@@ -198,8 +198,10 @@ theorem exists_continuousLinearEquiv_pi_comp_eq_comp_I_smul_and_mem_iff
     b.equivFun.symm.toLinearMap ∘ₗ LinearMap.pi fun i ↦ Complex.reLm ∘ₗ LinearMap.proj i
   let im' : (Fin (Module.finrank ℝ L) → ℂ) →ₗ[ℝ] L :=
     b.equivFun.symm.toLinearMap ∘ₗ LinearMap.pi fun i ↦ Complex.imLm ∘ₗ LinearMap.proj i
-  have hre (v : Fin (Module.finrank ℝ L) → ℂ) : re' v = b.equivFun.symm fun i ↦ (v i).re := rfl
-  have him (v : Fin (Module.finrank ℝ L) → ℂ) : im' v = b.equivFun.symm fun i ↦ (v i).im := rfl
+  have hre (v : Fin (Module.finrank ℝ L) → ℂ) : re' v = b.equivFun.symm fun i ↦ (v i).re := by
+    simp [re']
+  have him (v : Fin (Module.finrank ℝ L) → ℂ) : im' v = b.equivFun.symm fun i ↦ (v i).im := by
+    simp [im']
   have hP : Function.Bijective (re'.prod im') := by
     refine ⟨fun v w h ↦ funext fun i ↦ ?_,
       fun xy ↦ ⟨fun i ↦ ⟨b.equivFun xy.1 i, b.equivFun xy.2 i⟩, ?_⟩⟩
@@ -216,7 +218,8 @@ theorem exists_continuousLinearEquiv_pi_comp_eq_comp_I_smul_and_mem_iff
   let Φ : (Fin (Module.finrank ℝ L) → ℂ) ≃ₗ[ℝ] E :=
     LinearEquiv.ofBijective ((L.subtype.coprod ((A : E →ₗ[ℝ] E) ∘ₗ L.subtype)) ∘ₗ re'.prod im')
       (by rw [LinearMap.coe_comp]; exact hD.comp hP)
-  have hΦ (v : Fin (Module.finrank ℝ L) → ℂ) : Φ v = (re' v : E) + A (im' v) := rfl
+  have hΦ (v : Fin (Module.finrank ℝ L) → ℂ) : Φ v = (re' v : E) + A (im' v) := by
+    simp [Φ]
   refine ⟨Module.finrank ℝ L, Φ.toContinuousLinearEquiv, ContinuousLinearMap.ext fun v ↦ ?_,
     fun v ↦ ?_⟩
   · have h1 : re' (I • v) = -im' v := by rw [hre, him, ← map_neg]; congr 1; funext i; simp

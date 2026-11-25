@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 public import TauCeti.LinearAlgebra.TotallyReal.Basic
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.RealBoundary.DifferentialInequality
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
@@ -54,7 +55,7 @@ not proved here.
 
 **Totally real boundary values.** The same statements hold up to the boundary for a half-disc
 with totally real boundary values: `u` of class `C¹` up to the real axis on the closed upper part
-`Ω ∩ {0 ≤ im}` of a conjugation-invariant open set, solving `∂ₜu = J(u) ∂ₛu` off the axis, with
+`Ω ∩ {0 ≤ im}` of an open set, solving `∂ₜu = J(u) ∂ₛu` off the axis, with
 `u x ∈ x₀ + L` on `Ω ∩ ℝ` for a subspace `L` that is maximal totally real for `J(x₀)`. This is the
 local model of a pseudoholomorphic strip or disc with boundary on a totally real submanifold, in
 coordinates flattening the submanifold near `x₀`. Here the frame `Ψ` is chosen to carry also `ℝⁿ`
@@ -65,7 +66,9 @@ inequality `‖bar∂η‖ ≤ g ‖η‖` with `g` locally bounded up to the ax
 principle in that form
 (`TauCeti.Analysis.Complex.CauchyRiemann.RealBoundary.DifferentialInequality`), proved by
 reflection across the axis, gives unique continuation, isolated preimages and positive orders up
-to the boundary, also at the points `z₀` of the axis where `u z₀ = x₀`.
+to the boundary, also at the points `z₀` of the axis where `u z₀ = x₀`. The reflection needs a
+conjugation-invariant domain, so `Ω` is first replaced by `{z | re z + i |im z| ∈ Ω}`, which has
+the same closed upper part.
 
 ## Main results
 
@@ -317,8 +320,8 @@ private theorem conjWirtingerDeriv_symm_sub {V : Type*} [NormedAddCommGroup V] [
       (2 : ℂ)⁻¹ • (Ψ.symm (fderiv ℝ u z 1) + I • Ψ.symm (fderiv ℝ u z I)) := by
   have hD : fderiv ℝ (fun w ↦ Ψ.symm (u w - x₀)) z = (Ψ.symm : E →L[ℝ] V) ∘L fderiv ℝ u z :=
     ((Ψ.symm : E →L[ℝ] V).hasFDerivAt.comp z (hu.hasFDerivAt.sub_const x₀)).fderiv
-  rw [conjWirtingerDeriv_apply, hD, smul_eq_mul, mul_one]
-  rfl
+  rw [conjWirtingerDeriv_apply, hD, smul_eq_mul, mul_one, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
 
 omit [FiniteDimensional ℝ E] in
 /-- Off the real axis, the conjugate Wirtinger derivative of `η = Ψ⁻¹ (u - x₀)` is bounded by
@@ -338,26 +341,20 @@ private theorem norm_conjWirtingerDeriv_symm_sub_le {V : Type*} [NormedAddCommGr
         exact (norm_add_le _ _).trans (by rw [norm_smul, Complex.norm_I, one_mul])
     _ ≤ _ := by linarith [hv 1 norm_one, hv I Complex.norm_I]
 
+/-- Off the real axis, a point of `Ω` is an interior point of the closed upper part
+`Ω ∩ {0 ≤ im}`. -/
+private theorem inter_setOf_lt_im_subset_interior (hΩ : IsOpen Ω) :
+    Ω ∩ {z | 0 < z.im} ⊆ interior (Ω ∩ {z | 0 ≤ z.im}) :=
+  interior_maximal (fun _ hw ↦ ⟨hw.1, hw.2.out.le⟩)
+    (hΩ.inter (isOpen_lt continuous_const continuous_im))
+
 omit [FiniteDimensional ℝ E] in
-/-- Near each point of `Ω ∩ {0 ≤ im}`, the derivative of a `C¹` map up to the real axis is
-bounded off the axis, where it is an honest derivative. -/
-private theorem exists_eventually_norm_fderiv_le (hΩ : IsOpen Ω)
-    (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im})) {z₁ : ℂ} (hz₁ : z₁ ∈ Ω ∩ {z | 0 ≤ z.im}) :
-    ∃ B, 0 ≤ B ∧ ∀ᶠ w in 𝓝[Ω ∩ {z | 0 ≤ z.im}] z₁, w ∈ Ω ∩ {z | 0 < z.im} →
-      DifferentiableAt ℝ u w ∧ ‖fderiv ℝ u w‖ ≤ B := by
-  have hSu : UniqueDiffOn ℝ (Ω ∩ {z | 0 ≤ z.im}) := by
-    rw [inter_comm]
-    exact (uniqueDiffOn_setOfPred_le_im 0).inter hΩ
-  have hS' : IsOpen (Ω ∩ {z | 0 < z.im}) := hΩ.inter (isOpen_lt continuous_const continuous_im)
-  have hS'S : Ω ∩ {z | 0 < z.im} ⊆ Ω ∩ {z | 0 ≤ z.im} := fun w hw ↦ ⟨hw.1, hw.2.out.le⟩
-  refine ⟨‖fderivWithin ℝ u (Ω ∩ {z | 0 ≤ z.im}) z₁‖ + 1, by positivity, ?_⟩
-  filter_upwards [((hu.continuousOn_fderivWithin hSu le_rfl z₁ hz₁).norm.eventually
-    (gt_mem_nhds (lt_add_one _)))] with w hw hwS'
-  -- off the axis, `fderivWithin` is `fderiv`
-  have hS : Ω ∩ {z | 0 ≤ z.im} ∈ 𝓝 w := mem_of_superset (hS'.mem_nhds hwS') hS'S
-  refine ⟨(hu.differentiableOn one_ne_zero w (hS'S hwS')).differentiableAt hS, ?_⟩
-  rw [← fderivWithin_of_mem_nhds hS]
-  exact hw.le
+/-- A map `C¹` up to the real axis on `Ω ∩ {0 ≤ im}` is differentiable off the axis. -/
+private theorem differentiableAt_of_mem_inter_setOf_lt_im (hΩ : IsOpen Ω)
+    (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im})) {z : ℂ} (hz : z ∈ Ω ∩ {z | 0 < z.im}) :
+    DifferentiableAt ℝ u z :=
+  (hu.contDiffAt (mem_interior_iff_mem_nhds.1 (inter_setOf_lt_im_subset_interior hΩ hz))
+    ).differentiableAt_one
 
 omit [FiniteDimensional ℝ E] in
 /-- **Local bounds for the frozen coefficient.** Let `η = Ψ⁻¹ (u - x₀)` for a frame `Ψ` turning
@@ -374,7 +371,8 @@ private theorem exists_eventually_norm_conjWirtingerDeriv_div_le {n : ℕ}
     (hz₁ : z₁ ∈ Ω ∩ {z | 0 ≤ z.im}) :
     ∃ M, 0 ≤ M ∧ ∀ᶠ w in 𝓝[Ω ∩ {z | 0 ≤ z.im}] z₁, w ∈ Ω ∩ {z | 0 < z.im} →
       ‖conjWirtingerDeriv (fun w ↦ Ψ.symm (u w - x₀)) w 1‖ / ‖Ψ.symm (u w - x₀)‖ ≤ M := by
-  obtain ⟨B, hB0, hB⟩ := exists_eventually_norm_fderiv_le hΩ hu hz₁
+  obtain ⟨B, hB0, hB⟩ := hu.exists_eventually_norm_fderiv_le
+    (by rw [inter_comm]; exact (uniqueDiffOn_setOfPred_le_im 0).inter hΩ) le_rfl hz₁
   by_cases h₀ : u z₁ = x₀
   · -- near a zero of `η`: the frozen error term is a multiple of `‖∂ₛu‖ ‖η‖`
     obtain ⟨K, t, ht, hK⟩ := hJ
@@ -383,7 +381,7 @@ private theorem exists_eventually_norm_conjWirtingerDeriv_div_le {n : ℕ}
     refine ⟨(2 : ℝ)⁻¹ * (‖(Ψ.symm : E →L[ℝ] (Fin n → ℂ))‖ * ‖J x₀‖ * K *
       ‖(Ψ : (Fin n → ℂ) →L[ℝ] E)‖ * B), by positivity, ?_⟩
     filter_upwards [hB, hut] with w hwB hwt hw
-    obtain ⟨hwd, hwB⟩ := hwB hw
+    obtain ⟨hwd, hwB⟩ := hwB (inter_setOf_lt_im_subset_interior hΩ hw)
     have hJw : ‖J (u w) - J x₀‖ ≤ K * ‖u w - x₀‖ := by
       simpa only [dist_eq_norm] using
         lipschitzOnWith_iff_dist_le_mul.1 hK _ hwt _ (mem_of_mem_nhds ht)
@@ -410,28 +408,9 @@ private theorem exists_eventually_norm_conjWirtingerDeriv_div_le {n : ℕ}
     refine ⟨‖(Ψ.symm : E →L[ℝ] (Fin n → ℂ))‖ * B / (‖Ψ.symm (u z₁ - x₀)‖ / 2), by positivity,
       ?_⟩
     filter_upwards [hB, hη] with w hwB hwη hw
-    obtain ⟨hwd, hwB⟩ := hwB hw
+    obtain ⟨hwd, hwB⟩ := hwB (inter_setOf_lt_im_subset_interior hΩ hw)
     exact div_le_div₀ (by positivity)
       ((norm_conjWirtingerDeriv_symm_sub_le Ψ hwd).trans (by gcongr)) (by positivity) hwη.le
-
-/-- The quotient `‖G‖ / ‖η‖` of two maps continuous on an open subset `S'` of `S`, extended by zero
-off `S'`, is locally `Lᵖ` on `S` when it is bounded on `S'` near each point of `S`. -/
-private theorem memLpLoc_indicator_norm_div {V : Type*} [NormedAddCommGroup V] {S S' : Set ℂ}
-    {G η : ℂ → V} {p : ℝ≥0∞} (hS' : IsOpen S') (hS'S : S' ⊆ S) (hGc : ContinuousOn G S')
-    (hηc : ContinuousOn η S')
-    (hb : ∀ z₁ ∈ S, ∃ M, 0 ≤ M ∧ ∀ᶠ w in 𝓝[S] z₁, w ∈ S' → ‖G w‖ / ‖η w‖ ≤ M) :
-    MemLpLoc p S (S'.indicator fun z ↦ ‖G z‖ / ‖η z‖) := by
-  refine memLpLoc_of_forall_eventually_norm_le ?_ fun z₁ hz₁ ↦ ?_
-  · refine ((aestronglyMeasurable_indicator_iff hS'.measurableSet).2 ?_).mono_measure
-      Measure.restrict_le_self
-    exact ((hGc.aestronglyMeasurable hS'.measurableSet).norm.aemeasurable.div
-      (hηc.aestronglyMeasurable hS'.measurableSet).norm.aemeasurable).aestronglyMeasurable
-  · obtain ⟨M, hM0, hM⟩ := hb z₁ hz₁
-    refine ⟨M, (eventually_nhdsWithin_iff.1 hM).mono fun w hw ↦ ?_⟩
-    by_cases hwS' : w ∈ S'
-    · rw [indicator_of_mem hwS', Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-      exact hw (hS'S hwS') hwS'
-    · simpa [indicator_of_notMem hwS'] using hM0
 
 /-- **The frozen equation up to a totally real boundary.** Let `u` be `C¹` up to the real axis on
 `Ω ∩ {0 ≤ im}`, solving `∂ₜu = J(u) ∂ₛu` off the axis, with boundary values in `x₀ + L` for a
@@ -471,8 +450,7 @@ private theorem exists_frame_realBoundary (hJ : ∃ K, ∃ t ∈ 𝓝 x₀, Lips
       (fderiv ℝ u z 1))) := by
     rw [hG_def, hη_def]
     beta_reduce
-    rw [conjWirtingerDeriv_symm_sub Ψ ((hu.differentiableOn one_ne_zero z
-      (hS'S hz)).differentiableAt (mem_of_superset (hS'.mem_nhds hz) hS'S)),
+    rw [conjWirtingerDeriv_symm_sub Ψ (differentiableAt_of_mem_inter_setOf_lt_im hΩ hu hz),
       symm_apply_one_add_I_smul_symm_apply_I hΨ hJ₀ (hCR z hz.1 hz.2)]
   have hGc : ContinuousOn G S' := by
     have hDc := (hu.mono hS'S).continuousOn_fderiv_of_isOpen hS' le_rfl
@@ -480,12 +458,15 @@ private theorem exists_frame_realBoundary (hJ : ∃ K, ∃ t ∈ 𝓝 x₀, Lips
       (fderiv ℝ u z 1) + I • (Ψ.symm : E →L[ℝ] (Fin n → ℂ)) (fderiv ℝ u z I)))
       (by fun_prop) fun z hz ↦ ?_
     rw [hG_def, hη_def]
-    exact conjWirtingerDeriv_symm_sub Ψ ((hu.differentiableOn one_ne_zero z
-      (hS'S hz)).differentiableAt (mem_of_superset (hS'.mem_nhds hz) hS'S))
-  have hηc : ContinuousOn η S := hηC.continuousOn
+    exact conjWirtingerDeriv_symm_sub Ψ (differentiableAt_of_mem_inter_setOf_lt_im hΩ hu hz)
   set g : ℂ → ℝ := S'.indicator fun z ↦ ‖G z‖ / ‖η z‖ with hg_def
-  refine ⟨n, Ψ, g, hηc, hreal, memLpLoc_indicator_norm_div hS' hS'S hGc (hηc.mono hS'S)
-      fun z₁ hz₁ ↦ exists_eventually_norm_conjWirtingerDeriv_div_le hJ Ψ hΨ hJ₀ hΩ hu hCR hz₁,
+  refine ⟨n, Ψ, g, hηC.continuousOn, hreal, memLpLoc_indicator_of_forall_eventually_norm_le
+      hS'.measurableSet hS'S
+      (((hGc.aestronglyMeasurable hS'.measurableSet).norm.aemeasurable.div ((hηC.continuousOn.mono
+        hS'S).aestronglyMeasurable hS'.measurableSet).norm.aemeasurable).aestronglyMeasurable)
+      fun z₁ hz₁ ↦ (exists_eventually_norm_conjWirtingerDeriv_div_le hJ Ψ hΨ hJ₀ hΩ hu hCR
+        hz₁).imp fun _ hM ↦ hM.2.mono fun _ hw hwS' ↦
+          (Real.norm_of_nonneg (by positivity)).trans_le (hw hwS'),
     hasWeakConjWirtingerDerivRealBoundaryOn_of_contDiffOn (Ω := ⟨Ω, hΩ⟩) hηC
       (fun _ _ _ ↦ rfl) hreal, ?_⟩
   · -- off the axis, a null set, `‖G‖ = (‖G‖ / ‖η‖) ‖η‖`, both sides vanishing where `η` does
@@ -501,8 +482,30 @@ private theorem exists_frame_realBoundary (hJ : ∃ K, ∃ t ∈ 𝓝 x₀, Lips
       exact (norm_eq_zero.2 hG0).le
     · rw [div_mul_cancel₀ _ (norm_ne_zero_iff.2 hη0)]
 
-/-- **Unique continuation up to a totally real boundary.** Let `Ω` be a conjugation-invariant open
-set with `Ω ∩ {0 ≤ im}` connected, and `u` a map of class `C¹` up to the real axis on
+omit [FiniteDimensional ℝ E] in
+/-- **A conjugation-invariant domain with the same upper part.** The open set
+`Ω' = {z | re z + i |im z| ∈ Ω}` is invariant under conjugation and has the same closed upper part
+`Ω ∩ {0 ≤ im}` as `Ω`, so the equation and the boundary condition pass from `Ω` to `Ω'`. -/
+private theorem exists_mapsTo_conj_realBoundary (hΩ : IsOpen Ω)
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → u x - x₀ ∈ L) :
+    ∃ Ω' : Set ℂ, IsOpen Ω' ∧ MapsTo (starRingEnd ℂ) Ω' Ω' ∧
+      Ω' ∩ {z | 0 ≤ z.im} = Ω ∩ {z | 0 ≤ z.im} ∧
+      (∀ z ∈ Ω', 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1)) ∧
+      ∀ x : ℝ, (x : ℂ) ∈ Ω' → u x - x₀ ∈ L := by
+  set Ω' := (fun z : ℂ ↦ (z.re : ℂ) + |z.im| * I) ⁻¹' Ω
+  have heq : Ω' ∩ {z | 0 ≤ z.im} = Ω ∩ {z | 0 ≤ z.im} := by
+    ext z
+    exact and_congr_left fun h ↦ by
+      rw [mem_preimage, abs_of_nonneg (show 0 ≤ z.im from h), re_add_im]
+  have hsub {z : ℂ} (hz : z ∈ Ω') (h : 0 ≤ z.im) : z ∈ Ω :=
+    (heq ▸ (⟨hz, h⟩ : z ∈ Ω' ∩ {z | 0 ≤ z.im}) : z ∈ Ω ∩ {z | 0 ≤ z.im}).1
+  refine ⟨Ω', hΩ.preimage (by fun_prop), fun z hz ↦ ?_, heq,
+    fun z hz h ↦ hCR z (hsub hz h.le) h, fun x hx ↦ hbd x (hsub hx (by simp))⟩
+  simpa [Ω'] using hz
+
+/-- **Unique continuation up to a totally real boundary.** Let `Ω` be an open set
+with `Ω ∩ {0 ≤ im}` connected, and `u` a map of class `C¹` up to the real axis on
 `Ω ∩ {0 ≤ im}` solving the Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` off the axis, for a field `J`
 Lipschitz near `x₀` with `J(x₀)² = -1`, with boundary values `u x ∈ x₀ + L` on `Ω ∩ ℝ` for a
 subspace `L` maximal totally real for `J(x₀)`. If `u` equals `x₀` on a nonempty open subset of
@@ -511,21 +514,23 @@ theorem eqOn_const_of_cauchyRiemann_of_isMaximalTotallyReal_of_eqOn
     (hJ : ∃ K, ∃ t ∈ 𝓝 x₀, LipschitzOnWith K J t)
     (hJ₀ : J x₀ ∘L J x₀ = -ContinuousLinearMap.id ℝ E)
     (hL : IsMaximalTotallyReal (J x₀ : E →ₗ[ℝ] E) L) (hΩ : IsOpen Ω)
-    (hΩs : MapsTo (starRingEnd ℂ) Ω Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
     (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im}))
     (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → u x - x₀ ∈ L) {U : Set ℂ} (hU : IsOpen U) (hUne : U.Nonempty)
     (hUΩ : U ⊆ Ω ∩ {z | 0 ≤ z.im}) (h₀ : EqOn u (fun _ ↦ x₀) U) :
     EqOn u (fun _ ↦ x₀) (Ω ∩ {z | 0 ≤ z.im}) := by
-  obtain ⟨n, Ψ, g, hc, hr, hg, hw, hle⟩ := exists_frame_realBoundary hJ hJ₀ hL hΩ hu hCR hbd
+  obtain ⟨Ω', hΩ', hΩs, heq, hCR', hbd'⟩ := exists_mapsTo_conj_realBoundary hΩ hCR hbd
+  rw [← heq] at hΩc hu hUΩ ⊢
+  obtain ⟨n, Ψ, g, hc, hr, hg, hw, hle⟩ := exists_frame_realBoundary hJ hJ₀ hL hΩ' hu hCR' hbd'
   intro z hz
   exact (symm_sub_eq_zero_iff Ψ _).1
-    (eqOn_zero_of_hasWeakConjWirtingerDerivRealBoundaryOn_of_norm_le_of_eqOn_zero (Ω := ⟨Ω, hΩ⟩)
+    (eqOn_zero_of_hasWeakConjWirtingerDerivRealBoundaryOn_of_norm_le_of_eqOn_zero (Ω := ⟨Ω', hΩ'⟩)
       (by norm_num) hΩs hΩc hg hc hr hw hle hU hUne hUΩ
       (fun w hw ↦ (symm_sub_eq_zero_iff Ψ _).2 (h₀ hw)) hz)
 
 /-- **Unique continuation from infinite-order contact, up to a totally real boundary.** Let `Ω`
-be a conjugation-invariant open set with `Ω ∩ {0 ≤ im}` connected, and `u` a map of class `C¹` up
+be an open set with `Ω ∩ {0 ≤ im}` connected, and `u` a map of class `C¹` up
 to the real axis on `Ω ∩ {0 ≤ im}` solving the Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` off the
 axis, for a field `J` Lipschitz near `x₀` with `J(x₀)² = -1`, with boundary values `u x ∈ x₀ + L`
 on `Ω ∩ ℝ` for a subspace `L` maximal totally real for `J(x₀)`. If `u z - x₀ = O(‖z - z₀‖ⁿ)`
@@ -535,20 +540,22 @@ theorem eqOn_const_of_cauchyRiemann_of_isMaximalTotallyReal_of_forall_isBigO
     (hJ : ∃ K, ∃ t ∈ 𝓝 x₀, LipschitzOnWith K J t)
     (hJ₀ : J x₀ ∘L J x₀ = -ContinuousLinearMap.id ℝ E)
     (hL : IsMaximalTotallyReal (J x₀ : E →ₗ[ℝ] E) L) (hΩ : IsOpen Ω)
-    (hΩs : MapsTo (starRingEnd ℂ) Ω Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
     (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im}))
     (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → u x - x₀ ∈ L) (hz₀ : z₀ ∈ Ω ∩ {z | 0 ≤ z.im})
     (h₀ : ∀ n : ℕ, (fun z ↦ u z - x₀) =O[𝓝[{z | 0 ≤ z.im}] z₀] fun z ↦ (z - z₀) ^ n) :
     EqOn u (fun _ ↦ x₀) (Ω ∩ {z | 0 ≤ z.im}) := by
-  obtain ⟨n, Ψ, g, hc, hr, hg, hw, hle⟩ := exists_frame_realBoundary hJ hJ₀ hL hΩ hu hCR hbd
+  obtain ⟨Ω', hΩ', hΩs, heq, hCR', hbd'⟩ := exists_mapsTo_conj_realBoundary hΩ hCR hbd
+  rw [← heq] at hΩc hu hz₀ ⊢
+  obtain ⟨n, Ψ, g, hc, hr, hg, hw, hle⟩ := exists_frame_realBoundary hJ hJ₀ hL hΩ' hu hCR' hbd'
   intro z hz
   exact (symm_sub_eq_zero_iff Ψ _).1
     (eqOn_zero_of_hasWeakConjWirtingerDerivRealBoundaryOn_of_norm_le_of_forall_isBigO
-      (Ω := ⟨Ω, hΩ⟩) (by norm_num) hΩs hΩc hg hc hr hw hle hz₀
+      (Ω := ⟨Ω', hΩ'⟩) (by norm_num) hΩs hΩc hg hc hr hw hle hz₀
       (fun k ↦ (Ψ.symm.isBigO_comp _ _).trans (h₀ k)) hz)
 
-/-- **Isolated boundary point preimages.** Let `Ω` be a conjugation-invariant open set with
+/-- **Isolated boundary point preimages.** Let `Ω` be an open set with
 `Ω ∩ {0 ≤ im}` connected, and `u` a map of class `C¹` up to the real axis on `Ω ∩ {0 ≤ im}` solving
 the Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` off the axis, for a field `J` Lipschitz near `x₀` with
 `J(x₀)² = -1`, with boundary values `u x ∈ x₀ + L` on `Ω ∩ ℝ` for a subspace `L` maximal totally
@@ -558,23 +565,25 @@ theorem setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_of_isMaximalTotallyReal
     (hJ : ∃ K, ∃ t ∈ 𝓝 x₀, LipschitzOnWith K J t)
     (hJ₀ : J x₀ ∘L J x₀ = -ContinuousLinearMap.id ℝ E)
     (hL : IsMaximalTotallyReal (J x₀ : E →ₗ[ℝ] E) L) (hΩ : IsOpen Ω)
-    (hΩs : MapsTo (starRingEnd ℂ) Ω Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
     (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im}))
     (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → u x - x₀ ∈ L) (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ x₀) :
     {z | u z ≠ x₀} ∈ codiscreteWithin (Ω ∩ {z | 0 ≤ z.im}) := by
-  obtain ⟨n, Ψ, g, hc, hr, hg, hw, hle⟩ := exists_frame_realBoundary hJ hJ₀ hL hΩ hu hCR hbd
+  obtain ⟨Ω', hΩ', hΩs, heq, hCR', hbd'⟩ := exists_mapsTo_conj_realBoundary hΩ hCR hbd
+  rw [← heq] at hΩc hu hne ⊢
+  obtain ⟨n, Ψ, g, hc, hr, hg, hw, hle⟩ := exists_frame_realBoundary hJ hJ₀ hL hΩ' hu hCR' hbd'
   have hset : {z | u z ≠ x₀} = {z | Ψ.symm (u z - x₀) ≠ 0} := by
     ext z
     simp only [mem_ofPred_eq, ne_eq, symm_sub_eq_zero_iff Ψ]
   obtain ⟨z, hz, hzne⟩ := hne
   rw [hset]
   exact setOf_ne_zero_mem_codiscreteWithin_of_hasWeakConjWirtingerDerivRealBoundaryOn_of_norm_le
-    (Ω := ⟨Ω, hΩ⟩) (by norm_num) hΩs hΩc hg hc hr hw hle
+    (Ω := ⟨Ω', hΩ'⟩) (by norm_num) hΩs hΩc hg hc hr hw hle
     ⟨z, hz, mt (symm_sub_eq_zero_iff Ψ _).1 hzne⟩
 
-/-- **Finite boundary point preimages on compact sets.** Let `Ω` be a conjugation-invariant open
-set with `Ω ∩ {0 ≤ im}` connected, and `u` a map of class `C¹` up to the real axis on
+/-- **Finite boundary point preimages on compact sets.** Let `Ω` be an open set
+with `Ω ∩ {0 ≤ im}` connected, and `u` a map of class `C¹` up to the real axis on
 `Ω ∩ {0 ≤ im}` solving the Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` off the axis, for a field `J`
 Lipschitz near `x₀` with `J(x₀)² = -1`, with boundary values `u x ∈ x₀ + L` on `Ω ∩ ℝ` for a
 subspace `L` maximal totally real for `J(x₀)`. If `u` is not identically `x₀` on
@@ -584,20 +593,20 @@ theorem finite_inter_preimage_singleton_of_cauchyRiemann_of_isMaximalTotallyReal
     (hJ : ∃ K, ∃ t ∈ 𝓝 x₀, LipschitzOnWith K J t)
     (hJ₀ : J x₀ ∘L J x₀ = -ContinuousLinearMap.id ℝ E)
     (hL : IsMaximalTotallyReal (J x₀ : E →ₗ[ℝ] E) L) (hΩ : IsOpen Ω)
-    (hΩs : MapsTo (starRingEnd ℂ) Ω Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
     (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im}))
     (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → u x - x₀ ∈ L) (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ x₀)
     {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω ∩ {z | 0 ≤ z.im}) :
     (K ∩ u ⁻¹' {x₀}).Finite := by
   have h := hK.finite_sdiff_of_mem_codiscreteWithin (codiscreteWithin_mono hKΩ
-    (setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_of_isMaximalTotallyReal hJ hJ₀ hL hΩ hΩs hΩc
-      hu hCR hbd hne))
+    (setOf_ne_mem_codiscreteWithin_of_cauchyRiemann_of_isMaximalTotallyReal hJ hJ₀ hL hΩ hΩc hu
+      hCR hbd hne))
   convert h using 1
   ext z
   simp
 
-/-- **The order of a boundary point preimage.** Let `Ω` be a conjugation-invariant open set with
+/-- **The order of a boundary point preimage.** Let `Ω` be an open set with
 `Ω ∩ {0 ≤ im}` connected, and `u` a map of class `C¹` up to the real axis on `Ω ∩ {0 ≤ im}` solving
 the Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` off the axis, for a field `J` Lipschitz near `x₀` with
 `J(x₀)² = -1`, with boundary values `u x ∈ x₀ + L` on `Ω ∩ ℝ` for a subspace `L` maximal totally
@@ -608,17 +617,19 @@ theorem exists_isTheta_pow_of_cauchyRiemann_of_isMaximalTotallyReal
     (hJ : ∃ K, ∃ t ∈ 𝓝 x₀, LipschitzOnWith K J t)
     (hJ₀ : J x₀ ∘L J x₀ = -ContinuousLinearMap.id ℝ E)
     (hL : IsMaximalTotallyReal (J x₀ : E →ₗ[ℝ] E) L) (hΩ : IsOpen Ω)
-    (hΩs : MapsTo (starRingEnd ℂ) Ω Ω) (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
+    (hΩc : IsPreconnected (Ω ∩ {z | 0 ≤ z.im}))
     (hu : ContDiffOn ℝ 1 u (Ω ∩ {z | 0 ≤ z.im}))
     (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → u x - x₀ ∈ L) (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ x₀)
     (hz₀ : z₀ ∈ Ω ∩ {z | 0 ≤ z.im}) (hu₀ : u z₀ = x₀) :
     ∃ m : ℕ, 0 < m ∧
       (fun z ↦ u z - x₀) =Θ[𝓝[{z | 0 ≤ z.im}] z₀] fun z ↦ (z - z₀) ^ m := by
-  obtain ⟨n, Ψ, g, hc, hr, hg, hw, hle⟩ := exists_frame_realBoundary hJ hJ₀ hL hΩ hu hCR hbd
+  obtain ⟨Ω', hΩ', hΩs, heq, hCR', hbd'⟩ := exists_mapsTo_conj_realBoundary hΩ hCR hbd
+  rw [← heq] at hΩc hu hne hz₀
+  obtain ⟨n, Ψ, g, hc, hr, hg, hw, hle⟩ := exists_frame_realBoundary hJ hJ₀ hL hΩ' hu hCR' hbd'
   obtain ⟨m, hm, hθ, -⟩ :=
     exists_analyticOrderAt_eq_of_hasWeakConjWirtingerDerivRealBoundaryOn_of_norm_le
-      (Ω := ⟨Ω, hΩ⟩) (by norm_num) hΩs hΩc hg hc hr hw hle
+      (Ω := ⟨Ω', hΩ'⟩) (by norm_num) hΩs hΩc hg hc hr hw hle
       (hne.imp fun _ ↦ .imp_right fun h ↦ mt (symm_sub_eq_zero_iff Ψ _).1 h) hz₀
       ((symm_sub_eq_zero_iff Ψ _).2 hu₀)
   exact ⟨m, hm, ⟨by simpa using (Ψ.isBigO_comp _ _).trans hθ.1,
