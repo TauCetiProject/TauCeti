@@ -250,11 +250,13 @@ theorem pullbackTensorProductIso_hom_comp_tensorProductIsoTensor_hom (f : X ⟶ 
     (L K : InvertibleSheaf Y) :
     (pullbackTensorProductIso f L K).hom ≫
         (tensorProductIsoTensor ((pullback f).obj L) ((pullback f).obj K)).hom =
-      (pullback f).map (tensorProductIsoTensor L K).hom ≫ δ (pullback f) L K := by
-  apply ObjectProperty.hom_ext
-  simp
-  -- The remaining `eqToHom`s are identity transports along the `rfl` equation `pullback_obj_obj`.
-  rfl
+      (pullback f).map (tensorProductIsoTensor L K).hom ≫ δ (pullback f) L K :=
+  -- The transports along the `rfl` equation `pullback_obj_obj` are definitionally identities,
+  -- so `id_comp`, `id_tensorHom_id` and `comp_id` remove them.
+  ObjectProperty.hom_ext _ <|
+    (pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom f L K).trans <|
+      (Category.id_comp _).trans <| congrArg (_ ≫ ·) <|
+        (congrArg (_ ≫ ·) (id_tensorHom_id _ _)).trans (Category.comp_id _)
 
 /-- The inverse tensor comparison of line-bundle pullback is compatible with the symmetry. -/
 @[reassoc]

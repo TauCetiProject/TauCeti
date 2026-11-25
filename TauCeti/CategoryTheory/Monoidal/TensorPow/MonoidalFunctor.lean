@@ -116,10 +116,7 @@ theorem mapTensorPowIso_comp (G : D ⥤ E) [G.Monoidal] (X : C) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    simp only [Iso.trans_hom, mapIso_hom] at ih
-    rw [mapTensorPowIso_succ_hom, ih, comp_δ, Iso.trans_hom, mapIso_hom, mapTensorPowIso_succ_hom,
-      mapTensorPowIso_succ_hom, Functor.map_comp]
-    simp only [comp_obj, Category.assoc, MonoidalCategory.whiskerLeft_comp, δ_natural_right_assoc]
+    simp [mapTensorPowIso_succ_hom, ih, comp_δ, δ_natural_right_assoc]
 
 end Functor
 
