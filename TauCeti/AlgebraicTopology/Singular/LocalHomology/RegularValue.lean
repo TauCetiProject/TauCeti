@@ -323,15 +323,19 @@ section SourceChange
 variable {E N G : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace N] [T2Space N] [NormedAddCommGroup G] [NormedSpace ℝ G]
   [FiniteDimensional ℝ G] [ChartedSpace G N] {n : ℕ} (o : HomologicalOrientation E E n)
-  (o' : HomologicalOrientation N G n) (hE : finrank ℝ E = n) (hG : finrank ℝ G = n)
+  (o' : HomologicalOrientation N G n)
 
-include hE hG in
 /-- **The local index under a change of coordinates of the source.** If `φ : E → E` is strictly
 differentiable at `x` with derivative `φ'` of nonzero determinant, then the local index of
-`F ∘ φ` at `x` is that of `F` at `φ x` times `sign (det φ')`. -/
-theorem localIndex_comp_eq_mul_sign_det {F : C(E, N)} {φ : C(E, E)} {φ' : E →L[ℝ] E} {x : E}
-    (hφ : HasStrictFDerivAt φ φ' x) (hdet : φ'.det ≠ 0) :
+`F ∘ φ` at `x` is that of `F` at `φ x` times `sign (det φ')`. Only the target dimension must equal
+`n`; the source dimension may differ. -/
+theorem localIndex_comp_eq_mul_sign_det (hG : finrank ℝ G = n) {F : C(E, N)} {φ : C(E, E)}
+    {φ' : E →L[ℝ] E} {x : E} (hφ : HasStrictFDerivAt φ φ' x) (hdet : φ'.det ≠ 0) :
     o.localIndex o' (F.comp φ) x = o.localIndex o' F (φ x) * SignType.sign φ'.det := by
+  by_cases hE : finrank ℝ E = n
+  swap
+  · rw [o.localIndex_eq_zero_of_finrank_ne o' hE hG, o.localIndex_eq_zero_of_finrank_ne o' hE hG,
+      zero_mul]
   by_cases hiso : ∀ᶠ y in 𝓝[≠] φ x, F y ≠ F (φ x)
   · rw [o.localIndex_comp o o' hG hiso, o.localIndex_eq_sign_det hE hφ.hasFDerivAt hdet]
   have hfr : ∃ᶠ y in 𝓝[≠] φ x, F y = F (φ x) := by simpa using not_eventually.1 hiso
