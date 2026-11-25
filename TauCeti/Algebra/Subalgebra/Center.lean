@@ -32,8 +32,8 @@ central subalgebra provides. Transport of the center along an algebra equivalenc
   `Subalgebra.center_prod`.
 * `TauCeti.centerAlgEquivOfIsCentral` identifies the center of a central algebra with its base
   semiring when the scalar action is faithful. Its dimension is therefore one
-  (`TauCeti.finrank_center_of_isCentral`), and over a field `k` below a central field `Z`
-  the center has the dimension of `Z` (`TauCeti.finrank_center_eq_of_isCentral`). For a
+  (`TauCeti.finrank_center_of_isCentral`), and over any `k` below the base `Z` the center has
+  the dimension of `Z` (`TauCeti.finrank_center_eq_of_isCentral`). For a
   product of two such algebras the center is the split algebra `K × K`
   (`TauCeti.centerProdAlgEquivOfIsCentral`).
 * `TauCeti.isCentral_iff_surjective_algebraMap` records that a commutative algebra is central
@@ -274,14 +274,12 @@ theorem _root_.Algebra.IsCentral.of_algEquiv' (K : Type*) {D D' : Type*} [CommSe
       ((MulEquivClass.apply_mem_center_iff e.symm).mpr hx)
     ⟨k, by simpa [Algebra.ofId] using congr(e $hk)⟩
 
-/-- A central algebra `B` over a field `Z` has centre `Z`: for any field `k` below `Z`, the centre
-of `B` over `k` has the dimension of `Z` over `k`. -/
-theorem finrank_center_eq_of_isCentral (k : Type*) [Field k] {B : Type*} [Ring B] [Algebra k B]
-    (Z : Type*) [Field Z] [Algebra k Z] [Algebra Z B] [IsScalarTower k Z B]
-    [Algebra.IsCentral Z B] [Nontrivial B] :
+/-- A central algebra `B` over `Z` with faithful scalar action has centre `Z`: for any `k` below
+`Z`, the centre of `B` over `k` has the dimension of `Z` over `k`. -/
+theorem finrank_center_eq_of_isCentral (k : Type*) [CommSemiring k] {B : Type*} [Semiring B]
+    [Algebra k B] (Z : Type*) [CommSemiring Z] [Algebra k Z] [Algebra Z B] [IsScalarTower k Z B]
+    [FaithfulSMul Z B] [Algebra.IsCentral Z B] :
     Module.finrank k (Subalgebra.center k B) = Module.finrank k Z :=
-  have : FaithfulSMul Z B :=
-    (faithfulSMul_iff_algebraMap_injective Z B).2 (algebraMap Z B).injective
   ((Subalgebra.equivOfEq _ _ (SetLike.ext fun _ ↦ by
       simp only [Subalgebra.mem_restrictScalars, Subalgebra.mem_center_iff] :
       Subalgebra.center k B = (Subalgebra.center Z B).restrictScalars k)).toLinearEquiv.trans
