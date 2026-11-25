@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Complex.ClosedUpperHalfPlane
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -31,7 +32,11 @@ limit of interior points (`TauCeti.FiniteBundleAtlas.halfClosedImage_subset_clos
 
 Chart transitions `A.halfTransition i i'` carry interior points to interior points
 (`TauCeti.ClosedUpperHalfPlane.im_pos_iff_of_mem_contDiffGroupoid`), and are differentiable on the
-interiors `A.halfOverlap i i'` of the overlaps for a `C¹` manifold. In chart `i` a section `s` is
+interiors `A.halfOverlap i i'` of the overlaps for a `C¹` manifold. The same holds for transitions
+between the charts of two atlases `A` and `A'`: they keep interior points interior, are
+differentiable there, and pull back null sets, and the readings of a section in the two atlases
+differ by the coordinate changes of the bundle; this is the input to the change of atlas for
+Sobolev sections over bases with boundary. In chart `i` a section `s` is
 read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ` vector bundle it is
 `Cᵏ` up to the real axis (`TauCeti.FiniteBundleAtlas.contDiffOn_halfCoord`).
 
@@ -47,6 +52,13 @@ read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ
 
 ## Main results
 
+* `TauCeti.FiniteBundleAtlas.coe_chart_mem_halfImage`,
+  `TauCeti.FiniteBundleAtlas.differentiableOn_coe_chart_chart_symm`: transitions between the charts
+  of two atlases keep interior points interior and are differentiable there.
+* `TauCeti.FiniteBundleAtlas.ae_restrict_halfImage_chart_symm`: transitions between two atlases
+  pull back null sets.
+* `TauCeti.FiniteBundleAtlas.halfCoord_eq_coordChangeL_halfCoord`: readings of a section in charts
+  of two atlases differ by the coordinate change of the bundle.
 * `TauCeti.FiniteBundleAtlas.halfTransition_mem_halfOverlap`,
   `TauCeti.FiniteBundleAtlas.differentiableOn_halfTransition`: chart transitions keep interior
   points interior and are differentiable there.
@@ -385,29 +397,76 @@ theorem contDiffOn_comp_chart_symm_closedUpperHalfPlaneModel_symm {G : Type*}
   rw [Function.comp_apply, extChartAt_coe_symm, Function.comp_apply]
 
 variable [IsManifold closedUpperHalfPlaneModel 1 M]
+  {F' : Type*} [TopologicalSpace F'] {V' : M → Type*} [TopologicalSpace (TotalSpace F' V')]
+  [∀ x, TopologicalSpace (V' x)] [FiberBundle F' V']
+
+/-- **Chart transitions keep interior points interior.** A point of `M` lying in the domain of chart
+`i` of `A`, and read in chart `i'` of a second atlas `A'` at a point of the interior of the image of
+that chart, is read in chart `i` at a point of the interior of the image of chart `i`. -/
+theorem coe_chart_mem_halfImage (A' : FiniteBundleAtlas ClosedUpperHalfPlane M F' V')
+    {i : Fin A.n} {i' : Fin A'.n} {y : ℂ} (hy : y ∈ A'.halfImage i')
+    (hi : (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) ∈ A.dom i) :
+    (A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)) : ℂ) ∈ A.halfImage i := by
+  obtain ⟨hyU, hy0⟩ := A'.mem_halfImage.1 hy
+  refine A.mem_halfImage.2 ⟨?_, ?_⟩
+  · rw [closedUpperHalfPlaneModel_symm_coe]
+    exact A.mem_image.2 ⟨_, hi, rfl⟩
+  have he : (A'.chart i').symm ≫ₕ A.chart i ∈ contDiffGroupoid 1 closedUpperHalfPlaneModel :=
+    HasGroupoid.compatible (chart_mem_atlas _ _) (chart_mem_atlas _ _)
+  have hpos := ClosedUpperHalfPlane.im_pos_iff_of_mem_contDiffGroupoid he one_ne_zero
+    (z := closedUpperHalfPlaneModel.symm y)
+    ⟨A'.closure_image_subset_target i' (subset_closure hyU), A.dom_subset_chart_source i hi⟩
+  rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hy0.le] at hpos
+  exact hpos.1 hy0
+
+/-- **Chart transitions between two atlases are differentiable** at the interior points of the
+image of chart `i` of `A` lying over the domain of chart `i'` of `A'`. -/
+theorem differentiableOn_coe_chart_chart_symm (A' : FiniteBundleAtlas ClosedUpperHalfPlane M F' V')
+    (i : Fin A.n) (i' : Fin A'.n) :
+    DifferentiableOn ℝ
+      (fun z ↦ (A'.chart i' ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)) : ℂ))
+      ((A.halfImage i : Set ℂ) ∩
+        {z | (A.chart i).symm (closedUpperHalfPlaneModel.symm z) ∈ A'.dom i'}) := by
+  have h := (contDiffOn_ext_coord_change (I := closedUpperHalfPlaneModel) (n := 1)
+    (A'.center i') (A.center i)).differentiableOn one_ne_zero
+  refine h.congr_mono (fun z _ ↦ ?_) fun z hz ↦ ?_
+  · simp only [Function.comp_apply, extChartAt_coe_symm, extChartAt_coe,
+      closedUpperHalfPlaneModel_apply]
+  obtain ⟨hzU, hz'⟩ := hz
+  obtain ⟨hzU, hz0⟩ := A.mem_halfImage.1 hzU
+  have hzr : z ∈ range closedUpperHalfPlaneModel := by
+    rw [range_closedUpperHalfPlaneModel]; exact hz0.le
+  simp only [PartialEquiv.trans_source, PartialEquiv.symm_source, mem_inter_iff, mem_preimage,
+    extChartAt_target, extChartAt_source, extChartAt_coe_symm, Function.comp_apply]
+  exact ⟨⟨A.closure_image_subset_target i (subset_closure hzU), hzr⟩,
+    A'.dom_subset_chart_source i' hz'⟩
+
+omit [IsManifold closedUpperHalfPlaneModel 1 M] in
+/-- The chart transition from chart `i'` to chart `i`, read in `ℂ`. -/
+private theorem halfTransition_eq (i i' : Fin A.n) :
+    A.halfTransition i i' =
+      fun z ↦ (A.chart i ((A.chart i').symm (closedUpperHalfPlaneModel.symm z)) : ℂ) := by
+  funext z
+  simp only [halfTransition_def, transition_eq_symm_trans, OpenPartialHomeomorph.coe_trans,
+    Function.comp_apply]
+
+omit [IsManifold closedUpperHalfPlaneModel 1 M] in
+/-- A point of the interior of the overlap of two charts, read in chart `i'`, lies in the interior
+of the image of chart `i'` and over the domain of chart `i`. -/
+private theorem halfOverlap_subset (i i' : Fin A.n) :
+    A.halfOverlap i i' ⊆ (A.halfImage i' : Set ℂ) ∩
+      {z | (A.chart i').symm (closedUpperHalfPlaneModel.symm z) ∈ A.dom i} :=
+  fun _ hz ↦ ⟨A.halfOverlap_subset_halfImage i i' hz, (A.symm_mem_dom_of_mem_overlap hz.1).1⟩
 
 /-- Chart transitions carry interior points of the overlap to interior points. -/
 theorem halfTransition_mem_halfOverlap {i i' : Fin A.n} {z : ℂ} (hz : z ∈ A.halfOverlap i i') :
     A.halfTransition i i' z ∈ A.halfOverlap i' i := by
-  obtain ⟨hz, hz0⟩ := A.mem_halfOverlap.1 hz
-  obtain ⟨x, hx, hxz⟩ := A.mem_overlap.1 hz
-  have hx' := A.dom_subset_chart_source i' hx.2
-  have he : (A.chart i').symm ≫ₕ A.chart i ∈ contDiffGroupoid 1 closedUpperHalfPlaneModel :=
-    HasGroupoid.compatible (chart_mem_atlas _ _) (chart_mem_atlas _ _)
-  have hs : A.chart i' x ∈ ((A.chart i').symm ≫ₕ A.chart i).source := by
-    simp only [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
-      mem_inter_iff, mem_preimage, (A.chart i').map_source hx', (A.chart i').left_inv hx',
-      true_and]
-    exact A.dom_subset_chart_source i hx.1
-  have hpos := ClosedUpperHalfPlane.im_pos_iff_of_mem_contDiffGroupoid he one_ne_zero hs
-  have hz' : (A.chart i' x : ℂ) = z := by
-    rw [hxz, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz0.le]
+  obtain ⟨hzU, hdom⟩ := A.halfOverlap_subset i i' hz
   refine ⟨?_, ?_⟩
   · rw [mem_preimage, symm_halfTransition]
-    exact A.transition_mem_overlap (A.mem_overlap.2 ⟨x, hx, hxz⟩)
-  · rw [mem_ofPred_eq, halfTransition, ← hxz, A.transition_chart hx.2]
-    have h := hpos.1 (hz' ▸ hz0)
-    rwa [OpenPartialHomeomorph.coe_trans, Function.comp_apply, (A.chart i').left_inv hx'] at h
+    exact A.transition_mem_overlap hz.1
+  rw [halfTransition_eq]
+  exact (A.mem_halfImage.1 (A.coe_chart_mem_halfImage A hzU hdom)).2
 
 omit [IsManifold closedUpperHalfPlaneModel 1 M] in
 theorem halfTransition_halfTransition {i i' : Fin A.n} {z : ℂ} (hz : z ∈ A.halfOverlap i i') :
@@ -418,24 +477,52 @@ theorem halfTransition_halfTransition {i i' : Fin A.n} {z : ℂ} (hz : z ∈ A.h
 /-- Chart transitions are differentiable on the interiors of the overlaps. -/
 theorem differentiableOn_halfTransition (i i' : Fin A.n) :
     DifferentiableOn ℝ (A.halfTransition i i') (A.halfOverlap i i') := by
-  have h := (contDiffOn_ext_coord_change (I := closedUpperHalfPlaneModel) (n := 1)
-    (A.center i) (A.center i')).differentiableOn one_ne_zero
-  refine h.congr_mono (fun z hz ↦ ?_) ?_
-  · obtain ⟨x, hx, hxz⟩ := A.mem_overlap.1 hz.1
-    have hx' : x ∈ (A.chart i').source := A.dom_subset_chart_source i' hx.2
-    simp only [halfTransition, Function.comp_apply, extChartAt_coe_symm, extChartAt_coe,
-      ← hxz, A.transition_chart hx.2, (A.chart i').left_inv hx', closedUpperHalfPlaneModel_apply]
-  intro z hz
-  obtain ⟨hz, hz0⟩ := A.mem_halfOverlap.1 hz
-  obtain ⟨x, hx, hxz⟩ := A.mem_overlap.1 hz
-  have hx' : x ∈ (A.chart i').source := A.dom_subset_chart_source i' hx.2
-  have hzr : z ∈ range closedUpperHalfPlaneModel := by
-    rw [range_closedUpperHalfPlaneModel]; exact hz0.le
-  simp only [PartialEquiv.trans_source, PartialEquiv.symm_source, mem_inter_iff, mem_preimage,
-    extChartAt_target, extChartAt_source, extChartAt_coe_symm, Function.comp_apply]
-  refine ⟨⟨?_, hzr⟩, ?_⟩
-  · rw [← hxz]; exact (A.chart i').map_source hx'
-  · rw [← hxz, (A.chart i').left_inv hx']; exact A.dom_subset_chart_source i hx.1
+  rw [halfTransition_eq]
+  exact (A.differentiableOn_coe_chart_chart_symm A i' i).mono (A.halfOverlap_subset i i')
+
+omit [IsManifold closedUpperHalfPlaneModel 1 M] in
+/-- The interior points of the image of chart `i` lying over an open set of `M` form an open set. -/
+private theorem isOpen_halfImage_inter_preimage (i : Fin A.n) {D : Set M} (hD : IsOpen D) :
+    IsOpen ((A.halfImage i : Set ℂ) ∩
+      {y | (A.chart i).symm (closedUpperHalfPlaneModel.symm y) ∈ D}) :=
+  ((A.continuousOn_chart_symm i).comp closedUpperHalfPlaneModel.continuous_symm.continuousOn
+    fun _ hy ↦ (A.mem_halfImage.1 hy).1).isOpen_inter_preimage (A.halfImage i).isOpen hD
+
+/-- **Change of atlas preserves null sets, chartwise.** If a property `P` of points of `ℂ` holds
+almost everywhere on the interior of the image of chart `i` of `A`, then almost everywhere on the
+interior of the image of chart `i'` of `A'` it holds at the reading in chart `i` of the
+corresponding point of `M`, wherever that point lies in the domain of chart `i`. The chart
+transition from `A` to `A'` is differentiable on the interiors of the chart images, so it carries
+null sets to null sets. -/
+theorem ae_restrict_halfImage_chart_symm (A' : FiniteBundleAtlas ClosedUpperHalfPlane M F' V')
+    {i : Fin A.n} (i' : Fin A'.n) {P : ℂ → Prop}
+    (h : ∀ᵐ z ∂volume.restrict (A.halfImage i : Set ℂ), P z) :
+    ∀ᵐ y ∂volume.restrict (A'.halfImage i' : Set ℂ),
+      (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) ∈ A.dom i →
+        P (A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)) : ℂ) := by
+  -- Pull back along the chart transition from chart `i'` of `A'` to chart `i` of `A`, whose left
+  -- inverse is the transition back, on the open sets of interior points lying over the domain of
+  -- the other chart.
+  have hleft {y : ℂ} (hdom : (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) ∈ A.dom i) :
+      (A.chart i).symm (closedUpperHalfPlaneModel.symm
+        (A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)) : ℂ)) =
+          (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) := by
+    rw [closedUpperHalfPlaneModel_symm_coe, (A.chart i).left_inv (A.dom_subset_chart_source i hdom)]
+  have hs := A'.isOpen_halfImage_inter_preimage i' (A.isOpen_dom i)
+  have hpull := ae_restrict_comp_of_leftInvOn volume
+    (f := fun y ↦ (A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)) : ℂ))
+    hs.measurableSet (A.isOpen_halfImage_inter_preimage i (A'.isOpen_dom i')).measurableSet
+    (A.differentiableOn_coe_chart_chart_symm A' i i')
+    (fun y hy ↦ ⟨A.coe_chart_mem_halfImage A' hy.1 hy.2, by
+      rw [mem_ofPred_eq, hleft hy.2]; exact A'.symm_mem_dom (A'.mem_halfImage.1 hy.1).1⟩)
+    (fun y hy ↦ by
+      obtain ⟨hyU', hy0⟩ := A'.mem_halfImage.1 hy.1
+      simp only [hleft hy.2, (A'.chart i').right_inv (A'.closure_image_subset_target i'
+        (subset_closure hyU')), coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hy0.le])
+    (ae_restrict_of_ae_restrict_of_subset inter_subset_left h)
+  rw [ae_restrict_iff' hs.measurableSet] at hpull
+  rw [ae_restrict_iff' (A'.halfImage i').isOpen.measurableSet]
+  filter_upwards [hpull] with y hy hyU hdom using hy ⟨hyU, hdom⟩
 
 end FiniteBundleAtlas
 
@@ -484,6 +571,19 @@ theorem halfCoord_eq_coordChange {i i' : Fin A.n} (s : ∀ x, V x) {z : ℂ}
       (A.halfCoord i s (A.halfTransition i i' z)) := by
   rw [halfCoord, halfCoord, symm_halfTransition]
   exact A.coord_eq_coordChange s hz.1
+
+/-- Wherever chart `i'` of `A'` and chart `i` of `A` overlap, the reading of a section in chart
+`i'` is the coordinate change of the bundle applied to its reading in chart `i` at the
+corresponding point. -/
+theorem halfCoord_eq_coordChangeL_halfCoord (A' : FiniteBundleAtlas ClosedUpperHalfPlane M F V)
+    {i : Fin A.n} {i' : Fin A'.n} (s : ∀ x, V x) {y : ℂ}
+    (hj : (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) ∈ (A'.triv i').baseSet)
+    (hi : (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) ∈ A.dom i) :
+    A'.halfCoord i' s y = (A.triv i).coordChangeL ℝ (A'.triv i')
+      ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y))
+      (A.halfCoord i s (A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)))) := by
+  rw [halfCoord_def, halfCoord_def, closedUpperHalfPlaneModel_symm_coe]
+  exact A.coord_eq_coordChangeL_coord A' s hj hi
 
 /-- On the image of chart `i`, including its points on the real axis, the chart reading of
 `x ↦ φ x • s x` is the chart reading of `φ` times that of `s`. -/
