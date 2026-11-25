@@ -165,21 +165,23 @@ theorem zero_mem_finitePart (hτ : IsTrace τ) : (0 : B) ∈ finitePart τ :=
 /-- The parallelogram bound `τ((x + y)⋆(x + y)) ≤ 2 (τ(x⋆x) + τ(y⋆y))`. -/
 theorem map_star_add_mul_add_le (hτ : IsTrace τ) (x y : B) :
     τ (star (x + y) * (x + y)) ≤ 2 * (τ (star x * x) + τ (star y * y)) := by
-  rw [two_mul]
-  have hz : 0 ≤ star x * x + star y * y := add_nonneg (star_mul_self_nonneg x)
-    (star_mul_self_nonneg y)
-  rw [← hτ.map_add_of_nonneg (star_mul_self_nonneg x) (star_mul_self_nonneg y),
-    ← hτ.map_add_of_nonneg hz hz, ← two_smul ℕ, ← star_add_mul_add_add_star_sub_mul_sub,
-    hτ.map_add_of_nonneg (star_mul_self_nonneg _) (star_mul_self_nonneg _)]
-  exact le_self_add
+  have hx := star_mul_self_nonneg x
+  have hy := star_mul_self_nonneg y
+  calc τ (star (x + y) * (x + y))
+      ≤ τ (star (x + y) * (x + y)) + τ (star (x - y) * (x - y)) := le_self_add
+    _ = τ (2 • (star x * x + star y * y)) := by
+      rw [← hτ.map_add_of_nonneg (star_mul_self_nonneg _) (star_mul_self_nonneg _),
+        star_add_mul_add_add_star_sub_mul_sub]
+    _ = 2 * (τ (star x * x) + τ (star y * y)) := by
+      rw [two_nsmul, hτ.map_add_of_nonneg (add_nonneg hx hy) (add_nonneg hx hy),
+        hτ.map_add_of_nonneg hx hy, two_mul]
 
 /-- Left multiplication: `τ((ax)⋆(ax)) ≤ ‖a⋆a‖ τ(x⋆x)`. -/
 theorem map_star_mul_mul_le (hτ : IsTrace τ) (a x : B) :
     τ (star (a * x) * (a * x)) ≤ ‖star a * a‖₊ * τ (star x * x) := by
   rw [← hτ.map_nnreal_smul_of_nonneg _ (star_mul_self_nonneg x)]
   refine hτ.mono (star_mul_self_nonneg _) ?_
-  rw [coe_nnNorm, star_mul, mul_assoc, ← mul_assoc (star a), ← mul_assoc]
-  exact CStarAlgebra.star_left_conjugate_le_norm_smul x (star a * a)
+  simpa [star_mul, mul_assoc] using CStarAlgebra.star_left_conjugate_le_norm_smul x (star a * a)
 
 omit [StarOrderedRing B] in
 /-- The trace identity applied to `x⋆`: `τ((x⋆)⋆x⋆) = τ(x⋆x)`. -/

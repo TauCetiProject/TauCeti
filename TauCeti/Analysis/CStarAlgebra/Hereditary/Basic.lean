@@ -366,9 +366,12 @@ def leftIdeal (P : ProperCone ℝ A) (hP : IsHereditary P) : ClosedSubmodule ℂ
   carrier := {x : A | star x * x ∈ P}
   zero_mem' := by simp
   add_mem' {x y} hx hy := by
-    have hle : star (x + y) * (x + y) ≤ (2 : ℝ) • (star x * x + star y * y) := by
-      rw [two_smul, ← two_smul ℕ, ← star_add_mul_add_add_star_sub_mul_sub]
-      exact le_add_of_nonneg_right (star_mul_self_nonneg (x - y))
+    have hle : star (x + y) * (x + y) ≤ (2 : ℝ) • (star x * x + star y * y) :=
+      calc star (x + y) * (x + y)
+          ≤ star (x + y) * (x + y) + star (x - y) * (x - y) :=
+            le_add_of_nonneg_right (star_mul_self_nonneg (x - y))
+        _ = (2 : ℝ) • (star x * x + star y * y) := by
+          rw [star_add_mul_add_add_star_sub_mul_sub, two_nsmul, two_smul]
     exact hP.mem_of_le (star_mul_self_nonneg (x + y)) hle (P.smul_mem (add_mem hx hy) zero_le_two)
   smul_mem' c {x} hx := by
     rw [Set.mem_ofPred_eq, star_smul_mul_smul]
