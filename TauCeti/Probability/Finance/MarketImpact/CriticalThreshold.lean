@@ -369,11 +369,12 @@ theorem callFeedbackDenominator_eq (hx : 0 < x) (hK : 0 < K) (hσ : σ ≠ 0) (h
   ring
 
 /-- At the spot `K exp((σ² / 2 - r) τ)` the call feedback denominator equals `1 - ρ g(σ √τ)`. -/
-theorem callFeedbackDenominator_mul_exp (hK : 0 < K) (hσ : 0 < σ) (hτ : 0 < τ) :
+theorem callFeedbackDenominator_mul_exp (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
     callFeedbackDenominator ρ r σ K τ (K * exp ((σ ^ 2 / 2 - r) * τ)) =
       1 - ρ * callThresholdFunction (σ * √τ) := by
-  rw [callFeedbackDenominator_eq (by positivity) hK hσ.ne' hτ,
-    (dPlus_eq_mul_sqrt_iff (by positivity) hK (by positivity)).2 rfl, callThresholdFunction_def]
+  rw [callFeedbackDenominator_eq (by positivity) hK hσ hτ,
+    (dPlus_eq_mul_sqrt_iff (by positivity) hK (mul_ne_zero hσ (sqrt_ne_zero'.2 hτ))).2 rfl,
+    callThresholdFunction_def]
 
 /-- **The minimum of the call feedback denominator.** For feedback `ρ ≥ 0`, the call feedback
 denominator is at least `1 - ρ g(σ √τ)` at every positive spot. -/
@@ -389,7 +390,7 @@ minimum over positive spots at `K exp((σ² / 2 - r) τ)`. -/
 theorem isMinOn_callFeedbackDenominator (hρ : 0 ≤ ρ) (hK : 0 < K) (hσ : 0 < σ) (hτ : 0 < τ) :
     IsMinOn (callFeedbackDenominator ρ r σ K τ) (Ioi 0) (K * exp ((σ ^ 2 / 2 - r) * τ)) :=
   isMinOn_iff.2 fun x hx => by
-    rw [callFeedbackDenominator_mul_exp hK hσ hτ]
+    rw [callFeedbackDenominator_mul_exp hK hσ.ne' hτ]
     exact one_sub_mul_callThresholdFunction_le_callFeedbackDenominator hρ hx hK hσ hτ
 
 /-- **The minimizing spot is unique.** For feedback `ρ > 0`, the call feedback denominator exceeds
@@ -442,10 +443,10 @@ theorem isMinOn_putFeedbackDenominator (hρ : 0 ≤ ρ) (hK : 0 < K) (hσ : 0 < 
 
 /-- At the spot `K exp((σ² / 2 - r) τ)` the put feedback denominator equals
 `1 - ρ (g(σ √τ) - 1)`. -/
-theorem putFeedbackDenominator_mul_exp (hK : 0 < K) (hσ : 0 < σ) (hτ : 0 < τ) :
+theorem putFeedbackDenominator_mul_exp (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
     putFeedbackDenominator ρ r σ K τ (K * exp ((σ ^ 2 / 2 - r) * τ)) =
       1 - ρ * (callThresholdFunction (σ * √τ) - 1) := by
-  rw [putFeedbackDenominator_eq_callFeedbackDenominator_add (by positivity) hK hσ.ne' hτ,
+  rw [putFeedbackDenominator_eq_callFeedbackDenominator_add (by positivity) hK hσ hτ,
     callFeedbackDenominator_mul_exp hK hσ hτ]
   ring
 
