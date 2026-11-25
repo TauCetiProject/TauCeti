@@ -116,10 +116,13 @@ theorem dropLast_ne_self {l : List α} (hl : l ≠ []) : l.dropLast ≠ l := fun
   have := length_pos_of_ne_nil hl
   omega
 
-/-- **The parent is the greatest proper prefix.** For a nonempty `l`, a proper prefix `l'` of `l`
-of which every proper prefix of `l` is a prefix is `l.dropLast`. -/
-theorem eq_dropLast_of_forall_prefix {l l' : List α} (hl : l ≠ []) (h : l' <+: l) (hne : l' ≠ l)
+/-- **The parent is the greatest proper prefix.** A proper prefix `l'` of `l` of which every proper
+prefix of `l` is a prefix is `l.dropLast`. -/
+theorem eq_dropLast_of_forall_prefix {l l' : List α} (h : l' <+: l) (hne : l' ≠ l)
     (hmax : ∀ m, m <+: l → m ≠ l → m <+: l') : l' = l.dropLast := by
+  have hl : l ≠ [] := by
+    rintro rfl
+    exact hne (prefix_nil.1 h)
   have h₁ := h.prefix_dropLast hne
   have h₂ := hmax _ (dropLast_prefix l) (dropLast_ne_self hl)
   exact h₁.eq_of_length (le_antisymm h₁.length_le h₂.length_le)
@@ -135,8 +138,7 @@ theorem Equiv.map_dropLast_of_prefix_iff {α β : Type*} (Ψ : List α ≃ List 
     exact List.prefix_nil.1 (hl' ▸ (h [] l').2 (List.nil_prefix))
   rcases eq_or_ne l [] with rfl | hl
   · rw [List.dropLast_nil, hnil, List.dropLast_nil]
-  have hΨl : Ψ l ≠ [] := fun he => hl (Ψ.injective (he.trans hnil.symm))
-  refine List.eq_dropLast_of_forall_prefix hΨl ((h _ _).2 (List.dropLast_prefix l))
+  refine List.eq_dropLast_of_forall_prefix ((h _ _).2 (List.dropLast_prefix l))
     (fun he => List.dropLast_ne_self hl (Ψ.injective he)) fun m hm hne => ?_
   obtain ⟨m, rfl⟩ := Ψ.surjective m
   exact (h _ _).2 (((h _ _).1 hm).prefix_dropLast fun he => hne (he ▸ rfl))

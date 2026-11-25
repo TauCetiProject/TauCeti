@@ -309,12 +309,12 @@ private theorem exists_eq_some_of_unravelTreeRel {x : List ℚ} {m : ℕ} {q : L
     exact ⟨k, rfl, hk⟩
 
 /-- **The original nodes are those starting an infinite chain**: some infinite chain of the tagged
-tree lies above `p` exactly when `p` is an original node. Above `(x, none)` lie the nodes
-`(x ++ [0, …, 0], none)`; above a tag lie only tags of the same node, among which a chain holds at
-most one leaf and otherwise tags up to `χ x + 1`. -/
+tree lies above `p` exactly when `p` is an original node. -/
 theorem exists_infinite_isChain_unravelTreeRel_iff {p : List ℚ × Option ℕ} :
     (∃ s : Set (List ℚ × Option ℕ), s.Infinite ∧ IsChain (unravelTreeRel χ) s ∧
       ∀ q ∈ s, unravelTreeRel χ p q) ↔ p.2 = none := by
+  -- Above `(x, none)` lie the nodes `(x ++ [0, …, 0], none)`; above a tag lie only tags of the
+  -- same node, among which a chain holds at most one leaf and otherwise tags up to `χ x + 1`.
   obtain ⟨x, _ | m⟩ := p
   · refine iff_of_true ⟨range fun n => (x ++ List.replicate n 0, none), ?_, ?_, ?_⟩ rfl
     · refine infinite_range_of_injective fun a b h => ?_
@@ -371,21 +371,21 @@ theorem snd_eq_none_iff_of_unravelTreeRel (f : List ℚ × Option ℕ ≃ List �
 
 /-- The non-maximal tags of the node `p`: the nodes `q` above `p` that are not original, with no
 original node strictly between `p` and `q`, and with some node strictly above `q`. -/
-def nonMaximalTags (r : List ℚ × Option ℕ → List ℚ × Option ℕ → Prop) (p : List ℚ × Option ℕ) :
-    Set (List ℚ × Option ℕ) :=
+private def nonMaximalTags (r : List ℚ × Option ℕ → List ℚ × Option ℕ → Prop)
+    (p : List ℚ × Option ℕ) : Set (List ℚ × Option ℕ) :=
   {q | r p q ∧ q.2 ≠ none ∧ (∀ z, z.2 = none → r p z → r z q → z = p) ∧ ∃ t, r q t ∧ t ≠ q}
 
 /-- Unfolding lemma for `nonMaximalTags`. -/
-theorem mem_nonMaximalTags {r : List ℚ × Option ℕ → List ℚ × Option ℕ → Prop}
+private theorem mem_nonMaximalTags {r : List ℚ × Option ℕ → List ℚ × Option ℕ → Prop}
     {p q : List ℚ × Option ℕ} : q ∈ nonMaximalTags r p ↔
       r p q ∧ q.2 ≠ none ∧ (∀ z, z.2 = none → r p z → r z q → z = p) ∧ ∃ t, r q t ∧ t ≠ q :=
   Iff.rfl
 
 /-- The non-maximal tags of `(x, none)` are the tags `(x, some k)` with `k ≤ χ x`. -/
-theorem nonMaximalTags_unravelTreeRel (x : List ℚ) :
+private theorem nonMaximalTags_unravelTreeRel (x : List ℚ) :
     nonMaximalTags (unravelTreeRel χ) (x, none) = (fun k => (x, some k)) '' Iic (χ x) := by
   ext ⟨y, o⟩
-  simp only [nonMaximalTags, mem_ofPred_eq, mem_image, mem_Iic, Prod.mk.injEq]
+  simp only [mem_nonMaximalTags, mem_image, mem_Iic, Prod.mk.injEq]
   constructor
   · rintro ⟨hxy, ho, hz, ⟨w, o'⟩, ht, hne⟩
     obtain _ | k := o
@@ -410,6 +410,13 @@ theorem nonMaximalTags_unravelTreeRel (x : List ℚ) :
     · rw [unravelTreeRel_some_some, tagLE_iff]
       exact ⟨rfl, by omega⟩
 
+/-- **The colour is recovered from the tagged tree**: the node `(x, none)` has exactly `χ x + 1`
+non-maximal tags. -/
+private theorem ncard_nonMaximalTags_unravelTreeRel (x : List ℚ) :
+    (nonMaximalTags (unravelTreeRel χ) (x, none)).ncard = χ x + 1 := by
+  rw [nonMaximalTags_unravelTreeRel, ncard_image_of_injective _ (fun a b h => by simpa using h),
+    ncard_Iic_nat]
+
 /-- An isomorphism of tagged trees maps the non-maximal tags of an original node onto those of
 its image. -/
 private theorem image_nonMaximalTags (f : List ℚ × Option ℕ ≃ List ℚ × Option ℕ)
@@ -418,8 +425,7 @@ private theorem image_nonMaximalTags (f : List ℚ × Option ℕ ≃ List ℚ ×
   have hn := snd_eq_none_iff_of_unravelTreeRel f hf
   ext q
   obtain ⟨q, rfl⟩ := f.surjective q
-  rw [f.injective.mem_set_image]
-  simp only [nonMaximalTags, mem_ofPred_eq]
+  rw [f.injective.mem_set_image, mem_nonMaximalTags, mem_nonMaximalTags]
   refine and_congr (hf p q).symm (and_congr (not_congr (hn q)).symm (and_congr ?_ ?_))
   · refine ⟨fun h z hz h₁ h₂ => ?_, fun h z hz h₁ h₂ =>
       f.injective (h (f z) ((hn z).2 hz) ((hf _ _).2 h₁) ((hf _ _).2 h₂))⟩
@@ -431,10 +437,8 @@ private theorem image_nonMaximalTags (f : List ℚ × Option ℕ ≃ List ℚ ×
     exact ⟨t, (hf _ _).1 ht, fun h => hne (h ▸ rfl)⟩
 
 /-- **Isomorphisms of tagged trees give parent- and colour-preserving bijections.** A bijection
-`f` of `List ℚ × Option ℕ` carrying the tagged tree for `χ` to the tagged tree for `χ'` maps the
-original nodes onto the original nodes, preserving the prefix order and the number `χ x + 1` of
-non-maximal tags; so it induces a bijection `Ψ` of `List ℚ` with `Ψ x.dropLast = (Ψ x).dropLast`
-and `χ' ∘ Ψ = χ`. -/
+`f` of `List ℚ × Option ℕ` carrying the tagged tree for `χ` to the tagged tree for `χ'` gives a
+bijection `Ψ` of `List ℚ` with `Ψ x.dropLast = (Ψ x).dropLast` and `χ' ∘ Ψ = χ`. -/
 theorem exists_perm_of_unravelTreeRel (f : List ℚ × Option ℕ ≃ List ℚ × Option ℕ)
     (hf : ∀ p q, unravelTreeRel χ' (f p) (f q) ↔ unravelTreeRel χ p q) :
     ∃ Ψ : Equiv.Perm (List ℚ), (∀ x, Ψ x.dropLast = (Ψ x).dropLast) ∧ ∀ x, χ' (Ψ x) = χ x := by
@@ -448,16 +452,17 @@ theorem exists_perm_of_unravelTreeRel (f : List ℚ × Option ℕ ≃ List ℚ �
       invFun := fun y => (f.symm (y, none)).1
       left_inv := fun x => by simp only [← hf₀, Equiv.symm_apply_apply]
       right_inv := fun y => by simp only [← hf₁, Equiv.apply_symm_apply] }
-  have hΨ (x : List ℚ) : f (x, none) = (Ψ x, none) := hf₀ x
+  have hΨ (x : List ℚ) : f (x, none) = (Ψ x, none) := by
+    rw [Equiv.coe_fn_mk]
+    exact hf₀ x
   have hpre (x y : List ℚ) : Ψ x <+: Ψ y ↔ x <+: y := by
     have := hf (x, none) (y, none)
     rwa [hΨ, hΨ, unravelTreeRel_none_left, unravelTreeRel_none_left] at this
   refine ⟨Ψ, fun x => ?_, fun x => ?_⟩
   · exact Ψ.map_dropLast_of_prefix_iff hpre x
   · have h := congrArg Set.ncard (image_nonMaximalTags f hf (x, none))
-    rw [ncard_image_of_injective _ f.injective, hΨ, nonMaximalTags_unravelTreeRel,
-      nonMaximalTags_unravelTreeRel, ncard_image_of_injective _ (fun a b h => by simpa using h),
-      ncard_image_of_injective _ (fun a b h => by simpa using h), ncard_Iic_nat, ncard_Iic_nat] at h
+    rw [ncard_image_of_injective _ f.injective, hΨ, ncard_nonMaximalTags_unravelTreeRel,
+      ncard_nonMaximalTags_unravelTreeRel] at h
     omega
 
 /-- **Isomorphic images come from isomorphic codes.** -/
