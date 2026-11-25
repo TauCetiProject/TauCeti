@@ -8,11 +8,16 @@ module
 public import Mathlib.AlgebraicGeometry.Birational.Composition
 
 /-!
-# Composition of rational maps with morphisms
+# Composition of partial and rational maps
 
 Mathlib composes a partial or rational map with a morphism on the right (`compHom`) and composes
 partial or rational maps with each other (`comp`). This file shows that the two compositions
 associate: composing `f.comp g` with a morphism `h` is composing `f` with `g.compHom h`.
+
+It also gives the restriction `compDomainRestrict` of a partial map `f` to the domain of
+`f.comp g`, as a morphism into the domain of `g`, and shows that a composite `f.comp g` equal to
+the identity rational map is the inclusion of its domain. These are used to build partial
+isomorphisms from mutually inverse partial maps.
 
 ## Main results
 
@@ -21,8 +26,9 @@ associate: composing `f.comp g` with a morphism `h` is composing `f` with `g.com
   `(f.comp g).compHom h = f.comp (g.compHom h)`.
 * `AlgebraicGeometry.Scheme.RationalMap.toRationalMap_representative_comp_representative`: the
   composite of the representatives of `f` and `g` represents `f.comp g`.
-* `AlgebraicGeometry.Scheme.PartialMap.compLeft`: the restriction of `f` to the domain of
-  `f.comp g`, as a morphism into the domain of `g`, with `compLeft_hom` and `compLeft_ι`.
+* `AlgebraicGeometry.Scheme.PartialMap.compDomainRestrict`: the restriction of `f` to the domain of
+  `f.comp g`, as a morphism into the domain of `g`, with `compDomainRestrict_hom` and
+  `compDomainRestrict_ι`.
 * `AlgebraicGeometry.Scheme.PartialMap.comp_hom_eq_ι`: if `f.comp g` is the identity as a rational
   map, its underlying morphism is the inclusion of its domain.
 -/
@@ -67,23 +73,23 @@ theorem comp_domain_le (F : X.PartialMap Y) [IsDominant F.hom] (G : Y.PartialMap
   exact F.domain.ι_image_le _
 
 /-- The restriction of `F` to the domain of `F.comp G`, as a morphism into the domain of `G`. -/
-noncomputable def compLeft (F : X.PartialMap Y) [IsDominant F.hom] (G : Y.PartialMap Z) :
+noncomputable def compDomainRestrict (F : X.PartialMap Y) [IsDominant F.hom] (G : Y.PartialMap Z) :
     (F.comp G).domain.toScheme ⟶ G.domain.toScheme :=
   (F.domain.ι.isoImage (F.hom ⁻¹ᵁ G.domain)).inv ≫ F.hom ∣_ G.domain
 
-/-- `compLeft F G` followed by `G` is the composite `F.comp G`. -/
-theorem compLeft_hom (F : X.PartialMap Y) [IsDominant F.hom] (G : Y.PartialMap Z) :
-    compLeft F G ≫ G.hom = (F.comp G).hom := by
-  rw [comp_hom, compLeft]
+/-- `compDomainRestrict F G` followed by `G` is the composite `F.comp G`. -/
+theorem compDomainRestrict_hom (F : X.PartialMap Y) [IsDominant F.hom] (G : Y.PartialMap Z) :
+    compDomainRestrict F G ≫ G.hom = (F.comp G).hom := by
+  rw [comp_hom, compDomainRestrict]
   -- the domain of `F.comp G` is the image of `F.hom ⁻¹ᵁ G.domain` only up to unfolding, so the
   -- motive of a `Category.assoc` rewrite is not type-correct: apply it as a term instead
   exact Category.assoc _ _ _
 
-/-- `compLeft F G`, read in `Y`, is `F` on the domain of `F.comp G`. -/
-theorem compLeft_ι (F : X.PartialMap Y) [IsDominant F.hom] (G : Y.PartialMap Z) :
-    compLeft F G ≫ G.domain.ι = X.homOfLE (comp_domain_le F G) ≫ F.hom := by
-  rw [compLeft]
-  -- `Category.assoc` is applied as a term for the same reason as in `compLeft_hom`
+/-- `compDomainRestrict F G`, read in `Y`, is `F` on the domain of `F.comp G`. -/
+theorem compDomainRestrict_ι (F : X.PartialMap Y) [IsDominant F.hom] (G : Y.PartialMap Z) :
+    compDomainRestrict F G ≫ G.domain.ι = X.homOfLE (comp_domain_le F G) ≫ F.hom := by
+  rw [compDomainRestrict]
+  -- `Category.assoc` is applied as a term for the same reason as in `compDomainRestrict_hom`
   refine (Category.assoc _ _ _).trans ?_
   rw [morphismRestrict_ι]
   exact Opens.isoImage_ι_inv_ι_assoc _ _ _

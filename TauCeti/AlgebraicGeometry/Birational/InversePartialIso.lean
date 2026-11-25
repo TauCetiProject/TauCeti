@@ -58,15 +58,15 @@ variable {F : X.PartialMap Y} [IsDominant F.hom] {G : Y.PartialMap X} [IsDominan
 
 /-- If `F.comp G` is the identity rational map, `F` maps the domain of `F.comp G` into the domain
 of `G.comp F`. -/
-private theorem range_compLeft_ι_subset [X.IsSeparated]
+private theorem range_compDomainRestrict_ι_subset [X.IsSeparated]
     (h : (F.comp G).toRationalMap = RationalMap.id X) :
-    Set.range (compLeft F G ≫ G.domain.ι) ⊆ Set.range (G.comp F).domain.ι := by
+    Set.range (compDomainRestrict F G ≫ G.domain.ι) ⊆ Set.range (G.comp F).domain.ι := by
   rintro _ ⟨x, rfl⟩
   rw [Opens.range_ι, comp_domain]
-  refine ⟨compLeft F G x, ?_, (Scheme.Hom.comp_apply _ _ _).symm⟩
+  refine ⟨compDomainRestrict F G x, ?_, (Scheme.Hom.comp_apply _ _ _).symm⟩
   rw [SetLike.mem_coe, Hom.mem_preimage]
-  have hx : G.hom (compLeft F G x) = (F.comp G).domain.ι x := by
-    rw [← Scheme.Hom.comp_apply, compLeft_hom, comp_hom_eq_ι F G h]
+  have hx : G.hom (compDomainRestrict F G x) = (F.comp G).domain.ι x := by
+    rw [← Scheme.Hom.comp_apply, compDomainRestrict_hom, comp_hom_eq_ι F G h]
   have hmem : (F.comp G).domain.ι x ∈ Set.range (F.comp G).domain.ι := ⟨x, rfl⟩
   rw [Opens.range_ι] at hmem
   rw [hx]
@@ -76,18 +76,18 @@ private theorem range_compLeft_ι_subset [X.IsSeparated]
 private noncomputable def partialIsoHom [X.IsSeparated]
     (h : (F.comp G).toRationalMap = RationalMap.id X) :
     (F.comp G).domain.toScheme ⟶ (G.comp F).domain.toScheme :=
-  IsOpenImmersion.lift (G.comp F).domain.ι (compLeft F G ≫ G.domain.ι)
-    (range_compLeft_ι_subset h)
+  IsOpenImmersion.lift (G.comp F).domain.ι (compDomainRestrict F G ≫ G.domain.ι)
+    (range_compDomainRestrict_ι_subset h)
 
 /-- `partialIsoHom h`, read in `Y`, is `F` on the domain of `F.comp G`. -/
 private theorem partialIsoHom_ι [X.IsSeparated] (h : (F.comp G).toRationalMap = RationalMap.id X) :
-    partialIsoHom h ≫ (G.comp F).domain.ι = compLeft F G ≫ G.domain.ι :=
+    partialIsoHom h ≫ (G.comp F).domain.ι = compDomainRestrict F G ≫ G.domain.ι :=
   IsOpenImmersion.lift_fac _ _ _
 
-/-- `partialIsoHom h`, read in the domain of `G`, is `compLeft F G`. -/
+/-- `partialIsoHom h`, read in the domain of `G`, is `compDomainRestrict F G`. -/
 private theorem partialIsoHom_homOfLE [X.IsSeparated]
     (h : (F.comp G).toRationalMap = RationalMap.id X) :
-    partialIsoHom h ≫ Y.homOfLE (comp_domain_le G F) = compLeft F G := by
+    partialIsoHom h ≫ Y.homOfLE (comp_domain_le G F) = compDomainRestrict F G := by
   rw [← cancel_mono G.domain.ι, Category.assoc, homOfLE_ι, partialIsoHom_ι]
 
 /-- The restrictions of `F` and `G` are mutually inverse. -/
@@ -95,8 +95,9 @@ private theorem partialIsoHom_partialIsoHom_id [X.IsSeparated] [Y.IsSeparated]
     (h : (F.comp G).toRationalMap = RationalMap.id X)
     (h' : (G.comp F).toRationalMap = RationalMap.id Y) :
     partialIsoHom h ≫ partialIsoHom h' = 𝟙 _ := by
-  rw [← cancel_mono (F.comp G).domain.ι, Category.assoc, partialIsoHom_ι, compLeft_ι,
-    ← Category.assoc, partialIsoHom_homOfLE, compLeft_hom, comp_hom_eq_ι F G h, Category.id_comp]
+  rw [← cancel_mono (F.comp G).domain.ι, Category.assoc, partialIsoHom_ι, compDomainRestrict_ι,
+    ← Category.assoc, partialIsoHom_homOfLE, compDomainRestrict_hom, comp_hom_eq_ι F G h,
+    Category.id_comp]
 
 /-- **The partial isomorphism of mutually inverse partial maps.** If `F.comp G` and `G.comp F` are
 the identity rational maps, `F` restricts to an isomorphism from the domain of `F.comp G` onto the
@@ -147,7 +148,7 @@ private theorem toPartialMap_partialIsoOfComp_hom [X.IsSeparated] [Y.IsSeparated
     (h' : (G.comp F).toRationalMap = RationalMap.id Y) :
     (partialIsoOfComp h h').toPartialMap.hom = X.homOfLE (comp_domain_le F G) ≫ F.hom := by
   rw [PartialIso.toPartialMap_hom]
-  exact (partialIsoHom_ι h).trans (compLeft_ι F G)
+  exact (partialIsoHom_ι h).trans (compDomainRestrict_ι F G)
 
 /-- The partial map of `partialIsoOfComp h h'` is `F` restricted to the domain of `F.comp G`. -/
 theorem toPartialMap_partialIsoOfComp [X.IsSeparated] [Y.IsSeparated]
@@ -155,9 +156,10 @@ theorem toPartialMap_partialIsoOfComp [X.IsSeparated] [Y.IsSeparated]
     (h' : (G.comp F).toRationalMap = RationalMap.id Y) :
     (partialIsoOfComp h h').toPartialMap =
       F.restrict (F.comp G).domain (F.comp G).dense_domain (comp_domain_le F G) :=
-  PartialMap.ext _ _ (by rfl) (by
-    rw [toPartialMap_partialIsoOfComp_hom, restrict_hom]
-    exact (X.homOfLE_homOfLE_assoc le_rfl _ _).symm)
+  PartialMap.ext _ _
+    (by rw [PartialIso.toPartialMap_domain, partialIsoOfComp_source, restrict_domain]) (by
+      rw [toPartialMap_partialIsoOfComp_hom, restrict_hom]
+      exact (X.homOfLE_homOfLE_assoc le_rfl _ _).symm)
 
 /-- **The rational map of `partialIsoOfComp h h'` is that of `F`.** -/
 @[simp]
