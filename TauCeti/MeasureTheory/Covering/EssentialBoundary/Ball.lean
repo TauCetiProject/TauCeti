@@ -13,7 +13,7 @@ import TauCeti.Analysis.Normed.Affine.AddTorsor.TangentBall
 # The essential boundary of a ball
 
 Against an additive Haar measure on a finite-dimensional real normed space, the essential boundary
-of the open ball `ball c r`, `r > 0`, is the sphere `sphere c r`
+of the open ball `ball c r`, `r ≠ 0`, is the sphere `sphere c r`
 (`TauCeti.essentialBoundary_ball`): interior points of the ball and points outside the closed ball
 have density `1` and `0`, while at a point `x` of the sphere both the ball and its complement
 contain a ball of radius `ρ / 2` inside `ball x ρ`, so the density of the ball at `x` is neither
@@ -35,13 +35,15 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- **The essential boundary of a ball is its sphere.** For `r > 0`, the open ball `ball c r` has
+/-- **The essential boundary of a ball is its sphere.** For `r ≠ 0`, the open ball `ball c r` has
 essential boundary `sphere c r`. -/
-theorem essentialBoundary_ball {c : E} {r : ℝ} (hr : 0 < r) :
+theorem essentialBoundary_ball {c : E} {r : ℝ} (hr : r ≠ 0) :
     essentialBoundary μ (ball c r) = sphere c r := by
-  refine (essentialBoundary_subset_frontier.trans (frontier_ball c hr.ne').subset).antisymm
+  refine (essentialBoundary_subset_frontier.trans (frontier_ball c hr).subset).antisymm
     fun x hx ↦ ?_
   rw [mem_sphere] at hx
+  -- The sphere is empty for `r < 0`, so `r > 0` here.
+  replace hr : 0 < r := (hx ▸ dist_nonneg).lt_of_ne' hr
   have hball : ∀ᶠ ρ in 𝓝[>] (0 : ℝ), μ (closedBall x ρ) ≠ 0 ∧ μ (closedBall x ρ) ≠ ∞ :=
     eventually_mem_nhdsWithin.mono fun ρ (hρ : 0 < ρ) ↦
       ⟨(measure_closedBall_pos μ x hρ).ne', measure_closedBall_lt_top.ne⟩
@@ -61,16 +63,16 @@ theorem essentialBoundary_ball {c : E} {r : ℝ} (hr : 0 < r) :
     rw [two_mul, add_halves] at h
     exact ⟨_, h⟩
 
-/-- The punctured ball `ball c r \ {c}`, `r > 0`, has essential boundary `sphere c r`. -/
-theorem essentialBoundary_ball_sdiff_singleton [Nontrivial E] {c : E} {r : ℝ} (hr : 0 < r) :
+/-- The punctured ball `ball c r \ {c}`, `r ≠ 0`, has essential boundary `sphere c r`. -/
+theorem essentialBoundary_ball_sdiff_singleton [Nontrivial E] {c : E} {r : ℝ} (hr : r ≠ 0) :
     essentialBoundary μ (ball c r \ {c}) = sphere c r := by
   rw [essentialBoundary_congr_ae (sdiff_null_ae_eq_self (measure_singleton c)),
     essentialBoundary_ball hr]
 
-/-- In `EuclideanSpace ℝ (Fin n)`, the union of the ball `ball c r`, `r > 0`, with the points of
+/-- In `EuclideanSpace ℝ (Fin n)`, the union of the ball `ball c r`, `r ≠ 0`, with the points of
 rational coordinates has essential boundary `sphere c r`. -/
 theorem essentialBoundary_ball_union_rational {n : ℕ} [NeZero n]
-    {c : EuclideanSpace ℝ (Fin n)} {r : ℝ} (hr : 0 < r) :
+    {c : EuclideanSpace ℝ (Fin n)} {r : ℝ} (hr : r ≠ 0) :
     essentialBoundary volume
         (ball c r ∪ range fun q : Fin n → ℚ ↦ WithLp.toLp 2 fun i ↦ (q i : ℝ)) = sphere c r := by
   have hQ : (range fun q : Fin n → ℚ ↦ WithLp.toLp 2 fun i ↦ (q i : ℝ)) =ᵐ[volume]
