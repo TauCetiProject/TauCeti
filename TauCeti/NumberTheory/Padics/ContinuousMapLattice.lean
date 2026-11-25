@@ -99,9 +99,10 @@ norm at most `1`. -/
 theorem mem_span_padicInt_iff_norm_repr_le_one (b : Module.Basis ι ℚ_[p] V) (v : V) :
     v ∈ Submodule.span ℤ_[p] (Set.range b) ↔ ∀ i, ‖b.repr v i‖ ≤ 1 := by
   rw [b.mem_span_iff_repr_mem ℤ_[p]]
-  refine forall_congr' fun i ↦ ⟨?_, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
+  refine forall_congr' fun i ↦ ⟨?_, fun h ↦ ⟨⟨_, h⟩, PadicInt.algebraMap_apply _⟩⟩
   rintro ⟨x, hx⟩
-  exact hx ▸ x.norm_le_one
+  rw [← hx, PadicInt.algebraMap_apply, ← PadicInt.norm_def]
+  exact x.norm_le_one
 
 /-- The `ℤ_[p]`-span of a `ℚ_[p]`-basis of a finite-dimensional Hausdorff topological vector
 space is open. -/
