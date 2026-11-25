@@ -402,6 +402,12 @@ theorem discrim_emod_four_eq_zero_or_one (f : BinaryQuadraticForm ℤ) :
   rw [discrim_def, Int.discrim_emod_four]
   exact Int.emod_two_eq_zero_or_one f.b
 
+/-- The discriminant of an integral binary form has the parity of its middle coefficient. -/
+theorem discrim_emod_two (f : BinaryQuadraticForm ℤ) : f.discrim % 2 = f.b % 2 := by
+  have := Int.discrim_emod_four f.a f.b f.c
+  rw [discrim_def]
+  omega
+
 /-- A form of nonsquare discriminant has nonzero leading coefficient. -/
 theorem a_ne_zero_of_not_isSquare_discrim {f : BinaryQuadraticForm ℤ}
     (hf : ¬ IsSquare f.discrim) : f.a ≠ 0 := by

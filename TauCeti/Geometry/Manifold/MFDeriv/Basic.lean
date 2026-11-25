@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
 # Basic facts about manifold derivatives
 
 This file collects general facts about `mfderiv` that need nothing beyond Mathlib's basic
-manifold-derivative API.
+manifold-derivative API and the derivatives of extended charts.
 
 ## Main results
 
@@ -40,6 +41,8 @@ manifold-derivative API.
   are differentiable at `x`, `f x`, then `df_x` is injective.
 * `TauCeti.mfderiv_ne_zero_of_injective`: an injective differential out of a manifold with a
   nontrivial model space is nonzero.
+* `TauCeti.injective_mfderiv_of_eventuallyEq_comp_extChartAt`: a map agreeing near `x` with
+  `g ∘ extChartAt I x` has injective differential at `x` when `g` does at the chart image of `x`.
 -/
 
 public section
@@ -230,5 +233,22 @@ theorem mfderiv_ne_zero_of_injective [Nontrivial E] {f : M → N}
   have : Nontrivial (TangentSpace I x) := ‹Nontrivial E›
   exact fun h0 ↦ LinearMap.ne_zero_of_injective hinj
     (by rw [h0, ContinuousLinearMap.toLinearMap_zero])
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
+/-- A map agreeing near `x` with `g ∘ φ`, for the extended chart `φ` at `x` and a map `g` on the
+model space with injective differential at `φ x`, has injective differential at `x`: the
+differential of `φ` at `x` is invertible. -/
+theorem injective_mfderiv_of_eventuallyEq_comp_extChartAt [IsManifold I 1 M] {f : M → N}
+    {g : E → N} (hgd : MDifferentiableAt 𝓘(𝕜, E) J g (extChartAt I x x))
+    (hg : Function.Injective (mfderiv 𝓘(𝕜, E) J g (extChartAt I x x)))
+    (hev : f =ᶠ[𝓝 x] g ∘ extChartAt I x) : Function.Injective (mfderiv I J f x) := by
+  have hφ := (mdifferentiableAt_extChartAt (I := I) (mem_chart_source H x)).hasMFDerivAt
+  rw [((hgd.hasMFDerivAt.comp x hφ).congr_of_eventuallyEq hev).mfderiv,
+    ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp]
+  refine (tangentSpaceCast _ _ _).injective.comp (hg.comp ?_)
+  obtain ⟨A, hA⟩ := isInvertible_mfderiv_extChartAt (I := I) (mem_extChartAt_source x)
+  rw [← hA]
+  exact A.injective
 
 end TauCeti

@@ -15,7 +15,7 @@ Let `A` be a symmetric matrix over a field of characteristic different from two.
 with `Xᵀ * A * X = A`, which form `Matrix.isometryMatrices A`, act transitively on the vectors `x`
 with a given nonzero value of `xᵀ A x`, by the reflection transport
 `QuadraticMap.reflectionTransport`. When `A` is moreover nondegenerate, these matrices are
-identified with the isometry group `LinearMap.BilinForm.isometryGroup` of the bilinear form with
+identified with the isometry group `LinearMap.isometryGroup` of the bilinear form with
 Gram matrix `A`, so the orbit–stabilizer theorem `MulAction.orbitProdStabilizerEquivGroup` gives
 `#O(A) = N(c) · #Stab(e)` for any `e` with `eᵀ A e = c ≠ 0`, where `N(c)` is the number of
 solutions of `xᵀ A x = c`. When `A` is block diagonal with last block the `1 × 1` matrix `(c)` and
