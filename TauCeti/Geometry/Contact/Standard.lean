@@ -36,7 +36,8 @@ corresponding to `α` itself under the contact flat equivalence
 
 The Reeb field depends on the contact form, not only on the distribution: the form `eˣ (dz - x dy)`
 has the same kernel but Reeb vector field `e^(-x) (∂_y + (x + 1) ∂_z)`
-(`TauCeti.reebVectorField_of_eq_exp_smul_standardContactForm`).
+(`TauCeti.reebVectorField_of_eq_exp_smul_standardContactForm`). In the normalized rescaling law
+`R_(f α) = (R_α + Z) / f` this is the correction `Z = ∂_y + x ∂_z` of the contact plane.
 
 The form is assembled from the constant forms `dz` and `dy` and the coordinate function `x`, so its
 exterior derivative is computed by the Leibniz rule `d(x dy) = dx ∧ dy`.
@@ -92,12 +93,12 @@ private theorem standardDz_apply (u : Fin 1 → ℝ × ℝ × ℝ) : standardDz 
 
 /-- The one-form `-x dy` on `ℝ × ℝ × ℝ`. -/
 private def standardNegXDy : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) ℝ 1 :=
-  ⟨fun p ↦ (-p.1) • (SmoothForm.const standardDy).1 p,
+  ⟨fun p ↦ (-p.1) • (SmoothForm.const standardDy).val p,
     ((SmoothForm.const standardDy).isSmoothForm.fun_smul
       contDiff_fst.neg.contMDiff).mem_smoothBundleForms⟩
 
 private theorem standardNegXDy_toRoughForm :
-    standardNegXDy.1 = fun p ↦ (-p.1) • (SmoothForm.const standardDy).1 p :=
+    standardNegXDy.val = fun p ↦ (-p.1) • (SmoothForm.const standardDy).val p :=
   (rfl)
 
 private theorem mvfderiv_neg_fst (p : ℝ × ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
@@ -116,7 +117,7 @@ def standardContactForm : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ ×
 @[simp]
 theorem standardContactForm_apply (p : ℝ × ℝ × ℝ)
     (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
-    standardContactForm.1 p ![v] = v.2.2 - p.1 * v.2.1 := by
+    standardContactForm.val p ![v] = v.2.2 - p.1 * v.2.1 := by
   simp only [standardContactForm, standardNegXDy, SmoothForm.add_toRoughForm, Pi.add_apply,
     ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, SmoothForm.const_apply]
   rw [standardDz_apply, standardDy_apply, smul_eq_mul, neg_mul, ← sub_eq_add_neg]
@@ -125,11 +126,11 @@ theorem standardContactForm_apply (p : ℝ × ℝ × ℝ)
 /-- The exterior derivative of the standard contact form is `-dx ∧ dy`. -/
 theorem mextDeriv_standardContactForm_apply (p : ℝ × ℝ × ℝ)
     (v w : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
-    mextDeriv standardContactForm.1 p ![v, w] = w.1 * v.2.1 - v.1 * w.2.1 := by
+    mextDeriv standardContactForm.val p ![v, w] = w.1 * v.2.1 - v.1 * w.2.1 := by
   have hdy := (SmoothForm.isClosed_def _).1 (SmoothForm.isClosed_const standardDy)
   have hdz := (SmoothForm.isClosed_def _).1 (SmoothForm.isClosed_const standardDz)
-  have hsum : mextDeriv standardContactForm.1 =
-      mextDeriv (SmoothForm.const standardDz).1 + mextDeriv standardNegXDy.1 := by
+  have hsum : mextDeriv standardContactForm.val =
+      mextDeriv (SmoothForm.const standardDz).val + mextDeriv standardNegXDy.val := by
     rw [← mextDerivₗ_apply, standardContactForm, map_add, SmoothForm.add_toRoughForm,
       mextDerivₗ_apply, mextDerivₗ_apply]
   rw [hsum, hdz, zero_add, standardNegXDy_toRoughForm,
@@ -205,7 +206,7 @@ theorem standardReebField_snd_snd (p : ℝ × ℝ × ℝ) : (standardReebField p
 
 /-- The form `dz - x dy` takes the value `1` on its Reeb vector field `∂_z`. -/
 theorem standardContactForm_apply_standardReebField (p : ℝ × ℝ × ℝ) :
-    standardContactForm.1 p ![standardReebField p] = 1 := by
+    standardContactForm.val p ![standardReebField p] = 1 := by
   simp
 
 /-- The contraction of the Reeb vector field `∂_z` with the exterior derivative of `dz - x dy`
@@ -213,7 +214,7 @@ vanishes. -/
 @[simp]
 theorem mextDeriv_standardContactForm_standardReebField (p : ℝ × ℝ × ℝ)
     (w : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
-    mextDeriv standardContactForm.1 p ![standardReebField p, w] = 0 := by
+    mextDeriv standardContactForm.val p ![standardReebField p, w] = 0 := by
   rw [mextDeriv_standardContactForm_apply]
   simp [standardReebField]
 
@@ -240,31 +241,29 @@ This form has the same kernel as `dz - x dy`, but a different Reeb field. Here `
 `eˣ (dz - x dy)`, given through its values. -/
 theorem reebVectorField_of_eq_exp_smul_standardContactForm
     {β : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) ℝ 1}
-    (hβ : ∀ q : ℝ × ℝ × ℝ, β.1 q = Real.exp q.1 • standardContactForm.1 q) (p : ℝ × ℝ × ℝ) :
+    (hβ : ∀ q : ℝ × ℝ × ℝ, β.val q = Real.exp q.1 • standardContactForm.val q) (p : ℝ × ℝ × ℝ) :
     (β.reebVectorField p : ℝ × ℝ × ℝ) = Real.exp (-p.1) • (0, 1, p.1 + 1) := by
   have hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ) 1 (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1) p :=
     (Real.contDiff_exp.comp contDiff_fst).contMDiff.contMDiffAt
-  -- The rescaling law, with the correction `y = e^(-x) (∂_y + x ∂_z)` in the contact plane.
-  obtain ⟨y, hy⟩ : ∃ y : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p,
-      y = Real.exp (-p.1) • ((0, 1, p.1) : ℝ × ℝ × ℝ) := ⟨_, rfl⟩
-  have key := (isContactForm_standardContactForm.reebVectorField_eq_inv_smul_add_iff hf
-    hβ y).2 ⟨?_, fun w _ ↦ ?_⟩
-  · rw [key, hy, reebVectorField_standardContactForm, standardReebField_apply]
+  -- The normalized rescaling law, with the correction `z = ∂_y + x ∂_z` in the contact plane.
+  obtain ⟨z, hz⟩ : ∃ z : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p, z = ((0, 1, p.1) : ℝ × ℝ × ℝ) :=
+    ⟨_, rfl⟩
+  have key := (isContactForm_standardContactForm.smul_reebVectorField_eq_add_iff hf
+    (Real.exp_pos p.1).ne' hβ z).2 ⟨?_, fun w _ ↦ ?_⟩
+  · rw [(eq_inv_smul_iff₀ (Real.exp_pos p.1).ne').2 key, hz, reebVectorField_standardContactForm,
+      standardReebField_apply]
     -- The tangent space of `ℝ × ℝ × ℝ` carries the vector operations of `ℝ × ℝ × ℝ` by
     -- definition. Restate the goal there, where the `Prod` simp lemmas apply.
-    change (Real.exp p.1)⁻¹ • ((0, 0, 1) : ℝ × ℝ × ℝ) +
-      Real.exp (-p.1) • ((0, 1, p.1) : ℝ × ℝ × ℝ) = Real.exp (-p.1) • ((0, 1, p.1 + 1) : ℝ × ℝ × ℝ)
-    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp [Real.exp_neg]
-    ring
-  · rw [standardContactForm_apply, hy]
-    simp only [Prod.smul_snd, Prod.smul_fst, smul_eq_mul, mul_one]
+    change (Real.exp p.1)⁻¹ • (((0, 0, 1) : ℝ × ℝ × ℝ) + ((0, 1, p.1) : ℝ × ℝ × ℝ)) =
+      Real.exp (-p.1) • ((0, 1, p.1 + 1) : ℝ × ℝ × ℝ)
+    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp [Real.exp_neg, add_comm]
+  · rw [standardContactForm_apply, hz]
     ring
   · have hd : HasFDerivAt (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1)
         (Real.exp p.1 • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)) p :=
       (Real.hasDerivAt_exp p.1).comp_hasFDerivAt p hasFDerivAt_fst
-    rw [mextDeriv_standardContactForm_apply, mvfderiv_eq_fderiv, hd.fderiv, hy, Real.exp_neg]
+    rw [mextDeriv_standardContactForm_apply, mvfderiv_eq_fderiv, hd.fderiv, hz]
     simp [NormedSpace.fromTangentSpace_apply]
-    field_simp
 
 section InnerProductSpace
 
@@ -296,14 +295,14 @@ def innerProductContactForm : SmoothForm 𝓘(ℝ, V × V × ℝ) (V × V × ℝ
     (isSmoothForm_modelSpace_iff.mpr (contDiff_innerProductContactFormFun V)).mem_smoothBundleForms⟩
 
 private theorem innerProductContactForm_toRoughForm :
-    (innerProductContactForm V).1 = innerProductContactFormFun V :=
+    (innerProductContactForm V).val = innerProductContactFormFun V :=
   (rfl)
 
 /-- The standard contact form evaluates a tangent vector `(u, v, w)` at `(q, p, z)` as
 `w - ⟪p, u⟫`. -/
 @[simp]
 theorem innerProductContactForm_apply (x : V × V × ℝ) (v : TangentSpace 𝓘(ℝ, V × V × ℝ) x) :
-    (innerProductContactForm V).1 x ![v] = v.2.2 - ⟪x.2.1, v.1⟫_ℝ :=
+    (innerProductContactForm V).val x ![v] = v.2.2 - ⟪x.2.1, v.1⟫_ℝ :=
   innerProductContactFormFun_apply V x ![v]
 
 /-- The scalar function obtained by evaluating the standard contact form on a fixed vector has
@@ -336,9 +335,9 @@ private theorem extDeriv_innerProductContactFormFun_apply (x : V × V × ℝ) (v
 `(q, p)` coordinates: `d(dz - ⟪p, dq⟫) = Σᵢ dqᵢ ∧ dpᵢ`. -/
 theorem mextDeriv_innerProductContactForm_apply (x : V × V × ℝ)
     (v w : TangentSpace 𝓘(ℝ, V × V × ℝ) x) :
-    mextDeriv (innerProductContactForm V).1 x ![v, w] =
+    mextDeriv (innerProductContactForm V).val x ![v, w] =
       stdSymplecticForm (v.1, v.2.1) (w.1, w.2.1) :=
-  (congrArg (fun A ↦ A ![v, w]) (mextDeriv_eq_extDeriv (innerProductContactForm V).1 x)).trans
+  (congrArg (fun A ↦ A ![v, w]) (mextDeriv_eq_extDeriv (innerProductContactForm V).val x)).trans
     (extDeriv_innerProductContactFormFun_apply V x ![v, w])
 
 /-- A tangent vector `(u, v, w)` lies in the kernel of the standard contact form at `(q, p, z)`
@@ -374,7 +373,7 @@ theorem isContactForm_innerProductContactForm : (innerProductContactForm V).IsCo
 theorem innerProductContactForm_euclideanSpace_apply {n : ℕ}
     (x : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)
     (v : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) x) :
-    (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 x ![v] =
+    (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val x ![v] =
       v.2.2 - ∑ i, x.2.1 i * v.1 i := by
   simp [PiLp.inner_apply, mul_comm]
 
@@ -383,7 +382,7 @@ theorem innerProductContactForm_euclideanSpace_apply {n : ℕ}
 theorem mextDeriv_innerProductContactForm_euclideanSpace_apply {n : ℕ}
     (x : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)
     (v w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) x) :
-    mextDeriv (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 x ![v, w] =
+    mextDeriv (innerProductContactForm (EuclideanSpace ℝ (Fin n))).val x ![v, w] =
       ∑ i, (v.1 i * w.2.1 i - v.2.1 i * w.1 i) := by
   simp [mextDeriv_innerProductContactForm_apply, PiLp.inner_apply, Finset.sum_sub_distrib, mul_comm]
 
@@ -394,7 +393,7 @@ private theorem mpullback_innerProductContactForm_linear_eq {f : V × V × ℝ �
     (β : RoughForm 𝓘(ℝ, V × V × ℝ) (V × V × ℝ) ℝ 1)
     (hβ : ∀ x (w : TangentSpace 𝓘(ℝ, V × V × ℝ) x),
       (L w).2.2 - ⟪(L x).2.1, (L w).1⟫_ℝ = β x ![w]) :
-    mpullback 𝓘(ℝ, V × V × ℝ) 𝓘(ℝ, V × V × ℝ) f (innerProductContactForm V).1 = β := by
+    mpullback 𝓘(ℝ, V × V × ℝ) 𝓘(ℝ, V × V × ℝ) f (innerProductContactForm V).val = β := by
   subst hf
   funext x
   ext v
@@ -413,7 +412,7 @@ private theorem mpullback_innerProductContactForm_linear_eq {f : V × V × ℝ �
 along `(x, y, z) ↦ (y, x, z)` gives `dz - x dy`. -/
 theorem mpullback_innerProductContactForm_real :
     mpullback 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun p : ℝ × ℝ × ℝ ↦ (p.2.1, p.1, p.2.2))
-      (innerProductContactForm ℝ).1 = standardContactForm.1 := by
+      (innerProductContactForm ℝ).val = standardContactForm.val := by
   let L : (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ × ℝ :=
     ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))).prod
       ((ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)).prod
@@ -428,7 +427,7 @@ theorem mpullback_innerProductContactForm_real :
 form `α` back to `c α`. -/
 theorem mpullback_innerProductContactForm_smul (c : ℝ) :
     mpullback 𝓘(ℝ, V × V × ℝ) 𝓘(ℝ, V × V × ℝ) (fun x : V × V × ℝ ↦ (x.1, c • x.2))
-      (innerProductContactForm V).1 = (c • innerProductContactForm V).1 := by
+      (innerProductContactForm V).val = (c • innerProductContactForm V).val := by
   let L : (V × V × ℝ) →L[ℝ] V × V × ℝ :=
     (ContinuousLinearMap.fst ℝ V (V × ℝ)).prod (c • ContinuousLinearMap.snd ℝ V (V × ℝ))
   exact mpullback_innerProductContactForm_linear_eq V L (by funext x; simp [L]) _
@@ -442,7 +441,7 @@ theorem mpullback_innerProductContactForm_smul (c : ℝ) :
 structure: it pulls the standard contact form `α` back to `-α`. -/
 theorem mpullback_innerProductContactForm_neg :
     mpullback 𝓘(ℝ, V × V × ℝ) 𝓘(ℝ, V × V × ℝ) (fun x : V × V × ℝ ↦ (x.1, -x.2.1, -x.2.2))
-      (innerProductContactForm V).1 = (-innerProductContactForm V).1 := by
+      (innerProductContactForm V).val = (-innerProductContactForm V).val := by
   simpa [← Prod.neg_mk] using mpullback_innerProductContactForm_smul V (-1)
 
 end InnerProductSpace

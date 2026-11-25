@@ -89,9 +89,9 @@ See T. Y. Lam, *A First Course in Noncommutative Rings*, GTM 131, Chapter 4, and
 
 public section
 
-namespace TauCeti
-
 open Module
+
+namespace TauCeti
 
 variable {R : Type*} [Ring R] {M : Type*} [AddCommGroup M] [Module R M]
 
@@ -307,7 +307,7 @@ theorem _root_.Subalgebra.centralizer_centralizer_of_isSemisimpleModule
   have hx' : x = (a : Module.End K N) := by
     ext m
     exact (congrArg (fun t : Module.End (Module.End A N) N => t m) ha).symm
-  exact hx' ▸ a.2
+  exact hx' ▸ a.property
 
 /-- **The double centralizer theorem for the image of a semisimple algebra.** The image of a
 semisimple `K`-algebra `S` in `Module.End K N` is its own double centralizer when `N` is finite
@@ -342,7 +342,7 @@ theorem _root_.Subalgebra.exists_mem_centralizer_apply_eq_iff_of_isSemisimpleMod
     rw [← _root_.mul_apply_eq_comp, (Subalgebra.mem_centralizer_iff K).1 hf a ha,
       _root_.mul_apply_eq_comp, haw, map_zero]
   obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_apply_eq_iff (R := A)).mpr
-    fun a ha => h a a.2 ha
+    fun a ha => h a a.property ha
   exact ⟨f.restrictScalars K, A.restrictScalars_mem_centralizer f, hf⟩
 
 /-- **The centralizer of a semisimple image moves vectors as freely as annihilators allow.** For a

@@ -24,11 +24,14 @@ isomorphism at a single level: for countable `M` and `N`, `M ≅ N` exactly when
 tuples are equivalent at `scottHeight M`. It is an isomorphism invariant, and it is countable
 for countable `M`, because it lies within `ω` of the internal stabilization level: if `M`
 stabilizes internally at `α`, it stabilizes externally at every limit level above `α`, in
-particular at `α + ω`. Hence `scottHeight M ≤ internalScottRank M + ω`.
+particular at `α + ω`. Hence `scottHeight M ≤ internalScottRank M + ω`. Conversely, for countable
+`M` the Scott height is at least the internal stabilization level, so
+`internalScottRank M ≤ scottHeight M + 1`.
 
 The comparison partners range over countable structures in `Type` only. Every countable
-structure in any universe is isomorphic to one of these, so the isomorphism criterion holds for
-countable partners in every universe.
+structure in any universe is isomorphic to one of these, so quantifying over the countable
+structures of any other universe gives the same predicate, and the isomorphism criterion holds
+for countable partners in every universe.
 
 ## Main definitions
 
@@ -37,11 +40,17 @@ countable partners in every universe.
 
 ## Main results
 
+* `TauCeti.stabilizesCompletely_iff_univ`: external stabilization does not depend on the universe
+  of the countable partners.
 * `TauCeti.StabilizesCompletely.bfEquiv_of_le`: external stabilization propagates to all later
   levels.
 * `TauCeti.SelfStabilizesCompletely.stabilizesCompletely_of_isSuccLimit`: internal stabilization
   at `α` gives external stabilization at every limit above `α`.
 * `TauCeti.scottHeight_le_internalScottRank_add_omega0` and `TauCeti.scottHeight_lt_omega_one`.
+* `TauCeti.selfStabilizationOrdinal_le_scottHeight`,
+  `TauCeti.internalScottRank_le_scottHeight_add_one` and `TauCeti.orbitRank_le_scottHeight`: for a
+  countable structure the Scott height bounds the internal ordinals, since a countable copy of the
+  structure in `Type` is among the partners of external stabilization.
 * `FirstOrder.Language.Equiv.scottHeight_eq`: the Scott height is an isomorphism invariant.
 * `TauCeti.nonempty_equiv_of_bfEquiv_of_scottHeight_le` and
   `TauCeti.nonempty_equiv_iff_bfEquiv_scottHeight`: for countable structures, equivalence at the
@@ -61,7 +70,7 @@ countable partners in every universe.
 
 public section
 
-universe u v w w' o
+universe u v w w' w'' o
 
 namespace TauCeti
 
@@ -87,19 +96,58 @@ theorem stabilizesCompletely_def (α : Ordinal.{o}) :
       ∀ (N : Type) [L.Structure N] [Countable N] (n : ℕ) (a : Fin n → M) (b : Fin n → N),
         BFEquiv (L := L) α n a b → BFEquiv (L := L) (α + 1) n a b := Iff.rfl
 
+/-- One-step stabilization of `M` against every countable structure in one universe gives it
+against every countable structure in any other universe, through a countable copy. -/
+private theorem bfEquiv_add_one_of_forall_countable {α : Ordinal.{o}}
+    (h : ∀ (N : Type w') [L.Structure N] [Countable N] (n : ℕ) (a : Fin n → M) (b : Fin n → N),
+      BFEquiv (L := L) α n a b → BFEquiv (L := L) (α + 1) n a b)
+    {N : Type w''} [L.Structure N] [Countable N] {n : ℕ} {a : Fin n → M} {b : Fin n → N}
+    (hab : BFEquiv (L := L) α n a b) : BFEquiv (L := L) (α + 1) n a b := by
+  -- Transport `N` to a countable copy in `Type w'`, stabilize there, and transport back.
+  let e : N ≃ Shrink.{w'} N := equivShrink.{w', w''} N
+  let _ : L.Structure (Shrink.{w'} N) := e.inducedStructure
+  have : Countable (Shrink.{w'} N) := Countable.of_equiv N e
+  let f : N ≃[L] Shrink.{w'} N := e.inducedStructureEquiv
+  exact (h _ n a (f ∘ b) (hab.trans (f.bfEquiv α b))).trans (f.bfEquiv (α + 1) b).symm
+
+variable (M) in
+/-- External stabilization does not depend on the universe of the partners: quantifying over the
+countable structures in any universe `Type w'` gives the same predicate as quantifying over those
+in `Type`. -/
+theorem stabilizesCompletely_iff_univ (α : Ordinal.{o}) :
+    StabilizesCompletely (L := L) M α ↔
+      ∀ (N : Type w') [L.Structure N] [Countable N] (n : ℕ) (a : Fin n → M) (b : Fin n → N),
+        BFEquiv (L := L) α n a b → BFEquiv (L := L) (α + 1) n a b :=
+  ⟨fun h _ _ _ _ _ _ hab => bfEquiv_add_one_of_forall_countable h hab,
+    fun h _ _ _ _ _ _ hab => bfEquiv_add_one_of_forall_countable h hab⟩
+
 namespace StabilizesCompletely
 
-/-- External stabilization at `α` makes equivalence at `α` with a countable structure in `Type`
-persist at every later level. -/
+/-- External stabilization at `α` upgrades equivalence at `α` with a tuple of a countable
+structure in any universe to equivalence at `α + 1`. -/
+theorem bfEquiv_add_one {α : Ordinal.{o}} (h : StabilizesCompletely (L := L) M α)
+    {N : Type w'} [L.Structure N] [Countable N] {n : ℕ} {a : Fin n → M} {b : Fin n → N}
+    (hab : BFEquiv (L := L) α n a b) : BFEquiv (L := L) (α + 1) n a b :=
+  (stabilizesCompletely_iff_univ M α).1 h N n a b hab
+
+/-- External stabilization at `α` makes equivalence at `α` with a countable structure, in any
+universe, persist at every later level. -/
 theorem bfEquiv_of_le {α β : Ordinal.{o}} (h : StabilizesCompletely (L := L) M α) (hαβ : α ≤ β)
-    {N : Type} [L.Structure N] [Countable N] {n : ℕ} {a : Fin n → M} {b : Fin n → N}
+    {N : Type w'} [L.Structure N] [Countable N] {n : ℕ} {a : Fin n → M} {b : Fin n → N}
     (hab : BFEquiv (L := L) α n a b) : BFEquiv (L := L) β n a b :=
-  bfEquiv_of_le_of_forall_add_one (h N) hαβ hab
+  bfEquiv_of_le_of_forall_add_one (fun _ _ _ => h.bfEquiv_add_one) hαβ hab
 
 /-- Every level above an externally stabilizing level is itself externally stabilizing. -/
 theorem mono {α β : Ordinal.{o}} (h : StabilizesCompletely (L := L) M α) (hαβ : α ≤ β) :
     StabilizesCompletely (L := L) M β :=
   fun _ _ _ _ _ _ hab => h.bfEquiv_of_le (hαβ.trans le_self_add) (hab.mono hαβ)
+
+/-- For a countable structure, external stabilization at `α` gives internal stabilization at
+`α`: `M` itself is one of the countable partners. -/
+theorem selfStabilizesCompletely [Countable M] {α : Ordinal.{o}}
+    (h : StabilizesCompletely (L := L) M α) : SelfStabilizesCompletely (L := L) M α :=
+  (selfStabilizesCompletely_def M α).2 fun _ _ _ =>
+    ⟨h.bfEquiv_add_one, fun hab => hab.mono le_self_add⟩
 
 end StabilizesCompletely
 
@@ -170,6 +218,25 @@ theorem scottHeight_le_internalScottRank_add_omega0 :
     scottHeight (L := L) M ≤ internalScottRank (L := L) M + ω :=
   (scottHeight_le_selfStabilizationOrdinal_add_omega0 M).trans
     (add_le_add_left (selfStabilizationOrdinal_le_internalScottRank (L := L)) ω)
+
+/-- For a countable structure, the least internal stabilization level is at most the Scott
+height. -/
+theorem selfStabilizationOrdinal_le_scottHeight [Countable M] :
+    selfStabilizationOrdinal (L := L) M ≤ scottHeight (L := L) M :=
+  selfStabilizationOrdinal_le M
+    (stabilizesCompletely_scottHeight (L := L) M).selfStabilizesCompletely
+
+/-- For a countable structure, the internal Scott rank is at most the successor of the Scott
+height. -/
+theorem internalScottRank_le_scottHeight_add_one [Countable M] :
+    internalScottRank (L := L) M ≤ scottHeight (L := L) M + 1 :=
+  internalScottRank_le_succ_selfStabilizationOrdinal.trans
+    (add_le_add_left (selfStabilizationOrdinal_le_scottHeight M) 1)
+
+/-- Every tuple of a countable structure has orbit rank at most the Scott height. -/
+theorem orbitRank_le_scottHeight [Countable M] {n : ℕ} (a : Fin n → M) :
+    orbitRank (L := L) a ≤ scottHeight (L := L) M :=
+  (orbitRank_le_selfStabilizationOrdinal a).trans (selfStabilizationOrdinal_le_scottHeight M)
 
 /-- The Scott height of a countable structure is a countable ordinal. The relational language
 need not be countable. -/

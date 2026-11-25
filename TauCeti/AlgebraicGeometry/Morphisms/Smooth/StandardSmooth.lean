@@ -18,11 +18,14 @@ only provide this over some affine open of `Y`; shrinking them to basic opens an
 standard smoothness is stable under localization away from an element brings the source of the
 ring map up to all of `Y`.
 
+A smooth morphism has, around every point, standard smooth charts of some relative dimension.
 It also records that smoothness on an open subscheme `U ⊆ X` yields standard smooth charts of
 `f` itself around the points of `U`, as for the smooth locus of a family of curves.
 
 ## Main declarations
 
+* `AlgebraicGeometry.Scheme.Hom.exists_isStandardSmoothOfRelativeDimension_of_smooth`: a smooth
+  morphism has standard smooth charts of some relative dimension around every point.
 * `SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top`, in Mathlib's
   `AlgebraicGeometry` namespace: standard smooth charts whose ring map starts at the global
   sections of the affine target.
@@ -43,6 +46,23 @@ public section
 
 open CategoryTheory AlgebraicGeometry Opposite TopologicalSpace RingHom
 
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+/-- Around every point, a smooth morphism has an affine chart on which it is standard smooth of
+some relative dimension `m`. -/
+theorem exists_isStandardSmoothOfRelativeDimension_of_smooth {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [Smooth f] (x : X) :
+    ∃ (m : ℕ) (U : Y.Opens) (_ : IsAffineOpen U) (V : X.Opens) (_ : IsAffineOpen V) (_ : x ∈ V)
+      (e : V ≤ f ⁻¹ᵁ U), (f.appLE U V e).hom.IsStandardSmoothOfRelativeDimension m := by
+  obtain ⟨U, hU, V, hV, hx, e, h⟩ := Smooth.exists_isStandardSmooth f x
+  let := (f.appLE U V e).hom.toAlgebra
+  obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := h
+  exact ⟨P.dimension, U, hU, V, hV, hx, e, _, _, _, ‹_›, P, rfl⟩
+
+end AlgebraicGeometry.Scheme.Hom
+
 namespace AlgebraicGeometry.SmoothOfRelativeDimension
 
 universe u
@@ -53,7 +73,8 @@ dimension `n`. -/
 theorem exists_isStandardSmoothOfRelativeDimension_appLE_top
     {X Y : Scheme.{u}} (f : X ⟶ Y) [IsAffine Y] (n : ℕ) [SmoothOfRelativeDimension n f]
     (x : X) :
-    ∃ W : X.affineOpens, x ∈ W.1 ∧ (f.appLE ⊤ W.1 le_top).hom.IsStandardSmoothOfRelativeDimension n
+    ∃ W : X.affineOpens, x ∈ W.val ∧
+        (f.appLE ⊤ W.val le_top).hom.IsStandardSmoothOfRelativeDimension n
       := by
   obtain ⟨U, hU, V, hV, hx, e, hf⟩ :=
     SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension (n := n) (f := f) x
@@ -79,8 +100,8 @@ then every point of `U` has an affine open neighbourhood `V ⊆ U` lying over an
 of `Y` such that `Γ(Y, W) → Γ(X, V)` is standard smooth of relative dimension `n`. -/
 theorem exists_isStandardSmoothOfRelativeDimension_of_comp_ι {X Y : Scheme.{u}} (f : X ⟶ Y)
     (U : X.Opens) (n : ℕ) [SmoothOfRelativeDimension n (U.ι ≫ f)] {x : X} (hx : x ∈ U) :
-    ∃ (W : Y.affineOpens) (V : X.affineOpens) (_ : V.1 ≤ U) (_ : x ∈ V.1)
-      (e : V.1 ≤ f ⁻¹ᵁ W.1), (f.appLE W V e).hom.IsStandardSmoothOfRelativeDimension n := by
+    ∃ (W : Y.affineOpens) (V : X.affineOpens) (_ : V.val ≤ U) (_ : x ∈ V.val)
+      (e : V.val ≤ f ⁻¹ᵁ W.val), (f.appLE W V e).hom.IsStandardSmoothOfRelativeDimension n := by
   obtain ⟨W, hW, V, hV, hxV, e, h⟩ :=
     SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension (n := n)
       (f := U.ι ≫ f) ⟨x, hx⟩
@@ -108,8 +129,8 @@ variable (R : Type u) [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
 affine open whose ring of functions is standard smooth of relative dimension `n` over `R`. -/
 lemma exists_isStandardSmoothOfRelativeDimension (n : ℕ)
     [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] (x : X) :
-    ∃ W : X.affineOpens, x ∈ W.1 ∧
-      ((X.baseRingToStructurePresheaf R).app (op W.1)).hom.IsStandardSmoothOfRelativeDimension n
+    ∃ W : X.affineOpens, x ∈ W.val ∧
+      ((X.baseRingToStructurePresheaf R).app (op W.val)).hom.IsStandardSmoothOfRelativeDimension n
         := by
   obtain ⟨W, hxW, h⟩ :=
     SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top

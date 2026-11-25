@@ -16,7 +16,8 @@ Mathlib’s Gaussian probability density and records that its total mass is one.
 
 This file also records the complex Gaussian estimates needed to differentiate integrals against
 the translated kernel `z ↦ exp (-(c (t - z))²)` under the integral sign: a Gaussian bound in `t`,
-uniform for `z` in a ball, and the complex derivative in `z`.
+uniform for `z` in a ball. The complex derivative in `z` is the case `a = -c²`, `b = t` of
+`Complex.hasDerivAt_cexp_mul_sub_sq` in `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 
 ## Main definitions
 
@@ -29,15 +30,13 @@ uniform for `z` in a ball, and the complex derivative in `z`.
 * `Real.integral_gaussianDensity`: for `c > 0` it has total mass one.
 * `Complex.norm_cexp_neg_mul_sub_sq_le`: the Gaussian bound
   `‖exp (-(c (t - z))²)‖ ≤ exp (c² D²) exp (-(c² / 2) t²)` for `‖z‖ ≤ D`.
-* `Complex.hasDerivAt_cexp_neg_mul_sub_sq`: the complex derivative of
-  `z ↦ exp (-(c (t - z))²)`.
 -/
 
 public section
 
 noncomputable section
 
-open Complex MeasureTheory Filter Topology Real
+open Complex MeasureTheory Real
 
 namespace Real
 
@@ -60,22 +59,13 @@ of variance `(2 c²)⁻¹`. -/
 theorem gaussianDensity_eq_gaussianPDFReal {c : ℝ} (hc : 0 < c) :
     gaussianDensity c = ProbabilityTheory.gaussianPDFReal 0 (2 * c ^ 2)⁻¹.toNNReal := by
   ext t
-  have hv : (0 : ℝ) ≤ (2 * c ^ 2)⁻¹ := by positivity
-  -- Normalize the variance factor before simplifying its square root.
-  have hvariance : 2 * π * (2 * c ^ 2)⁻¹ = π / c ^ 2 := by field_simp
-  -- Express the Gaussian exponent in terms of the scaled variable.
-  have hexponent : -t ^ 2 / (2 * (2 * c ^ 2)⁻¹) = -(c * t) ^ 2 := by field_simp
-  rw [gaussianDensity, ProbabilityTheory.gaussianPDFReal, Real.coe_toNNReal _ hv, sub_zero]
-  rw [hvariance, Real.sqrt_div' _ (sq_nonneg c), Real.sqrt_sq hc.le]
-  rw [hexponent]
+  simp [gaussianDensity, ProbabilityTheory.gaussianPDFReal, hc.le]
   field_simp
 
 /-- For `c > 0`, the Gaussian density of width `c⁻¹` has total mass one. -/
 theorem integral_gaussianDensity {c : ℝ} (hc : 0 < c) : ∫ t, gaussianDensity c t = 1 := by
   rw [gaussianDensity_eq_gaussianPDFReal hc]
-  refine ProbabilityTheory.integral_gaussianPDFReal_eq_one 0 ?_
-  simpa using pow_pos hc 2
-
+  exact ProbabilityTheory.integral_gaussianPDFReal_eq_one 0 (by positivity)
 
 end Real
 
@@ -90,13 +80,5 @@ theorem norm_cexp_neg_mul_sub_sq_le (c t : ℝ) {z : ℂ} {D : ℝ} (hz : ‖z�
   simp only [sq, neg_re, mul_re, mul_im, sub_re, sub_im, ofReal_re, ofReal_im] at hz' ⊢
   nlinarith [mul_nonneg (sq_nonneg c) (sq_nonneg (t - 2 * z.re)), mul_le_mul_of_nonneg_left hz'
     (sq_nonneg c)]
-
-/-- The complex derivative of the translated Gaussian `z ↦ exp (-(c (t - z))²)`. -/
-theorem hasDerivAt_cexp_neg_mul_sub_sq (c t : ℝ) (z : ℂ) :
-    HasDerivAt (fun z : ℂ => cexp (-(c * (t - z)) ^ 2))
-      (cexp (-(c * (t - z)) ^ 2) * (2 * c ^ 2 * (t - z))) z := by
-  have h := (((hasDerivAt_id' z).const_sub (t : ℂ)).const_mul (c : ℂ)).fun_pow 2 |>.fun_neg.cexp
-  convert h using 1
-  ring
 
 end Complex

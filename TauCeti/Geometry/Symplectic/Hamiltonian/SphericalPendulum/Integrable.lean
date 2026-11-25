@@ -50,10 +50,11 @@ The critical points of `F = (H, J)` on the phase space all have vertical momentu
 (`TauCeti.not_isRegularPoint_sphericalPendulumEnergyMomentum_iff`), and the points with `p₃ ≠ 0`
 are dense: away from the poles the vertical momentum is changed by moving `p` along the tangent
 vector `e₃ - q₃ q`, and the poles are limits of points away from them. So the regular points are
-dense (`TauCeti.dense_setOf_isRegularPoint_sphericalPendulumEnergyMomentum`), and `(H, J)` is a
-completely integrable system on the phase space
-(`TauCeti.isIntegrableSystem_sphericalPendulumEnergyMomentum`). Since the energy is proper, so is
-`F` (`TauCeti.isProperMap_sphericalPendulumEnergyMomentum`), and the Hamiltonian vector fields
+dense (`TauCeti.dense_setOf_isRegularPoint_sphericalPendulumEnergyMomentum`), and `(H, J)`, read as
+the map `![H, J]` into `Fin 2 → ℝ` (`TauCeti.sphericalPendulumEnergyMomentumVec`), is a completely
+integrable system on the phase space
+(`TauCeti.isIntegrableSystem_sphericalPendulumEnergyMomentumVec`). Since the energy is proper, so is
+`F` (`TauCeti.isProperMap_sphericalPendulumEnergyMomentumVec`), and the Hamiltonian vector fields
 of `H` and `J` on the phase space are complete
 (`isCompleteVectorField_hamiltonianVectorField_sphericalPendulumHamiltonian_comp_subtypeVal`,
 `TauCeti.isCompleteVectorField_hamiltonianVectorField_angularMomentum_sphericalPendulumPhaseSpace`).
@@ -72,11 +73,17 @@ made here.
   `{H, J} = 0` on the phase space.
 * `TauCeti.dense_setOf_isRegularPoint_sphericalPendulumEnergyMomentum`: the regular points of
   `F = (H, J)` on the phase space are dense.
-* `TauCeti.isIntegrableSystem_sphericalPendulumEnergyMomentum`: the spherical pendulum is a
+* `TauCeti.sphericalPendulumEnergyMomentumVec`: the energy–momentum map `![H, J]` with values in
+  `Fin 2 → ℝ`.
+* `TauCeti.isRegularPoint_sphericalPendulumEnergyMomentumVec_iff`,
+  `TauCeti.isRegularValue_sphericalPendulumEnergyMomentumVec_iff`: its regular points and values
+  are those of `(H, J)`.
+* `TauCeti.isIntegrableSystem_sphericalPendulumEnergyMomentumVec`: the spherical pendulum is a
   completely integrable system.
-* `TauCeti.isProperMap_sphericalPendulumEnergyMomentum`: `F` is proper.
+* `TauCeti.isProperMap_sphericalPendulumEnergyMomentumVec`: `F` is proper.
 * `isCompleteVectorField_hamiltonianVectorField_sphericalPendulumHamiltonian_comp_subtypeVal`,
-  `isCompleteVectorField_hamiltonianVectorField_angularMomentum_sphericalPendulumPhaseSpace`: the
+  `isCompleteVectorField_hamiltonianVectorField_angularMomentum_sphericalPendulumPhaseSpace`,
+  `isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec`: the
   Hamiltonian flows of `H` and `J` are complete.
 
 ## References
@@ -166,7 +173,7 @@ theorem isSymplecticSubmanifoldEmbedding_coe_sphericalPendulumPhaseSpace :
   rw [SymplecticForm.isNondegenerate_constSmooth_symplecticFormAt,
     range_mfderiv_coe_sphericalPendulumPhaseSpace]
   exact isSymplectic_ker_fderiv_sphericalPendulumConstraint
-    (norm_ne_zero_iff.1 ((mem_sphericalPendulumPhaseSpace.1 x.2).1.symm ▸ one_ne_zero))
+    (norm_ne_zero_iff.1 ((mem_sphericalPendulumPhaseSpace.1 x.property).1.symm ▸ one_ne_zero))
 
 /-- **The symplectic form of the spherical pendulum is symplectic.** -/
 theorem isSymplectic_sphericalPendulumSymplecticForm :
@@ -353,27 +360,77 @@ theorem dense_setOf_isRegularPoint_sphericalPendulumEnergyMomentum :
 
 /-! ### The integrable system -/
 
+/-- The energy–momentum map `![H, J]` of the spherical pendulum on its phase space, with values in
+`Fin 2 → ℝ`: the form of `F = (H, J)` used for integrable systems. -/
+noncomputable def sphericalPendulumEnergyMomentumVec (x : sphericalPendulumPhaseSpace) :
+    Fin 2 → ℝ :=
+  ![sphericalPendulumHamiltonian x,
+    angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
+      (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))]
+
+/-- The first component of `![H, J]` is the energy `H`. -/
+@[simp]
+theorem sphericalPendulumEnergyMomentumVec_apply_zero (x : sphericalPendulumPhaseSpace) :
+    sphericalPendulumEnergyMomentumVec x 0 = sphericalPendulumHamiltonian x :=
+  (rfl)
+
+/-- The second component of `![H, J]` is the vertical angular momentum `J`. -/
+@[simp]
+theorem sphericalPendulumEnergyMomentumVec_apply_one (x : sphericalPendulumPhaseSpace) :
+    sphericalPendulumEnergyMomentumVec x 1 =
+      angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
+        (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) :=
+  (rfl)
+
+/-- The energy–momentum map `![H, J]` of the spherical pendulum is `(H, J)` followed by the linear
+identification of `ℝ × ℝ` with `Fin 2 → ℝ`. -/
+theorem sphericalPendulumEnergyMomentumVec_eq_finTwoArrow_symm_comp :
+    sphericalPendulumEnergyMomentumVec = (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm ∘
+      fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumEnergyMomentum y := by
+  ext x i
+  fin_cases i <;> simp
+
+/-- The value of `![H, J]` at a point of the phase space is `c` exactly when the value of `(H, J)`
+there is `(c 0, c 1)`. -/
+theorem sphericalPendulumEnergyMomentumVec_eq_iff (x : sphericalPendulumPhaseSpace)
+    (c : Fin 2 → ℝ) :
+    sphericalPendulumEnergyMomentumVec x = c ↔ sphericalPendulumEnergyMomentum x = (c 0, c 1) := by
+  rw [Prod.ext_iff, fst_sphericalPendulumEnergyMomentum, snd_sphericalPendulumEnergyMomentum,
+    funext_iff, Fin.forall_fin_two]
+  simp [eq_comm]
+
+/-- A point of the phase space of the spherical pendulum is a regular point of `![H, J]` exactly
+when it is a regular point of `(H, J)`. -/
+theorem isRegularPoint_sphericalPendulumEnergyMomentumVec_iff (x : sphericalPendulumPhaseSpace) :
+    IsRegularPoint 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, Fin 2 → ℝ) sphericalPendulumEnergyMomentumVec x ↔
+      IsRegularPoint 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, ℝ × ℝ)
+        (fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumEnergyMomentum y) x := by
+  rw [sphericalPendulumEnergyMomentumVec_eq_finTwoArrow_symm_comp,
+    ContinuousLinearEquiv.comp_isRegularPoint_iff]
+
+/-- A vector `c` of the plane is a regular value of `![H, J]` exactly when `(c 0, c 1)` is a
+regular value of `(H, J)`. -/
+theorem isRegularValue_sphericalPendulumEnergyMomentumVec_iff (c : Fin 2 → ℝ) :
+    IsRegularValue 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, Fin 2 → ℝ) sphericalPendulumEnergyMomentumVec c ↔
+      IsRegularValue 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, ℝ × ℝ)
+        (fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumEnergyMomentum y) (c 0, c 1) := by
+  have hc : c = (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm (c 0, c 1) := by
+    ext i
+    fin_cases i <;> simp
+  conv_lhs => rw [sphericalPendulumEnergyMomentumVec_eq_finTwoArrow_symm_comp, hc]
+  exact ContinuousLinearEquiv.comp_isRegularValue_iff _
+
 /-- **The spherical pendulum is a completely integrable system.** On the phase space `T*S²` with
 the restriction of the standard symplectic form of `ℝ³ × ℝ³`, the energy `H = ‖p‖² / 2 + q₃` and
 the vertical angular momentum `J = q₁ p₂ - q₂ p₁` Poisson-commute and are independent on a dense
 set. -/
-theorem isIntegrableSystem_sphericalPendulumEnergyMomentum :
-    sphericalPendulumSymplecticForm.IsIntegrableSystem fun x : sphericalPendulumPhaseSpace ↦
-      ![sphericalPendulumHamiltonian x,
-        angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
-          (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))] := by
-  let e := (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm
-  have he : (fun x : sphericalPendulumPhaseSpace ↦
-      ![sphericalPendulumHamiltonian x,
-        angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
-          (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))]) =
-      e ∘ fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumEnergyMomentum y := by
-    funext x
-    simp [e]
+theorem isIntegrableSystem_sphericalPendulumEnergyMomentumVec :
+    sphericalPendulumSymplecticForm.IsIntegrableSystem sphericalPendulumEnergyMomentumVec := by
   refine ⟨?_, fun i j x ↦ ?_, ?_, by simp⟩
-  · rw [he]
-    exact e.contDiff.contMDiff.comp (contDiff_sphericalPendulumEnergyMomentum.contMDiff.comp
-      isSmoothEmbedding_coe_sphericalPendulumPhaseSpace.contMDiff)
+  · rw [sphericalPendulumEnergyMomentumVec_eq_finTwoArrow_symm_comp]
+    exact (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm.contDiff.contMDiff.comp
+      (contDiff_sphericalPendulumEnergyMomentum.contMDiff.comp
+        isSmoothEmbedding_coe_sphericalPendulumPhaseSpace.contMDiff)
   · have h := poissonBracket_sphericalPendulumHamiltonian_angularMomentum_comp_subtypeVal x
     fin_cases i <;> fin_cases j
     · exact SmoothTwoForm.poissonBracket_self _ _ _
@@ -381,22 +438,15 @@ theorem isIntegrableSystem_sphericalPendulumEnergyMomentum :
     · rw [← SmoothTwoForm.neg_poissonBracket, neg_eq_zero]
       simpa using h
     · exact SmoothTwoForm.poissonBracket_self _ _ _
-  · -- Composing with the linear equivalence `e` preserves regular points.
-    refine dense_setOf_isRegularPoint_sphericalPendulumEnergyMomentum.mono fun x hx ↦ ?_
-    rw [Set.mem_ofPred_eq, he]
-    refine IsRegularPoint.comp (isRegularPoint_iff.2 ?_) hx
-    rw [mfderiv_eq_fderiv, e.fderiv]
-    exact e.surjective
+  · exact dense_setOf_isRegularPoint_sphericalPendulumEnergyMomentum.mono fun x hx ↦
+      (isRegularPoint_sphericalPendulumEnergyMomentumVec_iff x).2 hx
 
 /-- **The energy–momentum map of the spherical pendulum is proper**, since its energy component is
 proper. -/
-theorem isProperMap_sphericalPendulumEnergyMomentum :
-    IsProperMap fun x : sphericalPendulumPhaseSpace ↦
-      ![sphericalPendulumHamiltonian x,
-        angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
-          (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))] :=
+theorem isProperMap_sphericalPendulumEnergyMomentumVec :
+    IsProperMap sphericalPendulumEnergyMomentumVec :=
   isProperMap_of_comp_of_t2
-    (contMDiff_iff.1 isIntegrableSystem_sphericalPendulumEnergyMomentum.contMDiff).1
+    (contMDiff_iff.1 isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff).1
     (continuous_apply 0) isProperMap_sphericalPendulumHamiltonian_comp_subtypeVal
 
 /-- **The energy flow of the spherical pendulum is complete**: the energy is proper, so its
@@ -406,9 +456,20 @@ theorem isCompleteVectorField_hamiltonianVectorField_sphericalPendulumHamiltonia
       fun y ↦ sphericalPendulumHamiltonian y) :=
   isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
     |>.isCompleteVectorField_hamiltonianVectorField_of_isProperMap_self
-      ((contMDiff_pi_module_iff.1 isIntegrableSystem_sphericalPendulumEnergyMomentum.contMDiff
+      ((contMDiff_pi_module_iff.1 isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff
         0).of_le (by simp))
       isProperMap_sphericalPendulumHamiltonian_comp_subtypeVal
+
+/-- **The flows of the energy–momentum map are complete**: `F = (H, J)` is a proper integrable
+system, so the Hamiltonian vector fields of both of its components are complete. -/
+theorem isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec
+    (i : Fin 2) :
+    IsCompleteVectorField (sphericalPendulumSymplecticForm.hamiltonianVectorField
+      (sphericalPendulumEnergyMomentumVec · i)) :=
+  isIntegrableSystem_sphericalPendulumEnergyMomentumVec
+    |>.isCompleteVectorField_hamiltonianVectorField_of_isProperMap
+      isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
+      isProperMap_sphericalPendulumEnergyMomentumVec i
 
 /-- **The rotation flow of the spherical pendulum is complete**: the energy is a proper first
 integral of the vertical angular momentum, so the Hamiltonian vector field of the vertical angular
@@ -417,9 +478,6 @@ theorem isCompleteVectorField_hamiltonianVectorField_angularMomentum_sphericalPe
     IsCompleteVectorField (sphericalPendulumSymplecticForm.hamiltonianVectorField
       fun y ↦ angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
         (y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))) := by
-  simpa using isIntegrableSystem_sphericalPendulumEnergyMomentum
-    |>.isCompleteVectorField_hamiltonianVectorField_of_isProperMap
-      isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
-      isProperMap_sphericalPendulumEnergyMomentum 1
+  simpa using isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec 1
 
 end TauCeti

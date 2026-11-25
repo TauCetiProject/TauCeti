@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.Algebra.Quaternion.ComplexMatrix
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 public import Mathlib.Analysis.Quaternion
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
@@ -19,7 +20,9 @@ import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 The unitary Hamilton quaternions are exactly the unit sphere in the four-dimensional real normed
 space of quaternions. This gives a canonical homeomorphism between the two subtype presentations.
 The algebraic equivalence `Quaternion.unitaryEquivSpecialUnitaryGroup` with the special unitary
-group of degree two is an isomorphism of topological groups.
+group of degree two is an isomorphism of topological groups. Reading off the unique entry of a
+`1 × 1` quaternionic unitary matrix extends both identifications to the rank-one compact symplectic
+group `Sp(1) = unitary (Matrix ι ι ℍ)` for any singleton index type `ι`.
 The group of unit Hamilton quaternions is simply connected.
 
 ## Main definitions and results
@@ -32,6 +35,13 @@ The group of unit Hamilton quaternions is simply connected.
   connected.
 * `Matrix.instSimplyConnectedSpaceSpecialUnitaryGroupFinTwoComplex`: the complex special
   unitary group of degree two is simply connected.
+* `TauCeti.specialUnitaryGroupTwoHomeomorphSphere`: `SU(2)` is homeomorphic to the unit sphere
+  `S³ ⊆ ℍ`.
+* `TauCeti.unitaryMatrixQuaternionUniqueHomeomorphSphere`: for a singleton index type `ι`, the
+  homeomorphism `unitary (Matrix ι ι ℍ) ≃ₜ sphere (0 : ℍ) 1`.
+* `TauCeti.unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup`: for a singleton
+  index type `ι`, the topological group isomorphism
+  `unitary (Matrix ι ι ℍ) ≃ₜ* Matrix.specialUnitaryGroup (Fin 2) ℂ`.
 
 ## References
 
@@ -99,7 +109,7 @@ noncomputable def unitaryContinuousMulEquivSpecialUnitaryGroup :
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, coe_unitaryEquivSpecialUnitaryGroup_apply,
       AlgHom.coe_toLinearMap, StarAlgHom.coe_toAlgHom] using
-      (toComplexMatrix.toLinearMap.continuous_of_finiteDimensional.comp continuous_subtype_val)
+      (toComplexMatrix.toLinearMap.continuous_of_finiteDimensional.comp continuous_subtypeVal)
   exact { __ := unitaryEquivSpecialUnitaryGroup
           __ := unitaryEquivSpecialUnitaryGroup.toEquiv.toHomeomorphOfContinuousClosed
             hf hf.isClosedMap }
@@ -127,3 +137,94 @@ instance _root_.Matrix.instSimplyConnectedSpaceSpecialUnitaryGroupFinTwoComplex 
   exact e.toHomotopyEquiv.simplyConnectedSpace
 
 end Quaternion
+
+namespace TauCeti
+
+/-- **`SU(2)` is the three-sphere**: the unit quaternions form the group `SU(2)`, and they are the
+unit sphere of `ℍ`. -/
+noncomputable def specialUnitaryGroupTwoHomeomorphSphere :
+    Matrix.specialUnitaryGroup (Fin 2) ℂ ≃ₜ sphere (0 : ℍ[ℝ]) 1 :=
+  Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup.symm.toHomeomorph.trans
+    Quaternion.unitaryHomeomorphSphere
+
+/-- The point of the three-sphere attached to `A ∈ SU(2)` is the unit quaternion whose complex
+matrix is `A`. -/
+@[simp]
+theorem toComplexMatrix_specialUnitaryGroupTwoHomeomorphSphere_apply
+    (A : Matrix.specialUnitaryGroup (Fin 2) ℂ) :
+    Quaternion.toComplexMatrix (specialUnitaryGroupTwoHomeomorphSphere A : ℍ[ℝ]) =
+      (A : Matrix (Fin 2) (Fin 2) ℂ) := by
+  -- The homeomorphism underlying a continuous multiplicative equivalence applies it, by definition.
+  have h : Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup.symm.toHomeomorph A =
+      Quaternion.unitaryEquivSpecialUnitaryGroup.symm A :=
+    Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup_symm_apply A
+  rw [specialUnitaryGroupTwoHomeomorphSphere, Homeomorph.trans_apply,
+    Quaternion.coe_unitaryHomeomorphSphere_apply, h]
+  exact Quaternion.coe_unitaryEquivSpecialUnitaryGroup_symm_apply A
+
+/-- The element of `SU(2)` attached to a point `q` of the three-sphere is the complex matrix of
+the quaternion `q`. -/
+@[simp]
+theorem coe_specialUnitaryGroupTwoHomeomorphSphere_symm_apply (q : sphere (0 : ℍ[ℝ]) 1) :
+    (specialUnitaryGroupTwoHomeomorphSphere.symm q : Matrix (Fin 2) (Fin 2) ℂ) =
+      Quaternion.toComplexMatrix (q : ℍ[ℝ]) := by
+  rw [← toComplexMatrix_specialUnitaryGroupTwoHomeomorphSphere_apply,
+    Homeomorph.apply_symm_apply]
+
+section RankOne
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] [Unique ι]
+
+variable (ι) in
+/-- **Rank-one symplectic group and the `3`-sphere**: on a singleton index type `ι`, reading off the
+unique entry identifies `Sp(1) = unitary (Matrix ι ι ℍ)` homeomorphically with the unit quaternion
+sphere `S³ ⊆ ℍ`. -/
+noncomputable def unitaryMatrixQuaternionUniqueHomeomorphSphere :
+    unitary (Matrix ι ι ℍ) ≃ₜ sphere (0 : ℍ) 1 :=
+  (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ).toHomeomorph.trans
+    Quaternion.unitaryHomeomorphSphere
+
+@[simp]
+theorem coe_unitaryMatrixQuaternionUniqueHomeomorphSphere_apply
+    (A : unitary (Matrix ι ι ℍ)) :
+    (unitaryMatrixQuaternionUniqueHomeomorphSphere ι A : ℍ) = A.val default default := by
+  rw [unitaryMatrixQuaternionUniqueHomeomorphSphere, Homeomorph.trans_apply,
+    Quaternion.coe_unitaryHomeomorphSphere_apply, ContinuousMulEquiv.toHomeomorph_eq_coe]
+  exact Matrix.coe_unitaryUniqueContinuousMulEquiv_apply A
+
+@[simp]
+theorem coe_unitaryMatrixQuaternionUniqueHomeomorphSphere_symm_apply
+    (q : sphere (0 : ℍ) 1) :
+    ((unitaryMatrixQuaternionUniqueHomeomorphSphere ι).symm q).val =
+      Matrix.of fun _ _ ↦ (q : ℍ) := by
+  rw [unitaryMatrixQuaternionUniqueHomeomorphSphere, Homeomorph.symm_trans_apply,
+    ContinuousMulEquiv.toHomeomorph_eq_coe, ContinuousMulEquiv.coe_toHomeomorph_symm]
+  exact (Matrix.coe_unitaryUniqueContinuousMulEquiv_symm_apply _).trans (by simp)
+
+variable (ι) in
+/-- **Rank-one symplectic group and `SU(2)`**: on a singleton index type `ι`, `Sp(1)` is isomorphic
+as a topological group to `Matrix.specialUnitaryGroup (Fin 2) ℂ`. -/
+noncomputable def unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup :
+    unitary (Matrix ι ι ℍ) ≃ₜ* Matrix.specialUnitaryGroup (Fin 2) ℂ :=
+  (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ).trans
+    Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup
+
+@[simp]
+theorem unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup_apply
+    (A : unitary (Matrix ι ι ℍ)) :
+    unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup ι A =
+      Quaternion.unitaryEquivSpecialUnitaryGroup
+        (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ A) := by
+  simp [unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup]
+
+@[simp]
+theorem unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup_symm_apply
+    (g : Matrix.specialUnitaryGroup (Fin 2) ℂ) :
+    (unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup ι).symm g =
+      (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ).symm
+        (Quaternion.unitaryEquivSpecialUnitaryGroup.symm g) := by
+  simp [unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup]
+
+end RankOne
+
+end TauCeti

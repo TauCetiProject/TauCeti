@@ -46,8 +46,8 @@ carrying `V` into `W`. -/
 noncomputable def abelianizationProPMap :
     abelianizationProP p G V →* abelianizationProP p H W := by
   let r : V →* W := (f.comp V.subtype).codRestrict W
-    (fun v ↦ Subgroup.mem_comap.mp (hVW v.2))
-  have hr : Continuous r := (hf.comp continuous_subtype_val).subtype_mk _
+    (fun v ↦ Subgroup.mem_comap.mp (hVW v.property))
+  have hr : Continuous r := (hf.comp continuous_subtypeVal).subtype_mk _
   exact maximalProPQuotient.map (p := p) (TopologicalAbelianization.map r hr)
     (TopologicalAbelianization.continuous_map r hr)
 
@@ -60,10 +60,10 @@ theorem continuous_abelianizationProPMap : Continuous (abelianizationProPMap p f
 @[simp]
 theorem abelianizationProPMap_mk (v : V) :
     abelianizationProPMap p f hf hVW (abelianizationProPMk p G V v) =
-      abelianizationProPMk p H W ⟨f v, Subgroup.mem_comap.mp (hVW v.2)⟩ := by
+      abelianizationProPMk p H W ⟨f v, Subgroup.mem_comap.mp (hVW v.property)⟩ := by
   let r : V →* W := (f.comp V.subtype).codRestrict W
-    (fun v ↦ Subgroup.mem_comap.mp (hVW v.2))
-  have hr : Continuous r := (hf.comp continuous_subtype_val).subtype_mk _
+    (fun v ↦ Subgroup.mem_comap.mp (hVW v.property))
+  have hr : Continuous r := (hf.comp continuous_subtypeVal).subtype_mk _
   simpa only [abelianizationProPMap, abelianizationProPMk_apply,
     maximalProPQuotient.mk_apply, maximalProPQuotient.map_mk, r,
     MonoidHom.codRestrict_apply, MonoidHom.comp_apply, Subgroup.subtype_apply] using
@@ -76,7 +76,7 @@ theorem abelianizationProPMap_surjective (hWV : W ≤ V.map f) :
     Function.Surjective (abelianizationProPMap p f hf hVW) := by
   intro a
   obtain ⟨w, rfl⟩ := abelianizationProPMk_surjective p H W a
-  obtain ⟨v, hv, hvw⟩ := hWV w.2
+  obtain ⟨v, hv, hvw⟩ := hWV w.property
   refine ⟨abelianizationProPMk p G V ⟨v, hv⟩, ?_⟩
   rw [abelianizationProPMap_mk]
   congr 1

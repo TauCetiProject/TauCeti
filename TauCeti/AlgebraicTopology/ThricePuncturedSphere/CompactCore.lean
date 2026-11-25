@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoods
-public import TauCeti.Topology.Covering.Finite
+public import TauCeti.Topology.Covering.Finite.Basic
 public import TauCeti.Topology.Covering.Proper
 
 /-!
@@ -108,8 +108,8 @@ theorem exists_subset_compactCore {K : Set ThricePuncturedSphere} (hK : IsCompac
   let g : ThricePuncturedSphere → ℝ := fun z ↦ min (min ‖(z : ℂ)‖ ‖(z : ℂ) - 1‖) ‖(z : ℂ)‖⁻¹
   have hg : Continuous g := by
     have h0 : Continuous fun z : ThricePuncturedSphere ↦ ‖(z : ℂ)‖ :=
-      continuous_subtype_val.norm
-    exact (h0.min (continuous_subtype_val.sub continuous_const).norm).min
+      continuous_subtypeVal.norm
+    exact (h0.min (continuous_subtypeVal.sub continuous_const).norm).min
       (h0.inv₀ fun z ↦ norm_ne_zero_iff.mpr z.ne_zero)
   have hpos (z : ThricePuncturedSphere) : 0 < g z := by
     have h0 : 0 < ‖(z : ℂ)‖ := norm_pos_iff.mpr z.ne_zero

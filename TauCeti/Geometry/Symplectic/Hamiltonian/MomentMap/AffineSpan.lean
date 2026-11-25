@@ -226,7 +226,6 @@ theorem finrank_vectorSpan_range_of_faithfulSMul
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate) :
     Module.finrank ℝ (vectorSpan ℝ (range μ)) = Module.finrank ℝ (GroupLieAlgebra I G) := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := ‹FiniteDimensional ℝ E›
   rw [← h.finrank_vectorSpan_range_add_finrank_ker hσ,
     InfinitesimalAction.ker_toLinearMap_fundamental_eq_bot, finrank_bot, add_zero]
 
@@ -237,7 +236,6 @@ theorem affineSpan_range_eq_top_of_faithfulSMul [Nonempty M]
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate) :
     affineSpan ℝ (range μ) = ⊤ := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := ‹FiniteDimensional ℝ E›
   rw [h.affineSpan_range_eq_top_iff hσ]
   exact InfinitesimalAction.ker_toLinearMap_fundamental_eq_bot
 

@@ -146,7 +146,8 @@ theorem IsSpecEquivRel.exists_baseChange_ringEquiv_eqLocus
       ((algebraMap A' B').comp (algebraMap C' A')).comp
         (algebraMap ((algebraMap A B).eqLocus t) C') := by
     ext c
-    have hc : t (algebraMap _ A c) = algebraMap A B (algebraMap _ A c) := (mem_eqLocus.mp c.2).symm
+    have hc : t (algebraMap _ A c) = algebraMap A B (algebraMap _ A c) :=
+        (mem_eqLocus.mp c.property).symm
     simp only [RingHom.comp_apply, hc]
     rw [← IsScalarTower.algebraMap_apply A B B', IsScalarTower.algebraMap_apply A A' B',
       ← IsScalarTower.algebraMap_apply _ A A', IsScalarTower.algebraMap_apply _ C' A']
