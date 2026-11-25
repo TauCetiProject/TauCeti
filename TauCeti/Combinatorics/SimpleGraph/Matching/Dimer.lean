@@ -34,10 +34,11 @@ and a homomorphism `τ : Γ →* (G ≃g G)` induces an action of `Γ` of this k
 
 For a finite set `F` of edges and a configuration `ω`, the *completion set*
 `G.dimerCompletionSet F ω` is the set of dimer configurations agreeing with `ω` off `F`.
-It is finite (`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer
-configuration. When `ω` is a dimer configuration, the members of its completion set are the
-gluings `Function.updateFinset ω F η` of a configuration `η` on `F` to `ω` off `F` that cover
-every endpoint of an edge of `F` exactly once (`SimpleGraph.dimerCompletionSet_eq_image`), and
+It depends on `ω` only off `F` (`SimpleGraph.dimerCompletionSet_congr`), is finite
+(`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer configuration.
+When `ω` is a dimer configuration, the members of its completion set are the gluings
+`Function.updateFinset ω F η` of a configuration `η` on `F` to `ω` off `F` that cover every
+endpoint of an edge of `F` exactly once (`SimpleGraph.dimerCompletionSet_eq_image`), and
 the restrictions to `F` of its members are exactly those configurations `η`
 (`SimpleGraph.mem_image_restrict_dimerCompletionSet`). So for two dimer configurations `ω₁` and
 `ω₂` that agree on the edges outside `F` sharing a vertex with an edge of `F`, the restrictions to
@@ -247,6 +248,13 @@ theorem mem_dimerCompletionSet {F : Finset G.edgeSet} {ω ω' : G.edgeSet → Bo
 theorem mem_dimerCompletionSet_self {F : Finset G.edgeSet} {ω : G.edgeSet → Bool}
     (hω : G.IsDimerConfiguration ω) : ω ∈ G.dimerCompletionSet F ω :=
   ⟨hω, fun _ _ => rfl⟩
+
+/-- The completion set depends on `ω` only off `F`. -/
+theorem dimerCompletionSet_congr {F : Finset G.edgeSet} {ω₁ ω₂ : G.edgeSet → Bool}
+    (h : ∀ e ∉ F, ω₁ e = ω₂ e) : G.dimerCompletionSet F ω₁ = G.dimerCompletionSet F ω₂ := by
+  ext ω'
+  simp only [mem_dimerCompletionSet]
+  exact and_congr_right fun _ => forall₂_congr fun e he => by rw [h e he]
 
 /-- A completion set is finite: its members are determined by their values on `F`. -/
 theorem finite_dimerCompletionSet (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) :
