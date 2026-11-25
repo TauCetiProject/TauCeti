@@ -604,19 +604,6 @@ theorem toContinuousMap_nemytskiiPi {F : (Fin n → ℂ) → ℂ} {U : Set (Fin 
   obtain ⟨p, _, ρ, _, hp, _, h⟩ := exists_hasFPowerSeriesOnBall_nemytskiiPi T hU hF hu
   simpa only [add_sub_cancel, Pi.sub_apply] using h (u - p) hp x
 
-/-- For `s > 1/2` and an open set `U ⊆ ℂⁿ`, the families `u : Fin n → H^s` whose continuous
-representatives take their joint values in `U` form an open set. -/
-theorem isOpen_setOf_forall_toContinuousMap_pi_mem {U : Set (Fin n → ℂ)} (hU : IsOpen U) :
-    IsOpen {u : Fin n → CircleSobolev s ℂ |
-      ∀ x, (fun i ↦ toContinuousMap T hs.out (u i) x) ∈ U} := by
-  let Φ : (Fin n → CircleSobolev s ℂ) → C(AddCircle T, Fin n → ℂ) :=
-    fun u ↦ ContinuousMap.pi fun i ↦ toContinuousMap T hs.out (u i)
-  have hΦ : Continuous Φ := ContinuousMap.continuous_of_continuous_uncurry _ <|
-    continuous_pi fun i ↦ continuous_eval.comp
-      (((toContinuousMap T hs.out).continuous.comp ((continuous_apply i).comp
-        continuous_fst)).prodMk continuous_snd)
-  simpa [Set.MapsTo, Φ] using (ContinuousMap.isOpen_setOfPred_mapsTo isCompact_univ hU).preimage hΦ
-
 /-- **The holomorphic Nemytskii map is holomorphic.** If `F` is holomorphic on an open set
 `U ⊆ ℂⁿ`, then `u ↦ nemytskiiPi F u` is analytic on the open set of families `u : Fin n → H^s`,
 `s > 1/2`, with joint values in `U` (`isOpen_setOf_forall_toContinuousMap_pi_mem`). -/
@@ -661,7 +648,7 @@ theorem hasFDerivAt_nemytskiiPi {F : (Fin n → ℂ) → ℂ} {U : Set (Fin n �
     ev.hasFDerivAt.comp_hasDerivAt 0 (hD.comp_hasDerivAt_of_eq 0 hline (by simp))
   have hmem : ∀ᶠ t : ℂ in 𝓝 0, ∀ y, (fun i ↦ toContinuousMap T hs.out ((u + t • v) i) y) ∈ U :=
     hline.continuousAt.preimage_mem_nhds
-      ((isOpen_setOf_forall_toContinuousMap_pi_mem T hU).mem_nhds (by simpa using hu))
+      ((isOpen_setOf_forall_toContinuousMap_pi_mem T hs.out hU).mem_nhds (by simpa using hu))
   have hl : HasDerivAt (fun t : ℂ ↦ ux + t • vx) vx 0 := by
     simpa using ((hasDerivAt_id (0 : ℂ)).smul_const vx).const_add ux
   have h₂ : HasDerivAt (ev ∘ nemytskiiPi F ∘ fun t : ℂ ↦ u + t • v)

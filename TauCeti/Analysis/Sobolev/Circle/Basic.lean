@@ -1044,6 +1044,19 @@ theorem isOpen_setOf_forall_toContinuousMap_mem (hs : 1 / 2 < s) {U : Set E} (hU
   simpa [Set.MapsTo] using (ContinuousMap.isOpen_setOfPred_mapsTo isCompact_univ hU).preimage
     (toContinuousMap T hs).continuous
 
+/-- For `s > 1/2` and an open set `U ⊆ ι → E`, the families `u : ι → H^s` whose continuous
+representatives take their joint values `x ↦ (u i x)ᵢ` in `U` form an open set. -/
+theorem isOpen_setOf_forall_toContinuousMap_pi_mem (hs : 1 / 2 < s) {ι : Type*}
+    {U : Set (ι → E)} (hU : IsOpen U) :
+    IsOpen {u : ι → CircleSobolev s E | ∀ x, (fun i ↦ toContinuousMap T hs (u i) x) ∈ U} := by
+  let Φ : (ι → CircleSobolev s E) → C(AddCircle T, ι → E) :=
+    fun u ↦ ContinuousMap.pi fun i ↦ toContinuousMap T hs (u i)
+  have hΦ : Continuous Φ := ContinuousMap.continuous_of_continuous_uncurry _ <|
+    continuous_pi fun i ↦ continuous_eval.comp
+      (((toContinuousMap T hs).continuous.comp ((continuous_apply i).comp
+        continuous_fst)).prodMk continuous_snd)
+  simpa [Set.MapsTo, Φ] using (ContinuousMap.isOpen_setOfPred_mapsTo isCompact_univ hU).preimage hΦ
+
 end Continuous
 
 end CircleSobolev
