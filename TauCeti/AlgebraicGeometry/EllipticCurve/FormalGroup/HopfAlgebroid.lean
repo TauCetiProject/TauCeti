@@ -159,19 +159,7 @@ theorem strictArrowEquiv_symm_comp_lazardArrowHom {R : Type*} [CommRing R]
     map_strictArrowEquiv_symm_strictFormalCoordinate,
     LazardRing.map_coordinateChangeLift_universalStrictCoordinate]
 
-/-! ### Explicit values on `b₁, b₂, b₃` and surjectivity onto `A[r, s, t]` -/
-
-/-- `lazardArrowHom` sends `b₁ = X 1` to `-s` (`-X (.inr 1)`). -/
-theorem lazardArrowHom_X_one : lazardArrowHom (X 1) = -X (.inr 1) := by simp
-
-/-- `lazardArrowHom` sends `b₂ = X 2` to `s² - r` (`X (.inr 1) ^ 2 - X (.inr 0)`). -/
-theorem lazardArrowHom_X_two : lazardArrowHom (X 2) = X (.inr 1) ^ 2 - X (.inr 0) := by simp
-
-/-- `lazardArrowHom` sends `b₃ = X 3` to `-t - s³ + 2 r s - a₁ r`. -/
-theorem lazardArrowHom_X_three :
-    lazardArrowHom (X 3) =
-      -X (.inr 2) - X (.inr 1) ^ 3 + 2 * X (.inr 0) * X (.inr 1) -
-        X (.inl .A₁) * X (.inr 0) := by simp
+/-! ### Base-changed surjectivity onto `A[r, s, t]` -/
 
 /-- The base-changed homomorphism `A[b₁, b₂, …] = A ⊗_L L[b₁, b₂, …] →+* A[r, s, t]` induced by
 `strictLeftUnit` and `lazardArrowHom`. -/

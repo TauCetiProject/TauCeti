@@ -362,7 +362,7 @@ private theorem coeff_add_two_formalCoordinate (n : ℕ) (C : VariableChange R)
     nth_rw 1 [formalW_eq_X_pow_mul_formalU] at h
     linear_combination h
   have hc := congrArg (coeff (n + 2)) hp
-  simp only [map_add, coeff_C_mul, coeff_X, show n + 2 ≠ 1 by omega, ↓reduceIte, mul_zero,
+  simp only [map_add, coeff_C_mul, coeff_X, Nat.reduceEqDiff, ↓reduceIte, mul_zero,
     zero_add, coeff_succ_X_mul, coeff_formalW] at hc
   have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
   apply (C.u ^ 3).isUnit.mul_left_cancel
@@ -377,7 +377,7 @@ theorem coeff_two_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve 
   have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
   rw [coeff_add_two_formalCoordinate 0 C W]
   simp only [zero_add, coeff_one_formalCoordinate, formalWCoeff_two, mul_zero, add_zero,
-    coeff_X_pow_mul', show ¬ 3 ≤ 2 by decide, ↓reduceIte]
+    coeff_X_pow_mul', Nat.reduceLeDiff, ↓reduceIte]
   linear_combination C.s * (↑C.u⁻¹ : R) ^ 2 * pow_mul_pow_eq_one 2 hu
 
 /-- The cubic coefficient of the formal coordinate transition is `(r + s²) u⁻³`. -/
@@ -399,7 +399,7 @@ theorem coeff_four_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve
   have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
   rw [coeff_add_two_formalCoordinate 2 C W]
   simp only [Nat.reduceAdd, coeff_three_formalCoordinate, formalWCoeff_four, variableChange_a₁,
-    coeff_X_pow_mul', show 3 ≤ 4 by decide, ↓reduceIte, Nat.reduceSub, coeff_one_mul,
+    coeff_X_pow_mul', Nat.reduceLeDiff, ↓reduceIte, Nat.reduceSub, coeff_one_mul,
     TauCeti.FormalCoordinate.constantCoeff_toPowerSeries, coeff_one_formalCoordinate,
     constantCoeff_formalU, mul_one]
   linear_combination C.s * (C.r + C.s ^ 2) * (↑C.u⁻¹ : R) ^ 4 * pow_mul_pow_eq_one 2 hu

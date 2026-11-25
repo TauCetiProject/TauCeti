@@ -9,6 +9,7 @@ public import Mathlib.Basic.ENNReal.Operations
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.RingTheory.MvPolynomial.Rescale
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Weighted homogeneity under substitution and evaluation
@@ -92,6 +93,10 @@ polynomial of weight `m` that lies in the square of `idealOfVars σ R` has weigh
   `X i ↦ X i * T ^ w i` is the weighted homogeneous component of weight `n`.
 * `MvPolynomial.IsWeightedHomogeneous.comp_weight`: an additive map of the weights preserves
   weighted homogeneity.
+* `MvPolynomial.isWeightedHomogeneous_smul_weight_iff`,
+  `MvPolynomial.IsWeightedHomogeneous.map_smul_weight`: scaling weights by an injective scalar
+  action preserves and reflects weighted homogeneity, and additive maps preserving weighted
+  homogeneity also preserve homogeneity for scaled weights.
 * `MvPolynomial.IsWeightedHomogeneous.eval₂_eq_zero`: a polynomial of nonzero weight vanishes at
   a point whose coordinates of nonzero weight vanish.
 * `MvPolynomial.IsWeightedHomogeneous.eq_zero_of_eval₂_ne_zero`: the block form, a nonzero value
@@ -174,6 +179,35 @@ theorem IsWeightedHomogeneous.comp_weight {M N : Type*} [AddCommMonoid M] [AddCo
     {w : σ → M} {φ : MvPolynomial σ R} {m : M} (hφ : φ.IsWeightedHomogeneous w m) (r : M →+ N) :
     φ.IsWeightedHomogeneous (r ∘ w) (r m) := fun d hd ↦ by
   simp only [← hφ hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
+
+/-- When scalar multiplication by `s` on the weight monoid is injective, `φ` is weighted
+homogeneous of weight `s • m` for `s • w` if and only if it is weighted homogeneous of weight `m`
+for `w`. -/
+theorem isWeightedHomogeneous_smul_weight_iff {M S : Type*} [AddCommMonoid M] [DistribSMul S M]
+    {s : S} (hs : Function.Injective (s • · : M → M)) {w : σ → M} {m : M} {φ : MvPolynomial σ R} :
+    φ.IsWeightedHomogeneous (s • w) (s • m) ↔ φ.IsWeightedHomogeneous w m :=
+  ⟨fun h d hd ↦ hs ((Finsupp.weight_smul_left s w d).symm.trans (h hd)),
+    fun h d hd ↦ (Finsupp.weight_smul_left s w d).trans (congrArg (s • ·) (h hd))⟩
+
+/-- An additive map between polynomial rings that sends `w`-weighted homogeneous polynomials of
+each weight `k` to `v`-weighted homogeneous polynomials of weight `k` also sends `(s • w)`-weighted
+homogeneous polynomials of any weight `n` to `(s • v)`-weighted homogeneous polynomials of weight
+`n`. -/
+theorem IsWeightedHomogeneous.map_smul_weight {M S R' F : Type*} [CommSemiring R']
+    [AddCommMonoid M] [DistribSMul S M] (s : S) {w : σ → M} {v : τ → M}
+    [FunLike F (MvPolynomial σ R) (MvPolynomial τ R')]
+    [AddMonoidHomClass F (MvPolynomial σ R) (MvPolynomial τ R')] {f : F}
+    (hf : ∀ {k : M} {p : MvPolynomial σ R},
+      p.IsWeightedHomogeneous w k → (f p).IsWeightedHomogeneous v k)
+    {n : M} {p : MvPolynomial σ R} (hp : p.IsWeightedHomogeneous (s • w) n) :
+    (f p).IsWeightedHomogeneous (s • v) n := by
+  induction hp using IsWeightedHomogeneous.induction_on with
+  | zero => simp [isWeightedHomogeneous_zero]
+  | add p q _ _ ihp ihq => rw [map_add]; exact ihp.add ihq
+  | monomial d r hr =>
+    rw [← hr, Finsupp.weight_smul_left]
+    intro e he
+    rw [Finsupp.weight_smul_left, hf (isWeightedHomogeneous_monomial w d r rfl) he]
 
 /-- Substituting, for each variable `i`, a polynomial that is weighted homogeneous of weight
 `w i` for the weights `v` commutes with taking weighted homogeneous components: the component of
