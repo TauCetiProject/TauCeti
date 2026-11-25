@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.End.Model
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
-import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
@@ -35,7 +34,7 @@ chart `φ'_q` and with a cutoff `β` (`TauCeti.Floer.endTransfer`), of an operat
   Indeed the coefficient field of `D` applied to the transfer is `β(φ'_q) G` plus a field that only
   reads the value of a jet and vanishes outside a compact range of heights, which is compact by
   Rellich's theorem
-  (`TauCeti.CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero`).
+  (`TauCeti.CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero_of_le_or_le`).
 * **The local piece of the linearized operator.** Read along `φ'_q`, the principal part of the
   linearized Floer operator at `φ'_q(ζ)` is `r⁻¹ (a + b J) (∂s + J ∂t)` with `J = J(φ'_q ζ, u)`,
   `(a, b) = dφ'_q (1, 0)` and `r` the conformal scale of the chart. Freezing `J` at a point `z₀`
@@ -45,8 +44,9 @@ chart `φ'_q` and with a cutoff `β` (`TauCeti.Floer.endTransfer`), of an operat
   differ by `r⁻¹ (b (J - J₀) ∂s + a (J - J₀) ∂t)`, which is small when `J` is continuous at
   `z₀`. Adding this difference to the frozen model over the preimage of a small neighbourhood `U`
   of `z₀` gives a small perturbation of an invertible operator, hence an invertible operator
+  (`TauCeti.CylinderSobolev.exists_pos_forall_isInvertible_jetOperator_add_comp_subtypeL`)
   `G` with the principal part of `D` over `U`. So every cutoff supported in `U` gives a core piece
-  (`exists_mem_nhds_exists_forall_exists_isCompactOperator_jetOperator_endTransfer`,
+  (`exists_mem_nhds_forall_exists_isCompactOperator_jetOperator_floerConformalJetCoeff_endTransfer`,
   in the namespace `TauCeti.SymplecticForm`).
 
 The end chart `φ'_q` of each end covers the whole plane except its center, so every point of `S`
@@ -79,14 +79,6 @@ section Abstract
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   [NormedAddCommGroup W] [NormedSpace ℝ W] [CompleteSpace W]
 
-/-- Read along the end chart, a cutoff `β` with `|β| ≤ B` is essentially bounded on the strip. -/
-private theorem memLp_comp_positiveEndChart (q : Puncture) {β : ℝ × ℝ → ℝ} (hβ : Continuous β)
-    {B : ℝ} (hB : ∀ z, Complex.equivRealProdCLM.symm z ≠ q.endCenter → |β z| ≤ B) :
-    MemLp (fun ζ ↦ β (positiveEndChart q ζ)) ∞ stripMeasure :=
-  memLp_top_of_bound (hβ.comp (contDiff_positiveEndChart q 0).continuous
-    |>.aestronglyMeasurable) B (ae_of_all _ fun ζ ↦ by
-      simpa using hB _ (equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ))
-
 /-- Read along the end chart, the coefficient field of `D` applied to the transfer with a cutoff `β`
 living in a compact range of heights, minus `β` times a field `G` with the same principal part
 wherever `β ≠ 0`, only reads the value of a jet and vanishes outside that range of heights, so it
@@ -108,11 +100,11 @@ private theorem isCompactOperator_jetOperator_comp_endTransferCoeff_sub_smul (q 
     IsCompactOperator ((jetOperator stripMeasure fun ζ ↦
       (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ) -
         β (positiveEndChart q ζ) • G ζ).comp (CylinderSobolev.H1 V).subtypeL) := by
-  refine CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero
+  refine CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero_of_le_or_le
     (((hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).clm_comp ∞
       (memLp_endTransferCoeff q hβ hβS hB)).sub
       ((memLp_comp_positiveEndChart q hβ.continuous fun z hz ↦ (hB z hz).1).smul hG)) ?_
-    fun ε hε ↦ ⟨max |T₀| |T₁|, ae_of_all _ fun ζ hζ ↦ ?_⟩
+    (ae_of_all _ fun ζ (hout : ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1) ↦ ?_)
   · -- On principal parts, the transfer with the cutoff `β` is `β` times that with the cutoff `1`.
     filter_upwards [hMG] with ζ hζ a b
     have hcut : endTransferCoeff q β ζ (0, a, b) =
@@ -123,16 +115,11 @@ private theorem isCompactOperator_jetOperator_comp_endTransferCoeff_sub_smul (q 
     by_cases h0 : β (positiveEndChart q ζ) = 0
     · simp [h0]
     · rw [hζ h0 a b, sub_self]
-  · have hout : ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1 := by
-      rcases lt_abs.1 hζ with h | h
-      · exact Or.inr ((le_abs_self T₁).trans ((le_max_right _ _).trans h.le))
-      · exact Or.inl (by linarith [neg_abs_le T₀, le_max_left |T₀| |T₁|])
-    -- Where the cutoff and its derivative vanish, so does the jet coefficient of the transfer.
+  · -- Where the cutoff and its derivative vanish, so does the jet coefficient of the transfer.
     have h0 : endTransferCoeff (V := V) q β ζ = 0 := by
       refine ContinuousLinearMap.ext fun v ↦ ?_
       simp [endTransferCoeff_apply, hβ₀ ζ hout, hdβ ζ hout, Prod.mk_zero_zero]
-    simp only [h0, hβ₀ ζ hout, ContinuousLinearMap.comp_zero, zero_smul, sub_zero, norm_zero]
-    exact hε.le
+    simp only [h0, hβ₀ ζ hout, ContinuousLinearMap.comp_zero, zero_smul, sub_zero]
 
 /-- **A core contribution to a right parametrix.** Let `D` be a first-order operator on the pair
 of pants `S` with an essentially bounded coefficient field `M` on conformal jets, and let the
@@ -202,36 +189,6 @@ open StripSobolev (stripMeasure)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- The rotation part `r⁻¹ dφ'_q(ζ) (1, 0)` of the end chart at `ζ`, as a pair `(a', b')` with
-`a'² + b'² = 1`. -/
-private def endUnitTangent (q : Puncture) (ζ : ℝ × ℝ) : ℝ × ℝ :=
-  ((positiveEndChartScale q ζ)⁻¹ • fderiv ℝ (positiveEndChart q) ζ) (1, 0)
-
-private theorem endUnitTangent_eq_of_snd_eq (q : Puncture) {ζ ζ' : ℝ × ℝ} (h : ζ.2 = ζ'.2) :
-    endUnitTangent q ζ = endUnitTangent q ζ' := by
-  rw [endUnitTangent, endUnitTangent,
-    positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq q h]
-
-private theorem continuous_endUnitTangent (q : Puncture) : Continuous (endUnitTangent q) := by
-  have hd : Continuous fun ζ ↦ fderiv ℝ (positiveEndChart q) ζ :=
-    (contDiff_positiveEndChart q 1).continuous_fderiv one_ne_zero
-  exact (((continuous_positiveEndChartScale q).inv₀
-    fun ζ ↦ (positiveEndChartScale_pos q ζ).ne').smul hd).clm_apply continuous_const
-
-private theorem abs_endUnitTangent_le (q : Puncture) (ζ : ℝ × ℝ) :
-    |(endUnitTangent q ζ).1| ≤ 1 ∧ |(endUnitTangent q ζ).2| ≤ 1 := by
-  have hr := positiveEndChartScale_pos q ζ
-  simp only [endUnitTangent, smul_apply, Prod.smul_fst, Prod.smul_snd,
-    smul_eq_mul, abs_mul, abs_inv, abs_of_pos hr]
-  exact ⟨(inv_mul_le_one₀ hr).2 (abs_fst_fderiv_positiveEndChart_le q ζ),
-    (inv_mul_le_one₀ hr).2 (abs_snd_fderiv_positiveEndChart_le q ζ)⟩
-
-/-- The rotation of the end model is `a' + b' J_t` for the rotation part `(a', b')` of the chart. -/
-private theorem endModelRotation_apply_eq (q : Puncture) (J : ℝ → AlmostComplexStructure V)
-    (ζ : ℝ × ℝ) (v : V) :
-    endModelRotation q J ζ v = (endUnitTangent q ζ).1 • v + (endUnitTangent q ζ).2 • J ζ.2 v := by
-  simp [endModelRotation_eq, endUnitTangent]
-
 /-- The jet coefficient of the transfer along an end chart with the cutoff `1`, restricted to the
 derivative components: `(x, y, z) ↦ (0, a' y - b' z, b' y + a' z)` for the rotation part
 `(a', b')` of the chart. -/
@@ -253,7 +210,7 @@ omit [FiniteDimensional ℝ V] in
 private theorem endPrincipalCoeff_apply_zero (q : Puncture) (ζ : ℝ × ℝ) (a b : V) :
     endPrincipalCoeff q ζ (0, a, b) = endTransferCoeff q (fun _ ↦ 1) ζ (0, a, b) := by
   rw [endPrincipalCoeff_apply, endTransferCoeff_apply]
-  simp only [endUnitTangent, smul_apply, Prod.smul_fst, Prod.smul_snd,
+  simp only [endUnitTangent_def, smul_apply, Prod.smul_fst, Prod.smul_snd,
     smul_eq_mul, smul_zero, fderiv_const_apply, zero_apply, mul_zero,
     zero_add, one_mul, div_eq_inv_mul]
 
@@ -293,7 +250,8 @@ private theorem norm_floerConformalJetCoeff_comp_endPrincipalCoeff_sub_le (ω : 
         J₀.toLinearMap.toContinuousLinearMap‖ := by
   set L := J (positiveEndChart q ζ) (u (positiveEndChart q ζ))
   set Δ := L.toLinearMap.toContinuousLinearMap - J₀.toLinearMap.toContinuousLinearMap
-  obtain ⟨hc₁, hc₂⟩ := abs_endUnitTangent_le q ζ
+  have hc₁ := abs_fst_endUnitTangent_le q ζ
+  have hc₂ := abs_snd_endUnitTangent_le q ζ
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
   -- Since `L² = J₀² = -1`, the difference of the two principal parts is `c₂ Δ y + c₁ Δ z`.
   have hid : ((ω.floerConformalJetCoeff ρ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
@@ -302,7 +260,7 @@ private theorem norm_floerConformalJetCoeff_comp_endPrincipalCoeff_sub_le (ω : 
         (endUnitTangent q ζ).2 • Δ v.2.1 + (endUnitTangent q ζ).1 • Δ v.2.2 := by
     simp only [sub_apply, ContinuousLinearMap.comp_apply,
       floerConformalJetCoeff_apply, endPrincipalCoeff_apply, principalProj_apply, endModelCoeff_def,
-      stationaryJetCoeff_apply, endModelRotation_apply_eq, map_zero, sub_zero, smul_zero,
+      stationaryJetCoeff_apply, endModelRotation_apply, map_zero, sub_zero, smul_zero,
       add_zero, LinearMap.coe_toContinuousLinearMap', Δ, map_add, map_smul, J₀.apply_apply]
     module
   have hy : ‖v.2.1‖ ≤ ‖v‖ := (norm_fst_le v.2).trans (norm_snd_le v)
@@ -318,36 +276,6 @@ private theorem norm_floerConformalJetCoeff_comp_endPrincipalCoeff_sub_le (ω : 
             ((Δ.le_opNorm _).trans (by gcongr))
     _ = 2 * ‖Δ‖ * ‖v‖ := by ring
 
-/-- A first-order operator on the cylinder whose coefficient field is within a small enough `ε` of
-that of an invertible one is invertible. -/
-private theorem exists_pos_forall_isInvertible_jetOperator_add_comp_subtypeL
-    {G₀ : ℝ × ℝ → V × V × V →L[ℝ] V} (hG₀ : MemLp G₀ ∞ stripMeasure)
-    (hD : ((jetOperator stripMeasure G₀).comp (CylinderSobolev.H1 V).subtypeL).IsInvertible) :
-    ∃ ε > 0, ∀ {P : ℝ × ℝ → V × V × V →L[ℝ] V}, MemLp P ∞ stripMeasure → (∀ ζ, ‖P ζ‖ ≤ ε) →
-      ((jetOperator stripMeasure (G₀ + P)).comp (CylinderSobolev.H1 V).subtypeL).IsInvertible := by
-  obtain ⟨e, he⟩ := hD
-  set C := ‖(e.symm : Lp V 2 stripMeasure →L[ℝ] CylinderSobolev.H1 V)‖ with hCdef
-  have hC : 0 ≤ C := by rw [hCdef]; exact ContinuousLinearMap.opNorm_nonneg _
-  refine ⟨1 / (2 * (C + 1)), by positivity, fun {P} hPm hPb ↦ ?_⟩
-  refine isInvertible_of_mul_norm_sub_lt
-    (L := (e : CylinderSobolev.H1 V →L[ℝ] Lp V 2 stripMeasure)) e.surjective (C := C)
-    (fun x ↦ ?_) ?_
-  · simpa using (e.symm : Lp V 2 stripMeasure →L[ℝ] CylinderSobolev.H1 V).le_opNorm (e x)
-  -- The difference with the invertible operator is the operator of `P`, of norm at most `ε`.
-  have hAe : (jetOperator stripMeasure (G₀ + P)).comp (CylinderSobolev.H1 V).subtypeL - e =
-      (jetOperator stripMeasure P).comp (CylinderSobolev.H1 V).subtypeL := by
-    rw [he, jetOperator_add hG₀ hPm, ContinuousLinearMap.add_comp]
-    exact add_sub_cancel_left ((jetOperator stripMeasure G₀).comp (CylinderSobolev.H1 V).subtypeL) _
-  have hnorm : ‖(jetOperator stripMeasure (G₀ + P)).comp (CylinderSobolev.H1 V).subtypeL - e‖ ≤
-      1 / (2 * (C + 1)) := by
-    rw [hAe]
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ ?_
-    rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, ← Submodule.norm_coe x]
-    exact norm_jetOperator_apply_le hPm (ae_of_all _ hPb) _
-  calc C * ‖(jetOperator stripMeasure (G₀ + P)).comp (CylinderSobolev.H1 V).subtypeL - e‖
-      ≤ C * (1 / (2 * (C + 1))) := by gcongr
-    _ < 1 := by rw [mul_one_div, div_lt_one (by positivity)]; linarith
-
 /-- **The local core contribution to a right parametrix of the linearized operator.** Let
 `(J, K_s, K_t)` be Floer data on the pair of pants `S` along a map `u`, with essentially bounded
 coefficient field `M` on conformal jets, and let `z₀` be a point at which the structures
@@ -361,7 +289,8 @@ Then for every end `q` there are a neighbourhood `U` of `z₀` and a bounded ope
 `s ≥ T₁` of the band of the end chart `φ'_q`), the linearized operator `D_u` applied to the
 transfer `β · (Q h ∘ ψ)` along `φ'_q` is the transfer by the `L²` isometry
 `TauCeti.Floer.positiveEndChartLp` of `β(φ'_q) h + K h`, with `K` compact. -/
-theorem exists_mem_nhds_exists_forall_exists_isCompactOperator_jetOperator_endTransfer
+theorem
+    exists_mem_nhds_forall_exists_isCompactOperator_jetOperator_floerConformalJetCoeff_endTransfer
     (ω : SymplecticForm V) (q : Puncture) {J : ℝ × ℝ → V → AlmostComplexStructure V}
     {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
     (hM : MemLp (ω.floerConformalJetCoeff cylindricalWeight
@@ -393,7 +322,8 @@ theorem exists_mem_nhds_exists_forall_exists_isCompactOperator_jetOperator_endTr
   set G₀ := endModelCoeff q (fun _ ↦ J₀) (fun _ ↦ S₀)
   have hG₀ : MemLp G₀ ∞ stripMeasure := memLp_endModelCoeff q continuous_const continuous_const
   -- The frozen end model is invertible, and so is every operator close enough to it.
-  obtain ⟨ε, hε, hinv⟩ := exists_pos_forall_isInvertible_jetOperator_add_comp_subtypeL hG₀ (by
+  obtain ⟨ε, hε, hinv⟩ :=
+    CylinderSobolev.exists_pos_forall_isInvertible_jetOperator_add_comp_subtypeL hG₀ (by
     simpa only [endModelSobolevOperator_def] using
       (isInvertible_endModelSobolevOperator_iff q continuous_const continuous_const).2 hD)
   -- Near `z₀` the structures along `u` are within `ε / 2` of `J₀`.
@@ -419,7 +349,7 @@ theorem exists_mem_nhds_exists_forall_exists_isCompactOperator_jetOperator_endTr
       linarith
     · simp only [P, indicator_of_notMem hζ, norm_zero]
       exact hε.le
-  have hA := hinv hPm hPb
+  have hA := hinv hPm (ae_of_all _ hPb)
   refine ⟨U, Metric.ball_mem_nhds z₀ hr, ContinuousLinearMap.inverse
     ((jetOperator stripMeasure (G₀ + P)).comp (CylinderSobolev.H1 V).subtypeL),
     fun {β B T₀ T₁} hβ hβS hB hβU hβ₀ hdβ ↦ ?_⟩
