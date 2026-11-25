@@ -54,7 +54,10 @@ globular cell onto a side of an arbitrary cell replaces that boundary edge by an
   `changeBottom_vComp`, `changeLeft_hComp` and `changeRight_hComp` move a change of an outer
   edge of a pasting onto the cell carrying that edge, and `vComp_changeBottom_changeTop` and
   `hComp_changeRight_changeLeft` show that changing a shared edge on both sides leaves a
-  pasting unchanged.
+  pasting unchanged. Changes of two different boundaries commute: `changeBottom_changeTop` and
+  `changeRight_changeLeft` for opposite boundaries, and `changeLeft_changeTop`,
+  `changeRight_changeTop`, `changeRight_changeBottom` and `changeLeft_changeBottom` for adjacent
+  ones.
 
 ## References
 
@@ -501,6 +504,79 @@ theorem hComp_changeRight_changeLeft {x y : O} {s : Edge H b x} {t : Edge H d y}
     {n : Edge V x y} (e : D.VerticalIso r r') (α : D.Cell p q l r) (β : D.Cell s t r n) :
     D.hComp (D.changeRight e α) (D.changeLeft e β) = D.hComp α β :=
   D.transpose.vComp_changeBottom_changeTop e α β
+
+/-- Changing the top and the bottom boundary of a cell commute. -/
+theorem changeBottom_changeTop (e : D.HorizontalIso p p') (e' : D.HorizontalIso q q')
+    (α : D.Cell p q l r) :
+    D.changeBottom e' (D.changeTop e α) = D.changeTop e (D.changeBottom e' α) := by
+  simp only [changeTop_def, changeBottom_def, vComp_cast_top, vComp_cast_bottom, vComp_assoc,
+    Cell.cast_cast]
+
+/-- Changing the left and the right boundary of a cell commute. -/
+theorem changeRight_changeLeft (e : D.VerticalIso l l') (e' : D.VerticalIso r r')
+    (α : D.Cell p q l r) :
+    D.changeRight e' (D.changeLeft e α) = D.changeLeft e (D.changeRight e' α) :=
+  D.transpose.changeBottom_changeTop e e' α
+
+/-- Changing the top and the left boundary of a cell commute. -/
+theorem changeLeft_changeTop (e : D.HorizontalIso p p') (e' : D.VerticalIso l l')
+    (α : D.Cell p q l r) :
+    D.changeLeft e' (D.changeTop e α) = D.changeTop e (D.changeLeft e' α) := by
+  rw [changeLeft_def, changeTop_def, changeLeft_def, changeTop_def,
+    ← VerticalGlobular.homEquiv_apply e'.inv]
+  generalize e.inv.cell = σ
+  generalize VerticalGlobular.homEquiv _ _ e'.inv = τ
+  have hσ : (D.hComp (D.vId (edgeId H a)) σ).cast (Category.id_comp (self := H) p')
+      (Category.id_comp (self := H) p) rfl rfl = σ := by
+    simp
+  have hτ : (D.vComp (D.vId (edgeId H a)) τ).cast rfl rfl (Category.id_comp (self := V) l')
+      (Category.id_comp (self := V) l) = τ := by
+    simp
+  conv_lhs => rw [← hτ]
+  conv_rhs => rw [← hσ]
+  rw [hComp_cast_cast, vComp_cast_cast, ← D.interchange, Cell.cast_cast, Cell.cast_cast]
+
+/-- Changing the top and the right boundary of a cell commute. -/
+theorem changeRight_changeTop (e : D.HorizontalIso p p') (e' : D.VerticalIso r r')
+    (α : D.Cell p q l r) :
+    D.changeRight e' (D.changeTop e α) = D.changeTop e (D.changeRight e' α) := by
+  rw [changeRight_def, changeTop_def, changeRight_def, changeTop_def,
+    ← VerticalGlobular.homEquiv_apply e'.hom]
+  generalize e.inv.cell = σ
+  generalize VerticalGlobular.homEquiv _ _ e'.hom = τ
+  have hσ : (D.hComp σ (D.vId (edgeId H b))).cast (Category.comp_id (self := H) p')
+      (Category.comp_id (self := H) p) rfl rfl = σ := by
+    simp
+  have hτ : (D.vComp (D.vId (edgeId H b)) τ).cast rfl rfl (Category.id_comp (self := V) r)
+      (Category.id_comp (self := V) r') = τ := by
+    simp
+  conv_lhs => rw [← hτ]
+  conv_rhs => rw [← hσ]
+  rw [hComp_cast_cast, vComp_cast_cast, ← D.interchange, Cell.cast_cast, Cell.cast_cast]
+
+/-- Changing the bottom and the right boundary of a cell commute. -/
+theorem changeRight_changeBottom (e : D.HorizontalIso q q') (e' : D.VerticalIso r r')
+    (α : D.Cell p q l r) :
+    D.changeRight e' (D.changeBottom e α) = D.changeBottom e (D.changeRight e' α) := by
+  rw [changeRight_def, changeBottom_def, changeRight_def, changeBottom_def,
+    ← VerticalGlobular.homEquiv_apply e'.hom]
+  generalize e.hom.cell = σ
+  generalize VerticalGlobular.homEquiv _ _ e'.hom = τ
+  have hσ : (D.hComp σ (D.vId (edgeId H d))).cast (Category.comp_id (self := H) q)
+      (Category.comp_id (self := H) q') rfl rfl = σ := by
+    simp
+  have hτ : (D.vComp τ (D.vId (edgeId H d))).cast rfl rfl (Category.comp_id (self := V) r)
+      (Category.comp_id (self := V) r') = τ := by
+    simp
+  conv_lhs => rw [← hτ]
+  conv_rhs => rw [← hσ]
+  rw [hComp_cast_cast, vComp_cast_cast, ← D.interchange, Cell.cast_cast, Cell.cast_cast]
+
+/-- Changing the bottom and the left boundary of a cell commute. -/
+theorem changeLeft_changeBottom (e : D.HorizontalIso q q') (e' : D.VerticalIso l l')
+    (α : D.Cell p q l r) :
+    D.changeLeft e' (D.changeBottom e α) = D.changeBottom e (D.changeLeft e' α) :=
+  (D.transpose.changeRight_changeTop e' e α).symm
 
 end BoundaryChange
 

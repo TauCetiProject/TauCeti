@@ -62,6 +62,8 @@ and it contracts to the constant diffeotopy relative to both time ends through m
 * `TauCeti.exists_mem_diffeomorphStabilizer_coe_eq_orderedFlowOf`: every ordered flow
   of complete symplectic fields preserves `σ`.
 * `TauCeti.Diffeotopy.flux_orderedGlobalFlowDiffeotopy`: the flux of an ordered symplectic flow.
+* `TauCeti.Diffeotopy.final_orderedGlobalFlowDiffeotopy_eq_refl_of_flux_eq_zero`: an ordered
+  flow of fields with linearly independent classes and zero flux ends at the identity.
 * `TauCeti.Diffeotopy.exists_homotopy_orderedGlobalFlowDiffeotopy_mem_diffeomorphStabilizer`: an
   ordered symplectic flow with vanishing total times contracts relative to both time ends through
   maps preserving `σ`.
@@ -163,6 +165,27 @@ theorem flux_orderedGlobalFlowDiffeotopy (σ : closedForms I M 2)
       (SmoothForm.final_mem_diffeomorphStabilizer
         (timeSlice_globalFlowDiffeotopyAlong_mem_diffeomorphStabilizer hσ (hY 0) (hc 0) _ _ _)),
       flux_globalFlowDiffeotopyAlong, ih (Y := fun i ↦ Y i.succ) (fun i ↦ hY i.succ)]
+
+/-- **Ordered symplectic flows of zero flux are loops.** For a closed two-form `σ`, complete smooth
+symplectic vector fields `Y i` whose classes `[ι_(Y i) σ]` are linearly independent, and smooth time
+functions `A i` with `A i 0 = 0`, if the ordered flow
+`ψ_t = ψ^(Y 0)_(A 0 t) ∘ ⋯ ∘ ψ^(Y (k-1))_(A (k-1) t)` has zero flux, then every total time `A i 1`
+vanishes, so `ψ₁` is the identity. -/
+theorem final_orderedGlobalFlowDiffeotopy_eq_refl_of_flux_eq_zero (σ : closedForms I M 2)
+    {Y : Fin k → Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯}
+    (hY : ∀ i, Y i ∈ SmoothTwoForm.symplecticVectorFields σ.val)
+    (hc : ∀ i, IsCompleteVectorField (Y i)) (A : Fin k → ℝ → ℝ) (hA : ∀ i, ContDiff ℝ ∞ (A i))
+    (hA₀ : ∀ i, A i 0 = 0)
+    (hli : LinearIndependent ℝ fun i ↦ SmoothTwoForm.interiorClass σ.val ⟨Y i, hY i⟩)
+    (hΦ : (orderedGlobalFlowDiffeotopy le_top (fun i ↦ Y i) (fun i ↦ (Y i).contMDiff) hc A hA
+      hA₀).final ∈ SmoothForm.diffeomorphStabilizer σ.val)
+    (h : (orderedGlobalFlowDiffeotopy le_top (fun i ↦ Y i) (fun i ↦ (Y i).contMDiff) hc A hA
+      hA₀).flux σ hΦ = 0) :
+    (orderedGlobalFlowDiffeotopy le_top (fun i ↦ Y i) (fun i ↦ (Y i).contMDiff) hc A hA
+      hA₀).final = _root_.Diffeomorph.refl I M ∞ :=
+  final_orderedGlobalFlowDiffeotopy_eq_refl le_top _ _ hc A hA hA₀ fun i ↦
+    Fintype.linearIndependent_iff.1 hli _
+      ((flux_orderedGlobalFlowDiffeotopy σ hY hc A hA hA₀ hΦ).symm.trans h) i
 
 /-- **Ordered symplectic flows with vanishing total times contract symplectically.** For a closed
 two-form `σ`, complete smooth symplectic vector fields `Y i` and smooth time functions `A i` with

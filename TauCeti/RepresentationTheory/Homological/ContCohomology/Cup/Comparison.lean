@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ContinuousCohomologyIso
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Cohomology
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 
 /-!
 # The canonical cup product agrees with the explicit low-degree cup products
@@ -110,16 +110,16 @@ theorem cocycle0_cup00 (m : H0 G M) (n : H0 G N) :
 /-- **On cocycles, the explicit `(0,1)` cup product is the Alexander–Whitney product.** -/
 theorem cocycleEquiv1_cup01 (m : H0 G M) (b : Z1 G N) :
     cocycleEquiv1 G P ⟨fun g => μ (m : M) ((b : G → N) g),
-        cup01_mem_Z1 G M N P μ continuous_of_discreteTopology hequiv m b.property⟩ =
+        cup01_mem_Z1 G M N P μ hequiv m continuous_of_discreteTopology b.property⟩ =
       (ofDiscreteModulePairing μ hequiv).cupCocycles 0 1
         (cocycle0 G M m) (cocycleEquiv1 G N b) := by
   apply (homogeneousCochains (ofDiscreteModule ℤ G P)).iCycles_injective (0 + 1)
   -- Read the short-complex inclusions as the inclusions of the homogeneous complexes.
   have e₁ : (homogeneousCochains (ofDiscreteModule ℤ G P)).iCycles (0 + 1)
       (cocycleEquiv1 G P ⟨fun g => μ (m : M) ((b : G → N) g),
-        cup01_mem_Z1 G M N P μ continuous_of_discreteTopology hequiv m b.property⟩) =
+        cup01_mem_Z1 G M N P μ hequiv m continuous_of_discreteTopology b.property⟩) =
       cochainEquiv1 G P ⟨_, Z1_le_C1 G P
-        (cup01_mem_Z1 G M N P μ continuous_of_discreteTopology hequiv m b.property)⟩ :=
+        (cup01_mem_Z1 G M N P μ hequiv m continuous_of_discreteTopology b.property)⟩ :=
     iCycles_cocycleEquiv1 G P _
   have e₁' : (homogeneousCochains (ofDiscreteModule ℤ G N)).iCycles 1 (cocycleEquiv1 G N b) =
       cochainEquiv1 G N ⟨b.val, Z1_le_C1 G N b.property⟩ := iCycles_cocycleEquiv1 G N b
@@ -134,16 +134,16 @@ theorem cocycleEquiv1_cup01 (m : H0 G M) (b : Z1 G N) :
 /-- **On cocycles, the explicit `(1,0)` cup product is the Alexander–Whitney product.** -/
 theorem cocycleEquiv1_cup10 (a : Z1 G M) (n : H0 G N) :
     cocycleEquiv1 G P ⟨fun g => μ ((a : G → M) g) (g • (n : N)),
-        cup10_mem_Z1 G M N P μ continuous_of_discreteTopology hequiv a.property n⟩ =
+        cup10_mem_Z1 G M N P μ hequiv a.property n continuous_of_discreteTopology⟩ =
       (ofDiscreteModulePairing μ hequiv).cupCocycles 1 0
         (cocycleEquiv1 G M a) (cocycle0 G N n) := by
   apply (homogeneousCochains (ofDiscreteModule ℤ G P)).iCycles_injective (1 + 0)
   -- Read the short-complex inclusions as the inclusions of the homogeneous complexes.
   have e₁ : (homogeneousCochains (ofDiscreteModule ℤ G P)).iCycles (1 + 0)
       (cocycleEquiv1 G P ⟨fun g => μ ((a : G → M) g) (g • (n : N)),
-        cup10_mem_Z1 G M N P μ continuous_of_discreteTopology hequiv a.property n⟩) =
+        cup10_mem_Z1 G M N P μ hequiv a.property n continuous_of_discreteTopology⟩) =
       cochainEquiv1 G P ⟨_, Z1_le_C1 G P
-        (cup10_mem_Z1 G M N P μ continuous_of_discreteTopology hequiv a.property n)⟩ :=
+        (cup10_mem_Z1 G M N P μ hequiv a.property n continuous_of_discreteTopology)⟩ :=
     iCycles_cocycleEquiv1 G P _
   have e₁' : (homogeneousCochains (ofDiscreteModule ℤ G M)).iCycles 1 (cocycleEquiv1 G M a) =
       cochainEquiv1 G M ⟨a.val, Z1_le_C1 G M a.property⟩ := iCycles_cocycleEquiv1 G M a
@@ -166,16 +166,16 @@ variable [LocallyCompactSpace G]
 /-- **On cocycles, the explicit `(0,2)` cup product is the Alexander–Whitney product.** -/
 theorem cocycleEquiv2_cup02 (m : H0 G M) (b : Z2 G N) :
     cocycleEquiv2 G P ⟨fun q : G × G => μ (m : M) ((b : G × G → N) q),
-        cup02_mem_Z2 G M N P μ continuous_of_discreteTopology hequiv m b.property⟩ =
+        cup02_mem_Z2 G M N P μ hequiv m continuous_of_discreteTopology b.property⟩ =
       (ofDiscreteModulePairing μ hequiv).cupCocycles 0 2
         (cocycle0 G M m) (cocycleEquiv2 G N b) := by
   apply (homogeneousCochains (ofDiscreteModule ℤ G P)).iCycles_injective (0 + 2)
   -- Read the short-complex inclusions as the inclusions of the homogeneous complexes.
   have e₂ : (homogeneousCochains (ofDiscreteModule ℤ G P)).iCycles (0 + 2)
       (cocycleEquiv2 G P ⟨fun q : G × G => μ (m : M) ((b : G × G → N) q),
-        cup02_mem_Z2 G M N P μ continuous_of_discreteTopology hequiv m b.property⟩) =
+        cup02_mem_Z2 G M N P μ hequiv m continuous_of_discreteTopology b.property⟩) =
       cochainEquiv2 G P ⟨_, Z2_le_C2 G P
-        (cup02_mem_Z2 G M N P μ continuous_of_discreteTopology hequiv m b.property)⟩ :=
+        (cup02_mem_Z2 G M N P μ hequiv m continuous_of_discreteTopology b.property)⟩ :=
     iCycles_cocycleEquiv2 G P _
   have e₂' : (homogeneousCochains (ofDiscreteModule ℤ G N)).iCycles 2 (cocycleEquiv2 G N b) =
       cochainEquiv2 G N ⟨b.val, Z2_le_C2 G N b.property⟩ := iCycles_cocycleEquiv2 G N b
@@ -220,16 +220,16 @@ theorem cocycleEquiv2_cup11 (a : Z1 G M) (b : Z1 G N) :
 /-- **On cocycles, the explicit `(2,0)` cup product is the Alexander–Whitney product.** -/
 theorem cocycleEquiv2_cup20 (a : Z2 G M) (n : H0 G N) :
     cocycleEquiv2 G P ⟨fun q : G × G => μ ((a : G × G → M) q) ((q.1 * q.2) • (n : N)),
-        cup20_mem_Z2 G M N P μ continuous_of_discreteTopology hequiv a.property n⟩ =
+        cup20_mem_Z2 G M N P μ hequiv a.property n continuous_of_discreteTopology⟩ =
       (ofDiscreteModulePairing μ hequiv).cupCocycles 2 0
         (cocycleEquiv2 G M a) (cocycle0 G N n) := by
   apply (homogeneousCochains (ofDiscreteModule ℤ G P)).iCycles_injective (2 + 0)
   -- Read the short-complex inclusions as the inclusions of the homogeneous complexes.
   have e₂ : (homogeneousCochains (ofDiscreteModule ℤ G P)).iCycles (2 + 0)
       (cocycleEquiv2 G P ⟨fun q : G × G => μ ((a : G × G → M) q) ((q.1 * q.2) • (n : N)),
-        cup20_mem_Z2 G M N P μ continuous_of_discreteTopology hequiv a.property n⟩) =
+        cup20_mem_Z2 G M N P μ hequiv a.property n continuous_of_discreteTopology⟩) =
       cochainEquiv2 G P ⟨_, Z2_le_C2 G P
-        (cup20_mem_Z2 G M N P μ continuous_of_discreteTopology hequiv a.property n)⟩ :=
+        (cup20_mem_Z2 G M N P μ hequiv a.property n continuous_of_discreteTopology)⟩ :=
     iCycles_cocycleEquiv2 G P _
   have e₂' : (homogeneousCochains (ofDiscreteModule ℤ G M)).iCycles 2 (cocycleEquiv2 G M a) =
       cochainEquiv2 G M ⟨a.val, Z2_le_C2 G M a.property⟩ := iCycles_cocycleEquiv2 G M a

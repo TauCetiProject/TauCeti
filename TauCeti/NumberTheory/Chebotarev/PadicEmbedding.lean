@@ -75,8 +75,7 @@ theorem Subgroup.eq_top_of_forall_ringHom_padic {L : Type*} [Field L] [NumberFie
     S.finite_toSet.preimage Rat.HeightOneSpectrum.absNorm_asIdeal_injective.injOn
   obtain ⟨𝔭, h𝔭C, h𝔭S⟩ :=
     ((Chebotarev.infinite_frobeniusPrimeSet ℚ L (ConjClasses.mk σ)).sdiff hfin).nonempty
-  have : Fact (Ideal.absNorm 𝔭.asIdeal).Prime :=
-    ⟨by simpa using Rat.HeightOneSpectrum.prime_natGenerator 𝔭⟩
+  have : Fact (Ideal.absNorm 𝔭.asIdeal).Prime := ⟨Rat.HeightOneSpectrum.prime_absNorm_asIdeal 𝔭⟩
   -- The embedding at that prime gives a residue-degree-one prime, so the class meets `H`.
   obtain ⟨φ⟩ := hH _ h𝔭S
   obtain ⟨τ, hτC, hτ⟩ := (Chebotarev.exists_inertiaDeg_eq_iff_of_mem_frobeniusPrimeSet h𝔭C).mp
