@@ -43,6 +43,8 @@ tangent bundle.
   `‖∇ F p‖² - ⟪∇ F p, p⟫²`.
 * `TauCeti.mvfderiv_inner_coe_sphere`, `TauCeti.mvfderiv_coe_mgradient_inner_coe_sphere`,
   `TauCeti.norm_mgradient_inner_coe_sphere_sq`: the height-function specialisations `p ↦ ⟪a, p⟫`.
+* `TauCeti.forall_mvfderiv_inner_coe_sphere_eq_zero_iff`: in positive dimension, the differential
+  of the height function `p ↦ ⟪a, p⟫` vanishes identically only for `a = 0`.
 * `TauCeti.sphereTangentEquiv_symm_eq_sum_mgradient`: `(sphereTangentEquiv x).symm w` expanded as a
   linear combination of round height gradients along any finite orthonormal basis of `E`.
 * `TauCeti.contMDiff_sphereTangentEquiv_symm` and
@@ -142,6 +144,28 @@ theorem norm_mgradient_inner_coe_sphere_sq (a : E) (p : sphere (0 : E) 1) :
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   simpa only [Function.comp_def, coe_innerSL_apply, gradient_inner_const_left] using
     norm_mgradient_comp_coe_sphere_sq (n := n) (p := p) (innerSL ℝ a).differentiableAt
+
+/-- In positive dimension, the differential of the height function `⟪a, ·⟫` vanishes everywhere on
+the sphere only for `a = 0`: at a unit vector orthogonal to `a`, its round gradient has length
+`‖a‖`. -/
+theorem forall_mvfderiv_inner_coe_sphere_eq_zero_iff (hn : n ≠ 0) (a : E) :
+    (∀ x, mvfderiv (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) x = 0) ↔ a = 0 := by
+  refine ⟨fun hd ↦ ?_, fun ha x ↦ ?_⟩
+  · by_contra ha
+    -- A unit vector `x` orthogonal to `a` exists since `dim E ≥ 2`.
+    have hne : (ℝ ∙ a)ᗮ ≠ ⊥ := fun hb ↦ hn <| by
+      rw [← Submodule.finrank_orthogonal_span_singleton (𝕜 := ℝ) (n := n) ha, hb, finrank_bot]
+    obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
+    let x : sphere (0 : E) 1 := ⟨‖w‖⁻¹ • w, by simp [norm_smul, hw0]⟩
+    have hax : inner ℝ a (x : E) = 0 := by
+      rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hw
+      simp [x, real_inner_smul_right, hw]
+    have hx := norm_mgradient_inner_coe_sphere_sq (n := n) a x
+    rw [Manifold.mgradient_eq_zero_iff.2 (hd x), norm_zero, hax] at hx
+    exact ha (by simpa using hx.symm)
+  · subst ha
+    ext v
+    rw [mvfderiv_inner_coe_sphere, inner_zero_left, zero_apply]
 
 /-- Expanding `w ∈ (ℝ ∙ (x : E))ᗮ` in any finite orthonormal basis `b` of `E` expresses its
 corresponding tangent vector `(sphereTangentEquiv x).symm w` as a linear combination of the round
