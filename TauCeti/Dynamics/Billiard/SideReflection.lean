@@ -125,10 +125,9 @@ theorem sideReflection_trans_sideReflection (d e : Circle) :
 /-- Conjugating a reflection by a rotation reflects in the rotated direction. -/
 theorem rotation_trans_sideReflection_trans_rotation (a d : Circle) :
     ((rotation a⁻¹).trans (sideReflection d)).trans (rotation a) = sideReflection (a * d) := by
-  rw [← LinearIsometryEquiv.mul_def, ← LinearIsometryEquiv.mul_def,
-    sideReflection_eq_conjReflection_sq, sideReflection_eq_conjReflection_sq,
-    conjReflection_mul_rotation, rotation_mul_conjReflection, inv_inv, mul_comm (d ^ 2),
-    ← mul_assoc, ← sq, mul_pow]
+  simp only [← LinearIsometryEquiv.mul_def, sideReflection_eq_conjReflection_sq,
+    conjReflection_mul_rotation, rotation_mul_conjReflection, conjReflection_inj, inv_inv]
+  simp [sq, mul_comm, mul_left_comm]
 
 /-- Reflections commute with time reversal `v ↦ -v`. -/
 theorem sideReflection_apply_neg (d : Circle) (z : ℂ) :
