@@ -40,6 +40,8 @@ For `x ∈ 𝔨` the operator `ad x` is skew-adjoint for `B_θ`, and for `x ∈ 
 * `LieEquiv.ad_mem_skewAdjointSubmodule_twistedKillingForm`,
   `LieEquiv.ad_mem_selfAdjointSubmodule_twistedKillingForm`: `ad x` is `B_θ`-skew-adjoint for
   `x ∈ 𝔨` and `B_θ`-self-adjoint for `x ∈ 𝔭`.
+* `LieEquiv.cartanP_conj`: the `-1`-eigenspace of `e ∘ θ ∘ e⁻¹` is the image under `e` of that
+  of `θ`.
 
 ## References
 
@@ -164,5 +166,26 @@ theorem ad_mem_selfAdjointSubmodule_twistedKillingForm {x : L} (hx : x ∈ θ.ca
   intro y z
   simp only [twistedKillingForm_apply, ad_apply, map_lie, hx, neg_lie, map_neg,
     traceForm_apply_lie_apply']
+
+/-! ### Transport along an isomorphism -/
+
+section Conj
+
+variable {L' : Type*} [LieRing L'] [LieAlgebra R L']
+
+variable {e : L ≃ₗ⁅R⁆ L'}
+
+/-- The `-1`-eigenspace of `e ∘ θ ∘ e⁻¹` is the image under `e` of that of `θ`. -/
+@[simp]
+theorem cartanP_conj :
+    (e.conj θ).cartanP = θ.cartanP.map (e.toLinearEquiv : L →ₗ[R] L') := by
+  ext x
+  refine ⟨fun hx ↦ ⟨e.symm x, ?_, by simp⟩, ?_⟩
+  · rw [mem_cartanP, conj_apply] at hx
+    simpa using congrArg e.symm hx
+  · rintro ⟨y, hy, rfl⟩
+    simp [mem_cartanP.mp hy]
+
+end Conj
 
 end LieEquiv
