@@ -20,15 +20,18 @@ import TauCeti.NumberTheory.NumberField.SplitsCompletely.GaloisClosure
 Let `K` be a number field and `Ω` an arbitrary extension of `K`. This file compares
 unramifiedness of an ideal `p` of `𝓞 K` in the finite subextensions of `Ω / K`:
 
+* `IntermediateField.isUnramifiedIn_restrict_iff`: unramifiedness in `L` does not depend on the
+  intermediate field `E ≥ L` in which `L` is viewed;
 * `IntermediateField.isUnramifiedIn_sup_iff`: `p` is unramified in a compositum `L₁ ⊔ L₂` exactly
   when it is unramified in `L₁` and in `L₂`;
 * `IntermediateField.isUnramifiedIn_of_le`: unramifiedness descends to subextensions;
 * `IntermediateField.isUnramifiedIn_bot`: every ideal of `𝓞 K` is unramified in `⊥`.
 
-Invariance under conjugation is `Ideal.isUnramifiedIn_map_iff`. Together these show that the finite
-subextensions of `Ω / K` unramified outside a set of places are closed under composita,
-subextensions and conjugation, and contain `⊥`: this is what the compositum
-`TauCeti.RestrictedRamification.maxUnramifiedOutside` of these subextensions needs.
+Invariance under `K`-embeddings, in particular under conjugation, is
+`Ideal.isUnramifiedIn_map_iff`. Together these show that the finite subextensions of `Ω / K`
+unramified outside a set of places are closed under composita, subextensions and conjugation, and
+contain `⊥`: this is what the compositum `TauCeti.RestrictedRamification.maxUnramifiedOutside` of
+these subextensions needs.
 -/
 
 public section
@@ -43,6 +46,13 @@ namespace IntermediateField
 
 variable {K Ω : Type*} [Field K] [NumberField K] [Field Ω] [Algebra K Ω]
 
+omit [NumberField K] in
+/-- **Unramifiedness does not depend on the ambient field.** For `L ≤ E`, an ideal of `𝓞 K` is
+unramified in `L` viewed as a subextension of `E` exactly when it is unramified in `L`. -/
+theorem isUnramifiedIn_restrict_iff {L E : IntermediateField K Ω} (h : L ≤ E) (p : Ideal (𝓞 K)) :
+    Algebra.IsUnramifiedIn (𝓞 (restrict h)) p ↔ Algebra.IsUnramifiedIn (𝓞 L) p :=
+  ((mapAlgEquiv (restrictAlgEquiv h)).isUnramifiedIn_iff p).symm
+
 /-- Unramifiedness in a compositum, inside a Galois extension `Ω / K`: the three fields are compared
 inside the normal closure of `L₁ ⊔ L₂`, a finite Galois extension of `K`, where unramifiedness is
 read on inertia groups. -/
@@ -55,10 +65,8 @@ private theorem isUnramifiedIn_sup_iff_of_isGalois [IsGalois K Ω] (L₁ L₂ : 
   have h : L₁ ⊔ L₂ ≤ M := le_normalClosure _
   have h₁ : L₁ ≤ M := le_sup_left.trans h
   have h₂ : L₂ ≤ M := le_sup_right.trans h
-  rw [(mapAlgEquiv (restrictAlgEquiv h)).isUnramifiedIn_iff,
-    (mapAlgEquiv (restrictAlgEquiv h₁)).isUnramifiedIn_iff,
-    (mapAlgEquiv (restrictAlgEquiv h₂)).isUnramifiedIn_iff, restrict_sup h₁ h₂,
-    Ideal.isUnramifiedIn_sup_iff]
+  rw [← isUnramifiedIn_restrict_iff h, ← isUnramifiedIn_restrict_iff h₁,
+    ← isUnramifiedIn_restrict_iff h₂, restrict_sup h₁ h₂, Ideal.isUnramifiedIn_sup_iff]
 
 /-- **Unramifiedness in a compositum.** For finite subextensions `L₁` and `L₂` of `Ω / K`, an
 ideal of `𝓞 K` is unramified in `L₁ ⊔ L₂` exactly when it is unramified in `L₁` and in `L₂`. -/
@@ -77,9 +85,10 @@ theorem isUnramifiedIn_sup_iff (L₁ L₂ : IntermediateField K Ω)
     (restrictAlgEquiv h).trans ((restrict h).equivMap ι)
   have : FiniteDimensional K ((restrict h₁).map ι) := (e h₁).toLinearEquiv.finiteDimensional
   have : FiniteDimensional K ((restrict h₂).map ι) := (e h₂).toLinearEquiv.finiteDimensional
-  rw [(mapAlgEquiv (e (le_refl E))).isUnramifiedIn_iff,
-    (mapAlgEquiv (e h₁)).isUnramifiedIn_iff, (mapAlgEquiv (e h₂)).isUnramifiedIn_iff,
-    restrict_sup h₁ h₂,
+  rw [← isUnramifiedIn_restrict_iff (le_refl E), ← isUnramifiedIn_restrict_iff h₁,
+    ← isUnramifiedIn_restrict_iff h₂, ← Ideal.isUnramifiedIn_map_iff p _ ι,
+    ← Ideal.isUnramifiedIn_map_iff p (restrict h₁) ι,
+    ← Ideal.isUnramifiedIn_map_iff p (restrict h₂) ι, restrict_sup h₁ h₂,
     IntermediateField.map_sup, isUnramifiedIn_sup_iff_of_isGalois]
 
 /-- **Unramifiedness descends to subextensions.** For `L ≤ E` with `E` finite over `K`, an ideal of

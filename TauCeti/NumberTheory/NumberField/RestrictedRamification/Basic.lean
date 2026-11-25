@@ -183,16 +183,12 @@ instance isGalois_maxUnramifiedOutside [Normal K Ω] (S : Set (HeightOneSpectrum
   -- conjugation by `Gal(Ω / K)` permutes the finite subextensions unramified outside `S`
   have : Normal K (maxUnramifiedOutside K Ω S) := by
     refine normal_iff_forall_map_le'.2 fun σ ↦ ?_
-    rw [maxUnramifiedOutside_def, IntermediateField.map_iSup]
-    refine iSup_le fun L ↦ ?_
-    rw [IntermediateField.map_iSup]
-    refine iSup_le fun _ ↦ ?_
-    rw [IntermediateField.map_iSup]
-    refine iSup_le fun hL ↦ ?_
+    simp only [maxUnramifiedOutside_def, IntermediateField.map_iSup, iSup_le_iff]
+    intro L _ hL
     have : FiniteDimensional K (L.map (σ : Ω →ₐ[K] Ω)) :=
       (L.equivMap (σ : Ω →ₐ[K] Ω)).toLinearEquiv.finiteDimensional
     exact le_maxUnramifiedOutside fun v hv ↦
-      (Ideal.isUnramifiedIn_map_iff v.asIdeal L σ).2 (hL v hv)
+      (Ideal.isUnramifiedIn_map_iff v.asIdeal L (σ : Ω →ₐ[K] Ω)).2 (hL v hv)
   exact IsGalois.mk
 
 /-- **Hermite's theorem.** For a finite set `S` of finite places of `K` and `n : ℕ`, only finitely
