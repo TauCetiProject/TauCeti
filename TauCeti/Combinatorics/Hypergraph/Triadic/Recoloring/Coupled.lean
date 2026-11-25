@@ -21,37 +21,26 @@ import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Gap
 import TauCeti.Combinatorics.Hypergraph.Polyad.Nontransversal
 import TauCeti.Combinatorics.Hypergraph.Polyad.Perm
 import TauCeti.Combinatorics.Hypergraph.Polyad.Rank
-import TauCeti.Combinatorics.Hypergraph.Triadic.Recoloring.OrbitCoupling
+import TauCeti.Combinatorics.Hypergraph.Triadic.Recoloring.CoarsePassage
 import TauCeti.Data.Finset.Piecewise
 import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.Order.Partition.Equipartition
 
 /-!
-# Coupled triple recoloring over fine polyads
+# Coupled triple recoloring over fine polyads over equitable partitions
 
-Given a coarse triadic complex `C` and a fine palette refinement `D` with small polyad energy gap
-from `C` to `D`, suppose a coloring `H : Colored3Graph κ V` is `(η, 1)`-top-regular over most
-polyads of `D`. This file provides two coupled triple-recoloring theorems producing an `ε`-close
-coloring `H'` that is rank-one top-regular over most polyads of `C`:
-
-1. `TauCeti.Colored3Graph.TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le`:
-   a general version for any pair-color refinement `D` of `C`, building on the orbit-glued coupled
-   recoloring `TauCeti.Colored3Graph.exists_coupled_recoloring_of_polyadEnergy_sub_le`.
-2. `TauCeti.Colored3Graph.exists_recoloring_topRegularOverMostPolyads`: a streamlined version when
-   `C` and `D` share an equitable vertex partition with at least `48 / ε` cells, coupling directly
-   on unordered supports over canonical representatives of distinct-cell `S₃`-orbits via
-   `TauCeti.exists_recoloring_abs_card_filter_sub_mul_card_le`,
-   `TauCeti.two_mul_add_one_mul_exp_lt_of_le_two_pow`, and
-   `Finset.exists_piecewise_of_pairwiseDisjoint`.
-
-Both constructions share the passage from good-child subpolyad discrepancies to coarse subpolyad
-discrepancies, rank-one top regularity over coarse polyads, and fiberwise Markov charging of
-irregular coarse polyads.
+Given a coarse triadic complex `C` with at least `48 / ε` equitable vertex cells and a same-cell
+fine palette refinement `D` with small polyad energy gap from `C` to `D`, suppose a coloring
+`H : Colored3Graph κ V` is `(η, 1)`-top-regular over most polyads of `D`. This file constructs an
+`ε`-close recoloring `H'` that is `(δ₁, 1)`-top-regular over most polyads of `C`, coupling directly
+on unordered supports over canonical representatives of distinct-cell `S₃`-orbits via
+`TauCeti.exists_recoloring_abs_card_filter_sub_mul_card_le`,
+`TauCeti.two_mul_add_one_mul_exp_lt_of_le_two_pow`, and
+`Finset.exists_piecewise_of_pairwiseDisjoint`, and passing regularity from good fine children via
+`TauCeti.Colored3Graph.topRegularOverMostPolyads_of_good_children`.
 
 ## Main results
 
-* `TauCeti.Colored3Graph.TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le`:
-  coupled recoloring from fine rank-one top regularity across a small polyad energy gap.
 * `TauCeti.Colored3Graph.exists_recoloring_topRegularOverMostPolyads`: coupled recoloring from a
   same-cell fine rank-one top-regular refinement with equitable vertex cells.
 
@@ -72,264 +61,6 @@ namespace TauCeti
 namespace Colored3Graph
 
 variable {κ V : Type*} [Fintype V] [DecidableEq V]
-
-section SharedCoarsePassage
-
-variable [DecidableEq κ]
-
-open Classical in
-/-- Aggregating subpolyad discrepancy of `H'` against `H.relativeDensity c P` across good fine
-children of `P`, charging bad fine children trivially by `#Q.support`. -/
-private theorem abs_relDensityOn_sub_coarse_mul_card_le_of_good_children
-    (H H' : Colored3Graph κ V) {C D : TriadicComplex3 V}
-    (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
-    (f : Fin D.pairColorCount → Fin C.pairColorCount)
-    (hf : ∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p))
-    {P : Polyad3 C.skeleton} {Good : Polyad3 D.skeleton → Prop} {τ θ : ℝ} (hτ0 : 0 ≤ τ)
-    (hgood : ∀ Q : Polyad3 D.skeleton, Q.coarsen hV f = P → Good Q →
-      ∀ (c : κ) (S' : Subpolyad3 Q),
-        |((H'.relDensityOn c S'.support : ℝ) - H.relativeDensity c P) * #S'.support| ≤
-          τ * #Q.support)
-    (hbad : ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P ∧ ¬Good Q,
-        (#Q.support : ℝ) ≤ θ * #P.support)
-    (c : κ) (U : Subpolyad3 P) :
-    |((H'.relDensityOn c U.support : ℝ) - H.relativeDensity c P) * #U.support| ≤
-      (τ + θ) * #P.support := by
-  have hmiss (Q : Polyad3 D.skeleton) (hQ : Q.coarsen hV f ≠ P) :
-      U.support ∩ Q.support = ∅ :=
-    disjoint_iff_inter_eq_empty.1 ((Polyad3.pairwise_disjoint_support hQ.symm).mono
-      U.support_subset (Polyad3.support_subset_coarsen hV f hf Q))
-  have hsumP : ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P, (#Q.support : ℝ) =
-      #P.support := by
-    have h := Polyad3.sum_card_support_coarsen hV f hf P
-    rw [← Finset.filter_congr_decidable] at h
-    exact_mod_cast h
-  rw [H'.relDensityOn_sub_mul_card_eq_sum_inter_support D.skeleton c U.support]
-  calc |∑ Q : Polyad3 D.skeleton,
-          ((H'.relDensityOn c (U.support ∩ Q.support) : ℝ) - H.relativeDensity c P) *
-            #(U.support ∩ Q.support)|
-      ≤ ∑ Q : Polyad3 D.skeleton,
-          |((H'.relDensityOn c (U.support ∩ Q.support) : ℝ) - H.relativeDensity c P) *
-            #(U.support ∩ Q.support)| := abs_sum_le_sum_abs _ _
-    _ = ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P,
-          |((H'.relDensityOn c (U.support ∩ Q.support) : ℝ) - H.relativeDensity c P) *
-            #(U.support ∩ Q.support)| := by
-        rw [sum_filter]
-        refine sum_congr rfl fun Q _ ↦ ?_
-        split_ifs with hQ <;> [rfl; simp [hmiss Q hQ]]
-    _ ≤ ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P,
-          (τ * #Q.support + if ¬Good Q then (#Q.support : ℝ) else 0) := by
-        refine sum_le_sum fun Q hQ ↦ ?_
-        by_cases hG : Good Q
-        · simp only [hG, not_true_eq_false, ↓reduceIte, add_zero]
-          simpa only [Subpolyad3.support_restrict] using
-            hgood Q (mem_filter.1 hQ).2 hG c (U.restrict Q)
-        · simp only [hG, not_false_eq_true, ↓reduceIte]
-          have habs : |(H'.relDensityOn c (U.support ∩ Q.support) : ℝ) -
-              H.relativeDensity c P| ≤ 1 :=
-            abs_sub_le_of_nonneg_of_le (mod_cast H'.relDensityOn_nonneg c _)
-              (mod_cast H'.relDensityOn_le_one c _) (mod_cast H.relativeDensity_nonneg c P)
-              (mod_cast H.relativeDensity_le_one c P)
-          have hcard : (#(U.support ∩ Q.support) : ℝ) ≤ #Q.support := by
-            exact_mod_cast card_le_card inter_subset_right
-          rw [abs_mul, Nat.abs_cast]
-          have h1 := mul_le_mul habs hcard (Nat.cast_nonneg _) zero_le_one
-          linarith [mul_nonneg hτ0 (Nat.cast_nonneg (α := ℝ) #Q.support)]
-    _ = τ * #P.support +
-          ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P ∧ ¬Good Q, (#Q.support : ℝ) := by
-        rw [sum_add_distrib, ← mul_sum, hsumP, ← sum_filter, filter_filter]
-    _ ≤ (τ + θ) * #P.support := by linarith
-
-open Classical in
-/-- Rank-one coarse top regularity over `P` from good fine children with subpolyad discrepancy at
-most `τ * #Q.support` and bad-child mass at most `θ * #P.support`, when `2 * (τ + θ) ≤ δ²`. -/
-private theorem isTopRegularOverPolyad_of_good_children
-    (H H' : Colored3Graph κ V) {C D : TriadicComplex3 V}
-    (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
-    (f : Fin D.pairColorCount → Fin C.pairColorCount)
-    (hf : ∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p))
-    {P : Polyad3 C.skeleton} {Good : Polyad3 D.skeleton → Prop} {τ θ δ : ℝ}
-    (hδ : 0 < δ) (hτ0 : 0 ≤ τ) (htol : 2 * (τ + θ) ≤ δ ^ 2)
-    (hgood : ∀ Q : Polyad3 D.skeleton, Q.coarsen hV f = P → Good Q →
-      ∀ (c : κ) (S' : Subpolyad3 Q),
-        |((H'.relDensityOn c S'.support : ℝ) - H.relativeDensity c P) * #S'.support| ≤
-          τ * #Q.support)
-    (hbad : ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P ∧ ¬Good Q,
-        (#Q.support : ℝ) ≤ θ * #P.support) :
-    H'.IsTopRegularOverPolyad P δ 1 := by
-  have hsub := abs_relDensityOn_sub_coarse_mul_card_le_of_good_children H H' hV f hf hτ0 hgood hbad
-  rw [isTopRegularOverPolyad_one_iff]
-  intro c U hU
-  obtain hP0 | hPpos := P.support.eq_empty_or_nonempty
-  · have hU0 : U.support = ∅ := subset_empty.1 (hP0 ▸ U.support_subset)
-    simpa [hU0, H'.relativeDensity_of_support_eq_empty c hP0] using hδ.le
-  · have hUpos : (0 : ℝ) < #U.support := (mul_pos hδ (Nat.cast_pos.2 hPpos.card_pos)).trans_le hU
-    have hUP : (#U.support : ℝ) ≤ #P.support := by exact_mod_cast card_le_card U.support_subset
-    have hU_dev := hsub c U
-    have hP_dev := hsub c (Subpolyad3.ofSubcells P P.c₀ P.c₁ P.c₂)
-    rw [Subpolyad3.support_ofSubcells_cells, ← H'.relativeDensity_def] at hP_dev
-    rw [abs_mul, Nat.abs_cast] at hU_dev hP_dev
-    have hbase : |(H'.relativeDensity c P : ℝ) - H.relativeDensity c P| * #U.support ≤
-        (τ + θ) * #P.support :=
-      (mul_le_mul_of_nonneg_left hUP (abs_nonneg _)).trans hP_dev
-    have hsplit : |(H'.relDensityOn c U.support : ℝ) - H'.relativeDensity c P| ≤
-        |(H'.relDensityOn c U.support : ℝ) - H.relativeDensity c P| +
-          |(H'.relativeDensity c P : ℝ) - H.relativeDensity c P| := by
-      rw [abs_sub_comm (H'.relativeDensity c P : ℝ)]; exact abs_sub_le _ _ _
-    have hmul := mul_le_mul_of_nonneg_right hsplit hUpos.le
-    rw [add_mul] at hmul
-    refine le_of_mul_le_mul_right ?_ hUpos
-    calc |(H'.relDensityOn c U.support : ℝ) - H'.relativeDensity c P| * #U.support
-        ≤ 2 * (τ + θ) * #P.support := by linarith
-      _ ≤ δ ^ 2 * #P.support := by gcongr
-      _ ≤ δ * #U.support := by nlinarith
-
-open Classical in
-/-- Markov charging of irregular coarse polyads over a configurable filter `Keep` of coarse
-polyads: irregular polyads outside `Keep` contribute to `repMass`, while irregular polyads in
-`Keep` are charged to `¬Good` fine children via `θ⁻¹`. -/
-private theorem topRegularOverMostPolyads_of_good_children
-    {H H' : Colored3Graph κ V} {C D : TriadicComplex3 V}
-    (hC : C.IsPolyadDecomposition)
-    (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
-    (f : Fin D.pairColorCount → Fin C.pairColorCount)
-    (hf : ∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p))
-    (Keep : Polyad3 C.skeleton → Prop) (Good : Polyad3 D.skeleton → Prop)
-    {τ θ δ ε' : ℝ} (hδ : 0 < δ) (hτ0 : 0 ≤ τ) (hθ : 0 < θ) (hε' : 0 ≤ ε')
-    (htol : 2 * (τ + θ) ≤ δ ^ 2)
-    (hgood : ∀ (P : Polyad3 C.skeleton) (Q : Polyad3 D.skeleton),
-      Keep P → Q.coarsen hV f = P → Good Q →
-      ∀ (c : κ) (S' : Subpolyad3 Q),
-        |((H'.relDensityOn c S'.support : ℝ) - H.relativeDensity c P) * #S'.support| ≤
-          τ * #Q.support)
-    {repMass badMass : ℝ}
-    (hrep : ∑ P : Polyad3 C.skeleton with ¬Keep P, (#P.support : ℝ) ≤ repMass)
-    (hbad : ∑ Q : Polyad3 D.skeleton with Keep (Q.coarsen hV f) ∧ ¬Good Q,
-        (#Q.support : ℝ) ≤ badMass)
-    (hbudget : 0 < (Fintype.card V).descFactorial 3 →
-      repMass + badMass / θ ≤ ε' * (Fintype.card V).descFactorial 3) :
-    H'.TopRegularOverMostPolyads C δ ε' 1 := by
-  let badChild (P : Polyad3 C.skeleton) : ℝ :=
-    ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P ∧ ¬Good Q, (#Q.support : ℝ)
-  have hcharge (P : Polyad3 C.skeleton) :
-      (if ¬H'.IsTopRegularOverPolyad P δ 1 then (#P.support : ℝ) else 0) ≤
-        (if ¬Keep P then (#P.support : ℝ) else 0) +
-          (if Keep P then badChild P / θ else 0) := by
-    have hbc0 : 0 ≤ badChild P / θ :=
-      div_nonneg (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _) hθ.le
-    by_cases hP : H'.IsTopRegularOverPolyad P δ 1
-    · simp only [hP, not_true_eq_false, ↓reduceIte]
-      split_ifs <;> positivity
-    · simp only [hP, not_false_eq_true, ↓reduceIte]
-      by_cases hK : Keep P
-      · simp only [hK, not_true_eq_false, ↓reduceIte, zero_add]
-        rw [le_div_iff₀ hθ, mul_comm]
-        by_contra! hlt
-        exact hP (isTopRegularOverPolyad_of_good_children H H' hV f hf hδ hτ0 htol
-          (fun Q hQP hGQ ↦ hgood P Q hK hQP hGQ) hlt.le)
-      · simp only [hK, not_false_eq_true, ↓reduceIte, add_zero, le_refl]
-  have hfib : ∑ P : Polyad3 C.skeleton with Keep P, badChild P =
-      ∑ Q : Polyad3 D.skeleton with Keep (Q.coarsen hV f) ∧ ¬Good Q, (#Q.support : ℝ) := by
-    rw [← sum_fiberwise_of_maps_to (g := fun Q : Polyad3 D.skeleton ↦ Q.coarsen hV f)
-      (fun Q hQ ↦ mem_filter.2 ⟨mem_univ _, (mem_filter.1 hQ).2.1⟩)]
-    refine sum_congr rfl fun P hP ↦ sum_congr ?_ fun _ _ ↦ rfl
-    ext Q
-    simp only [mem_filter, mem_univ, true_and]
-    have hKP : Keep P := (mem_filter.1 hP).2
-    exact ⟨by rintro ⟨rfl, hng⟩; exact ⟨⟨hKP, hng⟩, rfl⟩,
-      by rintro ⟨⟨_, hng⟩, rfl⟩; exact ⟨rfl, hng⟩⟩
-  have hsum_irr : ∑ P : Polyad3 C.skeleton with ¬H'.IsTopRegularOverPolyad P δ 1,
-      (#P.support : ℝ) ≤ repMass + badMass / θ := by
-    calc ∑ P : Polyad3 C.skeleton with ¬H'.IsTopRegularOverPolyad P δ 1, (#P.support : ℝ)
-        = ∑ P : Polyad3 C.skeleton,
-            if ¬H'.IsTopRegularOverPolyad P δ 1 then (#P.support : ℝ) else 0 := sum_filter _ _
-      _ ≤ ∑ P : Polyad3 C.skeleton,
-            ((if ¬Keep P then (#P.support : ℝ) else 0) +
-              (if Keep P then badChild P / θ else 0)) := sum_le_sum fun P _ ↦ hcharge P
-      _ = (∑ P : Polyad3 C.skeleton with ¬Keep P, (#P.support : ℝ)) +
-            (∑ P : Polyad3 C.skeleton with Keep P, badChild P) / θ := by
-          rw [sum_add_distrib, ← sum_filter, ← sum_filter, sum_div]
-      _ = (∑ P : Polyad3 C.skeleton with ¬Keep P, (#P.support : ℝ)) +
-            (∑ Q : Polyad3 D.skeleton with Keep (Q.coarsen hV f) ∧ ¬Good Q,
-              (#Q.support : ℝ)) / θ := by rw [hfib]
-      _ ≤ repMass + badMass / θ := add_le_add hrep (div_le_div_of_nonneg_right hbad hθ.le)
-  rw [topRegularOverMostPolyads_iff, exceptionalPolyadMass_eq_sum_div hC]
-  rcases Nat.eq_zero_or_pos ((Fintype.card V).descFactorial 3) with hdesc0 | hdesc
-  · rw [hdesc0, Nat.cast_zero, div_zero]
-    exact hε'
-  · rw [div_le_iff₀ (Nat.cast_pos.2 hdesc)]
-    exact hsum_irr.trans (hbudget hdesc)
-
-end SharedCoarsePassage
-
-section EnergyGapRecoloring
-
-variable [Fintype κ] [DecidableEq κ]
-
-/-- **Coupled triple recoloring across a small polyad energy gap.** Let `D` refine `C` along a
-pair-color projection `f` recovering `C.skeleton.pairColors.color`, with both complexes selecting
-polyad decompositions, and suppose `H` is `(η, 1)`-top-regular over all polyads of `D` outside a
-`μ`-proportion of the injective triples, with polyad energy gap from `C` to `D` at most `g`. For
-`0 ≤ η` and `0 < δ, β, θ`, when `N₀` satisfies the Hoeffding support bound
-`221 (3 |V|² + |κ| + 7) ≤ β² N₀` and `2 (|κ| (η + β) + θ) ≤ δ²`, there is a coloring `H'` within
-edit discrepancy `|κ| (√g + β)` of `H` that is `(δ, 1)`-top-regular over all polyads of `C` outside
-a proportion of the injective triples bounded by
-`(μ + card (Polyad3 D.skeleton) * N₀ / |V|.descFactorial 3) / θ`. -/
-theorem TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le
-    {H : Colored3Graph κ V} {C D : TriadicComplex3 V} {η μ δ β θ N₀ g : ℝ}
-    (h : H.TopRegularOverMostPolyads D η μ 1)
-    (hC : C.IsPolyadDecomposition) (hD : D.IsPolyadDecomposition)
-    (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
-    (f : Fin D.pairColorCount → Fin C.pairColorCount)
-    (hf : ∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p))
-    (hgap : H.polyadEnergy D.skeleton - H.polyadEnergy C.skeleton ≤ g)
-    (hη : 0 ≤ η) (hδ : 0 < δ) (hβ : 0 < β) (hθ : 0 < θ)
-    (hN₀ : 221 * (3 * (Fintype.card V : ℝ) ^ 2 + Fintype.card κ + 7) ≤ β ^ 2 * N₀)
-    (htol : 2 * (Fintype.card κ * (η + β) + θ) ≤ δ ^ 2) :
-    ∃ H' : Colored3Graph κ V,
-      H.Approximates3 H' (Fintype.card κ * (√g + β)) ∧
-      H'.TopRegularOverMostPolyads C δ
-        ((μ + Fintype.card (Polyad3 D.skeleton) * N₀ /
-          (Fintype.card V).descFactorial 3) / θ) 1 := by
-  classical
-  have hN₀_pos : 0 < N₀ :=
-    pos_of_mul_pos_right (lt_of_lt_of_le (by positivity) hN₀) (sq_nonneg β)
-  obtain ⟨H', happrox, hchild⟩ :=
-    exists_coupled_recoloring_of_polyadEnergy_sub_le (H := H) (C := C) (D := D) hV f hf hgap hβ hN₀
-  refine ⟨H', happrox, ?_⟩
-  let Good : Polyad3 D.skeleton → Prop := fun Q ↦
-    N₀ ≤ (#Q.support : ℝ) ∧ H.IsTopRegularOverPolyad Q η 1
-  have hbad : ∑ Q : Polyad3 D.skeleton with True ∧ ¬Good Q, (#Q.support : ℝ) ≤
-      μ * (Fintype.card V).descFactorial 3 + Fintype.card (Polyad3 D.skeleton) * N₀ := by
-    let s₁ := univ.filter fun Q : Polyad3 D.skeleton ↦ ¬N₀ ≤ (#Q.support : ℝ)
-    let s₂ := univ.filter fun Q : Polyad3 D.skeleton ↦ ¬H.IsTopRegularOverPolyad Q η 1
-    have hunion : (univ.filter fun Q : Polyad3 D.skeleton ↦ True ∧ ¬Good Q) = s₁ ∪ s₂ := by
-      ext Q; simp only [Good, s₁, s₂, mem_union, mem_filter, mem_univ, true_and, not_and]
-      tauto
-    have hsmall_sum : ∑ Q ∈ s₁, (#Q.support : ℝ) ≤ Fintype.card (Polyad3 D.skeleton) * N₀ := by
-      calc ∑ Q ∈ s₁, (#Q.support : ℝ)
-          ≤ ∑ _Q ∈ s₁, N₀ := sum_le_sum fun Q hQ ↦ (not_le.1 (mem_filter.1 hQ).2).le
-        _ ≤ ∑ _Q : Polyad3 D.skeleton, N₀ :=
-            sum_le_sum_of_subset_of_nonneg (subset_univ _) fun _ _ _ ↦ hN₀_pos.le
-        _ = Fintype.card (Polyad3 D.skeleton) * N₀ := by rw [sum_const, card_univ, nsmul_eq_mul]
-    have hirr_D : ∑ Q ∈ s₂, (#Q.support : ℝ) ≤ μ * (Fintype.card V).descFactorial 3 := by
-      simpa only [s₂] using h.sum_card_support_univ_le hD
-    have hinter : 0 ≤ ∑ Q ∈ s₁ ∩ s₂, (#Q.support : ℝ) := sum_nonneg fun _ _ ↦ Nat.cast_nonneg _
-    rw [hunion]
-    linarith [sum_union_inter (s₁ := s₁) (s₂ := s₂) (f := fun Q ↦ (#Q.support : ℝ))]
-  have hε' : 0 ≤ (μ + Fintype.card (Polyad3 D.skeleton) * N₀ /
-      (Fintype.card V).descFactorial 3) / θ := by
-    have := h.nonneg; positivity
-  refine topRegularOverMostPolyads_of_good_children (H := H) hC hV f hf (fun _ ↦ True) Good
-    (τ := Fintype.card κ * (η + β)) (repMass := 0)
-    (badMass := μ * (Fintype.card V).descFactorial 3 + Fintype.card (Polyad3 D.skeleton) * N₀)
-    hδ (by positivity) hθ hε' htol (fun P Q _ hQP hGQ c S' ↦ hchild hQP hGQ.1 hGQ.2 c S')
-    (by simp) (by convert hbad) (fun hdesc ↦ ?_)
-  have hdescR : (0 : ℝ) < (Fintype.card V).descFactorial 3 := Nat.cast_pos.2 hdesc
-  rw [zero_add, div_le_iff₀ hθ]
-  exact le_of_eq (by field_simp [hθ.ne', hdescR.ne'])
-
-end EnergyGapRecoloring
 
 section EquipartitionRecoloring
 
@@ -483,10 +214,7 @@ private theorem six_mul_sum_local_budget_le (H : Colored3Graph κ V)
       Fintype.card κ * η * #Q.support
   have htotalD : ∑ Q : Polyad3 D.skeleton, (#Q.support : ℝ) =
       (Fintype.card V).descFactorial 3 := by
-    have hdec :
-        (⟨D.pairColorCount, D.skeleton, univ⟩ : TriadicComplex3 V).IsPolyadDecomposition :=
-      (TriadicComplex3.isPolyadDecomposition_iff_ofTriple_mem _).2 fun _ ↦ mem_univ _
-    exact_mod_cast hdec.sum_card_support
+    exact_mod_cast Polyad3.sum_card_support_eq_descFactorial D.skeleton
   have hΦperm (Q : Polyad3 D.skeleton) (σ : Equiv.Perm (Fin 3)) : Φ (Q.perm σ) = Φ Q := by
     obtain hQ0 | hQne := Q.support.eq_empty_or_nonempty
     · simp [Φ, hQ0]
@@ -580,7 +308,7 @@ private theorem exists_glued_coupled_recoloring (H : Colored3Graph κ V)
 /-- Derive `H.Approximates3 H' ε` from the glued global edit bound and the polyad energy gap. -/
 private theorem approximates3_of_glued_edit_bound (H H' : Colored3Graph κ V)
     {C D : TriadicComplex3 V} (π : Fin D.pairColorCount → Fin C.pairColorCount)
-    {ε η g : ℝ} (hε : 0 < ε) (hV6 : 6 ≤ Fintype.card V)
+    {ε η g : ℝ} (hV6 : 6 ≤ Fintype.card V)
     (hVeq : D.skeleton.vertexPart = C.skeleton.vertexPart)
     (hπ : ∀ p, π (D.skeleton.pairColors.color p) = C.skeleton.pairColors.color p)
     (hgap : H.polyadEnergy D.skeleton - H.polyadEnergy C.skeleton ≤ g)
@@ -607,7 +335,9 @@ private theorem approximates3_of_glued_edit_bound (H H' : Colored3Graph κ V)
     have : (0 : ℝ) < Fintype.card V := by exact_mod_cast hV_pos_nat
     positivity
   have h6 : 6 * ({e | H.color e ≠ H'.color e}.ncard : ℝ) ≤ ε * (Fintype.card V : ℝ) ^ 3 := by
-    have : (0 : ℝ) ≤ (Fintype.card V).descFactorial 3 := Nat.cast_nonneg _
+    have hpow : (Fintype.card V : ℝ) ^ 3 ≤ 2 * (Fintype.card V).descFactorial 3 := by
+      exact_mod_cast Nat.pow_le_two_mul_descFactorial (k := 3) hV6
+    have hdesc_pos : (0 : ℝ) < (Fintype.card V).descFactorial 3 := by linarith
     have h1 : 6 * ({e | H.color e ≠ H'.color e}.ncard : ℝ) ≤
         ε * (Fintype.card V).descFactorial 3 := by
       calc 6 * ({e | H.color e ≠ H'.color e}.ncard : ℝ)
@@ -616,7 +346,9 @@ private theorem approximates3_of_glued_edit_bound (H H' : Colored3Graph κ V)
         _ = ((Fintype.card κ : ℝ) * √g / 2 + (Fintype.card κ : ℝ) * η) *
               (Fintype.card V).descFactorial 3 := by ring
         _ ≤ ε * (Fintype.card V).descFactorial 3 := by gcongr
-    nlinarith
+    have hε0 : 0 ≤ ε :=
+      nonneg_of_mul_nonneg_left ((by positivity : (0 : ℝ) ≤ 6 * _).trans h1) hdesc_pos
+    exact h1.trans (mul_le_mul_of_nonneg_left hdesc_le hε0)
   rw [approximates3_iff, editDiscrepancy3_def]
   push_cast
   rw [Nat.card_eq_fintype_card, div_le_iff₀ hVpos]
@@ -705,7 +437,7 @@ theorem exists_recoloring_topRegularOverMostPolyads
     simpa only [card_univ, hVeq] using hCeq.card_part_le_two_mul_div (hVeq ▸ hA)
   obtain ⟨H', hedit, hdisc⟩ := exists_glued_coupled_recoloring H π hVeq hπ hs1 hη hγ
     hcell_ub hs_req
-  refine ⟨H', approximates3_of_glued_edit_bound H H' π hε hV6 hVeq hπ hgap hη_eps hedit, ?_⟩
+  refine ⟨H', approximates3_of_glued_edit_bound H H' π hV6 hVeq hπ hgap hη_eps hedit, ?_⟩
   have hrep : ∑ P : Polyad3 C.skeleton with ¬P.HasDistinctCells, (#P.support : ℝ) ≤
       (ε / 4) * (Fintype.card V).descFactorial 3 := by
     have hpow : (Fintype.card V : ℝ) ^ 3 ≤ 2 * (Fintype.card V).descFactorial 3 := by

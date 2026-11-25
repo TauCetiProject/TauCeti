@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Triadic.InducedCounting
-public import TauCeti.Combinatorics.Hypergraph.Triadic.Recoloring.Strong
+public import TauCeti.Combinatorics.Hypergraph.Triadic.Recoloring
 public import TauCeti.Combinatorics.Hypergraph.Triadic.RegularityLemma
 import Mathlib.Combinatorics.SimpleGraph.Regularity.Equitabilise
 

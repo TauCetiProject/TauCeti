@@ -23,9 +23,13 @@ the pairwise-collision upper bound on `n ^ (k + 1) - (n)_{k + 1}`;
 `c * k.choose 2 ≤ (c - 1) * n` (including `Nat.pow_le_two_mul_descFactorial`, `n ^ k ≤ 2 * (n)_k`
 whenever `k * (k - 1) ≤ n`); `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`,
 `6 ^ n * n ! ≤ (2 * n + 1)!`, the termwise comparison of the power series of `x * exp (x ^ 2 / 6)`
-and `sinh x`; and `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`,
+and `sinh x`; `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`,
 `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the termwise comparison that sums moment bounds `((n + 1)!)² aⁿ`
-against the series of `cosh`.
+against the series of `cosh`; `Nat.pow_three_le_two_mul_descFactorial_three`,
+`n ^ 3 ≤ 2 * (n)₃` for `6 ≤ n`, comparing the number of triples of `n` elements with the number
+of injective ones; and `Nat.factorial_add_mul_factorial_add_le`,
+`(s + j)! * (s + j)! ≤ (2 * s + j)! * j !`, which bounds products of factorials in double
+hypergeometric series.
 -/
 
 public section
@@ -120,5 +124,26 @@ theorem factorial_succ_sq_le_four_pow_mul_factorial_two_mul (n : ℕ) :
     exact le_of_dvd (factorial_pos _) (factorial_mul_factorial_dvd_factorial_add n n)
   rw [factorial_succ, Nat.mul_pow, Nat.pow_two n !]
   exact Nat.mul_le_mul hn hc
+
+/-- `(s + j)! * (s + j)! ≤ (2 * s + j)! * j !`, with equality at `s = 0`: equivalently,
+`C(s + j, s) ≤ C(2 * s + j, s)`. -/
+theorem factorial_add_mul_factorial_add_le (s j : ℕ) :
+    (s + j)! * (s + j)! ≤ (2 * s + j)! * j ! := by
+  have e₁ := add_choose_mul_factorial_mul_factorial j s
+  have e₂ := add_choose_mul_factorial_mul_factorial (s + j) s
+  have e₃ : (j + s).choose s ≤ (s + j + s).choose s := choose_le_choose s (by omega)
+  rw [Nat.add_comm j s] at e₁ e₃
+  rw [show 2 * s + j = s + j + s by omega]
+  calc (s + j)! * (s + j)! = (s + j).choose s * j ! * s ! * (s + j)! := by rw [e₁]
+    _ ≤ (s + j + s).choose s * j ! * s ! * (s + j)! :=
+        Nat.mul_le_mul_right _ (Nat.mul_le_mul_right _ (Nat.mul_le_mul_right _ e₃))
+    _ = (s + j + s).choose s * (s + j)! * s ! * j ! := by ac_rfl
+    _ = (s + j + s)! * j ! := by rw [e₂]
+
+/-- From `n = 6` on, the cube of `n` is at most twice the third falling factorial:
+`n ^ 3 ≤ 2 * (n)₃`. -/
+theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
+    n ^ 3 ≤ 2 * n.descFactorial 3 :=
+  pow_le_two_mul_descFactorial (k := 3) hn
 
 end Nat

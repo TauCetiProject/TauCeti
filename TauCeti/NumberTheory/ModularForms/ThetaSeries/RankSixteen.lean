@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZLattice.RealModel
-public import TauCeti.NumberTheory.IntegralLattice.EvenUnimodularGenus
+public import TauCeti.NumberTheory.IntegralLattice.EvenUnimodular.Genus
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Eisenstein
 
 /-!

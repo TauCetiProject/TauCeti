@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Data.Matrix.Basic
 import Mathlib.Tactic.FinCases
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Data.Fintype.Card.Embedding
 import TauCeti.Order.Partition.Finpartition
 
 /-!
@@ -20,7 +21,7 @@ role-ordered injective triples in the chosen cells whose coordinate pairs have t
 Thus a polyad carries no independently chosen support. Conversely, an injective triple determines
 the unique polyad `Polyad3.ofTriple` whose support contains it, so the supports of distinct
 polyads are disjoint and split every finite set of injective triples
-(`Polyad3.sum_card_inter_support`).
+(`Polyad3.sum_card_inter_support`, `Polyad3.sum_card_support_eq_descFactorial`).
 
 The three pair supports expose the colored bigraphs whose arbitrary subgraphs form subpolyads.
 Role-indexed accessors `Polyad3.cell`, `Polyad3.colorAt`, and `Polyad3.pairSupportAt` provide a
@@ -421,6 +422,13 @@ theorem sum_card_inter_support [Fintype κ] (s : Finset {x : Fin 3 → V // Func
   ext x
   rw [mem_inter, mem_filter, mem_support_iff_eq_ofTriple, eq_comm]
 
+/-- The supports of all polyads over a lower skeleton contain `|V|.descFactorial 3` injective
+triples in total. -/
+theorem sum_card_support_eq_descFactorial [Fintype κ] (S : PairSkeleton3 κ V) :
+    ∑ P : Polyad3 S, #P.support = (Fintype.card V).descFactorial 3 := by
+  simpa only [univ_inter, card_univ, Fintype.card_subtype_injective, Fintype.card_fin] using
+    sum_card_inter_support (S := S) univ
+
 /-- Summing a function of the polyad of each injective triple over all injective triples gives
 the support-weighted sum of that function over the polyads. -/
 theorem sum_comp_ofTriple [Fintype κ] {M : Type*} [AddCommMonoid M] (φ : Polyad3 S → M) :
@@ -640,6 +648,9 @@ def HasDistinctCells (P : Polyad3 S) : Prop :=
 theorem hasDistinctCells_iff (P : Polyad3 S) :
     P.HasDistinctCells ↔ P.c₀ ≠ P.c₁ ∧ P.c₀ ≠ P.c₂ ∧ P.c₁ ≠ P.c₂ :=
   Iff.rfl
+
+instance instDecidablePredHasDistinctCells : DecidablePred (HasDistinctCells (S := S)) :=
+  fun P ↦ decidable_of_iff (P.c₀ ≠ P.c₁ ∧ P.c₀ ≠ P.c₂ ∧ P.c₁ ≠ P.c₂) (hasDistinctCells_iff P).symm
 
 /-- Having distinct cells is equivalent to `P.cell` being injective. -/
 theorem hasDistinctCells_iff_injective_cell (P : Polyad3 S) :

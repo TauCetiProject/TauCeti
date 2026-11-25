@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Quotient
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Recovering an equivariant space by pulling back its orbit space

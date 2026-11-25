@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Approximation
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Stability
 public import TauCeti.Combinatorics.Hypergraph.Triadic.StrongTopRegularization
+import Mathlib.Combinatorics.SimpleGraph.Regularity.Equitabilise
 import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
@@ -36,7 +37,12 @@ equipartition `P₀`, rounds alternate two steps.
 
 Since the energy lies in `[0, 1]`, a round within the first `⌊2 / g⌋₊ + 1` stops. The numbers of
 vertex cells and pair colors are bounded independently of `V` by `strongTriadicRegularityBound`,
-which is also the size of host required by the regular approximations.
+which is also the size of host required by the regular approximations. Choosing the initial
+equipartition to have `max t₀ 1` cells gives controlled vertex cells at `t₀`
+(`Colored3Graph.exists_strong_lowerSkeletonRegular_topRegularOverMostPolyads`), and transferring top
+regularity across the small energy gap yields the scheduled-rank Rödl–Schacht regularity lemma for
+colored three-graphs
+(`Colored3Graph.exists_lowerSkeletonRegular_topRegularOverMostPolyads_scheduledRank`).
 
 ## Main definitions
 
@@ -49,6 +55,11 @@ which is also the size of host required by the regular approximations.
   complex with an `F`-regular lower skeleton on an equipartition refining `P₀`, and a palette
   refinement with energy gap at most `g` over which `H` is top-regular at the schedules evaluated
   at the coarse complexity.
+* `TauCeti.Colored3Graph.exists_strong_lowerSkeletonRegular_topRegularOverMostPolyads`:
+  simultaneous strong lower-skeleton and top regularization with controlled vertex cells.
+* `TauCeti.Colored3Graph.exists_lowerSkeletonRegular_topRegularOverMostPolyads_scheduledRank`:
+  the Rödl–Schacht regularity lemma for colored three-graphs with controlled vertex cells, an
+  `F`-regular lower skeleton, and scheduled-rank top regularity.
 
 ## References
 
@@ -129,6 +140,37 @@ theorem strongTriadicRegularityBound_def (F : ℕ → ℝ) (g : ℝ) (η μ : �
         (max (pairApproximationBound 1 (g / 24) F l₀) 6) :=
   (rfl)
 
+/-- `strongTriadicRegularityStep` is monotone in its bound argument. -/
+theorem strongTriadicRegularityStep_mono (F : ℕ → ℝ) (g : ℝ) (η μ : ℕ → ℝ) (r : ℕ → ℕ) :
+    Monotone (strongTriadicRegularityStep F g η μ r) := by
+  intro B₁ B₂ hB
+  rw [strongTriadicRegularityStep_def, strongTriadicRegularityStep_def]
+  simp_rw [← partialSups_eq_sup_range]
+  exact (partialSups_mono (fun t ↦ (partialSups _).monotone
+    (strongTopRegularityStep_mono η μ r le_rfl hB)) _).trans ((partialSups _).monotone hB)
+
+/-- `strongTriadicRegularityBound` is at least the requested vertex-cell floor `l₀`. -/
+theorem le_strongTriadicRegularityBound {F : ℕ → ℝ} {g : ℝ} (hg : 0 < g)
+    (hF : ∀ n, 0 < F n) (η μ : ℕ → ℝ) (r : ℕ → ℕ) (l₀ : ℕ) :
+    l₀ ≤ strongTriadicRegularityBound F g η μ r l₀ := by
+  calc l₀
+      ≤ pairApproximationPartsBound 1 (g / 24) F l₀ :=
+        le_pairApproximationPartsBound 1 (by positivity) hF l₀
+    _ ≤ pairApproximationBound 1 (g / 24) F l₀ :=
+        pairApproximationPartsBound_le_pairApproximationBound 1 (by positivity) hF l₀
+    _ ≤ max (pairApproximationBound 1 (g / 24) F l₀) 6 := le_max_left _ _
+    _ ≤ strongTriadicRegularityBound F g η μ r l₀ := by
+        rw [strongTriadicRegularityBound_def]
+        exact le_iterate_strongTriadicRegularityStep F g η μ r _ _
+
+/-- `strongTriadicRegularityBound` is monotone in the starting vertex-cell count `l₀`. -/
+theorem strongTriadicRegularityBound_mono (F : ℕ → ℝ) (g : ℝ) (η μ : ℕ → ℝ) (r : ℕ → ℕ) :
+    Monotone (strongTriadicRegularityBound F g η μ r) := by
+  intro l₁ l₂ hl
+  rw [strongTriadicRegularityBound_def, strongTriadicRegularityBound_def]
+  exact (strongTriadicRegularityStep_mono F g η μ r).iterate _
+    (max_le_max (pairApproximationBound_mono 1 (g / 24) F hl) le_rfl)
+
 namespace Colored3Graph
 
 variable [DecidableEq κ] [Fintype κ] (H : Colored3Graph κ V)
@@ -176,7 +218,7 @@ private theorem exists_regularization (P : Finpartition (univ : Finset V))
   set n := Fintype.card V
   have hN : (0 : ℝ) < n.descFactorial 3 := Nat.cast_pos.2 (Nat.descFactorial_pos.2 (by omega))
   have hcube : (n : ℝ) ^ 3 ≤ 2 * n.descFactorial 3 := by
-    exact_mod_cast Nat.pow_le_two_mul_descFactorial (k := 3) h6
+    exact_mod_cast Nat.pow_three_le_two_mul_descFactorial_three h6
   have hloss : 6 * (#{p | T.color p ≠ some (X.color p)} : ℝ) * n /
       n.descFactorial 3 ≤ g / 2 := by
     rw [div_le_iff₀ hN]
@@ -346,6 +388,80 @@ theorem exists_strong_topRegularOverMostPolyads_lowerSkeletonRegular
   obtain ⟨hCP₀, hCeq, hCreg, hCpol⟩ := hC
   obtain ⟨D, f, hDcard, hDV, hf, hfrev, hDpol, hDreg, hgap⟩ := hgood
   exact ⟨C, D, f, hCt, hCm, hDcard, hCP₀, hCeq, hDV, hCreg, hf, hfrev, hCpol, hDpol, hDreg, hgap⟩
+
+/-- **Simultaneous strong lower-skeleton and top regularization with controlled vertex cells.**
+Let `g > 0`, let `F`, `η`, `μ` be positive schedules, `r` a rank schedule, and `t₀` a vertex-cell
+floor. Once `|V|` is at least `strongTriadicRegularityBound F g η μ r (max t₀ 1)`, there exist
+triadic complexes `C` and `D` (selecting all their polyads) and a reversal-equivariant pair-color
+projection `f` from `D` to `C` such that `C` has controlled vertex cells at `t₀` and an
+`F`-regular lower skeleton, `D` shares the vertex cells of `C` and refines its pair palette along
+`f`, `H` is `(η C.complexity, r C.complexity)`-top-regular over all polyads of `D` outside a
+`μ C.complexity`-proportion of the triples, the polyad energy gap from `C` to `D` is at most `g`,
+and the vertex cells and pair colors of `C` are bounded independently of `V` by
+`strongTriadicRegularityBound F g η μ r (max t₀ 1)`. -/
+theorem exists_strong_lowerSkeletonRegular_topRegularOverMostPolyads
+    {g : ℝ} (hg : 0 < g) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) {η μ : ℕ → ℝ} (hη : ∀ n, 0 < η n)
+    (hμ : ∀ n, 0 < μ n) (r : ℕ → ℕ) (t₀ : ℕ)
+    (hV : strongTriadicRegularityBound F g η μ r (max t₀ 1) ≤ Fintype.card V) :
+    ∃ (C D : TriadicComplex3 V) (f : Fin D.pairColorCount → Fin C.pairColorCount),
+      C.VertexCellsControlled t₀ ∧
+      #C.skeleton.vertexPart.parts ≤ strongTriadicRegularityBound F g η μ r (max t₀ 1) ∧
+      C.pairColorCount ≤ strongTriadicRegularityBound F g η μ r (max t₀ 1) ∧
+      D.pairColorCount ≤ topRegularRefinementBound #C.skeleton.vertexPart.parts (r C.complexity)
+        (η C.complexity) (μ C.complexity) C.pairColorCount ∧
+      C.skeleton.LowerSkeletonRegular F ∧
+      D.skeleton.vertexPart = C.skeleton.vertexPart ∧
+      (∀ p, f (D.skeleton.pairColors.color p) = C.skeleton.pairColors.color p) ∧
+      (∀ c, f (D.skeleton.pairColors.rev c) = C.skeleton.pairColors.rev (f c)) ∧
+      C.polyads = univ ∧ D.polyads = univ ∧
+      H.TopRegularOverMostPolyads D (η C.complexity) (μ C.complexity) (r C.complexity) ∧
+      H.polyadEnergy D.skeleton - H.polyadEnergy C.skeleton ≤ g := by
+  have ht₁_pos : 0 < max t₀ 1 := lt_of_lt_of_le Nat.zero_lt_one (le_max_right t₀ 1)
+  have ht₁_le : max t₀ 1 ≤ #(univ : Finset V) := by
+    rw [card_univ]
+    exact (le_strongTriadicRegularityBound hg hF η μ r (max t₀ 1)).trans hV
+  obtain ⟨P₀, hP₀eq, hP₀card⟩ :=
+    Finpartition.exists_equipartition_card_eq (s := (univ : Finset V)) ht₁_pos.ne' ht₁_le
+  obtain ⟨C, D, f, hCt, hCm, hDcard, hCV, hCeq, hDV, hCreg, hf, hfrev, hCpol, hDpol, hDreg, hgap⟩ :=
+    H.exists_strong_topRegularOverMostPolyads_lowerSkeletonRegular P₀ hP₀eq hg hF hη hμ r
+      (by rwa [hP₀card])
+  rw [hP₀card] at hCt hCm
+  have hcells : C.VertexCellsControlled t₀ :=
+    TriadicComplex3.vertexCellsControlled_iff.2
+      ⟨hCeq, (le_max_left t₀ 1).trans (hP₀card ▸ Finpartition.card_mono hCV)⟩
+  exact ⟨C, D, f, hcells, hCt, hCm, hDcard, hCreg, hDV, hf, hfrev, hCpol, hDpol, hDreg, hgap⟩
+
+omit [Fintype κ] in
+/-- **Rödl–Schacht regularity lemma for colored three-graphs.** Let `δ > 0`, `ε > 0`, let `F` be a
+positive lower-regularity schedule, `r` a rank schedule, and `t₀` a vertex-cell floor. Once `|V|`
+is large enough, there exists a triadic complex `C` selecting all its polyads with controlled
+vertex cells at `t₀`, an `F`-regular lower skeleton, host-independent bounds on its vertex cells
+and pair colors, and such that `H` is `(δ, r C.complexity)`-top-regular over all polyads of `C`
+outside an `ε`-proportion of the injective triples. -/
+theorem exists_lowerSkeletonRegular_topRegularOverMostPolyads_scheduledRank [Finite κ]
+    {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) (r : ℕ → ℕ) (t₀ : ℕ) :
+    let B := strongTriadicRegularityBound F (topRegularEnergyGap (Nat.card κ) δ ε)
+      (fun _ ↦ topRegularFineTolerance δ) (fun _ ↦ topRegularFineProportion δ ε) r (max t₀ 1)
+    B ≤ Fintype.card V →
+    ∃ C : TriadicComplex3 V,
+      C.VertexCellsControlled t₀ ∧
+      #C.skeleton.vertexPart.parts ≤ B ∧
+      C.pairColorCount ≤ B ∧
+      C.skeleton.LowerSkeletonRegular F ∧
+      C.polyads = univ ∧
+      H.TopRegularOverMostPolyads C δ ε (r C.complexity) := by
+  intro B hV
+  have := Fintype.ofFinite κ
+  obtain ⟨C, D, f, hcells, hCt, hCm, -, hCreg, hDV, hf, -, hCpol, hDpol, hDreg, hgap⟩ :=
+    H.exists_strong_lowerSkeletonRegular_topRegularOverMostPolyads
+      (topRegularEnergyGap_pos (Nat.card κ) hδ hε) hF
+      (fun _ ↦ topRegularFineTolerance_pos hδ) (fun _ ↦ topRegularFineProportion_pos hδ hε)
+      r t₀ hV
+  exact ⟨C, hcells, hCt, hCm, hCreg, hCpol,
+    hDreg.of_polyadEnergy_sub_le_topRegularEnergyGap
+      (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
+      (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) hDV.le f
+      (fun p ↦ (hf p).symm) hgap hδ⟩
 
 end Colored3Graph
 

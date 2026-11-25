@@ -32,6 +32,8 @@ system.
 * `TauCeti.NormalizedCubicalChain.leftAct G Y R p q`: the action
   `C^□_p(G; R) ⊗ C^□_q(Y; R) → C^□_{p + q}(Y; R)`.
 * The `Module (normalizedCubicalChainAlgebra G R) (cubicalChainModule Y H R)` instance.
+* `TauCeti.cubicalChainModuleLeftPhantomEquiv G Y H H' R`: the change of phantom monoid, linear
+  over the chains of `G`.
 
 ## Main results
 
@@ -464,6 +466,46 @@ theorem cubicalChainModuleLinearMap_smul [MulAction G Y'] [ContinuousSMul G Y'] 
     cubicalChainModuleLinearMap (G' := H') R f (a • x) = a • cubicalChainModuleLinearMap R f x := by
   rw [cubicalChainModuleLinearMap_smul_map f (ContinuousMap.id G) hf, cubicalChainSumMap_id,
     LinearMap.id_apply]
+
+variable (G Y H H' R) in
+/-- The change of phantom monoid `TauCeti.cubicalChainModulePhantomEquiv`, as an equivalence of
+left modules over the chains of `G`. -/
+def cubicalChainModuleLeftPhantomEquiv :
+    cubicalChainModule Y H R ≃ₗ[normalizedCubicalChainAlgebra G R] cubicalChainModule Y H' R :=
+  { cubicalChainModulePhantomEquiv Y H H' R with
+    map_smul' a x := by
+      rw [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, cubicalChainModulePhantomEquiv_apply,
+        cubicalChainModulePhantomEquiv_apply]
+      exact cubicalChainModuleLinearMap_smul (ContinuousMap.id Y) (fun _ _ ↦ rfl) a x }
+
+/-- The change of phantom monoid over the chains of `G` is the one over `R`. -/
+theorem cubicalChainModuleLeftPhantomEquiv_apply (x : cubicalChainModule Y H R) :
+    cubicalChainModuleLeftPhantomEquiv G Y H H' R x = cubicalChainModulePhantomEquiv Y H H' R x :=
+  (rfl)
+
+/-- The inverse of the change of phantom monoid over the chains of `G` is the change back. -/
+@[simp]
+theorem cubicalChainModuleLeftPhantomEquiv_symm :
+    (cubicalChainModuleLeftPhantomEquiv G Y H H' R).symm =
+      cubicalChainModuleLeftPhantomEquiv G Y H' H R :=
+  LinearEquiv.ext fun x ↦ by
+    rw [LinearEquiv.symm_apply_eq, cubicalChainModuleLeftPhantomEquiv_apply,
+      cubicalChainModuleLeftPhantomEquiv_apply,
+      ← cubicalChainModulePhantomEquiv_symm (G := H) (G' := H'), LinearEquiv.apply_symm_apply]
+
+/-- The change of phantom monoid over the chains of `G` commutes with the differentials. -/
+theorem cubicalChainModuleDifferential_leftPhantomEquiv (x : cubicalChainModule Y H R) :
+    cubicalChainModuleDifferential Y H' R (cubicalChainModuleLeftPhantomEquiv G Y H H' R x) =
+      cubicalChainModuleLeftPhantomEquiv G Y H H' R (cubicalChainModuleDifferential Y H R x) := by
+  rw [cubicalChainModuleLeftPhantomEquiv_apply, cubicalChainModuleLeftPhantomEquiv_apply,
+    cubicalChainModuleDifferential_phantomEquiv]
+
+/-- The change of phantom monoid over the chains of `G` preserves the grading. -/
+theorem cubicalChainModuleLeftPhantomEquiv_mem {i : ℤ} {x : cubicalChainModule Y H R}
+    (hx : x ∈ cubicalChainModuleGrading Y H R i) :
+    cubicalChainModuleLeftPhantomEquiv G Y H H' R x ∈ cubicalChainModuleGrading Y H' R i := by
+  rw [cubicalChainModuleLeftPhantomEquiv_apply]
+  exact cubicalChainModulePhantomEquiv_mem hx
 
 end LeftMap
 

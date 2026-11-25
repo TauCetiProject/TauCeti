@@ -38,7 +38,6 @@ namespace Polyad3
 
 variable {κ V : Type*} [Fintype V] [DecidableEq V]
 
-open Classical in
 /-- Repeated-cell injective triples over an equipartition into `t` nonempty cells carry at most
 `6 * |V|³ / t` triples. -/
 theorem sum_card_support_not_hasDistinctCells_le [Fintype κ] (S : PairSkeleton3 κ V)
