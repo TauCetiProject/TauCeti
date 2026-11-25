@@ -9,9 +9,9 @@ public import TauCeti.Topology.VectorBundle.MayerVietoris.Twisted
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.Topology.VectorBundle.Thom.SignLocalSystem
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
-import TauCeti.AlgebraicTopology.Singular.CompactSupport
 import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 import TauCeti.Topology.Category.TopCat.Limits.Basic
+import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 import TauCeti.Topology.VectorBundle.MayerVietoris.TwistedDirectedUnion
 import TauCeti.Topology.VectorBundle.Thom.RankDegreeHomology
 
@@ -737,15 +737,20 @@ private theorem thomPairTwistedHomologyFinrankInv_restrict (W : Set B) :
 /-- The component isomorphism over a finite union of chosen trivializing open sets, comparing `H₀`
 with the twisted `Hᵣ` diagram object. -/
 private def thomPairFiniteTrivializingUnionComponentIso (s : Finset B) :
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R)).obj
-        (TopCat.of ↥(⋃ b ∈ s, (trivializationAt F E b).baseSet)) ≅
+    (baseFiniteTrivializingUnionDiagram F E ⋙
+        (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R)).obj
+        s ≅
       (TopPair.restrictPreimagePairTwistedHomologyFunctor (X := TopCat.of (TotalSpace F E))
         (zeroSectionCompl F E) (thomPairSignLocalSystem F E R hι) (π F E)
         (monotone_biUnion_baseSet_trivializationAt F E) (finrank ℝ F)).obj s :=
-  @asIso _ _ _ _ (thomPairOverTwistedHomologyFinrankInv F E R hι ω
-      (⋃ b ∈ s, (trivializationAt F E b).baseSet))
-    (isIso_thomPairOverTwistedHomologyFinrankInv_biUnion hι ω s
-      (fun b _ ↦ (trivializationAt F E b).open_baseSet) fun _ _ ↦ ⟨_, inferInstance, subset_rfl⟩) ≪≫
+  eqToIso (congrArg
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R)).obj
+      (baseFiniteTrivializingUnionDiagram_obj F E s)) ≪≫
+    @asIso _ _ _ _ (thomPairOverTwistedHomologyFinrankInv F E R hι ω
+        (⋃ b ∈ s, (trivializationAt F E b).baseSet))
+      (isIso_thomPairOverTwistedHomologyFinrankInv_biUnion hι ω s
+        (fun b _ ↦ (trivializationAt F E b).open_baseSet)
+        fun _ _ ↦ ⟨_, inferInstance, subset_rfl⟩) ≪≫
     (thomPairOver F E (⋃ b ∈ s, (trivializationAt F E b).baseSet)).twistedHomologyCoefficientIso
       (eqToIso (TopPair.pullback_subtypeVal_eq_pullback_restrictPreimagePairMap
         (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E)
@@ -754,16 +759,21 @@ private def thomPairFiniteTrivializingUnionComponentIso (s : Finset B) :
 
 private theorem thomPairFiniteTrivializingUnionComponentIso_hom (s : Finset B) :
     (thomPairFiniteTrivializingUnionComponentIso (F := F) (E := E) (R := R) hι ω s).hom =
-      thomPairOverTwistedHomologyFinrankInv F E R hι ω
-          (⋃ b ∈ s, (trivializationAt F E b).baseSet) ≫
-        (thomPairOver F E (⋃ b ∈ s, (trivializationAt F E b).baseSet)).twistedHomologyCoefficientMap
-          (eqToHom (TopPair.pullback_subtypeVal_eq_pullback_restrictPreimagePairMap
-            (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E)
-            (thomPairSignLocalSystem F E R hι) (π F E)
-            (⋃ b ∈ s, (trivializationAt F E b).baseSet))) (finrank ℝ F) := by
+      eqToHom (congrArg
+          ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj
+            (ModuleCat.of R R)).obj
+          (baseFiniteTrivializingUnionDiagram_obj F E s)) ≫
+        thomPairOverTwistedHomologyFinrankInv F E R hι ω
+            (⋃ b ∈ s, (trivializationAt F E b).baseSet) ≫
+          (thomPairOver F E
+            (⋃ b ∈ s, (trivializationAt F E b).baseSet)).twistedHomologyCoefficientMap
+            (eqToHom (TopPair.pullback_subtypeVal_eq_pullback_restrictPreimagePairMap
+              (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E)
+              (thomPairSignLocalSystem F E R hι) (π F E)
+              (⋃ b ∈ s, (trivializationAt F E b).baseSet))) (finrank ℝ F) := by
   -- `erw`: `(thomPairOver F E _).fst` matches `TopCat.of ↥(π F E ⁻¹' _)` after unfolding.
-  erw [thomPairFiniteTrivializingUnionComponentIso, Iso.trans_hom, asIso_hom,
-    TopPair.twistedHomologyCoefficientIso_hom, eqToIso.hom]
+  erw [thomPairFiniteTrivializingUnionComponentIso, Iso.trans_hom, Iso.trans_hom, eqToIso.hom,
+    asIso_hom, TopPair.twistedHomologyCoefficientIso_hom, eqToIso.hom]
   -- Both sides are identical after reducing the `asIso` and `twistedHomologyCoefficientIso`
   -- components.
   rfl
@@ -772,49 +782,54 @@ private theorem thomPairFiniteTrivializingUnionComponentIso_hom (s : Finset B) :
 gives a natural isomorphism between the `H₀` diagram of the base and the twisted `Hᵣ` diagram of the
 Thom pairs. -/
 private def thomPairFiniteTrivializingUnionNatIso :
-    subsetDiagram (X := TopCat.of B) (monotone_biUnion_baseSet_trivializationAt F E) ⋙
+    baseFiniteTrivializingUnionDiagram F E ⋙
         (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R) ≅
       TopPair.restrictPreimagePairTwistedHomologyFunctor (X := TopCat.of (TotalSpace F E))
         (zeroSectionCompl F E) (thomPairSignLocalSystem F E R hι) (π F E)
         (monotone_biUnion_baseSet_trivializationAt F E) (finrank ℝ F) :=
   NatIso.ofComponents (thomPairFiniteTrivializingUnionComponentIso hι ω) fun {s t} f ↦ by
-    -- `erw`: unfold `subsetDiagram` and `restrictPreimagePairTwistedHomologyFunctor` on morphisms.
-    erw [thomPairFiniteTrivializingUnionComponentIso_hom,
-      thomPairFiniteTrivializingUnionComponentIso_hom, Category.assoc,
+    -- `erw`: unfold `baseFiniteTrivializingUnionDiagram` and
+    -- `restrictPreimagePairTwistedHomologyFunctor` on morphisms.
+    erw [Functor.comp_map, baseFiniteTrivializingUnionDiagram_map, Functor.map_comp,
+      Functor.map_comp, eqToHom_map, eqToHom_map,
+      thomPairFiniteTrivializingUnionComponentIso_hom,
+      thomPairFiniteTrivializingUnionComponentIso_hom, Category.assoc, Category.assoc,
+      eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
       thomPairOverTwistedHomologyFinrankInv_naturality_assoc (E := E) (R := R) hι ω
         (monotone_biUnion_baseSet_trivializationAt F E f.le)]
-    exact congrArg (_ ≫ ·) (thomPairOverTwistedHomologyMap_comp_eqToHom
+    exact congrArg (_ ≫ ·) (congrArg (_ ≫ ·) (thomPairOverTwistedHomologyMap_comp_eqToHom
       (thomPairSignLocalSystem F E R hι)
-      (monotone_biUnion_baseSet_trivializationAt F E f.le) (finrank ℝ F))
-
-private theorem thomPairFiniteTrivializingUnionNatIso_hom_app (s : Finset B) :
-    (thomPairFiniteTrivializingUnionNatIso (F := F) (E := E) (R := R) hι ω).hom.app s =
-      (thomPairFiniteTrivializingUnionComponentIso hι ω s).hom :=
-  NatIso.ofComponents_hom_app _ _ s
+      (monotone_biUnion_baseSet_trivializationAt F E f.le) (finrank ℝ F)))
 
 /-- **The passage to the whole base**: both `H₀(B; R)` and `Hᵣ(E, E₀; π^*o(E))` are the filtered
 colimits of the corresponding groups over finite unions of the chosen trivializing open sets, on
 each of which `thomPairOverTwistedHomologyFinrankInv` is an isomorphism. -/
 private theorem isIso_thomPairTwistedHomologyFinrankInv :
     IsIso (thomPairTwistedHomologyFinrankInv (F := F) (E := E) (R := R) hι ω) := by
-  let c₁ := isColimitMapCoconeSingularHomologySubset (X := TopCat.of B) (ModuleCat.of R R) 0
-    (monotone_biUnion_baseSet_trivializationAt F E) fun _ hL ↦
-      hL.elim_finite_subcover _ (fun b ↦ (trivializationAt F E b).open_baseSet) fun b _ ↦
-        mem_iUnion.2 ⟨b, FiberBundle.mem_baseSet_trivializationAt' b⟩
+  let c₁ := isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion F E (ModuleCat.of R R) 0
   let c₂ := isColimitThomPairFiniteTrivializingUnionTwistedHomologyCocone (F := F) (E := E)
     (thomPairSignLocalSystem F E R hι) (finrank ℝ F)
   let α := thomPairFiniteTrivializingUnionNatIso (F := F) (E := E) (R := R) hι ω
-  have h : thomPairTwistedHomologyFinrankInv (F := F) (E := E) (R := R) hι ω =
+  let hbase := congrArg
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R)).obj
+    (baseFiniteTrivializingUnionCocone_pt F E)
+  have h : eqToHom hbase ≫ thomPairTwistedHomologyFinrankInv (F := F) (E := E) (R := R) hι ω =
       (c₁.coconePointsIsoOfNatIso c₂ α).hom := by
     refine c₁.hom_ext fun s ↦ ?_
     refine Eq.trans ?_ (c₁.comp_coconePointsIsoOfNatIso_hom c₂ α s).symm
+    dsimp only [Functor.mapCocone_ι_app, α, thomPairFiniteTrivializingUnionNatIso,
+      NatIso.ofComponents_hom_app]
     -- `erw`: unfold `c₁.ι`, `c₂.ι`, and `α.hom.app` across `(thomPair F E).fst`.
-    erw [Functor.mapCocone_ι_app, TopPair.restrictPreimagePairTwistedHomologyCocone_ι_app,
-      thomPairFiniteTrivializingUnionNatIso_hom_app,
-      thomPairFiniteTrivializingUnionComponentIso_hom, Category.assoc]
-    exact thomPairTwistedHomologyFinrankInv_restrict hι ω _
-  rw [h]
-  exact Iso.isIso_hom _
+    erw [baseFiniteTrivializingUnionCocone_ι_app, Functor.map_comp, Functor.map_comp,
+      eqToHom_map, eqToHom_map, Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+      Category.id_comp, TopPair.restrictPreimagePairTwistedHomologyCocone_ι_app,
+      thomPairFiniteTrivializingUnionComponentIso_hom, Category.assoc, Category.assoc]
+    exact congrArg (_ ≫ ·) (thomPairTwistedHomologyFinrankInv_restrict hι ω _)
+  have : IsIso (eqToHom hbase ≫
+      thomPairTwistedHomologyFinrankInv (F := F) (E := E) (R := R) hι ω) := by
+    rw [h]
+    exact Iso.isIso_hom _
+  exact IsIso.of_isIso_comp_left (eqToHom hbase) _
 
 variable (F E R) in
 /-- **The homology of the Thom pair in the rank degree with coefficients in the pulled-back
