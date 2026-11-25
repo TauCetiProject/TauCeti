@@ -52,8 +52,8 @@ reflection.
   tangent vector `1`; `TauCeti.norm_mvfderiv_Icc`: so the norm of the differential of a function is
   the absolute value of its value on `1`.
 * `TauCeti.IccZeroAddOne.inner_tangentSpace`, `TauCeti.IccZeroAddOne.norm_tangentSpace`,
-  `TauCeti.IccZeroAddOne.eq_mvfderiv_subtypeVal_smul_one`, `TauCeti.IccZeroAddOne.norm_mvfderiv`:
-  the same statements for the charts in the successor dimension `0 + 1`.
+  `TauCeti.IccZeroAddOne.norm_mvfderiv`: the same statements for the charts in the successor
+  dimension `0 + 1`.
 * `TauCeti.outwardUnitNormal_Icc_bot`, `TauCeti.outwardUnitNormal_Icc_top`: the outward unit
   normal at the two endpoints.
 -/
@@ -221,21 +221,6 @@ theorem mvfderiv_subtypeVal_one (x : Icc a b) :
 `instChartedSpaceIccZeroAddOne`. -/
 theorem norm_one_tangentSpace (x : Icc a b) : ‖(1 : TangentSpace (𝓡∂ (0 + 1)) x)‖ = 1 := by
   simp
-
-/-- The differential of the inclusion of `[a, b]` into `ℝ`, for the charts
-`instChartedSpaceIccZeroAddOne`, is injective at every point. -/
-theorem injective_mvfderiv_subtypeVal (x : Icc a b) :
-    Function.Injective (mvfderiv (𝓡∂ (0 + 1)) (Subtype.val : Icc a b → ℝ) x) :=
-  -- The charts for `𝓡∂ (0 + 1)` and `𝓡∂ 1` and their differentials agree by definition.
-  injective_mvfderiv_subtypeVal_Icc x
-
-/-- Every tangent vector `v` of `[a, b]` for the charts `instChartedSpaceIccZeroAddOne` is the
-multiple `v = ι'(v) • 1` of the unit tangent vector. -/
-theorem eq_mvfderiv_subtypeVal_smul_one (x : Icc a b) (v : TangentSpace (𝓡∂ (0 + 1)) x) :
-    v = mvfderiv (𝓡∂ (0 + 1)) (Subtype.val : Icc a b → ℝ) x v •
-      (1 : TangentSpace (𝓡∂ (0 + 1)) x) :=
-  -- The charts for `𝓡∂ (0 + 1)` and `𝓡∂ 1` and their unit vectors `1` agree by definition.
-  eq_mvfderiv_subtypeVal_smul_one_Icc x v
 
 /-- For the Euclidean metric of `[a, b]` and the charts `instChartedSpaceIccZeroAddOne`, the
 differential of a function at `x` has norm the absolute value of its value on the unit tangent

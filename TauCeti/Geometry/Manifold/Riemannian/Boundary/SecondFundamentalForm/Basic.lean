@@ -339,15 +339,7 @@ end InducedForm
 section DimOne
 
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 + 1)) M]
-
-/-- On a one-dimensional manifold with boundary, every tangent vector of the boundary vanishes:
-the boundary manifold is modelled on `EuclideanSpace ℝ (Fin 0)`. -/
-theorem eq_zero_of_boundaryTangent_of_dim_one {q : (𝓡∂ (0 + 1)).boundary M}
-    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) q) : u = 0 :=
-  -- `TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) q` is `EuclideanSpace ℝ (Fin 0)` by definition.
-  Subsingleton.elim (α := EuclideanSpace ℝ (Fin 0)) u 0
-
-variable [IsManifold (𝓡∂ (0 + 1)) 2 M]
+  [IsManifold (𝓡∂ (0 + 1)) 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (0 + 1)) x)]
   [IsContMDiffRiemannianBundle (𝓡∂ (0 + 1)) 1 (EuclideanSpace ℝ (Fin (0 + 1)))
     (fun x : M ↦ TangentSpace (𝓡∂ (0 + 1)) x)]
