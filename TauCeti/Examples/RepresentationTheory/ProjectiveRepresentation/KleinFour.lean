@@ -96,13 +96,13 @@ private theorem M_mul_smul_self (g : Q) : M k g * ((α k g g : k) • M k g) = 1
 
 /-- The operator `A^i B^j` of `(i, j)` on `k²`. -/
 noncomputable def ρ (g : Q) : (Fin 2 → k) ≃ₗ[k] (Fin 2 → k) :=
-  LinearEquiv.ofLinearMap (toLin' (M k g)) (toLin' ((α k g g : k) • M k g))
-    (by rw [← toLin'_mul, M_mul_smul_self, toLin'_one])
-    (by rw [← toLin'_mul, Matrix.smul_mul, ← Matrix.mul_smul, M_mul_smul_self, toLin'_one])
+  toLin'OfInv (M := (α k g g : k) • M k g) (M' := M k g)
+    (by rw [Matrix.smul_mul, ← Matrix.mul_smul, M_mul_smul_self]) (M_mul_smul_self k g)
 
 /-- `ρ g` acts by the matrix `M g`. -/
 theorem ρ_apply (g : Q) (x : Fin 2 → k) : ρ k g x = M k g *ᵥ x := by
-  simp [ρ]
+  ext i
+  rw [ρ, toLin'OfInv_apply, toLin'_apply]
 
 /-- **`ρ` is a projective representation of `C₂ × C₂` with factor set `α`.** -/
 theorem isProjectiveRep_ρ : IsProjectiveRep (ρ k) (α k) :=
