@@ -286,9 +286,17 @@ theorem mk_dual_toInvertibleSheaf_congr (hI : I.IsEffectiveCartier) (hJ : J.IsEf
   rfl
 
 /-- The line-bundle class of `𝒪_X(n D)` is the `n`-th power of the class of `𝒪_X(D)`. -/
-theorem mk_dual_toInvertibleSheaf_pow (hI : I.IsEffectiveCartier) (n : ℕ) :
-    mk (TauCeti.isEffectiveCartier_pow hI n).toInvertibleSheaf.dual =
-      mk hI.toInvertibleSheaf.dual ^ n := by
-  rw [← inv_mk, ← inv_mk, mk_toInvertibleSheaf_pow hI n, inv_pow]
+theorem mk_dual_toInvertibleSheaf_pow (hI : I.IsEffectiveCartier) (n : ℕ)
+    (hIn : (I ^ n).IsEffectiveCartier := TauCeti.isEffectiveCartier_pow hI n) :
+    mk hIn.toInvertibleSheaf.dual = mk hI.toInvertibleSheaf.dual ^ n := by
+  rw [mk_dual_toInvertibleSheaf_congr hIn (TauCeti.isEffectiveCartier_pow hI n) rfl,
+    ← inv_mk, ← inv_mk, mk_toInvertibleSheaf_pow hI n, inv_pow]
+
+/-- For any effective Cartier proofs on `I ^ n` and `I ^ 1`, `[𝒪_X(n D)] = [𝒪_X(1 D)] ^ n`. -/
+theorem mk_dual_toInvertibleSheaf_pow_eq_pow (hI : I.IsEffectiveCartier) {n : ℕ}
+    (hIn : (I ^ n).IsEffectiveCartier) (hI1 : (I ^ 1).IsEffectiveCartier) :
+    mk hIn.toInvertibleSheaf.dual = mk hI1.toInvertibleSheaf.dual ^ n := by
+  rw [mk_dual_toInvertibleSheaf_pow hI n hIn,
+    mk_dual_toInvertibleSheaf_congr hI1 hI (pow_one I)]
 
 end TauCeti.AlgebraicGeometry.LineBundleClass

@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.Trace.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.OfArrows
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.GraphGrading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # Matrix representations of signless preprojective algebras
@@ -279,6 +280,7 @@ section CyclicClass
 variable [Fintype V] [DecidableRel G.Adj] [Fintype m] [DecidableEq m]
   {W : Type*} [Fintype W] {H : SimpleGraph W} [DecidableRel H.Adj]
 
+omit [Fintype W] [DecidableRel H.Adj] in
 /-- **Nonzero cyclic classes from a matrix representation of a subgraph.** Let `f` be a copy of a
 graph `H` in `G`, not necessarily induced, and let `β` be a family of matrices on `H` satisfying
 the signless relations. If a product of backtracks `c → a → c` at a vertex `c` of `H`
@@ -286,7 +288,7 @@ acts at `c` by a matrix of nonzero trace, then the corresponding product of back
 `f c` is an element of path degree `2 * l.length` of `Π⁺(G)` which does not lie in the commutator
 submodule `[Π⁺(G), Π⁺(G)]`: its class in the cyclic quotient is nonzero. -/
 theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero
-    (f : H.Copy G) (β : W → W → Matrix m m k)
+    [H.LocallyFinite] (f : H.Copy G) (β : W → W → Matrix m m k)
     (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0) {c : W}
     (l : List {a // H.Adj c a})
     (htr : trace (l.map fun a => β a.val c * β c a.val).prod ≠ 0) :
@@ -299,7 +301,7 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trac
       (vertex G (f c))), fun hx => htr ?_⟩
     have htrace := trace_map_eq_zero_of_mem_commutatorSubmodule
       (signlessMatrixRepresentation k (f.extendByZero β)
-        (f.sum_extendByZero_mul_extendByZero β hβ)) hx
+        fun v => f.sum_extendByZero_mul_extendByZero β (mul_zero 0) hβ v) hx
     rw [signlessMatrixRepresentation_vertexIdempotent, trace_kronecker, trace_single_eq_same,
       one_mul] at htrace
     simpa using htrace
@@ -311,8 +313,8 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trac
   rw [List.length_map] at hgrade
   refine ⟨_, hgrade, fun hx => htr ?_⟩
   have htrace := trace_map_eq_zero_of_mem_commutatorSubmodule
-    (signlessMatrixRepresentation k (f.extendByZero β) (f.sum_extendByZero_mul_extendByZero β hβ))
-    hx
+    (signlessMatrixRepresentation k (f.extendByZero β)
+      fun v => f.sum_extendByZero_mul_extendByZero β (mul_zero 0) hβ v) hx
   rw [trace_signlessMatrixRepresentation_list_prod_backtrackElem _ _ l' (by simpa [l'] using hl)]
     at htrace
   have h₁ (a : {a // H.Adj c a}) : H.Adj c a := a.property
@@ -352,7 +354,7 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trac
       (Int.castRingHom k).mapMatrix (β c a.val)) =
       (l.map fun a => β a.val c * β c a.val).map (Int.castRingHom k).mapMatrix := by
     simp only [List.map_map, Function.comp_def, map_mul]
-  rw [hmap, ← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace, htr, map_one]
+  rw [hmap, trace_list_prod_map_mapMatrix, htr, map_one]
   exact one_ne_zero
 
 end CyclicClass

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszColeman.PrModule
 public import TauCeti.NumberTheory.NewtonPolygon.Preparation
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Splitting
+import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Coprime
 import TauCeti.NumberTheory.NewtonPolygon.Factorization
 
 /-!
@@ -40,6 +42,14 @@ inside `M_(≤h)`: the slope-`σ` factor `g` of the pure slope factorisation of 
 its cofactor in `H_u`, and the Riesz–Coleman summand `ker g*(u)` has dimension the multiplicity of
 `σ`.
 
+**Invariant summands.** Conversely, let `u` be upper triangular for a bounded splitting
+`M = F ⊕ N` with `F` finite-dimensional, so that `H_u = Q * S` with `Q = det (1 - T u|_F)`
+and `S` the Fredholm series of the complementary block. If every slope of `Q` is at most `h` and
+`S` has no slopes at most `h`, then `Q = Q_(≤h)` and `S = S_(>h)`. If moreover `u` is invertible
+on `F`, then `F = M_(≤h)`; when `N` is also `u`-stable, the finite-slope projector is the
+projection onto `F` along `N`. Invertibility cannot be dropped: a summand on which `u` is
+nilpotent does not change the Fredholm series.
+
 ## Main results
 
 * `ContinuousLinearMap.IsPrCompact.isMulDistinguished_finsum_newtonSlopeMultiplicity`: over a
@@ -54,6 +64,12 @@ its cofactor in `H_u`, and the Riesz–Coleman summand `ker g*(u)` has dimension
   the cutoff.
 * `ContinuousLinearMap.IsPrCompact.exists_isRieszColemanProjection_pureSlope`: the summand of a
   single slope `σ ≤ h`, of dimension its multiplicity, inside the finite-slope summand at `h`.
+* `ContinuousLinearMap.IsPrCompact.isEntirePreparation_of_split`: a slope-separated invariant
+  finite summand supplies the slope factorisation `H_u = Q_(≤h) * S_(>h)`.
+* `ContinuousLinearMap.IsPrCompact.range_eq_range_of_split`: an invariant finite summand on which
+  `u` is invertible, with slopes at most `h` while the complement has none, is `M_(≤h)`.
+* `ContinuousLinearMap.IsPrCompact.eq_comp_of_split`: for a `u`-stable splitting, the finite-slope
+  projector is the projection onto that summand along its complement.
 
 ## References
 
@@ -93,10 +109,10 @@ theorem IsPrCompact.exists_isRieszColemanProjection_of_isMulDistinguished {u : M
   obtain ⟨Q, S, hQS⟩ := hN.exists_isEntirePreparation hc hu.isEntire_charPowerSeries
     u.constantCoeff_charPowerSeries
   have hcop := hQS.isCoprime hN hc
-  obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection hQS.coeff_zero_eq_one
-    hQS.isUnit_leadingCoeff hQS.isEntire hQS.eq_mul hcop
+  obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection hQS.isUnit_leadingCoeff
+    hQS.isEntire hQS.eq_mul hcop
   refine ⟨Q, S, E, hQS, hE, fun p ↦ ?_⟩
-  rw [hE.rankAtStalk_range_of_isPrCompact hu hQS.coeff_zero_eq_one hQS.isUnit_leadingCoeff
+  rw [hE.rankAtStalk_range_of_isPrCompact hu hQS.isUnit_leadingCoeff
     hQS.isEntire hQS.eq_mul hcop p, hQS.natDegree_eq]
 
 end Ring
@@ -145,8 +161,8 @@ theorem IsPrCompact.exists_isRieszColemanProjection_finiteSlope (hu : u.IsPrComp
   obtain ⟨Q, S, E, hQS, hE, -⟩ := hu.exists_isRieszColemanProjection_of_isMulDistinguished hc hN
   refine ⟨Q, S, E, hQS, hQS.newtonSlopeMultiplicity_left v hb hv hN.toIsDistinguished,
     hQS.newtonSlopeMultiplicity_right v hb hv hN.toIsDistinguished, hE, ?_⟩
-  rw [hE.finrank_range_of_isPrCompact hu hQS.coeff_zero_eq_one hQS.isEntire hQS.eq_mul
-    (hQS.isCoprime hN hc), hQS.natDegree_eq]
+  rw [hE.finrank_range_of_isPrCompact hu hQS.isEntire hQS.eq_mul (hQS.isCoprime hN hc),
+    hQS.natDegree_eq]
 
 /-- **The finite-slope summands increase with the cutoff.** Let `u` be `(Pr)`-compact, let
 `h ≤ h'`, and let `H_u = Q * S` be the normalised entire preparation at `b ^ h` in degree
@@ -196,10 +212,144 @@ theorem IsPrCompact.exists_isRieszColemanProjection_pureSlope (hu : u.IsPrCompac
   have hH : u.charPowerSeries = (g σ : K⟦X⟧) * ((c : K⟦X⟧) * S) := by
     rw [hQS.eq_mul, ← hgcQ, Polynomial.coe_mul, mul_assoc]
   have hcop := hQS.isCoprime_of_isCoprime_mul_eq hN hc hgc hgcQ
-  obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection (hg.coeff_zero σ) hlc hcS hH hcop
+  obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection hlc hcS hH hcop
   refine ⟨g σ, E, hg.coeff_zero σ, hg.newtonSlopes_eq σ, hdeg, ⟨c, hgcQ.symm⟩, hE, ?_,
     fun E' hE' ↦ hE.range_le_range_of_dvd hE' hlc ⟨c, hgcQ.symm⟩⟩
-  rw [hE.finrank_range_of_isPrCompact hu (hg.coeff_zero σ) hcS hH hcop, hdeg]
+  rw [hE.finrank_range_of_isPrCompact hu hcS hH hcop, hdeg]
+
+section Summand
+
+variable {F N : Type*} [NormedAddCommGroup F] [Module K F] [IsBoundedSMul K F]
+  [FiniteDimensional K F] [SeminormedAddCommGroup N] [Module K N]
+
+omit [IsBoundedSMul K M] in
+/-- **A slope-separated invariant summand gives the finite-slope factorisation.** Let `u` be
+`(Pr)`-compact, upper triangular for a bounded splitting `i r + j s = id` through a
+finite-dimensional `F` and a complement `N`, so that `H_u = Q * S` for the finite factor
+`Q = det (1 - T (r u i))` and the complementary Fredholm series `S = det (1 - T (s u j))`. If
+every finite slope of `Q` is at most `h` and `S` has no slopes at most `h`, then this is the
+normalised entire preparation of `H_u` at `b ^ h` in the degree
+`N_h = ∑ᶠ s ∈ Set.Iic h, H_u.newtonSlopeMultiplicity v s`, that is, `Q = Q_(≤h)` and
+`S = S_(>h)`. -/
+theorem IsPrCompact.isEntirePreparation_of_split (hu : u.IsPrCompact) (hF : TauCeti.HasPr K F)
+    (hN : TauCeti.HasPr K N) (i : F →L[K] M) (r : M →L[K] F) (j : N →L[K] M) (s : M →L[K] N)
+    (hsplit : i.comp r + j.comp s = .id K M) (htri : s.comp (u.comp i) = 0) {h : ℝ}
+    (hQ : ∀ σ ∈ (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev.newtonSlopes v, σ ≤ h)
+    (hS : ∀ σ ≤ h, (s.comp (u.comp j)).charPowerSeries.newtonSlopeMultiplicity v σ = 0) :
+    IsEntirePreparation (b ^ h)
+      (∑ᶠ σ ∈ Set.Iic h, u.charPowerSeries.newtonSlopeMultiplicity v σ) u.charPowerSeries
+      (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev
+      (s.comp (u.comp j)).charPowerSeries := by
+  rw [TauCeti.charPowerSeries_eq_projectiveCharpolyRev_mul_of_split hu hF hN i r j s hsplit htri]
+  exact ((hu.comp_clm j hN).clm_comp s hN).isEntire_charPowerSeries
+    |>.isEntirePreparation_finsum_newtonSlopeMultiplicity v hb hv
+      (constantCoeff_charPowerSeries _) (LinearMap.coeff_projectiveCharpolyRev_zero _) hQ hS
+
+omit [IsBoundedSMul K M] in
+/-- Under the hypotheses of `IsPrCompact.isEntirePreparation_of_split`, any normalised entire
+preparation of `H_u` at `b ^ h` in the degree `N_h` has factors `det (1 - T (r u i))` and
+`det (1 - T (s u j))`. -/
+private theorem IsPrCompact.eq_of_split (hu : u.IsPrCompact) (hF : TauCeti.HasPr K F)
+    (hN : TauCeti.HasPr K N) (i : F →L[K] M) (r : M →L[K] F) (j : N →L[K] M) (s : M →L[K] N)
+    (hsplit : i.comp r + j.comp s = .id K M) (htri : s.comp (u.comp i) = 0) {h : ℝ}
+    (hQ : ∀ σ ∈ (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev.newtonSlopes v, σ ≤ h)
+    (hS : ∀ σ ≤ h, (s.comp (u.comp j)).charPowerSeries.newtonSlopeMultiplicity v σ = 0)
+    {Q : K[X]} {S : K⟦X⟧}
+    (hQS : IsEntirePreparation (b ^ h)
+      (∑ᶠ σ ∈ Set.Iic h, u.charPowerSeries.newtonSlopeMultiplicity v σ) u.charPowerSeries Q S) :
+    Q = (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev ∧
+      S = (s.comp (u.comp j)).charPowerSeries :=
+  hQS.unique (hu.isEntirePreparation_of_split v hb hv hF hN i r j s hsplit htri hQ hS)
+    (hu.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv h)
+    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) h)
+
+/-- **An invertible slope-separated invariant summand is the finite-slope part.** Let `u` be
+`(Pr)`-compact, upper triangular for a bounded splitting `i r + j s = id` through a
+finite-dimensional `F` and a complement `N`. Suppose that `u` is invertible on `F`, that every
+finite slope of `Q = det (1 - T (r u i))` is at most `h`, and that the complementary Fredholm series
+`det (1 - T (s u j))` has no slopes at most `h`. Then the finite-slope summand
+`M_(≤h) = ker Q_(≤h)*(u)`, the range of a Riesz–Coleman projection of `u` for the polynomial factor
+of the normalised entire preparation of `H_u` at `b ^ h`, is the image of `F`. Invertibility is
+needed: a summand on which `u` is nilpotent is invisible to the Fredholm series. -/
+theorem IsPrCompact.range_eq_range_of_split (hu : u.IsPrCompact) (hF : TauCeti.HasPr K F)
+    (hN : TauCeti.HasPr K N) (i : F →L[K] M) (r : M →L[K] F) (j : N →L[K] M) (s : M →L[K] N)
+    (hsplit : i.comp r + j.comp s = .id K M) (htri : s.comp (u.comp i) = 0)
+    (hunit : IsUnit (r.comp (u.comp i) : F →ₗ[K] F)) {h : ℝ}
+    (hQ : ∀ σ ∈ (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev.newtonSlopes v, σ ≤ h)
+    (hS : ∀ σ ≤ h, (s.comp (u.comp j)).charPowerSeries.newtonSlopeMultiplicity v σ = 0)
+    {Q : K[X]} {S : K⟦X⟧} {E : M →L[K] M}
+    (hQS : IsEntirePreparation (b ^ h)
+      (∑ᶠ σ ∈ Set.Iic h, u.charPowerSeries.newtonSlopeMultiplicity v σ) u.charPowerSeries Q S)
+    (hE : IsRieszColemanProjection u Q E) :
+    E.range = i.range := by
+  have hc : 0 < b ^ h := Real.rpow_pos_of_pos (zero_lt_one.trans hb) h
+  have hdist := hu.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv h
+  obtain ⟨rfl, rfl⟩ := hu.eq_of_split v hb hv hF hN i r j s hsplit htri hQ hS hQS
+  have hdeg := LinearMap.natDegree_projectiveCharpolyRev_eq_finrank_of_isUnit hunit
+  -- `i` intertwines `r u i` with `u`, and Cayley–Hamilton kills `Q*(r u i)`.
+  have hsemi := semiconj_of_split i r j s hsplit htri
+  have hCH : Polynomial.aeval (r.comp (u.comp i))
+      (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev.reverse = 0 := by
+    refine ContinuousLinearMap.coe_injective ?_
+    rw [toLinearMap_aeval, toLinearMap_zero]
+    exact LinearMap.aeval_reverse_projectiveCharpolyRev_eq_zero_of_rankAtStalk_le fun _ ↦ by
+      rw [Module.rankAtStalk_eq_finrank_of_free, Pi.natCast_apply, Nat.cast_id, hdeg]
+  have hle : i.range ≤ E.range := by
+    rintro _ ⟨x, rfl⟩
+    rw [hE.range_eq_ker, LinearMap.mem_ker, coe_coe, ← hsemi.aeval _ x, hCH, zero_apply,
+      map_zero]
+  have hinj : Function.Injective i := fun x y hxy ↦
+    ((Module.End.isUnit_iff _).mp hunit).injective (by simp [hxy])
+  have : FiniteDimensional K E.range :=
+    hE.finite_range_of_isPrCompact hQS.isUnit_leadingCoeff hu
+  refine (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
+  rw [LinearMap.finrank_range_of_inj hinj, hE.finrank_range_of_isPrCompact hu
+    hQS.isEntire hQS.eq_mul (hQS.isCoprime hdist hc), hdeg]
+
+/-- **The finite-slope projector of a slope-separated invariant splitting.** Let `u` be
+`(Pr)`-compact and block diagonal for a bounded splitting `i r + j s = id` through a
+finite-dimensional `F` and a complement `N`. Suppose that `u` is invertible on `F`, that every
+finite slope of `Q = det (1 - T (r u i))` is at most `h`, and that the complementary Fredholm series
+`det (1 - T (s u j))` has no slopes at most `h`. Then the Riesz–Coleman projection of `u` for the
+polynomial factor of the normalised entire preparation of `H_u` at `b ^ h` is the projection
+`i r` onto `F` along `N`. -/
+theorem IsPrCompact.eq_comp_of_split [ContinuousConstSMul K N] (hu : u.IsPrCompact)
+    (hF : TauCeti.HasPr K F) (hN : TauCeti.HasPr K N)
+    (i : F →L[K] M) (r : M →L[K] F) (j : N →L[K] M) (s : M →L[K] N)
+    (hsplit : i.comp r + j.comp s = .id K M) (htri : s.comp (u.comp i) = 0)
+    (hrj : r.comp (u.comp j) = 0) (hunit : IsUnit (r.comp (u.comp i) : F →ₗ[K] F)) {h : ℝ}
+    (hQ : ∀ σ ∈ (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev.newtonSlopes v, σ ≤ h)
+    (hS : ∀ σ ≤ h, (s.comp (u.comp j)).charPowerSeries.newtonSlopeMultiplicity v σ = 0)
+    {Q : K[X]} {S : K⟦X⟧} {E : M →L[K] M}
+    (hQS : IsEntirePreparation (b ^ h)
+      (∑ᶠ σ ∈ Set.Iic h, u.charPowerSeries.newtonSlopeMultiplicity v σ) u.charPowerSeries Q S)
+    (hE : IsRieszColemanProjection u Q E) :
+    E = i.comp r := by
+  have hrange := hu.range_eq_range_of_split v hb hv hF hN i r j s hsplit htri hunit hQ hS hQS hE
+  have hc : 0 < b ^ h := Real.rpow_pos_of_pos (zero_lt_one.trans hb) h
+  have hdist := hu.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv h
+  obtain ⟨-, rfl⟩ := hu.eq_of_split v hb hv hF hN i r j s hsplit htri hQ hS hQS
+  -- `E` fixes the image of `F`.
+  have hEi (x : F) : E (i x) = i x := by
+    obtain ⟨y, hy⟩ : i x ∈ E.range := hrange ▸ LinearMap.mem_range_self _ x
+    rw [← hy]
+    simpa only [mul_apply_eq_comp, coe_coe] using congr($(hE.isIdempotentElem.eq) y)
+  -- `E` kills the image of `N`: there `j` intertwines `s u j` with `u`, and `Q*(s u j)` is
+  -- invertible because `Q` is coprime to `det (1 - T (s u j))`.
+  have hEj (y : N) : E (j y) = 0 := by
+    have hsemi := semiconj_of_split j s i r ((add_comm _ _).trans hsplit) hrj
+    obtain ⟨w, hw⟩ := ((((hu.comp_clm j hN).clm_comp s hN).isUnit_aeval_reverse_iff
+      hQS.isUnit_leadingCoeff).mpr (hQS.isCoprime hdist hc)).exists_right_inv
+    have hy : j y ∈ LinearMap.ker (E : M →ₗ[K] M) := by
+      rw [← hE.range_aeval_reverse_eq_ker]
+      have hjw := hsemi.aeval Q.reverse (w y)
+      simp only [coe_coe] at hjw
+      exact ⟨j (w y), by rw [coe_coe, ← hjw, ← mul_apply_eq_comp, hw, one_apply_eq_self]⟩
+    simpa only [LinearMap.mem_ker, coe_coe] using hy
+  ext x
+  simpa [hEi, hEj] using (congr(E $(congr($hsplit x)))).symm
+
+end Summand
 
 end Field
 

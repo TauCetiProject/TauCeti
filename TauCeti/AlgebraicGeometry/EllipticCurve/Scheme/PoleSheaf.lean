@@ -15,6 +15,7 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasico
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Prime
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 
 /-!
@@ -56,11 +57,6 @@ namespace WeierstrassCurve
 variable {R : Type u} [CommRing R] (W : WeierstrassCurve R)
 
 /-! ### Twisting sheaves of the projective Weierstrass model -/
-
-/-- The three standard degree-one opens `D₊(X)`, `D₊(Y)`, `D₊(Z)` cover `W.projModel`. -/
-theorem iSup_basicOpen_coord_eq_top :
-    ⨆ i : Fin 3, Proj.basicOpen W.toProjective.grading (W.toProjective.coord i) = ⊤ :=
-  Proj.iSup_basicOpen_eq_top _ _ W.toProjective.irrelevant_le_span_range_coord
 
 private theorem iSup_basicOpen_coord_ulift_eq_top :
     ⨆ i : ULift.{u} (Fin 3),
@@ -224,6 +220,7 @@ private theorem chartι_appLE_awayToSection_coord_two (i : Fin 3)
   let g : Spec (.of (W.toProjective.ChartRing i)) ⟶ U.toScheme :=
     Spec.map φ ≫ (Proj.basicOpenIsoSpec 𝒜 (W.toProjective.coord i)
       (W.toProjective.coord_mem_grading i) one_pos).inv
+  -- `chartι_def` coerces `awayEquivChartRing i` to a ring hom, which is `φ` by definition.
   have hchart : W.chartι i = g ≫ U.ι := by
     rw [W.chartι_def i, ← Proj.basicOpenIsoSpec_inv_ι, Category.assoc]; rfl
   have happ : (W.chartι i).appLE U ⊤ h (Proj.awayToSection 𝒜 (W.toProjective.coord i)
@@ -237,8 +234,9 @@ private theorem chartι_appLE_awayToSection_coord_two (i : Fin 3)
     have hι : U.ι.appLE U ⊤ U.ι_preimage_self.ge = U.topIso.inv := by
       rw [Scheme.Opens.ι_appLE, Scheme.Opens.topIso_inv]
       exact congrArg (Proj 𝒜).presheaf.map (Subsingleton.elim _ _)
-    rw [CommRingCat.comp_apply, hι,
-      show g.appLE ⊤ ⊤ le_top = g.appTop from Scheme.Hom.appLE_eq_app g]
+    -- `g ⁻¹ᵁ ⊤ = ⊤` and `g.app ⊤ = g.appTop` hold by definition.
+    have htop : g.appLE ⊤ ⊤ le_top = g.appTop := Scheme.Hom.appLE_eq_app g
+    rw [CommRingCat.comp_apply, hι, htop]
   rw [happ]; simp only [g, Scheme.Hom.comp_appTop, CommRingCat.comp_apply]
   rw [Proj.basicOpenIsoSpec_inv_appTop_awayToSection 𝒜 (W.toProjective.coord_mem_grading i)
     one_pos (W.zOverCoord i)]
@@ -283,9 +281,14 @@ noncomputable def zeroSectionDivisorPowThreeSheafIso :
 
 /-- Composing `zeroSectionDivisorPowThreeSheafIso.inv` with `(3[0]).sheafι` gives `zMulHom`. -/
 @[simp, reassoc] theorem zeroSectionDivisorPowThreeSheafIso_inv_sheafι :
-    W.zeroSectionDivisorPowThreeSheafIso.inv ≫ (W.zeroSectionDivisor ^ 3).sheafι = W.zMulHom :=
-  (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) (Scheme.IdealSheafData.eqToIso_inv_sheafι
-    W.zeroSectionDivisor_pow_three_eq_imageIdealSheaf)).trans W.zMulHom.imageIdealSheafIso_hom_ι
+    W.zeroSectionDivisorPowThreeSheafIso.inv ≫ (W.zeroSectionDivisor ^ 3).sheafι = W.zMulHom := by
+  have heq : (eqToIso (congrArg Scheme.IdealSheafData.sheaf
+      W.zeroSectionDivisor_pow_three_eq_imageIdealSheaf)).inv ≫
+        (W.zeroSectionDivisor ^ 3).sheafι = W.zMulHom.imageIdealSheaf.sheafι :=
+    (congrArg (· ≫ _) (eqToIso.inv _)).trans
+      (Scheme.IdealSheafData.eqToHom_sheafι W.zeroSectionDivisor_pow_three_eq_imageIdealSheaf.symm)
+  exact (Category.assoc _ _ _).trans <|
+    (congrArg (_ ≫ ·) heq).trans W.zMulHom.imageIdealSheafIso_hom_ι
 
 /-- Composing `zeroSectionDivisorPowThreeSheafIso.hom` with `zMulHom` gives `(3[0]).sheafι`. -/
 @[simp, reassoc] theorem zeroSectionDivisorPowThreeSheafIso_hom_zMulHom :
@@ -323,12 +326,8 @@ theorem poleSheaf_def (n : ℕ) :
 
 /-- In the Picard group of `W.projModel`, `[𝒪(n[0])] = [𝒪([0])] ^ n`. -/
 theorem mk_poleSheaf_eq_pow (n : ℕ) :
-    LineBundleClass.mk (W.poleSheaf n) = LineBundleClass.mk (W.poleSheaf 1) ^ n := by
-  have h₁ := W.isEffectiveCartier_zeroSectionDivisor
-  rw [poleSheaf_def,
-    LineBundleClass.mk_dual_toInvertibleSheaf_congr _ (TauCeti.isEffectiveCartier_pow h₁ n) rfl,
-    LineBundleClass.mk_dual_toInvertibleSheaf_pow h₁ n]
-  congr 1; rw [poleSheaf_def, LineBundleClass.mk_dual_toInvertibleSheaf_congr _ h₁ (pow_one _)]
+    LineBundleClass.mk (W.poleSheaf n) = LineBundleClass.mk (W.poleSheaf 1) ^ n :=
+  LineBundleClass.mk_dual_toInvertibleSheaf_pow_eq_pow W.isEffectiveCartier_zeroSectionDivisor _ _
 
 /-- `𝒪(0[0])` has trivial class in the Picard group of `W.projModel`. -/
 @[simp] theorem mk_poleSheaf_zero : LineBundleClass.mk (W.poleSheaf 0) = 1 := by
@@ -358,9 +357,8 @@ theorem pullback_mk_projModelTwistingSheaf_of_isPullback (n : ℤ) :
     apply inv_injective
     rw [← LineBundleClass.pullback_inv, ← W.mk_toInvertibleSheaf_zeroSectionDivisor_pow_three,
       ← W'.mk_toInvertibleSheaf_zeroSectionDivisor_pow_three]
-    exact (W.isEffectiveCartier_zeroSectionDivisor_pow 3).pullback_mk_toInvertibleSheaf_of_eq_comap
-      (W'.isEffectiveCartier_zeroSectionDivisor_pow 3)
-      (zeroSectionDivisor_pow_eq_comap_of_isPullback hg h0 3)
+    exact hg.pullback_mk_toInvertibleSheaf_ker_pow W.projModelZero_projModelOver
+      W'.projModelZero_projModelOver h0 W.zeroSectionDivisor_def W'.zeroSectionDivisor_def _ _
   rw [W.mk_projModelTwistingSheaf_eq_zpow n, W'.mk_projModelTwistingSheaf_eq_zpow n,
     LineBundleClass.pullback_zpow, h1]
 
@@ -369,9 +367,8 @@ include hg h0 in
 theorem pullback_mk_poleSheaf_of_isPullback (n : ℕ) :
     LineBundleClass.pullback g (LineBundleClass.mk (W.poleSheaf n)) =
       LineBundleClass.mk (W'.poleSheaf n) :=
-  (W.isEffectiveCartier_zeroSectionDivisor_pow n).pullback_mk_dual_toInvertibleSheaf_of_eq_comap
-    (W'.isEffectiveCartier_zeroSectionDivisor_pow n)
-    (zeroSectionDivisor_pow_eq_comap_of_isPullback hg h0 n)
+  hg.pullback_mk_dual_toInvertibleSheaf_ker_pow W.projModelZero_projModelOver
+    W'.projModelZero_projModelOver h0 W.zeroSectionDivisor_def W'.zeroSectionDivisor_def _ _
 
 end BaseChange
 
@@ -388,8 +385,8 @@ theorem pullback_mk_projModelTwistingSheaf_projModelVariableChangeIso_hom
     (C : VariableChange R) (n : ℤ) : LineBundleClass.pullback (W.projModelVariableChangeIso C).hom
       (LineBundleClass.mk (W.projModelTwistingSheaf n)) =
       LineBundleClass.mk ((C • W).projModelTwistingSheaf n) :=
-  pullback_mk_projModelTwistingSheaf_of_isPullback (f := 𝟙 _) (IsPullback.of_horiz_isIso ⟨by simp⟩)
-    (by simp [W.projModelZero_projModelVariableChangeIso_hom]) n
+  pullback_mk_projModelTwistingSheaf_of_isPullback (W.isPullback_projModelVariableChangeIso_hom C)
+    ((W.projModelZero_projModelVariableChangeIso_hom C).trans (Category.id_comp _).symm) n
 
 /-- Under `projModelBaseChange W f`, `𝒪(n[0])` pulls back to `𝒪(n[0])` of `W.map f`. -/
 theorem pullback_mk_poleSheaf_projModelBaseChange {R' : Type u} [CommRing R'] (f : R →+* R')
@@ -402,8 +399,8 @@ theorem pullback_mk_poleSheaf_projModelBaseChange {R' : Type u} [CommRing R'] (f
 theorem pullback_mk_poleSheaf_projModelVariableChangeIso_hom (C : VariableChange R) (n : ℕ) :
     LineBundleClass.pullback (W.projModelVariableChangeIso C).hom
       (LineBundleClass.mk (W.poleSheaf n)) = LineBundleClass.mk ((C • W).poleSheaf n) :=
-  pullback_mk_poleSheaf_of_isPullback (f := 𝟙 _) (IsPullback.of_horiz_isIso ⟨by simp⟩)
-    (by simp [W.projModelZero_projModelVariableChangeIso_hom]) n
+  pullback_mk_poleSheaf_of_isPullback (W.isPullback_projModelVariableChangeIso_hom C)
+    ((W.projModelZero_projModelVariableChangeIso_hom C).trans (Category.id_comp _).symm) n
 
 /-! ### Cubic polarisation `𝒪(3[0]) ≅ 𝒪(1)` and ampleness -/
 
@@ -472,6 +469,12 @@ theorem tensorProductCongrRight_poleSheafThreeIsoProjModelTwistingSheafOne_inv_t
         W.poleSheafThreePairingIso)
   exact congrArg (·.hom) h0
 
+private theorem comp_five_inv_hom_id {C : Type*} [Category C] {X₁ X₂ X₃ X₄ X₅ X₆ X₇ : C}
+    (f₁ : X₁ ⟶ X₂) (f₂ : X₂ ⟶ X₃) (f₃ : X₃ ⟶ X₄) (f₄ : X₄ ⟶ X₅) (f₅ : X₅ ⟶ X₆)
+    (e : X₇ ≅ X₆) :
+    (f₁ ≫ f₂ ≫ f₃ ≫ f₄ ≫ f₅ ≫ e.inv) ≫ e.hom = f₁ ≫ f₂ ≫ f₃ ≫ f₄ ≫ f₅ := by
+  simp
+
 /-- On underlying `𝒪_{W.projModel}`-modules, evaluating the inverse of
 `poleSheafThreeIsoProjModelTwistingSheafOne` against `𝒪(-3[0])` recovers
 `zeroSectionDivisorPowThreeSheafIso` followed by the twisting-sheaf multiplication
@@ -496,16 +499,16 @@ theorem whiskerLeft_poleSheafThreeIsoProjModelTwistingSheafOne_inv_ev :
       (@eqToIso C _ _ _
         (congrArg (Proj.twistingSheaf W.toProjective.grading) (neg_add_cancel 1))).hom ≫
       (Proj.unitIsoTwistingSheafZero W.toProjective.grading).inv := by
-  have hpair : W.poleSheafThreePairingIso.hom.hom = W.poleSheafThreePairingSheafIso.hom := rfl
-  refine (InvertibleSheaf.whiskerLeft_dualIsoOfTensorIsoTrivial_inv_ev
+  -- `Proj.twistingSheaf` uses `ringCatSheaf W.projModel.sheaf` while `.sheaf` uses
+  -- `W.projModel.ringCatSheaf`, so we apply `comp_five_inv_hom_id` rather than `simp` directly.
+  have hpair : W.poleSheafThreePairingIso.hom.hom = W.poleSheafThreePairingSheafIso.hom :=
+    (congrArg (·.hom) (ObjectProperty.isoMk_hom _ W.poleSheafThreePairingSheafIso)).trans
+      (ObjectProperty.homMk_hom _)
+  exact (InvertibleSheaf.whiskerLeft_dualIsoOfTensorIsoTrivial_inv_ev
       W.poleSheafThreePairingIso).trans <|
     congrArg ((InvertibleSheaf.tensorProductObjIso _ _).inv ≫ ·) <|
-      (congrArg (· ≫ _) hpair).trans ?_
-  exact (Category.assoc _ _ _).trans <| congrArg (_ ≫ ·) <| (Category.assoc _ _ _).trans <|
-    congrArg (_ ≫ ·) <| (Category.assoc _ _ _).trans <| congrArg (_ ≫ ·) <|
-      (Category.assoc _ _ _).trans <| congrArg (_ ≫ ·) <| (Category.assoc _ _ _).trans <|
-        (congrArg (_ ≫ ·) (InvertibleSheaf.trivialObjIsoUnit W.projModel).inv_hom_id).trans
-          (Category.comp_id _)
+      (congrArg (· ≫ _) hpair).trans
+        (comp_five_inv_hom_id _ _ _ _ _ (InvertibleSheaf.trivialObjIsoUnit W.projModel))
 
 /-- **`[𝒪(3[0])] = [𝒪(1)]` in the Picard group of `W.projModel`.** -/
 theorem mk_poleSheaf_three :
@@ -529,8 +532,8 @@ theorem isGloballyGenerated_poleSheaf_three_mul (m : ℕ) :
     (W.isGloballyGenerated_projModelTwistingSheaf m)
 
 /-- **Ampleness of the pole sheaves `𝒪(n[0])`.** For every Weierstrass curve `W` over any
-commutative ring `R` and every `n > 0`, the pole sheaf `𝒪(n[0])` is ample on `W.projModel`: its
-cube `𝒪(3n[0])` is isomorphic to the positive twisting sheaf `𝒪(n)`. -/
+commutative ring `R` and every `n > 0`, the pole sheaf `𝒪(n[0])` is ample on `W.projModel` (see
+`mk_poleSheaf_three_mul`). -/
 theorem isAmple_poleSheaf {n : ℕ} (hn : 0 < n) :
     (LineBundleClass.mk (W.poleSheaf n)).IsAmple := by
   have h3 : (LineBundleClass.mk (W.poleSheaf 1) ^ 3).IsAmple := by

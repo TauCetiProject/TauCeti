@@ -26,10 +26,11 @@ For `c > 0` and every complex `a`, the integral
 
 converges absolutely, since `e^{-c/s}` vanishes to infinite order at `s = 0`. Classically
 `Q_a(c) = 2 c^{a/2} K_a(2 √c)` with the modified Bessel function `K_a` of the second kind
-(Macdonald's function; DLMF 10.32.10), which neither Mathlib nor Tau Ceti defines; this file
-works with the integral itself. As the multiplicative convolution of `s ↦ s^a e^{-s}` with
-`s ↦ e^{-s}`, its Mellin transform in `c` is a product of two Gamma functions (the integral form
-of DLMF 10.43.19):
+(Macdonald's function; DLMF 10.32.10). This file works with the integral itself; `K_a` on the
+positive axis is `Complex.positiveAxisBesselK`, built on this file in
+`TauCeti/Analysis/SpecialFunctions/Bessel/PositiveAxisK.lean`. As the multiplicative
+convolution of `s ↦ s^a e^{-s}` with `s ↦ e^{-s}`, its Mellin transform in `c` is a product of
+two Gamma functions (the integral form of DLMF 10.43.19):
 
 `∫₀^∞ c^{t - 1} Q_a(c) dc = Γ(t) Γ(t + a)`   for `Re t > 0`, `Re (t + a) > 0`.
 
@@ -65,8 +66,13 @@ at `p = 1 / (n + 2)` and `ζ = 2p z^{(n + 2)/2}`. That representation is not pro
   `Γ(t) Γ(t + a)`.
 * `Complex.mellinInv_Gamma_mul_Gamma_add`: the Mellin–Barnes integral of `Q_a`.
 * `Complex.integral_exp_neg_mul_cosh_mul_cosh_Ioi`: Schläfli's integral as a Macdonald integral.
-* `Complex.integrable_exp_mul_mul_exp_neg_mul_cosh`: `e^{p u} e^{-ζ cosh u}` is integrable on the
-  line for `Re ζ > 0`.
+* `Complex.mellinConvergent_exp_neg_mul_add_inv` and `Complex.mellin_exp_neg_mul_add_inv`: the
+  Mellin transform of `x ↦ e^{-(ζ / 2)(x + x⁻¹)}` converges everywhere for `ζ > 0`, and is
+  `∫_ℝ e^{-p u} e^{-ζ cosh u} du` in logarithmic coordinates.
+* `Complex.integrable_exp_mul_mul_exp_neg_mul_cosh` and
+  `Real.integrable_exp_mul_mul_exp_neg_mul_cosh`: `e^{p u} e^{-ζ cosh u}` is integrable on the
+  line for `Re ζ > 0`, and `Complex.integral_exp_mul_mul_exp_neg_mul_cosh` folds its integral
+  onto the half-line as `2 ∫₀^∞ e^{-ζ cosh u} cosh (p u) du`.
 * `Complex.integrable_exp_neg_mul_cosh_mul_cosh` and
   `Complex.differentiableOn_integral_exp_neg_mul_cosh_mul_cosh_Ioi`: Schläfli's integrand is
   integrable on the line, and Schläfli's integral is holomorphic in `ζ` on the right half-plane.
@@ -142,11 +148,11 @@ theorem hasMellin_integral_cpow_mul_exp_neg_add_div_Ioi {a t : ℂ} (ht : 0 < t.
   have hf : MellinConvergent (fun s : ℝ ↦ (s : ℂ) ^ a • (Real.exp (-s) : ℂ)) t :=
     MellinConvergent.cpow_smul.mpr <|
       (GammaIntegral_convergent hta).congr_fun (fun _ _ ↦ mul_comm _ _) measurableSet_Ioi
-  have h := TauCeti.hasMellin_integral_mul_div hf (TauCeti.hasMellin_exp_neg ht).1
+  have h := TauCeti.hasMellin_mellinConv hf (TauCeti.hasMellin_exp_neg ht).1
   rw [mellin_cpow_smul, (TauCeti.hasMellin_exp_neg hta).2, (TauCeti.hasMellin_exp_neg ht).2,
     mul_comm] at h
-  refine (TauCeti.hasMellin_congr fun c _ ↦ setIntegral_congr_fun measurableSet_Ioi
-    fun s (hs : 0 < s) ↦ ?_).mp h
+  refine (TauCeti.hasMellin_congr fun c _ ↦ (TauCeti.mellinConv_def _ _ c).trans <|
+    setIntegral_congr_fun measurableSet_Ioi fun s (hs : 0 < s) ↦ ?_).mp h
   rw [smul_eq_mul, cpow_sub _ _ (ofReal_ne_zero.mpr hs.ne'), cpow_one, neg_add, Real.exp_add]
   push_cast
   ring
@@ -185,7 +191,7 @@ private lemma integrand_eq_comp_mul_left {ζ : ℝ} (hζ : 0 < ζ) (p : ℂ) :
   ring
 
 /-- The Mellin transform of `x ↦ e^{-(ζ / 2)(x + x⁻¹)}` converges at every `p` for `ζ > 0`. -/
-private lemma mellinConvergent_exp_neg_mul_add_inv {ζ : ℝ} (hζ : 0 < ζ) (p : ℂ) :
+theorem mellinConvergent_exp_neg_mul_add_inv {ζ : ℝ} (hζ : 0 < ζ) (p : ℂ) :
     MellinConvergent (fun x : ℝ ↦ ((Real.exp (-(ζ / 2 * (x + x⁻¹))) : ℝ) : ℂ)) p :=
   (MellinConvergent.comp_mul_left (div_pos two_pos hζ)).mp
     ((integrableOn_cpow_mul_exp_neg_add_div_Ioi p (c := ζ ^ 2 / 4) (by positivity)).congr_fun
@@ -198,6 +204,13 @@ private lemma exp_neg_mul_add_inv_exp_neg (ζ u : ℝ) :
   rw [Real.cosh_eq, ← Real.exp_neg, neg_neg, ofReal_exp]
   push_cast
   ring_nf
+
+/-- In logarithmic coordinates, the Mellin transform of `x ↦ e^{-(ζ / 2)(x + x⁻¹)}` at `p` is
+`∫_ℝ e^{-p u} e^{-ζ cosh u} du`, for every real `ζ` and complex `p`. -/
+theorem mellin_exp_neg_mul_add_inv (ζ : ℝ) (p : ℂ) :
+    mellin (fun x : ℝ ↦ ((Real.exp (-(ζ / 2 * (x + x⁻¹))) : ℝ) : ℂ)) p =
+      ∫ u : ℝ, cexp (-p * u) * cexp (-((ζ : ℂ) * Real.cosh u)) := by
+  simp only [TauCeti.mellin_eq_integral_exp_smul, exp_neg_mul_add_inv_exp_neg, smul_eq_mul]
 
 /-- The real-`ζ` case of `integrable_exp_mul_mul_exp_neg_mul_cosh`, from the convergence of the
 Mellin transform of `x ↦ e^{-(ζ / 2)(x + x⁻¹)}` in logarithmic coordinates. -/
@@ -215,6 +228,27 @@ theorem integrable_exp_mul_mul_exp_neg_mul_cosh {ζ : ℂ} (hζ : 0 < ζ.re) (p 
     (Measurable.aestronglyMeasurable (by fun_prop)) (Eventually.of_forall fun u ↦ le_of_eq ?_)
   simp only [norm_mul, norm_exp_neg_mul_ofReal, ofReal_re]
 
+/-- For `ζ > 0` and every real `σ`, `u ↦ e^{σ u} e^{-ζ cosh u}` is integrable on the real line. -/
+theorem _root_.Real.integrable_exp_mul_mul_exp_neg_mul_cosh (σ : ℝ) {ζ : ℝ} (hζ : 0 < ζ) :
+    Integrable (fun u : ℝ ↦ Real.exp (σ * u) * Real.exp (-(ζ * Real.cosh u))) := by
+  refine (Complex.integrable_exp_mul_mul_exp_neg_mul_cosh (ζ := ζ) (by simpa using hζ) σ).norm.congr
+    (Eventually.of_forall fun u ↦ ?_)
+  simp [Complex.norm_exp]
+
+/-- For `Re ζ > 0` and every complex `p`, the integral of `e^{p u} e^{-ζ cosh u}` over the real
+line is `2 ∫₀^∞ e^{-ζ cosh u} cosh (p u) du`: pair `u` with `-u`. -/
+theorem integral_exp_mul_mul_exp_neg_mul_cosh {ζ : ℂ} (hζ : 0 < ζ.re) (p : ℂ) :
+    ∫ u : ℝ, cexp (p * u) * cexp (-(ζ * Real.cosh u)) =
+      2 * ∫ u in Ioi (0 : ℝ), cexp (-(ζ * Real.cosh u)) * Complex.cosh (p * u) := by
+  have hF := integrable_exp_mul_mul_exp_neg_mul_cosh hζ p
+  rw [← intervalIntegral.integral_Iic_add_Ioi hF.integrableOn hF.integrableOn,
+    ← neg_zero, ← integral_comp_neg_Ioi, neg_zero,
+    ← integral_add hF.comp_neg.integrableOn hF.integrableOn, ← integral_const_mul]
+  refine setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ ?_
+  simp only [ofReal_neg, Real.cosh_neg, mul_neg]
+  rw [mul_left_comm, two_cosh]
+  ring
+
 /-- **Schläfli's integral as a Macdonald integral.** For `ζ > 0` and every complex `p`, the
 substitution `s = (ζ / 2) e^u` gives
 `∫₀^∞ e^{-ζ cosh u} cosh (p u) du = ½ (ζ / 2)^{-p} ∫₀^∞ s^{p - 1} e^{-s - (ζ² / 4) / s} ds`.
@@ -223,23 +257,14 @@ theorem integral_exp_neg_mul_cosh_mul_cosh_Ioi {ζ : ℝ} (hζ : 0 < ζ) (p : �
     ∫ u in Ioi (0 : ℝ), cexp (-((ζ : ℂ) * Real.cosh u)) * Complex.cosh (p * u) =
       (ζ / 2 : ℂ) ^ (-p) / 2 *
         ∫ s in Ioi (0 : ℝ), (s : ℂ) ^ (p - 1) * Real.exp (-(s + ζ ^ 2 / 4 / s)) := by
-  set F : ℝ → ℂ := fun u ↦ cexp (-p * u) * cexp (-((ζ : ℂ) * Real.cosh u)) with hF
   have hk : 0 < 2 / ζ := div_pos two_pos hζ
-  have hFint : Integrable F := integrable_exp_mul_mul_exp_neg_mul_cosh_of_real hζ (-p)
-  -- the Mellin transform of `x ↦ e^{-(ζ / 2)(x + x⁻¹)}` at `p` is `∫_ℝ F`
-  have hmellin : mellin (fun x : ℝ ↦ ((Real.exp (-(ζ / 2 * (x + x⁻¹))) : ℝ) : ℂ)) p =
-      ∫ u, F u := by
-    simp only [TauCeti.mellin_eq_integral_exp_smul, exp_neg_mul_add_inv_exp_neg, smul_eq_mul, hF]
-  -- folding `∫_ℝ F` onto the half-line gives `2 ∫₀^∞ e^{-ζ cosh u} cosh (p u) du`
-  have hsplit : ∫ u, F u =
+  -- folding the Mellin transform of `x ↦ e^{-(ζ / 2)(x + x⁻¹)}` onto the half-line gives
+  -- `2 ∫₀^∞ e^{-ζ cosh u} cosh (p u) du`
+  have hsplit : mellin (fun x : ℝ ↦ ((Real.exp (-(ζ / 2 * (x + x⁻¹))) : ℝ) : ℂ)) p =
       2 * ∫ u in Ioi (0 : ℝ), cexp (-((ζ : ℂ) * Real.cosh u)) * Complex.cosh (p * u) := by
-    rw [← intervalIntegral.integral_Iic_add_Ioi hFint.integrableOn hFint.integrableOn,
-      ← neg_zero, ← integral_comp_neg_Ioi, neg_zero,
-      ← integral_add hFint.comp_neg.integrableOn hFint.integrableOn, ← integral_const_mul]
-    refine setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ ?_
-    simp only [hF, ofReal_neg, Real.cosh_neg, mul_neg, neg_mul, neg_neg]
-    rw [mul_left_comm, two_cosh]
-    ring
+    rw [mellin_exp_neg_mul_add_inv,
+      integral_exp_mul_mul_exp_neg_mul_cosh (by simpa using hζ) (-p)]
+    simp only [neg_mul, Complex.cosh_neg]
   -- the two scale factors cancel; the first factor is a nonnegative real, so that
   -- `ofReal_mul_cpow` merges the two powers
   have hcancel : (ζ / 2 : ℂ) * (2 / ζ) = 1 := by
@@ -250,7 +275,7 @@ theorem integral_exp_neg_mul_cosh_mul_cosh_Ioi {ζ : ℝ} (hζ : 0 < ζ) (p : �
     rw [← h, hcancel, one_cpow]
   rw [setIntegral_congr_fun measurableSet_Ioi (integrand_eq_comp_mul_left hζ p), ← mellin,
     mellin_comp_mul_left (fun x : ℝ ↦ ((Real.exp (-(ζ / 2 * (x + x⁻¹))) : ℝ) : ℂ)) p hk,
-    hmellin, hsplit, smul_eq_mul]
+    hsplit, smul_eq_mul]
   linear_combination
     -(∫ u in Ioi (0 : ℝ), cexp (-((ζ : ℂ) * Real.cosh u)) * Complex.cosh (p * u)) * hunit
 

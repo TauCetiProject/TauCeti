@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimpleGraph
+import TauCeti.Combinatorics.SimpleGraph.CoefficientGame
 
 /-!
 # Affine simply-laced diagrams are not of finite type
@@ -26,12 +27,19 @@ theorems apply to every affine diagram `Ãₙ` (`n ≥ 2`) and to affine `Dₙ`,
 exclusion of `Ã₁` is necessary: its graph is a single edge, the diagram of `A₂`; only its Cartan
 matrix `!![2, -2; -2, 2]` records the double edge.
 
+More strongly, a graph whose `2I - A` is positive definite contains no copy of the graph of such
+a diagram, induced or not. Extending the marks by zero along a copy gives a nonzero nonnegative
+vector with no positive coordinate under `2I - A`: an extra edge only lowers the coordinates, since
+the marks are positive (`SimpleGraph.not_isContained_of_posDef_of_two_mul_le_sum`).
+
 ## Main results
 
 * `TauCeti.AffineDynkinType.not_isFiniteType_cartanMatrix`: the generalized Cartan matrix of a
   valid affine diagram is not of finite type.
 * `TauCeti.AffineDynkinType.not_exists_dynkinType_iso`: the graph of a valid affine diagram other
   than `Ã₁` is not a finite Dynkin diagram.
+* `TauCeti.AffineDynkinType.not_isContained_of_posDef`: a graph with positive definite `2I - A`,
+  such as a finite simply-laced Dynkin diagram, contains no copy of such a graph.
 
 ## References
 
@@ -58,17 +66,28 @@ theorem not_isFiniteType_cartanMatrix (ht : t.Valid) : ¬ IsFiniteType t.cartanM
   have hpos : (0 : ℚ) < t.marks 0 := by exact_mod_cast marks_pos 0
   exact hpos.ne' (congrFun h0 0)
 
+open SimpleGraph in
+/-- **A graph with positive definite `2I - A` contains no graph of a valid affine diagram other
+than `Ã₁`.** If `2I - A` is positive definite over a linearly ordered ring, then `G` contains no
+copy, induced or not, of the graph of a valid affine simply-laced diagram other than `Ã₁`. In
+particular no finite simply-laced Dynkin diagram contains one
+(`SimpleGraph.posDef_graphCartanMatrix_of_iso`). -/
+theorem not_isContained_of_posDef {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [StarRing R] [TrivialStar R] {V : Type*} [Finite V] [DecidableEq V] {G : SimpleGraph V}
+    [DecidableRel G.Adj] (ht : t.Valid) (hg : t.IsGraphical)
+    (hC : (G.graphCartanMatrix R).PosDef) : ¬ t.graph ⊑ G :=
+  G.not_isContained_of_posDef_of_two_mul_le_sum hC (m := fun u ↦ (t.marks u : R))
+    (fun u ↦ (Int.cast_pos.mpr (marks_pos u)).le)
+    (fun h ↦ (Int.cast_pos.mpr (marks_pos 0)).ne' (congrFun h 0))
+    fun u ↦ by exact_mod_cast (sum_marks_neighborFinset_eq_two_mul ht hg u).ge
+
 /-- **The graph of an affine diagram is not a finite Dynkin diagram.** For a valid affine
 simply-laced diagram other than `Ã₁`, the underlying graph is not isomorphic to the diagram of any
 valid Dynkin type. -/
 theorem not_exists_dynkinType_iso (ht : t.Valid) (hg : t.IsGraphical) :
-    ¬ ∃ s : DynkinType, s.Valid ∧ Nonempty (t.graph ≃g diagramGraph s.cartanMatrix) := by
-  intro h
-  have hpd := (SimpleGraph.posDef_graphCartanMatrix_iff (graph_connected ht)).2
-    ((SimpleGraph.exists_valid_isSimplyLaced_dynkinType_iso_iff t.graph).2 h)
-  have hft := SimpleGraph.isFiniteType_graphCartanMatrix_of_posDef hpd
-  rw [← cartanMatrix_eq_graphCartanMatrix hg] at hft
-  exact not_isFiniteType_cartanMatrix ht hft
+    ¬ ∃ s : DynkinType, s.Valid ∧ Nonempty (t.graph ≃g diagramGraph s.cartanMatrix) :=
+  fun ⟨_, _, ⟨φ⟩⟩ ↦ not_isContained_of_posDef ht hg
+    (SimpleGraph.posDef_graphCartanMatrix_of_iso φ) (.refl _)
 
 end AffineDynkinType
 

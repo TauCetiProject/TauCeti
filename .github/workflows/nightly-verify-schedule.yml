@@ -2,9 +2,10 @@ name: Nightly verification
 
 # Rebuild main's own modules from source without restoring any cached build outputs, and check
 # that this clean compile agrees byte for byte with what the cache serves. The jobs, and why they
-# are shaped as they are, live in nightly-verify.yml, which keeps that name because the
-# TauCetiFleet runner group admits jobs by the workflow file that defines them. This file owns the
-# triggers and admits only main.
+# are shaped as they are, live in TauCetiTools' nightly-verify.yml at main; the TauCetiFleet runner
+# group admits jobs by the workflow file that defines them, so it lists that file. This file owns
+# the triggers, the GITHUB_TOKEN ceiling and the secrets, and admits only main. Its jobs appear as
+# `run / <job>`.
 #
 # The main check runs in a job because GitHub expression comparisons ignore case: an `if:` on
 # `github.ref == 'refs/heads/main'` also admits a branch named `Main`, which would then be built and
@@ -48,9 +49,9 @@ jobs:
       # Never cancel mid-run: a partial verification tells us nothing, and killing a run after the
       # from-source build but before the report wastes the expensive part.
       cancel-in-progress: false
-    uses: ./.github/workflows/nightly-verify.yml
+    uses: TauCetiProject/TauCetiTools/.github/workflows/nightly-verify.yml@main
     permissions:
-      # The called workflow reselects reference capacity through pick-runner.yml.
+      # The called workflow reselects reference capacity with its own picker job.
       actions: read
       contents: read
     secrets:

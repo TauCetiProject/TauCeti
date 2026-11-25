@@ -5,14 +5,10 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.QuasiAffine
-public import TauCeti.AlgebraicGeometry.LineBundle.Class
-public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
-public import TauCeti.AlgebraicGeometry.LineBundle.Power
-public import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
-import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
+public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 import Mathlib.Topology.Separation.Basic
+import TauCeti.AlgebraicGeometry.Modules.Localization
 
 /-!
 # Ample line bundles
@@ -51,10 +47,15 @@ No common tensor
 power is required. Every ample class also admits a finite affine cover by such nonvanishing
 loci (`LineBundleClass.IsAmple.exists_finset_isAffineOpen_nonvanishingLocus`).
 
-Ampleness is invariant under positive powers (`isAmple_pow_iff`), pulls back along affine morphisms
-(`IsAmple.pullback_of_isAffineHom`), and descends from basic open covers
-(`IsAmple.of_forall_exists_basicOpen`) and open covers of a quasi-affine base
-(`IsAmple.of_forall_exists_opens_of_isQuasiAffine`).
+Ampleness is preserved by positive tensor powers, tensoring with a globally generated line
+bundle, products of ample classes, and pullback along affine morphisms. In particular it is
+invariant under isomorphisms of schemes. Conversely, on a quasi-compact scheme ampleness descends
+along basic open covers (`LineBundleClass.IsAmple.of_forall_exists_basicOpen`, Stacks Tag 01VG), and
+for a morphism into a quasi-affine base it is Zariski-local on the base
+(`LineBundleClass.IsAmple.of_forall_exists_opens_of_isQuasiAffine`, Stacks Tag 0D32).
+
+These closure properties are ported from `roed-math/TauCeti-w2-fresh`, branch
+`lookahead/StableReduction/relative-ampleness`, commit `efa6fc8f3735`.
 
 ## Main definitions
 
@@ -62,13 +63,18 @@ Ampleness is invariant under positive powers (`isAmple_pow_iff`), pulls back alo
 
 ## Main results
 
+* `LineBundleClass.isAmple_pow_iff`: a positive power is ample exactly when the class is.
+* `LineBundleClass.IsAmple.mul_mk_of_isGloballyGenerated` and `LineBundleClass.IsAmple.mul`:
+  tensoring with a globally generated line bundle, or another ample class, preserves ampleness.
+* `LineBundleClass.IsAmple.pullback` and `LineBundleClass.isAmple_pullback_iff_of_isIso`:
+  affine pullback preserves ampleness, and isomorphic schemes have corresponding ample classes.
+* `LineBundleClass.IsAmple.of_forall_exists_basicOpen` and
+  `LineBundleClass.IsAmple.of_forall_exists_opens_of_isQuasiAffine`: ampleness descends along basic
+  open covers of a quasi-compact scheme and along Zariski covers of a quasi-affine base.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.exists_pos_forall_mk_eq`: the defining
   sections can be taken in any line bundle representing the relevant power.
-* `IsAmple.of_pow`, `IsAmple.pow`, `isAmple_pow_iff`: `aⁿ` is ample iff `a` is ample (`n > 0`).
-* `IsAmple.pullback_of_isAffineHom`, `isAmple_pullback_iff_of_isIso`: pullback along affine
-  morphisms and invariance under scheme isomorphisms.
-* `IsAmple.of_forall_exists_basicOpen`, `IsAmple.of_forall_exists_opens_of_isQuasiAffine`: descent
-  from basic open covers and from open covers of a quasi-affine base.
+* `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.of_pow`: if a positive power `aⁿ` is ample,
+  then so is `a`.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.isAmple_one_iff`: the structure sheaf is ample
   exactly when `X` is quasi-affine.
 * `LineBundleClass.isAmple_iff_forall_isClosed_singleton`: on a quasi-compact
@@ -82,9 +88,9 @@ Ampleness is invariant under positive powers (`isAmple_pow_iff`), pulls back alo
 
 ## References
 
-* [The Stacks Project, Tag 01PS](https://stacks.math.columbia.edu/tag/01PS) (ample invertible
-  sheaves), [Tag 01VG](https://stacks.math.columbia.edu/tag/01VG) (the locus of ampleness on the
-  base), and [Tag 0D32](https://stacks.math.columbia.edu/tag/0D32).
+* [The Stacks Project, Tag 01PS](https://stacks.math.columbia.edu/tag/01PS),
+  [Tag 01VG](https://stacks.math.columbia.edu/tag/01VG), and
+  [Tag 0D32](https://stacks.math.columbia.edu/tag/0D32).
 * R. Hartshorne, *Algebraic Geometry*, Chapter II, Section 7.
 -/
 
@@ -134,37 +140,119 @@ theorem IsAmple.of_pow {a : LineBundleClass X} {n : ℕ} (hn : 0 < n) (h : (a ^ 
     obtain ⟨m, hm, L, hL, s, hx, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus x
     exact ⟨n * m, Nat.mul_pos hn hm, L, hL.trans (pow_mul a n m).symm, s, hx, hs⟩
 
+/-- **Positive powers of an ample class are ample.** If `a` is ample and `k > 0`, then `aᵏ` is
+ample. -/
+theorem IsAmple.pow {a : LineBundleClass X} (h : a.IsAmple) {k : ℕ} (hk : 0 < k) :
+    (a ^ k).IsAmple where
+  compactSpace := h.compactSpace
+  exists_isAffineOpen_nonvanishingLocus x := by
+    -- For a global section `s` of a line bundle of class `aⁿ`, the `k`-fold tensor product
+    -- `s ⊗ ⋯ ⊗ s` is a global section of a line bundle of class `(aᵏ)ⁿ` with the same locus `X_s`.
+    obtain ⟨n, hn, L, hL, s, hx, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus x
+    obtain ⟨L', hL'⟩ := mk_surjective ((a ^ k) ^ n)
+    obtain ⟨s', hs'⟩ := InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow hk
+      (by rw [hL', hL, ← pow_mul, ← pow_mul, mul_comm]) s
+    exact ⟨n, hn, L', hL', s', hs' ▸ hx, hs' ▸ hs⟩
+
+/-- For `k > 0`, the power `aᵏ` of a line-bundle class is ample exactly when `a` is. -/
+@[simp]
+theorem isAmple_pow_iff {a : LineBundleClass X} {k : ℕ} (hk : 0 < k) :
+    (a ^ k).IsAmple ↔ a.IsAmple :=
+  ⟨IsAmple.of_pow hk, fun h ↦ h.pow hk⟩
+
+/-- An ample class remains ample after a twist if, at every point, some positive power of
+the twisting class has a global section nonvanishing there. -/
+theorem IsAmple.mul_of_forall_exists_nonvanishingLocus {a b : LineBundleClass X}
+    (ha : a.IsAmple)
+    (hb : ∀ x : X, ∃ m : ℕ, 0 < m ∧ ∃ (M : InvertibleSheaf X) (_ : LineBundleClass.mk M = b ^ m)
+      (t : Γ(M.obj, ⊤)), x ∈ M.obj.nonvanishingLocus t) : (a * b).IsAmple where
+  compactSpace := ha.compactSpace
+  exists_isAffineOpen_nonvanishingLocus x := by
+    -- Take global sections `s` and `t` of line bundles of classes `aⁿ` and `bᵐ` that do not vanish
+    -- at `x`, with `X_s` affine. Moved to the common power `n * m`, the tensor product of their
+    -- powers, a section of a line bundle of class `(a * b)ⁿᵐ`, vanishes nowhere exactly on the
+    -- affine open `X_s ∩ X_t`.
+    obtain ⟨n, hn, L, hL, s, hxs, hs⟩ := ha.exists_isAffineOpen_nonvanishingLocus x
+    obtain ⟨m, hm, M, hM, t, hxt⟩ := hb x
+    -- Move both sections to the common power `n * m`.
+    obtain ⟨L', hL'⟩ := mk_surjective (a ^ (n * m))
+    obtain ⟨s', hs'⟩ := InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow hm
+      (by rw [hL', hL, ← pow_mul]) s
+    obtain ⟨M', hM'⟩ := mk_surjective (b ^ (n * m))
+    obtain ⟨t', ht'⟩ := InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow hn
+      (by rw [hM', hM, ← pow_mul, mul_comm m]) t
+    let u := Scheme.Modules.tmulRight L'.obj t' s'
+    have hu : (L' ⊗ M').obj.nonvanishingLocus u =
+        L.obj.nonvanishingLocus s ⊓ M.obj.nonvanishingLocus t := by
+      exact (Scheme.Modules.nonvanishingLocus_tmulRight s' t').trans (by rw [hs', ht'])
+    refine ⟨n * m, Nat.mul_pos hn hm, L' ⊗ M', ?_, u, hu ▸ ⟨hxs, hxt⟩, ?_⟩
+    · rw [mk_tensorObj, hL', hM', mul_pow]
+    · exact hu ▸ hs.inf_nonvanishingLocus le_top t
+
+/-- **An ample class times a globally generated line bundle is ample.** If `a` is ample and the
+line bundle `K` is globally generated, then `a · [K]` is ample. -/
+theorem IsAmple.mul_mk_of_isGloballyGenerated {a : LineBundleClass X} (h : a.IsAmple)
+    {K : InvertibleSheaf X} (hK : K.IsGloballyGenerated) : (a * LineBundleClass.mk K).IsAmple :=
+  h.mul_of_forall_exists_nonvanishingLocus fun x ↦ by
+    obtain ⟨t, hxt⟩ := InvertibleSheaf.isGloballyGenerated_iff.mp hK x
+    exact ⟨1, Nat.one_pos, K, (pow_one _).symm, t, hxt⟩
+
+/-- **Products of ample classes are ample.** If `a` and `b` are ample, then so is `a * b`. -/
+theorem IsAmple.mul {a b : LineBundleClass X} (ha : a.IsAmple) (hb : b.IsAmple) :
+    (a * b).IsAmple :=
+  ha.mul_of_forall_exists_nonvanishingLocus fun x ↦ by
+    obtain ⟨m, hm, M, hM, t, hxt, -⟩ := hb.exists_isAffineOpen_nonvanishingLocus x
+    exact ⟨m, hm, M, hM, t, hxt⟩
+
+/-- **Ampleness is preserved by pullback along an affine morphism.** If `a` is ample on `Y` and
+`e : X ⟶ Y` is an affine morphism, for instance a closed immersion or an isomorphism, then the
+pullback of `a` to `X` is ample. -/
+theorem IsAmple.pullback {Y : Scheme.{u}} {a : LineBundleClass Y} (h : a.IsAmple) (e : X ⟶ Y)
+    [IsAffineHom e] : (pullback e a).IsAmple where
+  compactSpace := by
+    have := h.compactSpace
+    exact QuasiCompact.compactSpace_of_compactSpace e
+  exists_isAffineOpen_nonvanishingLocus x := by
+    -- The nonvanishing locus of a pulled-back global section is the preimage of the original one,
+    -- which is affine when the original one is, since `e` is affine.
+    obtain ⟨n, hn, L, hL, s, hx, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus (e x)
+    let s' : Γ(((InvertibleSheaf.pullback e).obj L).obj, ⊤) := e.pullbackSections L.obj ⊤ s
+    have hs' : ((InvertibleSheaf.pullback e).obj L).obj.nonvanishingLocus s' =
+        e ⁻¹ᵁ L.obj.nonvanishingLocus s :=
+      e.nonvanishingLocus_pullbackSections s
+    refine ⟨n, hn, (InvertibleSheaf.pullback e).obj L, ?_, s', hs' ▸ hx, hs' ▸ hs.preimage e⟩
+    rw [← pullback_mk, hL, pullback_pow]
+
+/-- **Ampleness is invariant under isomorphisms of schemes**: for an isomorphism `e : X ⟶ Y`, the
+pullback of `a` to `X` is ample exactly when `a` is ample. -/
+@[simp]
+theorem isAmple_pullback_iff_of_isIso {Y : Scheme.{u}} (e : X ⟶ Y) [IsIso e]
+    (a : LineBundleClass Y) : (pullback e a).IsAmple ↔ a.IsAmple := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.pullback e⟩
+  simpa using h.pullback (inv e)
+
 /-- The structure sheaf `𝒪_X` is ample exactly when `X` is quasi-affine: the nonvanishing loci of
 global sections of a line bundle isomorphic to `𝒪_X` are the basic open sets of global regular
 functions. -/
 @[simp]
 theorem isAmple_one_iff : (1 : LineBundleClass X).IsAmple ↔ X.IsQuasiAffine := by
-  let O : InvertibleSheaf X := ⟨SheafOfModules.unit X.ringCatSheaf, inferInstance⟩
-  -- The tensor unit `𝟙_ X.Modules` is by definition the structure sheaf `SheafOfModules.unit`.
-  have hO : mk O = 1 := mk_eq_one_iff.mpr ⟨Iso.refl _⟩
-  -- The nonvanishing loci of global sections of a line bundle of trivial class are exactly the
-  -- basic open sets of global regular functions.
-  have hrange (L : InvertibleSheaf X) (hL : mk L = 1) :
-      Set.range (L.obj.nonvanishingLocus (U := ⊤)) =
-        Set.range (X.basicOpen (U := ⊤)) := by
-    obtain ⟨e⟩ := mk_eq_mk_iff.mp (hL.trans hO.symm)
-    rw [Scheme.Modules.range_nonvanishingLocus_eq_of_iso e ⊤]
-    exact congrArg Set.range (funext Scheme.Modules.nonvanishingLocus_unit)
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨inferInstance, fun x ↦ ?_⟩⟩
   · have := h.compactSpace
     refine Scheme.IsQuasiAffine.of_forall_exists_mem_basicOpen X fun x ↦ ?_
     obtain ⟨n, -, L, hL, s, hx, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus x
     obtain ⟨r, hr⟩ : L.obj.nonvanishingLocus s ∈ Set.range (X.basicOpen (U := ⊤)) := by
-      rw [← hrange L (hL.trans (one_pow n))]
+      rw [← InvertibleSheaf.range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one
+        (hL.trans (one_pow n)) ⊤]
       exact ⟨s, rfl⟩
     exact ⟨r, hr ▸ hs, hr ▸ hx⟩
   · obtain ⟨_, ⟨r, hr, rfl⟩, hx, -⟩ :=
       Opens.isBasis_iff_nbhd.mp (Scheme.IsQuasiAffine.isBasis_basicOpen X) (Opens.mem_top x)
     obtain ⟨s, hs⟩ :
-        X.basicOpen r ∈ Set.range (O.obj.nonvanishingLocus (U := ⊤)) := by
-      rw [hrange O hO]
+        X.basicOpen r ∈ Set.range ((InvertibleSheaf.trivial X).obj.nonvanishingLocus (U := ⊤)) := by
+      rw [InvertibleSheaf.range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one mk_trivial ⊤]
       exact ⟨r, rfl⟩
-    exact ⟨1, Nat.one_pos, O, hO.trans (one_pow 1).symm, s, hs ▸ hx, hs ▸ hr⟩
+    exact ⟨1, Nat.one_pos, InvertibleSheaf.trivial X, mk_trivial.trans (one_pow 1).symm, s,
+      hs ▸ hx, hs ▸ hr⟩
 
 /-- On a quasi-affine scheme, in particular on an affine scheme, the structure sheaf is ample. -/
 theorem isAmple_one [X.IsQuasiAffine] : (1 : LineBundleClass X).IsAmple :=
@@ -247,53 +335,15 @@ theorem IsAmple.quasiSeparatedSpace {a : LineBundleClass X} (h : a.IsAmple) :
     rw [← Opens.coe_inf, ← Scheme.Modules.nonvanishingLocus_map k]
     exact (i.2.property.nonvanishingLocus _).isCompact
 
-/-- Every positive power of an ample line-bundle class is ample. -/
-theorem IsAmple.pow {a : LineBundleClass X} {n : ℕ} (hn : 0 < n) (h : a.IsAmple) :
-    (a ^ n).IsAmple where
-  compactSpace := h.compactSpace
-  exists_isAffineOpen_nonvanishingLocus x := by
-    obtain ⟨m, hm, L, hL, s, hx, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus x
-    have hsn := Scheme.Modules.nonvanishingLocus_tensorPowSection s hn
-    exact ⟨m, hm, ⟨TauCeti.tensorPow L.obj n, inferInstance⟩,
-      by rw [mk_tensorPowObj, hL, ← pow_mul, mul_comm, pow_mul],
-      Scheme.Modules.tensorPowSection s n, hsn.symm ▸ hx, hsn.symm ▸ hs⟩
-
-/-- For `n > 0`, the power `aⁿ` is ample if and only if `a` is ample. -/
-theorem isAmple_pow_iff {a : LineBundleClass X} {n : ℕ} (hn : 0 < n) :
-    (a ^ n).IsAmple ↔ a.IsAmple := ⟨IsAmple.of_pow hn, IsAmple.pow hn⟩
-
-/-- **Ampleness pulls back along affine morphisms.** If `f : X ⟶ Y` is an affine morphism and `a`
-is an ample line-bundle class on `Y`, then `pullback f a` is ample on `X`. -/
-theorem IsAmple.pullback_of_isAffineHom {Y : Scheme.{u}} (f : X ⟶ Y) [IsAffineHom f]
-    {a : LineBundleClass Y} (h : a.IsAmple) : (pullback f a).IsAmple where
-  compactSpace := have := h.compactSpace; QuasiCompact.compactSpace_of_compactSpace f
-  exists_isAffineOpen_nonvanishingLocus x := by
-    obtain ⟨n, hn, L, hL, s, hfx, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus (f.base x)
-    have hloc := (Scheme.Modules.nonvanishingLocus_pullbackSectionsLE f (M := L.obj) ⊤
-      f.preimage_top.symm.le s).trans (top_inf_eq _)
-    exact ⟨n, hn, (InvertibleSheaf.pullback f).obj L, by rw [← pullback_mk, hL, pullback_pow],
-      f.pullbackSectionsLE L.obj ⊤ ⊤ f.preimage_top.symm.le s,
-      hloc.symm ▸ hfx, hloc.symm ▸ hs.preimage f⟩
-
-/-- Ampleness pulls back along isomorphisms of schemes. -/
-theorem IsAmple.pullback_of_isIso {Y : Scheme.{u}} (f : X ⟶ Y) [IsIso f]
-    {a : LineBundleClass Y} (h : a.IsAmple) : (pullback f a).IsAmple :=
-  h.pullback_of_isAffineHom f
-
-/-- Along an isomorphism of schemes, `pullback f a` is ample if and only if `a` is ample. -/
-@[simp]
-theorem isAmple_pullback_iff_of_isIso {Y : Scheme.{u}} (f : X ⟶ Y) [IsIso f]
-    {a : LineBundleClass Y} : (pullback f a).IsAmple ↔ a.IsAmple :=
-  ⟨fun h ↦ by simpa only [pullback_comp, IsIso.inv_hom_id, pullback_id] using
-    h.pullback_of_isIso (inv f), fun h ↦ h.pullback_of_isIso f⟩
-
 /-- **Ampleness is local on basic open covers of a quasi-compact scheme** (Stacks, Tag 01VG). Let
 `X` be a quasi-compact scheme and `a` a line-bundle class on `X`. If every point `x` lies in
 `X.basicOpen f` for some global regular function `f` such that `a|_{X.basicOpen f}` is ample, then
 `a` is ample. -/
 theorem IsAmple.of_forall_exists_basicOpen [CompactSpace X] {a : LineBundleClass X}
-    (h : ∀ x : X, ∃ f : Γ(X, ⊤), x ∈ X.basicOpen f ∧ (pullback (X.basicOpen f).ι a).IsAmple) :
+    (h : ∀ x : X, ∃ f : Γ(X, ⊤),
+      x ∈ X.basicOpen f ∧ (LineBundleClass.pullback (X.basicOpen f).ι a).IsAmple) :
     a.IsAmple := by
+  -- First deduce that `X` is quasi-separated from the retrocompact cover by basic opens.
   have : QuasiSeparatedSpace X := by
     choose f hxf hf using h
     exact .of_isOpenCover (U := fun x ↦ X.basicOpen (f x))
@@ -302,38 +352,66 @@ theorem IsAmple.of_forall_exists_basicOpen [CompactSpace X] {a : LineBundleClass
       (fun x ↦ (isQuasiSeparated_iff_quasiSeparatedSpace _ (X.basicOpen (f x)).isOpen).mpr
         (hf x).quasiSeparatedSpace)
   refine ⟨inferInstance, fun x ↦ ?_⟩
-  obtain ⟨L, rfl⟩ := mk_surjective a; obtain ⟨f, hxf, hf⟩ := h x
+  -- Pick `D(f) ∋ x` on which `a` is ample, and realize an affine nonvanishing locus over `D(f)` by
+  -- a section `t` of a representative `L'` of `aⁿ` over `D(f)`.
+  obtain ⟨f, hxf, hf⟩ := h x
   let V : X.Opens := X.basicOpen f
   obtain ⟨n, hn, hsec⟩ := hf.exists_pos_forall_mk_eq ⟨x, hxf⟩
-  obtain ⟨s', hxs', hs'⟩ := hsec ((InvertibleSheaf.pullback V.ι).obj (L.tensorPow n))
-    (by rw [← pullback_mk, mk_tensorPow, pullback_pow])
-  let M : X.Modules := (L.tensorPow n).obj
-  obtain ⟨t, rfl⟩ := (Scheme.Modules.bijective_pullbackSectionsLE_ι M V ⊤ rfl).2 s'
-  have hloc : ((InvertibleSheaf.pullback V.ι).obj (L.tensorPow n)).obj.nonvanishingLocus
-      (V.ι.pullbackSectionsLE M V ⊤ (by simp) t) = V.ι ⁻¹ᵁ M.nonvanishingLocus t :=
-    (Scheme.Modules.nonvanishingLocus_pullbackSectionsLE V.ι ⊤ _ t).trans (top_inf_eq _)
-  have himg : V.ι ''ᵁ V.ι ⁻¹ᵁ M.nonvanishingLocus t = M.nonvanishingLocus t := by
+  obtain ⟨L', hL'⟩ := mk_surjective (a ^ n)
+  obtain ⟨s', hxs', hs'⟩ := hsec ((InvertibleSheaf.pullback V.ι).obj L')
+    (by rw [← pullback_mk, hL', pullback_pow])
+  obtain ⟨t, rfl⟩ := (Scheme.Modules.bijective_pullbackSectionsLE_ι L'.obj V ⊤ rfl).2 s'
+  have hloc : ((InvertibleSheaf.pullback V.ι).obj L').obj.nonvanishingLocus
+      (V.ι.pullbackSectionsLE L'.obj V ⊤ (by simp) t) = V.ι ⁻¹ᵁ L'.obj.nonvanishingLocus t :=
+    (V.ι.nonvanishingLocus_pullbackSectionsLE (X := X) (M := L'.obj) (U := V) (V := ⊤)
+      (by simp) t).trans (top_inf_eq _)
+  have himg : V.ι ''ᵁ V.ι ⁻¹ᵁ L'.obj.nonvanishingLocus t = L'.obj.nonvanishingLocus t := by
     rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
-    exact inf_eq_right.mpr (M.nonvanishingLocus_le t)
-  have htaff : IsAffineOpen (M.nonvanishingLocus t) :=
-    himg ▸ (Scheme.Hom.isAffineOpen_iff_of_isOpenImmersion V.ι).mpr (hloc ▸ hs')
+    exact inf_eq_right.mpr (L'.obj.nonvanishingLocus_le t)
+  have htaff : IsAffineOpen (L'.obj.nonvanishingLocus t) := by
+    rw [← himg, Scheme.Hom.isAffineOpen_iff_of_isOpenImmersion V.ι, ← hloc]
+    exact hs'
+  -- On a qcqs scheme, `f^m • t` extends to a global section `t₀`, and `f • t₀` has the same locus.
   obtain ⟨⟨t₀, ⟨_, m, rfl⟩⟩, ht₀⟩ :=
-    (M.isLocalizedModule_basicOpenRestrict_of_qcqs isCompact_univ isQuasiSeparated_univ f).surj t
+    (L'.obj.isLocalizedModule_basicOpenRestrict_of_qcqs
+      isCompact_univ isQuasiSeparated_univ f).surj t
   dsimp only at ht₀
-  have hsn : M.nonvanishingLocus (f • t₀) = M.nonvanishingLocus t := by
+  have hsn : L'.obj.nonvanishingLocus (f • t₀) = L'.obj.nonvanishingLocus t := by
     let i : V ⟶ ⊤ := homOfLE (X.basicOpen_le f)
-    have hres : M.presheaf.map i.op t₀ = (X.presheaf.map i.op f) ^ m • t := by
-      rw [← M.basicOpenRestrict_apply f t₀, ← ht₀, Submonoid.smul_def, M.basicOpen_smul_def,
-        map_pow]
+    have hres : L'.obj.presheaf.map i.op t₀ = (X.presheaf.map i.op f) ^ m • t := by
+      rw [← L'.obj.basicOpenRestrict_apply f t₀, ← ht₀, Submonoid.smul_def,
+        L'.obj.basicOpen_smul_def, map_pow]
     have hbf : V ≤ X.basicOpen ((X.presheaf.map i.op f) ^ m) := by
       rcases m.eq_zero_or_pos with rfl | hm
       · rw [pow_zero, X.basicOpen_one]
-      · rw [X.basicOpen_pow _ hm, X.basicOpen_res]; exact le_inf le_rfl le_rfl
+      · rw [X.basicOpen_pow _ hm, X.basicOpen_res]
+        exact le_inf le_rfl le_rfl
     rw [Scheme.Modules.nonvanishingLocus_smul, ← Scheme.Modules.nonvanishingLocus_map i, hres,
       Scheme.Modules.nonvanishingLocus_smul,
-      inf_eq_right.mpr ((M.nonvanishingLocus_le t).trans hbf)]
-  exact ⟨n, hn, L.tensorPow n, mk_tensorPow L n, f • t₀,
-    hsn.symm ▸ (show x ∈ M.nonvanishingLocus t from by rwa [hloc] at hxs'), hsn.symm ▸ htaff⟩
+      inf_eq_right.mpr ((L'.obj.nonvanishingLocus_le t).trans hbf)]
+  have hxt : x ∈ L'.obj.nonvanishingLocus (f • t₀) := by
+    rw [hsn]
+    rwa [hloc] at hxs'
+  refine ⟨n, hn, L', hL', f • t₀, hxt, ?_⟩
+  rwa [hsn]
+
+/-- If `S` is quasi-compact and covered by basic opens `D(r s)` over whose preimages `a` is ample,
+then `X` is quasi-compact. -/
+private theorem compactSpace_of_basicOpen_isAmple {S : Scheme.{u}} [CompactSpace S] (π : X ⟶ S)
+    {a : LineBundleClass X} (r : S → Γ(S, ⊤)) (hsr : ∀ s : S, s ∈ S.basicOpen (r s))
+    (hamp : ∀ s : S, (LineBundleClass.pullback (X.basicOpen (π.appTop (r s))).ι a).IsAmple) :
+    CompactSpace X := by
+  obtain ⟨t, ht⟩ := CompactSpace.isCompact_univ.elim_finite_subcover
+    (fun s : S ↦ (S.basicOpen (r s) : Set S)) (fun s ↦ (S.basicOpen (r s)).isOpen)
+    fun s _ ↦ Set.mem_iUnion.mpr ⟨s, hsr s⟩
+  have huniv : (Set.univ : Set X) = ⋃ s ∈ t, (X.basicOpen (π.appTop (r s)) : Set X) := by
+    ext x
+    simp only [Set.mem_univ, true_iff, Set.mem_iUnion, exists_prop]
+    obtain ⟨s, hst, hsx⟩ := Set.mem_iUnion₂.mp (ht (Set.mem_univ (π.base x)))
+    exact ⟨s, hst, (Scheme.preimage_basicOpen_top π (r s)).le hsx⟩
+  refine ⟨?_⟩
+  rw [huniv]
+  exact t.isCompact_biUnion fun s _ ↦ isCompact_iff_compactSpace.mpr (hamp s).compactSpace
 
 /-- **Ampleness over a quasi-affine base is Zariski-local on the base** (Stacks, Tag 0D32). Let
 `π : X ⟶ S` be a morphism into a quasi-affine scheme `S`, and `a` a line-bundle class on `X`. If
@@ -341,9 +419,11 @@ every point `s : S` lies in an open `U` over which `a|_{π⁻¹ U}` is ample, th
 `X`. -/
 theorem IsAmple.of_forall_exists_opens_of_isQuasiAffine {S : Scheme.{u}} (π : X ⟶ S)
     [S.IsQuasiAffine] {a : LineBundleClass X}
-    (h : ∀ s : S, ∃ U : S.Opens, s ∈ U ∧ (pullback (π ⁻¹ᵁ U).ι a).IsAmple) : a.IsAmple := by
+    (h : ∀ s : S, ∃ U : S.Opens,
+      s ∈ U ∧ (LineBundleClass.pullback (π ⁻¹ᵁ U).ι a).IsAmple) : a.IsAmple := by
+  -- Shrink each open `U ∋ s` to a global basic open `D(r)` of the quasi-affine base `S`.
   have hbase (s : S) : ∃ r : Γ(S, ⊤), s ∈ S.basicOpen r ∧
-      (pullback (X.basicOpen (π.appTop r)).ι a).IsAmple := by
+      (LineBundleClass.pullback (X.basicOpen (π.appTop r)).ι a).IsAmple := by
     obtain ⟨U, hsU, hU⟩ := h s
     obtain ⟨_, ⟨r, _, rfl⟩, hsr, hrU⟩ :=
       Opens.isBasis_iff_nbhd.mp (Scheme.IsQuasiAffine.isBasis_basicOpen S) hsU
@@ -352,17 +432,10 @@ theorem IsAmple.of_forall_exists_opens_of_isQuasiAffine {S : Scheme.{u}} (π : X
     have : IsAffineHom (X.homOfLE hVU ≫ (π ⁻¹ᵁ U).ι) := by rw [X.homOfLE_ι]; infer_instance
     have : IsAffineHom (X.homOfLE hVU) := .of_comp _ (π ⁻¹ᵁ U).ι
     refine ⟨r, hsr, ?_⟩
-    rw [← X.homOfLE_ι hVU, ← pullback_comp]; exact hU.pullback_of_isAffineHom (X.homOfLE hVU)
+    rw [← X.homOfLE_ι hVU, ← pullback_comp]
+    exact hU.pullback (X.homOfLE hVU)
   choose r hsr hamp using hbase
-  have : CompactSpace X := by
-    obtain ⟨t, ht⟩ := CompactSpace.isCompact_univ.elim_finite_subcover
-      (fun s : S ↦ (S.basicOpen (r s) : Set S)) (fun s ↦ (S.basicOpen (r s)).isOpen)
-      fun s _ ↦ Set.mem_iUnion.mpr ⟨s, hsr s⟩
-    refine ⟨(show (Set.univ : Set X) = ⋃ s ∈ t, (X.basicOpen (π.appTop (r s)) : Set X) by
-      ext x; simp only [Set.mem_univ, true_iff, Set.mem_iUnion, exists_prop]
-      obtain ⟨s, hst, hsx⟩ := Set.mem_iUnion₂.mp (ht (Set.mem_univ (π.base x)))
-      exact ⟨s, hst, (Scheme.preimage_basicOpen_top π (r s)).le hsx⟩) ▸
-      t.isCompact_biUnion fun s _ ↦ isCompact_iff_compactSpace.mpr (hamp s).compactSpace⟩
+  have := compactSpace_of_basicOpen_isAmple π r hsr hamp
   exact IsAmple.of_forall_exists_basicOpen fun x ↦
     ⟨π.appTop (r (π.base x)), (Scheme.preimage_basicOpen_top π (r (π.base x))).le (hsr _),
       hamp (π.base x)⟩

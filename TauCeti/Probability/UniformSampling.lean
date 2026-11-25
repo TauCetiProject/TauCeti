@@ -46,6 +46,9 @@ estimate is the classical union bound over unordered coordinate pairs, using
 
 * `uniformOn_not_injective_le`, `uniformOn_not_injective_le_one_sub_descFactorial_div_pow`, and
   their `.real` companions bound the uniform-measure mass of collisions;
+* `descFactorial_div_pow_le_one` and `one_sub_descFactorial_div_pow_eq_ofReal` bound the
+  injectivity probability `n.descFactorial m / n ^ m` by `1` and rewrite the collision error
+  `1 - n.descFactorial m / n ^ m` from `ℝ≥0∞` to `ENNReal.ofReal` of its real form;
 * `uniformOn_injective_apply_eq`, `uniformOn_not_injective_apply_eq`, and their `.real` forms
   compute the exact uniform-measure masses;
 * `uniformOn_injective_eq_zero_of_isEmpty`,
@@ -139,6 +142,23 @@ theorem uniformOn_real_not_injective_apply_eq [MeasurableSpace κ] [MeasurableSi
   rw [← Set.compl_ofPred, probReal_compl_eq_one_sub (Set.toFinite _).measurableSet,
     uniformOn_real_injective_apply_eq]
 
+/-- The injectivity probability `n.descFactorial m / n ^ m` of a uniform map from an `m`-element
+type to an `n`-element type is at most `1`. -/
+theorem descFactorial_div_pow_le_one (m n : ℕ) : (n.descFactorial m : ℝ) / (n : ℝ) ^ m ≤ 1 :=
+  div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le_pow n m) (by positivity)
+
+/-- The collision error `1 - n.descFactorial m / n ^ m` in `ℝ≥0∞` is the `ENNReal.ofReal` of its
+real counterpart. -/
+theorem one_sub_descFactorial_div_pow_eq_ofReal (m n : ℕ) :
+    1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m =
+      ENNReal.ofReal (1 - n.descFactorial m / (n : ℝ) ^ m) := by
+  have hle : (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m ≤ 1 :=
+    ENNReal.div_le_of_le_mul (by rw [one_mul]; exact_mod_cast Nat.descFactorial_le_pow n m)
+  rw [ENNReal.ofReal_sub _ (by positivity), ENNReal.ofReal_one]
+  congr 1
+  rw [← ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.one_ne_top hle)]
+  simp
+
 /-- Unconditional upper bound form of `uniformOn_not_injective_apply_eq`: when `ι → κ` is
 nonempty the two sides are equal, and when `ι → κ` is empty the uniform measure is zero while
 `1 - 0 / 0 = 1`. -/
@@ -159,8 +179,7 @@ theorem uniformOn_real_not_injective_le_one_sub_descFactorial_div_pow [Measurabl
         (Fintype.card κ : ℝ) ^ Fintype.card ι := by
   rcases isEmpty_or_nonempty (ι → κ) with h | h
   · rw [Measure.eq_zero_of_isEmpty (uniformOn (Set.univ : Set (ι → κ))), measureReal_zero_apply]
-    exact sub_nonneg.2 (div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le_pow _ _)
-      (by positivity))
+    exact sub_nonneg.2 (descFactorial_div_pow_le_one _ _)
   · exact uniformOn_real_not_injective_apply_eq.le
 
 end

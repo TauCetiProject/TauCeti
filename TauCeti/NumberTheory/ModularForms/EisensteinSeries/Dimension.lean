@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Span
 import TauCeti.NumberTheory.ModularForms.CharacterDecomp
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Independence
 import TauCeti.NumberTheory.ModularForms.Cusps.Codimension
+import TauCeti.NumberTheory.ModularForms.Cusps.ConstantTerm.Gamma1Four
 import TauCeti.NumberTheory.ModularForms.SturmBound
 
 /-!
@@ -78,11 +79,6 @@ private theorem finrank_congruenceEisensteinSubspace_le_card_four (hk : 3 ≤ (k
     Module.finrank ℂ (congruenceEisensteinSubspace (Gamma_le_Gamma1 4) hk) ≤
       Nat.card (CharIndex 4 k) := by
   have hV := disjoint_congruenceEisensteinSubspace_cuspFormSubmodule (Gamma_le_Gamma1 4) hk
-  have hvanish {γ m : SL(2, ℤ)} (hm : γ * m * γ⁻¹ ∈ Gamma1 4) (hm₁₀ : m 1 0 = 0)
-      (hm₀₀ : m 0 0 = -1) (hodd : Odd k) (f : ModularForm ((Gamma1 4).map (mapGL ℝ)) k) :
-      ModularForm.constantTermAt γ f = 0 :=
-    ModularForm.constantTermAt_eq_zero_of_odd (Subgroup.mem_map_of_mem _ hm) hm₁₀ hm₀₀
-      (by exact_mod_cast hodd) f
   rw [CharIndex.card_four]
   split_ifs with hk₂
   · simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k _
@@ -90,9 +86,9 @@ private theorem finrank_congruenceEisensteinSubspace_le_card_four (hk : 3 ≤ (k
   · -- In odd weight the irregular cusp `1/2` carries no constant term.
     simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S]
       (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
-        h.elim (fun h ↦ .inl ⟨1, h⟩) fun h ↦ .inr (hvanish
-          (mul_neg_T_mul_inv_mem_Gamma1_four h) (by simp [ModularGroup.coe_T])
-          (by simp [ModularGroup.coe_T]) (Nat.not_even_iff_odd.mp hk₂))) hV
+        h.elim (fun h ↦ .inl ⟨1, h⟩) fun h ↦
+          .inr (ModularForm.constantTermAt_eq_zero_of_odd_of_Gamma1_four h
+            (by exact_mod_cast Nat.not_even_iff_odd.mp hk₂))) hV
 
 /-- The Eisenstein subspace of `M_k(Γ₁(N))` has dimension at most the number of Eisenstein
 indices. Away from the levels `1`, `2` and `4` the indices are as many as the cusps. At those

@@ -36,9 +36,7 @@ for the trivial line bundle.
 * `InvertibleSheaf.tensorProductComm` exchanges the two tensor factors;
 * `InvertibleSheaf.tensorProductAssoc` is the associativity isomorphism;
 * `InvertibleSheaf.tensorTrivialLeftIso` and `InvertibleSheaf.tensorTrivialRightIso` are the
-  unit isomorphisms in the full category of invertible sheaves;
-* `SheafOfModules.isInvertible_tensor`: the monoidal tensor product of two invertible sheaves is
-  invertible.
+  unit isomorphisms in the full category of invertible sheaves.
 
 The underlying sheaf is exposed by `tensorProduct_obj`, while the congruence, symmetry,
 associativity, and unit isomorphisms provide the categorical API for manipulating tensor products
@@ -400,20 +398,6 @@ lemma tensorTrivialRightIso_inv_hom (L : InvertibleSheaf X) :
   (rfl)
 
 end InvertibleSheaf
-
-namespace SheafOfModules
-
-variable {X : Scheme.{u}}
-
-/-- The monoidal tensor product of two invertible `𝒪_X`-modules is invertible. -/
-instance isInvertible_tensor {M N : X.Modules}
-    [hM : isInvertible X M] [hN : isInvertible X N] :
-    isInvertible X (M ⊗ N) :=
-  (isInvertible X).prop_of_iso
-    (InvertibleSheaf.tensorProductObjIso ⟨M, hM⟩ ⟨N, hN⟩)
-    (InvertibleSheaf.tensorProduct ⟨M, hM⟩ ⟨N, hN⟩).property
-
-end SheafOfModules
 
 end
 

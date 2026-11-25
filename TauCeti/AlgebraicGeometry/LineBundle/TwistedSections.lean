@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
-public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GeneratingSections
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Sections
@@ -46,8 +45,6 @@ global section of `F ⊗ Lⁿ`. These global sections generate `F ⊗ Lⁿ`.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_tensorPowSection`: for `n > 0`, the
-  nonvanishing locus of `eⁿ` equals that of `e`.
 * `AlgebraicGeometry.Scheme.Modules.bijective_tmulRight_tensorPowSection_of_le_nonvanishingLocus`:
   for an invertible sheaf `L`, `t ↦ t ⊗ eⁿ` is bijective over the nonvanishing locus of `e`.
 * `AlgebraicGeometry.Scheme.Modules.exists_tmulRight_tensorPowSection_eq_zero`: a section over a
@@ -84,39 +81,6 @@ variable {X : Scheme.{u}} (F : X.Modules) {L : X.Modules}
 
 variable [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X L]
 
-/-- For a positive exponent `n`, the nonvanishing locus of the tensor power `eⁿ` of a section `e`
-of an invertible sheaf `L` equals the nonvanishing locus of `e`. -/
-@[simp]
-theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (e : Γ(L, U)) {n : ℕ} (hn : 0 < n) :
-    (tensorPow L n).nonvanishingLocus (tensorPowSection e n) = L.nonvanishingLocus e := by
-  ext x; by_cases hxU : x ∈ U
-  · obtain ⟨V, t, hxV⟩ := exists_mem_trivialization L x
-    let i : U ⊓ V ⟶ V := homOfLE inf_le_right; let j : U ⊓ V ⟶ U := homOfLE inf_le_left
-    let b : Γ(L, U ⊓ V) := L.presheaf.map i.op (trivializationGenerator L t)
-    let r : Γ(X, U ⊓ V) := trivializationCoordinate L t i (L.presheaf.map j.op e)
-    have hb : U ⊓ V ≤ L.nonvanishingLocus b := by
-      rw [nonvanishingLocus_map, nonvanishingLocus_trivializationGenerator]
-      exact le_inf le_rfl inf_le_right
-    have hbn : U ⊓ V ≤ (tensorPow L n).nonvanishingLocus (tensorPowSection b n) :=
-      (le_nonvanishingLocus_iff (tensorPowSection b n) (𝟙 (U ⊓ V))).mpr fun W k ↦ by
-        simpa only [Category.comp_id] using bijective_smul_tensorPowSection b
-          (fun W' k' ↦ by simpa only [Category.comp_id] using
-            (le_nonvanishingLocus_iff b (𝟙 (U ⊓ V))).mp hb W' k') n W k
-    have he : L.presheaf.map j.op e = r • b :=
-      eq_trivializationCoordinate_smul_map_trivializationGenerator L t i _
-    have hLHS : x ∈ (U ⊓ V) ⊓ (tensorPow L n).nonvanishingLocus (tensorPowSection e n) ↔
-        x ∈ X.basicOpen r := by
-      rw [← nonvanishingLocus_map, map_tensorPowSection, he, tensorPowSection_smul,
-        nonvanishingLocus_smul, X.basicOpen_pow r hn,
-        inf_eq_left.mpr ((X.basicOpen_le r).trans hbn)]
-    have hRHS : x ∈ (U ⊓ V) ⊓ L.nonvanishingLocus e ↔ x ∈ X.basicOpen r := by
-      rw [← nonvanishingLocus_map, he, nonvanishingLocus_smul,
-        inf_eq_left.mpr ((X.basicOpen_le r).trans hb)]
-    exact ⟨fun h ↦ (hRHS.mpr (hLHS.mp ⟨⟨hxU, hxV⟩, h⟩)).2,
-      fun h ↦ (hLHS.mpr (hRHS.mp ⟨⟨hxU, hxV⟩, h⟩)).2⟩
-  · exact iff_of_false (fun h ↦ hxU ((tensorPow L n).nonvanishingLocus_le _ h))
-      (fun h ↦ hxU (L.nonvanishingLocus_le _ h))
-
 /-- For an invertible sheaf `L` and a section `e` of `L` over `U` that vanishes nowhere on `U`,
 tensoring with `eⁿ` is a bijection `Γ(F, U) → Γ(F ⊗ Lⁿ, U)` for every `n`. -/
 theorem bijective_tmulRight_tensorPowSection_of_le_nonvanishingLocus {U : X.Opens}
@@ -124,6 +88,32 @@ theorem bijective_tmulRight_tensorPowSection_of_le_nonvanishingLocus {U : X.Open
     Function.Bijective (tmulRight F (tensorPowSection e n)) :=
   bijective_tmulRight_tensorPowSection F e (fun W i ↦ by
     simpa only [Category.comp_id] using (le_nonvanishingLocus_iff e (𝟙 U)).mp h W i) n
+
+/-- A quasi-compact open `U` is covered by finitely many affine opens `V i ≤ U`, each carrying a
+section `e i` of `L` that vanishes nowhere on `V i`. -/
+private theorem exists_finite_affine_cover_le_nonvanishingLocus {U : X.Opens}
+    (hU : IsCompact (U : Set X)) :
+    ∃ (ι : Type u) (_ : Finite ι) (V : ι → X.Opens) (e : ∀ i, Γ(L, V i)),
+      (∀ i, IsAffineOpen (V i)) ∧ (∀ i, V i ≤ U) ∧ (∀ i, V i ≤ L.nonvanishingLocus (e i)) ∧
+        U ≤ ⨆ i, V i := by
+  -- Near each point of `U`, take an affine open inside `U` and inside a trivializing open.
+  have H (x : U) : ∃ (A : X.Opens) (e : Γ(L, A)), IsAffineOpen A ∧ (x : X) ∈ A ∧ A ≤ U ∧
+      A ≤ L.nonvanishingLocus e := by
+    obtain ⟨V, t, hxV⟩ := exists_mem_trivialization L x
+    obtain ⟨_, ⟨A, hA, rfl⟩, hxA, hAUV⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
+      (show (x : X) ∈ ((U ⊓ V : X.Opens) : Set X) from ⟨x.property, hxV⟩) (U ⊓ V).isOpen
+    have hAV : A ≤ V := fun y hy ↦ (hAUV hy).2
+    refine ⟨A, L.presheaf.map (homOfLE hAV).op (trivializationGenerator L t), hA, hxA,
+      fun y hy ↦ (hAUV hy).1, ?_⟩
+    rw [nonvanishingLocus_map, nonvanishingLocus_trivializationGenerator]
+    exact le_inf le_rfl hAV
+  choose A e hA hxA hAU hAe using H
+  obtain ⟨t, ht⟩ := hU.elim_finite_subcover (fun x : U ↦ (A x : Set X)) (fun x ↦ (A x).isOpen)
+    fun x hx ↦ Set.mem_iUnion.mpr ⟨⟨x, hx⟩, hxA ⟨x, hx⟩⟩
+  refine ⟨t, inferInstance, fun i ↦ A i, fun i ↦ e i, fun i ↦ hA i, fun i ↦ hAU i,
+    fun i ↦ hAe i, fun x hx ↦ ?_⟩
+  obtain ⟨i, hi, hxi⟩ := Set.mem_iUnion₂.mp (ht hx)
+  exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hxi⟩
 
 /-- **Sections vanishing on the nonvanishing locus are killed by a power of the section**
 (Hartshorne, Lemma II.5.14(a)). Let `F` be quasi-coherent and `L` invertible, let `s` be a section
@@ -134,14 +124,14 @@ theorem exists_tmulRight_tensorPowSection_eq_zero [F.IsQuasicoherent] {U : X.Ope
     (ht : F.presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op t = 0) :
     ∃ n : ℕ, tmulRight F (tensorPowSection s n) t = 0 := by
   obtain ⟨ι, _, V, e, hVa, hVU, hVe, hUV⟩ :=
-    L.exists_finite_affine_cover_le_nonvanishingLocus hU
+    exists_finite_affine_cover_le_nonvanishingLocus (L := L) hU
   cases nonempty_fintype ι
   -- On each `V i`, write `s = f i • e i`; then `X_s ∩ V i` is the basic open set of `f i`.
   choose f hf using fun i ↦
     surjective_smul_of_le_nonvanishingLocus (hVe i) (L.presheaf.map (homOfLE (hVU i)).op s)
   beta_reduce at hf
   have hD (i : ι) : X.basicOpen (f i) ≤ L.nonvanishingLocus s :=
-    (L.basicOpen_eq_inf_nonvanishingLocus _ s (hVe i) (hf i)).le.trans inf_le_right
+    (basicOpen_eq_inf_nonvanishingLocus _ s (hVe i) (hf i)).le.trans inf_le_right
   -- So the restriction of `t` to `V i` is killed by a power of `f i`.
   have H (i : ι) : ∃ n : ℕ, f i ^ n • F.presheaf.map (homOfLE (hVU i)).op t = 0 := by
     refine F.exists_pow_smul_eq_zero_of_isCompact (hVa i).isCompact _ _ ?_
@@ -170,14 +160,14 @@ theorem exists_map_eq_tmulRight_tensorPowSection [F.IsQuasicoherent] {U : X.Open
         tmulRight F
           (tensorPowSection (L.presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op s) n) t := by
   obtain ⟨ι, _, V, e, hVa, hVU, hVe, hUV⟩ :=
-    L.exists_finite_affine_cover_le_nonvanishingLocus hU
+    exists_finite_affine_cover_le_nonvanishingLocus (L := L) hU
   cases nonempty_fintype ι
   -- On each `V i`, write `s = f i • e i`; then `X_s ∩ V i` is the basic open set of `f i`.
   choose f hf using fun i ↦
     surjective_smul_of_le_nonvanishingLocus (hVe i) (L.presheaf.map (homOfLE (hVU i)).op s)
   beta_reduce at hf
   have hDf (i : ι) : X.basicOpen (f i) = V i ⊓ L.nonvanishingLocus s :=
-    L.basicOpen_eq_inf_nonvanishingLocus _ s (hVe i) (hf i)
+    basicOpen_eq_inf_nonvanishingLocus _ s (hVe i) (hf i)
   have hfD (i : ι) : X.basicOpen (f i) ≤ L.nonvanishingLocus s := (hDf i).le.trans inf_le_right
   -- On each affine `V i`, a common power `f i ^ N • t` extends to a section `y' i` over `V i`.
   obtain ⟨N, y', hy'⟩ := exists_pow_smul_eq_map_of_finite F hVa f hfD t

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Spin.Structure
 public import Mathlib.Algebra.Field.Defs
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.Algebra.Algebra.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.GeneralLinear
 import TauCeti.LinearAlgebra.Dual.End
@@ -16,17 +17,22 @@ import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
 /-!
 # Duality of the half-spin representations in dimension six
 
-For a polarized six-dimensional quadratic space, reversal interchanges the two simple factors of
-the even Clifford algebra. Consequently the action on one half-spin module is contragredient to
-the action on the other. This file turns that observation into an equivalence between the odd
-half-spin representation and the dual of the even half-spin representation.
+For a polarized six-dimensional quadratic space over a field of characteristic not two, reversal
+interchanges the two simple factors of the even Clifford algebra. Consequently the action on one
+half-spin module is contragredient to the action on the other. This file turns that observation
+into an equivalence between the odd half-spin representation and the dual of the even half-spin
+representation.
 
 The equivalence is not canonical. Reversal gives an anti-isomorphism between the two endomorphism
 algebras, and Skolem--Noether identifies it, after linear duality, with conjugation by some linear
 equivalence. Restriction to the Spin group then supplies the desired intertwiner.
 
-## Main result
+## Main results
 
+* `TauCeti.exists_linearEquiv_intertwines_dual_spinPlusAction_spinMinusAction_reverseEven`: for a
+  polarization whose line vanishes, a linear equivalence from the dual of the even half-spin
+  module to the odd one intertwines the transposed action of each even Clifford element with the
+  action of its reversal.
 * `TauCeti.exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six`: in dimension six,
   a polarization line vanishes and the odd half-spin representation is equivalent to the dual of
   the even half-spin representation.
@@ -238,11 +244,15 @@ private theorem exists_algEquiv_op_spinPlusAction_reverseEven [NeZero (2 : K)]
   simpa only [hep] using
     reverseEvenFirstToSecondAlgEquiv_action ep hswap (hplus.trans hminus.symm) x
 
-/-- Scalar duality and Skolem--Noether realize reversal as a linear equivalence from the dual of
-the even half-spin module to the odd half-spin module that intertwines the transposed even action
-with the reversed odd action. -/
-private theorem exists_linearEquiv_dual_spinPlus_conj [NeZero (2 : K)]
-    (P : SpinPolarizationData Q) (hline : P.line = ⊥) (hV : finrank K V = 6) :
+/-- For a six-dimensional quadratic space over a field of characteristic not two with a
+polarization whose line vanishes, there is a linear equivalence `T` from the dual of the even
+half-spin module to the odd half-spin module that intertwines the dual of the even action of each
+even Clifford element `x` with the odd action of its reversal:
+`T ((spinPlusAction x).dualMap φ) = spinMinusAction (reverseEven x) (T φ)`.
+
+It comes from scalar duality and Skolem--Noether applied to reversal. -/
+theorem exists_linearEquiv_intertwines_dual_spinPlusAction_spinMinusAction_reverseEven
+    [NeZero (2 : K)] (P : SpinPolarizationData Q) (hline : P.line = ⊥) (hV : finrank K V = 6) :
     ∃ T : Module.Dual K (spinPlus Q P) ≃ₗ[K] spinMinus Q P, ∀ (x : even Q)
       (φ : Module.Dual K (spinPlus Q P)),
       T ((spinPlusAction Q P hline x).dualMap φ) =
@@ -271,7 +281,8 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   have hline : P.line = ⊥ := P.line_eq_bot_of_even_finrank (hV ▸ by decide)
   refine ⟨hline, ?_⟩
-  obtain ⟨T, hT⟩ := exists_linearEquiv_dual_spinPlus_conj P hline hV
+  obtain ⟨T, hT⟩ :=
+    exists_linearEquiv_intertwines_dual_spinPlusAction_spinMinusAction_reverseEven P hline hV
   -- The duality on the restricted even Clifford actions, from the conjugacy equation at `g⁻¹`.
   let E : Representation.Equiv
       ((spinMinusAction Q P hline : even Q →* End K (spinMinus Q P)).comp (spinGroupToEven Q))

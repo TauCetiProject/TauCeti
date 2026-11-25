@@ -126,13 +126,20 @@ theorem zeroSectionDivisor_pow_map (n : ℕ) :
       (W.zeroSectionDivisor ^ n).comap (W.projModelBaseChange f) := by
   rw [zeroSectionDivisor_map, AlgebraicGeometry.Scheme.IdealSheafData.comap_pow]
 
+/-- The variable-change isomorphism `(W.projModelVariableChangeIso C).hom` forms a cartesian square
+over `𝟙 (Spec R)`. -/
+theorem isPullback_projModelVariableChangeIso_hom (C : VariableChange R) :
+    IsPullback (W.projModelVariableChangeIso C).hom (C • W).projModelOver W.projModelOver
+      (𝟙 (Spec (.of R))) :=
+  IsPullback.of_horiz_isIso ⟨by simp⟩
+
 /-- **An admissible change of variables pulls `[0]` back to `[0]`.** -/
 @[simp]
 theorem zeroSectionDivisor_variableChange (C : VariableChange R) :
     (C • W).zeroSectionDivisor =
       W.zeroSectionDivisor.comap (W.projModelVariableChangeIso C).hom :=
-  zeroSectionDivisor_eq_comap_of_isPullback (f := 𝟙 _)
-    (IsPullback.of_horiz_isIso ⟨by simp⟩) (by simp [W.projModelZero_projModelVariableChangeIso_hom])
+  zeroSectionDivisor_eq_comap_of_isPullback (W.isPullback_projModelVariableChangeIso_hom C)
+    ((W.projModelZero_projModelVariableChangeIso_hom C).trans (Category.id_comp _).symm)
 
 /-- **An admissible change of variables pulls `n[0]` back to `n[0]`.** -/
 theorem zeroSectionDivisor_pow_variableChange (C : VariableChange R) (n : ℕ) :
@@ -325,10 +332,26 @@ theorem zeroSectionDivisor_pow_three_comap_chartι (i : Fin 3) :
         ← equivOfIsAffine_symm_apply, map_one]
     rw [zeroSectionDivisor_comap_chartι_eq_top_of_ne_one W hi, hrhs, ← one_eq_top, one_pow]
 
+/-- In any commutative ring `B`, if `z * v = x ^ 3` with `z` regular and `v` a unit, then `x` is
+regular and `(x, z) = (x)`. -/
+private theorem isSMulRegular_and_span_pair_eq_span_singleton {B : Type*} [CommRing B]
+    {x z v : B} (hrel : z * v = x ^ 3) (hz : IsSMulRegular B z) (hv : IsUnit v) :
+    IsSMulRegular B x ∧ Ideal.span {x, z} = Ideal.span {x} := by
+  obtain ⟨u, rfl⟩ := hv
+  have hpow : x ^ 2 * x = z * u := by rw [hrel]; ring
+  have hx3 : IsSMulRegular B (x ^ 2 * x) := by
+    rw [hpow]
+    exact hz.mul (u.isUnit.isSMulRegular (M := B))
+  refine ⟨IsSMulRegular.of_mul hx3,
+    le_antisymm ?_ (Ideal.span_mono (Set.singleton_subset_iff.mpr (Or.inl rfl)))⟩
+  rw [Ideal.span_le, Set.pair_subset_iff]
+  refine ⟨Ideal.subset_span rfl, Ideal.mem_span_singleton'.mpr ⟨x ^ 2 * ↑u⁻¹, ?_⟩⟩
+  calc x ^ 2 * (↑u⁻¹ : B) * x = x ^ 3 * ↑u⁻¹ := by ring
+    _ = z * u * ↑u⁻¹ := by rw [← hrel]
+    _ = z := by rw [mul_assoc, Units.mul_inv, mul_one]
+
 /-- **The zero section cuts out an effective Cartier divisor** on `W.projModel` over any
-commutative ring, with no ellipticity hypothesis. On `D₊(X)` and `D₊(Z)` it is empty; on `D₊(Y)`,
-`z (1 - t) = x³` with `t ∈ (x, z)` makes `(x, z)` equal to `(1)` on `D(t)` and `(x)` on `D(1 - t)`,
-where `x` is a nonzerodivisor because `z` is. -/
+commutative ring, with no ellipticity hypothesis. -/
 theorem isEffectiveCartier_zeroSectionDivisor :
     W.zeroSectionDivisor.IsEffectiveCartier := by
   refine isEffectiveCartier_of_forall_exists_isOpenImmersion _ fun p ↦ ?_
@@ -351,7 +374,7 @@ theorem isEffectiveCartier_zeroSectionDivisor :
       rw [ofIdealTop_ideal, Ideal.span_singleton_one]
       exact Ideal.eq_top_of_isUnit_mem _
         (Ideal.mem_map_of_mem _ (Ideal.mem_map_of_mem _ W.chartOneT_mem_span)) htU
-    · -- On `D(1 - t)`, `z = (1 - t)⁻¹ x³ ∈ (x)`, and `x³ = z (1 - t)` is a nonzerodivisor.
+    · -- On `D(1 - t)`, `z (1 - t) = x³` with `1 - t` invertible and `z` regular.
       set U : Y.affineOpens := Y.affineBasicOpen (U := ⟨⊤, isAffineOpen_top Y⟩) (e (1 - t))
       set φ : Γ(Y, ⊤) →+* Γ(Y, U) := (Y.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op).hom
       have hu : IsUnit (φ (e (1 - t))) :=
@@ -361,19 +384,11 @@ theorem isEffectiveCartier_zeroSectionDivisor :
       have hz_reg : IsSMulRegular Γ(Y, ⊤) (e z) :=
         (TauCeti.isSMulRegular_map_iff (Scheme.ΓSpecIso (.of A)).symm.commRingCatIsoToRingEquiv
           z).mpr W.isSMulRegular_chartPoint_one_two
-      have hx3_reg : IsSMulRegular Γ(Y, U) (φ (e x) ^ 2 * φ (e x)) := by
-        rw [show φ (e x) ^ 2 * φ (e x) = φ (e z) * φ (e (1 - t)) by rw [hrel]; ring]
-        exact ((isAffineOpen_top Y).isSMulRegular_map le_top hz_reg).mul
-          (hu.isSMulRegular (M := Γ(Y, U)))
-      refine ⟨U, hq1t, φ (e x), IsSMulRegular.of_mul hx3_reg, ?_⟩
+      obtain ⟨hx_reg, hspan⟩ := isSMulRegular_and_span_pair_eq_span_singleton hrel
+        ((isAffineOpen_top Y).isSMulRegular_map le_top hz_reg) hu
+      refine ⟨U, hq1t, φ (e x), hx_reg, ?_⟩
       rw [ofIdealTop_ideal, Ideal.map_span, Set.image_pair, Ideal.map_span, Set.image_pair]
-      refine le_antisymm ?_ (Ideal.span_mono (Set.singleton_subset_iff.mpr (Or.inl rfl)))
-      rw [Ideal.span_le, Set.pair_subset_iff]
-      obtain ⟨u, hu'⟩ := hu
-      refine ⟨Ideal.subset_span rfl, Ideal.mem_span_singleton'.mpr ⟨φ (e x) ^ 2 * ↑u⁻¹, ?_⟩⟩
-      calc φ (e x) ^ 2 * (↑u⁻¹ : Γ(Y, U)) * φ (e x) = φ (e x) ^ 3 * ↑u⁻¹ := by ring
-        _ = φ (e z) * u * ↑u⁻¹ := by rw [← hrel, hu']
-        _ = φ (e z) := by rw [mul_assoc, Units.mul_inv, mul_one]
+      exact hspan
   · rw [W.zeroSectionDivisor_comap_chartι_eq_top_of_ne_one hi]; exact isEffectiveCartier_top _
 
 end Chart

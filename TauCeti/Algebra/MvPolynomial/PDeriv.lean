@@ -49,6 +49,8 @@ difference of their constant coefficients.
 * `MvPolynomial.vars_pderiv_subset`: partial differentiation introduces no new variables.
 * `MvPolynomial.hasFiniteSupport_pderiv`: only finitely many partial derivatives of a polynomial
   are nonzero.
+* `MvPolynomial.derivation_apply_eq_sum_vars`: every derivation `D` on `MvPolynomial σ R` satisfies
+  `D p = ∑ i ∈ p.vars, pderiv i p • D (X i)`.
 * `MvPolynomial.totalDegree_iterate_pderiv_le`: the `k`-th iterated partial derivative has total
   degree at most `totalDegree p - k`.
 * `MvPolynomial.degreeOf_iterate_pderiv_le`: the `k`-th iterated partial derivative along `Xᵢ` has
@@ -66,6 +68,8 @@ difference of their constant coefficients.
   `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_sq`: Taylor's ideal-product estimate
   `p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ) ∈ I * J`, and its first-order specialisation modulo `I ^ 2`
   over an arbitrary variable type.
+* `MvPolynomial.sq_dvd_eval_add_smul_sub_sum_pderiv`: the first-order Taylor estimate
+  `d ^ 2 ∣ p(a + d b) - p(a) - d ∑ⱼ ∂ⱼp(a) bⱼ`.
 * `MvPolynomial.mul_dvd_eval_sub_eval_sub_sum_pderiv`: Taylor's divisibility estimate
   `d * e ∣ p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ)`.
 * `MvPolynomial.pderiv.ext`: over a commutative ring with `HasUniqueDiv`, a polynomial is
@@ -130,6 +134,20 @@ theorem hasFiniteSupport_pderiv {κ M : Type*} [Zero M] {e : κ → σ} (he : Fu
   refine (p.vars.finite_toSet.preimage he.injOn).subset fun k hk ↦ ?_
   by_contra h
   exact hk (by simp only [pderiv_eq_zero_of_notMem_vars h, hφ])
+
+/-- Every `R`-linear derivation `D` on `MvPolynomial σ R` (with `σ` possibly infinite) expands in
+the variables of `p`: `D p = ∑ i ∈ p.vars, pderiv i p • D (X i)`. -/
+theorem derivation_apply_eq_sum_vars {M : Type*} [AddCommMonoid M] [Module R M]
+    [Module (MvPolynomial σ R) M] [IsScalarTower R (MvPolynomial σ R) M]
+    (D : Derivation R (MvPolynomial σ R) M) (p : MvPolynomial σ R) :
+    D p = ∑ i ∈ p.vars, pderiv i p • D (X i) := by
+  classical
+  -- `q ↦ ∑ i ∈ p.vars, pderiv i q • D (X i)` is a derivation agreeing with `D` on `p.vars`
+  let D' : Derivation R (MvPolynomial σ R) M :=
+    ∑ i ∈ p.vars, (LinearMap.toSpanSingleton _ _ (D (X i))).compDer (pderiv i)
+  have hD' : ∀ q, D' q = ∑ i ∈ p.vars, pderiv i q • D (X i) := fun q ↦ by simp [D']
+  rw [← hD']
+  exact derivation_eq_of_forall_mem_vars fun j hj ↦ by simp [hD', pderiv_X, Pi.single_apply, hj]
 
 /-- Partial differentiation lowers the total degree by at least one. -/
 theorem totalDegree_pderiv_le (i : σ) (p : MvPolynomial σ R) :
@@ -348,6 +366,19 @@ theorem eval_sub_eval_sub_sum_pderiv_mem_sq (p : MvPolynomial σ R) {I : Ideal R
   have heval_a : eval (a ∘ Subtype.val) q = eval a p := by
     rw [← hq, eval_rename]
   simpa only [Function.comp_apply, heval_b, heval_a, hsum] using hmem
+
+/-- **First-order Taylor estimate modulo `d ^ 2` along the translates `a + d • b`.** Summing
+over the finitely many variables of `p`, `p(a + d b) - p(a) - d ∑ⱼ ∂ⱼp(a) bⱼ` is divisible by
+`d ^ 2`. -/
+theorem sq_dvd_eval_add_smul_sub_sum_pderiv (p : MvPolynomial σ R) (d : R) (a b : σ → R) :
+    d ^ 2 ∣ eval (a + d • b) p - eval a p - d * ∑ j ∈ p.vars, eval a (pderiv j p) * b j := by
+  have h := eval_sub_eval_sub_sum_pderiv_mem_sq p (I := Ideal.span {d}) (a := a)
+    (b := a + d • b) (s := p.vars) (fun i hi _ ↦ hi)
+    (fun i _ ↦ Ideal.mem_span_singleton.2 ⟨b i, by simp⟩)
+  rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton] at h
+  convert h using 2
+  rw [Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ by simp [mul_left_comm]
 
 /-- **Taylor's estimate in several variables.** If `d ∣ xᵢ - tᵢ`, `d ∣ e` and `e ∣ x'ᵢ - xᵢ` for
 every `i`, then the gradient at `t` linearises `p` from `x` to `x'` up to an error divisible by

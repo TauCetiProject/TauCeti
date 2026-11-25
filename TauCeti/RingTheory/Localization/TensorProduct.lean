@@ -17,6 +17,11 @@ Let `K` be a localization of `R` and let `A` be an `R`-algebra. Mathlib's
 automatically `K`-linear. This file records the analogue for the ring `K ⊗[R] A`: on modules where
 `q ⊗ₜ a` acts as `q • a • _`, every `A`-linear map is `K ⊗[R] A`-linear.
 
+Localizing the first factor of a tensor product localizes the tensor product: if `B` is a
+localization of `A` at `M`, then `B ⊗[R] S` is the localization of `A ⊗[R] S` at the image of `M`.
+Mathlib's `IsLocalization.tensorProduct_tensorProduct` asks for the scalar tower and the
+compatibility with `S`; here both follow from the algebra map being the map induced by `A → B`.
+
 For `R`-algebras `S` and `A` and a localization `B` of `A` away from `f : A`, Mathlib's isomorphism
 `IsLocalization.Away.tensorProductEquivTMulRight : S ⊗[R] B ≃ₐ[S] Localization.Away (1 ⊗ₜ f)` is
 computed on elements `1 ⊗ₜ z` by the map of localizations induced by `a ↦ 1 ⊗ₜ a`.
@@ -29,6 +34,9 @@ of a finite sum of elementary tensors.
 
 * `TauCeti.IsLocalization.linearMap_compatibleSMul_tensorProduct`: `A`-linear maps between such
   modules commute with the action of `K ⊗[R] A`.
+* `TauCeti.IsLocalization.tensorProduct_tensorProduct_of_algebraMap_eq`: if `B` is a localization
+  of `A` at `M`, then `B ⊗[R] S` is the localization of `A ⊗[R] S` at the image of `M`, along the
+  map induced by `A → B`.
 * `IsLocalization.Away.tensorProductEquivTMulRight_one_tmul`: the base-change isomorphism on
   elements `1 ⊗ₜ z` is the induced map of localizations.
 * `TensorProduct.exists_eq_inv_natCast_tmul`: every element of `ℚ ⊗[ℤ] M` is an elementary
@@ -62,6 +70,19 @@ theorem linearMap_compatibleSMul_tensorProduct {V W : Type*} [AddCommMonoid V] [
       rw [hV, hW, ← f.map_smul]
       exact (f.restrictScalars R).map_smul_of_tower q (a • v)
     | add b c hb hc => rw [add_smul, map_add, hb, hc, add_smul]
+
+/-- Let `B` be a localization of the `R`-algebra `A` at `M`, and give `B ⊗[R] S` the
+`A ⊗[R] S`-algebra structure of the map `A ⊗[R] S → B ⊗[R] S` induced by `A → B`. Then
+`B ⊗[R] S` is the localization of `A ⊗[R] S` at the image of `M`. -/
+theorem tensorProduct_tensorProduct_of_algebraMap_eq (R : Type*) [CommSemiring R]
+    (S : Type*) [CommSemiring S] [Algebra R S] {A : Type*} [CommSemiring A] [Algebra R A]
+    (M : Submonoid A) (B : Type*) [CommSemiring B] [Algebra R B] [Algebra A B]
+    [IsScalarTower R A B] [IsLocalization M B] [Algebra (A ⊗[R] S) (B ⊗[R] S)]
+    (H : algebraMap (A ⊗[R] S) (B ⊗[R] S) =
+      (Algebra.TensorProduct.map (IsScalarTower.toAlgHom R A B) (AlgHom.id R S)).toRingHom) :
+    _root_.IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[R] S) M) (B ⊗[R] S) := by
+  have : IsScalarTower A (A ⊗[R] S) (B ⊗[R] S) := .of_algebraMap_eq fun a ↦ by simp [H]
+  exact _root_.IsLocalization.tensorProduct_tensorProduct R S M B (by ext; simp [H])
 
 end TauCeti.IsLocalization
 
