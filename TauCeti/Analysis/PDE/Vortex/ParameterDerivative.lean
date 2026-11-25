@@ -257,9 +257,7 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le {c : 
   have hinner : ‖sobolevFieldValues (π y)‖ ^ 2 ≤
       |⟪sobolevFieldValues (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b
         (sobolevFieldValues (π y)))), A⟫| := by
-    have h := hπ.inner_apply_eq_norm_sq y
-    rw [RCLike.ofReal_real_eq_id, id] at h
-    exact h ▸ (le_abs_self _).trans (hpair _ hp)
+    exact hπ.real_inner_apply_eq_norm_sq y ▸ (le_abs_self _).trans (hpair _ hp)
   -- The weight `exp(-c ρ)` costs at most `qn ‖Z‖ ‖b‖∞ kn` on `Q (Z(b, π y))`, relative to `‖π y‖₂`.
   have hqe : eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
       (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b (sobolevFieldValues (π y)))) z) 2 μ⊤ ≤
@@ -343,9 +341,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_
   -- `‖π e‖₂² = ⟪π e, e⟫`, since `e - π e` is orthogonal to the kernel.
   have hinner : ‖sobolevFieldValues (π e)‖ ^ 2 ≤
       |⟪sobolevFieldValues (π e), sobolevFieldValues e⟫| := by
-    have h := hπ.inner_apply_eq_norm_sq e
-    rw [RCLike.ofReal_real_eq_id, id] at h
-    rw [real_inner_comm, h]
+    rw [real_inner_comm, hπ.real_inner_apply_eq_norm_sq e]
     exact le_abs_self _
   exact TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner (hkc (π e) hk) (hkn (π e) hk) hinner
 
@@ -366,8 +362,7 @@ private theorem isFredholm_and_differentiableAt_sobolevGaugeFixedOperator {m : �
   obtain ⟨hT, hsurj⟩ := isFredholm_and_surjective_sobolevGaugeFixedOperator hx hsol hframe hax
   have := hT.finite_ker
   exact ⟨hT, hsurj,
-    ((contDiff_sobolevGaugeFixedOperator (n := 1)).differentiable one_ne_zero).differentiableAt.comp
-      p₀ ha,
+    differentiableAt_sobolevGaugeFixedOperator_comp ha,
     isOrthogonalKerProjection_orthogonalKerProjection sobolevFieldValues_injective _⟩
 
 /-- **The weighted estimate for the parameter derivative of the orthogonal right inverses,

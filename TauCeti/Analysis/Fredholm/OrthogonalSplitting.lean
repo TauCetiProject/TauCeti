@@ -218,6 +218,13 @@ theorem IsOrthogonalKerProjection.inner_apply_eq_norm_sq {π : E →L[𝕜] E}
   rw [map_sub, inner_sub_left, sub_eq_zero] at h₀
   rw [h₀, inner_self_eq_norm_sq_to_K]
 
+/-- The real form of `IsOrthogonalKerProjection.inner_apply_eq_norm_sq`, without the coercion:
+`⟪ι e, ι (π e)⟫_ℝ = ‖ι (π e)‖²`. -/
+theorem IsOrthogonalKerProjection.real_inner_apply_eq_norm_sq [Module ℝ E] [Module ℝ F]
+    [InnerProductSpace ℝ H] {ι : E →L[ℝ] H} {T : E →L[ℝ] F} {π : E →L[ℝ] E}
+    (h : IsOrthogonalKerProjection ι T π) (e : E) : ⟪ι e, ι (π e)⟫_ℝ = ‖ι (π e)‖ ^ 2 := by
+  simpa only [RCLike.ofReal_real_eq_id, id_eq] using h.inner_apply_eq_norm_sq e
+
 /-- **Uniqueness of the orthogonal right inverse.** For an injective `ι` into an inner product
 space, two right inverses of `T` whose values are `ι`-orthogonal to the kernel of `T` agree. -/
 theorem IsOrthogonalRightInverse.unique (hι : Injective ι) {Q Q' : F →L[𝕜] E}
