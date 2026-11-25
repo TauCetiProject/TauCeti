@@ -88,18 +88,18 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 section Pointwise
 
 variable [IsManifold I 2 M] (h : i.IsNondegenerateCriticalSubmanifold f)
-  (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+  (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
 
 /-- The bilinear form `(v, w) ↦ (Hess (v⁺, w⁺) - Hess (v⁻, w⁻)) / 2` on the normal space, where
 `v⁻` and `v⁺` are the components of `v` in the negative and positive normal spaces relative to
 `g`. -/
-private def adaptedForm (s : S) : LinearMap.BilinForm ℝ (i.NormalSpace s hn) :=
+private def adaptedForm (s : S) : LinearMap.BilinForm ℝ (i.isImmersion.NormalSpace s hn) :=
   (2⁻¹ : ℝ) • ((h.normalHessian hn s).compl₁₂ (1 - h.negativeNormalProjection hn g s)
       (1 - h.negativeNormalProjection hn g s) -
     (h.normalHessian hn s).compl₁₂ (h.negativeNormalProjection hn g s)
       (h.negativeNormalProjection hn g s))
 
-private theorem adaptedForm_apply {s : S} (v w : i.NormalSpace s hn) :
+private theorem adaptedForm_apply {s : S} (v w : i.isImmersion.NormalSpace s hn) :
     h.adaptedForm hn g s v w =
       (h.normalHessian hn s (v - h.negativeNormalProjection hn g s v)
           (w - h.negativeNormalProjection hn g s w) -
@@ -107,12 +107,12 @@ private theorem adaptedForm_apply {s : S} (v w : i.NormalSpace s hn) :
           (h.negativeNormalProjection hn g s w)) / 2 := by
   simp [adaptedForm, div_eq_inv_mul]
 
-private theorem adaptedForm_symm {s : S} (v w : i.NormalSpace s hn) :
+private theorem adaptedForm_symm {s : S} (v w : i.isImmersion.NormalSpace s hn) :
     h.adaptedForm hn g s v w = h.adaptedForm hn g s w v := by
   simp only [adaptedForm_apply, (h.isSymm_normalHessian hn s).eq (v - _),
     (h.isSymm_normalHessian hn s).eq (h.negativeNormalProjection hn g s v)]
 
-private theorem adaptedForm_pos {s : S} {v : i.NormalSpace s hn} (hv : v ≠ 0) :
+private theorem adaptedForm_pos {s : S} {v : i.isImmersion.NormalSpace s hn} (hv : v ≠ 0) :
     0 < h.adaptedForm hn g s v v := by
   set P := h.negativeNormalProjection hn g s
   rw [adaptedForm_apply]
@@ -135,13 +135,13 @@ metric `g` on its normal bundle, the fibre metric `(v, w) ↦ (Hess (v⁺, w⁺)
 where `v⁻` and `v⁺` are the components of `v` in the negative and positive normal spaces relative
 to `g`. In it the normal Hessian is `2 (‖v⁺‖² - ‖v⁻‖²)`
 (`normalHessian_apply_eq_two_mul_adaptedMetric_inner_sub`). -/
-def adaptedMetric : RiemannianMetric fun s ↦ i.NormalSpace s hn :=
+def adaptedMetric : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn :=
   .ofFiniteDimensional (h.adaptedForm hn g) (fun _ ↦ ⟨h.adaptedForm_symm hn g⟩)
     (fun _ _ hv ↦ h.adaptedForm_pos hn g hv)
 
 /-- The adapted metric is `(Hess (v⁺, w⁺) - Hess (v⁻, w⁻)) / 2`, with `v⁻ = P v` and
 `v⁺ = v - P v` for the projection `P` onto the negative normal space along the positive one. -/
-theorem adaptedMetric_inner {s : S} (v w : i.NormalSpace s hn) :
+theorem adaptedMetric_inner {s : S} (v w : i.isImmersion.NormalSpace s hn) :
     (h.adaptedMetric hn g).inner s v w =
       (h.normalHessian hn s (v - h.negativeNormalProjection hn g s v)
           (w - h.negativeNormalProjection hn g s w) -
@@ -150,8 +150,8 @@ theorem adaptedMetric_inner {s : S} (v w : i.NormalSpace s hn) :
   simp only [adaptedMetric, RiemannianMetric.ofFiniteDimensional_inner, adaptedForm_apply]
 
 /-- **On the negative normal space the adapted metric is `-Hess / 2`.** -/
-theorem adaptedMetric_inner_of_mem_negativeNormalSpace {s : S} {v : i.NormalSpace s hn}
-    (hv : v ∈ h.negativeNormalSpace hn g s) (w : i.NormalSpace s hn) :
+theorem adaptedMetric_inner_of_mem_negativeNormalSpace {s : S} {v : i.isImmersion.NormalSpace s hn}
+    (hv : v ∈ h.negativeNormalSpace hn g s) (w : i.isImmersion.NormalSpace s hn) :
     (h.adaptedMetric hn g).inner s v w = -h.normalHessian hn s v w / 2 := by
   rw [adaptedMetric_inner, h.negativeNormalProjection_apply_of_mem hn g hv, sub_self,
     h.normalHessian_apply_eq_normalHessian_negativeNormalProjection_add hn g v w,
@@ -159,8 +159,8 @@ theorem adaptedMetric_inner_of_mem_negativeNormalSpace {s : S} {v : i.NormalSpac
   simp
 
 /-- **On the positive normal space the adapted metric is `Hess / 2`.** -/
-theorem adaptedMetric_inner_of_mem_positiveNormalSpace {s : S} {v : i.NormalSpace s hn}
-    (hv : v ∈ h.positiveNormalSpace hn g s) (w : i.NormalSpace s hn) :
+theorem adaptedMetric_inner_of_mem_positiveNormalSpace {s : S} {v : i.isImmersion.NormalSpace s hn}
+    (hv : v ∈ h.positiveNormalSpace hn g s) (w : i.isImmersion.NormalSpace s hn) :
     (h.adaptedMetric hn g).inner s v w = h.normalHessian hn s v w / 2 := by
   have hP : h.negativeNormalProjection hn g s v = 0 :=
     h.negativeNormalProjection_apply_eq_zero_of_mem hn g hv
@@ -172,7 +172,8 @@ theorem adaptedMetric_inner_of_mem_positiveNormalSpace {s : S} {v : i.NormalSpac
 adapted inner product of their positive components minus twice that of their negative components.
 For `w = v` it is twice the squared norm of the positive component minus twice the squared norm of
 the negative component, both taken in the adapted metric. -/
-theorem normalHessian_apply_eq_two_mul_adaptedMetric_inner_sub {s : S} (v w : i.NormalSpace s hn) :
+theorem normalHessian_apply_eq_two_mul_adaptedMetric_inner_sub {s : S}
+    (v w : i.isImmersion.NormalSpace s hn) :
     h.normalHessian hn s v w =
       2 * ((h.adaptedMetric hn g).inner s (v - h.negativeNormalProjection hn g s v)
           (w - h.negativeNormalProjection hn g s w) -
@@ -260,7 +261,7 @@ theorem contMDiff_adaptedMetric (h : i.IsNondegenerateCriticalSubmanifold f) (hk
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -268,7 +269,7 @@ theorem contMDiff_adaptedMetric (h : i.IsNondegenerateCriticalSubmanifold f) (hk
     letI := i.normalSpaceVectorBundle hn hdim
     ContMDiff J (J.prod 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ)) k fun s ↦
       TotalSpace.mk' (P →L[ℝ] P →L[ℝ] ℝ)
-        (E := fun s ↦ i.NormalSpace s hn →L[ℝ] i.NormalSpace s hn →L[ℝ] ℝ) s
+        (E := fun s ↦ i.isImmersion.NormalSpace s hn →L[ℝ] i.isImmersion.NormalSpace s hn →L[ℝ] ℝ) s
         ((h.adaptedMetric hn g.toRiemannianMetric).inner s) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -317,7 +318,7 @@ theorem contMDiff_adaptedMetric (h : i.IsNondegenerateCriticalSubmanifold f) (hk
   refine (contMDiffAt_hom_bundle _).2 ⟨contMDiffAt_id,
     (hφ.contMDiffAt (e.open_baseSet.mem_nhds hs₀)).congr_of_eventuallyEq ?_⟩
   filter_upwards [e.open_baseSet.mem_nhds hs₀] with s hs
-  have hs' : s ∈ (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).baseSet := by
+  have hs' : s ∈ (trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) s₀).baseSet := by
     rwa [normalSpaceFiberBundle_trivializationAt]
   ext u v
   rw [inCoordinates_apply_eq₂ (𝕜 := ℝ) (F₃ := ℝ) (E₃ := Trivial S ℝ) hs' hs' (Set.mem_univ _)]
@@ -335,12 +336,12 @@ def contMDiffAdaptedMetric (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k 
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) :
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn :=
+    ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn :=
   haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -360,7 +361,7 @@ theorem toRiemannianMetric_contMDiffAdaptedMetric (h : i.IsNondegenerateCritical
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
