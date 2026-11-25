@@ -150,7 +150,8 @@ theorem isBigO_one_add_cpow_sub_sum (c : ℂ) (K : ℕ) :
     (Asymptotics.isBigO_norm_left.2 (Asymptotics.isBigO_refl _ _)).congr_left fun z ↦ norm_pow z K
   refine ((Complex.one_add_cpow_hasFPowerSeriesAt_zero (a := c)).isBigO_sub_partialSum_pow K
     |>.trans hpow).congr_left fun z ↦ ?_
-  simp [FormalMultilinearSeries.partialSum, binomialSeries, mul_comm]
+  simp only [zero_add, FormalMultilinearSeries.partialSum, binomialSeries_apply, List.ofFn_const,
+    List.prod_replicate, smul_eq_mul, mul_comm]
 
 section NormedAlgebra
 
