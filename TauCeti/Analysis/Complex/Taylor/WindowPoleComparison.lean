@@ -31,10 +31,10 @@ These are the two pole comparisons in Levent Alpöge's windowed Landau argument 
 
 public section
 
-open Filter Metric
+open Filter Metric TauCeti
 open scoped Nat
 
-namespace TauCeti
+namespace DifferentiableOn
 
 /-- If a disc about `z` isolates a simple pole at `ρ` and a disc about `w` of radius greater than
 `‖z - ρ‖` is holomorphic, a window bound on the sum of the coefficient norm at `z` and the
@@ -95,4 +95,4 @@ theorem residue_re_nonpos_of_window_taylor_bound {F : ℂ → ℂ}
   filter_upwards [hlower] with k hk
   exact hk.trans (le_add_of_nonneg_left (norm_nonneg _))
 
-end TauCeti
+end DifferentiableOn
