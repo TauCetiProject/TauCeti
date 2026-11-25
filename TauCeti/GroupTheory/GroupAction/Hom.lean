@@ -111,9 +111,10 @@ namespace TauCeti
 theorem iterate_map_smulₛₗ {R F M : Type*} {σ : R → R} [SMul R M] [FunLike F M M]
     [MulActionSemiHomClass F σ M M] (f : F) (n : ℕ) (r : R) (x : M) :
     f^[n] (r • x) = σ^[n] r • f^[n] x := by
-  induction n with
-  | zero => rfl
-  | succ n ih => simp only [Function.iterate_succ_apply', ih, map_smulₛₗ]
+  have h : Function.Semiconj (fun z : R × M => z.1 • z.2) (Prod.map σ f) f :=
+    fun z => (map_smulₛₗ f z.1 z.2).symm
+  simpa only [Prod.map_iterate, Prod.map_fst, Prod.map_snd] using
+    ((h.iterate_right n) (r, x)).symm
 
 /-- The iterates of an equivariant map preserve scalar multiplication. -/
 theorem iterate_map_smul {R F M : Type*} [SMul R M] [FunLike F M M]

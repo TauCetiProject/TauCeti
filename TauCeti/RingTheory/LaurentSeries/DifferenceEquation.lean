@@ -8,14 +8,16 @@ module
 public import TauCeti.RingTheory.LaurentSeries.CoefficientFrobenius
 
 import TauCeti.LinearAlgebra.FiniteDimensional.Semilinear
-import TauCeti.RingTheory.PowerSeries.CoefficientFrobenius
+import TauCeti.FieldTheory.IsAlgClosed.Frobenius
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
-# Difference equations for coefficient Frobenius on Laurent series
+# Difference equations for coefficient maps on Laurent series
 
-If the residue field `k` is algebraically closed, every nonzero scalar twisted polynomial
-in positive coefficient Frobenius is surjective on `k((X))`. Normalizing the operator
-coefficients by a common power of `X` reduces the problem to a power-series equation.
+Dividing the multipliers of a finite sum of coefficient maps by a common power of `X`
+reduces solvability to a power-series equation. Over an algebraically closed residue field
+`k`, this makes every nonzero scalar twisted polynomial in positive coefficient Frobenius
+surjective on `k((X))`.
 
 On a finite-dimensional vector space over `k((X))` with semilinear endomorphism `Φ`
 for this Frobenius, a dependence among iterates and a telescoping sum give surjectivity
@@ -35,7 +37,43 @@ open Finset Function HahnSeries
 
 namespace TauCeti.LaurentSeries
 
-open _root_.LaurentSeries (coeff_coe_powerSeries ofPowerSeries_powerSeriesPart)
+/-- A finite sum of coefficient maps with Laurent-series multipliers acts surjectively if
+the multipliers have a common lower exponent `m` and their coefficients there give a
+surjective equation on the coefficient ring. -/
+theorem surjective_sum_mul_mapRingHom_of_surjective_coeff {R ι : Type*} [Ring R]
+    (s : Finset ι) (a : ι → R⸨X⸩) (τ : ι → R →+* R) (m : ℤ)
+    (hm : ∀ i ∈ s, (m : WithTop ℤ) ≤ (a i).orderTop)
+    (hlead : Surjective (fun x => ∑ i ∈ s, (a i).coeff m * τ i x)) :
+    Surjective (fun x : R⸨X⸩ => ∑ i ∈ s, a i * mapRingHom (τ i) x) := by
+  let A (i : ι) := PowerSeries.mk fun n => (a i).coeff (n + m)
+  have hA (i : ι) (hi : i ∈ s) :
+      (A i : R⸨X⸩) = single (-m) 1 * a i := by
+    ext j
+    rw [PowerSeries.coeff_coe, coeff_single_mul, one_mul, sub_neg_eq_add]
+    split_ifs with hj
+    · exact (le_orderTop_iff_forall.mp (hm i hi) _ (WithTop.coe_lt_coe.mpr (by omega))).symm
+    · simp [A, abs_of_nonneg (le_of_not_gt hj)]
+  have hconst (i : ι) : PowerSeries.constantCoeff (A i) = (a i).coeff m := by
+    simp [A, ← PowerSeries.coeff_zero_eq_constantCoeff_apply]
+  intro b
+  obtain ⟨x, hx⟩ := TauCeti.surjective_sum_mul_map_of_surjective_constantCoeff s A τ
+    (by simpa only [hconst] using hlead) b.powerSeriesPart
+  let d := b.order - m
+  refine ⟨single d 1 * (x : R⸨X⸩), ?_⟩
+  have hshift : (single b.order 1 : R⸨X⸩) * single (-m) 1 = single d 1 := by
+    rw [single_mul_single, one_mul, ← sub_eq_add_neg]
+  have hcomm (i : ι) : Commute (a i) (single d 1) := by
+    ext j
+    simp only [coeff_mul_single, coeff_single_mul, one_mul, mul_one]
+  calc
+    _ = single b.order 1 * (b.powerSeriesPart : R⸨X⸩) := by
+      rw [← hx, map_sum, mul_sum]
+      refine sum_congr rfl fun i hi => ?_
+      simp only [map_mul, mapRingHom_single, map_one, hA i hi]
+      rw [mapRingHom_apply, map_ofPowerSeries]
+      rw [← mul_assoc, (hcomm i).eq, ← hshift]
+      simp only [mul_assoc]
+    _ = b := b.single_order_mul_powerSeriesPart
 
 variable {p : ℕ} {k : Type*} [Field k] [Fact p.Prime] [CharP k p] [IsAlgClosed k]
 
@@ -44,43 +82,21 @@ Laurent series over an algebraically closed field. Each index in `s` denotes an 
 of the same coefficient automorphism. -/
 theorem surjective_sum_mul_coefficientFrobenius {f : ℕ} (hf : 0 < f) {s : Finset ℕ}
     (a : ℕ → k⸨X⸩) (ha : ∃ i ∈ s, a i ≠ 0) :
-    Surjective (fun x : k⸨X⸩ => ∑ i ∈ s, a i * coefficientFrobenius p (f * i) x) := by
+    Surjective (fun x : k⸨X⸩ => ∑ i ∈ s, a i * (coefficientFrobenius p f)^[i] x) := by
   classical
-  intro b
   obtain ⟨j, hj, hmin⟩ := (s.filter fun i => a i ≠ 0).exists_min_image
     (fun i => (a i).order) (by
       obtain ⟨i, hi, hi₀⟩ := ha
       exact ⟨i, mem_filter.mpr ⟨hi, hi₀⟩⟩)
-  let m := (a j).order
-  -- Dividing all operator coefficients by the same monomial gives a nonzero reduction.
-  let aSeries (i : ℕ) := PowerSeries.X ^ ((a i).order - m).toNat * (a i).powerSeriesPart
-  have haSeries_coe (i : ℕ) (hi : i ∈ s) :
-      (aSeries i : k⸨X⸩) = single (-m) 1 * a i := by
-    rcases eq_or_ne (a i) 0 with hzero | hne
-    · simp [aSeries, hzero]
-    have hle := hmin i (mem_filter.mpr ⟨hi, hne⟩)
-    have hadd : (((a i).order - m).toNat : ℤ) + -(a i).order = -m := by omega
-    simp only [aSeries, PowerSeries.coe_mul, ofPowerSeries_X_pow, ofPowerSeries_powerSeriesPart]
-    rw [← mul_assoc, single_mul_single, one_mul, hadd]
-  have hj' := mem_filter.mp hj
-  have hAj : PowerSeries.constantCoeff (aSeries j) ≠ 0 := by
-    rw [← PowerSeries.coeff_zero_eq_constantCoeff, ← coeff_coe_powerSeries, haSeries_coe _ hj'.1]
-    simpa [coeff_single_mul, m] using (coeff_order_eq_zero.not.mpr hj'.2)
-  obtain ⟨x, hx⟩ := TauCeti.PowerSeries.exists_sum_mul_map_iterateFrobenius_eq (p := p) s aSeries hf
-    ⟨j, hj'.1, hAj⟩ b.powerSeriesPart
-  refine ⟨single (b.order - m) 1 * (x : k⸨X⸩), ?_⟩
-  apply mul_left_cancel₀ (a := (single (-b.order) 1 : k⸨X⸩)) (by simp)
-  rw [← ofPowerSeries_powerSeriesPart b, ← hx, map_sum]
-  rw [mul_sum]
-  refine sum_congr rfl fun i hi => ?_
-  have hshift : (single (-b.order) 1 : k⸨X⸩) * single (b.order - m) 1 =
-      single (-m) 1 := by
-    have hadd : -b.order + (b.order - m) = -m := by omega
-    rw [single_mul_single, one_mul, hadd]
-  simp only [map_mul, coefficientFrobenius_single, one_pow, coefficientFrobenius_coe,
-    haSeries_coe i hi]
-  rw [← hshift]
-  ac_rfl
+  simp_rw [coefficientFrobenius_iterate, coefficientFrobenius_apply]
+  apply surjective_sum_mul_mapRingHom_of_surjective_coeff s a _ (a j).order
+  · intro i hi
+    rcases eq_or_ne (a i) 0 with hz | hn
+    · simp [hz]
+    · rw [← order_eq_orderTop_of_ne_zero hn, WithTop.coe_le_coe]
+      exact hmin i (mem_filter.mpr ⟨hi, hn⟩)
+  · obtain ⟨hjs, hj₀⟩ := mem_filter.mp hj
+    exact surjective_sum_mul_iterateFrobenius s _ hf ⟨j, hjs, coeff_order_eq_zero.not.mpr hj₀⟩
 
 end TauCeti.LaurentSeries
 
@@ -96,7 +112,6 @@ the difference `Φ - 1` for positive coefficient Frobenius is surjective. -/
 theorem surjective_sub_id_of_coefficientFrobenius_semilinear [Module.Finite k⸨X⸩ V] (hf : 0 < f)
     (Φ : V →ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] V) : Surjective (fun x => Φ x - x) := by
   apply Φ.surjective_sub_id_of_surjective_sum_mul_iterate σ
-  intro s a ha
-  simpa only [coefficientFrobenius_iterate] using surjective_sum_mul_coefficientFrobenius hf a ha
+  exact fun _ a ha => surjective_sum_mul_coefficientFrobenius hf a ha
 
 end TauCeti.LaurentSeries

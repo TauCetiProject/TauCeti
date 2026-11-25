@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.FiniteIsocrystal.Abelian
 import TauCeti.GroupTheory.FixedSubgroup.Lang
 import TauCeti.LinearAlgebra.Exact
-import TauCeti.LinearAlgebra.FiniteDimensional.Semilinear
 
 /-!
 # Splitting finite isocrystal epimorphisms
@@ -67,11 +66,21 @@ theorem isSplitEpi_of_surjective_sum_mul_iterate
       ((LinearMap.exact_subtype_ker_map g.hom).compRight_of_injective (T := L) D'
         g.hom.ker.injective_subtype)
       Ψ.toLinearMap.toAddMonoidHom F.toLinearMap.toAddMonoidHom F'.toLinearMap.toAddMonoidHom
-      hpost hincl (Ψ.toLinearMap.surjective_sub_id_of_surjective_sum_mul_iterate σ.toRingEquiv hσ)
-      (((epi_iff_surjective g).mp inferInstance).surjective_linearMapComp_left LinearMap.id)
-      (Φ D').conj_id
+      (by simpa only [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap,
+        LinearMap.compRight_apply] using hpost)
+      (by simpa only [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap,
+        LinearMap.compRight_apply] using hincl)
+      (Ψ.toLinearMap.surjective_sub_id_of_surjective_sum_mul_iterate σ.toRingEquiv hσ)
+      (y := LinearMap.id) (by
+        obtain ⟨t, ht⟩ := ((epi_iff_surjective g).mp inferInstance).surjective_linearMapComp_left
+          (LinearMap.id (R := L) (M := D'))
+        exact ⟨t, by simpa only [LinearMap.toAddMonoidHom_coe, LinearMap.compRight_apply] using ht⟩)
+      (by simpa only [F', LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap] using
+        (Φ D').conj_id)
   have hs : F s = s := by
     simpa only [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap] using hfix
-  exact IsSplitEpi.mk' ⟨ofHom s ((fixed_iff s).mp hs), hom_ext hsection⟩
+  refine IsSplitEpi.mk' ⟨ofHom s ((fixed_iff s).mp hs), hom_ext ?_⟩
+  simpa only [hom_comp, hom_ofHom, hom_id, LinearMap.toAddMonoidHom_coe,
+    LinearMap.compRight_apply] using hsection
 
 end TauCeti.FiniteIsocrystal

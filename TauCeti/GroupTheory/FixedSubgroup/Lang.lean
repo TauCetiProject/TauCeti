@@ -121,12 +121,19 @@ theorem AddMonoidHom.exists_fixed_lift_of_surjective_sub_id {T G H : Type*}
     (hψ : ∀ x, ψ (F x) = F' (ψ x)) (hj : ∀ t, F (j t) = j (f t))
     (hf : Function.Surjective (fun t => f t - t)) {y : H} (hy_range : y ∈ Set.range ψ)
     (hy : F' y = y) : ∃ x : G, F x = x ∧ ψ x = y := by
-  apply ψ.toMultiplicative.exists_fixed_lift_of_surjective_commutatorMap j.toMultiplicative
-    (Subgroup.ext fun t => (hex t.toAdd).symm) f.toMultiplicative F.toMultiplicative
-    F'.toMultiplicative hψ hj _ hy_range hy
-  intro t
-  obtain ⟨s, hs⟩ := hf (-t.toAdd)
-  refine ⟨Multiplicative.ofAdd s, Multiplicative.ext ?_⟩
-  simpa only [MonoidHom.commutatorMap_apply, toAdd_div, AddMonoidHom.coe_toMultiplicative,
-    Function.comp_apply, toAdd_ofAdd, neg_sub, neg_neg] using
-    congrArg Neg.neg hs
+  have hker : j.toMultiplicative.range = ψ.toMultiplicative.ker := by
+    rw [MonoidHom.coe_toMultiplicative_range, MonoidHom.coe_toMultiplicative_ker,
+      hex.addMonoidHom_ker_eq]
+  have hlang : Function.Surjective (MonoidHom.commutatorMap f.toMultiplicative) := by
+    intro t
+    obtain ⟨s, hs⟩ := hf (-t.toAdd)
+    refine ⟨Multiplicative.ofAdd s, Multiplicative.ext ?_⟩
+    simpa only [MonoidHom.commutatorMap_apply, toAdd_div, AddMonoidHom.coe_toMultiplicative,
+      Function.comp_apply, toAdd_ofAdd, neg_sub, neg_neg] using congrArg Neg.neg hs
+  obtain ⟨z, hz⟩ := hy_range
+  obtain ⟨x, hx, hxy⟩ := ψ.toMultiplicative.exists_fixed_lift_of_surjective_commutatorMap
+    j.toMultiplicative hker f.toMultiplicative F.toMultiplicative F'.toMultiplicative
+    (fun x => congrArg Multiplicative.ofAdd (hψ x.toAdd))
+    (fun t => congrArg Multiplicative.ofAdd (hj t.toAdd)) hlang
+    ⟨Multiplicative.ofAdd z, congrArg Multiplicative.ofAdd hz⟩ (congrArg Multiplicative.ofAdd hy)
+  exact ⟨x.toAdd, congrArg Multiplicative.toAdd hx, congrArg Multiplicative.toAdd hxy⟩

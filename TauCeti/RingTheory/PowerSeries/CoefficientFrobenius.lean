@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import Mathlib.RingTheory.PowerSeries.Basic
+public import TauCeti.FieldTheory.IsAlgClosed.Frobenius
+public import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # Difference equations for coefficient Frobenius on power series
@@ -26,44 +26,8 @@ by solving a nonconstant residue polynomial.
 public section
 
 open scoped PowerSeries
-open Finset Function Polynomial
 
 namespace TauCeti.PowerSeries
-
-/-- A finite sum of coefficientwise ring endomorphisms with power-series multipliers is
-surjective if its reduction on constant coefficients is surjective. -/
-theorem surjective_sum_mul_map_of_surjective_constantCoeff {R ι : Type*} [Ring R]
-    (s : Finset ι) (a : ι → R⟦X⟧) (τ : ι → R →+* R)
-    (hlead : Surjective (fun x => ∑ i ∈ s, PowerSeries.constantCoeff (a i) * τ i x)) :
-    Surjective (fun x => ∑ i ∈ s, a i * PowerSeries.map (τ i) x) := by
-  classical
-  intro b
-  let lower (n : ℕ) (c : ℕ → R) : R :=
-    ∑ i ∈ s, ∑ j ∈ range n, PowerSeries.coeff (n - j) (a i) * τ i (c j)
-  let solve (n : ℕ) (c : ℕ → R) := surjInv hlead (PowerSeries.coeff n b - lower n c)
-  let step (n : ℕ) (prev : ∀ j < n, R) : R :=
-    solve n (fun j => if h : j < n then prev j h else 0)
-  let c : ℕ → R := fun n => Nat.strongRecOn n step
-  have hc_step (n : ℕ) : c n = solve n (fun j => if j < n then c j else 0) := by
-    simpa only [c, step, dite_eq_ite] using Nat.strongRecOn_eq step n
-  have hc (n : ℕ) : ∑ i ∈ s, PowerSeries.constantCoeff (a i) * τ i (c n) =
-      PowerSeries.coeff n b - lower n c := by
-    rw [hc_step]
-    have h : lower n (fun j => if j < n then c j else 0) = lower n c := by
-      refine sum_congr rfl fun i _ => sum_congr rfl fun j hj => ?_
-      simp [mem_range.mp hj]
-    simpa only [solve, h] using
-      rightInverse_surjInv hlead (PowerSeries.coeff n b - lower n c)
-  refine ⟨PowerSeries.mk c, PowerSeries.ext fun n => ?_⟩
-  have hmul (i : ι) :
-      PowerSeries.coeff n (a i * PowerSeries.map (τ i) (PowerSeries.mk c)) =
-        (∑ j ∈ range n, PowerSeries.coeff (n - j) (a i) * τ i (c j)) +
-          PowerSeries.constantCoeff (a i) * τ i (c n) := by
-    rw [PowerSeries.coeff_mul, ← Nat.sum_antidiagonal_swap,
-      Nat.sum_antidiagonal_eq_sum_range_succ_mk, sum_range_succ]
-    simp [PowerSeries.coeff_zero_eq_constantCoeff]
-  simp only [map_sum, hmul, sum_add_distrib, hc, lower]
-  abel
 
 variable {p : ℕ} {k : Type*} [Field k] [Fact p.Prime] [CharP k p] [IsAlgClosed k]
 
@@ -72,22 +36,7 @@ variable {p : ℕ} {k : Type*} [Field k] [Fact p.Prime] [CharP k p] [IsAlgClosed
 theorem exists_sum_mul_map_iterateFrobenius_eq (s : Finset ℕ) (a : ℕ → k⟦X⟧)
     {f : ℕ} (hf : 0 < f) (ha : ∃ i ∈ s, PowerSeries.constantCoeff (a i) ≠ 0) (b : k⟦X⟧) :
     ∃ x : k⟦X⟧, ∑ i ∈ s, a i * PowerSeries.map (iterateFrobenius k p (f * i)) x = b := by
-  classical
-  let q := p ^ f
-  have hq : 1 < q := one_lt_pow₀ (Fact.out : p.Prime).one_lt hf.ne'
-  -- The constant coefficients give the same nonconstant polynomial at every lifting step.
-  let lead (x : k) := ∑ i ∈ s, PowerSeries.constantCoeff (a i) * x ^ (q ^ i)
-  have hlead : Surjective lead := by
-    let P : k[X] := ∑ i ∈ s, monomial (q ^ i) (PowerSeries.constantCoeff (a i))
-    obtain ⟨i, hi, hai⟩ := ha
-    have he (j : ℕ) : q ^ j = q ^ i ↔ j = i := (Nat.pow_right_injective hq).eq_iff
-    have hcoeff : P.coeff (q ^ i) = PowerSeries.constantCoeff (a i) := by
-      simp only [P, finsetSum_coeff, coeff_monomial_apply, he]
-      simp [hi]
-    have hdegree : P.natDegree ≠ 0 := ((pow_pos (by omega : 0 < q) i).trans_le
-      (Polynomial.le_natDegree_of_ne_zero (hcoeff.trans_ne hai))).ne'
-    simpa only [lead, P, eval_finsetSum, eval_monomial] using IsAlgClosed.eval_surjective hdegree
-  apply surjective_sum_mul_map_of_surjective_constantCoeff s a _ _ b
-  simpa only [iterateFrobenius_def, pow_mul, lead, q] using hlead
+  exact surjective_sum_mul_map_of_surjective_constantCoeff s a _
+    (surjective_sum_mul_iterateFrobenius s (fun i => PowerSeries.constantCoeff (a i)) hf ha) b
 
 end TauCeti.PowerSeries

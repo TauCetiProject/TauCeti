@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.Algebra.Category.FiniteIsocrystal.Splitting
 public import TauCeti.RingTheory.LaurentSeries.DifferenceEquation
 
@@ -36,7 +37,17 @@ theorem isSplitEpi_of_epi (hσ : σ.toRingEquiv = LaurentSeries.coefficientFrobe
     (hf : 0 < f) (g : D ⟶ D') [Epi g] : IsSplitEpi g := by
   apply isSplitEpi_of_surjective_sum_mul_iterate _ g
   intro s a ha
-  simpa only [hσ, LaurentSeries.coefficientFrobenius_iterate] using
+  simpa only [hσ] using
     LaurentSeries.surjective_sum_mul_coefficientFrobenius (p := p) hf a ha
+
+/-- A short exact sequence of finite isocrystals over an algebraically closed residue field
+splits for positive coefficient Frobenius. -/
+noncomputable def splittingOfShortExact
+    (hσ : σ.toRingEquiv = LaurentSeries.coefficientFrobenius p f)
+    (hf : 0 < f) (S : ShortComplex (FiniteIsocrystal σ)) (hS : S.ShortExact) : S.Splitting := by
+  letI := hS.epi_g
+  letI := isSplitEpi_of_epi hσ hf S.g
+  exact ShortComplex.Splitting.ofExactOfSection S hS.exact (section_ S.g)
+    (IsSplitEpi.id _) hS.mono_f
 
 end TauCeti.FiniteIsocrystal

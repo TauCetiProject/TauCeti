@@ -82,8 +82,9 @@ theorem surjective_sub_id_of_surjective_sum_mul_iterate {K V : Type*} [Field K]
   have hiter (i : Fin (n + 1)) :
       Φ^[n - i.val] (w i) = σ^[n] z • (a i • u i) := by
     have hindex : n - i.val + i.val = n := Nat.sub_add_cancel (by omega)
-    rw [TauCeti.iterate_map_smulₛₗ Φ, RingEquiv.coe_toRingHom, iterate_map_mul, hinv]
-    rw [← iterate_add_apply, hindex, smul_smul, mul_comm]
+    have hscalar : σ^[n - i.val] (c i * σ^[i.val] z) = σ^[n] z * a i := by
+      rw [iterate_map_mul, hinv, ← iterate_add_apply, hindex, mul_comm]
+    simp only [w, u, TauCeti.iterate_map_smulₛₗ Φ, RingEquiv.coe_toRingHom, hscalar, smul_smul]
   -- The iterated terms sum to zero, and their starting terms sum to `-v`.
   refine ⟨∑ i : Fin (n + 1), ∑ j ∈ Finset.range (n - i.val), Φ^[j] (w i), ?_⟩
   dsimp only
