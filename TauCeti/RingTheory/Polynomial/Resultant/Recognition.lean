@@ -144,7 +144,7 @@ theorem Monic.eventually_addVal_resultant_pow_mul {R S : O[X]} (hR : R.Monic) {�
     ring
   refine ⟨fun h0 ↦ ?_, by rw [hval, hc]⟩
   rw [h0, addVal_zero] at hval
-  exact ENat.top_ne_natCast _ (hval.trans (by push_cast; rfl))
+  exact ENat.top_ne_natCast _ (hval.trans (Nat.cast_add _ _).symm)
 
 section Recognition
 
