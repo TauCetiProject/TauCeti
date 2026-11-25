@@ -57,7 +57,9 @@ sign needed for degree formulas and pullback of top-degree differential forms.
 * `Orientation.orientedJacobian_comp`, `Orientation.orientedJacobian_id`,
   `Orientation.orientedJacobian_neg_left`, `Orientation.orientedJacobian_neg_right`,
   `Orientation.orientedJacobian_smul`: multiplicativity under composition, reversal of either
-  orientation, and homogeneity of degree `n`.
+  orientation, and homogeneity of degree `n`; `Orientation.orientedJacobian_comp_of_left_eq_one`
+  and `Orientation.orientedJacobian_comp_of_right_eq_one` specialize multiplicativity to a factor
+  of oriented Jacobian `1`.
 * `Orientation.orientedJacobian_self`, `Orientation.orientedJacobian_eq_neg_det_of_ne`,
   `Orientation.orientedJacobian_eq_det_comp_mul_div_volumeForm`,
   `Orientation.orientedJacobian_eq_det_comp_mul_div_abs_volumeForm_of_map_eq_of_linearIndependent`,
@@ -70,7 +72,8 @@ sign needed for degree formulas and pullback of top-degree differential forms.
 * `Orientation.abs_orientedJacobian`, `Orientation.orientedJacobian_sq_eq_det_gram`,
   `Orientation.orientedJacobian_sq`, `Orientation.orientedJacobian_adjoint`: agreement of
   `|oV.orientedJacobian oW A|` with `LinearMap.normDet A`, Gram-determinant square formula, and
-  invariance under taking the adjoint.
+  invariance under taking the adjoint; `Orientation.orientedJacobian_eq_prod_singularValues_of_pos`
+  writes a positive oriented Jacobian as the product of the singular values.
 * `Orientation.abs_orientedJacobian_toLinearMap_le`, `Orientation.abs_orientedJacobian_le`,
   `Orientation.norm_apply_eq_of_abs_orientedJacobian_eq_norm_pow`,
   `Orientation.abs_orientedJacobian_toLinearMap_eq_norm_pow_iff`: Hadamard's inequality
@@ -394,6 +397,22 @@ theorem orientedJacobian_comp (oU : Orientation ℝ U (Fin n)) (oV : Orientation
   rw [AlternatingMap.compLinearMap_apply, hcomp, oV.volumeForm_comp_eq oW B (A ∘ v),
     oU.volumeForm_comp_eq oV A v, smul_apply, smul_eq_mul, mul_assoc]
 
+/-- Postcomposing with a map of oriented Jacobian `1` (such as an orientation-preserving isometry)
+does not change the oriented Jacobian. -/
+theorem orientedJacobian_comp_of_left_eq_one (oU : Orientation ℝ U (Fin n))
+    (oV : Orientation ℝ V (Fin n)) (oW : Orientation ℝ W (Fin n)) {B : V →ₗ[ℝ] W}
+    (hB : oV.orientedJacobian oW B = 1) (A : U →ₗ[ℝ] V) :
+    oU.orientedJacobian oW (B ∘ₗ A) = oU.orientedJacobian oV A := by
+  rw [oU.orientedJacobian_comp oV oW, hB, one_mul]
+
+/-- Precomposing with a map of oriented Jacobian `1` (such as an orientation-preserving isometry)
+does not change the oriented Jacobian. -/
+theorem orientedJacobian_comp_of_right_eq_one (oU : Orientation ℝ U (Fin n))
+    (oV : Orientation ℝ V (Fin n)) (oW : Orientation ℝ W (Fin n)) {A : U →ₗ[ℝ] V}
+    (hA : oU.orientedJacobian oV A = 1) (B : V →ₗ[ℝ] W) :
+    oU.orientedJacobian oW (B ∘ₗ A) = oV.orientedJacobian oW B := by
+  rw [oU.orientedJacobian_comp oV oW, hA, mul_one]
+
 end ThreeSpaces
 
 section TwoSpacesOps
@@ -447,6 +466,13 @@ theorem orientedJacobian_zero_of_pos (oV : Orientation ℝ V (Fin n)) (oW : Orie
     (hn : 0 < n) :
     oV.orientedJacobian oW 0 = 0 := by
   simpa [zero_pow hn.ne'] using oV.orientedJacobian_smul oW 0 0
+
+/-- In positive dimension a map with nonzero oriented Jacobian is nonzero. -/
+theorem ne_zero_of_orientedJacobian_ne_zero (oV : Orientation ℝ V (Fin n))
+    (oW : Orientation ℝ W (Fin n)) (hn : 0 < n) {A : V →ₗ[ℝ] W}
+    (h : oV.orientedJacobian oW A ≠ 0) : A ≠ 0 := by
+  rintro rfl
+  exact h (oV.orientedJacobian_zero_of_pos oW hn)
 
 /-! ### Endomorphisms, inverses, and coordinate expressions -/
 
@@ -691,6 +717,14 @@ theorem abs_orientedJacobian [FiniteDimensional ℝ V] (oV : Orientation ℝ V (
       simpa only [RCLike.ofReal_real_eq_id, id, Function.comp_def] using A.normDet_sq_eq_det_gram b
     rw [oV.orientedJacobian_eq_volumeForm_of_orthonormal oW A b hb,
       oW.abs_volumeForm_apply_eq_sqrt_det_gram, ← hsq, Real.sqrt_sq A.normDet_nonneg]
+
+/-- When `J(A) > 0`, the oriented Jacobian is the product `σ₁ ⋯ σₙ` of the singular values. -/
+theorem orientedJacobian_eq_prod_singularValues_of_pos [FiniteDimensional ℝ V]
+    [FiniteDimensional ℝ W] (oV : Orientation ℝ V (Fin n)) (oW : Orientation ℝ W (Fin n))
+    {A : V →ₗ[ℝ] W} (h : 0 < oV.orientedJacobian oW A) :
+    oV.orientedJacobian oW A = ∏ i ∈ Finset.range n, A.singularValues i := by
+  rw [← abs_of_pos h, oV.abs_orientedJacobian oW A, A.normDet_eq_prod_singularValues,
+    (Fact.out : finrank ℝ V = n)]
 
 /-- On any orthonormal basis `b` of `V`, the square of `oV.orientedJacobian oW A` is the Gram
 determinant `(Matrix.gram ℝ (A ∘ b)).det`. -/

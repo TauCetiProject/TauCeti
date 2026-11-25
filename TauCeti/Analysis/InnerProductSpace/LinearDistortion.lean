@@ -119,13 +119,6 @@ orientations of the same sign it is `1` instead. -/
 theorem outerDistortion_zero (hn : 0 < n) : oV.outerDistortion oW 0 = 0 := by
   simp [outerDistortion_def, oV.orientedJacobian_zero_of_pos oW hn]
 
-omit [FiniteDimensional ℝ V] in
-/-- In positive dimension a map with nonzero oriented Jacobian is nonzero. -/
-theorem ne_zero_of_orientedJacobian_ne_zero (hn : 0 < n) {A : V →ₗ[ℝ] W}
-    (h : oV.orientedJacobian oW A ≠ 0) : A ≠ 0 := by
-  rintro rfl
-  exact h (oV.orientedJacobian_zero_of_pos oW hn)
-
 theorem outerDistortion_ne_top_of_pos {A : V →ₗ[ℝ] W} (h : 0 < oV.orientedJacobian oW A) :
     oV.outerDistortion oW A ≠ ⊤ := by
   simp [oV.outerDistortion_of_pos oW h]
@@ -216,13 +209,6 @@ theorem innerDistortion_nonneg (A : V →ₗ[ℝ] W) : 0 ≤ oV.innerDistortion 
 
 /-! ### Singular-value formulas and lower bounds -/
 
-/-- When `J(A) > 0`, the oriented Jacobian is the product `σ₁ ⋯ σₙ` of the singular values. -/
-theorem orientedJacobian_eq_prod_singularValues_of_pos {A : V →ₗ[ℝ] W}
-    (h : 0 < oV.orientedJacobian oW A) :
-    oV.orientedJacobian oW A = ∏ i ∈ Finset.range n, A.singularValues i := by
-  rw [← abs_of_pos h, oV.abs_orientedJacobian oW A, A.normDet_eq_prod_singularValues,
-    (Fact.out : finrank ℝ V = n)]
-
 /-- The outer distortion of a map with `J(A) > 0` is `σ₁ⁿ / (σ₁ ⋯ σₙ)`. -/
 theorem outerDistortion_eq_ofReal_prod_singularValues {A : V →ₗ[ℝ] W}
     (h : 0 < oV.orientedJacobian oW A) :
@@ -241,12 +227,9 @@ theorem innerDistortion_eq_prod_singularValues {A : V →ₗ[ℝ] W}
 
 /-- When `J(A) ≠ 0` in positive dimension, the minimal stretch is positive. -/
 theorem minimalStretch_pos_of_orientedJacobian_ne_zero (hn : 0 < n) {A : V →ₗ[ℝ] W}
-    (h : oV.orientedJacobian oW A ≠ 0) : 0 < A.minimalStretch := by
-  rw [← abs_ne_zero, oV.abs_orientedJacobian oW A, A.normDet_eq_prod_singularValues,
-    (Fact.out : finrank ℝ V = n)] at h
-  rw [A.minimalStretch_def, (Fact.out : finrank ℝ V = n),
-    LinearMap.singularValues_pos_iff_ne_zero]
-  exact Finset.prod_ne_zero_iff.mp h (n - 1) (Finset.mem_range.mpr (by omega))
+    (h : oV.orientedJacobian oW A ≠ 0) : 0 < A.minimalStretch :=
+  A.minimalStretch_pos_of_normDet_ne_zero ((Fact.out : finrank ℝ V = n) ▸ hn)
+    (oV.abs_orientedJacobian oW A ▸ abs_ne_zero.mpr h)
 
 /-- When `J(A) ≠ 0`, the power `ℓ(A)ⁿ` is positive (in dimension `0` it is `1`). -/
 theorem minimalStretch_pow_pos_of_orientedJacobian_ne_zero {A : V →ₗ[ℝ] W}
@@ -335,63 +318,53 @@ changes no outer distortion. -/
 theorem outerDistortion_linearIsometryEquiv_comp (U : W ≃ₗᵢ[ℝ] X)
     (hU : oW.orientedJacobian oX U.toLinearMap = 1) (A : V →ₗ[ℝ] W) :
     oV.outerDistortion oX (U.toLinearMap ∘ₗ A) = oV.outerDistortion oW A := by
-  have hJ : oV.orientedJacobian oX (U.toLinearMap ∘ₗ A) = oV.orientedJacobian oW A := by
-    rw [oV.orientedJacobian_comp oW oX, hU, one_mul]
+  -- The singular-value API is stated for the coercion `(U : W →ₗ[ℝ] X)`, which passes through
+  -- `U.toContinuousLinearEquiv`; both coerce to the function `U`.
+  have hUc : (U : W →ₗ[ℝ] X) = U.toLinearMap := LinearMap.ext fun _ ↦ rfl
   have hnorm : ‖LinearMap.toContinuousLinearMap (U.toLinearMap ∘ₗ A)‖ =
       ‖LinearMap.toContinuousLinearMap A‖ := by
     rw [LinearMap.norm_toContinuousLinearMap_eq_singularValues_zero,
-      LinearMap.norm_toContinuousLinearMap_eq_singularValues_zero]
-    -- `LinearMap.singularValues_linearIsometryEquiv_comp` is stated for the coercion
-    -- `(U : W →ₗ[ℝ] X)`, which passes through `U.toContinuousLinearEquiv`; it agrees with
-    -- `U.toLinearMap` only up to definitional unfolding, so the lemma is applied with `exact`.
-    exact DFunLike.congr_fun (LinearMap.singularValues_linearIsometryEquiv_comp U A) 0
+      LinearMap.norm_toContinuousLinearMap_eq_singularValues_zero, ← hUc,
+      LinearMap.singularValues_linearIsometryEquiv_comp]
   have hzero : U.toLinearMap ∘ₗ A = 0 ↔ A = 0 := by
     simp [LinearMap.ext_iff]
-  classical
-  simp only [outerDistortion_def, hJ, hnorm]
-  exact if_congr Iff.rfl rfl (if_congr hzero rfl rfl)
+  rw [outerDistortion_def, outerDistortion_def, oV.orientedJacobian_comp_of_left_eq_one oW oX hU,
+    hnorm, hzero]
 
 /-- Precomposing with an isometric isomorphism of oriented Jacobian `1` (orientation-preserving)
 changes no outer distortion. -/
 theorem outerDistortion_comp_linearIsometryEquiv (U : X ≃ₗᵢ[ℝ] V)
     (hU : oX.orientedJacobian oV U.toLinearMap = 1) (A : V →ₗ[ℝ] W) :
     oX.outerDistortion oW (A ∘ₗ U.toLinearMap) = oV.outerDistortion oW A := by
-  have hJ : oX.orientedJacobian oW (A ∘ₗ U.toLinearMap) = oV.orientedJacobian oW A := by
-    rw [oX.orientedJacobian_comp oV oW, hU, mul_one]
+  -- As above, the singular-value API uses the coercion `(U : X →ₗ[ℝ] V)`.
+  have hUc : (U : X →ₗ[ℝ] V) = U.toLinearMap := LinearMap.ext fun _ ↦ rfl
   have hnorm : ‖LinearMap.toContinuousLinearMap (A ∘ₗ U.toLinearMap)‖ =
       ‖LinearMap.toContinuousLinearMap A‖ := by
     rw [LinearMap.norm_toContinuousLinearMap_eq_singularValues_zero,
-      LinearMap.norm_toContinuousLinearMap_eq_singularValues_zero]
-    -- As above, the lemma's coercion `(U : X →ₗ[ℝ] V)` agrees with `U.toLinearMap` only up to
-    -- definitional unfolding.
-    exact DFunLike.congr_fun (LinearMap.singularValues_comp_linearIsometryEquiv A U) 0
+      LinearMap.norm_toContinuousLinearMap_eq_singularValues_zero, ← hUc,
+      LinearMap.singularValues_comp_linearIsometryEquiv]
   have hzero : A ∘ₗ U.toLinearMap = 0 ↔ A = 0 := by
     simp [LinearMap.ext_iff, U.surjective.forall]
-  classical
-  simp only [outerDistortion_def, hJ, hnorm]
-  exact if_congr Iff.rfl rfl (if_congr hzero rfl rfl)
+  rw [outerDistortion_def, outerDistortion_def, oX.orientedJacobian_comp_of_right_eq_one oV oW hU,
+    hnorm, hzero]
 
 /-- Postcomposing with an isometric isomorphism of oriented Jacobian `1` (orientation-preserving)
 changes no inner distortion. -/
 theorem innerDistortion_linearIsometryEquiv_comp (U : W ≃ₗᵢ[ℝ] X)
     (hU : oW.orientedJacobian oX U.toLinearMap = 1) (A : V →ₗ[ℝ] W) :
     oV.innerDistortion oX (U.toLinearMap ∘ₗ A) = oV.innerDistortion oW A := by
-  have hJ : oV.orientedJacobian oX (U.toLinearMap ∘ₗ A) = oV.orientedJacobian oW A := by
-    rw [oV.orientedJacobian_comp oW oX, hU, one_mul]
-  simp only [innerDistortion_def, hJ]
-  congr 3
-  exact LinearMap.minimalStretch_linearIsometryEquiv_comp U A
+  have hUc : (U : W →ₗ[ℝ] X) = U.toLinearMap := LinearMap.ext fun _ ↦ rfl
+  rw [innerDistortion_def, innerDistortion_def, oV.orientedJacobian_comp_of_left_eq_one oW oX hU,
+    ← hUc, LinearMap.minimalStretch_linearIsometryEquiv_comp]
 
 /-- Precomposing with an isometric isomorphism of oriented Jacobian `1` (orientation-preserving)
 changes no inner distortion. -/
 theorem innerDistortion_comp_linearIsometryEquiv (U : X ≃ₗᵢ[ℝ] V)
     (hU : oX.orientedJacobian oV U.toLinearMap = 1) (A : V →ₗ[ℝ] W) :
     oX.innerDistortion oW (A ∘ₗ U.toLinearMap) = oV.innerDistortion oW A := by
-  have hJ : oX.orientedJacobian oW (A ∘ₗ U.toLinearMap) = oV.orientedJacobian oW A := by
-    rw [oX.orientedJacobian_comp oV oW, hU, mul_one]
-  simp only [innerDistortion_def, hJ]
-  congr 3
-  exact LinearMap.minimalStretch_comp_linearIsometryEquiv A U
+  have hUc : (U : X →ₗ[ℝ] V) = U.toLinearMap := LinearMap.ext fun _ ↦ rfl
+  rw [innerDistortion_def, innerDistortion_def, oX.orientedJacobian_comp_of_right_eq_one oV oW hU,
+    ← hUc, LinearMap.minimalStretch_comp_linearIsometryEquiv]
 
 omit [FiniteDimensional ℝ W] in
 /-- Scaling by `c` with `cⁿ > 0` (any `c > 0`, and any `c ≠ 0` in even dimension) changes no outer
@@ -404,19 +377,17 @@ theorem outerDistortion_smul {c : ℝ} (hc : 0 < c ^ n) (A : V →ₗ[ℝ] W) :
   have hc0 : c ≠ 0 := (pow_ne_zero_iff hn.ne').mp hc.ne'
   have hpow : |c| ^ n = c ^ n := by rw [pow_abs, abs_of_pos hc]
   have hzero : c • A = 0 ↔ A = 0 := smul_eq_zero_iff_right hc0
-  rw [outerDistortion_def, outerDistortion_def, oV.orientedJacobian_smul oW, map_smul, norm_smul,
-    Real.norm_eq_abs, mul_pow, hpow, mul_div_mul_left _ _ hc.ne', hzero]
-  simp only [mul_pos_iff_of_pos_left hc]
+  rw [outerDistortion_def, outerDistortion_def, hzero]
+  simp only [oV.orientedJacobian_smul oW, map_smul, norm_smul, Real.norm_eq_abs, mul_pow, hpow,
+    mul_div_mul_left _ _ hc.ne', mul_pos_iff_of_pos_left hc]
 
 /-- Scaling by `c` with `cⁿ > 0` (any `c > 0`, and any `c ≠ 0` in even dimension) changes no inner
 distortion. -/
 theorem innerDistortion_smul {c : ℝ} (hc : 0 < c ^ n) (A : V →ₗ[ℝ] W) :
     oV.innerDistortion oW (c • A) = oV.innerDistortion oW A := by
   have hpow : |c| ^ n = c ^ n := by rw [pow_abs, abs_of_pos hc]
-  rw [innerDistortion_def, innerDistortion_def, oV.orientedJacobian_smul oW,
-    LinearMap.minimalStretch_smul, Real.norm_eq_abs, mul_pow, hpow,
-    mul_div_mul_left _ _ hc.ne']
-  simp only [mul_pos_iff_of_pos_left hc]
+  simp only [innerDistortion_def, oV.orientedJacobian_smul oW, LinearMap.minimalStretch_smul,
+    Real.norm_eq_abs, mul_pow, hpow, mul_div_mul_left _ _ hc.ne', mul_pos_iff_of_pos_left hc]
 
 omit [FiniteDimensional ℝ W] in
 /-- Scaling a map with `J(A) > 0` by `c` with `cⁿ < 0` (a negative scalar in odd dimension) makes

@@ -47,7 +47,8 @@ unit vectors therefore assume `Nontrivial E`.
   `normDet(A) ≤ ‖A‖ⁿ` is `ContinuousLinearMap.normDet_le_norm_pow`.
 * `LinearMap.norm_mul_minimalStretch_pow_le_normDet`,
   `LinearMap.normDet_le_norm_pow_mul_minimalStretch`: the sharper sandwich
-  `‖A‖ ℓ(A)ⁿ⁻¹ ≤ normDet(A) ≤ ‖A‖ⁿ⁻¹ ℓ(A)`, the latter for `n > 0`.
+  `‖A‖ ℓ(A)ⁿ⁻¹ ≤ normDet(A) ≤ ‖A‖ⁿ⁻¹ ℓ(A)`, the latter for `n > 0`;
+  `LinearMap.minimalStretch_pos_of_normDet_ne_zero`: hence `normDet(A) ≠ 0` gives `ℓ(A) > 0`.
 * `LinearMap.minimalStretch_smul`, `LinearMap.minimalStretch_linearIsometry_comp`,
   `LinearMap.minimalStretch_comp_linearIsometryEquiv`: `ℓ(c A) = ‖c‖ ℓ(A)`, and `ℓ` is unchanged
   by linear isometries on the left and isometric isomorphisms on the right.
@@ -227,6 +228,12 @@ theorem norm_mul_minimalStretch_pow_le_normDet (A : E →ₗ[𝕜] F) :
     fun i hi ↦ A.singularValues_antitone ?_).trans_eq' (by simp)
   simp only [Finset.mem_range] at hi
   omega
+
+/-- On a nonzero space, a map with nonzero Jacobian `normDet` has positive minimal stretch. -/
+theorem minimalStretch_pos_of_normDet_ne_zero (hE : 0 < finrank 𝕜 E) {A : E →ₗ[𝕜] F}
+    (h : A.normDet ≠ 0) : 0 < A.minimalStretch := by
+  refine A.minimalStretch_nonneg.lt_of_ne fun h0 ↦ h (le_antisymm ?_ A.normDet_nonneg)
+  simpa [← h0] using A.normDet_le_norm_pow_mul_minimalStretch hE
 
 /-- The zero map has minimal stretch `0`. -/
 @[simp]
