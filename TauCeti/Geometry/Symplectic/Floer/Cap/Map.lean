@@ -182,6 +182,19 @@ theorem novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy [Finite ι�
   novikovMapOfMatrix_coefficientComparison_mem_map_cochain_gradeBy r₁ r₀ q hq hμ₁ hμ₀ hF₁ hF₀ hΦ
     (AddMonoidHom.id ℤ) ha
 
+/-- A map of rigid class-indexed counts which preserves the index preserves the cochain degree
+`n - μ`. -/
+theorem novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq [Finite ι₁] [Finite ι₀]
+    {F₁ : (Σ i, P₁ i) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+    (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+    (hF₀ : ∀ k γ (D : P₀ k), F₀ ⟨k, γ +ᵥ D⟩ = F₀ ⟨k, D⟩ - (-area ω c) γ)
+    (hΦ : ∀ i k, ∀ A ∈ (Φ i k).support, μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩)
+    {n e : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ (fun p => n - μ₁ p) e) :
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (Φ i k)) a ∈
+      gradeBy R F₀ (fun p => n - μ₀ p) e := by
+  simpa only [add_zero] using novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy r₁ r₀ q
+    hq hμ₁ hμ₀ hF₁ hF₀ (ε := 0) (fun i k A hA => (hΦ i k A hA).trans (sub_zero _).symm) ha
+
 end MapGrading
 
 section ChainMap
@@ -321,9 +334,8 @@ theorem novikovMapOfMatrix_coefficientComparison_mem_cocycles
   rw [novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hm]
   refine LinearMap.apply_mem_cocycles_of_mem_cocycles _ (fun {_ b} hb => ?_) (fun {_ b} _ => ?_) ha
   · rw [← novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hm]
-    simpa only [add_zero] using novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy
-      r₁ r₀ q hq hμ₁ hμ₀ hF₁ hF₀ (ε := 0)
-      (fun i k A hA => by rw [sub_zero]; exact hΦdeg i k A hA) hb
+    exact novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq r₁ r₀ q hq hμ₁ hμ₀
+      hF₁ hF₀ hΦdeg hb
   · simp only [← novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hm,
       ← novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀,
       ← novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁]

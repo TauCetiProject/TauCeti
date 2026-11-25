@@ -101,8 +101,8 @@ private theorem contMap_mem_gradeBy {M : ι → ι' → NovikovSeries R G ωG}
     {k : ℤ} {a : NovikovModule R F} (ha : a ∈ gradeBy R F (fun p => n - μ p) k) :
     contMap q hq r r' hF hF' M a ∈ gradeBy R F' (fun p => n - μ' p) k := by
   rw [contMap_apply]
-  simpa only [add_zero] using novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy r r' q hq
-    hμ hμ' hF hF' (ε := 0) (fun i i' A hA => by rw [sub_zero]; exact hM i i' A hA) ha
+  exact novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq r r' q hq hμ hμ' hF hF'
+    hM ha
 
 /-- A map of counts obeying the chain-map identity commutes with the differentials. -/
 private theorem kernelMap_contMap {M : ι → ι' → NovikovSeries R G ωG}
@@ -293,17 +293,13 @@ def continuationAlgEquivOfCounts :
     (fun ha hb => contMap_kernelProduct_sub_mem_coboundaries q hq r r' hF hF' hμ hμ' n D D' hδ hδ'
       Φ Q Q' hnQ hnQ' hcont ha hb)
     -- The continuation maps in the two directions are mutually inverse on cohomology.
-    (fun k => by
-      convert (LinearMap.cohomologyEquiv (i := k) (contMap q hq r r' hF hF' Φ)
-        (contMap q hq r' r hF' hF Ψ) (fun ha => contMap_mem_gradeBy q hq r r' hF hF' hμ hμ' n hΦ ha)
-        (fun {_} {a} _ => kernelMap_contMap q hq r r' hF hF' D D' hδ hδ' hΦD a)
-        (fun ha => contMap_mem_gradeBy q hq r' r hF' hF hμ' hμ n hΨ ha)
-        (fun {_} {a} _ => kernelMap_contMap q hq r' r hF' hF D' D hδ' hδ hΨD a)
-        (contMap_contMap_sub_mem_coboundaries q hq r r' hF hF' hμ n D hδ Φ Ψ hΨΦ)
-        (contMap_contMap_sub_mem_coboundaries q hq r' r hF' hF hμ' n D' hδ' Ψ Φ hΦΨ)).bijective
-        using 1
-      funext x
-      simp only [LinearMap.cohomologyEquiv_apply])
+    (fun k => LinearMap.bijective_cohomologyMap (i := k) (contMap q hq r r' hF hF' Φ)
+      (contMap q hq r' r hF' hF Ψ) (fun ha => contMap_mem_gradeBy q hq r r' hF hF' hμ hμ' n hΦ ha)
+      (fun {_} {a} _ => kernelMap_contMap q hq r r' hF hF' D D' hδ hδ' hΦD a)
+      (fun ha => contMap_mem_gradeBy q hq r' r hF' hF hμ' hμ n hΨ ha)
+      (fun {_} {a} _ => kernelMap_contMap q hq r' r hF' hF D' D hδ' hδ hΨD a)
+      (contMap_contMap_sub_mem_coboundaries q hq r r' hF hF' hμ n D hδ Φ Ψ hΨΦ)
+      (contMap_contMap_sub_mem_coboundaries q hq r' r hF' hF hμ' n D' hδ' Ψ Φ hΦΨ))
 
 /-- The continuation isomorphism sends the class of a cocycle `a` to the class of its image `Φ a`
 under the map of the continuation counts. -/

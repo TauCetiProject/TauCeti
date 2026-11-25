@@ -77,6 +77,7 @@ cocycles of degrees `i` and `j`, then they are graded commutative
   homotopy invariance of the induced maps.
 * `LinearMap.leftInverse_cohomologyMap`: a left inverse up to coboundaries on cocycles induces a
   left inverse on cohomology.
+* `LinearMap.bijective_cohomologyMap`: a homotopy equivalence induces bijections on cohomology.
 * `LinearMap.cohomologyMap_cohomologyProduct`: maps intertwining two products up to coboundaries
   intertwine the products on cohomology.
 * `LinearMap.cohomologyMap_cohomologyProduct_of_leftInverse`: one-sided inverses of maps
@@ -407,6 +408,12 @@ map. -/
 theorem cohomologyEquiv_symm_apply (x : D₀.cohomology G₀ i) :
     (cohomologyEquiv f g hfdeg hfD hgdeg hgD hgf hfg).symm x = cohomologyMap g hgdeg hgD i x :=
   (rfl)
+
+include hgdeg hgD hgf hfg in
+/-- The map induced on degree-`i` cohomology by a homotopy equivalence is bijective. -/
+theorem bijective_cohomologyMap :
+    Function.Bijective (cohomologyMap (G₁ := G₁) (G₀ := G₀) f hfdeg hfD i) :=
+  (cohomologyEquiv f g hfdeg hfD hgdeg hgD hgf hfg).bijective
 
 end Equiv
 
