@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Lattice
 public import Mathlib.CategoryTheory.Limits.Shapes.FiniteProducts
+import TauCeti.Data.Finset.Image
 
 /-!
 # Finite products of reindexed families in a lattice
@@ -16,6 +17,10 @@ infimum of its members (`CategoryTheory.Limits.CompleteLattice.finite_product_eq
 file records the reindexed form used for Čech complexes: the product of the members `f (a j)` of a
 family `f`, for `a : J → ι` with `J` finite, is the infimum of `f` over the image of `a`. Hence a
 property of the nonempty finite infima of `f` holds for the products `f (a 0) × ⋯ × f (a n)`.
+In `(Finset ι)ᵒᵈ` (ordered by reverse inclusion), this identifies the finite product of singletons
+`toDual {a j}` with `Finset.univ.image a` (`ofDual_finite_product_toDual_singleton`), which equals
+`Finset.univ` if and only if `a` is surjective
+(`ofDual_finite_product_toDual_singleton_eq_univ_iff`).
 -/
 
 public section
@@ -47,5 +52,25 @@ theorem finite_product_of_forall_finset_inf {ι : Type v} {p : α → Prop} (f :
   classical
   have := Fintype.ofFinite J
   exact finite_product_eq_finset_image_inf f a ▸ h _ (Finset.univ_nonempty.image a)
+
+/-- In `(Finset ι)ᵒᵈ` (ordered by reverse inclusion), the finite product of the singletons
+`toDual {a j}` is the image of `a`. -/
+theorem ofDual_finite_product_toDual_singleton {ι : Type u} [DecidableEq ι] {J : Type v}
+    [Fintype J] (a : J → ι) :
+    OrderDual.ofDual (∏ᶜ fun j ↦ (OrderDual.toDual ({a j} : Finset ι))) =
+      Finset.univ.image a := by
+  rw [finite_product_eq_finset_image_inf (fun i : ι ↦ (OrderDual.toDual ({i} : Finset ι))) a,
+    Finset.ofDual_inf]
+  exact Finset.sup_singleton_eq_self _
+
+open scoped Classical in
+/-- In `(Finset ι)ᵒᵈ` (ordered by reverse inclusion), the finite product of the singletons
+`toDual {a j}` equals `Finset.univ` if and only if `a` is surjective. -/
+theorem ofDual_finite_product_toDual_singleton_eq_univ_iff {ι : Type u} [Fintype ι] {J : Type v}
+    [Finite J] (a : J → ι) :
+    OrderDual.ofDual (∏ᶜ fun j ↦ (OrderDual.toDual ({a j} : Finset ι))) = Finset.univ ↔
+      Function.Surjective a := by
+  have := Fintype.ofFinite J
+  rw [ofDual_finite_product_toDual_singleton, Finset.image_univ_eq_univ_iff]
 
 end CategoryTheory.Limits.CompleteLattice

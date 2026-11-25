@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.ReversalPairing
+public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.Spin.Representation
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
@@ -25,7 +26,8 @@ group, the pairing is invariant under the spin representation
 For a basis of `W` indexed by a finite linear order, the top-degree coefficient kills every
 contraction, and is involution-invariant whenever the rank is even, so its reversal pairing
 `⟨s, t⟩ = [reverse s ∧ t]_top` is Spin-invariant whenever `L = 0` or `dim W` is even
-(`TauCeti.reversalPairing_coord_univ_spinRep`).
+(`TauCeti.reversalPairing_coord_univ_spinRep`); that is, it is an invariant form of the spin
+representation (`TauCeti.isInvariantForm_reversalPairing_coord_univ`).
 
 In dimension five `dim W = 2`, and this pairing is a symplectic form on the four-dimensional
 spin representation of `Spin₅`: it is Spin-invariant by
@@ -116,5 +118,14 @@ theorem reversalPairing_coord_univ_spinRep {I : Type w} [LinearOrder I] [Fintype
   reversalPairing_spinRep P _ b.exteriorAlgebra_coord_univ_contractLeft
     (hline.imp_right fun h x ↦ by
       rw [b.exteriorAlgebra_coord_univ_involute, h.neg_one_pow, one_mul]) g s t
+
+/-- **The top-degree reversal pairing is an invariant form** of the spin representation, for a
+basis of the isotropic summand `W`, when the remainder of the polarization is zero or `W` has even
+rank. -/
+theorem isInvariantForm_reversalPairing_coord_univ {I : Type w} [LinearOrder I] [Fintype I]
+    (b : Module.Basis I K P.W) (hline : P.line = ⊥ ∨ Even (Fintype.card I)) :
+    Representation.IsInvariantForm (spinRep Q P)
+      (ExteriorAlgebra.reversalPairing (b.ExteriorAlgebra.coord Finset.univ)) :=
+  Representation.isInvariantForm_iff.mpr (reversalPairing_coord_univ_spinRep P b hline)
 
 end TauCeti

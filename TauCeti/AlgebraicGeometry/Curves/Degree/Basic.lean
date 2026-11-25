@@ -9,13 +9,18 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Finiteness
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 
 /-!
-# Additivity of degree on smooth proper curves
+# Degree on smooth proper curves
 
-On a connected smooth proper curve over a field, the Euler-characteristic degree of a tensor
-product is the sum of the degrees. The geometric hypotheses suffice: regularity gives integral
-local rings and discrete valuation rings in codimension one, and properness gives
+On a proper integral scheme smooth of relative dimension one over a field `k`, principal
+divisors have degree zero and the Euler-characteristic degree `χ(L) - χ(𝒪_X)` of a line bundle
+is the degree of any of its divisors. On a connected smooth proper curve over a field, the
+Euler-characteristic degree of a tensor product is the sum of the degrees. The geometric
+hypotheses suffice: regularity gives integral local rings and discrete valuation rings in
+codimension one, relative dimension one bounds the codimension of every point by one
+(`TauCeti.AlgebraicGeometry.coheight_le_of_relativeDimensionLE_of_field`), and properness gives
 finite-dimensional first cohomology. No rational point or perfectness of the field is required.
 
 The field-valued fibres of a smooth proper geometrically connected family of relative dimension
@@ -25,13 +30,18 @@ geometric fibre closed under tensor product.
 
 ## Main results
 
+* `SchemeWeilDivisor.relativeDegree_principalDivisor_of_smooth`: principal divisors on a proper
+  integral smooth curve have degree zero;
+* `InvertibleSheaf.eulerDegree_eq_relativeDegree_of_smooth`: on such a curve, the
+  Euler-characteristic degree of `𝒪_X(D)` is `Σ_y D(y) [κ(y) : k]`;
 * `LineBundleClass.eulerDegree_mul_of_smooth`: additivity on connected smooth proper curves;
 * `LineBundleClass.eulerDegree_mul_fieldValuedBaseChange`: additivity on all field-valued fibres
   of a smooth proper geometrically connected family of curves.
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, Chapter IV, Section 1.
+* R. Hartshorne, *Algebraic Geometry*, Chapter II, Corollary 6.10, Chapter III,
+  Proposition 9.3, and Chapter IV, Section 1.
 * S. Kleiman, *The Picard scheme*, in *Fundamental Algebraic Geometry: Grothendieck's FGA
   Explained*, Section 9.5.
 -/
@@ -45,6 +55,44 @@ namespace TauCeti.AlgebraicGeometry
 universe u
 
 noncomputable section
+
+namespace SchemeWeilDivisor
+
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsIntegral X]
+  [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
+
+/-- **A principal divisor on a smooth proper curve has degree zero.** On a proper integral scheme
+smooth of relative dimension one over a field `k`, the divisor of a nonzero rational function
+has degree `Σ_y ord_y(f) [κ(y) : k] = 0`. -/
+theorem relativeDegree_principalDivisor_of_smooth [IsNoetherian X]
+    (f : Additive X.functionFieldˣ) :
+    relativeDegree (X ↘ Spec (.of k))
+        ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor f) = 0 := by
+  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
+  have := isDiscreteValuationRing_stalk_of_smooth k (X := X)
+  have := finiteDimensional_cohomology_one_trivial_of_smooth k X
+  exact relativeDegree_principalDivisor k
+    (coheight_le_of_relativeDimensionLE_of_field (d := 1) (X ↘ Spec (.of k))) f
+
+end SchemeWeilDivisor
+
+namespace InvertibleSheaf
+
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsIntegral X]
+  [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
+
+/-- **The degree of a line bundle on a smooth proper curve is the degree of its divisors.** On a
+proper integral scheme smooth of relative dimension one over a field `k`, a line bundle
+`L ≅ 𝒪_X(D)` has `χ(L) - χ(𝒪_X) = Σ_y D(y) [κ(y) : k]`. -/
+theorem eulerDegree_eq_relativeDegree_of_smooth [IsLocallyNoetherian X]
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+    {L : InvertibleSheaf X} {D : SchemeWeilDivisor X} (e : L.obj ≅ SchemeWeilDivisor.sheaf D) :
+    L.eulerDegree k = SchemeWeilDivisor.relativeDegree (X ↘ Spec (.of k)) D := by
+  have := finiteDimensional_cohomology_one_trivial_of_smooth k X
+  exact eulerDegree_eq_relativeDegree k
+    (coheight_le_of_relativeDimensionLE_of_field (d := 1) (X ↘ Spec (.of k))) e
+
+end InvertibleSheaf
 
 namespace LineBundleClass
 
