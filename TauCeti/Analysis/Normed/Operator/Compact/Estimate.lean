@@ -16,10 +16,12 @@ import TauCeti.Analysis.Normed.Operator.ClosedRange
 # Peetre's compact-error estimate
 
 An estimate `‖x‖ ≤ C * ‖T x‖ + ‖K x‖`, with `K` compact, forces the kernel of `T` to be
-finite dimensional. If the domain is complete, the estimate also makes `T` bounded below
-on any closed subspace disjoint from its kernel, and the range of `T` is closed over any
-nontrivially normed field. The closed-range step needs no complement of the kernel: by the
-sequential criterion `ContinuousLinearMap.isClosed_range_of_exists_subseq_tendsto` from
+finite dimensional; in particular a space on which a compact operator is bounded below is finite
+dimensional (`IsCompactOperator.finiteDimensional_of_norm_le_mul_norm`). If the domain is
+complete, the estimate also makes `T` bounded below on any closed subspace disjoint from its
+kernel, and the range of `T` is closed over any nontrivially normed field. The closed-range step
+needs no complement of the kernel: by the sequential criterion
+`ContinuousLinearMap.isClosed_range_of_exists_subseq_tendsto` from
 `TauCeti.Analysis.Normed.Operator.ClosedRange`, an operator has closed range as soon as every
 bounded sequence with convergent images has a convergent subsequence.
 
@@ -95,6 +97,23 @@ theorem finiteDimensional_ker_of_compact_estimate [CompleteSpace 𝕜]
   simp only [map_sub, hTv, sub_self, norm_zero, mul_zero, zero_add] at h
   have hsep : 1 ≤ ‖(v m : E) - (v n : E)‖ := hvsep hmn.ne
   exact (hsep.trans h).not_gt (by simpa [dist_eq_norm] using hclose)
+
+/-- A normed space on which a compact operator is bounded below, `‖x‖ ≤ C * ‖K x‖`, is finite
+dimensional. The space need not be complete, and the target need only be seminormed. -/
+theorem _root_.IsCompactOperator.finiteDimensional_of_norm_le_mul_norm [CompleteSpace 𝕜]
+    {K : E →L[𝕜] G} (hK : IsCompactOperator K) (hbound : ∀ x, ‖x‖ ≤ C * ‖K x‖) :
+    FiniteDimensional 𝕜 E := by
+  by_contra hfinite
+  obtain ⟨R, v, _, hvbound, hvsep⟩ := exists_seq_norm_le_one_le_norm_sub hfinite
+  obtain ⟨m, n, hmn, hclose⟩ :=
+    hK.exists_dist_lt_of_norm_le hvbound (by positivity : (0 : ℝ) < (|C| + 1)⁻¹)
+  rw [dist_eq_norm, ← map_sub] at hclose
+  have : C * ‖K (v m - v n)‖ < 1 :=
+    calc C * ‖K (v m - v n)‖ ≤ (|C| + 1) * ‖K (v m - v n)‖ := by
+          gcongr; exact (le_abs_self C).trans (le_add_of_nonneg_right zero_le_one)
+      _ < (|C| + 1) * (|C| + 1)⁻¹ := by gcongr; exact hclose
+      _ = 1 := mul_inv_cancel₀ (by positivity)
+  exact (hvsep hmn.ne).not_gt ((hbound _).trans_lt this)
 
 /-- **Compact perturbations preserve compact-error estimates.** If
 `‖x‖ ≤ C * ‖T x‖ + ‖K x‖` with `K` compact and `S - T` is compact, then `S` satisfies an estimate

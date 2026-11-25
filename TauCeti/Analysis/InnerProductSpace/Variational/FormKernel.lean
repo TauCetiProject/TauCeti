@@ -21,13 +21,13 @@ and a shifted coercivity bound `c ‖u‖² ≤ q(u) + ω ‖j u‖²`. Its **fo
 the shifted bound gives `c ‖u‖² ≤ ω ‖j u‖²` on `N` and `j` is compact. So `j N` is closed in `H`,
 and `N` is a complement of `{u | j u ⊥ j N}` in `V`.
 
-When the energy is nonnegative, `N = {u | q(u) = 0}`, and the energy is coercive on the
-kernel-orthogonal part: there is `δ > 0` with `δ ‖j u‖² ≤ q(u)` whenever `j u ⊥ j N`
-(`TauCeti.CompactFormPair.exists_pos_mul_norm_sq_le_energy`), and then `c' ‖u‖² ≤ q(u)` there for
-some `c' > 0`. The best constant `δ` is the minimum of the energy on the constrained sphere of
-`(j N)ᗮ`. This gives the solvability of the weak equation `a(u, v) = ℓ(v)` for all `v`: it has a
-solution if and only if `ℓ` vanishes on `N`, and solutions are unique modulo `N`
-(`TauCeti.CompactFormPair.exists_forall_form_apply_eq_iff`).
+When the energy is nonnegative, `N = {u | q(u) = 0}`. When moreover `V` is complete, the energy
+is coercive on the kernel-orthogonal part: there is `δ > 0` with `δ ‖j u‖² ≤ q(u)` whenever
+`j u ⊥ j N` (`TauCeti.CompactFormPair.exists_pos_mul_norm_inclusion_sq_le_energy`), and then
+`c' ‖u‖² ≤ q(u)` there for some `c' > 0`. The best constant `δ` is the minimum of the energy on
+the constrained sphere of `(j N)ᗮ`. This gives the solvability of the weak equation
+`a(u, v) = ℓ(v)` for all `v`: it has a solution if and only if `ℓ` vanishes on `N`, and solutions
+are unique modulo `N` (`TauCeti.CompactFormPair.exists_forall_form_apply_eq_iff`).
 
 ## Main results
 
@@ -39,8 +39,8 @@ solution if and only if `ℓ` vanishes on `N`, and solutions are unique modulo `
 * `TauCeti.CompactFormPair.isGreatest_setOf_mul_norm_sq_le_energy`: the best constant of the
   inequality `δ ‖j u‖² ≤ q(u)` on `{j u ∈ W}` is the minimum of the energy on the constrained
   sphere of `W`.
-* `TauCeti.CompactFormPair.exists_pos_mul_norm_sq_le_energy`,
-  `exists_pos_mul_norm_sq_le_energy_of_inclusion_mem`: coercivity of a nonnegative energy in the
+* `TauCeti.CompactFormPair.exists_pos_mul_norm_inclusion_sq_le_energy`,
+  `exists_pos_mul_norm_sq_le_energy`: coercivity of a nonnegative energy in the
   `H` norm and in the `V` norm on the kernel-orthogonal part.
 * `TauCeti.CompactFormPair.finiteDimensional_of_orthogonal_eq_bot`: if `(j N)ᗮ = 0` then `H` is
   finite dimensional.
@@ -50,7 +50,9 @@ solution if and only if `ℓ` vanishes on `N`, and solutions are unique modulo `
 
 ## References
 
-* TauCetiRoadmap, `VariationalMethods/README.md`, §3.4.
+* V. Ivrii, *Partial Differential Equations*, Chapter 13, §13.1, Theorems 1–4.
+* J. K. Hunter, *Notes on Partial Differential Equations*, Chapter 4, §4.8, §4.10 and
+  Theorem 4.20 (the Lax–Milgram theorem).
 -/
 
 public section
@@ -76,6 +78,7 @@ def formKernel : Submodule 𝕜 V where
 
 variable {P} {u v n : V}
 
+@[simp]
 theorem mem_formKernel : u ∈ P.formKernel ↔ ∀ v, P.form u v = 0 :=
   Iff.rfl
 
@@ -91,9 +94,8 @@ theorem energy_eq_zero_of_mem_formKernel (hn : n ∈ P.formKernel) : P.energy n 
 theorem mem_formKernel_iff_energy_eq_zero (hq : ∀ w, 0 ≤ P.energy w) :
     u ∈ P.formKernel ↔ P.energy u = 0 := by
   rw [energy_def, ContinuousLinearMap.re_apply_self_eq_zero_iff P.hermitian
-    (fun w ↦ by simpa only [energy_def] using hq w), mem_formKernel,
-    ContinuousLinearMap.ext_iff]
-  rfl
+    (fun w ↦ by simpa only [energy_def] using hq w), mem_formKernel]
+  simp only [ContinuousLinearMap.ext_iff, zero_apply]
 
 variable (P)
 
@@ -107,25 +109,14 @@ theorem exists_mul_norm_sq_le_mul_norm_inclusion_sq :
 /-- The form kernel is finite dimensional: the inclusion is compact and bounded below on it. -/
 instance finiteDimensional_formKernel : FiniteDimensional 𝕜 P.formKernel := by
   obtain ⟨c, hc, ω, h⟩ := P.exists_mul_norm_sq_le_mul_norm_inclusion_sq
-  set C := √(max ω 0 / c)
-  set K : P.formKernel →L[𝕜] H := (C : 𝕜) • (P.inclusion ∘L P.formKernel.subtypeL)
-  have hK : IsCompactOperator K :=
-    (P.isCompactOperator.comp_clm P.formKernel.subtypeL).smul _
-  have hbound : ∀ x : P.formKernel, ‖x‖ ≤ 0 * ‖(0 : P.formKernel →L[𝕜] H) x‖ + ‖K x‖ := by
-    intro x
-    have hx := h x x.property
-    have hle : ‖(x : V)‖ ^ 2 ≤ (C * ‖P.inclusion x‖) ^ 2 := by
-      rw [mul_pow, Real.sq_sqrt (div_nonneg (le_max_right _ _) hc.le), div_mul_eq_mul_div,
-        le_div_iff₀ hc, mul_comm]
-      exact hx.trans (by gcongr; exact le_max_left _ _)
-    have hx' : ‖(x : V)‖ ≤ C * ‖P.inclusion x‖ :=
-      (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hle
-    have hC : 0 ≤ C := Real.sqrt_nonneg _
-    simpa [K, norm_smul, abs_of_nonneg hC] using hx'
-  have := ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate
-    (0 : P.formKernel →L[𝕜] H) hK hbound
-  rw [ContinuousLinearMap.toLinearMap_zero, LinearMap.ker_zero] at this
-  exact Module.Finite.equiv (LinearEquiv.ofTop ⊤ rfl)
+  refine IsCompactOperator.finiteDimensional_of_norm_le_mul_norm
+    (K := P.inclusion ∘L P.formKernel.subtypeL) (C := √(max ω 0 / c))
+    (P.isCompactOperator.comp_clm _) fun x ↦ ?_
+  have hle : ‖(x : V)‖ ^ 2 ≤ (√(max ω 0 / c) * ‖P.inclusion x‖) ^ 2 := by
+    rw [mul_pow, Real.sq_sqrt (div_nonneg (le_max_right _ _) hc.le), div_mul_eq_mul_div,
+      le_div_iff₀ hc, mul_comm]
+    exact (h x x.property).trans (by gcongr; exact le_max_left _ _)
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hle
 
 instance finiteDimensional_map_formKernel :
     FiniteDimensional 𝕜 (P.formKernel.map (P.inclusion : V →ₗ[𝕜] H)) :=
@@ -164,9 +155,8 @@ theorem isGreatest_setOf_mul_norm_sq_le_energy {W : Submodule 𝕜 H} {u₀ : V}
   ⟨fun _ hu ↦ mul_norm_sq_le_energy_of_isMinOn hmin hu,
     fun δ hδ ↦ by simpa [(mem_unitConstraint.1 hu₀).2] using hδ u₀ (mem_unitConstraint.1 hu₀).1⟩
 
-/-- For a nonnegative energy, a minimizer of the energy on the constrained sphere of `(j N)ᗮ` has
-positive energy: a minimizer of energy zero would lie in `N`, so its image would be a unit vector
-in `j N ∩ (j N)ᗮ`. -/
+/-- For a nonnegative energy, every vector of the constrained sphere of `(j N)ᗮ` has positive
+energy. -/
 theorem energy_pos_of_mem_unitConstraint_orthogonal (hq : ∀ w, 0 ≤ P.energy w)
     (hu : u ∈ P.unitConstraint (P.formKernel.map (P.inclusion : V →ₗ[𝕜] H))ᗮ) :
     0 < P.energy u := by
@@ -182,7 +172,8 @@ variable (P)
 
 /-- **The kernel-orthogonal Poincaré inequality.** For a nonnegative energy on a complete form
 domain there is `δ > 0` with `δ ‖j u‖² ≤ q(u)` whenever `j u ⊥ j N`. -/
-theorem exists_pos_mul_norm_sq_le_energy [CompleteSpace V] (hq : ∀ w, 0 ≤ P.energy w) :
+theorem exists_pos_mul_norm_inclusion_sq_le_energy [CompleteSpace V]
+    (hq : ∀ w, 0 ≤ P.energy w) :
     ∃ δ > 0, ∀ u, P.inclusion u ∈ (P.formKernel.map (P.inclusion : V →ₗ[𝕜] H))ᗮ →
       δ * ‖P.inclusion u‖ ^ 2 ≤ P.energy u := by
   set W := (P.formKernel.map (P.inclusion : V →ₗ[𝕜] H))ᗮ
@@ -198,11 +189,10 @@ theorem exists_pos_mul_norm_sq_le_energy [CompleteSpace V] (hq : ∀ w, 0 ≤ P.
 
 /-- **Coercivity on the kernel-orthogonal part.** For a nonnegative energy on a complete form
 domain there is `c' > 0` with `c' ‖u‖² ≤ q(u)` whenever `j u ⊥ j N`. -/
-theorem exists_pos_mul_norm_sq_le_energy_of_inclusion_mem [CompleteSpace V]
-    (hq : ∀ w, 0 ≤ P.energy w) :
+theorem exists_pos_mul_norm_sq_le_energy [CompleteSpace V] (hq : ∀ w, 0 ≤ P.energy w) :
     ∃ c > 0, ∀ u, P.inclusion u ∈ (P.formKernel.map (P.inclusion : V →ₗ[𝕜] H))ᗮ →
       c * ‖u‖ ^ 2 ≤ P.energy u := by
-  obtain ⟨δ, hδ, hP⟩ := P.exists_pos_mul_norm_sq_le_energy hq
+  obtain ⟨δ, hδ, hP⟩ := P.exists_pos_mul_norm_inclusion_sq_le_energy hq
   obtain ⟨c, hc, ω, h⟩ := P.exists_mul_norm_sq_le_energy_add
   set ω' := max ω 0
   refine ⟨c / (1 + ω' / δ), by positivity, fun u hu ↦ ?_⟩
@@ -218,11 +208,9 @@ theorem exists_pos_mul_norm_sq_le_energy_of_inclusion_mem [CompleteSpace V]
 dimensional. -/
 theorem finiteDimensional_of_orthogonal_eq_bot
     (h : (P.formKernel.map (P.inclusion : V →ₗ[𝕜] H))ᗮ = ⊥) : FiniteDimensional 𝕜 H := by
-  have htop : P.formKernel.map (P.inclusion : V →ₗ[𝕜] H) = ⊤ := by
-    rw [← Submodule.orthogonal_orthogonal (P.formKernel.map (P.inclusion : V →ₗ[𝕜] H)), h,
-      Submodule.bot_orthogonal_eq_top]
-  have : FiniteDimensional 𝕜 (⊤ : Submodule 𝕜 H) := htop ▸ inferInstance
-  exact Module.Finite.equiv (LinearEquiv.ofTop ⊤ rfl)
+  refine Module.Finite.of_surjective ((P.inclusion : V →ₗ[𝕜] H) ∘ₗ P.formKernel.subtype) ?_
+  rw [← LinearMap.range_eq_top, LinearMap.range_comp, Submodule.range_subtype,
+    ← Submodule.orthogonal_eq_bot_iff, h]
 
 /-! ### The weak equation modulo the kernel -/
 
@@ -242,16 +230,23 @@ theorem sub_mem_formKernel_of_forall_form_apply_eq {u₁ u₂ : V} {ℓ : Strong
 
 variable (P)
 
-/-- The restriction of a nonnegative energy to the kernel-orthogonal part, as a coercive Hermitian
-form on that closed subspace. -/
+/-- The restriction of the form `a` to the kernel-orthogonal part `{u | j u ⊥ j N}`, which is a
+coercive Hermitian form there when the energy is nonnegative and `V` is complete. -/
 noncomputable def kernelOrthogonalForm [CompleteSpace V] (hq : ∀ w, 0 ≤ P.energy w) :
     CoerciveHermitianForm 𝕜
       ((P.formKernel.map (P.inclusion : V →ₗ[𝕜] H))ᗮ.comap (P.inclusion : V →ₗ[𝕜] H)) where
   form := P.form.bilinearComp (Submodule.subtypeL _) (Submodule.subtypeL _)
   form_apply_eq_star u v := P.hermitian u v
   exists_coercive := by
-    obtain ⟨c, hc, h⟩ := P.exists_pos_mul_norm_sq_le_energy_of_inclusion_mem hq
+    obtain ⟨c, hc, h⟩ := P.exists_pos_mul_norm_sq_le_energy hq
     exact ⟨c, hc, fun u ↦ by simpa [energy_def] using h u u.property⟩
+
+/-- The form of `kernelOrthogonalForm` is `a` on the kernel-orthogonal part. -/
+@[simp]
+theorem kernelOrthogonalForm_form_apply [CompleteSpace V] (hq : ∀ w, 0 ≤ P.energy w)
+    (u v : (P.formKernel.map (P.inclusion : V →ₗ[𝕜] H))ᗮ.comap (P.inclusion : V →ₗ[𝕜] H)) :
+    (P.kernelOrthogonalForm hq).form u v = P.form u v := by
+  simp [kernelOrthogonalForm]
 
 /-- **The annihilator criterion.** For a nonnegative energy on a complete form domain, the weak
 equation `a(u, v) = ℓ(v)` for all `v` has a solution exactly when `ℓ` vanishes on the form kernel;
@@ -266,11 +261,10 @@ theorem exists_forall_form_apply_eq_iff [CompleteSpace V] (hq : ∀ w, 0 ≤ P.e
     (Submodule.isClosed_orthogonal _).preimage P.inclusion.continuous
   have : CompleteSpace V' := hV'.completeSpace_coe
   set a := P.kernelOrthogonalForm hq
-  set ℓ' : StrongDual 𝕜 V' := ℓ ∘L V'.subtypeL
-  set u' : V' := a.toEnergySpace.symm ((InnerProductSpace.toDual 𝕜 a.EnergySpace).symm
-    (ℓ'.comp (a.toEnergySpace.symm : a.EnergySpace →L[𝕜] V')))
-  have hu' : ∀ w : V', P.form u' w = ℓ w :=
-    (a.toEnergySpace_eq_toDual_symm_iff ℓ' u').1 (a.toEnergySpace.apply_symm_apply _)
+  obtain ⟨u', hu', -⟩ := InnerProductSpace.existsUnique_forall_apply_eq a.form
+    a.isUnit_continuousLinearMapOfBilin (ℓ ∘L V'.subtypeL)
+  simp only [a, kernelOrthogonalForm_form_apply, ContinuousLinearMap.comp_apply,
+    Submodule.subtypeL_apply] at hu'
   refine ⟨u', fun v ↦ ?_⟩
   obtain ⟨n, hn, w, hw, rfl⟩ := Submodule.mem_sup.1
     ((P.isCompl_formKernel.codisjoint.eq_top ▸ Submodule.mem_top) : v ∈ P.formKernel ⊔ V')
