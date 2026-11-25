@@ -163,6 +163,17 @@ theorem transitionOfLE_surjective {m k : ℕ} (h : ∀ n, m ≤ n → Function.S
       LinearMap.coe_comp]
     exact ih.comp (h k hmk)
 
+/-- If every transition map `F.transition n` with `m ≤ n` is injective, then so is every
+composite transition `Aₖ → Aₘ`. -/
+theorem transitionOfLE_injective {m k : ℕ} (h : ∀ n, m ≤ n → Function.Injective (F.transition n))
+    (hmk : m ≤ k) : Function.Injective (F.transitionOfLE hmk) := by
+  induction k, hmk using Nat.le_induction with
+  | base => simpa using Function.injective_id
+  | succ k hmk ih =>
+    rw [← F.transitionOfLE_comp_transitionOfLE hmk (Nat.le_succ k), transitionOfLE_succ,
+      LinearMap.coe_comp]
+    exact ih.comp (h k hmk)
+
 /-- The shift map `δ : ∏ₙ Aₙ → ∏ₙ Aₙ`, `δ(x)ₙ = xₙ - φₙ(xₙ₊₁)`. -/
 def shift : F.Product →ₗ[R] F.Product :=
   LinearMap.id - LinearMap.pi fun n ↦ F.transition n ∘ₗ LinearMap.proj (n + 1)
@@ -381,6 +392,19 @@ theorem limπ_surjective (h : ∀ n, Function.Surjective (F.transition n)) (n : 
     Function.Surjective (F.limπ n) := fun _ ↦
   F.exists_limπ_eq_of_forall_exists_transition_eq (fun _ _ ↦ True)
     (fun k y _ ↦ (h k y).imp fun _ hy ↦ ⟨trivial, hy⟩) trivial
+
+/-- If every transition map of a tower from the index `N` on is bijective, then so is every
+projection `lim A → Aₙ` with `N ≤ n`: the tower is constant from `N` on. -/
+theorem limπ_bijective_of_le (N : ℕ) (h : ∀ k, N ≤ k → Function.Bijective (F.transition k))
+    {n : ℕ} (hn : N ≤ n) : Function.Bijective (F.limπ n) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ F.lim_ext fun k ↦ ?_, fun y ↦ ?_⟩
+  · rw [map_zero]
+    rcases le_total k n with hk | hk
+    · rw [← F.transitionOfLE_comp_limπ hk, LinearMap.comp_apply, hx, map_zero]
+    · refine F.transitionOfLE_injective (fun i hi ↦ (h i (hn.trans hi)).1) hk ?_
+      rw [map_zero, ← LinearMap.comp_apply, F.transitionOfLE_comp_limπ hk, hx]
+  · exact F.exists_limπ_eq_of_forall_exists_transition_eq (fun k _ ↦ N ≤ k)
+      (fun k y hk ↦ ((h k hk).2 y).imp fun _ hy ↦ ⟨hk.trans (Nat.le_succ k), hy⟩) hn
 
 /-- If every transition map of a tower is a split epimorphism, then so is its shift map. -/
 theorem isSplitEpi_shift (h : ∀ n, IsSplitEpi (F.map (homOfLE (Nat.le_succ n)).op)) :
