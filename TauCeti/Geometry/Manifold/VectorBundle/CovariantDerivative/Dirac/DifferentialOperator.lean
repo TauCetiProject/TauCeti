@@ -210,10 +210,9 @@ theorem sectionPrincipalSymbol_smoothDiracOperator [T2Space M] [FiniteDimensiona
   obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
   refine LinearMap.ext fun v ↦ ?_
   obtain ⟨σ, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) (V := V) ∞ x v
-  rw [ContMDiffSection.evalLinearMap_apply, sectionPrincipalSymbol_mvfderiv, pow_one,
-    Nat.factorial_one, Nat.cast_one, inv_one, one_smul, ContinuousLinearMap.coe_coe,
-    ← TauCeti.Manifold.mgradient_def]
-  exact cov.smulCommutator_smoothDiracOperator_apply hc f σ x
+  rw [ContMDiffSection.evalLinearMap_apply, sectionPrincipalSymbol_mvfderiv]
+  simpa [← TauCeti.Manifold.mgradient_def] using
+    cov.smulCommutator_smoothDiracOperator_apply hc f σ x
 
 /-- **The square of the Dirac operator is of Laplace type.** If `c` satisfies the Clifford relation
 `c(v) c(v) = -⟪v, v⟫`, then `D² = D ∘ D` is of Laplace type with constant `1`: its principal
@@ -228,9 +227,8 @@ theorem isSectionLaplaceType_smoothDiracOperator_comp [T2Space M] [FiniteDimensi
   rw [sectionPrincipalSymbol_comp hx
     ⟨_, cov.smoothDiracOperator_mem_differentialOperators_one hc⟩
     ⟨_, cov.smoothDiracOperator_mem_differentialOperators_one hc⟩ ξ,
-    sectionPrincipalSymbol_smoothDiracOperator, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
-    hcl, real_inner_self_eq_norm_sq, LinearIsometryEquiv.norm_map, LinearMap.smul_apply,
-    LinearMap.id_apply, one_mul]
+    sectionPrincipalSymbol_smoothDiracOperator]
+  simp [hcl, LinearIsometryEquiv.norm_map]
 
 end Operator
 
@@ -308,9 +306,7 @@ theorem isDiracType_smoothDiracOperator
     IsDiracType
       ⟨cov.smoothDiracOperator hc, cov.smoothDiracOperator_mem_differentialOperators_one hc⟩ := by
   refine isDiracType_iff.2 fun x hx ξ v w ↦ ?_
-  rw [sectionPrincipalSymbol_smoothDiracOperator, ContinuousLinearMap.coe_coe, hskew, hcl,
-    inner_smul_right, real_inner_self_eq_norm_sq, LinearIsometryEquiv.norm_map]
-  ring
+  simp [hskew, hcl, inner_smul_right, LinearIsometryEquiv.norm_map]
 
 variable [IsContMDiffRiemannianBundle I ∞ F V]
   [I.Boundaryless] [SigmaCompactSpace M] [MeasurableSpace M] [BorelSpace M]
