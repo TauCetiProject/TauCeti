@@ -71,11 +71,6 @@ theorem essentialBoundary_ball_sdiff_singleton [Nontrivial E] {c : E} {r : ℝ} 
   rw [essentialBoundary_congr_ae (sdiff_null_ae_eq_self (measure_singleton c)),
     essentialBoundary_ball hr]
 
-/-- The points of rational coordinates form a null set, for `n ≠ 0`. -/
-theorem EuclideanSpace.volume_rationalPoints {n : ℕ} [NeZero n] :
-    volume (EuclideanSpace.rationalPoints n) = 0 :=
-  EuclideanSpace.countable_rationalPoints.measure_zero _
-
 /-- In `EuclideanSpace ℝ (Fin n)`, the union of the ball `ball c r`, `r ≠ 0`, with the points of
 rational coordinates has essential boundary `sphere c r`. -/
 theorem essentialBoundary_ball_union_rational {n : ℕ} [NeZero n]
