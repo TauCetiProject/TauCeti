@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.Equiv.IntLinear
 public import TauCeti.GroupTheory.Automorphism.Outer
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Basis
 
 /-!
 # The outer automorphism group of a free abelian group of finite rank
@@ -18,8 +17,8 @@ For a finite index type `ι`, the free abelian group `ℤ^ι`, written multiplic
 automorphism group is its automorphism group (`TauCeti.OuterAut.mulEquivOfIsMulCommutative`). Its
 automorphisms are its `ℤ`-linear automorphisms
 (`TauCeti.mulAutMultiplicativeEquivIntLinearEquiv`), that is, the invertible `ι × ι` integer
-matrices. For `ι = Fin 2` this is `OuterAut ℤ² ≅ GL₂(ℤ)`, the target of
-the Dehn–Nielsen–Baer theorem for the torus.
+matrices, through the standard basis (`Module.Basis.toGL`). For `ι = Fin 2` this is
+`OuterAut ℤ² ≅ GL₂(ℤ)`, the target of the Dehn–Nielsen–Baer theorem for the torus.
 
 ## Main definitions
 
@@ -46,9 +45,7 @@ automorphisms, the invertible `ι × ι` integer matrices. -/
 noncomputable def outerAutIntPiEquiv :
     OuterAut (Multiplicative (ι → ℤ)) ≃* Matrix.GeneralLinearGroup ι ℤ :=
   OuterAut.mulEquivOfIsMulCommutative.trans <|
-    (mulAutMultiplicativeEquivIntLinearEquiv _).trans <|
-      (LinearMap.GeneralLinearGroup.generalLinearEquiv ℤ (ι → ℤ)).symm.trans
-        Matrix.GeneralLinearGroup.toLin.symm
+    (mulAutMultiplicativeEquivIntLinearEquiv _).trans (Pi.basisFun ℤ ι).toGL
 
 variable {ι}
 
@@ -58,8 +55,7 @@ variable {ι}
 theorem outerAutIntPiEquiv_mk_apply (φ : MulAut (Multiplicative (ι → ℤ))) (i j : ι) :
     (outerAutIntPiEquiv ι (φ : OuterAut _) : Matrix ι ι ℤ) i j =
       (φ (ofAdd (Pi.single j 1))).toAdd i := by
-  simp [outerAutIntPiEquiv, Matrix.GeneralLinearGroup.toLin,
-    ← LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv]
+  simp [outerAutIntPiEquiv]
 
 /-- The outer class attached to an invertible integer matrix `A` is the class of the automorphism
 `v ↦ A *ᵥ v` of `ℤ^ι`. -/
