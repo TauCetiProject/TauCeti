@@ -785,7 +785,7 @@ end ComplexDeterminant
 
 section FrameModel
 
-open scoped Matrix
+open scoped _root_.Matrix
 open AlmostComplexStructure (unitaryGroupFrameEquiv complexCoords_unitaryGroupFrameEquiv_apply)
 
 variable (hQ₀ : Q ≠ 0) (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)

@@ -46,13 +46,7 @@ namespace TauCeti
 open Fact.Manifold
 open _root_.TauCeti.EuclideanHalfSpace
 
-attribute [local instance] intervalSuccessorChartedSpace intervalBoundaryChartedSpace
-
-/-- The interval `[0, 1]` is an analytic manifold for the charts
-`intervalSuccessorChartedSpace`. -/
-local instance instIsManifoldUnitIntervalZeroAddOne {k : ℕ∞ω} :
-    IsManifold (𝓡∂ (0 + 1)) k (Icc (0 : ℝ) 1) :=
-  instIsManifoldIcc 0 1
+attribute [local instance] intervalBoundaryChartedSpace
 
 local notation "B" => ModelWithCorners.boundary (I := 𝓡∂ (0 + 1)) (Icc (0 : ℝ) 1)
 local notation "D" => normalIioOpens 1

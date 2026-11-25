@@ -102,7 +102,7 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
   (g : letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
   (hV : letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g.toRiemannianMetric))
@@ -204,7 +204,7 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_e
   have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
   let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
   obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤) (F := P)
-    (E := fun s ↦ i.NormalSpace s hn)
+    (E := fun s ↦ i.isImmersion.NormalSpace s hn)
   have hV := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
     (fun s ↦ (hfs (i s)).of_le (by simp)) hdim g hr).hasLocalSubbundleFrames
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)

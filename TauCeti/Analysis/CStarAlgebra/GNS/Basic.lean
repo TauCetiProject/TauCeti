@@ -129,6 +129,9 @@ noncomputable def gnsVector (f : B →ₚ[ℂ] ℂ) : f.GNS :=
 /-- The canonical GNS vector is the class of the unit. -/
 theorem gnsVector_def (f : B →ₚ[ℂ] ℂ) : f.gnsVector = (f.toPreGNS 1 : f.GNS) := (rfl)
 
+/-- The canonical GNS vector is the image of the unit under the class map `f.toGNS`. -/
+theorem gnsVector_eq_toGNS_one (f : B →ₚ[ℂ] ℂ) : f.gnsVector = f.toGNS 1 := (rfl)
+
 /-- Acting on the canonical GNS vector produces the class of the acting element. -/
 @[simp]
 theorem gnsNonUnitalStarAlgHom_apply_gnsVector (f : B →ₚ[ℂ] ℂ) (a : B) :

@@ -49,6 +49,10 @@ This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
 * The indicator of the half-plane `{z | 0 < z.re}` has no weak derivative on any open set
   meeting the imaginary axis, so it is in every local `Lᵖ` class but in no local `W^{k,p}` class
   of positive order there.
+* The rotation `z ↦ i z` is not admissible on half-discs: it does not preserve the real axis
+  (`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`), and the indicator of the open upper half-plane is
+  in every local Sobolev class on the closed upper half-disc, while its composition with
+  `z ↦ i z`, the indicator of the right half-plane, is in no class of positive order there.
 * On the closed upper half-disc `D⁺ = ball 0 1 ∩ {z | 0 ≤ z.im}`, the map `z ↦ √z.im` is in the
   local class `W^{1,p}` exactly when `p < 2`, because the `Lᵖ` bounds reach the real axis. On the
   open half-disc it is in that class for every `p`, although it is continuous up to the axis.
@@ -325,6 +329,38 @@ theorem not_memWkpLoc_indicator_re_pos {k : ℕ} {z₀ : ℂ} (hz₀ : z₀ ∈ 
     ¬ MemWkpLoc p U (k + 1) ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := fun h => by
   obtain ⟨-, D, hD, -⟩ := memWkpLoc_succ_iff.1 h
   exact not_hasWeakFDerivOn_indicator_re_pos (Ω := Opens.interior U) hz₀ hre D hD
+
+/-! ### The rotation `z ↦ i z` on the half-disc -/
+
+/-- The indicator of the open upper half-plane is in every local Sobolev class on the closed upper
+half-disc `ball 0 1 ∩ {z | 0 ≤ z.im}`: there it agrees with `1` off the real axis. -/
+theorem memWkpLoc_ball_inter_setOf_im_nonneg_indicator_im_pos (k : ℕ) :
+    MemWkpLoc p (ball 0 1 ∩ {z : ℂ | 0 ≤ z.im}) k
+      ({z : ℂ | 0 < z.im}.indicator fun _ => (1 : ℝ)) := by
+  have h : ∀ᵐ z ∂(volume.restrict {z : ℂ | 0 ≤ z.im}), 0 < z.im := by
+    rw [Measure.restrict_congr_set (Complex.setOf_le_im_ae_eq 0)]
+    exact ae_restrict_mem (measurableSet_lt measurable_const Complex.measurable_im)
+  refine (memWkpLoc_const (1 : ℝ)).congr_ae ?_
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_right h] with z hz
+  simp [Set.indicator, hz]
+
+/-- **The rotation `z ↦ i z` does not preserve the half-disc classes.** The indicator of the open
+upper half-plane is in every local Sobolev class on the closed upper half-disc
+(`TauCeti.memWkpLoc_ball_inter_setOf_im_nonneg_indicator_im_pos`), but its composition with
+`z ↦ i z` is the indicator of the right half-plane, which is in no class of positive order there:
+the interior of the half-disc meets the imaginary axis at `i / 2`. -/
+theorem not_memWkpLoc_ball_inter_setOf_im_nonneg_indicator_im_pos_comp_I_mul (k : ℕ) :
+    ¬ MemWkpLoc p (ball 0 1 ∩ {z : ℂ | 0 ≤ z.im}) (k + 1)
+      (fun z => {z : ℂ | 0 < z.im}.indicator (fun _ => (1 : ℝ)) (Complex.I * z)) := by
+  have hfun : (fun z => {z : ℂ | 0 < z.im}.indicator (fun _ => (1 : ℝ)) (Complex.I * z)) =
+      {z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ) := by
+    funext z
+    simp [Set.indicator]
+  have hz₀ : Complex.I / 2 ∈ interior (ball (0 : ℂ) 1 ∩ {z : ℂ | 0 ≤ z.im}) := by
+    rw [interior_inter, isOpen_ball.interior_eq, Complex.interior_setOfPred_le_im]
+    exact ⟨by norm_num [Complex.norm_div], by simp⟩
+  rw [hfun]
+  exact not_memWkpLoc_indicator_re_pos hz₀ (by simp)
 
 /-! ### A square-root profile on the half-disc -/
 
