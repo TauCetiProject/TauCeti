@@ -79,9 +79,9 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `FDRep.character_baseChange`: the same for the scalar extension of an object of `FDRep`.
 * `TauCeti.ClassFunction.ofFDRep_baseChange`: the same as class functions, the coefficients changed
   along `algebraMap K L`.
-* `Representation.intertwiningDefectAt`: the intertwining defect `σ g ∘ₗ f - f ∘ₗ ρ g` at `g`, with
-  `Representation.intertwiningDefectAt_baseChange` and
-  `Representation.intertwiningDefectAt_homBaseChangeEquiv`: it commutes with scalar extension.
+* `Representation.intertwiningDefectAt_baseChange` and
+  `Representation.intertwiningDefectAt_homBaseChangeEquiv`: the intertwining defect
+  `Representation.intertwiningDefectAt` commutes with scalar extension.
 * `Representation.intertwiningMapBaseChangeEquiv`: flat scalar extension of commutative rings
   commutes with intertwiner spaces for finite monoids and finite free source modules.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
@@ -542,22 +542,6 @@ variable {V : Type*} [AddCommGroup V] [Module K V]
 variable {W : Type*} [AddCommGroup W] [Module K W]
 
 namespace Representation
-
-/-- The **intertwining defect at `g`** of a linear map `f : V →ₗ[K] W`: `σ g ∘ₗ f - f ∘ₗ ρ g`,
-which vanishes exactly when `f` intertwines the actions of `g`. -/
-def intertwiningDefectAt (ρ : Representation K G V) (σ : Representation K G W) (g : G) :
-    (V →ₗ[K] W) →ₗ[K] V →ₗ[K] W :=
-  LinearMap.llcomp K V W W (σ g) - LinearMap.lcomp K W (ρ g)
-
-@[simp]
-theorem intertwiningDefectAt_apply (ρ : Representation K G V) (σ : Representation K G W) (g : G)
-    (f : V →ₗ[K] W) : intertwiningDefectAt ρ σ g f = σ g ∘ₗ f - f ∘ₗ ρ g :=
-  (rfl)
-
-/-- The intertwining defect at `g` vanishes exactly when `f` intertwines the actions of `g`. -/
-theorem intertwiningDefectAt_eq_zero_iff {ρ : Representation K G V} {σ : Representation K G W}
-    {g : G} {f : V →ₗ[K] W} : intertwiningDefectAt ρ σ g f = 0 ↔ f ∘ₗ ρ g = σ g ∘ₗ f := by
-  rw [intertwiningDefectAt_apply, sub_eq_zero, eq_comm]
 
 /-- **The intertwining defect of a base-changed map is the base change of its defect**: the
 intertwining defect at `g` of `f.baseChange L` for the base-changed representations is the base
