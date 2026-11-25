@@ -58,20 +58,22 @@ private theorem weight_bilin_eq [ENNReal.HolderTriple p q r]
   rw [hexp, Real.rpow_add (norm_pos_iff.2 hx)]
   simp only [map_smul, smul_apply, smul_smul, mul_comm]
 
-omit [MeasurableSpace E] [OpensMeasurableSpace E] in
-/-- Complementary radial weights cancel in a conjugate bilinear pairing. -/
-private theorem weight_bilin_eq_of_add_eq_neg_finrank [ENNReal.HolderConjugate p q]
-    (B : F →L[ℝ] G →L[ℝ] H) {δ ε : ℝ}
-    (hδε : δ + ε = -(Module.finrank ℝ E : ℝ)) {x : E} (hx : x ≠ 0) (u : F) (v : G) :
-    B (‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal) • u)
-      (‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • v) = B u v := by
+omit [OpensMeasurableSpace E] in
+/-- Complementary radial weights cancel almost everywhere in a conjugate bilinear pairing. -/
+private theorem weight_bilin_ae_eq_of_add_eq_neg_finrank [ENNReal.HolderConjugate p q]
+    (B : F →L[ℝ] G →L[ℝ] H) {δ ε : ℝ} {f : E → F} {g : E → G}
+    (hδε : δ + ε = -(Module.finrank ℝ E : ℝ)) (h0 : ∀ᵐ x ∂μ, x ≠ 0) :
+    (fun x ↦ B (‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal) • f x)
+      (‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • g x)) =ᵐ[μ]
+      fun x ↦ B (f x) (g x) := by
+  filter_upwards [h0] with x hx
   rw [← weight_bilin_eq (r := 1) B δ ε (by simp) hx]
   simp only [hδε, inv_one, ENNReal.toReal_one, mul_one, neg_neg, sub_self,
     Real.rpow_zero, one_smul]
 
 /-- A bounded bilinear map satisfies Hölder's inequality with the sum of the Bartnik weights.
-The reference measure is supported away from the zero radius. -/
-theorem weightedELpNorm_bilin_le [ENNReal.HolderTriple p q r]
+The reference measure gives no mass to the origin. -/
+theorem _root_.ContinuousLinearMap.weightedELpNorm_bilin_le [ENNReal.HolderTriple p q r]
     (B : F →L[ℝ] G →L[ℝ] H)
     (h0 : ∀ᵐ x ∂μ, x ≠ 0) {f : E → F} {g : E → G}
     (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) (δ ε : ℝ) :
@@ -109,7 +111,7 @@ theorem MemWeightedLp.bilin [ENNReal.HolderTriple p q r]
     (hf : MemWeightedLp f p δ μ) (hg : MemWeightedLp g q ε μ)
     (B : F →L[ℝ] G →L[ℝ] H) (h0 : ∀ᵐ x ∂μ, x ≠ 0) :
     MemWeightedLp (fun x ↦ B (f x) (g x)) r (δ + ε) μ := by
-  refine memWeightedLp_iff.2 ((weightedELpNorm_bilin_le (p := p) (q := q) B h0
+  refine memWeightedLp_iff.2 ((B.weightedELpNorm_bilin_le (p := p) (q := q) h0
     (hf.aestronglyMeasurable h0) (hg.aestronglyMeasurable h0) δ ε).trans_lt ?_)
   exact ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top
     (memWeightedLp_iff.1 hf)) (memWeightedLp_iff.1 hg)
@@ -133,9 +135,8 @@ theorem MemWeightedLp.integrable_bilin [ENNReal.HolderConjugate p q]
   have hmem := B.memLp_of_bilin 1 (memWeightedLp_iff_memLp.1 hf)
     (memWeightedLp_iff_memLp.1 hg)
   apply memLp_one_iff_integrable.1
-  apply (memLp_congr_ae ?_).1 hmem
-  filter_upwards [h0] with x hx
-  exact weight_bilin_eq_of_add_eq_neg_finrank B hδε hx _ _
+  exact (memLp_congr_ae (weight_bilin_ae_eq_of_add_eq_neg_finrank
+    (p := p) (q := q) (f := f) (g := g) B hδε h0)).1 hmem
 
 omit [OpensMeasurableSpace E] in
 /-- In a complete target, the weighted Hölder volume pairing has norm at most the product
@@ -149,21 +150,16 @@ theorem eNorm_integral_bilin_le_weightedELpNorm [CompleteSpace H]
     ‖∫ x, B (f x) (g x) ∂μ‖ₑ ≤
       ‖B‖ₑ * weightedELpNorm f p δ μ * weightedELpNorm g q ε μ := by
   have hi := hf.integrable_bilin hg B h0 hδε
-  have heq : (fun x ↦ B (‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal) • f x)
-      (‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • g x)) =ᵐ[μ]
-      fun x ↦ B (f x) (g x) := by
-    filter_upwards [h0] with x hx
-    exact weight_bilin_eq_of_add_eq_neg_finrank B hδε hx _ _
+  have heq := weight_bilin_ae_eq_of_add_eq_neg_finrank
+    (p := p) (q := q) (f := f) (g := g) B hδε h0
   calc
     ‖∫ x, B (f x) (g x) ∂μ‖ₑ ≤ eLpNorm (fun x ↦ B (f x) (g x)) 1 μ := by
       rw [integral_eq _ hi, eLpNorm_one_eq_lintegral_eNorm hi.aestronglyMeasurable,
         ← hi.eNorm_toL1]
       simpa only [eNorm_eq_nnNorm, ENNReal.coe_le_coe] using
         L1.nnNorm_integral_le (hi.toL1 _)
-    _ = eLpNorm (fun x ↦ B (‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal) • f x)
-        (‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • g x)) 1 μ :=
-      (eLpNorm_congr_ae heq).symm
     _ ≤ _ := by
+      rw [← eLpNorm_congr_ae heq]
       simpa only [weightedELpNorm_def] using
         eLpNorm_le_eNorm_mul_eLpNorm_mul_eLpNorm (p := p) (q := q) (r := 1) B
           (memWeightedLp_iff_memLp.1 hf).aestronglyMeasurable
