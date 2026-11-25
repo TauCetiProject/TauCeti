@@ -886,23 +886,20 @@ private theorem exists_eq_timeDerivL_and_norm_le (hα : α ≤ 1) {k : ℕ} {T :
     exacts [norm_spatialLineDerivL_single_apply_le _ _, h₄ _]
 
 /-- The lower-order part `(∂ₑaⁱʲ) ∂ᵢ∂ⱼv + (∂ₑbⁱ) ∂ᵢv + (∂ₑc) v` of the forcing of the
-differentiated equation, along a coordinate direction `e`, as a field of order `k` bounded by the
-norm of `v` at order `k + 2`. -/
-private theorem exists_eq_sum_spatialLineDerivL_and_norm_le (hα : α ≤ 1) {k : ℕ} {T : ℝ≥0}
+differentiated equation `parabolicOperatorL_spatialLineDerivL`, along a coordinate direction `e`,
+is bounded at order `k` by the norm of `v` at order `k + 2`. -/
+private theorem norm_spatialOperatorL_spatialLineDerivL_le (hα : α ≤ 1) {k : ℕ} {T : ℝ≥0}
     {hT : (0 : ℝ) < T} {K : ℝ}
     (a : ι → ι → ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT)
     (b : ι → ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT)
     (c : ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT)
     (hak : ∀ i j, ‖a i j‖ ≤ K) (hbk : ∀ i, ‖b i‖ ≤ K) (hck : ‖c‖ ≤ K)
     (v : ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT) (l : ι) :
-    ∃ Z : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT,
-      (∀ p, Z p = ∑ i, ∑ j, spatialLineDerivL (EuclideanSpace.single l 1) (a i j) p *
-          spatialLineDerivL (EuclideanSpace.single i 1)
-            (spatialLineDerivL (EuclideanSpace.single j 1) v) p +
-        ∑ i, spatialLineDerivL (EuclideanSpace.single l 1) (b i) p *
-          spatialLineDerivL (EuclideanSpace.single i 1) v p +
-        spatialLineDerivL (EuclideanSpace.single l 1) c p * v p) ∧
-      ‖Z‖ ≤ 21 * (k + 1) ^ 2 * 2 ^ k * (Fintype.card ι * Fintype.card ι * K +
+    ‖spatialOperatorL hα
+        (euclideanSecondOrderCoeff fun i j ↦ spatialLineDerivL (EuclideanSpace.single l 1) (a i j))
+        (euclideanFirstOrderCoeff fun i ↦ spatialLineDerivL (EuclideanSpace.single l 1) (b i))
+        (euclideanZerothOrderCoeff (spatialLineDerivL (EuclideanSpace.single l 1) c)) v‖ ≤
+      21 * (k + 1) ^ 2 * 2 ^ k * (Fintype.card ι * Fintype.card ι * K +
         Fintype.card ι * K * (8 * (k + 1) ^ 2) + K * (8 * (k + 1) ^ 2 * (8 * (k + 2) ^ 2))) *
           ‖v‖ := by
   set e := EuclideanSpace.single l (1 : ℝ)
@@ -913,7 +910,14 @@ private theorem exists_eq_sum_spatialLineDerivL_and_norm_le (hα : α ≤ 1) {k 
     (fun i ↦ spatialLineDerivL e (b i))
     (fun i ↦ inclusionL hα (spatialLineDerivL (EuclideanSpace.single i 1) v))
     (spatialLineDerivL e c) (inclusionL hα (inclusionL hα v))
-  refine ⟨Z, fun p ↦ by simp [hZ], hZn.trans ?_⟩
+  have hZe : spatialOperatorL hα (euclideanSecondOrderCoeff fun i j ↦ spatialLineDerivL e (a i j))
+      (euclideanFirstOrderCoeff fun i ↦ spatialLineDerivL e (b i))
+      (euclideanZerothOrderCoeff (spatialLineDerivL e c)) v = Z :=
+    ext fun p ↦ by
+      rw [spatialOperatorL_apply, hZ]
+      simp [spatialFDerivBCF_apply, ← Matrix.vec_single_eq_const]
+  rw [hZe]
+  refine hZn.trans ?_
   have hK : 0 ≤ K := (norm_nonneg _).trans hck
   have hs₁ : ∑ i, ∑ j, ‖spatialLineDerivL e (a i j)‖ * ‖spatialLineDerivL
       (EuclideanSpace.single i 1) (spatialLineDerivL (EuclideanSpace.single j 1) v)‖ ≤
@@ -969,26 +973,18 @@ private theorem norm_spatialLineDerivL_single_le (hα₀ : 0 < α) (hα₁ : α 
           Fintype.card ι * K * (8 * (k + 1) ^ 2) + K * (8 * (k + 1) ^ 2 * (8 * (k + 2) ^ 2))) *
           ‖inclusionOfLEL hα₁.le (Nat.add_le_add_right k.le_succ 2) u‖ +
         ‖u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩‖) := by
-  set e := EuclideanSpace.single l (1 : ℝ)
-  obtain ⟨Z, hZ, hZn⟩ := exists_eq_sum_spatialLineDerivL_and_norm_le hα₁.le a b c hak hbk hck
+  have hZn := norm_spatialOperatorL_spatialLineDerivL_le hα₁.le a b c hak hbk hck
     (inclusionOfLEL hα₁.le (Nat.add_le_add_right k.le_succ 2) u) l
+  set e := EuclideanSpace.single l (1 : ℝ)
   have hP := est (spatialLineDerivL e u)
-  rw [show parabolicOperatorL hα₁.le
-      (euclideanSecondOrderCoeff fun i j ↦ inclusionOfLEL hα₁.le k.le_succ (a i j))
-      (euclideanFirstOrderCoeff fun i ↦ inclusionOfLEL hα₁.le k.le_succ (b i))
-      (euclideanZerothOrderCoeff (inclusionOfLEL hα₁.le k.le_succ c)) (spatialLineDerivL e u) =
-      spatialLineDerivL e (parabolicOperatorL hα₁.le (euclideanSecondOrderCoeff a)
-        (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u) + Z from
-    ext fun p ↦ by
-      rw [parabolicOperatorL_spatialLineDerivL_apply hα₀ hα₁ a b c ha, coe_add, Pi.add_apply, hZ]
-      simp [e]] at hP
+  rw [parabolicOperatorL_spatialLineDerivL hα₀ hα₁ a b c ha u e] at hP
   have hf := norm_spatialLineDerivL_single_apply_le (parabolicOperatorL hα₁.le
     (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u) l
   have ht := norm_spatialTrace_spatialLineDerivL_le e u ⟨0, left_mem_Icc.2 hT.le⟩
   rw [show ‖e‖ = 1 by simp [e], one_mul] at ht
-  refine hP.trans (mul_le_mul_of_nonneg_left ?_ hC₁)
-  linarith [norm_add_le (spatialLineDerivL e (parabolicOperatorL hα₁.le
-    (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u)) Z]
+  refine hP.trans (mul_le_mul_of_nonneg_left
+    ((add_le_add (norm_add_le _ _) le_rfl).trans ?_) hC₁)
+  linarith
 
 /-- **Reassembly.** A map of order `k + 3` is bounded through its norm at order `k + 2`, its
 directional derivatives in the coordinate directions and the forcing: these bound its spatial
