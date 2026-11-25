@@ -47,7 +47,8 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   `TopPair.singularCochainComplexMap` and `TopPair.singularCohomologyMap` induced by maps of
   pairs, with `TopPair.singularCohomologyFunctor` the functor `TopPairᵒᵖ ⥤ ModuleCat k`;
   `TopPair.singularCohomologyMap_eq` identifies `TopPair.singularCohomologyMap f` with the map
-  induced by `SSetPair.cochainComplexMap` on cohomology.
+  induced by `SSetPair.cochainComplexMap` on cohomology; `TopPair.singularCohomologyMapIso` is the
+  isomorphism on relative cohomology induced by an isomorphism of pairs.
 * `TopPair.isIso_singularCohomologyMap_of_forall_isIso`: a map of pairs inducing isomorphisms on
   the cohomology of the ambient spaces and of the subspaces in every degree induces isomorphisms on
   relative cohomology.
@@ -58,11 +59,15 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   target subspace induces zero on cohomology; in particular, a pair with surjective subspace map
   has vanishing relative cohomology in every degree.
 * `TopPair.shortExact_singularCochainComplexShortComplex`: the cochain sequence of a pair is short
-  exact.
+  exact. In particular the cochains of `X` coming from relative cochains are those vanishing on the
+  singular simplices of `A`
+  (`TopPair.mem_range_linearYonedaFunctor_map_singularChainComplexπ_f_iff`).
 * `TopPair.singularCohomologyδ`: the connecting morphism `Hⁿ(A) ⟶ Hᵐ(X, A)` for `n + 1 = m`, with
   the three exactness statements `TopPair.singularCohomology_exact_relative`,
   `TopPair.singularCohomology_exact_space` and `TopPair.singularCohomology_exact_subspace`, and its
   naturality `TopPair.singularCohomologyδ_naturality`.
+* `TopPair.isIso_singularCohomologyMap_map_of_isZero`: if `Hⁿ(X, A)` and `Hⁿ⁺¹(X, A)` vanish,
+  restriction `Hⁿ(X) ⟶ Hⁿ(A)` is an isomorphism.
 * `TopPair.singularCohomologyπ_singularCohomologyMap_ofSubsetMap`: the map to absolute cohomology
   is natural under maps of pairs induced by continuous maps.
 * `TopPair.singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ`: for `S' ⊆ S`, the map
@@ -72,7 +77,9 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   isomorphism.
 * `TopCat.singularCohomologyComplRestrict`: the restriction `Hⁿ(X, X ∖ S) ⟶ Hⁿ(X, X ∖ T)` for
   `S ⊆ T`, with its composition lemma
-  `TopCat.singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict`.
+  `TopCat.singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict` and its
+  compatibility `TopCat.singularCohomologyπ_singularCohomologyComplRestrict_apply` with the maps to
+  absolute cohomology.
 
 ## References
 
@@ -88,6 +95,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits Opposite
+open scoped Simplicial
 
 universe w v u
 
@@ -265,6 +273,42 @@ lemma singularCohomologyMap_comp_apply {P P' P'' : TopPair.{w}} (f : P ⟶ P') (
       TopPair.singularCohomologyMap f n (TopPair.singularCohomologyMap g n x) := by
   rw [singularCohomologyMap_comp, ConcreteCategory.comp_apply]
 
+variable (R k M) in
+/-- An isomorphism of topological pairs `e : P ≅ P'` induces an isomorphism `Hⁿ(P') ≅ Hⁿ(P)` on
+relative singular cohomology. -/
+def singularCohomologyMapIso {P P' : TopPair.{w}} (e : P ≅ P') (n : ℕ) :
+    P'.singularCohomology R k M n ≅ P.singularCohomology R k M n where
+  hom := TopPair.singularCohomologyMap e.hom n
+  inv := TopPair.singularCohomologyMap e.inv n
+  hom_inv_id := by rw [← singularCohomologyMap_comp, e.inv_hom_id, singularCohomologyMap_id]
+  inv_hom_id := by rw [← singularCohomologyMap_comp, e.hom_inv_id, singularCohomologyMap_id]
+
+@[simp]
+lemma singularCohomologyMapIso_hom {P P' : TopPair.{w}} (e : P ≅ P') (n : ℕ) :
+    (singularCohomologyMapIso R k M e n).hom = TopPair.singularCohomologyMap e.hom n :=
+  (rfl)
+
+@[simp]
+lemma singularCohomologyMapIso_inv {P P' : TopPair.{w}} (e : P ≅ P') (n : ℕ) :
+    (singularCohomologyMapIso R k M e n).inv = TopPair.singularCohomologyMap e.inv n :=
+  (rfl)
+
+/-- Two maps of pairs of subspaces that agree on points induce the same map on relative singular
+cohomology, up to the identifications of the pairs along equalities of the subspaces. This is the
+cohomological counterpart of `TopPair.singularHomologyMap_comp_eqToHom_of_eq`. -/
+lemma singularCohomologyMap_comp_eqToHom_of_eq {X Y : TopCat.{w}} {s t s₁ t₁ : Set X}
+    {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h₁ : s₁ ⊆ t₁} {h' : s' ⊆ t'} {h₁' : s₁' ⊆ t₁'}
+    (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
+    (φ : ofInclusion h ⟶ ofInclusion h') (ψ : ofInclusion h₁ ⟶ ofInclusion h₁')
+    (hφψ : ∀ x : t, (Hom.fst φ x).val = (Hom.fst ψ ⟨x, ht ▸ x.property⟩).val) (n : ℕ) :
+    TopPair.singularCohomologyMap (R := R) (k := k) (M := M) φ n ≫
+        eqToHom (congrArg (TopPair.singularCohomology · R k M n) (ofInclusion_congr h h₁ hs ht)) =
+      eqToHom (congrArg (TopPair.singularCohomology · R k M n) (ofInclusion_congr h' h₁' hs' ht')) ≫
+        TopPair.singularCohomologyMap ψ n := by
+  subst hs ht hs' ht'
+  obtain rfl : φ = ψ := hom_ext_of_fst _ (by ext x; exact Subtype.ext (hφψ x))
+  simp
+
 /-- The map induced on relative singular cohomology by a map of topological pairs is the one
 induced on the relative cochains of the associated map of pairs of simplicial sets. -/
 lemma singularCohomologyMap_eq {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :
@@ -381,6 +425,34 @@ lemma shortExact_singularCochainComplexShortComplex :
     exact TauCeti.ChainComplex.shortExact_map_linearYonedaFunctor k M
       (P.shortExact_singularChainComplexShortComplex R)
 
+/-- **Relative cochains are the cochains vanishing on the subspace.** A singular cochain of the
+ambient space of a pair `(X, A)` comes from a relative cochain exactly when it vanishes on every
+singular simplex of `X` whose image lies in `A`. -/
+theorem mem_range_linearYonedaFunctor_map_singularChainComplexπ_f_iff (n : ℕ)
+    (y : ((TopCat.toSSet.obj P.fst).chainComplex R).X n ⟶ M) :
+    y ∈ LinearMap.range (((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+        (P.singularChainComplexπ R).op).f n).hom ↔
+      ∀ σ : (TopCat.toSSet.obj P.fst) _⦋n⦌,
+        Set.range (P.fst.toSSetObjEquiv _ σ) ⊆ Set.range P.map →
+          (TopCat.toSSet.obj P.fst).ιChainComplex (R := R) σ ≫ y = 0 := by
+  have hS := (HomologicalComplex.shortExact_iff_degreewise_shortExact _).1
+    (P.shortExact_singularCochainComplexShortComplex R k M) n
+  refine (SetLike.ext_iff.1 hS.exact.moduleCat_range_eq_ker y).trans
+    ((LinearMap.mem_ker (f := ModuleCat.Hom.hom _)).trans ?_)
+  -- In degree `n` the restriction of cochains to the subspace is precomposition with the chain
+  -- map of the inclusion.
+  refine (congrArg (· = 0) (TopCat.singularCochainComplexMap_f_apply P.map n y)).to_iff.trans ?_
+  have hP := P.isEmbedding_map.isInducing
+  constructor
+  · intro h σ hσ
+    obtain ⟨τ, rfl⟩ := (hP.mem_range_toSSet_map_app_iff _ σ).2 hσ
+    rw [← SSet.ι_chainComplexMap_f_assoc, h]
+    exact comp_zero
+  · intro h
+    refine SSet.chainComplex_hom_ext fun τ ↦ ?_
+    rw [SSet.ι_chainComplexMap_f_assoc]
+    exact (h _ ((hP.mem_range_toSSet_map_app_iff _ _).1 ⟨τ, rfl⟩)).trans comp_zero.symm
+
 /-- The map `Hⁿ(X, A) ⟶ Hⁿ(X)` from relative to absolute singular cohomology, induced by the
 quotient map from the singular chains of `X` to the relative chains of `(X, A)`. -/
 abbrev singularCohomologyπ (n : ℕ) :
@@ -450,6 +522,18 @@ lemma singularCohomology_exact_space (n : ℕ) :
 lemma singularCohomology_exact_subspace (n m : ℕ) (h : n + 1 = m := by lia) :
     (ShortComplex.mk _ _ (P.singularCohomologyMap_comp_singularCohomologyδ R k M n m h)).Exact :=
   (P.shortExact_singularCochainComplexShortComplex R k M).homology_exact₃ n m (by simpa)
+
+/-- If `Hⁿ(X, A)` and `Hⁿ⁺¹(X, A)` vanish, the inclusion of the subspace induces an isomorphism
+`Hⁿ(X) ≅ Hⁿ(A)`. -/
+lemma isIso_singularCohomologyMap_map_of_isZero {n : ℕ}
+    (h₀ : IsZero (P.singularCohomology R k M n))
+    (h₁ : IsZero (P.singularCohomology R k M (n + 1))) :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) P.map n) :=
+  have : Mono (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) P.map n) :=
+    (P.singularCohomology_exact_space R k M n).mono_g (h₀.eq_of_src _ _)
+  have : Epi (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) P.map n) :=
+    (P.singularCohomology_exact_subspace R k M n (n + 1)).epi_f (h₁.eq_of_tgt _ _)
+  isIso_of_mono_of_epi _
 
 variable {P R k M}
 
@@ -592,5 +676,19 @@ lemma singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict {S T
   rw [← TopPair.singularCohomologyMap_comp_apply,
     TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (mapsTo_id_compl (h.trans h'))
       (Category.id_comp _)]
+
+/-- Restricting from the complement of `S` to the complement of `T` commutes with the maps to
+`Hⁿ(X)`. -/
+@[simp]
+lemma singularCohomologyπ_singularCohomologyComplRestrict_apply {S T : Set X} (h : S ⊆ T)
+    (n : ℕ) (a : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    (TopPair.ofSubset Tᶜ).singularCohomologyπ R k M n
+        (singularCohomologyComplRestrict R k M h n a) =
+      (TopPair.ofSubset Sᶜ).singularCohomologyπ R k M n a := by
+  rw [← ConcreteCategory.comp_apply,
+    TopPair.singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ]
+  -- The sides differ only in the ambient spaces `(ofSubset Tᶜ).fst` and `(ofSubset Sᶜ).fst` of the
+  -- two maps to `Hⁿ(X)`; both are `X` by definition.
+  rfl
 
 end TopCat

@@ -61,6 +61,8 @@ the spectrum of a local ring is free, on as many generators as its rank.
   finite locally free sheaf on `Spec R` is the rank at stalks of its module of global sections;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.isoFreeOfBasis`: a finite locally free sheaf on
   `Spec R` whose global sections have a basis indexed by `I` is the free sheaf on `I`;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.tildePiIsoFree`: the sheaf `(R^d)~` on
+  `Spec R` is the free sheaf on `d` generators;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.isoFreeOfIsLocalRing`: over a local ring, a
   finite locally free sheaf of rank `n` on `Spec R` is free on `n` generators.
 
@@ -258,6 +260,24 @@ lemma isoFreeOfBasis_hom (E : FiniteLocallyFreeSheaf (Spec R)) {I : Type u} [Fin
     (isoFreeOfBasis E b).hom = (finiteProjectiveEquiv R).counitIso.inv.app E ≫
       ObjectProperty.homMk ((tilde.functor R).map b.repr.toModuleIso.hom ≫
         (tildeFinsupp I).hom ≫ eqToHom (free_obj (Spec R) I).symm) :=
+  (rfl)
+
+variable (R) in
+/-- The sheaf `(R^d)~` on `Spec R` is the free sheaf on a universe lift of `Fin d`, the
+underlying sheaf of `FixedRank.free (Spec R) d`. -/
+def tildePiIsoFree (d : ℕ) :
+    tilde (.of R (Fin d → R)) ≅ (free (Spec R) (ULift.{u} (Fin d))).obj :=
+  (tilde.functor R).mapIso (LinearEquiv.funCongrLeft R R Equiv.ulift ≪≫ₗ
+    (Finsupp.linearEquivFunOnFinite R R _).symm).toModuleIso ≪≫ tildeFinsupp _ ≪≫
+    eqToIso (free_obj (Spec R) _).symm
+
+variable (R) in
+/-- `tildePiIsoFree` is the sheafification of `R^d ≃ (ULift (Fin d) →₀ R)` followed by
+`tildeFinsupp`. -/
+lemma tildePiIsoFree_hom (d : ℕ) :
+    (tildePiIsoFree R d).hom = (tilde.functor R).map (LinearEquiv.funCongrLeft R R Equiv.ulift ≪≫ₗ
+      (Finsupp.linearEquivFunOnFinite R R _).symm).toModuleIso.hom ≫ (tildeFinsupp _).hom ≫
+        eqToHom (free_obj (Spec R) _).symm :=
   (rfl)
 
 /-- The dimension of a free module of global sections of a finite locally free sheaf on `Spec R`

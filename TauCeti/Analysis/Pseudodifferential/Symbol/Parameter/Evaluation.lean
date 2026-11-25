@@ -210,6 +210,16 @@ theorem toSymbol_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n �
     (b.comp a).toSymbol z = (b.toSymbol z).comp (a.toSymbol z) :=
   Symbol.ext <| funext fun q => by simp
 
+/-- At a spectral parameter in `Λ`, the symbol of a function of the position is the ordinary symbol
+of that function. -/
+@[simp]
+theorem toSymbol_ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) {z : ℂ}
+    (hz : z ∈ Λ) :
+    (ofSpatial f hf : ParameterSymbol n Λ V W 0).toSymbol z = Symbol.ofSpatial f hf :=
+  Symbol.ext <| funext fun q => by
+    rw [coefficient_toSymbol, ← q.eta, coefficient_ofSpatial f hf _ _ hz,
+      Symbol.coefficient_ofSpatial]
+
 /-- If a parameter-dependent symbol vanishes, at a spectral parameter `z`, at the positions outside
 a compact set `K` for every frequency, then its symbol at `z` has compact spatial support. -/
 theorem hasCompactSpatialSupport_toSymbol (a : ParameterSymbol n Λ V W m) (z : ℂ)

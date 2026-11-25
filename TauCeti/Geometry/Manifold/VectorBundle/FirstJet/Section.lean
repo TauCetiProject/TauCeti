@@ -68,12 +68,10 @@ def jetExtension : Cₛ^∞⟮I; F, V⟯ →ₗ[𝕜]
 theorem jetExtension_apply (s : Cₛ^∞⟮I; F, V⟯) (x : M) :
     jetExtension I F V s x = jet I F s x := (rfl)
 
-section Leibniz
-
-variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
-
 /-- The first-jet extension of a smooth-function multiple satisfies the pointwise Leibniz rule. -/
 theorem jetExtension_smul_apply (f : C^∞⟮I, M; 𝕜⟯) (s : Cₛ^∞⟮I; F, V⟯) (x : M) :
+    letI := VectorBundle.isTopologicalAddGroup 𝕜 F V
+    letI := VectorBundle.continuousSMul 𝕜 F V
     jetExtension I F V (f • s) x = f x • jetExtension I F V s x +
       ofDeriv I F x ((mvfderiv I f x).smulRight (s x)) := by
   have hfs : ⇑(f • s) = (f : M → 𝕜) • (s : ∀ x, V x) :=
@@ -85,13 +83,13 @@ theorem jetExtension_smul_apply (f : C^∞⟮I, M; 𝕜⟯) (s : Cₛ^∞⟮I; F
 /-- The commutator of jet extension and multiplication is insertion of `df ⊗ s`. -/
 theorem smulCommutator_jetExtension_apply (f : C^∞⟮I, M; 𝕜⟯)
     (s : Cₛ^∞⟮I; F, V⟯) (x : M) :
+    letI := VectorBundle.isTopologicalAddGroup 𝕜 F V
+    letI := VectorBundle.continuousSMul 𝕜 F V
     smulCommutator 𝕜 f (jetExtension I F V) s x =
       ofDeriv I F x ((mvfderiv I f x).smulRight (s x)) := by
   rw [smulCommutator_apply_apply]
   simp only [ContMDiffSection.coe_sub, Pi.sub_apply, ContMDiffSection.smul_apply,
     jetExtension_smul_apply, add_sub_cancel_left]
-
-end Leibniz
 
 /-- The commutator of first-jet extension with multiplication is smooth-function-linear. -/
 theorem smulCommutator_jetExtension_smul (f g : C^∞⟮I, M; 𝕜⟯)

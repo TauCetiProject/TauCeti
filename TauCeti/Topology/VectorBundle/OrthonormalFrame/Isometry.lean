@@ -15,7 +15,8 @@ Let `E` and `E'` be Riemannian vector bundles over the same base `B`, and let
 frames with `Φ` maps orthonormal frames of `E` to orthonormal frames of `E'`
 (`TauCeti.OrthonormalFrameBundle.map`). This map covers the identity of `B`, commutes with the
 right action of the orthogonal group, is functorial in `Φ` and commutes with the canonical lifts
-of frames along pullbacks.
+of frames along pullbacks. The inverse isometries undo it, so for fixed `Φ` it is injective
+(`TauCeti.OrthonormalFrameBundle.map_right_injective`).
 
 Conversely, when every fibre of `E` admits an orthonormal frame modelled on `V`, every map of
 frame bundles covering the identity and commuting with the orthogonal action comes from a unique
@@ -87,6 +88,22 @@ theorem map_map (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b) (Ψ : ∀ b, E' b ≃ₗ�
     (p : OrthonormalFrameBundle ℝ F E V) :
     map (F' := F'') Ψ (map (F' := F') Φ p) = map (fun b ↦ (Φ b).trans (Ψ b)) p :=
   mk_eq_mk_iff.2 (LinearIsometryEquiv.trans_assoc _ _ _)
+
+/-- The map induced by the inverse isometries undoes the map induced by `Φ`. -/
+theorem map_symm_map (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b) (p : OrthonormalFrameBundle ℝ F E V) :
+    map (F' := F) (fun b ↦ (Φ b).symm) (map (F' := F') Φ p) = p := by
+  simp
+
+/-- The map induced by `Φ` undoes the map induced by the inverse isometries. -/
+theorem map_map_symm (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b) (p : OrthonormalFrameBundle ℝ F' E' V) :
+    map (F' := F') Φ (map (F' := F) (fun b ↦ (Φ b).symm) p) = p := by
+  simp
+
+/-- For a fixed family of isometries `Φ`, the induced map of orthonormal frame bundles is
+injective: frames are recovered by composing with the inverse isometries. -/
+theorem map_right_injective (Φ : ∀ b, E b ≃ₗᵢ[ℝ] E' b) :
+    Function.Injective (map (F := F) (F' := F') (V := V) Φ) :=
+  Function.LeftInverse.injective (map_symm_map Φ)
 
 /-- The induced map commutes with the right action of the orthogonal group. -/
 @[simp]

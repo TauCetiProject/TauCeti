@@ -86,6 +86,11 @@ theorem map_smoothPart_le (f : M →ₗ[A] N) : (smoothPart J M).map f ≤ smoot
   obtain ⟨i, hi⟩ := hp m hm
   exact ⟨i, fun a ha => by rw [← map_smul, hi a ha, map_zero]⟩
 
+/-- Every vector of a smooth module lies in its smooth part. -/
+theorem mem_smoothPart_of_smoothModules (hM : smoothModules.{v} J (ModuleCat.of A M)) (m : M) :
+    m ∈ smoothPart J M :=
+  le_smoothPart (p := ⊤) (fun m _ => smoothModules_iff.1 hM m) Submodule.mem_top
+
 variable [Nonempty ι]
 
 /-- For a directed family `J`, every vector of the smooth part is killed by some `J i`. -/

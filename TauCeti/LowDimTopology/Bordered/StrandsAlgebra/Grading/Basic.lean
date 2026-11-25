@@ -117,7 +117,7 @@ product.
   own grading only (`TauCeti.StrandsAlgebra.of_mem_gradedPart_iff`).
 * `TauCeti.StrandsAlgebra.iSupIndep_gradedPart`, `TauCeti.StrandsAlgebra.isInternal_gradedPart`:
   the graded parts are independent, so over a ring the algebra is their internal direct sum.
-* `TauCeti.StrandsAlgebra.mem_gradedPart_iff_of_basis`: a linear isomorphism of strands algebras
+* `TauCeti.StrandsAlgebra.mem_gradedPartBy_iff_of_basis`: a linear isomorphism of strands algebras
   given by a bijection of diagrams that transforms gradings by an injective map carries graded parts
   onto graded parts.
 
@@ -394,7 +394,7 @@ theorem mul_lambda_zpow (g : StrandGradingGroup α) (n : ℤ) :
 
 /-- `λ` is central. -/
 theorem lambda_mem_center : (lambda : StrandGradingGroup α) ∈ Subgroup.center _ :=
-  FactorSet.inl_range_le_center _ trivialMulDistribMulAction_smul ⟨_, rfl⟩
+  (FactorSet.range_inl_le_center_iff _).2 trivialMulDistribMulAction_smul ⟨_, rfl⟩
 
 /-- The grading group `G'(n)` of Lipshitz, Ozsváth and Thurston, for `α = Fin n`: the subgroup of
 the elements `(j, β)` with boundary of total sum zero and `j ≡ ε(β) (mod 1)`, where `ε(β)` is a
@@ -998,6 +998,26 @@ theorem of_mem_gradedPartBy (d : StrandDiagram α → G) (φ : StrandDiagram α)
     rw [← basis_apply, Module.Basis.repr_self] at hψ
     rw [Finset.mem_singleton.1 (Finsupp.support_single_subset hψ)]
 
+/-- A linear isomorphism of strands algebras given on basis elements by a bijection `E` of diagrams
+which transforms the degrees for `d` into the degrees for `d'` by an injective map `F` carries the
+part of degree `g` for `d` onto the part of degree `F g` for `d'`. -/
+theorem mem_gradedPartBy_iff_of_basis {γ G' : Type*} [LinearOrder γ]
+    (L : StrandsAlgebra R α ≃ₗ[R] StrandsAlgebra R γ) (E : StrandDiagram α ≃ StrandDiagram γ)
+    {d' : StrandDiagram γ → G'} {F : G → G'} (hF : F.Injective) (hL : ∀ φ, L (of φ) = of (E φ))
+    (hE : ∀ φ, d' (E φ) = F (d φ)) {g : G} {x : StrandsAlgebra R α} :
+    L x ∈ gradedPartBy R d' (F g) ↔ x ∈ gradedPartBy R d g := by
+  have himage : E '' {φ | d φ = g} = {ψ | d' ψ = F g} := by
+    rw [E.image_eq_preimage_symm]
+    ext ψ
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq]
+    rw [← hF.eq_iff, ← hE, Equiv.apply_symm_apply]
+  have hmap : (gradedPartBy R d g).map (L : StrandsAlgebra R α →ₗ[R] StrandsAlgebra R γ) =
+      gradedPartBy R d' (F g) := by
+    rw [gradedPartBy_eq_span, gradedPartBy_eq_span, Submodule.map_span, Set.image_image]
+    simp only [LinearEquiv.coe_coe, hL]
+    rw [← Set.image_image of E, himage]
+  rw [← hmap, Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply]
+
 /-- Every element of the strands algebra is a sum of elements homogeneous for `d`. -/
 theorem iSup_gradedPartBy (d : StrandDiagram α → G) : ⨆ g : G, gradedPartBy R d g = ⊤ := by
   have h : ⋃ g : G, {φ : StrandDiagram α | d φ = g} = Set.univ :=
@@ -1067,27 +1087,6 @@ theorem mem_gradedPart {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
 theorem gradedPart_eq_span (g : StrandGradingGroup α) :
     gradedPart R g = Submodule.span R (of '' {φ | φ.grading = g}) :=
   gradedPartBy_eq_span _ g
-
-/-- A linear isomorphism of strands algebras given on basis elements by a bijection of diagrams
-which transforms gradings by an injective map `F` carries the part of grading `g` onto the part of
-grading `F g`. -/
-theorem mem_gradedPart_iff_of_basis {β : Type*} [LinearOrder β] [Fintype β]
-    (L : StrandsAlgebra R α ≃ₗ[R] StrandsAlgebra R β)
-    (E : StrandDiagram α ≃ StrandDiagram β) {F : StrandGradingGroup α → StrandGradingGroup β}
-    (hF : F.Injective) (hL : ∀ φ, L (of φ) = of (E φ)) (hE : ∀ φ, (E φ).grading = F φ.grading)
-    {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
-    L x ∈ gradedPart R (F g) ↔ x ∈ gradedPart R g := by
-  have himage : E '' {φ | φ.grading = g} = {ψ | ψ.grading = F g} := by
-    rw [E.image_eq_preimage_symm]
-    ext ψ
-    simp only [Set.mem_preimage, Set.mem_ofPred_eq]
-    rw [← hF.eq_iff, ← hE, Equiv.apply_symm_apply]
-  have hmap : (gradedPart R g).map (L : StrandsAlgebra R α →ₗ[R] StrandsAlgebra R β) =
-      gradedPart R (F g) := by
-    rw [gradedPart_eq_span, gradedPart_eq_span, Submodule.map_span, Set.image_image]
-    simp only [LinearEquiv.coe_coe, hL]
-    rw [← Set.image_image of E, himage]
-  rw [← hmap, Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply]
 
 /-- A strand diagram lies in the part of grading `g` exactly when its grading is `g`. -/
 theorem of_mem_gradedPart_iff [Nontrivial R] {φ : StrandDiagram α} {g : StrandGradingGroup α} :

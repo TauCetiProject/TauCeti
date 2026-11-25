@@ -101,6 +101,22 @@ theorem chartIteratedFDeriv_zero_apply
     PartialEquiv.refl_coe]
   rfl
 
+/-- The norm of the order-zero chart jet is that of the map in source coordinates. -/
+theorem norm_chartIteratedFDeriv_zero (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M)
+    (hn : ((0 : ℕ) : WithTop ℕ∞) ≤ n) (z : (extChartAt I x).target) :
+    ‖chartIteratedFDeriv f x 0 hn z‖ = ‖f ((extChartAt I x).symm z)‖ := by
+  rw [← ContinuousMultilinearMap.fin0_apply_norm (x := Fin.elim0)]
+  exact congrArg norm (chartIteratedFDeriv_zero_apply f x z _)
+
+/-- The oscillation of the order-zero chart jet is that of the map in source coordinates. -/
+theorem norm_chartIteratedFDeriv_zero_sub (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M)
+    (hn : ((0 : ℕ) : WithTop ℕ∞) ≤ n) (z w : (extChartAt I x).target) :
+    ‖chartIteratedFDeriv f x 0 hn z - chartIteratedFDeriv f x 0 hn w‖ =
+      ‖f ((extChartAt I x).symm z) - f ((extChartAt I x).symm w)‖ := by
+  rw [← ContinuousMultilinearMap.fin0_apply_norm (x := Fin.elim0), sub_apply]
+  exact congrArg norm (congrArg₂ _ (chartIteratedFDeriv_zero_apply f x z _)
+    (chartIteratedFDeriv_zero_apply f x w _))
+
 omit [IsManifold I n M] in
 /-- For the identity chart of a normed space, the chart derivative is the ordinary iterated
 derivative, evaluated on the subtype representing the whole chart target.

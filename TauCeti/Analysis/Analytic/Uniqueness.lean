@@ -43,6 +43,12 @@ near `p` if and only if `iteratedFDeriv 𝕜 n f p = 0` for every `n : ℕ`, and
 principle extends this pointwise jet condition along any preconnected set on which `f` is analytic
 on neighbourhoods.
 
+The identity principle also shows that an analytic function on a preconnected set which does not
+vanish identically does not vanish on a dense subset: otherwise it would vanish on an open set.
+Combined with continuity, the nonvanishing set of an entire function such as a polynomial in the
+entries of a matrix is open and dense, which is how genericity statements for finitely many
+polynomial conditions are proved.
+
 The name follows Mathlib's `Mathlib.Analysis.Analytic.Uniqueness`, where the identity principle
 lives. The linear general-position corollary (generalized to finite families over any nontrivially
 normed field) lives in `TauCeti.Analysis.Analytic.SingularDirection`.
@@ -60,6 +66,12 @@ normed field) lives in `TauCeti.Analysis.Analytic.SingularDirection`.
 * `AnalyticOnNhd.eqOn_zero_of_preconnected_of_forall_iteratedFDeriv_eq_zero`,
   `AnalyticOnNhd.eqOn_of_preconnected_of_forall_iteratedFDeriv_eq`: the corresponding identity
   principles on preconnected sets.
+* `AnalyticOnNhd.subset_closure_setOf_ne_zero`: on a preconnected set, an analytic function not
+  vanishing at some point does not vanish on a dense subset.
+* `AnalyticOnNhd.dense_setOf_ne_zero`: the same for a function analytic on the whole space.
+* `TauCeti.mem_interior_or_exists_eventually_frequently_ne_zero`: over an `RCLike` field, a point
+  of an open set `U` either lies in the interior of the common zero set of a family of functions
+  analytic on `U`, or one member of the family vanishes identically near none of the nearby points.
 
 ## References
 
@@ -147,6 +159,30 @@ theorem AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul 
       fun v ↦ (h v).mono fun t ht ↦ by simp [ht]
   exact he.mono fun y hy ↦ UniformSpace.Completion.coe_injective F (by simpa [e] using hy)
 
+/-- **The identity theorem for a family of analytic functions.** A point `x` of an open set `U`
+either lies in the interior of the common zero set of a family of functions analytic on `U`, or
+some member of the family vanishes identically near none of the points close to `x`. -/
+theorem TauCeti.mem_interior_or_exists_eventually_frequently_ne_zero {ι : Type*}
+    {g : ι → E → F} {U : Set E} (hU : IsOpen U) (hg : ∀ i, AnalyticOnNhd 𝕜 (g i) U) {x : E}
+    (hx : x ∈ U) :
+    x ∈ interior {z | ∀ i, g i z = 0} ∨ ∃ i, ∀ᶠ y in 𝓝 x, ∃ᶠ z in 𝓝 y, g i z ≠ 0 := by
+  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  obtain ⟨δ, hδ, hδU⟩ := isOpen_iff.1 hU x hx
+  -- On the ball `ball x δ`, each `g i` vanishes as soon as it vanishes near one of its points.
+  have hδ0 (i : ι) (y : E) (hy : y ∈ ball x δ) (hy0 : ∀ᶠ z in 𝓝 y, g i z = 0) :
+      ∀ z ∈ ball x δ, g i z = 0 :=
+    AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero
+      (fun w hw ↦ hg i w (hδU hw)) (convex_ball x δ).isPreconnected hy hy0
+  by_cases hex : ∃ i, ∃ᶠ z in 𝓝 x, g i z ≠ 0
+  · obtain ⟨i, hi⟩ := hex
+    refine Or.inr ⟨i, ?_⟩
+    filter_upwards [ball_mem_nhds x hδ] with y hy
+    refine not_eventually.1 fun hy0 ↦ not_eventually.2 hi ?_
+    filter_upwards [ball_mem_nhds x hδ] with z hz using hδ0 i y hy hy0 z hz
+  · refine Or.inl (mem_interior_iff_mem_nhds.2 (mem_of_superset (ball_mem_nhds x hδ)
+      fun z hz i ↦ hδ0 i x (mem_ball_self hδ) ?_ z hz))
+    exact by_contra fun h ↦ hex ⟨i, not_eventually.1 h⟩
+
 end RCLike
 
 section IteratedFDeriv
@@ -202,5 +238,35 @@ theorem AnalyticOnNhd.eqOn_of_preconnected_of_forall_iteratedFDeriv_eq
     (((hf z₀ h₀).eventuallyEq_iff_forall_iteratedFDeriv_eq (hg z₀ h₀)).2 hfg)
 
 end IteratedFDeriv
+
+section NonvanishingSet
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **The nonvanishing set of an analytic function is dense.** If `f` is analytic on a
+preconnected set `U` and does not vanish at some point of `U`, then every point of `U` is a limit
+of points where `f` does not vanish. Otherwise `f` would vanish on a neighbourhood of a point of
+`U`, hence on all of `U` by the identity principle. -/
+theorem AnalyticOnNhd.subset_closure_setOf_ne_zero {f : E → F} {U : Set E}
+    (hf : AnalyticOnNhd 𝕜 f U) (hU : IsPreconnected U) {z₀ : E} (hz₀U : z₀ ∈ U)
+    (hz₀ : f z₀ ≠ 0) : U ⊆ closure {x | f x ≠ 0} := by
+  intro x hx
+  by_contra hcl
+  have hzero : f =ᶠ[𝓝 x] 0 := by
+    filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hcl] with y hy
+    by_contra hfy
+    exact hy (subset_closure hfy)
+  exact hz₀ (hf.eqOn_zero_of_preconnected_of_eventuallyEq_zero hU hx hzero hz₀U)
+
+/-- **The nonvanishing set of an entire function is dense.** A function analytic on a preconnected
+space that does not vanish at some point does not vanish on a dense set. Preconnectedness holds for
+real and complex normed spaces; over a totally disconnected field such as `ℚ_[p]` the indicator
+function of a ball is analytic, and the statement fails. -/
+theorem AnalyticOnNhd.dense_setOf_ne_zero [PreconnectedSpace E] {f : E → F}
+    (hf : AnalyticOnNhd 𝕜 f Set.univ) {z₀ : E} (hz₀ : f z₀ ≠ 0) : Dense {x | f x ≠ 0} := fun x ↦
+  hf.subset_closure_setOf_ne_zero isPreconnected_univ (Set.mem_univ z₀) hz₀ (Set.mem_univ x)
+
+end NonvanishingSet
 
 end

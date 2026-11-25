@@ -58,6 +58,8 @@ The conventions follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, p
   `TauCeti.DynkinType.trialityPermD4_mem_diagramSymmetry`: each graph permutation lies in the
   corresponding `diagramSymmetry` group.
 * `TauCeti.DynkinType.diagramSymmetry_E8_eq_bot`: the diagram of `E₈` has no nontrivial symmetry.
+* `TauCeti.DynkinType.mem_diagramSymmetry_of_mem_matrixSymmetryGroup`: a numbering identifying a
+  matrix with a Cartan matrix carries the symmetries of the matrix to diagram symmetries.
 -/
 
 public section
@@ -404,6 +406,18 @@ theorem mem_diagramSymmetry_iff :
     σ ∈ t.diagramSymmetry ↔ ∀ i j, t.cartanMatrix (σ i) (σ j) = t.cartanMatrix i j :=
   mem_diagramSymmetry_iff_submatrix.trans
     ⟨fun h i j => congrFun₂ h i j, fun h => by ext i j; exact h i j⟩
+
+/-- **A numbering identifying a matrix with a Cartan matrix carries its symmetries to diagram
+symmetries.** If `e` numbers the indices of `A` so that `A i j` is the entry of the Cartan matrix of
+`t` at `(e i, e j)`, then conjugating a symmetry of `A` by `e` gives a symmetry of the numbered
+diagram of `t`. -/
+theorem mem_diagramSymmetry_of_mem_matrixSymmetryGroup {κ : Type*} {A : Matrix κ κ ℤ}
+    {e : κ ≃ Fin t.rank} (he : ∀ i j, A i j = t.cartanMatrix (e i) (e j)) {φ : Equiv.Perm κ}
+    (hφ : φ ∈ matrixSymmetryGroup A) : e.permCongr φ ∈ t.diagramSymmetry :=
+  mem_diagramSymmetry_iff.mpr fun i j ↦ by
+    have hij := congrFun₂ (mem_matrixSymmetryGroup_iff.mp hφ) (e.symm i) (e.symm j)
+    rw [Matrix.submatrix_apply, he, he, Equiv.apply_symm_apply, Equiv.apply_symm_apply] at hij
+    simpa only [Equiv.permCongr_apply] using hij
 
 /-- Chain reversal lies in the diagram symmetry group of `Aₙ`. -/
 @[simp]
