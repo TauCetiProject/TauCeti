@@ -45,6 +45,13 @@ and the singleton of a code fixed by every permutation of the carrier is isomorp
   codes on `ℕ` is analytic exactly when it is a projective class along `LHom.sumInl`.
 * `FirstOrder.Language.LHom.setOf_pcMem_ne_singleton`: with uncountably many relation symbols, no
   projective class along an injective language map is a singleton.
+
+## References
+
+* D. Marker, *Infinitary Logic*, lecture notes for Math 512, University of Illinois at Chicago,
+  Fall 2013, Lemma 4.24, pp. 50–51: every invariant analytic set is the set of countable models of
+  a PC class. The forward direction of `TauCeti.RelationalConfiguration.analyticSet_iff_exists_pc`
+  follows this proof.
 -/
 
 public section
@@ -167,7 +174,7 @@ theorem eq_setOf_pcMem_pcSentence {B : Set (RelationalConfiguration L ℕ)}
     (hT : B = {c | ∃ g : ℕ → ℕ, (fun n => (queryCode c n, g n)) ∈ Descriptive.Tree.body T}) :
     B = {c | @LHom.PCMem L _ LHom.sumInl (pcSentence T) ℕ c.toStructure} := by
   ext c
-  change c ∈ B ↔ @LHom.PCMem L _ LHom.sumInl (pcSentence T) ℕ c.toStructure
+  simp only [Set.mem_ofPred_eq]
   rw [@pcMem_pcSentence_iff L _ ℕ c.toStructure T]
   constructor
   · intro hc
