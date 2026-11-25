@@ -34,8 +34,9 @@ Hence, for a group acting on a closed Riemannian manifold by isometries, `q ↦ 
   `H¹(N) ≃ₗᵢ H¹(M)`.
 * `TauCeti.Manifold.SobolevH1.toLp_compRiemannianIsometry`: its value in `L²` is the composition
   of the value with `Φ`.
-* `TauCeti.Manifold.SobolevH1.dirichletForm_compRiemannianIsometry`: it preserves the Dirichlet
-  form.
+* `TauCeti.Manifold.SobolevH1.inner_toLp_compRiemannianIsometry` and
+  `TauCeti.Manifold.SobolevH1.dirichletForm_compRiemannianIsometry`: it preserves the `L²` inner
+  product and the Dirichlet form.
 * `TauCeti.Manifold.SobolevH1.compRiemannianIsometry_refl`,
   `TauCeti.Manifold.SobolevH1.compRiemannianIsometry_trans` and
   `TauCeti.Manifold.SobolevH1.compRiemannianIsometry_symm`: functoriality.
@@ -178,6 +179,17 @@ theorem toLp_compRiemannianIsometry (Φ : RiemannianIsometry I I' M N) (w : Sobo
   refine (Filter.EventuallyEq.trans ?_ (Lp.coeFn_compMeasurePreserving _ hΦ).symm)
   exact (hΦ.quasiMeasurePreserving.ae_eq_comp (toLp_ofSmooth_ae_eq u)).symm
 
+/-- **Isometry invariance of the `L²` inner product.** Pullback along a Riemannian isometry
+preserves the `L²` inner product of the values of elements of `H¹`. -/
+@[simp]
+theorem inner_toLp_compRiemannianIsometry (Φ : RiemannianIsometry I I' M N)
+    (w v : SobolevH1 I' N) :
+    ⟪toLp (compRiemannianIsometry Φ w), toLp (compRiemannianIsometry Φ v)⟫_ℝ =
+      ⟪toLp w, toLp v⟫_ℝ := by
+  rw [toLp_compRiemannianIsometry, toLp_compRiemannianIsometry]
+  exact LinearIsometry.inner_map_map (𝕜 := ℝ)
+    (Lp.compMeasurePreservingₗᵢ (E := ℝ) (p := 2) ℝ Φ Φ.measurePreserving_riemannianVolume) _ _
+
 /-- **Isometry invariance of the Dirichlet form.** Pullback along a Riemannian isometry
 preserves the Dirichlet form, the extension of `∫ ⟪∇u, ∇v⟫ dV` to `H¹`. -/
 @[simp]
@@ -186,9 +198,6 @@ theorem dirichletForm_compRiemannianIsometry (Φ : RiemannianIsometry I I' M N)
     dirichletForm (compRiemannianIsometry Φ w) (compRiemannianIsometry Φ v) =
       dirichletForm w v := by
   rw [dirichletForm_apply, dirichletForm_apply, LinearIsometryEquiv.inner_map_map,
-    toLp_compRiemannianIsometry, toLp_compRiemannianIsometry]
-  congr 1
-  exact LinearIsometry.inner_map_map (𝕜 := ℝ)
-    (Lp.compMeasurePreservingₗᵢ (E := ℝ) (p := 2) ℝ Φ Φ.measurePreserving_riemannianVolume) _ _
+    inner_toLp_compRiemannianIsometry]
 
 end TauCeti.Manifold.SobolevH1
