@@ -43,6 +43,8 @@ Darboux basis this is the classical normalization of the symplectic volume form 
   into a wedge power of a two-form.
 * `ContinuousAlternatingMap.curryLeftTopological_wedgePow_succ_eq_zero`: a vector in the kernel
   of a two-form lies in the kernel of each of its positive powers.
+* `ContinuousAlternatingMap.pairedWedge_wedgePow_apply_vecCons_of_forall`: for a vector `v` in
+  the kernel of a two-form `ω` and a covector `a`, `ι_v (a ∧ ωᵐ) = a(v) ωᵐ`.
 * `ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv`: the `m`-th power of a two-form takes
   the value `m!` on a family of `m` standard pairs.
 
@@ -163,6 +165,45 @@ theorem curryLeftTopological_wedgePow_succ_eq_zero (ω : E [⋀^Fin 2]→L[ℝ] 
   rw [curryLeftTopological_apply_apply, coe_zero, Pi.zero_apply]
   refine (wedgePow_succ_apply_vecCons ω m v w).trans ?_
   rw [h₀, pairedWedge_zero_left, coe_zero, Pi.zero_apply, mul_zero]
+
+/-- **Inserting a kernel vector into `a ∧ ωᵐ`.** If `ω(v, w) = 0` for every `w`, then for every
+covector `a` the interior product of `v` with `a ∧ ωᵐ` is `a(v) ωᵐ`:
+`(a ∧ ωᵐ)(v, w) = a(v) ωᵐ(w)`. For a contact form `α` and its Reeb field `v`, this says that
+`ι_v (α ∧ (dα)ᵐ) = (dα)ᵐ`. -/
+theorem pairedWedge_wedgePow_apply_vecCons_of_forall (a : E [⋀^Fin 1]→L[ℝ] ℝ)
+    (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) {v : E} (hv : ∀ w, ω ![v, w] = 0) (w : Fin (2 * m) → E) :
+    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a
+        (ω.wedgePow m) (Matrix.vecCons v w ∘ Fin.cast (Nat.add_comm 1 (2 * m))) =
+      a ![v] * ω.wedgePow m w := by
+  cases m with
+  | zero =>
+    rw [pairedWedge_apply_zero_right, wedgePow_zero_apply, ContinuousLinearMap.mul_apply',
+      mul_one, wedgePow_zero_apply, mul_one]
+    congr 1
+    ext i
+    fin_cases i
+    rfl
+  | succ m =>
+    -- The antiderivation rule: `ι_v (a ∧ ψ) = a(v) ψ - a ∧ ι_v ψ` with `ψ = ωᵐ⁺¹`, whose
+    -- interior product with `v` vanishes.
+    have h := curryLeftTopological_pairedWedge (k := 0) (l := 2 * m + 1)
+      (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a
+      (ω.wedgePow (m + 1)) v (w ∘ Fin.cast (show 0 + 1 + (2 * m + 1) = 2 * (m + 1) by omega))
+    rw [curryLeftTopological_apply_apply, curryLeftTopological_wedgePow_succ_eq_zero ω m hv,
+      pairedWedge_zero_right, coe_zero, Pi.zero_apply, smul_zero, add_zero,
+      pairedWedge_apply_zero_left, ContinuousLinearMap.mul_apply',
+      curryLeftTopological_apply_apply] at h
+    -- The remaining tuples agree up to value-preserving `Fin.cast`s.
+    have hw : Matrix.vecCons v w ∘ Fin.cast (Nat.add_comm 1 (2 * (m + 1))) =
+        Matrix.vecCons v (w ∘ Fin.cast (show 0 + 1 + (2 * m + 1) = 2 * (m + 1) by omega)) := by
+      funext i
+      exact Fin.cases rfl (fun j ↦ rfl) i
+    have h₀ : (Matrix.vecCons v 0 : Fin (0 + 1) → E) = ![v] := by
+      funext i
+      exact Fin.cases rfl (fun j ↦ j.elim0) i
+    rw [hw, h, h₀]
+    -- `((w ∘ Fin.cast _) ∘ Fin.cast _) ∘ Fin.cast _` is `w` up to value-preserving casts.
+    rfl
 
 /-! ### The value on standard pairs -/
 
