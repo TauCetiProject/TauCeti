@@ -87,12 +87,13 @@ theorem IsLengthSpace.exists_dist_le_of_dist_le_add [IsLengthSpace X] {p x : X} 
     simpa only [Real.coe_toNNReal _ hr.le, Subtype.dist_eq, Real.dist_eq] using
       hf.dist_le_mul a b
   have hτ : r * (τ : ℝ) = s := mul_div_cancel₀ _ hr.ne'
+  have hτ' : r * (1 - (τ : ℝ)) = r - s := by rw [mul_one_sub, hτ]
   refine ⟨f τ, ?_, ?_⟩
   · have h := hd 0 τ
-    rw [hf0, Icc.coe_zero, zero_sub, abs_neg, abs_of_nonneg τ.property.1] at h
+    simp [hf0, abs_of_nonneg τ.property.1] at h
     linarith
   · have h := hd τ 1
-    rw [hf1, Icc.coe_one, abs_of_nonpos (sub_nonpos.mpr τ.property.2)] at h
-    nlinarith
+    simp [hf1, abs_of_nonpos (sub_nonpos.mpr τ.property.2)] at h
+    linarith [hτ']
 
 end TauCeti
