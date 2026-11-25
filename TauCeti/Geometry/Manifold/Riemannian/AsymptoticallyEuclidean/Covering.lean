@@ -8,11 +8,10 @@ module
 public import Mathlib.Topology.Covering.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Flux
-import Mathlib.Topology.Homotopy.Lifting
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Topology.Covering.LiftOn
 import TauCeti.Topology.Covering.Proper
-import TauCeti.Topology.SeparatedMap
 
 /-!
 # Lifting asymptotically Euclidean ends to Riemannian coverings
@@ -41,17 +40,15 @@ the positive mass theorem passes to finite covers, for instance to the orientati
   through a local Riemannian isometry has the coordinate flux, and so the mass, of the end below;
   `TauCeti.normalizedCoordinateFlux_pullbackMetricCoeff_comp` is the invariance of the flux under
   composition with a local Riemannian isometry.
-* `IsCoveringMap.exists_continuousOn_lift_compl_closedBall` and
-  `TauCeti.IsAsymptoticallyEuclideanEnd.exists_lift`: for `n ≥ 3`, a map continuous on the exterior
-  of a ball lifts continuously through a covering map, and an end lifts through a Riemannian
-  covering map to an end of the same order, through any prescribed point over a base point.
-* `IsCoveringMap.pairwise_disjoint_image_lift_compl_closedBall` and
-  `IsCoveringMap.preimage_image_eq_iUnion_image_lift_compl_closedBall`: the lifts of a map on the
-  exterior through the points of the fibre over a base point have pairwise disjoint images if the
-  map is injective, and their union is the preimage of the image of the map.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.exists_lift`: for `n ≥ 3`, an end lifts through a
+  Riemannian covering map to an end of the same order, through any prescribed point over a base
+  point. The exterior is simply connected (`TauCeti.simplyConnectedSpace_compl_closedBall`), so
+  the topological lift comes from `IsCoveringMap.exists_continuousOn_lift`.
 * `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.exists_lift`: a finite-ended asymptotically
   Euclidean structure lifts to a surjective Riemannian covering with finite fibres, with one end
-  over each end and each point of the fibre over its base point.
+  over each end and each point of the fibre over its base point. The lifts of one end are disjoint
+  and cover the preimage of its image by `IsCoveringMap.pairwise_disjoint_image_lift` and
+  `IsCoveringMap.preimage_image_eq_iUnion_image_lift`.
 
 ## References
 
@@ -122,79 +119,6 @@ theorem normalizedCoordinateFlux_pullbackMetricCoeff_comp (hp : IsLocalRiemannia
 
 /-! ### Lifting one end -/
 
-/-- For `n ≥ 3`, a map `φ` continuous on the exterior of the ball of radius `R` in `ℝⁿ` lifts
-continuously through any covering map `p : N → M`: for every point `x₀` of the exterior and every
-`y₀` over `φ x₀` there is a map `ψ`, continuous on the exterior, with `ψ x₀ = y₀` and `p ∘ ψ = φ`
-there. The exterior is simply connected because `n ≥ 3`. -/
-theorem _root_.IsCoveringMap.exists_continuousOn_lift_compl_closedBall {M N : Type*}
-    [TopologicalSpace M] [TopologicalSpace N] {p : N → M} (hcov : IsCoveringMap p)
-    {φ : EuclideanSpace ℝ (Fin n) → M} (hφ : ContinuousOn φ (closedBall 0 R)ᶜ) (hn : 3 ≤ n)
-    {x₀ : EuclideanSpace ℝ (Fin n)} (hx₀ : x₀ ∈ (closedBall 0 R)ᶜ) {y₀ : N} (hy₀ : p y₀ = φ x₀) :
-    ∃ ψ : EuclideanSpace ℝ (Fin n) → N, ContinuousOn ψ (closedBall 0 R)ᶜ ∧ ψ x₀ = y₀ ∧
-      EqOn (p ∘ ψ) φ (closedBall 0 R)ᶜ := by
-  classical
-  set U := (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ
-  have : SimplyConnectedSpace U := by
-    refine simplyConnectedSpace_compl_closedBall ?_ 0 R
-    rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin]
-    exact_mod_cast (by omega : 2 < n)
-  have : LocallyPathConnectedSpace U := isClosed_closedBall.isOpen_compl.locallyPathConnectedSpace
-  -- Lift `φ`, restricted to the simply connected exterior, through `p`, then extend the lift by
-  -- `y₀` inside the ball.
-  obtain ⟨G, ⟨hG₀, hG⟩, -⟩ := hcov.existsUnique_continuousMap_lifts
-    ⟨U.domRestrict φ, hφ.domRestrict⟩ ⟨x₀, hx₀⟩ y₀ hy₀
-  refine ⟨fun x ↦ if hx : x ∈ U then G ⟨x, hx⟩ else y₀, ?_, by simp [hx₀, hG₀],
-    fun x hx ↦ by simpa [hx] using congrFun hG ⟨x, hx⟩⟩
-  rw [continuousOn_iff_continuous_domRestrict]
-  convert G.continuous using 1
-  ext ⟨x, hx⟩
-  simp [hx]
-
-/-- The lifts through a covering map `p` of a map `φ` injective on the exterior of the ball of
-radius `R` in `ℝⁿ`, through the points `y` of the fibre of `p` over `φ x₀`, each continuous on the
-exterior and taking the value `y` at `x₀`, have pairwise disjoint images on the exterior, in
-dimension at least two. -/
-theorem _root_.IsCoveringMap.pairwise_disjoint_image_lift_compl_closedBall {M N : Type*}
-    [TopologicalSpace M] [TopologicalSpace N] {p : N → M} (hcov : IsCoveringMap p)
-    {φ : EuclideanSpace ℝ (Fin n) → M} (hinj : InjOn φ (closedBall 0 R)ᶜ) (hn : 1 < n)
-    {x₀ : EuclideanSpace ℝ (Fin n)} (hx₀ : x₀ ∈ (closedBall 0 R)ᶜ)
-    {ψ : p ⁻¹' {φ x₀} → EuclideanSpace ℝ (Fin n) → N}
-    (hψ : ∀ y, ContinuousOn (ψ y) (closedBall 0 R)ᶜ) (hψ₀ : ∀ y, ψ y x₀ = y)
-    (hψp : ∀ y, EqOn (p ∘ ψ y) φ (closedBall 0 R)ᶜ) :
-    Pairwise fun y y' ↦ Disjoint (ψ y '' (closedBall 0 R)ᶜ) (ψ y' '' (closedBall 0 R)ᶜ) :=
-  fun y y' hyy' ↦ hcov.isSeparatedMap.disjoint_image_of_eqOn_comp
-    hcov.isLocalHomeomorph.isLocallyInjective
-    (isPreconnected_compl_closedBall
-      (by rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin]; exact_mod_cast hn) 0 R)
-    hinj (hψ y) (hψ y') (hψp y) (hψp y') hx₀ (by rwa [hψ₀, hψ₀, Ne, ← Subtype.ext_iff])
-
-/-- **The preimage of an exterior is covered by its lifts.** For `n ≥ 3` and a covering map `p`,
-the lifts of a map `φ` continuous on the exterior of the ball of radius `R` in `ℝⁿ` through the
-points `y` of the fibre over `φ x₀`, each continuous on the exterior and taking the value `y` at
-`x₀`, have images on the exterior whose union is the preimage under `p` of the image of `φ`. -/
-theorem _root_.IsCoveringMap.preimage_image_eq_iUnion_image_lift_compl_closedBall {M N : Type*}
-    [TopologicalSpace M] [TopologicalSpace N] {p : N → M} (hcov : IsCoveringMap p)
-    {φ : EuclideanSpace ℝ (Fin n) → M} (hφ : ContinuousOn φ (closedBall 0 R)ᶜ) (hn : 3 ≤ n)
-    {x₀ : EuclideanSpace ℝ (Fin n)} (hx₀ : x₀ ∈ (closedBall 0 R)ᶜ)
-    {ψ : p ⁻¹' {φ x₀} → EuclideanSpace ℝ (Fin n) → N}
-    (hψ : ∀ y, ContinuousOn (ψ y) (closedBall 0 R)ᶜ) (hψ₀ : ∀ y, ψ y x₀ = y)
-    (hψp : ∀ y, EqOn (p ∘ ψ y) φ (closedBall 0 R)ᶜ) :
-    p ⁻¹' (φ '' (closedBall 0 R)ᶜ) = ⋃ y, ψ y '' (closedBall 0 R)ᶜ := by
-  refine Subset.antisymm ?_ (iUnion_subset fun y ↦ ?_)
-  · rintro z ⟨x, hx, hxz⟩
-    -- Lift `φ` through `z` at `x`; this lift passes at `x₀` through a point `y` of the fibre, so
-    -- it is the lift `ψ y`, which therefore takes the value `z` at `x`.
-    obtain ⟨χ, hχ, hχx, hχp⟩ := hcov.exists_continuousOn_lift_compl_closedBall hφ hn hx hxz.symm
-    have hy : χ x₀ ∈ p ⁻¹' {φ x₀} := hχp hx₀
-    have hEq := hcov.eqOn_of_comp_eqOn
-      (isPreconnected_compl_closedBall
-        (by rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin]; exact_mod_cast (by omega))
-        0 R) (hψ ⟨χ x₀, hy⟩)
-      hχ ((hψp _).trans hχp.symm) hx₀ (hψ₀ _)
-    exact mem_iUnion.2 ⟨⟨χ x₀, hy⟩, x, hx, (hEq hx).trans hχx⟩
-  · rintro _ ⟨x, hx, rfl⟩
-    exact ⟨x, hx, (hψp y hx).symm⟩
-
 namespace IsAsymptoticallyEuclideanEnd
 
 variable {φ : EuclideanSpace ℝ (Fin n) → M}
@@ -209,8 +133,13 @@ theorem exists_lift [CompleteSpace F] [BoundarylessManifold J N] [IsManifold J �
     (hx₀ : x₀ ∈ (closedBall 0 R)ᶜ) {y₀ : N} (hy₀ : p y₀ = φ x₀) :
     ∃ ψ : EuclideanSpace ℝ (Fin n) → N, IsAsymptoticallyEuclideanEnd J t R ψ ∧ ψ x₀ = y₀ ∧
       EqOn (p ∘ ψ) φ (closedBall 0 R)ᶜ := by
-  obtain ⟨ψ, hcont, hψ₀, hψp⟩ :=
-    hcov.exists_continuousOn_lift_compl_closedBall h.contMDiffOn.continuousOn hn hx₀ hy₀
+  have : SimplyConnectedSpace ↥(closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ :=
+    simplyConnectedSpace_compl_closedBall (by
+      rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin]
+      exact_mod_cast (by omega : 2 < n)) 0 R
+  have : LocallyPathConnectedSpace ↥(closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ :=
+    isClosed_closedBall.isOpen_compl.locallyPathConnectedSpace
+  obtain ⟨ψ, hcont, hψ₀, hψp⟩ := hcov.exists_continuousOn_lift h.contMDiffOn.continuousOn hx₀ hy₀
   -- The continuous lift is smooth, since `p` is a local diffeomorphism.
   have hsmooth : ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) J ∞ ψ (closedBall 0 R)ᶜ :=
     .of_comp_isLocalDiffeomorph (hp.isLocalDiffeomorph (n := ∞) (by simp) le_rfl) hcont
@@ -244,11 +173,17 @@ theorem exists_lift [CompleteSpace F] [BoundarylessManifold J N] [IsManifold J �
     (h.isAsymptoticallyEuclideanEnd a.1).exists_lift hcov hp hn (hx₀ a.1) a.2.property
   have hcont (a : Σ e, p ⁻¹' {φ e (x₀ e)}) : ContinuousOn (ψ a) (closedBall 0 (R a.1))ᶜ :=
     (hψ a).contMDiffOn.continuousOn
+  have hrank : 2 < Module.rank ℝ (EuclideanSpace ℝ (Fin n)) := by
+    rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin]
+    exact_mod_cast (by omega : 2 < n)
   -- Over each end `e` of `M`, the lifts `ψ ⟨e, y⟩` cover the preimage of the image of `e`.
   have hpre (e : ι) :
       p ⁻¹' (φ e '' (closedBall 0 (R e))ᶜ) = ⋃ y, ψ ⟨e, y⟩ '' (closedBall 0 (R e))ᶜ :=
-    hcov.preimage_image_eq_iUnion_image_lift_compl_closedBall
-      (h.isAsymptoticallyEuclideanEnd e).contMDiffOn.continuousOn hn (hx₀ e)
+    have := simplyConnectedSpace_compl_closedBall hrank 0 (R e)
+    have := (isClosed_closedBall (x := (0 : EuclideanSpace ℝ (Fin n))) (ε := R e)).isOpen_compl
+      |>.locallyPathConnectedSpace
+    hcov.preimage_image_eq_iUnion_image_lift
+      (h.isAsymptoticallyEuclideanEnd e).contMDiffOn.continuousOn (hx₀ e)
       (fun y ↦ hcont ⟨e, y⟩) (fun y ↦ hψ₀ ⟨e, y⟩) fun y ↦ hψp ⟨e, y⟩
   have hsub (a : Σ e, p ⁻¹' {φ e (x₀ e)}) :
       ψ a '' (closedBall 0 (R a.1))ᶜ ⊆ p ⁻¹' (φ a.1 '' (closedBall 0 (R a.1))ᶜ) :=
@@ -260,8 +195,9 @@ theorem exists_lift [CompleteSpace F] [BoundarylessManifold J N] [IsManifold J �
     exact ⟨⟨e, y, hy⟩⟩
   · rintro ⟨e, y⟩ ⟨e', y'⟩ hne
     rcases eq_or_ne e e' with rfl | hee'
-    · exact hcov.pairwise_disjoint_image_lift_compl_closedBall
-        (h.isAsymptoticallyEuclideanEnd e).injOn (by omega) (hx₀ e) (fun y ↦ hcont ⟨e, y⟩)
+    · exact hcov.pairwise_disjoint_image_lift
+        (isPreconnected_compl_closedBall (hrank.trans' (by norm_num)) 0 (R e))
+        (h.isAsymptoticallyEuclideanEnd e).injOn (hx₀ e) (fun y ↦ hcont ⟨e, y⟩)
         (fun y ↦ hψ₀ ⟨e, y⟩) (fun y ↦ hψp ⟨e, y⟩)
         fun hyy' ↦ hne (by rw [hyy'])
     · exact ((h.pairwise_disjoint hee').preimage p).mono (hsub ⟨e, y⟩) (hsub ⟨e', y'⟩)
