@@ -64,11 +64,8 @@ theorem lift_eval_symmetricAlgebra_dual (g : G) (v : V)
     (p : SymmetricAlgebra K (Module.Dual K V)) :
     SymmetricAlgebra.lift (Module.Dual.eval K V v) (ρ.dual.symmetricAlgebra g p) =
       SymmetricAlgebra.lift (Module.Dual.eval K V (ρ g⁻¹ v)) p := by
-  have h : (SymmetricAlgebra.lift (Module.Dual.eval K V v)).comp
-      (SymmetricAlgebra.map K (ρ.dual g)) =
-        SymmetricAlgebra.lift (Module.Dual.eval K V (ρ g⁻¹ v)) :=
-    SymmetricAlgebra.algHom_ext <| LinearMap.ext fun φ ↦ by simp [Module.Dual.transpose_apply]
-  rw [symmetricAlgebra_apply, ← h, AlgHom.comp_apply]
+  rw [symmetricAlgebra_apply]
+  exact SymmetricAlgebra.lift_eval_map_dualMap K (ρ g⁻¹) v p
 
 end CommSemiring
 

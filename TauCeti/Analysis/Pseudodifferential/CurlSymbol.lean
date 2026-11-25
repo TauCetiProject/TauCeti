@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.CrossProduct
-public import TauCeti.Analysis.Pseudodifferential.DeRhamSymbol
+public import TauCeti.Analysis.Pseudodifferential.DeRham.Symbol
 
 /-!
 # The principal symbol of the curl
