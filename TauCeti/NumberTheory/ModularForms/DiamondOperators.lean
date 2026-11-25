@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
@@ -74,7 +74,11 @@ Hecke pair `(Γ₁(N), Δ₁(N))` from the same source file is not ported here.
 * `diamondOp_coe_cuspForm`, `coe_mem_modFormCharSpace_iff`: the diamond operators, and hence the
   character spaces, commute with the coercion `S_k(Γ₁(N)) → M_k(Γ₁(N))`; a cusp form is a
   `χ`-form exactly when the modular form underlying it is.
-* `eq_of_mem_cuspFormCharSpace_of_ne_zero`: a nonzero cusp form determines its nebentypus.
+* `diamondOpNat_apply_of_mem_modFormCharSpace`, `diamondOpCuspNat_apply_of_mem_cuspFormCharSpace`:
+  natural-number diamond operators act by `χ(n)` when `n` is coprime to `N` and vanish otherwise on
+  `M_k(Γ₁(N), χ)` and `S_k(Γ₁(N), χ)`.
+* `eq_of_mem_modFormCharSpace_of_ne_zero`, `eq_of_mem_cuspFormCharSpace_of_ne_zero`: a nonzero
+  modular or cusp form determines its nebentypus.
 * `slash_mapGL_eq_self_of_comp_of_mem_modFormCharSpace`,
   `slash_mapGL_eq_self_of_comp_of_mem_cuspFormCharSpace`: a matrix of `Γ₀(N)` whose lower-right
   entry is `1` modulo a divisor `M` acts trivially on a form whose character is pulled back from
@@ -367,6 +371,15 @@ theorem diamondOp_apply_of_mem_modFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* 
     diamondOp k d f = (↑(χ d) : ℂ) • f :=
   (mem_modFormCharSpace_iff k χ f).mp hf d
 
+/-- **A nonzero modular form determines its nebentypus**: the character spaces of two distinct
+characters meet only in `0`, since `⟨d⟩ f = χ(d) • f = χ'(d) • f` forces `χ(d) = χ'(d)`. -/
+theorem eq_of_mem_modFormCharSpace_of_ne_zero {k : ℤ} {χ χ' : (ZMod N)ˣ →* ℂˣ}
+    {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ)
+    (hf' : f ∈ modFormCharSpace k χ') (h0 : f ≠ 0) : χ = χ' :=
+  MonoidHom.ext fun d ↦ Units.ext <| smul_left_injective ℂ h0 <|
+    (diamondOp_apply_of_mem_modFormCharSpace k χ d hf).symm.trans
+      (diamondOp_apply_of_mem_modFormCharSpace k χ' d hf')
+
 /-- **Bridge**: for a `Gamma1`-invariant modular form `f`, membership in the
 diamond-eigenspace `modFormCharSpace k χ₀` is equivalent to the classical nebentypus
 relation `f ∣[k] g = χ₀(d_g) • f` for all `g ∈ Γ₀(N)`. -/
@@ -459,7 +472,7 @@ theorem slash_mapGL_eq_smul_of_mem_functionCharSpace {k : ℤ} {χ : (ZMod N)ˣ 
 lemma slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 {k : ℤ}
     {χ : (ZMod N)ˣ →* ℂˣ} {f : ℍ → ℂ} (hf : f ∈ functionCharSpace k χ) {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma1 N) : f ∣[k] mapGL ℝ γ = f := by
-  have h := slash_mapGL_eq_smul_of_mem_functionCharSpace hf ⟨γ, Gamma1_in_Gamma0 N hγ⟩
+  have h := slash_mapGL_eq_smul_of_mem_functionCharSpace hf ⟨γ, Gamma1_le_Gamma0 N hγ⟩
   rwa [(mem_Gamma1_iff_toHomUnits_eq_one _).mp hγ, map_one, Units.val_one, one_smul] at h
 
 /-- A `χ`-invariant function for `Γ₀(N)` has the same slash by two matrices of `SL(2, ℤ)` whose
@@ -539,6 +552,28 @@ lemma diamondOpCuspNat_of_coprime (k : ℤ) {n : ℕ} (h : Nat.Coprime n N) :
 lemma diamondOpCuspNat_of_not_coprime (k : ℤ) {n : ℕ} (h : ¬ Nat.Coprime n N) :
     diamondOpCuspNat (N := N) k n = 0 :=
   dite_eq_right_of_eq_false (by simpa using h)
+
+/-- Natural-number diamond operators act by `χ(n)` when `n` is coprime to `N` and vanish
+otherwise on elements of `M_k(Γ₁(N), χ)`. Not `@[simp]`: `χ` occurs only in the hypothesis and
+the right-hand side, so `simp` cannot infer it. -/
+theorem diamondOpNat_apply_of_mem_modFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (n : ℕ)
+    {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
+    diamondOpNat k n f =
+      if h : Nat.Coprime n N then (↑(χ (ZMod.unitOfCoprime n h)) : ℂ) • f else 0 := by
+  split_ifs with h
+  · rw [diamondOpNat_of_coprime k h, diamondOp_apply_of_mem_modFormCharSpace k χ _ hf]
+  · rw [diamondOpNat_of_not_coprime k h, LinearMap.zero_apply]
+
+/-- Natural-number diamond operators act by `χ(n)` when `n` is coprime to `N` and vanish
+otherwise on elements of `S_k(Γ₁(N), χ)`. Not `@[simp]`: `χ` occurs only in the hypothesis and
+the right-hand side, so `simp` cannot infer it. -/
+theorem diamondOpCuspNat_apply_of_mem_cuspFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (n : ℕ)
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
+    diamondOpCuspNat k n f =
+      if h : Nat.Coprime n N then (↑(χ (ZMod.unitOfCoprime n h)) : ℂ) • f else 0 := by
+  split_ifs with h
+  · rw [diamondOpCuspNat_of_coprime k h, diamondOpCusp_apply_of_mem_cuspFormCharSpace k χ _ hf]
+  · rw [diamondOpCuspNat_of_not_coprime k h, LinearMap.zero_apply]
 
 /-- Slashing by a `Γ₀(N)` representative with lower-right unit `n` is the zero-extended
 diamond operator `⟨n⟩` on modular forms. -/
@@ -623,7 +658,7 @@ noncomputable def cuspToModFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) 
     cuspFormCharSpace k χ →ₗ[ℂ] modFormCharSpace k χ :=
   LinearMap.codRestrict (modFormCharSpace k χ)
     (CuspForm.toModularFormₗ.comp (cuspFormCharSpace k χ).subtype)
-    fun f ↦ (coe_mem_modFormCharSpace_iff k χ _).mpr f.2
+    fun f ↦ (coe_mem_modFormCharSpace_iff k χ _).mpr f.property
 
 @[simp]
 theorem coe_cuspToModFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (f : cuspFormCharSpace k χ) :
@@ -651,7 +686,7 @@ theorem mem_range_cuspToModFormCharSpace_iff (k : ℤ) (χ : (ZMod N)ˣ →* ℂ
   · rintro ⟨g, hg⟩
     have hgmem : (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ modFormCharSpace k χ := by
       rw [← CuspForm.toModularFormₗ_eq_coe, hg]
-      exact f.2
+      exact f.property
     exact ⟨⟨g, (coe_mem_modFormCharSpace_iff k χ g).mp hgmem⟩, Subtype.ext hg⟩
 
 /-- The projection onto a diamond-stable complement of the cusp forms in `M_k(Γ₁(N))` commutes
@@ -699,7 +734,7 @@ theorem isCompl_comap_subtype_range_cuspToModFormCharSpace {k : ℤ}
       ((mem_range_cuspToModFormCharSpace_iff k χ f).mp hfS))
   · refine codisjoint_iff.mpr (eq_top_iff.mpr fun f _ ↦ ?_)
     let e : modFormCharSpace k χ :=
-      ⟨F.projection _ hF f, projection_mem_modFormCharSpace hF hd χ f.2⟩
+      ⟨F.projection _ hF f, projection_mem_modFormCharSpace hF hd χ f.property⟩
     have he : e ∈ F.comap (modFormCharSpace k χ).subtype := by
       rw [Submodule.mem_comap, Submodule.subtype_apply]
       exact Submodule.projection_apply_mem _ _

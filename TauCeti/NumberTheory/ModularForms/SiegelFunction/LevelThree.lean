@@ -110,7 +110,7 @@ theorem siegelFunction_zero_third_eq_eta {τ : ℂ} (hτ : 0 < τ.im) :
     congr 1
     ring
   have hq₃ : cexp (2 * π * I * (3 * τ)) = cexp (2 * π * I * τ) ^ 3 := by
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     congr 1
     push_cast
     ring
@@ -134,7 +134,7 @@ theorem siegelFunction_third_eq_eta (k : ℤ) {τ : ℂ} (hτ : 0 < τ.im) :
   have ht : ‖t‖ < 1 := norm_exp_two_pi_I_lt_one ⟨_, hz⟩
   -- With `t = e^{2π i (τ + k)/3}` the nome is `q = t³`, and `w = t`.
   have hq : cexp (2 * π * I * τ) = t ^ 3 := by
-    rw [ht_def, ← Complex.exp_nat_mul,
+    rw [ht_def, ← Complex.exp_natCast_mul,
       show ((3 : ℕ) : ℂ) * (2 * π * I * ((τ + k) / 3)) = 2 * π * I * τ + k * (2 * π * I) by
         push_cast
         ring,
@@ -280,7 +280,7 @@ theorem siegelFunction_third_third_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im
   rw [sub_add_cancel] at hd
   have he₆ : cexp (π * I / 6) ≠ 0 := exp_ne_zero _
   have hI : cexp (π * I / 6) ^ 3 = I := by
-    rw [← Complex.exp_nat_mul, show ((3 : ℕ) : ℂ) * (π * I / 6) = π / 2 * I by push_cast; ring,
+    rw [← Complex.exp_natCast_mul, show ((3 : ℕ) : ℂ) * (π * I / 6) = π / 2 * I by push_cast; ring,
       exp_pi_div_two_mul_I]
   refine mul_left_cancel₀ (pow_ne_zero 2 he₆) ?_
   linear_combination (-cexp (π * I / 6)) * ha + cexp (π * I / 6) * hb - I * hc -
@@ -401,7 +401,7 @@ theorem siegelFunction_zero_third_mul_third_zero_mul_third_third_mul_third_two_t
       have hT : ((ModularGroup.T • τ : ℍ) : ℂ) = τ + 1 := by
         rw [modular_T_smul, coe_vadd, add_comm, ofReal_one]
       have he : cexp (π * I / 6) ^ 3 = I := by
-        rw [← Complex.exp_nat_mul,
+        rw [← Complex.exp_natCast_mul,
           show ((3 : ℕ) : ℂ) * (π * I / 6) = π / 2 * I by push_cast; ring, exp_pi_div_two_mul_I]
       rw [hT, siegelFunction_zero_third_apply_add_one, siegelFunction_third_zero_apply_add_one,
         siegelFunction_third_third_apply_add_one,

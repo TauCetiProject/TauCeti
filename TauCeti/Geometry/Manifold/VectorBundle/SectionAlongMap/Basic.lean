@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Coordinates of vector-bundle sections along maps
@@ -15,10 +18,15 @@ on the parameter domain. This permits manifold differentiation, in particular fo
 differentiation of tangent fields along maps in submanifold geometry.
 
 The coordinate reading and its algebra laws require only a vector bundle over a topological
-space. For a differentiable base map, differentiability of the total-space section at a point
-is equivalent to differentiability of its coordinate reading in any trivialization containing
-the image point. The corresponding equivalences within a set hold both for differentiability
-and for higher manifold regularity.
+space. A section continuous into the total space has a continuous coordinate reading in any
+trivialization containing the image point. For a differentiable base map, differentiability of
+the total-space section at a point is equivalent to differentiability of its coordinate reading
+in any trivialization containing the image point. The corresponding equivalences within a set
+hold both for differentiability and for higher manifold regularity. A differentiable coordinate
+reading has differentiable coordinates in any basis of the model fibre
+(`TauCeti.Manifold.mdifferentiableAt_repr_sectionCoord`). On the base set, a section
+expands in the local frame of a model-fibre basis with coefficients read from its coordinate
+reading (`TauCeti.Manifold.eq_sum_repr_sectionCoord_smul_localFrame`).
 -/
 
 public section
@@ -169,6 +177,54 @@ theorem symmL_sectionCoord_self (t : N) :
       (sectionCoord 𝕜 (F := F) γ W (γ t) t) = W t :=
   symmL_sectionCoord γ W (γ t) t (FiberBundle.mem_baseSet_trivializationAt F V (γ t))
 
+/-! ### Local-frame expansion -/
+
+/-- At a parameter where `γ t` lies in the trivialization base set at `x`, `W t` expands in the
+local frame of a finite model-fibre basis `b` with coefficients read from `sectionCoord γ W x t`. -/
+theorem eq_sum_repr_sectionCoord_smul_localFrame {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι 𝕜 F) {x : M} {t : N}
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    W t = ∑ i, b.repr (sectionCoord 𝕜 (F := F) γ W x t) i •
+      (trivializationAt F V x).localFrame b i (γ t) := by
+  simpa only [sectionCoord_apply] using
+    b.eq_sum_repr_continuousLinearMapAt_smul_localFrame (𝕜 := 𝕜) hx (W t)
+
+/-- Along a filter `l` where `γ` tends to a point `y` in the trivialization base set at `x`, `W`
+eventually expands in the local frame of a finite model-fibre basis `b` with coefficients read from
+`sectionCoord γ W x`. -/
+theorem eventually_eq_sum_repr_sectionCoord_smul_localFrame {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι 𝕜 F) {x y : M} {l : Filter N}
+    (hγ : Tendsto γ l (𝓝 y)) (hy : y ∈ (trivializationAt F V x).baseSet) :
+    ∀ᶠ r in l, W r = ∑ i, b.repr (sectionCoord 𝕜 (F := F) γ W x r) i •
+      (trivializationAt F V x).localFrame b i (γ r) :=
+  (hγ.eventually ((trivializationAt F V x).open_baseSet.mem_nhds hy)).mono fun _ hr ↦
+    eq_sum_repr_sectionCoord_smul_localFrame γ W b hr
+
+section Continuity
+
+variable [TopologicalSpace N]
+
+variable (𝕜) in
+/-- A section continuous into the total space within a set has a continuous coordinate reading
+within that set in any canonical trivialization whose base set contains the image point. -/
+theorem continuousWithinAt_sectionCoord {s : Set N} {x : M} {t : N}
+    (h : ContinuousWithinAt (fun r ↦ TotalSpace.mk' F (γ r) (W r)) s t)
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    ContinuousWithinAt (sectionCoord 𝕜 (F := F) γ W x) s t :=
+  (((trivializationAt F V x).tendsto_mk_nhds_mk_iff 𝕜 hx).1 h.tendsto).2
+
+variable (𝕜) in
+/-- A section continuous into the total space at a point has a continuous coordinate reading at
+that point in any canonical trivialization whose base set contains the image point. -/
+theorem continuousAt_sectionCoord {x : M} {t : N}
+    (h : ContinuousAt (fun r ↦ TotalSpace.mk' F (γ r) (W r)) t)
+    (hx : γ t ∈ (trivializationAt F V x).baseSet) :
+    ContinuousAt (sectionCoord 𝕜 (F := F) γ W x) t := by
+  rw [← continuousWithinAt_univ]
+  exact continuousWithinAt_sectionCoord 𝕜 γ W h.continuousWithinAt hx
+
+end Continuity
+
 variable
   {E H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [ChartedSpace H M]
@@ -232,6 +288,14 @@ theorem mdifferentiableAt_sectionCoord_iff {x : M} {t : N}
   rw [← mdifferentiableWithinAt_univ, ← mdifferentiableWithinAt_univ]
   exact mdifferentiableWithinAt_sectionCoord_iff γ W (s := Set.univ)
     hγ.mdifferentiableWithinAt hx
+
+/-- If the coordinate reading `sectionCoord γ W x` is differentiable at `t`, then each coordinate
+function in a model-fibre basis `b` is differentiable at `t`. -/
+theorem mdifferentiableAt_repr_sectionCoord [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {ι : Type*} (b : Module.Basis ι 𝕜 F) {x : M} {t : N}
+    (hW : MDifferentiableAt J 𝓘(𝕜, F) (sectionCoord 𝕜 (F := F) γ W x) t) (i : ι) :
+    MDifferentiableAt J 𝓘(𝕜, 𝕜) (fun r ↦ b.repr (sectionCoord 𝕜 (F := F) γ W x r) i) t :=
+  (b.coord i).toContinuousLinearMap.differentiableAt.comp_mdifferentiableAt hW
 
 omit [ContMDiffVectorBundle 1 F V I] in
 /-- For a base map of class `C^n` within a set, the coordinate reading characterizes

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
-public import TauCeti.Topology.VectorBundle.Thom.Homology
+public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.Topology.FiberBundle.Trivialization
 
@@ -27,11 +27,18 @@ with it is bijective. The Thom map `a ↦ π^*a ⌣ u` is this cup product compo
 along the homeomorphism `π` and the identification `Hᵖ(E, ∅) ≅ Hᵖ(E)`, so it is bijective in
 every degree and for every module of coefficients
 (`TauCeti.IsThomClass.bijective_thomMap_of_finrank_eq_zero`).
-Over a field the homology Thom map `x ↦ π_*(x ⌢ u)` is then bijective as well
-(`TauCeti.IsThomClass.bijective_homologyThomMap_of_finrank_eq_zero`).
 
 Such a class exists for every commutative ring of coefficients, with no orientation
 (`TauCeti.exists_isThomClass_of_finrank_eq_zero`): the class of the constant cocycle `1`.
+
+For a real vector bundle of rank zero, the Euler class map `Hⁿ(E, E₀) ⟶ Hⁿ(B)`, restriction to
+`Hⁿ(E)` followed by pull-back along the zero section, is an isomorphism in every degree and for
+all coefficients (`TauCeti.isIso_eulerClass_of_subsingleton`): in rank zero a relative class is
+the same thing as its Euler class. A degree-zero class restricts to a generator of
+`H⁰(E_b, ∅; K) ≅ K` on the fibre over `b` exactly when its Euler class takes a unit value at `b`
+(`TauCeti.span_singularCohomologyMap_fiberThomPairMap_eq_top_iff`). Hence the Thom classes of a
+rank-zero bundle are the classes whose Euler classes are units of `H⁰(B; K)`, the functions on
+path components with values in `Kˣ` (`TauCeti.isThomClass_iff_forall_isUnit`).
 
 This is the rank-zero case of the Thom isomorphism `Hᵖ(B; M) ≅ Hᵖ⁺ʳ(E, E₀; M)`. It is the case of
 the negative normal bundle of a Morse–Bott critical submanifold of index `0`, a family of local
@@ -41,10 +48,12 @@ minima, whose negative disc bundle is its zero section.
 
 * `TauCeti.IsThomClass.bijective_thomMap_of_finrank_eq_zero`: the Thom isomorphism in cohomology
   for a bundle of rank zero, with coefficients in any module.
-* `TauCeti.IsThomClass.bijective_homologyThomMap_of_finrank_eq_zero`: the Thom isomorphism in
-  homology for a bundle of rank zero, with coefficients in a field.
 * `TauCeti.exists_isThomClass_of_finrank_eq_zero`: a bundle of rank zero has a Thom class with
   coefficients in any commutative ring.
+* `TauCeti.isIso_eulerClass_of_subsingleton`: in rank zero the Euler class map is an
+  isomorphism.
+* `TauCeti.isThomClass_iff_forall_isUnit`: in rank zero a class is a Thom class exactly when its
+  Euler class takes unit values.
 
 ## References
 
@@ -58,7 +67,7 @@ noncomputable section
 
 open Bundle CategoryTheory MonoidalCategory Module
 
-universe w
+universe w v u
 
 namespace TauCeti
 
@@ -86,6 +95,8 @@ theorem isIso_thomPairProj_of_subsingleton : IsIso (thomPairProj F E) := by
     (h ▸ bijective_proj_of_subsingleton F E) (h ▸ FiberBundle.isOpenMap_proj F E)
 
 end Subsingleton
+
+section ThomIsomorphism
 
 variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)]
@@ -153,38 +164,11 @@ theorem IsThomClass.bijective_thomMap_of_finrank_eq_zero (hF : finrank ℝ F = 0
   -- The degree is `finrank ℝ F`, which is `0` only propositionally.
   generalize hr : finrank ℝ F = r at u hgen h
   obtain rfl : r = 0 := hr ▸ hF
-  obtain rfl : p = m := by omega
-  -- After `Hᵖ(E, ∅) ≅ Hᵖ(E)`, the Thom map is the pull-back along the homeomorphism `π` followed
-  -- by the cup product with the image `ū` of `u`, whose values are units.
-  have hcup := bijective_singularCup_left_of_forall_isUnit M
-    ((thomPair F E).singularCohomologyπ _ K _ 0 u)
-    (isUnit_singularCohomologyZeroEval_of_subsingleton (u := u) hgen) p
-  have hπ := ConcreteCategory.bijective_of_isIso
-    ((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K M p)
-  have hpull := ConcreteCategory.bijective_of_isIso
-    ((singularCohomologyFunctor (ModuleCat.of K K) K M p).map (thomPairProj F E).op)
-  have e : ⇑((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K M p) ∘
-      ⇑(thomMap F E M 0 p p h u) = (fun a ↦ (thomPair F E).fst.singularCup K
-        (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p rfl a
-          ((thomPair F E).singularCohomologyπ _ K _ 0 u)) ∘
-      ⇑(TopCat.singularCohomologyMap (thomPairProj F E) p) := by
-    funext a
-    rw [Function.comp_apply, thomMap_apply, TopPair.singularCohomologyπ_singularCup]
-    -- The two sides differ only in the proof of `p + 0 = p`.
-    rfl
-  rw [← Function.Bijective.of_comp_iff' hπ, e]
-  exact hcup.comp hpull
-
-/-- **The homology Thom isomorphism in rank zero.** For a bundle of rank zero and a Thom class `u`
-with coefficients in a field `K`, the homology Thom map `x ↦ π_*(x ⌢ u)` is a bijection
-`Hₘ(E, E₀; K) ≅ Hₘ(B; K)` in every degree. -/
-theorem IsThomClass.bijective_homologyThomMap_of_finrank_eq_zero {K : Type w} [Field K]
-    (hF : finrank ℝ F = 0)
-    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
-    (hu : IsThomClass F E u) {p m : ℕ} (h : finrank ℝ F + p = m) :
-    Function.Bijective (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom :=
-  (bijective_homologyThomMap_iff F E h u).2
-    (hu.bijective_thomMap_of_finrank_eq_zero hF (ModuleCat.of K K) _)
+  -- The pair `(E, ∅)` has empty subspace, `π` is a homeomorphism and the values of the image of `u`
+  -- in `H⁰(E; K)` are units.
+  rw [thomMap_def]
+  exact TopPair.bijective_pullbackCup_of_isEmpty _ _ u
+    (isUnit_singularCohomologyZeroEval_of_subsingleton (u := u) hgen) M h
 
 variable (F E) in
 /-- **A bundle of rank zero has a Thom class** with coefficients in any commutative ring `K`, with
@@ -215,5 +199,74 @@ theorem exists_isThomClass_of_finrank_eq_zero [FiniteDimensional ℝ F] (hF : fi
   rw [eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne (X := TopCat.of (E b))
     (0 : E b) y]
   exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+
+end ThomIsomorphism
+
+section EulerClass
+
+variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [Subsingleton F]
+
+/-- **In rank zero the Euler class map is an isomorphism** `Hⁿ(E, E₀) ≅ Hⁿ(B)` in every degree:
+`E₀` is empty, so restriction `Hⁿ(E, E₀) ⟶ Hⁿ(E)` is an isomorphism, and so is pull-back along
+the zero section. -/
+instance isIso_eulerClass_of_subsingleton {C : Type u} [Category.{v} C]
+    [Limits.HasCoproducts.{w} C] [Abelian C] (R : C) (k : Type*) [Ring k] [Linear k C] (M : C)
+    (n : ℕ) :
+    IsIso (eulerClass R k M F E n) := by
+  have := isEmpty_thomPair_snd_of_subsingleton F E
+  rw [eulerClass_def]
+  infer_instance
+
+variable {F E} {K : Type w} [CommRing K]
+
+/-- **The fibre generators in rank zero.** A degree-zero relative class `u ∈ H⁰(E, E₀; K)`
+restricts to a generator of `H⁰(E_b, E_b ∖ {0}; K) ≅ K` on the fibre over `b` exactly when its
+Euler class takes a unit value at `b`. -/
+theorem span_singularCohomologyMap_fiberThomPairMap_eq_top_iff
+    (u : (thomPair F E).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0)
+    (b : B) :
+    Submodule.span K {TopPair.singularCohomologyMap (fiberThomPairMap F E b) 0 u} = ⊤ ↔
+      IsUnit (singularCohomologyZeroEval b
+        (eulerClass (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) F E 0 u)) := by
+  have := subsingleton_fiber_of_subsingleton F E b
+  -- The fibre is the single point `0`, so the value at `0` identifies its `H⁰` with `K`.
+  have : Unique (E b) := uniqueOfSubsingleton 0
+  set Q := TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))
+  have : PathConnectedSpace Q.fst := inferInstanceAs (PathConnectedSpace (E b))
+  refine (span_singularCohomologyMap_fiber_eq_top_iff u b).symm.trans <|
+    (singularCohomologyZeroEvalEquiv (X := Q.fst) (k := K)
+      (0 : E b)).span_singleton_eq_top_iff_isUnit.trans ?_
+  -- Both sides read the value at the zero vector over `b` of the image of `u` in `H⁰(E; K)`.
+  refine iff_of_eq (congrArg IsUnit ((singularCohomologyZeroEvalEquiv_apply _ _).trans <|
+    (singularCohomologyZeroEval_naturality _ _ _).trans ?_))
+  rw [eulerClass_def, ConcreteCategory.comp_apply, singularCohomologyZeroEval_naturality]
+  exact congrArg (singularCohomologyZeroEval · _)
+    ((fiberThomPairMap_fst_apply F E b 0).trans (zeroSectionHom_apply F E b).symm)
+
+/-- **The Thom classes in rank zero.** A degree-zero relative class `u ∈ H⁰(E, E₀; K)` of a bundle
+with zero model fibre, read in the degree `finrank ℝ F = 0`, is a Thom class exactly when its
+Euler class takes unit values at every point. -/
+theorem isThomClass_iff_forall_isUnit
+    (u : (thomPair F E).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0) :
+    IsThomClass F E ((finrank_zero_of_subsingleton (R := ℝ) (M := F)).symm ▸ u :
+      (thomPair F E).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
+        (finrank ℝ F)) ↔
+      ∀ b, IsUnit (singularCohomologyZeroEval b
+        (eulerClass (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) F E 0 u)) := by
+  -- Transport along `0 = finrank ℝ F` commutes with the fibre restrictions.
+  suffices h : ∀ {d : ℕ} (hd : 0 = d) (b : B),
+      Submodule.span K {TopPair.singularCohomologyMap (fiberThomPairMap F E b) d (hd ▸ u)} = ⊤ ↔
+        Submodule.span K {TopPair.singularCohomologyMap (fiberThomPairMap F E b) 0 u} = ⊤ by
+    rw [isThomClass_iff, and_iff_right (inferInstance : FiniteDimensional ℝ F)]
+    exact forall_congr' fun b ↦ (h (finrank_zero_of_subsingleton (R := ℝ) (M := F)).symm b).trans
+      (span_singularCohomologyMap_fiberThomPairMap_eq_top_iff u b)
+  intro d hd b
+  subst hd
+  rfl
+
+end EulerClass
 
 end TauCeti

@@ -15,7 +15,9 @@ The characteristic map of an `n`-cell of a relative CW complex `C` is defined on
 ball of the sup norm on `Fin n → ℝ`.  Read on the Euclidean disk `𝔻 n` of `TopCat` through the
 radial homeomorphism `TauCeti.diskHomeomorphClosedBall`, it is a morphism
 `TauCeti.cellDiskHom` to the skeleton `skeletonLT C (n + 1)`, and its restriction to the boundary
-sphere `∂𝔻 n` is the attaching map `TauCeti.cellAttachingMap` to `skeletonLT C n`.
+sphere `∂𝔻 n` is the attaching map `TauCeti.cellAttachingMap` to `skeletonLT C n`.  For a `1`-cell,
+the attaching map sends a point of `S⁰` to the image of its coordinate
+(`TauCeti.coe_cellAttachingMap_one_apply`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2 and Appendix.
 -/
@@ -38,7 +40,8 @@ variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} {C : Set X} [
 def cellDiskHom (j : cell C n) : TopCat.disk.{w} n ⟶ skeletonObj C (n + 1) :=
   TopCat.ofHom
     { toFun z := ⟨map n j (diskHomeomorphClosedBall n z),
-        map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).2)⟩
+        map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1
+            (diskHomeomorphClosedBall n z).property)⟩
       continuous_toFun := ((continuous_map_closedBall j).comp
         (diskHomeomorphClosedBall n).continuous).subtype_mk _ }
 
@@ -68,6 +71,13 @@ lemma coe_cellAttachingMap_apply (j : cell C n) (z : TopCat.diskBoundary.{w} n) 
     (cellAttachingMap j z : X) =
       map n j (diskHomeomorphClosedBall n (TopCat.diskBoundaryInclusion n z)) :=
   (rfl)
+
+/-- The attaching map of a `1`-cell sends a point of `S⁰` to the image under the characteristic
+map of its coordinate. -/
+lemma coe_cellAttachingMap_one_apply (j : cell C 1) (z : TopCat.diskBoundary.{w} 1) :
+    (cellAttachingMap j z : X) =
+      map 1 j fun _ ↦ ((TopCat.diskBoundaryInclusion 1 z).down : EuclideanSpace ℝ (Fin 1)) 0 :=
+  congrArg (map 1 j) (coe_diskHomeomorphClosedBall_one_apply _)
 
 /-- The attaching map of a cell maps the boundary sphere onto the frontier of the cell. -/
 @[simp]

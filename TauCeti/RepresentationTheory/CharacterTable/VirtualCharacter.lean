@@ -59,6 +59,8 @@ complex character that is an integer combination of characters of representation
   closed under the pointwise product and contains the constant `1`.
 * `TauCeti.comp_mem_virtualCharacters`: pulling back along a monoid homomorphism preserves virtual
   characters.
+* `TauCeti.irreducibleCharacters_subset_virtualCharacters`: every irreducible character is a
+  virtual character.
 * `TauCeti.virtualCharacters_le_classFunction`: a virtual character is a class function, and
   `TauCeti.conj_apply_of_mem_virtualCharacters`: over `ℂ` inverting the argument conjugates the
   value, `conj (f g) = f g⁻¹`.
@@ -245,7 +247,7 @@ theorem virtualCharacters_le_classFunction :
   virtualCharacters_le fun V => by
     have h : (ClassFunction.ofCharacter V.ρ : G → k) = V.character :=
       funext fun g => ClassFunction.ofCharacter_apply V.ρ g
-    exact h ▸ (ClassFunction.ofCharacter V.ρ).2
+    exact h ▸ (ClassFunction.ofCharacter V.ρ).property
 
 end ClassFunctions
 
@@ -289,6 +291,12 @@ theorem irreducibleCharacters_subset_range :
   intro f hf
   obtain ⟨n, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.mp hf
   exact ⟨FDRep.of ρ, rfl⟩
+
+/-- **Every irreducible character is a virtual character.** -/
+theorem irreducibleCharacters_subset_virtualCharacters :
+    irreducibleCharacters k G ⊆ virtualCharacters k G := fun _ hf => by
+  obtain ⟨V, rfl⟩ := irreducibleCharacters_subset_range hf
+  exact character_mem_virtualCharacters V
 
 end Irreducible
 
@@ -336,16 +344,8 @@ theorem virtualCharacters_eq_closure_irreducibleCharacters :
 /-- **An irreducible character is a virtual character.** -/
 @[simp]
 theorem irreducibleCharacter_mem_virtualCharacters (i : Fin (Nat.card (ConjClasses G))) :
-    irreducibleCharacter k i ∈ virtualCharacters k G := by
-  rw [virtualCharacters_eq_closure_irreducibleCharacters]
-  exact AddSubgroup.subset_closure (irreducibleCharacter_mem k i)
-
-/-- The enumerated irreducible characters exhaust the irreducible characters. -/
-theorem range_irreducibleCharacter :
-    Set.range (irreducibleCharacter (G := G) k) = irreducibleCharacters k G := by
-  ext f
-  exact ⟨by rintro ⟨i, rfl⟩; exact irreducibleCharacter_mem k i,
-    fun hf => exists_irreducibleCharacter_eq k hf⟩
+    irreducibleCharacter k i ∈ virtualCharacters k G :=
+  irreducibleCharacters_subset_virtualCharacters (irreducibleCharacter_mem k i)
 
 /-- **A function `G → k` is a virtual character exactly when it is an integer combination of the
 irreducible characters.**
@@ -599,7 +599,7 @@ private theorem exists_char_sub_eq_of_ne_zero {V W : Type*} [AddCommGroup V] [Mo
         Representation.IntertwiningMap.coe_toLinearMap, map_sub]
       exact sub_eq_zero.mpr (by simpa [ψ] using hxy)
     exact Subtype.ext (sub_eq_zero.mp (Submodule.disjoint_def.mp hC'.disjoint _ hker
-      (C.toSubmodule.sub_mem x.2 y.2)))
+      (C.toSubmodule.sub_mem x.property y.property)))
   obtain ⟨ρ', hρ'⟩ := exists_isCompl ψ.range
   refine ⟨ρ', φ.ker, ?_, ?_⟩
   · -- the image of `ψ` is nonzero, since otherwise `C` is zero and `φ` vanishes

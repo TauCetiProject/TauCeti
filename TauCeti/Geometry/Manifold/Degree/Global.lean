@@ -47,8 +47,6 @@ cohomology of a compact manifold `M`
 (`TauCeti.compactlySupportedDeRhamCohomology.map_eq_of_homotopy`), so for compact `M` they have
 the same degree (`TauCeti.degree_eq_of_homotopy`).
 
-As in the local computation, `M` and `N` are modelled on the same vector space `E`.
-
 The proof is Lee's. Near `y` the formula holds by the stack-of-records computation
 `TauCeti.exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul`; choose a closed
 top form `θ` of integral one supported there. On the connected manifold `N` integration is an
@@ -63,9 +61,13 @@ linear, and the integral over `M` of `f^*θ` is `deg_y(f)`.
   compactly supported cohomology, read through integration, is multiplication by the degree.
 * `TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul`,
   `TauCeti.integralTopForm_mpullback_eq_degree_mul`: `∫_M f^*φ = deg(f) ∫_N φ`.
+* `TauCeti.integralTopForm_mpullback_comp_eq_degree_mul`: for compact `N` and a smooth map
+  `g : N → P`, `∫_M (g ∘ f)^*β = deg(f) ∫_N g^*β`.
 * `TauCeti.degreeAtRegularValue_eq_of_isRegularValue`: the signed count does not depend on the
   regular value.
 * `TauCeti.degree_eq_degreeAtRegularValue`: the degree is the signed count at every regular value.
+* `TauCeti.degree_eq_ncard_of_isOrientationPreservingAt`: the degree of a map preserving
+  orientations along a fibre is the number of points of that fibre.
 * `TauCeti.surjective_of_degree_ne_zero`: a proper map of nonzero degree is surjective.
 * `TauCeti.degree_comp`: the degree of a composite is the product of the degrees.
 * `TauCeti.degree_eq_of_homotopy`: smoothly homotopic maps from a compact manifold have the same
@@ -90,10 +92,12 @@ open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
-variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E E' H H' M N : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [BoundarylessManifold I M] [T2Space M]
-  [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J ∞ N] [BoundarylessManifold J N] [T2Space N] [SigmaCompactSpace N]
   [ConnectedSpace N] {k : ℕ}
 
@@ -114,11 +118,12 @@ theorem integral_map_eq_degreeAtRegularValue_mul [SigmaCompactSpace M]
   -- On the connected manifold `N`, the class of `θ` spans `H^k_c(N)`.
   have hc : c = integral o' c • mk J k θ :=
     injective_integral o' (by simp [hθ])
-  have hb : Module.Basis (Fin k) ℝ E :=
-    Module.finBasisOfFinrankEq ℝ E (by simpa using o'.card_eq.symm)
-  have hθi : IntegrableTopForm θ.1.1 :=
-    θ.1.isSmoothForm.integrableTopForm
-      ((mem_compactlySupportedForms J).mp ((mem_compactlySupportedClosedForms J).mp θ.2).1) hb
+  have hb : Module.Basis (Fin k) ℝ E' :=
+    Module.finBasisOfFinrankEq ℝ E' (by simpa using o'.card_eq.symm)
+  have hθi : IntegrableTopForm θ.val.val :=
+    θ.val.isSmoothForm.integrableTopForm
+      ((mem_compactlySupportedForms J).mp ((mem_compactlySupportedClosedForms J).mp θ.property).1)
+          hb
   conv_lhs => rw [hc]
   rw [map_smul, map_smul, map_mk, integral_mk, compactlySupportedClosedForms.coe_coe_mpullback,
     hloc _ hθi hθV, hθ, smul_eq_mul]
@@ -133,7 +138,7 @@ theorem integralTopForm_mpullback_eq_degreeAtRegularValue_mul
     (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) {f : M → N}
     (hf : ContMDiff I J ∞ f) (hfp : IsProperMap f) {y : N} (hy : IsRegularValue I J f y)
     {φ : RoughForm J N ℝ k} (hφ : IsSmoothForm J ∞ φ)
-    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ)) :
+    (hc : IsCompact (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ)) :
     integralTopForm o (mpullback I J f φ) =
       degreeAtRegularValue o o' f y * integralTopForm o' φ := by
   have := hfp.sigmaCompactSpace
@@ -173,6 +178,18 @@ theorem degree_eq_degreeAtRegularValue (o : Manifold.Orientation I M (Fin k))
   rw [degree_eq_degreeAtRegularValue_choose h]
   exact degreeAtRegularValue_eq_of_isRegularValue o o' hf hfp h.choose_spec hy
 
+/-- **The degree of an orientation-preserving map counts its fibres.** If a proper smooth map
+preserves the orientations at every point of the fibre over `y`, its derivatives there are
+invertible, so `y` is a regular value, and its degree is the number of points of that fibre. -/
+theorem degree_eq_ncard_of_isOrientationPreservingAt
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) {f : M → N}
+    (hf : ContMDiff I J ∞ f) (hfp : IsProperMap f) {y : N}
+    (h : ∀ x ∈ f ⁻¹' {y}, Manifold.Orientation.IsOrientationPreservingAt o o' f x) :
+    degree o o' f = (f ⁻¹' {y}).ncard := by
+  rw [degree_eq_degreeAtRegularValue o o' hf hfp (y := y) <| isRegularValue_iff.mpr
+    fun x hx ↦ isRegularPoint_iff.mpr (h x hx).isInvertible_mfderiv.surjective,
+    degreeAtRegularValue_eq_ncard h]
+
 /-- Pullback along a proper smooth map on top compactly supported cohomology, read through
 integration, is multiplication by the degree. -/
 theorem compactlySupportedDeRhamCohomology.integral_map_eq_degree_mul [SigmaCompactSpace M]
@@ -181,7 +198,8 @@ theorem compactlySupportedDeRhamCohomology.integral_map_eq_degree_mul [SigmaComp
     (c : compactlySupportedDeRhamCohomology J N k) :
     integral o (map f hf hfp k c) = degree o o' f * integral o' c := by
   -- Sard's theorem provides a regular value.
-  obtain ⟨y, hy⟩ := (dense_isRegularValue rfl (hf.mdifferentiable (by simp))).nonempty
+  obtain ⟨y, hy⟩ := (dense_isRegularValue (o.card_eq.symm.trans o'.card_eq)
+    (hf.mdifferentiable (by simp))).nonempty
   rw [degree_eq_degreeAtRegularValue o o' hf hfp hy]
   exact integral_map_eq_degreeAtRegularValue_mul o o' hf hfp hy c
 
@@ -190,14 +208,33 @@ smooth top form `φ` on `N`, `∫_M f^*φ = deg(f) ∫_N φ`. -/
 theorem integralTopForm_mpullback_eq_degree_mul (o : Manifold.Orientation I M (Fin k))
     (o' : Manifold.Orientation J N (Fin k)) {f : M → N} (hf : ContMDiff I J ∞ f)
     (hfp : IsProperMap f) {φ : RoughForm J N ℝ k} (hφ : IsSmoothForm J ∞ φ)
-    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ)) :
+    (hc : IsCompact (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ)) :
     integralTopForm o (mpullback I J f φ) = degree o o' f * integralTopForm o' φ := by
   -- The domain of a proper map to a σ-compact space is σ-compact, so Sard's theorem provides a
   -- regular value.
   have := hfp.sigmaCompactSpace
-  obtain ⟨y, hy⟩ := (dense_isRegularValue rfl (hf.mdifferentiable (by simp))).nonempty
+  obtain ⟨y, hy⟩ := (dense_isRegularValue (o.card_eq.symm.trans o'.card_eq)
+    (hf.mdifferentiable (by simp))).nonempty
   rw [degree_eq_degreeAtRegularValue o o' hf hfp hy]
   exact integralTopForm_mpullback_eq_degreeAtRegularValue_mul o o' hf hfp hy hφ hc
+
+omit [SigmaCompactSpace N] in
+/-- **The degree formula for forms pulled back through a compact manifold.** For a proper smooth
+map `f : M → N` to a compact manifold, a smooth map `g : N → P` and a smooth top form `β` on `P`,
+`∫_M (g ∘ f)^*β = deg(f) ∫_N g^*β`. -/
+theorem integralTopForm_mpullback_comp_eq_degree_mul {E'' H'' P : Type*}
+    [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+    {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K ∞ P]
+    [CompactSpace N]
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) {f : M → N}
+    {g : N → P} (hf : ContMDiff I J ∞ f) (hfp : IsProperMap f) (hg : ContMDiff J K ∞ g)
+    (β : SmoothForm K P ℝ k) :
+    integralTopForm o (SmoothForm.mpullback (g ∘ f) (hg.comp hf) β).val =
+      degree o o' f * integralTopForm o' (SmoothForm.mpullback g hg β).val := by
+  rw [← SmoothForm.mpullback_mpullback _ _ hf hg, SmoothForm.coe_mpullback]
+  -- On the compact manifold `N`, every form has compact support.
+  exact integralTopForm_mpullback_eq_degree_mul o o' hf hfp (SmoothForm.isSmoothForm _)
+    (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _))
 
 /-- A proper smooth map of nonzero degree to a connected manifold of the same dimension is
 surjective. -/
@@ -214,7 +251,8 @@ omit [SigmaCompactSpace N] in
 /-- **Multiplicativity of the degree.** For proper smooth maps `f : M → N` and `g : N → P` between
 oriented boundaryless manifolds of the same dimension, with `N` and `P` connected,
 `deg (g ∘ f) = deg g · deg f`. -/
-theorem degree_comp {H'' P : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ E H''}
+theorem degree_comp {E'' H'' P : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    [FiniteDimensional ℝ E''] [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''}
     [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K ∞ P] [BoundarylessManifold K P]
     [T2Space P] [SigmaCompactSpace P] [ConnectedSpace P]
     (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k))

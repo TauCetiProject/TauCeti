@@ -99,7 +99,7 @@ theorem typeAShellEquiv_cartan_single (k : Fin r) :
 /-- The root vector of a root goes to the signed matrix unit of its pair of indices. -/
 theorem typeAShellEquiv_root (a : (CartanMatrix.A r).normTwoShell) :
     typeAShellEquiv r (root _ a) =
-      specialLinearSignedRoot r ℤ _ _ ((typeANormTwoShellEquiv r).symm a).2 := by
+      specialLinearSignedRoot r ℤ _ _ ((typeANormTwoShellEquiv r).symm a).property := by
   rw [← basis_inr, typeAShellEquiv, Module.Basis.equiv_apply, Equiv.sumCongr_apply, Sum.map_inr,
     specialLinearRootBasis_inr]
 

@@ -8,8 +8,10 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.IsTensorProduct
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 import Mathlib.LinearAlgebra.Matrix.Nonsingular
 import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.LinearAlgebra.Basis.Submodule
 
 /-!
 # The dimension of a base change
@@ -24,6 +26,9 @@ product — the situation the `IsBaseChange` interface exists to serve.
 Mathlib proves the corresponding facts for the concrete tensor product (`Module.finrank_baseChange`
 and the `Module.Finite` instance on `S ⊗[R] M`); transporting them along
 `IsBaseChange.equiv : S ⊗[R] M ≃ₗ[S] N` is all that is needed.
+
+We also record `Submodule.finrank_span_image_comp`: extending scalars of a subspace of `ι → K`
+entrywise along any ring homomorphism `φ : K →+* L` into an integral domain preserves `finrank`.
 -/
 
 public section
@@ -48,3 +53,24 @@ theorem finrank_eq_of_free (hf : IsBaseChange S f) [Nontrivial S] [Module.Free R
   rw [← hf.equiv.finrank_eq, Module.finrank_baseChange]
 
 end IsBaseChange
+
+namespace Submodule
+
+/-- Extending scalars of a subspace `W` of `ι → K` entrywise along a ring homomorphism
+`φ : K →+* L` into an integral domain `L` preserves its rank. -/
+theorem finrank_span_image_comp {K L ι : Type*} [Field K] [CommRing L] [IsDomain L] [Finite ι]
+    (W : Submodule K (ι → K)) (φ : K →+* L) :
+    Module.finrank L (span L ((fun v : ι → K ↦ φ ∘ v) '' (W : Set (ι → K)))) =
+      Module.finrank K W := by
+  cases nonempty_fintype ι
+  let _ : Algebra K L := φ.toAlgebra
+  have : FaithfulSMul K L := (faithfulSMul_iff_algebraMap_injective K L).2 φ.injective
+  let b := Module.finBasis K W
+  have hli : LinearIndependent L (fun j ↦ Pi.algebraMap ι K L (b j : ι → K)) :=
+    linearIndependent_algebraMap_comp_iff.2 b.linearIndependent_coe_basis
+  have himg : (fun v : ι → K ↦ φ ∘ v) '' (W : Set (ι → K)) =
+      (Pi.algebraMap ι K L) '' (W : Set (ι → K)) := by
+    ext; simp [Pi.algebraMap, Function.comp_def, RingHom.algebraMap_toAlgebra]
+  rw [himg, b.span_image (Pi.algebraMap ι K L), finrank_span_eq_card hli, Fintype.card_fin]
+
+end Submodule

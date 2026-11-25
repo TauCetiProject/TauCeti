@@ -33,6 +33,9 @@ subtraction when `n = 0`), and is therefore solvable, over every ring.
   decreasing.
 * `TauCeti.UpperUnitriangularGroup.commutator_superdiagonalSubgroup_le`: the central-series
   estimate `[U^r, U^s] ≤ U^(r+s)`.
+* `TauCeti.UpperUnitriangularGroup.superdiagonalSubgroup_normal`: every `U^r` is normal.
+* `TauCeti.UpperUnitriangularGroup.superdiagonalSubgroup_le_comap_map`: base change preserves
+  every `U^r`.
 * `TauCeti.UpperUnitriangularGroup.lowerCentralSeries_le_superdiagonalSubgroup`: the `r`-th
   lower central subgroup lies in `U^(r+1)`.
 * `TauCeti.UpperUnitriangularGroup.instIsNilpotent`: upper-unitriangular matrix groups are
@@ -167,9 +170,9 @@ def superdiagonalSubgroup (r : ℕ) : Subgroup (upperUnitriangularGroup (Fin n) 
     have heq : Ginv - 1 = -((G - 1) * Ginv) := by
       have hmul : G * Ginv = 1 := by
         -- The two matrices are the values of a unit and its inverse.
-        change (g.1 : Matrix (Fin n) (Fin n) R) *
-          (g.1⁻¹ : Matrix.GeneralLinearGroup (Fin n) R) = 1
-        exact Units.mul_inv g.1
+        change (g.val : Matrix (Fin n) (Fin n) R) *
+          (g.val⁻¹ : Matrix.GeneralLinearGroup (Fin n) R) = 1
+        exact Units.mul_inv g.val
       calc
         Ginv - 1 = -(1 - Ginv) := by abel
         _ = -(G * Ginv - 1 * Ginv) := by rw [hmul, one_mul]
@@ -250,9 +253,9 @@ theorem commutator_superdiagonalSubgroup_le (r s : ℕ) :
         (G * H - H * G) * (K : Matrix (Fin n) (Fin n) R) := by
     have hmul : H * G * (K : Matrix (Fin n) (Fin n) R) = 1 := by
       -- The product and `K` are the values of a unit and its inverse.
-      change ((h * g).1 : Matrix (Fin n) (Fin n) R) *
-        ((h * g).1⁻¹ : Matrix.GeneralLinearGroup (Fin n) R) = 1
-      exact Units.mul_inv (h * g).1
+      change ((h * g).val : Matrix (Fin n) (Fin n) R) *
+        ((h * g).val⁻¹ : Matrix.GeneralLinearGroup (Fin n) R) = 1
+      exact Units.mul_inv (h * g).val
     have hK :
         Ginv * Hinv = (K : Matrix (Fin n) (Fin n) R) := by
       simp [Ginv, Hinv, K]
@@ -271,6 +274,14 @@ theorem commutator_superdiagonalSubgroup_le (r s : ℕ) :
     (((((⁅g, h⁆ : upperUnitriangularGroup (Fin n) R) :
       Matrix.GeneralLinearGroup (Fin n) R) : Matrix (Fin n) (Fin n) R)) - 1)
   exact heq.symm ▸ hright
+
+/-- Every term of the superdiagonal filtration is a normal subgroup of `Uₙ(R)`. -/
+instance superdiagonalSubgroup_normal (r : ℕ) :
+    (superdiagonalSubgroup (R := R) (n := n) r).Normal :=
+  Subgroup.commutator_top_left_le_iff.mp <| by
+    rw [← superdiagonalSubgroup_one (R := R) (n := n)]
+    exact (commutator_superdiagonalSubgroup_le 1 r).trans
+      (superdiagonalSubgroup_antitone (Nat.le_add_left r 1))
 
 /-- The `r`-th lower central subgroup has zero entries on the first `r` superdiagonals.
 Mathlib numbers the lower central series starting with the whole group at `r = 0`. -/
@@ -317,5 +328,21 @@ theorem nilpotencyClass_le {m : Type*} [Fintype m] [LinearOrder m] :
     _ ≤ Fintype.card m - 1 :=
       Subgroup.lowerCentralSeries_eq_bot_iff_nilpotencyClass_le.mp
         lowerCentralSeries_pred_eq_bot
+
+end TauCeti.UpperUnitriangularGroup
+
+namespace TauCeti.UpperUnitriangularGroup
+
+variable {R S : Type*} [CommRing R] [CommRing S] {n : ℕ}
+
+/-- Base change along a ring homomorphism preserves every term of the superdiagonal filtration. -/
+theorem superdiagonalSubgroup_le_comap_map (f : R →+* S) (r : ℕ) :
+    superdiagonalSubgroup (R := R) (n := n) r ≤
+      (superdiagonalSubgroup (R := S) (n := n) r).comap (map f) := by
+  intro g hg
+  rw [Subgroup.mem_comap, mem_superdiagonalSubgroup_iff]
+  intro i j hij
+  rw [map_apply, (mem_superdiagonalSubgroup_iff r g).mp hg i j hij]
+  by_cases h : i = j <;> simp [Matrix.one_apply, h]
 
 end TauCeti.UpperUnitriangularGroup

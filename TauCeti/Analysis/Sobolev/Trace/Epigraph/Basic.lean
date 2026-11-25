@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.GraphFlattening
+public import TauCeti.Analysis.Calculus.GraphFlattening.Basic
 public import TauCeti.Analysis.Sobolev.Trace.Kernel
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 
@@ -133,19 +133,20 @@ inverse the precomposition with `TauCeti.graphFlattening φ`. Both directions ha
 `1 + K` (`TauCeti.W1p.norm_normalEpigraphEquivL_le`). -/
 def W1p.normalEpigraphEquivL (hφ : LipschitzWith K φ) :
     W1p volume (normalEpigraph φ) p ≃L[ℝ] W1p volume (normalHalfSpace (E := E) 0) p :=
-  ContinuousLinearEquiv.equivOfInverse (flattenL hφ) (unflattenL hφ)
-    (unflattenL_flattenL hφ) (flattenL_unflattenL hφ)
+  ContinuousLinearEquiv.ofContinuousLinearMap (flattenL hφ) (unflattenL hφ)
+    (ContinuousLinearMap.ext (flattenL_unflattenL hφ))
+    (ContinuousLinearMap.ext (unflattenL_flattenL hφ))
 
 private theorem normalEpigraphEquivL_apply_eq (hφ : LipschitzWith K φ)
     (u : W1p volume (normalEpigraph φ) p) :
     W1p.normalEpigraphEquivL hφ u = flattenL hφ u :=
-  ContinuousLinearEquiv.equivOfInverse_apply _ _ _ _ u
+  congrFun (ContinuousLinearEquiv.coe_ofContinuousLinearMap _ _ _ _) u
 
 private theorem normalEpigraphEquivL_symm_apply_eq (hφ : LipschitzWith K φ)
     (v : W1p volume (normalHalfSpace (E := E) 0) p) :
     (W1p.normalEpigraphEquivL hφ).symm v = unflattenL hφ v := by
-  rw [W1p.normalEpigraphEquivL, ContinuousLinearEquiv.symm_equivOfInverse,
-    ContinuousLinearEquiv.equivOfInverse_apply]
+  rw [W1p.normalEpigraphEquivL, ContinuousLinearEquiv.symm_ofContinuousLinearMap,
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap]
 
 /-- Flattening multiplies the `W^{1,p}` norm by at most `1 + K`. -/
 theorem W1p.norm_normalEpigraphEquivL_le (hφ : LipschitzWith K φ)

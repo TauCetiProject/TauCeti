@@ -71,7 +71,7 @@ components, concatenated in the component order. -/
 theorem discriminantFactors_eq (r : RootfulNiemeierType) :
     r.discriminantFactors =
       (List.ofFn fun i : Fin r.components.length ↦
-        r.components[i].1.glueCyclicFactors).flatten := by
+        r.components[i].val.glueCyclicFactors).flatten := by
   cases r <;> decide
 
 /-- **The displayed discriminant groups.**  For every rootful row, the discriminant group of the
@@ -79,9 +79,10 @@ orthogonal sum of the root lattices of its ordered components is additively equi
 displayed product of cyclic groups `∏ ℤ/dₖ`, where `d = r.discriminantFactors`. -/
 theorem nonempty_addEquiv_discriminantGroup (r : RootfulNiemeierType) :
     Nonempty ((pi fun i : Fin r.components.length ↦
-        r.components[i].1.rootLattice r.components[i].2.2).DiscriminantGroup ≃+
+        r.components[i].val.rootLattice r.components[i].property.2).DiscriminantGroup ≃+
       ((k : Fin r.discriminantFactors.length) → ZMod r.discriminantFactors[k])) :=
-  DynkinType.nonempty_addEquiv_discriminantGroup_pi_rootLattice _ _ (fun i ↦ r.components[i].2.1)
+  DynkinType.nonempty_addEquiv_discriminantGroup_pi_rootLattice _ _
+      (fun i ↦ r.components[i].property.1)
     (discriminantFactors_eq r).symm
 
 end TauCeti.RootfulNiemeierType

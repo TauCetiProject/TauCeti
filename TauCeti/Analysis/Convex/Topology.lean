@@ -6,11 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Topology
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Sets.Compacts
 public import TauCeti.Analysis.Convex.Join
+import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 
 /-!
 # Topological properties of convex sets and segment unions
+
+In a Hausdorff finite-dimensional real topological vector space, the interior of the closure of a
+convex set equals its interior (`Convex.interior_closure`, Rockafellar, *Convex Analysis*,
+Theorem 6.3); unlike Mathlib's `Convex.interior_closure_eq_interior_of_nonempty_interior`, no
+nonempty-interior assumption is needed, because an affine subspace in finite dimension is closed and
+so a convex set with empty interior lies in a closed proper affine subspace. Hence a convex set and
+its closure have the same frontier (`Convex.frontier_closure`), so measurements of the frontier of a
+bounded convex set, such as its surface area, may be computed on its compact closure.
 
 A convex set symmetric about the origin has `0` in its interior as soon as its interior is
 nonempty. This lets volume arguments obtain the neighbourhood of the origin needed to use the
@@ -27,13 +37,50 @@ closed set `C` misses `⋃ x ∈ s, segment 𝕜 x₀ x` for an arbitrary set `s
 topological additive group, the convex join of any two compact sets is compact
 (`IsCompact.convexJoin`), so every compact set `K` lies in a compact set star-convex about any
 given point `y`, the union of the segments from `y` to `y` and to the points of `K`
-(`TopologicalSpace.Compacts.starHull`).
+(`TopologicalSpace.Compacts.starHull`). For an inducing map `j : U → E` whose range is star-convex
+about `y ∈ range j`, the preimages of these star hulls are cofinal among the compact subsets of `U`
+(`Topology.IsInducing.exists_compacts_le_starConvex_image`). Over a linearly ordered field with
+compact closed intervals (`CompactIccSpace`), in a topological vector space, the convex hull of a
+finite union of sets with compact convex hulls is compact (`TauCeti.isCompact_convexHull_union`,
+`Finset.isCompact_convexHull_biUnion`), although the convex hull of a single compact set need not
+be in infinite dimension.
 -/
 
 public section
 
 open Filter Set
 open scoped Pointwise Topology
+
+private lemma interior_closure_eq_interior_normed {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] {t : Set F} (ht : Convex ℝ t) :
+    interior (closure t) = interior t := by
+  by_cases hne : (interior t).Nonempty
+  · exact ht.interior_closure_eq_interior_of_nonempty_interior hne
+  · refine subset_antisymm (fun x hx ↦ False.elim (hne ?_)) (interior_mono subset_closure)
+    rw [ht.interior_nonempty_iff_affineSpan_eq_top, ← top_le_iff,
+      ← ht.closure.interior_nonempty_iff_affineSpan_eq_top.1 ⟨x, hx⟩, affineSpan_le]
+    exact closure_minimal (subset_affineSpan ℝ t) (affineSpan ℝ t).isClosed_of_finiteDimensional
+
+/-- In a Hausdorff finite-dimensional real topological vector space, the interior of the closure of
+a convex set equals its interior (Rockafellar, *Convex Analysis*, Theorem 6.3). Both hypotheses on
+the ambient space are necessary: in the indiscrete topology on `ℝ` the singleton `{0}` is convex
+with empty interior and closure `univ`, and in an infinite-dimensional Banach space a dense proper
+subspace is convex with empty interior and closure `univ`. -/
+theorem Convex.interior_closure {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E] [FiniteDimensional ℝ E]
+    {s : Set E} (hs : Convex ℝ s) : interior (closure s) = interior s := by
+  let e : E ≃L[ℝ] (Fin (Module.finrank ℝ E) → ℝ) :=
+    (Module.finBasis ℝ E).equivFun.toContinuousLinearEquiv
+  apply e.toHomeomorph.injective.image_injective
+  rw [e.toHomeomorph.image_interior, e.toHomeomorph.image_closure, e.toHomeomorph.image_interior]
+  exact interior_closure_eq_interior_normed (hs.linear_image e.toLinearMap)
+
+/-- In a Hausdorff finite-dimensional real topological vector space, a convex set and its closure
+have the same frontier, since they have the same interior (`Convex.interior_closure`). -/
+theorem Convex.frontier_closure {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E] [FiniteDimensional ℝ E]
+    {s : Set E} (hs : Convex ℝ s) : frontier (closure s) = frontier s := by
+  rw [frontier, frontier, closure_closure, hs.interior_closure]
 
 /-- The interior of a sum of convex sets with nonempty interiors is the sum of their
 interiors. -/
@@ -156,6 +203,38 @@ theorem IsCompact.convexJoin {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [A
   rw [this]
   exact ((hs.prod ht).prod isCompact_Icc).image (by fun_prop)
 
+section ConvexHullUnion
+
+variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜]
+  [CompactIccSpace 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+
+/-- If two sets have compact convex hulls, so does their union. When both sets are nonempty, its
+convex hull is the convex join of the two convex hulls. -/
+theorem TauCeti.isCompact_convexHull_union {s t : Set E} (hs : IsCompact (convexHull 𝕜 s))
+    (ht : IsCompact (convexHull 𝕜 t)) : IsCompact (convexHull 𝕜 (s ∪ t)) := by
+  rcases s.eq_empty_or_nonempty with rfl | hs₀
+  · simpa using ht
+  rcases t.eq_empty_or_nonempty with rfl | ht₀
+  · simpa using hs
+  rw [convexHull_union hs₀ ht₀]
+  exact hs.convexJoin ht
+
+/-- If finitely many sets have compact convex hulls, so does their union. In particular the convex
+hull of a finite union of compact convex sets is compact. -/
+theorem Finset.isCompact_convexHull_biUnion {ι : Type*} (s : Finset ι) {t : ι → Set E}
+    (ht : ∀ i ∈ s, IsCompact (convexHull 𝕜 (t i))) :
+    IsCompact (convexHull 𝕜 (⋃ i ∈ s, t i)) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s _ ih =>
+    rw [Finset.set_biUnion_insert]
+    exact TauCeti.isCompact_convexHull_union (ht i (Finset.mem_insert_self i s))
+      (ih fun j hj ↦ ht j (Finset.mem_insert_of_mem hj))
+
+end ConvexHullUnion
+
 namespace TopologicalSpace.Compacts
 
 variable (𝕜 : Type*) {E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [IsOrderedRing 𝕜]
@@ -200,7 +279,28 @@ variable {𝕜 y K} in
 `y`. -/
 theorem starHull_subset {s : Set E} (hs : StarConvex 𝕜 y s) (hy : y ∈ s) (hK : (K : Set E) ⊆ s) :
     (K.starHull 𝕜 y : Set E) ⊆ s := by
-  rw [coe_starHull, convexJoin_singleton_left]
-  exact iUnion₂_subset fun z hz ↦ hs.segment_subset (insert_subset hy hK hz)
+  rw [coe_starHull]
+  exact hs.convexJoin_singleton_subset (insert_subset hy hK)
 
 end TopologicalSpace.Compacts
+
+open TopologicalSpace in
+/-- For an inducing map `j : U → E` whose range is star-convex about one of its points `y`, every
+compact subset `K₀` of `U` lies in a compact subset `K` whose image contains `y` and is star-convex
+about `y`: the preimage of the star hull about `y` of the image of `K₀`, which lies in the range of
+`j`. -/
+theorem Topology.IsInducing.exists_compacts_le_starConvex_image {𝕜 E U : Type*} [Ring 𝕜]
+    [PartialOrder 𝕜] [IsOrderedRing 𝕜] [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [AddCommGroup E]
+    [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+    [TopologicalSpace U] {j : U → E} (hj : IsInducing j) {y : E} (hU : StarConvex 𝕜 y (range j))
+    (hy : y ∈ range j) (K₀ : Compacts U) :
+    ∃ K : Compacts U, K₀ ≤ K ∧ StarConvex 𝕜 y (j '' (K : Set U)) ∧ y ∈ j '' (K : Set U) := by
+  let S := (K₀.map j hj.continuous).starHull 𝕜 y
+  have hS : (S : Set E) ⊆ range j := Compacts.starHull_subset hU hy (image_subset_range _ _)
+  have hjS : j '' (j ⁻¹' S) = S := image_preimage_eq_of_subset hS
+  refine ⟨⟨j ⁻¹' S, hj.isCompact_preimage' S.isCompact hS⟩,
+    fun u hu ↦ Compacts.le_starHull 𝕜 y _ ⟨u, hu, rfl⟩, ?_, ?_⟩
+  · rw [Compacts.coe_mk, hjS]
+    exact Compacts.starConvex_starHull 𝕜 y _
+  · rw [Compacts.coe_mk, hjS]
+    exact Compacts.mem_starHull_self 𝕜 y _

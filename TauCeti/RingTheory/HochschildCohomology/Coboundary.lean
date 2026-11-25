@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.CyclicCohomology.Cochain
 public import TauCeti.RingTheory.Derivation.Bimodule
 import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.AlternatingSum
+import Mathlib.Tactic.FinCases
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -53,14 +54,18 @@ the cochains with coefficients in the dual bimodule, see
   `ContinuousLinearMap.hochschildBimoduleCoface_hochschildBimoduleCoface`.
 * `TauCeti.hochschildBimoduleCoface_hochschildBimoduleCoface`: the cosimplicial identities
   `∂_{j+1} ∘ ∂ᵢ = ∂ᵢ ∘ ∂_j` for `i ≤ j`.
+* `TauCeti.hochschildBimoduleCoface_castSucc_apply_eq_succ_apply_of_apply_eq_one`: on a tuple
+  with `aⱼ = 1`, the cofaces `∂ⱼ` and `∂ⱼ₊₁` agree.
 * `TauCeti.hochschildBimoduleCoboundary_hochschildBimoduleCoboundary`: `δ (δ ψ) = 0`.
-* `TauCeti.hochschildBimoduleCoboundary_apply_eq_add_sum_add`: the explicit formula for `δ`.
+* `TauCeti.hochschildBimoduleCoboundary_apply_eq_add_sum_add`: the explicit formula for `δ`, and
+  `TauCeti.hochschildBimoduleCoboundary_three_apply` in degree three.
 * `TauCeti.hochschildBimoduleCoboundary_constOfIsEmpty_eq_zero_iff`: the degree-zero cocycles
   are the central elements.
 * `TauCeti.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff`: the degree-one cocycles
   are the derivations.
 * `TauCeti.BimoduleDerivation.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero`: a
   `TauCeti.BimoduleDerivation` is a degree-one cocycle.
+* `TauCeti.hochschildBimoduleCoboundary_two_apply`: the explicit formula for `δ` in degree two.
 
 ## References
 
@@ -188,7 +193,7 @@ theorem hochschildBimoduleCofaceFun_hochschildBimoduleCofaceFun
           rw [Fin.succ_last, Fin.succ_last, hochschildBimoduleCofaceFun_succ_castSucc]
           simp only [hochschildBimoduleCofaceFun_last,
             hochschildBimoduleCofaceFun_castSucc_succ]
-          rw [Fin.contractNth_apply_of_gt _ _ _ _ i.2, Fin.init_contractNth_castSucc,
+          rw [Fin.contractNth_apply_of_gt _ _ _ _ i.isLt, Fin.init_contractNth_castSucc,
             Fin.succ_last]
         | cast j =>
           -- two inner contractions: the simplicial identity of `hochschildFace`
@@ -214,7 +219,7 @@ variable (R A M : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [AddCommGro
 /-- The zeroth coface `(∂₀ψ)(a₀, …, aₙ) = a₀ • ψ(a₁, …, aₙ)`. -/
 private def leftCoface :
     ((Fin n → A) →ₘₗ[R] M) →ₗ[R] ((Fin (n + 1) → A) →ₘₗ[R] M) :=
-  (multilinearCurryFirstEquiv R (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
+  (multilinearCurryFirstEquiv (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
     LinearMap.compMultilinearMapₗ R (Algebra.lsmul R R M).toLinearMap.flip
 
 /-- The last coface `(∂ₙ₊₁ψ)(a₀, …, aₙ) = ψ(a₀, …, aₙ₋₁) • aₙ`. -/
@@ -273,6 +278,38 @@ theorem hochschildBimoduleCoface_succ_castSucc_apply (j : Fin n)
     hochschildBimoduleCoface R A M j.succ.castSucc ψ a =
       ψ (Fin.contractNth j.castSucc (· * ·) a) := by
   rw [← Fin.succ_castSucc, hochschildBimoduleCoface_castSucc_succ_apply]
+
+/-- On a tuple with `aⱼ = 1`, the cofaces `∂ⱼ` and `∂ⱼ₊₁` agree: both evaluate the cochain on the
+tuple with `aⱼ` removed. -/
+theorem hochschildBimoduleCoface_castSucc_apply_eq_succ_apply_of_apply_eq_one
+    (ψ : (Fin n → A) →ₘₗ[R] M) {a : Fin (n + 1) → A} {j : Fin (n + 1)} (hj : a j = 1) :
+    hochschildBimoduleCoface R A M j.castSucc ψ a = hochschildBimoduleCoface R A M j.succ ψ a := by
+  cases n with
+  | zero =>
+    obtain rfl := Fin.fin_one_eq_zero j
+    conv_rhs => rw [← Fin.last_zero, Fin.succ_last, hochschildBimoduleCoface_last_apply,
+      Fin.last_zero, hj, op_one, one_smul]
+    rw [Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply, hj, one_smul]
+    exact congrArg ψ (Subsingleton.elim _ _)
+  | succ n =>
+    induction j using Fin.cases with
+    | zero =>
+      rw [Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply, hj, one_smul,
+        ← Fin.castSucc_zero (n := n + 1), hochschildBimoduleCoface_castSucc_succ_apply,
+        Fin.contractNth_castSucc_eq_removeNth_castSucc_of_apply_castSucc_eq_one
+          (by rwa [Fin.castSucc_zero]), Fin.castSucc_zero, Fin.removeNth_zero]
+    | succ k =>
+      rw [← Fin.succ_castSucc, hochschildBimoduleCoface_castSucc_succ_apply,
+        Fin.contractNth_castSucc_eq_removeNth_succ_of_apply_succ_eq_one hj]
+      induction k using Fin.lastCases with
+      | last =>
+        rw [Fin.succ_last] at hj ⊢
+        rw [Fin.succ_last, hochschildBimoduleCoface_last_apply, hj, op_one, one_smul,
+          Fin.removeNth_last]
+      | cast l =>
+        rw [Fin.succ_castSucc] at hj ⊢
+        rw [hochschildBimoduleCoface_castSucc_succ_apply,
+          Fin.contractNth_castSucc_eq_removeNth_castSucc_of_apply_castSucc_eq_one hj]
 
 /-- The cofaces evaluate by the coface formulas `TauCeti.hochschildBimoduleCofaceFun`. -/
 private theorem coe_hochschildBimoduleCoface (i : Fin (n + 2))
@@ -334,6 +371,27 @@ theorem hochschildBimoduleCoboundary_apply_eq_add_sum_add
           (-1 : ℤ) ^ (n + 1) • op (a (Fin.last n)) • ψ (Fin.init a) := by
   rw [hochschildBimoduleCoboundary_apply, Fin.sum_univ_succ, Fin.sum_univ_castSucc]
   simp [add_assoc]
+
+/-- The coboundary of a degree-three cochain `χ`: `(δχ)(a, b, c, d)` is
+`a • χ(b, c, d) - χ(a b, c, d) + χ(a, b c, d) - χ(a, b, c d) + χ(a, b, c) • d`. -/
+theorem hochschildBimoduleCoboundary_three_apply (χ : (Fin 3 → A) →ₘₗ[R] M) (a b c d : A) :
+    hochschildBimoduleCoboundary R A M 3 χ ![a, b, c, d] =
+      a • χ ![b, c, d] - χ ![a * b, c, d] + χ ![a, b * c, d] - χ ![a, b, c * d] +
+        op d • χ ![a, b, c] := by
+  have h₀ : Fin.contractNth 0 (· * ·) ![a, b, c, d] = ![a * b, c, d] := by
+    ext i
+    fin_cases i <;> simp [Fin.contractNth]
+  have h₁ : Fin.contractNth 1 (· * ·) ![a, b, c, d] = ![a, b * c, d] := by
+    ext i
+    fin_cases i <;> simp [Fin.contractNth]
+  have h₂ : Fin.contractNth 2 (· * ·) ![a, b, c, d] = ![a, b, c * d] := by
+    ext i
+    fin_cases i <;> simp [Fin.contractNth]
+  have h₃ : Fin.init ![a, b, c, d] = ![a, b, c] := by
+    ext i
+    fin_cases i <;> simp [Fin.init]
+  rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_three]
+  simp [h₀, h₁, h₂, h₃, sub_eq_add_neg, add_assoc]
 
 /-- The Hochschild coboundary with coefficients in a bimodule squares to zero. -/
 @[simp]
@@ -410,6 +468,27 @@ theorem BimoduleDerivation.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero
     hochschildBimoduleCoboundary R A M 1
         (MultilinearMap.ofSubsingleton (RingHom.id R) A M 0 D) = 0 :=
   (hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff _).2 D.leibniz
+
+/-- The coboundary of a degree-two cochain `ψ`:
+`(δψ)(a, b, c) = a • ψ(b, c) - ψ(a b, c) + ψ(a, b c) - ψ(a, b) • c`. -/
+theorem hochschildBimoduleCoboundary_two_apply (ψ : (Fin 2 → A) →ₘₗ[R] M) (a b c : A) :
+    hochschildBimoduleCoboundary R A M 2 ψ ![a, b, c] =
+      a • ψ ![b, c] - ψ ![a * b, c] + ψ ![a, b * c] - op c • ψ ![a, b] := by
+  rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_two]
+  have h₀ : Fin.contractNth (0 : Fin 2).castSucc (· * ·) ![a, b, c] = ![a * b, c] := by
+    ext i
+    fin_cases i <;> rfl
+  have h₁ : Fin.contractNth (1 : Fin 2).castSucc (· * ·) ![a, b, c] = ![a, b * c] := by
+    ext i
+    fin_cases i <;> rfl
+  have hi : Fin.init ![a, b, c] = ![a, b] := by
+    ext i
+    fin_cases i <;> rfl
+  rw [h₀, h₁, hi, Fin.tail_vecCons]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val, Fin.reduceLast, Fin.val_zero, Fin.val_one,
+    zero_add, pow_one, neg_smul, one_smul, Nat.reduceAdd, even_two, Even.neg_pow, one_pow,
+    Int.reducePow]
+  abel
 
 end Coboundary
 

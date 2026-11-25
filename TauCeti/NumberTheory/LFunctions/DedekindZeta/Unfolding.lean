@@ -82,7 +82,7 @@ variable (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
 /-- A nonzero point of the lattice of `I` has nonzero norm. -/
 private theorem norm_ne_zero_of_ne_zero (z : {z : idealLattice K I // z ≠ 0}) :
     mixedEmbedding.norm (z : mixedSpace K) ≠ 0 :=
-  norm_ne_zero_of_mem_idealLattice z.1.2 fun h ↦ z.2 (Submodule.coe_eq_zero.mp h)
+  norm_ne_zero_of_mem_idealLattice z.val.property fun h ↦ z.property (Submodule.coe_eq_zero.mp h)
 
 /-- A unit multiple of a point of the fundamental cone has nonzero norm. -/
 private theorem norm_unit_smul_ne_zero {a : mixedSpace K} (ha : a ∈ fundamentalCone K)
@@ -119,7 +119,7 @@ private theorem hasSum_integral_unitCone_archGaussian_prod
       φ r (u • (a : mixedSpace K))) (torsionOrder K * (Γ r *
         (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-r))) := by
     simpa [φ, Γ, mul_assoc] using hasSum_integral_unitCone_archGaussian_unit_smul hD
-      (by simpa using norm_unit_smul_ne_zero a.2.1 1) (zero_lt_one.trans hr)
+      (by simpa using norm_unit_smul_ne_zero a.property.1 1) (zero_lt_one.trans hr)
   -- the sum over the points in the cone of the sums over the units
   have hcone (r : ℂ) (hr : 1 < r.re) : HasSum (fun a : A ↦
       (torsionOrder K : ℂ) * (Γ r * (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-r)))
@@ -157,11 +157,11 @@ theorem hasSum_integral_unitCone_archGaussian (hD : IsUnitFundamentalDomain K D)
   have hw : (torsionOrder K : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (torsionOrder_ne_zero K)
   -- regroup the double sum along `(a, u) ↦ u a`, whose fibres have `w` points
   let Φ : A × (𝓞 K)ˣ → {z : idealLattice K I // z ≠ 0} := fun p ↦
-    ⟨⟨p.2 • (p.1 : mixedSpace K), (Units.unitSMul_mem_idealLattice_iff _ _ _).mpr p.1.2.2⟩,
-      fun h ↦ norm_unit_smul_ne_zero p.1.2.1 p.2
+    ⟨⟨p.2 • (p.1 : mixedSpace K), (Units.unitSMul_mem_idealLattice_iff _ _ _).mpr p.1.property.2⟩,
+      fun h ↦ norm_unit_smul_ne_zero p.1.property.1 p.2
         ((congrArg mixedEmbedding.norm (Submodule.coe_eq_zero.mpr h)).trans (map_zero _))⟩
   have hfiber (z : {z : idealLattice K I // z ≠ 0}) :
-      ∑' p : Φ ⁻¹' {z}, φ ((p : A × (𝓞 K)ˣ).2 • (p.1.1 : mixedSpace K)) =
+      ∑' p : Φ ⁻¹' {z}, φ ((p : A × (𝓞 K)ˣ).2 • (p.val.1 : mixedSpace K)) =
         torsionOrder K * φ (z : mixedSpace K) := by
     have hΦ (p : A × (𝓞 K)ˣ) :
         p ∈ Φ ⁻¹' {z} ↔ p.2 • (p.1 : mixedSpace K) = (z : mixedSpace K) := by
@@ -169,9 +169,10 @@ theorem hasSum_integral_unitCone_archGaussian (hD : IsUnitFundamentalDomain K D)
     -- a pair `(a, u)` with `u a = z` has `a = u⁻¹ z` in `σ(I)` already
     let e : {p : A × (𝓞 K)ˣ // p.2 • (p.1 : mixedSpace K) = z} ≃
         {p : fundamentalCone K × (𝓞 K)ˣ // p.2 • (p.1 : mixedSpace K) = z} :=
-      { toFun p := ⟨(⟨p.1.1, p.1.1.2.1⟩, p.1.2), p.2⟩
-        invFun p := ⟨(⟨p.1.1, p.1.1.2, (Units.unitSMul_mem_idealLattice_iff p.1.2 _ _).mp
-          (by rw [p.2]; exact z.1.2)⟩, p.1.2), p.2⟩
+      { toFun p := ⟨(⟨p.val.1, p.val.1.property.1⟩, p.val.2), p.property⟩
+        invFun p := ⟨(⟨p.val.1, p.val.1.property, (Units.unitSMul_mem_idealLattice_iff p.val.2 _
+            _).mp
+          (by rw [p.property]; exact z.val.property)⟩, p.val.2), p.property⟩
         left_inv _ := rfl
         right_inv _ := rfl }
     rw [tsum_congr fun p : Φ ⁻¹' {z} ↦ congrArg φ ((hΦ p).mp p.prop), tsum_const,

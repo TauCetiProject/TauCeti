@@ -38,6 +38,12 @@ trace of a commutator differs from `2` by minus the determinant of the additive 
 `tr ⁅A, B⁆ - 2 = -det (A B - B A)`, since `⁅A, B⁆ - 1 = (A B - B A) A⁻¹ B⁻¹` and
 `det (M - 1) = 2 - tr M` for `M ∈ SL(2, R)`.
 
+For an invertible `2 × 2` matrix `g` over a commutative ring, `det g • g⁻¹` is the adjugate
+`tr g • 1 - g`, so multiplying by `h` and taking traces gives the rank-two trace identity
+`det g * tr (g⁻¹ h) - tr g * tr h + tr (g h) = 0` in `GL₂(A)`. Together with `tr 1 = 2`,
+`tr (g h) = tr (h g)` and multiplicativity of `det`, it is what the pair
+`(tr ∘ ρ, det ∘ ρ)` of a representation `ρ : Γ →* GL₂(A)` satisfies.
+
 These are the matrix inputs for reading off the order of an element of `SL(2, R)` or `PSL(2, R)`
 from its trace, and for recognizing a commutator as hyperbolic. The real elliptic case, where the
 trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic`.
@@ -64,15 +70,21 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   `Matrix.det_one_sub_pow_pos_of_trace_lt_neg_two`,
   `Matrix.det_one_sub_pow_nonneg_of_abs_trace_le_two`: the sign of `det (1 - A ^ n)` for a
   determinant-one matrix `A`, according to its trace.
-* `Matrix.sign_det_one_sub_pow_succ_of_det_eq_one`: for a determinant-one matrix all of whose
-  nonzero powers are nondegenerate, the signs of `det (1 - A ^ n)` form a geometric sequence.
+* `Matrix.trace_pow_eq_two_of_trace_eq_two`: the powers of a determinant-one matrix of trace `2`
+  have trace `2`.
+* `Matrix.sign_det_one_sub_pow_succ_of_det_eq_one`: for a determinant-one matrix, the signs of
+  `det (1 - A ^ n)` over the nondegenerate powers follow a geometric sequence.
 * `Matrix.isHyperbolic_iff_two_lt_abs_trace`: a determinant-one matrix is hyperbolic exactly when
   its trace has absolute value greater than `2`.
 * `Matrix.isElliptic_iff_abs_trace_lt_two`: a determinant-one matrix is elliptic exactly when its
   trace has absolute value less than `2`.
+* `Matrix.IsElliptic.map_intCast`: an elliptic integer matrix is elliptic in every linearly
+  ordered commutative ring.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_fin_two`: the Fricke trace identity.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two`: the trace of a commutator
   through the determinant of the additive commutator.
+* `Matrix.GeneralLinearGroup.det_mul_trace_inv_mul_sub_trace_mul_trace_add_trace_mul_fin_two`:
+  `det g * tr (g⁻¹ h) - tr g * tr h + tr (g h) = 0` in `GL₂(A)`.
 
 ## References
 
@@ -80,6 +92,7 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   Press, 1992, §2.1 (the classification of elements of `PSL(2, ℝ)` by their trace).
 * William M. Goldman, *Trace coordinates on Fricke spaces of some simple hyperbolic surfaces*,
   in *Handbook of Teichmüller theory, Vol. II*, EMS, 2009, §2 (the trace of a commutator).
+* G. Chenevier, arXiv:0809.0415v2, Lemma 1.9, p. 11 (the rank-two trace identity).
 -/
 
 public section
@@ -108,6 +121,15 @@ theorem pow_add_two_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
 theorem trace_pow_add_two_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
     (A ^ (n + 2)).trace = A.trace * (A ^ (n + 1)).trace - A.det * (A ^ n).trace := by
   rw [pow_add_two_fin_two, trace_sub, trace_smul, trace_smul, smul_eq_mul, smul_eq_mul]
+
+/-- If a `2 × 2` matrix of determinant one has trace `2`, then so does every power of it: the
+recurrence `tr A ^ (n + 2) = 2 tr A ^ (n + 1) - tr A ^ n` starts at `tr 1 = tr A = 2`. -/
+theorem trace_pow_eq_two_of_trace_eq_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1)
+    (htr : A.trace = 2) (n : ℕ) : (A ^ n).trace = 2 := by
+  induction n using Nat.twoStepInduction with
+  | zero => norm_num [trace_one]
+  | one => simpa using htr
+  | more n h₀ h₁ => rw [trace_pow_add_two_fin_two, h₀, h₁, htr, hdet]; ring
 
 /-- Every power of a `2 × 2` matrix `A` is a linear combination `a • A - b • 1` of `A` and `1`, by
 the Cayley–Hamilton identity in size two. -/
@@ -223,6 +245,13 @@ theorem isElliptic_iff_abs_trace_lt_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : A
   rw [IsElliptic, discr_fin_two, hdet, mul_one, sub_neg, show (4 : R) = 2 ^ 2 by norm_num,
     sq_lt_sq, abs_two]
 
+/-- An elliptic `2 × 2` integer matrix stays elliptic in every linearly ordered commutative ring:
+its discriminant is cast from `ℤ`, and the cast preserves negativity. -/
+theorem IsElliptic.map_intCast {A : Matrix (Fin 2) (Fin 2) ℤ} (h : A.IsElliptic) :
+    (A.map ((↑) : ℤ → R)).IsElliptic := by
+  rw [IsElliptic, discr_fin_two, ← Int.cast_lt_zero (R := R)] at h
+  simpa [IsElliptic, discr_fin_two, trace_fin_two, det_fin_two] using h
+
 /-- If a `2 × 2` matrix of determinant one has trace of absolute value at most `2`, then so does
 every power of it. -/
 theorem abs_trace_pow_le_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : A.det = 1)
@@ -267,12 +296,13 @@ theorem det_one_sub_pow_nonneg_of_abs_trace_le_two {A : Matrix (Fin 2) (Fin 2) R
   rw [det_one_sub_fin_two, det_pow, hdet, one_pow]
   linarith [(abs_le.1 (abs_trace_pow_le_two hdet htr n)).2]
 
-/-- For a `2 × 2` matrix `A` of determinant one all of whose nonzero powers are nondegenerate,
-`det (1 - A ^ n) ≠ 0` for `n ≠ 0`, the signs of `det (1 - A ^ n)` form a geometric sequence:
+/-- For a `2 × 2` matrix `A` of determinant one, the signs of `det (1 - A ^ n)` over the
+nondegenerate powers follow a geometric sequence: if `det (1 - A ^ (k + 1)) ≠ 0`, then
 `sgn det (1 - A ^ (k + 1)) = sgn det (1 - A) * σ ^ k`, where `σ = -1` if `det (1 + A) < 0` (that
-is, if `trace A < -2`) and `σ = 1` otherwise. -/
+is, if `trace A < -2`) and `σ = 1` otherwise. Only the power `A ^ (k + 1)` needs to be
+nondegenerate; it forces `A` to be nondegenerate as well. -/
 theorem sign_det_one_sub_pow_succ_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R}
-    (hdet : A.det = 1) (hA : ∀ n ≠ 0, (1 - A ^ n).det ≠ 0) (k : ℕ) :
+    (hdet : A.det = 1) {k : ℕ} (hk : (1 - A ^ (k + 1)).det ≠ 0) :
     (SignType.sign (1 - A ^ (k + 1)).det : ℤ) =
       SignType.sign (1 - A).det * (if (1 + A).det < 0 then -1 else 1) ^ k := by
   rw [det_one_add_eq_two_add_trace_of_det_eq_one hdet]
@@ -291,11 +321,17 @@ theorem sign_det_one_sub_pow_succ_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R}
     · rw [sign_neg (det_one_sub_pow_neg_of_trace_lt_neg_two hdet htr' ho.add_one
         k.succ_ne_zero), ho.neg_one_pow]
       simp
-  have hpos (n : ℕ) (hn : n ≠ 0) : 0 < (1 - A ^ n).det :=
-    (det_one_sub_pow_nonneg_of_abs_trace_le_two hdet (abs_le.2 ⟨htr', htr⟩) n).lt_of_ne'
-      (hA n hn)
-  rw [ite_eq_right (by linarith), sign_pos (hpos _ k.succ_ne_zero),
-    sign_pos (a := (1 - A).det) (by simpa using hpos 1 one_ne_zero)]
+  have hpos (n : ℕ) (hn : (1 - A ^ n).det ≠ 0) : 0 < (1 - A ^ n).det :=
+    (det_one_sub_pow_nonneg_of_abs_trace_le_two hdet (abs_le.2 ⟨htr', htr⟩) n).lt_of_ne' hn
+  -- If `trace A = 2`, every power has trace `2`, so `A ^ (k + 1)` would be degenerate.
+  have hA : (1 - A ^ 1).det ≠ 0 := by
+    rw [pow_one, det_one_sub_eq_two_sub_trace_of_det_eq_one hdet, sub_ne_zero]
+    intro h
+    apply hk
+    rw [det_one_sub_eq_two_sub_trace_of_det_eq_one (by rw [det_pow, hdet, one_pow]),
+      trace_pow_eq_two_of_trace_eq_two hdet h.symm, sub_self]
+  rw [ite_eq_right (by linarith), sign_pos (hpos _ hk),
+    sign_pos (a := (1 - A).det) (by simpa using hpos 1 hA)]
   simp
 
 end Ordered
@@ -334,5 +370,18 @@ theorem SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two {R : Type*} [
       Fin.sum_univ_two, of_apply,
     cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
   linear_combination 2 * (A 0 0 * A 1 1 - A 0 1 * A 1 0) * hB + 2 * hA
+
+/-- **The rank-two trace identity.** For `g h ∈ GL₂(A)`,
+`det g * tr (g⁻¹ h) - tr g * tr h + tr (g h) = 0`. -/
+theorem GeneralLinearGroup.det_mul_trace_inv_mul_sub_trace_mul_trace_add_trace_mul_fin_two
+    {A : Type*} [CommRing A] (g h : GL (Fin 2) A) :
+    (g : Matrix (Fin 2) (Fin 2) A).det * ((g⁻¹ : GL (Fin 2) A) * h : Matrix (Fin 2) (Fin 2) A).trace
+      - (g : Matrix (Fin 2) (Fin 2) A).trace * (h : Matrix (Fin 2) (Fin 2) A).trace
+      + ((g : Matrix (Fin 2) (Fin 2) A) * h).trace = 0 := by
+  have key := trace_adjugate_mul_fin_two (g : Matrix (Fin 2) (Fin 2) A) h
+  -- `adj g = det g • g⁻¹`.
+  rw [adjugate_eq_det_smul_of_mul_eq_one (Units.mul_inv g), smul_mul_assoc, trace_smul,
+    smul_eq_mul] at key
+  linear_combination key
 
 end Matrix

@@ -157,11 +157,11 @@ private theorem mem_interior_fixedBy_of_mem_closure {g : G} (hg : IsOfFinOrder g
   let K := Subgroup.zpowers g
   have : Finite K := hg.finite_zpowers
   have hsK (k : K) : ContMDiff I I 1 fun x : M ↦ k • x :=
-    contMDiff_smul_of_mem_zpowers hg hsmooth k.2
+    contMDiff_smul_of_mem_zpowers hg hsmooth k.property
   have : ContinuousConstSMul K M := ⟨fun k ↦ (hsK k).continuous⟩
   have hfix (k : K) : k • y = y := by
     rw [Subgroup.smul_def]
-    exact mem_stabilizer_iff.mp (Subgroup.zpowers_le.mpr (mem_stabilizer_iff.mpr hy) k.2)
+    exact mem_stabilizer_iff.mp (Subgroup.zpowers_le.mpr (mem_stabilizer_iff.mpr hy) k.property)
   obtain ⟨σ, e, hye, -, he, hker⟩ := exists_equivariant_chart_of_contMDiffAt (fun k ↦ hsK k y) hfix
   let gK : K := ⟨g, Subgroup.mem_zpowers g⟩
   -- The linear map `σ gK` is the identity on the nonempty open image of the interior of the

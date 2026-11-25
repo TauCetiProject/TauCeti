@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Haar
 public import TauCeti.Analysis.MellinTransform
-import Mathlib.LinearAlgebra.Countable
+import TauCeti.NumberTheory.NumberField.Countable
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
 
@@ -56,8 +56,8 @@ theorem mem_unitCone {D : Set (realSpace K)} {y : realSpace K} :
 theorem surfaceScale_mem_unitCone_iff (D : Set (realSpace K)) (x : normOneSurface K)
     {t : ℝ} (ht : 0 < t) : surfaceScale (x : realSpace K) t ∈ unitCone D ↔
       (x : realSpace K) ∈ D := by
-  rw [mem_unitCone, surfacePart_surfaceScale x.2 ht]
-  exact and_iff_right (surfaceScale_pos (mem_normOneSurface.mp x.2).1 ht)
+  rw [mem_unitCone, surfacePart_surfaceScale x.property ht]
+  exact and_iff_right (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht)
 
 /-- A measurable surface set has a measurable cone. -/
 theorem measurableSet_unitCone {D : Set (realSpace K)} (hD : MeasurableSet D) :
@@ -187,7 +187,6 @@ theorem hasSum_integral_unitCone_unitScale (hD : IsUnitFundamentalDomain K D)
     {g : realSpace K → E} (hg : Integrable g (archHaar K)) :
     HasSum (fun u : (𝓞 K)ˣ ↦ ∫ y in unitCone D, g (unitScale u y) ∂archHaar K)
       (Units.torsionOrder K • ∫ y, g y ∂archHaar K) := by
-  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
   have : Countable (𝓞 K)ˣ := Function.Injective.countable (Units.val_injective (α := 𝓞 K))
   have hmeas (u : (𝓞 K)ˣ) : Measurable (unitScale (K := K) u) :=
     Measurable.of_eval fun w ↦ by

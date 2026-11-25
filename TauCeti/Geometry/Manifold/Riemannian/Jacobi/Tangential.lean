@@ -83,7 +83,7 @@ variable
 
 /-- **Tangential Jacobi fields.** Along a geodesic, the velocity scaled by an affine function
 `α + β t` of the parameter is a Jacobi field. -/
-theorem IsGeodesicCurveOn.isJacobiFieldOn_affine_smul_curveVelocityWithin [I.Boundaryless]
+theorem IsGeodesicCurveOn.isJacobiFieldOn_affine_smul_curveVelocityWithin
     (h : IsGeodesicCurveOn I γ s) (α β : ℝ) :
     IsJacobiFieldOn I γ (fun r ↦ (α + β * r) • curveVelocityWithin I γ s r) s := by
   have hf : ContDiff ℝ 2 fun r : ℝ ↦ α + β * r := by fun_prop
@@ -122,13 +122,10 @@ private theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin_curveVel
     (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hγ.uniqueDiffOn hγ.contMDiffOn ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
   refine hprod.congr_deriv ?_
-  have hskew := hm.inner_curvatureTensor_eq_neg (γ t) (J t) (curveVelocityWithin I γ s t)
-    (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)
-  rw [real_inner_comm (curveVelocityWithin I γ s t)] at hskew
   rw [hJ.alongCurveWithin_alongCurveWithin_eq ht, ← accelerationWithin_def,
     hγ.accelerationWithin_eq_zero t ht, inner_neg_left, inner_zero_right,
-    real_inner_comm (curveVelocityWithin I γ s t)]
-  linarith
+    hm.inner_curvatureTensor_self_eq_zero (γ t) (J t) (curveVelocityWithin I γ s t)
+      (curveVelocityWithin I γ s t), neg_zero, add_zero]
 
 /-- The derivative of `⟨J, γ'⟩` is `⟨DJ, γ'⟩`, since `γ'` is parallel. -/
 private theorem IsJacobiFieldOn.hasDerivWithinAt_inner_curveVelocityWithin
@@ -260,7 +257,7 @@ theorem IsGeodesicCurveOn.alongCurveWithin_starProjection_singleton
 
 /-- The tangential component of a Jacobi field, its orthogonal projection onto the line spanned by
 the velocity, is a Jacobi field on a preconnected parameter set. -/
-theorem IsJacobiFieldOn.isJacobiFieldOn_starProjection_singleton [I.Boundaryless]
+theorem IsJacobiFieldOn.isJacobiFieldOn_starProjection_singleton
     (hJ : IsJacobiFieldOn I γ J s) (hs : IsPreconnected s) :
     IsJacobiFieldOn I γ
       (fun r ↦ (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) s := by
@@ -279,7 +276,7 @@ theorem IsJacobiFieldOn.isJacobiFieldOn_starProjection_singleton [I.Boundaryless
 /-- The normal component of a Jacobi field, the field minus its orthogonal projection onto the
 line spanned by the velocity, is a Jacobi field on a preconnected parameter set. It is orthogonal
 to the velocity by `Submodule.sub_starProjection_mem_orthogonal`. -/
-theorem IsJacobiFieldOn.isJacobiFieldOn_sub_starProjection_singleton [I.Boundaryless]
+theorem IsJacobiFieldOn.isJacobiFieldOn_sub_starProjection_singleton
     (hJ : IsJacobiFieldOn I γ J s) (hs : IsPreconnected s) :
     IsJacobiFieldOn I γ
       (fun r ↦ J r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) s :=
@@ -330,7 +327,7 @@ theorem IsGeodesicCurveOn.inner_sub_starProjection_singleton_eq_zero
 
 /-- **Splitting of Jacobi fields.** On a preconnected parameter set, every Jacobi field is the sum
 of a tangential Jacobi field `(α + β t) γ'(t)` and a Jacobi field orthogonal to the velocity. -/
-theorem IsJacobiFieldOn.exists_eq_affine_smul_add [I.Boundaryless]
+theorem IsJacobiFieldOn.exists_eq_affine_smul_add
     (hJ : IsJacobiFieldOn I γ J s) (hs : IsPreconnected s) :
     ∃ α β : ℝ, ∃ N : ∀ t, TangentSpace I (γ t), IsJacobiFieldOn I γ N s ∧
       (∀ t ∈ s, inner ℝ (N t) (curveVelocityWithin I γ s t) = 0) ∧

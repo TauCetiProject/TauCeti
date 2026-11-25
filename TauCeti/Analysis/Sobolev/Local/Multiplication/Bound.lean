@@ -32,6 +32,10 @@ infinite.
 
 ## Main declarations
 
+* `TauCeti.le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le`: the reduction of such a
+  bound to factors of finite norm.
+* `TauCeti.le_mul_mul_of_le_mul_eNorm_mul_mul`: the specialisation of such bounds to bilinear
+  maps of norm at most one.
 * `TauCeti.exists_eLpNorm_bilin_le_eLpNormWkp_one`: the order-zero bound.
 * `TauCeti.exists_eLpNormWkp_one_bilin_le`: the order-one bound. At `q = p` this is the local
   bound for the algebra property of `W^{1,p}_loc`.
@@ -54,6 +58,42 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {Ω : Opens ℂ} {p q : ℝ≥0}
 
+omit [FiniteDimensional ℝ G] in
+/-- To bound a size `L` of the product `B(f, g)` on `V` by
+`C ‖B‖ ‖f‖_{W^{k,p}(S)} ‖g‖_{W^{l,q}(T)}` for nonzero `p`, `q` and `C` and `V ⊆ S ∩ T`, it
+suffices to treat factors of finite norm, provided `L` vanishes when the product vanishes almost
+everywhere on `V`. -/
+theorem le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le {p q : ℝ≥0∞} (hp : p ≠ 0)
+    (hq : q ≠ 0) {V S T : Set ℂ} (hVS : V ⊆ S) (hVT : V ⊆ T) {k l : ℕ} {C : ℝ≥0∞} (hC : C ≠ 0)
+    {B : F →L[ℝ] G →L[ℝ] H} {f : ℂ → F} {g : ℂ → G} {L : ℝ≥0∞}
+    (hL : (fun z => B (f z) (g z)) =ᵐ[volume.restrict V] 0 → L = 0)
+    (hfin : eLpNormWkp p S k f ≠ ∞ → eLpNormWkp q T l g ≠ ∞ →
+      L ≤ C * ‖B‖ₑ * eLpNormWkp p S k f * eLpNormWkp q T l g) :
+    L ≤ C * ‖B‖ₑ * eLpNormWkp p S k f * eLpNormWkp q T l g := by
+  refine ENNReal.le_mul_mul_of_ne_top_imp_le (fun hCB => hL (.of_forall fun z => ?_))
+    (fun hf0 => hL ?_) (fun hg0 => hL ?_) fun _ hf hg => hfin hf hg
+  · -- `eNorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
+    have hB : ‖B‖ₑ = 0 := (mul_eq_zero.1 hCB).resolve_left hC
+    simp [B.opNorm_zero_iff.1 <| (norm_nonneg B).antisymm' <| by simpa [← ofReal_norm] using hB]
+  · filter_upwards [ae_mono (Measure.restrict_mono hVS le_rfl)
+      (ae_eq_zero_of_eLpNormWkp_eq_zero hp hf0)] with z hz
+    simp [hz]
+  · filter_upwards [ae_mono (Measure.restrict_mono hVT le_rfl)
+      (ae_eq_zero_of_eLpNormWkp_eq_zero hq hg0)] with z hz
+    simp [hz]
+
+/-- A bound `L ≤ C ‖x‖ X Y` for an element `x` of norm at most one gives `L ≤ C X Y`. This
+specialises the local product bounds, which carry the factor `‖B‖`, to bilinear maps of norm at
+most one such as `(A, u) ↦ A u` and `(A, T) ↦ A ∘L T`. -/
+theorem le_mul_mul_of_le_mul_eNorm_mul_mul {E : Type*} [SeminormedAddCommGroup E] {x : E}
+    (hx : ‖x‖ ≤ 1) {C : ℝ≥0} {L X Y : ℝ≥0∞} (h : L ≤ C * ‖x‖ₑ * X * Y) : L ≤ C * X * Y :=
+  calc
+    L ≤ C * ‖x‖ₑ * X * Y := h
+    _ ≤ C * 1 * X * Y := by
+      gcongr
+      exact (ofReal_norm x).symm.trans_le (ENNReal.ofReal_le_one.2 hx)
+    _ = C * X * Y := by rw [mul_one]
+
 /-- **Local bound for order-zero mixed products.** Fix real normed spaces `F`, `G` and `H` with
 `G` finite-dimensional. For `p > 2`, `1 ≤ q ≤ p` and a set `U` whose closure is compact and
 contained in `Ω`, there is a constant `C` such that
@@ -73,19 +113,11 @@ theorem exists_eLpNorm_bilin_le_eLpNormWkp_one (hp : 2 < p) (hq : 1 ≤ q) (hqp 
   have hq0 : (q : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le hq1).ne'
   have hUm : volume.restrict U ≤ volume.restrict Ω :=
     Measure.restrict_mono (subset_closure.trans hUΩ) le_rfl
-  -- If `B = 0` or either factor vanishes almost everywhere on `U`, so does the product.
-  have hvanish (h : (fun z => B (f z) (g z)) =ᵐ[volume.restrict U] 0) :
-      eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) = 0 := by
-    rw [eLpNorm_congr_ae h, eLpNorm_zero]
-  refine ENNReal.le_mul_mul_of_ne_top_imp_le (fun hCB => hvanish (.of_forall fun z => ?_))
-    (fun hf0 => hvanish ?_) (fun hg0 => hvanish ?_) fun _ hf hg => ?_
-  · -- `eNorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
-    simp [B.opNorm_zero_iff.1 <| (norm_nonneg B).antisymm' <| by simpa [← ofReal_norm] using hCB]
-  · filter_upwards [(eLpNorm_eq_zero_iff (by simpa using (zero_lt_two.trans hp).ne')).1 hf0]
-      with z hz
-    simp [hz]
-  · filter_upwards [ae_mono hUm (ae_eq_zero_of_eLpNormWkp_eq_zero hq0 hg0)] with z hz
-    simp [hz]
+  rw [← eLpNormWkp_zero (f := f)]
+  refine le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le
+    (by simpa using (zero_lt_two.trans hp).ne') hq0 subset_rfl (subset_closure.trans hUΩ)
+    (by positivity) (fun h => by rw [eLpNorm_congr_ae h, eLpNorm_zero]) fun hf hg => ?_
+  rw [eLpNormWkp_zero] at hf ⊢
   obtain ⟨Dg, hDg, hDgq, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
   have hgq := memLp_of_eLpNormWkp_ne_top hg
   rw [eLpNormWkp_zero] at hDgq hgΩ
@@ -133,18 +165,8 @@ theorem exists_eLpNormWkp_one_bilin_le [FiniteDimensional ℝ F] [CompleteSpace 
   have hq0 : (q : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le hq1).ne'
   have hp0 : (p : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
   have hKm : volume.restrict K ≤ volume.restrict Ω := Measure.restrict_mono hUΩ le_rfl
-  -- If `B = 0` or either factor vanishes almost everywhere on `Ω`, so does the product on `K`.
-  have hvanish (h : (fun z => B (f z) (g z)) =ᵐ[volume.restrict Ω] 0) :
-      eLpNormWkp q K 1 (fun z => B (f z) (g z)) = 0 := by
-    rw [eLpNormWkp_congr_ae (ae_mono hKm h), eLpNormWkp_zero_fun]
-  refine ENNReal.le_mul_mul_of_ne_top_imp_le (fun hCB => hvanish (.of_forall fun z => ?_))
-    (fun hf0 => hvanish ?_) (fun hg0 => hvanish ?_) fun _ hf hg => ?_
-  · -- `eNorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
-    simp [B.opNorm_zero_iff.1 <| (norm_nonneg B).antisymm' <| by simpa [← ofReal_norm] using hCB]
-  · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hp0 hf0] with z hz
-    simp [hz]
-  · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hq0 hg0] with z hz
-    simp [hz]
+  refine le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le hp0 hq0 hUΩ hUΩ
+    (by positivity) (fun h => by rw [eLpNormWkp_congr_ae h, eLpNormWkp_zero_fun]) fun hf hg => ?_
   obtain ⟨Df, hDf, hDfp, hfΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hf
   obtain ⟨Dg, hDg, hDgq, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
   have hfp := memLp_of_eLpNormWkp_ne_top hf
@@ -154,7 +176,7 @@ theorem exists_eLpNormWkp_one_bilin_le [FiniteDimensional ℝ F] [CompleteSpace 
   replace hDgq : MemLp Dg q (volume.restrict Ω) := memLp_iff.2 (lt_top_iff_ne_top.2 hDgq)
   -- `f` is locally bounded on `Ω`, so the weak Leibniz rule applies there.
   have hfloc : MemWkpLoc p Ω 1 f := memWkpLoc_of_eLpNormWkp_ne_top hf
-  have hLeib := hDf.bilin_of_memLpLoc B hp hq hqp
+  have hLeib := hDf.bilin_of_finrank_lt B (by simpa using hp) hq hqp
     ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top) hDfp.memLpLoc
     hDg hgq.memLpLoc hDgq.memLpLoc
   have hint : Opens.interior K ≤ Ω := fun z hz => hUΩ (interior_subset hz)

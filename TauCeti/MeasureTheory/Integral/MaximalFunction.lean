@@ -28,7 +28,9 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 -- `TauCeti.MeasureTheory.Integral.Average` is imported privately: its change of variables for
 -- averages, `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`, is used only inside the proofs of
--- the translation and dilation invariance of the maximal function.
+-- the translation and dilation invariance of the maximal function, and
+-- `TauCeti.setLAverage_smul_measure` only inside the proof of
+-- `TauCeti.maximalFunction_smul_measure`.
 import TauCeti.MeasureTheory.Integral.Average
 -- `TauCeti.Analysis.Normed.Module.Ball` is imported privately: it supplies
 -- `TauCeti.preimage_smul_ball_smul_norm` inside the proof of the dilation invariance.
@@ -59,7 +61,9 @@ for every weight `w` and `1 < p < ∞`, and from it the **vector-valued** inequa
 `∫⁻ (∑' i, (M fᵢ) ^ r) ^ (p / r) ∂μ ≤ C(n, r, p) * ∫⁻ (∑' i, ‖fᵢ‖ₑ ^ r) ^ (p / r) ∂μ`
 
 for countable families and `1 < r ≤ p < ∞`. With `r = 2` the latter bounds the maximal functions of
-the pieces of a square function, which is the form Littlewood–Paley theory uses.
+the pieces of a square function, which is the form Littlewood–Paley theory uses. The weak type
+`(1, 1)` endpoint and the range `1 < p < r` are proved in
+`TauCeti.MeasureTheory.Integral.MaximalFunction.VectorValued`.
 
 The maximal inequality drives Calderón–Zygmund theory and, through it, the `Lᵖ` regularity
 theory for elliptic equations.
@@ -122,6 +126,8 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   `TauCeti.lt_maximalFunction_iff` as its interface.
 * `TauCeti.maximalFunction_const`: the maximal function of a constant is that constant, so the
   normalisation is the intended one.
+* `TauCeti.maximalFunction_smul_measure`: `M` does not change when the measure is scaled by a
+  positive finite constant.
 * `TauCeti.maximalFunction_mono_ae`, `TauCeti.maximalFunction_congr_ae`: `M` is monotone in `‖f‖ₑ`
   almost everywhere, so `M f` depends on `f` only through `‖f‖ₑ` and only up to a null set.
 * `TauCeti.maximalFunction_enorm`: replacing a function by its extended norm leaves its maximal
@@ -139,6 +145,9 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   superlevel sets `{x | t < M f x}` are open, so `M f` is Borel measurable.
 * `TauCeti.setLIntegral_ball_le_two_pow_mul_measure_mul_maximalFunction`: the average of `‖f‖ₑ`
   over any ball containing `x` is at most `2ⁿ M f x`.
+* `TauCeti.maximalFunction_le_ofReal_mul_maximalFunction_map`: under a linear change of variables
+  `e`, the maximal functions for `μ` and for `e_* μ` are comparable, with a constant depending on
+  the norms of `e` and `e⁻¹`.
 * `TauCeti.mul_measure_le_of_forall_exists_ball`: the Vitali covering estimate for a Haar
   measure.
 * `TauCeti.mul_measure_lt_maximalFunction_le`, `TauCeti.measure_lt_maximalFunction_le`: the
@@ -156,8 +165,9 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   `TauCeti.lintegral_rpow_maximalFunction_mul_le`: the **weighted maximal inequality** of
   Fefferman and Stein, of weak type `(1, 1)` and of strong type `(p, p)` for `1 < p < ∞`.
 * `TauCeti.lintegral_tsum_maximalFunction_rpow_le`,
-  `TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le`: the **vector-valued maximal inequality**
-  of Fefferman and Stein for `1 < r ≤ p < ∞`.
+  `TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_exponent_lt`: the **vector-valued
+  maximal inequality** of Fefferman and Stein for `1 < r ≤ p < ∞`, where `r` is the exponent of
+  the sum.
 * `TauCeti.eLpNorm_maximalFunction_lt_top`,
   `TauCeti.ae_maximalFunction_lt_top_of_eLpNorm_ne_top`: a function with finite `Lᵖ` seminorm
   has a maximal function with finite `Lᵖ` seminorm for `1 < p ≤ ∞`, and the maximal function
@@ -206,8 +216,10 @@ theorem setLAverage_le_maximalFunction (μ : Measure X) (f : X → F) (x : X) (h
 
 /-- The integral of `‖f‖ₑ` over a ball of finite measure is at most the measure of the ball times
 the maximal function at its centre. -/
-theorem setLIntegral_ball_le_measure_mul_maximalFunction (hr : 0 < r) (hμ : μ (ball x r) ≠ ∞) :
+theorem setLIntegral_ball_le_measure_mul_maximalFunction (hμ : μ (ball x r) ≠ ∞) :
     ∫⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ μ (ball x r) * maximalFunction μ f x := by
+  rcases le_or_gt r 0 with hr | hr
+  · simp [ball_eq_empty.2 hr]
   rw [← measure_mul_setLAverage _ hμ]
   gcongr
   exact setLAverage_le_maximalFunction μ f x hr
@@ -274,6 +286,13 @@ private theorem mul_measure_lt_maximalFunction_le_of_subsingleton [Subsingleton 
   calc t * μ {x | t < maximalFunction μ f x}
       ≤ t * μ univ := by gcongr; exact subset_univ _
     _ ≤ ∫⁻ x, ‖f x‖ₑ ∂μ := (ENNReal.mul_lt_of_lt_div hlt).le
+
+/-- Scaling the measure by a positive finite constant leaves the maximal function unchanged: the
+constant cancels in every average. -/
+@[simp]
+theorem maximalFunction_smul_measure {c : ℝ≥0∞} (hc : c ≠ 0) (hc' : c ≠ ∞) (μ : Measure X)
+    (f : X → F) : maximalFunction (c • μ) f = maximalFunction μ f :=
+  funext fun x => by simp only [maximalFunction_def, setLAverage_smul_measure hc hc']
 
 section Sublinear
 
@@ -393,8 +412,66 @@ theorem setLIntegral_ball_le_two_pow_mul_measure_mul_maximalFunction (μ : Measu
       ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
   calc ∫⁻ y in ball c r, ‖f y‖ₑ ∂μ ≤ ∫⁻ y in ball x (2 * r), ‖f y‖ₑ ∂μ := lintegral_mono_set hsub
     _ ≤ μ (ball x (2 * r)) * maximalFunction μ f x :=
-        setLIntegral_ball_le_measure_mul_maximalFunction (by positivity) measure_ball_lt_top.ne
+        setLIntegral_ball_le_measure_mul_maximalFunction measure_ball_lt_top.ne
     _ = 2 ^ finrank ℝ E * μ (ball c r) * maximalFunction μ f x := by rw [hμ]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Comparison under a linear change of variables.** Let `e : E ≃L[ℝ] E'` be a continuous linear
+equivalence with `‖e y‖ ≤ a ‖y‖` and `‖e.symm z‖ ≤ b ‖z‖`, and let `μ` be an additive Haar measure
+on `E`, of dimension `n`. Then the maximal function of `f` for `μ` at `x` is at most `(a b)ⁿ` times
+the maximal function of `f ∘ e.symm` for the image measure `e_* μ` at `e x`: the ball `B(x, r)`
+lies in `e⁻¹ B(e x, a r)` and contains `e⁻¹ B(e x, r / b)`, and the `e_* μ`-measures of these two
+balls differ by the factor `(a b)ⁿ`. -/
+theorem maximalFunction_le_ofReal_mul_maximalFunction_map {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [MeasurableSpace E'] [BorelSpace E'] [FiniteDimensional ℝ E']
+    (μ : Measure E) [μ.IsAddHaarMeasure] (e : E ≃L[ℝ] E') {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hea : ∀ y, ‖e y‖ ≤ a * ‖y‖) (heb : ∀ z, ‖e.symm z‖ ≤ b * ‖z‖) (f : E → F) (x : E) :
+    maximalFunction μ f x ≤ ENNReal.ofReal ((a * b) ^ finrank ℝ E) *
+      maximalFunction (μ.map e) (fun z => f (e.symm z)) (e x) := by
+  have : (μ.map e).IsAddHaarMeasure := e.isAddHaarMeasure_map μ
+  set em : E ≃ᵐ E' := e.toHomeomorph.toMeasurableEquiv
+  have hem : ⇑em = ⇑e := by
+    simp only [em, Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph]
+  refine maximalFunction_le fun r hr => ?_
+  have hsub₁ : ball x r ⊆ e ⁻¹' ball (e x) (a * r) := fun y hy => by
+    rw [mem_ball, dist_eq_norm] at hy
+    rw [mem_preimage, mem_ball, dist_eq_norm, ← map_sub]
+    exact (hea _).trans_lt (mul_lt_mul_of_pos_left hy ha)
+  have hsub₀ : e ⁻¹' ball (e x) (r / b) ⊆ ball x r := fun y hy => by
+    rw [mem_preimage, mem_ball, dist_eq_norm, ← map_sub] at hy
+    rw [mem_ball, dist_eq_norm]
+    calc ‖y - x‖ = ‖e.symm (e (y - x))‖ := by rw [e.symm_apply_apply]
+      _ ≤ b * ‖e (y - x)‖ := heb _
+      _ < b * (r / b) := mul_lt_mul_of_pos_left hy hb
+      _ = r := mul_div_cancel₀ r hb.ne'
+  have hB₀ : (μ.map e) (ball (e x) (r / b)) ≠ 0 := (measure_ball_pos _ _ (div_pos hr hb)).ne'
+  have hB₀' : (μ.map e) (ball (e x) (r / b)) ≠ ∞ := measure_ball_lt_top.ne
+  have hmeas : (μ.map e) (ball (e x) (r / b)) ≤ μ (ball x r) := by
+    rw [Measure.map_apply e.continuous.measurable measurableSet_ball]
+    exact measure_mono hsub₀
+  have hint : ∫⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤
+      ∫⁻ z in ball (e x) (a * r), ‖f (e.symm z)‖ₑ ∂μ.map e := by
+    calc ∫⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ ∫⁻ y in e ⁻¹' ball (e x) (a * r), ‖f y‖ₑ ∂μ :=
+          lintegral_mono_set hsub₁
+      _ = ∫⁻ z in ball (e x) (a * r), ‖f (e.symm z)‖ₑ ∂μ.map e := by
+          rw [← hem, em.restrict_map, lintegral_map_equiv]
+          simp [em]
+  have hratio : (μ.map e) (ball (e x) (a * r)) =
+      ENNReal.ofReal ((a * b) ^ finrank ℝ E) * (μ.map e) (ball (e x) (r / b)) := by
+    rw [show a * r = (a * b) * (r / b) by field_simp, Measure.addHaar_ball_mul_of_pos _ _
+      (mul_pos ha hb), Measure.addHaar_ball_center _ (e x), e.toLinearEquiv.finrank_eq]
+  rw [setLAverage_eq]
+  calc (∫⁻ y in ball x r, ‖f y‖ₑ ∂μ) / μ (ball x r)
+      ≤ (∫⁻ z in ball (e x) (a * r), ‖f (e.symm z)‖ₑ ∂μ.map e) / (μ.map e) (ball (e x) (r / b)) :=
+        ENNReal.div_le_div hint hmeas
+    _ ≤ (μ.map e) (ball (e x) (a * r)) *
+          maximalFunction (μ.map e) (fun z => f (e.symm z)) (e x) /
+            (μ.map e) (ball (e x) (r / b)) := by
+        gcongr
+        exact setLIntegral_ball_le_measure_mul_maximalFunction measure_ball_lt_top.ne
+    _ = ENNReal.ofReal ((a * b) ^ finrank ℝ E) *
+          maximalFunction (μ.map e) (fun z => f (e.symm z)) (e x) := by
+        rw [hratio, mul_right_comm, ENNReal.mul_div_cancel_right hB₀ hB₀']
 
 /-- **The Vitali covering estimate.** If every point of `S` is the centre of a ball of radius at
 most `R` on which `∫⁻ g` is at least `t` times the measure of the ball, then
@@ -516,9 +593,24 @@ theorem mul_measure_lt_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure]
   exact mul_measure_le_of_forall_exists_ball fun x hx => ⟨r x, hR x hx, (hrlt x hx).le⟩
 
 /-- **The Hardy–Littlewood maximal inequality**, in quotient form. -/
-theorem measure_lt_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure] (f : E → F)
-    (ht : t ≠ 0) :
+theorem measure_lt_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure] (f : E → F) :
     μ {x | t < maximalFunction μ f x} ≤ 4 ^ finrank ℝ E * (∫⁻ x, ‖f x‖ₑ ∂μ) / t := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · rcases eq_or_ne (∫⁻ x, ‖f x‖ₑ ∂μ) 0 with hI | hI
+    · -- the integral vanishes, so every positive superlevel set is null
+      rw [hI, mul_zero, ENNReal.zero_div, nonpos_iff_eq_zero]
+      have hU : {x | 0 < maximalFunction μ f x} =
+          ⋃ n : ℕ, {x | (n : ℝ≥0∞)⁻¹ < maximalFunction μ f x} := by
+        ext x
+        simp only [mem_ofPred_eq, mem_iUnion]
+        exact ⟨fun h ↦ ENNReal.exists_inv_nat_lt h.ne', fun ⟨_, hn⟩ ↦ zero_le.trans_lt hn⟩
+      rw [hU]
+      refine measure_iUnion_null fun n ↦ ?_
+      have h := mul_measure_lt_maximalFunction_le μ f (n : ℝ≥0∞)⁻¹
+      rw [hI, mul_zero, nonpos_iff_eq_zero] at h
+      exact (mul_eq_zero.1 h).resolve_left (by simp)
+    · rw [ENNReal.div_zero (mul_ne_zero (pow_ne_zero _ (by norm_num)) hI)]
+      exact le_top
   rcases eq_or_ne t ∞ with rfl | ht_top
   · -- the superlevel set at `∞` is empty
     simp
@@ -879,8 +971,9 @@ theorem mul_setLIntegral_lt_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMea
 
 With `w = 1` this recovers the unweighted bound `TauCeti.lintegral_rpow_maximalFunction_le`, with
 `5 ^ n` in place of `4 ^ n`. Applied to `w = g ^ (q - 1)` it controls the pairing of `(M f) ^ p`
-with an `Lᵠ'` function, which is how `TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le` reaches
-the vector-valued maximal inequality. -/
+with an `Lᵠ'` function, which is how
+`TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_exponent_lt` reaches the vector-valued
+maximal inequality. -/
 theorem lintegral_rpow_maximalFunction_mul_le (μ : Measure E) [μ.IsAddHaarMeasure] {f : E → F}
     (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) {w : E → ℝ≥0∞} (hw : AEMeasurable w μ) {p : ℝ}
     (hp : 1 < p) :
@@ -1025,10 +1118,11 @@ with `C = (c(r) * 5 ^ n * (c(s) * 4 ^ n) ^ (1 / s)) ^ (p / r)`, where
 conjugate to `p / r`; it depends only on `n`, `r` and `p`. The family is indexed by any countable
 type, so this covers sequences. For `r = 2` this is the square-function form
 `‖(∑' i, (M fᵢ) ^ 2) ^ (1 / 2)‖_p ≤ C' ‖(∑' i, ‖fᵢ‖ ^ 2) ^ (1 / 2)‖_p` for `2 < p < ∞`; the diagonal
-case `p = r` is `TauCeti.lintegral_tsum_maximalFunction_rpow_le`. -/
-theorem lintegral_rpow_tsum_maximalFunction_rpow_le (μ : Measure E) [μ.IsAddHaarMeasure]
-    {f : ι → E → F} (hf : ∀ i, AEMeasurable (fun x => ‖f i x‖ₑ) μ) {r p : ℝ} (hr : 1 < r)
-    (hrp : r < p) :
+case `p = r` is `TauCeti.lintegral_tsum_maximalFunction_rpow_le`. The suffix `_of_exponent_lt`
+records that the exponent `r` of the sum lies below `p`. -/
+theorem lintegral_rpow_tsum_maximalFunction_rpow_le_of_exponent_lt (μ : Measure E)
+    [μ.IsAddHaarMeasure] {f : ι → E → F} (hf : ∀ i, AEMeasurable (fun x => ‖f i x‖ₑ) μ) {r p : ℝ}
+    (hr : 1 < r) (hrp : r < p) :
     ∫⁻ x, (∑' i, maximalFunction μ (f i) x ^ r) ^ (p / r) ∂μ ≤
       (ENNReal.ofReal (2 * r * 2 ^ (r - 1) / (r - 1)) * 5 ^ finrank ℝ E *
         (ENNReal.ofReal (2 * (p / (p - r)) * 2 ^ (p / (p - r) - 1) / (p / (p - r) - 1)) *

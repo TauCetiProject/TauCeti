@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.RingTheory.KrullDimension.Equidimensional
 public import TauCeti.Topology.KrullDimension.ClosedCover
+import Mathlib.RingTheory.KrullDimension.Polynomial
 
 /-!
 # Krull dimension of schemes and extension of the base field
@@ -61,8 +62,12 @@ an irreducibility assumption on the group.
   dimension of an open subscheme is the supremum of the dimensions of its local rings.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_ne_top_of_locallyOfFiniteType`: a quasi-compact
   scheme locally of finite type over a field has finite Krull dimension.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec_mvPolynomial`: affine space in finitely
+  many variables `σ` over a Noetherian ring `R` has dimension `dim R + |σ|`.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_pullback_Spec_map_of_field`: the Krull dimension
   of a scheme locally of finite type over a field is invariant under extension of the base field.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_isPullback_Spec_map_of_field`: the same
+  invariance for a base change given by a cartesian square.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_inter_eq_of_locallyOfFiniteType`: on a scheme
   locally of finite type over a field, a nonempty open part of an irreducible closed subset has
   the dimension of that subset.
@@ -125,7 +130,7 @@ theorem topologicalKrullDim_ne_top_of_locallyOfFiniteType {K : Type u} [Field K]
   let 𝒰 := X.affineOpenCover.openCover.finiteSubcover
   -- Each member of the finite cover is the spectrum of a finitely generated `K`-algebra.
   have hchart (i : 𝒰.I₀) : topologicalKrullDim (𝒰.X i) ≠ ⊤ := by
-    let j := X.affineOpenCover.openCover.idx i.1
+    let j := X.affineOpenCover.openCover.idx i.val
     have hft : LocallyOfFiniteType (X.affineOpenCover.openCover.f j ≫ f) := inferInstance
     obtain ⟨φ, hφ⟩ : ∃ φ, Spec.map φ = X.affineOpenCover.openCover.f j ≫ f :=
       ⟨_, Spec.map_preimage _⟩
@@ -163,6 +168,15 @@ theorem topologicalKrullDim_pullback_Spec_algebraMap (K L A : Type u) [Field K] 
     (ringKrullDim_eq_of_ringEquiv (Algebra.TensorProduct.comm K A L).toRingEquiv).trans
       (ringKrullDim_tensorProduct_field_of_finiteType L A)
 
+/-- **The dimension of affine space.** Over a Noetherian ring `R`, the affine space
+`Spec R[x_i]` in finitely many variables `σ` has dimension `dim R + |σ|`. -/
+theorem topologicalKrullDim_Spec_mvPolynomial (σ R : Type*) [Finite σ] [CommRing R]
+    [IsNoetherianRing R] :
+    topologicalKrullDim (Spec (.of (MvPolynomial σ R))) = ringKrullDim R + Nat.card σ :=
+  -- The underlying space of `Spec R` is `PrimeSpectrum R` by definition.
+  (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _).trans
+    MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite
+
 /-- The Krull dimension of an affine scheme locally of finite type over a field `K` is invariant
 under extension of the base field. -/
 private theorem topologicalKrullDim_pullback_Spec_of_field {K L : Type u} [Field K] [Field L]
@@ -189,6 +203,17 @@ theorem topologicalKrullDim_pullback_Spec_map_of_field {K L : Type u} [Field K] 
   have : LocallyOfFiniteType (X.affineOpenCover.openCover.f i ≫ f) := inferInstance
   exact topologicalKrullDim_pullback_Spec_of_field (A := X.affineOpenCover.X i) (hg := this) _
 
+/-- **Dimension under extension of the base field, for a cartesian square.** If `X'` is the base
+change of a scheme `X` locally of finite type over a field `K` along `Spec K' ⟶ Spec K`, then
+`X'` has the Krull dimension of `X`. -/
+theorem topologicalKrullDim_eq_of_isPullback_Spec_map_of_field {K K' : Type u} [Field K]
+    [Field K'] [Algebra K K'] {X X' : Scheme.{u}} {πX : X' ⟶ X} {sX' : X' ⟶ Spec (.of K')}
+    {sX : X ⟶ Spec (.of K)} [LocallyOfFiniteType sX]
+    (h : IsPullback πX sX' sX (Spec.map (CommRingCat.ofHom (algebraMap K K')))) :
+    topologicalKrullDim X' = topologicalKrullDim X := by
+  rw [h.isoPullback.hom.homeomorph.isHomeomorph.topologicalKrullDim_eq,
+    topologicalKrullDim_pullback_Spec_map_of_field]
+
 /-- On a scheme locally of finite type over a field, a nonempty open part `Z ∩ U` of an
 irreducible closed subset `Z` has the Krull dimension of `Z`. -/
 theorem topologicalKrullDim_inter_eq_of_locallyOfFiniteType {K : Type u} [Field K]
@@ -201,12 +226,12 @@ theorem topologicalKrullDim_inter_eq_of_locallyOfFiniteType {K : Type u} [Field 
   have he (i : 𝒰.I₀) : IsOpenEmbedding (𝒰.f i) := (𝒰.f i).isOpenEmbedding
   -- `Z` is covered by its preimages in the affine charts that meet it.
   let ι := {i : 𝒰.I₀ // (Z ∩ Set.range (𝒰.f i)).Nonempty}
-  rw [topologicalKrullDim_eq_iSup_of_isOpenEmbedding (Y := fun i : ι ↦ (𝒰.f i.1) ⁻¹' Z)
-    (fun i ↦ Z.restrictPreimage (𝒰.f i.1)) (fun i ↦ (he i.1).restrictPreimage Z) ?_]
+  rw [topologicalKrullDim_eq_iSup_of_isOpenEmbedding (Y := fun i : ι ↦ (𝒰.f i.val) ⁻¹' Z)
+    (fun i ↦ Z.restrictPreimage (𝒰.f i.val)) (fun i ↦ (he i.val).restrictPreimage Z) ?_]
   swap
   · intro z
-    obtain ⟨i, y, hy⟩ := 𝒰.exists_eq z.1
-    exact ⟨⟨i, z.1, z.2, y, hy⟩, ⟨y, by simp [hy]⟩, Subtype.ext (by simp [hy])⟩
+    obtain ⟨i, y, hy⟩ := 𝒰.exists_eq z.val
+    exact ⟨⟨i, z.val, z.property, y, hy⟩, ⟨y, by simp [hy]⟩, Subtype.ext (by simp [hy])⟩
   refine iSup_le fun ⟨i, hi⟩ ↦ ?_
   -- Reduce the projection `↑⟨i, hi⟩` to `i`.
   dsimp only
@@ -225,7 +250,7 @@ theorem topologicalKrullDim_inter_eq_of_locallyOfFiniteType {K : Type u} [Field 
           ⟨x, hxZ, hxU⟩).symm
     _ ≤ topologicalKrullDim ↥(Z ∩ U) :=
         (((he i).isEmbedding.comp IsEmbedding.subtypeVal).codRestrict (Z ∩ U)
-          fun y ↦ y.2).isInducing.topologicalKrullDim_le
+          fun y ↦ y.property).isInducing.topologicalKrullDim_le
 
 /-- A nonempty open subspace of an irreducible scheme locally of finite type over a field has
 the Krull dimension of the scheme. -/
@@ -317,25 +342,26 @@ theorem topologicalKrullDim_closure_of_isLocallyClosed {K : Type u} [Field K]
     (IsEmbedding.inclusion (subset_closure (s := s))).isInducing.topologicalKrullDim_le
   rw [topologicalKrullDim_eq_iSup_irreducibleComponents]
   refine iSup_le fun C ↦ ?_
-  let Z : Set X := Subtype.val '' C.1
-  have hZ : IsIrreducible Z := C.2.1.image _ continuous_subtype_val.continuousOn
+  let Z : Set X := Subtype.val '' C.val
+  have hZ : IsIrreducible Z := C.property.1.image _ continuous_subtypeVal.continuousOn
   have hZc : IsClosed Z := isClosed_closure.isClosedEmbedding_subtypeVal.isClosedMap _
-    (isClosed_of_mem_irreducibleComponents _ C.2)
+    (isClosed_of_mem_irreducibleComponents _ C.property)
   have hd : Dense ((Subtype.val : closure s → X) ⁻¹' s) := by
     rw [Subtype.dense_iff, Subtype.image_preimage_coe,
       Set.inter_eq_right.mpr (subset_closure (s := s))]
   obtain ⟨V, hV, hVne, hVC⟩ :=
-    TopologicalSpace.NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent C.1 C.2
+    TopologicalSpace.NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent C.val
+        C.property
   obtain ⟨y, hyV, hys⟩ := hd.inter_open_nonempty V hV hVne
   have hZU : (Z ∩ coborder s).Nonempty :=
-    ⟨y.1, ⟨y, hVC hyV, rfl⟩, subset_coborder hys⟩
+    ⟨y.val, ⟨y, hVC hyV, rfl⟩, subset_coborder hys⟩
   have hsub : Z ∩ coborder s ⊆ s := by
     rintro x ⟨⟨z, _, rfl⟩, hx⟩
-    have hz : z.1 ∈ coborder s ∩ closure s := ⟨hx, z.2⟩
+    have hz : z.val ∈ coborder s ∩ closure s := ⟨hx, z.property⟩
     simpa only [coborder_inter_closure] using hz
   calc
-    topologicalKrullDim C.1 = topologicalKrullDim Z :=
-      IsEmbedding.subtypeVal.homeomorphImage C.1 |>.isHomeomorph.topologicalKrullDim_eq
+    topologicalKrullDim C.val = topologicalKrullDim Z :=
+      IsEmbedding.subtypeVal.homeomorphImage C.val |>.isHomeomorph.topologicalKrullDim_eq
     _ = topologicalKrullDim ↥(Z ∩ coborder s) :=
       (topologicalKrullDim_inter_eq_of_locallyOfFiniteType f hZ hZc hs.isOpen_coborder hZU).symm
     _ ≤ topologicalKrullDim s := (IsEmbedding.inclusion hsub).isInducing.topologicalKrullDim_le

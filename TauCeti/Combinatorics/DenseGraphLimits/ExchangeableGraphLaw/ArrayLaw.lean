@@ -203,15 +203,15 @@ noncomputable def infiniteGraphLawOfArray
     (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
       ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false}) :
     InfiniteExchangeableGraphLaw where
-  law := graphLawOfArray ρ.1
+  law := graphLawOfArray ρ.val
   prob := by
     obtain ⟨hmem, -⟩ :=
-      mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 ρ.2
+      mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 ρ.property
     obtain ⟨-, hp⟩ := mem_jointlyExchangeableProbabilityMeasures_iff.1 hmem
     infer_instance
   exchangeable σ := by
     obtain ⟨hmem, -⟩ :=
-      mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 ρ.2
+      mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 ρ.property
     obtain ⟨hexch, -⟩ := mem_jointlyExchangeableProbabilityMeasures_iff.1 hmem
     exact map_comap_graphLawOfArray σ (hexch.map_pairReindex σ)
 
@@ -220,17 +220,17 @@ noncomputable def infiniteGraphLawOfArray
 theorem infiniteGraphLawOfArray_law
     (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
       ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false}) :
-    (infiniteGraphLawOfArray ρ).law = graphLawOfArray ρ.1 :=
+    (infiniteGraphLawOfArray ρ).law = graphLawOfArray ρ.val :=
   (rfl)
 
 /-- Converting a carried array law to a graph law and back recovers the array law. -/
 theorem arrayLaw_infiniteGraphLawOfArray
     (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
       ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false}) :
-    arrayLaw (infiniteGraphLawOfArray ρ).law = ρ.1 := by
+    arrayLaw (infiniteGraphLawOfArray ρ).law = ρ.val := by
   rw [infiniteGraphLawOfArray_law]
   exact arrayLaw_graphLawOfArray
-    (mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 ρ.2).2
+    (mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 ρ.property).2
 
 /-- **Exchangeable graph laws are the jointly exchangeable array laws carried by the symmetric
 `false`-diagonal arrays.** The bundled law-level adapter. -/
@@ -263,8 +263,8 @@ theorem graphLawArrayLawEquiv_symm_apply
 /-- A block of `[k, m)²`, `m = k + n`, read as a pair of labels in `Fin n`. -/
 private def blockToFin (k n m : ℕ) (hm : k + n = m)
     (p : (Finset.Ico k m ×ˢ Finset.Ico k m : Finset (ℕ × ℕ))) : Fin n × Fin n :=
-  (⟨p.1.1 - k, by have := (Finset.mem_Ico.1 (Finset.mem_product.1 p.2).1); omega⟩,
-    ⟨p.1.2 - k, by have := (Finset.mem_Ico.1 (Finset.mem_product.1 p.2).2); omega⟩)
+  (⟨p.val.1 - k, by have := (Finset.mem_Ico.1 (Finset.mem_product.1 p.property).1); omega⟩,
+    ⟨p.val.2 - k, by have := (Finset.mem_Ico.1 (Finset.mem_product.1 p.property).2); omega⟩)
 
 private theorem blockToFin_surjective (k n m : ℕ) (hm : k + n = m) :
     Function.Surjective (blockToFin k n m hm) := fun ⟨a, b⟩ =>
@@ -409,7 +409,7 @@ theorem isDissociated_iff_graphLawArrayLawEquiv_mem_extremePoints
 theorem isDissociated_graphLawArrayLawEquiv_symm
     (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
       ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false})
-    (h : ρ.1 ∈ extremePoints ℝ≥0∞
+    (h : ρ.val ∈ extremePoints ℝ≥0∞
       (jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false)) :
     (exchangeableGraphLawEquivInfinite.symm (graphLawArrayLawEquiv.symm ρ)).IsDissociated := by
   rw [isDissociated_iff_arrayLaw_mem_extremePoints, graphLawArrayLawEquiv_symm_apply,

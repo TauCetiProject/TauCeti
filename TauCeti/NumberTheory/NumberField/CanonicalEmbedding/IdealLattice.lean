@@ -24,6 +24,8 @@ transported to the mixed space along the injective embedding.
 
 ## Main definitions
 
+* `NumberField.mixedEmbedding.idealLatticeEquiv`: the bijection between the points of a fractional
+  ideal `I` and the points of its lattice `idealLattice K I`, given by the mixed embedding.
 * `Ideal.mixedBasisElem`: the `ν`-th `ℤ`-basis element of a nonzero integral ideal `I` in `K`,
   indexed by `NumberField.mixedEmbedding.index K`.
 * `Ideal.mixedLatticeBasis`: an `ℝ`-basis of `mixedSpace K` indexed by `index K` whose `ℤ`-span is
@@ -41,6 +43,8 @@ transported to the mixed space along the injective embedding.
   lattice have nonzero norm.
 * `NumberField.mixedEmbedding.mixedEmbedding_mul_mem_idealLattice_iff`: multiplication by the
   image of `a ∈ Kˣ` carries the lattice of `I` onto the lattice of `(a) I`.
+* `NumberField.mixedEmbedding.norm_coe_idealLattice_eq_zero_iff`: a point of `idealLattice K I`
+  has mixed norm zero iff it is zero.
 * `Ideal.mixedBasisElem_mem`, `Ideal.linearIndependent_mixedBasisElem`,
   `Ideal.span_int_mixedBasisElem`: `Ideal.mixedBasisElem` lies in `IsLocalization.coeSubmodule K I`,
   is `ℤ`-linearly independent, and spans `IsLocalization.coeSubmodule K I` over `ℤ`.
@@ -125,6 +129,26 @@ theorem mixedEmbedding_mul_mem_idealLattice_iff (a : Kˣ) (I : (FractionalIdeal 
       ((map_mul _ _ _).symm.trans h)⟩
   · rintro ⟨z, hz, rfl⟩
     exact ⟨_, ⟨z, hz, rfl⟩, map_mul _ _ _⟩
+
+/-- A point of `idealLattice K I` has mixed norm zero if and only if it is zero. -/
+@[simp]
+theorem norm_coe_idealLattice_eq_zero_iff {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
+    {x : idealLattice K I} :
+    mixedEmbedding.norm (x : mixedSpace K) = 0 ↔ x = 0 := by
+  obtain ⟨a, _, ha⟩ := (mem_idealLattice K I).mp x.property
+  rw [← ha, norm_eq_zero_iff' ⟨a, rfl⟩, ha, Submodule.coe_eq_zero]
+
+/-- The points of a fractional ideal are in bijection with the points of its lattice in the mixed
+space, which is the image of the ideal under the mixed embedding. -/
+noncomputable def idealLatticeEquiv (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    (I : Submodule (𝓞 K) K) ≃ idealLattice K I :=
+  (LinearEquiv.ofInjective _ ((mixedEmbedding_injective K).comp Subtype.val_injective)).toEquiv
+
+/-- `idealLatticeEquiv` sends a point of the ideal to its mixed embedding. -/
+@[simp]
+theorem coe_idealLatticeEquiv (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (a : (I : Submodule (𝓞 K) K)) :
+    (idealLatticeEquiv I a : mixedSpace K) = mixedEmbedding K a :=
+  LinearEquiv.ofInjective_apply (h := (mixedEmbedding_injective K).comp Subtype.val_injective) _ a
 
 end NumberField.mixedEmbedding
 

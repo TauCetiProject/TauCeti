@@ -32,9 +32,12 @@ The corresponding statement for all of `W^{1,p}(Ω)` requires a boundary-regular
 operator; for bounded Lipschitz domains it is
 `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`.
 
-## Main declaration
+## Main declarations
 
 * `TauCeti.W1p0.isCompactOperator_valueL`: Rellich--Kondrachov for `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.exists_tendsto_value_subseq_of_sub_mem_w1p0Submodule`: a bounded sequence of
+  `W^{1,p}_0(Ω)`, shifted by a convergent sequence of `W^{1,p}(Ω)`, has values with a subsequence
+  converging in `Lᵖ(Ω)` and almost everywhere.
 
 ## References
 
@@ -50,8 +53,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Bornology MeasureTheory Metric Set TopologicalSpace
-open scoped ENNReal
+open Bornology Filter MeasureTheory Metric Set TopologicalSpace
+open scoped ENNReal Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -148,12 +151,47 @@ theorem W1p0.isCompactOperator_valueL (hp : p ≠ ∞)
     have hvalue : (W1p0.valueExtendByZeroL u : E → ℝ) =ᵐ[mu.restrict (Omega : Set E)]
         (W1p0.valueL u : E → ℝ) := by
       rw [W1p0.coeFn_valueExtendByZeroL_eq_value, W1p0.value_extendByZeroL, W1p0.valueL_apply]
-      exact coeFn_extendByZeroLpₗᵢ_restrict ℝ Omega.isOpen.measurableSet
+      exact coeFn_extendByZeroLpₗᵢ_restrict ℝ Omega.isOpen.nullMeasurableSet
         (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.value (u : W1p mu Omega p))
     filter_upwards [LpToLpRestrictCLM_coeFn ℝ (Omega : Set E) (T u), hvalue] with x hx hvaluex
     rw [ContinuousLinearMap.comp_apply, hx]
     exact hvaluex
   rw [← hrestrict]
   exact hT.clm_comp (LpToLpRestrictCLM E ℝ ℝ mu p (Omega : Set E))
+
+/-- **Rellich--Kondrachov for shifted bounded sequences.**  Let `Ω` be bounded and `1 ≤ p < ∞`.
+If `gₖ → g` in `W^{1,p}(Ω)` and the differences `uₖ - gₖ` lie in `W^{1,p}_0(Ω)` with bounded
+norms, then a subsequence of the values of `uₖ` converges in `Lᵖ(Ω)` and almost everywhere
+on `Ω`. -/
+theorem W1p.exists_tendsto_value_subseq_of_sub_mem_w1p0Submodule (hp : p ≠ ∞)
+    (hOmega : IsBounded (Omega : Set E)) {g : W1p mu Omega p} {gn un : ℕ → W1p mu Omega p}
+    (hg : Tendsto gn atTop (𝓝 g)) (hmem : ∀ k, un k - gn k ∈ w1p0Submodule mu Omega p)
+    (hbdd : BddAbove (range fun k => ‖un k - gn k‖)) :
+    ∃ v : Lp ℝ p (mu.restrict (Omega : Set E)),
+      ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (fun j => W1p.value (un (ψ j))) atTop (𝓝 v) ∧
+        ∀ᵐ x ∂mu.restrict (Omega : Set E),
+          Tendsto (fun j => W1p.value (un (ψ j)) x) atTop (𝓝 (v x)) := by
+  obtain ⟨B, hB⟩ := bddAbove_def.1 hbdd
+  replace hB (k : ℕ) : ‖un k - gn k‖ ≤ B := hB _ (mem_range_self k)
+  let w : ℕ → W1p0 mu Omega p :=
+    fun k => ⟨un k - gn k, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 (hmem k)⟩
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
+  -- The values of the ball of radius `B + 1` of `W^{1,p}_0(Ω)` form a relatively compact set.
+  have hcpt := (isCompactOperator_iff_isCompact_closure_image_ball
+    (W1p0.valueL (mu := mu) (Omega := Omega) (p := p)).toLinearMap
+      (r := B + 1) (by linarith)).1 (W1p0.isCompactOperator_valueL hp hOmega)
+  have hw (k : ℕ) : w k ∈ ball (0 : W1p0 mu Omega p) (B + 1) := by
+    rw [mem_ball_zero_iff, ← Submodule.norm_coe (w k)]
+    exact (hB k).trans_lt (lt_add_one B)
+  obtain ⟨z, -, ψ, hψ, hz⟩ := hcpt.tendsto_subseq fun k => subset_closure ⟨w k, hw k, rfl⟩
+  have hgv : Tendsto (fun j => W1p.value (gn (ψ j))) atTop (𝓝 (W1p.value g)) := by
+    simpa only [Function.comp_def, W1p.valueL_apply] using
+      (W1p.valueL.continuous.tendsto g).comp (hg.comp hψ.tendsto_atTop)
+  have hv : Tendsto (fun j => W1p.value (un (ψ j))) atTop (𝓝 (W1p.value g + z)) := by
+    refine (hgv.add hz).congr fun j => ?_
+    simp [w, W1p.value_sub]
+  -- A further subsequence converges almost everywhere.
+  obtain ⟨ψ', hψ', hae⟩ := (tendstoInMeasure_of_tendsto_Lp hv).exists_seq_tendsto_ae
+  exact ⟨W1p.value g + z, ψ ∘ ψ', hψ.comp hψ', hv.comp hψ'.tendsto_atTop, hae⟩
 
 end TauCeti

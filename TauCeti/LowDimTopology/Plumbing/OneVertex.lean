@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LowDimTopology.Plumbing.Covector.Square
 public import TauCeti.LowDimTopology.Plumbing.Tower
 import TauCeti.LowDimTopology.Plumbing.DiagonalDominance
 import TauCeti.LowDimTopology.Plumbing.TopDegree
@@ -38,6 +39,13 @@ directions along the lattice writes every lattice point as `U ^ (χ_k(x) - min �
 So the class of `x₀` generates lattice homology, and the augmentation already used for the
 `U`-tower shows it generates freely.
 
+The lattice correction term `(k² + 1) / 4 - 2 m_k` of `TauCeti.PlumbingGraph.latticeCorrectionTerm`
+is explicit as well. Write `k₀ = k 0` for the single integer entry of `k`. For framing `w`, the
+rational square `k²` is `k₀² / w`, and for framing `-p < 0` and a representative with `|k₀| ≤ p`
+the minimum `m_k` vanishes, so the correction term is `(p - k₀²) / (4 p)`. For the `(-1)`-framed
+vertex, whose boundary is the three-sphere, every characteristic covector is spin^c equivalent to
+`1`, and the correction term is `0`.
+
 ## Main definitions
 
 * `TauCeti.PlumbingGraph.coefficientEquivLatticeHomologyOfUnique`: the lattice homology of a
@@ -57,6 +65,11 @@ So the class of `x₀` generates lattice homology, and the augmentation already 
   `𝔽₂[U] ≅ ℍ(P, k)`.
 * `TauCeti.coefficientEquivOneVertexPlumbingLatticeHomology`: that isomorphism for the explicit
   one-vertex plumbing of negative framing.
+* `TauCeti.oneVertexPlumbing_covectorSquare`: the rational square of a covector `k` is
+  `k₀² / w`, where `k₀ = k 0`.
+* `TauCeti.oneVertexPlumbing_latticeCorrectionTerm`: for framing `-p < 0` and `|k₀| ≤ p`, where
+  `k₀ = k 0`, the lattice correction term is `(p - k₀²) / (4 p)`.
+* `TauCeti.oneVertexPlumbing_neg_one_latticeCorrectionTerm`: for framing `-1` it is `0`.
 
 ## References
 
@@ -421,5 +434,77 @@ noncomputable def coefficientEquivOneVertexPlumbingLatticeHomology {w : ℤ} (hw
   let e := (oneVertexPlumbing w).exists_cycle_latticeAugmentation_eq_one k
   PlumbingGraph.coefficientEquivLatticeHomologyOfUnique _ k h e.choose e.choose_spec.1
     e.choose_spec.2
+
+/-- The rational square `k²` of a covector `k` on the one-vertex plumbing with framing `w` is
+`k₀² / w`, where `k₀ = k 0` is the single integer entry of `k`. -/
+theorem oneVertexPlumbing_covectorSquare (w : ℤ) (k : Fin 1 → ℤ) :
+    (oneVertexPlumbing w).covectorSquare k = (k 0 : ℚ) ^ 2 / w := by
+  rw [PlumbingGraph.covectorSquare_eq_div_det, oneVertexPlumbing_intersectionMatrix,
+    Matrix.adjugate_fin_one, Matrix.one_mulVec, Matrix.det_fin_one_of]
+  simp [dotProduct, sq]
+
+/-- On the one-vertex plumbing with framing `-p < 0`, the characteristic weight of a
+characteristic covector `k` with `|k₀| ≤ p`, where `k₀ = k 0`, is nonnegative:
+`2 χ_k(x) = p x₀² - k₀ x₀ ≥ 0`, where `x₀ = x 0`. -/
+private theorem oneVertexPlumbing_characteristicWeight_nonneg {p : ℤ}
+    (k : (oneVertexPlumbing (-p)).characteristicVectors) (hk : |k.val 0| ≤ p) (x : Fin 1 → ℤ) :
+    0 ≤ (oneVertexPlumbing (-p)).characteristicWeight k x := by
+  have h2 := (oneVertexPlumbing (-p)).two_mul_characteristicWeight k x
+  rw [PlumbingGraph.characteristicWeightNumerator_def, PlumbingGraph.intersectionForm_apply,
+    oneVertexPlumbing_intersectionMatrix] at h2
+  simp only [Fin.sum_univ_one, Matrix.of_apply, Matrix.cons_val_fin_one] at h2
+  -- `k₀ x₀ ≤ p |x₀| ≤ p x₀²`, since `|k₀| ≤ p` and `|x₀| ≤ x₀²` for an integer `x₀`.
+  have hkx : k.val 0 * x 0 ≤ p * |x 0| := by
+    calc k.val 0 * x 0 ≤ |k.val 0 * x 0| := le_abs_self _
+      _ = |k.val 0| * |x 0| := abs_mul _ _
+      _ ≤ p * |x 0| := mul_le_mul_of_nonneg_right hk (abs_nonneg _)
+  have hx : |x 0| ≤ x 0 ^ 2 := Int.abs_eq_natAbs (x 0) ▸ Int.natAbs_le_self_sq (x 0)
+  have hp : 0 ≤ p := (abs_nonneg _).trans hk
+  nlinarith [mul_le_mul_of_nonneg_left hx hp]
+
+/-- **The lattice correction term of a one-vertex plumbing.** For framing `-p` with `p > 0` and a
+characteristic covector `k` whose single entry `k₀ = k 0` satisfies `|k₀| ≤ p`, the minimum of the
+characteristic weight is `0`, and the lattice correction term `(k² + 1) / 4 - 2 m_k`, with `k²` the
+rational square, is `(p - k₀²) / (4 p)`. -/
+theorem oneVertexPlumbing_latticeCorrectionTerm {p : ℤ} (hp : 0 < p)
+    (k : (oneVertexPlumbing (-p)).characteristicVectors) (hk : |k.val 0| ≤ p) :
+    (oneVertexPlumbing (-p)).latticeCorrectionTerm k = (p - (k.val 0 : ℚ) ^ 2) / (4 * p) := by
+  have hm : (oneVertexPlumbing (-p)).sInfCharacteristicWeight k = 0 := by
+    refine le_antisymm ?_ ((oneVertexPlumbing (-p)).le_sInfCharacteristicWeight k
+      (oneVertexPlumbing_characteristicWeight_nonneg k hk))
+    simpa using (oneVertexPlumbing (-p)).sInfCharacteristicWeight_le
+      (isNegativeDefinite_oneVertexPlumbing (neg_lt_zero.2 hp)) k 0
+  have hp' : (p : ℚ) ≠ 0 := by exact_mod_cast hp.ne'
+  rw [PlumbingGraph.latticeCorrectionTerm_def, hm, oneVertexPlumbing_covectorSquare,
+    Fintype.card_fin]
+  push_cast
+  field_simp
+  ring
+
+/-- **The `(-1)`-framed vertex.** The boundary of the `(-1)`-framed one-vertex plumbing is the
+three-sphere, and every characteristic covector has lattice correction term `0`. -/
+theorem oneVertexPlumbing_neg_one_latticeCorrectionTerm
+    (k : (oneVertexPlumbing (-1)).characteristicVectors) :
+    (oneVertexPlumbing (-1)).latticeCorrectionTerm k = 0 := by
+  -- `k` is odd, so it is spin^c equivalent to the covector `1`.
+  obtain ⟨m, hm⟩ : ∃ m, k.val 0 = 2 * m + 1 := by
+    have := (((oneVertexPlumbing (-1)).isCharacteristicVector_iff k.val).1 k.property 0).symm
+    rw [oneVertexPlumbing_weight, Int.ModEq] at this
+    exact ⟨k.val 0 / 2, by omega⟩
+  have h1 : (oneVertexPlumbing (-1)).IsCharacteristicVector (fun _ => 1) :=
+    ((oneVertexPlumbing (-1)).isCharacteristicVector_iff _).2 fun _ => by
+      rw [oneVertexPlumbing_weight]
+      decide
+  have hk : (oneVertexPlumbing (-1)).IsSpinCEquivalent ⟨fun _ => 1, h1⟩ k := by
+    refine ((oneVertexPlumbing (-1)).isSpinCEquivalent_iff _ _).2 ⟨fun _ => -m, ?_⟩
+    ext v
+    obtain rfl := Subsingleton.elim v 0
+    simp only [PlumbingGraph.addTwoMulVec_val, hm, Matrix.mulVec, dotProduct, Fin.sum_univ_one,
+      oneVertexPlumbing_intersectionMatrix, Matrix.of_apply, Matrix.cons_val_fin_one]
+    ring
+  have h := isNegativeDefinite_oneVertexPlumbing (w := -1) (by norm_num)
+  rw [h.latticeCorrectionTerm_eq_of_isSpinCEquivalent hk,
+    oneVertexPlumbing_latticeCorrectionTerm one_pos _ (by simp)]
+  norm_num
 
 end TauCeti

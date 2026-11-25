@@ -26,7 +26,8 @@ A power `(X - C x) ^ h` has the single slope `-v x`, with multiplicity `h`
 homomorphism compatible with the valuations preserves the multiplicities
 (`PowerSeries.newtonSlopeMultiplicity_map`). When only finitely many finite unit edges have slope
 at most `c`, their number is the sum of the multiplicities of the slopes at most `c`
-(`PowerSeries.ncard_setOf_unitSlope_newtonPolygon_le`).
+(`PowerSeries.ncard_setOf_unitSlope_newtonPolygon_le`); for a polynomial this sum is the number of
+its finite slopes at most `c` (`Polynomial.finsum_mem_Iic_newtonSlopeMultiplicity_coe`).
 
 Fix a real additive valuation `v` on a normed division ring and a base `b > 1` with
 `‖x‖ = b ^ (-(v x).untop₀)` for nonzero `x`. A nonzero entire series has a finite face of every
@@ -47,6 +48,8 @@ multiplicities are the slope multiplicities of their Newton polygons.
 
 * `PowerSeries.newtonSlopeMultiplicity_eq_of_isFiniteFace`: the multiplicity is the width of the
   finite face.
+* `PowerSeries.newtonSlopeMultiplicity_eq_ncard_of_heights_eq`: for a polygon given by infinite
+  slope data, the multiplicity counts the indices of that slope.
 * `Polynomial.newtonSlopeMultiplicity_coe`: comparison with the finite slope multiset of a
   polynomial.
 * `PowerSeries.newtonSlopeMultiplicity_rescale`: rescaling the variable shifts the slopes.
@@ -54,6 +57,8 @@ multiplicities are the slope multiplicities of their Newton polygons.
   multiplicities.
 * `PowerSeries.ncard_setOf_unitSlope_newtonPolygon_le`: the number of finite unit edges of slope
   at most a cutoff is the sum of the multiplicities of the slopes below it.
+* `Polynomial.finsum_mem_Iic_newtonSlopeMultiplicity_coe`: for a polynomial, that sum counts its
+  finite slopes at most the cutoff.
 * `PowerSeries.newtonSlopeMultiplicity_X_sub_C_pow`: the power `(X - C x) ^ h` has the slope
   `-v x` with multiplicity `h`.
 * `PowerSeries.IsEntire.newtonSlopeMultiplicity_mul`: multiplicities add under multiplication.
@@ -108,6 +113,25 @@ theorem newtonSlopeMultiplicity_eq_of_isFiniteFace {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     f.newtonSlopeMultiplicity v σ = u - l :=
   hface.ncard_setOf_unitSlope_eq (f.isConvexSeq_newtonPolygon v)
+
+/-- If the Newton polygon of `f` is represented by infinite slope data `d`, the multiplicity of a
+slope `σ` is the number of indices `i` with `d.slope i = σ`. -/
+theorem newtonSlopeMultiplicity_eq_ncard_of_heights_eq {d : InfiniteSlopeData ℝ}
+    (hd : d.heights = f.newtonPolygon v) (σ : ℝ) :
+    f.newtonSlopeMultiplicity v σ = {i | d.slope i = σ}.ncard := by
+  -- The finite unit edges of slope `σ` are the translates by `d.start` of the indices of slope `σ`.
+  have himage : {n | n ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) n = σ} =
+      (d.start + ·) '' {i | d.slope i = σ} := by
+    ext n
+    simp only [← hd, mem_finiteEdges, ne_eq, InfiniteSlopeData.heights_eq_top_iff, not_lt,
+      Set.mem_ofPred_eq, Set.mem_image]
+    constructor
+    · rintro ⟨⟨hn, -⟩, hσ⟩
+      obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le hn
+      exact ⟨i, by rwa [InfiniteSlopeData.unitSlope_heights] at hσ, rfl⟩
+    · rintro ⟨i, hi, rfl⟩
+      exact ⟨⟨by omega, by omega⟩, by rwa [InfiniteSlopeData.unitSlope_heights]⟩
+  rw [newtonSlopeMultiplicity_def, himage, Set.ncard_image_of_injective _ (add_right_injective _)]
 
 /-- **Cutoff counts.** If only finitely many finite unit edges of the Newton polygon of `f` have
 slope at most `c`, their number is the sum of the multiplicities of the slopes at most `c`. -/
@@ -202,6 +226,18 @@ theorem newtonSlopeMultiplicity_coe (σ : ℝ) :
     (p : PowerSeries R).newtonSlopeMultiplicity v σ = (p.newtonSlopes v).count σ := by
   simp_rw [PowerSeries.newtonSlopeMultiplicity_def, newtonPolygon_coe,
     Multiset.count_eq_card_filter_eq, card_filter_newtonSlopes, eq_comm]
+
+/-- **Cutoff counts of a polynomial.** The sum of the multiplicities of the slopes at most `σ` of
+the Newton polygon of a polynomial is the number of its finite slopes at most `σ`, counted with
+multiplicity. -/
+theorem finsum_mem_Iic_newtonSlopeMultiplicity_coe (σ : ℝ) :
+    ∑ᶠ s ∈ Set.Iic σ, (p : PowerSeries R).newtonSlopeMultiplicity v s =
+      ((p.newtonSlopes v).filter (· ≤ σ)).card := by
+  rw [card_filter_newtonSlopes, ← newtonPolygon_coe,
+    PowerSeries.ncard_setOf_unitSlope_newtonPolygon_le]
+  -- The edges of slope at most `σ` are among the finitely many finite edges of the polygon.
+  rw [newtonPolygon_coe]
+  exact (p.finite_finiteEdges_newtonPolygon v).subset fun _ hn ↦ hn.1
 
 end Polynomial
 

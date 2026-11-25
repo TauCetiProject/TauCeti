@@ -18,6 +18,9 @@ total-space section to `DifferentiableWithinAt` and `ContDiffWithinAt` regularit
 
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord`: a differentiability entry point for
   `sectionCoord` within a parameter set.
+* `TauCeti.Manifold.differentiableWithinAt_repr_sectionCoord`,
+  `TauCeti.Manifold.differentiableAt_repr_sectionCoord`: differentiability of basis coordinates of
+  `sectionCoord`.
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord_sum`: finite sums of sections with
   differentiable readings have differentiable readings.
 * `TauCeti.Manifold.contDiffWithinAt_sectionCoord_iff`: the `C^n` coordinate characterization
@@ -46,6 +49,22 @@ variable
 variable (γ : 𝕜 → M) (W : ∀ t, V (γ t))
 
 /-! ### Differentiability of the coordinate reading -/
+
+/-- If the coordinate reading `sectionCoord γ W x` is differentiable within `s` at `t`, then each
+coordinate function in a model-fibre basis `b` is differentiable within `s` at `t`. -/
+theorem differentiableWithinAt_repr_sectionCoord [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {ι : Type*} (b : Module.Basis ι 𝕜 F) {x : M} {s : Set 𝕜} {t : 𝕜}
+    (hW : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := F) γ W x) s t) (i : ι) :
+    DifferentiableWithinAt 𝕜 (fun r ↦ b.repr (sectionCoord 𝕜 (F := F) γ W x r) i) s t :=
+  (b.coord i).toContinuousLinearMap.differentiableAt.comp_differentiableWithinAt t hW
+
+/-- If the coordinate reading `sectionCoord γ W x` is differentiable at `t`, then each coordinate
+function in a model-fibre basis `b` is differentiable at `t`. -/
+theorem differentiableAt_repr_sectionCoord [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {ι : Type*} (b : Module.Basis ι 𝕜 F) {x : M} {t : 𝕜}
+    (hW : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := F) γ W x) t) (i : ι) :
+    DifferentiableAt 𝕜 (fun r ↦ b.repr (sectionCoord 𝕜 (F := F) γ W x r) i) t :=
+  (b.coord i).toContinuousLinearMap.differentiableAt.comp t hW
 
 /-- A finite sum of sections along a curve whose coordinate readings are differentiable within
 `s` at `t` again has a coordinate reading differentiable within `s` at `t`. -/
