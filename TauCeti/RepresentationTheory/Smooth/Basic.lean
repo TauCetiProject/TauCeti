@@ -467,12 +467,9 @@ supremum of `V^U` over all compact open subgroups `U` of `G`. -/
 theorem toSubmodule_smoothVectors_eq_biSup_invariants_isCompact (ρ : Representation A G V) :
     ρ.smoothVectors.toSubmodule =
       ⨆ (U : OpenSubgroup G) (_ : IsCompact (U : Set G)),
-        invariants (ρ.comp U.toSubgroup.subtype) := by
-  refine le_antisymm (fun v hv ↦ ?_) (iSup₂_le fun U hU v hv ↦ ?_)
-  · obtain ⟨U, hUcpt, hU⟩ :=
-      mem_smoothVectors_iff_exists_isCompact_openSubgroup_mem_invariants.mp hv
-    exact Submodule.mem_iSup_of_mem U (Submodule.mem_iSup_of_mem hUcpt hU)
-  · exact mem_smoothVectors_iff_exists_isCompact_openSubgroup_mem_invariants.mpr ⟨U, hU, hv⟩
+        invariants (ρ.comp U.toSubgroup.subtype) :=
+  toSubmodule_smoothVectors_eq_biSup_invariants (U := fun H : OpenSubgroup G ↦ H.toSubgroup)
+    NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup
 
 /-- For a locally profinite group, a representation is smooth exactly when `V = ⋃ V^U`, the
 union of the invariants of the compact open subgroups `U`. -/
@@ -487,9 +484,9 @@ theorem isSmooth_iff_biUnion_invariants_isCompact_eq_univ :
 `ρ` is smooth. -/
 theorem biSup_invariants_isCompact_eq_top_iff_isSmooth (ρ : Representation A G V) :
     (⨆ (U : OpenSubgroup G) (_ : IsCompact (U : Set G)),
-      invariants (ρ.comp U.toSubgroup.subtype)) = ⊤ ↔ IsSmooth ρ := by
-  rw [← toSubmodule_smoothVectors_eq_biSup_invariants_isCompact, ← smoothVectors_eq_top_iff,
-    ← Subrepresentation.toSubmodule_injective.eq_iff, Subrepresentation.toSubmodule_top]
+      invariants (ρ.comp U.toSubgroup.subtype)) = ⊤ ↔ IsSmooth ρ :=
+  biSup_invariants_eq_top_iff_isSmooth (U := fun H : OpenSubgroup G ↦ H.toSubgroup)
+    NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup
 
 end LocallyProfinite
 
