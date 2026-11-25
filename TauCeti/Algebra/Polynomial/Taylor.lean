@@ -203,6 +203,14 @@ theorem coeff_taylor_map_algebraMap {R B : Type*} [CommSemiring R] [CommSemiring
     (taylor ζ (p.map (algebraMap R B))).coeff k = aeval ζ (hasseDeriv k p) := by
   rw [taylor_coeff, hasseDeriv_map, eval_map_algebraMap]
 
+/-- If `ζ` is a root of `g` in an `R`-algebra and `g ^ m ∣ p`, then the Hasse derivatives of `p` of
+order less than `m` vanish at `ζ`. -/
+theorem aeval_hasseDeriv_eq_zero_of_pow_dvd {R B : Type*} [CommSemiring R] [CommSemiring B]
+    [Algebra R B] {ζ : B} {g p : R[X]} (hg : aeval ζ g = 0) {m : ℕ} (h : g ^ m ∣ p) {k : ℕ}
+    (hk : k < m) : aeval ζ (hasseDeriv k p) = 0 := by
+  obtain ⟨c, hc⟩ := pow_sub_dvd_hasseDeriv_of_pow_dvd k h
+  rw [hc, map_mul, map_pow, hg, zero_pow (by omega), zero_mul]
+
 variable {R : Type*} [CommRing R]
 
 /-- The trailing degree of the Taylor expansion of `p` at `r` is `p.rootMultiplicity r`. For
@@ -241,14 +249,6 @@ vanishes at `r`. -/
 theorem X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero {p : R[X]} {r : R} {n : ℕ} :
     (X - C r) ^ n ∣ p ↔ ∀ i < n, (hasseDeriv i p).eval r = 0 := by
   rw [← Ideal.mem_span_singleton, mem_span_X_sub_C_pow_iff_forall_eval_hasseDeriv_eq_zero]
-
-/-- If `ζ` is a root of `g` in an `R`-algebra and `g ^ m ∣ p`, then the Hasse derivatives of `p` of
-order less than `m` vanish at `ζ`. -/
-theorem aeval_hasseDeriv_eq_zero_of_pow_dvd {B : Type*} [CommRing B] [Algebra R B] {ζ : B}
-    {g p : R[X]} (hg : aeval ζ g = 0) {m : ℕ} (h : g ^ m ∣ p) {k : ℕ} (hk : k < m) :
-    aeval ζ (hasseDeriv k p) = 0 := by
-  obtain ⟨c, hc⟩ := pow_sub_dvd_hasseDeriv_of_pow_dvd k h
-  rw [hc, map_mul, map_pow, hg, zero_pow (by omega), zero_mul]
 
 /-- For `p ≠ 0`, `r` has multiplicity at least `n` as a root of `p` if and only if every Hasse
 derivative of `p` of order less than `n` vanishes at `r`. -/
