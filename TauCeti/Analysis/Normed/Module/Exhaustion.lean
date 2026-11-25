@@ -13,7 +13,6 @@ import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Normed.Module.FilledHull
-import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Frontier
 
@@ -223,9 +222,13 @@ theorem _root_.IsOpen.iUnion_filledExhaustion {Ω : Set E} (hΩ : IsOpen Ω) :
 `interior (filledExhaustion Ω n)` for some `n`. -/
 theorem _root_.IsCompact.exists_subset_interior_filledExhaustion {Ω K : Set E}
     (hK : IsCompact K) (hKΩ : K ⊆ interior Ω) :
-    ∃ n, K ⊆ interior (filledExhaustion Ω n) :=
-  hK.exists_subset_interior_of_subset_iUnion (filledExhaustion_subset_interior_succ Ω)
-    ((iUnion_filledExhaustion Ω).symm ▸ hKΩ)
+    ∃ n, K ⊆ interior (filledExhaustion Ω n) := by
+  refine hK.elim_directed_cover (fun n ↦ interior (filledExhaustion Ω n))
+    (fun _ ↦ isOpen_interior) ?_
+    (Monotone.directed_le fun _ _ h ↦ interior_mono (filledExhaustion_monotone Ω h))
+  intro x hx
+  obtain ⟨n, hn⟩ := mem_iUnion.mp ((iUnion_filledExhaustion Ω).symm ▸ hKΩ hx)
+  exact mem_iUnion.mpr ⟨n + 1, filledExhaustion_subset_interior_succ Ω n hn⟩
 
 /-- **Compact cofinality (strict).** Every compact subset `K` of an open set `Ω` lies inside
 `interior (filledExhaustion Ω n)` for some `n`. -/

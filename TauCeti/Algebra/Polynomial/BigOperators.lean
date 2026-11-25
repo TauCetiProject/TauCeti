@@ -23,8 +23,7 @@ degree bounds.
 A product of monomials over a list is the monomial of the summed degrees and the ordered product
 of the coefficients.
 
-This file also groups products of linear factors according to their constant terms and sums of
-polynomial evaluations according to fibers (`Polynomial.sum_image_eval_filter`), records
+This file also groups products of linear factors according to their constant terms, records
 that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
 of geometric sums of mixed powers of equal-degree monic polynomials.
 
@@ -70,17 +69,6 @@ theorem list_prod_map_monomial {α : Type*} (l : List α) (e : α → ℕ) (a : 
   induction l with
   | nil => simp
   | cons i l ih => simp [ih, monomial_mul_monomial]
-
-/-- Regroup a sum of polynomial evaluations `(P j).eval (g (b j))` according to the fibers of `b`,
-summing the polynomials in each fiber before evaluating at `g a`. -/
-theorem sum_image_eval_filter {α β : Type*} [DecidableEq β] (J : Finset α) (b : α → β)
-    (g : β → R) (P : α → R[X]) :
-    (∑ a ∈ J.image b, (∑ j ∈ J with b j = a, P j).eval (g a)) =
-      ∑ j ∈ J, (P j).eval (g (b j)) := by
-  refine (sum_congr rfl fun a _ ↦ ?_).trans
-    (sum_fiberwise_of_maps_to (fun _ ↦ mem_image_of_mem b) _)
-  rw [eval_finsetSum]
-  exact sum_congr rfl fun j hj ↦ by rw [(mem_filter.mp hj).right]
 
 end Semiring
 

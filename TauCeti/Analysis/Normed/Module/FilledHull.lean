@@ -59,8 +59,6 @@ regularity assumptions on `K`. The related frontier bound in
 * `TauCeti.compl_filledHull_eq_connectedComponentIn` and `TauCeti.isConnected_compl_filledHull`:
   outside its filled hull, the complement of a bounded set is a single component, in dimension at
   least two.
-* `TauCeti.isConnected_compl_iff_filledHull_eq` — the complement of a bounded set is connected if
-  and only if it equals its filled hull, in dimension at least two.
 -/
 
 public section
@@ -258,14 +256,5 @@ theorem isConnected_compl_filledHull (h : 1 < Module.rank ℝ E) (hK : IsBounded
   obtain ⟨x, hx⟩ := nonempty_compl_filledHull hK
   rw [compl_filledHull_eq_connectedComponentIn h hK hx]
   exact isConnected_connectedComponentIn_iff.mpr fun hxK => hx (subset_filledHull hxK)
-
-/-- In a real normed space of dimension at least two, the complement of a bounded set `K` is
-connected if and only if `K` equals its filled hull. -/
-theorem isConnected_compl_iff_filledHull_eq (h : 1 < Module.rank ℝ E)
-    (hK : IsBounded K) : IsConnected Kᶜ ↔ filledHull K = K := by
-  have : Nontrivial E := rank_pos_iff_nontrivial.mp (zero_lt_one.trans h)
-  exact ⟨fun hc => filledHull_eq_self hc.isPreconnected fun hbdd =>
-      NormedSpace.unbounded_univ ℝ E (compl_union_self K ▸ hbdd.union hK),
-    fun heq => heq ▸ isConnected_compl_filledHull h hK⟩
 
 end TauCeti

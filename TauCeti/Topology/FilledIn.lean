@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import TauCeti.Topology.FilledHull
 import Mathlib.Topology.MetricSpace.Bounded
-import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -24,34 +23,25 @@ In a proper, locally connected metric space,
 `TauCeti.isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset` recasts the
 condition through the bounded components of `Kᶜ`, which make up the filled hull
 `TauCeti.filledHull K \ K`: for closed `K ⊆ Ω`, the set `K` is filled in `Ω` exactly when every
-bounded connected component of `Kᶜ` meets `Ωᶜ`. The relatively compact components of `Ω \ K` in
-`Ω` are precisely the bounded components of `Kᶜ` contained in `Ω`
-(`TauCeti.setOf_isCompact_closure_connectedComponentIn_eq_filledHull` and
-`TauCeti.fillIn_eq_union_filledHull`). This is the form in which the condition enters
+bounded connected component of `Kᶜ` meets `Ωᶜ`. This is the form in which the condition enters
 unique-continuation arguments on the complement of `K`: each component of `Kᶜ` is unbounded or
 reaches a point outside `Ω`.
 For `Ω` the whole space, being filled in it means being equal to the filled hull
 (`TauCeti.isFilledIn_univ_iff`).
 
 Filled compact exhaustions of open sets in proper real normed spaces are constructed in
-`TauCeti/Analysis/Normed/Module/Exhaustion.lean`, and preservation of filledness under discrete
-unions on manifolds of dimension greater than one is proved in
-`TauCeti/Geometry/Manifold/FilledIn.lean`.
+`TauCeti/Analysis/Normed/Module/Exhaustion.lean`.
 
 ## Main declarations
 
 * `TauCeti.IsFilledIn`: no connected component of `Ω \ K` is relatively compact in `Ω`.
-* `IsOpen.isFilledIn_empty` and `IsOpen.fillIn_empty_left`: in a locally connected space with no
-  compact connected component, the empty set is filled in every open set.
-* `TauCeti.isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset` and
-  `TauCeti.fillIn_eq_union_filledHull`: description of `IsFilledIn` and `fillIn` through the
-  bounded components of `Kᶜ`.
+* `TauCeti.isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset`: the same
+  condition through the bounded components of `Kᶜ`.
 * `TauCeti.isFilledIn_univ_iff`: a closed set is filled in the whole space exactly when it equals
   its filled hull.
 * `TauCeti.fillIn`: `K` together with all connected components of `Ω \ K` having compact closure
   contained in `Ω`, with `TauCeti.fillIn_eq_self_iff_isFilledIn`, `TauCeti.isFilledIn_fillIn`,
-  `TauCeti.fillIn_univ`, `TauCeti.fillIn_subset_filledHull`, `IsClosed.fillIn`, and
-  `IsCompact.fillIn_of_not_isCompact_connectedComponent`.
+  `TauCeti.fillIn_univ`, `TauCeti.fillIn_subset_filledHull`, and `IsClosed.fillIn`.
 * `TauCeti.frontier_connectedComponentIn_sdiff_subset` and
   `TauCeti.connectedComponentIn_sdiff_eq_of_closure_subset`: when `Ω \ K` is open, a connected
   component of `Ω \ K` whose closure lies in `Ω` has frontier in `K` and coincides with the
@@ -87,23 +77,6 @@ theorem isFilledIn_iff :
         closure (connectedComponentIn (Ω \ K) x) ⊆ Ω) :=
   (Iff.rfl)
 
-/-- In a locally connected space with no compact connected component, the empty set is filled in
-every open set. -/
-theorem _root_.IsOpen.isFilledIn_empty [LocallyConnectedSpace X] (hΩ : IsOpen Ω)
-    (hX : ∀ x : X, ¬IsCompact (connectedComponent x)) : IsFilledIn ∅ Ω := by
-  -- A component of `Ω` with compact closure in `Ω` is clopen in `X`, hence a compact component.
-  rintro x ⟨hxΩ, -⟩ ⟨hcpt, hsub⟩
-  rw [sdiff_empty] at hcpt hsub
-  have hcl : closure (connectedComponentIn Ω x) = connectedComponentIn Ω x :=
-    Subset.antisymm
-      (isPreconnected_connectedComponentIn.closure.subset_connectedComponentIn
-        (subset_closure (mem_connectedComponentIn hxΩ)) hsub)
-      subset_closure
-  have hclopen : IsClopen (connectedComponentIn Ω x) :=
-    ⟨hcl ▸ isClosed_closure, hΩ.connectedComponentIn⟩
-  exact hX x (hcpt.of_isClosed_subset isClosed_connectedComponent
-    ((hclopen.connectedComponent_subset (mem_connectedComponentIn hxΩ)).trans subset_closure))
-
 /-- The domain-relative filling of `K` in `Ω`: `K` together with all connected components of
 `Ω \ K` whose closures are compact subsets of `Ω`. -/
 def fillIn (K Ω : Set X) : Set X :=
@@ -131,7 +104,7 @@ theorem subset_fillIn : K ⊆ fillIn K Ω :=
 
 /-- When `K ⊆ Ω`, `TauCeti.fillIn K Ω` is contained in `Ω`. -/
 theorem fillIn_subset (hKΩ : K ⊆ Ω) : fillIn K Ω ⊆ Ω :=
-  union_subset hKΩ fun _ hz => hz.left.left
+  union_subset hKΩ fun _ hz => hz.1.1
 
 /-- Monotonicity of `TauCeti.fillIn` in `K`. -/
 @[gcongr]
@@ -142,7 +115,7 @@ theorem fillIn_mono {K₁ K₂ : Set X} (hK : K₁ ⊆ K₂) : fillIn K₁ Ω �
     · exact subset_fillIn hzK₂
     · have hC : connectedComponentIn (Ω \ K₂) z ⊆ connectedComponentIn (Ω \ K₁) z :=
         connectedComponentIn_mono z (sdiff_subset_sdiff Subset.rfl hK)
-      exact Or.inr ⟨⟨hzΩK₁.left, hzK₂⟩,
+      exact Or.inr ⟨⟨hzΩK₁.1, hzK₂⟩,
         hcpt.of_isClosed_subset isClosed_closure (closure_mono hC),
         (closure_mono hC).trans hsub⟩
 
@@ -159,30 +132,24 @@ theorem fillIn_self (K : Set X) : fillIn K K = K := by
 /-- `TauCeti.fillIn K Ω` equals `K` if and only if `K` is filled in `Ω`. -/
 theorem fillIn_eq_self_iff_isFilledIn : fillIn K Ω = K ↔ IsFilledIn K Ω := by
   rw [fillIn_def, union_eq_left, isFilledIn_iff]
-  exact ⟨fun h x hx hcpt => hx.right (h ⟨hx, hcpt⟩),
+  exact ⟨fun h x hx hcpt => hx.2 (h ⟨hx, hcpt⟩),
     fun h x ⟨hx, hcpt⟩ => (h x hx hcpt).elim⟩
-
-/-- In a locally connected space with no compact connected component, filling the empty set in any
-open set `Ω` gives the empty set. -/
-theorem _root_.IsOpen.fillIn_empty_left [LocallyConnectedSpace X] (hΩ : IsOpen Ω)
-    (hX : ∀ x : X, ¬IsCompact (connectedComponent x)) : fillIn ∅ Ω = ∅ :=
-  fillIn_eq_self_iff_isFilledIn.mpr (hΩ.isFilledIn_empty hX)
 
 /-- `TauCeti.fillIn K Ω` is always filled in `Ω`. -/
 @[simp]
 theorem isFilledIn_fillIn (K Ω : Set X) : IsFilledIn (fillIn K Ω) Ω := by
-  refine isFilledIn_iff.mpr fun x hx ⟨hcpt, hsub⟩ => hx.right (Or.inr ?_)
-  have hxΩK : x ∈ Ω \ K := ⟨hx.left, fun h => hx.right (Or.inl h)⟩
+  refine isFilledIn_iff.mpr fun x hx ⟨hcpt, hsub⟩ => hx.2 (Or.inr ?_)
+  have hxΩK : x ∈ Ω \ K := ⟨hx.1, fun h => hx.2 (Or.inl h)⟩
   have hcomp_eq : connectedComponentIn (Ω \ fillIn K Ω) x = connectedComponentIn (Ω \ K) x := by
     refine Subset.antisymm
       (connectedComponentIn_mono x (sdiff_subset_sdiff Subset.rfl subset_fillIn)) ?_
     refine isPreconnected_connectedComponentIn.subset_connectedComponentIn
-      (mem_connectedComponentIn hxΩK) fun y hy => ⟨(connectedComponentIn_subset _ _ hy).left, ?_⟩
+      (mem_connectedComponentIn hxΩK) fun y hy => ⟨(connectedComponentIn_subset _ _ hy).1, ?_⟩
     rintro (hyK | ⟨-, hycpt, hysub⟩)
-    · exact (connectedComponentIn_subset _ _ hy).right hyK
+    · exact (connectedComponentIn_subset _ _ hy).2 hyK
     · have hxy : connectedComponentIn (Ω \ K) y = connectedComponentIn (Ω \ K) x :=
         (connectedComponentIn_eq hy).symm
-      exact hx.right (Or.inr ⟨hxΩK, hxy ▸ hycpt, hxy ▸ hysub⟩)
+      exact hx.2 (Or.inr ⟨hxΩK, hxy ▸ hycpt, hxy ▸ hysub⟩)
   exact ⟨hxΩK, hcomp_eq ▸ hcpt, hcomp_eq ▸ hsub⟩
 
 /-- Idempotence of `TauCeti.fillIn` in its first argument. -/
@@ -208,50 +175,8 @@ theorem connectedComponentIn_sdiff_eq_of_closure_subset [LocallyConnectedSpace X
     connectedComponentIn (Ω \ K) x = connectedComponentIn Kᶜ x :=
   Subset.antisymm (connectedComponentIn_mono x (sdiff_subset_compl Ω K)) <|
     isPreconnected_connectedComponentIn.subset_connectedComponentIn_of_inter_closure_subset
-      hΩK (mem_connectedComponentIn hx.right) hx
-      fun _ hy => ⟨hsub hy.right, connectedComponentIn_subset _ _ hy.left⟩
-
-/-- For an open set `Ω` and closed `K` in a locally connected `R₀` space, `TauCeti.fillIn K Ω` is
-closed. -/
-protected theorem _root_.IsClosed.fillIn [R0Space X] [LocallyConnectedSpace X] (hK : IsClosed K)
-    (hΩ : IsOpen Ω) : IsClosed (TauCeti.fillIn K Ω) := by
-  let : Bornology X := .relativelyCompact X
-  have hsub_hull : fillIn K Ω ⊆ filledHull K := by
-    rintro z (hzK | ⟨hz, hcpt, hsub⟩)
-    · exact subset_filledHull hzK
-    · rw [mem_filledHull_iff, Bornology.relativelyCompact.isBounded_iff]
-      rwa [← connectedComponentIn_sdiff_eq_of_closure_subset (hΩ.sdiff hK) hz hsub]
-  rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
-  intro z hz
-  by_cases hzF : z ∈ filledHull K
-  · have hzK : z ∉ K := fun h => hz (subset_fillIn h)
-    refine ⟨connectedComponentIn Kᶜ z, fun w hw hwK' => ?_,
-      hK.isOpen_compl.connectedComponentIn, mem_connectedComponentIn hzK⟩
-    rcases hwK' with hwK | ⟨hwΩK, hwcpt, hwsub⟩
-    · exact connectedComponentIn_subset Kᶜ z hw hwK
-    · have hD : connectedComponentIn (Ω \ K) w = connectedComponentIn Kᶜ z :=
-        (connectedComponentIn_sdiff_eq_of_closure_subset (hΩ.sdiff hK) hwΩK hwsub).trans
-          (connectedComponentIn_eq hw).symm
-      have hzC : z ∈ connectedComponentIn (Ω \ K) w := hD.symm ▸ mem_connectedComponentIn hzK
-      have hzC_eq : connectedComponentIn (Ω \ K) z = connectedComponentIn (Ω \ K) w :=
-        (connectedComponentIn_eq hzC).symm
-      exact hz (Or.inr ⟨connectedComponentIn_subset _ _ hzC, hzC_eq ▸ hwcpt, hzC_eq ▸ hwsub⟩)
-  · exact ⟨(filledHull K)ᶜ, compl_subset_compl.mpr hsub_hull,
-      hK.isClosed_filledHull.isOpen_compl, hzF⟩
-
-/-- **Compactness of the relative fill.** In a locally compact Hausdorff, locally connected space
-with no compact connected component, filling a compact set `K` inside an open set `Ω` produces a
-compact set. -/
-theorem _root_.IsCompact.fillIn_of_not_isCompact_connectedComponent
-    [T2Space X] [WeaklyLocallyCompactSpace X] [LocallyConnectedSpace X]
-    (hK : IsCompact K) (hΩ : IsOpen Ω) (hX : ∀ x : X, ¬IsCompact (connectedComponent x)) :
-    IsCompact (TauCeti.fillIn K Ω) := by
-  refine (hK.isCompact_setOf_isCompact_closure_connectedComponentIn_compl hX).of_isClosed_subset
-    (hK.isClosed.fillIn hΩ) ?_
-  rintro x (hxK | ⟨hx, hcpt, hsub⟩)
-  · exact isCompact_closure_connectedComponentIn_compl_of_mem hxK
-  · change IsCompact (closure (connectedComponentIn Kᶜ x))
-    rwa [← connectedComponentIn_sdiff_eq_of_closure_subset (hΩ.sdiff hK.isClosed) hx hsub]
+      hΩK (mem_connectedComponentIn hx.2) hx
+      fun _ hy => ⟨hsub hy.2, connectedComponentIn_subset _ _ hy.1⟩
 
 end Topology
 
@@ -259,50 +184,31 @@ section MetricSpace
 
 variable {X : Type*} [PseudoMetricSpace X] [ProperSpace X] [LocallyConnectedSpace X] {K Ω : Set X}
 
-/-- **Relatively compact components of `Ω \ K` versus bounded components of `Kᶜ`.** For a closed
-subset `K` of an open set `Ω` in a proper, locally connected pseudometric space, the points of
-`Ω \ K` whose component in `Ω \ K` has compact closure contained in `Ω` are the points of
-`filledHull K \ K` whose component in `Kᶜ` lies in `Ω`. -/
-theorem setOf_isCompact_closure_connectedComponentIn_eq_filledHull
-    (hK : IsClosed K) (hΩ : IsOpen Ω) (hKΩ : K ⊆ Ω) :
-    {x ∈ Ω \ K | IsCompact (closure (connectedComponentIn (Ω \ K) x)) ∧
-      closure (connectedComponentIn (Ω \ K) x) ⊆ Ω} =
-      {x ∈ filledHull K \ K | connectedComponentIn Kᶜ x ⊆ Ω} := by
-  ext x
-  constructor
-  · rintro ⟨⟨hxΩ, hxK⟩, hcpt, hsub⟩
-    have hD : connectedComponentIn (Ω \ K) x = connectedComponentIn Kᶜ x :=
-      connectedComponentIn_sdiff_eq_of_closure_subset (hΩ.sdiff hK) ⟨hxΩ, hxK⟩ hsub
-    exact ⟨⟨mem_filledHull_iff.mpr (hD ▸ hcpt.isBounded.subset subset_closure), hxK⟩,
-      hD ▸ subset_closure.trans hsub⟩
-  · rintro ⟨⟨hxH, hxK⟩, hDΩ⟩
-    have hCD : connectedComponentIn (Ω \ K) x ⊆ connectedComponentIn Kᶜ x :=
-      connectedComponentIn_mono x (sdiff_subset_compl _ _)
-    have hclD : closure (connectedComponentIn Kᶜ x) ⊆ Ω := by
-      rw [closure_eq_self_union_frontier]
-      exact union_subset hDΩ <| (frontier_connectedComponentIn_subset_compl hK.isOpen_compl x).trans
-        (by rwa [compl_compl])
-    exact ⟨⟨hDΩ (mem_connectedComponentIn hxK), hxK⟩,
-      (mem_filledHull_iff.mp hxH).isCompact_closure.of_isClosed_subset isClosed_closure
-        (closure_mono hCD), (closure_mono hCD).trans hclD⟩
-
-/-- **Filled-hull description of `TauCeti.fillIn`.** For a closed subset `K` of an open set `Ω` in a
-proper, locally connected pseudometric space, `fillIn K Ω` is `K` together with the points of
-`filledHull K \ K` whose connected component in `Kᶜ` lies in `Ω`. -/
-theorem fillIn_eq_union_filledHull (hK : IsClosed K) (hΩ : IsOpen Ω) (hKΩ : K ⊆ Ω) :
-    fillIn K Ω = K ∪ {x ∈ filledHull K \ K | connectedComponentIn Kᶜ x ⊆ Ω} := by
-  rw [fillIn_def, ← setOf_isCompact_closure_connectedComponentIn_eq_filledHull hK hΩ hKΩ]
-
 /-- **Filledness through the filled hull.** For a closed set `K` inside an open set `Ω` of a proper,
 locally connected metric space, `K` is filled in `Ω` exactly when no bounded connected component
 of `Kᶜ` lies in `Ω`, i.e. every bounded component of `Kᶜ` meets `Ωᶜ`. -/
 theorem isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset
     (hK : IsClosed K) (hΩ : IsOpen Ω) (hKΩ : K ⊆ Ω) :
     IsFilledIn K Ω ↔ ∀ x ∈ filledHull K \ K, ¬ connectedComponentIn Kᶜ x ⊆ Ω := by
-  have heq := Set.ext_iff.mp (setOf_isCompact_closure_connectedComponentIn_eq_filledHull hK hΩ hKΩ)
-  exact ⟨fun h x ⟨hxH, hxK⟩ hD => h x ⟨hD (mem_connectedComponentIn hxK), hxK⟩
-      ((heq x).mpr ⟨⟨hxH, hxK⟩, hD⟩).right,
-    fun h x hx hcpt => h x ((heq x).mp ⟨hx, hcpt⟩).left ((heq x).mp ⟨hx, hcpt⟩).right⟩
+  constructor
+  · -- The component `C` of `x` in `Ω \ K` lies in the component `D` of `x` in `Kᶜ`, whose closure
+    -- is compact and adds to `D` only points of `K ⊆ Ω`.
+    rintro h x ⟨hxH, hxK⟩ hDΩ
+    have hCD : connectedComponentIn (Ω \ K) x ⊆ connectedComponentIn Kᶜ x :=
+      connectedComponentIn_mono x (sdiff_subset_compl _ _)
+    have hclD : closure (connectedComponentIn Kᶜ x) ⊆ Ω := by
+      rw [closure_eq_self_union_frontier]
+      exact union_subset hDΩ <| (frontier_connectedComponentIn_subset_compl hK.isOpen_compl x).trans
+        (by rwa [compl_compl])
+    exact h x ⟨hDΩ (mem_connectedComponentIn hxK), hxK⟩
+      ⟨(mem_filledHull_iff.mp hxH).isCompact_closure.of_isClosed_subset isClosed_closure
+        (closure_mono hCD), (closure_mono hCD).trans hclD⟩
+  · -- A relatively compact component of `Ω \ K` equals the component of `x` in `Kᶜ`.
+    rintro h x hx ⟨hcpt, hsub⟩
+    have hD : connectedComponentIn (Ω \ K) x = connectedComponentIn Kᶜ x :=
+      connectedComponentIn_sdiff_eq_of_closure_subset (hΩ.sdiff hK) hx hsub
+    exact h x ⟨mem_filledHull_iff.mpr (hD ▸ hcpt.isBounded.subset subset_closure), hx.2⟩
+      (hD ▸ subset_closure.trans hsub)
 
 /-- A closed set is filled in the whole space exactly when it equals its filled hull, i.e. its
 complement has no bounded connected component. -/
@@ -311,7 +217,7 @@ theorem isFilledIn_univ_iff (hK : IsClosed K) : IsFilledIn K univ ↔ filledHull
     (subset_univ K)]
   exact ⟨fun h => Subset.antisymm
       (fun x hx => by_contra fun hxK => h x ⟨hx, hxK⟩ (subset_univ _)) subset_filledHull,
-    fun h x ⟨hxH, hxK⟩ _ => hxK (h ▸ hxH)⟩
+    fun h x hx _ => hx.2 (h ▸ hx.1)⟩
 
 omit [LocallyConnectedSpace X] in
 /-- Filling `K` in the whole space `Set.univ` of a proper pseudometric space equals
@@ -336,6 +242,30 @@ theorem fillIn_subset_filledHull (hΩK : IsOpen (Ω \ K)) :
   · exact subset_filledHull_of_frontier_subset (hcpt.isBounded.subset subset_closure)
       (frontier_connectedComponentIn_sdiff_subset hΩK hsub)
       (mem_connectedComponentIn hz)
+
+omit [ProperSpace X] in
+/-- For an open set `Ω` and closed `K` in a locally connected pseudometric space,
+`TauCeti.fillIn K Ω` is closed. -/
+protected theorem _root_.IsClosed.fillIn (hK : IsClosed K) (hΩ : IsOpen Ω) :
+    IsClosed (TauCeti.fillIn K Ω) := by
+  rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
+  intro z hz
+  by_cases hzF : z ∈ filledHull K
+  · have hzK : z ∉ K := fun h => hz (subset_fillIn h)
+    refine ⟨connectedComponentIn Kᶜ z, fun w hw hwK' => ?_,
+      hK.isOpen_compl.connectedComponentIn, mem_connectedComponentIn hzK⟩
+    rcases hwK' with hwK | ⟨hwΩK, hwcpt, hwsub⟩
+    · exact connectedComponentIn_subset Kᶜ z hw hwK
+    · have hD : connectedComponentIn (Ω \ K) w = connectedComponentIn Kᶜ z :=
+        (connectedComponentIn_sdiff_eq_of_closure_subset (hΩ.sdiff hK) hwΩK hwsub).trans
+          (connectedComponentIn_eq hw).symm
+      have hzC : z ∈ connectedComponentIn (Ω \ K) w := hD.symm ▸ mem_connectedComponentIn hzK
+      have hzC_eq : connectedComponentIn (Ω \ K) z = connectedComponentIn (Ω \ K) w :=
+        (connectedComponentIn_eq hzC).symm
+      exact hz (Or.inr ⟨connectedComponentIn_subset _ _ hzC, hzC_eq ▸ hwcpt, hzC_eq ▸ hwsub⟩)
+  · exact ⟨(filledHull K)ᶜ,
+      compl_subset_compl.mpr (fillIn_subset_filledHull (hΩ.sdiff hK)),
+      hK.isClosed_filledHull.isOpen_compl, hzF⟩
 
 end MetricSpace
 
