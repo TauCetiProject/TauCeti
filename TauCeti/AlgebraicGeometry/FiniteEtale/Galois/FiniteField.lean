@@ -21,7 +21,8 @@ arithmetic Frobenius going to the canonical generator (`TauCeti.FiniteField.galo
 
 * `TauCeti.FiniteEtaleScheme.etaleFundamentalGroupFiniteFieldEquivZHat`: the étale fundamental
   group of `Spec k` at `Spec Ω` is `ℤ̂`, with the automorphism given by the arithmetic Frobenius
-  going to `zHat.gen` (`etaleFundamentalGroupFiniteFieldEquivZHat_galContinuousMulEquivAutFiber`).
+  going to `zHat.gen`
+  (`etaleFundamentalGroupFiniteFieldEquivZHat_galContinuousMulEquivAutFiber_frobenius`).
 -/
 
 public section
@@ -47,7 +48,7 @@ def etaleFundamentalGroupFiniteFieldEquivZHat :
 /-- The automorphism of the geometric fibre functor given by the arithmetic Frobenius of `Ω`
 corresponds to the canonical generator of `ℤ̂`. -/
 @[simp]
-theorem etaleFundamentalGroupFiniteFieldEquivZHat_galContinuousMulEquivAutFiber :
+theorem etaleFundamentalGroupFiniteFieldEquivZHat_galContinuousMulEquivAutFiber_frobenius :
       etaleFundamentalGroupFiniteFieldEquivZHat k Ω
         (galContinuousMulEquivAutFiber k Ω
           (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k Ω)) = zHat.gen := by

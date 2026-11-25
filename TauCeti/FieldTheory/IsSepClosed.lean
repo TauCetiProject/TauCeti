@@ -55,6 +55,8 @@ its conclusion, so instance search could not find it.
   and `2 ≠ 0 ∨ b ≠ 0` has a root in a separably closed field.
 * `TauCeti.isSepClosure_tower_top`: `IsSepClosure K E` implies `IsSepClosure L E` for every
   intermediate extension `L`.
+* `TauCeti.isGalois_of_isSepClosed`: a separably closed algebraic extension of a perfect field is
+  Galois.
 * `SeparableClosure.neZero_two`: `2` stays nonzero in `SeparableClosure K`.
 * `IsSepClosed.of_ringEquiv`: separable closedness transfers along ring isomorphisms.
 -/
@@ -114,6 +116,14 @@ separability over `L`. -/
 theorem isSepClosure_tower_top (K L E : Type*) [Field K] [Field L] [Field E] [Algebra K L]
     [Algebra K E] [Algebra L E] [IsScalarTower K L E] [IsSepClosure K E] : IsSepClosure L E :=
   ⟨IsSepClosure.sep_closed K, Algebra.isSeparable_tower_top_of_isSeparable K L E⟩
+
+/-- **A separably closed algebraic extension of a perfect field is Galois**: it is separable, so
+it is a separable closure. -/
+instance (priority := 100) isGalois_of_isSepClosed (k L : Type*) [Field k] [PerfectField k]
+    [Field L] [Algebra k L] [Algebra.IsAlgebraic k L] [IsSepClosed L] : IsGalois k L := by
+  have : Algebra.IsSeparable k L := Algebra.IsAlgebraic.isSeparable_of_perfectField
+  have : IsSepClosure k L := ⟨inferInstance, inferInstance⟩
+  infer_instance
 
 end TauCeti
 
