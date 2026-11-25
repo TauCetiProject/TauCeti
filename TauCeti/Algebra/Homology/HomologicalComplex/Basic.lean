@@ -70,7 +70,10 @@ the mapped complex to the image of the class map
 (`CategoryTheory.Functor.homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app`,
 `CategoryTheory.Functor.map_homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_inv_app`),
 and `ShortComplex.mapCyclesIso` carries the image of the inclusion of cycles to the inclusion of
-cycles of the mapped complex (`CategoryTheory.Functor.mapCyclesIso_hom_comp_map_iCycles`).
+cycles of the mapped complex (`CategoryTheory.Functor.mapCyclesIso_hom_comp_map_iCycles`,
+`CategoryTheory.Functor.mapCyclesIso_inv_comp_iCycles`); so a morphism from a complex mapped along
+`F` to one mapped along another such functor acts on cycles as on chains
+(`CategoryTheory.Functor.mapCyclesIso_inv_comp_cyclesMap_comp_mapCyclesIso_hom_comp_map_iCycles`).
 Exactness of a mapped complex in degree `i` reduces to exactness of the mapped short complex
 `(K.sc i).map F` (`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`).
 Every morphism between acyclic complexes is a quasi-isomorphism
@@ -595,5 +598,32 @@ lemma mapCyclesIso_hom_comp_map_iCycles (K : HomologicalComplex C c) :
     ((K.sc i).mapCyclesIso F).hom ≫ F.map (K.iCycles i) =
       ((F.mapHomologicalComplex c).obj K).iCycles i :=
   (K.sc i).mapCyclesIso_hom_iCycles F
+
+/-- The inverse form of `mapCyclesIso_hom_comp_map_iCycles`: under the identification
+`ShortComplex.mapCyclesIso` of the cycles, the inclusion of the cycles of `F` applied to `K` is `F`
+applied to the inclusion of the cycles of `K`. This is `ShortComplex.mapCyclesIso_inv_comp_iCycles`
+stated for the mapped complex. -/
+@[reassoc, elementwise]
+lemma mapCyclesIso_inv_comp_iCycles (K : HomologicalComplex C c) :
+    ((K.sc i).mapCyclesIso F).inv ≫ ((F.mapHomologicalComplex c).obj K).iCycles i =
+      F.map (K.iCycles i) :=
+  (K.sc i).mapCyclesIso_inv_comp_iCycles F
+
+variable {E : Type*} [Category* E] [Preadditive E] [CategoryWithHomology E] (G : E ⥤ D)
+  [G.Additive] [G.PreservesHomology]
+
+/-- A morphism `Φ` from `F` applied to `K` to `G` applied to `L` acts on cycles as it acts on the
+underlying chains: carried along the identifications `ShortComplex.mapCyclesIso` of the cycles,
+its map of cycles followed by `G` applied to the inclusion of the cycles of `L` is `F` applied to
+the inclusion of the cycles of `K` followed by `Φ`. -/
+@[reassoc, elementwise]
+lemma mapCyclesIso_inv_comp_cyclesMap_comp_mapCyclesIso_hom_comp_map_iCycles
+    (K : HomologicalComplex C c) (L : HomologicalComplex E c)
+    (Φ : (F.mapHomologicalComplex c).obj K ⟶ (G.mapHomologicalComplex c).obj L) :
+    ((K.sc i).mapCyclesIso F).inv ≫ HomologicalComplex.cyclesMap Φ i ≫
+        ((L.sc i).mapCyclesIso G).hom ≫ G.map (L.iCycles i) =
+      F.map (K.iCycles i) ≫ Φ.f i := by
+  rw [mapCyclesIso_hom_comp_map_iCycles, HomologicalComplex.cyclesMap_i,
+    mapCyclesIso_inv_comp_iCycles_assoc]
 
 end CategoryTheory.Functor
