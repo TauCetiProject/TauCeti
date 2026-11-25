@@ -155,8 +155,9 @@ theorem algWeightSubstMatrix_mul (γ δ : ι → Matrix (Fin 2) (Fin 2) K) :
 forms whose block at `i` is `γ_i` with rows and columns reindexed by `Fin.rev`. -/
 theorem linearSubst_algWeightSubstMatrix (γ : ι → Matrix (Fin 2) (Fin 2) K) :
     linearSubst (algWeightSubstMatrix γ) = aeval (blockLinearForm fun i p q ↦ γ i p.rev q.rev) := by
-  rw [aeval_blockLinearForm_eq_linearSubst]
-  exact congrArg linearSubst (Matrix.ext (algWeightSubstMatrix_apply γ))
+  rw [linearSubst_eq_aeval_blockLinearForm_of_block fun x y h ↦ by
+    simp [algWeightSubstMatrix_apply, h]]
+  simp [algWeightSubstMatrix_apply]
 
 /-- The substitution of `TauCeti.algWeightSubstMatrix γ` sends the affine variable `X_i` to
 `a_i X_i + b_i Y_i`. -/
