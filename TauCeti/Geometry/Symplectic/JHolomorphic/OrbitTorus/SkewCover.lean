@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Cover
 import Mathlib.Analysis.Normed.Operator.Prod
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The orbit-torus operator on the skew covers of an orbit torus
@@ -351,20 +350,6 @@ private theorem torusModeOperator_shiftMode {ω : ℕ → ℝ} (σ : ℝ) (S : C
   refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;> simp [shiftPair_apply] <;>
     simp only [← Complex.coe_smul] <;> module
 
-/-- The inclusion `TauCeti.skewTorusModeSobolev F ℓ σ θ ≤ TauCeti.torusModeSobolev F ω`. -/
-private def inclusionTorusModeSobolev (ℓ σ : ℝ) (θ : AddCircle T) :
-    skewTorusModeSobolev F ℓ σ θ →L[ℂ] torusModeSobolev F fun k : ℕ ↦ 2 * (k + 1) * π / ℓ :=
-  (skewTorusModeSobolev F ℓ σ θ).subtypeL.codRestrict _ fun x ↦
-    skewTorusModeSobolev_le_torusModeSobolev ℓ σ θ x.property
-
-omit hT [FiniteDimensional ℂ F] in
-@[simp]
-private theorem inclusionTorusModeSobolev_apply (ℓ σ : ℝ) (θ : AddCircle T)
-    (x : skewTorusModeSobolev F ℓ σ θ) :
-    inclusionTorusModeSobolev T ℓ σ θ x =
-      Submodule.inclusion (skewTorusModeSobolev_le_torusModeSobolev ℓ σ θ) x :=
-  (rfl)
-
 /-- For a loop `S` invariant under the rotation by `θ`, the orbit-torus operator `∂s + A` maps maps
 invariant under the translation by `(σ, θ)` to targets invariant under it. -/
 theorem torusModeOperator_mem_skewTorusModeL2 {ℓ σ : ℝ} {θ : AddCircle T}
@@ -381,14 +366,12 @@ theorem torusModeOperator_mem_skewTorusModeL2 {ℓ σ : ℝ} {θ : AddCircle T}
 with no `s`-independent part, invariant under the translation by `(σ, θ)`, for a loop `S` invariant
 under the rotation by `θ`: the restriction of `TauCeti.torusModeOperator T ω S`,
 `ωₖ = 2(k + 1)π/ℓ`, to `TauCeti.skewTorusModeSobolev F ℓ σ θ`, with values in
-`TauCeti.skewTorusModeL2 F ℓ σ θ`. -/
+`TauCeti.skewTorusModeL2 F ℓ σ θ` (`TauCeti.restrictTorusModeOperator`). -/
 def skewTorusModeOperator (ℓ σ : ℝ) (θ : AddCircle T) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t, S (t + θ) = S t) :
     skewTorusModeSobolev F ℓ σ θ →L[ℝ] skewTorusModeL2 F ℓ σ θ :=
-  (torusModeOperator T (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) S ∘L
-    (inclusionTorusModeSobolev T ℓ σ θ).restrictScalars ℝ).codRestrictOfTower fun x ↦ by
-      simpa using torusModeOperator_mem_skewTorusModeL2 T hS
-        (x := Submodule.inclusion (skewTorusModeSobolev_le_torusModeSobolev ℓ σ θ) x) (by simp)
+  restrictTorusModeOperator T (skewTorusModeSobolev_le_torusModeSobolev ℓ σ θ) _ S fun x ↦
+    torusModeOperator_mem_skewTorusModeL2 T hS x.property
 
 @[simp]
 theorem coe_skewTorusModeOperator_apply (ℓ σ : ℝ) (θ : AddCircle T)
@@ -396,9 +379,8 @@ theorem coe_skewTorusModeOperator_apply (ℓ σ : ℝ) (θ : AddCircle T)
     (x : skewTorusModeSobolev F ℓ σ θ) :
     (skewTorusModeOperator T ℓ σ θ S hS x : 𝕐[F]) =
       torusModeOperator T (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) S
-        (Submodule.inclusion (skewTorusModeSobolev_le_torusModeSobolev ℓ σ θ) x) := by
-  rw [skewTorusModeOperator, ContinuousLinearMap.coe_codRestrictOfTower_apply]
-  simp
+        (Submodule.inclusion (skewTorusModeSobolev_le_torusModeSobolev ℓ σ θ) x) :=
+  coe_restrictTorusModeOperator_apply _ _ _ _ _ x
 
 /-- **Complex linearity.** If the loop operator `L_S` commutes with multiplication by complex
 scalars, as for a constant complex scalar loop, so does the orbit-torus operator on maps invariant
@@ -417,23 +399,9 @@ translation by `(σ, θ)` depends continuously, in operator norm, on the loop `S
 norm, among the loops invariant under the rotation by `θ`. -/
 theorem continuous_skewTorusModeOperator (ℓ σ : ℝ) (θ : AddCircle T) :
     Continuous fun S : {S : C(AddCircle T, F →L[ℝ] F) // ∀ t, S (t + θ) = S t} ↦
-      skewTorusModeOperator T ℓ σ θ S.val S.property := by
-  -- Composed with the inclusion of the target into `L²`, which induces the topology of the
-  -- operators, the operator is `∂s + A` composed with the inclusion of the domain.
-  refine (ContinuousLinearMap.isInducing_postcomp (E := skewTorusModeSobolev F ℓ σ θ)
-    (σ := RingHom.id ℝ) ((skewTorusModeL2 F ℓ σ θ).subtypeL.restrictScalars ℝ)
-    Topology.IsInducing.subtypeVal).continuous_iff.2 ?_
-  have h : (fun S : {S : C(AddCircle T, F →L[ℝ] F) // ∀ t, S (t + θ) = S t} ↦
-      ((skewTorusModeL2 F ℓ σ θ).subtypeL.restrictScalars ℝ).comp
-        (skewTorusModeOperator T ℓ σ θ S.val S.property)) = fun S ↦
-      (torusModeOperator T (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) S.val).comp
-        ((inclusionTorusModeSobolev T ℓ σ θ).restrictScalars ℝ) :=
-    funext fun S ↦ ContinuousLinearMap.ext fun x ↦ by
-      simp [coe_skewTorusModeOperator_apply]
-  rw [Function.comp_def, h]
-  exact (ContinuousLinearMap.precomp _
-    ((inclusionTorusModeSobolev T ℓ σ θ).restrictScalars ℝ)).continuous.comp
-      ((continuous_torusModeOperator T _).comp continuous_subtypeVal)
+      skewTorusModeOperator T ℓ σ θ S.val S.property :=
+  continuous_restrictTorusModeOperator T _ _ fun _ hS x ↦
+    torusModeOperator_mem_skewTorusModeL2 T hS x.property
 
 variable (q : ℕ) [NeZero q]
 
@@ -537,8 +505,9 @@ theorem isInvertible_skewTorusModeOperator {ℓ : ℝ} (hℓ : ℓ ≠ 0) (σ : 
     (hS' : ∀ t, S (t + θ) = S t) :
     (skewTorusModeOperator T ℓ σ θ S hS').IsInvertible :=
   -- The inverse of `D` maps invariant targets to invariant maps.
-  (isInvertible_torusModeOperator_periodic T hℓ S hS).codRestrictOfTower_comp (fun _ ↦ rfl) _
-    fun _ hx ↦ mem_skewTorusModeSobolev_of_mem T hℓ hS hS' hx
+  isInvertible_restrictTorusModeOperator T _ _ _
+    (isInvertible_torusModeOperator_periodic T hℓ S hS) fun _ hx ↦
+      mem_skewTorusModeSobolev_of_mem T hℓ hS hS' hx
 
 end Inner
 
