@@ -49,7 +49,9 @@ The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
 
-Two integers whose images in `ℂ` are at distance less than `1` are equal.
+Two integers whose images in `ℂ` are at distance less than `1` are equal, and on any compact
+subset of `ℂ` avoiding the nonpositive integers `-ℕ`, the shifted norms `‖(n : ℂ) + c‖` have a
+positive uniform lower bound (`IsCompact.exists_pos_le_norm_natCast_add`).
 
 A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`
 (`Complex.add_im_ne_zero_of_abs_im_lt`).
@@ -283,6 +285,39 @@ theorem eq_of_dist_intCast_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1)
   have : (1 : ℝ) ≤ dist (m : ℂ) (n : ℂ) := by
     rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne
   linarith
+
+/-- Reverse triangle lower bound for a natural-number shift: `(n : ℝ) - ‖c‖ ≤ ‖(n : ℂ) + c‖`. -/
+theorem _root_.Complex.sub_norm_le_norm_natCast_add (n : ℕ) (c : ℂ) :
+    (n : ℝ) - ‖c‖ ≤ ‖(n : ℂ) + c‖ := by
+  simpa [Complex.norm_natCast] using norm_sub_norm_le (n : ℂ) (-c)
+
+/-- Shifting a complex number in the open right half-plane by a natural number stays in the open
+right half-plane. -/
+theorem _root_.Complex.natCast_add_re_pos (n : ℕ) {c : ℂ} (hc : 0 < c.re) :
+    0 < ((n : ℂ) + c).re := by
+  simp only [Complex.add_re, Complex.natCast_re]
+  linarith [Nat.cast_nonneg (α := ℝ) n]
+
+/-- On any compact subset `K ⊆ ℂ` disjoint from `-ℕ`, the shifted norms `‖(n : ℂ) + c‖` are
+uniformly bounded below by a positive constant `δ ≤ 1`. -/
+theorem _root_.IsCompact.exists_pos_le_norm_natCast_add {K : Set ℂ} (hK : IsCompact K)
+    (hKc : ∀ c ∈ K, ∀ n : ℕ, (n : ℂ) + c ≠ 0) :
+    ∃ δ > 0, δ ≤ 1 ∧ ∀ c ∈ K, ∀ n : ℕ, δ ≤ ‖(n : ℂ) + c‖ := by
+  obtain ⟨C, hC⟩ := hK.isBounded.exists_norm_le
+  set C' : ℝ := max C 0
+  set N : ℕ := Nat.ceil (C' + 1)
+  have hlarge : ∀ c ∈ K, ∀ n : ℕ, N ≤ n → 1 ≤ ‖(n : ℂ) + c‖ := fun c hc n hn => by
+    have hc' : ‖c‖ ≤ C' := (hC c hc).trans (le_max_left C 0)
+    have hn' : C' + 1 ≤ (n : ℝ) := (Nat.le_ceil _).trans (Nat.cast_le.mpr hn)
+    linarith [Complex.sub_norm_le_norm_natCast_add n c]
+  have hcont : Continuous (fun p : ℕ × ℂ => ‖(p.1 : ℂ) + p.2‖) :=
+    continuous_norm.comp ((continuous_of_discreteTopology.comp continuous_fst).add continuous_snd)
+  obtain ⟨δ₀, hδ₀, hmin⟩ := ((Finset.finite_toSet (Finset.range N)).isCompact.prod hK)
+    |>.exists_forall_le' hcont.continuousOn (fun p hp => norm_pos_iff.mpr (hKc p.2 hp.2 p.1))
+  refine ⟨min δ₀ 1, lt_min hδ₀ one_pos, min_le_right _ _, fun c hc n => ?_⟩
+  rcases lt_or_ge n N with hn | hn
+  · exact (min_le_left _ _).trans (hmin (n, c) ⟨Finset.mem_range.mpr hn, hc⟩)
+  · exact (min_le_right _ _).trans (hlarge c hc n hn)
 
 end TauCeti
 

@@ -10,6 +10,7 @@ public import TauCeti.Data.ZMod.RingHoms
 public import TauCeti.LinearAlgebra.Matrix.Range
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.Algebra.Module.Submodule.Map
+public import TauCeti.Data.ZMod.PiReduction
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.LinearAlgebra.Pi
@@ -70,9 +71,13 @@ theorem intVectorToPadic_apply (x : ι → ℤ) (i : ι) :
 
 /-- Coordinatewise reduction of integral vectors modulo `pᵏ`. -/
 def intVectorReduction : (ι → ℤ) →ₛₗ[Int.castRingHom (ZMod (p ^ k))] (ι → ZMod (p ^ k)) where
-  toFun x i := x i
-  map_add' _ _ := by ext; simp
+  __ := ZMod.piReduction ι (p ^ k)
   map_smul' _ _ := by ext; simp
+
+omit [Fact p.Prime] in
+/-- Integral reduction modulo `pᵏ` is the coordinatewise reduction `ZMod.piReduction ι (p ^ k)`. -/
+theorem coe_intVectorReduction : ⇑(intVectorReduction ι p k) = ⇑(ZMod.piReduction ι (p ^ k)) :=
+  (rfl)
 
 /-- Coordinatewise reduction of p-adic integral vectors modulo `pᵏ`. -/
 def padicVectorReduction : (ι → ℤ_[p]) →ₛₗ[PadicInt.toZModPow (p := p) k] (ι → ZMod (p ^ k)) where
@@ -83,7 +88,8 @@ def padicVectorReduction : (ι → ℤ_[p]) →ₛₗ[PadicInt.toZModPow (p := p
 omit [Fact p.Prime] in
 @[simp]
 theorem intVectorReduction_apply (x : ι → ℤ) (i : ι) :
-    intVectorReduction ι p k x i = (x i : ZMod (p ^ k)) := (rfl)
+    intVectorReduction ι p k x i = (x i : ZMod (p ^ k)) := by
+  rw [coe_intVectorReduction, ZMod.piReduction_apply]
 
 @[simp]
 theorem padicVectorReduction_apply (x : ι → ℤ_[p]) (i : ι) :
@@ -91,8 +97,9 @@ theorem padicVectorReduction_apply (x : ι → ℤ_[p]) (i : ι) :
 
 omit [Fact p.Prime] in
 /-- Integral vectors surject onto the finite residue vectors. -/
-theorem intVectorReduction_surjective : Function.Surjective (intVectorReduction ι p k) :=
-  Function.Surjective.piMap fun _ ↦ ZMod.intCast_surjective
+theorem intVectorReduction_surjective : Function.Surjective (intVectorReduction ι p k) := by
+  rw [coe_intVectorReduction]
+  exact ZMod.piReduction_surjective ι (p ^ k)
 
 /-- P-adic integral vectors surject onto the finite residue vectors. -/
 theorem padicVectorReduction_surjective : Function.Surjective (padicVectorReduction ι p k) :=
@@ -116,15 +123,8 @@ omit [Fact p.Prime] in
 /-- The kernel of integral reduction consists exactly of the multiples of `pᵏ`. -/
 theorem mem_ker_intVectorReduction_iff (x : ι → ℤ) :
     x ∈ LinearMap.ker (intVectorReduction ι p k) ↔ ∃ y : ι → ℤ, x = (p : ℤ) ^ k • y := by
-  rw [LinearMap.mem_ker, funext_iff]
-  simp only [intVectorReduction_apply, Pi.zero_apply,
-    ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.cast_pow]
-  constructor
-  · intro h
-    choose y hy using h
-    exact ⟨y, funext fun i ↦ by simpa using hy i⟩
-  · rintro ⟨y, rfl⟩ i
-    exact ⟨y i, by simp⟩
+  rw [LinearMap.mem_ker, coe_intVectorReduction, ← AddMonoidHom.mem_ker, ← Nat.cast_pow]
+  exact ZMod.mem_ker_piReduction_iff ι (p ^ k) x
 
 /-- The kernel of p-adic reduction consists exactly of the multiples of `pᵏ`. -/
 theorem mem_ker_padicVectorReduction_iff (x : ι → ℤ_[p]) :

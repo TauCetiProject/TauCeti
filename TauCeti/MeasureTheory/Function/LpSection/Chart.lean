@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.VectorBundle.Constructions
 public import TauCeti.MeasureTheory.Function.LpSection.Basic
+public import TauCeti.Topology.FiberBundle.Trivial
 
 /-!
 # `Lᵖ` sections in local coordinates
@@ -55,7 +56,6 @@ a section of `Bundle.Trivial B F` is a.e.-strongly measurable exactly when it is
 `B → F`. -/
 theorem isMeasurableIsometricFrame_trivial :
     IsMeasurableIsometricFrame F μ (fun x ↦ LinearIsometryEquiv.refl 𝕜 (Trivial B F x)) := by
-  have : MemTrivializationAtlas (Trivial.trivialization B F) := ⟨mem_singleton _⟩
   refine isMeasurableIsometricFrame_iff.2 fun s ↦ ⟨fun hs ↦ ?_, fun hs ↦ .of_coord fun e _ ↦ ?_⟩
   · have h := hs.aestronglyMeasurable_coord (Trivial.trivialization B F)
     simp only [Trivial.trivialization_baseSet, Measure.restrict_univ,
