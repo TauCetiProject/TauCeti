@@ -304,9 +304,9 @@ noncomputable def ofBall (c : ℂ) {r : ℝ} (hr : 0 < r) : PointedCover (ball c
   have ht : f.target = ball c r := OpenPartialHomeomorph.unitBallBall_target c r hr
   have hb : ∀ z ∈ ball (0 : ℂ) 1, c + (ball 0 1).indicator (fun z : ℂ ↦ (r : ℂ) * z) z = f z :=
     fun z hz ↦ by rw [indicator_of_mem hz, hf]
+  have hd : DifferentiableOn ℂ (fun z : ℂ ↦ c + r * z) (ball 0 1) := by fun_prop
   { toFun z := c + (ball 0 1).indicator (fun z : ℂ ↦ (r : ℂ) * z) z
-    differentiableOn := (show DifferentiableOn ℂ (fun z : ℂ ↦ c + r * z) (ball 0 1) by
-      fun_prop).congr fun z hz ↦ (hb z hz).trans (hf z)
+    differentiableOn := hd.congr fun z hz ↦ (hb z hz).trans (hf z)
     mapsTo z hz := by simpa only [hb z hz, ht] using f.map_source (hs ▸ hz)
     map_zero := by simp
     isCoveringMap := by
