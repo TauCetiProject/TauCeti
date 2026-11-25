@@ -41,7 +41,7 @@ theorem toGNS_eq_zero_iff_fst_eq_zero (x : ℂ × ℂ) : pr₁.toGNS x = 0 ↔ x
 
 /-- The class of `x` is `x.1` times the cyclic vector `Ω = [1]`. -/
 theorem toGNS_eq_smul_gnsVector (x : ℂ × ℂ) : pr₁.toGNS x = x.1 • pr₁.gnsVector := by
-  rw [gnsVector_def, ← toGNS_apply, ← map_smul, ← sub_eq_zero, ← map_sub,
+  rw [gnsVector_eq_toGNS_one, ← map_smul, ← sub_eq_zero, ← map_sub,
     toGNS_eq_zero_iff_fst_eq_zero]
   simp
 
@@ -61,9 +61,9 @@ theorem exists_eq_smul_gnsVector (v : pr₁.GNS) : ∃ c : ℂ, v = c • pr₁.
 
 /-- **The GNS representation is `pr₁`.** `π(a) = a.1 • 1`. -/
 theorem gnsNonUnitalStarAlgHom_eq (a : ℂ × ℂ) : pr₁.gnsNonUnitalStarAlgHom a = a.1 • 1 := by
-  refine pr₁.gns_continuousLinearMap_ext fun c ↦ ?_
-  obtain ⟨x, rfl⟩ := pr₁.toPreGNS.surjective c
-  simp [← toGNS_apply, toGNS_eq_smul_gnsVector, smul_smul]
+  refine DFunLike.coe_injective <| pr₁.denseRange_toGNS.equalizer (map_continuous _)
+    (map_continuous _) <| funext fun x ↦ ?_
+  simp [↓gnsNonUnitalStarAlgHom_apply_toGNS, ↓toGNS_eq_smul_gnsVector, smul_smul]
 
 /-- **The kernel of the GNS representation is `0 ⊕ ℂ`.** -/
 theorem gnsNonUnitalStarAlgHom_eq_zero_iff (a : ℂ × ℂ) :
