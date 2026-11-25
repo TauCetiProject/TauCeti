@@ -566,7 +566,7 @@ private theorem map_comp_comul_compAlgEquiv [Module.Finite A C] [Module.Projecti
     toConv ((Algebra.TensorProduct.map e e).comp (Bialgebra.comulAlgHom A W₁))
       = toConv ((Algebra.TensorProduct.map e e).comp Algebra.TensorProduct.includeLeft) *
           toConv ((Algebra.TensorProduct.map e e).comp Algebra.TensorProduct.includeRight) :=
-          TauCeti.Bialgebra.toConv_comp_comulAlgHom (Algebra.TensorProduct.map e e)
+          AlgHom.toConv_comp_comulAlgHom (Algebra.TensorProduct.map e e)
     _ = toConv (ι₁.comp e) * toConv (ι₂.comp e) := by
           simp [ι₁, ι₂, Algebra.TensorProduct.map_comp_includeLeft,
             Algebra.TensorProduct.map_comp_includeRight]

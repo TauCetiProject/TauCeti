@@ -210,7 +210,6 @@ theorem loopPiMulEquiv_apply (g : WithConv (H →ₐ[k] (∀ i, A i)⟦Γ⟧)) (
     (loopPiMulEquiv k Γ A g i).ofConv h =
       HahnSeries.mapRingHom (Pi.evalRingHom A i) (g.ofConv h) := by
   rw [loopPiMulEquiv, MulEquiv.trans_apply, AlgHom.piValueMulEquiv_apply,
-    AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply, Pi.evalAlgHom_apply,
     AlgEquiv.mapValueMulEquiv_apply, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
     AlgEquiv.coe_toAlgHom, HahnSeries.piAlgEquiv_apply]
 
@@ -222,8 +221,7 @@ theorem coeff_loopPiMulEquiv_symm_apply (g : ∀ i, WithConv (H →ₐ[k] (A i)�
   rw [loopPiMulEquiv, MulEquiv.symm_trans_apply, AlgEquiv.mapValueMulEquiv_symm_apply,
     AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     HahnSeries.coeff_piAlgEquiv_symm_apply]
-  exact congr_arg (fun x : (A i)⟦Γ⟧ ↦ x.coeff n) <| by
-    rw [AlgHom.ofConv_piValueMulEquiv_symm, AlgHom.pi_apply]
+  exact congr_arg (fun x : (A i)⟦Γ⟧ ↦ x.coeff n) (AlgHom.piValueMulEquiv_symm_apply g h i)
 
 end Pi
 

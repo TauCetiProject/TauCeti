@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Algebra.Equiv
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Topology.Algebra.PointTopology.Functoriality
 
@@ -37,7 +36,13 @@ bialgebra map `H₁ → H₂` induces the continuous homomorphism `BialgHom.mapD
 `H₂` to those of `H₁`, and a continuous algebra map `R → R'` of coefficients induces the continuous
 homomorphism `AlgHom.mapValue`. Since the group of points carries the point topology of the
 underlying homomorphisms, `AlgHom.mapValue ψ` is an embedding or a closed embedding whenever `ψ`
-is, and an open embedding when `ψ` is and the coordinate algebra is of finite type.
+is, and an open embedding when `ψ` is and the coordinate algebra is of finite type. An
+isomorphism of topological coefficient algebras induces an isomorphism of topological monoids of
+points. No topology on the source of `ψ` is needed to locate its points among those with values in
+the target: when `ψ` is injective with closed image, its image on points is closed, and when the
+image of `ψ` is discrete and the coordinate algebra is commutative of finite type, its image on
+points is discrete. This is how the rational points of an affine group over a number field sit in
+its adelic points.
 
 ## Main declarations
 
@@ -49,14 +54,17 @@ is, and an open embedding when `ψ` is and the coordinate algebra is of finite t
   group.
 * `BialgHom.continuous_mapDomain` and `AlgHom.continuous_mapValue`: functoriality of the points is
   continuous in the coordinate algebra and in continuous maps of coefficients.
-* `BialgEquiv.mapDomainContinuousMulEquiv` and `ContinuousAlgEquiv.mapValueContinuousMulEquiv`:
-  bialgebra equivalences and continuous coefficient-algebra equivalences induce topological
+* `BialgEquiv.mapDomainContinuousMulEquiv`: bialgebra equivalences induce topological
   multiplicative equivalences of convolution monoids of points.
-* `TauCeti.PointTopology.piPointsContinuousMulEquiv`: points with values in a product of
-  topological algebras form the topological product of the factor point monoids.
 * `AlgHom.isEmbedding_mapValue`, `AlgHom.isClosedEmbedding_mapValue` and
   `AlgHom.isOpenEmbedding_mapValue`: change of coefficients along an embedding, closed embedding
   or open embedding of coefficient rings.
+* `AlgHom.isClosed_range_mapValue` and `AlgHom.isDiscrete_range_mapValue`: change of
+  coefficients along an injective map with closed, respectively discrete, image.
+* `BialgHom.isClosedEmbedding_mapDomain_of_surjective`: a closed immersion of affine groups induces
+  a closed embedding of groups of points over a T1 ring.
+* `ContinuousAlgEquiv.mapValueContinuousMulEquiv`: change of coefficients along an isomorphism of
+  topological coefficient algebras, as an isomorphism of topological monoids of points.
 
 ## References
 
@@ -159,6 +167,64 @@ theorem AlgHom.isOpenEmbedding_mapValue [Algebra.FiniteType k H₁] {ψ : R →�
     AlgHom.ofConv_comp_mapValue]
   exact (isOpenEmbedding_map_codomain ψ hψ).comp isHomeomorph_ofConv.isOpenEmbedding
 
+/-- An isomorphism `e : R ≃A[k] R'` of topological coefficient algebras induces, by
+post-composition, an isomorphism of topological monoids of points
+`WithConv (H₁ →ₐ[k] R) ≃ₜ* WithConv (H₁ →ₐ[k] R')`; it is `AlgEquiv.mapValueMulEquiv` with its
+continuity in both directions. -/
+noncomputable def ContinuousAlgEquiv.mapValueContinuousMulEquiv (e : R ≃A[k] R') :
+    WithConv (H₁ →ₐ[k] R) ≃ₜ* WithConv (H₁ →ₐ[k] R') where
+  toMulEquiv := e.toAlgEquiv.mapValueMulEquiv
+  continuous_toFun := continuous_withConv_iff.2 fun h ↦ by
+    simp only [MulEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, MulEquiv.coe_toEquiv,
+      AlgEquiv.mapValueMulEquiv_apply, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+      AlgEquiv.coe_toAlgHom, ContinuousAlgEquiv.coe_toAlgEquiv]
+    exact e.continuous.comp (continuous_eval_ofConv h)
+  continuous_invFun := continuous_withConv_iff.2 fun h ↦ by
+    simp only [MulEquiv.toEquiv_eq_coe, Equiv.invFun_as_coe, MulEquiv.coe_toEquiv_symm,
+      AlgEquiv.mapValueMulEquiv_symm_apply, AlgHom.mapValue_apply, ofConv_toConv,
+      AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ← ContinuousAlgEquiv.symm_toAlgEquiv,
+      ContinuousAlgEquiv.coe_toAlgEquiv]
+    exact e.symm.continuous.comp (continuous_eval_ofConv h)
+
+@[simp]
+theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_apply_apply (e : R ≃A[k] R')
+    (x : WithConv (H₁ →ₐ[k] R)) (h : H₁) :
+    (e.mapValueContinuousMulEquiv x).ofConv h = e (x.ofConv h) := by
+  simp [mapValueContinuousMulEquiv]
+
+@[simp]
+theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_symm_apply_apply (e : R ≃A[k] R')
+    (x : WithConv (H₁ →ₐ[k] R')) (h : H₁) :
+    (e.mapValueContinuousMulEquiv.symm x).ofConv h = e.symm (x.ofConv h) := by
+  obtain ⟨y, rfl⟩ := (e.mapValueContinuousMulEquiv (H₁ := H₁)).surjective x
+  simp
+
+/-- Forgetting continuity from `ContinuousAlgEquiv.mapValueContinuousMulEquiv` recovers
+`AlgEquiv.mapValueMulEquiv`. -/
+@[simp]
+theorem ContinuousAlgEquiv.toMulEquiv_mapValueContinuousMulEquiv (e : R ≃A[k] R') :
+    (e.mapValueContinuousMulEquiv (H₁ := H₁) :
+        WithConv (H₁ →ₐ[k] R) ≃* WithConv (H₁ →ₐ[k] R')) =
+      e.toAlgEquiv.mapValueMulEquiv := (rfl)
+
+/-- `ContinuousAlgEquiv.mapValueContinuousMulEquiv` acts by `AlgHom.mapValue` in the forward
+direction. -/
+theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_apply (e : R ≃A[k] R')
+    (f : WithConv (H₁ →ₐ[k] R)) :
+    e.mapValueContinuousMulEquiv f = AlgHom.mapValue (e : R →ₐ[k] R') f := by
+  have he : (e.toAlgEquiv : R →ₐ[k] R') = (e : R →ₐ[k] R') := AlgHom.ext fun _ ↦ rfl
+  exact (e.toAlgEquiv.mapValueMulEquiv_apply f).trans (by rw [he])
+
+/-- Inverting `ContinuousAlgEquiv.mapValueContinuousMulEquiv` is `mapValueContinuousMulEquiv` of
+the inverse continuous algebra equivalence. -/
+theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_symm (e : R ≃A[k] R') :
+    (e.mapValueContinuousMulEquiv (H₁ := H₁)).symm = e.symm.mapValueContinuousMulEquiv :=
+  ContinuousMulEquiv.ext fun f ↦ e.mapValueContinuousMulEquiv.symm_apply_eq.2 <| by
+    have hcomp : (e : R →ₐ[k] R').comp (e.symm : R' →ₐ[k] R) = AlgHom.id k R' :=
+      AlgHom.ext fun x ↦ e.apply_symm_apply x
+    simp only [ContinuousAlgEquiv.mapValueContinuousMulEquiv_apply, ← MonoidHom.comp_apply,
+      ← AlgHom.mapValue_comp, hcomp, AlgHom.mapValue_id, MonoidHom.id_apply]
+
 end Functoriality
 
 section DomainEquiv
@@ -206,101 +272,51 @@ theorem BialgEquiv.mapDomainContinuousMulEquiv_symm (e : H₁ ≃ₐc[k] H₂) :
 
 end DomainEquiv
 
-section ValueEquiv
+section Range
 
-variable {k H R R' : Type*} [CommSemiring k] [Semiring H] [Bialgebra k H]
-  [CommSemiring R] [Algebra k R] [TopologicalSpace R]
-  [CommSemiring R'] [Algebra k R'] [TopologicalSpace R']
+variable {k H R R' : Type*} [CommSemiring k] [CommSemiring R] [Algebra k R] [CommSemiring R']
+  [Algebra k R'] [TopologicalSpace R']
 
 open TauCeti.PointTopology
 
-/-- A continuous `k`-algebra equivalence `e : R ≃A[k] R'` of coefficient rings induces a
-topological multiplicative equivalence of the convolution monoids of points by postcomposition,
-upgrading `AlgEquiv.mapValueMulEquiv`. -/
-noncomputable def ContinuousAlgEquiv.mapValueContinuousMulEquiv (e : R ≃A[k] R') :
-    WithConv (H →ₐ[k] R) ≃ₜ* WithConv (H →ₐ[k] R') where
-  toMulEquiv := e.toAlgEquiv.mapValueMulEquiv
-  continuous_toFun :=
-    (AlgHom.continuous_mapValue (ψ := (e.toAlgEquiv : R →ₐ[k] R')) e.continuous).congr fun _ ↦ by
-      simp
-  continuous_invFun :=
-    (AlgHom.continuous_mapValue (ψ := (e.symm.toAlgEquiv : R' →ₐ[k] R)) e.symm.continuous).congr
-      fun _ ↦ by simp
+/-- If an injective coefficient map `ψ : R → R'` has closed image, then the points with values in
+`R` form a closed subset of the convolution monoid of points with values in `R'`, with no topology
+on `R` and no finiteness assumption on the bialgebra. -/
+theorem AlgHom.isClosed_range_mapValue [Semiring H] [Bialgebra k H] {ψ : R →ₐ[k] R'}
+    (hψ : Function.Injective ψ) (hc : IsClosed (Set.range ψ)) :
+    IsClosed (Set.range (mapValue (H := H) ψ)) := by
+  rw [AlgHom.range_mapValue]
+  exact (isClosed_range_map_codomain ψ hψ hc).preimage isHomeomorph_ofConv.continuous
 
-/-- Forgetting continuity from `ContinuousAlgEquiv.mapValueContinuousMulEquiv` recovers
-`AlgEquiv.mapValueMulEquiv`. -/
-@[simp]
-theorem ContinuousAlgEquiv.toMulEquiv_mapValueContinuousMulEquiv (e : R ≃A[k] R') :
-    (e.mapValueContinuousMulEquiv (H := H) :
-        WithConv (H →ₐ[k] R) ≃* WithConv (H →ₐ[k] R')) =
-      e.toAlgEquiv.mapValueMulEquiv := (rfl)
+/-- If an injective coefficient map `ψ : R → R'` has discrete image, then the points with values
+in `R` of a commutative bialgebra of finite type form a discrete subset of the convolution monoid of
+points with values in `R'`. -/
+theorem AlgHom.isDiscrete_range_mapValue [CommSemiring H] [Bialgebra k H] [Algebra.FiniteType k H]
+    {ψ : R →ₐ[k] R'} (hψ : Function.Injective ψ) (hd : IsDiscrete (Set.range ψ)) :
+    IsDiscrete (Set.range (mapValue (H := H) ψ)) := by
+  rw [AlgHom.range_mapValue]
+  exact (isDiscrete_range_map_codomain ψ hψ hd).preimage
+    isHomeomorph_ofConv.continuous.continuousOn WithConv.ofConv_injective
 
-/-- `ContinuousAlgEquiv.mapValueContinuousMulEquiv` acts by `AlgHom.mapValue` in the forward
-direction. -/
-@[simp]
-theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_apply (e : R ≃A[k] R')
-    (f : WithConv (H →ₐ[k] R)) :
-    e.mapValueContinuousMulEquiv f = AlgHom.mapValue (e : R →ₐ[k] R') f := by
-  have he : (e.toAlgEquiv : R →ₐ[k] R') = (e : R →ₐ[k] R') := AlgHom.ext fun _ ↦ rfl
-  exact (e.toAlgEquiv.mapValueMulEquiv_apply f).trans (by rw [he])
+end Range
 
-/-- Inverting `ContinuousAlgEquiv.mapValueContinuousMulEquiv` is `mapValueContinuousMulEquiv` of
-the inverse continuous algebra equivalence. -/
-@[simp]
-theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_symm (e : R ≃A[k] R') :
-    (e.mapValueContinuousMulEquiv (H := H)).symm = e.symm.mapValueContinuousMulEquiv :=
-  ContinuousMulEquiv.ext fun f ↦ e.mapValueContinuousMulEquiv.symm_apply_eq.2 <| by
-    have hcomp : (e : R →ₐ[k] R').comp (e.symm : R' →ₐ[k] R) = AlgHom.id k R' :=
-      AlgHom.ext fun x ↦ e.apply_symm_apply x
-    simp only [ContinuousAlgEquiv.mapValueContinuousMulEquiv_apply, ← MonoidHom.comp_apply,
-      ← AlgHom.mapValue_comp, hcomp, AlgHom.mapValue_id, MonoidHom.id_apply]
+section ClosedImmersion
 
-end ValueEquiv
+variable {k H₁ H₂ R : Type*} [CommSemiring k] [Ring H₁] [Bialgebra k H₁] [Ring H₂]
+  [Bialgebra k H₂] [CommRing R] [Algebra k R] [TopologicalSpace R] [T1Space R]
 
-namespace TauCeti.PointTopology
+open Topology TauCeti.PointTopology
 
-section Pi
+/-- Over a T1 ring of coefficients, precomposition with a surjective bialgebra map `φ : H₁ → H₂`,
+that is, a closed immersion of affine groups, is a closed embedding of groups of points. -/
+theorem BialgHom.isClosedEmbedding_mapDomain_of_surjective {φ : H₁ →ₐc[k] H₂}
+    (hφ : Function.Surjective φ) : IsClosedEmbedding (mapDomain (A := R) φ) := by
+  have hcomp : ofConv ∘ mapDomain (A := R) φ =
+      (fun x : H₂ →ₐ[k] R ↦ x.comp (φ : H₁ →ₐ[k] H₂)) ∘ ofConv := by
+    funext x
+    simp [BialgHom.mapDomain_apply]
+  rw [← (isHomeomorph_ofConv (k := k) (A := H₁) (R := R)).isClosedEmbedding.of_comp_iff, hcomp]
+  exact (isClosedEmbedding_comap_of_surjective (φ : H₁ →ₐ[k] H₂) hφ).comp
+    (isHomeomorph_ofConv (k := k) (A := H₂) (R := R)).isClosedEmbedding
 
-variable {k H ι : Type*} [CommSemiring k] [Semiring H] [Bialgebra k H]
-variable (R : ι → Type*) [∀ i, CommSemiring (R i)] [∀ i, Algebra k (R i)]
-  [∀ i, TopologicalSpace (R i)]
-
-/-- Points of a bialgebra with values in a product `∀ i, R i` of topological `k`-algebras form the
-topological product of the factor convolution monoids `∀ i, WithConv (H →ₐ[k] R i)`, with no
-finiteness assumption on the index type or topological-semiring assumption on the factors. -/
-noncomputable def piPointsContinuousMulEquiv :
-    WithConv (H →ₐ[k] ∀ i, R i) ≃ₜ* ∀ i, WithConv (H →ₐ[k] R i) where
-  toMulEquiv := AlgHom.piValueMulEquiv
-  continuous_toFun := continuous_pi fun i ↦
-    (AlgHom.continuous_mapValue (ψ := Pi.evalAlgHom k R i) (continuous_apply i)).congr fun f ↦
-      (AlgHom.piValueMulEquiv_apply f i).symm
-  continuous_invFun := continuous_withConv_iff.2 fun h ↦
-    (continuous_pi fun i ↦ (continuous_eval_ofConv h).comp (continuous_apply i)).congr fun g ↦ by
-      ext i
-      simp
-
-variable {R} in
-/-- Forgetting continuity from `piPointsContinuousMulEquiv` recovers `AlgHom.piValueMulEquiv`. -/
-@[simp]
-theorem toMulEquiv_piPointsContinuousMulEquiv :
-    (piPointsContinuousMulEquiv (k := k) (H := H) R :
-        WithConv (H →ₐ[k] ∀ i, R i) ≃* ∀ i, WithConv (H →ₐ[k] R i)) =
-      AlgHom.piValueMulEquiv := (rfl)
-
-variable {R} in
-/-- The `i`-th coordinate of `piPointsContinuousMulEquiv` projects along `Pi.evalAlgHom`. -/
-@[simp]
-theorem piPointsContinuousMulEquiv_apply (f : WithConv (H →ₐ[k] ∀ i, R i)) (i : ι) :
-    piPointsContinuousMulEquiv R f i = AlgHom.mapValue (Pi.evalAlgHom k R i) f :=
-  AlgHom.piValueMulEquiv_apply f i
-
-variable {R} in
-/-- The inverse of `piPointsContinuousMulEquiv` assembles a family of points via `AlgHom.pi`. -/
-@[simp]
-theorem ofConv_piPointsContinuousMulEquiv_symm (g : ∀ i, WithConv (H →ₐ[k] R i)) :
-    ((piPointsContinuousMulEquiv R).symm g).ofConv = AlgHom.pi fun i ↦ (g i).ofConv :=
-  AlgHom.ofConv_piValueMulEquiv_symm g
-
-end Pi
-
-end TauCeti.PointTopology
+end ClosedImmersion

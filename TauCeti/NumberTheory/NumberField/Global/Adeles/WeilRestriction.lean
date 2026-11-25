@@ -486,7 +486,7 @@ def adicCompletionPointsContinuousMulEquiv (v : HeightOneSpectrum (𝓞 F)) :
         AdelicPoints.LocalPoints (𝓞 E) E H w.val :=
   (pointsContinuousMulEquivOfBaseChange F E H (TauCeti.semilocalContinuousEquiv E v)
     TauCeti.semilocalContinuousEquiv_one_tmul).trans
-    (TauCeti.PointTopology.piPointsContinuousMulEquiv
+    (TauCeti.PointTopology.piContinuousMulEquiv E H
       fun w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal} ↦
         w.val.adicCompletion E)
 
@@ -498,7 +498,7 @@ def infiniteCompletionPointsContinuousMulEquiv (v : InfinitePlace F) :
       ∀ w : {w : InfinitePlace E // w.LiesOver v}, WithConv (H →ₐ[E] w.val.Completion) :=
   (pointsContinuousMulEquivOfBaseChange F E H (infiniteSemilocalContinuousEquiv E v)
     infiniteSemilocalContinuousEquiv_one_tmul).trans
-    (TauCeti.PointTopology.piPointsContinuousMulEquiv
+    (TauCeti.PointTopology.piContinuousMulEquiv E H
       fun w : {w : InfinitePlace E // w.LiesOver v} ↦ w.val.Completion)
 
 variable {F E H}
@@ -539,7 +539,11 @@ theorem pointsMulEquiv_adicCompletionPointsContinuousMulEquiv_symm (v : HeightOn
       AlgHom.mapValue ((v.adicCompletionSemilocalEquiv F (𝓞 E) E).baseChangeRight
           fun b ↦ by ext w; simp).symm.toAlgHom
         (toConv (AlgHom.pi fun w ↦ (y w).ofConv)) := by
-  simp [adicCompletionPointsContinuousMulEquiv]
+  have hy : (TauCeti.PointTopology.piContinuousMulEquiv E H
+      (fun w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal} ↦
+        w.val.adicCompletion E)).symm y = toConv (AlgHom.pi fun w ↦ (y w).ofConv) :=
+    WithConv.ofConv_injective <| AlgHom.ext fun h ↦ funext fun w ↦ by simp
+  simp [adicCompletionPointsContinuousMulEquiv, hy]
 
 /-- Applying `pointsMulEquiv` to the inverse of `infiniteCompletionPointsContinuousMulEquiv`
 assembles the local family with `AlgHom.pi` and post-composes with the inverse of
@@ -552,7 +556,11 @@ theorem pointsMulEquiv_infiniteCompletionPointsContinuousMulEquiv_symm (v : Infi
       AlgHom.mapValue ((infiniteSemilocalEquiv E v).baseChangeRight
           fun b ↦ by ext w; simp).symm.toAlgHom
         (toConv (AlgHom.pi fun w ↦ (y w).ofConv)) := by
-  simp [infiniteCompletionPointsContinuousMulEquiv]
+  have hy : (TauCeti.PointTopology.piContinuousMulEquiv E H
+      (fun w : {w : InfinitePlace E // w.LiesOver v} ↦ w.val.Completion)).symm y =
+      toConv (AlgHom.pi fun w ↦ (y w).ofConv) :=
+    WithConv.ofConv_injective <| AlgHom.ext fun h ↦ funext fun w ↦ by simp
+  simp [infiniteCompletionPointsContinuousMulEquiv, hy]
 
 /-- **Compatibility with projection to a finite place.** Projecting a finite-adelic point of
 `Res_{E/F} G` to `F_v` and decomposing via `adicCompletionPointsContinuousMulEquiv` reads off the
@@ -600,8 +608,13 @@ theorem adicCompletionPointsContinuousMulEquiv_finiteLocalProjection (v : Height
         rfl) x).trans ?_
     exact congrArg (AlgHom.mapValue pS)
       (DFunLike.congr_fun toMulEquiv_finiteAdelicPointsContinuousMulEquiv x).symm
-  rw [hx, hy, adicCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
-    TauCeti.PointTopology.piPointsContinuousMulEquiv_apply, hloc,
+  have hpi (z : WithConv (H →ₐ[E]
+      ∀ w' : {w' : HeightOneSpectrum (𝓞 E) // w'.asIdeal.LiesOver v.asIdeal},
+        w'.val.adicCompletion E)) :
+      TauCeti.PointTopology.piContinuousMulEquiv E H _ z w =
+        AlgHom.mapValue (Pi.evalAlgHom E _ w) z :=
+    WithConv.ofConv_injective <| AlgHom.ext fun _ ↦ by simp
+  rw [hx, hy, adicCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply, hpi, hloc,
     ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp]
   exact congrArg (fun f ↦ AlgHom.mapValue f _) (AlgHom.ext fun _ ↦ rfl)
 
@@ -665,8 +678,12 @@ theorem infiniteCompletionPointsContinuousMulEquiv_infiniteLocalProjection (v : 
         rfl) x).trans ?_
     exact congrArg (AlgHom.mapValue pS)
       (DFunLike.congr_fun toMulEquiv_infiniteAdelicPointsContinuousMulEquiv x).symm
-  rw [hx, hy, infiniteCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
-    TauCeti.PointTopology.piPointsContinuousMulEquiv_apply, hloc,
+  have hpi (z : WithConv (H →ₐ[E]
+      ∀ w' : {w' : InfinitePlace E // w'.LiesOver v}, w'.val.Completion)) :
+      TauCeti.PointTopology.piContinuousMulEquiv E H _ z w =
+        AlgHom.mapValue (Pi.evalAlgHom E _ w) z :=
+    WithConv.ofConv_injective <| AlgHom.ext fun _ ↦ by simp
+  rw [hx, hy, infiniteCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply, hpi, hloc,
     ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp]
   exact congrArg (fun f ↦ AlgHom.mapValue f _) (AlgHom.ext fun _ ↦ rfl)
 

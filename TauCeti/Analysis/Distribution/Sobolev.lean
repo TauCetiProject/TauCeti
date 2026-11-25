@@ -11,6 +11,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.MihlinHormander
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 
@@ -228,13 +229,7 @@ theorem MemSobolev.toBesselPotentialSpace_sum {ι : Type*} {t : Finset ι} {s : 
     h.toBesselPotentialSpace = ∑ i ∈ t.attach, (hg i i.property).toBesselPotentialSpace :=
   BesselPotentialSpace.ext <| by
     rw [MemSobolev.toBesselPotentialSpace_toDistr, ← Finset.sum_attach t g]
-    clear h
-    generalize t.attach = u
-    induction u using Finset.cons_induction with
-    | empty => simp
-    | cons i t hi ih =>
-      rw [Finset.sum_cons, Finset.sum_cons, BesselPotentialSpace.toDistr_add, ← ih,
-        MemSobolev.toBesselPotentialSpace_toDistr]
+    simp only [BesselPotentialSpace.toDistr_sum, MemSobolev.toBesselPotentialSpace_toDistr]
 
 /-- The element of `H^{s,p}` defined by a finite linear combination of `Lᵠ` functions in
 `H^{s,p}` is the same linear combination of the elements defined by these functions. -/
