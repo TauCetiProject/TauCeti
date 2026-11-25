@@ -62,9 +62,8 @@ class of `l` in `Λ ⧸ rΛ`, so this class does not depend on the representativ
 * `LinearMap.orbitRelQuotientTorsionByδ_eq`, `LinearMap.quotSMulTop_mk_eq_mk_of_smul_eq`: the
   connecting map of an orbit space sends `[β]` to the class of `l` when `r • β = f l`, and this
   class is independent of the representative `β`.
-* `LinearMap.injective_orbitRelQuotientTorsionByδ`,
-  `LinearMap.surjective_orbitRelQuotientTorsionByδ`: the connecting map of an orbit space is
-  injective (resp. surjective) when multiplication by `r` is injective (resp. surjective) on `E`.
+* `LinearMap.injective_orbitRelQuotientTorsionByδ`: the connecting map of an orbit space is
+  injective when multiplication by `r` is injective on `E`.
 -/
 
 public section
@@ -261,12 +260,6 @@ theorem mk_mem_torsionBy_orbitRelQuotient_iff {β : E} :
 theorem injective_orbitRelQuotientTorsionByδ (hr : Injective fun v : E ↦ r • v) :
     Injective (f.orbitRelQuotientTorsionByδ hf r) :=
   injective_torsionByδ _ hf _ hr
-
-/-- The connecting map of an orbit space is surjective when multiplication by `r` is surjective
-on `E`, as for a real vector space and `r ≠ 0`. -/
-theorem surjective_orbitRelQuotientTorsionByδ (hr : Surjective fun v : E ↦ r • v) :
-    Surjective (f.orbitRelQuotientTorsionByδ hf r) :=
-  surjective_torsionByδ _ hf _ hr
 
 include hf in
 /-- **Independence of the lift.** If `β₁` and `β₂` represent the same point of the orbit space
