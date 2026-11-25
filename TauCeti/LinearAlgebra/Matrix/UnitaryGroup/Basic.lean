@@ -39,9 +39,8 @@ and the phase ambiguity for complex unitary frames in Anderson, Guionnet and Zei
 *An Introduction to Random Matrices* (2010), §4.1.
 
 For `Matrix.specialUnitaryGroup`, this file also records basic inverse coercions (`coe_inv`,
-`coe_mul_coe_inv`, `coe_inv_mul_coe`), subsingleton triviality on subsingleton index types
-(`subsingleton_of_subsingleton`), and centrality of scalar matrices
-(`mem_center_of_coe_eq_scalar`).
+`coe_mul_coe_inv`, `coe_inv_mul_coe`) and subsingleton triviality on subsingleton index types
+(`subsingleton_of_subsingleton`).
 -/
 
 public section
@@ -201,6 +200,22 @@ end DiagonalStabilizer
 
 namespace specialUnitaryGroup
 
+/-- For a subsingleton index type `n`, `specialUnitaryGroup n α` has at most one element: the
+determinant-one condition forces the unique entry (if any) to be `1`. Taking `StarRing α` as an
+implicit parameter rather than an instance lets typeclass search also resolve
+`Subsingleton (specialOrthogonalGroup n R)`, where `starRingOfComm` is baked into the abbreviation
+rather than active in context. -/
+instance subsingleton_of_subsingleton {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α]
+    {_ : StarRing α} [Subsingleton n] :
+    Subsingleton (specialUnitaryGroup n α) := by
+  refine ⟨fun A B => Subtype.ext <| Matrix.ext fun i j => ?_⟩
+  have hAdet := (mem_specialUnitaryGroup_iff.mp A.property).2
+  have hBdet := (mem_specialUnitaryGroup_iff.mp B.property).2
+  rw [det_eq_elem_of_subsingleton _ i] at hAdet hBdet
+  rw [Subsingleton.elim j i, hAdet, hBdet]
+
+section StarRing
+
 variable {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α] [StarRing α]
 
 /-- The matrix underlying the inverse of a special unitary matrix is its conjugate transpose. -/
@@ -222,24 +237,7 @@ theorem coe_inv_mul_coe (g : specialUnitaryGroup n α) :
     ((g⁻¹ : specialUnitaryGroup n α) : Matrix n n α) * (g : Matrix n n α) = 1 := by
   rw [← Submonoid.coe_mul, inv_mul_cancel, OneMemClass.coe_one]
 
-/-- For a subsingleton index type `n`, `specialUnitaryGroup n α` has at most one element: the
-determinant-one condition forces the unique entry (if any) to be `1`. -/
-instance subsingleton_of_subsingleton [Subsingleton n] :
-    Subsingleton (specialUnitaryGroup n α) := by
-  refine ⟨fun A B => Subtype.ext <| Matrix.ext fun i j => ?_⟩
-  have hAdet := (mem_specialUnitaryGroup_iff.mp A.property).2
-  have hBdet := (mem_specialUnitaryGroup_iff.mp B.property).2
-  rw [det_eq_elem_of_subsingleton _ i] at hAdet hBdet
-  rw [Subsingleton.elim j i, hAdet, hBdet]
-
-/-- Any special unitary matrix equal to a scalar matrix lies in the center of the special unitary
-group. -/
-theorem mem_center_of_coe_eq_scalar {g : specialUnitaryGroup n α} {c : α}
-    (hg : (g : Matrix n n α) = scalar n c) :
-    g ∈ Subgroup.center (specialUnitaryGroup n α) :=
-  Subgroup.mem_center_iff.mpr fun h => Subtype.ext <| by
-    rw [Submonoid.coe_mul, Submonoid.coe_mul, hg,
-      (scalar_commute c (Commute.all c) (h : Matrix n n α)).eq]
+end StarRing
 
 end specialUnitaryGroup
 

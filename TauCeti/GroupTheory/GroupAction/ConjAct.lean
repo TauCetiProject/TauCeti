@@ -33,6 +33,8 @@ subgroup is the conjugate by `g` of the stabilizer of `a`.
 ## Main statements
 
 * `ConjAct.mk_eq_mk_iff_isConj`: conjugation orbits are the classes of `IsConj`.
+* `ConjAct.toConjAct_smul_pi_prod_eq_iff`: simultaneous conjugation of an indexed family of pairs
+  acts componentwise on both factors of each entry.
 * `ConjAct.toConjAct_smul_eq_self_of_mem_center`,
   `ConjAct.toConjAct_smul_pi_prod_eq_self_of_mem_center`: conjugation by a central element fixes
   every element of the group and every indexed family of pairs in the group.
@@ -72,6 +74,15 @@ theorem ConjAct.mk_eq_mk_iff_isConj {G : Type*} [Group G] {x y : G} :
       IsConj x y :=
   Quotient.eq''.trans (by rw [ConjAct.orbitRel_conjAct])
 
+/-- Simultaneous conjugation of an indexed family of pairs acts componentwise on both factors of
+each entry. -/
+theorem ConjAct.toConjAct_smul_pi_prod_eq_iff {G ι : Type*} [DivInvMonoid G] {u : G}
+    {x y : ι → G × G} :
+    ConjAct.toConjAct u • x = y ↔
+      ∀ j, u * (x j).1 * u⁻¹ = (y j).1 ∧ u * (x j).2 * u⁻¹ = (y j).2 := by
+  simp only [funext_iff, Prod.ext_iff, Pi.smul_apply, Prod.smul_fst, Prod.smul_snd,
+    ConjAct.toConjAct_smul]
+
 /-- Conjugation by a central element fixes every element of the group. -/
 theorem ConjAct.toConjAct_smul_eq_self_of_mem_center {G : Type*} [Group G] {u : G}
     (hu : u ∈ Subgroup.center G) (x : G) : ConjAct.toConjAct u • x = x := by
@@ -82,9 +93,9 @@ entry. -/
 theorem ConjAct.toConjAct_smul_pi_prod_eq_self_of_mem_center {G ι : Type*} [Group G] {u : G}
     (hu : u ∈ Subgroup.center G) (x : ι → G × G) :
     ConjAct.toConjAct u • x = x :=
-  funext fun j => Prod.ext
-    (by rw [Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
-    (by rw [Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
+  ConjAct.toConjAct_smul_pi_prod_eq_iff.mpr fun j =>
+    ⟨ConjAct.toConjAct_smul_eq_self_of_mem_center hu (x j).1,
+      ConjAct.toConjAct_smul_eq_self_of_mem_center hu (x j).2⟩
 
 /-- Every conjugation fixes a central element of the group. -/
 theorem ConjAct.smul_eq_self_of_mem_center {G : Type*} [Group G] (u : ConjAct G) {c : G}

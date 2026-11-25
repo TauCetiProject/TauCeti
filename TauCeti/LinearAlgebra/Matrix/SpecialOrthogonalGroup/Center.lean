@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.CoordinateRotation
-import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # The center of the special orthogonal matrix group
@@ -82,6 +81,16 @@ theorem mem_range_scalar_of_commute_specialOrthogonalGroup (h2 : IsRegular (2 : 
 
 namespace SpecialOrthogonalGroup
 
+/-- A special orthogonal matrix that is scalar belongs to the center. -/
+theorem mem_center_of_coe_eq_scalar (g : specialOrthogonalGroup n R) (c : R)
+    (hc : (g : Matrix n n R) = scalar n c) :
+    g ∈ Subgroup.center (specialOrthogonalGroup n R) := by
+  rw [Subgroup.mem_center_iff]
+  intro h
+  apply Subtype.ext
+  simpa only [Submonoid.coe_mul, hc] using
+    (scalar_commute c (Commute.all c) (h : Matrix n n R)).symm.eq
+
 /-- In dimension at least three, the center consists precisely of the scalar orthogonal
 matrices of determinant one. This includes coefficients with nilpotents. -/
 @[simp] theorem mem_center_iff (h2 : IsRegular (2 : R)) (g : specialOrthogonalGroup n R)
@@ -100,7 +109,7 @@ matrices of determinant one. This includes coefficients with nilpotents. -/
     · have hdet := (mem_specialOrthogonalGroup_iff.mp g.property).2
       simpa [← hc, scalar_apply, det_diagonal] using hdet
   · rintro ⟨c, hc, _, _⟩
-    exact Matrix.specialUnitaryGroup.mem_center_of_coe_eq_scalar hc
+    exact mem_center_of_coe_eq_scalar g c hc
 
 /-- Odd-dimensional special orthogonal groups have trivial center when two is a
 non-zero-divisor in the coefficient ring. -/

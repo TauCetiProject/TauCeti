@@ -34,6 +34,8 @@ of determinant one without changing the conjugate.
 
 ## Main definitions
 
+* `Matrix.specialUnitaryGroup.mulSingleInvTorus`: the diagonal element of `SU(n)` with circle entry
+  `c` at `i`, `c⁻¹` at `j` (or `1` if `i = j`), and `1` elsewhere.
 * `Matrix.specialUnitaryGroup.centerMulEquivCenterSL`: the isomorphism between the centers of
   `SU(n)` and `SL(n, ℂ)` induced by `toSL`.
 * `Matrix.specialUnitaryGroup.centerMulEquivRootsOfUnityFin`: for `0 < r`, the isomorphism
@@ -43,6 +45,9 @@ of determinant one without changing the conjugate.
 
 * `Matrix.specialUnitaryGroup.mem_center_iff`: over `ℂ`, `g` lies in the center of `SU(n)` iff
   `g = scalar n c` for some `c` with `c ^ card n = 1`.
+* `Matrix.specialUnitaryGroup.mulSingleInvTorus_notMem_center` and
+  `Matrix.specialUnitaryGroup.exists_notMem_center`: for `[Nontrivial n]`, `SU(n)` has non-central
+  elements.
 * `Matrix.specialUnitaryGroup.toSL_mem_center_iff`,
   `Matrix.specialUnitaryGroup.comap_toSL_center`,
   `Matrix.specialUnitaryGroup.ker_toPSL_eq_center`: the center of `SU(n)` is the preimage of the
@@ -66,37 +71,50 @@ section Complex
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- A central element of `SU(n)` over `ℂ` is diagonal: for any `i ≠ j`, the diagonal matrix with
-`I` at `i`, `-I` at `j`, and `1` elsewhere lies in `SU(n)` and separates `i` from `j`. -/
+/-- For indices `i, j : n` and `c : Circle`, the diagonal element of `SU(n)` with entry `c` at `i`,
+`c⁻¹` at `j` (or `1` when `i = j`), and `1` elsewhere. -/
+noncomputable def mulSingleInvTorus (i j : n) (c : Circle) : specialUnitaryGroup n ℂ :=
+  let z : n → Circle := Pi.mulSingle i c * Pi.mulSingle j c⁻¹
+  ⟨TauCeti.unitaryTorusHom n z,
+    mem_specialUnitaryGroup_iff.mpr
+      ⟨(TauCeti.unitaryTorusHom n z).property, by
+        have hprod : ∏ k, z k = 1 := by
+          simp only [z, Pi.mul_apply, Finset.prod_mul_distrib, Fintype.prod_pi_mulSingle',
+            mul_inv_cancel]
+        rw [TauCeti.det_unitaryTorusHom, hprod, Circle.coe_one]⟩⟩
+
+/-- The underlying matrix of `mulSingleInvTorus i j c` is the diagonal matrix of
+`Pi.mulSingle i c * Pi.mulSingle j c⁻¹`. -/
+@[simp]
+theorem coe_mulSingleInvTorus (i j : n) (c : Circle) :
+    (mulSingleInvTorus i j c : Matrix n n ℂ) =
+      diagonal fun k => (((Pi.mulSingle i c * Pi.mulSingle j c⁻¹ : n → Circle) k : Circle) : ℂ) :=
+  TauCeti.coe_unitaryTorusHom _
+
+/-- For distinct indices `i ≠ j`, some `mulSingleInvTorus i j c ∈ SU(n)` has distinct `(i, i)` and
+`(j, j)` entries (witnessed by `c = I`, giving `I` at `i` and `-I` at `j`). -/
+private theorem exists_mulSingleInvTorus_apply_ne {i j : n} (hij : i ≠ j) :
+    ∃ c : Circle,
+      (mulSingleInvTorus i j c : Matrix n n ℂ) i i ≠
+        (mulSingleInvTorus i j c : Matrix n n ℂ) j j := by
+  let cI : Circle := ⟨Complex.I, mem_sphere_zero_iff_norm.mpr Complex.norm_I⟩
+  have hcI : (cI : ℂ) = Complex.I := rfl
+  exact ⟨cI, by simp [hcI, hij, hij.symm, Complex.inv_I, self_eq_neg, Complex.I_ne_zero]⟩
+
+/-- A central element of `SU(n)` over `ℂ` is diagonal: for any `i ≠ j`, some
+`mulSingleInvTorus i j c ∈ SU(n)` separates `i` from `j`. -/
 private theorem isDiag_of_mem_center {g : specialUnitaryGroup n ℂ}
     (hg : g ∈ Subgroup.center (specialUnitaryGroup n ℂ)) :
     (g : Matrix n n ℂ).IsDiag := by
   intro i j hij
-  let cI : Circle := ⟨Complex.I, mem_sphere_zero_iff_norm.mpr Complex.norm_I⟩
-  let z : n → Circle := Pi.mulSingle i cI * Pi.mulSingle j cI⁻¹
-  have hprod : ∏ k, z k = 1 := by
-    simp only [z, Pi.mul_apply, Finset.prod_mul_distrib, Fintype.prod_pi_mulSingle', mul_inv_cancel]
-  have hdet : (TauCeti.unitaryTorusHom n z : Matrix n n ℂ).det = 1 := by
-    rw [TauCeti.det_unitaryTorusHom, hprod, Circle.coe_one]
-  let u : specialUnitaryGroup n ℂ :=
-    ⟨TauCeti.unitaryTorusHom n z,
-      mem_specialUnitaryGroup_iff.mpr ⟨(TauCeti.unitaryTorusHom n z).property, hdet⟩⟩
-  have hcomm : Commute (diagonal fun k => (z k : ℂ)) (g : Matrix n n ℂ) := by
-    have h := congrArg Subtype.val (Subgroup.mem_center_iff.mp hg u)
-    rw [Submonoid.coe_mul, Submonoid.coe_mul] at h
-    dsimp only [u] at h
-    rwa [TauCeti.coe_unitaryTorusHom] at h
-  have hzi : z i = cI := by
-    simp [z, Pi.mulSingle_eq_of_ne hij]
-  have hzj : z j = cI⁻¹ := by
-    simp [z, Pi.mulSingle_eq_of_ne hij.symm]
-  refine TauCeti.apply_eq_zero_of_commute_diagonal hcomm ?_
-  rw [hzi, hzj, Circle.coe_inv]
-  dsimp only [cI]
-  rw [Complex.inv_I]
-  intro hI
-  have h2 : (2 : ℂ) * Complex.I = 0 := by linear_combination hI
-  exact mul_ne_zero two_ne_zero Complex.I_ne_zero h2
+  obtain ⟨c, hc⟩ := exists_mulSingleInvTorus_apply_ne hij
+  have hcomm : Commute (mulSingleInvTorus i j c : Matrix n n ℂ) (g : Matrix n n ℂ) := by
+    rw [commute_iff_eq]
+    simpa only [Submonoid.coe_mul] using
+      congrArg Subtype.val (Subgroup.mem_center_iff.mp hg (mulSingleInvTorus i j c))
+  rw [coe_mulSingleInvTorus] at hcomm
+  exact TauCeti.apply_eq_zero_of_commute_diagonal hcomm
+    (by simpa only [coe_mulSingleInvTorus, diagonal_apply_eq] using hc)
 
 /-- Any two diagonal entries of a central element of `SU(n)` over `ℂ` coincide: for `i ≠ j`,
 multiplying the transposition matrix of `swap i j` by `diag(-1, 1, …)` at `i` gives an element of
@@ -111,9 +129,8 @@ private theorem diag_eq_of_mem_center {g : specialUnitaryGroup n ℂ}
   have hprod : ∏ k, z k = -1 := by
     simp only [z, Fintype.prod_pi_mulSingle']
   have hdet : (U : Matrix n n ℂ).det = 1 := by
-    rw [Submonoid.coe_mul, det_mul, TauCeti.det_unitaryTorusHom, hprod,
-      coe_permutationUnitary, Equiv.swap_inv, det_permutation, Equiv.Perm.sign_swap hij]
-    norm_num
+    simp [U, -TauCeti.coe_unitaryTorusHom, TauCeti.det_unitaryTorusHom, hprod,
+      Equiv.Perm.sign_swap hij]
   let u : specialUnitaryGroup n ℂ := ⟨U, mem_specialUnitaryGroup_iff.mpr ⟨U.property, hdet⟩⟩
   have hdiag := (isDiag_of_mem_center hg).diagonal_diag
   have hmat :
@@ -134,7 +151,9 @@ precisely when it is a scalar matrix whose scalar is a `card n`-th root of unity
 theorem mem_center_iff {g : specialUnitaryGroup n ℂ} :
     g ∈ Subgroup.center (specialUnitaryGroup n ℂ) ↔
       ∃ c : ℂ, c ^ Fintype.card n = 1 ∧ scalar n c = (g : Matrix n n ℂ) := by
-  refine ⟨fun hg => ?_, fun ⟨c, _, hc⟩ => mem_center_of_coe_eq_scalar hc.symm⟩
+  refine ⟨fun hg => ?_, fun ⟨c, _, hc⟩ => Subgroup.mem_center_iff.mpr fun h => Subtype.ext <| by
+    rw [Submonoid.coe_mul, Submonoid.coe_mul, ← hc,
+      (scalar_commute c (Commute.all c) (h : Matrix n n ℂ)).symm.eq]⟩
   rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
   · exact ⟨1, by simp, Subsingleton.elim _ _⟩
   have hscal : scalar n ((g : Matrix n n ℂ) i₀ i₀) = (g : Matrix n n ℂ) := by
@@ -146,6 +165,24 @@ theorem mem_center_iff {g : specialUnitaryGroup n ℂ} :
   refine ⟨(g : Matrix n n ℂ) i₀ i₀, ?_, hscal⟩
   have hdet := (mem_specialUnitaryGroup_iff.mp g.property).2
   rwa [← hscal, scalar_apply, det_diagonal, Finset.prod_const, Finset.card_univ] at hdet
+
+/-- For distinct indices `i ≠ j` and a circle element `c` with `c ≠ c⁻¹`,
+`mulSingleInvTorus i j c` does not lie in the center of `SU(n)`. -/
+theorem mulSingleInvTorus_notMem_center {i j : n} (hij : i ≠ j) {c : Circle} (hc : c ≠ c⁻¹) :
+    mulSingleInvTorus i j c ∉ Subgroup.center (specialUnitaryGroup n ℂ) := fun h => by
+  obtain ⟨z, _, hz⟩ := mem_center_iff.mp h
+  have hi : z = c := by simpa [hij] using congr_fun₂ hz i i
+  have hj : z = (c⁻¹ : Circle) := by simpa [hij.symm] using congr_fun₂ hz j j
+  exact hc (Circle.coe_inj.mp (hi.symm.trans hj))
+
+/-- Over `ℂ`, whenever `n` has at least two elements, `SU(n)` has a non-central element (so its
+center is a proper subgroup). -/
+theorem exists_notMem_center [Nontrivial n] :
+    ∃ u : specialUnitaryGroup n ℂ, u ∉ Subgroup.center (specialUnitaryGroup n ℂ) := by
+  obtain ⟨i, j, hij⟩ := exists_pair_ne n
+  obtain ⟨c, hc⟩ := exists_mulSingleInvTorus_apply_ne hij
+  refine ⟨mulSingleInvTorus i j c, mulSingleInvTorus_notMem_center hij fun h => hc ?_⟩
+  simp [hij, hij.symm, ← h]
 
 /-- Over `ℂ`, an element of `SU(n)` maps into the center of `SL(n, ℂ)` precisely when it lies in
 the center of `SU(n)`. -/
@@ -238,8 +275,7 @@ theorem exists_conj_eq_diagonal (g : specialUnitaryGroup n ℂ) :
   have hcoe : (((⟨(c : ℂ) • (U : Matrix n n ℂ), hc⟩ * g *
       (⟨(c : ℂ) • (U : Matrix n n ℂ), hc⟩)⁻¹ : specialUnitaryGroup n ℂ)) : Matrix n n ℂ) =
       ((U * gU * U⁻¹ : unitaryGroup n ℂ) : Matrix n n ℂ) := by
-    rw [Submonoid.coe_mul, Submonoid.coe_mul, coe_inv, Submonoid.coe_mul, Submonoid.coe_mul,
-      ← Unitary.star_eq_inv, Unitary.coe_star]
+    simp only [Submonoid.coe_mul, coe_inv, ← Unitary.star_eq_inv, Unitary.coe_star]
     exact Unitary.smul_mul_mul_star_smul c.coe_mem_unitary (U : Matrix n n ℂ) (g : Matrix n n ℂ)
   rw [hcoe, ← hz, TauCeti.coe_unitaryTorusHom]
 

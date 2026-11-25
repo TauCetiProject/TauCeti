@@ -59,8 +59,9 @@ genus-one witnesses are established in
 ## Main results
 
 * `TauCeti.isClosed_relationSet`, `TauCeti.isCompact_relationSet`,
-  `TauCeti.instCompactSpaceRelationModuli`, `TauCeti.instT2SpaceRelationModuli`:
-  `relationSet r ζ g` is closed and compact, and `relationModuli r ζ g` is compact and Hausdorff.
+  `TauCeti.instCompactSpaceRelationModuli`, `TauCeti.continuous_toConjAct_smul`,
+  `TauCeti.instT2SpaceRelationModuli`: `relationSet r ζ g` is closed and compact, simultaneous
+  `SU(r)`-conjugation is jointly continuous, and `relationModuli r ζ g` is compact and Hausdorff.
 * `TauCeti.conjAct_toConjAct_smul_eq_self_iff_mem_center` and
   `TauCeti.isCancelSMul_quotientCenter_relationSet`: when `IsPrimitiveRoot ζ r`, every conjugation
   stabilizer on `relationSet r ζ g` equals `Subgroup.center (SU(r))` (by
@@ -144,14 +145,14 @@ theorem mem_relationSubMulAction_iff {r : ℕ} {ζ : ℂ} {g : ℕ}
   (Iff.rfl)
 
 /-- Simultaneous conjugation action of `ConjAct (SU(r))` directly on `relationSet r ζ g`. -/
-noncomputable instance instMulActionConjActRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
+instance instMulActionConjActRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     MulAction (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationSet r ζ g) :=
   inferInstanceAs (MulAction (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
     (relationSubMulAction r ζ g))
 
 /-- Coercing `u • x` from `relationSet r ζ g` to the ambient tuple type agrees with `u • x.val`. -/
 @[simp]
-theorem conjAct_smul_relationSet_coe {r : ℕ} {ζ : ℂ} {g : ℕ}
+theorem val_conjAct_smul {r : ℕ} {ζ : ℂ} {g : ℕ}
     (u : ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) (x : relationSet r ζ g) :
     ((u • x : relationSet r ζ g) :
       Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) =
@@ -165,13 +166,12 @@ instance instContinuousConstSMulConjActRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ
   inferInstanceAs (ContinuousConstSMul (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
     (relationSubMulAction r ζ g))
 
-/-- The conjugation moduli `R_g / SU(r)` of the twisted `SU(r)` surface relation: the quotient of
-`relationSet r ζ g` by the pullback of the simultaneous conjugation orbit relation, endowed with
+/-- The conjugation moduli `R_g / SU(r)` of the twisted `SU(r)` surface relation: the orbit
+quotient of `relationSet r ζ g` under simultaneous conjugation by `ConjAct (SU(r))`, endowed with
 the quotient topology. -/
 abbrev relationModuli (r : ℕ) (ζ : ℂ) (g : ℕ) : Type :=
-  Quotient ((MulAction.orbitRel (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
-    (Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ)).comap
-    (Subtype.val : relationSet r ζ g → _))
+  MulAction.orbitRel.Quotient (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
+    (relationSet r ζ g)
 
 /-- The quotient projection from `relationSet r ζ g` onto `relationModuli r ζ g`. -/
 def relationModuliMk {r : ℕ} {ζ : ℂ} {g : ℕ} (x : relationSet r ζ g) :
@@ -199,8 +199,9 @@ when one is carried to the other by simultaneous conjugation by an element of `S
 theorem relationModuliMk_eq_iff {r : ℕ} {ζ : ℂ} {g : ℕ} (x y : relationSet r ζ g) :
     relationModuliMk x = relationModuliMk y ↔
       ∃ u : Matrix.specialUnitaryGroup (Fin r) ℂ, ConjAct.toConjAct u • y.val = x.val := by
-  rw [relationModuliMk, relationModuliMk, Quotient.eq, Setoid.comap_rel,
-    MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+  rw [relationModuliMk, relationModuliMk, Quotient.eq, MulAction.orbitRel_apply,
+    MulAction.mem_orbit_iff]
+  simp_rw [Subtype.ext_iff, val_conjAct_smul]
   exact ConjAct.toConjAct.toEquiv.exists_congr_left
 
 /-- Simultaneous conjugation by `ConjAct (SU(r))` acts trivially on `relationModuli r ζ g`. -/
@@ -208,38 +209,13 @@ theorem relationModuliMk_eq_iff {r : ℕ} {ζ : ℂ} {g : ℕ} (x y : relationSe
 theorem relationModuliMk_conjAct_smul {r : ℕ} {ζ : ℂ} {g : ℕ}
     (u : ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) (x : relationSet r ζ g) :
     relationModuliMk (u • x) = relationModuliMk x :=
-  (relationModuliMk_eq_iff (u • x) x).mpr ⟨ConjAct.ofConjAct u, by simp⟩
-
-/-- Homeomorphism identifying `relationModuli r ζ g` with the `MulAction.orbitRel.Quotient` of
-`ConjAct (SU(r))` acting directly on `relationSet r ζ g`. -/
-noncomputable def relationModuliHomeomorphOrbitQuotient (r : ℕ) (ζ : ℂ) (g : ℕ) :
-    relationModuli r ζ g ≃ₜ
-      MulAction.orbitRel.Quotient (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
-        (relationSet r ζ g) :=
-  Homeomorph.Quotient.congrRight
-    (Setoid.ext_iff.mp (SubMulAction.orbitRel_of_subMul (relationSubMulAction r ζ g)).symm)
-
-/-- `relationModuliHomeomorphOrbitQuotient` sends `relationModuliMk x` to `Quotient.mk _ x`. -/
-@[simp]
-theorem relationModuliHomeomorphOrbitQuotient_mk {r : ℕ} {ζ : ℂ} {g : ℕ}
-    (x : relationSet r ζ g) :
-    relationModuliHomeomorphOrbitQuotient r ζ g (relationModuliMk x) = Quotient.mk _ x :=
-  (rfl)
+  MulAction.orbitRel.Quotient.quotient_smul_eq
 
 /-- The quotient projection `relationModuliMk` is an open quotient map, since `ConjAct (SU(r))`
 acts by homeomorphisms on `relationSet r ζ g`. -/
 theorem isOpenQuotientMap_relationModuliMk (r : ℕ) (ζ : ℂ) (g : ℕ) :
-    IsOpenQuotientMap (@relationModuliMk r ζ g) := by
-  have hcomp : (relationModuliHomeomorphOrbitQuotient r ζ g).symm ∘
-      (Quotient.mk _ : relationSet r ζ g →
-        MulAction.orbitRel.Quotient (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
-          (relationSet r ζ g)) = @relationModuliMk r ζ g :=
-    funext fun x => by
-      rw [Function.comp_apply, ← relationModuliHomeomorphOrbitQuotient_mk,
-        Homeomorph.symm_apply_apply]
-  rw [← hcomp]
-  exact (relationModuliHomeomorphOrbitQuotient r ζ g).symm.isOpenQuotientMap.comp
-    MulAction.isOpenQuotientMap_quotientMk
+    IsOpenQuotientMap (@relationModuliMk r ζ g) :=
+  MulAction.isOpenQuotientMap_quotientMk
 
 /-! ### Compactness and Hausdorffness -/
 
@@ -250,21 +226,10 @@ private theorem continuous_commutatorProd (r g : ℕ) :
         Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ =>
       ((List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod : Matrix (Fin r) (Fin r) ℂ)) := by
   refine continuous_subtypeVal.comp ?_
-  induction g with
-  | zero =>
-    simpa only [List.ofFn_zero, List.prod_nil] using continuous_const
-  | succ g ih =>
-    simp only [List.ofFn_succ, List.prod_cons]
-    have hhead : Continuous (fun x : Fin (g + 1) →
-          Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ =>
-        ⁅(x 0).1, (x 0).2⁆) := by
-      simp only [commutatorElement_def]
-      fun_prop
-    have htail : Continuous (fun x : Fin (g + 1) →
-          Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ =>
-        (List.ofFn fun j : Fin g => ⁅(x j.succ).1, (x j.succ).2⁆).prod) :=
-      ih.comp (continuous_pi fun j => continuous_apply j.succ)
-    exact hhead.mul htail
+  simp only [List.ofFn_eq_map]
+  refine continuous_list_prod (List.finRange g) fun j _ => ?_
+  simp only [commutatorElement_def]
+  fun_prop
 
 /-- `relationSet r ζ g` is a closed subset of `Fin g → SU(r) × SU(r)`. -/
 theorem isClosed_relationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
@@ -294,6 +259,21 @@ instance instCompactSpaceRelationModuli (r : ℕ) (ζ : ℂ) (g : ℕ) :
     CompactSpace (relationModuli r ζ g) :=
   Quotient.compactSpace
 
+/-- Joint continuity of simultaneous `SU(r)`-conjugation `(u, x) ↦ ConjAct.toConjAct u • x` on
+`SU(r) × relationSet r ζ g`. -/
+theorem continuous_toConjAct_smul (r : ℕ) (ζ : ℂ) (g : ℕ) :
+    Continuous (fun p : Matrix.specialUnitaryGroup (Fin r) ℂ × relationSet r ζ g =>
+      ConjAct.toConjAct p.1 • p.2) := by
+  refine continuous_induced_rng.2 ?_
+  have hact : Continuous fun p : Matrix.specialUnitaryGroup (Fin r) ℂ ×
+      (Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) =>
+      ConjAct.toConjAct p.1 • p.2 :=
+    continuous_pi fun j => by
+      simp only [Pi.smul_apply, Prod.smul_def, ConjAct.toConjAct_smul]
+      fun_prop
+  simpa only [Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq, val_conjAct_smul] using
+    hact.comp (continuous_id.prodMap continuous_subtypeVal)
+
 /-- `relationModuli r ζ g` is Hausdorff: `relationModuliMk` is an open quotient map and the orbit
 relation is the image of the compact space `SU(r) × relationSet r ζ g`, hence closed. -/
 instance instT2SpaceRelationModuli (r : ℕ) (ζ : ℂ) (g : ℕ) :
@@ -302,17 +282,7 @@ instance instT2SpaceRelationModuli (r : ℕ) (ζ : ℂ) (g : ℕ) :
   let Φ : Matrix.specialUnitaryGroup (Fin r) ℂ × relationSet r ζ g →
       relationSet r ζ g × relationSet r ζ g :=
     fun p => (ConjAct.toConjAct p.1 • p.2, p.2)
-  have hcont : Continuous Φ := by
-    refine Continuous.prodMk (continuous_induced_rng.2 ?_) continuous_snd
-    have hact : Continuous fun p : Matrix.specialUnitaryGroup (Fin r) ℂ ×
-        (Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) =>
-        ConjAct.toConjAct p.1 • p.2 :=
-      continuous_pi fun j => by
-        simp only [Pi.smul_apply, Prod.smul_def, ConjAct.toConjAct_smul]
-        fun_prop
-    simpa only [Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq,
-      conjAct_smul_relationSet_coe] using
-      hact.comp (continuous_id.prodMap continuous_subtypeVal)
+  have hcont : Continuous Φ := (continuous_toConjAct_smul r ζ g).prodMk continuous_snd
   have hrange : {q : relationSet r ζ g × relationSet r ζ g |
       relationModuliMk q.1 = relationModuliMk q.2} = Set.range Φ := by
     ext ⟨a, b⟩
@@ -337,11 +307,9 @@ theorem conjAct_toConjAct_smul_eq_self_iff_mem_center {r : ℕ} {ζ : ℂ}
       u ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) := by
   refine ⟨fun h => relationSet_stabilizer_central hζ hx fun j => ?_,
     fun hu => ConjAct.toConjAct_smul_pi_prod_eq_self_of_mem_center hu x⟩
-  have hj1 := congrArg Prod.fst (congrFun h j)
-  have hj2 := congrArg Prod.snd (congrFun h j)
-  simp only [Pi.smul_apply, Prod.smul_fst, Prod.smul_snd, ConjAct.toConjAct_smul,
-    mul_inv_eq_iff_eq_mul] at hj1 hj2
-  exact ⟨hj1, hj2⟩
+  rw [commute_iff_eq, commute_iff_eq]
+  simpa only [mul_inv_eq_iff_eq_mul] using
+    ConjAct.toConjAct_smul_pi_prod_eq_iff.mp h j
 
 /-- Simultaneous conjugation by `SU(r)` descends to an action of the projective quotient
 `SU(r) ⧸ Subgroup.center (SU(r))` on `relationSet r ζ g`. -/
@@ -355,13 +323,13 @@ noncomputable instance instMulActionQuotientCenterRelationSet (r : ℕ) (ζ : �
     QuotientGroup.lift (Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) φ fun u hu => by
       ext x : 2
       simp only [φ, MonoidHom.comp_apply, MulAction.toPermHom_apply, MulAction.toPerm_apply,
-        MulEquiv.coe_toMonoidHom, Equiv.Perm.coe_one, id_eq, conjAct_smul_relationSet_coe]
+        MulEquiv.coe_toMonoidHom, Equiv.Perm.coe_one, id_eq, val_conjAct_smul]
       exact ConjAct.toConjAct_smul_pi_prod_eq_self_of_mem_center hu x.val
 
 /-- A coset `QuotientGroup.mk u` in `SU(r) ⧸ center(SU(r))` acts on `relationSet r ζ g` by
 simultaneous conjugation by `u`. -/
 @[simp]
-theorem quotientCenter_mk_smul_coe {r : ℕ} {ζ : ℂ} {g : ℕ}
+theorem val_quotientCenter_mk_smul {r : ℕ} {ζ : ℂ} {g : ℕ}
     (u : Matrix.specialUnitaryGroup (Fin r) ℂ) (x : relationSet r ζ g) :
     (((QuotientGroup.mk u : Matrix.specialUnitaryGroup (Fin r) ℂ ⧸
         Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) • x : relationSet r ζ g) :
@@ -382,7 +350,7 @@ theorem isCancelSMul_quotientCenter_relationSet {r : ℕ} {ζ : ℂ} (hζ : IsPr
     apply QuotientGroup.eq.mpr
     have hfix : ConjAct.toConjAct (u₁⁻¹ * u₂) • x.val = x.val := by
       rw [map_mul, mul_smul, map_inv, inv_smul_eq_iff]
-      simpa only [quotientCenter_mk_smul_coe] using (congrArg Subtype.val h).symm
+      simpa only [val_quotientCenter_mk_smul] using (congrArg Subtype.val h).symm
     exact (conjAct_toConjAct_smul_eq_self_iff_mem_center hζ x.property (u₁⁻¹ * u₂)).mp hfix
 
 /-- Homeomorphism identifying `relationModuli r ζ g` with the orbit quotient of the effective
@@ -394,9 +362,9 @@ noncomputable def relationModuliHomeomorphQuotientCenter (r : ℕ) (ζ : ℂ) (g
           Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ))
         (relationSet r ζ g) :=
   Homeomorph.Quotient.congrRight fun x y => by
-    rw [Setoid.comap_rel]
     simp only [MulAction.orbitRel_apply, MulAction.mem_orbit_iff,
-      QuotientGroup.mk_surjective.exists, Subtype.ext_iff, quotientCenter_mk_smul_coe]
+      QuotientGroup.mk_surjective.exists, Subtype.ext_iff, val_conjAct_smul,
+      val_quotientCenter_mk_smul]
     exact ConjAct.toConjAct.toEquiv.exists_congr_left
 
 /-- `relationModuliHomeomorphQuotientCenter` sends `relationModuliMk x` to `Quotient.mk _ x`. -/
@@ -480,7 +448,7 @@ noncomputable instance instSMulCenterTwistRelationSet (r : ℕ) (ζ : ℂ) (g : 
 /-- Coercing a central twist `ε • x` from `relationSet r ζ g` multiplies each pair `(A_j, B_j)`
 entrywise by `((ε j).1, (ε j).2)`. -/
 @[simp]
-theorem centerTwist_smul_relationSet_coe {r : ℕ} {ζ : ℂ} {g : ℕ}
+theorem val_centerTwist_smul {r : ℕ} {ζ : ℂ} {g : ℕ}
     (ε : Fin g → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
       Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) (x : relationSet r ζ g) :
     ((ε • x : relationSet r ζ g) :
@@ -494,15 +462,15 @@ theorem centerTwist_smul_relationSet_coe {r : ℕ} {ζ : ℂ} {g : ℕ}
 noncomputable instance instMulActionCenterTwistRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     MulAction (Fin g → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
       Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationSet r ζ g) where
-  one_smul x := Subtype.ext <| by simp [centerTwist_smul_relationSet_coe]
-  mul_smul ε₁ ε₂ x := Subtype.ext <| by simp [centerTwist_smul_relationSet_coe, mul_assoc]
+  one_smul x := Subtype.ext <| by simp [val_centerTwist_smul]
+  mul_smul ε₁ ε₂ x := Subtype.ext <| by simp [val_centerTwist_smul, mul_assoc]
 
 /-- The central holonomy twist action on `relationSet r ζ g` is jointly continuous. -/
 instance instContinuousSMulCenterTwistRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     ContinuousSMul (Fin g → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
       Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationSet r ζ g) where
   continuous_smul := continuous_induced_rng.2 <| by
-    simp only [Function.comp_def, centerTwist_smul_relationSet_coe]
+    simp only [Function.comp_def, val_centerTwist_smul]
     have hact : Continuous fun p : (Fin g →
         Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
         Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) ×
@@ -517,19 +485,18 @@ group action on `relationModuli r ζ g`. -/
 noncomputable instance instMulActionCenterTwistRelationModuli (r : ℕ) (ζ : ℂ) (g : ℕ) :
     MulAction (Fin g → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
       Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationModuli r ζ g) where
-  smul ε := Quotient.map' (ε • ·) fun x y ⟨u, hu⟩ => ⟨u, by
-    dsimp only at hu ⊢
-    rw [centerTwist_smul_relationSet_coe, centerTwist_smul_relationSet_coe]
-    funext j
-    have hj1 : u • (y.val j).1 = (x.val j).1 := by
-      simpa only [Pi.smul_apply, Prod.smul_fst] using congrArg Prod.fst (congrFun hu j)
-    have hj2 : u • (y.val j).2 = (x.val j).2 := by
-      simpa only [Pi.smul_apply, Prod.smul_snd] using congrArg Prod.snd (congrFun hu j)
-    exact Prod.ext
-      (by rw [Pi.smul_apply, Prod.smul_fst, ConjAct.smul_mul_of_mem_center u (ε j).1.property,
-        hj1])
-      (by rw [Pi.smul_apply, Prod.smul_snd, ConjAct.smul_mul_of_mem_center u (ε j).2.property,
-        hj2])⟩
+  smul ε := Quotient.map' (ε • ·) fun x y ⟨u, hu⟩ => ⟨u, Subtype.ext <| by
+    obtain ⟨u, rfl⟩ := ConjAct.toConjAct.surjective u
+    have hu' := ConjAct.toConjAct_smul_pi_prod_eq_iff.mp (congrArg Subtype.val hu)
+    rw [val_conjAct_smul, val_centerTwist_smul, val_centerTwist_smul,
+      ConjAct.toConjAct_smul_pi_prod_eq_iff]
+    exact fun j =>
+      ⟨by simpa only [← ConjAct.toConjAct_smul,
+          ConjAct.smul_mul_of_mem_center _ (ε j).1.property] using
+          congrArg (((ε j).1 : Matrix.specialUnitaryGroup (Fin r) ℂ) * ·) (hu' j).1,
+        by simpa only [← ConjAct.toConjAct_smul,
+          ConjAct.smul_mul_of_mem_center _ (ε j).2.property] using
+          congrArg (((ε j).2 : Matrix.specialUnitaryGroup (Fin r) ℂ) * ·) (hu' j).2⟩⟩
   one_smul q := Quotient.inductionOn' q fun x => congrArg Quotient.mk'' (one_smul _ x)
   mul_smul ε₁ ε₂ q :=
     Quotient.inductionOn' q fun x => congrArg Quotient.mk'' (mul_smul ε₁ ε₂ x)

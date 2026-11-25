@@ -79,11 +79,10 @@ theorem subsingleton_relationModuli_one {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveR
   obtain ⟨u, huA, huB⟩ := Matrix.exists_conj_eq_of_coe_commutatorElement_eq_smul_one
     (n := Fin r) (by simpa using hζ)
     (mem_relationSet_one_iff.mp x₂.property) (mem_relationSet_one_iff.mp x₁.property)
-  refine (relationModuliMk_eq_iff x₁ x₂).mpr ⟨u, funext fun j => ?_⟩
+  refine (relationModuliMk_eq_iff x₁ x₂).mpr
+    ⟨u, ConjAct.toConjAct_smul_pi_prod_eq_iff.mpr fun j => ?_⟩
   rw [Subsingleton.elim j 0]
-  exact Prod.ext
-    (by simpa only [Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul] using huA)
-    (by simpa only [Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul] using huB)
+  exact ⟨huA, huB⟩
 
 /-- **Genus-one twisted `SU(r)` moduli is a single point.** When `ζ` is a primitive `r`-th root of
 unity, `relationModuli r ζ 1` has a unique element. No positivity assumption on `r` is needed: for
@@ -120,7 +119,7 @@ theorem exists_ne_one_smul_eq_self_relationModuli_one {r : ℕ} (hr : 2 ≤ r) {
   have hpow : ζ ^ Fintype.card (Fin r) = 1 := by simpa using hζ.pow_eq_one
   let zζ : Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) :=
     ⟨⟨scalar (Fin r) ζ, Matrix.specialUnitaryGroup.scalar_mem hpow⟩,
-      Matrix.specialUnitaryGroup.mem_center_of_coe_eq_scalar rfl⟩
+      Matrix.specialUnitaryGroup.mem_center_iff.mpr ⟨ζ, hpow, rfl⟩⟩
   refine ⟨fun _ => (zζ, 1), fun h => hζ.ne_one hr ?_, fun _ => ?_⟩
   · have h0 := congrArg (fun f => ((f 0).1.val : Matrix (Fin r) (Fin r) ℂ) ⟨0, by omega⟩
       ⟨0, by omega⟩) h
@@ -138,37 +137,22 @@ theorem nontrivial_relationModuli_two_one_one :
   let x₂ : relationSet 2 1 1 := ⟨fun _ => (m1, 1), by simp⟩
   refine ⟨relationModuliMk x₁, relationModuliMk x₂, fun h => ?_⟩
   obtain ⟨u, hu⟩ := (relationModuliMk_eq_iff x₁ x₂).mp h
-  have hu0 : ((ConjAct.toConjAct u • x₂.val) 0).1 = (x₁.val 0).1 :=
-    congrArg Prod.fst (congrFun hu 0)
+  have hu0 : ConjAct.toConjAct u • m1 = 1 :=
+    (ConjAct.toConjAct_smul_pi_prod_eq_iff.mp hu 0).1
   have hm1_cen : m1 ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin 2) ℂ) :=
-    Matrix.specialUnitaryGroup.mem_center_of_coe_eq_scalar rfl
-  rw [Pi.smul_apply, Prod.smul_fst, ConjAct.smul_eq_self_of_mem_center _ hm1_cen] at hu0
+    Matrix.specialUnitaryGroup.mem_center_iff.mpr ⟨-1, by norm_num, rfl⟩
+  rw [ConjAct.smul_eq_self_of_mem_center _ hm1_cen] at hu0
   have h00 := congr_fun₂ (congrArg Subtype.val hu0) 0 0
-  norm_num [m1, x₁] at h00
+  norm_num [m1] at h00
 
 /-- **Non-coprime counterexample (`r = 2`, `ζ = 1`, `g = 1`): non-central stabilizer.** At
-`r = 2`, `ζ = 1`, `g = 1`, the diagonal matrix `diag(I, -I) ∈ SU(2)` fixes `(1, 1) ∈ relationSet`
-without lying in `Subgroup.center (SU(2))`. -/
+`r = 2`, `ζ = 1`, `g = 1`, any non-central element of `SU(2)` (such as `diag(I, -I)`) fixes
+`(1, 1) ∈ relationSet` without lying in `Subgroup.center (SU(2))`. -/
 theorem exists_notMem_center_commute_relationSet_two_one_one :
     ∃ (x : relationSet 2 1 1) (u : Matrix.specialUnitaryGroup (Fin 2) ℂ),
       (∀ j, Commute u (x.val j).1 ∧ Commute u (x.val j).2) ∧
       u ∉ Subgroup.center (Matrix.specialUnitaryGroup (Fin 2) ℂ) := by
-  let d : Fin 2 → ℂ := ![Complex.I, -Complex.I]
-  have hd_mem : diagonal d ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ := by
-    refine mem_specialUnitaryGroup_iff.mpr ⟨?_, ?_⟩
-    · rw [diagonal_mem_unitary, Pi.mem_unitary_iff]
-      intro i
-      fin_cases i <;> simp [d, Unitary.mem_iff_star_mul_self]
-    · simp [d, det_diagonal, Fin.prod_univ_two]
-  let u : Matrix.specialUnitaryGroup (Fin 2) ℂ := ⟨diagonal d, hd_mem⟩
-  let x : relationSet 2 1 1 := ⟨fun _ => (1, 1), by simp⟩
-  refine ⟨x, u, fun _ => ⟨Commute.one_right u, Commute.one_right u⟩, fun hu => ?_⟩
-  obtain ⟨c, _, hc⟩ := Matrix.specialUnitaryGroup.mem_center_iff.mp hu
-  have h00 := congr_fun₂ hc 0 0
-  have h11 := congr_fun₂ hc 1 1
-  simp only [scalar_apply, diagonal_apply_eq, u, d, Matrix.cons_val_zero,
-    Matrix.cons_val_one] at h00 h11
-  have h2I : (2 : ℂ) * Complex.I = 0 := by linear_combination h11 - h00
-  exact mul_ne_zero two_ne_zero Complex.I_ne_zero h2I
+  obtain ⟨u, hu⟩ := Matrix.specialUnitaryGroup.exists_notMem_center (n := Fin 2)
+  exact ⟨⟨fun _ => (1, 1), by simp⟩, u, fun _ => ⟨Commute.one_right u, Commute.one_right u⟩, hu⟩
 
 end TauCeti
