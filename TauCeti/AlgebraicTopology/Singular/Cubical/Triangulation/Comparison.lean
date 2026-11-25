@@ -175,15 +175,6 @@ theorem orderedChainOfCube_eq_zero {m : ℕ} {c : SingularCube P.fst m}
     (hc : range c ⊆ range P.map) : orderedChainOfCube k c = 0 :=
   ConcreteCategory.congr_hom (orderedChain_comp_singularRelπ_f_eq_zero hc) (1 : k)
 
-/-- A face of a cube sending the boundary of the cube into the subspace has values in the
-subspace. -/
-private theorem range_face_subset {m : ℕ} {c : SingularCube P.fst (m + 1)}
-    (hc : MapsTo c (Cube.boundary (Fin (m + 1))) (range P.map)) (i : Fin (m + 1)) {t : I}
-    (ht : t = 0 ∨ t = 1) : range (SingularCube.face i t c) ⊆ range P.map := by
-  rintro _ ⟨y, rfl⟩
-  rw [SingularCube.face_apply]
-  exact hc ⟨i, by simpa using ht⟩
-
 /-- The triangulation of a cube sending the boundary of the cube into the subspace is a relative
 cycle. -/
 theorem d_orderedChainOfCube {m : ℕ} {c : SingularCube P.fst (m + 1)}
@@ -200,8 +191,10 @@ theorem d_orderedChainOfCube {m : ℕ} {c : SingularCube P.fst (m + 1)}
       refine (Preadditive.sum_comp _ _ _).trans (Finset.sum_eq_zero fun i _ ↦ ?_)
       refine (Preadditive.zsmul_comp _ _ _).trans ((congrArg _
         ((Preadditive.sub_comp _ _ _).trans ?_)).trans (zsmul_zero _))
-      rw [orderedChain_comp_singularRelπ_f_eq_zero (range_face_subset hc i (Or.inr rfl)),
-        orderedChain_comp_singularRelπ_f_eq_zero (range_face_subset hc i (Or.inl rfl)), sub_zero]
+      rw [orderedChain_comp_singularRelπ_f_eq_zero
+          (range_subset_iff.2 (face_mem_range_map hc i (.inr rfl))),
+        orderedChain_comp_singularRelπ_f_eq_zero
+          (range_subset_iff.2 (face_mem_range_map hc i (.inl rfl))), sub_zero]
   exact ConcreteCategory.congr_hom h (1 : k)
 
 variable (k) in
@@ -277,8 +270,10 @@ theorem singularCubicalHomologyIso_inv_homologyπ_cubicalCycleOfCube {m : ℕ}
       (H.hom m (m + 1) (((rawCubicalChainComplex k).obj P.fst).d (m + 1) m x)) = 0 := by
     simp only [x, rawCubicalChainComplex_d_rawCubicalChainOfCube, map_sum, map_smul, map_sub]
     refine Finset.sum_eq_zero fun i _ ↦ ?_
-    rw [singularRelπ_orderedTriangulationHomotopy_eq_zero (range_face_subset hc i (Or.inl rfl)),
-      singularRelπ_orderedTriangulationHomotopy_eq_zero (range_face_subset hc i (Or.inr rfl)),
+    rw [singularRelπ_orderedTriangulationHomotopy_eq_zero
+        (range_subset_iff.2 (face_mem_range_map hc i (.inl rfl))),
+      singularRelπ_orderedTriangulationHomotopy_eq_zero
+        (range_subset_iff.2 (face_mem_range_map hc i (.inr rfl))),
       sub_zero, smul_zero]
   rw [hface, zero_add] at hx
   -- `(-1) ^ (m + 1)` times the triangulation is `T x`, and the cubical class is `G x`.

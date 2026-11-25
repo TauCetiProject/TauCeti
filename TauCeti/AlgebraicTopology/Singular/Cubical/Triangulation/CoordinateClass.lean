@@ -83,11 +83,6 @@ theorem coordinateCubeClass_def (m : ℕ) :
           (mapsTo_upCube_boundary (m + 1))) :=
   (rfl)
 
-variable {k} in
-/-- Two equal powers of `-1` multiply to one. -/
-private theorem neg_one_pow_mul_neg_one_pow (e : ℕ) : (-1 : k) ^ e * (-1) ^ e = 1 := by
-  simpa only [mul_one] using neg_one_pow_mul_neg_one_pow_mul e (1 : k)
-
 /-- The coordinate cube class is `(-1) ^ (m + 1)` times the cubical class of the identity cube. -/
 theorem coordinateCubeClass_eq_neg_one_pow_smul (m : ℕ) :
     coordinateCubeClass k m =

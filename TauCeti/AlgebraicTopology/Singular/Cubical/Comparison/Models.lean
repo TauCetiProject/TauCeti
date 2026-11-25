@@ -220,6 +220,20 @@ the identity cube of `Iⁿ` under the cubes of its support. -/
             (rawCubicalChainComplex_map_f_rawCubicalChainOfCube _ _)))
     exact (linearCombination_apply k _).symm.trans (LinearMap.congr_fun h x)
 
+@[simp]
+theorem rawCubicalModelPresentation_model (n : ℕ) :
+    (rawCubicalModelPresentation k).model n = cubeModel n :=
+  (rfl)
+
+theorem rawCubicalModelPresentation_gen (n : ℕ) :
+    (rawCubicalModelPresentation k).gen n = rawCubicalChainOfCube (upCube n) :=
+  (rfl)
+
+theorem rawCubicalModelPresentation_coord (X : TopCat.{u}) (n : ℕ) :
+    (rawCubicalModelPresentation k).coord X n =
+      (lmapDomain k k cubeToHom : (SingularCube X n →₀ k) →ₗ[k] ((cubeModel n ⟶ X) →₀ k)) :=
+  (rfl)
+
 /-- The cube models are contractible. -/
 instance (n : ℕ) : ContractibleSpace (cubeModel.{u} n) :=
   inferInstanceAs (ContractibleSpace (ULift (Fin n → unitInterval)))
