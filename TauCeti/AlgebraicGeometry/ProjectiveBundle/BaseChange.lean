@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.GradedPullback
 public import TauCeti.AlgebraicGeometry.ProjectiveBundle.Basic
-public import TauCeti.AlgebraicGeometry.RelativeProj.BaseChange
+public import TauCeti.AlgebraicGeometry.RelativeProj.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.RelativeProj.Map
 
 /-!
