@@ -187,7 +187,7 @@ theorem IsMetricCompatible.weylTensor_cyclic_eq_zero
     (x : M) (u v w z : TangentSpace I x) :
     cov.weylTensor x u v w z + cov.weylTensor x v w u z + cov.weylTensor x w u v z = 0 := by
   have hP := isSymm_iff.mpr (IsMetricCompatible.schoutenTensor_isSymm (cov := cov) hcov ht x)
-  have hg := isSymm_iff.mpr (isSymm_inner (E := TangentSpace I x))
+  have hg := TauCeti.isSymm_innerₗ (E := TangentSpace I x)
   have hR := cov.riemannCurvatureTensor_cyclic_eq_zero ht x u v w z
   have hK := hP.kulkarniNomizu_cyclic_eq_zero hg u v w z
   simp only [weylTensor_apply]

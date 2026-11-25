@@ -112,7 +112,7 @@ theorem tracelessRicci_eq_zero_of_finrank_le_one (r : FourTensor V)
 @[simp] theorem isSymm_tracelessRicci_iff {r : FourTensor V} :
     (tracelessRicci r).IsSymm ↔ (ricci r).IsSymm := by
   have hinner : BilinForm.IsSymm ((scalar r / Module.finrank ℝ V) • innerₗ V) :=
-    (BilinForm.isSymm_iff.mpr (isSymm_inner (E := V))).smul _
+    (isSymm_innerₗ (E := V)).smul _
   rw [tracelessRicci_apply]
   exact ⟨fun h ↦ by convert h.add hinner; abel, fun h ↦ h.sub hinner⟩
 

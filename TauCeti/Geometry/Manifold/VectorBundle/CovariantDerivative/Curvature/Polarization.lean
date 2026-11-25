@@ -96,7 +96,7 @@ theorem HasSectionalCurvatureAt.curvatureTensor_eq_smul_inner_sub
     (w u v : TangentSpace I x) :
     curvature x w u v = κ • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u) := by
   set g := innerₗ (TangentSpace I x)
-  have hg : LinearMap.BilinForm.IsSymm g := isSymm_iff.mpr isSymm_inner
+  have hg : LinearMap.BilinForm.IsSymm g := TauCeti.isSymm_innerₗ
   have hκg : LinearMap.BilinForm.IsSymm ((κ / 2) • g) := isSymm_def.2 fun a b ↦ by
     simp only [LinearMap.smul_apply, hg.eq a b]
   -- The constant-curvature tensor is `(κ / 2) g ⊙ g`.
