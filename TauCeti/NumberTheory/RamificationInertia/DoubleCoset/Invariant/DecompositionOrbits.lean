@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.Basic
 public import TauCeti.NumberTheory.RamificationInertia.HilbertTheory.IntermediateRing
+import TauCeti.Data.Multiset.Fintype
 import TauCeti.GroupTheory.GroupAction.Orbit.Quotient
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
@@ -220,12 +221,6 @@ theorem card_orbit_quotientInertia_coset [Algebra.IsSeparable (A ⧸ Q.under A) 
 
 variable [FaithfulSMul C B]
 
-private theorem map_univ_val_eq_of_equiv {α β γ : Type*} [Fintype α] [Fintype β]
-    {f : α → γ} {g : β → γ} (e : α ≃ β) (h : ∀ a, f a = g (e a)) :
-    Finset.univ.val.map f = Finset.univ.val.map g := by
-  have hf : f = g ∘ e := funext h
-  rw [hf, ← Multiset.map_map, Multiset.map_univ_val_equiv]
-
 /-- **The multiset of orbit sizes is the multiset of local degrees.** The sizes of the orbits of
 the decomposition group of `Q` on `G ⧸ H` are, as a multiset, the products `e · f` of the
 ramification index and the residue degree over the primes of `C` above `p`. -/
@@ -235,7 +230,7 @@ theorem map_card_orbit_stabilizer_eq_map_ramificationIdx_mul_inertiaDeg
         (fun ω => Nat.card ω.orbit) =
       (Finset.univ : Finset (p.primesOver C)).val.map
         (fun 𝔮 : p.primesOver C => 𝔮.val.ramificationIdx A * 𝔮.val.inertiaDeg A) := by
-  refine map_univ_val_eq_of_equiv (orbitQuotientEquivPrimesOver p Q H C) fun ω => ?_
+  refine Multiset.map_univ_val_eq_of_equiv (orbitQuotientEquivPrimesOver p Q H C) fun ω => ?_
   refine _root_.Quotient.inductionOn' ω fun x => ?_
   rw [orbitRel.Quotient.orbit_mk, orbitQuotientEquivPrimesOver_mk p Q H C,
     card_orbit_stabilizer_coset p Q H C]
@@ -257,7 +252,7 @@ theorem map_card_orbit_quotientInertia_eq_map_inertiaDeg
         (orbitRel.Quotient (Q.inertia (stabilizer G Q)) (G ⧸ H)) ≃ p.primesOver C :=
     (Subgroup.orbitRelQuotientEquiv (Q.inertia (stabilizer G Q))).trans
       (orbitQuotientEquivPrimesOver p Q H C)
-  refine map_univ_val_eq_of_equiv e fun ω => ?_
+  refine Multiset.map_univ_val_eq_of_equiv e fun ω => ?_
   refine _root_.Quotient.inductionOn' ω fun ω' => _root_.Quotient.inductionOn' ω' fun x => ?_
   rw [orbitRel.Quotient.orbit_mk]
   dsimp only [e]

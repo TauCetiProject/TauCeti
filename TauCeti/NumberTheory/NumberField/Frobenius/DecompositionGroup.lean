@@ -343,7 +343,7 @@ theorem zpowers_mk_eq_top_of_isArithFrobAt (Q : Ideal (𝓞 L)) [Q.IsPrime]
   have h := congrArg
     (Subgroup.map (QuotientGroup.mk' (Q.inertia (MulAction.stabilizer (L ≃ₐ[K] L) Q))))
     (zpowers_sup_inertia_eq_top_of_isArithFrobAt Q hσ)
-  rw [Subgroup.map_sup, MonoidHom.map_zpowers,
+  rw [Subgroup.map_sup, MonoidHom.map_zpowers, QuotientGroup.mk'_apply,
     Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective _),
     QuotientGroup.map_mk'_self, sup_bot_eq] at h
   exact h

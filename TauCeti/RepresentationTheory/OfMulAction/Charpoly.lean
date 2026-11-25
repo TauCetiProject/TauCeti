@@ -23,6 +23,10 @@ element.
 
 ## Main results
 
+* `Representation.coeffLinearEquiv_conj_ofMulAction`: `MonoidAlgebra.coeffLinearEquiv` intertwines
+  `ofMulAction` with `Finsupp.lmapDomain` for `MulAction.toPerm`.
+* `Representation.charpoly_ofMulAction_eq`: the characteristic polynomial of `ofMulAction R G Ω g`
+  equals that of `Finsupp.lmapDomain R R (MulAction.toPerm g : Equiv.Perm Ω)`.
 * `Representation.charpoly_ofMulAction`, `Representation.reverse_charpoly_ofMulAction`: the
   characteristic polynomial and reversed characteristic polynomial of a permutation representation
   at an element `g` in terms of `MulAction.toPerm g`.
@@ -36,7 +40,26 @@ open Polynomial
 
 namespace Representation
 
-variable {R G Ω : Type*} [CommRing R] [Group G] [MulAction G Ω] [Fintype Ω] [DecidableEq Ω]
+variable {R G Ω : Type*} [CommRing R] [Group G] [MulAction G Ω]
+
+/-- `MonoidAlgebra.coeffLinearEquiv R` conjugates the permutation representation of `g` to
+`Finsupp.lmapDomain R R (MulAction.toPerm g : Equiv.Perm Ω)`. -/
+theorem coeffLinearEquiv_conj_ofMulAction (g : G) :
+    (MonoidAlgebra.coeffLinearEquiv R).conj (ofMulAction R G Ω g) =
+      Finsupp.lmapDomain R R (MulAction.toPerm g : Equiv.Perm Ω) := by
+  apply Finsupp.lhom_ext
+  intro x r
+  simp [LinearEquiv.conj_apply, MonoidAlgebra.coeffLinearEquiv_symm_apply,
+    MonoidAlgebra.ofCoeff_single, ofMulAction_single, MonoidAlgebra.coeff_single]
+
+/-- The characteristic polynomial of `g` in the permutation representation of a finite `G`-set
+`Ω` equals that of `Finsupp.lmapDomain R R (MulAction.toPerm g : Equiv.Perm Ω)`. -/
+theorem charpoly_ofMulAction_eq [Finite Ω] (g : G) :
+    (ofMulAction R G Ω g).charpoly =
+      (Finsupp.lmapDomain R R (MulAction.toPerm g : Equiv.Perm Ω)).charpoly := by
+  rw [← coeffLinearEquiv_conj_ofMulAction g, LinearEquiv.charpoly_conj]
+
+variable [Fintype Ω] [DecidableEq Ω]
 
 /-- The characteristic polynomial of `g` in the permutation representation of a finite `G`-set
 `Ω` is `∏ (X ^ d - 1)`, the product over the full cycle type of the permutation of `Ω` by
@@ -44,11 +67,7 @@ variable {R G Ω : Type*} [CommRing R] [Group G] [MulAction G Ω] [Fintype Ω] [
 theorem charpoly_ofMulAction (g : G) :
     (ofMulAction R G Ω g).charpoly =
       ((MulAction.toPerm g : Equiv.Perm Ω).fullCycleType.map fun d ↦ X ^ d - 1).prod := by
-  rw [← Equiv.Perm.charpoly_lmapDomain, ofMulAction_def,
-    ← (MonoidAlgebra.coeffLinearEquiv R).symm.charpoly_conj (Finsupp.lmapDomain R R _),
-    LinearEquiv.conj_apply, LinearEquiv.symm_symm]
-  -- `MulAction.toPerm g` is `(g • ·)` as a function, by definition.
-  rfl
+  rw [charpoly_ofMulAction_eq, Equiv.Perm.charpoly_lmapDomain]
 
 /-- The reversed characteristic polynomial `det (1 - X g)` of `g` in the permutation
 representation of a finite `G`-set `Ω` is `∏ (1 - X ^ d)`, the product over the full cycle type
@@ -56,8 +75,7 @@ of the permutation of `Ω` by `g`. -/
 theorem reverse_charpoly_ofMulAction (g : G) :
     (ofMulAction R G Ω g).charpoly.reverse =
       ((MulAction.toPerm g : Equiv.Perm Ω).fullCycleType.map fun d ↦ 1 - X ^ d).prod := by
-  rw [charpoly_ofMulAction, ← Equiv.Perm.charpoly_lmapDomain,
-    Equiv.Perm.reverse_charpoly_lmapDomain]
+  rw [charpoly_ofMulAction_eq, Equiv.Perm.reverse_charpoly_lmapDomain]
 
 namespace Equiv
 
@@ -72,8 +90,7 @@ theorem fullCycleType_toPerm_eq {R G X Y : Type*} [CommRing R] [CharZero R] [Gro
       (MulAction.toPerm g : Equiv.Perm Y).fullCycleType := by
   have h : (Finsupp.lmapDomain R R (MulAction.toPerm g : Equiv.Perm X)).charpoly =
       (Finsupp.lmapDomain R R (MulAction.toPerm g : Equiv.Perm Y)).charpoly := by
-    rw [Equiv.Perm.charpoly_lmapDomain, Equiv.Perm.charpoly_lmapDomain,
-      ← charpoly_ofMulAction, ← charpoly_ofMulAction, e.charpoly_apply_eq g]
+    rw [← charpoly_ofMulAction_eq, ← charpoly_ofMulAction_eq, e.charpoly_apply_eq g]
   exact (Equiv.Perm.charpoly_lmapDomain_eq_iff _ _).mp h
 
 end Equiv
