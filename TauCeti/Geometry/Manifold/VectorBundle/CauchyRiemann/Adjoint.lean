@@ -166,9 +166,10 @@ namespace IsRealCauchyRiemannOperator
 a `V`-valued one-form `η` at `x`. Here `∇*` is the formal adjoint of the connection `∇` for the
 Levi-Civita connection, `a = D - (∇ ·)^{0,1}` is the zeroth-order term by which `D` differs from
 the `(0,1)`-part of `∇`, and `a* η` is its fibrewise adjoint for the Hilbert–Schmidt pairing,
-`⟪a* η, e⟫ = ⟪η, a e⟫_HS` (`TauCeti.IsRealCauchyRiemannOperator.inner_formalAdjoint`). For a metric
-connection it is the formal adjoint of `D` on `(0,1)`-forms
-(`TauCeti.IsRealCauchyRiemannOperator.integral_inner_formalAdjoint`) and does not depend on `∇`
+`⟪a* η, e⟫ = ⟪η, a e⟫_HS` (`TauCeti.IsRealCauchyRiemannOperator.inner_formalAdjoint`). For
+compatible metrics and a smooth metric connection, it is the formal adjoint of `D` on smooth
+`(0,1)`-forms (`TauCeti.IsRealCauchyRiemannOperator.integral_inner_formalAdjoint`), and on those
+it does not depend on `∇`
 (`TauCeti.IsRealCauchyRiemannOperator.formalAdjoint_eq_of_isMetricCompatible`). -/
 def formalAdjoint (η : Π x : M, TangentSpace I x →L[ℝ] V x) (x : M) : V x :=
   cov.formalAdjoint (leviCivitaConnection I M) η x +
@@ -402,7 +403,8 @@ theorem eq_formalAdjoint_of_forall_integral_inner_eq (hcov : cov.IsMetricCompati
   funext x
   simpa [u, sub_eq_zero] using congrArg (fun w : Cₛ^∞⟮I; F, V⟯ ↦ w x) hu
 
-/-- The formal adjoint does not depend on the smooth metric connection used to build it. -/
+/-- On smooth `(0,1)`-forms, for compatible metrics and a smooth real Cauchy–Riemann operator, the
+formal adjoint does not depend on the smooth metric connection used to build it. -/
 theorem formalAdjoint_eq_of_isMetricCompatible {cov' : _root_.CovariantDerivative I F V}
     [ContMDiffCovariantDerivative cov' ∞] (hcov : cov.IsMetricCompatible)
     (hcov' : cov'.IsMetricCompatible) (hDs : ContMDiffCovariantDerivativeOn F ∞ D univ)
