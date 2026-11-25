@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.GammaTwo
 public import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
-import TauCeti.NumberTheory.ModularForms.LevelOne.ModularPolynomial.Diagonal
+import TauCeti.NumberTheory.ModularForms.LevelOne.SingularModuli
 
 /-!
 # Integrality of the level-two Siegel functions and `γ₂`

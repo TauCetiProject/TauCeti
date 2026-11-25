@@ -13,10 +13,9 @@ import Mathlib.NumberTheory.Cyclotomic.Basic
 import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
-import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.NumberTheory.ModularForms.LevelOne.WeaklyHolomorphic
-import TauCeti.NumberTheory.ModularForms.QExpansion.Order
+import TauCeti.NumberTheory.ModularForms.QExpansion.Affine
 import TauCeti.RingTheory.HahnSeries.Map
 
 /-!
@@ -70,9 +69,9 @@ expresses each coefficient as a unique polynomial in `j` over `ℤ`.
 
 public noncomputable section
 
-open Complex Filter Function Matrix Polynomial Topology
+open Complex Function Matrix Polynomial
 open UpperHalfPlane hiding I
-open scoped Manifold MatrixGroups Polynomial.Bivariate Real
+open scoped MatrixGroups Polynomial.Bivariate Real
 
 local notation "𝕢" => Function.Periodic.qParam
 
@@ -98,10 +97,9 @@ private theorem mem_reps_nat_entries {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A 
     0 < repEntry A 0 0 ∧ 0 < repEntry A 1 1 ∧ repEntry A 0 0 * repEntry A 1 1 = n ∧
       repEntry A 0 1 < repEntry A 1 1 ∧
       A.val = !![(repEntry A 0 0 : ℤ), (repEntry A 0 1 : ℤ); 0, (repEntry A 1 1 : ℤ)] := by
+  have h₁₁ : 0 < A.val 1 1 := pos_val_one_one_of_mem_reps (Int.natCast_pos.2 (NeZero.pos n)) hA
   obtain ⟨h₁₀, h₀₀, h₀₁, h₁₁lt⟩ := hA
   have hmul : A.val 0 0 * A.val 1 1 = n := apply_zero_zero_mul_apply_one_one h₁₀
-  have hn_pos : (0 : ℤ) < n := Int.natCast_pos.2 (NeZero.pos n)
-  have h₁₁ : 0 < A.val 1 1 := pos_of_mul_pos_right (hmul.symm ▸ hn_pos) h₀₀.le
   have ha : (repEntry A 0 0 : ℤ) = A.val 0 0 := Int.natAbs_of_nonneg h₀₀.le
   have hb : (repEntry A 0 1 : ℤ) = A.val 0 1 := Int.natAbs_of_nonneg h₀₁
   have hd : (repEntry A 1 1 : ℤ) = A.val 1 1 := Int.natAbs_of_nonneg h₁₁.le
@@ -112,146 +110,12 @@ private theorem mem_reps_nat_entries {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A 
   · ext i j
     fin_cases i <;> fin_cases j <;> simp [ha, hb, hd, h₁₀]
 
-/-- The Möbius action of `A ∈ reps n` sends `τ` to `(a τ + b) / d` in `ℂ`. -/
-private theorem coe_toGLReal_smul_of_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps (n : ℤ)) (τ : ℍ) :
-    ((toGLReal (NeZero.ne (n : ℤ)) A • τ : ℍ) : ℂ) =
-      ((repEntry A 0 0 : ℂ) * τ + repEntry A 0 1) / repEntry A 1 1 := by
-  obtain ⟨-, -, -, -, hmat⟩ := mem_reps_nat_entries hA
-  have hdet : 0 < (toGLReal (NeZero.ne (n : ℤ)) A).det.val := by
-    rw [det_toGLReal]
-    exact_mod_cast NeZero.pos n
-  rw [coe_smul_of_det_pos hdet, UpperHalfPlane.num, UpperHalfPlane.denom]
-  simp [toGLReal_apply, hmat]
-
-/-- At `(a τ + b) / d` with `a d = n`, the width-one `q`-parameter factors as
-`ζ_n^{a b} q_n^{a²}`. -/
-private theorem qParam_one_toGLReal_smul_of_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps (n : ℤ)) (τ : ℍ) :
-    𝕢 1 ((toGLReal (NeZero.ne (n : ℤ)) A • τ : ℍ) : ℂ) =
-      cexp (2 * π * I / n) ^ (repEntry A 0 0 * repEntry A 0 1) *
-        𝕢 n τ ^ (repEntry A 0 0 ^ 2) := by
-  obtain ⟨-, hd, had, -, -⟩ := mem_reps_nat_entries hA
-  have hd0 : (repEntry A 1 1 : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hd.ne'
-  have hn0 : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne n)
-  have hadC : (repEntry A 0 0 : ℂ) * repEntry A 1 1 = n := by exact_mod_cast had
-  rw [coe_toGLReal_smul_of_mem_reps hA]
-  simp only [Function.Periodic.qParam, Complex.ofReal_one, Complex.ofReal_natCast, div_one,
-    ← Complex.exp_natCast_mul, ← Complex.exp_add]
-  congr 1
-  push_cast
-  field_simp
-  rw [← hadC]
-  ring
-
-/-- For `A ∈ reps n`, `τ ↦ toGLReal _ A • τ` sends `atImInfty` to `atImInfty`. -/
-private theorem tendsto_toGLReal_smul_atImInfty {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps (n : ℤ)) :
-    Tendsto (fun τ : ℍ ↦ toGLReal (NeZero.ne (n : ℤ)) A • τ) atImInfty atImInfty := by
-  obtain ⟨ha, hd, -, -, -⟩ := mem_reps_nat_entries hA
-  rw [UpperHalfPlane.atImInfty, tendsto_comap_iff]
-  have him : (UpperHalfPlane.im ∘ fun τ : ℍ ↦ toGLReal (NeZero.ne (n : ℤ)) A • τ) =
-      fun τ : ℍ ↦ (repEntry A 0 0 / repEntry A 1 1 : ℝ) * τ.im := by
-    ext τ
-    have h := congrArg Complex.im (coe_toGLReal_smul_of_mem_reps hA τ)
-    simp only [Function.comp_apply, coe_im, ← Complex.ofReal_natCast, Complex.div_ofReal_im,
-      Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero]
-      at h ⊢
-    rw [h, ← div_mul_eq_mul_div]
-  rw [him]
-  exact Tendsto.const_mul_atTop (by positivity) Filter.tendsto_comap
-
-/-- Adding `n` on `ℍ` shifts `toGLReal _ A • τ` by the integer `a²`. -/
-private theorem toGLReal_smul_vadd_nat {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps (n : ℤ)) (τ : ℍ) :
-    toGLReal (NeZero.ne (n : ℤ)) A • ((n : ℝ) +ᵥ τ) =
-      ((repEntry A 0 0 ^ 2 : ℕ) : ℝ) +ᵥ (toGLReal (NeZero.ne (n : ℤ)) A • τ) := by
-  obtain ⟨-, hd, had, -, -⟩ := mem_reps_nat_entries hA
-  have hd0 : (repEntry A 1 1 : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hd.ne'
-  have hadC : (repEntry A 0 0 : ℂ) * repEntry A 1 1 = n := by exact_mod_cast had
-  apply UpperHalfPlane.ext
-  rw [coe_vadd, coe_toGLReal_smul_of_mem_reps hA, coe_toGLReal_smul_of_mem_reps hA, coe_vadd]
-  push_cast
-  field_simp
-  rw [← hadC]
-  ring
-
-/-- Twisting `j (A • τ)` by `q_n^{a²}` gives a function analytic in `q_n` at `0`. -/
-private theorem analyticAt_cuspFunction_qParam_pow_mul_j_toGLReal_smul
-    {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ reps (n : ℤ)) :
-    AnalyticAt ℂ (cuspFunction n fun τ : ℍ ↦
-      𝕢 n τ ^ (repEntry A 0 0 ^ 2) * j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) 0 := by
-  let ζ := cexp (2 * π * I / n)
-  let a := repEntry A 0 0
-  let b := repEntry A 0 1
-  have hζ : ζ ^ (a * b) ≠ 0 := pow_ne_zero _ (Complex.exp_ne_zero _)
-  have hrew : (fun τ : ℍ ↦ 𝕢 n τ ^ (a ^ 2) * j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) =
-      fun τ : ℍ ↦ (ζ ^ (a * b))⁻¹ *
-        (𝕢 1 ((toGLReal (NeZero.ne (n : ℤ)) A • τ : ℍ) : ℂ) *
-          j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) := by
-    ext τ
-    rw [qParam_one_toGLReal_smul_of_mem_reps hA, mul_assoc, inv_mul_cancel_left₀ hζ]
-  rw [hrew]
-  refine UpperHalfPlane.analyticAt_cuspFunction_zero (Nat.cast_pos.2 (NeZero.pos n)) ?_ ?_ ?_
-  · refine UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ ?_
-    rw [toGLReal_smul_vadd_nat hA]
-    set w : ℍ := toGLReal (NeZero.ne (n : ℤ)) A • τ
-    have hper := periodic_qParam_mul_j_comp_ofComplex.nat_mul (a ^ 2) (w : ℂ)
-    have h1 : ofComplex ((w : ℂ) + (a ^ 2 : ℕ) * (1 : ℂ)) = (((a ^ 2 : ℕ) : ℝ) +ᵥ w) := by
-      rw [mul_one, add_comm, ← Complex.ofReal_natCast, ← coe_vadd, ofComplex_apply]
-    rw [Function.comp_apply, Function.comp_apply, h1, ofComplex_apply] at hper
-    exact congrArg ((ζ ^ (a * b))⁻¹ * ·) hper
-  · exact mdifferentiable_const.mul (mdifferentiable_qParam_mul_j.comp
-      (mdifferentiable_toGLReal_smul (Int.natCast_pos.2 (NeZero.pos n)) A))
-  · exact ((tendsto_qParam_mul_j_atImInfty.comp
-      (tendsto_toGLReal_smul_atImInfty hA)).const_mul _).isBigO_one ℝ
-
 /-- For `A ∈ reps n`, `τ ↦ j (A • τ)` has a meromorphic width-`n` cusp function at `0`. -/
 theorem meromorphicAt_cuspFunction_j_toGLReal_smul {A : FixedDetMatrix (Fin 2) ℤ n}
     (hA : A ∈ reps (n : ℤ)) :
     MeromorphicAt (cuspFunction n fun τ : ℍ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) 0 :=
-  UpperHalfPlane.meromorphicAt_cuspFunction_qParam_pow_mul_iff.1
-    (analyticAt_cuspFunction_qParam_pow_mul_j_toGLReal_smul hA).meromorphicAt
-
-/-- The `q`-expansion coefficients of `q_n^{a²} j(A • τ)` at width `n`. -/
-private theorem qExpansion_qParam_pow_mul_j_toGLReal_smul_coeff {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps (n : ℤ)) (k : ℕ) :
-    (qExpansion n (fun τ : ℍ ↦
-      𝕢 n τ ^ (repEntry A 0 0 ^ 2) * j (toGLReal (NeZero.ne (n : ℤ)) A • τ))).coeff k =
-      if repEntry A 0 0 ^ 2 ∣ k then
-        (cexp (2 * π * I / n) ^ (repEntry A 0 0 * repEntry A 0 1)) ^
-            ((k / repEntry A 0 0 ^ 2 : ℕ) - 1 : ℤ) *
-          (qExpansion 1 (fun τ : ℍ ↦ 𝕢 1 τ * j τ)).coeff (k / repEntry A 0 0 ^ 2)
-      else 0 := by
-  obtain ⟨ha, -, -, -, -⟩ := mem_reps_nat_entries hA
-  let a := repEntry A 0 0
-  let b := repEntry A 0 1
-  let ζ := cexp (2 * π * I / n)
-  have ha2 : 0 < a ^ 2 := pow_pos ha 2
-  have hζ : ζ ^ (a * b) ≠ 0 := pow_ne_zero _ (Complex.exp_ne_zero _)
-  let c : ℕ → ℂ := fun r ↦ if a ^ 2 ∣ r then
-    (ζ ^ (a * b)) ^ ((r / a ^ 2 : ℕ) - 1 : ℤ) *
-      (qExpansion 1 (fun τ : ℍ ↦ 𝕢 1 τ * j τ)).coeff (r / a ^ 2) else 0
-  refine (UpperHalfPlane.qExpansion_coeff_unique (c := c) (Nat.cast_pos.2 (NeZero.pos n))
-    (analyticAt_cuspFunction_qParam_pow_mul_j_toGLReal_smul hA) (fun τ ↦ ?_) k).symm
-  have hsum := (hasSum_qExpansion_qParam_mul_j (toGLReal (NeZero.ne (n : ℤ)) A • τ)).mul_left
-    (ζ ^ (a * b))⁻¹
-  have hlim : (ζ ^ (a * b))⁻¹ *
-      (𝕢 1 ((toGLReal (NeZero.ne (n : ℤ)) A • τ : ℍ) : ℂ) *
-        j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) =
-      𝕢 n τ ^ (a ^ 2) * j (toGLReal (NeZero.ne (n : ℤ)) A • τ) := by
-    rw [qParam_one_toGLReal_smul_of_mem_reps hA, mul_assoc, inv_mul_cancel_left₀ hζ]
-  rw [hlim] at hsum
-  have hinj : Injective fun m : ℕ ↦ a ^ 2 * m := fun _ _ h ↦ Nat.eq_of_mul_eq_mul_left ha2 h
-  refine (hinj.hasSum_iff fun r hr ↦ ?_).1 (hsum.congr_fun fun m ↦ ?_)
-  · have hnd : ¬ a ^ 2 ∣ r := fun ⟨m, hm⟩ ↦ hr ⟨m, hm.symm⟩
-    simp [c, hnd]
-  · dsimp only [c, Function.comp_apply, smul_eq_mul]
-    rw [ite_eq_left (dvd_mul_right _ _), Nat.mul_div_cancel_left _ ha2, zpow_sub₀ hζ, zpow_one,
-      zpow_natCast, div_eq_mul_inv, qParam_one_toGLReal_smul_of_mem_reps hA, mul_pow,
-      ← pow_mul (𝕢 n τ)]
-    dsimp only [ζ, a, b]
-    ring
+  TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_comp_toGLReal_smul
+    (Int.natCast_pos.2 (NeZero.pos n)) hA periodic_j_comp_ofComplex meromorphicAt_cuspFunction_j
 
 /-- **Width-`n` Laurent `q`-expansion of `j(A • τ)`.** For `A = !![a, b; 0, d] ∈ reps n`, the
 width-`n` Laurent `q`-expansion of `j(A • τ)` is the width-one expansion of `j` twisted by
@@ -266,44 +130,39 @@ theorem laurentQExpansion_j_toGLReal_smul {A : FixedDetMatrix (Fin 2) ℤ n}
             (cexp (2 * π * I / n) ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs))
             (pow_ne_zero _ (Complex.exp_ne_zero _))))
           (UpperHalfPlane.laurentQExpansion 1 j)) := by
-  have ha : 0 < repEntry A 0 0 := Int.natAbs_pos.2 hA.2.1.ne'
-  let a := repEntry A 0 0
-  set d : ℕ+ := ⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
-  rw [UpperHalfPlane.laurentQExpansion_eq_of_analyticAt_qParam_pow_mul
-    (Nat.cast_pos.2 (NeZero.pos n)) (analyticAt_cuspFunction_qParam_pow_mul_j_toGLReal_smul hA)]
-  ext k
-  rw [HahnSeries.coeff_single_mul, one_mul, PowerSeries.coeff_coe]
-  by_cases hdvd : (d : ℤ) ∣ k
-  · obtain ⟨r, rfl⟩ := hdvd
-    rw [LaurentSeries.coeff_expand_mul, HahnSeries.coeff_twistEquiv]
-    rcases lt_or_ge r (-1) with hr | hr
-    · have hlt : (d : ℤ) * r - -((a ^ 2 : ℕ) : ℤ) < 0 := by
-        have hd_eq : (d : ℤ) = ((a ^ 2 : ℕ) : ℤ) := rfl
-        nlinarith [d.pos]
-      have h0 : (UpperHalfPlane.laurentQExpansion 1 j).coeff r = 0 :=
-        HahnSeries.coeff_eq_zero_of_lt_orderTop (by simpa using WithTop.coe_lt_coe.2 hr)
-      rw [ite_eq_left hlt, h0, smul_zero]
-    · obtain ⟨m, rfl⟩ : ∃ m : ℕ, r = (m : ℤ) - 1 := ⟨(r + 1).toNat, by omega⟩
-      have hdiff : (d : ℤ) * ((m : ℤ) - 1) - -((a ^ 2 : ℕ) : ℤ) = (a ^ 2 * m : ℕ) := by
-        have hd_eq : (d : ℤ) = ((a ^ 2 : ℕ) : ℤ) := rfl
-        rw [hd_eq]; push_cast; ring
-      rw [hdiff, ite_eq_right (not_lt.2 (Nat.cast_nonneg _)), Int.natAbs_natCast,
-        qExpansion_qParam_pow_mul_j_toGLReal_smul_coeff hA, ite_eq_left (dvd_mul_right _ _),
-        Nat.mul_div_cancel_left _ (pow_pos ha 2), laurentQExpansion_j_coeff_natCast_sub_one]
-      simp [repEntry, zpowersHom_apply, Units.val_zpow_eq_zpow_val]
-  · rw [LaurentSeries.coeff_expand_of_not_dvd d _ hdvd]
-    split_ifs with hlt
-    · rfl
-    · rw [qExpansion_qParam_pow_mul_j_toGLReal_smul_coeff hA, ite_eq_right]
-      rintro ⟨m, hm⟩
-      refine hdvd ⟨(m : ℤ) - 1, ?_⟩
-      have habs : ((k - -((a ^ 2 : ℕ) : ℤ)).natAbs : ℤ) = k + (a ^ 2 : ℕ) := by
-        rw [Int.natAbs_of_nonneg (not_lt.1 hlt), sub_neg_eq_add]
-      have hm' : ((k - -((a ^ 2 : ℕ) : ℤ)).natAbs : ℤ) = ((a ^ 2 : ℕ) : ℤ) * (m : ℤ) := by
-        simpa [a] using congrArg (Nat.cast : ℕ → ℤ) hm
-      have hd_eq : (d : ℤ) = ((a ^ 2 : ℕ) : ℤ) := rfl
-      rw [hd_eq]
-      linarith
+  obtain ⟨-, hd, had, -, -⟩ := mem_reps_nat_entries hA
+  have hexp := TauCeti.UpperHalfPlane.laurentQExpansion_comp_toGLReal_smul
+    (Int.natCast_pos.2 (NeZero.pos n)) hA periodic_j_comp_ofComplex meromorphicAt_cuspFunction_j
+  rw [Int.cast_natCast] at hexp
+  rw [hexp]
+  have hd_eq : ((A.val 0 0).natAbs ^ 2).toPNat' =
+      ⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩ :=
+    Subtype.ext (PNat.toPNat'_coe (pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2))
+  have hq : 𝕢 1 ((A.val 0 1 / A.val 1 1 : ℝ) : ℂ) =
+      cexp (2 * π * I / n) ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs) := by
+    have hbZ : A.val 0 1 = ((A.val 0 1).natAbs : ℤ) := (Int.natAbs_of_nonneg hA.2.2.1).symm
+    have hdZ : A.val 1 1 = ((A.val 1 1).natAbs : ℤ) :=
+      (Int.natAbs_of_nonneg
+        (pos_val_one_one_of_mem_reps (Int.natCast_pos.2 (NeZero.pos n)) hA).le).symm
+    have hd0 : ((A.val 1 1).natAbs : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hd.ne'
+    have hn0 : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne n)
+    have hadC : ((A.val 0 0).natAbs : ℂ) * (A.val 1 1).natAbs = n := by exact_mod_cast had
+    rw [hbZ, hdZ]
+    simp only [Function.Periodic.qParam, Int.cast_natCast, Complex.ofReal_one, Complex.ofReal_div,
+      Complex.ofReal_natCast, div_one, ← Complex.exp_natCast_mul]
+    congr 1
+    push_cast
+    field_simp
+    rw [← hadC, Int.natAbs_abs]
+    ring
+  have hu : Units.mk0 (𝕢 1 ((A.val 0 1 / A.val 1 1 : ℝ) : ℂ)) (Periodic.qParam_ne_zero _) =
+      Units.mk0 (cexp (2 * π * I / n) ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs))
+        (pow_ne_zero _ (Complex.exp_ne_zero _)) :=
+    Units.ext hq
+  rw [hd_eq, hu]
+  congr 1
+  ext m
+  simp [TauCeti.LaurentSeries.coeff_rescale, zpowersHom_apply, Units.val_zpow_eq_zpow_val]
 
 end RepsExpansion
 
@@ -312,113 +171,6 @@ end RepsExpansion
 section CyclicExpansion
 
 variable {n : ℕ} [NeZero n]
-
-/-- For every `A ∈ reps n`, `𝕢 1 τ ^ n * j (A • τ)` is bounded at `i∞`, because `𝕢 1 = 𝕢 n ^ n`
-and `a² ≤ n²`. -/
-private theorem isBoundedAtImInfty_qParam_pow_mul_j_toGLReal_smul {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps (n : ℤ)) :
-    IsBoundedAtImInfty fun τ : ℍ ↦ 𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) A • τ) := by
-  obtain ⟨-, hd, had, -, -⟩ := mem_reps_nat_entries hA
-  let a := repEntry A 0 0
-  let b := repEntry A 0 1
-  let ζ := cexp (2 * π * I / n)
-  have han : a ≤ n := had ▸ Nat.le_mul_of_pos_right a hd
-  have ha2 : a ^ 2 ≤ n ^ 2 := Nat.pow_le_pow_left han 2
-  have hζ : ζ ^ (a * b) ≠ 0 := pow_ne_zero _ (Complex.exp_ne_zero _)
-  have hq1 (τ : ℍ) : 𝕢 1 (τ : ℂ) ^ n = 𝕢 n τ ^ (n ^ 2 - a ^ 2) * 𝕢 n τ ^ (a ^ 2) := by
-    have hbase : 𝕢 (n * 1 : ℝ) (τ : ℂ) ^ n = 𝕢 1 (τ : ℂ) :=
-      TauCeti.Periodic.qParam_nat_mul_pow (NeZero.ne n) (τ : ℂ)
-    rw [mul_one] at hbase
-    rw [← hbase, ← pow_mul, ← sq, ← pow_add, Nat.sub_add_cancel ha2]
-  have hrew : (fun τ : ℍ ↦ 𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) =
-      fun τ : ℍ ↦ 𝕢 n τ ^ (n ^ 2 - a ^ 2) * ((ζ ^ (a * b))⁻¹ *
-        (𝕢 1 ((toGLReal (NeZero.ne (n : ℤ)) A • τ : ℍ) : ℂ) *
-          j (toGLReal (NeZero.ne (n : ℤ)) A • τ))) := by
-    ext τ
-    rw [hq1, qParam_one_toGLReal_smul_of_mem_reps hA, mul_assoc (ζ ^ (a * b)),
-      inv_mul_cancel_left₀ hζ, mul_assoc]
-  rw [hrew]
-  have h1 : Tendsto (fun τ : ℍ ↦ 𝕢 n τ ^ (n ^ 2 - a ^ 2)) atImInfty (𝓝 (0 ^ (n ^ 2 - a ^ 2))) :=
-    (UpperHalfPlane.qParam_tendsto_atImInfty (Nat.cast_pos.2 (NeZero.pos n))).pow _
-  have h2 := (tendsto_qParam_mul_j_atImInfty.comp
-    (tendsto_toGLReal_smul_atImInfty hA)).const_mul (ζ ^ (a * b))⁻¹
-  exact (h1.mul h2).isBigO_one ℝ
-
-/-- Boundedness at `i∞` of the coefficients of `∏ A ∈ s, (q^n Y - q^n j(A • τ))`. -/
-private theorem isBoundedAtImInfty_qParam_pow_mul_coeff_prod
-    (s : Finset (FixedDetMatrix (Fin 2) ℤ n)) (hs : ∀ A ∈ s, A ∈ reps (n : ℤ)) (k : ℕ) :
-    IsBoundedAtImInfty fun τ : ℍ ↦
-      (∏ A ∈ s, (C (𝕢 1 τ ^ n) * X - C (𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) A • τ)))).coeff
-        k := by
-  classical
-  let B := UpperHalfPlane.boundedAtImInftySubalgebra ℂ
-  induction s using Finset.induction_on generalizing k with
-  | empty =>
-    simp only [Finset.prod_empty]
-    exact B.algebraMap_mem ((1 : ℂ[X]).coeff k)
-  | @insert A s hAs ih =>
-    have hA : A ∈ reps (n : ℤ) := hs A (Finset.mem_insert_self A s)
-    have hs' : ∀ D ∈ s, D ∈ reps (n : ℤ) := fun D hD ↦ hs D (Finset.mem_insert_of_mem hD)
-    have hq : (fun τ : ℍ ↦ 𝕢 1 τ ^ n) ∈ B :=
-      ((UpperHalfPlane.qParam_tendsto_atImInfty one_pos).pow n).isBigO_one ℝ
-    have hjA : (fun τ : ℍ ↦ 𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) ∈ B :=
-      isBoundedAtImInfty_qParam_pow_mul_j_toGLReal_smul hA
-    cases k with
-    | zero =>
-      have h0 : (fun τ : ℍ ↦ (∏ D ∈ insert A s, (C (𝕢 1 τ ^ n) * X -
-          C (𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) D • τ)))).coeff 0) =
-          -(fun τ : ℍ ↦ 𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) *
-            fun τ : ℍ ↦ (∏ D ∈ s, (C (𝕢 1 τ ^ n) * X -
-              C (𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) D • τ)))).coeff 0 := by
-        ext τ
-        simp only [Finset.prod_insert hAs, mul_coeff_zero, coeff_sub, coeff_X_zero,
-          coeff_C_zero, mul_zero, zero_sub, Pi.mul_apply, Pi.neg_apply]
-      rw [h0]
-      exact B.mul_mem (B.neg_mem hjA) (ih hs' 0)
-    | succ k =>
-      have hk : (fun τ : ℍ ↦ (∏ D ∈ insert A s, (C (𝕢 1 τ ^ n) * X -
-          C (𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) D • τ)))).coeff (k + 1)) =
-          (fun τ : ℍ ↦ 𝕢 1 τ ^ n) * (fun τ : ℍ ↦ (∏ D ∈ s, (C (𝕢 1 τ ^ n) * X -
-              C (𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) D • τ)))).coeff k) -
-            (fun τ : ℍ ↦ 𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) *
-              fun τ : ℍ ↦ (∏ D ∈ s, (C (𝕢 1 τ ^ n) * X -
-                C (𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) D • τ)))).coeff (k + 1) := by
-        ext τ
-        rw [Finset.prod_insert hAs, sub_mul, coeff_sub, mul_assoc, coeff_C_mul, coeff_X_mul,
-          coeff_C_mul]
-        rfl
-      rw [hk]
-      exact B.sub_mem (B.mul_mem hq (ih hs' k)) (B.mul_mem hjA (ih hs' (k + 1)))
-
-/-- Every coefficient of `cyclicIsogenyPolynomial n j` has a meromorphic width-one cusp function at
-`q = 0`. -/
-private theorem meromorphicAt_cuspFunction_coeff_cyclicIsogenyPolynomial_j (k : ℕ) :
-    MeromorphicAt (cuspFunction 1 fun τ : ℍ ↦ (cyclicIsogenyPolynomial n j τ).coeff k) 0 := by
-  set M := (primitiveReps (n : ℤ)).card
-  refine (UpperHalfPlane.meromorphicAt_cuspFunction_qParam_pow_mul_iff (k := n * M)).1
-    (AnalyticAt.meromorphicAt ?_)
-  have hper_f : Periodic ((fun τ : ℍ ↦ (cyclicIsogenyPolynomial n j τ).coeff k) ∘ ofComplex) 1 :=
-    UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
-      rw [← UpperHalfPlane.modular_T_smul]
-      exact congrArg (fun p : ℂ[X] ↦ p.coeff k) (cyclicIsogenyPolynomial_smul j_smul_SL2Z _ τ)
-  refine UpperHalfPlane.analyticAt_cuspFunction_zero one_pos ?_ ?_ ?_
-  · have hper_q : Periodic ((fun τ : ℍ ↦ 𝕢 1 τ ^ (n * M)) ∘ ofComplex) 1 :=
-      (TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex (h := 1)).comp fun z : ℂ ↦ z ^ (n * M)
-    exact hper_q.mul hper_f
-  · exact ((Function.Periodic.differentiable_qParam.mdifferentiable.comp
-      mdifferentiable_coe).pow _).mul
-      (mdifferentiable_coeff_cyclicIsogenyPolynomial j_mdifferentiable k)
-  · have hrew : (fun τ : ℍ ↦ 𝕢 1 τ ^ (n * M) * (cyclicIsogenyPolynomial n j τ).coeff k) =
-        fun τ : ℍ ↦ (∏ A ∈ primitiveReps (n : ℤ),
-          (C (𝕢 1 τ ^ n) * X -
-            C (𝕢 1 τ ^ n * j (toGLReal (NeZero.ne (n : ℤ)) A • τ)))).coeff k := by
-      ext τ
-      rw [pow_mul, cyclicIsogenyPolynomial_def, ← coeff_C_mul, C_pow,
-        Finset.pow_card_mul_prod]
-      simp only [mul_sub, ← C_mul]
-    rw [hrew]
-    exact isBoundedAtImInfty_qParam_pow_mul_coeff_prod _
-      (fun _ hA ↦ (mem_primitiveReps.1 hA).1) k
 
 /-- At width `n`, the Laurent `q`-expansion commutes with the coefficients of a `Finset` product of
 linear factors `X - C (g A τ)`. -/
@@ -473,6 +225,20 @@ private theorem meromorphicAt_and_laurentQExpansion_coeff_prod_X_sub_C
       rw [UpperHalfPlane.laurentQExpansion_sub hm1 hm2,
         UpperHalfPlane.laurentQExpansion_mul hA (ih hs' (k + 1)).1,
         (ih hs' k).2, (ih hs' (k + 1)).2, Finset.prod_insert hAs, coeff_X_sub_C_mul]
+
+/-- Every coefficient of `cyclicIsogenyPolynomial n j` has a meromorphic width-one cusp function at
+`q = 0`. -/
+private theorem meromorphicAt_cuspFunction_coeff_cyclicIsogenyPolynomial_j (k : ℕ) :
+    MeromorphicAt (cuspFunction 1 fun τ : ℍ ↦ (cyclicIsogenyPolynomial n j τ).coeff k) 0 := by
+  have hper : Periodic ((fun τ : ℍ ↦ (cyclicIsogenyPolynomial n j τ).coeff k) ∘ ofComplex) 1 :=
+    UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
+      rw [← UpperHalfPlane.modular_T_smul]
+      exact congrArg (fun p : ℂ[X] ↦ p.coeff k) (cyclicIsogenyPolynomial_smul j_smul_SL2Z _ τ)
+  refine TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_pnat_mul one_pos hper
+    (mdifferentiable_coeff_cyclicIsogenyPolynomial j_mdifferentiable k) ⟨n, NeZero.pos n⟩ ?_
+  simp only [PNat.mk_coe, mul_one, cyclicIsogenyPolynomial_def]
+  exact (meromorphicAt_and_laurentQExpansion_coeff_prod_X_sub_C _
+    (fun _ hA ↦ (mem_primitiveReps.1 hA).1) k).1
 
 end CyclicExpansion
 
@@ -913,9 +679,10 @@ theorem modularPolynomial_one : modularPolynomial 1 = Y - C X := by
       exact mem_primitiveReps.2 ⟨hI₁_reps,
         isPrimitive_def.2 ⟨(entryAddMonoidHom ℤ 0 0).toIntLinearMap, by simp [I₁]⟩⟩
   have hsmul : toGLReal (NeZero.ne ((1 : ℕ) : ℤ)) I₁ • τ = τ := by
+    rw [toGLReal_smul_eq_vadd_smul one_pos hI₁_reps]
     apply UpperHalfPlane.ext
-    rw [coe_toGLReal_smul_of_mem_reps (n := 1) hI₁_reps]
-    simp [repEntry, I₁]
+    rw [coe_vadd, coe_pos_real_smul, coe_repsScale]
+    simp [I₁]
   rw [cyclicIsogenyPolynomial_def, hreps, Finset.prod_singleton, hsmul]
   simp
 

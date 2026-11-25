@@ -592,13 +592,8 @@ theorem meromorphicAt_cuspFunction_of_pnat_mul (hh : 0 < h) (hfper : Periodic (f
     exact eq_cuspFunction τ hdh.ne' (by simpa using hgper.nat_mul d)
   have hghol : MDiff g :=
     ((Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe).pow k).mul hfhol
-  have hg : AnalyticAt ℂ (cuspFunction h g) 0 := analyticAt_cuspFunction_zero hh hgper hghol hgbdd
-  have heq : cuspFunction h f =ᶠ[𝓝[≠] 0] fun q ↦ (q ^ k)⁻¹ * cuspFunction h g q := by
-    filter_upwards [cuspFunction_qParam_pow_mul_eventuallyEq hh k f, self_mem_nhdsWithin]
-      with q h₁ hq
-    rw [h₁, inv_mul_cancel_left₀ (pow_ne_zero k hq)]
-  exact ((analyticAt_id.pow k).meromorphicAt.inv.mul hg.meromorphicAt).congr heq.symm
-
+  exact meromorphicAt_cuspFunction_qParam_pow_mul_iff.mp
+    (analyticAt_cuspFunction_zero hh hgper hghol hgbdd).meromorphicAt
 end TauCeti.UpperHalfPlane
 
 /-! ### Comparison with the Laurent expansion at a Fuchsian cusp -/
