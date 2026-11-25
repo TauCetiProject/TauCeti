@@ -35,6 +35,8 @@ preimage under `e.functor` of `e.counit.app Z ≫ u`; taking the preimage rather
 * `TauCeti.preGaloisCategory_of_equivalence`: (G1)–(G3) transfer along an equivalence.
 * `TauCeti.fiberFunctor_comp_of_equivalence`: (G4)–(G6) transfer, so that a fibre functor on `D`
   composes with an equivalence `C ≌ D` to a fibre functor on `C`.
+* `CategoryTheory.PreGaloisCategory.FiberFunctor.of_iso`: a functor naturally isomorphic to a
+  fibre functor is a fibre functor.
 * `TauCeti.galoisCategory_of_equivalence`: a category equivalent to a Galois category is a
   Galois category.
 * `CategoryTheory.Functor.isFundamentalGroup_comp`: a fundamental group of a fibre functor
@@ -85,6 +87,16 @@ theorem fiberFunctor_comp_of_equivalence (e : C ≌ D) [PreGaloisCategory C] [Pr
     (F : D ⥤ FintypeCat.{w}) [FiberFunctor F] : FiberFunctor (e.functor ⋙ F) where
   preservesFiniteCoproducts := ⟨fun _ => inferInstance⟩
   preservesQuotientsByFiniteGroups _ _ _ := inferInstance
+
+/-- A functor naturally isomorphic to a fibre functor is a fibre functor. -/
+theorem _root_.CategoryTheory.PreGaloisCategory.FiberFunctor.of_iso [PreGaloisCategory C]
+    {F G : C ⥤ FintypeCat.{w}} (e : F ≅ G) [FiberFunctor F] : FiberFunctor G where
+  preservesTerminalObjects := preservesLimitsOfShape_of_natIso e
+  preservesPullbacks := preservesLimitsOfShape_of_natIso e
+  preservesFiniteCoproducts := ⟨fun _ ↦ preservesColimitsOfShape_of_natIso e⟩
+  preservesEpis := Functor.PreservesEpimorphisms.of_iso e
+  preservesQuotientsByFiniteGroups _ _ _ := preservesColimitsOfShape_of_natIso e
+  reflectsIsos := reflectsIsomorphisms_of_iso e
 
 /-- **A category equivalent to a Galois category is a Galois category.**
 

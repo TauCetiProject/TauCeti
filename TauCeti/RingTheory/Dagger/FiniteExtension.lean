@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Finiteness.Defs
+public import Mathlib.RingTheory.TensorProduct.Finite
 import Mathlib.Algebra.Polynomial.Lifts
 import TauCeti.Analysis.Normed.Algebra.ScaleRoots
 import TauCeti.RingTheory.AdjoinRoot.Finite
@@ -42,6 +43,8 @@ characteristic, or nontriviality assumption is placed on the algebras.
   algebra.
 * `TauCeti.Dagger.IsDaggerAlgebra.of_algHom_finite`: the target of a finite algebra homomorphism
   from a dagger algebra is a dagger algebra.
+* `TauCeti.Dagger.IsDaggerAlgebra.tensorProduct_of_finite`: `A ⊗[B] C` is a dagger algebra when
+  `A` is a dagger algebra and `C` is finite over `B`.
 
 ## References
 
@@ -135,5 +138,13 @@ theorem of_algHom_finite [IsDaggerAlgebra K A] {B : Type v} [CommRing B] [Algebr
   have : IsScalarTower K A B := IsScalarTower.of_algebraMap_eq fun r ↦ (f.commutes r).symm
   have : Module.Finite A B := hf
   exact of_finite (A := A)
+
+open scoped TensorProduct in
+/-- **Finite base change of a dagger algebra.** If `A` is a dagger algebra and `C` is finite over
+`B`, then the algebraic tensor product `A ⊗[B] C` is a dagger algebra, being finite over `A`. -/
+instance tensorProduct_of_finite [IsDaggerAlgebra K A] {B C : Type*} [CommRing B] [CommRing C]
+    [Algebra B A] [Algebra B C] [SMulCommClass B K A] [Module.Finite B C] :
+    IsDaggerAlgebra K (A ⊗[B] C) :=
+  of_finite (A := A)
 
 end TauCeti.Dagger.IsDaggerAlgebra

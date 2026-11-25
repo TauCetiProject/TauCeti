@@ -8,7 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.RegularValue.Level
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+import TauCeti.Geometry.Manifold.MFDeriv.Slice
+import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel.Topology
 
 /-!
 # Vector fields transverse to a map
@@ -31,12 +32,10 @@ inclusion of the level exactly when `df(Z) ≠ 0` at every point of the level
 hypersurfaces of symplectic geometry (energy levels, boundaries of domains, cosphere bundles) is
 checked in practice.
 
-A vector field crossing a level of `f` in the direction of increasing `f`, `df(Z) > 0`, leaves the
-sublevel set there: a point where `df` does not vanish is not a local maximum, by Fermat's theorem,
-so every point of the level is a limit of points where `f` is larger
-(`TauCeti.mem_closure_setOf_lt_of_mvfderiv_pos`). Hence the frontier of the sublevel set `{f ≤ c}`
-is exactly the level `f⁻¹(c)` when `df(Z) > 0` along it
-(`TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`). This identifies the boundary of a domain whose
+A vector field crossing a level of `f` in the direction of increasing `f`, `df(Z) > 0`, makes the
+level a regular level, so the frontier of the sublevel set `{f ≤ c}` is exactly the level `f⁻¹(c)`
+(`TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`, a case of
+`TauCeti.IsRegularValue.frontier_setOfPred_le`). This identifies the boundary of a domain whose
 boundary is crossed outwards by a vector field, as for Liouville domains.
 
 ## Main definitions
@@ -127,6 +126,15 @@ theorem IsTransverseAlong.injective_smul_add {Z : (x : M) → TangentSpace I x} 
     Function.Injective fun v : ℝ × E' ↦ v.1 • Z (ι s) + mfderiv J I ι s v.2 :=
   (injective_smul_add_mfderiv_iff_notMem_range himm).2 (h s)
 
+/-- If `Z` is transverse along `ι` and the differential `dι_s` is injective, then
+`a Z (ι s) + dι_s w = 0` only for `a = 0` and `w = 0`. -/
+theorem IsTransverseAlong.eq_zero_of_smul_add_eq_zero {Z : (x : M) → TangentSpace I x}
+    {ι : S → M} (h : IsTransverseAlong J Z ι) {s : S}
+    (himm : Function.Injective (mfderiv J I ι s)) {a : ℝ} {w : TangentSpace J s}
+    (hw : a • Z (ι s) + mfderiv J I ι s w = 0) : a = 0 ∧ w = 0 :=
+  Prod.ext_iff.1 <| h.injective_smul_add himm (a₁ := (a, w)) (a₂ := (0, 0)) <|
+    hw.trans (by simp only [zero_smul, zero_add]; exact (map_zero _).symm)
+
 /-- **Vanishing of the differential on a transverse slice.** Let `ι : S → M` have injective
 differential at `s`, with `Z (ι s)` outside its range, where `S` has one dimension less than `M`.
 If a function `h` vanishes on the slice near `s` and its derivative along `Z` vanishes at `ι s`,
@@ -137,21 +145,12 @@ theorem mvfderiv_eq_zero_of_comp_eventuallyEq_zero
     (h0 : h ∘ ι =ᶠ[𝓝 s] 0) (himm : Function.Injective (mfderiv J I ι s))
     (htr : Z (ι s) ∉ (mfderiv J I ι s).range) (hZ : mvfderiv I h (ι s) (Z (ι s)) = 0) :
     mvfderiv I h (ι s) = 0 := by
-  -- A function that is not differentiable at `ι s` has zero differential there by convention.
-  by_cases hh : MDifferentiableAt I 𝓘(ℝ) h (ι s)
-  swap
-  · simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hh]
   set L := (mfderiv J I ι s).toLinearMap
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (hdim ▸ Nat.succ_pos _)
   have : FiniteDimensional ℝ E' := finiteDimensional_of_injective_mfderiv himm
-  -- The differential of `h` kills the tangent space of the slice, since `h ∘ ι` vanishes near `s`
-  -- (trivially when `ι` is not differentiable at `s`, as then `L = 0`).
-  have hL (w : TangentSpace J s) : mvfderiv I h (ι s) (L w) = 0 := by
-    by_cases hιs : MDifferentiableAt J I ι s
-    · have hc := mvfderiv_comp_apply s hh hιs w
-      rw [h0.mvfderiv_eq, mvfderiv_zero] at hc
-      exact hc.symm
-    · rw [show L w = 0 by simp [L, mfderiv_zero_of_not_mdifferentiableAt hιs], map_zero]
+  -- The differential of `h` kills the tangent space of the slice, since `h ∘ ι` vanishes near `s`.
+  have hL (w : TangentSpace J s) : mvfderiv I h (ι s) (L w) = 0 :=
+    mvfderiv_mfderiv_apply_eq_zero_of_comp_eventuallyEq_zero h0 w
   -- The tangent space of the slice and the line through `Z (ι s)` span the tangent space of `M`.
   have htop : LinearMap.range L ⊔ ℝ ∙ Z (ι s) = ⊤ := by
     refine Submodule.eq_top_of_finrank_eq ?_
@@ -168,29 +167,17 @@ theorem mvfderiv_eq_zero_of_comp_eventuallyEq_zero
 
 section Crossing
 
-variable [I.Boundaryless]
-
-/-- **A direction increasing a function leaves its sublevel set.** If a tangent vector `v` at a
-point `x` of a boundaryless manifold satisfies `df_x(v) > 0`, then `x` lies in the closure of the
-set `{y | f x < f y}`: otherwise `x` would be a local maximum of `f`, hence a critical point by
-Fermat's theorem (`IsLocalMax.mem_criticalPoints`), and `df_x` would vanish. -/
-theorem mem_closure_setOf_lt_of_mvfderiv_pos {f : M → ℝ} {x : M} {v : TangentSpace I x}
-    (hpos : 0 < mvfderiv I f x v) : x ∈ closure {y | f x < f y} := by
-  by_contra h
-  rw [mem_closure_iff_frequently, not_frequently] at h
-  have hmax : IsLocalMax f x := h.mono fun y hy ↦ not_lt.1 hy
-  simp [mem_criticalPoints.1 (hmax.mem_criticalPoints (I := I))] at hpos
+variable [BoundarylessManifold I M]
 
 /-- **The frontier of a sublevel set crossed outwards by a vector field.** Let `f` be continuous,
-and let `Z` be a vector field with `df(Z) > 0` along the level `f⁻¹(c)`. Then the frontier of the
-sublevel set `{f ≤ c}` is exactly the level `f⁻¹(c)`. -/
+and let `Z` be a vector field with `df(Z) > 0` along the level `f⁻¹(c)`. Then `c` is a regular
+value of `f`, so the frontier of the sublevel set `{f ≤ c}` is exactly the level `f⁻¹(c)`
+(`TauCeti.IsRegularValue.frontier_setOfPred_le`). -/
 theorem frontier_setOf_le_eq_of_mvfderiv_pos {Z : (x : M) → TangentSpace I x} {f : M → ℝ}
     {c : ℝ} (hfc : Continuous f) (hpos : ∀ x, f x = c → 0 < mvfderiv I f x (Z x)) :
-    frontier {x | f x ≤ c} = {x | f x = c} := by
-  refine (frontier_le_subset_eq hfc continuous_const).antisymm fun x (hx : f x = c) ↦ ?_
-  rw [frontier_eq_closure_inter_closure]
-  exact ⟨subset_closure hx.le, closure_mono (fun y hy ↦ by simpa [← hx] using hy)
-    (mem_closure_setOf_lt_of_mvfderiv_pos (hpos x hx))⟩
+    frontier {x | f x ≤ c} = {x | f x = c} :=
+  IsRegularValue.frontier_setOfPred_le (I := I) (isRegularValue_iff.2 fun x hx ↦
+    isRegularPoint_iff_mvfderiv_ne_zero.2 fun h ↦ (hpos x hx).ne' (by simp [h])) hfc
 
 end Crossing
 

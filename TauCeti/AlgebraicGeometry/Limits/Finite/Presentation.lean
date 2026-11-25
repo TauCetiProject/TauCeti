@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import TauCeti.AlgebraicGeometry.Limits.BaseChange
-public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 
 /-!
 # Descent of morphisms and their properties along cofiltered limits
@@ -28,6 +28,8 @@ inheritance follows by applying isomorphism inheritance to the diagonal.
   presented stage models over a quasi-compact quasi-separated affine-transition diagram.
 * `CategoryTheory.Limits.IsLimit.exists_isIso_pullbackMap`: isomorphism inheritance for a
   locally finitely presented morphism between suitable quasi-compact stage models.
+* `CategoryTheory.Limits.IsLimit.exists_iso_pullback_of_iso`: isomorphism descent for finitely
+  presented quasi-compact quasi-separated stage models.
 * `CategoryTheory.Limits.IsLimit.exists_mono_pullbackMap`: monomorphism inheritance for a
   quasi-compact locally finite type morphism from a quasi-compact quasi-separated stage source.
 
@@ -223,6 +225,60 @@ theorem exists_isIso_pullbackMap
   have : IsIso (pullback.snd (g ≫ b.inv)
       ((c.pullbackOver q).π.app (Over.mk (𝟙 i)))) := hb
   exact (hc.pullbackOver q).exists_isIso_pullback_snd (g ≫ b.inv)
+
+include hc in
+/-- Let `S = lim Dⱼ` be a cofiltered limit of quasi-compact quasi-separated schemes with affine
+transition maps, and let `X` and `Y` be quasi-compact, quasi-separated and locally of finite
+presentation over a member `Dᵢ`. Every isomorphism `S ×_{Dᵢ} X ≅ S ×_{Dᵢ} Y` over `S` is the base
+change of an isomorphism `Dⱼ ×_{Dᵢ} X ≅ Dⱼ ×_{Dᵢ} Y` over some `Dⱼ`. Stacks, Lemmas 32.10.1
+(01ZM) and 32.8.11 (081E). -/
+theorem exists_iso_pullback_of_iso [∀ i, CompactSpace (D.obj i)]
+    [∀ i, QuasiSeparatedSpace (D.obj i)] {i : I} {X Y : Scheme.{u}} {p : X ⟶ D.obj i}
+    {q : Y ⟶ D.obj i} [QuasiCompact p] [QuasiSeparated p] [LocallyOfFinitePresentation p]
+    [QuasiCompact q] [QuasiSeparated q] [LocallyOfFinitePresentation q]
+    (a : pullback (c.π.app i) p ≅ pullback (c.π.app i) q)
+    (ha : a.hom ≫ pullback.fst _ _ = pullback.fst _ _) :
+    ∃ (j : I) (t : j ⟶ i) (e : pullback (D.map t) p ≅ pullback (D.map t) q),
+      e.hom ≫ pullback.fst _ _ = pullback.fst _ _ ∧
+        pullback.map (c.π.app i) p (D.map t) p (c.π.app j) (𝟙 X) (𝟙 _) (by simp) (by simp) ≫
+          e.hom = a.hom ≫ pullback.map (c.π.app i) q (D.map t) q (c.π.app j) (𝟙 Y) (𝟙 _)
+            (by simp) (by simp) := by
+  -- `a` is the base change of a morphism `b` over some `Dⱼ`, which is an isomorphism over `S`.
+  obtain ⟨j, hji, b, hb₁, hb₂⟩ := hc.exists_pullbackMap_comp_eq a.hom ha
+  have : IsIso (pullback.map (c.π.app j) (pullback.fst (D.map hji) p) (c.π.app j)
+      (pullback.fst (D.map hji) q) (𝟙 _) b (𝟙 _) (by simp) (by exact hb₁.symm)) :=
+    (MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq
+      (.isomorphisms Scheme) hji ha hb₁ hb₂).mpr (inferInstance : IsIso a.hom)
+  have := QuasiCompact.compactSpace_of_compactSpace (pullback.fst (D.map hji) p)
+  have := QuasiCompact.compactSpace_of_compactSpace (pullback.fst (D.map hji) q)
+  have := quasiSeparatedSpace_of_quasiSeparated (pullback.fst (D.map hji) q)
+  have : LocallyOfFinitePresentation b := by
+    have : LocallyOfFinitePresentation (b ≫ pullback.fst (D.map hji) q) := by
+      rw [hb₁]
+      infer_instance
+    exact locallyOfFinitePresentation_of_comp b (pullback.fst (D.map hji) q)
+  -- Hence `b` is an isomorphism over some later stage `Dₖ`.
+  obtain ⟨k, hkj, hk⟩ := hc.exists_isIso_pullbackMap b hb₁
+  -- `Dₖ ×_{Dⱼ} (Dⱼ ×_{Dᵢ} Z) ≅ Dₖ ×_{Dᵢ} Z`.
+  let ψ {Z : Scheme.{u}} (r : Z ⟶ D.obj i) :
+      pullback (D.map hkj) (pullback.fst (D.map hji) r) ≅ pullback (D.map (hkj ≫ hji)) r :=
+    pullbackRightPullbackFstIso (D.map hji) r (D.map hkj) ≪≫
+      pullback.congrHom (D.map_comp hkj hji).symm rfl
+  let bK := pullback.map (D.map hkj) (pullback.fst (D.map hji) p) (D.map hkj)
+    (pullback.fst (D.map hji) q) (𝟙 _) b (𝟙 _) (by simp) (by exact hb₁.symm)
+  have : IsIso bK := hk
+  let e := (ψ p).symm ≪≫ asIso bK ≪≫ ψ q
+  refine ⟨k, hkj ≫ hji, e, by simp [e, ψ, bK], ?_⟩
+  apply pullback.hom_ext
+  · simpa [e, ψ, bK] using ((reassoc_of% ha) (c.π.app k)).symm
+  · have h := congrArg (· ≫ pullback.snd (D.map hji) q) hb₂
+    simp only [Category.assoc] at h
+    have key : pullback.map (c.π.app i) p (D.map (hkj ≫ hji)) p (c.π.app k) (𝟙 _) (𝟙 _)
+        (by simp) (by simp) ≫ (ψ p).inv ≫ pullback.snd (D.map hkj) (pullback.fst (D.map hji) p) =
+        pullback.map (c.π.app i) p (D.map hji) p (c.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) := by
+      apply pullback.hom_ext <;> simp [ψ]
+    have h' := congrArg (· ≫ b ≫ pullback.snd (D.map hji) q) key
+    simpa [e, ψ, bK] using h'.trans h
 
 include hc in
 private theorem exists_isIso_overPullback

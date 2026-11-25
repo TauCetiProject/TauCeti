@@ -16,7 +16,7 @@ public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
-import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent
+import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent.Basic
 
 /-!
 # Base change of Hopf ideals

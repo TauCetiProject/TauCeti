@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.RandomMatrices.Ginibre.Density
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
-public import TauCeti.MeasureTheory.Measure.Matrix
+public import TauCeti.MeasureTheory.Measure.Matrix.Basic
 public import TauCeti.Probability.HasLaw
 
 /-!
