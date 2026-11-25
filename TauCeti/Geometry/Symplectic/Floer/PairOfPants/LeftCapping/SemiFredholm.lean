@@ -75,20 +75,89 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-! ### Patching on the capped surface -/
 
+/-- **The cutoff on the capped surface.** There is a smooth factor `β` with values in `[0, 1]`,
+vanishing near the disc `‖w‖ ≤ 1/3` and equal to `1` near every point off the disc `‖w‖ < 2/5`;
+in particular its derivative vanishes off the disc `‖w‖ ≤ 1/2`. -/
+private theorem exists_contDiff_cutoff_capped :
+    ∃ β : ℝ × ℝ → ℝ, ContDiff ℝ 2 β ∧ (∀ z, β z ∈ Icc 0 1) ∧
+      (∀ z, ‖equivRealProdCLM.symm z‖ ≤ 1 / 3 → β =ᶠ[𝓝 z] 0) ∧
+      (∀ z, 2 / 5 ≤ ‖equivRealProdCLM.symm z‖ → β =ᶠ[𝓝 z] fun _ ↦ 1) ∧
+      ∀ z ∉ {z : ℝ × ℝ | ‖equivRealProdCLM.symm z‖ ≤ 1 / 2}, fderiv ℝ β z = 0 := by
+  obtain ⟨χ, hχ, hχ01, hχ1, hχ0, -⟩ :=
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le (1 / 3)).exists_contDiff_cutoff_sublevel
+      equivRealProdCLM.symm.continuous.norm (by norm_num : (1 / 3 : ℝ) < 2 / 5)
+  have h1 (z : ℝ × ℝ) (hz : 2 / 5 ≤ ‖equivRealProdCLM.symm z‖) :
+      (fun w ↦ 1 - χ w) =ᶠ[𝓝 z] fun _ ↦ 1 := by
+    filter_upwards [hχ0 z hz] with w hw
+    simp [hw]
+  refine ⟨fun z ↦ 1 - χ z, contDiff_const.sub (hχ.of_le (by simp)),
+    fun z ↦ ⟨sub_nonneg.2 (hχ01 z).2, sub_le_self _ (hχ01 z).1⟩, fun z hz ↦ ?_, h1, fun z hz ↦ ?_⟩
+  · filter_upwards [hχ1 z hz] with w hw
+    simp [hw]
+  · rw [notMem_ofPred_iff, not_le] at hz
+    rw [(h1 z (by linarith)).fderiv_eq]
+    simp
+
 omit [FiniteDimensional ℝ V] in
-/-- Beyond the height `0` on the input end at `1` or on the output end, a section agrees with its
-cut-off `(1 - χ) ξ` for a cutoff `χ` vanishing off the disc `‖w‖ < 1/2`. -/
-private theorem setIntegral_sobolevDensity_comp_positiveEndChart_one_sub_smul {χ : ℝ × ℝ → ℝ}
-    (hχ : ∀ z, 1 / 2 ≤ ‖equivRealProdCLM.symm z‖ → χ z = 0) {q : Puncture} (hq : q ≠ zero)
-    {T : ℝ} (hT : 0 ≤ T) (ξ : ℝ × ℝ → V) :
-    ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ =
-      ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1,
-        sobolevDensity ((fun z ↦ (1 - χ z) • ξ z) ∘ positiveEndChart q) ζ := by
-  refine setIntegral_congr_fun (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-  refine sobolevDensity_congr_of_eventuallyEq ?_
-  filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds
-    (show (0 : ℝ) < ζ.1 by linarith [mem_Ioi.1 hζ.1])] with ζ' hζ'
-  simp [hχ _ (half_le_norm_positiveEndChart hq hζ')]
+/-- A section cut off by a factor `β` vanishing near the disc `‖w‖ ≤ 1/3`, with `ξ` supported in
+`ℂ ∖ {1}`, is supported in the pair of pants `S` below the height `1` on the end at `0`. -/
+private theorem tsupport_smul_subset_of_eventuallyEq_zero {β : ℝ × ℝ → ℝ}
+    (hβ : ∀ z, ‖equivRealProdCLM.symm z‖ ≤ 1 / 3 → β =ᶠ[𝓝 z] 0) {ξ : ℝ × ℝ → V}
+    (hξ : tsupport ξ ⊆ {z | equivRealProdCLM.symm z ≠ 1}) :
+    tsupport (fun z ↦ β z • ξ z) ⊆
+      thricePuncturedSphereReal ∩ {z | (positiveEndCoord zero z).1 ≤ 1} := by
+  have h3 {z : ℝ × ℝ} (hz : z ∈ tsupport fun z ↦ β z • ξ z) :
+      1 / 3 < ‖equivRealProdCLM.symm z‖ :=
+    lt_of_not_ge fun h ↦ notMem_tsupport_iff_eventuallyEq.2 (by
+      filter_upwards [hβ z h] with w hw
+      simp [hw]) hz
+  refine fun z hz ↦ ⟨mem_thricePuncturedSphereReal_iff.2
+    ⟨fun h0 ↦ ?_, hξ (tsupport_smul_subset_right _ _ hz)⟩, ?_⟩
+  · have h := h3 hz
+    rw [h0, norm_zero] at h
+    norm_num at h
+  · rw [mem_ofPred_eq, fst_positiveEndCoord_zero]
+    exact re_endCoord_zero_le_one (by linarith [h3 hz, exp_neg_two_pi_div_two_le_one_third])
+
+omit [FiniteDimensional ℝ V] in
+/-- Beyond the height `T ≥ 0` on the input end at `1` and on the output end, a section agrees with
+its cut-off `β ξ` for a factor `β` equal to `1` off the disc `‖w‖ < 1/2`, so its energy there is at
+most the energy of `β ξ` beyond `T` on all three ends. -/
+private theorem sum_setIntegral_sobolevDensity_comp_positiveEndChart_le_smul {β : ℝ × ℝ → ℝ}
+    (hβ : ∀ z, 1 / 2 ≤ ‖equivRealProdCLM.symm z‖ → β z = 1) {T : ℝ} (hT : 0 ≤ T)
+    (ξ : ℝ × ℝ → V) :
+    (∑ q ∈ ({one, inf} : Finset Puncture),
+        ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ) ≤
+      ∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1,
+        sobolevDensity ((fun z ↦ β z • ξ z) ∘ positiveEndChart q) ζ := by
+  calc
+    _ = ∑ q ∈ ({one, inf} : Finset Puncture), ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1,
+        sobolevDensity ((fun z ↦ β z • ξ z) ∘ positiveEndChart q) ζ := by
+      refine Finset.sum_congr rfl fun q hq ↦ setIntegral_congr_fun
+        (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦
+          sobolevDensity_congr_of_eventuallyEq ?_
+      have hq0 : q ≠ zero := by rcases Finset.mem_insert.1 hq with rfl | hq <;> simp_all
+      filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds
+        (show (0 : ℝ) < ζ.1 by linarith [mem_Ioi.1 hζ.1])] with ζ' hζ'
+      simp [hβ _ (half_le_norm_positiveEndChart hq0 hζ')]
+    _ ≤ _ := Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _) fun q _ _ ↦
+      setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc) fun ζ _ ↦
+        sobolevDensity_nonneg _ ζ
+
+/-- **The bookkeeping of the capped patching.** The end and core energies `E`, `F` of `ξ` are
+bounded by those of the cut-off section, `E₁` and `F₁`, plus the energy `G` of `ξ` on a disc;
+the patching bounds `E₁ + F₁` by `C₁ (X₁ + B₁)`, the disc estimate bounds `G` by `C₀ (X + Y₀)`, and
+the cost of the cutoff bounds `X₁` by `2 X + C₂ Y₀`. If the `L²` norms `B₁` and `Y₀` are at most
+`Y`, then `E + F ≤ (C₁ (3 + C₂) + C₀) (X + Y)`. -/
+private theorem add_le_mul_add_of_cutoff {E E₁ F F₁ G X X₁ B₁ Y Y₀ C₀ C₁ C₂ : ℝ}
+    (hC₀ : 0 ≤ C₀) (hC₁ : 0 ≤ C₁) (hC₂ : 0 ≤ C₂) (hX : 0 ≤ X) (hY₀0 : 0 ≤ Y₀)
+    (hE : E ≤ E₁) (hF : F ≤ F₁ + G) (h₁ : E₁ + F₁ ≤ C₁ * (X₁ + B₁)) (h₀ : G ≤ C₀ * (X + Y₀))
+    (hX₁ : X₁ ≤ 2 * X + C₂ * Y₀) (hB₁ : B₁ ≤ Y) (hY₀ : Y₀ ≤ Y) :
+    E + F ≤ (C₁ * (3 + C₂) + C₀) * (X + Y) := by
+  have hA : C₁ * (X₁ + B₁) ≤ C₁ * ((3 + C₂) * (X + Y)) :=
+    mul_le_mul_of_nonneg_left (by nlinarith [mul_le_mul_of_nonneg_left hY₀ hC₂]) hC₁
+  have hB : C₀ * (X + Y₀) ≤ C₀ * (X + Y) := mul_le_mul_of_nonneg_left (by linarith) hC₀
+  linarith
 
 omit [FiniteDimensional ℝ V] in
 /-- **The core of the capped surface.** If `ξ` agrees with `ξ₁` near every point off a compact set
@@ -200,109 +269,58 @@ theorem
   set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
   set U : Set (ℝ × ℝ) := {z | equivRealProdCLM.symm z ≠ 1}
   set K₀ : Set (ℝ × ℝ) := {z | ‖equivRealProdCLM.symm z‖ ≤ 1 / 2}
-  set D : Set (ℝ × ℝ) := {z | ‖equivRealProdCLM.symm z‖ ≤ 2 / 5}
   have hK₀ : IsCompact K₀ := isCompact_setOf_norm_equivRealProdCLM_symm_le _
-  have hD : IsCompact D := isCompact_setOf_norm_equivRealProdCLM_symm_le _
   have hK₀U : K₀ ⊆ U := fun z hz h1 ↦ by
-    have h : ‖equivRealProdCLM.symm z‖ ≤ 1 / 2 := hz
-    rw [h1, norm_one] at h
-    norm_num at h
+    rw [mem_ofPred_eq, h1, norm_one] at hz
+    norm_num at hz
   have hSU : thricePuncturedSphereReal ⊆ U := fun z hz ↦ (mem_thricePuncturedSphereReal_iff.1 hz).2
   -- The constants are fixed before the section: the patching on `S` away from the capped end, a
-  -- cutoff `χ` equal to `1` near `‖w‖ ≤ 1/3` and vanishing near `‖w‖ ≥ 2/5`, the cost of the
-  -- cutoff `1 - χ`, whose derivative lives on `K₀`, and the estimate on the disc `D` inside `K₀`.
+  -- cutoff `β` vanishing near `‖w‖ ≤ 1/3` and equal to `1` near `‖w‖ ≥ 2/5`, the cost of the
+  -- cutoff, whose derivative lives on `K₀`, and the estimate on the disc `‖w‖ ≤ 2/5` inside `K₀`.
   obtain ⟨C₁, hC₁, T, hT, h₁⟩ :=
     exists_forall_sum_setIntegral_add_setIntegral_le_of_fst_positiveEndCoord_zero_le ω
       (fun z hz ↦ hJ z (hSU hz)) (fun z hz ↦ hKs z (hSU hz)) (fun z hz ↦ hKt z (hSU hz))
       (fun z hz ↦ hu z (hSU hz)) (fun z hz ↦ hc z (hSU hz)) hend
-  obtain ⟨χ, hχ, hχ01, hχ1, hχ0, -⟩ :=
-    (isCompact_setOf_norm_equivRealProdCLM_symm_le (1 / 3)).exists_contDiff_cutoff_sublevel
-      equivRealProdCLM.symm.continuous.norm (by norm_num : (1 / 3 : ℝ) < 2 / 5)
-  have hχ2 : ContDiff ℝ 2 χ := hχ.of_le (by simp)
-  have h1χ01 (z : ℝ × ℝ) : 1 - χ z ∈ Icc 0 1 := ⟨sub_nonneg.2 (hχ01 z).2, sub_le_self _ (hχ01 z).1⟩
+  obtain ⟨β, hβ, hβ01, hβ0, hβ1, hβK⟩ := exists_contDiff_cutoff_capped
   obtain ⟨C₂, hC₂, h₂⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le_of_tsupport_subset
-    (J := J') (U := U) hJ hKs hKt hu (β := fun z ↦ 1 - χ z)
-    (contDiff_const.sub (hχ2.of_le one_le_two)) h1χ01 hK₀ hK₀U fun z hz ↦ by
-      rw [(show (fun w ↦ 1 - χ w) =ᶠ[𝓝 z] fun _ ↦ 1 by
-        filter_upwards [hχ0 z (by
-          linarith [not_le.1 (show ¬‖equivRealProdCLM.symm z‖ ≤ 1 / 2 from hz)])] with w hw
-        simp [hw]).fderiv_eq]
-      simp
+    (J := J') (U := U) hJ hKs hKt hu (hβ.of_le one_le_two) hβ01 hK₀ hK₀U hβK
   obtain ⟨C₀, hC₀, h₀⟩ :=
     ω.exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt_of_tsupport_subset
       hJ hKs hKt hu hK₀U (fun z hz ↦ hc z (hK₀U hz)) (by norm_num : (2 / 5 : ℝ) < 1 / 2)
   refine ⟨C₁ * (3 + C₂) + C₀, by positivity, T, hT, fun ξ hξ hξc hξU ↦ ?_⟩
-  -- Off the disc `D` the section `ξ` is `(1 - χ) ξ`, supported in `S` below the height `1` of the
-  -- end at `0`.
-  set ξ₁ : ℝ × ℝ → V := fun z ↦ (1 - χ z) • ξ z
-  have hξ₁ : ContDiff ℝ 2 ξ₁ := (contDiff_const.sub hχ2).smul hξ
-  have hξ₁0 {z : ℝ × ℝ} (hz : ‖equivRealProdCLM.symm z‖ ≤ 1 / 3) : ξ₁ =ᶠ[𝓝 z] 0 := by
-    filter_upwards [hχ1 z hz] with w hw
-    simp [ξ₁, hw]
-  have hξξ₁ {z : ℝ × ℝ} (hz : z ∉ D) : ξ =ᶠ[𝓝 z] ξ₁ := by
-    filter_upwards [hχ0 z (not_le.1 hz).le] with w hw
-    simp [ξ₁, hw]
-  have h3 {z : ℝ × ℝ} (hz : z ∈ tsupport ξ₁) : 1 / 3 < ‖equivRealProdCLM.symm z‖ :=
-    lt_of_not_ge fun h ↦ notMem_tsupport_iff_eventuallyEq.2 (hξ₁0 h) hz
-  have hξ₁S : tsupport ξ₁ ⊆ thricePuncturedSphereReal := fun z hz ↦ by
-    refine mem_thricePuncturedSphereReal_iff.2
-      ⟨fun h0 ↦ ?_, hξU (tsupport_smul_subset_right _ _ hz)⟩
-    have h := h3 hz
-    rw [h0, norm_zero] at h
-    norm_num at h
-  have hξ₁A : tsupport ξ₁ ⊆ {z | (positiveEndCoord zero z).1 ≤ 1} := fun z hz ↦ by
-    rw [mem_ofPred_eq, fst_positiveEndCoord_zero]
-    exact re_endCoord_zero_le_one (by linarith [h3 hz, exp_neg_two_pi_div_two_le_one_third])
-  -- The pieces of the estimate, with `X = ∫ ‖D_u ξ‖²` and `Y` the `L²` term of the right side.
-  set X := ∫ z, ‖ω.floerLinearization J' Ks Kt u ξ z‖ ^ 2
+  -- The cut-off section `β ξ` is supported in `S` below the height `1` of the end at `0`.
+  set ξ₁ : ℝ × ℝ → V := fun z ↦ β z • ξ z
+  have hξ₁ : ContDiff ℝ 2 ξ₁ := hβ.smul hξ
+  obtain ⟨hξ₁S, hξ₁A⟩ := subset_inter_iff.1 (tsupport_smul_subset_of_eventuallyEq_zero hβ0 hξU)
+  -- The `L²` term of the right side.
   set Y := ∫ z in equivRealProdCLM.symm ⁻¹' truncation (T + 1) ∪ K₀, ‖ξ z‖ ^ 2
-  set Y₀ := ∫ z in K₀, ‖ξ z‖ ^ 2
-  have hX₁ : ∫ z, ‖ω.floerLinearization J' Ks Kt u ξ₁ z‖ ^ 2 ≤ 2 * X + C₂ * Y₀ :=
-    h₂ (hξ.of_le one_le_two) hξc hξU
-  have e₁ : (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ₁ ∘ positiveEndChart q) ζ) +
-      ∫ z in equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity ξ₁ z ≤
-      C₁ * ((∫ z, ‖ω.floerLinearization J' Ks Kt u ξ₁ z‖ ^ 2) +
-        ∫ z in equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ₁ z‖ ^ 2) :=
-    h₁ hξ₁ hξc.smul_left hξ₁S hξ₁A
-  have e₀ : ∫ z in D, sobolevDensity ξ z ≤ C₀ * (X + Y₀) := by
-    simpa only [sobolevDensity_apply] using h₀ hξ hξc hξU
-  -- The core: on `S_T` off the disc `D` the section is `(1 - χ) ξ`.
-  have h14 : {z | ‖equivRealProdCLM.symm z‖ ≤ 1 / 4} ⊆ D :=
-    fun z (hz : ‖equivRealProdCLM.symm z‖ ≤ 1 / 4) ↦
-      (show ‖equivRealProdCLM.symm z‖ ≤ 2 / 5 by linarith)
+  -- The core: on `S_T` off the disc `‖w‖ ≤ 2/5` the section `ξ` is `β ξ`.
+  have h14 : {z | ‖equivRealProdCLM.symm z‖ ≤ 1 / 4} ⊆ {z | ‖equivRealProdCLM.symm z‖ ≤ 2 / 5} :=
+    ofPred_subset_ofPred.2 fun z hz ↦ by linarith
   have hcore := setIntegral_sobolevDensity_union_le (hξ.of_le one_le_two) (hξ₁.of_le one_le_two)
-    (isCompact_preimage_truncation T) hD h14 fun z hz ↦ hξξ₁ hz
-  -- The ends: beyond the height `T ≥ 1` on the two ends, `ξ` agrees with `(1 - χ) ξ`.
-  have hends : (∑ q ∈ ({one, inf} : Finset Puncture),
-      ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ) ≤
-      ∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ₁ ∘ positiveEndChart q) ζ := by
-    rw [Finset.sum_congr rfl fun q hq ↦
-      setIntegral_sobolevDensity_comp_positiveEndChart_one_sub_smul
-        (fun z hz ↦ (hχ0 z (by linarith)).eq_of_nhds)
-        (by rcases Finset.mem_insert.1 hq with rfl | hq <;> simp_all) (by linarith) ξ]
-    exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _) fun q _ _ ↦
-      setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc) fun ζ _ ↦
-        sobolevDensity_nonneg _ ζ
-  -- The `L²` norms of `ξ` and of `(1 - χ) ξ` on the compact sets involved are at most `Y`.
+    (isCompact_preimage_truncation T) (isCompact_setOf_norm_equivRealProdCLM_symm_le (2 / 5)) h14
+    fun z hz ↦ by
+      rw [notMem_ofPred_iff, not_le] at hz
+      filter_upwards [hβ1 z hz.le] with w hw
+      simp [ξ₁, hw]
+  -- The `L²` norms of `ξ` and of `β ξ` on the compact sets involved are at most `Y`.
   have hY {s : Set (ℝ × ℝ)} (hs : s ⊆ equivRealProdCLM.symm ⁻¹' truncation (T + 1) ∪ K₀) :
       ∫ z in s, ‖ξ z‖ ^ 2 ≤ Y :=
     setIntegral_mono_set ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact
       ((isCompact_preimage_truncation _).union hK₀)) (ae_of_all _ fun _ ↦ sq_nonneg _)
       (.of_forall fun _ hz ↦ hs hz)
   have hb₁ : ∫ z in equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ₁ z‖ ^ 2 ≤ Y :=
-    (integral_norm_smul_sq_le (ae_of_all _ fun z ↦ by
-        rw [Real.norm_of_nonneg (h1χ01 z).1]; exact (h1χ01 z).2)
+    (integral_norm_smul_sq_le
+      (ae_of_all _ fun z ↦ (Real.norm_of_nonneg (hβ01 z).1).trans_le (hβ01 z).2)
       ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact
         (isCompact_preimage_truncation (T + 1)))).trans (hY subset_union_left)
-  have hY₀ : Y₀ ≤ Y := hY subset_union_right
-  have hY₀0 : 0 ≤ Y₀ := setIntegral_nonneg hK₀.measurableSet fun _ _ ↦ sq_nonneg _
-  have hX0 : 0 ≤ X := integral_nonneg fun _ ↦ sq_nonneg _
-  have hA : C₁ * ((∫ z, ‖ω.floerLinearization J' Ks Kt u ξ₁ z‖ ^ 2) +
-      ∫ z in equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ₁ z‖ ^ 2) ≤
-      C₁ * ((3 + C₂) * (X + Y)) :=
-    mul_le_mul_of_nonneg_left (by nlinarith [mul_le_mul_of_nonneg_left hY₀ hC₂]) hC₁
-  have hB : C₀ * (X + Y₀) ≤ C₀ * (X + Y) := mul_le_mul_of_nonneg_left (by linarith) hC₀
-  linarith
+  exact add_le_mul_add_of_cutoff hC₀ hC₁ hC₂ (integral_nonneg fun _ ↦ sq_nonneg _)
+    (setIntegral_nonneg hK₀.measurableSet fun _ _ ↦ sq_nonneg _)
+    (sum_setIntegral_sobolevDensity_comp_positiveEndChart_le_smul
+      (fun z hz ↦ (hβ1 z (by linarith)).eq_of_nhds) (by linarith) ξ)
+    hcore (h₁ hξ₁ hξc.smul_left hξ₁S hξ₁A)
+    (by simpa only [sobolevDensity_apply] using h₀ hξ hξc hξU) (h₂ (hξ.of_le one_le_two) hξc hξU)
+    hb₁ (hY subset_union_right)
 
 /-! ### The family -/
 
