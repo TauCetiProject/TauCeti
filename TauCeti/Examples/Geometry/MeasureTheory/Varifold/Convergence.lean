@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.MeasureTheory.Varifold.Convergence
-public import TauCeti.Geometry.MeasureTheory.Varifold.Euclidean
 public import TauCeti.Geometry.MeasureTheory.Varifold.LineVarifold
+public import TauCeti.Topology.Sets.Opens
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
