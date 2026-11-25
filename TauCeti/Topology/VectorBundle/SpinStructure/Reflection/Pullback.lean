@@ -62,13 +62,13 @@ open OrthonormalFrameLift
 variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : X → Type} [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ} [NeZero n]
-  {Y : Type*} [TopologicalSpace Y]
+  {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K Y X] [ContinuousMapClass K Y X]
 
 attribute [local instance] Pullback.normedFiberBundle Pullback.normedVectorBundle
 
 /-- **The frame of `[p, 1]`** in the pullback of the precomposition of a `Spinᶜ` structure `s`
 with `f` is the frame of `p` in the pullback of `s`, precomposed with `f`. -/
-theorem toFrame_pullback_precompIsometry_inl (g : C(Y, X))
+theorem toFrame_pullback_precompIsometry_inl (g : K)
     (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
     (s : SpinCStructure F V n) (y : Y) (p : s.P (g y)) :
     ((s.precompIsometry f).pullback g).toFrame
@@ -91,7 +91,7 @@ theorem toFrame_pullback_precompIsometry_inl (g : C(Y, X))
 /-- **Precomposition commutes with pullback**: for a continuous map `g : Y → X`,
 `(g^* s).precompIsometry f ≃ g^* (s.precompIsometry f)`. Over `y`, both principal bundles are
 `P_{g y} ×_σ Spinᶜ(n)`, and the equivalence is `[p, h] ↦ [p, h]`. -/
-def precompIsometryPullbackEquiv (g : C(Y, X))
+def precompIsometryPullbackEquiv (g : K)
     (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
     (s : SpinCStructure F V n) :
     (SpinCStructure.precompIsometry f (s.pullback g)).Equiv ((s.precompIsometry f).pullback g) :=
@@ -100,12 +100,13 @@ def precompIsometryPullbackEquiv (g : C(Y, X))
     (fun _ (p : s.P _) ↦ Extend.inl (precompIsometryHom f) (continuous_precompIsometryHom f) p)
     (fun _ (p : s.P _) h ↦ Extend.inl_smul _ _ p h)
     (Pullback.continuous_fiberwise
-      (Extend.continuous_inl s.P (precompIsometryHom f) (continuous_precompIsometryHom f)) g)
+      (Extend.continuous_inl s.P (precompIsometryHom f) (continuous_precompIsometryHom f))
+      (g : Y → X))
     (toFrame_pullback_precompIsometry_inl g f s)
 
 /-- The equivalence `(g^* s).precompIsometry f ≃ g^* (s.precompIsometry f)` sends `[p, 1]` to
 `[p, 1]`. -/
-theorem precompIsometryPullbackEquiv_toEquiv_inl (g : C(Y, X))
+theorem precompIsometryPullbackEquiv_toEquiv_inl (g : K)
     (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
     (s : SpinCStructure F V n) (y : Y) (p : s.P (g y)) :
     (precompIsometryPullbackEquiv g f s).toEquiv y
@@ -117,12 +118,12 @@ theorem precompIsometryPullbackEquiv_toEquiv_inl (g : C(Y, X))
 
 /-- **Orientation reversal commutes with pullback**: for a continuous map `g : Y → X`,
 `(g^* s).reverse ≃ g^* s.reverse`. -/
-def reversePullbackEquiv (g : C(Y, X)) (s : SpinCStructure F V n) :
+def reversePullbackEquiv (g : K) (s : SpinCStructure F V n) :
     (SpinCStructure.reverse (s.pullback g)).Equiv (s.reverse.pullback g) :=
   precompIsometryPullbackEquiv g _ s
 
 /-- The equivalence `(g^* s).reverse ≃ g^* s.reverse` sends `[p, 1]` to `[p, 1]`. -/
-theorem reversePullbackEquiv_toEquiv_inl (g : C(Y, X)) (s : SpinCStructure F V n) (y : Y)
+theorem reversePullbackEquiv_toEquiv_inl (g : K) (s : SpinCStructure F V n) (y : Y)
     (p : s.P (g y)) :
     (reversePullbackEquiv g s).toEquiv y
         (Extend.inl (P := (g : Y → X) *ᵖ s.P) (precompIsometryHom (realCliffordCoordReflection 0))
