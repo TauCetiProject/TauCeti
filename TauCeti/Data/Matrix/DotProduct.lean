@@ -6,17 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Mul
+public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.Algebra.Polynomial.Roots
+import TauCeti.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Dot product lemmas
-
-A vector indexed by `n` can be transported along an injective map `f : n → m` by extending it by
-zero off the range of `f`. Its dot product with any vector indexed by `m` then only sees the
-coordinates in the range of `f`. This lets orthogonality on a subset of coordinates be read off
-in the ambient coordinate space.
 
 A nonnegative vector paired with strictly positive weights has dot product zero precisely when
 the vector is zero.
@@ -27,20 +24,24 @@ space. The vector can be taken of the form `w i = M ^ e i` for a numbering `e` o
 because `w ⬝ᵥ v` is then the value at `M` of a nonzero polynomial with coefficients `v`.
 
 A ring homomorphism carries the bilinear form `v ⬝ᵥ A *ᵥ w` of a (possibly rectangular) matrix
-to the form of the image matrix at the image vectors.
+to the form of the image matrix at the image vectors. Over a commutative semiring the same form is
+the trace of the rank-one matrix `vecMulVec w v` times `A`.
 
 ## Main results
 
-* `Function.Injective.dotProduct_extend_zero`: the dot product with a vector extended by zero
-  along an injective map is the dot product of the pulled-back vectors.
 * `RingHom.map_dotProduct_mulVec`: a ring homomorphism commutes with the bilinear form
   `v ⬝ᵥ A *ᵥ w`.
+* `Matrix.dotProduct_mulVec_eq_trace_vecMulVec_mul`: the bilinear form `w ⬝ᵥ M *ᵥ v` is the
+  trace of `vecMulVec v w * M`.
 * `Matrix.intCast_dotProduct`: the dot product of the casts of integer vectors is the cast of their
   integer dot product.
 * `Matrix.intCast_dotProduct_mulVec`: the form of the cast of an integer matrix, at the casts of
   integer vectors, is the cast of the integer value of the form.
 * `TauCeti.dotProduct_eq_zero_iff_of_pos`: a nonnegative vector is zero if and only if its pairing
   with strictly positive weights vanishes.
+* `TauCeti.sum_mul_sub_eq_dotProduct_sub`, `TauCeti.sum_mul_sub_eq_sub_dotProduct`: for weights `p`
+  of total weight `1`, the `p`-average of the differences `v i - c` is `p ⬝ᵥ v - c`, and that of
+  the differences `c - v i` is `c - p ⬝ᵥ v`.
 * `Finset.exists_forall_dotProduct_ne_zero`: over an infinite domain, some vector has nonzero dot
   product with each of finitely many nonzero vectors.
 -/
@@ -48,23 +49,6 @@ to the form of the image matrix at the image vectors.
 public section
 
 open scoped Matrix
-
-namespace Function.Injective
-
-variable {m n α : Type*} [Fintype m] [Fintype n] [NonUnitalNonAssocSemiring α]
-
-/-- The dot product with a vector extended by zero along an injective map only sees the
-coordinates in the range of that map. -/
-theorem dotProduct_extend_zero {f : n → m} (hf : f.Injective) (x : m → α) (y : n → α) :
-    x ⬝ᵥ f.extend y 0 = (x ∘ f) ⬝ᵥ y := by
-  classical
-  rw [dotProduct, dotProduct, ← Finset.sum_extend_zero_of_injective _ hf fun _ ↦ Finset.mem_univ _]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rcases em (∃ k, f k = i) with ⟨k, rfl⟩ | hi
-  · simp [hf.extend_apply]
-  · simp [extend_apply' _ _ _ hi]
-
-end Function.Injective
 
 namespace RingHom
 
@@ -95,6 +79,12 @@ theorem intCast_dotProduct_mulVec {R : Type*} [NonAssocRing R] (A : Matrix m n �
       ((v ⬝ᵥ A *ᵥ w : ℤ) : R) :=
   ((Int.castRingHom R).map_dotProduct_mulVec A v w).symm
 
+/-- The bilinear form `w ⬝ᵥ M *ᵥ v` of a (possibly rectangular) matrix is the trace of the
+rank-one matrix `vecMulVec v w` times `M`. -/
+theorem dotProduct_mulVec_eq_trace_vecMulVec_mul {R : Type*} [CommSemiring R] (v : n → R)
+    (w : m → R) (M : Matrix m n R) : w ⬝ᵥ M *ᵥ v = (vecMulVec v w * M).trace := by
+  rw [vecMulVec_mul, trace_vecMulVec, dotProduct_mulVec, dotProduct_comm]
+
 end Matrix
 
 namespace TauCeti
@@ -108,6 +98,18 @@ theorem dotProduct_eq_zero_iff_of_pos {ι R : Type*} [Fintype ι] [NonUnitalNonA
     c ⬝ᵥ x = 0 ↔ x = 0 := by
   simp [dotProduct, Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ mul_nonneg (hc j).le (hx j),
     (hc _).ne', funext_iff]
+
+/-- For weights `p` of total weight `1`, the `p`-average of the differences `v i - c` is
+`p ⬝ᵥ v - c`. -/
+theorem sum_mul_sub_eq_dotProduct_sub {ι R : Type*} [Fintype ι] [NonAssocRing R] {p : ι → R}
+    (hp : ∑ i, p i = 1) (v : ι → R) (c : R) : ∑ i, p i * (v i - c) = p ⬝ᵥ v - c := by
+  simp only [mul_sub, Finset.sum_sub_distrib, sum_mul_const_of_sum_eq_one hp, dotProduct]
+
+/-- For weights `p` of total weight `1`, the `p`-average of the differences `c - v i` is
+`c - p ⬝ᵥ v`. -/
+theorem sum_mul_sub_eq_sub_dotProduct {ι R : Type*} [Fintype ι] [NonAssocRing R] {p : ι → R}
+    (hp : ∑ i, p i = 1) (v : ι → R) (c : R) : ∑ i, p i * (c - v i) = c - p ⬝ᵥ v := by
+  simp only [mul_sub, Finset.sum_sub_distrib, sum_mul_const_of_sum_eq_one hp, dotProduct]
 
 end TauCeti
 

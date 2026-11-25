@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Complex.Poisson.Basic
 public import Mathlib.Analysis.Complex.Harmonic.Poisson
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
+public import Mathlib.Analysis.Fourier.AddCircle
 import Mathlib.Analysis.Normed.Group.Bounded
+import TauCeti.MeasureTheory.Integral.Circle.Haar
 
 /-!
 # The planar Poisson integral: harmonicity and boundary values
@@ -17,7 +19,9 @@ The Poisson average of integrable real boundary data is harmonic in the disk. Fo
 boundary data, it converges to the prescribed value as the interior point approaches the boundary.
 Together these facts solve the planar Dirichlet problem on a disk.
 
-The Poisson integral is the real part of Mathlib's analytic Herglotz–Riesz integral.
+The Poisson integral is the real part of Mathlib's analytic Herglotz–Riesz integral. Parametrizing
+the unit circle by `AddCircle.toCircle`, the Poisson kernel of a pole inside the unit disk is a
+continuous function on the additive circle with normalized Haar integral one.
 See L. C. Evans, *Partial Differential Equations*, Section 2.2.4.
 -/
 
@@ -135,6 +139,21 @@ particular, the Poisson kernel has circle average one there. -/
     ext y
     simp
   simpa only [planarPoissonIntegral_def, hK] using planarPoissonIntegral_const hw 1
+
+/-- For a pole inside the unit disk, the Poisson kernel parametrized by `AddCircle.toCircle` is
+continuous on the additive circle. -/
+theorem continuous_poissonKernel_toCircle {T : ℝ} {w : ℂ} (hw : ‖w‖ < 1) :
+    Continuous fun t : AddCircle T ↦ poissonKernel 0 w (AddCircle.toCircle t) :=
+  (continuousOn_poissonKernel (s := sphere 0 1) (by simpa using hw.ne)).comp_continuous
+    (continuous_subtypeVal.comp AddCircle.continuous_toCircle) fun t ↦ by simp
+
+/-- For a pole inside the unit disk, the Poisson kernel parametrized by `AddCircle.toCircle` has
+normalized Haar integral one. -/
+theorem integral_poissonKernel_toCircle {T : ℝ} [Fact (0 < T)] {w : ℂ} (hw : ‖w‖ < 1) :
+    ∫ t : AddCircle T, poissonKernel 0 w (AddCircle.toCircle t) ∂AddCircle.haarAddCircle = 1 := by
+  have h := AddCircle.integral_haarAddCircle_comp_toCircle (T := T) (poissonKernel 0 w) 0 1
+  simp only [ofReal_one, one_mul, add_zero] at h
+  rw [h, circleAverage_poissonKernel (by simpa using hw)]
 
 /-- Inside the disk, subtracting a constant from the Poisson integral subtracts it from the
 boundary data under the kernel. -/

@@ -55,7 +55,8 @@ waves add their frequencies.
   `L^∞` of any measure, with norm one when the measure is nonzero.
 * `Real.toLp_fourierChar_inner_smul_toLp_fourierChar_inner`: in `L^∞`, the product of the plane
   waves of frequencies `ξ` and `η` is the plane wave of frequency `ξ + η`.
-* `ContDiff.fourierChar`: `y ↦ 𝐞 (Φ y)` is `C^n` when the phase `Φ` is.
+* `ContDiff.fourierChar`, `ContDiffOn.fourierChar`: `y ↦ 𝐞 (Φ y)` is `C^n` (on a set) when the
+  phase `Φ` is.
 * `HasFDerivAt.fourierChar`: the derivative of `y ↦ 𝐞 (Φ y)` is `2πi 𝐞 (Φ y) DΦ(y)`.
 * `Real.fderiv_fourierChar_comp_apply`: its value in a direction `w`, `2πi DΦ(y) w 𝐞 (Φ y)`.
 -/
@@ -160,6 +161,15 @@ theorem ContDiff.fourierChar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ
     {n : WithTop ℕ∞} {Φ : F → ℝ} (hΦ : ContDiff ℝ n Φ) : ContDiff ℝ n fun y ↦ (𝐞 (Φ y) : ℂ) := by
   simp_rw [Real.fourierChar_apply]
   exact ((Complex.ofRealCLM.contDiff.comp (contDiff_const.mul hΦ)).mul contDiff_const).cexp
+
+/-- The Fourier character composed with a real phase that is `C^n` on `s` is `C^n` on `s`. -/
+@[fun_prop]
+theorem ContDiffOn.fourierChar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : WithTop ℕ∞} {Φ : F → ℝ} {s : Set F} (hΦ : ContDiffOn ℝ n Φ s) :
+    ContDiffOn ℝ n (fun y ↦ (𝐞 (Φ y) : ℂ)) s := by
+  simp_rw [Real.fourierChar_apply]
+  exact ((Complex.ofRealCLM.contDiff.comp_contDiffOn (contDiffOn_const.mul hΦ)).mul
+    contDiffOn_const).cexp
 
 /-- The plane wave `x ↦ 𝐞 ⟪x, η⟫` is smooth. -/
 theorem Real.contDiff_fourierChar_inner {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]

@@ -32,6 +32,10 @@ carried to the gradient by
 `TauCeti.exists_mul_abs_sub_le_norm_mgradient_sq_of_fderiv_comp_extChartAt_symm`, since in that
 chart the differential of `f` is bounded by a multiple of the length of its gradient.
 
+When `S` is compact and connected, `f` takes a single value on the image of `i`, and a single
+constant `lam` works on a whole neighbourhood of the image
+(`IsNondegenerateCriticalSubmanifold.exists_mul_abs_sub_le_norm_mgradient_sq_nhdsSet`).
+
 Consequently a negative gradient trajectory converging to a point of a Morse–Bott critical
 submanifold converges to it exponentially fast in the Riemannian distance
 (`exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient` in the same namespace), by
@@ -60,6 +64,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
 * `exists_mul_abs_sub_le_norm_mgradient_sq`: the Łojasiewicz inequality with exponent `1 / 2`
   near a point of a Morse–Bott critical submanifold, for the Riemannian gradient.
+* `exists_mul_abs_sub_le_norm_mgradient_sq_nhdsSet`: the same with one constant on a
+  neighbourhood of a compact connected Morse–Bott critical submanifold.
 * `exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`: a trajectory of
   `-grad f` converging to a point of the submanifold converges to it exponentially fast.
 
@@ -112,6 +118,31 @@ theorem exists_mul_abs_sub_le_norm_mgradient_sq
     ∃ lam > 0, ∀ᶠ y in 𝓝 (i s), lam * |f y - f (i s)| ≤ ‖mgradient I f y‖ ^ 2 :=
   exists_mul_abs_sub_le_norm_mgradient_sq_of_fderiv_comp_extChartAt_symm
     (hi.exists_mul_abs_sub_le_norm_fderiv_comp_extChartAt_symm_sq hn s)
+
+/-- **Łojasiewicz's gradient inequality near a compact connected Morse–Bott critical
+submanifold.** If `i : S → M` is a nondegenerate critical submanifold of `f`, with `S` compact and
+connected and `i` of class `C²`, then `f` takes a single value `f (i s₀)` on the image of `i`, and
+a single constant `lam > 0` bounds `lam * |f y - f (i s₀)|` by the squared Riemannian length of
+the gradient of `f` on a whole neighbourhood of the image, for any continuous Riemannian
+metric. -/
+theorem exists_mul_abs_sub_le_norm_mgradient_sq_nhdsSet
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    [IsManifold J 1 S] [CompactSpace S] [PreconnectedSpace S]
+    (hi : i.IsNondegenerateCriticalSubmanifold f) (hn : 2 ≤ n) (s₀ : S) :
+    ∃ lam > 0, ∀ᶠ y in 𝓝ˢ (range i), lam * |f y - f (i s₀)| ≤ ‖mgradient I f y‖ ^ 2 := by
+  -- The function is constant on the image, since it is locally constant along `i`.
+  have hconst (s : S) : f (i s) = f (i s₀) :=
+    (hi.isLocallyConstant_comp (by rintro rfl; simp at hn)).apply_eq_of_preconnectedSpace s s₀
+  -- Each point of the image has a neighbourhood on which a nearby constant works; compactness
+  -- of the image patches these into one constant on a neighbourhood of the image.
+  have h : ∀ᶠ p : ℝ × M in 𝓝 0 ×ˢ 𝓝ˢ (range i),
+      p.1 * |f p.2 - f (i s₀)| ≤ ‖mgradient I f p.2‖ ^ 2 := by
+    refine (isCompact_range i.isEmbedding.continuous).mem_prod_nhdsSet_of_forall ?_
+    rintro _ ⟨s, rfl⟩
+    obtain ⟨lam, hlam, hloj⟩ := hi.exists_mul_abs_sub_le_norm_mgradient_sq hn s
+    filter_upwards [(eventually_lt_nhds hlam).prod_mk hloj] with p hp
+    exact (mul_le_mul_of_nonneg_right hp.1.le (abs_nonneg _)).trans (hconst s ▸ hp.2)
+  exact h.curry.exists_gt
 
 /-- **A trajectory converging to a point of a Morse–Bott critical submanifold converges to it
 exponentially fast.** Let `i : S → M` be a nondegenerate critical submanifold of a `C²` function

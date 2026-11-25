@@ -23,7 +23,8 @@ unique, and how cells account for points in consecutive skeleta, so that a map s
 skeleton above any given level, which gives induction principles over the skeleta
 (`TauCeti.forall_mem_skeletonLT_of_map`, `TauCeti.forall_mem_complex_of_map`).  With a single
 `0`-cell, the `0`-skeleton is the base together with that point
-(`TauCeti.skeletonLT_one_eq_insert`).  A subset of the `0`-skeleton is closed as
+(`TauCeti.skeletonLT_one_eq_insert`); the centre of a `0`-cell is a point of the `0`-skeleton
+(`TauCeti.zeroCellCenter`).  A subset of the `0`-skeleton is closed as
 soon as its trace on the base is (`TauCeti.isClosed_of_subset_skeletonLT_one`), so a map from a
 preconnected space into the `0`-skeleton cannot leave such a subset whose complement there is
 also closed (`TauCeti.forall_mem_of_subset_skeletonLT_one`).  The preimages of the skeleta under
@@ -165,6 +166,16 @@ lemma map_mem_skeletonLT_succ {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy :
     map n j y ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
   rw [Nat.cast_succ]
   exact closedCell_subset_skeletonLT n j ⟨y, mem_closedBall_zero_iff.2 hy, rfl⟩
+
+variable (C) in
+/-- The centre of a `0`-cell, as a point of the `0`-skeleton. -/
+-- The body is exposed so that the fibres over the centre, read in `X`, are those over `χₖ(0)`.
+@[expose] def zeroCellCenter (k : cell C 0) : skeletonObj C 1 :=
+  ⟨map 0 k 0, map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one)⟩
+
+@[simp]
+lemma coe_zeroCellCenter (k : cell C 0) : (zeroCellCenter C k : X) = map 0 k 0 :=
+  (rfl)
 
 /-- The centre of an `n`-cell does not lie in `skeletonLT C n`. -/
 lemma map_zero_notMem_skeletonLT {n : ℕ} (j : cell C n) :

@@ -342,7 +342,7 @@ theorem positiveSumShortRootUnit_eq_symplecticTransvection {i j : Fin m} (hij : 
   rw [neg_neg] at hprod
   rw [coe_positiveSumShortRootUnit, Units.val_mul, coe_transvectionUnit_eq_one_add_single,
     coe_transvectionUnit_eq_one_add_single,
-    one_add_single_mul_one_add_single_of_ne (finSumFinEquiv_inl_ne_inr j j).symm, hprod]
+    one_add_single_mul_one_add_single_of_ne (Fin.finSumFinEquiv_inl_ne_inr j j).symm, hprod]
   simp only [single_inl_vecMul_JFin, vecMulVec_neg, smul_add, smul_neg, neg_smul, neg_neg,
     smul_vecMulVec_single_single]
   abel
@@ -358,7 +358,7 @@ theorem negativeSumShortRootUnit_eq_symplecticTransvection {i j : Fin m} (hij : 
   refine Subtype.ext (Units.ext ?_)
   rw [coe_negativeSumShortRootUnit, Units.val_mul, coe_transvectionUnit_eq_one_add_single,
     coe_transvectionUnit_eq_one_add_single,
-    one_add_single_mul_one_add_single_of_ne (finSumFinEquiv_inr_ne_inl j j).symm,
+    one_add_single_mul_one_add_single_of_ne (Fin.finSumFinEquiv_inr_ne_inl j j).symm,
     coe_symplecticTransvection_add_mul_mul (by
       rw [dotProduct_mulVec, single_inr_vecMul_JFin]
       simp [-finSumFinEquiv_apply_left, -finSumFinEquiv_apply_right])]

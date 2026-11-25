@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
-public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
+public import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 import TauCeti.NumberTheory.DirichletCharacter.Primitive
 
 /-!
