@@ -58,6 +58,7 @@ dilates of the unit ball, shows that a full lattice in a real normed space of di
 
 ## Main results
 
+* `ZLattice.covolume_nonneg`: the covolume of any `ℤ`-submodule is nonnegative.
 * `ZLattice.covolume_sq_eq_det_gram`: `covolume L ^ 2` is the determinant of the Gram matrix of
   any `ℤ`-basis of `L`.
 * `ZLattice.covolume_span_sq_eq_det_gram`: in particular `covolume (span ℤ (range b)) ^ 2` is the
@@ -92,6 +93,13 @@ open Asymptotics Filter Metric Module MeasureTheory Submodule
 open LinearMap (BilinForm)
 
 namespace TauCeti
+
+/-- The covolume of a `ℤ`-submodule is nonnegative, with no finite-dimensionality or lattice
+hypotheses. -/
+@[simp]
+theorem _root_.ZLattice.covolume_nonneg {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
+    (L : Submodule ℤ E) (μ : Measure E := by volume_tac) : 0 ≤ ZLattice.covolume L μ :=
+  ENNReal.toReal_nonneg
 
 section NormedSpace
 
@@ -169,14 +177,17 @@ theorem _root_.ZLattice.covolume_le_covolume_of_le {L₁ L₂ : Submodule ℤ E}
     (y₁ := ⟨g, hg₂⟩) hgx hx₀
   exact hg (Subtype.ext (congrArg Subtype.val hg₀ :))
 
-/-- If a real basis `b` of `E` consists of vectors of a discrete `ℤ`-submodule `L`, then the
+omit [FiniteDimensional ℝ E] in
+/-- If a finite real basis `b` of `E` consists of vectors of a discrete `ℤ`-submodule `L`, then the
 covolume of `L` is at most `|det_{b₀} b|` times the measure of the fundamental parallelepiped of
 any real basis `b₀`, for any Haar measure. The right side is the covolume of the full sublattice
-spanned by `b`, as in `ZLattice.covolume_eq_det_mul_measureReal`. -/
+spanned by `b`, as in `ZLattice.covolume_eq_det_mul_measureReal`. The finite basis `b` already
+forces `E` to be finite-dimensional. -/
 theorem _root_.ZLattice.covolume_le_abs_det_mul_measureReal (L : Submodule ℤ E)
     [DiscreteTopology L] {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℝ E)
     (hb : ∀ i, b i ∈ L) (b₀ : Basis ι ℝ E) (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
     ZLattice.covolume L μ ≤ |b₀.det b| * μ.real (ZSpan.fundamentalDomain b₀) := by
+  have := Module.Finite.of_basis b
   calc ZLattice.covolume L μ ≤ ZLattice.covolume (span ℤ (Set.range b)) μ :=
         ZLattice.covolume_le_covolume_of_le (span_le.2 (Set.range_subset_iff.2 hb)) μ
     _ = |b₀.det b| * μ.real (ZSpan.fundamentalDomain b₀) := by

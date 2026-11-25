@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.TaylorIntegral
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-public import TauCeti.Analysis.Calculus.Hadamard
+public import TauCeti.Analysis.Calculus.Hadamard.Basic
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Normed.Algebra.SquareRoot
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
@@ -44,8 +44,8 @@ turns the second-order term into the Hessian evaluated at `Ï† v = R v v`, and `Ï
 the identity at `0`, so it is a chart by the inverse function theorem.
 
 The weight `2 * (1 - t)` is what makes `B 0` the Hessian on the nose.  Iterating the smooth
-Hadamard factorisation of `TauCeti.Analysis.Calculus.Hadamard` twice would also produce a smooth
-family with `f (x + v) - f x = B v v v` at a critical point, but its value at `0` is then the
+Hadamard factorisation of `TauCeti.Analysis.Calculus.Hadamard.Basic` twice would also produce a
+smooth family with `f (x + v) - f x = B v v v` at a critical point, but its value at `0` is then the
 derivative of a parametrised integral rather than the Hessian, and it is not symmetric; both are
 needed here.  The averaged Hessian and its Taylor formula are stated for a map into an arbitrary
 Banach space, nothing in them being special to real-valued functions; only the congruence and the
