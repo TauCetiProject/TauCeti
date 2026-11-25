@@ -17,7 +17,8 @@ Let `M` be a Riemannian manifold with boundary modelled on the half-space `𝓡�
 
 * *strictly convex at `q`* (`TauCeti.IsStrictlyConvexAt`) if `II_q(u, u) > 0` for every nonzero
   `u ∈ T_q∂M`, that is, the quadratic form of `II_q` is positive definite (`QuadraticMap.PosDef`);
-* *convex at `q`* (`TauCeti.IsConvexAt`) if `II_q(u, u) ≥ 0` for every `u ∈ T_q∂M`;
+* *convex at `q`* (`TauCeti.IsConvexAt`) if `II_q(u, u) ≥ 0` for every `u ∈ T_q∂M`, that is,
+  `II_q` is nonnegative (`LinearMap.IsNonneg`);
 * *strictly concave at `q`* (`TauCeti.IsStrictlyConcaveAt`) if `II_q(u, u) < 0` for every nonzero
   `u ∈ T_q∂M`, that is, the quadratic form of `-II_q` is positive definite.
 
@@ -63,9 +64,10 @@ variable {n : ℕ} {M M' : Type*} [TopologicalSpace M]
 def IsStrictlyConvexAt (q : (𝓡∂ (n + 1)).boundary M) : Prop :=
   (boundarySecondFundamentalForm q).toQuadraticMap.PosDef
 
-/-- The boundary is **convex at** `q ∈ ∂M` if `II_q(u, u) ≥ 0` for every `u ∈ T_q∂M`. -/
+/-- The boundary is **convex at** `q ∈ ∂M` if `II_q(u, u) ≥ 0` for every `u ∈ T_q∂M`, that is,
+`II_q` is nonnegative. -/
 def IsConvexAt (q : (𝓡∂ (n + 1)).boundary M) : Prop :=
-  ∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q, 0 ≤ boundarySecondFundamentalForm q u u
+  LinearMap.IsNonneg (boundarySecondFundamentalForm q)
 
 /-- The boundary is **strictly concave at** `q ∈ ∂M` if `II_q(u, u) < 0` for every nonzero
 `u ∈ T_q∂M`, that is, the quadratic form of `-II_q` is positive definite. -/
@@ -90,14 +92,20 @@ theorem isStrictlyConvexAt_iff_posDef {q : (𝓡∂ (n + 1)).boundary M} :
 /-- Strict convexity at `q`: `II_q(u, u) > 0` for every nonzero `u ∈ T_q∂M`. -/
 theorem isStrictlyConvexAt_iff {q : (𝓡∂ (n + 1)).boundary M} :
     IsStrictlyConvexAt q ↔ ∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q, u ≠ 0 →
-      0 < boundarySecondFundamentalForm q u u :=
+      0 < boundarySecondFundamentalForm q u u := by
+  simp only [isStrictlyConvexAt_iff_posDef, QuadraticMap.PosDef,
+    LinearMap.BilinMap.toQuadraticMap_apply]
+
+/-- Convexity at `q` is nonnegativity of `II_q`. -/
+theorem isConvexAt_iff_isNonneg {q : (𝓡∂ (n + 1)).boundary M} :
+    IsConvexAt q ↔ LinearMap.IsNonneg (boundarySecondFundamentalForm q) :=
   Iff.rfl
 
 /-- Convexity at `q`: `II_q(u, u) ≥ 0` for every `u ∈ T_q∂M`. -/
 theorem isConvexAt_iff {q : (𝓡∂ (n + 1)).boundary M} :
     IsConvexAt q ↔ ∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q,
       0 ≤ boundarySecondFundamentalForm q u u :=
-  Iff.rfl
+  LinearMap.isNonneg_def
 
 /-- Strict concavity at `q` is positive definiteness of the quadratic form of `-II_q`. -/
 theorem isStrictlyConcaveAt_iff_posDef {q : (𝓡∂ (n + 1)).boundary M} :
@@ -107,8 +115,9 @@ theorem isStrictlyConcaveAt_iff_posDef {q : (𝓡∂ (n + 1)).boundary M} :
 /-- Strict concavity at `q`: `II_q(u, u) < 0` for every nonzero `u ∈ T_q∂M`. -/
 theorem isStrictlyConcaveAt_iff {q : (𝓡∂ (n + 1)).boundary M} :
     IsStrictlyConcaveAt q ↔ ∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q, u ≠ 0 →
-      boundarySecondFundamentalForm q u u < 0 :=
-  forall₂_congr fun _ _ ↦ neg_pos
+      boundarySecondFundamentalForm q u u < 0 := by
+  simp only [isStrictlyConcaveAt_iff_posDef, QuadraticMap.PosDef, neg_apply,
+    LinearMap.BilinMap.toQuadraticMap_apply, neg_pos]
 
 /-- Strict convexity on `S`: strict convexity at every point of `S`. -/
 theorem isStrictlyConvexOn_iff {S : Set ((𝓡∂ (n + 1)).boundary M)} :
@@ -130,14 +139,14 @@ theorem isStrictlyConvexOn_univ_iff :
 /-- Strict convexity at a point implies convexity there. -/
 theorem IsStrictlyConvexAt.isConvexAt {q : (𝓡∂ (n + 1)).boundary M}
     (h : IsStrictlyConvexAt q) : IsConvexAt q :=
-  h.nonneg
+  isConvexAt_iff.2 fun u ↦ (h.nonneg u).trans_eq (LinearMap.BilinMap.toQuadraticMap_apply _ u)
 
 /-- For `n ≥ 1`, the boundary is not both strictly convex and strictly concave at a point: the
 tangent space of the boundary has a nonzero vector. -/
 theorem IsStrictlyConvexAt.not_isStrictlyConcaveAt [NeZero n] {q : (𝓡∂ (n + 1)).boundary M}
     (h : IsStrictlyConvexAt q) : ¬ IsStrictlyConcaveAt q := fun h' ↦ by
   obtain ⟨u, hu⟩ := exists_ne (0 : EuclideanSpace ℝ (Fin n))
-  exact (h u hu).not_gt (isStrictlyConcaveAt_iff.1 h' u hu)
+  exact (isStrictlyConvexAt_iff.1 h u hu).not_gt (isStrictlyConcaveAt_iff.1 h' u hu)
 
 /-- In dimension one (`n = 0`) every tangent vector of the boundary vanishes: `T_q∂M` is the type
 `EuclideanSpace ℝ (Fin 0)`, a subsingleton, under the name `TangentSpace`. -/
@@ -149,12 +158,14 @@ private theorem eq_zero_of_eq_zero (hn : n = 0) {q : (𝓡∂ (n + 1)).boundary 
 /-- In dimension one (`n = 0`) the tangent space of the boundary is zero, so the boundary is
 strictly convex at every point. -/
 theorem isStrictlyConvexAt_of_eq_zero (hn : n = 0) (q : (𝓡∂ (n + 1)).boundary M) :
-    IsStrictlyConvexAt q := fun u hu ↦ (hu (eq_zero_of_eq_zero hn u)).elim
+    IsStrictlyConvexAt q :=
+  isStrictlyConvexAt_iff.2 fun u hu ↦ (hu (eq_zero_of_eq_zero hn u)).elim
 
 /-- In dimension one (`n = 0`) the tangent space of the boundary is zero, so the boundary is
 strictly concave at every point. -/
 theorem isStrictlyConcaveAt_of_eq_zero (hn : n = 0) (q : (𝓡∂ (n + 1)).boundary M) :
-    IsStrictlyConcaveAt q := fun u hu ↦ (hu (eq_zero_of_eq_zero hn u)).elim
+    IsStrictlyConcaveAt q :=
+  isStrictlyConcaveAt_iff.2 fun u hu ↦ (hu (eq_zero_of_eq_zero hn u)).elim
 
 /-! ### Invariance under isometries -/
 
@@ -190,23 +201,25 @@ private theorem forall_boundaryTangent_iff (p : Prop → ℝ → Prop) :
 @[simp]
 theorem isStrictlyConvexAt_iff :
     IsStrictlyConvexAt (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M') ↔
-      IsStrictlyConvexAt q :=
-  Φ.forall_boundaryTangent_iff q fun z r ↦ ¬z → 0 < r
+      IsStrictlyConvexAt q := by
+  simp only [TauCeti.isStrictlyConvexAt_iff, ne_eq]
+  exact Φ.forall_boundaryTangent_iff q fun z r ↦ ¬z → 0 < r
 
 /-- Strict concavity of the boundary at a point is invariant under isometries. -/
 @[simp]
 theorem isStrictlyConcaveAt_iff :
     IsStrictlyConcaveAt (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M') ↔
       IsStrictlyConcaveAt q := by
-  rw [TauCeti.isStrictlyConcaveAt_iff, TauCeti.isStrictlyConcaveAt_iff]
+  simp only [TauCeti.isStrictlyConcaveAt_iff, ne_eq]
   exact Φ.forall_boundaryTangent_iff q fun z r ↦ ¬z → r < 0
 
 /-- Convexity of the boundary at a point is invariant under isometries. -/
 @[simp]
 theorem isConvexAt_iff :
     IsConvexAt (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M') ↔
-      IsConvexAt q :=
-  Φ.forall_boundaryTangent_iff q fun _ r ↦ 0 ≤ r
+      IsConvexAt q := by
+  rw [TauCeti.isConvexAt_iff, TauCeti.isConvexAt_iff]
+  exact Φ.forall_boundaryTangent_iff q fun _ r ↦ 0 ≤ r
 
 /-- Strict convexity of the boundary is invariant under isometries. -/
 theorem isStrictlyConvexBoundary_iff (Φ : RiemannianIsometry (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) M M') :

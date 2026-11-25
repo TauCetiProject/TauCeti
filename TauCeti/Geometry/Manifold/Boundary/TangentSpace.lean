@@ -448,8 +448,12 @@ theorem exists_boundaryTangentCorr {k : WithTop ℕ∞} (hk : k ≠ 0)
     (Φ : M ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ M') (q : (𝓡∂ (n + 1)).boundary M)
     (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
     ∃ u', BoundaryTangentCorr Φ q
-      ⟨Φ q, Φ.image_boundary hk ▸ mem_image_of_mem Φ q.property⟩ u u' :=
-  (mfderiv_mem_boundaryTangentSpace_iff hk Φ q).2 (mfderiv_subtypeVal_mem_boundaryTangentSpace q u)
+      ⟨Φ q, Φ.image_boundary hk ▸ mem_image_of_mem Φ q.property⟩ u u' := by
+  have h := (mfderiv_mem_boundaryTangentSpace_iff hk Φ q).2
+    (mfderiv_subtypeVal_mem_boundaryTangentSpace q u)
+  rw [boundaryTangentSpace_def, LinearMap.mem_range] at h
+  obtain ⟨u', hu'⟩ := h
+  exact ⟨u', hu'⟩
 
 /-- Under a diffeomorphism `Φ` of manifolds with boundary, of class `C^k` with `k ≠ 0`, every
 tangent vector of `∂M'` at `Φ q` corresponds to one of `∂M` at `q`. -/
@@ -460,8 +464,12 @@ theorem exists_boundaryTangentCorr_symm {k : WithTop ℕ∞} (hk : k ≠ 0)
         (𝓡∂ (n + 1)).boundary M')) :
     ∃ u, BoundaryTangentCorr Φ q
       ⟨Φ q, Φ.image_boundary hk ▸ mem_image_of_mem Φ q.property⟩ u u' := by
-  obtain ⟨_, ⟨u, rfl⟩, hu⟩ := (map_mfderiv_boundaryTangentSpace hk Φ q).ge
+  have h := (map_mfderiv_boundaryTangentSpace hk Φ q).ge
     (mfderiv_subtypeVal_mem_boundaryTangentSpace _ u')
+  rw [Submodule.mem_map] at h
+  obtain ⟨_, hv, hu⟩ := h
+  rw [boundaryTangentSpace_def, LinearMap.mem_range] at hv
+  obtain ⟨u, rfl⟩ := hv
   exact ⟨u, hu.symm⟩
 
 end Naturality
