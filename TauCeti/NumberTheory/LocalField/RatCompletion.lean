@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.NumberTheory.LocalField.Henselian
+public import TauCeti.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Henselian
 
@@ -41,10 +42,6 @@ open IsDedekindDomain NumberField TauCeti
 namespace Rat.HeightOneSpectrum
 
 variable (v : HeightOneSpectrum (𝓞 ℚ))
-
-/-- The rational prime of a finite place of `ℚ` is prime. -/
-instance fact_prime_natGenerator : Fact (natGenerator v).Prime :=
-  ⟨prime_natGenerator v⟩
 
 /-- **The completion of `ℚ` at a finite place `v` is a finite extension of `ℚ_p`**, for `p` the
 rational prime of `v`. The `ℚ_p`-algebra structure is the inverse of Mathlib's isomorphism

@@ -29,10 +29,6 @@ orders. -/]
 theorem card_pi [Fintype η] (H : ∀ i, Subgroup (f i)) :
     Nat.card (Subgroup.pi Set.univ H) = ∏ i, Nat.card (H i) := by
   rw [← Nat.card_pi]
-  exact Nat.card_congr
-    { toFun x i := ⟨x.val i, x.property i (Set.mem_univ i)⟩
-      invFun y := ⟨fun i ↦ y i, fun i _ ↦ (y i).property⟩
-      left_inv _ := rfl
-      right_inv _ := rfl }
+  exact Nat.card_congr (Equiv.Set.univPi fun i ↦ (H i : Set (f i)))
 
 end Subgroup

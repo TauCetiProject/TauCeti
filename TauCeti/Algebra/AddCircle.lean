@@ -694,6 +694,14 @@ theorem toRatAddCircle_apply (x : ZMod n) :
     conv_lhs => rw [← hx]
     rw [toRatAddCircle_natCast]
 
+/-- Transport along an equality of moduli commutes with the embeddings of `ℤ/m` and `ℤ/n` into
+`ℚ/ℤ`. -/
+@[simp]
+theorem toRatAddCircle_ringEquivCongr {m : ℕ} (h : m = n) (x : ZMod m) :
+    toRatAddCircle n (ZMod.ringEquivCongr h x) = toRatAddCircle m x := by
+  subst h
+  rw [ZMod.ringEquivCongr_refl_apply]
+
 /-- Only the zero residue has integral image in `ℚ/ℤ`. -/
 @[simp]
 theorem toRatAddCircle_eq_zero [NeZero n] {x : ZMod n} : toRatAddCircle n x = 0 ↔ x = 0 := by

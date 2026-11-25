@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStru
 import TauCeti.Algebra.Group.Pi.Pairing
 import TauCeti.Algebra.Group.Subgroup.Pi
 import TauCeti.Algebra.Module.ZMod.Annihilator
-import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Finiteness
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Orthogonality
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 
@@ -151,12 +150,7 @@ private theorem sum_localPairing_eq_zero (S : Finset (HeightOneSpectrum (𝓞 K)
     mem_localKummerCondition_iff] at hc' hd'
   apply ZMod.toRatAddCircle_injective φ.degree
   rw [map_sum, map_zero]
-  -- Transport along an equality of moduli commutes with the embeddings into `ℚ/ℤ`.
-  have hcongr {m n : ℕ} (h : m = n) (x : ZMod m) :
-      ZMod.toRatAddCircle n (ZMod.ringEquivCongr h x) = ZMod.toRatAddCircle m x := by
-    subst h
-    rw [ZMod.ringEquivCongr_refl_apply]
-  simp only [localPairing_apply, hcongr]
+  simp only [localPairing_apply, ZMod.toRatAddCircle_ringEquivCongr]
   rw [Finset.sum_coe_sort S fun v ↦ ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
     ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
       (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)

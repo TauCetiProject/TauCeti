@@ -233,31 +233,20 @@ theorem dualKerRes_eq_zero_iff {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dua
         (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker := by
     rw [baseChange, dual_map φ (algebraMap K L)]
     rfl
-  -- The inclusions between the two equal kernels are mutually inverse coefficient maps.
+  -- The inclusion between the two equal kernels is a bijective coefficient map.
   let f : (ofIsogeny (φ.dual.baseChange L)).KerCoeff →+[AbsoluteGaloisGroup L]
       (ofIsogeny (φ.baseChange L).dual).KerCoeff :=
     { AddSubgroup.inclusion h.le with map_smul' := fun _ _ ↦ Subtype.ext (by simp) }
-  let f' : (ofIsogeny (φ.baseChange L).dual).KerCoeff →+[AbsoluteGaloisGroup L]
-      (ofIsogeny (φ.dual.baseChange L)).KerCoeff :=
-    { AddSubgroup.inclusion h.ge with map_smul' := fun _ _ ↦ Subtype.ext (by simp) }
+  have hf : Function.Bijective f :=
+    ⟨AddSubgroup.inclusion_injective h.le, fun y ↦ ⟨⟨y, h.ge y.property⟩, rfl⟩⟩
   have hT : φ.dualKerRes τ c =
       explicitCoeff1 _ _ f continuous_of_discreteTopology (φ.dual.kerRes τ c) := by
     refine (DFunLike.congr_fun (explicitCoeff1_id _ _) (φ.dualKerRes τ c)).symm.trans ?_
     rw [explicitCoeff1_eq_explicitMap1, explicitCoeff1_eq_explicitMap1, kerRes_eq_explicitMap1,
       dualKerRes_eq_explicitMap1]
-    exact explicitMap1_explicitMap1_of_comp_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-      (by ext; rfl) (by ext; rfl) c
-  have hinv (x : H1 (AbsoluteGaloisGroup L) (ofIsogeny (φ.dual.baseChange L)).KerCoeff) :
-      explicitCoeff1 _ _ f' continuous_of_discreteTopology
-        (explicitCoeff1 _ _ f continuous_of_discreteTopology x) = x := by
-    rw [← AddMonoidHom.comp_apply, ← explicitCoeff1_comp]
-    have key : ∀ (g : _ →+[AbsoluteGaloisGroup L] _) (hg : Continuous g),
-        g = DistribMulActionHom.id _ → explicitCoeff1 _ _ g hg x = x := by
-      rintro g hg rfl
-      exact DFunLike.congr_fun (explicitCoeff1_id _ _) x
-    exact key _ _ (by ext; rfl)
-  refine ⟨fun h0 ↦ ?_, fun h0 ↦ by rw [hT, h0, map_zero]⟩
-  rw [← hinv (φ.dual.kerRes τ c), ← hT, h0, map_zero]
+    exact explicitMap1_explicitMap1_of_comp_eq (hφ := by ext; rfl) (hqf := by ext; rfl) (x := c) ..
+  rw [hT]
+  exact map_eq_zero_iff _ (explicitCoeff1_bijective _ _ hf).1
 
 variable [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
   [DecidableEq K] [DecidableEq L]
