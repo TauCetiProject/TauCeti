@@ -20,7 +20,8 @@ Mathlib's `ExteriorAlgebra.baseChangeEquiv` identifies `A ⊗[R] ⋀ M` with `�
 arbitrary commutative rings, including in characteristic two, and records its values on
 `a ⊗ ι m` and on `ι (a ⊗ m)`. This file extends that API: on the inverse comparison, its value on
 an arbitrary generator, on wedges of pure tensors, and its naturality in the module; on the
-forward comparison, its intertwining of scalar-extended interior contraction with contraction by
+forward comparison, its naturality in the module (`ExteriorAlgebra.map_baseChange_baseChangeEquiv`),
+its intertwining of scalar-extended interior contraction with contraction by
 the scalar-extended functional (`ExteriorAlgebra.baseChangeEquiv_baseChange_contractLeft`) and its
 action on exterior basis vectors (`ExteriorAlgebra.baseChangeEquiv_tmul_basis`).
 No flatness or freeness assumption is needed for the basis-free comparisons.
@@ -70,6 +71,15 @@ theorem baseChangeEquiv_symm_map {N : Type*} [AddCommGroup N] [Module R N]
     intro a m
     simp
   exact AlgHom.congr_fun h x
+
+/-- The base-change comparison is natural in the module: it intertwines the scalar extension of
+`map f` with the exterior-algebra map of the scalar-extended linear map. -/
+@[simp]
+theorem map_baseChange_baseChangeEquiv {N : Type*} [AddCommGroup N] [Module R N]
+    (f : M →ₗ[R] N) (x : A ⊗[R] ExteriorAlgebra R M) :
+    map (f.baseChange A) (baseChangeEquiv R M A x) =
+      baseChangeEquiv R N A (Algebra.TensorProduct.map (AlgHom.id A A) (map f) x) := by
+  rw [← AlgEquiv.symm_apply_eq, baseChangeEquiv_symm_map, AlgEquiv.symm_apply_apply]
 
 /-- `ExteriorAlgebra.baseChangeEquiv` intertwines the scalar-extended interior contraction by `d`
 with interior contraction by `Module.Dual.baseChange A d`. -/
