@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Basic
 public import TauCeti.Algebra.Lie.GeneralLinear.Casimir
-public import TauCeti.Algebra.Lie.UniversalEnveloping.InfinitesimalCharacter
+public import TauCeti.Algebra.Lie.UniversalEnveloping.InfinitesimalCharacter.Basic
 
 /-!
 # The trace-form Casimir of `gl n` on characters

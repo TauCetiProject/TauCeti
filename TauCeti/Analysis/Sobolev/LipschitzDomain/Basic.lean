@@ -54,6 +54,8 @@ support-containment lemmas provide the shared geometry for chart trace and exten
   Lipschitz graph is a Lipschitz boundary chart.
 * `Set.IsLipschitzChart.compl_closure`: a Lipschitz chart of `Ω`, with its normal coordinate
   reflected, is a Lipschitz chart of `(closure Ω)ᶜ`, with the negated graph.
+* `Set.IsLipschitzChart.exists_preimage_normalCylinder_subset`: a chart centred at `x`
+  restricts to a cylinder whose preimage lies in any given neighbourhood of `x`.
 * `Set.IsLipschitzDomain.compl_closure`: the exterior of a Lipschitz domain is a Lipschitz domain.
 * `Set.IsLipschitzDomain.interior_closure`: a Lipschitz domain is regular open.
 * `Set.IsLipschitzDomain.frontier_closure`: the closure of a Lipschitz domain has the same
@@ -155,6 +157,16 @@ theorem mem_normalCylinder_abs_add_one (x : WithLp 2 (ℝ × E)) :
     x ∈ normalCylinder (|x.fst| + 1) (‖x.snd‖ + 1) := by
   rw [mem_normalCylinder]
   exact ⟨by linarith [neg_abs_le x.fst], by linarith [le_abs_self x.fst], by linarith⟩
+
+/-- A normal product cylinder lies in the ball about the origin whose radius is the sum of its two
+radii. -/
+theorem normalCylinder_subset_ball (a b : ℝ) : normalCylinder (E := E) a b ⊆ ball 0 (a + b) := by
+  intro x hx
+  rw [mem_normalCylinder] at hx
+  have hfst : ‖x.fst‖ < a := by rw [Real.norm_eq_abs, abs_lt]; exact ⟨hx.1, hx.2.1⟩
+  have hsnd := norm_nonneg x.snd
+  rw [mem_ball_zero_iff, WithLp.prod_norm_eq_of_L2, Real.sqrt_lt' (by linarith [norm_nonneg x.fst])]
+  nlinarith [norm_nonneg x.fst]
 
 /-- A normal product cylinder with positive radii contains its centre. -/
 theorem zero_mem_normalCylinder {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
@@ -272,6 +284,21 @@ theorem mono (hc : IsLipschitzChart Ω e γ K h r) {h' r' : ℝ} (hh' : 0 < h') 
     have hsub := normalCylinder_mono (E := E) hh hr
     rw [← inter_eq_right.2 hsub, ← inter_assoc, hc.image_inter_normalCylinder, inter_assoc]
 
+/-- A Lipschitz chart centred at `x` restricts to a cylinder whose preimage lies in any given
+neighbourhood of `x`. -/
+theorem exists_preimage_normalCylinder_subset (hc : IsLipschitzChart Ω e γ K h r) {x : F}
+    (hex : e x = 0) {V : Set F} (hV : V ∈ 𝓝 x) :
+    ∃ ρ : ℝ, IsLipschitzChart Ω e γ K ρ ρ ∧ e ⁻¹' normalCylinder ρ ρ ⊆ V := by
+  have hW : e.symm ⁻¹' V ∈ 𝓝 (0 : WithLp 2 (ℝ × E)) :=
+    e.symm.continuous.continuousAt.preimage_mem_nhds (by rwa [← hex, e.symm_apply_apply])
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hW
+  set ρ := min (min h r) (ε / 2)
+  have hρ : 0 < ρ := lt_min (lt_min hc.height_pos hc.radius_pos) (half_pos hε)
+  refine ⟨ρ, hc.mono hρ hρ ((min_le_left _ _).trans (min_le_left _ _))
+    ((min_le_left _ _).trans (min_le_right _ _)), fun y hy => ?_⟩
+  have hρε : ρ + ρ ≤ ε := by linarith [min_le_right (min h r) (ε / 2)]
+  simpa using hball (ball_subset_ball hρε (normalCylinder_subset_ball ρ ρ hy))
+
 /-- A `K`-Lipschitz chart is a `K'`-Lipschitz chart for every `K' ≥ K`. -/
 theorem weaken (hc : IsLipschitzChart Ω e γ K h r) {K' : ℝ≥0} (hK : K ≤ K') :
     IsLipschitzChart Ω e γ K' h r :=
@@ -317,6 +344,12 @@ theorem exists_isLipschitzChart_eq_zero (hc : IsLipschitzChart Ω e γ K h r) {x
     simpa only [mem_normalCylinder, abs_lt, and_assoc] using hx
   exact ⟨_, _, _, _, hc.trans_constVAdd (e x) (sub_pos.2 hx'.1) (sub_pos.2 hx'.2)
     (by linarith) (by linarith), by simp⟩
+
+/-- The preimage of the chart cylinder is a neighbourhood of the centre of the chart. -/
+theorem preimage_normalCylinder_mem_nhds (hc : IsLipschitzChart Ω e γ K h r) {x : F}
+    (hx : e x = 0) : e ⁻¹' normalCylinder h r ∈ 𝓝 x :=
+  ((isOpen_normalCylinder h r).preimage e.continuous).mem_nhds
+    (by simpa [hx] using zero_mem_normalCylinder (E := E) hc.height_pos hc.radius_pos)
 
 /-- Transporting a Lipschitz chart along an affine isometry `g : F ≃ᵃⁱ[ℝ] G`. -/
 theorem image (hc : IsLipschitzChart Ω e γ K h r) (g : F ≃ᵃⁱ[ℝ] G) :
@@ -682,15 +715,6 @@ theorem IsLipschitzChartWith.exists_mono_radii_two_mul_lt
         rw [mul_div_assoc', div_lt_iff₀ hL]
         nlinarith [h.toIsLipschitzChart.height_pos]
 
-/-- The preimage of the chart cylinder is a neighbourhood of the centre of the chart. -/
-theorem IsLipschitzChartWith.preimage_normalCylinder_mem_nhds
-    (h : Omega.IsLipschitzChartWith L e φ a b) {x : F} (hx : e x = 0) :
-    e ⁻¹' normalCylinder a b ∈ 𝓝 x :=
-  ((isOpen_normalCylinder a b).preimage e.continuous).mem_nhds
-    (by simpa [hx] using
-      (zero_mem_normalCylinder (E := E) h.toIsLipschitzChart.height_pos
-        h.toIsLipschitzChart.radius_pos))
-
 /-- **Rigid-coordinate transport of a chart.** Composing the coordinates of a chart with the
 inverse of an affine isometry `g` gives a chart for the image of the set under `g`. -/
 theorem IsLipschitzChartWith.image_affineIsometryEquiv
@@ -817,7 +841,7 @@ theorem _root_.IsCompact.exists_finset_isLipschitzChartWith_cover {K : Set (With
         K ⊆ ⋃ x ∈ t, e x ⁻¹' normalCylinder (a x) (b x) := by
   choose! e φ a b hex hchart using h
   obtain ⟨t, htK, hcover⟩ := hK.elim_nhds_subcover _
-    fun x hx ↦ (hchart x hx).preimage_normalCylinder_mem_nhds (hex x hx)
+    fun x hx ↦ (hchart x hx).toIsLipschitzChart.preimage_normalCylinder_mem_nhds (hex x hx)
   exact ⟨t, e, φ, a, b, fun x hx ↦ ⟨htK x hx, hex x (htK x hx), hchart x (htK x hx)⟩, hcover⟩
 
 /-- **Finite chart covers of bounded Lipschitz domains.** The frontier of a bounded Lipschitz
@@ -857,7 +881,7 @@ theorem _root_.IsCompact.exists_finset_isLipschitzChartWith_two_mul_lt_cover
     intro x hx
     have hb0 := ((isLipschitzChartWith_iff ..).1 (hchart x hx)).2.1
     exact ((hchart x hx).mono_radii (sub_pos.2 (hlt x hx)) hb0 (sub_le_self _ (by positivity))
-      le_rfl).preimage_normalCylinder_mem_nhds (hex x hx)
+      le_rfl).toIsLipschitzChart.preimage_normalCylinder_mem_nhds (hex x hx)
   obtain ⟨t, htK, hcover⟩ := hK.elim_nhds_subcover _ hnhds
   exact ⟨t, e, φ, a, b, fun x hx ↦ ⟨htK x hx, hex x (htK x hx), hchart x (htK x hx),
     hlt x (htK x hx)⟩, hcover⟩
