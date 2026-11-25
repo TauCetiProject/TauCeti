@@ -53,8 +53,9 @@ question about `⟨1, -a, -b, ab⟩`.
 * `QuaternionAlgebra.equivalent_normForm_weightedSumSquares`: the norm form of `ℍ[R,a,b]` is the
   diagonal form `⟨1, -a, -b, ab⟩`, with the explicit isometry
   `QuaternionAlgebra.normFormIsometryEquivWeightedSumSquares`.
-* `QuaternionAlgebra.posDef_normForm_of_neg`: over a strictly ordered field, the norm form of
-  `ℍ[K,a,b]` with `a < 0` and `b < 0` is positive definite, as for the Hamilton quaternions.
+* `QuaternionAlgebra.posDef_normForm_of_neg`: over a strictly ordered commutative ring, the norm
+  form of `ℍ[R,a,b]` with `a < 0` and `b < 0` is positive definite, as for the Hamilton
+  quaternions.
 * `QuaternionAlgebra.equivalent_pureNormForm_weightedSumSquares`: the pure norm form of `ℍ[R,a,b]`
   is the diagonal form `⟨-a, -b, ab⟩`, with the explicit isometry
   `QuaternionAlgebra.pureNormFormIsometryEquivWeightedSumSquares`.

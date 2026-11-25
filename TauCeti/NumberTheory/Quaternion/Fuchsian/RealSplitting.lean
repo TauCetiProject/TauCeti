@@ -61,7 +61,7 @@ off from it.
 * `TauCeti.RealSplitting.exists_conj_eq_of_place_eq` and
   `TauCeti.RealSplitting.conj_splitting_eq_iff`: real splittings with the same place are conjugate
   by an element of `GL(2, ℝ)`, unique up to `ℝ^×`.
-* `TauCeti.RealSplitting.zero_lt_place_or_zero_lt_place`: the algebra splits at `place`.
+* `TauCeti.RealSplitting.place_a_pos_or_place_b_pos`: the algebra splits at `place`.
 * `TauCeti.RealSplitting.anisotropic_normForm_of_ne` and
   `TauCeti.RealSplitting.anisotropic_normForm_of_one_lt_finrank`: the algebra is a division
   algebra when `k` has another real embedding, in particular over a totally real number field of
@@ -197,8 +197,9 @@ def realAlgEquiv : ℍ[ℝ,S.place a,S.place b] ≃ₐ[ℝ] Matrix (Fin 2) (Fin 
 theorem realAlgEquiv_apply (y : ℍ[ℝ,S.place a,S.place b]) :
     S.realAlgEquiv y = algebraMap ℝ (Matrix (Fin 2) (Fin 2) ℝ) y.re +
       y.imI • S.splitting ⟨0, 1, 0, 0⟩ + y.imJ • S.splitting ⟨0, 0, 1, 0⟩ +
-        y.imK • S.splitting ⟨0, 0, 0, 1⟩ :=
-  (rfl)
+        y.imK • S.splitting ⟨0, 0, 0, 1⟩ := by
+  simp [realAlgEquiv, AlgEquiv.ofBijective_apply, _root_.QuaternionAlgebra.lift_apply,
+    _root_.QuaternionAlgebra.Basis.liftHom_apply, _root_.QuaternionAlgebra.Basis.lift, realBasis]
 
 /-- The induced real isomorphism extends the splitting: on the coefficientwise image of a
 quaternion of `ℍ[k,a,b]` under `place`, it is the splitting. -/
@@ -312,16 +313,17 @@ theorem conj_splitting_eq_iff {u v : GL (Fin 2) ℝ} :
 structure constants `place a` and `place b` are not both negative. Otherwise the norm form of
 `ℍ[ℝ, place a, place b]` would be positive definite, which is impossible for an algebra isomorphic
 to `M₂(ℝ)`. -/
-theorem zero_lt_place_or_zero_lt_place : 0 < S.place a ∨ 0 < S.place b := by
+theorem place_a_pos_or_place_b_pos : 0 < S.place a ∨ 0 < S.place b := by
   by_contra! h
   have hdef := (_root_.QuaternionAlgebra.posDef_normForm_of_neg
     (h.1.lt_of_ne S.place_a_ne_zero) (h.2.lt_of_ne S.place_b_ne_zero)).anisotropic
   exact (QuaternionAlgebra.nonempty_algEquiv_matrix_iff_not_anisotropic_normForm
     (Units.mk0 _ S.place_a_ne_zero) (Units.mk0 _ S.place_b_ne_zero)).mp ⟨S.realAlgEquiv⟩ hdef
 
-/-- **A quaternion algebra with a real splitting ramifies at every other real place**: if `k` has a
-real embedding other than the place, the norm form of `ℍ[k,a,b]` is anisotropic, so that
-`ℍ[k,a,b]` is a division algebra. -/
+/-- **A quaternion algebra with a real splitting is a division algebra when `k` has another real
+embedding**: if `σ` is a real embedding of `k` other than the place, then the ramification at `σ`
+required by the structure makes the norm form of `ℍ[k,a,b]` anisotropic, so that `ℍ[k,a,b]` is a
+division algebra. -/
 theorem anisotropic_normForm_of_ne {σ : k →+* ℝ} (hσ : σ ≠ S.place) :
     (_root_.QuaternionAlgebra.normForm a 0 b).Anisotropic := by
   obtain ⟨ha, hb⟩ := S.ramified σ hσ

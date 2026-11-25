@@ -70,7 +70,7 @@ example : (ratOneOne.splitting ⟨1, 1, 0, 1⟩).det = 1 := by
 constants are negative at the real place of `ℚ`. -/
 theorem isEmpty_neg_one_neg_one : IsEmpty (RealSplitting ℚ (-1) (-1)) :=
   ⟨fun S ↦ by
-    have h := S.zero_lt_place_or_zero_lt_place
+    have h := S.place_a_pos_or_place_b_pos
     simp only [map_neg, map_one, or_self] at h
     linarith⟩
 
