@@ -248,10 +248,9 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
   let J₀' : AlmostComplexStructure V :=
     ⟨(J₀ : V →L[ℝ] V).toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
   -- `J₀'` is built from `(J₀ : V →L[ℝ] V).toLinearMap`, so `J₀' v` unfolds to `J₀ v`: this lets
-  -- `Unitary.inner_map_map J₀` say that `J₀'` is orthogonal, and `hβ₁`, `hβ₃` (about `J₀'`) serve
-  -- below as statements about `J₀ : V →L[ℝ] V`.
-  obtain ⟨β, hβ₁, hβ₃⟩ :=
-    AlmostComplexStructure.exists_unitary_orthonormalBasis (J := J₀') (Unitary.inner_map_map J₀)
+  -- `Unitary.norm_map J₀` say that `J₀'` preserves norms, and `hβ 0`, `hβ 1` (about `J₀'`)
+  -- serve below as statements about `J₀ : V →L[ℝ] V`.
+  obtain ⟨β, hβ⟩ := J₀'.exists_adapted_orthonormalBasis (Unitary.norm_map J₀) 2 hV
   let e := trivializationAt F E x
   let cF := Module.finBasisOfFinrankEq ℝ F hF
   -- Some vector of `β` lies outside the complex line of `β 0` for `J` read at `x`.
@@ -264,7 +263,7 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
   obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_smul_mem
     (H := Subgroup.centralizer {J₀}) (U := goodSet J e cF β (β j))
     (fun _ hy ↦ (e.baseSet_orthonormalFrameBundle cF β).symm ▸ hy.1)
-    (fun _ hy ↦ smul_symm_apply_one_mem_unitaryFrames hJ₂ hJ₀ hβ₁.symm hβ₃.symm hy)
+    (fun _ hy ↦ smul_symm_apply_one_mem_unitaryFrames hJ₂ hJ₀ (hβ 0) (hβ 1) hy)
     (isOpen_goodSet e cF β (β j) hJ)
     (continuousOn_unitaryToAdaptedFourBasis_localStructure hJ₂ hJ)
     hx
