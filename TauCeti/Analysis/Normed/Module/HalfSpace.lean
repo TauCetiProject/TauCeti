@@ -116,7 +116,8 @@ theorem interior_setOf_forall_mem_nonneg_apply (hS : IsCompact S) (hφ : Continu
   -- Push `x` slightly against a direction `y` in which `φ i` increases; it stays in the set.
   obtain ⟨y, hy⟩ : ∃ y, 0 < φ i y := by
     obtain ⟨y, hy⟩ := DFunLike.ne_iff.mp (hφ₀ i hi)
-    rcases (show φ i y ≠ 0 from hy).lt_or_gt with h | h
+    rw [zero_apply] at hy
+    rcases hy.lt_or_gt with h | h
     · exact ⟨-y, by simpa using h⟩
     · exact ⟨y, h⟩
   have hlim : Tendsto (fun t : ℝ ↦ x - t • y) (𝓝[>] 0) (𝓝 x) := by
