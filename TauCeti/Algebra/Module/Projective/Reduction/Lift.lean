@@ -86,28 +86,32 @@ variable {A B : Type*} [Ring A] [Ring B] {π : A →+* B}
 variable (hπ : Function.Surjective π) {f : P →ₛₗ[π] Y} (hf : Function.Surjective f)
   (hfker : ∀ x, f x = 0 ↔ x ∈ RingHom.ker π • (⊤ : Submodule A P))
 
-include hfker in
-/-- A semilinear map out of `P` factors through a reduction `f : P → Y`. -/
-private theorem map_eq_of_map_eq {M : Type*} [AddCommGroup M] [Module B M] (h : P →ₛₗ[π] M)
-    {x x' : P} (hxx : f x = f x') : h x = h x' := by
-  rw [← sub_eq_zero, ← map_sub]
-  exact h.map_eq_zero_of_mem_ker_smul_top ((hfker _).mp (by rw [map_sub, hxx, sub_self]))
-
+include hπ hf hfker in
 /-- The descent of a semilinear map `h : P → M` to a `B`-linear map `Y → M` along a reduction
-`f : P → Y`. -/
+`f : P → Y`: Mathlib's `LinearMap.liftOfSurjective` for `f` and `h` regarded as `A`-linear maps,
+which is `B`-linear because `π` is surjective. -/
 private noncomputable def descend {M : Type*} [AddCommGroup M] [Module B M] (h : P →ₛₗ[π] M) :
-    Y →ₗ[B] M where
-  toFun y := h (Function.surjInv hf y)
-  map_add' y y' := by
-    rw [← map_add]
-    exact map_eq_of_map_eq hfker h (by simp [Function.surjInv_eq hf])
-  map_smul' b y := by
-    rw [RingHom.id_apply, ← Function.surjInv_eq hπ b, ← h.map_smulₛₗ]
-    exact map_eq_of_map_eq hfker h (by simp [f.map_smulₛₗ, Function.surjInv_eq hf])
+    Y →ₗ[B] M :=
+  letI : Module A Y := Module.compHom Y π
+  letI : Module A M := Module.compHom M π
+  let g := (f.toLinearMapOfCompHom fun _ _ ↦ rfl).liftOfSurjective
+    (by rwa [LinearMap.coe_toLinearMapOfCompHom])
+    ⟨h.toLinearMapOfCompHom fun _ _ ↦ rfl, fun x hx ↦ by
+      rw [LinearMap.mem_ker, LinearMap.coe_toLinearMapOfCompHom] at hx ⊢
+      exact h.map_eq_zero_of_mem_ker_smul_top ((hfker x).mp hx)⟩
+  { toFun := g
+    map_add' := g.map_add
+    map_smul' b y := by
+      obtain ⟨a, rfl⟩ := hπ b
+      exact g.map_smul a y }
 
 private theorem descend_apply {M : Type*} [AddCommGroup M] [Module B M] (h : P →ₛₗ[π] M) (x : P) :
-    descend hπ hf hfker h (f x) = h x :=
-  map_eq_of_map_eq hfker h (Function.surjInv_eq hf _)
+    descend hπ hf hfker h (f x) = h x := by
+  let _ : Module A Y := Module.compHom Y π
+  let _ : Module A M := Module.compHom M π
+  simp only [descend, LinearMap.coe_mk, AddHom.coe_mk]
+  simpa using LinearMap.equivOfSurjective_apply (f := f.toLinearMapOfCompHom fun _ _ ↦ rfl)
+    (g := h.toLinearMapOfCompHom fun _ _ ↦ rfl) (m := x) _ _
 
 include hf hfker in
 /-- A reduction `f : P → Y` induces a linear equivalence `P ⧸ ker π • P ≃ Y`, when `Y` is regarded
