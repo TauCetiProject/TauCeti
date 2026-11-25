@@ -58,8 +58,10 @@ half-cylinder `ε s > a` and the datum is `H(t) dt` from `ε s = 2` on.
 * **Finite-energy planes.** The convergence hypotheses hold for a finite-energy solution with
   image in a compact set, structures cylindrical on the end and nondegenerate orbits, by the
   exponential decay at the end of a PSS plane
-  (`exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePerturbation`),
-  so the end estimate holds for such planes
+  (`exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePerturbation`):
+  the loops along the end converge to a nondegenerate orbit and the slice defect tends to zero
+  (`TauCeti.SymplecticForm.exists_tendstoUniformlyOn_sliceDefect_of_finite_energy`). So the end
+  estimate holds for such planes
   (`exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization_of_finite_energy`).
 * **The formal adjoint.** A covector field `η` is read in end coordinates as the `(0, 1)`-form
   `η' = η (φ ·) ∘ (a + b J)` (`TauCeti.Floer.covectorPullback`). On the part `ε s ≥ 2` of the end,
@@ -887,6 +889,82 @@ section InnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
+/-- **The asymptotic orbit of a finite-energy PSS plane.** Let `u` be `C³` on a part `‖w‖ > r` of
+the end of the PSS plane `p`, with image in a compact set `K`, solving there the Floer equation for
+the perturbation of a jointly `C³` period-one Hamiltonian `H` whose suspended vector field is
+globally Lipschitz, with finite energy there. Suppose that the structures are cylindrical there,
+`J(w) = J_t` with `t` the angular coordinate of `w`, for a one-periodic `C²` family `J_t` which is
+tamed by `ω` on `K`, and that every one-periodic orbit of `H` in `K` is nondegenerate. Then there
+are a one-periodic orbit `x` of `H` in `K` and a height `a`, with the part `‖w‖ > exp (2π a)` of
+the plane inside the part `‖w‖ > r`, such that in the coordinates of the end lift `φ`, from
+`ε s > a` on, `J(φ(s, t)) = J_t`, and the loops `t ↦ u(φ(ε s, t))` converge uniformly to `x` as
+`s → ∞` while the slice defect `∂t (u ∘ φ) - X_{H_t}(u ∘ φ)` at `(ε s, t)` tends uniformly to
+zero. These are the hypotheses of the end estimates of `D_u` and of its formal adjoint; they follow
+from the exponential decay of the end
+(`exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePerturbation`). -/
+theorem exists_tendstoUniformlyOn_sliceDefect_of_finite_energy (ω : SymplecticForm V)
+    (p : PSSPlane) {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 3 (uncurry H)) {L : ℝ≥0}
+    (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H)) {K : Set V} (hK : IsCompact K)
+    {Jq : ℝ → V → AlmostComplexStructure V}
+    (hJq : ContDiff ℝ 2 fun q : ℝ × V ↦ (Jq q.1 q.2).toLinearMap.toContinuousLinearMap)
+    (hJqper : Periodic Jq 1) (hJqK : ∀ t, ∀ y ∈ K, ω.Tames (Jq t y))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {r : ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      J z = Jq (p.endCoord (Complex.equivRealProdCLM.symm z)).im)
+    (hu : ContDiffOn ℝ 3 u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
+    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
+    (hF : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv
+          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
+          z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
+      ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) ≠ ⊤)
+    (hnd : ∀ x : ℝ → V, Periodic x 1 →
+      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) → (∀ t, x t ∈ K) →
+      IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
+    ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
+      (∀ t, x t ∈ K) ∧ ∃ a : ℝ,
+        {z : ℝ × ℝ | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
+          {z | r < ‖Complex.equivRealProdCLM.symm z‖} ∧
+        (∀ ζ : ℝ × ℝ, a < p.endSign * ζ.1 → J (realChart p.cylindricalEndLift ζ) = Jq ζ.2) ∧
+        TendstoUniformlyOn (fun s t ↦ u (realChart p.cylindricalEndLift (p.endSign * s, t))) x
+          atTop (Icc 0 1) ∧
+        TendstoUniformlyOn (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t))
+          (u ∘ realChart p.cylindricalEndLift) (p.endSign * s, t)) 0 atTop (Icc 0 1) := by
+  -- The end converges exponentially fast in `C¹` to the stationary cylinder of an orbit `x`.
+  obtain ⟨x, hxper, hx, κ, hκ, A, hdecay⟩ :=
+    exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePerturbation
+      (J := fun z ↦ J z (u z)) p hH hHs hu hK huK hF hE isOpen_univ hJq.contDiffOn hJqper
+      (subset_univ _) hJqK (fun z hz ↦ by rw [hJ z hz]) hL hnd
+  have hrealChart (s t : ℝ) : Complex.equivRealProdCLM
+      (p.cylindricalEndLift (↑s + ↑t * Complex.I)) = realChart p.cylindricalEndLift (s, t) := by
+    rw [realChart_apply, Complex.equivRealProdCLM_symm_apply]
+  simp only [hrealChart] at hdecay
+  have hloop (S : Set ℝ) : TendstoUniformlyOn
+      (fun s t ↦ u (realChart p.cylindricalEndLift (p.endSign * s, t))) x atTop S :=
+    tendstoUniformlyOn_of_dist_le (Real.tendsto_const_mul_exp_neg_mul_atTop A hκ)
+      (hdecay.mono fun s hs t _ ↦ by
+        rw [dist_eq_norm]
+        exact (le_add_of_nonneg_right (norm_nonneg _)).trans (hs t))
+  obtain ⟨a, -, hsub⟩ := exists_le_exp_lt_norm_subset 2 r
+  -- The orbit stays in `K`, as a limit of loops in `K`.
+  have hxK (t : ℝ) : x t ∈ K := by
+    refine hK.isClosed.mem_of_tendsto ((hloop {t}).tendsto_at (mem_singleton t)) ?_
+    filter_upwards [eventually_gt_atTop a] with s hs
+    exact huK _ (hsub (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2
+      (by simpa [← mul_assoc] using hs)))
+  -- Far out on the end, `J` is `J_t` in end coordinates.
+  refine ⟨x, hxper, hx, hxK, a, hsub, fun ζ hζ ↦ ?_, hloop _,
+    tendstoUniformlyOn_sliceDefect_of_le_exp ω p hL hκ hdecay _⟩
+  rw [hJ _ (hsub (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hζ)), realChart_apply,
+    ContinuousLinearEquiv.symm_apply_apply, apply_im_endCoord_cylindricalEndLift hJqper,
+    Complex.equivRealProdCLM_symm_apply_im]
+
 /-- **The end estimate on a finite-energy PSS plane.** Let `u` be `C³` on a part `‖w‖ > r` of the
 end of the PSS plane `p`, with image in a compact set `K`, solving there the Floer equation for
 the perturbation of a jointly `C³` period-one Hamiltonian `H` whose suspended vector field is
@@ -900,8 +978,8 @@ Then there are `C` and `R` such that every `C²` section `ξ` with compact suppo
 
 where `φ` is the end lift and `D_u` the linearized Floer operator of the perturbation of the
 plane. The end of `u` converges exponentially fast to a nondegenerate orbit
-(`exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePerturbation`), which gives
-the hypotheses of `exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization`. -/
+(`exists_tendstoUniformlyOn_sliceDefect_of_finite_energy`), which gives the hypotheses of
+`exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization`. -/
 theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization_of_finite_energy
     (ω : SymplecticForm V) (p : PSSPlane) {H : ℝ → V → ℝ} (hH : Periodic H 1)
     (hHs : ContDiff ℝ 3 (uncurry H)) {L : ℝ≥0}
@@ -940,40 +1018,14 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
           u ξ z‖ ^ 2 := by
   have hΩ : IsOpen {z : ℝ × ℝ | r < ‖Complex.equivRealProdCLM.symm z‖} :=
     isOpen_lt continuous_const (by fun_prop)
-  -- The end converges exponentially fast in `C¹` to the stationary cylinder of an orbit `x`.
-  obtain ⟨x, hxper, hx, κ, hκ, A, hdecay⟩ :=
-    exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePerturbation
-      (J := fun z ↦ J z (u z)) p hH hHs hu hK huK hF hE isOpen_univ hJq.contDiffOn hJqper
-      (subset_univ _) (fun t y hy ↦ (hJqK t y hy).tames) (fun z hz ↦ by rw [hJ z hz]) hL hnd
-  have hrealChart (s t : ℝ) : Complex.equivRealProdCLM
-      (p.cylindricalEndLift (↑s + ↑t * Complex.I)) = realChart p.cylindricalEndLift (s, t) := by
-    rw [realChart_apply, Complex.equivRealProdCLM_symm_apply]
-  simp only [hrealChart] at hdecay
-  have hloop (S : Set ℝ) : TendstoUniformlyOn
-      (fun s t ↦ u (realChart p.cylindricalEndLift (p.endSign * s, t))) x atTop S :=
-    tendstoUniformlyOn_of_dist_le (Real.tendsto_const_mul_exp_neg_mul_atTop A hκ)
-      (hdecay.mono fun s hs t _ ↦ by
-        rw [dist_eq_norm]
-        exact (le_add_of_nonneg_right (norm_nonneg _)).trans (hs t))
-  obtain ⟨a, -, hsub⟩ := exists_le_exp_lt_norm_subset 2 r
-  -- The orbit stays in `K`, as a limit of loops in `K`.
-  have hxK (t : ℝ) : x t ∈ K := by
-    refine hK.isClosed.mem_of_tendsto ((hloop {t}).tendsto_at (mem_singleton t)) ?_
-    filter_upwards [eventually_gt_atTop a] with s hs
-    exact huK _ (hsub (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2
-      (by simpa [← mul_assoc] using hs)))
-  -- Far out on the end, `J` is `J_t` in end coordinates.
-  have hJeq (ζ : ℝ × ℝ) (hζ : a < p.endSign * ζ.1) :
-      J (realChart p.cylindricalEndLift ζ) = Jq ζ.2 := by
-    rw [hJ _ (hsub (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hζ)), realChart_apply,
-      ContinuousLinearEquiv.symm_apply_apply, apply_im_endCoord_cylindricalEndLift hJqper,
-      Complex.equivRealProdCLM_symm_apply_im]
+  obtain ⟨x, hxper, hx, hxK, a, hsub, hJeq, hux, hδ⟩ :=
+    ω.exists_tendstoUniformlyOn_sliceDefect_of_finite_energy p hH hHs hL hK hJq hJqper
+      (fun t y hy ↦ (hJqK t y hy).tames) hJ hu huK hF hE hnd
   exact ω.exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization
     p hH (hHs.of_le (by norm_num)) hL hx (hnd x hxper hx hxK) (Je := Jq) (hJq.of_le one_le_two)
     (fun t ↦ hJqK t _ (hxK t)) hJeq
     (fun z hz ↦ (hu.contDiffAt (hΩ.mem_nhds (hsub hz))).of_le (by norm_num))
-    (fun z hz ↦ hF z (hsub hz)) (hloop _)
-    (tendstoUniformlyOn_sliceDefect_of_le_exp ω p hL hκ hdecay _)
+    (fun z hz ↦ hF z (hsub hz)) hux hδ
 
 end InnerProductSpace
 
