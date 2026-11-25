@@ -34,6 +34,9 @@ isomorphism classes therefore identifies the monoidal `Skeleton` of `InvertibleS
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.toFiniteLocallyFreeMonoidal` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.toFiniteLocallyFreeBraided`: the inclusion into
   finite locally free sheaves is braided monoidal;
+* `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_tensorPow` and
+  `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPow_obj`: monoidal tensor powers of invertible
+  sheaves are invertible, and computed on underlying sheaves;
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorProductIsoTensor` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.trivialIsoTensorUnit`: comparisons between the
   explicit line-bundle operations and the inherited monoidal operations;
@@ -77,6 +80,18 @@ instance isMonoidal_isInvertible (X : Scheme.{u}) : (isInvertible X).IsMonoidal 
       TauCeti.SheafOfModules.IsInvertible.tensorProduct (R := X.sheaf) (M := M) (N := N)
     exact (isInvertible X).prop_of_iso
       (SheafOfModules.tensorProductIso X.sheaf M N ≪≫ (M.tensorUnderlyingIso N).symm) hprod
+
+/-- The monoidal tensor product of two invertible sheaves is invertible. -/
+instance isInvertible_tensorObj {X : Scheme.{u}} (M N : X.Modules)
+    [isInvertible X M] [isInvertible X N] : isInvertible X (M ⊗ N) :=
+  ObjectProperty.prop_tensor ‹_› ‹_›
+
+/-- The monoidal tensor powers of an invertible sheaf are invertible. -/
+instance isInvertible_tensorPow {X : Scheme.{u}} (M : X.Modules) [isInvertible X M] (n : ℕ) :
+    isInvertible X (TauCeti.tensorPow M n) := by
+  induction n with
+  | zero => exact isInvertible_tensorUnit X
+  | succ n ih => exact ObjectProperty.prop_tensor ‹_› ih
 
 end SheafOfModules
 
@@ -143,6 +158,15 @@ def pullbackToFiniteLocallyFreeTensorIso {Y : Scheme.{u}} (f : Y ⟶ X) (M N : I
       (Functor.Monoidal.μIso (toFiniteLocallyFree X) M N ≪≫
         (toFiniteLocallyFree X).mapIso (tensorProductIsoTensor M N).symm)) ≪≫
     eqToIso (pullback_toFiniteLocallyFree_obj_obj f _)
+
+/-- The underlying sheaf of the monoidal tensor power `L^{⊗n}` in `InvertibleSheaf X` is the
+monoidal tensor power of the underlying sheaf of `L`. -/
+@[simp]
+theorem tensorPow_obj (L : InvertibleSheaf X) (n : ℕ) :
+    (TauCeti.tensorPow L n).obj = TauCeti.tensorPow L.obj n := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [TauCeti.tensorPow_succ, TauCeti.tensorPow_succ, ← ih]; rfl
 
 end InvertibleSheaf
 

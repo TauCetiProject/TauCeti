@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 import Mathlib.FieldTheory.Minpoly.Basic
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import TauCeti.Algebra.GroupWithZero.Irreducible
+import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
 import TauCeti.RingTheory.Ideal.KrullIntersection
 import TauCeti.RingTheory.Ideal.Quotient.Integral
 import TauCeti.RingTheory.PowerSeries.Trunc
@@ -145,9 +146,7 @@ theorem polynomialToOption_dvd_iff
   have hg : PowerSeries.IsDistinguished 1 s
       (restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate) := by
     rwa [restrictedOptionEquiv_toTate_polynomialToOption]
-  have hdeg : (p %ₘ ω).degree < (s : WithBot ℕ) := by
-    simpa [Polynomial.degree_eq_natDegree hm.ne_zero, hm.natDegree_eq] using
-      Polynomial.degree_modByMonic_lt p hm.monic
+  have hdeg : (p %ₘ ω).degree < (s : WithBot ℕ) := hm.degree_modByMonic_lt p
   -- Compare `p = a * ω` in `W'` with the polynomial division `p = (p /ₘ ω) * ω + p %ₘ ω`.
   have heq : a * polynomialToOption ω + polynomialToOption 0 =
       polynomialToOption (p /ₘ ω) * polynomialToOption ω + polynomialToOption (p %ₘ ω) := by

@@ -8,9 +8,10 @@ module
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.MultiplicativeDomain
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 public import TauCeti.Analysis.InnerProductSpace.Positive.VectorFunctional
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
 
 /-!
-# The multiplicative domain of a vector state
+# The multiplicative domains of a vector state and of the normalized trace
 
 For a unit vector `ξ` of a complex Hilbert space `H`, the vector state `ω_ξ(a) = ⟪ξ, a ξ⟫` on
 `H →L[ℂ] H` is a unital completely positive functional. Its multiplicative domain consists of the
@@ -20,6 +21,10 @@ operators `a` for which both `a ξ` and `a⋆ ξ` are multiples of `ξ`
 The computation rests on the identity
 `ω_ξ(a⋆a) - conj (ω_ξ a) ω_ξ(a) = ‖a ξ - ω_ξ(a) ξ‖²`, so the Schwarz equality at `a` says exactly
 that `a ξ` is the multiple `ω_ξ(a) ξ` of `ξ`.
+
+The normalized trace `tr_n` on `M_n`, `n ≥ 1`, has multiplicative domain `ℂ·1`
+(`multiplicativeDomain_normalizedTraceFunctional_eq_bot`): its Schwarz defect at `a` is
+`tr_n(b⋆b)` for `b = a - tr_n(a)·1`, and `tr_n` is faithful.
 -/
 
 public section
@@ -77,5 +82,42 @@ theorem mem_multiplicativeDomain_vectorFunctional_iff {ξ : H} (hξ : ‖ξ‖ =
     simpa [hstar, mul_comm] using vectorFunctional_star_mul_self_eq_iff hξ (star a)
   rw [IsNPositive.mem_multiplicativeDomain]
   exact and_congr (vectorFunctional_star_mul_self_eq_iff hξ a) h2
+
+section Trace
+
+variable (n : Type*) [Fintype n]
+
+/-- The normalized trace `tr_n` on `M_n`, completely positive since it is a positive functional.
+It is a faithful tracial state when `n` is nonempty. -/
+noncomputable def normalizedTraceFunctional : CStarMatrix n n ℂ →CP ℂ :=
+  (CStarMatrix.normalizedTraceMap n).toPositiveLinearMap.toCompletelyPositiveMap
+
+variable {n}
+
+@[simp]
+theorem normalizedTraceFunctional_apply (a : CStarMatrix n n ℂ) :
+    normalizedTraceFunctional n a = CStarMatrix.normalizedTrace a := by
+  simp [normalizedTraceFunctional]
+
+theorem normalizedTraceFunctional_one [DecidableEq n] [Nonempty n] :
+    (normalizedTraceFunctional n).toLinearMap 1 = 1 := by
+  simp
+
+/-- **The multiplicative domain of the normalized trace** on `M_n`, `n ≥ 1`, is `ℂ·1`: the
+Schwarz equality `tr_n(a⋆a) = |tr_n(a)|²` forces `a = tr_n(a)·1`, since `tr_n` is faithful. -/
+theorem multiplicativeDomain_normalizedTraceFunctional_eq_bot [DecidableEq n] [Nonempty n] :
+    ((normalizedTraceFunctional n).isNPositive 2).multiplicativeDomain
+      normalizedTraceFunctional_one = ⊥ := by
+  refine eq_bot_iff.mpr fun a ha ↦ ?_
+  have h := ((IsNPositive.mem_multiplicativeDomain _ _).mp ha).1
+  simp only [CompletelyPositiveMap.coe_toLinearMap, normalizedTraceFunctional_apply] at h
+  have hb : a - CStarMatrix.normalizedTrace a • 1 = 0 := by
+    rw [← CStarMatrix.normalizedTrace_star_mul_self_eq_zero_iff,
+      ← CStarMatrix.normalizedTrace_star_mul_self_sub, h, sub_self]
+  rw [sub_eq_zero] at hb
+  rw [hb, Algebra.smul_def, mul_one]
+  exact StarSubalgebra.algebraMap_mem _ _
+
+end Trace
 
 end TauCeti.MultiplicativeDomainExample
