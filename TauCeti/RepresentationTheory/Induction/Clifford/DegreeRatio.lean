@@ -39,7 +39,8 @@ The ratio need not be the index of the inertia group: for `G = Q₈`, `N = Z(Q�
   (`N.relIndex T`).
 * `FDRep.exists_finrank_eq_mul_dvd_index_of_liesOver`: for an irreducible representation `W` of
   `G` lying over `V`, `dim W = dim V · m` with `m ∣ |G : N|`.
-* `FDRep.finrank_div_finrank_dvd_index_of_liesOver`: `dim W / dim V ∣ |G : N|`.
+* `FDRep.finrank_dvd_finrank_and_finrank_div_finrank_dvd_index_of_liesOver`: `dim V ∣ dim W`
+  and `dim W / dim V ∣ |G : N|`.
 
 ## References
 
@@ -107,8 +108,8 @@ theorem exists_finrank_eq_mul_dvd_index_of_liesOver (V : FDRep k N) [Simple V] (
 group `G` lying over an irreducible representation `V` of a normal subgroup `N`, over an
 algebraically closed field of characteristic zero, `dim V ∣ dim W` and
 `dim W / dim V ∣ |G : N|` (Isaacs, Corollary 11.29). -/
-theorem finrank_div_finrank_dvd_index_of_liesOver (V : FDRep k N) [Simple V] (W : FDRep k G)
-    [Simple W] (hW : W.LiesOver N.subtype V) :
+theorem finrank_dvd_finrank_and_finrank_div_finrank_dvd_index_of_liesOver (V : FDRep k N)
+    [Simple V] (W : FDRep k G) [Simple W] (hW : W.LiesOver N.subtype V) :
     finrank k V ∣ finrank k W ∧ finrank k W / finrank k V ∣ N.index := by
   obtain ⟨m, hm, hmdvd⟩ := exists_finrank_eq_mul_dvd_index_of_liesOver V W hW
   have : Nontrivial V := (FDRep.isIrreducible_of_simple V).nontrivial
