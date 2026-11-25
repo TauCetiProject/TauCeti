@@ -66,7 +66,8 @@ tracial state space `TauCeti.tracialStates A` in the weak-* dual.
   approximants `φ₁ : A → M_{k₁}` and `φ₂ : A → M_{k₂}` of `τ₁` and `τ₂` give the block-diagonal
   sum of `p k₂` copies of `φ₁` and `(N - p) k₁` copies of `φ₂`, whose normalized trace is
   `(p / N) tr ∘ φ₁ + (1 - p / N) tr ∘ φ₂`; choosing `p / N` close to `θ` recovers `τ`, and the
-  multiplicativity defect of a block-diagonal sum is the largest defect of its blocks.
+  multiplicativity defect of a block-diagonal sum is bounded by the largest defect of its blocks
+  (with equality in the operator norm).
 * `TauCeti.closure_amenableTraces_inter_tracialStates` and
   `TauCeti.closure_quasidiagonalTraces_inter_tracialStates`: `AT(A)` and `AT_QD(A)` are weak-*
   closed in `T(A)`, hence weak-* closed for unital `A` (`TauCeti.isClosed_amenableTraces`,
@@ -363,7 +364,9 @@ private theorem normalizedTrace_blockDiagonal_sumRec {k₁ k₂ m₁ m₂ : ℕ}
   have hc : ∑ i : Fin m₁ ⊕ Fin m₂, Fintype.card (Fin (Sum.elim (fun _ => k₁) (fun _ => k₂) i)) =
       m₁ * k₁ + m₂ * k₂ := by
     simp [Fintype.sum_sum_type]
-  -- the block at `inl j` is `φ₁` on `M_{k₁}` and the block at `inr j` is `φ₂` on `M_{k₂}`
+  -- the block at `inl j` is `φ₁` on `M_{k₁}` and the block at `inr j` is `φ₂` on `M_{k₂}`; the
+  -- block family is dependent, so `Sum.elim_inl`/`Sum.elim_inr` cannot be rewritten (the motive is
+  -- not type-correct), and each `rfl` instead reduces `Sum.rec`/`Sum.elim` at `inl j`/`inr j`
   rw [normalizedTrace_blockDiagonal_apply, Fintype.card_sigma, hc, Fintype.sum_sum_type,
     Fintype.sum_congr _ (fun _ : Fin m₁ =>
       (k₁ / (m₁ * k₁ + m₂ * k₂ : ℕ) : ℂ) * CStarMatrix.normalizedTrace (φ₁ a))
@@ -775,7 +778,8 @@ private theorem convex_image_toWeakDual {P : (A →P[ℂ] ℂ) → Prop}
   refine ⟨τ, ⟨hτ, hP h₁ h₂ hs (by linarith) fun a => ?_⟩, he⟩
   calc τ a = (s • StrongDual.toWeakDual (τ₁ : A →L[ℂ] ℂ) +
         (1 - s) • StrongDual.toWeakDual (τ₂ : A →L[ℂ] ℂ)) a := congrArg (fun φ => φ a) he
-    -- functionals in the weak-* dual are added and scaled pointwise
+    -- functionals in the weak-* dual are added and scaled pointwise; Mathlib states this for
+    -- `WeakDual` only definitionally (it has no `IsAddApply` or `smul_apply` API), hence `rfl`
     _ = s • τ₁ a + (1 - s) • τ₂ a := rfl
     _ = s * τ₁ a + (1 - s) * τ₂ a := by simp [Complex.real_smul]
 

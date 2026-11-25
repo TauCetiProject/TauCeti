@@ -545,19 +545,23 @@ C⋆-matrix form of `Matrix.blockDiagonal'RingHom`. -/
 def blockDiagonalNonUnitalStarAlgHom [Fintype ι] :
     (Π i, CStarMatrix (n i) (n i) B) →⋆ₙₐ[R] CStarMatrix (Σ i, n i) (Σ i, n i) B where
   toFun x := ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))
-  -- each law is the corresponding law of `Matrix.blockDiagonal'`; the closing `rfl` identifies
-  -- the pointwise operations on `Π i, CStarMatrix (n i) (n i) B` with those on the blocks
+  -- each law is the corresponding law of `Matrix.blockDiagonal'`, applied blockwise
   map_smul' c x := ofMatrix.symm.injective <| by
-    simp [← Matrix.blockDiagonal'_smul]
-    rfl
-  map_zero' := ofMatrix.symm.injective <| by simp [← Matrix.blockDiagonal'_zero]; rfl
-  map_add' x y := ofMatrix.symm.injective <| by simp [← Matrix.blockDiagonal'_add]; rfl
+    simp only [Pi.smul_apply, ofMatrix_symm_smul, Equiv.symm_apply_apply, MonoidHom.id_apply,
+      ← Pi.smul_def, Matrix.blockDiagonal'_smul]
+  map_zero' := ofMatrix.symm.injective <| by
+    simp only [Pi.zero_apply, ofMatrix_symm_zero, Equiv.symm_apply_apply, ← Pi.zero_def,
+      Matrix.blockDiagonal'_zero]
+  map_add' x y := ofMatrix.symm.injective <| by
+    simp only [Pi.add_apply, ofMatrix_symm_add, Equiv.symm_apply_apply, ← Pi.add_def,
+      Matrix.blockDiagonal'_add]
   map_mul' x y := ofMatrix.symm.injective <| by
-    simp only [Equiv.symm_apply_apply, ofMatrix_symm_mul, ← Matrix.blockDiagonal'_mul]
-    rfl
+    simp only [Pi.mul_apply, ofMatrix_symm_mul, Equiv.symm_apply_apply, ← Pi.mul_def]
+    -- `exact`, not `simp`: the blockwise products come from the rectangular `Matrix` product
+    exact Matrix.blockDiagonal'_mul _ _
   map_star' x := ofMatrix.symm.injective <| by
-    simp only [Equiv.symm_apply_apply, ofMatrix_symm_star, Matrix.blockDiagonal'_conjTranspose]
-    rfl
+    simp only [Pi.star_apply, ofMatrix_symm_star, Equiv.symm_apply_apply,
+      Matrix.blockDiagonal'_conjTranspose]
 
 /-- The block-diagonal embedding sends `x` to the block-diagonal matrix with blocks `x i`. -/
 theorem blockDiagonalNonUnitalStarAlgHom_apply [Fintype ι] (x : Π i, CStarMatrix (n i) (n i) B) :

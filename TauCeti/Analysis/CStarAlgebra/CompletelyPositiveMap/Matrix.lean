@@ -120,8 +120,8 @@ theorem blockDiagonal_map_mul_sub (φ : ∀ i, A →CP CStarMatrix (n i) (n i) B
       ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (φ i (a * b) - φ i a * φ i b)) := by
   simp only [blockDiagonal_apply, ← CStarMatrix.blockDiagonalNonUnitalStarAlgHom_apply (R := ℂ),
     ← map_mul, ← map_sub]
-  -- the two sides differ by `Pi.sub_apply` and `Pi.mul_apply` inside the embedding
-  rfl
+  -- unfold the embedding and evaluate the pointwise operations blockwise
+  simp only [CStarMatrix.blockDiagonalNonUnitalStarAlgHom_apply, Pi.sub_apply, Pi.mul_apply]
 
 end BlockDiagonal
 
