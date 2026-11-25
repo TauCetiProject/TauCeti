@@ -10,11 +10,11 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.Polynomial.HilbertPoly
 public import TauCeti.Algebra.Module.GradedModule.MvPolynomial
 import Mathlib.Algebra.Polynomial.Taylor
+import Mathlib.RingTheory.HopkinsLevitzki
 import Mathlib.RingTheory.Polynomial.Basic
 import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.Algebra.Module.GradedModule.Length
 import TauCeti.Algebra.Module.MvPolynomial
-import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
