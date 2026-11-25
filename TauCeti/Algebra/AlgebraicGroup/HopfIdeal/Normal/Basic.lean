@@ -39,8 +39,6 @@ cut out by `J`, namely its normal closure.
 * `TauCeti.HopfIdeal.IsNormal.map`: normality is preserved by the image of a Hopf ideal.
 * `TauCeti.HopfIdeal.IsNormal.comapOfSurjective_of_bijective`: normality is preserved by
   pullback along a bijective bialgebra morphism.
-* `TauCeti.HopfIdeal.IsNormal.conj_apply_eq_zero`: points vanishing on a normal Hopf ideal are
-  stable under conjugation.
 * `TauCeti.CommHopfAlgCat.quotientPointsSubgroup_normal`: a normal Hopf ideal cuts out a normal
   subgroup on points over every commutative value algebra.
 
@@ -183,27 +181,6 @@ theorem normalCore_idempotent (J : HopfIdeal R H) : J.normalCore.normalCore = J.
 
 end HopfIdeal
 
-namespace HopfIdeal
-
-variable {R : Type u} [CommRing R] {H : Type v} [CommRing H] [HopfAlgebra R H]
-
-/-- Points of a normal closed subgroup are stable under conjugation: if a point `n` vanishes on
-a normal Hopf ideal `I`, so does its conjugate `g * n * g⁻¹` by any point `g`. -/
-theorem IsNormal.conj_apply_eq_zero {I : HopfIdeal R H} (hI : I.IsNormal) {A : Type w}
-    [CommRing A] [Algebra R A] (g n : WithConv (H →ₐ[R] A)) (hn : ∀ y ∈ I, n.ofConv y = 0)
-    {x : H} (hx : x ∈ I) : (g * n * g⁻¹).ofConv x = 0 := by
-  rw [← HopfAlgebra.productMap_comp_conjugationAlgHom, AlgHom.comp_apply]
-  -- The product of `g` with a point killing `I` kills the right tensor ideal `H ⊗ I`.
-  have hker : Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal ≤
-      RingHom.ker (Algebra.TensorProduct.productMap g.ofConv n.ofConv).toRingHom := by
-    rw [Ideal.rightTensorIdeal_le_iff]
-    intro y hy
-    rw [Ideal.mem_comap, RingHom.mem_ker]
-    simpa using hn y (mem_toIdeal.mp hy)
-  exact RingHom.mem_ker.mp (hker (hI.conjugation_mem hx))
-
-end HopfIdeal
-
 namespace CommHopfAlgCat
 
 variable {R : Type u} [CommRing R]
@@ -215,7 +192,16 @@ theorem quotientPointsSubgroup_normal (H : _root_.CommHopfAlgCat.{v} R)
     (quotientPointsSubgroup H I A).Normal := by
   refine ⟨fun n hn g ↦ ?_⟩
   rw [mem_quotientPointsSubgroup_iff] at hn ⊢
-  exact fun x hx ↦ hI.conj_apply_eq_zero g n hn hx
+  intro x hx
+  rw [← HopfAlgebra.productMap_comp_conjugationAlgHom (R := R) (H := H) g n]
+  have hker :
+      Ideal.rightTensorIdeal (R := R) (A := H) I.toIdeal ≤
+        RingHom.ker (Algebra.TensorProduct.productMap g.ofConv n.ofConv).toRingHom := by
+    rw [Ideal.rightTensorIdeal_le_iff]
+    intro y hy
+    rw [Ideal.mem_comap, RingHom.mem_ker]
+    simpa using hn y ((HopfIdeal.mem_toIdeal (I := I)).mp hy)
+  exact RingHom.mem_ker.mp (hker (hI.conjugation_mem hx))
 
 /-- If a Hopf ideal cuts out a normal subgroup over the value algebra `H ⊗ (H ⧸ I)`, then it is
 normal. That single test algebra suffices: it carries the two points whose conjugate detects
