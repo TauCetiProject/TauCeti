@@ -114,11 +114,11 @@ end SL
 
 section PSL
 
-variable (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+variable (Γ' : Subgroup PSL(2, ℤ))
 
 /-- The coset action of `PSL(2, ℤ)` on `PSL(2, ℤ) ⧸ Γ'`, read on `SL(2, ℤ)`, has kernel the normal
 core of the full preimage `±Γ' = Γ'.liftSL`. -/
-theorem ker_permutationRepresentation_comp_mk' :
+theorem ker_permutationRepresentation_comp_mk' {β : Type*} (e : PSL(2, ℤ) ⧸ Γ' ≃ β) :
     (e.permutationRepresentation.comp (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).ker =
       Γ'.liftSL.normalCore := by
   rw [← MonoidHom.comap_ker, Equiv.ker_permutationRepresentation_quotient, Subgroup.liftSL_def,
@@ -129,14 +129,14 @@ theorem ker_permutationRepresentation_comp_mk' :
 omit [NeZero M] in
 /-- `Γ(M)` lies in the full preimage of `Γ'` exactly when it acts trivially on the cosets of
 `Γ'`, `Γ(M)` being normal. -/
-private theorem Gamma_le_liftSL_iff :
+private theorem Gamma_le_liftSL_iff {β : Type*} (e : PSL(2, ℤ) ⧸ Γ' ≃ β) :
     Gamma M ≤ Γ'.liftSL ↔
       Gamma M ≤ (e.permutationRepresentation.comp
         (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).ker := by
   have := Gamma_normal M
   rw [ker_permutationRepresentation_comp_mk', Subgroup.normal_le_normalCore]
 
-variable {Γ' e}
+variable {Γ'} {e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n}
 
 /-- **Congruence as triviality of the action of `Γ(M)`.** For `M ≠ 0` a multiple of the general
 level of `Γ' ≤ PSL(2, ℤ)`, the full preimage `±Γ'` is a congruence subgroup exactly when every
@@ -213,11 +213,18 @@ end PSL
 /-- The connected permutation triple of degree `8` with `σ1 = (2 3)(4 5)(6 7)`,
 `σinf = (0 1 3 5 4 7 6 2)` and `σ0 = σ1 * σinf⁻¹ = (0 3 1)(2 7 5)`. Its subgroups of `PSL(2, ℤ)`
 are not congruence (`not_isCongruenceSubgroup_liftSL_of_modularTriple_eq_indexEightTriple`). -/
-def indexEightTriple : PermutationTriple 8 where
+@[expose] def indexEightTriple : PermutationTriple 8 where
   σ0 := c[0, 3, 1] * c[2, 7, 5]
   σ1 := c[2, 3] * c[4, 5] * c[6, 7]
   σinf := c[0, 1, 3, 5, 4, 7, 6, 2]
   product_eq_one := by decide +kernel
+
+@[simp] theorem indexEightTriple_σ0 : indexEightTriple.σ0 = c[0, 3, 1] * c[2, 7, 5] := (rfl)
+
+@[simp] theorem indexEightTriple_σ1 :
+    indexEightTriple.σ1 = c[2, 3] * c[4, 5] * c[6, 7] := (rfl)
+
+@[simp] theorem indexEightTriple_σinf : indexEightTriple.σinf = c[0, 1, 3, 5, 4, 7, 6, 2] := (rfl)
 
 /-- The triple `indexEightTriple` is connected. -/
 theorem isConnected_indexEightTriple : indexEightTriple.IsConnected := by
