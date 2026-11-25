@@ -163,6 +163,14 @@ noncomputable def pointsBaseChange : WithConv (A →ₐ[k] k) →* WithConv (K �
   (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := K)).toMonoidHom.comp
     (AlgHom.mapValue (Algebra.ofId k K))
 
+/-- Base change of base-valued points is `AlgHom.mapValue (Algebra.ofId k K)` followed by the
+base-change point equivalence. -/
+lemma pointsBaseChange_def :
+    pointsBaseChange (k := k) (A := A) K =
+      (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := K)).toMonoidHom.comp
+        (AlgHom.mapValue (Algebra.ofId k K)) :=
+  (rfl)
+
 /-- The base change of a point `f` sends `s ⊗ a` to `s * f a`. -/
 @[simp]
 lemma pointsBaseChange_apply_tmul (f : WithConv (A →ₐ[k] k)) (s : K) (a : A) :
