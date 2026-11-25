@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HalfPlane.Reflection
+import TauCeti.Analysis.Complex.CauchyRiemann.NormalDerivative
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.PartialDerivative
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc.Higher
+import TauCeti.Analysis.Sobolev.Local.HalfPlane
 import TauCeti.Analysis.Sobolev.Local.Reflection.Tangential
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -37,7 +39,7 @@ McDuff–Salamon, Proposition B.4.9, with a totally real boundary condition and 
 The reflected coefficient `crReflectionCoeff R J` is in general only of class `W^{1,p}` across the
 axis, whatever the regularity of `J` up to the axis, so the interior theorem
 `TauCeti.IsWeakCRSolution.memWkpLoc_succ` does not apply to the doubled equation beyond `k = 0`.
-The induction instead runs through the tangential derivative `∂_s`, following the roadmap:
+The induction instead runs through the tangential derivative `∂_s`:
 
 * *Tangential step* (`TauCeti.IsWeakCRSolution.crReflection_partial_one`). Reflection commutes
   with `∂_s`, and tangential weak derivatives glue across the axis with no boundary condition
@@ -84,11 +86,10 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteS
 /-! ### Recovery of the normal derivative -/
 
 omit [CompleteSpace V] in
-/-- If `a + J b + S x = y` and `J² = -1`, then `b = J (a + S x - y)`. -/
-private theorem eq_apply_of_add_apply_add_eq {J' S' : V →L[ℝ] V} {a b x y : V}
-    (hJ : J' * J' = -1) (h : a + J' b + S' x = y) : b = J' (a + S' x - y) := by
-  have h2 : J' (J' b) = -b := by simpa using congrArg (· b) hJ
-  rw [show a + S' x - y = -J' b by rw [← h]; abel, map_neg, h2, neg_neg]
+/-- `J² = -1` as an equation in the ring of operators is `J ∘ J = -id`. -/
+private theorem comp_eq_neg_id_of_mul_self_eq_neg_one {J' : V →L[ℝ] V} (hJ : J' * J' = -1) :
+    J'.comp J' = -ContinuousLinearMap.id ℝ V := by
+  rwa [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] at hJ
 
 /-- **Recovery of the normal derivative.** Let `ξ ∈ W^{k+1,q}_loc(Ω ∩ {0 ≤ t})` have weak
 derivative `Dξ` on the open upper part and solve `∂_s ξ + J ∂_t ξ + S ξ = η` almost everywhere on
@@ -111,7 +112,8 @@ theorem memWkpLoc_add_two_of_ae_cauchyRiemann [FiniteDimensional ℝ V] {p q : �
   have hI : MemWkpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) (fun z => Dξ z I) :=
     (hJ.clm_apply_succ_halfPlane hp hq hqp
       ((h1.add (hS.clm_apply_succ_halfPlane hp hq hqp hξ)).sub hη)).congr_ae
-      (by filter_upwards [heq, hJ2] with z hz hJz using (eq_apply_of_add_apply_add_eq hJz hz).symm)
+      (((ae_cauchyRiemann_iff_ae_apply_I_eq
+        (hJ2.mono fun _ => comp_eq_neg_id_of_mul_self_eq_neg_one)).1 heq).mono fun _ => Eq.symm)
   refine memWkpLoc_succ_iff.2 ⟨hξ.memLpLoc, Dξ, hDξ, ?_⟩
   rw [fun_eq_smulRightL_reCLM_add_smulRightL_imCLM Dξ]
   exact (h1.clm_comp _).add (hI.clm_comp _)
@@ -120,11 +122,10 @@ theorem memWkpLoc_add_two_of_ae_cauchyRiemann [FiniteDimensional ℝ V] {p q : �
 
 omit [CompleteSpace V] in
 /-- The reflection of a sum of zeroth-order coefficients is the sum of their reflections. -/
-private theorem crReflectionZeroth_add_apply (R : V ≃L[ℝ] V) (S M : ℂ → V →L[ℝ] V) (z : ℂ) :
-    crReflectionZeroth R (fun w => S w + M w) z =
-      crReflectionZeroth R S z + crReflectionZeroth R M z := by
+theorem crReflectionZeroth_add (R : V ≃L[ℝ] V) (S M : ℂ → V →L[ℝ] V) :
+    crReflectionZeroth R (S + M) = crReflectionZeroth R S + crReflectionZeroth R M := by
   simp only [crReflectionZeroth_def]
-  exact congrFun (twistedReflection_add _ S M) z
+  exact twistedReflection_add _ S M
 
 omit [CompleteSpace V] in
 /-- Off the real axis, the reflection of `(∂_s J) J` is the product of the reflections of `∂_s J`
@@ -213,23 +214,16 @@ theorem IsWeakCRSolution.crReflection_partial_one [FiniteDimensional ℝ V] {p q
     hηs).add_zeroth ((memLpLoc_crReflectionZeroth_iff (R := R) hΩ).2 hM) hpq
   have hsol := (hDξ'.hasWeakLineDerivOn 1).ae_eq hξs
   refine (isWeakCRSolution_congr_ae .rfl .rfl
-    (.of_forall fun z => (crReflectionZeroth_add_apply R S _ z).symm) hsol ?_).1 hT
+    (.of_forall fun z => (congrFun (crReflectionZeroth_add R S _) z).symm) hsol ?_).1 hT
   -- Eliminate `∂_t` of the reflected solution with the doubled equation.
   filter_upwards [heq, hJJ, ae_restrict_of_ae Complex.ae_im_ne_zero] with z hz hJz hz0
-  rw [eq_apply_of_add_apply_add_eq hJz hz, crReflectionZeroth_comp_apply hz0,
+  rw [(add_apply_add_eq_iff_eq_apply_add_sub (comp_eq_neg_id_of_mul_self_eq_neg_one hJz)).1 hz,
+    crReflectionZeroth_comp_apply hz0,
     ← twistedReflection_partial_one_rhs hz0]
   simp only [map_add, map_sub]
   abel
 
 /-! ### Regularity of every order -/
-
-omit [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V] in
-/-- The open upper part of `Ω ∩ {0 ≤ t}` lies in the open upper half-plane. -/
-private theorem ae_im_pos_interior :
-    ∀ᵐ z ∂volume.restrict (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) : Set ℂ), 0 < z.im := by
-  refine (ae_restrict_iff' (Opens.interior _).isOpen.measurableSet).2 (.of_forall fun z hz => ?_)
-  rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen] at hz
-  exact hz.2
 
 /-- On the open upper part, a weak solution of the reflected equation solves the original one
 almost everywhere, for every weak derivative `Dξ` of `ξ` there. -/
@@ -250,9 +244,11 @@ private theorem ae_cauchyRiemann_of_crReflection [FiniteDimensional ℝ V] {p q 
   have hU : Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ≤ Ω :=
     fun z hz => (interior_subset hz).1
   have hD := (hDξ'.mono hU).ae_eq
-    (hDξ.congr_ae (ae_im_pos_interior.mono fun z hz => (twistedReflection_of_im_pos hz).symm))
+    (hDξ.congr_ae ((ae_restrict_interior_inter_setOf_im_nonneg_im_pos Ω).mono fun _ hz =>
+      (twistedReflection_of_im_pos hz).symm))
   rw [Measure.restrict_congr_set (inter_setOf_im_nonneg_ae_eq_interior Ω)]
-  filter_upwards [ae_im_pos_interior, ae_restrict_of_ae_restrict_of_subset hU heq, hD]
+  filter_upwards [ae_restrict_interior_inter_setOf_im_nonneg_im_pos Ω,
+    ae_restrict_of_ae_restrict_of_subset hU heq, hD]
     with z hz0 hz hDz
   simpa [hDz, hz0] using hz
 
@@ -264,8 +260,9 @@ private theorem hasWeakFDerivOn_of_crReflectionCoeff {p : ℝ≥0∞}
     HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) J DJ :=
   ((hc.hasWeakFDerivOn.mono (show Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ≤ Ω from
     fun _ hz => (interior_subset hz).1)).congr_ae
-    (ae_im_pos_interior.mono fun z hz => by simp [hz])).congr_ae_deriv
-    (ae_im_pos_interior.mono fun z hz => by simp [hz])
+    ((ae_restrict_interior_inter_setOf_im_nonneg_im_pos Ω).mono fun _ hz => by
+      simp [hz])).congr_ae_deriv
+    ((ae_restrict_interior_inter_setOf_im_nonneg_im_pos Ω).mono fun _ hz => by simp [hz])
 
 /-- Interior regularity on the doubled domain: a reflected solution is in `W^{1,q}_loc(Ω)`. -/
 private theorem memWkpLoc_one_twistedReflection [FiniteDimensional ℝ V] {p q : ℝ≥0}

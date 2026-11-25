@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Analysis.Sobolev.Trace.Reflection.HalfSpace
+import TauCeti.Analysis.Complex.ReImTopology
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Smooth functions on relatively open subsets of the closed upper half-plane
@@ -31,6 +33,11 @@ real axis the map extends to a `Cᵏ` map across the axis, by
 * `IsOpen.measurableSet_inter_setOf_im_nonneg`: such relatively open sets are measurable.
 * `ContDiffOn.memWkpLoc_inter_setOf_im_nonneg`: `Cᵏ` maps on `Ω ∩ {z | 0 ≤ z.im}` are in the
   local Sobolev class of order `k` there.
+* `TauCeti.MemLpLoc.locallyIntegrableOn_indicator_setOf_im_nonneg`: a map integrable on compact
+  subsets of `Ω ∩ {z | 0 ≤ z.im}`, extended by zero below the axis, is locally integrable on `Ω`.
+* `TauCeti.MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg`: every weak derivative on
+  the open upper part of a map in `W^{k+1,p}_loc(Ω ∩ {z | 0 ≤ z.im})` is in
+  `W^{k,p}_loc(Ω ∩ {z | 0 ≤ z.im})`.
 -/
 
 public section
@@ -136,5 +143,30 @@ theorem _root_.ContDiffOn.memWkpLoc_inter_setOf_im_nonneg [CompleteSpace F] {f :
   exact (hg.memWkpLoc (Ω := ⟨W, hWo⟩) (p := p) inter_subset_right).congr_ae
     ((ae_restrict_iff' (hΩ.measurableSet_inter_setOf_im_nonneg.inter hWo.measurableSet)).2
       (Eventually.of_forall hgf))
+
+omit [NormedSpace ℝ F] in
+/-- The extension by zero below the real axis of a map integrable on compact subsets of
+`Ω ∩ {z | 0 ≤ z.im}` is locally integrable on `Ω`. -/
+theorem MemLpLoc.locallyIntegrableOn_indicator_setOf_im_nonneg {Ω : TopologicalSpace.Opens ℂ}
+    {g : ℂ → F} (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g) :
+    LocallyIntegrableOn ({z : ℂ | 0 ≤ z.im}.indicator g) Ω :=
+  LocallyIntegrableOn.indicator_of_closure
+    (by rw [(Complex.isClosed_setOfPred_le_im 0).closure_eq]
+        exact hg.locallyIntegrableOn le_rfl (Ω.isOpen.isLocallyClosed_inter_setOfPred_le_im 0))
+    (measurableSet_le measurable_const Complex.measurable_im).nullMeasurableSet
+
+/-- Every weak derivative on the open upper part of a member of `W^{k+1,p}_loc(Ω ∩ {0 ≤ im})` is in
+`W^{k,p}_loc(Ω ∩ {0 ≤ im})`, not only the one supplied by the definition: weak derivatives are
+unique almost everywhere, and the real axis is null. -/
+theorem MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg
+    {Ω : TopologicalSpace.Opens ℂ} {u : ℂ → F}
+    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u) {D : ℂ → ℂ →L[ℝ] F}
+    (hD : HasWeakFDerivOn volume
+      (TopologicalSpace.Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) u D) :
+    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k D := by
+  obtain ⟨-, D', hD', hD'k⟩ := memWkpLoc_succ_iff.1 hu
+  exact hD'k.congr_ae
+    (by rw [Measure.restrict_congr_set (inter_setOf_im_nonneg_ae_eq_interior Ω)]
+        exact hD'.ae_eq hD)
 
 end TauCeti

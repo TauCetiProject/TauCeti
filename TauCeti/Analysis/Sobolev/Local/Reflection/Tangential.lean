@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Reflection
 public import TauCeti.Analysis.Complex.LaplaceReflection
+import TauCeti.Analysis.Sobolev.Local.HalfPlane
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -27,10 +28,6 @@ term (`TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg`), so no bounda
   the axis and to `L (g (conj z))` below it, has the twisted reflection of `g'` as weak derivative
   along the real axis on all of `Ω`. The full weak derivative of a twisted reflection exists only
   under a compatibility condition on the axis; the tangential one always does.
-
-It also records that every weak derivative of a member of `W^{k+1,p}_loc(Ω ∩ {0 ≤ im})` on the open
-upper part is in `W^{k,p}_loc(Ω ∩ {0 ≤ im})`
-(`TauCeti.MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg`).
 -/
 
 public section
@@ -43,19 +40,6 @@ open scoped ComplexConjugate ENNReal
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens ℂ}
-
-/-- Every weak derivative on the open upper part of a member of `W^{k+1,p}_loc(Ω ∩ {0 ≤ im})` is in
-`W^{k,p}_loc(Ω ∩ {0 ≤ im})`, not only the one supplied by the definition: weak derivatives are
-unique almost everywhere, and the real axis is null. -/
-theorem MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg {p : ℝ≥0∞} {k : ℕ}
-    {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u)
-    {D : ℂ → ℂ →L[ℝ] F}
-    (hD : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) u D) :
-    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k D := by
-  obtain ⟨-, D', hD', hD'k⟩ := memWkpLoc_succ_iff.1 hu
-  exact hD'k.congr_ae
-    (by rw [Measure.restrict_congr_set (inter_setOf_im_nonneg_ae_eq_interior Ω)]
-        exact hD'.ae_eq hD)
 
 /-- **Extension by zero in a tangential direction.** If `g'` is the weak derivative of `g` in a
 direction `v` tangent to the real axis on the upper part of `Ω`, with `g` and `g'` integrable on
@@ -70,13 +54,8 @@ theorem HasWeakLineDerivOn.indicator_setOf_im_nonneg_of_im_eq_zero {g g' : ℂ �
       ({z : ℂ | 0 ≤ z.im}.indicator g') v := by
   have := hgW.completeSpace
   have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
-  have hli {f : ℂ → F} (hf : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) f) :
-      LocallyIntegrableOn ({z : ℂ | 0 ≤ z.im}.indicator f) Ω :=
-    LocallyIntegrableOn.indicator_of_closure
-      (by rw [(Complex.isClosed_setOfPred_le_im 0).closure_eq]
-          exact hf.locallyIntegrableOn le_rfl (Ω.isOpen.isLocallyClosed_inter_setOfPred_le_im 0))
-      hH.nullMeasurableSet
-  refine (hasWeakLineDerivOn_iff (hli hg) (hli hg')).2 fun φ hφ hφc hφΩ => ?_
+  refine (hasWeakLineDerivOn_iff hg.locallyIntegrableOn_indicator_setOf_im_nonneg
+    hg'.locallyIntegrableOn_indicator_setOf_im_nonneg).2 fun φ hφ hφc hφΩ => ?_
   have hind (a : ℂ → ℝ) (f : ℂ → F) : (fun z => a z • {z : ℂ | 0 ≤ z.im}.indicator f z) =
       {z : ℂ | 0 ≤ z.im}.indicator fun z => a z • f z :=
     funext fun z => (indicator_smul_apply _ _ _ _).symm
