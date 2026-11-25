@@ -50,19 +50,13 @@ section Coordinates
 
 variable {m : ℕ}
 
-/-- A sesquilinear form in the coordinates of a basis, through its Gram matrix. -/
-private theorem apply_eq_star_dotProduct_toMatrix₂_mulVec (b : Basis (Fin m) 𝕜 E)
-    (s : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) (u v : E) :
-    s u v = star (b.equivFun u) ⬝ᵥ LinearMap.toMatrix₂ b b s *ᵥ b.equivFun v :=
-  apply_eq_dotProduct_toMatrix₂_mulVec b b s u v
-
 /-- Positivity of the real part of a form on nonzero vectors, read on its Gram matrix. -/
 private theorem forall_re_pos_iff_toMatrix₂ (b : Basis (Fin m) 𝕜 E) (s : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) :
     (∀ v, v ≠ 0 → 0 < RCLike.re (s v v)) ↔
       ∀ p, p ≠ 0 → 0 < RCLike.re (star p ⬝ᵥ LinearMap.toMatrix₂ b b s *ᵥ p) := by
   refine ⟨fun hs p hp ↦ ?_, fun hs v hv ↦ ?_⟩
-  · simpa only [apply_eq_star_dotProduct_toMatrix₂_mulVec b, LinearEquiv.apply_symm_apply] using
-      hs _ (b.equivFun.symm.map_ne_zero_iff.2 hp)
+  · rw [star_dotProduct_toMatrix₂_mulVec]
+    exact hs _ (b.equivFun.symm.map_ne_zero_iff.2 hp)
   · rw [apply_eq_star_dotProduct_toMatrix₂_mulVec b]
     exact hs _ (by simpa using hv)
 
@@ -166,12 +160,12 @@ private theorem isRelEigenvalueVector_of_tendsto {F : Filter ι} [F.NeBot]
   have hlim (s : ι → E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) (s₀ : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜)
       (hs : ∀ u v, Tendsto (fun i ↦ s i u v) F (𝓝 (s₀ u v))) (k k') :
       Tendsto (fun i ↦ s i (B i k) (B i k')) F (𝓝 (s₀ (B₀ k) (B₀ k'))) := by
-    rw [apply_eq_star_dotProduct_toMatrix₂_mulVec b s₀]
+    rw [apply_eq_star_dotProduct_toMatrix₂_mulVec b (B := s₀)]
     refine (((by fun_prop : Continuous fun z : Matrix (Fin (finrank 𝕜 E)) (Fin (finrank 𝕜 E)) 𝕜 ×
       (Fin (finrank 𝕜 E) → 𝕜) × (Fin (finrank 𝕜 E) → 𝕜) ↦ star z.2.1 ⬝ᵥ z.1 *ᵥ z.2.2).tendsto
         _).comp ((tendsto_toMatrix₂ b hs).prodMk_nhds ((hcoord k).prodMk_nhds (hcoord k')))).congr
       fun i ↦ ?_
-    exact (apply_eq_star_dotProduct_toMatrix₂_mulVec b (s i) _ _).symm
+    exact (apply_eq_star_dotProduct_toMatrix₂_mulVec b (B := s i) _ _).symm
   refine (isRelEigenvalueVector_def _ _ _).2 ⟨B₀, fun k k' ↦ ⟨?_, ?_⟩⟩
   · refine tendsto_nhds_unique (hlim h h₀ hhl k k') (tendsto_const_nhds.congr' ?_)
     filter_upwards [hB] with i hi using ((hi k k').1).symm
@@ -251,7 +245,7 @@ theorem tendsto_relEigenvalueVector {l : Filter ι}
   have hQ1 : ∀ᶠ i in l, ∀ k, star (Q i k) ⬝ᵥ LinearMap.toMatrix₂ b b (h i) *ᵥ Q i k = 1 ∧
       star (Q i k) ⬝ᵥ LinearMap.toMatrix₂ b b (a i) *ᵥ Q i k = M i k := by
     filter_upwards [hB] with i hBi k
-    simp only [Q, ← apply_eq_star_dotProduct_toMatrix₂_mulVec b]
+    simp only [Q, Basis.equivFun_apply, ← apply_eq_star_dotProduct_toMatrix₂_mulVec b]
     simpa using hBi k k
   have hQ : ∀ᶠ i in l, Q i ∈ closedBall 0 (1 + c⁻¹) := by
     filter_upwards [hlow, hQ1] with i hlowi hQi
