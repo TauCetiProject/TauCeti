@@ -12,23 +12,17 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Primitive
 /-!
 # Simplicity of projective special unitary groups
 
-Applying `MulAction.IwasawaStructure.isSimpleGroup_quotient_center` to
+Combining `MulAction.IwasawaStructure.isSimpleGroup_quotient_center` with
 `Matrix.unitaryIwasawaStructure`, `Matrix.isPreprimitive_isotropicPoints`,
 `Matrix.nontrivial_specialIsometryGroup`, and
-`Matrix.mem_center_specialIsometryGroup_of_forall_smul_eq`, this file proves
+`Matrix.mem_center_specialIsometryGroup_of_forall_smul_eq`, we prove
 `Matrix.isSimpleGroup_quotient_center_specialIsometryGroup_of_commutator_eq_top` and
-`Matrix.isSimpleGroup_quotient_center_specialIsometryGroup`: for an invertible `ε`-Hermitian
-matrix `Q` with surjective `ε`-trace, nonzero skew-trace, and nonempty `Matrix.isotropicPoints Q σ`,
-the central quotient of `Q.specialIsometryGroup σ` is simple under the three-way generation
-hypothesis and perfectness, and in particular under the three-way hypothesis of
-`Matrix.commutator_specialIsometryGroup_eq_top`.
+`Matrix.isSimpleGroup_quotient_center_specialIsometryGroup`.
 
 ## References
 
-* K. Iwasawa, *Über die Einfachheit der speziellen projektiven Gruppen*, Proc. Imp. Acad. Tokyo
-  **17** (1941), 57--59.
+* K. Iwasawa, *Über die Einfachheit der speziellen projektiven Gruppen* (1941).
 * D. E. Taylor, *The Geometry of the Classical Groups* (1992), Chapter 10, Theorems 10.9 and 10.20.
-* L. C. Grove, *Classical Groups and Geometric Algebra* (2002), Chapter 11.
 -/
 
 public section
@@ -38,12 +32,8 @@ namespace Matrix
 variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K] {Q : Matrix n n K} {σ : K →+* K}
   {ε : K}
 
-/-- **Iwasawa's theorem for projective special unitary groups.** Let `σ` be an involution of `K`,
-let `Q` be an invertible `ε`-Hermitian matrix whose trace `t ↦ t + ε σ(t)` is onto
-`{s : K | σ s = ε * s}` and has a nonzero kernel element, and suppose `Q.isotropicPoints σ` is
-nonempty. If either `σ` fixes a scalar outside `{0, 1}`, `Fintype.card n ≤ 2`, or `Q` has Witt
-index at least two, and `Q.specialIsometryGroup σ` is perfect, then its quotient by its centre is
-simple. -/
+/-- **Iwasawa's theorem for projective special unitary groups**: when transvections generate and
+`Q.specialIsometryGroup σ` is perfect, its central quotient is simple. -/
 theorem isSimpleGroup_quotient_center_specialIsometryGroup_of_commutator_eq_top
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hadm : ∃ d ≠ 0, d + ε * σ d = 0)
@@ -59,12 +49,8 @@ theorem isSimpleGroup_quotient_center_specialIsometryGroup_of_commutator_eq_top
   exact (Q.unitaryIwasawaStructure hσ hQ hdet htr hadm hgen).isSimpleGroup_quotient_center
     fun _ hg ↦ mem_center_specialIsometryGroup_of_forall_smul_eq hσ hQ hdet htr hadm hg
 
-/-- **Simplicity of a projective special unitary group.** Let `σ` be an involution of `K`, let `Q`
-be an invertible `ε`-Hermitian matrix whose trace `t ↦ t + ε σ(t)` is onto `{s : K | σ s = ε * s}`
-and has a nonzero kernel element, and suppose `Q.isotropicPoints σ` is nonempty. If the fixed field
-of `σ` contains a nonzero element whose square is not `1`, or `Q` has Witt index at least two, or
-`3 ≤ Fintype.card n` and some nonzero `c : K` satisfies `c * σ c ≠ 1`, then the central quotient of
-`Q.specialIsometryGroup σ` is simple. -/
+/-- **Simplicity of a projective special unitary group** under any of the three perfectness
+hypotheses of `Matrix.commutator_specialIsometryGroup_eq_top`. -/
 theorem isSimpleGroup_quotient_center_specialIsometryGroup
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hadm : ∃ d ≠ 0, d + ε * σ d = 0)

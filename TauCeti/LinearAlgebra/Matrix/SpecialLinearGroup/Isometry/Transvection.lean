@@ -273,8 +273,8 @@ theorem exists_coe_eq_unitaryTransvection_iff (hσ : Function.Involutive σ)
         Q.unitaryTransvection σ (p : ℙ K (n → K)).rep a) ↔ a + ε * σ a = 0 := by
   refine ⟨fun ⟨g, hg⟩ ↦ ?_, exists_coe_eq_unitaryTransvection hσ hQ p⟩
   have h := mem_specialIsometryGroup_iff.mp (g : Q.specialIsometryGroup σ).property
-  rw [hg, transpose_map_unitaryTransvection_mul_mul hσ hQ (comp_rep_dotProduct_mulVec_rep p),
-    add_eq_left, smul_eq_zero] at h
+  rw [hg, transpose_map_unitaryTransvection_mul_mul hσ hQ, comp_rep_dotProduct_mulVec_rep p,
+    mul_zero, add_zero, add_eq_left, smul_eq_zero] at h
   exact h.resolve_right
     (vecMulVec_mulVec_comp_vecMul_ne_zero hσ.injective hdet (p : ℙ K (n → K)).rep_ne_zero)
 

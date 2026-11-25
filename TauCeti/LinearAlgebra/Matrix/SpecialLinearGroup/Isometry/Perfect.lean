@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Iwasawa
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Module
 import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Nondegenerate
@@ -19,20 +18,15 @@ import TauCeti.Logic.Function.Basic
 /-!
 # Perfectness of special unitary groups
 
-Let `σ` be an involution of a field `K`, let `Q` be an invertible `ε`-Hermitian matrix,
-`(Q.map σ)ᵀ = ε • Q`, whose trace `t ↦ t + ε σ(t)` is onto `{s : K | σ s = ε * s}` and has a
-nonzero kernel element (`∃ d ≠ 0, d + ε * σ d = 0`), and suppose `Matrix.isotropicPoints Q σ` is
-nonempty. This file proves `Matrix.commutator_specialIsometryGroup_eq_top`:
-`Matrix.specialIsometryGroup Q σ` is perfect whenever the fixed field of `σ` contains a nonzero `c`
-with `c ^ 2 ≠ 1`, `Q` has Witt index at least two, or `3 ≤ Fintype.card n` and some nonzero `c : K`
-satisfies `c * σ c ≠ 1` (each branch also implying the generation disjunction via
-`Matrix.exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span`). This supplies the
-commutator hypothesis in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Simple` and feeds
-`TauCeti.DerivedCentralQuotient.quotientCenterEquivOfPerfect`.
+For involutive `σ` on `K` and invertible `ε`-Hermitian `Q` with surjective `ε`-trace, nonzero
+skew-trace, and nonempty `Matrix.isotropicPoints Q σ`, we prove `Matrix.specialIsometryGroup Q σ`
+perfect (`Matrix.commutator_specialIsometryGroup_eq_top`) when `σ` fixes `c ≠ 0` with `c ^ 2 ≠ 1`,
+Witt index is at least two, or `3 ≤ Fintype.card n` and `∃ c ≠ 0, c * σ c ≠ 1` (each giving
+generation via `Matrix.exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span`).
 
 ## References
 
-* D. E. Taylor, *The Geometry of the Classical Groups* (1992), Chapter 10 (§10.4 and Theorem 10.20).
+* D. E. Taylor, *The Geometry of the Classical Groups* (1992), Chapter 10 (§10.4, Theorem 10.20).
 * L. C. Grove, *Classical Groups and Geometric Algebra* (2002), Chapter 11.
 -/
 
@@ -61,17 +55,15 @@ private theorem unitaryTransvection_mem_commutator_of_mulVec_eq_smul {g : Q.spec
     (ha : a + ε * σ a = 0) : MemCommTransv Q σ e a := by
   have hsub := sub_ne_zero.mpr hc1; set b := a * (c * σ c - 1)⁻¹
   obtain ⟨tb, htb, hctb⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ he
-    (a := b) (by
-      simp only [b, map_mul, map_inv₀, map_sub, hσ c, map_one, mul_comm (σ c) c]
-      linear_combination (c * σ c - 1)⁻¹ * ha)
+    (a := b) (by simp only [b, map_mul, map_inv₀, map_sub, hσ c, map_one, mul_comm (σ c) c]
+                 linear_combination (c * σ c - 1)⁻¹ * ha)
   let t₀ : Q.specialIsometryGroup σ := ⟨tb, htb⟩; have hct₀ : (t₀ : Matrix n n K) = _ := hctb
   refine ⟨⁅g, t₀⁆, Subgroup.commutator_mem_commutator (by simp) (by simp), ?_⟩
   rw [commutatorElement_def, coe_mul_specialIsometryGroup,
     coe_inv_specialIsometryGroup_eq_unitaryTransvection he hct₀, coe_mul_specialIsometryGroup,
     coe_mul_specialIsometryGroup, Subgroup.coe_inv, hct₀,
     coe_mul_unitaryTransvection_mul_coe_inv g.property, hge, unitaryTransvection_smul,
-    unitaryTransvection_mul_unitaryTransvection he]
-  congr 1; simp only [b]; field_simp; ring
+    unitaryTransvection_mul_unitaryTransvection he]; congr 1; simp only [b]; field_simp; ring
 
 include hσ hQ hdet hε htr he hf hef in
 private theorem unitaryTransvection_mem_commutator_of_witt_two {u w : n → K} (hu₀ : u ≠ 0)
@@ -101,55 +93,61 @@ private theorem unitaryTransvection_mem_commutator_of_witt_two {u w : n → K} (
     hsiegel (by rw [comp_smul_dotProduct_mulVec_smul, hu₀, mul_zero]) hew₁
   obtain ⟨g₂, hcs₂', hg₂_inv⟩ := hsiegel hy₀ hey₀
   refine ⟨⁅g₁, g₂⁆, Subgroup.commutator_mem_commutator (by simp) (by simp), ?_⟩
-  have hsum : w₁ + y₀ + -w₁ + -y₀ = 0 := by abel
   rw [commutatorElement_def, coe_mul_specialIsometryGroup, hg₂_inv, coe_mul_specialIsometryGroup,
     hg₁_inv, coe_mul_specialIsometryGroup, hcs₁', hcs₂',
     siegelTransvection_mul_siegelTransvection he hey₀ hw₁e,
     siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hew₁])
       (by simp [hw₁e, hy₀e]),
     siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hey₀]) (by simp [hy₀e]),
-    hsum, siegelTransvection_zero_eq_unitaryTransvection]
+    show w₁ + y₀ + -w₁ + -y₀ = 0 by simp [add_assoc, add_left_comm],
+    siegelTransvection_zero_eq_unitaryTransvection]
   congr 1; simp only [w₁, map_comp_add, map_comp_neg, TauCeti.map_comp_smul, add_dotProduct,
     neg_dotProduct, smul_dotProduct, mulVec_neg, mulVec_smul, dotProduct_neg, dotProduct_smul,
     smul_eq_mul, hu₀, hy₀, hu₀y₀, hy₀u₀]; linear_combination b * hε + hb
+
+private def hyperbolicRescaling (Q : Matrix n n K) (σ : K →+* K) (ε : K) (e f : n → K) (c : K) :=
+  1 + ((c - 1) * ε) • vecMulVec e ((σ ∘ f) ᵥ* Q) + ((σ c)⁻¹ - 1) • vecMulVec f ((σ ∘ e) ᵥ* Q)
+
+private theorem hyperbolicRescaling_mulVec (e f : n → K) (c : K) (x : n → K) :
+    hyperbolicRescaling Q σ ε e f c *ᵥ x = x + (((c - 1) * ε) * ((σ ∘ f) ⬝ᵥ (Q *ᵥ x))) • e +
+      (((σ c)⁻¹ - 1) * ((σ ∘ e) ⬝ᵥ (Q *ᵥ x))) • f := by
+  simp [hyperbolicRescaling, add_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec,
+    smul_smul]
+
+include hσ hQ hε hσε he hf hef hfe in
+private theorem transpose_map_hyperbolicRescaling_mul_mul_self {c : K} (hc : c ≠ 0) :
+    ((hyperbolicRescaling Q σ ε e f c).map σ)ᵀ * Q * hyperbolicRescaling Q σ ε e f c = Q :=
+  have hσc := (map_ne_zero σ).mpr hc
+  transpose_map_mul_mul_eq_self fun x y ↦ by
+    rw [hyperbolicRescaling_mulVec, hyperbolicRescaling_mulVec]
+    simp only [map_comp_add, TauCeti.map_comp_smul, map_mul, map_sub, map_inv₀, map_one, hσ c, hσε,
+      comp_dotProduct_mulVec_swap hσ hQ hε e x, comp_dotProduct_mulVec_swap hσ hQ hε f x,
+      add_dotProduct, smul_dotProduct, mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul,
+      smul_eq_mul, he, hf, hef, hfe]; field_simp
+    linear_combination σ c * (c - 1) * ((σ ∘ f) ⬝ᵥ (Q *ᵥ y)) * σ ((σ ∘ e) ⬝ᵥ (Q *ᵥ x)) * hε
 
 include hσ hQ hε hσε he hf hef hfe in
 private theorem exists_mem_specialIsometryGroup_mulVec_eq_smul_of_anisotropic {v : n → K}
     (hev : (σ ∘ e) ⬝ᵥ (Q *ᵥ v) = 0) (hvv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) ≠ 0) {c : K} (hc : c ≠ 0) :
     ∃ g : Q.specialIsometryGroup σ, (g : Matrix n n K) *ᵥ e = c • e := by
-  have hσc : σ c ≠ 0 := (map_ne_zero σ).mpr hc
-  let M₁ : Matrix n n K := 1 + ((c - 1) * ε) • vecMulVec e ((σ ∘ f) ᵥ* Q) +
-    ((σ c)⁻¹ - 1) • vecMulVec f ((σ ∘ e) ᵥ* Q)
-  let M₂ : Matrix n n K := Q.unitaryTransvection σ v ((σ c * c⁻¹ - 1) * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹)
-  have hM₁x (x : n → K) : M₁ *ᵥ x = x + (((c - 1) * ε) * ((σ ∘ f) ⬝ᵥ (Q *ᵥ x))) • e +
-      (((σ c)⁻¹ - 1) * ((σ ∘ e) ⬝ᵥ (Q *ᵥ x))) • f := by
-    simp [M₁, add_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec, smul_smul]
+  have hσc := (map_ne_zero σ).mpr hc; have hε0 := left_ne_zero_of_mul (hε ▸ one_ne_zero)
+  let M₁ := hyperbolicRescaling Q σ ε e f c; set a := (σ c * c⁻¹ - 1) * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹
+  let M₂ := Q.unitaryTransvection σ v a
   have hM₁e : M₁ *ᵥ e = c • e := by
-    rw [hM₁x, hfe, he, mul_zero, zero_smul, add_zero, mul_assoc, hε, mul_one]; module
+    rw [hyperbolicRescaling_mulVec]; simp [hfe, he, mul_assoc, hε, sub_smul]
   have hd₁ : M₁.det = c * (σ c)⁻¹ := det_eq_mul_of_mulVec_eq_smul hε he hf hef hfe hM₁e
-    (by rw [hM₁x, hf, hef, mul_zero, zero_smul, add_zero, mul_one]; module)
-    fun w hew hfw ↦ by simp [hM₁x, hew, hfw]
-  have hd₂ : M₂.det = σ c * c⁻¹ := by
-    have hM₂ : M₂ = 1 - vecMulVec (-((σ c * c⁻¹ - 1) * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹) • v)
-        ((σ ∘ v) ᵥ* Q) := by simp [M₂, unitaryTransvection_def, sub_eq_add_neg, smul_vecMulVec]
-    rw [hM₂, TauCeti.det_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec, smul_eq_mul]
-    field_simp; ring
-  have hB₁ (x y : n → K) : (σ ∘ (M₁ *ᵥ x)) ⬝ᵥ (Q *ᵥ (M₁ *ᵥ y)) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y) := by
-    rw [hM₁x x, hM₁x y]; simp only [map_comp_add, TauCeti.map_comp_smul, map_mul, map_sub,
-      map_inv₀, map_one, hσ c, hσε, apply_comp_dotProduct_mulVec hσ hQ, add_dotProduct,
-      smul_dotProduct, mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul, smul_eq_mul, he,
-      hf, hef, hfe]; rcases mul_self_eq_one_iff.mp hε with rfl | rfl <;> (field_simp; ring)
-  have hB₂ (x y : n → K) : (σ ∘ (M₂ *ᵥ x)) ⬝ᵥ (Q *ᵥ (M₂ *ᵥ y)) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y) := by
-    rw [unitaryTransvection_mulVec, unitaryTransvection_mulVec]; simp only [map_comp_add,
-      TauCeti.map_comp_smul, map_mul, map_sub, map_inv₀, map_one, hσ c,
-      apply_comp_dotProduct_mulVec hσ hQ v v, apply_comp_dotProduct_mulVec hσ hQ v x,
-      add_dotProduct, smul_dotProduct, mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul,
-      smul_eq_mul]; rcases mul_self_eq_one_iff.mp hε with rfl | rfl <;> (field_simp; ring)
-  let g₀ : SpecialLinearGroup n K := .mk (M₁ * M₂)
-    (by rw [det_mul, hd₁, hd₂, mul_assoc, inv_mul_cancel_left₀ hσc, mul_inv_cancel₀ hc])
-  refine ⟨⟨g₀, mem_specialIsometryGroup_iff.mpr (transpose_map_mul_mul_eq_self fun x y ↦ by
-      rw [SpecialLinearGroup.coe_mk, ← mulVec_mulVec, ← mulVec_mulVec, hB₁, hB₂])⟩, ?_⟩
-  simpa [g₀, M₂, ← mulVec_mulVec, unitaryTransvection_mulVec,
+    (by rw [hyperbolicRescaling_mulVec]; simp [hf, hef, sub_smul])
+    fun w hew hfw ↦ by rw [hyperbolicRescaling_mulVec]; simp [hew, hfw]
+  have hd₂ : M₂.det = σ c * c⁻¹ := by rw [det_unitaryTransvection_eq]; dsimp [a]; field_simp; ring
+  have hM₁Q := transpose_map_hyperbolicRescaling_mul_mul_self hσ hQ hε hσε he hf hef hfe hc
+  have hM₂Q : (M₂.map σ)ᵀ * Q * M₂ = Q := transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero
+    (v := v) (a := a) hσ hQ (by simp only [a, map_mul, map_sub, map_inv₀, map_one, hσ c,
+      apply_comp_dotProduct_mulVec hσ hQ v v]; field_simp; ring)
+  refine ⟨⟨.mk (M₁ * M₂) (by rw [det_mul, hd₁, hd₂, mul_assoc, inv_mul_cancel_left₀ hσc,
+      mul_inv_cancel₀ hc]), mem_specialIsometryGroup_iff.mpr (transpose_map_mul_mul_eq_self
+      fun x y ↦ by rw [SpecialLinearGroup.coe_mk, ← mulVec_mulVec, ← mulVec_mulVec,
+        comp_mulVec_dotProduct_mulVec_mulVec hM₁Q, comp_mulVec_dotProduct_mulVec_mulVec hM₂Q])⟩, ?_⟩
+  simpa [M₂, ← mulVec_mulVec, unitaryTransvection_mulVec,
     (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hev] using hM₁e
 
 include hσ hQ hdet hε hσε htr he hf hef hfe in
@@ -176,11 +174,9 @@ private theorem unitaryTransvection_mem_commutator_of_card_three_le (hcard : 3 �
 end Helpers
 
 omit [DecidableEq n] in
-/-- Each of the three non-solvability hypotheses for a special unitary group implies the three-way
-transvection-generation hypothesis of `Matrix.elementaryUnitaryGroup_eq_top`. -/
+/-- Each non-solvability hypothesis implies transvection generation. -/
 theorem exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span
-    (hσ : Function.Involutive σ)
-    (hperf : (∃ c : K, c ≠ 0 ∧ c ^ 2 ≠ 1 ∧ σ c = c) ∨
+    (hσ : Function.Involutive σ) (hperf : (∃ c : K, c ≠ 0 ∧ c ^ 2 ≠ 1 ∧ σ c = c) ∨
       (∃ u w : n → K, u ≠ 0 ∧ w ∉ K ∙ u ∧ (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0 ∧
         (σ ∘ w) ⬝ᵥ (Q *ᵥ w) = 0 ∧ (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) ∨
       (3 ≤ Fintype.card n ∧ ∃ c : K, c ≠ 0 ∧ c * σ c ≠ 1)) :
@@ -192,11 +188,7 @@ theorem exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span
   · exact .inr (.inr h)
   · exact .inl ⟨c * σ c, mul_ne_zero hc0 ((map_ne_zero σ).mpr hc0), hc1, by simp [hσ c, mul_comm]⟩
 
-/-- **Perfectness of a special unitary group.** Let `σ` be an involution of `K`, let `Q` be an
-invertible `ε`-Hermitian matrix whose trace `t ↦ t + ε σ(t)` is onto `{s | σ(s) = ε s}` and has a
-nonzero kernel element, and suppose `Q.isotropicPoints σ` is nonempty. If `σ` fixes a nonzero `c`
-with `c ^ 2 ≠ 1`, `Q` has Witt index at least two, or `3 ≤ Fintype.card n` and some nonzero `c : K`
-satisfies `c * σ c ≠ 1`, then `Q.specialIsometryGroup σ` is perfect. -/
+/-- **Perfectness of a special unitary group.** -/
 theorem commutator_specialIsometryGroup_eq_top (hσ : Function.Involutive σ)
     (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0) (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s)
     (hadm : ∃ d ≠ 0, d + ε * σ d = 0) [Nonempty (Q.isotropicPoints σ)]
@@ -207,21 +199,21 @@ theorem commutator_specialIsometryGroup_eq_top (hσ : Function.Involutive σ)
     commutator (Q.specialIsometryGroup σ) = ⊤ := by
   obtain ⟨e, f, he₀, -, he, hf, hef, hfe⟩ :=
     exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_nonempty_isotropicPoints hσ hQ hdet htr
-  have := Function.nonempty_of_ne he₀
+  have := Function.nonempty_of_ne he₀; have hgen :=
+    exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span hσ hperf
   have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
   have hσε := map_eq_self_of_mul_self_eq_one_of_det_ne_zero hσ hQ hdet hε
-  have hgen := exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span hσ hperf
   have hmem (a : K) (ha : a + ε * σ a = 0) : MemCommTransv Q σ e a := by
     rcases hperf with ⟨c, hc0, hcsq, hσc⟩ | ⟨u, w, hu0, hws, hu, hw, huw⟩ | ⟨hcard, c, hc0, hc1⟩
     · obtain ⟨h, -, hhe, -, -⟩ :=
-        exists_mem_elementaryUnitaryGroup_mulVec_eq_smul_and_inv_smul_and_eq_self
-          hσ hQ hε hadm he hf hef hc0 hσc
+        exists_mem_elementaryUnitaryGroup_mulVec_eq_smul_and_inv_smul_and_eq_self hσ hQ hε hadm he
+          hf hef hc0 hσc
       exact unitaryTransvection_mem_commutator_of_mulVec_eq_smul hσ hQ he (by rwa [hσc, ← sq])
         hhe ha
-    · exact unitaryTransvection_mem_commutator_of_witt_two hσ hQ hdet hε htr he hf hef hu0 hws
-        hu hw huw ha
-    · exact unitaryTransvection_mem_commutator_of_card_three_le hσ hQ hdet hε hσε htr he hf hef
-        hfe hcard hc0 hc1 ha
+    · exact unitaryTransvection_mem_commutator_of_witt_two hσ hQ hdet hε htr he hf hef hu0 hws hu hw
+        huw ha
+    · exact unitaryTransvection_mem_commutator_of_card_three_le hσ hQ hdet hε hσε htr he hf hef hfe
+        hcard hc0 hc1 ha
   let p₀ : Q.isotropicPoints σ := ⟨_, (mk_mem_isotropicPoints_iff he₀).mpr he⟩
   have hp₀ : Q.unitaryTransvectionSubgroup σ p₀ ≤ commutator (Q.specialIsometryGroup σ) := by
     intro g hg; obtain ⟨a, hga⟩ := (mem_unitaryTransvectionSubgroup_mk_iff he₀ p₀.property).mp hg

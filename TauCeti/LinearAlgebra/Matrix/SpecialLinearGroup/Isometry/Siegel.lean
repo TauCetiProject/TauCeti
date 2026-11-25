@@ -17,23 +17,20 @@ import TauCeti.Logic.Function.Basic
 /-!
 # Hyperbolic rescalings and Siegel transformations from unitary transvections
 
-Let `σ` be an involution of a field `K`, let `Q` be an invertible `ε`-Hermitian matrix,
-`(Q.map σ)ᵀ = ε • Q`, and write `B(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)`. When `ε * ε = 1` and
-`∃ d ≠ 0, d + ε * σ d = 0`, `Matrix.elementaryUnitaryGroup Q σ` contains hyperbolic rescalings by
-nonzero `σ`-fixed scalars
+For an involution `σ` of a field `K` and an invertible `ε`-Hermitian `Q` (`(Q.map σ)ᵀ = ε • Q`)
+with `B(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)`, when `ε * ε = 1` and `∃ d ≠ 0, d + ε * σ d = 0`,
+`Matrix.elementaryUnitaryGroup Q σ` contains hyperbolic rescalings by nonzero `σ`-fixed scalars
 (`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_smul_and_inv_smul_and_eq_self`). When in
-addition `t ↦ t + ε σ(t)` is onto `{s : K | σ s = ε * s}` (giving a hyperbolic pair in `{e, f}ᗮ` in
-Witt index at least two via `Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_notMem_span`
-from `TauCeti.LinearAlgebra.Matrix.SesquilinearForm`) and either `σ` fixes a scalar outside
-`{0, 1}`, `Fintype.card n ≤ 2`, or `Q` has Witt index at least two, every
-`Matrix.siegelTransvection Q σ ε u w c` along an isotropic `u` with `B(u, w) = 0` that belongs to
-`Q.specialIsometryGroup σ` lies in `Q.elementaryUnitaryGroup σ`
+addition `t ↦ t + ε σ(t)` is onto `{s : K | σ s = ε * s}` and either `σ` fixes a scalar outside
+`{0, 1}`, `Fintype.card n ≤ 2`, or `Q` has Witt index at least two, every admissible
+`Matrix.siegelTransvection Q σ ε u w c` in `Q.specialIsometryGroup σ` along isotropic `u` with
+`B(u, w) = 0` lies in `Q.elementaryUnitaryGroup σ`
 (`Matrix.mk_mem_elementaryUnitaryGroup_of_coe_eq_siegelTransvection`), feeding
 `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Iwasawa`.
 
 ## References
 
-* D. E. Taylor, *The Geometry of the Classical Groups* (1992), Chapters 10 and 11 (§10.4 and §11.4).
+* D. E. Taylor, *The Geometry of the Classical Groups* (1992), Chapters 10 and 11 (§10.4, §11.4).
 * L. C. Grove, *Classical Groups and Geometric Algebra* (2002), Chapter 11.
 -/
 
@@ -55,9 +52,8 @@ private theorem exists_mem_elementary_w_hyperbolic (hσ : Function.Involutive σ
       (w : Matrix n n K) *ᵥ f = (u * d) • e ∧ ∀ x : n → K, (σ ∘ e) ⬝ᵥ (Q *ᵥ x) = 0 →
         (σ ∘ f) ⬝ᵥ (Q *ᵥ x) = 0 → (w : Matrix n n K) *ᵥ x = x := by
   have ha₂ : -(ε * u⁻¹ * d⁻¹) + ε * σ (-(ε * u⁻¹ * d⁻¹)) = 0 := by
-    have hσd : σ d ≠ 0 := (map_ne_zero σ).mpr hd
-    rw [map_neg, map_mul, map_mul, map_inv₀, map_inv₀, hσε, hσu]; field_simp
-    linear_combination -hdε - d * hε
+    have hσd := (map_ne_zero σ).mpr hd; rw [map_neg, map_mul, map_mul, map_inv₀, map_inv₀, hσε, hσu]
+    field_simp; linear_combination -hdε - d * hε
   obtain ⟨t₁, ht₁, hc₁⟩ := exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection hσ hQ he
     (a := u * d) (by rw [map_mul, hσu]; linear_combination u * hdε)
   obtain ⟨t₂, ht₂, hc₂⟩ := exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection hσ hQ hf ha₂
@@ -66,33 +62,27 @@ private theorem exists_mem_elementary_w_hyperbolic (hσ : Function.Involutive σ
     simp [hc₁, unitaryTransvection_mulVec, hef]
   have ht₂f : (t₂ : Matrix n n K) *ᵥ f = f := by simp [hc₂, unitaryTransvection_mulVec, hf]
   have ht₂e : (t₂ : Matrix n n K) *ᵥ e = e - (u⁻¹ * d⁻¹) • f := by
-    have hcoeff : -(ε * u⁻¹ * d⁻¹) * ε = -(u⁻¹ * d⁻¹) := by linear_combination -u⁻¹ * d⁻¹ * hε
-    rw [hc₂, unitaryTransvection_mulVec, hfe, hcoeff, neg_smul, ← sub_eq_add_neg]
+    rw [hc₂, unitaryTransvection_mulVec, hfe, show -(ε * u⁻¹ * d⁻¹) * ε = -(u⁻¹ * d⁻¹) by
+      linear_combination -u⁻¹ * d⁻¹ * hε, neg_smul, ← sub_eq_add_neg]
   have hud : (u⁻¹ * d⁻¹) * (u * d) = 1 := by field_simp
   refine ⟨t₁ * t₂ * t₁, mul_mem (mul_mem ht₁ ht₂) ht₁, ?_, ?_, fun x hex hfx ↦ ?_⟩
-  · rw [coe_mul_specialIsometryGroup_mulVec, coe_mul_specialIsometryGroup_mulVec, ht₁e, ht₂e,
-      mulVec_sub, mulVec_smul, ht₁e, ht₁f, smul_add, smul_smul, hud]; module
-  · rw [coe_mul_specialIsometryGroup_mulVec, coe_mul_specialIsometryGroup_mulVec, ht₁f, mulVec_add,
-      mulVec_smul, ht₂f, ht₂e, smul_sub, smul_smul, mul_comm (u * d), hud, one_smul,
-      ← add_sub_assoc, add_sub_cancel_left, mulVec_smul, ht₁e]
+  · simp [← mulVec_mulVec, mulVec_sub, mulVec_smul, ht₁e, ht₂e, ht₁f, smul_add, smul_smul, hud]
+  · simp [← mulVec_mulVec, mulVec_add, mulVec_sub, mulVec_smul, ht₁f, ht₂f, ht₂e, ht₁e, smul_smul,
+      mul_comm (u * d), hud]
   · simp [← mulVec_mulVec, hc₁, hc₂, unitaryTransvection_mulVec, hex, hfx]
 
-/-- **Hyperbolic rescaling lies in the elementary unitary group.** Let `σ` be an involution and let
-`Q` be an `ε`-Hermitian matrix with `ε * ε = 1` such that some nonzero `d` satisfies
-`d + ε * σ d = 0`. For any isotropic vectors `e, f` with `B(e, f) = 1` and any nonzero `a` fixed by
-`σ`, some element of `Q.elementaryUnitaryGroup σ` sends `e ↦ a • e`, `f ↦ a⁻¹ • f`, and fixes
-pointwise every vector orthogonal to both `e` and `f`. -/
+/-- **Hyperbolic rescaling lies in the elementary unitary group.** For involutive `σ`, `ε`-Hermitian
+`Q` with `ε * ε = 1` and `∃ d ≠ 0, d + ε * σ d = 0`, isotropic `e, f` with `B(e, f) = 1`, and
+`a ≠ 0` fixed by `σ`, some `h ∈ Q.elementaryUnitaryGroup σ` sends `e ↦ a • e`, `f ↦ a⁻¹ • f`, and
+fixes `{e, f}ᗮ`. -/
 theorem exists_mem_elementaryUnitaryGroup_mulVec_eq_smul_and_inv_smul_and_eq_self
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1)
     (hadm : ∃ d ≠ 0, d + ε * σ d = 0) {e f : n → K} (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0)
-    (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0) (hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1)
-    {a : K} (ha : a ≠ 0) (hσa : σ a = a) :
-    ∃ h ∈ Q.elementaryUnitaryGroup σ,
-      (h : Matrix n n K) *ᵥ e = a • e ∧ (h : Matrix n n K) *ᵥ f = a⁻¹ • f ∧
-      ∀ x : n → K, (σ ∘ e) ⬝ᵥ (Q *ᵥ x) = 0 → (σ ∘ f) ⬝ᵥ (Q *ᵥ x) = 0 →
-        (h : Matrix n n K) *ᵥ x = x := by
-  obtain ⟨d, hd, hdε⟩ := hadm
-  have hfe := comp_dotProduct_mulVec_eq_of_eq_one hσ hQ hε hef
+    (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0) (hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1) {a : K} (ha : a ≠ 0)
+    (hσa : σ a = a) : ∃ h ∈ Q.elementaryUnitaryGroup σ, (h : Matrix n n K) *ᵥ e = a • e ∧
+      (h : Matrix n n K) *ᵥ f = a⁻¹ • f ∧ ∀ x : n → K, (σ ∘ e) ⬝ᵥ (Q *ᵥ x) = 0 →
+        (σ ∘ f) ⬝ᵥ (Q *ᵥ x) = 0 → (h : Matrix n n K) *ᵥ x = x := by
+  obtain ⟨d, hd, hdε⟩ := hadm; have hfe := comp_dotProduct_mulVec_eq_of_eq_one hσ hQ hε hef
   have hw {u : K} := exists_mem_elementary_w_hyperbolic (u := u) hσ hQ hε
     (by simpa [hfe, hef] using apply_comp_dotProduct_mulVec hσ hQ f e) hd hdε he hf hef hfe
   obtain ⟨w₁, hw₁, he₁, hf₁, hx₁⟩ := hw ha hσa
@@ -127,13 +117,12 @@ private theorem exists_mem_elementaryUnitaryGroup_siegelTransvection_zero_of_iso
   have hpair₁ : (σ ∘ (e + u')) ⬝ᵥ (Q *ᵥ (v + (-d * β) • u' + (-d * α) • e)) = α + β := by
     simp only [comp_add_dotProduct_mulVec, mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul,
       smul_eq_mul, he, hu', heu', hu'e, α, β]; ring
-  have hvec : v + (-d * β) • u' + (-d * α) • e + (d * (α + β)) • (e + u') =
-      v + (d * β) • e + (d * α) • u' := by module
   rw [coe_mul_specialIsometryGroup_mulVec, coe_mul_specialIsometryGroup_mulVec, hv₂, hc₁,
-    unitaryTransvection_mulVec, hpair₁, hvec, siegelTransvection_mulVec]
-  have h1 : d * α * d⁻¹ = α := by field_simp
+    unitaryTransvection_mulVec, hpair₁, show v + (-d * β) • u' + (-d * α) • e +
+      (d * (α + β)) • (e + u') = v + (d * β) • e + (d * α) • u' by module,
+    siegelTransvection_mulVec]
   simp only [u', β, TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul, map_inv₀, smul_smul,
-    zero_smul, add_zero, ← mul_assoc, h1, hd_ratio, neg_mul]; module
+    zero_smul, add_zero, ← mul_assoc, show d * α * d⁻¹ = α by field_simp, hd_ratio, neg_mul]; module
 
 section SiegelGen
 
@@ -158,8 +147,8 @@ private theorem siegelTransvection_mem_elementary_of_exists_param {c c₀ : K}
   obtain ⟨t₀, ht₀, hct₀⟩ := exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection hσ hQ he
     (a := c - c₀) (by rw [map_sub]; linear_combination hc - hc₀)
   exact specialIsometryGroup_ext (g₁ := ⟨s, hs⟩) (g₂ := t₀ * s₀) (by
-    simp only [coe_mul_specialIsometryGroup, hcs, hct₀, hcs₀]
-    rw [← siegelTransvection_zero_eq_unitaryTransvection (ε := ε),
+    rw [coe_mul_specialIsometryGroup, hcs, hct₀, hcs₀,
+      ← siegelTransvection_zero_eq_unitaryTransvection (ε := ε),
       siegelTransvection_mul_siegelTransvection he hew₀ (by simp)]; simp) ▸ mul_mem ht₀ hs₀
 
 include hσ hQ hdet hε hσε htr hd hdε he hf hef hew₀ in
@@ -176,27 +165,24 @@ private theorem siegelTransvection_mem_elementary_of_fixed_ne {a : K} (ha0 : a �
   obtain ⟨s', hs', hcs'⟩ := exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ he hew'
     (c := c') (by linear_combination hc')
   obtain ⟨h, hh, hhe, -, hhx⟩ :=
-    exists_mem_elementaryUnitaryGroup_mulVec_eq_smul_and_inv_smul_and_eq_self
-      hσ hQ hε ⟨d, hd, hdε⟩ he hf hef ha0 hσa
+    exists_mem_elementaryUnitaryGroup_mulVec_eq_smul_and_inv_smul_and_eq_self hσ hQ hε ⟨d, hd, hdε⟩
+      he hf hef ha0 hσa
   let s₁ : Q.specialIsometryGroup σ := ⟨s', hs'⟩; have hcs₁ : (s₁ : Matrix n n K) = _ := hcs'
   have hconj : (↑(h * s₁ * h⁻¹) : Matrix n n K) =
       Q.siegelTransvection σ ε e (a • w') (c' * a * a) := by
     rw [coe_mul_specialIsometryGroup, coe_mul_specialIsometryGroup, Subgroup.coe_inv, hcs₁,
       coe_mul_siegelTransvection_mul_coe_inv h.property, hhe, hhx w' hew' hfw',
       siegelTransvection_smul_left hσ, hσa]
-  have hw_sum : a • w' + -w' = w₀ := by
-    have hsub : a • w' + -w' = (a - 1) • w' := by module
-    rw [hsub, smul_inv_smul₀ (sub_ne_zero.mpr ha1)]
   have hcs₂ : (↑((h * s₁ * h⁻¹) * s₁⁻¹) : Matrix n n K) = Q.siegelTransvection σ ε e w₀
-      (c' * a * a + (-c' - ε * ((σ ∘ w') ⬝ᵥ (Q *ᵥ w'))) - ε * ((σ ∘ (a • w')) ⬝ᵥ (Q *ᵥ (-w')))) :=
-    by rw [coe_mul_specialIsometryGroup, hconj,
+      (c' * (a ^ 2 - 1) + ε * (a - 1) * ((σ ∘ w') ⬝ᵥ (Q *ᵥ w'))) := by
+    rw [coe_mul_specialIsometryGroup, hconj,
       coe_inv_specialIsometryGroup_eq_siegelTransvection he hew' hw'e hcs₁,
       siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hew'])
-        (by simp [TauCeti.map_comp_smul, hw'e]), hw_sum]
-  have hmem₂ : (h * s₁ * h⁻¹) * s₁⁻¹ ∈ Q.elementaryUnitaryGroup σ := by
-    simpa [mul_assoc] using mul_mem hh (normal_elementaryUnitaryGroup.conj_mem _ (inv_mem hh) s₁)
-  exact siegelTransvection_mem_elementary_of_exists_param hσ hQ hdet he hef hew₀ hc hmem₂ hcs₂ hs
-    hcs
+        (by simp [TauCeti.map_comp_smul, hw'e]), show a • w' + -w' = (a - 1) • w' by module,
+      smul_inv_smul₀ (sub_ne_zero.mpr ha1)]
+    congr 1; simp [TauCeti.map_comp_smul, smul_dotProduct, mulVec_neg, hσa]; ring
+  refine siegelTransvection_mem_elementary_of_exists_param hσ hQ hdet he hef hew₀ hc ?_ hcs₂ hs hcs
+  simpa [mul_assoc] using mul_mem hh (normal_elementaryUnitaryGroup.conj_mem _ (inv_mem hh) s₁)
 
 include hε he hf hef hfe hew₀ in
 private theorem siegelTransvection_mem_elementary_of_card_le_two (hcard : Fintype.card n ≤ 2)
@@ -244,30 +230,29 @@ private theorem siegelTransvection_mem_elementary_of_witt_two {u w : n → K} (h
   have hex₃ : (σ ∘ e) ⬝ᵥ (Q *ᵥ x₃) = 0 := by simp [x₃, mulVec_neg, hey']
   have hs0 {x : n → K} :=
     exists_mem_elementaryUnitaryGroup_siegelTransvection_zero_of_isotropic (x := x) hσ hQ hd hdε he
-  obtain ⟨t₁, ht₁, hc₁⟩ := hs0 ht hex₁
+  obtain ⟨t₁, ht₁, hc₁⟩ := hs0 ht hex₁; obtain ⟨t₃, ht₃, hc₃⟩ :=
+    hs0 (by simp [x₃, map_comp_neg, mulVec_neg, hy'_iso]) hex₃
   obtain ⟨t₂, ht₂, hc₂⟩ := hs0 (by rw [comp_smul_dotProduct_mulVec_smul, hu₀_iso, mul_zero]) hex₂
-  obtain ⟨t₃, ht₃, hc₃⟩ := hs0 (by simp [x₃, map_comp_neg, mulVec_neg, hy'_iso]) hex₃
   have hx₁e := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hex₁
   have hx₂e := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hex₂
-  have hx_sum : x₁ + x₂ + x₃ = w₀ := by dsimp [x₁, x₂, x₃]; module
   have hcs₀ : (↑(t₁ * t₂ * t₃) : Matrix n n K) = Q.siegelTransvection σ ε e w₀
-      (0 + 0 - ε * ((σ ∘ x₁) ⬝ᵥ (Q *ᵥ x₂)) + 0 - ε * ((σ ∘ (x₁ + x₂)) ⬝ᵥ (Q *ᵥ x₃))) := by
+      (-(ε * ((σ ∘ x₁) ⬝ᵥ (Q *ᵥ x₂) + (σ ∘ (x₁ + x₂)) ⬝ᵥ (Q *ᵥ x₃)))) := by
     rw [coe_mul_specialIsometryGroup, coe_mul_specialIsometryGroup, hc₁, hc₂, hc₃,
       siegelTransvection_mul_siegelTransvection he hex₂ hx₁e,
       siegelTransvection_mul_siegelTransvection he hex₃
-        (by rw [comp_add_dotProduct_mulVec, hx₁e, hx₂e, add_zero]), hx_sum]
+        (by rw [comp_add_dotProduct_mulVec, hx₁e, hx₂e, add_zero]),
+      show x₁ + x₂ + x₃ = w₀ by dsimp [x₁, x₂, x₃]; module]
+    congr 1; ring
   exact siegelTransvection_mem_elementary_of_exists_param hσ hQ hdet he hef hew₀ hc
     (mul_mem (mul_mem ht₁ ht₂) ht₃) hcs₀ hs hcs
 
 end SiegelGen
 
 /-- **Every Siegel transformation in `Q.specialIsometryGroup σ` lies in the elementary unitary
-group.** Let `σ` be an involution, let `Q` be an invertible `ε`-Hermitian matrix whose trace
-`t ↦ t + ε σ(t)` is onto `{s | σ(s) = ε s}` and has a nonzero kernel element, and suppose either
-`σ` fixes a scalar outside `{0, 1}`, `Fintype.card n ≤ 2`, or `Q` admits two linearly independent
-orthogonal isotropic vectors. Then any `s ∈ Q.specialIsometryGroup σ` of the form
-`Q.siegelTransvection σ ε u w c` with `u` isotropic and `B(u, w) = 0` belongs to
-`Q.elementaryUnitaryGroup σ`. -/
+group.** For involutive `σ` and invertible `ε`-Hermitian `Q` with surjective `ε`-trace, nonzero
+skew-trace, and either a `σ`-fixed scalar outside `{0, 1}`, `Fintype.card n ≤ 2`, or Witt index at
+least two, any `s ∈ Q.specialIsometryGroup σ` equal to `Q.siegelTransvection σ ε u w c` with `u`
+isotropic and `B(u, w) = 0` belongs to `Q.elementaryUnitaryGroup σ`. -/
 theorem mk_mem_elementaryUnitaryGroup_of_coe_eq_siegelTransvection
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hadm : ∃ d ≠ 0, d + ε * σ d = 0)
