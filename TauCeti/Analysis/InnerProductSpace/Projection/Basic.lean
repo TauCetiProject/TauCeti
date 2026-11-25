@@ -67,6 +67,9 @@ The complementary projection `1 - P_U` has range `Uᗮ`, and more generally `1 -
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
 complement of its kernel whenever the kernel admits an orthogonal projection.
 
+For `s ⊆ U`, the preimage of `s` under the orthogonal projection onto `U` is the cylinder
+`{y + z | y ∈ s, z ∈ Uᗮ}`.
+
 Conjugating the orthogonal projection onto `V` by a linear isometry equivalence `e` of Hilbert
 spaces gives the orthogonal projection onto `e(V)`.
 
@@ -81,6 +84,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
+* `Submodule.preimage_orthogonalProjectionOnto_eq`: the preimage of `s ⊆ U` under the
+  orthogonal projection onto `U` is the cylinder `{y + z | y ∈ s, z ∈ Uᗮ}`.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
   onto that subspace.
 * `Submodule.adjoint_orthogonalProjectionOnto_toLinearMap`: the adjoint of restricted
@@ -422,6 +427,17 @@ theorem orthogonalProjectionOnto_comp_subtypeL :
     U.orthogonalProjectionOnto ∘L U.subtypeL = ContinuousLinearMap.id 𝕜 U := by
   ext u
   exact congrArg Subtype.val (U.orthogonalProjectionOnto_mem_subspace_eq_self u)
+
+/-- The cylinder over `s ⊆ U` along `Uᗮ`, the set `{y + z | y ∈ s, z ∈ Uᗮ}`, is the preimage of
+`s` under the orthogonal projection onto `U`. -/
+theorem preimage_orthogonalProjectionOnto_eq (s : Set U) :
+    U.orthogonalProjectionOnto ⁻¹' s = {x | ∃ y ∈ s, ∃ z ∈ Uᗮ, (y : E) + z = x} := by
+  ext x
+  refine ⟨fun hx => ⟨_, hx, x - U.orthogonalProjectionOnto x,
+    U.sub_starProjection_mem_orthogonal x, add_sub_cancel _ _⟩, ?_⟩
+  rintro ⟨y, hy, z, hz, rfl⟩
+  rwa [Set.mem_preimage, map_add, U.orthogonalProjectionOnto_mem_subspace_eq_self,
+    U.orthogonalProjectionOnto_eq_zero_iff.2 hz, add_zero]
 
 /-- The adjoint of the inclusion `U → E` is the orthogonal projection `E → U`.
 Both maps are regarded as finite-dimensional algebraic linear maps. -/
