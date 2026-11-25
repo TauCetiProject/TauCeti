@@ -18,7 +18,6 @@ import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.PDE.Vortex.Decay
 import TauCeti.Analysis.PDE.Vortex.Flux.Basic
-import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
@@ -48,7 +47,7 @@ gives, for every continuous `α_X`,
 
 with `u₀ = √(2r) z(c)` (`TauCeti.SeibergWitten.setIntegral_ball_mul_abs_one_sub_norm_sq_eq`). For a
 vortex, `|α_X| ≤ 1` and `∫ (1 - |α_X|²) = 16 π m`
-(`TauCeti.Vortex.integral_one_sub_normSq_eq_mul_card`), so
+(`TauCeti.Vortex.integral_one_sub_sq_norm_sectionValue_eq_mul_card`), so
 
 `2 π² m σ² - (π / (16 r)) ∫ |u - u₀|² (1 - |α_X(u)|²) du ≤ E_r(B_σ(c)) ≤ 2 π² m σ²`
 
@@ -109,59 +108,25 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 section Splitting
 
-/-- The frame coordinates `y ↦ (w(y), z(y))` as a linear isometry into the `L²` product. -/
-private def splittingIsometry : V →ₗᵢ[ℝ] WithLp 2 (ℂ × ℂ) where
-  toFun y := WithLp.toLp 2 (baseCoord e y, normalCoord e y)
-  map_add' y y' := by rw [← WithLp.toLp_add]; simp
-  map_smul' c y := by rw [← WithLp.toLp_smul]; simp [Complex.real_smul]
-  norm_map' y := by
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), WithLp.prod_norm_sq_eq_of_L2]
-    exact norm_baseCoord_sq_add_norm_normalCoord_sq (e := e) y
-
-include e in
-private theorem finrank_eq_finrank_withLp :
-    Module.finrank ℝ V = Module.finrank ℝ (WithLp 2 (ℂ × ℂ)) := by
-  rw [Module.finrank_eq_card_basis e.toBasis, (WithLp.linearEquiv 2 ℝ (ℂ × ℂ)).finrank_eq,
-    Module.finrank_prod, Complex.finrank_real_complex, Fintype.card_fin]
-
-variable [FiniteDimensional ℝ V]
-
-/-- The frame coordinates as a homeomorphism of `V` with `ℂ × ℂ`. -/
-private def splittingHomeomorph : V ≃ₜ ℂ × ℂ :=
-  ((splittingIsometry e).toLinearIsometryEquiv
-    (finrank_eq_finrank_withLp e)).toHomeomorph.trans (WithLp.homeomorphProd 2 ℂ ℂ)
-
-variable [MeasurableSpace V] [BorelSpace V]
-
-/-- The frame coordinates as a measurable equivalence of `V` with `ℂ × ℂ`. -/
-private def splittingEquiv : V ≃ᵐ ℂ × ℂ :=
-  (splittingHomeomorph e).toMeasurableEquiv
-
-private theorem splittingEquiv_apply (y : V) :
-    splittingEquiv e y = (baseCoord e y, normalCoord e y) :=
-  (rfl)
-
-private theorem splittingEquiv_apply_snd (y : V) : (splittingEquiv e y).2 = normalCoord e y :=
-  (rfl)
-
-/-- The point of the base plane with base coordinate `w` is `Re w e₀ + Im w e₁`. -/
-private theorem splittingEquiv_symm_apply_zero (w : ℂ) :
-    (splittingEquiv e).symm (w, 0) = w.re • e 0 + w.im • e 1 := by
-  rw [MeasurableEquiv.symm_apply_eq, splittingEquiv_apply]
-  simp [baseCoord_apply_zero, baseCoord_apply_one, normalCoord_apply_zero, normalCoord_apply_one,
-    Complex.re_add_im]
-
-private theorem measurePreserving_splittingEquiv :
-    MeasurePreserving (splittingEquiv e) volume volume :=
-  (WithLp.volume_preserving_ofLp ℂ ℂ).comp
-    ((splittingIsometry e).toLinearIsometryEquiv (finrank_eq_finrank_withLp e)).measurePreserving
+variable [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
 
 /-- **The frame coordinates preserve volume**: `y ↦ (w(y), z(y))`, the base and normal
 coordinates of an orthonormal frame, carries the volume of `V` to the product Lebesgue measure on
 `ℂ × ℂ`. -/
 theorem measurePreserving_baseCoord_normalCoord :
-    MeasurePreserving (fun y ↦ (baseCoord e y, normalCoord e y)) volume volume :=
-  measurePreserving_splittingEquiv e
+    MeasurePreserving (fun y ↦ (baseCoord e y, normalCoord e y)) volume volume := by
+  have h : (fun y ↦ (baseCoord e y, normalCoord e y)) = WithLp.ofLp ∘ baseNormalCoordEquiv e :=
+    funext fun y ↦ by simp
+  rw [h]
+  exact (WithLp.volume_preserving_ofLp ℂ ℂ).comp (baseNormalCoordEquiv e).measurePreserving
+
+/-- The frame coordinates, as a homeomorphism `V ≃ₜ ℂ × ℂ`, preserve volume. -/
+private theorem measurePreserving_baseNormalCoordHomeomorph :
+    MeasurePreserving (baseNormalCoordHomeomorph e) volume volume := by
+  have h : ⇑(baseNormalCoordHomeomorph e) = fun y ↦ (baseCoord e y, normalCoord e y) :=
+    funext (baseNormalCoordHomeomorph_apply (e := e))
+  rw [h]
+  exact measurePreserving_baseCoord_normalCoord e
 
 /-- **The slice formula for a ball.** The integral over the ball of radius `σ ≥ 0` about `c` of a
 continuous function of the normal coordinate `z` is an integral over the normal plane, weighted by
@@ -176,9 +141,10 @@ theorem setIntegral_ball_comp_normalCoord {g : ℂ → ℝ} (hg : Continuous g) 
   set b := normalCoord e c
   set S : Set (ℂ × ℂ) := {p | ‖p.1 - a‖ ^ 2 + ‖p.2 - b‖ ^ 2 < σ ^ 2}
   -- The ball is the preimage of the round ball `S` of `ℂ × ℂ`.
-  have hball : ball c σ = splittingEquiv e ⁻¹' S := by
+  have hball : ball c σ = baseNormalCoordHomeomorph e ⁻¹' S := by
     ext y
-    simp only [mem_ball, dist_eq_norm, mem_preimage, splittingEquiv_apply, S, mem_ofPred_eq, a, b,
+    simp only [mem_ball, dist_eq_norm, mem_preimage, baseNormalCoordHomeomorph_apply, S,
+      mem_ofPred_eq, a, b,
       ← map_sub, norm_baseCoord_sq_add_norm_normalCoord_sq]
     exact (sq_lt_sq₀ (norm_nonneg _) hσ).symm
   have hS : IsOpen S := isOpen_lt (by fun_prop) continuous_const
@@ -192,9 +158,10 @@ theorem setIntegral_ball_comp_normalCoord {g : ℂ → ℝ} (hg : Continuous g) 
     rw [← Measure.volume_eq_prod, integrable_indicator_iff hS.measurableSet]
     exact ((hg.comp continuous_snd).continuousOn.integrableOn_compact
       (isCompact_closedBall _ _)).mono_set hSK
-  simp_rw [hball, ← splittingEquiv_apply_snd]
-  rw [(measurePreserving_splittingEquiv e).setIntegral_preimage_emb
-    (splittingEquiv e).measurableEmbedding (fun p : ℂ × ℂ ↦ g p.2) S,
+  have hsnd (y : V) : normalCoord e y = (baseNormalCoordHomeomorph e y).2 := by simp
+  simp_rw [hball, hsnd]
+  rw [(measurePreserving_baseNormalCoordHomeomorph e).setIntegral_preimage_emb
+    (baseNormalCoordHomeomorph e).measurableEmbedding (fun p : ℂ × ℂ ↦ g p.2) S,
     ← integral_indicator hS.measurableSet, Measure.volume_eq_prod, integral_prod_symm _ hint]
   refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
   -- The base slice of `S` at `ζ` is a disc of area `π max (σ² - |ζ - b|²) 0`.
@@ -276,22 +243,15 @@ private theorem vortex_defect_facts (hX : ContDiff ℝ 2 X) (hsol : ∀ z, Vorte
   have hcont : Continuous fun u ↦ 1 - ‖Vortex.sectionValue X u‖ ^ 2 := by
     have := Vortex.continuous_sectionValue hX.continuous
     fun_prop
-  have hnorm : (fun u ↦ 1 - ‖Vortex.sectionValue X u‖ ^ 2) =
-      fun u ↦ 1 - 4 * (X u 2 ^ 2 + X u 3 ^ 2) := by
-    simp only [Vortex.sq_norm_sectionValue]
-  have hf : Integrable (fun u ↦ 1 - ‖Vortex.sectionValue X u‖ ^ 2) := by
-    rw [hnorm]
-    simpa using Vortex.integrable_one_sub_normSq_smul_of_isBigO (μ := volume) (hXi 2)
-      (hXi 3) hsol hlim (g := fun _ ↦ (1 : ℝ)) continuous_const (k := 0)
-      (by simpa using Asymptotics.isBigO_refl (fun _ : ℂ ↦ (1 : ℝ)) (cocompact ℂ))
+  have hf : Integrable (fun u ↦ 1 - ‖Vortex.sectionValue X u‖ ^ 2) :=
+    Vortex.integrable_one_sub_sq_norm_sectionValue hX hsol hlim
   have hf2 : Integrable (fun u ↦ ‖u‖ ^ 2 * (1 - ‖Vortex.sectionValue X u‖ ^ 2)) := by
     simp_rw [Vortex.sq_norm_sectionValue, mul_comm (‖_‖ ^ 2)]
     exact Vortex.integrable_one_sub_normSq_smul_of_isBigO
       (μ := volume) (hXi 2) (hXi 3) hsol hlim (g := fun u ↦ ‖u‖ ^ 2) (by fun_prop) (k := 2)
       (Asymptotics.isBigO_refl _ _)
-  have hnn (u : ℂ) : 0 ≤ 1 - ‖Vortex.sectionValue X u‖ ^ 2 := by
-    rw [Vortex.sq_norm_sectionValue]
-    linarith [Vortex.normSq_le_one_of_tendsto (hXi 2) (hXi 3) hsol hlim u]
+  have hnn (u : ℂ) : 0 ≤ 1 - ‖Vortex.sectionValue X u‖ ^ 2 :=
+    sub_nonneg.2 (Vortex.sq_norm_sectionValue_le_one hX hsol hlim u)
   refine ⟨hnn, hf, fun u₀ ↦ ?_, ?_⟩
   · -- `|u - u₀|² ≤ 2 |u|² + 2 |u₀|²`.
     refine ((hf2.const_mul 2).add (hf.const_mul (2 * ‖u₀‖ ^ 2))).mono'
@@ -305,8 +265,7 @@ private theorem vortex_defect_facts (hX : ContDiff ℝ 2 X) (hsol : ∀ z, Vorte
     have := mul_le_mul_of_nonneg_right this h
     simp only [Pi.add_apply]
     linarith
-  · rw [hnorm]
-    exact Vortex.integral_one_sub_normSq_eq_mul_card (hXi 0) (hXi 1) (hXi 2) (hXi 3) hsol hlim hD
+  · exact Vortex.integral_one_sub_sq_norm_sectionValue_eq_mul_card hX hsol hlim hD
 
 /-- The defect energy of a ball for the pulled-back vortex, with the absolute value removed. -/
 private theorem setIntegral_ball_defect_eq (hX : ContDiff ℝ 2 X)
@@ -317,14 +276,11 @@ private theorem setIntegral_ball_defect_eq (hX : ContDiff ℝ 2 X)
         r / 4 * |1 - ‖Vortex.sectionValue (Vortex.dilateField √(2 * r) X) (normalCoord e y)‖ ^ 2| =
       π / 8 * ∫ u, max (σ ^ 2 - ‖u - √(2 * r) • normalCoord e c‖ ^ 2 / (2 * r)) 0 *
         (1 - ‖Vortex.sectionValue X u‖ ^ 2) := by
-  have hXi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ X w i := (contDiff_piLp 2).1 hX i
   simp_rw [Vortex.sectionValue_dilateField]
   rw [setIntegral_ball_mul_abs_one_sub_norm_sq_eq e (Vortex.continuous_sectionValue hX.continuous)
     hr c hσ]
   congr 2 with u
-  rw [abs_of_nonneg]
-  rw [Vortex.sq_norm_sectionValue]
-  linarith [Vortex.normSq_le_one_of_tendsto (hXi 2) (hXi 3) hsol hlim u]
+  rw [abs_of_nonneg (sub_nonneg.2 (Vortex.sq_norm_sectionValue_le_one hX hsol hlim u))]
 
 /-- For `r ≥ 0` the weight `max (σ² - |u - u₀|² / (2 r)) 0` lies between `σ² - |u - u₀|² / (2 r)`
 and `σ²`. -/
@@ -477,6 +433,16 @@ private theorem tendsto_norm_sq_mul_defect {X : ℂ → EuclideanSpace ℝ (Fin 
 
 /-! ### The curvature current -/
 
+/-- The base component `ζ(e₀, e₁)` of a continuous compactly supported two-form, read on `ℂ × ℂ`
+through the frame coordinates, is continuous and compactly supported. -/
+private theorem continuous_and_hasCompactSupport_apply_baseNormalCoordHomeomorph_symm
+    {ζ : V → V [⋀^Fin 2]→L[ℝ] ℝ} (hζ : Continuous ζ) (hζc : HasCompactSupport ζ) :
+    Continuous (fun p ↦ ζ ((baseNormalCoordHomeomorph e).symm p) ![e 0, e 1]) ∧
+      HasCompactSupport (fun p ↦ ζ ((baseNormalCoordHomeomorph e).symm p) ![e 0, e 1]) :=
+  ⟨(continuous_eval_const _).comp (hζ.comp (baseNormalCoordHomeomorph e).symm.continuous),
+    (hζc.comp_left (g := fun β : V [⋀^Fin 2]→L[ℝ] ℝ ↦ β ![e 0, e 1]) rfl).comp_homeomorph
+      (baseNormalCoordHomeomorph e).symm⟩
+
 section Current
 
 variable [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)}
@@ -502,16 +468,6 @@ theorem wedge_neg_extDeriv_normalConnection_apply {x : ℂ → EuclideanSpace �
 
 variable [MeasurableSpace V] [BorelSpace V] {X : ℂ → EuclideanSpace ℝ (Fin 4)} {D : Multiset ℂ}
 
-/-- The base component `ζ(e₀, e₁)` of a continuous compactly supported two-form, read on `ℂ × ℂ`
-through the frame coordinates, is continuous and compactly supported. -/
-private theorem continuous_and_hasCompactSupport_apply_splittingEquiv_symm
-    {ζ : V → V [⋀^Fin 2]→L[ℝ] ℝ} (hζ : Continuous ζ) (hζc : HasCompactSupport ζ) :
-    Continuous (fun p ↦ ζ ((splittingEquiv e).symm p) ![e 0, e 1]) ∧
-      HasCompactSupport (fun p ↦ ζ ((splittingEquiv e).symm p) ![e 0, e 1]) :=
-  ⟨(continuous_eval_const _).comp (hζ.comp (splittingHomeomorph e).symm.continuous),
-    (hζc.comp_left (g := fun β : V [⋀^Fin 2]→L[ℝ] ℝ ↦ β ![e 0, e 1]) rfl).comp_homeomorph
-      (splittingHomeomorph e).symm⟩
-
 include hkl he in
 /-- For `r > 0` the curvature current of the pulled-back vortex is an integral over the normal
 plane of the density `(r / 4) (1 - |α_X(√(2r) n)|²)` against the integral of `ζ(e₀, e₁)` along the
@@ -524,34 +480,34 @@ private theorem integral_wedge_neg_extDeriv_normalConnection_dilateField_eq (hX 
     ∫ y, (-extDeriv (normalConnection e (Vortex.dilateField √(2 * r) X)) y).wedge (ζ y)
         (e ∘ finCongr (hkl.trans Fact.out)) =
       ∫ n, r / 4 * (1 - ‖Vortex.sectionValue X (√(2 * r) • n)‖ ^ 2) *
-        ∫ b, ζ ((splittingEquiv e).symm (b, n)) ![e 0, e 1] := by
-  have hXi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ X w i := (contDiff_piLp 2).1 hX i
+        ∫ b, ζ ((baseNormalCoordHomeomorph e).symm (b, n)) ![e 0, e 1] := by
   have hα : Continuous (Vortex.sectionValue X) := Vortex.continuous_sectionValue hX.continuous
-  obtain ⟨hψ, hψc⟩ := continuous_and_hasCompactSupport_apply_splittingEquiv_symm e hζ hζc
-  set ψ : ℂ × ℂ → ℝ := fun p ↦ ζ ((splittingEquiv e).symm p) ![e 0, e 1]
+  obtain ⟨hψ, hψc⟩ :=
+    continuous_and_hasCompactSupport_apply_baseNormalCoordHomeomorph_symm e hζ hζc
+  set ψ : ℂ × ℂ → ℝ := fun p ↦ ζ ((baseNormalCoordHomeomorph e).symm p) ![e 0, e 1]
   set g : ℂ × ℂ → ℝ := fun p ↦ r / 4 * (1 - ‖Vortex.sectionValue X (√(2 * r) • p.2)‖ ^ 2) * ψ p
   have ht2 : √(2 * r) ^ 2 = 2 * r := Real.sq_sqrt (by positivity)
   -- Pointwise, the wedge is the vortex defect at the normal coordinate times `ζ(e₀, e₁)`.
   have hpt (y : V) : (-extDeriv (normalConnection e (Vortex.dilateField √(2 * r) X)) y).wedge
-      (ζ y) (e ∘ finCongr (hkl.trans Fact.out)) = g (splittingEquiv e y) := by
+      (ζ y) (e ∘ finCongr (hkl.trans Fact.out)) = g (baseNormalCoordHomeomorph e y) := by
     rw [wedge_neg_extDeriv_normalConnection_apply e hkl he
       ((Vortex.contDiff_dilateField hX _).differentiable (by norm_num) _) (ζ y),
       Vortex.curvature_dilateField, Vortex.curvature_apply,
       Vortex.curvature_eq_of_equation_eq_zero (hsol _), ht2]
-    simp only [g, ψ, MeasurableEquiv.symm_apply_apply, splittingEquiv_apply_snd,
-      Vortex.sq_norm_sectionValue, real_smul]
+    simp only [g, ψ, Homeomorph.symm_apply_apply]
+    simp only [baseNormalCoordHomeomorph_apply, Vortex.sq_norm_sectionValue, real_smul]
     ring
   -- `ψ` is integrable and the vortex factor is bounded by `r / 4`.
   have hint : Integrable g (volume.prod volume) := by
     rw [← Measure.volume_eq_prod]
     refine (hψ.integrable_of_hasCompactSupport hψc).bdd_mul (c := r / 4) (by fun_prop)
       (.of_forall fun p ↦ ?_)
-    have h1 := Vortex.normSq_le_one_of_tendsto (hXi 2) (hXi 3) hsol hlim (√(2 * r) • p.2)
-    rw [← Vortex.sq_norm_sectionValue] at h1
+    have h1 := Vortex.sq_norm_sectionValue_le_one hX hsol hlim (√(2 * r) • p.2)
     rw [Real.norm_eq_abs, abs_of_nonneg (by nlinarith)]
     nlinarith [sq_nonneg ‖Vortex.sectionValue X (√(2 * r) • p.2)‖]
   simp_rw [hpt]
-  rw [(measurePreserving_splittingEquiv e).integral_comp' g, Measure.volume_eq_prod,
+  rw [(measurePreserving_baseNormalCoordHomeomorph e).integral_comp
+    (baseNormalCoordHomeomorph e).measurableEmbedding g, Measure.volume_eq_prod,
     integral_prod_symm g hint]
   refine integral_congr_ae (.of_forall fun n ↦ ?_)
   dsimp only [g, ψ]
@@ -577,15 +533,16 @@ theorem tendsto_integral_wedge_neg_extDeriv_normalConnection_dilateField (hX : C
       atTop (𝓝 (D.card * ∫ w : ℂ, ζ (w.re • e 0 + w.im • e 1) ![e 0, e 1])) := by
   obtain ⟨hnn, hf, -, hflux⟩ := vortex_defect_facts hX hsol hlim hD
   have hα : Continuous (Vortex.sectionValue X) := Vortex.continuous_sectionValue hX.continuous
-  obtain ⟨hψ, hψc⟩ := continuous_and_hasCompactSupport_apply_splittingEquiv_symm e hζ hζc
+  obtain ⟨hψ, hψc⟩ :=
+    continuous_and_hasCompactSupport_apply_baseNormalCoordHomeomorph_symm e hζ hζc
   -- The integral of `ζ(e₀, e₁)` along the base, as a function of the normal coordinate.
-  set Ψ : ℂ → ℝ := fun n ↦ ∫ b, ζ ((splittingEquiv e).symm (b, n)) ![e 0, e 1]
+  set Ψ : ℂ → ℝ := fun n ↦ ∫ b, ζ ((baseNormalCoordHomeomorph e).symm (b, n)) ![e 0, e 1]
   have hΨ : Continuous Ψ := continuous_integral_of_hasCompactSupport_uncurry
     (hψ.comp continuous_swap) (hψc.comp_homeomorph (.prodComm ℂ ℂ))
   have hΨc : HasCompactSupport Ψ :=
     hasCompactSupport_integral_of_hasCompactSupport_uncurry (hψc.comp_homeomorph (.prodComm ℂ ℂ))
   have hΨ0 : Ψ 0 = ∫ w : ℂ, ζ (w.re • e 0 + w.im • e 1) ![e 0, e 1] := by
-    simp only [Ψ, splittingEquiv_symm_apply_zero]
+    simp only [Ψ, baseNormalCoordHomeomorph_symm_apply, zero_re, zero_im, zero_smul, add_zero]
   rw [← hΨ0]
   refine Tendsto.congr' (f₁ := fun r ↦ (2 * π)⁻¹ *
       ∫ n, r / 4 * (1 - ‖Vortex.sectionValue X (√(2 * r) • n)‖ ^ 2) * Ψ n) ?_ ?_

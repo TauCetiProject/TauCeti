@@ -73,7 +73,8 @@ connection along the normal factor are exactly the pullbacks of plane vortices o
 The base coordinate `w = ⟪e₀, ·⟫ + i ⟪e₁, ·⟫` (`baseCoord`) is the normal coordinate of the frame
 with its base and normal planes swapped. The derivative along `v` of a function of `(w, z)` is
 the sum of the derivatives of its base and normal slices along `w(v)` and `z(v)`
-(`fderiv_comp_baseCoord_normalCoord_apply`).
+(`fderiv_comp_baseCoord_normalCoord_apply`). The frame coordinates `y ↦ (w(y), z(y))` identify `V`
+isometrically with the `L²` product `ℂ × ℂ` (`baseNormalCoordEquiv`, `baseNormalCoordHomeomorph`).
 
 For a solution `(b, α u₀)` that is not assumed base independent:
 
@@ -331,6 +332,58 @@ theorem norm_baseCoord_sq_add_norm_normalCoord_sq (y : V) :
     ← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.normSq_apply, baseCoord_re,
     baseCoord_im, normalCoord_re, normalCoord_im]
   ring
+
+variable (e) in
+include e in
+private theorem finrank_eq_finrank_withLp :
+    finrank ℝ V = finrank ℝ (WithLp 2 (ℂ × ℂ)) := by
+  rw [finrank_eq_card_basis e.toBasis, (WithLp.linearEquiv 2 ℝ (ℂ × ℂ)).finrank_eq,
+    finrank_prod, Complex.finrank_real_complex, Fintype.card_fin]
+
+variable (e) in
+/-- The **frame coordinates** `y ↦ (w(y), z(y))`, the base and normal coordinates of the frame
+`e`, as a linear isometric equivalence of `V` with the `L²` product `ℂ × ℂ`. -/
+def baseNormalCoordEquiv : V ≃ₗᵢ[ℝ] WithLp 2 (ℂ × ℂ) :=
+  letI := e.toBasis.finiteDimensional_of_finite
+  LinearIsometry.toLinearIsometryEquiv
+    { toFun y := WithLp.toLp 2 (baseCoord e y, normalCoord e y)
+      map_add' y y' := by rw [← WithLp.toLp_add]; simp
+      map_smul' c y := by rw [← WithLp.toLp_smul]; simp [Complex.real_smul]
+      norm_map' y := by
+        rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), WithLp.prod_norm_sq_eq_of_L2]
+        exact norm_baseCoord_sq_add_norm_normalCoord_sq y }
+    (finrank_eq_finrank_withLp e)
+
+@[simp]
+theorem baseNormalCoordEquiv_apply (y : V) :
+    baseNormalCoordEquiv e y = WithLp.toLp 2 (baseCoord e y, normalCoord e y) :=
+  (rfl)
+
+/-- The point with base coordinate `w` and normal coordinate `n` is
+`Re w e₀ + Im w e₁ + Re n e₂ + Im n e₃`. -/
+theorem baseNormalCoordEquiv_symm_apply (w n : ℂ) :
+    (baseNormalCoordEquiv e).symm (WithLp.toLp 2 (w, n)) =
+      w.re • e 0 + w.im • e 1 + n.re • e 2 + n.im • e 3 := by
+  rw [LinearIsometryEquiv.symm_apply_eq, baseNormalCoordEquiv_apply]
+  simp [Complex.re_add_im]
+
+variable (e) in
+/-- The frame coordinates `y ↦ (w(y), z(y))` as a homeomorphism of `V` with `ℂ × ℂ`. -/
+def baseNormalCoordHomeomorph : V ≃ₜ ℂ × ℂ :=
+  (baseNormalCoordEquiv e).toHomeomorph.trans (WithLp.homeomorphProd 2 ℂ ℂ)
+
+@[simp]
+theorem baseNormalCoordHomeomorph_apply (y : V) :
+    baseNormalCoordHomeomorph e y = (baseCoord e y, normalCoord e y) :=
+  (rfl)
+
+/-- The point with base coordinate `w` and normal coordinate `n` is
+`Re w e₀ + Im w e₁ + Re n e₂ + Im n e₃`. -/
+theorem baseNormalCoordHomeomorph_symm_apply (w n : ℂ) :
+    (baseNormalCoordHomeomorph e).symm (w, n) =
+      w.re • e 0 + w.im • e 1 + n.re • e 2 + n.im • e 3 := by
+  rw [Homeomorph.symm_apply_eq, baseNormalCoordHomeomorph_apply]
+  simp [Complex.re_add_im]
 
 variable (e) in
 /-- The **base-independent connection** `b₁(z) ds + b₂(z) dt` on `V = ℂ_base × ℂ_normal` pulled

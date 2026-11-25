@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.ZeroMultiplicity
 public import TauCeti.Analysis.PDE.Vortex.Decay
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.Zeros
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Algebra.BigOperators.Finprod
@@ -415,6 +416,35 @@ theorem integral_one_sub_normSq_eq_mul_card
     ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) = 16 * π * Multiset.card D := by
   rw [integral_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim
     (isZeroMultiplicity_iff.1 hD), Multiset.finsum_count_eq_card]
+
+/-! ### The modulus defect in terms of the section -/
+
+/-- A `C²` vortex on the whole plane with `|α| → 1` at infinity has `|α|² ≤ 1`. -/
+theorem sq_norm_sectionValue_le_one (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (z : ℂ) :
+    ‖sectionValue x z‖ ^ 2 ≤ 1 := by
+  rw [sq_norm_sectionValue]
+  exact normSq_le_one_of_tendsto ((contDiff_piLp 2).1 hx 2) ((contDiff_piLp 2).1 hx 3) hsol hlim z
+
+/-- The modulus defect `1 - |α|²` of a `C²` vortex on the whole plane with `|α| → 1` at infinity
+is integrable. -/
+theorem integrable_one_sub_sq_norm_sectionValue {μ : Measure ℂ} [μ.IsAddHaarMeasure]
+    (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    Integrable (fun z ↦ 1 - ‖sectionValue x z‖ ^ 2) μ := by
+  simpa only [sq_norm_sectionValue] using integrable_one_sub_normSq μ ((contDiff_piLp 2).1 hx 2)
+    ((contDiff_piLp 2).1 hx 3) hsol hlim
+
+/-- **The flux identity in terms of `|α|`.** For a `C²` vortex on the whole plane with `|α| → 1`
+at infinity and zero divisor `D`, `∫ (1 - |α|²) = 16π deg D`. -/
+theorem integral_one_sub_sq_norm_sectionValue_eq_mul_card (hx : ContDiff ℝ 2 x)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {D : Multiset ℂ}
+    (hD : IsZeroMultiplicity (sectionValue x) (Multiset.count · D)) :
+    ∫ z, (1 - ‖sectionValue x z‖ ^ 2) = 16 * π * Multiset.card D := by
+  simpa only [sq_norm_sectionValue] using integral_one_sub_normSq_eq_mul_card
+    ((contDiff_piLp 2).1 hx 0) ((contDiff_piLp 2).1 hx 1) ((contDiff_piLp 2).1 hx 2)
+    ((contDiff_piLp 2).1 hx 3) hsol hlim hD
 
 /-- **The flux is the degree of the zero divisor.** For a `C²` vortex on the whole plane with
 `|α| → 1` at infinity and zero divisor `D`, the curvature coefficient `∂₁ b₂ - ∂₂ b₁` integrates
