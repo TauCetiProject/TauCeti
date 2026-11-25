@@ -21,11 +21,13 @@ complex embedding `σ` of `K` has exactly `[L : K]` extensions `τ` to `L`
 `[L : K]` times that of `s` (`TauCeti.HermitianMetric.sum_log_norm_baseChange_one_tmul`). The
 index of `𝓞 L (1 ⊗ s)` in `𝓞 L ⊗ E` is `#(E / 𝓞 K s) ^ [L : K]`
 (`TauCeti.cardQuot_span_one_tmul`, from Mathlib's `Ideal.absNorm_algebraMap`), so the index term
-is multiplied by `[L : K]` too, and `deg(Ē_{𝓞 L}) = [L : K] deg(Ē)`
-(`TauCeti.HermitianMetric.sectionDegree_baseChange`).
+is multiplied by `[L : K]` too, and the section degrees satisfy `deg(1 ⊗ s) = [L : K] deg(s)`
+for every `s` (`TauCeti.HermitianMetric.sectionDegree_baseChange`). For a nonzero section `s` of a
+hermitian line this is the Arakelov degree identity `deg(Ē_{𝓞 L}) = [L : K] deg(Ē)`.
 
 More generally, if the base change `Ē_{𝓞 L}` is a sublattice of finite index of a hermitian bundle
-`F` over `𝓞 L` with the same metrics, then `deg(F) = [L : K] deg(Ē) + log #(F / Ē_{𝓞 L})`
+`F` over `𝓞 L` with the same metrics, then for a nonzero section `s` of a hermitian line `Ē`,
+`deg(F) = [L : K] deg(Ē) + log #(F / Ē_{𝓞 L})`
 (`TauCeti.HermitianMetric.sectionDegree_map_baseChange`).
 
 ## Main statements
@@ -66,8 +68,9 @@ theorem sum_log_norm_baseChange_one_tmul (s : E) :
   simp only [norm_baseChange_tmul_tmul, map_one, norm_one, one_mul]
   rw [sum_comp_algebraMap (fun σ ↦ Real.log (h.norm σ (1 ⊗ₜ s))), nsmul_eq_mul]
 
-/-- **The degree under base change**: `deg(Ē_{𝓞 L}) = [L : K] deg(Ē)`, computed with `1 ⊗ s`
-and `s`. -/
+/-- **The degree under base change**: the section degrees satisfy
+`deg(1 ⊗ s) = [L : K] deg(s)` for every section `s`. When `s` is a nonzero section of a hermitian
+line, this is the Arakelov degree identity `deg(Ē_{𝓞 L}) = [L : K] deg(Ē)`. -/
 theorem sectionDegree_baseChange (s : E) :
     h.baseChange.sectionDegree ((1 : 𝓞 L) ⊗ₜ s) = Module.finrank K L * h.sectionDegree s := by
   rw [sectionDegree_def, sectionDegree_def, sum_log_norm_baseChange_one_tmul,
@@ -78,7 +81,8 @@ theorem sectionDegree_baseChange (s : E) :
 /-- **The degree of a lattice containing a base change** (the second statement of the degree
 under finite extension). Let `f : 𝓞 L ⊗ E → F` be an injective `𝓞 L`-linear map preserving the
 norms, with `F / f(𝓞 L ⊗ E)` finite. For a section `s` with `E / 𝓞 K s` finite,
-`deg(F) = [L : K] deg(Ē) + log #(F / f(𝓞 L ⊗ E))`, computed with `f (1 ⊗ s)` and `s`. -/
+`deg(f (1 ⊗ s)) = [L : K] deg(s) + log #(F / f(𝓞 L ⊗ E))`. When `s` is a nonzero section of a
+hermitian line, this is `deg(F) = [L : K] deg(Ē) + log #(F / f(𝓞 L ⊗ E))`. -/
 theorem sectionDegree_map_baseChange {F : Type*} [AddCommGroup F] [Module (𝓞 L) F]
     {g : HermitianMetric L F} (f : 𝓞 L ⊗[𝓞 K] E →ₗ[𝓞 L] F) (hf : Function.Injective f)
     (hnorm : ∀ τ x, g.norm τ (1 ⊗ₜ f x) = h.baseChange.norm τ (1 ⊗ₜ x)) (s : E)
