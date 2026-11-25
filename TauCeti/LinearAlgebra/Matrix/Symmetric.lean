@@ -51,11 +51,12 @@ has determinant `(1 + 2 r t) det G`, provided `H` or `E` has even diagonal. Inde
 for some `s`. No cancellation is needed, so `a` may be a zero divisor.
 
 A symmetric `n × n` matrix is determined by its entries on and above the diagonal, that is by a
-function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of them. A symmetric
-matrix on `ι ⊕ Unit` is the same as a symmetric matrix on `ι` together with a border column and a
-corner, the transpose of the column filling the last row. More
+function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of them. More
 generally, for an alternating matrix `Q` the solutions `S` of `S - Sᵀ = Q` are determined in the
 same way by their entries on and above the diagonal, in every characteristic.
+
+A symmetric matrix on `ι ⊕ Unit` is the same as a symmetric matrix on `ι` together with a border
+column and a corner, the transpose of the column filling the last row.
 
 ## Main results
 
