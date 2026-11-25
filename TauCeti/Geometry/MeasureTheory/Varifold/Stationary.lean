@@ -248,15 +248,15 @@ theorem hasLocallyBoundedFirstVariation_smul_iff {c : ℝ≥0} (hc : c ≠ 0) :
     ENNReal.mul_eq_top, ENNReal.coe_ne_top, false_and, ENNReal.coe_eq_zero, hc, not_false_eq_true,
     true_and, or_false]
 
-/-- The first variation of a field supported in an open set of zero weight is `0`. -/
-theorem firstVariation_eq_zero_of_weight_eq_zero (hU : IsOpen U) {X : 𝓓^{1}(W, E)}
+/-- The first variation of a field supported in a measurable set of zero weight is `0`. -/
+theorem firstVariation_eq_zero_of_weight_eq_zero (hU : MeasurableSet U) {X : 𝓓^{1}(W, E)}
     (hXU : tsupport X ⊆ U) (h : weight V U = 0) : firstVariation V X = 0 := by
   by_cases hV : IsFiniteMeasureOnCompacts V
   swap
   · simp [firstVariation_of_not_isFiniteMeasureOnCompacts hV]
   rw [firstVariation_apply]
   refine integral_eq_zero_of_ae ?_
-  rw [weight_apply hU.measurableSet] at h
+  rw [weight_apply hU] at h
   filter_upwards [measure_eq_zero_iff_ae_notMem.1 h] with p hp
   exact tangentialDivergence_eq_zero_of_notMem_tsupport (fun hx ↦ hp (hXU hx)) _
 

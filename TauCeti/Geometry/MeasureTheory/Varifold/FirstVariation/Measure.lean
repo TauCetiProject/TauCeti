@@ -221,11 +221,13 @@ theorem firstVariationExt_apply (X : 𝓓^{0}(W, E)) :
 
 /-- **The extension extends `δV`.** If `V` has locally bounded first variation, the extended first
 variation of a `C¹` field is its first variation. -/
+@[simp]
 theorem firstVariationExt_monoCLM (hV : HasLocallyBoundedFirstVariation V) (X : 𝓓^{1}(W, E)) :
     firstVariationExt V (monoCLM ℝ X) = firstVariation V X :=
   extendContinuous_monoCLM hV.hasLocallyFiniteMass X
 
 /-- **The mass measure of the extension is `‖δV‖`.** -/
+@[simp]
 theorem massMeasure_firstVariationExt :
     massMeasure (firstVariationExt V) = firstVariationMeasure V :=
   massMeasure_extendContinuous
@@ -274,8 +276,8 @@ theorem support_firstVariationMeasure_subset :
   refine preimage_mono fun x hx ↦ by_contra fun hx' ↦ ?_
   obtain ⟨U, hU, hU0⟩ := Measure.notMem_support_iff_exists.1 hx'
   obtain ⟨U', hU'U, hU'o, hxU'⟩ := mem_nhds_iff.1 hU
-  exact (notMem_dsupport_iff x).2 ⟨U', fun X hXU' ↦ firstVariation_eq_zero_of_weight_eq_zero hU'o
-    hXU' (measure_mono_null hU'U hU0), hU'o, hxU'⟩ hx
+  exact (notMem_dsupport_iff x).2 ⟨U', fun X hXU' ↦ firstVariation_eq_zero_of_weight_eq_zero
+    hU'o.measurableSet hXU' (measure_mono_null hU'U hU0), hU'o, hxU'⟩ hx
 
 /-- **Locality of the extended first variation.** The extended first variation of a continuous
 field depends only on its values on the support of the weight `spt ‖V‖`. -/
