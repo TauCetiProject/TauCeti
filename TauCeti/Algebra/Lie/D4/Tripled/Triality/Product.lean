@@ -327,45 +327,36 @@ private def DerivationApply (s : ℤ) (i : Fin 4) : Prop :=
 /-! Each derivation equation is checked by a separate kernel computation for each simple root: a
 single check over all `4 * 24 ^ 3` cases needs more memory than a CI runner provides. -/
 
+/-- Unfold one derivation equation to its coefficient table and check it in the kernel. -/
+local macro "derivation_decide" : tactic =>
+  `(tactic| (
+    simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+      blockTrialityCoefficient, trialityCoefficient_apply]
+    decide +kernel))
+
 private theorem derivationApply_neg_one_zero : DerivationApply (-1) 0 := by
-  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
-    blockTrialityCoefficient, trialityCoefficient_apply]
-  decide +kernel
+  derivation_decide
 
 private theorem derivationApply_neg_one_one : DerivationApply (-1) 1 := by
-  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
-    blockTrialityCoefficient, trialityCoefficient_apply]
-  decide +kernel
+  derivation_decide
 
 private theorem derivationApply_neg_one_two : DerivationApply (-1) 2 := by
-  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
-    blockTrialityCoefficient, trialityCoefficient_apply]
-  decide +kernel
+  derivation_decide
 
 private theorem derivationApply_neg_one_three : DerivationApply (-1) 3 := by
-  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
-    blockTrialityCoefficient, trialityCoefficient_apply]
-  decide +kernel
+  derivation_decide
 
 private theorem derivationApply_one_zero : DerivationApply 1 0 := by
-  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
-    blockTrialityCoefficient, trialityCoefficient_apply]
-  decide +kernel
+  derivation_decide
 
 private theorem derivationApply_one_one : DerivationApply 1 1 := by
-  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
-    blockTrialityCoefficient, trialityCoefficient_apply]
-  decide +kernel
+  derivation_decide
 
 private theorem derivationApply_one_two : DerivationApply 1 2 := by
-  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
-    blockTrialityCoefficient, trialityCoefficient_apply]
-  decide +kernel
+  derivation_decide
 
 private theorem derivationApply_one_three : DerivationApply 1 3 := by
-  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
-    blockTrialityCoefficient, trialityCoefficient_apply]
-  decide +kernel
+  derivation_decide
 
 private theorem raising_derivation_apply (i : Fin 4) : DerivationApply (-1) i := by
   fin_cases i

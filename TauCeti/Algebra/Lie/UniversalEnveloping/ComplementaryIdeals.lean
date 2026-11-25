@@ -132,9 +132,10 @@ theorem _root_.UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl_symm_tmul (a 
 of addition `I × J ≃ L`, followed by `productEnveloping`. -/
 theorem envelopingEquivOfIsCompl_toAlgHom :
     (envelopingEquivOfIsCompl R I J h).toAlgHom = (productEnveloping R I J).toAlgHom.comp
-      (map R (LieIdeal.prodEquivOfIsCompl I J h).symm.toLieHom) := by
-  rw [← mapEquiv_toAlgHom]
-  rfl
+      (map R (LieIdeal.prodEquivOfIsCompl I J h).symm.toLieHom) :=
+  AlgHom.ext fun x ↦ by
+    rw [← mapEquiv_toAlgHom, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, AlgEquiv.toAlgHom_apply,
+      AlgEquiv.toAlgHom_apply, envelopingEquivOfIsCompl, AlgEquiv.trans_apply]
 
 end IsCompl
 
