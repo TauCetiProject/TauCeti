@@ -93,7 +93,7 @@ theorem conjReflection_mul_conjReflection (a b : Circle) :
   simp only [LinearIsometryEquiv.coe_mul, Function.comp_apply, conjReflection_apply, rotation_apply,
     map_mul, Complex.conj_conj, Circle.coe_inv_eq_conj]
 
-/-- A reflection followed by a rotation is a reflection. -/
+/-- A rotation followed by a reflection is a reflection. -/
 @[simp]
 theorem conjReflection_mul_rotation (a b : Circle) :
     conjReflection b * rotation a = conjReflection (b * a⁻¹) := by
@@ -102,7 +102,7 @@ theorem conjReflection_mul_rotation (a b : Circle) :
     map_mul, Circle.coe_mul, Circle.coe_inv_eq_conj]
   ring
 
-/-- A rotation followed by a reflection is a reflection. -/
+/-- A reflection followed by a rotation is a reflection. -/
 @[simp]
 theorem rotation_mul_conjReflection (a b : Circle) :
     rotation a * conjReflection b = conjReflection (a * b) := by

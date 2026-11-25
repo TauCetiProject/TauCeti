@@ -55,12 +55,6 @@ open Complex ComplexConjugate Set TauCeti.Complex
 
 namespace TauCeti.Billiard
 
-/-- The side reflection `σ_d` is the reflection `v ↦ d² conj v`. -/
-theorem sideReflection_eq_conjReflection_sq (d : Circle) :
-    sideReflection d = conjReflection (d ^ 2) := by
-  ext z
-  simp
-
 /-! ### The reflection group of a family of directions -/
 
 /-- **The reflection group** of a family `D` of unit directions: the group of real linear
@@ -156,10 +150,10 @@ theorem rotationSubgroup_reflectionGroup :
     · rwa [rotation_injective h]
     · exact absurd h.symm (conjReflection_ne_rotation a b)
   · rintro c ⟨d, hd, e, he, rfl⟩
-    rw [SetLike.mem_coe, mem_rotationSubgroup, ← sideReflection_trans_sideReflection,
-      ← LinearIsometryEquiv.mul_def]
-    exact (reflectionGroup D).mul_mem (sideReflection_mem_reflectionGroup hd)
-      (sideReflection_mem_reflectionGroup he)
+    rw [SetLike.mem_coe, mem_rotationSubgroup, mul_pow, inv_pow,
+      ← conjReflection_mul_conjReflection]
+    exact (reflectionGroup D).mul_mem (conjReflection_sq_mem_reflectionGroup hd)
+      (conjReflection_sq_mem_reflectionGroup he)
 
 /-- A reflection group containing two non-parallel directions has a nontrivial rotation subgroup;
 when it is finite, of order at least `2`. -/
