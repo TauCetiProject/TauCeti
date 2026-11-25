@@ -44,6 +44,8 @@ homomorphisms (`Derivation.mapSemilinear_kaehlerLieDeriv`).
 * `Derivation.exists_apply_D_eq_iff`: exact criterion for a `k`-linear endomorphism `L` of
   `Ω[S⁄R]` to satisfy `L (D R S s) = D R S (δ s)`.
 * `Derivation.kaehlerLieDeriv_unique`: uniqueness of `δ.kaehlerLieDeriv hδ`.
+* `Derivation.kaehlerLieDeriv_mem_span_range_D`: `δ.kaehlerLieDeriv hδ` preserves the span of
+  differentials `D R S (x j)` whenever each `D R S (δ (x j))` lies in it.
 * `Derivation.kaehlerLieDeriv_congr`, `Derivation.kaehlerLieDeriv_zero`,
   `Derivation.kaehlerLieDeriv_add`, `Derivation.kaehlerLieDeriv_neg`,
   `Derivation.kaehlerLieDeriv_sub`, `Derivation.kaehlerLieDeriv_sum`,
@@ -170,6 +172,25 @@ theorem kaehlerLieDeriv_congr {δ₁ δ₂ : Derivation k S S}
     δ₁.kaehlerLieDeriv h₁ = δ₂.kaehlerLieDeriv h₂ := by
   subst h
   rfl
+
+/-- **The Lie derivative preserves spans of exact differentials** when it maps each generator
+back into the span: if `D R S (δ (x j))` lies in the span of the `D R S (x j)` for every `j`, then
+`δ.kaehlerLieDeriv hδ` maps that span into itself. -/
+theorem kaehlerLieDeriv_mem_span_range_D {ι : Type*} (δ : Derivation k S S)
+    (hδ : ∀ r : R, KaehlerDifferential.D R S (δ (algebraMap R S r)) = 0) {x : ι → S}
+    (hx : ∀ j, KaehlerDifferential.D R S (δ (x j)) ∈
+      Submodule.span S (Set.range (KaehlerDifferential.D R S ∘ x)))
+    {ω : Ω[S⁄R]} (hω : ω ∈ Submodule.span S (Set.range (KaehlerDifferential.D R S ∘ x))) :
+    δ.kaehlerLieDeriv hδ ω ∈ Submodule.span S (Set.range (KaehlerDifferential.D R S ∘ x)) := by
+  induction hω using Submodule.span_induction with
+  | mem ω hω =>
+    obtain ⟨j, rfl⟩ := hω
+    simpa using hx j
+  | zero => simp
+  | add ω₁ ω₂ _ _ h₁ h₂ => simpa using add_mem h₁ h₂
+  | smul s ω hω h =>
+    rw [kaehlerLieDeriv_smul]
+    exact add_mem (Submodule.smul_mem _ _ hω) (Submodule.smul_mem _ _ h)
 
 /-- Every `R`-linear derivation `δ : Derivation R S S` automatically satisfies the lift condition
 `D R S (δ (algebraMap R S r)) = 0`. -/

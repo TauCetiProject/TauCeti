@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.Flat.Operator
-public import TauCeti.Analysis.PDE.SeibergWitten.Normal.Basic
+public import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Basic
 public import TauCeti.Analysis.PDE.SeibergWitten.Normal.Frame
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 
