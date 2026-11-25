@@ -8,12 +8,13 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.TemperedDistribution.MulLeft
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
-import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 
 /-!
@@ -61,8 +62,6 @@ up to order `k` and `f ∈ H^{k,p}`, while `∂_v f ∈ H^{k,p}`. Going down, a 
   multiplies `H^{0,p}` into itself, for every `1 ≤ p ≤ ∞`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`: a function with bounded
   derivatives up to order `k` multiplies `H^{k,p}` into itself, for `1 < p < ∞`.
-* `TemperedDistribution.MemSobolev.smulLeftCLM_schwartzMap`: in particular a Schwartz function
-  multiplies `H^{k,p}` into itself.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg`: the same for the
   negative order `H^{-k,p}`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast`: the two
@@ -73,6 +72,10 @@ up to order `k` and `f ∈ H^{k,p}`, while `∂_v f ∈ H^{k,p}`. Going down, a 
   matrix-valued `A` of class `C^{|k|}` with bounded derivatives up to order `|k|`,
   `TemperedDistribution.mulLeftCLM A` maps `H^{k,p}(E, F)` into `H^{k,p}(E, G)`, for `k ∈ ℤ` and
   `1 < p < ∞` (multiplication by `A` when `A` has temperate growth, and a junk value otherwise).
+* `BesselPotentialSpace.smulLeftCLMOfNormIteratedFDerivLe`: multiplication by a scalar function
+  with bounded derivatives up to order `k`, as a bounded operator on `H^{k,p}(E, F)` for `k ∈ ℕ`,
+  with `Lᵖ` function the pointwise product
+  (`BesselPotentialSpace.coeFn_inclusionLp_smulLeftCLMOfNormIteratedFDerivLe_ae_eq`).
 * `BesselPotentialSpace.mulLeftCLM`: `TemperedDistribution.mulLeftCLM A` as a bounded operator
   `H^{k,p}(E, F) →L[ℂ] H^{k,p}(E, G)` (multiplication by `A` when `A` has temperate growth, and a
   junk value otherwise).
@@ -155,13 +158,6 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le (hp : 1 < p) (hp_top : 
     exact (ih (hg.1.exists_bound_iteratedFDeriv_fderiv_apply (by simp) hbd v)
       (hf.mono_of_one_lt hp hp_top (by linarith))).add
       (ih (fun n hn ↦ hbd n (by omega)) (hf'.2 v))
-
-/-- **Schwartz multipliers act on `H^{k,p}`.** For `1 < p < ∞`, multiplication by a Schwartz
-function maps `H^{k,p}` into itself. -/
-theorem MemSobolev.smulLeftCLM_schwartzMap (hp : 1 < p) (hp_top : p ≠ ∞) {k : ℕ} (ψ : 𝓢(E, ℂ))
-    {f : 𝓢'(E, F)} (hf : MemSobolev k p f) : MemSobolev k p (smulLeftCLM F ψ f) :=
-  hf.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top
-    fun i _ ↦ ⟨_, ψ.norm_iteratedFDeriv_le_seminorm ℝ i⟩
 
 /-- **Multipliers with bounded derivatives act on `H^{-k,p}`.** Let `1 < p < ∞` and let `g` be a
 function whose iterated derivatives of order at most `k` are bounded. Then `g f ∈ H^{-k,p}` for
@@ -308,5 +304,46 @@ theorem mulLeftEquiv_symm_apply (hp : 1 < p) (hp_top : p ≠ ∞) {A : E → F �
     (mulLeftEquiv hp hp_top hA hB hAbd hBbd hBA hAB).symm u =
       mulLeftCLM hp hp_top (hB.1.of_le (mod_cast le_top)) hBbd u :=
   (rfl)
+
+end BesselPotentialSpace
+
+namespace BesselPotentialSpace
+
+open MeasureTheory
+open scoped ENNReal
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+  [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ} {g : E → ℂ}
+
+/-- **Multiplication by a scalar function with bounded derivatives**, as a bounded operator on
+`H^{k,p}(E, F)` for a natural number `k` and `1 < p < ∞`, when the iterated derivatives of `g` of
+order at most `k` are bounded. On the underlying tempered distributions it is
+`TemperedDistribution.smulLeftCLM F g`
+(`BesselPotentialSpace.toDistr_smulLeftCLMOfNormIteratedFDerivLe`), which is multiplication by `g`
+when `g` has temperate growth and a junk value otherwise. -/
+noncomputable def smulLeftCLMOfNormIteratedFDerivLe (hp : 1 < p) (hp_top : p ≠ ∞)
+    (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
+    H^{(k : ℝ), p}(E, F) →L[ℂ] H^{(k : ℝ), p}(E, F) :=
+  mapCLM (TemperedDistribution.smulLeftCLM F g) fun u ↦
+    u.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top hbd
+
+@[simp]
+theorem toDistr_smulLeftCLMOfNormIteratedFDerivLe (hp : 1 < p) (hp_top : p ≠ ∞)
+    (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) (u : H^{(k : ℝ), p}(E, F)) :
+    (smulLeftCLMOfNormIteratedFDerivLe hp hp_top hbd u).toDistr =
+      TemperedDistribution.smulLeftCLM F g u.toDistr :=
+  toDistr_mapCLM _ _ u
+
+/-- For `g` of temperate growth, the `Lᵖ` function of `g u` is almost everywhere `g` times that
+of `u`. -/
+theorem coeFn_inclusionLp_smulLeftCLMOfNormIteratedFDerivLe_ae_eq (hp : 1 < p) (hp_top : p ≠ ∞)
+    (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) (hg : g.HasTemperateGrowth)
+    (u : H^{(k : ℝ), p}(E, F)) :
+    ⇑(inclusionLp k.cast_nonneg (smulLeftCLMOfNormIteratedFDerivLe hp hp_top hbd u)) =ᵐ[volume]
+      fun x ↦ g x • inclusionLp k.cast_nonneg u x := by
+  obtain ⟨C, hC⟩ := hbd 0 k.zero_le
+  exact coeFn_inclusionLp_ae_eq_smul_of_toDistr_eq_smulLeftCLM _ _ hg (C := C)
+    (fun x ↦ by simpa using hC x) (toDistr_smulLeftCLMOfNormIteratedFDerivLe hp hp_top hbd u)
 
 end BesselPotentialSpace

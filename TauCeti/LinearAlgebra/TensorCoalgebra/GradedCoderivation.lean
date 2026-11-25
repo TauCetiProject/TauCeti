@@ -995,7 +995,7 @@ theorem ReducedTensorWords.IsGradedCoderivation.isCoderivation_comp_self
     rw [← ReducedTensorWords.map_comp, InternalGrading.koszulTwist_comp_self,
       ReducedTensorWords.map_id]
   have h := LinearMap.congr_fun (LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self b
-    (ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q)) hτ hodd)
+    (ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q)) b hτ hodd)
     (deconcatenation R M z)
   simp only [LinearMap.add_apply, LinearMap.comp_apply, map_add] at h ⊢
   rw [← h]

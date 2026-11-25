@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Topology.Algebra.LinearMapCompletion
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 
 /-!

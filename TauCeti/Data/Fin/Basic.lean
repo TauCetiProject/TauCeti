@@ -43,7 +43,9 @@ range, so the value is a `dite` rather than a plain application.
 ## Main results
 
 * `Equiv.Perm.eq_one_or_swap_fin_two` and `Equiv.Perm.univ_fin_two`: every permutation of
-  `Fin 2` is the identity or the transposition, and these form the set of all permutations.
+  `Fin 2` is the identity or the transposition, and these form the set of all permutations;
+  so a function of a pair that is invariant under the swap is invariant under every permutation
+  (`Equiv.Perm.apply_comp_fin_two`).
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
 * `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
@@ -67,6 +69,10 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.sum_val_eq_choose_two`: the sum of the values of `Fin n` is `n.choose 2`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
+* `Fin.castAdd_ne_natAdd`, `Fin.natAdd_ne_castAdd`: the first `m` and the last `n` indices of
+  `Fin (m + n)` are distinct.
+* `Fin.natAdd_comp_finProdFinEquiv_injective`: listing `Fin n × Fin k` as `Fin (n * k)` after
+  the first `m` indices is injective.
 * `Fin.map_partialProd`, `Fin.comp_partialProd`: applying a monoid homomorphism entrywise commutes
   with `Fin.partialProd` (`Fin.map_partialSum` and `Fin.comp_partialSum` for `Fin.partialSum`).
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
@@ -243,6 +249,23 @@ theorem not_castSucc_eq_zero_and_succ_eq_last {n : ℕ} (hn : 2 ≤ n) (i : Fin 
 theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
     castLE (Nat.succ_le_iff.mpr i.isLt) (last i.val) = i := by
   rfl
+
+/-- The first `m` indices of `Fin (m + n)` are distinct from the last `n`. -/
+@[simp]
+theorem castAdd_ne_natAdd {m n : ℕ} (i : Fin m) (j : Fin n) : castAdd n i ≠ natAdd m j := by
+  simp only [ne_eq, Fin.ext_iff, val_castAdd, val_natAdd]
+  omega
+
+/-- The last `n` indices of `Fin (m + n)` are distinct from the first `m`. -/
+@[simp]
+theorem natAdd_ne_castAdd {m n : ℕ} (i : Fin m) (j : Fin n) : natAdd m j ≠ castAdd n i :=
+  (castAdd_ne_natAdd i j).symm
+
+/-- Listing the pairs of `Fin n × Fin k` as `Fin (n * k)` after the first `m` indices of
+`Fin (m + n * k)` is injective. -/
+theorem natAdd_comp_finProdFinEquiv_injective {m n k : ℕ} :
+    Function.Injective fun l : Fin n × Fin k ↦ natAdd m (finProdFinEquiv l) :=
+  (natAdd_injective _ _).comp finProdFinEquiv.injective
 
 /-- The sum of the positions `0, 1, …, n - 1` is `n.choose 2`. -/
 theorem sum_val_eq_choose_two (n : ℕ) : ∑ i : Fin n, (i : ℕ) = n.choose 2 := by
@@ -1176,6 +1199,20 @@ theorem univ_fin_two :
   classical
   ext e
   simpa using e.eq_one_or_swap_fin_two
+
+/-- A function of a pair that is unchanged by swapping the two entries is unchanged by every
+permutation of the entries. -/
+theorem apply_comp_fin_two {α β : Type*} (σ : Equiv.Perm (Fin 2)) {f : (Fin 2 → α) → β}
+    (hf : ∀ a b, f ![a, b] = f ![b, a]) (μ : Fin 2 → α) : f (μ ∘ σ) = f μ := by
+  rcases σ.eq_one_or_swap_fin_two with rfl | rfl
+  · rfl
+  · have hswap : μ ∘ Equiv.swap 0 1 = ![μ 1, μ 0] := by
+      ext i
+      fin_cases i <;> simp
+    have hμ : μ = ![μ 0, μ 1] := by
+      ext i
+      fin_cases i <;> simp
+    rw [hswap, ← hf, ← hμ]
 
 end Equiv.Perm
 

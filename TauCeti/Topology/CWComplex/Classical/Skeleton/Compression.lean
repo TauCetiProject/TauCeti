@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Path
-public import TauCeti.Analysis.Convex.RadialPush
+public import TauCeti.Analysis.Convex.Radial.Push
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellDeformation
 public import TauCeti.Topology.Homotopy.AvoidPoint

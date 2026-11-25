@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.FiberBundle.Principal.Basic
+public import TauCeti.Topology.FiberBundle.Principal.Equiv
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Isometry
 
 /-!
@@ -26,8 +27,9 @@ lands in `SO(n)`, each fibre of `P` is a `G`-torsor, so its image is one `ρG`-o
 contained in one `SO(n)`-orbit, which singles out an orientation of `E`. There is no numerability
 field; on paracompact Hausdorff bases every principal bundle is numerable.
 
-An *equivalence* of lifts (`TauCeti.OrthonormalFrameLift.Equiv`) is a family of equivariant
-bijections between the fibres of the two principal bundles, inducing a homeomorphism of total
+An *equivalence* of lifts (`TauCeti.OrthonormalFrameLift.Equiv`) is an equivalence of the two
+principal bundles (`TauCeti.PrincipalBundle.Equiv`), a family of equivariant bijections between
+their fibres, inducing a homeomorphism of total
 spaces (`TauCeti.OrthonormalFrameLift.Equiv.toHomeomorph`) and commuting with the frame maps.
 Equivalences have identities, inverses and composites.
 
@@ -51,6 +53,11 @@ is a bijection from the lifts for `E` to the lifts for `E'`
 those of their transports (`TauCeti.OrthonormalFrameLift.equivMapEquiv`). A change of metric is the
 main instance.
 
+Precomposing every frame of a lift along `ρ` with a fixed linear isometry `r` of the model gives
+a lift along any `ρ'` with `ρ g ∘ r = r ∘ ρ' g`, on the same principal bundle
+(`TauCeti.OrthonormalFrameLift.precomp`). Equivalences of lifts are equivalences of the lifts with
+precomposed frames (`TauCeti.OrthonormalFrameLift.Equiv.precomp`).
+
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameLift`: a lift of the orthonormal frame bundle of a real vector bundle
@@ -61,6 +68,10 @@ main instance.
 * `TauCeti.OrthonormalFrameLift.Equiv.pullback`: the pullback of an equivalence.
 * `TauCeti.OrthonormalFrameLift.map`, `TauCeti.OrthonormalFrameLift.Equiv.map`: the transport of a
   lift and of an equivalence along fibrewise isometries.
+* `TauCeti.OrthonormalFrameLift.precomp`: the lift whose frames are those of a lift precomposed
+  with a fixed isometry of the model.
+* `TauCeti.OrthonormalFrameLift.Equiv.precomp`: the equivalence of lifts with precomposed frames
+  induced by an equivalence of lifts.
 
 ## Main results
 
@@ -211,22 +222,12 @@ theorem toFrame_smul_of_map_eq_one (s : OrthonormalFrameLift F E n G ρ) {g : G}
 
 /-! ### Equivalences -/
 
-/-- An **equivalence of lifts** `s ≃ t` on the same bundle: a family of bijections
-between the fibres of their principal bundles, equivariant for the right action of `G`,
-inducing continuous maps of total spaces in both directions, and commuting with the maps to the
-orthonormal frame bundle. -/
-structure Equiv (s t : OrthonormalFrameLift F E n G ρ) where
-  /-- The bijection between fibres. -/
-  toEquiv : ∀ x, s.P x ≃ t.P x
-  /-- The induced map of total spaces is continuous. -/
-  continuous_toFun : Continuous fun p : TotalSpace G s.P ↦
-    (⟨p.proj, toEquiv p.proj p.snd⟩ : TotalSpace G t.P)
-  /-- The inverse map of total spaces is continuous. -/
-  continuous_invFun : Continuous fun p : TotalSpace G t.P ↦
-    (⟨p.proj, (toEquiv p.proj).symm p.snd⟩ : TotalSpace G s.P)
-  /-- The bijection is equivariant. -/
-  map_smul : ∀ (x : X) (p : s.P x) (g : G),
-    toEquiv x (op g • p) = op g • toEquiv x p
+/-- An **equivalence of lifts** `s ≃ t` on the same bundle: an equivalence of their principal
+`G`-bundles (`TauCeti.PrincipalBundle.Equiv`), that is a family of bijections between the fibres,
+equivariant for the right action of `G` and inducing continuous maps of total spaces in both
+directions, commuting with the maps to the orthonormal frame bundle. -/
+structure Equiv (s t : OrthonormalFrameLift F E n G ρ) extends
+    toPrincipalBundleEquiv : PrincipalBundle.Equiv G s.P t.P where
   /-- The bijection commutes with the maps to frames. -/
   toFrame_map : ∀ (x : X) (p : s.P x), t.toFrame ⟨x, toEquiv x p⟩ = s.toFrame ⟨x, p⟩
 
@@ -234,13 +235,7 @@ namespace Equiv
 
 variable {s t u : OrthonormalFrameLift F E n G ρ}
 
-attribute [simp] map_smul toFrame_map
-
-/-- The inverse of the bijection of an equivalence is equivariant. -/
-@[simp]
-theorem map_smul_symm (φ : s.Equiv t) (x : X) (p : t.P x) (g : G) :
-    (φ.toEquiv x).symm (op g • p) = op g • (φ.toEquiv x).symm p := by
-  rw [_root_.Equiv.symm_apply_eq, φ.map_smul, _root_.Equiv.apply_symm_apply]
+attribute [simp] toFrame_map
 
 /-- The inverse of the bijection of an equivalence commutes with the maps to frames. -/
 @[simp]
@@ -254,8 +249,7 @@ theorem ext {φ ψ : s.Equiv t} (h : ∀ x p, φ.toEquiv x p = ψ.toEquiv x p) :
   obtain ⟨φ, _⟩ := φ
   obtain ⟨ψ, _⟩ := ψ
   congr
-  funext x
-  exact _root_.Equiv.ext (h x)
+  exact PrincipalBundle.Equiv.ext h
 
 /-- Equivalences between equal lifts are heterogeneously equal when their bijections are,
 fibre by fibre. This compares equivalences whose source and target lifts agree only
@@ -327,31 +321,22 @@ theorem toHomeomorph_symm_smul (φ : s.Equiv t) (g : Gᵐᵒᵖ)
 /-- The identity equivalence of a lift. -/
 @[refl]
 def refl (s : OrthonormalFrameLift F E n G ρ) : s.Equiv s where
-  toEquiv _ := _root_.Equiv.refl _
-  continuous_toFun := continuous_id
-  continuous_invFun := continuous_id
-  map_smul _ _ _ := rfl
+  toPrincipalBundleEquiv := .refl G s.P
   toFrame_map _ _ := rfl
 
 /-- The inverse of an equivalence of lifts. -/
 @[symm]
 def symm (φ : s.Equiv t) : t.Equiv s where
-  toEquiv x := (φ.toEquiv x).symm
-  continuous_toFun := φ.continuous_invFun
-  continuous_invFun := φ.continuous_toFun
-  map_smul := φ.map_smul_symm
+  toPrincipalBundleEquiv := φ.toPrincipalBundleEquiv.symm
   toFrame_map := φ.toFrame_map_symm
 
 /-- The composite of two equivalences of lifts. -/
 @[trans]
 def trans (φ : s.Equiv t) (ψ : t.Equiv u) : s.Equiv u where
-  toEquiv x := (φ.toEquiv x).trans (ψ.toEquiv x)
-  continuous_toFun := ψ.continuous_toFun.comp φ.continuous_toFun
-  continuous_invFun := φ.continuous_invFun.comp ψ.continuous_invFun
-  map_smul x p g := by
-    simp only [_root_.Equiv.trans_apply, φ.map_smul, ψ.map_smul]
+  toPrincipalBundleEquiv := φ.toPrincipalBundleEquiv.trans ψ.toPrincipalBundleEquiv
   toFrame_map x p := by
-    simp only [_root_.Equiv.trans_apply, ψ.toFrame_map, φ.toFrame_map]
+    simp only [PrincipalBundle.Equiv.trans_toEquiv, _root_.Equiv.trans_apply, ψ.toFrame_map,
+      φ.toFrame_map]
 
 @[simp]
 theorem refl_toEquiv (s : OrthonormalFrameLift F E n G ρ) (x : X) :
@@ -819,6 +804,64 @@ theorem Equiv.pullback_map_heq {s t : OrthonormalFrameLift F E n G ρ} (φ : s.E
   Equiv.heq_of_toEquiv_heq (s.pullback_map f) (t.pullback_map f) fun _ ↦ HEq.rfl
 
 end Map
+
+/-! ### Changing the model frame -/
+
+/-- The **lift with precomposed frames**: for a lift `s` along `ρ`, a linear isometry `r` of the
+model `ℝⁿ` and a homomorphism `ρ'` with `ρ g ∘ r = r ∘ ρ' g`, the lift along `ρ'` with the same
+principal bundle, whose frame at `p` is the frame of `p` in `s` precomposed with `r`. Its body is
+exposed so that the fibre `(s.precomp r ρ' hr).P x` unfolds to `s.P x` downstream. -/
+@[expose]
+noncomputable def precomp (s : OrthonormalFrameLift F E n G ρ)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp) :
+    OrthonormalFrameLift F E n G ρ' where
+  P := s.P
+  toFrame p := ⟨(s.toFrame p).proj, r.trans (s.toFrame p).frame⟩
+  continuous_toFrame := OrthonormalFrameBundle.continuous_iff.2 fun v ↦
+    (OrthonormalFrameBundle.continuous_totalSpaceMk_frame (r v)).comp s.continuous_toFrame
+  proj_toFrame p := s.proj_toFrame p
+  toFrame_smul x p g v := by
+    have h := s.toFrame_smul x p g (r (WithLp.toLp 2 v)).ofLp
+    simp only [WithLp.toLp_ofLp, hr] at h
+    simpa only [LinearIsometryEquiv.trans_apply] using h
+
+/-- The frame of a point in the lift with precomposed frames is its frame in the original lift
+precomposed with `r`. -/
+@[simp]
+theorem toFrame_precomp (s : OrthonormalFrameLift F E n G ρ)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp)
+    (p : TotalSpace G s.P) :
+    (s.precomp r ρ' hr).toFrame p = ⟨(s.toFrame p).proj, r.trans (s.toFrame p).frame⟩ :=
+  (rfl)
+
+/-- **Precomposing frames is functorial**: an equivalence `s ≃ t` of lifts is an equivalence of
+the lifts with frames precomposed with `r`. -/
+noncomputable def Equiv.precomp {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp) :
+    (s.precomp r ρ' hr).Equiv (t.precomp r ρ' hr) where
+  toEquiv := φ.toEquiv
+  continuous_toFun := φ.continuous_toFun
+  continuous_invFun := φ.continuous_invFun
+  map_smul := φ.map_smul
+  -- `rw` and `simp` cannot see through the fibre `(s.precomp …).P x = s.P x`, so the frame
+  -- equation of `φ` is pushed through the precomposition `q ↦ ⟨q.proj, r.trans q.frame⟩` of the
+  -- frame map (`toFrame_precomp`) by `congrArg`.
+  toFrame_map x p := congrArg (fun q ↦ (⟨q.proj, r.trans q.frame⟩ :
+    OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin n)))) (φ.toFrame_map x p)
+
+@[simp]
+theorem Equiv.precomp_toEquiv {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    (r : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (ρ' : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+    (hr : ∀ g v, ρ g (r (WithLp.toLp 2 v)).ofLp = (r (WithLp.toLp 2 (ρ' g v))).ofLp) (x : X) :
+    (φ.precomp r ρ' hr).toEquiv x = φ.toEquiv x :=
+  (rfl)
 
 end OrthonormalFrameLift
 

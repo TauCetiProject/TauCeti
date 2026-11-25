@@ -36,6 +36,8 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
 * `TauCeti.branchDenom a x`: the denominator `q_a (w) = 1 + (A + 1) (1 - w_j)`.
 * `TauCeti.branchMap a x`: the branch `F_a` in chart coordinates.
 * `TauCeti.linearMove j`: the linear map `γ_{j+1}` of `ℝ^{d+2}`.
+* `TauCeti.lastMoveMap x`: the action `w ↦ (w₁, …, w_{n-2}) / (1 + w₁ + ⋯ + w_{n-2})` of
+  `γ_{n-1}` in chart coordinates.
 
 ## Main results
 
@@ -53,6 +55,14 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
   in the letter.
 * `TauCeti.contDiffAt_branchMap`: each branch is smooth wherever its denominator is nonzero, in
   particular on a neighbourhood of the simplex.
+* `TauCeti.branchMap_eq_branchMap_iff`, `TauCeti.injOn_branchMap`: at an interior point `w` of
+  the simplex the image `F_a (w)` determines the letter `a` and the point `w`. The coordinate sum
+  `(1 - w_j) / q_a (w)` of the image lies strictly between `1 / (A + 3)` and `1 / (A + 2)`, which
+  fixes `A` and then `w_j`; the position of `w_j` among the strictly increasing coordinates of `w`
+  fixes `j`.
+* `TauCeti.linearMove_last_simplexLift`, `TauCeti.branchMap_succ`,
+  `TauCeti.branchMap_eq_iterate_lastMoveMap`: `lastMoveMap` is the projective action of
+  `γ_{n-1}`, and the branch of `(A, j)` is its `A`-th iterate after the branch of `(0, j)`.
 
 ## References
 
@@ -168,6 +178,160 @@ theorem branchMap_mem_orderedSimplex (a : ℕ × Fin d) {x : Fin d → ℝ}
 theorem mapsTo_branchMap (a : ℕ × Fin d) :
     MapsTo (branchMap a) (orderedSimplex d) (orderedSimplex d) :=
   fun _ hx => branchMap_mem_orderedSimplex a hx
+
+/-! ### Recovering the letter and the point from the image -/
+
+/-- At an interior point of the simplex every coordinate of the full point lies in `(0, 1)`. The
+index `j` only witnesses `d ≠ 0`. -/
+private theorem simplexPoint_mem_Ioo_of_mem_interior {x : Fin d → ℝ} (j : Fin d)
+    (hx : x ∈ interior (orderedSimplex d)) (k : Fin (d + 1)) :
+    0 < simplexPoint x k ∧ simplexPoint x k < 1 := by
+  obtain ⟨h0, -, hlast⟩ := mem_interior_orderedSimplex_iff.mp hx
+  induction k using Fin.lastCases with
+  | last =>
+    have : 0 < ∑ k, x k := Finset.sum_pos (fun k _ => h0 k) ⟨j, Finset.mem_univ j⟩
+    simp only [simplexPoint_last]; constructor <;> linarith [h0 j, hlast j]
+  | cast k =>
+    simp only [simplexPoint_castSucc]
+    constructor <;> linarith [h0 k, lt_one_half_of_mem_interior_orderedSimplex hx k]
+
+/-- Each branch maps the interior of the simplex into itself. -/
+theorem branchMap_mem_interior_orderedSimplex (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x ∈ interior (orderedSimplex d)) : branchMap a x ∈ interior (orderedSimplex d) := by
+  have hs := simplexPoint_mem_Ioo_of_mem_interior a.2 hx
+  have hmono := strictMono_simplexPoint_iff.mpr (mem_interior_orderedSimplex_iff.mp hx).2
+  have hq := branchDenom_pos_of_mem_orderedSimplex a (interior_subset hx)
+  refine mem_interior_orderedSimplex_iff.mpr ⟨fun i => div_pos (hs _).1 hq, fun i j hij => ?_,
+    fun i => ?_⟩
+  · exact div_lt_div_of_pos_right (hmono (Fin.strictMono_succAbove _ hij)) hq
+  · rw [← simplexPoint_last, simplexPoint_branchMap_last a hq.ne', branchMap_apply]
+    refine div_lt_div_of_pos_right ((hs _).2.trans_le ?_) hq
+    have : 0 ≤ (a.1 : ℝ) * (1 - x a.2) := mul_nonneg a.1.cast_nonneg
+      (by linarith [le_one_half_of_mem_orderedSimplex (interior_subset hx) a.2])
+    linarith
+
+/-- The chart coordinates of `F_a (w)` sum to at least `1 / (A + 3)` where `w_j ≤ 1 / 2`. -/
+private theorem one_div_add_three_le_sum_branchMap (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x a.2 ≤ 1 / 2) : 1 / ((a.1 : ℝ) + 3) ≤ ∑ i, branchMap a x i := by
+  rw [sum_branchMap, div_le_div_iff₀ (by positivity) (branchDenom_pos a (by linarith)),
+    branchDenom_def]
+  nlinarith
+
+/-- The chart coordinates of `F_a (w)` sum to more than `1 / (A + 3)` where `w_j < 1 / 2`. -/
+private theorem one_div_add_three_lt_sum_branchMap (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x a.2 < 1 / 2) : 1 / ((a.1 : ℝ) + 3) < ∑ i, branchMap a x i := by
+  rw [sum_branchMap, div_lt_div_iff₀ (by positivity) (branchDenom_pos a (by linarith)),
+    branchDenom_def]
+  nlinarith
+
+/-- The chart coordinates of `F_a (w)` sum to at most `1 / (A + 2)` where `0 ≤ w_j ≤ 1`. -/
+private theorem sum_branchMap_le_one_div_add_two (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (h₀ : 0 ≤ x a.2) (h₁ : x a.2 ≤ 1) : ∑ i, branchMap a x i ≤ 1 / ((a.1 : ℝ) + 2) := by
+  rw [sum_branchMap, div_le_div_iff₀ (branchDenom_pos a h₁) (by positivity), branchDenom_def]
+  nlinarith
+
+/-- The chart coordinates of `F_a (w)` sum to less than `1 / (A + 2)` where `0 < w_j ≤ 1`. -/
+private theorem sum_branchMap_lt_one_div_add_two (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (h₀ : 0 < x a.2) (h₁ : x a.2 ≤ 1) : ∑ i, branchMap a x i < 1 / ((a.1 : ℝ) + 2) := by
+  rw [sum_branchMap, div_lt_div_iff₀ (branchDenom_pos a h₁) (by positivity), branchDenom_def]
+  nlinarith
+
+/-- The coordinate sum of `F_a (w)` lies in `[1 / (A + 3), 1 / (A + 2)]`, strictly inside when
+`0 < w_j < 1 / 2`, and these intervals overlap only at their endpoints; so the sum determines `A`
+as soon as one of the two points has `0 < w_j < 1 / 2`. -/
+private theorem fst_eq_of_sum_branchMap_eq {a b : ℕ × Fin d} {x x' : Fin d → ℝ}
+    (h₀ : 0 < x a.2) (h₁ : x a.2 < 1 / 2) (h₀' : 0 ≤ x' b.2) (h₁' : x' b.2 ≤ 1 / 2)
+    (h : ∑ i, branchMap a x i = ∑ i, branchMap b x' i) : a.1 = b.1 := by
+  have h₂ := one_div_add_three_lt_sum_branchMap a h₁
+  have h₃ := sum_branchMap_lt_one_div_add_two a h₀ (by linarith)
+  have h₄ := one_div_add_three_le_sum_branchMap b h₁'
+  have h₅ := sum_branchMap_le_one_div_add_two b h₀' (by linarith)
+  rcases lt_trichotomy a.1 b.1 with hlt | heq | hlt
+  · have : 1 / ((b.1 : ℝ) + 2) ≤ 1 / ((a.1 : ℝ) + 3) :=
+      one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.add_le_add_right hlt 2)
+    linarith
+  · exact heq
+  · have : 1 / ((a.1 : ℝ) + 2) ≤ 1 / ((b.1 : ℝ) + 3) :=
+      one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.add_le_add_right hlt 2)
+    linarith
+
+/-- For two letters with the same `A`, the coordinate sum of the image determines the deleted
+coordinate `w_j` and the denominator. -/
+private theorem eq_and_branchDenom_eq_of_sum_branchMap_eq {a b : ℕ × Fin d} {x x' : Fin d → ℝ}
+    (hab : a.1 = b.1) (hq : branchDenom a x ≠ 0) (hq' : branchDenom b x' ≠ 0)
+    (h : ∑ i, branchMap a x i = ∑ i, branchMap b x' i) :
+    x a.2 = x' b.2 ∧ branchDenom a x = branchDenom b x' := by
+  rw [sum_branchMap, sum_branchMap, div_eq_div_iff hq hq'] at h
+  rw [branchDenom_def, branchDenom_def, hab] at h
+  have hj : x a.2 = x' b.2 := by linear_combination -h
+  exact ⟨hj, by rw [branchDenom_def, branchDenom_def, hab, hj]⟩
+
+/-- Two equal images of branches with equal denominators come from full points that agree after
+deleting the respective coordinates. -/
+private theorem simplexPoint_succAbove_eq_of_branchMap_eq {a b : ℕ × Fin d} {x x' : Fin d → ℝ}
+    (hq : branchDenom a x = branchDenom b x') (hq' : branchDenom b x' ≠ 0)
+    (h : branchMap a x = branchMap b x') (i : Fin d) :
+    simplexPoint x (a.2.castSucc.succAbove i) = simplexPoint x' (b.2.castSucc.succAbove i) := by
+  have := congrFun h i
+  rw [branchMap_apply, branchMap_apply, hq] at this
+  exact (div_left_inj₀ hq').mp this
+
+/-- Each branch is injective wherever its denominator is nonzero, in particular on the simplex. -/
+theorem injOn_branchMap (a : ℕ × Fin d) : InjOn (branchMap a) {x | branchDenom a x ≠ 0} := by
+  intro x hx x' hx' h
+  obtain ⟨hj, hq⟩ := eq_and_branchDenom_eq_of_sum_branchMap_eq rfl hx hx' (by rw [h])
+  funext k
+  rcases eq_or_ne k a.2 with rfl | hk
+  · exact hj
+  · obtain ⟨i, hi⟩ := Fin.exists_succAbove_eq (Fin.castSucc_injective _ |>.ne hk)
+    have := simplexPoint_succAbove_eq_of_branchMap_eq hq hx' h i
+    rwa [hi, simplexPoint_castSucc, simplexPoint_castSucc] at this
+
+/-- Let `u` and `v` be monotone, and agree after deleting the coordinates `i < k` respectively.
+If the deleted coordinates are also equal, then `u` is constant on `[i, i + 1]` and `v` is
+constant on `[i, k]`. -/
+private theorem eq_of_succAbove_eq_of_lt {u v : Fin (d + 1) → ℝ} (hu : Monotone u)
+    (hv : Monotone v) {i k : Fin d} (hik : i < k)
+    (hs : ∀ m, u (i.castSucc.succAbove m) = v (k.castSucc.succAbove m))
+    (h : u i.castSucc = v k.castSucc) : u i.castSucc = u i.succ ∧ v i.castSucc = v k.castSucc := by
+  have h₁ := hs i
+  rw [Fin.succAbove_of_le_castSucc _ _ le_rfl,
+    Fin.succAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_castSucc_iff.mpr hik)] at h₁
+  have h₂ := hu (Fin.castSucc_le_succ i)
+  have h₃ := hv (Fin.castSucc_le_castSucc_iff.mpr hik.le)
+  constructor <;> linarith
+
+/-- **Letter recovery.** At an interior point `w` of the simplex, the image `F_a (w)` determines
+both the letter `a` and the point `w`, even among the images `F_b (w')` of all points `w'` of the
+simplex. -/
+theorem branchMap_eq_branchMap_iff {a b : ℕ × Fin d} {x x' : Fin d → ℝ}
+    (hx : x ∈ interior (orderedSimplex d)) (hx' : x' ∈ orderedSimplex d) :
+    branchMap a x = branchMap b x' ↔ a = b ∧ x = x' := by
+  refine ⟨fun h => ?_, by rintro ⟨rfl, rfl⟩; rfl⟩
+  obtain ⟨h0, hstrict, hlast⟩ := mem_interior_orderedSimplex_iff.mp hx
+  have hq := branchDenom_pos_of_mem_orderedSimplex a (interior_subset hx)
+  have hq' := branchDenom_pos_of_mem_orderedSimplex b hx'
+  have hsum : ∑ i, branchMap a x i = ∑ i, branchMap b x' i := by rw [h]
+  have hA := fst_eq_of_sum_branchMap_eq (h0 a.2)
+    (lt_one_half_of_mem_interior_orderedSimplex hx a.2) ((mem_orderedSimplex_iff.mp hx').1 b.2)
+    (le_one_half_of_mem_orderedSimplex hx' b.2) hsum
+  obtain ⟨hj, hqe⟩ := eq_and_branchDenom_eq_of_sum_branchMap_eq hA hq.ne' hq'.ne' hsum
+  have hs := simplexPoint_succAbove_eq_of_branchMap_eq hqe hq'.ne' h
+  have hmono := strictMono_simplexPoint_iff.mpr ⟨hstrict, hlast⟩
+  have hmono' := (mem_orderedSimplex_iff_simplexPoint.mp hx').2
+  -- With `A` and `w_j` known, the position of `w_j` among the strictly increasing coordinates
+  -- of `w` determines `j`.
+  have hj' : simplexPoint x a.2.castSucc = simplexPoint x' b.2.castSucc := by
+    simpa only [simplexPoint_castSucc] using hj
+  have hj₂ : a.2 = b.2 := by
+    rcases lt_trichotomy a.2 b.2 with hlt | heq | hlt
+    · exact absurd (eq_of_succAbove_eq_of_lt hmono.monotone hmono' hlt hs hj').1
+        (hmono (Fin.castSucc_lt_succ (i := a.2))).ne
+    · exact heq
+    · exact absurd (eq_of_succAbove_eq_of_lt hmono' hmono.monotone hlt (fun i => (hs i).symm)
+        hj'.symm).2 (hmono (Fin.castSucc_lt_castSucc_iff.mpr hlt)).ne
+  obtain rfl : a = b := Prod.ext hA hj₂
+  exact ⟨rfl, injOn_branchMap a hq.ne' hq'.ne' h⟩
 
 /-! ### Smoothness and the logarithmic derivative -/
 
@@ -375,5 +539,113 @@ theorem linearMove_last_pow_linearMove_mem_orderedCone (a : ℕ × Fin d) {y : F
   rw [linearMove_last_pow_linearMove_of_mem_orderedCone a hy]
   exact smul_mem_orderedCone (simplexLift_mem_orderedCone (branchMap_mem_orderedSimplex a hx))
     (mul_pos (pos_last_of_mem_orderedCone hy) hq)
+
+/-! ### The last move in chart coordinates -/
+
+/-- The action of `γ_{n-1}` on the ordered simplex in chart coordinates. Since
+`γ_{n-1} (w, 1) = (w₁, …, w_{n-2}, 1, 1 + w₁ + ⋯ + w_{n-2})`, it divides the chart coordinates by
+`1 + ∑ xᵢ`. The accelerated branch of `(A, j)` is its `A`-th iterate after the branch of
+`(0, j)`. -/
+noncomputable def lastMoveMap (x : Fin d → ℝ) : Fin d → ℝ :=
+  fun i => x i / (1 + ∑ k, x k)
+
+@[simp]
+theorem lastMoveMap_apply (x : Fin d → ℝ) (i : Fin d) :
+    lastMoveMap x i = x i / (1 + ∑ k, x k) :=
+  (rfl)
+
+/-- The chart coordinates of `lastMoveMap x` sum to `∑ xᵢ / (1 + ∑ xᵢ)`. -/
+theorem sum_lastMoveMap (x : Fin d → ℝ) :
+    ∑ i, lastMoveMap x i = (∑ k, x k) / (1 + ∑ k, x k) := by
+  simp only [lastMoveMap_apply, ← Finset.sum_div]
+
+/-- The last coordinate of the image of the last move is `1 / (1 + ∑ xᵢ)`. -/
+theorem simplexPoint_lastMoveMap_last {x : Fin d → ℝ} (hx : 1 + ∑ k, x k ≠ 0) :
+    simplexPoint (lastMoveMap x) (Fin.last d) = 1 / (1 + ∑ k, x k) := by
+  rw [simplexPoint_last, sum_lastMoveMap]
+  field_simp
+  ring
+
+/-- **The homogeneous identity** for `γ_{n-1}`: `γ_{n-1} (w, 1) = (1 + ∑ xᵢ) (G (w), 1)` for the
+last move `G = lastMoveMap`, wherever `1 + ∑ xᵢ ≠ 0`. -/
+theorem linearMove_last_simplexLift {x : Fin d → ℝ} (hx : 1 + ∑ k, x k ≠ 0) :
+    linearMove (Fin.last d) (simplexLift x) = (1 + ∑ k, x k) • simplexLift (lastMoveMap x) := by
+  rw [simplexLift_eq_snoc_snoc x, linearMove_last_snoc_snoc]
+  ext i
+  induction i using Fin.lastCases with
+  | last => simp only [Fin.snoc_last, Pi.smul_apply, simplexLift_last, smul_eq_mul]; ring
+  | cast i => induction i using Fin.lastCases with
+    | last =>
+      simp only [Fin.snoc_castSucc, Fin.snoc_last, Pi.smul_apply, simplexLift_castSucc,
+        smul_eq_mul]
+      rw [simplexPoint_lastMoveMap_last hx]
+      field_simp
+    | cast i => simp [mul_div_cancel₀ _ hx]
+
+/-- The last move maps the ordered simplex into itself. -/
+theorem lastMoveMap_mem_orderedSimplex {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
+    lastMoveMap x ∈ orderedSimplex d := by
+  obtain ⟨h0, hmono, -⟩ := mem_orderedSimplex_iff.mp hx
+  have hpos := one_add_sum_pos_of_mem_orderedSimplex hx
+  refine mem_orderedSimplex_iff.mpr ⟨fun i => div_nonneg (h0 i) hpos.le,
+    fun i j hij => div_le_div_of_nonneg_right (hmono hij) hpos.le, fun i => ?_⟩
+  rw [← simplexPoint_last, simplexPoint_lastMoveMap_last hpos.ne', lastMoveMap_apply]
+  exact div_le_div_of_nonneg_right ((le_one_half_of_mem_orderedSimplex hx i).trans
+    (by norm_num)) hpos.le
+
+/-- The last move maps the ordered simplex into itself. -/
+theorem mapsTo_lastMoveMap : MapsTo lastMoveMap (orderedSimplex d) (orderedSimplex d) :=
+  fun _ hx => lastMoveMap_mem_orderedSimplex hx
+
+/-- The last move is smooth at every point where `1 + ∑ xᵢ` does not vanish, in particular on a
+neighbourhood of the simplex. -/
+theorem contDiffAt_lastMoveMap {x : Fin d → ℝ} (hx : 1 + ∑ k, x k ≠ 0) {n : WithTop ℕ∞} :
+    ContDiffAt ℝ n lastMoveMap x := by
+  rw [contDiffAt_pi]
+  intro i
+  have h : (fun y => lastMoveMap y i) = fun y : Fin d → ℝ => y i / (1 + ∑ k, y k) :=
+    funext fun y => lastMoveMap_apply y i
+  rw [h]
+  exact ContDiffAt.div (by fun_prop) (by fun_prop) hx
+
+/-- The last move is smooth on the ordered simplex. -/
+theorem contDiffOn_lastMoveMap {n : WithTop ℕ∞} :
+    ContDiffOn ℝ n lastMoveMap (orderedSimplex d) := fun _ hx =>
+  (contDiffAt_lastMoveMap (one_add_sum_pos_of_mem_orderedSimplex hx).ne').contDiffWithinAt
+
+/-- Raising the acceleration by one adds `1 - w_j` to the denominator. -/
+theorem branchDenom_succ (A : ℕ) (j : Fin d) (x : Fin d → ℝ) :
+    branchDenom (A + 1, j) x = branchDenom (A, j) x + (1 - x j) := by
+  simp only [branchDenom_def]
+  push_cast
+  ring
+
+/-- Raising the acceleration by one applies the last move: `F_{(A + 1, j)} = G ∘ F_{(A, j)}`,
+the chart form of `γ_{n-1}^{A+1} γ_j = γ_{n-1} (γ_{n-1}^A γ_j)`. -/
+theorem branchMap_succ (A : ℕ) (j : Fin d) {x : Fin d → ℝ} (hx : branchDenom (A, j) x ≠ 0) :
+    branchMap (A + 1, j) x = lastMoveMap (branchMap (A, j) x) := by
+  ext i
+  rw [lastMoveMap_apply, sum_branchMap, branchMap_apply, branchMap_apply, branchDenom_succ]
+  field_simp
+
+/-- Each accelerated branch is an iterate of the last move after an unaccelerated branch:
+`F_{(A, j)} = G^A ∘ F_{(0, j)}` wherever `w_j ≤ 1`, in particular on the simplex. -/
+theorem branchMap_eq_iterate_lastMoveMap (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x a.2 ≤ 1) :
+    branchMap a x = lastMoveMap^[a.1] (branchMap (0, a.2) x) := by
+  obtain ⟨A, j⟩ := a
+  dsimp only at hx ⊢
+  induction A with
+  | zero => rfl
+  | succ A ih =>
+    rw [branchMap_succ A j (branchDenom_pos (A, j) hx).ne', ih,
+      Function.iterate_succ_apply']
+
+/-- The last coordinate of an image of a branch is the last coordinate `w_{d+2}` of the full
+point, divided by the denominator: deleting `w_j` with `j ≤ d + 1` shifts `w_{d+2}` into the last
+chart slot. -/
+theorem branchMap_apply_last (a : ℕ × Fin (d + 1)) (x : Fin (d + 1) → ℝ) :
+    branchMap a x (Fin.last d) = (1 - ∑ k, x k) / branchDenom a x := by
+  rw [branchMap_apply, Fin.succAbove_of_le_castSucc _ _ (Fin.castSucc_le_castSucc_iff.mpr
+    (Fin.le_last a.2)), Fin.succ_last, simplexPoint_last]
 
 end TauCeti
