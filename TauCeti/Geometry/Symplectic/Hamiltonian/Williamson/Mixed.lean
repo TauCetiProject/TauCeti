@@ -208,39 +208,64 @@ theorem IsDarbouxBasis.hamiltonianEnd_williamsonBlocks_inl_apply_snd (hb : ω.Is
         (if k ∈ t then b (Fin.castAdd _ k, 0) else -b (Fin.castAdd _ k, 1)) else 0 := by
   simp [williamsonBlocks_inl, hb.hamiltonianEnd_ellipticHyperbolic_apply_snd]
 
-/-- In a Darboux basis, the Williamson blocks pairwise Poisson-commute. -/
+/-- In a Darboux basis, the Hamiltonian endomorphism of a focus-focus Williamson block followed by
+that of an elliptic or hyperbolic one is zero: the focus-focus block kills the first `m` planes and
+maps the last `2f` planes into themselves, which the elliptic or hyperbolic block kills. -/
+private theorem IsDarbouxBasis.hamiltonianEnd_williamsonBlocks_inl_mul_inr
+    (hb : ω.IsDarbouxBasis b) (k : Fin m) (l : Fin f × Fin 2) :
+    ω.hamiltonianEnd (williamsonBlocks b t (.inl k)) *
+      ω.hamiltonianEnd (williamsonBlocks b t (.inr l)) = 0 := by
+  refine b.ext fun ⟨n, c⟩ ↦ ?_
+  induction n using Fin.addCases with
+  | left i =>
+    simp [mul_apply_eq_comp, williamsonBlocks_inr,
+      hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne]
+  | right p =>
+    obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective p
+    obtain ⟨j', l⟩ := l
+    fin_cases l <;> fin_cases i <;> fin_cases c <;>
+      simp [mul_apply_eq_comp, williamsonBlocks_inr,
+        hb.hamiltonianEnd_focusFocusBlocksAt_zero_apply Fin.natAdd_comp_finProdFinEquiv_injective,
+        hb.hamiltonianEnd_focusFocusBlocksAt_one_apply Fin.natAdd_comp_finProdFinEquiv_injective,
+        apply_ite, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
+        hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd]
+
+/-- In a Darboux basis, the Hamiltonian endomorphism of an elliptic or hyperbolic Williamson block
+followed by that of a focus-focus one is zero: the elliptic or hyperbolic block kills the last `2f`
+planes and maps the first `m` planes into themselves, which the focus-focus block kills. -/
+private theorem IsDarbouxBasis.hamiltonianEnd_williamsonBlocks_inr_mul_inl
+    (hb : ω.IsDarbouxBasis b) (k : Fin m) (l : Fin f × Fin 2) :
+    ω.hamiltonianEnd (williamsonBlocks b t (.inr l)) *
+      ω.hamiltonianEnd (williamsonBlocks b t (.inl k)) = 0 := by
+  refine b.ext fun ⟨n, c⟩ ↦ ?_
+  induction n using Fin.addCases with
+  | left i =>
+    fin_cases c <;>
+      simp [mul_apply_eq_comp, williamsonBlocks_inr, apply_ite,
+        hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
+        hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
+        hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne]
+  | right p =>
+    fin_cases c <;>
+      simp [mul_apply_eq_comp, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
+        hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd]
+
+/-- In a Darboux basis, the Williamson blocks pairwise Poisson-commute: the elliptic–hyperbolic
+and the focus-focus blocks do among themselves, and the Hamiltonian endomorphisms of an elliptic
+or hyperbolic block and a focus-focus block compose to zero in both orders. -/
 theorem IsDarbouxBasis.quadraticPoissonBracket_williamsonBlocks (hb : ω.IsDarbouxBasis b)
     (x y : Fin m ⊕ Fin f × Fin 2) :
     ω.quadraticPoissonBracket (williamsonBlocks b t x) (williamsonBlocks b t y) = 0 := by
-  rcases x with i₁ | ⟨j₁, l₁⟩ <;> rcases y with i₂ | ⟨j₂, l₂⟩
+  rcases x with k₁ | l₁ <;> rcases y with k₂ | l₂
   · simpa only [williamsonBlocks_inl] using hb.quadraticPoissonBracket_ellipticHyperbolic _ _ _
-  pick_goal 3
+  · exact (quadraticPoissonBracket_eq_zero_iff ω).2
+      ((hb.hamiltonianEnd_williamsonBlocks_inl_mul_inr k₁ l₂).trans
+        (hb.hamiltonianEnd_williamsonBlocks_inr_mul_inl k₁ l₂).symm)
+  · exact (quadraticPoissonBracket_eq_zero_iff ω).2
+      ((hb.hamiltonianEnd_williamsonBlocks_inr_mul_inl k₂ l₁).trans
+        (hb.hamiltonianEnd_williamsonBlocks_inl_mul_inr k₂ l₁).symm)
   · exact hb.quadraticPoissonBracket_focusFocusBlocksAt
       Fin.natAdd_comp_finProdFinEquiv_injective _ _
-  all_goals
-    rw [quadraticPoissonBracket_eq_zero_iff, Commute, SemiconjBy]
-    refine b.ext fun ⟨n, c⟩ ↦ ?_
-    simp only [mul_apply_eq_comp]
-    induction n using Fin.addCases with
-    | left i =>
-      fin_cases c <;>
-        simp only [Fin.zero_eta, Fin.mk_one, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
-          williamsonBlocks_inr, hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne,
-          Fin.natAdd_ne_castAdd, ne_eq, not_false_eq_true, implies_true] <;>
-        split_ifs <;>
-        simp_all [hb.hamiltonianEnd_focusFocusBlocksAt_apply_of_forall_ne]
-    | right p =>
-      obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective p
-      fin_cases i <;> fin_cases c <;> (try fin_cases l₁) <;> (try fin_cases l₂) <;>
-        simp only [Fin.zero_eta, Fin.mk_one, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd, williamsonBlocks_inr,
-          hb.hamiltonianEnd_focusFocusBlocksAt_zero_apply Fin.natAdd_comp_finProdFinEquiv_injective,
-          hb.hamiltonianEnd_focusFocusBlocksAt_one_apply Fin.natAdd_comp_finProdFinEquiv_injective,
-          Fin.natAdd_ne_castAdd, ite_false] <;>
-        split_ifs <;>
-        simp_all [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd]
 
 end Darboux
 
