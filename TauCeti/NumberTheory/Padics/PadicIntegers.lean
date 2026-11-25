@@ -7,12 +7,10 @@ module
 
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.NumberTheory.Padics.ProperSpace
-public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
 public import TauCeti.Topology.Algebra.Group.Units
-import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import Mathlib.Data.Int.Associated
 import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
@@ -96,7 +94,6 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `Padic.norm_ratCast_le_zpow_neg_iff`: a rational number `q` satisfies `‖q‖ ≤ p ^ (-N)` exactly
   when `q = 0` or `N ≤ v_p(q)`.
 * `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
-* `Padic.norm_le_one_of_isIntegral`: a `p`-adic number integral over `ℤ` has norm at most one.
 * `Padic.exists_forall_norm_pow_mul_le_one`: a single power of `p` carries a finite family of
   `p`-adic numbers into `ℤ_[p]`.
 * `PadicInt.compactSpace_units`: `ℤ_[p]ˣ` is compact (and totally disconnected via
@@ -487,11 +484,6 @@ theorem zpow_neg_le_norm_natCast_iff {m k : ℕ} :
   rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.2 hm), Padic.valuation_natCast,
     zpow_le_zpow_iff_right₀ hp, neg_le_neg_iff, multiplicity_dvd_iff_le hm]
   omega
-
-/-- A `p`-adic number integral over `ℤ` is a `p`-adic integer: its norm is at most one. -/
-theorem norm_le_one_of_isIntegral {x : ℚ_[p]} (hx : IsIntegral ℤ x) : ‖x‖ ≤ 1 := by
-  obtain ⟨y, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp (hx.tower_top (A := ℤ_[p]))
-  exact PadicInt.norm_le_one y
 
 /-- **Clearing `p`-adic denominators.** A single power `p ^ k` carries every member of a finite
 family of `p`-adic numbers into the unit ball, that is, into `ℤ_[p]`. -/
