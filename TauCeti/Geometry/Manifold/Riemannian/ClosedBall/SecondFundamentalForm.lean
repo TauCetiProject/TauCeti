@@ -20,9 +20,10 @@ For the Euclidean metric on the closed unit ball of a real inner product space `
 `II_q(u, w) = ⟨dι u, dι w⟩`,
 
 where `ι : ∂B → B` is the inclusion of the boundary manifold
-(`TauCeti.boundarySecondFundamentalForm_closedBall`). The proof extends the outward unit normal by
-the radial vector field `x ↦ x`, the pullback along the inclusion `B → E` of the identity vector
-field of `E`. The inclusion is a local Riemannian isometry
+(`TauCeti.boundarySecondFundamentalForm_closedBall`; as an equality of bilinear forms,
+`TauCeti.boundarySecondFundamentalForm_closedBall_eq_boundaryInducedForm`). The proof extends
+the outward unit normal by the radial vector field `x ↦ x`, the pullback along the inclusion
+`B → E` of the identity vector field of `E`. The inclusion is a local Riemannian isometry
 (`TauCeti.isLocalRiemannianIsometry_subtypeVal_closedBall`), so the Levi-Civita derivative of the
 radial field in the direction `v` is `v`, and `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩` is the induced
 metric.
@@ -78,5 +79,13 @@ theorem boundarySecondFundamentalForm_closedBall
   rw [show fderiv ℝ Y ((q : closedBall (0 : E) 1) : E) = ContinuousLinearMap.id ℝ E by
     simp only [Y]; exact fderiv_fun_id] at hΓ
   exact congrArg (fun v ↦ ⟪v, _⟫) (hΓ.trans (ContinuousLinearMap.id_apply _))
+
+/-- The second fundamental form of the unit sphere bounding the closed unit ball is the induced
+metric: `II = h`. -/
+theorem boundarySecondFundamentalForm_closedBall_eq_boundaryInducedForm
+    (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :
+    boundarySecondFundamentalForm q = boundaryInducedForm q := by
+  ext u w
+  rw [boundarySecondFundamentalForm_closedBall, boundaryInducedForm_apply]
 
 end TauCeti
