@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Gamma
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Analysis.SpecialFunctions.Exp.Image
 
 /-!
@@ -18,6 +20,9 @@ integral `∫₀¹ t ^ r * (-log t) ^ q dt` onto the Gamma integral
 When `q = k` is a natural number, `Γ(k + 1) = k!` yields the real-exponent evaluation
 `∫₀¹ t ^ r * (-log t) ^ k dt = k! / (r + 1) ^ (k + 1)` and its natural-moment specialization
 `∫₀¹ t ^ j * (-log t) ^ k dt = k! / (j + 1) ^ (k + 1)`.
+
+The first moment `t ↦ t * log t` also has an elementary antiderivative, which evaluates its
+integral over every interval, including the planar radial integrals `∫ ρ log ρ dρ`.
 
 ## Main results
 
@@ -34,6 +39,9 @@ When `q = k` is a natural number, `Γ(k + 1) = k!` yields the real-exponent eval
   `TauCeti.intervalIntegrable_pow_mul_log_pow`, and `TauCeti.integral_pow_mul_log_pow`:
   interval integrability on any interval `a..b` and unit-interval evaluation for the natural
   polynomial-moment specializations `t ^ j * (-log t) ^ k` and `t ^ j * (log t) ^ k`.
+* `TauCeti.integral_mul_log`:
+  `∫ t in a..b, t * log t = (b ^ 2 * log b - a ^ 2 * log a) / 2 - (b ^ 2 - a ^ 2) / 4` for all
+  `a` and `b`.
 -/
 
 public section
@@ -173,5 +181,24 @@ theorem integral_pow_mul_log_pow (j k : ℕ) :
       (-1) ^ k * (k.factorial : ℝ) / (j + 1 : ℝ) ^ (k + 1) := by
   simpa only [rpow_natCast] using
     integral_rpow_mul_log_pow (r := j) (by linarith [Nat.cast_nonneg (α := ℝ) j]) k
+
+/-- The integral of `t ↦ t * log t` over any interval, with antiderivative
+`t ↦ t ^ 2 * log t / 2 - t ^ 2 / 4`. Lean's convention `log t = log |t|` makes the formula hold
+on intervals containing or crossing `0`. -/
+@[simp]
+theorem integral_mul_log (a b : ℝ) :
+    ∫ t in a..b, t * log t = (b ^ 2 * log b - a ^ 2 * log a) / 2 - (b ^ 2 - a ^ 2) / 4 := by
+  have hF : Continuous fun t : ℝ ↦ t * (t * log t) / 2 - t ^ 2 / 4 :=
+    ((continuous_id.mul continuous_mul_log).div_const 2).sub (by fun_prop)
+  -- The derivative is computed through `log`, so off the negligible point `0`.
+  rw [integral_eq_of_hasDerivAt_off_countable _ _ (countable_singleton 0) hF.continuousOn
+    (fun t ht ↦ ?_) (continuous_mul_log.intervalIntegrable a b)]
+  · ring
+  · have ht0 : t ≠ 0 := ht.2
+    convert (((hasDerivAt_id' t).mul ((hasDerivAt_id' t).mul (hasDerivAt_log ht0))).div_const
+      2).sub ((hasDerivAt_pow 2 t).div_const 4) using 1
+    simp only [Pi.mul_apply]
+    field_simp
+    ring
 
 end TauCeti
