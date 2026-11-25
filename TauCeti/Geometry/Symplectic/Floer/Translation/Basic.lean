@@ -20,12 +20,12 @@ cylindrical perturbation `K = H_t dt` up to the translations `(s, t) ↦ (s + c,
 perturbation does not depend on `s`, so the perturbed derivative of the translate of `u` is the
 translate of the perturbed derivative of `u` (`SymplecticForm.perturbedFDeriv_comp_add_right`).
 Hence the translate of a solution for the almost complex structures `J` solves the equation for
-the translated structures `J(· + (c, 0))`, which are `J` itself when `J` does not depend on `s`,
-and translations translate the energy density
-(`SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`), so they preserve the energy.
-This file identifies the fixed points of this action of `ℝ` on finite-energy solutions and shows
-that it is free elsewhere, so that the quotient by translations is taken only away from the
-stationary cylinders.
+the translated structures `J(· + (c, 0))`, which are `J` itself when `J` does not depend on `s`
+(`SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_add_right`), and translations translate the
+energy density (`SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`), so they preserve
+the energy. This file identifies the fixed points of this action of `ℝ` on finite-energy
+solutions and shows that it is free elsewhere, so that the quotient by translations is taken only
+away from the stationary cylinders.
 
 For this perturbation the two components of the perturbed derivative are `∂_s u` and
 `∂_t u - X_{H_t}(u)` (`SymplecticForm.perturbedFDeriv_cylindrical_apply_stdComplexLineReal` and
@@ -58,6 +58,9 @@ compactness or transversality is asserted.
 
 ## Main results
 
+* `SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_add_right`: a translate
+  `(s, t) ↦ u (s + r, t)` of a Floer cylinder is again one, for the translated almost complex
+  structures.
 * `SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_snd_iff`: stationary solutions are the
   Hamiltonian orbits.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`: a solution has zero energy exactly
@@ -99,6 +102,20 @@ theorem perturbedFDeriv_cylindrical_apply_stdComplexLineImag (u : ℝ × ℝ →
     ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineImag =
       fderiv ℝ u z (0, 1) - ω.hamiltonianVectorField (H z.2) (u z) := by
   rw [perturbedFDeriv_apply_stdComplexLineImag, stdComplexLineImag_eq]
+
+/-- **Translates of Floer cylinders.** For the cylindrical perturbation `K = H_t dt`, if `u`
+solves the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` at `z + (r, 0)`, then the translate
+`w ↦ u (w + (r, 0))` solves it at `z`, for the same almost complex structure `J`. -/
+theorem isComplexLinearMap_perturbedFDeriv_comp_add_right {J : AlmostComplexStructure V}
+    {u : ℝ × ℝ → V} (r : ℝ)
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u (z + (r, 0)) : ℝ × ℝ →ₗ[ℝ] V)) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (r, 0))) z :
+        ℝ × ℝ →ₗ[ℝ] V) := by
+  have h' := ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, 0) z
+  simp only [Prod.snd_add, add_zero] at h'
+  rwa [h']
 
 /-- The perturbed derivative of a stationary map `(s, t) ↦ x(t)` for `K = H_t dt` sends `(a, b)`
 to `b (x'(t) - X_{H_t}(x(t)))`. -/

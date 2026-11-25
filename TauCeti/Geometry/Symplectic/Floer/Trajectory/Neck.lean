@@ -22,7 +22,9 @@ into levels which drift apart in `s`
 (`TauCeti.Geometry.Symplectic.Floer.Trajectory.Level`). This file shows that loops of the
 trajectories which drift apart in `s` are separated by necks along which the trajectories converge
 to stationary cylinders over `1`-periodic orbits, and that these orbits are located by the action;
-this is the step that separates levels. Assembling the levels themselves is not done here.
+this is the step that separates levels. The levels are assembled into a broken trajectory in
+`Trajectory/Convergence.lean`, in the theorem
+`exists_subseq_forall_tendstoLocallyUniformly_comp_add_and_sum_setLIntegral_eq`.
 
 * **Necks are stationary cylinders.** If the translates `(s, t) ↦ u_k(s + σ_k, t)` converge
   locally uniformly to `g` along windows `[a + σ_k, b + σ_k] × [0, 1]` whose energy tends to zero,
