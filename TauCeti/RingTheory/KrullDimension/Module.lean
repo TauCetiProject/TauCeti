@@ -12,7 +12,6 @@ public import Mathlib.RingTheory.Localization.AtPrime.Basic
 import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.Data.ENat.Monoid
-import TauCeti.Order.KrullDimension
 import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.KrullDimension.Quotient
 import TauCeti.RingTheory.Localization.Annihilator
@@ -29,9 +28,8 @@ survives in `M_p` as a non-maximal associated prime.
 This is the dimension input to the characterization of Serre's condition `(S_1)` as the absence of
 embedded primes.
 
-For a finite module `M`, the support of `M ⧸ I • M` depends only on the radical of `I`, and the
-support of `M ⧸ (I * J) • M` is the union of the supports of `M ⧸ I • M` and `M ⧸ J • M`, so its
-dimension is the larger of their dimensions.
+For a finite module `M`, the support and support dimension of `M ⧸ I • M` depend only on the
+radical of `I`.
 
 ## Main results
 
@@ -49,8 +47,6 @@ dimension is the larger of their dimensions.
   `p` is a minimal prime of the support of `M`.
 * `Module.support_quotient_eq_of_radical_eq`, `Module.supportDim_quotient_eq_of_radical_eq`: for a
   finite module, `Supp(M ⧸ I • M)` and `supportDim R (M ⧸ I • M)` depend only on `I.radical`.
-* `Module.supportDim_quotient_mul`: for a finite module, `dim Supp(M ⧸ (I * J) • M)` is the maximum
-  of `dim Supp(M ⧸ I • M)` and `dim Supp(M ⧸ J • M)`.
 -/
 
 public section
@@ -211,19 +207,6 @@ theorem supportDim_quotient_eq_of_radical_eq [Module.Finite R M] {I J : Ideal R}
     (h : I.radical = J.radical) :
     supportDim R (M ⧸ (I • ⊤ : Submodule R M)) = supportDim R (M ⧸ (J • ⊤ : Submodule R M)) :=
   supportDim_eq_of_support_eq (support_quotient_eq_of_radical_eq h)
-
-/-- For a finite module `M` and ideals `I, J`, the support dimension of `M ⧸ (I * J) • M` is the
-larger of the support dimensions of `M ⧸ I • M` and `M ⧸ J • M`. -/
-theorem supportDim_quotient_mul [Module.Finite R M] (I J : Ideal R) :
-    supportDim R (M ⧸ ((I * J) • ⊤ : Submodule R M)) =
-      max (supportDim R (M ⧸ (I • ⊤ : Submodule R M)))
-        (supportDim R (M ⧸ (J • ⊤ : Submodule R M))) := by
-  have hsupp : support R (M ⧸ ((I * J) • ⊤ : Submodule R M)) =
-      support R (M ⧸ (I • ⊤ : Submodule R M)) ∪ support R (M ⧸ (J • ⊤ : Submodule R M)) := by
-    rw [support_quotient, support_quotient, support_quotient, PrimeSpectrum.zeroLocus_mul,
-      Set.inter_union_distrib_left]
-  rw [supportDim, hsupp]
-  exact Order.krullDim_union_of_isUpperSet (fun _ _ ↦ mem_support_mono) (fun _ _ ↦ mem_support_mono)
 
 end Quotient
 

@@ -34,7 +34,8 @@ a field (`TrivSqZeroExt.depth_eq_zero`, `TrivSqZeroExt.not_flat`).
 
 * `TrivSqZeroExt.isLocalRing`: the trivial square-zero extension of a local ring is local.
 * `TrivSqZeroExt.mem_maximalIdeal_iff`: its maximal ideal consists of the elements whose first
-  component lies in the maximal ideal of `R`.
+  component lies in the maximal ideal of `R`; in particular, for `M = R ⧸ 𝔪` every element of the
+  maximal ideal annihilates `inr (R ⧸ 𝔪)` (`TrivSqZeroExt.mul_inr_eq_zero_of_mem_maximalIdeal`).
 * `TrivSqZeroExt.ringKrullDim_eq`: `TrivSqZeroExt R M` has the Krull dimension of `R`.
 * `TrivSqZeroExt.finrank_eq_finrank_add_one`: `TrivSqZeroExt R M` has rank `finrank R M + 1`.
 -/
@@ -61,6 +62,17 @@ and only if its first component does. -/
 theorem mem_maximalIdeal_iff {x : TrivSqZeroExt R M} :
     x ∈ maximalIdeal (TrivSqZeroExt R M) ↔ x.fst ∈ maximalIdeal R := by
   simp [mem_maximalIdeal, mem_nonunits_iff, isUnit_iff_isUnit_fst]
+
+/-- In the trivial square-zero extension of a local ring `(R, 𝔪)` by its residue field `R ⧸ 𝔪`,
+every element of the maximal ideal annihilates `inr (R ⧸ 𝔪)`. -/
+theorem mul_inr_eq_zero_of_mem_maximalIdeal {x : TrivSqZeroExt R (R ⧸ maximalIdeal R)}
+    (hx : x ∈ maximalIdeal (TrivSqZeroExt R (R ⧸ maximalIdeal R)))
+    (b : R ⧸ maximalIdeal R) : x * inr b = 0 := by
+  rw [mem_maximalIdeal_iff] at hx
+  induction b using Submodule.Quotient.induction_on with | H a =>
+    ext
+    · simp
+    · simpa [Algebra.smul_def] using Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mul_mem_right a _ hx)
 
 /-- The inclusion of a local ring into its trivial square-zero extension is a local
 homomorphism. -/

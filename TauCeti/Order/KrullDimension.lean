@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.KrullDimension
+import TauCeti.Order.Hom.Set
 
 /-!
 # Krull dimension of products, adjacent intervals and unions of upper or lower sets
@@ -34,6 +35,8 @@ of `M ⧸ I M` and `M ⧸ J M`.
   `a ≤ b ≤ c`.
 * `Order.krullDim_iUnion_of_isUpperSet`, `Order.krullDim_union_of_isUpperSet`: the Krull dimension
   of an arbitrary or binary union of upper sets is the supremum of their Krull dimensions.
+* `Order.krullDim_preimage_ofDual`, `Order.krullDim_preimage_toDual`: pulling a subset back along
+  `OrderDual.ofDual` or `OrderDual.toDual` preserves its Krull dimension.
 * `Order.krullDim_iUnion_of_isLowerSet`, `Order.krullDim_union_of_isLowerSet`: the dual results for
   arbitrary and binary unions of lower sets.
 
@@ -45,7 +48,8 @@ component strictly smaller and the other no larger, and heights are strictly mon
 are finite. The lower bound for intervals bounds the Krull dimensions of `[a, b]` and `[b, c]` by
 the height and the coheight of `b` in `[a, c]`, whose sum is at most the Krull dimension of
 `[a, c]` (`Order.krullDim_eq_iSup_height_add_coheight_of_nonempty`). The lower-set union formulas
-are deduced from the upper-set ones on `αᵒᵈ` via `Order.krullDim_orderDual`.
+are deduced from the upper-set ones on `αᵒᵈ` via `Set.preimageOfDualOrderIso` and
+`Order.krullDim_preimage_ofDual`.
 
 ## References
 
@@ -139,32 +143,38 @@ theorem krullDim_union_of_isUpperSet {s t : Set α} (hs : IsUpperSet s) (ht : Is
     (by rintro (_ | _) <;> simpa)]
   simp [iSup_bool_eq]
 
-private theorem krullDim_eq_krullDim_preimage_ofDual (u : Set α) :
-    krullDim ↥u = krullDim ↥(OrderDual.ofDual ⁻¹' u) := by
-  let e : (↥u)ᵒᵈ ≃o ↥(OrderDual.ofDual ⁻¹' u) :=
-    { toFun := fun x ↦ ⟨OrderDual.toDual (OrderDual.ofDual x).val, (OrderDual.ofDual x).property⟩
-      invFun := fun x ↦ OrderDual.toDual ⟨OrderDual.ofDual x.val, x.property⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      map_rel_iff' := Iff.rfl }
-  exact (krullDim_orderDual (α := ↥u)).symm.trans (krullDim_eq_of_orderIso e)
+/-- Pulling a subset of a preorder back along `OrderDual.ofDual` preserves its Krull dimension. -/
+@[simp]
+theorem krullDim_preimage_ofDual (u : Set α) :
+    krullDim ↥(OrderDual.ofDual ⁻¹' u) = krullDim ↥u :=
+  (krullDim_eq_of_orderIso u.preimageOfDualOrderIso).trans krullDim_orderDual
+
+/-- Pulling a subset of the order dual back along `OrderDual.toDual` preserves its Krull
+dimension. -/
+@[simp]
+theorem krullDim_preimage_toDual (u : Set αᵒᵈ) :
+    krullDim ↥(OrderDual.toDual ⁻¹' u) = krullDim ↥u :=
+  (krullDim_eq_of_orderIso u.preimageToDualOrderIso).trans krullDim_orderDual
 
 /-- The Krull dimension of an arbitrary union of lower sets in a preorder is the supremum of their
 Krull dimensions: every strictly increasing chain lies in a member containing its last element. -/
 theorem krullDim_iUnion_of_isLowerSet {ι : Sort*} {f : ι → Set α}
     (hf : ∀ i, IsLowerSet (f i)) :
     krullDim ↥(⋃ i, f i) = ⨆ i, krullDim ↥(f i) := by
-  have hf' : ∀ i, IsUpperSet (OrderDual.ofDual ⁻¹' f i) := fun i _ _ hab ha ↦ hf i hab ha
-  rw [krullDim_eq_krullDim_preimage_ofDual, Set.preimage_iUnion, krullDim_iUnion_of_isUpperSet hf']
-  exact iSup_congr fun i ↦ (krullDim_eq_krullDim_preimage_ofDual (f i)).symm
+  have hf' : ∀ i, IsUpperSet (OrderDual.ofDual ⁻¹' f i) :=
+    fun i _ _ hab ha ↦ hf i (OrderDual.ofDual_le_ofDual.2 hab) ha
+  rw [← krullDim_preimage_ofDual, Set.preimage_iUnion, krullDim_iUnion_of_isUpperSet hf']
+  simp only [krullDim_preimage_ofDual]
 
 /-- The Krull dimension of a union of two lower sets is the larger of their Krull dimensions. -/
 theorem krullDim_union_of_isLowerSet {s t : Set α} (hs : IsLowerSet s) (ht : IsLowerSet t) :
     krullDim ↥(s ∪ t) = max (krullDim ↥s) (krullDim ↥t) := by
-  have hs' : IsUpperSet (OrderDual.ofDual ⁻¹' s) := fun _ _ hab ha ↦ hs hab ha
-  have ht' : IsUpperSet (OrderDual.ofDual ⁻¹' t) := fun _ _ hab ha ↦ ht hab ha
-  rw [krullDim_eq_krullDim_preimage_ofDual, Set.preimage_union,
+  have hs' : IsUpperSet (OrderDual.ofDual ⁻¹' s) :=
+    fun _ _ hab ha ↦ hs (OrderDual.ofDual_le_ofDual.2 hab) ha
+  have ht' : IsUpperSet (OrderDual.ofDual ⁻¹' t) :=
+    fun _ _ hab ha ↦ ht (OrderDual.ofDual_le_ofDual.2 hab) ha
+  rw [← krullDim_preimage_ofDual, Set.preimage_union,
     krullDim_union_of_isUpperSet hs' ht',
-    ← krullDim_eq_krullDim_preimage_ofDual, ← krullDim_eq_krullDim_preimage_ofDual]
+    krullDim_preimage_ofDual, krullDim_preimage_ofDual]
 
 end Order

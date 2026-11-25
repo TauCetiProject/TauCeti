@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.PowerSeries.Inverse
+public import TauCeti.RingTheory.CohenMacaulay.Secant
+public import TauCeti.RingTheory.CohenMacaulay.TrivSqZeroExt
 import Mathlib.Data.Rat.Defs
-import Mathlib.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.CohenMacaulay.RegularSequence
-import TauCeti.RingTheory.CohenMacaulay.Secant
-import TauCeti.RingTheory.CohenMacaulay.TrivSqZeroExt
 import TauCeti.RingTheory.KrullDimension.Module
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
@@ -27,14 +27,19 @@ Concrete instances of `TauCeti.IsCMSecant`, `TauCeti.IsPStandard`, and
   `p`-standard, `[C X * X]` is secant while `[C X * X, X]` is not, and `[C X]` extends by
   `IsCMSecant.exists_append_supportDim_eq_zero`);
 * the one-dimensional non-Cohen–Macaulay local ring `S = TrivSqZeroExt k⟦X⟧ (k⟦X⟧ ⧸ 𝔪)`
-  (algebraically `k⟦x, y⟧ ⧸ (x², xy)`), where `[]` is not CM-secant, `a_𝔪(S, 1) = 𝔪 ≠ ⊤`, and
+  (algebraically `k⟦x, y⟧ ⧸ (x², xy)`), where `[]` is not CM-secant,
+  `TauCeti.annihilatorProduct_trivSqZeroExt_one` computes `a_𝔪(S, 1) = 𝔪 ≠ ⊤`, and
   `y = inl X` is a zero divisor yet both `[inl X]` and `[inl X + inr 1]` are CM-secant and
   `p`-standard.
 -/
 
+public section
+
 universe u
 
-open TauCeti IsLocalRing Module localCohomology Pointwise
+open IsLocalRing Module localCohomology Pointwise
+
+namespace TauCeti
 
 section ZeroAndField
 
@@ -109,10 +114,8 @@ example :
   have hsec_x2 : IsSecant k⟦X⟧ ([X ^ 2] : List k⟦X⟧) :=
     (isSecant_append_pow_cons_iff [] [] X two_ne_zero).2 hsec_x
   have hdim0 (r : k⟦X⟧) (hs : IsSecant k⟦X⟧ [r]) :
-      supportDim k⟦X⟧ (prefixQuotient k⟦X⟧ [r]) = 0 := by
-    have h := hs.supportDim_add_length_eq
-    rw [hdim, List.length_singleton, Nat.cast_one] at h
-    exact ENat.WithBot.add_one_cancel.1 (h.trans (zero_add 1).symm)
+      supportDim k⟦X⟧ (prefixQuotient k⟦X⟧ [r]) = 0 :=
+    hs.supportDim_prefixQuotient_eq_zero_iff.2 (by simp [hdim])
   exact ⟨hcm.isCMSecant_of_isSecant hsec_x, hcm.isCMSecant_of_isSecant hsec_x2,
     (isCMSecant_iff_isPStandard_reverse (hdim0 X hsec_x).le).1 (hcm.isCMSecant_of_isSecant hsec_x),
     (isCMSecant_iff_isPStandard_reverse (hdim0 (X ^ 2) hsec_x2).le).1
@@ -165,11 +168,8 @@ example :
     · exact hmax ▸ Ideal.subset_span (by simp)
     · exact (List.mem_singleton.1 hr) ▸ hmax ▸ Ideal.subset_span (by simp)
   have hcm_sec : IsCMSecant k⟦X⟧⟦X⟧ ([C X, X] : List k⟦X⟧⟦X⟧) := hcm.isCMSecant_of_isSecant hsec
-  have hdim_q : supportDim k⟦X⟧⟦X⟧ (prefixQuotient k⟦X⟧⟦X⟧ ([C X, X] : List k⟦X⟧⟦X⟧)) = 0 := by
-    have h := hsec.supportDim_add_length_eq
-    rw [hdim2, List.length_cons, List.length_singleton, Nat.cast_two, ← one_add_one_eq_two,
-      ← add_assoc, ENat.WithBot.add_one_cancel] at h
-    exact ENat.WithBot.add_one_cancel.1 (h.trans (zero_add 1).symm)
+  have hdim_q : supportDim k⟦X⟧⟦X⟧ (prefixQuotient k⟦X⟧⟦X⟧ ([C X, X] : List k⟦X⟧⟦X⟧)) = 0 :=
+    hsec.supportDim_prefixQuotient_eq_zero_iff.2 (by simp [hdim2])
   have hmem_x : (X : k⟦X⟧⟦X⟧) ∈ ([C X, X] : List k⟦X⟧⟦X⟧) := by simp
   refine ⟨hcm_sec, (isCMSecant_iff_isPStandard_reverse hdim_q.le).1 hcm_sec,
     hsec.append_mul (rs := []) (qs := [X]) (r := C (X : k⟦X⟧)) (s := X) hmem_x, fun hbad ↦ ?_⟩
@@ -219,6 +219,38 @@ open _root_.PowerSeries TrivSqZeroExt
 
 variable (k : Type u) [Field k]
 
+/-- In `S = k⟦X⟧ ⊕ k`, the cutoff-one local-cohomology annihilator product `a_𝔪(S, 1)` equals the
+maximal ideal `𝔪` of `S`. -/
+theorem annihilatorProduct_trivSqZeroExt_one :
+    annihilatorProduct
+      (maximalIdeal (TrivSqZeroExt k⟦X⟧ (k⟦X⟧ ⧸ maximalIdeal k⟦X⟧)))
+      (TrivSqZeroExt k⟦X⟧ (k⟦X⟧ ⧸ maximalIdeal k⟦X⟧)) 1 =
+      maximalIdeal (TrivSqZeroExt k⟦X⟧ (k⟦X⟧ ⧸ maximalIdeal k⟦X⟧)) := by
+  let S := TrivSqZeroExt k⟦X⟧ (k⟦X⟧ ⧸ maximalIdeal k⟦X⟧)
+  have hprim : ∀ s : S, s ∈ (maximalIdeal S).primaryComponent S ↔ s.fst = 0 := fun s ↦ by
+    rw [Ideal.primaryComponent_mem]
+    refine ⟨fun ⟨n, hn⟩ ↦ ?_, fun hfst ↦ ⟨1, by
+      rw [pow_one, Submodule.mem_torsionBySet_iff]; rintro ⟨t, ht⟩
+      exact (TrivSqZeroExt.ext (by simp [hfst]) (by simp) : s = inr s.snd) ▸
+        mul_inr_eq_zero_of_mem_maximalIdeal ht s.snd⟩⟩
+    rw [Submodule.mem_torsionBySet_iff] at hn
+    have hy : (inl X : S) ∈ maximalIdeal S := TrivSqZeroExt.mem_maximalIdeal_iff.2
+      (maximalIdeal_eq_span_X (k := k) ▸ Ideal.subset_span rfl)
+    have hfst : (X : k⟦X⟧) ^ n * s.fst = 0 := by
+      simpa [S] using congrArg TrivSqZeroExt.fst (hn ⟨(inl X : S) ^ n, Ideal.pow_mem_pow hy n⟩)
+    exact (mul_eq_zero.1 hfst).resolve_left (pow_ne_zero n PowerSeries.X_ne_zero)
+  rw [annihilatorProduct_one, annihilator_obj_zero]
+  ext t; rw [Module.mem_annihilator]
+  refine ⟨fun ht ↦ ?_, fun ht ⟨s, hs⟩ ↦ Subtype.ext ?_⟩
+  · have h0 : (t * (inr 1 : S)).snd = 0 :=
+      congrArg (fun x ↦ x.val.snd) (ht ⟨inr 1, (hprim _).2 rfl⟩)
+    rw [snd_mul, fst_inr, snd_inr] at h0
+    exact TrivSqZeroExt.mem_maximalIdeal_iff.2 <|
+      Ideal.Quotient.eq_zero_iff_mem.1 <| by simpa [Algebra.smul_def] using h0
+  · have hs' : s = inr s.snd := TrivSqZeroExt.ext (by simp [(hprim s).1 hs]) (by simp)
+    rw [SetLike.val_smul, smul_eq_mul, Submodule.coe_mk, ZeroMemClass.coe_zero, hs']
+    exact mul_inr_eq_zero_of_mem_maximalIdeal ht s.snd
+
 /-- In the one-dimensional non-Cohen–Macaulay local ring `S = k⟦X⟧ ⊕ k` (algebraically
 `k⟦x, y⟧ ⧸ (x², xy)`), `S` is not Cohen–Macaulay, `[]` is not CM-secant, and
 `a_𝔪(S, 1) = 𝔪 ≠ ⊤`. -/
@@ -235,45 +267,13 @@ example :
     ⟨⟨LinearMap.id, 0, fun h ↦ by simpa using LinearMap.congr_fun h 1⟩⟩
   have hnotCM : ¬ IsCohenMacaulay S S :=
     TrivSqZeroExt.not_isCohenMacaulay hκ (by rw [hdimA]; decide)
-  have hmul_inr : ∀ {t : S}, t ∈ maximalIdeal S → ∀ b : κ, t * inr b = 0 := fun ht b ↦ by
-    rw [TrivSqZeroExt.mem_maximalIdeal_iff] at ht
-    refine TrivSqZeroExt.ext (by simp [S]) ?_
-    rw [snd_mul, fst_inr, snd_inr, snd_zero]; simp only [MulOpposite.op_zero, zero_smul, add_zero]
-    induction b using Submodule.Quotient.induction_on with | H a =>
-      exact Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mul_mem_right a _ ht)
-  have hprim : ∀ s : S, s ∈ (maximalIdeal S).primaryComponent S ↔ s.fst = 0 := fun s ↦ by
-    rw [Ideal.primaryComponent_mem]
-    refine ⟨fun ⟨n, hn⟩ ↦ ?_, fun hfst ↦ ⟨1, by
-      rw [pow_one, Submodule.mem_torsionBySet_iff]; rintro ⟨t, ht⟩
-      exact (TrivSqZeroExt.ext (by simp [hfst]) (by simp) : s = inr s.snd) ▸ hmul_inr ht s.snd⟩⟩
-    rw [Submodule.mem_torsionBySet_iff] at hn
-    have hy : (inl X : S) ∈ maximalIdeal S := TrivSqZeroExt.mem_maximalIdeal_iff.2
-      (maximalIdeal_eq_span_X (k := k) ▸ Ideal.subset_span rfl)
-    have hfst : (X : k⟦X⟧) ^ n * s.fst = 0 := by
-      simpa [S] using congrArg TrivSqZeroExt.fst (hn ⟨(inl X : S) ^ n, Ideal.pow_mem_pow hy n⟩)
-    exact (mul_eq_zero.1 hfst).resolve_left (pow_ne_zero n PowerSeries.X_ne_zero)
-  have hann : annihilatorProduct (maximalIdeal S) S 1 = maximalIdeal S := by
-    rw [annihilatorProduct_one, annihilator_obj_zero]
-    ext t; rw [Module.mem_annihilator]
-    refine ⟨fun ht ↦ ?_, fun ht ⟨s, hs⟩ ↦ Subtype.ext ?_⟩
-    · have h0 : (t * (inr 1 : S)).snd = 0 :=
-        congrArg (fun x ↦ x.val.snd) (ht ⟨inr 1, (hprim _).2 rfl⟩)
-      rw [snd_mul, fst_inr, snd_inr] at h0
-      exact TrivSqZeroExt.mem_maximalIdeal_iff.2 <|
-        Ideal.Quotient.eq_zero_iff_mem.1 <| by simpa [Algebra.smul_def] using h0
-    · have hs' : s = inr s.snd := TrivSqZeroExt.ext (by simp [(hprim s).1 hs]) (by simp)
-      rw [SetLike.val_smul, smul_eq_mul, Submodule.coe_mk, ZeroMemClass.coe_zero, hs']
-      exact hmul_inr ht s.snd
+  have hann := annihilatorProduct_trivSqZeroExt_one k
   exact ⟨hnotCM, fun h ↦ hnotCM (isCMSecant_nil_iff.1 h), hann,
     by rw [hann]; exact (maximalIdeal.isMaximal _).ne_top⟩
 
 /-- In `S = k⟦X⟧ ⊕ k`, `y = inl X` is a zero divisor (`y * inr 1 = 0`), yet both `[inl X]` and
-`[inl X + inr 1]` are secant, CM-secant, and `p`-standard once `a_𝔪(S, 1) = 𝔪` is supplied. -/
-example
-    (hann : annihilatorProduct
-      (maximalIdeal (TrivSqZeroExt k⟦X⟧ (k⟦X⟧ ⧸ maximalIdeal k⟦X⟧)))
-      (TrivSqZeroExt k⟦X⟧ (k⟦X⟧ ⧸ maximalIdeal k⟦X⟧)) 1 =
-      maximalIdeal (TrivSqZeroExt k⟦X⟧ (k⟦X⟧ ⧸ maximalIdeal k⟦X⟧))) :
+`[inl X + inr 1]` are secant, CM-secant, and `p`-standard. -/
+example :
     let S := TrivSqZeroExt k⟦X⟧ (k⟦X⟧ ⧸ maximalIdeal k⟦X⟧)
     let y : S := inl X
     let y' : S := inl X + inr 1
@@ -281,6 +281,7 @@ example
       IsSecant S [y] ∧ IsCMSecant S [y] ∧ IsPStandard S [y] ∧
       IsCMSecant S [y'] ∧ IsPStandard S [y'] := by
   intro S y y'
+  have hann := annihilatorProduct_trivSqZeroExt_one k
   have hdimS : supportDim S S = 1 := by
     rw [supportDim_self_eq_ringKrullDim, TrivSqZeroExt.ringKrullDim_eq,
       IsDiscreteValuationRing.ringKrullDim_eq_one k⟦X⟧]
@@ -289,10 +290,7 @@ example
   have hy_mem : y ∈ maximalIdeal S := TrivSqZeroExt.mem_maximalIdeal_iff.2 hx_mem
   have hy'_mem : y' ∈ maximalIdeal S :=
     TrivSqZeroExt.mem_maximalIdeal_iff.2 (by simpa [S, y'] using hx_mem)
-  have hy_inr : y * (inr 1 : S) = 0 := by
-    refine TrivSqZeroExt.ext (by simp [S, y]) ?_
-    rw [snd_mul, fst_inr, snd_inr, snd_zero]; simp only [MulOpposite.op_zero, zero_smul, add_zero]
-    exact Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mul_mem_right 1 _ hx_mem)
+  have hy_inr : y * (inr 1 : S) = 0 := mul_inr_eq_zero_of_mem_maximalIdeal hy_mem 1
   have hnonpos : ∀ {z : S}, (∀ p : Ideal S, p.IsPrime → z ∈ p → y ∈ p) →
       supportDim S (QuotSMulTop z S) ≤ 0 := fun hzy ↦ by
     refine supportDim_nonpos_of_support_subsingleton
@@ -332,3 +330,5 @@ example
       ((supportDim_eq_of_equiv (prefixQuotient.singletonEquiv S y')).trans_le hdim_y')).1 hcm_y'⟩
 
 end NonCohenMacaulay
+
+end TauCeti

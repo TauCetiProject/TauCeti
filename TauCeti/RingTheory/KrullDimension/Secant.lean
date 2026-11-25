@@ -39,7 +39,9 @@ sequences.
 * `TauCeti.isSecant_iff_of_support_eq`: secancy for a finite module depends only on its support.
 * `TauCeti.isSecant_iff_supportDim_add_length_eq`: for a nonzero finite module over a Noetherian
   local ring, `rs` is secant if and only if its entries lie in `𝔪` and
-  `dim Supp M ⧸ (rs) M + length rs = dim Supp M`.
+  `dim Supp M ⧸ (rs) M + length rs = dim Supp M`;
+  `TauCeti.IsSecant.supportDim_prefixQuotient_eq_zero_iff` characterizes zero-dimensional terminal
+  support by `dim Supp M = length rs`.
 * `TauCeti.IsSecant.length_le_supportDim`: a secant list has length at most `dim Supp M`.
 * `TauCeti.IsSecant.perm`, `TauCeti.IsSecant.reverse`, `TauCeti.isSecant_reverse_iff`,
   `TauCeti.IsSecant.sublist`: permutations, reversals, and sublists of secant lists are secant.
@@ -216,6 +218,12 @@ theorem IsSecant.supportDim_add_length_eq {rs : List R} (h : IsSecant M rs) :
     rw [supportDim_prefixQuotient_cons, List.length_cons, Nat.cast_add_one, ← add_assoc,
       ih hrs this]
     exact supportDim_quotSMulTop_succ_eq_supportDim_of_lt hr hlt
+
+/-- For a secant list `rs` on a finite module `M` over a Noetherian local ring, the terminal
+quotient `M ⧸ (rs) M` has zero-dimensional support if and only if `supportDim R M = rs.length`. -/
+theorem IsSecant.supportDim_prefixQuotient_eq_zero_iff {rs : List R} (h : IsSecant M rs) :
+    supportDim R (prefixQuotient M rs) = 0 ↔ supportDim R M = rs.length := by
+  rw [← ENat.WithBot.add_natCast_cancel (c := rs.length), h.supportDim_add_length_eq, zero_add]
 
 /-- **The secant dimension formula.** For a nonzero finite module `M` over a Noetherian local ring,
 a list `rs` is secant for `M` if and only if its entries lie in `𝔪` and
