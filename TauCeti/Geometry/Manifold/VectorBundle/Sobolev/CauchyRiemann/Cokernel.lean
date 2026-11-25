@@ -224,6 +224,7 @@ private theorem norm_apply_sub_apply_le {i : Fin A.n} {Q₀ Q : Opens ℂ} (hQ�
       A.tangentHom.sectionChartData.SobolevData volume p 0)
   have hQi : (Q : Set ℂ) ⊆ A.tangentHom.sectionChartData.image i := by
     rwa [sectionChartData_image_tangentHom]
+  have hQ₀' : (Q₀ : Set ℂ) ⊆ Q := SetLike.coe_subset_coe.2 hQ₀
   have hg : MemLp g p (volume.restrict Q) :=
     (Lp.memLp g).mono_measure (Measure.restrict_mono hQi le_rfl)
   -- The pairing `(θ, L) ↦ θ (L 1)` is bounded by `‖θ‖ ‖L‖`.
@@ -239,7 +240,7 @@ private theorem norm_apply_sub_apply_le {i : Fin A.n} {Q₀ Q : Opens ℂ} (hQ�
   have hvan : ∀ᵐ z ∂volume, z ∈ (Q : Set ℂ) \ Q₀ → (θ - θ') z (g z 1) = 0 := by
     have hQ' : (Q : Set ℂ) ⊆ A.tangentHom.image i := by rwa [A.image_tangentHom]
     have h := SobolevSection.chartValueL_eq_zero_ae_of_mem_aeZeroOff_image
-      ((show (Q₀ : Set ℂ) ⊆ Q from hQ₀).trans hQ') hw
+      (hQ₀'.trans hQ') hw
     filter_upwards [(ae_restrict_iff' Q.isOpen.measurableSet).1
       (ae_restrict_of_ae_restrict_of_subset hQ' h)] with z hz hzQ
     rw [hz hzQ.1 hzQ.2, zero_apply, map_zero]
@@ -252,8 +253,7 @@ private theorem norm_apply_sub_apply_le {i : Fin A.n} {Q₀ Q : Opens ℂ} (hQ�
     (q := p) (r := 1) (f := θ - θ') (g := g) _ 1 hb (.of_forall fun z ↦ hbd _ _) one_pos
   have hgQ₀ : eLpNorm g p (volume.restrict Q₀) ≤ ‖g‖ₑ := by
     rw [Lp.eNorm_def]
-    exact eLpNorm_mono_measure _ (Measure.restrict_mono ((show (Q₀ : Set ℂ) ⊆ Q from hQ₀).trans
-      hQi) le_rfl)
+    exact eLpNorm_mono_measure _ (Measure.restrict_mono (hQ₀'.trans hQi) le_rfl)
   have hE : eLpNorm (θ - θ') q (volume.restrict Q₀) ≠ ⊤ :=
     ((hθ.sub hθ').mono_measure (Measure.restrict_mono hQ₀ le_rfl)).eLpNorm_ne_top
   rw [← toReal_eNorm, ← toReal_eNorm g, ← ENNReal.toReal_mul]
@@ -323,11 +323,11 @@ private theorem exists_norm_sub_le_sum (χ : SmoothPartitionOfUnity (Fin A.n) �
             _ _).trans (mul_le_mul_of_nonneg_left ((P i).le_opNorm w) (norm_nonneg _)))
             (norm_nonneg _) (mul_nonneg (by positivity) (he0 i)))
     _ ≤ ∑ i, (∑ j, k j) * ((∑ c, e i c) * ‖w‖) := Finset.sum_le_sum fun i _ ↦ by
-        rw [show (Kb * ∑ c, e i c) * (‖A.tangentHom.sectionChartData.chartValueL volume p 0 i‖ *
-          (‖P i‖ * ‖w‖)) = k i * ((∑ c, e i c) * ‖w‖) by rw [hk]; ring]
-        exact mul_le_mul_of_nonneg_right
-          (Finset.single_le_sum (fun j _ ↦ hk0 j) (Finset.mem_univ i))
-          (mul_nonneg (he0 i) (norm_nonneg _))
+        calc _ = k i * ((∑ c, e i c) * ‖w‖) := by rw [hk]; ring
+          _ ≤ _ := by
+            have := he0 i
+            gcongr
+            exact Finset.single_le_sum (fun j _ ↦ hk0 j) (Finset.mem_univ i)
     _ = (∑ i, k i) * (∑ i, ∑ c, e i c) * ‖w‖ := by
         rw [← Finset.mul_sum, ← Finset.sum_mul, mul_assoc]
 
@@ -413,6 +413,7 @@ theorem finiteDimensional_orthogonalBilin_range_sobolevL (hp : 1 < p) (hp_top : 
       refine le_trans (le_of_eq ?_) ((norm_le_pi_norm (f Λ i - f Λ' i) c).trans
         (norm_le_pi_norm (f Λ - f Λ') i))
       rw [Pi.sub_apply, ← MemLp.toLp_sub, Lp.norm_toLp]
+      -- The two functions agree pointwise: `(θ - θ') z v = θ z v - θ' z v`.
       rfl
     refine (hC Λ Λ' (θ Λ) (θ Λ') (hθ Λ) (hθ Λ') (hrep Λ) (hrep Λ')).trans ?_
     rw [mul_assoc]
