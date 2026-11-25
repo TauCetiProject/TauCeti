@@ -87,9 +87,8 @@ theorem one_mul_norm_sq_le_re_inner_diagOneTwo (u : EuclideanSpace ℝ (Fin 2)) 
     Fin.sum_univ_two]
   nlinarith [sq_nonneg (u 1)]
 
-/-- The form `a(u, v) = u₁ v₁ + 2 u₂ v₂` on `ℝ²`, that is `⟪u, diag(1, 2) v⟫`. Its diagonal
-values `a(u, u)` simplify to `⟪u, diag(1, 2) u⟫` by `ContinuousLinearMap.toSesqForm_apply_coe`,
-so the coercivity bound comes from `one_mul_norm_sq_le_re_inner_diagOneTwo`. -/
+/-- The form `a(u, v) = u₁ v₁ + 2 u₂ v₂` on `ℝ²`, that is `⟪u, diag(1, 2) v⟫`, as a coercive
+Hermitian form with coercivity constant `1`. -/
 def diagOneTwoForm : CoerciveHermitianForm ℝ (EuclideanSpace ℝ (Fin 2)) where
   form := ContinuousLinearMap.toSesqForm diagOneTwo
   form_apply_eq_star u v := by simp [inner_diagOneTwo, mul_comm]
