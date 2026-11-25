@@ -80,6 +80,8 @@ connected, not simply connected: the covering argument needs simple connectivity
 * `TauCeti.Lie.center_eq_bot_integralLeafSubgroupData_derivedSeries` and
   `TauCeti.Lie.derivedSeries_one_eq_top_integralLeafSubgroupData_derivedSeries`: the subgroup
   integrating `[𝔤, 𝔤]` has centreless, perfect Lie algebra when `𝔷 ⊕ [𝔤, 𝔤] = 𝔤`.
+* `TauCeti.Lie.simplyConnectedSpace_integralLeafSubgroupData_derivedSeries`: it is simply
+  connected, as a factor of `G`.
 
 ## References
 
@@ -324,6 +326,17 @@ theorem derivedSeries_one_eq_top_integralLeafSubgroupData_derivedSeries
   LieHom.derivedSeries_one_eq_top_of_range_eq_of_sup_eq_top _
     (ImmersedLieSubgroupData.injective_lieMap_toContMDiffMonoidMorphism _)
     range_lieMap_integralLeafSubgroupData_derivedSeries hc.sup_eq_top
+
+/-- **The subgroup integrating `[𝔤, 𝔤]` is simply connected** when `𝔤 = 𝔷 ⊕ [𝔤, 𝔤]`: it is the
+second factor of the splitting `TauCeti.Lie.centerProdDerivedContinuousMulEquiv` of the simply
+connected group `G`. -/
+theorem simplyConnectedSpace_integralLeafSubgroupData_derivedSeries
+    (hc : IsCompl (LieAlgebra.center ℝ (LeftInvariantDerivation I G))
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1)) :
+    SimplyConnectedSpace ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X :=
+  (simplyConnectedSpace_prod_iff.mp
+    (centerProdDerivedContinuousMulEquiv hc).toHomeomorph.toHomotopyEquiv.simplyConnectedSpace).2
 
 /-! ### The centre factor is the centre of the Lie algebra -/
 
