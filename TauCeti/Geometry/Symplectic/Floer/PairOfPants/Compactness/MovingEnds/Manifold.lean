@@ -107,40 +107,25 @@ private theorem isOpen_and_contDiffOn_puncturedSpherePerturbation {ι : Type*} [
       (a q.1) H Hout (equivRealProdCLM.symm q.2.1) (φ.symm q.2.2) w)
       {q | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧ (∀ i, equivRealProdCLM.symm q.2.1 ≠ c q.1 i) ∧
         q.2.2 ∈ φ.target} := by
+  obtain ⟨hSo, hS⟩ :=
+    isOpen_and_contMDiffAt_puncturedSpherePerturbation (n := 3) hH hHs hHout hHouts hU hc ha
   set S := {q : P × ((ℝ × ℝ) × V) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
     (∀ i, equivRealProdCLM.symm q.2.1 ≠ c q.1 i) ∧ q.2.2 ∈ φ.target}
-  -- The configuration, the domain point in `ℂ` and the point of `M`, as a map of `(p, z, y)`.
-  set g : P × ((ℝ × ℝ) × V) → ((ι → ℂ) × (ι → ℂ)) × (ℂ × M) :=
-    fun q ↦ ((c q.1, a q.1), (equivRealProdCLM.symm q.2.1, φ.symm q.2.2))
-  have hO : IsOpen {r : ((ι → ℂ) × (ι → ℂ)) × (ℂ × V) |
-      (∀ i, r.1.2 i ≠ 0) ∧ (∀ i, r.2.1 ≠ r.1.1 i) ∧ r.2.2 ∈ φ.target} := by
-    simp only [ofPred_and, ofPred_forall]
-    exact (isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const).inter
-      ((isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) (by fun_prop)).inter
-        (φ.open_target.preimage (by fun_prop)))
-  have hcont : ContinuousOn (fun q : P × ((ℝ × ℝ) × V) ↦
-      ((c q.1, a q.1), (equivRealProdCLM.symm q.2.1, q.2.2))) (U ×ˢ univ) :=
-    ((hc.continuousOn.comp continuousOn_fst mapsTo_fst_prod).prodMk
-      (ha.continuousOn.comp continuousOn_fst mapsTo_fst_prod)).prodMk
-      (by fun_prop : Continuous fun q : P × ((ℝ × ℝ) × V) ↦
-        (equivRealProdCLM.symm q.2.1, q.2.2)).continuousOn
-  have hSo : IsOpen S := by
-    convert hcont.isOpen_inter_preimage (hU.prod isOpen_univ) hO using 1
+  -- The point `(p, z)` of the family and the point of `M` with chart coordinate `y`.
+  set g : P × ((ℝ × ℝ) × V) → (P × (ℝ × ℝ)) × M := fun q ↦ ((q.1, q.2.1), φ.symm q.2.2)
+  have hSo' : IsOpen S := by
+    have hp : Continuous fun q : P × ((ℝ × ℝ) × V) ↦ (q.1, q.2.1) := by fun_prop
+    convert (hSo.preimage hp).inter
+      (φ.open_target.preimage (f := fun q : P × ((ℝ × ℝ) × V) ↦ q.2.2) (by fun_prop)) using 1
     ext q
-    simp [S]
-  refine ⟨hSo, fun w ↦ ?_⟩
-  have hg : ContMDiffOn 𝓘(ℝ, P × ((ℝ × ℝ) × V)) (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I))
-      3 g S := by
-    refine ContMDiffOn.prodMk ?_ ?_
-    · exact ((hc.comp contDiffOn_fst fun q (hq : q ∈ S) ↦ hq.1).prodMk
-        (ha.comp contDiffOn_fst fun q (hq : q ∈ S) ↦ hq.1)).contMDiffOn
-    · exact (equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff
-        |>.contMDiffOn.prodMk ((φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp
-          (contDiff_snd.comp contDiff_snd).contMDiff.contMDiffOn fun q (hq : q ∈ S) ↦ hq.2.2.2)
-  refine contMDiffOn_iff_contDiffOn.1 fun q hq ↦ ?_
-  have hF := (contMDiffAt_puncturedSpherePerturbation (n := 3) hH hHs hHout hHouts hq.2.1 hq.2.2.1
-    (φ.symm q.2.2)).comp q ((hg q hq).contMDiffAt (hSo.mem_nhds hq))
-  exact (hF.clm_apply contMDiffAt_const).contMDiffWithinAt
+    simp [S, and_assoc]
+  refine ⟨hSo', fun w ↦ contMDiffOn_iff_contDiffOn.1 fun q hq ↦ ?_⟩
+  have hg : ContMDiffAt 𝓘(ℝ, P × ((ℝ × ℝ) × V)) (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 3 g q :=
+    (contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd)).contMDiff.contMDiffAt.prodMk
+      (((φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).contMDiffAt
+        (φ.open_target.mem_nhds hq.2.2.2)).comp q
+        (contDiff_snd.comp contDiff_snd).contMDiff.contMDiffAt)
+  exact ((hS w _ ⟨hq.1, hq.2.1, hq.2.2.1⟩ (φ.symm q.2.2)).comp q hg).contMDiffWithinAt
 
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 

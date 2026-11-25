@@ -34,8 +34,8 @@ applies once its hypotheses are checked for the family.
 
 * **The data in the charts of `M`.** Along a `C³` family of configurations `p ↦ (c p, a p)` with
   nonzero scales, the datum is `C³` jointly in the parameter, the domain point off the centers and
-  the target point (`TauCeti.Floer.contMDiffAt_puncturedSpherePerturbation`), so its Hamiltonian
-  vector fields read in the chart at any point of `M` are `C²`
+  the target point (`TauCeti.Floer.isOpen_and_contMDiffAt_puncturedSpherePerturbation`), so its
+  Hamiltonian vector fields read in the chart at any point of `M` are `C²`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt`).
 * **The energy bound.** If the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in
   `‖w‖ ≤ 2 exp (2π)`, and `|H i| ≤ B i`, `|Hout| ≤ Bout`, the Floer energy of a solution over any
@@ -107,60 +107,6 @@ variable {E G M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
 namespace IsNondegenerate
 
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ}
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ⊤ M] [CompactSpace M] in
-/-- Along a `C³` family of configurations `p ↦ (c p, a p)` of input ends on an open set `U` of
-parameters, the points `(p, z)` with `p ∈ U`, nonzero scales and `z` off the centers form an open
-set, on which the components of the datum of the sphere with moving input ends are `C³` jointly in
-`(p, z)` and the point of `M`. -/
-private theorem isOpen_and_contMDiffAt_puncturedSpherePerturbation (hH : ∀ i, Periodic (H i) 1)
-    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H i))) (hHout : Periodic Hout 1)
-    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry Hout)) {P : Type*}
-    [NormedAddCommGroup P] [NormedSpace ℝ P] {c a : P → ι → ℂ} {U : Set P} (hU : IsOpen U)
-    (hc : ContDiffOn ℝ 3 c U) (ha : ContDiffOn ℝ 3 a U) :
-    IsOpen {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
-      ∀ i, equivRealProdCLM.symm q.2 ≠ c q.1 i} ∧
-    ∀ (w : ℂ), ∀ q ∈ {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
-      ∀ i, equivRealProdCLM.symm q.2 ≠ c q.1 i}, ∀ x : M,
-      ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
-        (uncurry fun (q : P × (ℝ × ℝ)) x ↦
-          puncturedSpherePerturbation (c q.1) (a q.1) H Hout (equivRealProdCLM.symm q.2) x w)
-        (q, x) := by
-  set S := {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
-    ∀ i, equivRealProdCLM.symm q.2 ≠ c q.1 i}
-  have hSo : IsOpen S := by
-    have hO : IsOpen {r : ((ι → ℂ) × (ι → ℂ)) × ℂ | (∀ i, r.1.2 i ≠ 0) ∧ ∀ i, r.2 ≠ r.1.1 i} := by
-      simp only [ofPred_and, ofPred_forall]
-      exact (isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const).inter
-        (isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) (by fun_prop))
-    have hcont : ContinuousOn (fun q : P × (ℝ × ℝ) ↦ ((c q.1, a q.1), equivRealProdCLM.symm q.2))
-        (U ×ˢ univ) :=
-      ((hc.continuousOn.comp continuousOn_fst mapsTo_fst_prod).prodMk
-        (ha.continuousOn.comp continuousOn_fst mapsTo_fst_prod)).prodMk
-        (by fun_prop : Continuous fun q : P × (ℝ × ℝ) ↦ equivRealProdCLM.symm q.2).continuousOn
-    convert hcont.isOpen_inter_preimage (hU.prod isOpen_univ) hO using 1
-    ext q
-    simp [S]
-  refine ⟨hSo, fun w q hq x ↦ ?_⟩
-  have hfst : ContMDiff (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ, P) 3
-      (fun y : (P × (ℝ × ℝ)) × M ↦ y.1.1) :=
-    contDiff_fst.contMDiff.comp contMDiff_fst
-  have hcq := (hc.contDiffAt (hU.mem_nhds hq.1)).contMDiffAt.comp (q, x) hfst.contMDiffAt
-  have haq := (ha.contDiffAt (hU.mem_nhds hq.1)).contMDiffAt.comp (q, x) hfst.contMDiffAt
-  have hg : ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I)
-      (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I)) 3
-      (fun y : (P × (ℝ × ℝ)) × M ↦ ((c y.1.1, a y.1.1), (equivRealProdCLM.symm y.1.2, y.2)))
-      (q, x) :=
-    (hcq.prodMk_space haq).prodMk
-      ((((equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp
-        contMDiff_fst).contMDiffAt).prodMk contMDiffAt_snd)
-  have h3 : ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ) 3
-      (uncurry fun (q : P × (ℝ × ℝ)) x ↦
-        puncturedSpherePerturbation (c q.1) (a q.1) H Hout (equivRealProdCLM.symm q.2) x w)
-      (q, x) :=
-    ((contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts hq.2.1 hq.2.2 x).comp (q, x)
-      hg).clm_apply contMDiffAt_const
-  exact h3.of_le (by norm_num)
 
 /-- **Solutions on spheres with moving input ends in a closed manifold converge off finitely many
 bubbling points, uniformly over a compact window of configurations.** Let `ω` be a nondegenerate
@@ -247,7 +193,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
   set S := {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
     ∀ i, equivRealProdCLM.symm q.2 ≠ c q.1 i}
   obtain ⟨hSo, hK⟩ :=
-    isOpen_and_contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts hU hc ha (I := I)
+    isOpen_and_contMDiffAt_puncturedSpherePerturbation (I := I) hH hHs hHout hHouts hU hc ha
   have hCDS : C ×ˢ D ⊆ W ∩ S := fun q hq ↦ ⟨hCDW hq, hCU hq.1, ha₀ _ hq.1,
     fun i ↦ ne_of_mem_puncturedSphereTruncation (ha₀ _ hq.1 i) (hDT _ hq.1 hq.2)⟩
   obtain ⟨δ, hδ, hconv⟩ :=
@@ -258,9 +204,11 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
         puncturedSpherePerturbation (c p) (a p) H Hout (equivRealProdCLM.symm z) x Complex.I)
       he he_inj (hW.inter hSo) hC hD hCDS
       (fun α ↦ (hJ α).mono (prod_mono inter_subset_left subset_rfl))
-      (fun α ↦ (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK 1) α).mono
+      (fun α ↦ (hω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2)
+        (fun q hq x ↦ (hK 1 q hq x).of_le (by norm_num)) α).mono
         (prod_mono inter_subset_right subset_rfl))
-      (fun α ↦ (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK Complex.I) α).mono
+      (fun α ↦ (hω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2)
+        (fun q hq x ↦ (hK Complex.I q hq x).of_le (by norm_num)) α).mono
         (prod_mono inter_subset_right subset_rfl))
       (fun p hp z hz ↦ hJt p hp z (hDT p hp hz)) hκ hJc hLs hLt
   refine ⟨δ, hδ, fun Ω p u A hΩ hΩD hpC hu hfl hA ↦ ?_⟩

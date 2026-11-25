@@ -245,11 +245,43 @@ theorem almostComplexInChartAt_almostComplexStructureAt (J : P → SmoothAlmostC
     (α : M) (p : P × E) :
     almostComplexInChartAt I α (fun z ↦ (J z).almostComplexStructureAt) p =
       (J p.1).inChart α p.2 := by
-  rw [almostComplexInChartAt, SmoothAlmostComplexStructure.inChart_def]
-  congr 1
-  ext v
-  rw [LinearMap.coe_toContinuousLinearMap']
-  exact (J p.1).almostComplexStructureAt_apply _ v
+  rw [almostComplexInChartAt, SmoothAlmostComplexStructure.inChart_def,
+    SmoothAlmostComplexStructure.toContinuousLinearMap_almostComplexStructureAt]
+
+omit [FiniteDimensional ℝ E] in
+/-- The coordinates, in the trivialization at `α`, of a section `(q, x) ↦ σ q x` of a vector bundle
+`V` over `M` depending on a point `q` of a normed space `Q`, read along the chart at `α`, are `Cⁿ`
+on `U × (extChartAt I α).target` when the section is jointly `Cⁿ` at every point of `U × M` and the
+chart target lies over the base set of the trivialization. The chart readings of families of
+structures and of Hamiltonian vector fields are such coordinates. Unlike
+`TauCeti.Manifold.contDiffOn_trivializationAt_extChartAt_symm`, which treats a single tangent vector
+field, the section here is of any vector bundle and depends jointly on the parameter `q`. -/
+private theorem contDiffOn_trivializationAt_extChartAt_symm {Q F : Type*} [NormedAddCommGroup Q]
+    [NormedSpace ℝ Q] [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
+    [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [∀ x, AddCommMonoid (V x)]
+    [∀ x, Module ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ∞}
+    [ContMDiffVectorBundle n F V I] {U : Set Q} {σ : Q → (x : M) → V x} {α : M}
+    (hbase : ∀ w ∈ (extChartAt I α).target,
+      (extChartAt I α).symm w ∈ (trivializationAt F V α).baseSet)
+    (hσ : ∀ q ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, Q).prod I) (I.prod 𝓘(ℝ, F)) n
+      (fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2)) (q, x)) :
+    ContDiffOn ℝ n (fun p : Q × E ↦ (trivializationAt F V α
+        ⟨(extChartAt I α).symm p.2, σ p.1 ((extChartAt I α).symm p.2)⟩).2)
+      (U ×ˢ (extChartAt I α).target) := by
+  rintro ⟨q, y⟩ ⟨hq, hy⟩
+  -- The coordinates of the section in the trivialization at `α` are `Cⁿ` at `(q, x)`, for the
+  -- point `x` with chart coordinate `y`.
+  have hcoord := ((Bundle.Trivialization.contMDiffAt_iff (e := trivializationAt F V α)
+    (f := fun p : Q × M ↦ TotalSpace.mk' F p.2 (σ p.1 p.2))
+    ((trivializationAt F V α).mem_source.2 (hbase y hy))).1
+    (hσ q hq ((extChartAt I α).symm y))).2
+  -- The map `(q, y) ↦ (q, x)` into `Q × M` is `Cⁿ` over the chart target.
+  have hψ : ContMDiffWithinAt 𝓘(ℝ, Q × E) (𝓘(ℝ, Q).prod I) n
+      (fun p : Q × E ↦ (p.1, (extChartAt I α).symm p.2)) (U ×ˢ (extChartAt I α).target) (q, y) :=
+    (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
+      (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (q, y)
+        (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))
+  exact (contMDiffWithinAt_iff_contDiffWithinAt.1 (hcoord.comp_contMDiffWithinAt (q, y) hψ) :)
 
 /-- **A jointly regular family of structures is regular in a chart.** Let `J_q(x)` be structures
 on the tangent spaces of `M`, depending on a point `q` of a normed space `Q`, such as the domain
@@ -265,32 +297,13 @@ theorem contDiffOn_almostComplexInChartAt {Q : Type*} [NormedAddCommGroup Q] [No
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) p.2
         (J p.1 p.2).toLinearMap.toContinuousLinearMap) (q, x))
     (α : M) :
-    ContDiffOn ℝ n (almostComplexInChartAt I α J) (U ×ˢ (extChartAt I α).target) := by
-  set T := trivializationAt (E →L[ℝ] E)
-    (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) α
-  set φ := extChartAt I α
-  -- The map `(q, y) ↦ (q, φ⁻¹ y)` into `Q × M`.
-  set ψ : Q × E → Q × M := fun p ↦ (p.1, φ.symm p.2)
-  rintro ⟨q, y⟩ ⟨hq, hy⟩
-  have hbase {w : E} (hw : w ∈ φ.target) : φ.symm w ∈ T.baseSet := by
-    simpa [T, φ] using TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw
-  -- The coordinates of the section in the trivialization at `α` are `Cⁿ` at `(q, φ⁻¹ y)`.
-  have hcoord : ContMDiffAt (𝓘(ℝ, Q).prod I) 𝓘(ℝ, E →L[ℝ] E) n
-      (fun p : Q × M ↦ (T ⟨p.2, (J p.1 p.2).toLinearMap.toContinuousLinearMap⟩).2)
-      (q, φ.symm y) :=
-    ((Bundle.Trivialization.contMDiffAt_iff (e := T) (by exact hbase hy)).1
-      (hJ q hq (φ.symm y))).2
-  have hψ : ContMDiffWithinAt 𝓘(ℝ, Q × E) (𝓘(ℝ, Q).prod I) n ψ (U ×ˢ φ.target) (q, y) :=
-    (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
-      (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (q, y)
-        (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))
+    ContDiffOn ℝ n (almostComplexInChartAt I α J) (U ×ˢ (extChartAt I α).target) :=
   -- In the trivialization at `α`, the section is the family in tangent coordinates.
-  have hT (w : E) (p : Q) :
-      (T ⟨φ.symm w, (J p (φ.symm w)).toLinearMap.toContinuousLinearMap⟩).2 =
-        almostComplexInChartAt I α J (p, w) := by
-    rw [almostComplexInChartAt, hom_trivializationAt_apply]
-  have h := contMDiffWithinAt_iff_contDiffWithinAt.1 (hcoord.comp_contMDiffWithinAt (q, y) hψ)
-  exact h.congr (fun ⟨p, w⟩ _ ↦ (hT w p).symm) (hT y q).symm
+  (contDiffOn_trivializationAt_extChartAt_symm (V := fun x : M ↦
+      TangentSpace I x →L[ℝ] TangentSpace I x)
+    (σ := fun q x ↦ (J q x).toLinearMap.toContinuousLinearMap)
+    (fun _ hw ↦ by simpa using TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw)
+    hJ).congr fun _ _ ↦ by rw [almostComplexInChartAt, hom_trivializationAt_apply]
 
 /-- **A jointly regular family of smooth structures is regular in a chart.** For smooth almost
 complex structures `J q` depending on a point `q` of a normed space `Q`, whose endomorphism
@@ -309,11 +322,9 @@ theorem contDiffOn_almostComplexInChartAt_almostComplexStructureAt {Q : Type*}
     ContDiffOn ℝ n (almostComplexInChartAt I α fun q ↦ (J q).almostComplexStructureAt)
       (U ×ˢ (extChartAt I α).target) :=
   contDiffOn_almostComplexInChartAt (J := fun q ↦ (J q).almostComplexStructureAt)
-    (fun q hq x ↦ (hJ q hq x).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun p ↦ congrArg (TotalSpace.mk' _ p.2)
-        (ContinuousLinearMap.ext fun v ↦ by
-          rw [LinearMap.coe_toContinuousLinearMap']
-          exact (J p.1).almostComplexStructureAt_apply p.2 v))) α
+    (fun q hq x ↦ (hJ q hq x).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦
+      congrArg (TotalSpace.mk' _ p.2)
+        ((J p.1).toContinuousLinearMap_almostComplexStructureAt p.2))) α
 
 end Floer
 
@@ -420,29 +431,17 @@ theorem IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt (hω : ω.IsN
     (hK : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, Q).prod I) 𝓘(ℝ) (n + 1) (Function.uncurry K) (z, x))
     (α : M) :
     ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α K) (U ×ˢ (extChartAt I α).target) := by
-  set T := trivializationAt E (TangentSpace I) α
-  set φ := extChartAt I α
-  -- The map `(z, y) ↦ (z, φ⁻¹ y)` into `Q × M`.
-  set ψ : Q × E → Q × M := fun p ↦ (p.1, φ.symm p.2)
-  rintro ⟨z, y⟩ ⟨hz, hy⟩
-  have hbase {w : E} (hw : w ∈ φ.target) : φ.symm w ∈ T.baseSet := by
-    simpa [T, φ] using (extChartAt I α).map_target hw
-  -- The Hamiltonian vector fields form a section of the tangent bundle which is `C^n` at
-  -- `(z, φ⁻¹ y)`, so its coordinates in the trivialization at `α` are `C^n` there.
-  have hX := hω.contMDiffAt_hamiltonianVectorField_uncurry (n := n) (by exact_mod_cast le_top)
-    (hK z hz (φ.symm y))
-  have hcoord := ((Bundle.Trivialization.contMDiffAt_iff (e := T)
-    (by simpa [T] using hbase hy)).1 hX).2
-  have hψ : ContMDiffWithinAt 𝓘(ℝ, Q × E) (𝓘(ℝ, Q).prod I) n ψ (U ×ˢ φ.target) (z, y) :=
-    (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
-      (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (z, y)
-        (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))
-  refine (contMDiffWithinAt_iff_contDiffWithinAt.1 (hcoord.comp_contMDiffWithinAt (z, y) hψ)).congr
-    (fun p hp ↦ ?_) ?_
-  · rw [hamiltonianVectorFieldInChartAt_apply]
-    exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) T (hbase hp.2) _
-  · rw [hamiltonianVectorFieldInChartAt_apply]
-    exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) T (hbase hy) _
+  have hbase {w : E} (hw : w ∈ (extChartAt I α).target) :
+      (extChartAt I α).symm w ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+    simpa using (extChartAt I α).map_target hw
+  -- The Hamiltonian vector fields form a section of the tangent bundle which is `C^n` on `U × M`,
+  -- and in the trivialization at `α` it is the vector field in tangent coordinates.
+  refine (Floer.contDiffOn_trivializationAt_extChartAt_symm (V := TangentSpace I)
+    (σ := fun z ↦ ω.hamiltonianVectorField (K z)) (fun _ ↦ hbase) fun z hz x ↦
+      hω.contMDiffAt_hamiltonianVectorField_uncurry (n := n) (by exact_mod_cast le_top)
+        (hK z hz x)).congr fun p hp ↦ ?_
+  rw [hamiltonianVectorFieldInChartAt_apply]
+  exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ (hbase hp.2) _
 
 omit [FiniteDimensional ℝ E] in
 /-- The Hamiltonian vector field of the zero Hamiltonian, read in a chart, vanishes. -/
