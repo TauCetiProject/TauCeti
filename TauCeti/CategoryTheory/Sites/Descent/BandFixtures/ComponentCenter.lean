@@ -55,7 +55,9 @@ theorem catCenter_ext_discrete_prod_singleObj [Monoid G]
     (h : ∀ x : Discrete I × SingleObj G, (z.app x).2 = (w.app x).2) : z = w :=
   CatCenter.ext _ _ fun x ↦ Prod.hom_ext (Subsingleton.elim _ _) (h x)
 
-variable [CommGroup G]
+section CommMonoid
+
+variable [CommMonoid G]
 
 /-- The **centre of a profile** `a : I → G`: the natural endomorphism of the identity of
 `Discrete I × SingleObj G` with component `(𝟙, a i)` at an object over the label `i`. It is natural
@@ -94,6 +96,12 @@ theorem componentCenter_mul (a b : I → G) :
 theorem componentCenter_one : componentCenter (1 : I → G) = 1 :=
   catCenter_ext_discrete_prod_singleObj fun _ ↦ by
     simp [CatCenter.app_one, SingleObj.id_as_one]
+
+end CommMonoid
+
+section CommGroup
+
+variable [CommGroup G]
 
 /-- The **centre unit of a profile** `a`, with inverse the centre of the pointwise inverse
 profile. -/
@@ -146,5 +154,7 @@ theorem componentCenterEquiv_apply (a : I → G) :
 theorem componentCenterEquiv_symm_apply (z : (CatCenter (Discrete I × SingleObj G))ˣ) (i : I) :
     (componentCenterEquiv I G).symm z i = (z.val.app (⟨i⟩, SingleObj.star G)).2 :=
   (rfl)
+
+end CommGroup
 
 end CategoryTheory.Pseudofunctor.BandFixtures
