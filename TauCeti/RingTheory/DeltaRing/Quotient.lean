@@ -65,15 +65,6 @@ section DeltaStable
 
 variable {B : Type*} [CommRing B] [DeltaRing p A] {I : Ideal A}
 
-/-- If `δ` maps `I` into `I`, then so does every iterate of `δ`. -/
-theorem iterate_delta_mem (hI : ∀ x ∈ I, delta p x ∈ I) {x : A} (hx : x ∈ I) (n : ℕ) :
-    (delta p)^[n] x ∈ I := by
-  induction n with
-  | zero => exact hx
-  | succ n ih =>
-    rw [Function.iterate_succ_apply']
-    exact hI _ ih
-
 /-- If `δ` maps `J` into `J`, then it maps the preimage of `J` under a `δ`-map into itself. -/
 theorem IsDeltaMap.delta_mem_comap [DeltaRing p B] {f : A →+* B} (hf : IsDeltaMap p f)
     {J : Ideal B} (hJ : ∀ y ∈ J, delta p y ∈ J) : ∀ x ∈ J.comap f, delta p x ∈ J.comap f :=
@@ -92,8 +83,7 @@ theorem forall_delta_mem_span_iff {S : Set A} :
     (∀ x ∈ Ideal.span S, delta p x ∈ Ideal.span S) ↔ ∀ s ∈ S, delta p s ∈ Ideal.span S := by
   refine ⟨fun h s hs => h s (Ideal.subset_span hs), fun h x hx => ?_⟩
   rcases eq_or_ne p 0 with rfl | hp
-  · -- For `p = 0` the product rule applied to `x * 0` gives `δ x = 0`.
-    rw [show delta 0 x = 0 by simpa using (delta_mul (p := 0) x 0).symm]
+  · rw [delta_eq_zero_of_p_eq_zero rfl]
     exact zero_mem _
   induction hx using Submodule.span_induction with
   | mem s hs => exact h s hs
@@ -148,7 +138,7 @@ theorem deltaStabilization_le_iff (hJ : ∀ x ∈ J, delta p x ∈ J) :
     deltaStabilization p I ≤ J ↔ I ≤ J := by
   refine ⟨(le_deltaStabilization p I).trans, fun h => Ideal.span_le.mpr ?_⟩
   rintro _ ⟨a, ha, n, rfl⟩
-  exact iterate_delta_mem hJ (h ha) n
+  exact Set.MapsTo.iterate (fun x hx => hJ x hx) n (h ha)
 
 /-- `δ`-stabilization is monotone. -/
 @[gcongr]
@@ -250,10 +240,7 @@ theorem isDeltaMap_comp_quotient_mk_iff {B : Type*} [CommRing B] [DeltaRing p B]
     IsDeltaMap p (g.comp (Ideal.Quotient.mk I)) ↔
       @IsDeltaMap p (A ⧸ I) _ B _ (quotient I hI) _ g := by
   let := quotient I hI
-  refine ⟨fun h => ⟨fun x => ?_⟩, fun h => h.comp (isDeltaMap_quotient_mk hI)⟩
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  rw [delta_quotient_mk]
-  exact h.map_delta a
+  exact (isDeltaMap_quotient_mk hI).comp_iff_of_surjective Ideal.Quotient.mk_surjective
 
 /-- If some `δ`-structure on `A ⧸ I` makes the quotient map a `δ`-map, then `δ` maps `I` into
 `I`. -/
@@ -281,7 +268,8 @@ variable [DeltaRing p A] (I : Ideal A)
 
 /-- The universal `δ`-ring under `A` in which `I` vanishes: the quotient of `A` by the
 `δ`-stabilization of `I`, with its quotient `δ`-structure, so `δ` sends the class of `a` to the
-class of `δ a` (`delta_quotient_mk`). Its universal property is `deltaStabilizationLiftEquiv`. -/
+class of `δ a` (`delta_mk_deltaStabilization`). Its universal property is
+`deltaStabilizationLiftEquiv`. -/
 instance instDeltaRingQuotientDeltaStabilization : DeltaRing p (A ⧸ deltaStabilization p I) :=
   quotient _ fun _ => delta_mem_deltaStabilization
 
@@ -289,6 +277,20 @@ instance instDeltaRingQuotientDeltaStabilization : DeltaRing p (A ⧸ deltaStabi
 theorem isDeltaMap_mk_deltaStabilization :
     IsDeltaMap p (Ideal.Quotient.mk (deltaStabilization p I)) :=
   isDeltaMap_quotient_mk fun _ => delta_mem_deltaStabilization
+
+/-- `δ` on `A ⧸ deltaStabilization p I` sends the class of `a` to the class of `δ a`. It is not a
+`simp` lemma, since `simp` already rewrites its left-hand side with `delta_quotient_mk`. -/
+theorem delta_mk_deltaStabilization (a : A) :
+    delta p (Ideal.Quotient.mk (deltaStabilization p I) a) =
+      Ideal.Quotient.mk (deltaStabilization p I) (delta p a) :=
+  (rfl)
+
+variable {I} in
+/-- The quotient map `A → A ⧸ deltaStabilization p I` sends every element of `I` to zero. -/
+@[simp]
+theorem mk_deltaStabilization_eq_zero {a : A} (ha : a ∈ I) :
+    Ideal.Quotient.mk (deltaStabilization p I) a = 0 :=
+  Ideal.Quotient.eq_zero_iff_mem.mpr (le_deltaStabilization p I ha)
 
 /-- The `δ`-structure on `A ⧸ deltaStabilization p I` is the only one making the quotient map a
 `δ`-map. -/
@@ -307,8 +309,7 @@ def deltaStabilizationLiftEquiv :
       {f : A →+* B // IsDeltaMap p f ∧ I ≤ RingHom.ker f} where
   toFun g := ⟨g.val.comp (Ideal.Quotient.mk _),
     g.property.comp (isDeltaMap_mk_deltaStabilization I), fun a ha => by
-      rw [RingHom.mem_ker, RingHom.comp_apply,
-        Ideal.Quotient.eq_zero_iff_mem.mpr (le_deltaStabilization p I ha), map_zero]⟩
+      rw [RingHom.mem_ker, RingHom.comp_apply, mk_deltaStabilization_eq_zero ha, map_zero]⟩
   invFun f := ⟨Ideal.Quotient.lift _ f.val fun _ ha =>
       (deltaStabilization_le_iff f.property.1.delta_mem_ker).mpr f.property.2 ha,
     isDeltaMap_quotient_lift _ f.property.1 _⟩

@@ -15,10 +15,10 @@ The zero ideal is `δ`-stable and its quotient recovers the given `δ`-structure
 under the Frobenius, which is the identity, but not under `δ`, since `δ p = 1 - p ^ (p - 1)` is
 not divisible by `p`. So no `δ`-structure on `ℤ ⧸ (p)` makes the quotient map a `δ`-map.
 
-For `p = 2`, where `δ 2 = -1`, the `δ`-stabilization of `⊥` lies in `(2)`, which is not
-`δ`-stable: the minimality statement `deltaStabilization_le_iff` needs its target to be
-`δ`-stable. The `δ`-stabilization of `(2)` contains the unit `-1`, so it is the unit ideal and the
-universal `δ`-quotient of `ℤ` in which `2` vanishes is the zero ring.
+For `p = 2`, where `δ 2 = -1`, the `δ`-stabilization of `(2)` contains the unit `-1`, so it is
+the unit ideal and the universal `δ`-quotient of `ℤ` in which `2` vanishes is the zero ring. In
+particular `(2) ≤ (2)` but the `δ`-stabilization of `(2)` does not lie in `(2)`: the minimality
+statement `deltaStabilization_le_iff` needs its target to be `δ`-stable.
 -/
 
 namespace TauCeti.Examples
@@ -60,15 +60,20 @@ example [hp : Fact p.Prime] :
     exact hp.out.one_lt.ne' (by exact_mod_cast Int.eq_one_of_dvd_one (by positivity) h1)
   exact fun ⟨_, hd⟩ => key fun _ hx => delta_mem_of_isDeltaMap_quotient_mk hd hx
 
--- The `δ`-stabilization of `⊥` lies in the ideal `(2)`, which is not `δ`-stable.
-example : deltaStabilization 2 (⊥ : Ideal ℤ) ≤ Ideal.span {(2 : ℤ)} := by
-  simp
-
 -- The `δ`-stabilization of `(2)` is the unit ideal of `ℤ`.
 example : deltaStabilization 2 (Ideal.span {(2 : ℤ)}) = ⊤ := by
   have h := iterate_delta_mem_deltaStabilization (p := 2) (Ideal.mem_span_singleton_self (2 : ℤ)) 1
   rw [Function.iterate_one, delta_int_two] at h
   exact Ideal.eq_top_of_isUnit_mem _ h isUnit_one.neg
+
+-- `deltaStabilization_le_iff` needs its target to be `δ`-stable: `(2) ≤ (2)`, but the
+-- `δ`-stabilization of `(2)` does not lie in `(2)`, which is not `δ`-stable.
+example : ¬ deltaStabilization 2 (Ideal.span {(2 : ℤ)}) ≤ Ideal.span {(2 : ℤ)} := by
+  intro h
+  have h1 := h (iterate_delta_mem_deltaStabilization (p := 2)
+    (Ideal.mem_span_singleton_self (2 : ℤ)) 1)
+  rw [Function.iterate_one, delta_int_two, Ideal.mem_span_singleton] at h1
+  norm_num at h1
 
 -- The universal `δ`-quotient of `ℤ` in which `2` vanishes is the zero ring.
 example : Subsingleton (ℤ ⧸ deltaStabilization 2 (Ideal.span {(2 : ℤ)})) := by
