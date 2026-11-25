@@ -11,7 +11,11 @@ public import Mathlib.CategoryTheory.Sites.Pullback
 public import TauCeti.CategoryTheory.Limits.Final
 
 /-!
-# Constant sheaves: vanishing, pullback and change of coefficients
+# Constant sheaves: restriction, vanishing, pullback and change of coefficients
+
+On any site, the constant sheaf with value `A` is the sheafification of the constant presheaf,
+whose restriction maps are identities; so restricting the image of `A` in the sections over `U`
+gives its image over `V`.
 
 Let `u : C ⥤ D` be a continuous functor from a site `(C, J)` to a site `(D, K)`, whose sheaf
 pushforward `u_* : Sheaf K A ⥤ Sheaf J A` has the left adjoint `u^* = u.sheafPullback A J K`.
@@ -33,9 +37,11 @@ Separately, since the constant sheaf functor is left adjoint to sections over a 
 
 ## Main declarations
 
+* `CategoryTheory.toSheafify_app_const_comp_map`: restricting the image of `A` in the sections
+  of the constant sheaf over `U` to `V` gives its image over `V`; its elementwise form is
+  `CategoryTheory.toSheafify_app_const_map_apply`.
 * `CategoryTheory.Sheaf.isZero_of_isConstant_of_isZero_obj`: a constant sheaf with vanishing
   sections over a terminal object is zero.
-
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom`: the comparison `u^* (X_J) ⟶ X_K`.
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom_naturality`: the comparison is natural
   in `X`.
@@ -51,6 +57,38 @@ Separately, since the constant sheaf functor is left adjoint to sections over a 
 public section
 
 open CategoryTheory Limits
+
+namespace CategoryTheory
+
+section ConstantPresheafRestriction
+
+variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {D : Type*} [Category* D]
+  [HasWeakSheafify J D]
+
+/-- On any site, restricting the image of `A` in the sections of the constant sheaf over `U`
+along `i : U ⟶ V` gives the image of `A` over `V`, since the constant presheaf has identity
+restrictions. -/
+@[reassoc (attr := simp)]
+theorem toSheafify_app_const_comp_map (A : D) {U V : Cᵒᵖ} (i : U ⟶ V) :
+    (toSheafify J ((Functor.const _).obj A)).app U ≫ ((constantSheaf J D).obj A).obj.map i =
+      (toSheafify J ((Functor.const _).obj A)).app V :=
+  -- `((constantSheaf J D).obj A).obj` is by definition the sheafification of the constant
+  -- presheaf, whose restriction maps are identities.
+  ((toSheafify J ((Functor.const _).obj A)).naturality i).symm.trans (by simp)
+
+/-- The elementwise form of `toSheafify_app_const_comp_map`: restricting the image of `a : A` in
+the sections of the constant sheaf over `U` along `i : U ⟶ V` gives the image of `a` over `V`. -/
+@[simp]
+theorem toSheafify_app_const_map_apply {FD : D → D → Type*} {CD : D → Type*}
+    [∀ X Y, FunLike (FD X Y) (CD X) (CD Y)] [ConcreteCategory D FD]
+    (A : D) {U V : Cᵒᵖ} (i : U ⟶ V) (a : ToType A) :
+    ((constantSheaf J D).obj A).obj.map i ((toSheafify J ((Functor.const _).obj A)).app U a) =
+      (toSheafify J ((Functor.const _).obj A)).app V a := by
+  rw [← ConcreteCategory.comp_apply, toSheafify_app_const_comp_map]
+
+end ConstantPresheafRestriction
+
+end CategoryTheory
 
 namespace CategoryTheory.Functor
 

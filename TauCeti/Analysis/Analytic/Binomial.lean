@@ -44,6 +44,8 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
   `‖(ascPochhammer 𝕂 n).eval w / n !‖ ≤ Ring.multichoose r n` for `‖w‖ ≤ r`.
 * `TauCeti.exists_abs_one_add_rpow_sub_sum_le` — the remainder of the real binomial series of
   `(1 + u) ^ r` after `K` terms is `O(|u| ^ K)` as `u → 0`.
+* `TauCeti.isBigO_one_add_cpow_sub_sum` — the remainder of the complex binomial series of
+  `(1 + z) ^ c` after `K` terms is `O(z ^ K)` as `z → 0`.
 * `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series has radius at least
   `1` in every normed algebra over `ℝ` or `ℂ`.
 * `TauCeti.binomialSeries_sum_mul_binomialSeries_sum` — on the open unit ball of a Banach algebra,
@@ -183,6 +185,18 @@ theorem exists_abs_one_add_rpow_sub_sum_le (r : ℝ) (K : ℕ) :
   have hbound := hεA (y := u) (by simpa using huε)
   simpa only [zero_add, FormalMultilinearSeries.partialSum, binomialSeries_apply, List.ofFn_const,
     List.prod_replicate, smul_eq_mul, Real.norm_eq_abs, abs_pow, abs_abs] using hbound
+
+/-- The remainder of the complex binomial series of `(1 + z) ^ c` after `K` terms is `O(z ^ K)` as
+`z → 0`. -/
+theorem isBigO_one_add_cpow_sub_sum (c : ℂ) (K : ℕ) :
+    (fun z : ℂ ↦ (1 + z) ^ c - ∑ k ∈ Finset.range K, Ring.choose c k * z ^ k) =O[𝓝 0]
+      fun z ↦ z ^ K := by
+  have hpow : (fun z : ℂ ↦ ‖z‖ ^ K) =O[𝓝 0] fun z ↦ z ^ K :=
+    (Asymptotics.isBigO_norm_left.2 (Asymptotics.isBigO_refl _ _)).congr_left fun z ↦ norm_pow z K
+  refine ((Complex.one_add_cpow_hasFPowerSeriesAt_zero (a := c)).isBigO_sub_partialSum_pow K
+    |>.trans hpow).congr_left fun z ↦ ?_
+  simp only [zero_add, FormalMultilinearSeries.partialSum, binomialSeries_apply, List.ofFn_const,
+    List.prod_replicate, smul_eq_mul, mul_comm]
 
 section NormedAlgebra
 

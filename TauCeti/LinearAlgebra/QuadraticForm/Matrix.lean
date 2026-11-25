@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basis
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import Mathlib.LinearAlgebra.Matrix.Nonsingular
+import TauCeti.LinearAlgebra.Matrix.Alternating.ModIdeal
 
 /-!
 # Full polarization and the matrix of a quadratic form
@@ -31,6 +32,10 @@ the diagonal are the polar values `q(bᵢ + bⱼ) - q(bᵢ) - q(bⱼ)`, and the 
 (`QuadraticForm.coefficientMatrix_apply`). For a form on `R^ι`, reading `M` in an `R`-algebra `A`
 gives the form `q_A` on `A^ι` with the same coefficients (`QuadraticForm.baseChangeForm`).
 Mathlib's `QuadraticForm.baseChange` instead lives on `A ⊗[R] R^ι` and assumes `2` invertible.
+A matrix `P` with `q'(P x) = q(x)` over `R` satisfies `q'_A(P x) = q_A(x)` over every `A`
+(`QuadraticForm.baseChangeForm_map_mulVec`): the matrix `Pᵀ M' P - M` has vanishing quadratic
+expression, so it is alternating (`Matrix.isAltMod_bot_iff`) and stays alternating over `A`. This
+holds in characteristic two, where `q` is not determined by its polar form.
 
 ## Main declarations
 
@@ -42,6 +47,10 @@ Mathlib's `QuadraticForm.baseChange` instead lives on `A ⊗[R] R^ι` and assume
   triangular coefficient matrix of a quadratic form in an ordered basis.
 * `QuadraticForm.baseChangeForm`, `QuadraticForm.baseChangeForm_apply` and
   `QuadraticForm.baseChangeForm_self`: the form with the same coefficients over an `R`-algebra.
+* `QuadraticForm.baseChangeForm_map_mulVec`: a matrix carrying `q` to `q'` over `R` carries `q_A`
+  to `q'_A` over every `R`-algebra `A`.
+* `QuadraticForm.baseChangeForm_add` and `QuadraticForm.baseChangeForm_proj`: `q ↦ q_A` is
+  additive and sends the coordinate product `xᵢ xⱼ` to `xᵢ xⱼ`.
 -/
 
 public section
@@ -111,6 +120,26 @@ theorem coefficientMatrix_apply (q : QuadraticForm R V) (b : Module.Basis ι R V
       if i = j then q (b i) else if i < j then QuadraticMap.polar q (b i) (b j) else 0 := by
   rw [coefficientMatrix, LinearMap.toMatrix₂_apply, QuadraticMap.toBilin_apply]
 
+/-- The coefficient matrix is additive in the form. -/
+@[simp]
+theorem coefficientMatrix_add (q q' : QuadraticForm R V) (b : Module.Basis ι R V) :
+    coefficientMatrix (q + q') b = coefficientMatrix q b + coefficientMatrix q' b := by
+  ext k l
+  simp only [coefficientMatrix_apply, Matrix.add_apply]
+  split_ifs <;> simp [QuadraticMap.polar_add]
+
+/-- The coefficient matrix of the coordinate product `xᵢ xⱼ` has a single entry `1`, in position
+`(min i j, max i j)`. -/
+@[simp]
+theorem coefficientMatrix_proj (i j : ι) :
+    coefficientMatrix (QuadraticMap.proj (R := R) i j) (Pi.basisFun R ι) =
+      Matrix.single (min i j) (max i j) 1 := by
+  ext k l
+  simp only [coefficientMatrix_apply, QuadraticMap.polar, QuadraticMap.proj_apply,
+    Pi.basisFun_apply, Pi.add_apply, Pi.single_apply, Matrix.single_apply]
+  rcases le_total i j with h | h <;> simp only [min_eq_left, min_eq_right, max_eq_left,
+    max_eq_right, h] <;> split_ifs <;> grind
+
 /-- The form `q_A` on `A^ι` with the same coefficients as a form `q` on `R^ι`: `x ↦ xᵀ M x` for
 the coefficient matrix `M` of `q` in the standard basis, read in `A`. -/
 noncomputable def baseChangeForm (q : QuadraticForm R (ι → R)) (A : Type*) [CommRing A]
@@ -132,6 +161,47 @@ theorem baseChangeForm_self (q : QuadraticForm R (ι → R)) : baseChangeForm q 
   simp only [baseChangeForm, coefficientMatrix, Algebra.algebraMap_self, RingHom.coe_id,
     Matrix.map_id, Matrix.toQuadraticForm', LinearMap.toMatrix₂_basisFun,
     Matrix.toLinearMap₂'_toMatrix', QuadraticMap.toQuadraticMap_toBilin]
+
+/-- **A matrix carrying `q` to `q'` over `R` does so over every `R`-algebra.** If `q'(P x) = q(x)`
+for every `x ∈ R^ι`, then `q'_A(P x) = q_A(x)` for every `x ∈ A^ι`, with `P` read in `A`. -/
+theorem baseChangeForm_map_mulVec {κ : Type*} [Fintype κ] [LinearOrder κ]
+    {q : QuadraticForm R (ι → R)} {q' : QuadraticForm R (κ → R)} {P : Matrix κ ι R}
+    (hP : ∀ x, q' (P *ᵥ x) = q x) (A : Type*) [CommRing A] [Algebra R A] (x : ι → A) :
+    baseChangeForm q' A (P.map (algebraMap R A) *ᵥ x) = baseChangeForm q A x := by
+  set M := coefficientMatrix q (Pi.basisFun R ι)
+  set M' := coefficientMatrix q' (Pi.basisFun R κ)
+  have hR : Matrix.IsAltMod ⊥ (Pᵀ * M' * P - M) := by
+    rw [Matrix.isAltMod_bot_iff]
+    intro y
+    have h1 := hP y
+    rw [← baseChangeForm_self q', ← baseChangeForm_self q, baseChangeForm_apply,
+      baseChangeForm_apply] at h1
+    simp only [Algebra.algebraMap_self, RingHom.coe_id, Matrix.map_id] at h1
+    rw [Matrix.sub_mulVec, dotProduct_sub, Matrix.dotProduct_transpose_mul_mul_mulVec, h1,
+      sub_self]
+  have hA := (Matrix.isAltMod_bot_iff _).mp
+    (hR.map (algebraMap R A) (by rw [Ideal.map_bot])) x
+  rw [Matrix.map_sub _ (map_sub (algebraMap R A)), Matrix.map_mul, Matrix.map_mul,
+    Matrix.transpose_map, Matrix.sub_mulVec, dotProduct_sub,
+    Matrix.dotProduct_transpose_mul_mul_mulVec, sub_eq_zero] at hA
+  rw [baseChangeForm_apply, baseChangeForm_apply]
+  exact hA
+
+/-- The form with the coefficients of `q + q'` is the sum of the forms with the coefficients of
+`q` and of `q'`. -/
+@[simp]
+theorem baseChangeForm_add (q q' : QuadraticForm R (ι → R)) (A : Type*) [CommRing A]
+    [Algebra R A] : baseChangeForm (q + q') A = baseChangeForm q A + baseChangeForm q' A := by
+  ext x
+  simp [Matrix.map_add, Matrix.add_mulVec]
+
+/-- The form with the coefficients of the coordinate product `xᵢ xⱼ` is again `xᵢ xⱼ`. -/
+@[simp]
+theorem baseChangeForm_proj (i j : ι) (A : Type*) [CommRing A] [Algebra R A] :
+    baseChangeForm (QuadraticMap.proj (R := R) i j) A = QuadraticMap.proj (R := A) i j := by
+  ext x
+  rcases le_total i j with h | h <;>
+    simp [h, Matrix.single_mulVec, dotProduct, Function.update_apply, mul_comm]
 
 end Coefficients
 

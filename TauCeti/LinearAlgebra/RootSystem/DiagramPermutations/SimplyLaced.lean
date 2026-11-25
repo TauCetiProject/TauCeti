@@ -32,6 +32,8 @@ the cycle-orthogonality dichotomy that governs diagram folding of irreducible ro
 * **Type `D₄`**: a permutation preserves `CartanMatrix.D 4` if and only if it fixes the central
   node `1` (`TauCeti.DynkinType.mem_diagramSymmetry_D4_iff`), giving the full symmetric group `S₃`
   on the three outer nodes `{0, 2, 3}`.
+  In particular the triality permutation preserves `CartanMatrix.D 4`
+  (`TauCeti.submatrix_cartanMatrix_D4_trialityPermD4`).
 * **Type `Dₙ` (`5 ≤ n`)**: a permutation preserves `CartanMatrix.D n` if and only if it is `1` or
   the fork swap `TauCeti.graphPermD n` (`TauCeti.DynkinType.mem_diagramSymmetry_D_iff_of_five_le`).
 * **Type `E₆`**: a permutation preserves `CartanMatrix.E 6` if and only if it is `1` or
@@ -167,6 +169,14 @@ theorem mem_diagramSymmetry_D4_iff {σ : Equiv.Perm (Fin 4)} :
       have hj1 : σ j = 1 ↔ j = 1 := ⟨fun h ↦ σ.injective (h.trans h1.symm), fun h ↦ h ▸ h1⟩
       simp only [cartanMatrix_D, hD4, σ.injective.eq_iff, hi1, hj1]
     exact mem_diagramSymmetry_iff.mpr hrev
+
+/-- The triality permutation preserves `CartanMatrix.D 4`: the matrix form of
+`TauCeti.cartanMatrix_D4_trialityPermD4`, stated over `Fin 4` in the shape of hypothesis taken by
+`TauCeti.serreDiagramAut`. -/
+theorem _root_.TauCeti.submatrix_cartanMatrix_D4_trialityPermD4 :
+    (CartanMatrix.D 4).submatrix trialityPermD4 trialityPermD4 = CartanMatrix.D 4 := by
+  ext i j
+  simpa only [Matrix.submatrix_apply, cartanMatrix_D] using cartanMatrix_D4_trialityPermD4 i j
 
 /-- Every diagram symmetry of `Dₙ` (`4 ≤ n`) fixes the unique branch node `n - 3`, which is the
 only node with three neighbours of entry `-1`. -/
