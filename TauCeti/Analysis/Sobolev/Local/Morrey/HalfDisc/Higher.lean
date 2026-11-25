@@ -9,11 +9,11 @@ public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.Local.Morrey.HalfDisc
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Holder.CompLinear
-import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Planar
 import TauCeti.Analysis.Sobolev.Local.Reflection
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.Local.Wkp.HalfDisc
+import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -187,7 +187,8 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
   refine ⟨v, hv, ⟨⋂ l, V l, isOpen_iInter_of_finite fun l => (V l).isOpen⟩,
     subset_iInter hTV, fun z => ∑ l, A l (g l z), ContDiffOn.sum fun l _ =>
       (A l).contDiff.comp_contDiffOn ((hg l).mono (iInter_subset _ l)), ?_, fun i hi => ?_⟩
-  · exact ae_eq_sum_smulRight_of_coord_ae_eq b hug
+  · exact (b.ae_eq_sum_smul_of_coord_ae_eq hug).trans
+      (Filter.Eventually.of_forall fun z => by simp [A])
   · have h := norm_iteratedFDeriv_le_and_holderOnWith_sum_comp_left A (c := fun l => ‖v l‖₊)
       (fun l => hgT l hi) fun l => ⟨fun z hz => by simpa using (hb l i hi).1 z hz, (hb l i hi).2⟩
     exact ⟨fun z hz => by simpa using h.1 z hz, h.2⟩
