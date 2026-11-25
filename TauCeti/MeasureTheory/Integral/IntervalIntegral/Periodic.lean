@@ -65,6 +65,8 @@ integrable on `[0, T/2]`, then `f` is not integrable from `t` to `t + n T` for a
   is nonnegative over a period and has integral zero over a period vanishes inside that period.
 * `Function.Periodic.intervalIntegral_neg_div_two_eq`: the integral of a `T`-periodic function
   over `[-T/2, T/2]` is its integral over `[0, T]`.
+* `Function.Periodic.intervalIntegral_comp_neg`: a `T`-periodic function and its reflection
+  `x ↦ f (-x)` have the same integral over `[0, T]`.
 * `Function.Periodic.intervalIntegrable_of_even`: an even `T`-periodic function (`T ≠ 0`) which is
   interval integrable on `[0, T/2]` is interval integrable on every interval.
 * `Function.Periodic.intervalIntegral_add_zsmul_eq'`: Mathlib's
@@ -364,6 +366,13 @@ theorem intervalIntegrable_of_even (hper : Periodic f T) (heven : Function.Even 
   exact hper.intervalIntegrable₀ hT (hf.trans h2) a b
 
 variable [NormedSpace ℝ E]
+
+/-- A `T`-periodic function and its reflection `x ↦ f (-x)` have the same integral over the period
+`[0, T]`. -/
+theorem intervalIntegral_comp_neg (hper : Periodic f T) :
+    ∫ x in (0 : ℝ)..T, f (-x) = ∫ x in (0 : ℝ)..T, f x := by
+  rw [intervalIntegral.integral_comp_neg, neg_zero]
+  simpa using hper.intervalIntegral_add_eq (-T) 0
 
 /-- Version of `Function.Periodic.intervalIntegral_add_zsmul_eq` without the integrability
 hypothesis: if `f` is not interval integrable over one period, it is not interval integrable over
