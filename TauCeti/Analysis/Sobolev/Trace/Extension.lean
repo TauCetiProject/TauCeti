@@ -288,9 +288,8 @@ theorem W1p.restrictL_extendByReflectionL (a : ℝ)
   apply Lp.ext
   filter_upwards [W1p.value_restrictL_ae le_top (W1p.extendByReflectionL a u),
     ae_restrict_of_ae (W1p.value_extendByReflectionL_ae a u), ae_restrict_mem hH] with x h1 h2 hx
-  have hρx : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-    rw [SetLike.mem_coe, normalReflection_mem_normalHalfSpace_iff, not_lt]
-    exact ((mem_normalHalfSpace a x).1 hx).le
+  have hρx : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) :=
+    normalReflection_notMem_normalHalfSpace hx
   rw [h1, h2, indicator_of_mem hx, indicator_of_notMem hρx, add_zero]
 
 /-- The reflection extension at most doubles the Sobolev norm. -/
