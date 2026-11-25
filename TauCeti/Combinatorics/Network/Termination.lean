@@ -35,6 +35,8 @@ subgroup, augmentation sequences need not terminate.
 ## Main results
 
 * `TauCeti.Flow.AugmentsTo.val_add_le`: an augmentation step raises the value by at least `d`.
+* `TauCeti.Flow.exists_nsmul_eq_val_le_arrowSum`: a compatible flow value and the capacity of
+  any cut are natural multiples of `d`, with the former multiplier at most the latter.
 * `TauCeti.Flow.wellFounded_val_lt`: the relation of having larger value is well-founded on flows
   with values in `zmultiples d`.
 * `TauCeti.Flow.acc_augmentsTo`: every sequence of augmentation steps from a flow with values in
@@ -90,6 +92,31 @@ theorem AugmentsTo.val_add_le (hst : s ≠ t) (hcap : ∀ ⦃v w⦄ (e : Q v w),
   · exact hd.trans hb.le
   · have hk₀ : 0 < k := (zsmul_lt_zsmul_iff_left hd).1 (by simpa using hb)
     simpa using (zsmul_le_zsmul_iff_left hd).2 (by omega : (1 : ℤ) ≤ k)
+
+/-- For positive `d`, a flow whose capacities and arrow values lie in `zmultiples d` has value
+`n • d`, while the capacity of any source--sink cut is `m • d`, for natural numbers `n ≤ m`.
+In particular, taking the cut `{s}` bounds the multiplier of the flow value by that of the total
+capacity leaving the source. -/
+theorem exists_nsmul_eq_val_le_arrowSum [DecidableEq V] (hd : 0 < d)
+    (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ zmultiples d) {f : Flow cap s t}
+    (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d) {S : Finset V}
+    (hs : s ∈ S) (ht : t ∉ S) :
+    ∃ n m : ℕ, n • d = f.val ∧ m • d = arrowSum cap S Sᶜ ∧ n ≤ m := by
+  obtain ⟨k, hk⟩ := mem_zmultiples_iff.1 (arrowSum_mem hcap S Sᶜ)
+  have hcap_nonneg : 0 ≤ cap := fun v w e ↦
+    (f.mem_Icc.1 v w e).trans (f.mem_Icc.2 v w e)
+  have hk_nonneg : (0 : ℤ) ≤ k := (zsmul_le_zsmul_iff_left hd).1 <| by
+    rw [zero_zsmul, hk]
+    exact arrowSum_nonneg hcap_nonneg S Sᶜ
+  let m := k.toNat
+  have hmk : (m : ℤ) = k := Int.toNat_of_nonneg hk_nonneg
+  have hm : m • d = arrowSum cap S Sᶜ := by
+    rw [← natCast_zsmul, hmk]
+    exact hk
+  obtain ⟨n, hn⟩ := f.exists_nsmul_eq_val hd hf
+  refine ⟨n, m, hn, hm, (nsmul_le_nsmul_iff_left hd).1 ?_⟩
+  rw [hn, hm]
+  exact f.val_le_arrowSum hs ht
 
 /-- For capacities in `zmultiples d`, the relation of having larger value, `f.val < g.val`, is
 well-founded on the flows with arrow values in `zmultiples d`: their values are among the finitely
