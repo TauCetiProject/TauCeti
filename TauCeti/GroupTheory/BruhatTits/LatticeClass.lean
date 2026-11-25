@@ -11,7 +11,6 @@ public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.Algebra.Module.Submodule.Pointwise
-import Mathlib.Algebra.Order.Group.Action
 
 /-!
 # Homothety classes of lattices and their adjacency graph
@@ -173,87 +172,13 @@ theorem smulOfUnit_smul (a : Kˣ) (x : LatticeClass O K V) :
 
 section Graph
 
-/-- Multiplying a submodule by a nonzero scalar of `K` coming from `O` is multiplying it by that
-element of `O`. -/
-private theorem units_smul_eq_smul {a : Kˣ} {c : O} (h : (a : K) = algebraMap O K c)
-    (N : Submodule O V) : a • N = c • N := by
-  ext x
-  simp only [Submodule.mem_smul_pointwise_iff_exists, Units.smul_def, h, algebraMap_smul]
-
-variable [IsFractionRing O K]
-
-/-- A uniformizer of `O`, as a nonzero scalar of `K`. -/
-private noncomputable def uniformizerUnit {ϖ : O} (hϖ : Irreducible ϖ) : Kˣ :=
-  Units.mk0 (algebraMap O K ϖ) <|
-    (map_ne_zero_iff _ (IsFractionRing.injective O K)).2 hϖ.ne_zero
-
-private theorem coe_uniformizerUnit {ϖ : O} (hϖ : Irreducible ϖ) :
-    (uniformizerUnit (K := K) hϖ : K) = algebraMap O K ϖ :=
-  (rfl)
-
-/-- Powers of a uniformizer shrink submodules as the exponent grows. -/
-private theorem zpow_smul_le_zpow_smul {ϖ : O} (hϖ : Irreducible ϖ) {m n : ℤ} (h : m ≤ n)
-    (N : Submodule O V) :
-    uniformizerUnit (K := K) hϖ ^ n • N ≤ uniformizerUnit (K := K) hϖ ^ m • N := by
-  obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (sub_nonneg.2 h)
-  rw [show n = m + k by omega, zpow_add, mul_smul, zpow_natCast]
-  refine Submodule.pointwise_smul_le_pointwise_smul_iff.2 ?_
-  rw [units_smul_eq_smul (c := ϖ ^ k) (by rw [Units.val_pow_eq_pow_val, coe_uniformizerUnit,
-    map_pow])]
-  exact N.smul_le_self_of_tower _
-
-variable [IsDomain O] [IsDiscreteValuationRing O]
-
-/-- The maximal ideal multiplies a submodule as a uniformizer does. -/
-private theorem maximalIdeal_smul_eq {ϖ : O} (hϖ : Irreducible ϖ) (N : Submodule O V) :
-    maximalIdeal O • N = uniformizerUnit (K := K) hϖ • N := by
-  rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ,
-    Submodule.ideal_span_singleton_smul, units_smul_eq_smul rfl]
-
-/-- On submodules, every nonzero scalar of `K` acts as an integral power of a uniformizer, since
-it is a unit of `O` times such a power. -/
-private theorem exists_smul_eq_zpow_smul {ϖ : O} (hϖ : Irreducible ϖ) (a : Kˣ) :
-    ∃ n : ℤ, ∀ N : Submodule O V, a • N = uniformizerUnit (K := K) hϖ ^ n • N := by
-  obtain ⟨n, u, hu⟩ :=
-    IsDiscreteValuationRing.exists_units_eq_smul_zpow_of_irreducible hϖ a.ne_zero
-  have hau : a = Units.map (algebraMap O K).toMonoidHom u * uniformizerUnit hϖ ^ n := by
-    ext
-    rw [hu, Units.smul_def, Algebra.smul_def]
-    simp [coe_uniformizerUnit]
-  refine ⟨n, fun N => ?_⟩
-  rw [hau, mul_smul]
-  exact (units_smul_eq_smul (c := (u : O)) rfl _).trans
-    (Submodule.smul_eq_self_of_isUnit u.isUnit)
-
-/-- **Rigidity of the submodules between `𝔪 N` and `N`.** If `M` lies between `𝔪 N` and `N`, a
-homothety which places `M` strictly between them fixes `M`. -/
-private theorem smul_eq_self_of_lt {a : Kˣ} {N M : Submodule O V}
-    (hM : maximalIdeal O • N ≤ M) (hMN : M ≤ N) (h₁ : maximalIdeal O • N < a • M)
-    (h₂ : a • M < N) : a • M = M := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
-  obtain ⟨n, ha⟩ := exists_smul_eq_zpow_smul (V := V) hϖ a
-  set π := uniformizerUnit (K := K) hϖ
-  rw [maximalIdeal_smul_eq (K := K) hϖ] at hM h₁
-  rw [ha] at h₁ h₂ ⊢
-  rcases lt_trichotomy n 0 with hn | rfl | hn
-  · -- For `n < 0`, `ϖⁿ M` contains `ϖ⁻¹ M`, which contains `ϖ⁻¹ ϖ N = N`.
-    refine absurd h₂ (not_lt_of_ge ?_)
-    calc N = π ^ (-1 : ℤ) • π • N := by rw [zpow_neg_one, inv_smul_smul]
-      _ ≤ π ^ (-1 : ℤ) • M := Submodule.pointwise_smul_le_pointwise_smul_iff.2 hM
-      _ ≤ π ^ n • M := zpow_smul_le_zpow_smul hϖ (by omega) M
-  · rw [zpow_zero, one_smul]
-  · -- For `n > 0`, `ϖⁿ M` lies in `ϖ M`, which lies in `ϖ N`.
-    refine absurd h₁ (not_lt_of_ge ?_)
-    calc π ^ n • M ≤ π ^ (1 : ℤ) • M := zpow_smul_le_zpow_smul hϖ (by omega) M
-      _ ≤ π • N := by
-        rw [zpow_one]
-        exact Submodule.pointwise_smul_le_pointwise_smul_iff.2 hMN
+variable [IsFractionRing O K] [IsDomain O] [IsDiscreteValuationRing O]
 
 /-- No homothety places a submodule strictly between its product with the maximal ideal and
 itself. -/
 private theorem not_maximalIdeal_smul_lt_and_lt (a : Kˣ) (N : Submodule O V) :
     ¬(maximalIdeal O • N < a • N ∧ a • N < N) := fun ⟨h₁, h₂⟩ =>
-  h₂.ne (smul_eq_self_of_lt (Submodule.smul_le_right) le_rfl h₁ h₂)
+  h₂.ne (Submodule.smul_eq_self_of_maximalIdeal_smul_lt Submodule.smul_le_right le_rfl h₁ h₂)
 
 variable (O K V) in
 /-- The **adjacency graph of lattice classes** over a discrete valuation ring `O` with fraction
@@ -265,11 +190,14 @@ def graph : SimpleGraph (LatticeClass O K V) where
     maximalIdeal O • (L : Submodule O V) < M ∧ (M : Submodule O V) < L
   symm := ⟨fun _ _ ⟨L, M, hL, hM, h₁, h₂⟩ => by
     obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
+    have hϖ0 : algebraMap O K ϖ ≠ 0 :=
+      (map_ne_zero_iff _ (IsFractionRing.injective O K)).2 hϖ.ne_zero
+    have h𝔪 := Submodule.maximalIdeal_smul_eq_units_smul (V' := V) hϖ (Units.val_mk0 hϖ0)
     -- The representatives `M` and `ϖ L` of the two classes are in the opposite position.
-    refine ⟨M, uniformizerUnit (K := K) hϖ • L, hM, (mk_smul _ _).trans hL, ?_, ?_⟩
-    · rw [maximalIdeal_smul_eq (K := K) hϖ, SubMulAction.val_smul]
+    refine ⟨M, Units.mk0 _ hϖ0 • L, hM, (mk_smul _ _).trans hL, ?_, ?_⟩
+    · rw [h𝔪, SubMulAction.val_smul]
       exact Submodule.pointwise_smul_lt_pointwise_smul_iff.2 h₂
-    · rwa [SubMulAction.val_smul, ← maximalIdeal_smul_eq (K := K) hϖ]⟩
+    · rwa [SubMulAction.val_smul, ← h𝔪]⟩
   loopless := ⟨fun _ ⟨L, M, hL, hM, h₁, h₂⟩ => by
     obtain ⟨a, rfl⟩ := mk_eq_mk_iff.1 (hM.trans hL.symm)
     rw [SubMulAction.val_smul] at h₁ h₂
@@ -296,14 +224,12 @@ theorem graph_adj_mk_iff {L M : fullLattices O K V} :
   rintro ⟨L', M', hL, hM, h₁, h₂⟩
   obtain ⟨b, rfl⟩ := mk_eq_mk_iff.1 hL
   obtain ⟨c, rfl⟩ := mk_eq_mk_iff.1 hM
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
-  rw [SubMulAction.val_smul, SubMulAction.val_smul, maximalIdeal_smul_eq (K := K) hϖ] at h₁
-  rw [SubMulAction.val_smul, SubMulAction.val_smul] at h₂
-  -- Translate the chain `𝔪 (b L) ⊊ c M ⊊ b L` by `b⁻¹`.
+  rw [SubMulAction.val_smul, SubMulAction.val_smul] at h₁ h₂
+  -- Translate the chain `𝔪 (b L) = b (𝔪 L) ⊊ c M ⊊ b L` by `b⁻¹`.
   refine ⟨b⁻¹ * c, ?_, ?_⟩
-  · rw [maximalIdeal_smul_eq (K := K) hϖ, mul_smul, ← inv_smul_smul b (L : Submodule O V),
-      smul_comm _ b⁻¹]
-    exact Submodule.pointwise_smul_lt_pointwise_smul_iff.2 h₁
+  · rw [mul_smul, ← inv_smul_smul b (maximalIdeal O • (L : Submodule O V))]
+    exact Submodule.pointwise_smul_lt_pointwise_smul_iff.2
+      ((Submodule.ideal_smul_pointwise_smul _ _ _).symm.trans_lt h₁)
   · rw [mul_smul, ← inv_smul_smul b (L : Submodule O V)]
     exact Submodule.pointwise_smul_lt_pointwise_smul_iff.2 h₂
 
@@ -328,8 +254,8 @@ private theorem toNeighbor_bijective (L : fullLattices O K V) :
   · -- Two such submodules with the same class are homothetic, and the homothety fixes them.
     obtain ⟨a, ha⟩ := mk_eq_mk_iff.1 (congrArg Subtype.val h)
     have ha' : a • (M₂ : Submodule O V) = M₁ := congrArg Subtype.val ha
-    refine Subtype.ext (ha'.symm.trans
-      (smul_eq_self_of_lt M₂.property.1.le M₂.property.2.le ?_ ?_))
+    refine Subtype.ext (ha'.symm.trans (Submodule.smul_eq_self_of_maximalIdeal_smul_lt
+      M₂.property.1.le M₂.property.2.le ?_ ?_))
     · rw [ha']
       exact M₁.property.1
     · rw [ha']
@@ -367,10 +293,8 @@ theorem graph_adj_smul_iff (g : V ≃ₗ[K] V) {x y : LatticeClass O K V} :
       (graph O K V).Adj x y → (graph O K V).Adj (g • x) (g • y) from
     ⟨fun hg => by simpa using h g⁻¹ hg, h g⟩
   rintro g _ _ ⟨L, M, rfl, rfl, h₁, h₂⟩
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   refine graph_adj_mk_of_lt ?_ ?_
-  · rw [maximalIdeal_smul_eq (K := K) hϖ] at h₁ ⊢
-    simpa only [fullLattices.val_linearEquiv_smul, smul_comm (uniformizerUnit (K := K) hϖ) g,
+  · simpa only [fullLattices.val_linearEquiv_smul, Submodule.ideal_smul_pointwise_smul,
       Submodule.pointwise_smul_lt_pointwise_smul_iff] using h₁
   · simpa only [fullLattices.val_linearEquiv_smul,
       Submodule.pointwise_smul_lt_pointwise_smul_iff] using h₂

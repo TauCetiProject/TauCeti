@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Algebra.Order.Group.Action
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
@@ -25,7 +26,7 @@ inverse both preserve it.
 
 Membership in a pointwise translate under a group action is tested by the inverse action, and a
 group acts on submodules by order automorphisms. Pointwise actions of commuting monoids on
-submodules commute.
+submodules commute, and commute with multiplication by an ideal.
 For a subalgebra `C`, two translates `s C` and `t C` by ambient units agree exactly when
 `s⁻¹ t` is a unit of `C`.
 
@@ -47,6 +48,10 @@ this file to restate both.
   automorphisms.
 * `Submodule.pointwiseSMulCommClass`: pointwise actions of commuting monoids on submodules
   commute.
+* `Submodule.ideal_smul_pointwise_smul`: multiplying by an ideal commutes with a linear
+  translation.
+* `Submodule.units_smul_eq_smul_of_val_eq`: a unit of an `R`-algebra coming from `c : R`
+  translates submodules as `c` does.
 * `Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff`: translates `s C` and `t C` by ambient
   units agree exactly when `s⁻¹ t` is a unit of `C`.
 * `Submodule.pow_smul_mem_pow_smul`: the ambient-scalar bridge — an element of `M₀` scaled by
@@ -98,6 +103,20 @@ instance pointwiseSMulCommClass {R M α β : Type*} [Semiring R] [AddCommMonoid 
     congr 1
     ext x
     exact smul_comm a b x⟩
+
+/-- Multiplying by an ideal commutes with translating by an element acting linearly. -/
+theorem ideal_smul_pointwise_smul {R M G : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Monoid G] [DistribMulAction G M] [SMulCommClass G R M] (I : Ideal R) (g : G)
+    (N : Submodule R M) : I • (g • N) = g • (I • N) := by
+  simp only [pointwise_smul_def, map_smul'']
+
+/-- Translating a submodule by a unit of an `R`-algebra `A` which comes from `c : R` is
+multiplying it by `c`. -/
+theorem units_smul_eq_smul_of_val_eq {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M] {a : Aˣ} {c : R}
+    (h : (a : A) = algebraMap R A c) (N : Submodule R M) : a • N = c • N := by
+  ext x
+  simp only [mem_smul_pointwise_iff_exists, Units.smul_def, h, algebraMap_smul]
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommMonoid M] [Module A M]
 
