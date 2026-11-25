@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Topology.JordanCurve.Basic
-public import TauCeti.Topology.Order.Compact
+public import TauCeti.Topology.Order.Interval
 
 /-!
 # Rotational invariant curves of annulus maps
@@ -34,15 +34,14 @@ The definition asks only `f '' C = C` of an arbitrary self-map `f`. We record:
   (`TauCeti.IsRotationalInvariantCurve.of_injective`, `TauCeti.isRotationalInvariantCurve_iff`);
 * conjugating `f` by a homeomorphism `e` of the annulus carries rotational invariant curves of `f`
   to rotational invariant curves of `e ∘ f ∘ e⁻¹`
-  (`TauCeti.IsRotationalInvariantCurve.image_homeomorph`, with the characteristic form
+  (`TauCeti.IsRotationalInvariantCurve.image_homeomorph`, with the iff form
   `TauCeti.isRotationalInvariantCurve_image_homeomorph_iff`); for instance a fibre reflection
   `I`, an involution, carries rotational invariant curves of `f` to those of `I ∘ f ∘ I`;
 * a rotational invariant curve is a Jordan curve
   (`TauCeti.IsRotationalInvariantCurve.isJordanCurve`), hence nonempty and compact, so if it lies
   in an open band `a < φ y < b`, for `φ : Y → ℝ` with `φ ∘ Prod.snd` continuous on the curve, it
   lies in a closed band `a' ≤ φ y ≤ b'` with `a < a' ≤ b' < b`
-  (`TauCeti.IsRotationalInvariantCurve.exists_subset_Icc`, from the general
-  `IsCompact.exists_mapsTo_Icc_of_mapsTo_Ioo`).
+  (`TauCeti.IsRotationalInvariantCurve.exists_subset_Icc`, from `IsCompact.exists_Icc_between`).
 
 ## References
 
@@ -137,8 +136,13 @@ that `φ ∘ Prod.snd` is continuous on the curve, lies in a closed band `a' ≤
 theorem exists_subset_Icc (hC : IsRotationalInvariantCurve f C) {φ : Y → ℝ}
     (hφ : ContinuousOn (fun x : AddCircle ℓ × Y => φ x.2) C) {a b : ℝ}
     (hCab : ∀ x ∈ C, φ x.2 ∈ Ioo a b) :
-    ∃ a' b', a < a' ∧ a' ≤ b' ∧ b' < b ∧ ∀ x ∈ C, φ x.2 ∈ Icc a' b' :=
-  hC.isCompact.exists_mapsTo_Icc_of_mapsTo_Ioo hC.nonempty hφ hCab
+    ∃ a' b', a < a' ∧ a' ≤ b' ∧ b' < b ∧ ∀ x ∈ C, φ x.2 ∈ Icc a' b' := by
+  obtain ⟨c, d, hK, hcd⟩ := (hC.isCompact.image_of_continuousOn hφ).exists_Icc_between
+    (hC.nonempty.image _) (image_subset_iff.2 hCab)
+  obtain ⟨x, hx⟩ := hC.nonempty
+  have hlt : c < d := (hK ⟨x, hx, rfl⟩).1.trans (hK ⟨x, hx, rfl⟩).2
+  exact ⟨c, d, (hcd ⟨le_rfl, hlt.le⟩).1, hlt.le, (hcd ⟨hlt.le, le_rfl⟩).2,
+    fun y hy => Ioo_subset_Icc_self (hK ⟨y, hy, rfl⟩)⟩
 
 end IsRotationalInvariantCurve
 
@@ -152,10 +156,8 @@ theorem isRotationalInvariantCurve_iff [T2Space Y] :
   obtain ⟨e, he⟩ := hC.exists_not_nullhomotopic
   exact ⟨hC.image_eq, _, jordanParam_injective e, range_jordanParam e, he⟩
 
-/-- Being a rotational invariant curve is invariant under conjugation by a homeomorphism `e` of
-the annulus. This is the characteristic form of
-`TauCeti.IsRotationalInvariantCurve.image_homeomorph`: the backward direction is that lemma
-applied to `e.symm`. -/
+/-- For a homeomorphism `e` of the annulus, `e '' C` is a rotational invariant curve of
+`e ∘ f ∘ e⁻¹` if and only if `C` is a rotational invariant curve of `f`. -/
 @[simp]
 theorem isRotationalInvariantCurve_image_homeomorph_iff (e : AddCircle ℓ × Y ≃ₜ AddCircle ℓ × Y) :
     IsRotationalInvariantCurve (e ∘ f ∘ e.symm) (e '' C) ↔ IsRotationalInvariantCurve f C := by
