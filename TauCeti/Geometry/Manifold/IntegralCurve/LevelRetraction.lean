@@ -38,10 +38,6 @@ collar projection whose fibres are preserved by the involution.
 
 ## Main results
 
-* `TauCeti.isMIntegralCurve_globalFlow_neg`: running the flow of `v` backwards gives integral
-  curves of `-v`.
-* `TauCeti.apply_globalFlow_eq_sub_of_forall_mem`: a flow line staying for times in `(-ε, ε)` where
-  `df(v) = -1` lowers `f` at unit speed for those times.
 * `TauCeti.exists_contMDiff_retraction_zeroLevel`: a smooth retraction of a neighbourhood onto a
   regular compact zero level.
 * `TauCeti.exists_contMDiff_retraction_zeroLevel_of_involutive`: for a smooth involution reversing
@@ -62,54 +58,6 @@ open Function Set
 open scoped ContDiff Manifold
 
 namespace TauCeti
-
-section Flow
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I 1 M]
-  [BoundarylessManifold I M]
-  {v : (x : M) → TangentSpace I x}
-  (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
-  (hcomplete : IsCompleteVectorField v)
-
-include hv in
-/-- Running the flow of a complete `C¹` field `v` backwards gives integral curves of `-v`. -/
-theorem isMIntegralCurve_globalFlow_neg (x : M) :
-    IsMIntegralCurve (fun t ↦ globalFlow v hv hcomplete (-t) x) (-v) := by
-  have h := (isMIntegralCurve_globalFlow hv hcomplete x).comp_mul (-1)
-  convert h using 1
-  · ext t
-    simp only [comp_apply, mul_neg_one]
-  · ext y
-    simp only [Pi.neg_apply, Pi.smul_apply, neg_smul, one_smul]
-
-/-- **Unit-speed descent for small times.** Let `v` be a complete `C¹` field with `df(v) = -1` on a
-set `U`. If the flow line of `x` stays in `U` for all times in `(-ε, ε)`, then `f` decreases at unit
-speed along it for those times: `f (φ s x) = f x - s`. -/
-theorem apply_globalFlow_eq_sub_of_forall_mem {f : M → ℝ} {U : Set M}
-    (hvU : ∀ y ∈ U, mvfderiv I f y (v y) = -1) {x : M} {ε : ℝ}
-    (hxU : ∀ s ∈ Ioo (-ε) ε, globalFlow v hv hcomplete s x ∈ U) {s : ℝ} (hs : s ∈ Ioo (-ε) ε) :
-    f (globalFlow v hv hcomplete s x) = f x - s := by
-  set γ : ℝ → M := fun u ↦ globalFlow v hv hcomplete u x
-  -- Along the flow line, `f ∘ γ + id` has zero derivative on the interval `(-ε, ε)`.
-  have hderiv : ∀ u ∈ Ioo (-ε) ε, HasDerivAt (fun w ↦ f (γ w) + w) 0 u := by
-    intro u hu
-    have huU : γ u ∈ U := hxU u hu
-    have hmd : MDifferentiableAt I 𝓘(ℝ) f (γ u) :=
-      mdifferentiableAt_of_mvfderiv_apply_ne_zero (by rw [hvU _ huU]; norm_num)
-    have h := Manifold.hasDerivAt_comp_curve hmd (isMIntegralCurve_globalFlow hv hcomplete x u)
-    rw [hvU _ huU] at h
-    have h' := h.add (hasDerivAt_id' u)
-    rwa [neg_add_cancel] at h'
-  have h0 : (0 : ℝ) ∈ Ioo (-ε) ε := ⟨by linarith [hs.1, hs.2], by linarith [hs.1, hs.2]⟩
-  have hconst := isOpen_Ioo.is_const_of_deriv_eq_zero (convex_Ioo (-ε) ε).isPreconnected
-    (fun w hw ↦ (hderiv w hw).differentiableAt.differentiableWithinAt)
-    (fun w hw ↦ (hderiv w hw).deriv) hs h0
-  simp only [γ, Flow.map_zero_apply, add_zero] at hconst
-  linarith
-
-end Flow
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [T2Space M] [IsManifold 𝓘(ℝ, E) ∞ M]
@@ -139,15 +87,14 @@ private theorem exists_retraction_of_vectorField [CompleteSpace E]
       obtain ⟨ht, hy⟩ := hp
       rw [mem_singleton_iff] at ht
       subst ht
-      change globalFlow X hX1 hcomplete 0 y ∈ U
-      rw [Flow.map_zero_apply]
+      rw [mem_preimage, Flow.map_zero_apply]
       exact hKU hy
   obtain ⟨ε, hε, hεu⟩ := Metric.isOpen_iff.1 hu 0 (h0u rfl)
   refine ⟨fun x ↦ globalFlow X hX1 hcomplete (f x) x, hφ.comp (hf.prodMk contMDiff_id),
     fun _ ↦ rfl, fun x hx ↦ by simp only [hx, Flow.map_zero_apply],
     V ∩ f ⁻¹' Ioo (-ε) ε, hV.inter (isOpen_Ioo.preimage hf.continuous),
-    fun x hx ↦ ⟨hKV hx, by simpa only [mem_preimage, show f x = 0 from hx, mem_Ioo, neg_lt_zero,
-      and_self] using hε⟩, fun x hx ↦ ?_⟩
+    fun x hx ↦ ⟨hKV hx, by simpa only [mem_preimage, mem_singleton_iff.1 (mem_preimage.1 hx),
+      mem_Ioo, neg_lt_zero, and_self] using hε⟩, fun x hx ↦ ?_⟩
   have hxU : ∀ s ∈ Ioo (-ε) ε, globalFlow X hX1 hcomplete s x ∈ U := fun s hs ↦
     huV (mk_mem_prod (hεu (by rwa [Metric.mem_ball, Real.dist_eq, sub_zero, abs_lt])) hx.1)
   have h := apply_globalFlow_eq_sub_of_forall_mem hX1 hcomplete hXU hxU hx.2
@@ -244,14 +191,15 @@ theorem exists_contMDiff_retraction_zeroLevel_of_involutive (hf : ContMDiff 𝓘
     isCompleteVectorField_of_isCompact_of_eq_zero_off hX'1 hC' hX'C
   obtain ⟨ρ, hρ, hρφ, hρ0, hρW⟩ := exists_retraction_of_vectorField hf hK hX's hcomplete
     (hU.inter (hU.preimage τ.continuous))
-    (fun x hx ↦ ⟨hKU hx, hKU (show f (τ x) = 0 by rw [hfτ, show f x = 0 from hx, neg_zero])⟩)
+    (fun x hx ↦ ⟨hKU hx, hKU (by rw [mem_preimage, mem_singleton_iff, hfτ,
+      mem_singleton_iff.1 (mem_preimage.1 hx), neg_zero])⟩)
     hX'U
   refine ⟨ρ, hρ, hρ0, fun x ↦ ?_, hρW⟩
   -- `τ` carries the backward flow line of `x` to the forward flow line of `τ x`.
   have hcurve : IsMIntegralCurve (τ ∘ fun t ↦ globalFlow X' hX'1 hcomplete (-t) x) X' := by
     rw [isMIntegralCurve_iff_isMIntegralCurveOn] at *
     exact (τ.isMIntegralCurveOn_comp_iff hn hτX').2
-      ((isMIntegralCurve_globalFlow_neg hX'1 hcomplete x).isMIntegralCurveOn _)
+      ((isMIntegralCurve_globalFlow hX'1 hcomplete x).comp_neg.isMIntegralCurveOn _)
   have h := globalFlow_eq_of_isMIntegralCurve hX'1 hcomplete hcurve (f (τ x))
   simp only [comp_apply, neg_zero, Flow.map_zero_apply, hfτ, neg_neg] at h
   rw [hρφ, hρφ, hfτ]

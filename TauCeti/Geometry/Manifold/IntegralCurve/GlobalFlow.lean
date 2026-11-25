@@ -34,6 +34,8 @@ use is a compact invariant region of a field that blows up elsewhere, such as th
 * `TauCeti.isMIntegralCurve_globalFlow`: its orbits are integral curves of the field.
 * `TauCeti.apply_globalFlow_eq_sub`: a function `f` with `df(v) = -1` on a band decreases at unit
   speed along the flow while the flow stays in the band;
+  `TauCeti.apply_globalFlow_eq_sub_of_forall_mem`: the same for all small times, forward and
+  backward, along a flow line staying where `df(v) = -1`;
   `TauCeti.mvfderiv_apply_eq_one_of_eventually_apply_globalFlow_eq_add`: conversely, a function
   translated at unit speed by the flow has `df(v) = 1`, so
   (`TauCeti.isRegularValue_of_apply_globalFlow_eq_add`) the values it is translated through are
@@ -110,6 +112,20 @@ theorem isMIntegralCurve_globalFlow (x : M) :
   exact isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv
     (hcomplete.maximalIntegralCurveInterval_eq_univ x)
 
+/-- Where the flow line of `x` lies in a set on which `df(v) = -1`, the function
+`u ↦ f (ψ_u x) + u` has derivative `0`, for the flow `ψ` of `v`. -/
+theorem hasDerivAt_apply_globalFlow_add {f : M → ℝ} {U : Set M}
+    (hvU : ∀ y ∈ U, mvfderiv I f y (v y) = -1) {x : M} {u : ℝ}
+    (hu : globalFlow v hv hcomplete u x ∈ U) :
+    HasDerivAt (fun w ↦ f (globalFlow v hv hcomplete w x) + w) 0 u := by
+  set γ : ℝ → M := fun w ↦ globalFlow v hv hcomplete w x
+  have hmd : MDifferentiableAt I 𝓘(ℝ) f (γ u) :=
+    mdifferentiableAt_of_mvfderiv_apply_ne_zero (by rw [hvU _ hu]; norm_num)
+  have h := Manifold.hasDerivAt_comp_curve hmd (isMIntegralCurve_globalFlow hv hcomplete x u)
+  rw [hvU _ hu] at h
+  have h' := h.add (hasDerivAt_id' u)
+  rwa [neg_add_cancel] at h'
+
 /-- **Unit-speed descent along a flow.** Let `v` be a complete `C¹` vector field with
 `df(v) = -1` on an open set `U` containing the band `a ≤ f ≤ b`. If `f x ≤ b`, then `f` decreases
 at unit speed along the flow line of `x` until it reaches the level `a`. -/
@@ -131,15 +147,8 @@ theorem apply_globalFlow_eq_sub {f : M → ℝ} {a b : ℝ} (hf : Continuous f) 
   have hu' : f (γ u) = f x - u := hu
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (hU.preimage hγ) u
     (hband _ (by rw [hu']; linarith) (by rw [hu']; linarith))
-  have hderiv : ∀ s ∈ Metric.ball u ε, HasDerivAt (fun w ↦ f (γ w) + w) 0 s := by
-    intro s hs
-    have hsU : γ s ∈ U := hball hs
-    have hmd : MDifferentiableAt I 𝓘(ℝ) f (γ s) :=
-      mdifferentiableAt_of_mvfderiv_apply_ne_zero (by rw [hvU _ hsU]; norm_num)
-    have h := Manifold.hasDerivAt_comp_curve hmd (isMIntegralCurve_globalFlow hv hcomplete x s)
-    rw [hvU _ hsU] at h
-    have h' := h.add (hasDerivAt_id' s)
-    rwa [neg_add_cancel] at h'
+  have hderiv : ∀ s ∈ Metric.ball u ε, HasDerivAt (fun w ↦ f (γ w) + w) 0 s := fun s hs ↦
+    hasDerivAt_apply_globalFlow_add hv hcomplete hvU (hball hs)
   have hconst : ∀ s ∈ Metric.ball u ε, f (γ s) + s = f (γ u) + u := fun s hs ↦
     Metric.isOpen_ball.is_const_of_deriv_eq_zero (convex_ball u ε).isPreconnected
       (fun w hw ↦ (hderiv w hw).differentiableAt.differentiableWithinAt)
@@ -147,6 +156,22 @@ theorem apply_globalFlow_eq_sub {f : M → ℝ} {a b : ℝ} (hf : Continuous f) 
   filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds u hε)] with s hs
   simp only [S, mem_ofPred_eq]
   linarith [hconst s hs]
+
+/-- **Unit-speed descent for small times.** Let `v` be a complete `C¹` vector field with
+`df(v) = -1` on a set `U`. If the flow line of `x` stays in `U` for all times in `(-ε, ε)`, then `f`
+decreases at unit speed along it for those times, forward and backward: `f (ψ_s x) = f x - s`. -/
+theorem apply_globalFlow_eq_sub_of_forall_mem {f : M → ℝ} {U : Set M}
+    (hvU : ∀ y ∈ U, mvfderiv I f y (v y) = -1) {x : M} {ε : ℝ}
+    (hxU : ∀ s ∈ Ioo (-ε) ε, globalFlow v hv hcomplete s x ∈ U) {s : ℝ} (hs : s ∈ Ioo (-ε) ε) :
+    f (globalFlow v hv hcomplete s x) = f x - s := by
+  -- `f (ψ_s x) + s` has zero derivative on the interval `(-ε, ε)`, which contains `0`.
+  have h0 : (0 : ℝ) ∈ Ioo (-ε) ε := ⟨by linarith [hs.1, hs.2], by linarith [hs.1, hs.2]⟩
+  have hconst := isOpen_Ioo.is_const_of_deriv_eq_zero (convex_Ioo (-ε) ε).isPreconnected
+    (fun w hw ↦ (hasDerivAt_apply_globalFlow_add hv hcomplete hvU (hxU w hw)).differentiableAt
+      |>.differentiableWithinAt)
+    (fun w hw ↦ (hasDerivAt_apply_globalFlow_add hv hcomplete hvU (hxU w hw)).deriv) hs h0
+  rw [Flow.map_zero_apply, add_zero] at hconst
+  linarith
 
 /-- **A function translated by a flow has unit derivative along the field.** If `f` is
 differentiable at `x` and `f (ψ_t x) = f x + t` for all times `t` near `0`, where `ψ` is the flow
