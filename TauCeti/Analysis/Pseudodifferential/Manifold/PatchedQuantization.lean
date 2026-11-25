@@ -61,7 +61,7 @@ def patchedQuantization
     (hS : LocallyFinite fun i ↦ (e i).symm '' (tsupport (φ i) ∪ tsupport (ψ i))) :
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ :=
-  locallyFiniteSum (fun i ↦ (e i).chartQuantization (he i) (φ i) (ψ i) (a i)) fun f ↦
+  ContMDiffMap.locallyFiniteSum (fun i ↦ (e i).chartQuantization (he i) (φ i) (ψ i) (a i)) fun f ↦
     hS.subset fun i ↦ (subset_tsupport _).trans
       (((e i).tsupport_chartQuantization_subset (he i) _ _ _ f).trans
         (image_mono subset_union_left))
@@ -74,7 +74,7 @@ theorem patchedQuantization_apply
     (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
     patchedQuantization he φ ψ a hS f x =
       ∑ᶠ i, (e i).chartQuantization (he i) (φ i) (ψ i) (a i) f x :=
-  locallyFiniteSum_apply f x
+  ContMDiffMap.locallyFiniteSum_apply f x
 
 /-- **Patched quantization.** For charts `eᵢ` of the maximal atlas, classical symbols `aᵢ` of order
 `m` and cutoffs `φᵢ`, `ψᵢ` with compact supports in the chart targets, such that the chart preimages

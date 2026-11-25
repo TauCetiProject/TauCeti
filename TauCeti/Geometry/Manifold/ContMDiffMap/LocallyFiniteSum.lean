@@ -13,9 +13,9 @@ public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 Let `Pᵢ` be linear maps from a module `V` into the `C^n` functions on a manifold `M` with values in
 a normed algebra `A`, such that for every `f` the supports of the outputs `Pᵢ f` form a locally
 finite family. Then `f ↦ ∑ᶠ i, Pᵢ f` is again a linear map into the `C^n` functions
-(`TauCeti.locallyFiniteSum`): the sum is smooth because near every point only finitely many terms
-are nonzero. Such sums glue operators along a partition of unity, and patch local operators built
-in charts into operators on `M`.
+(`ContMDiffMap.locallyFiniteSum`): the sum is smooth because near every point only finitely many
+terms are nonzero. Such sums glue operators along a partition of unity, and patch local operators
+built in charts into operators on `M`.
 
 The operators are linear over any commutative semiring `R` acting on the `C^n` functions through an
 algebra structure, which covers both the scalar field of `M` and the complex scalars acting on
@@ -23,10 +23,10 @@ complex-valued functions on a real manifold.
 
 ## Main results
 
-* `TauCeti.locallyFiniteSum`: the locally finite sum `f ↦ ∑ᶠ i, Pᵢ f` of linear maps into the
-  `C^n` functions.
-* `TauCeti.locallyFiniteSum_apply_eq_sum`: at a point of a compact set `K`, the sum is the finite
-  sum over the indices whose output supports `Sᵢ` meet `K`.
+* `ContMDiffMap.locallyFiniteSum`: the locally finite sum `f ↦ ∑ᶠ i, Pᵢ f` of linear maps into
+  the `C^n` functions.
+* `ContMDiffMap.locallyFiniteSum_apply_eq_sum`: at a point of a compact set `K`, the sum is the
+  finite sum over the indices whose output supports `Sᵢ` meet `K`.
 -/
 
 public section
@@ -36,7 +36,7 @@ noncomputable section
 open Set
 open scoped ContDiff Manifold
 
-namespace TauCeti
+namespace ContMDiffMap
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
@@ -85,4 +85,4 @@ theorem locallyFiniteSum_apply_eq_sum {S : ι → Set M} (hS : LocallyFinite S)
   finsum_eq_sum_of_support_subset _ fun i hi ↦
     (hS.finite_nonempty_inter_compact hK).mem_toFinset.2 ⟨x, hsupp i f (subset_tsupport _ hi), hx⟩
 
-end TauCeti
+end ContMDiffMap

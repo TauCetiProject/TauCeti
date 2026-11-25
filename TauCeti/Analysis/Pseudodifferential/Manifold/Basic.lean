@@ -50,7 +50,7 @@ values on compactly supported functions, and hence by its chart compressions.
   scalar multiples, products with smooth functions on either side and local operators
   (`TauCeti.IsProperlySupported.of_local`) are properly supported.
 * `TauCeti.isProperlySupported_locallyFiniteSum`: the locally finite sum
-  `TauCeti.locallyFiniteSum P hP` of operators `f ↦ ∑ᵢ Pᵢ f` is properly supported when the
+  `ContMDiffMap.locallyFiniteSum P hP` of operators `f ↦ ∑ᵢ Pᵢ f` is properly supported when the
   outputs of `Pᵢ` lie in compact sets `Sᵢ` forming a locally finite family and each `Pᵢ` only sees
   its input near `Sᵢ`.
 * `TauCeti.classicalPseudodifferentialOperators m`: the properly supported operators all of whose
@@ -59,9 +59,9 @@ values on compactly supported functions, and hence by its chart compressions.
 * `TauCeti.classicalPseudodifferentialOperators_le`: an operator of order `m - k`, `k ∈ ℕ`, has
   order `m`.
 * `TauCeti.locallyFiniteSum_mem_classicalPseudodifferentialOperators`: a locally finite sum
-  `TauCeti.locallyFiniteSum P hP = ∑ᵢ Pᵢ` of classical pseudodifferential operators of order `m`
-  is one, provided each `Pᵢ` has outputs supported in a compact set `Sᵢ` and only sees its input
-  near `Sᵢ`, with `(Sᵢ)` locally finite. Near a compact set only finitely many `Pᵢ` matter.
+  `ContMDiffMap.locallyFiniteSum P hP = ∑ᵢ Pᵢ` of classical pseudodifferential operators of
+  order `m` is one, provided each `Pᵢ` has outputs supported in a compact set `Sᵢ` and only sees its
+  input near `Sᵢ`, with `(Sᵢ)` locally finite. Near a compact set only finitely many `Pᵢ` matter.
 * `TauCeti.id_mem_classicalPseudodifferentialOperators` and
   `TauCeti.mulLeft_mem_classicalPseudodifferentialOperators`: the identity and multiplication by a
   smooth function have order `0`.
@@ -197,7 +197,7 @@ seeing its input near `Sᵢ`, is properly supported. -/
 theorem isProperlySupported_locallyFiniteSum [T2Space M] (hS : LocallyFinite S)
     (hSc : ∀ i, IsCompact (S i)) (hsupp : ∀ i f, tsupport (P i f) ⊆ S i)
     (hloc : ∀ i f, (∀ᶠ y in 𝓝ˢ (S i), f y = 0) → P i f = 0) :
-    IsProperlySupported (locallyFiniteSum P hP) := by
+    IsProperlySupported (ContMDiffMap.locallyFiniteSum P hP) := by
   refine isProperlySupported_iff.2 fun K hK ↦ ?_
   -- Only the finitely many `Pᵢ` with `Sᵢ` meeting `K` see functions supported in `K` or act at
   -- points of `K`, so `K'` is the union of their sets `Sᵢ`.
@@ -207,7 +207,7 @@ theorem isProperlySupported_locallyFiniteSum [T2Space M] (hS : LocallyFinite S)
       (I.finite_toSet.isClosed_biUnion fun i _ ↦ (hSc i).isClosed)
     obtain ⟨i, hi⟩ : ∃ i, P i f x ≠ 0 := by
       by_contra! h
-      exact hx (by rw [locallyFiniteSum_apply, finsum_eq_zero_of_forall_eq_zero h])
+      exact hx (by rw [ContMDiffMap.locallyFiniteSum_apply, finsum_eq_zero_of_forall_eq_zero h])
     -- `f` vanishes off `K`, so `Pᵢ f = 0` unless `Sᵢ` meets `K`.
     have hiI : i ∈ I := by
       by_contra hiI
@@ -217,7 +217,7 @@ theorem isProperlySupported_locallyFiniteSum [T2Space M] (hS : LocallyFinite S)
         hiI ((hS.finite_nonempty_inter_compact hK).mem_toFinset.2 ⟨y, hy, hyK⟩)) fun y hy ↦ ?_
       exact image_eq_zero_of_notMem_tsupport fun h ↦ hy (hf h)
     exact mem_biUnion hiI (hsupp i f (subset_tsupport _ hi))
-  · rw [locallyFiniteSum_apply_eq_sum hS hsupp hK f hx]
+  · rw [ContMDiffMap.locallyFiniteSum_apply_eq_sum hS hsupp hK f hx]
     refine Finset.sum_eq_zero fun i hi ↦ ?_
     rw [hloc i f (hf.filter_mono (nhdsSet_mono (subset_biUnion_of_mem hi))),
       ContMDiffMap.coe_zero, Pi.zero_apply]
@@ -302,7 +302,7 @@ theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyF
     (hSc : ∀ i, IsCompact (S i)) (hPm : ∀ i, P i ∈ classicalPseudodifferentialOperators m)
     (hsupp : ∀ i f, tsupport (P i f) ⊆ S i)
     (hloc : ∀ i f, (∀ᶠ y in 𝓝ˢ (S i), f y = 0) → P i f = 0) :
-    locallyFiniteSum P hP ∈ classicalPseudodifferentialOperators m := by
+    ContMDiffMap.locallyFiniteSum P hP ∈ classicalPseudodifferentialOperators m := by
   classical
   refine mem_classicalPseudodifferentialOperators_iff.2
     ⟨isProperlySupported_locallyFiniteSum hS hSc hsupp hloc, fun e he φ ψ ↦ ?_⟩
@@ -315,7 +315,7 @@ theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyF
   simp only [ha, OpenPartialHomeomorph.complexChartCompression_apply, ← Finset.smul_sum]
   by_cases hx : φ x = 0
   · simp [hx]
-  rw [locallyFiniteSum_apply_eq_sum hS hsupp hK _ ⟨x, subset_tsupport _ hx, rfl⟩]
+  rw [ContMDiffMap.locallyFiniteSum_apply_eq_sum hS hsupp hK _ ⟨x, subset_tsupport _ hx, rfl⟩]
 
 end LocallyFiniteSum
 

@@ -88,12 +88,12 @@ private theorem locallyFinite_support_glue (g : C^∞⟮I, M; ℝ⟯) :
 /-- The operator `g ↦ ∑ᶠ i, T i (ρ i * g)` glued from the operators `T i` along a smooth partition
 of unity `ρ`, as a locally finite sum. -/
 private def glue : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ :=
-  locallyFiniteSum (fun i ↦ T i ∘ₗ mulLeft ℝ (ρ i)) fun g ↦ by
+  ContMDiffMap.locallyFiniteSum (fun i ↦ T i ∘ₗ mulLeft ℝ (ρ i)) fun g ↦ by
     simpa only [comp_apply, mulLeft_apply] using locallyFinite_support_glue ρ T hT g
 
 private theorem glue_apply (g : C^∞⟮I, M; ℝ⟯) (y : M) :
     glue ρ T hT g y = ∑ᶠ i, T i (ρ i * g) y := by
-  simp only [glue, locallyFiniteSum_apply, comp_apply, mulLeft_apply]
+  simp only [glue, ContMDiffMap.locallyFiniteSum_apply, comp_apply, mulLeft_apply]
 
 /-- Gluing operators of order at most `m` gives an operator of order at most `m`: if `g` lies in
 `I_x ^ (m + 1)`, so does each `ρ i * g`, and every piece vanishes at `x`. -/
