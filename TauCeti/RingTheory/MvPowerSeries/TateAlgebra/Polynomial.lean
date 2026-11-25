@@ -47,7 +47,7 @@ constants and variables, and commutes with bounded coefficient maps by
 * `TauCeti.MvPowerSeries.tendsto_truncTotal_atTop`: in finitely many variables, total-degree
   truncations converge in the Gauss norm.
 * `TauCeti.MvPowerSeries.denseRange_polynomialToRestricted`: the polynomials are dense.
-* `TauCeti.MvPowerSeries.isRestricted_subring_ringHom_ext_of_continuous'`: continuous ring
+* `TauCeti.MvPowerSeries.isRestricted_subring_ringHom_ext_of_continuous`: continuous ring
   homomorphisms out of `R{X/c}` are determined by the constants and the variables.
 * `TauCeti.MvPowerSeries.hasBasis_polynomialGaussUniformSpace`: the entourages of the Gauss
   uniform structure on polynomials are given by the Gauss norm of differences.
@@ -117,9 +117,8 @@ theorem denseRange_polynomialToRestricted : DenseRange (polynomialToRestricted (
     (Eventually.of_forall fun _ ↦ Set.mem_range_self _)
 
 /-- **Continuous ring homomorphisms out of `R{X/c}` are determined by the constants and the
-variables**, at arbitrary positive polyradii `c`, since the polynomials are dense. For unit
-radii, see `TauCeti.MvPowerSeries.isRestricted_subring_ringHom_ext_of_continuous`. -/
-theorem isRestricted_subring_ringHom_ext_of_continuous' {T : Type*} [Semiring T]
+variables**, at arbitrary positive polyradii `c`, since the polynomials are dense. -/
+theorem isRestricted_subring_ringHom_ext_of_continuous {T : Type*} [Semiring T]
     [TopologicalSpace T] [T2Space T] {ψ₁ ψ₂ : IsRestricted.subring (R := R) c →+* T}
     (h₁ : Continuous ψ₁) (h₂ : Continuous ψ₂)
     (hC : ∀ r, ψ₁ (algebraMap R _ r) = ψ₂ (algebraMap R _ r))

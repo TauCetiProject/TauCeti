@@ -67,7 +67,7 @@ public section
 namespace TauCeti.Dagger.FringePresentation
 
 open Filter Topology _root_.MvPowerSeries Polynomial
-open TauCeti.MvPowerSeries (isRestricted_subring_ringHom_ext_of_continuous')
+open TauCeti.MvPowerSeries (isRestricted_subring_ringHom_ext_of_continuous)
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A B : Type*} [CommRing A] [Algebra K A] [CommRing B] [Algebra K B]
@@ -198,7 +198,7 @@ private theorem eventually_exists_ofStage_comp_eq_comp_ofRestricted
     AlgHom.ext fun f ↦ toCompletion_injective (AlgHom.congr_fun h f)
   have hΦX (i : Fin P.n) : Φ ⟨X i, isRestricted_X _ i⟩ = β i :=
     RingHom.restrictedEval₂OfPowBound_X _ β hφ hD i
-  exact AlgHom.toRingHom_injective (isRestricted_subring_ringHom_ext_of_continuous'
+  exact AlgHom.toRingHom_injective (isRestricted_subring_ringHom_ext_of_continuous
     ((Q.continuous_toCompletion_comp_ofStage ρ').comp hΦ)
     (continuous_toCompletion_comp_ofRestricted _ ρ.property.1) (fun r ↦ by simp)
     fun i ↦ by simp [hΦX, hβ, washnitzerAlgebra.ofRestricted_X])

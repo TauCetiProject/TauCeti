@@ -46,7 +46,7 @@ open MvPowerSeries
 open TauCeti.Huber
 open TauCeti.MvPowerSeries (restrictedMap coe_restrictedMap norm_restrictedMap_le
   continuous_restrictedMap polynomialToRestricted restrictedMap_polynomialToRestricted
-  isRestricted_subring_ringHom_ext_of_continuous')
+  isRestricted_subring_ringHom_ext_of_continuous)
 
 variable {k : ℕ} {R S : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S]
@@ -128,7 +128,7 @@ theorem eq_restrictedEval₂OfBound (ψ : IsRestricted.subring (R := R) c →+* 
     (hψ : Continuous ψ) (hC : ∀ r, ψ (algebraMap R _ r) = φ r)
     (hX : ∀ i, ψ ⟨X i, isRestricted_X c i⟩ = a i) :
     ψ = restrictedEval₂OfBound φ a hφ ha :=
-  isRestricted_subring_ringHom_ext_of_continuous' hψ (continuous_restrictedEval₂OfBound φ a hφ ha)
+  isRestricted_subring_ringHom_ext_of_continuous hψ (continuous_restrictedEval₂OfBound φ a hφ ha)
     (by simp [hC]) (by simp [hX])
 
 include hφ ha in
@@ -299,7 +299,7 @@ theorem eq_restrictedEval₂OfPowBound (ψ : IsRestricted.subring (R := R) c →
     (hψ : Continuous ψ) (hC : ∀ r, ψ (algebraMap R _ r) = φ r)
     (hX : ∀ i, ψ ⟨X i, isRestricted_X c i⟩ = a i) :
     ψ = restrictedEval₂OfPowBound φ a hφ hpow :=
-  isRestricted_subring_ringHom_ext_of_continuous' hψ
+  isRestricted_subring_ringHom_ext_of_continuous hψ
     (continuous_restrictedEval₂OfPowBound φ a hφ hpow) (by simp [hC]) (by simp [hX])
 
 end PowerBound
