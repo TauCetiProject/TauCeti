@@ -99,6 +99,14 @@ theorem pairingCovector_eq_zero_iff_mem_orthogonal (σ : SmoothTwoForm J N) (hn 
     simpa using congr($h u)
   · simpa using h _ ⟨u, rfl⟩
 
+/-- For an isotropic embedding, the covector `σ(df ·, df z)` vanishes for every tangent vector `z`
+of the source. -/
+theorem pairingCovector_mfderiv_eq_zero (hf : hσ.IsIsotropicMap I f) (x : M)
+    (z : TangentSpace I x) :
+    f.pairingCovector σ x (mfderiv I J f x z) = 0 :=
+  ContinuousLinearMap.ext fun u ↦ (f.pairingCovector_apply_apply σ x _ u).trans
+    ((SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff.1 hf) x u z)
+
 /-- For an isotropic embedding, the covector `σ(df ·, v)` vanishes for `v` tangent to the image. -/
 theorem pairingCovector_eq_zero_of_mem_tangentRange (hf : hσ.IsIsotropicMap I f) (hn : n ≠ 0)
     (x : M) {v : TangentSpace J (f x)} (hv : v ∈ f.tangentRange x hn) :

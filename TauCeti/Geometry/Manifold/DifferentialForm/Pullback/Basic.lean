@@ -310,6 +310,16 @@ theorem mpullback_apply_congr {f : M → M'} {ω η : RoughForm I' M' F k} {x : 
   ext v
   simp [mpullback_apply, h]
 
+/-- If `f x = y` and `mfderiv I I' f x = A`, the pullback of `ω` along `f` at `x` is `ω y`
+precomposed with `A`. -/
+theorem mpullback_apply_eq_of_mfderiv_eq {f : M → M'} {x : M} {y : M'} (hy : f x = y)
+    {A : TangentSpace I x →L[ℝ] TangentSpace I' y} (hA : mfderiv I I' f x = A)
+    (ω : RoughForm I' M' F k) :
+    mpullback I I' f ω x = (ω y).compContinuousLinearMap A := by
+  subst hy
+  rw [← hA]
+  rfl
+
 /-- If the derivative of `f` at `x` is surjective, two forms have the same pullback along `f` at
 `x` exactly when they agree at `f x`. -/
 theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}

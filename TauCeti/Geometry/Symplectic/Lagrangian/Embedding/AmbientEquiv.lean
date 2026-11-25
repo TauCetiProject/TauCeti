@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.Empty
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.TubularNeighborhood.PrescribedDifferential
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
@@ -175,6 +176,24 @@ theorem isInvertible_inducedMetricFlat (i : SmoothEmbedding J I ∞ Q M) {σ : S
   exact ⟨(LinearEquiv.ofBijective _ hbij).toContinuousLinearEquiv,
     ContinuousLinearMap.ext fun _ ↦ rfl⟩
 
+/-- When `J_M` is `σ`-compatible, `(inducedMetricFlat σ J_M q).inverse` is a left inverse to
+`inducedMetricFlat σ J_M q`. -/
+@[simp]
+theorem inverse_inducedMetricFlat_inducedMetricFlat (i : SmoothEmbedding J I ∞ Q M)
+    {σ : SmoothTwoForm I M} {J_M : SmoothAlmostComplexStructure I M} (hJM : σ.Compatible J_M)
+    (q : Q) (z : TangentSpace J q) :
+    (i.inducedMetricFlat σ J_M q).inverse (i.inducedMetricFlat σ J_M q z) = z :=
+  (i.isInvertible_inducedMetricFlat hJM q).inverse_apply_self z
+
+/-- When `J_M` is `σ`-compatible, `(inducedMetricFlat σ J_M q).inverse` is a right inverse to
+`inducedMetricFlat σ J_M q`. -/
+@[simp]
+theorem inducedMetricFlat_inverse_inducedMetricFlat (i : SmoothEmbedding J I ∞ Q M)
+    {σ : SmoothTwoForm I M} {J_M : SmoothAlmostComplexStructure I M} (hJM : σ.Compatible J_M)
+    (q : Q) (α : TangentSpace J q →L[ℝ] ℝ) :
+    i.inducedMetricFlat σ J_M q ((i.inducedMetricFlat σ J_M q).inverse α) = α :=
+  (i.isInvertible_inducedMetricFlat hJM q).self_apply_inverse α
+
 /-- `inducedMetricFlat` is a smooth section of `Hom(TQ, T^*Q)`. -/
 theorem contMDiff_inducedMetricFlat [IsManifold J ∞ Q] (i : SmoothEmbedding J I ∞ Q M)
     (σ : SmoothTwoForm I M) (J_M : SmoothAlmostComplexStructure I M) :
@@ -232,9 +251,8 @@ theorem pairingCovector_isotropicLift (i : SmoothEmbedding J I ∞ Q M) {σ : Sm
     {J_M : SmoothAlmostComplexStructure I M} (hJM : σ.Compatible J_M) (q : Q)
     (α : TangentSpace J q →L[ℝ] ℝ) :
     i.pairingCovector σ q (i.isotropicLift σ J_M q α) = α := by
-  obtain ⟨e, he⟩ := i.isInvertible_inducedMetricFlat hJM q
-  rw [isotropicLift_apply, ← inducedMetricFlat_apply, ← he, ContinuousLinearMap.inverse_equiv]
-  exact e.apply_symm_apply α
+  rw [isotropicLift_apply, ← inducedMetricFlat_apply,
+    i.inducedMetricFlat_inverse_inducedMetricFlat hJM]
 
 /-- Pairing a pushed-forward tangent vector `di_q u` with `isotropicLift α` under `σ` gives
 `α u`. -/
@@ -245,6 +263,37 @@ theorem eval₂_mfderiv_isotropicLift (i : SmoothEmbedding J I ∞ Q M) {σ : Sm
     σ.eval₂ (i q) (mfderiv J I i q u) (i.isotropicLift σ J_M q α) = α u := by
   rw [← i.pairingCovector_apply_apply, i.pairingCovector_isotropicLift hJM]
 
+/-- For an isotropic embedding `i` and a `σ`-compatible almost complex structure `J_M`, the
+coordinate map `w ↦ (γ_q⁻¹ (σ_(i q)(di_q ·, J_M w)), σ_(i q)(di_q ·, w))` is a left inverse to
+`(u, α) ↦ di_q u + isotropicLift α`. -/
+theorem leftInverse_coprod_isotropicLift (i : SmoothEmbedding J I ∞ Q M) {σ : SmoothTwoForm I M}
+    {hσ : σ.IsNondegenerate} (hi : hσ.IsIsotropicMap J i)
+    {J_M : SmoothAlmostComplexStructure I M} (hJM : σ.Compatible J_M) (q : Q) :
+    LeftInverse
+      (((i.inducedMetricFlat σ J_M q).inverse.comp
+          ((i.pairingCovector σ q).comp (J_M.toEndomorphism (i q)))).prod
+        (i.pairingCovector σ q))
+      ((mfderiv J I i q).coprod (i.isotropicLift σ J_M q)) := fun ⟨u, α⟩ ↦ by
+  simp [← inducedMetricFlat_apply, i.inverse_inducedMetricFlat_inducedMetricFlat hJM,
+    i.pairingCovector_mfderiv_eq_zero hi, i.pairingCovector_isotropicLift hJM]
+
+/-- For a coisotropic embedding `i` and a `σ`-compatible almost complex structure `J_M`, the
+coordinate map `w ↦ (γ_q⁻¹ (σ_(i q)(di_q ·, J_M w)), σ_(i q)(di_q ·, w))` is injective. -/
+theorem prod_pairingCovector_injective (i : SmoothEmbedding J I ∞ Q M) {σ : SmoothTwoForm I M}
+    {hσ : σ.IsNondegenerate} (hi : hσ.IsCoisotropicMap J i)
+    {J_M : SmoothAlmostComplexStructure I M} (hJM : σ.Compatible J_M) (q : Q) :
+    Function.Injective
+      (((i.inducedMetricFlat σ J_M q).inverse.comp
+          ((i.pairingCovector σ q).comp (J_M.toEndomorphism (i q)))).prod
+        (i.pairingCovector σ q)) := by
+  refine (injective_iff_map_eq_zero _).2 fun w hw ↦ ?_
+  obtain ⟨u₀, rfl⟩ := (i.mem_tangentRange_iff q (by simp) w).1
+    (i.mem_tangentRange_of_pairingCovector_eq_zero hi (by simp) q (congrArg Prod.snd hw))
+  have hu₀ : u₀ = 0 := by
+    simpa [← inducedMetricFlat_apply, i.inverse_inducedMetricFlat_inducedMetricFlat hJM] using
+      congrArg Prod.fst hw
+  simp [hu₀]
+
 /-- **Explicit polarization of the ambient tangent space along a Lagrangian embedding.** Given a
 Lagrangian embedding `i : Q → M` and a `σ`-compatible almost complex structure `J_M`, the map
 `(u, α) ↦ di_q u + isotropicLift α` is a continuous linear equivalence
@@ -254,43 +303,15 @@ def lagrangianPolarizationEquiv (i : SmoothEmbedding J I ∞ Q M) {σ : SmoothTw
     {hσ : σ.IsNondegenerate} (hi : hσ.IsLagrangianMap J i)
     {J_M : SmoothAlmostComplexStructure I M} (hJM : σ.Compatible J_M) (q : Q) :
     (TangentSpace J q × (TangentSpace J q →L[ℝ] ℝ)) ≃L[ℝ] TangentSpace I (i q) :=
-  let L := (mfderiv J I i q).coprod (i.isotropicLift σ J_M q)
   let R := (((i.inducedMetricFlat σ J_M q).inverse.comp
       ((i.pairingCovector σ q).comp (J_M.toEndomorphism (i q)))).prod
     (i.pairingCovector σ q))
-  have hleft : LeftInverse R L := fun ⟨u, α⟩ ↦ by
-    obtain ⟨e, he⟩ := i.isInvertible_inducedMetricFlat hJM q
-    have hpair_di (z : TangentSpace J q) : i.pairingCovector σ q (mfderiv J I i q z) = 0 := by
-      ext v
-      simpa using (SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff.1 hi.isIsotropicMap) q v z
-    have hsnd : i.pairingCovector σ q (L (u, α)) = α := by
-      simp [L, hpair_di u, i.pairingCovector_isotropicLift hJM q α]
-    have hfst_pair : i.pairingCovector σ q (J_M (i q) (L (u, α))) =
-        i.inducedMetricFlat σ J_M q u := by
-      have hJadd : J_M (i q) (L (u, α)) =
-          J_M (i q) (mfderiv J I i q u) + J_M (i q) (i.isotropicLift σ J_M q α) :=
-        map_add (J_M.toEndomorphism (i q)) (mfderiv J I i q u) (i.isotropicLift σ J_M q α)
-      rw [hJadd, apply_isotropicLift, map_add, map_neg, hpair_di, neg_zero, add_zero,
-        inducedMetricFlat_apply]
-    have hfst : (i.inducedMetricFlat σ J_M q).inverse
-        (i.pairingCovector σ q (J_M (i q) (L (u, α)))) = u := by
-      rw [hfst_pair, ← he, ContinuousLinearMap.inverse_equiv]
-      exact e.symm_apply_apply u
-    exact Prod.ext hfst hsnd
-  have hR_inj : Function.Injective R := (injective_iff_map_eq_zero R).2 fun w hw ↦ by
-    obtain ⟨e, he⟩ := i.isInvertible_inducedMetricFlat hJM q
-    have hw2 : i.pairingCovector σ q w = 0 := congrArg Prod.snd hw
-    obtain ⟨u₀, hu₀⟩ := (i.mem_tangentRange_iff q (by simp) w).1
-      (i.mem_tangentRange_of_pairingCovector_eq_zero hi.isCoisotropicMap (by simp) q hw2)
-    subst hu₀
-    have hw1 : (i.inducedMetricFlat σ J_M q).inverse (i.inducedMetricFlat σ J_M q u₀) = 0 :=
-      congrArg Prod.fst hw
-    rw [← he, ContinuousLinearMap.inverse_equiv] at hw1
-    have hu₀0 : u₀ = 0 := by simpa using congrArg e hw1
-    simp [hu₀0]
-  ContinuousLinearEquiv.ofContinuousLinearMap L R
-    (ContinuousLinearMap.ext fun w ↦ hR_inj (hleft (R w)))
-    (ContinuousLinearMap.ext hleft)
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    ((mfderiv J I i q).coprod (i.isotropicLift σ J_M q)) R
+    (ContinuousLinearMap.ext fun w ↦
+      i.prod_pairingCovector_injective hi.isCoisotropicMap hJM q
+        (i.leftInverse_coprod_isotropicLift hi.isIsotropicMap hJM q (R w)))
+    (ContinuousLinearMap.ext (i.leftInverse_coprod_isotropicLift hi.isIsotropicMap hJM q))
 
 /-- Evaluating `lagrangianPolarizationEquiv` adds `di_q x.1` and `isotropicLift x.2`. -/
 theorem lagrangianPolarizationEquiv_apply (i : SmoothEmbedding J I ∞ Q M) {σ : SmoothTwoForm I M}
@@ -361,12 +382,13 @@ theorem eval₂_lagrangianPolarizationEquiv (i : SmoothEmbedding J I ∞ Q M) {�
     σ.eval₂ (i q) (i.lagrangianPolarizationEquiv hi hJM q x)
         (i.lagrangianPolarizationEquiv hi hJM q y) =
       strongDualCotangentSymplecticForm x y := by
-  have hiso := (SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff.1 hi.isIsotropicMap) q
   have hswap (u : TangentSpace J q) (α : TangentSpace J q →L[ℝ] ℝ) :
       σ.eval₂ (i q) (i.isotropicLift σ J_M q α) (mfderiv J I i q u) = -α u := by
     rw [SmoothBundleForm.eval₂_swap, i.eval₂_mfderiv_isotropicLift hJM]
   simp only [lagrangianPolarizationEquiv_apply, SmoothBundleForm.eval₂_add_left,
-    SmoothBundleForm.eval₂_add_right, hiso, hswap, i.eval₂_mfderiv_isotropicLift hJM,
+    SmoothBundleForm.eval₂_add_right, ← i.pairingCovector_apply_apply,
+    i.pairingCovector_mfderiv_eq_zero hi.isIsotropicMap, zero_apply,
+    i.pairingCovector_isotropicLift hJM, hswap,
     i.eval₂_isotropicLift_isotropicLift hi.isIsotropicMap hJM.invariant,
     strongDualCotangentSymplecticForm_apply]
   ring
@@ -709,25 +731,20 @@ theorem IsLagrangianEmbedding.exists_continuousLinearEquiv_compContinuousLinearM
           (A q : TangentSpace I (i q) →L[ℝ] TangentSpace I' (j (f q))) = σ.val (i q) := by
   by_cases hQ : Nonempty Q
   · obtain ⟨q₀⟩ := hQ
-    let i_emb : SmoothEmbedding J I ∞ Q M :=
-      ⟨⟨i, hi.isImmersion.contMDiff⟩, hi.isSmoothEmbedding⟩
-    let j_emb : SmoothEmbedding J' I' ∞ Q' N :=
-      ⟨⟨j, hj.isImmersion.contMDiff⟩, hj.isSmoothEmbedding⟩
-    have := i_emb.finiteDimensional_tangentSpace q₀ (by simp)
-    have : FiniteDimensional ℝ F := (tangentSpaceCastModel J q₀).toLinearEquiv.finiteDimensional
-    have := j_emb.finiteDimensional_tangentSpace (f q₀) (by simp)
+    have : FiniteDimensional ℝ F :=
+      finiteDimensional_of_injective_mfderiv (hi.isImmersion.mfderiv_injective (by simp) q₀)
     have : FiniteDimensional ℝ F' :=
-      (tangentSpaceCastModel J' (f q₀)).toLinearEquiv.finiteDimensional
+      finiteDimensional_of_injective_mfderiv (hj.isImmersion.mfderiv_injective (by simp) (f q₀))
     obtain ⟨J_M, hJM⟩ := hσ.exists_compatible
     obtain ⟨J_N, hJN⟩ := hτ.exists_compatible
-    exact ⟨SmoothEmbedding.ambientLagrangianEquiv i_emb j_emb hi.isLagrangianMap
-        hj.isLagrangianMap hJM hJN f,
-      SmoothEmbedding.contMDiffAt_inTangentCoordinates_ambientLagrangianEquiv i_emb j_emb
+    exact ⟨SmoothEmbedding.ambientLagrangianEquiv hi.toSmoothEmbedding hj.toSmoothEmbedding
         hi.isLagrangianMap hj.isLagrangianMap hJM hJN f,
-      SmoothEmbedding.ambientLagrangianEquiv_comp_mfderiv i_emb j_emb hi.isLagrangianMap
-        hj.isLagrangianMap hJM hJN f,
-      SmoothEmbedding.compContinuousLinearMap_ambientLagrangianEquiv i_emb j_emb
-        hi.isLagrangianMap hj.isLagrangianMap hJM hJN f⟩
+      SmoothEmbedding.contMDiffAt_inTangentCoordinates_ambientLagrangianEquiv
+        hi.toSmoothEmbedding hj.toSmoothEmbedding hi.isLagrangianMap hj.isLagrangianMap hJM hJN f,
+      SmoothEmbedding.ambientLagrangianEquiv_comp_mfderiv hi.toSmoothEmbedding hj.toSmoothEmbedding
+        hi.isLagrangianMap hj.isLagrangianMap hJM hJN f,
+      SmoothEmbedding.compContinuousLinearMap_ambientLagrangianEquiv hi.toSmoothEmbedding
+        hj.toSmoothEmbedding hi.isLagrangianMap hj.isLagrangianMap hJM hJN f⟩
   · have : IsEmpty Q := not_nonempty_iff.1 hQ
     exact ⟨isEmptyElim, isEmptyElim, isEmptyElim, isEmptyElim⟩
 
@@ -756,10 +773,8 @@ theorem IsLagrangianEmbedding.exists_diffeomorph_opens_mpullback_apply_eq_subset
     have : IsEmpty (⊥ : Opens N) := ⟨fun y ↦ y.property⟩
     exact ⟨⊥, ⊥, Diffeomorph.ofIsEmpty, empty_subset O_M, empty_subset O_N, fun q ↦ isEmptyElim q⟩
   · obtain ⟨q₀⟩ := id hQ
-    let i_emb : SmoothEmbedding J I ∞ Q M :=
-      ⟨⟨i, hi.isImmersion.contMDiff⟩, hi.isSmoothEmbedding⟩
-    have := i_emb.finiteDimensional_tangentSpace q₀ (by simp)
-    have : FiniteDimensional ℝ F := (tangentSpaceCastModel J q₀).toLinearEquiv.finiteDimensional
+    have : FiniteDimensional ℝ F :=
+      finiteDimensional_of_injective_mfderiv (hi.isImmersion.mfderiv_injective (by simp) q₀)
     have : LocallyCompactSpace H := I.locallyCompactSpace
     have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
     have : LocallyCompactSpace H' := I'.locallyCompactSpace
@@ -772,28 +787,21 @@ theorem IsLagrangianEmbedding.exists_diffeomorph_opens_mpullback_apply_eq_subset
       rintro _ ⟨q, rfl⟩
       exact hjO (mem_range_self (f q))
     have hAi' (q : Q) :
-        (A q : TangentSpace I (i q) →L[ℝ] TangentSpace I' (j (f q))) ∘L mfderiv J I i_emb q =
+        (A q : TangentSpace I (i q) →L[ℝ] TangentSpace I' (j (f q))) ∘L
+            mfderiv J I hi.toSmoothEmbedding q =
           mfderiv J I' (j ∘ f) q :=
       (hAi q).trans (mfderiv_comp q (hj.isImmersion.contMDiff.mdifferentiableAt (by simp))
         (f.contMDiff.mdifferentiableAt (by simp))).symm
     obtain ⟨Ψ, hsrc, hU, hV, hval, hd⟩ :=
-      i_emb.exists_partialDiffeomorph_mfderiv_eq hg hgi hA (fun q ↦ ⟨A q, rfl⟩) hAi'
+      hi.toSmoothEmbedding.exists_partialDiffeomorph_mfderiv_eq hg hgi hA (fun q ↦ ⟨A q, rfl⟩) hAi'
         hOM hiO hON hgO
     refine ⟨⟨Ψ.source, Ψ.open_source⟩, ⟨Ψ.target, Ψ.open_target⟩,
       Ψ.toDiffeomorphSourceTarget, hU, hV, fun q ↦ ?_⟩
     have hq : i q ∈ Ψ.source := hsrc (mem_range_self q)
     refine ⟨hq, (Ψ.toDiffeomorphSourceTarget_apply_coe ⟨i q, hq⟩).trans (hval q), ?_⟩
-    simp only [SmoothForm.coe_mpullback, mpullback_toDiffeomorphSourceTarget_apply Ψ (by simp),
-      mpullback_subtype_val_apply]
-    -- Both sides live in the common model space `E' [⋀^Fin 2]→L[ℝ] ℝ`.
-    change TauCeti.mpullback I I' Ψ τ.val (i q) = σ.val (i q)
-    rw [← hAform q]
-    ext v
-    rw [TauCeti.mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply]
-    have hvec : (fun l ↦ (mfderiv I I' Ψ (i q) (v l) : E')) = fun l ↦ A q (v l) :=
-      funext fun l ↦ DFunLike.congr_fun (hd q) (v l)
-    exact (congrArg (fun y : N ↦ (τ.val y : (Fin 2 → E') → ℝ)
-      (fun l ↦ mfderiv I I' Ψ (i q) (v l))) (hval q)).trans (congrArg (τ.val (j (f q))) hvec)
+    simp only [SmoothForm.coe_mpullback]
+    exact mpullback_toDiffeomorphSourceTarget_apply_eq_of_mfderiv_eq Ψ (by simp) hq (hval q)
+      (hd q) (hAform q)
 
 end TwoEmbeddings
 

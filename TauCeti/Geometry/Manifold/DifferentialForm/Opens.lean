@@ -46,9 +46,10 @@ some partial diffeomorphism of the ambient manifold fixing `K` pulls forms back 
 also when `U` is empty (`TauCeti.exists_partialDiffeomorph_mpullback_apply_eq_of_opens`). A partial
 diffeomorphism, viewed as a diffeomorphism between its source and target, pulls back the restriction
 of a form to its target as it pulls back the form itself
-(`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`). So a construction carried out on an open
-submanifold, such as a flow defined only where some condition on the forms holds, transfers to the
-ambient manifold.
+(`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`,
+`TauCeti.mpullback_toDiffeomorphSourceTarget_apply_eq_of_mfderiv_eq`). So a construction carried out
+on an open submanifold, such as a flow defined only where some condition on the forms holds,
+transfers to the ambient manifold.
 
 On a product `U × M` with an open subset `U` of a normed space, the differential of the first
 coordinate reads the first coordinate of a tangent vector
@@ -469,5 +470,23 @@ theorem mpullback_toDiffeomorphSourceTarget_apply {E' H' M' : Type*} [NormedAddC
     (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero), hcomp,
     mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
       (Ψ.mdifferentiableAt hn x.property), mpullback_subtype_val_apply]
+
+omit [IsManifold I 1 M] in
+/-- **Pointwise pullback agreement along `PartialDiffeomorph.toDiffeomorphSourceTarget`.** If
+`Ψ x = y` at `x ∈ Ψ.source`, `mfderiv I I' Ψ x = A`, and `A` pulls `τ y` back to `σ x`, then
+pulling the restriction of `τ` to `Ψ.target` back along `Ψ.toDiffeomorphSourceTarget` agrees at
+`⟨x, hx⟩` with the restriction of `σ` to `Ψ.source`. -/
+theorem mpullback_toDiffeomorphSourceTarget_apply_eq_of_mfderiv_eq {E' H' M' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] {n : WithTop ℕ∞}
+    (Ψ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0) {σ : RoughForm I M F k}
+    {τ : RoughForm I' M' F k} {x : M} (hx : x ∈ Ψ.source) {y : M'} (hy : Ψ x = y)
+    {A : TangentSpace I x →L[ℝ] TangentSpace I' y} (hA : mfderiv I I' Ψ x = A)
+    (hform : (τ y).compContinuousLinearMap A = σ x) :
+    mpullback I I' Ψ.toDiffeomorphSourceTarget
+        (mpullback I' I' (Subtype.val : (⟨Ψ.target, Ψ.open_target⟩ : Opens M') → M') τ) ⟨x, hx⟩ =
+      mpullback I I (Subtype.val : (⟨Ψ.source, Ψ.open_source⟩ : Opens M) → M) σ ⟨x, hx⟩ := by
+  rw [mpullback_toDiffeomorphSourceTarget_apply Ψ hn, mpullback_subtype_val_apply]
+  exact (mpullback_apply_eq_of_mfderiv_eq hy hA τ).trans hform
 
 end TauCeti

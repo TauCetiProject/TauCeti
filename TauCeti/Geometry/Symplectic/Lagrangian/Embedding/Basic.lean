@@ -17,7 +17,8 @@ public import TauCeti.Geometry.Symplectic.Lagrangian.Rescale
 A Lagrangian embedding is a smooth embedding whose tangent images are Lagrangian.
 Unlike a Lagrangian immersion it is a homeomorphism onto its image, so it parametrizes an
 embedded submanifold and excludes self-intersections. The definition uses the existing
-smooth-immersion, topological-embedding and Lagrangian tangent-image predicates.
+smooth-immersion, topological-embedding and Lagrangian tangent-image predicates, and bundles into a
+`SmoothEmbedding` via `IsLagrangianEmbedding.toSmoothEmbedding`.
 
 Reparametrization by a diffeomorphism, transport by a symplectomorphism, products, restriction
 to an open subset of the source and nonzero rescaling of the form preserve Lagrangian embeddings,
@@ -61,6 +62,24 @@ structure IsLagrangianEmbedding (f : N → M) : Prop where
 theorem IsLagrangianEmbedding.isSmoothEmbedding (h : hσ.IsLagrangianEmbedding J f) :
     Manifold.IsSmoothEmbedding J I ∞ f :=
   ⟨h.isImmersion, h.isEmbedding⟩
+
+/-- Bundle a Lagrangian embedding as a `SmoothEmbedding`. -/
+@[expose]
+def IsLagrangianEmbedding.toSmoothEmbedding (h : hσ.IsLagrangianEmbedding J f) :
+    SmoothEmbedding J I ∞ N M :=
+  ⟨⟨f, h.isImmersion.contMDiff⟩, h.isSmoothEmbedding⟩
+
+/-- The function underlying `IsLagrangianEmbedding.toSmoothEmbedding` is the original map. -/
+@[simp]
+theorem IsLagrangianEmbedding.coe_toSmoothEmbedding (h : hσ.IsLagrangianEmbedding J f) :
+    ⇑h.toSmoothEmbedding = f :=
+  (rfl)
+
+/-- Evaluating `IsLagrangianEmbedding.toSmoothEmbedding` applies the original map. -/
+@[simp]
+theorem IsLagrangianEmbedding.toSmoothEmbedding_apply (h : hσ.IsLagrangianEmbedding J f) (x : N) :
+    h.toSmoothEmbedding x = f x :=
+  (rfl)
 
 /-- Among smooth embeddings, the Lagrangian condition is precisely the tangent-image condition. -/
 @[simp]
