@@ -185,7 +185,9 @@ theorem isUnramifiedAt_iff_of_isMaximal [PerfectField F]
   have := hQ'.isPrime
   obtain ⟨σ, hσ⟩ := GaloisRep.exists_inertiaGroup_eq_map_conj Q Q' (hQv.trans hQ'v.symm)
   rw [hσ, Subgroup.map_le_iff_le_comap]
-  exact fun g hg ↦ (MonoidHom.normal_ker ρ.toRepresentation).conj_mem g (h hg) σ
+  intro g hg
+  rw [Subgroup.mem_comap, MonoidHom.coe_ofClass, MulAut.conj_apply]
+  exact (MonoidHom.normal_ker ρ.toRepresentation).conj_mem g (h hg) σ
 
 /-- **`isUnramifiedAt_iff_exists`**: over a number field, `ρ` is unramified at `v` exactly when the
 inertia group at some maximal ideal of the integral closure of `𝓞 F` in `F^alg` above `v` acts
@@ -208,6 +210,11 @@ in `S`. Typically `S` is finite. -/
 def IsUnramifiedOutside (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A M)
     (S : Set (HeightOneSpectrum (𝓞 F))) : Prop :=
   ρ.ramificationSet ⊆ S
+
+/-- `ρ` is unramified outside `S` exactly when its ramification set is contained in `S`. -/
+theorem isUnramifiedOutside_iff_ramificationSet_subset {S : Set (HeightOneSpectrum (𝓞 F))} :
+    ρ.IsUnramifiedOutside S ↔ ρ.ramificationSet ⊆ S :=
+  Iff.rfl
 
 /-- `ρ` is unramified outside `S` exactly when it is unramified at every finite place not in `S`. -/
 theorem isUnramifiedOutside_iff {S : Set (HeightOneSpectrum (𝓞 F))} :
@@ -235,18 +242,19 @@ theorem IsUnramifiedOutside.of_ker_le {B P : Type*} [Semiring B] [AddCommMonoid 
 @[simp]
 theorem isUnramifiedOutside_prod_iff {S : Set (HeightOneSpectrum (𝓞 F))} :
     (ρ.prod ρ').IsUnramifiedOutside S ↔ ρ.IsUnramifiedOutside S ∧ ρ'.IsUnramifiedOutside S := by
-  simp only [IsUnramifiedOutside, ramificationSet_prod, Set.union_subset_iff]
+  simp only [isUnramifiedOutside_iff_ramificationSet_subset, ramificationSet_prod,
+    Set.union_subset_iff]
 
 /-- Isomorphic representations are unramified outside the same sets of places. -/
 theorem Iso.isUnramifiedOutside_iff (e : Iso ρ ρ') {S : Set (HeightOneSpectrum (𝓞 F))} :
     ρ.IsUnramifiedOutside S ↔ ρ'.IsUnramifiedOutside S := by
-  rw [IsUnramifiedOutside, IsUnramifiedOutside, e.ramificationSet_eq]
+  simp only [isUnramifiedOutside_iff_ramificationSet_subset, e.ramificationSet_eq]
 
 /-- The trivial representation is unramified outside every set of places. -/
 @[simp]
 theorem isUnramifiedOutside_trivial (S : Set (HeightOneSpectrum (𝓞 F))) :
     (trivial (Field.absoluteGaloisGroup F) A M).IsUnramifiedOutside S := by
-  simp [IsUnramifiedOutside]
+  simp [isUnramifiedOutside_iff_ramificationSet_subset]
 
 /-- An equivariant quotient of a representation unramified outside `S` is unramified outside `S`. -/
 theorem IsUnramifiedOutside.of_surjective {S : Set (HeightOneSpectrum (𝓞 F))}

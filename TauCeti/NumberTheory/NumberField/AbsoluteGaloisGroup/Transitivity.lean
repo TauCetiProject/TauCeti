@@ -55,11 +55,10 @@ instance isInvariant_integralClosure [PerfectField F] :
 
 variable (F) in
 /-- The action of `G_F` on `O` is continuous for the discrete topology on `O`. -/
-theorem continuousSMul_integralClosure :
-    letI : TopologicalSpace (integralClosure (𝓞 F) (AlgebraicClosure F)) := ⊥
+theorem continuousSMul_integralClosure
+    [TopologicalSpace (integralClosure (𝓞 F) (AlgebraicClosure F))]
+    [DiscreteTopology (integralClosure (𝓞 F) (AlgebraicClosure F))] :
     ContinuousSMul (Field.absoluteGaloisGroup F) (integralClosure (𝓞 F) (AlgebraicClosure F)) := by
-  let _ : TopologicalSpace (integralClosure (𝓞 F) (AlgebraicClosure F)) := ⊥
-  have : DiscreteTopology (integralClosure (𝓞 F) (AlgebraicClosure F)) := ⟨rfl⟩
   refine continuousSMul_iff_stabilizer_isOpen.2 fun x ↦ ?_
   have h : (MulAction.stabilizer (Field.absoluteGaloisGroup F) x :
       Set (Field.absoluteGaloisGroup F)) =
@@ -86,7 +85,7 @@ theorem exists_inertiaGroup_eq_map_conj [PerfectField F]
     (P Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))) [P.IsPrime] [Q.IsPrime]
     (hPQ : P.under (𝓞 F) = Q.under (𝓞 F)) :
     ∃ σ : Field.absoluteGaloisGroup F,
-      inertiaGroup F Q = (inertiaGroup F P).map (MulAut.conj σ).toMonoidHom := by
+      inertiaGroup F Q = (inertiaGroup F P).map (MulAut.conj σ) := by
   obtain ⟨σ, rfl⟩ := exists_smul_eq_of_under_eq P Q hPQ
   exact ⟨σ, Ideal.inertia_smul σ P⟩
 
