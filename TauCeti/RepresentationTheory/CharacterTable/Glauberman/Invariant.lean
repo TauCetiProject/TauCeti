@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.SemidirectProduct
+public import TauCeti.GroupTheory.SemidirectProduct
 public import TauCeti.RepresentationTheory.CharacterTable.Automorphism
 public import TauCeti.RepresentationTheory.Induction.Inertia
 import TauCeti.RepresentationTheory.CharacterTable.Determined
@@ -35,15 +35,15 @@ an invariant character from `Γ` to `Γ ⋊ S`:
 * `TauCeti.invariantIrreducibleCharacters`: the invariant irreducible characters `Irr_S(Γ)`.
 * `TauCeti.coe_mem_invariantIrreducibleCharacters_iff`: `Irr_S(Γ)` is the fixed set of the action
   of `S` on the irreducible characters through `MulAut Γ`.
-* `TauCeti.invariantIrreducibleCharacters_range_toMulAut` and
-  `FixedPoints.subgroup_range_toMulAut`: both `Irr_S(Γ)` and `C_Γ(S)` only depend on the image of
-  `S` in `MulAut Γ`, so the kernel of the action can be divided out.
+* `TauCeti.invariantIrreducibleCharacters_range_toMulAut`: `Irr_S(Γ)` only depends on the image of
+  `S` in `MulAut Γ`, so the kernel of the action can be divided out. The same holds for `C_Γ(S)`
+  (`FixedPoints.subgroup_range_toMulAut` in `TauCeti.GroupTheory.GroupAction.FixedPoints`).
 * `Representation.character_mem_invariantIrreducibleCharacters_iff`: over a field of
   characteristic zero and for finite `Γ`, the character of an irreducible representation `ρ` is
   invariant exactly when `ρ` is equivalent to each of its twists by elements of `S`.
 * `TauCeti.inertia_eq_top_iff_forall_character_smul_eq`: for a representation `A` of the kernel
-  of `Γ ⋊ S → S`, its inertia group is the whole semidirect product exactly when its character,
-  read on `Γ`, is `S`-invariant.
+  of `Γ ⋊ S → S`, identified with `Γ` by `SemidirectProduct.mulEquivKerRightHom`, its inertia
+  group is the whole semidirect product exactly when its character, read on `Γ`, is `S`-invariant.
 
 ## References
 
@@ -78,6 +78,7 @@ variable {k : Type u} {S : Type v} {Γ : Type w} [Field k] [Group S] [Group Γ]
   [MulDistribMulAction S Γ]
 
 /-- Membership in `TauCeti.invariantIrreducibleCharacters` unfolded. -/
+@[simp]
 theorem mem_invariantIrreducibleCharacters_iff {χ : Γ → k} :
     χ ∈ invariantIrreducibleCharacters k S Γ ↔
       χ ∈ irreducibleCharacters k Γ ∧ ∀ (s : S) (g : Γ), χ (s • g) = χ g :=
@@ -107,7 +108,7 @@ theorem invariantIrreducibleCharacters_range_toMulAut :
     invariantIrreducibleCharacters k (MulDistribMulAction.toMulAut S Γ).range Γ =
       invariantIrreducibleCharacters k S Γ := by
   ext χ
-  simp [mem_invariantIrreducibleCharacters_iff, Subgroup.smul_def]
+  simp [Subgroup.smul_def]
 
 section Twist
 
@@ -132,39 +133,26 @@ end Twist
 
 section Inertia
 
-/-- The inclusion of `Γ` into the kernel of the projection `Γ ⋊ S → S`. -/
-private abbrev inlKer : Γ →* (rightHom : Γ ⋊[MulDistribMulAction.toMulAut S Γ] S →* S).ker :=
-  inl.codRestrict _ fun g ↦ MonoidHom.mem_ker.2 (rightHom_inl g)
-
-private theorem inlKer_surjective : Function.Surjective (inlKer (S := S) (Γ := Γ)) := by
-  rintro ⟨x, hx⟩
-  refine ⟨x.left, Subtype.ext ?_⟩
-  rw [MonoidHom.mem_ker, rightHom_eq_right] at hx
-  simpa [hx] using inl_left_mul_inr_right x
-
-/-- Conjugating by `inr s` acts on the copy of `Γ` in `Γ ⋊ S` as `s⁻¹`. -/
-private theorem inv_inr_mul_inl_mul_inr (s : S) (g : Γ) :
-    (inr s)⁻¹ * (inl g : Γ ⋊[MulDistribMulAction.toMulAut S Γ] S) * inr s = inl (s⁻¹ • g) := by
-  simp [← map_inv, ← inl_aut_inv]
-
 variable [CharZero k] [Finite Γ]
 
 /-- **Invariance as full inertia in the semidirect product.** In `Γ ⋊ S`, the copy of `Γ` is the
-kernel of the projection onto `S`. For a finite group `Γ` and a field of characteristic zero, a
-representation `A` of that kernel has the whole semidirect product as its inertia group exactly
-when its character `χ`, read on `Γ`, satisfies `χ(s • g) = χ(g)` for all `s` and `g`. -/
+kernel of the projection onto `S` (`SemidirectProduct.mulEquivKerRightHom`). For a finite group `Γ`
+and a field of characteristic zero, a representation `A` of that kernel has the whole semidirect
+product as its inertia group exactly when its character `χ`, read on `Γ`, satisfies
+`χ(s • g) = χ(g)` for all `s` and `g`. -/
 theorem inertia_eq_top_iff_forall_character_smul_eq
     (A : FDRep k (rightHom : Γ ⋊[MulDistribMulAction.toMulAut S Γ] S →* S).ker) :
     inertia A = ⊤ ↔ ∀ (s : S) (g : Γ),
-      A.character ⟨inl (s • g), MonoidHom.mem_ker.2 (rightHom_inl _)⟩ =
-        A.character ⟨inl g, MonoidHom.mem_ker.2 (rightHom_inl _)⟩ := by
+      A.character (mulEquivKerRightHom (s • g)) = A.character (mulEquivKerRightHom g) := by
   have : Finite (rightHom : Γ ⋊[MulDistribMulAction.toMulAut S Γ] S →* S).ker :=
-    Finite.of_surjective _ inlKer_surjective
-  -- `inr s` lies in the inertia group exactly when the character is invariant under `s⁻¹`.
-  have hinr (s : S) : inr s ∈ inertia A ↔ ∀ g : Γ, A.character (inlKer (s⁻¹ • g)) =
-      A.character (inlKer g) := by
-    rw [mem_inertia_iff_forall_character_eq, inlKer_surjective.forall]
-    simp only [MonoidHom.codRestrict_apply, inv_inr_mul_inl_mul_inr]
+    Finite.of_equiv _ mulEquivKerRightHom.toEquiv
+  -- `inr s` lies in the inertia group exactly when the character is invariant under `s⁻¹`:
+  -- conjugating `inl g` by `inr s` gives `inl (s⁻¹ • g)` (`SemidirectProduct.inl_aut_inv`).
+  have hinr (s : S) : inr s ∈ inertia A ↔ ∀ g : Γ,
+      A.character (mulEquivKerRightHom (s⁻¹ • g)) = A.character (mulEquivKerRightHom g) := by
+    rw [mem_inertia_iff_forall_char_conj_eq, mulEquivKerRightHom.surjective.forall]
+    refine forall_congr' fun g ↦ Eq.congr_left (congrArg A.character (Subtype.ext ?_))
+    simp [← map_inv, ← inl_aut_inv]
   refine ⟨fun h s g ↦ by simpa using (hinr s⁻¹).1 (h ▸ Subgroup.mem_top _) g, fun h ↦ ?_⟩
   -- Every element is `inl x.left * inr x.right`, and the inertia group contains the kernel.
   refine eq_top_iff.2 fun x _ ↦ inl_left_mul_inr_right x ▸ mul_mem (le_inertia A ?_)
@@ -177,22 +165,13 @@ irreducible character exactly when its inertia group is the whole semidirect pro
 theorem mem_invariantIrreducibleCharacters_iff_inertia_eq_top
     (A : FDRep k (rightHom : Γ ⋊[MulDistribMulAction.toMulAut S Γ] S →* S).ker)
     [CategoryTheory.Simple A] :
-    (fun g : Γ ↦ A.character ⟨inl g, MonoidHom.mem_ker.2 (rightHom_inl g)⟩) ∈
+    (fun g : Γ ↦ A.character (mulEquivKerRightHom g)) ∈
         invariantIrreducibleCharacters k S Γ ↔ inertia A = ⊤ := by
   have := FDRep.isIrreducible_of_simple A
   rw [inertia_eq_top_iff_forall_character_smul_eq, mem_invariantIrreducibleCharacters_iff]
-  exact and_iff_right (inlKer.comp_mem_irreducibleCharacters inlKer_surjective
+  exact and_iff_right (mulEquivKerRightHom.comp_mem_irreducibleCharacters_iff.2
     (character_mem_irreducibleCharacters A.ρ))
 
 end Inertia
 
 end TauCeti
-
-/-- **Only the image of `S` in `MulAut Γ` matters** for the fixed-point subgroup: `C_Γ(S)` is the
-fixed-point subgroup of the range of `MulDistribMulAction.toMulAut S Γ`. -/
-@[simp]
-theorem FixedPoints.subgroup_range_toMulAut (S : Type v) (Γ : Type w) [Group S] [Group Γ]
-    [MulDistribMulAction S Γ] :
-    FixedPoints.subgroup (MulDistribMulAction.toMulAut S Γ).range Γ = FixedPoints.subgroup S Γ := by
-  ext g
-  simp [FixedPoints.mem_subgroup, Subgroup.smul_def]

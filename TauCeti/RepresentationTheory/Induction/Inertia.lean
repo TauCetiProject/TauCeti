@@ -61,7 +61,7 @@ restriction with a single `G`-orbit.
 * `FDRep.inertia_resFDRep`: a representation restricted from `G` to `N` has full inertia.
 * `TauCeti.char_conj_eq_of_mem_inertia`: the character of `A` is invariant under conjugation
   by an element of the inertia group.
-* `TauCeti.mem_inertia_iff_forall_character_eq`: for a finite `N` in characteristic zero, this
+* `TauCeti.mem_inertia_iff_forall_char_conj_eq`: for a finite `N` in characteristic zero, this
   invariance characterises the inertia group.
 -/
 
@@ -170,7 +170,7 @@ zero: `g ∈ inertia A` exactly when `χ(g⁻¹xg) = χ(x)` for every `x : N`, w
 character of `A`. The forward direction is `TauCeti.char_conj_eq_of_mem_inertia`, valid over any
 field; the converse holds because the character of `{}^g A` is `x ↦ χ(g⁻¹xg)`
 (`TauCeti.char_conjNormalFDRep_mk`) and such representations are determined by their characters. -/
-theorem mem_inertia_iff_forall_character_eq [CharZero k] [Finite N] {A : FDRep k N} {g : G} :
+theorem mem_inertia_iff_forall_char_conj_eq [CharZero k] [Finite N] {A : FDRep k N} {g : G} :
     g ∈ inertia A ↔ ∀ x : N,
       A.character ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.property g⟩ = A.character x := by
   refine ⟨fun hg ↦ char_conj_eq_of_mem_inertia hg, fun h ↦ mem_inertia_iff.2 ?_⟩
