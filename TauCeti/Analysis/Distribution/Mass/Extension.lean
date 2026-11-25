@@ -251,13 +251,14 @@ theorem massMeasure_massRestrict (hT : HasLocallyFiniteMass T) (hA : MeasurableS
 /-- **Recognizing a Borel restriction.** If `T = R + R'` for maps `R`, `R'` of locally finite mass
 whose mass measures are `‖T‖ ⌞ A` and `‖T‖ ⌞ Aᶜ`, then `T ⌞ A = R`. -/
 theorem massRestrict_eq_of_massMeasure_eq {T R R' : 𝓓^{n}(Ω, F) →L[ℝ] ℝ}
-    (hT : HasLocallyFiniteMass T) (hR : HasLocallyFiniteMass R) (hR' : HasLocallyFiniteMass R')
+    (hR : HasLocallyFiniteMass R) (hR' : HasLocallyFiniteMass R')
     (hsum : T = R + R') (hA : MeasurableSet A)
     (hRm : massMeasure R = (massMeasure T).restrict A)
     (hR'm : massMeasure R' = (massMeasure T).restrict Aᶜ) :
     massRestrict T hA = R := by
   -- The difference `T ⌞ A - R = R' - T ⌞ Aᶜ` has mass measure dominated both by `2 ‖T‖ ⌞ A` and
   -- by `2 ‖T‖ ⌞ Aᶜ`, hence zero.
+  have hT : HasLocallyFiniteMass T := by rw [hsum, FunLike.coe_add]; exact hR.add hR'
   have hD : massRestrict T hA - R = R' - massRestrict T hA.compl := by
     ext φ
     have h := massRestrict_add_massRestrict_compl_apply hT hA φ

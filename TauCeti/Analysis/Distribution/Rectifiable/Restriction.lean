@@ -106,7 +106,7 @@ theorem massRestrict_frameCurrent (hθ : LocallyIntegrableOn θ Ω μHE[k]) (hτ
       frameCurrent (A.indicator θ) τ := by
   have hθA := (hθ.mono_set inter_subset_left).indicator_of_closure hA.nullMeasurableSet
   have hθAc := (hθ.mono_set inter_subset_left).indicator_of_closure hA.compl.nullMeasurableSet
-  exact massRestrict_eq_of_massMeasure_eq (hasLocallyFiniteMass_frameCurrent hθ hτo)
+  exact massRestrict_eq_of_massMeasure_eq
     (hasLocallyFiniteMass_frameCurrent hθA (orthonormal_of_indicator_ne_zero hτo A))
     (hasLocallyFiniteMass_frameCurrent hθAc (orthonormal_of_indicator_ne_zero hτo Aᶜ))
     (frameCurrent_eq_add_of_ae hθ hτ hτo hθA hτ (orthonormal_of_indicator_ne_zero hτo A) hθAc hτ
