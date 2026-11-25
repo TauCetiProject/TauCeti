@@ -38,13 +38,16 @@ from the structure's laws.
   `inner_proj` between them and `proj`, the normalization `proj_univ : P(X) = 1`, and the
   multiplicativity law `proj_inter`.
 * `proj_idem`, `isSelfAdjoint_proj`, `isPositive_proj`, `proj_mul_eq_left_of_subset`,
-  `range_proj_mono`, `proj_union`, `proj_compl`, `norm_proj_apply_le`:
+  `range_proj_mono`, `proj_eq_zero_iff_range_eq_bot`, `proj_union`, `proj_compl`,
+  `norm_proj_apply_le`:
   the classical PVM laws, recovered from the structure.
+* `instCompleteSpaceRangeProj`, `starProjection_range_proj`: the range of `P(B)` is complete, and
+  `P(B)` is the orthogonal projection onto it.
 * `hasSum_proj_of_pairwise_disjoint`: unconditional strong countable additivity
   (`HasSum`) on a pairwise-disjoint measurable family; `tendsto_sum_proj_of_pairwise_disjoint`
   gives convergence of the natural-order partial sums.
-* `diag`, `diag_real_univ`, `diag_univ`, `enorm_sq_proj_apply`, `diag_zero`,
-  `diag_smul`, `diag_neg`, `diag_add_le`, `diag_proj`: the finite diagonal scalar
+* `diag`, `enorm_sq_proj_apply`, `diag_real_univ`, `diag_univ`, `diag_zero`, `diag_smul`,
+  `diag_neg`, `diag_add_add_diag_sub`, `diag_add_le`, `diag_proj`: the finite diagonal scalar
   measures carried by the structure, their real/extended-real total masses, and
   their behavior under vector operations and spectral projections.
 * `ext_of_diag`, `ext`, `ext_iff_diag`, `ext_iff`: extensionality from either
@@ -175,6 +178,19 @@ theorem isStarProjection_proj (P : ProjValMeasure X H) (B : Set X)
   exact (isStarProjection_iff' (p := P.proj B hB)).2
     ⟨P.proj_idem B hB, (P.isSelfAdjoint_proj B hB).star_eq⟩
 
+/-- The range of a measurable-set projection is complete, being the range of an idempotent
+operator and hence closed. In particular it admits an orthogonal projection. -/
+instance instCompleteSpaceRangeProj (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) : CompleteSpace (P.proj B hB).range :=
+  (ContinuousLinearMap.IsIdempotentElem.isClosed_range (P.proj_idem B hB)).completeSpace_coe
+
+/-- The orthogonal projection onto the range of a measurable-set projection is that
+projection. -/
+@[simp]
+theorem starProjection_range_proj (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) : (P.proj B hB).range.starProjection = P.proj B hB :=
+  (isStarProjection_iff_eq_starProjection_range.mp (P.isStarProjection_proj B hB)).2.symm
+
 /-- For each measurable set `B`, the operator `P(B)` is positive. -/
 theorem isPositive_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B) :
     (P.proj B hB).IsPositive :=
@@ -222,6 +238,13 @@ theorem range_proj_mono (P : ProjValMeasure X H) {B C : Set X}
   rw [← P.proj_mul_eq_right_of_subset hBC hB hC]
   exact LinearMap.range_comp_le_range _ _
 
+/-- A spectral projection vanishes iff its range is trivial. -/
+theorem proj_eq_zero_iff_range_eq_bot (P : ProjValMeasure X H) {B : Set X}
+    (hB : MeasurableSet B) :
+    P.proj B hB = 0 ↔ LinearMap.range (P.proj B hB : H →ₗ[ℂ] H) = ⊥ := by
+  rw [LinearMap.range_eq_bot, ← ContinuousLinearMap.toLinearMap_zero,
+    ContinuousLinearMap.coe_inj]
+
 /-- For disjoint measurable sets, the projection of their union is the sum of
 their projections. -/
 lemma proj_union (P : ProjValMeasure X H) {B₁ B₂ : Set X}
@@ -257,6 +280,21 @@ lemma norm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSe
   rw [norm_sq_eq_re_inner (𝕜 := ℂ), h1, P.inner_proj, RCLike.re_eq_complex_re,
     Complex.ofReal_re]
 
+/-- Squared extended norm of a spectral projection equals the diagonal mass
+of the corresponding measurable set. -/
+@[simp]
+theorem enorm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) (ξ : H) :
+    ‖P.proj B hB ξ‖ₑ ^ 2 = (P.diag ξ) B := by
+  have hfin : (P.diag ξ) B ≠ ⊤ :=
+    measure_ne_top (μ := P.diag ξ) (s := B)
+  calc
+    ‖P.proj B hB ξ‖ₑ ^ 2 = ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) := by
+      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    _ = ENNReal.ofReal (((P.diag ξ) B).toReal) := by
+      rw [P.norm_sq_proj_apply B hB ξ]
+    _ = (P.diag ξ) B := ENNReal.ofReal_toReal hfin
+
 /-- The total mass of the diagonal measure as a real number. -/
 @[simp]
 theorem diag_real_univ (P : ProjValMeasure X H) (ξ : H) :
@@ -278,21 +316,6 @@ theorem diag_univ (P : ProjValMeasure X H) (ξ : H) :
     _ = ‖ξ‖ₑ ^ 2 := by
       rw [ENNReal.ofReal_pow (norm_nonneg ξ), ofReal_norm]
 
-/-- Squared extended norm of a spectral projection equals the diagonal mass
-of the corresponding measurable set. -/
-@[simp]
-theorem enorm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X)
-    (hB : MeasurableSet B) (ξ : H) :
-    ‖P.proj B hB ξ‖ₑ ^ 2 = (P.diag ξ) B := by
-  have hfin : (P.diag ξ) B ≠ ⊤ :=
-    measure_ne_top (μ := P.diag ξ) (s := B)
-  calc
-    ‖P.proj B hB ξ‖ₑ ^ 2 = ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) := by
-      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-    _ = ENNReal.ofReal (((P.diag ξ) B).toReal) := by
-      rw [P.norm_sq_proj_apply B hB ξ]
-    _ = (P.diag ξ) B := ENNReal.ofReal_toReal hfin
-
 /-- The diagonal scalar measure of the zero vector is the zero measure. -/
 @[simp]
 theorem diag_zero (P : ProjValMeasure X H) : P.diag 0 = 0 := by
@@ -312,14 +335,22 @@ theorem diag_smul (P : ProjValMeasure X H) (c : ℂ) (ξ : H) :
 theorem diag_neg (P : ProjValMeasure X H) (ξ : H) : P.diag (-ξ) = P.diag ξ := by
   simpa using P.diag_smul (-1 : ℂ) ξ
 
+/-- **Parallelogram law for diagonal measures**: the sum of the diagonal measures of `ξ + η` and
+`ξ - η` equals twice the sum of the diagonal measures of `ξ` and `η`. -/
+theorem diag_add_add_diag_sub (P : ProjValMeasure X H) (ξ η : H) :
+    P.diag (ξ + η) + P.diag (ξ - η) = (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η := by
+  refine Measure.ext fun B hB => ?_
+  simp only [add_apply, smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB,
+    map_add, map_sub, ← mul_add]
+  exact TauCeti.parallelogram_law_with_enorm ℂ (P.proj B hB ξ) (P.proj B hB η)
+
 /-- The diagonal scalar measure of a sum is bounded by twice the sum of the two diagonal
 measures. -/
 theorem diag_add_le (P : ProjValMeasure X H) (ξ η : H) :
-    P.diag (ξ + η) ≤ (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η := by
-  refine Measure.le_iff.2 fun B hB => ?_
-  simp only [add_apply, smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB, map_add, ← mul_add]
-  exact le_self_add.trans_eq
-    (TauCeti.parallelogram_law_with_enorm ℂ (P.proj B hB ξ) (P.proj B hB η))
+    P.diag (ξ + η) ≤ (2 : ℝ≥0∞) • P.diag ξ + (2 : ℝ≥0∞) • P.diag η :=
+  Measure.le_iff'.mpr fun B => by
+    rw [← P.diag_add_add_diag_sub ξ η, add_apply]
+    exact le_self_add
 
 /-- Applying a measurable-set projection restricts the diagonal scalar measure to that set. -/
 @[simp]
@@ -438,9 +469,12 @@ private theorem norm_sq_partialSum_sub (P : ProjValMeasure X H) {f : ℕ → Set
       (P.diag ξ (⋃ k, f k) - ∑ k ∈ Finset.range n, P.diag ξ (f k)).toReal := by
   have hUle := sum_measure_le_measure_iUnion (μ := P.diag ξ) (fun k => (hf k).nullMeasurableSet)
     hdisj.aedisjoint (Finset.range n)
-  rw [ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption _ _
-    (partialSum_selfAdjoint P hf n) (partialSum_idem P hf hdisj n) (partialSum_mul_univ P hf n) ξ,
-    P.norm_sq_proj_apply, norm_sq_partialSum P hf hdisj ξ n,
+  have habs := LinearMap.norm_sub_sq_of_isSymmetric_idempotent_absorption _ _
+    (partialSum_selfAdjoint P hf n).isSymmetric
+    (congrArg ContinuousLinearMap.toLinearMap (partialSum_idem P hf hdisj n))
+    (congrArg ContinuousLinearMap.toLinearMap (partialSum_mul_univ P hf n)) ξ
+  rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe] at habs
+  rw [habs, P.norm_sq_proj_apply, norm_sq_partialSum P hf hdisj ξ n,
     ENNReal.toReal_sub_of_le hUle (measure_ne_top (μ := P.diag ξ) (s := ⋃ k, f k))]
 
 /-- For pairwise disjoint measurable sets, the finite sums of their projections,

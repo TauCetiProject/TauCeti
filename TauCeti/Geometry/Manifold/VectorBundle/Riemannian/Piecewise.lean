@@ -53,29 +53,21 @@ open Classical in
 def piecewise (g₁ g₂ : ContMDiffRiemannianMetric IB n F E) (hU : IsOpen U) (hV : IsOpen V)
     (hUV : U ∪ V = univ) (h : ∀ b ∈ U ∩ V, g₁.inner b = g₂.inner b) :
     ContMDiffRiemannianMetric IB n F E where
-  inner b := if b ∈ U then g₁.inner b else g₂.inner b
-  symm b v w := by
-    split_ifs
-    exacts [g₁.symm b v w, g₂.symm b v w]
-  pos b v hv := by
-    split_ifs
-    exacts [g₁.pos b v hv, g₂.pos b v hv]
-  isVonNBounded b := by
-    split_ifs
-    exacts [g₁.isVonNBounded b, g₂.isVonNBounded b]
-  contMDiff b := by
-    by_cases hb : b ∈ U
-    · -- Near a point of `U`, the glued metric is `g₁`.
-      refine (g₁.contMDiff b).congr_of_eventuallyEq ?_
-      filter_upwards [hU.mem_nhds hb] with c hc
-      simp [hc]
-    · -- Near a point outside `U`, which lies in `V`, the glued metric is `g₂`.
-      have hbV : b ∈ V := (hUV ▸ mem_univ b : b ∈ U ∪ V).resolve_left hb
-      refine (g₂.contMDiff b).congr_of_eventuallyEq ?_
-      filter_upwards [hV.mem_nhds hbV] with c hc
-      split_ifs with hcU
-      · rw [h c ⟨hcU, hc⟩]
-      · rfl
+  -- Over each point use whichever of `g₁` and `g₂` is chosen there, so that the fibrewise
+  -- axioms are those of the chosen metric.
+  inner b := (if b ∈ U then g₁ else g₂).inner b
+  symm b := (if b ∈ U then g₁ else g₂).symm b
+  pos b := (if b ∈ U then g₁ else g₂).pos b
+  isVonNBounded b := (if b ∈ U then g₁ else g₂).isVonNBounded b
+  contMDiff := contMDiff_of_contMDiffOn_union_of_isOpen
+    -- Over `U`, the glued metric is `g₁`.
+    (g₁.contMDiff.contMDiffOn.congr fun b hb ↦ by simp [hb])
+    -- Over `V` it is `g₂`, as `g₁` and `g₂` agree over `U ∩ V`.
+    (g₂.contMDiff.contMDiffOn.congr fun b hb ↦ by
+      split_ifs with hbU
+      · rw [h b ⟨hbU, hb⟩]
+      · rfl)
+    hUV hU hV
 
 variable {g₁ g₂ : ContMDiffRiemannianMetric IB n F E} {hU : IsOpen U} {hV : IsOpen V}
   {hUV : U ∪ V = univ} {h : ∀ b ∈ U ∩ V, g₁.inner b = g₂.inner b}

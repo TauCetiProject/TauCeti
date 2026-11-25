@@ -15,7 +15,10 @@ import TauCeti.Topology.FiberBundle.Separation
 Two geodesics on a preconnected parameter set agree if their position and velocity agree
 at any one parameter, including an endpoint. The comparison takes place on the native
 velocity lifts, so it also identifies their velocities without transporting tangent vectors
-by hand. Only a C² metric on a C³ manifold is required for uniqueness.
+by hand. Only a C² metric on a C³ manifold is required for uniqueness, and the manifold may
+have boundary.
+When both curves are differentiable at the initial parameter, equality of their actual
+velocity lifts also suffices, including at the left endpoint of a closed interval.
 
 ## References
 
@@ -32,7 +35,7 @@ open scoped ContDiff Manifold
 namespace TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
@@ -54,7 +57,6 @@ theorem IsGeodesicCurveOn.curveVelocityLiftWithin_eqOn
   have hδlift := (isMIntegralCurveOn_curveVelocityLiftWithin_iff
     hδ.uniqueDiffOn hδ.contMDiffOn).2 hδ
   exact hγlift.eqOn_of_isPreconnected hδlift hs ha
-    (fun _ _ ↦ BoundarylessManifold.isInteriorPoint)
     (fun _ _ ↦ contMDiff_one_geodesicSpray.contMDiffAt) heq
 
 /-- Geodesics with the same initial position and velocity agree on their preconnected
@@ -67,6 +69,34 @@ theorem IsGeodesicCurveOn.eqOn_of_curveVelocityLiftWithin_eq
   intro t ht
   simpa only [curveVelocityLiftWithin_proj] using
     congrArg TotalSpace.proj (hγ.curveVelocityLiftWithin_eqOn hδ hs ha heq ht)
+
+/-- Geodesics on a preconnected parameter set agree when their actual position and velocity
+agree at a parameter where both curves are differentiable, including an endpoint. -/
+theorem IsGeodesicCurveOn.eqOn_of_curveVelocityLift_eq
+    (hγ : IsGeodesicCurveOn I γ s) (hδ : IsGeodesicCurveOn I δ s)
+    (hs : IsPreconnected s) (ha : a ∈ s)
+    (hγdiff : MDifferentiableAt 𝓘(ℝ) I γ a) (hδdiff : MDifferentiableAt 𝓘(ℝ) I δ a)
+    (heq : curveVelocityLift I γ a = curveVelocityLift I δ a) : EqOn γ δ s := by
+  apply hγ.eqOn_of_curveVelocityLiftWithin_eq hδ hs ha
+  have hwithin {η : ℝ → M} (hη : MDifferentiableAt 𝓘(ℝ) I η a) :
+      curveVelocityLiftWithin I η s a = curveVelocityLift I η a := by
+    rw [curveVelocityLiftWithin_apply, curveVelocityLift_apply]
+    congr 1
+    rw [curveVelocityWithin_apply, curveVelocity_apply,
+      mfderivWithin_eq_mfderiv (hγ.uniqueDiffOn a ha).uniqueMDiffWithinAt hη]
+  rw [hwithin hγdiff, hwithin hδdiff]
+  exact heq
+
+/-- Equality of actual endpoint position and velocity determines ambient geodesics. -/
+theorem IsGeodesicCurveOn.eqOn_Icc_of_curveVelocityLift_left_eq
+    {b : ℝ}
+    (hγ : IsGeodesicCurveOn I γ (Icc a b)) (hδ : IsGeodesicCurveOn I δ (Icc a b))
+    (hγdiff : MDifferentiableAt 𝓘(ℝ) I γ a) (hδdiff : MDifferentiableAt 𝓘(ℝ) I δ a)
+    (heq : curveVelocityLift I γ a = curveVelocityLift I δ a) : EqOn γ δ (Icc a b) := by
+  by_cases hab : a ≤ b
+  · exact hγ.eqOn_of_curveVelocityLift_eq hδ isPreconnected_Icc (left_mem_Icc.mpr hab)
+      hγdiff hδdiff heq
+  · simp only [Icc_eq_empty hab, eqOn_empty]
 
 end FiniteRegularity
 

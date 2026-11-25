@@ -9,6 +9,10 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
+import TauCeti.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -26,9 +30,24 @@ inner product space. For a scalar Schwartz function `φ` and real orders `r < s`
 theorem for a common compact support: if the elements of a bounded subset of `H^s` all satisfy
 `φ u = u`, for instance because they are supported in a compact set on a neighbourhood of which
 `φ = 1`, the subset has compact closure in `H^r`
-(`BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq`). Without such a
-localization the inclusion `H^s ⊆ H^r` is not compact, since translates of a fixed bump function
-have no convergent subsequence.
+(`BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq`).
+
+Without such a localization the inclusion `H^{s,p} ⊆ H^{r,p}` is not compact, for any `r ≤ s` and
+`1 ≤ p ≤ ∞` (`BesselPotentialSpace.not_isCompactOperator_inclusion`). The translates
+`u (· - k v)`, `k ∈ ℕ`, of a fixed nonzero Schwartz function all have the same `H^{s,p}` and
+`H^{r,p}` norms, but they tend to `0` as tempered distributions, so no subsequence converges in
+`H^{r,p}`.
+
+Combined with Ehrling's lemma, Rellich's theorem gives **Ehrling's inequality for a common compact
+support**: for `t ≤ r < s` and every `ε > 0` there is `C` with
+
+`‖φ u‖_{H^r} ≤ ε ‖u‖_{H^s} + C ‖φ u‖_{H^t}`
+
+for all `u ∈ H^s` (`BesselPotentialSpace.exists_norm_inclusion_smulLeftCLM_le`), so that
+`‖u‖_{H^r} ≤ ε ‖u‖_{H^s} + C ‖u‖_{H^t}` whenever `φ u = u`
+(`BesselPotentialSpace.exists_norm_inclusion_le_of_smulLeftCLM_eq`). An intermediate Sobolev norm
+of functions supported in a fixed compact set is controlled by an arbitrarily small multiple of a
+stronger norm and a multiple of an arbitrarily weak one.
 
 ## The Fourier argument
 
@@ -54,11 +73,18 @@ is compact.
   `H^s` to `H^r` for `r < s`.
 * `BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq`: a bounded subset of
   `H^s` on which multiplication by `φ` is the identity has compact closure in `H^r`.
+* `BesselPotentialSpace.not_isCompactOperator_inclusion`: the inclusion `H^{s,p} ⊆ H^{r,p}` on the
+  whole space is not compact.
+* `BesselPotentialSpace.exists_norm_inclusion_smulLeftCLM_le`,
+  `BesselPotentialSpace.exists_norm_inclusion_le_of_smulLeftCLM_eq`: Ehrling's inequality for a
+  common compact support.
 
 ## References
 
 * G. B. Folland, *Introduction to Partial Differential Equations*, 2nd ed., Princeton University
   Press, 1995, Chapter 6 (Rellich's theorem for Sobolev spaces with a common compact support).
+* G. Ehrling, *On a type of eigenvalue problem for certain elliptic differential operators*,
+  Math. Scand. **2** (1954), 267–285.
 -/
 
 public section
@@ -328,5 +354,82 @@ theorem isCompact_closure_image_inclusion_of_smulLeftCLM_eq [FiniteDimensional �
   rw [himage]
   exact (isCompactOperator_inclusion_comp_smulLeftCLM (F := F) φ h)
     |>.isCompact_closure_image_of_bounded hS
+
+/-- **Ehrling's inequality for a common compact support.** For a finite-dimensional complex inner
+product space `F`, a scalar Schwartz function `φ`, real orders `t ≤ r < s` and `ε > 0`, there is
+`C ≥ 0` with `‖φ u‖_{H^r} ≤ ε ‖u‖_{H^s} + C ‖φ u‖_{H^t}` for every `u ∈ H^s(E, F)`. -/
+theorem exists_norm_inclusion_smulLeftCLM_le [FiniteDimensional ℂ F] (φ : 𝓢(E, ℂ)) {t : ℝ}
+    (htr : t ≤ r) (hrs : r < s) {ε : ℝ} (hε : 0 < ε) :
+    ∃ C, 0 ≤ C ∧ ∀ u : H^{s}(E, F),
+      ‖inclusion hrs.le (smulLeftCLM s φ u)‖ ≤
+        ε * ‖u‖ + C * ‖inclusion (htr.trans hrs.le) (smulLeftCLM s φ u)‖ := by
+  obtain ⟨C, hC, h⟩ := (isCompactOperator_inclusion_comp_smulLeftCLM (F := F) φ hrs)
+    |>.exists_norm_le_mul_norm_add_mul_norm (inclusion_injective htr) hε
+  exact ⟨C, hC, fun u ↦ by simpa [inclusion_inclusion] using h u⟩
+
+/-- **Ehrling's inequality for a common compact support**, for elements fixed by multiplication by
+a scalar Schwartz function `φ`, for instance those supported in a compact set on a neighbourhood of
+which `φ = 1`: for real orders `t ≤ r < s` and `ε > 0` there is `C ≥ 0` with
+`‖u‖_{H^r} ≤ ε ‖u‖_{H^s} + C ‖u‖_{H^t}` whenever `φ u = u`. -/
+theorem exists_norm_inclusion_le_of_smulLeftCLM_eq [FiniteDimensional ℂ F] (φ : 𝓢(E, ℂ))
+    {t : ℝ} (htr : t ≤ r) (hrs : r < s) {ε : ℝ} (hε : 0 < ε) :
+    ∃ C, 0 ≤ C ∧ ∀ u : H^{s}(E, F), smulLeftCLM s φ u = u →
+      ‖inclusion hrs.le u‖ ≤ ε * ‖u‖ + C * ‖inclusion (htr.trans hrs.le) u‖ := by
+  obtain ⟨C, hC, h⟩ := exists_norm_inclusion_smulLeftCLM_le (F := F) φ htr hrs hε
+  exact ⟨C, hC, fun u hu ↦ by simpa [hu] using h u⟩
+
+section NotCompact
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G] {p : ℝ≥0∞}
+  [Fact (1 ≤ p)]
+
+/-- **Rellich's theorem fails on the whole space.** For a nonzero space `E`, a nonzero `G`, real
+orders `r ≤ s` and `1 ≤ p ≤ ∞`, the inclusion `H^{s,p}(E, G) ⊆ H^{r,p}(E, G)` is not a compact
+operator: the translates of a fixed nonzero Schwartz function form a bounded sequence in
+`H^{s,p}` with no convergent subsequence in `H^{r,p}`. A common compact support restores
+compactness (`BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM`). -/
+theorem not_isCompactOperator_inclusion [Nontrivial E] [Nontrivial G] (h : r ≤ s) :
+    ¬IsCompactOperator (inclusion h : H^{s, p}(E, G) →L[ℂ] H^{r, p}(E, G)) := by
+  intro hK
+  -- A nonzero Schwartz function `u`: a bump function times a nonzero vector.
+  obtain ⟨w, hw⟩ := exists_ne (0 : G)
+  let b : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
+  let u : 𝓢(E, G) := (b.hasCompactSupport.smul_right (f' := fun _ ↦ w)).toSchwartzMap
+    (b.contDiff.smul contDiff_const)
+  have hu : SchwartzMap.toBesselPotentialSpaceCLM r p u ≠ 0 := by
+    rw [← map_zero (SchwartzMap.toBesselPotentialSpaceCLM r p),
+      (SchwartzMap.toBesselPotentialSpaceCLM_injective r p).ne_iff]
+    intro h0
+    have h00 := congrArg (· 0) h0
+    simp [u, b.one_of_mem_closedBall (by simp : (0 : E) ∈ Metric.closedBall 0 1), hw] at h00
+  -- Its translates by `k v`, `k ∈ ℕ`, for a nonzero vector `v`, leave every compact set.
+  obtain ⟨v, hv⟩ := exists_ne (0 : E)
+  have ha : Tendsto (fun k : ℕ ↦ (k : ℝ) • v) atTop (cocompact E) := by
+    rw [← Metric.cobounded_eq_cocompact, ← comap_norm_atTop, tendsto_comap_iff]
+    simpa [Function.comp_def, norm_smul] using
+      tendsto_natCast_atTop_atTop.atTop_mul_const (norm_pos_iff.2 hv)
+  let x : ℕ → H^{s, p}(E, G) := fun k ↦
+    SchwartzMap.toBesselPotentialSpaceCLM s p (u.compSubConstCLM ℂ ((k : ℝ) • v))
+  have hx (k : ℕ) : ‖x k‖ ≤ ‖SchwartzMap.toBesselPotentialSpaceCLM s p u‖ :=
+    (SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM s u _).le
+  obtain ⟨y, φ, hφ, hy⟩ := hK.exists_subseq_tendsto hx
+  -- The limit is `0`, since the translates tend to `0` as tempered distributions.
+  have hy0 : y = 0 := by
+    have h1 := ((toDistrCLM E G r p).continuous.tendsto y).comp hy
+    have h2 := (SchwartzMap.tendsto_toTemperedDistributionCLM_compSubConstCLM volume u).comp
+      (ha.comp hφ.tendsto_atTop)
+    refine toDistrCLM_injective (tendsto_nhds_unique (h1.congr fun k ↦ ?_) h2 |>.trans
+      (map_zero _).symm)
+    simp [x, Function.comp_def]
+  subst hy0
+  -- But the translates all have the same nonzero norm in `H^{r,p}`.
+  have hnorm : Tendsto (fun k ↦ ‖inclusion h (x (φ k))‖) atTop (𝓝 0) := by
+    simpa [Function.comp_def] using (continuous_norm.tendsto _).comp hy
+  have hconst (k : ℕ) :
+      ‖inclusion h (x (φ k))‖ = ‖SchwartzMap.toBesselPotentialSpaceCLM r p u‖ := by
+    simp [x]
+  exact hu (norm_eq_zero.1 (tendsto_const_nhds_iff.1 (hnorm.congr hconst)))
+
+end NotCompact
 
 end BesselPotentialSpace

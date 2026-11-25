@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Fourier.LpSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 public import TauCeti.Analysis.Fourier.Continuous
+public import TauCeti.MeasureTheory.Function.Lp.Dilation
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
 # The Fourier integral on `L¹ ∩ L²`
@@ -29,6 +31,11 @@ Together with the `L¹ → L^∞` bound `‖𝓕 f‖_∞ ≤ ‖f‖₁` (`TauC
 the two endpoint estimates which the Riesz–Thorin theorem interpolates to the Hausdorff–Young
 inequality, in `TauCeti.Analysis.Fourier.HausdorffYoung`.
 
+The file also records the Fourier transform of an `L²` derivative: if the tempered distribution
+`f` has a Fourier transform `v ∈ L^q`, `1 ≤ q`, and the derivative `∂_m f` is an `L²` function
+`d`, then `𝓕 d(ξ) = 2πi⟪ξ, m⟫ v(ξ)` almost everywhere, and the Fourier transform of an `L²`
+dilation: the `L²` Fourier transform turns the normalized dilation `D_r` into `D_{r⁻¹}`.
+
 ## Main declarations
 
 * `MeasureTheory.Integrable.coeFn_fourier_toLp`: on `L¹ ∩ L²` the `L²` Fourier transform is the
@@ -36,6 +43,10 @@ inequality, in `TauCeti.Analysis.Fourier.HausdorffYoung`.
 * `MeasureTheory.Integrable.eLpNorm_fourier_two_eq`: Plancherel's theorem on `L¹ ∩ L²`.
 * `MeasureTheory.Integrable.memLp_fourier_two`: the Fourier integral of a function in `L¹ ∩ L²`
   lies in `L²`.
+* `MeasureTheory.Lp.fourier_ae_eq_of_lineDerivOp_eq`: the Fourier transform of an `L²` derivative
+  `∂_m f` is `2πi⟪ξ, m⟫ 𝓕f`.
+* `MeasureTheory.Lp.fourier_dilateLp`: the `L²` Fourier transform turns the normalized dilation
+  `D_r` of `L²` into `D_{r⁻¹}`.
 
 ## References
 
@@ -78,3 +89,71 @@ theorem memLp_fourier_two (hf : Integrable f) (hf₂ : MemLp f 2) : MemLp (𝓕 
   memLp_iff.2 ((hf.eLpNorm_fourier_two_eq hf₂).trans_lt hf₂.eLpNorm_lt_top)
 
 end MeasureTheory.Integrable
+
+namespace MeasureTheory.Lp
+
+open TemperedDistribution
+open scoped LineDeriv SchwartzMap Real
+
+variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **The Fourier transform of a derivative.** If a tempered distribution `f` has the `L^q`
+Fourier transform `v` and its derivative in the direction `m` is an `L²` function `d`, then
+`𝓕 d(ξ) = 2πi⟪ξ, m⟫ v(ξ)` almost everywhere. -/
+theorem fourier_ae_eq_of_lineDerivOp_eq {f : 𝓢'(E, F)} {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {v : Lp F q (volume : Measure E)} {d : Lp F 2 (volume : Measure E)} (hv : 𝓕 f = v) {m : E}
+    (hd : ∂_{m} f = d) :
+    𝓕 d =ᵐ[volume] fun ξ ↦ (2 * π * Complex.I * inner ℝ ξ m) • v ξ := by
+  rw [← toTemperedDistribution_eq_smulLeftCLM_iff (by fun_prop),
+    ← fourier_toTemperedDistribution_eq, ← hd, fourier_lineDerivOp_eq, hv]
+  exact (DFunLike.congr_fun (smulLeftCLM_smul (F := F) (g := fun ξ : E ↦ (inner ℝ ξ m : ℂ))
+    (by fun_prop) (2 * π * Complex.I)) _).symm
+
+/-! ### Dilations -/
+
+section Dilation
+
+open Measure Module
+
+/-- `MeasureTheory.Lp.fourier_dilateLp` for the class of a Schwartz function. -/
+private theorem fourier_dilateLp_toLp {r : ℝ} (hr : 0 < r) (φ : 𝓢(E, F)) :
+    𝓕 (dilateLp volume ℝ 2 r hr (φ.toLp 2)) =
+      dilateLp volume ℝ 2 r⁻¹ (inv_pos.2 hr) (𝓕 (φ.toLp 2)) := by
+  set g : E → F := fun x ↦ r ^ (-((finrank ℝ E : ℝ) / 2)) • φ (r⁻¹ • x)
+  -- The dilated class is represented by the dilated Schwartz function `g`.
+  have hg : ⇑(dilateLp volume ℝ 2 r hr (φ.toLp 2)) =ᵐ[volume] g := by
+    simpa only [ENNReal.toReal_ofNat] using coeFn_dilateLp_of_ae_eq (𝕜 := ℝ) hr (φ.coeFn_toLp 2)
+  have hg₂ : MemLp g 2 volume := (Lp.memLp _).ae_eq hg
+  have hg₁ : Integrable g volume := (φ.integrable.comp_smul (inv_ne_zero hr.ne')).smul _
+  have hD : dilateLp volume ℝ 2 r hr (φ.toLp 2) = hg₂.toLp g :=
+    Lp.ext (hg.trans hg₂.coeFn_toLp.symm)
+  rw [hD]
+  refine Lp.ext ?_
+  rw [SchwartzMap.toLp_fourier_eq]
+  filter_upwards [hg₁.coeFn_fourier_toLp hg₂,
+    coeFn_dilateLp_of_ae_eq (𝕜 := ℝ) (inv_pos.2 hr) ((𝓕 φ).coeFn_toLp 2)] with ξ h₁ h₂
+  rw [h₁, h₂, ENNReal.toReal_ofNat]
+  have hc : 𝓕 g ξ = r ^ (-((finrank ℝ E : ℝ) / 2)) • 𝓕 (fun x ↦ φ (r⁻¹ • x)) ξ := by
+    simp only [g, Real.fourier_eq, smul_comm _ (r ^ (-((finrank ℝ E : ℝ) / 2))), integral_smul]
+  rw [hc, TauCeti.fourier_comp_smul, inv_inv, smul_smul]
+  congr 1
+  rw [abs_of_pos (by positivity), inv_pow, inv_inv, Real.inv_rpow hr.le, ← Real.rpow_neg hr.le,
+    ← Real.rpow_add_natCast hr.ne']
+  ring_nf
+
+/-- **The `L²` Fourier transform of a dilation.** The Fourier transform on `L²` turns the normalized
+dilation by `r > 0` into the normalized dilation by `r⁻¹`: replacing `f` by
+`r ^ (-n/2) • f (r⁻¹ • ·)` replaces `𝓕 f` by `r ^ (n/2) • 𝓕 f (r • ·)`. -/
+theorem fourier_dilateLp {r : ℝ} (hr : 0 < r) (f : Lp F 2 (volume : Measure E)) :
+    𝓕 (dilateLp volume ℝ 2 r hr f) = dilateLp volume ℝ 2 r⁻¹ (inv_pos.2 hr) (𝓕 f) := by
+  have hc₁ : Continuous fun f : Lp F 2 (volume : Measure E) ↦ 𝓕 (dilateLp volume ℝ 2 r hr f) :=
+    FourierTransform.continuous_fourier.comp (dilateLp volume ℝ 2 r hr).continuous
+  have hc₂ : Continuous fun f : Lp F 2 (volume : Measure E) ↦
+      dilateLp volume ℝ 2 r⁻¹ (inv_pos.2 hr) (𝓕 f) :=
+    (dilateLp volume ℝ 2 r⁻¹ (inv_pos.2 hr)).continuous.comp FourierTransform.continuous_fourier
+  exact congrFun ((SchwartzMap.denseRange_toLpCLM (F := F) (E := E) (p := 2) (μ := volume)
+    ENNReal.ofNat_ne_top).equalizer hc₁ hc₂ (funext fun φ ↦ fourier_dilateLp_toLp hr φ)) f
+
+end Dilation
+
+end MeasureTheory.Lp
