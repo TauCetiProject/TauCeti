@@ -83,15 +83,7 @@ private lemma changeOrder_absorption (o₁ o₂ : LinearOrder ι) :
     simp only [Preadditive.zsmul_comp, smul_smul, hsign, Category.assoc, ← Functor.map_comp,
       ← op_comp]
     congr 1
-    have hcoord (a a' : {a : Fin (n + 1) → ι //
-        @StrictMono _ _ _ o₁.toPartialOrder.toPreorder a}) (ha : a = a')
-        (f : (∏ᶜ fun j ↦ U (b j)) ⟶ ∏ᶜ fun j ↦ U (a.val j))
-        (g : (∏ᶜ fun j ↦ U (b j)) ⟶ ∏ᶜ fun j ↦ U (a'.val j)) :
-        (letI := o₁; strictMonoCechComplexπ U P a) ≫ P.map f.op =
-          (letI := o₁; strictMonoCechComplexπ U P a') ≫ P.map g.op := by
-      subst a'
-      rw [Subsingleton.elim f g]
-    exact hcoord _ _ (Subtype.ext hsort) _ _
+    exact (letI := o₁; strictMonoCechComplexπ_comp_map_eq U P (Subtype.ext hsort) _ _)
   · simp only [NatTrans.comp_app, HomologicalComplex.comp_f]
     erw [Category.assoc, Category.assoc]
     erw [@fromStrictMonoCechComplex_app_f_π_of_not_injective _ _ _ _ _ _ _ _ o₂ U _ P n b hb,

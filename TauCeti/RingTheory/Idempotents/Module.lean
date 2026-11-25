@@ -59,12 +59,15 @@ hypothesis in the intended applications.
 
 * `TauCeti.smulTopMap S e f`: the restriction of an `R`-linear map `f : M →ₗ[R] N` to
   `e • M →ₗ[S] e • N`.
+* `IsIdempotentElem.smulTopSubmoduleEquiv`: for an idempotent `e` of a ring `A`, the
+  corner of an `A`-submodule containing `eM` is `eM`.
 
 ## Main results
 
 * `IsIdempotentElem.mem_smul_top_iff_smul_eq_self`: for an idempotent `e`, membership in
   `e • M` is the fixed-point condition `e • x = x`. The scalar `e` needs only a distributive
   monoid action on `M`.
+* `Module.End.smul_top_eq_range`: for an endomorphism `f`, the piece `f • M` is `range f`.
 * `TauCeti.isInternal_smul_top`: **the decomposition** `M = ⨁ᵢ eᵢ M`, with the component of `x` at
   `i` being `eᵢ • x` (`TauCeti.coe_ofBijective_coeLinearMap_symm_apply_smul_top`).
 * `TauCeti.smul_coeLinearMap_smul_top`: multiplying by `eᵢ` reads off the `i`-th component of a
@@ -113,6 +116,20 @@ theorem smul_eq_self_of_mem_smul_top {e : R} (he : IsIdempotentElem e) {x : M}
   he.mem_smul_top_iff_smul_eq_self.1 hx
 
 end IsIdempotentElem
+
+namespace Module.End
+
+variable {S M : Type*} [CommSemiring S] [AddCommMonoid M] [Module S M]
+
+/-- **An endomorphism acting on `⊤` gives its range**: the piece `f • M` cut out by an
+endomorphism `f : Module.End S M`, acting through Mathlib's pointwise action, is `range f`. -/
+theorem smul_top_eq_range (f : Module.End S M) :
+    f • (⊤ : Submodule S M) = LinearMap.range f := by
+  rw [Submodule.pointwise_smul_def, Submodule.map_top]
+  exact congrArg LinearMap.range <| LinearMap.ext fun x ↦ by
+    rw [DistribSMul.toLinearMap_apply, Module.End.smul_def]
+
+end Module.End
 
 namespace TauCeti
 
@@ -402,5 +419,36 @@ theorem coe_algebraMap_corner_smul {R : Type*} [CommSemiring R] [Algebra R A] (r
       algebraMap R A r • (x : M) := by
   rw [Corner.coe_smul, Corner.val_algebraMap, Algebra.smul_def, mul_smul,
     he.smul_eq_self_of_mem_smul_top x.property]
+
+section Submodule
+
+variable {A M : Type*} [Ring A] [AddCommGroup M] [Module A M] {e : A} (he : IsIdempotentElem e)
+
+/-- **The corner of a submodule containing `eM` is `eM`.** If an `A`-submodule `X` of `M`
+contains every `e • m`, then the corner `eX` is identified with `eM` by the inclusion `X ⊆ M`. -/
+def smulTopSubmoduleEquiv (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X) :
+    ↥(e • (⊤ : Submodule ℤ X)) ≃ₗ[he.Corner] ↥(e • (⊤ : Submodule ℤ M)) where
+  toFun y := ⟨y.val.val, he.mem_smul_top_iff_smul_eq_self.2
+    (congrArg Subtype.val (he.smul_eq_self_of_mem_smul_top y.property))⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun z := ⟨⟨z.val, he.smul_eq_self_of_mem_smul_top z.property ▸ hX z.val⟩,
+    he.mem_smul_top_iff_smul_eq_self.2 (Subtype.ext (he.smul_eq_self_of_mem_smul_top z.property))⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem coe_smulTopSubmoduleEquiv_apply (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X)
+    (y : ↥(e • (⊤ : Submodule ℤ X))) :
+    (he.smulTopSubmoduleEquiv X hX y : M) = y.val.val :=
+  (rfl)
+
+@[simp]
+theorem coe_coe_smulTopSubmoduleEquiv_symm_apply (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X)
+    (z : ↥(e • (⊤ : Submodule ℤ M))) :
+    (((he.smulTopSubmoduleEquiv X hX).symm z : X) : M) = z.val :=
+  (rfl)
+
+end Submodule
 
 end IsIdempotentElem

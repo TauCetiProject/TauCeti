@@ -9,13 +9,12 @@ public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.Valuation.Basic
 
-import Mathlib.Algebra.Polynomial.Eval.Coeff
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Data.Finset.Order
-import Mathlib.Algebra.Polynomial.Monic
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
 
 /-!
 # Valuations of roots of monic polynomials
@@ -43,6 +42,12 @@ coefficients and unit discriminant the derivative is a unit, is stated over a co
   `Valuation.exists_map_eval_eq_leadingCoeff_mul_pow`: the non-monic forms, at `t` with `1 ≤ ν t`
   whose value is large compared with the lower coefficients, and over a division ring at every `t`
   of large enough value.
+* `Valuation.exists_pow_le_map_coeff_of_root_monic` and
+  `Valuation.exists_map_coeff_le_mul_pow_of_root`: a root `t` is bounded above by a lower
+  coefficient of a monic polynomial it annihilates and, if `ν t ≠ 0`, below by a ratio of two
+  coefficients of any polynomial it annihilates that has a coefficient of nonzero value. Over an
+  integral extension these bounds compare the values of a valuation with those of its
+  restriction.
 * `Valuation.le_one_of_root_monic`: a root of a monic polynomial with `ν`-integral coefficients
   has value at most one.
 * `Valuation.map_quadratic_eq_of_one_lt` and `Valuation.one_lt_map_sq_add_mul_sub_iff`:
@@ -90,21 +95,14 @@ lemma eq_one_of_mul_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hab : ν (a * b)
 
 /-- **The leading term of a polynomial dominates its value when it dominates each lower term**:
 if `ν (p.coeff i) * ν t ^ i < ν (leadingCoeff p) * ν t ^ natDegree p` for every
-`i < natDegree p`, then `ν (p.eval t) = ν (leadingCoeff p) * ν t ^ natDegree p`. -/
+`i < natDegree p`, then `ν (p.eval t) = ν (leadingCoeff p) * ν t ^ natDegree p`. This is the
+valuation form of `IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow`. -/
 lemma map_eval_eq_leadingCoeff_mul_pow {p : L[X]}
     (hp : ∀ i < p.natDegree, ν (p.coeff i) * ν t ^ i < ν p.leadingCoeff * ν t ^ p.natDegree) :
     ν (p.eval t) = ν p.leadingCoeff * ν t ^ p.natDegree := by
-  set n := p.natDegree with hn
-  rcases Nat.eq_zero_or_pos n with h0 | h0
-  · simp [eval_eq_sum_range, ← hn, h0, leadingCoeff]
-  have heval : p.eval t = (∑ i ∈ Finset.range n, p.coeff i * t ^ i) + p.leadingCoeff * t ^ n := by
-    rw [eval_eq_sum_range, Finset.sum_range_succ, leadingCoeff]
-  have hlt : ν (∑ i ∈ Finset.range n, p.coeff i * t ^ i) < ν (p.leadingCoeff * t ^ n) := by
-    rw [map_mul, map_pow]
-    refine ν.map_sum_lt (zero_le.trans_lt (hp 0 h0)).ne' fun i hi ↦ ?_
-    rw [map_mul, map_pow]
-    exact hp i (Finset.mem_range.mp hi)
-  rw [heval, ν.map_add_eq_of_lt_right hlt, map_mul, map_pow]
+  have h := IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow (f := ν) ν.map_add ν.map_neg
+    (p := p) (t := t) fun i hi ↦ by simpa only [map_mul, map_pow] using hp i hi
+  rwa [map_mul, map_pow] at h
 
 /-- If `p` is monic with coefficients that are integral for the valuation `ν` and `1 < ν t`,
 then the value of `p` at `t` is dominated by the leading term: `ν (p.eval t) = ν t ^ p.natDegree`.
@@ -157,6 +155,58 @@ theorem exists_map_eval_eq_leadingCoeff_mul_pow {K : Type*} [DivisionRing K] (ν
   have hi' := (hM _ (Finset.mem_image_of_mem _ (Finset.mem_range.mpr hi))).trans_lt
     ((le_max_right _ _).trans_lt ht)
   rwa [div_lt_iff₀ hlc, mul_comm] at hi'
+
+/-- **Some lower coefficient bounds a root of a monic polynomial from above.** If `t` is a root
+of a monic polynomial `p`, then `ν t ^ (natDegree p - i) ≤ ν (p.coeff i)` for some
+`i < natDegree p`: otherwise the leading term `t ^ natDegree p` would dominate `p.eval t`. -/
+theorem exists_pow_le_map_coeff_of_root_monic (ν : Valuation L Γ₀) {p : L[X]} (hp : p.Monic)
+    (heq : p.eval t = 0) : ∃ i < p.natDegree, ν t ^ (p.natDegree - i) ≤ ν (p.coeff i) := by
+  by_contra! h
+  -- `p ≠ 1` has positive degree, and then `ν t ≠ 0`, as `ν (p.coeff 0) < ν t ^ natDegree p`
+  have hn : p.natDegree ≠ 0 := fun hn ↦ by
+    rw [hp.natDegree_eq_zero.mp hn, eval_one] at heq
+    simpa using congrArg ν heq
+  have ht : ν t ≠ 0 := fun ht ↦ by
+    simpa [ht, zero_pow hn] using h 0 (Nat.pos_of_ne_zero hn)
+  have hdom := ν.map_eval_eq_leadingCoeff_mul_pow (p := p) (t := t) fun i hi ↦ by
+    rw [hp.leadingCoeff, ν.map_one, one_mul]
+    calc ν (p.coeff i) * ν t ^ i < ν t ^ (p.natDegree - i) * ν t ^ i :=
+          mul_lt_mul_of_pos_right (h i hi) (pow_pos (pos_iff_ne_zero.mpr ht) i)
+      _ = ν t ^ p.natDegree := by rw [← pow_add, Nat.sub_add_cancel hi.le]
+  rw [heq, map_zero, hp.leadingCoeff, ν.map_one, one_mul] at hdom
+  exact pow_ne_zero _ ht hdom.symm
+
+/-- **A root is bounded from below by a ratio of two coefficients.** If `t` is a root of `p` with
+`ν t ≠ 0` and some coefficient of `p` has nonzero value, then there are `i < j` with
+`ν (p.coeff i) ≠ 0` and `ν (p.coeff i) ≤ ν (p.coeff j) * ν t ^ (j - i)`. -/
+theorem exists_map_coeff_le_mul_pow_of_root (ν : Valuation L Γ₀) {p : L[X]}
+    (heq : p.eval t = 0) (ht : ν t ≠ 0) (hp : ∃ k, ν (p.coeff k) ≠ 0) :
+    ∃ i j, i < j ∧ ν (p.coeff i) ≠ 0 ∧ ν (p.coeff i) ≤ ν (p.coeff j) * ν t ^ (j - i) := by
+  classical
+  set i := Nat.find hp
+  have hi : ν (p.coeff i) ≠ 0 := Nat.find_spec hp
+  have hlow (j : ℕ) (hj : j < i) : ν (p.coeff j) = 0 := not_not.mp (Nat.find_min hp hj)
+  refine ⟨i, ?_⟩
+  by_contra! h
+  -- the term of index `i` strictly dominates every other term of `p.eval t`
+  have hti : ν (p.coeff i * t ^ i) ≠ 0 := by
+    rw [map_mul, map_pow]
+    exact mul_ne_zero hi (pow_ne_zero _ ht)
+  have hmem : i ∈ Finset.range (p.natDegree + 1) :=
+    Finset.mem_range_succ_iff.mpr (le_natDegree_of_ne_zero fun h0 ↦ hi (by rw [h0, map_zero]))
+  have hrest : ν (∑ j ∈ (Finset.range (p.natDegree + 1)).erase i, p.coeff j * t ^ j) <
+      ν (p.coeff i * t ^ i) := by
+    refine ν.map_sum_lt hti fun j hj ↦ ?_
+    rw [map_mul, map_pow, map_mul, map_pow]
+    rcases lt_or_gt_of_ne (Finset.ne_of_mem_erase hj) with hji | hij
+    · rw [hlow j hji, zero_mul]
+      exact pos_iff_ne_zero.mpr (by simpa using hti)
+    · calc ν (p.coeff j) * ν t ^ j = ν (p.coeff j) * ν t ^ (j - i) * ν t ^ i := by
+            rw [mul_assoc, ← pow_add, Nat.sub_add_cancel hij.le]
+        _ < ν (p.coeff i) * ν t ^ i :=
+            mul_lt_mul_of_pos_right (h j hij hi) (pow_pos (pos_iff_ne_zero.mpr ht) i)
+  rw [eval_eq_sum_range, ← Finset.add_sum_erase _ _ hmem] at heq
+  exact hti (by rw [← ν.map_add_eq_of_lt_left hrest, heq, map_zero])
 
 end Group
 

@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Topology.Frontier
 
@@ -255,13 +256,9 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_add_smul {A : Matrix ι ι ℝ}
     r * (∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ g) x (EuclideanSpace.single i 1)
       (EuclideanSpace.single j 1) + fderiv ℝ g x v) := by
   have hg' : ContDiffAt ℝ 2 (r • g) x := hg.const_smul r
-  have h2 : fderiv ℝ (fderiv ℝ (f + r • g)) x =
-      fderiv ℝ (fderiv ℝ f) x + fderiv ℝ (fderiv ℝ (r • g)) x := by
-    ext v w
-    simpa [iteratedFDeriv_two_apply] using
-      congrArg (· ![v, w]) (iteratedFDeriv_add_apply hf hg')
-  rw [h2, fderiv_fderiv_const_smul, fderiv_add (hf.differentiableAt two_ne_zero)
-    (hg'.differentiableAt two_ne_zero), fderiv_const_smul_field]
+  rw [fderiv_fderiv_add hf hg', fderiv_fderiv_const_smul,
+    fderiv_add (hf.differentiableAt two_ne_zero) (hg'.differentiableAt two_ne_zero),
+    fderiv_const_smul_field]
   simp only [_root_.add_apply, Pi.smul_apply, _root_.smul_apply, smul_eq_mul, mul_add,
     Finset.sum_add_distrib, Finset.mul_sum]
   have h : ∑ i, ∑ j, A i j * (r * fderiv ℝ (fderiv ℝ g) x (EuclideanSpace.single i 1)

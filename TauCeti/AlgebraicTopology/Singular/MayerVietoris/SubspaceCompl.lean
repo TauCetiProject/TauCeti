@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Relative
+public import TauCeti.Data.Set.Function
 public import TauCeti.LinearAlgebra.Submodule.LineExtension
 
 /-!
@@ -73,7 +74,7 @@ omit [NormedSpace ℝ F] in
 private lemma mapsTo_union_preimage (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x)
     (hA : Set.MapsTo f A A') (S : Set F) :
     Set.MapsTo f (A ∪ q ⁻¹' S) (A' ∪ q' ⁻¹' S) :=
-  hA.union_union fun x hx ↦ by rw [Set.mem_preimage, hf]; exact hx
+  hA.union_union (Set.mapsTo_preimage_of_apply_eq f hf S)
 
 /-- The map of pairs `(X, A ∪ q⁻¹(F ∖ W)) ⟶ (X', A' ∪ q'⁻¹(F ∖ W))` induced by a map `f : X ⟶ X'`
 over `F` carrying `A` into `A'`. -/
@@ -122,56 +123,68 @@ lemma subspaceComplPairMap_comp (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x) (hA 
       subspaceComplPairMap f hf hA W ≫ subspaceComplPairMap g hg hA' W :=
   TopPair.ofSubsetMap_comp _ _ _ _ _
 
+variable (q A) in
+/-- The identification of `(X, A ∪ q⁻¹(F ∖ W))` with `(X, A ∪ q⁻¹(F ∖ F))`, which is `(X, A)`, for
+`W` equal to `F`. -/
+def subspaceComplPairTopIso {W : Submodule ℝ F} (hW : W = ⊤) :
+    subspaceComplPair q A W ≅ subspaceComplPair q A ⊤ :=
+  TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by
+    rw [hW]
+    rfl
+
+/-- The identification `subspaceComplPairTopIso` commutes with the maps of pairs induced by a map
+over `F` carrying `A` into `A'`. -/
+@[reassoc]
+lemma subspaceComplPairTopIso_hom_naturality (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x)
+    (hA : Set.MapsTo f A A') {W : Submodule ℝ F} (hW : W = ⊤) :
+    (subspaceComplPairTopIso q A hW).hom ≫ subspaceComplPairMap f hf hA ⊤ =
+      subspaceComplPairMap f hf hA W ≫ (subspaceComplPairTopIso q' A' hW).hom := by
+  simp only [subspaceComplPairTopIso, subspaceComplPairMap_eq_ofSubsetMap f hf hA _
+    (mapsTo_union_preimage f hf hA _), TopPair.ofSubsetIso_hom]
+  exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
+
 namespace SubspaceComplPair
 
 variable (q A)
 
+/-- The preimage of the complement of the closed half-subspace `{y ∈ W | φ y ≤ 0}`. -/
+abbrev halfCompl (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) : Set X :=
+  q ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ
+
+/-- The complement of a closed half-subspace has open preimage. -/
+lemma isOpen_halfCompl [FiniteDimensional ℝ F] (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) :
+    IsOpen (halfCompl q W φ) :=
+  ((W.isClosed_of_finiteDimensional.inter (isClosed_le φ.continuous_of_finiteDimensional
+    continuous_const)).isOpen_compl).preimage q.continuous
+
 /-- The union of `A` with the preimage of the complement of the closed half-subspace
 `{y ∈ W | φ y ≤ 0}`. -/
 private abbrev half (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) : Set X :=
-  A ∪ q ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ
+  A ∪ halfCompl q W φ
 
 private lemma isOpen_half [FiniteDimensional ℝ F] (hA : IsOpen A) (W : Submodule ℝ F)
     (φ : F →ₗ[ℝ] ℝ) : IsOpen (half q A W φ) :=
-  hA.union (((W.isClosed_of_finiteDimensional.inter (isClosed_le φ.continuous_of_finiteDimensional
-    continuous_const)).isOpen_compl).preimage q.continuous)
+  hA.union (isOpen_halfCompl q W φ)
 
 variable {W : Submodule ℝ F}
-
-/-- A chosen extension to `F` of the functional of an extension by a line. -/
-private def extension (s : W.LineExtension) : F →ₗ[ℝ] ℝ :=
-  (LinearMap.exists_extend s.φ).choose
-
-private lemma extension_comp (s : W.LineExtension) : extension s ∘ₗ s.W'.subtype = s.φ :=
-  (LinearMap.exists_extend s.φ).choose_spec
-
-private lemma extension_apply_v (s : W.LineExtension) : extension s s.v = 1 :=
-  (LinearMap.congr_fun (extension_comp s) s.v).trans s.apply_v
 
 /-- The identification of `(X, A ∪ q⁻¹(F ∖ W))` with the pair modulo the union of the two
 half-subspace complements of a step. -/
 private def unionIso (s : W.LineExtension) :
     subspaceComplPair q A W ≅
-      TopPair.ofSubset (half q A s.W' (extension s) ∪ half q A s.W' (-extension s)) :=
+      TopPair.ofSubset (half q A s.W' s.extension ∪ half q A s.W' (-s.extension)) :=
   TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by
     rw [← Set.union_union_distrib_left, ← Set.preimage_union,
-      s.compl_union_compl (extension_comp s)]
+      s.compl_union_compl s.extension_comp]
     rfl
 
 /-- The identification of the pair modulo the intersection of the two half-subspace complements of
 a step with `(X, A ∪ q⁻¹(F ∖ W'))`. -/
 private def interIso (s : W.LineExtension) :
-    TopPair.ofSubset (half q A s.W' (extension s) ∩ half q A s.W' (-extension s)) ≅
+    TopPair.ofSubset (half q A s.W' s.extension ∩ half q A s.W' (-s.extension)) ≅
       subspaceComplPair q A s.W' :=
   TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by
     rw [← Set.union_inter_distrib_left, ← Set.preimage_inter, s.compl_inter_compl]
-    rfl
-
-/-- The identification of `(X, A ∪ q⁻¹(F ∖ W))` with `(X, A ∪ q⁻¹(F ∖ F))` for `W` equal to
-`F`. -/
-private def topIso (hW : W = ⊤) : subspaceComplPair q A W ≅ subspaceComplPair q A ⊤ :=
-  TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by
-    rw [hW]
     rfl
 
 variable (hA : IsOpen A) (hq : ∀ (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F), v ∈ W → φ v = 1 →
@@ -180,22 +193,22 @@ variable (hA : IsOpen A) (hq : ∀ (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ
 include hq
 
 private lemma isZero_biprod (s : W.LineExtension) (n : ℕ) :
-    IsZero ((TopPair.ofSubset (half q A s.W' (extension s))).singularHomology R n ⊞
-      (TopPair.ofSubset (half q A s.W' (-extension s))).singularHomology R n) :=
-  biprod_isZero_iff _ _ |>.2 ⟨hq _ _ _ s.v.property (extension_apply_v s) n,
-    hq _ _ _ (neg_mem s.v.property) (by simp [extension_apply_v]) n⟩
+    IsZero ((TopPair.ofSubset (half q A s.W' s.extension)).singularHomology R n ⊞
+      (TopPair.ofSubset (half q A s.W' (-s.extension))).singularHomology R n) :=
+  biprod_isZero_iff _ _ |>.2 ⟨hq _ _ _ s.v.property s.extension_apply_v n,
+    hq _ _ _ (neg_mem s.v.property) (by simp) n⟩
 
 variable [FiniteDimensional ℝ F]
 
 include hA in
 private lemma isIso_relativeMayerVietorisδ (s : W.LineExtension) (n : ℕ) :
-    IsIso (TopCat.relativeMayerVietorisδ R (isOpen_half q A hA s.W' (extension s))
-      (isOpen_half q A hA s.W' (-extension s)) (n + 1) n rfl) := by
-  have := (TopCat.relativeMayerVietoris_exact₃ R (isOpen_half q A hA s.W' (extension s))
-    (isOpen_half q A hA s.W' (-extension s)) (n + 1) n rfl).mono_g
+    IsIso (TopCat.relativeMayerVietorisδ R (isOpen_half q A hA s.W' s.extension)
+      (isOpen_half q A hA s.W' (-s.extension)) (n + 1) n rfl) := by
+  have := (TopCat.relativeMayerVietoris_exact₃ R (isOpen_half q A hA s.W' s.extension)
+    (isOpen_half q A hA s.W' (-s.extension)) (n + 1) n rfl).mono_g
       ((isZero_biprod R q A hq s _).eq_of_src _ _)
-  have := (TopCat.relativeMayerVietoris_exact₁ R (isOpen_half q A hA s.W' (extension s))
-    (isOpen_half q A hA s.W' (-extension s)) (n + 1) n rfl).epi_f
+  have := (TopCat.relativeMayerVietoris_exact₁ R (isOpen_half q A hA s.W' s.extension)
+    (isOpen_half q A hA s.W' (-s.extension)) (n + 1) n rfl).epi_f
       ((isZero_biprod R q A hq s _).eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
 
@@ -205,15 +218,15 @@ private def stepIso (s : W.LineExtension) (n : ℕ) :
       (subspaceComplPair q A s.W').singularHomology R n :=
   haveI := isIso_relativeMayerVietorisδ R q A hA hq s n
   asIso (TopPair.singularHomologyMap (unionIso q A s).hom R (n + 1)) ≪≫
-    asIso (TopCat.relativeMayerVietorisδ R (isOpen_half q A hA s.W' (extension s))
-      (isOpen_half q A hA s.W' (-extension s)) (n + 1) n rfl) ≪≫
+    asIso (TopCat.relativeMayerVietorisδ R (isOpen_half q A hA s.W' s.extension)
+      (isOpen_half q A hA s.W' (-s.extension)) (n + 1) n rfl) ≪≫
     asIso (TopPair.singularHomologyMap (interIso q A s).hom R n)
 
 omit [FiniteDimensional ℝ F] in
 private lemma isZero_singularHomology_zero (s : W.LineExtension) :
     IsZero ((subspaceComplPair q A W).singularHomology R 0) := by
-  have := TopCat.epi_relativeMayerVietorisFromBiprod_zero R (U := half q A s.W' (extension s))
-    (V := half q A s.W' (-extension s))
+  have := TopCat.epi_relativeMayerVietorisFromBiprod_zero R (U := half q A s.W' s.extension)
+    (V := half q A s.W' (-s.extension))
   exact ((isZero_biprod R q A hq s 0).of_epi
     (TopCat.relativeMayerVietorisFromBiprod R _ _ 0)).of_iso
       (asIso (TopPair.singularHomologyMap (unionIso q A s).hom R 0))
@@ -230,8 +243,8 @@ private lemma stepIso_hom_naturality (s : W.LineExtension) (n : ℕ) :
         TopPair.singularHomologyMap (subspaceComplPairMap f hf hfA s.W') R n =
       TopPair.singularHomologyMap (subspaceComplPairMap f hf hfA W) R (n + 1) ≫
         (stepIso R q' A' hA' hq' s n).hom := by
-  have hU := mapsTo_union_preimage f hf hfA {y | y ∈ s.W' ∧ extension s y ≤ 0}ᶜ
-  have hV := mapsTo_union_preimage f hf hfA {y | y ∈ s.W' ∧ (-extension s) y ≤ 0}ᶜ
+  have hU := mapsTo_union_preimage f hf hfA {y | y ∈ s.W' ∧ s.extension y ≤ 0}ᶜ
+  have hV := mapsTo_union_preimage f hf hfA {y | y ∈ s.W' ∧ (-s.extension) y ≤ 0}ᶜ
   have hinter : (interIso q A s).hom ≫ subspaceComplPairMap f hf hfA s.W' =
       TopPair.ofSubsetMap f (hU.inter_inter hV) ≫ (interIso q' A' s).hom := by
     simp only [interIso, subspaceComplPairMap_eq_ofSubsetMap f hf hfA _
@@ -244,8 +257,8 @@ private lemma stepIso_hom_naturality (s : W.LineExtension) (n : ℕ) :
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
   simp only [stepIso, Iso.trans_hom, asIso_hom, Category.assoc]
   rw [← TopPair.singularHomologyMap_comp, hinter, TopPair.singularHomologyMap_comp,
-    TopCat.relativeMayerVietorisδ_naturality_assoc R _ _ (isOpen_half q' A' hA' s.W' (extension s))
-      (isOpen_half q' A' hA' s.W' (-extension s)) f hU hV (n + 1) n rfl,
+    TopCat.relativeMayerVietorisδ_naturality_assoc R _ _ (isOpen_half q' A' hA' s.W' s.extension)
+      (isOpen_half q' A' hA' s.W' (-s.extension)) f hU hV (n + 1) n rfl,
     ← TopPair.singularHomologyMap_comp_assoc, hunion,
     TopPair.singularHomologyMap_comp_assoc]
 
@@ -284,7 +297,8 @@ def subspaceComplPairSingularHomologyIso :
       ((subspaceComplPair q A W).singularHomology R m ≅
         (subspaceComplPair q A (⊤ : Submodule ℝ F)).singularHomology R n)
   | 0, _, hW, n, _, rfl =>
-    asIso (TopPair.singularHomologyMap (topIso q A (Submodule.eq_top_of_finrank_eq hW)).hom R n)
+    asIso (TopPair.singularHomologyMap
+      (subspaceComplPairTopIso q A (Submodule.eq_top_of_finrank_eq hW)).hom R n)
   | c + 1, W, hW, n, _, rfl =>
     let s := W.lineExtension (Submodule.lt_top_of_finrank_lt_finrank (by omega)).ne
     stepIso R q A hA hq s (n + c) ≪≫
@@ -306,15 +320,9 @@ theorem subspaceComplPairSingularHomologyIso_hom_naturality :
         TopPair.singularHomologyMap (subspaceComplPairMap f hf hfA W) R m ≫
           (subspaceComplPairSingularHomologyIso R q' A' hA' hq' c W hW n m h).hom
   | 0, W, hW, n, _, rfl => by
-    have h : (topIso q A (Submodule.eq_top_of_finrank_eq hW)).hom ≫
-        subspaceComplPairMap f hf hfA ⊤ =
-        subspaceComplPairMap f hf hfA W ≫
-          (topIso q' A' (Submodule.eq_top_of_finrank_eq hW)).hom := by
-      simp only [topIso, subspaceComplPairMap_eq_ofSubsetMap f hf hfA _
-        (mapsTo_union_preimage f hf hfA _), TopPair.ofSubsetIso_hom]
-      exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
     rw [subspaceComplPairSingularHomologyIso, subspaceComplPairSingularHomologyIso, asIso_hom,
-      asIso_hom, ← TopPair.singularHomologyMap_comp, h, TopPair.singularHomologyMap_comp]
+      asIso_hom, ← TopPair.singularHomologyMap_comp, subspaceComplPairTopIso_hom_naturality,
+      TopPair.singularHomologyMap_comp]
     rfl
   | c + 1, W, hW, n, _, rfl => by
     rw [subspaceComplPairSingularHomologyIso, subspaceComplPairSingularHomologyIso, Iso.trans_hom,

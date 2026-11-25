@@ -10,8 +10,9 @@ public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Topology.ContinuousMap.Ascoli
-import TauCeti.Topology.Separation.InvFunOn
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Floer solutions in a manifold with bounded energy density
@@ -30,6 +31,9 @@ respect to `e`: `c ‖d e v‖² ≤ ω(v, J v)` for a constant `c > 0`.
   density (`TauCeti.SmoothTwoForm.IsNondegenerate.norm_fderiv_comp_le`). Writing
   `a = ∂ₛu - X_{K_s}`, the Floer equation says `∂ₜu - X_{K_t} = J a`, and `ρ = ω(a, J a)` bounds
   both `c ‖d e a‖²` and `c ‖d e (J a)‖² ≤ ω(J a, J J a) = ρ`.
+* **Lipschitz bounds where the energy density is bounded.** On a convex set where the density is at
+  most `A`, the map `e ∘ u` is Lipschitz with constant `2 (√(A / c) + B)`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.lipschitzOnWith_comp_of_floerEnergyDensity_le`).
 * **Compactness where the energy density is bounded.** A sequence of solutions on an open set
   `Ω` of the domain with values in a compact set `K ⊆ M`, on which `e` is injective, and with
   energy densities bounded on every compact subset of `Ω`, has a subsequence converging locally
@@ -136,6 +140,29 @@ theorem IsNondegenerate.norm_fderiv_comp_le_of_floerEnergyDensity_le (hω : ω.I
     ‖fderiv ℝ (e ∘ u) z‖ ≤ 2 * (√(A / c) + B) :=
   (hω.norm_fderiv_comp_le hc he hu hJc hBs hBt h).trans (by gcongr)
 
+/-- **Where the energy density is bounded, solutions are Lipschitz through `e`.** Let `u` solve
+the Floer equation `(du - X_K)^{0,1} = 0` on a convex set `s ⊆ ℝ × ℝ`, for structures `J` uniformly
+tame with respect to `e : M → F`, `c ‖d e v‖² ≤ ω(v, J v)` with `c > 0`, and with the pushforwards
+`d e (X_{K_s})`, `d e (X_{K_t})` along `u` at most `B`. If the Floer energy density of `u` is at
+most `A` on `s`, then `e ∘ u` is Lipschitz on `s` with constant `2 (√(A / c) + B)`. -/
+theorem IsNondegenerate.lipschitzOnWith_comp_of_floerEnergyDensity_le (hω : ω.IsNondegenerate)
+    {s : Set (ℝ × ℝ)} (hs : Convex ℝ s) (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
+    {c A B : ℝ} (hc : 0 < c) (he : ∀ z ∈ s, MDifferentiableAt I 𝓘(ℝ, F) e (u z))
+    (hu : ∀ z ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z)
+    (hJc : ∀ z ∈ s, ∀ v,
+      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (hBs : ∀ z ∈ s, ‖mvfderiv I e (u z) (ω.hamiltonianVectorField (Ks z) (u z))‖ ≤ B)
+    (hBt : ∀ z ∈ s, ‖mvfderiv I e (u z) (ω.hamiltonianVectorField (Kt z) (u z))‖ ≤ B)
+    (hfloer : ∀ z ∈ s, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap)
+    (hρ : ∀ z ∈ s, ω.floerEnergyDensity Ks Kt u z ≤ A) :
+    LipschitzOnWith (2 * (√(A / c) + B)).toNNReal (e ∘ u) s := by
+  refine hs.lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ) (fun z hz ↦ ?_) (fun z hz ↦ ?_)
+  · exact mdifferentiableAt_iff_differentiableAt.1 ((he z hz).comp z (hu z hz))
+  · rw [← NNReal.coe_le_coe, coe_nnNorm]
+    exact (hω.norm_fderiv_comp_le_of_floerEnergyDensity_le hc (he z hz) (hu z hz) (hJc z hz)
+      (hBs z hz) (hBt z hz) (hfloer z hz) (hρ z hz)).trans (Real.le_coe_toNNReal _)
+
 /-- **Floer solutions in a manifold converge where their energy density is bounded.** Let `uₙ`
 solve the Floer equation `(du - X_{Kₙ})^{0,1} = 0` on an open set `Ω ⊆ ℝ × ℝ`, for perturbations
 `Kₙ = K_{s,n} ds + K_{t,n} dt` and structures `Jₙ`, with values in a compact set `K ⊆ M`. Let
@@ -184,9 +211,8 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformlyOn_comp (hω : 
     TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hΩ hequi
       fun z hz ↦ ⟨e '' K, hK.image_of_continuousOn hec, fun n ↦ mem_image_of_mem e (huK n hz)⟩
   -- The limit is read back in `K` through `e`.
-  have : Nonempty M := ⟨u 0 0⟩
   obtain ⟨v, hv, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp hec he_inj
-    (fun n ↦ huK (φ n)) hGc fun z hz ↦ hconvG.tendsto_at hz
+    (fun z hz ↦ .of_forall fun n ↦ huK (φ n) hz) hGc fun z hz ↦ hconvG.tendsto_at hz
   exact ⟨φ, hφ, v, hv, hvK, hconvG.congr_right hev.symm, hpt⟩
 
 /-- **Floer solutions in a manifold with bounded energy density on exhausting discs converge.**
@@ -224,44 +250,25 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformly_comp (hω : ω
   -- The energy density bounds the derivatives of the `e ∘ uₙ` on the discs, which are convex, so
   -- these maps are uniformly Lipschitz there.
   have hL (n : ℕ) : LipschitzOnWith (2 * (√(A / c) + B)).toNNReal (e ∘ u n)
-      (Metric.closedBall 0 (R n)) := by
-    refine (convex_closedBall 0 (R n)).lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ)
-      (fun z hz ↦ ?_) (fun z hz ↦ ?_)
-    · exact mdifferentiableAt_iff_differentiableAt.1
-        ((he _ (huK n hz)).comp z (hu n z hz))
-    · rw [← NNReal.coe_le_coe, coe_nnNorm]
-      exact (hω.norm_fderiv_comp_le_of_floerEnergyDensity_le hc (he _ (huK n hz)) (hu n z hz)
-        (hJc n z hz) (hBs n z hz) (hBt n z hz) (hfloer n z hz) (hρ n z hz)).trans
-        (Real.le_coe_toNNReal _)
+      (Metric.closedBall 0 (R n)) :=
+    hω.lipschitzOnWith_comp_of_floerEnergyDensity_le (convex_closedBall 0 (R n)) (J n) hc
+      (fun z hz ↦ he _ (huK n hz)) (hu n) (hJc n) (hBs n) (hBt n) (hfloer n) (hρ n)
   -- Arzelà–Ascoli along the exhausting discs, for maps with values in the compact set `e(K)`.
   have hec : ContinuousOn e K := fun x hx ↦ (he x hx).continuousAt.continuousWithinAt
   have hKe : IsCompact (e '' K) := hK.image_of_continuousOn hec
   obtain ⟨φ, hφ, g, hg⟩ :=
     TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall hKe hR hL
       fun n z hz ↦ mem_image_of_mem e (huK n hz)
-  -- Every point eventually lies in the discs. Off the discs, replace the maps by a point `p₀` of
-  -- `K`, so as to read the limit back in `K` through `e`.
+  -- Every point eventually lies in the discs, so the values there eventually lie in `K`, and the
+  -- limit is read back in `K` through `e`.
   have hin (z : ℝ × ℝ) : ∀ᶠ n in atTop, z ∈ Metric.closedBall 0 (R (φ n)) :=
     ((hR.comp hφ.tendsto_atTop).eventually_ge_atTop ‖z‖).mono fun n hn ↦
       mem_closedBall_zero_iff.2 hn
-  obtain ⟨n₀, hn₀⟩ := (hR.eventually_ge_atTop 0).exists
-  set p₀ := u n₀ 0
-  have hp₀ : p₀ ∈ K := huK n₀ (Metric.mem_closedBall_self hn₀)
-  classical
-  set x : ℕ → ℝ × ℝ → M := fun n z ↦ if z ∈ Metric.closedBall 0 (R (φ n)) then u (φ n) z else p₀
-  have hxK (n : ℕ) : MapsTo (x n) univ K := fun z _ ↦ by
-    by_cases hz : z ∈ Metric.closedBall 0 (R (φ n))
-    · simpa only [x, ite_eq_left hz] using huK _ hz
-    · simpa only [x, ite_eq_right hz] using hp₀
-  have hxu (z : ℝ × ℝ) : (fun n ↦ u (φ n) z) =ᶠ[atTop] fun n ↦ x n z :=
-    (hin z).mono fun n hn ↦ (ite_eq_left hn).symm
-  have : Nonempty M := ⟨p₀⟩
-  obtain ⟨v, hv, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp (Ω := univ) hec he_inj hxK
-    g.continuous.continuousOn fun z _ ↦
-      ((tendstoLocallyUniformlyOn_univ.2 hg).tendsto_at (mem_univ z)).congr'
-        ((hxu z).mono fun n hn ↦ by simp only [comp_apply, hn])
+  obtain ⟨v, hv, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp (Ω := univ)
+    (x := fun n ↦ u (φ n)) hec he_inj (fun z _ ↦ (hin z).mono fun n hn ↦ huK (φ n) hn)
+    g.continuous.continuousOn fun z _ ↦ hg.tendsto_at z
   refine ⟨φ, hφ, v, continuousOn_univ.1 hv, fun z ↦ hvK (mem_univ z), ?_,
-    fun z ↦ (hpt z (mem_univ z)).congr' (hxu z).symm⟩
+    fun z ↦ hpt z (mem_univ z)⟩
   convert hg using 1
   exact funext fun z ↦ hev (mem_univ z)
 

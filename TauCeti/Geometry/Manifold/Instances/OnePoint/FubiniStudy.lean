@@ -13,6 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.TwoDim
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Surface
+import TauCeti.MeasureTheory.Integral.PolarCoord
 
 /-!
 # The Fubini–Study form of the Riemann sphere
@@ -45,7 +46,10 @@ sphere, multiplication by `i` on each tangent space
 integrates to `1` over the affine chart
 (`OnePoint.integral_fubiniStudyDensity`), which is the whole sphere except the point `∞`. The area
 `π` of the unit disc and the polar integral `∫₀^∞ 2r / (1 + r²)² dr = 1` give this value. The
-comparison with the integral of the form over the oriented sphere is not carried out here.
+integral of the form itself over the sphere with its complex orientation is then `1`
+(`OnePoint.integralTopForm_fubiniStudyForm`), and its measure `|ω_FS|` gives the sphere total mass
+one (`OnePoint.measure_fubiniStudyForm_univ`), both in
+`TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere`.
 
 This is the area form with which symplectic and holomorphic-curve arguments on the sphere are
 normalized; other areas are obtained by scaling it.
@@ -142,15 +146,10 @@ private theorem integral_Ioi_mul_fubiniStudyDensity :
 density integrates to `2 · π · 1 / (2π) = 1` over `ℂ`, the affine chart of the sphere, which misses
 only the point `∞`. This is the normalization of the Fubini–Study form to total area one. -/
 theorem integral_fubiniStudyDensity : ∫ z : ℂ, fubiniStudyDensity z = 1 := by
-  have h := integral_fun_norm_addHaar (volume : Measure ℂ)
-    (fun r : ℝ ↦ (Real.pi * (1 + r ^ 2) ^ 2)⁻¹)
-  simp only [Complex.finrank_real_complex, Measure.real, Complex.volume_ball] at h
   simp only [fubiniStudyDensity_def]
-  rw [h]
-  simp only [Nat.add_one_sub_one, pow_one, smul_eq_mul, integral_Ioi_mul_fubiniStudyDensity]
-  simp only [ENNReal.ofReal_one, one_pow, one_mul, ENNReal.coe_toReal, NNReal.coe_real_pi]
+  rw [integral_fun_norm_complex fun r ↦ (Real.pi * (1 + r ^ 2) ^ 2)⁻¹]
+  simp only [smul_eq_mul, integral_Ioi_mul_fubiniStudyDensity]
   field_simp
-  norm_num
 
 /-! ### The Fubini–Study form -/
 
@@ -271,6 +270,14 @@ theorem fubiniStudyForm_apply_ne_zero (x : OnePoint ℂ) : fubiniStudyForm.val x
 theorem isSymplectic_fubiniStudyForm : fubiniStudyForm.IsSymplectic :=
   (SmoothTwoForm.isSymplectic_iff_forall_ne_zero_of_finrank_eq_two
     Complex.finrank_real_complex).2 fubiniStudyForm_apply_ne_zero
+
+/-- The Fubini–Study form is `C¹`, the regularity at which forms are integrated over spheres. -/
+theorem isSmoothForm_fubiniStudyForm : IsSmoothForm 𝓘(ℝ, ℂ) 1 fubiniStudyForm.val :=
+  fubiniStudyForm.isSmoothForm.of_le (by simp)
+
+/-- The Fubini–Study form is closed: its manifold exterior derivative vanishes. -/
+theorem mextDeriv_fubiniStudyForm : mextDeriv fubiniStudyForm.val = 0 :=
+  (SmoothForm.isClosed_def _).1 isSymplectic_fubiniStudyForm.isClosed
 
 /-- **The Fubini–Study form is compatible with the complex structure** of the Riemann sphere: it
 is invariant under multiplication by `i`, and `ω_FS(v, i v) = ρ |v|² > 0` for `v ≠ 0`. -/

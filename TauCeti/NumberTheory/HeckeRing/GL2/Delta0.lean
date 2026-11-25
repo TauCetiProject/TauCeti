@@ -44,6 +44,8 @@ Chris Birkbeck), with `CoprimeDet` and `coprimeDet_iff` from the `CoprimeDet` se
 ## Main results
 
 * `HeckeRing.GL2.mem_Delta0_iff`: membership, unfolded.
+* `HeckeRing.GL2.dvd_mul_apply_one_zero`, `HeckeRing.GL2.intCast_mul_apply_zero_zero`: the
+  congruence conditions `N ∣ c` and `a` a unit modulo `N` are preserved by products.
 * `HeckeRing.GL2.CoprimeDet`, `HeckeRing.GL2.coprimeDet_iff`: the elements whose integral
   representative has determinant coprime to `N`, and the fact that one witness decides it.
 * `HeckeRing.GL2.Delta0_le_posDetInt`: `Δ₀(N)` consists of integral matrices of positive
@@ -68,6 +70,20 @@ open scoped Pointwise MatrixGroups
 
 namespace HeckeRing.GL2
 
+/-- If the lower-left entries of two integral matrices are divisible by `N`, so is the
+lower-left entry of their product. -/
+theorem dvd_mul_apply_one_zero {N : ℕ} {A B : Matrix (Fin 2) (Fin 2) ℤ} (hA : (N : ℤ) ∣ A 1 0)
+    (hB : (N : ℤ) ∣ B 1 0) : (N : ℤ) ∣ (A * B) 1 0 := by
+  simp only [Matrix.mul_apply, Fin.sum_univ_two]
+  exact dvd_add (dvd_mul_of_dvd_left hA _) (dvd_mul_of_dvd_right hB _)
+
+/-- If the lower-left entry of `B` is divisible by `N`, the upper-left entry of `A * B` is
+`A 0 0 * B 0 0` modulo `N`. -/
+theorem intCast_mul_apply_zero_zero {N : ℕ} {A B : Matrix (Fin 2) (Fin 2) ℤ}
+    (hB : (N : ℤ) ∣ B 1 0) :
+    ((A * B) 0 0 : ZMod N) = (A 0 0 : ZMod N) * (B 0 0 : ZMod N) := by
+  simp [Matrix.mul_apply, Fin.sum_univ_two, (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr hB]
+
 variable (N : ℕ)
 
 /-- `Δ₀(N)`: integral matrices of positive determinant that are upper-triangular modulo `N`
@@ -84,13 +100,8 @@ noncomputable def Delta0 : Submonoid (GL (Fin 2) ℚ) where
     · ext i j
       simp [hA, hB, Matrix.mul_apply, Matrix.map_apply]
     · simpa [Matrix.det_mul] using mul_pos hda hdb
-    · simp only [Matrix.mul_apply, Fin.sum_univ_two]
-      exact dvd_add (dvd_mul_of_dvd_left hAN _) (dvd_mul_of_dvd_right hBN _)
-    · -- the upper-left entry of the product is `a₁a₂` modulo `N`, since `c₂ ≡ 0`
-      have hentry : ((A * B) 0 0 : ZMod N) = (A 0 0 : ZMod N) * (B 0 0 : ZMod N) := by
-        simp [Matrix.mul_apply, Fin.sum_univ_two,
-          (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr hBN]
-      rw [hentry]
+    · exact dvd_mul_apply_one_zero hAN hBN
+    · rw [intCast_mul_apply_zero_zero hBN]
       exact hAunit.mul hBunit
 
 /-- Membership in `Δ₀(N)`, unfolded. -/

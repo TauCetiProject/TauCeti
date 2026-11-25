@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Classification.NumberedFi
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Topology.Covering.LocalPower
 
-import Mathlib.Data.Set.Card.Arithmetic
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
 import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Topology.ClusterSet
@@ -371,36 +370,17 @@ degree hypothesis; over a marked point `q`, it says that the multiset of local d
 is a partition of `n`. -/
 theorem finsum_mem_preimage_singleton_localDegree (y : OnePoint ℂ) :
     ∑ᶠ z ∈ X.π ⁻¹' {y}, X.localDegree z = n := by
-  set F := X.π ⁻¹' {y}
-  have hF : F.Finite := X.finite_preimage_singleton y
-  -- Separate the points of the fibre `F` by pairwise disjoint neighbourhoods `V z`, on which the
-  -- local degree counts the preimages of each point near `y`.
-  obtain ⟨U, hU, hUdisj⟩ := hF.t2_separation
-  choose V hVU hVo hzV hV using fun z =>
-    (X.isLocalPowerAt_localDegree z).exists_ncard_inter_preimage_eq
-      ((hU z).2.mem_nhds (hU z).1)
-  -- Since `π` is closed, the fibres near `y` lie in the union of the `V z`.
-  have ht : ∀ᶠ y' in 𝓝 y, X.π ⁻¹' {y'} ⊆ ⋃ z ∈ F, V z :=
-    X.isProperMap.isClosedMap.eventually_nhds_fiber y fun z hz ↦
-      Filter.Eventually.mono ((hVo z).mem_nhds (hzV z)) fun _ hV ↦ mem_biUnion hz hV
-  have hnear : ∀ᶠ y' in 𝓝[≠] y, y' ∉ marked ∧ X.π ⁻¹' {y'} ⊆ ⋃ z ∈ F, V z ∧
-      ∀ z ∈ F, (V z ∩ X.π ⁻¹' {y'}).ncard = X.localDegree z := by
-    have hmarked : (marked \ {y})ᶜ ∈ 𝓝 y :=
-      (finite_marked.sdiff).isClosed.isOpen_compl.mem_nhds fun h => h.2 rfl
-    filter_upwards [nhdsWithin_le_nhds hmarked, self_mem_nhdsWithin, nhdsWithin_le_nhds ht,
-      hF.eventually_all.2 fun z (hz : X.π z = y) => hz ▸ hV z] with y' hy'm hy'y hy't hy'V
-    exact ⟨fun h => hy'm ⟨h, hy'y⟩, hy't, hy'V⟩
-  -- Pick an unmarked `y'` near `y`: its `n` preimages are distributed among the `V z`.
-  obtain ⟨y', hy'm, hy't, hy'V⟩ := hnear.exists
-  have hcover : X.π ⁻¹' {y'} = ⋃ z ∈ F, V z ∩ X.π ⁻¹' {y'} := by
-    refine Subset.antisymm (fun z' hz' => ?_) (iUnion₂_subset fun _ _ => inter_subset_right)
-    obtain ⟨z, hz, hz'z⟩ := mem_iUnion₂.1 (hy't hz')
-    exact mem_biUnion hz ⟨hz'z, hz'⟩
-  refine Eq.trans ?_ (X.natCard_preimage_singleton y' hy'm)
-  rw [Nat.card_coe_set_eq, hcover,
-    hF.ncard_biUnion (fun _ _ => (X.finite_preimage_singleton y').subset inter_subset_right)
-      (hUdisj.mono fun z => inter_subset_left.trans (hVU z))]
-  exact (finsum_mem_congr rfl hy'V).symm
+  -- Near `y`, the local degrees over `y` count the preimages of every other point.
+  have hcount := X.isProperMap.isClosedMap.eventually_ncard_preimage_eq_finsum
+    X.finite_preimage_singleton fun z (hz : X.π z = y) _ hN => by
+      rw [← hz]
+      exact (X.isLocalPowerAt_localDegree z).exists_ncard_inter_preimage_eq hN
+  -- Pick an unmarked such point: it has `n` preimages.
+  have hmarked : ∀ᶠ y' in 𝓝[≠] y, y' ∉ marked :=
+    nhdsNE_le_codiscrete y finite_marked.compl_mem_codiscrete
+  obtain ⟨y', hy', hy'm⟩ := (hcount.and hmarked).exists
+  rw [← hy', ← Nat.card_coe_set_eq]
+  exact X.natCard_preimage_singleton y' hy'm
 
 /-- The degree of a branched cover is positive: an unmarked point has a nonempty finite fibre. -/
 theorem ne_zero (X : TopBranchedCover n) : n ≠ 0 := by

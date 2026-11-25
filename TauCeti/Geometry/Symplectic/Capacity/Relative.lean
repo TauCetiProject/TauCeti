@@ -35,15 +35,16 @@ supremum of `-min H`; the orbits of `X_{-F} = -X_F` are those of `X_F` run backw
 periods and the same free homotopy classes, so the two conventions give the same number. The
 convention here is that of `TauCeti.SmoothTwoForm.contractibleHZCapacity`.
 
-In the absolute capacity `c°_HZ(W)` contractibility is tested in the support region `W` itself.
-In the relative capacity it is tested in a fixed set `W`, typically a domain in which `V` lies or
-the whole manifold `M`, independently of `V`. This makes the relative capacity monotone: for
-`V' ⊆ V`, `Z ⊆ Z'` and `W ⊆ W'`, every `(V', Z')`-admissible function in `W'` is
-`(V, Z)`-admissible in `W`, since a loop contractible in `W` is contractible in `W'`, so
-`c°_HZ(V', Z')` in `W'` is at most `c°_HZ(V, Z)` in `W`
-(`TauCeti.SmoothTwoForm.relContractibleHZCapacity_mono`). For `V ⊆ W` it is bounded by the
-absolute capacity `c°_HZ(W)` as soon as `Z` has nonempty interior
-(`TauCeti.SmoothTwoForm.relContractibleHZCapacity_le_contractibleHZCapacity`). When `σ`
+In the capacity `c°_HZ(W)` of a set, contractibility is tested in the support region `W` itself.
+In the relative capacity, as in the capacity `c°_HZ(V; W)` of `V` in `W`, it is tested in a fixed
+set `W`, typically a domain in which `V` lies or the whole manifold `M`, independently of `V`. This
+makes the relative capacity monotone: for `V' ⊆ V`, `Z ⊆ Z'` and `W ⊆ W'`, every
+`(V', Z')`-admissible function in `W'` is `(V, Z)`-admissible in `W`, since a loop contractible in
+`W` is contractible in `W'`, so `c°_HZ(V', Z')` in `W'` is at most `c°_HZ(V, Z)` in `W`
+(`TauCeti.SmoothTwoForm.relContractibleHZCapacity_mono`). It is bounded by the capacity
+`c°_HZ(V; W)` as soon as `Z` has nonempty interior
+(`TauCeti.SmoothTwoForm.relContractibleHZCapacity_le_contractibleHZCapacity`), and hence, for
+`V ⊆ W`, by `c°_HZ(W)`. When `σ`
 is nondegenerate and `M` is finite-dimensional, the capacity is conformal,
 `c°_HZ(V, Z; cσ) = c · c°_HZ(V, Z; σ)` for `c > 0`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.relContractibleHZCapacity_smul`), and it is invariant under
@@ -67,8 +68,8 @@ contractible in `W`, on almost every level near `Σ`.
 ## Main results
 
 * `TauCeti.SmoothTwoForm.relContractibleHZCapacity_mono`: monotonicity in the pair.
-* `TauCeti.SmoothTwoForm.relContractibleHZCapacity_le_contractibleHZCapacity`: when `V ⊆ W` and
-  `Z` has nonempty interior, `c°_HZ(V, Z)` in `W` is at most `c°_HZ(W)`.
+* `TauCeti.SmoothTwoForm.relContractibleHZCapacity_le_contractibleHZCapacity`: when `Z` has
+  nonempty interior, `c°_HZ(V, Z)` in `W` is at most `c°_HZ(V; W)`.
 * `TauCeti.SmoothTwoForm.exists_isRelContractibleHZAdmissible_lt_iSup`: a finite capacity is
   approximated by the maxima of admissible Hamiltonians.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.relContractibleHZCapacity_smul`: conformality.
@@ -81,7 +82,7 @@ contractible in `W`, on almost every level near `Σ`.
   cotangent bundles*, Duke Math. J. 123 (2004), 1–47.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
   Applications to cotangent bundles*, arXiv:2404.07953, Definition 5.3 and the remark following
-  it.
+  it, and the remarks following Definition 6.1.
 * H. Hofer, E. Zehnder, *Symplectic Invariants and Hamiltonian Dynamics*, Birkhäuser, 1994,
   Section 4.1.
 -/
@@ -167,24 +168,23 @@ theorem relContractibleHZCapacity_mono {W' V' Z' : Set M} (hW : W ⊆ W') (hV : 
   relContractibleHZCapacity_le_iff.2 fun _ hF ↦
     (hF.mono hW hV hZ).ofReal_iSup_le_relContractibleHZCapacity
 
-/-- A `(V, Z)`-admissible Hamiltonian in `W` is `HZ°`-admissible for `W` as soon as `V ⊆ W` and `Z`
-has nonempty interior: it is supported in the interior of `W` and attains its maximum on the
-interior of `Z`. -/
+/-- A `(V, Z)`-admissible Hamiltonian in `W` is `HZ°`-admissible for `V` in `W` as soon as `Z` has
+nonempty interior: it attains its maximum on the interior of `Z`. -/
 theorem IsRelContractibleHZAdmissible.isContractibleHZAdmissible
-    (hF : σ.IsRelContractibleHZAdmissible W V Z F) (hV : V ⊆ W) (hZ : (interior Z).Nonempty) :
-    σ.IsContractibleHZAdmissible W F where
-  toIsHZNormalized := hF.toIsHZNormalized.mono hV
+    (hF : σ.IsRelContractibleHZAdmissible W V Z F) (hZ : (interior Z).Nonempty) :
+    σ.IsContractibleHZAdmissible W V F where
+  toIsHZNormalized := hF.toIsHZNormalized
   exists_isOpen_isMaxOn :=
     ⟨interior Z, isOpen_interior, hZ, fun z hz ↦ hF.isMaxOn z (interior_subset hz)⟩
   eq_of_isMIntegralCurve := hF.eq_of_isMIntegralCurve
 
-/-- **The relative capacity is bounded by the absolute one.** If `V ⊆ W` and `Z` has nonempty
-interior, then `c°_HZ(V, Z)` in `W` is at most `c°_HZ(W)`. -/
-theorem relContractibleHZCapacity_le_contractibleHZCapacity (hV : V ⊆ W)
-    (hZ : (interior Z).Nonempty) :
-    σ.relContractibleHZCapacity W V Z ≤ σ.contractibleHZCapacity W :=
+/-- **The relative capacity is bounded by the capacity of the support region.** If `Z` has
+nonempty interior, then `c°_HZ(V, Z)` in `W` is at most `c°_HZ(V; W)`. Combined with
+`TauCeti.SmoothTwoForm.contractibleHZCapacity_mono`, it is at most `c°_HZ(W)` when `V ⊆ W`. -/
+theorem relContractibleHZCapacity_le_contractibleHZCapacity (hZ : (interior Z).Nonempty) :
+    σ.relContractibleHZCapacity W V Z ≤ σ.contractibleHZCapacity W V :=
   relContractibleHZCapacity_le_iff.2 fun _ hF ↦
-    (hF.isContractibleHZAdmissible hV hZ).ofReal_iSup_le_contractibleHZCapacity
+    (hF.isContractibleHZAdmissible hZ).ofReal_iSup_le_contractibleHZCapacity
 
 /-- The zero Hamiltonian is `(V, Z)`-admissible in `W` as soon as `V` contains a nonempty open set:
 its Hamiltonian vector field vanishes, so its periodic orbits are constant. In particular the

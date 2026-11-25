@@ -49,6 +49,8 @@ how membership in the big cell is read off a Bruhat normal form.
 * `Matrix.BlockUnitriangular.det_eq_one`, `Matrix.BlockUnitriangular.mul` and
   `Matrix.BlockUnitriangular.inv`: block unitriangular matrices have determinant one and are
   closed under products and inverses.
+* `Matrix.BlockUnitriangular.mul_apply_of_covBy`: one step above the diagonal blocks, a product
+  of block unitriangular matrices has the sum of the entries of its factors.
 * `Matrix.mul_eq_of_blockUnitriangular_toDual`: a block diagonal matrix multiplied on the left by
   a block lower unitriangular matrix is unchanged once the product is block upper triangular.
 * `Matrix.det_toSquareBlockProp_blockLDU`: the leading block minors of `L * D * U` are those of
@@ -177,6 +179,22 @@ theorem BlockUnitriangular.mul_apply_of_eq (hA : A.BlockUnitriangular b)
 theorem BlockUnitriangular.mul (hA : A.BlockUnitriangular b) (hB : B.BlockUnitriangular b) :
     (A * B).BlockUnitriangular b :=
   ⟨hA.1.mul hB.1, fun _ _ hij => (hA.mul_apply_of_eq hB.1 hij).trans (hB.2 hij)⟩
+
+/-- One step above the diagonal blocks, the entries of a product of block unitriangular matrices
+are the sums of the entries of the factors: such an entry only meets the identity diagonal blocks
+of the two factors. -/
+theorem BlockUnitriangular.mul_apply_of_covBy (hA : A.BlockUnitriangular b)
+    (hB : B.BlockUnitriangular b) {i j : m} (hij : b i ⋖ b j) :
+    (A * B) i j = A i j + B i j := by
+  rw [Matrix.mul_apply, Fintype.sum_eq_add i j fun h => hij.ne (congrArg b h)]
+  · simp [hA.apply_of_eq rfl, hB.apply_of_eq rfl, add_comm]
+  · rintro k ⟨hki, hkj⟩
+    rcases lt_trichotomy (b k) (b i) with hk | hk | hk
+    · rw [hA.1 hk, zero_mul]
+    · rw [hA.2 hk.symm, one_apply_ne (Ne.symm hki), zero_mul]
+    · rcases (not_lt.mp (hij.2 hk)).lt_or_eq with hjk | hjk
+      · rw [hB.1 hjk, mul_zero]
+      · rw [hB.2 hjk.symm, one_apply_ne hkj, mul_zero]
 
 /-- A block diagonal matrix `D`, multiplied on the left by a block lower unitriangular matrix, is
 unchanged as soon as the product is block upper triangular. -/

@@ -235,19 +235,31 @@ theorem hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM
   ((exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose_spec.2
     b).choose_spec.1
 
+/-- The Littlewood–Paley blocks of `u` sum to the synthesis of its weighted blocks. -/
+private theorem hasSum_littlewoodPaleyBlock_ofWeightedBlocksCLM_weightedBlocks
+    (u : BesovSpace F φ s p q) :
+    HasSum (fun j ↦ littlewoodPaleyBlock F φ j u.toDistr)
+      (ofWeightedBlocksCLM F φ s p q u.weightedBlocks).toDistr := by
+  refine (hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM u.weightedBlocks).congr_fun
+    fun j ↦ ?_
+  rw [inv_weight_smul_weightedBlocks_apply, u.coe_block,
+    enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
+      (fun _ _ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ)]
+
 /-- `ofWeightedBlocksCLM` reconstructs every element of `B^s_{p,q}` from its weighted blocks. -/
 @[simp]
 theorem ofWeightedBlocksCLM_weightedBlocks (u : BesovSpace F φ s p q) :
-    ofWeightedBlocksCLM F φ s p q u.weightedBlocks = u := by
-  ext1
-  have hsum : HasSum (fun j ↦ littlewoodPaleyBlock F φ j u.toDistr)
-      (ofWeightedBlocksCLM F φ s p q u.weightedBlocks).toDistr := by
-    refine (hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM u.weightedBlocks).congr_fun
-      fun j ↦ ?_
-    rw [inv_weight_smul_weightedBlocks_apply, u.coe_block,
-      enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
-        (fun _ _ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ)]
-  exact tendsto_nhds_unique hsum.tendsto_sum_nat (tendsto_sum_littlewoodPaleyBlock φ u.toDistr)
+    ofWeightedBlocksCLM F φ s p q u.weightedBlocks = u :=
+  ext <| tendsto_nhds_unique
+    (hasSum_littlewoodPaleyBlock_ofWeightedBlocksCLM_weightedBlocks u).tendsto_sum_nat
+    (tendsto_sum_littlewoodPaleyBlock φ u.toDistr)
+
+/-- **Unconditional reconstruction.** The tempered distribution of an element of `B^s_{p,q}` is the
+unconditional sum in `𝓢'(E, F)` of its Littlewood–Paley blocks. -/
+theorem hasSum_littlewoodPaleyBlock_toDistr (u : BesovSpace F φ s p q) :
+    HasSum (fun j ↦ littlewoodPaleyBlock F φ j u.toDistr) u.toDistr := by
+  simpa only [ofWeightedBlocksCLM_weightedBlocks] using
+    hasSum_littlewoodPaleyBlock_ofWeightedBlocksCLM_weightedBlocks u
 
 theorem leftInverse_ofWeightedBlocksCLM :
     Function.LeftInverse (ofWeightedBlocksCLM F φ s p q) (weightedBlocksₗᵢ F φ s p q) :=

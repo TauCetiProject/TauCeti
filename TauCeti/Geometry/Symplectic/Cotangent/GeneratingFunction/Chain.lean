@@ -28,7 +28,11 @@ source and target points are `TauCeti.CotangentBundle.generatingSource` and
 vertex the outgoing covector of edge `i - 1` equals the incoming covector of edge `i`,
 `-d₂S_(i-1)(q_(i-1), q_i) = d₁S_i(q_i, q_(i+1))`; equivalently, the target point of the relation
 of `S_(i-1)` over `(q_(i-1), q_i)` is the source point of the relation of `S_i` over
-`(q_i, q_(i+1))` (`TauCeti.CotangentBundle.mvfderiv_cyclicAction_eq_zero_iff`).
+`(q_i, q_(i+1))` (`TauCeti.CotangentBundle.mvfderiv_cyclicAction_eq_zero_iff`). On
+configurations in a normed space, `A` has the Fréchet derivative
+`v ↦ Σ_i dS_i(q_i, q_(i+1)) (v_i, v_(i+1))` (`TauCeti.hasFDerivAt_cyclicAction`). If each `S_i`
+is invariant under a diagonal translation `(x, X) ↦ (x + c, X + c)`, then `A` is invariant under
+`q ↦ q + c` (`TauCeti.periodic_cyclicAction`).
 
 Suppose now that, over a set `W_i ⊆ Q × Q`, the relation of `S_i` is the graph of a map `φ_i`
 defined on a set `D_i` of covectors: every `z ∈ D_i` has its base pair `(π z, π (φ_i z))` in `W_i`
@@ -87,6 +91,49 @@ omit [TopologicalSpace Q] in
 theorem cyclicAction_apply (S : ZMod N → Q × Q → ℝ) (q : ZMod N → Q) :
     cyclicAction S q = ∑ i, S i (q i, q (i + 1)) :=
   (rfl)
+
+/-- If each `S_i` is invariant under the diagonal translation `(x, X) ↦ (x + c, X + c)`, then the
+cyclic discrete action is invariant under the diagonal translation `q ↦ q + c` of
+configurations. -/
+theorem periodic_cyclicAction {G : Type*} [Add G] {c : G} {S : ZMod N → G × G → ℝ}
+    (hS : ∀ i, Function.Periodic (S i) (c, c)) :
+    Function.Periodic (cyclicAction S) fun _ ↦ c := fun q ↦ by
+  simp only [cyclicAction_apply, Pi.add_apply]
+  exact Finset.sum_congr rfl fun i _ ↦ by simpa using hS i (q i, q (i + 1))
+
+/-- **The derivative of the cyclic discrete action** on configurations in a normed space. If each
+`S_i` is differentiable at the edge `(q_i, q_(i+1))`, then `A(q) = Σ_i S_i(q_i, q_(i+1))` has
+derivative `v ↦ Σ_i dS_i(q_i, q_(i+1)) (v_i, v_(i+1))` at `q`. -/
+theorem hasFDerivAt_cyclicAction {S : ZMod N → E × E → ℝ} {q : ZMod N → E}
+    (hS : ∀ i, DifferentiableAt ℝ (S i) (q i, q (i + 1))) :
+    HasFDerivAt (cyclicAction S)
+      (∑ i, (fderiv ℝ (S i) (q i, q (i + 1))).comp
+        ((ContinuousLinearMap.proj i).prod (ContinuousLinearMap.proj (i + 1)))) q := by
+  have h : cyclicAction S = fun q' ↦ ∑ i, S i (q' i, q' (i + 1)) := by
+    funext q'
+    simp [cyclicAction_apply]
+  rw [h]
+  exact HasFDerivAt.fun_sum fun i _ ↦ (hS i).hasFDerivAt.comp q
+    ((hasFDerivAt_apply i q).prodMk (hasFDerivAt_apply (i + 1) q))
+
+/-- If each `S_i` is differentiable at the edge `(q_i, q_(i+1))`, then the cyclic discrete action
+`A(q) = Σ_i S_i(q_i, q_(i+1))` on configurations in a normed space is differentiable at `q`. -/
+theorem differentiableAt_cyclicAction {S : ZMod N → E × E → ℝ} {q : ZMod N → E}
+    (hS : ∀ i, DifferentiableAt ℝ (S i) (q i, q (i + 1))) :
+    DifferentiableAt ℝ (cyclicAction S) q :=
+  (hasFDerivAt_cyclicAction hS).differentiableAt
+
+/-- If each `S_i` is `C^n` at the edge `(q_i, q_(i+1))`, then the cyclic discrete action
+`A(q) = Σ_i S_i(q_i, q_(i+1))` on configurations in a normed space is `C^n` at `q`. -/
+theorem contDiffAt_cyclicAction {n : ℕ∞ω} {S : ZMod N → E × E → ℝ} {q : ZMod N → E}
+    (hS : ∀ i, ContDiffAt ℝ n (S i) (q i, q (i + 1))) :
+    ContDiffAt ℝ n (cyclicAction S) q := by
+  have h : cyclicAction S = fun q' ↦ ∑ i, S i (q' i, q' (i + 1)) := by
+    funext q'
+    simp [cyclicAction_apply]
+  rw [h]
+  exact ContDiffAt.sum fun i _ ↦ (hS i).comp q
+    ((contDiffAt_apply ℝ (fun _ ↦ E) i q).prodMk (contDiffAt_apply ℝ (fun _ ↦ E) (i + 1) q))
 
 /-- The edge `(q_i, q_(i+1))` of a configuration has derivative `v ↦ (v_i, v_(i+1))`. -/
 private theorem hasMFDerivAt_edge (i : ZMod N) (q : ZMod N → Q) :

@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Sub.Defs
 public import Mathlib.Order.Filter.Cofinite
+public import Mathlib.Order.Interval.Finset.Defs
+import Mathlib.Basic.Finite.Sigma
 
 /-!
-# Functions tending to infinity along the cofinite filter
+# Convergence along the cofinite filter
 
 If a function tending to `atTop` along the cofinite filter takes all its values strictly above `b`,
 then they are bounded below by a single `c > b` (`Filter.Tendsto.exists_gt_forall_le`); for
@@ -17,14 +20,29 @@ complements Mathlib's `Filter.Tendsto.exists_forall_le`, which needs a nonempty 
 function takes only finitely many values below each bound is Mathlib's Northcott property
 (`northcott_iff_tendsto`, `Northcott.finite_le`).
 
+In an order with finite lower sets `Iic a` and a truncated subtraction, subtracting a constant has
+finite fibres, so it maps the cofinite filter into itself (`Filter.tendsto_tsub_const_cofinite`);
+for instance, shifting the multi-indices `n : σ →₀ ℕ` down by a fixed `d`.
+
 Extending a function along any map by a constant preserves convergence along the cofinite filter
 to a limit that the constant lies in (`Filter.Tendsto.extend_cofinite`); for instance, the extension
 by zero of a function vanishing at infinity on a subgroup vanishes at infinity on the whole group.
+
+On a sigma type with finitely many components, convergence along the cofinite filter can be checked
+on each component (`Filter.tendsto_cofinite_sigma_iff`); for instance, the row norms of an operator
+into a finite sum of coefficient models tend to zero when they do on each summand.
 -/
 
 public section
 
 open Filter
+
+/-- In an order whose lower sets `Iic a` are finite, subtracting a constant `d` has finite fibres
+(`n - d = m` forces `n ≤ m + d`), so it maps the cofinite filter into itself. -/
+theorem Filter.tendsto_tsub_const_cofinite {α : Type*} [Preorder α] [Add α] [Sub α]
+    [OrderedSub α] [LocallyFiniteOrderBot α] (d : α) : Tendsto (· - d) cofinite cofinite :=
+  Tendsto.cofinite_of_finite_preimage_singleton fun m ↦
+    ((Set.finite_Iic (m + d)).subset fun _ hn ↦ tsub_le_iff_right.1 (le_of_eq hn)).to_subtype
 
 namespace Filter.Tendsto
 
@@ -57,3 +75,17 @@ theorem extend_cofinite {γ : Type*} {l : Filter γ} {φ : α → γ} (hφ : Ten
     exact absurd (he hs) hb
 
 end Filter.Tendsto
+
+namespace Filter
+
+/-- Over finitely many components, a function on a sigma type tends to `l` along the cofinite
+filter exactly when its restriction to each component does. -/
+theorem tendsto_cofinite_sigma_iff {ι β : Type*} [Finite ι] {α : ι → Type*}
+    {f : (Σ i, α i) → β} {l : Filter β} :
+    Tendsto f cofinite l ↔ ∀ i, Tendsto (fun a ↦ f ⟨i, a⟩) cofinite l := by
+  refine ⟨fun hf i ↦ hf.comp sigma_mk_injective.tendsto_cofinite, fun hf s hs ↦ ?_⟩
+  rw [mem_map, mem_cofinite]
+  exact (Set.finite_univ.sigma fun i _ ↦ mem_cofinite.mp (hf i hs)).subset
+    fun _ hx ↦ ⟨Set.mem_univ _, hx⟩
+
+end Filter

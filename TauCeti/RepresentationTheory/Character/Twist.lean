@@ -64,6 +64,15 @@ representation need neither.
   irreducible**, and conversely.
 * `Representation.char_charTwist`: the trace character of the twist is `χ` times the character
   of `ρ`.
+* `Representation.invariants_charTwist_trivial_eq_bot`: if `χ g - 1` acts injectively on `V` for
+  some `g`, then `G` acting on `V` through `χ` has no nonzero invariant vector.
+* `Representation.ker_inf_stabilizer_le_stabilizer_charTwist`: the kernel of `χ` meets the
+  stabilizer of `v` for `ρ` inside the stabilizer of `v` for the twist, and
+  `Representation.ker_inf_ker_le_ker_charTwist` does the same for kernels.
+* `Representation.charTwist_comp`: restricting a twist along a homomorphism `f` twists the
+  restriction by `χ.comp f`.
+* `Representation.charTwist_comp_subtype_of_le_ker`: on a subgroup inside the kernel of `χ`, the
+  twist restricts to `ρ`.
 * `Representation.asAlgebraHom_charTwist`: on the group algebra, the twist acts through the
   algebra automorphism `MonoidAlgebra.charTwist χ` of `k[G]`.
 
@@ -117,6 +126,12 @@ theorem charTwist_charTwist (χ ψ : G →* kˣ) (ρ : Representation k G V) :
     charTwist χ (charTwist ψ ρ) = charTwist (χ * ψ) ρ :=
   MonoidHom.ext fun g => LinearMap.ext fun v => by
     simp [mul_smul]
+
+/-- Restricting a twist along a monoid homomorphism `f` gives the twist of the restriction by
+`χ.comp f`. -/
+theorem charTwist_comp {H : Type*} [Monoid H] (χ : G →* kˣ) (ρ : Representation k G V)
+    (f : H →* G) : (charTwist χ ρ).comp f = charTwist (χ.comp f) (ρ.comp f) :=
+  MonoidHom.ext fun _ => by simp
 
 /-- Twisting the trivial representation of the coefficient line by `χ` gives the one-dimensional
 representation of `χ`.  So the one-dimensional representations are the twists of the trivial one,
@@ -290,6 +305,47 @@ theorem coe_charTwistLinearEquiv_symm (f : IntertwiningMap (charTwist χ ρ) (ch
 end IntertwiningMap
 
 end CommSemiring
+
+section Group
+
+variable [CommSemiring k] [Group G] [AddCommMonoid V] [Module k V] (χ : G →* kˣ)
+  (ρ : Representation k G V)
+
+/-- A vector fixed by `ρ g` is fixed by the twist `χ g • ρ g` when `g` is in the kernel of `χ`. -/
+theorem ker_inf_stabilizer_le_stabilizer_charTwist (v : V) :
+    χ.ker ⊓ ρ.stabilizer v ≤ (charTwist χ ρ).stabilizer v := fun g hg ↦ by
+  rw [Subgroup.mem_inf, MonoidHom.mem_ker, mem_stabilizer] at hg
+  simp [mem_stabilizer, hg.1, hg.2]
+
+/-- An element in the kernels of `χ` and of `ρ` is in the kernel of the twist. -/
+theorem ker_inf_ker_le_ker_charTwist : χ.ker ⊓ ρ.ker ≤ (charTwist χ ρ).ker := fun g hg ↦ by
+  simp [MonoidHom.mem_ker.mp hg.1, MonoidHom.mem_ker.mp hg.2]
+
+/-- On a subgroup inside the kernel of `χ`, the twist by `χ` restricts to `ρ`. -/
+@[simp]
+theorem charTwist_comp_subtype_of_le_ker {U : Subgroup G} (hU : U ≤ χ.ker) :
+    (charTwist χ ρ).comp U.subtype = ρ.comp U.subtype := by
+  have hχU : χ.comp U.subtype = 1 := MonoidHom.ext fun g ↦ MonoidHom.mem_ker.1 (hU g.property)
+  rw [charTwist_comp, hχU, charTwist_one]
+
+end Group
+
+section Invariants
+
+variable [CommRing k] [Group G] [AddCommGroup V] [Module k V] (χ : G →* kˣ)
+
+/-- **A character moving every vector fixes none.** Let `G` act on a module `V` through the
+character `χ`, `g` acting as multiplication by `χ g`. If `χ g - 1` acts injectively on `V` for some
+`g`, the invariants are zero, since an invariant `v` has `(χ g - 1) • v = 0`. For a sign character
+this applies as soon as `χ g = -1` and multiplication by `2` is injective on `V`. For the trivial
+character the twist is the trivial representation, whose invariants are all of `V`. -/
+theorem invariants_charTwist_trivial_eq_bot {g : G} (hg : IsSMulRegular V ((χ g : k) - 1)) :
+    (charTwist χ (trivial k G V)).invariants = ⊥ := by
+  refine eq_bot_iff.2 fun v hv ↦ (Submodule.mem_bot k).2 <| hg ?_
+  have hv' : (χ g : k) • v = v := by simpa [charTwist_apply_apply] using hv g
+  simp only [smul_zero, sub_smul, one_smul, hv', sub_self]
+
+end Invariants
 
 section Field
 

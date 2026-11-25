@@ -72,6 +72,9 @@ of a completed group algebra attached to two topological generators.
 * `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
   continuous families whose inner series have zero constant coefficient.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
+* `PowerSeries.HasSubst.sub_one`: `f - 1` can be substituted when `constantCoeff f = 1`.
+* `PowerSeries.constantCoeff_subst_of_constantCoeff_zero'`: univariate `PowerSeries.constantCoeff`
+  form of `constantCoeff_subst_of_constantCoeff_zero`.
 * `PowerSeries.subst_one`: substitution preserves the constant series one.
 * `PowerSeries.subst_X_add_C_mul_X_pow`: substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`.
 * `PowerSeries.subst_eq_aeval_trunc_of_pow_eq_zero`: substitution at a series with a vanishing
@@ -109,6 +112,8 @@ of a completed group algebra attached to two topological generators.
   through the linear term `Xₛ` of the multivariate series.
 * `PowerSeries.exists_subst_add_X_pow_mul`: perturbing a zero-constant input by `X ^ m * r`
   gives a difference `X ^ m * s` with `s(0) = f₁ r(0)`.
+* `PowerSeries.coe_inv_eq_subst_of_coe_eq_subst`: if a unit `u` is `f (a)` for a unit `f`, then
+  `u⁻¹ = f⁻¹ (a)`.
 * `PowerSeries.algHom_eq_substAlgHom`: an algebra map `R⟦X⟧ → S⟦X⟧` sending `X` to a
   substitutable series is a substitution.
 * `PowerSeries.subst_add_of_sq_eq_zero`: `f (a + h) = f (a) + h f' (a)` when `h ^ 2 = 0`, and
@@ -157,6 +162,12 @@ theorem coeff_trunc_comp_trunc {R : Type*} [CommRing R] (f : R⟦X⟧) {g : R⟦
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
     HasSubst (C x) := by
   simpa only [HasSubst, ← constantCoeff_eq, constantCoeff_C] using hx
+
+/-- If `f` has constant coefficient `1`, then `f - 1` has zero constant coefficient and can be
+substituted into any power series. -/
+theorem HasSubst.sub_one {R : Type*} [CommRing R] {f : R⟦X⟧} (hf : constantCoeff f = 1) :
+    HasSubst (f - 1) :=
+  .of_constantCoeff_zero' (by simp [hf])
 
 /-- Substituting into the zero series gives zero, even without a substitutability hypothesis. -/
 @[simp]
@@ -291,6 +302,12 @@ section Algebra
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
+/-- A variant of `constantCoeff_subst_of_constantCoeff_zero` using `PowerSeries.constantCoeff`
+instead of `MvPowerSeries.constantCoeff`. -/
+theorem constantCoeff_subst_of_constantCoeff_zero' {a : S⟦X⟧} (ha : constantCoeff a = 0)
+    (f : R⟦X⟧) : constantCoeff (f.subst a) = algebraMap R S (constantCoeff f) := by
+  rw [constantCoeff_eq, constantCoeff_subst_of_constantCoeff_zero (by rwa [← constantCoeff_eq])]
+
 /-- The linear coefficient of `f (a)`, for `a` of zero constant coefficient, is the product of
 the linear coefficients of `f` and `a`. -/
 theorem coeff_one_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) (f : R⟦X⟧) :
@@ -335,6 +352,14 @@ theorem coeff_subst_eq_mul {a : S⟦X⟧} (ha : constantCoeff a = 0) {f : R⟦X�
       refine (mul_dvd_mul (X_pow_dvd_iff.mpr fun m hm ↦ coeff_of_lt_order m
         ((Nat.cast_lt.mpr hm).trans_le hn)) (X_dvd_iff.mpr ha)).trans ⟨a ^ d, by ring⟩
     rw [X_pow_dvd_iff.mp hdvd n (Nat.lt_succ_self n), smul_zero]
+
+/-- If a unit `u` is the substitution `f (a)` of a unit `f`, then its inverse is the substitution
+`f⁻¹ (a)` of the inverse. -/
+theorem coe_inv_eq_subst_of_coe_eq_subst {a : S⟦X⟧} (ha : HasSubst a) {f : R⟦X⟧ˣ} {u : S⟦X⟧ˣ}
+    (hu : (u : S⟦X⟧) = (f : R⟦X⟧).subst a) :
+    ((u⁻¹ : S⟦X⟧ˣ) : S⟦X⟧) = ((f⁻¹ : R⟦X⟧ˣ) : R⟦X⟧).subst a := by
+  refine Units.inv_eq_of_mul_eq_one_right ?_
+  rw [hu, ← coe_substAlgHom ha, ← map_mul, Units.mul_inv, map_one]
 
 /-- An `R`-algebra map `σ : R⟦X⟧ → S⟦X⟧` such that `σ X` can be substituted is the
 substitution `f ↦ f (σ X)`. No continuity hypothesis is needed. -/
