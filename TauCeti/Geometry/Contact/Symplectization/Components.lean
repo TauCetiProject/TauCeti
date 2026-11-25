@@ -19,16 +19,16 @@ annihilator line `ξ⁰ ⊂ T*M` (`TauCeti.IsContactDistribution.annihilatorPunc
 manifold for the exterior derivative of its tautological one-form. This file determines its
 connected components.
 
-* If `ξ` is not coorientable, that is, if no global contact form has kernel `ξ`, then `ξ⁰ ∖ 0` is
-  connected; conversely, on a Hausdorff σ-compact manifold, it is connected only then
+* On a nonempty, preconnected, Hausdorff, σ-compact manifold, `ξ⁰ ∖ 0` is connected exactly when
+  `ξ` is not coorientable, that is, when no global contact form has kernel `ξ`
   (`TauCeti.IsContactDistribution.connectedSpace_annihilatorPunctured_iff`).
-* If `ξ = ker α` for a contact form `α`, then `ξ⁰ ∖ 0` has exactly two connected components: the
-  images of the trivializations `κ_α : (t, x) ↦ eᵗ α_x` and `κ_(-α)`
-  (`TauCeti.SmoothForm.symplectizationToAnnihilator`), that is, the positive multiples of `α` and
-  the negative ones
+* If `ξ = ker α` for a contact form `α` on a manifold without boundary, then `ξ⁰ ∖ 0` has exactly
+  two connected components: the images of the trivializations `κ_α : (t, x) ↦ eᵗ α_x` and
+  `κ_(-α)` (`TauCeti.SmoothForm.symplectizationToAnnihilator`), that is, the positive multiples of
+  `α` and the negative ones
   (`TauCeti.IsContactDistribution.connectedComponentIn_annihilatorPunctured_eq_range`,
-  `TauCeti.IsContactDistribution.connectedComponentIn_annihilatorPunctured_eq_or`). On a manifold
-  without boundary each of them is a diffeomorphic copy of the cooriented symplectization `ℝ × M`
+  `TauCeti.IsContactDistribution.connectedComponentIn_annihilatorPunctured_eq_or`). Each of them
+  is a diffeomorphic copy of the cooriented symplectization `ℝ × M`
   (`TauCeti.SmoothForm.isLocalDiffeomorph_symplectizationToAnnihilator`), and the fibre negation
   `ℓ ↦ -ℓ` exchanges them
   (`TauCeti.SmoothForm.vectorBundleScalarDiffeomorph_symplectizationToAnnihilator_of_neg`).
