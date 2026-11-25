@@ -23,10 +23,9 @@ making Mathlib's vertex-colouring API (`DFunLike` coercion to `G.edgeSet → C`,
 At any vertex `x`, the edges incident with `x` form a clique in `G.lineGraph` in bijection with
 `G.neighborSet x`. Every proper edge-colouring is therefore injective on the incident edges at `x`,
 and `(G.neighborSet x).encard ≤ G.chromaticIndex` holds without finiteness or decidability
-assumptions on `G` or its vertex type. Restricting to any vertex set containing `G.support` induces
-an isomorphism of line graphs. Finally, edge-colourings correspond bijectively to indexed
-partitions of `G.edgeSet` into matching subgraphs (`SimpleGraph.Subgraph.IsMatching`), with empty
-matchings allowed so unused colours are retained.
+assumptions on `G` or its vertex type. Edge-colourings correspond bijectively to indexed partitions
+of `G.edgeSet` into matching subgraphs (`SimpleGraph.Subgraph.IsMatching`), with empty matchings
+allowed so unused colours are retained.
 
 ## Main definitions
 
@@ -38,9 +37,6 @@ matchings allowed so unused colours are retained.
 * `SimpleGraph.EdgeColorableWith G C`, `SimpleGraph.EdgeColorable G k`, and
   `SimpleGraph.chromaticIndex G`: edge-colourability by `C` or by `k` colours and the chromatic
   index `χ'(G) : ℕ∞`.
-* `SimpleGraph.lineGraphInduceIsoOfSupportSubset` and
-  `SimpleGraph.edgeColoringInduceEquivOfSupportSubset`: restricting to a vertex set containing
-  `G.support` preserves the line graph and its colourings up to equivalence.
 * `SimpleGraph.EdgeColoring.colorClassSubgraph`, `SimpleGraph.EdgeColoring.ofMatchings`, and
   `SimpleGraph.edgeColoringEquivMatchings`: correspondence between proper edge-colourings and
   indexed partitions into matching subgraphs.
@@ -80,7 +76,7 @@ namespace SimpleGraph
 variable {V : Type u} {W : Type v} {G H : SimpleGraph V} {G' : SimpleGraph W}
   {C : Type w} {D : Type x} {k m : ℕ}
 
-/-! ### Cliques of incident edges and support -/
+/-! ### Cliques of incident edges -/
 
 /-- The edges incident with a vertex `x` form a clique in `G.lineGraph`. -/
 theorem isClique_lineGraph_incidenceSet (G : SimpleGraph V) (x : V) :
@@ -97,40 +93,6 @@ theorem pairwise_lineGraph_adj_neighborSet (G : SimpleGraph V) (x : V) :
   refine lineGraph_adj_iff_exists.2 ⟨?_, x, Sym2.mem_mk_left _ _, Sym2.mem_mk_left _ _⟩
   intro h
   exact hne (Subtype.ext (Sym2.congr_right.1 (Subtype.mk.inj h)))
-
-/-- Inducing `G` on any vertex set `s` that contains `G.support` yields an isomorphic line graph,
-since isolated vertices outside `s` are incident with no edges. -/
-def lineGraphInduceIsoOfSupportSubset {s : Set V} (hs : G.support ⊆ s) :
-    (G.induce s).lineGraph ≃g G.lineGraph where
-  toFun := (Copy.induce G s).toLineGraphEmbedding
-  invFun e := ⟨(e : Sym2 V).attachWith
-      (fun _ ha ↦ Set.mem_sym2_iff_subset.1 (G.edgeSet_subset_sym2_iff.2 hs e.property) ha), by
-    obtain ⟨p, hp⟩ := e
-    induction p using Sym2.ind with
-    | _ x y => exact hp⟩
-  left_inv e := by
-    obtain ⟨p, hp⟩ := e
-    induction p using Sym2.ind with
-    | _ x y => rfl
-  right_inv e := Subtype.ext (Sym2.attachWith_map_subtypeVal _)
-  map_rel_iff' := (Copy.induce G s).toLineGraphEmbedding.map_rel_iff
-
-/-- `SimpleGraph.lineGraphInduceIsoOfSupportSubset` acts on edges by mapping endpoints along
-`Subtype.val`. -/
-@[simp]
-theorem coe_lineGraphInduceIsoOfSupportSubset_apply {s : Set V} (hs : G.support ⊆ s)
-    (e : (G.induce s).edgeSet) :
-    (G.lineGraphInduceIsoOfSupportSubset hs e : Sym2 V) = (e : Sym2 s).map Subtype.val :=
-  (rfl)
-
-/-- Mapping the inverse of `SimpleGraph.lineGraphInduceIsoOfSupportSubset` along `Subtype.val`
-recovers the original edge. -/
-@[simp]
-theorem map_coe_lineGraphInduceIsoOfSupportSubset_symm_apply {s : Set V} (hs : G.support ⊆ s)
-    (e : G.edgeSet) :
-    (((G.lineGraphInduceIsoOfSupportSubset hs).symm e : (G.induce s).edgeSet) : Sym2 s).map
-      Subtype.val = (e : Sym2 V) :=
-  Sym2.attachWith_map_subtypeVal _
 
 /-! ### Proper edge-colourings -/
 
@@ -278,29 +240,6 @@ theorem EdgeColorable.mono (hkm : k ≤ m) (h : G.EdgeColorable k) : G.EdgeColor
 theorem edgeColorable_bot (k : ℕ) : (⊥ : SimpleGraph V).EdgeColorable k :=
   (edgeColorable_zero_iff.2 rfl).mono k.zero_le
 
-/-- A simple graph is `1`-edge-colourable iff every vertex has at most one neighbour. -/
-theorem edgeColorable_one_iff_subsingleton_neighborSet :
-    G.EdgeColorable 1 ↔ ∀ x : V, (G.neighborSet x).Subsingleton := by
-  rw [EdgeColorable, colorable_one_iff]
-  refine ⟨fun h x y₁ hy₁ y₂ hy₂ ↦ by_contra fun hne ↦ ?_, fun h ↦ ?_⟩
-  · have hadj : G.lineGraph.Adj ⟨s(x, y₁), hy₁⟩ ⟨s(x, y₂), hy₂⟩ :=
-      @pairwise_lineGraph_adj_neighborSet _ G x ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩
-        fun hy ↦ hne (congrArg Subtype.val hy)
-    rw [h] at hadj
-    exact hadj
-  · ext e₁ e₂
-    simp only [bot_adj, iff_false]
-    rintro ⟨hne, x, hx₁, hx₂⟩
-    obtain ⟨y₁, hy₁⟩ := Sym2.mem_iff_exists.1 hx₁
-    obtain ⟨y₂, hy₂⟩ := Sym2.mem_iff_exists.1 hx₂
-    have hadj₁ : y₁ ∈ G.neighborSet x := by
-      rw [mem_neighborSet, ← G.mem_edgeSet, ← hy₁]
-      exact e₁.property
-    have hadj₂ : y₂ ∈ G.neighborSet x := by
-      rw [mem_neighborSet, ← G.mem_edgeSet, ← hy₂]
-      exact e₂.property
-    exact hne (Subtype.ext (hy₁.trans (h x hadj₁ hadj₂ ▸ hy₂.symm)))
-
 /-- Containment in another graph preserves edge-colourability by a given colour type. -/
 theorem EdgeColorableWith.of_isContained (hGG' : G ⊑ G') (h : G'.EdgeColorableWith C) :
     G.EdgeColorableWith C := by
@@ -372,44 +311,6 @@ colours. -/
 theorem chromaticIndex_le_iff_edgeColorable (G : SimpleGraph V) :
     G.chromaticIndex ≤ k ↔ G.EdgeColorable k :=
   chromaticNumber_le_iff_colorable
-
-/-- Equivalence between proper edge-colourings of `G.induce s` and `G` when `G.support ⊆ s`. -/
-def edgeColoringInduceEquivOfSupportSubset {s : Set V} (hs : G.support ⊆ s) :
-    (G.induce s).EdgeColoring C ≃ G.EdgeColoring C :=
-  coloringCongr (G.lineGraphInduceIsoOfSupportSubset hs) (.refl C)
-
-/-- Forward evaluation of `SimpleGraph.edgeColoringInduceEquivOfSupportSubset` pulls an edge back
-along `(G.lineGraphInduceIsoOfSupportSubset hs).symm`. -/
-@[simp]
-theorem edgeColoringInduceEquivOfSupportSubset_apply {s : Set V} (hs : G.support ⊆ s)
-    (c : (G.induce s).EdgeColoring C) (e : G.edgeSet) :
-    G.edgeColoringInduceEquivOfSupportSubset hs c e =
-      c ((G.lineGraphInduceIsoOfSupportSubset hs).symm e) :=
-  (rfl)
-
-/-- Inverse evaluation of `SimpleGraph.edgeColoringInduceEquivOfSupportSubset` restricts a proper
-edge-colouring of `G` to `G.induce s`. -/
-@[simp]
-theorem edgeColoringInduceEquivOfSupportSubset_symm_apply {s : Set V} (hs : G.support ⊆ s)
-    (c : G.EdgeColoring C) (e : (G.induce s).edgeSet) :
-    (G.edgeColoringInduceEquivOfSupportSubset hs).symm c e =
-      c (G.lineGraphInduceIsoOfSupportSubset hs e) :=
-  (rfl)
-
-/-- Restricting `G` to a vertex set containing `G.support` preserves `EdgeColorableWith`. -/
-theorem edgeColorableWith_induce_of_support_subset {s : Set V} (hs : G.support ⊆ s) :
-    (G.induce s).EdgeColorableWith C ↔ G.EdgeColorableWith C :=
-  (G.edgeColoringInduceEquivOfSupportSubset hs).nonempty_congr
-
-/-- Restricting `G` to a vertex set containing `G.support` preserves `k`-edge-colourability. -/
-theorem edgeColorable_induce_of_support_subset {s : Set V} (hs : G.support ⊆ s) :
-    (G.induce s).EdgeColorable k ↔ G.EdgeColorable k :=
-  colorable_congr (G.lineGraphInduceIsoOfSupportSubset hs)
-
-/-- Restricting `G` to a vertex set containing `G.support` preserves `G.chromaticIndex`. -/
-theorem chromaticIndex_induce_of_support_subset {s : Set V} (hs : G.support ⊆ s) :
-    (G.induce s).chromaticIndex = G.chromaticIndex :=
-  chromaticNumber_congr (G.lineGraphInduceIsoOfSupportSubset hs)
 
 /-! ### Edge-colourings and partitions into matchings -/
 
@@ -605,15 +506,7 @@ theorem edgeColorable_iff_exists_matchings :
         Pairwise (Disjoint on fun i ↦ (M i).edgeSet) ∧ ⋃ i, (M i).edgeSet = G.edgeSet :=
   (G.edgeColorable_iff_edgeColorableWith).trans G.edgeColorableWith_iff_exists_matchings
 
-/-! ### Degree bounds and small values of the chromatic index -/
-
-/-- `G.chromaticIndex = 1` iff `G` has at least one edge and every vertex has at most one
-neighbour. -/
-theorem chromaticIndex_eq_one_iff :
-    G.chromaticIndex = 1 ↔ G ≠ ⊥ ∧ ∀ x : V, (G.neighborSet x).Subsingleton := by
-  rw [eq_iff_le_not_lt, Order.lt_one_iff_nonpos, ← Nat.cast_one, ← Nat.cast_zero,
-    chromaticIndex_le_iff_edgeColorable, chromaticIndex_le_iff_edgeColorable,
-    edgeColorable_one_iff_subsingleton_neighborSet, edgeColorable_zero_iff, and_comm]
+/-! ### Degree lower bounds on the chromatic index -/
 
 /-- **Degree lower bound on the chromatic index.** For every graph `G` and vertex `x`, the extended
 cardinality of `G.neighborSet x` is at most `G.chromaticIndex`, with no finiteness or decidability
