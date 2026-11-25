@@ -175,9 +175,9 @@ theorem commute_starLift_right_iff (f : A →⋆ₐ[R] C) (g : B →⋆ₐ[R] C)
 /-- The universal property of the algebraic tensor product of star algebras: its unital
 star homomorphisms are exactly the pairs of unital star homomorphisms with commuting ranges. -/
 def starLiftEquiv :
-    {fg : (A →⋆ₐ[R] C) × (B →⋆ₐ[R] C) // ∀ a b, Commute (fg.1 a) (fg.2 b)} ≃
+    {fg : (A →⋆ₐ[R] C) × (B →⋆ₐ[R] C) // ∀ a b, Commute (fg.fst a) (fg.snd b)} ≃
       (A ⊗[R] B →⋆ₐ[R] C) where
-  toFun fg := starLift fg.1.1 fg.1.2 fg.2
+  toFun fg := starLift fg.val.fst fg.val.snd fg.property
   invFun f := ⟨(f.comp includeLeftStarAlgHom, f.comp includeRightStarAlgHom),
     fun a b => ((Commute.one_right a).tmul (Commute.one_left b)).map f⟩
   left_inv fg := by
@@ -189,13 +189,13 @@ def starLiftEquiv :
 
 @[simp]
 theorem starLiftEquiv_apply
-    (fg : {fg : (A →⋆ₐ[R] C) × (B →⋆ₐ[R] C) // ∀ a b, Commute (fg.1 a) (fg.2 b)}) :
-    starLiftEquiv fg = starLift fg.1.1 fg.1.2 fg.2 :=
+    (fg : {fg : (A →⋆ₐ[R] C) × (B →⋆ₐ[R] C) // ∀ a b, Commute (fg.fst a) (fg.snd b)}) :
+    starLiftEquiv fg = starLift fg.val.fst fg.val.snd fg.property :=
   (rfl)
 
 @[simp]
 theorem starLiftEquiv_symm_apply_coe (f : A ⊗[R] B →⋆ₐ[R] C) :
-    (starLiftEquiv.symm f).1 = (f.comp includeLeftStarAlgHom, f.comp includeRightStarAlgHom) :=
+    (starLiftEquiv.symm f).val = (f.comp includeLeftStarAlgHom, f.comp includeRightStarAlgHom) :=
   (rfl)
 
 end Algebra.TensorProduct
