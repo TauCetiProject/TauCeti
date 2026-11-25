@@ -69,12 +69,10 @@ identities `H_(uE) = Q(0)⁻¹ Q` and `H_(u(1-E)) = Q(0) S` (which simplify to `
 
 * `ContinuousLinearMap.IsRowCompact.isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse`,
   `ContinuousLinearMap.IsRowCompact.isRieszProjection_rieszColemanProjection`,
-  `ContinuousLinearMap.IsRowCompact.isRieszColemanProjection_rieszColemanProjection`,
-  `ContinuousLinearMap.IsRowCompact.isRowCompact_rieszColemanProjection`, and
+  `ContinuousLinearMap.IsRowCompact.isRieszColemanProjection_rieszColemanProjection`, and
   `ContinuousLinearMap.IsRowCompact.exists_isRieszColemanProjection`: good Fredholm zero after
-  Coleman's polynomial transform, Riesz-projection characterization, row compactness, and existence
-  of the Riesz–Coleman projection for a coprime polynomial factorisation `H_u = Q * S` on
-  `C₀(I, R)`.
+  Coleman's polynomial transform, Riesz-projection characterization, and existence of the
+  Riesz–Coleman projection for a coprime polynomial factorisation `H_u = Q * S` on `C₀(I, R)`.
 * `ContinuousLinearMap.IsRieszColemanProjection.isCoprime_charPowerSeries_matrixCoeff_complement`:
   for any Riesz–Coleman projection `E` of a row-compact `u` on `C₀(I, R)` with
   `IsUnit Q.leadingCoeff`, `Q` is coprime to `(u * (1 - E)).matrixCoeff.charPowerSeries`.
@@ -130,13 +128,6 @@ theorem rieszColemanProjection_def (u : C₀(I, R) →L[R] C₀(I, R)) (Q : R[X]
         1 Q.natDegree :=
   (rfl)
 
-/-- Since `(0 : R[X]).natDegree = 0`, `u.rieszColemanProjection 0` evaluates to the junk value `0`
-(`Q = 0` lacks a unit leading coefficient; `IsRieszColemanProjection u 0 E ↔ E = 1`). -/
-@[simp]
-theorem rieszColemanProjection_zero (u : C₀(I, R) →L[R] C₀(I, R)) :
-    u.rieszColemanProjection 0 = 0 := by
-  simp [rieszColemanProjection_def]
-
 /-- For `Q = 1`, the explicit Riesz–Coleman projector is `0`. -/
 @[simp]
 theorem rieszColemanProjection_one (u : C₀(I, R) →L[R] C₀(I, R)) :
@@ -151,12 +142,6 @@ theorem rieszColemanProjection_C_mul (u : C₀(I, R) →L[R] C₀(I, R)) {Q : R[
   rw [rieszColemanProjection_def, rieszColemanProjection_def,
     Polynomial.natDegree_C_mul_of_isUnit hb,
     Polynomial.C_inverse_leadingCoeff_mul_reverse_C_mul hb]
-
-/-- Scaling `Q` by a unit of `R` does not change `u.rieszColemanProjection Q`. -/
-@[simp]
-theorem rieszColemanProjection_units_smul (u : C₀(I, R) →L[R] C₀(I, R)) (Q : R[X]) (c : Rˣ) :
-    u.rieszColemanProjection (c • Q) = u.rieszColemanProjection Q := by
-  rw [Units.smul_def, Polynomial.smul_eq_C_mul, rieszColemanProjection_C_mul u c.isUnit]
 
 end Defs
 
@@ -393,16 +378,6 @@ theorem IsRowCompact.isRieszColemanProjection_rieszColemanProjection
     (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     IsRieszColemanProjection u Q (u.rieszColemanProjection Q) :=
   (rieszColemanProjection_spec hu hQ hS hQS hcop).1
-
-/-- For a row-compact `u` under a coprime Fredholm factorisation `H_u = Q * S` with
-`IsUnit Q.leadingCoeff`, the explicit Riesz–Coleman projector is row compact. -/
-theorem IsRowCompact.isRowCompact_rieszColemanProjection
-    {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) {Q : R[X]} {S : R⟦X⟧}
-    (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
-    (hQS : u.matrixCoeff.charPowerSeries = (Q : R⟦X⟧) * S)
-    (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
-    (u.rieszColemanProjection Q).IsRowCompact :=
-  (hu.isRieszColemanProjection_rieszColemanProjection hQ hS hQS hcop).isRowCompact hQ hu
 
 /-- **Existence of the Riesz–Coleman projection on model spaces.** Let `u` be row compact on
 `C₀(I, R)`, and suppose `H_u = Q * S` where `Q.leadingCoeff` is a unit, `S` is entire, and `Q`,

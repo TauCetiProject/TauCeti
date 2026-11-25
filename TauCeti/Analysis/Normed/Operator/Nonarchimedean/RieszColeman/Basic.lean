@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Complement
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Basic
+public import TauCeti.Analysis.Normed.Operator.RingOpNorm.Banach
 public import TauCeti.Analysis.Normed.Operator.RowCompact.Idempotent
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Algebra.Polynomial.Smeval
 import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.Reverse
-import TauCeti.Algebra.Ring.Commute
 import TauCeti.Algebra.Ring.SpectralIdempotent
 
 /-!
@@ -36,16 +35,12 @@ into `u`-stable submodules (`ContinuousLinearMap.IsRieszColemanProjection.range_
 `ContinuousLinearMap.IsRieszColemanProjection.isTopCompl_ker_range_aeval_reverse`), on which
 `Q*(u)` vanishes on the first summand and restricts to a continuous linear automorphism of the
 second (`ContinuousLinearMap.IsRieszColemanProjection.equivKer`). Such a projection is unique
-(`ContinuousLinearMap.IsRieszColemanProjection.unique`); for `Q = 1` it is zero and for `Q = 0` it
-is the identity (`ContinuousLinearMap.isRieszColemanProjection_one_iff`,
-`ContinuousLinearMap.isRieszColemanProjection_zero_iff`); scaling `Q` by a unit leaves the
-predicate unchanged (`ContinuousLinearMap.IsRieszColemanProjection.C_mul`,
-`ContinuousLinearMap.IsRieszColemanProjection.units_smul`,
-`ContinuousLinearMap.isRieszColemanProjection_C_mul_iff`,
-`ContinuousLinearMap.isRieszColemanProjection_units_smul_iff`); and for `Q = (X - C a) ^ h`
-(`0 < h`) it agrees with Serre's classical Riesz projection at `a` of order `h`
-(`ContinuousLinearMap.IsRieszProjection.isRieszColemanProjection_X_sub_C_pow`,
-`ContinuousLinearMap.isRieszColemanProjection_X_sub_C_pow_iff`).
+(`ContinuousLinearMap.IsRieszColemanProjection.unique`); for `Q = 1` it is zero
+(`ContinuousLinearMap.isRieszColemanProjection_one_iff`,
+`ContinuousLinearMap.IsRieszColemanProjection.eq_zero_of_one`,
+`ContinuousLinearMap.isRieszColemanProjection_one_zero`); scaling `Q` by a unit constant leaves
+the predicate unchanged (`ContinuousLinearMap.IsRieszColemanProjection.C_mul`,
+`ContinuousLinearMap.isRieszColemanProjection_C_mul_iff`).
 
 When the leading coefficient of `Q` is a unit, the constant term of `Q*` is `Q.leadingCoeff`, so
 dividing `Q* - Q*(0)` by `X` expresses `E = u * ((-lc(Q)⁻¹) • (Q*.divX)(u) * E)`, and
@@ -154,30 +149,6 @@ end IsRieszColemanProjection
 theorem isRieszColemanProjection_one_iff {u E : M →L[R] M} :
     IsRieszColemanProjection u 1 E ↔ E = 0 :=
   ⟨IsRieszColemanProjection.eq_zero_of_one, fun h ↦ h ▸ isRieszColemanProjection_one_zero u⟩
-
-/-- For `Q = 0`, the identity operator is a Riesz–Coleman projection of `u`. -/
-theorem isRieszColemanProjection_zero_one (u : M →L[R] M) :
-    IsRieszColemanProjection u 0 1 :=
-  ⟨.one, Commute.one_right u, subset_closure (Subalgebra.one_mem _), by simp,
-    ⟨0, by simp, by simp, by simp, by simp, subset_closure (Subalgebra.zero_mem _)⟩⟩
-
-namespace IsRieszColemanProjection
-
-variable {u E : M →L[R] M} {Q : R[X]}
-
-/-- For `Q = 0`, the reversal is `0`, so any Riesz–Coleman projection for `0` is `1`. -/
-theorem eq_one_of_zero (hE : IsRieszColemanProjection u 0 E) : E = 1 := by
-  obtain ⟨w, hw₁, -⟩ := hE.exists_inverse
-  symm
-  simpa [sub_eq_zero] using hw₁.symm
-
-end IsRieszColemanProjection
-
-/-- For `Q = 0`, `E` is a Riesz–Coleman projection of `u` if and only if `E = 1`. -/
-@[simp]
-theorem isRieszColemanProjection_zero_iff {u E : M →L[R] M} :
-    IsRieszColemanProjection u 0 E ↔ E = 1 :=
-  ⟨IsRieszColemanProjection.eq_one_of_zero, fun h ↦ h ▸ isRieszColemanProjection_zero_one u⟩
 
 namespace IsRieszColemanProjection
 
@@ -300,21 +271,6 @@ theorem inverse_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit
     (hE.C_mul hc).inverse = Ring.inverse c • hE.inverse :=
   (C_mul_aux hE hc).2
 
-/-- Scaling `Q` by a unit of `R` preserves Riesz–Coleman projections. -/
-theorem units_smul (hE : IsRieszColemanProjection u Q E) (c : Rˣ) :
-    IsRieszColemanProjection u (c • Q) E := by
-  rw [Units.smul_def, Polynomial.smul_eq_C_mul]
-  exact hE.C_mul c.isUnit
-
-/-- Scaling `Q` by `c : Rˣ` scales the complementary inverse by `c⁻¹`. -/
-@[simp]
-theorem inverse_units_smul (hE : IsRieszColemanProjection u Q E) (c : Rˣ) :
-    (hE.units_smul c).inverse = (↑c⁻¹ : R) • hE.inverse := by
-  refine ((hE.units_smul c).eq_inverse ?_ ?_).symm
-  · rw [reverse_smul, Units.smul_def, map_smul, smul_mul_smul_comm, c.mul_inv, one_smul,
-      hE.aeval_reverse_mul_inverse]
-  · rw [mul_smul_comm, hE.mul_inverse_eq_zero, smul_zero]
-
 end IsRieszColemanProjection
 
 /-- Scaling `Q` by a unit scalar does not change the Riesz–Coleman projections of `u`. -/
@@ -327,12 +283,6 @@ theorem isRieszColemanProjection_C_mul_iff {u E : M →L[R] M} {Q : R[X]} {c : R
   have hQ : Polynomial.C c' * (Polynomial.C c * Q) = Q := by
     rw [← mul_assoc, ← Polynomial.C_mul, hc', Polynomial.C_1, one_mul]
   simpa only [hQ] using h.C_mul (IsUnit.of_mul_eq_one _ hc')
-
-/-- Scaling `Q` by a unit of `R` gives an equivalent Riesz–Coleman projection condition. -/
-@[simp]
-theorem isRieszColemanProjection_units_smul_iff {u E : M →L[R] M} {Q : R[X]} (c : Rˣ) :
-    IsRieszColemanProjection u (c • Q) E ↔ IsRieszColemanProjection u Q E := by
-  rw [Units.smul_def, Polynomial.smul_eq_C_mul, isRieszColemanProjection_C_mul_iff c.isUnit]
 
 namespace IsRieszColemanProjection
 
@@ -548,89 +498,6 @@ theorem isUnit_aeval_mul_one_sub_reverse (hE : IsRieszColemanProjection u Q E)
     hE.inverse_mul_aeval_reverse
 
 end IsRieszColemanProjection
-
-/-- Every Riesz projection of `u` at `a` of order `h` is a Riesz–Coleman projection for
-`(X - C a) ^ h`. -/
-theorem IsRieszProjection.isRieszColemanProjection_X_sub_C_pow {u E : M →L[R] M} {a : R} {h : ℕ}
-    (hE : IsRieszProjection u a h E) : IsRieszColemanProjection u ((X - C a) ^ h) E := by
-  rcases Nat.eq_zero_or_pos h with rfl | hh
-  · simp [hE.eq_zero_of_order_zero]
-  have hrev : Polynomial.aeval u ((X - C a) ^ h).reverse = (1 - a • u) ^ h := by
-    simp [Algebra.algebraMap_eq_smul_one]
-  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
-  have hCw : Commute (1 - a • u) w := hw₁.trans hw₂.symm
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hh.ne'
-  refine ⟨hE.isIdempotentElem, hE.commute, hE.mem_closure_adjoin, hrev ▸ hE.pow_mul_eq_zero,
-    ⟨w ^ (k + 1), ?_, ?_, ?_, ?_,
-      (Algebra.adjoin R {u}).topologicalClosure.pow_mem hw _⟩⟩
-  · rw [hrev, ← hCw.mul_pow, hw₁, hE.isIdempotentElem.one_sub.pow_succ_eq]
-  · rw [hrev, ← hCw.symm.mul_pow, hw₂, hE.isIdempotentElem.one_sub.pow_succ_eq]
-  · rw [pow_succ', ← mul_assoc, hw₃, zero_mul]
-  · rw [pow_succ, mul_assoc, hw₄, mul_zero]
-
-/-- Viewing a Riesz projection at `a` of order `h` as a Riesz–Coleman projection for
-`(X - C a) ^ h` raises its complementary inverse to the `h`-th power. -/
-@[simp]
-theorem IsRieszProjection.inverse_isRieszColemanProjection_X_sub_C_pow {u E : M →L[R] M} {a : R}
-    {h : ℕ} (hE : IsRieszProjection u a h E) :
-    hE.isRieszColemanProjection_X_sub_C_pow.inverse = hE.inverse ^ h := by
-  refine (hE.isRieszColemanProjection_X_sub_C_pow.eq_inverse ?_ ?_).symm
-  · rcases Nat.eq_zero_or_pos h with rfl | hh
-    · simp [hE.eq_zero_of_order_zero]
-    · obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hh.ne'
-      have hrev : Polynomial.aeval u ((X - C a) ^ (k + 1)).reverse = (1 - a • u) ^ (k + 1) := by
-        simp [Algebra.algebraMap_eq_smul_one]
-      have hCw : Commute (1 - a • u) hE.inverse :=
-        hE.one_sub_smul_mul_inverse.trans hE.inverse_mul_one_sub_smul.symm
-      rw [hrev, ← hCw.mul_pow, hE.one_sub_smul_mul_inverse,
-        hE.isIdempotentElem.one_sub.pow_succ_eq]
-  · rcases Nat.eq_zero_or_pos h with rfl | hh
-    · simp [hE.eq_zero_of_order_zero]
-    · obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hh.ne'
-      rw [pow_succ', ← mul_assoc, hE.mul_inverse_eq_zero, zero_mul]
-
-/-- For `0 < h`, Riesz–Coleman projections for `(X - C a) ^ h` are exactly Serre's Riesz
-projections at `a` of order `h`. -/
-theorem isRieszColemanProjection_X_sub_C_pow_iff {u E : M →L[R] M} {a : R} {h : ℕ} (hh : 0 < h) :
-    IsRieszColemanProjection u ((X - C a) ^ h) E ↔ IsRieszProjection u a h E := by
-  refine ⟨fun hE ↦ ?_, fun hE ↦ hE.isRieszColemanProjection_X_sub_C_pow⟩
-  have hrev : Polynomial.aeval u ((X - C a) ^ h).reverse = (1 - a • u) ^ h := by
-    simp [Algebra.algebraMap_eq_smul_one]
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hh.ne'
-  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
-  rw [hrev] at hw₁ hw₂
-  set C₀ : M →L[R] M := 1 - a • u
-  have hCE : Commute C₀ E := hE.commute.one_sub_smul_left (A := M →L[R] M) a
-  have hECw : E * (C₀ ^ k * w) = 0 := by
-    rw [← mul_assoc, ← (hCE.pow_left k).eq, mul_assoc, hw₃, mul_zero]
-  have hwCE : w * C₀ ^ k * E = 0 := by
-    rw [mul_assoc, (hCE.pow_left k).eq, ← mul_assoc, hw₄, zero_mul]
-  have hCw_eq : C₀ ^ k * w = w * C₀ ^ k := by
-    calc C₀ ^ k * w = (1 - E) * (C₀ ^ k * w) := by
-          rw [sub_mul (α := M →L[R] M), one_mul, hECw, sub_zero]
-      _ = w * C₀ ^ (k + 1) * (C₀ ^ k * w) := by rw [hw₂]
-      _ = w * C₀ ^ k * (C₀ ^ (k + 1) * w) := by
-          (conv_lhs => rw [pow_succ C₀ k])
-          (conv_rhs => rw [pow_succ' C₀ k])
-          simp only [mul_assoc]
-      _ = w * C₀ ^ k * (1 - E) := by rw [hw₁]
-      _ = w * C₀ ^ k := by rw [mul_sub (α := M →L[R] M), mul_one, hwCE, sub_zero]
-  have hC₀_mem : C₀ ∈ (Algebra.adjoin R {u}).topologicalClosure :=
-    Subalgebra.le_topologicalClosure _
-      (sub_mem (one_mem _) (Subalgebra.smul_mem _ (Algebra.self_mem_adjoin_singleton R u) a))
-  have hmem : C₀ ^ k * w ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) :=
-    (Algebra.adjoin R {u}).topologicalClosure.mul_mem (pow_mem hC₀_mem k) hw
-  refine ⟨hE.isIdempotentElem, hE.commute, hE.mem_closure_adjoin,
-    hrev ▸ hE.aeval_reverse_mul_eq_zero, ⟨C₀ ^ k * w, ?_, ?_, hECw, ?_, hmem⟩⟩
-  · rwa [← mul_assoc, ← pow_succ']
-  · rwa [hCw_eq, mul_assoc, ← pow_succ]
-  · rw [mul_assoc, hw₄, mul_zero]
-
-/-- Riesz–Coleman projections for `X - C a` are exactly Riesz projections at `a` of order `1`. -/
-@[simp]
-theorem isRieszColemanProjection_X_sub_C_iff {u E : M →L[R] M} {a : R} :
-    IsRieszColemanProjection u (X - C a) E ↔ IsRieszProjection u a 1 E := by
-  simpa using isRieszColemanProjection_X_sub_C_pow_iff (u := u) (E := E) (a := a) Nat.one_pos
 
 end Module
 

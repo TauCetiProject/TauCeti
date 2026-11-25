@@ -49,8 +49,7 @@ nonzero roots is again such a product in the reciprocal roots
 (`Polynomial.reverse_C_mul_prod_X_sub_C`), unit-scalar multiplication preserves the leading-
 coefficient-normalised reversal (`Polynomial.C_inverse_leadingCoeff_mul_reverse_C_mul`), and
 evaluating a unit-rescaled reversal in an algebra scales the evaluation
-(`Polynomial.aeval_C_mul_reverse`). Reversal commutes with regular scalar multiplication
-(`Polynomial.reverse_smul_of_smul_regular`, `Polynomial.reverse_smul`). Reflection at a degree bound
+(`Polynomial.aeval_C_mul_reverse`). Reflection at a degree bound
 stays within that bound, also after a coefficient map, and its coefficient at the bound is the
 constant coefficient; whenever a coefficient map preserves `natDegree` (in particular when it does
 not kill the leading coefficient, or when the leading coefficient is a unit), it commutes with
@@ -231,22 +230,11 @@ theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] {p : R[X]}
   nontriviality S
   exact reverse_map_of_leadingCoeff_ne_zero f (hp.map f).ne_zero
 
-/-- Reversing a polynomial commutes with scalar multiplication by an `R`-regular scalar. -/
-theorem reverse_smul_of_smul_regular {S : Type*} [Semiring R] [SMulZeroClass S R] {k : S}
-    (p : R[X]) (h : IsSMulRegular R k) : (k • p).reverse = k • p.reverse := by
-  rw [reverse, natDegree_smul_of_smul_regular p h, reverse]; ext i; simp
-
-/-- Reversing a polynomial commutes with cancellative scalar multiplication. -/
-@[simp]
-theorem reverse_smul {S : Type*} [Semiring R] [SMulZeroClass S R] [IsLeftCancelSMul S R]
-    (p : R[X]) (c : S) : (c • p).reverse = c • p.reverse :=
-  reverse_smul_of_smul_regular p (.all c)
-
 /-- Reversing a polynomial scaled on the left by a unit pulls the unit scalar out. -/
 @[simp]
 theorem reverse_C_mul_of_isUnit [Semiring R] {a : R} (ha : IsUnit a) (p : R[X]) :
     (C a * p).reverse = C a * p.reverse := by
-  simpa only [Units.smul_def, smul_eq_C_mul, IsUnit.unit_spec] using reverse_smul p ha.unit
+  rw [reverse, reverse, natDegree_C_mul_of_isUnit ha, reflect_C_mul]
 
 /-- Scaling a polynomial by a unit leaves the normalised reverse polynomial `lc(p)⁻¹ * p*`
 unchanged. -/

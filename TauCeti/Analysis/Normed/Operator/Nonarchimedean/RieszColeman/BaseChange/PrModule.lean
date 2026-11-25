@@ -27,7 +27,8 @@ modules.
   `ContinuousLinearMap.IsPrCompact.finrank_ker_aeval_reverse_completedBaseChange`: transport of
   Riesz–Coleman projections, complementary inverses, stalk ranks, and field kernel dimensions along
   completed-tensor base change on `(Pr)` modules for bounded scalar extensions.
-* `ContinuousLinearMap.IsRieszColemanProjection.eq_completedBaseChange`: the extended projection is
+* `ContinuousLinearMap.IsRieszColemanProjection.eq_completedBaseChange_of_natDegree_eq` and
+  `ContinuousLinearMap.IsRieszColemanProjection.eq_completedBaseChange`: the extended projection is
   the unique Riesz–Coleman projection of `u.completedBaseChange α α` for `Q.map (algebraMap R S)`.
 * `ContinuousLinearMap.IsRieszColemanProjection.finrank_range_completedBaseChange`: over a bounded
   field extension, the extended Riesz–Coleman summand has the same dimension as the original.
@@ -131,6 +132,18 @@ theorem IsRieszColemanProjection.inverse_completedBaseChange (hM : HasPr R M)
     (Polynomial.natDegree_map_eq_of_isUnit_leadingCoeff (algebraMap R S) hQ)
 
 include hS in
+/-- **Uniqueness of the extended Riesz–Coleman projection under degree-preserving base change.** On
+a `(Pr)` module, for a bounded scalar extension `S` satisfying `‖r • s‖ ≤ C * ‖r‖ * ‖s‖` along
+which `Q` preserves its `natDegree`, every Riesz–Coleman projection of `u.completedBaseChange α α`
+for `Q.map (algebraMap R S)` is `E.completedBaseChange α α`. -/
+theorem IsRieszColemanProjection.eq_completedBaseChange_of_natDegree_eq (hM : HasPr R M)
+    (α : S ⊗̂[R] M ≃L[S] N) {u E : M →L[R] M} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
+    (hdeg : (Polynomial.map (algebraMap R S) Q).natDegree = Q.natDegree) {E' : N →L[S] N}
+    (hE' : IsRieszColemanProjection (u.completedBaseChange α α) (Q.map (algebraMap R S)) E') :
+    E' = E.completedBaseChange α α :=
+  hE'.unique (hE.completedBaseChange_of_natDegree_eq hS hM α hdeg)
+
+include hS in
 /-- **Uniqueness of the extended Riesz–Coleman projection.** On a `(Pr)` module, for a bounded
 scalar extension `S` satisfying `‖r • s‖ ≤ C * ‖r‖ * ‖s‖` and `IsUnit Q.leadingCoeff`, every
 Riesz–Coleman projection of `u.completedBaseChange α α` for `Q.map (algebraMap R S)` is the
@@ -140,7 +153,9 @@ theorem IsRieszColemanProjection.eq_completedBaseChange (hM : HasPr R M) (α : S
     (hQ : IsUnit Q.leadingCoeff) {E' : N →L[S] N}
     (hE' : IsRieszColemanProjection (u.completedBaseChange α α) (Q.map (algebraMap R S)) E') :
     E' = E.completedBaseChange α α :=
-  hE'.unique (hE.completedBaseChange hS hM α hQ)
+  letI : Nontrivial S := NormOneClass.nontrivial
+  hE.eq_completedBaseChange_of_natDegree_eq hS hM α
+    (Polynomial.natDegree_map_eq_of_isUnit_leadingCoeff (algebraMap R S) hQ) hE'
 
 include hS in
 /-- **Constant stalk rank after bounded completed-tensor base change.** For a `(Pr)`-compact

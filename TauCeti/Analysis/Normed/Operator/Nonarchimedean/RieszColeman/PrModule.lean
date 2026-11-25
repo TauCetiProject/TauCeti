@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszColeman.Decomposition
+import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Splitting
+import TauCeti.LinearAlgebra.End.Split
+import TauCeti.RingTheory.Polynomial.Resultant.Coleman
 import TauCeti.RingTheory.PowerSeries.Dvd
 
 /-!
@@ -50,6 +53,7 @@ to `M` (simplifying to `Q` and `S` when `Q(0) = 1`).
   `ContinuousLinearMap.IsRieszColemanProjection.charPowerSeries_restrict_range`,
   `ContinuousLinearMap.IsRieszColemanProjection.charPowerSeries_restrict_ker`,
   `ContinuousLinearMap.IsRieszColemanProjection.charPowerSeries_eq_mul`,
+  `ContinuousLinearMap.IsRieszColemanProjection.charPowerSeries_eq_mul_restrict`,
   `ContinuousLinearMap.IsRieszColemanProjection.isCoprime_charPowerSeries_complement`, and
   `ContinuousLinearMap.IsRieszColemanProjection.isCoprime_charPowerSeries_restrict_ker`:
   `(Pr)`-compactness, Fredholm-series factorisation, and complementary coprimality on `range E` and
@@ -233,13 +237,56 @@ theorem IsPrCompact.rankAtStalk_ker_aeval_reverse {u : M →L[R] M} (hu : u.IsPr
       Q.natDegree := by
   classical
   obtain ⟨J, _, _, i, r, hri⟩ := (TauCeti.hasPr_def R M).mp hu.hasPr_source
+  have hv := hu.isRowCompact_comp i r
   rw [hu.charPowerSeries_eq hri] at hQS
-  let : AddCommGroup (Polynomial.aeval u Q.reverse : M →L[R] M).ker := inferInstance
-  let : AddCommGroup (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
-    C₀(J, R) →L[R] C₀(J, R)).ker := inferInstance
-  rw [Module.rankAtStalk_eq_of_equiv
-    (kerAevalCompCompEquiv hri u (by rwa [coeff_zero_reverse])).symm.toLinearEquiv]
-  exact (hu.isRowCompact_comp i r).rankAtStalk_ker_aeval_reverse hQ hS hQS hcop p
+  set c := Ring.inverse Q.leadingCoeff
+  have hc : c * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
+  have hcu : IsUnit c := IsUnit.of_mul_eq_one _ hc
+  set B : R[X] := 1 - Polynomial.C c * Q.reverse
+  have hB0 : B.coeff 0 = 0 := coeff_zero_one_sub_C_mul_reverse hc
+  have hri' : r.toLinearMap.comp i.toLinearMap = LinearMap.id := by
+    simpa only [toLinearMap_comp, coe_id] using
+      congrArg ContinuousLinearMap.toLinearMap hri
+  -- `1 - B(v) = c • Q*(v)` is the split extension of `1 - B(u) = c • Q*(u)`, and scaling by the
+  -- unit `c` preserves kernels.
+  have hker_u : LinearMap.ker (c • (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap) =
+      LinearMap.ker (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap := by
+    ext x; simp only [LinearMap.mem_ker, LinearMap.smul_apply, hcu.smul_eq_zero]
+  have hker_v : LinearMap.ker (c • (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
+      C₀(J, R) →L[R] C₀(J, R)).toLinearMap) =
+      LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
+        C₀(J, R) →L[R] C₀(J, R)).toLinearMap := by
+    ext x; simp only [LinearMap.mem_ker, LinearMap.smul_apply, hcu.smul_eq_zero]
+  have h1u : (1 - (Polynomial.aeval u B).toLinearMap : Module.End R M) =
+      c • (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap := by
+    simpa only [toLinearMap_sub, toLinearMap_one, toLinearMap_smul] using
+      congrArg ContinuousLinearMap.toLinearMap
+        (Polynomial.one_sub_aeval_one_sub_C_mul u c Q.reverse)
+  have h1v : LinearMap.splitEnd r.toLinearMap i.toLinearMap hri'
+      (1 - (Polynomial.aeval u B).toLinearMap) =
+      c • (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
+        C₀(J, R) →L[R] C₀(J, R)).toLinearMap := by
+    rw [LinearMap.splitEnd_one_sub, ← toLinearMap_comp, ← toLinearMap_comp,
+      ← aeval_comp_comp_of_retract hri u hB0]
+    simpa only [toLinearMap_sub, toLinearMap_one, toLinearMap_smul] using
+      congrArg ContinuousLinearMap.toLinearMap
+        (Polynomial.one_sub_aeval_one_sub_C_mul (i.comp (u.comp r)) c Q.reverse)
+  have heq : LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
+      C₀(J, R) →L[R] C₀(J, R)).toLinearMap ≃ₗ[R]
+      LinearMap.ker (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap := by
+    have e := LinearMap.kerSplitEndEquiv r.toLinearMap i.toLinearMap hri'
+      (1 - (Polynomial.aeval u B).toLinearMap)
+    rw [h1v, h1u] at e
+    exact (LinearEquiv.ofEq _ _ hker_v.symm).trans (e.trans (LinearEquiv.ofEq _ _ hker_u))
+  have hrank : Module.rankAtStalk (R := R) (Polynomial.aeval u Q.reverse : M →L[R] M).ker =
+      Module.rankAtStalk (R := R)
+        (Polynomial.aeval (i.comp (u.comp r)) Q.reverse : C₀(J, R) →L[R] C₀(J, R)).ker := by
+    let : AddCommGroup (Polynomial.aeval u Q.reverse : M →L[R] M).ker := inferInstance
+    let : AddCommGroup (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
+      C₀(J, R) →L[R] C₀(J, R)).ker := inferInstance
+    exact Module.rankAtStalk_eq_of_equiv heq.symm
+  rw [hrank]
+  exact hv.rankAtStalk_ker_aeval_reverse hQ hS hQS hcop p
 
 end KerRank
 
