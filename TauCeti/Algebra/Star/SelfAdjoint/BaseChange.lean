@@ -128,16 +128,12 @@ theorem isQuadraticExtension_of_mem_skewAdjoint [Nontrivial E]
     (ht : (t : E) ∈ skewAdjoint E) : Algebra.IsQuadraticExtension F E := by
   have hli : LinearIndependent F ![1, (t : E)] := by
     refine LinearIndependent.pair_iff.mpr fun a b hab ↦ ?_
-    have hinj := (algebraMap F E).injective
-    have ha : a • (1 : E) = 0 := by
-      refine ((IsSelfAdjoint.all a).smul (IsSelfAdjoint.one E)).eq_zero_of_mem_skewAdjoint F ?_
-      rw [eq_neg_of_add_eq_zero_left hab]
-      exact neg_mem (skewAdjoint.smul_mem b ht)
-    rw [← Algebra.algebraMap_eq_smul_one, map_eq_zero_iff _ hinj] at ha
-    subst ha
-    rw [zero_smul, zero_add, Algebra.smul_def] at hab
-    have hb : algebraMap F E b = 0 := by simpa using congrArg (· * ((t⁻¹ : Eˣ) : E)) hab
-    exact ⟨rfl, (map_eq_zero_iff _ hinj).mp hb⟩
+    have hsa (c : F) : IsSelfAdjoint (c • (1 : E)) := (IsSelfAdjoint.all c).smul (.one E)
+    obtain ⟨ha, hb⟩ := IsSelfAdjoint.eq_zero_of_add_smul_eq_zero F (hsa a) (hsa b) ht <| by
+      rwa [smul_comm, smul_eq_mul, mul_one]
+    simp only [← Algebra.algebraMap_eq_smul_one, map_eq_zero_iff _ (algebraMap F E).injective]
+      at ha hb
+    exact ⟨ha, hb⟩
   have hsp : ⊤ ≤ Submodule.span F (Set.range ![1, (t : E)]) := by
     rintro c -
     obtain ⟨a, b, rfl⟩ := exists_algebraMap_add_algebraMap_mul_eq hfix ht c
@@ -197,13 +193,7 @@ private theorem liftBaseChange_subtype_selfAdjoint_injective
   refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
   obtain ⟨p, q, rfl⟩ := exists_one_tmul_add_tmul_eq hfix ht z
   simp only [map_add, LinearMap.liftBaseChange_tmul, one_smul, Submodule.subtype_apply] at hz
-  have hp : (p : A) = 0 := by
-    refine IsSelfAdjoint.eq_zero_of_mem_skewAdjoint F p.property ?_
-    rw [eq_neg_of_add_eq_zero_left hz]
-    exact neg_mem (IsSelfAdjoint.smul_mem_skewAdjoint ht q.property)
-  rw [hp, zero_add] at hz
-  have hq : (q : A) = 0 := by
-    rw [← one_smul E (q : A), ← t.inv_mul, mul_smul, hz, smul_zero]
+  obtain ⟨hp, hq⟩ := IsSelfAdjoint.eq_zero_of_add_smul_eq_zero F p.property q.property ht hz
   rw [show p = 0 from Subtype.ext hp, show q = 0 from Subtype.ext hq, TensorProduct.tmul_zero,
     TensorProduct.tmul_zero, add_zero]
 

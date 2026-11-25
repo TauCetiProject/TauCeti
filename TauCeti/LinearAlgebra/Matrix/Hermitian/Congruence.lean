@@ -162,6 +162,6 @@ theorem det_selfAdjointConjugate_complex [DecidableEq n] (C : Matrix n n ℂ) :
     LinearMap.det (selfAdjointConjugate ℝ C) = Complex.normSq C.det ^ Fintype.card n := by
   rw [← Algebra.norm_complex_apply]
   exact det_selfAdjointConjugate Complex.mem_range_algebraMap_of_isSelfAdjoint
-    (t := Units.mk0 Complex.I Complex.I_ne_zero) Complex.I_mem_skewAdjoint C
+    Complex.val_mk0_I_mem_skewAdjoint C
 
 end Matrix

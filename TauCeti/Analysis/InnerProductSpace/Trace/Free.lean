@@ -352,7 +352,7 @@ theorem finrank_traceFreeSelfAdjoint :
     simp [hφ, hT, Complex.ext_iff, him]
   have hS : finrank ℝ S = finrank ℂ E ^ 2 := by
     rw [finrank_selfAdjoint_submodule_eq ℝ _ Complex.mem_range_algebraMap_of_isSelfAdjoint
-        (t := Units.mk0 Complex.I Complex.I_ne_zero) Complex.I_mem_skewAdjoint,
+        Complex.val_mk0_I_mem_skewAdjoint,
       ← (LinearMap.toContinuousLinearMap (𝕜 := ℂ) (E := E) (F' := E)).finrank_eq,
       Module.finrank_linearMap, sq]
   have : FiniteDimensional ℝ (E →L[ℂ] E) := Module.Finite.trans ℂ _

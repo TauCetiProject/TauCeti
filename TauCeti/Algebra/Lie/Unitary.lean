@@ -150,7 +150,7 @@ theorem finrank_unitaryLieAlgebra :
     finrank ℝ (unitaryLieAlgebra ι) = Fintype.card ι * Fintype.card ι := by
   rw [(unitaryLieAlgebraEquivSelfAdjoint ι).finrank_eq,
     finrank_selfAdjoint_submodule_eq ℝ _ Complex.mem_range_algebraMap_of_isSelfAdjoint
-      (t := Units.mk0 I I_ne_zero) Complex.I_mem_skewAdjoint,
+      Complex.val_mk0_I_mem_skewAdjoint,
     finrank_matrix, finrank_self, mul_one]
 
 /-! ### The adjoint and coadjoint representations -/
