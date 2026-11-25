@@ -17,8 +17,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 The frontier of a polygonal billiard table is the union of its finitely many sides. Each side is a
 segment in `ℂ`, the image of a Lipschitz curve, so it is Lebesgue-null
 (`LocallyBoundedVariationOn.addHaar_image_eq_zero`). Hence the frontier is a Lebesgue-null set
-(`TauCeti.PolygonalTable.volume_frontier_carrier`), and the table and its interior have the same
-area (`TauCeti.PolygonalTable.volume_interior_carrier`). This is the planar input for showing that
+(`TauCeti.PolygonalTable.volume_frontier_carrier`). This is the planar input for showing that
 frontier states are null for a phase-space measure built from Lebesgue measure.
 
 ## References
@@ -43,9 +42,5 @@ theorem volume_frontier_carrier : volume (frontier T.carrier) = 0 := by
   rw [side_eq_segment, segment_eq_image_lineMap]
   exact ((lipschitzWith_lineMap _ _).locallyBoundedVariationOn _).addHaar_image_eq_zero volume
     (by simp)
-
-/-- A polygonal table and its interior have the same area. -/
-theorem volume_interior_carrier : volume (interior T.carrier) = volume T.carrier :=
-  measure_congr (interior_ae_eq_of_null_frontier T.volume_frontier_carrier)
 
 end TauCeti.PolygonalTable
