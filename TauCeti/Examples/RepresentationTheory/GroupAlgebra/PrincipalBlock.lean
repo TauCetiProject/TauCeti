@@ -29,26 +29,17 @@ open _root_.MonoidAlgebra TauCeti.GroupAlgebraBlockExamples
 
 /-! ### `𝔽₂[S₃]` -/
 
-/-- The augmentation of an element of `k[G]` for finite `G` is the sum of its coefficients. -/
-private theorem augmentation_eq_sum_coeff {k G : Type*} [Semiring k] [Monoid G] [Fintype G]
-    (x : MonoidAlgebra k G) : augmentation k G x = ∑ g, x.coeff g := by
-  classical
-  induction x using induction_linear with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy, Finset.sum_add_distrib]
-  | single g a => simp [coeff_single, Finsupp.single_apply]
-
 /-- The augmentation of `1 + ρ + ρ²` in `𝔽₂[S₃]` is `3 = 1`. -/
 theorem augmentation_blockOneS₃ :
     augmentation (ZMod 2) S₃ (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) = 1 := by
-  rw [augmentation_eq_sum_coeff, coeff_blockOneS₃]
-  decide +kernel
+  simp only [coe_blockOneS₃, of_apply, map_add, map_one, augmentation_single]
+  decide
 
 /-- The augmentation of `ρ + ρ²` in `𝔽₂[S₃]` is `2 = 0`. -/
 theorem augmentation_blockTwoS₃ :
     augmentation (ZMod 2) S₃ (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃) = 0 := by
-  rw [augmentation_eq_sum_coeff, coeff_blockTwoS₃]
-  decide +kernel
+  simp only [coe_blockTwoS₃, of_apply, map_add, augmentation_single]
+  decide
 
 /-- `1 + ρ + ρ²` is the principal block of `𝔽₂[S₃]`. -/
 theorem blockOneS₃_eq_principalBlockIdempotent :
@@ -76,10 +67,10 @@ theorem coe_principalBlockIdempotent_c₃ :
       1 + of K C₃ r + of K C₃ (r ^ 2) := by
   have h₃ : Fintype.card C₃ = 3 := by rw [Fintype.card_multiplicative, ZMod.card]
   let := invertibleOfCharPNotDvd (K := K) (p := 2) (t := Fintype.card C₃) (by rw [h₃]; decide)
-  have h : (Fintype.card C₃ : K) = 1 := by
-    rw [h₃, show ((3 : ℕ) : K) = 2 + 1 by norm_num, CharTwo.two_eq_zero, zero_add]
-  rw [coe_principalBlockIdempotent_eq_average, GroupAlgebra.average, invOf_eq_inv, h, inv_one,
-    one_smul, sum_c₃, map_one]
+  have h : (3 : K) = 1 := by
+    simpa using CharP.cast_eq_mod K 2 3
+  simp [coe_principalBlockIdempotent_eq_average, GroupAlgebra.average, invOf_eq_inv, h, sum_c₃,
+    one_def]
 
 /-- Over `𝔽₂`, `1 + r + r²` is the principal block of `𝔽₂[C₃]`. -/
 example : toCenter (1 + of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) =

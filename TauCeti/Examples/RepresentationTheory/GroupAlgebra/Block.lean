@@ -345,6 +345,16 @@ noncomputable def blockOneS₃ : Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod
 noncomputable def blockTwoS₃ : Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) S₃) :=
   ⟨_, of_ρ_add_of_ρ_sq_mem_center⟩
 
+/-- `blockOneS₃` is `1 + ρ + ρ²`. -/
+theorem coe_blockOneS₃ : (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) =
+    1 + of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) := by
+  rw [blockOneS₃]
+
+/-- `blockTwoS₃` is `ρ + ρ²`. -/
+theorem coe_blockTwoS₃ : (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃) =
+    of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) := by
+  rw [blockTwoS₃]
+
 /-- The coefficient function of `1 + ρ + ρ²` is the indicator of `{g | g³ = 1}`. -/
 theorem coeff_blockOneS₃ : ⇑(blockOneS₃ : MonoidAlgebra (ZMod 2) S₃).coeff =
     fun g ↦ if g * g * g = 1 then 1 else 0 := by
