@@ -97,11 +97,7 @@ theorem not_isIrreducible_induceRepresentation_of_comp_star_eq
       fin_cases i <;> simp [hv, hstar]
     · refine ⟨s * χ z, ?_⟩
       ext i
-      fin_cases i
-      · simp [hv, map_mul, hstar, hs]
-        ring
-      · simp [hv, map_mul, hstar]
-        ring
+      fin_cases i <;> simp [hv, map_mul, hstar, hs, mul_assoc, mul_comm, mul_left_comm]
   let σ : Subrepresentation (induceRepresentation χ) :=
     { toSubmodule := Submodule.span ℂ {v}
       apply_mem_toSubmodule := fun w x hx ↦ by
@@ -118,10 +114,9 @@ theorem not_isIrreducible_induceRepresentation_of_comp_star_eq
       rw [hσ, Subrepresentation.toSubmodule_top]
       exact Submodule.mem_top
     obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp hmem
-    have h0 := congr_fun ha 0
-    have h1 := congr_fun ha 1
-    simp [hv] at h0 h1
-    simp [h1] at h0
+    -- the second coordinate forces `a = 0`, and then the first coordinate reads `0 = 1`
+    have ha0 : a = 0 := by simpa [hv] using congr_fun ha 1
+    simpa [hv, ha0] using congr_fun ha 0
 
 /-- In the induction of `χ`, a subrepresentation containing the first basis vector is everything:
 the image of `j` carries the first basis vector to the second. -/
@@ -150,21 +145,19 @@ private theorem induceRepresentation_single_mem_of_mem {z₀ : WeilGroupComplex}
     Pi.single i (v i) ∈ σ.toSubmodule := by
   have hzv := σ.apply_mem_toSubmodule (includeComplex z₀) hv
   have hab : (χ z₀ : ℂ) - χ (star z₀) ≠ 0 := sub_ne_zero.mpr hz₀
+  -- subtracting one eigenvalue from the action of `z₀` leaves a multiple of the other coordinate
+  have h0 : induceRepresentation χ (includeComplex z₀) v - (χ (star z₀) : ℂ) • v =
+      ((χ z₀ : ℂ) - χ (star z₀)) • Pi.single 0 (v 0) := by
+    ext k
+    fin_cases k <;> simp [sub_mul]
+  have h1 : (χ z₀ : ℂ) • v - induceRepresentation χ (includeComplex z₀) v =
+      ((χ z₀ : ℂ) - χ (star z₀)) • Pi.single 1 (v 1) := by
+    ext k
+    fin_cases k <;> simp [sub_mul]
+  rw [← σ.toSubmodule.smul_mem_iff hab]
   fin_cases i
-  · convert σ.toSubmodule.smul_mem ((χ z₀ : ℂ) - χ (star z₀))⁻¹
-      (σ.toSubmodule.sub_mem hzv (σ.toSubmodule.smul_mem (χ (star z₀) : ℂ) hv)) using 1
-    ext k
-    fin_cases k
-    · simp [vecHead, vecTail]
-      field_simp
-    · simp [vecHead, vecTail]
-  · convert σ.toSubmodule.smul_mem ((χ z₀ : ℂ) - χ (star z₀))⁻¹
-      (σ.toSubmodule.sub_mem (σ.toSubmodule.smul_mem (χ z₀ : ℂ) hv) hzv) using 1
-    ext k
-    fin_cases k
-    · simp [vecHead, vecTail]
-    · simp [vecHead, vecTail]
-      field_simp
+  · exact h0 ▸ σ.toSubmodule.sub_mem hzv (σ.toSubmodule.smul_mem _ hv)
+  · exact h1 ▸ σ.toSubmodule.sub_mem (σ.toSubmodule.smul_mem _ hv) hzv
 
 /-- **Irreducibility of the induction.** The two-dimensional induction of a character `χ` of
 `W_ℂ = ℂˣ` to `W_ℝ` is irreducible if and only if `χ ∘ conj ≠ χ`. For `χ(z) = z^p zbar^q` this is
