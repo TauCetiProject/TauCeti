@@ -59,12 +59,9 @@ theorem measurePreserving_orbitThird :
   have h3 : third + (third + third) = 0 := by
     simp only [third, ← AddCircle.coe_add]
     norm_num
-  rw [orbitThird, Measure.map_smul, Measure.map_add _ _ hm, Measure.map_add _ _ hm,
-    Measure.map_dirac' hm, Measure.map_dirac' hm, Measure.map_dirac' hm]
-  · simp only [add_zero, h3]
-    congr 1
-    rw [add_comm, ← add_assoc]
-  · exact hm.aemeasurable
+  simp only [orbitThird, Measure.map_smul _ hm.aemeasurable, Measure.map_add _ _ hm,
+    Measure.map_dirac' hm, add_zero, h3]
+  ac_rfl
 
 /-- The rotation by `1/3` is not uniquely ergodic. -/
 example : ¬ UniquelyErgodic (third + · : UnitAddCircle → UnitAddCircle) := by
