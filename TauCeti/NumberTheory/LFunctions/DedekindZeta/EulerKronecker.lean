@@ -157,6 +157,7 @@ noncomputable def eulerKroneckerConstant : ℝ :=
 
 /-- The logarithmic derivative of the pole-removed zeta function at `1` is the
 Euler–Kronecker constant (with no imaginary part). -/
+@[simp]
 theorem logDeriv_dedekindZetaPoleRemoved_one :
     logDeriv (dedekindZetaPoleRemoved K) 1 = (eulerKroneckerConstant K : ℂ) := by
   have heq : conj ∘ dedekindZetaPoleRemoved K ∘ conj = dedekindZetaPoleRemoved K := by
