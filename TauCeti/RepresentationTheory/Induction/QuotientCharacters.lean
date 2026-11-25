@@ -27,25 +27,6 @@ open TauCeti
 
 namespace Subgroup
 
-/-- Inducing the restriction of a conjugation-invariant function to a normal subgroup of finite
-index multiplies it by the index on the subgroup and gives zero outside it. -/
-theorem indClassFun_comp_subtype_apply_of_normal {G A : Type*} [Group G] [AddCommMonoid A]
-    (N : Subgroup G) [N.Normal] [N.FiniteIndex] {f : G → A}
-    (hf : ∀ g c, f (c * g * c⁻¹) = f g) (g : G) :
-    open Classical in
-    N.indClassFun (fun n : N => f n) g = if g ∈ N then N.index • f g else 0 := by
-  classical
-  let := Fintype.ofFinite (G ⧸ N)
-  rw [N.indClassFun_apply]
-  have hmem (c : G) : c⁻¹ * g * c ∈ N ↔ g ∈ N := by
-    rw [mul_assoc, (inferInstance : N.Normal).mem_comm_iff]
-    simp [mul_assoc]
-  split_ifs with hg
-  · have hterm (c : G) : f (c⁻¹ * g * c) = f g := by simpa using hf g c⁻¹
-    simp only [hmem, hg, dite_true, hterm, Finset.sum_const, Finset.card_univ, N.index_eq_card,
-      Nat.card_eq_fintype_card]
-  · simp [hmem, hg]
-
 /-- The induction of a restricted class function is the sum of its products with the inflated
 irreducible characters of the quotient, each weighted by its degree. -/
 theorem indClassFun_comp_subtype_eq_sum_quotient_characters {G k : Type*} [Group G] [Field k]
