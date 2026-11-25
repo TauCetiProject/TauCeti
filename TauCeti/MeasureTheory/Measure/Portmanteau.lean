@@ -412,10 +412,10 @@ theorem tendsto_of_forall_isOpen_le_liminf_of_filter
         (hopen _ (isOpen_lt continuous_const f.continuous)) (by positivity)
   have hev_int : ∀ᶠ i in L, ∫ x, f x ∂(μ : Measure X) - ε ≤ ∫ x, f x ∂(μs i : Measure X) := by
     filter_upwards [hev] with i hi
-    have hμ_le := (MeasureTheory.integral_bounds_mul_sum_measureReal_gt (μ : Measure X)
-      (f.integrable _) (ae_of_all _ fun x ↦ hf x) ha (ae_of_all _ hka)).1
-    have hμi_ge := (MeasureTheory.integral_bounds_mul_sum_measureReal_gt (μs i : Measure X)
-      (f.integrable _) (ae_of_all _ fun x ↦ hf x) ha (ae_of_all _ hka)).2
+    have hμ_le := MeasureTheory.integral_le_mul_sum_measureReal_gt (μ : Measure X)
+      (f.integrable _) (ae_of_all _ fun x ↦ hf x) ha (ae_of_all _ hka)
+    have hμi_ge := MeasureTheory.mul_sum_measureReal_gt_le_integral_add (μs i : Measure X)
+      (f.integrable _) (ae_of_all _ fun x ↦ hf x) k ha
     rw [probReal_univ, mul_one] at hμi_ge
     have hsum : ∑ j ∈ Finset.range k,
         ((μ : Measure X).real {x | (j : ℝ) * a < f x} - ε / (2 * M)) ≤

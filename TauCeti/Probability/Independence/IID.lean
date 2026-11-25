@@ -20,11 +20,12 @@ A family of random variables `X : ι → Ω → E` on `(Ω, μ)` is **independen
 distributed** with common law `P` if each `X i` is measurable, the family is mutually independent
 under `μ`, and every `X i` pushes `μ` forward to `P`.
 
-This file provides the basic API for `TauCeti.IsIndependentIdenticallyDistributed`: projections to
-measurability, mutual and pairwise independence, identical distribution, `MeasurePreserving`,
-`HasLaw`, composition with measurable statistics, restriction along injective index maps, canonical
-coordinate witnesses on `Measure.pi` and `Measure.infinitePi`, and the strong and weak laws of
-large numbers for Banach-space-valued integrable statistics.
+This file provides the basic API for `TauCeti.IsIndependentIdenticallyDistributed`: a constructor
+from measurability, independence, and common law, projections to measurability, mutual and pairwise
+independence, identical distribution, `MeasurePreserving`, `HasLaw`, composition with measurable
+statistics, restriction along injective index maps, canonical coordinate witnesses on `Measure.pi`
+and `Measure.infinitePi`, and the strong and weak laws of large numbers for Banach-space-valued
+integrable statistics.
 
 ## Main definitions
 
@@ -34,6 +35,8 @@ large numbers for Banach-space-valued integrable statistics.
 ## Main statements
 
 * `TauCeti.isIndependentIdenticallyDistributed_iff` — definitional characterization.
+* `TauCeti.IsIndependentIdenticallyDistributed.of_measurable_map_eq` — constructor from
+  measurability, mutual independence, and common pushforward law.
 * `TauCeti.IsIndependentIdenticallyDistributed.comp` — measurable statistics of an i.i.d. family
   are i.i.d.
 * `TauCeti.IsIndependentIdenticallyDistributed.map_fun_eq_pi`,
@@ -79,6 +82,13 @@ theorem isIndependentIdenticallyDistributed_iff {μ : Measure Ω} {X : ι → Ω
   Iff.rfl
 
 variable {μ : Measure Ω} {X : ι → Ω → E} {P : Measure E}
+
+/-- Construct `IsIndependentIdenticallyDistributed` from measurability, mutual independence, and
+common pushforward law `P`. -/
+theorem IsIndependentIdenticallyDistributed.of_measurable_map_eq
+    (hm : ∀ i, Measurable (X i)) (hi : iIndepFun X μ) (hmap : ∀ i, μ.map (X i) = P) :
+    IsIndependentIdenticallyDistributed μ X P :=
+  ⟨hi, fun i ↦ ⟨hm i, hmap i⟩⟩
 
 /-- Each coordinate of an i.i.d. family is measure-preserving into the common law `P`. -/
 theorem IsIndependentIdenticallyDistributed.measurePreserving

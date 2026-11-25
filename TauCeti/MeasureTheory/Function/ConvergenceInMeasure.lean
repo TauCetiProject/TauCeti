@@ -84,9 +84,8 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   continuous unary and binary maps on arbitrary measure spaces.
 * `MeasureTheory.TendstoInMeasure.add`, `neg`, `sub`, `const_smul`: uniform-group
   and constant scalar operations on arbitrary measure spaces.
-* `MeasureTheory.TendstoInMeasure.of_edist_le_on`,
-  `MeasureTheory.TendstoInMeasure.zero_of_norm_le_on`, and
-  `MeasureTheory.TendstoInMeasure.zero_of_norm_le_on_prob`: domination on events whose complements
+* `MeasureTheory.TendstoInMeasure.of_edist_le_on` and
+  `MeasureTheory.TendstoInMeasure.zero_of_norm_le_on`: domination on events whose complements
   have vanishing measure.
 * `MeasureTheory.tendsto_measure_compl_zero_of_tendsto_one`: eventually null-measurable events
   whose probabilities tend to `1` have complements of measure tending to `0`.
@@ -355,18 +354,6 @@ theorem zero_of_norm_le_on {α ι E F : Type*} [MeasurableSpace α] {μ : Measur
   refine hf.of_edist_le_on hA ?_
   filter_upwards [hle] with i hi x hx
   simpa only [edist_dist, dist_zero_right] using ENNReal.ofReal_le_ofReal (hi x hx)
-
-/-- If `‖g i x‖ ≤ ‖f i x‖` on eventually null-measurable events `A i` of probability tending to `1`,
-and `f → 0` in probability, then `g → 0` in probability. -/
-theorem zero_of_norm_le_on_prob {α ι E F : Type*} [MeasurableSpace α] {μ : Measure α}
-    [IsProbabilityMeasure μ] [SeminormedAddGroup E] [SeminormedAddGroup F]
-    {l : Filter ι} {f : ι → α → E} {g : ι → α → F} {A : ι → Set α}
-    (hf : TendstoInMeasure μ f l (fun _ ↦ 0))
-    (hmeas : ∀ᶠ i in l, NullMeasurableSet (A i) μ)
-    (hA : Tendsto (fun i ↦ μ (A i)) l (𝓝 1))
-    (hle : ∀ᶠ i in l, ∀ x ∈ A i, ‖g i x‖ ≤ ‖f i x‖) :
-    TendstoInMeasure μ g l (fun _ ↦ 0) := by
-  exact hf.zero_of_norm_le_on (tendsto_measure_compl_zero_of_tendsto_one hmeas hA) hle
 
 end MeasureTheory.TendstoInMeasure
 
