@@ -36,7 +36,7 @@ A closed set inside an open set has a smooth `[0, 1]`-valued cutoff equal to one
 closed set, with topological support in the open set
 (`IsClosed.exists_contMDiff_tsupport_subset_eq_one_iff`).
 For a sequence whose regularity holds eventually near each compact set,
-`ContMDiffMap.exists_contMDiffMap_eventuallyEq_nhdsSet_of_eventually_contMDiffAt` chooses compactly
+`TauCeti.exists_contMDiffMap_eventuallyEq_nhdsSet_of_eventually_contMDiffAt` chooses compactly
 supported global representatives that agree with the original maps near each compact set on a tail.
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 2, §2, and Chapter 8, §1.
@@ -132,19 +132,37 @@ variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] {n : ℕ∞}
 
+/-- A vector-valued `C^n` map on an open neighbourhood of a compact set has a compactly
+supported global `C^n` representative with the same germ near that set. This uses
+`IsCompact.exists_contMDiff_one_nhds_tsupport_subset` and needs no sigma-compactness. -/
+theorem IsCompact.exists_contMDiffMap_eventuallyEq_nhdsSet
+    {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] [T2Space M] {n : ℕ∞} [IsManifold I n M]
+    {K U : Set M} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U)
+    {f : M → F} (hf : ContMDiffOn I 𝓘(ℝ, F) n f U) :
+    ∃ g : C^n⟮I, M; 𝓘(ℝ, F), F⟯, HasCompactSupport (g : M → F) ∧
+      (g : M → F) =ᶠ[𝓝ˢ K] f := by
+  obtain ⟨ρ, hρ, hρ1, hρc, hρsupp, -⟩ :=
+    hK.exists_contMDiff_one_nhds_tsupport_subset (n := n) I hU hKU
+  refine ⟨⟨fun x ↦ ρ x • f x,
+    hf.contMDiff_smul_of_tsupport_subset hU hρ.contMDiffOn hρsupp⟩, hρc.smul_right, ?_⟩
+  filter_upwards [hρ1] with x hx
+  simp [hx]
+
+omit [IsManifold I ∞ M] in
 /-- **A smooth germ is the germ of a global smooth map.** A vector-valued function that is `C^n`
 on a neighbourhood of a point agrees near that point with a globally `C^n` map, namely its
 product with a smooth bump function supported in that neighbourhood. -/
-theorem ContMDiffOn.exists_contMDiffMap_eventuallyEq {U : Set M} {g : M → F} {x : M}
+theorem ContMDiffOn.exists_contMDiffMap_eventuallyEq [IsManifold I n M]
+    {U : Set M} {g : M → F} {x : M}
     (hg : ContMDiffOn I 𝓘(ℝ, F) n g U) (hU : U ∈ 𝓝 x) :
     ∃ G : C^n⟮I, M; 𝓘(ℝ, F), F⟯, (G : M → F) =ᶠ[𝓝 x] g := by
-  have hU' : interior U ∈ 𝓝 x := interior_mem_nhds.mpr hU
-  obtain ⟨β, hβ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hU').mem_iff.mp hU'
-  refine ⟨⟨fun y ↦ β y • g y, contMDiff_of_tsupport fun y hy ↦ ?_⟩, ?_⟩
-  · exact β.contMDiffAt.of_le (mod_cast le_top) |>.smul <| hg.contMDiffAt <|
-      mem_interior_iff_mem_nhds.mp <| hβ <| tsupport_smul_subset_left _ _ hy
-  · filter_upwards [β.eventuallyEq_one] with y hy
-    simp [hy]
+  obtain ⟨G, -, hG⟩ := isCompact_singleton.exists_contMDiffMap_eventuallyEq_nhdsSet
+    isOpen_interior (singleton_subset_iff.mpr (mem_interior_iff_mem_nhds.mpr hU))
+    (hg.mono interior_subset)
+  exact ⟨G, by simpa only [nhdsSet_singleton] using hG⟩
 
 /-- **Smooth germ extension from an open submanifold.** A `C^n` vector-valued function on an open
 submanifold `U` agrees near any point `x : U` with the restriction `G ∘ Subtype.val` of a globally
@@ -227,8 +245,9 @@ variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- If the terms of a sequence are eventually `C^n` near each compact set, the sequence admits
 compactly supported global `C^n` representatives which agree with it near each compact set on a
-tail. -/
-theorem ContMDiffMap.exists_contMDiffMap_eventuallyEq_nhdsSet_of_eventually_contMDiffAt
+tail. Each representative uses `IsCompact.exists_contMDiff_one_nhds_tsupport_subset` at the
+largest regular exhaustion stage up to its term index. -/
+theorem TauCeti.exists_contMDiffMap_eventuallyEq_nhdsSet_of_eventually_contMDiffAt
     (f : ℕ → M → F)
     (h : ∀ K : Set M, IsCompact K → ∀ᶠ i : ℕ in Filter.atTop, ∀ x ∈ K,
       ContMDiffAt I 𝓘(ℝ, F) n (f i) x) :
@@ -245,17 +264,12 @@ theorem ContMDiffMap.exists_contMDiffMap_eventuallyEq_nhdsSet_of_eventually_cont
     · let j := Nat.findGreatest (regular i) i
       obtain ⟨k, hki, hk⟩ := hreg
       have hj : regular i j := Nat.findGreatest_spec hki hk
-      obtain ⟨ρ, hρ, hρ1, hρc, hρsupp, -⟩ :=
-        (L.isCompact j).exists_contMDiff_one_nhds_tsupport_subset (n := n) I isOpen_interior
-          (L.subset_interior_succ j)
       have hf : ContMDiffOn I 𝓘(ℝ, F) n (f i) (interior (L (j + 1))) :=
         fun x hx ↦ (hj x (interior_subset hx)).contMDiffWithinAt
-      refine ⟨⟨fun x ↦ ρ x • f i x,
-        hf.contMDiff_smul_of_tsupport_subset isOpen_interior hρ.contMDiffOn hρsupp⟩,
-        hρc.smul_right, fun l hli hl ↦ ?_⟩
-      have hlj : l ≤ j := Nat.le_findGreatest hli hl
-      filter_upwards [hρ1.filter_mono (nhdsSet_mono (L.subset hlj))] with x hx
-      simp [hx]
+      obtain ⟨g, hgc, hge⟩ := (L.isCompact j).exists_contMDiffMap_eventuallyEq_nhdsSet
+        isOpen_interior (L.subset_interior_succ j) hf
+      exact ⟨g, hgc, fun l hli hl ↦
+        hge.filter_mono (nhdsSet_mono (L.subset (Nat.le_findGreatest hli hl)))⟩
     · exact ⟨⟨0, contMDiff_const⟩, HasCompactSupport.zero,
         fun j hji hj ↦ (hreg ⟨j, hji, hj⟩).elim⟩
   choose g hgc hge using hext

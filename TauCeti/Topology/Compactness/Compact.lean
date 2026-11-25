@@ -46,6 +46,19 @@ open Filter Set Topology
 
 variable {X : Type*} [TopologicalSpace X]
 
+/-- Eventual equality near every compact set pulls back along a map continuous on `s` to
+simultaneous germ equality within `s` at every point of a compact subset. In particular, these
+germs give equality of all iterated within derivatives when the source is a normed space. -/
+theorem _root_.IsCompact.eventually_eventuallyEq_nhdsWithin_comp
+    {Y Z ι : Type*} [TopologicalSpace Y] {l : Filter ι} {a b : ι → Y → Z}
+    {φ : X → Y} {K s : Set X} (hK : IsCompact K) (hφ : ContinuousOn φ s) (hKs : K ⊆ s)
+    (h : ∀ C : Set Y, IsCompact C → ∀ᶠ i in l, a i =ᶠ[𝓝ˢ C] b i) :
+    ∀ᶠ i in l, ∀ y ∈ K, a i ∘ φ =ᶠ[𝓝[s] y] b i ∘ φ := by
+  filter_upwards [h _ (hK.image_of_continuousOn (hφ.mono hKs))] with i hi y hy
+  have he : a i =ᶠ[𝓝 (φ y)] b i :=
+    (eventually_nhdsSet_iff_forall.mp hi) _ (mem_image_of_mem φ hy)
+  exact he.comp_tendsto (hφ y (hKs hy))
+
 /-- Compactness of `U ∩ S` for a compact set `U` may be checked on open pieces of `U` around
 each of its points. -/
 theorem _root_.IsCompact.inter_of_forall_exists {U S : Set X} (hU : IsCompact U)
