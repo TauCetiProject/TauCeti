@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DeterminantK1
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.SpecialLinear
 import TauCeti.RingTheory.Length.Determinant
 
 /-!
@@ -26,10 +25,10 @@ if `s ≠ 0` in `A` and `α` is a matrix over `A` with image `s • g` in `K`, t
   `ord_A (det g) = length_A (Aⁿ / α Aⁿ) - n · length_A (A / s A)`.
 
 In particular the right-hand side does not depend on the choice of `s` and `α`, and an
-integral matrix `α` invertible over `K` has value the length of its cokernel. When `A` is local,
-finite-length `A`-modules are measured in `K₀` by their length, and this is the concrete form of
-the localization boundary `K₁(K) → K₀` of finite-length `A`-modules, with the positive
-normalization: the cokernel of an injective integral matrix contributes with a plus sign.
+integral matrix `α` invertible over `K` has value the length of its cokernel. The sign convention
+makes the cokernel of an injective integral matrix count positively. When `A` is local, this is
+expected to agree with the localization boundary `K₁(K) → K₀` of finite-length `A`-modules,
+measured by length; that comparison is not formalized here.
 
 Units of `A` have order zero, so `K₁(A) → K₁(K) → ℤ` is trivial. For a discrete valuation ring
 `O` with fraction field `L` the sequence
@@ -37,9 +36,8 @@ Units of `A` have order zero, so `K₁(A) → K₁(K) → ℤ` is trivial. For a
   `1 → K₁(O) → K₁(L) → ℤ → 0`
 
 is exact: `K₁(O) = Oˣ` and `K₁(L) = Lˣ` through the determinant, the order of vanishing is the
-normalized valuation, its kernel is `Oˣ`, and a uniformizer `π` has value `1`. Injectivity
-holds more generally for an injective map out of any commutative ring with trivial `SK₁`, such
-as a semilocal ring.
+normalized valuation, its kernel is `Oˣ`, and a uniformizer `π` has value `1`. Injectivity of
+`K₁(O) → K₁(L)` is the semilocal case `TauCeti.AlgebraicK1.map_algebraMap_injective`.
 
 ## Main definitions
 
@@ -52,8 +50,6 @@ as a semilocal ring.
 * `TauCeti.AlgebraicK1.ordFrac_mk_of_map_eq`: an integral matrix invertible over `K` has value
   the length of its cokernel.
 * `TauCeti.AlgebraicK1.ordFrac_map_algebraMap`: classes coming from `K₁(A)` have value `1`.
-* `TauCeti.AlgebraicK1.map_injective_of_specialAlgebraicK1_eq_bot`: an injective ring
-  homomorphism out of a ring with trivial `SK₁` induces an injection of `K₁`.
 * `TauCeti.AlgebraicK1.ordFrac_ofUnits_of_irreducible`, `TauCeti.AlgebraicK1.ordFrac_surjective`,
   `TauCeti.AlgebraicK1.range_map_algebraMap_eq_ker_ordFrac`: exactness of
   `1 → K₁(O) → K₁(L) → ℤ → 0` for a discrete valuation ring `O`.
@@ -140,18 +136,18 @@ theorem ordFrac_mk_of_map_eq_smul {n : ℕ} (g : GL (Fin n) K) {s : A} (hs : s �
   have hord : Ring.ord A α.det = ℓ := by
     rw [← hℓ, Matrix.length_quotient_range_mulVecLin_eq_ord_det α hα0]
   have key := congrArg (Ring.ordFrac A) hdet
-  rw [Ring.ordFrac_eq_ord, Ring.ordMonoidWithZeroHom_eq_coe A
-      (mem_nonZeroDivisors_of_ne_zero hα0) hord, map_mul, map_pow, Ring.ordFrac_eq_ord,
-    Ring.ordMonoidWithZeroHom_eq_coe A (mem_nonZeroDivisors_of_ne_zero hs) hm,
-    ← coe_ordFrac_mk, ← WithZero.coe_pow, ← WithZero.coe_mul, WithZero.coe_inj] at key
-  rw [eq_comm, ← ofAdd_toAdd (ordFrac A (mk K n g)), Multiplicative.ofAdd.injective.eq_iff]
+  simp only [map_mul, map_pow, Ring.ordFrac_eq_ord, ← coe_ordFrac_mk,
+    Ring.ordMonoidWithZeroHom_eq_coe A (mem_nonZeroDivisors_of_ne_zero hα0) hord,
+    Ring.ordMonoidWithZeroHom_eq_coe A (mem_nonZeroDivisors_of_ne_zero hs) hm] at key
+  norm_cast at key
+  apply Multiplicative.toAdd.injective
   have := congrArg Multiplicative.toAdd key
-  simp only [toAdd_ofAdd, toAdd_mul, toAdd_pow, nsmul_eq_mul] at this
+  simp only [toAdd_ofAdd, toAdd_mul, toAdd_pow, nsmul_eq_mul] at this ⊢
   linarith
 
 /-- An integral matrix `α` whose image `g` in `K` is invertible has order of vanishing the length
-of the cokernel of `α` on `Aⁿ`. This is the positive normalization of the boundary map: the
-cokernel of an injective integral matrix contributes its length. -/
+of the cokernel of `α` on `Aⁿ`. With this sign convention the cokernel of an injective integral
+matrix counts positively. -/
 theorem ordFrac_mk_of_map_eq {n : ℕ} (g : GL (Fin n) K) {α : Matrix (Fin n) (Fin n) A}
     (hα : α.map (algebraMap A K) = g) {ℓ : ℕ}
     (hℓ : Module.length A ((Fin n → A) ⧸ LinearMap.range α.mulVecLin) = ℓ) :
@@ -161,30 +157,6 @@ theorem ordFrac_mk_of_map_eq {n : ℕ} (g : GL (Fin n) K) {α : Matrix (Fin n) (
 
 end KrullDimLE
 
-/-! ## Injectivity of `K₁(A) → K₁(B)` -/
-
-/-- An injective homomorphism `f : A →+* B` of commutative rings induces an injective homomorphism
-of algebraic `K₁` when `SK₁(A)` is trivial, for instance when `A` is semilocal: the determinant
-detects the classes of `K₁(A)`, and `f` is injective on units. -/
-theorem map_injective_of_specialAlgebraicK1_eq_bot {A B : Type*} [CommRing A] [CommRing B]
-    (hA : specialAlgebraicK1 A = ⊥) {f : A →+* B} (hf : Function.Injective f) :
-    Function.Injective (map f) := by
-  refine (injective_iff_map_eq_one _).2 fun x hx ↦ ?_
-  refine det_injective_of_specialAlgebraicK1_eq_bot hA ?_
-  have h := congrArg (det B) hx
-  rw [det_map, map_one] at h
-  rw [map_one]
-  exact Units.ext (hf (by simpa using congrArg Units.val h))
-
-/-- For a commutative semilocal ring `A`, such as a local ring, and an `A`-algebra `B` with
-injective structure map, the map `K₁(A) → K₁(B)` is injective. For a discrete valuation ring `O`
-with fraction field `L` this is exactness of `1 → K₁(O) → K₁(L)`. -/
-theorem map_algebraMap_injective {A B : Type*} [CommRing A] [Finite (MaximalSpectrum A)]
-    [CommRing B] [Algebra A B] [FaithfulSMul A B] :
-    Function.Injective (map (algebraMap A B)) :=
-  map_injective_of_specialAlgebraicK1_eq_bot specialAlgebraicK1_eq_bot_of_finite_maximalSpectrum
-    (FaithfulSMul.algebraMap_injective A B)
-
 /-! ## Discrete valuation rings -/
 
 section IsDiscreteValuationRing
@@ -193,7 +165,7 @@ variable {O L : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O] [Fi
   [Algebra O L] [IsFractionRing O L]
 
 /-- A uniformizer `π` of a discrete valuation ring `O`, as a unit of the fraction field, has
-order of vanishing `1`: the boundary of `[π]` is the class of the residue field. -/
+order of vanishing `1`. -/
 theorem ordFrac_ofUnits_of_irreducible {π : O} (hπ : Irreducible π) (u : Lˣ)
     (hu : (u : L) = algebraMap O L π) :
     ordFrac O (ofUnits L u) = Multiplicative.ofAdd 1 := by

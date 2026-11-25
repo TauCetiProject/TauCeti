@@ -41,6 +41,8 @@ is its element of order two.
   determinant one is elementary.
 * `TauCeti.specialAlgebraicK1_eq_bot_of_euclideanDomain`: `SK₁(R)` is trivial for a Euclidean
   domain `R`.
+* `TauCeti.AlgebraicK1.map_injective_of_specialAlgebraicK1_eq_bot`: an injective ring
+  homomorphism out of a commutative ring with trivial `SK₁` induces an injection of `K₁`.
 * `TauCeti.AlgebraicK1.orderOf_ofUnits_neg_one_int`: the class of `-1` in `K₁(ℤ)` has order two.
 
 ## References
@@ -175,6 +177,19 @@ namespace AlgebraicK1
 theorem det_injective_of_specialAlgebraicK1_eq_bot (h : specialAlgebraicK1 R = ⊥) :
     Function.Injective (det R) :=
   (MonoidHom.ker_eq_bot_iff _).1 h
+
+/-- An injective homomorphism `f : R →+* S` of commutative rings induces an injective homomorphism
+of algebraic `K₁` when `SK₁(R)` is trivial, for instance when `R` is semilocal: the determinant
+detects the classes of `K₁(R)`, and `f` is injective on units. -/
+theorem map_injective_of_specialAlgebraicK1_eq_bot {S : Type*} [CommRing S]
+    (h : specialAlgebraicK1 R = ⊥) {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (map f) := by
+  refine (injective_iff_map_eq_one _).2 fun x hx ↦ ?_
+  refine det_injective_of_specialAlgebraicK1_eq_bot h ?_
+  have h' := congrArg (det S) hx
+  rw [det_map, map_one] at h'
+  rw [map_one]
+  exact Units.ext (hf (by simpa using congrArg Units.val h'))
 
 /-- When `SK₁(R)` is trivial, as for a Euclidean domain, the determinant is an isomorphism
 `K₁(R) ≃* Rˣ`. -/
