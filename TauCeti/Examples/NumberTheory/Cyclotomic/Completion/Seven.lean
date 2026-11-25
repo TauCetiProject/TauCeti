@@ -151,9 +151,8 @@ example : ∃ v w : HeightOneSpectrum (𝓞 F), v ≠ w ∧
 example (v : HeightOneSpectrum (𝓞 F))
     [v.asIdeal.LiesOver ((primesEquiv (R := ℤ)).symm ⟨7, Nat.prime_seven⟩).asIdeal] :
     Module.finrank (((primesEquiv (R := ℤ)).symm ⟨7, Nat.prime_seven⟩).adicCompletion ℚ)
-      (v.adicCompletion F) = 1 := by
-  rw [finrank_adicCompletion_eq_orderOf v 7 (by norm_num),
-    show ((7 : ℕ) : ZMod 3) = 1 by decide, orderOf_one]
+      (v.adicCompletion F) = 1 :=
+  finrank_adicCompletion_eq_one v 7 (by decide)
 
 /-- At each place over `7` the completion map from `ℚ₇` to `F_v` is bijective. -/
 example (v : HeightOneSpectrum (𝓞 F))

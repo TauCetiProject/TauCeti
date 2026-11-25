@@ -44,7 +44,8 @@ isomorphism `TauCeti.rootsOfUnityEquivResidueField`, since `e'` is a unit of `O`
 
 When `p` does not divide `e`, the local degree `[K : ℚ_p]` is the order of `p` modulo `e`
 (`TauCeti.Cyclotomic.finrank_adicCompletion_eq_orderOf`): `p` is unramified in `F` and its residue
-degree is that order. In particular, when `p ≡ 1 mod e` the completion map from the `p`-adic
+degree is that order. In particular, when `p ≡ 1 mod e` the local degree is `1`
+(`TauCeti.Cyclotomic.finrank_adicCompletion_eq_one`), the completion map from the `p`-adic
 completion of `ℚ` to `K` is bijective (`TauCeti.Cyclotomic.adicCompletionExtension_bijective`) and
 `K ≃A[ℚ] ℚ_[p]` (`TauCeti.Cyclotomic.adicCompletionEquivPadic`).
 
@@ -159,6 +160,18 @@ theorem finrank_adicCompletion_eq_orderOf (p : ℕ) [Fact p.Prime]
   rw [finrank_adicCompletion, IsCyclotomicExtension.Rat.ramificationIdx_eq_of_not_dvd p F _ hpe,
     IsCyclotomicExtension.Rat.inertiaDeg_eq_of_not_dvd p F _ hpe, one_mul]
 
+/-- **The local degree of `F` at a prime `p ≡ 1 mod e` is `1`.** If `p ≡ 1 mod e`, then at each
+place `v` of `F` over `p` the degree `[F_v : ℚ_p]` is `1`: `p` does not divide `e`, and the order of
+`p` modulo `e` is `1`. -/
+theorem finrank_adicCompletion_eq_one (p : ℕ) [Fact p.Prime]
+    [v.asIdeal.LiesOver ((Rat.HeightOneSpectrum.primesEquiv (R := ℤ)).symm ⟨p, Fact.out⟩).asIdeal]
+    (hp : (p : ZMod e) = 1) :
+    Module.finrank
+      (((Rat.HeightOneSpectrum.primesEquiv (R := ℤ)).symm ⟨p, Fact.out⟩).adicCompletion ℚ)
+      (v.adicCompletion F) = 1 := by
+  rw [finrank_adicCompletion_eq_orderOf v p
+    ((ZMod.isUnit_prime_iff_not_dvd Fact.out).1 (hp ▸ isUnit_one)), hp, orderOf_one]
+
 /-- **The completion map at a prime `p ≡ 1 mod e` is bijective.** If `p ≡ 1 mod e`, then at each
 place `v` of `F` over `p` the completion map from the `p`-adic completion of `ℚ` to `F_v` is
 bijective. -/
@@ -166,33 +179,30 @@ theorem adicCompletionExtension_bijective (p : ℕ) [Fact p.Prime]
     [v.asIdeal.LiesOver ((Rat.HeightOneSpectrum.primesEquiv (R := ℤ)).symm ⟨p, Fact.out⟩).asIdeal]
     (hp : (p : ZMod e) = 1) :
     Function.Bijective (adicCompletionExtension ℚ F
-      ((Rat.HeightOneSpectrum.primesEquiv (R := ℤ)).symm ⟨p, Fact.out⟩) v) := by
-  have hpe : ¬ p ∣ e := (ZMod.isUnit_prime_iff_not_dvd Fact.out).1 (hp ▸ isUnit_one)
-  rw [← algebraMap_adicCompletionExtensionAlgebra]
-  refine Algebra.finrank_eq_one_iff_bijective_algebraMap.1 ?_
-  rw [finrank_adicCompletion_eq_orderOf v p hpe, hp, orderOf_one]
+      ((Rat.HeightOneSpectrum.primesEquiv (R := ℤ)).symm ⟨p, Fact.out⟩) v) :=
+  adicCompletionExtension_bijective_of_finrank_eq_one _ v (finrank_adicCompletion_eq_one v p hp)
 
 /-- **The completions of `F` at a prime `p ≡ 1 mod e` are `ℚ_p`.** If `p ≡ 1 mod e`, then at
 each place `v` of `F` over `p` the completion `F_v` is isomorphic to `ℚ_[p]` as a topological
 `ℚ`-algebra. The isomorphism inverts the completion map from the `p`-adic completion of `ℚ` to
-`F_v` (`adicCompletionExtension_bijective`) and then applies Mathlib's
-`Padic.adicCompletionEquiv`; `adicCompletionEquivPadic_symm_apply` and
-`adicCompletionEquivPadic_adicCompletionExtension` record how it acts. -/
+`F_v` (`IsDedekindDomain.HeightOneSpectrum.adicCompletionExtensionEquiv`, as the local degree is
+`1`) and then applies the inverse of Mathlib's `Padic.adicCompletionEquiv`;
+`adicCompletionEquivPadic_symm_apply` and `adicCompletionEquivPadic_adicCompletionExtension`
+record how it acts. -/
 noncomputable def adicCompletionEquivPadic (p : ℕ) [Fact p.Prime]
     [v.asIdeal.LiesOver ((Rat.HeightOneSpectrum.primesEquiv (R := ℤ)).symm ⟨p, Fact.out⟩).asIdeal]
     (hp : (p : ZMod e) = 1) :
     v.adicCompletion F ≃A[ℚ] ℚ_[p] :=
+  -- `adicCompletionExtensionEquiv` is linear over the `p`-adic completion of `ℚ`, and the
+  -- `ℚ`-algebra structure on that completion in `Padic.adicCompletionEquiv` is not reducibly
+  -- `DivisionRing.toRatAlgebra`, so the two are composed as ring isomorphisms.
   let w := (Rat.HeightOneSpectrum.primesEquiv (R := ℤ)).symm ⟨p, Fact.out⟩
-  let f := RingEquiv.ofBijective _ (adicCompletionExtension_bijective v p hp)
+  let f := adicCompletionExtensionEquiv w v (finrank_adicCompletion_eq_one v p hp)
   let φ := Padic.adicCompletionEquiv ℤ ⟨p, Fact.out⟩
-  have hiso : Isometry f := AddMonoidHomClass.isometry_of_norm f fun x ↦ by
-    rw [RingEquiv.ofBijective_apply, norm_adicCompletionExtension,
-      finrank_adicCompletion_eq_orderOf v p
-        ((ZMod.isUnit_prime_iff_not_dvd Fact.out).1 (hp ▸ isUnit_one)), hp, orderOf_one, pow_one]
-  { (f.symm.trans (φ : ℚ_[p] ≃+* w.adicCompletion ℚ).symm).toRatAlgEquiv with
-    continuous_toFun :=
-      (HomeomorphClass.inv_continuous φ).comp (hiso.right_inv f.right_inv).continuous
-    continuous_invFun := (continuous_adicCompletionExtension ℚ F w v).comp (map_continuous φ) }
+  { (f.symm.toAlgEquiv.toRingEquiv.trans
+      (φ : ℚ_[p] ≃+* w.adicCompletion ℚ).symm).toRatAlgEquiv with
+    continuous_toFun := (HomeomorphClass.inv_continuous φ).comp f.symm.continuous
+    continuous_invFun := f.continuous.comp (map_continuous φ) }
 
 /-- The inverse of `adicCompletionEquivPadic` is Mathlib's `Padic.adicCompletionEquiv` followed by
 the completion map from the `p`-adic completion of `ℚ` to `F_v`. -/
@@ -203,8 +213,15 @@ theorem adicCompletionEquivPadic_symm_apply (p : ℕ) [Fact p.Prime]
     (adicCompletionEquivPadic v p hp).symm x = adicCompletionExtension ℚ F
       ((Rat.HeightOneSpectrum.primesEquiv (R := ℤ)).symm ⟨p, Fact.out⟩) v
       (Padic.adicCompletionEquiv ℤ ⟨p, Fact.out⟩ x) := by
-  rw [adicCompletionEquivPadic]
-  rfl
+  let f := adicCompletionExtensionEquiv _ v (finrank_adicCompletion_eq_one v p hp)
+  let φ : ℚ_[p] ≃+*
+      ((Rat.HeightOneSpectrum.primesEquiv (R := ℤ)).symm ⟨p, Fact.out⟩).adicCompletion ℚ :=
+    Padic.adicCompletionEquiv ℤ ⟨p, Fact.out⟩
+  rw [ContinuousAlgEquiv.symm_apply_eq, ← coe_adicCompletionExtensionEquiv _ v
+    (finrank_adicCompletion_eq_one v p hp)]
+  -- By definition, `adicCompletionEquivPadic` applies `f.symm` and then `φ.symm`, which cancel
+  -- `φ` and `f`.
+  exact (φ.symm_apply_apply x).symm.trans (congr_arg φ.symm (f.symm_apply_apply (φ x)).symm)
 
 /-- `adicCompletionEquivPadic` sends the image in `F_v` of `x ∈ ℚ_[p]` under the completion map
 back to `x`. -/
