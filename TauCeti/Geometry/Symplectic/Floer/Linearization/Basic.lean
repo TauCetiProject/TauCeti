@@ -377,6 +377,19 @@ theorem floerLinearizationCoeff_apply (ω : SymplecticForm V)
         J z (u z) (fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z) v) :=
   (rfl)
 
+/-- Where the structures are a fixed `J₀`, independent of the target point, and the Hamiltonian
+perturbations vanish, the zeroth-order part of the linearized Floer operator vanishes. -/
+theorem floerLinearizationCoeff_eq_zero_of_eq_base (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V) {z : ℝ × ℝ}
+    {J₀ : V →L[ℝ] V} (hJ₀ : ∀ y, J z y = J₀) (hKs₀ : ∀ y, Ks z y = 0)
+    (hKt₀ : ∀ y, Kt z y = 0) :
+    ω.floerLinearizationCoeff J Ks Kt u z = 0 := by
+  have hJ : J z = fun _ ↦ J₀ := funext hJ₀
+  have hKs : Ks z = fun _ ↦ 0 := funext hKs₀
+  have hKt : Kt z = fun _ ↦ 0 := funext hKt₀
+  ext v
+  simp [floerLinearizationCoeff_apply, hJ, hKs, hKt, hamiltonianVectorField_const]
+
 /-- The linearized Floer operator is `∂s ξ + J(z, u z) ∂t ξ` plus its zeroth-order part
 `floerLinearizationCoeff`. -/
 theorem floerLinearization_eq_add (ω : SymplecticForm V)
