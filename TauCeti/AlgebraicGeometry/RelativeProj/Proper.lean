@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Symm
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Proper
 public import TauCeti.AlgebraicGeometry.RelativeProj.Basic
 public import TauCeti.AlgebraicGeometry.RelativeProj.ClosedImmersion
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact.TargetLocal
 
 /-!
 # Properness of the relative `Proj`
@@ -105,12 +106,6 @@ quasi-compact over the base. -/
 theorem quasiCompact_relativeProjToBase (h : ∀ U : X.Opens, IsAffineOpen U →
       Algebra.FiniteType (A.gradedSectionsGrading U 0) (⨁ n, Γ(A.X n, U))) :
     QuasiCompact A.relativeProjToBase :=
-  -- Instance search cannot use Mathlib's instance `HasAffineProperty @QuasiCompact _`: its affine
-  -- property is stored at a dependent function type, not at `AffineTargetMorphismProperty`, so it
-  -- cannot be assigned to that out-parameter. The instance is therefore supplied explicitly.
-  have : IsZariskiLocalAtTarget @QuasiCompact.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _
-      instHasAffinePropertyQuasiCompactCompactSpaceCarrierCarrierCommRingCat
   (A.relativeProjToBase_iff_forall_isAffineOpen @QuasiCompact).mpr fun U hU ↦
     have := h U hU
     inferInstance

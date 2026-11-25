@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.LineBundle.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact.TargetLocal
 
 /-!
 # Relatively ample line bundles
@@ -90,14 +91,7 @@ theorem IsRelativelyAmple.quasiCompact {f : X ⟶ S} {a : LineBundleClass X}
 affine open carries an ample line bundle, so it is quasi-separated. -/
 theorem IsRelativelyAmple.quasiSeparated {f : X ⟶ S} {a : LineBundleClass X}
     (h : a.IsRelativelyAmple f) : QuasiSeparated f :=
-  -- Instance search cannot use Mathlib's instance `HasAffineProperty @QuasiSeparated _`: its affine
-  -- property is stored at a dependent function type, not at `AffineTargetMorphismProperty`, so it
-  -- cannot be assigned to that out-parameter. Mathlib itself only uses this instance under a
-  -- `set_option` override, which this repository forbids, and a typed `inferInstance` fails for the
-  -- same reason. The instance is therefore supplied explicitly.
-  @HasAffineProperty.of_iSup_eq_top _ _
-    instHasAffinePropertyQuasiSeparatedQuasiSeparatedSpaceCarrierCarrierCommRingCat _ _ f _
-    (fun V : S.affineOpens ↦ V) (iSup_affineOpens_eq_top S)
+  HasAffineProperty.of_iSup_eq_top (fun V : S.affineOpens ↦ V) (iSup_affineOpens_eq_top S)
     fun V ↦ (h.isAmple_pullback V V.property).quasiSeparatedSpace
 
 /-- If a positive power `aⁿ` of a line-bundle class is relatively ample, then so is `a`. -/
