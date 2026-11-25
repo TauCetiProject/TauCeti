@@ -52,10 +52,17 @@ is nonzero; this is not formalized here.
 
 ## Main results
 
+* `TauCeti.coeff_mapDomainRingHom_brauerProjection`: pushed forward to `R[G]`, `Br_P(x)` keeps
+  the coefficients of `x` on `C_G(P)`.
 * `TauCeti.brauerProjection_eq_zero_iff`: `Br_P(x) = 0` exactly when `x` vanishes on `C_G(P)`.
+* `TauCeti.brauerProjection_mapRingHom`: `Br_P` commutes with a change of coefficients
+  `f : R →+* S`, and `TauCeti.brauerProjection_mapRingHom_eq_zero_iff`: for injective `f`,
+  `Br_P(f x) = 0 ↔ Br_P(x) = 0`.
 * `TauCeti.brauerProjection_sSup_ne_zero_of_directedOn`: if `Br_Q(x) ≠ 0` for every `Q` in a
   nonempty directed family `c`, then `Br_{sSup c}(x) ≠ 0`.
 * `TauCeti.brauerProjection_conj_eq_zero_iff`: `Br_{gPg⁻¹}(g x g⁻¹) = 0 ↔ Br_P(x) = 0`.
+* `TauCeti.brauerProjection_conj_eq_zero_iff_of_conjRepresentation_eq`: if `g x g⁻¹ = x`, for
+  instance if `x` is central, then `Br_{gPg⁻¹}(x) = 0 ↔ Br_P(x) = 0`.
 * `TauCeti.brauerProjection_mul`: `Br_P(x y) = Br_P(x) Br_P(y)` for `x, y ∈ R[G]^P`.
 * `TauCeti.coeff_brauerProjection_conj_of_mem_conjInvariants`: `Br_P` of an element invariant
   under conjugation by `N_G(P)`, for instance a central one, is invariant under `N_G(P)`.
@@ -94,6 +101,18 @@ theorem coeff_brauerProjection (P : Subgroup G) (x : MonoidAlgebra R G)
     (brauerProjection P x).coeff c = x.coeff c := by
   simp [brauerProjection]
 
+/-- Pushing `Br_P(x)` forward along the inclusion `C_G(P) → G` keeps exactly the coefficients of
+`x` on `C_G(P)`. -/
+theorem coeff_mapDomainRingHom_brauerProjection (P : Subgroup G) (x : MonoidAlgebra R G) (g : G)
+    [Decidable (g ∈ Subgroup.centralizer (P : Set G))] :
+    (mapDomainRingHom R (Subgroup.centralizer (P : Set G)).subtype (brauerProjection P x)).coeff g =
+      if g ∈ Subgroup.centralizer (P : Set G) then x.coeff g else 0 := by
+  rw [mapDomainRingHom_apply, coeff_mapDomain]
+  split_ifs with hg
+  · simpa using Finsupp.mapDomain_apply_of_injective
+      (Subgroup.centralizer (P : Set G)).subtype_injective (brauerProjection P x).coeff ⟨g, hg⟩
+  · exact Finsupp.mapDomain_of_notMem_range _ _ (by simpa using hg)
+
 /-- `Br_P(x) = 0` exactly when `x` has no nonzero coefficient on the centralizer `C_G(P)`. -/
 theorem brauerProjection_eq_zero_iff {P : Subgroup G} {x : MonoidAlgebra R G} :
     brauerProjection P x = 0 ↔ ∀ c ∈ Subgroup.centralizer (P : Set G), x.coeff c = 0 := by
@@ -103,6 +122,20 @@ theorem brauerProjection_eq_zero_iff {P : Subgroup G} {x : MonoidAlgebra R G} :
   · intro h
     ext c
     simpa using h c c.property
+
+/-- The Brauer projection commutes with a change of coefficients: `Br_P(f x) = f(Br_P(x))`. -/
+@[simp]
+theorem brauerProjection_mapRingHom {S : Type*} [CommSemiring S] (f : R →+* S) (P : Subgroup G)
+    (x : MonoidAlgebra R G) :
+    brauerProjection P (mapRingHom G f x) = mapRingHom _ f (brauerProjection P x) := by
+  ext c
+  simp
+
+/-- For injective `f`, `Br_P(f x) = 0` exactly when `Br_P(x) = 0`. -/
+theorem brauerProjection_mapRingHom_eq_zero_iff {S : Type*} [CommSemiring S] {f : R →+* S}
+    (hf : Function.Injective f) {P : Subgroup G} {x : MonoidAlgebra R G} :
+    brauerProjection P (mapRingHom G f x) = 0 ↔ brauerProjection P x = 0 := by
+  simp only [brauerProjection_eq_zero_iff, coeff_mapRingHom, map_eq_zero_iff f hf]
 
 /-- `Br_1(x) = 0` exactly when `x = 0`, since the trivial subgroup is centralized by all of `G`. -/
 theorem brauerProjection_bot_eq_zero_iff {x : MonoidAlgebra R G} :
@@ -156,6 +189,13 @@ theorem brauerProjection_conj_eq_zero_iff (g : G) {P : Subgroup G} {x : MonoidAl
     rw [coeff_conjRepresentation]
     refine h _ ((Subgroup.smul_mem_pointwise_smul_iff (a := MulAut.conj g)).1 ?_)
     simpa [mul_assoc] using hc
+
+/-- **The Brauer projection of a conjugation-fixed element.** If conjugation by `g` fixes `x`, for
+instance if `x` is central, then `Br_{gPg⁻¹}(x) = 0` exactly when `Br_P(x) = 0`. -/
+theorem brauerProjection_conj_eq_zero_iff_of_conjRepresentation_eq {g : G} {P : Subgroup G}
+    {x : MonoidAlgebra R G} (hx : conjRepresentation R G g x = x) :
+    brauerProjection (MulAut.conj g • P) x = 0 ↔ brauerProjection P x = 0 := by
+  rw [← brauerProjection_conj_eq_zero_iff g (P := P) (x := x), hx]
 
 /-- `Br_P` keeps a basis element `single c r` with `c ∈ C_G(P)`. -/
 @[simp]

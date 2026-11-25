@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
 public import Mathlib.CategoryTheory.Filtered.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
+import TauCeti.Algebra.Category.CommAlgCat.FilteredColimits
 
 /-!
 # Localization of bundled commutative algebras
@@ -17,7 +18,9 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 For a submonoid `M` of a commutative ring `R`, invert the product of each finite subset of
 `M`. Inclusion of finite subsets gives a filtered diagram of principal localizations, whose
 colimit is any localization of `R` at `M`. This presentation lets properties stable under
-filtered colimits pass from principal localizations to arbitrary localizations.
+filtered colimits pass from principal localizations to arbitrary localizations. Since the
+forgetful functor to commutative rings preserves filtered colimits, the same presentation holds for
+the underlying rings (`Submonoid.localizationAwayRingCoconeIsColimit`).
 
 The construction uses the universal property of localization, through Mathlib's
 `IsLocalization.liftAlgHom` and `IsLocalization.algHom_subsingleton`.
@@ -125,6 +128,48 @@ noncomputable def localizationAwayCoconeIsColimit : IsColimit (localizationAwayC
   · exact (Submonoid.powers (∏ x ∈ s, (x : R))).isLocalization_hom_ext
       (A := .of R (Localization.Away (∏ x ∈ s, (x : R)))) _ _
   · exact M.isLocalization_hom_ext (A := .of R S) _ _
+
+/-- The principal localizations `R[1/∏ s]` as commutative rings, with the canonical maps to the
+localization `S` of `R` at `M`, which is the apex. -/
+noncomputable abbrev localizationAwayRingCocone :
+    Cocone (localizationAwayDiagram M ⋙ forget₂ (CommAlgCat.{u} R) CommRingCat.{u}) :=
+  (forget₂ (CommAlgCat.{u} R) CommRingCat.{u}).mapCocone
+    ((localizationAwayCocone M S).extend (eqToHom (localizationAwayCocone_pt M S)))
+
+/-- The apex of `Submonoid.localizationAwayRingCocone` is the localization `S`. -/
+theorem localizationAwayRingCocone_pt : (localizationAwayRingCocone M S).pt = CommRingCat.of S :=
+  rfl
+
+/-- A leg of `Submonoid.localizationAwayRingCocone` is the underlying ring map of the
+corresponding leg of the `R`-algebra cocone `Submonoid.localizationAwayCocone`. -/
+theorem localizationAwayRingCocone_ι_app_hom (s : Finset M) :
+    ((localizationAwayRingCocone M S).ι.app s).hom =
+      ((localizationAwayCocone M S).ι.app s ≫
+        eqToHom (localizationAwayCocone_pt M S)).hom.toRingHom :=
+  rfl
+
+/-- The legs of `Submonoid.localizationAwayRingCocone` are `R`-algebra maps. -/
+theorem localizationAwayRingCocone_ι_app_comp_algebraMap (s : Finset M) :
+    ((localizationAwayRingCocone M S).ι.app s).hom.comp
+        (algebraMap R ((localizationAwayDiagram M).obj s)) = algebraMap R S :=
+  RingHom.ext fun x ↦
+    (((localizationAwayCocone M S).extend (eqToHom (localizationAwayCocone_pt M S))).ι.app
+      s).hom.commutes x
+
+/-- As a commutative ring, every localization is the filtered colimit of the principal
+localizations indexed by finite sets of denominators. -/
+noncomputable def localizationAwayRingCoconeIsColimit :
+    IsColimit (localizationAwayRingCocone M S) := by
+  let U := forget₂ (CommAlgCat.{u} R) CommRingCat.{u}
+  -- Forgetting the algebra structure preserves this filtered colimit: the forgetful functor
+  -- to types preserves it, and the forgetful functor from rings to types reflects it.
+  have : PreservesColimitsOfShape (Finset M) (U ⋙ forget CommRingCat) :=
+    preservesColimitsOfShape_of_natIso (eqToIso HasForget₂.forget_comp).symm
+  have : ReflectsColimit (localizationAwayDiagram M ⋙ U) (forget CommRingCat) :=
+    reflectsColimit_of_reflectsIsomorphisms _ _
+  have : PreservesColimit (localizationAwayDiagram M) U :=
+    preservesColimit_of_reflects_of_preserves U (forget CommRingCat)
+  exact isColimitOfPreserves U (IsColimit.extendIso _ (localizationAwayCoconeIsColimit M S))
 
 end Submonoid
 

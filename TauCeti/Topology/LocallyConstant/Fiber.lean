@@ -94,6 +94,12 @@ theorem mem_fiberCompactOpens {b : β} {x : X} :
     x ∈ hf.fiberCompactOpens hc hfc b ↔ f x = b ∧ b ≠ b₀ :=
   Iff.rfl
 
+@[simp]
+theorem coe_fiberCompactOpens {b : β} (hb : b ≠ b₀) :
+    (hf.fiberCompactOpens hc hfc b : Set X) = f ⁻¹' {b} := by
+  ext x
+  simp [hb]
+
 theorem pairwiseDisjoint_fiberCompactOpens (s : Set β) :
     s.PairwiseDisjoint fun b ↦ (hf.fiberCompactOpens hc hfc b : Set X) :=
   fun _ _ _ _ hbb' ↦ Set.disjoint_left.2 fun _ hx hx' ↦
@@ -136,6 +142,15 @@ theorem mem_fiberClopens {f : LocallyConstant X α} {a : α} {x : X} :
 theorem coe_fiberClopens (f : LocallyConstant X α) (a : α) :
     (f.fiberClopens a : Set X) = f ⁻¹' {a} :=
   (rfl)
+
+/-- Away from the value taken off the compact set, the compact-open and clopen fibers
+have the same underlying set. -/
+@[simp]
+theorem toClopens_fiberCompactOpens [T2Space X] (f : LocallyConstant X α) {s : Set X}
+    (hs : IsCompact s) {a₀ a : α} (hf : ∀ x ∉ s, f x = a₀) (ha : a ≠ a₀) :
+    (f.isLocallyConstant.fiberCompactOpens hs hf a).toClopens = f.fiberClopens a :=
+  Clopens.ext (by rw [CompactOpens.coe_toClopens, IsLocallyConstant.coe_fiberCompactOpens _ _ _ ha,
+    toFun_eq_coe, coe_fiberClopens])
 
 /-- The fibers of a locally constant function, as open sets, cover its domain. -/
 theorem iSup_toOpens_fiberClopens (f : LocallyConstant X α) :

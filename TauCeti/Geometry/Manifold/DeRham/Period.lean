@@ -35,7 +35,12 @@ On loops at `x` it is the **period homomorphism** `TauCeti.periodHom φ x` from 
 group to the coefficients. For smooth real closed forms it only depends on the de Rham class, and on
 a connected manifold a closed form is exact exactly when all its periods vanish
 (`TauCeti.mem_exactForms_one_iff_periodHom_eq_zero`). Hence the periods give an injective linear
-map `TauCeti.deRhamCohomology.period` from `H¹_dR(M)` to the homomorphisms `π₁(M, x) → ℝ`.
+map `TauCeti.deRhamCohomology.period` from `H¹_dR(M)` to the homomorphisms `π₁(M, x) → ℝ`. When
+`H¹_dR(M)` is finite-dimensional, finitely many smooth loops already suffice: every linear
+functional on `H¹_dR(M)` is a finite combination of line integrals along smooth loops at a base
+point (`TauCeti.deRhamCohomology.exists_apply_mk_eq_sum_pathIntegral`). So the coordinates of the
+de Rham classes of a family of closed forms depend smoothly on a parameter as soon as its line
+integrals along smooth loops do.
 
 Periods are natural under pullback: the integral of `f^* θ` along `γ` is the integral of `θ` along
 `f ∘ γ` (`TauCeti.pathClassIntegral_mpullback`), so the periods of `f^* θ` at `x` are those of `θ`
@@ -56,6 +61,9 @@ is the subgroup of loops lifting to loops, so this decides which covers make a c
   manifold is exact exactly when its periods vanish.
 * `TauCeti.deRhamCohomology.period`: the periods of de Rham classes in degree one, an injective
   linear map on a connected manifold.
+* `TauCeti.deRhamCohomology.exists_apply_mk_eq_sum_pathIntegral`: on a connected manifold with
+  finite-dimensional `H¹_dR(M)`, every linear functional on `H¹_dR(M)` is a finite combination of
+  line integrals along smooth loops at a base point.
 * `TauCeti.pathClassIntegral_mapCoeff`: integration commutes with continuous linear maps of the
   coefficients.
 * `TauCeti.pathClassIntegral_mpullback`, `TauCeti.periodHom_mpullback`,
@@ -502,6 +510,49 @@ theorem period_injective [PreconnectedSpace M] (x : M) :
   rw [period_mk] at hc
   rw [mk_eq_zero_iff, mem_exactForms_one_iff_periodHom_eq_zero φ.property x]
   exact hc
+
+/-- **Line integrals along loops span the dual of `H¹_dR`.** On a connected manifold whose first
+de Rham cohomology is finite-dimensional, for instance a compact boundaryless one, every linear
+functional `f` on `H¹_dR(M)` is a finite linear combination of line integrals along smooth loops at
+a base point `x₀`: there are smooth loops `γ j` at `x₀` and real numbers `c j` with
+`f [φ] = ∑ j, c j ∫_{γ j} φ` for every closed form `φ`. -/
+theorem exists_apply_mk_eq_sum_pathIntegral [PreconnectedSpace M]
+    [FiniteDimensional ℝ (deRhamCohomology I M 1)] (x₀ : M)
+    (f : Module.Dual ℝ (deRhamCohomology I M 1)) :
+    ∃ (n : ℕ) (γ : Fin n → ℝ → M) (c : Fin n → ℝ),
+      (∀ j, ContMDiff 𝓘(ℝ, ℝ) I ∞ (γ j) ∧ γ j 0 = x₀ ∧ γ j 1 = x₀) ∧
+      ∀ φ : closedForms I M 1,
+        f (mk I 1 φ) = ∑ j, c j * pathIntegral (φ.val : RoughForm I M ℝ 1) (γ j) 0 1 := by
+  -- The period along a smooth loop at `x₀`, as a linear functional on `H¹_dR(M)`.
+  let L := {γ : ℝ → M // ContMDiff 𝓘(ℝ, ℝ) I ∞ γ ∧ γ 0 = x₀ ∧ γ 1 = x₀}
+  let ℓ (γ : L) : Module.Dual ℝ (deRhamCohomology I M 1) :=
+    { toFun c := period x₀ c (Additive.ofMul (.of (.mk
+        ⟨⟨fun t ↦ γ.val t, γ.property.1.continuous.comp continuous_subtypeVal⟩, γ.property.2.1,
+          γ.property.2.2⟩)))
+      map_add' c d := by simp
+      map_smul' r c := by simp }
+  have hℓ (γ : L) (φ : closedForms I M 1) :
+      ℓ γ (mk I 1 φ) = pathIntegral (φ.val : RoughForm I M ℝ 1) γ.val 0 1 := by
+    simp only [ℓ, LinearMap.coe_mk, AddHom.coe_mk, period_mk]
+    exact periodHom_ofMul_eq_pathIntegral (φ.val.isSmoothForm.of_le (by simp))
+      ((mem_closedForms I _).mp φ.property) (γ.property.1.of_le (by simp)) fun _ ↦ rfl
+  -- A class whose loop integrals all vanish is zero, so these functionals span the dual.
+  have hspan : Submodule.span ℝ (Set.range ℓ) = ⊤ := by
+    refine Submodule.span_eq_top_of_ne_zero fun c hc ↦ ?_
+    by_contra! h
+    obtain ⟨φ, rfl⟩ := mk_surjective I 1 c
+    refine hc ((mk_eq_zero_iff_forall_pathIntegral_eq_zero φ x₀).2 fun γ hγ h₀ h₁ ↦ ?_)
+    rw [← hℓ ⟨γ, hγ, h₀, h₁⟩]
+    exact h _ ⟨_, rfl⟩
+  obtain ⟨a, ha⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1
+    (hspan ▸ Submodule.mem_top : f ∈ Submodule.span ℝ (Set.range ℓ))
+  -- Enumerate the loops in the support of the combination.
+  let e := a.support.equivFin
+  refine ⟨a.support.card, fun j ↦ (e.symm j).val.val, fun j ↦ a (e.symm j),
+    fun j ↦ (e.symm j).val.property, fun φ ↦ ?_⟩
+  rw [← ha, Finsupp.sum, LinearMap.sum_apply, ← Finset.sum_coe_sort a.support]
+  exact Fintype.sum_equiv e _ _ fun γ ↦ by
+    simp only [LinearMap.smul_apply, hℓ, smul_eq_mul, Equiv.symm_apply_apply]
 
 /-- **Naturality of periods of de Rham classes.** The periods of the pullback of a class along a
 smooth map `f` are the periods of the class composed with the induced map of fundamental groups. -/
