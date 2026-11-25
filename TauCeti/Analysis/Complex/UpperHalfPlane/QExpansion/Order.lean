@@ -55,9 +55,9 @@ lemma qExpansion_order_eq_of_orderAtInfty_eq {f : ℍ → ℂ} {n : ℕ} (hh : 0
     (hfbdd : IsBoundedAtImInfty f) (hf : orderAtInfty f = ((n / h : ℝ) : EReal)) :
     (qExpansion h f).order = n := by
   rw [orderAtInfty_eq_qExpansion_order hh hfper hfhol hfbdd,
-    EReal.div_eq_iff (by simp) (by simp) (by simpa using hh.ne'), ← EReal.coe_mul,
-    div_mul_cancel₀ _ hh.ne', EReal.coe_natCast, ← ENNReal.toEReal_natCast,
-    EReal.coe_ennreal_eq_coe_ennreal_iff] at hf
-  exact_mod_cast hf
+    EReal.div_eq_iff (by simp) (by simp) (by simpa using hh.ne')] at hf
+  have : ((qExpansion h f).order : EReal) = ((n : ℕ∞) : EReal) := by
+    simpa [← EReal.coe_mul, hh.ne'] using hf
+  exact_mod_cast this
 
 end TauCeti
