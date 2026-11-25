@@ -554,7 +554,8 @@ private lemma exists_twistedChainSkeletonBasePairToComplex_f_eq (n : ℕ) {k : �
   obtain ⟨c, rfl⟩ := (complexBasePair C).twistedChainComplexπ_f_surjective L y
   -- The chain `c` is supported in a compact subset `K` of the complex, which lies in a skeleton.
   obtain ⟨K, hK, hc⟩ :=
-    LocalCoefficientSystem.exists_isCompact_forall_mem_range_twistedChainComplexMap_f L c
+    LocalCoefficientSystem.exists_isCompact_forall_subset_iff_mem_range_twistedChainComplexMap_f
+      L c
   obtain ⟨d, hd⟩ := exists_subset_skeletonLT_of_isCompact (C := C)
     (hK.image continuous_subtypeVal) (by rintro _ ⟨x, -, rfl⟩; exact x.property)
   set m := n + d
@@ -572,7 +573,7 @@ private lemma exists_twistedChainSkeletonBasePairToComplex_f_eq (n : ℕ) {k : �
     erw [LocalCoefficientSystem.range_twistedChainComplexMap_f ι L
       (Topology.IsEmbedding.inclusion (skeletonLT C ((m + 1 : ℕ) : ℕ∞)).subset_complex).isInducing,
       hι, ← LocalCoefficientSystem.range_twistedChainComplexMap_subtypeVal_f]
-    exact hc _ fun x hx ↦
+    exact (hc _).1 fun x hx ↦
       skeletonLT_mono (by exact_mod_cast (by lia : d ≤ m + 1)) (hd ⟨x, hx, rfl⟩)
   let e := (skeletonBasePair C m).twistedChainComplexCoefficientIso
     (eqToIso (skeletonSystem_eq_pullback C L m))

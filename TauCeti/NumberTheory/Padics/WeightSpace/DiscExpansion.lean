@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.ExpLog
+public import TauCeti.NumberTheory.Padics.Exp.Log
 public import TauCeti.NumberTheory.Padics.WeightSpace.AnalyticLevel
 public import TauCeti.NumberTheory.Padics.WeightSpace.ZeroExtend
 import TauCeti.Analysis.Normed.Ring.CompactMonoid
