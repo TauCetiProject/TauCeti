@@ -20,10 +20,19 @@ off-diagonal form `star v ⬝ᵥ (A - diagonal A.diag) *ᵥ v`
 (`Matrix.star_dotProduct_mulVec_eq_sum_diag_add`), with real-part counterpart
 `Matrix.re_star_dotProduct_mulVec_eq_sum_diag_add`.
 
+The form of a diagonal matrix is the weighted sum `∑ i, d i * ‖v i‖ ^ 2`
+(`Matrix.star_dotProduct_diagonal_mulVec`), and the form of `B * diagonal d * Bᴴ` is the same
+sum for the coordinates of `Bᴴ *ᵥ v`
+(`Matrix.star_dotProduct_mul_diagonal_mul_conjTranspose_mulVec`). With `B` the eigenvector
+unitary of a Hermitian matrix, the latter expands a quadratic form over the eigenbasis.
+
 A Hermitian matrix is determined by its quadratic form: if `star v ⬝ᵥ A *ᵥ v = 0` for every `v`,
 then `A = 0` (`Matrix.IsHermitian.forall_star_dotProduct_mulVec_self_eq_zero_iff`). This is
 polarization for Hermitian forms, read from Mathlib's
 `LinearMap.IsSymmetric.inner_map_self_eq_zero` through `Matrix.toEuclideanLin`.
+
+The self pairing `star x ⬝ᵥ x` is real: it is the cast of its real part
+(`Matrix.star_dotProduct_self_eq_ofReal_re`).
 -/
 
 public section
@@ -34,17 +43,29 @@ variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n]
 
 variable [RCLike 𝕜]
 
+/-- The form `star v ⬝ᵥ diagonal d *ᵥ v` is the weighted sum of the squared moduli of the
+coordinates of `v`. -/
+theorem star_dotProduct_diagonal_mulVec (d v : n → 𝕜) :
+    star v ⬝ᵥ diagonal d *ᵥ v = ∑ i, d i * ((‖v i‖ ^ 2 : ℝ) : 𝕜) := by
+  simp only [dotProduct, mulVec_diagonal, Pi.star_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [mul_left_comm, RCLike.star_def, RCLike.conj_mul]; norm_cast
+
+/-- The form of `B * diagonal d * Bᴴ` at `v` is the weighted sum of the squared moduli of the
+coordinates of `Bᴴ *ᵥ v`. -/
+theorem star_dotProduct_mul_diagonal_mul_conjTranspose_mulVec {m : Type*} [Fintype m]
+    (B : Matrix m n 𝕜) (d : n → 𝕜) (v : m → 𝕜) :
+    star v ⬝ᵥ (B * diagonal d * Bᴴ) *ᵥ v = ∑ j, d j * ((‖(Bᴴ *ᵥ v) j‖ ^ 2 : ℝ) : 𝕜) := by
+  rw [← star_dotProduct_diagonal_mulVec, ← mulVec_mulVec, ← mulVec_mulVec, dotProduct_mulVec,
+    star_mulVec, conjTranspose_conjTranspose]
+
 /-- Decomposes `star v ⬝ᵥ A *ᵥ v` into its diagonal squared-norm sum and its off-diagonal part
 `star v ⬝ᵥ (A - diagonal A.diag) *ᵥ v`. -/
 theorem star_dotProduct_mulVec_eq_sum_diag_add (A : Matrix n n 𝕜) (v : n → 𝕜) :
     star v ⬝ᵥ A *ᵥ v =
       (∑ i, A i i * ((‖v i‖ ^ 2 : ℝ) : 𝕜)) + star v ⬝ᵥ (A - diagonal A.diag) *ᵥ v := by
-  have hdiag : star v ⬝ᵥ diagonal A.diag *ᵥ v = ∑ i, A i i * ((‖v i‖ ^ 2 : ℝ) : 𝕜) := by
-    simp only [dotProduct, mulVec_diagonal, diag_apply, Pi.star_apply]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [mul_left_comm, RCLike.star_def, RCLike.conj_mul]; norm_cast
   nth_rw 1 [← add_sub_cancel (diagonal A.diag) A]
-  rw [add_mulVec, dotProduct_add, hdiag]
+  simp only [add_mulVec, dotProduct_add, star_dotProduct_diagonal_mulVec, diag_apply]
 
 omit [DecidableEq n] in
 /-- Subtracting a weighted diagonal sum leaves the off-diagonal sum and the weighted
@@ -78,5 +99,11 @@ theorem IsHermitian.forall_star_dotProduct_mulVec_self_eq_zero_iff {A : Matrix n
   intro x
   rw [inner_eq_zero_symm, EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm]
   simpa using h x
+
+omit [DecidableEq n] in
+/-- The self pairing `star x ⬝ᵥ x` is real: it is the cast of its real part. -/
+theorem star_dotProduct_self_eq_ofReal_re (x : n → 𝕜) :
+    star x ⬝ᵥ x = (RCLike.re (star x ⬝ᵥ x) : 𝕜) :=
+  (RCLike.conj_eq_iff_re.mp (by rw [← RCLike.star_def, ← star_dotProduct_star, star_star])).symm
 
 end Matrix

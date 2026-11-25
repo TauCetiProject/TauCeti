@@ -22,7 +22,9 @@ controls how many elements of a fixed degree have period in a bounded window.
   holds on a finite union `Σ k, P k` of torsors under `H` for a potential and a degree shifted by
   `N` and `δ` (`TauCeti.AddTorsor.finite_setOf_sigma_eq_and_mem_Icc`).
 * If the degree-zero periods are dense, every open interval contains the periods of infinitely
-  many elements of degree zero (`TauCeti.AddTorsor.infinite_setOf_eq_zero_and_mem_Ioo`).
+  many elements of degree zero (`TauCeti.AddTorsor.infinite_setOf_eq_zero_and_mem_Ioo`), and of
+  infinitely many elements of each attained degree
+  (`TauCeti.AddTorsor.infinite_setOf_eq_and_mem_Ioo`).
 -/
 
 public section
@@ -68,6 +70,17 @@ theorem infinite_setOf_eq_zero_and_mem_Ioo (hdense : Dense ((δ.ker.map N : AddS
   refine Infinite.of_image N (hK.mono ?_)
   rintro _ ⟨⟨h, hh, rfl⟩, hmem⟩
   exact ⟨h, ⟨hh, hmem⟩, rfl⟩
+
+/-- If the degree-zero periods `N (ker δ)` are dense in `ℝ`, every open interval contains the
+periods of infinitely many elements of each degree `δ h₀` that is attained. -/
+theorem infinite_setOf_eq_and_mem_Ioo (hdense : Dense ((δ.ker.map N : AddSubgroup ℝ) : Set ℝ))
+    (h₀ : H) {a b : ℝ} (hab : a < b) : {h : H | δ h = δ h₀ ∧ N h ∈ Ioo a b}.Infinite := by
+  refine ((infinite_setOf_eq_zero_and_mem_Ioo hdense (sub_lt_sub_right hab (N h₀))).image
+    (add_left_injective h₀).injOn).mono ?_
+  rintro _ ⟨h, ⟨hδ, hN⟩, rfl⟩
+  refine ⟨by rw [map_add, hδ, zero_add], ?_⟩
+  rw [map_add]
+  exact ⟨by linarith [hN.1], by linarith [hN.2]⟩
 
 variable {ι : Type*} {P : ι → Type*} [∀ k, AddTorsor H (P k)] {F : (Σ k, P k) → ℝ}
   {d : (Σ k, P k) → D}

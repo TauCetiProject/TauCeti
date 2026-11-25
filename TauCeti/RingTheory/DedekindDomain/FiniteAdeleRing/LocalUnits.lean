@@ -117,18 +117,14 @@ theorem coe_unitsOfAdicCompletion_apply (v : HeightOneSpectrum R) (u : (v.adicCo
 @[simp]
 theorem unitsProj_unitsOfAdicCompletion (v : HeightOneSpectrum R) (u : (v.adicCompletion K)ˣ) :
     unitsProj K v (unitsOfAdicCompletion K v u) = u :=
-  Units.ext <| by
-    classical
-    exact (ofAdicCompletion_apply_coe K v u v).trans (Pi.mulSingle_eq_same _ _)
+  Units.ext (ofAdicCompletion_apply_self K v u)
 
 /-- The finite idele concentrated at `v` has coordinate `1` at every other place. -/
 @[simp]
 theorem unitsProj_unitsOfAdicCompletion_of_ne {v w : HeightOneSpectrum R} (h : w ≠ v)
     (u : (v.adicCompletion K)ˣ) :
     unitsProj K w (unitsOfAdicCompletion K v u) = 1 :=
-  Units.ext <| by
-    classical
-    exact (ofAdicCompletion_apply_coe K v u w).trans (Pi.mulSingle_eq_of_ne h _)
+  Units.ext (ofAdicCompletion_apply_of_ne K h u)
 
 /-- The coordinates of a product of finite ideles, one concentrated at each place of a finite set
 `S`: the prescribed unit at a place of `S`, and `1` elsewhere. -/

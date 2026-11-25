@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 public import Mathlib.FieldTheory.SeparableClosure
 public import TauCeti.AlgebraicGeometry.IrreducibleComponents.Basic
 public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
