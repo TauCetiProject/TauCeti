@@ -18,9 +18,10 @@ Configurations `ℤ → Bool`, with `ℤ` acting on itself by translation (writt
   outside a finite set `Λ` determines the configuration, so the exterior σ-algebra of `Λ` is the
   full trace σ-algebra. The identity kernels `γ_Λ(· | ω) = δ_ω` are then a specification, and every
   measure on `X₀` is Gibbs for it.
-* On the full shift the identity kernels are not a specification: the event `{ω(0) = 1}` is not
-  measurable for the exterior σ-algebra of `{0}`, since two configurations differing only at `0`
-  have the same exterior, so `ω ↦ δ_ω({ω(0) = 1})` is not a kernel for it.
+* On the full shift, the event `{ω(0) = 1}` is not measurable for the exterior σ-algebra of `{0}`,
+  since two configurations differing only at `0` have the same exterior. (The site `0` of `ℤ` is
+  `1 = ofAdd 0` in `Multiplicative ℤ`.) Informally, this is why the identity kernels are not a
+  specification there: `ω ↦ δ_ω({ω(0) = 1})` is not measurable for that exterior σ-algebra.
 -/
 
 open MeasureTheory ProbabilityTheory Set
@@ -38,8 +39,13 @@ def X₀ : Subshift (Multiplicative ℤ) (Multiplicative ℤ) Bool where
       isClosed_eq (continuous_apply i) (continuous_apply j)
   smul_mem' _ _ hω _ _ := hω _ _
 
+/-- A configuration lies in `X₀` exactly when it is constant. -/
+@[simp]
+theorem mem_X₀_iff (ω : Multiplicative ℤ → Bool) : ω ∈ X₀ ↔ ∀ i j, ω i = ω j :=
+  Iff.rfl
+
 /-- A configuration of `X₀` is constant. -/
-theorem X₀_apply (ω : X₀) (i j : Multiplicative ℤ) : ω.val i = ω.val j :=
+theorem X₀_val_apply_eq (ω : X₀) (i j : Multiplicative ℤ) : ω.val i = ω.val j :=
   ω.property i j
 
 /-- On `X₀`, the exterior σ-algebra of every finite set is the full trace σ-algebra: a single
@@ -49,7 +55,7 @@ theorem exterior_X₀ (Λ : Finset (Multiplicative ℤ)) :
   refine le_antisymm (X₀.exterior_le _) fun s hs => ?_
   obtain ⟨i, hi⟩ := Infinite.exists_notMem_finset Λ
   have h (j : Multiplicative ℤ) : (fun ω : X₀ => ω.val j) = fun ω => ω.val i :=
-    funext fun ω => X₀_apply ω j i
+    funext fun ω => X₀_val_apply_eq ω j i
   have hval : Measurable[X₀.exterior Λ] fun ω : X₀ => (ω : Multiplicative ℤ → Bool) := by
     let : MeasurableSpace X₀ := X₀.exterior Λ
     exact measurable_pi_iff.2 fun j => by
@@ -71,24 +77,27 @@ def idSpec : Specification X₀ where
   isProper Λ := by
     refine (Kernel.isProper_iff_inter_eq_indicator_mul (X₀.exterior_le _)).2
       fun A hA B hB ω => ?_
-    rw [Kernel.deterministic_apply, id,
-      Measure.dirac_apply' ω (hA.inter (X₀.exterior_le _ B hB)), Measure.dirac_apply' ω hA,
-      inter_indicator_one, Pi.mul_apply, mul_comm]
+    simp [Kernel.deterministic_apply, Measure.dirac_apply' _ hA,
+      Measure.dirac_apply' _ (hA.inter (X₀.exterior_le _ B hB)), inter_indicator_one, mul_comm]
   comp_eq Λ Δ _ := by
     ext1 ω
-    rw [Kernel.comp_apply, Kernel.deterministic_apply, Measure.dirac_bind (Kernel.measurable _),
-      Kernel.comap_apply, Kernel.deterministic_apply]
-    rfl
+    simp [Kernel.comp_deterministic_eq_comap, Kernel.comap_apply, Kernel.deterministic_apply]
+
+/-- The kernels of the identity specification are the Dirac measures. -/
+@[simp]
+theorem idSpec_kernel_apply (Λ : Finset (Multiplicative ℤ)) (ω : X₀) :
+    idSpec.kernel Λ ω = Measure.dirac ω :=
+  Kernel.deterministic_apply (measurable_id_exterior Λ) ω
 
 /-- The identity specification on `X₀` is a specification for which every measure is Gibbs. -/
 example (μ : Measure X₀) : idSpec.IsGibbs μ := by
   refine Specification.isGibbs_iff.2 fun Λ => ?_
-  have h : ⇑(idSpec.kernel Λ) = Measure.dirac :=
-    funext fun ω => Kernel.deterministic_apply (measurable_id_exterior Λ) ω
+  have h : ⇑(idSpec.kernel Λ) = Measure.dirac := funext (idSpec_kernel_apply Λ)
   rw [h, Measure.bind_dirac]
 
-/-- On the full shift, `{ω(0) = 1}` is not measurable for the exterior σ-algebra of `{0}`: the
-identity kernels are not kernels for the exterior σ-algebras. -/
+/-- On the full shift, `{ω(0) = 1}` is not measurable for the exterior σ-algebra of `{0}`; here the
+site `0` of `ℤ` is `1 = ofAdd 0` in `Multiplicative ℤ`. Informally, the identity kernels are
+therefore not kernels for the exterior σ-algebras. -/
 example : ¬ MeasurableSet[(⊤ : Subshift (Multiplicative ℤ) (Multiplicative ℤ) Bool).exterior
     ({1} : Set (Multiplicative ℤ))] {ω | ω.val 1 = true} := by
   intro h
