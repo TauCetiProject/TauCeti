@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 import Mathlib.Analysis.Normed.Field.Instances
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Topology.Algebra.InfiniteSum.GroupCompletion
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Topology.Algebra.InfiniteSum.LinearRecurrence
 
@@ -95,12 +96,6 @@ private theorem summable_norm_geom_sum_mul_geom_sum_mul_pow (hx : ‖x‖ < 1) (
       simp only [sum_const, card_range, nsmul_eq_mul]
       push_cast
       ring
-
-/-- An element of norm less than one is not `1`. -/
-private theorem one_sub_ne_zero_of_norm_lt_one {y : K} (hy : ‖y‖ < 1) : 1 - y ≠ 0 := by
-  rw [sub_ne_zero]
-  rintro rfl
-  simp at hy
 
 /-- The identity in a complete normed field. -/
 private theorem hasSum_geom_sum_mul_geom_sum_mul_geometric_of_complete [CompleteSpace K]
