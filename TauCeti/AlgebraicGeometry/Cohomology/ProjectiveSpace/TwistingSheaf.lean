@@ -21,6 +21,9 @@ commutative ring `R`:
   monomials of degree `j` in the coordinates, indexed by the degree-`j` multisets of `κ`;
 * for `n < 0`, `H⁰(Proj A, 𝒪(n)) = 0`.
 
+On projective space of dimension zero, `M` free of rank one, every twisting sheaf has a nonzero
+global section, since the coordinate is invertible there; in particular `H⁰(ℙ⁰_R, 𝒪(-1)) ≠ 0`.
+
 So `H⁰(Proj A, 𝒪(n))` is a free `R`-module for every `n : ℤ`, finitely generated when `κ` is
 finite, of rank `(card κ).multichoose j` for `n = j ≥ 0`. On the projective line this is the
 rank `max (n + 1) 0`. This is the `H⁰` part of Hartshorne, Theorem III.5.1, and follows from the
@@ -43,6 +46,8 @@ the identification of zeroth cohomology with global sections.
   every `n`, and finitely generated when `κ` is finite.
 * `TauCeti.SymmetricAlgebra.finrank_cohomology_zero_twistingSheaf`: its rank is
   `(card κ).multichoose j` in degree `j : ℕ`.
+* `TauCeti.SymmetricAlgebra.nontrivial_cohomology_zero_twistingSheaf_of_unique`: on projective
+  space of dimension zero over a nonzero ring, `H⁰(Proj A, 𝒪(m)) ≠ 0` for every `m : ℤ`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.finrank_cohomology_zero_twistingSheaf`: on the
   projective line, `H⁰(ℙ¹_R, 𝒪(n))` is free of rank `max (n + 1) 0` for every `n : ℤ`.
 
@@ -136,6 +141,43 @@ theorem finrank_cohomology_zero_twistingSheaf [Nontrivial R] (j : ℕ) (b : Modu
   classical
   rw [Module.finrank_eq_card_basis (cohomologyZeroTwistingSheafBasis j b),
     Sym.card_sym_eq_multichoose]
+
+/-- On projective space of dimension zero, `Proj (Sym M)` for `M` free of rank one, the standard
+open `D₊(x)` of the coordinate `x` is the whole space. -/
+theorem basicOpen_ι_basis_eq_top [Unique κ] (b : Module.Basis κ R M) :
+    Proj.basicOpen 𝒜 (_root_.SymmetricAlgebra.ι R M (b default)) = ⊤ := by
+  simpa using iSup_basicOpen_ι_eq_top R M b b.span_eq
+
+/-- **Twisting sheaves on projective space of dimension zero have nonzero sections.** For `M` free
+of rank one over a nonzero ring `R`, `H⁰(Proj (Sym M), 𝒪(m))` is nontrivial for every `m : ℤ`:
+the coordinate `x` does not vanish anywhere on `Proj (Sym M) = D₊(x)`, so `xᵐ` is a global section,
+and it is nonzero since `x` is a nonzerodivisor. In particular `H⁰(ℙ⁰_R, 𝒪(-1)) ≠ 0`. -/
+theorem nontrivial_cohomology_zero_twistingSheaf_of_unique [Nontrivial R] [Unique κ]
+    (b : Module.Basis κ R M) (m : ℤ) :
+    Nontrivial (Cohomology (Proj.twistingSheaf 𝒜 m) 0) := by
+  set x := _root_.SymmetricAlgebra.ι R M (b default)
+  have hx : x ∈ 𝒜 1 := ι_mem_homogeneousSubmodule R M _
+  have : Nontrivial (SymmetricAlgebra R M) :=
+    (_root_.SymmetricAlgebra.equivMvPolynomial b).toEquiv.nontrivial
+  -- The section `xᵐ = xʲ / xᵏ` with `j = k + m`.
+  obtain ⟨k, j, hkj⟩ : ∃ k j : ℕ, (j : ℤ) = k + m := ⟨m.natAbs, (m.natAbs + m).toNat, by omega⟩
+  have hxk : x ^ k ∈ 𝒜 k := by simpa using SetLike.pow_mem_graded k hx
+  have hxj : x ^ j ∈ 𝒜 j := by simpa using SetLike.pow_mem_graded j hx
+  have hle : Proj.basicOpen 𝒜 x ≤ Proj.basicOpen 𝒜 (x ^ k) :=
+    fun p hp hpk ↦ hp (p.isPrime.mem_of_pow_mem k hpk)
+  let s := Proj.twistingSheaf.const hkj (x ^ j) (x ^ k) hxj hxk ⊤
+    ((basicOpen_ι_basis_eq_top b).ge.trans hle)
+  have hs : s ≠ 0 := by
+    intro h0
+    have h := congrArg ((Proj.twistingSheaf 𝒜 m).presheaf.map
+      (homOfLE (le_top : Proj.basicOpen 𝒜 x ≤ ⊤)).op) h0
+    rw [map_zero, Proj.twistingSheaf.res_const, Proj.twistingSheaf.const_eq_zero_iff
+      (HomogeneousIdeal.mem_irrelevant_of_mem 𝒜 one_pos hx)] at h
+    obtain ⟨N, hN⟩ := h
+    rw [← pow_add] at hN
+    exact ((_root_.SymmetricAlgebra.isRegular_ι_basis b default).pow (N + j)).ne_zero hN
+  have : Nontrivial Γ(Proj.twistingSheaf 𝒜 m, ⊤) := nontrivial_of_ne s 0 hs
+  exact (cohomologyZeroBaseLinearEquiv R _ _).toEquiv.nontrivial
 
 end TauCeti.SymmetricAlgebra
 
