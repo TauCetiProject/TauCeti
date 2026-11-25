@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Basis.Submodule
-public import Mathlib.NumberTheory.Padics.PadicIntegers
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.NumberTheory.Padics.Module
 public import TauCeti.Topology.Algebra.Module.ContinuousMapLocalization
 
 /-!
@@ -28,10 +26,9 @@ equality `Cⁱ(G, V) = Cⁱ(G, T) ⊗ ℚ_p` of continuous cochains for a finite
   space lands in `p^{-n} T` for one `n`.
 * `TauCeti.isBaseChange_padic_compLeftContinuous_subtypeL`:
   `C(X, V) = ℚ_p ⊗[ℤ_p] C(X, T)`.
-* `Module.Basis.mem_span_padicInt_iff_norm_repr_le_one`: the `ℤ_p`-span of a `ℚ_p`-basis is the
-  set of vectors whose coordinates have norm at most `1`.
-* `Module.Basis.isOpen_span_padicInt`: the `ℤ_p`-span of a `ℚ_p`-basis of a finite-dimensional
-  Hausdorff topological vector space is open, so the results apply to it.
+
+The `ℤ_p`-span of a `ℚ_p`-basis of a finite-dimensional Hausdorff `V` is open
+(`Module.Basis.isOpen_span_padicInt`), so the results apply to it.
 -/
 
 public section
@@ -41,14 +38,7 @@ open Filter Topology
 namespace TauCeti
 
 variable {p : ℕ} [Fact p.Prime] {V : Type*} [AddCommGroup V] [Module ℚ_[p] V] [Module ℤ_[p] V]
-  [IsScalarTower ℤ_[p] ℚ_[p] V] [TopologicalSpace V]
-
-/-- `ℤ_[p]` acts continuously on a topological `ℚ_[p]`-module through `ℚ_[p]`. -/
-instance instContinuousConstSMulPadicInt [ContinuousConstSMul ℚ_[p] V] :
-    ContinuousConstSMul ℤ_[p] V :=
-  IsScalarTower.continuousConstSMul ℤ_[p] ℚ_[p] V
-
-variable [ContinuousSMul ℚ_[p] V]
+  [IsScalarTower ℤ_[p] ℚ_[p] V] [TopologicalSpace V] [ContinuousSMul ℚ_[p] V]
 
 /-- An open `ℤ_[p]`-submodule `T` of a topological `ℚ_[p]`-module absorbs every vector:
 `pⁿ • v ∈ T` for some `n`. -/
@@ -88,35 +78,3 @@ theorem isBaseChange_padic_compLeftContinuous_subtypeL [IsTopologicalAddGroup V]
   exact ⟨s, powers_le_nonZeroDivisors_of_noZeroDivisors hp hs, h⟩
 
 end TauCeti
-
-namespace Module.Basis
-
-variable {p : ℕ} [Fact p.Prime] {V : Type*} [AddCommGroup V] [Module ℚ_[p] V] [Module ℤ_[p] V]
-  [IsScalarTower ℤ_[p] ℚ_[p] V] {ι : Type*}
-
-/-- A vector lies in the `ℤ_[p]`-span of a `ℚ_[p]`-basis exactly when all its coordinates have
-norm at most `1`. -/
-theorem mem_span_padicInt_iff_norm_repr_le_one (b : Module.Basis ι ℚ_[p] V) (v : V) :
-    v ∈ Submodule.span ℤ_[p] (Set.range b) ↔ ∀ i, ‖b.repr v i‖ ≤ 1 := by
-  rw [b.mem_span_iff_repr_mem ℤ_[p]]
-  refine forall_congr' fun i ↦ ⟨?_, fun h ↦ ⟨⟨_, h⟩, PadicInt.algebraMap_apply _⟩⟩
-  rintro ⟨x, hx⟩
-  rw [← hx, PadicInt.algebraMap_apply, ← PadicInt.norm_def]
-  exact x.norm_le_one
-
-/-- The `ℤ_[p]`-span of a `ℚ_[p]`-basis of a finite-dimensional Hausdorff topological vector
-space is open. -/
-theorem isOpen_span_padicInt [TopologicalSpace V] [IsTopologicalAddGroup V]
-    [ContinuousSMul ℚ_[p] V] [T2Space V] [Finite ι] (b : Module.Basis ι ℚ_[p] V) :
-    IsOpen (Submodule.span ℤ_[p] (Set.range b) : Set V) := by
-  have := Module.Finite.of_basis b
-  have h : (Submodule.span ℤ_[p] (Set.range b) : Set V) =
-      ⋂ i, (b.coord i) ⁻¹' Metric.closedBall 0 1 := by
-    ext v
-    simp [mem_span_padicInt_iff_norm_repr_le_one]
-  rw [h]
-  exact isOpen_iInter_of_finite fun i ↦
-    (IsUltrametricDist.isOpen_closedBall (0 : ℚ_[p]) one_ne_zero).preimage
-      (LinearMap.continuous_of_finiteDimensional _)
-
-end Module.Basis
