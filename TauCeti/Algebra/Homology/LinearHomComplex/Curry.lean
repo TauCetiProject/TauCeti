@@ -475,6 +475,27 @@ lemma linearHomComplexHomEquiv_naturality_right {M' : CochainComplex (ModuleCat.
   Cochain.ofHom_injective (by
     simp only [ofHom_linearHomComplexHomEquiv, Cochain.ofHom_comp, Cochain.curry_comp_ofHom])
 
+/-- Currying sends chain maps with the same homotopy class to chain maps with the same homotopy
+class (`linearHomComplexHomEquivHomotopy`). -/
+private lemma quotient_map_linearHomComplexHomEquiv_eq_of_eq {f g : K ⊗ L ⟶ M}
+    (hfg : (HomotopyCategory.quotient _ _).map f = (HomotopyCategory.quotient _ _).map g) :
+    (HomotopyCategory.quotient _ _).map (linearHomComplexHomEquiv K L M f) =
+      (HomotopyCategory.quotient _ _).map (linearHomComplexHomEquiv K L M g) :=
+  HomotopyCategory.eq_of_homotopy _ _
+    (linearHomComplexHomEquivHomotopy f g (HomotopyCategory.homotopyOfEq _ _ hfg))
+
+/-- Uncurrying sends chain maps with the same homotopy class to chain maps with the same homotopy
+class (`linearHomComplexHomEquivHomotopy`). -/
+private lemma quotient_map_linearHomComplexHomEquiv_symm_eq_of_eq
+    {f g : K ⟶ linearHomComplex R L M}
+    (hfg : (HomotopyCategory.quotient _ _).map f = (HomotopyCategory.quotient _ _).map g) :
+    (HomotopyCategory.quotient _ _).map ((linearHomComplexHomEquiv K L M).symm f) =
+      (HomotopyCategory.quotient _ _).map ((linearHomComplexHomEquiv K L M).symm g) :=
+  HomotopyCategory.eq_of_homotopy _ _ ((linearHomComplexHomEquivHomotopy _ _).symm
+    ((Homotopy.ofEq (Equiv.apply_symm_apply _ f)).trans
+      ((HomotopyCategory.homotopyOfEq _ _ hfg).trans
+        (Homotopy.ofEq (Equiv.apply_symm_apply _ g).symm))))
+
 variable (L)
 
 /-- Tensoring on the right with `L` is left adjoint to the `R`-linear Hom complex out of `L`. -/
@@ -497,42 +518,30 @@ private def linearHomComplexHomotopyHomEquiv (K M : CochainComplex (ModuleCat.{v
     ((HomotopyCategory.quotient _ _).obj (K ⊗ L) ⟶ (HomotopyCategory.quotient _ _).obj M) ≃
       ((HomotopyCategory.quotient _ _).obj K ⟶
         (HomotopyCategory.quotient _ _).obj (linearHomComplex R L M)) :=
-  have h {f g : K ⊗ L ⟶ M}
-      (hfg : (HomotopyCategory.quotient _ _).map f = (HomotopyCategory.quotient _ _).map g) :
-      (HomotopyCategory.quotient _ _).map (linearHomComplexHomEquiv K L M f) =
-        (HomotopyCategory.quotient _ _).map (linearHomComplexHomEquiv K L M g) :=
-    HomotopyCategory.eq_of_homotopy _ _
-      (linearHomComplexHomEquivHomotopy f g (HomotopyCategory.homotopyOfEq _ _ hfg))
-  have h' {f g : K ⟶ linearHomComplex R L M}
-      (hfg : (HomotopyCategory.quotient _ _).map f = (HomotopyCategory.quotient _ _).map g) :
-      (HomotopyCategory.quotient _ _).map ((linearHomComplexHomEquiv K L M).symm f) =
-        (HomotopyCategory.quotient _ _).map ((linearHomComplexHomEquiv K L M).symm g) :=
-    HomotopyCategory.eq_of_homotopy _ _ ((linearHomComplexHomEquivHomotopy _ _).symm
-      (by simpa using HomotopyCategory.homotopyOfEq _ _ hfg))
   { toFun f := (HomotopyCategory.quotient _ _).map
       (linearHomComplexHomEquiv K L M ((HomotopyCategory.quotient _ _).preimage f))
     invFun g := (HomotopyCategory.quotient _ _).map
       ((linearHomComplexHomEquiv K L M).symm ((HomotopyCategory.quotient _ _).preimage g))
     left_inv f := by
       dsimp only
-      rw [h' (Functor.map_preimage _ _), Equiv.symm_apply_apply, Functor.map_preimage]
+      rw [quotient_map_linearHomComplexHomEquiv_symm_eq_of_eq (Functor.map_preimage _ _),
+        Equiv.symm_apply_apply, Functor.map_preimage]
     right_inv g := by
       dsimp only
-      rw [h (Functor.map_preimage _ _), Equiv.apply_symm_apply, Functor.map_preimage] }
+      rw [quotient_map_linearHomComplexHomEquiv_eq_of_eq (Functor.map_preimage _ _),
+        Equiv.apply_symm_apply, Functor.map_preimage] }
 
 private lemma linearHomComplexHomotopyHomEquiv_quotient_map
     {K M : CochainComplex (ModuleCat.{v} R) ℤ} (f : K ⊗ L ⟶ M) :
     linearHomComplexHomotopyHomEquiv L K M ((HomotopyCategory.quotient _ _).map f) =
       (HomotopyCategory.quotient _ _).map (linearHomComplexHomEquiv K L M f) :=
-  HomotopyCategory.eq_of_homotopy _ _ (linearHomComplexHomEquivHomotopy _ _
-    (HomotopyCategory.homotopyOfEq _ _ (Functor.map_preimage _ _)))
+  quotient_map_linearHomComplexHomEquiv_eq_of_eq (Functor.map_preimage _ _)
 
 private lemma linearHomComplexHomotopyHomEquiv_symm_quotient_map
     {K M : CochainComplex (ModuleCat.{v} R) ℤ} (g : K ⟶ linearHomComplex R L M) :
     (linearHomComplexHomotopyHomEquiv L K M).symm ((HomotopyCategory.quotient _ _).map g) =
       (HomotopyCategory.quotient _ _).map ((linearHomComplexHomEquiv K L M).symm g) :=
-  HomotopyCategory.eq_of_homotopy _ _ ((linearHomComplexHomEquivHomotopy _ _).symm (by
-    simpa using HomotopyCategory.homotopyOfEq _ _ (Functor.map_preimage _ _)))
+  quotient_map_linearHomComplexHomEquiv_symm_eq_of_eq (Functor.map_preimage _ _)
 
 private lemma linearHomComplexHomotopyHomEquiv_symm_naturality_left
     {K' K M : CochainComplex (ModuleCat.{v} R) ℤ}
