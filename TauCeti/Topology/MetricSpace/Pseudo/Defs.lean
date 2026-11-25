@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.Separation.Hausdorff
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -29,6 +30,10 @@ The bounded transform `dist x y / (1 + dist x y)` satisfies the triangle inequal
 
 On the real line, the extended distance from `b` to `a ≤ b` is `b - a`
 (`Real.edist_eq_ofReal_sub_of_le`).
+
+In a Hausdorff pseudometric space, if `f → a` and `g → b` along a nontrivial filter `l` with
+`dist (g z) (f z) ≤ dist (f z) a` eventually, then `a = b`
+(`Filter.Tendsto.eq_of_eventually_dist_le`).
 -/
 
 public section
@@ -95,3 +100,14 @@ theorem Metric.dist_div_one_add_dist_le {X : Type*} [PseudoMetricSpace X] (a b c
   exact add_le_add
     (div_le_div_of_nonneg_left hab (by positivity) (by linarith))
     (div_le_div_of_nonneg_left hbc (by positivity) (by linarith))
+
+open Filter Topology in
+/-- If `f` tends to `a` and `g` tends to `b` along a nontrivial filter `l` in a Hausdorff
+pseudometric space, and eventually `dist (g z) (f z) ≤ dist (f z) a`, then `a = b`. -/
+theorem Filter.Tendsto.eq_of_eventually_dist_le {α β : Type*} [PseudoMetricSpace β] [T2Space β]
+    {l : Filter α} [l.NeBot] {f g : α → β} {a b : β} (hf : Tendsto f l (𝓝 a))
+    (hg : Tendsto g l (𝓝 b)) (h : ∀ᶠ z in l, dist (g z) (f z) ≤ dist (f z) a) : a = b :=
+  tendsto_nhds_unique
+    (hf.congr_dist (squeeze_zero' (.of_forall fun _ ↦ dist_nonneg)
+      (h.mono fun z hz ↦ dist_comm (g z) (f z) ▸ hz) (tendsto_iff_dist_tendsto_zero.1 hf)))
+    hg

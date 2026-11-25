@@ -407,7 +407,7 @@ theorem isEmpty_linearIsometryEquiv_of_hilbertDim_ne {E F : Type u}
 @[simp]
 theorem hilbertDim_lp (𝕜 : Type w) (ι : Type v) [RCLike 𝕜] :
     hilbertDim 𝕜 ℓ²(ι, 𝕜) = Cardinal.lift.{w} #ι := by
-  have h := (default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).lift_hilbertDim_eq
+  have h := (lp.hilbertBasisFun ι 𝕜).lift_hilbertDim_eq
   rw [Cardinal.lift_id'.{v, w}, Cardinal.lift_umax.{v, w}] at h
   exact h
 

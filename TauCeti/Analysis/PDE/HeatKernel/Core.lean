@@ -74,7 +74,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 /-- The classes of test functions lie in the domain of the heat generator. -/
 private theorem range_ambientToLp_le_domain_generator_heatSemigroup (hp : p ≠ ∞) :
-    LinearMap.range (TestFunction.ambientToLp p (volume : Measure E) :
+    LinearMap.range (TestFunction.ambientToLp ℝ p (volume : Measure E) :
       𝓓((⊤ : Opens E), F) →L[ℝ] Lp F p (volume : Measure E)).toLinearMap ≤
         (heatSemigroup hp).generator.domain := by
   rintro _ ⟨φ, rfl⟩
@@ -92,14 +92,14 @@ private theorem mem_closure_graph_domRestrict_range_ambientToLp (hp : p ≠ ∞)
     (hf : (f : Lp F p (volume : Measure E)) =ᵐ[volume] u) :
     ((f : Lp F p (volume : Measure E)), (heatSemigroup hp).generator f) ∈
       closure (SetLike.coe ((heatSemigroup hp).generator.domRestrict
-        (LinearMap.range (TestFunction.ambientToLp p (volume : Measure E) :
+        (LinearMap.range (TestFunction.ambientToLp ℝ p (volume : Measure E) :
           𝓓((⊤ : Opens E), F) →L[ℝ] Lp F p (volume : Measure E)).toLinearMap)).graph) := by
   have hD := range_ambientToLp_le_domain_generator_heatSemigroup (E := E) (F := F) hp
   obtain ⟨g, hg, -, hlim⟩ :=
     exists_contDiff_hasCompactSupport_approximation hp (m := ⊤) hu 2 (by simp) hmem
   let φ (n : ℕ) : 𝓓((⊤ : Opens E), F) := ⟨g n, (hg n).1, (hg n).2, by simp⟩
-  have hφ (n : ℕ) : TestFunction.ambientToLp p volume (φ n) =ᵐ[volume] g n := by
-    simpa [φ] using TestFunction.coeFn_ambientToLp (p := p) (ν := volume) (φ n)
+  have hφ (n : ℕ) : TestFunction.ambientToLp ℝ p volume (φ n) =ᵐ[volume] g n := by
+    simpa [φ] using TestFunction.coeFn_ambientToLp (𝕜 := ℝ) (p := p) (ν := volume) (φ n)
   have hu2 : ContDiff ℝ 2 u := hu.of_le (by simp)
   have hg2 (n : ℕ) : ContDiff ℝ 2 (g n) := (hg n).1.of_le (by simp)
   have hΔ : MemLp (Δ u) p volume := (hmem 2 le_rfl).of_le_mul
@@ -115,7 +115,7 @@ private theorem mem_closure_graph_domRestrict_range_ambientToLp (hp : p ≠ ∞)
     (hg2 n).continuous_laplacian.memLp_of_hasCompactSupport (hg n).2.laplacian
   have hgen (n : ℕ) : (heatSemigroup hp).generator ⟨_, hD ⟨φ n, rfl⟩⟩ = (hΔg n).toLp _ :=
     generator_heatSemigroup hp (hg2 n) (hg n).2 (hφ n) (hΔg n).coeFn_toLp
-  refine mem_closure_of_tendsto (b := atTop) (f := fun n => (TestFunction.ambientToLp p volume
+  refine mem_closure_of_tendsto (b := atTop) (f := fun n => (TestFunction.ambientToLp ℝ p volume
       (φ n), (heatSemigroup hp).generator ⟨_, hD ⟨φ n, rfl⟩⟩)) (Tendsto.prodMk_nhds ?_ ?_)
     (Eventually.of_forall fun n => (LinearPMap.mem_graph_iff' _).mpr
       ⟨⟨_, ⟨φ n, rfl⟩, hD ⟨φ n, rfl⟩⟩, Prod.ext rfl (LinearPMap.domRestrict_apply rfl)⟩)
@@ -148,7 +148,7 @@ of the test functions `C_c^∞(E; F)` lie in the domain of the generator of the 
 `Lᵖ(E; F)`, and the closure of its restriction to them is the whole generator. -/
 theorem generator_heatSemigroup_hasCore_range_ambientToLp (hp : p ≠ ∞) :
     (heatSemigroup (E := E) (F := F) hp).generator.HasCore
-      (LinearMap.range (TestFunction.ambientToLp p (volume : Measure E) :
+      (LinearMap.range (TestFunction.ambientToLp ℝ p (volume : Measure E) :
         𝓓((⊤ : Opens E), F) →L[ℝ] Lp F p (volume : Measure E)).toLinearMap) := by
   set S := (heatSemigroup (E := E) (F := F) hp).toStronglyContinuousSemigroup
   refine (S.isClosed_generator.hasCore_iff_graph_subset_closure
@@ -183,7 +183,7 @@ For `1 ≤ p < ∞`, the test functions form a core for the Laplacian in the sen
 on `Lᵖ`, with domain `{f ∈ Lᵖ : Δf ∈ Lᵖ}`. -/
 theorem weakLaplacianLp_hasCore_range_ambientToLp (hp : p ≠ ∞) :
     (weakLaplacianLp E F p).HasCore
-      (LinearMap.range (TestFunction.ambientToLp p (volume : Measure E) :
+      (LinearMap.range (TestFunction.ambientToLp ℝ p (volume : Measure E) :
         𝓓((⊤ : Opens E), F) →L[ℝ] Lp F p (volume : Measure E)).toLinearMap) := by
   rw [← generator_heatSemigroup_eq_weakLaplacianLp hp]
   exact generator_heatSemigroup_hasCore_range_ambientToLp hp
