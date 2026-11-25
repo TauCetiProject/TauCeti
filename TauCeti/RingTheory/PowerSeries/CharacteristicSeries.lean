@@ -419,9 +419,7 @@ theorem eq_hirzebruchLSeries_iff {f : A⟦X⟧} :
   refine ⟨fun h ↦ h ▸ hirzebruchLSeries_mul_sub A, fun h ↦ ?_⟩
   -- `e^X + e^{-X}` has constant coefficient `2`, hence is a unit.
   have hu : IsUnit (exp A + rescale (-1) (exp A)) := by
-    rw [isUnit_iff_constantCoeff, map_add, constantCoeff_rescale, constantCoeff_exp,
-      one_add_one_eq_two, ← map_ofNat (algebraMap ℚ A) 2]
-    exact (isUnit_iff_ne_zero.mpr (two_ne_zero' ℚ)).map _
+    simpa using isUnit_rescale_exp_add_rescale_neg_exp (1 : A)
   refine mul_X_cancel (hu.mul_right_cancel ?_)
   linear_combination hirzebruchLSeries A * h - f * hirzebruchLSeries_mul_sub A
 
@@ -507,10 +505,7 @@ theorem X_mul_derivative_hirzebruchLSeries :
   have key' : D * (e + k) ^ 3 * X * X = 0 := by
     linear_combination L ^ 2 * key - D * (e + k) * (X * (e + k) + L * (e - k)) * h₁
   have hu : IsUnit ((e + k) ^ 3) := by
-    refine IsUnit.pow 3 ?_
-    rw [isUnit_iff_constantCoeff, map_add, constantCoeff_rescale, constantCoeff_exp,
-      one_add_one_eq_two, ← map_ofNat (algebraMap ℚ A) 2]
-    exact (isUnit_iff_ne_zero.mpr (two_ne_zero' ℚ)).map _
+    simpa using (isUnit_rescale_exp_add_rescale_neg_exp (1 : A)).pow 3
   have hX : D * (e + k) ^ 3 = 0 :=
     mul_X_cancel (mul_X_cancel (by simpa only [zero_mul] using key'))
   exact sub_eq_zero.1 (hu.mul_left_eq_zero.1 hX)

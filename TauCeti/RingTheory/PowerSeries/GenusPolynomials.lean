@@ -234,8 +234,8 @@ theorem coeff_single_multiplicativeSequence_cartier_hirzebruchLSeries (i : Fin n
     simp [M, ← map_ofNat C 2, coeff_rescale, hL, coeff_one, hm0]
   -- The logarithmic derivative of `P` with `P(X²) = L(X)` is `M(√X) / 2`.
   have h2 : C (algebraMap ℚ A 2⁻¹) * 2 = (1 : A⟦X⟧) := by
-    rw [← map_ofNat C 2, ← map_mul, ← map_ofNat (algebraMap ℚ A) 2, ← map_mul,
-      inv_mul_cancel₀ (two_ne_zero' ℚ), map_one, map_one]
+    simpa only [map_mul, map_ofNat, map_one, RingHom.comp_apply] using
+      congrArg ((C : A →+* A⟦X⟧).comp (algebraMap ℚ A)) (inv_mul_cancel₀ (two_ne_zero' ℚ))
   have hG : cartier A 2 0 L * (C (algebraMap ℚ A 2⁻¹) * cartier A 2 0 M) =
       X * d⁄dX (cartier A 2 0 L) := by
     refine expand_injective 2 two_ne_zero ?_
@@ -259,11 +259,15 @@ theorem coeff_single_multiplicativeSequence_cartier_hirzebruchLSeries (i : Fin n
     congr 1
     ring
   rw [coeff_single_multiplicativeSequence (constantCoeff_cartier_hirzebruchLSeries A) hG,
-    coeff_C_mul, coeff_cartier, add_zero, hc, ← map_mul, ← map_one (algebraMap ℚ A), ← map_neg,
-    ← map_pow, ← map_mul]
-  congr 1
-  rw [show 2 * ((i : ℕ) + 1) = 2 * (i : ℕ) + 1 + 1 by ring, pow_succ 2 (2 * (i : ℕ) + 1)]
-  field_simp
+    coeff_C_mul, coeff_cartier, add_zero, hc]
+  -- In `ℚ`, `sₖ` is `(-1)ᵏ⁻¹ / 2` times the coefficient `hc` of `X²ᵏ` in `M`.
+  have hs : ((-1) ^ (i : ℕ) * 2 ^ (2 * ((i : ℕ) + 1)) * (2 ^ (2 * (i : ℕ) + 1) - 1) *
+      bernoulli (2 * ((i : ℕ) + 1)) / (2 * ((i : ℕ) + 1)).factorial : ℚ) =
+      (-1) ^ (i : ℕ) * (2⁻¹ * ((2 ^ (2 * ((i : ℕ) + 1)) - 2) * (2 ^ (2 * ((i : ℕ) + 1)) *
+        bernoulli (2 * ((i : ℕ) + 1)) / (2 * ((i : ℕ) + 1)).factorial))) := by
+    ring
+  rw [hs]
+  simp only [map_mul, map_pow, map_neg, map_one]
 
 /-! ### The Â polynomials -/
 
