@@ -28,7 +28,10 @@ same fact for pushforwards and integrals,
 
 which is the form in which the character enters Fourier analysis: for a field `F` acting on
 itself, `distribHaarChar F a` is the module `|a|_F` of `a ∈ Fˣ`, and the substitution `x ↦ a x`
-in an integral over `F` produces the factor `|a|_F⁻¹`.
+in an integral over `F` produces the factor `|a|_F⁻¹`. In particular `g` preserves a Haar measure
+exactly when its character is `1`, and the character is transported along isomorphisms of
+topological additive groups intertwining two actions, in particular along ring isomorphisms that
+are homeomorphisms.
 
 The module of the archimedean fields is computed here: a nonzero real scalar `a` scales Haar
 measure on a finite-dimensional real space `E` by `|a| ^ dim_ℝ E`, and a nonzero complex scalar
@@ -50,11 +53,21 @@ particular the module of `ℝ` is the usual absolute value and the module of `�
 * `MeasureTheory.distribHaarChar_real_eq`, `MeasureTheory.distribHaarChar_complex_eq`: the
   module of a nonzero real, resp. complex, scalar acting on a finite-dimensional space `E` is
   `|a| ^ dim_ℝ E`.
+* `MeasureTheory.Measure.map_smul_eq_self_iff_distribHaarChar_eq_one`: the action of `g` preserves
+  a Haar measure exactly when the character of `g` is `1`.
+* `MeasureTheory.distribHaarChar_eq_of_continuousAddEquiv`,
+  `MeasureTheory.distribHaarChar_map_ringEquiv`: transport of the character.
 
 ## References
 
 * J. Tate, *Fourier analysis in number fields and Hecke's zeta-functions*, §2.2.
 * A. Weil, *Basic Number Theory*, Chapter I, §2.
+* V. Platonov, A. Rapinchuk and I. Rapinchuk, *Algebraic Groups and Number Theory*, Vol. I,
+  2nd ed., §3.5, pp. 186–189 (the modulus of an automorphism).
+* The FLT project (`ImperialCollegeLondon/FLT`, Apache 2.0) develops the same Haar-character API
+  in `FLT/HaarMeasure/HaarChar/`; the transport lemmas correspond to
+  `ringHaarChar_eq_ringHaarChar_of_continuousAlgEquiv` in `Ring.lean` (by Kevin Buzzard) and
+  `mulEquivHaarChar_eq_mulEquivHaarChar_of_continuousMulEquiv` in `AddEquiv.lean`.
 -/
 
 public section
@@ -66,7 +79,10 @@ namespace MeasureTheory
 
 variable {G A : Type*} [Group G] [AddCommGroup A] [DistribMulAction G A] [TopologicalSpace A]
   [IsTopologicalAddGroup A] [LocallyCompactSpace A] [ContinuousConstSMul G A]
-  [MeasurableSpace A] [BorelSpace A] (μ : Measure A) [μ.IsAddHaarMeasure] [μ.Regular]
+
+section ChangeOfVariables
+
+variable [MeasurableSpace A] [BorelSpace A] (μ : Measure A) [μ.IsAddHaarMeasure] [μ.Regular]
 
 namespace Measure
 
@@ -105,6 +121,8 @@ theorem integral_comp_smul_eq_inv_distribHaarChar_smul {E : Type*} [NormedAddCom
   rw [← he.integral_map, Measure.map_smul_eq_inv_distribHaarChar_smul,
     integral_smul_nnreal_measure, NNReal.smul_def, NNReal.coe_inv]
 
+end ChangeOfVariables
+
 section Archimedean
 
 variable (E : Type*) [NormedAddCommGroup E]
@@ -141,5 +159,67 @@ theorem distribHaarChar_complex_eq [NormedSpace ℂ E] [FiniteDimensional ℂ E]
     pow_right_comm]
 
 end Archimedean
+
+section Criterion
+
+open Measure TopologicalSpace
+
+variable [MeasurableSpace A] [BorelSpace A]
+
+/-- The action of `g` preserves a regular additive Haar measure exactly when the distributive Haar
+character of `g` is `1`. -/
+theorem Measure.map_smul_eq_self_iff_distribHaarChar_eq_one (μ : Measure A) [μ.IsAddHaarMeasure]
+    [μ.Regular] (g : G) :
+    μ.map (g • ·) = μ ↔ distribHaarChar A g = 1 := by
+  rw [map_smul_eq_inv_distribHaarChar_smul]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, inv_one, one_smul]⟩
+  have h1 : addHaarScalarFactor ((distribHaarChar A g)⁻¹ • μ) μ = addHaarScalarFactor μ μ := by
+    simp only [h]
+  rw [addHaarScalarFactor_smul, addHaarScalarFactor_self, smul_eq_mul, mul_one] at h1
+  exact inv_eq_one.mp h1
+
+end Criterion
+
+section Transport
+
+open Measure TopologicalSpace
+
+variable {H B : Type*} [Group H] [AddCommGroup B] [DistribMulAction H B] [TopologicalSpace B]
+  [IsTopologicalAddGroup B] [LocallyCompactSpace B] [ContinuousConstSMul H B]
+
+/-- **Transport of the Haar character.** If an isomorphism `f : A ≃ₜ+ B` of topological additive
+groups intertwines the action of `g` on `A` with the action of `h` on `B`, then `g` and `h` have
+the same distributive Haar character. -/
+theorem distribHaarChar_eq_of_continuousAddEquiv (f : A ≃ₜ+ B) {g : G} {h : H}
+    (hf : ∀ a, f (g • a) = h • f a) :
+    distribHaarChar B h = distribHaarChar A g := by
+  borelize A B
+  let μ : Measure A := addHaar
+  have _ : (μ.map f).IsAddHaarMeasure := f.isAddHaarMeasure_map μ
+  have _ : (μ.map f).Regular := Regular.map f.toHomeomorph
+  have hf' : MeasurableEmbedding f := f.toHomeomorph.measurableEmbedding
+  let K : PositiveCompacts A := Classical.arbitrary _
+  have himage (t : Set A) : μ.map f (f '' t) = μ t := by
+    rw [hf'.map_apply, Set.preimage_image_eq _ f.injective]
+  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := μ.map f) (s := f '' K)
+    (by rw [himage]; exact (measure_pos_of_nonempty_interior μ K.interior_nonempty).ne')
+    (by rw [himage]; exact K.isCompact.measure_ne_top) ?_
+  have hsmul : h • f '' K = f '' (g • (K : Set A)) := by
+    rw [← Set.image_smul, ← Set.image_smul, Set.image_image, Set.image_image]
+    simp only [hf]
+  rw [hsmul, himage, himage, distribHaarChar_mul]
+
+/-- **Transport of the Haar character along a ring isomorphism.** A ring isomorphism
+`e : R ≃+* S` which is a homeomorphism preserves Haar characters. -/
+theorem distribHaarChar_map_ringEquiv {R S : Type*} [Ring R] [TopologicalSpace R]
+    [IsTopologicalRing R] [LocallyCompactSpace R] [Ring S] [TopologicalSpace S]
+    [IsTopologicalRing S] [LocallyCompactSpace S] (e : R ≃+* S) (he : Continuous e)
+    (he' : Continuous e.symm) (x : Rˣ) :
+    distribHaarChar S (Units.map e.toMonoidHom x) = distribHaarChar R x :=
+  distribHaarChar_eq_of_continuousAddEquiv
+    { e.toAddEquiv with continuous_toFun := he, continuous_invFun := he' }
+    fun a ↦ by simp [Units.smul_def]
+
+end Transport
 
 end MeasureTheory
