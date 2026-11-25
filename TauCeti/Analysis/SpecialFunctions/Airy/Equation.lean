@@ -33,10 +33,10 @@ solution satisfies the Riccati equation `W' = z − W²`.
   Riccati form (DLMF 9.2.16), pointwise and for entire solutions;
 * `TauCeti.airy_inhomogeneous_ode_rotation`: for a cube root of unity `ν`, the rotation
   `f ↦ (z ↦ ν f(ν z))` preserves every equation `w'' = z w + c`;
-* `TauCeti.airy_inhomogeneous_ode_sub`: the difference of solutions of `w'' = z w + c` and
+* `ContDiffAt.airy_inhomogeneous_ode_sub`: the difference of solutions of `w'' = z w + c` and
   `w'' = z w + d` solves `w'' = z w + (c − d)`;
-* `TauCeti.exists_eq_add_airy_combination`: every entire solution of `w'' = z w + g(z)` is a given
-  entire solution plus a combination of `Ai` and `Bi`.
+* `Differentiable.exists_eq_add_airy_combination`: every entire solution of `w'' = z w + g(z)`
+  is a given entire solution plus a combination of `Ai` and `Bi`.
 
 ## Implementation notes
 
@@ -47,11 +47,13 @@ Uniqueness is proved with Wronskians: the Wronskian of two entire solutions is c
 ## References
 
 * NIST Digital Library of Mathematical Functions, §9.2, <https://dlmf.nist.gov/9.2>.
+* NIST Digital Library of Mathematical Functions, §9.12, <https://dlmf.nist.gov/9.12>.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), files
 `DLMF/Airy/Basic/Properties.lean` and `DLMF/Bessel/Basic/RegularizedSeries.lean`;
 `TauCeti.airy_inhomogeneous_ode_rotation` is adapted from `IsAiryInhomSol.rotate` in
-`DLMF/Airy/Scorer/Representations.lean`.
+`DLMF/Airy/Scorer/Representations.lean`, and `Differentiable.exists_eq_add_airy_combination` is
+adapted from `scorer_general_solution` in `DLMF/Airy/Basic/Scorer.lean`.
 -/
 
 public section
@@ -275,8 +277,8 @@ theorem airy_inhomogeneous_ode_rotation {f : ℂ → ℂ} {c ν : ℂ}
 
 /-- The difference of a solution of `w'' = z w + c` and a solution of `w'' = z w + d`, both twice
 continuously differentiable at `z`, solves `w'' = z w + (c − d)` at `z`. -/
-theorem airy_inhomogeneous_ode_sub {f g : ℂ → ℂ} {c d z : ℂ} (hf : ContDiffAt ℂ 2 f z)
-    (hg : ContDiffAt ℂ 2 g z) (hf' : deriv^[2] f z = z * f z + c)
+theorem _root_.ContDiffAt.airy_inhomogeneous_ode_sub {f g : ℂ → ℂ} {c d z : ℂ}
+    (hf : ContDiffAt ℂ 2 f z) (hg : ContDiffAt ℂ 2 g z) (hf' : deriv^[2] f z = z * f z + c)
     (hg' : deriv^[2] g z = z * g z + d) :
     deriv^[2] (f - g) z = z * (f - g) z + (c - d) := by
   rw [← iteratedDeriv_eq_iterate, iteratedDeriv_sub hf hg, iteratedDeriv_eq_iterate,
@@ -287,12 +289,12 @@ theorem airy_inhomogeneous_ode_sub {f g : ℂ → ℂ} {c d z : ℂ} (hf : ContD
 `w'' = z w + g(z)` with the same forcing `g`, then `w` is `p` plus a combination of `Ai` and `Bi`.
 With `p = Hi` and `g = 1/π` this is DLMF 9.12.2: every entire solution of `w'' = z w + 1/π` is
 `Hi + c₁ Ai + c₂ Bi`. -/
-theorem exists_eq_add_airy_combination {g p w : ℂ → ℂ} (hp : Differentiable ℂ p)
-    (hw : Differentiable ℂ w) (hp' : ∀ z, deriv^[2] p z = z * p z + g z)
+theorem _root_.Differentiable.exists_eq_add_airy_combination {g p w : ℂ → ℂ}
+    (hp : Differentiable ℂ p) (hw : Differentiable ℂ w) (hp' : ∀ z, deriv^[2] p z = z * p z + g z)
     (hw' : ∀ z, deriv^[2] w z = z * w z + g z) :
     ∃ c₁ c₂ : ℂ, w = fun z => p z + c₁ * airyAi z + c₂ * airyBi z := by
   have hode (z : ℂ) : deriv^[2] (w - p) z = z * (w - p) z := by
-    simpa using airy_inhomogeneous_ode_sub hw.contDiff.contDiffAt hp.contDiff.contDiffAt (hw' z)
+    simpa using hw.contDiff.contDiffAt.airy_inhomogeneous_ode_sub hp.contDiff.contDiffAt (hw' z)
       (hp' z)
   obtain ⟨c₁, c₂, h⟩ : ∃ c₁ c₂ : ℂ, w - p = fun z => c₁ * airyAi z + c₂ * airyBi z :=
     ⟨_, _, eq_airy_combination (hw.sub hp) hode⟩

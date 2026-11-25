@@ -44,12 +44,13 @@ Airy's equation, a combination of `Ai` and `Bi` (DLMF 9.12.2). On the real line 
   entire, and `Real.differentiable_scorerHi`, `Real.differentiable_scorerGi` — their real
   restrictions are differentiable.
 * `TauCeti.scorerHi_ode` — `Hi'' = z Hi + 1/π` (DLMF 9.12.1).
-* `TauCeti.scorerGi_ode` — `Gi'' = z Gi − 1/π` (DLMF 9.12.3), and
+* `Complex.scorerGi_ode` — `Gi'' = z Gi − 1/π` (DLMF 9.12.3), and
   `TauCeti.scorerHi_rotation_ode` — `z ↦ ν Hi(ν z)` solves `w'' = z w + 1/π` when `ν³ = 1`
   (DLMF 9.12.3).
 * DLMF 9.12.2, every entire solution `w` of `w'' = z w + 1/π` is `Hi + c₁ Ai + c₂ Bi`, is the
-  application `exists_eq_add_airy_combination differentiable_scorerHi hw scorerHi_ode hode` of
-  `TauCeti.exists_eq_add_airy_combination` in `TauCeti.Analysis.SpecialFunctions.Airy.Equation`.
+  application `differentiable_scorerHi.exists_eq_add_airy_combination hw scorerHi_ode hode` of
+  `Differentiable.exists_eq_add_airy_combination` in
+  `TauCeti.Analysis.SpecialFunctions.Airy.Equation`.
 * `Nat.iterate_deriv_scorerHi_zero` — `Hi⁽ⁿ⁾(0) = 3^{(n−2)/3} Γ((n+1)/3) / π`, and
   `TauCeti.scorerHi_zero` — `Hi(0) = 3^{−2/3} Γ(1/3) / π`.
 
@@ -253,8 +254,9 @@ theorem scorerHi_rotation_ode {ν : ℂ} (hν : ν ^ 3 = 1) (z : ℂ) :
   airy_inhomogeneous_ode_rotation scorerHi_ode hν z
 
 /-- `Gi` solves the inhomogeneous Airy equation `Gi'' = z Gi − 1/π` (DLMF 9.12.3). -/
-theorem scorerGi_ode (z : ℂ) : deriv^[2] scorerGi z = z * scorerGi z - (π : ℂ)⁻¹ := by
-  have h := airy_inhomogeneous_ode_sub (c := 0) differentiable_airyBi.contDiff.contDiffAt
+theorem _root_.Complex.scorerGi_ode (z : ℂ) :
+    deriv^[2] scorerGi z = z * scorerGi z - (π : ℂ)⁻¹ := by
+  have h := differentiable_airyBi.contDiff.contDiffAt.airy_inhomogeneous_ode_sub (c := 0)
     differentiable_scorerHi.contDiff.contDiffAt (by rw [airyBi_ode, add_zero]) (scorerHi_ode z)
   have hGi : scorerGi = airyBi - scorerHi := funext Complex.scorerGi_def
   rw [hGi, h, Pi.sub_apply]
