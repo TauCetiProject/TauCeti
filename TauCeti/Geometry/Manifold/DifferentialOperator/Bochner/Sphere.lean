@@ -32,10 +32,10 @@ self-adjoint operator of Laplace type on a closed manifold whose Bochner connect
 because the density is not the Riemannian volume:
 
 * the formal transpose of `∂ₓ` for the density `e^(sin x) dx` is `-∂ₓ - cos x`
-  (`TauCeti.isFormalTranspose_circleRotationField_withDensity`);
+  (`TauCeti.isFormalTranspose_vectorFieldDerivation_circleRotationField_withDensity_exp`);
 * their product is `-Δ_φ = (-∂ₓ - cos x) ∘ ∂ₓ = -∂ₓ² - cos x ∂ₓ`
-  (`TauCeti.neg_smoothWeightedLaplacian_eq_comp_circleRotationField`), formally self-adjoint for the
-  density `e^(sin x) dx`;
+  (`TauCeti.neg_smoothWeightedLaplacian_eq_comp_vectorFieldDerivation_circleRotationField`),
+  formally self-adjoint for the density `e^(sin x) dx`;
 * `grad sin = cos ∂ₓ` (`TauCeti.mgradient_im_eq_re_smul_circleRotationField`), so its Bochner
   connection is `d + ½ cos x dx`, with potential `¼ cos² x - ½ sin x`, and it is not metric
   (`TauCeti.not_isMetricCompatible_trivialAddInner_of_coe_eq_im`).
@@ -46,8 +46,8 @@ because the density is not the Riemannian volume:
   `-Δ_φ` for a height weight on the sphere.
 * `TauCeti.isMetricCompatible_trivialAddInner_iff_eq_zero_of_coe_eq_inner`: its Bochner connection
   is metric only for `a = 0`.
-* `TauCeti.isFormalTranspose_circleRotationField_withDensity`,
-  `TauCeti.neg_smoothWeightedLaplacian_eq_comp_circleRotationField`,
+* `TauCeti.isFormalTranspose_vectorFieldDerivation_circleRotationField_withDensity_exp`,
+  `TauCeti.neg_smoothWeightedLaplacian_eq_comp_vectorFieldDerivation_circleRotationField`,
   `TauCeti.not_isMetricCompatible_trivialAddInner_of_coe_eq_im`: the weighted circle.
 
 ## References
@@ -107,8 +107,9 @@ attribute [local instance] finrank_real_complex_fact'
 /-- **The weighted Laplacian of the circle.** For the weight `φ = sin x`, the imaginary part, the
 weighted Laplacian is `Δ_φ = ∂ₓ² + cos x ∂ₓ`, where `ψ = cos x` is the real part. So
 `-Δ_φ = (-∂ₓ - cos x) ∘ ∂ₓ` is the product of `∂ₓ` with its formal transpose for the density
-`e^(sin x) dx` (`TauCeti.isFormalTranspose_circleRotationField_withDensity`). -/
-theorem neg_smoothWeightedLaplacian_eq_comp_circleRotationField
+`e^(sin x) dx`
+(`TauCeti.isFormalTranspose_vectorFieldDerivation_circleRotationField_withDensity_exp`). -/
+theorem neg_smoothWeightedLaplacian_eq_comp_vectorFieldDerivation_circleRotationField
     {φ ψ : C^∞⟮𝓡 1, sphere (0 : ℂ) 1; ℝ⟯}
     (hφ : ⇑φ = fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ).im)
     (hψ : ⇑ψ = fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ).re) :
@@ -130,7 +131,8 @@ theorem neg_smoothWeightedLaplacian_eq_comp_circleRotationField
 /-- **The formal transpose of `∂ₓ` for the density `e^(sin x) dx`** is `-∂ₓ - cos x`: with `φ` the
 imaginary part and `ψ` the real part of a point of the circle, the transpose of differentiation
 along the rotation field for the density `e^φ dV` is `-∂ₓ - ψ`. -/
-theorem isFormalTranspose_circleRotationField_withDensity {φ ψ : C^∞⟮𝓡 1, sphere (0 : ℂ) 1; ℝ⟯}
+theorem isFormalTranspose_vectorFieldDerivation_circleRotationField_withDensity_exp
+    {φ ψ : C^∞⟮𝓡 1, sphere (0 : ℂ) 1; ℝ⟯}
     (hφ : ⇑φ = fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ).im)
     (hψ : ⇑ψ = fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ).re) :
     (vectorFieldDerivation circleRotationField :
@@ -153,10 +155,11 @@ theorem isFormalTranspose_circleRotationField_withDensity {φ ψ : C^∞⟮𝓡 
 /-- **A formally self-adjoint operator of Laplace type on the circle whose Bochner connection is
 not metric.** On the unit circle, with the weight `φ = sin x` given by the imaginary part, the
 operator `-Δ_φ = -∂ₓ² - cos x ∂ₓ`
-(`TauCeti.neg_smoothWeightedLaplacian_eq_comp_circleRotationField`) is formally self-adjoint
-for the density `e^(sin x) dx` (`TauCeti.isFormalTranspose_smoothWeightedLaplacian`), but no
-connection `d + ⟪Y, ·⟫` with `-Δ_φ = ∇*∇ + V` is compatible with the standard fibre metric. Its
-Bochner connection is `d + ½ cos x dx` (`TauCeti.mgradient_im_eq_re_smul_circleRotationField`). -/
+(`TauCeti.neg_smoothWeightedLaplacian_eq_comp_vectorFieldDerivation_circleRotationField`) is
+formally self-adjoint for the density `e^(sin x) dx`
+(`TauCeti.isFormalTranspose_smoothWeightedLaplacian`), but no connection `d + ⟪Y, ·⟫` with
+`-Δ_φ = ∇*∇ + V` is compatible with the standard fibre metric. Its Bochner connection is
+`d + ½ cos x dx` (`TauCeti.mgradient_im_eq_re_smul_circleRotationField`). -/
 theorem not_isMetricCompatible_trivialAddInner_of_coe_eq_im
     {φ : C^∞⟮𝓡 1, sphere (0 : ℂ) 1; ℝ⟯}
     (hφ : ⇑φ = fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ).im)
