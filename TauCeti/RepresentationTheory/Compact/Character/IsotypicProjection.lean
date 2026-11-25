@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.Compact.Character.Projection
+public import TauCeti.RepresentationTheory.Continuous.Representative
 public import Mathlib.RingTheory.SimpleModule.Isotypic
 import TauCeti.RepresentationTheory.Compact.Semisimple
 import TauCeti.RepresentationTheory.Irreducible
@@ -35,6 +36,10 @@ Mathlib's `isotypicComponent` of type `sigma`.
 
 ## Main results
 
+* `ContRepresentation.isotypicKernel_mem_representativeSubmodule`: the kernel is a representative
+  function.
+* `ContRepresentation.finiteDimensional_span_range_isotypicKernel_comp_mulLeft`: its left
+  translates span a finite-dimensional space.
 * `ContRepresentation.isotypicKernel_eq_of_equiv`,
   `ContRepresentation.isotypicProjector_eq_of_equiv`: kernel and projector depend on `sigma` only
   through its isomorphism type.
@@ -123,6 +128,37 @@ theorem isotypicKernel_conj (sigma : ContRepresentation k G W) (hsigma : Continu
     isotypicKernel sigma hsigma (h * g * h⁻¹) = isotypicKernel sigma hsigma g := by
   simp only [isotypicKernel_apply]
   rw [character_conj]
+
+/-- **The isotypic kernel is a representative function.** Transporting `sigma` to a standard
+Euclidean model does not change its character, which therefore lies in `𝓡(G)`, and `𝓡(G)` is
+closed under conjugation and scalars. -/
+theorem isotypicKernel_mem_representativeSubmodule (sigma : ContRepresentation k G W)
+    (hsigma : Continuous sigma) :
+    isotypicKernel sigma hsigma ∈ representativeSubmodule k G := by
+  let e : W ≃L[k] EuclideanSpace k (Fin (Module.finrank k W)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  have hc : character sigma hsigma = character (e.congr sigma) (e.continuous_congr hsigma) := by
+    rw [ContinuousLinearEquiv.character_congr]
+  rw [isotypicKernel, hc]
+  exact Submodule.smul_mem _ _
+    (star_mem_representativeSubmodule (character_mem_representativeSubmodule _ _))
+
+/-- The left translates `g ↦ f (h⁻¹ * g)` of the isotypic kernel `f` span a finite-dimensional
+subspace of `C(G, k)`: since `f` is a class function they are its right translates, and `f` is a
+representative function. -/
+theorem finiteDimensional_span_range_isotypicKernel_comp_mulLeft [IsTopologicalGroup G]
+    (sigma : ContRepresentation k G W) (hsigma : Continuous sigma) :
+    FiniteDimensional k (Submodule.span k (Set.range fun h : G ↦
+      (isotypicKernel sigma hsigma).comp (ContinuousMap.mulLeft h⁻¹))) := by
+  have := finiteDimensional_span_range_comp_mulRight
+    (isotypicKernel_mem_representativeSubmodule sigma hsigma)
+  refine Submodule.finiteDimensional_of_le (S₂ := Submodule.span k (Set.range fun g : G ↦
+    (isotypicKernel sigma hsigma).comp (ContinuousMap.mulRight g))) (Submodule.span_mono ?_)
+  rintro _ ⟨h, rfl⟩
+  refine ⟨h⁻¹, ContinuousMap.ext fun g ↦ ?_⟩
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mulRight, ContinuousMap.coe_mulLeft]
+  rw [← isotypicKernel_conj sigma hsigma (g * h⁻¹) h⁻¹, inv_inv, mul_assoc,
+    inv_mul_cancel_right]
 
 /-- **Equivalent representations have the same normalized character kernel.** The kernel sees
 `sigma` only through its isomorphism type. -/

@@ -31,6 +31,15 @@ every degree and for every module of coefficients
 Such a class exists for every commutative ring of coefficients, with no orientation
 (`TauCeti.exists_isThomClass_of_finrank_eq_zero`): the class of the constant cocycle `1`.
 
+For a real vector bundle of rank zero, the Euler class map `Hⁿ(E, E₀) ⟶ Hⁿ(B)`, restriction to
+`Hⁿ(E)` followed by pull-back along the zero section, is an isomorphism in every degree and for
+all coefficients (`TauCeti.isIso_eulerClass_of_subsingleton`): in rank zero a relative class is
+the same thing as its Euler class. A degree-zero class restricts to a generator of
+`H⁰(E_b, ∅; K) ≅ K` on the fibre over `b` exactly when its Euler class takes a unit value at `b`
+(`TauCeti.span_singularCohomologyMap_fiberThomPairMap_eq_top_iff`). Hence the Thom classes of a
+rank-zero bundle are the classes whose Euler classes are units of `H⁰(B; K)`, the functions on
+path components with values in `Kˣ` (`TauCeti.isThomClass_iff_forall_isUnit`).
+
 This is the rank-zero case of the Thom isomorphism `Hᵖ(B; M) ≅ Hᵖ⁺ʳ(E, E₀; M)`. It is the case of
 the negative normal bundle of a Morse–Bott critical submanifold of index `0`, a family of local
 minima, whose negative disc bundle is its zero section.
@@ -41,6 +50,10 @@ minima, whose negative disc bundle is its zero section.
   for a bundle of rank zero, with coefficients in any module.
 * `TauCeti.exists_isThomClass_of_finrank_eq_zero`: a bundle of rank zero has a Thom class with
   coefficients in any commutative ring.
+* `TauCeti.isIso_eulerClass_of_subsingleton`: in rank zero the Euler class map is an
+  isomorphism.
+* `TauCeti.isThomClass_iff_forall_isUnit`: in rank zero a class is a Thom class exactly when its
+  Euler class takes unit values.
 
 ## References
 
@@ -54,7 +67,7 @@ noncomputable section
 
 open Bundle CategoryTheory MonoidalCategory Module
 
-universe w
+universe w v u
 
 namespace TauCeti
 
@@ -82,6 +95,8 @@ theorem isIso_thomPairProj_of_subsingleton : IsIso (thomPairProj F E) := by
     (h ▸ bijective_proj_of_subsingleton F E) (h ▸ FiberBundle.isOpenMap_proj F E)
 
 end Subsingleton
+
+section ThomIsomorphism
 
 variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)]
@@ -184,5 +199,74 @@ theorem exists_isThomClass_of_finrank_eq_zero [FiniteDimensional ℝ F] (hF : fi
   rw [eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne (X := TopCat.of (E b))
     (0 : E b) y]
   exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+
+end ThomIsomorphism
+
+section EulerClass
+
+variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [Subsingleton F]
+
+/-- **In rank zero the Euler class map is an isomorphism** `Hⁿ(E, E₀) ≅ Hⁿ(B)` in every degree:
+`E₀` is empty, so restriction `Hⁿ(E, E₀) ⟶ Hⁿ(E)` is an isomorphism, and so is pull-back along
+the zero section. -/
+instance isIso_eulerClass_of_subsingleton {C : Type u} [Category.{v} C]
+    [Limits.HasCoproducts.{w} C] [Abelian C] (R : C) (k : Type*) [Ring k] [Linear k C] (M : C)
+    (n : ℕ) :
+    IsIso (eulerClass R k M F E n) := by
+  have := isEmpty_thomPair_snd_of_subsingleton F E
+  rw [eulerClass_def]
+  infer_instance
+
+variable {F E} {K : Type w} [CommRing K]
+
+/-- **The fibre generators in rank zero.** A degree-zero relative class `u ∈ H⁰(E, E₀; K)`
+restricts to a generator of `H⁰(E_b, E_b ∖ {0}; K) ≅ K` on the fibre over `b` exactly when its
+Euler class takes a unit value at `b`. -/
+theorem span_singularCohomologyMap_fiberThomPairMap_eq_top_iff
+    (u : (thomPair F E).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0)
+    (b : B) :
+    Submodule.span K {TopPair.singularCohomologyMap (fiberThomPairMap F E b) 0 u} = ⊤ ↔
+      IsUnit (singularCohomologyZeroEval b
+        (eulerClass (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) F E 0 u)) := by
+  have := subsingleton_fiber_of_subsingleton F E b
+  -- The fibre is the single point `0`, so the value at `0` identifies its `H⁰` with `K`.
+  have : Unique (E b) := uniqueOfSubsingleton 0
+  set Q := TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))
+  have : PathConnectedSpace Q.fst := inferInstanceAs (PathConnectedSpace (E b))
+  refine (span_singularCohomologyMap_fiber_eq_top_iff u b).symm.trans <|
+    (singularCohomologyZeroEvalEquiv (X := Q.fst) (k := K)
+      (0 : E b)).span_singleton_eq_top_iff_isUnit.trans ?_
+  -- Both sides read the value at the zero vector over `b` of the image of `u` in `H⁰(E; K)`.
+  refine iff_of_eq (congrArg IsUnit ((singularCohomologyZeroEvalEquiv_apply _ _).trans <|
+    (singularCohomologyZeroEval_naturality _ _ _).trans ?_))
+  rw [eulerClass_def, ConcreteCategory.comp_apply, singularCohomologyZeroEval_naturality]
+  exact congrArg (singularCohomologyZeroEval · _)
+    ((fiberThomPairMap_fst_apply F E b 0).trans (zeroSectionHom_apply F E b).symm)
+
+/-- **The Thom classes in rank zero.** A degree-zero relative class `u ∈ H⁰(E, E₀; K)` of a bundle
+with zero model fibre, read in the degree `finrank ℝ F = 0`, is a Thom class exactly when its
+Euler class takes unit values at every point. -/
+theorem isThomClass_iff_forall_isUnit
+    (u : (thomPair F E).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0) :
+    IsThomClass F E ((finrank_zero_of_subsingleton (R := ℝ) (M := F)).symm ▸ u :
+      (thomPair F E).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
+        (finrank ℝ F)) ↔
+      ∀ b, IsUnit (singularCohomologyZeroEval b
+        (eulerClass (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) F E 0 u)) := by
+  -- Transport along `0 = finrank ℝ F` commutes with the fibre restrictions.
+  suffices h : ∀ {d : ℕ} (hd : 0 = d) (b : B),
+      Submodule.span K {TopPair.singularCohomologyMap (fiberThomPairMap F E b) d (hd ▸ u)} = ⊤ ↔
+        Submodule.span K {TopPair.singularCohomologyMap (fiberThomPairMap F E b) 0 u} = ⊤ by
+    rw [isThomClass_iff, and_iff_right (inferInstance : FiniteDimensional ℝ F)]
+    exact forall_congr' fun b ↦ (h (finrank_zero_of_subsingleton (R := ℝ) (M := F)).symm b).trans
+      (span_singularCohomologyMap_fiberThomPairMap_eq_top_iff u b)
+  intro d hd b
+  subst hd
+  rfl
+
+end EulerClass
 
 end TauCeti

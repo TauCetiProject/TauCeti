@@ -67,11 +67,6 @@ open scoped ComplexOrder
 
 namespace TauCeti.TemperleyLieb
 
-/-- Registers `IsSelfAdjoint (Real.sqrt 3 : ℂ)` as a `Fact`, so that
-`TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m` carries the analytic adjoint `TemperleyLieb.instStarRing`. -/
-instance instFactIsSelfAdjointSqrtThree : Fact (IsSelfAdjoint (Real.sqrt 3 : ℂ)) :=
-  ⟨Complex.conj_ofReal _⟩
-
 /-- The cubic comparison map intertwines the analytic adjoint of the Temperley–Lieb algebra with
 the adjoint of the cubic quantum torus. -/
 @[simp]
