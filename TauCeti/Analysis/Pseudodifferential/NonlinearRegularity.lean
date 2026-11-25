@@ -12,7 +12,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Holder.Iterated
 import TauCeti.Analysis.Sobolev.BesselPotential.Holder
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
+import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.SobolevEmbedding
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -36,7 +36,7 @@ every compactly supported Schwartz function `ψ` with support in `U`, the functi
 every Sobolev space `H^{k,6}` (`TauCeti.Symbol.IsEllipticAbove.memSobolev_smulLeftCLM_of_eq_bilin`)
 and agrees almost everywhere with a smooth function. The equation is imposed in the sense of
 distributions on `U`, and `D f` is the image of `f ∈ H^{1,3}` under the bounded operator
-`Op(c) : H^{1,3} → H^{0,3}` (`TauCeti.Symbol.quantizeBesselPotentialSpace`).
+`Op(c) : H^{1,3} → H^{0,3}` (`TauCeti.Symbol.quantizeUniformBesselPotentialSpace`).
 
 The exponent `3` is below the dimension, so `W^{1,3}(ℝ⁴)` is not an algebra and `Q (f, f)` is a
 priori only an `L^{3/2}` function. It is still subcritical for this equation (the critical space is
@@ -47,8 +47,8 @@ priori only an `L^{3/2}` function. It is still subcritical for this equation (th
   `TemperedDistribution.MemSobolev.of_add_of_inv_eq`) puts `χ Q (f, f)` in `L^6`
   (`1 / 6 = 1 / 12 + 1 / 12`) for every compactly supported cutoff `χ`;
 * interior elliptic regularity on `H^{s,6}`
-  (`IsEllipticAbove.memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace` in the
-  namespace `TauCeti.Symbol`)
+  (`IsEllipticAbove.memSobolev_smulLeftCLM_of_memSobolev_quantizeUniformBesselPotentialSpace` in
+  the namespace `TauCeti.Symbol`)
   then gives `ψ f ∈ H^{1,6}` for every cutoff `ψ` supported in `U`;
 * since `6 > 4`, the space `H^{k,6}(ℝ⁴)`, `k ≥ 1`, is closed under bilinear products
   (`TemperedDistribution.MemSobolev.exists_memSobolev_bilin`), so `ψ f ∈ H^{k,6}` puts
@@ -59,7 +59,8 @@ priori only an `L^{3/2}` function. It is still subcritical for this equation (th
 
 Passing from the equation, an identity in `H^{0,3}`, to the regularity theorem on `H^{s,6}` uses
 that `Op(c)` acts compatibly on the two scales
-(`TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr_exponent`).
+(`HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_congr_exponent` in the
+namespace `TauCeti.Symbol`).
 
 ## References
 
@@ -155,16 +156,19 @@ function `χ Q (f, f)`. -/
 private theorem toDistr_quantize_smulLeft_eq (hc : c.HasCompactSpatialSupport)
     (hf : MemSobolev 1 (3 : ℝ≥0) (f : 𝓢'(CoordinateSpace 4, V)))
     (heq : ∀ φ : 𝓢(CoordinateSpace 4, ℂ), HasCompactSupport φ → tsupport φ ⊆ U →
-      (c.quantizeBesselPotentialSpace hc 1 (3 : ℝ≥0) hf.toBesselPotentialSpace).toDistr φ =
+      (c.quantizeUniformBesselPotentialSpace hc.isUniform 1 (3 : ℝ≥0)
+          hf.toBesselPotentialSpace).toDistr φ =
         ∫ x, φ x • Q x (f x) (f x))
     (hf6 : MemSobolev 0 (6 : ℝ≥0) (f : 𝓢'(CoordinateSpace 4, V))) {χ : 𝓢(CoordinateSpace 4, ℂ)}
     (hχ : HasCompactSupport χ) (hχU : tsupport χ ⊆ U)
     {q : Lp W (6 : ℝ≥0) (volume : Measure (CoordinateSpace 4))}
     (hq : q =ᵐ[volume] fun x ↦ χ x • Q x (f x) (f x)) :
-    ((smulLeft (χ.smooth ⊤) c).quantizeBesselPotentialSpace (hc.smulLeft (χ.smooth ⊤)) 0
-        (6 : ℝ≥0) hf6.toBesselPotentialSpace).toDistr = (q : 𝓢'(CoordinateSpace 4, W)) := by
-  rw [toDistr_quantizeBesselPotentialSpace_smulLeft _ χ.hasTemperateGrowth hc 0 (by norm_num)
-    ENNReal.coe_ne_top, ← toDistr_quantizeBesselPotentialSpace_congr_exponent rfl hc hc
+    ((smulLeft (χ.smooth ⊤) c).quantizeUniformBesselPotentialSpace
+        (hc.smulLeft (χ.smooth ⊤)).isUniform 0 (6 : ℝ≥0) hf6.toBesselPotentialSpace).toDistr =
+      (q : 𝓢'(CoordinateSpace 4, W)) := by
+  rw [hc.toDistr_quantizeUniformBesselPotentialSpace_smulLeft _ χ.hasTemperateGrowth 0
+    (by norm_num) ENNReal.coe_ne_top,
+    ← hc.toDistr_quantizeUniformBesselPotentialSpace_congr_exponent hc rfl
       (by norm_num : (1 : ℝ≥0) < 3) (by norm_num : (1 : ℝ≥0) < 6)
       (u := hf.toBesselPotentialSpace)
       (by rw [MemSobolev.toBesselPotentialSpace_toDistr,
@@ -188,7 +192,8 @@ private theorem memSobolev_succ (ha : a.IsEllipticAbove R) (hc : c.HasCompactSpa
     (hU : IsOpen U) (hca : ∀ x ∈ U, ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
     (hQ : ContDiff ℝ ∞ Q) (hf : MemSobolev 1 (3 : ℝ≥0) (f : 𝓢'(CoordinateSpace 4, V)))
     (heq : ∀ φ : 𝓢(CoordinateSpace 4, ℂ), HasCompactSupport φ → tsupport φ ⊆ U →
-      (c.quantizeBesselPotentialSpace hc 1 (3 : ℝ≥0) hf.toBesselPotentialSpace).toDistr φ =
+      (c.quantizeUniformBesselPotentialSpace hc.isUniform 1 (3 : ℝ≥0)
+          hf.toBesselPotentialSpace).toDistr φ =
         ∫ x, φ x • Q x (f x) (f x))
     (hf6 : MemSobolev 0 (6 : ℝ≥0) (f : 𝓢'(CoordinateSpace 4, V))) {k : ℕ}
     (hk : ∀ χ : 𝓢(CoordinateSpace 4, ℂ), HasCompactSupport χ → tsupport χ ⊆ U →
@@ -200,7 +205,7 @@ private theorem memSobolev_succ (ha : a.IsEllipticAbove R) (hc : c.HasCompactSpa
       (smulLeftCLM V (ψ : CoordinateSpace 4 → ℂ) (f : 𝓢'(CoordinateSpace 4, V))) := by
   obtain ⟨χ, hχ, hχU, hχ1⟩ := hψ.isCompact.exists_schwartzMap_cutoff hU hψU
   obtain ⟨q, hq⟩ := exists_lp_six_ae_eq hQ hf hχ
-  have h := ha.memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace hψ
+  have h := ha.memSobolev_smulLeftCLM_of_memSobolev_quantizeUniformBesselPotentialSpace hψ
     (hc.smulLeft (χ.smooth ⊤)) ?_ (by norm_num) ENNReal.coe_ne_top hf6.toBesselPotentialSpace
     (s := k) (by rw [toDistr_quantize_smulLeft_eq hc hf heq hf6 hχ hχU hq]; exact hk χ hχ hχU q hq)
   · rwa [MemSobolev.toBesselPotentialSpace_toDistr, ← Nat.cast_succ] at h
@@ -239,7 +244,7 @@ private theorem memSobolev_bilin (hU : IsOpen U) (hQ : ContDiff ℝ ∞ Q) {k : 
   choose w hw hwS using fun i ↦ hyS.exists_memSobolev_bilin (by norm_num)
     (by rw [finrank_euclideanSpace_fin]; norm_num) hk0 (b i) hyS
   choose v hv using fun i ↦ Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le
-    (ψi i).hasTemperateGrowth (fun x ↦ (ψi i).norm_le_seminorm ℝ x) (w i)
+    (.of_forall fun x ↦ (ψi i).norm_le_seminorm ℝ x) (w i)
   have hvw (i) := (Lp.toTemperedDistribution_eq_smulLeftCLM_iff (ψi i).hasTemperateGrowth (v i)
     (w i)).1 (hv i).1.symm
   -- Near the support of `χ`, `ψ = 1`, so `q = ∑ᵢ ψᵢ bᵢ (y, y)`.
@@ -271,7 +276,8 @@ theorem IsEllipticAbove.memSobolev_smulLeftCLM_of_eq_bilin (ha : a.IsEllipticAbo
     (hca : ∀ x ∈ U, ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ)) (hQ : ContDiff ℝ ∞ Q)
     (hf : MemSobolev 1 (3 : ℝ≥0) (f : 𝓢'(CoordinateSpace 4, V)))
     (heq : ∀ φ : 𝓢(CoordinateSpace 4, ℂ), HasCompactSupport φ → tsupport φ ⊆ U →
-      (c.quantizeBesselPotentialSpace hc 1 (3 : ℝ≥0) hf.toBesselPotentialSpace).toDistr φ =
+      (c.quantizeUniformBesselPotentialSpace hc.isUniform 1 (3 : ℝ≥0)
+          hf.toBesselPotentialSpace).toDistr φ =
         ∫ x, φ x • Q x (f x) (f x))
     (k : ℕ) {ψ : 𝓢(CoordinateSpace 4, ℂ)} (hψ : HasCompactSupport ψ) (hψU : tsupport ψ ⊆ U) :
     MemSobolev k (6 : ℝ≥0)
@@ -297,7 +303,8 @@ theorem IsEllipticAbove.exists_contDiff_ae_eq_smul_of_eq_bilin (ha : a.IsEllipti
     (hca : ∀ x ∈ U, ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ)) (hQ : ContDiff ℝ ∞ Q)
     (hf : MemSobolev 1 (3 : ℝ≥0) (f : 𝓢'(CoordinateSpace 4, V)))
     (heq : ∀ φ : 𝓢(CoordinateSpace 4, ℂ), HasCompactSupport φ → tsupport φ ⊆ U →
-      (c.quantizeBesselPotentialSpace hc 1 (3 : ℝ≥0) hf.toBesselPotentialSpace).toDistr φ =
+      (c.quantizeUniformBesselPotentialSpace hc.isUniform 1 (3 : ℝ≥0)
+          hf.toBesselPotentialSpace).toDistr φ =
         ∫ x, φ x • Q x (f x) (f x))
     {ψ : 𝓢(CoordinateSpace 4, ℂ)} (hψ : HasCompactSupport ψ) (hψU : tsupport ψ ⊆ U) :
     ∃ g : CoordinateSpace 4 → V, ContDiff ℝ ∞ g ∧ (fun x ↦ ψ x • f x) =ᵐ[volume] g := by
@@ -319,7 +326,7 @@ theorem IsEllipticAbove.exists_contDiff_ae_eq_smul_of_eq_bilin (ha : a.IsEllipti
     exact (F k).contDiff
   -- `ψ f` and `F 0` have the same tempered distribution.
   obtain ⟨v, hv, -⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le
-    ψ.hasTemperateGrowth (fun x ↦ ψ.norm_le_seminorm ℝ x) f
+    (.of_forall fun x ↦ ψ.norm_le_seminorm ℝ x) f
   have h₁ := (Lp.toTemperedDistribution_eq_smulLeftCLM_iff ψ.hasTemperateGrowth v f).1 hv.symm
   have h₂ := Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.1
     (hv.symm.trans (hF 0).symm)

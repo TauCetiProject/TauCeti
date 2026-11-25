@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DerivedCategory.Perfect
-public import TauCeti.Algebra.Homology.Periodic.Compression.Derived
 public import TauCeti.Algebra.Homology.Periodic.Compression.FullyFaithful
+public import TauCeti.Algebra.Homology.Periodic.Compression.Gradable
 public import TauCeti.Algebra.Homology.Periodic.GlobalDimension
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
 /-!
 # The derived orbit functor in finite global dimension
@@ -47,10 +48,26 @@ The finite global dimension hypothesis is used twice, for the bounded projective
 in `D^b(C)` and for the homotopical projectivity of their compressions. The positivity of `n` is
 needed already for the homotopy orbit functor.
 
+Since the essential image of the orbit functor is the class of gradable objects
+(`TauCeti.PeriodicComplex.essImage_orbitDerivedCompressionFunctor`), under the same hypotheses the
+orbit category is equivalent to the full subcategory of gradable objects of `D_n(C)`
+(`TauCeti.PeriodicComplex.orbitDerivedCompressionEquivalence`), and the orbit functor is an
+equivalence exactly when every object of `D_n(C)` is gradable
+(`TauCeti.PeriodicComplex.isEquivalence_orbitDerivedCompressionFunctor_iff`).
+
+## Main definitions
+
+* `TauCeti.PeriodicComplex.orbitDerivedCompressionEquivalence`: for positive `n`, in an abelian
+  category with enough projectives and a uniform finite bound on projective dimensions, the
+  equivalence between the orbit category `D^b(C)/[n]` and the gradable objects of `D_n(C)`.
+
 ## Main results
 
 * `TauCeti.PeriodicComplex.fullyFaithfulOrbitDerivedCompressionFunctor`: in finite global
   dimension, the orbit functor `D^b(C)/[n] ⥤ D_n(C)` is fully faithful.
+* `TauCeti.PeriodicComplex.isEquivalence_orbitDerivedCompressionFunctor_iff`: for positive `n`,
+  in an abelian category with enough projectives and a uniform finite bound on projective
+  dimensions, the orbit functor is an equivalence exactly when every object is gradable.
 
 ## References
 
@@ -163,5 +180,59 @@ noncomputable def fullyFaithfulOrbitDerivedCompressionFunctor [EnoughProjectives
   (E.fullyFaithfulInverse.comp (fullyFaithfulToOrbitComp n d hd)).ofIso
     ((Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight E.counitIso _ ≪≫
       Functor.leftUnitor _)
+
+section Gradable
+
+variable [EnoughProjectives C] [NeZero n]
+
+/-- **The orbit category is the category of gradable objects** (Stai, Lemma 3.12). Let `C` be an
+abelian category with enough projectives in which every object has projective dimension `< d`,
+and let `n` be positive. Then the orbit functor identifies the orbit category `D^b(C)/[n]` with
+the full subcategory of gradable objects of `D_n(C)`. -/
+noncomputable def orbitDerivedCompressionEquivalence (d : ℕ)
+    (hd : ∀ X : C, HasProjectiveDimensionLT X d) :
+    OrbitCategory (_root_.DerivedCategory.Bounded C) n ≌ (gradable C n).FullSubcategory :=
+  have hF := fullyFaithfulOrbitDerivedCompressionFunctor (C := C) n d hd
+  let G := (gradable C n).lift (orbitDerivedCompressionFunctor n)
+    gradable_orbitDerivedCompressionFunctor_obj
+  have hG : G.FullyFaithful :=
+    Functor.FullyFaithful.ofCompFaithful (G := (gradable C n).ι)
+      (hF.ofIso ((gradable C n).liftCompιIso _ _).symm)
+  have := hG.full
+  have := hG.faithful
+  have : G.EssSurj := (ObjectProperty.essSurj_lift_iff _ _ _).2
+    essImage_orbitDerivedCompressionFunctor.ge
+  have : G.IsEquivalence := {}
+  G.asEquivalence
+
+/-- The functor of `orbitDerivedCompressionEquivalence` is the orbit functor, viewed as landing
+in the gradable objects. -/
+@[simp]
+theorem orbitDerivedCompressionEquivalence_functor (d : ℕ)
+    (hd : ∀ X : C, HasProjectiveDimensionLT X d) :
+    (orbitDerivedCompressionEquivalence (C := C) n d hd).functor =
+      (gradable C n).lift (orbitDerivedCompressionFunctor n)
+        gradable_orbitDerivedCompressionFunctor_obj :=
+  (rfl)
+
+instance (d : ℕ) (hd : ∀ X : C, HasProjectiveDimensionLT X d) :
+    (orbitDerivedCompressionEquivalence (C := C) n d hd).functor.Additive := by
+  rw [orbitDerivedCompressionEquivalence_functor]
+  infer_instance
+
+/-- **The orbit functor is an equivalence exactly when every object is gradable.** Let `C` be an
+abelian category with enough projectives in which every object has projective dimension `< d`,
+and let `n` be positive. Then the orbit functor `D^b(C)/[n] ⥤ D_n(C)` is an equivalence if and
+only if every object of `D_n(C)` is gradable. -/
+theorem isEquivalence_orbitDerivedCompressionFunctor_iff (d : ℕ)
+    (hd : ∀ X : C, HasProjectiveDimensionLT X d) :
+    (orbitDerivedCompressionFunctor (C := C) n).IsEquivalence ↔ gradable C n = ⊤ := by
+  rw [← essSurj_orbitDerivedCompressionFunctor_iff]
+  have hF := fullyFaithfulOrbitDerivedCompressionFunctor (C := C) n d hd
+  have := hF.full
+  have := hF.faithful
+  exact ⟨fun _ ↦ inferInstance, fun _ ↦ {}⟩
+
+end Gradable
 
 end TauCeti.PeriodicComplex

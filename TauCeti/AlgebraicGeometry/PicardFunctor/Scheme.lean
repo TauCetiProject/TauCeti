@@ -215,6 +215,14 @@ theorem picardSchemeRepresentableBy_homEquiv_inv [HasPicardScheme f] {T : Over S
     (picardSchemeRepresentableBy f).homEquiv φ⁻¹ = -(picardSchemeRepresentableBy f).homEquiv φ :=
   congrArg Multiplicative.toAdd (map_inv (picardSchemeHomMulEquiv f T) φ)
 
+/-- The quotient of two sections of the Picard scheme corresponds to the difference of their
+classes. -/
+theorem picardSchemeRepresentableBy_homEquiv_div [HasPicardScheme f] {T : Over S}
+    (φ ψ : T ⟶ picardScheme f) :
+    (picardSchemeRepresentableBy f).homEquiv (φ / ψ) =
+      (picardSchemeRepresentableBy f).homEquiv φ - (picardSchemeRepresentableBy f).homEquiv ψ :=
+  congrArg Multiplicative.toAdd (map_div (picardSchemeHomMulEquiv f T) φ ψ)
+
 /-- The representing isomorphism sends the unit section to the trivial class. -/
 theorem picardSchemeIso_hom_app_one [HasPicardScheme f] (T : Over S) :
     (picardSchemeIso f).hom.app (op T) ⟨(1 : T ⟶ picardScheme f)⟩ = 0 := by

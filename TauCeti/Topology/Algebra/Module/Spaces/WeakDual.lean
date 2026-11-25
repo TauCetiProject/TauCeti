@@ -10,12 +10,13 @@ public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 /-!
 # Pointwise operations on the weak dual
 
-The addition and the scalar actions on `WeakDual 𝕜 E` are those of `E →L[𝕜] 𝕜`, so they are
-computed pointwise. Registering `IsAddApply` and `IsSMulApply` makes the generic simp lemmas
-`add_apply` and `smul_apply` available on `WeakDual 𝕜 E`, so that pointwise computations, such
-as convex combinations of functionals, need not pass through `WeakDual.toStrongDual` or unfold
-the type synonym. Likewise, `WeakDual.instIsScalarTower` transfers a scalar tower `R`, `S` of
-actions on `𝕜` to `WeakDual 𝕜 E`; over `RCLike 𝕜` it makes the real action on the weak dual
+The zero, the addition and the scalar actions on `WeakDual 𝕜 E` are those of `E →L[𝕜] 𝕜`, so
+they are computed pointwise. Registering `IsZeroApply`, `IsAddApply` and `IsSMulApply` makes the
+generic simp lemmas `zero_apply`, `add_apply` and `smul_apply`, and the lemma `sum_apply`,
+available on `WeakDual 𝕜 E`, so that pointwise computations, such as convex combinations of
+functionals, need not pass through `WeakDual.toStrongDual` or unfold the type synonym. Likewise,
+`WeakDual.instIsScalarTower` transfers a scalar tower `R`, `S` of actions on `𝕜` to
+`WeakDual 𝕜 E`; over `RCLike 𝕜` it makes the real action on the weak dual
 compatible with the `𝕜`-action.
 
 It also records that, for ordered `E` and `𝕜`, the functionals that are nonnegative on
@@ -28,6 +29,8 @@ namespace WeakDual
 
 variable {𝕜 E : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
   [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+
+instance instIsZeroApply : IsZeroApply (WeakDual 𝕜 E) where
 
 instance instIsAddApply : IsAddApply (WeakDual 𝕜 E) where
 

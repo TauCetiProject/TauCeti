@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.MeasureTheory.Group.Integral
@@ -42,6 +43,9 @@ the integral to `z`.
   `differentiableOn_of_hasLaplace`, and `differentiableOn_of_hasLaplace_re_gt` (holomorphic
   differentiation under the integral sign with respect to `s`, producing the transform of
   `t ↦ -(t : ℂ) • f t`).
+* Higher derivatives: `hasLaplace_neg_pow_smul_iteratedDeriv` (the `n`-th derivative is the
+  transform of `t ↦ (-t) ^ n • f t`) and `hasLaplace_pow_div_factorial_smul_iteratedDeriv` (the
+  normalised coefficient `(-1) ^ n / n ! • F⁽ⁿ⁾` is the transform of `t ↦ (t ^ n / n !) • f t`).
 * Transform of a derivative: `intervalIntegral_cexp_neg_mul_smul_of_eq_add_intervalIntegral`
   establishes the finite-cutoff identity on `[0, T]`; `TauCeti.hasLaplace_deriv_of_primitive` proves
   `HasLaplace g s (s • z - f 0)` for a primitive `f(t) = f(0) + ∫₀ᵗ g(u) du` on `[0, ∞)` assuming
@@ -487,6 +491,34 @@ theorem differentiableOn_of_hasLaplace_re_gt {E : Type*}
     (hF : ∀ s : ℂ, a < s.re → HasLaplace f s (F s)) :
     DifferentiableOn ℂ F {s : ℂ | a < s.re} :=
   differentiableOn_of_hasLaplace (isOpen_lt continuous_const Complex.continuous_re) hF
+
+/-- **Derivatives of a Laplace transform.** If `F` is the one-sided Laplace transform of `f` near
+`s`, then the `n`-th derivative of `F` at `s` is the Laplace transform of `u ↦ (-u) ^ n • f u`. -/
+theorem hasLaplace_neg_pow_smul_iteratedDeriv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℝ → E} {F : ℂ → E} {s : ℂ} (hF : ∀ᶠ w in 𝓝 s, HasLaplace f w (F w)) (n : ℕ) :
+    HasLaplace (fun u : ℝ ↦ (-(u : ℂ)) ^ n • f u) s (iteratedDeriv n F s) := by
+  induction n generalizing s with
+  | zero => simpa only [pow_zero, one_smul, iteratedDeriv_zero] using hF.self_of_nhds
+  | succ n ih =>
+    obtain ⟨z', hz', hder⟩ := exists_hasLaplace_neg_smul_and_hasDerivAt
+      (hF.eventually_nhds.mono fun w hw ↦ ih hw)
+    rw [iteratedDeriv_succ, hder.deriv]
+    simpa only [pow_succ', mul_smul] using hz'
+
+open scoped Nat in
+/-- **Taylor coefficients of a Laplace transform.** If `F` is the one-sided Laplace transform of
+`f` near `s`, then `(-1) ^ n / n !` times the `n`-th derivative of `F` at `s`, the `n`-th Taylor
+coefficient of `F` at `s` up to the sign `(-1) ^ n`, is the Laplace transform of
+`u ↦ (u ^ n / n !) • f u`. -/
+theorem hasLaplace_pow_div_factorial_smul_iteratedDeriv {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {f : ℝ → E} {F : ℂ → E} {s : ℂ} (hF : ∀ᶠ w in 𝓝 s, HasLaplace f w (F w))
+    (n : ℕ) :
+    HasLaplace (fun u : ℝ ↦ ((u : ℂ) ^ n / n !) • f u) s
+      (((-1) ^ n / n ! : ℂ) • iteratedDeriv n F s) := by
+  have hc : ∀ u : ℝ, ((-1) ^ n / n ! : ℂ) * (-(u : ℂ)) ^ n = (u : ℂ) ^ n / n ! := fun u ↦ by
+    rw [div_mul_eq_mul_div, ← mul_pow, neg_one_mul, neg_neg]
+  simpa only [Pi.smul_def, smul_smul, hc] using
+    (hasLaplace_neg_pow_smul_iteratedDeriv hF n).const_smul ((-1) ^ n / n ! : ℂ)
 
 end HalfPlane
 

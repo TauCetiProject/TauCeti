@@ -65,6 +65,15 @@ theorem real_inner_I_mul_left (x y : ℂ) : inner ℝ (I * x) y = -inner ℝ x (
   simp only [Complex.inner, mul_re, mul_im, conj_re, conj_im, I_re, I_im]
   ring
 
+/-- The squared norm is the sum of squared real inner products with a unit complex number
+and its rotation by `i`. -/
+theorem norm_sq_eq_real_inner_sq_add_real_inner_mul_I_sq (v w : ℂ) (hw : ‖w‖ = 1) :
+    ‖v‖ ^ 2 = inner ℝ v w ^ 2 + inner ℝ v (w * I) ^ 2 := by
+  have h : w.re * w.re + w.im * w.im = 1 := by
+    rw [← Complex.normSq_apply, ← Complex.sq_norm, hw, one_pow]
+  simp [Complex.sq_norm, Complex.normSq_apply, Complex.inner, Complex.mul_re]
+  linear_combination -(v.re ^ 2 + v.im ^ 2) * h
+
 end Complex
 
 /-- The real line is orthogonal to its rotation by `i`: `⟪x, i y⟫_ℝ = 0` for real `x`, `y`. That

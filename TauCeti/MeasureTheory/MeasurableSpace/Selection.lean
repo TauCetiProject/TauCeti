@@ -26,10 +26,22 @@ depends jointly continuously on `(z, x)`, the open subsets of the parameter spac
 be chosen measurably in `z`. Indeed the set of `z` for which `F z` has a minimizer in a fixed
 compact set is closed, and every open subset of `X` is a countable union of compact sets.
 
+A second application is to the fibres of an open quotient map `q : X → Y` from a Polish space
+onto a T1 space. They are closed and nonempty, and `{y | q ⁻¹' {y} ∩ U ≠ ∅} = q '' U` is open for
+open `U`, so `q` has a measurable right inverse, a *Borel section*. This applies to the quotient
+map `G → G ⧸ H` of a Polish group by a closed subgroup (`QuotientGroup.isOpenQuotientMap_mk`), and
+to a continuous open surjective homomorphism of a Polish group onto a T1 group, which is how
+Borel sections of extensions and of homogeneous spaces are obtained in Mackey's theory of induced
+representations.
+
 ## Main statements
 
 * `TauCeti.exists_measurable_forall_mem` — the Kuratowski–Ryll-Nardzewski measurable selection
   theorem for weakly measurable maps with nonempty closed values in a Polish space;
+* `IsOpenQuotientMap.exists_measurable_rightInverse` — an open quotient map from a Polish space
+  onto a T1 space has a Borel section;
+* `IsOpenQuotientMap.exists_measurable_rightInverse_apply_eq` — that section can be chosen to
+  pass through any prescribed point, for instance to send `1` to `1` for a homomorphism;
 * `Continuous.exists_measurable_isMinOn` — a jointly continuous function on a product with a
   σ-compact Polish factor, which attains its minimum on each fibre, has a measurable
   selection of minimizers.
@@ -220,5 +232,39 @@ theorem _root_.Continuous.exists_measurable_isMinOn [TopologicalSpace Z] [Measur
       isClosed_le (hF.comp (continuous_const.prodMk continuous_id)) continuous_const)
     (fun z ↦ (hmin z).imp fun _ hx ↦ hmemM.2 hx) hMmeas
   exact ⟨T, hT, fun z ↦ hmemM.1 (hTM z)⟩
+
+/-- **Borel sections of open quotient maps.** A continuous open surjection `q` from a Polish space
+onto a T1 space whose open sets are measurable has a measurable right inverse. -/
+theorem _root_.IsOpenQuotientMap.exists_measurable_rightInverse [TopologicalSpace X]
+    [PolishSpace X] [MeasurableSpace X] [BorelSpace X] [TopologicalSpace Z] [T1Space Z]
+    [MeasurableSpace Z] [OpensMeasurableSpace Z] {q : X → Z} (hq : IsOpenQuotientMap q) :
+    ∃ s : Z → X, Measurable s ∧ Function.RightInverse s q := by
+  -- the fibres of `q` are closed and nonempty, and the fibres meeting `U` lie over `q '' U`
+  have hM (U : Set X) (hU : IsOpen U) : MeasurableSet {z | (q ⁻¹' {z} ∩ U).Nonempty} := by
+    have : {z | (q ⁻¹' {z} ∩ U).Nonempty} = q '' U := by
+      ext z
+      simp [Set.Nonempty, and_comm]
+    exact this ▸ (hq.isOpenMap U hU).measurableSet
+  obtain ⟨s, hs, hsq⟩ := exists_measurable_forall_mem (M := fun z ↦ q ⁻¹' {z})
+    (fun z ↦ isClosed_singleton.preimage hq.continuous)
+    (fun z ↦ hq.surjective.nonempty_preimage.2 (singleton_nonempty z)) hM
+  exact ⟨s, hs, hsq⟩
+
+/-- **Normalized Borel sections of open quotient maps.** A continuous open surjection `q` from a
+Polish space onto a T1 space whose open sets are measurable has a measurable right inverse
+sending `q x₀` to `x₀`, for any prescribed point `x₀`. For a homomorphism of groups, `x₀ = 1`
+gives a section with `s 1 = 1`. -/
+theorem _root_.IsOpenQuotientMap.exists_measurable_rightInverse_apply_eq [TopologicalSpace X]
+    [PolishSpace X] [MeasurableSpace X] [BorelSpace X] [TopologicalSpace Z] [T1Space Z]
+    [MeasurableSpace Z] [OpensMeasurableSpace Z] {q : X → Z} (hq : IsOpenQuotientMap q)
+    (x₀ : X) : ∃ s : Z → X, Measurable s ∧ Function.RightInverse s q ∧ s (q x₀) = x₀ := by
+  classical
+  obtain ⟨s, hs, hsq⟩ := hq.exists_measurable_rightInverse
+  -- redefine `s` at the single point `q x₀`
+  refine ⟨({q x₀} : Set Z).piecewise (fun _ ↦ x₀) s,
+    measurable_const.piecewise (measurableSet_singleton _) hs, fun z ↦ ?_, by simp⟩
+  by_cases hz : z = q x₀
+  · simp [hz]
+  · simp [hz, hsq z]
 
 end TauCeti

@@ -105,6 +105,9 @@ density `e^(sin x) dx`, but its Bochner connection `d + ½ cos x dx` is not metr
   formally self-adjoint operator is metric.
 * `LinearMap.IsFormalAdjoint.inner_sub_smul_smoothRoughLaplacian_apply`: its zeroth-order remainder
   is fibrewise self-adjoint.
+* `CovariantDerivative.isFormalAdjoint_smul_smoothRoughLaplacian_add_iff`: conversely, for `c ≠ 0`
+  and `P` of order zero, `c ∇*∇ + P` is formally self-adjoint for the Riemannian volume if and only
+  if `∇` is metric and `P` is fibrewise self-adjoint.
 
 ## References
 
@@ -531,9 +534,8 @@ theorem isMetricCompatible_of_sub_smul_smoothRoughLaplacian_mem
   -- Along a gradient `X` with `X x = w`, the difference `B = ∇⁰_X - ∇_X` of the covariant
   -- derivatives of `∇⁰ = ∇ + C` and `∇` is the operator of order zero `B σ = C(σ, X)`.
   obtain ⟨f, hf⟩ := exists_contMDiffMap_mgradient_eq x w
-  let X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
-    ⟨mgradient I f, by simpa using contMDiff_mgradient_infty f.contMDiff⟩
-  have hX : ⇑X = mgradient I f := ContMDiffSection.coeFn_mk _ _
+  let X := smoothGradient I M f
+  have hX : ⇑X = mgradient I f := coe_smoothGradient f
   let N := cov.metricCorrected.alongVectorField X
   let L := Algebra.lsmul ℝ ℝ Cₛ^∞⟮I; F, V⟯ (smoothDivergence I M X)
   have hB (σ : Cₛ^∞⟮I; F, V⟯) (y : M) :
@@ -608,5 +610,31 @@ theorem inner_sub_smul_smoothRoughLaplacian_apply
     (tsupport_differentialOperators_section_apply_subset hP2)
     (tsupport_differentialOperators_section_apply_subset hcL)
   exact hE.inner_apply_eq_of_mem_differentialOperators_zero h0 σ τ x
+
+/-- **Formally self-adjoint operators and their Bochner connections.** Let `c ≠ 0` and let `P`
+be an operator of order zero on the smooth sections of a Riemannian bundle over a Riemannian
+manifold without boundary. Then `c ∇*∇ + P` is formally self-adjoint for the Riemannian volume if
+and only if the connection `∇` is compatible with the fibre metric and `P` is fibrewise
+self-adjoint: `⟪P s x, t x⟫ = ⟪s x, P t x⟫` for all smooth sections `s`, `t` and every point `x`.
+-/
+theorem _root_.CovariantDerivative.isFormalAdjoint_smul_smoothRoughLaplacian_add_iff (hc : c ≠ 0)
+    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 0) :
+    (c • cov.smoothRoughLaplacian (leviCivitaConnection I M) + P).IsFormalAdjoint
+        (c • cov.smoothRoughLaplacian (leviCivitaConnection I M) + P) (riemannianVolume I M) ↔
+      cov.IsMetricCompatible ∧ ∀ s t x, ⟪P s x, t x⟫ = ⟪s x, P t x⟫ := by
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
+    (V := V)
+  have h0 : c • cov.smoothRoughLaplacian (leviCivitaConnection I M) + P -
+      c • cov.smoothRoughLaplacian (leviCivitaConnection I M) ∈
+        differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 0 := by
+    rwa [add_sub_cancel_left]
+  refine ⟨fun hD ↦ ⟨hD.isMetricCompatible_of_sub_smul_smoothRoughLaplacian_mem hc h0,
+    fun s t x ↦ by simpa using hD.inner_sub_smul_smoothRoughLaplacian_apply h0 s t x⟩,
+    fun ⟨hcov, hPsa⟩ ↦ ?_⟩
+  have hcLs := tsupport_differentialOperators_section_apply_subset (Submodule.smul_mem _ c
+    (cov.smoothRoughLaplacian_mem_differentialOperators_two (leviCivitaConnection I M)))
+  have hPs := tsupport_differentialOperators_section_apply_subset hP
+  exact (hcov.isFormalAdjoint_smoothRoughLaplacian.smul c).add
+    (LinearMap.isFormalAdjoint_of_forall_inner_eq hPsa) hcLs hPs hcLs hPs
 
 end LinearMap.IsFormalAdjoint

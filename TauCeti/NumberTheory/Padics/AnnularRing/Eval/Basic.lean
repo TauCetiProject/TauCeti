@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.Padics.AnnularRing.Evaluation
 public import TauCeti.NumberTheory.Padics.AnnularRing.Localization
 public import TauCeti.NumberTheory.Padics.Basic
 import Mathlib.Analysis.Normed.Algebra.Ultra
@@ -30,10 +31,13 @@ unique ring homomorphism bounded on `H` extending `f` and sending `T ↦ t`
 bounded by `C` on `H` (`TauCeti.AnnularRing.norm_eval₂_le`).
 
 We specialize this construction in two directions:
-* `TauCeti.AnnularRing.eval` and `TauCeti.AnnularRing.localizedEvalAlgHom` as `ℤ_[p]`-algebra
-  homomorphisms when `[Algebra ℤ_[p] K] [IsBoundedSMul ℤ_[p] K]`.
+* `TauCeti.AnnularRing.evalAlgHom` and `TauCeti.AnnularRing.localizedEvalAlgHom` as
+  `ℤ_[p]`-algebra homomorphisms when `[Algebra ℤ_[p] K] [IsBoundedSMul ℤ_[p] K]`.
 * `TauCeti.AnnularRing.evalAt` and `TauCeti.AnnularRing.localizedEvalAt` for any complete normed
-  division ring extension `K` of `ℚ_[p]` (such as `ℂ_[p]`) and any `t : K` with `p⁻¹ < ‖t‖ < 1`.
+  division ring extension `K` of `ℚ_[p]` (such as `ℂ_[p]`) and any `t : K` with `p⁻¹ < ‖t‖ < 1`;
+  over a complete normed field over `ℚ_[p]`, `evalAt` agrees with `TauCeti.AnnularRing.eval`
+  (`TauCeti.AnnularRing.evalAt_eq_eval`), while `ℚ_[p]` itself contains no points of the open
+  annulus (`TauCeti.AnnularRing.not_exists_padic_annulus`).
 
 Every annulus evaluation is continuous for any `T`-adic topology on `H[1/T]` whose neighbourhoods
 of zero have basis `T ^ n H` (`TauCeti.AnnularRing.continuous_localizedEval₂`), and is the unique
@@ -44,7 +48,7 @@ continuous ring homomorphism extending `f` and sending `T ↦ t`
 
 * `TauCeti.AnnularRing.eval₂`, `TauCeti.AnnularRing.localizedEval₂`: evaluation ring homomorphisms
   on `H` and `H[1/T]` into any complete normed ring `K`.
-* `TauCeti.AnnularRing.eval`, `TauCeti.AnnularRing.localizedEvalAlgHom`: `ℤ_[p]`-algebra
+* `TauCeti.AnnularRing.evalAlgHom`, `TauCeti.AnnularRing.localizedEvalAlgHom`: `ℤ_[p]`-algebra
   evaluations under `[Algebra ℤ_[p] K] [IsBoundedSMul ℤ_[p] K]`.
 * `TauCeti.AnnularRing.evalAt`, `TauCeti.AnnularRing.localizedEvalAt`: evaluations at `t : K` with
   `p⁻¹ < ‖t‖ < 1` in any complete normed division ring `K` over `ℚ_[p]`.
@@ -62,10 +66,12 @@ continuous ring homomorphism extending `f` and sending `T ↦ t`
   evaluations of power series in `T` and `U = p / T`.
 * `TauCeti.AnnularRing.eq_eval₂_of_bound`, `TauCeti.AnnularRing.eq_localizedEval₂_of_continuous`:
   uniqueness of bounded evaluations on `H` and `T`-adically continuous evaluations on `H[1/T]`.
-* `TauCeti.AnnularRing.eval_toRingHom`, `TauCeti.AnnularRing.localizedEvalAlgHom_toRingHom`,
-  `TauCeti.AnnularRing.evalAt_eq_eval₂`, `TauCeti.AnnularRing.localizedEvalAt_eq_localizedEval₂`:
-  comparison lemmas relating the specialized evaluations to `eval₂` and `localizedEval₂`.
+* `TauCeti.AnnularRing.evalAlgHom_toRingHom`, `TauCeti.AnnularRing.localizedEvalAlgHom_toRingHom`,
+  `TauCeti.AnnularRing.evalAt_eq_eval₂`, `TauCeti.AnnularRing.evalAt_eq_eval`,
+  `TauCeti.AnnularRing.localizedEvalAt_eq_localizedEval₂`:
+  comparison lemmas relating the specialized evaluations to `eval₂`, `localizedEval₂`, and `eval`.
 * `TauCeti.AnnularRing.continuous_localizedEval₂`: continuity for the `T`-adic topology on `H[1/T]`.
+* `TauCeti.AnnularRing.not_exists_padic_annulus`: `ℚ_[p]` has no points in the open annulus.
 
 ## References
 
@@ -627,27 +633,28 @@ variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedRing K] [Algebra ℤ_[p] K]
 
 /-- The `ℤ_p`-algebra evaluation `H →ₐ[ℤ_[p]] K` at a unit `t : Kˣ` with `‖t‖ < 1` and
 `‖t⁻¹‖ < p`. -/
-def eval (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
+def evalAlgHom (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
     AnnularRing p →ₐ[ℤ_[p]] K :=
   { eval₂ (algebraMap ℤ_[p] K) TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul t ht htinv with
     commutes' :=
       eval₂_algebraMap (algebraMap ℤ_[p] K) TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul t ht
         htinv }
 
-theorem eval_toRingHom (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p)
+theorem evalAlgHom_toRingHom (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p)
     (hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖algebraMap ℤ_[p] K a‖ ≤ C * ‖a‖) :
-    (eval t ht htinv).toRingHom = eval₂ (algebraMap ℤ_[p] K) hf t ht htinv := (rfl)
+    (evalAlgHom t ht htinv).toRingHom = eval₂ (algebraMap ℤ_[p] K) hf t ht htinv := (rfl)
 
-theorem eval_apply (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p)
+theorem evalAlgHom_apply (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p)
     (x : AnnularRing p) :
-    eval t ht htinv x = ∑' m : ℤ, algebraMap ℤ_[p] K (x.coeff m) * ((t ^ m : Kˣ) : K) := (rfl)
+    evalAlgHom t ht htinv x = ∑' m : ℤ, algebraMap ℤ_[p] K (x.coeff m) * ((t ^ m : Kˣ) : K) :=
+  (rfl)
 
-@[simp] theorem eval_T (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
-    eval t ht htinv T = (t : K) :=
+@[simp] theorem evalAlgHom_T (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
+    evalAlgHom t ht htinv T = (t : K) :=
   eval₂_T (algebraMap ℤ_[p] K) TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul t ht htinv
 
-@[simp] theorem eval_U (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
-    eval t ht htinv U = (p : K) * ((t⁻¹ : Kˣ) : K) :=
+@[simp] theorem evalAlgHom_U (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
+    evalAlgHom t ht htinv U = (p : K) * ((t⁻¹ : Kˣ) : K) :=
   eval₂_U (algebraMap ℤ_[p] K) TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul t ht htinv
 
 /-- The `ℤ_p`-algebra evaluation `H[1/T] →ₐ[ℤ_[p]] K` at a unit `t : Kˣ` with `‖t‖ < 1` and
@@ -674,7 +681,7 @@ theorem localizedEvalAlgHom_toRingHom {A : Type*} [CommRing A] [Algebra (Annular
     [IsLocalization.Away (T : AnnularRing p) A] [Algebra ℤ_[p] A]
     (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) (a : AnnularRing p) :
     localizedEvalAlgHom (A := A) t ht htinv (algebraMap (AnnularRing p) A a) =
-      eval t ht htinv a :=
+      evalAlgHom t ht htinv a :=
   localizedEval₂_algebraMap (algebraMap ℤ_[p] K) TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul
     t ht htinv a
 
@@ -819,5 +826,24 @@ theorem continuous_localizedEvalAt [TopologicalSpace A] [IsTopologicalAddGroup A
 end LocalizedEvalAt
 
 end EvalAt
+
+/-- Over a complete normed field `K` over `ℚ_[p]`, `evalAt` agrees with
+`TauCeti.AnnularRing.eval`. -/
+theorem evalAt_eq_eval {p : ℕ} [Fact p.Prime] {K : Type*} [NormedField K]
+    [NormedAlgebra ℚ_[p] K] [CompleteSpace K]
+    (t : K) (ht₀ : (p : ℝ)⁻¹ < ‖t‖) (ht₁ : ‖t‖ < 1) :
+    evalAt t ht₀ ht₁ = eval t ht₀ ht₁ :=
+  RingHom.ext fun x ↦ (hasSum_evalAt t ht₀ ht₁ x).unique <| by
+    simpa only [padicIntAlgebraMap_apply] using hasSum_eval ht₀ ht₁ x
+
+/-- The open annulus `p⁻¹ < ‖t‖ < 1` has no points in `ℚ_[p]`, because the value group of `ℚ_[p]`
+is `p ^ ℤ`. -/
+theorem not_exists_padic_annulus (p : ℕ) [Fact (Nat.Prime p)] :
+    ¬ ∃ t : ℚ_[p], (p : ℝ)⁻¹ < ‖t‖ ∧ ‖t‖ < 1 := by
+  rintro ⟨t, ht₀, ht₁⟩
+  rw [← zpow_zero (p : ℝ)] at ht₁
+  have hle := (Padic.norm_lt_pow_iff_norm_le_pow_sub_one t 0).mp ht₁
+  norm_num at hle
+  linarith
 
 end TauCeti.AnnularRing

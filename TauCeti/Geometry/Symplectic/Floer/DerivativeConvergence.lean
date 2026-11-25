@@ -49,6 +49,11 @@ The Arzelà–Ascoli theorem in `C¹` (`TauCeti.exists_strictMono_tendstoLocally
 gives a subsequence of every subsequence along which `Duₙ → Dv`; as the limit `Dv` is the same each
 time, the whole sequence converges. The equation passes to the limit pointwise.
 
+Combined with the compactness theorem of `TauCeti.Geometry.Symplectic.Floer.Compactness.Basic`,
+this shows that smooth solutions of bounded energy converge in `C¹` off finitely many bubbling
+points, to a `C¹` solution of the same equation there
+(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`).
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS Colloquium

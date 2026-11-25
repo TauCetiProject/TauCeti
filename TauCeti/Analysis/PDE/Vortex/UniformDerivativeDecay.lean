@@ -66,6 +66,8 @@ zero:
 * `exists_norm_iteratedFDeriv_log_normSq_le_mul_exp_of_forall_le_norm_sub`: for every order `n`,
   `‖Dⁿ log |α|²‖ ≤ K exp (-c ρ)`, with `K` and `R` depending also on `n`; the case `n = 1` is
   `exists_norm_fderiv_log_normSq_le_mul_exp_of_forall_le_norm_sub`.
+* `exists_forall_le_norm_iteratedFDeriv_log_normSq_le_mul_exp`: the same bound for all orders
+  `j ≤ n` at once.
 * `exists_norm_iteratedFDeriv_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub`: for every order
   `n`, `‖Dⁿ (1 - |α|²)‖ ≤ K exp (-c ρ)`.
 * `exists_norm_fderiv_normSq_le_mul_exp_of_forall_le_norm_sub`: `|∇ |α|²| ≤ K exp (-c ρ)`.
@@ -271,9 +273,11 @@ private theorem norm_iteratedFDeriv_succ_log_normSq_le {x : ℂ → EuclideanSpa
       ring
 
 open scoped Nat in
-/-- Uniform decay of the derivatives of `log |α|²` of order at most `n`, with a radius `R` beyond
-the threshold `√(2 m (16 m + 1))` where `|α|² > 1 / 2`. -/
-private theorem exists_forall_le_norm_iteratedFDeriv_log_normSq_le_mul_exp (m n : ℕ) {c : ℝ}
+/-- **Uniform decay of the derivatives of `log |α|²` up to order `n`.** One pair of constants
+`K ≥ 0` and `R` bounds `‖Dʲ log |α|²‖ ≤ K exp (-c ρ)` for every order `j ≤ n`, at every point at
+distance at least `ρ ≥ R` from the zeros of a smooth plane vortex with the degree-`m` end framing.
+The radius `R` is at least the threshold `√(2 m (16 m + 1))` beyond which `|α|² > 1 / 2`. -/
+theorem exists_forall_le_norm_iteratedFDeriv_log_normSq_le_mul_exp (m n : ℕ) {c : ℝ}
     (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
     ∃ K R, 0 ≤ K ∧ Real.sqrt (m * (16 * m + 1) / (1 / 2)) ≤ R ∧
       ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
