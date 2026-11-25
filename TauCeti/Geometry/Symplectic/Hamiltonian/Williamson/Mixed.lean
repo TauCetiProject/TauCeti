@@ -218,21 +218,6 @@ end IsNondegenerateQuadraticFamily
 
 /-! ### Williamson's classification of mixed type -/
 
-/-- For `a, b > 0`, the polynomials `X² - μ` and `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)` are
-coprime: a common complex root `w` would have `w² = μ` real, hence `re w * im w = 0`, while the
-roots `±a ± bi` of the second polynomial have nonzero real and imaginary parts. -/
-private theorem isCoprime_X_sq_sub_C_focusFocusPoly (μ : ℝ) {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
-    IsCoprime (X ^ 2 - C μ : ℝ[X]) (focusFocusPoly a b) := by
-  refine (isCoprime_iff_aeval_ne_zero_of_isAlgClosed ℝ ℂ _ _).2 fun w ↦ ?_
-  by_contra! hw
-  obtain ⟨h₁, h₂⟩ := abs_re_eq_and_abs_im_eq_of_aeval_focusFocusPoly_eq_zero hb.ne' hw.2
-  have hre : w.re ≠ 0 := fun h ↦ ha.ne' (by simpa [h, abs_of_pos ha] using h₁.symm)
-  have him : w.im ≠ 0 := fun h ↦ hb.ne' (by simpa [h, abs_of_pos hb] using h₂.symm)
-  have hsq : w ^ 2 = μ := by simpa [sub_eq_zero] using hw.1
-  have h := congrArg Complex.im hsq
-  simp only [pow_two, Complex.mul_im, Complex.ofReal_im] at h
-  exact mul_ne_zero hre him (by linear_combination h / 2)
-
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V} {A : Module.End ℝ V}
 
 /-- If `A ∈ sp(V, ω)` and `A²` has the distinct eigenvalues `μ ∈ s`, the vectors killed by a power
@@ -269,7 +254,8 @@ private theorem mem_orthogonal_maxGenEigenspace_of_mem_maxGenEigenspace_focusFoc
   mem_orthogonal_iff.2 fun _ hy ↦
     ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval
       (by rw [focusFocusPoly_comp_neg_X]
-          exact IsCoprime.prod_left fun μ _ ↦ isCoprime_X_sq_sub_C_focusFocusPoly μ ha hb) hy hx
+          exact IsCoprime.prod_left fun μ _ ↦
+            (isCoprime_focusFocusPoly_X_sq_sub_C ha.ne' hb.ne' μ).symm) hy hx
 
 /-- If `A ∈ sp(V, ω)` has the distinct eigenvalues `z ∈ t` in the open first quadrant, each with an
 eigenvector `v + iw`, the symplectic complement of the vectors killed by a power of
