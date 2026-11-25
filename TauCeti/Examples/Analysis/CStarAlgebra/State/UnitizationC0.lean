@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.State.Unitization
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
+import TauCeti.Analysis.SpecificLimits.HalfPowSucc
 import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
 
 /-!
@@ -38,12 +39,9 @@ local instance spectralStarOrderedRing : StarOrderedRing C₀(ℕ, ℂ) :=
 /-- The weights `2⁻⁽ⁿ⁺¹⁾`, of sum `1`. -/
 private noncomputable abbrev w (n : ℕ) : ℝ := (1 / 2 : ℝ) ^ (n + 1)
 
-private theorem summable_w : Summable w :=
-  (summable_geometric_two).mul_left (1 / 2) |>.congr fun n ↦ by simp [w, pow_succ, mul_comm]
-
 /-- The weights `2⁻⁽ⁿ⁺¹⁾`, as an absolutely summable family. -/
 private noncomputable def weights : lp (fun _ : ℕ ↦ ℂ) 1 :=
-  ⟨fun n ↦ (w n : ℂ), memℓp_gen <| summable_w.congr fun n ↦ by simp [w]⟩
+  ⟨fun n ↦ (w n : ℂ), memℓp_gen <| hasSum_half_pow_succ.summable.congr fun n ↦ by simp [w]⟩
 
 private theorem dualEquiv_weights_star_mul_self (g : C₀(ℕ, ℂ)) :
     ZeroAtInftyContinuousMap.dualEquiv ℂ ℕ weights (star g * g) =
@@ -53,9 +51,9 @@ private theorem dualEquiv_weights_star_mul_self (g : C₀(ℕ, ℂ)) :
   simp [weights, Complex.conj_mul']
 
 private theorem summable_w_mul_sq (g : C₀(ℕ, ℂ)) : Summable fun n ↦ w n * ‖g n‖ ^ 2 :=
-  (summable_w.mul_right (‖g‖ ^ 2)).of_nonneg_of_le (fun n ↦ by positivity) fun n ↦
-    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) (g.norm_coe_le_norm n) 2)
-      (by positivity)
+  (hasSum_half_pow_succ.summable.mul_right (‖g‖ ^ 2)).of_nonneg_of_le (fun n ↦ by positivity)
+    fun n ↦ mul_le_mul_of_nonneg_left
+      (pow_le_pow_left₀ (norm_nonneg _) (g.norm_coe_le_norm n) 2) (by positivity)
 
 /-- The faithful positive functional `τ(f) = Σₙ 2⁻⁽ⁿ⁺¹⁾ f(n)` on `c₀`. -/
 noncomputable def faithfulFunctional : C₀(ℕ, ℂ) →P[ℂ] ℂ :=
