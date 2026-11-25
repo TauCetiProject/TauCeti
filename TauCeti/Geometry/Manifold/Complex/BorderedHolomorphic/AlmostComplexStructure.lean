@@ -150,6 +150,8 @@ theorem mfderiv_extend_symm_I_mul_of_mem_maximalAtlas
   -- `j` is multiplication by `i`, and in the chart at `x` the derivative of the inverse chart is
   -- the derivative of the chart change; the tangent spaces at `z` and `x` are `ℂ` by definition.
   refine Eq.trans ?_ (ofBorderedHolomorphic_apply x _).symm
+  -- `simpa` cannot close this: the goal is an equation in `TangentSpace`, which is `ℂ` only up to
+  -- unfolding at default transparency, so the coordinate identifications are rewritten explicitly.
   rw [hφs.mfderiv_eq_fderiv_extChartAt_conj rfl, extChartAt_model_space_eq_id, extChartAt,
     OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
     PartialEquiv.refl_symm, PartialEquiv.refl_coe, Function.comp_id]

@@ -139,7 +139,7 @@ theorem range_closedUpperHalfPlaneModel :
 theorem setOf_im_pos_subset_range_closedUpperHalfPlaneModel :
     {z : ℂ | 0 < z.im} ⊆ range closedUpperHalfPlaneModel := fun z hz ↦ by
   rw [range_closedUpperHalfPlaneModel]
-  exact (show 0 < z.im from hz).le
+  exact (mem_ofPred_eq ▸ hz).le
 
 /-- The interior in `ℂ` of a subset of the closed upper half-plane consists of points of positive
 imaginary part. -/
