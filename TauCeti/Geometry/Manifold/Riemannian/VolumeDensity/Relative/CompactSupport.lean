@@ -59,10 +59,7 @@ theorem contDiffAt_relativeVolume_of_isCompact [T2Space M] {k : ℕ∞} [IsManif
     WithMetric.coe_homeomorph g₀ ▸ (WithMetric.homeomorph g₀).isCompact_preimage.mpr hK
   refine (hK'.contMDiffAt_parametric_integral (I := 𝓘(ℝ)) (J := I)
     hK'.measure_lt_top.ne (fun a ha ↦ ?_) ?_).contDiffAt
-  · exact ((contMDiffAt_uncurry_relativeVolumeDensity (hg₀ _ ha) (hg _ ha)).comp (t₀, a)
-      (contMDiffAt_fst.prodMk
-        ((WithMetric.contMDiff_ofWithMetric (g := g₀)).contMDiffAt.comp _ contMDiffAt_snd))).sub
-      contMDiffAt_const
+  · exact contMDiffAt_relativeVolume_integrand (hg₀ _ ha) (hg _ ha)
   · filter_upwards [hgK] with t ht a ha
     rw [relativeVolumeDensity_congr g₀ (g t) (g₁ := g₀) (g₂ := g₀) rfl (ht _ ha),
       relativeVolumeDensity_self, sub_self]
