@@ -67,16 +67,17 @@ of the solution. This is the linear step of the regularity bootstrap for quasili
 
 * `exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_gradient_of_contDiffOn`:
   interior `C^{2,α}` regularity for divergence-form equations with `C^{1,α}` coefficients.
-* `exists_holderOnWith_smul_neg_sub_toDual_symm_matrixBilinearForm`: that divergence datum is
-  Hölder where the derivatives of the coefficients, the data and the gradient are.
-* `energyFormH1_eq_setIntegral_inner_of_eq_neg_sub`: the differentiated equation written with the
-  divergence datum `G = -f e - (∂ₑa) ∇u`, for any representative of `∇u` and on any relatively
-  compact `V ≤ Ω`, such as a half-ball at a flat boundary.
 * `exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_contDiffOn`: the same
   in classical form, a `C²` representative with locally `α`-Hölder second derivative. The
   continuous representatives of the second weak derivatives give `C¹` representatives of the first
   derivatives (`TauCeti.W1p.exists_contDiffOn_one_ae_eq_of_continuousOn_preciseRepresentative`),
   which assemble into a `C¹` derivative of `u`.
+* `exists_holderOnWith_smul_neg_sub_toDual_symm_matrixBilinearForm`: the divergence datum
+  `G = -f e - (∂ₑa) P` of the differentiated equation is Hölder on a compact set where the
+  derivatives of the coefficients, the data and the field `P` are.
+* `energyFormH1_eq_setIntegral_inner_of_eq_neg_sub`: the differentiated equation written with the
+  divergence datum `G = -f e - (∂ₑa) ∇u`, for any representative of `∇u` and on any relatively
+  compact `V ≤ Ω`, such as a half-ball at a flat boundary.
 
 ## References
 

@@ -22,9 +22,9 @@ Let `H = {x | c₀ < ⟪x, ν⟫}` be an open half-space of `ℝ^{n+1}`, `ν ≠
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `H`, `u = 0` on `∂H`,
 
 that is `∫_H ⟨a ∇u, ∇v⟩ = ∫_H f v` for every `v ∈ H¹₀(H)`, where `a` is uniformly elliptic and
-Lipschitz, as a bilinear form, on all of `H`, its entries are `C¹` with first derivatives
-`α`-Hölder on a ball `B(y₀, r)` about a point `y₀` of the boundary hyperplane, and `f ∈ L²(H)` is
-`α`-Hölder up to the boundary there. This file proves that the second
+Lipschitz, as a bilinear form, on all of `H`, `a` is uniformly elliptic on a ball `B(y₀, r)` about
+a point `y₀` of the boundary hyperplane and its entries are `C¹` with first derivatives `α`-Hölder
+there, and `f ∈ L²(H)` is `α`-Hölder up to the boundary there. This file proves that the second
 derivatives of `u` with a tangential direction are `α`-Hölder up to the boundary near `y₀`: for
 every `e` with `⟪e, ν⟫ = 0`, the weak derivative `∂ₑu` lies in `H¹₀(H)`, and the precise
 representative of its gradient for the Lebesgue measure on `H` is `α`-Hölder on the closed
