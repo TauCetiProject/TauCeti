@@ -98,6 +98,12 @@ theorem norm_verticalField_le {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ) (hψc :
   gcongr ?_ * _
   exact mul_le_of_le_one_right (by positivity) (Real.abs_sin_le_one _)
 
+/-- The vertical field is supported where `ψ` is: `tsupport X_n ⊆ tsupport ψ`. -/
+theorem tsupport_verticalField_subset {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ)
+    (hψc : HasCompactSupport ψ) (a w : E) (n : ℝ) :
+    tsupport (verticalField hψ hψc a w n) ⊆ tsupport ψ :=
+  closure_mono fun y hy => by_contra fun hψy => hy (by simp [Function.notMem_support.1 hψy])
+
 /-- Along the line `a + ℝu` with `u ⊥ w`, the tangential divergence of the vertical field along
 the line spanned by `w` is `ψ`. -/
 private theorem tangentialDivergence_verticalField [FiniteDimensional ℝ E] {ψ : E → ℝ}
@@ -255,17 +261,16 @@ theorem not_exists_abs_firstVariation_verticalLift_le {a u w : E} (hu : u ≠ 0)
   set n : ℝ := |C| / I + 1
   have hn : 0 < n := by positivity
   have h := hC (verticalField θ.contDiff θ.hasCompactSupport a w n)
-    ((closure_mono fun y hy => ?_).trans θ.tsupport_eq.subset) n⁻¹ fun y =>
+    ((tsupport_verticalField_subset θ.contDiff θ.hasCompactSupport a w n).trans
+      θ.tsupport_eq.subset) n⁻¹ fun y =>
       (norm_verticalField_le θ.contDiff θ.hasCompactSupport a w n y).trans (by
         simpa [hw, abs_of_pos hn, abs_of_nonneg θ.nonneg] using
           mul_le_of_le_one_right (inv_pos.2 hn).le θ.le_one)
-  · rw [firstVariation_verticalLift_verticalField θ.contDiff θ.hasCompactSupport hu huw hw
-      hn.ne', abs_of_pos hI] at h
-    have hIn : I * n = |C| + I := by
-      simp only [n]
-      field_simp
-    linarith [(le_mul_inv_iff₀ hn).1 h, le_abs_self C]
-  · by_contra hθ
-    exact hy (by simp [Function.notMem_support.1 hθ])
+  rw [firstVariation_verticalLift_verticalField θ.contDiff θ.hasCompactSupport hu huw hw
+    hn.ne', abs_of_pos hI] at h
+  have hIn : I * n = |C| + I := by
+    simp only [n]
+    field_simp
+  linarith [(le_mul_inv_iff₀ hn).1 h, le_abs_self C]
 
 end Euclidean
