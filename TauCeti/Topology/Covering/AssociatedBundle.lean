@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Covering.Quotient
 public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import TauCeti.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.Homeomorph.Quotient
 public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
@@ -492,15 +493,6 @@ theorem localTriv_associatedMk_of_mem_target {e y : E}
   rw [hp.localTriv_associatedMk ρ he, associatedCore_coordChange,
     hp.deckChange_eq_one_of_mem_target hy, rep_one_apply]
 
-/-- Two points over the domain of the chart through `e` agree when the chart takes them to the
-same point. -/
-private theorem eq_of_localTriv_eq {e : E} {a b : (hp.associatedCore ρ).TotalSpace}
-    (ha : a.proj ∈ (hp.associatedCore ρ).baseSet e) (hb : b.proj ∈ (hp.associatedCore ρ).baseSet e)
-    (h : (hp.associatedCore ρ).localTriv e a = (hp.associatedCore ρ).localTriv e b) : a = b :=
-  ((hp.associatedCore ρ).localTriv e).toOpenPartialHomeomorph.injOn
-    ((VectorBundleCore.mem_localTriv_source _ _ _).2 ha)
-    ((VectorBundleCore.mem_localTriv_source _ _ _).2 hb) h
-
 /-- Two pairs with the same first component represent the same point only if they are equal. -/
 @[simp]
 theorem associatedMk_right_inj {y : E} {v v' : F} :
@@ -516,7 +508,8 @@ theorem associatedMk_smul (g : G) (y : E) (v : F) :
   have hy := hp.mem_associatedCore_baseSet_self ρ y
   have hgy := hp.mem_associatedCore_baseSet_self ρ (g • y)
   rw [hp.map_smul] at hgy
-  refine hp.eq_of_localTriv_eq ρ (by rwa [associatedMk_proj, hp.map_smul]) hgy ?_
+  refine ((hp.associatedCore ρ).localTriv (g • y)).eq_of_apply_eq
+    (by rwa [associatedMk_proj, hp.map_smul]) hgy ?_
   rw [localTriv_associatedMk_self, hp.localTriv_associatedMk ρ hgy,
     hp.associatedCore_coordChange_smul ρ hy, (hp.associatedCore ρ).coordChange_self _ _ hy,
     hp.map_smul]
@@ -539,8 +532,8 @@ theorem associatedMk_surjective : Function.Surjective (hp.associatedMk ρ) := by
     rw [associatedCore_indexAt]
     exact Function.surjInv_eq hp.surjective x
   have hmem := (hp.associatedCore ρ).mem_baseSet_at x
-  refine ⟨((hp.associatedCore ρ).indexAt x, w), hp.eq_of_localTriv_eq ρ (by rwa [associatedMk_proj,
-    hx]) hmem ?_⟩
+  refine ⟨((hp.associatedCore ρ).indexAt x, w),
+    ((hp.associatedCore ρ).localTriv _).eq_of_apply_eq (by rwa [associatedMk_proj, hx]) hmem ?_⟩
   rw [localTriv_associatedMk_self, VectorBundleCore.localTriv_apply, hx]
   exact Prod.ext rfl ((hp.associatedCore ρ).coordChange_self _ x hmem w).symm
 
@@ -549,7 +542,7 @@ the value of `σ` at `p y`. -/
 theorem associatedMk_associatedSectionEquiv (σ : ∀ x, (hp.associatedCore ρ).Fiber x) (y : E) :
     hp.associatedMk ρ (y, (hp.associatedSectionEquiv ρ σ : E → F) y) = ⟨p y, σ (p y)⟩ := by
   have hy := hp.mem_associatedCore_baseSet_self ρ y
-  refine hp.eq_of_localTriv_eq ρ hy hy ?_
+  refine ((hp.associatedCore ρ).localTriv y).eq_of_apply_eq hy hy ?_
   rw [localTriv_associatedMk_self, associatedSectionEquiv_apply_coe]
   exact ((hp.associatedCore ρ).localTriv y).mk_proj_snd' (x := ⟨p y, σ (p y)⟩) hy
 
