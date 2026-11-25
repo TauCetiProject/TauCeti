@@ -131,7 +131,7 @@ theorem sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app
 `R⁰Γ(F) ≅ Γ(F)` of the zeroth derived functor of the left exact functor `Γ`, the comparison
 `H⁰(X, F) ≅ R⁰Γ(F)` is the inverse of the identification
 `TauCeti.Topology.sectionsIsoCechZero` of `H⁰(X, F)` with the global sections of `F`. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem cechCohomologyIsoRightDerivedΓ_hom_app_comp_rightDerivedZeroIsoSelf_hom
     (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :
     (cechCohomologyIsoRightDerivedΓ 0).hom.app F ≫
