@@ -25,11 +25,10 @@ unit of `R` (`WittVector.isUnit_iff_isUnit_coeff_zero`); the inverse is Mathlib'
 `p u`, so a sum `[a] + p u` has Witt coordinates `a` in degree `0` and `u_n ^ p` in degree `n + 1`
 (`WittVector.teichmuller_add_p_mul_coeff_succ`).
 
-Consequently the Jacobson radical of `𝕎 R` consists of the Witt vectors whose zeroth coordinate
-lies in the Jacobson radical of `R` (`WittVector.mem_jacobson_iff`), and contains `p`
-(`WittVector.p_mem_jacobson`). Over a perfect ring, where `p ^ n 𝕎 R` consists of the Witt
-vectors whose first `n` coordinates vanish, `x` is `p ^ n` times a unit exactly when
-`x₀ = ⋯ = x_{n-1} = 0` and `xₙ` is a unit (`WittVector.associated_p_pow_iff`).
+Consequently `p` lies in the Jacobson radical of `𝕎 R` (`WittVector.p_mem_jacobson`). Over a
+perfect ring, where `p ^ n 𝕎 R` consists of the Witt vectors whose first `n` coordinates vanish,
+`x` is `p ^ n` times a unit exactly when `x₀ = ⋯ = x_{n-1} = 0` and `xₙ` is a unit
+(`WittVector.associated_p_pow_iff`).
 
 ## Main results
 
@@ -44,8 +43,6 @@ vectors whose first `n` coordinates vanish, `x` is `p ^ n` times a unit exactly 
 * `WittVector.teichmuller_add_p_mul_coeff_zero`, `WittVector.teichmuller_add_p_mul_coeff_succ`:
   the Witt coordinates of `[a] + p u` in characteristic `p`.
 * `WittVector.isUnit_iff_isUnit_coeff_zero`: in characteristic `p`, `x` is a unit iff `x₀` is.
-* `WittVector.mem_jacobson_iff`: in characteristic `p`, `x` lies in the Jacobson radical of
-  `𝕎 R` iff `x₀` lies in that of `R`.
 * `WittVector.p_mem_jacobson`: in characteristic `p`, `p` lies in the Jacobson radical of `𝕎 R`.
 * `WittVector.associated_p_pow_iff`: over a perfect ring, `x` is `p ^ n` times a unit iff
   `x₀ = ⋯ = x_{n-1} = 0` and `xₙ` is a unit.
@@ -150,14 +147,6 @@ Witt vector is a unit exactly when its zeroth Witt coordinate is a unit of `R`. 
 theorem isUnit_iff_isUnit_coeff_zero {x : 𝕎 R} : IsUnit x ↔ IsUnit (x.coeff 0) :=
   ⟨fun h ↦ by simpa using h.map (constantCoeff (p := p) (R := R)),
     fun ⟨_, ha⟩ ↦ (mkUnit ha.symm).isUnit⟩
-
-/-- **The Jacobson radical of Witt vectors in characteristic `p`.** Over a ring `R` of
-characteristic `p`, a Witt vector lies in the Jacobson radical of `𝕎 R` exactly when its zeroth
-Witt coordinate lies in the Jacobson radical of `R`. -/
-theorem mem_jacobson_iff {x : 𝕎 R} : x ∈ Ring.jacobson (𝕎 R) ↔ x.coeff 0 ∈ Ring.jacobson R := by
-  simp only [Ring.mem_jacobson_iff, isUnit_iff_isUnit_coeff_zero, add_coeff_zero, mul_coeff_zero,
-    one_coeff_zero]
-  exact ⟨fun h r ↦ by simpa using h (teichmuller p r), fun h y ↦ h _⟩
 
 /-- In characteristic `p`, `p` lies in the Jacobson radical of `𝕎 R`: every `p y + 1` has zeroth
 Witt coordinate `1`. -/
