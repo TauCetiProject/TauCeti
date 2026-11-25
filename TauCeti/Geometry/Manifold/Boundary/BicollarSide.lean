@@ -46,15 +46,16 @@ at positive normal coordinate, where the truncation of the normal coordinate at 
 
 * `TauCeti.IsBicollar.sideChartedSpace`: the charted-space structure on a side of a bicollar,
   modelled on `EuclideanHalfSpace (n + 1)`. Every charted space is a `C⁰` manifold, so this is a
-  topological manifold with boundary, and it is a smooth one when the bicollar is smooth.
+  topological manifold with boundary, and it is a smooth one when the bicollar is a smooth local
+  diffeomorphism.
 
 ## Main results
 
 * `TauCeti.IsBicollar.boundary_sideChartedSpace`: the manifold boundary of the side is the image
   of `f`.
 * `TauCeti.IsBicollar.interior_sideChartedSpace`: its manifold interior is the rest of the side.
-* `TauCeti.IsBicollar.isManifold_sideChartedSpace`: the side of a smooth bicollar is a smooth
-  manifold with boundary.
+* `TauCeti.IsBicollar.isManifold_sideChartedSpace`: when the bicollar is a smooth local
+  diffeomorphism, the side is a smooth manifold with boundary.
 * `TauCeti.IsBicollar.contMDiff_subtypeVal_sideChartedSpace`: its inclusion into `M` is smooth.
 
 ## Implementation notes
