@@ -28,14 +28,16 @@ compact support in `W`, so the Riesz representation for vector fields
 
 The formula `X ↦ ∫ ⟪η, X⟫ d‖δV‖` extends `δV` to the compactly supported continuous vector
 fields on `W` (`Euclidean.firstVariationExt`, the extension `Distribution.extendContinuous` of
-`δV` through `L¹(‖δV‖)`). The extension has locally finite mass, it is the
+`δV` through `L¹(‖δV‖)`). The extension satisfies the same local bound
+`|δV(X)| ≤ ∫ |X| d‖δV‖` (`Euclidean.enorm_firstVariationExt_apply_le`), it is the
 only extension with locally finite mass (`Euclidean.eq_firstVariationExt`), and its mass
 measure is `‖δV‖` (`Euclidean.massMeasure_firstVariationExt`). Hence the supremum defining
 `‖δV‖(U)` may equally be taken over continuous fields
 (`Euclidean.firstVariationMass_eq_iSup_firstVariationExt`). This is the first part of Simon,
 *Lectures on Geometric Measure Theory*, 39.3, in Euclidean space.
 
-When `V` does not have locally bounded first variation, `‖δV‖` and `η` are `0` by convention.
+When `V` does not have locally bounded first variation, `‖δV‖`, `η` and the extension are `0` by
+convention.
 
 ## Main results
 
@@ -219,6 +221,19 @@ theorem firstVariationExt_apply (X : 𝓓^{0}(W, E)) :
     firstVariationExt V X = ∫ x, ⟪firstVariationVector V x, X x⟫ ∂firstVariationMeasure V :=
   extendContinuous_apply_eq_integral_inner X
 
+/-- If `V` does not have locally bounded first variation, its extended first variation is `0`. -/
+@[simp]
+theorem firstVariationExt_of_not_hasLocallyBoundedFirstVariation
+    (hV : ¬HasLocallyBoundedFirstVariation V) : firstVariationExt V = 0 :=
+  extendContinuous_of_not_hasLocallyFiniteMass
+    (hasLocallyBoundedFirstVariation_iff_hasLocallyFiniteMass.not.1 hV)
+
+/-- **Domination of the extended first variation by `‖δV‖`.**
+`|firstVariationExt V X| ≤ ∫ |X| d‖δV‖`. -/
+theorem enorm_firstVariationExt_apply_le (X : 𝓓^{0}(W, E)) :
+    ‖firstVariationExt V X‖ₑ ≤ ∫⁻ x, ‖X x‖ₑ ∂firstVariationMeasure V :=
+  enorm_extendContinuous_apply_le X
+
 /-- **The extension extends `δV`.** If `V` has locally bounded first variation, the extended first
 variation of a `C¹` field is its first variation. -/
 @[simp]
@@ -277,7 +292,7 @@ theorem support_firstVariationMeasure_subset :
   obtain ⟨U, hU, hU0⟩ := Measure.notMem_support_iff_exists.1 hx'
   obtain ⟨U', hU'U, hU'o, hxU'⟩ := mem_nhds_iff.1 hU
   exact (notMem_dsupport_iff x).2 ⟨U', fun X hXU' ↦ firstVariation_eq_zero_of_weight_eq_zero
-    hU'o.measurableSet hXU' (measure_mono_null hU'U hU0), hU'o, hxU'⟩ hx
+    hXU' (measure_mono_null hU'U hU0), hU'o, hxU'⟩ hx
 
 /-- **Locality of the extended first variation.** The extended first variation of a continuous
 field depends only on its values on the support of the weight `spt ‖V‖`. -/

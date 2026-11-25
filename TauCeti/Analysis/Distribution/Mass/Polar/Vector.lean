@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Distribution.Mass.Measure
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.Mass.Polar.Density
-import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Support
@@ -63,12 +62,9 @@ pairing that is not almost everywhere strongly measurable is `0` by convention.
 * `Distribution.massMeasure_eq_of_apply_eq_integral_inner`: a Radon measure `μ` against which
   `T` is represented by an almost everywhere strongly measurable field of norm one
   `μ`-almost everywhere is the mass measure of `T`.
-* `Distribution.apply_eq_zero_of_hasLocallyFiniteMass`: a map of locally finite mass that vanishes
-  on smooth tests vanishes.
 * `Distribution.extendContinuous_apply_eq_integral_inner`: the extension
   `Distribution.extendContinuous T` of `T` to compactly supported continuous tests is
   `φ ↦ ∫ ⟪η x, φ x⟫ d‖T‖`.
-* `Distribution.extendContinuous_unique`: it is the only extension of locally finite mass.
 
 ## References
 
@@ -107,30 +103,6 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensi
 private theorem smoothRestrict_apply (hT : HasLocallyFiniteMass T) (ψ : 𝓓(Ω, F)) :
     smoothRestrict T hT ψ = T (monoCLM ℝ ψ) :=
   rfl
-
-/-- A test `φ` of class `C^n` is approximated by smooth tests in a compact set of finite local
-mass: there is a compact `K ⊆ Ω` with `localMass T K` finite and compact, measurable preimage in
-`Ω`, and for every `ε > 0` a smooth test `ψ` such that `φ - ψ` is supported in `K` and bounded by
-`ε`, so that `‖T (φ - ψ)‖ₑ ≤ localMass T K * ε`. -/
-theorem exists_isCompact_localMass_ne_top_approx (hT : HasLocallyFiniteMass T)
-    (φ : 𝓓^{n}(Ω, F)) :
-    ∃ K : Set E, localMass T K ≠ ⊤ ∧ IsCompact ((↑) ⁻¹' K : Set Ω) ∧
-      MeasurableSet ((↑) ⁻¹' K : Set Ω) ∧ ∀ ε : ℝ, 0 < ε → ∃ ψ : 𝓓(Ω, F),
-        tsupport (⇑φ - ⇑ψ) ⊆ K ∧ (∀ x, ‖φ x - ψ x‖ ≤ ε) ∧
-          ‖T (φ - monoCLM ℝ ψ)‖ₑ ≤ localMass T K * ENNReal.ofReal ε := by
-  obtain ⟨K, hK, hKΩ, hφK, happrox⟩ := exists_isCompact_forall_exists_dist_le φ
-  have hKc := Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
-  refine ⟨K, (hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT K hK hKΩ, hKc, hKc.measurableSet,
-    fun ε hε => ?_⟩
-  obtain ⟨ψ, hψK, hψφ⟩ := happrox ε hε
-  have hsub : tsupport (⇑φ - ⇑ψ) ⊆ K := (tsupport_sub _ _).trans (union_subset hφK hψK)
-  have hε' (x : E) : ‖φ x - ψ x‖ ≤ ε := by
-    rw [← dist_eq_norm_sub']
-    exact hψφ x
-  refine ⟨ψ, hsub, hε', enorm_apply_le_localMass_mul_of_forall_enorm_le T
-    (by simpa [coe_monoCLM_of_le le_top le_rfl] using hsub) fun x => ?_⟩
-  rw [← ofReal_norm]
-  simpa [coe_monoCLM_of_le le_top le_rfl] using ENNReal.ofReal_le_ofReal (hε' x)
 
 /-- The restriction of `T` to smooth tests has the same mass measure as `T`. -/
 private theorem massMeasure_smoothRestrict (hT : HasLocallyFiniteMass T) :
@@ -428,18 +400,6 @@ end Uniqueness
 
 section Continuous
 
-/-- **Smooth tests determine a map of locally finite mass.** A real-linear map on tests of class
-`C^n` with locally finite mass that vanishes on smooth tests vanishes: smooth tests approximate a
-test uniformly, with supports in a fixed compact set of finite local mass. -/
-theorem apply_eq_zero_of_hasLocallyFiniteMass (hT : HasLocallyFiniteMass T)
-    (h : ∀ ψ : 𝓓(Ω, F), T (monoCLM ℝ ψ) = 0) (φ : 𝓓^{n}(Ω, F)) : T φ = 0 := by
-  obtain ⟨K, hKT, -, -, happrox⟩ := exists_isCompact_localMass_ne_top_approx hT φ
-  refine eNorm_eq_zero.1 (nonpos_iff_eq_zero.1
-    (ENNReal.le_of_forall_pos_le_add_ofReal_mul hKT fun ε hε => ?_))
-  obtain ⟨ψ, -, -, hψ⟩ := happrox ε hε
-  rw [map_sub, h ψ, sub_zero, mul_comm] at hψ
-  rwa [zero_add]
-
 /-- **The extension is integration against the polar vector field.** For every compactly
 supported continuous test `φ`, `extendContinuous T φ = ∫ ⟪η x, φ x⟫ d‖T‖`, where `η` is the polar
 vector field of `T`. -/
@@ -447,10 +407,7 @@ theorem extendContinuous_apply_eq_integral_inner (φ : 𝓓^{0}(Ω, F)) :
     extendContinuous T φ = ∫ x, ⟪polarVector T x, φ x⟫ ∂massMeasure T := by
   by_cases hT : HasLocallyFiniteMass T
   swap
-  · have h := enorm_extendContinuous_apply_le (T := T) φ
-    simp only [massMeasure_of_not_hasLocallyFiniteMass hT, lintegral_zero_measure,
-      nonpos_iff_eq_zero, eNorm_eq_zero] at h
-    simp [h, massMeasure_of_not_hasLocallyFiniteMass hT]
+  · simp [hT]
   have hS := hasLocallyFiniteMass_extendContinuous (T := T)
   have hμ := massMeasure_extendContinuous (T := T)
   have hη : polarVector (extendContinuous T) =ᵐ[massMeasure T] polarVector T := by
@@ -461,25 +418,6 @@ theorem extendContinuous_apply_eq_integral_inner (φ : 𝓓^{0}(Ω, F)) :
   refine integral_congr_ae ?_
   filter_upwards [hη] with x hx
   rw [hx]
-
-/-- **Uniqueness of the extension.** A real-linear map on compactly supported continuous tests
-with locally finite mass that agrees with `T` on the tests of class `C^n` is the extension
-`Distribution.extendContinuous T`. -/
-theorem extendContinuous_unique {L : 𝓓^{0}(Ω, F) →ₗ[ℝ] ℝ} (hL : HasLocallyFiniteMass L)
-    (h : ∀ φ : 𝓓^{n}(Ω, F), L (monoCLM ℝ φ) = T φ) :
-    L = (extendContinuous T : 𝓓^{0}(Ω, F) →ₗ[ℝ] ℝ) := by
-  have hT : HasLocallyFiniteMass T := by
-    convert hL.comp_monoCLM (Ω' := Ω) (m := n) using 1
-    exact funext fun φ => (h φ).symm
-  have hsub : HasLocallyFiniteMass (L - (extendContinuous T : 𝓓^{0}(Ω, F) →ₗ[ℝ] ℝ)) :=
-    hL.sub hasLocallyFiniteMass_extendContinuous
-  refine LinearMap.ext fun φ => sub_eq_zero.1 ?_
-  refine apply_eq_zero_of_hasLocallyFiniteMass hsub (fun ψ => ?_) φ
-  have hψ : (monoCLM ℝ ψ : 𝓓^{0}(Ω, F)) = monoCLM ℝ (monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) :=
-    TestFunction.ext fun x => by
-      simp [coe_monoCLM_of_le le_top le_rfl, coe_monoCLM_of_le zero_le le_rfl]
-  rw [LinearMap.sub_apply, hψ, h, ContinuousLinearMap.coe_coe, extendContinuous_monoCLM hT,
-    sub_self]
 
 end Continuous
 

@@ -248,17 +248,18 @@ theorem hasLocallyBoundedFirstVariation_smul_iff {c : ℝ≥0} (hc : c ≠ 0) :
     ENNReal.mul_eq_top, ENNReal.coe_ne_top, false_and, ENNReal.coe_eq_zero, hc, not_false_eq_true,
     true_and, or_false]
 
-/-- The first variation of a field supported in a measurable set of zero weight is `0`. -/
-theorem firstVariation_eq_zero_of_weight_eq_zero (hU : MeasurableSet U) {X : 𝓓^{1}(W, E)}
-    (hXU : tsupport X ⊆ U) (h : weight V U = 0) : firstVariation V X = 0 := by
+/-- The first variation of a field supported in a set of zero weight is `0`. -/
+theorem firstVariation_eq_zero_of_weight_eq_zero {X : 𝓓^{1}(W, E)} (hXU : tsupport X ⊆ U)
+    (h : weight V U = 0) : firstVariation V X = 0 := by
   by_cases hV : IsFiniteMeasureOnCompacts V
   swap
   · simp [firstVariation_of_not_isFiniteMeasureOnCompacts hV]
   rw [firstVariation_apply]
   refine integral_eq_zero_of_ae ?_
-  rw [weight_apply hU] at h
+  rw [← measure_toMeasurable, weight_apply (measurableSet_toMeasurable _ _)] at h
   filter_upwards [measure_eq_zero_iff_ae_notMem.1 h] with p hp
-  exact tangentialDivergence_eq_zero_of_notMem_tsupport (fun hx ↦ hp (hXU hx)) _
+  exact tangentialDivergence_eq_zero_of_notMem_tsupport
+    (fun hx ↦ hp (subset_toMeasurable _ _ (hXU hx))) _
 
 /-- **Lower semicontinuity of the total first variation** (Simon, *Lectures on Geometric Measure
 Theory*, 40.7(1)). If `V_j → V` as varifolds, then `‖δV‖(U) ≤ lim inf_j ‖δV_j‖(U)` for every
