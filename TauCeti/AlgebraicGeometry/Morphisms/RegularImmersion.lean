@@ -28,6 +28,10 @@ immersion of codimension `d` exactly when its ideal sheaf `i.ker` is regular of 
 * `AlgebraicGeometry.Scheme.Hom.isRegularImmersion_iff_of_isClosedImmersion`: a closed immersion
   is a regular immersion of codimension `d` exactly when its ideal sheaf is regular of
   codimension `d`.
+* `AlgebraicGeometry.Scheme.Hom.isRegularImmersion_zero_of_isIso`: an isomorphism, for instance
+  the identity, is a regular immersion of codimension zero.
+* `AlgebraicGeometry.Scheme.Hom.isRegularImmersion_of_isEmpty`: an immersion with empty source is
+  a regular immersion of every codimension.
 
 ## References
 
@@ -73,5 +77,19 @@ theorem isRegularImmersion_iff_of_isClosedImmersion {i : X ⟶ Y} [IsClosedImmer
       ← (IsOpenImmersion.isPullback_lift_id i i.coborderRange.ι _).isoPullback_hom_fst,
       Scheme.Hom.ker_comp_of_isIso]
   rw [isRegularImmersion_iff, hker, IdealSheafData.isLocallyRegular_comap_iff_of_isIso]
+
+/-- **An isomorphism is a regular immersion of codimension zero**: its ideal sheaf is zero. -/
+theorem isRegularImmersion_zero_of_isIso (i : X ⟶ Y) [IsIso i] : i.IsRegularImmersion 0 := by
+  rw [isRegularImmersion_iff_of_isClosedImmersion, i.ker_eq_bot_of_isIso]
+  exact IdealSheafData.isLocallyRegular_bot
+
+/-- **An immersion with empty source is a regular immersion of every codimension**: its ideal sheaf
+has empty support, so the condition is vacuous. -/
+theorem isRegularImmersion_of_isEmpty (i : X ⟶ Y) [IsImmersion i] [IsEmpty X] (d : ℕ) :
+    i.IsRegularImmersion d := by
+  refine IdealSheafData.isLocallyRegular_of_support_eq_bot ?_ d
+  refine SetLike.coe_injective ?_
+  rw [Scheme.Hom.support_ker, Set.range_eq_empty, closure_empty]
+  rfl
 
 end AlgebraicGeometry.Scheme.Hom
