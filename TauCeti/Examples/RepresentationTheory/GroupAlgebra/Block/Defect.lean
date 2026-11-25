@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Defs
-public import TauCeti.RepresentationTheory.GroupAlgebra.BlockDefect
+public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Defect
 
 /-!
 # The defect of the block of `k[C_p]`
@@ -37,12 +37,9 @@ theorem isDefectGroup_top :
 /-- **The defect of `C_p` at `p` is `1`.** The defect of `1 ∈ k[C_p]` is the exponent `1` of
 `|C_p| = p ^ 1`, not the order `p` of its defect group. -/
 theorem blockDefect_one : blockDefect p (1 : MonoidAlgebra k (Multiplicative (ZMod p))) = 1 := by
-  have h : ∃ D, IsDefectGroup k p (1 : MonoidAlgebra k (Multiplicative (ZMod p))) D :=
-    ⟨⊤, isDefectGroup_top p k⟩
-  have htop : h.choose = ⊤ :=
-    (isDefectGroup_iff.1 h.choose_spec).2.2 ⊤ (isDefectGroup_top p k).isPGroup
-      (isDefectGroup_top p k).brauerProjection_ne_zero le_top |>.symm
-  simp only [blockDefect_def, h, ↓reduceDIte, htop, Subgroup.card_top]
-  simp [Nat.card_eq_fintype_card, (Fact.out : p.Prime).factorization_self]
+  refine blockDefect_eq_of_forall_card (isDefectGroup_top p k) fun D hD => ?_
+  rw [(isDefectGroup_iff.1 hD).2.2 ⊤ (isDefectGroup_top p k).isPGroup
+    (isDefectGroup_top p k).brauerProjection_ne_zero le_top |>.symm, Subgroup.card_top]
+  simp [Nat.card_eq_fintype_card]
 
 end TauCeti.Examples.BlockDefectCyclic

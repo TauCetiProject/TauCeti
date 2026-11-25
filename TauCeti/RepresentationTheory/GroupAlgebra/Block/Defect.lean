@@ -35,6 +35,8 @@ and defect `1`, where `|C_p| = p`.
 
 ## Main results
 
+* `TauCeti.blockDefect_eq_of_forall_card`: if every defect group of `e` has order `p ^ d`, then
+  `blockDefect p e = d`; `TauCeti.blockDefect_zero`: `0` has defect `0`.
 * `TauCeti.card_eq_pow_blockDefect`: every defect group of a primitive idempotent of `R[G]^G` has
   order `p ^ blockDefect p e`.
 * `TauCeti.blockDefect_eq_zero_iff`: the defect is `0` exactly when `1` is a defect group.
@@ -78,12 +80,37 @@ theorem blockDefect_def (p : ℕ) (e : MonoidAlgebra R G) :
       if h : ∃ D, IsDefectGroup R p e D then (Nat.card h.choose).factorization p else 0 := by
   rw [blockDefect]
 
+/-- An element with no defect group has defect `0`. -/
+theorem blockDefect_of_forall_not_isDefectGroup {p : ℕ} {e : MonoidAlgebra R G}
+    (h : ∀ D, ¬IsDefectGroup R p e D) : blockDefect p e = 0 := by
+  simp [blockDefect_def, h]
+
+/-- The element `0` has defect `0`: it has no defect group, since `Br_D(0) = 0`. -/
+@[simp]
+theorem blockDefect_zero (p : ℕ) : blockDefect p (0 : MonoidAlgebra R G) = 0 :=
+  blockDefect_of_forall_not_isDefectGroup fun _ hD => hD.brauerProjection_ne_zero (map_zero _)
+
+/-- **Computing the defect.** If `e` has a defect group and every defect group of `e` has order
+`p ^ d`, then `e` has defect `d`. -/
+theorem blockDefect_eq_of_forall_card {p : ℕ} [hp : Fact p.Prime] {e : MonoidAlgebra R G}
+    {D : Subgroup G} (hD : IsDefectGroup R p e D) {d : ℕ}
+    (h : ∀ D', IsDefectGroup R p e D' → Nat.card D' = p ^ d) : blockDefect p e = d := by
+  have he : ∃ D, IsDefectGroup R p e D := ⟨D, hD⟩
+  simp only [blockDefect_def, he, ↓reduceDIte]
+  rw [h _ he.choose_spec, hp.out.factorization_pow, Finsupp.single_eq_same]
+
 end Def
 
 section Primitive
 
 variable {R G : Type*} [CommRing R] [IsArtinianRing R] [Group G] [Finite G] {p : ℕ}
   [hp : Fact p.Prime] [CharP R p] {e : conjInvariants R (⊤ : Subgroup G)}
+
+omit [IsArtinianRing R] [Finite G] [hp : Fact p.Prime] [CharP R p] in
+/-- A primitive idempotent of `R[G]^G` has a defect group: it is nonzero. -/
+theorem IsPrimitiveIdempotent.exists_isDefectGroup (p : ℕ) (he : IsPrimitiveIdempotent e) :
+    ∃ D, IsDefectGroup R p (e : MonoidAlgebra R G) D :=
+  TauCeti.exists_isDefectGroup p fun h => he.ne_zero (Subtype.ext h)
 
 /-- **The order of a defect group.** Every defect group `D` of a primitive idempotent `e` of
 `R[G]^G`, with `R` an Artinian ring of characteristic `p`, has order `p ^ blockDefect p e`: the
@@ -92,19 +119,17 @@ chosen in the definition, a power of `p`. -/
 theorem card_eq_pow_blockDefect (he : IsPrimitiveIdempotent e) {D : Subgroup G}
     (hD : IsDefectGroup R p (e : MonoidAlgebra R G) D) :
     Nat.card D = p ^ blockDefect p (e : MonoidAlgebra R G) := by
-  have h : ∃ D, IsDefectGroup R p (e : MonoidAlgebra R G) D := ⟨D, hD⟩
-  simp only [blockDefect_def, h, ↓reduceDIte]
-  obtain ⟨g, rfl⟩ := isDefectGroup_conj he h.choose_spec hD
-  obtain ⟨n, hn⟩ := IsPGroup.iff_card.1 h.choose_spec.isPGroup
-  rw [card_conj_smul_eq, hn, hp.out.factorization_pow, Finsupp.single_eq_same]
+  obtain ⟨n, hn⟩ := IsPGroup.iff_card.1 hD.isPGroup
+  rwa [blockDefect_eq_of_forall_card hD fun D' hD' => by
+    obtain ⟨g, rfl⟩ := isDefectGroup_conj he hD hD'
+    rw [card_conj_smul_eq, hn]]
 
 /-- **Defect zero.** A primitive idempotent `e` of `R[G]^G`, with `R` an Artinian ring of
 characteristic `p`, has defect `0` exactly when the trivial subgroup is a defect group of `e`. -/
 theorem blockDefect_eq_zero_iff (he : IsPrimitiveIdempotent e) :
     blockDefect p (e : MonoidAlgebra R G) = 0 ↔ IsDefectGroup R p (e : MonoidAlgebra R G) ⊥ := by
   refine ⟨fun h0 => ?_, fun hD => ?_⟩
-  · obtain ⟨D, hD⟩ := exists_isDefectGroup (R := R) p
-      (show (e : MonoidAlgebra R G) ≠ 0 from fun h => he.ne_zero (Subtype.ext h))
+  · obtain ⟨D, hD⟩ := he.exists_isDefectGroup p
     rwa [← Subgroup.card_eq_one.1 (by rw [card_eq_pow_blockDefect he hD, h0, pow_zero])]
   · have := card_eq_pow_blockDefect he hD
     simp only [Subgroup.mem_bot, Nat.card_unique, eq_comm (a := 1)] at this
@@ -115,8 +140,7 @@ with `R` an Artinian ring of characteristic `p`, `blockDefect p e ≤ a` where `
 a defect group lies in a Sylow `p`-subgroup. -/
 theorem blockDefect_le (he : IsPrimitiveIdempotent e) :
     blockDefect p (e : MonoidAlgebra R G) ≤ (Nat.card G).factorization p := by
-  obtain ⟨D, hD⟩ := exists_isDefectGroup (R := R) p
-    (show (e : MonoidAlgebra R G) ≠ 0 from fun h => he.ne_zero (Subtype.ext h))
+  obtain ⟨D, hD⟩ := he.exists_isDefectGroup p
   obtain ⟨S, hS⟩ := hD.isPGroup.exists_le_sylow
   have hdvd := Subgroup.card_dvd_of_le hS
   rw [card_eq_pow_blockDefect he hD, S.card_eq_multiplicity] at hdvd
@@ -130,8 +154,7 @@ theorem blockDefect_eq_iff_forall_sylow (he : IsPrimitiveIdempotent e) :
     blockDefect p (e : MonoidAlgebra R G) = (Nat.card G).factorization p ↔
       ∀ S : Sylow p G, IsDefectGroup R p (e : MonoidAlgebra R G) S := by
   refine ⟨fun h S => ?_, fun h => ?_⟩
-  · obtain ⟨D, hD⟩ := exists_isDefectGroup (R := R) p
-      (show (e : MonoidAlgebra R G) ≠ 0 from fun h => he.ne_zero (Subtype.ext h))
+  · obtain ⟨D, hD⟩ := he.exists_isDefectGroup p
     obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G
       (Sylow.ofCard D (by rw [card_eq_pow_blockDefect he hD, h])) S
     rw [← hg, Sylow.coe_subgroup_smul, Sylow.coe_ofCard]
