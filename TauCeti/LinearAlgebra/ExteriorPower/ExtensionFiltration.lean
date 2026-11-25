@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.ExteriorPower.Prod
+public import TauCeti.LinearAlgebra.ExteriorPower.Prod.Basic
 
 /-!
 # The exterior-power extension filtration
@@ -215,27 +215,29 @@ private theorem one_mem_mulTop : (1 : ExteriorAlgebra R M) ∈ mulTop f 0 := by
   rw [← mul_one (1 : ExteriorAlgebra R M)]
   exact mul_mem_mul ⟨1, SetLike.GradedOne.one_mem, by simp⟩ mem_top
 
+/-- `f(⋀ⁱ M') · ⋀ M` lies in a submodule `P` exactly when every product `f a * b` with
+`a ∈ ⋀ⁱ M'` does. -/
+private theorem mulTop_le_iff {i : ℕ} {P : Submodule R (ExteriorAlgebra R M)} :
+    mulTop f i ≤ P ↔ ∀ a ∈ ⋀[R]^i M', ∀ b, ExteriorAlgebra.map f a * b ∈ P := by
+  simp only [mulTop, Submodule.mul_le, mem_map, mem_top, forall_const, forall_exists_index,
+    and_imp, forall_apply_eq_imp_iff₂, AlgHom.toLinearMap_apply]
+
 private theorem ι_mul_mem_mulTop (z : M) (i : ℕ) (x : ExteriorAlgebra R M)
     (hx : x ∈ mulTop f i) : ι R z * x ∈ mulTop f i := by
-  induction hx using Submodule.mul_induction_on' with
-  | mem_mul_mem a ha b _ =>
-    obtain ⟨a', ha', rfl⟩ := ha
-    have ha : ExteriorAlgebra.map f a' ∈ ⋀[R]^i M :=
-      f.exteriorAlgebra_map_mem_exteriorPower ha'
-    rw [AlgHom.toLinearMap_apply, ← mul_assoc,
-      TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem
-      (TauCeti.ExteriorAlgebra.ι_mem_exteriorPower_one z) ha, smul_mul_assoc, mul_assoc]
-    exact smul_mem _ _ (mul_mem_mul ⟨a', ha', rfl⟩ mem_top)
-  | add x _ y _ hx hy => rw [mul_add]; exact add_mem hx hy
+  refine (mulTop_le_iff f (P := (mulTop f i).comap (LinearMap.mulLeft R (ι R z)))).mpr
+    (fun a ha b ↦ ?_) hx
+  rw [mem_comap, LinearMap.mulLeft_apply, ← mul_assoc,
+    TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem
+    (TauCeti.ExteriorAlgebra.ι_mem_exteriorPower_one z)
+    (f.exteriorAlgebra_map_mem_exteriorPower ha), smul_mul_assoc, mul_assoc]
+  exact smul_mem _ _ (mul_mem_mul ⟨a, ha, rfl⟩ mem_top)
 
 private theorem ι_mul_mem_mulTop_succ (y : M') (i : ℕ) (x : ExteriorAlgebra R M)
     (hx : x ∈ mulTop f i) : ι R (f y) * x ∈ mulTop f (i + 1) := by
-  induction hx using Submodule.mul_induction_on' with
-  | mem_mul_mem a ha b _ =>
-    obtain ⟨a', ha', rfl⟩ := ha
-    rw [AlgHom.toLinearMap_apply, ← mul_assoc, ← ExteriorAlgebra.map_apply_ι, ← map_mul]
-    exact mul_mem_mul ⟨_, TauCeti.ExteriorAlgebra.ι_mul_mem_exteriorPower y ha', rfl⟩ mem_top
-  | add x _ y _ hx hy => rw [mul_add]; exact add_mem hx hy
+  refine (mulTop_le_iff f (P := (mulTop f (i + 1)).comap (LinearMap.mulLeft R (ι R (f y))))).mpr
+    (fun a ha b ↦ ?_) hx
+  rw [mem_comap, LinearMap.mulLeft_apply, ← mul_assoc, ← ExteriorAlgebra.map_apply_ι, ← map_mul]
+  exact mul_mem_mul ⟨_, TauCeti.ExteriorAlgebra.ι_mul_mem_exteriorPower y ha, rfl⟩ mem_top
 
 /-- Every wedge of `n` vectors whose factors indexed by `s` lie in the range of `f` belongs to
 `f(⋀ᵏ M') · ⋀ M` for `k = s.card`. -/
@@ -258,16 +260,14 @@ private theorem ιMulti_mem_mulTop_of_le {n i : ℕ} {v : Fin n → M} {s : Fins
 private theorem proj_mem_range_of_mem_mulTop (i j : ℕ) (x : ExteriorAlgebra R M)
     (hx : x ∈ mulTop f i) :
     TauCeti.exteriorPower.proj R M (i + j) x ∈ LinearMap.range (f.exteriorPowerWedge i j) := by
-  induction hx using Submodule.mul_induction_on' with
-  | mem_mul_mem a ha b _ =>
-    obtain ⟨a', ha', rfl⟩ := ha
-    refine ⟨⟨a', ha'⟩ ⊗ₜ TauCeti.exteriorPower.proj R M j b, Subtype.ext ?_⟩
-    rw [LinearMap.coe_exteriorPowerWedge_tmul, TauCeti.exteriorPower.proj_apply,
-      TauCeti.exteriorPower.proj_apply, AlgHom.toLinearMap_apply,
-      DirectSum.coe_decompose_mul_of_left_mem_of_le (fun i ↦ ⋀[R]^i M)
-        (f.exteriorAlgebra_map_mem_exteriorPower ha') (Nat.le_add_right _ _),
-      Nat.add_sub_cancel_left]
-  | add x _ y _ hx hy => rw [map_add]; exact add_mem hx hy
+  refine (mulTop_le_iff f (P := (LinearMap.range (f.exteriorPowerWedge i j)).comap
+    (TauCeti.exteriorPower.proj R M (i + j)))).mpr (fun a ha b ↦ ?_) hx
+  refine ⟨⟨a, ha⟩ ⊗ₜ TauCeti.exteriorPower.proj R M j b, Subtype.ext ?_⟩
+  rw [LinearMap.coe_exteriorPowerWedge_tmul, TauCeti.exteriorPower.proj_apply,
+    TauCeti.exteriorPower.proj_apply,
+    DirectSum.coe_decompose_mul_of_left_mem_of_le (fun i ↦ ⋀[R]^i M)
+      (f.exteriorAlgebra_map_mem_exteriorPower ha) (Nat.le_add_right _ _),
+    Nat.add_sub_cancel_left]
 
 /-- Every wedge product `f a ∧ b` with `a ∈ ⋀ⁱ M'` and `b ∈ ⋀ʲ M` lies in `Fⁱ ⋀ⁱ⁺ʲ M` for
 `N = range f`. -/
@@ -387,16 +387,13 @@ theorem mem_exteriorPowerFiltration_range_inl_iff {n i : ℕ} {x : ⋀[R]^n (M �
     have hmem := Submodule.ιMulti_mem_mulTop_of_le (LinearMap.inl R M N) hs hv
     rw [LinearMap.mem_ker, LinearMap.comp_apply, LinearEquiv.coe_coe,
       ← DirectSum.apply_eq_component, prodEquivTensor_apply, _root_.exteriorPower.ιMulti_apply_coe]
-    have key : ∀ y ∈ Submodule.mulTop (LinearMap.inl R M N) i,
-        TensorProduct.map (proj R M k) (proj R N (n - k)) ((GradedTensorProduct.of R _ _).symm
-          (ExteriorAlgebra.prodEquivTensor R M N y)) = 0 := by
-      intro y hy
-      induction hy using Submodule.mul_induction_on' with
-      | mem_mul_mem a ha b _ =>
-        obtain ⟨a', ha', rfl⟩ := ha
-        exact map_proj_prodEquivTensor_map_inl_mul hk _ ha' b
-      | add y _ y' _ hy hy' => rw [map_add, map_add, map_add, hy, hy', add_zero]
-    exact key _ hmem
+    have key : Submodule.mulTop (LinearMap.inl R M N) i ≤ LinearMap.ker
+        (TensorProduct.map (proj R M k) (proj R N (n - k)) ∘ₗ
+          (GradedTensorProduct.of R (fun i ↦ ⋀[R]^i M) (fun i ↦ ⋀[R]^i N)).symm.toLinearMap ∘ₗ
+          (ExteriorAlgebra.prodEquivTensor R M N).toLinearMap) :=
+      (Submodule.mulTop_le_iff _).mpr fun a ha b ↦ map_proj_prodEquivTensor_map_inl_mul hk _ ha b
+    simpa only [LinearMap.mem_ker, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      AlgEquiv.toLinearMap_apply] using key hmem
   · intro hx
     rw [← (prodEquivTensor R M N n).symm_apply_apply x,
       ← DirectSum.sum_univ_of (prodEquivTensor R M N n x), map_sum]
