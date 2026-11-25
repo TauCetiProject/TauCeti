@@ -355,15 +355,16 @@ theorem slAbelianizationMulEquiv_of_isConj_T {g : SL(2, ℤ)} (h : IsConj T g) :
 /-- `(T B)⁶ = 1` for `B = S T S⁻¹ = (1 0; -1 1)`: the product `T B = (0 1; -1 1)` has
 order six. -/
 theorem T_mul_S_mul_T_mul_S_inv_pow_six : (T * (S * T * S⁻¹)) ^ 6 = (1 : SL(2, ℤ)) := by
-  -- With `T = S⁻¹ R` and `S⁻¹ = S³`, the product `T B = S⁻¹ R² S⁻¹` is the conjugate
+  -- With `T = S⁻¹ R` and `S³ = S⁻¹`, the product `T B = S⁻¹ R² S⁻¹` is the conjugate
   -- `S⁻¹ R⁵ S` of `R² S² = R⁵`, whose sixth power is `(R⁶)⁵ = 1`.
-  have hS : S ^ 2 * S = S⁻¹ :=
-    eq_inv_of_mul_eq_one_left (by rw [mul_assoc, ← sq, S_sq, neg_one_mul, neg_neg])
-  have h : T * (S * T * S⁻¹) = S⁻¹ * R ^ 5 * S⁻¹⁻¹ := by
-    rw [← S_inv_mul_R, mul_inv_cancel_left, inv_inv, show 5 = 2 + 3 from rfl, pow_add,
-      R_pow_three, ← S_sq, mul_assoc S⁻¹, mul_assoc, mul_assoc (R ^ 2), hS, ← mul_assoc R, ← sq]
-  rw [h, conj_pow, ← pow_mul, show 5 * 6 = 6 * 5 from rfl, pow_mul, R_pow_six, one_pow,
-    mul_one, mul_inv_cancel]
+  have hS : S ^ 3 = S⁻¹ := eq_inv_of_mul_eq_one_left (by rw [← pow_succ, S_pow_four])
+  have h : T * (S * T * S⁻¹) = S⁻¹ * R ^ 5 * S⁻¹⁻¹ :=
+    calc T * (S * T * S⁻¹) = S⁻¹ * R ^ 2 * S⁻¹ := by rw [← S_inv_mul_R, sq]; group
+      _ = S⁻¹ * R ^ 2 * S ^ 3 := by rw [hS]
+      _ = S⁻¹ * (R ^ 2 * R ^ 3) * S⁻¹⁻¹ := by rw [R_pow_three, ← S_sq]; group
+      _ = S⁻¹ * R ^ 5 * S⁻¹⁻¹ := by rw [← pow_add]
+  rw [h, conj_pow, ← pow_mul, pow_mul', R_pow_six, one_pow]
+  group
 
 /-- **Positive factorizations of the identity in `SL(2, ℤ)`.** A list of `n` conjugates of `T`
 with product `1` exists if and only if `12 ∣ n`. Each such element has class `1` in
