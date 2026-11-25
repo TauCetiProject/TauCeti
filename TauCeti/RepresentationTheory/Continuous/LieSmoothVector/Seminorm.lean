@@ -40,6 +40,8 @@ the derived action lowers the order by one: if `Y = ∑ i, c i • X i`, then
 * `TauCeti.BoundedWord.castSucc`, `TauCeti.BoundedWord.snoc`: a word of length at most `k` as a
   word of length at most `k + 1`, unchanged or with a letter appended.
 * `TauCeti.BoundedWord.nil`: the empty word.
+* `TauCeti.BoundedWord.snocOptionEquiv`: the words of length at most `k + 1` as the empty word or a
+  word of length at most `k` followed by one letter.
 * `TauCeti.SobolevIndex m k`: the exponent vectors `α : Fin m → ℕ` with `|α| ≤ k`.
 * `ContRepresentation.wordAction I π X w`: the operator `dπ(X_w)` of a word `w`, for a
   representation over any ring.
@@ -193,37 +195,43 @@ def nil : BoundedWord ι k :=
 theorem ofFn_nil : List.ofFn (nil : BoundedWord ι k).2 = [] :=
   (rfl)
 
-/-- A word of length at most `k + 1` is the empty word or a word of length at most `k` followed
-by one letter. -/
-private def snocOption : Option (BoundedWord ι k × ι) → BoundedWord ι (k + 1)
-  | none => nil
-  | some p => p.1.snoc p.2
+/-- Every word of length at most `k + 1` is uniquely the empty word (the image of `none`) or a
+word `w i` with `|w| ≤ k` (the image of `some (w, i)`). -/
+noncomputable def snocOptionEquiv : Option (BoundedWord ι k × ι) ≃ BoundedWord ι (k + 1) :=
+  Equiv.ofBijective (Option.elim · nil fun p ↦ p.1.snoc p.2) <| by
+    refine ⟨fun p q h ↦ ?_, fun w ↦ ?_⟩
+    · have h' := congrArg (fun w : BoundedWord ι (k + 1) ↦ List.ofFn w.2) h
+      rcases p with _ | ⟨w, i⟩ <;> rcases q with _ | ⟨w', i'⟩
+      · rfl
+      · simp at h'
+      · simp at h'
+      · simp only [Option.elim_some, ofFn_snoc] at h'
+        obtain ⟨hw, hi⟩ := List.append_inj' h' rfl
+        rw [ofFn_injective hw, (List.singleton_inj.mp hi)]
+    · obtain ⟨n, f⟩ := w
+      induction n using Fin.cases with
+      | zero => exact ⟨none, Sigma.ext rfl (heq_of_eq (funext fun x ↦ x.elim0))⟩
+      | succ n =>
+        exact ⟨some (⟨n, Fin.init f⟩, f (Fin.last n)),
+          Sigma.ext rfl (heq_of_eq (Fin.snoc_init_self f))⟩
 
-/-- Every word of length at most `k + 1` is uniquely empty or of the form `w i` with `|w| ≤ k`. -/
-private theorem snocOption_bijective : Function.Bijective (snocOption (ι := ι) (k := k)) := by
-  refine ⟨fun p q h ↦ ?_, fun w ↦ ?_⟩
-  · have h' := congrArg (fun w : BoundedWord ι (k + 1) ↦ List.ofFn w.2) h
-    rcases p with _ | ⟨w, i⟩ <;> rcases q with _ | ⟨w', i'⟩
-    · rfl
-    · simp [snocOption] at h'
-    · simp [snocOption] at h'
-    · simp only [snocOption, BoundedWord.ofFn_snoc] at h'
-      obtain ⟨hw, hi⟩ := List.append_inj' h' rfl
-      rw [ofFn_injective hw, (List.singleton_inj.mp hi)]
-  · obtain ⟨n, f⟩ := w
-    induction n using Fin.cases with
-    | zero => exact ⟨none, Sigma.ext rfl (heq_of_eq (funext fun x ↦ x.elim0))⟩
-    | succ n =>
-      exact ⟨some (⟨n, Fin.init f⟩, f (Fin.last n)),
-        Sigma.ext rfl (heq_of_eq (Fin.snoc_init_self f))⟩
+/-- `snocOptionEquiv` sends `none` to the empty word. -/
+@[simp]
+theorem snocOptionEquiv_none : snocOptionEquiv none = (nil : BoundedWord ι (k + 1)) :=
+  (rfl)
+
+/-- `snocOptionEquiv` sends `some (w, i)` to `w.snoc i`. -/
+@[simp]
+theorem snocOptionEquiv_some (w : BoundedWord ι k) (i : ι) :
+    snocOptionEquiv (some (w, i)) = w.snoc i :=
+  (rfl)
 
 /-- **A sum over the words of length at most `k + 1`** is the term of the empty word plus the
 terms of the words `w i` with `|w| ≤ k`. -/
 theorem sum_succ {M : Type*} [AddCommMonoid M] [Fintype ι] (f : BoundedWord ι (k + 1) → M) :
     ∑ w, f w = f nil + ∑ i, ∑ w : BoundedWord ι k, f (w.snoc i) := by
-  rw [← (Fintype.sum_bijective _ snocOption_bijective (f ∘ snocOption) f fun _ ↦ rfl),
-    Fintype.sum_option, Fintype.sum_prod_type_right]
-  simp [snocOption]
+  rw [← snocOptionEquiv.sum_comp, Fintype.sum_option, Fintype.sum_prod_type_right]
+  simp
 
 end BoundedWord
 
