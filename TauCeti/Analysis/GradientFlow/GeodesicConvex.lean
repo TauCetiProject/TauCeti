@@ -62,7 +62,6 @@ curve need no such assumption.
 
 ## Main definitions
 
-* `TauCeti.ConvexAlong m φ γ`: `φ` is `m`-convex along the curve `γ`.
 * `TauCeti.GeodesicallyConvex m φ`: any two points with energy `≠ ⊤` are joined by a geodesic
   segment along which `φ` is `m`-convex.
 * `TauCeti.ConvexAlongGeodesics m φ`: `φ` is `m`-convex along every geodesic segment joining two
@@ -72,14 +71,9 @@ curve need no such assumption.
 
 * `TauCeti.ConvexAlongGeodesics.geodesicallyConvex`: in a geodesic space, convexity along every
   geodesic implies geodesic convexity.
-* `TauCeti.ConvexAlong.apply_ne_top`: the effective domain is convex along a curve of convexity.
-* `TauCeti.ConvexAlong.apply_add_le_of_forall_le`: an `m`-convex energy grows at least like
-  `(m / 2) d(γ 0, γ 1)²` away from a minimum at the start of the curve.
-* `TauCeti.ConvexAlong.add`, `TauCeti.ConvexAlong.const_mul`, `TauCeti.ConvexAlong.iSup` and
-  `TauCeti.ConvexAlong.of_tendsto`: convexity along a curve is stable under sums, nonnegative
-  multiples, suprema and pointwise limits; `TauCeti.ConvexAlongGeodesics.add`,
-  `TauCeti.ConvexAlongGeodesics.const_mul`, `TauCeti.ConvexAlongGeodesics.iSup` and
-  `TauCeti.ConvexAlongGeodesics.of_tendsto` are the versions for convexity along geodesics.
+* `TauCeti.ConvexAlongGeodesics.add`, `TauCeti.ConvexAlongGeodesics.const_mul`,
+  `TauCeti.ConvexAlongGeodesics.iSup` and `TauCeti.ConvexAlongGeodesics.of_tendsto`: convexity
+  along geodesics is stable under sums, nonnegative multiples, suprema and pointwise limits.
 * `TauCeti.ConvexAlongGeodesics.convexAlong_comp_lineMap`: convexity along geodesics restricts to
   pieces of geodesics.
 * `TauCeti.GeodesicallyConvex.add_convexAlongGeodesics` and
@@ -115,14 +109,7 @@ variable {X : Type*} [PseudoMetricSpace X] {m m' : ℝ} {φ ψ : X → EReal} {�
 theorem IsGeodesicSegment.convexAlong_iff (hγ : IsGeodesicSegment γ x y) :
     ConvexAlong m φ γ ↔ ∀ t ∈ Icc (0 : ℝ) 1, φ (γ t) ≤ ((1 - t : ℝ) : EReal) * φ x +
       (t : EReal) * φ y - ((m / 2 * t * (1 - t) * dist x y ^ 2 : ℝ) : EReal) := by
-  rw [ConvexAlong, hγ.source, hγ.target]
-
-/-- Convexity along a curve with a parameter `m` implies it for every smaller parameter. -/
-theorem ConvexAlong.mono (h : ConvexAlong m φ γ) (hm : m' ≤ m) : ConvexAlong m' φ γ :=
-  fun t ht ↦ (h t ht).trans <| EReal.sub_le_sub le_rfl <| EReal.coe_le_coe_iff.2 <| by
-    have : 0 ≤ t * (1 - t) * dist (γ 0) (γ 1) ^ 2 :=
-      mul_nonneg (mul_nonneg ht.1 (sub_nonneg.2 ht.2)) (sq_nonneg _)
-    nlinarith
+  rw [convexAlong_def, hγ.source, hγ.target]
 
 /-- The energy `φ` is *`m`-geodesically convex*: any two points of its effective domain, that is
 with `φ x ≠ ⊤` (energy `⊥` is allowed), are joined by a geodesic segment along which `φ` is
@@ -178,71 +165,6 @@ theorem convexAlongGeodesics_dist_sq [IsCATZeroSpace X] (z : X) :
 
 /-! ### Endpoints, restriction and stability -/
 
-/-- **The effective domain is convex along a curve of convexity.** If `φ` is `m`-convex along `γ`
-and both endpoint values are `≠ ⊤`, then so is `φ (γ t)` for every `t ∈ [0, 1]`. -/
-theorem ConvexAlong.apply_ne_top (h : ConvexAlong m φ γ) (h₀ : φ (γ 0) ≠ ⊤) (h₁ : φ (γ 1) ≠ ⊤)
-    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : φ (γ t) ≠ ⊤ :=
-  ne_top_of_le_ne_top
-    (EReal.coe_mul_add_coe_mul_sub_coe_ne_top h₀ h₁ (sub_nonneg.2 ht.2) ht.1) (h t ht)
-
-/-- Convexity along a curve is unchanged by running the curve backwards. -/
-theorem ConvexAlong.reverse (h : ConvexAlong m φ γ) : ConvexAlong m φ fun t ↦ γ (1 - t) := by
-  intro t ht
-  have h' := h (1 - t) ⟨sub_nonneg.2 ht.2, sub_le_self _ ht.1⟩
-  rw [sub_sub_cancel] at h'
-  simp only [sub_zero, sub_self]
-  rw [add_comm, dist_comm, mul_right_comm (m / 2) t]
-  exact h'
-
-/-- **Sum of convex energies.** If `φ` is `m`-convex and `ψ` is `m'`-convex along the same curve,
-then `φ + ψ` is `(m + m')`-convex along it. -/
-theorem ConvexAlong.add (hφ : ConvexAlong m φ γ) (hψ : ConvexAlong m' ψ γ) :
-    ConvexAlong (m + m') (φ + ψ) γ := by
-  intro t ht
-  calc (φ + ψ) (γ t) = φ (γ t) + ψ (γ t) := rfl
-    _ ≤ _ := add_le_add (hφ t ht) (hψ t ht)
-    _ = _ := by
-      rw [EReal.coe_mul_add_coe_mul_sub_add_sub_comm _ _ _ _ (sub_nonneg.2 ht.2) ht.1]
-      congr 2
-      ring
-
-/-- **Nonnegative multiple of a convex energy.** If `φ` is `m`-convex along a curve and `c ≥ 0`,
-then `c φ` is `(c m)`-convex along it. -/
-theorem ConvexAlong.const_mul (h : ConvexAlong m φ γ) {c : ℝ} (hc : 0 ≤ c) :
-    ConvexAlong (c * m) (fun x ↦ (c : EReal) * φ x) γ := by
-  intro t ht
-  have hc' : (0 : EReal) ≤ c := EReal.coe_nonneg.2 hc
-  calc (c : EReal) * φ (γ t) ≤ (c : EReal) * (((1 - t : ℝ) : EReal) * φ (γ 0) +
-        (t : EReal) * φ (γ 1) - ((m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal)) :=
-      mul_le_mul_of_nonneg_left (h t ht) hc'
-    _ = _ := by
-      rw [EReal.coe_mul_coe_mul_add_coe_mul_sub _ _ hc]
-      congr 2
-      ring
-
-/-- **Supremum of convex energies.** The pointwise supremum of a family of energies, each
-`m`-convex along a curve, is `m`-convex along it. -/
-theorem ConvexAlong.iSup {ι : Sort*} {φs : ι → X → EReal} (h : ∀ i, ConvexAlong m (φs i) γ) :
-    ConvexAlong m (⨆ i, φs i) γ := by
-  intro t ht
-  simp only [iSup_apply]
-  refine iSup_le fun i ↦ (h i t ht).trans ?_
-  exact EReal.coe_mul_add_coe_mul_sub_le_of_le (le_iSup (fun i ↦ φs i (γ 0)) i)
-    (le_iSup (fun i ↦ φs i (γ 1)) i) (sub_nonneg.2 ht.2) ht.1 _
-
-/-- **Convexity along a curve passes to pointwise limits.** If the energies `φs i` are eventually
-`m`-convex along `γ` and converge to `φ` at every point `γ t`, `t ∈ [0, 1]`, and the endpoint
-values of `φ` are `≠ ⊤`, then `φ` is `m`-convex along `γ`. -/
-theorem ConvexAlong.of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {φs : ι → X → EReal}
-    (h : ∀ᶠ i in l, ConvexAlong m (φs i) γ)
-    (hφ : ∀ t ∈ Icc (0 : ℝ) 1, Tendsto (fun i ↦ φs i (γ t)) l (𝓝 (φ (γ t))))
-    (h₀ : φ (γ 0) ≠ ⊤) (h₁ : φ (γ 1) ≠ ⊤) : ConvexAlong m φ γ := by
-  intro t ht
-  exact le_of_tendsto_of_tendsto (hφ t ht)
-    (EReal.tendsto_coe_mul_add_coe_mul_sub (hφ 0 (left_mem_Icc.2 zero_le_one))
-      (hφ 1 (right_mem_Icc.2 zero_le_one)) h₀ h₁ (sub_nonneg.2 ht.2) ht.1 _)
-    (h.mono fun i hi ↦ hi t ht)
-
 /-- **Restriction to a piece of a geodesic.** If `φ` is `m`-convex along geodesics, then along a
 geodesic segment `γ` between two points of its effective domain, `φ` is also `m`-convex along the
 piece of `γ` between any two times `a, b ∈ [0, 1]`, reparametrised over `[0, 1]`. -/
@@ -287,7 +209,9 @@ energy, which is convex along every curve. -/
 theorem ConvexAlongGeodesics.const_mul (h : ConvexAlongGeodesics m φ) {c : ℝ} (hc : 0 ≤ c) :
     ConvexAlongGeodesics (c * m) fun x ↦ (c : EReal) * φ x := by
   rcases hc.eq_or_lt with rfl | hc
-  · intro _ _ _ _ _ _ t _
+  · intro _ _ _ _ _ _
+    rw [convexAlong_def]
+    intro t _
     simp
   exact fun _ _ hx hy _ hγ ↦
     (h (EReal.ne_top_of_coe_mul_ne_top hc hx) (EReal.ne_top_of_coe_mul_ne_top hc hy) hγ).const_mul

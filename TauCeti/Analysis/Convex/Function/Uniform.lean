@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Convex.Strong
 public import TauCeti.Analysis.Convex.Along
 
+import TauCeti.Algebra.Order.Field.Basic
+
 /-!
 # Affine-segment bounds for uniformly convex functions
 
@@ -26,21 +28,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A uniformly convex function satisfies the modulus interpolation bound along an
 affine segment contained in its domain. -/
-theorem UniformConvexOn.lineMap_le (hf : UniformConvexOn s φ f) (hx : x ∈ s) (hy : y ∈ s)
+theorem UniformConvexOn.map_lineMap_le (hf : UniformConvexOn s φ f) (hx : x ∈ s) (hy : y ∈ s)
     {t : ℝ} (ht : t ∈ Icc 0 1) :
     f (AffineMap.lineMap x y t) ≤ (1 - t) * f x + t * f y - t * (1 - t) * φ ‖x - y‖ := by
   rw [AffineMap.lineMap_apply_module, mul_comm t (1 - t)]
   simpa only [smul_eq_mul] using hf.2 hx hy (sub_nonneg.2 ht.2) ht.1 (sub_add_cancel 1 t)
 
-/-- The quadratic interpolation bound for a strongly convex function along an affine segment. -/
-theorem StrongConvexOn.lineMap_le (hf : StrongConvexOn s μ f) (hx : x ∈ s) (hy : y ∈ s)
-    {t : ℝ} (ht : t ∈ Icc 0 1) :
-    f (AffineMap.lineMap x y t) ≤
-      (1 - t) * f x + t * f y - μ / 2 * t * (1 - t) * dist x y ^ 2 := by
-  have hu : UniformConvexOn s (fun r ↦ μ / 2 * r ^ 2) f := hf
-  rw [dist_eq_norm]
-  convert hu.lineMap_le hx hy ht using 1
-  ring
+/-- Strong convexity is uniform convexity with the quadratic modulus. -/
+theorem StrongConvexOn.uniformConvexOn (hf : StrongConvexOn s μ f) :
+    UniformConvexOn s (fun r ↦ μ / 2 * r ^ 2) f := by
+  simpa only [StrongConvexOn] using hf
 
 /-- The real-to-extended-real embedding of a strongly convex function is convex along
 the affine segment between any two points in its domain, with the same modulus. -/
@@ -49,7 +46,12 @@ theorem StrongConvexOn.convexAlong_lineMap (hf : StrongConvexOn s μ f) (hx : x 
   rw [TauCeti.convexAlong_def]
   intro t ht
   simp only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one]
-  exact_mod_cast hf.lineMap_le hx hy ht
+  have hbound : f (AffineMap.lineMap x y t) ≤
+      (1 - t) * f x + t * f y - μ / 2 * t * (1 - t) * dist x y ^ 2 := by
+    rw [dist_eq_norm]
+    convert hf.uniformConvexOn.map_lineMap_le hx hy ht using 1
+    ring
+  exact_mod_cast hbound
 
 /-- At a constrained minimizer, the objective increases by at least the uniform modulus
 evaluated at the distance to any other feasible point. -/
@@ -58,7 +60,7 @@ theorem UniformConvexOn.add_le_of_isMinOn (hf : UniformConvexOn s φ f) (hx : x 
     f x + φ ‖x - y‖ ≤ f y := by
   refine TauCeti.add_le_of_le_affine_sub fun t ht ↦ ?_
   exact ((isMinOn_iff.mp hmin) _ (hf.1.lineMap_mem hx hy (Ioo_subset_Icc_self ht))).trans
-    (hf.lineMap_le hx hy (Ioo_subset_Icc_self ht))
+    (hf.map_lineMap_le hx hy (Ioo_subset_Icc_self ht))
 
 /-- The average objective gap above a common lower bound controls one quarter of the
 modulus at the distance between the two points. -/
@@ -66,5 +68,5 @@ theorem UniformConvexOn.div_four_le_sub (hf : UniformConvexOn s φ f)
     {a : ℝ} (hlower : ∀ z ∈ s, a ≤ f z) (hx : x ∈ s) (hy : y ∈ s) :
     φ ‖x - y‖ / 4 ≤ (f x + f y) / 2 - a := by
   have ht : (1 / 2 : ℝ) ∈ Icc 0 1 := by norm_num
-  exact TauCeti.div_four_le_sub_of_le_midpoint
-    ((hlower _ (hf.1.lineMap_mem hx hy ht)).trans (hf.lineMap_le hx hy ht))
+  exact TauCeti.div_four_le_sub_of_le_midpoint_sub
+    ((hlower _ (hf.1.lineMap_mem hx hy ht)).trans (hf.map_lineMap_le hx hy ht))

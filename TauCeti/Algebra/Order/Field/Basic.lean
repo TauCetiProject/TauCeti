@@ -73,6 +73,9 @@ zero only at `0`.
 
 ## Main results
 
+* `TauCeti.div_four_le_sub_of_le_midpoint_sub`: a midpoint interpolation penalty is bounded by
+  the average endpoint gap.
+
 * `TauCeti.mul_le_iff_bounds`: characterize `a * t ≤ b` by the lower or upper bound on `t`
   determined by the sign of `a`, including the zero-coefficient case.
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
@@ -125,6 +128,13 @@ zero only at `0`.
 public section
 
 namespace TauCeti
+
+/-- Comparing a common lower bound with a midpoint interpolation bound controls its
+penalty by the average endpoint gap. -/
+theorem div_four_le_sub_of_le_midpoint_sub {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b c D : K}
+    (h : a ≤ (1 - 1 / 2) * b + (1 / 2) * c - (1 / 2) * (1 - 1 / 2) * D) :
+    D / 4 ≤ (b + c) / 2 - a := by linarith
 
 /-- Normalizing by a nonzero square converts a scale inequality into a bound on time. -/
 theorem two_mul_sq_inv_mul_lt_one_iff {K : Type*} [Field K] [LinearOrder K]

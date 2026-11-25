@@ -8,8 +8,9 @@ module
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Existence
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Topology.Instances.EReal.Lemmas
 import TauCeti.Data.EReal.Operations
+import TauCeti.Topology.MetricSpace.LowerBound
+import TauCeti.Topology.MetricSpace.Pseudo.Cauchy
 
 /-!
 # The discrete variational inequality and resolvent existence for convex energies
@@ -376,17 +377,19 @@ private lemma mul_dist_sq_le_of_convexAlong (hτ : 0 < τ) {M ε₀ ε₁ : ℝ}
     (hv₀ : φ v₀ + (edist x v₀ ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + ε₀ : ℝ) : EReal))
     (hv₁ : φ v₁ + (edist x v₁ ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + ε₁ : ℝ) : EReal)) :
     ((m + (τ : ℝ)⁻¹) / 2 * dist v₀ v₁ ^ 2) / 4 ≤ (ε₀ + ε₁) / 2 := by
-  set a₀ : ℝ := (φ v₀).toReal
-  set a₁ : ℝ := (φ v₁).toReal
-  have ha₀ : φ v₀ = a₀ := (EReal.coe_toReal htop₀ hbot₀).symm
-  have ha₁ : φ v₁ = a₁ := (EReal.coe_toReal htop₁ hbot₁).symm
-  have hv₀' : a₀ + dist x v₀ ^ 2 / (2 * τ) < M + ε₀ := by
-    rwa [coe_edist_sq_div_eq_coe_dist_sq_div hτ, ha₀, ← EReal.coe_add, EReal.coe_lt_coe_iff] at hv₀
-  have hv₁' : a₁ + dist x v₁ ^ 2 / (2 * τ) < M + ε₁ := by
-    rwa [coe_edist_sq_div_eq_coe_dist_sq_div hτ, ha₁, ← EReal.coe_add, EReal.coe_lt_coe_iff] at hv₁
+  let energy (v : X) : ℝ := (φ v).toReal + dist x v ^ 2 / (2 * τ)
+  have henergy (v : X) (htop : φ v ≠ ⊤) (hbot : φ v ≠ ⊥) :
+      φ v + ((dist x v ^ 2 / (2 * τ) : ℝ) : EReal) = (energy v : EReal) := by
+    dsimp only [energy]
+    rw [EReal.coe_add, EReal.coe_toReal htop hbot]
+  have hv₀' : energy v₀ < M + ε₀ := by
+    simpa only [coe_edist_sq_div_eq_coe_dist_sq_div hτ, henergy v₀ htop₀ hbot₀,
+      EReal.coe_lt_coe_iff] using hv₀
+  have hv₁' : energy v₁ < M + ε₁ := by
+    simpa only [coe_edist_sq_div_eq_coe_dist_sq_div hτ, henergy v₁ htop₁ hbot₁,
+      EReal.coe_lt_coe_iff] using hv₁
   have hgap := hγ.mul_dist_sq_div_four_le_sub
-    (b := a₀ + dist x v₀ ^ 2 / (2 * τ)) (c := a₁ + dist x v₁ ^ 2 / (2 * τ))
-    (by rw [hγ0, ha₀, EReal.coe_add]) (by rw [hγ1, ha₁, EReal.coe_add]) hlow
+    (by rw [hγ0, henergy v₀ htop₀ hbot₀]) (by rw [hγ1, henergy v₁ htop₁ hbot₁]) hlow
   rw [hγ0, hγ1] at hgap
   linarith
 
