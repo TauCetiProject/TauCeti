@@ -34,7 +34,7 @@ preferred trivializations of `L`. There `D s = 0` reads `\bar∂ sᵢ = -Zᵢ s�
 with a bounded zeroth-order term `Zᵢ`
 (`TauCeti.FiniteBundleAtlas.exists_norm_chartZeroOrder_apply_le`), so the reading satisfies the
 Cauchy–Riemann inequality `‖\bar∂ sᵢ‖ ≤ C ‖sᵢ‖`
-(`TauCeti.IsRealCauchyRiemannOperator.exists_norm_conjWirtingerDeriv_coord_le`). The holomorphic
+(`TauCeti.FiniteBundleAtlas.exists_norm_complexAntilinearPartL_fderiv_coord_le`). The holomorphic
 charts carry the canonical local orientation of `X` to that of `ℂ`
 (`TauCeti.localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas`), and the
 complex-linear trivializations read the complex orientation of `L` as that of `ℂ`
@@ -45,15 +45,14 @@ count for sections solving a Cauchy–Riemann inequality
 
 ## Main results
 
-* `TauCeti.IsRealCauchyRiemannOperator.exists_norm_conjWirtingerDeriv_coord_le`: a section in the
-  kernel satisfies a Cauchy–Riemann inequality in each chart of a finite bundle atlas.
 * `TauCeti.IsRealCauchyRiemannOperator.finite_setOf_eq_zero`: on a connected `X`, a nonzero `C¹`
   section in the kernel has finitely many zeros.
 * `TauCeti.IsRealCauchyRiemannOperator.ncard_le_evalFundamentalClass_complexEulerClass`: a `C¹`
   section in the kernel with finitely many zeros has at most `c₁(L)[X]` of them.
 * `TauCeti.IsRealCauchyRiemannOperator.eq_zero_of_evalFundamentalClass_complexEulerClass_lt_ncard`
   and `TauCeti.IsRealCauchyRiemannOperator.eq_zero_of_evalFundamentalClass_complexEulerClass_neg`:
-  the kernel is detected by values at `c₁(L)[X] + 1` points, and is zero if `c₁(L)[X] < 0`.
+  the kernel is detected by values at any `c₁(L)[X] + 1` distinct points, and is zero if
+  `c₁(L)[X] < 0`.
 
 ## Implementation notes
 
@@ -94,33 +93,6 @@ variable [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)]
   (hD : IsRealCauchyRiemannOperator ℂ (ofComplexManifold ℂ X) D)
   {n : ℕ∞ω} [ENat.LEInfty n] (hDs : ContMDiffCovariantDerivativeOn ℂ n D univ)
 
-include hD hDs in
-/-- **A section in the kernel solves a Cauchy–Riemann inequality in each chart.** In chart `i` of a
-finite bundle atlas, the reading `sᵢ` of a `C¹` section `s` with `D s = 0` satisfies
-`‖\bar∂ sᵢ‖ ≤ C ‖sᵢ‖` on the chart image, for a constant `C` bounding the zeroth-order term of `D`
-in that chart. -/
-theorem exists_norm_conjWirtingerDeriv_coord_le (A : FiniteBundleAtlas ℂ X ℂ L) (i : Fin A.n)
-    {s : Π x, L x}
-    (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) 1 fun x ↦ TotalSpace.mk' ℂ x (s x))
-    (hs0 : D s = 0) :
-    ∃ C, ∀ y ∈ A.image i, ‖conjWirtingerDeriv (A.coord i s) y‖ ≤ C * ‖A.coord i s y‖ := by
-  obtain ⟨C, hC⟩ := A.exists_norm_chartZeroOrder_apply_le hD hDs i
-  refine ⟨max C 0, fun y hy ↦ ?_⟩
-  have h := A.coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder hD hy
-    ((hs _).mdifferentiableAt one_ne_zero)
-  -- The reading of the one-form `D s = 0` is zero.
-  rw [hs0, A.tangentHom.coord_zero i (by rwa [FiniteBundleAtlas.image_tangentHom])] at h
-  have hbar : complexAntilinearPartL (fderiv ℝ (A.coord i s) y) =
-      -A.chartZeroOrder D i y (A.coord i s y) := eq_neg_of_add_eq_zero_left h.symm
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-  rw [conjWirtingerDeriv_apply_eq_complexAntilinearPartL, hbar, _root_.neg_apply,
-    norm_neg]
-  calc ‖A.chartZeroOrder D i y (A.coord i s y) v‖
-      ≤ ‖A.chartZeroOrder D i y (A.coord i s y)‖ * ‖v‖ := ContinuousLinearMap.le_opNorm _ _
-    _ ≤ max C 0 * ‖A.coord i s y‖ * ‖v‖ := by
-      gcongr
-      exact (hC y (subset_closure hy) _).trans (by gcongr; exact le_max_left _ _)
-
 /-- The reading of a section `s` in the preferred chart of `X` and the preferred trivialization of
 `L` at `c`: the function `y ↦ (e_c (s (φ_c⁻¹ y))).2` on the chart target. -/
 private abbrev chartReading (s : Π x, L x) (c : X) (y : ℂ) : ℂ :=
@@ -150,7 +122,8 @@ private theorem nonempty_chartData [CompactSpace X] {s : Π x, L x}
     (hs0 : D s = 0) : Nonempty (∀ z, ChartData s z) := by
   obtain ⟨A⟩ := FiniteBundleAtlas.nonempty (E := ℂ) (M := X) (F := ℂ) (V := L)
   choose i hi using A.exists_mem_dom
-  choose C hC using fun j ↦ exists_norm_conjWirtingerDeriv_coord_le hD hDs A j hs hs0
+  choose C hC₀ hC using fun j ↦
+    A.exists_norm_complexAntilinearPartL_fderiv_coord_le hD hDs j hs hs0
   -- The readings of `s` in the charts of `A`.
   have hc (j : Fin A.n) : chartReading s (A.center j) = A.coord j s :=
     funext fun y ↦ (A.coord_def j s y).symm
@@ -164,7 +137,11 @@ private theorem nonempty_chartData [CompactSpace X] {s : Π x, L x}
       rw [mem_preimage, (A.chart _).left_inv (A.dom_subset_chart_source _ hx)]
       exact A.dom_subset_baseSet _ hx⟩
   · rw [hc]
-    exact fun y hy ↦ hC (i z) y hy
+    -- On `ℂ`, `\bar∂` is the complex antilinear part of the derivative.
+    exact fun y hy ↦ ContinuousLinearMap.opNorm_le_bound _
+      (mul_nonneg (hC₀ _) (norm_nonneg _)) fun v ↦ by
+        rw [conjWirtingerDeriv_apply_eq_complexAntilinearPartL]
+        exact ((ContinuousLinearMap.le_opNorm _ v).trans (by gcongr; exact hC (i z) y hy))
 
 variable [CompactSpace X]
 
@@ -212,8 +189,8 @@ theorem ncard_le_evalFundamentalClass_complexEulerClass {s : Π x, L x}
 include hD hDs in
 /-- **A section in the kernel vanishing at more than `c₁(L)[X]` points vanishes identically.** On
 a compact connected Riemann surface, a `C¹` section of a complex line bundle `L` in the kernel of a
-`C^n` real Cauchy–Riemann operator which vanishes on a set with more than `c₁(L)[X]` points is
-zero. -/
+`C^n` real Cauchy–Riemann operator which vanishes on a finite set with more than `c₁(L)[X]` points
+is zero. The condition is `c₁(L)[X] < S.ncard`, and `Set.ncard` is `0` for an infinite set. -/
 theorem eq_zero_of_evalFundamentalClass_complexEulerClass_lt_ncard [ConnectedSpace X]
     {s : Π x, L x}
     (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) 1 fun x ↦ TotalSpace.mk' ℂ x (s x))
