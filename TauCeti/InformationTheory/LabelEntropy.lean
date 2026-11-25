@@ -190,7 +190,9 @@ theorem labelEntropy_pair_eq_add [IsFiniteMeasure μ] {X : Ω → A} (hX : Measu
   -- Summing the cells over `a` recovers the mass of `Y ⁻¹' {b}`.
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun b _ ↦ ?_
-  rw [← Finset.sum_mul, sum_measureReal_preimage_singleton_inter hX (Y ⁻¹' {b}), negMulLog]
+  rw [← Finset.sum_mul,
+    sum_measureReal_preimage_singleton_inter (hX <| measurableSet_singleton ·) (Y ⁻¹' {b}),
+    negMulLog]
   ring
 
 /-- **Alphabet bound.** For a probability measure and a measurable label,
@@ -206,8 +208,8 @@ theorem labelEntropy_nonneg_le_log_card [IsProbabilityMeasure μ] {X : Ω → A}
     (w := fun _ : A ↦ (Fintype.card A : ℝ)⁻¹) (p := fun a ↦ μ.real (X ⁻¹' {a}))
     (fun _ _ ↦ inv_nonneg.mpr hn.le) (by simp [Finset.card_univ, hn.ne'])
     (fun _ _ ↦ Set.mem_Ici.mpr measureReal_nonneg)
-  simp only [smul_eq_mul, ← Finset.mul_sum, sum_measureReal_preimage_singleton_eq_one hX,
-    mul_one] at hJ
+  simp only [smul_eq_mul, ← Finset.mul_sum,
+    sum_measureReal_preimage_singleton_eq_one (hX <| measurableSet_singleton ·), mul_one] at hJ
   rw [negMulLog, log_inv, neg_mul_neg] at hJ
   exact le_of_mul_le_mul_left hJ (inv_pos.mpr hn)
 
@@ -223,7 +225,8 @@ theorem labelEntropy_pair_of_indepFun [IsProbabilityMeasure μ] [MeasurableSpace
       (measurableSet_singleton a) (measurableSet_singleton b), ENNReal.toReal_mul]
   rw [labelEntropy_pair, labelEntropy_def, labelEntropy_def]
   simp only [hcell, negMulLog_mul, Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.sum_mul,
-    sum_measureReal_preimage_singleton_eq_one hX, sum_measureReal_preimage_singleton_eq_one hY,
+    sum_measureReal_preimage_singleton_eq_one (hX <| measurableSet_singleton ·),
+    sum_measureReal_preimage_singleton_eq_one (hY <| measurableSet_singleton ·),
     one_mul]
 
 end Additivity
