@@ -374,17 +374,28 @@ variable (J) in
 the sheaf of points of `G`, sending a torsor to its torsor of points `IsTorsor.toTorsor` and an
 equivariant morphism to the morphism `IsTorsor.toTorsorHomEquiv` assigns to it. It is fully
 faithful (`fullyFaithfulToTorsorFunctor`). -/
-noncomputable def toTorsorFunctor (G : Grp C) :
+-- The body is exposed so that `toTorsorFunctor_map` can be stated: its right-hand side is a
+-- morphism between torsors of points, which must be seen to be the images of `X` and `Y`. The
+-- functor laws are tactic proofs, which can still use the hidden body of `toTorsorHomEquiv`.
+@[expose] noncomputable def toTorsorFunctor (G : Grp C) :
     (J.torsorProperty G).FullSubcategory ⥤ Sheaf.Torsor (J.uliftYonedaGrp.{w}.obj G) where
   obj X := IsTorsor.toTorsor X.property
   map f := (IsTorsor.toTorsorHomEquiv _ _).symm ⟨f.hom.hom, inferInstance⟩
-  map_id _ := Sheaf.Torsor.hom_ext (J.uliftYoneda.map_id _)
-  map_comp _ _ := Sheaf.Torsor.hom_ext (J.uliftYoneda.map_comp _ _)
+  map_id _ := by exact Sheaf.Torsor.hom_ext (J.uliftYoneda.map_id _)
+  map_comp _ _ := by exact Sheaf.Torsor.hom_ext (J.uliftYoneda.map_comp _ _)
 
 /-- The functor of points sends a torsor to its torsor of points `IsTorsor.toTorsor`. -/
 @[simp]
 lemma toTorsorFunctor_obj (G : Grp C) (X : (J.torsorProperty G).FullSubcategory) :
     (J.toTorsorFunctor.{w} G).obj X = IsTorsor.toTorsor X.property :=
+  (rfl)
+
+/-- The functor of points sends an equivariant morphism to the morphism of torsors of points
+`IsTorsor.toTorsorHomEquiv` assigns to it. -/
+@[simp]
+lemma toTorsorFunctor_map (G : Grp C) {X Y : (J.torsorProperty G).FullSubcategory} (f : X ⟶ Y) :
+    (J.toTorsorFunctor.{w} G).map f =
+      (IsTorsor.toTorsorHomEquiv X.property Y.property).symm ⟨f.hom.hom, inferInstance⟩ :=
   (rfl)
 
 /-- The functor of points from `G`-torsors of `C` to torsors under the sheaf of points of `G` is
