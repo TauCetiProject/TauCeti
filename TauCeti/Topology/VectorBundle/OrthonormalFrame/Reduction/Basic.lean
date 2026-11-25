@@ -108,7 +108,7 @@ that it lies in `S`. -/
 theorem SMulMemIff.smul_eq_mk (g : H) (p : S)
     (hgp : op (g : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) ∈ S) :
     op g • p = ⟨_, hgp⟩ :=
-  Subtype.ext (coe_smul (op g) p)
+  reductionMulAction_smul_eq_mk _ g p hgp
 
 /-- The action of `H` on `S` is free. -/
 @[simp↓]

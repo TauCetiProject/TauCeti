@@ -214,6 +214,14 @@ theorem coe_reductionMulAction_smul (hS : ∀ p ∈ S, ∀ g ∈ H, op g • p �
     ((g • p : S) : Z) = op (g.unop : G) • (p : Z) :=
   (rfl)
 
+/-- The action of `g ∈ H` on a point `p` of `S` is the point `op g • p` of `S`, with any proof
+that it lies in `S`. -/
+theorem reductionMulAction_smul_eq_mk (hS : ∀ p ∈ S, ∀ g ∈ H, op g • p ∈ S) (g : H) (p : S)
+    (hgp : op (g : G) • (p : Z) ∈ S) :
+    letI := reductionMulAction hS
+    op g • p = ⟨_, hgp⟩ :=
+  Subtype.ext (coe_reductionMulAction_smul hS (op g) p)
+
 /-- The action of `H` on `S` preserves a map `proj` that the action of `G` preserves. -/
 theorem proj_reductionMulAction_smul {proj : Z → B}
     (hproj : ∀ (g : Gᵐᵒᵖ) (z : Z), proj (g • z) = proj z) (hS : ∀ p ∈ S, ∀ g ∈ H, op g • p ∈ S)
@@ -297,9 +305,9 @@ theorem principalBundle (hproj : ∀ (g : Gᵐᵒᵖ) (z : Z), proj (g • z) = 
       (proj_reductionMulAction_smul hproj hSH)
     PrincipalBundle H (MapFiber fun p : S ↦ proj p) :=
   letI := reductionMulAction hSH
-  hS.atlas.principalBundle (proj_reductionMulAction_smul hproj hSH)
-    fun b p hp g ↦
-      congrArg Prod.snd (hS.atlas_trivAt_mk_smul b g p (hSH p p.property g g.property) hp)
+  hS.atlas.principalBundle (proj_reductionMulAction_smul hproj hSH) fun b p hp g ↦ by
+    rw [reductionMulAction_smul_eq_mk hSH g p (hSH p p.property g g.property),
+      hS.atlas_trivAt_mk_smul b g p _ hp]
 
 end IsLocallyTrivialReduction
 
