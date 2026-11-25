@@ -191,10 +191,7 @@ theorem comp_inverseComposablePairsDiffeomorph (p : ComposablePairs C) :
       (inverseComposablePairsDiffeomorph I J C p).property =
       inverseDiffeomorph I J C (p.val.1.comp p.val.2 p.property) := by
   let := composablePairsChartedSpace I J C
-  exact ((Quiver.Total.comp_congr (inverseDiffeomorph_apply I J C p.val.2)
-    (inverseDiffeomorph_apply I J C p.val.1) _ p.property.symm).trans
-    (p.val.1.inv_comp p.val.2 p.property).symm).trans
-    (inverseDiffeomorph_apply I J C (p.val.1.comp p.val.2 p.property)).symm
+  simp [Quiver.Total.inv_comp]
 
 /-! ### Composable triples and smooth associativity -/
 
@@ -248,17 +245,12 @@ private theorem composableTriplesLeft_bundle :
     transverse_of_isSubmersion_right (IX := K)
       (f := fun q : ComposablePairs C ↦ q.val.2.right) (n := ∞) (by simp)
       (isSubmersion_source (I := I) (J := J) (C := C)) p
-  refine ⟨isManifold_transverseFiberProduct (n := ∞) (by simp) hf hg htrans,
+  exact ⟨isManifold_transverseFiberProduct (n := ∞) (by simp) hf hg htrans,
     isSmoothEmbedding_coe_transverseFiberProduct (n := ∞) (by simp) hf hg htrans,
     isSubmersion_fst_transverseFiberProduct (n := ∞) (by simp) hf hg htrans
       (isSubmersion_source (I := I) (J := J) (C := C)),
-    isSubmersion_snd_transverseFiberProduct (n := ∞) (by simp) hf hg htrans ?_⟩
-  refine (hf.isSubmersionOfComplement_of_surjective_mfderiv (by simp) fun q ↦ ?_).isSubmersion
-  rw [show (fun q : ComposablePairs C ↦ q.val.2.right) =
-      Quiver.Total.right ∘ (fun q : ComposablePairs C ↦ q.val.2) from rfl,
-    mfderiv_comp q ((contMDiff_target I J C _).mdifferentiableAt (by simp))
-      ((hsnd.contMDiff q).mdifferentiableAt (by simp))]
-  exact (surjective_mfderiv_target I J C q.val.2).comp (hsnd.surjective_mfderiv (by simp) q)
+    isSubmersion_snd_transverseFiberProduct (n := ∞) (by simp) hf hg htrans
+      ((isSubmersion_target I J C).comp hsnd (by simp))⟩
 
 /-- Left-parenthesized composable triples form a smooth manifold. -/
 theorem isManifold_composableTriplesLeft :
@@ -468,17 +460,12 @@ theorem isSubmersion_triplesFace₀ :
   have := isManifold_composablePairs I J C
   have := isManifold_composableTriplesLeft I J C
   have := isManifold_composableTriplesRight I J C
-  let e := composableTriplesAssocDiffeomorph I J C
-  have hsnd := isSubmersion_snd_composableTriplesRight I J C
-  refine ((contMDiff_triplesFace₀ I J C).isSubmersionOfComplement_of_surjective_mfderiv
-    (by simp) fun t ↦ ?_).isSubmersion
-  have heq : (triplesFace₀ : ComposableTriplesLeft C → ComposablePairs C) =
-      (fun q : ComposableTriplesRight C ↦ q.val.2) ∘ e :=
+  let e := (composableTriplesAssocDiffeomorph I J C).symm
+  have heq : (triplesFace₀ : ComposableTriplesLeft C → ComposablePairs C) ∘ e =
+      fun q : ComposableTriplesRight C ↦ q.val.2 :=
     funext fun p ↦ Subtype.ext (Prod.ext (by simp [e]) (by simp [e]))
-  rw [heq, mfderiv_comp t ((hsnd.contMDiff (e t)).mdifferentiableAt (by simp))
-    ((e.contMDiff t).mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp]
-  exact (hsnd.surjective_mfderiv (by simp) (e t)).comp
-    ((e.isLocalDiffeomorph t).mfderivToContinuousLinearEquiv (by simp)).surjective
+  exact Manifold.IsSubmersion.of_comp (heq ▸ isSubmersion_snd_composableTriplesRight I J C)
+    e.contMDiff e.surjective (contMDiff_triplesFace₀ I J C) (by simp)
 
 /-- The third simplicial face map `((a, b), c) ↦ (a, b)` is a smooth submersion. -/
 theorem isSubmersion_triplesFace₃ :

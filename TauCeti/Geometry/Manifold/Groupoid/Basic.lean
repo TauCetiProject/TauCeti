@@ -13,7 +13,6 @@ public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
-import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
 # Lie groupoids
@@ -894,26 +893,6 @@ theorem mfderiv_inverse_unit_of_mem_ker_source_of_mem_ker_target (x : C)
       ⟨x, x, 𝟙 x⟩ v = -v := by
   rw [mfderiv_inverse_unit_of_mem_ker_source I J x hs, ht, map_zero, zero_sub]
 
-/-- Differentiating `s ∘ u = id` at `x` shows that `d1_x` is a continuous linear right inverse of
-`ds_{1_x}`. -/
-@[simp]
-theorem mfderiv_source_comp_mfderiv_unit (x : C) :
-    (mfderiv J I (Quiver.Total.left : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩).comp
-      (mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x) =
-      ContinuousLinearMap.id ℝ (TangentSpace I x) := by
-  ext v
-  exact mfderiv_source_mfderiv_unit I J x v
-
-/-- Differentiating `t ∘ u = id` at `x` shows that `d1_x` is a continuous linear right inverse of
-`dt_{1_x}`. -/
-@[simp]
-theorem mfderiv_target_comp_mfderiv_unit (x : C) :
-    (mfderiv J I (Quiver.Total.right : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩).comp
-      (mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x) =
-      ContinuousLinearMap.id ℝ (TangentSpace I x) := by
-  ext v
-  exact mfderiv_target_mfderiv_unit I J x v
-
 /-- The differential of groupoid inversion at `⟨x, x, 𝟙 x⟩` fixes the image of `d1_x`. -/
 @[simp]
 theorem mfderiv_inverse_mfderiv_unit (x : C) (v : TangentSpace I x) :
@@ -922,15 +901,6 @@ theorem mfderiv_inverse_mfderiv_unit (x : C) (v : TangentSpace I x) :
       mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x v := by
   rw [mfderiv_inverse_unit I J x, mfderiv_source_mfderiv_unit, mfderiv_target_mfderiv_unit,
     add_sub_cancel_right]
-
-/-- Differentiating `inv ∘ u = u` at `x` as a continuous linear map identity. -/
-@[simp]
-theorem mfderiv_inverse_comp_mfderiv_unit (x : C) :
-    (mfderiv J J (fun a : Quiver.Total C ↦ (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C))
-      ⟨x, x, 𝟙 x⟩).comp (mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x) =
-      mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x := by
-  ext v
-  exact mfderiv_inverse_mfderiv_unit I J x v
 
 /-- Differentiating `s ∘ inv = t` at an arrow `a` relates the source and target differentials
 through inversion. -/
@@ -958,9 +928,9 @@ theorem isCompl_range_mfderiv_unit_ker_mfderiv_source (x : C) :
       (LinearMap.range (mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x).toLinearMap)
       (LinearMap.ker (mfderiv J I (Quiver.Total.left : Quiver.Total C → C)
         ⟨x, x, 𝟙 x⟩).toLinearMap) :=
-  (LinearMap.bijective_comp_iff.mp (by
-    rw [show _ ∘ₗ _ = LinearMap.id from LinearMap.ext (mfderiv_source_mfderiv_unit I J x)]
-    exact Function.bijective_id)).2.1
+  ((mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x).isTopCompl_range_ker_of_leftInverse
+    (mfderiv J I (Quiver.Total.left : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩)
+    (mfderiv_source_mfderiv_unit I J x)).isCompl
 
 /-- At any identity arrow `⟨x, x, 𝟙 x⟩`, the arrow tangent space also splits as the internal direct
 sum of the unit tangent image `im(d1_x)` and the target-vertical kernel `ker(dt_{1_x})`. -/
@@ -969,9 +939,9 @@ theorem isCompl_range_mfderiv_unit_ker_mfderiv_target (x : C) :
       (LinearMap.range (mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x).toLinearMap)
       (LinearMap.ker (mfderiv J I (Quiver.Total.right : Quiver.Total C → C)
         ⟨x, x, 𝟙 x⟩).toLinearMap) :=
-  (LinearMap.bijective_comp_iff.mp (by
-    rw [show _ ∘ₗ _ = LinearMap.id from LinearMap.ext (mfderiv_target_mfderiv_unit I J x)]
-    exact Function.bijective_id)).2.1
+  ((mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x).isTopCompl_range_ker_of_leftInverse
+    (mfderiv J I (Quiver.Total.right : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩)
+    (mfderiv_target_mfderiv_unit I J x)).isCompl
 
 end UnitDifferentials
 

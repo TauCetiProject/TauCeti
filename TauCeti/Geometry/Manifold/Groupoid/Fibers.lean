@@ -378,8 +378,8 @@ theorem leftMulDiffeomorph_symm (g : Quiver.Total C) :
       leftMulDiffeomorph I J (⟨g.right, g.left, inv g.hom⟩ : Quiver.Total C) := by
   let := targetFiberChartedSpace I J g.left
   let := targetFiberChartedSpace I J g.right
-  ext1 b
-  rfl
+  exact Diffeomorph.ext fun b ↦ Subtype.ext
+    (by simp only [coe_leftMulDiffeomorph_symm_apply, coe_leftMulDiffeomorph_apply])
 
 /-- Functoriality of left translation: left translating by `f : x ⟶ y` and then by `g : y ⟶ z`
 equals left translating by `f ≫ g : x ⟶ z`. -/
@@ -498,8 +498,8 @@ theorem rightMulDiffeomorph_symm (g : Quiver.Total C) :
       rightMulDiffeomorph I J (⟨g.right, g.left, inv g.hom⟩ : Quiver.Total C) := by
   let := sourceFiberChartedSpace I J g.right
   let := sourceFiberChartedSpace I J g.left
-  ext1 b
-  rfl
+  exact Diffeomorph.ext fun b ↦ Subtype.ext
+    (by simp only [coe_rightMulDiffeomorph_symm_apply, coe_rightMulDiffeomorph_apply])
 
 /-- Contravariant functoriality of right translation: right translating by `g : y ⟶ z` and then by
 `f : x ⟶ y` equals right translating by `f ≫ g : x ⟶ z`. -/
@@ -584,15 +584,10 @@ theorem inverseSourceTargetDiffeomorph_conj_leftMulDiffeomorph (g : Quiver.Total
   let := sourceFiberChartedSpace I J g.right
   let := targetFiberChartedSpace I J g.left
   let := targetFiberChartedSpace I J g.right
-  refine Diffeomorph.ext fun h ↦ ?_
-  obtain ⟨x, y, f⟩ := g
-  have hinv := rightMulDiffeomorph_trans_inverseSourceTargetDiffeomorph I J
-    (⟨y, x, inv f⟩ : Quiver.Total C)
-  dsimp only at hinv
-  rw [IsIso.inv_inv] at hinv
-  have h' := congrArg (fun e ↦ (inverseSourceTargetDiffeomorph I J y).symm (e h)) hinv
-  simpa only [Diffeomorph.coe_trans, Function.comp_apply, Diffeomorph.symm_apply_apply] using
-    h'.symm
+  refine Diffeomorph.ext fun h ↦ Subtype.ext ?_
+  rw [Diffeomorph.coe_trans, Function.comp_apply, coe_inverseSourceTargetDiffeomorph_symm_apply,
+    ← inverseDiffeomorph_apply I J C]
+  simp [Quiver.Total.inv_comp]
 
 end IsLieGroupoid
 
