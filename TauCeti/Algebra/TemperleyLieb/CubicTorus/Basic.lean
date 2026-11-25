@@ -271,6 +271,11 @@ It is a trace (`cubicScalarCoefficient_mul_comm`). -/
 noncomputable def cubicScalarCoefficient : CubicTorus N →ₗ[ℂ] ℂ :=
   (basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)).coord 1
 
+theorem cubicScalarCoefficient_apply (x : CubicTorus N) :
+    cubicScalarCoefficient N x =
+      (basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)).repr x 1 :=
+  (rfl)
+
 @[simp]
 theorem cubicScalarCoefficient_weyl (a : Fin N → ZMod 3) :
     cubicScalarCoefficient N (weyl N a) = if a = 0 then 1 else 0 := by
