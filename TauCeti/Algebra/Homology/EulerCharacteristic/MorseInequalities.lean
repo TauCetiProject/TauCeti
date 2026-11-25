@@ -96,7 +96,8 @@ theorem le_of_forall_sum_range_neg_one_pow_mul_le {b c : ℕ → ℕ}
   | succ n =>
     have hnext := hgap (n + 1)
     rw [strongGap_succ] at hnext
-    exact_mod_cast (show (b (n + 1) : ℤ) ≤ c (n + 1) by linarith [hgap n])
+    have hle : (b (n + 1) : ℤ) ≤ c (n + 1) := by linarith [hgap n]
+    exact_mod_cast hle
 
 /-- If consecutive alternating partial sums satisfy the strong inequalities and the next term
 of the upper sequence is at most that of the lower sequence, the Euler sums agree. -/
