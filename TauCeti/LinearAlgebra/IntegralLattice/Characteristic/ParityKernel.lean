@@ -69,7 +69,7 @@ theorem half_characteristic_notMem_carrier_of_not_isEven {w : L}
     (hw : L.IsCharacteristicVector w) (hL : ¬ L.IsEven) : (1 / 2 : ℚ) • (w : V) ∉ L.carrier :=
   fun hm ↦ hL (L.isEven_iff_isCharacteristicVector_zero.mpr
     ((L.isCharacteristicVector_add_two_smul_iff 0 ⟨(1 / 2 : ℚ) • (w : V), hm⟩).mp
-      ((Subtype.ext (by simp [← Int.cast_smul_eq_zsmul ℚ, smul_smul]) :
+      ((Subtype.ext (by simp [← Int.cast_smul_eq_zsmul ℚ]) :
         w = 0 + (2 : ℤ) • ⟨(1 / 2 : ℚ) • (w : V), hm⟩) ▸ hw)))
 
 /-- In a unimodular lattice, `(1 / 2) • w` lies in the carrier iff the lattice is even. -/
@@ -79,10 +79,9 @@ theorem half_characteristic_mem_carrier_iff (hLu : L.IsUnimodular) {w : L}
     fun hLe ↦ ?_⟩
   obtain ⟨v, hv⟩ := hLu.exists_characteristicVector_sub_eq_two_smul hw
     (L.isEven_iff_isCharacteristicVector_zero.mp hLe)
-  have hv' := congrArg (Subtype.val : L → V) hv
-  simp only [sub_zero, Submodule.coe_smul_of_tower, ← Int.cast_smul_eq_zsmul ℚ] at hv'
-  have hvw : (1 / 2 : ℚ) • (w : V) = (v : V) := by rw [hv', smul_smul]; norm_num
-  exact hvw ▸ v.property
+  have hv' : (1 / 2 : ℚ) • (w : V) = (v : V) := by
+    simpa [← Int.cast_smul_eq_zsmul ℚ] using congrArg (fun z : L ↦ (1 / 2 : ℚ) • (z : V)) hv
+  exact hv' ▸ v.property
 
 private theorem isCharacteristicVector_of_even_on_evenNorm {u y₀ : L}
     (hu_even : ∀ z : L, Even (L.integralNorm z) → Even (L.integralForm u z))
@@ -111,9 +110,8 @@ theorem mem_evenSublattice_dualCarrier_iff (hLu : L.IsUnimodular) {w : L}
       (L.half_characteristic_mem_evenSublattice_dualCarrier hw)⟩
   have h2x : (2 : ℚ) • x ∈ L.carrier := by
     rw [L.isUnimodular_def.mp hLu, LinearMap.BilinForm.mem_dualSubmodule]; intro y hy
-    simpa only [L.evenSublattice_form, Submodule.coe_smul_of_tower, ← Int.cast_smul_eq_zsmul ℚ,
-      map_smul, LinearMap.smul_apply, Int.cast_ofNat] using hx _ ((L.mem_evenSublattice_carrier_iff
-        _).mpr ((L.mem_evenSubmodule_iff _).mp (L.two_smul_mem_evenSubmodule ⟨y, hy⟩)))
+    simpa only [L.evenSublattice_form, map_smul, LinearMap.smul_apply] using
+      hx _ (L.two_smul_mem_evenSublattice_carrier ⟨y, hy⟩)
   let u : L := ⟨(2 : ℚ) • x, h2x⟩
   have hu_even (z : L) (hz : Even (L.integralNorm z)) : Even (L.integralForm u z) := by
     obtain ⟨k, hk⟩ := Submodule.mem_one.mp (hx z ((L.mem_evenSublattice_carrier_iff z).mpr hz))
@@ -129,10 +127,9 @@ theorem mem_evenSublattice_dualCarrier_iff (hLu : L.IsUnimodular) {w : L}
   · right; push Not at hall; obtain ⟨y₀, hy₀⟩ := hall
     obtain ⟨v, hv⟩ := hLu.exists_characteristicVector_sub_eq_two_smul
       (L.isCharacteristicVector_of_even_on_evenNorm hu_even hy₀) hw
-    have hv' := congrArg (Subtype.val : L → V) hv
-    simp only [u, Submodule.coe_sub, Submodule.coe_smul_of_tower, ← Int.cast_smul_eq_zsmul ℚ] at hv'
     have hxv : x - (1 / 2 : ℚ) • (w : V) = (v : V) := by
-      simpa [smul_sub, smul_smul] using congrArg ((1 / 2 : ℚ) • ·) hv'
+      simpa [u, smul_sub, ← Int.cast_smul_eq_zsmul ℚ] using
+        congrArg (fun z : L ↦ (1 / 2 : ℚ) • (z : V)) hv
     exact hxv ▸ v.property
 
 /-- **Span description of `(L_even)ᵛ` for unimodular `L`:** `(L_even)ᵛ = L + ℤ · (w / 2)`. -/
@@ -163,21 +160,14 @@ private theorem odd_integralNorm_of_odd_finrank (hLu : L.IsUnimodular)
     (hLu.integralNorm_characteristicVector_modEq_finrank hw), Int.cast_natCast,
     ZMod.natCast_eq_one_iff_odd]
 
-private theorem not_isEven_of_odd {e : L} (he : Odd (L.integralNorm e)) : ¬ L.IsEven :=
-  fun hLe ↦ Int.not_odd_iff_even.mpr
-    ((L.even_integralNorm_iff e).mpr (L.isEven_iff_forall_norm.mp hLe e)) he
-
 /-- In odd rank, `(2 : ℤ) • [w / 2]` is the unique nonzero class `[e]` of `L / L_even`. -/
 theorem two_zsmul_halfCharacteristicClass_eq_latticeVectorClass (hLu : L.IsUnimodular)
     (hodd : Odd (Module.finrank ℤ L)) {w : L} (hw : L.IsCharacteristicVector w)
     {e : L} (he : Odd (L.integralNorm e)) :
     (2 : ℤ) • L.halfCharacteristicClass hw = L.latticeVectorClass e := by
-  have h2w : (2 : ℚ) • ((1 / 2 : ℚ) • (w : V)) = (w : V) := by rw [smul_smul]; norm_num
-  rw [halfCharacteristicClass_def, latticeVectorClass_def, ← Submodule.Quotient.mk_smul,
-    L.evenSublattice.discriminantGroup_mk_eq_iff, Submodule.coe_sub, Submodule.coe_smul_of_tower,
-    coe_halfCharacteristicDual, coe_latticeVectorDual, ← Int.cast_smul_eq_zsmul ℚ, Int.cast_ofNat,
-    h2w, ← Submodule.coe_sub]
-  exact L.sub_mem_evenSublattice_of_odd (L.odd_integralNorm_of_odd_finrank hLu hodd hw) he
+  simpa [halfCharacteristicClass_def, latticeVectorClass_def,
+    L.evenSublattice.zsmul_discriminantGroup_mk_eq_mk_iff] using
+    L.sub_mem_evenSublattice_of_odd (L.odd_integralNorm_of_odd_finrank hLu hodd hw) he
 
 /-- **Four-element exhaustion of `A_(L_even)`** for unimodular `L` with odd-norm `e ∈ L`. -/
 theorem eq_zero_or_eq_latticeVectorClass_or_eq_halfCharacteristicClass_or_eq_add
@@ -247,7 +237,7 @@ noncomputable def zmodTwoProdAddEquivEvenSublatticeDiscriminantGroup (hLu : L.Is
       (L.evenSublatticeZModTwoHom _ hw2)) ?_
   rw [Nat.bijective_iff_surjective_and_card]
   refine ⟨fun g ↦ ?_, by simp [L.natCard_evenSublattice_discriminantGroup hLu
-    (L.not_isEven_of_odd he)]⟩
+    (L.not_isEven_of_odd_integralNorm he)]⟩
   rcases L.eq_zero_or_eq_latticeVectorClass_or_eq_halfCharacteristicClass_or_eq_add
       hLu hw he g with rfl | rfl | rfl | rfl
   exacts [⟨(0, 0), by simp⟩, ⟨(1, 0), by simp [evenSublatticeZModTwoHom_one]⟩,
@@ -280,8 +270,11 @@ noncomputable def shiftedHalfCharacteristicSubgroup {w : L} (hw : L.IsCharacteri
     (e : L) : AddSubgroup L.evenSublattice.DiscriminantGroup :=
   AddSubgroup.zmultiples (L.latticeVectorClass e + L.halfCharacteristicClass hw)
 
-private theorem shiftedHalfCharacteristicSubgroup_eq {w : L} (hw : L.IsCharacteristicVector w)
-    (e : L) : L.shiftedHalfCharacteristicSubgroup hw e =
+/-- Shifting `w` by `2 • e` identifies `shiftedHalfCharacteristicSubgroup` with
+`halfCharacteristicSubgroup` at `w + 2 • e`. -/
+theorem shiftedHalfCharacteristicSubgroup_eq_halfCharacteristicSubgroup {w : L}
+    (hw : L.IsCharacteristicVector w) (e : L) :
+    L.shiftedHalfCharacteristicSubgroup hw e =
       L.halfCharacteristicSubgroup (hw.add_two_smul e) :=
   congrArg AddSubgroup.zmultiples (L.halfCharacteristicClass_add_two_smul hw e).symm
 
@@ -330,7 +323,7 @@ theorem natCard_halfCharacteristicSubgroup {w : L} (hw : L.IsCharacteristicVecto
 theorem natCard_shiftedHalfCharacteristicSubgroup {w : L} (hw : L.IsCharacteristicVector w)
     (hwe : Even (L.integralNorm w)) (hL : ¬ L.IsEven) (e : L) :
     Nat.card (L.shiftedHalfCharacteristicSubgroup hw e) = 2 :=
-  L.shiftedHalfCharacteristicSubgroup_eq hw e ▸
+  L.shiftedHalfCharacteristicSubgroup_eq_halfCharacteristicSubgroup hw e ▸
     L.natCard_halfCharacteristicSubgroup (hw.add_two_smul e)
       (even_iff_two_dvd.mpr ((L.dvd_integralNorm_add_two_smul_iff (by decide) hw e).mpr
         (even_iff_two_dvd.mp hwe))) hL
@@ -366,7 +359,7 @@ theorem isIntegral_intermediateCarrier_shiftedHalfCharacteristicSubgroup_iff {w 
     (hw : L.IsCharacteristicVector w) (e : L) :
     IntermediateCarrier.IsIntegral (L.evenSublattice.intermediateCarrierOfDiscriminantSubgroup
       (L.shiftedHalfCharacteristicSubgroup hw e)) ↔ 4 ∣ L.integralNorm w := by
-  rw [L.shiftedHalfCharacteristicSubgroup_eq hw e,
+  rw [L.shiftedHalfCharacteristicSubgroup_eq_halfCharacteristicSubgroup hw e,
     L.isIntegral_intermediateCarrier_halfCharacteristicSubgroup_iff,
     L.dvd_integralNorm_add_two_smul_iff (by decide) hw e]
 
@@ -399,7 +392,8 @@ theorem discriminantQuadraticMap_halfCharacteristicClass_eq_zero_iff {w : L}
     (hw : L.IsCharacteristicVector w) (e : L) :
     (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).IsIsotropic
         (L.shiftedHalfCharacteristicSubgroup hw e) ↔ 8 ∣ L.integralNorm w := by
-  rw [L.shiftedHalfCharacteristicSubgroup_eq hw e, L.isIsotropic_halfCharacteristicSubgroup_iff,
+  rw [L.shiftedHalfCharacteristicSubgroup_eq_halfCharacteristicSubgroup hw e,
+    L.isIsotropic_halfCharacteristicSubgroup_iff,
     L.dvd_integralNorm_add_two_smul_iff dvd_rfl hw e]
 
 /-- **The even overlattice `L_even + ℤ · (w / 2)` of `L.evenSublattice` when `8 ∣ w²`.**
@@ -420,11 +414,14 @@ noncomputable def shiftedHalfCharacteristicOverlattice [L.IsNondegenerate] {w : 
     (L.shiftedHalfCharacteristicSubgroup hw e)
     ((L.isIsotropic_shiftedHalfCharacteristicSubgroup_iff hw e).mpr h8)
 
-private theorem shiftedHalfCharacteristicOverlattice_eq [L.IsNondegenerate] {w : L}
-    (hw : L.IsCharacteristicVector w) (h8 : 8 ∣ L.integralNorm w) (e : L) :
+/-- Shifting `w` by `2 • e` identifies `shiftedHalfCharacteristicOverlattice` with
+`halfCharacteristicOverlattice` at `w + 2 • e`. -/
+theorem shiftedHalfCharacteristicOverlattice_eq_halfCharacteristicOverlattice [L.IsNondegenerate]
+    {w : L} (hw : L.IsCharacteristicVector w) (h8 : 8 ∣ L.integralNorm w) (e : L) :
     L.shiftedHalfCharacteristicOverlattice hw h8 e = L.halfCharacteristicOverlattice
-      (hw.add_two_smul e) ((L.dvd_integralNorm_add_two_smul_iff dvd_rfl hw e).mpr h8) :=
-  (L.evenSublattice.ofIsotropicSubgroup_inj ..).mpr (L.shiftedHalfCharacteristicSubgroup_eq ..)
+      (hw.add_two_smul e) ((hw.integralNorm_add_two_smul_modEq e).dvd_iff.mpr h8) :=
+  (L.evenSublattice.ofIsotropicSubgroup_inj ..).mpr
+    (L.shiftedHalfCharacteristicSubgroup_eq_halfCharacteristicSubgroup ..)
 
 /-- `halfCharacteristicOverlattice` shares the ambient rational bilinear form of `L`. -/
 @[simp] theorem halfCharacteristicOverlattice_form [L.IsNondegenerate] {w : L}
@@ -436,7 +433,8 @@ private theorem shiftedHalfCharacteristicOverlattice_eq [L.IsNondegenerate] {w :
 @[simp] theorem shiftedHalfCharacteristicOverlattice_form [L.IsNondegenerate] {w : L}
     (hw : L.IsCharacteristicVector w) (h8 : 8 ∣ L.integralNorm w) (e : L) :
     (L.shiftedHalfCharacteristicOverlattice hw h8 e).form = L.form := by
-  rw [L.shiftedHalfCharacteristicOverlattice_eq, L.halfCharacteristicOverlattice_form]
+  rw [L.shiftedHalfCharacteristicOverlattice_eq_halfCharacteristicOverlattice,
+    L.halfCharacteristicOverlattice_form]
 
 /-- `halfCharacteristicOverlattice` has the same signature as `L`. -/
 @[simp] theorem halfCharacteristicOverlattice_signature [L.IsNondegenerate] {w : L}
@@ -460,7 +458,8 @@ theorem isEven_halfCharacteristicOverlattice [L.IsNondegenerate] {w : L}
 theorem isEven_shiftedHalfCharacteristicOverlattice [L.IsNondegenerate] {w : L}
     (hw : L.IsCharacteristicVector w) (h8 : 8 ∣ L.integralNorm w) (e : L) :
     (L.shiftedHalfCharacteristicOverlattice hw h8 e).IsEven := by
-  rw [L.shiftedHalfCharacteristicOverlattice_eq]; exact L.isEven_halfCharacteristicOverlattice ..
+  rw [L.shiftedHalfCharacteristicOverlattice_eq_halfCharacteristicOverlattice]
+  exact L.isEven_halfCharacteristicOverlattice ..
 
 /-- Explicit coset membership in `halfCharacteristicOverlattice`. -/
 theorem mem_halfCharacteristicOverlattice_carrier_iff [L.IsNondegenerate] {w : L}
@@ -487,12 +486,11 @@ theorem mem_shiftedHalfCharacteristicOverlattice_carrier_iff [L.IsNondegenerate]
     x ∈ (L.shiftedHalfCharacteristicOverlattice hw h8 e).carrier ↔
       x ∈ L.evenSublattice.carrier ∨
         x - ((e : V) + (1 / 2 : ℚ) • (w : V)) ∈ L.evenSublattice.carrier := by
-  have hshift : (1 / 2 : ℚ) • ((w + (2 : ℤ) • e : L) : V) = (e : V) + (1 / 2 : ℚ) • (w : V) := by
-    simp only [Submodule.coe_add, Submodule.coe_smul_of_tower, ← Int.cast_smul_eq_zsmul ℚ,
-      Int.cast_ofNat, smul_add, smul_smul]
-    norm_num; abel
-  rw [L.shiftedHalfCharacteristicOverlattice_eq, L.mem_halfCharacteristicOverlattice_carrier_iff,
-    hshift]
+  rw [L.shiftedHalfCharacteristicOverlattice_eq_halfCharacteristicOverlattice,
+    L.mem_halfCharacteristicOverlattice_carrier_iff,
+    ← L.coe_halfCharacteristicDual (hw.add_two_smul e),
+    L.halfCharacteristicDual_add_two_smul hw e, Submodule.coe_add, L.coe_latticeVectorDual,
+    L.coe_halfCharacteristicDual hw]
 
 /-- `halfCharacteristicOverlattice` is a Kneser two-neighbor of `L` whenever `L` is odd. -/
 theorem isNeighbor_halfCharacteristicOverlattice [L.IsNondegenerate] (hL : ¬ L.IsEven)
@@ -518,7 +516,7 @@ theorem isNeighbor_halfCharacteristicOverlattice [L.IsNondegenerate] (hL : ¬ L.
 theorem isNeighbor_shiftedHalfCharacteristicOverlattice [L.IsNondegenerate] (hL : ¬ L.IsEven)
     {w : L} (hw : L.IsCharacteristicVector w) (h8 : 8 ∣ L.integralNorm w) (e : L) :
     L.IsNeighbor (L.shiftedHalfCharacteristicOverlattice hw h8 e) 2 :=
-  L.shiftedHalfCharacteristicOverlattice_eq hw h8 e ▸
+  L.shiftedHalfCharacteristicOverlattice_eq_halfCharacteristicOverlattice hw h8 e ▸
     L.isNeighbor_halfCharacteristicOverlattice hL _ _
 
 /-- `halfCharacteristicOverlattice` is unimodular when `L` is unimodular and `8 ∣ w²`. -/
@@ -539,7 +537,7 @@ theorem isUnimodular_halfCharacteristicOverlattice [L.IsNondegenerate] (hLu : L.
 theorem isUnimodular_shiftedHalfCharacteristicOverlattice [L.IsNondegenerate]
     (hLu : L.IsUnimodular) {w : L} (hw : L.IsCharacteristicVector w) (h8 : 8 ∣ L.integralNorm w)
     (e : L) : (L.shiftedHalfCharacteristicOverlattice hw h8 e).IsUnimodular :=
-  L.shiftedHalfCharacteristicOverlattice_eq hw h8 e ▸
+  L.shiftedHalfCharacteristicOverlattice_eq_halfCharacteristicOverlattice hw h8 e ▸
     L.isUnimodular_halfCharacteristicOverlattice hLu _ _
 
 /-- **Every even Kneser two-neighbor of an odd lattice meets it in the even sublattice.** -/
@@ -557,19 +555,6 @@ theorem carrier_inf_eq_evenSublattice_carrier_of_isNeighbor {M : IntegralLattice
   exact le_antisymm hle ((Submodule.toAddSubgroup_le _ _).mp
     (AddSubgroup.relIndex_eq_one.mp (by omega)))
 
-private theorem exists_zmultiples_eq_of_natCard_eq_two
-    {H : AddSubgroup L.evenSublattice.DiscriminantGroup} (hcardH : Nat.card H = 2) :
-    ∃ g : L.evenSublattice.DiscriminantGroup, g ≠ 0 ∧ AddSubgroup.zmultiples g = H := by
-  have : Finite H := Nat.finite_of_card_ne_zero (by omega)
-  have : Nontrivial H := Finite.one_lt_card_iff_nontrivial.mp (by omega)
-  obtain ⟨⟨g, hgH⟩, hg0⟩ := exists_ne (0 : H)
-  have hg_ne : g ≠ 0 := fun h ↦ hg0 (Subtype.ext h)
-  have hcard_smul : 2 • (⟨g, hgH⟩ : H) = 0 := hcardH ▸
-    addOrderOf_dvd_iff_nsmul_eq_zero.mp (addOrderOf_dvd_natCard (⟨g, hgH⟩ : H))
-  have hcz : Nat.card (AddSubgroup.zmultiples g) = 2 :=
-    (Nat.card_zmultiples g).trans (addOrderOf_eq_prime (congrArg Subtype.val hcard_smul) hg_ne)
-  exact ⟨g, hg_ne, AddSubgroup.eq_of_le_of_card_ge (AddSubgroup.zmultiples_le.mpr hgH) (by omega)⟩
-
 /-- **Classification of even Kneser two-neighbors of an odd unimodular lattice.** -/
 theorem eq_halfCharacteristicOverlattice_or_shifted_of_isNeighbor [L.IsNondegenerate]
     {M : IntegralLattice V} (hLu : L.IsUnimodular) (hM : L.IsNeighbor M 2) (hMe : M.IsEven)
@@ -577,7 +562,7 @@ theorem eq_halfCharacteristicOverlattice_or_shifted_of_isNeighbor [L.IsNondegene
     ∃ h8 : 8 ∣ L.integralNorm w,
       M = L.halfCharacteristicOverlattice hw h8 ∨
         M = L.shiftedHalfCharacteristicOverlattice hw h8 e := by
-  have hL := L.not_isEven_of_odd he
+  have hL := L.not_isEven_of_odd_integralNorm he
   have hinf := L.carrier_inf_eq_evenSublattice_carrier_of_isNeighbor hL hM hMe
   have hle : L.evenSublattice.carrier ≤ M.carrier := hinf ▸ inf_le_right
   have hform : M.form = L.evenSublattice.form := hM.form_eq.symm.trans L.evenSublattice_form.symm
@@ -586,9 +571,10 @@ theorem eq_halfCharacteristicOverlattice_or_shifted_of_isNeighbor [L.IsNondegene
   have hHiso : (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).IsIsotropic
       H := (IntermediateCarrier.isEven_iff_isIsotropic_discriminantSubgroup
         L.isEven_evenSublattice P).mp (M.isEven_toIntermediateCarrier hform hle hMe)
-  obtain ⟨g, hg_ne, hHz⟩ := L.exists_zmultiples_eq_of_natCard_eq_two (H := H) (by
+  obtain ⟨g, hg_ne, hHz⟩ := AddSubgroup.exists_zmultiples_eq_of_prime_natCard (H := H) (by
     rw [← IntermediateCarrier.index_eq_natCard_discriminantSubgroup, IntermediateCarrier.index_def,
-      M.coe_toIntermediateCarrier hform hle, ← hinf, hM.relIndex_inf_right])
+      M.coe_toIntermediateCarrier hform hle, ← hinf, hM.relIndex_inf_right]
+    exact Nat.prime_two)
   have hM_eq : L.evenSublattice.ofIsotropicSubgroup L.isEven_evenSublattice H hHiso = M :=
     IntegralLattice.ext (by
       rw [L.evenSublattice.ofIsotropicSubgroup_carrier,

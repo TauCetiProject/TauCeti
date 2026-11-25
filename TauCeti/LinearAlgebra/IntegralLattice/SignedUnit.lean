@@ -166,39 +166,6 @@ noncomputable def rankOneOrthogonalSumIsometrySignedUnitLattice :
     rankOneOrthogonalSumIsometrySignedUnitLattice p = Sum.elim (fun _ ↦ p.1) (fun _ ↦ p.2) :=
   (rfl)
 
-/-- Membership in `(signedUnitLattice r s).evenSublattice` means integral coordinates with
-even coordinate sum. -/
-theorem mem_evenSublattice_signedUnitLattice_carrier_iff (r s : ℕ) (x : Fin r ⊕ Fin s → ℚ) :
-    x ∈ (signedUnitLattice r s).evenSublattice.carrier ↔
-      (∀ k, ∃ z : ℤ, (z : ℚ) = x k) ∧
-        ∃ m : ℤ, (∑ i : Fin r, x (.inl i)) + ∑ j : Fin s, x (.inr j) = 2 * m := by
-  have hev (a : ℤ) : (∃ k : ℤ, (a : ℚ) = 2 * k) ↔ Even a :=
-    ⟨fun ⟨k, hk⟩ ↦ ⟨k, Int.cast_injective (α := ℚ) (by push_cast; linarith)⟩,
-      fun ⟨k, hk⟩ ↦ ⟨k, by rw [hk]; push_cast; ring⟩⟩
-  rw [(signedUnitLattice r s).mem_evenSublattice_carrier_iff_exists_norm,
-    mem_signedUnitLattice_carrier_iff]
-  refine and_congr_right fun hxZ ↦ ?_
-  choose z hz using hxZ
-  have hnorm : (signedUnitLattice r s).norm x =
-      (((∑ i : Fin r, z (.inl i) ^ 2) - ∑ j : Fin s, z (.inr j) ^ 2 : ℤ) : ℚ) := by
-    simp [signedUnitLattice_norm_apply, ← hz]
-  have hsum : (∑ i : Fin r, x (.inl i)) + ∑ j : Fin s, x (.inr j) =
-      (((∑ i : Fin r, z (.inl i)) + ∑ j : Fin s, z (.inr j) : ℤ) : ℚ) := by
-    simp [← hz]
-  rw [hnorm, hsum, hev, hev]
-  have hdiff : Even (((∑ i : Fin r, z (.inl i) ^ 2) - ∑ j : Fin s, z (.inr j) ^ 2) -
-      ((∑ i : Fin r, z (.inl i)) + ∑ j : Fin s, z (.inr j))) := by
-    have heq : ((∑ i : Fin r, z (.inl i) ^ 2) - ∑ j : Fin s, z (.inr j) ^ 2) -
-        ((∑ i : Fin r, z (.inl i)) + ∑ j : Fin s, z (.inr j)) =
-        (∑ i : Fin r, (z (.inl i) ^ 2 - z (.inl i))) -
-          ∑ j : Fin s, (z (.inr j) ^ 2 - z (.inr j) + 2 * z (.inr j)) := by
-      simp only [Finset.sum_sub_distrib, Finset.sum_add_distrib, ← Finset.mul_sum]; ring
-    rw [heq]
-    exact (even_iff_two_dvd.mpr (Finset.dvd_sum fun _ _ ↦ Int.two_dvd_sq_sub_self _)).sub
-      (even_iff_two_dvd.mpr (Finset.dvd_sum fun _ _ ↦ dvd_add (Int.two_dvd_sq_sub_self _)
-        (dvd_mul_right 2 _)))
-  exact ⟨fun h ↦ by simpa using h.sub hdiff, fun h ↦ by simpa using h.add hdiff⟩
-
 /-- The `k`-th standard coordinate vector in `signedUnitLattice r s`. -/
 def signedUnitBasisVector (r s : ℕ) (k : Fin r ⊕ Fin s) : signedUnitLattice r s :=
   ⟨Pi.single k 1, (mem_signedUnitLattice_carrier_iff r s _).mpr fun l ↦ by
@@ -236,12 +203,10 @@ theorem odd_integralNorm_signedUnitBasisVector (r s : ℕ) (k : Fin r ⊕ Fin s)
 /-- `signedUnitLattice r s` is even if and only if `r = 0` and `s = 0`. -/
 @[simp] theorem isEven_signedUnitLattice_iff (r s : ℕ) :
     (signedUnitLattice r s).IsEven ↔ r = 0 ∧ s = 0 := by
-  have hno (k : Fin r ⊕ Fin s) (h : (signedUnitLattice r s).IsEven) : False :=
-    Int.not_odd_iff_even.mpr (((signedUnitLattice r s).even_integralNorm_iff _).mpr
-      ((signedUnitLattice r s).isEven_iff_forall_norm.mp h (signedUnitBasisVector r s k)))
-      (odd_integralNorm_signedUnitBasisVector r s k)
-  refine ⟨fun h ↦ ⟨by_contra fun hr ↦ hno (.inl ⟨0, Nat.pos_of_ne_zero hr⟩) h,
-    by_contra fun hs ↦ hno (.inr ⟨0, Nat.pos_of_ne_zero hs⟩) h⟩, ?_⟩
+  refine ⟨fun h ↦ ⟨by_contra fun hr ↦ not_isEven_of_odd_integralNorm
+      (odd_integralNorm_signedUnitBasisVector r s (.inl ⟨0, Nat.pos_of_ne_zero hr⟩)) h,
+    by_contra fun hs ↦ not_isEven_of_odd_integralNorm
+      (odd_integralNorm_signedUnitBasisVector r s (.inr ⟨0, Nat.pos_of_ne_zero hs⟩)) h⟩, ?_⟩
   rintro ⟨rfl, rfl⟩; exact (signedUnitLattice 0 0).isEven_iff_forall_norm.mpr fun _ ↦ ⟨0, by simp⟩
 
 /-- `signedUnitLattice r s` is odd whenever `0 < r + s`. -/
@@ -275,59 +240,67 @@ theorem isCharacteristicVector_signedUnitCharacteristicVector (r s : ℕ) :
     (signedUnitLattice r s).integralNorm (signedUnitCharacteristicVector r s) = (r : ℤ) - s :=
   Int.cast_injective (α := ℚ) (by simp [integralNorm_cast])
 
-private def signedUnitSignFlipEquiv (r s : ℕ) (k : Fin r ⊕ Fin s) :
-    (Fin r ⊕ Fin s → ℚ) ≃ₗ[ℚ] (Fin r ⊕ Fin s → ℚ) where
-  toFun x := Function.update x k (-x k)
-  invFun x := Function.update x k (-x k)
-  map_add' x y := by ext l; by_cases h : l = k <;> simp [h, add_comm]
-  map_smul' c x := by ext l; by_cases h : l = k <;> simp [h]
-  left_inv x := by ext l; by_cases h : l = k <;> simp [h]
-  right_inv x := by ext l; by_cases h : l = k <;> simp [h]
-
-private theorem signedUnitSignFlipEquiv_apply (r s : ℕ) (k : Fin r ⊕ Fin s)
-    (x : Fin r ⊕ Fin s → ℚ) :
-    signedUnitSignFlipEquiv r s k x = Function.update x k (-x k) := (rfl)
-
-private theorem signedUnitSignFlipEquiv_symm (r s : ℕ) (k : Fin r ⊕ Fin s) :
-    (signedUnitSignFlipEquiv r s k).symm = signedUnitSignFlipEquiv r s k :=
-  LinearEquiv.ext fun x ↦ (LinearEquiv.symm_apply_eq _).2
-    (by ext l; by_cases h : l = k <;> simp [signedUnitSignFlipEquiv_apply, h])
+/-- Membership in `(signedUnitLattice r s).evenSublattice` means integral coordinates with
+even coordinate sum. -/
+theorem mem_evenSublattice_signedUnitLattice_carrier_iff (r s : ℕ) (x : Fin r ⊕ Fin s → ℚ) :
+    x ∈ (signedUnitLattice r s).evenSublattice.carrier ↔
+      (∀ k, ∃ z : ℤ, (z : ℚ) = x k) ∧
+        ∃ m : ℤ, (∑ i : Fin r, x (.inl i)) + ∑ j : Fin s, x (.inr j) = 2 * m := by
+  rw [(signedUnitLattice r s).mem_evenSublattice_carrier_iff_exists_norm]
+  have hchar (hx : x ∈ (signedUnitLattice r s).carrier) :
+      (∃ k : ℤ, (signedUnitLattice r s).norm x = 2 * k) ↔
+        ∃ m : ℤ, (∑ i : Fin r, x (.inl i)) + ∑ j : Fin s, x (.inr j) = 2 * m := by
+    let y : signedUnitLattice r s := ⟨x, hx⟩
+    choose z hz using (mem_signedUnitLattice_carrier_iff r s x).mp hx
+    have hform : (signedUnitLattice r s).integralForm (signedUnitCharacteristicVector r s) y =
+        (∑ i : Fin r, z (.inl i)) - ∑ j : Fin s, z (.inr j) :=
+      Int.cast_injective (α := ℚ) (by simp [y, integralForm_cast, ← hz])
+    rw [← (signedUnitLattice r s).even_integralNorm_iff y, even_iff_two_dvd,
+      ← (((signedUnitLattice r s).isCharacteristicVector_iff _).mp
+        (isCharacteristicVector_signedUnitCharacteristicVector r s) y).dvd_iff,
+      ← even_iff_two_dvd, hform, Int.even_sub, ← Int.even_add, even_iff_exists_two_mul]
+    exact exists_congr fun m ↦ by simp [← Int.cast_inj (α := ℚ), ← hz]
+  exact ⟨fun ⟨hx, hk⟩ ↦ ⟨(mem_signedUnitLattice_carrier_iff r s x).mp hx, (hchar hx).mp hk⟩,
+    fun ⟨hxZ, hm⟩ ↦ ⟨(mem_signedUnitLattice_carrier_iff r s x).mpr hxZ,
+      (hchar ((mem_signedUnitLattice_carrier_iff r s x).mpr hxZ)).mpr hm⟩⟩
 
 /-- The involutive self-isometry of `signedUnitLattice r s` that negates coordinate `k`. -/
 def signedUnitSignFlipIsometry (r s : ℕ) (k : Fin r ⊕ Fin s) :
     Isometry (signedUnitLattice r s) (signedUnitLattice r s) where
-  toLinearEquiv := signedUnitSignFlipEquiv r s k
+  toLinearEquiv := LinearEquiv.piCongrRight
+    (Function.update (fun _ ↦ LinearEquiv.refl ℚ ℚ) k (LinearEquiv.neg ℚ))
   map_app' x y := by
-    have hmul (l) : signedUnitSignFlipEquiv r s k x l * signedUnitSignFlipEquiv r s k y l =
-        x l * y l := by
-      rw [signedUnitSignFlipEquiv_apply, signedUnitSignFlipEquiv_apply]
-      by_cases h : l = k
-      · subst h; simp
-      · simp [h]
+    have hmul (l) :
+        (Function.update (fun _ ↦ LinearEquiv.refl ℚ ℚ) k (LinearEquiv.neg ℚ) l) (x l) *
+          (Function.update (fun _ ↦ LinearEquiv.refl ℚ ℚ) k (LinearEquiv.neg ℚ) l) (y l) =
+        x l * y l := by by_cases h : l = k <;> simp [h]
     simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-      signedUnitLattice_form_apply, hmul]
+      signedUnitLattice_form_apply, LinearEquiv.piCongrRight_apply, hmul]
   map_carrier := Submodule.ext fun x ↦ by
     rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply,
-      signedUnitSignFlipEquiv_symm, mem_signedUnitLattice_carrier_iff,
+      LinearEquiv.piCongrRight_symm, mem_signedUnitLattice_carrier_iff,
       mem_signedUnitLattice_carrier_iff]
     refine forall_congr' fun l ↦ ?_
-    rw [signedUnitSignFlipEquiv_apply]
+    rw [LinearEquiv.piCongrRight_apply]
     by_cases hlk : l = k
-    · subst hlk; simp only [Function.update_self]
-      exact ⟨fun ⟨z, hz⟩ ↦ ⟨-z, by push_cast; linarith⟩,
+    · subst hlk
+      simpa using ⟨fun ⟨z, hz⟩ ↦ ⟨-z, by push_cast; linarith⟩,
         fun ⟨z, hz⟩ ↦ ⟨-z, by push_cast; linarith⟩⟩
-    · simp only [Function.update_of_ne hlk]
+    · simp only [Function.update_of_ne hlk, LinearEquiv.refl_symm, LinearEquiv.refl_apply]
 
 /-- `signedUnitSignFlipIsometry` negates coordinate `k` and leaves all other coordinates fixed. -/
 @[simp] theorem signedUnitSignFlipIsometry_apply (r s : ℕ) (k : Fin r ⊕ Fin s)
     (x : Fin r ⊕ Fin s → ℚ) :
-    signedUnitSignFlipIsometry r s k x = Function.update x k (-x k) := (rfl)
+    signedUnitSignFlipIsometry r s k x = Function.update x k (-x k) := by
+  rw [← Isometry.coe_toLinearEquiv]
+  ext l; by_cases h : l = k <;> simp [signedUnitSignFlipIsometry, h]
 
 /-- `signedUnitSignFlipIsometry` is an involution: its inverse is itself. -/
 @[simp] theorem signedUnitSignFlipIsometry_symm (r s : ℕ) (k : Fin r ⊕ Fin s) :
     (signedUnitSignFlipIsometry r s k).symm = signedUnitSignFlipIsometry r s k :=
   Isometry.ext fun x ↦ by
     rw [Isometry.coe_symm]
-    exact LinearEquiv.congr_fun (signedUnitSignFlipEquiv_symm r s k) x
+    refine (LinearEquiv.symm_apply_eq _).mpr ?_
+    ext l; by_cases h : l = k <;> simp [h]
 
 end TauCeti.IntegralLattice

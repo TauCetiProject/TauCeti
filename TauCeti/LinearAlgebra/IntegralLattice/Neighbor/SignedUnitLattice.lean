@@ -170,11 +170,9 @@ noncomputable def evenSignedUnitNeighborIsometryShiftedHalfCharacteristicOverlat
       · simp only [e, w, Function.update_of_ne hlk, Pi.add_apply, Pi.smul_apply,
           coe_signedUnitBasisVector, coe_signedUnitCharacteristicVector, Pi.single_eq_of_ne hlk,
           smul_eq_mul, zsmul_eq_mul, zero_add, sub_self, mul_zero, neg_zero]
-    have he2 : ((2 : ℤ) • signedUnitBasisVector r s k : Fin r ⊕ Fin s → ℚ) ∈
-        (signedUnitLattice r s).evenSublattice.carrier :=
-      ((signedUnitLattice r s).mem_evenSublattice_carrier_iff _).mpr
-        (((signedUnitLattice r s).mem_evenSubmodule_iff _).mp
-          ((signedUnitLattice r s).two_smul_mem_evenSubmodule _))
+    have he2 : ((2 : ℤ) • e) ∈ (signedUnitLattice r s).evenSublattice.carrier := by
+      simpa [e, ← Int.cast_smul_eq_zsmul ℚ] using
+        (signedUnitLattice r s).two_smul_mem_evenSublattice_carrier (signedUnitBasisVector r s k)
     rw [← sub_sub_sub_cancel_right (signedUnitSignFlipIsometry r s k x)
         (signedUnitSignFlipIsometry r s k (e + (1 / 2 : ℚ) • w)) ((1 / 2 : ℚ) • w), hdiff,
       Submodule.sub_mem_iff_left _ ((signedUnitLattice r s).evenSublattice.carrier.neg_mem he2)]

@@ -39,8 +39,9 @@ This lightweight module provides the shared discriminant-class definitions neede
 
 ## Main results
 
-* `TauCeti.IntegralLattice.halfCharacteristicClass_add_two_smul`: shifting `w` by `2 • e` shifts
-  `[w / 2]` by `[e]`.
+* `TauCeti.IntegralLattice.halfCharacteristicDual_add_two_smul`,
+  `TauCeti.IntegralLattice.halfCharacteristicClass_add_two_smul`: shifting `w` by `2 • e` shifts
+  `w / 2` and `[w / 2]` by `e` and `[e]`.
 * `TauCeti.IntegralLattice.discriminantQuadraticMap_halfCharacteristicClass`:
   `q([w / 2]) = w² / 8 (mod 1)`.
 * `TauCeti.IntegralLattice.discriminantQuadraticMap_halfCharacteristicClass_add`: `q` is constant
@@ -108,15 +109,21 @@ noncomputable def latticeVectorClass (x : L) : L.evenSublattice.DiscriminantGrou
 theorem latticeVectorClass_def (x : L) :
     L.latticeVectorClass x = Submodule.Quotient.mk (L.latticeVectorDual x) := (rfl)
 
+/-- Shifting `w` by `2 • e` shifts `halfCharacteristicDual` by `latticeVectorDual e`. -/
+@[simp] theorem halfCharacteristicDual_add_two_smul {w : L} (hw : L.IsCharacteristicVector w)
+    (e : L) : L.halfCharacteristicDual (hw.add_two_smul e) =
+      L.latticeVectorDual e + L.halfCharacteristicDual hw := by
+  ext
+  simp [← Int.cast_smul_eq_zsmul ℚ, smul_add, add_comm]
+
 /-- Shifting a characteristic vector `w` by `2 • e` shifts its half-characteristic class
 in `A_(L_even)` by `L.latticeVectorClass e`. -/
 theorem halfCharacteristicClass_add_two_smul {w : L} (hw : L.IsCharacteristicVector w)
     (e : L) : L.halfCharacteristicClass (hw.add_two_smul e) =
       L.latticeVectorClass e + L.halfCharacteristicClass hw := by
-  simp only [halfCharacteristicClass_def, latticeVectorClass_def, ← Submodule.Quotient.mk_add]
-  refine congrArg Submodule.Quotient.mk (Subtype.ext ?_)
-  simp only [Submodule.coe_add, coe_halfCharacteristicDual, coe_latticeVectorDual,
-    Submodule.coe_smul_of_tower, ← Int.cast_smul_eq_zsmul ℚ, smul_add, smul_smul]; norm_num; abel
+  rw [L.halfCharacteristicClass_def (hw.add_two_smul e), L.halfCharacteristicClass_def hw,
+    L.latticeVectorClass_def e, ← Submodule.Quotient.mk_add,
+    L.halfCharacteristicDual_add_two_smul hw e]
 
 /-- The class of a lattice vector in `A_(L_even)` vanishes precisely when its norm is even. -/
 @[simp] theorem latticeVectorClass_eq_zero_iff (x : L) :
@@ -126,11 +133,8 @@ theorem halfCharacteristicClass_add_two_smul {w : L} (hw : L.IsCharacteristicVec
 
 /-- Every lattice vector defines a two-torsion class in `A_(L_even)`. -/
 @[simp] theorem two_nsmul_latticeVectorClass (x : L) : 2 • L.latticeVectorClass x = 0 := by
-  rw [latticeVectorClass_def, ← Nat.cast_smul_eq_nsmul ℤ, ← Submodule.Quotient.mk_smul,
-    L.evenSublattice.discriminantGroup_mk_eq_zero_iff, Submodule.coe_smul_of_tower,
-    coe_latticeVectorDual, Nat.cast_ofNat, ← Submodule.coe_smul_of_tower,
-    L.mem_evenSublattice_carrier_iff]
-  exact (L.mem_evenSubmodule_iff _).mp (L.two_smul_mem_evenSubmodule x)
+  rw [latticeVectorClass_def, L.evenSublattice.nsmul_discriminantGroup_mk_eq_zero_iff]
+  simpa using L.two_smul_mem_evenSublattice_carrier x
 
 /-- Integer scalar multiplication by `2` annihilates every `latticeVectorClass`. -/
 @[simp] theorem two_zsmul_latticeVectorClass (x : L) : (2 : ℤ) • L.latticeVectorClass x = 0 := by
@@ -140,11 +144,7 @@ theorem halfCharacteristicClass_add_two_smul {w : L} (hw : L.IsCharacteristicVec
 theorem two_nsmul_halfCharacteristicClass_eq_zero_iff_even_integralNorm {w : L}
     (hw : L.IsCharacteristicVector w) :
     2 • L.halfCharacteristicClass hw = 0 ↔ Even (L.integralNorm w) := by
-  have h2w : (2 : ℚ) • ((1 / 2 : ℚ) • (w : V)) = (w : V) := by rw [smul_smul]; norm_num
-  rw [halfCharacteristicClass_def, ← Nat.cast_smul_eq_nsmul ℤ, ← Submodule.Quotient.mk_smul,
-    L.evenSublattice.discriminantGroup_mk_eq_zero_iff, Submodule.coe_smul_of_tower,
-    coe_halfCharacteristicDual, ← Int.cast_smul_eq_zsmul ℚ, Int.cast_natCast, Nat.cast_ofNat,
-    h2w, L.mem_evenSublattice_carrier_iff]
+  simp [halfCharacteristicClass_def, L.evenSublattice.nsmul_discriminantGroup_mk_eq_zero_iff]
 
 /-- The discriminant quadratic map evaluates `[w / 2]` to `w² / 8` modulo `1`. -/
 theorem discriminantQuadraticMap_halfCharacteristicClass {w : L} (hw : L.IsCharacteristicVector w) :

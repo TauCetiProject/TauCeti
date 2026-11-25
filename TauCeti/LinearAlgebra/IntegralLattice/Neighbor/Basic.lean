@@ -161,14 +161,22 @@ theorem IsNeighbor.orthogonalSum_left {W : Type*} [AddCommGroup W] [Module ℚ W
   have hrel (B : Submodule ℤ V) : (Y.carrier.prod (L.carrier ⊓ M.carrier)).toAddSubgroup.relIndex
       (Y.carrier.prod B).toAddSubgroup =
       (L.carrier ⊓ M.carrier).toAddSubgroup.relIndex B.toAddSubgroup := by
-    let proj : (Y.carrier.prod B).toAddSubgroup →+ B.toAddSubgroup :=
-      ⟨⟨fun q ↦ ⟨q.val.2, q.property.2⟩, rfl⟩, fun _ _ ↦ rfl⟩
-    have hcomap : ((L.carrier ⊓ M.carrier).toAddSubgroup.addSubgroupOf B.toAddSubgroup).comap proj =
-        (Y.carrier.prod (L.carrier ⊓ M.carrier)).toAddSubgroup.addSubgroupOf
-          (Y.carrier.prod B).toAddSubgroup :=
-      AddSubgroup.ext fun q ↦ ⟨fun hq ↦ ⟨q.property.1, hq⟩, fun hq ↦ hq.2⟩
+    let proj : ↥(Y.carrier.prod B) →ₗ[ℤ] ↥B :=
+      ((LinearMap.snd ℤ W V).domRestrict (Y.carrier.prod B)).codRestrict B fun q ↦ q.property.2
+    have hproj (q : ↥(Y.carrier.prod B)) : (proj q : V) = q.val.2 :=
+      LinearMap.codRestrict_apply B _ q
+    have hcomap :
+        ((L.carrier ⊓ M.carrier).toAddSubgroup.addSubgroupOf B.toAddSubgroup).comap
+            proj.toAddMonoidHom =
+          (Y.carrier.prod (L.carrier ⊓ M.carrier)).toAddSubgroup.addSubgroupOf
+            (Y.carrier.prod B).toAddSubgroup := by
+      ext q
+      rw [AddSubgroup.mem_comap, AddSubgroup.mem_addSubgroupOf, AddSubgroup.mem_addSubgroupOf,
+        LinearMap.toAddMonoidHom_coe]
+      exact ⟨fun hq ↦ ⟨q.property.1, hproj q ▸ hq⟩, fun hq ↦ (hproj q).symm ▸ hq.2⟩
     rw [AddSubgroup.relIndex, ← hcomap, AddSubgroup.index_comap_of_surjective _
-      (fun b ↦ ⟨⟨(0, b.val), ⟨Y.carrier.zero_mem, b.property⟩⟩, rfl⟩), ← AddSubgroup.relIndex]
+      (fun b ↦ ⟨⟨(0, b.val), ⟨Y.carrier.zero_mem, b.property⟩⟩, Subtype.ext (hproj _)⟩),
+      ← AddSubgroup.relIndex]
   have hinf : (Y.orthogonalSum L).carrier ⊓ (Y.orthogonalSum M).carrier =
       Y.carrier.prod (L.carrier ⊓ M.carrier) := Submodule.ext fun x ↦ by
     simp only [Submodule.mem_inf, orthogonalSum_carrier, Submodule.mem_prod]; tauto

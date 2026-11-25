@@ -107,6 +107,13 @@ theorem mem_evenSublattice_carrier_iff (x : L) :
   · intro hx
     exact ⟨x, (L.mem_evenSubmodule_iff x).mpr hx, rfl⟩
 
+/-- Twice any vector of the original lattice belongs to the even sublattice carrier. -/
+theorem two_smul_mem_evenSublattice_carrier (x : L) :
+    (2 : ℚ) • (x : V) ∈ L.evenSublattice.carrier := by
+  simpa [← Int.cast_smul_eq_zsmul ℚ] using
+    (L.mem_evenSublattice_carrier_iff ((2 : ℤ) • x)).mpr
+      ((L.mem_evenSubmodule_iff _).mp (L.two_smul_mem_evenSubmodule x))
+
 /-- The even sublattice retains the original rational bilinear form. -/
 @[simp]
 theorem evenSublattice_form : L.evenSublattice.form = L.form := by
