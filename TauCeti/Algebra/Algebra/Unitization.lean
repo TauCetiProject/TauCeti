@@ -40,6 +40,7 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
   `Unitization R A → Unitization S A`, `(r, a) ↦ (algebraMap R S r, a)`.
 * `Unitization.fstHom_comp_mapScalars`, `Unitization.mapScalars_map`: change of scalars lies over
   `algebraMap R S` on the augmentations and commutes with `Unitization.map`.
+* `Unitization.fstStarAlgHom`: the augmentation `(r, a) ↦ r` as a star algebra homomorphism.
 * `Unitization.fstAlgEquivOfSubsingleton`, `Unitization.fstStarAlgEquivOfSubsingleton`: when `A`
   is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra)
   equivalence onto `R`.
@@ -164,6 +165,23 @@ theorem mapScalars_map [NonUnitalSemiring B] [Module S B] [IsScalarTower S B B]
   Unitization.ext (by simp) (by simp)
 
 end MapScalars
+
+section Augmentation
+
+variable (R A : Type*) [CommSemiring R] [Star R] [NonUnitalSemiring A] [Star A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A]
+
+/-- The augmentation `Unitization R A → R`, `(r, a) ↦ r`, as a star algebra homomorphism. -/
+def fstStarAlgHom : Unitization R A →⋆ₐ[R] R where
+  toAlgHom := fstHom R A
+  map_star' := fst_star
+
+/-- The augmentation sends `(r, a)` to `r`. -/
+@[simp]
+theorem fstStarAlgHom_apply (x : Unitization R A) : fstStarAlgHom R A x = x.fst :=
+  (rfl)
+
+end Augmentation
 
 section Subsingleton
 
