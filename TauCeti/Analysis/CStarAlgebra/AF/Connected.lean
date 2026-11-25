@@ -16,8 +16,9 @@ Every element of a finite-dimensional subalgebra of `C(X, 𝕜)` is constant whe
 preconnected and `𝕜` is a T1 space such as `ℂ`
 (`ContinuousMap.apply_eq_apply_of_mem_finiteDimensional`). Consequently, if `X` is
 compact and preconnected and `C(X, ℂ)` is AF, then the dense union of its finite-dimensional
-stages consists of constant functions, and so does `C(X, ℂ)`. So `C(X, ℂ)` is not AF once `X` is
-compact, connected and has two points; for instance `C([0, 1], ℂ)` is not AF.
+stages consists of constant functions, and so does `C(X, ℂ)`. So `C(X, ℂ)` is not AF once some
+continuous `X → ℂ` is non-constant, e.g. when `X` is compact Hausdorff, connected and has two
+points; for instance `C([0, 1], ℂ)` is not AF.
 
 ## Main statements
 
@@ -32,8 +33,8 @@ namespace TauCeti
 variable {X : Type*} [TopologicalSpace X] [CompactSpace X]
 
 /-- If `X` is compact and preconnected and `C(X, ℂ)` is AF, then every continuous function
-`X → ℂ` is constant. So `C(X, ℂ)` is not AF when `X` is compact, preconnected and has two
-points. -/
+`X → ℂ` is constant. So `C(X, ℂ)` is not AF when `X` is compact and preconnected and some
+continuous `X → ℂ` is non-constant. -/
 theorem IsAF.continuousMap_apply_eq_apply [PreconnectedSpace X] (h : IsAF C(X, ℂ))
     (f : C(X, ℂ)) (x y : X) : f x = f y := by
   obtain ⟨S, -, hS, hdense⟩ := isAF_iff.1 h
