@@ -190,22 +190,12 @@ theorem relIndex_componentGroup_ne_zero {U U' : Subgroup (GL (Fin 2) (FiniteAdel
   -- The index is at most that of `gU'g⁻¹` in `gUg⁻¹`, which is that of `U'` in `U`.
   set φ := GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))
   set c := (MulAut.conj g).toMonoidHom
-  -- `φ⁻¹(gU'g⁻¹) ⊓ Γ_{g,U} ≤ Γ_{g,U'}`
-  have hle : (U'.map c).comap φ ⊓ componentGroup U g ≤ componentGroup U' g := by
-    rw [componentGroup, componentGroup]
-    exact le_inf (inf_le_right.trans inf_le_left) inf_le_left
-  -- `Γ_{g,U} ≤ φ⁻¹(gUg⁻¹)`
-  have hcomap : componentGroup U g ≤ (U.map c).comap φ := by
-    rw [componentGroup]
-    exact inf_le_right
   have hc : (U'.map c).relIndex (U.map c) ≠ 0 := by
     rw [Subgroup.relIndex_map_map_of_injective _ _ (MulAut.conj g).injective]
     exact Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact hU' hU
-  have hφ : ((U'.map c).comap φ).relIndex (componentGroup U g) ≠ 0 :=
-    mt (Subgroup.relIndex_eq_zero_of_le_right hcomap) (Subgroup.relIndex_comap_ne_zero φ hc)
-  refine fun h ↦ hφ ?_
-  rw [← Subgroup.inf_relIndex_right]
-  exact Subgroup.relIndex_eq_zero_of_le_left hle h
+  -- `Γ_{g,U'} = φ⁻¹(gU'g⁻¹) ⊓ GL₂(ℚ)^+` and likewise for `U`
+  rw [componentGroup, componentGroup, inf_comm (GLPos _ _), inf_comm (GLPos _ _)]
+  exact Subgroup.relIndex_inter_ne_zero (Subgroup.relIndex_comap_ne_zero φ hc) _
 
 end AdelicExamples.GL2
 
