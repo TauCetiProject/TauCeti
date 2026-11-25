@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Ring.Compact
 import Mathlib.RingTheory.Filtration
 import Mathlib.Topology.Algebra.Module.Compact
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The topology of a compact Hausdorff noetherian local ring is adic
@@ -23,15 +24,15 @@ or discreteness hypothesis. This identifies the neighbourhoods of the identity i
 points over `R` of an affine group of finite type with its congruence subgroups.
 
 More generally, whenever the maximal ideal of a local ring is open, as it is for a compact
-Hausdorff local ring (`IsLocalRing.isOpen_maximalIdeal`), the residue map is continuous for the
-discrete topology on the residue field, its fibres being the cosets of the maximal ideal.
+Hausdorff noetherian local ring (`IsLocalRing.isOpen_maximalIdeal`), the residue map is continuous
+for every topology on the residue field, being constant on the cosets of the maximal ideal.
 
 ## Main results
 
 * `IsLocalRing.isAdic_maximalIdeal`: the topology of a compact Hausdorff noetherian local ring is
   its `m`-adic topology.
 * `IsLocalRing.continuous_residue`: the residue map of a local ring with open maximal ideal is
-  continuous for the discrete topology on its residue field.
+  continuous for every topology on its residue field.
 -/
 
 public section
@@ -56,19 +57,14 @@ theorem isAdic_maximalIdeal : IsAdic (maximalIdeal R) := by
   · exact Ideal.pow_le_pow_right (le_max_left i j)
   · exact Ideal.pow_le_pow_right (le_max_right i j)
 
-/-- **The residue map is continuous when the maximal ideal is open**, for the discrete topology on
-the residue field: the fibre over `residue a` is the coset `a + m`, the preimage of the open set
-`m` under the translation `x ↦ x + -a`. -/
+/-- **The residue map is continuous when the maximal ideal is open**, for every topology on the
+residue field: its kernel is the open maximal ideal, so it is constant on the open cosets of `m`. -/
 theorem continuous_residue {S : Type*} [CommRing S] [IsLocalRing S] [TopologicalSpace S]
-    [ContinuousAdd S] [TopologicalSpace (ResidueField S)] [DiscreteTopology (ResidueField S)]
-    (h : IsOpen (maximalIdeal S : Set S)) : Continuous (residue S) := by
-  refine continuous_discrete_rng.2 fun b ↦ ?_
-  obtain ⟨a, rfl⟩ := residue_surjective b
-  have : residue S ⁻¹' {residue S a} = (· + -a) ⁻¹' (maximalIdeal S) := by
+    [ContinuousConstVAdd S S] [TopologicalSpace (ResidueField S)]
+    (h : IsOpen (maximalIdeal S : Set S)) : Continuous (residue S) :=
+  (residue S).toAddMonoidHom.continuous_of_isOpen_ker <| by
+    convert h using 1
     ext x
-    rw [Set.mem_preimage, Set.mem_preimage, SetLike.mem_coe, Set.mem_singleton_iff, ← sub_eq_zero,
-      ← map_sub, residue_eq_zero_iff, sub_eq_add_neg]
-  rw [this]
-  exact h.preimage (continuous_id.add continuous_const)
+    simp
 
 end IsLocalRing

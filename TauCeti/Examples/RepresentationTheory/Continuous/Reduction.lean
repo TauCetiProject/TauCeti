@@ -65,27 +65,11 @@ local instance : IsModuleTopology ℚ_[ℓ] (ℚ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 →
 
 /-- The representation `n ↦ (1 nb; 0 1)` of `ℤ`, written multiplicatively, on `ℤ_ℓ²`. -/
 def unipotentRep (b : ℤ_[ℓ]) : Representation ℤ_[ℓ] (Multiplicative ℤ) (Fin 2 → ℤ_[ℓ]) where
-  toFun n :=
-    { toFun v := ![v 0 + (n.toAdd : ℤ_[ℓ]) * b * v 1, v 1]
-      map_add' v w := by
-        ext i
-        fin_cases i
-        · simp
-          ring
-        · simp
-      map_smul' c v := by
-        ext i
-        fin_cases i
-        · simp
-          ring
-        · simp }
-  map_one' := by ext v i; fin_cases i <;> simp
+  toFun n := (!![1, (n.toAdd : ℤ_[ℓ]) * b; 0, 1]).mulVecLin
+  map_one' := by simp [← Matrix.one_fin_two, Module.End.one_eq_id]
   map_mul' m n := by
-    ext v i
-    fin_cases i
-    · simp
-      ring
-    · simp
+    rw [Module.End.mul_eq_comp, ← Matrix.mulVecLin_mul, Matrix.mul_fin_two]
+    simp [add_mul, add_comm]
 
 /-- The continuous representation `n ↦ (1 nb; 0 1)` of the discrete group `ℤ` on `ℤ_ℓ²`. -/
 def unipotent (b : ℤ_[ℓ]) : ContinuousRep (Multiplicative ℤ) ℤ_[ℓ] (Fin 2 → ℤ_[ℓ]) where
@@ -94,8 +78,9 @@ def unipotent (b : ℤ_[ℓ]) : ContinuousRep (Multiplicative ℤ) ℤ_[ℓ] (Fi
     IsModuleTopology.continuous_of_linearMap (R := ℤ_[ℓ]) (unipotentRep ℓ b g)
 
 theorem unipotent_apply (b : ℤ_[ℓ]) (n : Multiplicative ℤ) (v : Fin 2 → ℤ_[ℓ]) :
-    unipotent ℓ b n v = ![v 0 + (n.toAdd : ℤ_[ℓ]) * b * v 1, v 1] :=
-  (rfl)
+    unipotent ℓ b n v = ![v 0 + (n.toAdd : ℤ_[ℓ]) * b * v 1, v 1] := by
+  ext i
+  fin_cases i <;> simp [unipotent, unipotentRep, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 /-- **The two lattices span the same `ℚ_ℓ`-representation**: the inclusion of
 `ℤ_ℓ e₁ ⊕ ℓℤ_ℓ e₂` in `ℤ_ℓ²`, which is `diag(1, ℓ)` from the basis `e₁, ℓ e₂` to `e₁, e₂`,
