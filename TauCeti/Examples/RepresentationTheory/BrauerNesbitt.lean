@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Maschke
+public import TauCeti.Algebra.MonoidAlgebra.CyclicTwo
 public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.FDRep.Basic
 
@@ -109,22 +110,19 @@ section Sign
 variable (k : Type*) [Field k] (n : ℕ)
 
 /-- The sign representation of `ℤ/2`, written multiplicatively, on `kⁿ`: the generator acts by
-`-1`. -/
-def sign : Representation k (Multiplicative (ZMod 2)) (Fin n → k) where
-  toFun a := (-1) ^ a.toAdd.val
-  map_one' := by simp
-  map_mul' a b := by
-    rw [toAdd_mul, ZMod.val_add, ← pow_add, neg_one_pow_eq_pow_mod_two (a.toAdd.val + _)]
+`-1`. It is the sign character `TauCeti.cyclicTwoSign` with values in
+`Module.End k (Fin n → k)`. -/
+def sign : Representation k (Multiplicative (ZMod 2)) (Fin n → k) :=
+  cyclicTwoSign _
 
 /-- Each element `a` acts on `sgn^{⊕n}` by `(-1) ^ a.toAdd.val`. -/
 theorem sign_apply (a : Multiplicative (ZMod 2)) : sign k n a = (-1) ^ a.toAdd.val :=
-  (rfl)
+  cyclicTwoSign_apply _ a
 
 /-- The generator of `ℤ/2` acts on `sgn^{⊕n}` by `-1`. -/
 @[simp]
-theorem sign_ofAdd_one : sign k n (Multiplicative.ofAdd 1) = -1 := by
-  rw [sign_apply, toAdd_ofAdd]
-  exact pow_one _
+theorem sign_ofAdd_one : sign k n (Multiplicative.ofAdd 1) = -1 :=
+  cyclicTwoSign_ofAdd_one _
 
 /-- The trivial representation of `ℤ/2`, written multiplicatively, on `kⁿ`. -/
 abbrev triv : Representation k (Multiplicative (ZMod 2)) (Fin n → k) :=
