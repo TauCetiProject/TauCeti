@@ -76,6 +76,7 @@ noncomputable section
 
 open Filter Metric Set Topology
 open TauCeti.Complex.UnitDisc
+open Complex.UnitDisc (exists_forall_norm_lt_of_isCompact isOpen_setOf_norm_lt)
 open scoped Complex.UnitDisc Manifold ContDiff
 
 namespace TauCeti
@@ -121,23 +122,6 @@ private theorem isCompact_preimage_zero_of_forall_norm_lt {f : C(Y, ℂ)} {σ : 
     (hs : s < 1) (h : ∀ z, f (σ z) = 0 → ‖(z : ℂ)‖ < s) : IsCompact (σ ⁻¹' (f ⁻¹' {0})) :=
   (Complex.UnitDisc.isCompact_setOf_norm_le hs).of_isClosed_subset
     ((isClosed_singleton.preimage f.continuous).preimage σ.continuous) fun z hz ↦ (h z hz).le
-
-/-- The points of `𝔻` of norm less than `ρ` form an open set. -/
-private theorem isOpen_setOf_norm_lt (ρ : ℝ) : IsOpen {z : 𝔻 | ‖(z : ℂ)‖ < ρ} :=
-  isOpen_lt Complex.UnitDisc.continuous_coe.norm continuous_const
-
-/-- Of pairwise disjoint discs `B(cᵢ, rᵢ)`, a point of `B(cᵢ, rᵢ)` lying in the union of the
-smaller concentric discs `B(cⱼ, rⱼ tⱼ)`, `tⱼ ≤ 1`, lies in `B(cᵢ, rᵢ tᵢ)`. -/
-private theorem mem_ball_mul_of_mem_iUnion {κ : Type*} {c : κ → ℂ} {r : κ → ℝ}
-    (hr : ∀ i, 0 < r i)
-    (hdisj : Pairwise fun i j ↦ Disjoint (ball (c i) (r i)) (ball (c j) (r j))) {t : κ → ℝ}
-    (ht : ∀ i, t i ≤ 1) {w : ℂ} (hw : w ∈ ⋃ j, ball (c j) (r j * t j)) {i : κ}
-    (hwi : w ∈ ball (c i) (r i)) : w ∈ ball (c i) (r i * t i) := by
-  obtain ⟨j, hj⟩ := mem_iUnion.1 hw
-  obtain rfl | hij := eq_or_ne j i
-  · exact hj
-  · exact absurd hwi (Set.disjoint_left.1 (hdisj hij)
-      (ball_subset_ball (mul_le_of_le_one_right (hr j).le (ht j)) hj))
 
 /-! ### The limit zero charge -/
 
@@ -262,11 +246,11 @@ preimage of `Z` in `[0, 1] × 𝔻` is compact. -/
 theorem limitZeroCharge_eq_of_homotopy [l.NeBot] {σ₀ σ₁ : C(𝔻, Y)} (F : σ₀.Homotopy σ₁)
     (hF : IsCompact ((F : unitInterval × 𝔻 → Y) ⁻¹' Z)) :
     limitZeroCharge l α Z σ₀ = limitZeroCharge l α Z σ₁ := by
-  obtain ⟨ρ₀, hρ₀, hρ₀₁, hFρ₀⟩ := exists_forall_norm_lt_of_isCompact (hF.image continuous_snd)
+  obtain ⟨ρ₀, ρ, hρ₀, hρ₀ρ, hρ₁, hFρ₀⟩ :=
+    exists_forall_norm_lt_of_isCompact (hF.image continuous_snd)
+  have hρ : 0 ≤ ρ := hρ₀.trans hρ₀ρ.le
   have hFZ (t : unitInterval) (z : 𝔻) (hz : F (t, z) ∈ Z) : ‖(z : ℂ)‖ < ρ₀ :=
     hFρ₀ z ⟨(t, z), hz, rfl⟩
-  obtain ⟨ρ, hρ, hρ₁, hρ₀ρ⟩ : ∃ ρ, 0 ≤ ρ ∧ ρ < 1 ∧ ρ₀ < ρ :=
-    ⟨(ρ₀ + 1) / 2, by positivity, by linarith, by linarith⟩
   set D := discRetraction ρ hρ hρ₁
   -- Eventually the zeros of `α k ∘ F` over the closed disc of radius `ρ` have norm less than `ρ₀`.
   have hconf := eventually_forall_mem_of_apply_eq_zero h.eventually_ne_zero
@@ -279,7 +263,8 @@ theorem limitZeroCharge_eq_of_homotopy [l.NeBot] {σ₀ σ₁ : C(𝔻, Y)} (F :
   rw [← h₀, ← h₁]
   -- The homotopy `F ∘ (id × D)` has compact total preimage of the zeros of `α k`.
   refine ContinuousMap.zeroCharge_eq_of_homotopy (α k) (F.compContinuousMap D) ?_
-  refine (isCompact_univ.prod (Complex.UnitDisc.isCompact_setOf_norm_le hρ₀₁)).of_isClosed_subset
+  refine (isCompact_univ.prod
+    (Complex.UnitDisc.isCompact_setOf_norm_le (hρ₀ρ.trans hρ₁))).of_isClosed_subset
     ((isClosed_singleton.preimage (α k).continuous).preimage (F.compContinuousMap D).continuous)
     fun p hp ↦ ⟨mem_univ _, ?_⟩
   have hmem := hk (p.1, D p.2) ⟨mem_univ _, norm_coe_discRetraction_apply_le p.2⟩ hp
@@ -292,15 +277,13 @@ theorem limitZeroCharge_comp [l.NeBot] (o : HomologicalOrientation 𝔻 ℂ 2) {
     (hσ : IsCompact (σ ⁻¹' Z)) {θ : C(𝔻, 𝔻)} (hθ : IsProperMap θ) :
     limitZeroCharge l α Z (σ.comp θ) =
       o.degree o Complex.finrank_real_complex θ * limitZeroCharge l α Z σ := by
-  obtain ⟨ρ₀, hρ₀, hρ₀₁, hσρ₀⟩ := exists_forall_norm_lt_of_isCompact hσ
-  obtain ⟨ρ, hρ, hρ₁, hρ₀ρ⟩ : ∃ ρ, 0 ≤ ρ ∧ ρ < 1 ∧ ρ₀ < ρ :=
-    ⟨(ρ₀ + 1) / 2, by positivity, by linarith, by linarith⟩
+  obtain ⟨ρ₀, ρ, hρ₀, hρ₀ρ, hρ₁, hσρ₀⟩ := exists_forall_norm_lt_of_isCompact hσ
+  have hρ : 0 ≤ ρ := hρ₀.trans hρ₀ρ.le
   -- `θ` sends only a compact set into the closed disc of radius `ρ`; it lies in a disc of radius
   -- `s₀ < s < 1`.
-  obtain ⟨s₀, hs₀, hs₀₁, hθs₀⟩ := exists_forall_norm_lt_of_isCompact
+  obtain ⟨s₀, s, hs₀, hs₀s, hs₁, hθs₀⟩ := exists_forall_norm_lt_of_isCompact
     (hθ.isCompact_preimage (Complex.UnitDisc.isCompact_setOf_norm_le hρ₁))
-  obtain ⟨s, hs, hs₁, hs₀s⟩ : ∃ s, 0 ≤ s ∧ s < 1 ∧ s₀ < s :=
-    ⟨(s₀ + 1) / 2, by positivity, by linarith, by linarith⟩
+  have hs : 0 ≤ s := hs₀.trans hs₀s.le
   have hθ' (z : 𝔻) (hz : ‖(θ z : ℂ)‖ < ρ₀) : ‖(z : ℂ)‖ < s₀ := hθs₀ z (hz.trans hρ₀ρ).le
   obtain ⟨k, h₁, h₂, h₃, h₄⟩ := ((h.eventually_zeroCharge_eq_limitZeroCharge hρ hρ₁ hρ₀ρ hσρ₀).and
     ((h.eventually_zeroCharge_eq_limitZeroCharge hs hs₁ hs₀s (σ := σ.comp θ)
@@ -311,7 +294,7 @@ theorem limitZeroCharge_comp [l.NeBot] (o : HomologicalOrientation 𝔻 ℂ 2) {
       ((Complex.UnitDisc.isCompact_setOf_norm_le hs₁).image θ.continuous)
       (isOpen_setOf_norm_lt ρ₀) fun z _ hz ↦ hσρ₀ z hz)))).exists
   rw [← h₁, ← h₂, ← ContinuousMap.zeroCharge_comp o
-    (isCompact_preimage_zero_of_forall_norm_lt hρ₀₁ fun z hz ↦ h₃ z hz) hθ]
+    (isCompact_preimage_zero_of_forall_norm_lt (hρ₀ρ.trans hρ₁) fun z hz ↦ h₃ z hz) hθ]
   -- `σ ∘ θ ∘ D_s` and `σ ∘ D_ρ ∘ θ` agree where `θ` lands in the disc of radius `ρ₀`, inside the
   -- disc of radius `s₀`, which contains the zeros of both.
   exact (zeroCharge_comp_discRetraction_comp_eq (N := {z : 𝔻 | ‖(z : ℂ)‖ < ρ₀}) hρ hρ₁ hs hs₁
@@ -329,14 +312,13 @@ theorem limitZeroCharge_eq_sum [l.NeBot] {κ : Type} [Fintype κ] {σ : C(𝔻, 
     limitZeroCharge l α Z σ =
       ∑ i, limitZeroCharge l α Z (σ.comp (subdisc (c i) (r i) (hc i) (hr i))) := by
   set s := fun i ↦ subdisc (c i) (r i) (hc i) (hr i)
-  obtain ⟨ρ₀, hρ₀, hρ₀₁, hσρ₀⟩ := exists_forall_norm_lt_of_isCompact hσ
-  obtain ⟨ρ, hρ, hρ₁, hρ₀ρ⟩ : ∃ ρ, 0 ≤ ρ ∧ ρ < 1 ∧ ρ₀ < ρ :=
-    ⟨(ρ₀ + 1) / 2, by positivity, by linarith, by linarith⟩
+  obtain ⟨ρ₀, ρ, hρ₀, hρ₀ρ, hρ₁, hσρ₀⟩ := exists_forall_norm_lt_of_isCompact hσ
+  have hρ : 0 ≤ ρ := hρ₀.trans hρ₀ρ.le
   -- Each restriction `σ ∘ sᵢ` sends no point of norm at least `t₀ᵢ < tᵢ < 1` into `Z`.
-  choose t₀ ht₀ ht₀₁ hσt₀ using fun i ↦ exists_forall_norm_lt_of_isCompact
+  choose t₀ t ht₀ ht₀t ht₁ hσt₀ using fun i ↦ exists_forall_norm_lt_of_isCompact
     (isCompact_subdisc_preimage_of_subset_iUnion hc hr hdisj hσ hcov i)
-  choose t ht ht₁ ht₀t using fun i ↦ (⟨(t₀ i + 1) / 2, by linarith [ht₀ i],
-    by linarith [ht₀₁ i], by linarith [ht₀₁ i]⟩ : ∃ t, 0 ≤ t ∧ t < 1 ∧ t₀ i < t)
+  have ht (i : κ) : 0 ≤ t i := (ht₀ i).trans (ht₀t i).le
+  have ht₀₁ (i : κ) : t₀ i < 1 := (ht₀t i).trans (ht₁ i)
   -- The open set `N` in which the zeros eventually lie: near `σ⁻¹(Z)` in every subdisc.
   set N : Set 𝔻 := {z | ‖(z : ℂ)‖ < ρ₀} ∩ ⋃ i, {z | (z : ℂ) ∈ ball (c i) (r i * t₀ i)}
   have hN : IsOpen N := (isOpen_setOf_norm_lt ρ₀).inter
@@ -359,7 +341,8 @@ theorem limitZeroCharge_eq_sum [l.NeBot] {κ : Type} [Fintype κ] {σ : C(𝔻, 
     (eventually_all.2 fun i ↦ eventually_forall_mem_of_apply_eq_zero h.eventually_ne_zero (σ := σ)
       ((Complex.UnitDisc.isCompact_setOf_norm_le (ht₁ i)).image (s i).continuous) hN
       fun z _ hz ↦ hσN z hz)))).exists
-  rw [← h₀, ContinuousMap.zeroCharge_eq_sum (isCompact_preimage_zero_of_forall_norm_lt hρ₀₁
+  rw [← h₀, ContinuousMap.zeroCharge_eq_sum (isCompact_preimage_zero_of_forall_norm_lt
+    (hρ₀ρ.trans hρ₁)
     fun z hz ↦ (hconf z hz).1) c r hc hr hdisj fun z hz ↦ ?_]
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [← hall i]
@@ -383,10 +366,9 @@ theorem isZeroChargeLimit_const (l : Filter ι) (f : C(Y, ℂ)) :
 theorem limitZeroCharge_const [l.NeBot] {f : C(Y, ℂ)} {σ : C(𝔻, Y)}
     (hσ : IsCompact (σ ⁻¹' (f ⁻¹' {0}))) :
     limitZeroCharge l (fun _ ↦ f) (f ⁻¹' {0}) σ = f.zeroCharge σ := by
-  obtain ⟨ρ₀, hρ₀, hρ₀₁, hσρ₀⟩ := exists_forall_norm_lt_of_isCompact hσ
-  obtain ⟨ρ, hρ, hρ₁, hρ₀ρ⟩ : ∃ ρ, 0 ≤ ρ ∧ ρ < 1 ∧ ρ₀ < ρ :=
-    ⟨(ρ₀ + 1) / 2, by positivity, by linarith, by linarith⟩
-  refine (isZeroChargeLimit_const l f).limitZeroCharge_eq_of_eventually hρ hρ₁ hρ₀ρ
+  obtain ⟨ρ₀, ρ, hρ₀, hρ₀ρ, hρ₁, hσρ₀⟩ := exists_forall_norm_lt_of_isCompact hσ
+  refine (isZeroChargeLimit_const l f).limitZeroCharge_eq_of_eventually (hρ₀.trans hρ₀ρ.le) hρ₁
+    hρ₀ρ
     (fun z hz ↦ hσρ₀ z hz) (Eventually.of_forall fun _ ↦ ?_)
   -- `σ ∘ D_ρ` agrees with `σ` on the disc of radius `ρ₀`, which contains the zeros of both.
   refine ContinuousMap.zeroCharge_congr (isOpen_setOf_norm_lt ρ₀) (fun z hz ↦ ?_)

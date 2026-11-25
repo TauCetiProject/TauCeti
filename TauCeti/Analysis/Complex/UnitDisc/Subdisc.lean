@@ -27,7 +27,9 @@ cohomology assignments. In particular, if finitely many pairwise disjoint round 
 compact set, its preimage under each of their subdisc maps is compact
 (`TauCeti.Complex.UnitDisc.isCompact_subdisc_preimage_of_subset_iUnion`). Concentric discs
 correspond under `subdisc c r` to discs about `0`: `subdisc c r` sends `w` into `B(c, r t)` exactly
-when `‖w‖ < t` (`TauCeti.Complex.UnitDisc.coe_subdisc_mem_ball_mul_iff`).
+when `‖w‖ < t` (`TauCeti.Complex.UnitDisc.coe_subdisc_mem_ball_mul_iff`). Of pairwise disjoint
+round discs, a point of one of them lying in the union of their shrunk concentric discs lies in its
+own shrunk disc (`TauCeti.Complex.UnitDisc.mem_ball_mul_of_mem_iUnion`).
 
 Points of a finite subset of `𝔻` can be isolated in pairwise disjoint round discs inside `𝔻`, on
 which a function continuous at these points varies arbitrarily little
@@ -209,8 +211,20 @@ theorem isCompact_subdisc_preimage {K : Set 𝔻} (hK : IsCompact K)
 when `‖w‖ < t`. -/
 theorem coe_subdisc_mem_ball_mul_iff (w : 𝔻) (t : ℝ) :
     (subdisc c r hc hr w : ℂ) ∈ ball c (r * t) ↔ ‖(w : ℂ)‖ < t := by
-  rw [mem_ball, dist_eq_norm, coe_subdisc_apply, add_sub_cancel_left, norm_mul,
-    Complex.norm_real, Real.norm_of_nonneg hr.le, mul_lt_mul_iff_right₀ hr]
+  rw [coe_subdisc_apply]
+  simp [dist_eq_norm, abs_of_pos hr, mul_lt_mul_iff_right₀ hr]
+
+/-- Of pairwise disjoint discs `B(cᵢ, rᵢ)`, a point of `B(cᵢ, rᵢ)` lying in the union of the
+smaller concentric discs `B(cⱼ, rⱼ tⱼ)`, `tⱼ ≤ 1`, lies in `B(cᵢ, rᵢ tᵢ)`. -/
+theorem mem_ball_mul_of_mem_iUnion {ι : Type*} {c : ι → ℂ} {r : ι → ℝ} (hr : ∀ i, 0 < r i)
+    (hdisj : Pairwise fun i j ↦ Disjoint (ball (c i) (r i)) (ball (c j) (r j))) {t : ι → ℝ}
+    (ht : ∀ i, t i ≤ 1) {w : ℂ} (hw : w ∈ ⋃ j, ball (c j) (r j * t j)) {i : ι}
+    (hwi : w ∈ ball (c i) (r i)) : w ∈ ball (c i) (r i * t i) := by
+  obtain ⟨j, hj⟩ := mem_iUnion.1 hw
+  obtain rfl | hij := eq_or_ne j i
+  · exact hj
+  · exact absurd hwi (Set.disjoint_left.1 (hdisj hij)
+      (ball_subset_ball (mul_le_of_le_one_right (hr j).le (ht j)) hj))
 
 /-- If finitely many pairwise disjoint round discs `B(cⱼ, rⱼ) ⊆ 𝔻` contain a compact set `K ⊆ 𝔻`,
 then the points of `𝔻` that each `subdisc cⱼ rⱼ` sends into `K` form a compact set: no point of `K`

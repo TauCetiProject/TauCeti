@@ -22,9 +22,10 @@ along a filter `l`, with cutoff currents `Θₖ = i F_{bₖ} + d(χ(|αₖ|²) �
 
 Then the family of framing sections `αₖ` is a zero-charge limit with support `Z`
 (`TauCeti.SeibergWitten.isZeroChargeLimit_of_tendsto`, see `TauCeti.IsZeroChargeLimit`). Off `Z`
-the sections are eventually nonvanishing on compact sets, and the framed charge of every disc whose
-boundary circle avoids `Z` stabilizes. The framed charge is the winding number of `αₖ` along the
-boundary circle
+the sections are eventually nonvanishing on compact sets. The framed charge of a disc `σ` cut off at
+radius `ρ < 1` stabilizes whenever the whole preimage `σ⁻¹(Z)` lies in the open disc of some radius
+`ρ₀ < ρ`: the zeros then eventually lie inside a circle of radius between `ρ₀` and `ρ`, which avoids
+`σ⁻¹(Z)`. The framed charge is the winding number of `αₖ` along that circle
 (`TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_eq_two_pi_mul_degree`),
 equivalently the zero charge of the disc (`ContinuousMap.zeroCharge_eq_degree_toBasedLoop`). Its
 stabilization is `TauCeti.SeibergWitten.exists_int_eventually_degree_toBasedLoop_eq`.
@@ -35,10 +36,11 @@ degree and additivity laws of a positive cohomology assignment to `Z`
 `TauCeti.IsZeroChargeLimit.limitZeroCharge_eq_of_homotopy`,
 `TauCeti.IsZeroChargeLimit.limitZeroCharge_comp`,
 `TauCeti.IsZeroChargeLimit.limitZeroCharge_eq_sum`). Only the vacuum region and the convergence
-of the currents enter: neither positivity of the charges of pseudoholomorphic discs nor any
-density bound on `Z` is used or asserted. For Seiberg–Witten solutions at large parameter these
-are separate inputs, which make the limit zero charges a positive cohomology assignment
-(`TauCeti.PositiveCohomologyAssignment.ofIsZeroChargeLimit`).
+of the currents enter: positivity of the charges of pseudoholomorphic discs is neither used nor
+asserted. For Seiberg–Witten solutions at large parameter it is the separate input that makes the
+limit zero charges a positive cohomology assignment
+(`TauCeti.PositiveCohomologyAssignment.ofIsZeroChargeLimit`). No density bound on `Z` enters
+anywhere.
 
 ## References
 
@@ -79,8 +81,8 @@ abelian Higgs pairs along a filter `l` whose cutoff currents `Θₖ` have coeffi
 distributions, and let every point off `Z` have a neighbourhood that eventually lies in the vacuum
 region `{χ(|αₖ|²) = 1}`. Then the framing sections `αₖ` form a zero-charge limit with support `Z`:
 they are eventually nonvanishing on every compact set missing `Z`, and the zero charges, that is
-the framed charges, of every disc cut off at a radius whose circle avoids `Z` are eventually
-constant. -/
+the framed charges, of every disc `σ` cut off at radius `ρ < 1` are eventually constant, when `σ`
+sends no point of norm at least `ρ₀ < ρ` into `Z`. -/
 theorem isZeroChargeLimit_of_tendsto [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
     {μ : Measure E} [μ.IsAddHaarMeasure] [l.NeBot] {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ}
     (hα : ∀ k, ContDiff ℝ 2 (α k)) (hb : ∀ k, ContDiff ℝ 1 (b k)) (hχ : ContDiff ℝ 1 χ)
@@ -96,8 +98,8 @@ theorem isZeroChargeLimit_of_tendsto [FiniteDimensional ℝ E] [MeasurableSpace 
   refine ⟨hne, fun σ ρ₀ ρ hρ hρ₁ hρ₀ hσ ↦ ?_⟩
   -- Eventually the zeros of `αₖ ∘ σ ∘ D_ρ` have norm less than `ρ₀`.
   have hconf := eventually_forall_mem_of_apply_discRetraction_eq_zero hne hρ hρ₁
-    (N := {z : 𝔻 | ‖(z : ℂ)‖ < ρ₀})
-    (isOpen_lt Complex.UnitDisc.continuous_coe.norm continuous_const) (fun z hz ↦ hz.trans hρ₀) hσ
+    (N := {z : 𝔻 | ‖(z : ℂ)‖ < ρ₀}) (Complex.UnitDisc.isOpen_setOf_norm_lt ρ₀)
+    (fun z hz ↦ hz.trans hρ₀) hσ
   rcases le_or_gt ρ₀ 0 with hρ₀₀ | hρ₀₀
   · -- If `ρ₀ ≤ 0` there are eventually no zeros at all.
     refine ⟨0, ?_⟩
@@ -105,16 +107,16 @@ theorem isZeroChargeLimit_of_tendsto [FiniteDimensional ℝ E] [MeasurableSpace 
     exact ContinuousMap.zeroCharge_eq_zero_of_forall_ne_zero fun z hz ↦
       (norm_nonneg _).not_gt ((hk z hz).trans_le hρ₀₀)
   -- The circle of radius `r` between `ρ₀` and `ρ`, and the disc `σ ∘ D_ρ` read on the plane.
-  obtain ⟨r, hr, hρ₀r, hrρ⟩ : ∃ r, 0 < r ∧ ρ₀ < r ∧ r < ρ :=
-    ⟨(ρ₀ + ρ) / 2, by linarith, by linarith, by linarith⟩
-  set σ' : C(ℂ, E) := σ.comp (TauCeti.Complex.UnitDisc.radialRetraction ρ hρ hρ₁)
+  obtain ⟨r, hρ₀r, hrρ⟩ := exists_between hρ₀
+  have hr : 0 < r := hρ₀₀.trans hρ₀r
+  set σ' : C(ℂ, E) := σ.comp (radialRetractionToUnitDisc ρ hρ hρ₁)
   have hsph (ζ : Circle) : (0 : ℂ) + r * ζ ∈ sphere (0 : ℂ) r := by simp [abs_of_pos hr]
   -- The image of the circle misses `Z`, so it has an open neighbourhood eventually in the vacuum.
   have hKZ : Disjoint (σ' '' sphere 0 r) Z := by
     rw [Set.disjoint_left]
     rintro _ ⟨w, hw, rfl⟩ hwZ
     have h' := hσ _ hwZ
-    rw [norm_coe_radialRetraction_apply, mem_sphere_zero_iff_norm.1 hw,
+    rw [norm_coe_radialRetractionToUnitDisc_apply, mem_sphere_zero_iff_norm.1 hw,
       min_eq_left hrρ.le] at h'
     exact hρ₀r.not_gt h'
   obtain ⟨U, hUo, hKU, hU⟩ := exists_isOpen_eventually_forall_cutoff_eq_one hvac

@@ -201,8 +201,8 @@ theorem zeroCharge_congr {f : C(Y, ℂ)} {σ σ' : C(𝔻, Y)} {W : Set 𝔻} (h
   refine HomologicalOrientation.localDegree_congr _ _ _ Complex.finrank_real_complex
     (eventually_nhdsSet_iff_exists.2 ⟨W, hW, fun z hz ↦ hσ z hz, fun z hz ↦ ?_⟩) fun z hz ↦ ?_
   · simp [hσσ' z hz]
-  · have hz : f (σ' z) = 0 := hz
-    simpa [hσσ' z (hσ' z hz)] using hz
+  · simp only [Set.mem_preimage, ContinuousMap.comp_apply, Set.mem_singleton_iff] at hz ⊢
+    rwa [hσσ' z (hσ' z hz)]
 
 /-- **The zero charge is a winding number.** If every zero of `f ∘ σ` lies in the open disc of
 radius `r > 0` about `z₀`, whose closure lies in `𝔻`, then the zero charge of `σ` is the degree
