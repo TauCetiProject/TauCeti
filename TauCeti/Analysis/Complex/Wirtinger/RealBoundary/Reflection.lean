@@ -412,24 +412,17 @@ private theorem integral_smul_starSchwarzReflection {f : ℂ → F} (a : ℂ →
     ∫ z, a z • starSchwarzReflection f z =
       (∫ z in {z : ℂ | 0 ≤ z.im}, a z • f z) +
         star (∫ z in {z : ℂ | 0 ≤ z.im}, a (conj z) • f z) := by
-  rw [← integral_add_compl measurableSet_im_nonneg ha]
-  congr 1
-  · exact setIntegral_congr_fun measurableSet_im_nonneg fun z hz ↦ by
-      rw [starSchwarzReflection_of_im_nonneg hz]
-  · have hpre : (conjLIE : ℂ → ℂ) ⁻¹' {z : ℂ | 0 ≤ z.im}ᶜ = {z : ℂ | 0 < z.im} := by
-      ext z
-      simp
-    -- The open and closed upper half-planes agree up to the null real axis.
-    have hae : {z : ℂ | 0 < z.im} =ᵐ[volume] {z : ℂ | 0 ≤ z.im} := by
-      simpa [Complex.inner, neg_nonpos, neg_neg_iff_pos] using
-        (setOf_inner_le_ae_eq_setOf_inner_lt (μ := volume) (neg_ne_zero.2 I_ne_zero) 0).symm
-    rw [← conjLIE.measurePreserving.setIntegral_preimage_emb
-      conjLIE.toHomeomorph.measurableEmbedding, hpre, ← integral_star,
-      ← setIntegral_congr_set hae]
-    refine setIntegral_congr_fun (measurableSet_lt measurable_const Complex.measurable_im)
-      fun z hz ↦ ?_
-    simp only [conjLIE_apply]
-    rw [starSchwarzReflection_of_im_neg (by simpa using hz), conj_conj, star_smul,
+  have hH : MeasurableSet {z : ℂ | 0 < z.im} :=
+    measurableSet_lt measurable_const Complex.measurable_im
+  have hc : Integrable (fun z ↦ a (conj z) • starSchwarzReflection f (conj z)) := by
+    simpa [Function.comp_def] using conjLIE.measurePreserving.integrable_comp_of_integrable ha
+  rw [Complex.integral_eq_setIntegral_add_comp_conj ha,
+    integral_add ha.integrableOn hc.integrableOn,
+    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0),
+    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0), ← integral_star]
+  congr 1 <;> refine setIntegral_congr_fun hH fun z hz ↦ ?_
+  · rw [starSchwarzReflection_of_im_nonneg (le_of_lt hz.out)]
+  · rw [starSchwarzReflection_of_im_neg (by simpa using hz.out), conj_conj, star_smul,
       star_trivial (a (conj z))]
 
 /-! ### Weak Schwarz reflection -/
