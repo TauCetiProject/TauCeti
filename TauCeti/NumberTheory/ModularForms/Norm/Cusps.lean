@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.QuotientGroup
 public import TauCeti.NumberTheory.ModularForms.Norm.Trace
 public import TauCeti.NumberTheory.ModularForms.Norm.Valence
+import TauCeti.GroupTheory.GroupAction.Period
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 
 /-!
@@ -165,19 +166,6 @@ end Translate
 
 section Width
 
-/-- The period of a group element on a point is constant along that element's orbit.
-Mathlib has `MulAction.period` and its divisibility API but not this invariance; it stays
-private rather than planting a general group-theoretic declaration in a modular-forms file. -/
-private lemma minimalPeriod_zpow_smul {G α : Type*} [Group G] [MulAction G α] (g : G) (j : ℤ)
-    (a : α) : minimalPeriod (g • ·) (g ^ j • a) = minimalPeriod (g • ·) a := by
-  have key : ∀ (b : α) (i : ℤ), minimalPeriod (g • ·) (g ^ i • b) ∣ minimalPeriod (g • ·) b :=
-    fun b i ↦ MulAction.pow_smul_eq_iff_minimalPeriod_dvd.mp (by
-      rw [← mul_smul, ← zpow_natCast, ← zpow_add, add_comm, zpow_add, zpow_natCast, mul_smul,
-        MulAction.pow_smul_eq_iff_minimalPeriod_dvd.mpr dvd_rfl])
-  refine Nat.dvd_antisymm (key a j) ?_
-  have h := key (g ^ j • a) (-j)
-  rwa [← mul_smul, ← zpow_add, neg_add_cancel, zpow_zero, one_smul] at h
-
 /-- The **width** of a cusp translation orbit of `𝒢`: the period of the `T`-action. Under
 `[𝒢.IsFiniteRelIndex 𝒮ℒ]`, `minimalPeriod_TSL_dvd_iff` and
 `cuspTranslationOrbitWidth_mk` identify it with the least `m > 0` such that
@@ -201,11 +189,6 @@ coset. -/
       minimalPeriod (TSL • ·) q := by
   obtain ⟨j, hj⟩ := exists_zpow_smul_eq_out (𝒢 := 𝒢) q
   rw [cuspTranslationOrbitWidth, ← hj, minimalPeriod_zpow_smul]
-
-/-- Translating a coset by a power of `T` does not change its period. -/
-lemma minimalPeriod_TSL_zpow_smul (j : ℤ) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
-    minimalPeriod (TSL • ·) (TSL ^ j • q) = minimalPeriod (TSL • ·) q :=
-  minimalPeriod_zpow_smul TSL j q
 
 /-- **What the period of a coset says about the group**: `T ^ n` fixes the coset of `x` exactly
 when `x⁻¹ T ^ n x ∈ 𝒢`. Thus the action period is characterized by divisibility of exactly these

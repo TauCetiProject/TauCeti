@@ -9,6 +9,8 @@ module
 public import Mathlib.NumberTheory.ModularForms.ArithmeticSubgroups
 -- `Subgroup.index_smul`: conjugation preserves the index.
 import TauCeti.GroupTheory.Index.Map
+-- `card_center_subgroupOf_eq_two_iff` and `mapGL_neg_one` for the `SL` facts.
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The projective index of a subgroup
@@ -38,6 +40,9 @@ from `GL₂(ℤ/m)` to `GL₂(ℤ/n)` for `n ∣ m` and `m ≠ 0`.
   commutes with negation.
 * `Subgroup.projectiveIndex_comap_of_surjective`, `Subgroup.projectiveIndex_pointwise_smul`: the
   projective index is unchanged by surjective pullback and by conjugation.
+* `Subgroup.card_center_subgroupOf_mul_relIndex_adjoinNegOne`: for `H ≤ SL(2, R)`,
+  `|H ∩ {±I}| · [±H : H] = 2`.
+* `Subgroup.map_mapGL_adjoinNegOne`: adjoining `-I` commutes with `SL(n, R) → GL(n, S)`.
 
 ## References
 
@@ -97,5 +102,30 @@ open scoped Pointwise in
 theorem projectiveIndex_pointwise_smul (H : Subgroup G) (g : ConjAct G) :
     (g • H).projectiveIndex = H.projectiveIndex := by
   rw [projectiveIndex_def, adjoinNegOne_conj, index_smul, projectiveIndex_def]
+
+section SpecialLinearGroup
+
+open Matrix Matrix.SpecialLinearGroup
+open scoped MatrixGroups
+
+/-- `|H ∩ {±I}| · [±H : H] = 2` for `H ≤ SL(2, R)`: the two factors are `2, 1` when `-I ∈ H` and
+`1, 2` otherwise. -/
+theorem card_center_subgroupOf_mul_relIndex_adjoinNegOne {R : Type*} [CommRing R]
+    [NoZeroDivisors R] [NeZero (2 : R)] (H : Subgroup SL(2, R)) :
+    Nat.card ((center SL(2, R)).subgroupOf H) * H.relIndex H.adjoinNegOne = 2 := by
+  by_cases h : (-1 : SL(2, R)) ∈ H
+  · rw [(card_center_subgroupOf_eq_two_iff H).mpr h, adjoinNegOne_eq_self_iff.mpr h,
+      relIndex_self]
+  · rw [(card_center_subgroupOf_eq_one_iff H).mpr h, relIndex_adjoinNegOne_eq_two h]
+
+/-- Adjoining `-I` commutes with mapping `SL(n, R)` into `GL(n, S)`. For `Γ ≤ SL(2, ℤ)` this says
+that `±Γ`, read in `GL(2, ℝ)`, is the image of `Γ` with `-I` adjoined. -/
+theorem map_mapGL_adjoinNegOne {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [CommRing S] [Algebra R S] [Fact (Even (Fintype.card n))]
+    (H : Subgroup (SpecialLinearGroup n R)) :
+    H.adjoinNegOne.map (mapGL S) = (H.map (mapGL S)).adjoinNegOne :=
+  map_adjoinNegOne H _ fun g ↦ by rw [← neg_one_mul g, map_mul, mapGL_neg_one, neg_one_mul]
+
+end SpecialLinearGroup
 
 end Subgroup

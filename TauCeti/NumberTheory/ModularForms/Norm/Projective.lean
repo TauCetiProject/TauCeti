@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.GroupTheory.GroupAction.Period
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.Modular.Stabilizer
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
@@ -131,15 +132,6 @@ theorem ellipticOrderOnSubgroupOrbit_pos
   Nat.pos_of_ne_zero fun h ↦ cardStabilizerOnOrbit_ne_zero o (by
     rw [cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit, h, mul_zero])
 
-/-- `|Γ ∩ {±I}| · [±Γ : Γ] = 2`: the two factors are `2, 1` when `-I ∈ Γ` and `1, 2` otherwise. -/
-private lemma card_center_subgroupOf_mul_relIndex_adjoinNegOne (Γ : Subgroup SL(2, ℤ)) :
-    Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) * Γ.relIndex Γ.adjoinNegOne = 2 := by
-  by_cases h : (-1 : SL(2, ℤ)) ∈ Γ
-  · rw [(Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_two_iff Γ).mpr h,
-      Subgroup.adjoinNegOne_eq_self_iff.mpr h, Subgroup.relIndex_self]
-  · rw [(Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_one_iff Γ).mpr h,
-      Subgroup.relIndex_adjoinNegOne_eq_two h]
-
 /-- **The native interior weight is `[±Γ : Γ] / e_P`**: the weight `2 · ord_P f / |Stab_Γ P|` of
 the general-level valence formula is `[±Γ : Γ] · ord_P f / e_P`. -/
 theorem weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_mul_div
@@ -152,7 +144,7 @@ theorem weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_mul_div
     exact_mod_cast (ellipticOrderOnSubgroupOrbit_pos o).ne'
   have hc : (Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) : ℚ) *
       Γ.relIndex Γ.adjoinNegOne = 2 := by
-    exact_mod_cast card_center_subgroupOf_mul_relIndex_adjoinNegOne Γ
+    exact_mod_cast Γ.card_center_subgroupOf_mul_relIndex_adjoinNegOne
   have hc0 : (Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) : ℚ) ≠ 0 := by
     rintro h
     norm_num [h] at hc
@@ -164,12 +156,12 @@ theorem weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_mul_div
 
 /-! ### Geometric orders at the cusps -/
 
-/-- `±Γ`, read in `GL(2, ℝ)`, is the image of `Γ` with `-I` adjoined. -/
-private lemma coe_adjoinNegOne :
-    ((Γ.adjoinNegOne : Subgroup SL(2, ℤ)) : Subgroup (GL (Fin 2) ℝ)) =
-      (Γ : Subgroup (GL (Fin 2) ℝ)).adjoinNegOne :=
-  Subgroup.map_adjoinNegOne Γ _ fun g ↦ by
-    rw [← neg_one_mul g, map_mul, Matrix.SpecialLinearGroup.mapGL_neg_one, neg_one_mul]
+/-- `-I · x`, read in `GL(2, ℝ)`, is `-x`: the coercion of the `rangeRestrict` of `-I` is
+`mapGL ℝ (-I) = -I`. -/
+private lemma coe_rangeRestrict_neg_one_mul (x : 𝒮ℒ) :
+    (((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) * x : 𝒮ℒ) : GL (Fin 2) ℝ) = -x := by
+  rw [Subgroup.coe_mul, MonoidHom.coe_rangeRestrict, Matrix.SpecialLinearGroup.mapGL_neg_one,
+    neg_one_mul]
 
 /-- The cosets of `Γ` refine those of `±Γ`. -/
 private lemma subgroupOf_le_adjoinNegOne :
@@ -207,7 +199,7 @@ private lemma minimalPeriod_dvd_two_mul_minimalPeriod_adjoinNegOne (x : 𝒮ℒ)
     (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)
   have hh := (minimalPeriod_TSL_dvd_iff (𝒢 := (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ))) x h).mp
     dvd_rfl
-  rw [coe_adjoinNegOne, Subgroup.mem_adjoinNegOne_iff] at hh
+  rw [Subgroup.map_mapGL_adjoinNegOne, Subgroup.mem_adjoinNegOne_iff] at hh
   have hsq : (x⁻¹ * TSL ^ (2 * h) * x : 𝒮ℒ) = (x⁻¹ * TSL ^ h * x) ^ 2 := by
     rw [sq, two_mul, pow_add]
     group
@@ -215,6 +207,29 @@ private lemma minimalPeriod_dvd_two_mul_minimalPeriod_adjoinNegOne (x : 𝒮ℒ)
   rcases hh with hh | hh
   · exact pow_mem hh 2
   · simpa only [neg_sq] using pow_mem hh 2
+
+/-- `minimalPeriod_dvd_two_mul_minimalPeriod_adjoinNegOne`, read in `ℝ`. -/
+private lemma exists_two_mul_minimalPeriod_adjoinNegOne_eq_mul (x : 𝒮ℒ) :
+    ∃ t : ℕ, 2 * (minimalPeriod (TSL • ·)
+        (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) : ℝ) =
+      t * minimalPeriod (TSL • ·)
+        (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) := by
+  obtain ⟨t, ht⟩ := minimalPeriod_dvd_two_mul_minimalPeriod_adjoinNegOne (Γ := Γ) x
+  exact ⟨t, by exact_mod_cast ht.trans (mul_comm _ _)⟩
+
+/-- The coset factor of the coset of `x` is periodic with period `2h`, for `h` the period at the
+coset of `±Γ` of `x`, since the period at the coset of `Γ` divides `2h`. -/
+private lemma periodic_quotientFunc_two_mul_minimalPeriod_adjoinNegOne
+    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) (x : 𝒮ℒ) :
+    Periodic (quotientFunc f (QuotientGroup.mk x :
+        𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) ∘ ofComplex)
+      ((2 * (minimalPeriod (TSL • ·) (QuotientGroup.mk x :
+        𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) : ℝ) : ℝ) : ℂ) := by
+  obtain ⟨t, ht⟩ := exists_two_mul_minimalPeriod_adjoinNegOne_eq_mul (Γ := Γ) x
+  convert (periodic_quotientFunc f _).nat_mul t using 1
+  rw [ht]
+  push_cast
+  ring
 
 section Order
 
@@ -239,25 +254,20 @@ private lemma natCast_minimalPeriod_mul_doubleWidthOrder (f : F)
         qExpansionOrderAtCusp (minimalPeriod (TSL • ·) q : ℝ) (quotientFunc f q) := by
   induction q using QuotientGroup.induction_on with
   | H x =>
-    obtain ⟨t, ht⟩ := minimalPeriod_dvd_two_mul_minimalPeriod_adjoinNegOne (Γ := Γ) x
+    obtain ⟨t, hw⟩ := exists_two_mul_minimalPeriod_adjoinNegOne_eq_mul (Γ := Γ) x
     have hpos : (0 : ℝ) < minimalPeriod (TSL • ·)
         (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) :=
       mod_cast Nat.pos_of_neZero _
-    have hw : 2 * (minimalPeriod (TSL • ·) (Subgroup.quotientMapOfLE subgroupOf_le_adjoinNegOne
-        (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)) : ℝ) =
-        (t : ℝ) * minimalPeriod (TSL • ·)
-          (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) := by
-      rw [Subgroup.quotientMapOfLE_apply_mk]
-      exact_mod_cast ht.trans (mul_comm _ _)
-    rw [doubleWidthOrder, hw, qExpansionOrderAtCusp_nat_mul hpos (periodic_quotientFunc f _)
-      (SlashInvariantForm.isBoundedAtImInfty_quotientFunc f _)
-      (SlashInvariantForm.mdifferentiable_quotientFunc f _), Subgroup.quotientMapOfLE_apply_mk]
-    have ht' : (2 * minimalPeriod (TSL • ·) (QuotientGroup.mk x :
+    rw [doubleWidthOrder, Subgroup.quotientMapOfLE_apply_mk, hw,
+      qExpansionOrderAtCusp_nat_mul hpos (periodic_quotientFunc f _)
+        (SlashInvariantForm.isBoundedAtImInfty_quotientFunc f _)
+        (SlashInvariantForm.mdifferentiable_quotientFunc f _)]
+    have ht : (2 * minimalPeriod (TSL • ·) (QuotientGroup.mk x :
         𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) : ℤ) =
-        minimalPeriod (TSL • ·)
-          (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) * t := by
-      exact_mod_cast ht
-    rw [ht']
+        t * minimalPeriod (TSL • ·)
+          (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) := by
+      exact_mod_cast hw
+    rw [ht]
     ring
 
 /-- `doubleWidthOrder` is unchanged by translating the coset by a power of `T`. -/
@@ -270,7 +280,7 @@ private lemma doubleWidthOrder_TSL_zpow_smul (f : F)
     | H x => rw [MulAction.Quotient.smul_mk, Subgroup.quotientMapOfLE_apply_mk,
         Subgroup.quotientMapOfLE_apply_mk, MulAction.Quotient.smul_mk]
   have hm := natCast_minimalPeriod_mul_doubleWidthOrder f (TSL ^ j • q)
-  rw [hπ, minimalPeriod_TSL_zpow_smul, minimalPeriod_TSL_zpow_smul,
+  rw [hπ, minimalPeriod_zpow_smul, minimalPeriod_zpow_smul,
     qExpansionOrderAtCusp_quotientFunc_TSL_zpow_smul,
     ← natCast_minimalPeriod_mul_doubleWidthOrder f q] at hm
   exact mul_left_cancel₀ (mod_cast (Nat.pos_of_neZero _).ne') hm
@@ -283,44 +293,30 @@ private lemma doubleWidthOrder_neg_one_mul (f : F) (x : 𝒮ℒ) :
           𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) =
       doubleWidthOrder f
         (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) := by
-  have hn : (((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) : 𝒮ℒ) : GL (Fin 2) ℝ) = -1 :=
-    Matrix.SpecialLinearGroup.mapGL_neg_one
   have hπ : (QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) * x) :
       𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) = QuotientGroup.mk x := by
-    rw [QuotientGroup.eq, Subgroup.mem_subgroupOf, coe_adjoinNegOne]
+    rw [QuotientGroup.eq, Subgroup.mem_subgroupOf, Subgroup.map_mapGL_adjoinNegOne]
     have : ((((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) * x)⁻¹ * x : 𝒮ℒ) :
         GL (Fin 2) ℝ) = -1 := by
-      simp only [Subgroup.coe_mul, InvMemClass.coe_inv, hn, mul_inv_rev, inv_neg_one, mul_neg,
-        mul_one, neg_mul, inv_mul_cancel]
+      rw [Subgroup.coe_mul, InvMemClass.coe_inv, coe_rangeRestrict_neg_one_mul, inv_neg,
+        neg_mul, inv_mul_cancel]
     rw [this]
     exact Subgroup.neg_one_mem_adjoinNegOne _
-  have hper : Periodic (quotientFunc f (QuotientGroup.mk x :
-      𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) ∘ ofComplex)
-      ((2 * (minimalPeriod (TSL • ·) (QuotientGroup.mk x :
-        𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) : ℝ) : ℝ) : ℂ) := by
-    obtain ⟨t, ht⟩ := minimalPeriod_dvd_two_mul_minimalPeriod_adjoinNegOne (Γ := Γ) x
-    have ht' : 2 * (minimalPeriod (TSL • ·) (QuotientGroup.mk x :
-        𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) : ℝ) =
-        t * minimalPeriod (TSL • ·)
-          (QuotientGroup.mk x : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) := by
-      exact_mod_cast ht.trans (mul_comm _ _)
-    convert (periodic_quotientFunc f _).nat_mul t using 1
-    rw [ht']
-    push_cast
-    ring
   have hpos : (0 : ℝ) < 2 * (minimalPeriod (TSL • ·) (QuotientGroup.mk x :
       𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) : ℝ) := by
     have : 0 < minimalPeriod (TSL • ·) (QuotientGroup.mk x :
         𝒮ℒ ⧸ (Γ.adjoinNegOne : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) := Nat.pos_of_neZero _
     positivity
-  have hana := analyticAt_cuspFunction_zero hpos hper
+  have hana := analyticAt_cuspFunction_zero hpos
+    (periodic_quotientFunc_two_mul_minimalPeriod_adjoinNegOne f x)
     (SlashInvariantForm.mdifferentiable_quotientFunc f _)
     (SlashInvariantForm.isBoundedAtImInfty_quotientFunc f _)
   rw [doubleWidthOrder, doubleWidthOrder, Subgroup.quotientMapOfLE_apply_mk,
     Subgroup.quotientMapOfLE_apply_mk, hπ]
   rw [_root_.SlashInvariantForm.quotientFunc_mk] at hana ⊢
-  rw [_root_.SlashInvariantForm.quotientFunc_mk, Subgroup.coe_mul, hn, neg_one_mul, inv_neg,
-    ModularForm.slash_neg, qExpansionOrderAtCusp_neg_one_zpow_mul hana]
+  rw [_root_.SlashInvariantForm.quotientFunc_mk, coe_rangeRestrict_neg_one_mul, inv_neg,
+    ModularForm.slash_neg]
+  exact qExpansionOrderAtCusp_smul (zpow_ne_zero k (neg_ne_zero.mpr one_ne_zero)) hana
 
 /-- `doubleWidthOrder` depends only on the cusp below the coset. -/
 private lemma doubleWidthOrder_eq_of_mk_eq (f : F)
@@ -338,7 +334,7 @@ private lemma doubleWidthOrder_eq_of_mk_eq (f : F)
   rw [Subgroup.quotientMapOfLE_apply_mk, Subgroup.quotientMapOfLE_apply_mk] at hgx
   dsimp only at hgx
   rw [Subgroup.mk_smul, MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq,
-    Subgroup.mem_subgroupOf, coe_adjoinNegOne, Subgroup.mem_adjoinNegOne_iff] at hgx
+    Subgroup.mem_subgroupOf, Subgroup.map_mapGL_adjoinNegOne, Subgroup.mem_adjoinNegOne_iff] at hgx
   rcases hgx with hgx | hgx
   · -- `x₁` lies in the coset of `Γ` of `T ^ j x₂`
     have hq : (QuotientGroup.mk x₁ : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) =
@@ -353,11 +349,9 @@ private lemma doubleWidthOrder_eq_of_mk_eq (f : F)
           QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) * x₂) := by
       rw [MulAction.Quotient.smul_mk, smul_eq_mul, eq_comm, QuotientGroup.eq,
         Subgroup.mem_subgroupOf]
-      have hn : (((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict (-1) : 𝒮ℒ) :
-          GL (Fin 2) ℝ) = -1 := Matrix.SpecialLinearGroup.mapGL_neg_one
       convert hgx using 1
-      simp only [Subgroup.coe_mul, InvMemClass.coe_inv, hn, mul_inv_rev, inv_neg_one, neg_mul,
-        mul_neg, mul_one]
+      rw [Subgroup.coe_mul, InvMemClass.coe_inv, Subgroup.coe_mul, coe_rangeRestrict_neg_one_mul]
+      simp only [Subgroup.coe_mul, InvMemClass.coe_inv, mul_neg, inv_neg, neg_mul]
     rw [hq, doubleWidthOrder_TSL_zpow_smul, doubleWidthOrder_neg_one_mul]
 
 /-- `doubleWidthOrder` is twice the geometric order at the cusp below the coset. -/
