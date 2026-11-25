@@ -149,13 +149,13 @@ theorem integrable_marginal_mul_log_left {α β : Type*} [MeasurableSpace α] [M
     · have hm_gt_one : 1 < |m x| := lt_of_not_ge hm_le_one
       have hM_gt_one : 1 < M x := lt_of_lt_of_le hm_gt_one hm_bound
       have hlog_le : Real.log |m x| ≤ Real.log (M x) :=
-        Real.log_le_log (by linarith) hm_bound
+      Real.log_le_log (lt_trans zero_lt_one hm_gt_one) hm_bound
       have hmul_le : |m x| * Real.log |m x| ≤ M x * Real.log (M x) :=
-        mul_le_mul hm_bound hlog_le (Real.log_nonneg (by linarith)) hM_nonneg
+      mul_le_mul hm_bound hlog_le (Real.log_nonneg hm_gt_one.le) hM_nonneg
       have hleft_nonneg : 0 ≤ |m x| * Real.log |m x| :=
-        mul_nonneg (abs_nonneg _) (Real.log_nonneg (by linarith))
+      mul_nonneg (abs_nonneg _) (Real.log_nonneg hm_gt_one.le)
       have hright_nonneg : 0 ≤ M x * Real.log (M x) :=
-        mul_nonneg hM_nonneg (Real.log_nonneg (by linarith))
+      mul_nonneg hM_nonneg (Real.log_nonneg hM_gt_one.le)
       calc
         ‖|m x| * Real.log |m x|‖ = |m x| * Real.log |m x| := by
           rw [Real.norm_eq_abs, abs_of_nonneg hleft_nonneg]
