@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Congruence.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.BaseChange
-public import TauCeti.AlgebraicGeometry.AffineGroupScheme.BaseChange.Square
+public import TauCeti.AlgebraicGeometry.AffineGroupScheme.BaseChange.Coordinate
 
 /-!
 # Naturality of congruence isomorphisms of constant-form subgroup schemes
@@ -96,9 +96,9 @@ theorem baseChange_map_groupSchemeCongr_hom_comp (P : GL (Fin n) R)
     (coordinateHopfAlgebraCongr P hP).inv
     (coordinateHopfAlgebraCongr (GeneralLinearGroup.map (algebraMap R K) P) hP').inv
     (coordinateHopfAlgebraBaseChangeIso h₁) (coordinateHopfAlgebraBaseChangeIso h₂) ?_
-  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_inv, Iso.inv_comp_eq,
-    ← Category.assoc, Functor.mapIso_hom, CommHopfAlgCat.baseChangeFunctor_map, hS,
-    Category.assoc, Iso.hom_inv_id, Category.comp_id]
+  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_hom] at hS
+  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_inv]
+  exact (CommSq.horiz_inv ⟨hS⟩).w
 
 end GroupScheme
 
