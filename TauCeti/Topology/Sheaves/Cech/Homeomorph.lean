@@ -19,9 +19,10 @@ public import TauCeti.Topology.Sheaves.Homeomorph
 # Čech cohomology under a homeomorphism
 
 Homeomorphisms transport point-neighborhood covers and Čech cohomology across base universes.
-`cechComplexIso` gives tuple-complex hom and inverse component laws;
-`cechCohomologyIso` preserves cover-colimit cohomology, augmentation, refinement,
-degree-zero global sections and connecting maps.
+`cechComplexIso` gives tuple-complex hom and inverse component laws and is compatible with
+augmentation and actual refinements. `cechCohomologyIso` preserves cover-colimit cohomology,
+cover insertion, degree-zero global sections and connecting maps, and its inverse is
+continuous-map pullback in the same base universe. Both satisfy refl/trans laws.
 -/
 
 public noncomputable section

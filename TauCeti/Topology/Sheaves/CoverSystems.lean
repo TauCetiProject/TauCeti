@@ -33,6 +33,10 @@ categories for colimits of cover-dependent invariants whose transition maps are 
 refinement functions.
 Finite covers retain repeated members and include the empty cover of the empty space.
 
+Homeomorphisms transport point-neighborhood covers and actual refinements
+(`PointOpenCover.mapHomeomorph`, `PointOpenCover.mapHomeomorphHom`) and identify the refinement
+preorders (`Homeomorph.pointOpenCoverOrderIso`).
+
 The cover-refinement description follows the Stacks Project, Cohomology of Sheaves, §20.15
 (tag 09UY). Finite cofinality is the compactness argument of J. Pardon, arXiv:1309.2370v6,
 Appendix A, Lemma A.4.4, here without separation or local compactness assumptions.

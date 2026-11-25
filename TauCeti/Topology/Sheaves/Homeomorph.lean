@@ -14,6 +14,9 @@ public import TauCeti.CategoryTheory.Sites.Preadditive
 
 The order equivalence on opens supplied by a homeomorphism identifies their covering sieves.
 The resulting equivalence of sheaf categories keeps the coefficient objects unchanged.
+The inverse-opens functors satisfy refl/trans laws (`opensCongr_inverse_refl`,
+`opensCongr_inverse_trans`), and `Homeomorph.globalSectionsIso` compares global sections before
+and after `sheafCongr`.
 -/
 
 public noncomputable section

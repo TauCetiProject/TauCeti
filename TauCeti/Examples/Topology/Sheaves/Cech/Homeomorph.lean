@@ -843,7 +843,8 @@ def compositionSequentialMap :
     (cechCohomology (TopCat.of (ULift.{u + 1} disconnectedBase))
       (ModuleCat.{u + 1} ℂ) 0).map compositionCoefficientIso.{u}.hom
 
-/-- Native swap/lift transport on the value-two section equals the actual composite map. -/
+/-- The sequential swap-then-lift transport map equals the composite homeomorphism's transport
+at `compositionSheaf`. -/
 theorem compositionSequentialMap_eq :
     compositionSequentialMap.{u} =
       ((compositionSwap.trans compositionLift.{u}).cechCohomologyIso
