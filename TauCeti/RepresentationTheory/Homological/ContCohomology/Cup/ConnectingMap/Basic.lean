@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DeltaNaturality
+
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Comm
 
 /-!
 # The connecting maps and the explicit low-degree cup products
@@ -168,14 +170,14 @@ theorem explicitDelta1_explicitCup01_left [IsTopologicalAddGroup B] [ContinuousS
   induction y using QuotientAddGroup.induction_on with
   | _ β =>
     obtain ⟨a, ha⟩ := SA.proj_surjective (x : A'')
-    have hamem : SA.proj a ∈ H0 G A'' := ha ▸ x.2
+    have hamem : SA.proj a ∈ H0 G A'' := ha ▸ x.property
     obtain ⟨α, -, hαi⟩ :=
       SA.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) a)
         (DiscreteShortExact.proj_d0_eq_zero hamem)
     have hαi' : ∀ g : G, SA.incl (α g) = g • a - a := fun g => (hαi g).trans (d0_apply a g)
-    have hβ1 : groupCohomology.IsCocycle₁ (β : G → B) := (mem_Z1_iff.1 β.2).2
+    have hβ1 : groupCohomology.IsCocycle₁ (β : G → B) := (mem_Z1_iff.1 β.property).2
     have hecont : Continuous fun g : G => μ a ((β : G → B) g) :=
-      hμ.comp (continuous_const.prodMk (mem_Z1_iff.1 β.2).1)
+      hμ.comp (continuous_const.prodMk (mem_Z1_iff.1 β.property).1)
     -- The `(1,1)` cup cochain of `α` against `β` lies over `d¹` of the paired lift `μ a ∘ β`,
     -- by the `1`-cocycle identity for `β`.
     have hcup : ∀ g h : G, SC.incl (μ' (α g) (g • (β : G → B) h)) =
@@ -187,7 +189,8 @@ theorem explicitDelta1_explicitCup01_left [IsTopologicalAddGroup B] [ContinuousS
       fun g => by rw [← hproj, ha]
     have hleft := SC.explicitDelta1_apply
       (⟨fun g => μ'' (x : A'') ((β : G → B) g),
-        cup01_mem_Z1 G A'' B C'' μ'' hμ'' hequiv'' x β.2⟩ : Z1 G C'')
+        cup01_mem_Z1 G A'' B C'' μ'' hequiv'' x
+          (hμ''.uncurry_left (f := (μ'' · ·)) (x : A'')) β.property⟩ : Z1 G C'')
       hecont he (a := fun q : G × G => μ' (α q.1) (q.1 • (β : G → B) q.2)) hcup
     have hright := SA.explicitDelta0_apply x ha hαi'
     simp only [QuotientAddGroup.mk'_apply] at hleft hright
@@ -369,12 +372,12 @@ theorem explicitCup10_explicitDelta0_eq_neg_explicitCup01_explicitDelta0
   obtain ⟨a, ha⟩ := SA.proj_surjective (x : A₂)
   obtain ⟨α, -, hαi⟩ :=
     SA.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) a)
-      (DiscreteShortExact.proj_d0_eq_zero (ha ▸ x.2))
+      (DiscreteShortExact.proj_d0_eq_zero (ha ▸ x.property))
   have hαi' : ∀ g : G, SA.incl (α g) = g • a - a := fun g => (hαi g).trans (d0_apply a g)
   obtain ⟨b, hb⟩ := SB.proj_surjective (y : B₁)
   obtain ⟨β, -, hβi⟩ :=
     SB.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) b)
-      (DiscreteShortExact.proj_d0_eq_zero (hb ▸ y.2))
+      (DiscreteShortExact.proj_d0_eq_zero (hb ▸ y.property))
   have hβi' : ∀ g : G, SB.incl (β g) = g • b - b := fun g => (hβi g).trans (d0_apply b g)
   have hx := SA.explicitDelta0_apply x ha hαi'
   have hy := SB.explicitDelta0_apply y hb hβi'
@@ -403,9 +406,9 @@ theorem explicitCup11_explicitDelta0_eq_neg_explicitCup02_explicitDelta1 [Contin
     obtain ⟨a, ha⟩ := SA.proj_surjective (x : A₂)
     obtain ⟨α, -, hαi⟩ :=
       SA.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) a)
-        (DiscreteShortExact.proj_d0_eq_zero (ha ▸ x.2))
+        (DiscreteShortExact.proj_d0_eq_zero (ha ▸ x.property))
     have hαi' : ∀ g : G, SA.incl (α g) = g • a - a := fun g => (hαi g).trans (d0_apply a g)
-    obtain ⟨hβc, hβ1⟩ := mem_Z1_iff.1 β.2
+    obtain ⟨hβc, hβ1⟩ := mem_Z1_iff.1 β.property
     obtain ⟨e, hec, he⟩ := exists_continuous_lift SB.proj_surjective hβc
     obtain ⟨b, -, hbi⟩ :=
       SB.exists_continuous_incl_comp_eq (continuous_d1_apply hec) (SB.proj_d1_eq_zero he hβ1)
@@ -435,7 +438,7 @@ theorem explicitCup20_explicitDelta1_eq_explicitCup11_explicitDelta0 [Continuous
         (equivariant_of_proj SA SB μ μ₂ hproj hequiv) x (SB.explicitDelta0 y) := by
   induction x using QuotientAddGroup.induction_on with
   | _ α =>
-    obtain ⟨hαc, hα1⟩ := mem_Z1_iff.1 α.2
+    obtain ⟨hαc, hα1⟩ := mem_Z1_iff.1 α.property
     obtain ⟨e, hec, he⟩ := exists_continuous_lift SA.proj_surjective hαc
     obtain ⟨a, -, hai⟩ :=
       SA.exists_continuous_incl_comp_eq (continuous_d1_apply hec) (SA.proj_d1_eq_zero he hα1)
@@ -444,7 +447,7 @@ theorem explicitCup20_explicitDelta1_eq_explicitCup11_explicitDelta0 [Continuous
     obtain ⟨b, hb⟩ := SB.proj_surjective (y : B₁)
     obtain ⟨β, -, hβi⟩ :=
       SB.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) b)
-        (DiscreteShortExact.proj_d0_eq_zero (hb ▸ y.2))
+        (DiscreteShortExact.proj_d0_eq_zero (hb ▸ y.property))
     have hβi' : ∀ g : G, SB.incl (β g) = g • b - b := fun g => (hβi g).trans (d0_apply b g)
     have hx := SA.explicitDelta1_apply α hec he hai'
     have hy := SB.explicitDelta0_apply y hb hβi'

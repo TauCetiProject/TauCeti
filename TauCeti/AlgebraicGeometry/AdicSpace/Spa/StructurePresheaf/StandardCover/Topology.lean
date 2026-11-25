@@ -73,7 +73,7 @@ theorem isInducing_presentationLimitPresheafMap_standardSieve_of_isUnit
       fun _ ↦ homOfLE inf_le_left
     IsInducing fun (x : (presentationLimitPresheaf P Aplus).obj (op W))
       (g : (V : Opens ↥(spa Aplus)) × { f : V ⟶ W // S f }) ↦
-        ((presentationLimitPresheaf P Aplus).map g.2.1.op).hom.1 x := by
+        ((presentationLimitPresheaf P Aplus).map g.2.val.op).hom.val x := by
   classical
   let F := presentationLimitPresheaf P Aplus
   let S := Sieve.ofArrows (fun t : T ↦ W ⊓ spaBasicOpen Aplus T t)
@@ -85,11 +85,11 @@ theorem isInducing_presentationLimitPresheafMap_standardSieve_of_isUnit
     laurentSieve_mul_inverse_le_ofArrows_inf_spaBasicOpen hT hu W
   let j (g : (V : Opens ↥(spa Aplus)) × { f : V ⟶ W // laurentSieve Aplus R W f }) :
       (V : Opens ↥(spa Aplus)) × { f : V ⟶ W // S f } :=
-    ⟨g.1, g.2.1, hRS g.2.1 g.2.2⟩
+    ⟨g.1, g.2.val, hRS g.2.val g.2.property⟩
   -- Projection to the Laurent coordinates is continuous for the product topologies.
   let q := fun z : (g : (V : Opens ↥(spa Aplus)) × { f : V ⟶ W // S f }) → F.obj (op g.1) ↦
     fun g ↦ z (j g)
-  apply IsInducing.of_comp (g := q) (continuous_pi fun g ↦ (F.map g.2.1.op).hom.2)
+  apply IsInducing.of_comp (g := q) (continuous_pi fun g ↦ (F.map g.2.val.op).hom.property)
     (continuous_pi fun g ↦ continuous_apply (j g))
   exact isInducing_presentationLimitPresheafMap_laurentSieve_of_isInducing P
     (hC.isInducing_inf_laurentCoverOpen P hA hAplus) R hW
@@ -179,7 +179,7 @@ private theorem ofArrows_locOpensComap_eq_ofArrows_image (T : Finset A) :
             (T.image (toCompletionLoc P U s S hden)) (toCompletionLoc P U s S hden t) := by
     rw [locOpensComap_inf, locOpensComap_spaBasicOpen P Aplus U s S hden T]
   let a : T → T.image (toCompletionLoc P U s S hden) := fun t ↦
-    ⟨toCompletionLoc P U s S hden t, Finset.mem_image_of_mem _ t.2⟩
+    ⟨toCompletionLoc P U s S hden t, Finset.mem_image_of_mem _ t.property⟩
   ext V g
   simp only [Sieve.mem_ofArrows_iff]
   constructor
@@ -207,10 +207,10 @@ private theorem isInducing_presentationLimitMap_pieces_of_completion
         ((presentationLimitPresheaf (completionLocalization P U s S hden)
           (completedPlusSubring P Aplus U s S hden)).map
           (homOfLE (locOpensComap_mono P Aplus U s S hden
-            (inf_le_left : spaBasicOpen Aplus U s ⊓ spaBasicOpen Aplus T t ≤ _))).op).hom.1 x) :
+            (inf_le_left : spaBasicOpen Aplus U s ⊓ spaBasicOpen Aplus T t ≤ _))).op).hom.val x) :
     IsInducing fun (x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus U s)) (t : T) ↦
       (presentationLimitMap (P := P)
-        (inf_le_left : spaBasicOpen Aplus U s ⊓ spaBasicOpen Aplus T t ≤ _)).hom.1 x := by
+        (inf_le_left : spaBasicOpen Aplus U s ⊓ spaBasicOpen Aplus T t ≤ _)).hom.val x := by
   classical
   let _ := locUniformSpace P U s S hden
   have _ := isUniformAddGroup_locUniformSpace P U s S hden
@@ -227,7 +227,7 @@ private theorem isInducing_presentationLimitMap_pieces_of_completion
   have σ_apply (V : Opens ↥(spa Aplus)) (hV : V ∈ spaRationalOpens Aplus)
       (hVW : V ≤ spaBasicOpen Aplus U s) (x : presentationLimit (P := P) Aplus V) :
       σ V hV hVW x =
-        (presentationLimitLocIso P Aplus U s S hden hAplus hU V hV hVW).hom.hom.1 x := rfl
+        (presentationLimitLocIso P Aplus U s S hden hAplus hU V hV hVW).hom.hom.val x := rfl
   -- Pass from the presheaf over the completed coordinate ring to its presentation limits.
   have hBpl := ((isInducing_restrictionMap_iff_isInducing_presentationLimitMap
     (completionLocalization P U s S hden)
@@ -255,7 +255,7 @@ theorem isInducing_presentationLimitPresheafMap_standardSieve
       fun _ ↦ homOfLE inf_le_left
     IsInducing fun (x : (presentationLimitPresheaf P Aplus).obj (op W))
       (g : (V : Opens ↥(spa Aplus)) × { f : V ⟶ W // S f }) ↦
-        ((presentationLimitPresheaf P Aplus).map g.2.1.op).hom.1 x := by
+        ((presentationLimitPresheaf P Aplus).map g.2.val.op).hom.val x := by
   classical
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
   -- Write `W` as a rational open `R(U / s)` and equip its completed coordinate ring `B`.

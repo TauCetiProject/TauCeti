@@ -18,9 +18,12 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Topology.Algebra.Support
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Normed.Group.Pi
+public import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.Fredholm.Criteria
+public import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 
 /-!
-# The gauge-fixed vortex operator on `H¹` has finite-dimensional kernel and closed range
+# The gauge-fixed vortex operator on `H¹`: kernel, range and orthogonal splittings
 
 At a field `x = (b₁, b₂, p, q)`, the gauge-fixed vortex operator `L_x = d₀* ⊕ d₁`
 (`TauCeti.Vortex.gaugeFixedOperator`) is a first-order operator with constant leading part and
@@ -41,9 +44,12 @@ on variations whose four coordinates lie in `H¹(ℂ) = W^{1,2}(ℂ)` (`TauCeti.
 gradients in the leading part. The coefficient enters through its `L∞` class `a`, so the
 operator depends only on the almost-everywhere class of the field, and for a bounded measurable
 field `x` one takes `a` with `a = x` almost everywhere. The domain carries the product norm, the
-largest of the `H¹` norms of the four coordinates. Its values are given almost everywhere by the
-same formula with weak gradients (`TauCeti.Vortex.sobolevGaugeFixedOperator_apply_ae`), and on
-variations with a `C¹` representative it is the classical operator
+largest of the `H¹` norms of the four coordinates; the inclusion
+`TauCeti.Vortex.sobolevFieldValues : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` is injective
+(`TauCeti.Vortex.sobolevFieldValues_injective`) and gives it the `L²` pairing. Its values are
+given almost everywhere by the same formula with weak gradients
+(`TauCeti.Vortex.sobolevGaugeFixedOperator_apply_ae`), and on variations with a `C¹`
+representative it is the classical operator
 (`TauCeti.Vortex.sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator`). Changing the coefficient
 changes only the zeroth-order part (`TauCeti.Vortex.sobolevGaugeFixedOperator_sub_apply_ae`), so
 the realization depends Lipschitz continuously on `a` in operator norm
@@ -68,8 +74,38 @@ finite-dimensional kernel and a closed range:
 * `TauCeti.Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator`;
 * `TauCeti.Vortex.isClosed_range_sobolevGaugeFixedOperator`.
 
-So `L_x : H¹ → L²` is upper semi-Fredholm at such a vortex. The finite dimensionality and the
-vanishing of its cokernel, and the value `2m` of its index, are not proved here.
+So `L_x : H¹ → L²` is upper semi-Fredholm at such a vortex. The vanishing of its cokernel is
+proved in `TauCeti.Analysis.PDE.Vortex.Fredholm`. The value `2m` of its index at a continuous
+plane vortex lying in `A_m^k` for every `k` is proved in `TauCeti.Analysis.PDE.Vortex.Index`.
+
+Near a coefficient `a₀` at which the realization is onto with a finite-dimensional kernel, the
+projections onto the kernels of `L_a` along their `L²`-orthogonal complements, and the right
+inverses of `L_a` with values in those complements, depend continuously on `a`
+(`TauCeti.Vortex.exists_continuousOn_orthogonal_rightInverse_sobolevGaugeFixedOperator`). This is
+the general statement for Fredholm families,
+`ContinuousLinearMap.IsFredholm.exists_continuousOn_orthogonal_rightInverse`, applied to the
+Lipschitz family `a ↦ L_a` and the inclusion into `L²`.
+
+Both are unique (`ContinuousLinearMap.IsOrthogonalKerProjection.unique`,
+`ContinuousLinearMap.IsOrthogonalRightInverse.unique`): at every coefficient where `L_a` is onto
+with a finite-dimensional kernel they are
+`ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues L_a` and
+`ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues L_a`, which are continuous in `L_a`
+there (`ContinuousLinearMap.IsFredholm.continuousAt_orthogonalKerProjection`,
+`ContinuousLinearMap.IsFredholm.continuousAt_orthogonalRightInverse`). Composed with a family of
+vortex coefficients continuous in `L∞`, at which the realization is onto with a
+finite-dimensional kernel (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`,
+`TauCeti.Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator`), they give continuous kernel
+projections and right inverses along that family
+(`TauCeti.Vortex.continuous_orthogonalKerProjection_sobolevGaugeFixedOperator`,
+`TauCeti.Vortex.continuous_orthogonalRightInverse_sobolevGaugeFixedOperator`). Since `a ↦ L_a`
+is affine (`TauCeti.Vortex.contDiff_sobolevGaugeFixedOperator`) and over `ℝ` the projections and
+right inverses are `C^n` in the operator
+(`ContinuousLinearMap.IsFredholm.contDiffAt_orthogonalKerProjection`,
+`ContinuousLinearMap.IsFredholm.contDiffAt_orthogonalRightInverse`), they are `C^n` along a family
+of coefficients `C^n` in `L∞`
+(`TauCeti.Vortex.contDiff_orthogonalKerProjection_sobolevGaugeFixedOperator`,
+`TauCeti.Vortex.contDiff_orthogonalRightInverse_sobolevGaugeFixedOperator`).
 
 ## References
 
@@ -90,6 +126,47 @@ open scoped ENNReal Topology InnerProductSpace Gradient Distributions
 
 local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens ℂ) : Set ℂ)
 
+/-- The values of a variation `y ∈ H¹(ℂ)⁴`, as an element of `L²(ℂ; ℝ⁴)`: the inclusion
+`H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)`, through which the `L²` pairing is taken on `H¹(ℂ)⁴`. -/
+def sobolevFieldValues :
+    (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
+  ∑ j : Fin 4, ((ContinuousLinearMap.toSpanSingleton ℝ
+    (EuclideanSpace.single j (1 : ℝ))).compLpL 2 μ⊤).comp
+      ((W1p.valueL).comp (ContinuousLinearMap.proj j))
+
+/-- Almost everywhere, the `L²` values of a variation have the values of its four coordinates as
+coordinates. -/
+theorem sobolevFieldValues_ae_eq (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevFieldValues y =ᵐ[μ⊤] fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (y j) z := by
+  simp only [sobolevFieldValues, FunLike.coe_sum, Finset.sum_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply, W1p.valueL_apply]
+  have hv : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
+      (ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
+        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))) z =
+          W1p.value (y j) z • EuclideanSpace.single j (1 : ℝ) :=
+    ae_all_iff.2 fun j ↦ (ContinuousLinearMap.toSpanSingleton ℝ
+      (EuclideanSpace.single j (1 : ℝ))).coeFn_compLpL (W1p.value (y j))
+  filter_upwards [Lp.coeFn_finsetSum (μ := μ⊤) (p := 2) Finset.univ fun j : Fin 4 ↦
+      ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
+        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j)), hv] with z h₁ h₂
+  rw [h₁]
+  simp only [Finset.sum_apply, h₂]
+  ext i
+  simp [WithLp.ofLp_sum, EuclideanSpace.single, Pi.single_apply]
+
+/-- A variation is determined by its `L²` values. -/
+theorem sobolevFieldValues_injective : Function.Injective sobolevFieldValues := by
+  refine (injective_iff_map_eq_zero _).2 fun y hy ↦ funext fun j ↦ ?_
+  refine W1p.ext_value ?_
+  rw [Pi.zero_apply, W1p.value_zero]
+  have h := sobolevFieldValues_ae_eq y
+  rw [hy] at h
+  refine Lp.ext_iff.2 ?_
+  filter_upwards [h, Lp.coeFn_zero (EuclideanSpace ℝ (Fin 4)) 2 μ⊤, Lp.coeFn_zero ℝ 2 μ⊤]
+    with z h₁ h₂ h₃
+  rw [h₃]
+  simpa using congrArg (fun v : EuclideanSpace ℝ (Fin 4) ↦ v j) (h₁.symm.trans h₂)
+
 /-- The realization `H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` of the gauge-fixed vortex operator `L_x`, whose
 zeroth-order coefficients are given by the `L∞` class `a` of the field `x`. The leading part
 acts on the weak gradients of the four coordinates. -/
@@ -98,10 +175,7 @@ def sobolevGaugeFixedOperator (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
   ∑ j : Fin 4, ((gaugeFixedFirstOrder.comp
       (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j)).compLpL 2 μ⊤).comp
         ((W1p.gradientL).comp (ContinuousLinearMap.proj j)) +
-    (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 a).comp
-      (∑ j : Fin 4, ((ContinuousLinearMap.toSpanSingleton ℝ
-        (EuclideanSpace.single j (1 : ℝ))).compLpL 2 μ⊤).comp
-          ((W1p.valueL).comp (ContinuousLinearMap.proj j)))
+    (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 a).comp sobolevFieldValues
 
 /-- Almost everywhere, the realization is given by the formula of `L_x` with the weak gradients
 and the values of the coordinates. -/
@@ -113,38 +187,25 @@ theorem sobolevGaugeFixedOperator_apply_ae (a : Lp (EuclideanSpace ℝ (Fin 4)) 
   simp only [sobolevGaugeFixedOperator, add_apply,
     FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.proj_apply,
-    W1p.gradientL_apply, W1p.valueL_apply]
+    W1p.gradientL_apply]
   have hg : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
       (ContinuousLinearMap.compLpL 2 μ⊤
         (gaugeFixedFirstOrder.comp (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j))
           (W1p.gradient (y j))) z = gaugeFixedFirstOrder (Pi.single j (W1p.gradient (y j) z)) :=
     ae_all_iff.2 fun j ↦ (gaugeFixedFirstOrder.comp
       (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j)).coeFn_compLpL (W1p.gradient (y j))
-  have hv : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
-      (ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
-        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))) z =
-          W1p.value (y j) z • EuclideanSpace.single j (1 : ℝ) :=
-    ae_all_iff.2 fun j ↦ (ContinuousLinearMap.toSpanSingleton ℝ
-      (EuclideanSpace.single j (1 : ℝ))).coeFn_compLpL (W1p.value (y j))
   set G := ∑ j : Fin 4, ContinuousLinearMap.compLpL 2 μ⊤
     (gaugeFixedFirstOrder.comp (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j))
       (W1p.gradient (y j))
-  set V := ∑ j : Fin 4, ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
-    (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))
-  filter_upwards [Lp.coeFn_add G (gaugeFixedZerothOrder.holder 2 a V),
+  filter_upwards [Lp.coeFn_add G (gaugeFixedZerothOrder.holder 2 a (sobolevFieldValues y)),
     Lp.coeFn_finsetSum (μ := μ⊤) (p := 2) Finset.univ fun j : Fin 4 ↦
       ContinuousLinearMap.compLpL 2 μ⊤
         (gaugeFixedFirstOrder.comp (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j))
           (W1p.gradient (y j)),
-    Lp.coeFn_finsetSum (μ := μ⊤) (p := 2) Finset.univ fun j : Fin 4 ↦
-      ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
-        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j)),
-    gaugeFixedZerothOrder.coeFn_holder (r := 2) a V, hg, hv] with z h₁ h₂ h₃ h₄ h₅ h₆
-  rw [h₁, Pi.add_apply, h₂, h₄, h₃]
-  simp only [Finset.sum_apply, h₅, h₆, ← map_sum, Finset.univ_sum_single]
-  congr 2
-  ext i
-  simp [WithLp.ofLp_sum, EuclideanSpace.single, Pi.single_apply]
+    gaugeFixedZerothOrder.coeFn_holder (r := 2) a (sobolevFieldValues y), hg,
+    sobolevFieldValues_ae_eq y] with z h₁ h₂ h₃ h₄ h₅
+  rw [h₁, Pi.add_apply, h₂, h₃, h₅]
+  simp only [Finset.sum_apply, h₄, ← map_sum, Finset.univ_sum_single]
 
 /-- Changing the coefficient changes the realization only in its zeroth-order part: almost
 everywhere, the difference of the realizations at `a` and `b` is the zeroth-order term with
@@ -163,10 +224,7 @@ theorem sobolevGaugeFixedOperator_sub_apply_ae (a b : Lp (EuclideanSpace ℝ (Fi
 coefficient. -/
 theorem exists_lipschitzWith_sobolevGaugeFixedOperator :
     ∃ K, LipschitzWith K sobolevGaugeFixedOperator := by
-  set V : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
-    ∑ j : Fin 4, ((ContinuousLinearMap.toSpanSingleton ℝ
-      (EuclideanSpace.single j (1 : ℝ))).compLpL 2 μ⊤).comp
-        ((W1p.valueL).comp (ContinuousLinearMap.proj j))
+  set V := sobolevFieldValues
   set H := gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2
   have hsub : ∀ a b, sobolevGaugeFixedOperator a - sobolevGaugeFixedOperator b =
       (H (a - b)).comp V := fun a b ↦ by
@@ -183,6 +241,17 @@ coefficient. -/
 theorem continuous_sobolevGaugeFixedOperator :
     Continuous sobolevGaugeFixedOperator :=
   exists_lipschitzWith_sobolevGaugeFixedOperator.elim fun _ h ↦ h.continuous
+
+/-- The realization is a smooth function of the `L∞` class of the coefficient: it is affine in
+it, the realization at `0` plus the zeroth-order part with coefficient `a`. -/
+theorem contDiff_sobolevGaugeFixedOperator {n : WithTop ℕ∞} :
+    ContDiff ℝ n sobolevGaugeFixedOperator := by
+  set H := gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2
+  have h (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) : sobolevGaugeFixedOperator a =
+      sobolevGaugeFixedOperator 0 + (H a).comp sobolevFieldValues := by
+    simp [sobolevGaugeFixedOperator, H]
+  rw [funext h]
+  exact contDiff_const.add (H.contDiff.clm_comp contDiff_const)
 
 /-- On a variation `y` whose coordinates have the coordinates of a `C¹` field `Y` as
 representatives, the realization at the `L∞` class of a field `x` is the classical gauge-fixed
@@ -336,7 +405,10 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
     refine integral_mono_of_nonneg (ae_of_all _ fun z ↦ by positivity)
       ((hYi.const_mul _).add (hGi.const_mul _)) (ae_of_all _ fun z ↦ ?_)
     have h₁ := sum_norm_gradient_sq_le x Y z
-    have h₂ : ‖x z‖ ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (hM z) 2
+    have h₂ : x z 0 ^ 2 + x z 1 ^ 2 ≤ M ^ 2 := by
+      have := pow_le_pow_left₀ (norm_nonneg _) (hM z) 2
+      rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four] at this
+      nlinarith [sq_nonneg (x z 2), sq_nonneg (x z 3)]
     -- The coordinates of `Y` are the test functions themselves.
     have h₃ (j : Fin 4) : (fun w ↦ Y w j) = φ j := funext fun w ↦ by simp only [Y]
     simp only [h₃] at h₁
@@ -452,5 +524,114 @@ theorem isClosed_range_sobolevGaugeFixedOperator (hx : ContDiff ℝ 1 x)
   obtain ⟨R, C, h⟩ := exists_compact_estimate hx hsol hlim hcov hax
   exact (sobolevGaugeFixedOperator a).isClosed_range_of_compact_estimate
     ((isCompactOperator_discValues R).smul (2 * C)) h
+
+/-- **The `L²`-orthogonal kernel projections and right inverses of `L_x : H¹ → L²` move
+continuously with the coefficient.** Let `a₀` be an `L∞` class at which the realization is onto
+with a finite-dimensional kernel; at a plane vortex these hypotheses are supplied by
+`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective` and
+`TauCeti.Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator`. Near `a₀` in `L∞`, every
+realization `L_a` is onto, and there are families of operators `π a` on `H¹(ℂ)⁴` and
+`Q a : L² → H¹(ℂ)⁴`, continuous in `a` for the operator norms,
+such that `π a` is the projection onto the kernel of `L_a` along its `L²`-orthogonal complement,
+`Q a` is a right inverse of `L_a` whose values are `L²`-orthogonal to that kernel, and every `y`
+splits as `y = π a y + Q a (L_a y)`. The `L²` pairing on `H¹(ℂ)⁴` is taken through the inclusion
+`sobolevFieldValues`. -/
+theorem exists_continuousOn_orthogonal_rightInverse_sobolevGaugeFixedOperator
+    {a₀ : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
+    (hsurj : Function.Surjective (sobolevGaugeFixedOperator a₀))
+    (hfin : FiniteDimensional ℝ (sobolevGaugeFixedOperator a₀).ker) :
+    ∃ U : Set (Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤), IsOpen U ∧ a₀ ∈ U ∧
+      ∃ π : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤ →
+          (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
+        ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤ →
+          Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
+        ContinuousOn π U ∧ ContinuousOn Q U ∧ ∀ a ∈ U,
+          Function.Surjective (sobolevGaugeFixedOperator a) ∧
+          (∀ y, π a y ∈ (sobolevGaugeFixedOperator a).ker) ∧
+          (∀ k ∈ (sobolevGaugeFixedOperator a).ker, π a k = k) ∧
+          (∀ y, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
+            ⟪sobolevFieldValues (y - π a y), sobolevFieldValues k⟫_ℝ = 0) ∧
+          (∀ f, sobolevGaugeFixedOperator a (Q a f) = f) ∧
+          (∀ f, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
+            ⟪sobolevFieldValues (Q a f), sobolevFieldValues k⟫_ℝ = 0) ∧
+          ∀ y, π a y + Q a (sobolevGaugeFixedOperator a y) = y := by
+  have hT₀ := ContinuousLinearMap.IsFredholm.of_surjective hsurj
+  obtain ⟨U, -, hU⟩ := hT₀.exists_continuousOn_orthogonal_rightInverse sobolevFieldValues
+    sobolevFieldValues_injective hsurj continuous_sobolevGaugeFixedOperator.continuousOn
+      isOpen_univ (Set.mem_univ a₀)
+  exact ⟨U, hU⟩
+
+section Family
+
+variable {X : Type*} [TopologicalSpace X] {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
+  (ha : Continuous a) (hsurj : ∀ x, Function.Surjective (sobolevGaugeFixedOperator (a x)))
+  (hfin : ∀ x, FiniteDimensional ℝ (sobolevGaugeFixedOperator (a x)).ker)
+include ha hsurj hfin
+
+/-- **Continuity of the kernel projections along a family of coefficients.** Along a family of
+`L∞` coefficients `a x`, continuous in `x`, at which the realization `L_a : H¹ → L²` is onto with
+a finite-dimensional kernel, the projection of `H¹(ℂ)⁴` onto the kernel of `L_a` along its
+`L²`-orthogonal complement depends continuously on `x`, in operator norm. -/
+theorem continuous_orthogonalKerProjection_sobolevGaugeFixedOperator :
+    Continuous fun x ↦ ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+      (sobolevGaugeFixedOperator (a x)) :=
+  continuous_iff_continuousAt.2 fun x ↦
+    have := hfin x
+    ((ContinuousLinearMap.IsFredholm.of_surjective (hsurj x)).continuousAt_orthogonalKerProjection
+      sobolevFieldValues_injective (hsurj x)).comp
+      (f := fun x ↦ sobolevGaugeFixedOperator (a x))
+      (continuous_sobolevGaugeFixedOperator.comp ha).continuousAt
+
+/-- **Continuity of the right inverses along a family of coefficients.** Along a family of `L∞`
+coefficients `a x`, continuous in `x`, at which the realization `L_a : H¹ → L²` is onto with a
+finite-dimensional kernel, the right inverse of `L_a` with values `L²`-orthogonal to its kernel
+depends continuously on `x`, in operator norm. -/
+theorem continuous_orthogonalRightInverse_sobolevGaugeFixedOperator :
+    Continuous fun x ↦ ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+      (sobolevGaugeFixedOperator (a x)) :=
+  continuous_iff_continuousAt.2 fun x ↦
+    have := hfin x
+    ((ContinuousLinearMap.IsFredholm.of_surjective (hsurj x)).continuousAt_orthogonalRightInverse
+      sobolevFieldValues_injective (hsurj x)).comp
+      (f := fun x ↦ sobolevGaugeFixedOperator (a x))
+      (continuous_sobolevGaugeFixedOperator.comp ha).continuousAt
+
+end Family
+
+section SmoothFamily
+
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] {n : WithTop ℕ∞}
+  {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} (ha : ContDiff ℝ n a)
+  (hsurj : ∀ x, Function.Surjective (sobolevGaugeFixedOperator (a x)))
+  (hfin : ∀ x, FiniteDimensional ℝ (sobolevGaugeFixedOperator (a x)).ker)
+include ha hsurj hfin
+
+/-- **Smoothness of the kernel projections along a family of coefficients.** Along a family of
+`L∞` coefficients `a x`, `C^n` in `x`, at which the realization `L_a : H¹ → L²` is onto with a
+finite-dimensional kernel, the projection of `H¹(ℂ)⁴` onto the kernel of `L_a` along its
+`L²`-orthogonal complement is a `C^n` function of `x`, in operator norm. -/
+theorem contDiff_orthogonalKerProjection_sobolevGaugeFixedOperator :
+    ContDiff ℝ n fun x ↦ ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+      (sobolevGaugeFixedOperator (a x)) :=
+  contDiff_iff_contDiffAt.2 fun x ↦
+    have := hfin x
+    ((ContinuousLinearMap.IsFredholm.of_surjective (hsurj x)).contDiffAt_orthogonalKerProjection
+      sobolevFieldValues_injective (hsurj x)).comp (f := fun x ↦ sobolevGaugeFixedOperator (a x))
+      x (contDiff_sobolevGaugeFixedOperator.comp ha).contDiffAt
+
+/-- **Smoothness of the right inverses along a family of coefficients.** Along a family of `L∞`
+coefficients `a x`, `C^n` in `x`, at which the realization `L_a : H¹ → L²` is onto with a
+finite-dimensional kernel, the right inverse of `L_a` with values `L²`-orthogonal to its kernel is
+a `C^n` function of `x`, in operator norm. -/
+theorem contDiff_orthogonalRightInverse_sobolevGaugeFixedOperator :
+    ContDiff ℝ n fun x ↦ ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+      (sobolevGaugeFixedOperator (a x)) :=
+  contDiff_iff_contDiffAt.2 fun x ↦
+    have := hfin x
+    ((ContinuousLinearMap.IsFredholm.of_surjective (hsurj x)).contDiffAt_orthogonalRightInverse
+      sobolevFieldValues_injective (hsurj x)).comp (f := fun x ↦ sobolevGaugeFixedOperator (a x))
+      x (contDiff_sobolevGaugeFixedOperator.comp ha).contDiffAt
+
+end SmoothFamily
 
 end TauCeti.Vortex

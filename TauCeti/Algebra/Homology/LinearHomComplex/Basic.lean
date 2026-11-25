@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplex
+public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 
 /-!
 # The `R`-linear Hom complex of two cochain complexes
@@ -40,6 +41,15 @@ complexes.
   `CochainComplex.HomComplex.Cochain.v_apply_mem_ker_of_δ_eq_zero`: element-level formulas for the
   differential of a cochain of complexes of modules on an element killed by the source
   differential, and the resulting behaviour of closed degree-zero cochains on kernels.
+* `CochainComplex.HomComplex.Cochain.vLinearMap`: for complexes of modules over a commutative
+  ring, the component of a cochain on a single term, as a linear map into linear maps.
+* `CochainComplex.HomComplex.Cochain.vLinearMap_eq_zero_of_isZero`: that component vanishes on a
+  zero term of the source.
+* `CochainComplex.HomComplex.Cochain.smul_linearHomComplex_v` and
+  `CochainComplex.HomComplex.Cochain.zsmul_linearHomComplex_v`: the components of a scalar multiple
+  of an element of the `R`-linear Hom complex.
+* `CochainComplex.HomComplex.Cochain.ext_linearHomComplex`: a cochain from a complex of modules
+  to the Hom complex of two complexes of modules is determined by its values on pairs of elements.
 
 The cochain modules, the differential `δ`, its `R`-linearity and the Leibniz rule for composition
 are supplied by Mathlib.
@@ -237,5 +247,64 @@ theorem v_apply_mem_ker_of_δ_eq_zero {R : Type*} [Ring R] {K L : CochainComplex
   simpa only [δ_zero_cochain_v, Cochain.zero_v, ModuleCat.hom_sub, ModuleCat.hom_comp,
     LinearMap.sub_apply, LinearMap.comp_apply, ha, map_zero, sub_zero, ModuleCat.hom_zero,
     LinearMap.zero_apply, LinearMap.mem_ker] using key
+
+/-- The component on `Kⁱ` of a cochain of degree `n` between complexes of modules over a
+commutative ring, as a linear map `Cochain K L n →ₗ[R] (Kⁱ →ₗ[R] Lʲ)`. -/
+def vLinearMap {R : Type*} [CommRing R] (K L : CochainComplex (ModuleCat R) ℤ) (n i j : ℤ)
+    (hij : i + n = j) : Cochain K L n →ₗ[R] (K.X i →ₗ[R] L.X j) where
+  toFun z := (z.v i j hij).hom
+  map_add' _ _ := by simp
+  map_smul' _ _ := by simp
+
+@[simp]
+lemma vLinearMap_apply {R : Type*} [CommRing R] {K L : CochainComplex (ModuleCat R) ℤ}
+    {n i j : ℤ} (hij : i + n = j) (z : Cochain K L n) :
+    vLinearMap K L n i j hij z = (z.v i j hij).hom :=
+  (rfl)
+
+/-- The component of a cochain of complexes of modules on a zero term of its source vanishes. -/
+theorem vLinearMap_eq_zero_of_isZero {R : Type*} [CommRing R]
+    {K L : CochainComplex (ModuleCat R) ℤ} {n i j : ℤ} (hij : i + n = j) (hK : IsZero (K.X i))
+    (z : Cochain K L n) : vLinearMap K L n i j hij z = 0 := by
+  rw [vLinearMap_apply, v_eq_zero_of_isZero hij hK, ModuleCat.hom_zero]
+
+section LinearHomComplexSMul
+
+variable {R : Type w} [Ring R] {C : Type u} [Category.{v} C] [Preadditive C] [Linear R C]
+  {F G : CochainComplex C ℤ} {q : ℤ}
+
+/- The scalar actions of `R` and `ℤ` on the `ModuleCat` carrier of the Hom complex agree with the
+`SMul` instances of `Cochain` only up to unfolding instances, so `Cochain.smul_v` does not fire on
+them under `rw` or `simp`.  The next two restatements are proved by `Cochain.smul_v` itself. -/
+
+/-- A scalar multiple of an element of the `R`-linear Hom complex has the scaled components. -/
+@[simp]
+lemma smul_linearHomComplex_v (r : R) (z : (linearHomComplex R F G).X q) (a b : ℤ)
+    (hab : a + q = b) :
+    ((r • z : (linearHomComplex R F G).X q) : Cochain F G q).v a b hab =
+      r • (z : Cochain F G q).v a b hab :=
+  Cochain.smul_v r z a b hab
+
+/-- An integer multiple of an element of the `R`-linear Hom complex has the scaled components. -/
+@[simp]
+lemma zsmul_linearHomComplex_v (k : ℤ) (z : (linearHomComplex R F G).X q) (a b : ℤ)
+    (hab : a + q = b) :
+    ((k • z : (linearHomComplex R F G).X q) : Cochain F G q).v a b hab =
+      k • (z : Cochain F G q).v a b hab :=
+  Cochain.smul_v k z a b hab
+
+end LinearHomComplexSMul
+
+/-- Two cochains from `K` to the `R`-linear Hom complex of `L` and `M`, for complexes of modules,
+agree as soon as their values agree on all pairs of elements. -/
+theorem ext_linearHomComplex {R : Type v} [CommRing R]
+    {K L M : CochainComplex (ModuleCat.{v} R) ℤ} {n : ℤ}
+    {z z' : Cochain K (linearHomComplex R L M) n}
+    (h : ∀ (p q : ℤ) (hpq : p + n = q) (x : K.X p) (a b : ℤ) (hab : a + q = b) (y : L.X a),
+      (((z.v p q hpq).hom x : Cochain L M q).v a b hab).hom y =
+        (((z'.v p q hpq).hom x : Cochain L M q).v a b hab).hom y) :
+    z = z' :=
+  Cochain.ext _ _ fun p q hpq => ModuleCat.hom_ext <| LinearMap.ext fun x =>
+    Cochain.ext _ _ fun a b hab => ModuleCat.hom_ext <| LinearMap.ext fun y => h p q hpq x a b hab y
 
 end CochainComplex.HomComplex.Cochain

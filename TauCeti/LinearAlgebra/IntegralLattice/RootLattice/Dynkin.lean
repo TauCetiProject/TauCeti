@@ -59,8 +59,9 @@ are excluded here (`TauCeti.DynkinType.isSimplyLaced_cartanMatrix_iff`).
   Dynkin types.
 * `TauCeti.DynkinType.rootLattice_A`, `rootLattice_E6`, `rootLattice_E7`, `rootLattice_E8`:
   identification with the family-specific simple-root lattices.
-* `TauCeti.DynkinType.rootLatticeIsometryCheckerboard`: the isometry of the type `Dₙ` root lattice
-  with the checkerboard lattice.
+* `TauCeti.DynkinType.rootLatticeIsometryCheckerboard` and
+  `TauCeti.DynkinType.rootLatticeIsometryCheckerboard_symm_apply`: the isometry of the type `Dₙ`
+  root lattice with the checkerboard lattice and its explicit inverse coordinate formula.
 
 ## References
 
@@ -181,7 +182,7 @@ theorem span_vectorsOfNorm_two_rootLattice :
       (t.rootLattice ht).carrier := by
   refine le_antisymm (Submodule.span_le.mpr ?_) ?_
   · rintro _ ⟨x, -, rfl⟩
-    exact x.2
+    exact x.property
   · refine (t.rootLattice_carrier ht).le.trans (Submodule.span_le.mpr ?_)
     rintro _ ⟨i, rfl⟩
     exact Submodule.subset_span ⟨t.simpleRootBasis ht i,
@@ -228,11 +229,8 @@ vectors by the Cartan integers, is the root lattice of `t`. -/
 theorem eq_rootLattice {L : IntegralLattice (Fin t.rank → ℚ)}
     (hcarrier : ∀ x, x ∈ L.carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i)
     (hform : ∀ i j, L.form (Pi.single i 1) (Pi.single j 1) = ((t.cartanMatrix i j : ℤ) : ℚ)) :
-    L = t.rootLattice ht := by
-  refine IntegralLattice.ext (Submodule.ext fun x ↦
-    (hcarrier x).trans (t.mem_rootLattice_carrier_iff ht x).symm) ?_
-  refine LinearMap.BilinForm.ext_basis (Pi.basisFun ℚ (Fin t.rank)) fun i j ↦ ?_
-  rw [Pi.basisFun_apply, Pi.basisFun_apply, hform, rootLattice_form_single_single]
+    L = t.rootLattice ht :=
+  eq_ofGramMatrix_basisFun _ _ hcarrier hform
 
 /-- The root lattice of type `Aₙ` is the simple-root lattice `typeARootLattice n`. -/
 theorem rootLattice_A (n : ℕ) (ht : (A n).IsSimplyLaced) :
@@ -290,5 +288,36 @@ theorem rootLatticeIsometryCheckerboard_single (n : ℕ) (hn : 4 ≤ n)
     rootLatticeIsometryCheckerboard n hn ht (Pi.single i 1) = checkerboardSimpleRoot n hn i :=
   (congrArg _ ((D n).coe_simpleRootBasis ht i).symm).trans <|
     (Isometry.ofGramMatrixEq_apply_basis _ _ _ i).trans (coe_checkerboardSimpleRootBasis_apply hn i)
+
+/-- **Inverse simple-root coordinates on `Dₙ`.**  For `4 ≤ n`, the inverse of
+`rootLatticeIsometryCheckerboard` reads prefix sums `y₀ + ⋯ + yₖ` on the chain nodes `k + 2 < n`,
+`(∑ yⱼ) / 2 - y_{n-1}` at node `n - 2`, and `(∑ yⱼ) / 2` at node `n - 1`. -/
+theorem rootLatticeIsometryCheckerboard_symm_apply (n : ℕ) (hn : 4 ≤ n)
+    (ht : (D n).IsSimplyLaced) (y : Fin n → ℚ) (k : Fin n) :
+    (rootLatticeIsometryCheckerboard n hn ht).symm y k =
+      if (k : ℕ) + 2 < n then ∑ j ∈ Finset.Iic k, y j
+      else if (k : ℕ) + 1 < n then (∑ j, y j) / 2 - y ⟨n - 1, by omega⟩
+      else (∑ j, y j) / 2 := by
+  let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
+  set e := rootLatticeIsometryCheckerboard n hn ht
+  have hexp (x : Fin n → ℚ) :
+      e x = ∑ i : Fin n, x i • typeDSimpleRootBasis ℚ n hn i := by
+    have hx : x = ∑ i : Fin n, x i • Pi.single i 1 := by
+      ext j
+      simp [Finset.sum_apply, Pi.single_apply]
+    refine (congrArg e hx).trans ((map_sum e (fun i : Fin n ↦ x i • Pi.single i (1 : ℚ))
+      Finset.univ).trans ?_)
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hcb : checkerboardSimpleRoot n hn i = typeDSimpleRootBasis ℚ n hn i := by
+      ext j
+      rw [checkerboardSimpleRoot_apply, typeDSimpleRootBasis_apply]
+    exact (map_smul e (x i) (Pi.single i (1 : ℚ))).trans
+      (congrArg (x i • ·) ((rootLatticeIsometryCheckerboard_single n hn ht i).trans hcb))
+  have hrepr : e ((typeDSimpleRootBasis ℚ n hn).repr y) = y :=
+    (hexp _).trans ((typeDSimpleRootBasis ℚ n hn).sum_repr y)
+  have hsymm : e.symm y = (typeDSimpleRootBasis ℚ n hn).repr y :=
+    (congrArg e.symm hrepr.symm).trans (e.symm_apply_apply _)
+  rw [congrFun hsymm k, typeDSimpleRootBasis_repr_apply ℚ hn y k, invOf_eq_inv]
+  split_ifs <;> ring
 
 end TauCeti.DynkinType

@@ -19,8 +19,7 @@ point contains a closed ball about it of arbitrarily small positive radius
 The frontier of the closed annulus `closedBall y R \ ball y r` lies on its two boundary spheres
 (`TauCeti.frontier_closedBall_sdiff_ball_subset`). A point outside a closed ball containing the
 support of a function lies outside its closed support
-(`TauCeti.notMem_tsupport_of_support_subset_closedBall`), and the indicator of a closed ball is
-pointwise right-continuous in the radius (`TauCeti.continuousWithinAt_Ici_indicator_closedBall`).
+(`TauCeti.notMem_tsupport_of_support_subset_closedBall`).
 -/
 
 public section
@@ -59,21 +58,5 @@ theorem notMem_tsupport_of_support_subset_closedBall {β : Type*} [Zero β] {f :
     {r : ℝ} (hsupp : Function.support f ⊆ closedBall c r) (hw : r < dist w c) :
     w ∉ tsupport f := fun h ↦
   (mem_closedBall.mp (closure_minimal hsupp isClosed_closedBall h)).not_gt hw
-
-/-- At every point `y`, the indicator `(closedBall x r').indicator g y` is right-continuous in the
-radius `r'`, that is, continuous within `Ici r` at `r`. -/
-theorem continuousWithinAt_Ici_indicator_closedBall {β : Type*} [TopologicalSpace β] [Zero β]
-    (g : X → β) (x : X) (r : ℝ) (y : X) :
-    ContinuousWithinAt (fun r' ↦ (closedBall x r').indicator g y) (Ici r) r := by
-  rw [ContinuousWithinAt]
-  by_cases hy : y ∈ closedBall x r
-  · rw [indicator_of_mem hy]
-    exact tendsto_const_nhds.congr' <| eventually_nhdsWithin_of_forall fun r' (hr' : r ≤ r') ↦
-      (indicator_of_mem (closedBall_subset_closedBall hr' hy) g).symm
-  · rw [indicator_of_notMem hy]
-    have hlt : r < dist y x := not_le.1 hy
-    exact tendsto_const_nhds.congr' <|
-      (eventually_nhdsWithin_of_eventually_nhds (gt_mem_nhds hlt)).mono fun r' hr' ↦
-        (indicator_of_notMem (not_le.2 hr') g).symm
 
 end TauCeti
