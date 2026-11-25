@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.GroupTheory.Perm.Cycle.Factors
 public import Mathlib.Order.Setoid.Basic
+public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import Mathlib.GroupTheory.GroupAction.Transitive
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
@@ -27,8 +28,9 @@ away from the incident edges.
 The product of the two vertex rotations determines the face permutation, whose orbits are the
 faces.  Gluing a disc into each face gives a closed oriented surface, one for each connected
 component, and `eulerChar` is its Euler characteristic `|B| + |W| - |E| + |F|`.  This file also
-provides morphisms, isomorphisms, automorphisms, connected components, vertex degrees, the two
-incidence degree-sum formulas, and the copy of a ribbon graph in a higher universe.
+provides morphisms, isomorphisms, automorphisms, connected components, vertex degrees, the
+vertex counts as cycle counts of the two rotations, the two incidence degree-sum formulas, and the
+copy of a ribbon graph in a higher universe.
 
 ## References
 
@@ -111,6 +113,18 @@ theorem whiteEnd_eq_whiteEnd_iff {e e' : Γ.E} :
     Γ.whiteEnd e = Γ.whiteEnd e' ↔ Γ.rotW.SameCycle e e' :=
   ⟨fun h ↦ (Γ.isCycleOn_rotW (Γ.whiteEnd e')).2 (by simpa using h) (by simp),
     fun h ↦ h.apply_eq_of_apply_eq Γ.whiteEnd_rotW⟩
+
+/-- The black vertices are the cycles of the black rotation, fixed points included. -/
+theorem orbitCount_rotB : orbitCount Γ.rotB = Fintype.card Γ.B := by
+  rw [orbitCount_def, ← Nat.card_eq_fintype_card]
+  exact Nat.card_congr ((Quotient.congrRight fun _ _ ↦ Γ.blackEnd_eq_blackEnd_iff.symm).trans
+    (Setoid.quotientKerEquivOfSurjective Γ.blackEnd Γ.blackEnd_surjective))
+
+/-- The white vertices are the cycles of the white rotation, fixed points included. -/
+theorem orbitCount_rotW : orbitCount Γ.rotW = Fintype.card Γ.W := by
+  rw [orbitCount_def, ← Nat.card_eq_fintype_card]
+  exact Nat.card_congr ((Quotient.congrRight fun _ _ ↦ Γ.whiteEnd_eq_whiteEnd_iff.symm).trans
+    (Setoid.quotientKerEquivOfSurjective Γ.whiteEnd Γ.whiteEnd_surjective))
 
 /-! ### Permutations, faces, and connected components -/
 

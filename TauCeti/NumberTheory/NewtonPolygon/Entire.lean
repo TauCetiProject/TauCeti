@@ -43,6 +43,9 @@ infinity.
   face of every slope.
 * `PowerSeries.IsEntire.finite_finiteEdges_newtonPolygon_iff`: the Newton polygon of an entire
   series has finitely many finite unit edges if and only if the series is a polynomial.
+* `PowerSeries.IsEntire.newtonPolygon_ncard_setOf_unitSlope_le_le`: if the Newton polygon of an
+  entire series starts at or below `a`, its height at the number `N` of finite unit edges of slope
+  at most `σ` is at most `a + σ N`.
 * `PowerSeries.IsEntire.finite_setOf_unitSlope_newtonPolygon_le`,
   `PowerSeries.IsEntire.tendsto_unitSlope_newtonPolygon` and
   `PowerSeries.IsEntire.exists_polynomial_or_tendsto_unitSlope_newtonPolygon`: the slopes of an
@@ -126,6 +129,20 @@ theorem IsEntire.finite_setOf_unitSlope_newtonPolygon_le (hf : f.IsEntire) (c : 
   · simp
   obtain ⟨l, u, hface⟩ := hf.exists_isFiniteFace_newtonPolygon v hb hv hf0 c
   exact hface.finite_setOf_unitSlope_le (f.isConvexSeq_newtonPolygon v)
+
+/-- **Slopes at most `σ` lie under the line of slope `σ`.** If the Newton polygon of an entire
+series starts at or below `a` and has `N` finite unit edges of slope at most `σ`, its height at `N`
+is at most `a + σ N`. -/
+theorem IsEntire.newtonPolygon_ncard_setOf_unitSlope_le_le (hf : f.IsEntire) (σ : ℝ) {a : ℝ}
+    (ha : f.newtonPolygon v 0 ≤ a) :
+    f.newtonPolygon v {n | n ∈ finiteEdges (f.newtonPolygon v) ∧
+      unitSlope (f.newtonPolygon v) n ≤ σ}.ncard ≤
+      ((a + σ * {n | n ∈ finiteEdges (f.newtonPolygon v) ∧
+        unitSlope (f.newtonPolygon v) n ≤ σ}.ncard : ℝ) : WithTop ℝ) := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · simp [newtonPolygon_zero] at ha
+  obtain ⟨l, u, hface⟩ := hf.exists_isFiniteFace_newtonPolygon v hb hv hf0 σ
+  exact hface.apply_ncard_setOf_unitSlope_le_le (f.isConvexSeq_newtonPolygon v) ha
 
 /-- If the Newton polygon of an entire series has infinitely many finite unit edges, their
 slopes tend to infinity. -/

@@ -25,6 +25,9 @@ determinant of the pencil `1 - c • B`, which are read off the scalars `1 - c *
 and the traces of natural powers of `B`, which are sums of powers of the eigenvalues. The
 pencil is diagonal in the eigenbasis for any scalar `c`; only its positive definiteness asks
 for a real one.
+The real parts of the determinant and trace are the product and sum of the eigenvalues, and a
+Hermitian matrix with all eigenvalues equal to `c` is `c • 1`
+(`Matrix.IsHermitian.eq_smul_one_of_eigenvalues_eq`).
 
 These are the spectral facts behind the moment-generating function of a Gaussian quadratic form,
 whose exponential-integrability domain is a positive-definiteness condition on such a pencil and
@@ -91,7 +94,8 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`;
 * `Matrix.IsSymm.exists_orthogonal_diagonal` — a real symmetric matrix is `O * diagonal d * O⁻¹`
   for an invertible `O` with `O⁻¹ = Oᵀ`;
-* `Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq` and
+* `Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq`,
+  `Matrix.IsHermitian.eigenvalues₀_equivOfCardEq_symm` and
   `Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq` — the canonical equivalence
   `Fin (Fintype.card ι) ≃ ι` reindexes the sorted eigenvalues `hB.eigenvalues₀` as the
   matrix-indexed eigenvalues `hB.eigenvalues`, so a simple sorted eigenvalue is simple as a
@@ -527,6 +531,13 @@ theorem eigenvalues_apply_equivOfCardEq (hA : A.IsHermitian)
       hA.eigenvalues₀ i := by
   simp only [IsHermitian.eigenvalues, Equiv.symm_apply_apply]
 
+/-- The sorted eigenvalue at the index the canonical finite equivalence sends to `i` is the
+matrix-indexed eigenvalue at `i`. -/
+theorem eigenvalues₀_equivOfCardEq_symm (hA : A.IsHermitian) (i : ι) :
+    hA.eigenvalues₀ ((Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))).symm i) =
+      hA.eigenvalues i := by
+  rw [← eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]
+
 /-- A product of a function over the matrix-indexed eigenvalues of a Hermitian matrix is its
 product over the sorted eigenvalues. -/
 @[to_additive /-- A sum of a function over the matrix-indexed eigenvalues of a Hermitian matrix is
@@ -546,6 +557,25 @@ theorem eigenvalues_ne_eigenvalues_equivOfCardEq (hA : A.IsHermitian)
   intro k hk
   have hk' : e.symm k ≠ i := fun h ↦ hk (by rw [← h, e.apply_symm_apply])
   simpa [e, IsHermitian.eigenvalues] using hi _ hk'
+
+/-- A Hermitian matrix whose eigenvalues are all equal to `c` is `c • 1`. -/
+theorem eq_smul_one_of_eigenvalues_eq (hA : A.IsHermitian) {c : ℝ}
+    (hc : ∀ i, hA.eigenvalues i = c) : A = c • (1 : Matrix ι ι 𝕜) := by
+  have hdiag : diagonal (RCLike.ofReal ∘ hA.eigenvalues) = algebraMap 𝕜 (Matrix ι ι 𝕜) c := by
+    ext i j
+    simp [hc, diagonal_apply, algebraMap_matrix_apply]
+  rw [hA.spectral_theorem, hdiag, AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one,
+    ← RCLike.real_smul_eq_coe_smul]
+
+/-- The real part of the determinant of a Hermitian matrix is the product of its eigenvalues. -/
+theorem re_det_eq_prod_eigenvalues (hA : A.IsHermitian) :
+    RCLike.re A.det = ∏ i, hA.eigenvalues i := by
+  rw [hA.det_eq_prod_eigenvalues, ← RCLike.ofReal_prod, RCLike.ofReal_re]
+
+/-- The real part of the trace of a Hermitian matrix is the sum of its eigenvalues. -/
+theorem re_trace_eq_sum_eigenvalues (hA : A.IsHermitian) :
+    RCLike.re A.trace = ∑ i, hA.eigenvalues i := by
+  rw [hA.trace_eq_sum_eigenvalues, ← RCLike.ofReal_sum, RCLike.ofReal_re]
 
 /-- At a simple ordered eigenvalue `λᵢ`, the product `∏_{j ≠ i} (λᵢ - λⱼ)` over the remaining
 matrix-indexed eigenvalues does not vanish. -/
