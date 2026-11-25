@@ -186,27 +186,21 @@ the same pair of indices. -/
 theorem stabilizeGL_transvectionUnit {m n : ℕ} (h : m ≤ n) {i j : Fin m} (hij : i ≠ j) (a : A) :
     stabilizeGL A h (transvectionUnit hij a) =
       transvectionUnit ((Fin.castLE_injective h).ne hij) a := by
-  ext p q
-  simp only [coe_stabilizeGL_apply, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
-    Matrix.one_apply, single_apply, Fin.ext_iff, Fin.val_castLE]
-  split_ifs <;> first | rfl | omega | simp_all
+  rw [← Function.Embedding.extendGL_castLEEmb, Function.Embedding.extendGL_transvectionUnit]
+  simp only [Fin.castLEEmb_apply]
 
 /-- Stabilization `u ↦ u ⊕ 1` does not change the determinant of an invertible matrix over a
 commutative ring. -/
 @[simp]
 theorem det_stabilizeGL {R : Type*} [CommRing R] {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) R) :
     GeneralLinearGroup.det (stabilizeGL R h u) = GeneralLinearGroup.det u := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [stabilizeGL_eq_reindexGL_fromBlocksGL]
-  ext
-  simp [GeneralLinearGroup.val_det_apply, det_fromBlocks_zero₂₁]
+  rw [← Function.Embedding.extendGL_castLEEmb, Function.Embedding.det_extendGL]
 
 /-- Stabilization maps the elementary subgroup into the elementary subgroup. -/
 theorem map_stabilizeGL_elementarySubgroup_le {m n : ℕ} (h : m ≤ n) :
     (elementarySubgroup (Fin m) A).map (stabilizeGL A h) ≤ elementarySubgroup (Fin n) A := by
-  refine Subgroup.map_le_iff_le_comap.2 (elementarySubgroup_le_iff.2 fun i j hij a ↦ ?_)
-  rw [Subgroup.mem_comap, stabilizeGL_transvectionUnit]
-  exact transvectionUnit_mem_elementarySubgroup _ _
+  rw [← Function.Embedding.extendGL_castLEEmb]
+  exact Function.Embedding.map_extendGL_elementarySubgroup_le _ A
 
 /-- The stabilizations form a directed system of groups. -/
 instance : DirectedSystem (fun n : ℕ ↦ GL (Fin n) A) fun _ _ h ↦ stabilizeGL A h where

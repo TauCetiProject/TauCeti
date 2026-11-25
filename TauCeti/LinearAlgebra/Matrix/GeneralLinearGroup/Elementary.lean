@@ -72,6 +72,8 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
 * `Function.Embedding.extendGL_transvectionUnit`,
   `Function.Embedding.map_extendGL_elementarySubgroup_le`: extension by the identity along an
   embedding of index types sends elementary matrices to elementary matrices.
+* `Function.Embedding.extendGL_inl`, `Function.Embedding.extendGL_inr`: extension by the identity
+  along the inclusions into `m ⊕ k` is the upper left and the lower right corner embedding.
 * `TauCeti.map_elementarySubgroup_le_elementarySubgroup`,
   `TauCeti.map_elementarySubgroup_le_elementarySubgroup_inr`: the upper left and lower right
   corner embeddings into `GL (m ⊕ k) A` preserve elementary matrices.
@@ -422,7 +424,7 @@ theorem extendGL_toEmbedding (e : n ≃ m) :
 @[simp]
 theorem extendGL_refl : (Function.Embedding.refl n).extendGL A = MonoidHom.id (GL n A) := by
   rw [← Equiv.refl_toEmbedding, extendGL_toEmbedding, Equiv.reindexGL_refl]
-  rfl
+  exact MulEquiv.toMonoidHom_refl
 
 /-- Successive extensions by the identity compose according to the embeddings. -/
 @[simp]
@@ -463,6 +465,36 @@ theorem det_extendGL {R : Type*} [CommRing R] (u : GL n R) :
   rw [extendGL, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Equiv.det_reindexGL]
   ext
   simp [GeneralLinearGroup.val_det_apply, det_fromBlocks_zero₂₁]
+
+/-- Extension by the identity along the left inclusion `m ↪ m ⊕ p` is the block diagonal matrix
+`u ⊕ 1`. -/
+@[simp]
+theorem extendGL_inl_apply (u : GL m A) :
+    (inl : m ↪ m ⊕ p).extendGL A u = fromBlocksGL (u, 1) := by
+  refine extendGL_apply_eq_iff.2 ⟨fun i j ↦ by simp, fun i j h ↦ ?_⟩
+  rcases i with i | i <;> rcases j with j | j <;> simp_all [Matrix.one_apply]
+
+/-- Extension by the identity along the right inclusion `p ↪ m ⊕ p` is the block diagonal matrix
+`1 ⊕ u`. -/
+@[simp]
+theorem extendGL_inr_apply (u : GL p A) :
+    (inr : p ↪ m ⊕ p).extendGL A u = fromBlocksGL (1, u) := by
+  refine extendGL_apply_eq_iff.2 ⟨fun i j ↦ by simp, fun i j h ↦ ?_⟩
+  rcases i with i | i <;> rcases j with j | j <;> simp_all [Matrix.one_apply]
+
+variable (A) in
+/-- Extension by the identity along the left inclusion `m ↪ m ⊕ p` is the upper left corner
+embedding `u ↦ u ⊕ 1`. -/
+theorem extendGL_inl :
+    (inl : m ↪ m ⊕ p).extendGL A = fromBlocksGL.comp (MonoidHom.inl (GL m A) (GL p A)) :=
+  MonoidHom.ext extendGL_inl_apply
+
+variable (A) in
+/-- Extension by the identity along the right inclusion `p ↪ m ⊕ p` is the lower right corner
+embedding `u ↦ 1 ⊕ u`. -/
+theorem extendGL_inr :
+    (inr : p ↪ m ⊕ p).extendGL A = fromBlocksGL.comp (MonoidHom.inr (GL m A) (GL p A)) :=
+  MonoidHom.ext extendGL_inr_apply
 
 end Function.Embedding
 
@@ -654,30 +686,12 @@ namespace TauCeti
 variable {A : Type*} [Ring A] {m k : Type*} [DecidableEq m] [Fintype m] [DecidableEq k]
   [Fintype k]
 
-/-- Extension by the identity along the left inclusion `m ↪ m ⊕ k` is the block diagonal matrix
-`u ⊕ 1`. -/
-@[simp]
-theorem extendGL_inl (u : GL m A) :
-    (Function.Embedding.inl : m ↪ m ⊕ k).extendGL A u = fromBlocksGL (u, 1) := by
-  refine Function.Embedding.extendGL_apply_eq_iff.2 ⟨fun i j ↦ by simp, fun i j h ↦ ?_⟩
-  rcases i with i | i <;> rcases j with j | j <;> simp_all [Matrix.one_apply]
-
-/-- Extension by the identity along the right inclusion `k ↪ m ⊕ k` is the block diagonal matrix
-`1 ⊕ u`. -/
-@[simp]
-theorem extendGL_inr (u : GL k A) :
-    (Function.Embedding.inr : k ↪ m ⊕ k).extendGL A u = fromBlocksGL (1, u) := by
-  refine Function.Embedding.extendGL_apply_eq_iff.2 ⟨fun i j ↦ by simp, fun i j h ↦ ?_⟩
-  rcases i with i | i <;> rcases j with j | j <;> simp_all [Matrix.one_apply]
-
 /-- Placing an elementary matrix in the upper left block gives an elementary matrix: the
 stabilization `e ↦ e ⊕ 1` maps the elementary subgroup into the elementary subgroup. -/
 theorem map_elementarySubgroup_le_elementarySubgroup :
     (elementarySubgroup m A).map (fromBlocksGL.comp (MonoidHom.inl (GL m A) (GL k A))) ≤
       elementarySubgroup (m ⊕ k) A := by
-  rw [show fromBlocksGL.comp (MonoidHom.inl (GL m A) (GL k A)) =
-      (Function.Embedding.inl : _ ↪ m ⊕ k).extendGL A from
-    MonoidHom.ext fun u ↦ (extendGL_inl u).symm]
+  rw [← Function.Embedding.extendGL_inl]
   exact Function.Embedding.map_extendGL_elementarySubgroup_le _ A
 
 /-- Placing an elementary matrix in the lower right block gives an elementary matrix: the
@@ -685,9 +699,7 @@ embedding `e ↦ 1 ⊕ e` maps the elementary subgroup into the elementary subgr
 theorem map_elementarySubgroup_le_elementarySubgroup_inr :
     (elementarySubgroup k A).map (fromBlocksGL.comp (MonoidHom.inr (GL m A) (GL k A))) ≤
       elementarySubgroup (m ⊕ k) A := by
-  rw [show fromBlocksGL.comp (MonoidHom.inr (GL m A) (GL k A)) =
-      (Function.Embedding.inr : _ ↪ m ⊕ k).extendGL A from
-    MonoidHom.ext fun u ↦ (extendGL_inr u).symm]
+  rw [← Function.Embedding.extendGL_inr]
   exact Function.Embedding.map_extendGL_elementarySubgroup_le _ A
 
 /-- The block diagonal embedding `g ↦ diag(1, g)` of `GL Tᶜ A` is extension by the identity along
