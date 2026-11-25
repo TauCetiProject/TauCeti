@@ -185,9 +185,9 @@ private theorem exists_pow_sub_pow_eq_homogeneousCyclotomic_mul (hp : p.Prime) {
     exact hdne (hp.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq hdvd
       (fun h => hdk (Nat.mem_divisors.2 ⟨h, hk⟩)) hdord.symm)
   · rw [Finset.mul_prod_erase S (fun d => homogeneousCyclotomic d a b) hmem, hS,
-      ← prod_homogeneousCyclotomic_eq_pow_sub_pow (Nat.pos_of_ne_zero hk) a b,
-      Finset.prod_sdiff (Nat.divisors_subset_of_dvd hn (dvd_mul_left k p)),
-      prod_homogeneousCyclotomic_eq_pow_sub_pow (Nat.pos_of_ne_zero hn)]
+      mul_comm (∏ d ∈ _, _),
+      pow_sub_pow_mul_prod_homogeneousCyclotomic_eq_pow_sub_pow_of_dvd (dvd_mul_left k p)
+        (Nat.pos_of_ne_zero hn)]
 
 /-- **Nonprimitive prime divisors divide a cyclotomic value once.** For natural bases `b < a`, a
 prime `p ∤ b` dividing both `n` and `Φ_n(a, b)` divides `Φ_n(a, b)` exactly once, unless

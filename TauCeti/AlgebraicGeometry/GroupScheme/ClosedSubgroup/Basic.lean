@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.CategoryTheory.Subobject.Basic
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.CommGrp_
 public import TauCeti.CategoryTheory.Monoidal.Grp.Over
+import TauCeti.CategoryTheory.Monoidal.Mon
 import TauCeti.CategoryTheory.Subobject.FactorThru
 
 /-!
@@ -33,6 +34,8 @@ specialized constructions that import this generic API.
 * `TauCeti.ClosedSubgroupScheme.mapIso`: transport of closed subgroups along an isomorphism of
   ambient group schemes, compatible with composition of isomorphisms
   (`TauCeti.ClosedSubgroupScheme.mapIso_trans`).
+* `TauCeti.ClosedSubgroupScheme.isCommMonObj_underlying`: every closed subgroup scheme of a
+  commutative group scheme is commutative.
 -/
 
 public section
@@ -79,8 +82,8 @@ variable {X : Scheme.{u}} {G : Grp (Over X)}
 /-- The representative arrow of a closed subgroup scheme is a closed immersion on underlying
 schemes. -/
 instance isClosedImmersion_arrow (P : ClosedSubgroupScheme G) :
-    IsClosedImmersion P.1.arrow.hom.hom.left :=
-  (closedSubgroupMorphismProperty_iff X P.1.arrow).1 P.2
+    IsClosedImmersion P.val.arrow.hom.hom.left :=
+  (closedSubgroupMorphismProperty_iff X P.val.arrow).1 P.property
 
 /-- Construct a closed subgroup scheme from a morphism whose underlying scheme morphism is a
 closed immersion. -/
@@ -96,13 +99,13 @@ subobject represented by that arrow. -/
 @[simp]
 lemma coe_mk {K : Grp (Over X)} (i : K ⟶ G)
     [IsClosedImmersion i.hom.hom.left] :
-    (mk i).1 = Subobject.mk i := (rfl)
+    (mk i).val = Subobject.mk i := (rfl)
 
 /-- The closed subgroup represented by a closed immersion is canonically isomorphic to the source
 of that immersion. -/
 noncomputable def mkIso {K : Grp (Over X)} (i : K ⟶ G)
     [IsClosedImmersion i.hom.hom.left] :
-    ((mk i).1 : Grp (Over X)) ≅ K :=
+    ((mk i).val : Grp (Over X)) ≅ K :=
   eqToIso (congrArg (fun P : Subobject G => (P : Grp (Over X))) (coe_mk i)) ≪≫
     Subobject.underlyingIso i
 
@@ -111,12 +114,12 @@ immersion representing it. -/
 @[simp]
 lemma mkIso_inv_comp_arrow {K : Grp (Over X)} (i : K ⟶ G)
     [IsClosedImmersion i.hom.hom.left] :
-    (mkIso i).inv ≫ (mk i).1.arrow = i := by
+    (mkIso i).inv ≫ (mk i).val.arrow = i := by
   have harrow :
       (eqToIso (congrArg (fun P : Subobject G => (P : Grp (Over X))) (coe_mk i))).inv ≫
-          (mk i).1.arrow =
+          (mk i).val.arrow =
         (Subobject.mk i).arrow :=
-    Subobject.arrow_congr (Subobject.mk i) (mk i).1 (coe_mk i).symm
+    Subobject.arrow_congr (Subobject.mk i) (mk i).val (coe_mk i).symm
   rw [mkIso, Iso.trans_inv, Category.assoc, harrow, Subobject.underlyingIso_arrow]
 
 /-- Transporting a subobject along an isomorphism of ambient group schemes preserves the
@@ -137,32 +140,32 @@ private lemma closedSubgroupMorphismProperty_map_arrow {H : Grp (Over X)} (e : G
 postcomposing their representing arrows with the isomorphism. -/
 noncomputable def mapIso {H : Grp (Over X)} (e : G ≅ H) :
     ClosedSubgroupScheme G ≃o ClosedSubgroupScheme H where
-  toFun P := ⟨(Subobject.map e.hom).obj P.1,
-    closedSubgroupMorphismProperty_map_arrow e P.2⟩
-  invFun P := ⟨(Subobject.map e.inv).obj P.1,
-    closedSubgroupMorphismProperty_map_arrow e.symm P.2⟩
-  left_inv P := Subtype.ext ((Subobject.mapIsoToOrderIso e).symm_apply_apply P.1)
-  right_inv P := Subtype.ext ((Subobject.mapIsoToOrderIso e).apply_symm_apply P.1)
+  toFun P := ⟨(Subobject.map e.hom).obj P.val,
+    closedSubgroupMorphismProperty_map_arrow e P.property⟩
+  invFun P := ⟨(Subobject.map e.inv).obj P.val,
+    closedSubgroupMorphismProperty_map_arrow e.symm P.property⟩
+  left_inv P := Subtype.ext ((Subobject.mapIsoToOrderIso e).symm_apply_apply P.val)
+  right_inv P := Subtype.ext ((Subobject.mapIsoToOrderIso e).apply_symm_apply P.val)
   map_rel_iff' := (Subobject.mapIsoToOrderIso e).map_rel_iff
 
 /-- The subobject underlying a transported closed subgroup is the transported subobject. -/
 @[simp]
 lemma coe_mapIso {H : Grp (Over X)} (e : G ≅ H) (P : ClosedSubgroupScheme G) :
-    (mapIso e P).1 = (Subobject.map e.hom).obj P.1 := (rfl)
+    (mapIso e P).val = (Subobject.map e.hom).obj P.val := (rfl)
 
 /-- Transporting closed subgroups along a composite of isomorphisms transports along each in
 turn. -/
 @[simp]
 lemma mapIso_trans {H K : Grp (Over X)} (e : G ≅ H) (e' : H ≅ K) (P : ClosedSubgroupScheme G) :
     mapIso (e ≪≫ e') P = mapIso e' (mapIso e P) :=
-  Subtype.ext (Subobject.map_comp e.hom e'.hom P.1)
+  Subtype.ext (Subobject.map_comp e.hom e'.hom P.val)
 
 /-- A map `g` factors uniquely through a closed subgroup transported along an isomorphism `e`
 exactly when `g ≫ e.inv` factors uniquely through the original closed subgroup. -/
 lemma existsUnique_comp_arrow_mapIso_iff {H Y : Grp (Over X)} (e : G ≅ H)
     (P : ClosedSubgroupScheme G) (g : Y ⟶ H) :
-    (∃! f : Y ⟶ ((mapIso e P).1 : Grp (Over X)), f ≫ (mapIso e P).1.arrow = g) ↔
-      ∃! f : Y ⟶ (P.1 : Grp (Over X)), f ≫ P.1.arrow = g ≫ e.inv := by
+    (∃! f : Y ⟶ ((mapIso e P).val : Grp (Over X)), f ≫ (mapIso e P).val.arrow = g) ↔
+      ∃! f : Y ⟶ (P.val : Grp (Over X)), f ≫ P.val.arrow = g ≫ e.inv := by
   rw [← Subobject.factors_iff_existsUnique, ← Subobject.factors_iff_existsUnique,
     coe_mapIso, ← Subobject.mapIsoToOrderIso_apply, Subobject.factors_mapIsoToOrderIso_iff]
 
@@ -189,7 +192,7 @@ lemma mapIso_mk {H K : Grp (Over X)} (e : G ≅ H) (i : K ⟶ G)
 subobject transported back along it. -/
 @[simp]
 lemma coe_mapIso_symm {H : Grp (Over X)} (e : G ≅ H) (P : ClosedSubgroupScheme H) :
-    ((mapIso e).symm P).1 = (Subobject.map e.inv).obj P.1 := (rfl)
+    ((mapIso e).symm P).val = (Subobject.map e.inv).obj P.val := (rfl)
 
 /-- Postcomposing a closed immersion with the inverse of an isomorphism of group schemes gives a
 closed immersion. -/
@@ -206,6 +209,13 @@ lemma mapIso_symm_mk {H K : Grp (Over X)} (e : G ≅ H) (i : K ⟶ H)
     (mapIso e).symm (mk i) = mk (i ≫ e.inv) :=
   Subtype.ext (by
     rw [coe_mapIso_symm, coe_mk, coe_mk, Subobject.map_mk])
+
+attribute [local instance] Over.cartesianMonoidalCategory Over.braidedCategory in
+/-- Every closed subgroup scheme of a commutative group scheme is commutative. -/
+instance isCommMonObj_underlying [IsCommMonObj G.X] (P : ClosedSubgroupScheme G) :
+    IsCommMonObj (P.val : Grp (Over X)).X := by
+  have := Over.mono_of_mono_left P.val.arrow.hom.hom
+  exact isCommMonObj_of_mono P.val.arrow.hom.hom
 
 end ClosedSubgroupScheme
 

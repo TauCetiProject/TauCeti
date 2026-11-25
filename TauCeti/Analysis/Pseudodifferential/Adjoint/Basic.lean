@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.RightQuantization
+import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Fourier.Adjoint
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -48,7 +50,9 @@ support.
   formal adjoint of `Op(a)`, and dually `TauCeti.Symbol.integral_inner_quantizeRightUniformCLM`:
   `Op(c†)` is the formal adjoint of `Op_R(c)`.
 * `TauCeti.Symbol.integral_inner_quantizeSchwartzValue_adjoint`: the quantization of `a*` is the
-  formal adjoint of the quantization of `a`.
+  formal adjoint of the quantization of `a`, and
+  `TauCeti.Symbol.coefficient_eq_adjoint_of_forall_integral_inner_eq`: `a*` is the only symbol, of
+  any order, with this property.
 * `TauCeti.Symbol.quantizeUniformCLM_adjoint`: as an operator on Schwartz space, the quantization
   of `a*` is the right quantization of the pointwise adjoint `a(x, ξ)†`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le`: the decay of
@@ -59,7 +63,8 @@ support.
   `HasCompactSpatialSupport.exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le`).
 
 The asymptotic expansion `a* ∼ ∑_α (1 / α!) ∂_ξ^α D_x^α a†` of the adjoint symbol is in
-`TauCeti.Analysis.Pseudodifferential.Adjoint.Expansion`.
+`TauCeti.Analysis.Pseudodifferential.Adjoint.Expansion`, and the adjoint of a classical symbol in
+`TauCeti.Analysis.Pseudodifferential.Adjoint.Classical`.
 
 ## Construction
 
@@ -175,7 +180,7 @@ theorem HasCompactSpatialSupport.continuous_fourierChar_smul_fourier_slice_sub_s
     Continuous fun θ : CoordinateSpace n ↦
       (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ - s • θ)) θ := by
   have h₁ : Continuous fun θ : CoordinateSpace n ↦ (𝐞 ⟪θ, x⟫ : ℂ) :=
-    (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).subtype_val
+    (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).subtypeVal
   have h₂ : Continuous fun θ : CoordinateSpace n ↦
       𝓕 (fun y ↦ a.coefficient (y, ξ - s • θ)) θ := by
     exact ha.continuous_fourier_slice_comp continuous_id (by fun_prop)
@@ -293,7 +298,7 @@ private lemma integrable_pairingIntegrand {a : Symbol n V W m} (ha : a.IsUniform
   have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
       pairingIntegrand a u v q.1 q.2 := by
     have h₁ : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 (-⟪q.1, q.2⟫) : ℂ) :=
-      (Real.continuous_fourierChar.comp (by fun_prop)).subtype_val
+      (Real.continuous_fourierChar.comp (by fun_prop)).subtypeVal
     have h₂ : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
         a.coefficient (q.1, (2 * π) • q.2) :=
       a.contDiff_coefficient.continuous.comp (by fun_prop)
@@ -383,6 +388,25 @@ theorem integral_inner_quantizeSchwartzValue_adjoint (a : Symbol n V W m)
   have h := integral_inner_quantizeUniformCLM a ha.isUniform u v
   rw [← quantizeUniformCLM_adjoint a ha] at h
   simpa only [quantizeUniformCLM_apply] using h
+
+/-- **Uniqueness of the adjoint symbol.** A symbol `b`, of any order, whose quantization is the
+formal adjoint of the quantization of `a` on compactly supported Schwartz functions,
+`∫ ⟪Op(a) u, v⟫ = ∫ ⟪u, Op(b) v⟫`, has the coefficient of the adjoint symbol `a*`. -/
+theorem coefficient_eq_adjoint_of_forall_integral_inner_eq (ha : a.HasCompactSpatialSupport)
+    {m' : ℝ} {b : Symbol n W V m'}
+    (h : ∀ (u : 𝓢(CoordinateSpace n, V)) (v : 𝓢(CoordinateSpace n, W)), HasCompactSupport u →
+      HasCompactSupport v →
+        ∫ x, inner ℂ (quantizeSchwartzValue a.coefficient u x) (v x) =
+          ∫ x, inner ℂ (u x) (quantizeSchwartzValue b.coefficient v x)) :
+    b.coefficient = (adjoint a ha).coefficient := by
+  refine coefficient_eq_of_forall_quantizeSchwartzValue_eq fun v hv ↦
+    eq_of_forall_integral_inner_eq_of_continuous (𝕜 := ℂ) (μ := volume)
+      (b.contDiff_quantizeSchwartzValue v).continuous
+      ((adjoint a ha).contDiff_quantizeSchwartzValue v).continuous fun u ↦ ?_
+  have hu := u.hasCompactSupport
+  simpa only [HasCompactSupport.toSchwartzMap_toFun] using
+    (h (hu.toSchwartzMap u.contDiff) v hu hv).symm.trans
+      (integral_inner_quantizeSchwartzValue_adjoint a ha _ v)
 
 end Adjoint
 

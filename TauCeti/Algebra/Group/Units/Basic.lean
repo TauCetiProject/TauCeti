@@ -8,24 +8,26 @@ module
 public import Mathlib.Algebra.Group.Even
 public import Mathlib.Algebra.Group.Units.Hom
 
-import Mathlib.Algebra.Group.Commute.Units
-
 /-!
 # Units in monoids
 
 This file lifts units in the range of a local monoid homomorphism to units of its source.
-It also rewrites a strictly negative integer power of a product of units as an inverse monomial
-with consecutive natural exponents, which lets the negative half of a bilateral sum over integer
-powers be expressed as a sum over natural numbers without requiring a zero in the ambient monoid.
-The nonnegative half is `TauCeti.mul_pow_mul_eq_pow_succ_mul_pow` in `TauCeti.Algebra.Group.Pow`.
+It also rewrites a strictly negative integer power of a product `a * b` with `a` a unit as an
+inverse monomial with consecutive natural exponents, which lets the negative half of a bilateral
+sum over integer powers be expressed as a sum over natural numbers without requiring a zero in the
+ambient monoid. The nonnegative half is `TauCeti.mul_pow_mul_eq_pow_succ_mul_pow` in
+`TauCeti.Algebra.Group.Pow`.
 
 ## Main results
 
 * `TauCeti.mem_range_iff_exists_units_map_eq`: a unit lies in the range of a local monoid
   homomorphism exactly when it is the image of a unit under `Units.map`.
-* `Units.eq_of_mul_mul_inv_eq_of_commute`: if the conjugate of `a` by a unit `u` is an element
-  commuting with `u`, then `a` equals it.
-* `Units.val_mul_zpow_neg_natCast_succ_mul`: negative product powers give inverse monomials.
+* `Units.mul_mul_inv_eq_iff_eq_of_commute`: for `z` commuting with a unit `u`, the conjugate of
+  `a` by `u` equals `z` exactly when `a` does.
+* `Units.val_inv_mul_mul_mul_eq_one`: if `(a : M) = z`, then `(l * a)⁻¹ * l * z = 1`.
+* `Units.val_inv_mul_mul_inv_mul_eq_one`: if `(a : M) = z` and `l ^ 2 * z = b`, then
+  `(l * a)⁻¹ * l⁻¹ * b = 1`.
+* `IsUnit.mul_zpow_neg_natCast_succ_mul`: negative product powers give inverse monomials.
 -/
 
 public section
@@ -35,33 +37,47 @@ namespace TauCeti
 /-- A unit in the range of a local monoid homomorphism comes from a unit of the source. -/
 theorem mem_range_iff_exists_units_map_eq {M N F : Type*} [Monoid M] [Monoid N]
     [FunLike F M N] [MonoidHomClass F M N] (f : F) [IsLocalHom f] (u : Nˣ) :
-    (u : N) ∈ Set.range f ↔ ∃ a : Mˣ, Units.map (f : M →* N) a = u := by
-  constructor
-  · rintro ⟨a, ha⟩
-    exact ⟨(IsUnit.of_map f a (ha ▸ u.isUnit)).unit, Units.ext (by simp [ha])⟩
-  · rintro ⟨a, rfl⟩
-    exact ⟨a, rfl⟩
-
+    (u : N) ∈ Set.range f ↔ ∃ a : Mˣ, Units.map (f : M →* N) a = u :=
+  ⟨fun ⟨a, ha⟩ ↦ ⟨(IsUnit.of_map f a (ha ▸ u.isUnit)).unit, Units.ext (by simp [ha])⟩,
+    fun ⟨a, ha⟩ ↦ ⟨a, by simp [← ha]⟩⟩
 
 end TauCeti
 
 namespace Units
 
-/-- If the conjugate of `a` by a unit `u` is an element `z` that commutes with `u`, then `a = z`. -/
-theorem eq_of_mul_mul_inv_eq_of_commute {A : Type*} [Monoid A] {a z : A} (u : Aˣ)
-    (h : (u : A) * a * ↑u⁻¹ = z) (hz : Commute z u) : a = z := by
-  calc a = ↑u⁻¹ * ((u : A) * a * ↑u⁻¹) * u := by simp [mul_assoc]
-    _ = z := by rw [h, mul_assoc, hz.eq, Units.inv_mul_cancel_left]
+/-- For an element `z` commuting with a unit `u`, the conjugate of `a` by `u` equals `z` exactly
+when `a` does. -/
+theorem mul_mul_inv_eq_iff_eq_of_commute {A : Type*} [Monoid A] {a z : A} (u : Aˣ)
+    (hz : Commute z u) : (u : A) * a * ↑u⁻¹ = z ↔ a = z := by
+  rw [Units.mul_inv_eq_iff_eq_mul, hz.eq, Units.mul_right_inj]
 
-/-- A strictly negative power of the product of two units gives the inverse monomial with
-the consecutive exponents exchanged. -/
-theorem val_mul_zpow_neg_natCast_succ_mul {M : Type*} [DivisionCommMonoid M]
-    (u v : Mˣ) (n : ℕ) :
-    ((u * v : Mˣ) : M) ^ (-((n : ℤ) + 1)) * (u : M) =
-      ((v : M) ^ (n + 1) * (u : M) ^ n)⁻¹ := by
-  have h : (u * v) ^ (-((n : ℤ) + 1)) * u = (v ^ (n + 1) * u ^ n)⁻¹ := by
-    simp [zpow_neg, zpow_add, mul_pow, pow_succ, mul_assoc, mul_left_comm, mul_comm]
-  simpa only [Units.val_mul, Units.val_zpow_eq_zpow_val, Units.val_inv_eq_inv_val,
-    Units.val_pow_eq_pow_val] using congrArg (fun w : Mˣ ↦ (w : M)) h
+/-- If `(a : M) = z`, then `(l * a)⁻¹ * l * z = 1`. -/
+theorem val_inv_mul_mul_mul_eq_one {M : Type*} [Monoid M] (a l : Mˣ) {z : M} (ha : (a : M) = z) :
+    (↑(l * a)⁻¹ : M) * (l : M) * z = 1 := by
+  rw [← ha, mul_assoc, ← Units.val_mul, Units.inv_mul]
+
+/-- If `(a : M) = z` and `l ^ 2 * z = b`, then `(l * a)⁻¹ * l⁻¹ * b = 1`. -/
+theorem val_inv_mul_mul_inv_mul_eq_one {M : Type*} [Monoid M] (a l : Mˣ) {z b : M}
+    (ha : (a : M) = z) (hl : (l : M) ^ 2 * z = b) :
+    (↑(l * a)⁻¹ : M) * (↑l⁻¹ : M) * b = 1 := by
+  have h : (l * a)⁻¹ * l⁻¹ * (l ^ 2 * a) = 1 := by
+    simp [sq, mul_assoc]
+  simpa only [ha, hl, Units.val_mul, Units.val_pow_eq_pow_val, Units.val_one] using
+    congrArg Units.val h
 
 end Units
+
+namespace IsUnit
+
+/-- In a commutative division monoid, a strictly negative power of a product `a * b` with `a` a
+unit, multiplied by `a`, is the inverse of the monomial with the consecutive exponents exchanged.
+The second factor `b` need not be a unit. -/
+theorem mul_zpow_neg_natCast_succ_mul {M : Type*} [DivisionCommMonoid M] {a : M}
+    (ha : IsUnit a) (b : M) (n : ℕ) :
+    (a * b) ^ (-((n : ℤ) + 1)) * a = (b ^ (n + 1) * a ^ n)⁻¹ := by
+  -- Split one factor `a` off the positive power, so that it cancels against the trailing `a`.
+  have h : (a * b) ^ (n + 1) = b ^ (n + 1) * a ^ n * a := by
+    rw [mul_pow, pow_succ a, mul_comm, mul_assoc]
+  rw [← Int.negSucc_eq, zpow_negSucc, h, mul_inv, ha.inv_mul_cancel_right]
+
+end IsUnit

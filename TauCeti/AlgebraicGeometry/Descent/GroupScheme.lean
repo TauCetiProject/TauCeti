@@ -28,9 +28,10 @@ descent for:
   and with canonical uniqueness up to group-scheme isomorphism
   (`TauCeti.DescentDatum.Hom.descendGrpIso`);
 * group schemes affine over the base change `G₀ ×_S S'` of an arbitrary group scheme `G₀` over `S`
-  (`Hom.exists_grp_baseChange_hom_isIso_of_mem`), specialized to closed subgroup immersions
-  (`Hom.exists_grp_baseChange_hom_isIso_of_isClosedImmersion`) and finite locally free
-  homomorphisms (`Hom.exists_grp_finiteLocallyFree_baseChange_hom_isIso`).
+  (`Hom.exists_grp_baseChange_hom_isIso_of_mem`) and finite locally free homomorphisms into
+  `G₀ ×_S S'` (`Hom.exists_grp_finiteLocallyFree_baseChange_hom_isIso`); for closed subgroup
+  immersions without an explicit `IsMon` assumption, see
+  `TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Descent`.
 
 ## Main results
 
@@ -40,10 +41,9 @@ descent for:
   descent for `FiniteFlatCommGroupScheme`, retaining `Scheme.Hom.finrank`.
 * `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.baseChangeIsoOfDescent`: the comparison
   isomorphism `G₀.baseChange p ≅ G` induced by a group-homomorphism isomorphism of descent data
-  (with uniqueness of the descended `FiniteFlatCommGroupScheme` given directly by
-  `TauCeti.DescentDatum.Hom.descendGrpIso`).
-* `TauCeti.DescentDatum.Hom.exists_grp_baseChange_hom_isIso_of_mem`,
-  `TauCeti.DescentDatum.Hom.exists_grp_baseChange_hom_isIso_of_isClosedImmersion`, and
+  (with uniqueness of the descended `FiniteFlatCommGroupScheme` given by
+  `FiniteFlatCommGroupScheme.isoMk (f.descendGrpIso g)`).
+* `TauCeti.DescentDatum.Hom.exists_grp_baseChange_hom_isIso_of_mem` and
   `TauCeti.DescentDatum.Hom.exists_grp_finiteLocallyFree_baseChange_hom_isIso`: effective fpqc
   descent of group schemes affine over a descended group scheme `G₀`, preserving morphism
   properties and finite-flat rank.
@@ -87,7 +87,7 @@ to `p` on a finite locally free commutative group scheme `G` over `S'`. Then the
 locally free commutative group scheme `G₀` over `S` and an isomorphism `f` of descent data from
 `baseChange p G₀.toOver` to `D` whose underlying morphism over `S'` is a group homomorphism, and
 the rank of `G` over `S'` is the rank of `G₀` pulled back along `p`. Uniqueness up to canonical
-isomorphism `G₀.Iso H₀` is supplied by `f.descendGrpIso g`. -/
+isomorphism `G₀ ≅ H₀` is supplied by `FiniteFlatCommGroupScheme.isoMk (f.descendGrpIso g)`. -/
 theorem exists_finiteFlatCommGroupScheme_baseChange_hom_isIso
     (G : TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme S')
     (D : DescentDatum p G.toOver) [D.IsMon] :
@@ -137,20 +137,6 @@ theorem Hom.exists_grp_baseChange_hom_isIso_of_mem
   have : IsMonHom wHom := f.isMonHom_of_comp_eq_baseChangeHom g hcomp
   exact ⟨Grp.mk (Over.mk (W.hom ≫ G₀.X.hom)), Grp.homMk wHom, g, hg, inferInstance, hcomp, hP⟩
 
-/-- **Effective fpqc descent of stable closed subgroup immersions.** Let `p : S' ⟶ S` be
-surjective, flat and quasi-compact, let `G₀` be a group scheme over `S`, let `D` be a
-monoid-compatible descent datum on a group scheme `Z` over `S'`, and let
-`f : Hom D (baseChange p G₀.X)` be a closed immersion whose underlying morphism in `Over S'` is a
-group homomorphism. Then `(Z, f)` descends to a closed subgroup immersion `i₀ : K₀ ⟶ G₀` over
-`S`. -/
-theorem Hom.exists_grp_baseChange_hom_isIso_of_isClosedImmersion
-    {G₀ : Grp (Over S)} {Z : Over S'} [GrpObj Z] {D : DescentDatum p Z} [D.IsMon]
-    (f : Hom D (baseChange p G₀.X)) [IsMonHom f.hom] [IsClosedImmersion f.hom.left] :
-    ∃ (K₀ : Grp (Over S)) (i₀ : K₀ ⟶ G₀) (g : Hom (baseChange p K₀.X) D),
-      IsIso g.hom ∧ IsMonHom g.hom ∧ f.comp g = baseChangeHom p i₀.hom.hom ∧
-        IsClosedImmersion i₀.hom.hom.left :=
-  f.exists_grp_baseChange_hom_isIso_of_mem (P := @IsClosedImmersion) inferInstance
-
 /-- **Effective fpqc descent of finite locally free homomorphisms into a descended group scheme.**
 Let `p : S' ⟶ S` be surjective, flat and quasi-compact, let `G₀` be a group scheme over `S`, let
 `D` be a monoid-compatible descent datum on a group scheme `Z` over `S'`, and let
@@ -185,28 +171,29 @@ universe u
 variable {S S' : Scheme.{u}} {p : S' ⟶ S}
 
 /-- An isomorphism `f : Hom (baseChange p G₀.toOver) D` of descent data whose underlying morphism
-over `S'` is a group isomorphism induces an isomorphism `(G₀.baseChange p).Iso G` of finite locally
+over `S'` is a group isomorphism induces an isomorphism `G₀.baseChange p ≅ G` of finite locally
 free commutative group schemes over `S'`. -/
 noncomputable def baseChangeIsoOfDescent (G₀ : FiniteFlatCommGroupScheme S)
     (G : FiniteFlatCommGroupScheme S') (D : DescentDatum p G.toOver)
     (f : DescentDatum.Hom (DescentDatum.baseChange p G₀.toOver) D)
     [IsIso f.hom] [IsMonHom f.hom] :
-    (G₀.baseChange p).Iso G :=
+    G₀.baseChange p ≅ G :=
   let e := asIso f.hom
-  eqToIso (G₀.grpMk_baseChange p) ≪≫
+  isoMk <| eqToIso (G₀.grpMk_baseChange p) ≪≫
     Grp.mkIso (G := (Over.pullback p).mapGrp.obj (Grp.mk G₀.toOver)) (H := Grp.mk G.toOver)
       e (IsMonHom.one_hom f.hom) (IsMonHom.mul_hom f.hom)
 
 /-- The underlying morphism in `Over S'` of `G₀.baseChangeIsoOfDescent G D f` is `f.hom`, read
 through `G₀.grpMk_baseChange p`. -/
 @[simp]
-theorem baseChangeIsoOfDescent_hom_hom_hom (G₀ : FiniteFlatCommGroupScheme S)
+theorem baseChangeIsoOfDescent_hom_hom_hom_hom (G₀ : FiniteFlatCommGroupScheme S)
     (G : FiniteFlatCommGroupScheme S') (D : DescentDatum p G.toOver)
     (f : DescentDatum.Hom (DescentDatum.baseChange p G₀.toOver) D)
     [IsIso f.hom] [IsMonHom f.hom] :
-    (G₀.baseChangeIsoOfDescent G D f).hom.hom.hom =
+    (G₀.baseChangeIsoOfDescent G D f).hom.hom.hom.hom =
       eqToHom (congrArg (fun H : Grp (Over S') ↦ H.X) (G₀.grpMk_baseChange p)) ≫ f.hom := by
-  simp only [baseChangeIsoOfDescent, Iso.trans_hom, Grp.comp', Mon.comp_hom', eqToIso.hom]
+  simp only [baseChangeIsoOfDescent, isoMk_hom, homMk_hom, Iso.trans_hom, Grp.comp',
+    Mon.comp_hom', eqToIso.hom]
   exact congrArg (· ≫ f.hom) (eqToHom_map (Grp.forget (Over S')) (G₀.grpMk_baseChange p))
 
 end TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme

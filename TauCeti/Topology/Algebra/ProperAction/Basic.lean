@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
-# Proper actions: compact groups and invariant subspaces
+# Proper actions: compact groups, invariant subspaces, and type tags
 
 A continuous action of a compact group `G` on a Hausdorff space `X` is proper: the map
 `(g, x) ↦ (g • x, x)` is proper because its first coordinate ranges over a compact space. In
@@ -17,25 +18,55 @@ particular the orbit space `X ⧸ G` is Hausdorff (`t2Space_quotient_mulAction_o
 is how quotients such as complex projective space, the orbit space of the circle acting on an odd
 sphere, are shown to be Hausdorff.
 
+Even without a separation axiom on `X`, the quotient map `X → X ⧸ G` of a continuous action of a
+compact group is closed, because the saturation of a closed set `A` is the projection to `X` of the
+closed set `{(g, x) | g • x ∈ A}` of `G × X`, and the projection `G × X → X` is a closed map. Its
+fibres are orbits, continuous images of `G`, so it is proper.
+
 A proper action also restricts to a proper action on every invariant subspace, and more generally
 pulls back along any equivariant topological embedding. It even pulls back to a subgroup acting on
 a subspace, as long as every element of the group carrying a point of the subspace into the
 subspace lies in the subgroup. This is the topological half of restricting a free proper action
 to a level of an equivariant map, acted on by the stabilizer of the value, before taking its
-quotient.
+quotient. Properness also pulls back along continuous equivariant maps out of Hausdorff spaces,
+such as the projection of a cotangent bundle carrying the cotangent-lifted action.
+
+This file also transfers `ProperVAdd` and `ProperSMul` across the `Multiplicative` and `Additive`
+type tags (`Multiplicative.properSMul`, `Additive.properVAdd`).
 
 ## Main results
 
 * `TauCeti.properSMul_of_compactSpace`, `TauCeti.properVAdd_of_compactSpace`: a continuous action
   of a compact group, or of a compact additive group, on a Hausdorff space is proper.
+* `Multiplicative.properSMul`, `Additive.properVAdd`: properness transfers across the
+  `Multiplicative` and `Additive` type tags on the acting group.
+* `MulAction.isClosedMap_quotientMk_of_compactSpace`,
+  `MulAction.isProperMap_quotientMk_of_compactSpace`: for a continuous action of a compact group,
+  with no separation axiom, the quotient map `X → X ⧸ G` is closed and proper.
+* `TauCeti.properSMul_prod`: a diagonal action is proper as soon as it is proper on the first
+  factor and continuous on a Hausdorff second factor.
 * `Topology.IsEmbedding.properSMul`: an action which a topological embedding intertwines with a
   proper action is proper.
 * `Topology.IsEmbedding.properSMul_of_isEmbedding`: the same along a topological embedding of
   the acting groups, provided the elements of the larger group carrying a point of the image into
   the image come from the smaller group.
+* `Continuous.properSMul`: a continuous action on a Hausdorff space which a continuous map
+  intertwines with a proper action is proper.
+* `ProperSMul.prod_of_smul_eq`: a factorwise action of a product of groups, each acting properly
+  on its factor, is proper.
 -/
 
 public section
+
+/-- A proper additive group action becomes a proper multiplicative action of `Multiplicative G`. -/
+instance Multiplicative.properSMul {G X : Type*} [TopologicalSpace G] [TopologicalSpace X]
+    [AddGroup G] [AddAction G X] [ProperVAdd G X] : ProperSMul (Multiplicative G) X where
+  isProperMap_smul_pair := ProperVAdd.isProperMap_vadd_pair (G := G) (X := X)
+
+/-- A proper multiplicative group action becomes a proper additive action of `Additive G`. -/
+instance Additive.properVAdd {G X : Type*} [TopologicalSpace G] [TopologicalSpace X]
+    [Group G] [MulAction G X] [ProperSMul G X] : ProperVAdd (Additive G) X where
+  isProperMap_vadd_pair := ProperSMul.isProperMap_smul_pair (G := G) (X := X)
 
 namespace TauCeti
 
@@ -54,6 +85,41 @@ theorem properSMul_of_compactSpace (G X : Type*) [Group G] [TopologicalSpace G] 
       ((continuous_fst.tendsto _).comp hxx), hg⟩⟩
 
 end TauCeti
+
+namespace MulAction
+
+variable {G X : Type*} [Group G] [TopologicalSpace G] [CompactSpace G] [MulAction G X]
+  [TopologicalSpace X] [ContinuousSMul G X]
+
+/-- **The orbit map of a compact group is closed.** For a continuous action of a compact group `G`
+on `X`, the quotient map `X → X ⧸ G` is closed. -/
+@[to_additive /-- **The orbit map of a compact additive group is closed.** For a continuous
+additive action of a compact additive group `G` on `X`, the quotient map `X → X ⧸ G` is
+closed. -/]
+theorem isClosedMap_quotientMk_of_compactSpace : IsClosedMap (Quotient.mk (orbitRel G X)) :=
+  fun A hA ↦ by
+    rw [← isOpenQuotientMap_quotientMk.isQuotientMap.isClosed_preimage]
+    convert isClosedMap_snd_of_compactSpace _ (hA.preimage (continuous_smul (M := G) (X := X)))
+    ext x
+    simp only [Set.mem_preimage, Set.mem_image, Quotient.eq, orbitRel_apply, mem_orbit_iff,
+      Prod.exists]
+    exact ⟨fun ⟨_, ha, g, hg⟩ ↦ ⟨g, x, hg ▸ ha, rfl⟩, fun ⟨g, _, ha, rfl⟩ ↦ ⟨_, ha, g, rfl⟩⟩
+
+/-- **The orbit map of a compact group is proper.** For a continuous action of a compact group `G`
+on `X`, the quotient map `X → X ⧸ G` is proper. -/
+@[to_additive /-- **The orbit map of a compact additive group is proper.** For a continuous
+additive action of a compact additive group `G` on `X`, the quotient map `X → X ⧸ G` is
+proper. -/]
+theorem isProperMap_quotientMk_of_compactSpace : IsProperMap (Quotient.mk (orbitRel G X)) := by
+  refine isProperMap_iff_isClosedMap_and_compact_fibers.mpr
+    ⟨continuous_quotient_mk', isClosedMap_quotientMk_of_compactSpace, fun y ↦ ?_⟩
+  induction y using Quotient.inductionOn with | h x => ?_
+  convert isCompact_range (continuous_smul.comp (Continuous.prodMk_left (X := G) x))
+  ext w
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, Quotient.eq, orbitRel_apply, mem_orbit_iff,
+    Set.mem_range, Function.comp_apply]
+
+end MulAction
 
 open Filter Topology in
 /-- **Proper actions pull back along slices.** Let `φ : H → G` be a topological embedding between
@@ -98,3 +164,74 @@ theorem Topology.IsEmbedding.properSMul {G X Y : Type*} [Group G] [TopologicalSp
     {f : Y → X} (hf : IsEmbedding f) (hsmul : ∀ (g : G) (y : Y), f (g • y) = g • f y) :
     ProperSMul G Y :=
   hf.properSMul_of_isEmbedding IsEmbedding.id hsmul fun g _ _ _ ↦ ⟨g, rfl⟩
+
+open Filter in
+/-- **Proper actions pull back along continuous equivariant maps.** If a continuous map
+`f : Y → X` into a space with a proper action of `G` intertwines it with a continuous action of `G`
+on a Hausdorff space `Y`, then the action on `Y` is proper. For instance the cotangent lift of a
+proper action is proper, through the bundle projection. -/
+theorem Continuous.properSMul {G X Y : Type*} [Group G] [TopologicalSpace G] [MulAction G X]
+    [TopologicalSpace X] [ProperSMul G X] [MulAction G Y] [TopologicalSpace Y] [T2Space Y]
+    [ContinuousSMul G Y] {f : Y → X} (hf : Continuous f)
+    (hsmul : ∀ (g : G) (y : Y), f (g • y) = g • f y) : ProperSMul G Y := by
+  refine properSMul_iff_continuousSMul_ultrafilter_tendsto_t2.2 ⟨inferInstance, fun 𝒰 y₁ y₂ h ↦ ?_⟩
+  -- Push the ultrafilter forward along `id × f`, where the action on `X` is proper.
+  have hX : Tendsto (fun gx : G × X ↦ (gx.1 • gx.2, gx.2)) (𝒰.map (Prod.map id f))
+      (nhds (f y₁, f y₂)) := by
+    rw [Ultrafilter.coe_map, tendsto_map'_iff]
+    refine (((hf.prodMap hf).tendsto (y₁, y₂)).comp h).congr fun gy ↦ ?_
+    simp [hsmul]
+  obtain ⟨g, -, hg⟩ := (properSMul_iff_continuousSMul_ultrafilter_tendsto.1 ‹_›).2 _ _ _ hX
+  rw [Ultrafilter.coe_map, tendsto_map'_iff] at hg
+  exact ⟨g, hg⟩
+
+namespace TauCeti
+
+open Filter Topology in
+/-- **A diagonal action is proper when it is proper on the first factor and continuous on a
+Hausdorff second factor.** If `G` acts properly on `X` and continuously on a Hausdorff space `Y`,
+then its diagonal action on `X × Y` is proper: when `(g • x, x)` converges, so does `g`, to an
+element `g₀`, and then `g • y` converges both to `g₀ • y₀` and to the limit of the first
+coordinates. -/
+@[to_additive /-- **A diagonal additive action is proper when it is proper on the first factor
+and continuous on a Hausdorff second factor.** If `G` acts properly on `X` and continuously on a
+Hausdorff space `Y`, then its diagonal additive action on `X × Y` is proper. -/]
+instance properSMul_prod {G X Y : Type*} [Group G] [TopologicalSpace G] [MulAction G X]
+    [TopologicalSpace X] [ProperSMul G X] [MulAction G Y] [TopologicalSpace Y] [ContinuousSMul G Y]
+    [T2Space Y] : ProperSMul G (X × Y) := by
+  refine properSMul_iff_continuousSMul_ultrafilter_tendsto.2 ⟨inferInstance, fun 𝒰 p₁ p₂ hp ↦ ?_⟩
+  -- Properness on `X`, along the image of `𝒰` in `G × X`.
+  have hX : Tendsto (fun q : G × X ↦ (q.1 • q.2, q.2)) (𝒰.map fun q ↦ (q.1, q.2.1))
+      (𝓝 (p₁.1, p₂.1)) := by
+    rw [Ultrafilter.coe_map, tendsto_map'_iff]
+    exact ((continuous_fst.prodMap continuous_fst).tendsto _).comp hp
+  obtain ⟨g, hg, hgt⟩ :=
+    (properSMul_iff_continuousSMul_ultrafilter_tendsto.1 ‹ProperSMul G X›).2 _ _ _ hX
+  rw [Ultrafilter.coe_map, tendsto_map'_iff] at hgt
+  refine ⟨g, Prod.ext hg ?_, hgt⟩
+  exact tendsto_nhds_unique (hgt.smul ((continuous_snd.tendsto _).comp
+    ((continuous_snd.tendsto _).comp hp))) ((continuous_snd.tendsto _).comp
+      ((continuous_fst.tendsto _).comp hp))
+
+end TauCeti
+
+/-- **Products of proper actions are proper.** If `G` acts properly on `X` and `K` acts properly on
+`Y`, then an action of `G × K` on `X × Y` acting factorwise, `(g, k) • (x, y) = (g • x, k • y)`,
+is proper: up to reordering the factors, its map `((g, k), (x, y)) ↦ ((g, k) • (x, y), (x, y))` is
+the product of the proper maps of the two actions. -/
+@[to_additive /-- **Products of proper additive actions are proper.** If `G` acts properly on `X`
+and `K` acts properly on `Y`, then an additive action of `G × K` on `X × Y` acting factorwise,
+`(g, k) +ᵥ (x, y) = (g +ᵥ x, k +ᵥ y)`, is proper. -/]
+theorem ProperSMul.prod_of_smul_eq {G K X Y : Type*} [Group G] [Group K] [TopologicalSpace G]
+    [TopologicalSpace K] [TopologicalSpace X] [TopologicalSpace Y] [MulAction G X]
+    [MulAction K Y] [ProperSMul G X] [ProperSMul K Y] [MulAction (G × K) (X × Y)]
+    (hsmul : ∀ (g : G × K) (p : X × Y), g • p = (g.1 • p.1, g.2 • p.2)) :
+    ProperSMul (G × K) (X × Y) where
+  isProperMap_smul_pair := by
+    have h := ((Homeomorph.prodProdProdComm X X Y Y).isProperMap.comp
+      ((ProperSMul.isProperMap_smul_pair (G := G) (X := X)).prodMap
+        (ProperSMul.isProperMap_smul_pair (G := K) (X := Y)))).comp
+      (Homeomorph.prodProdProdComm G K X Y).isProperMap
+    convert h using 1
+    funext ⟨⟨g, k⟩, x, y⟩
+    simp [hsmul, Homeomorph.prodProdProdComm]

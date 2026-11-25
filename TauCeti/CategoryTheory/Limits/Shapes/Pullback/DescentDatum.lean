@@ -51,7 +51,9 @@ construct.
 * `TauCeti.DescentDatum.baseChange p X`: the canonical descent datum on the base change
   `X ×_S S'` of an object `X` over `S`, acting by `s · (x, s₀) = (x, s)`, with the morphism
   `baseChangeHom p f : Hom (baseChange p X) (baseChange p Y)` induced by `f : X ⟶ Y` over `S`, a
-  pullback of `f` (`isPullback_baseChangeHom`).
+  pullback of `f` (`isPullback_baseChangeHom`). A morphism of descent data from or to a canonical
+  descent datum interacts with the action as `Hom.lift_comp_act` and `Hom.lift_act_comp_fst`
+  describe.
 * `TauCeti.DescentDatum.Hom.ofPullbackAlong f`: a morphism `f` from a canonical descent datum to
   `D.pullbackAlong q` gives a morphism from the canonical descent datum on `Y₀ ×_S S'` to `D`.
   When `q` is the inclusion of an open of a scheme, this transports effectivity of the base change
@@ -396,34 +398,8 @@ noncomputable def pullbackAlong (D : DescentDatum p X) :
     · simp only [Category.assoc, pullback.lift_fst]
       -- Compare both sides with the original twice-iterated action space, where `D.act_assoc`
       -- applies directly.
-      calc
-        _ = (pullbackAlongActionAssocComparison (p := p) q X ≫
-              pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
-                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ D.act)
-                (by rw [Category.assoc, reassoc_of% D.act_hom]; exact pullback.condition)) ≫
-              D.act := by rw [← Category.assoc, pullbackAlongActionAssocComparison_act]
-        _ = pullbackAlongActionAssocComparison (p := p) q X ≫
-              (pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
-                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ D.act)
-                (by rw [Category.assoc, reassoc_of% D.act_hom]; exact pullback.condition) ≫
-              D.act) := Category.assoc _ _ _
-        _ = pullbackAlongActionAssocComparison (p := p) q X ≫
-              (pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
-                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫
-                  pullback.snd p (X.hom ≫ p))
-                (by
-                  rw [Category.assoc, ← pullback.condition (f := p) (g := X.hom ≫ p)]
-                  exact pullback.condition) ≫ D.act) := congrArg _ D.act_assoc
-        _ = (pullbackAlongActionAssocComparison (p := p) q X ≫
-              pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
-                (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫
-                  pullback.snd p (X.hom ≫ p))
-                (by
-                  rw [Category.assoc, ← pullback.condition (f := p) (g := X.hom ≫ p)]
-                  exact pullback.condition)) ≫ D.act := (Category.assoc _ _ _).symm
-        _ = _ := by
-          simpa only [Category.assoc] using
-            congrArg (· ≫ D.act) (pullbackAlongActionAssocComparison_snd (p := p) q X).symm
+      rw [← Category.assoc, pullbackAlongActionAssocComparison_act, Category.assoc, D.act_assoc,
+        ← Category.assoc, ← pullbackAlongActionAssocComparison_snd, Category.assoc]
     · simp
 
 /-- The underlying map of the base-changed action, followed by the projection to `X`, is the
@@ -539,6 +515,35 @@ variable (p) in
 theorem baseChange_act_snd (X : Over S) :
     (baseChange p X).act ≫ pullback.snd X.hom p = pullback.fst _ _ := by
   simp [baseChange]
+
+/-- A morphism `f` of descent data from the canonical descent datum on `X₀ ×_S S'` intertwines
+the actions: for a point `y = (x, s₀)` of `X₀ ×_S S'` and a point `c` of `S'`,
+`c · f y = f (x, c)`. -/
+theorem Hom.lift_comp_act {X : Over S'} {X₀ : Over S} {D : DescentDatum p X}
+    (f : Hom (baseChange p X₀) D) {Z : C} (c : Z ⟶ S') (y : Z ⟶ pullback X₀.hom p)
+    (h : c ≫ p = (y ≫ f.hom.left) ≫ X.hom ≫ p) :
+    pullback.lift c (y ≫ f.hom.left) h ≫ D.act =
+      pullback.lift (y ≫ pullback.fst X₀.hom p) c
+        (by rw [Category.assoc, pullback.condition, h]; simp) ≫ f.hom.left := by
+  have : pullback.lift c (y ≫ f.hom.left) h =
+      pullback.lift c y (by simpa using h) ≫
+        pullback.map p (((Over.pullback p).obj X₀).hom ≫ p) p (X.hom ≫ p) (𝟙 S') f.hom.left
+          (𝟙 S) (by simp) (by simp) := by
+    apply pullback.hom_ext <;> simp
+  rw [this, Category.assoc, f.map_act, ← Category.assoc]
+  congr 1
+  apply pullback.hom_ext <;> simp
+
+/-- A morphism `f` of descent data to the canonical descent datum on `X₀ ×_S S'`, followed by the
+projection to `X₀`, is invariant under the action: `f (c · y)` and `f y` have the same image
+in `X₀`. -/
+theorem Hom.lift_act_comp_fst {X : Over S'} {X₀ : Over S} {D : DescentDatum p X}
+    (f : Hom D (baseChange p X₀)) {Z : C} (c : Z ⟶ S') (y : Z ⟶ X.left)
+    (h : c ≫ p = y ≫ X.hom ≫ p) :
+    pullback.lift c y h ≫ D.act ≫ f.hom.left ≫ pullback.fst X₀.hom p =
+      y ≫ f.hom.left ≫ pullback.fst X₀.hom p := by
+  rw [← f.map_act_assoc, baseChange_act_fst]
+  simp
 
 variable (p) in
 /-- The morphism of canonical descent data induced by a morphism `f : X ⟶ Y` over `S`: its

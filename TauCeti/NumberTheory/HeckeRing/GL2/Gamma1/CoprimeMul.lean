@@ -306,7 +306,7 @@ private lemma det_of_mem_doubleCoset_natDiagGL {k : ℕ} (hk : 0 < k) {y : GL (F
     (hy : y ∈ doubleCoset (natDiagGL 2 ![1, k]) ((Gamma1 N).map (mapGL ℚ))
       ((Gamma1 N).map (mapGL ℚ))) :
     (↑y : Matrix (Fin 2) (Fin 2) ℚ).det = k := by
-  have hle := (Subgroup.map_mono (Gamma1_in_Gamma0 N)).trans (Gamma0_map_le_SLnZ N)
+  have hle := (Subgroup.map_mono (Gamma1_le_Gamma0 N)).trans (Gamma0_map_le_SLnZ N)
   rw [det_eq_of_mem_doubleCoset_of_le_SLnZ 2 hle hle hy,
     natDiagGL_det 2 _ fun i ↦ by fin_cases i <;> simp [hk]]
   simp

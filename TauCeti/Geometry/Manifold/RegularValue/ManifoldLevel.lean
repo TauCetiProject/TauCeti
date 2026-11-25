@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
 # Regular fibres of manifold-valued maps
@@ -28,6 +29,9 @@ fibre may be empty.
 `TauCeti.range_mfderiv_coe_regularFiber` give its manifold, embedding, and tangent-kernel
 properties.
 `TauCeti.exists_regularFiber_smoothEmbedding` packages these properties existentially.
+`TauCeti.RegularFiber.diffeomorphOfProd` identifies a fibre over an interior regular value with
+the other factor when domain and base diffeomorphisms identify its map with a product projection.
+It uses the canonical fibre atlas and requires `1 ≤ m`.
 The smooth universal property follows from Mathlib's `ContMDiff.iff_comp_isImmersion`
 and continuity into a subtype. No global charted-space instance is installed on a fibre or on its
 ambient manifold.
@@ -69,15 +73,15 @@ private def domain (hf : ContMDiff I J m f) (φ : PartialDiffeomorph J 𝓘(ℝ,
 private theorem coordinate_eq_iff (hf : ContMDiff I J m f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) (hc : c ∈ φ.source)
     (x : domain hf φ) : φ (f x) = φ c ↔ f x = c :=
-  ⟨fun h ↦ φ.toPartialEquiv.injOn x.2 hc h, congrArg φ⟩
+  ⟨fun h ↦ φ.toPartialEquiv.injOn x.property hc h, congrArg φ⟩
 
 /-- The coordinate level in the open preimage is the original fibre, with the same topology. -/
 private def levelHomeomorph (hf : ContMDiff I J m f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) (hc : c ∈ φ.source) :
     {x : M // f x = c} ≃ₜ {x : domain hf φ // φ (f x) = φ c} where
   toFun x := ⟨⟨x, by simpa only [domain, TopologicalSpace.Opens.mem_mk,
-    mem_preimage, x.2] using hc⟩, congrArg φ x.2⟩
-  invFun x := ⟨x.1, (coordinate_eq_iff hf φ hc x.1).1 x.2⟩
+    mem_preimage, x.property] using hc⟩, congrArg φ x.property⟩
+  invFun x := ⟨x.val, (coordinate_eq_iff hf φ hc x.val).1 x.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := by fun_prop
@@ -85,13 +89,13 @@ private def levelHomeomorph (hf : ContMDiff I J m f)
 
 private theorem coe_levelHomeomorph (hf : ContMDiff I J m f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) (hc : c ∈ φ.source)
-    (x : {x : M // f x = c}) : (levelHomeomorph hf φ hc x).1.1 = x.1 :=
+    (x : {x : M // f x = c}) : (levelHomeomorph hf φ hc x).val.val = x.val :=
   (rfl)
 
 private theorem contMDiff_coordinate (hf : ContMDiff I J m f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) :
     ContMDiff I 𝓘(ℝ, F) m (fun x : domain hf φ ↦ φ (f x)) :=
-  φ.contMDiffOn.comp_contMDiff (hf.comp contMDiff_subtype_val) fun x ↦ x.2
+  φ.contMDiffOn.comp_contMDiff (hf.comp contMDiff_subtypeVal) fun x ↦ x.property
 
 /-- Target coordinates and the open inclusion both have invertible differential, so regularity
 is unchanged by passing to the coordinate level. -/
@@ -103,10 +107,9 @@ private theorem regularValue_coordinate (hm : 1 ≤ m) (hf : ContMDiff I J m f)
   intro x hx
   have hm0 : m ≠ 0 := ENat.one_le_iff_ne_zero_withTop.mp hm
   have hi := isLocalDiffeomorph_subtype_val (I := I) (n := m) (U := domain hf φ) x
-  have hφ := φ.isLocalDiffeomorphAt J 𝓘(ℝ, F) m x.2
-  exact IsRegularPoint.comp (isRegularPoint_iff.2 (hφ.isInvertible_mfderiv hm0).surjective)
-    ((hreg.isRegularPoint ((coordinate_eq_iff hf φ hc x).1 hx)).comp
-      (isRegularPoint_iff.2 (hi.isInvertible_mfderiv hm0).surjective))
+  have hφ := φ.isLocalDiffeomorphAt J 𝓘(ℝ, F) m x.property
+  exact IsRegularPoint.comp (p := x) (hφ.isRegularPoint hm0)
+    ((hreg.isRegularPoint ((coordinate_eq_iff hf φ hc x).1 hx)).comp (hi.isRegularPoint hm0))
 
 variable [I.Boundaryless] [IsManifold I m M]
   [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
@@ -151,8 +154,8 @@ private theorem isManifold_and_isSmoothEmbedding_of_chart (hm : 1 ≤ m)
   rw [Homeomorph.coe_pullbackDiffeomorph] at hpre
   have hpost := isImmersionOfComplement_isLocalDiffeomorphAt_comp
     (fun x ↦ isLocalDiffeomorph_subtype_val (I := I) (n := m)
-      (U := domain hf φ) (e x).1) hpre
-  have heq : (fun x : {x : M // f x = c} ↦ ((e x).1 : M)) = Subtype.val :=
+      (U := domain hf φ) (e x).val) hpre
+  have heq : (fun x : {x : M // f x = c} ↦ ((e x).val : M)) = Subtype.val :=
     funext (coe_levelHomeomorph hf φ hc)
   simp only [comp_def] at hpost
   rw [heq] at hpost
@@ -234,13 +237,13 @@ theorem range_mfderiv_coe_regularFiber (hm : 1 ≤ m) (hf : ContMDiff I J m f)
     letI := regularFiberChartedSpace hm hf hc hreg
     ∀ z : {x : M // f x = c},
       (mfderiv 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I Subtype.val z).range =
-        (mfderiv I J f z.1).ker := by
+        (mfderiv I J f z.val).ker := by
   let := regularFiberChartedSpace hm hf hc hreg
   have := isManifold_regularFiber hm hf hc hreg
   intro z
-  have hdim := (hreg.isRegularPoint z.2).finrank_ker_mfderiv_add_finrank
-  refine (hreg.isRegularPoint z.2).range_mfderiv_eq_ker_mfderiv
-    (.of_forall fun w : {x : M // f x = c} ↦ w.2)
+  have hdim := (hreg.isRegularPoint z.property).finrank_ker_mfderiv_add_finrank
+  refine (hreg.isRegularPoint z.property).range_mfderiv_eq_ker_mfderiv
+    (.of_forall fun w : {x : M // f x = c} ↦ w.property)
     ((isSmoothEmbedding_coe_regularFiber hm hf hc hreg).isImmersion.mfderiv_injective
       (ENat.one_le_iff_ne_zero_withTop.mp hm) z) ?_
   rw [finrank_fin_fun]
@@ -260,9 +263,94 @@ theorem exists_regularFiber_smoothEmbedding (hm : 1 ≤ m) (hf : ContMDiff I J m
         (Subtype.val : {x : M // f x = c} → M) ∧
       ∀ z : {x : M // f x = c},
         (mfderiv 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I Subtype.val z).range =
-          (mfderiv I J f z.1).ker := by
+          (mfderiv I J f z.val).ker := by
   exact ⟨regularFiberChartedSpace hm hf hc hreg, isManifold_regularFiber hm hf hc hreg,
     isSmoothEmbedding_coe_regularFiber hm hf hc hreg,
     range_mfderiv_coe_regularFiber hm hf hc hreg⟩
+
+namespace RegularFiber
+
+variable {E₁ H₁ P E₂ H₂ Q : Type*}
+  [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [TopologicalSpace H₁]
+  {I₁ : ModelWithCorners ℝ E₁ H₁} [TopologicalSpace P] [ChartedSpace H₁ P]
+  [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
+  {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace Q] [ChartedSpace H₂ Q]
+
+omit [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P] [TopologicalSpace Q] in
+private def prodEquiv (e : M ≃ P × Q) (d : N ≃ Q)
+    (h : d ∘ f = Prod.snd ∘ e) : {x : M // f x = c} ≃ P :=
+  ((e.subtypeEquiv (q := fun p ↦ p ∈ (Set.univ ×ˢ {d c})) (fun x ↦ by
+    have hx : d (f x) = (e x).2 := by simpa only [comp_apply] using congrFun h x
+    simp only [Set.mem_prod, Set.mem_univ, Set.mem_singleton_iff, true_and]
+    rw [← hx]
+    exact d.injective.eq_iff.symm)).trans (Equiv.Set.prod Set.univ {d c})).trans
+    (((Equiv.Set.univ P).prodCongr (Equiv.refl ↥({d c} : Set Q))).trans
+      (Equiv.prodUnique P ↥({d c} : Set Q)))
+
+omit [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P] [TopologicalSpace Q] in
+private theorem prodEquiv_apply (e : M ≃ P × Q) (d : N ≃ Q)
+    (h : d ∘ f = Prod.snd ∘ e) (x : {x : M // f x = c}) :
+    prodEquiv e d h x = (e x.val).1 := by
+  simp only [prodEquiv, Equiv.trans_apply, Equiv.prodUnique_apply, Equiv.prodCongr_apply,
+    Prod.map_fst, Equiv.Set.univ_apply]
+  -- `Equiv.Set.prod` only repackages the two subtype components.
+  rfl
+
+omit [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P] [TopologicalSpace Q] in
+private theorem coe_prodEquiv_symm_apply (e : M ≃ P × Q) (d : N ≃ Q)
+    (h : d ∘ f = Prod.snd ∘ e) (p : P) :
+    ((prodEquiv (c := c) e d h).symm p).val = e.symm (p, d c) := by
+  apply e.injective
+  rw [e.apply_symm_apply]
+  apply Prod.ext
+  · exact (prodEquiv_apply e d h _).symm.trans ((prodEquiv e d h).apply_symm_apply p)
+  · exact (congrFun h _).symm.trans (congrArg d ((prodEquiv e d h).symm p).property)
+
+/-- A fibre over an interior regular value of a map identified with a product projection is
+diffeomorphic to the other factor. The fibre carries its canonical regular-fibre atlas, and
+`1 ≤ m` is required; no separation, countability, or nonemptiness assumption is needed. -/
+noncomputable def diffeomorphOfProd (hm : 1 ≤ m) (hf : ContMDiff I J m f)
+    (hc : J.IsInteriorPoint c) (hreg : IsRegularValue I J f c)
+    (e : M ≃ₘ^m⟮I, I₁.prod I₂⟯ P × Q) (d : N ≃ₘ^m⟮J, I₂⟯ Q)
+    (h : d ∘ f = Prod.snd ∘ e) :
+    letI := regularFiberChartedSpace hm hf hc hreg
+    {x : M // f x = c} ≃ₘ^m⟮
+      𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ), I₁⟯ P := by
+  letI := regularFiberChartedSpace hm hf hc hreg
+  let eF : {x : M // f x = c} ≃ P := prodEquiv e.toEquiv d.toEquiv h
+  have hforward : ⇑eF = fun x ↦ (e x.val).1 := funext (prodEquiv_apply _ _ h)
+  have hinverse : Subtype.val ∘ eF.symm = fun p ↦ e.symm (p, d c) :=
+    funext (coe_prodEquiv_symm_apply _ _ h)
+  refine { eF with
+    contMDiff_toFun := ?_
+    contMDiff_invFun := ?_ }
+  · rw [hforward]
+    exact (e.contMDiff.comp (isSmoothEmbedding_coe_regularFiber hm hf hc hreg).contMDiff).fst
+  · apply ((isSmoothEmbedding_coe_regularFiber hm hf hc hreg).contMDiff_iff_comp
+      (f := eF.symm)).2
+    rw [hinverse]
+    exact e.symm.contMDiff.comp (contMDiff_id.prodMk contMDiff_const)
+
+/-- The product identification reads the first coordinate of the ambient diffeomorphism. -/
+theorem diffeomorphOfProd_apply (hm : 1 ≤ m) (hf : ContMDiff I J m f)
+    (hc : J.IsInteriorPoint c) (hreg : IsRegularValue I J f c)
+    (e : M ≃ₘ^m⟮I, I₁.prod I₂⟯ P × Q) (d : N ≃ₘ^m⟮J, I₂⟯ Q)
+    (h : d ∘ f = Prod.snd ∘ e) (x : {x : M // f x = c}) :
+    letI := regularFiberChartedSpace hm hf hc hreg
+    diffeomorphOfProd hm hf hc hreg e d h x = (e x.val).1 := by
+  exact prodEquiv_apply e.toEquiv d.toEquiv h x
+
+/-- The inverse product identification inserts the fixed base coordinate before applying the
+ambient inverse diffeomorphism. -/
+@[simp]
+theorem coe_diffeomorphOfProd_symm_apply (hm : 1 ≤ m) (hf : ContMDiff I J m f)
+    (hc : J.IsInteriorPoint c) (hreg : IsRegularValue I J f c)
+    (e : M ≃ₘ^m⟮I, I₁.prod I₂⟯ P × Q) (d : N ≃ₘ^m⟮J, I₂⟯ Q)
+    (h : d ∘ f = Prod.snd ∘ e) (p : P) :
+    letI := regularFiberChartedSpace hm hf hc hreg
+    ((diffeomorphOfProd hm hf hc hreg e d h).symm p).val = e.symm (p, d c) := by
+  exact coe_prodEquiv_symm_apply e.toEquiv d.toEquiv h p
+
+end RegularFiber
 
 end TauCeti

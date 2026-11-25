@@ -432,9 +432,9 @@ homomorphism. -/
 noncomputable def baseChangeGrpHomEquiv (G H : Grp (Over S)) :
     (G ⟶ H) ≃ {φ : Hom (baseChange p G.X) (baseChange p H.X) // IsMonHom φ.hom} where
   toFun u := ⟨baseChangeHom p u.hom.hom, by rw [baseChangeHom_hom]; infer_instance⟩
-  invFun φ := haveI := φ.2; Grp.homMk φ.1.descend
+  invFun φ := haveI := φ.property; Grp.homMk φ.val.descend
   left_inv u := by ext1; exact Hom.descend_baseChangeHom p u.hom.hom
-  right_inv φ := Subtype.ext (baseChangeHom_descend φ.1)
+  right_inv φ := Subtype.ext (baseChangeHom_descend φ.val)
 
 variable (p) in
 /-- `baseChangeGrpHomEquiv` sends a group homomorphism over `S` to its base change. -/
@@ -448,7 +448,7 @@ theorem baseChangeGrpHomEquiv_apply_coe {G H : Grp (Over S)} (u : G ⟶ H) :
 @[simp]
 theorem baseChangeGrpHomEquiv_symm_apply_hom_hom {G H : Grp (Over S)}
     (φ : {φ : Hom (baseChange p G.X) (baseChange p H.X) // IsMonHom φ.hom}) :
-    ((baseChangeGrpHomEquiv p G H).symm φ).hom.hom = φ.1.descend :=
+    ((baseChangeGrpHomEquiv p G H).symm φ).hom.hom = φ.val.descend :=
   (rfl)
 
 /-- **Uniqueness of effective descent of group objects.** Two group objects `G` and `H` in

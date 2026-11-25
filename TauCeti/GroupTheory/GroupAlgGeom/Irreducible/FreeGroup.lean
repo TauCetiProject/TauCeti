@@ -8,10 +8,13 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.Separated
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Discrimination
 public import TauCeti.GroupTheory.LimitGroup.ResiduallyFree
+import TauCeti.GroupTheory.GroupAlgGeom.FreeDiscrimination
+import TauCeti.GroupTheory.GroupAlgGeom.FreeGGroup
+import TauCeti.GroupTheory.GroupAlgGeom.SolutionImage
 import TauCeti.Topology.NoetherianSpace.Decomposition
 
 /-!
-# The centralizer of a generator and the union of two such centralizers
+# The centralizer of a generator, commuting pairs, and the union of two centralizers
 
 Let `F = F(α)` be a free group, viewed as a group over itself, and let `a, b` be free generators.
 Over `F` the centralizer `⟨a⟩` of `a` is the algebraic set of the commutator equation
@@ -24,7 +27,17 @@ is abelian and both sets are everything.
 The set `⟨a⟩` is irreducible in the Zariski topology. Its coordinate group is the extension
 `F(a, ℤ) = F ∗_{⟨a⟩} ⟨a, t | [a, t]⟩` of the centralizer of `a`, the variable `x` going to the
 new letter `t`; this group is discriminated by `F` over `F`, through the retractions `t ↦ aᵏ`,
-and in particular fully residually free. For `a ≠ b` the union `⟨a⟩ ∪ ⟨b⟩` is reducible, with
+and in particular fully residually free.
+
+In two variables, the commuting pairs, the solutions of `[x, y] = 1`, form an irreducible set
+too: the coordinate group of `[x, y] = 1`, which is `F ∗ ℤ²` in rank at least two, is
+discriminated by `F` over `F`. A commuting pair `(rᵐ, rⁿ)` of `F` is the image of the new letters
+`(t₀, t₁)` of the extension `F[t](t, ℤ²)` of the centralizer of a further letter `t` under
+`tᵢ ↦ t ^ kᵢ` followed by `t ↦ r`, and this extension is discriminated by `F[t]`, hence by `F`
+when `F` is nonabelian. In rank one, where every pair commutes, the extension `F(a, ℤ²)` of the
+centralizer of the generator plays the same role.
+
+For `a ≠ b` the union `⟨a⟩ ∪ ⟨b⟩` is reducible, with
 the two irreducible components `⟨a⟩` and `⟨b⟩`. Its coordinate group, like every coordinate
 group, is separated by `F` (`TauCeti.GroupAlgGeom.CoordGroup.isSeparatedBy_coeff`), and it
 embeds in the product of the coordinate groups of the two components
@@ -41,6 +54,8 @@ and a CSA coordinate group over the nonabelian group `F` would make the union ir
 * `TauCeti.GroupAlgGeom.isDiscriminatedBy_coordGroup_singleton_commutatorElement_of`,
   `TauCeti.GroupAlgGeom.isFullyResiduallyFree_coordGroup_singleton_commutatorElement_of`: that
   coordinate group is discriminated by `F` and fully residually free.
+* `TauCeti.GroupAlgGeom.isDiscriminatedBy_coordGroup_singleton_commutatorElement`: the coordinate
+  group of `[x, y] = 1` is discriminated by `F`.
 * `TauCeti.GroupAlgGeom.V_unionEquations_commutatorElement_of`: `⟨a⟩ ∪ ⟨b⟩` is algebraic.
 * `TauCeti.GroupAlgGeom.not_isIrreducible_setOf_mem_zpowers_of_or`,
   `TauCeti.GroupAlgGeom.maximal_isIrreducible_subset_setOf_mem_zpowers_of_or_iff`: for `a ≠ b`
@@ -49,6 +64,8 @@ and a CSA coordinate group over the nonabelian group `F` would make the union ir
   `TauCeti.GroupAlgGeom.not_isFullyResiduallyFree_coordGroup_unionEquations_commutatorElement_of`:
   for `a ≠ b` the coordinate group of the union is neither discriminated by `F` nor fully
   residually free.
+* `TauCeti.GroupAlgGeom.not_exists_injective_gHom_unionEquations`: for `a ≠ b` the coordinate
+  group of the union embeds over `F` in no group discriminated by `F`.
 
 ## References
 
@@ -59,7 +76,8 @@ and a CSA coordinate group over the nonabelian group `F` would make the union ir
   Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §3,
   Proposition 7.
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §§2.5–2.6.
+  (2005), §§2.5–2.6, and §7.6 (the coordinate group `F ∗ A(X)` of a commutation system, before
+  Lemma 75).
 -/
 
 public section
@@ -167,6 +185,81 @@ theorem isFullyResiduallyFree_coordGroup_singleton_commutatorElement_of (a : α)
   (isFullyResiduallyFree_of_isFreeGroup (G := FreeGroup α)).of_isDiscriminatedBy
     (isDiscriminatedBy_coordGroup_singleton_commutatorElement_of a)
 
+/-! ### Commuting pairs -/
+
+/- Let `K` be discriminated by `F` over `F`, and let `s false`, `s true` be commuting elements of
+`K` such that every commuting pair of `F` is their image under some `F`-homomorphism `K → F`.
+Then the commuting pairs are exactly the images of `s` under the `F`-homomorphisms `K → F`, an
+irreducible set, so the coordinate group of `[x, y] = 1` is discriminated by `F`. -/
+private theorem isDiscriminatedBy_coordGroup_commutatorElement_of_gHom {K : Type*} [Group K]
+    {κ : FreeGroup α →* K} (hK : IsDiscriminatedBy κ (.id (FreeGroup α))) (s : Bool → K)
+    (hs : Commute (s false) (s true))
+    (h : ∀ v : Bool → FreeGroup α, Commute (v false) (v true) →
+      ∃ ψ : GHom κ (.id (FreeGroup α)), ⇑ψ ∘ s = v) :
+    IsDiscriminatedBy (CoordGroup.coeff (X := Bool) (.id (FreeGroup α))
+      {⁅(inr (of false) : GX (FreeGroup α) Bool), inr (of true)⁆}) (.id (FreeGroup α)) := by
+  rw [← isIrreducible_V_iff_isDiscriminatedBy]
+  convert hK.isIrreducible_range_comp s using 1
+  ext v
+  refine ⟨fun hv => h v (mem_V_commutator_iff.1 hv), ?_⟩
+  rintro ⟨ψ, rfl⟩
+  exact mem_V_commutator_iff.2 (hs.map ψ)
+
+/- In rank one `F` is abelian, and every pair of elements of `F` is the image of the new letters
+`(t₀, t₁)` of the extension `F(a, ℤ²)` of the centralizer of the generator `a`. -/
+private theorem isDiscriminatedBy_coordGroup_commutatorElement_of_subsingleton [Subsingleton α]
+    (a : α) : IsDiscriminatedBy (CoordGroup.coeff (X := Bool) (.id (FreeGroup α))
+      {⁅(inr (of false) : GX (FreeGroup α) Bool), inr (of true)⁆}) (.id (FreeGroup α)) := by
+  have : IsMulCommutative (FreeGroup α) := FreeGroup.isMulCommutative_iff_subsingleton.2 ‹_›
+  have hc (g h : FreeGroup α) : Commute g h := (commute_iff_eq g h).2 (mul_comm' g h)
+  exact isDiscriminatedBy_coordGroup_commutatorElement_of_gHom
+    (CentralizerExt.isDiscriminatedBy (n := 2) FreeGroup.isBP IsFreeGroup.isCSA (of_ne_one a))
+    (fun b => CentralizerExt.t (cond b 1 0)) (CentralizerExt.commute_t_t _ _) fun v _ =>
+    ⟨⟨CentralizerExt.lift (.id _) ![v false, v true] (fun _ _ => hc _ _) fun _ _ _ => hc _ _,
+      fun g => by simp⟩, funext fun b => by cases b <;> simp⟩
+
+/- In rank at least two, the extension `F[t](t, ℤ²)` of the centralizer of a new letter `t` is
+discriminated by `F` over `F`. -/
+private theorem isDiscriminatedBy_centralizerExt_inr_of [Nontrivial α] :
+    IsDiscriminatedBy ((CentralizerExt.of : GX (FreeGroup α) Unit →*
+      CentralizerExt (inr (of ()) : GX (FreeGroup α) Unit) 2).comp inl) (.id (FreeGroup α)) := by
+  have : IsFreeGroup (GX (FreeGroup α) Unit) := (isFreeGGroup_inl Unit).isFreeGroup
+  have h := (CentralizerExt.isDiscriminatedBy (n := 2) IsFreeGroup.isBP IsFreeGroup.isCSA
+    (u := (inr (of ()) : GX (FreeGroup α) Unit))
+    (inr_injective.ne (of_ne_one ()) |>.trans_eq (map_one _))).comp inl
+  rw [MonoidHom.id_comp] at h
+  exact h.trans <| GX.isDiscriminatedBy_of_isFreeGroup <|
+    FreeGroup.isMulCommutative_iff_subsingleton.not.2 (not_subsingleton α)
+
+/- In rank at least two, a commuting pair `(rᵐ, rⁿ)` of `F` is the image of the new letters
+`(t₀, t₁)` of `F[t](t, ℤ²)` under the retraction `tᵢ ↦ t ^ kᵢ` followed by `t ↦ r`. -/
+private theorem isDiscriminatedBy_coordGroup_commutatorElement_of_nontrivial [Nontrivial α] :
+    IsDiscriminatedBy (CoordGroup.coeff (X := Bool) (.id (FreeGroup α))
+      {⁅(inr (of false) : GX (FreeGroup α) Bool), inr (of true)⁆}) (.id (FreeGroup α)) := by
+  refine isDiscriminatedBy_coordGroup_commutatorElement_of_gHom
+    isDiscriminatedBy_centralizerExt_inr_of (fun b => CentralizerExt.t (cond b 1 0))
+    (CentralizerExt.commute_t_t _ _) fun v hv => ?_
+  obtain ⟨r, m, n, hm, hn⟩ := IsFreeGroup.commute_iff_exists_zpow.1 hv
+  refine ⟨⟨(eval (.id _) fun _ => r).comp (CentralizerExt.retraction ![m, n]),
+    fun g => by simp⟩, funext fun b => ?_⟩
+  cases b <;> simp [hm, hn]
+
+/-- **The coordinate group of `[x, y] = 1` is discriminated.** Over a free group `F`, the
+coordinate group of the commutator equation `[x, y] = 1` (the group `F ∗ ℤ²` in rank at least
+two, `ℤ³` in rank one) is discriminated by `F` over `F`. Equivalently
+(`TauCeti.GroupAlgGeom.isIrreducible_V_iff_isDiscriminatedBy`), the set of commuting pairs of `F`
+is irreducible in the Zariski topology. -/
+theorem isDiscriminatedBy_coordGroup_singleton_commutatorElement :
+    IsDiscriminatedBy (CoordGroup.coeff (X := Bool) (.id (FreeGroup α))
+      {⁅(inr (of false) : GX (FreeGroup α) Bool), inr (of true)⁆}) (.id (FreeGroup α)) := by
+  rcases isEmpty_or_nonempty α with hα | ⟨⟨a⟩⟩
+  · -- In rank zero `F` is trivial.
+    exact isDiscriminatedBy_coordGroup_commutatorElement_of_gHom (.self _) 1 (.one_left _)
+      fun v _ => ⟨GHom.id _, Subsingleton.elim _ _⟩
+  rcases subsingleton_or_nontrivial α with hα | hα
+  exacts [isDiscriminatedBy_coordGroup_commutatorElement_of_subsingleton a,
+    isDiscriminatedBy_coordGroup_commutatorElement_of_nontrivial]
+
 /-! ### The union of the centralizers of two generators -/
 
 /-- **The union of two cyclic subgroups is algebraic.** Over a free group `F` and for free
@@ -180,7 +273,7 @@ theorem V_unionEquations_commutatorElement_of (x : X) (a b : α) :
   · -- In rank one `F` is abelian: every commutator vanishes and `⟨a⟩ = C(a) = F`.
     have hc : IsMulCommutative (FreeGroup α) := FreeGroup.isMulCommutative_iff_subsingleton.2 hα
     have htop (c : α) (g : FreeGroup α) : g ∈ zpowers (of c) := by
-      rw [← centralizer_singleton_of]
+      rw [← centralizer_of]
       exact mem_centralizer_singleton_iff.2 (mul_comm' _ _)
     ext v
     simp only [Set.mem_ofPred_eq, htop, or_self, iff_true, mem_V, mem_unionEquations]
@@ -249,6 +342,20 @@ theorem not_isDiscriminatedBy_coordGroup_unionEquations_commutatorElement_of (x 
         {⁅(inr (of x) : GX (FreeGroup α) X), inl (of b)⁆})) (.id (FreeGroup α)) := by
   rw [← isIrreducible_V_iff_isDiscriminatedBy, V_unionEquations_commutatorElement_of]
   exact not_isIrreducible_setOf_mem_zpowers_of_or x hab
+
+/-- Over a free group `F` and for distinct free generators `a` and `b`, the coordinate group of
+the union `⟨a⟩ ∪ ⟨b⟩` (of the `x`-coordinate) embeds over `F` in no group discriminated by `F`
+over `F`: discrimination passes to subgroups over `F`. -/
+theorem not_exists_injective_gHom_unionEquations (x : X) {a b : α} (hab : a ≠ b) :
+    ¬∃ (T : Type*) (_ : Group T) (ι : FreeGroup α →* T)
+      (_ : IsDiscriminatedBy ι (.id (FreeGroup α)))
+      (θ : GHom (CoordGroup.coeff (X := X) (.id (FreeGroup α))
+        (unionEquations {⁅(inr (of x) : GX (FreeGroup α) X), inl (of a)⁆}
+          {⁅(inr (of x) : GX (FreeGroup α) X), inl (of b)⁆})) ι),
+      Function.Injective θ := by
+  rintro ⟨T, _, ι, hι, θ, hθ⟩
+  exact not_isDiscriminatedBy_coordGroup_unionEquations_commutatorElement_of x hab
+    (hι.of_injective θ hθ)
 
 /-- Over a free group `F` and for distinct free generators `a` and `b`, the coordinate group of
 the union `⟨a⟩ ∪ ⟨b⟩` (of the `x`-coordinate) is not fully residually free. -/

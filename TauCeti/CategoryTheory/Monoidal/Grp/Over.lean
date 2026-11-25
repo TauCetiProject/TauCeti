@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import TauCeti.CategoryTheory.Monoidal.Grp.Basic
 import TauCeti.CategoryTheory.Comma.Over
+import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
 
 /-!
 # Group objects over a base: monomorphisms and pullback functoriality
@@ -19,7 +20,8 @@ immersions of group schemes are monomorphisms without any affineness assumption.
 
 In a category `C` with pullbacks, the slice categories `Over X` are cartesian monoidal via
 `Over.cartesianMonoidalCategory`, and base change lifts to `(Over.pullback s).mapGrp`. This file
-also records the canonical functoriality isomorphisms of base change on `Grp (Over X)`:
+also records the canonical functoriality isomorphisms of base change on `Grp (Over X)` in
+`_root_.CategoryTheory.Grp`:
 
 * `CategoryTheory.Grp.pullbackIdIso`: `(Over.pullback (𝟙 X)).mapGrp.obj G ≅ G`.
 * `CategoryTheory.Grp.pullbackCompIso`:
@@ -85,23 +87,21 @@ and `t : Z ⟶ Y` with base change along `t ≫ s`. -/
 noncomputable def pullbackCompIso {Z : C} (t : Z ⟶ Y) (s : Y ⟶ X) (G : Grp (Over X)) :
     (Over.pullback t).mapGrp.obj ((Over.pullback s).mapGrp.obj G) ≅
       (Over.pullback (t ≫ s)).mapGrp.obj G :=
-  ((Functor.mapGrpNatIso (Over.pullbackComp t s) ≪≫ Functor.mapGrpCompIso).symm).app G
+  ((Over.mapGrpPullbackComp t s).symm).app G
 
 /-- The underlying morphism in `Over Z` of `(pullbackCompIso t s G).hom` is
 `(Over.pullbackComp t s).inv.app G.X`. -/
 @[simp]
 theorem pullbackCompIso_hom_hom_hom {Z : C} (t : Z ⟶ Y) (s : Y ⟶ X) (G : Grp (Over X)) :
-    (pullbackCompIso t s G).hom.hom.hom = (Over.pullbackComp t s).inv.app G.X := by
-  simp only [pullbackCompIso]
-  exact Category.id_comp _
+    (pullbackCompIso t s G).hom.hom.hom = (Over.pullbackComp t s).inv.app G.X :=
+  Over.mapGrpPullbackComp_inv_app_hom_hom t s G
 
 /-- The underlying morphism in `Over Z` of `(pullbackCompIso t s G).inv` is
 `(Over.pullbackComp t s).hom.app G.X`. -/
 @[simp]
 theorem pullbackCompIso_inv_hom_hom {Z : C} (t : Z ⟶ Y) (s : Y ⟶ X) (G : Grp (Over X)) :
-    (pullbackCompIso t s G).inv.hom.hom = (Over.pullbackComp t s).hom.app G.X := by
-  simp only [pullbackCompIso]
-  exact Category.comp_id _
+    (pullbackCompIso t s G).inv.hom.hom = (Over.pullbackComp t s).hom.app G.X :=
+  Over.mapGrpPullbackComp_hom_app_hom_hom t s G
 
 /-- Naturality of `pullbackCompIso`. -/
 @[reassoc]
@@ -109,7 +109,7 @@ theorem pullbackCompIso_hom_naturality {Z : C} (t : Z ⟶ Y) (s : Y ⟶ X)
     {G H : Grp (Over X)} (f : G ⟶ H) :
     (Over.pullback t).mapGrp.map ((Over.pullback s).mapGrp.map f) ≫ (pullbackCompIso t s H).hom =
       (pullbackCompIso t s G).hom ≫ (Over.pullback (t ≫ s)).mapGrp.map f :=
-  ((Functor.mapGrpNatIso (Over.pullbackComp t s) ≪≫ Functor.mapGrpCompIso).symm).hom.naturality f
+  (Over.mapGrpPullbackComp t s).inv.naturality f
 
 /-- The canonical isomorphism between base changes of `G` along two equal morphisms `s₁ = s₂`. -/
 noncomputable def pullbackCongrIso {s₁ s₂ : Y ⟶ X} (h : s₁ = s₂) (G : Grp (Over X)) :
@@ -154,15 +154,8 @@ group object `(Over.pullback p).mapGrp.obj G` along `pullback.fst p p` and `pull
 noncomputable def pullbackOverlapIso (p : Y ⟶ X) (G : Grp (Over X)) :
     (Over.pullback (pullback.fst p p)).mapGrp.obj ((Over.pullback p).mapGrp.obj G) ≅
       (Over.pullback (pullback.snd p p)).mapGrp.obj ((Over.pullback p).mapGrp.obj G) :=
-  pullbackCompIso (pullback.fst p p) p G ≪≫ pullbackCongrIso pullback.condition G ≪≫
-    (pullbackCompIso (pullback.snd p p) p G).symm
-
-/-- Unfolding `pullbackOverlapIso` in terms of `pullbackCompIso` and `pullbackCongrIso`. -/
-theorem pullbackOverlapIso_def (p : Y ⟶ X) (G : Grp (Over X)) :
-    pullbackOverlapIso p G =
-      pullbackCompIso (pullback.fst p p) p G ≪≫ pullbackCongrIso pullback.condition G ≪≫
-        (pullbackCompIso (pullback.snd p p) p G).symm :=
-  (rfl)
+  (Over.mapGrpPullbackCompOfEq (pullback.fst p p) (pullback.condition (f := p) (g := p)) ≪≫
+    Over.mapGrpPullbackComp (pullback.snd p p) p).app G
 
 /-- Naturality of `pullbackOverlapIso`. -/
 @[reassoc]
@@ -170,11 +163,9 @@ theorem pullbackOverlapIso_hom_naturality (p : Y ⟶ X) {G H : Grp (Over X)} (f 
     (Over.pullback (pullback.fst p p)).mapGrp.map ((Over.pullback p).mapGrp.map f) ≫
         (pullbackOverlapIso p H).hom =
       (pullbackOverlapIso p G).hom ≫
-        (Over.pullback (pullback.snd p p)).mapGrp.map ((Over.pullback p).mapGrp.map f) := by
-  simp only [pullbackOverlapIso, Iso.trans_hom, Iso.symm_hom, Category.assoc,
-    pullbackCompIso_hom_naturality_assoc, pullbackCongrIso_hom_naturality_assoc]
-  congr 2
-  rw [Iso.comp_inv_eq, Category.assoc, pullbackCompIso_hom_naturality, Iso.inv_hom_id_assoc]
+        (Over.pullback (pullback.snd p p)).mapGrp.map ((Over.pullback p).mapGrp.map f) :=
+  (Over.mapGrpPullbackCompOfEq (pullback.fst p p) (pullback.condition (f := p) (g := p)) ≪≫
+    Over.mapGrpPullbackComp (pullback.snd p p) p).hom.naturality f
 
 /-- On underlying objects, `pullbackOverlapIso p G` sends `((g, y₁), (y₁, y₂))` in
 `(G ×_X Y) ×_Y (Y ×_X Y)` to `((g, y₂), (y₁, y₂))`: its first projection to `G ×_X Y` pairs the
@@ -192,12 +183,13 @@ theorem pullbackOverlapIso_hom_left_fst (p : Y ⟶ X) (G : Grp (Over X)) :
           rw [Category.assoc, pullback.condition, ← Over.pullback_obj_hom p G.X,
             pullback.condition_assoc, pullback.condition, Category.assoc]) := by
   have hhom : (pullbackOverlapIso p G).hom.hom.hom =
-      (Over.pullbackComp (pullback.fst p p) p).inv.app G.X ≫
+      ((Over.pullbackComp (pullback.fst p p) p).inv.app G.X ≫
         eqToHom (congrArg (fun f ↦ (Over.pullback f).obj G.X)
-          (pullback.condition (f := p) (g := p))) ≫
+          (pullback.condition (f := p) (g := p)))) ≫
         (Over.pullbackComp (pullback.snd p p) p).hom.app G.X := by
-    simp only [pullbackOverlapIso, Iso.trans_hom, Iso.symm_hom, Grp.comp', Mon.comp_hom',
-      pullbackCompIso_hom_hom_hom, pullbackCongrIso_hom_hom_hom, pullbackCompIso_inv_hom_hom]
+    simp only [pullbackOverlapIso, Iso.app_hom, Iso.trans_hom, NatTrans.comp_app,
+      Grp.comp', Mon.comp_hom', Over.mapGrpPullbackCompOfEq_hom_app_hom_hom,
+      Over.mapGrpPullbackComp_hom_app_hom_hom]
     rfl
   have hleft : (pullbackOverlapIso p G).hom.hom.hom.left =
       ((Over.pullbackComp (pullback.fst p p) p).inv.app G.X).left ≫
@@ -205,7 +197,7 @@ theorem pullbackOverlapIso_hom_left_fst (p : Y ⟶ X) (G : Grp (Over X)) :
           (pullback.condition (f := p) (g := p))) ≫
         ((Over.pullbackComp (pullback.snd p p) p).hom.app G.X).left := by
     refine (congrArg Over.Hom.left hhom).trans ?_
-    simp only [Over.comp_left, Over.eqToHom_left]
+    simp only [Over.comp_left, Over.eqToHom_left, Category.assoc]
     rfl
   exact (congrArg (· ≫ pullback.fst ((Over.pullback p).obj G.X).hom (pullback.snd p p))
     hleft).trans ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans

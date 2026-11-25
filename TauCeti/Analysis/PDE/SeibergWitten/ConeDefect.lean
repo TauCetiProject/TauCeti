@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
-public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameterCurvature
+public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature
 
 /-!
 # The distance of the cutoff current to the cone of positive `(1,1)`-forms
