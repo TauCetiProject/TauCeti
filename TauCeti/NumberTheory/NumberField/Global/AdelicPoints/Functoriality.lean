@@ -95,6 +95,7 @@ theorem map_comp (ψ : H →ₐc[K] H'') (φ : H' →ₐc[K] H) :
     map R (ψ.comp φ) = (map R φ).comp (map R ψ) :=
   BialgHom.mapDomain_comp ψ φ
 
+@[simp]
 theorem map_map (ψ : H →ₐc[K] H'') (φ : H' →ₐc[K] H) (x : AdelicPoints R K H'') :
     map R φ (map R ψ x) = map R (ψ.comp φ) x :=
   (DFunLike.congr_fun (map_comp ψ φ) x).symm
