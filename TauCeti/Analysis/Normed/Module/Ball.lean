@@ -72,9 +72,7 @@ For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact se
 
 A scalar of norm one maps the product of a set with a ball about zero to itself when it acts on the
 ball factor (`TauCeti.mapsTo_prodMk_smul_ball`). A scalar `c` maps the ball of radius `R` about
-zero into the ball of radius `ρ` once `‖c‖ * R < ρ` (`TauCeti.smul_mem_ball_zero_of_norm_mul_lt`),
-and a scalar of norm at most one maps each ball about zero into itself
-(`TauCeti.mapsTo_smul_ball_zero_of_norm_le_one`).
+zero into the ball of radius `ρ` once `‖c‖ * R < ρ` (`TauCeti.smul_mem_ball_zero_of_norm_mul_lt`).
 
 A closed ball of positive radius is homeomorphic to the closed unit ball by a rescaling that
 matches the boundary spheres (`TauCeti.exists_homeomorph_closedBall_one_norm_eq`).
@@ -206,13 +204,6 @@ theorem smul_mem_ball_zero_of_norm_mul_lt {c : 𝕜} {R ρ : ℝ} (hc : ‖c‖ 
   rw [mem_ball_zero_iff] at hz ⊢
   rw [norm_smul]
   exact (mul_le_mul_of_nonneg_left hz.le (norm_nonneg c)).trans_lt hc
-
-/-- Scaling by `c` with `‖c‖ ≤ 1` maps the ball of radius `R` about zero into itself. -/
-theorem mapsTo_smul_ball_zero_of_norm_le_one {c : 𝕜} (hc : ‖c‖ ≤ 1) (R : ℝ) :
-    Set.MapsTo (c • ·) (ball (0 : E) R) (ball 0 R) := fun z hz ↦ by
-  rw [mem_ball_zero_iff] at hz ⊢
-  rw [norm_smul]
-  exact (mul_le_of_le_one_left (norm_nonneg z) hc).trans_lt hz
 
 end SMulBall
 

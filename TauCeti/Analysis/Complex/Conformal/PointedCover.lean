@@ -11,11 +11,11 @@ public import Mathlib.Topology.Homotopy.Lifting
 import Mathlib.Analysis.Calculus.Deriv.CompMul
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
+import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Rotation
 import TauCeti.Analysis.Complex.UnitDisc.Basic
 import TauCeti.Analysis.Convex.SimplyConnected
-import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Topology.Covering.Homeomorph
 
 /-!
@@ -110,7 +110,7 @@ theorem isCoveringMap_coverMap : IsCoveringMap F.coverMap :=
   F.isCoveringMap
 
 /-- The map `Complex.UnitDisc → Ω` of a pointed cover is surjective. -/
-theorem surjective_coverMap : Function.Surjective F.coverMap := fun w ↦ by
+theorem coverMap_surjective : Function.Surjective F.coverMap := fun w ↦ by
   obtain ⟨z, hz, hzw⟩ := F.surjOn w.property
   exact ⟨UnitDisc.mk z (mem_ball_zero_iff.1 hz), Subtype.ext hzw⟩
 
@@ -217,13 +217,13 @@ unit circle, gives a pointed cover. -/
 def rotate (u : Circle) : PointedCover Ω a where
   toFun z := F.toFun (u * z)
   differentiableOn := F.differentiableOn.comp (by fun_prop)
-    (mapsTo_smul_ball_zero_of_norm_le_one (Circle.norm_coe u).le 1)
-  mapsTo := F.mapsTo.comp (mapsTo_smul_ball_zero_of_norm_le_one (Circle.norm_coe u).le 1)
+    fun _ hz ↦ balanced_ball_zero.smul_mem (Circle.norm_coe u).le hz
+  mapsTo := F.mapsTo.comp fun _ hz ↦ balanced_ball_zero.smul_mem (Circle.norm_coe u).le hz
   map_zero := by simp
   isCoveringMap := F.isCoveringMap.comp_homeomorph (Homeomorph.smul u)
   surjOn w hw := by
     obtain ⟨z, hz, rfl⟩ := F.surjOn hw
-    refine ⟨u⁻¹ * z, mapsTo_smul_ball_zero_of_norm_le_one (Circle.norm_coe u⁻¹).le 1 hz, ?_⟩
+    refine ⟨u⁻¹ * z, balanced_ball_zero.smul_mem (Circle.norm_coe u⁻¹).le hz, ?_⟩
     simp
 
 @[simp]
@@ -255,7 +255,8 @@ theorem existsUnique_eqOn_comp_const_mul (G : PointedCover Ω a) :
   -- Two rotations lifting `G` through `F` agree on the disc, hence have equal factors.
   rintro ζ ⟨hζ, hGζ⟩
   have hζc := F.eqOn_of_comp_eqOn hBp (by fun_prop) (by fun_prop)
-    (mapsTo_smul_ball_zero_of_norm_le_one hζ.le 1) (mapsTo_smul_ball_zero_of_norm_le_one hc.le 1)
+    (fun _ hz ↦ balanced_ball_zero.smul_mem hζ.le hz)
+    (fun _ hz ↦ balanced_ball_zero.smul_mem hc.le hz)
     (fun z hz ↦ (hGζ hz).symm.trans (hGc hz)) h₀ (by simp)
     (show (2⁻¹ : ℂ) ∈ ball (0 : ℂ) 1 by norm_num [mem_ball_zero_iff])
   simpa using hζc
