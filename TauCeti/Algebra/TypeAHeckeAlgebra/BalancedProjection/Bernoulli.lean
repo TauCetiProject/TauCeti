@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Zero
 import TauCeti.Algebra.MvPolynomial.Supported
 import TauCeti.RingTheory.TraceFunctional.Radical
-import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.MvPolynomial.Basic
 
 /-!
@@ -129,8 +128,8 @@ private theorem boolExpect_monomial (η : R) (m : ℕ →₀ ℕ) (c : R) :
     boolExpect η (monomial m c) = c * η ^ m.support.card := by
   have h := (basisMonomials ℕ R).constr_basis R (fun m : ℕ →₀ ℕ ↦ η ^ m.support.card) m
   rw [coe_basisMonomials] at h
-  rw [show monomial m c = c • monomial m 1 by rw [smul_monomial, smul_eq_mul, mul_one], map_smul,
-    boolExpect, h, smul_eq_mul]
+  have hm : monomial m c = c • monomial m 1 := by rw [smul_monomial, smul_eq_mul, mul_one]
+  rw [hm, map_smul, boolExpect, h, smul_eq_mul]
 
 private theorem boolExpect_one (η : R) : boolExpect η 1 = 1 := by
   simpa using boolExpect_monomial η 0 1

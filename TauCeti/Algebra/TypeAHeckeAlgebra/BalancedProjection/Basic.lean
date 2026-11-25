@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
-import Mathlib.Algebra.Algebra.Subalgebra.Directed
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import TauCeti.Algebra.Algebra.Subalgebra.Lattice
@@ -402,7 +401,7 @@ theorem toSubmodule_stage_add_two (n : ℕ) :
           Subalgebra.toSubmodule (stage R τ (n + 1)) := by
   rw [stage_add_one, stage_add_one, Algebra.toSubmodule_adjoinPrefix_succ
     (fun _ _ h ↦ commute_e (Or.inr (by omega))) e_mul_self_mem_adjoinPrefixSplit
-    e_succ_mul_e_mul_e_succ_mem_adjoinPrefixSplit, Algebra.adjoinPrefixSplit]
+    e_succ_mul_e_mul_e_succ_mem_adjoinPrefixSplit, Algebra.adjoinPrefixSplit_def]
 
 /-- To show that the stage of the first `n + 2` strands lies in a submodule, it suffices to check
 the stage of the first `n + 1` strands and the products `a * e n * b` with `a`, `b` in it. -/
