@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.AdicCompletion.CompletedGenericField.Basic
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 
 import TauCeti.RingTheory.AdicCompletion.Algebra
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Maps of completed generic fields and Frobenius lifts
@@ -64,12 +65,6 @@ namespace TauCeti.AdicCompletion
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C] {π : A} {π' : B} {π'' : C}
   [(Ideal.span {π}).IsPrime] [(Ideal.span {π'}).IsPrime] [(Ideal.span {π''}).IsPrime]
 
-/-- Two elements of a local ring have the same residue if and only if their difference lies in
-the maximal ideal. -/
-private theorem residue_eq_residue_iff {R : Type*} [CommRing R] [IsLocalRing R] {x y : R} :
-    residue R x = residue R y ↔ x - y ∈ maximalIdeal R :=
-  Ideal.Quotient.eq
-
 /-- Elements of `A` congruent modulo `π` have the same residue in the generic local ring. -/
 private theorem residue_algebraMap_eq_of_sub_mem {a₁ a₂ : A} (h : a₁ - a₂ ∈ Ideal.span {π}) :
     residue (genericLocalRing π) (algebraMap A _ a₁) =
@@ -89,6 +84,8 @@ variable (f : A →+* B) (hf : (Ideal.span {π'}).comap f = Ideal.span {π})
 private theorem le_comap_maximalIdeal_localAlgHom :
     maximalIdeal (genericLocalRing π) ≤ (maximalIdeal (genericLocalRing π')).comap
       (Localization.localAlgHom _ _ f.toIntAlgHom hf.symm) :=
+  -- `localAlgHom _ _ f.toIntAlgHom` is `localRingHom _ _ f` as a map: `f.toIntAlgHom` is `f`
+  -- with the automatic `ℤ`-linearity, so its underlying ring homomorphism unfolds to `f`.
   (IsLocalRing.maximalIdeal_comap (Localization.localRingHom _ _ f hf.symm)).ge
 
 /-- A ring homomorphism `f : A →+* B` with `f⁻¹ (π') = (π)` induces a homomorphism of completed
@@ -106,6 +103,8 @@ theorem completedGenericIntegersMap_algebraMap_genericLocalRing (x : genericLoca
       algebraMap (genericLocalRing π') _ (Localization.localRingHom _ _ f hf.symm x) := by
   simp only [completedGenericIntegersMap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
     _root_.AdicCompletion.algebraMap_apply, _root_.AdicCompletion.mapₐ_of]
+  -- `localAlgHom_apply` gives `localRingHom _ _ f.toIntAlgHom.toRingHom`, and the underlying
+  -- ring homomorphism of `f.toIntAlgHom` unfolds to `f`.
   exact congrArg _ (Localization.localAlgHom_apply _ _ _ _ x)
 
 /-- The map of completed generic rings extends `f`. -/
