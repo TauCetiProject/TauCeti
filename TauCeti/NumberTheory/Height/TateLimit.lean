@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Tate's limit
@@ -95,27 +96,20 @@ private theorem norm_tateTerm_le (hd : 1 < d) (hf : ∀ s, |f (φ s) - d * f s| 
     Function.iterate_succ_apply']
   exact div_le_div_of_nonneg_right (hf _) hpos.le
 
-/-- The series `∑ C * d⁻¹ ^ (m + 1)` dominating the series of `tateLimit` sums to `C / (d - 1)`. -/
-private theorem hasSum_mul_inv_pow_succ (hd : 1 < d) :
-    HasSum (fun m : ℕ ↦ C * d⁻¹ ^ (m + 1)) (C / (d - 1)) := by
-  have h := (hasSum_geometric_of_lt_one (inv_nonneg.mpr (by linarith))
-    (inv_lt_one_of_one_lt₀ hd)).mul_left (C * d⁻¹)
-  convert h using 1
-  · funext m
-    ring
-  · field_simp [show d - 1 ≠ 0 by linarith, show d ≠ 0 by linarith]
-
 /-- Under the bounded-error hypothesis the series defining `tateLimit` converges absolutely. -/
 theorem summable_tateLimit (hd : 1 < d) (hf : ∀ s, |f (φ s) - d * f s| ≤ C) (s : S) :
     Summable fun m : ℕ ↦ (f (φ^[m + 1] s) - d * f (φ^[m] s)) / d ^ (m + 1) :=
-  (hasSum_mul_inv_pow_succ hd).summable.of_norm_bounded (norm_tateTerm_le hd hf s)
+  (hasSum_mul_inv_pow_succ_of_one_lt_norm (hd.trans_le (Real.le_norm_self d)) C).summable
+    |>.of_norm_bounded (norm_tateTerm_le hd hf s)
 
 /-- **Tate's limit is at bounded distance from `f`**: `|tateLimit φ d f s - f s| ≤ C / (d - 1)`
 when `|f (φ s) - d * f s| ≤ C` for every `s`. -/
 theorem abs_tateLimit_sub_le (hd : 1 < d) (hf : ∀ s, |f (φ s) - d * f s| ≤ C) (s : S) :
     |tateLimit φ d f s - f s| ≤ C / (d - 1) := by
   rw [tateLimit_def, add_sub_cancel_left]
-  exact tsum_of_norm_bounded (hasSum_mul_inv_pow_succ hd) (norm_tateTerm_le hd hf s)
+  exact tsum_of_norm_bounded
+    (hasSum_mul_inv_pow_succ_of_one_lt_norm (hd.trans_le (Real.le_norm_self d)) C)
+    (norm_tateTerm_le hd hf s)
 
 /-- **Tate's limit scales by `d` along `φ`**: `tateLimit φ d f (φ s) = d * tateLimit φ d f s`.
 The series at `φ s` is `d` times the tail of the series at `s`. -/
