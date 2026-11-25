@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
+public import TauCeti.CategoryTheory.Monoidal.Subcategory
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 
 /-!
@@ -109,64 +110,13 @@ namespace QuasicoherentSheaf
 /-- Pullback of quasicoherent sheaves is strong symmetric monoidal for every scheme morphism. -/
 instance pullbackBraided : (pullback f).Braided := by
   -- Lift the module comparisons first, then transport them using the public pullback equations.
+  let F : QuasicoherentSheaf Y ⥤ X.Modules :=
+    (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f
+  letI : F.Braided := Scheme.Modules.pullbackToModulesBraided f
   let H : QuasicoherentSheaf Y ⥤ QuasicoherentSheaf X :=
     (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf).lift
-      ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f)
-      fun E ↦ Scheme.Modules.isQuasicoherent_pullback f E.obj
-  -- The explicit lift lets each coherence law reduce to the corresponding module law.
-  letI : H.OplaxMonoidal := {
-    η := ObjectProperty.homMk
-      (η ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f))
-    δ E F := ObjectProperty.homMk
-      (δ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E F)
-    δ_natural_left φ E := by
-      apply ObjectProperty.hom_ext
-      exact Functor.OplaxMonoidal.δ_natural_left
-        ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) φ E
-    δ_natural_right E φ := by
-      apply ObjectProperty.hom_ext
-      exact Functor.OplaxMonoidal.δ_natural_right
-        ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E φ
-    oplax_associativity E F G := by
-      apply ObjectProperty.hom_ext
-      exact Functor.OplaxMonoidal.associativity
-        ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E F G
-    oplax_left_unitality E := by
-      apply ObjectProperty.hom_ext
-      exact Functor.OplaxMonoidal.left_unitality
-        ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E
-    oplax_right_unitality E := by
-      apply ObjectProperty.hom_ext
-      exact Functor.OplaxMonoidal.right_unitality
-        ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E }
-  letI : H.Monoidal := by
-    have : IsIso (η H) := by
-      apply (ObjectProperty.isIso_hom_iff _).mp
-      exact inferInstanceAs (IsIso (η
-        ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f)))
-    have (E F : QuasicoherentSheaf Y) : IsIso (δ H E F) := by
-      apply (ObjectProperty.isIso_hom_iff _).mp
-      exact inferInstanceAs (IsIso (δ
-        ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E F))
-    exact Functor.Monoidal.ofOplaxMonoidal H
-  letI : H.Braided := {
-    toMonoidal := inferInstance
-    braided E F := by
-      apply ObjectProperty.hom_ext
-      -- Express full-subcategory composition on underlying modules before rewriting inverses.
-      change (μ H E F).hom ≫ _ = _ ≫ (μ H F E).hom
-      have hμ (E F : QuasicoherentSheaf Y) : (μ H E F).hom =
-          μ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
-            Scheme.Modules.pullback f) E F := by
-        rw [← Functor.Monoidal.inv_δ, ObjectProperty.hom_inv]
-        -- The lifted oplax tensor comparison forgets to the module comparison.
-        exact Functor.Monoidal.inv_δ
-          ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
-            Scheme.Modules.pullback f) E F
-      rw [hμ, hμ]
-      exact @Functor.LaxBraided.braided _ _ _ _ _ _ _ _
-        ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f)
-        inferInstance E F }
+      F (fun E ↦ Scheme.Modules.isQuasicoherent_pullback f E.obj)
+  letI : H.Braided := ObjectProperty.braidedLift _ F _
   -- Identify the explicit lift with the opaque canonical functor through its public API.
   let i : H ≅ pullback f :=
     NatIso.ofComponents (fun E ↦ ObjectProperty.isoMk _
@@ -232,43 +182,28 @@ theorem pullback_μ_hom (E F : QuasicoherentSheaf Y) :
         inv (δ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
           Scheme.Modules.pullback f) E F) ≫
             eqToHom (C := X.Modules) (pullback_obj_obj f (E ⊗ F)).symm := by
-  let H : QuasicoherentSheaf Y ⥤ QuasicoherentSheaf X :=
-    (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf).lift
-      ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f)
-      fun E ↦ Scheme.Modules.isQuasicoherent_pullback f E.obj
-  let d : H.obj (E ⊗ F) ⟶ H.obj E ⊗ H.obj F := ObjectProperty.homMk
-    (δ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) E F)
-  have : IsIso d := (ObjectProperty.isIso_hom_iff d).mp
-    (inferInstanceAs (IsIso (δ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
-      Scheme.Modules.pullback f) E F)))
-  -- Name the lifted map to rewrite its inverse before forgetting the subcategory.
-  change ((eqToHom (C := X.Modules) (pullback_obj_obj f E) ⊗ₘ
-    eqToHom (C := X.Modules) (pullback_obj_obj f F)) ≫ (inv d).hom) ≫ _ = _
-  rw [ObjectProperty.hom_inv]
-  exact Category.assoc _ _ _
+  let G := (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f
+  let : G.Braided := Scheme.Modules.pullbackToModulesBraided f
+  -- The lifted tensor comparison has the underlying map of `G`.
+  let t := eqToHom (C := X.Modules) (pullback_obj_obj f E) ⊗ₘ
+    eqToHom (C := X.Modules) (pullback_obj_obj f F)
+  let e := eqToHom (C := X.Modules) (pullback_obj_obj f (E ⊗ F)).symm
+  change (t ≫ μ G E F) ≫ e = t ≫ inv (δ G E F) ≫ e
+  exact (Category.assoc _ _ _).trans
+    (congrArg (fun m ↦ t ≫ m ≫ e) (Functor.Monoidal.inv_δ G E F).symm)
 
 /-- The unit comparison of quasicoherent pullback inverts the structure-sheaf comparison. -/
 @[simp]
 theorem pullback_ε_hom :
     (ε (pullback f)).hom = (Scheme.Modules.pullbackObjUnitIso f).inv ≫
       eqToHom (C := X.Modules) (pullback_obj_obj f (𝟙_ (QuasicoherentSheaf Y))).symm := by
-  let U : QuasicoherentSheaf X := ⟨(Scheme.Modules.pullback f).obj (𝟙_ Y.Modules),
-    Scheme.Modules.isQuasicoherent_pullback f _⟩
-  let e : U ⟶ 𝟙_ (QuasicoherentSheaf X) := ObjectProperty.homMk
-    (η ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f))
-  have : IsIso e := (ObjectProperty.isIso_hom_iff e).mp
-    (inferInstanceAs (IsIso (η ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
-      Scheme.Modules.pullback f))))
-  -- As for the tensor comparison, forget the named lifted inverse before rewriting it.
-  change (inv e).hom ≫ _ = _
-  rw [ObjectProperty.hom_inv]
-  -- Express the forgotten map in `X.Modules`; rewriting under `inv` mixes category instances.
-  change inv (η ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
-    Scheme.Modules.pullback f)) ≫ _ = _
-  congr 1
-  apply IsIso.inv_eq_of_hom_inv_id
-  rw [Scheme.Modules.pullbackToModules_η]
-  exact (Scheme.Modules.pullbackObjUnitIso f).hom_inv_id
+  let G := (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f
+  let : G.Braided := Scheme.Modules.pullbackToModulesBraided f
+  -- The lifted unit comparison has the underlying map of `G`.
+  change ε G ≫ _ = _
+  exact congrArg (· ≫ eqToHom (C := X.Modules)
+    (pullback_obj_obj f (𝟙_ (QuasicoherentSheaf Y))).symm)
+    (Scheme.Modules.pullbackToModules_ε f)
 
 /-- Arbitrary pullback carries a left dual of a quasicoherent sheaf to a left dual of its
 pullback. -/
