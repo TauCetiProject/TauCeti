@@ -383,9 +383,9 @@ theorem base_toWeightBasis_repr [P.IsRootSystem]
   have hw : w = ⟨_, F.orbitSum_mem_support_base hj⟩ ↔ j ∈ P.orbitIndices σ k := by
     rw [Subtype.ext_iff, Subtype.ext_iff, ← hkw]
     exact b.orbitSum_eq_orbitSum_iff_of_mem_support hσ hk hj
-  rw [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply, if_congr hw rfl rfl,
-    LinearMap.comp_apply, Submodule.coe_subtype, Base.toWeightBasis_apply, F.coe_root, ← hkw,
-    orbitSum_def, Module.Basis.coord_apply, map_sum, Finset.sum_apply']
+  simp only [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply, hw]
+  simp only [LinearMap.comp_apply, Submodule.coe_subtype, Base.toWeightBasis_apply, F.coe_root,
+    ← hkw, orbitSum_def, Module.Basis.coord_apply, map_sum]
   have hcoord (i : ι) (hi : i ∈ P.orbitIndices σ k) :
       b.toWeightBasis.repr (P.root i) ⟨j, hj⟩ = if i = j then 1 else 0 := by
     rw [← b.toWeightBasis_apply ⟨i, hsub hi⟩, Module.Basis.repr_self, Finsupp.single_apply]
