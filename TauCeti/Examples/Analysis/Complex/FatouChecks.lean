@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Nontangential.Limit
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.Basic.Complex.OfRealSub
 
 /-!
@@ -117,9 +118,11 @@ theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_of_on
 theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_ray (c : ℝ) :
     Tendsto (fun t : ℝ => upperHalfPlanePoissonIntegral (volume.restrict (Icc 0 1))
       (((c * t : ℝ) : ℂ) + t * I)) (𝓝[>] 0) (𝓝 (1 / 2 + Real.arctan c / π)) := by
-  have h₁ : Tendsto (fun t : ℝ => Real.arctan (t⁻¹ + -c)) (𝓝[>] 0) (𝓝 (π / 2)) :=
-    (Real.tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp
-      (tendsto_atTop_add_const_right _ _ tendsto_inv_nhdsGT_zero)
+  have h₁ : Tendsto (fun t : ℝ => Real.arctan ((1 - c * t) / t)) (𝓝[>] 0) (𝓝 (π / 2)) := by
+    have hf : Tendsto (fun t : ℝ => 1 - c * t) (𝓝[>] 0) (𝓝 1) :=
+      ((by fun_prop : Continuous fun t : ℝ => 1 - c * t).tendsto' 0 1 (by simp)).mono_left
+        nhdsWithin_le_nhds
+    simpa using Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero hf one_ne_zero tendsto_id
   have h := (h₁.add_const (Real.arctan c)).div_const π
   have he : (π / 2 + Real.arctan c) / π = 1 / 2 + Real.arctan c / π := by
     field_simp
@@ -127,9 +130,7 @@ theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_ray (
   refine h.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
   rw [upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one]
-  simp only [add_re, ofReal_re, mul_re, ofReal_im, I_re, mul_zero, I_im, mul_one, sub_zero,
-    add_im, mul_im, zero_add, add_zero]
-  rw [show (1 - c * t) / t = t⁻¹ + -c by field_simp; ring, mul_div_cancel_right₀ c ht.ne']
+  simp [mul_div_cancel_right₀ c ht.ne']
 
 /-- **The vertical limit at the jump**: `P[1_{[0,1]}](it) → 1/2` as `t → 0⁺`. -/
 theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_vertical :
