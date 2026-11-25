@@ -420,8 +420,13 @@ theorem abs_weightedLogSpotPrice_add_abs_mul_deriv_le (u : ParabolicC2HolderSpac
       rw [weightedLogSpotPrice_of_mem, abs_mul, abs_of_pos (by positivity : 0 < 1 + s), mul_comm]
       exact mul_le_mul_of_nonneg_right ((valueL u).norm_coe_le_norm _) (by positivity)
     have h₂ := abs_mul_deriv_weightedLogSpotPrice_le u hs τ
-    have hnorm := u.norm_eq
-    nlinarith [norm_nonneg (spatialFDerivL u), norm_nonneg (spatialSecondFDerivL u),
-      norm_nonneg (timeDerivL u)]
+    have hnorm : 2 * ‖valueL u‖ + ‖spatialFDerivL u‖ ≤ 2 * ‖u‖ := by
+      linarith [u.norm_eq, norm_nonneg (spatialFDerivL u), norm_nonneg (spatialSecondFDerivL u),
+        norm_nonneg (timeDerivL u)]
+    refine (add_le_add h₁ h₂).trans ?_
+    calc
+      ‖valueL u‖ * (1 + s) + (‖valueL u‖ + ‖spatialFDerivL u‖) * (1 + s) =
+          (2 * ‖valueL u‖ + ‖spatialFDerivL u‖) * (1 + s) := by ring
+      _ ≤ 2 * ‖u‖ * (1 + s) := mul_le_mul_of_nonneg_right hnorm (by positivity)
 
 end TauCeti.Finance

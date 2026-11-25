@@ -450,30 +450,13 @@ theorem norm_compSlabSpaceL_apply_le (f : HolderSpace α E Y) :
     ‖(compSlabSpaceL f : HolderSpace α (slab (E := E) a b) Y)‖ ≤ ‖f‖ :=
   (compSlabSpaceL.le_of_opNorm_le norm_compSlabSpaceL_le_one f).trans_eq (one_mul _)
 
-private theorem le_norm_of_section {β : ℝ≥0} {X Z : Type*} [MetricSpace X] [MetricSpace Z]
-    (f : HolderSpace α X Y) (F : HolderSpace β Z Y) (ι : X → Z) (hval : ∀ x, F (ι x) = f x)
-    (hedist : ∀ x y, edist (ι x) (ι y) ^ (β : ℝ) ≤ edist x y ^ (α : ℝ)) :
-    ‖f‖ ≤ ‖F‖ := by
-  have hsup : ‖f.toBoundedContinuousFunction‖ ≤ ‖F.toBoundedContinuousFunction‖ :=
-    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x ↦ by
-      simpa [hval x] using F.toBoundedContinuousFunction.norm_coe_le_norm (ι x)
-  have hhold : HolderWith (nnHolderNorm β (F : Z → Y)) α (f : X → Y) := fun x y ↦ by
-    have hed := hedist x y
-    simpa only [hval] using (F.holderWith (ι x) (ι y)).trans (by gcongr)
-  rw [norm_def, norm_def, coe_toBoundedContinuousFunction, coe_toBoundedContinuousFunction]
-  exact add_le_add hsup (by exact_mod_cast hhold.nnholderNorm_le)
-
 /-- On a nonempty time interval, lifting a spatial `α`-Hölder field to a slab preserves its norm. -/
 @[simp] theorem norm_compSlabSpaceL_apply [Nonempty (Icc a b)] (f : HolderSpace α E Y) :
     ‖compSlabSpaceL (a := a) (b := b) f‖ = ‖f‖ := by
   obtain ⟨t₀⟩ := ‹Nonempty (Icc a b)›
   exact le_antisymm (norm_compSlabSpaceL_apply_le f)
-    (le_norm_of_section f _ (slabMk · t₀) (fun _ ↦ by simp) fun _ _ ↦ by simp [edist_slabMk])
-
-/-- When `a ≤ b`, lifting a spatial `α`-Hölder field to `E × [a, b]` preserves its norm. -/
-theorem norm_compSlabSpaceL_apply_of_le (hab : a ≤ b) (f : HolderSpace α E Y) :
-    ‖compSlabSpaceL (a := a) (b := b) f‖ = ‖f‖ :=
-  letI : Nonempty (Icc a b) := ⟨⟨a, left_mem_Icc.2 hab⟩⟩; norm_compSlabSpaceL_apply f
+    (norm_le_norm_of_apply_comp (ι := (slabMk · t₀)) (fun _ ↦ by simp)
+      fun _ _ ↦ by simp [edist_slabMk])
 
 private theorem holderWith_comp_slabTime (f : HolderSpace (α / 2) (Icc a b) Y) :
     HolderWith (nnHolderNorm (α / 2) (f : Icc a b → Y)) α
@@ -517,7 +500,7 @@ its norm. -/
     ‖compSlabTimeL (E := E) f‖ = ‖f‖ := by
   obtain ⟨x⟩ := ‹Nonempty E›
   exact le_antisymm ((compSlabTimeL.le_of_opNorm_le norm_compSlabTimeL_le_one f).trans_eq
-    (one_mul _)) (le_norm_of_section f _ (slabMk x) (fun _ ↦ by simp)
+    (one_mul _)) (norm_le_norm_of_apply_comp (ι := slabMk x) (fun _ ↦ by simp)
       fun t s ↦ (edist_slabMk_same_space_rpow x t s α).le)
 
 /-- Lift an `(α / 2)`-Hölder map `f : ℝ → Y` on `[a, b]` (`0 < α`) to a spatially constant bounded

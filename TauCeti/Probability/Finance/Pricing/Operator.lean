@@ -11,6 +11,7 @@ public import TauCeti.Probability.Finance.WeightedLogSpot
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Probability.Finance.LogSpot
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeLine
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The weighted log-spot pricing operator on parabolic Hölder spaces
@@ -35,18 +36,11 @@ The construction and conjugation identity use
 `log (1 + exp y)`. The zeroth-order coefficient simplifies to an expression independent
 of `a`. Identification with the spot pricing equation uses `TauCeti.Finance.pde_comp_exp`.
 
-## Norm bounds, Lipschitz dependence, and spot-PDE identities
+## Norm bounds and spot-PDE identities
 
 For `α ≤ 1`, the coefficients satisfy `‖A_w‖ ≤ ‖a‖`, `‖B_w‖ ≤ 5 ‖a‖ + ‖r‖`, and `‖C_w‖ ≤ 3 ‖r‖`
-(`norm_weightedLogSpot{Second,First,Zeroth}OrderCoeff_le`) and are linear in differences
-(`weightedLogSpot{Second,First,Zeroth}OrderCoeff_sub`). These feed the uniform Schauder and
-resolvent-Lipschitz estimates on `weightedLogSpotTerminalDataCLE` in
-`TauCeti/Probability/Finance/Pricing/Existence.lean`, and also yield the standalone forward
-operator-norm bounds `‖weightedLogSpotPricingOperatorL hα a r‖ ≤ 1 + 121 ‖a‖ + 96 ‖r‖`
-(`norm_weightedLogSpotPricingOperatorL_le`) and
-`‖weightedLogSpotPricingOperatorL hα a r - weightedLogSpotPricingOperatorL hα a' r'‖ ≤`
-`121 ‖a - a'‖ + 96 ‖r - r'‖` (`norm_weightedLogSpotPricingOperatorL_sub_le`). The three spot-PDE
-identities `pde_weightedLogSpotPrice_{,Ici_,Ioo_}eq_mul_weightedLogSpotPricingOperatorL` transfer
+(`norm_weightedLogSpot{Second,First,Zeroth}OrderCoeff_le`). The three spot-PDE identities
+`pde_weightedLogSpotPrice_{,Ici_,Ioo_}eq_mul_weightedLogSpotPricingOperatorL` transfer
 `weightedLogSpotPricingOperatorL` to `weightedLogSpotPrice u` (within `[t₀, t₁]`, within
 `[t₀, ∞)` on `[t₀, t₁)`, and ordinary `deriv` on `(t₀, t₁)`), feeding
 `existsUnique_pde_weightedLogSpotPrice_eq_zero` and the spot-PDE theorems in
@@ -143,6 +137,12 @@ theorem weightedLogSpotSecondOrderCoeff_def : weightedLogSpotSecondOrderCoeff a 
     (H : ℝ →L[ℝ] ℝ →L[ℝ] ℝ) : weightedLogSpotSecondOrderCoeff a p H = a p * H 1 1 := by
   simp [weightedLogSpotSecondOrderCoeff]
 
+/-- Evaluating `weightedLogSpotSecondOrderCoeff a p` on `ContinuousLinearMap.mul ℝ ℝ` recovers the
+scalar variance rate `a p`. -/
+theorem weightedLogSpotSecondOrderCoeff_apply_mul (p : slab (E := ℝ) t₀ t₁) :
+    weightedLogSpotSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ) = a p := by
+  simp
+
 @[simp]
 theorem weightedLogSpotFirstOrderCoeff_apply (p : slab (E := ℝ) t₀ t₁)
     (D : ℝ →L[ℝ] ℝ) :
@@ -158,24 +158,6 @@ theorem weightedLogSpotZerothOrderCoeff_apply (p : slab (E := ℝ) t₀ t₁) (v
       -(r p * (1 - sigmoid (p : ParabolicSpaceTime ℝ).space)) * v := by
   simp [weightedLogSpotZerothOrderCoeff]
   ring
-
-/-- `weightedLogSpotSecondOrderCoeff` preserves differences. -/
-theorem weightedLogSpotSecondOrderCoeff_sub (a' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    weightedLogSpotSecondOrderCoeff (a - a') =
-      weightedLogSpotSecondOrderCoeff a - weightedLogSpotSecondOrderCoeff a' := by
-  ext p H; simp; ring
-
-/-- `weightedLogSpotFirstOrderCoeff` preserves differences. -/
-theorem weightedLogSpotFirstOrderCoeff_sub (a' r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    weightedLogSpotFirstOrderCoeff hα (a - a') (r - r') =
-      weightedLogSpotFirstOrderCoeff hα a r - weightedLogSpotFirstOrderCoeff hα a' r' := by
-  ext p D; simp; ring
-
-/-- `weightedLogSpotZerothOrderCoeff` preserves differences. -/
-theorem weightedLogSpotZerothOrderCoeff_sub (r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    weightedLogSpotZerothOrderCoeff hα (r - r') =
-      weightedLogSpotZerothOrderCoeff hα r - weightedLogSpotZerothOrderCoeff hα r' :=
-  HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp; ring
 
 /-- The backward pricing operator after division by `1 + exp y`, as a bounded linear
 map from bounded order-two parabolic Hölder functions to parabolic Hölder functions. -/
@@ -244,36 +226,6 @@ theorem norm_weightedLogSpotZerothOrderCoeff_le :
   rw [norm_neg]
   exact (mul_le_mul (mul_le_of_le_one_left (norm_nonneg r) opNorm_lsmul_le) hsub
     (norm_nonneg _) (norm_nonneg r)).trans_eq (mul_comm _ _)
-
-/-- **Operator-norm bound for `weightedLogSpotPricingOperatorL`.** For `α ≤ 1` and parabolic Hölder
-coefficients `a, r`, `‖weightedLogSpotPricingOperatorL hα a r‖ ≤ 1 + 121 ‖a‖ + 96 ‖r‖`. -/
-theorem norm_weightedLogSpotPricingOperatorL_le :
-    ‖weightedLogSpotPricingOperatorL (ht := ht) hα a r‖ ≤ 1 + 121 * ‖a‖ + 96 * ‖r‖ := by
-  rw [weightedLogSpotPricingOperatorL_def, ← weightedLogSpotSecondOrderCoeff_def]
-  linarith [norm_weightedLogSpotSecondOrderCoeff_le a,
-    norm_weightedLogSpotFirstOrderCoeff_le hα a r, norm_weightedLogSpotZerothOrderCoeff_le hα r,
-    norm_backwardParabolicOperatorL_le (ht := ht) hα (A := weightedLogSpotSecondOrderCoeff a)
-      (B := weightedLogSpotFirstOrderCoeff hα a r) (C := weightedLogSpotZerothOrderCoeff hα r)]
-
-/-- **Lipschitz dependence of `weightedLogSpotPricingOperatorL` on `(a, r)`.** For `α ≤ 1` and
-parabolic Hölder coefficients `a, a', r, r'`,
-`‖weightedLogSpotPricingOperatorL hα a r - weightedLogSpotPricingOperatorL hα a' r'‖ ≤`
-`121 ‖a - a'‖ + 96 ‖r - r'‖`. -/
-theorem norm_weightedLogSpotPricingOperatorL_sub_le
-    {a' r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ} :
-    ‖weightedLogSpotPricingOperatorL (ht := ht) hα a r -
-        weightedLogSpotPricingOperatorL (ht := ht) hα a' r'‖ ≤ 121 * ‖a - a'‖ + 96 * ‖r - r'‖ := by
-  have hP := norm_backwardParabolicOperatorL_sub_le (ht := ht) hα
-    (A := weightedLogSpotSecondOrderCoeff a) (A' := weightedLogSpotSecondOrderCoeff a')
-    (B := weightedLogSpotFirstOrderCoeff hα a r) (B' := weightedLogSpotFirstOrderCoeff hα a' r')
-    (C := weightedLogSpotZerothOrderCoeff hα r) (C' := weightedLogSpotZerothOrderCoeff hα r')
-  rw [← weightedLogSpotSecondOrderCoeff_sub, ← weightedLogSpotFirstOrderCoeff_sub,
-    ← weightedLogSpotZerothOrderCoeff_sub] at hP
-  rw [weightedLogSpotPricingOperatorL_def, weightedLogSpotPricingOperatorL_def,
-    ← weightedLogSpotSecondOrderCoeff_def a, ← weightedLogSpotSecondOrderCoeff_def a']
-  linarith [hP, norm_weightedLogSpotSecondOrderCoeff_le (a - a'),
-    norm_weightedLogSpotFirstOrderCoeff_le hα (a - a') (r - r'),
-    norm_weightedLogSpotZerothOrderCoeff_le hα (r - r')]
 
 /-- The bounded weighted operator is the classical backward log-spot pricing operator
 on `(1 + exp y) v`, divided by the weight. Within time derivatives include the endpoints. -/
@@ -545,9 +497,9 @@ theorem pde_weightedLogSpotPrice_Ici_eq_mul_weightedLogSpotPricingOperatorL
           (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
       (1 + s) * weightedLogSpotPricingOperatorL hα a r u
         (slabMk (log s) ⟨t, Ico_subset_Icc_self ht'⟩) := by
-  rw [derivWithin_Ici_weightedLogSpotPrice_time u s ht',
-    ← derivWithin_weightedLogSpotPrice_time u s ⟨t, Ico_subset_Icc_self ht'⟩]
-  exact pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL hα u hs _
+  rw [← derivWithin_congr_set (Icc_eventuallyEq_Ici ht'.2)]
+  exact pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL hα u hs
+    ⟨t, Ico_subset_Icc_self ht'⟩
 
 /-- Open-horizon (`t ∈ (t₀, t₁)`) version of
 `pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL`, with ordinary derivative. -/
@@ -560,9 +512,10 @@ theorem pde_weightedLogSpotPrice_Ioo_eq_mul_weightedLogSpotPricingOperatorL
           (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
       (1 + s) * weightedLogSpotPricingOperatorL hα a r u
         (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) := by
-  rw [deriv_weightedLogSpotPrice_time u s ht',
-    ← derivWithin_weightedLogSpotPrice_time u s ⟨t, Ioo_subset_Icc_self ht'⟩]
-  exact pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL hα u hs _
+  rw [← (differentiableAt_weightedLogSpotPrice_time u s ht').derivWithin
+    (uniqueDiffOn_Icc ht t (Ioo_subset_Icc_self ht'))]
+  exact pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL hα u hs
+    ⟨t, Ioo_subset_Icc_self ht'⟩
 
 end TerminalValue
 

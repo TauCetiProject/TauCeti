@@ -45,6 +45,8 @@ parallel notion of Hölder continuity.
   norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
 * `TauCeti.HolderSpace.norm_le_mul_norm_of_apply_eq`: an element whose values are those of `g`
   followed by a continuous linear map `L` has norm at most `‖L‖ * ‖g‖`.
+* `TauCeti.HolderSpace.norm_le_norm_of_apply_comp`: an element whose values are those of `F` along
+  a map `ι` with `edist (ι x) (ι y) ^ β ≤ edist x y ^ α` has norm at most `‖F‖`.
 * `TauCeti.HolderSpace.ofHolderOnWith`: promotes a `HolderOnWith` map (`0 < α`) on a compact set
   to `HolderSpace`.
 
@@ -708,6 +710,19 @@ theorem norm_le_mul_norm_of_apply_eq (L : Y →L[ℝ] Y') {f : HolderSpace α X 
   exact (compLeftL L).le_of_opNorm_le (norm_compLeftL_le L) g
 
 end compLeft
+
+/-- If the values of `f` are those of `F` along a map `ι : X → Z` satisfying
+`edist (ι x) (ι y) ^ β ≤ edist x y ^ α`, then `‖f‖ ≤ ‖F‖`. -/
+theorem norm_le_norm_of_apply_comp {β : ℝ≥0} {Z : Type*} [MetricSpace Z]
+    {f : HolderSpace α X Y} {F : HolderSpace β Z Y} {ι : X → Z} (h : ∀ x, f x = F (ι x))
+    (hedist : ∀ x y, edist (ι x) (ι y) ^ (β : ℝ) ≤ edist x y ^ (α : ℝ)) :
+    ‖f‖ ≤ ‖F‖ := by
+  rw [norm_def F, coe_toBoundedContinuousFunction]
+  refine norm_le_of_norm_le_of_holderWith (norm_nonneg _) (fun x ↦ ?_) fun x y ↦ ?_
+  · simpa only [h, toBoundedContinuousFunction_apply] using
+      F.toBoundedContinuousFunction.norm_coe_le_norm (ι x)
+  · have hed := hedist x y
+    simpa only [h] using (F.holderWith (ι x) (ι y)).trans (by gcongr)
 
 section ofHolderOnWith
 

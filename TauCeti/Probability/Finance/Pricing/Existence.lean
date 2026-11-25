@@ -46,18 +46,16 @@ to the conjugated coefficients of the weighted operator. Only the lower bound on
 hypothesis: the conjugated first- and zeroth-order coefficients are bounded Hölder fields by
 construction, whatever the sign of `r`.
 
-## Terminal-data isomorphism, bounds, and classical solvability
+## Terminal-data isomorphism, solution operator, and classical solvability
 
 This file packages `v ↦ (P v, v(·, t₁))` as a Banach-space isomorphism
-(`weightedLogSpotTerminalDataCLE`) with uniform Schauder and resolvent-Lipschitz bounds
-(`exists_norm_weightedLogSpotTerminalDataCLE_symm_le`, `_sub_le`) via `realTerminalDataCLE` and
-the coefficient bounds in `Pricing/Operator.lean`. At zero forcing this yields
-`weightedLogSpotTerminalSolutionL`, its uniform/Lipschitz bounds, discounted sup bound, spot-PDE
-identity (`pde_weightedLogSpotPrice_weightedLogSpotTerminalSolutionL`), and discounted linear-growth
-bound. Finally, `halfSqVolatility`, `HolderSpace.ofHolderSpaceTime`, and `HolderSpace.ofHolderTime`
-lift log-spot `α`-Hölder / time `(α / 2)`-Hölder coefficients to `C_b^{α,α/2}`, giving
-`exists_weightedLogSpotPrice_terminal_and_pde` (in all three time-derivative conventions) and
-`eq_weightedLogSpotPrice_of_pde_of_terminal`.
+(`weightedLogSpotTerminalDataCLE`) via `realTerminalDataCLE`. At zero forcing this yields the
+homogeneous terminal solution operator `weightedLogSpotTerminalSolutionL`, its discounted supremum
+bound (`abs_weightedLogSpotTerminalSolutionL_le_exp_mul`), its spot-PDE identities in all three
+time-derivative conventions, and its discounted linear-growth bound. Finally, `halfSqVolatility`,
+`HolderSpace.ofHolderSpaceTime`, and `HolderSpace.ofHolderTime` lift log-spot `α`-Hölder / time
+`(α / 2)`-Hölder coefficients to `C_b^{α,α/2}`, giving
+`exists_weightedLogSpotPrice_terminal_and_pde` and `eq_weightedLogSpotPrice_of_pde_of_terminal`.
 
 ## References
 
@@ -80,7 +78,7 @@ open scoped NNReal
 
 variable {α : ℝ≥0} {t₀ t₁ : ℝ} {ht : t₀ < t₁}
 
-/-! ### Terminal-data Banach isomorphism and uniform Schauder bounds -/
+/-! ### Terminal-data Banach isomorphism -/
 
 section TerminalDataCLE
 
@@ -95,7 +93,8 @@ def weightedLogSpotTerminalDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t�
       HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ :=
   realTerminalDataCLE hα₀ hα₁ ht (weightedLogSpotSecondOrderCoeff a)
     (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotZerothOrderCoeff hα₁.le r)
-    (ha.elim fun lam h ↦ ⟨lam, h.1, fun p ↦ by simpa using h.2 p⟩)
+    (ha.elim fun lam h ↦
+      ⟨lam, h.1, fun p ↦ (weightedLogSpotSecondOrderCoeff_apply_mul a p).symm ▸ h.2 p⟩)
 
 section TerminalDataEval
 
@@ -128,15 +127,6 @@ variable {hα₀ : 0 < α} {hα₁ : α < 1} {a r : HolderSpace α (slab (E := �
     (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).symm d
       (slabMk x ⟨t₁, right_mem_Icc.2 ht.le⟩) = d.2 x := by
   rw [← spatialTrace_apply, spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply]
-
-private theorem weightedLogSpotTerminalDataCLE_symm_eq
-    {ha' : ∃ lam : ℝ, 0 < lam ∧
-      ∀ p, lam ≤ weightedLogSpotSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ)} :
-    (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).symm.toContinuousLinearMap =
-      (realTerminalDataCLE hα₀ hα₁ ht (weightedLogSpotSecondOrderCoeff a)
-        (weightedLogSpotFirstOrderCoeff hα₁.le a r)
-        (weightedLogSpotZerothOrderCoeff hα₁.le r) ha').symm.toContinuousLinearMap :=
-  rfl
 
 end TerminalDataEval
 
@@ -195,73 +185,11 @@ theorem existsUnique_pde_weightedLogSpotPrice_eq_zero (hα₀ : 0 < α) (hα₁ 
     rw [spatialTrace_apply, hg, ← hy, mul_div_cancel_left₀ _ (by positivity)]
   · exact weightedLogSpotPrice_terminal v (fun y ↦ by rw [← spatialTrace_apply, hv, hg]) hs
 
-section UniformBounds
+/-! ### The homogeneous terminal-value solution operator -/
+
+section TerminalSolution
 
 open ContinuousLinearMap
-
-private theorem weightedCoeff_norm_le {hα₁ : α < 1} {K : ℝ≥0}
-    {a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ} (haK : ‖a‖ ≤ K) (hrK : ‖r‖ ≤ K) :
-    ‖weightedLogSpotSecondOrderCoeff a‖ ≤ (6 * K : ℝ≥0) ∧
-      ‖weightedLogSpotFirstOrderCoeff hα₁.le a r‖ ≤ (6 * K : ℝ≥0) ∧
-      ‖weightedLogSpotZerothOrderCoeff hα₁.le r‖ ≤ (6 * K : ℝ≥0) := by
-  push_cast; have hK : (0 : ℝ) ≤ K := K.coe_nonneg
-  exact ⟨(norm_weightedLogSpotSecondOrderCoeff_le a).trans (by linarith),
-    (norm_weightedLogSpotFirstOrderCoeff_le hα₁.le a r).trans (by linarith),
-    (norm_weightedLogSpotZerothOrderCoeff_le hα₁.le r).trans (by linarith)⟩
-
-/-- **Uniform Schauder bound for the weighted log-spot terminal-value problem.** For `0 < α < 1`,
-`λ > 0`, a coefficient norm bound `K`, and a horizon bound `T₀`, the inverse terminal-data
-operators on `ℝ × [t₀, t₁]` (`t₁ - t₀ ≤ T₀`) are bounded uniformly over `λ ≤ a`, `‖a‖, ‖r‖ ≤ K`. -/
-theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_le (hα₀ : 0 < α) (hα₁ : α < 1)
-    {lam : ℝ} (hlam : 0 < lam) (K T₀ : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {t₀ t₁ : ℝ} (ht : t₀ < t₁), t₁ - t₀ ≤ T₀ →
-      ∀ (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) (ha : ∀ p, lam ≤ a p),
-        ‖a‖ ≤ K → ‖r‖ ≤ K →
-        ‖(weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap‖
-          ≤ C := by
-  obtain ⟨C, hC, hest⟩ := exists_norm_realTerminalDataCLE_symm_le hα₀ hα₁ hlam (6 * K) T₀
-  refine ⟨C, hC, fun {t₀ t₁} ht hT₀ a r ha haK hrK ↦ ?_⟩
-  obtain ⟨hA, hB, hC'⟩ := weightedCoeff_norm_le (hα₁ := hα₁) haK hrK
-  have ha₀ : ∀ p, lam ≤ weightedLogSpotSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ) :=
-    fun p ↦ by simpa using ha p
-  rw [weightedLogSpotTerminalDataCLE_symm_eq (ha' := ⟨lam, hlam, ha₀⟩)]
-  exact hest ht hT₀ _ _ _ ha₀ hA hB hC'
-
-/-- **Lipschitz dependence of the weighted terminal-data inverse on `(a, r)`.** Under the uniform
-ellipticity, norm, and horizon bounds of `exists_norm_weightedLogSpotTerminalDataCLE_symm_le`, the
-solution operators for `(a, r)` and `(a', r')` differ by at most `C (‖a - a'‖ + ‖r - r'‖)`. -/
-theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : α < 1)
-    {lam : ℝ} (hlam : 0 < lam) (K T₀ : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {t₀ t₁ : ℝ} (ht : t₀ < t₁), t₁ - t₀ ≤ T₀ →
-      ∀ (a a' r r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)
-        (ha : ∀ p, lam ≤ a p) (ha' : ∀ p, lam ≤ a' p),
-        ‖a‖ ≤ K → ‖r‖ ≤ K → ‖a'‖ ≤ K → ‖r'‖ ≤ K →
-        ‖(weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap
-          - (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a' r'
-              ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap‖ ≤ C * (‖a - a'‖ + ‖r - r'‖) := by
-  obtain ⟨C, hC, hest⟩ := exists_norm_realTerminalDataCLE_symm_sub_le hα₀ hα₁ hlam (6 * K) T₀
-  refine ⟨6 * C, by positivity, fun {t₀ t₁} ht hT₀ a a' r r' ha ha' haK hrK haK' hrK' ↦ ?_⟩
-  obtain ⟨hA₁, hB₁, hC₁⟩ := weightedCoeff_norm_le (hα₁ := hα₁) haK hrK
-  obtain ⟨hA₂, hB₂, hC₂⟩ := weightedCoeff_norm_le (hα₁ := hα₁) haK' hrK'
-  have ha₀ : ∀ p, lam ≤ weightedLogSpotSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ) :=
-    fun p ↦ by simpa using ha p
-  have ha₀' : ∀ p, lam ≤ weightedLogSpotSecondOrderCoeff a' p (ContinuousLinearMap.mul ℝ ℝ) :=
-    fun p ↦ by simpa using ha' p
-  have h0 := hest ht hT₀ (weightedLogSpotSecondOrderCoeff a) (weightedLogSpotSecondOrderCoeff a')
-    (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotFirstOrderCoeff hα₁.le a' r')
-    (weightedLogSpotZerothOrderCoeff hα₁.le r) (weightedLogSpotZerothOrderCoeff hα₁.le r')
-    ha₀ ha₀' hA₁ hB₁ hC₁ hA₂ hB₂ hC₂
-  rw [← weightedLogSpotSecondOrderCoeff_sub, ← weightedLogSpotFirstOrderCoeff_sub,
-    ← weightedLogSpotZerothOrderCoeff_sub] at h0
-  refine (congrArg norm ?_).trans_le (h0.trans ?_)
-  · rw [weightedLogSpotTerminalDataCLE_symm_eq (ha' := ⟨lam, hlam, ha₀⟩),
-      weightedLogSpotTerminalDataCLE_symm_eq (ha' := ⟨lam, hlam, ha₀'⟩)]
-  · nlinarith [norm_weightedLogSpotSecondOrderCoeff_le (a - a'),
-      norm_weightedLogSpotFirstOrderCoeff_le hα₁.le (a - a') (r - r'),
-      norm_weightedLogSpotZerothOrderCoeff_le hα₁.le (r - r'),
-      norm_nonneg (a - a'), norm_nonneg (r - r')]
-
-/-! ### The homogeneous terminal-value solution operator -/
 
 /-- **The homogeneous terminal solution operator.** Sends `g ∈ C_b^{2,α}(ℝ)` to the unique
 `u ∈ C_b^{2+α,1+α/2}(ℝ × [t₀, t₁])` solving `P u = 0` with `u(·, t₁) = g`. -/
@@ -301,36 +229,6 @@ theorem weightedLogSpotTerminalSolutionL_apply (g : CkHolderSpace 2 α ℝ ℝ) 
 
 end TerminalSolutionEval
 
-/-- Uniform operator-norm bound on `weightedLogSpotTerminalSolutionL`. -/
-theorem exists_norm_weightedLogSpotTerminalSolutionL_le (hα₀ : 0 < α) (hα₁ : α < 1)
-    {lam : ℝ} (hlam : 0 < lam) (K T₀ : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {t₀ t₁ : ℝ} (ht : t₀ < t₁), t₁ - t₀ ≤ T₀ →
-      ∀ (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) (ha : ∀ p, lam ≤ a p),
-        ‖a‖ ≤ K → ‖r‖ ≤ K →
-        ‖weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ⟨lam, hlam, ha⟩‖ ≤ C := by
-  obtain ⟨C, hC, hest⟩ := exists_norm_weightedLogSpotTerminalDataCLE_symm_le hα₀ hα₁ hlam K T₀
-  refine ⟨C, hC, fun ht hT₀ a r ha haK hrK ↦ opNorm_le_bound _ hC fun g ↦ ?_⟩
-  rw [weightedLogSpotTerminalSolutionL_apply]
-  simpa [Prod.norm_def] using
-    ContinuousLinearMap.le_of_opNorm_le _ (hest ht hT₀ a r ha haK hrK) (0, g)
-
-/-- Lipschitz dependence of `weightedLogSpotTerminalSolutionL` on `(a, r)` in operator norm. -/
-theorem exists_norm_weightedLogSpotTerminalSolutionL_sub_le (hα₀ : 0 < α) (hα₁ : α < 1)
-    {lam : ℝ} (hlam : 0 < lam) (K T₀ : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {t₀ t₁ : ℝ} (ht : t₀ < t₁), t₁ - t₀ ≤ T₀ →
-      ∀ (a a' r r' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)
-        (ha : ∀ p, lam ≤ a p) (ha' : ∀ p, lam ≤ a' p),
-        ‖a‖ ≤ K → ‖r‖ ≤ K → ‖a'‖ ≤ K → ‖r'‖ ≤ K →
-        ‖weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ⟨lam, hlam, ha⟩ -
-            weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a' r' ⟨lam, hlam, ha'⟩‖ ≤
-          C * (‖a - a'‖ + ‖r - r'‖) := by
-  obtain ⟨C, hC, hest⟩ := exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le hα₀ hα₁ hlam K T₀
-  refine ⟨C, hC, fun ht hT₀ a a' r r' ha ha' haK hrK haK' hrK' ↦
-    opNorm_le_bound _ (mul_nonneg hC (by positivity)) fun g ↦ ?_⟩
-  simpa [_root_.sub_apply, weightedLogSpotTerminalSolutionL_apply, Prod.norm_def,
-    max_eq_right (norm_nonneg g)] using ContinuousLinearMap.le_of_opNorm_le _
-      (hest ht hT₀ a a' r r' ha ha' haK hrK haK' hrK') (0, g)
-
 /-- **Discounted supremum bound for the terminal solution.** When `r ≥ -γ` with `0 ≤ γ` and
 `|g y| ≤ M` on `ℝ`, the solution satisfies `|u p| ≤ exp (γ (t₁ - t)) M` on the whole slab. -/
 theorem abs_weightedLogSpotTerminalSolutionL_le_exp_mul {hα₀ : 0 < α} {hα₁ : α < 1}
@@ -344,7 +242,7 @@ theorem abs_weightedLogSpotTerminalSolutionL_le_exp_mul {hα₀ : 0 < α} {hα�
     (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ⟨lam, hlam, hle⟩ g)
     (fun q ↦ by simp) (fun y ↦ by simpa using hg y) p
 
-end UniformBounds
+end TerminalSolution
 
 /-! ### Financial coefficient adapters -/
 
@@ -370,15 +268,6 @@ theorem norm_halfSqVolatility_le (σ : HolderSpace α X ℝ) : ‖halfSqVolatili
   rw [halfSqVolatility_def, norm_smul, Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ 1 / 2), sq]
   linarith [norm_mul_le σ σ]
 
-theorem norm_halfSqVolatility_sub_le (σ σ' : HolderSpace α X ℝ) :
-    ‖halfSqVolatility σ - halfSqVolatility σ'‖ ≤ (‖σ‖ + ‖σ'‖) / 2 * ‖σ - σ'‖ := by
-  have hdiff : halfSqVolatility σ - halfSqVolatility σ' =
-      (1 / 2 : ℝ) • ((σ + σ') * (σ - σ')) := by
-    ext x; simp [halfSqVolatility_def]; ring
-  rw [hdiff, norm_smul, Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ 1 / 2)]
-  linarith [(norm_mul_le (σ + σ') (σ - σ')).trans
-    (mul_le_mul_of_nonneg_right (norm_add_le σ σ') (norm_nonneg _))]
-
 theorem div_le_halfSqVolatility_of_le_sq {σ : HolderSpace α X ℝ} {δ : ℝ} (hδ : ∀ x, δ ≤ σ x ^ 2)
     (x : X) : δ / 2 ≤ halfSqVolatility σ x := by rw [halfSqVolatility_apply]; linarith [hδ x]
 end HalfSq
@@ -401,8 +290,44 @@ theorem pde_weightedLogSpotPrice_weightedLogSpotTerminalSolutionL (g : CkHolderS
           (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ha g) x t) s -
           weightedLogSpotPrice (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ha g) s t) = 0 := by
   rw [pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL hα₁.le _ hs t,
-    weightedLogSpotPricingOperatorL_weightedLogSpotTerminalSolutionL, HolderSpace.zero_apply]
-  exact mul_zero _
+    weightedLogSpotPricingOperatorL_weightedLogSpotTerminalSolutionL, HolderSpace.zero_apply,
+    mul_zero]
+
+/-- Pre-maturity (`t ∈ [t₀, t₁)`) version of
+`pde_weightedLogSpotPrice_weightedLogSpotTerminalSolutionL`, with time derivative within
+`[t₀, ∞)`. -/
+theorem pde_weightedLogSpotPrice_Ici_weightedLogSpotTerminalSolutionL (g : CkHolderSpace 2 α ℝ ℝ)
+    {s t : ℝ} (hs : 0 < s) (ht' : t ∈ Ico t₀ t₁) :
+    derivWithin (weightedLogSpotPrice (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ha g) s)
+          (Ici t₀) t +
+        a (slabMk (log s) ⟨t, Ico_subset_Icc_self ht'⟩) * s ^ 2 *
+          deriv (deriv fun x ↦ weightedLogSpotPrice
+            (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ha g) x t) s +
+        r (slabMk (log s) ⟨t, Ico_subset_Icc_self ht'⟩) *
+          (s * deriv (fun x ↦ weightedLogSpotPrice
+            (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ha g) x t) s -
+            weightedLogSpotPrice (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ha g) s t) =
+      0 := by
+  rw [pde_weightedLogSpotPrice_Ici_eq_mul_weightedLogSpotPricingOperatorL hα₁.le _ hs ht',
+    weightedLogSpotPricingOperatorL_weightedLogSpotTerminalSolutionL, HolderSpace.zero_apply,
+    mul_zero]
+
+/-- Open-horizon (`t ∈ (t₀, t₁)`) version of
+`pde_weightedLogSpotPrice_weightedLogSpotTerminalSolutionL`, with ordinary time derivative. -/
+theorem pde_weightedLogSpotPrice_Ioo_weightedLogSpotTerminalSolutionL (g : CkHolderSpace 2 α ℝ ℝ)
+    {s t : ℝ} (hs : 0 < s) (ht' : t ∈ Ioo t₀ t₁) :
+    deriv (weightedLogSpotPrice (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ha g) s) t +
+        a (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) * s ^ 2 *
+          deriv (deriv fun x ↦ weightedLogSpotPrice
+            (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ha g) x t) s +
+        r (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) *
+          (s * deriv (fun x ↦ weightedLogSpotPrice
+            (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ha g) x t) s -
+            weightedLogSpotPrice (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ha g) s t) =
+      0 := by
+  rw [pde_weightedLogSpotPrice_Ioo_eq_mul_weightedLogSpotPricingOperatorL hα₁.le _ hs ht',
+    weightedLogSpotPricingOperatorL_weightedLogSpotTerminalSolutionL, HolderSpace.zero_apply,
+    mul_zero]
 
 /-- Discounted linear-growth bound on `weightedLogSpotPrice (weightedLogSpotTerminalSolutionL ...)`
 when `r ≥ -γ` with `0 ≤ γ` and `|g y| ≤ M`. -/
@@ -455,32 +380,26 @@ theorem exists_weightedLogSpotPrice_terminal_and_pde (hα₀ : 0 < α) (hα₁ :
   have ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p, lam ≤ a p :=
     ⟨δ / 2, half_pos hδ, div_le_halfSqVolatility_of_le_sq fun p ↦ by
       simpa [σH] using (hσ_bounds _ (exp_pos _) _ (slabTime p).property).1⟩
-  let u := weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a rH ha g
-  have hpde_Icc {s : ℝ} (hs : 0 < s) {t : ℝ} (ht' : t ∈ Icc t₀ t₁) :
-      derivWithin (weightedLogSpotPrice u s) (Icc t₀ t₁) t +
-          σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
-          r t * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
-            weightedLogSpotPrice u s t) = 0 := by
-    have h := pde_weightedLogSpotPrice_weightedLogSpotTerminalSolutionL
-      (ht := ht) (hα₀ := hα₀) (hα₁ := hα₁) (a := a) (r := rH) (ha := ha) g hs ⟨t, ht'⟩
-    have ha_eval : a (slabMk (log s) ⟨t, ht'⟩) * s ^ 2 = σ s t ^ 2 * s ^ 2 / 2 := by
-      simp only [a, σH, halfSqVolatility_apply, HolderSpace.ofHolderSpaceTime_apply,
-        space_slabMk, slabTime_slabMk, exp_log hs, div_mul_eq_mul_div]
-    have hr_eval : rH (slabMk (log s) ⟨t, ht'⟩) = r t := by
-      simp only [rH, HolderSpace.ofHolderTime_apply, slabTime_slabMk]
-    rwa [ha_eval, hr_eval] at h
-  refine ⟨u, weightedLogSpotTerminalSolutionL_slabMk_right g,
+  have ha_eval {s t : ℝ} (hs : 0 < s) (ht' : t ∈ Icc t₀ t₁) :
+      a (slabMk (log s) ⟨t, ht'⟩) * s ^ 2 = σ s t ^ 2 * s ^ 2 / 2 := by
+    simp only [a, σH, halfSqVolatility_apply, HolderSpace.ofHolderSpaceTime_apply,
+      space_slabMk, slabTime_slabMk, exp_log hs, div_mul_eq_mul_div]
+  have hr_eval {s t : ℝ} (ht' : t ∈ Icc t₀ t₁) : rH (slabMk (log s) ⟨t, ht'⟩) = r t := by
+    simp only [rH, HolderSpace.ofHolderTime_apply, slabTime_slabMk]
+  refine ⟨weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a rH ha g,
+    weightedLogSpotTerminalSolutionL_slabMk_right g,
     fun s hs ↦ weightedLogSpotPrice_terminal _
       (fun y ↦ by rw [weightedLogSpotTerminalSolutionL_slabMk_right, hg]) hs,
-    fun _ hs _ ht' ↦ hpde_Icc hs ht',
-    fun s hs t ht' ↦ by
-      rw [derivWithin_Ici_weightedLogSpotPrice_time u s ht',
-        ← derivWithin_weightedLogSpotPrice_time u s ⟨t, Ico_subset_Icc_self ht'⟩]
-      exact hpde_Icc hs (Ico_subset_Icc_self ht'),
-    fun s hs t ht' ↦ by
-      rw [deriv_weightedLogSpotPrice_time u s ht',
-        ← derivWithin_weightedLogSpotPrice_time u s ⟨t, Ioo_subset_Icc_self ht'⟩]
-      exact hpde_Icc hs (Ioo_subset_Icc_self ht')⟩
+    fun s hs t ht' ↦ ?_, fun s hs t ht' ↦ ?_, fun s hs t ht' ↦ ?_⟩
+  · have h := pde_weightedLogSpotPrice_weightedLogSpotTerminalSolutionL
+      (ht := ht) (hα₀ := hα₀) (hα₁ := hα₁) (a := a) (r := rH) (ha := ha) g hs ⟨t, ht'⟩
+    rwa [ha_eval hs ht', hr_eval ht'] at h
+  · have h := pde_weightedLogSpotPrice_Ici_weightedLogSpotTerminalSolutionL
+      (ht := ht) (hα₀ := hα₀) (hα₁ := hα₁) (a := a) (r := rH) (ha := ha) g hs ht'
+    rwa [ha_eval hs (Ico_subset_Icc_self ht'), hr_eval (Ico_subset_Icc_self ht')] at h
+  · have h := pde_weightedLogSpotPrice_Ioo_weightedLogSpotTerminalSolutionL
+      (ht := ht) (hα₀ := hα₀) (hα₁ := hα₁) (a := a) (r := rH) (ha := ha) g hs ht'
+    rwa [ha_eval hs (Ioo_subset_Icc_self ht'), hr_eval (Ioo_subset_Icc_self ht')] at h
 
 /-- **Uniqueness of the reconstructed spot price in the classical linear-growth class.** On
 `[t₀, t₁]` (`t₀ < t₁`), for bounded `σ² ≤ Λ` and `|r| ≤ R` on `(t₀, t₁)`, any classical function
