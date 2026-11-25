@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair
+public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace
 public import TauCeti.Analysis.InnerProductSpace.Variational.EnergySpace
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
-import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Variational.QuadraticEnergy
 
 /-!
@@ -17,9 +17,9 @@ import TauCeti.Analysis.Variational.QuadraticEnergy
 Let `P` be a compact form pair (`TauCeti.CompactFormPair 𝕜 V H`): a compact injective map
 `j : V → H` of dense range and a bounded Hermitian form `a` on `V` with energy `q(u) = re a(u, u)`
 and a shifted coercivity bound `c ‖u‖² ≤ q(u) + ω ‖j u‖²`. Its **form kernel**
-`N = {u | ∀ v, a(u, v) = 0}` (`TauCeti.CompactFormPair.formKernel`) is finite dimensional, since
-the shifted bound gives `c ‖u‖² ≤ ω ‖j u‖²` on `N` and `j` is compact. So `j N` is closed in `H`,
-and `N` is a complement of `{u | j u ⊥ j N}` in `V`.
+`N = {u | ∀ v, a(u, v) = 0}` (`TauCeti.CompactFormPair.formKernel`) is the variational eigenspace
+at `λ = 0` (`TauCeti.CompactFormPair.formEigenspace_zero`), so it is finite dimensional.
+Hence `j N` is closed in `H`, and `N` is a complement of `{u | j u ⊥ j N}` in `V`.
 
 When the energy is nonnegative, `N = {u | q(u) = 0}`. When moreover `V` is complete, the energy
 is coercive on the kernel-orthogonal part: there is `δ > 0` with `δ ‖j u‖² ≤ q(u)` whenever
@@ -31,7 +31,7 @@ are unique modulo `N` (`TauCeti.CompactFormPair.exists_forall_form_apply_eq_iff`
 
 ## Main results
 
-* `TauCeti.CompactFormPair.formKernel`: the form kernel `N`, with
+* `TauCeti.CompactFormPair.formKernel`: the form kernel `N`, with `formEigenspace_zero` and
   `mem_formKernel_iff_energy_eq_zero` for nonnegative energies.
 * `TauCeti.CompactFormPair.finiteDimensional_formKernel`, `isClosed_map_formKernel`: `N` is finite
   dimensional and `j N` is closed.
@@ -97,26 +97,17 @@ theorem mem_formKernel_iff_energy_eq_zero (hq : ∀ w, 0 ≤ P.energy w) :
     (fun w ↦ by simpa only [energy_def] using hq w), mem_formKernel]
   simp only [ContinuousLinearMap.ext_iff, zero_apply]
 
+/-- The form kernel is the variational eigenspace at `λ = 0`. -/
+theorem formEigenspace_zero : P.formEigenspace 0 = P.formKernel := by
+  ext u
+  simp
+
 variable (P)
 
-/-- On the form kernel the shifted coercivity bound reads `c ‖u‖² ≤ ω ‖j u‖²`: the norms of `V`
-and `H` are equivalent there. -/
-theorem exists_mul_norm_sq_le_mul_norm_inclusion_sq :
-    ∃ c > 0, ∃ ω : ℝ, ∀ u ∈ P.formKernel, c * ‖u‖ ^ 2 ≤ ω * ‖P.inclusion u‖ ^ 2 := by
-  obtain ⟨c, hc, ω, h⟩ := P.exists_mul_norm_sq_le_energy_add
-  exact ⟨c, hc, ω, fun u hu ↦ by simpa [energy_eq_zero_of_mem_formKernel hu] using h u⟩
-
-/-- The form kernel is finite dimensional: the inclusion is compact and bounded below on it. -/
-instance finiteDimensional_formKernel : FiniteDimensional 𝕜 P.formKernel := by
-  obtain ⟨c, hc, ω, h⟩ := P.exists_mul_norm_sq_le_mul_norm_inclusion_sq
-  refine IsCompactOperator.finiteDimensional_of_norm_le_mul_norm
-    (K := P.inclusion ∘L P.formKernel.subtypeL) (C := √(max ω 0 / c))
-    (P.isCompactOperator.comp_clm _) fun x ↦ ?_
-  have hle : ‖(x : V)‖ ^ 2 ≤ (√(max ω 0 / c) * ‖P.inclusion x‖) ^ 2 := by
-    rw [mul_pow, Real.sq_sqrt (div_nonneg (le_max_right _ _) hc.le), div_mul_eq_mul_div,
-      le_div_iff₀ hc, mul_comm]
-    exact (h x x.property).trans (by gcongr; exact le_max_left _ _)
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hle
+/-- The form kernel is finite dimensional, as the variational eigenspace at `λ = 0`
+(`TauCeti.CompactFormPair.finiteDimensional_formEigenspace`). -/
+instance finiteDimensional_formKernel : FiniteDimensional 𝕜 P.formKernel :=
+  formEigenspace_zero (P := P) ▸ P.finiteDimensional_formEigenspace 0
 
 instance finiteDimensional_map_formKernel :
     FiniteDimensional 𝕜 (P.formKernel.map (P.inclusion : V →ₗ[𝕜] H)) :=

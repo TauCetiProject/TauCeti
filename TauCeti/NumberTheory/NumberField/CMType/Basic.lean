@@ -43,6 +43,11 @@ complex.
   complex. In particular every CM field has a CM type.
 * `TauCeti.CMType.induced_induced`, `TauCeti.CMType.star_induced`: inducing is transitive and
   commutes with conjugation.
+* `TauCeti.CMType.induced_algebraMap_injective`: inducing along an algebraic extension of fields
+  is injective, since every complex embedding extends (`NumberField.ComplexEmbedding.lift`).
+* `TauCeti.CMType.exists_induced_algebraMap_eq_iff`: the fibre criterion, a CM type on `E` is
+  induced from the subextension `F` exactly when membership depends only on the restriction
+  to `F`.
 
 ## References
 
@@ -212,6 +217,53 @@ theorem induced_induced (Φ₀ : CMType E₀) (f : E₀ →+* E₁) (g : E₁ �
 theorem star_induced (Φ₀ : CMType E₀) (f : E₀ →+* E) :
     star (Φ₀.induced f) = (star Φ₀).induced f := by
   ext; simp
+
+end CMType
+
+/-! ### Inducing along algebraic extensions -/
+
+namespace CMType
+
+variable {F E : Type*} [Field F] [Field E] [Algebra F E] [Algebra.IsAlgebraic F E]
+
+/-- Inducing along an algebraic extension of fields is injective: a CM type on `F` is recovered
+from the type it induces on `E`, since every embedding of `F` extends to `E`. -/
+theorem induced_algebraMap_injective :
+    Function.Injective fun Φ₀ : CMType F ↦ Φ₀.induced (algebraMap F E) := by
+  intro Φ₀ Φ₁ h
+  ext φ₀
+  simpa using SetLike.ext_iff.1 h (ComplexEmbedding.lift E φ₀)
+
+/-- Two CM types on `F` inducing the same type along an algebraic extension `E / F` are equal. -/
+@[simp]
+theorem induced_algebraMap_inj {Φ₀ Φ₁ : CMType F} :
+    Φ₀.induced (algebraMap F E) = Φ₁.induced (algebraMap F E) ↔ Φ₀ = Φ₁ :=
+  induced_algebraMap_injective.eq_iff
+
+/-- **The fibre criterion.** A CM type `Φ` on `E` is induced from a CM type on the subextension
+`F` exactly when membership in `Φ` depends only on the restriction to `F`: two embeddings of `E`
+agreeing on `F` are both in `Φ` or both outside it. -/
+theorem exists_induced_algebraMap_eq_iff (Φ : CMType E) :
+    (∃ Φ₀ : CMType F, Φ₀.induced (algebraMap F E) = Φ) ↔
+      ∀ φ ψ : E →+* ℂ, (∀ x : F, φ (algebraMap F E x) = ψ (algebraMap F E x)) →
+        (φ ∈ Φ ↔ ψ ∈ Φ) := by
+  constructor
+  · rintro ⟨Φ₀, rfl⟩ φ ψ h
+    simp [show φ.comp (algebraMap F E) = ψ.comp (algebraMap F E) from RingHom.ext h]
+  · intro h
+    have key {φ ψ : E →+* ℂ} (hφψ : φ.comp (algebraMap F E) = ψ.comp (algebraMap F E)) :
+        φ ∈ Φ ↔ ψ ∈ Φ :=
+      h φ ψ (RingHom.congr_fun hφψ)
+    -- The type on `F` consists of the embeddings whose chosen lift to `E` lies in `Φ`.
+    refine ⟨⟨{φ₀ | ComplexEmbedding.lift E φ₀ ∈ Φ}, fun φ₀ ↦ ?_⟩, ?_⟩
+    · -- `lift (star φ₀)` and `star (lift φ₀)` both restrict to `star φ₀`.
+      have : (ComplexEmbedding.lift E (star φ₀)).comp (algebraMap F E) =
+          (star (ComplexEmbedding.lift E φ₀)).comp (algebraMap F E) := by
+        rw [← ComplexEmbedding.conjugate, ComplexEmbedding.conjugate_comp]
+        simp
+      simp only [Set.mem_ofPred_eq, key this, Φ.star_mem_iff]
+    · ext φ
+      exact key (ComplexEmbedding.lift_comp_algebraMap E _)
 
 end CMType
 
