@@ -47,6 +47,7 @@ private theorem eLpNormWkp_linearIsometryEquiv_comp_le [CompleteSpace G] (e : F 
 
 /-- **Linear isometric equivalences preserve the `W^{k,p}` size.** For a linear isometric
 equivalence `e : F ≃ₗᵢ[ℝ] G` between complete spaces, `‖e ∘ f‖_{W^{k,p}(U)} = ‖f‖_{W^{k,p}(U)}`. -/
+@[simp]
 theorem eLpNormWkp_linearIsometryEquiv_comp [CompleteSpace F] [CompleteSpace G]
     (e : F ≃ₗᵢ[ℝ] G) (f : ℂ → F) :
     eLpNormWkp p U k (fun z => e (f z)) = eLpNormWkp p U k f := by
