@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Compactification.BaseChange
 public import TauCeti.AlgebraicGeometry.Compactification.Refinement
 public import TauCeti.AlgebraicGeometry.Compactification.Uniqueness
 public import TauCeti.AlgebraicGeometry.Morphisms.Separated
+import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 
 /-!
 # Strict morphisms of scheme compactifications
@@ -125,10 +126,7 @@ instance : (strict f).HasOfPostcompProperty ⊤ where
 
 /-- If the source is empty, every morphism of compactifications is strict. -/
 theorem strict_of_isEmpty [IsEmpty X] {C D : Compactification f} (h : C ⟶ D) : strict f h := by
-  have hbot {Y : Scheme.{u}} (i : X ⟶ Y) [IsOpenImmersion i] : i.opensRange = ⊥ := by
-    ext
-    simp [Scheme.Hom.coe_opensRange]
-  rw [strict_iff, hbot, hbot, Scheme.Hom.preimage_bot]
+  simp [strict_iff]
 
 /-- Base change along any map of bases preserves strictness: the inverse image of the
 base-changed target interior is the base-changed source interior. -/
