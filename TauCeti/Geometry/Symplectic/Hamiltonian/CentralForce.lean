@@ -63,8 +63,9 @@ there.
   equations for a central force.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum`: angular momentum generates
   rotations.
-* `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`:
-  conservation of angular momentum, `{H, L} = 0`.
+* `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`,
+  `TauCeti.stdSymplecticForm_poissonBracket_angularMomentum_centralForceHamiltonian`:
+  conservation of angular momentum, `{H, L} = 0 = {L, H}`.
 * `TauCeti.stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian`:
   conservation of the squared angular momentum in every dimension, `{ℓ², H} = 0`.
 * `TauCeti.sq_sub_inner_sq_eq_of_hasDerivAt`: `ℓ²` is constant along integral curves of `H`.
@@ -496,6 +497,15 @@ theorem stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum
   simp only [centralForceHamiltonian, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd]
   rw [hrot x.1, hrot x.2]
 
+/-- **Conservation of angular momentum**, with the bracket in the other order: every component
+of the angular momentum Poisson-commutes with a central-force Hamiltonian, `{L, H} = 0`. -/
+theorem stdSymplecticForm_poissonBracket_angularMomentum_centralForceHamiltonian {m : ℝ}
+    {U : ℝ → ℝ} {x : V × V} (u w : V) :
+    (stdSymplecticForm (V := V)).poissonBracket (angularMomentum u w)
+      (centralForceHamiltonian m U) x = 0 := by
+  rw [← SymplecticForm.neg_poissonBracket,
+    stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum, neg_zero]
+
 /-- **Conservation of the squared angular momentum.** The squared
 length `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of the angular momentum bivector Poisson-commutes with every
 central-force Hamiltonian, in every dimension and at every point of phase space. -/
@@ -528,16 +538,13 @@ theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ �
       ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
     {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     ‖(γ t).1‖ ^ 2 * ‖(γ t).2‖ ^ 2 - ⟪(γ t).1, (γ t).2⟫_ℝ ^ 2 =
-      ‖(γ t₀).1‖ ^ 2 * ‖(γ t₀).2‖ ^ 2 - ⟪(γ t₀).1, (γ t₀).2⟫_ℝ ^ 2 := by
-  -- The derivative of `ℓ²` along `γ` is the Poisson bracket `{ℓ², H} = 0`.
-  have hderiv (t : ℝ) (ht : t ∈ s) : HasDerivAt
-      ((fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) 0 t := by
-    have h := (hasStrictFDerivAt_sq_sub_inner_sq (γ t)).hasFDerivAt.comp_hasDerivAt t (hγ t ht)
-    rwa [← (hasStrictFDerivAt_sq_sub_inner_sq (γ t)).hasFDerivAt.fderiv,
-      ← SymplecticForm.poissonBracket_eq_fderiv,
-      stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian] at h
-  -- A function with zero derivative on a preconnected set of times is constant there.
-  exact hs.eq_of_hasDerivWithinAt_zero (fun u hu ↦ (hderiv u hu).hasDerivWithinAt) ht ht₀
+      ‖(γ t₀).1‖ ^ 2 * ‖(γ t₀).2‖ ^ 2 - ⟪(γ t₀).1, (γ t₀).2⟫_ℝ ^ 2 :=
+  -- `ℓ²` Poisson-commutes with `H`, so it is a first integral of the motion.
+  stdSymplecticForm.apply_eq_of_hasDerivWithinAt_of_poissonBracket_eq_zero
+    (F := fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) hs
+    (fun u hu ↦ (hγ u hu).hasDerivWithinAt)
+    (fun u _ ↦ (hasStrictFDerivAt_sq_sub_inner_sq (γ u)).hasFDerivAt.differentiableAt)
+    (fun _ _ ↦ stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian) ht₀ ht
 
 /-- **Conservation of energy along the motion.** Let `γ` be an integral curve of the Hamiltonian
 vector field of a central-force Hamiltonian `H` on a preconnected set `s` of times, avoiding the

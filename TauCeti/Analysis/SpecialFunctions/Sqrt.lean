@@ -17,9 +17,9 @@ import TauCeti.Analysis.Real.Sqrt
 
 This file records a weighted form `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)` for
 `0 ≤ γ ≤ 1` of the `1/2`-Hölder bound for the square root, the derivatives of `x ↦ √(x² + p)`,
-`x ↦ β x + √(x² + p)`, `t ↦ t + √(t² + p)` and `y ↦ α / (β y + √(y² + c))`, that
-`1 / √(1 + f²)` is as smooth as `f`, that `t ↦ √(1 + t²)` is smooth and `t ↦ δ √(1 + t²)` has
-slope at most `|δ|`, that the radial
+`x ↦ β x + √(x² + p)`, `t ↦ t + √(t² + p)`, `y ↦ α / (β y + √(y² + c))` and `y ↦ √(a / y)`,
+that `1 / √(1 + f²)` is as smooth as `f`, that `t ↦ √(1 + t²)` is smooth and `t ↦ δ √(1 + t²)`
+has slope at most `|δ|`, that the radial
 profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`, and the
 Gaussian normalization `√(4 / π) = 2 / √π`. The elementary square-root bounds, identities and
 limits that need no `rpow`, `π`, or calculus are in `TauCeti.Analysis.Real.Sqrt`.
@@ -39,6 +39,7 @@ limits that need no `rpow`, `π`, or calculus are in `TauCeti.Analysis.Real.Sqrt
   derivative wherever `t² + p > 0`.
 * `Real.hasDerivAt_div_mul_add_sqrt_sq_add`: the function `y ↦ α / (β y + √(y² + c))` has an
   explicit derivative where `y² + c` and the denominator do not vanish.
+* `Real.hasDerivAt_sqrt_div`: the derivative of `y ↦ √(a / y)` wherever `y ≠ 0`.
 * `TauCeti.sqrt_four_div_pi`: `√(4/π) = 2/√π`.
 
 ## References
@@ -163,6 +164,20 @@ theorem hasDerivAt_div_mul_add_sqrt_sq_add (α β c : ℝ) {y : ℝ} (hyc : y ^ 
       (-α * (β + y / √(y ^ 2 + c)) / (β * y + √(y ^ 2 + c)) ^ 2) y := by
   have := (hasDerivAt_const y α).div (hasDerivAt_mul_add_sqrt_sq_add β y hyc) hy
   refine this.congr_deriv ?_
+  ring
+
+/-- The derivative of `y ↦ √(a / y)` at a point `x ≠ 0` is `-√(a / x) / (2x)`. Where `a / x < 0`
+the function vanishes near `x`, matching the junk value `√(a / x) = 0`. -/
+theorem hasDerivAt_sqrt_div (a : ℝ) {x : ℝ} (hx : x ≠ 0) :
+    HasDerivAt (fun y ↦ √(a / y)) (-(√(a / x) / (2 * x))) x := by
+  by_cases ha : a = 0
+  · simpa [ha] using hasDerivAt_const x (0 : ℝ)
+  refine (((hasDerivAt_const x a).div (hasDerivAt_id' x) hx).sqrt
+    (div_ne_zero ha hx)).congr_deriv ?_
+  rw [Pi.div_apply]
+  -- Both sides are `-(a / x) / √(a / x) / (2x)`, and `(a / x) / √(a / x) = √(a / x)`.
+  conv_rhs => rw [← div_sqrt (x := a / x)]
+  field_simp
   ring
 
 end Real
