@@ -83,6 +83,8 @@ correction `w_P` entering through these hypotheses.
   equation is integrable.
 * `TauCeti.Vortex.exp_backgroundAmplitude_smul`, `TauCeti.Vortex.hasFDerivAt_backgroundAmplitude`:
   the background section is `univUnitBall ∘ f`, and `Du₀ = -⟪f, Df⟫ / (1 + ‖f‖²)`.
+* `TauCeti.Vortex.exists_abs_fderiv_backgroundAmplitude_apply_le`: for a polynomial `P`, the
+  derivative `Du₀` is bounded on the plane.
 * `TauCeti.Vortex.tendstoUniformly_exp_backgroundAmplitude_smul`,
   `TauCeti.Vortex.tendstoUniformly_fderiv_backgroundAmplitude`: along polynomials whose
   coefficients converge, the background sections and the derivatives of the background amplitudes
@@ -154,6 +156,13 @@ theorem backgroundWeight_lt_one (f : ℂ → ℂ) (z : ℂ) : backgroundWeight f
   rw [backgroundWeight_def, div_lt_one (by positivity)]
   exact lt_one_add _
 
+/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` is `1` minus its defect `(1 + ‖f‖²)⁻¹`. -/
+theorem backgroundWeight_eq_one_sub_inv (f : ℂ → ℂ) (z : ℂ) :
+    backgroundWeight f z = 1 - (1 + ‖f z‖ ^ 2)⁻¹ := by
+  rw [backgroundWeight_def]
+  field_simp
+  ring
+
 theorem continuous_backgroundWeight (hf : Continuous f) : Continuous (backgroundWeight f) := by
   have hh : backgroundWeight f = fun z ↦ ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) :=
     funext (backgroundWeight_def f)
@@ -168,11 +177,20 @@ theorem contDiff_backgroundWeight {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
   rw [hh]
   exact (hf.norm_sq ℝ).div (contDiff_const.add (hf.norm_sq ℝ)) fun z ↦ by positivity
 
+/-- The background amplitudes of sections depending on a parameter are as smooth, jointly in the
+parameter and the point, as the sections, including at their zeros. -/
+theorem contDiff_parametric_backgroundAmplitude {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {f : P → ℂ → ℂ} {n : WithTop ℕ∞}
+    (hf : ContDiff ℝ n fun p : P × ℂ ↦ f p.1 p.2) :
+    ContDiff ℝ n fun p : P × ℂ ↦ backgroundAmplitude (f p.1) p.2 := by
+  have h : ContDiff ℝ n fun p : P × ℂ ↦ 1 + ‖f p.1 p.2‖ ^ 2 := contDiff_const.add (hf.norm_sq ℝ)
+  exact (h.log fun p ↦ by positivity).neg.div_const 2
+
 /-- The background amplitude is as smooth as `f`, including at the zeros of `f`. -/
 theorem contDiff_backgroundAmplitude {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
-    ContDiff ℝ n (backgroundAmplitude f) := by
-  have h : ContDiff ℝ n fun z ↦ 1 + ‖f z‖ ^ 2 := contDiff_const.add (hf.norm_sq ℝ)
-  exact (h.log fun z ↦ by positivity).neg.div_const 2
+    ContDiff ℝ n (backgroundAmplitude f) :=
+  (contDiff_parametric_backgroundAmplitude (P := Unit) (f := fun _ ↦ f)
+    (hf.comp contDiff_snd)).comp ((contDiff_const (c := ())).prodMk contDiff_id)
 
 /-- The background amplitude is as smooth at `z` as `f`. -/
 theorem contDiffAt_backgroundAmplitude {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f z) :
@@ -327,6 +345,23 @@ theorem fderiv_backgroundAmplitude_apply (hf : DifferentiableAt ℂ f z) (v : �
     fderiv ℝ (backgroundAmplitude f) z v = -((1 + ‖f z‖ ^ 2)⁻¹ * ⟪f z, v * deriv f z⟫_ℝ) := by
   rw [(hasFDerivAt_backgroundAmplitude (hf.hasDerivAt.hasFDerivAt.restrictScalars ℝ)).fderiv]
   simp [smul_eq_mul]
+
+/-- The derivative of the background amplitude of a polynomial is bounded on unit vectors. -/
+theorem exists_abs_fderiv_backgroundAmplitude_apply_le (P : Polynomial ℂ) :
+    ∃ C, ∀ z v, ‖v‖ = 1 → |fderiv ℝ (backgroundAmplitude P.eval) z v| ≤ C := by
+  obtain ⟨C, hC0, hC⟩ :=
+    Polynomial.exists_norm_eval_le_mul_one_add_norm_eval (Polynomial.degree_derivative_le (p := P))
+  refine ⟨2 * C, fun z v hv ↦ ?_⟩
+  rw [fderiv_backgroundAmplitude_apply (P.differentiable z), Polynomial.deriv, abs_neg, abs_mul,
+    abs_inv, abs_of_pos (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2)]
+  have hin : |⟪P.eval z, v * P.derivative.eval z⟫_ℝ| ≤ ‖P.eval z‖ * (C * (1 + ‖P.eval z‖)) := by
+    refine (abs_real_inner_le_norm _ _).trans ?_
+    rw [norm_mul, hv, one_mul]
+    exact mul_le_mul_of_nonneg_left (hC z) (norm_nonneg _)
+  rw [inv_mul_le_iff₀ (by positivity)]
+  refine hin.trans ?_
+  have := norm_nonneg (P.eval z)
+  nlinarith [sq_nonneg (‖P.eval z‖ - 1), mul_nonneg hC0 (sq_nonneg (‖P.eval z‖ - 1))]
 
 /-! ### Uniform convergence along converging polynomials -/
 

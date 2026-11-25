@@ -10,6 +10,7 @@ public import Mathlib.Data.FunLike.Fintype
 public import Mathlib.GroupTheory.GroupExtension.Defs
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
+public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.GroupTheory.GroupExtension.Basic
 
 /-!
@@ -30,9 +31,12 @@ hypotheses of the results below.
 Two facts identify `α` as *the* factor set of the extension it builds. The set-theoretic section
 `g ↦ ⟨1, g⟩` fails to be a homomorphism by exactly `α` (`TauCeti.FactorSet.canonicalSection_mul`),
 and conjugating the copy of `M` inside the extension is the given action of `G` on `M`
-(`TauCeti.FactorSet.mul_inl`). When `G` acts trivially the latter says the copy of `M` is central,
-so the extension is a central extension; that is the case `M = kˣ` in which a projective
-representation of `G` with factor set `α` becomes a linear representation of `E_α`.
+(`TauCeti.FactorSet.mul_inl`). By the latter the copy of `M` is central exactly when `G` acts
+trivially (`TauCeti.FactorSet.range_inl_le_center_iff`). For `M = kˣ` with the trivial action,
+this central extension carries the linearization `TauCeti.IsProjectiveRep.linearization` of a
+projective representation `ρ` of `G` with factor set `α`: the homomorphism
+`E_α →* (V ≃ₗ[k] V)`, `⟨a, g⟩ ↦ a • ρ g`, which sends each element `inl a` of the central copy of
+`kˣ` to multiplication by the scalar `a` and restricts to `ρ` along the canonical section.
 
 A factor set is a multiplicative `2`-cocycle by definition, so no conversion is needed to reach
 group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂` reads `α` as a
@@ -56,6 +60,10 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
   induces.
 * `TauCeti.FactorSet.ofBimultiplicative`: the factor set of a map `G →* G →* M`, for a trivial
   action.
+* `TauCeti.FactorSet.extendHom`: for a trivial action, the homomorphism `x ↦ χ x.left` attached to
+  a homomorphism `χ` out of `M` that kills every value of the factor set.
+* `TauCeti.FactorSet.ofIsCocycle₂`: the factor set named by a normalized additive `2`-cocycle
+  `G × G → Additive M`.
 
 ## Main results
 
@@ -64,14 +72,19 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
   `TauCeti.FactorSet.inl_mul_canonicalSection`: every element of the extension is its `M`-component
   times the section at its `G`-component, so the two together determine a homomorphism out of the
   extension.
-* `TauCeti.FactorSet.mul_inl`: conjugation moves the copy of `M` by the action of the image in `G`.
-* `TauCeti.FactorSet.inl_range_le_center`: when `G` acts trivially the extension is central.
+* `TauCeti.FactorSet.mul_inl`: conjugation moves the copy of `M` by the action of the image in `G`,
+  so the extension induces the given action (`TauCeti.FactorSet.inducesAction_groupExtension`).
+* `TauCeti.FactorSet.range_inl_le_center_iff`: the extension is central exactly when `G` acts
+  trivially.
 * `TauCeti.FactorSet.characterTwist_groupExtension_left` and
   `TauCeti.FactorSet.characterTwist_groupExtension_right`: when the extension is central, a
   character twist multiplies the `M`-component by the character value and keeps the
   `G`-component.
 * `TauCeti.FactorSet.commutatorElement_eq_inl`: for commutative `G` acting trivially, the
   commutator of `x` and `y` is the ratio of the values of `α` on their images in the two orders.
+* `TauCeti.FactorSet.forall_map_mul_left_iff` and `TauCeti.FactorSet.eq_extendHom`: for a trivial
+  action, `x ↦ χ x.left` is multiplicative exactly when `χ` kills the factor set, and it is then the
+  only homomorphism restricting to `χ` on `M` and trivial on the canonical section.
 * `TauCeti.FactorSet.forall_canonicalSection_mul_iff`: the canonical section is a homomorphism
   exactly for the trivial factor set.
 * `TauCeti.FactorSet.nonempty_groupExtensionEquiv`: cohomologous factor sets build equivalent
@@ -155,6 +168,33 @@ what makes the inverse of `TauCeti.FactorSet.Extension` a two-sided inverse. -/
 theorem smul_apply_inv_left (g : G) : g • α (g⁻¹, g) = α (g, g⁻¹) := by
   have h := smul_map_inv_div_map_inv_of_isMulCocycle₂ α.isMulCocycle₂ g
   rwa [map_one_one, map_one_snd, div_self', div_eq_one] at h
+
+end
+
+/-! ### The additive reading of a factor set -/
+
+/-- **A factor set, read additively, is a `2`-cocycle.** The multiplicative cocycle identity of `α`
+is the additive identity `groupCohomology.IsCocycle₂` for `Additive.ofMul ∘ α`, because the sum
+and the action on `Additive M` are the product and the action on `M`. -/
+theorem isCocycle₂_ofMul (α : FactorSet G M) :
+    IsCocycle₂ fun p : G × G => Additive.ofMul (α p) :=
+  fun g h j => congrArg Additive.ofMul (α.isMulCocycle₂ g h j)
+
+section
+
+variable {z : G × G → Additive M}
+
+/-- **The factor set named by a normalized additive `2`-cocycle** `z : G × G → Additive M`, read
+multiplicatively through `Additive.toMul`. -/
+def ofIsCocycle₂ (hz : IsCocycle₂ z) (hz₁ : z (1, 1) = 0) : FactorSet G M where
+  toFun p := (z p).toMul
+  isMulCocycle₂' g h j := congrArg Additive.toMul (hz g h j)
+  map_one_one' := congrArg Additive.toMul hz₁
+
+@[simp]
+theorem ofIsCocycle₂_apply (hz : IsCocycle₂ z) (hz₁ : z (1, 1) = 0) (p : G × G) :
+    ofIsCocycle₂ hz hz₁ p = (z p).toMul :=
+  (rfl)
 
 end
 
@@ -392,13 +432,26 @@ by `TauCeti.FactorSet.range_inl_eq_ker_rightHom`. -/
 theorem mul_inl (x : α.Extension) (a : M) : x * inl α a = inl α (x.right • a) * x := by
   ext <;> simp [mul_comm]
 
-/-- **The extension is central when `G` acts trivially on `M`.** This is the case `M = kˣ` with the
-trivial action, in which a projective representation of `G` with factor set `α` is a linear
-representation of the extension. -/
-theorem inl_range_le_center (h : ∀ (g : G) (a : M), g • a = a) :
-    (inl α).range ≤ Subgroup.center α.Extension := by
-  rintro _ ⟨a, rfl⟩
-  exact Subgroup.mem_center_iff.2 fun x => by rw [mul_inl, h]
+/-- The twisted product built from a factor set conjugates its kernel by the given action of `G`. -/
+theorem inducesAction_groupExtension :
+    GroupExtension.InducesAction α.groupExtension := by
+  refine GroupExtension.inducesAction_iff.2 fun x a => ?_
+  refine α.groupExtension.inl_injective ?_
+  rw [GroupExtension.inl_conjAct_comm]
+  simp only [groupExtension_inl, groupExtension_rightHom, rightHom_apply]
+  rw [mul_inl, mul_inv_cancel_right]
+
+/-- **The extension is central exactly when `G` acts trivially on `M`.** This is
+`GroupExtension.InducesAction.range_inl_le_center_iff` for the twisted product, which
+induces the given action by `TauCeti.FactorSet.inducesAction_groupExtension`. For `M = kˣ` with
+the trivial action this is the central extension on which `TauCeti.IsProjectiveRep.linearization`
+is defined: for a projective representation `ρ` with factor set `α`, that homomorphism
+`⟨a, g⟩ ↦ a • ρ g` sends each `inl a` to multiplication by the scalar `a` and restricts to `ρ`
+along `TauCeti.FactorSet.canonicalSection`. -/
+theorem range_inl_le_center_iff :
+    (inl α).range ≤ Subgroup.center α.Extension ↔ ∀ (g : G) (a : M), g • a = a := by
+  simpa only [groupExtension_inl] using
+    α.inducesAction_groupExtension.range_inl_le_center_iff
 
 /-- A character twist of a central twisted product keeps the `G`-component. -/
 theorem characterTwist_groupExtension_right
@@ -441,6 +494,58 @@ theorem commutatorElement_eq_inl (h : ∀ (g : A) (a : M), g • a = a) (x y : �
   group
 
 end Commutator
+
+section ExtendHom
+
+variable {A : Type*} [Monoid A] (α : FactorSet G M) (h : ∀ (g : G) (a : M), g • a = a)
+  (χ : M →* A)
+
+include h in
+/-- **Reading off the `M`-component is multiplicative exactly when `χ` kills the factor set.** For
+a trivial action, `x ↦ χ x.left` preserves multiplication on the twisted product if and only if
+`χ (α (g, k)) = 1` for all `g` and `k`. -/
+theorem forall_map_mul_left_iff :
+    (∀ x y : α.Extension, χ (x * y).left = χ x.left * χ y.left) ↔ ∀ p, χ (α p) = 1 := by
+  refine ⟨fun H p => ?_, fun H x y => by simp [h, H]⟩
+  simpa using H ⟨1, p.1⟩ ⟨1, p.2⟩
+
+/-- **The section-trivial extension of a homomorphism on the kernel.** For a trivial action and a
+homomorphism `χ : M →* A` killing every value of `α`, the map `x ↦ χ x.left` is a homomorphism on
+the twisted product. It restricts to `χ` on the copy of `M`
+(`TauCeti.FactorSet.extendHom_comp_inl`), is trivial on the canonical section
+(`TauCeti.FactorSet.extendHom_canonicalSection`), and is the only homomorphism with these two
+properties (`TauCeti.FactorSet.eq_extendHom`). -/
+def extendHom (hχ : ∀ p, χ (α p) = 1) : α.Extension →* A where
+  toFun x := χ x.left
+  map_one' := by simp
+  map_mul' := (forall_map_mul_left_iff α h χ).2 hχ
+
+variable (hχ : ∀ p, χ (α p) = 1)
+
+@[simp]
+theorem extendHom_apply (x : α.Extension) : α.extendHom h χ hχ x = χ x.left := (rfl)
+
+/-- The section-trivial extension of `χ` restricts to `χ` on the copy of `M`. -/
+@[simp]
+theorem extendHom_comp_inl : (α.extendHom h χ hχ).comp (inl α) = χ := by
+  ext
+  simp
+
+/-- The section-trivial extension of `χ` is trivial on the canonical section. -/
+theorem extendHom_canonicalSection (g : G) : α.extendHom h χ hχ (α.canonicalSection g) = 1 := by
+  simp
+
+/-- **Uniqueness of the section-trivial extension.** A homomorphism out of the twisted product
+that restricts to `χ` on the copy of `M` and is trivial on the canonical section is
+`TauCeti.FactorSet.extendHom`. -/
+theorem eq_extendHom (f : α.Extension →* A) (hf : ∀ a, f (inl α a) = χ a)
+    (hs : ∀ g, f (α.canonicalSection g) = 1) : f = α.extendHom h χ hχ := by
+  ext x
+  rw [← inl_mul_canonicalSection α x]
+  simp only [map_mul, hf, hs]
+  simp
+
+end ExtendHom
 
 section Rescale
 

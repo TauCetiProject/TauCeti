@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.ModuleTopology.Pair
-public import TauCeti.RingTheory.Huber.TensorProduct.FiniteAlgebra
+public import TauCeti.RingTheory.Huber.TensorProduct.Finite.Algebra
 public import TauCeti.RingTheory.Huber.TensorProduct.Pair
 import Mathlib.RingTheory.TensorProduct.Finite
 

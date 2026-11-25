@@ -336,6 +336,14 @@ theorem memLp_gradient_testFunction (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
   (continuous_gradient_testFunction phi).memLp_of_hasCompactSupport
     phi.hasCompactSupport.gradient
 
+/-- A field in `Lᵖ` paired with the gradient of a test function is integrable. -/
+theorem integrable_inner_gradient_testFunction {p : ENNReal} [Fact (1 ≤ p)] {F : E → E}
+    (hF : MemLp F p mu) (phi : 𝓓(Omega, ℝ)) :
+    Integrable (fun x => ⟪F x, ∇ (phi : E → ℝ) x⟫_ℝ) mu :=
+  hF.integrable_inner_of_holderConjugate (q' := p.conjExponent)
+    ((continuous_gradient_testFunction phi).memLp_of_hasCompactSupport
+      phi.hasCompactSupport.gradient)
+
 /-- The gradient of a test function on `Ω`, as an element of `Lᵠ(Ω, E)`. -/
 def gradientTestFunctionLp (q : ENNReal) (phi : 𝓓(Omega, ℝ)) : Lp E q (mu.restrict Omega) :=
   (memLp_gradient_testFunction (mu := mu) q phi).toLp _

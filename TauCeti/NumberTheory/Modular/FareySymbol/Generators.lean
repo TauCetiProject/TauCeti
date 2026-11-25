@@ -45,7 +45,8 @@ matrices `evenGenerator`, `oddGenerator`, and `freeGenerator`, factored via `M =
   `TauCeti.FareySymbol.not_isOfFinOrder_coe_freeSideSL`: parabolic/hyperbolic dichotomy.
 * `TauCeti.FareySymbol.group`, `TauCeti.FareySymbol.group_translate`,
   `TauCeti.FareySymbol.group_reflect`, `TauCeti.FareySymbol.group_levelOne`,
-  `TauCeti.FareySymbol.comap_group_gamma0Two`, `TauCeti.FareySymbol.comap_group_gammaTwo`.
+  `TauCeti.FareySymbol.comap_group_gamma0Two`, `TauCeti.FareySymbol.comap_group_gammaTwo_le`,
+  `TauCeti.FareySymbol.comap_group_gammaTwo`.
 
 ## References
 
@@ -126,7 +127,7 @@ theorem freeGenerator_eq_mul_S_mul_neg_adjugate (a b c d a' b' c' d' : ℤ) :
 
 /-- Positive-determinant lift `!![-a, c; -b, d] ∈ SL(2, ℤ)` mapping `(∞, 0)` to `(a / b, c / d)`. -/
 def sideSL {a b c d : ℤ} (h : c * b - a * d = 1) : SL(2, ℤ) :=
-  ⟨!![-a, c; -b, d], by simp [Matrix.det_fin_two]; linarith⟩
+  .mk !![-a, c; -b, d] (by simp [Matrix.det_fin_two]; linarith)
 @[simp] theorem coe_sideSL {a b c d : ℤ} (h : c * b - a * d = 1) :
     (sideSL h : Matrix (Fin 2) (Fin 2) ℤ) = !![-a, c; -b, d] := (rfl)
 
@@ -141,18 +142,18 @@ theorem R_inv_eq_sideSL :
 
 /-- The `SL(2, ℤ)` lift of `evenGenerator` on a unimodular side `c * b - a * d = 1`. -/
 def evenSL {a b c d : ℤ} (h : c * b - a * d = 1) : SL(2, ℤ) :=
-  ⟨evenGenerator a b c d, by rw [det_evenGenerator, h, one_pow]⟩
+  .mk (evenGenerator a b c d) (by rw [det_evenGenerator, h, one_pow])
 @[simp] theorem coe_evenSL {a b c d : ℤ} (h : c * b - a * d = 1) :
     (evenSL h : Matrix (Fin 2) (Fin 2) ℤ) = evenGenerator a b c d := (rfl)
 /-- The `SL(2, ℤ)` lift of `oddGenerator` on a unimodular side `c * b - a * d = 1`. -/
 def oddSL {a b c d : ℤ} (h : c * b - a * d = 1) : SL(2, ℤ) :=
-  ⟨oddGenerator a b c d, by rw [det_oddGenerator, h, one_pow]⟩
+  .mk (oddGenerator a b c d) (by rw [det_oddGenerator, h, one_pow])
 @[simp] theorem coe_oddSL {a b c d : ℤ} (h : c * b - a * d = 1) :
     (oddSL h : Matrix (Fin 2) (Fin 2) ℤ) = oddGenerator a b c d := (rfl)
 /-- The `SL(2, ℤ)` lift of `freeGenerator` on two unimodular sides. -/
 def freeSL {a b c d a' b' c' d' : ℤ} (h : c * b - a * d = 1)
     (h' : c' * b' - a' * d' = 1) : SL(2, ℤ) :=
-  ⟨freeGenerator a b c d a' b' c' d', by rw [det_freeGenerator, h, h', mul_one]⟩
+  .mk (freeGenerator a b c d a' b' c' d') (by rw [det_freeGenerator, h, h', mul_one])
 @[simp] theorem coe_freeSL {a b c d a' b' c' d' : ℤ} (h : c * b - a * d = 1)
     (h' : c' * b' - a' * d' = 1) :
     (freeSL h h' : Matrix (Fin 2) (Fin 2) ℤ) = freeGenerator a b c d a' b' c' d' := (rfl)
@@ -884,7 +885,7 @@ theorem comap_group_gamma0Two :
     gamma0Two.group.comap (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) =
       CongruenceSubgroup.Gamma0 2 := by
   set H := gamma0Two.group.comap (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))
-  let B : SL(2, ℤ) := ⟨!![-1, 1; -2, 1], by decide⟩
+  let B : SL(2, ℤ) := .mk !![-1, 1; -2, 1] (by decide)
   have hB : gamma0Two.evenSideSL ⟨1, by simp⟩ = B := Subtype.ext coe_evenSideSL_gamma0Two
   have hle : H ≤ CongruenceSubgroup.Gamma0 2 := by
     refine comap_group_le CongruenceSubgroup.neg_one_mem_Gamma0 ?_
@@ -935,28 +936,40 @@ theorem coe_freeSideSL_gammaTwo_inner :
   ext p q; fin_cases p <;> fin_cases q <;>
     simp [freeSideSL_def, freeGenerator_def, leftEndpoint_def, rightEndpoint_def, endpoints_def]
 
+/-- If `K` contains `-1` and the two free generators of `gammaTwo`, `-T²` (sides `0` and `3`) and
+`-!![3, -2; 2, -1]` (sides `1` and `2`), then the `SL(2, ℤ)` preimage of `gammaTwo.group` is
+contained in `K`. -/
+theorem comap_group_gammaTwo_le {K : Subgroup SL(2, ℤ)} (hneg : (-1 : SL(2, ℤ)) ∈ K)
+    (ha : -(ModularGroup.T ^ 2) ∈ K) (hb : gammaTwo.freeSideSL ⟨1, by simp⟩ ⟨2, by simp⟩ ∈ K) :
+    gammaTwo.group.comap (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) ≤ K := by
+  refine comap_group_le hneg ?_
+  rintro x ⟨⟨i, hi⟩, h⟩; have : i < 4 := by simpa using hi
+  rcases h with ⟨hlab, rfl⟩ | ⟨hlab, rfl⟩ | ⟨⟨j, hj⟩, l, hij, hli, hlj, rfl⟩
+  · rw [Fin.getElem_fin] at hlab; interval_cases i <;> simp at hlab
+  · rw [Fin.getElem_fin] at hlab; interval_cases i <;> simp at hlab
+  · rw [Fin.getElem_fin] at hli hlj; rw [Fin.mk_lt_mk] at hij; have : j < 4 := by simpa using hj
+    interval_cases i <;> interval_cases j <;> try omega
+    all_goals simp only [gammaTwo_labels, List.getElem_cons_zero, List.getElem_cons_succ,
+      SideLabel.free.injEq] at hli hlj
+    all_goals try omega
+    -- The free pairs left are sides `0` and `3` (outer) and sides `1` and `2` (inner).
+    all_goals first
+      | exact ⟨-(ModularGroup.T ^ 2), ha, by
+          rw [freeSideSL_gammaTwo_outer, QuotientGroup.mk'_apply]⟩
+      | exact ⟨_, hb, QuotientGroup.mk'_apply _ _⟩
+
 /-- The preimage of `gammaTwo.group` in `SL(2, ℤ)` is `CongruenceSubgroup.Gamma 2`. -/
 theorem comap_group_gammaTwo :
     gammaTwo.group.comap (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) =
       CongruenceSubgroup.Gamma 2 := by
   set H := gammaTwo.group.comap (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))
-  let B : SL(2, ℤ) := ⟨-!![3, -2; 2, -1], by decide⟩
+  let B : SL(2, ℤ) := .mk (-!![3, -2; 2, -1]) (by decide)
   have hB : gammaTwo.freeSideSL ⟨1, by simp⟩ ⟨2, by simp⟩ = B :=
     Subtype.ext coe_freeSideSL_gammaTwo_inner
-  have hle : H ≤ CongruenceSubgroup.Gamma 2 := by
-    refine comap_group_le (CongruenceSubgroup.Gamma_mem.mpr (by decide)) ?_
-    rintro x ⟨⟨i, hi⟩, h⟩; have : i < 4 := by simpa using hi
-    rcases h with ⟨hlab, rfl⟩ | ⟨hlab, rfl⟩ | ⟨⟨j, hj⟩, l, hij, hli, hlj, rfl⟩
-    · rw [Fin.getElem_fin] at hlab; interval_cases i <;> simp at hlab
-    · rw [Fin.getElem_fin] at hlab; interval_cases i <;> simp at hlab
-    · rw [Fin.getElem_fin] at hli hlj; rw [Fin.mk_lt_mk] at hij; have : j < 4 := by simpa using hj
-      interval_cases i <;> interval_cases j <;> try omega
-      all_goals simp only [gammaTwo_labels, List.getElem_cons_zero, List.getElem_cons_succ,
-        SideLabel.free.injEq] at hli hlj
-      all_goals try omega
-      · exact ⟨(-(ModularGroup.T ^ 2) : SL(2, ℤ)), CongruenceSubgroup.Gamma_mem.mpr (by decide),
-          by rw [freeSideSL_gammaTwo_outer]; rfl⟩
-      · exact ⟨B, CongruenceSubgroup.Gamma_mem.mpr (by decide), by rw [hB]; rfl⟩
+  have hle : H ≤ CongruenceSubgroup.Gamma 2 :=
+    comap_group_gammaTwo_le (CongruenceSubgroup.Gamma_mem.mpr (by decide))
+      (CongruenceSubgroup.Gamma_mem.mpr (by decide))
+      (hB ▸ CongruenceSubgroup.Gamma_mem.mpr (by decide))
   have ha : -(ModularGroup.T ^ 2) ∈ H := freeSideSL_gammaTwo_outer ▸ Subgroup.mem_comap.mpr
     (gammaTwo.coe_freeSideSL_mem_group (l := 2) (by decide) (by simp) (by simp))
   have hb : B ∈ H := hB ▸ Subgroup.mem_comap.mpr

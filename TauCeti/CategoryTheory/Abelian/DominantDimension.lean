@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Preadditive.Injective.Preserves
 public import Mathlib.CategoryTheory.Preadditive.Projective.Preserves
 public import TauCeti.Data.ENat.Lattice
 public import TauCeti.CategoryTheory.Abelian.Injective.MinimalCoresolution
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 /-!

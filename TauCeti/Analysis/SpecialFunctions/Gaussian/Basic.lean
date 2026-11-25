@@ -7,19 +7,21 @@ module
 
 public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exp
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
 
 /-!
-# Elementary Gaussian bounds
+# Elementary Gaussian bounds and derivatives
 
 A polynomial weight times a real Gaussian is bounded above, and completing the square absorbs a
 linear tilt into half the Gaussian weight. This file records an explicit upper bound for
 `(1 + r) ^ m * exp (-a r²)` (the scalar estimate behind the decay of Gaussian Schwartz functions),
 the uniform bound `exp (-b u² - c u) ≤ exp (c² / (2 b)) * exp (-(b / 2) u²)` for `0 < b`,
 the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-shift bounds for
-`z ↦ exp (δ * (z - θ) ^ 2)`.
+`z ↦ exp (δ * (z - θ) ^ 2)`, together with the complex derivative of `w ↦ exp (a (w - b)²)`.
 
 ## Main results
 
@@ -29,11 +31,16 @@ the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-sh
   `exp (-b u² - c u)` when `0 < b`.
 * `TauCeti.norm_exp_ofReal_mul_sub_sq`, `TauCeti.exp_mul_sq_add_mul`: modulus and
   square-completion for complex Gaussians.
+* `TauCeti.norm_exp_ofReal_mul_sq_add_ofReal_mul_le`: the bound `exp (δ + |ω|)` for
+  `exp (δ z² + ω z)` on the closed strip `0 ≤ re z ≤ 1`.
 * `TauCeti.exp_neg_mul_intCast_sq_le`, `TauCeti.norm_exp_ofReal_mul_add_mul_I_sq_le`,
   `TauCeti.norm_exp_ofReal_mul_add_intCast_mul_I_sq_le`,
   `TauCeti.norm_exp_ofReal_mul_sq_mul_add_mul_I_sq_le`: vertical-shift Gaussian decay bounds.
 * `TauCeti.tendsto_exp_sub_mul_sq_cocompact`,
   `TauCeti.tendstoUniformly_exp_ofReal_mul_add_mul_I_sq_smul`: cocompact decay and uniform damping.
+* `Complex.hasDerivAt_cexp_mul_sub_sq`: the complex derivative of `w ↦ exp (a (w - b)²)`, for
+  complex `a` and `b`; Gaussian kernels such as `z ↦ exp (-(c (t - z))²)` and
+  `w ↦ exp (-(z + w)² / 2)` are the cases `a = -c²`, `b = t` and `a = -1/2`, `b = -z`.
 -/
 
 public section
@@ -130,6 +137,22 @@ theorem exp_mul_sq_add_mul {δ : ℂ} (hδ : δ ≠ 0) (ω z : ℂ) :
       Complex.exp (-(ω ^ 2 / (4 * δ))) * Complex.exp (δ * (z + ω / (2 * δ)) ^ 2) := by
   rw [← Complex.exp_add]; congr 1; field_simp; ring
 
+/-- On the closed strip `0 ≤ re z ≤ 1`, the factor `exp (δ z² + ω z)` of the elementary admissible
+functions of the complex method has modulus at most `exp (δ + |ω|)` for `0 ≤ δ`. -/
+theorem norm_exp_ofReal_mul_sq_add_ofReal_mul_le {δ : ℝ} (hδ : 0 ≤ δ) (ω : ℝ) {z : ℂ}
+    (hz : z.re ∈ Set.Icc 0 1) : ‖Complex.exp (δ * z ^ 2 + ω * z)‖ ≤ Real.exp (δ + |ω|) := by
+  rw [Complex.norm_exp, Real.exp_le_exp]
+  simp only [sq, Complex.add_re, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
+    sub_zero]
+  have hω : ω * z.re ≤ |ω| := by
+    calc ω * z.re ≤ |ω * z.re| := le_abs_self _
+      _ = |ω| * z.re := by rw [abs_mul, abs_of_nonneg hz.1]
+      _ ≤ |ω| := mul_le_of_le_one_right (abs_nonneg ω) hz.2
+  have h1 : z.re * z.re ≤ 1 := by nlinarith [hz.1, hz.2]
+  have h2 : δ * (z.re * z.re - z.im * z.im) ≤ δ := by
+    nlinarith [mul_nonneg hδ (mul_self_nonneg z.im)]
+  linarith
+
 /-- Quadratic Gaussian decay on `ℤ` dominates geometric decay (`0 ≤ a`). -/
 theorem exp_neg_mul_intCast_sq_le {a : ℝ} (ha : 0 ≤ a) (k : ℤ) :
     Real.exp (-a * (k : ℝ) ^ 2) ≤ Real.exp (-a) ^ k.natAbs := by
@@ -199,3 +222,16 @@ theorem tendstoUniformly_exp_ofReal_mul_add_mul_I_sq_smul {E : Type*} [Seminorme
     linarith [mul_le_mul_of_nonneg_right hexp (norm_nonneg (f t))]
 
 end TauCeti
+
+namespace Complex
+
+/-- The complex derivative of the translated quadratic exponential `w ↦ exp (a (w - b)²)` is
+`exp (a (w - b)²) · 2a (w - b)`, for complex `a` and `b`. -/
+theorem hasDerivAt_cexp_mul_sub_sq (a b w : ℂ) :
+    HasDerivAt (fun w : ℂ => cexp (a * (w - b) ^ 2)) (cexp (a * (w - b) ^ 2) * (2 * a * (w - b)))
+      w := by
+  have h := (((hasDerivAt_id' w).sub_const b).fun_pow 2).const_mul a |>.cexp
+  convert h using 1
+  ring
+
+end Complex

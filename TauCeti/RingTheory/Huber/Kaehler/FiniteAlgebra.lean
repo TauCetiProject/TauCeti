@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.Huber.ModuleTopology.NaturallyComplete
 public import TauCeti.RingTheory.Huber.NoetherianType.Basic
 
 import TauCeti.RingTheory.Huber.NoetherianType.ModuleTopology
-import TauCeti.RingTheory.Huber.TensorProduct.FiniteAlgebra
+import TauCeti.RingTheory.Huber.TensorProduct.Finite.Algebra
 
 /-!
 # Continuous differentials of finite Huber algebras

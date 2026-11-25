@@ -87,6 +87,12 @@ theorem isHomeomorph_comm : IsHomeomorph (comm A B C) :=
     comm A B C (inr A B C c) = inl A C B c := by
   simp [comm, commHom]
 
+/-- Exchange fixes the image of the base ring. -/
+@[simp] theorem comm_algebraMap (a : A) :
+    comm A B C (algebraMap A (CompletedTensor A B C) a) =
+      algebraMap A (CompletedTensor A C B) a := by
+  rw [← inl_algebraMap, comm_inl, inr_algebraMap]
+
 /-- Exchange sends the completed pure tensor `b ⊗ c` to `c ⊗ b`. -/
 theorem comm_tmul (b : B) (c : C) :
     comm A B C (toCompletion A B C (b ⊗ₜ[A] c)) =
