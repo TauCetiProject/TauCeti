@@ -172,6 +172,25 @@ theorem coe_realSubRef (h : 0 ≤ s) (x : SobolevFieldSpace f m s) (j : Fin 4) :
     (realSubRef h x j : H^{s}(ℂ)) = subRef x j :=
   (rfl)
 
+/-- The real coordinates of a field are the real parts of its coordinates in `H^s(ℂ)⁴`. -/
+theorem realSubRef_eq_realPartCLM_subRef (h : 0 ≤ s) (x : SobolevFieldSpace f m s) :
+    x.realSubRef h = fun j ↦ realPartCLM ℂ h (subRef x j) :=
+  funext fun j ↦ by rw [← coe_realSubRef h, realPartCLM_coe]
+
+/-- The real coordinates of a field depend continuously on the field. -/
+theorem continuous_realSubRef (h : 0 ≤ s) : Continuous (realSubRef (f := f) (m := m) h) :=
+  continuous_pi fun j ↦ ((continuous_apply j).comp continuous_subRef).subtype_mk _
+
+/-- **The real coordinates for two expressions of the same order** `s = s'` correspond under
+`BesselPotentialSpace.realSubmoduleCongr`. -/
+theorem realSubRef_congrOrder {s' : ℝ} (hss' : s = s') (h : 0 ≤ s) (h' : 0 ≤ s')
+    (x : SobolevFieldSpace f m s) (j : Fin 4) :
+    realSubRef h' (congrOrder hss' x) j = realSubmoduleCongr ℂ hss' h h' (realSubRef h x j) := by
+  subst hss'
+  have hx : congrOrder rfl x = x := by ext z i; simp
+  ext1
+  rw [coe_realSubmoduleCongr, inclusion_self, hx]
+
 /-- The `L²` function of a real coordinate of `x` is the complexification of the coordinate of
 `x - x_m`. -/
 theorem coeFn_inclusionLp_realSubRef (h : 0 ≤ s) (x : SobolevFieldSpace f m s) (j : Fin 4) :
@@ -224,6 +243,7 @@ theorem ofRealSubRef_realSubRef (hs : 1 < s) {h : 0 ≤ s} (x : SobolevFieldSpac
 
 /-- The complexified coordinates of the field with real coordinates `u` are the coordinates `u`
 included into `H^s(ℂ)⁴`. -/
+@[simp]
 theorem subRef_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
     subRef (ofRealSubRef (f := f) (m := m) hs u) = coordInclusion ℂ h u :=
   funext fun j ↦ by rw [← coe_realSubRef h, realSubRef_ofRealSubRef, coordInclusion_apply]
@@ -234,6 +254,13 @@ theorem continuousRepField_realSubRef (hs : 1 < s) {h : 0 ≤ s} (x : SobolevFie
   conv_rhs => rw [← ofRealSubRef_realSubRef hs (h := h) x, coe_ofRealSubRef]
   exact (add_sub_cancel_left _ _).symm
 
+/-- The field with real coordinates `u` depends continuously on `u`, for `s > 1`. -/
+theorem continuous_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} :
+    Continuous (ofRealSubRef (f := f) (m := m) hs (h := h)) := by
+  refine (isEmbedding_subRef h).continuous_iff.2 ?_
+  simp_rw [Function.comp_def, subRef_ofRealSubRef]
+  exact (coordInclusion ℂ h).continuous
+
 /-- **The real chart of `A_m^s`**, `s > 1`: the real coordinates of `x - x_m` identify the
 continuous fields of `A_m^s` with the real Hilbert space `(H^s_ℝ)⁴`, as topological spaces. -/
 def realSubRefHomeomorph (hs : 1 < s) {h : 0 ≤ s} :
@@ -242,12 +269,8 @@ def realSubRefHomeomorph (hs : 1 < s) {h : 0 ≤ s} :
   invFun := ofRealSubRef hs
   left_inv := ofRealSubRef_realSubRef hs
   right_inv := realSubRef_ofRealSubRef hs
-  continuous_toFun := continuous_pi fun j ↦
-    ((continuous_apply j).comp continuous_subRef).subtype_mk _
-  continuous_invFun := by
-    refine (isEmbedding_subRef h).continuous_iff.2 ?_
-    rw [show subRef ∘ ofRealSubRef hs = coordInclusion ℂ h from funext (subRef_ofRealSubRef hs)]
-    exact (coordInclusion ℂ h).continuous
+  continuous_toFun := continuous_realSubRef h
+  continuous_invFun := continuous_ofRealSubRef hs
 
 @[simp]
 theorem coe_realSubRefHomeomorph (hs : 1 < s) {h : 0 ≤ s} :
