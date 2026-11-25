@@ -29,6 +29,9 @@ itself a nonzerodivisor (`MvPolynomial.mem_nonZeroDivisors_of_coeff_mem`), the m
 counterpart of `Polynomial.mem_nonZeroDivisors_of_coeff_mem`; over a commutative ring, having a
 regular coefficient implies regularity (`MvPolynomial.isRegular_of_isRegular_coeff`).
 
+The coefficient of a single variable `Xᵢ` in a product obeys the Leibniz rule at `0`, as for the
+linear coefficient of a univariate power series (`PowerSeries.coeff_one_mul`).
+
 ## Main results
 
 * `MvPolynomial.coeff_sum_linearCombination_X_pow_of_fintype`: the coefficients of a power sum of
@@ -40,6 +43,8 @@ regular coefficient implies regularity (`MvPolynomial.isRegular_of_isRegular_coe
 * `MvPolynomial.mem_nonZeroDivisors_of_coeff_mem`, `MvPolynomial.isRegular_of_isRegular_coeff`:
   a multivariate polynomial with a nonzerodivisor (or regular) coefficient is a nonzerodivisor
   (or regular).
+* `MvPolynomial.coeff_single_one_mul`: the coefficient of `Xᵢ` in `p * q` is
+  `pᵢ q(0) + p(0) qᵢ`.
 -/
 
 public section
@@ -137,5 +142,15 @@ theorem isRegular_of_isRegular_coeff {R : Type*} [CommRing R] {p : MvPolynomial 
     (d : σ →₀ ℕ) (hp : IsRegular (p.coeff d)) : IsRegular p :=
   isRegular_iff_mem_nonZeroDivisors.mpr
     (mem_nonZeroDivisors_of_coeff_mem d (isRegular_iff_mem_nonZeroDivisors.mp hp))
+
+/-- **The linear coefficients of a product**: the coefficient of the variable `Xᵢ` in `p * q` is
+`pᵢ q(0) + p(0) qᵢ`, so taking it is a derivation at `0`. -/
+theorem coeff_single_one_mul (i : σ) (p q : MvPolynomial σ R) :
+    (p * q).coeff (Finsupp.single i 1) =
+      p.coeff (Finsupp.single i 1) * constantCoeff q +
+        constantCoeff p * q.coeff (Finsupp.single i 1) := by
+  classical
+  rw [coeff_mul, Finsupp.antidiagonal_single, Finset.sum_map]
+  simp [Finset.Nat.antidiagonal_succ, constantCoeff_eq, add_comm]
 
 end MvPolynomial

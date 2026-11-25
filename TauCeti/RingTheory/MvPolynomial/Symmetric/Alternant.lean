@@ -66,6 +66,8 @@ sign appears: that is the dual Pieri rule.
 * `TauCeti.prod_Ioi_X_sub_X_eq_neg_one_pow_mul_alternant`, `TauCeti.alternant_fin_val_sq`: sign
   and square conversion between `∏_{i < j} (X_i - X_j)` and the Vandermonde alternant.
 * `TauCeti.isSymmetric_alternant_of_two_eq_zero`: symmetry of alternants when `2 = 0`.
+* `MvPolynomial.rename_vandermonde` and `MvPolynomial.vandermonde_ne_zero`: the Vandermonde
+  product is antisymmetric, and nonzero over a nontrivial ring.
 * `TauCeti.psum_mul_alternant`: the power-sum multiplication rule `p_r · a_α = ∑_j a_{α + r e_j}`.
 * `TauCeti.psum_mul_alternant_eq_sum_filter`: for `r > 0`, only the exponent moves onto a free
   position contribute to `p_r · a_α`.
@@ -373,3 +375,25 @@ theorem isSymmetric_alternant_of_two_eq_zero (h2 : (2 : R) = 0) (α : σ → ℕ
       hneg, one_mul]
 
 end TauCeti
+
+namespace MvPolynomial
+
+open Equiv Finset
+
+variable {R : Type*} [CommRing R] {n : ℕ}
+
+/-- **The Vandermonde product is antisymmetric**: renaming the variables along a permutation `e`
+multiplies `∏_{i < j} (X j - X i)` by the sign of `e`. -/
+theorem rename_vandermonde (e : Perm (Fin n)) :
+    rename e (∏ i : Fin n, ∏ j ∈ Ioi i, (X j - X i : MvPolynomial (Fin n) R)) =
+      Perm.sign e • ∏ i : Fin n, ∏ j ∈ Ioi i, (X j - X i) := by
+  rw [← TauCeti.alternant_fin_val_eq_vandermonde, TauCeti.rename_alternant]
+
+/-- **The Vandermonde product is nonzero** over a nontrivial ring: it is the alternant of the
+pairwise distinct exponents `0, 1, …, n - 1`. -/
+theorem vandermonde_ne_zero [Nontrivial R] :
+    ∏ i : Fin n, ∏ j ∈ Ioi i, (X j - X i : MvPolynomial (Fin n) R) ≠ 0 := by
+  rw [← TauCeti.alternant_fin_val_eq_vandermonde]
+  exact TauCeti.alternant_ne_zero_of_injective Fin.val_injective
+
+end MvPolynomial

@@ -16,7 +16,8 @@ Let `W` be an elliptic curve over a finite field `𝔽_q` and `π` its Frobenius
 `K`. This file proves that `deg (id - π)` over `K` is `#E(𝔽_q)`, the point count of
 `W` over its own base, and hence, when `K` is separably closed, that the degree of the Frobenius
 pencil `r π - s` is the quadratic form `q r² - a_q r s + s²` whose middle coefficient is the
-Frobenius trace `a_q = q + 1 - #E(𝔽_q)`.
+Frobenius trace `a_q = q + 1 - #E(𝔽_q)`. As `r π - 1` is then separable, its kernel, the set of
+points fixed by `r π`, has `q r² - a_q r + 1` elements.
 
 ## Main results
 
@@ -24,10 +25,14 @@ Frobenius trace `a_q = q + 1 - #E(𝔽_q)`.
   `deg (id - π) = #E(𝔽_q)` over an extension.
 * `TauCeti.Isogeny.Hom.degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_eq_frobeniusTrace`:
   the degree of `r π - s` is the quadratic form `q r² - a_q r s + s²`.
+* `TauCeti.Isogeny.Hom.degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_one`: over a separably
+  closed extension, `deg (r π - 1) = q r² - a_q r + 1`.
+* `TauCeti.Isogeny.Hom.ncard_fixedPoints_zsmul_ofIsogeny_baseChangeFrobenius`: over a separably
+  closed extension, `#{P | r • π P = P} = q r² - a_q r + 1`.
 
 ## References
 
-* [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.4.10 and V.1.1.
+* [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.4.10, V.1.1 and V.2.3.
 
 ## Provenance
 
@@ -78,6 +83,34 @@ theorem degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_eq_frobeniusTrac
       (Nat.card F : ℤ) * r ^ 2 - W.frobeniusTrace * (r * s) + s ^ 2 := by
   rw [degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id W r s,
     degree_id_sub_ofIsogeny_baseChangeFrobenius_eq_pointCount, WeierstrassCurve.frobeniusTrace_def]
+
+/-- The Frobenius pencil `r π - 1` is nonzero: it pulls the invariant differential back to its
+negative. -/
+theorem zsmul_ofIsogeny_baseChangeFrobenius_sub_one_ne_zero (r : ℤ) :
+    r • ofIsogeny (baseChangeFrobenius K W) - 1 ≠ 0 := by
+  rw [one_def, ← one_zsmul (id (W⁄K).toAffine)]
+  exact zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_ne_zero W r 1 (by simp)
+
+/-- **The degree of `r π - 1`**: over a separably closed extension,
+`deg (r π - 1) = q r² - a_q r + 1`. -/
+theorem degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_one [IsSepClosed K] (r : ℤ) :
+    ((r • ofIsogeny (baseChangeFrobenius K W) - 1).degree : ℤ) =
+      Nat.card F * r ^ 2 - W.frobeniusTrace * r + 1 := by
+  rw [one_def, ← one_zsmul (id (W⁄K).toAffine),
+    degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_eq_frobeniusTrace, mul_one, one_pow]
+
+/-- **The points fixed by `r π` over a separably closed extension** number
+`q r² - a_q r + 1`, the degree of the separable endomorphism `r π - 1` (Silverman V.2.3). -/
+theorem ncard_fixedPoints_zsmul_ofIsogeny_baseChangeFrobenius [DecidableEq K] [IsSepClosed K]
+    (r : ℤ) :
+    ({P : (W⁄K).toAffine.Point |
+      (r • ofIsogeny (baseChangeFrobenius K W)).pointMap P = P}.ncard : ℤ) =
+      Nat.card F * r ^ 2 - W.frobeniusTrace * r + 1 := by
+  have h := zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_ne_zero (K := K) W r 1 (by simp)
+  have := (isSeparable_toIsogeny_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_iff W r 1 h).mpr
+    (by simp)
+  rw [setOf_pointMap_eq_self', ← degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_one (K := K),
+    one_def, ← one_zsmul (id (W⁄K).toAffine), ncard_setOf_pointMap_eq h]
 
 end TauCeti.Isogeny.Hom
 

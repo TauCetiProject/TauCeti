@@ -35,7 +35,7 @@ theorem coordinatePower_a1_eq_smul_unitLattice (ι : Type*) [Fintype ι] :
     intro x
     apply LinearMap.ext
     intro y
-    simp only [pi_form, piForm_apply, a1_form_apply,
+    simp only [pi_form, LinearMap.BilinForm.pi_apply, a1_form_apply,
       smul_form, LinearMap.smul_apply, unitLattice_form_apply,
       smul_eq_mul, mul_assoc, Finset.mul_sum]
     norm_num

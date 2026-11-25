@@ -43,7 +43,8 @@ on that factor, without a domination assumption.
 
 For a compactly supported `C¹` factor `g`, the file also records the directional form
 `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g` of Mathlib's rule `HasCompactSupport.hasFDerivAt_convolution_right`, in
-which the derivative is a convolution with values in `F` rather than in a space of linear maps.
+which the derivative is a convolution with values in `F` rather than in a space of linear maps, and
+its counterpart `∂ᵥ (f ⋆ g) = ∂ᵥ f ⋆ g` for a compactly supported `C¹` kernel `f`.
 
 For mollification by a nonnegative compactly supported kernel `ρ` of integral `1`, the file
 records two bounds that need no regularity of the mollified function `u`. One-sided bounds on the
@@ -65,6 +66,8 @@ kernel allows, hence Lipschitz.
   compactly supported `C^N` `g` and `n ≤ N`.
 * `HasCompactSupport.fderiv_convolution_right_apply`: for `g` compactly supported, the
   directional derivative `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g`.
+* `HasCompactSupport.fderiv_convolution_left_apply`: for `f` compactly supported, the
+  directional derivative falls on the kernel, `∂ᵥ (f ⋆ g) = ∂ᵥ f ⋆ g`.
 * `HasCompactSupport.fderiv_fderiv_convolution_right_apply`: the same for two directional
   derivatives, `∂ᵥ ∂ᵥ' (f ⋆ g) = f ⋆ ∂ᵥ ∂ᵥ' g`.
 * `HasCompactSupport.fderiv_convolution_left_apply_le`: mollifying by a nonnegative kernel of
@@ -301,6 +304,14 @@ theorem _root_.HasCompactSupport.fderiv_convolution_right_apply (hcg : HasCompac
     fderiv ℝ (f ⋆[L, μ] g) x v = (f ⋆[L, μ] fun y => fderiv ℝ g y v) x := by
   rw [(hcg.hasFDerivAt_convolution_right L hf hg x).fderiv,
     convolution_precompR_apply L hf (hcg.fderiv (𝕜 := ℝ)) (hg.continuous_fderiv one_ne_zero) x v]
+
+/-- **Directional derivatives of a convolution, on the kernel.** If `f` is `C¹` with compact
+support and `g` is locally integrable, then the derivative of `f ⋆ g` in a direction `v` is the
+convolution of the derivative of `f` in the direction `v` with `g`. -/
+theorem _root_.HasCompactSupport.fderiv_convolution_left_apply [μ.IsNegInvariant]
+    (hcf : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (hg : LocallyIntegrable g μ) (x v : G) :
+    fderiv ℝ (f ⋆[L, μ] g) x v = ((fun y => fderiv ℝ f y v) ⋆[L, μ] g) x := by
+  rw [← convolution_flip, hcf.fderiv_convolution_right_apply L.flip hg hf, convolution_flip]
 
 /-- **Iterated directional derivatives of a convolution fall on the compactly supported
 factor.** If `f` is locally integrable and `g` is `C²` with compact support, then the derivative

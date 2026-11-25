@@ -28,13 +28,16 @@ coefficients of `p` yields the general monoid statement.
 
 ## Main results
 
+* `Polynomial.isWeightedHomogeneous_discr`: the discriminant of a polynomial whose coefficient of
+  `X ^ i` has weight `natDegree - i` is weighted homogeneous of weight
+  `natDegree * (natDegree - 1)`.
 * `Polynomial.isWeightedHomogeneous_discr_freePoly`: the discriminant of `Polynomial.freePoly R n`
   is weighted homogeneous of weight `n * (n - 1)` when `X i` has weight `n - i`.
 * `Polynomial.isWeightedHomogeneous_discr_freeMonic`: the discriminant of
   `Polynomial.freeMonic R m` is weighted homogeneous of weight `m * (m - 1)` when `X i` has
   weight `m - i`.
-* `Polynomial.isWeightedHomogeneous_discr`: the discriminant of a polynomial whose coefficient of
-  `X ^ i` has weight `(natDegree - i) • u` is weighted homogeneous of weight
+* `Polynomial.isWeightedHomogeneous_discr_smul`: the discriminant of a polynomial whose coefficient
+  of `X ^ i` has weight `(natDegree - i) • u` is weighted homogeneous of weight
   `(natDegree * (natDegree - 1)) • u`.
 -/
 
@@ -44,7 +47,10 @@ namespace Polynomial
 
 variable {σ R : Type*} [CommRing R]
 
-private theorem isWeightedHomogeneous_discr_nat {w : σ → ℕ} {p : (MvPolynomial σ R)[X]}
+/-- **The discriminant is isobaric.** If the coefficient of `X ^ i` in `p` is weighted homogeneous
+of weight `p.natDegree - i` for every `i`, then the discriminant of `p` is weighted homogeneous of
+weight `p.natDegree * (p.natDegree - 1)`. -/
+theorem isWeightedHomogeneous_discr {w : σ → ℕ} {p : (MvPolynomial σ R)[X]}
     (hp : ∀ i, (p.coeff i).IsWeightedHomogeneous w (p.natDegree - i)) :
     p.discr.IsWeightedHomogeneous w (p.natDegree * (p.natDegree - 1)) := by
   -- The substitution `X i ↦ T ^ w i * X i`, valued in polynomials in `T`.
@@ -89,13 +95,14 @@ theorem isWeightedHomogeneous_discr_freePoly (R : Type*) [CommRing R] (n : ℕ) 
     split_ifs with hk
     · exact MvPolynomial.isWeightedHomogeneous_X R w ⟨k, Nat.lt_succ_of_le hk⟩
     · exact MvPolynomial.isWeightedHomogeneous_zero R w (n - k)
-  have h := isWeightedHomogeneous_discr_nat hp
+  have h := isWeightedHomogeneous_discr hp
   rwa [natDegree_freePoly] at h
 
-/-- **The discriminant is isobaric.** If the coefficient of `X ^ i` in `p` is weighted homogeneous
-of weight `(p.natDegree - i) • u` in an additive commutative monoid `M` for every `i`, then the
-discriminant of `p` is weighted homogeneous of weight `(p.natDegree * (p.natDegree - 1)) • u`. -/
-theorem isWeightedHomogeneous_discr {M : Type*} [AddCommMonoid M] {w : σ → M} (u : M)
+/-- **The discriminant is isobaric (general monoid weights).** If the coefficient of `X ^ i` in `p`
+is weighted homogeneous of weight `(p.natDegree - i) • u` in an additive commutative monoid `M` for
+every `i`, then the discriminant of `p` is weighted homogeneous of weight
+`(p.natDegree * (p.natDegree - 1)) • u`. -/
+theorem isWeightedHomogeneous_discr_smul {M : Type*} [AddCommMonoid M] {w : σ → M} (u : M)
     {p : (MvPolynomial σ R)[X]}
     (hp : ∀ i, (p.coeff i).IsWeightedHomogeneous w ((p.natDegree - i) • u)) :
     p.discr.IsWeightedHomogeneous w ((p.natDegree * (p.natDegree - 1)) • u) := by
@@ -124,13 +131,13 @@ theorem isWeightedHomogeneous_discr_freeMonic (R : Type*) [CommRing R] (m : ℕ)
   · rw [Subsingleton.elim (freeMonic R m).discr 0]
     exact MvPolynomial.isWeightedHomogeneous_zero R _ _
   let w : Fin m → ℕ := fun i ↦ m - (i : ℕ)
-  have h := isWeightedHomogeneous_discr (w := w) (1 : ℕ) (p := freeMonic R m) fun i ↦ by
-    rw [natDegree_freeMonic, coeff_freeMonic, smul_eq_mul, mul_one]
+  have h := isWeightedHomogeneous_discr (w := w) (p := freeMonic R m) fun i ↦ by
+    rw [natDegree_freeMonic, coeff_freeMonic]
     split_ifs with hi him
     · exact MvPolynomial.isWeightedHomogeneous_X R w ⟨i, hi⟩
     · rw [him, Nat.sub_self]; exact MvPolynomial.isWeightedHomogeneous_one R w
     · exact MvPolynomial.isWeightedHomogeneous_zero R w (m - i)
   rw [natDegree_freeMonic] at h
-  simpa [w] using h
+  exact h
 
 end Polynomial

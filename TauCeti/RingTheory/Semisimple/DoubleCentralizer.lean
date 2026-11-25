@@ -89,9 +89,9 @@ See T. Y. Lam, *A First Course in Noncommutative Rings*, GTM 131, Chapter 4, and
 
 public section
 
-namespace TauCeti
-
 open Module
+
+namespace TauCeti
 
 variable {R : Type*} [Ring R] {M : Type*} [AddCommGroup M] [Module R M]
 

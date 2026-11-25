@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.MvPolynomial.Symmetric.Alternant
 import Mathlib.Algebra.Prime.Lemmas
 import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 import TauCeti.RingTheory.MvPolynomial.IrreducibleQuadratic
+import TauCeti.RingTheory.MvPolynomial.Prime
 
 /-!
 # Divisibility by the Vandermonde alternant

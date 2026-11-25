@@ -45,9 +45,8 @@ when `3 = 0`, and over `ℤ` show sharpness.
   `TauCeti.prime_depressedDiscr_iff_prime_discr_freeMonic_of_isUnit`: identification of generic
   monic and depressed discriminants when `m` is invertible.
 * `TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`, `TauCeti.prime_depressedDiscr_of_isUnit`,
-  `TauCeti.prime_depressedDiscr_of_three_le`, `TauCeti.prime_depressedDiscr_of_ne_zero`,
-  `TauCeti.depressedDiscr_prime`: every constant divisor is a unit for `3 ≤ m` and
-  integral-domain primality of `depressedDiscr`.
+  `TauCeti.prime_depressedDiscr_of_three_le`, `TauCeti.prime_depressedDiscr_of_ne_zero`: every
+  constant divisor is a unit for `3 ≤ m` and integral-domain primality of `depressedDiscr`.
 * `TauCeti.prime_depressedDiscr_two_iff`, `TauCeti.not_prime_depressedDiscr_two_of_two_eq_zero`,
   `TauCeti.not_prime_depressedDiscr_three_of_three_eq_zero`,
   `TauCeti.not_prime_depressedDiscr_int_two`: degree-`2` criterion and sharpness counterexamples.
@@ -313,12 +312,6 @@ theorem prime_depressedDiscr_of_three_le {R : Type*} [CommRing R] [IsDomain R]
   rcases hprimeM.dvd_or_dvd hfgM with hf | hg
   · exact Or.inl (MvPolynomial.dvd_of_map_isLocalization_away_dvd Rₘ hsat hf)
   · exact Or.inr (MvPolynomial.dvd_of_map_isLocalization_away_dvd Rₘ hsat hg)
-
-/-- Over a field `K` of characteristic zero, `TauCeti.depressedDiscr K m` is prime in
-`MvPolynomial (Fin (m - 1)) K` for every `m ≥ 2`. -/
-theorem depressedDiscr_prime (K : Type*) [Field K] [CharZero K] (m : ℕ) (hm : 2 ≤ m) :
-    Prime (depressedDiscr K m) :=
-  prime_depressedDiscr_of_ne_zero two_ne_zero hm (Nat.cast_ne_zero.mpr (by omega))
 
 end Tschirnhaus
 

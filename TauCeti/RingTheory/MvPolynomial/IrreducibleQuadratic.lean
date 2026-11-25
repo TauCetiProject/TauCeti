@@ -7,12 +7,12 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.IrreducibleQuadratic
 
-import Mathlib.Algebra.MvPolynomial.Division
 import Mathlib.Algebra.MvPolynomial.Nilpotent
 import TauCeti.Algebra.MvPolynomial.Variables
+import TauCeti.RingTheory.MvPolynomial.Prime
 
 /-!
-# Primality, irreducibility, and non-associatedness of variable differences
+# Irreducibility and non-associatedness of variable differences
 
 Over an integral domain `R`, each root-difference hyperplane `X i - X j` (`i ≠ j`) in
 `MvPolynomial σ R` is prime (`MvPolynomial.prime_X_sub_X`) and therefore irreducible
@@ -23,8 +23,6 @@ product `∏_{i < j} (X i - X j)`.
 
 ## Main results
 
-* `MvPolynomial.prime_X_sub_X`: for `i ≠ j` over an integral domain, `X i - X j` is prime in
-  `MvPolynomial σ R`.
 * `MvPolynomial.irreducible_X_sub_X`: for `i ≠ j` over an integral domain, `X i - X j` is
   irreducible in `MvPolynomial σ R`.
 * `MvPolynomial.eq_of_associated_X_sub_X`: for `i < j` and `i' < j'` in a preordered index type
@@ -34,31 +32,6 @@ product `∏_{i < j} (X i - X j)`.
 public section
 
 namespace MvPolynomial
-
-/-- Over an integral domain `R`, the difference `X i - X j` of two distinct variables is prime in
-`MvPolynomial σ R`. -/
-theorem prime_X_sub_X {σ R : Type*} [CommRing R] [IsDomain R] {i j : σ} (hij : i ≠ j) :
-    Prime (X i - X j : MvPolynomial σ R) := by
-  classical
-  let f : MvPolynomial σ R →ₐ[R] MvPolynomial σ R :=
-    aeval fun k ↦ if k = i then X i + X j else X k
-  let g : MvPolynomial σ R →ₐ[R] MvPolynomial σ R :=
-    aeval fun k ↦ if k = i then X i - X j else X k
-  have hfg : f.comp g = AlgHom.id R _ := by
-    refine algHom_ext fun k ↦ ?_
-    by_cases hki : k = i
-    · subst hki; simp [f, g, hij.symm]
-    · simp [f, g, hki]
-  have hgf : g.comp f = AlgHom.id R _ := by
-    refine algHom_ext fun k ↦ ?_
-    by_cases hki : k = i
-    · subst hki; simp [f, g, hij.symm]
-    · simp [f, g, hki]
-  let e : MvPolynomial σ R ≃ₐ[R] MvPolynomial σ R := AlgEquiv.ofAlgHom f g hfg hgf
-  have he : e (X i - X j) = X i := by
-    simp [e, f, hij.symm]
-  rw [← MulEquiv.prime_iff e, he]
-  exact prime_X
 
 /-- Over an integral domain `R`, the difference `X i - X j` of two distinct variables is
 irreducible in `MvPolynomial σ R`. -/
