@@ -9,6 +9,7 @@ public import TauCeti.Probability.Process.Tail.ShiftInvariant
 public import Mathlib.Dynamics.Ergodic.Ergodic
 public import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.Independence.ZeroOne
+import TauCeti.Probability.ProductMeasure
 
 /-!
 # Ergodicity of the Bernoulli shift
@@ -67,9 +68,8 @@ theorem ergodic_shift_infinitePi_const (μ : Measure α) [IsProbabilityMeasure �
     exact shift_apply x n
   have hmp : MeasurePreserving (shift α) (Measure.infinitePi fun _ : ℕ => μ)
       (Measure.infinitePi fun _ : ℕ => μ) := by
-    refine ⟨measurable_shift, ?_⟩
     rw [hshift]
-    exact Measure.map_infinitePi_infinitePi_of_inj (P := fun _ : ℕ => μ) (add_left_injective 1)
+    exact measurePreserving_infinitePi_comp_of_injective (fun _ => μ) (add_left_injective 1)
   exact ergodic_shift_of_iIndepFun (Measure.infinitePi fun _ : ℕ => μ)
     (iIndepFun_infinitePi (X := fun _ => id) fun _ => measurable_id) hmp
 
