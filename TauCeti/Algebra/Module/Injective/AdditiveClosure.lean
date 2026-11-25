@@ -6,19 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Injective
-public import Mathlib.Algebra.Module.Projective
-public import Mathlib.Algebra.Module.Equiv.Basic
-public import Mathlib.RingTheory.Finiteness.Cardinality
 public import Mathlib.RingTheory.Finiteness.Projective
+public import TauCeti.RingTheory.Finiteness.Faithful
 
 /-!
 # Projective-injective modules over a ring acting on a finitely generated module
 
-Let `M` be a finitely generated module over a ring `A`, and let a ring `Γ` act faithfully on `M` by
-`A`-linear maps. The main example is the endomorphism ring `Γ = Module.End A M`, acting by
-evaluation. If `m₁, …, mₖ` generate `M` over `A`, the map `γ ↦ (γ • m₁, …, γ • mₖ)` embeds `Γ` into
-`Mᵏ` as a `Γ`-module (`TauCeti.exists_injective_pi_of_faithfulSMul`): an element of `Γ` killing
-the generators kills `M`, since it acts `A`-linearly.
+Let `M` be a finitely generated module over a semiring `A`, and let a ring `Γ` act faithfully on
+`M` by `A`-linear maps. The main example is the endomorphism ring `Γ = Module.End A M`, acting by
+evaluation. Then `Γ` embeds into a finite power `Mᵏ` as a `Γ`-module
+(`TauCeti.exists_injective_pi_of_faithfulSMul`, in `TauCeti.RingTheory.Finiteness.Faithful`).
 
 Hence a finitely generated projective `Γ`-module `P`, a direct summand of some `Γⁿ`, embeds into
 `Mⁿᵏ`. If `P` is also injective, this embedding splits, so **`P` is a retract of a finite power of
@@ -33,8 +30,6 @@ and injective over `Module.End A M`, and the finitely generated projective-injec
 
 ## Main results
 
-* `TauCeti.exists_injective_pi_of_faithfulSMul`: a ring acting faithfully and `A`-linearly on a
-  finitely generated `A`-module `M` embeds into a finite power of `M`.
 * `TauCeti.exists_comp_eq_id_pi_of_projective_of_injective`: a finitely generated projective and
   injective module over such a ring is a retract of a finite power of `M`.
 
@@ -52,25 +47,8 @@ namespace TauCeti
 
 universe v
 
-variable {A : Type*} [Ring A] {Γ : Type*} [Ring Γ] {M : Type v} [AddCommGroup M] [Module A M]
+variable {A : Type*} [Semiring A] {Γ : Type*} [Ring Γ] {M : Type v} [AddCommGroup M] [Module A M]
   [Module Γ M] [SMulCommClass Γ A M] [FaithfulSMul Γ M] [Module.Finite A M]
-
-variable (A Γ M) in
-include A in
-/-- **A ring acting faithfully on a finitely generated module embeds into a finite power of it.**
-If `Γ` acts faithfully and `A`-linearly on a finitely generated `A`-module `M`, then `Γ` embeds
-into some `Mᵏ` as a `Γ`-module, by `γ ↦ (γ • m₁, …, γ • mₖ)` for generators `mᵢ` of `M`. -/
-theorem exists_injective_pi_of_faithfulSMul :
-    ∃ (k : ℕ) (f : Γ →ₗ[Γ] (Fin k → M)), Function.Injective f := by
-  obtain ⟨k, s, hs⟩ := Module.Finite.exists_fin (R := A) (M := M)
-  refine ⟨k, LinearMap.pi fun i ↦ LinearMap.toSpanSingleton Γ M (s i), fun γ γ' h ↦ ?_⟩
-  -- The `A`-linear maps `γ • ·` and `γ' • ·` agree on the generators `s i`.
-  let φ (g : Γ) : M →ₗ[A] M :=
-    { toFun m := g • m
-      map_add' := smul_add g
-      map_smul' a m := smul_comm g a m }
-  have h' : φ γ = φ γ' := LinearMap.ext_on_range hs fun i ↦ by simpa [φ] using congrFun h i
-  exact FaithfulSMul.eq_of_smul_eq_smul fun m ↦ LinearMap.congr_fun h' m
 
 variable (A M) in
 include A in
@@ -94,10 +72,9 @@ theorem exists_comp_eq_id_pi_of_projective_of_injective (P : Type v) [AddCommGro
   have hσ : Function.Injective σ :=
     Function.LeftInverse.injective (g := π) fun x ↦ LinearMap.congr_fun hπσ x
   have hs : Function.Injective s :=
-    c.injective.comp (Function.Injective.comp (f := σ)
-      (fun x y h ↦ funext fun i ↦ hf (congrFun h i)) hσ)
+    c.injective.comp ((Function.Injective.piMap fun _ : Fin n ↦ hf).comp hσ)
   -- The embedding splits, since `P` is injective.
-  obtain ⟨r, hr⟩ := (Module.Baer.of_injective ‹_›).extension_property s hs .id
+  obtain ⟨r, hr⟩ := Module.Injective.extension_property Γ P _ _ s hs .id
   exact ⟨n * k, s, r, hr⟩
 
 end TauCeti

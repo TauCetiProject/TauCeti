@@ -73,6 +73,8 @@ equivalence's functor and inverse: without exposure, the public statements of
 `IsIdempotentElem.cornerEquivalence_unitIso` and `IsIdempotentElem.cornerEquivalence_counitIso`
 cannot identify those types with the ones of the supplied natural isomorphisms. The functor and
 inverse projection equalities alone do not supply this definitional equality during elaboration.
+The bundled `IsIdempotentElem.moritaEquivalenceCorner` is exposed as well, so that clients can
+compose isomorphisms through its functor read as the corner functor.
 
 ## References
 
@@ -441,7 +443,7 @@ instance : he.cornerFunctor.{v}.Linear R where
 /-- **Morita equivalence with the corner ring of a full idempotent**: for a full idempotent `e`
 of an `R`-algebra `A`, the corner functor `M ↦ eM` is an `R`-linear equivalence between the
 module categories of `A` and of `eAe`. -/
-noncomputable def moritaEquivalenceCorner (hfull : TwoSidedIdeal.span {e} = ⊤) :
+@[expose] noncomputable def moritaEquivalenceCorner (hfull : TwoSidedIdeal.span {e} = ⊤) :
     MoritaEquivalence R A he.Corner where
   eqv := he.cornerEquivalence.{u, u} hfull
   linear := inferInstanceAs (he.cornerFunctor.{u}.Linear R)
