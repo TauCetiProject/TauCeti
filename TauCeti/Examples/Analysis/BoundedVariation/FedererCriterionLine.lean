@@ -59,10 +59,16 @@ and the interval `piece k`. -/
 private noncomputable def window (k : ℕ) : Opens ℝ :=
   ⟨Ioo (1 / (2 * k + 3)) (1 / (2 * k + 1)), isOpen_Ioo⟩
 
+/-- `window k` is the open interval `(1/(2k + 3), 1/(2k + 1))`. -/
+@[simp]
+private theorem coe_window (k : ℕ) :
+    (window k : Set ℝ) = Ioo (1 / (2 * (k : ℝ) + 3)) (1 / (2 * k + 1)) :=
+  (rfl)
+
 theorem measurableSet_intervals : MeasurableSet intervals :=
   MeasurableSet.iUnion fun _ => measurableSet_Ioo
 
-/-- For `j < k`, the left end `1/(2k + 1)` of the `k`-th gap lies left of `piece j`. -/
+/-- For `j < k`, the right end `1/(2k + 1)` of the `k`-th gap lies left of `piece j`. -/
 private theorem one_div_two_mul_add_one_le_of_lt {j k : ℕ} (hjk : j < k) :
     1 / (2 * (k : ℝ) + 1) ≤ 1 / (2 * j + 3) := by
   have : (j : ℝ) + 1 ≤ k := by exact_mod_cast hjk
@@ -83,19 +89,23 @@ private theorem one_le_perimeter_window (k : ℕ) :
     1 ≤ perimeter volume (window k) intervals := by
   have h₁ : 1 / (2 * (k : ℝ) + 3) < 1 / (2 * k + 2) := by gcongr; norm_num
   have h₂ : 1 / (2 * (k : ℝ) + 2) < 1 / (2 * k + 1) := by gcongr; norm_num
-  have hs : Ioo (1 / (2 * (k : ℝ) + 3)) (1 / (2 * k + 2)) ⊆ intervals ∩ window k :=
-    fun x hx => ⟨mem_iUnion.2 ⟨k, hx⟩, hx.1, hx.2.trans h₂⟩
-  have hc : Ioo (1 / (2 * (k : ℝ) + 2)) (1 / (2 * k + 1)) ⊆ intervalsᶜ ∩ window k :=
-    fun x hx => ⟨Ioo_subset_compl_intervals k hx, h₁.trans hx.1, hx.2⟩
+  have hs : Ioo (1 / (2 * (k : ℝ) + 3)) (1 / (2 * k + 2)) ⊆ intervals ∩ window k := by
+    rw [coe_window]
+    exact fun x hx => ⟨mem_iUnion.2 ⟨k, hx⟩, hx.1, hx.2.trans h₂⟩
+  have hc : Ioo (1 / (2 * (k : ℝ) + 2)) (1 / (2 * k + 1)) ⊆ intervalsᶜ ∩ window k := by
+    rw [coe_window]
+    exact fun x hx => ⟨Ioo_subset_compl_intervals k hx, h₁.trans hx.1, hx.2⟩
   exact Real.one_le_perimeter_of_ordConnected measurableSet_intervals.nullMeasurableSet
-    ordConnected_Ioo
+    (by rw [coe_window]; exact ordConnected_Ioo)
     (fun h0 => ((Measure.measure_Ioo_pos volume).2 h₁).ne' (measure_mono_null hs h0))
     (fun h0 => ((Measure.measure_Ioo_pos volume).2 h₂).ne' (measure_mono_null hc h0))
 
 /-- Distinct windows are disjoint. -/
 private theorem disjoint_window {j k : ℕ} (hjk : j < k) : Disjoint (window j) (window k) :=
-  Opens.coe_disjoint.1 <| disjoint_left.2 fun _ hj hk =>
-    absurd (hj.1.trans hk.2) (not_lt.2 (one_div_two_mul_add_one_le_of_lt hjk))
+  Opens.coe_disjoint.1 <| by
+    rw [coe_window, coe_window]
+    exact disjoint_left.2 fun _ hj hk =>
+      absurd (hj.1.trans hk.2) (not_lt.2 (one_div_two_mul_add_one_le_of_lt hjk))
 
 /-- The first `N` windows carry perimeter at least `N`. -/
 private theorem natCast_le_perimeter_sup_window (N : ℕ) :
@@ -114,8 +124,9 @@ private theorem natCast_le_perimeter_sup_window (N : ℕ) :
 theorem perimeter_eq_top : perimeter volume unitIoo intervals = ∞ := by
   refine ENNReal.eq_top_of_forall_nnreal_le fun r => ?_
   have hsub : (Finset.range ⌈(r : ℝ)⌉₊).sup window ≤ unitIoo := by
-    refine Finset.sup_le fun k _ x hx => ⟨(by positivity : (0 : ℝ) < 1 / (2 * k + 3)).trans hx.1,
-      hx.2.trans_le ?_⟩
+    refine Finset.sup_le fun k _ => ?_
+    rw [← SetLike.coe_subset_coe, coe_window, coe_unitIoo]
+    refine Ioo_subset_Ioo (by positivity) ?_
     rw [div_le_one (by positivity)]
     linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
   calc (r : ℝ≥0∞) ≤ (⌈(r : ℝ)⌉₊ : ℝ≥0∞) := by
