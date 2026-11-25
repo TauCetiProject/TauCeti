@@ -195,8 +195,7 @@ band, such that every field `Xₛ = (1 - s) • X₀ + s • X₁`, `s ∈ ℝ`,
 `{f ≤ b}` for the time `max (f x - a) 0` is a retraction of `{f ≤ b}` onto `{f ≤ a}`, and these
 retractions form a homotopy, relative to `{f ≤ a}`, from the retraction `r₀` along `X₀` to the
 retraction `r₁` along `X₁`. So the retractions built from `Y₀` and from `Y₁` are homotopic
-through retractions of the same kind, each moving the points of the band to the level `a` at unit
-speed. -/
+through retractions of the same kind. -/
 theorem exists_homotopyRel_sublevelRetraction_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(ℝ) ∞ f)
     {Y₀ Y₁ : (x : M) → TangentSpace I x}
     (hY₀ : ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, Y₀ x⟩ : TangentBundle I M)))
@@ -295,13 +294,13 @@ theorem exists_sublevelDeformation (hY : IsAdaptedPseudoGradient f Y)
 pseudo-gradient adapted to a smooth function `f` on a manifold with a smooth Riemannian metric, let
 `a ≤ b`, and let the band `f⁻¹[a, b]` be compact and contain no critical point of `f`. Let `X` be
 the rescaled pseudo-gradient `Y / (-df(Y))` and `X'` the normalized negative gradient
-`-grad f / ‖grad f‖²` on an open neighbourhood of the band, both complete smooth vector fields,
-so that `df(X) = df(X') = -1` there. Following their flows from each point `x` of `{f ≤ b}` for the
-time `max (f x - a) 0` gives retractions `r` and `r'` of `{f ≤ b}` onto `{f ≤ a}`: each moves a
-point of the band to the level `a` at unit speed and fixes `{f ≤ a}`. These two retractions are
-homotopic relative to `{f ≤ a}`, through the retractions along the fields
-`(1 - s) • X + s • X'` of the segment from `X` to `X'`: the homotopy `F` follows the flow of the
-field at parameter `s` from each point `x` for the time `max (f x - a) 0`. This is
+`-grad f / ‖grad f‖²` on an open neighbourhood of the band, both complete smooth vector fields.
+Following their flows from each point `x` of `{f ≤ b}` for the time `max (f x - a) 0` gives
+retractions `r` and `r'` of `{f ≤ b}` onto `{f ≤ a}`: each brings a point `x` of the band into
+`{f ≤ a}` at time `f x - a` and fixes `{f ≤ a}`. These two retractions are homotopic relative to
+`{f ≤ a}`, through the retractions along the fields `(1 - s) • X + s • X'` of the segment from `X`
+to `X'`: the homotopy `F` follows the flow of the field at parameter `s` from each point `x` for
+the time `max (f x - a) 0`. This is
 `TauCeti.exists_homotopyRel_sublevelRetraction_of_mvfderiv_lt_zero` for `Y` and `-grad f`. -/
 theorem exists_homotopicRel_sublevelRetraction_neg_mgradient
     [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
