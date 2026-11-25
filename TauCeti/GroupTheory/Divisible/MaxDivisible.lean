@@ -119,6 +119,16 @@ section AddCommGroup
 
 variable {A : Type*} [AddCommGroup A]
 
+/-- The kernel of a retraction `r : A →+ D` onto a subgroup `D` of an abelian group is a complement
+of `D`. -/
+theorem isCompl_ker_of_retraction {D : AddSubgroup A} (r : A →+ D) (hr : ∀ x : D, r x = x) :
+    IsCompl D r.ker :=
+  -- `LinearMap.isCompl_of_proj` for the `ℤ`-linear map `r.toIntLinearMap`. The carrier of
+  -- `D.toIntSubmodule` is that of `D`, so `↥D.toIntSubmodule` is `↥D` by definition and `r` is a
+  -- retraction onto `D.toIntSubmodule`; likewise `ker r.toIntLinearMap` is `r.ker.toIntSubmodule`.
+  toIntSubmodule.isCompl_iff.2 <|
+    LinearMap.isCompl_of_proj (p := D.toIntSubmodule) (f := r.toIntLinearMap) hr
+
 namespace IsDivisible
 
 /-- A supremum of divisible subgroups of an abelian group is divisible. -/
@@ -162,19 +172,20 @@ complement is not canonical. -/
 theorem exists_isCompl {D : AddSubgroup A} (hD : D.IsDivisible) :
     ∃ C : AddSubgroup A, IsCompl D C := by
   obtain ⟨r, hr⟩ := hD.exists_retraction
-  exact ⟨r.ker, toIntSubmodule.isCompl_iff.2 <|
-    LinearMap.isCompl_of_proj (p := D.toIntSubmodule) (f := r.toIntLinearMap) hr⟩
+  exact ⟨r.ker, isCompl_ker_of_retraction r hr⟩
 
 /-- An abelian group splits, noncanonically, as the product of a divisible subgroup and the
 quotient by it. -/
 theorem nonempty_addEquiv_prod_quotient {D : AddSubgroup A} (hD : D.IsDivisible) :
     Nonempty (A ≃+ D × (A ⧸ D)) := by
   obtain ⟨r, hr⟩ := hD.exists_retraction
+  -- As in `isCompl_ker_of_retraction`, `↥D.toIntSubmodule` is `↥D` by definition, so `r` is a
+  -- retraction onto `D.toIntSubmodule` and the `ℤ`-linear splitting lemma applies.
   refine ⟨(r.toIntLinearMap.equivProdOfSurjectiveOfIsCompl D.toIntSubmodule.mkQ
     (LinearMap.range_eq_of_proj (p := D.toIntSubmodule) hr) D.toIntSubmodule.range_mkQ
     ?_).toAddEquiv⟩
   rw [Submodule.ker_mkQ]
-  exact (LinearMap.isCompl_of_proj (p := D.toIntSubmodule) (f := r.toIntLinearMap) hr).symm
+  exact (toIntSubmodule.isCompl_iff.1 (isCompl_ker_of_retraction r hr)).symm
 
 end IsDivisible
 
