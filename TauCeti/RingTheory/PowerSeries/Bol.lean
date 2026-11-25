@@ -56,6 +56,19 @@ private theorem derivative_mul_sub_mul_derivative (a b c d : K) :
   simp only [map_add, derivative_C_mul_X, derivative_C, add_zero, map_sub, map_mul]
   ring
 
+/-- The constant coefficient of `c X + d` is `d`. -/
+private theorem constantCoeff_C_mul_X_add_C (c d : K) : constantCoeff (C c * X + C d) = d := by
+  rw [map_add, map_mul, constantCoeff_X, mul_zero, constantCoeff_C, zero_add]
+
+/-- `c X + d` is invertible when `d ≠ 0`. -/
+private theorem mul_inv_C_mul_X_add_C (c : K) {d : K} (hd : d ≠ 0) :
+    (C c * X + C d) * (C c * X + C d)⁻¹ = 1 :=
+  PowerSeries.mul_inv_cancel _ (by rwa [constantCoeff_C_mul_X_add_C])
+
+/-- The inverse of `c X` is `0`, because its constant coefficient vanishes. -/
+private theorem inv_C_mul_X_add_C_zero (c : K) : (C c * X + C (0 : K))⁻¹ = 0 :=
+  PowerSeries.inv_eq_zero.2 (constantCoeff_C_mul_X_add_C c 0)
+
 /-- **Bol's identity** for formal power series over a field: with `N = a X + b` and
 `L = c X + d`, `D^r (N ^ (j + r) * L⁻¹ ^ (j + 1)) =
 (j + r) ⋯ (j + 1) • (a d - b c) ^ r * N ^ j * L⁻¹ ^ (j + r + 1)`. When `d = 0` both sides vanish,
@@ -65,10 +78,11 @@ theorem iterate_derivative_pow_add_mul_inv_pow_add_one (a b c d : K) (j r : ℕ)
       (j + r).descFactorial r •
         (C (a * d - b * c) ^ r * (C a * X + C b) ^ j * (C c * X + C d)⁻¹ ^ (j + r + 1)) := by
   rcases eq_or_ne d 0 with rfl | hd
-  · simp [iterate_map_zero]
-  · have hLM : (C c * X + C d) * (C c * X + C d)⁻¹ = 1 := PowerSeries.mul_inv_cancel _ (by simpa)
-    rw [(d⁄dX).iterate_apply_pow_add_mul_pow_add_one (derivative_derivative_C_mul_X_add_C a b)
-      (derivative_derivative_C_mul_X_add_C c d) hLM, derivative_mul_sub_mul_derivative]
+  · rw [inv_C_mul_X_add_C_zero]
+    simp [iterate_map_zero]
+  · rw [(d⁄dX).iterate_apply_pow_add_mul_pow_add_one (derivative_derivative_C_mul_X_add_C a b)
+      (derivative_derivative_C_mul_X_add_C c d) (mul_inv_C_mul_X_add_C c hd),
+      derivative_mul_sub_mul_derivative]
 
 /-- **Bol's identity for polynomials**, over formal power series over a field: with
 `N = a X + b` and `L = c X + d`, for every polynomial `f` and every `n : ℕ`,
@@ -80,17 +94,16 @@ theorem iterate_derivative_pow_mul_aeval (a b c d : K) (n : ℕ) (f : K[X]) :
         Polynomial.aeval ((C a * X + C b) * (C c * X + C d)⁻¹)
           (Polynomial.derivative^[n + 1] f) := by
   rcases eq_or_ne d 0 with rfl | hd
-  · have h : (C c * X + C (0 : K))⁻¹ = 0 := PowerSeries.inv_eq_zero.2 (by simp)
-    -- `f (N L⁻¹) = f (0)` is a constant and `D^(n + 1)` kills `L ^ n`.
+  · -- `f (N L⁻¹) = f (0)` is a constant and `D^(n + 1)` kills `L ^ n`.
     have hf : d⁄dX (Polynomial.aeval (0 : K⟦X⟧) f) = 0 := by
       rw [← Polynomial.coeff_zero_eq_aeval_zero', Derivation.map_algebraMap]
-    rw [h, mul_zero, mul_comm ((C c * X + C 0) ^ n),
+    rw [inv_C_mul_X_add_C_zero, mul_zero, mul_comm ((C c * X + C 0) ^ n),
       Derivation.iterate_apply_mul_of_apply_eq_zero _ hf,
       Derivation.iterate_apply_pow_of_apply_apply_eq_zero _
         (derivative_derivative_C_mul_X_add_C c 0)]
     simp
-  · have hLM : (C c * X + C d) * (C c * X + C d)⁻¹ = 1 := PowerSeries.mul_inv_cancel _ (by simpa)
-    rw [(d⁄dX).iterate_apply_pow_mul_aeval (derivative_derivative_C_mul_X_add_C a b)
-      (derivative_derivative_C_mul_X_add_C c d) hLM, derivative_mul_sub_mul_derivative]
+  · rw [(d⁄dX).iterate_apply_pow_mul_aeval (derivative_derivative_C_mul_X_add_C a b)
+      (derivative_derivative_C_mul_X_add_C c d) (mul_inv_C_mul_X_add_C c hd),
+      derivative_mul_sub_mul_derivative]
 
 end TauCeti.PowerSeries
