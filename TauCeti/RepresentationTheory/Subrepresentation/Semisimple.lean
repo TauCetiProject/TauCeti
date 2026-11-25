@@ -96,30 +96,6 @@ instance Representation.isSemisimpleRepresentation_dual {G : Type*} [Group G]
 
 namespace Subrepresentation
 
-/-- **Membership in a supremum of subrepresentations.** A vector of `ρ`, read in `ρ.asModule`,
-lies in the supremum of the `k[G]`-submodules `(σ i).asSubmodule` exactly when it lies in the
-supremum of the underlying `k`-submodules `(σ i).toSubmodule`. -/
-theorem mem_iSup_asSubmodule_iff {ι : Sort*} {σ : ι → Subrepresentation ρ} {v : W} :
-    ρ.asModuleEquiv.symm v ∈ ⨆ i, (σ i).asSubmodule ↔ v ∈ ⨆ i, (σ i).toSubmodule := by
-  refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩
-  · rw [← ρ.asModuleEquiv.apply_symm_apply v]
-    refine Submodule.iSup_induction _
-      (motive := fun x ↦ ρ.asModuleEquiv x ∈ ⨆ i, (σ i).toSubmodule) hv
-      (fun i x hx ↦ Submodule.mem_iSup_of_mem i ?_) (by rw [map_zero]; exact zero_mem _)
-      (fun x y hx hy ↦ ?_)
-    · rw [Representation.asModuleEquiv_apply]
-      exact mem_asSubmodule_iff.mp hx
-    · rw [map_add]
-      exact add_mem hx hy
-  · refine Submodule.iSup_induction _
-      (motive := fun v ↦ ρ.asModuleEquiv.symm v ∈ ⨆ i, (σ i).asSubmodule) hv
-      (fun i x hx ↦ Submodule.mem_iSup_of_mem i ?_) (by rw [map_zero]; exact zero_mem _)
-      (fun x y hx hy ↦ ?_)
-    · simp only [Representation.asModuleEquiv_symm_apply]
-      exact (mem_asSubmodule_iff (v := x)).mpr hx
-    rw [map_add]
-    exact add_mem hx hy
-
 /-- **Equivariant projection onto a subrepresentation.** Every subrepresentation `S` of a
 semisimple representation `ρ` has a `G`-equivariant linear projection `P : W → S`. It is the first
 component of the splitting of `ρ` along a complement of `S`. -/
@@ -136,9 +112,8 @@ theorem exists_equivariant_projection [ρ.IsSemisimpleRepresentation] (S : Subre
 
 end Subrepresentation
 
-/-- **Restriction along a surjective homomorphism preserves semisimplicity.** Semisimplicity is
-complementedness of the lattice of subrepresentations, and `MonoidHom.resSubrepresentationOrderIso`
-identifies the two lattices. -/
+/-- **Restriction along a surjective homomorphism preserves and reflects semisimplicity.** For
+surjective `f`, the representation `ρ.comp f` is semisimple if and only if `ρ` is. -/
 @[simp]
 theorem MonoidHom.isSemisimpleRepresentation_comp_surjective_iff {H K : Type*} [Monoid H]
     [Monoid K] (f : H →* K) (hf : Function.Surjective f) (ρ : Representation k K W) :
@@ -170,10 +145,8 @@ theorem Representation.IsSemisimpleRepresentation.iSup_atoms_eq_top (ρ : Repres
   have hle : sSup {m : Submodule k[G] ρ.asModule | IsSimpleModule k[G] m} ≤
       ⨆ σ : {σ : Subrepresentation ρ // IsAtom σ}, (σ : Subrepresentation ρ).asSubmodule := by
     refine sSup_le fun m hm ↦ ?_
-    have hm' : (Subrepresentation.ofSubmodule' m).asSubmodule = m := by
-      rw [← Subrepresentation.subrepresentationSubmoduleOrderIso_apply,
-        ← Subrepresentation.subrepresentationSubmoduleOrderIso_symm_apply]
-      exact Subrepresentation.subrepresentationSubmoduleOrderIso.apply_symm_apply m
+    have hm' : (Subrepresentation.ofSubmodule' m).asSubmodule = m :=
+      Subrepresentation.subrepresentationSubmoduleOrderIso.apply_symm_apply m
     refine le_iSup_of_le ⟨Subrepresentation.ofSubmodule' m,
       Subrepresentation.isSimpleModule_asSubmodule_iff.mp (hm'.symm ▸ hm)⟩ hm'.ge
   refine Submodule.eq_top_iff'.mpr fun v ↦ Subrepresentation.mem_iSup_asSubmodule_iff.mp (hle ?_)
