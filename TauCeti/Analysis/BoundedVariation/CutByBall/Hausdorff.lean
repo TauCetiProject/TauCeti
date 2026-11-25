@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.CutByBall
+public import TauCeti.Analysis.BoundedVariation.CutByBall.Basic
 public import TauCeti.Geometry.Euclidean.Volume.Polar
 
 /-!
@@ -19,7 +19,7 @@ let `s ⊆ E` be Lebesgue-measurable. For every centre `x₀` and almost every r
 `P(s ∩ ball x₀ r) ≤ P(s; ball x₀ r) + Hⁿ⁻¹(s ∩ sphere x₀ r)` in `[0, ∞]`
 
 (`TauCeti.ae_perimeter_inter_ball_le_add_euclideanHausdorffMeasure`). This is the truncation
-inequality of GeometricMeasureTheory roadmap §5.1. It combines the estimate
+inequality for perimeter (Maggi, §13.2). It combines the estimate
 `P(s ∩ ball x₀ r) ≤ P(s; ball x₀ r) + m'(r)`, where `m(ρ) = |s ∩ ball x₀ ρ|`
 (`TauCeti.ae_perimeter_inter_ball_le`), with polar integration, which identifies `m'(r)` with
 `Hⁿ⁻¹(s ∩ sphere x₀ r)` at almost every radius (`TauCeti.ae_hasDerivAt_measureReal_inter_ball`).
