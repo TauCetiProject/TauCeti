@@ -16,11 +16,11 @@ import TauCeti.LinearAlgebra.Prod
 /-!
 # Index of linear maps
 
-This file extends Mathlib's algebraic `LinearMap.index` API with its invariance under composing
-with a linear equivalence, its additivity under products with finite free kernels and cokernels,
-and its behaviour under restriction of scalars along a tower of division rings `K → L`: the index
-gets multiplied by `finrank K L`. For instance, the realification of a complex-linear map has
-twice its complex index.
+This file extends Mathlib's algebraic `LinearMap.index` API with its invariance under composing with
+a linear equivalence or transporting along linear equivalences (`LinearMap.index_arrowCongr`), its
+additivity under products with finite free kernels and cokernels, and its behaviour under
+restriction of scalars along a tower of division rings `K → L`: the index gets multiplied by
+`finrank K L`. For instance, the realification of a complex-linear map has twice its complex index.
 
 It also compares the kernels, cokernels and indices of two linear maps `f : M → N` and
 `f' : M' → N'` related by injective maps `i : M' → M` and `j : N' → N` with
@@ -72,6 +72,18 @@ lemma index_comp_equiv (f : M →ₗ[R] N) (e : P ≃ₗ[R] M) :
   congr 1
   · rw [ker_comp, Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
   · rw [range_comp_of_range_eq_top _ (range_eq_top.2 e.surjective)]
+
+/-- Transporting a linear map along linear equivalences of its domain and codomain leaves the
+index unchanged. -/
+@[simp]
+lemma index_arrowCongr {S M₁ M₂ N₁ N₂ : Type*} [CommRing S] [AddCommGroup M₁] [Module S M₁]
+    [AddCommGroup M₂] [Module S M₂] [AddCommGroup N₁] [Module S N₁] [AddCommGroup N₂]
+    [Module S N₂] (e₁ : M₁ ≃ₗ[S] M₂) (e₂ : N₁ ≃ₗ[S] N₂) (f : M₁ →ₗ[S] N₁) :
+    (e₁.arrowCongr e₂ f).index = f.index := by
+  have h : e₁.arrowCongr e₂ f = (e₂ : N₁ →ₗ[S] N₂) ∘ₗ f ∘ₗ (e₁.symm : M₂ →ₗ[S] M₁) := by
+    ext x
+    simp
+  rw [h, index_equiv_comp, index_comp_equiv]
 
 /-- The index is additive under Cartesian products when the kernels and cokernels are finite
 free modules. -/

@@ -329,6 +329,17 @@ def complexifyL2 (T : X →L[ℝ] Y) :
 theorem ofLp_complexifyL2_apply (T : X →L[ℝ] Y) (z : WithLp 2 (Complexification X)) :
     (T.complexifyL2 z).ofLp = T.complexify z.ofLp := (rfl)
 
+/-- As a linear map, the complexification is `ContinuousLinearMap.complexify` transported along
+the identifications `WithLp.linearEquiv` of the `L²` complexifications with their underlying
+spaces. -/
+theorem coe_complexifyL2 (T : X →L[ℝ] Y) :
+    (T.complexifyL2 : WithLp 2 (Complexification X) →ₗ[ℂ] WithLp 2 (Complexification Y)) =
+      (WithLp.linearEquiv 2 ℂ (Complexification X)).symm.arrowCongr
+        (WithLp.linearEquiv 2 ℂ (Complexification Y)).symm
+        (T.complexify : Complexification X →ₗ[ℂ] Complexification Y) := by
+  ext z
+  exact WithLp.ofLp_injective 2 <| by simp [complexify_apply, LinearMap.complexify_apply]
+
 /-- The complexification agrees with `T` on real vectors. -/
 @[simp]
 theorem complexifyL2_toLp_ofReal (T : X →L[ℝ] Y) (x : X) :

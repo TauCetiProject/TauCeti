@@ -136,12 +136,9 @@ theorem isFredholm_complexify_iff {T : X →L[ℝ] Y} :
 operator has the same index as the operator. No Fredholm hypothesis is needed. -/
 @[simp]
 theorem index_complexify (T : X →L[ℝ] Y) : T.complexify.index = T.index := by
-  have h : (T : X →ₗ[ℝ] Y).complexify = (tensorEquivComplexification Y).toLinearMap ∘ₗ
-      (T : X →ₗ[ℝ] Y).baseChange ℂ ∘ₗ (tensorEquivComplexification X).symm.toLinearMap := by
-    rw [← LinearMap.arrowCongr_tensorEquivComplexification_baseChange]
-    exact LinearMap.ext fun z ↦ LinearEquiv.arrowCongr_apply _ _ _ z
-  rw [index_def, index_def, coe_complexify, h, LinearMap.index_equiv_comp,
-    LinearMap.index_comp_equiv, LinearMap.index_baseChange]
+  rw [index_def, index_def, coe_complexify,
+    ← LinearMap.arrowCongr_tensorEquivComplexification_baseChange, LinearMap.index_arrowCongr,
+    LinearMap.index_baseChange]
 
 end Complexify
 
@@ -168,17 +165,7 @@ theorem isFredholm_complexifyL2_iff {T : X →L[ℝ] Y} :
 hypothesis is needed. -/
 @[simp]
 theorem index_complexifyL2 (T : X →L[ℝ] Y) : T.complexifyL2.index = T.index := by
-  have h : (T.complexifyL2 : WithLp 2 (Complexification X) →ₗ[ℂ] WithLp 2 (Complexification Y)) =
-      (((WithLp.linearEquiv 2 ℂ (Complexification Y)).symm :
-          Complexification Y →ₗ[ℂ] WithLp 2 (Complexification Y)).comp
-        (T.complexify : Complexification X →ₗ[ℂ] Complexification Y)).comp
-        (WithLp.linearEquiv 2 ℂ (Complexification X) :
-          WithLp 2 (Complexification X) →ₗ[ℂ] Complexification X) := by
-    ext z
-    exact WithLp.ofLp_injective 2 <| by
-      simp [ofLp_complexifyL2_apply, complexify_apply, LinearMap.complexify_apply]
-  rw [← index_complexify, index_def, index_def, h, LinearMap.index_comp_equiv,
-    LinearMap.index_equiv_comp]
+  rw [← index_complexify, index_def, index_def, coe_complexifyL2, LinearMap.index_arrowCongr]
 
 end ComplexifyL2
 
