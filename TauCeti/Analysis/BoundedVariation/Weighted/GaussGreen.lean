@@ -9,10 +9,10 @@ public import TauCeti.Analysis.BoundedVariation.DeGiorgi
 public import TauCeti.Analysis.BoundedVariation.Weighted.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.BoundedVariation.Weighted.ReducedBoundary
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
@@ -134,41 +134,27 @@ private theorem tendsto_integral_weightedDivergence_cutoff (hW : ContDiff ℝ 1 
       (fderiv ℝ W x (X x)))).mul_const (Real.exp (-W x) * s.indicator 1 x)
     simpa only [one_mul, add_zero, mul_assoc] using h
 
-/-- The right side of the weighted Gauss–Green formula for the cut-off fields `g k • X` tends to
-the one for `X`, by dominated convergence against `‖X‖_∞ e^{−W}`, which is integrable on the
-reduced boundary of a set of finite weighted perimeter. -/
-private theorem tendsto_integral_reducedBoundary_cutoff (hW : ContDiff ℝ 1 W)
+/-- For a bounded continuous field `X`, the boundary integrand `⟨X, ν_s⟩ e^{−W}` of the weighted
+Gauss–Green formula is integrable on the reduced boundary of a set of finite weighted perimeter:
+it is dominated by `‖X‖_∞ e^{−W}`, whose integral there is a multiple of the weighted perimeter. -/
+private theorem integrable_inner_outerNormal_mul_exp_neg (hW : ContDiff ℝ 1 W)
     (hn : 2 ≤ finrank ℝ E) (hs : NullMeasurableSet s (volume.restrict ((⊤ : Opens E) : Set E)))
     (hP : weightedPerimeter W ⊤ s ≠ ∞) {X : E → E} (hX : Continuous X) {C : ℝ}
-    (hXC : ∀ x, ‖X x‖ ≤ C) {g : ℕ → E → ℝ} (hg : ∀ k, Continuous (g k))
-    (hg1 : ∀ k x, |g k x| ≤ 1) (hgt : ∀ x, Tendsto (g · x) atTop (𝓝 1)) :
-    Tendsto (fun k => ∫ x in reducedBoundary volume ⊤ s,
-      ⟪g k x • X x, outerNormal volume ⊤ s x⟫ * Real.exp (-W x) ∂μHE[finrank ℝ E - 1])
-      atTop (𝓝 (∫ x in reducedBoundary volume ⊤ s,
-        ⟪X x, outerNormal volume ⊤ s x⟫ * Real.exp (-W x) ∂μHE[finrank ℝ E - 1])) := by
+    (hXC : ∀ x, ‖X x‖ ≤ C) :
+    Integrable (fun x => ⟪X x, outerNormal volume ⊤ s x⟫ * Real.exp (-W x))
+      ((μHE[finrank ℝ E - 1]).restrict (reducedBoundary volume ⊤ s)) := by
   have hexp : Continuous fun x => Real.exp (-W x) := (hW.continuous.neg).rexp
   have hexpi : Integrable (fun x => Real.exp (-W x))
       ((μHE[finrank ℝ E - 1]).restrict (reducedBoundary volume ⊤ s)) :=
     ⟨hexp.aestronglyMeasurable, (hasFiniteIntegral_iff_ofReal
       (Eventually.of_forall fun x => (Real.exp_pos _).le)).2
       (weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top hW hn hs hP ▸ hP.lt_top)⟩
-  refine tendsto_integral_of_dominated_convergence (fun x => C * Real.exp (-W x))
-    (fun k => ?_) (hexpi.const_mul C) (fun k => ?_) ?_
-  · have hν := (measurable_outerNormal (μ := volume) (Ω := ⊤) (s := s)).aestronglyMeasurable
-      (μ := (μHE[finrank ℝ E - 1]).restrict (reducedBoundary volume ⊤ s))
-    have h1 : AEStronglyMeasurable (fun x => g k x • X x)
-        ((μHE[finrank ℝ E - 1]).restrict (reducedBoundary volume ⊤ s)) :=
-      ((hg k).smul hX).aestronglyMeasurable
-    exact (h1.inner hν).mul hexp.aestronglyMeasurable
-  · filter_upwards [ae_restrict_mem measurableSet_reducedBoundary] with x hx
-    rw [norm_mul, Real.norm_of_nonneg (Real.exp_pos _).le, real_inner_smul_left]
-    gcongr
-    rw [norm_mul, Real.norm_eq_abs]
-    refine (mul_le_of_le_one_left (norm_nonneg _) (hg1 k x)).trans ?_
-    exact (norm_inner_le_norm _ _).trans (by rw [norm_outerNormal hx, mul_one]; exact hXC x)
-  · refine Eventually.of_forall fun x => ?_
-    simp_rw [real_inner_smul_left]
-    simpa only [one_mul] using ((hgt x).mul_const _).mul_const (Real.exp (-W x))
+  refine (hexpi.const_mul C).mono' ((hX.aestronglyMeasurable.inner
+    measurable_outerNormal.aestronglyMeasurable).mul hexp.aestronglyMeasurable) ?_
+  filter_upwards [ae_restrict_mem measurableSet_reducedBoundary] with x hx
+  rw [norm_mul, Real.norm_of_nonneg (Real.exp_pos _).le]
+  gcongr
+  exact (norm_inner_le_norm _ _).trans (by rw [norm_outerNormal hx, mul_one]; exact hXC x)
 
 /-- **The weighted Gauss–Green formula for bounded fields.** For a `C¹` weight `W` whose measure
 `μ = e^{−W} · volume` is finite, in dimension `n ≥ 2`, a Lebesgue-measurable set `s` of finite
@@ -196,6 +182,7 @@ theorem integral_weightedDivergence_eq_integral_reducedBoundary_of_bounded
   have hgc (k : ℕ) : HasCompactSupport (g k) :=
     HasCompactSupport.intro (isCompact_closedBall 0 (2 * ((k : ℝ) + 1))) fun x hx =>
       hg0 k x (by simpa [dist_zero_right] using hx)
+  have hgI (k : ℕ) (x : E) : g k x ∈ Icc (0 : ℝ) 1 := hg01 k x
   replace hg01 (k : ℕ) (x : E) : |g k x| ≤ 1 := abs_le.2 ⟨by linarith [(hg01 k x).1], (hg01 k x).2⟩
   have hgt (x : E) : Tendsto (g · x) atTop (𝓝 1) := by
     refine tendsto_const_nhds.congr' ?_
@@ -204,9 +191,19 @@ theorem integral_weightedDivergence_eq_integral_reducedBoundary_of_bounded
   replace hgd (k : ℕ) (x : E) : ‖fderiv ℝ (g k) x‖ ≤ 1 / ((k : ℝ) + 1) * B := by
     rw [(hgd' k x).fderiv, one_div, mul_comm]
     exact hgd k x
+  have hright : Tendsto (fun k : ℕ => ∫ x in reducedBoundary volume ⊤ s,
+      ⟪g k x • X x, outerNormal volume ⊤ s x⟫ * Real.exp (-W x) ∂μHE[finrank ℝ E - 1])
+      atTop (𝓝 (∫ x in reducedBoundary volume ⊤ s,
+        ⟪X x, outerNormal volume ⊤ s x⟫ * Real.exp (-W x) ∂μHE[finrank ℝ E - 1])) := by
+    refine (tendsto_integral_smul_of_eq_one_ball (R := fun k : ℕ => (k : ℝ) + 1)
+      (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
+      (fun k => (hg k).continuous.aestronglyMeasurable)
+      (fun k x hx => hg1 k x (mem_closedBall_zero_iff.2 hx.le)) hgI
+      (integrable_inner_outerNormal_mul_exp_neg hW hn hs' hP hX.continuous hXC)).congr fun k => ?_
+    congr 1 with x
+    rw [real_inner_smul_left, smul_eq_mul, mul_assoc]
   refine tendsto_nhds_unique ((tendsto_integral_weightedDivergence_cutoff hW hμ hs hX hXC hXC'
-    hWX hB hg hg01 hgt hgd).congr fun k => ?_) (tendsto_integral_reducedBoundary_cutoff hW hn hs'
-    hP hX.continuous hXC (fun k => (hg k).continuous) hg01 hgt)
+    hWX hB hg hg01 hgt hgd).congr fun k => ?_) hright
   rw [← integral_weightedDivergence_eq_integral_reducedBoundary hW hn hu hfin
     (X := fun x => g k x • X x) ((hg k).smul hX) ((hgc k).smul_right) (subset_univ _)]
   congr 1 with x
