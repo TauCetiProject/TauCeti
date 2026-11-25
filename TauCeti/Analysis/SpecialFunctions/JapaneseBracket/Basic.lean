@@ -7,12 +7,13 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-public import TauCeti.Analysis.SpecialFunctions.Beta
+public import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 public import Mathlib.NumberTheory.Harmonic.Defs
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -49,12 +50,6 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 
 ## Main declarations
 
-* `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: one power of `‖x‖` costs one order of the
-  Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
-* `TauCeti.one_add_norm_sq_rpow_neg_le_inv_norm_pow`: away from the origin,
-  `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)`.
-* `TauCeti.one_add_mul_norm_pow_le`: the linear weight `(1 + c ‖x‖) ^ i` is at most
-  `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_add_norm_rpow_neg`, `TauCeti.integral_add_norm_rpow_neg`: integrability
@@ -64,6 +59,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   elsewhere is `O(T ^ (d - q))`.
 * `TauCeti.not_integrableOn_rpow_neg_one_add_norm_sq`: for `r ≤ d` the bracket
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is not integrable over any open cone containing a nonzero vector.
+* `TauCeti.integrable_rpow_neg_one_add_norm_sq_iff`: on a nontrivial space the bracket
+  `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable exactly when `d < r`.
 * `TauCeti.memLp_two_one_add_norm_rpow_neg`: the power `x ↦ (1 + ‖x‖) ^ (-r)` is square
   integrable for `d < 2 r`, for every additive Haar measure.
 * `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
@@ -92,42 +89,6 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory Metric Module ProbabilityTheory Real Set Topology
-
-/-- One power of `‖x‖` costs one order of the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
-`⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)` for every real `m`. -/
-theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x : E) (m : ℝ) :
-    (1 + ‖x‖ ^ 2) ^ (m / 2) * ‖x‖ ≤ (1 + ‖x‖ ^ 2) ^ ((m + 1) / 2) := by
-  rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
-  gcongr
-  exact Real.le_sqrt_of_sq_le (by linarith)
-
-/-- Away from the origin, a negative bracket power is bounded by the corresponding power of the
-norm: `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)` for `x ≠ 0`. This turns symbol estimates of order `0` into
-Mihlin's condition `‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k`. -/
-theorem one_add_norm_sq_rpow_neg_le_inv_norm_pow {E : Type*} [NormedAddCommGroup E] {x : E}
-    (hx : x ≠ 0) (k : ℕ) : (1 + ‖x‖ ^ 2) ^ (-(k : ℝ) / 2) ≤ (‖x‖ ^ k)⁻¹ := by
-  have hk : ‖x‖ ^ k ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
-    calc ‖x‖ ^ k ≤ ((1 + ‖x‖ ^ 2) ^ ((1 : ℝ) / 2)) ^ k := by
-          gcongr
-          rw [← Real.sqrt_eq_rpow]
-          exact Real.le_sqrt_of_sq_le (by linarith)
-      _ = _ := by rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]; ring_nf
-  rw [neg_div, Real.rpow_neg (by positivity)]
-  exact inv_anti₀ (pow_pos (norm_pos_iff.2 hx) k) hk
-
-/-- A linear weight is dominated by the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
-`(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`. -/
-theorem one_add_mul_norm_pow_le {E : Type*} [NormedAddCommGroup E] {c : ℝ} (hc : 0 ≤ c) (x : E)
-    (i : ℕ) : (1 + c * ‖x‖) ^ i ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) := by
-  have hle : 1 + c * ‖x‖ ≤ (1 + c) * √(1 + ‖x‖ ^ 2) := by
-    have h1 : 1 ≤ √(1 + ‖x‖ ^ 2) := Real.one_le_sqrt.2 (by nlinarith [sq_nonneg ‖x‖])
-    have h2 : ‖x‖ ≤ √(1 + ‖x‖ ^ 2) := Real.le_sqrt_of_sq_le (by linarith)
-    nlinarith
-  have hsqrt : (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) = √(1 + ‖x‖ ^ 2) ^ i := by
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast (by positivity)]
-    ring_nf
-  rw [hsqrt, ← mul_pow]
-  exact pow_le_pow_left₀ (by positivity) hle i
 
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 
@@ -299,6 +260,18 @@ theorem not_integrableOn_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaar
       _ ≤ ∫⁻ x in Γ, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ := lintegral_mono_set (iUnion_subset hS)
   exact lt_irrefl _ (hint.hasFiniteIntegral.trans_le htop)
 
+/-- **Exact integrability of the Japanese bracket.** On a nontrivial finite-dimensional real
+normed space of dimension `d`, `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable for an additive Haar
+measure exactly when `d < r`. -/
+theorem integrable_rpow_neg_one_add_norm_sq_iff (μ : Measure V) [μ.IsAddHaarMeasure]
+    [Nontrivial V] {r : ℝ} :
+    Integrable (fun x : V ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)) μ ↔ (finrank ℝ V : ℝ) < r := by
+  refine ⟨fun hint ↦ ?_, integrable_rpow_neg_one_add_norm_sq⟩
+  by_contra! hr
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : V)
+  exact not_integrableOn_rpow_neg_one_add_norm_sq μ hr isOpen_univ (fun _ _ _ _ ↦ mem_univ _)
+    (mem_univ ξ) hξ hint.integrableOn
+
 end Cone
 
 /-- The power `x ↦ (1 + ‖x‖) ^ (-r)` is square integrable for every additive Haar measure on a
@@ -363,7 +336,8 @@ theorem integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq (μ : Measu
     (1 + c * ‖x‖) ^ i * (1 + ‖x‖ ^ 2) ^ (-r / 2)
         ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖x‖ ^ 2) ^ (-r / 2) := by
           gcongr
-          exact one_add_mul_norm_pow_le hc x i
+          simpa only [abs_norm, Real.rpow_natCast] using
+            Real.one_add_mul_abs_rpow_le ‖x‖ hc i.cast_nonneg
     _ = (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ (-(r - i) / 2) := by
           rw [mul_assoc, ← Real.rpow_add hA]
           ring_nf

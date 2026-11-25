@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.Torus.Smooth
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
@@ -211,7 +212,7 @@ private theorem summable_schwartzKernel (h : smoothFunctions (a ⊕ b)) :
     Summable fun n ↦ mFourierCoeff (h : UnitAddTorus (a ⊕ b) → ℂ) n •
       B (mFourierSmooth fun i ↦ n (.inl i)) (mFourierSmooth fun i ↦ n (.inr i)) := by
   obtain ⟨C, N, hCN⟩ := hB
-  refine Summable.of_norm_bounded ((summable_norm_mFourierCoeff_mul_pow h.2
+  refine Summable.of_norm_bounded ((summable_norm_mFourierCoeff_mul_pow h.property
     (R := 2 * π * Fintype.card (a ⊕ b)) (by positivity) (2 * N)).mul_left C) fun n ↦ ?_
   rw [norm_smul]
   calc _ ≤ ‖mFourierCoeff (h : UnitAddTorus (a ⊕ b) → ℂ) n‖ *
@@ -229,8 +230,9 @@ def schwartzKernel : smoothFunctions (a ⊕ b) →ₗ[ℂ] F where
   map_add' h h' := by
     rw [← (summable_schwartzKernel B hB h).tsum_add (summable_schwartzKernel B hB h')]
     congr 1 with n
-    rw [Submodule.coe_add, UnitAddTorus.mFourierCoeff_add (integrable_of_mem_smoothFunctions h.2)
-      (integrable_of_mem_smoothFunctions h'.2), add_smul]
+    rw [Submodule.coe_add, UnitAddTorus.mFourierCoeff_add (integrable_of_mem_smoothFunctions
+        h.property)
+      (integrable_of_mem_smoothFunctions h'.property), add_smul]
   map_smul' c h := by
     rw [RingHom.id_apply, ← (summable_schwartzKernel B hB h).tsum_const_smul c]
     congr 1 with n
@@ -263,7 +265,7 @@ theorem exists_norm_schwartzKernel_le : ∃ (C' : ℝ) (N' : ℕ), ∀ (h : smoo
       nlinarith [norm_nonneg n, (by positivity : (0 : ℝ) ≤ 2 * π * Fintype.card (a ⊕ b))]
     have hcd : ContDiff ℝ (2 * N + Fintype.card (a ⊕ b) + 1)
         fun x : a ⊕ b → ℝ ↦ (h : UnitAddTorus (a ⊕ b) → ℂ) fun i ↦ (x i : UnitAddCircle) :=
-      (mem_smoothFunctions.1 h.2).of_le (WithTop.coe_le_coe.2 le_top)
+      (mem_smoothFunctions.1 h.property).of_le (WithTop.coe_le_coe.2 le_top)
     have hdecay := one_add_norm_pow_mul_norm_mFourierCoeff_le_mul_inv (N := 2 * N) hcd hM n
     rw [norm_smul]
     calc _ ≤ ‖mFourierCoeff (h : UnitAddTorus (a ⊕ b) → ℂ) n‖ *
@@ -275,16 +277,17 @@ theorem exists_norm_schwartzKernel_le : ∃ (C' : ℝ) (N' : ℕ), ∀ (h : smoo
       _ ≤ _ := by gcongr
   rw [schwartzKernel_apply]
   refine (tsum_of_norm_bounded
-    ((TauCeti.summable_pi_int_inv_one_add_norm_pow.mul_left _).mul_left _).hasSum key).trans_eq ?_
+    (((TauCeti.summable_pi_int_one_add_norm_pow_inv (lt_add_one _)).mul_left _).mul_left _).hasSum
+      key).trans_eq ?_
   rw [tsum_mul_left, tsum_mul_left]
   ring
 
 /-- **The kernel theorem.** The kernel of `B` represents `B` on tensor products:
 `K (f ⊗ g) = B f g`. -/
 theorem schwartzKernel_tensor (f : smoothFunctions a) (g : smoothFunctions b) :
-    schwartzKernel B hB ⟨tensor f g, tensor_mem_smoothFunctions f.2 g.2⟩ = B f g := by
+    schwartzKernel B hB ⟨tensor f g, tensor_mem_smoothFunctions f.property g.property⟩ = B f g := by
   have ⟨C, N, hCN⟩ := hB
-  obtain ⟨Mg, hMg⟩ := exists_derivBound g.2 N
+  obtain ⟨Mg, hMg⟩ := exists_derivBound g.property N
   -- Expansion of `B (mFourier k) g` in the Fourier series of `g`.
   have hrow (k : a → ℤ) : HasSum (fun l ↦ mFourierCoeff (g : UnitAddTorus b → ℂ) l •
       B (mFourierSmooth k) (mFourierSmooth l)) (B (mFourierSmooth k) g) :=
@@ -300,8 +303,9 @@ theorem schwartzKernel_tensor (f : smoothFunctions a) (g : smoothFunctions b) :
   have hp : Summable fun q : (a → ℤ) × (b → ℤ) ↦ mFourierCoeff (f : UnitAddTorus a → ℂ) q.1 •
       mFourierCoeff (g : UnitAddTorus b → ℂ) q.2 • B (mFourierSmooth q.1) (mFourierSmooth q.2) := by
     refine Summable.of_norm_bounded
-      (((summable_norm_mFourierCoeff_mul_pow f.2 (R := 2 * π * Fintype.card a) (by positivity)
-        N).mul_of_nonneg (summable_norm_mFourierCoeff_mul_pow g.2
+      (((summable_norm_mFourierCoeff_mul_pow f.property (R := 2 * π * Fintype.card a)
+          (by positivity)
+        N).mul_of_nonneg (summable_norm_mFourierCoeff_mul_pow g.property
           (R := 2 * π * Fintype.card b) (by positivity) N) (fun _ ↦ by positivity)
           (fun _ ↦ by positivity)).mul_left C) fun q ↦ ?_
     have hq := hCN (mFourierSmooth q.1) (mFourierSmooth q.2) _ _
@@ -325,13 +329,13 @@ theorem eq_schwartzKernel {K : smoothFunctions (a ⊕ b) →ₗ[ℂ] F}
     (hK : ∃ (C : ℝ) (N : ℕ), ∀ (h : smoothFunctions (a ⊕ b)) M,
       DerivBound N M (h : UnitAddTorus (a ⊕ b) → ℂ) → ‖K h‖ ≤ C * M)
     (hKB : ∀ (f : smoothFunctions a) (g : smoothFunctions b),
-      K ⟨tensor f g, tensor_mem_smoothFunctions f.2 g.2⟩ = B f g) :
+      K ⟨tensor f g, tensor_mem_smoothFunctions f.property g.property⟩ = B f g) :
     K = schwartzKernel B hB := by
   refine linearMap_eq_of_apply_mFourierSmooth_eq hK (exists_norm_schwartzKernel_le B hB)
     fun n ↦ ?_
   have hn : mFourierSmooth n = ⟨tensor (mFourierSmooth fun i ↦ n (.inl i) : smoothFunctions a)
       (mFourierSmooth fun i ↦ n (.inr i) : smoothFunctions b),
-      tensor_mem_smoothFunctions (mFourierSmooth _).2 (mFourierSmooth _).2⟩ := by
+      tensor_mem_smoothFunctions (mFourierSmooth _).property (mFourierSmooth _).property⟩ := by
     have he : Sum.elim (fun i ↦ n (.inl i)) (fun i ↦ n (.inr i)) = n :=
       funext fun i ↦ by cases i <;> rfl
     refine Subtype.ext ?_
@@ -346,7 +350,7 @@ theorem existsUnique_schwartzKernel : ∃! K : smoothFunctions (a ⊕ b) →ₗ[
     (∃ (C : ℝ) (N : ℕ), ∀ (h : smoothFunctions (a ⊕ b)) M,
       DerivBound N M (h : UnitAddTorus (a ⊕ b) → ℂ) → ‖K h‖ ≤ C * M) ∧
     ∀ (f : smoothFunctions a) (g : smoothFunctions b),
-      K ⟨tensor f g, tensor_mem_smoothFunctions f.2 g.2⟩ = B f g :=
+      K ⟨tensor f g, tensor_mem_smoothFunctions f.property g.property⟩ = B f g :=
   ⟨schwartzKernel B hB, ⟨exists_norm_schwartzKernel_le B hB, schwartzKernel_tensor B hB⟩,
     fun _ hK ↦ eq_schwartzKernel B hB hK.1 hK.2⟩
 

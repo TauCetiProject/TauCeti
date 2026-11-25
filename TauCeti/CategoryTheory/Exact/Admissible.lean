@@ -133,9 +133,7 @@ instance : E.admissibles.RespectsIso := by
 /-- Every zero morphism is admissible, through the zero object. -/
 @[simp]
 theorem isAdmissible_zero (X Y : C) : E.IsAdmissible (0 : X ⟶ Y) := by
-  have hp := E.toConflationClass.isDeflation_g (E.conflation_id_zero X)
-  have hi := E.toConflationClass.isInflation_f (E.conflation_zero_id Y)
-  simpa using isAdmissible_comp hp hi
+  simpa using isAdmissible_comp (E.isDeflation_zero X) (E.isInflation_zero Y)
 
 /-- Admissibility is self-dual: reversing a factorization exchanges its two admissible maps. -/
 @[simp]

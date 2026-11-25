@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import TauCeti.Analysis.Sobolev.Local.Reflection
+public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
+import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
+import TauCeti.MeasureTheory.Function.LocalRepresentative
 
 /-!
 # Morrey's embedding on half-discs
@@ -22,12 +25,27 @@ of `U`, with the local Morrey inequality across the axis.
 The representative is `TauCeti.halfPlanePreciseRepresentative u`, the precise representative of
 the even reflection `TauCeti.planarReflection (higherReflectionCoeff 1) u` of `u` across the real
 axis. In the open upper half-plane it is the precise representative of `u` itself
-(`TauCeti.halfPlanePreciseRepresentative_of_im_pos`). The proof reflects: near a real point
-`x ∈ Ω` the reflection is in `W^{k,p}_loc` of a disc centred at `x`, and off the axis it agrees
-with `u`, so by locality it is in `W^{k,p}_loc` of an open neighbourhood of `U` in `Ω`
-(`TauCeti.MemWkpLoc.exists_opens_memWkpLoc_planarReflection`, in
+(`TauCeti.halfPlanePreciseRepresentative_of_im_pos`). The proof reflects: the reflection is in
+`W^{1,p}_loc` of the reflection core of `Ω`, an open neighbourhood of `U` in `Ω` that is stable
+under the node dilations of points below the real axis
+(`TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore`, in
 `TauCeti.Analysis.Sobolev.Local.Reflection`). The interior Morrey theorems of
 `TauCeti.Analysis.Sobolev.Local.Morrey` then apply to the reflection.
+
+At higher order, for `2 < p` a map in `MemWkpLoc p U (k + 1)` agrees almost everywhere on `U`
+with a map that is `Cᵏ` on an open neighbourhood of `U` in `Ω`, so `Cᵏ` up to the real axis, and
+whose `k`-th derivative is Hölder continuous with exponent `1 - 2 / p` on compact subsets of `U`.
+Here the order-`(k + 1)` reflection `TauCeti.planarReflection (higherReflectionCoeff (k + 1)) u`
+is in `W^{k+1,p}_loc` of a neighbourhood of `U`, and the interior higher-order Morrey theorems of
+`TauCeti.Analysis.Sobolev.Local.Morrey.Higher` apply to it. Such a representative is unique on `U`
+together with its derivatives up to order `k`, including on the real axis, because `U` lies in the
+closure of the upper half `Ω ∩ {0 < im}`, where two continuous representatives agree. For every
+`p`, the derivatives of a `Cᵏ` representative up to the axis lie in the half-disc classes of the
+corresponding lower orders, with `Lᵖ` bounds reaching the axis: apply
+`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn` and
+`TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn` with
+`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`. This is the form in which regularity up to the
+boundary is iterated.
 
 The converse fails: `z ↦ √(Im z)` is continuous on the closed half-disc and in `W^{1,p}_loc` of
 the open half-disc for every `p` (`TauCeti.memWkpLoc_sqrt_im_ball_inter_im_pos`), but not in
@@ -44,6 +62,14 @@ the open half-disc for every `p` (`TauCeti.memWkpLoc_sqrt_im_ball_inter_im_pos`)
 * `TauCeti.MemWkpLoc.exists_dist_halfPlanePreciseRepresentative_le`: the local Morrey inequality
   on conjugation-invariant domains, bounded by the `Lᵖ` norm of the derivative on the upper half
   of a disc and its mirror image.
+* `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg`: for `p > 2`, a map in
+  `MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` has a representative that is `Cᵏ` on an open neighbourhood
+  of `Ω ∩ {0 ≤ im}`.
+* `TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact_inter_setOf_im_nonneg`: the
+  `k`-th derivative of such a representative is Hölder continuous with exponent `1 - 2 / p` on
+  compact subsets of `Ω ∩ {0 ≤ im}`.
+* `TauCeti.eqOn_iteratedFDeriv_inter_setOf_im_nonneg_of_ae_eq`: `Cᵏ` representatives up to the
+  axis have the same derivatives of order at most `k` on `Ω ∩ {0 ≤ im}`.
 
 ## References
 
@@ -98,10 +124,11 @@ everywhere on `Ω ∩ {0 ≤ im}`. -/
 theorem MemWkpLoc.ae_eq_halfPlanePreciseRepresentative [CompleteSpace F] (hp : 1 ≤ p)
     (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) :
     u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] halfPlanePreciseRepresentative u := by
-  obtain ⟨V, hUV, -, hV⟩ := hu.exists_opens_memWkpLoc_planarReflection hp
+  have hV := hu.planarReflection_higherReflectionCoeff_reflectionCore hp
   have hU : MeasurableSet ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
     Ω.isOpen.measurableSet.inter (measurableSet_le measurable_const measurable_im)
-  filter_upwards [ae_restrict_of_ae_restrict_of_subset hUV
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset
+    Ω.inter_setOf_im_nonneg_subset_reflectionCore
     (hV.memLpLoc.ae_eq_preciseRepresentative hp), ae_restrict_mem hU] with z hz hzU
   rw [halfPlanePreciseRepresentative_def, ← hz, planarReflection_of_nonneg _ _ hzU.2]
 
@@ -112,9 +139,9 @@ variable [FiniteDimensional ℝ F]
 `Ω ∩ {0 ≤ im}`. -/
 theorem MemWkpLoc.continuousOn_halfPlanePreciseRepresentative (hp : 2 < p)
     (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) :
-    ContinuousOn (halfPlanePreciseRepresentative u) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
-  obtain ⟨V, hUV, -, hV⟩ := hu.exists_opens_memWkpLoc_planarReflection (one_le_two.trans hp.le)
-  exact (hV.continuousOn_preciseRepresentative hp).mono hUV
+    ContinuousOn (halfPlanePreciseRepresentative u) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
+  ((hu.planarReflection_higherReflectionCoeff_reflectionCore (one_le_two.trans hp.le))
+    |>.continuousOn_preciseRepresentative hp).mono Ω.inter_setOf_im_nonneg_subset_reflectionCore
 
 /-- **Morrey's embedding up to the real axis.** For `2 < p ≤ ∞`, the representative
 `TauCeti.halfPlanePreciseRepresentative u` of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` is Hölder
@@ -124,9 +151,10 @@ theorem MemWkpLoc.exists_holderOnWith_halfPlanePreciseRepresentative_of_isCompac
     (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) {K : Set ℂ} (hK : IsCompact K)
     (hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :
     ∃ C : ℝ≥0, HolderOnWith C ((1 : ℝ≥0∞) - 2 / p).toNNReal
-      (halfPlanePreciseRepresentative u) K := by
-  obtain ⟨V, hUV, -, hV⟩ := hu.exists_opens_memWkpLoc_planarReflection (one_le_two.trans hp.le)
-  exact hV.exists_holderOnWith_preciseRepresentative_of_isCompact hp hK (hKU.trans hUV)
+      (halfPlanePreciseRepresentative u) K :=
+  (hu.planarReflection_higherReflectionCoeff_reflectionCore (one_le_two.trans hp.le))
+    |>.exists_holderOnWith_preciseRepresentative_of_isCompact hp hK
+      (hKU.trans Ω.inter_setOf_im_nonneg_subset_reflectionCore)
 
 /-- **`W^{1,∞}` maps on half-discs are Lipschitz up to the real axis.** At `p = ∞` the
 representative `TauCeti.halfPlanePreciseRepresentative u` is Lipschitz on every compact subset of
@@ -134,9 +162,10 @@ representative `TauCeti.halfPlanePreciseRepresentative u` is Lipschitz on every 
 theorem MemWkpLoc.exists_lipschitzOnWith_halfPlanePreciseRepresentative_of_isCompact
     (hu : MemWkpLoc ∞ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) {K : Set ℂ} (hK : IsCompact K)
     (hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :
-    ∃ C : ℝ≥0, LipschitzOnWith C (halfPlanePreciseRepresentative u) K := by
-  obtain ⟨V, hUV, -, hV⟩ := hu.exists_opens_memWkpLoc_planarReflection le_top
-  exact hV.exists_lipschitzOnWith_preciseRepresentative_of_isCompact hK (hKU.trans hUV)
+    ∃ C : ℝ≥0, LipschitzOnWith C (halfPlanePreciseRepresentative u) K :=
+  (hu.planarReflection_higherReflectionCoeff_reflectionCore le_top)
+    |>.exists_lipschitzOnWith_preciseRepresentative_of_isCompact hK
+      (hKU.trans Ω.inter_setOf_im_nonneg_subset_reflectionCore)
 
 /-! ### The local Morrey inequality across the real axis -/
 
@@ -166,8 +195,7 @@ theorem MemWkpLoc.exists_dist_halfPlanePreciseRepresentative_le (hp : 2 < p) :
   set S : Set ℂ := ball x ρ ∪ ball (conj x) ρ
   set H : Set ℂ := {z | 0 ≤ z.im}
   set Dr := planarReflectionFDeriv (higherReflectionCoeff 1) D with hDr_def
-  have hconj : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin 1, imDilation (higherReflectionNode j) z ∈ Ω :=
-    fun z hz _ j => by rw [imDilation_higherReflectionNode_fin_one]; exact hΩ z hz
+  have hconj := imDilation_higherReflectionNode_fin_one_mem fun z hz _ => hΩ z hz
   have hDp := hu.memLpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg hD
   have hext := hu.planarReflection_higherReflectionCoeff hp1 hconj
   have hDr : HasWeakFDerivOn volume Ω (TauCeti.planarReflection (higherReflectionCoeff 1) u)
@@ -237,5 +265,89 @@ theorem MemWkpLoc.exists_dist_halfPlanePreciseRepresentative_le (hp : 2 < p) :
       ≤ C * (2 * (eLpNorm D p (volume.restrict (S ∩ H))).toReal) *
         dist x y ^ (((1 : ℝ≥0∞) - 2 / p).toNNReal : ℝ) := by gcongr
     _ = _ := by ring
+
+/-! ### Higher order -/
+
+section Higher
+
+variable {k : ℕ} {g g₁ g₂ : ℂ → F}
+
+omit [FiniteDimensional ℝ F] in
+/-- **Representatives up to the real axis are unique, with their derivatives.** If `g₁` and `g₂`
+are `Cᵏ` on open sets containing `Ω ∩ {0 ≤ im}` and agree almost everywhere on `Ω ∩ {0 ≤ im}`, then
+their derivatives of every order `i ≤ k` agree at every point of `Ω ∩ {0 ≤ im}`, including the
+points of the real axis. -/
+theorem eqOn_iteratedFDeriv_inter_setOf_im_nonneg_of_ae_eq {V₁ V₂ : Set ℂ} (hV₁ : IsOpen V₁)
+    (hV₂ : IsOpen V₂) (hUV₁ : (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V₁)
+    (hUV₂ : (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V₂) (hg₁ : ContDiffOn ℝ k g₁ V₁)
+    (hg₂ : ContDiffOn ℝ k g₂ V₂) (h : g₁ =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g₂)
+    {i : ℕ} (hi : i ≤ k) :
+    EqOn (iteratedFDeriv ℝ i g₁) (iteratedFDeriv ℝ i g₂) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
+  eqOn_iteratedFDeriv_of_ae_eq (subset_closure_interior_inter_setOf_im_nonneg Ω.isOpen) hV₁ hV₂
+    hUV₁ hUV₂ hg₁ hg₂ h (by exact_mod_cast hi)
+
+/-- The reflection of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` lies in `W^{k+1,p}_loc` of an open
+set `V` between `Ω ∩ {0 ≤ im}` and `Ω`, and has a `Cᵏ` representative on `V`, which is also a
+representative of `u` on `Ω ∩ {0 ≤ im}`. -/
+private theorem MemWkpLoc.exists_planarReflection_contDiffOn_ae_eq (hp : 2 < p)
+    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u) :
+    ∃ V : Opens ℂ, (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V ∧ (V : Set ℂ) ⊆ Ω ∧
+      MemWkpLoc p V (k + 1) (TauCeti.planarReflection (higherReflectionCoeff (k + 1)) u) ∧
+      ∃ g : ℂ → F, ContDiffOn ℝ k g V ∧
+        TauCeti.planarReflection (higherReflectionCoeff (k + 1)) u =ᵐ[volume.restrict V] g ∧
+        u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g := by
+  have hUV := Ω.inter_setOf_im_nonneg_subset_reflectionCore
+  have hV := hu.planarReflection_higherReflectionCoeff_reflectionCore (one_le_two.trans hp.le)
+  obtain ⟨g, hg, hRg⟩ := hV.exists_contDiffOn_ae_eq hp
+  refine ⟨Ω.reflectionCore, hUV, Ω.reflectionCore_le, hV, g, hg, hRg, ?_⟩
+  have hU : MeasurableSet ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
+    Ω.isOpen.measurableSet.inter (measurableSet_le measurable_const measurable_im)
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset hUV hRg, ae_restrict_mem hU] with z hz hzU
+  rw [← hz, planarReflection_of_nonneg _ _ hzU.2]
+
+/-- **Morrey's embedding `W^{k+1,p} ⊆ Cᵏ` up to the real axis.** For `2 < p`, a map
+`u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` agrees almost everywhere on `Ω ∩ {0 ≤ im}` with a map `g`
+that is `Cᵏ` on an open set `V` with `Ω ∩ {0 ≤ im} ⊆ V ⊆ Ω`: the representative is `Cᵏ` up to the
+real axis, and extends as a `Cᵏ` map across it. Its derivatives on `Ω ∩ {0 ≤ im}` do not depend on
+the choice of `g` (`TauCeti.eqOn_iteratedFDeriv_inter_setOf_im_nonneg_of_ae_eq`), and the `k`-th
+derivative is Hölder continuous with exponent `1 - 2 / p` on compact subsets of `Ω ∩ {0 ≤ im}`
+(`TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact_inter_setOf_im_nonneg`). -/
+theorem MemWkpLoc.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg (hp : 2 < p)
+    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u) :
+    ∃ V : Opens ℂ, (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V ∧ (V : Set ℂ) ⊆ Ω ∧ ∃ g : ℂ → F,
+      ContDiffOn ℝ k g V ∧ u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g := by
+  obtain ⟨V, hUV, hVΩ, -, g, hg, -, hug⟩ := hu.exists_planarReflection_contDiffOn_ae_eq hp
+  exact ⟨V, hUV, hVΩ, g, hg, hug⟩
+
+/-- **Morrey's embedding at higher order up to the real axis.** If `2 < p ≤ ∞`, `g` is `Cᵏ` on an
+open set `V` and agrees almost everywhere on `Ω ∩ {0 ≤ im}` with
+`u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)`, then `iteratedFDeriv ℝ k g` is Hölder continuous with
+exponent `1 - 2 / p` on every compact subset of `(Ω ∩ {0 ≤ im}) ∩ V`, including compact sets
+meeting the real axis: the representative need only be smooth near the compact set. -/
+theorem MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact_inter_setOf_im_nonneg
+    (hp : 2 < p) (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u) {V : Set ℂ}
+    (hV : IsOpen V) (hg : ContDiffOn ℝ k g V)
+    (hug : u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g) {K : Set ℂ} (hK : IsCompact K)
+    (hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (hKV : K ⊆ V) :
+    ∃ C : ℝ≥0, HolderOnWith C ((1 : ℝ≥0∞) - 2 / p).toNNReal (iteratedFDeriv ℝ k g) K := by
+  obtain ⟨V₀, hUV₀, -, hR, g₀, hg₀, hRg₀, hug₀⟩ :=
+    hu.exists_planarReflection_contDiffOn_ae_eq hp
+  obtain ⟨C, hC⟩ :=
+    hR.exists_holderOnWith_iteratedFDeriv_of_isCompact hp hg₀ hRg₀ hK (hKU.trans hUV₀)
+  have hsub : ((Ω ⊓ ⟨V, hV⟩ : Opens ℂ) : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆
+      (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hz.1.1, hz.2⟩
+  have hug' : u =ᵐ[volume.restrict (((Ω ⊓ ⟨V, hV⟩ : Opens ℂ) : Set ℂ) ∩ {z | 0 ≤ z.im})] g :=
+    ae_restrict_of_ae_restrict_of_subset hsub hug
+  have hug₀' : u =ᵐ[volume.restrict (((Ω ⊓ ⟨V, hV⟩ : Opens ℂ) : Set ℂ) ∩ {z | 0 ≤ z.im})] g₀ :=
+    ae_restrict_of_ae_restrict_of_subset hsub hug₀
+  have hgg₀ := hug'.symm.trans hug₀'
+  have heq := eqOn_iteratedFDeriv_inter_setOf_im_nonneg_of_ae_eq (Ω := Ω ⊓ ⟨V, hV⟩)
+    hV V₀.isOpen (fun z hz => hz.1.2) (fun z hz => hUV₀ (hsub hz)) hg hg₀ hgg₀ le_rfl
+  refine ⟨C, fun x hx y hy => ?_⟩
+  rw [heq ⟨⟨(hKU hx).1, hKV hx⟩, (hKU hx).2⟩,
+    heq ⟨⟨(hKU hy).1, hKV hy⟩, (hKU hy).2⟩]
+  exact hC x hx y hy
+
+end Higher
 
 end TauCeti

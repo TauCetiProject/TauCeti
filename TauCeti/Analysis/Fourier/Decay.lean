@@ -13,6 +13,9 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.PSeries
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
+import TauCeti.Analysis.Fourier.FourierTransformDeriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Decay of Fourier transforms and Fourier coefficients of smooth functions
@@ -21,8 +24,9 @@ A smooth compactly supported function is a Schwartz function, so its Fourier tra
 Schwartz function and therefore decays faster than every negative power of `‖v‖`. This file records
 that decay in the elementary form `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C`, which is the shape a Fourier transform
 is used in when it weights a comparison test. Without smoothness or compact support, integrating by
-parts `N` times gives the explicit bound `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖` for a `C^N` function
-whose derivatives up to order `N` are integrable. The file also records the angular-frequency form
+parts `N` times gives the explicit bound `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖` when the
+derivatives below order `N` are differentiable and those up to order `N` are integrable. The file
+also records the angular-frequency form
 `∫ exp(-i ⟪v, ξ⟫) f v dv = 𝓕 f ((2π)⁻¹ ξ)` of the Fourier transform, whose integrand is
 integrable whenever `f` is.
 
@@ -40,11 +44,14 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
   `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C` for some `C > 0`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le`: the same decay with the weight
   `(1 + ‖v‖) ^ k`.
-* `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if `f` is `C^N` and its
-  derivatives up to order `N` are integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
+* `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if derivatives below order `N`
+  are differentiable and those up to order `N` are integrable, then
+  `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
 * `TauCeti.one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset`: if `f` is `C^N`, its closed
-  support `tsupport f` is contained in a measurable set `S` of finite volume and its derivatives of
+  support `tsupport f` is contained in any set `S` of finite outer volume and its derivatives of
   order at most `N` are bounded by `C`, then `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N C vol(S)`.
+* `TauCeti.norm_fourier_le_of_tsupport_subset`: the same bound when the derivatives are bounded by
+  `C ⟨2π w⟩ ^ m` at the frequency `w`, in the form `‖𝓕 f w‖ ≤ C' ⟨w⟩ ^ (|m| - N)`.
 * `TauCeti.fourier_fderiv_apply`: the Fourier transform of the directional derivative `∂_v f` of an
   integrable differentiable function with integrable derivative is `2πi ⟪w, v⟫ 𝓕 f w`.
 * `TauCeti.integral_exp_smul_eq_fourier`: the integral `∫ exp(-i ⟪v, ξ⟫) f v dv` in angular
@@ -61,6 +68,8 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
 * `TauCeti.integral_eq_integral_add_mul_I_of_differentiableOn_strip`: the integral over a period of
   a periodic function holomorphic on a strip `|Im z| ≤ |y|` is unchanged by shifting the line of
   integration to `Im z = y`.
+* `Function.Periodic.intervalIntegral_comp_add_eq_of_differentiable`: for an entire periodic
+  function, the integral over a period of the line `ℝ + w` does not depend on `w : ℂ`.
 * `TauCeti.norm_fourierCoeff_le_of_differentiableOn_strip`: if `f : AddCircle T → ℂ` extends to a
   periodic function holomorphic and bounded by `M` on the strip `|Im z| ≤ δ`, then
   `‖fourierCoeff f n‖ ≤ M e^{-2π |n| δ / T}`.
@@ -99,13 +108,14 @@ theorem exists_one_add_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f)
   rwa [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe, hcoe] at h
 
 open MeasureTheory Real in
-/-- **Integration by parts.** If `f` is `C^N` and its derivatives of order at most `N` are
-integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`. -/
-theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ} (hf : ContDiff ℝ N f)
+/-- **Integration by parts.** If the derivatives of `f` below order `N` are differentiable
+and its derivatives of order at most `N` are integrable, then
+`(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`. -/
+theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ}
+    (hf : ∀ n < N, Differentiable ℝ (iteratedFDeriv ℝ n f))
     (hf' : ∀ n ≤ N, Integrable (iteratedFDeriv ℝ n f)) (w : V) :
     (2 * π * ‖w‖) ^ N * ‖𝓕 f w‖ ≤ ∫ v, ‖iteratedFDeriv ℝ N f v‖ := by
-  have key := congrFun (Real.fourier_iteratedFDeriv (N := N) hf
-    (fun n hn ↦ hf' n (mod_cast hn)) le_rfl) w
+  have key := congrFun (Real.fourier_iteratedFDeriv_of_differentiable hf hf') w
   have hle : ‖𝓕 (iteratedFDeriv ℝ N f) w (fun _ ↦ w)‖ ≤
       (∫ v, ‖iteratedFDeriv ℝ N f v‖) * ‖w‖ ^ N := by
     refine ((𝓕 (iteratedFDeriv ℝ N f) w).le_opNorm _).trans ?_
@@ -128,34 +138,42 @@ theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ} (hf : Con
 
 open MeasureTheory Real in
 /-- **Explicit decay of the Fourier transform.** If `f` is `C^N`, its closed support `tsupport f`
-is contained in a measurable set `S` of finite volume, and its derivatives of order at most `N` are
+is contained in any set `S` of finite outer volume, and its derivatives of order at most `N` are
 bounded by `C`, then
 `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N * (C * vol(S))`. The constant depends on `f` only through `C`
 and `S`, so the bound is uniform over families of functions with common such data. -/
 theorem one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset {N : ℕ} (hf : ContDiff ℝ N f)
-    {S : Set V} (hS : MeasurableSet S) (hS' : volume S ≠ ⊤) (hfS : tsupport f ⊆ S) {C : ℝ}
+    {S : Set V} (hS' : volume S ≠ ⊤) (hfS : tsupport f ⊆ S) {C : ℝ}
     (hC : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p f x‖ ≤ C) (w : V) :
     (1 + ‖w‖) ^ N * ‖𝓕 f w‖ ≤ 2 ^ N * (C * volume.real S) := by
+  have hC0 : 0 ≤ C := (norm_nonneg (iteratedFDeriv ℝ 0 f 0)).trans
+    (hC 0 (Nat.zero_le _) 0)
+  have hT : MeasurableSet (tsupport f) := (isClosed_tsupport f).measurableSet
+  have hT' : volume (tsupport f) ≠ ⊤ := measure_ne_top_of_subset hfS hS'
+  suffices h : (1 + ‖w‖) ^ N * ‖𝓕 f w‖ ≤ 2 ^ N * (C * volume.real (tsupport f)) by
+    exact h.trans (mul_le_mul_of_nonneg_left
+      (mul_le_mul_of_nonneg_left (measureReal_mono hfS hS') hC0) (by positivity))
   have hbound (p : ℕ) (hp : p ≤ N) (x : V) :
-      ‖iteratedFDeriv ℝ p f x‖ ≤ S.indicator (fun _ ↦ C) x := by
-    by_cases hx : x ∈ S
+      ‖iteratedFDeriv ℝ p f x‖ ≤ (tsupport f).indicator (fun _ ↦ C) x := by
+    by_cases hx : x ∈ tsupport f
     · simpa [hx] using hC p hp x
     · rw [Set.indicator_of_notMem hx, Function.notMem_support.1
-        fun h ↦ hx (hfS (support_iteratedFDeriv_subset p h)), norm_zero]
-  have hind : Integrable (S.indicator fun _ ↦ C) := (integrable_indicator_iff hS).2
-    (integrableOn_const hS')
+        fun h ↦ hx (support_iteratedFDeriv_subset p h), norm_zero]
+  have hind : Integrable ((tsupport f).indicator fun _ ↦ C) := (integrable_indicator_iff hT).2
+    (integrableOn_const hT')
   have hint : ∀ p ≤ N, Integrable (iteratedFDeriv ℝ p f) := fun p hp ↦
     hind.mono' (hf.continuous_iteratedFDeriv (by exact_mod_cast hp)).aestronglyMeasurable
       (ae_of_all _ (hbound p hp))
-  have hle : ∀ p ≤ N, ∫ x, ‖iteratedFDeriv ℝ p f x‖ ≤ C * volume.real S := fun p hp ↦ by
+  have hle : ∀ p ≤ N, ∫ x, ‖iteratedFDeriv ℝ p f x‖ ≤ C * volume.real (tsupport f) := fun p hp ↦ by
     refine (integral_mono (hint p hp).norm hind (hbound p hp)).trans_eq ?_
-    rw [integral_indicator_const _ hS, smul_eq_mul, mul_comm]
-  have h0 : ‖𝓕 f w‖ ≤ C * volume.real S :=
+    rw [integral_indicator_const _ hT, smul_eq_mul, mul_comm]
+  have h0 : ‖𝓕 f w‖ ≤ C * volume.real (tsupport f) :=
     (norm_fourier_le_integral_norm f w).trans (by simpa using hle 0 (Nat.zero_le _))
   rcases le_total ‖w‖ 1 with hw | hw
   · have h2 : (1 + ‖w‖) ^ N ≤ 2 ^ N := by gcongr; linarith
     exact mul_le_mul h2 h0 (norm_nonneg _) (by positivity)
-  · have hN := (pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv hf hint w).trans
+  · have hN := (pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv
+      (fun n hn ↦ hf.differentiable_iteratedFDeriv (by exact_mod_cast hn)) hint w).trans
       (hle N le_rfl)
     calc (1 + ‖w‖) ^ N * ‖𝓕 f w‖ ≤ (2 * ‖w‖) ^ N * ‖𝓕 f w‖ := by
           gcongr
@@ -164,7 +182,45 @@ theorem one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset {N : ℕ} (hf : 
       _ ≤ 2 ^ N * ((2 * π * ‖w‖) ^ N * ‖𝓕 f w‖) := by
           gcongr
           nlinarith [two_le_pi]
-      _ ≤ 2 ^ N * (C * volume.real S) := by gcongr
+      _ ≤ 2 ^ N * (C * volume.real (tsupport f)) := by gcongr
+
+open MeasureTheory Real in
+/-- **Fourier decay with a frequency-dependent bound.** If `f` is `C^N`, its closed support
+`tsupport f` is contained in a set `S` of finite outer volume, and its derivatives of order at most
+`N` are bounded by `C ⟨2π w⟩ ^ m`, then
+`‖𝓕 f w‖ ≤ 2 ^ N C vol(S) (2π) ^ |m| ⟨w⟩ ^ (|m| - N)`. This is the form needed for a family of
+functions indexed by a frequency `w`, such as rescaled slices of an amplitude, whose derivatives
+grow like a power of `⟨2π w⟩`. -/
+theorem norm_fourier_le_of_tsupport_subset {N : ℕ} (hf : ContDiff ℝ N f) {S : Set V}
+    (hS' : volume S ≠ ⊤) (hfS : tsupport f ⊆ S) {C m : ℝ} (w : V)
+    (hC : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p f x‖ ≤ C * (1 + ‖(2 * π) • w‖ ^ 2) ^ (m / 2)) :
+    ‖𝓕 f w‖ ≤ 2 ^ N * C * volume.real S * (2 * π) ^ |m| *
+      (1 + ‖w‖ ^ 2) ^ (-((N : ℝ) - |m|) / 2) := by
+  have h := one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset hf hS' hfS hC w
+  have hw : (1 + ‖w‖ ^ 2) ^ ((N : ℝ) / 2) ≤ (1 + ‖w‖) ^ N := by
+    simpa using one_add_norm_sq_rpow_le_one_add_norm_rpow w (Nat.cast_nonneg (α := ℝ) N)
+  have h2π : (1 + ‖(2 * π) • w‖ ^ 2) ^ (m / 2) ≤ (2 * π) ^ |m| * (1 + ‖w‖ ^ 2) ^ (|m| / 2) := by
+    refine (one_add_norm_smul_sq_rpow_le (by nlinarith [two_le_pi]) m w).trans ?_
+    gcongr
+    · nlinarith [sq_nonneg ‖w‖]
+    · linarith [le_abs_self m]
+  have hsplit : (1 + ‖w‖ ^ 2) ^ (|m| / 2) * (1 + ‖w‖ ^ 2) ^ (-(N : ℝ) / 2) =
+      (1 + ‖w‖ ^ 2) ^ (-((N : ℝ) - |m|) / 2) := by
+    rw [← Real.rpow_add (by positivity)]
+    ring_nf
+  have hF : ‖𝓕 f w‖ ≤
+      2 ^ N * (C * (1 + ‖(2 * π) • w‖ ^ 2) ^ (m / 2) * volume.real S) *
+        (1 + ‖w‖ ^ 2) ^ (-(N : ℝ) / 2) := by
+    rw [neg_div, Real.rpow_neg (by positivity), ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
+    exact (mul_le_mul_of_nonneg_left hw (norm_nonneg _)).trans (by rw [mul_comm]; exact h)
+  have hC0 : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hC 0 (Nat.zero_le N) 0))
+    (by positivity)
+  calc ‖𝓕 f w‖
+      ≤ 2 ^ N * (C * ((2 * π) ^ |m| * (1 + ‖w‖ ^ 2) ^ (|m| / 2)) * volume.real S) *
+          (1 + ‖w‖ ^ 2) ^ (-(N : ℝ) / 2) := hF.trans (by gcongr)
+    _ = 2 ^ N * C * volume.real S * (2 * π) ^ |m| *
+          ((1 + ‖w‖ ^ 2) ^ (|m| / 2) * (1 + ‖w‖ ^ 2) ^ (-(N : ℝ) / 2)) := by ring
+    _ = _ := by rw [hsplit]
 
 open MeasureTheory Real in
 open scoped RealInnerProductSpace in
@@ -283,6 +339,25 @@ theorem integral_eq_integral_add_mul_I_of_differentiableOn_strip {h : ℂ → �
       exact hper _ (by simpa using hmem ht)
   rw [hside, add_sub_cancel_right, sub_eq_zero] at key
   exact key
+
+omit hT in
+/-- **Translating a period integral by a complex number.** If `h` is entire and `T`-periodic, then
+its integral over a period of the line `ℝ + w` equals its integral over a period of the real axis,
+for every `w : ℂ`. The real part of `w` does not matter by periodicity, and the imaginary part by
+`TauCeti.integral_eq_integral_add_mul_I_of_differentiableOn_strip`. -/
+theorem _root_.Function.Periodic.intervalIntegral_comp_add_eq_of_differentiable {h : ℂ → ℂ}
+    (hper : Function.Periodic h T) (hh : Differentiable ℂ h) (w : ℂ) :
+    ∫ x in (0 : ℝ)..T, h (x + w) = ∫ x in (0 : ℝ)..T, h x := by
+  have hline : Function.Periodic (fun t : ℝ ↦ h (t + w.im * I)) T := fun t ↦ by
+    simpa [add_right_comm] using hper (t + w.im * I)
+  have hre : ∫ x in (0 : ℝ)..T, h (x + w) = ∫ x in (0 : ℝ)..T, h (x + w.im * I) := by
+    have hw (x : ℝ) : h (x + w) = h (((x + w.re : ℝ) : ℂ) + w.im * I) := by
+      rw [ofReal_add, add_assoc, re_add_im]
+    simp_rw [hw]
+    rw [intervalIntegral.integral_comp_add_right (fun t : ℝ ↦ h (t + w.im * I)), zero_add,
+      add_comm T, hline.intervalIntegral_add_eq w.re 0, zero_add]
+  rw [hre, integral_eq_integral_add_mul_I_of_differentiableOn_strip (fun z _ ↦ hper z)
+    hh.differentiableOn]
 
 /-- **Exponential decay of the Fourier coefficients of a function holomorphic in a strip.** If
 `f : AddCircle T → ℂ` is the restriction to `ℝ` of a function `g` which is `T`-periodic and
