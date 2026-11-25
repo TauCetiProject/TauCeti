@@ -22,6 +22,8 @@ This file proves the basic theory of the scalar equation
   `w'' = q(x) w`
 
 on `I`, for solutions that are `C²` on `I`, with the equation written with `iteratedDeriv 2`:
+* a solution `(w, v)` of the first-order system `w' = v`, `v' = q w` on an open set is such a
+  solution (`TauCeti.contDiffOn_two_of_hasDerivAt`);
 * for every `t₀ ∈ I` and all `w₀, w₁ : 𝕜` there is a solution with `w(t₀) = w₀` and
   `w'(t₀) = w₁` (`TauCeti.exists_contDiffOn_iteratedDeriv_eq_mul`);
 * two solutions with the same value and derivative at one point of `I` agree on `I`
@@ -68,9 +70,12 @@ private lemma lipschitzWith_secondOrderSystem (c : 𝕜) :
   have hp := norm_nonneg (p.2 - p'.2)
   exact max_le (by nlinarith) (by nlinarith)
 
-/-- A function `w` with `w' = v` and `v' = q w` on an open set, with `q` continuous there, is a
-`C²` solution of `w'' = q w` there. -/
-private lemma contDiffOn_two_of_hasDerivAt {v : ℝ → 𝕜} (hI : IsOpen I) (hq : ContinuousOn q I)
+/-- **Solutions of the first-order system are `C²` solutions.** A function `w` with `w' = v` and
+`v' = q w` on an open set, with `q` continuous there, is a `C²` solution of `w'' = q w` there.
+This is the bridge from the first-order-system form of the equation to the `ContDiffOn` and
+`iteratedDeriv 2` form used in this file; the converse direction is
+`ContDiffOn.hasDerivAt_and_hasDerivAt_deriv`. -/
+theorem contDiffOn_two_of_hasDerivAt {v : ℝ → 𝕜} (hI : IsOpen I) (hq : ContinuousOn q I)
     (hw : ∀ x ∈ I, HasDerivAt w (v x) x) (hv : ∀ x ∈ I, HasDerivAt v (q x * w x) x) :
     ContDiffOn ℝ 2 w I ∧ ∀ x ∈ I, iteratedDeriv 2 w x = q x * w x := by
   have hdw (x : ℝ) (hx : x ∈ I) : HasDerivAt (deriv w) (q x * w x) x :=

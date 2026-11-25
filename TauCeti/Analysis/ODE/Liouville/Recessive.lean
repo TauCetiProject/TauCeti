@@ -9,6 +9,7 @@ public import TauCeti.Analysis.ODE.Liouville.Green
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 import Mathlib.Analysis.Complex.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Calculus.Deriv.Growth
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.ODE.SecondOrder.Linear
@@ -127,8 +128,8 @@ private lemma eventually_ne_zero_of_isEquivalent_approximant {u : ℝ → ℂ}
     (hf0 : ∀ x ∈ Ioi a, 0 < f x)
     (hu : u ~[atTop] fun x ↦ ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ)) :
     ∀ᶠ x in atTop, x ∈ Ioi a ∧ u x ≠ 0 :=
-  (eventually_gt_atTop a).and <| ((tendsto_div_of_isEquivalent_approximant hf0 hu).eventually_ne
-    one_ne_zero).mono fun x hx h ↦ hx (by rw [h, zero_div])
+  (eventually_gt_atTop a).and <| hu.eventually_ne_zero <| (eventually_gt_atTop a).mono
+    fun x hx ↦ liouvilleGreen_approximant_ne_zero (hf0 x hx)
 
 /-- Where `w₂ ≠ 0`, the function `w / w₂ - (W / 2) e^{2ξ}` has derivative
 `(W / 2) ((w₂ / y₋)⁻² - 1) (e^{2ξ})'`, where `W = w₂ w' - w₂' w` and `y₋ = f^{-1/4} e^{-ξ}`. -/
