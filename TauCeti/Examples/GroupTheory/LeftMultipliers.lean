@@ -17,8 +17,7 @@ These examples exercise `TauCeti.GroupTheory.LeftMultipliers` on the symmetric g
   conjugation preserves the kernel;
 * for the squaring map of `S₃`, the conjugation stabilizer is `A₃` while the left multipliers are
   trivial, so the conjugation stabilizer can be nontrivial and proper while the multiplier
-  subgroup is trivial;
-* inversion induces inversion on the range of a homomorphism.
+  subgroup is trivial.
 -/
 
 open Equiv Function
@@ -52,10 +51,4 @@ example : (⟨fun x ↦ x ^ 2, one_pow 2⟩ : OneHom (Perm (Fin 3)) (Perm (Fin 3
 -- Every element is a left multiplier of a homomorphism.
 example {G C : Type*} [Group G] [Group C] (φ : G →* C) (g : G) :
     g ∈ φ.toOneHom.leftMultipliers := by
-  simp
-
--- Inversion, which stabilizes every kernel, induces inversion on the range.
-example {G C : Type*} [Group G] [Group C] (κ : G →* C) (g : G) :
-    κ.rangeOpMulEquiv (MulEquiv.inv' G) (fun _ ↦ by simp) (fun _ ↦ by simp)
-      (κ.rangeRestrict g) = MulOpposite.op (κ.rangeRestrict g)⁻¹ := by
   simp

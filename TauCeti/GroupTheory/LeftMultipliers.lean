@@ -13,8 +13,7 @@ import Mathlib.Tactic.Group
 # Left multipliers and the conjugation stabilizer of a function on a group
 
 Let `f : G → C` be a function from a group to a possibly noncommutative group. This file records
-two subgroups of `G` that measure how far `f` is from being a homomorphism, together with the
-map induced on the range of a homomorphism whose kernel is stable under an anti-homomorphism.
+two subgroups of `G` that measure how far `f` is from being a homomorphism.
 
 * When `f 1 = 1`, the *left multipliers* of `f` are the `h : G` with `f (h * x) = f h * f x` for
   every `x`. They form a subgroup on which `f` restricts to a homomorphism, and this subgroup is
@@ -23,10 +22,6 @@ map induced on the range of a homomorphism whose kernel is stable under an anti-
   every `x`, that is, the stabilizer of `f` under conjugation. It normalizes the left
   multipliers. Preserving every value of `f` is stronger than preserving its fibre over `1`: for
   `f` a homomorphism, the conjugation stabilizer is the preimage of the centralizer of the image.
-* If `σ : G →* Gᵐᵒᵖ` is an involutive anti-homomorphism, such as the transpose of invertible
-  matrices, and `κ : G →* C` has kernel stable under `σ`, then `κ g ↦ κ (σ g)` is a well-defined
-  involutive anti-automorphism of the range of `κ`. It is defined only on that range: nothing is
-  asserted about elements of `C` outside it.
 
 These are the group-theoretic devices of Bass–Milnor–Serre's extension argument for Mennicke
 symbols: a value function defined through standard forms is first shown to be multiplicative on
@@ -40,10 +35,6 @@ exchange the two corners.
 * `OneHom.leftMultipliersHom`: the restriction of the map to its left multipliers, as a
   homomorphism.
 * `Function.conjStabilizer`: the subgroup of elements whose conjugation preserves every value.
-* `MonoidHom.rangeOpHom`: the anti-endomorphism of the range of `κ` induced by an
-  anti-homomorphism of `G` that stabilizes the kernel of `κ`.
-* `MonoidHom.rangeOpMulEquiv`: the same map as an anti-automorphism of the range, when the
-  anti-homomorphism of `G` is involutive.
 
 ## Main results
 
@@ -53,8 +44,6 @@ exchange the two corners.
   left multipliers.
 * `MonoidHom.conjStabilizer_eq_comap_centralizer`: for a homomorphism, the conjugation stabilizer
   is the preimage of the centralizer of its range.
-* `MonoidHom.rangeOpMulEquiv_rangeRestrict`, `MonoidHom.rangeOpMulEquiv_rangeOpMulEquiv`: the
-  defining formula and involutivity of the induced anti-automorphism of the range.
 
 ## References
 
@@ -70,6 +59,12 @@ namespace OneHom
 
 variable (f : OneHom G C)
 
+variable {f} in
+/-- A map preserving `1` inverts the value at any element that splits it on the left. -/
+theorem map_inv_of_forall_map_mul {h : G} (hh : ∀ x, f (h * x) = f h * f x) :
+    f h⁻¹ = (f h)⁻¹ :=
+  eq_inv_of_mul_eq_one_right (by rw [← hh]; simp)
+
 /-- The left multipliers of a map `f` with `f 1 = 1`: the elements `h` such that
 `f (h * x) = f h * f x` for every `x`. They form a subgroup, on which `f` is a homomorphism. -/
 def leftMultipliers : Subgroup G where
@@ -79,8 +74,7 @@ def leftMultipliers : Subgroup G where
     have hhk : f (h * k) = f h * f k := by simpa using hh k
     rw [mul_assoc, hh, hk, hhk, mul_assoc]
   inv_mem' {h} hh x := by
-    have hinv : f h⁻¹ = (f h)⁻¹ := eq_inv_of_mul_eq_one_right (by rw [← hh]; simp)
-    rw [hinv, eq_inv_mul_iff_mul_eq, ← hh, mul_inv_cancel_left]
+    rw [map_inv_of_forall_map_mul hh, eq_inv_mul_iff_mul_eq, ← hh, mul_inv_cancel_left]
 
 variable {f}
 
@@ -96,7 +90,7 @@ theorem map_mul_of_mem_leftMultipliers {h : G} (hh : h ∈ f.leftMultipliers) (x
 /-- A map preserving `1` inverts the values of its left multipliers. -/
 theorem map_inv_of_mem_leftMultipliers {h : G} (hh : h ∈ f.leftMultipliers) :
     f h⁻¹ = (f h)⁻¹ :=
-  eq_inv_of_mul_eq_one_right (by rw [← hh]; simp)
+  map_inv_of_forall_map_mul hh
 
 variable (f) in
 /-- The restriction of a map preserving `1` to its left multipliers, as a homomorphism. -/
@@ -206,64 +200,5 @@ theorem conjStabilizer_eq_comap_centralizer (φ : G →* C) :
     SetLike.mem_coe, mem_range, forall_exists_index, forall_apply_eq_imp_iff, map_mul, map_inv]
   refine forall_congr' fun x ↦ ?_
   rw [mul_inv_eq_iff_eq_mul, eq_comm]
-
-section RangeOpMulEquiv
-
-variable {F : Type*} [FunLike F G Gᵐᵒᵖ] [MonoidHomClass F G Gᵐᵒᵖ] (κ : G →* C) (σ : F)
-
-/-- If the kernel of `κ` is stable under an anti-homomorphism `σ : G → Gᵐᵒᵖ`, then
-`κ g ↦ κ (σ g)` is well defined on the range of `κ`, and is an anti-homomorphism from the range
-to itself. -/
-noncomputable def rangeOpHom (hker : ∀ g, κ g = 1 → κ (σ g).unop = 1) :
-    κ.range →* κ.rangeᵐᵒᵖ :=
-  κ.rangeRestrict.liftOfSurjective κ.rangeRestrict_surjective
-    ⟨{ toFun g := MulOpposite.op (κ.rangeRestrict (σ g).unop)
-       map_one' := by simp
-       map_mul' g h := by simp [← MulOpposite.op_mul] },
-      fun g hg ↦ by
-        rw [ker_rangeRestrict, mem_ker] at hg
-        simpa [Subtype.ext_iff] using hker g hg⟩
-
-variable {κ σ}
-
-@[simp]
-theorem rangeOpHom_rangeRestrict (hker : ∀ g, κ g = 1 → κ (σ g).unop = 1) (g : G) :
-    κ.rangeOpHom σ hker (κ.rangeRestrict g) = MulOpposite.op (κ.rangeRestrict (σ g).unop) :=
-  liftOfRightInverse_comp_apply _ _ _ _ g
-
-variable (κ σ)
-
-/-- Let `σ` be an involutive anti-homomorphism of `G`, such as the transpose of invertible
-matrices, and suppose that the kernel of `κ` is stable under `σ`. Then `κ g ↦ κ (σ g)` is a
-well-defined involutive anti-automorphism of the range of `κ`. -/
-noncomputable def rangeOpMulEquiv (hσ : ∀ g, (σ (σ g).unop).unop = g)
-    (hker : ∀ g, κ g = 1 → κ (σ g).unop = 1) : κ.range ≃* κ.rangeᵐᵒᵖ :=
-  have hinv (x : κ.range) : (κ.rangeOpHom σ hker (κ.rangeOpHom σ hker x).unop).unop = x := by
-    obtain ⟨g, rfl⟩ := κ.rangeRestrict_surjective x
-    simp [hσ]
-  { κ.rangeOpHom σ hker with
-    invFun y := (κ.rangeOpHom σ hker y.unop).unop
-    left_inv := hinv
-    right_inv y := congrArg MulOpposite.op (hinv y.unop) }
-
-variable {κ σ}
-
-@[simp]
-theorem rangeOpMulEquiv_rangeRestrict (hσ : ∀ g, (σ (σ g).unop).unop = g)
-    (hker : ∀ g, κ g = 1 → κ (σ g).unop = 1) (g : G) :
-    κ.rangeOpMulEquiv σ hσ hker (κ.rangeRestrict g) =
-      MulOpposite.op (κ.rangeRestrict (σ g).unop) :=
-  rangeOpHom_rangeRestrict hker g
-
-/-- The anti-automorphism of the range induced by an involutive anti-homomorphism is itself
-involutive. -/
-@[simp]
-theorem rangeOpMulEquiv_rangeOpMulEquiv (hσ : ∀ g, (σ (σ g).unop).unop = g)
-    (hker : ∀ g, κ g = 1 → κ (σ g).unop = 1) (x : κ.range) :
-    (κ.rangeOpMulEquiv σ hσ hker (κ.rangeOpMulEquiv σ hσ hker x).unop).unop = x := by
-  obtain ⟨g, rfl⟩ := κ.rangeRestrict_surjective x
-  simp [hσ]
-
-end RangeOpMulEquiv
 
 end MonoidHom
