@@ -76,9 +76,7 @@ theorem diagOneTwo_apply (v : EuclideanSpace ℝ (Fin 2)) :
 /-- The inner products `⟪u, diag(1, 2) v⟫ = u₁ v₁ + 2 u₂ v₂`. -/
 theorem inner_diagOneTwo (u v : EuclideanSpace ℝ (Fin 2)) :
     inner ℝ u (diagOneTwo v) = u 0 * v 0 + 2 * (u 1 * v 1) := by
-  rw [diagOneTwo_apply, inner_add_right, inner_smul_right, EuclideanSpace.inner_single_right,
-    PiLp.inner_apply, Fin.sum_univ_two]
-  simp only [conj_trivial, one_mul, RCLike.inner_apply]
+  simp [diagOneTwo_apply, inner_add_right, PiLp.inner_apply, Fin.sum_univ_two]
   ring
 
 /-- The weight `diag(1, 2)` is coercive with constant `1`: `‖u‖² ≤ ⟪u, diag(1, 2) u⟫`. -/
@@ -112,15 +110,11 @@ theorem diagOneTwoForm_dualForcing_apply (ℓ : StrongDual ℝ (EuclideanSpace �
   simp
   ring
 
-/-- `c = 1` is a coercivity constant of `diag(1, 2)`. -/
-theorem one_mul_norm_sq_le_diagOneTwoForm (u : EuclideanSpace ℝ (Fin 2)) :
-    1 * ‖u‖ ^ 2 ≤ RCLike.re (diagOneTwoForm.form u u) := by
-  simpa [diagOneTwoForm] using norm_sq_le_inner_diagOneTwo u
-
-/-- The bound `‖F ℓ‖ ≤ c⁻¹ ‖ℓ‖` with `c = 1`. -/
+/-- The bound `‖F ℓ‖ ≤ c⁻¹ ‖ℓ‖` with `c = 1`, which is a coercivity constant of `diag(1, 2)`. -/
 example (ℓ : StrongDual ℝ (EuclideanSpace ℝ (Fin 2))) :
     ‖diagOneTwoForm.dualForcing ℓ‖ ≤ 1⁻¹ * ‖ℓ‖ :=
-  diagOneTwoForm.norm_dualForcing_le one_pos one_mul_norm_sq_le_diagOneTwoForm ℓ
+  diagOneTwoForm.norm_dualForcing_le one_pos
+    (fun u ↦ by simpa [inner_diagOneTwo] using norm_sq_le_inner_diagOneTwo u) ℓ
 
 /-- With `c = 2` the bound fails for `ℓ = e₁*`: `F e₁* = e₁` has norm `1 > 2⁻¹ ‖e₁*‖`. -/
 example :
