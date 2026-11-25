@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Airy.Equation
-import TauCeti.Analysis.Calculus.Deriv.Second
-import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Airy functions: rotated solutions and their Wronskians
@@ -18,8 +17,6 @@ For a cube root of unity `ν`, the functions `z ↦ Ai(νz)` and `z ↦ Bi(νz)`
 
 ## Main results
 
-* `TauCeti.airy_ode_comp_mul_left`: if `w'' = z w` and `ν³ = 1`, then `z ↦ w(νz)` solves the same
-  equation;
 * `TauCeti.airyAi_ode_comp_mul_left`, `TauCeti.airyBi_ode_comp_mul_left`: `z ↦ Ai(νz)` and
   `z ↦ Bi(νz)` solve Airy's equation (DLMF 9.2.2);
 * `TauCeti.airyAi_zero_mul_deriv_airyAi_zero`: `Ai(0) Ai′(0) = −1/(2π√3)`;
@@ -54,15 +51,6 @@ open scoped Real
 
 namespace TauCeti
 
-/-- **Rotation symmetry** of Airy's equation: if `w'' = z w` and `ν³ = 1`, then `z ↦ w(νz)` solves
-the same equation. No differentiability of `w` is needed. -/
-theorem airy_ode_comp_mul_left {w : ℂ → ℂ} {ν : ℂ} (hw : ∀ z, deriv^[2] w z = z * w z)
-    (hν : ν ^ 3 = 1) (z : ℂ) :
-    deriv^[2] (fun u => w (ν * u)) z = z * w (ν * z) := by
-  have h2 (f : ℂ → ℂ) (x : ℂ) : deriv^[2] f x = deriv (deriv f) x := rfl
-  rw [h2, deriv_deriv_comp_mul_left, smul_eq_mul, ← h2, hw]
-  linear_combination z * w (ν * z) * hν
-
 /-- For a cube root of unity `ν`, `z ↦ Ai(νz)` solves Airy's equation (DLMF 9.2.2). -/
 theorem airyAi_ode_comp_mul_left {ν : ℂ} (hν : ν ^ 3 = 1) (z : ℂ) :
     deriv^[2] (fun u => airyAi (ν * u)) z = z * airyAi (ν * z) :=
@@ -73,17 +61,12 @@ theorem airyBi_ode_comp_mul_left {ν : ℂ} (hν : ν ^ 3 = 1) (z : ℂ) :
     deriv^[2] (fun u => airyBi (ν * u)) z = z * airyBi (ν * z) :=
   airy_ode_comp_mul_left airyBi_ode hν z
 
-/-- `(3 : ℂ)^{1/2} = √3`. -/
-private theorem three_cpow_one_div_two : (3 : ℂ) ^ (1 / 2 : ℂ) = (√3 : ℂ) := by
-  rw [Real.sqrt_eq_rpow, ofReal_cpow (by norm_num : (0 : ℝ) ≤ 3)]
-  norm_num
-
 /-- `Ai(0) Ai′(0) = −1/(2π√3)`. -/
 theorem airyAi_zero_mul_deriv_airyAi_zero :
     airyAi 0 * deriv airyAi 0 = -(2 * π * √3 : ℂ)⁻¹ := by
   have hW := wronskian_airyAi_airyBi 0
   rw [airyBi_zero_eq_cpow_mul_airyAi_zero, deriv_airyBi_zero_eq_neg_cpow_mul_deriv_airyAi_zero,
-    three_cpow_one_div_two] at hW
+    ofNat_cpow_one_half] at hW
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
   have hs : (√3 : ℂ) ≠ 0 := ofReal_ne_zero.mpr (by positivity)
   field_simp at hW ⊢
@@ -99,8 +82,7 @@ theorem wronskian_airyAi_comp_mul_left {μ ν : ℂ} (hμ : μ ^ 3 = 1) (hν : �
   have h := wronskian_eq_of_airy_ode hd hd (airyAi_ode_comp_mul_left hμ)
     (airyAi_ode_comp_mul_left hν) z 0
   simp only [deriv_comp_mul_left, smul_eq_mul, mul_zero] at h ⊢
-  rw [h, div_eq_mul_inv, ← neg_neg (2 * π * √3 : ℂ)⁻¹, ← airyAi_zero_mul_deriv_airyAi_zero]
-  ring
+  linear_combination h + (ν - μ) * airyAi_zero_mul_deriv_airyAi_zero
 
 /-- `ω = e^{2πi/3} = −1/2 + (√3/2) i`. -/
 private theorem exp_two_pi_mul_I_div_three : cexp (2 * π * I / 3) = -1 / 2 + √3 / 2 * I := by
@@ -132,6 +114,15 @@ private theorem exp_neg_pi_mul_I_div_six : cexp (-(π * I / 6)) = √3 / 2 - 1 /
   push_cast
   ring
 
+/-- `ω³ = 1` for `ω = e^{2πi/3}`. -/
+private theorem exp_two_pi_mul_I_div_three_pow_three : cexp (2 * π * I / 3) ^ 3 = 1 := by
+  rw [← exp_natCast_mul, show ((3 : ℕ) : ℂ) * (2 * π * I / 3) = 2 * π * I by push_cast; ring,
+    exp_two_pi_mul_I]
+
+/-- `ω⁻³ = 1` for `ω = e^{2πi/3}`. -/
+private theorem exp_neg_two_pi_mul_I_div_three_pow_three : cexp (-(2 * π * I / 3)) ^ 3 = 1 := by
+  rw [exp_neg, inv_pow, exp_two_pi_mul_I_div_three_pow_three, inv_one]
+
 /-- `(√3 : ℂ)² = 3`. -/
 private theorem ofReal_sqrt_three_sq : (√3 : ℂ) ^ 2 = 3 := by
   rw [← ofReal_pow, Real.sq_sqrt (by norm_num)]
@@ -149,9 +140,7 @@ theorem wronskian_airyAi_mul_exp_neg_two_pi_mul_I_div_three (z : ℂ) :
     airyAi z * deriv (fun u => airyAi (u * cexp (-(2 * π * I / 3)))) z -
         deriv airyAi z * airyAi (z * cexp (-(2 * π * I / 3))) =
       cexp (π * I / 6) / (2 * π) := by
-  have hω : cexp (2 * π * I / 3) ^ 3 = 1 := by
-    exact_mod_cast (isPrimitiveRoot_exp 3 (by norm_num)).pow_eq_one
-  rw [wronskian_airyAi_mul (by rw [exp_neg, inv_pow, hω, inv_one]),
+  rw [wronskian_airyAi_mul exp_neg_two_pi_mul_I_div_three_pow_three,
     exp_neg_two_pi_mul_I_div_three, exp_pi_mul_I_div_six]
   have hs : (√3 : ℂ) ≠ 0 := ofReal_ne_zero.mpr (by positivity)
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
@@ -163,9 +152,7 @@ theorem wronskian_airyAi_mul_exp_two_pi_mul_I_div_three (z : ℂ) :
     airyAi z * deriv (fun u => airyAi (u * cexp (2 * π * I / 3))) z -
         deriv airyAi z * airyAi (z * cexp (2 * π * I / 3)) =
       cexp (-(π * I / 6)) / (2 * π) := by
-  have hω : cexp (2 * π * I / 3) ^ 3 = 1 := by
-    exact_mod_cast (isPrimitiveRoot_exp 3 (by norm_num)).pow_eq_one
-  rw [wronskian_airyAi_mul hω, exp_two_pi_mul_I_div_three,
+  rw [wronskian_airyAi_mul exp_two_pi_mul_I_div_three_pow_three, exp_two_pi_mul_I_div_three,
     exp_neg_pi_mul_I_div_six]
   have hs : (√3 : ℂ) ≠ 0 := ofReal_ne_zero.mpr (by positivity)
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
@@ -178,10 +165,9 @@ theorem wronskian_airyAi_rotations (z : ℂ) :
         deriv (fun u => airyAi (u * cexp (-(2 * π * I / 3)))) z *
           airyAi (z * cexp (2 * π * I / 3)) =
       1 / (2 * π * I) := by
-  have hω : cexp (2 * π * I / 3) ^ 3 = 1 := by
-    exact_mod_cast (isPrimitiveRoot_exp 3 (by norm_num)).pow_eq_one
   simp_rw [mul_comm _ (cexp _)]
-  rw [wronskian_airyAi_comp_mul_left (by rw [exp_neg, inv_pow, hω, inv_one]) hω z,
+  rw [wronskian_airyAi_comp_mul_left exp_neg_two_pi_mul_I_div_three_pow_three
+      exp_two_pi_mul_I_div_three_pow_three z,
     exp_neg_two_pi_mul_I_div_three, exp_two_pi_mul_I_div_three]
   have hs : (√3 : ℂ) ≠ 0 := ofReal_ne_zero.mpr (by positivity)
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
