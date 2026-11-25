@@ -40,6 +40,9 @@ families of automorphic forms.
 * `MvPowerSeries.norm_coeff_pow_le_pow_mul_prod_pow` and
   `MvPowerSeries.norm_coeff_prod_le_prod_mul_prod_pow`: the bounds of powers and finite products.
 * `MvPowerSeries.norm_coeff_invOfUnit_le_mul_prod_pow`: the bound of an inverse.
+* `MvPowerSeries.norm_coeff_mul_le_prod_pow`, `MvPowerSeries.norm_coeff_pow_le_prod_pow`,
+  `MvPowerSeries.norm_coeff_prod_le_prod_pow` and `MvPowerSeries.norm_coeff_invOfUnit_le_prod_pow`:
+  the same bounds for the unit bound `a = 1`.
 -/
 
 public section
@@ -72,6 +75,14 @@ theorem norm_coeff_mul_le_mul_prod_pow {f g : MvPowerSeries σ R} {a b : ℝ}
   rw [← mem_antidiagonal.mp hx, Finsupp.prod_add_index' (fun _ ↦ pow_zero _)
     fun _ _ _ ↦ pow_add _ _ _, mul_mul_mul_comm]
   exact norm_mul_le_of_le (hf x.1) (hg x.2)
+
+/-- The unit case of `MvPowerSeries.norm_coeff_mul_le_mul_prod_pow`: if the coefficients of `f`
+and `g` are bounded by `∏ i, s i ^ t i`, so are those of `f * g`. -/
+theorem norm_coeff_mul_le_prod_pow {f g : MvPowerSeries σ R}
+    (hf : ∀ t, ‖coeff t f‖ ≤ t.prod (s · ^ ·)) (hg : ∀ t, ‖coeff t g‖ ≤ t.prod (s · ^ ·))
+    (t : σ →₀ ℕ) : ‖coeff t (f * g)‖ ≤ t.prod (s · ^ ·) := by
+  simpa only [one_mul] using norm_coeff_mul_le_mul_prod_pow (a := 1) (b := 1)
+    (fun t ↦ (one_mul _).trans_ge (hf t)) (fun t ↦ (one_mul _).trans_ge (hg t)) t
 
 omit [IsUltrametricDist R] in
 /-- A monomial `x Xᵉ` with `‖x‖ ≤ ∏ i, s i ^ e i` has the geometric coefficient bound
@@ -107,6 +118,14 @@ theorem norm_coeff_pow_le_pow_mul_prod_pow (hs : ∀ i, 0 ≤ s i) {f : MvPowerS
   | zero => simpa using norm_coeff_one_le_prod_pow hs t
   | succ n ih => simpa only [pow_succ] using norm_coeff_mul_le_mul_prod_pow ih hf t
 
+/-- The unit case of `MvPowerSeries.norm_coeff_pow_le_pow_mul_prod_pow`: if the coefficients of
+`f` are bounded by `∏ i, s i ^ t i`, so are those of `f ^ n`. -/
+theorem norm_coeff_pow_le_prod_pow (hs : ∀ i, 0 ≤ s i) {f : MvPowerSeries σ R}
+    (hf : ∀ t, ‖coeff t f‖ ≤ t.prod (s · ^ ·)) (n : ℕ) (t : σ →₀ ℕ) :
+    ‖coeff t (f ^ n)‖ ≤ t.prod (s · ^ ·) := by
+  simpa only [one_pow, one_mul] using norm_coeff_pow_le_pow_mul_prod_pow hs (a := 1)
+    (fun t ↦ (one_mul _).trans_ge (hf t)) n t
+
 end Ring
 
 section CommRing
@@ -126,6 +145,14 @@ theorem norm_coeff_prod_le_prod_mul_prod_pow {ι : Type*} (hs : ∀ i, 0 ≤ s i
     rw [prod_insert hj, prod_insert hj]
     exact norm_coeff_mul_le_mul_prod_pow (hf j (mem_insert_self j S))
       (ih fun j' hj' ↦ hf j' (mem_insert_of_mem hj')) t
+
+/-- The unit case of `MvPowerSeries.norm_coeff_prod_le_prod_mul_prod_pow`: if the coefficients of
+each `f j` are bounded by `∏ i, s i ^ t i`, so are those of `∏ j ∈ S, f j`. -/
+theorem norm_coeff_prod_le_prod_pow {ι : Type*} (hs : ∀ i, 0 ≤ s i) (S : Finset ι)
+    {f : ι → MvPowerSeries σ R} (hf : ∀ j ∈ S, ∀ t, ‖coeff t (f j)‖ ≤ t.prod (s · ^ ·))
+    (t : σ →₀ ℕ) : ‖coeff t (∏ j ∈ S, f j)‖ ≤ t.prod (s · ^ ·) := by
+  simpa only [prod_const_one, one_mul] using norm_coeff_prod_le_prod_mul_prod_pow hs S
+    (a := fun _ ↦ 1) (fun j hj t ↦ (one_mul _).trans_ge (hf j hj t)) t
 
 end CommRing
 
@@ -165,6 +192,16 @@ theorem norm_coeff_invOfUnit_le_mul_prod_pow (hs : ∀ i, 0 ≤ s i) {φ : MvPow
           mul_le_mul_of_nonneg_right (hφ x.1 hx1) (prod_pow_nonneg hs _)
   · rw [norm_zero]
     exact prod_pow_nonneg hs t
+
+/-- The unit case of `MvPowerSeries.norm_coeff_invOfUnit_le_mul_prod_pow`: if `‖u⁻¹‖ ≤ 1` and the
+nonconstant coefficients of `φ` are bounded by `∏ i, s i ^ t i`, so are all coefficients of
+`invOfUnit φ u`. -/
+theorem norm_coeff_invOfUnit_le_prod_pow (hs : ∀ i, 0 ≤ s i) {φ : MvPowerSeries σ R} {u : Rˣ}
+    (hu : ‖(↑u⁻¹ : R)‖ ≤ 1) (hφ : ∀ t ≠ 0, ‖coeff t φ‖ ≤ t.prod (s · ^ ·)) (t : σ →₀ ℕ) :
+    ‖coeff t (invOfUnit φ u)‖ ≤ t.prod (s · ^ ·) :=
+  (norm_coeff_invOfUnit_le_mul_prod_pow hs
+    (fun t ht ↦ (mul_le_of_le_one_left (norm_nonneg _) hu).trans (hφ t ht)) t).trans
+    (mul_le_of_le_one_left (prod_pow_nonneg hs t) hu)
 
 end Inverse
 

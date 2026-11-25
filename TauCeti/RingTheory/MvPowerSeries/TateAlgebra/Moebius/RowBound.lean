@@ -107,7 +107,6 @@ theorem norm_coeff_ringInverse_moebiusDenom_le (hs : ∀ j, 0 ≤ s j) (hg : g �
       t.prod (s · ^ ·) := by
   classical
   set u := (isNormMulUnit_lowerRight_of_mem_moebiusSubmonoid hg).isUnit.unit
-  have hu : ‖(↑u⁻¹ : R)‖ = 1 := norm_inv_lowerRight_unit hg
   -- The inverse in the Tate algebra is Mathlib's formal inverse `invOfUnit _ u`.
   have hinv : (↑(Ring.inverse (moebiusDenom i g)) : _root_.MvPowerSeries (Fin k) R) =
       invOfUnit (moebiusDenom i g : _root_.MvPowerSeries (Fin k) R) u := by
@@ -115,8 +114,8 @@ theorem norm_coeff_ringInverse_moebiusDenom_le (hs : ∀ j, 0 ≤ s j) (hg : g �
     · rw [← Subring.coe_mul, Ring.inverse_mul_cancel _ (isUnit_moebiusDenom hg), Subring.coe_one]
     · rw [constantCoeff_moebiusDenom, IsUnit.unit_spec]
   rw [hinv]
-  refine (norm_coeff_invOfUnit_le_mul_prod_pow hs (fun t ht ↦ ?_) t).trans_eq (by rw [hu, one_mul])
-  rw [hu, one_mul, coe_moebiusDenom, map_add]
+  refine norm_coeff_invOfUnit_le_prod_pow hs (norm_inv_lowerRight_unit hg).le (fun t ht ↦ ?_) t
+  rw [coe_moebiusDenom, map_add]
   simp only [coeff_monomial t (0 : Fin k →₀ ℕ), ht, ↓reduceIte, add_zero]
   exact norm_coeff_monomial_le_prod_pow hs (by rwa [prod_pow_single]) t
 
@@ -160,8 +159,7 @@ theorem norm_coeff_moebius_le (hs : ∀ j, 0 ≤ s j) (hg : g ∈ moebiusSubmono
   · have hm := norm_coeff_monomial_le_prod_pow (x := g.det * ↑u⁻¹) hs (by
       rw [prod_pow_single]
       simpa [hu] using norm_mul_le_of_le hdet hu.le)
-    simpa using norm_coeff_mul_le_mul_prod_pow (a := 1) (b := 1) (by simpa using hm)
-      (by simpa using norm_coeff_ringInverse_moebiusDenom_le hs hg hc) t
+    exact norm_coeff_mul_le_prod_pow hm (norm_coeff_ringInverse_moebiusDenom_le hs hg hc) t
 
 /-- **The row estimate.** Let `A` be a restricted automorphy factor whose substitution at `γ` is
 the Möbius series of matrices `gᵢ = !![aᵢ, bᵢ; cᵢ, dᵢ] ∈ moebiusSubmonoid R` with
@@ -178,7 +176,7 @@ theorem RestrictedAutomorphyFactor.norm_coeff_slash_le {M : Type*} [Monoid M]
     ‖coeff t (A.slash (op γ) f : _root_.MvPowerSeries (Fin k) R)‖ ≤ ‖f‖ * t.prod (s · ^ ·) := by
   have hs (i : Fin k) : 0 ≤ s i := (norm_nonneg _).trans (hc i)
   rw [RestrictedAutomorphyFactor.slash_apply, Subring.coe_mul, ← one_mul ‖f‖]
-  refine norm_coeff_mul_le_mul_prod_pow (by simpa using hj)
+  refine norm_coeff_mul_le_mul_prod_pow (fun t ↦ (one_mul _).trans_ge (hj t))
     (norm_coeff_restrictedAnalyticSubst_le _ _ hs (fun i e ↦ ?_) f) t
   rw [hsubst, one_mul]
   exact norm_coeff_moebius_le hs (hg i) (hc i) (hdet i) e
@@ -196,14 +194,10 @@ theorem norm_coeff_moebiusAutomorphyFactor_slash_le (n : Fin k → ℕ)
   have hs (i : Fin k) : 0 ≤ s i := (norm_nonneg _).trans (hc i)
   refine (moebiusAutomorphyFactor R n).norm_coeff_slash_le (moebiusAutomorphyFactor_subst n γ)
     (fun i ↦ (γ i).property) hc hdet (fun t ↦ ?_) f t
-  have hpow (i : Fin k) (t : Fin k →₀ ℕ) :
-      ‖coeff t ((moebiusDenom i (γ i : Matrix (Fin 2) (Fin 2) R) : _root_.MvPowerSeries (Fin k) R) ^
-        n i)‖ ≤ 1 * t.prod (s · ^ ·) := by
-    have h := norm_coeff_moebiusDenom_le (i := i) hs (hc i)
-      (norm_lowerRight_eq_one_of_mem_moebiusSubmonoid (γ i).property).le
-    simpa using norm_coeff_pow_le_pow_mul_prod_pow hs (a := 1) (by simpa using h) (n i) t
   rw [moebiusAutomorphyFactor_factor]
   push_cast
-  simpa using norm_coeff_prod_le_prod_mul_prod_pow hs Finset.univ (fun i _ ↦ hpow i) t
+  exact norm_coeff_prod_le_prod_pow hs Finset.univ (fun i _ ↦ norm_coeff_pow_le_prod_pow hs
+    (norm_coeff_moebiusDenom_le hs (hc i)
+      (norm_lowerRight_eq_one_of_mem_moebiusSubmonoid (γ i).property).le) (n i)) t
 
 end TauCeti.MvPowerSeries
