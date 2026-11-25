@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Curvature.Sectional
-import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.NormSq
 
 /-!
 # O'Neill's scalar-curvature formula for totally geodesic fibres
@@ -15,12 +15,12 @@ import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 Let `f : M → N` be a Riemannian submersion. At a point `x` of `M`, horizontal lifts `X_i` of an
 orthonormal basis of `T_(f x) N` together with an orthonormal basis `V_a` of the vertical space
 `ker (df_x)` form an orthonormal basis of `T_x M`
-(`IsRiemannianSubmersion.horizontalVerticalBasis`).
-
-The squared norm of O'Neill's horizontal tensor is `|A|² = ∑ i j, ‖A_(X_i) X_j‖²`
-(`IsRiemannianSubmersion.oneillANormSq`). It does not depend on the horizontal orthonormal frame
-(`IsRiemannianSubmersion.oneillANormSq_eq_sum`) and is bounded on compact sets. Since `A_X` is
-skew-adjoint and exchanges horizontal and vertical vectors, also `∑ i a, ‖A_(X_i) V_a‖² = |A|²`.
+(`IsRiemannianSubmersion.horizontalVerticalBasis`, in
+`TauCeti.Geometry.Manifold.Riemannian.Submersion.Basic`). The squared norm
+`|A|² = ∑ i j, ‖A_(X_i) X_j‖²` of O'Neill's horizontal tensor
+(`IsRiemannianSubmersion.oneillANormSq`, in
+`TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.NormSq`) also satisfies
+`∑ i a, ‖A_(X_i) V_a‖² = |A|²`.
 
 Splitting the double trace `Scal = ∑ Rm(e_β, e_α, e_α, e_β)` in this adapted basis gives three
 kinds of terms. The horizontal-horizontal terms are `Scal_N(f x) - 3 |A|²` by O'Neill's horizontal
@@ -37,23 +37,8 @@ O'Neill's formula `Scal_M = Scal_N ∘ f + Scal_F - |A|²`; that identification 
 This is the formula behind the scalar curvature `Scal_N + ε⁻² Scal_F - ε² |A|²` of a connection
 metric whose totally geodesic fibres are scaled by `ε²`.
 
-## Main definitions
-
-* `TauCeti.IsRiemannianSubmersion.horizontalVerticalBasis`: the orthonormal basis of `T_x M`
-  adapted to the horizontal-vertical splitting.
-* `TauCeti.IsRiemannianSubmersion.oneillANormSq`: the squared norm `|A|²` of O'Neill's horizontal
-  tensor.
-
 ## Main results
 
-* `TauCeti.IsRiemannianSubmersion.oneillANormSq_eq_sum`: `|A|²` may be computed in any horizontal
-  orthonormal frame.
-* `TauCeti.IsRiemannianSubmersion.oneillANormSq_eq_zero_iff`: `|A|²` vanishes exactly where `A`
-  does.
-* `TauCeti.IsRiemannianSubmersion.exists_oneillANormSq_le_of_isCompact`: `|A|²` is bounded on
-  compact sets.
-* `TauCeti.IsRiemannianSubmersion.sum_sum_norm_oneillA_horizontalLift_vertical`:
-  `∑ i a, ‖A_(X_i) V_a‖² = |A|²`.
 * `TauCeti.IsRiemannianSubmersion.scalarCurvature_eq_of_eventually_oneillT_eq_zero`: O'Neill's
   scalar-curvature formula for totally geodesic fibres.
 
@@ -89,179 +74,6 @@ variable
   {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 include h
-
-/-! ### The adapted orthonormal basis -/
-
-section Basis
-
-omit [IsContMDiffRiemannianBundle I ∞ E fun x : M ↦ TangentSpace I x]
-  [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] [IsManifold I ∞ M]
-  [IsManifold J ∞ N]
-
-/-- Horizontal lifts of an orthonormal basis of `T_(f x) N`, followed by an orthonormal basis of the
-vertical space `ker (df_x)`, form an orthonormal family. -/
-theorem orthonormal_sumElim_horizontalLift (x : M)
-    (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
-    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).ker) :
-    Orthonormal ℝ (Sum.elim (fun i ↦ h.horizontalLift x (b i))
-      fun a ↦ (c a : TangentSpace I x)) := by
-  classical
-  rw [orthonormal_iff_ite]
-  rintro (i | a) (j | a')
-  · rw [Sum.elim_inl, Sum.elim_inl, LinearIsometry.inner_map_map,
-      orthonormal_iff_ite.mp b.orthonormal i j]
-    simp
-  · rw [Sum.elim_inl, Sum.elim_inr, Submodule.inner_left_of_mem_orthogonal (c a').property
-      (h.horizontalLift_mem_orthogonal_ker x (b i))]
-    simp
-  · rw [Sum.elim_inr, Sum.elim_inl, Submodule.inner_right_of_mem_orthogonal (c a).property
-      (h.horizontalLift_mem_orthogonal_ker x (b j))]
-    simp
-  · rw [Sum.elim_inr, Sum.elim_inr, ← Submodule.coe_inner,
-      orthonormal_iff_ite.mp c.orthonormal a a']
-    simp
-
-/-- A tangent vector orthogonal to the horizontal lifts of an orthonormal basis of `T_(f x) N` and
-to an orthonormal basis of `ker (df_x)` is zero. -/
-theorem eq_zero_of_forall_inner_horizontalLift_eq_zero (x : M)
-    (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
-    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).ker) {w : TangentSpace I x}
-    (hb : ∀ i, ⟪h.horizontalLift x (b i), w⟫_ℝ = 0)
-    (hc : ∀ a, ⟪(c a : TangentSpace I x), w⟫_ℝ = 0) :
-    w = 0 := by
-  have hdw : mfderiv I J f x w = 0 := by
-    rw [← norm_eq_zero, ← sq_eq_zero_iff, ← b.sum_sq_inner_right]
-    simp [← h.inner_horizontalLift_left, hb]
-  rw [← norm_eq_zero, ← sq_eq_zero_iff]
-  calc ‖w‖ ^ 2 = ‖(⟨w, hdw⟩ : (mfderiv I J f x).ker)‖ ^ 2 := rfl
-    _ = ∑ a, ⟪c a, (⟨w, hdw⟩ : (mfderiv I J f x).ker)⟫_ℝ ^ 2 := (c.sum_sq_inner_right _).symm
-    _ = 0 := Finset.sum_eq_zero fun a _ ↦ by rw [Submodule.coe_inner, hc a, sq, mul_zero]
-
-/-- The orthonormal basis of `T_x M` adapted to the splitting into horizontal and vertical spaces:
-horizontal lifts of an orthonormal basis `b` of `T_(f x) N`, followed by an orthonormal basis `c` of
-the vertical space `ker (df_x)`. -/
-def horizontalVerticalBasis (x : M) (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
-    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).ker) :
-    OrthonormalBasis (ι ⊕ κ) ℝ (TangentSpace I x) :=
-  .mkOfOrthogonalEqBot (h.orthonormal_sumElim_horizontalLift x b c) <| by
-    refine (Submodule.eq_bot_iff _).2 fun w hw ↦
-      h.eq_zero_of_forall_inner_horizontalLift_eq_zero x b c (fun i ↦ ?_) fun a ↦ ?_
-    · exact Submodule.inner_right_of_mem_orthogonal
-        (Submodule.subset_span (Set.mem_range_self (Sum.inl i))) hw
-    · exact Submodule.inner_right_of_mem_orthogonal
-        (Submodule.subset_span (Set.mem_range_self (Sum.inr a))) hw
-
-/-- The first block of the adapted basis consists of the horizontal lifts. -/
-@[simp]
-theorem horizontalVerticalBasis_inl (x : M) (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
-    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).ker) (i : ι) :
-    h.horizontalVerticalBasis x b c (.inl i) = h.horizontalLift x (b i) := by
-  simp [horizontalVerticalBasis]
-
-/-- The second block of the adapted basis is the vertical basis. -/
-@[simp]
-theorem horizontalVerticalBasis_inr (x : M) (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
-    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).ker) (a : κ) :
-    h.horizontalVerticalBasis x b c (.inr a) = c a := by
-  simp [horizontalVerticalBasis]
-
-/-- For a horizontal vector `w`, the squared coefficients of `w` on the horizontal lifts of an
-orthonormal basis of `T_(f x) N` add up to `‖w‖²`. -/
-theorem sum_sq_inner_horizontalLift {x : M} (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
-    {w : TangentSpace I x} (hw : w ∈ (mfderiv I J f x).kerᗮ) :
-    ∑ i, ⟪h.horizontalLift x (b i), w⟫_ℝ ^ 2 = ‖w‖ ^ 2 := by
-  simp_rw [h.inner_horizontalLift_left, b.sum_sq_inner_right, (h.norm_mfderiv_eq_iff x w).2 hw]
-
-end Basis
-
-/-! ### The squared norm of O'Neill's horizontal tensor -/
-
-section NormSq
-
-/-- The squared norm `|A|² = ∑ i j, ‖A_(X_i) X_j‖²` of O'Neill's horizontal tensor at `x`, where
-`X_i` are the horizontal lifts of an orthonormal basis of `T_(f x) N`. It does not depend on the
-basis (`TauCeti.IsRiemannianSubmersion.oneillANormSq_eq_sum`). -/
-def oneillANormSq (x : M) : ℝ :=
-  ∑ i, ∑ j, ‖h.oneillA x (h.horizontalLift x (stdOrthonormalBasis ℝ (TangentSpace J (f x)) i))
-    (h.horizontalLift x (stdOrthonormalBasis ℝ (TangentSpace J (f x)) j))‖ ^ 2
-
-omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
-/-- `|A|²` may be computed in the horizontal lifts of any orthonormal basis of `T_(f x) N`. -/
-theorem oneillANormSq_eq_sum (x : M) (b : OrthonormalBasis ι ℝ (TangentSpace J (f x))) :
-    h.oneillANormSq x =
-      ∑ i, ∑ j, ‖h.oneillA x (h.horizontalLift x (b i)) (h.horizontalLift x (b j))‖ ^ 2 :=
-  LinearMap.sum_sum_norm_apply_apply_sq_eq_sum_sum_norm_apply_apply_sq
-    ((h.oneillA x).toLinearMap₁₂.compl₁₂ (h.horizontalLift x).toLinearMap
-      (h.horizontalLift x).toLinearMap) _ b
-
-omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
-/-- `|A|²` is nonnegative. -/
-theorem oneillANormSq_nonneg (x : M) : 0 ≤ h.oneillANormSq x := by
-  unfold oneillANormSq
-  positivity
-
-/-- `|A|²` vanishes at `x` exactly when O'Neill's horizontal tensor vanishes at `x`. -/
-theorem oneillANormSq_eq_zero_iff (x : M) :
-    h.oneillANormSq x = 0 ↔ h.oneillA x = 0 := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace J (f x))
-  rw [h.oneillA_eq_zero_iff_horizontalLift, h.oneillANormSq_eq_sum x b]
-  refine ⟨fun h0 u v ↦ ?_, fun h0 ↦ by simp [h0]⟩
-  have hij (i j) : h.oneillA x (h.horizontalLift x (b i)) (h.horizontalLift x (b j)) = 0 := by
-    have hi := (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦
-      Finset.sum_nonneg fun j _ ↦ by positivity).1 h0 i (Finset.mem_univ _)
-    simpa using (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ by positivity).1 hi j
-      (Finset.mem_univ _)
-  exact LinearMap.congr_fun₂ (LinearMap.ext_basis b.toBasis b.toBasis
-    (B := (h.oneillA x).toLinearMap₁₂.compl₁₂ (h.horizontalLift x).toLinearMap
-      (h.horizontalLift x).toLinearMap) (B' := 0) (by simpa using hij)) u v
-
-/-- `|A|²` is bounded on every compact set. -/
-theorem exists_oneillANormSq_le_of_isCompact {K : Set M} (hK : IsCompact K) :
-    ∃ C : ℝ, ∀ x ∈ K, h.oneillANormSq x ≤ C := by
-  obtain ⟨C, -, hC⟩ := h.exists_norm_oneillA_le_of_isCompact hK
-  refine ⟨Module.finrank ℝ F ^ 2 * C ^ 2, fun x hx ↦ ?_⟩
-  set b := stdOrthonormalBasis ℝ (TangentSpace J (f x))
-  have hle (i j) : ‖h.oneillA x (h.horizontalLift x (b i)) (h.horizontalLift x (b j))‖ ^ 2 ≤
-      C ^ 2 := by
-    have := hC x hx (h.horizontalLift x (b i)) (h.horizontalLift x (b j))
-    simp only [LinearIsometry.norm_map, b.orthonormal.1, mul_one] at this
-    exact pow_le_pow_left₀ (norm_nonneg _) this 2
-  calc h.oneillANormSq x ≤ ∑ _i : Fin (Module.finrank ℝ (TangentSpace J (f x))),
-        ∑ _j : Fin (Module.finrank ℝ (TangentSpace J (f x))), C ^ 2 :=
-        Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ hle i j
-    _ = Module.finrank ℝ F ^ 2 * C ^ 2 := by
-      simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-      -- `TangentSpace J (f x)` is `F` as a real vector space, so the two ranks agree by definition.
-      change (Module.finrank ℝ F : ℝ) * ((Module.finrank ℝ F : ℝ) * C ^ 2) = _
-      ring
-
-variable {x : M}
-
-/-- In an adapted orthonormal basis, the mixed squared norms of O'Neill's horizontal tensor add up
-to `|A|²`: `∑ i a, ‖A_(X_i) V_a‖² = ∑ i j, ‖A_(X_i) X_j‖²`. -/
-theorem sum_sum_norm_oneillA_horizontalLift_vertical
-    (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
-    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).ker) :
-    ∑ i, ∑ a, ‖h.oneillA x (h.horizontalLift x (b i)) (c a)‖ ^ 2 = h.oneillANormSq x := by
-  rw [h.oneillANormSq_eq_sum x b]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  set X := h.horizontalLift x (b i)
-  -- `A_X V_a` is horizontal and `A_X X_j` is vertical, and `A_X` is skew-adjoint, so both sides
-  -- are `∑ a j, ⟪X_j, A_X V_a⟫²`.
-  calc ∑ a, ‖h.oneillA x X (c a)‖ ^ 2
-      = ∑ a, ∑ j, ⟪(c a : TangentSpace I x), h.oneillA x X (h.horizontalLift x (b j))⟫_ℝ ^ 2 := by
-        refine Finset.sum_congr rfl fun a _ ↦ ?_
-        rw [← h.sum_sq_inner_horizontalLift b
-          (h.oneillA_apply_mem_orthogonal_ker X (c a).property)]
-        refine Finset.sum_congr rfl fun j _ ↦ ?_
-        rw [real_inner_comm, h.inner_oneillA, neg_sq]
-    _ = ∑ j, ‖h.oneillA x X (h.horizontalLift x (b j))‖ ^ 2 := by
-        rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun j _ ↦ ?_
-        exact c.sum_sq_inner_right
-          ⟨_, h.oneillA_apply_mem_ker X (h.horizontalLift_mem_orthogonal_ker x (b j))⟩
-
-end NormSq
 
 /-! ### The scalar-curvature formula -/
 

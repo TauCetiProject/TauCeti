@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Curvature
+public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.NormSq
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Prod
 
@@ -155,8 +156,8 @@ theorem oneillT_fst (p : M × N) :
 projection `Prod.fst : M × N → M`. -/
 @[simp]
 theorem oneillANormSq_fst (p : M × N) :
-    (isRiemannianSubmersion_fst (I := I) (J := J)).oneillANormSq p = 0 :=
-  (isRiemannianSubmersion_fst (I := I) (J := J)).oneillANormSq_eq_zero_iff p |>.2 (oneillA_fst p)
+    (isRiemannianSubmersion_fst (I := I) (J := J)).oneillANormSq p = 0 := by
+  simp [oneillA_fst]
 
 section Curvature
 
