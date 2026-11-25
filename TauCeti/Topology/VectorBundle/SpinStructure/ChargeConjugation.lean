@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.SpinStructure.FirstChernClass
-import Mathlib.Topology.Algebra.Module.Star
 import TauCeti.Topology.VectorBundle.Orientation.Complex.FiberwiseEquiv
 
 /-!
@@ -180,66 +179,31 @@ end OrthonormalFrameLift
 
 namespace SpinCStructure
 
-/-- The map `[p, h] ↦ p • χ(h)` from the principal bundle of the charge conjugate back to that of
-`s`: the composite of the identifications `(P ×_χ Spinᶜ(n)) ×_χ Spinᶜ(n) ≃ P ×_{χ ∘ χ} Spinᶜ(n)`,
-`P ×_{χ ∘ χ} Spinᶜ(n) = P ×_{id} Spinᶜ(n)` and `P ×_{id} Spinᶜ(n) ≃ P`, applied to `[[p, h], 1]`. -/
-private def chargeConjRetract (s : SpinCStructure F V n) (x : X) (q : s.chargeConj.P x) : s.P x :=
-  Extend.idEquiv x (Extend.congrEquiv chargeConj_comp_chargeConj
-    continuous_chargeConj_comp_chargeConj continuous_id x
-      (Extend.compEquiv χ hχ χ hχ x (Extend.inl (P := Extend s.P χ hχ) χ hχ q)))
-
-private theorem chargeConjRetract_mk (s : SpinCStructure F V n) (x : X) (p : s.P x)
-    (h : spinCGroup (realCliffordForm n 0) hQ) :
-    chargeConjRetract s x (Extend.mk χ hχ p h) = op (spinCGroup.chargeConj _ hQ h) • p := by
-  unfold chargeConjRetract
-  rw [Extend.inl_def, Extend.compEquiv_mk, mul_one, Extend.congrEquiv_mk, Extend.idEquiv_mk,
-    MonoidHom.coe_ofClass]
-
-private theorem chargeConjRetract_smul (s : SpinCStructure F V n) (x : X) (q : s.chargeConj.P x)
-    (g : spinCGroup (realCliffordForm n 0) hQ) :
-    chargeConjRetract s x (op g • q) = op (χ g) • chargeConjRetract s x q := by
-  obtain ⟨p, h, rfl⟩ := Extend.exists_mk (P := s.P) (ρ := χ) (hρ := hχ) (b := x) q
-  -- The action of `Spinᶜ(n)` on the fibre `s.chargeConj.P x` is that of `Extend s.P χ hχ x`, but
-  -- `rw` cannot see through the fibre, so `Extend.smul_mk` is applied by `congrArg`.
-  refine (congrArg (chargeConjRetract s x) (Extend.smul_mk χ hχ p h g)).trans ?_
-  rw [chargeConjRetract_mk, chargeConjRetract_mk, map_mul, op_mul, mul_smul,
-    MonoidHom.coe_ofClass]
-
-private theorem continuous_chargeConjRetract (s : SpinCStructure F V n) :
-    Continuous fun q : TotalSpace SpinC s.chargeConj.P ↦
-      (⟨q.proj, chargeConjRetract s q.proj q.snd⟩ : TotalSpace SpinC s.P) :=
-  (Extend.idHomeomorph.continuous.comp ((Extend.congrHomeomorph chargeConj_comp_chargeConj
-    continuous_chargeConj_comp_chargeConj continuous_id).continuous.comp
-      ((Extend.compHomeomorph χ hχ χ hχ).continuous.comp
-        (Extend.continuous_inl (Extend s.P χ hχ) χ hχ)))).congr fun q ↦ by
-    rw [Function.comp_apply, Function.comp_apply, Function.comp_apply, Extend.compHomeomorph_apply,
-      Extend.congrHomeomorph_apply, Extend.idHomeomorph_apply]
-    rfl
-
-private theorem toFrame_chargeConjRetract (s : SpinCStructure F V n) (x : X)
-    (q : s.chargeConj.P x) :
-    s.toFrame ⟨x, chargeConjRetract s x q⟩ = s.chargeConj.toFrame ⟨x, q⟩ := by
-  obtain ⟨p, h, rfl⟩ := Extend.exists_mk (P := s.P) (ρ := χ) (hρ := hχ) (b := x) q
-  refine OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ ?_
-  rw [chargeConjRetract_mk, s.toFrame_smul, toFrame_chargeConj_mk]
-  simp
-
 /-- **Charge conjugation is involutive**: `s.chargeConj.chargeConj ≃ s`, by
-`[[p, h], k] ↦ p • χ(h) k`, since `χ ∘ χ = id`. -/
+`[[p, h], k] ↦ p • χ(h) k`. Extending along `χ` twice is extending along `χ ∘ χ`
+(`TauCeti.OrthonormalFrameLift.extendCompEquiv`), and `χ ∘ χ = id`. -/
 def chargeConjChargeConjEquiv (s : SpinCStructure F V n) : s.chargeConj.chargeConj.Equiv s :=
-  s.chargeConj.extendEquivOfEquivariant χ hχ rotation_comp_chargeConj hπn hπc s
-    (chargeConjRetract s) (chargeConjRetract_smul s) (continuous_chargeConjRetract s)
-    (toFrame_chargeConjRetract s)
+  (s.extendCompEquiv χ hχ rotation_comp_chargeConj hπn hπc χ hχ rotation_comp_chargeConj hπn
+      hπc).symm.trans
+    (s.extendEquivOfEquivariant (ρ' := πᶜ) (MonoidHom.comp χ χ)
+      continuous_chargeConj_comp_chargeConj
+      (by rw [chargeConj_comp_chargeConj, MonoidHom.comp_id]) hπn hπc s (fun _ p ↦ p)
+      (fun _ p g ↦ by rw [chargeConj_comp_chargeConj, MonoidHom.id_apply]) continuous_id
+      fun _ _ ↦ rfl)
 
 @[simp]
 theorem chargeConjChargeConjEquiv_toEquiv_mk (s : SpinCStructure F V n) (x : X) (p : s.P x)
     (h k : spinCGroup (realCliffordForm n 0) hQ) :
     (chargeConjChargeConjEquiv s).toEquiv x (Extend.mk χ hχ (Extend.mk χ hχ p h) k) =
       op (spinCGroup.chargeConj _ hQ h * k) • p := by
-  refine (s.chargeConj.extendEquivOfEquivariant_toEquiv_mk χ hχ rotation_comp_chargeConj hπn hπc
-    s (chargeConjRetract s) (chargeConjRetract_smul s) (continuous_chargeConjRetract s)
-    (toFrame_chargeConjRetract s) x (Extend.mk χ hχ p h) k).trans ?_
-  rw [chargeConjRetract_mk, smul_smul, ← op_mul]
+  simp only [chargeConjChargeConjEquiv, OrthonormalFrameLift.Equiv.trans_toEquiv,
+    OrthonormalFrameLift.Equiv.symm_toEquiv]
+  -- `[[p, h], k] = [[p, 1], χ(h) k]` is the image of `[p, χ(h) k]` under `extendCompEquiv`.
+  refine (Equiv.trans_apply _ _ _).trans <| (congrArg _ <| (Equiv.symm_apply_eq _).2 <|
+    ((OrthonormalFrameLift.extendCompEquiv_toEquiv_mk _ _ _ _ _ _ _ _ _ _ _ x p _).trans <|
+      (Extend.mk_smul _ _ _ h k).symm.trans <|
+        congrArg (Extend.mk χ hχ · k) (Extend.smul_inl χ hχ p h)).symm).trans ?_
+  exact OrthonormalFrameLift.extendEquivOfEquivariant_toEquiv_mk _ _ _ _ _ _ _ _ _ _ _ x p _
 
 end SpinCStructure
 
@@ -249,30 +213,11 @@ end Structure
 
 section DeterminantLine
 
-variable {X : Type} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : X → Type} [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
 
 namespace SpinCStructure
-
-/-- Complex conjugation of the determinant model. -/
-private def detConj : DeterminantModel n ≃L⋆[ℂ] DeterminantModel n :=
-  (DeterminantModel.toComplex.toContinuousLinearEquiv.trans (starL ℂ)).trans
-    DeterminantModel.toComplex.symm.toContinuousLinearEquiv
-
-omit [NeZero n] in
-private theorem toComplex_detConj (w : DeterminantModel n) :
-    DeterminantModel.toComplex (detConj w) = starRingEnd ℂ (DeterminantModel.toComplex w) := by
-  simp [detConj]
-
-/-- Conjugation of the determinant model carries the action of `χ g` to that of `g`:
-`conj (det (χ g) w) = det g (conj w)`, since `det (χ g) = (det g)⁻¹` lies on the circle. -/
-private theorem detConj_chargeConj_smul (g : SpinC) (w : DeterminantModel n) :
-    detConj (spinCGroup.chargeConj _ hQ g • w) = g • detConj w := by
-  apply DeterminantModel.toComplex.injective
-  rw [toComplex_detConj, DeterminantModel.toComplex_smul, DeterminantModel.toComplex_smul,
-    toComplex_detConj, spinCGroup.det_chargeConj, map_mul, Circle.coe_inv_eq_conj,
-    Complex.conj_conj]
 
 /-- **The determinant line of the charge conjugate is the conjugate line**: the fibrewise
 conjugate-linear isomorphism `L(s.chargeConj)_x ≃ L(s)_x`, `[[p, h], w] ↦ [p, conj (det h w)]`
@@ -282,7 +227,7 @@ conjugate-linear isomorphism `L(s.chargeConj)_x ≃ L(s)_x`, `[[p, h], w] ↦ [p
 def determinantLineChargeConjEquiv (s : SpinCStructure F V n) (x : X) :
     s.chargeConj.determinantLine x ≃L⋆[ℂ] s.determinantLine x :=
   ((AssociatedBundle.mkContinuousLinearEquiv ℂ SpinC (F := DeterminantModel n)
-      (Extend.inl χ hχ (Classical.arbitrary (s.P x)))).symm.trans detConj).trans
+      (Extend.inl χ hχ (Classical.arbitrary (s.P x)))).symm.trans DeterminantModel.conj).trans
     (AssociatedBundle.mkContinuousLinearEquiv ℂ SpinC (Classical.arbitrary (s.P x)))
 
 /-- The comparison of determinant lines through the frames `[p₀, 1]` and `p₀`, for the chosen
@@ -291,20 +236,22 @@ private theorem determinantLineChargeConjEquiv_apply (s : SpinCStructure F V n) 
     (z : AssociatedBundle SpinC (Extend s.P χ hχ) (DeterminantModel n) x) :
     s.determinantLineChargeConjEquiv x z =
       AssociatedBundle.mkContinuousLinearEquiv ℂ SpinC (Classical.arbitrary (s.P x))
-        (detConj ((AssociatedBundle.mkContinuousLinearEquiv ℂ SpinC (F := DeterminantModel n)
-          (Extend.inl χ hχ (Classical.arbitrary (s.P x)))).symm z)) :=
+        (DeterminantModel.conj ((AssociatedBundle.mkContinuousLinearEquiv ℂ SpinC
+          (F := DeterminantModel n) (Extend.inl χ hχ (Classical.arbitrary (s.P x)))).symm z)) :=
   (rfl)
 
 /-- The comparison of determinant lines in terms of the conjugation of the determinant model. -/
-private theorem determinantLineChargeConjEquiv_mk_eq_detConj (s : SpinCStructure F V n) {x : X}
+private theorem determinantLineChargeConjEquiv_mk_eq_conj (s : SpinCStructure F V n) {x : X}
     (p : s.P x) (h : SpinC) (w : DeterminantModel n) :
     s.determinantLineChargeConjEquiv x
         (AssociatedBundle.mk (P := Extend s.P χ hχ) SpinC (Extend.mk χ hχ p h) w) =
-      AssociatedBundle.mk SpinC p (detConj (h • w)) := by
-  rw [determinantLineChargeConjEquiv_apply, AssociatedBundle.mkContinuousLinearEquiv_symm_apply_mk,
+      AssociatedBundle.mk SpinC p (DeterminantModel.conj (h • w)) := by
+  simp only [determinantLineChargeConjEquiv_apply,
+    AssociatedBundle.mkContinuousLinearEquiv_symm_apply_mk,
     AssociatedBundle.mkContinuousLinearEquiv_apply, Extend.inl_def, Extend.division_mk, inv_one,
-    one_mul, mul_smul, MonoidHom.coe_ofClass, detConj_chargeConj_smul,
-    ← AssociatedBundle.mk_smul, PrincipalBundle.smul_division]
+    one_mul, mul_smul, MonoidHom.coe_ofClass]
+  rw [DeterminantModel.conj_chargeConj_smul, ← AssociatedBundle.mk_smul,
+    PrincipalBundle.smul_division]
 
 /-- **The comparison of determinant lines in a frame**: `[[p, h], w] ↦ [p, conj (det h w)]`. -/
 theorem determinantLineChargeConjEquiv_mk (s : SpinCStructure F V n) {x : X} (p : s.P x)
@@ -313,8 +260,8 @@ theorem determinantLineChargeConjEquiv_mk (s : SpinCStructure F V n) {x : X} (p 
         (AssociatedBundle.mk (P := Extend s.P χ hχ) SpinC (Extend.mk χ hχ p h) w) =
       AssociatedBundle.mk SpinC p (DeterminantModel.toComplex.symm
         (starRingEnd ℂ ((spinCGroup.det _ hQ h : ℂ) * DeterminantModel.toComplex w))) := by
-  rw [determinantLineChargeConjEquiv_mk_eq_detConj, ← DeterminantModel.toComplex_smul,
-    ← toComplex_detConj, LinearIsometryEquiv.symm_apply_apply]
+  rw [determinantLineChargeConjEquiv_mk_eq_conj, ← DeterminantModel.toComplex_smul,
+    ← DeterminantModel.toComplex_conj, LinearIsometryEquiv.symm_apply_apply]
 
 /-- **The comparison of determinant lines at `[p, 1]`**: `[[p, 1], w] ↦ [p, conj w]`. -/
 @[simp]
@@ -339,14 +286,28 @@ theorem continuous_determinantLineChargeConjEquiv (s : SpinCStructure F V n) :
   refine hq.continuous_comp_iff.1 ?_
   have hc : Continuous fun y : (TotalSpace SpinC s.P × SpinC) × DeterminantModel n ↦
       TotalSpace.mk' (DeterminantModel n) y.1.1.proj
-        (AssociatedBundle.mk SpinC y.1.1.snd (detConj (y.1.2 • y.2))) :=
+        (AssociatedBundle.mk SpinC y.1.1.snd (DeterminantModel.conj (y.1.2 • y.2))) :=
     Continuous.totalSpaceMk_associatedBundleMk
       (f := fun y : (TotalSpace SpinC s.P × SpinC) × DeterminantModel n ↦ y.1.1.proj)
-      (continuous_fst.comp continuous_fst) (detConj.continuous.comp
+      (continuous_fst.comp continuous_fst) (DeterminantModel.conj.continuous.comp
         (continuous_smul.comp ((continuous_snd.comp continuous_fst).prodMk continuous_snd)))
   refine hc.congr fun y ↦ ?_
   exact (congrArg (TotalSpace.mk _)
-    (determinantLineChargeConjEquiv_mk_eq_detConj s y.1.1.snd y.1.2 y.2)).symm
+    (determinantLineChargeConjEquiv_mk_eq_conj s y.1.1.snd y.1.2 y.2)).symm
+
+end SpinCStructure
+
+end DeterminantLine
+
+/-! ### The first Chern class -/
+
+section FirstChernClass
+
+variable {X : Type} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : X → Type} [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
+
+namespace SpinCStructure
 
 /-- **The first Chern class of the charge conjugate is the negative**: `c₁(s.chargeConj) = -c₁(s)`
 in `H²(X; ℤ)`, since the determinant line of `s.chargeConj` is the complex conjugate of that of
@@ -361,6 +322,6 @@ theorem firstChernClass_chargeConj (s : SpinCStructure F V n) :
 
 end SpinCStructure
 
-end DeterminantLine
+end FirstChernClass
 
 end TauCeti
