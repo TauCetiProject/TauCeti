@@ -79,6 +79,8 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   exponentially small below its centre.
 * `Real.one_sub_exp_neg_div_le_exp` — `(1 - exp (-l)) / l ≤ exp (-(l / 2) + l ^ 2 / 24)`: the
   resulting bound on that exponential moment, for every real `l`.
+* `Complex.hasDerivAt_tanh` — the derivative of `Complex.tanh` is `1 / cosh z ^ 2` where
+  `cosh z ≠ 0`.
 * `TauCeti.isEquivalent_complexTanh` — `tanh z ∼ z` as `z → 0` in `ℂ` (DLMF 2.1.4). It follows
   the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
   `DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
@@ -465,6 +467,15 @@ theorem norm_cosh_mul_le (z w : ℂ) : ‖cosh z * w‖ ≤ (‖exp z * w‖ + �
         exact norm_cosh_le z
     _ = _ := by rw [norm_mul, norm_mul]; ring
 
+/-- The derivative of the complex hyperbolic tangent at a point `z` with `cosh z ≠ 0` is
+`1 / cosh z ^ 2`, as for `Real.hasDerivAt_tanh`. -/
+theorem hasDerivAt_tanh (z : ℂ) (hz : cosh z ≠ 0) : HasDerivAt tanh (1 / cosh z ^ 2) z := by
+  have h : HasDerivAt (fun y ↦ sinh y / cosh y) _ z :=
+    (hasDerivAt_sinh z).div (hasDerivAt_cosh z) hz
+  rw [← funext tanh_eq_sinh_div_cosh] at h
+  convert h using 1
+  rw [← sq, ← sq, cosh_sq_sub_sinh_sq]
+
 end Complex
 
 namespace TauCeti
@@ -474,15 +485,6 @@ open Asymptotics Topology in
 derivative `1` at `0`, where both sides vanish. It parallels Mathlib's `Complex.isEquivalent_sinh`
 and `Complex.isEquivalent_sin`. -/
 theorem isEquivalent_complexTanh : Complex.tanh ~[𝓝 0] id := by
-  have hd : HasDerivAt Complex.tanh 1 0 := by
-    have h := (Complex.hasDerivAt_sinh 0).div (Complex.hasDerivAt_cosh 0) (by simp)
-    simp only [Complex.cosh_zero, Complex.sinh_zero, mul_zero, sub_zero, one_pow, div_one,
-      mul_one] at h
-    have he : Complex.sinh / Complex.cosh = Complex.tanh :=
-      funext fun z ↦ (Complex.tanh_eq_sinh_div_cosh z).symm
-    rwa [he] at h
-  have h := hd.isLittleO
-  simp only [Complex.tanh_zero, sub_zero, smul_eq_mul, mul_one] at h
-  exact h
+  simpa using! (Complex.hasDerivAt_tanh 0 (by simp)).isLittleO
 
 end TauCeti
