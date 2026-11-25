@@ -79,25 +79,6 @@ lemma _root_.Set.mem_integer_empty_iff {x : K} :
     x ∈ (∅ : Set (HeightOneSpectrum R)).integer K ↔ ∃ a : R, algebraMap R K a = x := by
   rw [integer_empty, Algebra.mem_bot, Set.mem_range]
 
-variable {S} in
-/-- For `S ⊆ T`, the canonical `S.integer K`-algebra structure on `T.integer K` induced by the
-subalgebra inclusion `S.integer K ≤ T.integer K`. -/
-@[instance_reducible]
-noncomputable def _root_.Set.integerAlgebraOfSubset {T : Set (HeightOneSpectrum R)}
-    (hST : S ⊆ T) : Algebra (S.integer K) (T.integer K) :=
-  (Subalgebra.inclusion (Set.integer_mono K hST)).toAlgebra
-
-variable {S} in
-/-- For `S ⊆ T`, the `S.integer K`-algebra structure `Set.integerAlgebraOfSubset K hST` on
-`T.integer K` forms a scalar tower with `K`. -/
-lemma _root_.Set.isScalarTower_integerAlgebraOfSubset {T : Set (HeightOneSpectrum R)}
-    (hST : S ⊆ T) :
-    @IsScalarTower (S.integer K) (T.integer K) K
-      (Set.integerAlgebraOfSubset K hST).toSMul Algebra.toSMul Algebra.toSMul := by
-  let : Algebra (S.integer K) (T.integer K) := Set.integerAlgebraOfSubset K hST
-  exact IsScalarTower.of_algebraMap_eq fun r ↦ by
-    simp [RingHom.algebraMap_toAlgebra]
-
 /-- The ring of `S`-integers is integrally closed: it is an intersection of valuation subrings
 of `K`, each of which is integrally closed in `K`. -/
 instance : IsIntegrallyClosed (S.integer K) := by

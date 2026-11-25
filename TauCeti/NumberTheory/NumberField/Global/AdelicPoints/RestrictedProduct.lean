@@ -168,59 +168,58 @@ theorem continuous_toRestrictedProductMonoidHom (M : IntegralModel F H S) :
 
 /-! ### Inverse map from the restricted product and its continuity -/
 
-private theorem exists_continuous_adele_eval_baseChange (M : IntegralModel F H S)
+private theorem eventually_eval_baseChange_mem_integers (M : IntegralModel F H S)
     (t : F ⊗[SIntegers F S] M.coordinate) :
-    ∃ φ : (Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) → FiniteAdeleRing (𝓞 F) F,
-      Continuous φ ∧ ∀ y v, φ y v = (y v).ofConv (M.baseChangeIso.hom.hom t) := by
+    ∀ᶠ v in cofinite, ∀ g ∈ M.level v,
+      g.ofConv (M.baseChangeIso.hom.hom t) ∈ v.adicCompletionIntegers F := by
   induction t using TensorProduct.inductionOn with
   | tmul c a =>
-    have hmaps : ∀ᶠ v in cofinite,
-        Set.MapsTo (fun g : LocalPoints (𝓞 F) F H v ↦ g.ofConv (M.toBase a))
-          (M.level v : Set (LocalPoints (𝓞 F) F H v))
-          (v.adicCompletionIntegers F : Set (v.adicCompletion F)) := by
-      filter_upwards [S.finite_toSet.compl_mem_cofinite] with v hv g hg
-      rw [SetLike.mem_coe, M.level_of_notMem hv, M.mem_localPoints_iff] at hg
-      exact hg a
-    let φ₀ : (Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) → FiniteAdeleRing (𝓞 F) F :=
-      RestrictedProduct.map (fun _ (g : LocalPoints (𝓞 F) F H _) ↦ g.ofConv (M.toBase a)) hmaps
-    have hφ₀_cont : Continuous φ₀ :=
-      RestrictedProduct.mapAlong_continuous
-        (fun v : HeightOneSpectrum (𝓞 F) ↦ LocalPoints (𝓞 F) F H v)
-        (fun v : HeightOneSpectrum (𝓞 F) ↦ v.adicCompletion F)
-        (A₁ := fun v ↦ (M.level v : Set (LocalPoints (𝓞 F) F H v)))
-        (A₂ := fun v ↦ (v.adicCompletionIntegers F : Set (v.adicCompletion F)))
-        id tendsto_id (fun _ g ↦ g.ofConv (M.toBase a)) hmaps
-        (fun _ ↦ continuous_eval_ofConv (M.toBase a))
-    refine ⟨fun y ↦ c • φ₀ y,
-      (continuous_const.mul hφ₀_cont).congr fun y ↦ (Algebra.smul_def c (φ₀ y)).symm,
-      fun y v ↦ ?_⟩
-    rw [FiniteAdeleRing.smul_apply, M.baseChangeIso_hom_tmul, map_smul]
-    exact congrArg (c • ·) (RestrictedProduct.map_apply _ hmaps y v)
+    filter_upwards [S.finite_toSet.compl_mem_cofinite,
+      (algebraMap F (FiniteAdeleRing (𝓞 F) F) c).cofinite_mem_adicCompletionIntegers]
+      with v hv hc g hg
+    have hc_int : algebraMap F (v.adicCompletion F) c ∈ v.adicCompletionIntegers F := by
+      rwa [FiniteAdeleRing.algebraMap_apply_eq_algebraMap] at hc
+    rw [M.level_of_notMem hv, M.mem_localPoints_iff] at hg
+    rw [M.baseChangeIso_hom_tmul, map_smul, Algebra.smul_def]
+    exact mul_mem hc_int (hg a)
   | add t₁ t₂ ih₁ ih₂ =>
-    obtain ⟨φ₁, hcont₁, hφ₁⟩ := ih₁
-    obtain ⟨φ₂, hcont₂, hφ₂⟩ := ih₂
-    refine ⟨fun y ↦ φ₁ y + φ₂ y, hcont₁.add hcont₂, fun y v ↦ ?_⟩
-    rw [FiniteAdeleRing.add_apply, hφ₁, hφ₂, ← map_add, ← map_add]
+    filter_upwards [ih₁, ih₂] with v hv₁ hv₂ g hg
+    rw [map_add, map_add]
+    exact add_mem (hv₁ g hg) (hv₂ g hg)
 
-private theorem exists_continuous_adele_eval (M : IntegralModel F H S) (h : H) :
-    ∃ φ : (Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) → FiniteAdeleRing (𝓞 F) F,
-      Continuous φ ∧ ∀ y v, φ y v = (y v).ofConv h := by
-  obtain ⟨φ, hcont, hφ⟩ := exists_continuous_adele_eval_baseChange M (M.baseChangeIso.inv.hom h)
-  refine ⟨φ, hcont, fun y v ↦ ?_⟩
-  rw [hφ, M.baseChangeIso.inv_hom_id_apply h]
+/-- For every coordinate `h ∈ H`, elements of `M.level v` take `v`-integral values at `h` for all
+but finitely many height-one primes `v`. -/
+theorem eventually_eval_mem_adicCompletionIntegers_of_mem_level (M : IntegralModel F H S)
+    (h : H) :
+    ∀ᶠ v in cofinite, ∀ g ∈ M.level v, g.ofConv h ∈ v.adicCompletionIntegers F := by
+  filter_upwards [eventually_eval_baseChange_mem_integers M (M.baseChangeIso.inv.hom h)]
+    with v hv g hg
+  simpa only [M.baseChangeIso.inv_hom_id_apply] using hv g hg
 
-private noncomputable def adeleEval (M : IntegralModel F H S) (h : H) :
-    (Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) → FiniteAdeleRing (𝓞 F) F :=
-  Classical.choose (exists_continuous_adele_eval M h)
-
-private theorem continuous_adeleEval (M : IntegralModel F H S) (h : H) :
-    Continuous (adeleEval M h) :=
-  (Classical.choose_spec (exists_continuous_adele_eval M h)).left
+private noncomputable def adeleEval (M : IntegralModel F H S) (h : H)
+    (y : Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) : FiniteAdeleRing (𝓞 F) F :=
+  ⟨fun v ↦ (y v).ofConv h, by
+    filter_upwards [y.property, M.eventually_eval_mem_adicCompletionIntegers_of_mem_level h]
+      with v hy hv
+    exact hv (y v) hy⟩
 
 private theorem adeleEval_apply (M : IntegralModel F H S) (h : H)
     (y : Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) (v : HeightOneSpectrum (𝓞 F)) :
     adeleEval M h y v = (y v).ofConv h :=
-  (Classical.choose_spec (exists_continuous_adele_eval M h)).right y v
+  rfl
+
+private theorem continuous_adeleEval (M : IntegralModel F H S) (h : H) :
+    Continuous (adeleEval M h) :=
+  (RestrictedProduct.mapAlong_continuous
+    (fun v : HeightOneSpectrum (𝓞 F) ↦ LocalPoints (𝓞 F) F H v)
+    (fun v : HeightOneSpectrum (𝓞 F) ↦ v.adicCompletion F)
+    (A₁ := fun v ↦ (M.level v : Set (LocalPoints (𝓞 F) F H v)))
+    (A₂ := fun v ↦ (v.adicCompletionIntegers F : Set (v.adicCompletion F)))
+    id tendsto_id (fun _ g ↦ g.ofConv h)
+    (M.eventually_eval_mem_adicCompletionIntegers_of_mem_level h)
+    (fun _ ↦ continuous_eval_ofConv h)).congr fun y ↦
+      FiniteAdeleRing.ext F fun v ↦
+        (RestrictedProduct.mapAlong_apply _ _ _ _ _ _ y v).trans (adeleEval_apply M h y v).symm
 
 private noncomputable def fromRestrictedProductFun (M : IntegralModel F H S)
     (y : Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) : FiniteAdelicPoints (𝓞 F) F H :=
@@ -332,27 +331,24 @@ theorem exists_restrictedProductEquiv (M : IntegralModel F H S) :
 topological group to `G(F_∞) × Πʳ v, [G(F_v), M.level v]`. -/
 noncomputable def adelicRestrictedProductEquiv (M : IntegralModel F H S) :
     AdelicPoints (𝓞 F) F H ≃ₜ*
-      InfinitePoints F H × Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v] where
-  toMulEquiv := (AdelicPoints.prodContinuousMulEquiv (𝓞 F) F H).toMulEquiv.trans
-    ((MulEquiv.refl (InfinitePoints F H)).prodCongr M.restrictedProductEquiv.toMulEquiv)
-  continuous_toFun :=
-    (continuous_id.prodMap M.restrictedProductEquiv.continuous).comp
-      (AdelicPoints.prodContinuousMulEquiv (𝓞 F) F H).continuous
-  continuous_invFun :=
-    (AdelicPoints.prodContinuousMulEquiv (𝓞 F) F H).symm.continuous.comp
-      (continuous_id.prodMap M.restrictedProductEquiv.symm.continuous)
+      InfinitePoints F H × Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v] :=
+  (AdelicPoints.prodContinuousMulEquiv (𝓞 F) F H).trans
+    { toMulEquiv :=
+        (MulEquiv.refl (InfinitePoints F H)).prodCongr M.restrictedProductEquiv.toMulEquiv
+      continuous_toFun := continuous_id.prodMap M.restrictedProductEquiv.continuous
+      continuous_invFun := continuous_id.prodMap M.restrictedProductEquiv.symm.continuous }
 
 @[simp]
 theorem adelicRestrictedProductEquiv_fst (M : IntegralModel F H S) (x : AdelicPoints (𝓞 F) F H) :
     (M.adelicRestrictedProductEquiv x).1 = infiniteProjection (𝓞 F) F H x := by
-  rw [adelicRestrictedProductEquiv]
+  rw [adelicRestrictedProductEquiv, ContinuousMulEquiv.trans_apply]
   exact congr_arg Prod.fst (AdelicPoints.prodContinuousMulEquiv_apply x)
 
 @[simp]
 theorem adelicRestrictedProductEquiv_snd (M : IntegralModel F H S) (x : AdelicPoints (𝓞 F) F H) :
     (M.adelicRestrictedProductEquiv x).2 =
       M.restrictedProductEquiv (finiteProjection (𝓞 F) F H x) := by
-  rw [adelicRestrictedProductEquiv]
+  rw [adelicRestrictedProductEquiv, ContinuousMulEquiv.trans_apply]
   exact congr_arg M.restrictedProductEquiv
     (congr_arg Prod.snd (AdelicPoints.prodContinuousMulEquiv_apply x))
 
@@ -370,36 +366,12 @@ theorem adelicRestrictedProductEquiv_symm_apply (M : IntegralModel F H S)
     M.adelicRestrictedProductEquiv.symm p =
       (AdelicPoints.prodContinuousMulEquiv (𝓞 F) F H).symm
         (p.1, M.restrictedProductEquiv.symm p.2) := by
-  have hp := AdelicPoints.prodContinuousMulEquiv_apply
-    ((AdelicPoints.prodContinuousMulEquiv (𝓞 F) F H).symm (p.1, M.restrictedProductEquiv.symm p.2))
-  rw [ContinuousMulEquiv.apply_symm_apply] at hp
-  obtain ⟨hp₁, hp₂⟩ := Prod.mk.inj hp
-  rw [ContinuousMulEquiv.symm_apply_eq]
-  refine Prod.ext ?_ ?_
-  · rw [adelicRestrictedProductEquiv_fst, ← hp₁]
-  · rw [adelicRestrictedProductEquiv_snd, ← hp₂, ContinuousMulEquiv.apply_symm_apply]
+  rw [adelicRestrictedProductEquiv, ContinuousMulEquiv.symm_trans_apply]
+  rfl
 
 /-! ### Independence of the integral model -/
 
 section ModelIndependence
-
-private theorem eventually_eval_baseChange_mem_integers (M : IntegralModel F H S)
-    (t : F ⊗[SIntegers F S] M.coordinate) :
-    ∀ᶠ v in cofinite, ∀ (hv : v ∉ S) {g : LocalPoints (𝓞 F) F H v},
-      g ∈ M.localPoints v hv →
-        g.ofConv (M.baseChangeIso.hom.hom t) ∈ v.adicCompletionIntegers F := by
-  induction t using TensorProduct.inductionOn with
-  | tmul c a =>
-    filter_upwards [(algebraMap F (FiniteAdeleRing (𝓞 F) F) c).cofinite_mem_adicCompletionIntegers]
-      with v hc hv g hg
-    have hc_int : algebraMap F (v.adicCompletion F) c ∈ v.adicCompletionIntegers F := by
-      rwa [FiniteAdeleRing.algebraMap_apply_eq_algebraMap] at hc
-    rw [M.baseChangeIso_hom_tmul, map_smul, Algebra.smul_def]
-    exact mul_mem hc_int ((M.mem_localPoints_iff v hv).mp hg a)
-  | add t₁ t₂ ih₁ ih₂ =>
-    filter_upwards [ih₁, ih₂] with v hv₁ hv₂ hv g hg
-    rw [map_add, map_add]
-    exact add_mem (hv₁ hv hg) (hv₂ hv hg)
 
 private theorem eventually_localPoints_le
     {S₁ S₂ : Finset (HeightOneSpectrum (𝓞 F))}
@@ -407,17 +379,14 @@ private theorem eventually_localPoints_le
     ∀ᶠ v in cofinite, ∀ (hv₁ : v ∉ S₁) (hv₂ : v ∉ S₂),
       M₂.localPoints v hv₂ ≤ M₁.localPoints v hv₁ := by
   obtain ⟨s₁, hs₁⟩ := M₁.exists_finset_forall_mem_localPoints_iff
-  have hgen : ∀ᶠ v in cofinite, ∀ a ∈ s₁, ∀ (hv₂ : v ∉ S₂) {g : LocalPoints (𝓞 F) F H v},
-      g ∈ M₂.localPoints v hv₂ →
-        g.ofConv (M₁.toBase a) ∈ v.adicCompletionIntegers F := by
-    refine (eventually_all_finset s₁).mpr fun a _ ↦ ?_
-    filter_upwards [eventually_eval_baseChange_mem_integers M₂
-      (M₂.baseChangeIso.inv.hom (M₁.toBase a))] with v hv hv₂ g hg
-    simpa only [M₂.baseChangeIso.inv_hom_id_apply] using hv hv₂ hg
+  have hgen : ∀ᶠ v in cofinite, ∀ a ∈ s₁, ∀ g ∈ M₂.level v,
+      g.ofConv (M₁.toBase a) ∈ v.adicCompletionIntegers F :=
+    (eventually_all_finset s₁).mpr fun a _ ↦
+      M₂.eventually_eval_mem_adicCompletionIntegers_of_mem_level (M₁.toBase a)
   filter_upwards [hgen] with v hv hv₁ hv₂ g hg
   rw [hs₁ v hv₁]
   intro a ha
-  exact hv a ha hv₂ hg
+  exact hv a ha g ((M₂.level_of_notMem hv₂).symm ▸ hg)
 
 /-- **Model independence of local integral subgroups**: for any two integral models `M₁` and `M₂` of
 the same affine group scheme `(F, H)`, their reference subgroups `M₁.level v` and `M₂.level v` agree

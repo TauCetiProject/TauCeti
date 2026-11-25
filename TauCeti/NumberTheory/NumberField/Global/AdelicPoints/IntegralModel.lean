@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.NumberTheory.NumberField.Global.AdelicPoints.Basic
 public import TauCeti.NumberTheory.NumberField.SInteger.Completion
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+public import TauCeti.RingTheory.DedekindDomain.SInteger.Inclusion
 public import TauCeti.Topology.Algebra.PointTopology.BaseChange
 
 /-!
@@ -130,29 +130,19 @@ theorem baseChangeIso_hom_tmul (M : IntegralModel F H S) (c : F) (a : M.coordina
 
 section GenericFiberPoints
 
-/-- For any commutative `F`-algebra `R` whose `𝒪_{F,S}`-algebra structure factors through `F`, the
-generic-fibre isomorphism identifies `R`-points of `M.coordinate` over `𝒪_{F,S}` with `R`-points of
-`H` over `F` as groups. -/
+/-- For any commutative `F`-algebra `R`, the generic-fibre isomorphism identifies `R`-points of
+`M.coordinate` over `𝒪_{F,S}` with `R`-points of `H` over `F` as groups. -/
 noncomputable def pointsMulEquiv (M : IntegralModel F H S) (R : Type*) [CommRing R]
-    [Algebra (SIntegers F S) R] [Algebra F R]
-    (hR : (algebraMap F R).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) R := by ext; simp) :
+    [Algebra F R] :
     WithConv (M.coordinate →ₐ[SIntegers F S] R) ≃* WithConv (H →ₐ[F] R) :=
-  letI : @IsScalarTower (SIntegers F S) F R Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
-    IsScalarTower.of_algebraMap_eq' hR.symm
   (TauCeti.AlgHom.baseChangePointsMulEquiv
     (k := SIntegers F S) (K := F) (A := M.coordinate) (R := R)).trans
     ((_root_.CommHopfAlgCat.ofIso M.baseChangeIso.symm).mapDomainMulEquiv (A := R))
 
 @[simp]
 theorem pointsMulEquiv_symm_ofConv_apply (M : IntegralModel F H S) {R : Type*} [CommRing R]
-    [Algebra (SIntegers F S) R] [Algebra F R]
-    (hR : (algebraMap F R).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) R := by ext; simp)
-    (g : WithConv (H →ₐ[F] R)) (a : M.coordinate) :
-    ((M.pointsMulEquiv R hR).symm g).ofConv a = g.ofConv (M.toBase a) := by
-  let _ : @IsScalarTower (SIntegers F S) F R Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
-    IsScalarTower.of_algebraMap_eq' hR.symm
+    [Algebra F R] (g : WithConv (H →ₐ[F] R)) (a : M.coordinate) :
+    ((M.pointsMulEquiv R).symm g).ofConv a = g.ofConv (M.toBase a) := by
   have hbase : (_root_.CommHopfAlgCat.ofIso M.baseChangeIso.symm).symm
       ((1 : F) ⊗ₜ[SIntegers F S] a) = M.toBase a := by
     rw [M.toBase_apply]
@@ -161,35 +151,24 @@ theorem pointsMulEquiv_symm_ofConv_apply (M : IntegralModel F H S) {R : Type*} [
 
 @[simp]
 theorem pointsMulEquiv_ofConv_toBase (M : IntegralModel F H S) {R : Type*} [CommRing R]
-    [Algebra (SIntegers F S) R] [Algebra F R]
-    (hR : (algebraMap F R).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) R := by ext; simp)
-    (x : WithConv (M.coordinate →ₐ[SIntegers F S] R)) (a : M.coordinate) :
-    (M.pointsMulEquiv R hR x).ofConv (M.toBase a) = x.ofConv a := by
-  have hx := M.pointsMulEquiv_symm_ofConv_apply hR (M.pointsMulEquiv R hR x) a
+    [Algebra F R] (x : WithConv (M.coordinate →ₐ[SIntegers F S] R)) (a : M.coordinate) :
+    (M.pointsMulEquiv R x).ofConv (M.toBase a) = x.ofConv a := by
+  have hx := M.pointsMulEquiv_symm_ofConv_apply (M.pointsMulEquiv R x) a
   rwa [MulEquiv.symm_apply_apply, eq_comm] at hx
 
 /-- Topological group version of `pointsMulEquiv` when `R` is a topological ring. -/
 noncomputable def pointsContinuousMulEquiv (M : IntegralModel F H S) (R : Type*) [CommRing R]
-    [Algebra (SIntegers F S) R] [Algebra F R] [TopologicalSpace R] [IsTopologicalRing R]
-    (hR : (algebraMap F R).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) R := by ext; simp) :
+    [Algebra F R] [TopologicalSpace R] [IsTopologicalRing R] :
     WithConv (M.coordinate →ₐ[SIntegers F S] R) ≃ₜ* WithConv (H →ₐ[F] R) :=
-  letI : @IsScalarTower (SIntegers F S) F R Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
-    IsScalarTower.of_algebraMap_eq' hR.symm
   (baseChangePointsContinuousMulEquiv (SIntegers F S) F M.coordinate R).trans
     ((_root_.CommHopfAlgCat.ofIso M.baseChangeIso.symm).mapDomainContinuousMulEquiv R)
 
 @[simp]
 theorem coe_pointsContinuousMulEquiv (M : IntegralModel F H S) {R : Type*} [CommRing R]
-    [Algebra (SIntegers F S) R] [Algebra F R] [TopologicalSpace R] [IsTopologicalRing R]
-    (hR : (algebraMap F R).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) R := by ext; simp) :
-    (M.pointsContinuousMulEquiv R hR :
+    [Algebra F R] [TopologicalSpace R] [IsTopologicalRing R] :
+    (M.pointsContinuousMulEquiv R :
       WithConv (M.coordinate →ₐ[SIntegers F S] R) ≃* WithConv (H →ₐ[F] R)) =
-      M.pointsMulEquiv R hR := by
-  let _ : @IsScalarTower (SIntegers F S) F R Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
-    IsScalarTower.of_algebraMap_eq' hR.symm
+      M.pointsMulEquiv R := by
   rw [pointsContinuousMulEquiv, pointsMulEquiv]
   exact congrArg₂ MulEquiv.trans
     (coe_baseChangePointsContinuousMulEquiv (SIntegers F S) F M.coordinate R)
@@ -197,138 +176,112 @@ theorem coe_pointsContinuousMulEquiv (M : IntegralModel F H S) {R : Type*} [Comm
       (_root_.CommHopfAlgCat.ofIso M.baseChangeIso.symm))
 
 theorem pointsContinuousMulEquiv_apply (M : IntegralModel F H S) {R : Type*}
-    [CommRing R] [Algebra (SIntegers F S) R] [Algebra F R]
-    [TopologicalSpace R] [IsTopologicalRing R]
-    (hR : (algebraMap F R).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) R := by ext; simp)
+    [CommRing R] [Algebra F R] [TopologicalSpace R] [IsTopologicalRing R]
     (x : WithConv (M.coordinate →ₐ[SIntegers F S] R)) :
-    M.pointsContinuousMulEquiv R hR x = M.pointsMulEquiv R hR x := by
-  let _ : @IsScalarTower (SIntegers F S) F R Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
-    IsScalarTower.of_algebraMap_eq' hR.symm
+    M.pointsContinuousMulEquiv R x = M.pointsMulEquiv R x := by
   apply ofConv_injective
   simp [pointsContinuousMulEquiv, pointsMulEquiv]
 
 @[simp]
 theorem pointsContinuousMulEquiv_symm_ofConv_apply (M : IntegralModel F H S) {R : Type*}
-    [CommRing R] [Algebra (SIntegers F S) R] [Algebra F R]
-    [TopologicalSpace R] [IsTopologicalRing R]
-    (hR : (algebraMap F R).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) R := by ext; simp)
+    [CommRing R] [Algebra F R] [TopologicalSpace R] [IsTopologicalRing R]
     (g : WithConv (H →ₐ[F] R)) (a : M.coordinate) :
-    ((M.pointsContinuousMulEquiv R hR).symm g).ofConv a = g.ofConv (M.toBase a) := by
-  have hsymm : (M.pointsContinuousMulEquiv R hR).symm g = (M.pointsMulEquiv R hR).symm g :=
-    (M.pointsContinuousMulEquiv R hR).symm_apply_eq.mpr <| by
-      rw [M.pointsContinuousMulEquiv_apply hR, MulEquiv.apply_symm_apply]
-  rw [hsymm, M.pointsMulEquiv_symm_ofConv_apply hR]
+    ((M.pointsContinuousMulEquiv R).symm g).ofConv a = g.ofConv (M.toBase a) := by
+  have hsymm : (M.pointsContinuousMulEquiv R).symm g = (M.pointsMulEquiv R).symm g :=
+    (M.pointsContinuousMulEquiv R).symm_apply_eq.mpr <| by
+      rw [M.pointsContinuousMulEquiv_apply, MulEquiv.apply_symm_apply]
+  rw [hsymm, M.pointsMulEquiv_symm_ofConv_apply]
 
 @[simp]
 theorem pointsContinuousMulEquiv_ofConv_toBase (M : IntegralModel F H S) {R : Type*}
-    [CommRing R] [Algebra (SIntegers F S) R] [Algebra F R]
-    [TopologicalSpace R] [IsTopologicalRing R]
-    (hR : (algebraMap F R).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) R := by ext; simp)
+    [CommRing R] [Algebra F R] [TopologicalSpace R] [IsTopologicalRing R]
     (x : WithConv (M.coordinate →ₐ[SIntegers F S] R)) (a : M.coordinate) :
-    (M.pointsContinuousMulEquiv R hR x).ofConv (M.toBase a) = x.ofConv a := by
-  rw [M.pointsContinuousMulEquiv_apply hR, M.pointsMulEquiv_ofConv_toBase hR]
+    (M.pointsContinuousMulEquiv R x).ofConv (M.toBase a) = x.ofConv a := by
+  rw [M.pointsContinuousMulEquiv_apply, M.pointsMulEquiv_ofConv_toBase]
 
 /-- For a commutative `𝒪_{F,S}`-algebra `R` mapped into a commutative `F`-algebra `K` via
 `ι : R →ₐ[𝒪_{F,S}] K`, `integralPointsHom` maps `R`-points of `M.coordinate` into `K`-points of `H`
 via `ι` and the generic-fibre isomorphism. -/
 noncomputable def integralPointsHom (M : IntegralModel F H S) {R K : Type*}
-    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra (SIntegers F S) K]
-    [Algebra F K] (ι : R →ₐ[SIntegers F S] K)
-    (hK : (algebraMap F K).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) K := by ext; simp) :
+    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra F K]
+    (ι : R →ₐ[SIntegers F S] K) :
     WithConv (M.coordinate →ₐ[SIntegers F S] R) →* WithConv (H →ₐ[F] K) :=
-  (M.pointsMulEquiv K hK).toMonoidHom.comp (AlgHom.mapValue (H := M.coordinate) ι)
+  (M.pointsMulEquiv K).toMonoidHom.comp (AlgHom.mapValue (H := M.coordinate) ι)
 
 theorem integralPointsHom_apply (M : IntegralModel F H S) {R K : Type*}
-    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra (SIntegers F S) K]
-    [Algebra F K] (ι : R →ₐ[SIntegers F S] K)
-    (hK : (algebraMap F K).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) K := by ext; simp)
+    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra F K]
+    (ι : R →ₐ[SIntegers F S] K)
     (x : WithConv (M.coordinate →ₐ[SIntegers F S] R)) :
-    M.integralPointsHom ι hK x = M.pointsMulEquiv K hK (AlgHom.mapValue ι x) := by
+    M.integralPointsHom ι x = M.pointsMulEquiv K (AlgHom.mapValue ι x) := by
   rw [integralPointsHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
 
 @[simp]
 theorem integralPointsHom_ofConv_toBase (M : IntegralModel F H S) {R K : Type*}
-    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra (SIntegers F S) K]
-    [Algebra F K] (ι : R →ₐ[SIntegers F S] K)
-    (hK : (algebraMap F K).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) K := by ext; simp)
+    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra F K]
+    (ι : R →ₐ[SIntegers F S] K)
     (x : WithConv (M.coordinate →ₐ[SIntegers F S] R)) (a : M.coordinate) :
-    (M.integralPointsHom ι hK x).ofConv (M.toBase a) = ι (x.ofConv a) := by
-  rw [M.integralPointsHom_apply ι hK, M.pointsMulEquiv_ofConv_toBase hK,
+    (M.integralPointsHom ι x).ofConv (M.toBase a) = ι (x.ofConv a) := by
+  rw [M.integralPointsHom_apply ι, M.pointsMulEquiv_ofConv_toBase,
     AlgHom.mapValue_apply, AlgHom.comp_apply]
 
 /-- When `ι : R →ₐ[𝒪_{F,S}] K` is injective, the induced homomorphism from `R`-points of
 `M.coordinate` to `K`-points of `H` is injective. -/
 theorem integralPointsHom_injective (M : IntegralModel F H S) {R K : Type*}
-    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra (SIntegers F S) K]
-    [Algebra F K] {ι : R →ₐ[SIntegers F S] K} (hι : Function.Injective ι)
-    (hK : (algebraMap F K).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) K := by ext; simp) :
-    Function.Injective (M.integralPointsHom ι hK) :=
-  (M.pointsMulEquiv K hK).injective.comp (AlgHom.mapValue_injective hι)
+    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra F K]
+    {ι : R →ₐ[SIntegers F S] K} (hι : Function.Injective ι) :
+    Function.Injective (M.integralPointsHom ι) :=
+  (M.pointsMulEquiv K).injective.comp (AlgHom.mapValue_injective hι)
 
-/-- When `ι : R →ₐ[𝒪_{F,S}] K` is injective, the image of `M.integralPointsHom ι hK` consists of
-the `K`-points of `H` whose values on `M.toBase` lie in `Set.range ι`. -/
+/-- When `ι : R →ₐ[𝒪_{F,S}] K` is injective, the image of `M.integralPointsHom ι` consists of the
+`K`-points of `H` whose values on `M.toBase` lie in `Set.range ι`. -/
 theorem mem_range_integralPointsHom_iff (M : IntegralModel F H S) {R K : Type*}
-    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra (SIntegers F S) K]
-    [Algebra F K] {ι : R →ₐ[SIntegers F S] K} (hι : Function.Injective ι)
-    (hK : (algebraMap F K).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) K := by ext; simp)
+    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra F K]
+    {ι : R →ₐ[SIntegers F S] K} (hι : Function.Injective ι)
     {g : WithConv (H →ₐ[F] K)} :
-    g ∈ (M.integralPointsHom ι hK).range ↔
+    g ∈ (M.integralPointsHom ι).range ↔
       ∀ a : M.coordinate, g.ofConv (M.toBase a) ∈ Set.range ι := by
-  have hrng : g ∈ (M.integralPointsHom ι hK).range ↔
-      (M.pointsMulEquiv K hK).symm g ∈
+  have hrng : g ∈ (M.integralPointsHom ι).range ↔
+      (M.pointsMulEquiv K).symm g ∈
         MonoidHom.mrange (AlgHom.mapValue (H := M.coordinate) ι) := by
     rw [MonoidHom.mem_range, MonoidHom.mem_mrange]
     refine exists_congr fun x ↦ ?_
-    rw [M.integralPointsHom_apply ι hK, MulEquiv.eq_symm_apply]
+    rw [M.integralPointsHom_apply ι, MulEquiv.eq_symm_apply]
   rw [hrng, AlgHom.mem_mrange_mapValue_iff hι]
   exact forall_congr' fun a ↦ by
-    rw [M.pointsMulEquiv_symm_ofConv_apply hK, ← SetLike.mem_coe, AlgHom.coe_range]
+    rw [M.pointsMulEquiv_symm_ofConv_apply, ← SetLike.mem_coe, AlgHom.coe_range]
 
-/-- Membership in `(M.integralPointsHom ι hK).range` for an injective `ι` need only be checked on a
+/-- Membership in `(M.integralPointsHom ι).range` for an injective `ι` need only be checked on a
 generating family of `M.coordinate` over `𝒪_{F,S}`. -/
 theorem mem_range_integralPointsHom_iff_of_adjoin_eq_top (M : IntegralModel F H S) {R K : Type*}
-    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra (SIntegers F S) K]
-    [Algebra F K] {ι : R →ₐ[SIntegers F S] K} (hι : Function.Injective ι)
-    (hK : (algebraMap F K).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) K := by ext; simp)
+    [CommRing R] [Algebra (SIntegers F S) R] [CommRing K] [Algebra F K]
+    {ι : R →ₐ[SIntegers F S] K} (hι : Function.Injective ι)
     {J : Type*} {a : J → M.coordinate}
     (ha : Algebra.adjoin (SIntegers F S) (Set.range a) = ⊤)
     {g : WithConv (H →ₐ[F] K)} :
-    g ∈ (M.integralPointsHom ι hK).range ↔
+    g ∈ (M.integralPointsHom ι).range ↔
       ∀ j, g.ofConv (M.toBase (a j)) ∈ Set.range ι := by
-  rw [M.mem_range_integralPointsHom_iff hι hK]
-  simp_rw [← M.pointsMulEquiv_symm_ofConv_apply hK g]
+  rw [M.mem_range_integralPointsHom_iff hι]
+  simp_rw [← M.pointsMulEquiv_symm_ofConv_apply g]
   have hmem : (∀ b : M.coordinate,
-      ((M.pointsMulEquiv K hK).symm g).ofConv b ∈ Set.range ι) ↔
-      ((M.pointsMulEquiv K hK).symm g).ofConv ∈
+      ((M.pointsMulEquiv K).symm g).ofConv b ∈ Set.range ι) ↔
+      ((M.pointsMulEquiv K).symm g).ofConv ∈
         Set.range (fun x : M.coordinate →ₐ[SIntegers F S] R ↦ ι.comp x) := by
     rw [AlgHom.range_comp_left_of_injective _ hι, Set.mem_ofPred_eq]
   rw [hmem, AlgHom.range_comp_left_eq_of_adjoin_eq_top _ hι ha, Set.mem_ofPred_eq]
 
 /-- When `ι : R →ₐ[𝒪_{F,S}] K` is an open embedding into a topological ring `K`,
-`M.integralPointsHom ι hK` is an open embedding. -/
+`M.integralPointsHom ι` is an open embedding. -/
 theorem isOpenEmbedding_integralPointsHom (M : IntegralModel F H S) {R K : Type*}
     [CommRing R] [Algebra (SIntegers F S) R] [TopologicalSpace R]
-    [CommRing K] [Algebra (SIntegers F S) K] [Algebra F K]
-    [TopologicalSpace K] [IsTopologicalRing K]
-    {ι : R →ₐ[SIntegers F S] K} (hι : IsOpenEmbedding ι)
-    (hK : (algebraMap F K).comp (algebraMap (SIntegers F S) F) =
-      algebraMap (SIntegers F S) K := by ext; simp) :
-    IsOpenEmbedding (M.integralPointsHom ι hK) := by
+    [CommRing K] [Algebra F K] [TopologicalSpace K] [IsTopologicalRing K]
+    {ι : R →ₐ[SIntegers F S] K} (hι : IsOpenEmbedding ι) :
+    IsOpenEmbedding (M.integralPointsHom ι) := by
   have h1 := AlgHom.isOpenEmbedding_mapValue (H₁ := M.coordinate) hι
-  have h2 := (Homeomorph.ofClass (M.pointsContinuousMulEquiv K hK)).isOpenEmbedding
+  have h2 := (Homeomorph.ofClass (M.pointsContinuousMulEquiv K)).isOpenEmbedding
   convert h2.comp h1 using 1
   funext x
-  rw [Function.comp_apply, Homeomorph.coe_ofClass, M.integralPointsHom_apply ι hK,
-    M.pointsContinuousMulEquiv_apply hK]
+  rw [Function.comp_apply, Homeomorph.coe_ofClass, M.integralPointsHom_apply ι,
+    M.pointsContinuousMulEquiv_apply]
 
 end GenericFiberPoints
 
@@ -336,87 +289,42 @@ end GenericFiberPoints
 
 section LocalPoints
 
-/-- For `v ∉ S`, the valuation ring `𝒪_v` of `F_v` viewed as an `𝒪_{F,S}`-subalgebra of `F_v`. -/
-noncomputable def localIntegerSubalgebra (S : Finset (HeightOneSpectrum (𝓞 F)))
-    (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ S) :
-    Subalgebra (SIntegers F S) (v.adicCompletion F) :=
-  { (v.adicCompletionIntegers F).toSubring with
-    algebraMap_mem' r := by
-      rw [IsScalarTower.algebraMap_apply (SIntegers F S) F (v.adicCompletion F)]
-      exact (mem_sIntegers_iff_forall_adicCompletionIntegers.mp r.property) v hv }
-
-@[simp]
-theorem toSubring_localIntegerSubalgebra (S : Finset (HeightOneSpectrum (𝓞 F)))
-    (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ S) :
-    (localIntegerSubalgebra S v hv).toSubring = (v.adicCompletionIntegers F).toSubring := by
-  rw [localIntegerSubalgebra]
-
-@[simp]
-theorem mem_localIntegerSubalgebra_iff (S : Finset (HeightOneSpectrum (𝓞 F)))
-    (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ S) {x : v.adicCompletion F} :
-    x ∈ localIntegerSubalgebra S v hv ↔ x ∈ v.adicCompletionIntegers F :=
-  Iff.rfl
-
-@[simp]
-theorem coe_localIntegerSubalgebra (S : Finset (HeightOneSpectrum (𝓞 F)))
-    (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ S) :
-    (localIntegerSubalgebra S v hv : Set (v.adicCompletion F)) =
-      (v.adicCompletionIntegers F : Set (v.adicCompletion F)) :=
-  Set.ext fun _ ↦ mem_localIntegerSubalgebra_iff S v hv
-
-/-- For `v ∉ S`, `localIntegerSubalgebra S v hv` is compact in the `v`-adic topology. -/
-instance compactSpace_localIntegerSubalgebra (S : Finset (HeightOneSpectrum (𝓞 F)))
-    (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ S) :
-    CompactSpace (localIntegerSubalgebra S v hv) := by
-  have : Finite (𝓞 F ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-  have : IsNonarchimedeanLocalField (v.adicCompletion F) :=
-    HeightOneSpectrum.isNonarchimedeanLocalField_adicCompletion v
-  have : CompactSpace (v.adicCompletionIntegers F) :=
-    HeightOneSpectrum.compactSpace_adicCompletionIntegers v
-  exact (Homeomorph.setCongr (coe_localIntegerSubalgebra S v hv).symm).compactSpace
-
 /-- The canonical embedding `𝓗(𝒪_v) →* G(F_v)` of `𝒪_v`-points of `M.coordinate` into local points
 at `v ∉ S` under the generic-fibre identification. -/
 noncomputable def localIntegralHom (M : IntegralModel F H S)
     (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ S) :
-    WithConv (M.coordinate →ₐ[SIntegers F S] localIntegerSubalgebra S v hv) →*
+    WithConv (M.coordinate →ₐ[SIntegers F S] localIntegerSubalgebra F S v hv) →*
       LocalPoints (𝓞 F) F H v :=
-  M.integralPointsHom (localIntegerSubalgebra S v hv).val
-    (IsScalarTower.algebraMap_eq (SIntegers F S) F (v.adicCompletion F)).symm
+  M.integralPointsHom (localIntegerSubalgebra F S v hv).val
 
 theorem localIntegralHom_def (M : IntegralModel F H S)
     (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ S) :
     M.localIntegralHom v hv =
-      M.integralPointsHom (localIntegerSubalgebra S v hv).val
-        (IsScalarTower.algebraMap_eq (SIntegers F S) F (v.adicCompletion F)).symm := by
+      M.integralPointsHom (localIntegerSubalgebra F S v hv).val := by
   rw [localIntegralHom]
 
 @[simp]
 theorem localIntegralHom_ofConv_toBase (M : IntegralModel F H S)
     (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ S)
-    (x : WithConv (M.coordinate →ₐ[SIntegers F S] localIntegerSubalgebra S v hv))
+    (x : WithConv (M.coordinate →ₐ[SIntegers F S] localIntegerSubalgebra F S v hv))
     (a : M.coordinate) :
     (M.localIntegralHom v hv x).ofConv (M.toBase a) = (x.ofConv a : v.adicCompletion F) := by
-  rw [M.localIntegralHom_def, M.integralPointsHom_ofConv_toBase
-    (localIntegerSubalgebra S v hv).val
-    (IsScalarTower.algebraMap_eq (SIntegers F S) F (v.adicCompletion F)).symm, Subalgebra.coe_val]
+  rw [M.localIntegralHom_def, M.integralPointsHom_ofConv_toBase, Subalgebra.coe_val]
 
 /-- The canonical map `𝓗(𝒪_v) →* G(F_v)` is injective for every `v ∉ S`. -/
 theorem localIntegralHom_injective (M : IntegralModel F H S)
     (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ S) :
     Function.Injective (M.localIntegralHom v hv) :=
   M.integralPointsHom_injective Subtype.val_injective
-    (IsScalarTower.algebraMap_eq (SIntegers F S) F (v.adicCompletion F)).symm
 
 /-- The canonical map `𝓗(𝒪_v) →* G(F_v)` is an open topological embedding for every `v ∉ S`. -/
 theorem isOpenEmbedding_localIntegralHom (M : IntegralModel F H S)
     (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ S) :
     IsOpenEmbedding (M.localIntegralHom v hv) := by
-  have hopen : IsOpen (localIntegerSubalgebra S v hv : Set (v.adicCompletion F)) := by
+  have hopen : IsOpen (localIntegerSubalgebra F S v hv : Set (v.adicCompletion F)) := by
     rw [coe_localIntegerSubalgebra]
     exact Valued.isOpen_valuationSubring _
   refine M.isOpenEmbedding_integralPointsHom ?_
-    (IsScalarTower.algebraMap_eq (SIntegers F S) F (v.adicCompletion F)).symm
   rw [Subalgebra.coe_val]
   exact hopen.isOpenEmbedding_subtypeVal
 
@@ -424,8 +332,7 @@ private theorem mem_range_localIntegralHom_iff (M : IntegralModel F H S)
     (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ S) {g : LocalPoints (𝓞 F) F H v} :
     g ∈ (M.localIntegralHom v hv).range ↔
       ∀ a : M.coordinate, g.ofConv (M.toBase a) ∈ v.adicCompletionIntegers F := by
-  rw [M.localIntegralHom_def, M.mem_range_integralPointsHom_iff Subtype.val_injective
-    (IsScalarTower.algebraMap_eq (SIntegers F S) F (v.adicCompletion F)).symm]
+  rw [M.localIntegralHom_def, M.mem_range_integralPointsHom_iff Subtype.val_injective]
   simp [Subalgebra.coe_val]
 
 /-- The local integral subgroup `𝓗(𝒪_v) ≤ G(F_v)` for `v ∉ S`: the subgroup of local points taking
@@ -460,8 +367,7 @@ theorem mem_localPoints_iff_of_adjoin_eq_top (M : IntegralModel F H S)
     g ∈ M.localPoints v hv ↔
       ∀ i, g.ofConv (M.toBase (a i)) ∈ v.adicCompletionIntegers F := by
   rw [← M.range_localIntegralHom v hv, M.localIntegralHom_def,
-    M.mem_range_integralPointsHom_iff_of_adjoin_eq_top Subtype.val_injective
-      (IsScalarTower.algebraMap_eq (SIntegers F S) F (v.adicCompletion F)).symm ha]
+    M.mem_range_integralPointsHom_iff_of_adjoin_eq_top Subtype.val_injective ha]
   simp [Subalgebra.coe_val]
 
 /-- Since `M.coordinate` is finitely generated over `𝒪_{F,S}`, there is a single finite set `s` of
@@ -543,61 +449,43 @@ end LocalPoints
 
 section GlobalPoints
 
-/-- The canonical embedding `𝓗(𝒪_{F,T}) →* G(F)` of `𝒪_{F,T}`-points of `M.coordinate` into
-`F`-rational points for `S ⊆ T` under the generic-fibre identification. -/
-noncomputable def globalIntegralHom (M : IntegralModel F H S)
-    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
-    letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-    WithConv (M.coordinate →ₐ[SIntegers F S] SIntegers F T) →*
-      WithConv (H →ₐ[F] F) :=
-  letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  letI := isScalarTower_sIntegersAlgebraOfSubset hST
-  M.integralPointsHom (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F)
-    (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm
+section Tower
 
-theorem globalIntegralHom_def (M : IntegralModel F H S)
-    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
-    M.globalIntegralHom T hST =
-      (letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-       letI := isScalarTower_sIntegersAlgebraOfSubset hST
-       M.integralPointsHom (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F)
-         (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm) := by
+variable (M : IntegralModel F H S) (T : Finset (HeightOneSpectrum (𝓞 F)))
+  [Algebra (SIntegers F S) (SIntegers F T)] [IsScalarTower (SIntegers F S) (SIntegers F T) F]
+
+/-- The canonical embedding `𝓗(𝒪_{F,T}) →* G(F)` of `𝒪_{F,T}`-points of `M.coordinate` into
+`F`-rational points in any scalar tower `𝒪_{F,S} → 𝒪_{F,T} → F` (supplied for `S ⊆ T` by
+`Set.integerAlgebraOfSubset` and `Set.isScalarTower_integerAlgebraOfSubset`), under the
+generic-fibre identification. -/
+noncomputable def globalIntegralHom :
+    WithConv (M.coordinate →ₐ[SIntegers F S] SIntegers F T) →* WithConv (H →ₐ[F] F) :=
+  M.integralPointsHom (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F)
+
+theorem globalIntegralHom_def :
+    M.globalIntegralHom T =
+      M.integralPointsHom (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F) := by
   rw [globalIntegralHom]
 
 @[simp]
-theorem globalIntegralHom_ofConv_toBase (M : IntegralModel F H S)
-    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T)
-    (x :
-      letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-      WithConv (M.coordinate →ₐ[SIntegers F S] SIntegers F T))
-    (a : M.coordinate) :
-    letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-    (M.globalIntegralHom T hST x).ofConv (M.toBase a) = (x.ofConv a : F) := by
-  let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
-  rw [M.globalIntegralHom_def, M.integralPointsHom_ofConv_toBase
-    (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F)
-    (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm]
-  simp [IsScalarTower.coe_toAlgHom']
+theorem globalIntegralHom_ofConv_toBase
+    (x : WithConv (M.coordinate →ₐ[SIntegers F S] SIntegers F T)) (a : M.coordinate) :
+    (M.globalIntegralHom T x).ofConv (M.toBase a) = (x.ofConv a : F) := by
+  rw [M.globalIntegralHom_def, M.integralPointsHom_ofConv_toBase]
+  simp
 
-/-- The canonical map `𝓗(𝒪_{F,T}) →* G(F)` is injective for every `T ⊇ S`. -/
-theorem globalIntegralHom_injective (M : IntegralModel F H S)
-    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
-    Function.Injective (M.globalIntegralHom T hST) := by
-  let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
-  exact M.integralPointsHom_injective (toAlgHom_sIntegers_injective hST)
-    (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm
+/-- The canonical map `𝓗(𝒪_{F,T}) →* G(F)` is injective. -/
+theorem globalIntegralHom_injective : Function.Injective (M.globalIntegralHom T) :=
+  M.integralPointsHom_injective (Set.toAlgHom_integer_injective F)
 
-private theorem mem_range_globalIntegralHom_iff (M : IntegralModel F H S)
-    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) {g : WithConv (H →ₐ[F] F)} :
-    g ∈ (M.globalIntegralHom T hST).range ↔
+private theorem mem_range_globalIntegralHom_iff {g : WithConv (H →ₐ[F] F)} :
+    g ∈ (M.globalIntegralHom T).range ↔
       ∀ a : M.coordinate, g.ofConv (M.toBase a) ∈ SIntegers F T := by
-  let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
-  rw [M.globalIntegralHom_def, M.mem_range_integralPointsHom_iff (toAlgHom_sIntegers_injective hST)
-    (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm]
-  simp [IsScalarTower.coe_toAlgHom']
+  rw [M.globalIntegralHom_def,
+    M.mem_range_integralPointsHom_iff (Set.toAlgHom_integer_injective F)]
+  simp
+
+end Tower
 
 /-- The subgroup `Γ(M, T) ≤ G(F)` of `T`-integral rational points for `S ⊆ T`: the subgroup of
 rational points taking `𝒪_{F,T}`-values on `M.toBase`, equal to the image of the `𝒪_{F,T}`-points
@@ -605,16 +493,13 @@ of `M.coordinate` in `G(F)`. -/
 noncomputable def globalPoints (M : IntegralModel F H S)
     (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
     Subgroup (WithConv (H →ₐ[F] F)) :=
-  Subgroup.copy (M.globalIntegralHom T hST).range
+  letI : Algebra (SIntegers F S) (SIntegers F T) :=
+    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  letI : IsScalarTower (SIntegers F S) (SIntegers F T) F :=
+    Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  Subgroup.copy (M.globalIntegralHom T).range
     {g | ∀ a : M.coordinate, g.ofConv (M.toBase a) ∈ SIntegers F T}
-    (Set.ext fun _ ↦ (mem_range_globalIntegralHom_iff M T hST).symm)
-
-/-- The range of `M.globalIntegralHom T hST` is `M.globalPoints T hST`. -/
-@[simp]
-theorem range_globalIntegralHom (M : IntegralModel F H S)
-    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
-    (M.globalIntegralHom T hST).range = M.globalPoints T hST :=
-  (Subgroup.copy_eq _ _ _).symm
+    (Set.ext fun _ ↦ (mem_range_globalIntegralHom_iff M T).symm)
 
 /-- A rational point `g ∈ G(F)` lies in `M.globalPoints T hST` if and only if its values on
 `M.toBase` lie in `𝒪_{F,T}`. -/
@@ -625,6 +510,15 @@ theorem mem_globalPoints_iff (M : IntegralModel F H S)
       ∀ a : M.coordinate, g.ofConv (M.toBase a) ∈ SIntegers F T :=
   Iff.rfl
 
+/-- The range of `M.globalIntegralHom T` is `M.globalPoints T hST`. -/
+@[simp]
+theorem range_globalIntegralHom (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T)
+    [Algebra (SIntegers F S) (SIntegers F T)] [IsScalarTower (SIntegers F S) (SIntegers F T) F] :
+    (M.globalIntegralHom T).range = M.globalPoints T hST := by
+  ext g
+  rw [M.mem_range_globalIntegralHom_iff T, M.mem_globalPoints_iff T hST]
+
 /-- Membership in `M.globalPoints T hST` need only be checked on a generating family of
 `M.coordinate` over `𝒪_{F,S}`. -/
 theorem mem_globalPoints_iff_of_adjoin_eq_top (M : IntegralModel F H S)
@@ -632,19 +526,19 @@ theorem mem_globalPoints_iff_of_adjoin_eq_top (M : IntegralModel F H S)
     (ha : Algebra.adjoin (SIntegers F S) (Set.range a) = ⊤) {g : WithConv (H →ₐ[F] F)} :
     g ∈ M.globalPoints T hST ↔
       ∀ i, g.ofConv (M.toBase (a i)) ∈ SIntegers F T := by
-  let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
+  let : Algebra (SIntegers F S) (SIntegers F T) :=
+    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  let : IsScalarTower (SIntegers F S) (SIntegers F T) F :=
+    Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
   rw [← M.range_globalIntegralHom T hST, M.globalIntegralHom_def,
-    M.mem_range_integralPointsHom_iff_of_adjoin_eq_top (toAlgHom_sIntegers_injective hST)
-      (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm ha]
-  simp [IsScalarTower.coe_toAlgHom']
+    M.mem_range_integralPointsHom_iff_of_adjoin_eq_top (Set.toAlgHom_integer_injective F) ha]
+  simp
 
 /-- Enlarging the finite set of places `T` enlarges the subgroup of `T`-integral rational points. -/
 theorem globalPoints_mono (M : IntegralModel F H S)
     {T U : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) (hTU : T ⊆ U) :
-    M.globalPoints T hST ≤ M.globalPoints U (hST.trans hTU) := by
-  intro g hg a
-  exact sIntegers_mono hTU (hg a)
+    M.globalPoints T hST ≤ M.globalPoints U (hST.trans hTU) :=
+  fun _ hg a ↦ Set.integer_mono F (Finset.coe_subset.mpr hTU) (hg a)
 
 /-- **Local-global characterization of `T`-integral rational points**: for `S ⊆ T`, a rational point
 `g ∈ G(F)` lies in `M.globalPoints T hST` if and only if its local image at every `v ∉ T` lies in
@@ -679,75 +573,67 @@ section Enlarge
 /-- Base change of an integral model `M` away from `S` to an integral model away from `T` for
 `S ⊆ T`, obtained by extending scalars of `M.coordinate` along `𝒪_{F,S} → 𝒪_{F,T}`. -/
 noncomputable def enlarge (M : IntegralModel F H S) {T : Finset (HeightOneSpectrum (𝓞 F))}
-    (hST : S ⊆ T) : IntegralModel F H T where
-  coordinate :=
-    letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-    TauCeti.CommHopfAlgCat.baseChange (K := SIntegers F T) M.coordinate
-  finitePresentation :=
-    letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-    inferInstance
-  baseChangeIso :=
-    letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-    letI := isScalarTower_sIntegersAlgebraOfSubset hST
-    TauCeti.CommHopfAlgCat.baseChangeTowerIso (SIntegers F S) F M.coordinate ≪≫
-      M.baseChangeIso
+    (hST : S ⊆ T) : IntegralModel F H T :=
+  letI : Algebra (SIntegers F S) (SIntegers F T) :=
+    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  letI : IsScalarTower (SIntegers F S) (SIntegers F T) F :=
+    Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  { coordinate := TauCeti.CommHopfAlgCat.baseChange (K := SIntegers F T) M.coordinate
+    finitePresentation := inferInstance
+    baseChangeIso :=
+      TauCeti.CommHopfAlgCat.baseChangeTowerIso (SIntegers F S) F M.coordinate ≪≫
+        M.baseChangeIso }
+
+section EnlargeTower
+
+variable (M : IntegralModel F H S) {T : Finset (HeightOneSpectrum (𝓞 F))}
+  [instA : Algebra (SIntegers F S) (SIntegers F T)]
+  [instT : IsScalarTower (SIntegers F S) (SIntegers F T) F]
 
 /-- Canonical Hopf `𝒪_{F,T}`-algebra isomorphism identifying `(M.enlarge hST).coordinate` with the
 scalar extension `𝒪_{F,T} ⊗[𝒪_{F,S}] M.coordinate`. -/
-noncomputable def enlargeCoordinateIso (M : IntegralModel F H S)
-    {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) :
-    letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
+noncomputable def enlargeCoordinateIso (hST : S ⊆ T) :
     (M.enlarge hST).coordinate ≅
-      TauCeti.CommHopfAlgCat.baseChange (K := SIntegers F T) M.coordinate :=
-  Iso.refl _
+      TauCeti.CommHopfAlgCat.baseChange (K := SIntegers F T) M.coordinate := by
+  obtain rfl := (Set.integerAlgebraOfSubset_eq F (Finset.coe_subset.mpr hST)).symm
+  exact Iso.refl _
 
 /-- Compatibility of `(M.enlarge hST).baseChangeIso` with `enlargeCoordinateIso` and
 `baseChangeTowerIso`. -/
-theorem enlarge_baseChangeIso (M : IntegralModel F H S)
-    {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) :
-    letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-    letI := isScalarTower_sIntegersAlgebraOfSubset hST
+theorem enlarge_baseChangeIso (hST : S ⊆ T) :
     (M.enlarge hST).baseChangeIso =
       (TauCeti.CommHopfAlgCat.baseChangeFunctor (K := F)).mapIso (M.enlargeCoordinateIso hST) ≪≫
         TauCeti.CommHopfAlgCat.baseChangeTowerIso (SIntegers F S) F M.coordinate ≪≫
           M.baseChangeIso := by
-  let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
+  obtain rfl := (Set.integerAlgebraOfSubset_eq F (Finset.coe_subset.mpr hST)).symm
+  obtain rfl : instT = Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST) :=
+    Subsingleton.elim _ _
   dsimp only [enlarge, enlargeCoordinateIso]
   rw [Functor.mapIso_refl, Iso.refl_trans]
 
 /-- Pointwise evaluation of `(M.enlarge hST).baseChangeIso.hom` on a pure tensor in terms of
 `enlargeCoordinateIso`, `baseChangeTowerIso`, and `M.baseChangeIso`. -/
-theorem enlarge_baseChangeIso_hom_tmul (M : IntegralModel F H S)
-    {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T)
-    (c : F) (x : (M.enlarge hST).coordinate) :
-    letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-    letI := isScalarTower_sIntegersAlgebraOfSubset hST
+theorem enlarge_baseChangeIso_hom_tmul (hST : S ⊆ T) (c : F) (x : (M.enlarge hST).coordinate) :
     (M.enlarge hST).baseChangeIso.hom.hom (c ⊗ₜ[SIntegers F T] x) =
       M.baseChangeIso.hom.hom
         ((TauCeti.CommHopfAlgCat.baseChangeTowerIso (SIntegers F S) F M.coordinate).hom.hom
           (c ⊗ₜ[SIntegers F T] (M.enlargeCoordinateIso hST).hom.hom x)) := by
-  let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
   rw [M.enlarge_baseChangeIso hST]
   simp
 
 /-- Under `enlargeCoordinateIso`, `(M.enlarge hST).toBase` sends a pure tensor `r ⊗ₜ a` to
 `(r : F) • M.toBase a`. -/
 @[simp]
-theorem enlarge_toBase_tmul (M : IntegralModel F H S)
-    {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T)
-    (r : SIntegers F T) (a : M.coordinate) :
-    letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
+theorem enlarge_toBase_tmul (hST : S ⊆ T) (r : SIntegers F T) (a : M.coordinate) :
     (M.enlarge hST).toBase
       ((M.enlargeCoordinateIso hST).inv.hom (r ⊗ₜ[SIntegers F S] a)) =
       (r : F) • M.toBase a := by
-  let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
   rw [(M.enlarge hST).toBase_apply, M.enlarge_baseChangeIso_hom_tmul hST,
     (M.enlargeCoordinateIso hST).inv_hom_id_apply,
     TauCeti.CommHopfAlgCat.baseChangeTowerIso_hom_apply, M.baseChangeIso_hom_tmul]
   simp [Algebra.smul_def]
+
+end EnlargeTower
 
 /-- Enlarging the exceptional set from `S` to `T` does not change the local integral subgroup at
 any place `v ∉ T`. -/
@@ -755,7 +641,10 @@ any place `v ∉ T`. -/
 theorem localPoints_enlarge (M : IntegralModel F H S) {T : Finset (HeightOneSpectrum (𝓞 F))}
     (hST : S ⊆ T) (v : HeightOneSpectrum (𝓞 F)) (hv : v ∉ T) :
     (M.enlarge hST).localPoints v hv = M.localPoints v (fun hvS ↦ hv (hST hvS)) := by
-  let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
+  let : Algebra (SIntegers F S) (SIntegers F T) :=
+    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  let : IsScalarTower (SIntegers F S) (SIntegers F T) F :=
+    Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
   ext g
   simp only [mem_localPoints_iff]
   constructor
