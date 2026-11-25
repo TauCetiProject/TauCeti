@@ -40,8 +40,9 @@ immersion.
   points.
 * `Module.Grassmannian.pluckerHom_toSpec`: `pluckerHom` lies over `Spec R`.
 * `Module.Grassmannian.specMap_pluckerChartHom_chartι`: `pluckerHom` on the standard charts.
-* `Module.Grassmannian.isClosedImmersion_specMap_pluckerChartHom`: on the standard charts,
-  `pluckerHom` is `Spec` of a surjective ring map, hence a closed immersion.
+* `Module.Grassmannian.isClosedImmersion_specMap_pluckerChartHom`: `Spec` of the Plücker map on
+  charts `Module.Grassmannian.ChartAlgebra.pluckerChartHom R x` is a closed immersion, since that
+  ring map is surjective.
 
 ## References
 

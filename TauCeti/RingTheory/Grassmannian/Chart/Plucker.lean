@@ -59,6 +59,13 @@ namespace Module.Grassmannian
 
 variable (R : Type u) [CommRing R] {M : Type v} [AddCommGroup M] [Module R M] {k : ℕ}
 
+/-- The row determinant form evaluated on a family of rows is the determinant of the matrix with
+those rows. -/
+private theorem detRowAlternating_eq_det {A : Type*} [CommRing A] (v : Fin k → Fin k → A) :
+    Matrix.detRowAlternating v = (Matrix.of v).det :=
+  -- `Matrix.det` is by definition `Matrix.detRowAlternating` applied to the rows
+  rfl
+
 namespace ChartAlgebra
 
 /-- **The Plücker form** of the chart at `x`: the linear map `⋀ᵏ M → C_x` sending
@@ -78,8 +85,7 @@ theorem pluckerForm_ιMulti (x m : Fin k → M) :
     pluckerForm R x (exteriorPower.ιMulti R k m) =
       (Matrix.of fun j i ↦ universalLinearMap R x (m j) i).det := by
   rw [pluckerForm, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
-  -- `Matrix.det` is by definition `Matrix.detRowAlternating` applied to the rows
-  rfl
+  exact detRowAlternating_eq_det fun j ↦ universalLinearMap R x (m j)
 
 /-- The Plücker form of the chart at `x` takes the value `1` at `x₁ ∧ ⋯ ∧ xₖ`. -/
 @[simp]
@@ -142,6 +148,34 @@ end ChartAlgebra
 
 open ChartAlgebra
 
+/-- The base change to `C_x` of the Plücker form, read on `⋀ᵏ (C_x ⊗ M)`, is the determinant of the
+universal surjection `C_x ⊗ M → C_x^k`. -/
+private theorem liftBaseChange_pluckerChartHom_comp_equivBaseChange (x : Fin k → M) :
+    ((pluckerChartHom R x).toLinearMap.compLeft (Fin 1) ∘ₗ
+        universalLinearMap R (fun _ : Fin 1 ↦ exteriorPower.ιMulti R k x)).liftBaseChange
+          (ChartAlgebra R x) ∘ₗ
+      (TauCeti.exteriorPower.equivBaseChange (ChartAlgebra R x) k).toLinearMap =
+    (LinearMap.pi fun _ ↦ exteriorPower.alternatingMapLinearEquiv Matrix.detRowAlternating) ∘ₗ
+      exteriorPower.map k
+        (((AlgHom.id R _).toLinearMap.compLeft (Fin k) ∘ₗ universalLinearMap R x).liftBaseChange
+          (ChartAlgebra R x)) := by
+  have hspan : Submodule.span (ChartAlgebra R x)
+      (Set.range (TensorProduct.mk R (ChartAlgebra R x) M 1)) = ⊤ := by
+    rw [← LinearMap.coe_range, LinearMap.range_eq_map, ← Submodule.baseChange_eq_span,
+      Submodule.baseChange_top]
+  refine LinearMap.ext_on (exteriorPower.ιMulti_span_of_span _ k _ hspan) ?_
+  rintro _ ⟨v, hv, rfl⟩
+  choose m hm using fun i ↦ hv ⟨i, rfl⟩
+  obtain rfl : v = fun i ↦ (1 : ChartAlgebra R x) ⊗ₜ[R] m i := funext fun i ↦ (hm i).symm
+  have hA := TauCeti.exteriorPower.equivBaseChange_ιMulti_tmul (R := R) (ChartAlgebra R x)
+    (fun _ ↦ 1) m
+  simp only [Finset.prod_const_one] at hA
+  ext j
+  have hid (y : Fin k → ChartAlgebra R x) : (LinearMap.id (R := R)).compLeft (Fin k) y = y := by
+    ext; simp
+  simp [hA, hid, pluckerForm_ιMulti, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti,
+    detRowAlternating_eq_det, Function.comp_def]
+
 /-- **The Plücker map on the universal point of a chart.** The Plücker point of the universal point
 of the chart of `G(k, M)` at `x` is the point of the chart of `G(1, ⋀ᵏ M)` at `x₁ ∧ ⋯ ∧ xₖ`
 classified by `pluckerChartHom R x`. -/
@@ -165,27 +199,9 @@ theorem pluckerBaseChange_chartHomEquiv_id (x : Fin k → M) :
       universalLinearMap R (fun _ : Fin 1 ↦ exteriorPower.ιMulti R k x)).liftBaseChange A
   let D : ⋀[A]^k (Fin k → A) →ₗ[A] Fin 1 → A :=
     LinearMap.pi fun _ ↦ exteriorPower.alternatingMapLinearEquiv Matrix.detRowAlternating
-  have hspan : Submodule.span A (Set.range (TensorProduct.mk R A M 1)) = ⊤ := by
-    rw [← LinearMap.coe_range, LinearMap.range_eq_map, ← Submodule.baseChange_eq_span,
-      Submodule.baseChange_top]
   have key : Ψ ∘ₗ (TauCeti.exteriorPower.equivBaseChange A k).toLinearMap =
-      D ∘ₗ exteriorPower.map k φ := by
-    refine LinearMap.ext_on (exteriorPower.ιMulti_span_of_span A k (A ⊗[R] M) hspan) ?_
-    rintro _ ⟨v, hv, rfl⟩
-    choose m hm using fun i ↦ hv ⟨i, rfl⟩
-    obtain rfl : v = fun i ↦ (1 : A) ⊗ₜ[R] m i := funext fun i ↦ (hm i).symm
-    have hA := TauCeti.exteriorPower.equivBaseChange_ιMulti_tmul (R := R) A (fun _ ↦ (1 : A)) m
-    simp only [Finset.prod_const_one] at hA
-    ext j
-    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, hA,
-      LinearMap.liftBaseChange_tmul, one_smul, LinearMap.compLeft_apply, AlgHom.toLinearMap_apply,
-      pluckerChartHom_universalLinearMap, pluckerForm_ιMulti, exteriorPower.map_apply_ιMulti,
-      LinearMap.pi_apply, D, Ψ, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
-    -- `Matrix.det` is by definition `Matrix.detRowAlternating` applied to the rows
-    change _ = Matrix.det (Matrix.of _)
-    congr 1
-    ext j i
-    simp
+      D ∘ₗ exteriorPower.map k φ :=
+    liftBaseChange_pluckerChartHom_comp_equivBaseChange R x
   refine eq_of_le ?_
   rw [toSubmodule_pluckerBaseChange, ← toSubmodule_plucker, hN,
     toSubmodule_plucker_ofSurjective φ hφ (rankAtStalk_fin_fun k)]
