@@ -94,11 +94,13 @@ namespace IsFullyRamified
 
 variable {θ : H →* kˣ}
 
-/-- **`H` is normal.** A subgroup containing every commutator is normal, since
-`g h g⁻¹ = (g h g⁻¹ h⁻¹) h`. This is a theorem rather than an instance, as the instance search
-cannot find `hθ`. -/
-theorem normal (hθ : θ.IsFullyRamified) : H.Normal where
-  conj_mem h hh g := by simpa using H.mul_mem (hθ.commutator_mem g h) hh
+/-- **`H` is normal.** A subgroup containing every commutator is normal
+(`Subgroup.Normal.of_commutator_le`). This is a theorem rather than an instance, as the instance
+search cannot find `hθ`. -/
+theorem normal (hθ : θ.IsFullyRamified) : H.Normal :=
+  .of_commutator_le J <| by
+    rw [_root_.commutator_def, Subgroup.commutator_le]
+    exact fun g _ x _ => hθ.commutator_mem g x
 
 /-- **Off `H` the character vanishes.** If `θ` is fully ramified, any representation on which `H`
 acts by `θ` has character `0` outside `H`. -/
