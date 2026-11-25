@@ -126,7 +126,7 @@ private theorem norm_cutoffSMul_le (f : CkHolderSpaceOn k α Ω F) :
     exact (norm_iteratedFDeriv_smul_extend_le hχ hδ hχΩ hχb f hi x).trans (by
       gcongr
       · norm_num
-      · exact le_rfl)
+      · exact (coe_nnNorm f).le)
   · refine le_of_eq ?_
     push_cast
     ring

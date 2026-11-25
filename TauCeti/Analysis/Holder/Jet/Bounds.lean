@@ -22,7 +22,8 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
 On an open convex set, bounds for a derivative field and its next derivative give a Hölder
 bound for every exponent at most one. Thus local `C^{k,α}` data need a separate Hölder
-hypothesis only at their top derivative. On the whole space, a uniform bound on the next
+hypothesis only at their top derivative (`ContDiffOn.holderOnWith_iteratedFDeriv_of_le`). On the
+whole space, a uniform bound on the next
 derivative makes a derivative field Lipschitz (`ContDiff.lipschitzWith_iteratedFDeriv`).
 Currying preserves these bounds exactly. On an open set that need not be convex, a `C^1` map is
 locally Lipschitz, hence Hölder on every compact subset, so one more derivative makes the top
@@ -75,6 +76,35 @@ theorem _root_.ContDiffOn.holderOnWith_iteratedFDeriv_of_lt {k j : ℕ} {s : Set
       hnext x hx
   have hlip := Convex.lipschitzOnWith_of_nnNorm_fderiv_le hdiff hder hconv
   exact hlip.holderOnWith_of_norm_le hb hα
+
+/-- On a convex open set, every derivative field through order `k` of a `C^k` map with
+derivatives bounded by `M` and `k`-th derivative `α`-Hölder with constant `H` is `α`-Hölder with
+constant `H + 3 M`. -/
+theorem _root_.ContDiffOn.holderOnWith_iteratedFDeriv_of_le {k j : ℕ} {s : Set E}
+    {f : E → F} {M H α : ℝ≥0} (hf : ContDiffOn ℝ k f s) (hs : IsOpen s)
+    (hconv : Convex ℝ s) (hj : j ≤ k) (hα : α ≤ 1)
+    (hb : ∀ i ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ i f x‖ ≤ M)
+    (hH : HolderOnWith H α (iteratedFDeriv ℝ k f) s) :
+    HolderOnWith (H + 3 * M) α (iteratedFDeriv ℝ j f) s := by
+  rcases hj.eq_or_lt with rfl | hj
+  · exact hH.mono_const le_self_add
+  · have hlow := hf.holderOnWith_iteratedFDeriv_of_lt hs hconv hj hα
+      (hb j hj.le) (hb (j + 1) (by omega))
+    have hconstant : M + 2 * M = 3 * M := by ring
+    rw [hconstant] at hlow
+    exact hlow.mono_const le_add_self
+
+/-- Every derivative field through order `k` of a `C^{k+1}` map whose derivatives through order
+`k + 1` are bounded by `N` everywhere is `α`-Hölder with constant `3 N`. -/
+theorem _root_.ContDiff.holderWith_iteratedFDeriv_of_le {k j : ℕ} {f : E → F} {N α : ℝ≥0}
+    (hf : ContDiff ℝ (k + 1) f) (hj : j ≤ k) (hα : α ≤ 1)
+    (hb : ∀ i ≤ k + 1, ∀ x, ‖iteratedFDeriv ℝ i f x‖ ≤ N) :
+    HolderWith (3 * N) α (iteratedFDeriv ℝ j f) := by
+  have hlow := hf.contDiffOn.holderOnWith_iteratedFDeriv_of_lt (k := k + 1)
+    isOpen_univ convex_univ (by omega : j < k + 1) hα
+    (fun x _ => hb j (by omega) x) (fun x _ => hb (j + 1) (by omega) x)
+  convert holderOnWith_univ.mp hlow using 1
+  ring
 
 /-- A derivative field below the top order whose next derivative is bounded by `L` everywhere is
 `L`-Lipschitz. -/

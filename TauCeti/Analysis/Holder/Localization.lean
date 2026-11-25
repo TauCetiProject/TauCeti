@@ -66,36 +66,6 @@ theorem norm_iteratedFDeriv_cutoff_smul_le {k j : ℕ} {s : Set E} {f : E → F}
     have hnonneg : (0 : ℝ) ≤ 2^j * N * M := by positivity
     simpa using hnonneg
 
-/-- On a convex open set, every derivative through order `k` of a `C^k` map with derivatives
-bounded by `M` and `k`-th derivative `α`-Hölder with constant `H` is `α`-Hölder with constant
-`H + 3 M`. -/
-private theorem holderOnWith_iteratedFDeriv_of_le_of_convex {k : ℕ} {s : Set E} {f : E → F}
-    {M H α : ℝ≥0} (hf : ContDiffOn ℝ k f s) (hs : IsOpen s) (hc : Convex ℝ s) (hα : α ≤ 1)
-    (hfb : ∀ i ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ i f x‖ ≤ M)
-    (hfH : HolderOnWith H α (iteratedFDeriv ℝ k f) s) :
-    ∀ j ≤ k, HolderOnWith (H + 3 * M) α (iteratedFDeriv ℝ j f) s := by
-  intro j hj
-  rcases hj.eq_or_lt with rfl | hj
-  · exact hfH.mono_const (le_self_add)
-  · have hlow := hf.holderOnWith_iteratedFDeriv_of_lt hs hc hj hα
-      (hfb j hj.le) (hfb (j + 1) (by omega))
-    have hconstant : M + 2 * M = 3 * M := by ring
-    rw [hconstant] at hlow
-    exact hlow.mono_const le_add_self
-
-/-- The derivatives through order `k` of a `C^{k+1}` cutoff whose derivatives through order
-`k + 1` are bounded by `N` are globally `α`-Hölder with constant `3 N`. -/
-private theorem holderWith_iteratedFDeriv_of_le_of_contDiff {k : ℕ} {χ : E → ℝ} {N α : ℝ≥0}
-    (hχ : ContDiff ℝ (k + 1) χ) (hα : α ≤ 1)
-    (hχb : ∀ i ≤ k + 1, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ N) :
-    ∀ j ≤ k, HolderWith (3 * N) α (iteratedFDeriv ℝ j χ) := by
-  intro j hj
-  have hlow := hχ.contDiffOn.holderOnWith_iteratedFDeriv_of_lt (k := k + 1)
-    isOpen_univ convex_univ (by omega : j < k + 1) hα
-    (fun x _ => hχb j (by omega) x) (fun x _ => hχb (j + 1) (by omega) x)
-  convert holderOnWith_univ.mp hlow using 1
-  ring
-
 /-- The top derivative of a cutoff product is globally Hölder. The constant involves only the
 source jet bound, its top Hölder constant, and the cutoff jets through order `k + 1`. -/
 theorem holderWith_iteratedFDeriv_cutoff_smul {k : ℕ} {s : Set E} {f : E → F} {χ : E → ℝ}
@@ -113,8 +83,8 @@ theorem holderWith_iteratedFDeriv_cutoff_smul {k : ℕ} {s : Set E} {f : E → F
     exact ContinuousLinearMap.opNNNorm_lsmul_le
   have h := L.holderWith_iteratedFDeriv_of_tsupport_subset_right hf
     (hχ.of_le (by simp)) hs hχs hfb (fun i hi => hχb i (by omega))
-    (holderOnWith_iteratedFDeriv_of_le_of_convex hf hs hc hα hfb hfH)
-    (holderWith_iteratedFDeriv_of_le_of_contDiff hχ hα hχb)
+    (fun j hj ↦ hf.holderOnWith_iteratedFDeriv_of_le hs hc hj hα hfb hfH)
+    (fun j hj ↦ hχ.holderWith_iteratedFDeriv_of_le hj hα hχb)
   apply h.mono
   calc
     _ ≤ (2 : ℝ≥0)^k * 1 * (M * (3 * N) + N * (H + 3 * M)) := by
@@ -137,8 +107,8 @@ theorem holderOnWith_iteratedFDeriv_smul_of_convex {k : ℕ} {s : Set E} {f : E 
   have hL : ‖L‖₊ ≤ 1 := ContinuousLinearMap.opNNNorm_lsmul_le
   have h := L.holderOnWith_iteratedFDeriv_comp₂ (hχ.contDiffOn.of_le (by simp)) hf hs
     (fun j hj y _ ↦ hχb j (by omega) y) hfb
-    (fun j hj ↦ (holderWith_iteratedFDeriv_of_le_of_contDiff hχ hα hχb j hj).holderOnWith s)
-    (holderOnWith_iteratedFDeriv_of_le_of_convex hf hs hc hα hfb hfH)
+    (fun j hj ↦ (hχ.holderWith_iteratedFDeriv_of_le hj hα hχb).holderOnWith s)
+    (fun j hj ↦ hf.holderOnWith_iteratedFDeriv_of_le hs hc hj hα hfb hfH)
   have hLf : (fun x ↦ L (χ x) (f x)) = fun x ↦ χ x • f x := by
     ext x
     simp [L]
