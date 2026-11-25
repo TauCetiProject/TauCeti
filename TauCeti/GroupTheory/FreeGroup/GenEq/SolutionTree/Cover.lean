@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.ProperQuotient
 public import TauCeti.GroupTheory.FreeGroup.GenEq.SolutionTree.Basic
-import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.FreeMonoid.Basic
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Data.Set.Monotone
@@ -73,8 +73,12 @@ of the file).
 
 * `TauCeti.ParamGenEq.Branch.comp_mem_homs_append`: composites along two branches compose to a
   composite along their concatenation.
-* `TauCeti.ParamGenEq.hasParamCover_self`: an equation with the property `p` covers itself.
-* `TauCeti.ParamGenEq.HasParamCover.bind`: parametric covers compose.
+* `TauCeti.ParamGenEq.Branch.append_nil`, `TauCeti.ParamGenEq.Branch.append_assoc`: the branch
+  with no step is a unit for concatenation, and concatenation is associative.
+* `TauCeti.ParamGenEq.isParamCover_self`, `TauCeti.ParamGenEq.hasParamCover_self`: an equation
+  covers itself.
+* `TauCeti.ParamGenEq.IsParamCover.comp`, `TauCeti.ParamGenEq.HasParamCover.bind`: parametric
+  covers compose.
 * `TauCeti.ParamGenEq.hasParamCover_of_forall`: gluing decomposition trees at the leaves whose
   coordinate groups are proper quotients.
 
@@ -111,7 +115,9 @@ namespace Branch
 /-- The composites along a branch: the homomorphisms `σₙ ∘ πₙ ∘ ⋯ ∘ σ₁ ∘ π₁ ∘ σ₀` of coordinate
 groups, where the `πᵢ` are the homomorphisms of the steps and `σᵢ` is an automorphism of the
 coordinate group of the `i`-th equation of the branch fixing the coefficients and the items
-outside its active sections. -/
+outside its active sections. This follows the composites along the branches of a Makanin–Razborov
+diagram, `TauCeti.LimitGroup.MRDiagram.branchHoms`, with the automorphisms of the active parts in
+place of the modular automorphisms. -/
 def homs : ∀ {Ω T : ParamGenEq A}, Branch Ω T → Set (GenEq.CoordHom Ω.toGenEq T.toGenEq)
   | _, _, nil Ω => {Φ | ∃ σ ∈ Ω.activeAut, ∀ x, Φ x = σ x}
   | Ω, _, cons π b => {Φ | ∃ σ ∈ Ω.activeAut, ∃ Ψ ∈ b.homs, ∀ x, Φ x = Ψ (π (σ x))}
@@ -129,6 +135,19 @@ theorem nil_append (b : Branch Ω T) : (nil Ω).append b = b := (rfl)
 @[simp]
 theorem cons_append (π : GenEq.CoordHom Ω.toGenEq V.toGenEq) {W : ParamGenEq A} (b : Branch V W)
     (b' : Branch W T) : (cons π b).append b' = cons π (b.append b') := (rfl)
+
+@[simp]
+theorem append_nil (b : Branch Ω T) : b.append (nil T) = b := by
+  induction b with
+  | nil => rfl
+  | cons π b ih => rw [cons_append, ih]
+
+@[simp]
+theorem append_assoc {W : ParamGenEq A} (b₁ : Branch Ω V) (b₂ : Branch V W) (b₃ : Branch W T) :
+    (b₁.append b₂).append b₃ = b₁.append (b₂.append b₃) := by
+  induction b₁ with
+  | nil => rfl
+  | cons π b ih => rw [cons_append, cons_append, cons_append, ih]
 
 theorem mem_homs_nil_iff {Φ : GenEq.CoordHom Ω.toGenEq Ω.toGenEq} :
     Φ ∈ (nil Ω).homs ↔ ∃ σ ∈ Ω.activeAut, ∀ x, Φ x = σ x :=
@@ -241,8 +260,9 @@ theorem hasParamCover_iff {Ω : ParamGenEq A} {p : ParamGenEq A → Prop} :
 
 /-! ### Covers of an equation by itself, and composition of covers -/
 
--- Every parametric generalised equation covers itself, each parametric item going to itself.
-private theorem isParamCover_self (Ω : ParamGenEq A) :
+/-- Every parametric generalised equation covers itself, by the branch with no step, each
+parametric item going to itself. -/
+theorem isParamCover_self (Ω : ParamGenEq A) :
     Ω.IsParamCover (fun _ : Fin 1 => Ω) (fun _ => .nil Ω) fun _ => id where
   lt _ k _ := k.castSucc_lt_succ
   isParamItem _ k hk k' h₁ h₂ := by
@@ -387,9 +407,10 @@ private theorem IsParamCover.substituteVars_comp {U' : (T j).Solution} {U'' : (S
 
 end Comp
 
--- Composition of covers: the members of covers of the members of a cover of `Ω`, indexed by
--- `Fin (∑ j, m j) ≃ Σ j, Fin (m j)`, with the concatenated branches, cover `Ω`.
-private theorem IsParamCover.comp {Ω : ParamGenEq A} {n : ℕ} {T : Fin n → ParamGenEq A}
+/-- Composition of covers: the members of covers of the members of a cover of `Ω`, indexed by
+`Fin (∑ j, m j) ≃ Σ j, Fin (m j)`, with the concatenated branches and the composite boundary maps,
+cover `Ω`. -/
+theorem IsParamCover.comp {Ω : ParamGenEq A} {n : ℕ} {T : Fin n → ParamGenEq A}
     {B : ∀ j, Branch Ω (T j)} {bd : ∀ j, Fin (Ω.numItems + 1) → Fin ((T j).numItems + 1)}
     (hT : Ω.IsParamCover T B bd) {m : Fin n → ℕ} {S : ∀ j, Fin (m j) → ParamGenEq A}
     {B' : ∀ j t, Branch (T j) (S j t)}
@@ -483,13 +504,10 @@ private abbrev oneParam : ParamGenEq Bool where
 example : ¬ yEqX.IsTerminal := fun h => by
   simpa [yEqX] using yEqX.isTerminal_iff.1 h 0
 
-/-- Labelling the section of `y` as constant does not make `y = x` terminal: the item `h₀` is
-neither constant nor free, since it lies in a variable base. -/
+/-- Labelling the section of `y` as constant does not make `y = x` terminal: the item `h₀` lies in
+a variable base. -/
 example : ¬ (⟨yEqX.toGenEq, ⟨![.constant, .parametric], by decide⟩⟩ : ParamGenEq Bool).IsTerminal :=
-  fun h => by
-    have := (isTerminal_iff _).1 h 0
-    revert this
-    decide
+  by decide
 
 -- The equation with one parametric item is terminal.
 private theorem isTerminal_oneParam : oneParam.IsTerminal :=
