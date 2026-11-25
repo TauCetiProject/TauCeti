@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Incompressible.WeakDivergence
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Basic
 import Mathlib.MeasureTheory.Group.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable

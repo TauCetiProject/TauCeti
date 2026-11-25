@@ -19,7 +19,8 @@ On an open set, weak divergence is defined by pairing a locally integrable vecto
 scalar test gradients. The field is solenoidal if these pairings vanish. The predicate supports
 restriction and changes of representative, and agrees with the trace when the field has a weak
 Fréchet derivative. Against an additive Haar measure it therefore recovers classical divergence
-for a continuously differentiable field.
+for a continuously differentiable field. In particular, the kernel of divergence on test
+fields consists exactly of the weakly solenoidal test fields.
 -/
 
 public section
@@ -228,3 +229,30 @@ theorem _root_.ContDiffOn.isSolenoidalOn_iff (hu : ContDiffOn ℝ 1 u Ω) :
     exact hdiv.congr_ae .rfl (ae_restrict_of_forall_mem Ω.isOpen.measurableSet hzero)
 
 end TauCeti
+
+namespace TestFunction
+
+open MeasureTheory Set TopologicalSpace
+open scoped Distributions
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {Ω : Opens E}
+
+variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- A test field belongs to the kernel of divergence exactly when its underlying field is
+weakly solenoidal. -/
+theorem mem_solenoidalSubmodule_iff_isSolenoidalOn {φ : 𝓓(Ω, E)} :
+    φ ∈ solenoidalSubmodule Ω ↔ TauCeti.IsSolenoidalOn μ Ω (φ : E → E) := by
+  have hφ : ContDiffOn ℝ 1 (φ : E → E) Ω := (φ.contDiff.of_le (by simp)).contDiffOn
+  rw [hφ.isSolenoidalOn_iff, mem_solenoidalSubmodule_iff]
+  constructor
+  · intro h x _
+    simpa only [divergenceCLM_apply, FunLike.coe_zero, Pi.zero_apply] using congrArg (· x) h
+  · intro h
+    ext x
+    by_cases hx : x ∈ (Ω : Set E)
+    · simpa only [divergenceCLM_apply, FunLike.coe_zero, Pi.zero_apply] using h x hx
+    · rw [(divergenceCLM φ).zero_on_compl hx, FunLike.coe_zero, Pi.zero_apply]
+
+end TestFunction

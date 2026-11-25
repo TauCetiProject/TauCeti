@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Incompressible.WeakDivergence
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Basic
 public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.TangentSpace
 import TauCeti.Analysis.Distribution.TestFunction.Gradient
@@ -14,8 +14,7 @@ import TauCeti.MeasureTheory.Function.Lp.Duality
 /-!
 # Solenoidal subspaces
 
-The submodule `TestFunction.solenoidalSubmodule` consists exactly of weakly solenoidal test
-fields. In `Lᵖ`, the solenoidal fields form the intersection of the kernels of the
+In `Lᵖ`, the solenoidal fields form the intersection of the kernels of the
 continuous pairings with scalar test gradients. At `p = 2`, these pairings are Hilbert space inner
 products, so the closed subspace is the orthogonal complement of the closed span of the test
 gradients, given by `TauCeti.wassersteinTangentSpace`.
@@ -25,30 +24,6 @@ public section
 
 open MeasureTheory Set TopologicalSpace
 open scoped Distributions ENNReal Gradient InnerProductSpace
-
-namespace TestFunction
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {Ω : Opens E}
-
-variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
-
-/-- A test field belongs to the kernel of divergence exactly when its underlying field is
-weakly solenoidal. -/
-theorem mem_solenoidalSubmodule_iff_isSolenoidalOn {φ : 𝓓(Ω, E)} :
-    φ ∈ solenoidalSubmodule Ω ↔ TauCeti.IsSolenoidalOn μ Ω (φ : E → E) := by
-  have hφ : ContDiffOn ℝ 1 (φ : E → E) Ω := (φ.contDiff.of_le (by simp)).contDiffOn
-  rw [hφ.isSolenoidalOn_iff, mem_solenoidalSubmodule_iff]
-  constructor
-  · intro h x _
-    simpa only [divergenceCLM_apply, FunLike.coe_zero, Pi.zero_apply] using congrArg (· x) h
-  · intro h
-    ext x
-    by_cases hx : x ∈ (Ω : Set E)
-    · simpa only [divergenceCLM_apply, FunLike.coe_zero, Pi.zero_apply] using h x hx
-    · rw [(divergenceCLM φ).zero_on_compl hx, FunLike.coe_zero, Pi.zero_apply]
-
-end TestFunction
 
 namespace TauCeti
 

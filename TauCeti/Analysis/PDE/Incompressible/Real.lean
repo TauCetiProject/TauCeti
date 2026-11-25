@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Incompressible.Solenoidal
-import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
-import TauCeti.Analysis.Calculus.LineDeriv.Basic
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Real
 
 /-!
-# Solenoidal fields on the real line
+# Solenoidal `Lᵖ` fields on the real line
 
-Weak divergence in dimension one is the ordinary weak derivative. A solenoidal field on the
-real line is almost everywhere constant, and finite `Lᵖ` norm forces this constant to vanish.
+A solenoidal field on the real line is almost everywhere constant, and finite `Lᵖ` norm forces
+this constant to vanish.
 -/
 
 public section
@@ -22,19 +21,6 @@ namespace TauCeti
 
 open MeasureTheory Set TopologicalSpace
 open scoped ENNReal
-
-/-- On the real line, weak divergence is the weak derivative in the direction `1`. -/
-theorem hasWeakDivergenceOn_real_iff {μ : Measure ℝ} {Ω : Opens ℝ} {u g : ℝ → ℝ} :
-    HasWeakDivergenceOn μ Ω u g ↔ HasWeakLineDerivOn μ Ω u g 1 := by
-  rw [hasWeakDivergenceOn_iff, hasWeakLineDerivOn_iff_testFunction]
-  have hcomplete : CompleteSpace ℝ := inferInstance
-  simp [hcomplete, gradient_eq_deriv', lineDeriv_one, smul_eq_mul, mul_comm]
-
-/-- A solenoidal field on the whole real line agrees almost everywhere with a constant. -/
-theorem IsSolenoidalOn.exists_ae_eq_const {u : ℝ → ℝ} (hu : IsSolenoidalOn volume ⊤ u) :
-    ∃ c : ℝ, u =ᵐ[volume] fun _ ↦ c := by
-  have hd := hasWeakDivergenceOn_real_iff.mp (isSolenoidalOn_iff_hasWeakDivergenceOn.mp hu)
-  simpa using hd.exists_ae_eq_add_intervalIntegral_top 0
 
 /-- For every finite exponent `p ≥ 1`, the solenoidal subspace on the real line is zero. -/
 theorem solenoidalLp_real_eq_bot {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) :
