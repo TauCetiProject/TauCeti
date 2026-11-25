@@ -19,7 +19,7 @@ let `s ⊆ E` be Lebesgue-measurable. For every centre `x₀` and almost every r
 `P(s ∩ ball x₀ r) ≤ P(s; ball x₀ r) + Hⁿ⁻¹(s ∩ sphere x₀ r)` in `[0, ∞]`
 
 (`TauCeti.ae_perimeter_inter_ball_le_add_euclideanHausdorffMeasure`). This is the truncation
-inequality for perimeter (Maggi, §13.2). It combines the estimate
+inequality for perimeter (Maggi, Lemma 15.12). It combines the estimate
 `P(s ∩ ball x₀ r) ≤ P(s; ball x₀ r) + m'(r)`, where `m(ρ) = |s ∩ ball x₀ ρ|`
 (`TauCeti.ae_perimeter_inter_ball_le`), with polar integration, which identifies `m'(r)` with
 `Hⁿ⁻¹(s ∩ sphere x₀ r)` at almost every radius (`TauCeti.ae_hasDerivAt_measureReal_inter_ball`).
@@ -27,7 +27,8 @@ Neither finite perimeter nor finite volume of `s` is assumed.
 
 ## References
 
-* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, §13.2.
+* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Chapter 15,
+  Lemma 15.12 (intersections of sets of finite perimeter with balls).
 -/
 
 public section
