@@ -97,19 +97,36 @@ namespace TauCeti
 
 /-! ### The Poisson kernel -/
 
+/-- The inward unit normal `i` of the upper half-plane, in the coordinates
+`Complex.orthonormalBasisOneI`. -/
+def upperHalfPlaneNormal : {w : EuclideanSpace ℝ (Fin 2) // ‖w‖ = 1} :=
+  ⟨Complex.orthonormalBasisOneI.repr I, by simp⟩
+
+/-- The defining formula of `TauCeti.upperHalfPlaneNormal`. -/
+theorem coe_upperHalfPlaneNormal :
+    (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)) = Complex.orthonormalBasisOneI.repr I := by
+  rw [upperHalfPlaneNormal]
+
+/-- The coordinate of `z` along the normal `i` is `Im z`. -/
+@[simp]
+theorem inner_upperHalfPlaneNormal_repr (z : ℂ) :
+    ⟪(upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)), Complex.orthonormalBasisOneI.repr z⟫_ℝ =
+      z.im := by
+  simp [coe_upperHalfPlaneNormal, LinearIsometryEquiv.inner_map_map, Complex.inner]
+
 /-- The **Poisson kernel of the upper half-plane**, `P(z, x) = Im z / (π |x - z| ^ 2)` for a pole
 `z ∈ ℂ₊` and a boundary point `x ∈ ℝ`. It is the half-space Poisson kernel
-`TauCeti.halfSpacePoissonKernel 2` with unit inward normal `i`, pole `z` and boundary point `x`,
-read through `Complex.orthonormalBasisOneI`; `TauCeti.upperHalfPlanePoissonKernel_eq` gives the
-explicit formula. -/
+`TauCeti.halfSpacePoissonKernel 2` with unit inward normal `i` (`TauCeti.upperHalfPlaneNormal`),
+pole `z` and boundary point `x`, read through `Complex.orthonormalBasisOneI`;
+`TauCeti.upperHalfPlanePoissonKernel_eq` gives the explicit formula. -/
 def upperHalfPlanePoissonKernel (z : ℂ) (x : ℝ) : ℝ :=
-  halfSpacePoissonKernel 2 ⟨Complex.orthonormalBasisOneI.repr I, by simp⟩
+  halfSpacePoissonKernel 2 upperHalfPlaneNormal
     (Complex.orthonormalBasisOneI.repr z) (Complex.orthonormalBasisOneI.repr x)
 
 /-- The defining formula of `TauCeti.upperHalfPlanePoissonKernel`. -/
 theorem upperHalfPlanePoissonKernel_def (z : ℂ) (x : ℝ) :
     upperHalfPlanePoissonKernel z x =
-      halfSpacePoissonKernel 2 ⟨Complex.orthonormalBasisOneI.repr I, by simp⟩
+      halfSpacePoissonKernel 2 upperHalfPlaneNormal
         (Complex.orthonormalBasisOneI.repr z) (Complex.orthonormalBasisOneI.repr x) := by
   rw [upperHalfPlanePoissonKernel]
 
@@ -118,7 +135,7 @@ half-plane. -/
 theorem upperHalfPlanePoissonKernel_eq (z : ℂ) (x : ℝ) :
     upperHalfPlanePoissonKernel z x = z.im / (π * normSq ((x : ℂ) - z)) := by
   have hinner : ⟪(I : ℂ), z⟫_ℝ = z.im := by simp [Complex.inner]
-  rw [upperHalfPlanePoissonKernel_def,
+  rw [upperHalfPlanePoissonKernel_def, upperHalfPlaneNormal,
     halfSpacePoissonKernel_orthonormalBasisOneI_repr ⟨I, norm_I⟩, hinner, normSq_eq_norm_sq]
 
 /-- The Poisson kernel is measurable in its boundary point. -/
@@ -298,6 +315,13 @@ theorem upperHalfPlanePoissonMeasure_univ :
 instance instIsFiniteMeasureUpperHalfPlanePoissonMeasure :
     IsFiniteMeasure upperHalfPlanePoissonMeasure :=
   ⟨by simp [upperHalfPlanePoissonMeasure_univ]⟩
+
+/-- The Poisson measure `dx / (1 + x ^ 2)` is absolutely continuous with respect to Lebesgue
+measure. -/
+theorem upperHalfPlanePoissonMeasure_absolutelyContinuous :
+    upperHalfPlanePoissonMeasure ≪ volume := by
+  rw [upperHalfPlanePoissonMeasure_eq_withDensity]
+  exact withDensity_absolutelyContinuous _ _
 
 /-- A function is integrable for the Poisson measure `dx / (1 + x ^ 2)` exactly when
 `h(x) / (1 + x ^ 2)` is Lebesgue integrable. -/
@@ -529,9 +553,6 @@ theorem integrable_upperHalfPlanePoissonMeasure_iff {E : Type*} [NormedAddCommGr
     Integrable h upperHalfPlanePoissonMeasure ↔
       upperHalfPlanePoissonLIntegral (volume.withDensity fun x ↦ ‖h x‖ₑ) I < ∞ := by
   have hd : Measurable fun x : ℝ ↦ ENNReal.ofReal (1 + x ^ 2)⁻¹ := by fun_prop
-  have hPi : upperHalfPlanePoissonMeasure ≪ volume := by
-    rw [upperHalfPlanePoissonMeasure_eq_withDensity]
-    exact withDensity_absolutelyContinuous _ _
   have hP : upperHalfPlanePoissonLIntegral (volume.withDensity fun x ↦ ‖h x‖ₑ) I =
       ENNReal.ofReal π⁻¹ * ∫⁻ x, ‖h x‖ₑ ∂upperHalfPlanePoissonMeasure := by
     rw [upperHalfPlanePoissonLIntegral_def, upperHalfPlanePoissonMeasure_eq_withDensity,
@@ -542,8 +563,8 @@ theorem integrable_upperHalfPlanePoissonMeasure_iff {E : Type*} [NormedAddCommGr
     simp only [Pi.mul_apply, upperHalfPlanePoissonKernel_I, mul_inv]
     rw [ENNReal.ofReal_mul (by positivity)]
     ring
-  rw [hP, Integrable, and_iff_right (hh.mono_ac hPi), HasFiniteIntegral,
-    ENNReal.mul_lt_top_iff]
+  rw [hP, Integrable, and_iff_right (hh.mono_ac upperHalfPlanePoissonMeasure_absolutelyContinuous),
+    HasFiniteIntegral, ENNReal.mul_lt_top_iff]
   simp only [ENNReal.ofReal_lt_top, true_and, ENNReal.ofReal_eq_zero, not_le.mpr
     (inv_pos.mpr Real.pi_pos), false_or, iff_self_or]
   exact fun h0 ↦ h0 ▸ ENNReal.zero_lt_top
