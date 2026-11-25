@@ -149,12 +149,9 @@ theorem outerDistortion_eq_zero_iff (hn : 0 < n) {A : V →ₗ[ℝ] W} :
   rw [outerDistortion_def] at h
   split_ifs at h with hJ
   · rw [ENNReal.ofReal_eq_zero, div_nonpos_iff] at h
-    have hnorm : 0 < ‖LinearMap.toContinuousLinearMap A‖ := by
-      rw [norm_pos_iff]
-      exact (map_ne_zero_iff _ LinearMap.toContinuousLinearMap.injective).mpr hA
     rcases h with ⟨-, h₂⟩ | ⟨h₁, -⟩
     · exact hJ.not_ge h₂
-    · exact (pow_pos hnorm n).not_ge h₁
+    · exact (pow_pos (LinearMap.norm_toContinuousLinearMap_pos hA) n).not_ge h₁
   · exact ENNReal.top_ne_zero h
 
 /-- A nonzero linear map has nonzero outer distortion. -/

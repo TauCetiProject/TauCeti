@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearDistortion
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -16,9 +17,8 @@ Let `V`, `W`, `X` be oriented real inner product spaces of the same finite dimen
 `Orientation.innerDistortion`). This file proves:
 
 * **Submultiplicativity.** `q_O(B ∘ A) ≤ q_O(B) q_O(A)` for all `A`, `B` (in positive dimension,
-  with `0 · ∞ = 0`), and `q_I(B ∘ A) ≤ q_I(B) q_I(A)` when `J(A) ≥ 0` and `J(B) ≥ 0`. The sign
-  hypotheses cannot be dropped: a reflection `R` of the plane has `q_I(R) = 0` while
-  `q_I(R ∘ R) = q_I(id) = 1`.
+  with `0 · ∞ = 0`), and `q_I(B ∘ A) ≤ q_I(B) q_I(A)` when `J(A) ≥ 0`. Some sign hypothesis is
+  needed: a reflection `R` of the plane has `q_I(R) = 0` while `q_I(R ∘ R) = q_I(id) = 1`.
 * **The case `q_O ≤ 1`.** `q_O(A) ≤ 1` holds exactly when `A = 0` or
   `A = c U` with `c > 0` and `U` a linear isometry with `J(U) = 1`; then `q_O(A) = 1` exactly in
   the second case.
@@ -107,22 +107,23 @@ theorem outerDistortion_comp_le (hn : 0 < n) (A : V →ₗ[ℝ] W) (B : W →ₗ
         ENNReal.mul_top (oW.outerDistortion_ne_zero oX hB)]
 
 /-- **Submultiplicativity of the inner distortion**: `q_I(B ∘ A) ≤ q_I(B) q_I(A)` when
-`J(A) ≥ 0` and `J(B) ≥ 0`. The sign hypotheses cannot be dropped: a reflection `R` has
-`q_I(R) = 0`, while `q_I(R ∘ R) = 1`. -/
+`J(A) ≥ 0`. Some sign hypothesis is needed: a reflection `R` has `q_I(R) = 0`, while
+`q_I(R ∘ R) = 1`. No hypothesis on `J(B)` is needed: if `J(B ∘ A) = J(B) J(A) > 0` and
+`J(A) ≥ 0`, then both factors are positive. -/
 theorem innerDistortion_comp_le {A : V →ₗ[ℝ] W} {B : W →ₗ[ℝ] X}
-    (hA : 0 ≤ oV.orientedJacobian oW A) (hB : 0 ≤ oW.orientedJacobian oX B) :
+    (hA : 0 ≤ oV.orientedJacobian oW A) :
     oV.innerDistortion oX (B ∘ₗ A) ≤ oW.innerDistortion oX B * oV.innerDistortion oW A := by
   have hJ := oV.orientedJacobian_comp oW oX A B
   by_cases hpos : 0 < oV.orientedJacobian oX (B ∘ₗ A)
   swap
   · rw [oV.innerDistortion_of_nonpos oX (not_lt.mp hpos)]
     exact mul_nonneg (oW.innerDistortion_nonneg oX B) (oV.innerDistortion_nonneg oW A)
-  have hJA : 0 < oV.orientedJacobian oW A := by
-    rw [hJ] at hpos
-    exact pos_of_mul_pos_right hpos hB
   have hJB : 0 < oW.orientedJacobian oX B := by
     rw [hJ] at hpos
     exact pos_of_mul_pos_left hpos hA
+  have hJA : 0 < oV.orientedJacobian oW A := by
+    rw [hJ] at hpos
+    exact pos_of_mul_pos_right hpos hJB.le
   have hℓA := oV.minimalStretch_pow_pos_of_orientedJacobian_ne_zero oW hJA.ne'
   have hℓB := oW.minimalStretch_pow_pos_of_orientedJacobian_ne_zero oX hJB.ne'
   rw [oV.innerDistortion_of_pos oX hpos, oW.innerDistortion_of_pos oX hJB,
@@ -218,10 +219,8 @@ theorem outerDistortion_le_ofReal_iff (hn : 0 < n) {K : ℝ} (hK : 0 ≤ K) {A :
     simp [oV.outerDistortion_zero oW hn, oV.orientedJacobian_zero_of_pos oW hn, hn.ne']
   rw [oV.outerDistortion_of_nonpos oW (not_lt.mp hJ) hA]
   simp only [top_le_iff, ENNReal.ofReal_ne_top, false_iff, not_le]
-  have hnorm : 0 < ‖LinearMap.toContinuousLinearMap A‖ := by
-    rw [norm_pos_iff]
-    exact (map_ne_zero_iff _ LinearMap.toContinuousLinearMap.injective).mpr hA
-  exact (mul_nonpos_of_nonneg_of_nonpos hK (not_lt.mp hJ)).trans_lt (pow_pos hnorm n)
+  exact (mul_nonpos_of_nonneg_of_nonpos hK (not_lt.mp hJ)).trans_lt
+    (pow_pos (LinearMap.norm_toContinuousLinearMap_pos hA) n)
 
 omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
 /-- For real `K ≥ 0`, `q_I(A) ≤ K` exactly when `J(A) ≤ K ℓ(A)ⁿ`. -/
