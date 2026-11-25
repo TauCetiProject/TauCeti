@@ -52,9 +52,6 @@ namespace SmoothRep
 
 variable (A : Type u) [Ring A] (G : Type v) [Group G] [TopologicalSpace G]
 
-/-- The property "smooth" on `Rep A G`, the property cutting out `SmoothRep A G`. -/
-abbrev isSmoothProperty : ObjectProperty (Rep.{w} A G) := fun V ↦ IsSmooth V.ρ
-
 /-- **Smoothness passes to subobjects**: a representation with a monomorphism into a smooth
 representation is smooth. -/
 instance isClosedUnderSubobjects : (isSmoothProperty.{w} A G).IsClosedUnderSubobjects where
@@ -64,8 +61,40 @@ instance isClosedUnderSubobjects : (isSmoothProperty.{w} A G).IsClosedUnderSubob
 
 /-- The zero representation is smooth. -/
 instance containsZero : (isSmoothProperty.{w} A G).ContainsZero where
-  exists_zero := ⟨Rep.trivial A G PUnit, (Rep.isZero_iff _).2 inferInstance,
-    show IsSmooth (trivial A G PUnit) from inferInstance⟩
+  exists_zero := ⟨Rep.trivial A G PUnit, (Rep.isZero_iff _).2 inferInstance, inferInstance⟩
+
+/-- **Smoothness passes to binary products**: the limit point of a binary product diagram of
+smooth representations is smooth, as it is isomorphic to the product representation. -/
+instance isClosedUnderBinaryProducts : (isSmoothProperty.{w} A G).IsClosedUnderBinaryProducts where
+  limitsOfShape_le := by
+    rintro X ⟨p⟩
+    have : IsSmooth (p.diag.obj ⟨.left⟩).ρ := p.prop_diag_obj _
+    have : IsSmooth (p.diag.obj ⟨.right⟩).ρ := p.prop_diag_obj _
+    -- The point of `Rep.binaryBicone V W` is `Rep.of (V.ρ.prod W.ρ)`, smooth by `instIsSmoothProd`.
+    exact (isSmoothProperty A G).prop_of_mono (p.isLimit.conePointUniqueUpToIso
+      ((IsLimit.postcomposeInvEquiv (diagramIsoPair p.diag) _).symm
+        (Rep.binaryBiconeIsBilimit _ _).isLimit)).hom
+      (inferInstanceAs (IsSmooth ((p.diag.obj ⟨.left⟩).ρ.prod (p.diag.obj ⟨.right⟩).ρ)))
+
+/-- **Smoothness passes to finite products.** -/
+instance isClosedUnderFiniteProducts : (isSmoothProperty.{w} A G).IsClosedUnderFiniteProducts :=
+  .mk'
+
+/-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves kernels. -/
+instance preservesKernels_ι {V W : SmoothRep.{w} A G} (f : V ⟶ W) :
+    PreservesLimit (parallelPair f 0) (ι.{w} A G) :=
+  (isSmoothProperty A G).preservesKernels_ι f
+
+/-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves monomorphisms. -/
+instance preservesMonomorphisms_ι : (ι.{w} A G).PreservesMonomorphisms :=
+  (isSmoothProperty A G).preservesMonomorphisms_ι_of_isNormalEpiCategory
+
+variable {A G} in
+/-- A morphism of smooth representations is a monomorphism exactly when it is injective. -/
+theorem mono_iff_injective {V W : SmoothRep.{w} A G} (f : V ⟶ W) :
+    Mono f ↔ Function.Injective f.hom.hom :=
+  ⟨fun _ ↦ (Rep.mono_iff_injective ((ι A G).map f)).1 inferInstance,
+    fun h ↦ (ι A G).mono_of_mono_map ((Rep.mono_iff_injective _).2 h)⟩
 
 variable [SeparatelyContinuousMul G]
 
@@ -76,73 +105,21 @@ instance isClosedUnderQuotients : (isSmoothProperty.{w} A G).IsClosedUnderQuotie
     haveI : IsSmooth _ := hX
     IsSmooth.of_surjective f.hom ((Rep.epi_iff_surjective f).1 inferInstance)
 
-/-- The cone over a functor from `Discrete WalkingPair` given by the concrete product
-representation and its two projections. -/
-noncomputable def concreteProdCone (F : Discrete WalkingPair ⥤ Rep.{w} A G) : Cone F where
-  pt := (Rep.binaryBicone (F.obj ⟨.left⟩) (F.obj ⟨.right⟩)).pt
-  π := Discrete.natTrans fun
-    | ⟨.left⟩ => (Rep.binaryBicone (F.obj ⟨.left⟩) (F.obj ⟨.right⟩)).fst
-    | ⟨.right⟩ => (Rep.binaryBicone (F.obj ⟨.left⟩) (F.obj ⟨.right⟩)).snd
-
-/-- **Smoothness passes to binary products**: the limit point of a binary product diagram of
-smooth representations is smooth, as it embeds into the concrete product representation. -/
-instance isClosedUnderBinaryProducts : (isSmoothProperty.{w} A G).IsClosedUnderBinaryProducts where
-  limitsOfShape_le := by
-    rintro X ⟨p⟩
-    let F := p.diag
-    let B := Rep.binaryBicone (F.obj ⟨.left⟩) (F.obj ⟨.right⟩)
-    let m : X ⟶ B.pt := (Rep.binaryBiconeIsBilimit _ _).isLimit.lift
-      (BinaryFan.mk (p.π.app ⟨.left⟩) (p.π.app ⟨.right⟩))
-    let u : B.pt ⟶ X := p.isLimit.lift (concreteProdCone A G F)
-    have hmu : m ≫ u = 𝟙 X := p.isLimit.hom_ext fun j ↦ by
-      rw [Category.assoc, Category.id_comp]
-      refine (congrArg (m ≫ ·) (p.isLimit.fac (concreteProdCone A G F) j)).trans ?_
-      rcases j with ⟨_ | _⟩
-      · exact (Rep.binaryBiconeIsBilimit _ _).isLimit.fac
-          (BinaryFan.mk (p.π.app ⟨.left⟩) (p.π.app ⟨.right⟩)) ⟨.left⟩
-      · exact (Rep.binaryBiconeIsBilimit _ _).isLimit.fac
-          (BinaryFan.mk (p.π.app ⟨.left⟩) (p.π.app ⟨.right⟩)) ⟨.right⟩
-    have : Mono m := ⟨fun g h hgh ↦ by
-      simpa [Category.assoc, hmu] using congrArg (· ≫ u) hgh⟩
-    have : IsSmooth (F.obj ⟨.left⟩).ρ := p.prop_diag_obj _
-    have : IsSmooth (F.obj ⟨.right⟩).ρ := p.prop_diag_obj _
-    exact (isSmoothProperty A G).prop_of_mono m
-      (show IsSmooth ((F.obj ⟨.left⟩).ρ.prod (F.obj ⟨.right⟩).ρ) from inferInstance)
-
-/-- **Smoothness passes to finite products.** -/
-instance isClosedUnderFiniteProducts : (isSmoothProperty.{w} A G).IsClosedUnderFiniteProducts :=
-  .mk'
-
 /-- **Smooth representations form an abelian category**, a full subcategory of `Rep A G` closed
 under kernels, cokernels and finite products. -/
 noncomputable instance abelian : Abelian (SmoothRep.{w} A G) :=
   inferInstanceAs (Abelian (isSmoothProperty.{w} A G).FullSubcategory)
-
-/-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves kernels. -/
-instance preservesKernels_ι {V W : SmoothRep.{w} A G} (f : V ⟶ W) :
-    PreservesLimit (parallelPair f 0) (ι.{w} A G) :=
-  (isSmoothProperty A G).preservesKernels_ι f
 
 /-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves cokernels. -/
 instance preservesCokernels_ι {V W : SmoothRep.{w} A G} (f : V ⟶ W) :
     PreservesColimit (parallelPair f 0) (ι.{w} A G) :=
   (isSmoothProperty A G).preservesCokernels_ι f
 
-/-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves monomorphisms. -/
-instance preservesMonomorphisms_ι : (ι.{w} A G).PreservesMonomorphisms :=
-  (isSmoothProperty A G).preservesMonomorphisms_ι_of_isNormalEpiCategory
-
 /-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves epimorphisms. -/
 instance preservesEpimorphisms_ι : (ι.{w} A G).PreservesEpimorphisms :=
   (isSmoothProperty A G).preservesEpimorphisms_ι_of_isNormalMonoCategory
 
 variable {A G}
-
-/-- A morphism of smooth representations is a monomorphism exactly when it is injective. -/
-theorem mono_iff_injective {V W : SmoothRep.{w} A G} (f : V ⟶ W) :
-    Mono f ↔ Function.Injective f.hom.hom :=
-  ⟨fun _ ↦ (Rep.mono_iff_injective ((ι A G).map f)).1 inferInstance,
-    fun h ↦ (ι A G).mono_of_mono_map ((Rep.mono_iff_injective _).2 h)⟩
 
 /-- A morphism of smooth representations is an epimorphism exactly when it is surjective. -/
 theorem epi_iff_surjective {V W : SmoothRep.{w} A G} (f : V ⟶ W) :
