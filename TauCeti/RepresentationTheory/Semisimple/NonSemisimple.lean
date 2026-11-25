@@ -9,20 +9,20 @@ public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
-# Two obstructions to semisimplicity
+# Extensions of trivial representations are not semisimple
 
-* **Extensions of trivial representations.** If a group acts trivially on a subrepresentation `W`
-  and on the quotient by `W`, and the representation is semisimple, then the group acts trivially
-  on the whole representation (`Representation.apply_eq_self_of_isSemisimpleRepresentation`): an
-  invariant complement of `W` maps isomorphically onto the quotient, so the action on it is
-  trivial too. A nontrivial unipotent action, such as `(1 a; 0 1)` with `a ≠ 0` on `k²`, is
-  therefore never semisimple (`Representation.not_isSemisimpleRepresentation_of_apply_ne`).
-* **Regular representations in modular characteristic.** If the order of a finite group `G` is
-  zero in the field `k`, the left regular representation of `G` over `k` is not semisimple
-  (`Representation.not_isSemisimpleRepresentation_leftRegular`): an invariant complement of the
-  augmentation kernel would contain an invariant vector of augmentation `1`, but every invariant
-  vector is a multiple of `∑_g g`, whose augmentation is the order of `G`. This is the converse
-  direction of Maschke's theorem for the regular representation.
+If a monoid acts trivially on a subrepresentation `W` and on the quotient by `W`, and the
+representation is semisimple, then the monoid acts trivially on the whole representation
+(`Representation.apply_eq_self_of_isSemisimpleRepresentation`): an invariant complement of `W`
+maps isomorphically onto the quotient, so the action on it is trivial too. A nontrivial unipotent
+action, such as `(1 a; 0 1)` with `a ≠ 0` on `k²`, is therefore never semisimple
+(`Representation.not_isSemisimpleRepresentation_of_apply_ne`).
+
+Both rest on `Subrepresentation.apply_eq_self_of_disjoint`: a vector `c` of a subrepresentation
+`C` disjoint from `W` with `ρ g c - c ∈ W` is fixed by `ρ g`. The same step shows that the
+regular representation in modular characteristic is not semisimple
+(`Representation.not_isSemisimpleRepresentation_leftRegular`, in
+`TauCeti.RepresentationTheory.Augmentation.Semisimple`).
 
 These are the non-examples showing that the invertible-index hypotheses in the relative Maschke
 theorem (`Representation.isSemisimpleRepresentation_of_comp_subtype`) and in the restriction
@@ -31,9 +31,26 @@ theorems of `TauCeti.RepresentationTheory.Semisimple.Restriction` cannot be drop
 
 public section
 
+namespace Subrepresentation
+
+variable {k G V : Type*} [Ring k] [Monoid G] [AddCommGroup V] [Module k V]
+  {ρ : Representation k G V}
+
+/-- A vector `c` of a subrepresentation `C` that is disjoint from a subrepresentation `W` is fixed
+by `ρ g` as soon as `ρ g c - c` lies in `W`: that difference lies in both. -/
+theorem apply_eq_self_of_disjoint {W C : Subrepresentation ρ} (h : Disjoint W C) {g : G} {c : V}
+    (hc : c ∈ C) (hW : ρ g c - c ∈ W) : ρ g c = c := by
+  have h' : Disjoint W.toSubmodule C.toSubmodule := by
+    rwa [disjoint_iff, ← toSubmodule_inf, ← toSubmodule_bot (ρ := ρ),
+      toSubmodule_injective.eq_iff, ← disjoint_iff]
+  exact sub_eq_zero.1 <| Submodule.disjoint_def.1 h' _ hW
+    (C.toSubmodule.sub_mem (C.apply_mem_toSubmodule g hc) hc)
+
+end Subrepresentation
+
 namespace Representation
 
-variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
+variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
 
 /-- **A semisimple extension of trivial representations is trivial.** If `G` acts trivially on a
 subrepresentation `W` of a semisimple representation `ρ` and on the quotient `V ⧸ W` (that is,
@@ -45,9 +62,7 @@ theorem apply_eq_self_of_isSemisimpleRepresentation {ρ : Representation k G V}
   obtain ⟨C, hC⟩ := exists_isCompl W
   have hC' := Subrepresentation.isCompl_toSubmodule.2 hC
   obtain ⟨w, hw, c, hc, rfl⟩ := Submodule.mem_sup.1 (hC'.sup_eq_top ▸ Submodule.mem_top (x := v))
-  have hc' : ρ g c - c = 0 := (Submodule.disjoint_def.1 hC'.disjoint) _
-    (by simpa using hV g c) (C.toSubmodule.sub_mem (C.apply_mem_toSubmodule g hc) hc)
-  rw [map_add, hW g w hw, sub_eq_zero.1 hc']
+  rw [map_add, hW g w hw, Subrepresentation.apply_eq_self_of_disjoint hC.disjoint hc (hV g c)]
 
 /-- **A nontrivial unipotent action is not semisimple.** If `G` acts trivially on a
 subrepresentation `W` and on `V ⧸ W`, but some `ρ g` moves some vector, then `ρ` is not
@@ -57,45 +72,5 @@ theorem not_isSemisimpleRepresentation_of_apply_ne {ρ : Representation k G V}
     (hV : ∀ g v, ρ g v - v ∈ W.toSubmodule) {g : G} {v : V} (hgv : ρ g v ≠ v) :
     ¬ ρ.IsSemisimpleRepresentation := fun _ ↦
   hgv (apply_eq_self_of_isSemisimpleRepresentation W hW hV g v)
-
-/-- **The regular representation in modular characteristic is not semisimple.** If the order of
-a finite group `G` is zero in `k`, the left regular representation of `G` over `k` is not
-semisimple. -/
-theorem not_isSemisimpleRepresentation_leftRegular [Fintype G]
-    (hG : (Fintype.card G : k) = 0) : ¬ (leftRegular k G).IsSemisimpleRepresentation := by
-  intro
-  -- The augmentation `ε (∑ a_g g) = ∑ a_g` is invariant, so its kernel `I` is a subrepresentation.
-  let ε : MonoidAlgebra k G →ₗ[k] k :=
-    (Finsupp.lsum k fun _ ↦ LinearMap.id) ∘ₗ (MonoidAlgebra.coeffLinearEquiv k).toLinearMap
-  have hε (x : MonoidAlgebra k G) : ε x = ∑ g, x.coeff g := by
-    simp [ε, Finsupp.sum_fintype]
-  have hερ (g : G) (x : MonoidAlgebra k G) : ε (leftRegular k G g x) = ε x := by
-    simp only [hε, coeff_ofMulAction, smul_eq_mul]
-    exact Fintype.sum_equiv (Equiv.mulLeft g⁻¹) _ _ fun _ ↦ rfl
-  let I : Subrepresentation (leftRegular k G) :=
-    ⟨LinearMap.ker ε, fun g x hx ↦ by rw [LinearMap.mem_ker, hερ, LinearMap.mem_ker.1 hx]⟩
-  obtain ⟨C, hC⟩ := exists_isCompl I
-  have hC' := Subrepresentation.isCompl_toSubmodule.2 hC
-  -- Write `1 = i + c` with `ε i = 0`, so `ε c = 1`.
-  obtain ⟨i, hi, c, hc, hic⟩ := Submodule.mem_sup.1
-    (hC'.sup_eq_top ▸ Submodule.mem_top (x := MonoidAlgebra.single (1 : G) (1 : k)))
-  have hεc : ε c = 1 := by
-    have := congrArg ε hic
-    rw [map_add, LinearMap.mem_ker.1 hi, zero_add, hε (MonoidAlgebra.single _ _),
-      MonoidAlgebra.coeff_single] at this
-    simpa using this
-  -- `c` is invariant: `g c - c` lies in both `I` and `C`.
-  have hinv (g : G) : leftRegular k G g c = c := by
-    have h0 : leftRegular k G g c - c = 0 := (Submodule.disjoint_def.1 hC'.disjoint) _
-      (LinearMap.mem_ker.2 (by rw [map_sub, hερ, sub_self]))
-      (C.toSubmodule.sub_mem (C.apply_mem_toSubmodule g hc) hc)
-    exact sub_eq_zero.1 h0
-  -- So `c` is constant, and its augmentation is a multiple of `|G| = 0`.
-  have hconst (x : G) : c.coeff x = c.coeff 1 := by
-    have := congrArg (fun y : MonoidAlgebra k G ↦ y.coeff 1) (hinv x⁻¹)
-    simpa [coeff_ofMulAction] using this
-  rw [hε, Finset.sum_congr rfl fun x _ ↦ hconst x, Finset.sum_const, Finset.card_univ,
-    nsmul_eq_mul, hG, zero_mul] at hεc
-  exact zero_ne_one hεc
 
 end Representation
