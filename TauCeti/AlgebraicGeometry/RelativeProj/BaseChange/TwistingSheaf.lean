@@ -266,17 +266,6 @@ private theorem pullbackRelativeProjTwistingSheafChartHom_comp_transition
     ((A.relativeProjTwistingSheafChartHom_comp_transition g n f hV.choose_spec).trans
         (A.relativeProjTwistingSheafChartHom_eq g n _ _)))
 
-/-- The charts of the relative `Proj` of `g^* A` over the affine opens of `X` lying over some
-affine open of `Y` cover it. -/
-theorem exists_mem_opensRange_relativeProjCover_f (x : ((pullback g).obj A).obj.relativeProj) :
-    ∃ V ∈ {V : X.AffineZariskiSite | ∃ U : Y.AffineZariskiSite, V.toOpens ≤ g ⁻¹ᵁ U.toOpens},
-      x ∈ (((pullback g).obj A).obj.relativeProjCover.f V).opensRange := by
-  obtain ⟨⟨⟨V, U⟩, hV⟩, hx⟩ := g.isOpenCover_affinePair.exists_mem
-    (((pullback g).obj A).obj.relativeProjToBase x)
-  refine ⟨V, ⟨U, hV⟩, ?_⟩
-  rw [← CommMon.relativeProjToBase_preimage _ V]
-  exact hx
-
 /-- **The comparison of twisting sheaves along the base change of a relative `Proj`**: the
 morphism `h^* 𝒪_A(n) ⟶ 𝒪_{g^* A}(n)` for the projection `h` of the relative `Proj` of `g^* A`
 onto that of `A`, glued from the chart comparisons over the affine opens `V ≤ g⁻¹ U`. -/
