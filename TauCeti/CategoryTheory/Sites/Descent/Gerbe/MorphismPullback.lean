@@ -34,9 +34,10 @@ a band-preserving morphism of gerbes induces isomorphisms of the sheaves of morp
 
 In the namespace `CategoryTheory.Pseudofunctor.GerbeMorphismPullback`:
 
-* `mapIso`, `homMap`: transport of local isomorphisms and morphisms, with `mapIso_hom`,
-  `homMap_restrict`, `mapIso_restrict`, `homMap_id`, `homMap_comp`, `mapIso_refl`, and
-  `homMap_id_trans`, `mapIso_id_trans` for the identity transformation.
+* `mapIso`, `homMap`: transport of local isomorphisms and morphisms by `Iso.isoCongr` and
+  `Iso.homCongr`, with `mapIso_hom`, `homMap_restrict`, `mapIso_restrict`, `homMap_id`,
+  `homMap_comp`, `mapIso_refl`, `mapIso_trans`, `mapIso_symm`, and `id_homMap`, `id_mapIso` for
+  the identity transformation.
 * `mapIso_act`, `mapIso_difference`, `mapIso_injective`, `homMap_injective`: compatibility with
   the bands.
 * `preimageIso`, `map_preimageIso`, `preimageIso_mapIso`, `preimageIso_eq`, `preimageIso_act`,
@@ -67,8 +68,8 @@ noncomputable def homMap
     (p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y) :
     (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ⟶
       (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y) :=
-  (η.naturalityObjIso f.op.toLoc x).inv ≫ (η.app (.mk (op V))).toFunctor.map p ≫
-    (η.naturalityObjIso f.op.toLoc y).hom
+  (η.naturalityObjIso f.op.toLoc x).homCongr (η.naturalityObjIso f.op.toLoc y)
+    ((η.app (.mk (op V))).toFunctor.map p)
 
 theorem homMap_def
     (p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y) :
@@ -95,7 +96,8 @@ theorem homMap_comp
     (p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y)
     (q : (F.map f.op.toLoc).toFunctor.obj y ⟶ (F.map f.op.toLoc).toFunctor.obj z) :
     homMap η f (p ≫ q) = homMap η f p ≫ homMap η f q := by
-  simp [homMap_def]
+  rw [homMap, Functor.map_comp, Iso.homCongr_comp _ (η.naturalityObjIso f.op.toLoc y)]
+  rfl
 
 /-- The transport `M_f(p) = c_f(x)⁻¹ ≪≫ η_V(p) ≪≫ c_f(y)` of a local isomorphism
 `p : F(f) x ≅ F(f) y`. -/
@@ -103,8 +105,8 @@ noncomputable def mapIso
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
     (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
       (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y) :=
-  (η.naturalityObjIso f.op.toLoc x).symm ≪≫ (η.app (.mk (op V))).toFunctor.mapIso p ≪≫
-    η.naturalityObjIso f.op.toLoc y
+  (η.naturalityObjIso f.op.toLoc x).isoCongr (η.naturalityObjIso f.op.toLoc y)
+    ((η.app (.mk (op V))).toFunctor.mapIso p)
 
 /-- The transported isomorphism has the transported morphism as its underlying morphism. -/
 @[simp]
@@ -131,15 +133,22 @@ theorem mapIso_refl (x : F.obj (.mk (op U))) :
     mapIso η f (Iso.refl ((F.map f.op.toLoc).toFunctor.obj x)) = Iso.refl _ :=
   Iso.ext (homMap_id η f x)
 
+@[simp]
 theorem mapIso_trans
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
     (q : (F.map f.op.toLoc).toFunctor.obj y ≅ (F.map f.op.toLoc).toFunctor.obj z) :
     mapIso η f (p ≪≫ q) = mapIso η f p ≪≫ mapIso η f q :=
   Iso.ext (homMap_comp η f p.hom q.hom)
 
+@[simp]
+theorem mapIso_symm
+    (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
+    mapIso η f p.symm = (mapIso η f p).symm :=
+  Iso.ext (mapIso_inv η f p).symm
+
 /-- For the identity transformation, the transport of a local morphism is the morphism itself. -/
 @[simp]
-theorem homMap_id_trans
+theorem id_homMap
     (p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y) :
     homMap (StrongTrans.id F) f p = p := by
   simp [homMap_def, StrongTrans.id]
@@ -147,10 +156,10 @@ theorem homMap_id_trans
 /-- For the identity transformation, the transport of a local isomorphism is the isomorphism
 itself. -/
 @[simp]
-theorem mapIso_id_trans
+theorem id_mapIso
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
     mapIso (StrongTrans.id F) f p = p :=
-  Iso.ext (homMap_id_trans f p.hom)
+  Iso.ext (id_homMap f p.hom)
 
 /-! ### Compatibility with the bands -/
 
@@ -165,27 +174,23 @@ theorem mapIso_act
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
     (a : Multiplicative (A.obj.obj (op V))) :
     mapIso η f (bF.act p a) = bG.act (mapIso η f p) a := by
-  rw [mapIso, BandedMorphism.map_act bF bG η, AbelianBanding.act_trans,
-    AbelianBanding.trans_act, mapIso]
+  rw [mapIso, BandedMorphism.map_act bF bG η, Iso.isoCongr_apply, AbelianBanding.act_trans,
+    AbelianBanding.trans_act, mapIso, Iso.isoCongr_apply]
 
 /-- **Compatibility with the difference.** The difference of transported local isomorphisms is the
 difference of the local isomorphisms. -/
 theorem mapIso_difference
     (p q : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
     bG.difference (mapIso η f p) (mapIso η f q) = bF.difference p q := by
-  rw [← BandedMorphism.map_difference bF bG η p q, AbelianBanding.difference_eq_iff, mapIso,
-    mapIso, ← AbelianBanding.trans_act, ← AbelianBanding.act_trans, AbelianBanding.act_difference]
+  rw [AbelianBanding.difference_eq_iff, ← mapIso_act η f bF bG, AbelianBanding.act_difference]
 
 include bF bG in
 /-- **Injectivity on local isomorphisms**, with no anchor. -/
 theorem mapIso_injective :
     Function.Injective fun
       p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y ↦
-        mapIso η f p := by
-  intro p q h
-  refine BandedMorphism.mapIso_injective bF bG η (Iso.ext ?_)
-  have h' := congrArg Iso.hom h
-  rwa [mapIso_hom, mapIso_hom, homMap_def, homMap_def, cancel_epi, cancel_mono] at h'
+        mapIso η f p :=
+  (Iso.isoCongr _ _).injective.comp (BandedMorphism.mapIso_injective bF bG η)
 
 include bF bG in
 /-- **Injectivity on local morphisms** when the fibre of `F` over `V` is a groupoid, for instance
@@ -193,11 +198,8 @@ when `F` is a gerbe. -/
 theorem homMap_injective [IsGroupoid (F.obj (.mk (op V)))] :
     Function.Injective fun
       p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y ↦
-        homMap η f p := by
-  intro p q h
-  simp only at h
-  rw [homMap_def, homMap_def, cancel_epi, cancel_mono] at h
-  exact (BandedMorphism.faithful bF bG η).map_injective h
+        homMap η f p :=
+  (Iso.homCongr _ _).injective.comp (BandedMorphism.faithful bF bG η).map_injective
 
 /-- **The anchored inverse on local isomorphisms.** Given a local anchor
 `p : F(f) x ≅ F(f) y`, the preimage of `q : G(f) (η_U x) ≅ G(f) (η_U y)` is the
@@ -208,7 +210,35 @@ noncomputable def preimageIso
       (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) :
     (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y :=
   BandedMorphism.preimageIso bF bG η p
-    (η.naturalityObjIso f.op.toLoc x ≪≫ q ≪≫ (η.naturalityObjIso f.op.toLoc y).symm)
+    (((η.naturalityObjIso f.op.toLoc x).isoCongr (η.naturalityObjIso f.op.toLoc y)).symm q)
+
+/-- **The anchored bijection on local isomorphisms.** Given a local anchor
+`p : F(f) x ≅ F(f) y`, `M_f` is a bijection `(F(f) x ≅ F(f) y) ≃ (G(f) (η_U x) ≅ G(f) (η_U y))`
+with inverse `preimageIso p`: the bijection `BandedMorphism.isomEquiv p` over `V` followed by
+conjugation with `c_f`. -/
+noncomputable def isomEquiv
+    (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
+    ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) ≃
+      ((G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
+        (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) :=
+  (BandedMorphism.isomEquiv bF bG η p).trans
+    ((η.naturalityObjIso f.op.toLoc x).isoCongr (η.naturalityObjIso f.op.toLoc y))
+
+@[simp]
+theorem isomEquiv_apply
+    (p q : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
+    isomEquiv η f bF bG p q = mapIso η f q := by
+  rw [isomEquiv, Equiv.trans_apply, BandedMorphism.isomEquiv_apply]
+  rfl
+
+@[simp]
+theorem isomEquiv_symm_apply
+    (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
+    (q : (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
+      (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) :
+    (isomEquiv η f bF bG p).symm q = preimageIso η f bF bG p q := by
+  rw [isomEquiv, Equiv.symm_trans_apply, BandedMorphism.isomEquiv_symm_apply]
+  rfl
 
 /-- `M_f` maps the preimage of `q` to `q`. -/
 @[simp]
@@ -217,16 +247,14 @@ theorem map_preimageIso
     (q : (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
       (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) :
     mapIso η f (preimageIso η f bF bG p q) = q := by
-  rw [mapIso, preimageIso, BandedMorphism.map_preimageIso]
-  ext
-  simp
+  simpa using (isomEquiv η f bF bG p).apply_symm_apply q
 
 /-- The preimage of the transport of `q` is `q`. -/
 @[simp]
 theorem preimageIso_mapIso
     (p q : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
-    preimageIso η f bF bG p (mapIso η f q) = q :=
-  mapIso_injective η f bF bG (map_preimageIso η f bF bG p _)
+    preimageIso η f bF bG p (mapIso η f q) = q := by
+  simpa using (isomEquiv η f bF bG p).symm_apply_apply q
 
 /-- The preimage does not depend on the anchor. -/
 theorem preimageIso_eq
@@ -255,33 +283,6 @@ theorem preimageIso_restrict (p : x ≅ y)
   mapIso_injective η f bF bG (by
     simp only [map_preimageIso, mapIso_restrict, BandedMorphism.map_preimageIso])
 
-/-- **The anchored bijection on local isomorphisms.** Given a local anchor
-`p : F(f) x ≅ F(f) y`, `M_f` is a bijection `(F(f) x ≅ F(f) y) ≃ (G(f) (η_U x) ≅ G(f) (η_U y))`
-with inverse `preimageIso p`. -/
-noncomputable def isomEquiv
-    (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
-    ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) ≃
-      ((G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
-        (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) where
-  toFun := mapIso η f
-  invFun := preimageIso η f bF bG p
-  left_inv := preimageIso_mapIso η f bF bG p
-  right_inv := map_preimageIso η f bF bG p
-
-@[simp]
-theorem isomEquiv_apply
-    (p q : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
-    isomEquiv η f bF bG p q = mapIso η f q :=
-  (rfl)
-
-@[simp]
-theorem isomEquiv_symm_apply
-    (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
-    (q : (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
-      (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) :
-    (isomEquiv η f bF bG p).symm q = preimageIso η f bF bG p q :=
-  (rfl)
-
 include bF bG in
 /-- **Surjectivity on local morphisms with an anchor.** When the fibre of `G` over `V` is a
 groupoid and `F(f) x ≅ F(f) y` is inhabited, every morphism `G(f) (η_U x) ⟶ G(f) (η_U y)` is the
@@ -290,9 +291,7 @@ theorem homMap_surjective_of_anchor [IsGroupoid (G.obj (.mk (op V)))]
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
     Function.Surjective fun
       r : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y ↦
-        homMap η f r := by
-  intro q
-  exact ⟨(preimageIso η f bF bG p (asIso q)).hom,
-    congrArg Iso.hom (map_preimageIso η f bF bG p (asIso q))⟩
+        homMap η f r :=
+  (Iso.homCongr _ _).surjective.comp (BandedMorphism.hom_surjective_of_anchor bF bG η p)
 
 end CategoryTheory.Pseudofunctor.GerbeMorphismPullback
