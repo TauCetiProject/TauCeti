@@ -14,12 +14,13 @@ public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.Seminorm
 # The topology of the word seminorms on smooth vectors
 
 Let `π` be a continuous representation of a real Lie group `G` on a normed space `V` over a
-nontrivially normed field `𝕜`, and fix a finite family `X : ι → LeftInvariantDerivation I G`, for
+normed field `𝕜`, and fix a finite family `X : ι → LeftInvariantDerivation I G`, for
 instance a basis of the Lie algebra. The smooth vectors `lieSmoothVectors I π` carry the countable
 family of word seminorms `P_k = ContRepresentation.wordSeminorm I π X k`, `k : ℕ`. This file puts
-the topology of this family on the type synonym `ContRepresentation.LieSmoothSpace I π X` of the
-smooth vectors, rather than on `lieSmoothVectors I π` itself, which keeps the subspace topology
-of `V`.
+the topology of this family on `ContRepresentation.LieSmoothSpace I π X`, a copy (a one-field
+structure) of the smooth vectors, rather than on `lieSmoothVectors I π` itself, which keeps the
+subspace topology of `V`. The linear equivalence `ContRepresentation.LieSmoothSpace.linearEquiv`
+moves between the two.
 
 The word seminorm of order zero is the norm of `V`
 (`ContRepresentation.wordSeminorm_zero`). So the family separates points and the topology is
@@ -43,7 +44,7 @@ locally convex; and the inclusion into `V` is a continuous injective linear map
   `ContRepresentation.LieSmoothSpace.instMetrizableSpace` and
   `ContRepresentation.LieSmoothSpace.instLocallyConvexSpace`: the topology is Hausdorff,
   metrizable and locally convex.
-* `ContRepresentation.LieSmoothSpace.injective_inclusion`: the inclusion into `V` is injective.
+* `ContRepresentation.LieSmoothSpace.inclusion_injective`: the inclusion into `V` is injective.
 * `ContRepresentation.LieSmoothSpace.tendsto_nhds`: convergence is convergence in every word
   seminorm.
 
@@ -65,14 +66,13 @@ namespace ContRepresentation
 
 open TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 V] [SMulCommClass ℝ 𝕜 V]
+  {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 V] [SMulCommClass ℝ 𝕜 V]
   (π : ContRepresentation 𝕜 G V)
-  {ι : Type*} [Fintype ι]
+  {ι : Type*}
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
@@ -80,6 +80,7 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 the topology of the word seminorms `P_k` of the family `X` (`LieSmoothSpace.withSeminorms`). It
 is a copy of the smooth vectors: the submodule `lieSmoothVectors I π` itself keeps the subspace
 topology of `V`. -/
+@[ext]
 structure LieSmoothSpace (X : ι → LeftInvariantDerivation I G) where
   /-- A smooth vector, as an element of `LieSmoothSpace I π X`. -/
   ofSmooth ::
@@ -91,36 +92,103 @@ namespace LieSmoothSpace
 variable (X : ι → LeftInvariantDerivation I G)
 
 /-- `LieSmoothSpace I π X` is a copy of the smooth vectors. -/
-def equivSmooth : LieSmoothSpace I π X ≃ lieSmoothVectors I π where
+def equiv : LieSmoothSpace I π X ≃ lieSmoothVectors I π where
   toFun := toSmooth
   invFun := ofSmooth
   left_inv _ := rfl
   right_inv _ := rfl
 
 instance instAddCommGroup : AddCommGroup (LieSmoothSpace I π X) :=
-  (equivSmooth I π X).addCommGroup
+  (equiv I π X).addCommGroup
 
 /-- `LieSmoothSpace I π X` is a copy of the smooth vectors, as additive groups. -/
-def addEquivSmooth : LieSmoothSpace I π X ≃+ lieSmoothVectors I π where
-  __ := equivSmooth I π X
+def addEquiv : LieSmoothSpace I π X ≃+ lieSmoothVectors I π where
+  __ := equiv I π X
   map_add' _ _ := rfl
 
 instance instModule : Module 𝕜 (LieSmoothSpace I π X) :=
-  (addEquivSmooth I π X).module 𝕜
+  (addEquiv I π X).module 𝕜
 
-/-- The identification of the smooth vectors with `LieSmoothSpace I π X`, as a linear
-equivalence. -/
-def equiv : lieSmoothVectors I π ≃ₗ[𝕜] LieSmoothSpace I π X :=
-  ((addEquivSmooth I π X).linearEquiv 𝕜).symm
-
-/-- The word seminorms `P_k` of `X`, `k : ℕ`, on `LieSmoothSpace I π X`. -/
-def seminormFamily : SeminormFamily 𝕜 (LieSmoothSpace I π X) ℕ :=
-  fun k ↦ (wordSeminorm I π X k).comp (equiv I π X).symm.toLinearMap
+/-- `LieSmoothSpace I π X` is a copy of the smooth vectors, as `𝕜`-modules. -/
+def linearEquiv : LieSmoothSpace I π X ≃ₗ[𝕜] lieSmoothVectors I π :=
+  (addEquiv I π X).linearEquiv 𝕜
 
 variable {I π X}
 
+@[simp]
+theorem toSmooth_zero : (0 : LieSmoothSpace I π X).toSmooth = 0 :=
+  (rfl)
+
+@[simp]
+theorem toSmooth_add (v w : LieSmoothSpace I π X) : (v + w).toSmooth = v.toSmooth + w.toSmooth :=
+  (rfl)
+
+@[simp]
+theorem toSmooth_neg (v : LieSmoothSpace I π X) : (-v).toSmooth = -v.toSmooth :=
+  (rfl)
+
+@[simp]
+theorem toSmooth_sub (v w : LieSmoothSpace I π X) : (v - w).toSmooth = v.toSmooth - w.toSmooth :=
+  (rfl)
+
+@[simp]
+theorem toSmooth_smul (c : 𝕜) (v : LieSmoothSpace I π X) : (c • v).toSmooth = c • v.toSmooth :=
+  (rfl)
+
+@[simp]
+theorem equiv_apply (v : LieSmoothSpace I π X) : equiv I π X v = v.toSmooth :=
+  (rfl)
+
+@[simp]
+theorem equiv_symm_apply (v : lieSmoothVectors I π) : (equiv I π X).symm v = ofSmooth v :=
+  (rfl)
+
+@[simp]
+theorem addEquiv_apply (v : LieSmoothSpace I π X) : addEquiv I π X v = v.toSmooth :=
+  (rfl)
+
+@[simp]
+theorem addEquiv_symm_apply (v : lieSmoothVectors I π) : (addEquiv I π X).symm v = ofSmooth v :=
+  (rfl)
+
+@[simp]
+theorem linearEquiv_apply (v : LieSmoothSpace I π X) : linearEquiv I π X v = v.toSmooth :=
+  (rfl)
+
+@[simp]
+theorem linearEquiv_symm_apply (v : lieSmoothVectors I π) :
+    (linearEquiv I π X).symm v = ofSmooth v :=
+  (rfl)
+
+section RealModule
+
+variable [NormedSpace ℝ 𝕜] [IsScalarTower ℝ 𝕜 V]
+
+variable (I π X) in
+instance instModuleReal : Module ℝ (LieSmoothSpace I π X) :=
+  (addEquiv I π X).module ℝ
+
+@[simp]
+theorem toSmooth_real_smul (r : ℝ) (v : LieSmoothSpace I π X) :
+    (r • v).toSmooth = r • v.toSmooth :=
+  (rfl)
+
+variable (I π X) in
+instance instIsScalarTower : IsScalarTower ℝ 𝕜 (LieSmoothSpace I π X) :=
+  ⟨fun r c v ↦ congrArg ofSmooth (smul_assoc r c v.toSmooth)⟩
+
+end RealModule
+
+variable [FiniteDimensional ℝ E] [T2Space G] [BoundarylessManifold I G] [Fintype ι]
+
+variable (I π X) in
+/-- The word seminorms `P_k` of `X`, `k : ℕ`, on `LieSmoothSpace I π X`. -/
+def seminormFamily : SeminormFamily 𝕜 (LieSmoothSpace I π X) ℕ :=
+  fun k ↦ (wordSeminorm I π X k).comp (linearEquiv I π X).toLinearMap
+
+@[simp]
 theorem seminormFamily_apply (k : ℕ) (v : LieSmoothSpace I π X) :
-    seminormFamily I π X k v = wordSeminorm I π X k ((equiv I π X).symm v) :=
+    seminormFamily I π X k v = wordSeminorm I π X k v.toSmooth :=
   (rfl)
 
 variable (I π X)
@@ -148,15 +216,20 @@ instance instIsUniformAddGroup : IsUniformAddGroup (LieSmoothSpace I π X) :=
 /-- **The word seminorms separate points**: `P_0` is the norm of `V`. -/
 instance instT1Space : T1Space (LieSmoothSpace I π X) := by
   refine (withSeminorms I π X).T1_of_separating fun v hv ↦ ⟨0, fun h0 ↦ hv ?_⟩
-  rw [seminormFamily_apply, wordSeminorm_zero, norm_eq_zero] at h0
-  exact (equiv I π X).symm.injective (Subtype.ext (by rw [h0, map_zero]; rfl))
+  ext1
+  simpa using h0
 
 instance instT2Space : T2Space (LieSmoothSpace I π X) :=
   inferInstance
 
 /-- The countable family of word seminorms gives a first countable topology. -/
 instance instFirstCountableTopology : FirstCountableTopology (LieSmoothSpace I π X) :=
-  (withSeminorms I π X).firstCountableTopology
+  have : (𝓝 (0 : LieSmoothSpace I π X)).IsCountablyGenerated := by
+    rw [(seminormFamily I π X).withSeminorms_iff_nhds_eq_iInf.mp (withSeminorms I π X)]
+    exact Filter.iInf.isCountablyGenerated _
+  have : (uniformity (LieSmoothSpace I π X)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  UniformSpace.firstCountableTopology _
 
 /-- **The topology of the word seminorms is metrizable.** -/
 instance instMetrizableSpace : TopologicalSpace.MetrizableSpace (LieSmoothSpace I π X) :=
@@ -168,12 +241,6 @@ section LocallyConvex
 
 variable [NormedSpace ℝ 𝕜] [IsScalarTower ℝ 𝕜 V]
 
-instance instModuleReal : Module ℝ (LieSmoothSpace I π X) :=
-  (addEquivSmooth I π X).module ℝ
-
-instance instIsScalarTower : IsScalarTower ℝ 𝕜 (LieSmoothSpace I π X) :=
-  ⟨fun r c v ↦ congrArg ofSmooth (smul_assoc r c v.toSmooth)⟩
-
 /-- **The topology of the word seminorms is locally convex.** -/
 instance instLocallyConvexSpace : LocallyConvexSpace ℝ (LieSmoothSpace I π X) :=
   (withSeminorms I π X).toLocallyConvexSpace
@@ -183,23 +250,20 @@ end LocallyConvex
 /-- **The inclusion of the smooth vectors into `V` is continuous** for the topology of the word
 seminorms, since `P_0` is the norm of `V`. -/
 def inclusion : LieSmoothSpace I π X →L[𝕜] V where
-  toLinearMap := (lieSmoothVectors I π).subtype ∘ₗ (equiv I π X).symm.toLinearMap
+  toLinearMap := (lieSmoothVectors I π).subtype ∘ₗ (linearEquiv I π X).toLinearMap
   cont := WithSeminorms.continuous_normedSpace_rng V (withSeminorms I π X) _
-    ⟨{0}, 1, fun v ↦ by
-      rw [Seminorm.comp_apply, coe_normSeminorm, Finset.sup_singleton, one_smul,
-        seminormFamily_apply, wordSeminorm_zero]
-      rfl⟩
+    ⟨{0}, 1, fun v ↦ by simp⟩
 
 variable {I π X}
 
 @[simp]
 theorem inclusion_apply (v : LieSmoothSpace I π X) :
-    inclusion I π X v = ((equiv I π X).symm v : V) :=
+    inclusion I π X v = (v.toSmooth : V) :=
   (rfl)
 
 /-- The inclusion of the smooth vectors into `V` is injective. -/
-theorem injective_inclusion : Function.Injective (inclusion I π X) := fun _ _ h ↦
-  (equiv I π X).symm.injective (Subtype.ext h)
+theorem inclusion_injective : Function.Injective (inclusion I π X) := fun _ _ h ↦
+  LieSmoothSpace.ext (Subtype.ext h)
 
 /-- **Convergence in `LieSmoothSpace I π X` is convergence in every word seminorm.** -/
 theorem tendsto_nhds {α : Type*} {l : Filter α} {u : α → LieSmoothSpace I π X}
