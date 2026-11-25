@@ -102,6 +102,10 @@ derivative bounds; it localizes operators to the frequencies of a single block.
   positive constant.
 * `ContDiffBump.exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley`: on
   the support of `ψⱼ`, `(1 + ‖ξ‖ ^ 2) ^ (t / 2) ≤ c (2^j) ^ t` with `c` independent of `j`.
+* `ContDiffBump.exists_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le`: the dyadic weight
+  `∑ⱼ (2^{js} ψⱼ ξ)²` is at most a constant times the Sobolev weight `(1 + ‖ξ‖ ^ 2) ^ s`, and
+`ContDiffBump.exists_one_add_norm_sq_rpow_le_mul_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq`
+  is the converse bound.
 * `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le`: the uniform rescaled
   derivative bounds for the inhomogeneous partition, and
   `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le`: their weighted
@@ -1006,6 +1010,112 @@ theorem exists_one_le_mul_sum_sq_inhomogeneousLittlewoodPaley :
     _ ≤ (L + 1 : ℕ) * ∑ j ∈ s, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 := by
         gcongr
         exact_mod_cast (hL s ξ).trans L.le_succ
+
+/-- On the support of `ψⱼ`, the weight `(2^{js})²` of the `j`-th piece is comparable to the
+Sobolev weight `(1 + ‖ξ‖ ^ 2) ^ s`, with constants independent of `j`. -/
+private theorem exists_two_rpow_sq_le_and_le (s : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ (j : ℕ) (ξ : E), ξ ∈ tsupport (φ.inhomogeneousLittlewoodPaley j) →
+      ((2 : ℝ) ^ (s * j)) ^ 2 ≤ C * (1 + ‖ξ‖ ^ 2) ^ s ∧
+        (1 + ‖ξ‖ ^ 2) ^ s ≤ C * ((2 : ℝ) ^ (s * j)) ^ 2 := by
+  obtain ⟨c₁, hc₁, h₁⟩ :=
+    φ.exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley (2 * s)
+  obtain ⟨c₂, -, h₂⟩ :=
+    φ.exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley (-(2 * s))
+  refine ⟨max c₁ c₂, le_max_of_le_left hc₁, fun j ξ hξ ↦ ?_⟩
+  -- Both bounds compare `(1 + ‖ξ‖ ^ 2) ^ s` with `w = (2^j) ^ (2 s) = (2^{js})²`.
+  have hw : ((2 : ℝ) ^ j) ^ (2 * s) = ((2 : ℝ) ^ (s * j)) ^ 2 := by
+    rw [← Real.rpow_natCast_mul zero_le_two, ← Real.rpow_mul_natCast zero_le_two]
+    ring_nf
+  have hup := h₁ j ξ hξ
+  have hlow := h₂ j ξ hξ
+  rw [mul_div_cancel_left₀ s two_ne_zero, hw] at hup
+  rw [neg_div, mul_div_cancel_left₀ s two_ne_zero, Real.rpow_neg (by positivity),
+    Real.rpow_neg (by positivity), hw] at hlow
+  constructor
+  · calc ((2 : ℝ) ^ (s * j)) ^ 2
+        = ((2 : ℝ) ^ (s * j)) ^ 2 * (1 + ‖ξ‖ ^ 2) ^ s * ((1 + ‖ξ‖ ^ 2) ^ s)⁻¹ := by
+          field_simp
+      _ ≤ ((2 : ℝ) ^ (s * j)) ^ 2 * (1 + ‖ξ‖ ^ 2) ^ s * (c₂ * (((2 : ℝ) ^ (s * j)) ^ 2)⁻¹) := by
+          gcongr
+      _ = c₂ * (1 + ‖ξ‖ ^ 2) ^ s := by field_simp
+      _ ≤ max c₁ c₂ * (1 + ‖ξ‖ ^ 2) ^ s := by gcongr; exact le_max_right _ _
+  · exact hup.trans (by gcongr; exact le_max_left _ _)
+
+/-- On the support of the pieces, the Sobolev weight `(1 + ‖ξ‖ ^ 2) ^ s` and the dyadic weights
+`(2^{js})²` are comparable: there is `C ≥ 0`, depending only on `φ` and `s`, with
+`(2^{js} ψⱼ ξ)² ≤ C (1 + ‖ξ‖ ^ 2) ^ s ψⱼ ξ ²` and `(1 + ‖ξ‖ ^ 2) ^ s ψⱼ ξ ² ≤ C (2^{js} ψⱼ ξ)²` for
+every `j` and `ξ`. -/
+theorem exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le (s : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ (j : ℕ) (ξ : E),
+      ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 ≤
+          C * ((1 + ‖ξ‖ ^ 2) ^ s * φ.inhomogeneousLittlewoodPaley j ξ ^ 2) ∧
+        (1 + ‖ξ‖ ^ 2) ^ s * φ.inhomogeneousLittlewoodPaley j ξ ^ 2 ≤
+          C * ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 := by
+  obtain ⟨C, hC, h⟩ := φ.exists_two_rpow_sq_le_and_le s
+  refine ⟨C, hC, fun j ξ ↦ ?_⟩
+  by_cases hξ : φ.inhomogeneousLittlewoodPaley j ξ = 0
+  · simp [hξ]
+  obtain ⟨h₁, h₂⟩ := h j ξ (subset_tsupport _ hξ)
+  rw [mul_pow, ← mul_assoc, ← mul_assoc]
+  exact ⟨by gcongr, by gcongr⟩
+
+/-- At every `ξ` the weighted squares `(2^{js} ψⱼ ξ)²` of the pieces are summable over `j`. -/
+theorem summable_two_rpow_mul_inhomogeneousLittlewoodPaley_sq (s : ℝ) (ξ : E) :
+    Summable fun j : ℕ ↦ ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 := by
+  obtain ⟨C, -, h⟩ := φ.exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le s
+  exact (((φ.summable_inhomogeneousLittlewoodPaley_sq ξ).mul_left ((1 + ‖ξ‖ ^ 2) ^ s)).mul_left
+    C).of_nonneg_of_le (fun _ ↦ sq_nonneg _) fun j ↦ (h j ξ).1
+
+/-- **The dyadic weight is bounded by the Sobolev weight.** There is `C ≥ 0`, depending only on
+`φ` and `s`, with `∑ⱼ (2^{js} ψⱼ ξ)² ≤ C (1 + ‖ξ‖ ^ 2) ^ s` for every `ξ`. -/
+theorem exists_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le (s : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ ξ : E,
+      ∑' j : ℕ, ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ s := by
+  obtain ⟨C, hC, h⟩ := φ.exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le s
+  obtain ⟨L, hL⟩ := φ.exists_tsum_inhomogeneousLittlewoodPaley_sq_le
+  refine ⟨C * L, by positivity, fun ξ ↦ ?_⟩
+  have hs := φ.summable_inhomogeneousLittlewoodPaley_sq ξ
+  calc ∑' j : ℕ, ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2
+      ≤ ∑' j : ℕ, C * ((1 + ‖ξ‖ ^ 2) ^ s * φ.inhomogeneousLittlewoodPaley j ξ ^ 2) :=
+        (φ.summable_two_rpow_mul_inhomogeneousLittlewoodPaley_sq s ξ).tsum_le_tsum
+          (fun j ↦ (h j ξ).1) ((hs.mul_left _).mul_left _)
+    _ = C * (1 + ‖ξ‖ ^ 2) ^ s * ∑' j : ℕ, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 := by
+        rw [tsum_mul_left, tsum_mul_left, mul_assoc]
+    _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ s * L := by gcongr; exact hL ξ
+    _ = C * L * (1 + ‖ξ‖ ^ 2) ^ s := by ring
+
+/-- **The Sobolev weight is bounded by the dyadic weight.** There is `C ≥ 0`, depending only on
+`φ` and `s`, with `(1 + ‖ξ‖ ^ 2) ^ s ≤ C ∑ⱼ (2^{js} ψⱼ ξ)²` for every `ξ`. Together with
+`ContDiffBump.exists_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le`, the dyadic weight
+`∑ⱼ (2^{js} ψⱼ ξ)²` is comparable to `(1 + ‖ξ‖ ^ 2) ^ s`. -/
+theorem exists_one_add_norm_sq_rpow_le_mul_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq
+    (s : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ ξ : E,
+      (1 + ‖ξ‖ ^ 2) ^ s ≤
+        C * ∑' j : ℕ, ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 := by
+  obtain ⟨C, hC, h⟩ := φ.exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le s
+  obtain ⟨L, -, hL⟩ := φ.exists_one_le_mul_sum_sq_inhomogeneousLittlewoodPaley
+  refine ⟨L * C, by positivity, fun ξ ↦ ?_⟩
+  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (‖ξ‖ / φ.rIn) (one_lt_two (α := ℝ))
+  have h1 := hL N ξ ((div_lt_iff₀ φ.rIn_pos).1 hN).le
+  calc (1 + ‖ξ‖ ^ 2) ^ s
+      ≤ (1 + ‖ξ‖ ^ 2) ^ s * (L * ∑ j ∈ Finset.range (N + 1),
+          φ.inhomogeneousLittlewoodPaley j ξ ^ 2) := le_mul_of_one_le_right (by positivity) h1
+    _ = L * ∑ j ∈ Finset.range (N + 1),
+          (1 + ‖ξ‖ ^ 2) ^ s * φ.inhomogeneousLittlewoodPaley j ξ ^ 2 := by
+        rw [Finset.mul_sum, Finset.mul_sum, Finset.mul_sum]
+        exact Finset.sum_congr rfl fun _ _ ↦ by ring
+    _ ≤ L * ∑ j ∈ Finset.range (N + 1),
+          C * ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 := by
+        exact mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun j _ ↦ (h j ξ).2) L.cast_nonneg
+    _ ≤ L * (C * ∑' j : ℕ, ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2) := by
+        rw [← Finset.mul_sum]
+        gcongr
+        exact (φ.summable_two_rpow_mul_inhomogeneousLittlewoodPaley_sq s ξ).sum_le_tsum _
+          fun _ _ ↦ sq_nonneg _
+    _ = L * C * ∑' j : ℕ, ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 := by
+        ring
 
 end HasContDiffBump
 
