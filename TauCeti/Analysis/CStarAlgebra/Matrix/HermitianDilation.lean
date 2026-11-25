@@ -89,11 +89,16 @@ theorem isSelfAdjoint_hermitianDilation (x : A) : IsSelfAdjoint (hermitianDilati
   ext i j
   fin_cases i <;> fin_cases j <;> simp [star_apply]
 
+/-- The star of a Hermitian dilation is itself, as a rewrite rule for `simp`. -/
+@[simp]
+theorem star_hermitianDilation (x : A) : star (hermitianDilation x) = hermitianDilation x :=
+  (isSelfAdjoint_hermitianDilation x).star_eq
+
 /-- The Hermitian dilation commutes with scalars whose star is trivial, such as real scalars
 acting on a complex star algebra. -/
 @[simp]
-theorem hermitianDilation_smul {R : Type*} [Monoid R] [StarMul R] [TrivialStar R]
-    [DistribMulAction R A] [StarModule R A] (r : R) (x : A) :
+theorem hermitianDilation_smul {R : Type*} [Star R] [TrivialStar R] [SMulZeroClass R A]
+    [StarModule R A] (r : R) (x : A) :
     hermitianDilation (r • x) = r • hermitianDilation x := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [star_smul]
@@ -128,7 +133,7 @@ theorem norm_sum_hermitianDilation_mul_hermitianDilation {ι : Type*} (s : Finse
 @[simp]
 theorem norm_hermitianDilation (x : A) : ‖hermitianDilation x‖ = ‖x‖ := by
   have h := CStarRing.norm_star_mul_self (x := hermitianDilation x)
-  rw [(isSelfAdjoint_hermitianDilation x).star_eq, hermitianDilation_mul_hermitianDilation,
+  rw [star_hermitianDilation, hermitianDilation_mul_hermitianDilation,
     norm_ofMatrix_diagonal_fin_two, CStarRing.norm_self_mul_star, CStarRing.norm_star_mul_self,
     max_self] at h
   exact (mul_self_inj (norm_nonneg _) (norm_nonneg _)).1 h.symm
