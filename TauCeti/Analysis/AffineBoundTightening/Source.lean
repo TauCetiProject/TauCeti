@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Int.Cast.Basic
 public import TauCeti.Analysis.AffineBoundTightening.Limit
 
 /-!
@@ -22,10 +21,6 @@ limiting variable bounds inside the initial box, equality of the bounded origina
 feasible sets, and preservation of membership together with `IsMinOn` for the
 unchanged objective. It makes no assertion that an arbitrary objective attains a
 minimum. The limit and graph-retention results are supplied by `Limit`.
-
-This file implements the initialization and preservation targets of
-FiniteAffineBoundTightening, §§5.1 and 5.3. The LP-infeasibility application is a
-separate target.
 
 ## References
 
@@ -53,10 +48,6 @@ def sourceInitial (A : Matrix (Fin m) (Fin n) ℝ) (r : Fin m → ℝ)
 def sourceSet (A : Matrix (Fin m) (Fin n) ℝ) (r : Fin m → ℝ)
     (extra : Set (Fin n → ℝ)) (integers : Finset (Fin n)) : Set (Fin n → ℝ) :=
   {x | A.mulVec x ≤ r ∧ x ∈ extra ∧ ∀ j ∈ integers, ∃ z : ℤ, x j = (z : ℝ)}
-
-/-- The closed variable-coordinate box of a joint raw endpoint pair. -/
-def variableBox (q : Raw n m) : Set (Fin n → ℝ) :=
-  Icc (fun j => q.1 (.inl j)) (fun j => q.2 (.inl j))
 
 /-- Variable lower endpoints in the initialization are the supplied lower bounds. -/
 @[simp]
@@ -100,11 +91,6 @@ theorem mem_sourceSet {A : Matrix (Fin m) (Fin n) ℝ} {r : Fin m → ℝ}
       A.mulVec x ≤ r ∧ x ∈ extra ∧ ∀ j ∈ integers, ∃ z : ℤ, x j = (z : ℝ) := by
   rfl
 
-/-- Membership in the variable box is coordinatewise closed interval membership. -/
-theorem mem_variableBox {q : Raw n m} {x : Fin n → ℝ} :
-    x ∈ variableBox q ↔ ∀ j, x j ∈ Icc (q.1 (.inl j)) (q.2 (.inl j)) := by
-  simp only [variableBox, mem_Icc, Pi.le_def, forall_and]
-
 /-- The variable box of the initialization is exactly the supplied initial box. -/
 @[simp]
 theorem variableBox_sourceInitial (A : Matrix (Fin m) (Fin n) ℝ) (r : Fin m → ℝ)
@@ -147,7 +133,7 @@ theorem variableBox_endpointLimit_subset {A : Matrix (Fin m) (Fin n) ℝ} {r : F
     (h : ∀ k, (publicRun A (sourceInitial A r l u) k : Set (Coord n m → ℝ)).Nonempty) :
     variableBox (endpointLimit A (sourceInitial A r l u)) ⊆ Icc l u := by
   have hw := (actual_limit A (sourceInitial A r l u) h).2.1
-  change Icc _ _ ⊆ Icc l u
+  unfold variableBox
   exact Icc_subset_Icc (fun j => hw.fst_le (.inl j)) (fun j => hw.le_snd (.inl j))
 
 /-- The actual endpoint limit preserves the bounded original feasible set. -/

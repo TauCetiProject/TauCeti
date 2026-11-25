@@ -16,10 +16,11 @@ import Mathlib.Tactic.NormNum
 
 These checks cover initialization with an inconsistent affine row, empty coordinate
 families, signed and zero coefficients, and a bounded original model with effective
-nonlinear and integer restrictions. For the model specified in §5.3 of the
-FiniteAffineBoundTightening roadmap, the point `(1, 0)` attains objective value zero
-and remains a minimizer at the actual endpoint limit. No LP feasibility result is
-used, and no general attainment assertion is made.
+nonlinear and integer restrictions. The model minimizes `(x₀ - 1)² + x₁²` subject to
+`x₀ + x₁ ≤ 2`, `1 ≤ x₀² + x₁²`, and integer `x₀`, with initial bounds `[0, 2]²`.
+The point `(1, 0)` attains objective value zero and remains a minimizer at the actual
+endpoint limit. No LP feasibility result is used, and no general attainment assertion
+is made.
 -/
 
 public section
@@ -37,7 +38,7 @@ def sumMatrix : Matrix (Fin 1) (Fin 2) ℝ := !![1, 1]
 /-- The initial joint box for `x₀ + x₁ ≤ 2` on `[0, 2]²`. -/
 def initial : Raw 2 1 := sourceInitial sumMatrix ![2] ![0, 0] ![2, 2]
 
-/-- The effective nonlinear restriction in the roadmap's original model. -/
+/-- The nonlinear restriction `1 ≤ x₀² + x₁²`. -/
 def nonlinearRestriction : Set (Fin 2 → ℝ) := {x | 1 ≤ x 0 ^ 2 + x 1 ^ 2}
 
 /-- The original model retains the nonlinear restriction and integrality of `x₀`. -/
@@ -151,9 +152,9 @@ theorem empty_integers {n m : ℕ} (A : Matrix (Fin m) (Fin n) ℝ) (r : Fin m �
     x ∈ sourceSet A r extra ∅ ↔ A.mulVec x ≤ r ∧ x ∈ extra := by
   simp
 
-/-- The roadmap's minimizer satisfies every original restriction. -/
+/-- The point `(1, 0)` satisfies every original restriction. -/
 theorem optimum_feasible : ![1, 0] ∈ feasible := by
-  change ![1, 0] ∈ sourceSet sumMatrix ![2] nonlinearRestriction {0}
+  unfold feasible
   rw [mem_sourceSet]
   refine ⟨?_, by norm_num [nonlinearRestriction], ?_⟩
   · intro i
@@ -164,7 +165,7 @@ theorem optimum_feasible : ![1, 0] ∈ feasible := by
     subst j
     exact ⟨1, by norm_num⟩
 
-/-- The roadmap's minimizer lies in the initial variable box. -/
+/-- The point `(1, 0)` lies in the initial variable box. -/
 theorem optimum_in_initial_box : ![1, 0] ∈ Icc (![0, 0] : Fin 2 → ℝ) ![2, 2] := by
   constructor <;> intro j <;> fin_cases j <;> norm_num
 
