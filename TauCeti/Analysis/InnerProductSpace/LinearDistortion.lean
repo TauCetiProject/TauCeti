@@ -59,7 +59,8 @@ both at least `σ₁ / σₙ = ‖A‖ / ℓ(A) ≥ 1`.
   orientations changes neither distortion.
 * `Orientation.outerDistortion_linearIsometryEquiv`,
   `Orientation.outerDistortion_linearIsometryEquiv_of_neg`: an isometric isomorphism has outer
-  distortion `1` or `∞` according as it preserves or reverses orientation.
+  distortion `1` if it preserves orientation, and (in positive dimension) `∞` if it reverses
+  orientation.
 
 ## References
 
