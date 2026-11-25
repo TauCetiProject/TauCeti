@@ -51,7 +51,7 @@ theorem quarticWellSumFlow_quarticTrajectoryPoint_eq_self_iff
     (hne : p ≠ q) {s : ℝ} {τ : {i // p i ≠ q i} → ℝ} :
     quarticWellSumFlow s (quarticTrajectoryPoint p q τ) = quarticTrajectoryPoint p q τ ↔
       s = 0 := by
-  rw [quarticWellSumFlow_quarticTrajectoryPoint hq hpq,
+  rw [quarticWellSumFlow_quarticTrajectoryPoint hq,
     (quarticTrajectoryPoint_injective hq hpq).eq_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
   obtain ⟨i, hi⟩ := Function.ne_iff.1 hne
@@ -79,7 +79,7 @@ theorem strictAnti_quarticWellSum_quarticWellSumFlow_quarticTrajectoryPoint
     (hne : p ≠ q) (τ : {i // p i ≠ q i} → ℝ) :
     StrictAnti fun s ↦ quarticWellSum (quarticWellSumFlow s (quarticTrajectoryPoint p q τ)) := by
   intro s r hsr
-  simp only [quarticWellSumFlow_quarticTrajectoryPoint hq hpq, quarticWellSum_def]
+  simp only [quarticWellSumFlow_quarticTrajectoryPoint hq, quarticWellSum_def]
   -- On a moving coordinate the summand `σ(-2 (s + τ j))² / 4` decreases strictly.
   have hlt : ∀ j : {i // p i ≠ q i},
       intervalBasePotential 1 (quarticTrajectoryPoint p q (fun j ↦ r + τ j) j) <
@@ -108,7 +108,7 @@ theorem existsUnique_quarticWellSum_quarticWellSumFlow_eq_iff
   obtain rfl | hne := eq_or_ne p q
   · -- For `p = q` the trajectory is constant, so no level is crossed exactly once.
     have hconst : ∀ s, g s = g 0 := fun s ↦ by
-      simp only [g, quarticWellSumFlow_quarticTrajectoryPoint hq hpq]
+      simp only [g, quarticWellSumFlow_quarticTrajectoryPoint hq]
       congr 2
       funext j
       exact (j.property rfl).elim

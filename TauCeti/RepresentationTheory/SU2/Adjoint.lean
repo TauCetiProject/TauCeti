@@ -77,6 +77,8 @@ The Pauli map is a covering map (`TauCeti.SU2.isCoveringMap_toSO3`).
 * `TauCeti.SU2.center_ne_top`: `SU(2)` is not commutative.
 * `TauCeti.SU2.coe_toSO3_torusHom`: the maximal torus `diag (z, z⁻¹)` maps to the rotations about
   the axis `(0, 0, 1)`.
+* `TauCeti.SU2.toSO3_mulVec_single_two_eq_self_iff`: the rotation `toSO3 g` fixes the north pole
+  `(0, 0, 1)` exactly when `g` lies in the maximal torus.
 * `TauCeti.SU2.toSO3_surjective`: `SU(2) → SO(3)` is surjective.
 * `TauCeti.SU2.isCoveringMap_toSO3`: the Pauli map is a covering map.
 
@@ -252,14 +254,11 @@ theorem pauliRotation_mulVec_single_two :
 private theorem eq_smul_one_of_commute_pauli {A : Matrix (Fin 2) (Fin 2) ℂ}
     (h3 : A * pauli (Pi.single 2 1) = pauli (Pi.single 2 1) * A)
     (h1 : A * pauli (Pi.single 0 1) = pauli (Pi.single 0 1) * A) : A = A 0 0 • 1 := by
-  have h01 : -A 0 1 = A 0 1 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] using Matrix.ext_iff.mpr h3 0 1
-  have h10 : A 1 0 = -A 1 0 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] using Matrix.ext_iff.mpr h3 1 0
+  have hd := isDiag_of_commute_pauli_single_two h3
   have h11 : A 0 0 = A 1 1 := by
     simpa [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] using Matrix.ext_iff.mpr h1 0 1
-  have h01' : A 0 1 = 0 := by linear_combination -h01 / 2
-  have h10' : A 1 0 = 0 := by linear_combination h10 / 2
+  have h01' : A 0 1 = 0 := hd (by decide)
+  have h10' : A 1 0 = 0 := hd (by decide)
   ext i j
   fin_cases i <;> fin_cases j <;> simp [h01', h10', h11]
 
@@ -380,6 +379,30 @@ theorem coe_toSO3_torusHom (z : Circle) :
   refine ext_iff_mulVec.mpr fun x => ?_
   rw [coe_toSO3, pauliRotation_mulVec, Submonoid.coe_inclusion, coe_torusHom,
     pauliCoord_torusMatrix_mul_pauli_mul_star]
+
+/-- **The stabilizer of the north pole `e₃` is the maximal torus**: the rotation induced by
+`g ∈ SU(2)` fixes the vector `e₃` exactly when `g` is diagonal. -/
+theorem toSO3_mulVec_single_two_eq_self_iff {g : SU2} :
+    (toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ Pi.single 2 1 = Pi.single 2 1 ↔ g ∈ torus := by
+  constructor
+  · intro hg
+    -- The rotation fixes `e₃`, so `g σ₃ g* = σ₃`, and `g` commutes with `σ₃ = diag(1, -1)`.
+    have hU := Matrix.mem_unitaryGroup_iff'.mp (specialUnitaryGroup_le_unitaryGroup g.property)
+    have hconj := pauli_pauliRotation_mulVec
+      (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup g) (Pi.single 2 1)
+    rw [← coe_toSO3, hg, Submonoid.coe_inclusion] at hconj
+    have hcomm : (g : Matrix (Fin 2) (Fin 2) ℂ) * pauli (Pi.single 2 1) =
+        pauli (Pi.single 2 1) * g := by
+      calc (g : Matrix (Fin 2) (Fin 2) ℂ) * pauli (Pi.single 2 1)
+          = g * pauli (Pi.single 2 1) * (star (g : Matrix (Fin 2) (Fin 2) ℂ) * g) := by
+            rw [hU, mul_one]
+        _ = pauli (Pi.single 2 1) * g := by rw [← mul_assoc, ← hconj]
+    exact mem_torus_iff.mpr (isDiag_of_commute_pauli_single_two hcomm)
+  · intro hg
+    obtain ⟨z, rfl⟩ := mem_torus_iff_exists_torusHom.mp hg
+    rw [coe_toSO3_torusHom]
+    ext i
+    fin_cases i <;> simp [mulVec, dotProduct, Fin.sum_univ_three]
 
 /-- The torus element `diag (e^{iθ}, e^{-iθ})` maps to the identity rotation exactly when `θ` is an
 integer multiple of `π`: the rotation angle `-2θ` is a multiple of `2π`. -/

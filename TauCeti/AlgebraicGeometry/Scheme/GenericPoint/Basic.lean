@@ -33,6 +33,8 @@ in its function field is computed on affine opens.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem`: the generic point of an irreducible scheme
+  lies in every nonempty open subset;
 * `TauCeti.AlgebraicGeometry.Scheme.isMax_genericPoint`: the generic point of an irreducible
   scheme is maximal for the specialization order;
 * `TauCeti.AlgebraicGeometry.Scheme.eq_genericPoint_of_isMax`: a point of an irreducible scheme
@@ -46,6 +48,8 @@ in its function field is computed on affine opens.
   than the generic point.
 * `TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint`: on an irreducible
   scheme of dimension at most one, every point other than the generic point is closed.
+* `TauCeti.AlgebraicGeometry.Scheme.surjective_of_isClosedImmersion`: on such a scheme, a closed
+  immersion from an irreducible scheme with more than one point is surjective.
 * `TauCeti.AlgebraicGeometry.Scheme.isClosed_of_isLocallyClosed_of_genericPoint_notMem`: on a
   Noetherian irreducible scheme of dimension at most one, a locally closed set missing the generic
   point is closed, since all its points are closed. For instance, the zero locus of a function on
@@ -83,6 +87,10 @@ namespace Scheme
 universe u
 
 variable {X : Scheme.{u}} [IrreducibleSpace X]
+
+/-- The generic point of an irreducible scheme lies in every nonempty open subset. -/
+theorem genericPoint_mem (U : X.Opens) [Nonempty U] : genericPoint X ∈ U :=
+  ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
 
 /-- The generic point of an irreducible scheme is maximal for the specialization order: it
 generizes every point. -/
@@ -129,6 +137,23 @@ theorem isClosed_singleton_of_ne_genericPoint (hX : topologicalKrullDim X ≤ 1)
     exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim y).trans hX
   exact TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim
     ((coheight_eq_one_iff_ne_genericPoint hX).mpr hz)
+
+/-- On an irreducible scheme of dimension at most one, a closed immersion from an irreducible
+scheme with more than one point is surjective. -/
+theorem surjective_of_isClosedImmersion (hX : topologicalKrullDim X ≤ 1) {C : Scheme.{u}}
+    [IrreducibleSpace C] [Nontrivial C] (i : C ⟶ X) [IsClosedImmersion i] : Surjective i := by
+  -- The image of the generic point of `C` is not a closed point of `X`: its preimage would be a
+  -- closed point generizing every point of `C`. So it is the generic point of `X`.
+  have hgen : i (genericPoint C) = genericPoint X := by
+    by_contra hne
+    have hcl := (isClosed_singleton_of_ne_genericPoint hX hne).preimage i.continuous
+    rw [← Set.image_singleton, i.isClosedEmbedding.injective.preimage_image] at hcl
+    have h (c : C) : c = genericPoint C := by
+      simpa [hcl.closure_eq] using specializes_iff_mem_closure.mp (genericPoint_specializes c)
+    obtain ⟨a, b, hab⟩ := exists_pair_ne C
+    exact hab ((h a).trans (h b).symm)
+  exact ⟨fun x ↦ (genericPoint_specializes x).mem_closed i.isClosedEmbedding.isClosed_range
+    ⟨_, hgen⟩⟩
 
 /-- On a Noetherian irreducible scheme of dimension at most one, a locally closed set which does
 not contain the generic point is closed: all of its points have codimension one, so they are
