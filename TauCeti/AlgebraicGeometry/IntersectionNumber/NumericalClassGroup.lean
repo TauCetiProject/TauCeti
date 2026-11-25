@@ -50,6 +50,8 @@ This file develops the basic structure of these quotients.
 * `LineBundleClass.quotientMk_eq_quotientMk_iff_forall_fiber_intersectionNumber_eq`: two classes
   have the same image in `Num(X/S)` iff they have the same degree on every integral curve in every
   fibre;
+* `LineBundleClass.relNumericalIntersectionNumberHom`: the relative degree pairing
+  `Num(X/S) →+ ℤ` with an integral curve in a fibre of `f`;
 * the `HasUniqueRoots` instances on `Num(X/k)` and `Num(X/S)`: both groups are torsion-free;
 * `projectiveLine.numericalClassDegreeEquiv`: `Num(ℙ¹_k/k) ≃+ ℤ` through the degree;
 * the `Subsingleton` instance on `Num(S/S)` for the identity of `S`.
@@ -284,6 +286,37 @@ relatively numerically trivial. -/
 instance : Subsingleton (LineBundleClass S ⧸ relNumericallyTrivialClasses (𝟙 S)) := by
   rw [relNumericallyTrivialClasses_id]
   exact QuotientGroup.subsingleton_quotient_top
+
+variable {f} {s : S} {C : Scheme.{u}} [IsIntegral C] [C.Over (Spec (.of (S.residueField s)))]
+  {i : C ⟶ f.fiber s} [IsClosedImmersion i]
+  (hi : C ↘ Spec (.of (S.residueField s)) = i ≫ f.fiberToSpecResidueField s)
+  (hC : topologicalKrullDim C = 1)
+
+/-- The **relative intersection number** `Num(X/S) →+ ℤ` with an integral curve `C` in the
+fibre `X_s` of `f` over a point `s`: restriction to `X_s` followed by the degree on `C` over the
+residue field `κ(s)`. -/
+def relNumericalIntersectionNumberHom :
+    Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f) →+ ℤ :=
+  (numericalIntersectionNumberHom (S.residueField s) hi hC).comp
+    (numericalFiberRestriction f s).toAdditive
+
+/-- The relative intersection number of `α` is the degree on `C` of the restriction of `α` to
+the fibre. -/
+@[simp]
+theorem relNumericalIntersectionNumberHom_apply
+    (α : Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f)) :
+    relNumericalIntersectionNumberHom hi hC α =
+      numericalIntersectionNumber (S.residueField s) hi hC
+        (numericalFiberRestriction f s α.toMul) :=
+  (rfl)
+
+/-- The relative intersection number of the class of `a` is the degree on `C` of the pullback of
+`a` to the fibre. -/
+theorem relNumericalIntersectionNumberHom_mk (a : LineBundleClass X) :
+    relNumericalIntersectionNumberHom hi hC
+        (Additive.ofMul (a : LineBundleClass X ⧸ relNumericallyTrivialClasses f)) =
+      intersectionNumber (S.residueField s) i (pullback (f.fiberι s) a) := by
+  simp
 
 end Relative
 

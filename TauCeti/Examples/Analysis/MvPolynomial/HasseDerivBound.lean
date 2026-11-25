@@ -7,6 +7,7 @@ module
 
 import Mathlib.Analysis.Complex.Basic
 import TauCeti.Analysis.MvPolynomial.HasseDerivBound
+import TauCeti.Examples.Analysis.Polynomial.HasseDerivBound
 import TauCeti.RingTheory.MvPolynomial.Abv.Taylor
 
 /-!
@@ -41,11 +42,11 @@ example : IsAbsoluteValue.toAbsoluteValue (norm : ℂ → ℝ)
     (eval ![1] (hasseDeriv 0 (1 + X 0 + X 0 ^ 2 : MvPolynomial (Fin 1) ℂ))) ≤ 12 := by
   have hcoeff (s : Fin 1 →₀ ℕ) :
       ‖(1 + X 0 + X 0 ^ 2 : MvPolynomial (Fin 1) ℂ).coeff s‖ ≤ 1 := by
-    obtain ⟨n, rfl⟩ : ∃ n, s = Finsupp.single 0 n :=
-      ⟨s 0, Finsupp.ext fun i ↦ by fin_cases i; simp⟩
-    rcases n with _ | _ | _ | n <;>
-      simp [coeff_one, coeff_X, coeff_X_pow, eq_comm (a := (0 : Fin 1 →₀ ℕ))]
-    split_ifs <;> simp
+    have h : (1 + X 0 + X 0 ^ 2 : MvPolynomial (Fin 1) ℂ) =
+        (uniqueAlgEquiv ℂ (Fin 1)).symm (1 + .X + .X ^ 2) := by
+      simp
+    rw [h, coeff_uniqueAlgEquiv_symm]
+    exact HasseDerivBoundExample.norm_coeff_one_add_X_add_X_sq_le _
   have hdeg : (1 + X 0 + X 0 ^ 2 : MvPolynomial (Fin 1) ℂ).degreeOf 0 ≤ 2 := by
     refine (degreeOf_add_le _ _ _).trans
       (max_le ((degreeOf_add_le _ _ _).trans (max_le ?_ ?_)) ?_)

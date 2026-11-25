@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Symplectic.Restrict
 import TauCeti.Geometry.Symplectic.Complex.JointEigenvector
 import TauCeti.Geometry.Symplectic.Complex.Module.Hom
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
+import TauCeti.LinearAlgebra.SesquilinearForm.AdjointPair
 
 /-!
 # Weight decompositions of symplectic representations of compact abelian groups
@@ -343,17 +344,17 @@ private theorem mapsTo_orthogonal_span_pair_of_skewAdjoint {A : V →ₗ[ℝ] V}
     (h : A q = a • q + b • J q) :
     ∀ x ∈ ω.orthogonal (Submodule.span ℝ {q, J q}),
       A x ∈ ω.orthogonal (Submodule.span ℝ {q, J q}) := by
-  intro x hx
-  simp only [mem_orthogonal_span_iff, Set.mem_insert_iff, Set.mem_singleton_iff,
-    forall_eq_or_imp, forall_eq] at hx ⊢
-  have hJq := hAJ.apply_apply_eq_of_apply_eq h
-  have e₁ := (LinearMap.mem_skewAdjointSubmodule A).1 hA q x
-  have e₂ := (LinearMap.mem_skewAdjointSubmodule A).1 hA (J q) x
-  rw [h] at e₁
-  rw [hJq] at e₂
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-    Pi.neg_apply, map_neg, hx.1, hx.2, mul_zero, add_zero] at e₁ e₂
-  exact ⟨by linarith, by linarith⟩
+  -- `A` preserves `span{q, J q}`, hence its symplectic complement.
+  have hq : q ∈ Submodule.span ℝ {q, J q} := Submodule.subset_span (by simp)
+  have hJq : J q ∈ Submodule.span ℝ {q, J q} := Submodule.subset_span (by simp)
+  have hspan : Submodule.span ℝ {q, J q} ≤ (Submodule.span ℝ {q, J q}).comap A := by
+    refine Submodule.span_le.2 (Set.insert_subset_iff.2 ⟨?_, Set.singleton_subset_iff.2 ?_⟩)
+    · rw [SetLike.mem_coe, Submodule.mem_comap, h]
+      exact add_mem (Submodule.smul_mem _ _ hq) (Submodule.smul_mem _ _ hJq)
+    · rw [SetLike.mem_coe, Submodule.mem_comap, hAJ.apply_apply_eq_of_apply_eq h]
+      exact add_mem (Submodule.smul_mem _ _ hq) (Submodule.smul_mem _ _ hJq)
+  exact fun _ ↦ ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_mem_orthogonal
+    (N := Submodule.span ℝ {q, J q}) fun _ hv ↦ hspan hv
 
 /-- **Simultaneous diagonalization in `sp(V, ω) ∩ gl(V, J)`.** Let `J` be a complex structure
 compatible with a symplectic form `ω` on a finite-dimensional space, and let `f` be a pairwise

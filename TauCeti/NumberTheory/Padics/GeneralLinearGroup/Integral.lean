@@ -7,6 +7,9 @@ module
 
 -- `ℤ_[p]`, `ℚ_[p]` and the inclusion `PadicInt.Coe.ringHom` occur in the statements below.
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+-- The reduction `PadicInt.toZModPow` occurs in the statement of
+-- `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`.
+public import Mathlib.NumberTheory.Padics.RingHoms
 -- `Matrix.GeneralLinearGroup.map` and the `GL` notation occur in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- The topology of `GL n ℚ_[p]` as the unit group of the matrix ring occurs in the statements of
@@ -20,6 +23,9 @@ import TauCeti.Analysis.Matrix.Ultra
 -- Non-public: injectivity of `Matrix.GeneralLinearGroup.map` along an injective ring hom, used only
 -- to build `TauCeti.GLPadicInt.mulEquiv`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+-- Non-public: `PadicInt.toZModPow_eq_iff_dvd_sub`, used only in the proof of
+-- `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`.
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # The integral subgroup `GLₙ(ℤ_p)` of `GLₙ(ℚ_p)`
@@ -47,6 +53,8 @@ of the entries alone is not enough: `!![p, 0; 0, 1]` has integral entries, but i
 * `TauCeti.GLPadicInt.mem_iff_inv`: `g ∈ GLₙ(ℤ_p)` if and only if `g` and `g⁻¹` have integral
   entries.
 * `TauCeti.GLPadicInt.isOpen`, `TauCeti.GLPadicInt.isCompact`: `GLₙ(ℤ_p)` is open and compact.
+* `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`: an invertible matrix over `ℤ_p` that reduces
+  to `1` modulo `p ^ m` is `1 + p ^ m C` for a matrix `C` over `ℤ_p`.
 
 ## References
 
@@ -172,3 +180,28 @@ theorem coe_mulEquiv_apply (γ : GL n ℤ_[p]) :
 end GLPadicInt
 
 end TauCeti
+
+namespace PadicInt
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- An invertible matrix over `ℤ_[p]` that reduces to `1` modulo `p ^ m`, that is, an element of
+the principal congruence subgroup of level `p ^ m`, is `1 + p ^ m C` for a matrix `C` over
+`ℤ_[p]`. -/
+theorem exists_eq_one_add_pow_smul_of_mem_ker {n : Type*} [Fintype n] [DecidableEq n] {m : ℕ}
+    {γ : GL n ℤ_[p]} (hγ : γ ∈ (Matrix.GeneralLinearGroup.map (toZModPow (p := p) m)).ker) :
+    ∃ C : Matrix n n ℤ_[p], (γ : Matrix n n ℤ_[p]) = 1 + (p : ℤ_[p]) ^ m • C := by
+  have hentry (i j : n) :
+      (p : ℤ_[p]) ^ m ∣ (γ : Matrix n n ℤ_[p]) i j - (1 : Matrix n n ℤ_[p]) i j := by
+    have h := congrArg (fun x : GL n (ZMod (p ^ m)) ↦ (x : Matrix n n (ZMod (p ^ m))) i j)
+      (MonoidHom.mem_ker.mp hγ)
+    simp only [Matrix.GeneralLinearGroup.map_apply, Units.val_one] at h
+    refine (toZModPow_eq_iff_dvd_sub m).mp ?_
+    rw [h, Matrix.one_apply, Matrix.one_apply]
+    split_ifs <;> simp
+  choose C hC using hentry
+  refine ⟨Matrix.of C, ?_⟩
+  ext i j
+  rw [Matrix.add_apply, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul, ← hC, add_sub_cancel]
+
+end PadicInt

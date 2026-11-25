@@ -39,14 +39,20 @@ extension-closed subcategories inherit axiom E1.
 * `TauCeti.ExactStructure.conflation_comp_of_isPushout` and
   `TauCeti.ExactStructure.conflation_comp_of_isPullback`: the cokernel of a composite of
   inflations, and the kernel of a composite of deflations, computed as a pushout resp. pullback.
+* `TauCeti.ExactStructure.isInflation_of_isPullback` and
+  `TauCeti.ExactStructure.isDeflation_of_isPushout`: inflations are stable under base change along
+  deflations, and deflations under cobase change along inflations.
 * `TauCeti.ExactStructure.exists_conflation_comp`: the Noether package for a composite of two
   inflations.
+* `TauCeti.ExactStructure.exists_conflation_of_conflation_comp`: the Noether conflation for an
+  arbitrary prescribed cokernel of the composite inflation.
 
 ## References
 
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69,
   <https://arxiv.org/abs/0811.1480>. Proposition 2.12 identifies the cokernel along a cobase
-  change and Lemma 3.5 is the Noether isomorphism proved here.
+  change, Proposition 2.15 is the base change of an inflation along a deflation, and Lemma 3.5 is
+  the Noether isomorphism proved here.
 -/
 
 public section
@@ -232,6 +238,36 @@ theorem conflation_comp_of_isPullback {X Y Z W V Q : C} {i : X ⟶ Y} {p : Y ⟶
   exact KernelFork.IsLimit.ofι' _ _ fun {T} t ht =>
     ⟨(key T t ht).choose, (key T t ht).choose_spec⟩
 
+/-- **Cobase change of a deflation along an inflation is a deflation.** In a pushout square of a
+deflation `p : Y ⟶ Z` along an inflation `j : Y ⟶ W`, the morphism `W ⟶ Q` opposite `p` is a
+deflation. -/
+theorem isDeflation_of_isPushout {Y Z W Q : C} {j : Y ⟶ W} {p : Y ⟶ Z} {c : W ⟶ Q} {α : Z ⟶ Q}
+    (sq : IsPushout j p c α) (hj : E.IsInflation j) (hp : E.IsDeflation p) :
+    E.IsDeflation c := by
+  obtain ⟨X, i, hip, h₁⟩ := (E.isDeflation_iff p).1 hp
+  obtain ⟨V, v, hjv, h₂⟩ := (E.isInflation_iff j).1 hj
+  exact E.isDeflation_g (E.conflation_comp_of_isPushout h₁ h₂ sq)
+
+/-- **Base change of an inflation along a deflation is an inflation.** In a pullback square of an
+inflation `i : X ⟶ Y` along a deflation `q : W ⟶ Y`, the morphism `Q ⟶ W` opposite `i` is an
+inflation. -/
+theorem isInflation_of_isPullback {X Y W Q : C} {i : X ⟶ Y} {q : W ⟶ Y} {c : Q ⟶ W} {α : Q ⟶ X}
+    (sq : IsPullback c α q i) (hi : E.IsInflation i) (hq : E.IsDeflation q) :
+    E.IsInflation c := by
+  obtain ⟨Z, p, hip, h₁⟩ := (E.isInflation_iff i).1 hi
+  obtain ⟨V, v, hvq, h₂⟩ := (E.isDeflation_iff q).1 hq
+  exact E.isInflation_f (E.conflation_comp_of_isPullback h₁ h₂ sq)
+
+/-- Deflations are stable under cobase change along inflations. -/
+instance : E.deflations.IsStableUnderCobaseChangeAgainst E.inflations where
+  isStableUnderCobaseChangeAlong _ _ _ hf :=
+    ⟨fun sq hg => E.isDeflation_of_isPushout sq hf hg⟩
+
+/-- Inflations are stable under base change along deflations. -/
+instance : E.inflations.IsStableUnderBaseChangeAgainst E.deflations where
+  isStableUnderBaseChangeAlong _ _ _ hf :=
+    ⟨fun sq hg => E.isInflation_of_isPullback sq.flip hg hf⟩
+
 /-- **The Noether isomorphism for exact categories.** Given conflations `X ⟶ Y ⟶ Z` and
 `Y ⟶ W ⟶ V`, there is an object `Q` — the pushout of `Y ⟶ W` along `Y ⟶ Z` — which is at once
 the cokernel of the composite inflation `X ⟶ W` and an extension of `V` by `Z`.
@@ -271,6 +307,30 @@ theorem exists_conflation_comp' {X Y Z W V : C} {i : X ⟶ Y} {p : Y ⟶ Z} {hip
     baseChangeι_snd (ShortComplex.mk v q hvq) sq,
     E.conflation_comp_of_isPullback h₁ h₂ sq, E.conflation_baseChange h₂ sq, sq.w,
     baseChangeι_fst (ShortComplex.mk v q hvq) sq⟩
+
+/-- **The Noether conflation with a prescribed cokernel.** Let `X ⟶ Y ⟶ Z` and `Y ⟶ W ⟶ V` be
+conflations, and let `X ⟶ W ⟶ Q` be any conflation on the composite inflation. Then there are
+maps `α : Z ⟶ Q` and `β : Q ⟶ V`, induced by the universal properties of the cokernels, which
+form a conflation `Z ⟶ Q ⟶ V`.
+
+Unlike `exists_conflation_comp`, the cokernel `Q` of the composite inflation is given in
+advance rather than constructed as a pushout; this lets several Noether conflations share the
+same middle object. -/
+theorem exists_conflation_of_conflation_comp {X Y Z W V Q : C} {i : X ⟶ Y} {p : Y ⟶ Z}
+    {hip : i ≫ p = 0} (h₁ : E.Conflation (ShortComplex.mk i p hip)) {j : Y ⟶ W} {v : W ⟶ V}
+    {hjv : j ≫ v = 0} (h₂ : E.Conflation (ShortComplex.mk j v hjv)) {c : W ⟶ Q}
+    {hc : (i ≫ j) ≫ c = 0} (h₃ : E.Conflation (ShortComplex.mk (i ≫ j) c hc)) :
+    ∃ (α : Z ⟶ Q) (β : Q ⟶ V) (hαβ : α ≫ β = 0),
+      E.Conflation (ShortComplex.mk α β hαβ) ∧ j ≫ c = p ≫ α ∧ c ≫ β = v := by
+  have hpair₁ := E.isKernelCokernelPair _ h₁
+  have hpair₃ := E.isKernelCokernelPair _ h₃
+  have hjc : i ≫ j ≫ c = 0 := by rw [← Category.assoc]; exact hc
+  have sq : IsPushout j p c (hpair₁.desc (j ≫ c) hjc) :=
+    IsPushout.of_isColimit_cokernelCofork_comp hpair₁.gIsCokernel hpair₃.gIsCokernel
+      (hpair₁.g_desc _ _).symm
+  exact ⟨_, _, inr_cobaseChangeπ (ShortComplex.mk j v hjv) sq,
+    E.conflation_cobaseChange h₂ sq, (hpair₁.g_desc _ _).symm,
+    inl_cobaseChangeπ (ShortComplex.mk j v hjv) sq⟩
 
 end ExactStructure
 
