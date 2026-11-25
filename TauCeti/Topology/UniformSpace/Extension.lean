@@ -25,7 +25,7 @@ open Set
 extension to the closure of its domain. -/
 theorem UniformContinuousOn.exists_continuousOn_closure_eqOn {X Y : Type*}
     [UniformSpace X] [UniformSpace Y]
-    [CompleteSpace Y] [T2Space Y] {U : Set X} {f : X → Y}
+    [CompleteSpace Y] [T0Space Y] {U : Set X} {f : X → Y}
     (hf : UniformContinuousOn f U) :
     ∃ g : X → Y, ContinuousOn g (closure U) ∧ EqOn g f U := by
   let i : U → closure U := Set.inclusion subset_closure
