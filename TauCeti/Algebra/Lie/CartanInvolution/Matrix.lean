@@ -88,17 +88,22 @@ theorem killingForm_restrictNegConjTranspose (x y : L) :
     Subtype.ext (by simp)
   rw [hθ, map_neg, killingForm_apply_apply, ← Module.End.mul_eq_comp]
 
+/-- The trace form `Re tr(X Yᴴ)` restricted to `L`. -/
+private noncomputable def reTraceFormRestrict : LinearMap.BilinForm ℝ L :=
+  (reTraceForm 𝕜 n n).restrict L.toSubmodule
+
+private theorem reTraceFormRestrict_apply (x y : L) :
+    reTraceFormRestrict L x y = reTraceForm 𝕜 n n x y :=
+  -- `L.toSubmodule` and `L` have the same elements.
+  rfl
+
 /-- For a real Lie subalgebra `L` closed under conjugate transpose, `B(X, -Xᴴ) < 0` for every
 noncentral `X` in `L`. -/
 private theorem killingForm_restrictNegConjTranspose_neg (x : L) (hx : x ∉ center ℝ L) :
     killingForm ℝ L x (L.restrictNegConjTranspose hL x) < 0 := by
   let x' : L := ⟨(x : Matrix n n 𝕜)ᴴ, hL _ x.property⟩
-  let P : LinearMap.BilinForm ℝ L :=
-    (reTraceForm 𝕜 n n).compl₁₂ L.toSubmodule.subtype L.toSubmodule.subtype
-  have hP (y z : L) : P y z = reTraceForm 𝕜 n n y z := by
-    -- `L.toSubmodule.subtype` is the inclusion `Subtype.val` of `L`.
-    simp only [P, LinearMap.compl₁₂_apply]
-    rfl
+  let P := reTraceFormRestrict L
+  have hP (y z : L) : P y z = reTraceForm 𝕜 n n y z := reTraceFormRestrict_apply L y z
   have hsymm : P.IsSymm := ⟨fun y z ↦ by rw [hP, hP]; exact (isSymm_reTraceForm 𝕜 n n).eq y z⟩
   have hpos : P.toQuadraticMap.PosDef := fun y hy ↦ by
     simpa only [LinearMap.BilinMap.toQuadraticMap_apply, hP] using
@@ -138,30 +143,6 @@ open TauCeti
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
   (L : LieSubalgebra ℝ (Matrix n n 𝕜)) (hL : ∀ X ∈ L, Xᴴ ∈ L)
 
-/-- The conjugate transpose of an element of `L`, as an element of `L`. -/
-private def conjTransposeElem (z : L) : L :=
-  ⟨(z : Matrix n n 𝕜)ᴴ, hL _ z.property⟩
-
-/-- The trace form `Re tr(X Yᴴ)` restricted to `L`. -/
-private noncomputable def reTraceFormRestrict : LinearMap.BilinForm ℝ L :=
-  (reTraceForm 𝕜 n n).compl₁₂ L.toSubmodule.subtype L.toSubmodule.subtype
-
-private theorem reTraceFormRestrict_apply (x y : L) :
-    reTraceFormRestrict L x y = reTraceForm 𝕜 n n x y := by
-  -- `L.toSubmodule.subtype` is the inclusion `Subtype.val` of `L`.
-  simp only [reTraceFormRestrict, LinearMap.compl₁₂_apply]
-  rfl
-
-/-- `ad z` and `ad zᴴ` are adjoint for the twisted Killing form of `X ↦ -Xᴴ`, as they are for
-`Re tr(X Yᴴ)` (`TauCeti.reTraceForm_lie_apply`). -/
-private theorem twistedKillingForm_lie_apply (z x y : L) :
-    (L.restrictNegConjTranspose hL).twistedKillingForm ⁅z, x⁆ y =
-      (L.restrictNegConjTranspose hL).twistedKillingForm x ⁅conjTransposeElem L hL z, y⁆ := by
-  have hθ : L.restrictNegConjTranspose hL (conjTransposeElem L hL z) = -z :=
-    Subtype.ext (by simp [conjTransposeElem])
-  rw [LieEquiv.twistedKillingForm_apply, LieEquiv.twistedKillingForm_apply, LieEquiv.map_lie, hθ,
-    neg_lie, map_neg, neg_neg, killingForm, LieModule.traceForm_apply_lie_apply', neg_neg]
-
 private theorem isSymm_twistedKillingForm :
     (L.restrictNegConjTranspose hL).twistedKillingForm.IsSymm :=
   (L.restrictNegConjTranspose hL).isSymm_twistedKillingForm
@@ -191,10 +172,11 @@ private theorem twistedKillingForm_traceFormRatio (x y : L) :
 private theorem traceFormRatio_lie (z x : L) :
     traceFormRatio L hL ⁅z, x⁆ = ⁅z, traceFormRatio L hL x⁆ := by
   refine sub_eq_zero.1 (separatingLeft_twistedKillingForm L hL _ fun y ↦ ?_)
-  rw [map_sub, LinearMap.sub_apply, twistedKillingForm_traceFormRatio,
-    twistedKillingForm_lie_apply, twistedKillingForm_traceFormRatio, LieSubalgebra.coe_bracket,
-    LieSubalgebra.coe_bracket, reTraceForm_lie_apply]
-  exact sub_self _
+  simp only [map_sub, LinearMap.sub_apply, twistedKillingForm_traceFormRatio,
+    (L.restrictNegConjTranspose hL).twistedKillingForm_lie_apply
+      (L.restrictNegConjTranspose_involutive hL),
+    LieSubalgebra.coe_bracket, reTraceForm_lie_apply, NegMemClass.coe_neg,
+    coe_restrictNegConjTranspose_apply, neg_neg, sub_self]
 
 /-- `A` is self-adjoint for `B_θ`. -/
 private theorem isSelfAdjoint_traceFormRatio :
@@ -204,20 +186,13 @@ private theorem isSelfAdjoint_traceFormRatio :
       twistedKillingForm_traceFormRatio,
       (isSymm_reTraceForm 𝕜 n n).eq]
 
-/-- The eigenspaces of `A` are Lie ideals, since `A` commutes with every `ad z`. -/
-private noncomputable def eigenspaceIdeal (μ : ℝ) : LieIdeal ℝ L where
-  toSubmodule := (traceFormRatio L hL).eigenspace μ
-  lie_mem {z x} hx := by
-    simp only [Submodule.mem_carrier, SetLike.mem_coe, Module.End.mem_eigenspace_iff] at hx ⊢
-    rw [traceFormRatio_lie, hx, lie_smul]
+/-- `A` as a morphism of Lie modules, since it commutes with every `ad z`. -/
+private noncomputable def traceFormRatioHom : L →ₗ⁅ℝ,L⁆ L :=
+  { traceFormRatio L hL with map_lie' := traceFormRatio_lie L hL _ _ }
 
-/-- The preimage of a Lie ideal under `A` is a Lie ideal. -/
-private noncomputable def comapIdeal (I : LieIdeal ℝ L) : LieIdeal ℝ L where
-  toSubmodule := I.toSubmodule.comap (traceFormRatio L hL)
-  lie_mem {z x} hx := by
-    simp only [Submodule.mem_carrier, SetLike.mem_coe, Submodule.mem_comap] at hx ⊢
-    rw [traceFormRatio_lie]
-    exact I.lie_mem hx
+private theorem traceFormRatioHom_apply (x : L) :
+    traceFormRatioHom L hL x = traceFormRatio L hL x :=
+  rfl
 
 /-- **`B_θ` is a positive multiple of `Re tr(X Yᴴ)` on each simple ideal.** For a real Lie
 subalgebra `L` of `𝔤𝔩_n(𝕜)` with trivial radical, closed under conjugate transpose, and a minimal
@@ -228,20 +203,20 @@ theorem exists_twistedKillingForm_eq_mul_reTraceForm {I : LieIdeal ℝ L} (hI : 
       (L.restrictNegConjTranspose hL).twistedKillingForm x y = c * reTraceForm 𝕜 n n x y := by
   have hθ := L.isCartanInvolution_restrictNegConjTranspose hL
   set A := traceFormRatio L hL
-  -- `⁅I, L⁆ = I`, since `L` has trivial centre; so `A I ⊆ I`, as `A ⁅x, y⁆ = ⁅x, A y⁆`.
+  -- `⁅L, I⁆ = I`, since `L` has trivial centre; so `A I ⊆ I`, as `A ⁅x, y⁆ = ⁅x, A y⁆`.
   have hlie : ⁅I, (⊤ : LieIdeal ℝ L)⁆ = I := by
-    refine (hI.le_iff.1 (LieSubmodule.lie_le_left _ _)).resolve_left fun h ↦ hI.1 ?_
+    rw [LieSubmodule.lie_comm]
+    refine lie_eq_self_of_isAtom_of_ne_bot hI fun h ↦ hI.1 ?_
     refine (LieSubmodule.eq_bot_iff _).2 fun x hx ↦ ?_
-    have hx' : x ∈ center ℝ L := (LieModule.mem_maxTrivSubmodule ℝ L L x).2 fun m ↦ by
-      rw [← lie_skew, (LieSubmodule.lie_eq_bot_iff _ _).1 h x hx m trivial, neg_zero]
+    have hx' : x ∈ center ℝ L := (LieModule.mem_maxTrivSubmodule ℝ L L x).2 fun m ↦
+      (LieSubmodule.lie_eq_bot_iff _ _).1 h m trivial x hx
     rwa [center_eq_bot ℝ L] at hx'
   have hA (x : L) (hx : x ∈ I) : A x ∈ I := by
-    have hle : ⁅I, (⊤ : LieIdeal ℝ L)⁆ ≤ comapIdeal L hL I :=
+    have hle : ⁅I, (⊤ : LieIdeal ℝ L)⁆ ≤ LieSubmodule.comap (traceFormRatioHom L hL) I :=
       (LieSubmodule.lie_le_iff _ _ _).2 fun u hu v _ ↦ by
-        change A ⁅u, v⁆ ∈ I
-        rw [traceFormRatio_lie]
+        rw [LieSubmodule.mem_comap, LieModuleHom.map_lie]
         exact lie_mem_left ℝ L I u _ hu
-    exact hle (hlie.symm ▸ hx)
+    simpa only [LieSubmodule.mem_comap, traceFormRatioHom_apply] using hle (hlie.symm ▸ hx)
   -- `A` is diagonalizable, so `I` is the sum of its intersections with the eigenspaces of `A`;
   -- these are ideals, so one of them is `I`.
   have htop : ⨆ μ : ℝ, A.eigenspace μ = ⊤ :=
@@ -251,17 +226,19 @@ theorem exists_twistedKillingForm_eq_mul_reTraceForm {I : LieIdeal ℝ L} (hI : 
     rw [← Submodule.inf_iSup_genEigenspace hA, htop, inf_top_eq]
   obtain ⟨μ, hμ⟩ : ∃ μ : ℝ, I.toSubmodule ⊓ A.eigenspace μ ≠ ⊥ := by
     by_contra! h
-    refine hI.1 ((LieSubmodule.toSubmodule_eq_bot _).1 ?_)
-    rw [hsum, iSup_eq_bot]
-    exact h
-  have hIμ : I ≤ eigenspaceIdeal L hL μ := by
+    exact hI.1 ((LieSubmodule.toSubmodule_eq_bot _).1 (hsum.trans (iSup_eq_bot.2 h)))
+  -- The eigenspace of `A` for `μ` is the kernel of the Lie module morphism `A - μ`.
+  set E := (traceFormRatioHom L hL - μ • 1).ker
+  have hE : E.toSubmodule = A.eigenspace μ := by
+    ext x
+    simp [E, A, sub_eq_zero, traceFormRatioHom_apply]
+  have hIμ : I ≤ E := by
     refine inf_eq_left.1 ((hI.le_iff.1 inf_le_left).resolve_left fun h ↦ hμ ?_)
     have h' := congrArg LieSubmodule.toSubmodule h
-    rw [LieSubmodule.inf_toSubmodule, LieSubmodule.bot_toSubmodule] at h'
-    exact h'
+    rwa [LieSubmodule.inf_toSubmodule, LieSubmodule.bot_toSubmodule, hE] at h'
   have hAx (x : L) (hx : x ∈ I) (y : L) :
       reTraceForm 𝕜 n n x y = μ * (L.restrictNegConjTranspose hL).twistedKillingForm x y := by
-    have : A x = μ • x := Module.End.mem_eigenspace_iff.1 (hIμ hx)
+    have : A x = μ • x := Module.End.mem_eigenspace_iff.1 (hE ▸ hIμ hx)
     rw [← twistedKillingForm_traceFormRatio L hL, this, LinearMap.map_smul₂, smul_eq_mul]
   -- `μ > 0`: both forms are positive definite.
   obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
