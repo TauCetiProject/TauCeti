@@ -36,10 +36,11 @@ operator `∑ᵢ gᵢ P gᵢ` is `P` up to order `m - 2`, not only `m - 1`
 `∑ᵢ gᵢ P gᵢ - P = -½ ∑ᵢ ⁅gᵢ, ⁅gᵢ, P⁆⁆`.
 
 For real `gᵢ` the first-order terms `i ∑ᵢ gᵢ ∂_ξ σ_m(P) (dgᵢ) = (i/2) ∂_ξ σ_m(P) (d ∑ᵢ gᵢ²)` cancel,
-as the formula above shows. With cutoffs `ρᵢ` in charts `eᵢ` whose squares add up to `1`, the
-symmetric patched quantization `∑ᵢ ρᵢ Op_{eᵢ}(aᵢ) ρᵢ` of the chart symbols `aᵢ` of `P` is therefore
-`P` up to order `m - 2`
-(`TauCeti.sum_chartQuantization_sub_mem_classicalPseudodifferentialOperators`), and it differs by
+as the formula above shows. Take cutoffs `ρᵢ` in charts `eᵢ` whose squares add up to `1`, and let
+`aᵢ` be the symbol of the chart compression of `P` by `ρᵢ` and `ρᵢ`, that is, the chart symbol of
+`ρᵢ P ρᵢ`. The symmetric patched quantization `∑ᵢ Op_{eᵢ}(aᵢ)`, localized by cutoffs `φᵢ` and `ψᵢ`
+equal to `1` on the support of `ρᵢ`, is `∑ᵢ ρᵢ P ρᵢ`, and therefore `P` up to order `m - 2`
+(`TauCeti.sum_chartQuantization_sub_mem_classicalPseudodifferentialOperators`). It differs by
 an operator of order `m - 2` from the ordinary patched quantization over a partition of unity,
 which is `P` up to order `-∞` (the theorem
 `sum_chartQuantization_sub_sum_chartQuantization_mem_classicalPseudodifferentialOperators`).
@@ -173,9 +174,8 @@ private theorem complexChartCompression_lie_mulLeft_ofReal_apply {m : ℝ}
   have hh : (⇑h : CoordinateSpace n → ℝ) = fun y ↦ φ y * f (e.symm y) :=
     funext (e.cutoffPushforward_apply he φ f)
   have hht : (⇑h : CoordinateSpace n → ℝ).HasTemperateGrowth :=
-    (show HasCompactSupport (⇑h : CoordinateSpace n → ℝ) from
-      hh ▸ φ.hasCompactSupport.mul_right).hasTemperateGrowth
-      (contMDiff_iff_contDiff.1 h.contMDiff)
+    (e.hasCompactSupport_cutoffPushforward he φ f).hasTemperateGrowth
+      (e.contDiff_cutoffPushforward he φ f)
   set g := e.complexCutoffPullback he φ (ContMDiffMap.ofContDiff u (u.smooth ⊤))
   -- Read on `M` through `χ`, the inputs `φ u` and `h u` are `g` and `f g`.
   have h₁ : e.complexCutoffPullback he χ (ContMDiffMap.ofContDiff
@@ -259,32 +259,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
 
-omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
-/-- The differential of a real function `f` at `x`, read as a frequency in a chart `e`, is the
-gradient `∑ₖ ∂ₖh(e x) eₖ` of any function `h` that agrees with `f ∘ e⁻¹` near `e x`. -/
-private theorem toDual_symm_mvfderiv_comp_inverse_eq_sum
-    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M) {x : M} (hx : x ∈ e.source)
-    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) {h : CoordinateSpace n → ℝ}
-    (hh : h =ᶠ[𝓝 (e x)] fun y ↦ f (e.symm y)) :
-    (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
-        ((mvfderiv 𝓘(ℝ, CoordinateSpace n) f x).comp
-          (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse) =
-      ∑ k, coordinateDeriv [k] h (e x) • EuclideanSpace.single k 1 := by
-  have hD : mvfderiv 𝓘(ℝ, CoordinateSpace n) f x =
-      (fderiv ℝ (fun y ↦ f (e.symm y)) (e x)).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x) := by
-    -- `mvfderiv` is `mfderiv` followed by the identification of the tangent space of `ℝ` at
-    -- `f x` with `ℝ`, which is the identity.
-    simp only [mvfderiv, mfderiv_eq_fderiv_comp_of_eqOn he
-      (fun q hq ↦ by simp [e.left_inv hq] : EqOn (⇑f) ((fun y ↦ f (e.symm y)) ∘ e) e.source) hx]
-    rfl
-  rw [hD, ContinuousLinearMap.comp_assoc, (isInvertible_mvfderiv_chart he hx).self_comp_inverse,
-    ContinuousLinearMap.comp_id, ← hh.fderiv_eq]
-  conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr' (InnerProductSpace.toDual ℝ
-    (CoordinateSpace n) |>.symm (fderiv ℝ h (e x)))]
-  simp only [EuclideanSpace.basisFun_apply, real_inner_comm _ (EuclideanSpace.single _ _),
-    InnerProductSpace.toDual_symm_apply, coordinateDeriv_singleton]
-
 /-- **Fibre derivatives of the principal symbol in a chart.** Let `c` be the symbol of the chart
 compression of `P` by a cutoff `χ` with `χ (e x) = 1`, and `η` the frequency of the nonzero
 covector `ξ ∈ T*ₓM` in the chart. If `h` agrees with `f ∘ e⁻¹` near `e x`, the derivative of
@@ -319,9 +293,7 @@ private theorem deriv_classicalPrincipalSymbol_eq_sum_coefficient_frequencyDeriv
       L ξ' = (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm (ξ'.comp D.inverse) :=
     rfl
   set η := L ξ
-  have hη : η ≠ 0 := fun h0 ↦ hξ <| by
-    rw [← innerSL_toDual_symm_comp_inverse_mvfderiv he₁ hx ξ, ← hL, show L ξ = 0 from h0]
-    simp
+  have hη : η ≠ 0 := toDual_symm_comp_inverse_mvfderiv_ne_zero he₁ hx hξ
   -- `σ_m(P)(x, ·) = g ∘ L` for the principal symbol `g` of `c` at `e x`, read at `1`.
   set ev := (ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).restrictScalars ℝ
   set g : CoordinateSpace n → ℂ := ev ∘ fun η' ↦ c.principal.coefficient (e x, η')
@@ -346,7 +318,11 @@ private theorem deriv_classicalPrincipalSymbol_eq_sum_coefficient_frequencyDeriv
     exact ev.hasFDerivAt.comp η hcd.hasFDerivAt
   -- The vector `v` is the gradient `∑ₖ ∂ₖh(e x) eₖ` of `f ∘ e⁻¹` at `e x`.
   have hv : v = ∑ k, coordinateDeriv [k] h (e x) • EuclideanSpace.single k 1 := by
-    rw [← hvL, hL, toDual_symm_mvfderiv_comp_inverse_eq_sum he₁ hx f hh]
+    rw [← hvL, hL, toDual_symm_mvfderiv_comp_inverse_eq_gradient he₁ hx hh, gradient,
+      ← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr' (InnerProductSpace.toDual ℝ
+        (CoordinateSpace n) |>.symm (fderiv ℝ h (e x)))]
+    simp only [EuclideanSpace.basisFun_apply, real_inner_comm _ (EuclideanSpace.single _ _),
+      InnerProductSpace.toDual_symm_apply, coordinateDeriv_singleton]
   rw [hline, (hgη.comp_hasDerivAt 0 hlin).deriv, hv, map_sum]
   simp only [map_smul, FunLike.coe_sum, Finset.sum_apply, smul_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
@@ -389,25 +365,22 @@ theorem classicalPrincipalSymbol_lie_mulLeft_ofReal {m : ℝ}
   obtain ⟨s, hs⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hQ).2 e he φ φ
   -- The function `h = φ · (f ∘ e⁻¹)` on the chart, equal to `f ∘ e⁻¹` near `e x`.
   set h := e.cutoffPushforward he φ f
-  have hh : (⇑h : CoordinateSpace n → ℝ) = fun y ↦ φ y * f (e.symm y) :=
-    funext (e.cutoffPushforward_apply he φ f)
-  have hhd : ContDiff ℝ ∞ (⇑h : CoordinateSpace n → ℝ) := contMDiff_iff_contDiff.1 h.contMDiff
-  have hhc : HasCompactSupport (⇑h : CoordinateSpace n → ℝ) := hh ▸ φ.hasCompactSupport.mul_right
+  have hhd : ContDiff ℝ ∞ (⇑h : CoordinateSpace n → ℝ) := e.contDiff_cutoffPushforward he φ f
+  have hhc : HasCompactSupport (⇑h : CoordinateSpace n → ℝ) :=
+    e.hasCompactSupport_cutoffPushforward he φ f
   have hhe : (⇑h : CoordinateSpace n → ℝ) =ᶠ[𝓝 (e x)] fun y ↦ f (e.symm y) := by
     filter_upwards [hφx] with y hy
-    simp only [hh, hy, one_mul]
+    rw [e.cutoffPushforward_apply he φ f, hy, one_mul]
   -- Read the principal symbol of `⁅f, P⁆` in the chart, where its symbol is
   -- `h (c # φ) - φ (c # h)`.
   have hL' := coefficient_principal_apply_eq_classicalPrincipalSymbol hQ he φ φ hs hx ξ
   rw [hφ1, mul_one, Complex.ofReal_one, one_mul] at hL'
   rw [← hL', coefficient_principal_eq_of_coefficient_eq_compress_sub c s φ.contDiff
     φ.hasCompactSupport hhd hhc (coefficient_eq_compress_sub_of_lie_mulLeft_ofReal he hχ1 hc f hs
-      hhd hhc) hφx (fun h0 ↦ hξ ?_),
+      hhd hhc) hφx (toDual_symm_comp_inverse_mvfderiv_ne_zero
+        (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx hξ),
     deriv_classicalPrincipalSymbol_eq_sum_coefficient_frequencyDeriv hP he hc hx hχx hξ f hhe,
     smul_apply, smul_eq_mul]
-  · rw [← innerSL_toDual_symm_comp_inverse_mvfderiv
-      (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx ξ, h0]
-    simp
 
 end PrincipalSymbol
 
@@ -430,15 +403,18 @@ theorem sum_mulLeft_comp_comp_mulLeft_sub_mem_classicalPseudodifferentialOperato
     ∑ i ∈ s, LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g i) - P ∈
       classicalPseudodifferentialOperators (m - 2) := by
   set A := fun i ↦ LinearMap.mulLeft ℂ (g i)
+  -- Composition in `Module.End` is multiplication.
+  have hcomp : ∑ i ∈ s, LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g i) =
+      ∑ i ∈ s, A i * P * A i := by
+    simp only [A, Module.End.mul_eq_comp, LinearMap.comp_assoc]
   have hA : ∑ i ∈ s, A i * A i = 1 := by
     ext u : 1
-    have hu : (∑ i ∈ s, A i * A i) u = (∑ i ∈ s, g i ^ 2) * u := by
-      rw [LinearMap.sum_apply, Finset.sum_mul]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [mul_apply_eq_comp, sq, mul_assoc]
-      rfl
-    rw [hu, hg, one_mul]
-    rfl
+    rw [LinearMap.sum_apply, one_apply_eq_self]
+    calc ∑ i ∈ s, (A i * A i) u = (∑ i ∈ s, g i ^ 2) * u := by
+          rw [Finset.sum_mul]
+          refine Finset.sum_congr rfl fun i _ ↦ ?_
+          simp only [A, mul_apply_eq_comp, LinearMap.mulLeft_apply, sq, mul_assoc]
+      _ = u := by rw [hg, one_mul]
   -- `∑ᵢ ⁅gᵢ, ⁅gᵢ, P⁆⁆ = 2 (P - ∑ᵢ gᵢ P gᵢ)`.
   have key : ∑ i ∈ s, ⁅A i, ⁅A i, P⁆⁆ = (2 : ℂ) • (P - ∑ i ∈ s, A i * P * A i) := by
     have hexp (i : ι) : ⁅A i, ⁅A i, P⁆⁆ =
@@ -454,20 +430,19 @@ theorem sum_mulLeft_comp_comp_mulLeft_sub_mem_classicalPseudodifferentialOperato
       simpa [sub_sub, one_add_one_eq_two] using lie_mulLeft_mem_classicalPseudodifferentialOperators
         (lie_mulLeft_mem_classicalPseudodifferentialOperators hP (g i)) (g i)
   have h := Submodule.smul_mem _ (-(1 / 2 : ℂ)) hmem
-  rw [key, smul_smul] at h
-  convert h using 1
-  rw [show -(1 / 2 : ℂ) * 2 = -1 by norm_num, neg_one_smul, neg_sub]
-  rfl
+  rwa [key, smul_smul, show -(1 / 2 : ℂ) * 2 = -1 by norm_num, neg_one_smul, neg_sub, ← hcomp]
+    at h
 
 variable {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
   {he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
-  {ρ φ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ)} {a : ι → ClassicalSymbol n ℂ ℂ m}
+  {ρ φ ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ)} {a : ι → ClassicalSymbol n ℂ ℂ m}
 
 /-- **Symmetric quantization over a square partition of unity.** Let `ρᵢ` be cutoffs in charts
 `eᵢ` whose squares, read on `M`, add up to `1`, and `aᵢ` the symbol of the chart compression of a
-classical pseudodifferential operator `P` of order `m` by `ρᵢ` and `ρᵢ`. If `φᵢ` are cutoffs equal
-to `1` on the supports of the `ρᵢ`, the symmetric patched operator `∑ᵢ Op_{eᵢ}(aᵢ)`, localized by
-`φᵢ` on both sides, is `∑ᵢ ρᵢ P ρᵢ`, and it differs from `P` by an operator of order `m - 2`. -/
+classical pseudodifferential operator `P` of order `m` by `ρᵢ` and `ρᵢ`. If `φᵢ` and `ψᵢ` are
+cutoffs equal to `1` on the supports of the `ρᵢ`, the symmetric patched operator `∑ᵢ Op_{eᵢ}(aᵢ)`,
+localized by `φᵢ` on the left and `ψᵢ` on the right, is `∑ᵢ ρᵢ P ρᵢ`, and it differs from `P` by an
+operator of order `m - 2`. -/
 theorem sum_chartQuantization_sub_mem_classicalPseudodifferentialOperators
     (hP : P ∈ classicalPseudodifferentialOperators m)
     (hρ : ∑ i ∈ s, (e i).complexCutoffPullback (he i) (ρ i) 1 ^ 2 = 1)
@@ -475,11 +450,12 @@ theorem sum_chartQuantization_sub_mem_classicalPseudodifferentialOperators
       quantizeSchwartzValue (a i).toSymbol.coefficient u x =
         (e i).complexChartCompression (he i) (ρ i) (ρ i) P
           (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x)
-    (hφ : ∀ i ∈ s, EqOn (φ i) 1 (tsupport (ρ i))) :
-    ∑ i ∈ s, (e i).chartQuantization (he i) (φ i) (φ i) (a i) - P ∈
+    (hφ : ∀ i ∈ s, EqOn (φ i) 1 (tsupport (ρ i)))
+    (hψ : ∀ i ∈ s, EqOn (ψ i) 1 (tsupport (ρ i))) :
+    ∑ i ∈ s, (e i).chartQuantization (he i) (φ i) (ψ i) (a i) - P ∈
       classicalPseudodifferentialOperators (m - 2) := by
   rw [Finset.sum_congr rfl fun i hi ↦ (e i).chartQuantization_eq_mulLeft_comp_comp_mulLeft (he i)
-    (ha i hi) (hφ i hi) (hφ i hi)]
+    (ha i hi) (hφ i hi) (hψ i hi)]
   exact sum_mulLeft_comp_comp_mulLeft_sub_mem_classicalPseudodifferentialOperators hP hρ
 
 /-- **The symmetric and the ordinary patched quantizations differ by order `m - 2`.** The symmetric
@@ -495,7 +471,8 @@ theorem sum_chartQuantization_sub_sum_chartQuantization_mem_classicalPseudodiffe
       quantizeSchwartzValue (a i).toSymbol.coefficient u x =
         (e i).complexChartCompression (he i) (ρ i) (ρ i) P
           (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x)
-    (hφ : ∀ i ∈ s, EqOn (φ i) 1 (tsupport (ρ i))) {κ : Type*} {t : Finset κ}
+    (hφ : ∀ i ∈ s, EqOn (φ i) 1 (tsupport (ρ i))) (hψ : ∀ i ∈ s, EqOn (ψ i) 1 (tsupport (ρ i)))
+    {κ : Type*} {t : Finset κ}
     {e' : κ → OpenPartialHomeomorph M (CoordinateSpace n)}
     {he' : ∀ j, e' j ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
     {ρ' χ' φ' ψ' : ∀ j, 𝓓(⟨(e' j).target, (e' j).open_target⟩, ℝ)}
@@ -508,11 +485,11 @@ theorem sum_chartQuantization_sub_sum_chartQuantization_mem_classicalPseudodiffe
           (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x)
     (hφ' : ∀ j ∈ t, EqOn (φ' j) 1 (tsupport (ρ' j)))
     (hψ' : ∀ j ∈ t, EqOn (ψ' j) 1 (tsupport (χ' j))) :
-    ∑ i ∈ s, (e i).chartQuantization (he i) (φ i) (φ i) (a i) -
+    ∑ i ∈ s, (e i).chartQuantization (he i) (φ i) (ψ i) (a i) -
         ∑ j ∈ t, (e' j).chartQuantization (he' j) (φ' j) (ψ' j) (b j) ∈
       classicalPseudodifferentialOperators (m - 2) := by
   rw [← sub_add_sub_cancel _ P]
-  exact add_mem (sum_chartQuantization_sub_mem_classicalPseudodifferentialOperators hP hρ ha hφ)
+  exact add_mem (sum_chartQuantization_sub_mem_classicalPseudodifferentialOperators hP hρ ha hφ hψ)
     (smoothingPseudodifferentialOperators_le_classicalPseudodifferentialOperators _
       (sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators hP hρ' hχ' hb hφ' hψ'))
 

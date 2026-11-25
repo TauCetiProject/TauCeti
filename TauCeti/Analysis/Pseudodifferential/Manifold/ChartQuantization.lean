@@ -290,8 +290,8 @@ private theorem overlapCutoff_spec (φ' : 𝓓(⟨e'.target, e'.open_target⟩, 
       tsupport (overlapCutoff he he' φ' φ) ⊆ (e'.symm.trans e).source := by
   have hfun : overlapCutoff he he' φ' φ = fun x ↦ φ' x * e.cutoffPullback he φ 1 (e'.symm x) :=
     funext (overlapCutoff_apply he he' φ' φ)
-  refine ⟨overlapCutoff_eq he he' φ' φ ▸ contMDiff_iff_contDiff.1 (ContMDiffMap.contMDiff _),
-    hfun ▸ φ'.hasCompactSupport.mul_right, ?_⟩
+  refine ⟨overlapCutoff_eq he he' φ' φ ▸ e'.contDiff_cutoffPushforward he' φ' _,
+    overlapCutoff_eq he he' φ' φ ▸ e'.hasCompactSupport_cutoffPushforward he' φ' _, ?_⟩
   -- The support lies in the set of `x ∈ supp φ'` with `e'⁻¹ x ∈ e⁻¹(supp φ)`, which is closed.
   have hS : IsClosed (tsupport φ' ∩ e'.symm ⁻¹' (e.symm '' tsupport φ)) :=
     (e'.continuousOn_symm.mono φ'.tsupport_subset).preimage_isClosed_of_isClosed
