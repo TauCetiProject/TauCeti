@@ -23,8 +23,9 @@ given by **Hadamard's first variation formula** (`Matrix.hasFDerivAt_eigenvalues
 
 `Dλᵢ (x₀) v = Re ⟪u, (DM (x₀) v) u⟫`
 
-for every unit eigenvector `u` of `M x₀` with eigenvalue `λᵢ`. For a real curve `M` and any nonzero
-eigenvector `w`, not necessarily normalized, this is the Rayleigh quotient
+for every unit eigenvector `u` of `M x₀` with eigenvalue `λᵢ`. For any nonzero eigenvector `w`, not
+necessarily normalized, this is the Rayleigh quotient `Dλᵢ (x₀) v = Re ⟪w, (DM (x₀) v) w⟫ / ⟪w, w⟫`
+(`Matrix.fderiv_eigenvalues₀_apply_eq_div`), which for a real curve `M` reads
 `λᵢ' (t₀) = Re ⟪w, M' (t₀) w⟫ / ⟪w, w⟫` (`Matrix.deriv_eigenvalues₀_eq_div`). For the straight
 line `A + t • B` of Hermitian matrices this reads `d/dt λᵢ (A + t • B) |_{t = 0} = Re ⟪u, B u⟫`
 (`Matrix.IsHermitian.hasDerivAt_eigenvalues₀_add_smul`). These are the first-order inputs to the
@@ -367,7 +368,32 @@ theorem fderiv_eigenvalues₀_apply (hM : ∀ x, (M x).IsHermitian)
 
 open scoped ComplexOrder in
 /-- The first variation formula with an eigenvector that need not be normalized: at a simple
-eigenvalue, the derivative of `t ↦ λᵢ (M t)` is the Rayleigh quotient
+eigenvalue, the derivative of `x ↦ λᵢ (M x)` in the direction `v` is the Rayleigh quotient
+`Re ⟪w, (DM (x₀) v) w⟫ / ⟪w, w⟫` at any nonzero eigenvector `w`. -/
+theorem fderiv_eigenvalues₀_apply_eq_div (hM : ∀ x, (M x).IsHermitian)
+    (hMd : ∀ a b, DifferentiableAt ℝ (fun x ↦ M x a b) x₀) {i : Fin (Fintype.card n)}
+    (hi : ∀ j ≠ i, (hM x₀).eigenvalues₀ j ≠ (hM x₀).eigenvalues₀ i) {w : n → 𝕜}
+    (hw : M x₀ *ᵥ w = ((hM x₀).eigenvalues₀ i : 𝕜) • w) (hw0 : w ≠ 0) (v : E) :
+    fderiv ℝ (fun x ↦ (hM x).eigenvalues₀ i) x₀ v =
+      RCLike.re (star w ⬝ᵥ (of (fun a b ↦ fderiv ℝ (fun x ↦ M x a b) x₀ v) *ᵥ w)) /
+        RCLike.re (star w ⬝ᵥ w) := by
+  obtain ⟨r, hr, hrw⟩ := RCLike.pos_iff_exists_ofReal.1 (dotProduct_star_self_pos_iff.2 hw0)
+  set c : 𝕜 := (((Real.sqrt r)⁻¹ : ℝ) : 𝕜)
+  have hcc : star c * c = ((r⁻¹ : ℝ) : 𝕜) := by
+    rw [RCLike.star_def, RCLike.conj_ofReal, ← RCLike.ofReal_mul, ← mul_inv,
+      Real.mul_self_sqrt hr.le]
+  have hu : M x₀ *ᵥ (c • w) = ((hM x₀).eigenvalues₀ i : 𝕜) • (c • w) := by
+    rw [mulVec_smul, hw, smul_comm]
+  have hu1 : star (c • w) ⬝ᵥ (c • w) = 1 := by
+    rw [star_smul, smul_dotProduct, dotProduct_smul, smul_smul, smul_eq_mul, hcc, ← hrw]
+    norm_cast
+    exact inv_mul_cancel₀ hr.ne'
+  rw [fderiv_eigenvalues₀_apply hM hMd hi hu hu1, ← hrw, RCLike.ofReal_re]
+  simp only [star_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul]
+  rw [← mul_assoc, mul_comm c, hcc, RCLike.re_ofReal_mul, inv_mul_eq_div]
+
+/-- The first variation formula along a real curve with an eigenvector that need not be
+normalized: at a simple eigenvalue, the derivative of `t ↦ λᵢ (M t)` is the Rayleigh quotient
 `Re ⟪w, M' w⟫ / ⟪w, w⟫` of the derivative of the family at any nonzero eigenvector `w`. -/
 theorem deriv_eigenvalues₀_eq_div {M : ℝ → Matrix n n 𝕜} (hM : ∀ t, (M t).IsHermitian) {t : ℝ}
     (hMd : ∀ a b, DifferentiableAt ℝ (fun s ↦ M s a b) t) {i : Fin (Fintype.card n)}
@@ -376,22 +402,8 @@ theorem deriv_eigenvalues₀_eq_div {M : ℝ → Matrix n n 𝕜} (hM : ∀ t, (
     deriv (fun s ↦ (hM s).eigenvalues₀ i) t =
       RCLike.re (star w ⬝ᵥ (of (fun a b ↦ deriv (fun s ↦ M s a b) t) *ᵥ w)) /
         RCLike.re (star w ⬝ᵥ w) := by
-  obtain ⟨r, hr, hrw⟩ := RCLike.pos_iff_exists_ofReal.1 (dotProduct_star_self_pos_iff.2 hw0)
-  set c : 𝕜 := (((Real.sqrt r)⁻¹ : ℝ) : 𝕜)
-  have hcc : star c * c = ((r⁻¹ : ℝ) : 𝕜) := by
-    rw [RCLike.star_def, RCLike.conj_ofReal, ← RCLike.ofReal_mul, ← mul_inv,
-      Real.mul_self_sqrt hr.le]
-  have hu : M t *ᵥ (c • w) = ((hM t).eigenvalues₀ i : 𝕜) • (c • w) := by
-    rw [mulVec_smul, hw, smul_comm]
-  have hu1 : star (c • w) ⬝ᵥ (c • w) = 1 := by
-    rw [star_smul, smul_dotProduct, dotProduct_smul, smul_smul, smul_eq_mul, hcc, ← hrw]
-    norm_cast
-    exact inv_mul_cancel₀ hr.ne'
-  rw [← fderiv_apply_one_eq_deriv, fderiv_eigenvalues₀_apply hM hMd hi hu hu1, ← hrw,
-    RCLike.ofReal_re]
-  simp only [fderiv_apply_one_eq_deriv, star_smul, mulVec_smul, smul_dotProduct, dotProduct_smul,
-    smul_eq_mul]
-  rw [← mul_assoc, mul_comm c, hcc, RCLike.re_ofReal_mul, inv_mul_eq_div]
+  simpa only [fderiv_apply_one_eq_deriv] using
+    fderiv_eigenvalues₀_apply_eq_div hM hMd hi hw hw0 1
 
 /-- **Hadamard's first variation formula along a line.** If `u` is a unit eigenvector of a
 Hermitian matrix `A` for a simple ordered eigenvalue `A.eigenvalues₀ i`, and `B` is Hermitian, then
