@@ -68,7 +68,7 @@ defined once the root vectors are.
 * `TauCeti.IsSl2System.toSubmodule_rootSpace_eq_span`: `x α` spans the root space of `α`.
 * `TauCeti.IsSl2System.killingForm_root_neg_eq`: the Killing pairing of opposite normalized root
   vectors is `2 / α((cartanEquivDual H)⁻¹ α)`.
-* `TauCeti.IsSl2System.killingForm_rootVector_neg_eq_zero` and
+* `TauCeti.IsSl2System.killingForm_rootVector_neg_eq_zero_of_ne` and
   `TauCeti.IsSl2System.killingForm_rootVector_cartan_eq_zero`: root vectors at `α` and `-β` are
   Killing-orthogonal unless `α = β`, and root vectors are Killing-orthogonal to `H`.
 * `TauCeti.IsSl2System.lie_coroot`: the Cartan relation.
@@ -165,7 +165,7 @@ theorem killingForm_root_neg_eq (hα : α.IsNonZero) :
 
 omit [CharZero K] in
 /-- Root vectors at `α` and `-β` are Killing-orthogonal unless `α = β`. -/
-theorem killingForm_rootVector_neg_eq_zero {α β : Weight K H L} (hαβ : α ≠ β) :
+theorem killingForm_rootVector_neg_eq_zero_of_ne {α β : Weight K H L} (hαβ : α ≠ β) :
     killingForm K L (x α) (x (-β)) = 0 :=
   killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H
     (hx.mem_rootSpace α) (hx.mem_rootSpace (-β)) fun h ↦ hαβ <|

@@ -177,18 +177,18 @@ theorem isLieConjugation_compactConjugation : IsLieConjugation (hx.compactConjug
 /-- The Hermitian Killing form of the compact conjugation, in the coordinates of the basis of root
 vectors and simple coroots. -/
 theorem killingHermitianForm_compactConjugation_eq_sum (v : L) :
-    killingHermitianForm (hx.compactConjugation b) v v =
+    (hx.compactConjugation b).killingHermitianForm v v =
       ∑ k, ∑ l, (hx.toIsSl2System.rootSimpleCorootFieldBasis b).repr v k *
         star ((hx.toIsSl2System.rootSimpleCorootFieldBasis b).repr v l) *
           -killingForm ℂ L (hx.toIsSl2System.rootSimpleCorootFieldBasis b k)
             (ω (hx.toIsSl2System.rootSimpleCorootFieldBasis b l)) := by
   set c := hx.toIsSl2System.rootSimpleCorootFieldBasis b
-  rw [← (killingHermitianForm (hx.compactConjugation b)).sum_repr_mul_repr_mulₛₗ c c v v,
+  rw [← (hx.compactConjugation b).killingHermitianForm.sum_repr_mul_repr_mulₛₗ c c v v,
     Finsupp.sum_fintype _ _ fun _ ↦ by simp]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [Finsupp.sum_fintype _ _ fun _ ↦ by simp]
   refine Finset.sum_congr rfl fun l _ ↦ ?_
-  rw [killingHermitianForm_def, compactConjugation_apply,
+  rw [LinearMap.killingHermitianForm_def, compactConjugation_apply,
     hx.coordConj_eq_self_of_mem_chevalleyLieLattice b
       (hx.apply_rootSimpleCorootFieldBasis_mem_chevalleyLieLattice b l),
     RingHom.id_apply, starRingEnd_apply, smul_eq_mul, smul_eq_mul, mul_assoc]
@@ -196,7 +196,7 @@ theorem killingHermitianForm_compactConjugation_eq_sum (v : L) :
 /-- **The Hermitian Killing form of the compact conjugation.** For `v = ∑ a_α x α + ∑ aᵢ αᵢ∨`,
 `H_τ(v, v) = ∑_α |a_α|² B(x α, x (-α)) + ∑_γ |γ(h)|²` with `h = ∑ aᵢ αᵢ∨`. -/
 theorem killingHermitianForm_compactConjugation_self (v : L) :
-    killingHermitianForm (hx.compactConjugation b) v v =
+    (hx.compactConjugation b).killingHermitianForm v v =
       ∑ α : H.root, (Complex.normSq
           ((hx.toIsSl2System.rootSimpleCorootFieldBasis b).repr v (Sum.inl α)) : ℂ) *
             killingForm ℂ L (x α) (x (-α)) +
@@ -219,8 +219,8 @@ theorem killingHermitianForm_compactConjugation_self (v : L) :
   congr 1
   · refine Finset.sum_congr rfl fun α _ ↦ ?_
     rw [Finset.sum_eq_single α (fun β _ hβ ↦ by
-        rw [hx.toIsSl2System.killingForm_rootVector_neg_eq_zero fun h ↦ hβ (Subtype.ext h).symm,
-          mul_zero])
+        rw [hx.toIsSl2System.killingForm_rootVector_neg_eq_zero_of_ne
+          fun h ↦ hβ (Subtype.ext h).symm, mul_zero])
       (by simp), ← Complex.mul_conj, starRingEnd_apply]
   · exact Finset.sum_congr rfl fun γ _ ↦ Complex.mul_conj _
 
@@ -239,7 +239,7 @@ theorem isCompactConjugation_compactConjugation :
       rw [hqB]
       simp [r]
     set h : H := ∑ i, c.repr v (Sum.inr i) • coroot (i : Weight ℂ H L) with hh
-    have key : killingHermitianForm (hx.compactConjugation b) v v =
+    have key : (hx.compactConjugation b).killingHermitianForm v v =
         ((∑ α : H.root, Complex.normSq (c.repr v (Sum.inl α)) * r α +
           ∑ γ ∈ H.root, Complex.normSq (γ h) : ℝ) : ℂ) := by
       rw [hx.killingHermitianForm_compactConjugation_self b]
