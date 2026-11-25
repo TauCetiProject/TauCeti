@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.AtPrime.Extension
+public import Mathlib.RingTheory.Localization.BaseChange
 
 /-!
 # Maximal ideals of the semilocalization over a prime
@@ -19,6 +20,11 @@ maximal ideals of `Sₚ` described as the primes over the maximal ideal of `Rₚ
 
 For `S` finite over `R`, `Sₚ` is the semilocal ring of `S` over `p`, and this is the
 correspondence between its maximal ideals and the points of the fibre over `p`.
+
+Suppose that among the ideals of `S` contracting into `p` there is a greatest one `q`, for
+instance when `S` is a valuation ring. Then `Sₚ` is the localization of `S` at `q`
+(`IsLocalization.isLocalization_atPrime_of_isGreatest_comap_le`); in particular so is
+`S ⊗[R] Rₚ` (`IsLocalization.isLocalization_atPrime_tensorProduct_of_isGreatest_comap_le`).
 -/
 
 public section
@@ -65,3 +71,35 @@ theorem maximalSpectrumEquivPrimesOver_symm_apply_asIdeal (q : p.primesOver S) :
   (rfl)
 
 end IsLocalization.AtPrime
+
+namespace IsLocalization
+
+variable {R B : Type*} [CommRing R] [CommRing B] [Algebra R B] {p : Ideal R} [p.IsPrime]
+  {q : Ideal B} [q.IsPrime]
+
+/-- Let `B` be an algebra over `R`, `p` a prime of `R` and `q` the greatest ideal of `B`
+contracting into `p` (which is prime by `Ideal.isPrime_of_isGreatest_comap_le`). Then a
+localization of `B` at the image of `R \ p` is a localization of `B` at `q`. -/
+theorem isLocalization_atPrime_of_isGreatest_comap_le
+    (hq : IsGreatest {J : Ideal B | J.comap (algebraMap R B) ≤ p} q) (S : Type*) [CommRing S]
+    [Algebra B S] [IsLocalization (Algebra.algebraMapSubmonoid B p.primeCompl) S] :
+    IsLocalization.AtPrime S q := by
+  refine of_le (Algebra.algebraMapSubmonoid B p.primeCompl) _
+    (fun t ht htq ↦ Set.disjoint_left.mp (Ideal.disjoint_map_primeCompl_iff_comap_le.mpr hq.1)
+      htq ht) fun w hw ↦ ?_
+  -- Otherwise `w` lies in a maximal ideal of `S`, whose contraction to `B` is an ideal disjoint
+  -- from the image of `R \ p`, hence contained in `q`.
+  by_contra hu
+  obtain ⟨M, hM, hwM⟩ := exists_max_ideal_of_mem_nonunits hu
+  have hdisj := ((isPrime_iff_isPrime_disjoint (Algebra.algebraMapSubmonoid B p.primeCompl) S
+    M).mp hM.isPrime).2.symm
+  exact hw (hq.2 (Ideal.disjoint_map_primeCompl_iff_comap_le.mp hdisj) hwM)
+
+/-- Let `B` be an algebra over `R`, `p` a prime of `R` and `q` the greatest ideal of `B`
+contracting into `p`. Then `B ⊗[R] R_p` is a localization of `B` at `q`. -/
+theorem isLocalization_atPrime_tensorProduct_of_isGreatest_comap_le
+    (hq : IsGreatest {J : Ideal B | J.comap (algebraMap R B) ≤ p} q) :
+    IsLocalization.AtPrime (TensorProduct R B (Localization.AtPrime p)) q :=
+  isLocalization_atPrime_of_isGreatest_comap_le hq _
+
+end IsLocalization

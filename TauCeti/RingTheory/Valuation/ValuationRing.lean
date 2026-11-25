@@ -32,6 +32,8 @@ In a valuation ring an irreducible element `ϖ` generates the maximal ideal, wit
 hypothesis; so for a valuation subring `s` of a commutative ring the powers of the maximal ideal
 are, inside that ring, the scaled copies `ϖ ^ k • s`.
 
+In a valuation ring a proper radical ideal is prime, since of two elements one divides the other.
+
 Finally, on a monoid with total divisibility, a multiplicative map preserving zero and one is
 determined by divisibility when it is at most `1` everywhere, below `1` on the nonunits and zero
 only at `0`: then `v x ≤ v y` exactly when `y ∣ x`. This describes the `𝔪`-adic valuation of a
@@ -47,6 +49,7 @@ discrete valuation ring on its own elements, and the points with zero support of
   of a valuation ring generates its maximal ideal.
 * `Irreducible.image_maximalIdeal_pow_eq_smul`: for an irreducible `ϖ` of a valuation subring `s`
   of a commutative ring, the image of the `k`-th power of the maximal ideal is `ϖ ^ k • s`.
+* `Ideal.IsRadical.isPrime_of_ne_top`: a proper radical ideal of a valuation ring is prime.
 * `MonoidWithZeroHom.le_iff_dvd`: a multiplicative map at most `1`, below `1` on the nonunits
   and zero only at `0` compares elements by divisibility.
 
@@ -144,6 +147,15 @@ theorem _root_.Irreducible.image_maximalIdeal_pow_eq_smul {A S : Type*} [CommRin
 end ValuationRing
 
 end TauCeti
+
+/-- In a valuation ring a proper radical ideal is prime. -/
+theorem Ideal.IsRadical.isPrime_of_ne_top {S : Type*} [CommRing S] [PreValuationRing S]
+    {I : Ideal S} (hI : I.IsRadical) (htop : I ≠ ⊤) : I.IsPrime := by
+  refine ⟨htop, fun {x y} hxy ↦ ?_⟩
+  -- One of `x` and `y` divides the other, and then the square of the multiple lies in `I`.
+  obtain ⟨c, rfl⟩ | ⟨c, rfl⟩ := ValuationRing.dvd_total x y
+  · exact .inr (hI ⟨2, by simpa [pow_two, mul_assoc, mul_left_comm] using I.mul_mem_right c hxy⟩)
+  · exact .inl (hI ⟨2, by simpa [pow_two, mul_assoc, mul_left_comm] using I.mul_mem_right c hxy⟩)
 
 namespace MonoidWithZeroHom
 

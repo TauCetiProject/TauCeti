@@ -7,8 +7,8 @@ module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
-import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.RingTheory.Localization.Submodule
+import TauCeti.RingTheory.Localization.AtPrime.Extension
 
 /-!
 # The local rings of the fibre ring
@@ -19,7 +19,8 @@ of `B`, Mathlib's `Ideal.Fiber.algEquivAux₂` identifies the local ring `(κ(p)
 It also records that the fibre ring of a Noetherian algebra is Noetherian.
 
 When `q` is the greatest ideal of `B` contracting into `p`, the localization of `B` at the image
-of `R \ p`, in particular `B ⊗[R] R_p`, is the localization of `B` at `q`, and the fibre ring
+of `R \ p` is the localization of `B` at `q`
+(`IsLocalization.isLocalization_atPrime_of_isGreatest_comap_le`), so the fibre ring
 `κ(p) ⊗[R] B` is `B_q ⧸ p B_q`.
 
 ## Main results
@@ -31,12 +32,8 @@ of `R \ p`, in particular `B ⊗[R] R_p`, is the localization of `B` at `q`, and
   `B_q ⧸ p B_q`.
 * `Ideal.Fiber.map_le_maximalIdeal`: the ideal `p B_q` lies in the maximal ideal of `B_q`.
 * `Ideal.Fiber.isNoetherianRing`: if `B` is Noetherian, so is the fibre ring `κ(p) ⊗[R] B`.
-* `IsLocalization.isLocalization_atPrime_of_isGreatest_comap_le`: a localization of `B` at the
-  image of `R \ p` is a localization of `B` at the greatest ideal `q` contracting into `p`; in
-  particular so is `B ⊗[R] R_p`
-  (`IsLocalization.isLocalization_atPrime_tensorProduct_of_isGreatest_comap_le`).
-* `Ideal.Fiber.algEquivQuotientLocalizationAtPrime`: for this `q`, the fibre ring
-  `κ(p) ⊗[R] B` is isomorphic to `B_q ⧸ p B_q`.
+* `Ideal.Fiber.algEquivQuotientLocalizationAtPrime`: for the greatest ideal `q` of `B`
+  contracting into `p`, the fibre ring `κ(p) ⊗[R] B` is isomorphic to `B_q ⧸ p B_q`.
 -/
 
 public section
@@ -108,37 +105,6 @@ instance isNoetherianRing [IsNoetherianRing B] : IsNoetherianRing (p.Fiber B) :=
   isNoetherianRing_of_ringEquiv _ (algEquivQuotient p).symm.toRingEquiv
 
 end Ideal.Fiber
-
-namespace IsLocalization
-
-variable {p : Ideal R} [p.IsPrime] {q : Ideal B} [q.IsPrime]
-
-/-- Let `B` be an algebra over `R`, `p` a prime of `R` and `q` the greatest ideal of `B`
-contracting into `p` (which is prime by `Ideal.isPrime_of_isGreatest_comap_le`). Then a
-localization of `B` at the image of `R \ p` is a localization of `B` at `q`. -/
-theorem isLocalization_atPrime_of_isGreatest_comap_le
-    (hq : IsGreatest {J : Ideal B | J.comap (algebraMap R B) ≤ p} q) (S : Type*) [CommRing S]
-    [Algebra B S] [IsLocalization (Algebra.algebraMapSubmonoid B p.primeCompl) S] :
-    IsLocalization.AtPrime S q := by
-  refine of_le (Algebra.algebraMapSubmonoid B p.primeCompl) _
-    (fun t ht htq ↦ Set.disjoint_left.mp (Ideal.disjoint_map_primeCompl_iff_comap_le.mpr hq.1)
-      htq ht) fun w hw ↦ ?_
-  -- Otherwise `w` lies in a maximal ideal of `S`, whose contraction to `B` is an ideal disjoint
-  -- from the image of `R \ p`, hence contained in `q`.
-  by_contra hu
-  obtain ⟨M, hM, hwM⟩ := exists_max_ideal_of_mem_nonunits hu
-  have hdisj := ((isPrime_iff_isPrime_disjoint (Algebra.algebraMapSubmonoid B p.primeCompl) S
-    M).mp hM.isPrime).2.symm
-  exact hw (hq.2 (Ideal.disjoint_map_primeCompl_iff_comap_le.mp hdisj) hwM)
-
-/-- Let `B` be an algebra over `R`, `p` a prime of `R` and `q` the greatest ideal of `B`
-contracting into `p`. Then `B ⊗[R] R_p` is a localization of `B` at `q`. -/
-theorem isLocalization_atPrime_tensorProduct_of_isGreatest_comap_le
-    (hq : IsGreatest {J : Ideal B | J.comap (algebraMap R B) ≤ p} q) :
-    IsLocalization.AtPrime (TensorProduct R B (Localization.AtPrime p)) q :=
-  isLocalization_atPrime_of_isGreatest_comap_le hq _
-
-end IsLocalization
 
 namespace Ideal
 
