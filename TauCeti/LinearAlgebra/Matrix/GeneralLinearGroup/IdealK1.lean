@@ -605,6 +605,13 @@ theorem toAlgebraicK1_mk (x : congruenceSubgroup I) :
     toAlgebraicK1 I (mk I x) = Group.Abelianization.of (x : StableGeneralLinearGroup R) :=
   (rfl)
 
+/-- The homomorphism `K₁(R, I) → K₁(R)` sends the class of an invertible matrix congruent to the
+identity modulo `I` to its class in `K₁(R)`. It is not `@[simp]`, because `toAlgebraicK1_mk`
+already rewrites its left-hand side. -/
+theorem toAlgebraicK1_mk_of {n : ℕ} {u : GL (Fin n) R} (hu : u ∈ congruenceSubgroupGL (Fin n) I) :
+    toAlgebraicK1 I (mk I ⟨of R n u, of_mem_congruenceSubgroup_iff.2 hu⟩) = AlgebraicK1.mk R n u :=
+  (toAlgebraicK1_mk _).trans (AlgebraicK1.mk_apply n u).symm
+
 /-- **Exactness of `K₁(R, I) → K₁(R) → K₁(R/I)` at `K₁(R)`**: the image of relative `K₁` in
 `K₁(R)` is the kernel of the homomorphism induced by the quotient map `R → R/I`. -/
 theorem range_toAlgebraicK1_eq_ker_map :
@@ -613,8 +620,7 @@ theorem range_toAlgebraicK1_eq_ker_map :
   constructor
   · rintro ⟨y, rfl⟩
     obtain ⟨n, u, hu, rfl⟩ := exists_mk_of y
-    rw [MonoidHom.mem_ker, toAlgebraicK1_mk]
-    rw [← AlgebraicK1.mk_apply, AlgebraicK1.map_mk, hu, map_one]
+    rw [MonoidHom.mem_ker, toAlgebraicK1_mk_of hu, AlgebraicK1.map_mk, hu, map_one]
   · intro hz
     obtain ⟨n, u, rfl⟩ := AlgebraicK1.exists_mk z
     rw [MonoidHom.mem_ker, AlgebraicK1.map_mk, AlgebraicK1.mk_eq_one_iff] at hz
@@ -626,7 +632,7 @@ theorem range_toAlgebraicK1_eq_ker_map :
     have hg : stabilizeGL R h u * e⁻¹ ∈ congruenceSubgroupGL (Fin k) I := by
       rw [congruenceSubgroupGL, MonoidHom.mem_ker, map_mul, map_inv, hee, mul_inv_cancel]
     refine ⟨mk I ⟨of R k _, of_mem_congruenceSubgroup_iff.2 hg⟩, ?_⟩
-    rw [toAlgebraicK1_mk, ← AlgebraicK1.mk_apply, map_mul, map_inv, AlgebraicK1.mk_stabilizeGL,
+    rw [toAlgebraicK1_mk_of hg, map_mul, map_inv, AlgebraicK1.mk_stabilizeGL,
       AlgebraicK1.elementarySubgroup_le_ker_mk k he, inv_one, mul_one]
 
 /-- The composite `K₁(R, I) → K₁(R) → K₁(R/I)` is trivial. -/
