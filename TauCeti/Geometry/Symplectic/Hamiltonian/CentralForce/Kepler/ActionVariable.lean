@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Kepler.Freque
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Kepler.Period
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Kepler.Torus
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Rotation
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Kepler.Basic
 
 /-!
@@ -126,25 +127,6 @@ theorem keplerRadialAction_eq_radialAction (hm : 0 < m) {x : ℂ × ℂ}
   rw [kepler_radialAction_turningRadii hm (pos_of_centralForceHamiltonian_kepler_neg hm hE) hL
     hmin hE, keplerRadialAction_def]
 
-/-- The derivative of `E ↦ √(m / (-2E))` at `E ≠ 0` is `√(m / (-2E)) / (-2E)`. -/
-private theorem hasDerivAt_sqrt_div_neg_two_mul (m : ℝ) {E : ℝ} (hE : E ≠ 0) :
-    HasDerivAt (fun E ↦ √(m / (-2 * E))) (√(m / (-2 * E)) / (-2 * E)) E := by
-  have h2E : -2 * E ≠ 0 := mul_ne_zero (by norm_num) hE
-  -- Write `m = s (-2E)`, so that `√(m / (-2E)) = √s`.
-  obtain ⟨s, rfl⟩ : ∃ s, m = s * (-2 * E) := ⟨m / (-2 * E), by field_simp⟩
-  rw [mul_div_cancel_right₀ _ h2E]
-  by_cases hs : s = 0
-  · simpa [hs] using hasDerivAt_const E (0 : ℝ)
-  have hd : HasDerivAt (fun E' ↦ s * (-2 * E) / (-2 * E'))
-      ((0 * (-2 * E) - s * (-2 * E) * (-2 * 1)) / (-2 * E) ^ 2) E :=
-    (hasDerivAt_const E _).div ((hasDerivAt_id' E).const_mul (-2)) h2E
-  refine (hd.sqrt (by rwa [mul_div_cancel_right₀ _ h2E])).congr_deriv ?_
-  -- Both sides are `-(s / √s) / (2E)`, and `s / √s = √s`.
-  rw [mul_div_cancel_right₀ _ h2E]
-  conv_rhs => rw [← div_sqrt (x := s)]
-  field_simp
-  ring
-
 /-- Kepler's third law in the radial action: for `m, κ > 0` and energy `E < 0`, the period
 `2π √(m / κ) a^(3/2)` of the Kepler motions with semi-major axis `a = κ / (-2E)` is `2π` times
 the coefficient `κ √(m / (-2E)) / (-2E)` of `X_H` in the Hamiltonian vector field of the radial
@@ -175,10 +157,12 @@ theorem hasFDerivAt_keplerRadialAction {x : ℂ × ℂ} (hq : x.1 ≠ 0)
   have hH := (hasFDerivAt_centralForceHamiltonian (m := m)
     (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 hq)) hq).differentiableAt.hasFDerivAt
   have hL' := (hasFDerivAt_angularMomentum (1 : ℂ) I x).differentiableAt.hasFDerivAt
-  have h := (((hasDerivAt_sqrt_div_neg_two_mul m hE).comp_hasFDerivAt x hH).const_mul κ).sub
-    ((hasDerivAt_abs hL).comp_hasFDerivAt x hL')
+  have h := (((hasDerivAt_sqrt_div m (mul_ne_zero (by norm_num) hE)).comp_hasFDerivAt x
+    (hH.const_mul (-2))).const_mul κ).sub ((hasDerivAt_abs hL).comp_hasFDerivAt x hL')
   refine h.congr_fderiv ?_
-  rw [smul_smul, mul_div_assoc]
+  rw [smul_smul, smul_smul]
+  congr 2
+  field_simp
 
 /-- **The Hamiltonian vector field of the radial action.** Off the collision set, at a state of
 nonzero energy `E` and nonzero angular momentum `ℓ`, the Hamiltonian vector field of the radial
@@ -310,13 +294,13 @@ theorem exists_hasDerivAt_keplerRadialAction (hm : 0 < m) {x : ℂ × ℂ}
     ∃ γ : ℝ → ℂ × ℂ, γ 0 = x ∧ ∀ t, γ t ∈ keplerBoundPhaseSpace orthonormalBasisOneI m κ ∧
       HasDerivAt γ
         ((stdSymplecticForm (V := ℂ)).hamiltonianVectorField (keplerRadialAction m κ) (γ t)) t := by
-  obtain ⟨hq, hE, hL⟩ := mem_keplerBoundPhaseSpace_orthonormalBasisOneI.1 hx
+  obtain ⟨-, hE, hL⟩ := mem_keplerBoundPhaseSpace_orthonormalBasisOneI.1 hx
   have hκ := pos_of_centralForceHamiltonian_kepler_neg hm hE
   -- The Kepler motion through `x` is defined for all time.
   have hx := pow_ne_zero 2 (show angularMomentum (orthonormalBasisOneI 0) (orthonormalBasisOneI 1)
     x ≠ 0 by simpa [coe_orthonormalBasisOneI] using hL)
   rw [sq_angularMomentum] at hx
-  obtain ⟨η, hη0, hη, hηq⟩ := exists_hasDerivAt_kepler_of_sq_sub_inner_sq_ne_zero hm hκ hq hx
+  obtain ⟨η, hη0, hη, hηq⟩ := exists_hasDerivAt_kepler_of_sq_sub_inner_sq_ne_zero hm hκ hx
   -- Along it the energy and the angular momentum are constant.
   have hHc (t : ℝ) : centralForceHamiltonian m (fun r ↦ -κ / r) (η t) =
       centralForceHamiltonian m (fun r ↦ -κ / r) x :=
