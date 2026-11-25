@@ -257,14 +257,22 @@ def lieExpLift {K : Type*} [Monoid K] [TopologicalSpace K]
       ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm.continuous.comp
         continuous_ofMul))
 
+/-- Unfolding lemma for `lieExpLift`: it lifts `ψ` through the identification of `G` with
+`𝔤 / ker(exp)`. -/
+theorem lieExpLift_apply {K : Type*} [Monoid K] [TopologicalSpace K]
+    (ψ : LeftInvariantDerivation I G →+ Additive K) (hψc : Continuous ψ)
+    (hψ : (lieExpAddMonoidHom (I := I) (G := G)).ker ≤ ψ.ker) (g : G) :
+    lieExpLift ψ hψc hψ g = Additive.toMul (QuotientAddGroup.lift _ ψ hψ
+      ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm (Additive.ofMul g))) :=
+  (rfl)
+
 /-- The homomorphism `lieExpLift ψ hψc hψ` sends `exp X` to `ψ X`. -/
 @[simp]
 theorem lieExpLift_lieExp {K : Type*} [Monoid K] [TopologicalSpace K]
     (ψ : LeftInvariantDerivation I G →+ Additive K) (hψc : Continuous ψ)
     (hψ : (lieExpAddMonoidHom (I := I) (G := G)).ker ≤ ψ.ker) (X : LeftInvariantDerivation I G) :
     lieExpLift ψ hψc hψ (lieExp X) = Additive.toMul (ψ X) := by
-  rw [lieExpLift, ContinuousMonoidHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk,
-    lieExpQuotientKerContinuousAddEquiv_symm_apply, QuotientAddGroup.lift_mk]
+  simp [lieExpLift_apply]
 
 end Preconnected
 
