@@ -42,9 +42,10 @@ Then `dΦ` induces a linear equivalence `[u] ↦ [dΦ u]` from the conformal sym
 line-valued form of `ξ` to that of `ξ₂` up to the isomorphism
 `T_(f y) M ⧸ ξ_(f y) ≃ T_(Φ (f y)) M₂ ⧸ ξ₂_(Φ (f y))` of contact lines induced by `dΦ`
 (`IsLocalDiffeomorphAt.mfderivQuotientEquiv`,
-`TauCeti.conformalSymplecticNormalForm_conformalSymplecticNormalCongr`), and which is compatible
-with composition (`TauCeti.conformalSymplecticNormalCongr_trans`). This rests on the naturality of
-the Levi form (`TauCeti.distributionLeviForm_mfderivRestrictEquiv`).
+`TauCeti.conformalSymplecticNormalForm_conformalSymplecticNormalCongr`). Both isomorphisms are
+compatible with composition (`TauCeti.conformalSymplecticNormalCongr_trans`,
+`IsLocalDiffeomorphAt.mfderivQuotientEquiv_trans`). This rests on the naturality of the Levi form
+(`TauCeti.distributionLeviForm_mfderivRestrictEquiv`).
 
 A local defining form `α` of `ξ` at `f y`, with `ker α_(f y) = ξ_(f y)`, identifies the contact
 line with `ℝ` and turns the line-valued form into a linear symplectic form
@@ -214,23 +215,18 @@ theorem conformalSymplecticNormalCongr_trans {E₃ H₃ M₃ : Type*} [NormedAdd
     (hΦ' : IsLocalDiffeomorphAt I₂ I₃ m Φ' ((Φ ∘ f) y)) (hm : 2 ≤ m)
     (hDΦ : ∀ᶠ z in 𝓝 (f y), D z = (D₂ (Φ z)).comap (mfderiv I I₂ Φ z).toLinearMap)
     (hDΦ' : ∀ᶠ z in 𝓝 ((Φ ∘ f) y), D₂ z = (D₃ (Φ' z)).comap (mfderiv I₂ I₃ Φ' z).toLinearMap)
-    (hDΦ'Φ : ∀ᶠ z in 𝓝 (f y),
-      D z = (D₃ ((Φ' ∘ Φ) z)).comap (mfderiv I I₃ (Φ' ∘ Φ) z).toLinearMap)
     (hf : MDifferentiableAt J I f y) :
-    conformalSymplecticNormalCongr J hD₃ hn (hΦ.comp (hg := hΦ')) hm hDΦ'Φ hf =
+    conformalSymplecticNormalCongr J hD₃ hn (hΦ.comp (hg := hΦ')) hm
+        (hΦ.eventually_eq_comap_mfderiv_comp hΦ' (zero_lt_two.trans_le hm).ne' hDΦ hDΦ') hf =
       (conformalSymplecticNormalCongr J hD₂ hn hΦ hm hDΦ hf).trans
         (conformalSymplecticNormalCongr J hD₃ hn hΦ' hm hDΦ'
           ((hΦ.mdifferentiableAt (zero_lt_two.trans_le hm).ne').comp y hf)) := by
-  have hm0 : m ≠ 0 := (zero_lt_two.trans_le hm).ne'
   ext a
   induction a using Submodule.Quotient.induction_on with
   | H u =>
     simp only [conformalSymplecticNormalCongr, LinearEquiv.trans_apply,
-      LinearMap.symplecticNormalCongr_mk]
-    congr 2
-    ext
-    simp only [IsLocalDiffeomorphAt.coe_mfderivRestrictEquiv_apply]
-    exact mfderiv_comp_apply (f y) (hΦ'.mdifferentiableAt hm0) (hΦ.mdifferentiableAt hm0) _
+      LinearMap.symplecticNormalCongr_mk, hΦ.mfderivRestrictEquiv_trans hΦ'
+        (zero_lt_two.trans_le hm).ne' hDΦ.self_of_nhds hDΦ'.self_of_nhds]
 
 end Naturality
 
