@@ -440,15 +440,6 @@ section Torus
 variable {R : Type u} [CommRing R] [Invertible (2 : R)] {l : ℕ} (s : ShortRootIndex l)
 variable {A : Type v} [CommRing A] [Algebra R A]
 
-/-- The middle diagonal entry of the diagonal torus has weight `0`. -/
-theorem diagonalTorusWeight_m : diagonalTorusWeight.{u} l s.m = 0 := by
-  have h := congrArg Fin.val s.rev_m
-  rw [Fin.val_rev] at h
-  apply diagonalTorusWeight_eq_zero
-  · omega
-  · rw [s.rev_m]
-    omega
-
 /-- **The diagonal torus of `SO_l^J` acts on the short root subgroup `x_i` through the weight
 `w_i`** of the `i`-th diagonal entry: conjugation by a point `t` of the diagonal torus scales the
 parameter by the value at `t` of `w_i`, which is `ε_i` for `i < l / 2`. -/
@@ -475,7 +466,7 @@ theorem diagonalTorusPoints_mul_shortRootSubgroupPoints_mul_inv
     coe_shortRootHom, toAdd_ofAdd]
   exact diagonal_mul_shortRootMatrix_mul_diagonal_inv s _
     (fun k => by rw [diagonalTorusWeight_rev, torusCharacter_neg])
-    (by rw [diagonalTorusWeight_m, torusCharacter_zero]) _ _
+    (by rw [diagonalTorusWeight_eq_zero_of_rev_eq s.rev_m, torusCharacter_zero]) _ _
 
 end Torus
 
