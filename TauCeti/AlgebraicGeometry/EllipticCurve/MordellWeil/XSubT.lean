@@ -20,7 +20,6 @@ public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Collinear
-import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -279,6 +278,23 @@ lemma fCofactor_eq_of_f_eq_mul {x : R} {q : R[X]} (hf : W.f = q * (X - C x)) :
   have hx : W.f.eval x = 0 := by rw [hf]; simp
   exact (monic_X_sub_C x).isRegular.right <| (W.f_eq_mul_of_eval_eq_zero hx).symm.trans hf
 
+/-- A root `t ≠ e` of `f` is a root of the cofactor `fCofactor e`, since
+`f = fCofactor e · (X - e)`. -/
+lemma isRoot_fCofactor_of_ne [IsDomain R] {e t : R} (he : W.f.eval e = 0)
+    (ht : W.f.eval t = 0) (hte : t ≠ e) : (W.fCofactor e).IsRoot t := by
+  rw [W.f_eq_mul_of_eval_eq_zero he, eval_mul, eval_sub, eval_X, eval_C] at ht
+  exact (mul_eq_zero.mp ht).resolve_right (sub_ne_zero.mpr hte)
+
+/-- A root `r` of the cofactor `fCofactor e` splits it as `(X - r) (X - r')`, where
+`r' = -(e + a₂) - r` is the other root. -/
+lemma fCofactor_eq_mul_of_isRoot {e r : R} (hr : (W.fCofactor e).IsRoot r) :
+    W.fCofactor e = (X - C r) * (X - C (-(e + W.a₂) - r)) := by
+  have hr' : e ^ 2 + W.a₂ * e + W.a₄ = -r ^ 2 - (e + W.a₂) * r := by
+    simp only [IsRoot, eval_add, eval_pow, eval_X, eval_mul, eval_C] at hr
+    linear_combination hr
+  simp only [fCofactor, hr', map_sub, map_neg, map_add, map_mul, map_pow]
+  ring
+
 lemma separable_f [W.IsElliptic] [W.IsCharNeTwoNF] : W.f.Separable := by
   let u := W.isUnit_Δ.unit
   have hu : (↑u⁻¹ : R) * W.Δ = 1 := W.isUnit_Δ.val_inv_mul
@@ -298,6 +314,12 @@ lemma separable_f [W.IsElliptic] [W.IsCharNeTwoNF] : W.f.Separable := by
 lemma squarefree_f [W.IsElliptic] [W.IsCharNeTwoNF] : Squarefree W.f :=
   (separable_f W).squarefree
 
+/-- At a root `x` of `f`, the cofactor `fCofactor x` is coprime to `X - C x` when `W` is elliptic
+and in characteristic `≠ 2` normal form, because `f = fCofactor x * (X - C x)` is separable. -/
+lemma isCoprime_fCofactor_X_sub_C [W.IsElliptic] [W.IsCharNeTwoNF] {x : R}
+    (hx : W.f.eval x = 0) : IsCoprime (W.fCofactor x) (X - C x) :=
+  (W.f_eq_mul_of_eval_eq_zero hx ▸ separable_f W).isCoprime
+
 /-- The cubic quotient algebra `R[X]/(f)`. It is étale when `W` is elliptic and in
 characteristic `≠ 2` normal form, by `separable_f`. -/
 abbrev A : Type _ := AdjoinRoot W.f
@@ -313,8 +335,7 @@ noncomputable def equivProdA' [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f
     Ideal.quotEquivOfEq <| by
       rw [Ideal.span_singleton_mul_span_singleton, mul_comm, ← W.f_eq_mul_of_eval_eq_zero hx]
   have H : IsCoprime (Ideal.span {X - C x}) (Ideal.span {W.fCofactor x}) :=
-    (Ideal.isCoprime_span_singleton_iff _ _).mpr <|
-      (W.f_eq_mul_of_eval_eq_zero hx ▸ separable_f W).isCoprime.symm
+    (Ideal.isCoprime_span_singleton_iff _ _).mpr (W.isCoprime_fCofactor_X_sub_C hx).symm
   eA.trans <|
     (Ideal.quotientMulEquivQuotientProd (Ideal.span {X - C x}) (Ideal.span {W.fCofactor x})
       H).trans <|
@@ -335,18 +356,16 @@ lemma mk_eq_mk_iff [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f.eval x = 0
   rw [← EquivLike.apply_eq_iff_eq <| W.equivProdA' hx]
   simpa only [equivProdA'_apply] using Prod.mk_inj
 
-lemma isUnit_mk_iff {x : R} (hx : W.f.eval x = 0) {p : R[X]} :
-    IsUnit (AdjoinRoot.mk W.f p) ↔
-      IsUnit (p.eval x) ∧ IsUnit (AdjoinRoot.mk (W.fCofactor x) p) := by
-  have key (q : R[X]) : IsUnit (AdjoinRoot.mk q p) ↔ IsCoprime p q := by
-    rw [AdjoinRoot.mk]
-    exact (Ideal.Quotient.isUnit_mk_iff).trans (Ideal.sup_eq_top_iff_isCoprime _ _)
-  have hlin : IsUnit (p.eval x) ↔ IsCoprime p (X - C x) := by
-    rw [← key]
-    exact (MulEquiv.isUnit_map (quotientSpanXSubCAlgEquiv x).toRingEquiv.toMulEquiv
-      (x := AdjoinRoot.mk (X - C x) p))
-  rw [key W.f, key (W.fCofactor x), hlin, W.f_eq_mul_of_eval_eq_zero hx,
-    IsCoprime.mul_right_iff, and_comm]
+variable {W} in
+/-- When `W` is elliptic and in characteristic `≠ 2` normal form, then at a root `x` of `f` the
+corrected representative `x - T + fCofactor x` is a unit of the cubic quotient algebra. -/
+lemma isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero [W.IsElliptic] [W.IsCharNeTwoNF] {x : R}
+    (h : W.f.eval x = 0) :
+    IsUnit <| AdjoinRoot.mk W.f <| C x - X + W.fCofactor x := by
+  -- The representative is `fCofactor x - (X - C x)`, the difference of the two factors of `f`.
+  rw [W.f_eq_mul_of_eval_eq_zero h, ← neg_sub X (C x), ← sub_eq_neg_add,
+    AdjoinRoot.isUnit_mk_mul_sub_iff_isCoprime]
+  exact W.isCoprime_fCofactor_X_sub_C h
 
 /-! ### Square classes of the cubic quotient algebra -/
 
@@ -593,37 +612,6 @@ variable [W.IsCharNeTwoNF]
 lemma y_eq_zero_of_eval_f_eq_zero {x y : K} (h : W.Equation x y) (hf : W.f.eval x = 0) :
     y = 0 := by
   rwa [equation_iff_eval_f_eq_sq, hf, eq_comm, sq_eq_zero_iff] at h
-
-variable [W.IsElliptic]
-
-lemma isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero {x : K} (h : W.f.eval x = 0) :
-    IsUnit <| AdjoinRoot.mk W.f <| C x - X + W.fCofactor x := by
-  rw [isUnit_mk_iff W h]
-  have H₀ : 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ ≠ 0 := deriv_f_ne_zero W h
-  have H₁ : eval x (C x - X + W.fCofactor x) = 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ := by
-    rw [eval_add, W.eval_fCofactor_self]; simp
-  have H₂ : (AdjoinRoot.mk (W.fCofactor x)) (C x - X + W.fCofactor x) =
-      AdjoinRoot.mk (W.fCofactor x) (C x - X) := by
-    simp
-  rw [H₁, H₂, isUnit_iff_ne_zero]
-  refine ⟨H₀, ?_⟩
-  let u := AdjoinRoot.mk (W.fCofactor x) <|
-    C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄)⁻¹ * (X + C (2 * x + W.a₂))
-  rw [isUnit_iff_exists_inv]
-  refine ⟨u, ?_⟩
-  rw [← map_mul]
-  have : (C x - X) * (C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄)⁻¹ * (X + C (2 * x + W.a₂))) =
-      C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄)⁻¹ * (-W.fCofactor x) + 1 := by
-    rw [mul_left_comm]
-    apply_fun (C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) * ·) using
-      mul_right_injective₀ <| C_ne_zero.mpr H₀
-    dsimp only
-    rw [mul_add _ _ 1]
-    simp_rw [← mul_assoc, ← map_mul, mul_inv_cancel₀ H₀, map_one, one_mul, mul_one]
-    simp only [C_eq_algebraMap, fCofactor]
-    algebra
-  rw [this, map_add, map_one, map_mul, map_neg]
-  simp
 
 end
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Elementary
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Comparison
 public import Mathlib.GroupTheory.Subgroup.Centralizer
@@ -20,8 +21,10 @@ point belongs to the elementary subgroup.
 
 `rootGeneratedTorusAction` restricts conjugation to the root-generated subgroup, using the pinning
 equation. `comp_rootGeneratedTorusAction` proves equivariance for an arbitrary root-preserving
-homomorphism to another datum's points. Both constructions work over every commutative ring,
-including when the character lattices are proper and their restriction map is not surjective.
+homomorphism to another datum's points, and `map_mk_torusPoints_mul_mul_inv` reads it pointwise
+for a homomorphism on `ChevalleyDatum.elementarySubgroup`. Both constructions work over every
+commutative ring, including when the character lattices are proper and their restriction map is
+not surjective.
 
 The proof uses the native pinning equation and `torusRestriction`, together with Mathlib's
 `Subgroup.normalizerMonoidHom` and homomorphism extensionality on a generated subgroup.
@@ -110,5 +113,28 @@ theorem map_rootGeneratedTorusAction (h : E.weightLattice ≤ D.weightLattice)
         (E.torusPoints A (D.torusRestriction E h s))⁻¹ := by
   simpa only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
     DFunLike.congr_fun (D.comp_rootGeneratedTorusAction E A h f hf s) g
+
+/-- Conjugation by an actual torus point of `D` corresponds under a root-preserving
+homomorphism on the elementary subgroup to conjugation by the restricted torus point of `E`.
+This is `map_rootGeneratedTorusAction`, read on `ChevalleyDatum.elementarySubgroup`. -/
+theorem map_mk_torusPoints_mul_mul_inv (h : E.weightLattice ≤ D.weightLattice)
+    (f : D.elementarySubgroup A →* E.points A)
+    (hf : ∀ (γ : Fin t.numRoots) (u : Multiplicative A),
+      f ⟨D.rootSubgroupPoints γ A u, D.rootSubgroupPoints_mem_elementarySubgroup A γ u⟩ =
+        E.rootSubgroupPoints γ A u)
+    (s : Fin t.rank → Aˣ) (x : D.elementarySubgroup A)
+    (hx : D.torusPoints A s * x * (D.torusPoints A s)⁻¹ ∈ D.elementarySubgroup A) :
+    f ⟨D.torusPoints A s * x * (D.torusPoints A s)⁻¹, hx⟩ =
+      E.torusPoints A (D.torusRestriction E h s) * f x *
+        (E.torusPoints A (D.torusRestriction E h s))⁻¹ := by
+  let f' : Subgroup.closure (⋃ γ : Fin t.numRoots, Set.range (D.rootSubgroupPoints γ A)) →*
+      E.points A :=
+    f.comp (MulEquiv.subgroupCongr (D.elementarySubgroup_def A)).symm.toMonoidHom
+  have hf' : ∀ z, f' z = f ⟨z, (D.elementarySubgroup_def A).ge z.property⟩ := fun z =>
+    congrArg f (Subtype.ext (MulEquiv.subgroupCongr_symm_apply _ _))
+  have key := D.map_rootGeneratedTorusAction E A h f'
+    (fun γ u => (hf' _).trans (hf γ u)) s ⟨x, (D.elementarySubgroup_def A).le x.property⟩
+  rw [hf', hf'] at key
+  simpa only [coe_rootGeneratedTorusAction] using key
 
 end TauCeti.DynkinType.ChevalleyDatum

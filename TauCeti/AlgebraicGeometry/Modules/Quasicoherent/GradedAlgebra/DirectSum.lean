@@ -9,7 +9,9 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Functor
 public import TauCeti.CategoryTheory.GradedObject.Total
+public import TauCeti.CategoryTheory.Limits.Shapes.Products
 public import TauCeti.CategoryTheory.Monoidal.Mon
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
 /-!
 # The direct-sum algebra of a graded quasicoherent algebra
@@ -47,12 +49,21 @@ is quasicoherent because coproducts of quasicoherent sheaves are.
   `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.one_ιTotal_comp`: hence an algebra
   morphism out of `⨁ₙ Aₙ` is multiplicative and unital on the homogeneous summands
   (`mul_ιTotal` and `one_ιTotal` for the identity);
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isIso_ιTotal_zero` and
+  `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isIso_one_toQuasicoherentAlgebra`: a
+  graded algebra whose positive-degree components vanish is its degree-zero component, and its
+  direct sum has invertible unit when `A₀` does;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.ιTotal_toQuasicoherentAlgebra_map`:
   the algebra morphism induced by a graded algebra morphism is its degree-`n` component on the
   summand `Aₙ`;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.epi_toQuasicoherentAlgebra_map`: a
   graded algebra morphism that is an epimorphism in positive degrees, into an algebra whose unit
   is an epimorphism onto the degree-zero component, induces an epimorphism of direct sums.
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.πTotal`: the projection of the direct
+  sum onto a homogeneous summand, compatible with induced morphisms
+  (`toQuasicoherentAlgebra_map_πTotal`);
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isIso_of_isIso_toQuasicoherentAlgebra_map`:
+  the direct-sum functor reflects isomorphisms.
 -/
 
 public section
@@ -288,6 +299,22 @@ theorem one_ιTotal_comp {B : CommMon X.Modules} (A : GradedQuasicoherentAlgebra
   (Category.assoc _ _ _).symm.trans
     ((congrArg (· ≫ k.hom.hom) (one_ιTotal A)).trans (IsMonHom.one_hom k.hom.hom))
 
+/-- If every homogeneous component of positive degree vanishes, the inclusion of the degree-zero
+component into the direct sum `⨁ₙ Aₙ` is an isomorphism. -/
+theorem isIso_ιTotal_zero (A : GradedQuasicoherentAlgebra X)
+    (h : ∀ n, n ≠ 0 → IsZero (A.obj.X n)) : IsIso (ιTotal A 0) :=
+  Cofan.IsColimit.isIso_inj_of_isInitial (isColimitιTotal A) 0 fun n hn ↦ (h n hn).isInitial
+
+/-- **A graded algebra concentrated in degree zero has trivial direct sum.** If the unit
+`𝒪_X ⟶ A₀` is an isomorphism and every homogeneous component of positive degree vanishes, the
+unit of the direct-sum algebra `⨁ₙ Aₙ` is an isomorphism. -/
+theorem isIso_one_toQuasicoherentAlgebra (A : GradedQuasicoherentAlgebra X)
+    [IsIso A.obj.toMon.one] (h : ∀ n, n ≠ 0 → IsZero (A.obj.X n)) :
+    IsIso η[(toQuasicoherentAlgebra.obj A).obj.X] := by
+  have := A.isIso_ιTotal_zero h
+  rw [← one_ιTotal]
+  exact IsIso.comp_isIso' inferInstance this
+
 /-- On the summand `Aₙ`, the algebra morphism induced by a graded algebra morphism `f` is the
 degree-`n` component of `f`. -/
 @[simp, reassoc]
@@ -328,6 +355,90 @@ theorem epi_toQuasicoherentAlgebra_map {A B : GradedQuasicoherentAlgebra X} (g :
     exact (cancel_epi (g.hom.hom.hom n)).1
       ((ιTotal_toQuasicoherentAlgebra_map_assoc g n u).symm.trans
         ((congrArg (ιTotal A n ≫ ·) h).trans (ιTotal_toQuasicoherentAlgebra_map_assoc g n v)))
+
+/-- The projection of the direct sum `⨁ₙ Aₙ` onto its summand `Aₙ`: the projection `Sigma.π` of
+the coproduct, transported along the identification of the direct-sum algebra's underlying module
+with the total object, as for `ιTotal`. -/
+def πTotal (A : GradedQuasicoherentAlgebra X) (n : ℕ) :
+    (toQuasicoherentAlgebra.obj A).obj.X ⟶ A.obj.X n :=
+  eqToHom (toQuasicoherentAlgebra_obj_obj_X A) ≫ Sigma.π (fun m ↦ A.obj.X m) n
+
+/-- The projection onto `Aₙ` is the identity on the summand `Aₙ` (up to `m = n`) and zero on the
+other summands. -/
+theorem ιTotal_πTotal (A : GradedQuasicoherentAlgebra X) (m n : ℕ) :
+    ιTotal A m ≫ πTotal A n = if h : m = n then eqToHom (congrArg A.obj.X h) else 0 := by
+  rw [ιTotal_def, πTotal, Category.assoc]
+  -- The two transports are typed partly in `SheafOfModules X.ringCatSheaf` and partly in
+  -- `X.Modules`, which `rw` does not identify, so they are cancelled as a term.
+  exact (congrArg (_ ≫ ·) ((eqToHom_trans_assoc _ _ _).trans ((congrArg (· ≫ _)
+    (eqToHom_refl _ _)).trans (Category.id_comp _)))).trans (Sigma.ι_π (fun m ↦ A.obj.X m) m n)
+
+/-- The projection onto `Aₙ` is a retraction of the inclusion of `Aₙ`. -/
+@[simp]
+theorem ιTotal_πTotal_self (A : GradedQuasicoherentAlgebra X) (n : ℕ) :
+    ιTotal A n ≫ πTotal A n = 𝟙 _ :=
+  (ιTotal_πTotal A n n).trans (by simp)
+
+/-- The algebra morphism induced by a graded algebra morphism `f` commutes with the projections
+onto the summands, where it is the degree-`n` component of `f`. -/
+theorem toQuasicoherentAlgebra_map_πTotal {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B)
+    (n : ℕ) :
+    (toQuasicoherentAlgebra.map f).hom.hom.hom ≫ πTotal B n = πTotal A n ≫ f.hom.hom.hom n := by
+  refine toQuasicoherentAlgebra_hom_ext fun m ↦ ?_
+  -- The composites are typed partly in `SheafOfModules X.ringCatSheaf` and partly in
+  -- `X.Modules`, which `rw` and `simp` do not identify (for the same reason `@[reassoc]` would
+  -- not reassociate `ιTotal_toQuasicoherentAlgebra_map`), so the reassociations are chained as
+  -- terms: both sides become `f m ≫ (ιTotal B m ≫ πTotal B n)` and
+  -- `(ιTotal A m ≫ πTotal A n) ≫ f n`.
+  refine ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ πTotal B n)
+    (ιTotal_toQuasicoherentAlgebra_map f m)).trans (Category.assoc _ _ _))).trans
+      (Eq.trans ?_ (Category.assoc _ _ _))
+  refine (congrArg (f.hom.hom.hom m ≫ ·) (ιTotal_πTotal B m n)).trans
+    (Eq.trans ?_ (congrArg (· ≫ f.hom.hom.hom n) (ιTotal_πTotal A m n)).symm)
+  split_ifs with h
+  · subst h
+    exact (Category.comp_id _).trans (Category.id_comp _).symm
+  · exact comp_zero.trans zero_comp.symm
+
+/-- **The direct-sum functor reflects isomorphisms.** A morphism of graded quasicoherent algebras
+whose direct sum `⨁ₙ Aₙ ⟶ ⨁ₙ Bₙ` is an isomorphism is an isomorphism. -/
+theorem isIso_of_isIso_toQuasicoherentAlgebra_map {A B : GradedQuasicoherentAlgebra X}
+    (f : A ⟶ B) [IsIso (toQuasicoherentAlgebra.map f)] : IsIso f := by
+  let φ := (toQuasicoherentAlgebra.map f).hom.hom.hom
+  let ψ := (inv (toQuasicoherentAlgebra.map f)).hom.hom.hom
+  have h₁ : φ ≫ ψ = 𝟙 _ :=
+    congrArg (fun φ ↦ φ.hom.hom.hom) (IsIso.hom_inv_id (toQuasicoherentAlgebra.map f))
+  have h₂ : ψ ≫ φ = 𝟙 _ :=
+    congrArg (fun φ ↦ φ.hom.hom.hom) (IsIso.inv_hom_id (toQuasicoherentAlgebra.map f))
+  -- Each component `fₙ` is an isomorphism with inverse `ιTotal B n ≫ ψ ≫ πTotal A n`. As in
+  -- `toQuasicoherentAlgebra_map_πTotal`, `φ` and `ψ` are typed in `SheafOfModules X.ringCatSheaf`
+  -- and `ιTotal`, `πTotal` in `X.Modules`, so `rw`, `simp` and `calc` cannot be used and the
+  -- reassociations are chained as terms.
+  have (n : ℕ) : IsIso (f.hom.hom.hom n) := by
+    refine ⟨ιTotal B n ≫ ψ ≫ πTotal A n, ?_, ?_⟩
+    · -- `fₙ ≫ ιTotal B n ≫ ψ ≫ πTotal A n = ιTotal A n ≫ (φ ≫ ψ) ≫ πTotal A n = 𝟙`
+      have e : ιTotal A n ≫ φ = f.hom.hom.hom n ≫ ιTotal B n :=
+        ιTotal_toQuasicoherentAlgebra_map f n
+      exact ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ ψ ≫ πTotal A n) e.symm)).trans
+        (((Category.assoc _ _ _).trans (congrArg (ιTotal A n ≫ ·) ((Category.assoc _ _ _).symm.trans
+          ((congrArg (· ≫ πTotal A n) h₁).trans (Category.id_comp _))))).trans
+            (ιTotal_πTotal_self A n))
+    · -- `(ιTotal B n ≫ ψ ≫ πTotal A n) ≫ fₙ = ιTotal B n ≫ (ψ ≫ φ) ≫ πTotal B n = 𝟙`
+      have e : φ ≫ πTotal B n = πTotal A n ≫ f.hom.hom.hom n :=
+        toQuasicoherentAlgebra_map_πTotal f n
+      exact ((Category.assoc _ _ _).trans (congrArg (ιTotal B n ≫ ·)
+        ((Category.assoc _ _ _).trans (congrArg (ψ ≫ ·) e.symm)))).trans
+          ((congrArg (ιTotal B n ≫ ·) ((Category.assoc _ _ _).symm.trans
+            ((congrArg (· ≫ πTotal B n) h₂).trans (Category.id_comp _)))).trans
+              (ιTotal_πTotal_self B n))
+  have : IsIso f.hom.hom.hom := GradedObject.isIso_of_isIso_apply _
+  -- The forgetful functor to graded modules sends `f` to its underlying morphism
+  -- `f.hom.hom.hom` (`Functor.comp_map`, `ObjectProperty.ι_map`, `CommMon.forget₂Mon_map_hom`,
+  -- `Mon.forget_map`), and it reflects isomorphisms.
+  have : IsIso ((ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _).map f) := by
+    simpa only [Functor.comp_map, ObjectProperty.ι_map, CommMon.forget₂Mon_map_hom,
+      Mon.forget_map]
+  exact isIso_of_reflects_iso f (ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _)
 
 end GradedQuasicoherentAlgebra
 

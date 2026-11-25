@@ -17,8 +17,10 @@ none of these interfaces imposes norm, completeness, or positivity assumptions.
 
 Unitary arrows have their dagger as a two-sided inverse. They compose, and define native
 categorical isomorphisms. Isometries `v`, with `v ≫ dagger v = 𝟙`, that have the same
-range projection `dagger v ≫ v` differ by a unique unitary. Endomorphisms inherit the usual
-algebraic star structures, with Mathlib's operator-order multiplication on `CategoryTheory.End`.
+range projection `dagger v ≫ v` differ by a unique unitary. A dagger category has unitary
+splittings, `TauCeti.HasUnitarySplittings`, when every self-adjoint idempotent is the range
+projection of an isometry. Endomorphisms inherit the usual algebraic star structures, with
+Mathlib's operator-order multiplication on `CategoryTheory.End`.
 -/
 
 public section
@@ -274,6 +276,22 @@ theorem isUnitary_comp_dagger_of_dagger_comp_eq {v : Y ⟶ X} {w : Z ⟶ X}
     (hv : v ≫ dagger v = 𝟙 Y) (h : dagger v ≫ v = dagger w ≫ w) :
     (v ≫ dagger w) ≫ w = v := by
   rw [Category.assoc, ← h, reassoc_of% hv]
+
+variable (C) in
+/-- A dagger category *has unitary splittings* when every self-adjoint idempotent `p : X ⟶ X` has
+a unitary splitting: an isometry `v : Y ⟶ X`, with `v ≫ dagger v = 𝟙 Y`, whose range projection
+`dagger v ≫ v` is `p`. -/
+class HasUnitarySplittings : Prop where
+  /-- Every self-adjoint idempotent is the range projection of an isometry. -/
+  exists_isometry : ∀ (X : C) (p : X ⟶ X), dagger p = p → p ≫ p = p →
+    ∃ (Y : C) (v : Y ⟶ X), v ≫ dagger v = 𝟙 Y ∧ dagger v ≫ v = p
+
+variable (C) in
+/-- Unfolding `TauCeti.HasUnitarySplittings`. -/
+theorem hasUnitarySplittings_iff : HasUnitarySplittings C ↔
+    ∀ (X : C) (p : X ⟶ X), dagger p = p → p ≫ p = p →
+      ∃ (Y : C) (v : Y ⟶ X), v ≫ dagger v = 𝟙 Y ∧ dagger v ≫ v = p :=
+  ⟨fun h => h.exists_isometry, fun h => ⟨h⟩⟩
 
 end TauCeti
 
