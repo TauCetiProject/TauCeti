@@ -64,7 +64,7 @@ vanishes depends on the compact set of positions
 (`TauCeti.Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero`), while in positive
 dimension a nonzero constant is not (`TauCeti.Symbol.isSmoothing_const_iff`); it is a symbol of
 no negative order (`TauCeti.Symbol.not_exists_coefficient_eq_const`). On `ℝ⁰`, where the only
-frequency is `0`, every symbol is smoothing (`TauCeti.Symbol.isSmoothing_of_eq_zero`).
+frequency is `0`, every symbol is smoothing (`TauCeti.Symbol.isSmoothing_of_dim_eq_zero`).
 
 The estimates are only required locally uniformly in `x`. The predicate `TauCeti.Symbol.IsUniform`
 asks for constants independent of `x`, and `TauCeti.Symbol.HasCompactSpatialSupport` asks that the
@@ -1447,7 +1447,7 @@ theorem not_exists_coefficient_eq_const [NeZero n] {T : V →L[ℂ] W} (hT : T �
   linarith
 
 /-- In positive dimension, a nonzero constant symbol is not smoothing: it does not even have order
-`-2`. On `ℝ⁰` every symbol is smoothing (`TauCeti.Symbol.isSmoothing_of_eq_zero`). -/
+`-2`. On `ℝ⁰` every symbol is smoothing (`TauCeti.Symbol.isSmoothing_of_dim_eq_zero`). -/
 theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
     (const T : Symbol n V W 0).IsSmoothing ↔ T = 0 := by
   refine ⟨fun h => of_not_not fun hT => ?_, fun h => h ▸ fun _ => ⟨0, by funext p; simp⟩⟩
@@ -1456,7 +1456,7 @@ theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
 
 /-- **Symbols on `ℝ⁰` are smoothing.** The only frequency is `0`, where `⟨ξ⟩ = 1`, so the estimates
 of every order hold with the same constants. -/
-theorem isSmoothing_of_eq_zero (hn : n = 0) (a : Symbol n V W m) : a.IsSmoothing := by
+theorem isSmoothing_of_dim_eq_zero (hn : n = 0) (a : Symbol n V W m) : a.IsSmoothing := by
   subst hn
   refine isSmoothing_iff_forall_exists_bound.2 fun m' K hK α β ↦ ?_
   obtain rfl : α = [] := List.eq_nil_iff_forall_not_mem.2 fun i ↦ i.elim0

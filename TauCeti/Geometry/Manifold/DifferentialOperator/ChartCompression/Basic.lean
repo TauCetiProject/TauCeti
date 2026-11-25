@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Bas
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -433,6 +434,13 @@ def complexChartCompression (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
   map_smul' c D := by
     rw [LinearMap.smul_comp, LinearMap.comp_smul, RingHom.id_apply]
 
+/-- The chart compression of `D` is `D` between the pullback by `ψ` and the pushforward by `φ`. -/
+theorem complexChartCompression_eq (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (D : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexChartCompression he φ ψ D =
+      e.complexCutoffPushforward he φ ∘ₗ D ∘ₗ e.complexCutoffPullback he ψ :=
+  LinearMap.ext fun _ ↦ rfl
+
 @[simp]
 theorem complexChartCompression_apply (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (D : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯)
@@ -463,22 +471,13 @@ theorem complexCutoffPullback_congr {e' : OpenPartialHomeomorph M E}
   have h₁ : tsupport ψ ⊆ e'.target := hts ▸ ψ'.tsupport_subset
   have h₂ : tsupport ψ' ⊆ e.target := hts ▸ ψ.tsupport_subset
   have h' : EqOn e'.symm e.symm (tsupport ψ') := hts ▸ h.symm
-  -- A point of the first source whose image lies in a set on which the inverses agree is in the
-  -- second source, with the same image.
-  have key : ∀ {e₁ e₂ : OpenPartialHomeomorph M E} {s : Set E}, s ⊆ e₂.target →
-      EqOn e₁.symm e₂.symm s → ∀ {x}, x ∈ e₁.source → e₁ x ∈ s → x ∈ e₂.source ∧ e₂ x = e₁ x := by
-    intro e₁ e₂ s hs h x hx hxs
-    have hx' : e₂.symm (e₁ x) = x := by rw [← h hxs, e₁.left_inv hx]
-    refine ⟨hx' ▸ e₂.map_target (hs hxs), ?_⟩
-    conv_lhs => rw [← hx']
-    exact e₂.right_inv (hs hxs)
   ext f x
   by_cases hx : x ∈ e.source ∧ e x ∈ tsupport ψ
-  · obtain ⟨hx', hex⟩ := key h₁ h hx.1 hx.2
+  · obtain ⟨hx', hex⟩ := mem_source_and_apply_eq_of_eqOn_symm h₁ h hx.1 hx.2
     rw [complexCutoffPullback_apply_of_mem he _ _ hx.1,
       complexCutoffPullback_apply_of_mem he' _ _ hx', hex, hψ]
   by_cases hx' : x ∈ e'.source ∧ e' x ∈ tsupport ψ'
-  · obtain ⟨hxe, hex⟩ := key h₂ h' hx'.1 hx'.2
+  · obtain ⟨hxe, hex⟩ := mem_source_and_apply_eq_of_eqOn_symm h₂ h' hx'.1 hx'.2
     exact absurd ⟨hxe, hex ▸ hts ▸ hx'.2⟩ hx
   -- Away from the chart preimages of the supports, both pullbacks vanish.
   have hzero : ∀ {e'' : OpenPartialHomeomorph M E}
@@ -515,8 +514,7 @@ theorem complexChartCompression_congr {e' : OpenPartialHomeomorph M E}
     (hψ : (ψ : E → ℝ) = ψ') (h : EqOn e.symm e'.symm (tsupport φ ∪ tsupport ψ)) :
     e.complexChartCompression he φ ψ = e'.complexChartCompression he' φ' ψ' := by
   ext D : 1
-  rw [complexChartCompression, LinearMap.coe_mk, AddHom.coe_mk, complexChartCompression,
-    LinearMap.coe_mk, AddHom.coe_mk,
+  rw [complexChartCompression_eq, complexChartCompression_eq,
     complexCutoffPushforward_congr he he' hφ (h.mono subset_union_left),
     complexCutoffPullback_congr he he' hψ (h.mono subset_union_right)]
 
@@ -546,7 +544,7 @@ theorem complexChartCompression_comp_apply (φ ψ χ : 𝓓(⟨e.target, e.open_
     (hB : ∀ x, B (e.complexCutoffPullback he ψ f) x ≠ 0 → x ∈ e.source ∧ χ (e x) = 1) :
     e.complexChartCompression he φ ψ (A ∘ₗ B) f =
       e.complexChartCompression he φ χ A (e.complexChartCompression he χ ψ B f) := by
-  simp only [complexChartCompression, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.comp_apply,
+  simp only [complexChartCompression_eq, LinearMap.comp_apply,
     complexCutoffPullback_complexCutoffPushforward he χ hB]
 
 end Complex

@@ -54,7 +54,7 @@ values on compactly supported functions, and hence by its chart compressions.
   the operators on `C^∞(M, ℂ)`.
 * `TauCeti.classicalPseudodifferentialOperators_le`: an operator of order `m - k`, `k ∈ ℕ`, has
   order `m`.
-* `TauCeti.mem_classicalPseudodifferentialOperators_of_eq_zero`: on a manifold modelled on `ℝ⁰`,
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_dim_eq_zero`: on a manifold modelled on `ℝ⁰`,
   every properly supported operator has every order.
 * `TauCeti.id_mem_classicalPseudodifferentialOperators` and
   `TauCeti.mulLeft_mem_classicalPseudodifferentialOperators`: the identity and multiplication by a
@@ -261,15 +261,15 @@ theorem classicalPseudodifferentialOperators_le {m m' : ℝ} (k : ℕ) (hk : m' 
 /-- **Dimension zero.** On a manifold modelled on `ℝ⁰`, every properly supported operator is a
 classical pseudodifferential operator of every order: each chart compression is multiplication by
 a constant, and on `ℝ⁰` a constant symbol is classical of every order. -/
-theorem mem_classicalPseudodifferentialOperators_of_eq_zero (hn : n = 0)
+theorem mem_classicalPseudodifferentialOperators_of_dim_eq_zero (hn : n = 0)
     {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
     (hP : IsProperlySupported P) (m : ℝ) : P ∈ classicalPseudodifferentialOperators m := by
   refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
   set A := e.complexChartCompression he φ ψ P
   obtain ⟨b, hb⟩ := Symbol.isSmoothing_iff.1
-    (Symbol.isSmoothing_of_eq_zero hn (Symbol.const (A 1 0 • ContinuousLinearMap.id ℂ ℂ))) m
-  refine ⟨ClassicalSymbol.ofIsSmoothing b (Symbol.isSmoothing_of_eq_zero hn b), fun u x ↦ ?_⟩
+    (Symbol.isSmoothing_of_dim_eq_zero hn (Symbol.const (A 1 0 • ContinuousLinearMap.id ℂ ℂ))) m
+  refine ⟨ClassicalSymbol.ofIsSmoothing b (Symbol.isSmoothing_of_dim_eq_zero hn b), fun u x ↦ ?_⟩
   subst hn
   -- On `ℝ⁰` the input is the constant `u x`, so the compression multiplies it by `A 1 0`.
   have hu : ContMDiffMap.ofContDiff u (u.smooth ⊤) = u x • 1 := by

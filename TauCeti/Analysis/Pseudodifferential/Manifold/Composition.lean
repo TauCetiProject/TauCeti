@@ -10,7 +10,6 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.Composition.Classical
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
-import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Composition of classical pseudodifferential operators on a manifold
@@ -31,7 +30,7 @@ need not lie in the source of `e`. A partition of unity `ρᵢ` on `K'` splits t
 that agrees with `e` over the supports of `φ` and `ψ`: either `e` itself, or, when the support of
 `ρᵢ` leaves the source of `e`, a chart made of a neighbourhood of `e⁻¹(supp φ ∪ supp ψ)` read
 through `e` and a neighbourhood of the support of `ρᵢ`, with disjoint images in `ℝⁿ`
-(`OpenPartialHomeomorph.exists_mem_maximalAtlas_eqOn_symm`). Such a chart exists in
+(`IsCompact.exists_smoothPartition_mem_maximalAtlas_eqOn_symm`). Such a chart exists in
 positive dimension because the maximal atlas contains every chart, not only those of a fixed
 atlas.
 
@@ -45,8 +44,8 @@ support of `χᵢ`. So their composition is `Op(aᵢ # bᵢ)`, with `aᵢ # bᵢ
 distant points are part of the compressions in the charts `Eᵢ`.
 
 In dimension `0` every properly supported operator has every order
-(`TauCeti.mem_classicalPseudodifferentialOperators_of_eq_zero`), so only proper support has to be
-checked (`TauCeti.IsProperlySupported.comp`).
+(`TauCeti.mem_classicalPseudodifferentialOperators_of_dim_eq_zero`), so only proper support has to
+be checked (`TauCeti.IsProperlySupported.comp`).
 
 ## Main results
 
@@ -74,51 +73,6 @@ namespace TauCeti
 
 variable {n : ℕ} {M : Type u} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
   [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
-
-/-- **Charts for a partition of unity.** Let `e` be a chart, `C` a compact subset of its target and
-`K` a compact subset of `M`. In positive dimension there are finitely many smooth functions `ρᵢ`
-adding up to `1` on `K`, with compact supports, and charts `Eᵢ` containing the support of `ρᵢ` in
-their sources and `C` in their targets, with the same inverse as `e` on `C`. Where the support of
-`ρᵢ` leaves the source of `e`, the chart `Eᵢ` is made of a neighbourhood of `e⁻¹(C)` read through
-`e` and a neighbourhood of the support of `ρᵢ`, with disjoint images. -/
-private theorem exists_chart_partition [NeZero n] {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M) {C : Set (CoordinateSpace n)}
-    (hC : IsCompact C) (hCe : C ⊆ e.target) {K : Set M} (hK : IsCompact K) :
-    ∃ (ι : Type u) (_ : Fintype ι) (ρ : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯)
-      (E : ι → OpenPartialHomeomorph M (CoordinateSpace n)), (∀ x ∈ K, ∑ i, ρ i x = 1) ∧
-      ∀ i, E i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M ∧
-        IsCompact (tsupport (ρ i)) ∧ tsupport (ρ i) ⊆ (E i).source ∧ C ⊆ (E i).target ∧
-          EqOn (E i).symm e.symm C := by
-  classical
-  -- A bounded open neighbourhood `W` of `C` and the compact set `L = e⁻¹(closure W)`.
-  obtain ⟨W, hWo, hCW, hWe, hWc⟩ := exists_open_between_and_isCompact_closure hC e.open_target hCe
-  set L := e.symm '' closure W
-  have hLc : IsCompact L := hWc.image_of_continuousOn (e.continuousOn_symm.mono hWe)
-  have hLe : L ⊆ e.source := image_subset_iff.2 fun y hy ↦ e.map_target (hWe hy)
-  -- A finite smooth bump covering of `K` whose bumps lie in `e.source`, or away from `L`.
-  obtain ⟨ι, _, f, hf⟩ := hK.exists_smoothBumpCovering_isSubordinate 𝓘(ℝ, CoordinateSpace n)
-    (U := fun x ↦ if x ∈ e.source then e.source else Lᶜ) fun x _ ↦ by
-      split_ifs with hx
-      · exact e.open_source.mem_nhds hx
-      · exact hLc.isClosed.isOpen_compl.mem_nhds fun hxL ↦ hx (hLe hxL)
-  have hchart : ∀ i, ∃ E ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M,
-      tsupport (f i) ⊆ E.source ∧ C ⊆ E.target ∧ EqOn E.symm e.symm C := by
-    intro i
-    by_cases hc : f.c i ∈ e.source
-    · exact ⟨e, he, by simpa [hc] using hf i, hCe, eqOn_refl _ _⟩
-    obtain ⟨E, hE, hfE, hWE, hEe⟩ := OpenPartialHomeomorph.exists_mem_maximalAtlas_eqOn_symm he
-      (IsManifold.chart_mem_maximalAtlas (f.c i)) hWo hWe hWc (f i).hasCompactSupport.isCompact
-      (f i).tsupport_subset_chartAt_source
-      (subset_compl_iff_disjoint_right.1 (by simpa [hc] using hf i))
-    exact ⟨E, hE, hfE, hCW.trans hWE, hEe.mono hCW⟩
-  choose E hE hfE hCE hEe using hchart
-  have hρ (i) : tsupport (f.toSmoothPartitionOfUnity i) ⊆ tsupport (f i) :=
-    closure_mono (f.support_toSmoothPartitionOfUnity_subset i)
-  refine ⟨ι, inferInstance, fun i ↦ f.toSmoothPartitionOfUnity i, E, fun x hx ↦ ?_, fun i ↦
-    ⟨hE i, (f i).hasCompactSupport.isCompact.of_isClosed_subset (isClosed_tsupport _) (hρ i),
-      (hρ i).trans (hfE i), hCE i, hEe i⟩⟩
-  rw [← finsum_eq_sum_of_fintype]
-  exact f.toSmoothPartitionOfUnity.sum_eq_one hx
 
 variable {P Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
   C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {m m' : ℝ}
@@ -191,7 +145,7 @@ theorem comp_mem_classicalPseudodifferentialOperators
   have hPQ := (mem_classicalPseudodifferentialOperators_iff.1 hP).1.comp
     (mem_classicalPseudodifferentialOperators_iff.1 hQ).1
   rcases eq_or_ne n 0 with hn | hn
-  · exact mem_classicalPseudodifferentialOperators_of_eq_zero hn hPQ _
+  · exact mem_classicalPseudodifferentialOperators_of_dim_eq_zero hn hPQ _
   have : NeZero n := ⟨hn⟩
   refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hPQ, fun e he φ ψ ↦ ?_⟩
   -- `Q` sends the functions supported in `e⁻¹(supp ψ)` to functions supported in `K'`, and a
@@ -201,9 +155,9 @@ theorem comp_mem_classicalPseudodifferentialOperators
     isProperlySupported_iff.1 (mem_classicalPseudodifferentialOperators_iff.1 hQ).1 _
     (ψ.hasCompactSupport.isCompact.image_of_continuousOn
     (e.continuousOn_symm.mono ψ.tsupport_subset))
-  obtain ⟨ι, _, ρ, E, hρ1, hE⟩ := exists_chart_partition he
+  obtain ⟨ι, _, ρ, E, hρ1, hE⟩ := hK'.exists_smoothPartition_mem_maximalAtlas_eqOn_symm he
     (φ.hasCompactSupport.isCompact.union ψ.hasCompactSupport.isCompact)
-    (union_subset φ.tsupport_subset ψ.tsupport_subset) hK'
+    (union_subset φ.tsupport_subset ψ.tsupport_subset)
   choose hEa hρc hρE hCE hEe using hE
   choose c hc using fun i ↦ exists_quantizeSchwartzValue_eq_complexChartCompression_comp_mulLeft
     hP hQ he (hEa i) φ ψ (hρc i) (hρE i) (hCE i) (hEe i)

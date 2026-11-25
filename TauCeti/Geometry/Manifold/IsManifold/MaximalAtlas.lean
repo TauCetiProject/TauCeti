@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Joining two charts with disjoint sources
@@ -20,7 +22,14 @@ chart of the maximal atlas, equal to `e₁` on the source of `e₁` and to `e₂
 `e₂` (`OpenPartialHomeomorph.exists_mem_maximalAtlas_of_disjoint_source`). Restricting a chart `e`
 over an open set `W` with compact closure in its target, and a chart `c` to a neighbourhood of a
 compact set `S` away from `e⁻¹(closure W)`, gives a chart that contains `S` in its source and has
-the same inverse as `e` on `W` (`OpenPartialHomeomorph.exists_mem_maximalAtlas_eqOn_symm`).
+the same inverse as `e` on `W` (`OpenPartialHomeomorph.exists_mem_maximalAtlas_eqOn_symm`). On a
+manifold modelled on a nontrivial finite-dimensional real space, a compact set `K` then carries a
+finite smooth partition of unity each of whose pieces lies in the source of a chart agreeing with a
+given chart `e` over a compact subset of its target
+(`IsCompact.exists_smoothPartition_mem_maximalAtlas_eqOn_symm`).
+
+Two charts with the same inverse on a subset `s` of the second target see the points mapped into
+`s` the same way (`OpenPartialHomeomorph.mem_source_and_apply_eq_of_eqOn_symm`).
 
 Such charts see two distant regions of `M` at once. Since chart compressions of operators are
 taken in every chart of the maximal atlas, this lets a statement made in all charts control how an
@@ -33,7 +42,21 @@ public section
 open Set Bornology
 open scoped Manifold ContDiff
 
+universe u
+
 namespace OpenPartialHomeomorph
+
+/-- **Charts with the same inverse on a set.** If the inverses of `e₁` and `e₂` agree on a subset
+`s` of the target of `e₂`, a point of the source of `e₁` mapped into `s` by `e₁` lies in the source
+of `e₂`, and `e₂` maps it to the same point. -/
+theorem mem_source_and_apply_eq_of_eqOn_symm {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {e₁ e₂ : OpenPartialHomeomorph X Y} {s : Set Y} (hs : s ⊆ e₂.target)
+    (h : EqOn e₁.symm e₂.symm s) {x : X} (hx : x ∈ e₁.source) (hxs : e₁ x ∈ s) :
+    x ∈ e₂.source ∧ e₂ x = e₁ x := by
+  have hx' : e₂.symm (e₁ x) = x := by rw [← h hxs, e₁.left_inv hx]
+  refine ⟨hx' ▸ e₂.map_target (hs hxs), ?_⟩
+  conv_lhs => rw [← hx']
+  exact e₂.right_inv (hs hxs)
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M] {n : WithTop ℕ∞}
@@ -62,6 +85,9 @@ theorem exists_mem_maximalAtlas_of_disjoint_source [Nontrivial E]
       simpa [e₂', Homeomorph.addRight_symm, sub_eq_add_neg] using hR₂ hy₂
     linarith [norm_sub_norm_le v y, norm_sub_rev v y]
   let e := e₁.disjointUnion e₂' hs ht
+  -- `disjointUnion` overrides only the source and target of `piecewise`, so `e` and `e.symm` are
+  -- definitionally `Set.piecewise e₁.source e₁ e₂'` and `Set.piecewise e₁.target e₁.symm e₂'.symm`,
+  -- and are evaluated below by `piecewise_eq_of_mem` and `piecewise_eq_of_notMem`.
   have hesrc : e.source = e₁.source ∪ e₂.source := rfl
   have he₁eq : EqOn e e₁ e₁.source := fun x hx ↦ piecewise_eq_of_mem _ _ _ hx
   have he₂eq : EqOn e (fun x ↦ e₂ x + v) e₂.source := fun x hx ↦
@@ -135,3 +161,52 @@ theorem exists_mem_maximalAtlas_eqOn_symm [Nontrivial E] [T2Space M]
     rw [← hy₂, ← he'₁ hy₁, e'.left_inv (he's ▸ Or.inl hy₁), he'₁ hy₁, hy₂]
 
 end OpenPartialHomeomorph
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [Nontrivial E] {M : Type u} [TopologicalSpace M] [ChartedSpace E M] [T2Space M]
+  [IsManifold 𝓘(ℝ, E) ∞ M]
+
+/-- **Charts for a partition of unity.** Let `e` be a chart, `C` a compact subset of its target and
+`K` a compact subset of `M`. There are finitely many smooth functions `ρᵢ` adding up to `1` on `K`,
+with compact supports, and charts `eᵢ` containing the support of `ρᵢ` in their sources and `C` in
+their targets, with the same inverse as `e` on `C`. Where the support of `ρᵢ` leaves the source of
+`e`, the chart `eᵢ` is made of a neighbourhood of `e⁻¹(C)` read through `e` and a neighbourhood of
+the support of `ρᵢ`, with disjoint images. -/
+theorem IsCompact.exists_smoothPartition_mem_maximalAtlas_eqOn_symm {K : Set M} (hK : IsCompact K)
+    {e : OpenPartialHomeomorph M E} (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) {C : Set E}
+    (hC : IsCompact C) (hCe : C ⊆ e.target) :
+    ∃ (ι : Type u) (_ : Fintype ι) (ρ : ι → C^∞⟮𝓘(ℝ, E), M; ℝ⟯)
+      (e' : ι → OpenPartialHomeomorph M E), (∀ x ∈ K, ∑ i, ρ i x = 1) ∧
+      ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
+        IsCompact (tsupport (ρ i)) ∧ tsupport (ρ i) ⊆ (e' i).source ∧ C ⊆ (e' i).target ∧
+          EqOn (e' i).symm e.symm C := by
+  classical
+  -- A bounded open neighbourhood `W` of `C` and the compact set `L = e⁻¹(closure W)`.
+  obtain ⟨W, hWo, hCW, hWe, hWc⟩ := exists_open_between_and_isCompact_closure hC e.open_target hCe
+  set L := e.symm '' closure W
+  have hLc : IsCompact L := hWc.image_of_continuousOn (e.continuousOn_symm.mono hWe)
+  have hLe : L ⊆ e.source := image_subset_iff.2 fun y hy ↦ e.map_target (hWe hy)
+  -- A finite smooth bump covering of `K` whose bumps lie in `e.source`, or away from `L`.
+  obtain ⟨ι, _, f, hf⟩ := hK.exists_smoothBumpCovering_isSubordinate 𝓘(ℝ, E)
+    (U := fun x ↦ if x ∈ e.source then e.source else Lᶜ) fun x _ ↦ by
+      split_ifs with hx
+      · exact e.open_source.mem_nhds hx
+      · exact hLc.isClosed.isOpen_compl.mem_nhds fun hxL ↦ hx (hLe hxL)
+  have hchart : ∀ i, ∃ e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M,
+      tsupport (f i) ⊆ e'.source ∧ C ⊆ e'.target ∧ EqOn e'.symm e.symm C := by
+    intro i
+    by_cases hc : f.c i ∈ e.source
+    · exact ⟨e, he, by simpa [hc] using hf i, hCe, eqOn_refl _ _⟩
+    obtain ⟨e', he', hfE, hWE, hEe⟩ := OpenPartialHomeomorph.exists_mem_maximalAtlas_eqOn_symm he
+      (IsManifold.chart_mem_maximalAtlas (f.c i)) hWo hWe hWc (f i).hasCompactSupport.isCompact
+      (f i).tsupport_subset_chartAt_source
+      (subset_compl_iff_disjoint_right.1 (by simpa [hc] using hf i))
+    exact ⟨e', he', hfE, hCW.trans hWE, hEe.mono hCW⟩
+  choose e' he' hfE hCE hEe using hchart
+  have hρ (i) : tsupport (f.toSmoothPartitionOfUnity i) ⊆ tsupport (f i) :=
+    closure_mono (f.support_toSmoothPartitionOfUnity_subset i)
+  refine ⟨ι, inferInstance, fun i ↦ f.toSmoothPartitionOfUnity i, e', fun x hx ↦ ?_, fun i ↦
+    ⟨he' i, (f i).hasCompactSupport.isCompact.of_isClosed_subset (isClosed_tsupport _) (hρ i),
+      (hρ i).trans (hfE i), hCE i, hEe i⟩⟩
+  rw [← finsum_eq_sum_of_fintype]
+  exact f.toSmoothPartitionOfUnity.sum_eq_one hx
