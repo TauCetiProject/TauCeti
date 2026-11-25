@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.OfDim
+public import TauCeti.AlgebraicGeometry.Restrict
 public import Mathlib.AlgebraicGeometry.AffineSpace
 
 /-!
@@ -46,28 +47,16 @@ instance overPlaneLine : (planeLine k).Over (Spec (.of k)) :=
 instance isOver_inr : (coprod.inr : line k ⟶ planeLine k).IsOver (Spec (.of k)) :=
   ⟨coprod.inr_desc _ _⟩
 
-/-- A property local at the source holds for `𝔸²_k ⊔ 𝔸¹_k ⟶ Spec k` when it holds for both
-components. -/
-theorem planeLine_over {P : MorphismProperty Scheme.{u}} [IsZariskiLocalAtSource P]
-    (h₁ : P (plane k ↘ Spec (.of k))) (h₂ : P (line k ↘ Spec (.of k))) :
-    P (planeLine k ↘ Spec (.of k)) := by
-  rw [IsZariskiLocalAtSource.iff_of_openCover (P := P) (coprodOpenCover.{_, 0} (plane k) (line k))]
-  rintro (⟨⟩ | ⟨⟩)
-  · change P (coprod.inl ≫ coprod.desc (plane k ↘ Spec (.of k)) (line k ↘ Spec (.of k)))
-    rwa [coprod.inl_desc]
-  · change P (coprod.inr ≫ coprod.desc (plane k ↘ Spec (.of k)) (line k ↘ Spec (.of k)))
-    rwa [coprod.inr_desc]
-
 /-- `𝔸²_k ⊔ 𝔸¹_k` is smooth over `Spec k`. -/
 instance smooth_planeLine : Smooth (planeLine k ↘ Spec (.of k)) :=
   have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @Smooth)
-  planeLine_over k inferInstance inferInstance
+  IsZariskiLocalAtSource.coprodDesc inferInstance inferInstance
 
 /-- `𝔸²_k ⊔ 𝔸¹_k` is locally of finite presentation over `Spec k`. -/
 instance locallyOfFinitePresentation_planeLine :
     LocallyOfFinitePresentation (planeLine k ↘ Spec (.of k)) :=
   have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @LocallyOfFinitePresentation)
-  planeLine_over k inferInstance inferInstance
+  IsZariskiLocalAtSource.coprodDesc inferInstance inferInstance
 
 -- **Check.** The smooth locus of `𝔸²_k ⊔ 𝔸¹_k` is everything, so it is dense.
 example : (planeLine k ↘ Spec (.of k)).smoothLocus = ⊤ :=
