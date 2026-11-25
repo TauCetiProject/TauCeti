@@ -57,6 +57,8 @@ in this sense are the tables on which the billiard ball map of a convex billiard
   curvature transforms by `κ ↦ κ (· + c)` under a shift of the origin and is unchanged by
   rotations and translations.
 * `TauCeti.ConvexTable.curvature_circle`: the circle of radius `R` has curvature `1 / R`.
+* `TauCeti.ConvexTable.apply_notMem_openSegment`, `TauCeti.ConvexTable.not_segment_subset_range`:
+  no point of a table lies strictly between two others, so its image contains no segment.
 * `TauCeti.ConvexTable.coe_ne_comp_neg`: reversing the orientation of a table never gives a
   table.
 
@@ -434,6 +436,20 @@ theorem isClosedEmbedding_circleParam : IsClosedEmbedding T.circleParam :=
 /-- **The boundary of a table is a Jordan curve.** -/
 theorem isJordanCurve_range : IsJordanCurve (range T) :=
   T.toStrictConvexBilliardTable.isJordanCurve_range
+
+/-- **No point of a table lies strictly between two others.** If `p ≠ q` are points of the image
+of a table, no point of the image lies on the open segment between them: the tangent line at such
+a point would have `p` and `q` strictly on the same side, while they lie on opposite sides of the
+point along a line. In particular a line meets the image in at most two points. -/
+theorem apply_notMem_openSegment {p q : ℂ} (hp : p ∈ range T) (hq : q ∈ range T) (hpq : p ≠ q)
+    (s : ℝ) : T s ∉ openSegment ℝ p q :=
+  T.toStrictConvexBilliardTable.apply_notMem_openSegment hp hq hpq s
+
+/-- **The image of a table contains no segment.** No nondegenerate segment lies in the image of a
+table: its midpoint would lie strictly between its endpoints. So the stadium, whose boundary
+contains two segments, is not the image of a table. -/
+theorem not_segment_subset_range {p q : ℂ} (hpq : p ≠ q) : ¬segment ℝ p q ⊆ range T :=
+  T.toStrictConvexBilliardTable.not_segment_subset_range hpq
 
 /-- The convex table `circle R` is the circle billiard table
 `TauCeti.StrictConvexBilliardTable.circle`. -/
