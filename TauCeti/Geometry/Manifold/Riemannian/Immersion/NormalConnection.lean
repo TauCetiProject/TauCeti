@@ -50,16 +50,6 @@ variable
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
   {cov : CovariantDerivative J F (fun y : N ↦ TangentSpace J y)} {f : M → N} {x : M}
 
-omit [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)] in
-/-- Pairing the covariant derivative of a field along `f` with a normal vector only sees the
-normal connection. -/
-theorem inner_alongMap_eq_inner_immersionNormalConnection (ν : Π y : M, TangentSpace J (f y))
-    (X : Π y : M, TangentSpace I y) {w : TangentSpace J (f x)}
-    (hw : w ∈ orthogonalNormalSpace I J f x) :
-    inner ℝ (cov.alongMap I f ν x (X x)) w = inner ℝ (immersionNormalConnection cov f ν X x) w := by
-  rw [immersionNormalConnection_def, Submodule.inner_starProjection_left_eq_right,
-    Submodule.starProjection_eq_self_iff.2 hw]
-
 /-- **The normal connection is metric.** For a metric-compatible covariant derivative, a map `f`
 differentiable at `x`, and fields `ν`, `ξ` along `f` with differentiable readings at `x` which are
 normal at `x`, `X ⟪ν, ξ⟫ = ⟪∇^⊥_X ν, ξ⟫ + ⟪ν, ∇^⊥_X ξ⟫` at `x`. -/
@@ -74,8 +64,8 @@ theorem mvfderiv_inner_eq_inner_immersionNormalConnection
       inner ℝ (immersionNormalConnection cov f ν X x) (ξ x) +
         inner ℝ (ν x) (immersionNormalConnection cov f ξ X x) := by
   rw [hcov.mvfderiv_inner_alongMap hf hν hξ (X x),
-    inner_alongMap_eq_inner_immersionNormalConnection ν X hξx, real_inner_comm _ (ν x),
-    inner_alongMap_eq_inner_immersionNormalConnection ξ X hνx, real_inner_comm (ν x)]
+    ← inner_immersionNormalConnection_of_mem ν X hξx, real_inner_comm _ (ν x),
+    ← inner_immersionNormalConnection_of_mem ξ X hνx, real_inner_comm (ν x)]
 
 /-- The normal connection of a normal field of constant length near `x`, such as a unit normal
 field, is orthogonal to it at `x`: `⟪∇^⊥_X ν, ν⟫ = 0`. -/
