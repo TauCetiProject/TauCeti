@@ -59,7 +59,7 @@ instance : CompactSpace CenteredClosedDisc := inferInstanceAs (CompactSpace 𝕔
 instance : T2Space CenteredClosedDisc := inferInstanceAs (T2Space 𝕔𝔻)
 
 /-- A point of the closed disc as a point of `TauCeti.CenteredClosedDisc`. -/
-@[expose] def ofDisc : 𝕔𝔻 ≃ CenteredClosedDisc := Equiv.refl _
+def ofDisc : 𝕔𝔻 ≃ CenteredClosedDisc := Equiv.refl _
 
 /-- A point of `TauCeti.CenteredClosedDisc` as a point of `ℂ`. -/
 @[coe] def toComplex (z : CenteredClosedDisc) : ℂ := ((ofDisc.symm z : 𝕔𝔻) : ℂ)
@@ -81,12 +81,27 @@ theorem norm_le_one (z : CenteredClosedDisc) : ‖(z : ℂ)‖ ≤ 1 := by
   rw [← coe_ofDisc_symm]
   exact (ofDisc.symm z).norm_le_one
 
+theorem coe_injective : Function.Injective ((↑) : CenteredClosedDisc → ℂ) := fun z w h ↦
+  ofDisc.symm.injective (Complex.UnitClosedDisc.coe_injective (by simpa using h))
+
+@[simp, norm_cast]
+theorem coe_inj {z w : CenteredClosedDisc} : (z : ℂ) = w ↔ z = w :=
+  coe_injective.eq_iff
+
+@[ext]
+theorem ext {z w : CenteredClosedDisc} (h : (z : ℂ) = w) : z = w :=
+  coe_injective h
+
 /-- The point of `TauCeti.CenteredClosedDisc` with coordinate `z`, for `‖z‖ ≤ 1`. -/
 def mk (z : ℂ) (hz : ‖z‖ ≤ 1) : CenteredClosedDisc := ofDisc (Complex.UnitClosedDisc.mk z hz)
 
 @[simp]
 theorem coe_mk (z : ℂ) (hz : ‖z‖ ≤ 1) : (mk z hz : ℂ) = z := by
   rw [mk, coe_ofDisc, Complex.UnitClosedDisc.coe_mk]
+
+@[simp]
+theorem mk_coe (z : CenteredClosedDisc) (hz : ‖(z : ℂ)‖ ≤ 1 := norm_le_one z) : mk z hz = z :=
+  ext (coe_mk _ _)
 
 /-- The center of the preferred Cayley chart at `z`: `z` itself on the unit circle, and the
 center `Complex.UnitClosedDisc.chartCenter z` of the preferred chart of `𝕔𝔻` otherwise. -/
@@ -128,7 +143,7 @@ theorem coe_ne_neg_center (z : CenteredClosedDisc) : (z : ℂ) ≠ -center z := 
     exact coe_ne_neg_chartCenter _
 
 /-- The Cayley chart centered at `ζ`, on `TauCeti.CenteredClosedDisc`. -/
-@[expose] def cayleyChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
+def cayleyChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
     OpenPartialHomeomorph CenteredClosedDisc ClosedUpperHalfPlane :=
   Complex.UnitClosedDisc.cayleyChart ζ hζ
 
@@ -164,12 +179,16 @@ theorem chartAt_eq (z : CenteredClosedDisc) :
     chartAt ClosedUpperHalfPlane z = cayleyChart (center z) (norm_center z) :=
   (rfl)
 
+/-- The preferred chart at `z` is the Cayley chart centered at `ζ` whenever `center z = ζ`. -/
+theorem chartAt_eq_cayleyChart {z : CenteredClosedDisc} {ζ : ℂ} (hζ : ‖ζ‖ = 1)
+    (h : center z = ζ) : chartAt ClosedUpperHalfPlane z = cayleyChart ζ hζ := by
+  subst h
+  rfl
+
 /-- At a point `ζ` of the unit circle, the preferred chart is the Cayley chart centered at `ζ`. -/
 theorem chartAt_of_norm_eq_one {z : CenteredClosedDisc} (hz : ‖(z : ℂ)‖ = 1) :
-    chartAt ClosedUpperHalfPlane z = cayleyChart z hz := by
-  rw [chartAt_eq]
-  congr 1
-  exact center_of_norm_eq_one hz
+    chartAt ClosedUpperHalfPlane z = cayleyChart z hz :=
+  chartAt_eq_cayleyChart hz (center_of_norm_eq_one hz)
 
 /-- The charts of the atlas are the Cayley charts, as for `Complex.UnitClosedDisc`. -/
 theorem mem_atlas_iff {e : OpenPartialHomeomorph CenteredClosedDisc ClosedUpperHalfPlane} :
