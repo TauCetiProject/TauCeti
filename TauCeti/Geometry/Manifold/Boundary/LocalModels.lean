@@ -26,6 +26,10 @@ the counts of boundary points of compact one-dimensional manifolds from
   points with a half-open model along which the orientation points outward are as many as those
   along which it points inward (`TauCeti.ncard_eq_ncard_of_forall_exists_homeomorph_Ico`).
 
+The second statement is the signed count of the endpoints of a compact oriented one-manifold,
+which makes the signed counts of broken trajectories cancel in the proof that the integral Morse
+boundary squares to zero, as the first makes them cancel modulo two.
+
 A half-open local model also transports between two ways of recording the points of a
 compactified space: along maps `ι` and `π` identifying a set `R` near a point `a` with the closure
 of a set `P` near `ι a`, a half-open model of `R` at `a` gives one of the closure of `P` at `ι a`
@@ -39,10 +43,6 @@ When the closure of a set `P` adds only finitely many points, `P` is open in its
 that point (`TauCeti.nhdsWithin_closure_le_nhdsWithin_insert`); if `P` is moreover a copy of a
 one-dimensional manifold, its closure is locally homeomorphic to open subsets of `ℝ` at the
 points of `P` (`TauCeti.exists_nhds_homeomorph_of_isOpen_preimage_val`).
-
-The second statement is the signed count of the endpoints of a compact oriented one-manifold,
-which makes the signed counts of broken trajectories cancel in the proof that the integral Morse
-boundary squares to zero, as the first makes them cancel modulo two.
 
 ## References
 
