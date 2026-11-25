@@ -9,8 +9,9 @@ public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
 public import TauCeti.Combinatorics.SimpleGraph.OddTriangles
 import TauCeti.Algebra.BigOperators.Sym
+import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.ParityRetract
-import Mathlib.Tactic.Linarith
+import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -141,7 +142,6 @@ theorem two_mul_card_edgeFinset_le_cost {t : Perm α} (ht : t.IsSwap) (G : Simpl
     (2 * #G.edgeFinset : ℝ) ≤
       (Cochain.ofLt (complete V) fun u v => if G.Adj u v then t else 1).cost
         (Perm.movedNorm α) β := by
-  have ht1 : t * t = 1 := by obtain ⟨a, b, -, rfl⟩ := ht; exact swap_mul_self a b
   set c := Cochain.ofLt (complete V) fun u v => if G.Adj u v then t else 1
   have hφc : c.map (Perm.parityRetract ht) = c := by
     refine Cochain.ext fun u v _ => ?_
@@ -151,20 +151,16 @@ theorem two_mul_card_edgeFinset_le_cost {t : Perm α} (ht : t.IsSwap) (G : Simpl
       split_ifs <;> simp
     · simp
     · rw [Cochain.ofLt_apply_of_gt _ ((adj_complete u v).mpr h.ne') h]
-      split_ifs <;> simp [inv_eq_of_mul_eq_one_right ht1]
+      split_ifs <;> simp [inv_eq_of_mul_eq_one_right ht.mul_self_eq_one]
   refine le_trans ?_ (Cochain.cost_map_le (Perm.movedNorm_parityRetract_le ht) c β)
   -- The retracted gauge takes values in `{1, t}`: it is the cut gauge of the vertices sent to `t`.
   let S : Set V := {u | Perm.parityRetract ht (β u) = t}
   have hγ : Perm.parityRetract ht ∘ β = fun u => if u ∈ S then t else 1 := by
     funext u
     rcases (Perm.mem_range_parityRetract ht _).mp ⟨β u, rfl⟩ with h | h
-    · have hu : u ∉ S := fun hu => by
-        have h2 := ht.movedNorm
-        rw [← hu, h, Perm.movedNorm_apply, Perm.support_one, card_empty] at h2
-        norm_num at h2
-      simp [hu, h]
+    · simp [S, h, ht.isCycle.ne_one.symm]
     · simp [S, h]
-  rw [hφc, hγ, G.cost_ofLt_ite_adj _ ht1, ht.movedNorm]
+  rw [hφc, hγ, G.cost_ofLt_ite_adj _ ht.mul_self_eq_one, ht.movedNorm]
   exact_mod_cast Nat.mul_le_mul_left 2 ((isCutMinimal_iff_card_le_card_symmDiff G).mp hG S)
 
 /-- **Cut-minimality as a gauge distance.** For a transposition `t`, a graph `G` is cut-minimal
@@ -175,15 +171,14 @@ theorem isCutMinimal_iff_gaugeDist_eq {t : Perm α} (ht : t.IsSwap) (G : SimpleG
     G.IsCutMinimal ↔
       (Cochain.ofLt (complete V) fun u v => if G.Adj u v then t else 1).gaugeDist
         (Perm.movedNorm α) = 2 * #G.edgeFinset := by
-  have ht1 : t * t = 1 := by obtain ⟨a, b, -, rfl⟩ := ht; exact swap_mul_self a b
   refine ⟨fun hG => le_antisymm ?_ ?_, fun h => ?_⟩
-  · simpa [ht.movedNorm] using G.gaugeDist_ofLt_ite_adj_le (Perm.movedNorm α) ht1
+  · simpa [ht.movedNorm] using G.gaugeDist_ofLt_ite_adj_le (Perm.movedNorm α) ht.mul_self_eq_one
   · exact (Cochain.le_gaugeDist_iff _ _).mpr (G.two_mul_card_edgeFinset_le_cost ht hG)
   · refine (isCutMinimal_iff_card_le_card_symmDiff G).mpr fun S _ => ?_
     have hS := Cochain.gaugeDist_le_cost (Perm.movedNorm α)
       (Cochain.ofLt (complete V) fun u v => if G.Adj u v then t else 1)
       (fun u => if u ∈ S then t else 1)
-    rw [h, G.cost_ofLt_ite_adj _ ht1, ht.movedNorm] at hS
+    rw [h, G.cost_ofLt_ite_adj _ ht.mul_self_eq_one, ht.movedNorm] at hS
     exact_mod_cast (mul_le_mul_iff_right₀ (by norm_num : (0 : ℝ) < 2)).mp hS
 
 /-- **Cut-minimal graphs bound the permutation constant.** For a cut-minimal graph `G` on `V` with
@@ -232,11 +227,10 @@ edges of its support graph and `1` elsewhere. -/
 theorem eq_ofLt_ite_supportGraph (α : Cochain (complete V) (Perm (Fin 2))) :
     α = Cochain.ofLt (complete V) fun u v => if α.supportGraph.Adj u v then swap 0 1 else 1 := by
   refine ext_of_lt fun u v huv hadj => ?_
-  have key : ∀ σ : Perm (Fin 2), σ ≠ 1 → σ = swap 0 1 := by decide
   rw [ofLt_apply_of_lt _ hadj huv]
   by_cases h : α.supportGraph.Adj u v
   · rw [ite_eq_left h]
-    exact key _ h
+    exact (Perm.eq_one_or_swap_fin_two _).resolve_left h
   · rw [ite_eq_right h]
     simpa using h
 
@@ -257,11 +251,10 @@ theorem cost_eq_two_mul_card_symmDiff (α : Cochain (complete V) (Perm (Fin 2)))
       2 * #(α.supportGraph.edgeFinset ∆
         ((⊤ : SimpleGraph V).between {u | β u ≠ 1} {u | β u ≠ 1}ᶜ).edgeFinset) := by
   have hβ : β = fun u => if u ∈ {u | β u ≠ 1} then swap 0 1 else 1 := by
-    have key : ∀ σ : Perm (Fin 2), σ ≠ 1 → σ = swap 0 1 := by decide
     funext u
     by_cases h : β u = 1
     · simp [h]
-    · simp [key _ h]
+    · simp [(Perm.eq_one_or_swap_fin_two _).resolve_left h]
   conv_lhs => rw [α.eq_ofLt_ite_supportGraph, hβ]
   rw [SimpleGraph.cost_ofLt_ite_adj _ _ (swap_mul_self 0 1),
     Perm.IsSwap.movedNorm ⟨0, 1, by decide, rfl⟩]
