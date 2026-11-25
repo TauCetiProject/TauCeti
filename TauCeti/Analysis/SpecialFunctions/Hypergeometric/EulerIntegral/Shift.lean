@@ -233,29 +233,17 @@ theorem eulerIntegralShift_eq_regularizedGaussHGFun {p q : ℕ} {a b c z : ℂ}
       ih (mem_eulerIntegralShiftRegion_shift_bc (a + 1) hx),
       ← regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b c hz]
 
-/-- At fixed `(a, b, c)`, two functions jointly analytic on regions containing
-`{(a, b, c)} × {1 - w ∈ slitPlane}` that agree on the unit disk agree on the cut plane. -/
-private theorem eq_of_forall_norm_lt_one_eq {F G : ℂ × ℂ × ℂ × ℂ → ℂ}
-    {s t : Set (ℂ × ℂ × ℂ × ℂ)} (hF : AnalyticOnNhd ℂ F s) (hG : AnalyticOnNhd ℂ G t)
-    {a b c z : ℂ} (hs : ∀ w : ℂ, 1 - w ∈ slitPlane → (a, b, c, w) ∈ s)
-    (ht : ∀ w : ℂ, 1 - w ∈ slitPlane → (a, b, c, w) ∈ t)
-    (hFG : ∀ w : ℂ, ‖w‖ < 1 → F (a, b, c, w) = G (a, b, c, w)) (hz : 1 - z ∈ slitPlane) :
-    F (a, b, c, z) = G (a, b, c, z) := by
-  exact AnalyticOnNhd.eqOn_setOf_one_sub_mem_slitPlane_of_eventuallyEq
-    (f := fun w ↦ F (a, b, c, w)) (g := fun w ↦ G (a, b, c, w))
-    (hF.comp (by fun_prop) fun w hw ↦ hs w hw) (hG.comp (by fun_prop) fun w hw ↦ ht w hw)
-    (by simp) (Filter.eventually_of_mem (Metric.ball_mem_nhds 0 one_pos)
-      fun w hw ↦ hFG w (by simpa using hw)) hz
-
 /-- On its region, `eulerIntegralShift p q` agrees with Euler's integral where
 `0 < re b < re c`. -/
 theorem eulerIntegralShift_eq_eulerIntegral {p q : ℕ} {a b c z : ℂ}
     (hx : (a, b, c, z) ∈ eulerIntegralShiftRegion p q) (hb : 0 < b.re) (hbc : b.re < c.re) :
     eulerIntegralShift p q a b c z = eulerIntegral a b c z :=
-  eq_of_forall_norm_lt_one_eq (analyticOnNhd_eulerIntegralShift p q)
-    analyticOnNhd_eulerIntegral_joint (fun _ hw ↦ ⟨hx.1, hx.2.1, hw⟩) (fun _ hw ↦ ⟨hb, hbc, hw⟩)
-    (fun _ hw ↦ (eulerIntegralShift_eq_regularizedGaussHGFun hx.1 hx.2.1 hw).trans
-      (regularizedGaussHGFun_eq_eulerIntegral a hb hbc hw)) hx.2.2
+  AnalyticOnNhd.comp_eqOn_setOf_one_sub_mem_slitPlane_of_eqOn_ball (ι := fun w ↦ (a, b, c, w))
+    (analyticOnNhd_eulerIntegralShift p q) analyticOnNhd_eulerIntegral_joint (by fun_prop)
+    (fun _ hw ↦ ⟨hx.1, hx.2.1, hw⟩) (fun _ hw ↦ ⟨hb, hbc, hw⟩)
+    (fun _ hw ↦ (eulerIntegralShift_eq_regularizedGaussHGFun hx.1 hx.2.1
+      (mem_ball_zero_iff.mp hw)).trans
+      (regularizedGaussHGFun_eq_eulerIntegral a hb hbc (mem_ball_zero_iff.mp hw))) hx.2.2
 
 /-- Compatibility of different counts: `eulerIntegralShift p q` and `eulerIntegralShift p' q'`
 agree where both regions contain the point. -/
@@ -263,10 +251,12 @@ theorem eulerIntegralShift_eq_eulerIntegralShift {p q p' q' : ℕ} {a b c z : �
     (hx : (a, b, c, z) ∈ eulerIntegralShiftRegion p q)
     (hx' : (a, b, c, z) ∈ eulerIntegralShiftRegion p' q') :
     eulerIntegralShift p q a b c z = eulerIntegralShift p' q' a b c z :=
-  eq_of_forall_norm_lt_one_eq (analyticOnNhd_eulerIntegralShift p q)
-    (analyticOnNhd_eulerIntegralShift p' q') (fun _ hw ↦ ⟨hx.1, hx.2.1, hw⟩)
-    (fun _ hw ↦ ⟨hx'.1, hx'.2.1, hw⟩)
-    (fun _ hw ↦ (eulerIntegralShift_eq_regularizedGaussHGFun hx.1 hx.2.1 hw).trans
-      (eulerIntegralShift_eq_regularizedGaussHGFun hx'.1 hx'.2.1 hw).symm) hx.2.2
+  AnalyticOnNhd.comp_eqOn_setOf_one_sub_mem_slitPlane_of_eqOn_ball (ι := fun w ↦ (a, b, c, w))
+    (analyticOnNhd_eulerIntegralShift p q) (analyticOnNhd_eulerIntegralShift p' q') (by fun_prop)
+    (fun _ hw ↦ ⟨hx.1, hx.2.1, hw⟩) (fun _ hw ↦ ⟨hx'.1, hx'.2.1, hw⟩)
+    (fun _ hw ↦ (eulerIntegralShift_eq_regularizedGaussHGFun hx.1 hx.2.1
+      (mem_ball_zero_iff.mp hw)).trans
+      (eulerIntegralShift_eq_regularizedGaussHGFun hx'.1 hx'.2.1 (mem_ball_zero_iff.mp hw)).symm)
+    hx.2.2
 
 end Complex
