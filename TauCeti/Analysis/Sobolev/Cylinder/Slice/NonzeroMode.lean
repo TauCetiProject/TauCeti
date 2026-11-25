@@ -71,7 +71,8 @@ theorem exists_eq_of_sliceAverageLp_eq_zero_of_isPreconnected {X : Type*} [Topol
       rw [dist_eq_norm, dist_eq_norm, ← comp_sub]
       exact G.subtypeₗᵢ.norm_toContinuousLinearMap_comp
     refine hiso.comp_continuous_iff.1 ?_
-    have h : (fun L : E →L[ℝ] G ↦ G.subtypeL.comp L) ∘ T = fun σ : s ↦ (D σ).comp ι := rfl
+    have h : (fun L : E →L[ℝ] G ↦ G.subtypeL.comp L) ∘ T = fun σ : s ↦ (D σ).comp ι :=
+      funext fun σ ↦ subtypeL_comp_codRestrict _ _ _
     rw [h]
     exact (continuousOn_iff_continuous_domRestrict.1 hD).clm_comp continuous_const
   -- Each `T σ` is injective with closed range, and `T τ₀` is onto.

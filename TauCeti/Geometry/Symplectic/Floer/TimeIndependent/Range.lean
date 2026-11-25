@@ -172,12 +172,10 @@ private theorem segmentOperator_eq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH :
     Lp.coeFn_sub (segmentOperator ω J H γ ε 1 x) (segmentOperator ω J H γ ε 0 x)]
     with z h h₀ h₁ hadd hsmul hsub
   simp only [segmentOperator] at h h₀ h₁ hadd hsmul hsub ⊢
-  rw [hadd, Pi.add_apply, hsmul, Pi.smul_apply, hsub, Pi.sub_apply, h, h₀, h₁,
-    floerJetCoeff_const_eq, floerJetCoeff_const_eq, floerJetCoeff_const_eq,
-    fderiv_hamiltonianVectorField_lineMap hg hH, fderiv_hamiltonianVectorField_lineMap hg hH,
-    fderiv_hamiltonianVectorField_lineMap hg hH]
-  simp only [firstOrderJetCoeff_apply, neg_apply, comp_apply, add_apply, _root_.smul_apply,
-    map_add, map_smul]
+  simp only [hadd, Pi.add_apply, hsmul, Pi.smul_apply, hsub, Pi.sub_apply, h, h₀, h₁,
+    floerJetCoeff_const_eq, fderiv_hamiltonianVectorField_lineMap hg hH,
+    firstOrderJetCoeff_apply, neg_apply, comp_apply, add_apply, _root_.smul_apply, map_add,
+    map_smul]
   module
 
 /-- On the nonzero modes, every operator of the segment for `τ ∈ [0, 1]` is bounded below with
@@ -279,7 +277,10 @@ theorem exists_floerSobolevOperator_eq_of_sliceAverageLp_eq_zero
   have hb : 0 < 2 * π - max a (1 / 2) := sub_pos.2 (max_lt ha (by linarith [two_le_pi]))
   have hcont : Continuous (segmentOperator ω J H γ ε) := by
     rw [funext (segmentOperator_eq hg hH hγ haγ ε)]
-    let : ContinuousAdd (H1 V →L[ℝ] Lp V 2 stripMeasure) :=
+    -- Instance search for `ContinuousAdd` on operators out of the submodule `H1 V` exhausts the
+    -- default typeclass heartbeats: unifying the generic addition with that of the operator space
+    -- needs the unexposed body of `jetClosure`. Project it from the operator-space instance.
+    have : ContinuousAdd (H1 V →L[ℝ] Lp V 2 stripMeasure) :=
       (isTopologicalAddGroup (E := H1 V) (F := Lp V 2 stripMeasure)).toContinuousAdd
     exact continuous_const.add (continuous_id.smul continuous_const)
   rw [← segmentOperator_one ω J H γ ε]
