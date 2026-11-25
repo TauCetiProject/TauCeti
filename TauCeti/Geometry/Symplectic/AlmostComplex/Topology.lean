@@ -72,12 +72,14 @@ def ofContinuousLinearMap (J₀ : V →L[ℝ] V) (hJ₀ : ∀ v, J₀ (J₀ v) =
     AlmostComplexStructure V :=
   ⟨J₀.toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
 
-@[simp]
+/-- `ofContinuousLinearMap J₀ hJ₀` acts as `J₀`. Not `@[simp]`: `simp` proves it from
+`toLinearMap_ofContinuousLinearMap`. -/
 theorem ofContinuousLinearMap_apply (J₀ : V →L[ℝ] V) (hJ₀ : ∀ v, J₀ (J₀ v) = -v) (v : V) :
     ofContinuousLinearMap J₀ hJ₀ v = J₀ v :=
   (rfl)
 
 /-- The underlying linear map of `ofContinuousLinearMap J₀ hJ₀` is `J₀`. -/
+@[simp]
 theorem toLinearMap_ofContinuousLinearMap (J₀ : V →L[ℝ] V) (hJ₀ : ∀ v, J₀ (J₀ v) = -v) :
     (ofContinuousLinearMap J₀ hJ₀).toLinearMap = J₀.toLinearMap :=
   (rfl)
