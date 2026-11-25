@@ -18,10 +18,8 @@ structures and their scalar towers from `E (f x)`. Mathlib supplies the additive
 structures. The topological group structures let fibrewise linear equivalences between pullbacks,
 such as the pullback `x ↦ e (f x)` of a family of fibrewise linear equivalences `e`, induce maps of
 total spaces with continuous inverses. The normed instances allow the orthonormal frame bundle of a
-pullback to use exactly the original fibre metrics, with no transport or renorming, and
-`Bundle.Pullback.instFiberBundleOfNormed` / `Bundle.Pullback.instVectorBundleOfNormed` register
-the fibre and vector bundle structures on normed pullbacks for the norm-induced fibre topology. A
-pulled-back linear trivialization also induces the original fibre equivalence at the image point
+pullback to use exactly the original fibre metrics, with no transport or renorming. A pulled-back
+linear trivialization also induces the original fibre equivalence at the image point
 (`Bundle.Trivialization.linearEquivAt_pullback`,
 `Bundle.Trivialization.continuousLinearEquivAt_pullback` and
 `Bundle.Trivialization.continuousLinearMapAt_pullback`), and reads coordinates back into the fibre
@@ -30,6 +28,12 @@ pullbacks by two different base maps agree with the original source and target c
 (`ContinuousLinearMap.inCoordinates_pullback_of_mem`), and similarly scalar-valued bilinear forms
 pull back to continuous sections (`ContinuousLinearMap.inCoordinates_bilinear_pullback_of_mem`,
 `TauCeti.continuous_bilinear_pullback`).
+
+Mathlib's `FiberBundle.pullback` and `VectorBundle.pullback` give the fibres of `f *ᵖ E` the
+pulled-back fibre topology, which agrees with the topology of the fibre norm only after unfolding
+instances. Constructions that read the fibres through their norms, such as orthonormal frames,
+use the restatements `Bundle.Pullback.normedFiberBundle` and `Bundle.Pullback.normedVectorBundle`
+for the norm topologies instead, as local instances.
 -/
 
 public section
@@ -74,34 +78,35 @@ instance instNormedSpace {𝕜 : Type*} [NormedField 𝕜]
     NormedSpace 𝕜 ((f *ᵖ E) x) :=
   inferInstanceAs (NormedSpace 𝕜 (E (f x)))
 
-/-- The inner product on a pullback fibre is the original fibre inner product. -/
+/-- The inner product on a normed pullback fibre is the original fibre inner product. -/
 instance instInnerProductSpace {𝕜 : Type*} [RCLike 𝕜]
     [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace 𝕜 (E b)] (x : B') :
     InnerProductSpace 𝕜 ((f *ᵖ E) x) :=
   inferInstanceAs (InnerProductSpace 𝕜 (E (f x)))
 
-section Normed
+end Bundle.Pullback
 
-variable {𝕜 F K : Type*} [TopologicalSpace B] [TopologicalSpace B']
-  [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
-  [FunLike K B' B] [ContinuousMapClass K B' B]
+namespace Bundle.Pullback
 
-/-- Pulling back a bundle with normed fibres along a continuous map gives a fibre bundle with
-respect to the topology induced by `Bundle.Pullback.instNormedAddCommGroup`, matching
-`FiberBundle.pullback` definitionally. -/
-noncomputable instance instFiberBundleOfNormed [TopologicalSpace F] [FiberBundle F E] (f : K) :
-    @FiberBundle B' F _ _ ((f : B' → B) *ᵖ E) _ (fun _ ↦ UniformSpace.toTopologicalSpace) :=
+variable {B B' : Type*} [TopologicalSpace B] [TopologicalSpace B'] (F : Type*)
+  (E : B → Type*) [∀ b, NormedAddCommGroup (E b)] [TopologicalSpace (TotalSpace F E)]
+  {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B]
+
+/-- The pullback of a fibre bundle `E` with normed fibres along `f`, with the fibres `E (f y)`
+carrying the topology of their norms (Mathlib's `FiberBundle.pullback`, restated for these fibre
+topologies). -/
+noncomputable abbrev normedFiberBundle [TopologicalSpace F] [FiberBundle F E] (f : K) :
+    @FiberBundle B' F _ _ ((f : B' → B) *ᵖ E) _ fun _ ↦ UniformSpace.toTopologicalSpace :=
   FiberBundle.pullback (F := F) (E := E) f
 
-/-- Pulling back a vector bundle with normed fibres along a continuous map gives a vector bundle
-with respect to the topology induced by `Bundle.Pullback.instNormedAddCommGroup`. -/
-noncomputable instance instVectorBundleOfNormed [NontriviallyNormedField 𝕜] [NormedAddCommGroup F]
-    [NormedSpace 𝕜 F] [∀ b, Module 𝕜 (E b)] [FiberBundle F E] [VectorBundle 𝕜 F E] (f : K) :
-    @VectorBundle 𝕜 B' F ((f : B' → B) *ᵖ E) _ _ _ _ _ _ _
-      (fun _ ↦ UniformSpace.toTopologicalSpace) (instFiberBundleOfNormed f) :=
-  VectorBundle.pullback (F := F) (E := E) 𝕜 f
-
-end Normed
+/-- The pullback of a vector bundle `E` with normed fibres along `f`, with the fibres `E (f y)`
+carrying the topology of their norms (Mathlib's `VectorBundle.pullback`, restated for these fibre
+topologies). -/
+abbrev normedVectorBundle [NormedAddCommGroup F] [FiberBundle F E] (𝕜 : Type*)
+    [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F]
+    [∀ b, NormedSpace 𝕜 (E b)] [VectorBundle 𝕜 F E] (f : K) :
+    @VectorBundle 𝕜 B' F ((f : B' → B) *ᵖ E) _ _ _ _ _ _ _ _ (normedFiberBundle F E f) :=
+  VectorBundle.pullback 𝕜 (F := F) (E := E) f
 
 end Bundle.Pullback
 
