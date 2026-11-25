@@ -209,6 +209,54 @@ def restrictToGenerated : RootDatum P D.generatedSubgroup where
 /-- `D.restrictToGenerated` retains the regular coweight `D.positiveVector`. -/
 @[simp] theorem restrictToGenerated_positiveVector :
     D.restrictToGenerated.positiveVector = D.positiveVector := (rfl)
+/-- The positive unipotent subgroup of `D.restrictToGenerated` is `D.positiveSubgroup` restricted
+to `D.generatedSubgroup`. -/
+@[simp] theorem restrictToGenerated_positiveSubgroup :
+    D.restrictToGenerated.positiveSubgroup =
+      D.positiveSubgroup.subgroupOf D.generatedSubgroup := by
+  refine le_antisymm
+    (D.restrictToGenerated.positiveSubgroup_le_iff.mpr fun i hi _ hu ↦
+      D.U_le_positiveSubgroup hi hu) fun x hx ↦ ?_
+  have hle : D.positiveSubgroup ≤
+      D.restrictToGenerated.positiveSubgroup.map D.generatedSubgroup.subtype :=
+    D.positiveSubgroup_le_iff.mpr fun i hi y hy ↦
+      ⟨⟨y, D.U_le_generatedSubgroup i hy⟩, D.restrictToGenerated.U_le_positiveSubgroup hi hy, rfl⟩
+  obtain ⟨y, hy, hxy⟩ := hle hx
+  exact (Subtype.ext hxy : y = x) ▸ hy
+/-- The Borel subgroup of `D.restrictToGenerated` is `D.borelSubgroup` restricted to
+`D.generatedSubgroup`. -/
+@[simp] theorem restrictToGenerated_borelSubgroup :
+    D.restrictToGenerated.borelSubgroup =
+      D.borelSubgroup.subgroupOf D.generatedSubgroup := by
+  refine le_antisymm
+    (sup_le (fun _ ht ↦ D.T_le_borelSubgroup ht)
+      (D.restrictToGenerated_positiveSubgroup.trans_le fun _ hu ↦
+        D.positiveSubgroup_le_borelSubgroup hu)) fun x hx ↦ ?_
+  have hle : D.borelSubgroup ≤
+      D.restrictToGenerated.borelSubgroup.map D.generatedSubgroup.subtype :=
+    sup_le (fun y hy ↦ ⟨⟨y, D.T_le_generatedSubgroup hy⟩, Subgroup.mem_sup_left hy, rfl⟩)
+      (fun y hy ↦ ⟨⟨y, D.positiveSubgroup_le_generatedSubgroup hy⟩,
+        Subgroup.mem_sup_right (D.restrictToGenerated_positiveSubgroup.symm ▸ hy), rfl⟩)
+  obtain ⟨y, hy, hxy⟩ := hle hx
+  exact (Subtype.ext hxy : y = x) ▸ hy
+/-- The Weyl normalizer of `D.restrictToGenerated` is `D.weylNormalizer` restricted to
+`D.generatedSubgroup`. -/
+@[simp] theorem restrictToGenerated_weylNormalizer :
+    D.restrictToGenerated.weylNormalizer =
+      D.weylNormalizer.subgroupOf D.generatedSubgroup := by
+  refine le_antisymm
+    (D.restrictToGenerated.weylNormalizer_le_iff.mpr
+      ⟨fun _ ht ↦ D.T_le_weylNormalizer ht,
+        fun i _ hm ↦ D.reflectionCoset_subset_weylNormalizer i hm⟩) fun x hx ↦ ?_
+  have hle : D.weylNormalizer ≤
+      D.restrictToGenerated.weylNormalizer.map D.generatedSubgroup.subtype :=
+    D.weylNormalizer_le_iff.mpr
+      ⟨fun y hy ↦ ⟨⟨y, D.T_le_generatedSubgroup hy⟩, D.restrictToGenerated.T_le_weylNormalizer hy,
+        rfl⟩,
+        fun i y hy ↦ ⟨⟨y, D.reflectionCoset_subset_generatedSubgroup i hy⟩,
+          D.restrictToGenerated.reflectionCoset_subset_weylNormalizer i hy, rfl⟩⟩
+  obtain ⟨y, hy, hxy⟩ := hle hx
+  exact (Subtype.ext hxy : y = x) ▸ hy
 /-- `D.restrictToGenerated` is a generating root datum in `D.generatedSubgroup`. -/
 theorem isGenerating_restrictToGenerated : D.restrictToGenerated.IsGenerating := by
   rw [isGenerating_iff, eq_top_iff]; rintro ⟨x, hx⟩ -
@@ -297,12 +345,6 @@ def withPositiveVector (x : N) (hx : ∀ i : ι, P.root' i x ≠ 0) : RootDatum 
 /-- `D.withPositiveVector x hx` has positive coweight `x`. -/
 @[simp] theorem withPositiveVector_positiveVector (x : N) (hx : ∀ i : ι, P.root' i x ≠ 0) :
     (D.withPositiveVector x hx).positiveVector = x := (rfl)
-omit [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] in
-/-- Opposite unipotent subgroups `U⁺` and `U⁻` intersect trivially. -/
-@[simp] theorem positiveSubgroup_inf_negativeSubgroup :
-    D.positiveSubgroup ⊓ D.negativeSubgroup = ⊥ :=
-  eq_bot_iff.mpr fun _ ⟨hu₁, hu₂⟩ ↦ by
-    simpa using D.eq_one_of_mul_mem_negativeSubgroup D.T.one_mem hu₁ (by simpa using hu₂)
 /-- `T` and `U⁺` intersect trivially. -/
 @[simp] theorem T_inf_positiveSubgroup : D.T ⊓ D.positiveSubgroup = ⊥ := by
   let D' := D.withPositiveVector (-D.positiveVector) fun i ↦ by simp [D.positiveVector_regular i]
@@ -357,6 +399,13 @@ noncomputable def weylGroupHom : D.weylNormalizer →* P.weylGroup where
 theorem weylGroupHom_conj (n : D.weylNormalizer) (i : ι) :
     ConjAct.toConjAct (n : G) • D.U i = D.U (P.weylGroupToPerm (D.weylGroupHom n) i) :=
   (D.exists_weylGroup_conj_U n).choose_spec i
+/-- Conjugating `u ∈ D.U i` by `n⁻¹` for `n ∈ D.weylNormalizer` (`n⁻¹ u n`) lands in
+`D.U (w⁻¹ i)`, where `w = D.weylGroupHom n`. -/
+theorem inv_mul_mul_mem_U_weylNormalizer (n : D.weylNormalizer) {i : ι} {u : G} (hu : u ∈ D.U i) :
+    (n : G)⁻¹ * u * n ∈ D.U (P.weylGroupToPerm (D.weylGroupHom n)⁻¹ i) := by
+  rw [← Subgroup.mem_conjAct_smul_iff, D.weylGroupHom_conj, ← Equiv.Perm.mul_apply, ← map_mul,
+    mul_inv_cancel, map_one, Equiv.Perm.one_apply]
+  exact hu
 variable {D} in
 /-- `D.weylGroupHom n` is uniquely determined by how `n` permutes the root subgroups `D.U i`. -/
 theorem eq_weylGroupHom {n : D.weylNormalizer} {w : P.weylGroup}
@@ -368,6 +417,7 @@ theorem eq_weylGroupHom {n : D.weylNormalizer} {w : P.weylGroup}
     D.weylGroupHom ⟨t, D.T_le_weylNormalizer ht⟩ = 1 :=
   (D.eq_weylGroupHom fun _ ↦ by simp [D.conj_smul_U_of_mem_T ht]).symm
 /-- Every element of `D.reflectionCoset i` maps under `D.weylGroupHom` to the reflection in `i`. -/
+-- Not `@[simp]`: `{i : ι}` appears on the LHS only in the proof field of `⟨m, _⟩` (`simpNF`).
 theorem weylGroupHom_reflection {i : ι} {m : G} (hm : m ∈ D.reflectionCoset i) :
     D.weylGroupHom ⟨m, D.reflectionCoset_subset_weylNormalizer i hm⟩ =
       RootPairing.weylGroup.ofIdx P i :=
@@ -839,9 +889,48 @@ noncomputable def IsGenerating.titsSystem (hG : D.IsGenerating) : TitsSystem G w
 /-- The Weyl normalizer subgroup of `hG.titsSystem` is `D.weylNormalizer`. -/
 @[simp] theorem IsGenerating.titsSystem_subgroupN {D : RootDatum P G} (hG : D.IsGenerating) :
     hG.titsSystem.subgroupN = D.weylNormalizer := (rfl)
+/-- Membership in the simple reflections of `hG.titsSystem`: the classes in `N / (B ∩ N)` of
+elements of `D.reflectionCoset a.val` for simple roots `a` of the indivisible base cut out by
+`D.positiveVector`. -/
+theorem IsGenerating.mem_titsSystem_simple_iff {D : RootDatum P G} (hG : D.IsGenerating)
+    {s : hG.titsSystem.WeylGroup} :
+    s ∈ hG.titsSystem.simple ↔
+      ∃ a ∈ (P.indivisibleBaseOf D.positiveVector D.positiveVector_regular).support,
+        ∃ (m : G) (hm : m ∈ D.reflectionCoset a.val),
+          QuotientGroup.mk
+            ⟨m, hG.titsSystem_subgroupN.symm ▸
+              D.reflectionCoset_subset_weylNormalizer a.val hm⟩ = s :=
+  Iff.rfl
 /-- The Tits system attached to any Bruhat–Tits root datum, in `D.generatedSubgroup`. -/
 noncomputable def titsSystem : TitsSystem D.generatedSubgroup :=
   D.isGenerating_restrictToGenerated.titsSystem
+/-- The Borel subgroup of `D.titsSystem` is `D.borelSubgroup` restricted to
+`D.generatedSubgroup`. -/
+@[simp] theorem titsSystem_subgroupB :
+    D.titsSystem.subgroupB = D.borelSubgroup.subgroupOf D.generatedSubgroup :=
+  D.restrictToGenerated_borelSubgroup
+/-- The Weyl normalizer subgroup of `D.titsSystem` is `D.weylNormalizer` restricted to
+`D.generatedSubgroup`. -/
+@[simp] theorem titsSystem_subgroupN :
+    D.titsSystem.subgroupN = D.weylNormalizer.subgroupOf D.generatedSubgroup :=
+  D.restrictToGenerated_weylNormalizer
+/-- Membership in the simple reflections of `D.titsSystem`: the classes in `N / (B ∩ N)` of
+elements of `D.reflectionCoset a.val` for simple roots `a` of the indivisible base cut out by
+`D.positiveVector`. -/
+theorem mem_titsSystem_simple_iff {s : D.titsSystem.WeylGroup} :
+    s ∈ D.titsSystem.simple ↔
+      ∃ a ∈ (P.indivisibleBaseOf D.positiveVector D.positiveVector_regular).support,
+        ∃ (m : G) (hm : m ∈ D.reflectionCoset a.val),
+          QuotientGroup.mk
+            ⟨⟨m, D.reflectionCoset_subset_generatedSubgroup a.val hm⟩,
+              D.titsSystem_subgroupN.symm ▸
+                D.reflectionCoset_subset_weylNormalizer a.val hm⟩ = s := by
+  refine D.isGenerating_restrictToGenerated.mem_titsSystem_simple_iff.trans
+    (exists_congr fun a ↦ and_congr_right fun _ ↦ ⟨?_, ?_⟩)
+  · rintro ⟨m, hm, rfl⟩
+    exact ⟨m.val, hm, rfl⟩
+  · rintro ⟨m, hm, rfl⟩
+    exact ⟨⟨m, D.reflectionCoset_subset_generatedSubgroup a.val hm⟩, hm, rfl⟩
 private theorem IsGenerating.ker_weylGroupHom {D : RootDatum P G} (hG : D.IsGenerating) :
     D.weylGroupHom.ker = D.T.subgroupOf D.weylNormalizer := by
   refine le_antisymm (fun n hn ↦ ?_) fun n hn ↦ D.weylGroupHom_torus hn
@@ -873,17 +962,9 @@ subgroups if and only if it belongs to `T` (Bruhat–Tits I, 6.1.11 (ii)). -/
 @[simp] theorem ker_weylGroupHom : D.weylGroupHom.ker = D.T.subgroupOf D.weylNormalizer := by
   refine le_antisymm (fun n hn ↦ ?_) fun n hn ↦ D.weylGroupHom_torus hn
   let D' := D.restrictToGenerated
-  have hn'_mem (m : D.weylNormalizer) :
-      (⟨(m : G), D.weylNormalizer_le_generatedSubgroup m.property⟩ : D.generatedSubgroup) ∈
-        D'.weylNormalizer := by
-    induction m using D.weylNormalizer_induction with
-    | torus _ ht => exact D'.T_le_weylNormalizer (by simpa [D', Subgroup.mem_subgroupOf] using ht)
-    | reflection i _ hm => exact D'.reflectionCoset_subset_weylNormalizer i (by simpa [D'] using hm)
-    | one => exact one_mem _
-    | mul _ _ ih₁ ih₂ => exact mul_mem ih₁ ih₂
-    | inv _ ih₁ => exact inv_mem ih₁
   let n' : D'.weylNormalizer :=
-    ⟨⟨(n : G), D.weylNormalizer_le_generatedSubgroup n.property⟩, hn'_mem n⟩
+    ⟨⟨(n : G), D.weylNormalizer_le_generatedSubgroup n.property⟩,
+      D.restrictToGenerated_weylNormalizer.symm ▸ Subgroup.mem_subgroupOf.mpr n.property⟩
   have hhom_eq : D'.weylGroupHom n' = D.weylGroupHom n :=
     (D'.eq_weylGroupHom fun i ↦ Subgroup.ext fun x ↦ by
       simp only [Subgroup.mem_conjAct_smul_iff, D', restrictToGenerated_U, Subgroup.mem_subgroupOf,
@@ -891,6 +972,23 @@ subgroups if and only if it belongs to `T` (Bruhat–Tits I, 6.1.11 (ii)). -/
   have hn'_ker : n' ∈ D'.weylGroupHom.ker := MonoidHom.mem_ker.mpr (hhom_eq.trans hn)
   rw [D.isGenerating_restrictToGenerated.ker_weylGroupHom] at hn'_ker
   simpa [D', Subgroup.mem_subgroupOf] using hn'_ker
+/-- Conjugating `m ∈ D.reflectionCoset i` by `n⁻¹` for `n ∈ D.weylNormalizer` (`n⁻¹ m n`) lands in
+`D.reflectionCoset (w⁻¹ i)`, where `w = D.weylGroupHom n`. -/
+theorem inv_mul_mul_mem_reflectionCoset_weylNormalizer (n : D.weylNormalizer) {i : ι} {m : G}
+    (hm : m ∈ D.reflectionCoset i) :
+    (n : G)⁻¹ * m * n ∈ D.reflectionCoset (P.weylGroupToPerm (D.weylGroupHom n)⁻¹ i) := by
+  set j := P.weylGroupToPerm (D.weylGroupHom n)⁻¹ i
+  obtain ⟨m', hm'⟩ := D.reflectionCoset_nonempty j
+  let nm : D.weylNormalizer := ⟨m, D.reflectionCoset_subset_weylNormalizer i hm⟩
+  let nm' : D.weylNormalizer := ⟨m', D.reflectionCoset_subset_weylNormalizer j hm'⟩
+  have hker : n⁻¹ * nm * n * nm'⁻¹ ∈ D.weylGroupHom.ker := by
+    rw [MonoidHom.mem_ker, map_mul, map_mul, map_mul, map_inv, map_inv,
+      D.weylGroupHom_reflection hm, D.weylGroupHom_reflection hm']
+    have hconj := RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj P (D.weylGroupHom n)⁻¹ i
+    rw [inv_inv] at hconj
+    rw [← hconj, mul_inv_cancel]
+  rw [D.ker_weylGroupHom, Subgroup.mem_subgroupOf] at hker
+  exact (D.mem_reflectionCoset_iff_mul_inv_mem_T hm').mpr hker
 /-- **The Weyl group isomorphism of a Bruhat–Tits root datum**: `N / T ≃* W(Φ)`. -/
 noncomputable def weylGroupEquiv :
     D.weylNormalizer ⧸ D.T.subgroupOf D.weylNormalizer ≃* P.weylGroup :=

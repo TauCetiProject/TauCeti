@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.GroupAction.Defs
 public import TauCeti.Algebra.Order.AddGroupWithTop
 public import TauCeti.GroupTheory.BruhatTits.RootDatum
 public import TauCeti.GroupTheory.GroupAction.ConjAct
+public import TauCeti.LinearAlgebra.RootSystem.Indivisible
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 import TauCeti.LinearAlgebra.RootSystem.CoweightLattice
 
@@ -55,6 +56,8 @@ valuation `ω` of the field, and it says that `z` acts on the apartment by the t
 
 ## Main results
 
+* `TauCeti.BruhatTits.Valuation.ext_of_isIndivisible`: a valuation of a finite crystallographic
+  root datum is determined by its values on the indivisible root subgroups.
 * `TauCeti.BruhatTits.Valuation.ext_filtration`: a valuation is determined by its filtrations.
 * `TauCeti.BruhatTits.Valuation.filtration_antitone`: `U (a, l) ≤ U (a, k)` for `k ≤ l`.
 * `TauCeti.BruhatTits.Valuation.commutator_filtration_le`: the axiom (V3) for subgroups.
@@ -142,6 +145,16 @@ theorem ext {φ ψ : Valuation D} (h : ∀ i u, φ i u = ψ i u) : φ = ψ := by
   cases ψ
   congr
   exact funext fun i ↦ funext (h i)
+
+/-- Two valuations of a finite crystallographic root datum are equal as soon as they agree on the
+root subgroups of all indivisible roots, since every divisible root is twice an indivisible root and
+its valuation is determined by (V4). -/
+theorem ext_of_isIndivisible [CharZero R] [Finite ι] [P.IsCrystallographic] {φ ψ : Valuation D}
+    (h : ∀ i : ι, P.IsIndivisible i → ∀ u : D.U i, φ i u = ψ i u) : φ = ψ := by
+  ext j u
+  rcases P.isIndivisible_or_exists_root_eq_two_smul j with hj | ⟨i, hi, hij⟩
+  · exact h j hj u
+  · rw [φ.apply_eq_two_smul i j hij u, ψ.apply_eq_two_smul i j hij u, h i hi]
 
 variable (φ : Valuation D) {i : ι}
 

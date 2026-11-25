@@ -9,7 +9,6 @@ public import TauCeti.GroupTheory.BruhatTits.Valuation.Basic
 public import TauCeti.GroupTheory.BruhatTits.WeylGroup
 import TauCeti.GroupTheory.Commutator
 import TauCeti.LinearAlgebra.RootSystem.Basic
-import TauCeti.LinearAlgebra.RootSystem.CoweightLattice
 import TauCeti.LinearAlgebra.RootSystem.CoweightLattice.Automorphism
 
 /-!
@@ -70,51 +69,9 @@ section WeylNormalizer
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
   [Module R M] [Module R N] {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic]
 
-namespace RootDatum
-
-variable (D : RootDatum P G)
-
-/-- Conjugating `u ∈ D.U i` by `n⁻¹` for `n ∈ D.weylNormalizer` (`n⁻¹ u n`) lands in
-`D.U (w⁻¹ i)`, where `w = D.weylGroupHom n`. -/
-theorem inv_mul_mul_mem_U_weylNormalizer (n : D.weylNormalizer) {i : ι} {u : G} (hu : u ∈ D.U i) :
-    (n : G)⁻¹ * u * n ∈ D.U (P.weylGroupToPerm (D.weylGroupHom n)⁻¹ i) := by
-  rw [← Subgroup.mem_conjAct_smul_iff, D.weylGroupHom_conj, ← Equiv.Perm.mul_apply, ← map_mul,
-    mul_inv_cancel, map_one, Equiv.Perm.one_apply]
-  exact hu
-
-/-- Conjugating `m ∈ D.reflectionCoset i` by `n⁻¹` for `n ∈ D.weylNormalizer` (`n⁻¹ m n`) lands in
-`D.reflectionCoset (w⁻¹ i)`, where `w = D.weylGroupHom n`. -/
-theorem inv_mul_mul_mem_reflectionCoset_weylNormalizer (n : D.weylNormalizer) {i : ι} {m : G}
-    (hm : m ∈ D.reflectionCoset i) :
-    (n : G)⁻¹ * m * n ∈ D.reflectionCoset (P.weylGroupToPerm (D.weylGroupHom n)⁻¹ i) := by
-  set j := P.weylGroupToPerm (D.weylGroupHom n)⁻¹ i
-  obtain ⟨m', hm'⟩ := D.reflectionCoset_nonempty j
-  let nm : D.weylNormalizer := ⟨m, D.reflectionCoset_subset_weylNormalizer i hm⟩
-  let nm' : D.weylNormalizer := ⟨m', D.reflectionCoset_subset_weylNormalizer j hm'⟩
-  have hker : n⁻¹ * nm * n * nm'⁻¹ ∈ D.weylGroupHom.ker := by
-    rw [MonoidHom.mem_ker, map_mul, map_mul, map_mul, map_inv, map_inv,
-      D.weylGroupHom_reflection hm, D.weylGroupHom_reflection hm']
-    have hconj := RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj P (D.weylGroupHom n)⁻¹ i
-    rw [inv_inv] at hconj
-    rw [← hconj, mul_inv_cancel]
-  rw [D.ker_weylGroupHom, Subgroup.mem_subgroupOf] at hker
-  exact (D.mem_reflectionCoset_iff_mul_inv_mem_T hm').mpr hker
-
-end RootDatum
-
 namespace Valuation
 
 variable {D : RootDatum P G}
-
-/-- Two valuations of a crystallographic root datum are equal as soon as they agree on the root
-subgroups of all indivisible roots, since every divisible root is twice an indivisible root and its
-valuation is determined by (V4). -/
-theorem ext_of_isIndivisible {φ ψ : Valuation D}
-    (h : ∀ i : ι, P.IsIndivisible i → ∀ u : D.U i, φ i u = ψ i u) : φ = ψ := by
-  ext j u
-  rcases P.isIndivisible_or_exists_root_eq_two_smul j with hj | ⟨i, hi, hij⟩
-  · exact h j hj u
-  · rw [φ.apply_eq_two_smul i j hij u, ψ.apply_eq_two_smul i j hij u, h i hi]
 
 private noncomputable abbrev permInv (n : D.weylNormalizer) (i : ι) : ι :=
   P.weylGroupToPerm (D.weylGroupHom n)⁻¹ i
@@ -252,7 +209,8 @@ theorem smul_apply (n : D.weylNormalizer) (φ : Valuation D) (i : ι) (u : D.U i
   (rfl)
 
 /-- Variant of `Valuation.smul_apply` expressing the root-index permutation through the spherical
-Weyl group isomorphism `D.weylGroupEquiv : D.weylGroup ≃* P.weylGroup`. -/
+Weyl group isomorphism
+`D.weylGroupEquiv : D.weylNormalizer ⧸ D.T.subgroupOf D.weylNormalizer ≃* P.weylGroup`. -/
 theorem smul_apply_weylGroupEquiv (n : D.weylNormalizer) (φ : Valuation D) (i : ι) (u : D.U i) :
     (n • φ) i u = φ (P.weylGroupToPerm (D.weylGroupEquiv (QuotientGroup.mk n))⁻¹ i)
       ⟨(n : G)⁻¹ * u * n,
@@ -334,23 +292,6 @@ private theorem shift_neg_smul_coroot (c : ℝ) (i j : ι) (x : D.U j) :
   rw [shift_apply]
   congr 2
   simp [mul_comm]
-
-private theorem ne_one_right_of_mul_mul_mem_reflectionCoset {i : ι} {u : D.U i}
-    {u' u'' : D.U (P.reflectionPerm i i)}
-    (h : (u' : G) * u * u'' ∈ D.reflectionCoset i) : u'' ≠ 1 := by
-  rintro rfl
-  have h1 := D.reflection_conjugates i ((u' : G) * u) (by simpa using h) i
-  rw [ConjAct.toConjAct_mul, mul_smul,
-    Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer u.property)] at h1
-  have h2 : D.U i = D.U (P.reflectionPerm i i) := by
-    rw [← inv_smul_eq_iff.mpr h1.symm, ← ConjAct.toConjAct_inv,
-      Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer (inv_mem u'.property))]
-  exact D.U_ne_of_root_eq_neg (by simp) h2.symm
-
-private theorem inv_mul_mul_mem_U_reflectionCoset {i j : ι} {m : G}
-    (hm : m ∈ D.reflectionCoset i) {x : G} (hx : x ∈ D.U j) :
-    m⁻¹ * x * m ∈ D.U (P.reflectionPerm i j) := by
-  rwa [← Subgroup.mem_conjAct_smul_iff, D.reflection_conjugates i m hm, P.reflectionPerm_self]
 
 private def reflCone (P : RootPairing ι ℝ M N) (i j : ι) (y₀ y₁ : N) (b : ι) : Prop :=
   0 < P.root' b y₀ ∧ P.root b = P.root' b y₀ • P.root j + P.root' b y₁ • P.root i
@@ -506,33 +447,9 @@ theorem smul_shift (n : D.weylNormalizer) (v : N) :
   rw [Equiv.apply_symm_apply] at h
   exact congrArg WithTop.some h.symm
 
-omit [P.IsCrystallographic] in
-private theorem exists_regular_preserve_pos (D : RootDatum P G) (y₀ : N) :
-    ∃ z₀ : N, (∀ b : ι, P.root' b z₀ ≠ 0) ∧ ∀ b : ι, 0 < P.root' b y₀ → 0 < P.root' b z₀ := by
-  have := Fintype.ofFinite ι
-  let C : ℝ := (∑ b : ι, |P.root' b D.positiveVector| / |P.root' b y₀|) + 1
-  have hdom (b : ι) (hb : P.root' b y₀ ≠ 0) : |P.root' b D.positiveVector| < C * |P.root' b y₀| :=
-    (div_lt_iff₀ (abs_pos.mpr hb)).mp <| lt_of_le_of_lt
-      (Finset.single_le_sum (f := fun c : ι ↦ |P.root' c D.positiveVector| / |P.root' c y₀|)
-        (fun _ _ ↦ div_nonneg (abs_nonneg _) (abs_nonneg _)) (Finset.mem_univ b)) (lt_add_one _)
-  let z₀ : N := C • y₀ + D.positiveVector
-  have hpos (b : ι) (hb : 0 < P.root' b y₀) : 0 < P.root' b z₀ := by
-    have h1 := hdom b hb.ne'
-    rw [abs_of_pos hb] at h1
-    simp only [z₀, map_add, map_smul, smul_eq_mul]
-    linarith [neg_abs_le (P.root' b D.positiveVector)]
-  refine ⟨z₀, fun b ↦ ?_, hpos⟩
-  rcases lt_trichotomy (P.root' b y₀) 0 with hn | h0 | hp
-  · have h1 := hdom b hn.ne
-    rw [abs_of_neg hn] at h1
-    exact (by simp only [z₀, map_add, map_smul, smul_eq_mul]
-              linarith [le_abs_self (P.root' b D.positiveVector)] : P.root' b z₀ < 0).ne
-  · simp [z₀, h0, D.positiveVector_regular b]
-  · exact (hpos b hp).ne'
-
 private theorem smul_reflection_apply_raw {i : ι} {m : G} (hm : m ∈ D.reflectionCoset i) (j : ι)
     (x : D.U j) : (reflN hm • φ) j x =
-      φ (P.reflectionPerm i j) ⟨m⁻¹ * x * m, inv_mul_mul_mem_U_reflectionCoset hm x.property⟩ :=
+      φ (P.reflectionPerm i j) ⟨m⁻¹ * x * m, D.inv_mul_mul_mem_U_reflectionCoset hm x.property⟩ :=
   (smul_apply _ _ _ _).trans <| φ.apply_congr
     (by rw [D.weylGroupHom_reflection hm, RootPairing.weylGroup.ofIdx_inv_eq,
       P.weylGroupToPerm_ofIdx_apply]) rfl
@@ -563,12 +480,13 @@ private theorem smul_reflection_apply_self_aux {i : ι} {u : D.U i}
         ⟨_, hw_mem⟩ ⟨u, hni_i.symm ▸ u.property⟩ hw_prod, hφ_u', neg_neg]
   obtain ⟨c, hc⟩ := φ.exists_apply_eq_apply_conj_add i m hm
   have hc_eq : c = -(2 * k) := by
-    have h1 := hc u'' (ne_one_right_of_mul_mul_mem_reflectionCoset hm_prod)
+    have h1 := hc u'' (mt (congrArg Subtype.val)
+      (D.ne_one_right_of_mul_mul_mem_reflectionCoset u.property u'.property hm_prod))
     rw [hφ_u'', hφ_conj] at h1
     norm_cast at h1
     linarith
   let y : D.U (P.reflectionPerm i i) :=
-    ⟨m⁻¹ * x * m, inv_mul_mul_mem_U_reflectionCoset hm x.property⟩
+    ⟨m⁻¹ * x * m, D.inv_mul_mul_mem_U_reflectionCoset hm x.property⟩
   have hy_ne : y ≠ 1 := fun h ↦ hx <| Subtype.ext <|
     (conj_eq_one_iff (a := m⁻¹) (b := (x : G))).mp
       (by simpa only [y, inv_inv, Subgroup.coe_one] using congrArg Subtype.val h)
@@ -585,7 +503,7 @@ private theorem le_smul_reflection_of_linearIndependent {i j : ι}
   obtain ⟨y₁, hy₁j, hy₁i⟩ :=
     P.exists_root'_eq_zero_and_eq_one (LinearIndependent.pair_symm_iff.mp hli)
   have hy : IsDualPair P i j y₀ y₁ := ⟨hy₀i, hy₀j, hy₁j, hy₁i⟩
-  obtain ⟨z₀, hz₀, hz₀_pos⟩ := exists_regular_preserve_pos D y₀
+  obtain ⟨z₀, hz₀, hz₀_pos⟩ := P.exists_forall_root'_ne_zero_and_pos D.positiveVector_regular y₀
   let L := φ.reflConeSubgroup i j y₀ y₁ k l
   have hLU : ∀ b, 0 < P.root' b z₀ → L b ≤ D.U b := fun b _ ↦ by
     dsimp [L, reflConeSubgroup]; split_ifs <;> simp [φ.filtration_le_U]
@@ -607,7 +525,7 @@ private theorem le_smul_reflection_of_linearIndependent {i j : ι}
     (φ.reflConeSubgroup_eq_of_root_eq hy k l one_pos hj'_lin).trans (congrArg _ (by ring))
   have hconj_mem : m⁻¹ * (x : G) * m ∈ (⨆ (b) (_ : 0 < P.root' b z₀), L b) ⊓ D.U j' :=
     ⟨hiSup_eq ▸ by simpa [mul_assoc] using (Subgroup.mem_normalizer_iff.mp hminv_norm x).mp hx_mem,
-      inv_mul_mul_mem_U_reflectionCoset hm x.property⟩
+      D.inv_mul_mul_mem_U_reflectionCoset hm x.property⟩
   rw [D.iSup_inf_U_eq_of_commutator_le hz₀ L hLU
     (fun b₁ b₂ _ ↦ φ.reflConeSubgroup_le_of_two_smul i j y₀ y₁ k l)
     (fun b₁ b₂ ↦ φ.commutator_reflConeSubgroup_le hy k l)
@@ -629,7 +547,8 @@ private theorem smul_reflection_of_not_linearIndependent {i j : ι}
     have hm_inv : m⁻¹ ∈ D.reflectionCoset i := D.inv_mem_reflectionCoset hm
     have hm_inv_eq : ((u''⁻¹ : D.U _) : G) * (u⁻¹ : D.U i) * (u'⁻¹ : D.U _) = m⁻¹ := by
       simp only [Subgroup.coe_inv]; rw [← hm_eq]; group
-    let y : D.U i := ⟨m⁻¹ * x * m, by simpa using inv_mul_mul_mem_U_reflectionCoset hm x.property⟩
+    let y : D.U i :=
+      ⟨m⁻¹ * x * m, by simpa using D.inv_mul_mul_mem_U_reflectionCoset hm x.property⟩
     have hself := φ.smul_reflection_apply_self_aux hm_inv hm_inv_eq ((φ.apply_inv u).trans hφ) y
     rw [φ.smul_reflection_apply_raw hm_inv i y,
       φ.apply_congr rfl (v := x) (by dsimp [y]; group)] at hself
@@ -651,7 +570,7 @@ private theorem smul_reflection_of_isIndivisible {i : ι} (hi : P.IsIndivisible 
     obtain ⟨l, hl⟩ := φ.exists_apply_eq_coe hx
     set j' := P.reflectionPerm i j
     have hle₁ := φ.le_smul_reflection_of_linearIndependent hj hli hm hm_eq hφ hl.ge
-    let x' : D.U j' := ⟨m⁻¹ * x * m, inv_mul_mul_mem_U_reflectionCoset hm x.property⟩
+    let x' : D.U j' := ⟨m⁻¹ * x * m, D.inv_mul_mul_mem_U_reflectionCoset hm x.property⟩
     have hx'_ne : x' ≠ 1 := fun h ↦ hx <| Subtype.ext <|
       (conj_eq_one_iff (a := m⁻¹) (b := (x : G))).mp
         (by simpa only [x', inv_inv, Subgroup.coe_one] using congrArg Subtype.val h)
@@ -699,10 +618,8 @@ theorem smul_reflection {i : ι} {u : D.U i} {u' u'' : D.U (P.reflectionPerm i i
     have hres := φ.smul_reflection_of_isIndivisible hi₀ (u := u₀)
       (u' := ⟨u', D.le_of_root_eq_two_smul _ _ hneg_eq u'.property⟩)
       (u'' := ⟨u'', D.le_of_root_eq_two_smul _ _ hneg_eq u''.property⟩) hm₀ hm_eq hφ₀
-    have : HasUniqueDiv M := .of_isTorsionFree ℝ M
-    have : HasUniqueDiv N := .of_isTorsionFree ℝ N
     have hcor : (k / 2 : ℝ) • P.coroot i₀ = k • P.coroot i := by
-      rw [P.coroot_eq_smul_coroot_iff.mpr hi_eq, smul_smul]; ring_nf
+      rw [P.coroot_eq_smul_of_root_eq_smul hi_eq, smul_smul]; ring_nf
     rwa [hcor] at hres
 
 /-- Evaluating `m • φ` at the reflected root `i` itself, where `m = u' u u'' ∈ D.reflectionCoset i`
@@ -785,42 +702,12 @@ private theorem torus_add_const_reflectionPerm {t : G} (ht : t ∈ D.T) {d : ι 
   norm_cast at heval
   linarith
 
-private theorem exists_mem_corootSpan_of_forall_reflectionPerm (D : RootDatum P G) {d : ι → ℝ}
-    (hrefl_d : ∀ i j : ι, d (P.reflectionPerm i j) = d j - P.pairing j i * d i) :
-    ∃ v ∈ P.corootSpan ℝ, ∀ i : ι, P.IsIndivisible i → P.root' i v = d i := by
-  have := Fintype.ofFinite ι
-  let b₀ := P.indivisibleBaseOf D.positiveVector D.positiveVector_regular
-  have hli_supp : LinearIndependent ℝ (fun a : b₀.support ↦ P.root a.val.val) := by
-    simpa [LinearIndepOn, funext P.indivisiblePairing_root] using b₀.linearIndepOn_root
-  let B := Module.Basis.span hli_supp
-  obtain ⟨g, hg⟩ := LinearMap.exists_extend (B.constr ℝ (fun a : b₀.support ↦ d a.val.val))
-  obtain ⟨⟨v, hv⟩, hv_eq⟩ :=
-    P.bijective_toDualRootSpan_corootSpan.surjective (g ∘ₗ (P.rootSpan ℝ).subtype)
-  have hv_supp (a : b₀.support) : P.root' a.val.val v = d a.val.val := by
-    have h1 : P.toDualRootSpan v ⟨P.root a.val.val, (P.rootSpanMem ℝ a.val.val).property⟩ =
-        g (P.root a.val.val) :=
-      congr($hv_eq ⟨P.root a.val.val, (P.rootSpanMem ℝ a.val.val).property⟩)
-    have hB : (B a : M) = P.root a.val.val :=
-      congrArg Subtype.val (Module.Basis.span_apply hli_supp a)
-    simpa [RootPairing.root'] using h1.trans (by simpa [hB, B.constr_basis] using congr($hg (B a)))
-  refine ⟨v, hv, fun i hi ↦ b₀.induction_reflect ⟨i, hi⟩ (p := fun c ↦ P.root' c.val v = d c.val)
-    (fun a ih ↦ ?_) (fun a ha ↦ hv_supp ⟨a, ha⟩) fun a s ih hs ↦ ?_⟩
-  · have h := hrefl_d a.val a.val
-    rw [P.pairing_same] at h
-    rw [P.coe_indivisiblePairing_reflectionPerm a a, P.root'_reflectionPerm_self,
-      LinearMap.neg_apply, ih]
-    linarith
-  · have hr : P.root' (P.reflectionPerm s.val a.val) v =
-        P.root' a.val v - P.pairing a.val s.val * P.root' s.val v := by
-      simp [RootPairing.root', P.root_reflectionPerm, P.reflection_apply, P.root_coroot'_eq_pairing]
-    rw [P.coe_indivisiblePairing_reflectionPerm s a, hr, ih, hv_supp ⟨s, hs⟩, hrefl_d s.val a.val]
-
 private theorem exists_mem_corootSpan_torus_smul_eq_shift {t : G} (ht : t ∈ D.T) :
     ∃ v ∈ P.corootSpan ℝ, torusN ht • φ = φ.shift v := by
   obtain ⟨d, hd⟩ := φ.exists_torus_smul_add_const ht
-  obtain ⟨v, hv, hv_ind⟩ :=
-    exists_mem_corootSpan_of_forall_reflectionPerm D (φ.torus_add_const_reflectionPerm ht hd)
-  exact ⟨v, hv, ext_of_isIndivisible fun i hi x ↦ by rw [hd i x, shift_apply, hv_ind i hi]⟩
+  obtain ⟨v, hv, hv_eq⟩ := P.exists_mem_corootSpan_of_forall_reflectionPerm
+    D.positiveVector_regular (φ.torus_add_const_reflectionPerm ht hd)
+  exact ⟨v, hv, ext fun i x ↦ by rw [hd i x, shift_apply, hv_eq i]⟩
 
 /-- Every `n ∈ D.weylNormalizer` acts on `φ` by shifting by a vector `v ∈ P.corootSpan ℝ`, and `v`
 is unique *within `P.corootSpan ℝ`* (uniqueness in all of `N` holds only modulo the common kernel of
