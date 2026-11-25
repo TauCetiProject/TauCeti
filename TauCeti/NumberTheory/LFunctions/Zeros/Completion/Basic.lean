@@ -287,21 +287,29 @@ theorem HasMeromorphicContinuation.divisor_dual_entireCompletion_conj (s : ℂ) 
     MeromorphicOn.divisor_apply h.meromorphicOn_entireCompletion (Set.mem_univ _),
     h.meromorphicOrderAt_dual_entireCompletion_conj]
 
+omit h in
+/-- The functional equation carries the meromorphic order of the dual completed function at `s`
+to that of the completed function at `1 - s`, including at poles. -/
+theorem HasFunctionalEquation.meromorphicOrderAt_completed_one_sub
+    (hfe : d.HasFunctionalEquation) (s : ℂ) :
+    meromorphicOrderAt d.completed (1 - s) = meromorphicOrderAt d.dual.completed s := by
+  have hsmul : (fun z ↦ d.rootNumber * d.dual.completed (1 - z)) =
+      d.rootNumber • (d.dual.completed ∘ fun z ↦ 1 - z) := by
+    ext z
+    simp [Function.comp_def, smul_eq_mul]
+  rw [meromorphicOrderAt_congr (hfe.eventuallyEq (1 - s)), hsmul,
+    meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hfe.rootNumber_ne_zero,
+    meromorphicOrderAt_comp_of_deriv_ne_zero (by fun_prop) (by simp), sub_sub_cancel]
+
 /-- The functional equation carries the orders of the entire completion of the dual card at `s`
 to those of the entire completion at `1 - s`. -/
 theorem HasFunctionalEquation.meromorphicOrderAt_entireCompletion_one_sub
     (hfe : d.HasFunctionalEquation) (s : ℂ) :
     meromorphicOrderAt d.entireCompletion (1 - s) =
       meromorphicOrderAt d.dual.entireCompletion s := by
-  have hc : meromorphicOrderAt d.completed (1 - s) = meromorphicOrderAt d.dual.completed s := by
-    rw [meromorphicOrderAt_congr (hfe.eventuallyEq (1 - s)),
-      show (fun z ↦ d.rootNumber * d.dual.completed (1 - z)) =
-        d.rootNumber • (d.dual.completed ∘ fun z ↦ 1 - z) by
-          funext z; simp [Function.comp_def, smul_eq_mul],
-      meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hfe.rootNumber_ne_zero,
-      meromorphicOrderAt_comp_of_deriv_ne_zero (by fun_prop) (by simp), sub_sub_cancel]
-  rw [h.meromorphicOrderAt_entireCompletion, h.dual.meromorphicOrderAt_entireCompletion, hc,
-    dual_polarOrder_apply, ← hfe.polarOrder_one_sub_conj (conj s), Complex.conj_conj]
+  rw [h.meromorphicOrderAt_entireCompletion, h.dual.meromorphicOrderAt_entireCompletion,
+    hfe.meromorphicOrderAt_completed_one_sub, dual_polarOrder_apply,
+    ← hfe.polarOrder_one_sub_conj (conj s), Complex.conj_conj]
 
 /-- The functional equation carries the analytic order of the dual entire completion at `s` to that
 of `d.entireCompletion` at `1 - s`. -/
