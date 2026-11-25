@@ -76,9 +76,9 @@ principal-character pole at `1` is removed. -/
     exact WithTop.coe_lt_coe.mpr (neg_one_lt_zero : (-1 : ℤ) < 0)
 
 /-- Every real pole of the Mellin expression in the open right half-plane has a positive real
-residue. -/
-theorem rieszRemainderMellin_LFunction_residue_pos {β : ℝ} (hβ : 0 < β)
-    (hpole : meromorphicOrderAt (TauCeti.rieszRemainderMellin χ.LFunction) β < 0) :
+leading Laurent coefficient, which is its residue since the pole is simple. -/
+theorem exists_pos_meromorphicTrailingCoeffAt_rieszRemainderMellin_LFunction {β : ℝ}
+    (hβ : 0 < β) (hpole : meromorphicOrderAt (TauCeti.rieszRemainderMellin χ.LFunction) β < 0) :
     ∃ c : ℝ, 0 < c ∧
       meromorphicTrailingCoeffAt (TauCeti.rieszRemainderMellin χ.LFunction) β = (c : ℂ) := by
   have h₀ : (β : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hβ.ne'
