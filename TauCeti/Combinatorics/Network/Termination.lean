@@ -35,8 +35,6 @@ subgroup, augmentation sequences need not terminate.
 ## Main results
 
 * `TauCeti.Flow.AugmentsTo.val_add_le`: an augmentation step raises the value by at least `d`.
-* `TauCeti.Flow.exists_nsmul_eq_val_le_arrowSum`: a compatible flow value and the capacity of
-  any cut are natural multiples of `d`, with the former multiplier at most the latter.
 * `TauCeti.Flow.wellFounded_val_lt`: the relation of having larger value is well-founded on flows
   with values in `zmultiples d`.
 * `TauCeti.Flow.acc_augmentsTo`: every sequence of augmentation steps from a flow with values in
@@ -93,31 +91,6 @@ theorem AugmentsTo.val_add_le (hst : s ≠ t) (hcap : ∀ ⦃v w⦄ (e : Q v w),
   · have hk₀ : 0 < k := (zsmul_lt_zsmul_iff_left hd).1 (by simpa using hb)
     simpa using (zsmul_le_zsmul_iff_left hd).2 (by omega : (1 : ℤ) ≤ k)
 
-/-- For positive `d`, a flow whose capacities and arrow values lie in `zmultiples d` has value
-`n • d`, while the capacity of any source--sink cut is `m • d`, for natural numbers `n ≤ m`.
-In particular, taking the cut `{s}` bounds the multiplier of the flow value by that of the total
-capacity leaving the source. -/
-theorem exists_nsmul_eq_val_le_arrowSum [DecidableEq V] (hd : 0 < d)
-    (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ zmultiples d) {f : Flow cap s t}
-    (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d) {S : Finset V}
-    (hs : s ∈ S) (ht : t ∉ S) :
-    ∃ n m : ℕ, n • d = f.val ∧ m • d = arrowSum cap S Sᶜ ∧ n ≤ m := by
-  obtain ⟨k, hk⟩ := mem_zmultiples_iff.1 (arrowSum_mem hcap S Sᶜ)
-  have hcap_nonneg : 0 ≤ cap := fun v w e ↦
-    (f.mem_Icc.1 v w e).trans (f.mem_Icc.2 v w e)
-  have hk_nonneg : (0 : ℤ) ≤ k := (zsmul_le_zsmul_iff_left hd).1 <| by
-    rw [zero_zsmul, hk]
-    exact arrowSum_nonneg hcap_nonneg S Sᶜ
-  let m := k.toNat
-  have hmk : (m : ℤ) = k := Int.toNat_of_nonneg hk_nonneg
-  have hm : m • d = arrowSum cap S Sᶜ := by
-    rw [← natCast_zsmul, hmk]
-    exact hk
-  obtain ⟨n, hn⟩ := f.exists_nsmul_eq_val hd hf
-  refine ⟨n, m, hn, hm, (nsmul_le_nsmul_iff_left hd).1 ?_⟩
-  rw [hn, hm]
-  exact f.val_le_arrowSum hs ht
-
 /-- For capacities in `zmultiples d`, the relation of having larger value, `f.val < g.val`, is
 well-founded on the flows with arrow values in `zmultiples d`: their values are among the finitely
 many multiples of `d` between zero and the total capacity leaving the source, and they all vanish
@@ -137,19 +110,20 @@ theorem wellFounded_val_lt (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ zmultipl
       exact ⟨fun f ↦ ⟨f, fun g hg ↦ by simp [h] at hg⟩⟩
   rcases eq_or_ne s t with hst | hst
   · exact ⟨fun f ↦ ⟨f, fun g hg ↦ by simp [BoundedFlow.val_eq_zero_of_eq hst] at hg⟩⟩
-  obtain ⟨m, hm⟩ := mem_zmultiples_iff.1 (arrowSum_mem hcap {s} {s}ᶜ)
-  choose n hn using fun f : {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d} ↦
-    exists_nsmul_eq_val hd f.property
-  have hnm (f : {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d}) :
-      (n f : ℤ) ≤ m := by
-    refine (zsmul_le_zsmul_iff_left hd).1 ?_
-    rw [natCast_zsmul, hn, hm]
-    exact f.val.val_le_arrowSum (mem_singleton_self s) (by simpa using hst.symm)
+  choose n m hn hm hnm using fun f :
+      {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d} ↦
+    exists_nsmul_eq_val_and_nsmul_eq_arrowSum_and_le hd hcap f.property
+      (S := {s}) (mem_singleton_self s) (by simpa using hst.symm)
+  have hm_eq (f g :
+      {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d}) : m f = m g :=
+    (nsmul_left_strictMono hd).injective <| by rw [hm f, hm g]
   refine Subrelation.wf (fun {g f} h ↦ ?_)
-    (InvImage.wf (fun f ↦ (m - n f).toNat) wellFounded_lt)
+    (InvImage.wf (fun f ↦ m f - n f) wellFounded_lt)
   have hlt : n f < n g := (nsmul_lt_nsmul_iff_left hd).1 (by rwa [hn, hn])
-  have := hnm g
-  exact (by omega : (m - n g).toNat < (m - n f).toNat)
+  have hmf := hnm f
+  have hmg := hnm g
+  have hmfg := hm_eq f g
+  exact (by omega : m g - n g < m f - n f)
 
 /-- **Termination of augmentation for capacities in a cyclic subgroup.** For capacities in
 `zmultiples d` and distinct terminals, every sequence of augmentation steps starting from a flow

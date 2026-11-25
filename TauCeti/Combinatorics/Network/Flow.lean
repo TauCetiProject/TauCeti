@@ -62,8 +62,12 @@ flows is assembled.
   add values, and connect any two bounded `s`–`t` assignments.
 * `TauCeti.Flow.exists_augment_eq`: every flow of at least the value of `f` is an augmentation of
   `f` by a flow of its residual network.
+* `TauCeti.exists_nsmul_eq_arrowSum`: the sum of a nonnegative assignment in `zmultiples d` is a
+  natural multiple of a positive `d`.
 * `TauCeti.Flow.exists_nsmul_eq_val`: a flow with arrow values in `zmultiples d` has value
   `n • d` for a natural number `n`.
+* `TauCeti.Flow.exists_nsmul_eq_val_and_nsmul_eq_arrowSum_and_le`: a compatible flow value and
+  the capacity of any source--sink cut have natural multipliers `n ≤ m`.
 
 ## References
 
@@ -517,20 +521,55 @@ theorem Flow.exists_augment_eq [Lattice K] [IsOrderedAddMonoid K] {cap : Assignm
   rw [← BoundedFlow.val_def, hval]
   exact sub_nonneg.mpr hfg
 
+private theorem exists_nsmul_eq_of_nonneg_of_mem_zmultiples [Preorder K] [AddLeftMono K]
+    {d x : K} (hd : 0 < d) (hx : 0 ≤ x) (hxd : x ∈ AddSubgroup.zmultiples d) :
+    ∃ n : ℕ, n • d = x := by
+  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 hxd
+  rcases k with n | n
+  · exact ⟨n, by simpa using hk⟩
+  · have hn := nsmul_pos hd (Nat.succ_ne_zero n)
+    rw [← hk, negSucc_zsmul, neg_nonneg] at hx
+    exact (hn.not_ge hx).elim
+
+omit [Fintype V] in
+/-- The sum over two vertex sets of a nonnegative assignment in `zmultiples d`, for positive `d`,
+is a natural multiple of `d`. -/
+theorem exists_nsmul_eq_arrowSum [PartialOrder K] [IsOrderedAddMonoid K]
+    {cap : Assignment Q K} {d : K} (hd : 0 < d) (hcap_nonneg : 0 ≤ cap)
+    (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ AddSubgroup.zmultiples d) (S T : Finset V) :
+    ∃ n : ℕ, n • d = arrowSum cap S T :=
+  exists_nsmul_eq_of_nonneg_of_mem_zmultiples hd (arrowSum_nonneg hcap_nonneg S T)
+    (arrowSum_mem hcap S T)
+
 /-- For `0 < d`, an ordinary flow with arrow values in `zmultiples d` has value `n • d` for a
 natural number `n`. -/
 theorem Flow.exists_nsmul_eq_val [Preorder K] [AddLeftMono K] {cap : Assignment Q K}
     {s t : V} {d : K} (hd : 0 < d) {f : Flow cap s t}
     (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ AddSubgroup.zmultiples d) :
-    ∃ n : ℕ, n • d = f.val := by
-  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (excessAt_mem hf t)
-  rw [← BoundedFlow.val_def] at hk
-  rcases k with n | n
-  · exact ⟨n, by simpa using hk⟩
-  · have hn := nsmul_pos hd (Nat.succ_ne_zero n)
-    have h := f.val_nonneg
-    rw [← hk, negSucc_zsmul, neg_nonneg] at h
-    exact (hn.not_ge h).elim
+    ∃ n : ℕ, n • d = f.val :=
+  exists_nsmul_eq_of_nonneg_of_mem_zmultiples hd f.val_nonneg <| by
+    rw [BoundedFlow.val_def]
+    exact excessAt_mem hf t
+
+/-- For positive `d`, a flow whose capacities and arrow values lie in `zmultiples d` has value
+`n • d`, while the capacity of any source--sink cut is `m • d`, for natural numbers `n ≤ m`.
+When `s ≠ t`, taking the cut `{s}` bounds the multiplier of the flow value by that of the total
+capacity leaving the source. -/
+theorem Flow.exists_nsmul_eq_val_and_nsmul_eq_arrowSum_and_le [PartialOrder K]
+    [IsOrderedAddMonoid K] [DecidableEq V] {cap : Assignment Q K} {s t : V} {d : K} (hd : 0 < d)
+    (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ AddSubgroup.zmultiples d) {f : Flow cap s t}
+    (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ AddSubgroup.zmultiples d) {S : Finset V}
+    (hs : s ∈ S) (ht : t ∉ S) :
+    ∃ n m : ℕ, n • d = f.val ∧ m • d = arrowSum cap S Sᶜ ∧ n ≤ m := by
+  have hcap_nonneg : 0 ≤ cap := fun v w e ↦
+    (f.mem_Icc.1 v w e).trans (f.mem_Icc.2 v w e)
+  obtain ⟨n, hn⟩ := f.exists_nsmul_eq_val hd hf
+  obtain ⟨m, hm⟩ := exists_nsmul_eq_arrowSum hd hcap_nonneg hcap S Sᶜ
+  refine ⟨n, m, hn, hm, ?_⟩
+  have hnm : (n : ℤ) ≤ (m : ℤ) := (zsmul_le_zsmul_iff_left hd).1 <| by
+    rw [natCast_zsmul, natCast_zsmul, hn, hm]
+    exact f.val_le_arrowSum hs ht
+  exact_mod_cast hnm
 
 end BoundedFlow
 
