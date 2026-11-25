@@ -72,6 +72,10 @@ theorem pullbackIhomComparison_id (M N : X.Modules) :
   rw [Functor.ihomComparison_ev]
   rw [← cancel_epi (δ (Scheme.Modules.pullback (𝟙 X)) M ((ihom M).obj N))]
   simp only [Category.assoc]
+  -- The pullback cancellations use the tensorator from Scheme.Modules.pullbackOplaxMonoidal.
+  -- Mathlib's δ_μ uses the oplax projection of Scheme.Modules.pullbackBraided, built from the
+  -- same adjunction comparison via Functor.Monoidal.ofOplaxMonoidal. The typed equality lets
+  -- elaboration identify the definitionally equal tensorators before rewriting.
   have hδμ : δ (Scheme.Modules.pullback (𝟙 X)) M ((ihom M).obj N) ≫
       μ (Scheme.Modules.pullback (𝟙 X)) M ((ihom M).obj N) = 𝟙 _ :=
     Functor.Monoidal.δ_μ (Scheme.Modules.pullback (𝟙 X)) M ((ihom M).obj N)
