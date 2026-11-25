@@ -66,6 +66,9 @@ statement.
   `TauCeti.MemLpLoc.planarReflection` and `TauCeti.MemLpLoc.planarReflection_ball`.
 * `TauCeti.continuousOn_planarReflection`: with weights of sum one, the reflection of a map
   continuous up to the real axis is continuous across it.
+* `TendstoUniformlyOn.planarReflection`: uniform convergence up to the real axis gives uniform
+  convergence of the reflections; `TauCeti.planarReflection_sub`: the reflection commutes with
+  differences.
 * `TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflectionCore`: the reflection core
   of an open set `V` (`TopologicalSpace.Opens.reflectionCore`, from
   `TauCeti.Analysis.Complex.ImDilation`), an open set between `V ∩ {0 ≤ im}` and `V`, is stable
@@ -227,6 +230,47 @@ theorem continuousOn_planarReflection (hd : ∑ j, d j = 1) {Ω : Set ℂ}
     exact continuousOn_finsetSum _ fun j _ =>
       (hg.comp (imDilation (higherReflectionNode j)).continuous.continuousOn
         (mapsTo_imDilation_higherReflectionNode hΩ j)).const_smul _
+
+/-- The reflection is additive in the reflected map: it commutes with differences. -/
+theorem planarReflection_sub (d : Fin k → ℝ) (g₁ g₂ : ℂ → F) :
+    planarReflection d (g₁ - g₂) = planarReflection d g₁ - planarReflection d g₂ := by
+  funext z
+  by_cases hz : 0 ≤ z.im
+  · simp [hz]
+  · simp [planarReflection_of_neg _ _ (not_le.1 hz), smul_sub, Finset.sum_sub_distrib]
+
+/-- **Uniform convergence of reflections.** If the node dilations map the lower part of `S` into
+`S`, then uniform convergence on `S ∩ {0 ≤ im}` gives uniform convergence of the reflections, with
+any weights, on `S`: below the real axis the reflection only samples the maps in
+`S ∩ {0 ≤ im}`. -/
+theorem _root_.TendstoUniformlyOn.planarReflection {ι : Type*} {l : Filter ι} {G : ι → ℂ → F}
+    {S : Set ℂ} (hS : ∀ z ∈ S, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ S)
+    (h : TendstoUniformlyOn G g l (S ∩ {z | 0 ≤ z.im})) (d : Fin k → ℝ) :
+    TendstoUniformlyOn (fun n => TauCeti.planarReflection d (G n))
+      (TauCeti.planarReflection d g) l S := by
+  set M : ℝ := ∑ j, ‖d j‖ + 1
+  have hS0 : 0 ≤ ∑ j, ‖d j‖ := Finset.sum_nonneg fun j _ => norm_nonneg _
+  have hM : 0 < M := by positivity
+  refine Metric.tendstoUniformlyOn_iff.2 fun ε hε => ?_
+  filter_upwards [Metric.tendstoUniformlyOn_iff.1 h (ε / M) (div_pos hε hM)] with n hn z hz
+  have hεM : ε / M ≤ ε := div_le_self hε.le (by linarith)
+  by_cases hz0 : 0 ≤ z.im
+  · rw [planarReflection_of_nonneg _ _ hz0, planarReflection_of_nonneg _ _ hz0]
+    exact (hn z ⟨hz, hz0⟩).trans_le hεM
+  rw [planarReflection_of_neg _ _ (not_le.1 hz0), planarReflection_of_neg _ _ (not_le.1 hz0),
+    dist_eq_norm, ← Finset.sum_sub_distrib]
+  calc ‖∑ j, (d j • g (imDilation (higherReflectionNode j) z) -
+          d j • G n (imDilation (higherReflectionNode j) z))‖
+      ≤ ∑ j, ‖d j‖ * (ε / M) := by
+        refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ => ?_)
+        rw [← smul_sub, norm_smul, ← dist_eq_norm]
+        exact mul_le_mul_of_nonneg_left
+          (hn _ (mapsTo_imDilation_higherReflectionNode hS j ⟨hz, (not_le.1 hz0).le⟩)).le
+          (norm_nonneg _)
+    _ < ε := by
+        rw [← Finset.sum_mul, mul_div_assoc', div_lt_iff₀ hM]
+        simp only [M]
+        nlinarith
 
 /-! ### Integration by parts up to the real axis -/
 
@@ -852,6 +896,14 @@ theorem _root_.TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflec
     imDilation (higherReflectionNode j) z ∈ V.reflectionCore :=
   Opens.imDilation_mem_reflectionCore (abs_le.1 (abs_higherReflectionNode_le_one j)) hz him
 
+/-- The node dilations map the open lower part of a reflection core into the core: the form of the
+stability hypothesis taken by `TauCeti.planarReflection` lemmas such as
+`TauCeti.continuousOn_planarReflection`. -/
+theorem _root_.TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflectionCore_of_im_neg
+    {V : Opens ℂ} {n : ℕ} : ∀ z ∈ (V.reflectionCore : Set ℂ), z.im < 0 → ∀ j : Fin n,
+      imDilation (higherReflectionNode j) z ∈ (V.reflectionCore : Set ℂ) :=
+  fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le
+
 /-! ### Reflection near a relatively open subset of the closed upper half-plane -/
 
 /-- **Reflection near a relatively open subset of the closed upper half-plane.** The order-`k`
@@ -862,7 +914,7 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore {p : ℝ
     (hp : 1 ≤ p) {Ω : Opens ℂ} {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
     MemWkpLoc p Ω.reflectionCore k (TauCeti.planarReflection (higherReflectionCoeff k) u) :=
   MemWkpLoc.planarReflection_higherReflectionCoeff hp
-    (fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le)
+    Opens.imDilation_higherReflectionNode_mem_reflectionCore_of_im_neg
     (by rwa [Opens.coe_reflectionCore_inter_setOf_im_nonneg])
 
 /-- At order one the reflection node is `-1`, so the node dilation is complex conjugation. -/
