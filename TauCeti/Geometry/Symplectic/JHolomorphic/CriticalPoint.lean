@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.VariableStructure
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.ContDiffStructure
+import TauCeti.Analysis.Complex.CauchyRiemann.Similarity.Weak
+import TauCeti.Geometry.Symplectic.JHolomorphic.UniqueContinuation
 import TauCeti.Analysis.RCLike.OperatorNorm
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.MeanValue
@@ -14,7 +17,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 /-!
 # Isolated critical points of J-holomorphic curves
 
-Let `E` be a finite-dimensional real normed space and `u : ℂ → E` a map of class `C²` on an open
+Let `E` be a finite-dimensional real normed space and `u : ℂ → E` a map of class `C¹` on an open
 set `Ω ⊆ ℂ` solving the Cauchy–Riemann equation
 
 `∂ₜu = A(z) ∂ₛu`
@@ -40,25 +43,39 @@ points):
   (`TauCeti.exists_isTheta_pow_fderiv_of_cauchyRiemann`).
 
 The theorems with the suffix `_comp` state the two main results for `A = J ∘ u`, assuming `J` of
-class `C¹` near the image of `u` and `J² = -1` along it.
+class `C¹` near the image of `u` and `J² = -1` along it. Combined with the finiteness of the fibres
+of `u` on compact sets (`TauCeti.finite_inter_preimage_singleton_of_cauchyRiemann`), they give the
+last assertion of McDuff–Salamon, Lemma 2.4.1: for compact subsets `K` and `K'` of `Ω`, only
+finitely many points of `K` lie over the values of `u` at its critical points in `K'`, so a
+nonconstant curve on a compact domain has finite `u⁻¹(u(Crit u))`
+(`TauCeti.finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp`).
 
 The argument applies the similarity principle to the differentiated equation. Since
-`∂ₜu = A ∂ₛu`, the differential of `u` vanishes exactly where `ξ = ∂ₛu` does
-(`ContinuousLinearMap.eq_zero_iff_apply_one_eq_zero_of_apply_I_eq`). Differentiating the
-equation in `s` and using the symmetry of the second derivative gives `∂ₜξ = (∂ₛA) ξ + A ∂ₛξ`,
-and applying `A` turns this into the linear Cauchy–Riemann equation
+`∂ₜu = A ∂ₛu` and `A² = -1`, the differential of `u` vanishes exactly where `∂ₛu` does
+(`ContinuousLinearMap.eq_zero_iff_apply_one_eq_zero_of_apply_I_eq`), and exactly where
+`ξ = ∂ₜu` does. A `C¹` solution is in `W^{2,p}_loc` for every finite `p`
+(`TauCeti.memWkpLoc_two_of_contDiffOn_of_cauchyRiemann`), and differentiating the equation
+`∂ₛu + A ∂ₜu = 0` in `t` shows that `ξ` is a weak solution of the linear Cauchy–Riemann equation
+
+`∂ₛξ + A ∂ₜξ + (∂ₜA) ξ = 0`
+
+with the continuous coefficient `∂ₜA`
+(`TauCeti.isWeakLinearCauchyRiemannOn_fderiv_I_of_contDiffOn_of_cauchyRiemann`). Its structure
+`A` genuinely varies, so the weak variable-structure unique continuation theorems of
+`TauCeti.Analysis.Complex.CauchyRiemann.Similarity.Weak` apply to `ξ`.
+
+For a `C²` solution the same holds classically for `ξ = ∂ₛu`: differentiating the equation in `s`
+and using the symmetry of the second derivative gives `∂ₜξ = (∂ₛA) ξ + A ∂ₛξ`, and applying `A`
+turns this into the linear Cauchy–Riemann equation
 
 `∂ₛξ + A ∂ₜξ - A (∂ₛA) ξ = 0`
 
 with the continuous coefficient `-A ∘ ∂ₛA` (`TauCeti.cauchyRiemann_fderiv_one`; the same
 computation for the equation `∂ₛu + A ∂ₜu = 0` on `ℝ × ℝ` is
-`TauCeti.cauchyRiemann_fderiv_apply_eq_neg`). Its structure
-`A` genuinely varies, so the variable-structure unique continuation theorems of
-`TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.VariableStructure` apply to `ξ`.
-
-The `C²` hypothesis on `u` is what the differentiated equation needs classically. For a smooth
-structure it holds for every `C¹` solution by elliptic regularity; a structure of class `C¹` only
-gives `W^{2,p}` solutions, which are not treated here.
+`TauCeti.cauchyRiemann_fderiv_apply_eq_neg`). The order of a critical point
+(`TauCeti.exists_isTheta_pow_fderiv_of_cauchyRiemann`) is proved from this classical equation, by
+the `C¹` theorems of `TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.VariableStructure`,
+and still assumes `u` of class `C²`.
 
 ## Main results
 
@@ -73,6 +90,9 @@ gives `W^{2,p}` solutions, which are not treated here.
   connected domain has finitely many critical points in each compact subset.
 * `TauCeti.exists_isTheta_pow_fderiv_of_cauchyRiemann`: the differential vanishes to a finite
   positive order at each critical point of a nonconstant solution.
+* `TauCeti.finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp`: for
+  compact `K, K' ⊆ Ω`, a nonconstant J-holomorphic curve has finitely many points of `K` over the
+  values of `u` at its critical points in `K'`.
 
 ## References
 
@@ -82,7 +102,7 @@ gives `W^{2,p}` solutions, which are not treated here.
 
 public section
 
-open Asymptotics Complex Filter MeasureTheory Set Topology
+open Asymptotics Complex Filter MeasureTheory Set Topology TopologicalSpace
 
 namespace TauCeti
 
@@ -165,61 +185,85 @@ private theorem linearizedCoeff_of_cauchyRiemann (hΩ : IsOpen Ω) (hA : ContDif
   filter_upwards [(hC.continuousAt (hΩ.mem_nhds hz)).norm.eventually
     (gt_mem_nhds (lt_add_one _))] with w hw using hw.le
 
-/-- **Unique continuation for critical points.** Let `u` be of class `C²` on a connected open set
+/-- The hypotheses of the weak unique continuation theorems for `ξ = ∂ₜu`, at the exponent `3`:
+`A ∈ W^{1,3}_loc`, the coefficient `∂ₜA` is locally `L³`, and `ξ` solves the linearized equation
+`∂ₛξ + A ∂ₜξ + (∂ₜA) ξ = 0` weakly
+(`TauCeti.isWeakLinearCauchyRiemannOn_fderiv_I_of_contDiffOn_of_cauchyRiemann`). -/
+private theorem weakLinearized_of_cauchyRiemann (hΩ : IsOpen Ω) (hA : ContDiffOn ℝ 1 A Ω)
+    (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 1 u Ω)
+    (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1)) :
+    MemWkpLoc 3 (⟨Ω, hΩ⟩ : Opens ℂ) 1 A ∧ MemLpLoc 3 Ω (fun z ↦ fderiv ℝ A z I) ∧
+      IsWeakLinearCauchyRiemannOn 3 Ω A (fun z ↦ fderiv ℝ A z I) (fun z ↦ fderiv ℝ u z I) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  exact ⟨hA.memWkpLoc (Ω := ⟨Ω, hΩ⟩) subset_rfl,
+    ((hA.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply continuousOn_const).memLpLoc,
+    isWeakLinearCauchyRiemannOn_fderiv_I_of_contDiffOn_of_cauchyRiemann (Ω := ⟨Ω, hΩ⟩) hA hAA hu
+      hCR ENNReal.ofNat_ne_top⟩
+
+/-- **Unique continuation for critical points.** Let `u` be of class `C¹` on a connected open set
 `Ω` and solve the Cauchy–Riemann equation `∂ₜu = A ∂ₛu` there, for a `C¹` field `A` of complex
 structures, `A(z)² = -1`, on a finite-dimensional real normed space. If the differential of `u`
 vanishes near one point `z₀ ∈ Ω`, then `u` is constant on `Ω`. -/
 theorem eqOn_const_of_cauchyRiemann_of_eventually_fderiv_eq_zero (hΩ : IsOpen Ω)
     (hΩc : IsPreconnected Ω) (hA : ContDiffOn ℝ 1 A Ω)
-    (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 2 u Ω)
+    (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 1 u Ω)
     (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1)) (hz₀ : z₀ ∈ Ω)
     (h₀ : ∀ᶠ z in 𝓝 z₀, fderiv ℝ u z = 0) : EqOn u (fun _ ↦ u z₀) Ω := by
-  obtain ⟨hξ, hCm, hCb, hL⟩ := linearizedCoeff_of_cauchyRiemann hΩ hA hAA hu hCR
+  obtain ⟨hAw, hC, hξ⟩ := weakLinearized_of_cauchyRiemann hΩ hA hAA hu hCR
   obtain ⟨t, ht, hto, hz₀t⟩ := eventually_nhds_iff.1 h₀
-  refine eqOn_const_of_cauchyRiemann_of_eqOn_zero hΩ hΩc (hu.differentiableOn two_ne_zero) hCR ?_
-    hz₀
-  exact eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure hΩ hΩc hA hAA hξ hCm hCb hL
-    (hto.inter hΩ) ⟨z₀, hz₀t, hz₀⟩ inter_subset_right fun z hz ↦ by simp [ht z hz.1]
+  have h := eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_eqOn_zero (Ω := ⟨Ω, hΩ⟩) (by norm_num)
+    hΩc hAw hA.continuousOn hAA hC hξ (hto.inter hΩ) ⟨z₀, hz₀t, hz₀⟩ inter_subset_right
+    fun z hz ↦ by simp [ht z hz.1]
+  refine eqOn_const_of_cauchyRiemann_of_eqOn_zero hΩ hΩc (hu.differentiableOn one_ne_zero) hCR
+    (fun z hz ↦ (ContinuousLinearMap.apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq
+      (hAA z hz) (hCR z hz)).1 (h hz)) hz₀
 
-/-- **Unique continuation for critical points of infinite order.** Let `u` be of class `C²` on a
+/-- **Unique continuation for critical points of infinite order.** Let `u` be of class `C¹` on a
 connected open set `Ω` and solve the Cauchy–Riemann equation `∂ₜu = A ∂ₛu` there, for a `C¹`
 field `A` of complex structures, `A(z)² = -1`, on a finite-dimensional real normed space. If the
 differential of `u` is `O(‖z - z₀‖ⁿ)` at a point `z₀ ∈ Ω` for every `n`, then `u` is constant on
 `Ω`. -/
 theorem eqOn_const_of_cauchyRiemann_of_forall_fderiv_isBigO (hΩ : IsOpen Ω)
     (hΩc : IsPreconnected Ω) (hA : ContDiffOn ℝ 1 A Ω)
-    (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 2 u Ω)
+    (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 1 u Ω)
     (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1)) (hz₀ : z₀ ∈ Ω)
     (h₀ : ∀ n : ℕ, (fun z ↦ fderiv ℝ u z) =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n) :
     EqOn u (fun _ ↦ u z₀) Ω := by
-  obtain ⟨hξ, hCm, hCb, hL⟩ := linearizedCoeff_of_cauchyRiemann hΩ hA hAA hu hCR
-  exact eqOn_const_of_cauchyRiemann_of_eqOn_zero hΩ hΩc (hu.differentiableOn two_ne_zero) hCR
-    (eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ hΩc hA hAA hξ hCm hCb hL hz₀
-      fun n ↦ ((ContinuousLinearMap.apply ℝ E (1 : ℂ)).isBigO_comp _ _).trans (h₀ n)) hz₀
+  obtain ⟨hAw, hC, hξ⟩ := weakLinearized_of_cauchyRiemann hΩ hA hAA hu hCR
+  have h := eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_forall_isBigO (Ω := ⟨Ω, hΩ⟩)
+    (by norm_num) hΩc hAw hA.continuousOn hAA hC hξ hz₀
+    fun n ↦ ((ContinuousLinearMap.apply ℝ E I).isBigO_comp _ _).trans (h₀ n)
+  exact eqOn_const_of_cauchyRiemann_of_eqOn_zero hΩ hΩc (hu.differentiableOn one_ne_zero) hCR
+    (fun z hz ↦ (ContinuousLinearMap.apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq
+      (hAA z hz) (hCR z hz)).1 (h hz)) hz₀
 
-/-- **Isolated critical points.** Let `u` be of class `C²` on a connected open set `Ω` and solve
+/-- **Isolated critical points.** Let `u` be of class `C¹` on a connected open set `Ω` and solve
 the Cauchy–Riemann equation `∂ₜu = A ∂ₛu` there, for a `C¹` field `A` of complex structures,
 `A(z)² = -1`, on a finite-dimensional real normed space. If `u` is not constant on `Ω`, its
 critical points form a discrete subset of `Ω`. -/
 theorem setOf_fderiv_ne_zero_mem_codiscreteWithin_of_cauchyRiemann (hΩ : IsOpen Ω)
     (hΩc : IsPreconnected Ω) (hA : ContDiffOn ℝ 1 A Ω)
-    (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 2 u Ω)
+    (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 1 u Ω)
     (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1))
     (hne : ∃ z ∈ Ω, ∃ w ∈ Ω, u z ≠ u w) : {z | fderiv ℝ u z ≠ 0} ∈ codiscreteWithin Ω := by
-  obtain ⟨hξ, hCm, hCb, hL⟩ := linearizedCoeff_of_cauchyRiemann hΩ hA hAA hu hCR
+  obtain ⟨hAw, hC, hξ⟩ := weakLinearized_of_cauchyRiemann hΩ hA hAA hu hCR
+  obtain ⟨z₁, hz₁, h₁⟩ :=
+    exists_fderiv_one_ne_zero_of_cauchyRiemann hΩ hΩc (hu.differentiableOn one_ne_zero) hCR hne
   refine Filter.mem_of_superset
-    (setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure hΩ hΩc hA hAA hξ hCm
-      hCb hL (exists_fderiv_one_ne_zero_of_cauchyRiemann hΩ hΩc (hu.differentiableOn two_ne_zero)
-        hCR hne)) fun z hz h₀ ↦ ?_
+    (setOf_ne_zero_mem_codiscreteWithin_of_isWeakLinearCauchyRiemannOn (Ω := ⟨Ω, hΩ⟩)
+      (by norm_num) hΩc hAw hA.continuousOn hAA hC hξ
+      ⟨z₁, hz₁, fun h ↦ h₁ ((ContinuousLinearMap.apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq
+        (hAA z₁ hz₁) (hCR z₁ hz₁)).1 h)⟩)
+    fun z hz h₀ ↦ ?_
   exact hz (by simp [h₀])
 
-/-- **Finitely many critical points on compact sets.** Let `u` be of class `C²` on a connected
+/-- **Finitely many critical points on compact sets.** Let `u` be of class `C¹` on a connected
 open set `Ω` and solve the Cauchy–Riemann equation `∂ₜu = A ∂ₛu` there, for a `C¹` field `A` of
 complex structures, `A(z)² = -1`, on a finite-dimensional real normed space. If `u` is not
 constant on `Ω`, each compact subset of `Ω` contains finitely many critical points of `u`. -/
 theorem finite_inter_setOf_fderiv_eq_zero_of_cauchyRiemann (hΩ : IsOpen Ω)
     (hΩc : IsPreconnected Ω) (hA : ContDiffOn ℝ 1 A Ω)
-    (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 2 u Ω)
+    (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 1 u Ω)
     (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1))
     (hne : ∃ z ∈ Ω, ∃ w ∈ Ω, u z ≠ u w) {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     (K ∩ {z | fderiv ℝ u z = 0}).Finite := by
@@ -255,33 +299,66 @@ theorem exists_isTheta_pow_fderiv_of_cauchyRiemann (hΩ : IsOpen Ω) (hΩc : IsP
 
 /-! ### J-holomorphic curves in local coordinates -/
 
-/-- **Isolated critical points of J-holomorphic curves.** Let `u` be of class `C²` on a connected
+/-- **Isolated critical points of J-holomorphic curves.** Let `u` be of class `C¹` on a connected
 open set `Ω` and solve the Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` there, for a field `J` of
 endomorphisms of a finite-dimensional real normed space which is `C¹` near the image of `u` and
 satisfies `J(u)² = -1` along it. If `u` is not constant on `Ω`, its critical points form a
 discrete subset of `Ω`. -/
 theorem setOf_fderiv_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_comp {J : E → E →L[ℝ] E}
     (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω) (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 J (u z))
-    (hJJ : ∀ z ∈ Ω, J (u z) ∘L J (u z) = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 2 u Ω)
+    (hJJ : ∀ z ∈ Ω, J (u z) ∘L J (u z) = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 1 u Ω)
     (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hne : ∃ z ∈ Ω, ∃ w ∈ Ω, u z ≠ u w) : {z | fderiv ℝ u z ≠ 0} ∈ codiscreteWithin Ω :=
   setOf_fderiv_ne_zero_mem_codiscreteWithin_of_cauchyRiemann (A := fun z ↦ J (u z)) hΩ hΩc
-    (fun z hz ↦ (hJ z hz).comp_contDiffWithinAt z ((hu z hz).of_le (by norm_num))) hJJ hu hCR hne
+    (fun z hz ↦ (hJ z hz).comp_contDiffWithinAt z (hu z hz)) hJJ hu hCR hne
 
 /-- **Finitely many critical points of J-holomorphic curves on compact sets.** Let `u` be of class
-`C²` on a connected open set `Ω` and solve the Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` there,
+`C¹` on a connected open set `Ω` and solve the Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` there,
 for a field `J` of endomorphisms of a finite-dimensional real normed space which is `C¹` near the
 image of `u` and satisfies `J(u)² = -1` along it. If `u` is not constant on `Ω`, each compact
 subset of `Ω` contains finitely many critical points of `u`. -/
 theorem finite_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp {J : E → E →L[ℝ] E}
     (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω) (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 J (u z))
-    (hJJ : ∀ z ∈ Ω, J (u z) ∘L J (u z) = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 2 u Ω)
+    (hJJ : ∀ z ∈ Ω, J (u z) ∘L J (u z) = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 1 u Ω)
     (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hne : ∃ z ∈ Ω, ∃ w ∈ Ω, u z ≠ u w) {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     (K ∩ {z | fderiv ℝ u z = 0}).Finite :=
   finite_inter_setOf_fderiv_eq_zero_of_cauchyRiemann (A := fun z ↦ J (u z)) hΩ hΩc
-    (fun z hz ↦ (hJ z hz).comp_contDiffWithinAt z ((hu z hz).of_le (by norm_num))) hJJ hu hCR hne
-    hK hKΩ
+    (fun z hz ↦ (hJ z hz).comp_contDiffWithinAt z (hu z hz)) hJJ hu hCR hne hK hKΩ
+
+/-! ### Fibres through critical points -/
+
+/-- **Finitely many points over the critical values of a J-holomorphic curve.** Let `u` be of
+class `C¹` on a connected open set `Ω` and solve the Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu`
+there, for a field `J` of endomorphisms of a finite-dimensional real normed space which is `C¹`
+near the image of `u` and satisfies `J(u)² = -1` along it. If `u` is not constant on `Ω`, then for
+compact subsets `K` and `K'` of `Ω`, only finitely many points of `K` are mapped by `u` to the
+image of a critical point of `u` lying in `K'`. For `K = K'` this is the finiteness of
+`u⁻¹(u(Crit u))` on a compact domain. -/
+theorem finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp
+    {J : E → E →L[ℝ] E} (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
+    (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 J (u z))
+    (hJJ : ∀ z ∈ Ω, J (u z) ∘L J (u z) = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 1 u Ω)
+    (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hne : ∃ z ∈ Ω, ∃ w ∈ Ω, u z ≠ u w) {K K' : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω)
+    (hK' : IsCompact K') (hK'Ω : K' ⊆ Ω) :
+    (K ∩ u ⁻¹' (u '' (K' ∩ {z | fderiv ℝ u z = 0}))).Finite := by
+  -- over each value `u c`, `c ∈ Ω`, there are finitely many points of `K`
+  have hfib : ∀ c ∈ Ω, (K ∩ u ⁻¹' {u c}).Finite := by
+    intro c hc
+    -- one of the two distinct values of `u` differs from `u c`
+    have hnec : ∃ z ∈ Ω, u z ≠ u c := by
+      obtain ⟨z, hz, w, hw, hzw⟩ := hne
+      by_cases hz' : u z = u c
+      · exact ⟨w, hw, fun hw' ↦ hzw (hz'.trans hw'.symm)⟩
+      · exact ⟨z, hz, hz'⟩
+    exact finite_inter_preimage_singleton_of_cauchyRiemann (hJ c hc).exists_lipschitzOnWith
+      (hJJ c hc) hΩ hΩc hu hCR hnec hK hKΩ
+  -- and there are finitely many critical points in `K'`
+  refine ((finite_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp hΩ hΩc hJ hJJ hu hCR hne hK'
+    hK'Ω).biUnion fun c hc ↦ hfib c (hK'Ω hc.1)).subset ?_
+  rintro z ⟨hzK, c, hc, hcz⟩
+  exact mem_biUnion hc ⟨hzK, hcz.symm⟩
 
 end FiniteDimensional
 

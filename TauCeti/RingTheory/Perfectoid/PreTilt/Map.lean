@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Perfectoid.FontaineTheta
 public import TauCeti.RingTheory.Perfectoid.Untilt
 public import TauCeti.RingTheory.Teichmuller
-public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
+public import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 
 import Mathlib.NumberTheory.Basic
 import TauCeti.RingTheory.AdicCompletion.Pi

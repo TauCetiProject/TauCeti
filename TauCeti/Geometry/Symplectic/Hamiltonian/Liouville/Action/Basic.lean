@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Basic
 public import TauCeti.LinearAlgebra.Matrix.TransposeLattice
 import Mathlib.Algebra.Group.Subgroup.Finsupp
+import TauCeti.Analysis.Calculus.DifferentialForm.Gradient
 
 /-!
 # Action variables near a regular Liouville torus
@@ -167,14 +168,10 @@ theorem fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer
     -- `tangentSpaceCast` is the identity on the underlying vectors.
     rw [hΦ.mfderiv_eq]
     rfl
+  rw [hd, hd] at h
   -- Evaluate `σ` at the point `s c` rather than at its other spelling `λ(c) • s(c)`; all tangent
   -- spaces of `M` are the model space by definition, so the tangent vectors need no transport.
-  have hy : ∀ y, y = s c → ∀ v v' : TangentSpace I y,
-      SmoothBundleForm.eval₂ σ y v v' = SmoothBundleForm.eval₂ σ (s c) v v' := by
-    rintro _ rfl _ _
-    rfl
-  rw [hd, hd] at h
-  linarith [(hy _ hΦ.self_of_nhds _ _).symm.trans h]
+  linarith [(SmoothForm.eval₂_congr_basePoint σ hΦ.self_of_nhds _ _).symm.trans h]
 
 /-- **Action functions.** Let `s` be a differentiable section of `F` over a convex open set `D`,
 and let `λ` be a differentiable family of periods along it: `λ c` is a period of `s c` for every
@@ -186,28 +183,19 @@ theorem exists_forall_hasFDerivAt_of_mem_hamiltonianFlowStabilizer {D : Set (ι 
     (hps : ∀ c ∈ D, p c ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c)) :
     ∃ A : (ι → ℝ) → ℝ, ∀ c ∈ D,
       HasFDerivAt A ((2 * π)⁻¹ • ∑ j, p c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c := by
+  have hpd (c : ι → ℝ) (hcD : c ∈ D) : DifferentiableAt ℝ p c :=
+    (hp c hcD).differentiableAt (hDo.mem_nhds hcD)
   have hω (c : ι → ℝ) (hcD : c ∈ D) :
-      HasFDerivAt (fun c ↦ (2 * π)⁻¹ • ∑ j, p c j • (proj j : (ι → ℝ) →L[ℝ] ℝ))
-      ((2 * π)⁻¹ • ∑ j, ((proj j).comp (fderiv ℝ p c)).smulRight
-        (proj j : (ι → ℝ) →L[ℝ] ℝ)) c := by
-    have hpc := ((hp c hcD).differentiableAt (hDo.mem_nhds hcD)).hasFDerivAt
-    have h1 (j : ι) : HasFDerivAt (fun c ↦ p c j • (proj j : (ι → ℝ) →L[ℝ] ℝ))
-        (((proj j : (ι → ℝ) →L[ℝ] ℝ).comp (fderiv ℝ p c)).smulRight
-          (proj j : (ι → ℝ) →L[ℝ] ℝ)) c :=
-      ((proj j : (ι → ℝ) →L[ℝ] ℝ).hasFDerivAt.comp c hpc).smul_const
-        (F := (ι → ℝ) →L[ℝ] ℝ) (proj j)
-    exact (HasFDerivAt.fun_sum (F := (ι → ℝ) →L[ℝ] ℝ) (u := Finset.univ)
-      fun j _ ↦ h1 j).fun_const_smul (F := (ι → ℝ) →L[ℝ] ℝ) _
+      DifferentiableAt ℝ (fun c ↦ ∑ j, p c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c :=
+    DifferentiableAt.fun_sum fun j _ ↦ (differentiableAt_pi.1 (hpd c hcD) j).smul_const _
   refine hD.exists_forall_hasFDerivAt_of_fderiv_symmetric hDo
-    (fun c hcD ↦ (hω c hcD).differentiableAt.differentiableWithinAt) fun c hcD u w ↦ ?_
+    (fun c hcD ↦ ((hω c hcD).const_smul (2 * π)⁻¹).differentiableWithinAt) fun c hcD u w ↦ ?_
   have hsym := hσ.fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer hF hcomm hc
     ((hs c hcD).mdifferentiableAt (hDo.mem_nhds hcD))
-    (eventually_of_mem (hDo.mem_nhds hcD) hFs)
-    ((hp c hcD).differentiableAt (hDo.mem_nhds hcD))
+    (eventually_of_mem (hDo.mem_nhds hcD) hFs) (hpd c hcD)
     (eventually_of_mem (hDo.mem_nhds hcD) hps) u w
-  rw [(hω c hcD).fderiv]
-  simp only [dotProduct] at hsym
-  simp [hsym]
+  simp only [fderiv_fun_const_smul (hω c hcD), smul_apply,
+    TauCeti.fderiv_sum_smul_proj_apply (hpd c hcD), hsym]
 
 /-- **Action variables near a compact Liouville torus.** On a manifold of dimension `2 · |ι|`, let
 the connected component of `x` in its level `F⁻¹(F x)` be compact and consist of regular points of

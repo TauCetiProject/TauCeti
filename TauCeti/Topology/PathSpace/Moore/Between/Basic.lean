@@ -67,6 +67,20 @@ theorem continuous_toMoorePath :
     Continuous (toMoorePath : MoorePathBetween X a b → MoorePath X) :=
   continuous_subtypeVal
 
+/-- Change the specified endpoints of a Moore path along equalities, as `Path.cast`. -/
+def cast (γ : MoorePathBetween X a b) {a' b' : X} (ha : a' = a) (hb : b' = b) :
+    MoorePathBetween X a' b' :=
+  ⟨γ.toMoorePath, by simp [ha], by simp [hb]⟩
+
+@[simp]
+theorem toMoorePath_cast (γ : MoorePathBetween X a b) {a' b' : X} (ha : a' = a) (hb : b' = b) :
+    (γ.cast ha hb).toMoorePath = γ.toMoorePath :=
+  (rfl)
+
+@[simp]
+theorem cast_rfl_rfl (γ : MoorePathBetween X a b) : γ.cast rfl rfl = γ :=
+  (rfl)
+
 /-- Reverse a Moore path with specified endpoints. -/
 def symm (γ : MoorePathBetween X a b) : MoorePathBetween X b a :=
   ⟨γ.toMoorePath.symm, by simp⟩

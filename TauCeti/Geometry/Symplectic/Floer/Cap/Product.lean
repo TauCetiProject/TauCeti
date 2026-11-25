@@ -5,14 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.SquareZero.Graded
+public import TauCeti.Algebra.Ring.NegOnePow
 public import TauCeti.Geometry.Symplectic.Floer.CoefficientComparison
-public import TauCeti.Geometry.Symplectic.Floer.Grading
 public import TauCeti.RingTheory.NovikovModule.Bilinear
-public import TauCeti.RingTheory.NovikovModule.Commutativity
-public import TauCeti.RingTheory.NovikovModule.Continuation
-public import TauCeti.RingTheory.NovikovModule.Associativity
-public import TauCeti.RingTheory.NovikovModule.Leibniz
+public import TauCeti.RingTheory.NovikovModule.Grading
 public import TauCeti.RingTheory.NovikovModule.Topology
+public import TauCeti.RingTheory.NovikovModule.Trilinear
+import TauCeti.Geometry.Symplectic.Floer.Grading
+import TauCeti.RingTheory.NovikovModule.Associativity
+import TauCeti.RingTheory.NovikovModule.Commutativity
+import TauCeti.RingTheory.NovikovModule.Continuation
+import TauCeti.RingTheory.NovikovModule.Leibniz
 
 /-!
 # The pair-of-pants product of class-indexed counts on capped generators
@@ -62,7 +66,10 @@ on the completed capped modules. This file proves:
   `-1`, have `ε = -1`.
 * **Change of reference caps.** Moving the reference caps by lifts `g₁, g₂, g₀ ∈ G` multiplies
   the generating series by `q^(g₀ - g₁ - g₂)` and leaves the kernel, hence the product, unchanged
-  (`TauCeti.Floer.kernelOfMatrix_coefficientComparison_vadd`).
+  (`TauCeti.Floer.kernelOfMatrix_coefficientComparison_vadd`), by
+  `TauCeti.NovikovModule.kernelOfMatrix_vadd_single_mul`. Likewise the trilinear map of the
+  associativity homotopy is unchanged when its series are multiplied by `q^(g₀ - g₁ - g₂ - g₃)`
+  (`TauCeti.Floer.novikovTrilinearOfMatrix_coefficientComparison_vadd`).
 * **The Leibniz rule from the count identity.** The rigid Floer cylinders between reference
   capped orbits of each end are counted in the same way, by generating series `Dₗ` whose
   comparisons are the matrices of the differentials on the completed capped modules
@@ -128,6 +135,9 @@ spaces are to supply; no moduli space, orientation or count is constructed here.
 
 ## References
 
+* H. Hofer and D. A. Salamon, *Floer homology and Novikov rings*, in *The Floer memorial
+  volume*, Progr. Math. 133 (1995), 483–524, for the independence from the choice of reference
+  caps.
 * S. Piunikhin, D. Salamon and M. Schwarz, *Symplectic Floer–Donaldson theory and quantum
   cohomology*, in *Contact and symplectic geometry*, Publ. Newton Inst. 8 (1996), 171–200.
 * M. Schwarz, *Cohomology operations from S¹-cobordisms in Floer homology*, PhD thesis,
@@ -150,29 +160,12 @@ variable {R S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
   [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)]
   (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
 
-section Recapping
-
-variable {ι : Type*} {P : ι → Type*} [∀ i, AddTorsor (PeriodGroup ω c) (P i)]
-  {μ : (Σ i, P i) → ℤ} (hμ : ∀ i γ (D : P i), μ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ ⟨i, D⟩) (n : ℤ)
-
-include hμ
-
-/-- Recapping by `γ` adds `f (-2 c₁(γ))` to any additive image `f` of the cochain degree. -/
-private theorem map_cochain_vadd {D : Type*} [AddCommMonoid D] (f : ℤ →+ D) (i : ι)
-    (γ : PeriodGroup ω c) (E : P i) :
-    f (n - μ ⟨i, γ +ᵥ E⟩) = (f.comp (-degree ω c)) γ + f (n - μ ⟨i, E⟩) := by
-  rw [hμ, AddMonoidHom.comp_apply, AddMonoidHom.neg_apply, ← map_add]
-  congr 1
-  ring
-
-end Recapping
-
 section Monoid
 
 variable {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
   (hq : ∀ A, area ω c (q A) = ωG A)
 
-section Semiring
+section Kernel
 
 variable [Semiring R]
 
@@ -204,25 +197,18 @@ theorem kernelOfMatrix_coefficientComparison_apply_of_injective
   rw [kernelOfMatrix_coefficientComparison_apply, ← hA, ← Set.image_singleton,
     hqi.preimage_image, finsum_mem_singleton]
 
-end Semiring
-
-section Grading
-
-variable [Semiring R] {μ₁ : (Σ i, P₁ i) → ℤ} {μ₂ : (Σ j, P₂ j) → ℤ} {μ₀ : (Σ k, P₀ k) → ℤ}
-  (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
-  (hμ₂ : ∀ j γ (D : P₂ j), μ₂ ⟨j, γ +ᵥ D⟩ = degree ω c γ + μ₂ ⟨j, D⟩)
-  (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨k, D⟩)
-  {n : ℤ} {Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG}
-  (hQ : ∀ i j k, ∀ A ∈ (Q i j k).support,
-    μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + μ₂ ⟨j, r₂ j⟩ - n)
-
-include hμ₁ hμ₂ hμ₀ hQ
-
 /-- **Degree of the kernel from the index.** If the gradings obey the recapping law and every
 class with nonzero count satisfies the rigidity condition `μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + μ₂(r₂) - n`
 relative to the reference caps, then the kernel has raw degree `-n` at all capped generators. -/
-theorem grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero (p₁ : Σ i, P₁ i)
-    (p₂ : Σ j, P₂ j) (p₀ : Σ k, P₀ k)
+theorem grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero {μ₁ : (Σ i, P₁ i) → ℤ}
+    {μ₂ : (Σ j, P₂ j) → ℤ} {μ₀ : (Σ k, P₀ k) → ℤ}
+    (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
+    (hμ₂ : ∀ j γ (D : P₂ j), μ₂ ⟨j, γ +ᵥ D⟩ = degree ω c γ + μ₂ ⟨j, D⟩)
+    (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨k, D⟩)
+    {n : ℤ} {Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG}
+    (hQ : ∀ i j k, ∀ A ∈ (Q i j k).support,
+      μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + μ₂ ⟨j, r₂ j⟩ - n)
+    (p₁ : Σ i, P₁ i) (p₂ : Σ j, P₂ j) (p₀ : Σ k, P₀ k)
     (h : kernelOfMatrix r₁ r₂ r₀ (fun i j k => coefficientComparison q hq (Q i j k)) p₁ p₂ p₀ ≠ 0) :
     μ₀ p₀ = μ₁ p₁ + μ₂ p₂ - n := by
   obtain ⟨i, D₁⟩ := p₁
@@ -239,7 +225,7 @@ theorem grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero (p₁ : Σ i,
   rw [vsub_vadd] at e₁ e₂ e₀
   linarith
 
-end Grading
+end Kernel
 
 section Product
 
@@ -361,7 +347,8 @@ variable [CommRing R] [Fintype ι₁] [Fintype ι₂] [Fintype ι₀] {F₁ : (�
   (hF₀ : ∀ k γ (D : P₀ k), F₀ ⟨k, γ +ᵥ D⟩ = F₀ ⟨k, D⟩ - (-area ω c) γ)
   {μ₁ : (Σ i, P₁ i) → ℤ} (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
 
-include hμ₁ in
+include hμ₁
+
 /-- **The Leibniz rule for class-indexed counts.** Let `Q` be the generating series of rigid
 pairs of pants between reference capped orbits, and `D₁`, `D₂`, `D₀` those of rigid Floer
 cylinders of the two inputs and the output, all indexed by a common class group `G`. Suppose the
@@ -397,6 +384,44 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add
   simpa only [map_sum, map_add, _root_.map_mul, map_negOnePowCast_smul] using
     congrArg (coefficientComparison q hq) (hL i j l)
 
+/-- **The Leibniz rule for the ground-ring product of class-indexed counts.** This is
+`novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add` for the ground-ring
+linear and bilinear maps of the kernels, for any potential bounds of the kernels: the Leibniz
+hypothesis of `LinearMap.cohomologyProduct` for the product of class-indexed counts and the maps
+of the cylinder counts. -/
+theorem kernelMap_kernelProduct_coefficientComparison_eq_add
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG) (D₁ : ι₁ → ι₁ → NovikovSeries R G ωG)
+    (D₂ : ι₂ → ι₂ → NovikovSeries R G ωG) (D₀ : ι₀ → ι₀ → NovikovSeries R G ωG) (n : ℤ)
+    (hL : ∀ i j l, ∑ k, Q i j k * D₀ k l =
+      ∑ k, D₁ i k * Q k j l + negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ k, D₂ j k * Q i k l)
+    {C₁ C₂ C₀ CQ : ℝ}
+    (hδ₁ : ∀ p p',
+      mapKernelOfMatrix r₁ r₁ (fun i k => coefficientComparison q hq (D₁ i k)) p p' ≠ 0 →
+        F₁ p' ≤ F₁ p + C₁)
+    (hδ₂ : ∀ p p',
+      mapKernelOfMatrix r₂ r₂ (fun j k => coefficientComparison q hq (D₂ j k)) p p' ≠ 0 →
+        F₂ p' ≤ F₂ p + C₂)
+    (hδ₀ : ∀ p p',
+      mapKernelOfMatrix r₀ r₀ (fun k l => coefficientComparison q hq (D₀ k l)) p p' ≠ 0 →
+        F₀ p' ≤ F₀ p + C₀)
+    (hnQ : ∀ p₁ p₂ p₀,
+      kernelOfMatrix r₁ r₂ r₀ (fun i j k => coefficientComparison q hq (Q i j k)) p₁ p₂ p₀ ≠ 0 →
+        F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + CQ)
+    {e : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ (fun p => n - μ₁ p) e)
+    (b : NovikovModule R F₂) :
+    kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀ r₀ r₀ _)
+        (kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _) a b) =
+      kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _)
+          (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _) a) b +
+        negOnePowCast R e • kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _) a
+          (kernelMap hδ₂ (mapKernelOfMatrix_mem hF₂ r₂ r₂ _) b) := by
+  simpa only [novikovProductOfMatrix_eq_kernelProduct hF₁ hF₂ hF₀ r₁ r₂ r₀ _ hnQ,
+    novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀,
+    novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁,
+    novikovMapOfMatrix_eq_kernelMap hF₂ hF₂ r₂ r₂ _ hδ₂] using
+    novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add r₁ r₂ r₀ q hq hF₁ hF₂
+      hF₀ hμ₁ Q D₁ D₂ D₀ n hL ha b
+
 end Leibniz
 
 section Commutativity
@@ -412,7 +437,8 @@ variable [CommRing R] [Fintype ι₁] [Fintype ι₂] [Fintype ι₀] {F₁ : (�
   (K : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG) (D₁ : ι₁ → ι₁ → NovikovSeries R G ωG)
   (D₂ : ι₂ → ι₂ → NovikovSeries R G ωG) (D₀ : ι₀ → ι₀ → NovikovSeries R G ωG) (n : ℤ)
 
-include hμ₁ hμ₂ in
+include hμ₁ hμ₂
+
 /-- **Graded commutativity of class-indexed counts up to homotopy.** Let `Q` be the generating
 series of rigid pairs of pants between reference capped orbits, `Q'` those of the rigid pairs of
 pants with the two inputs exchanged, `K` those of the rigid members of the input-exchange family,
@@ -458,7 +484,6 @@ theorem
   simpa only [map_sum, map_add, map_sub, _root_.map_mul, map_negOnePowCast_smul] using
     congrArg (coefficientComparison q hq) (hC i j l)
 
-include hμ₁ hμ₂ in
 /-- **Graded commutativity of class-indexed counts on cohomology.** Under the identity of
 `novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_coefficientComparison`,
 suppose that every class counted by `K` satisfies the index condition
@@ -497,15 +522,8 @@ theorem novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_mem
           (fun j i k => coefficientComparison q hq (Q' j i k)) b a ∈
       (kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀ r₀ r₀ _)).coboundaries
         (gradeBy R F₀ fun p => n - μ₀ p) (e + f) := by
-  rw [LinearMap.mem_cocycles_iff] at ha hb
-  have hDa : novikovMapOfMatrix hF₁ hF₁ r₁ r₁ (fun i k => coefficientComparison q hq (D₁ i k)) a =
-      0 := by
-    rw [novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁]
-    exact ha.1
-  have hDb : novikovMapOfMatrix hF₂ hF₂ r₂ r₂ (fun j k => coefficientComparison q hq (D₂ j k)) b =
-      0 := by
-    rw [novikovMapOfMatrix_eq_kernelMap hF₂ hF₂ r₂ r₂ _ hδ₂]
-    exact hb.1
+  rw [LinearMap.mem_cocycles_iff, ← novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁] at ha
+  rw [LinearMap.mem_cocycles_iff, ← novikovMapOfMatrix_eq_kernelMap hF₂ hF₂ r₂ r₂ _ hδ₂] at hb
   -- `K(a, b)` has cochain degree `e + f - 1`.
   have hKab' := novikovProductOfMatrix_coefficientComparison_mem_cochain_gradeBy_add r₁ r₂ r₀
     q hq hF₁ hF₂ hF₀ hμ₁ hμ₂ hμ₀ K (ε := -1) (fun i j k A hA => by rw [hK i j k A hA]; ring)
@@ -518,7 +536,7 @@ theorem novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_mem
   let := module (R := R) hF₀
   rw [novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_coefficientComparison
       r₁ r₂ r₀ q hq hF₁ hF₂ hF₀ hμ₁ hμ₂ Q Q' K D₁ D₂ D₀ n hC ha.2 hb.2,
-    hDa, hDb, map_zero, LinearMap.zero_apply, map_zero, smul_zero, add_zero, add_zero,
+    ha.1, hb.1, map_zero, LinearMap.zero_apply, map_zero, smul_zero, add_zero, add_zero,
     novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀]
 
 section Cohomology
@@ -565,7 +583,7 @@ variable {μ₀ : (Σ k, P₀ k) → ℤ}
         negOnePowCast R i • kernelProduct hnQ' (kernelOfMatrix_mem hF₀ r₂ r₁ r₀ _) a
           (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _) b)}
 
-include hμ₁ hμ₂ hμ₀ in
+include hμ₀ in
 /-- **Graded commutativity of class-indexed counts on cohomology.** Let the product `⋆` of
 class-indexed counts and the product `⋆'` with exchanged inputs, as ground-ring bilinear maps for
 any potential bounds of their kernels, induce products on the cohomology of the cylinder
@@ -620,6 +638,8 @@ variable {ι₃ ι₁₂ ι₂₃ : Type*} {P₃ : ι₃ → Type*} {P₁₂ : �
   (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
   (hμ₂ : ∀ j γ (D : P₂ j), μ₂ ⟨j, γ +ᵥ D⟩ = degree ω c γ + μ₂ ⟨j, D⟩)
 
+include hμ₁ hμ₂
+
 section Degree
 
 variable [CommSemiring R] {μ₃ : (Σ k, P₃ k) → ℤ} {μ₀ : (Σ l, P₀ l) → ℤ}
@@ -629,7 +649,7 @@ variable [CommSemiring R] {μ₃ : (Σ k, P₃ k) → ℤ} {μ₀ : (Σ l, P₀ 
   (hK : ∀ i j k l, ∀ A ∈ (K i j k l).support,
     μ₀ ⟨l, r₀ l⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + μ₂ ⟨j, r₂ j⟩ + μ₃ ⟨k, r₃ k⟩ - 2 * n + 1)
 
-include hμ₁ hμ₂ hμ₃ hμ₀ hK
+include hμ₃ hμ₀ hK
 
 /-- **The homotopy of rigid counts lowers cochain degree by one.** Let `K` be the generating
 series of the rigid elements of a one-parameter family of four-punctured spheres with three
@@ -638,7 +658,7 @@ condition `μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + μ₂(r₂) + μ₃(r₃) - 2
 recapping law, then the trilinear map of the counts on capped generators shifts every additive
 image `f` of the cochain degree `n - μ` by `f (-1)`. -/
 theorem novikovTrilinearOfMatrix_coefficientComparison_mem_map_cochain_gradeBy {D : Type*}
-    [AddCommGroup D] (f : ℤ →+ D) {e₁ e₂ e₃ : D} {x₁ : NovikovModule R F₁}
+    [AddMonoid D] (f : ℤ →+ D) {e₁ e₂ e₃ : D} {x₁ : NovikovModule R F₁}
     {x₂ : NovikovModule R F₂} {x₃ : NovikovModule R F₃}
     (ha : x₁ ∈ gradeBy R F₁ (fun p => f (n - μ₁ p)) e₁)
     (hb : x₂ ∈ gradeBy R F₂ (fun p => f (n - μ₂ p)) e₂)
@@ -646,16 +666,13 @@ theorem novikovTrilinearOfMatrix_coefficientComparison_mem_map_cochain_gradeBy {
     novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
         (fun i j k l => coefficientComparison q hq (K i j k l)) x₁ x₂ x₃ ∈
       gradeBy R F₀ (fun p => f (n - μ₀ p)) (e₁ + e₂ + e₃ + f (-1)) := by
-  refine novikovTrilinearOfMatrix_mem_gradeBy hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ _ (f.comp (-degree ω c))
-    (map_cochain_vadd hμ₁ n f) (map_cochain_vadd hμ₂ n f) (map_cochain_vadd hμ₃ n f)
-    (map_cochain_vadd hμ₀ n f) (fun i j k l => NovikovSeries.mem_gradeBy_iff.2 fun γ hγ => ?_)
-    ha hb hc
-  obtain ⟨A, hA, rfl⟩ := support_coefficientComparison_subset q hq _ hγ
-  have hd : degree ω c (q A) = n - μ₁ ⟨i, r₁ i⟩ + (n - μ₂ ⟨j, r₂ j⟩) + (n - μ₃ ⟨k, r₃ k⟩) + -1 -
-      (n - μ₀ ⟨l, r₀ l⟩) := by
-    linarith [hK i j k l A hA]
-  simp only [Set.mem_preimage, Set.mem_singleton_iff, AddMonoidHom.comp_apply,
-    AddMonoidHom.neg_apply, map_neg, neg_neg, hd, map_sub, map_add]
+  refine novikovTrilinearOfMatrix_mem_gradeBy_of_support hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ _
+    (fun i j k l γ₁ γ₂ γ₃ γK hγK => ?_) ha hb hc
+  obtain ⟨A, hA, rfl⟩ := support_coefficientComparison_subset q hq _ hγK
+  rw [← map_add, ← map_add, ← map_add]
+  congr 1
+  rw [hμ₀, hμ₁, hμ₂, hμ₃, map_add, map_add, map_add, AddMonoidHom.neg_apply, map_neg]
+  linarith [hK i j k l A hA]
 
 /-- The trilinear map of rigid homotopy counts has degree `-1` on capped generators regraded by
 the cochain degree `n - μ`. -/
@@ -676,7 +693,6 @@ variable [CommRing R] [Fintype ι₁₂] [Fintype ι₂₃] {F₁₂ : (Σ t, P�
   (hF₁₂ : ∀ t γ (D : P₁₂ t), F₁₂ ⟨t, γ +ᵥ D⟩ = F₁₂ ⟨t, D⟩ - (-area ω c) γ)
   (hF₂₃ : ∀ u γ (D : P₂₃ u), F₂₃ ⟨u, γ +ᵥ D⟩ = F₂₃ ⟨u, D⟩ - (-area ω c) γ)
 
-include hμ₁ hμ₂ in
 /-- **The associativity homotopy for class-indexed counts.** Let `Q`, `Q'` be the generating
 series of rigid pairs of pants for the products in `(x₁ ⋆ x₂) ⋆' x₃`, and `T`, `T'` those for the
 products in `x₁ ⋆''' (x₂ ⋆'' x₃)`. Let `D₁`, `D₂`, `D₃`, `D₀` be those of rigid Floer cylinders of
@@ -761,7 +777,8 @@ variable {μ₃ : (Σ k, P₃ k) → ℤ} {μ₀ : (Σ l, P₀ l) → ℤ}
     mapKernelOfMatrix r₀ r₀ (fun m l => coefficientComparison q hq (D₀ m l)) p p' ≠ 0 →
       F₀ p' ≤ F₀ p + C₀)
 
-include hμ₁ hμ₂ hμ₃ hμ₀ in
+include hμ₃ hμ₀
+
 /-- **Associativity of class-indexed counts on cocycles.** Under the identity of
 `TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_assoc_sub_eq_add`, suppose that every
 class counted by `K` satisfies the index condition
@@ -870,7 +887,6 @@ variable {G₁₂ : ℤ → Submodule R (NovikovModule R F₁₂)}
           (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _) a) b +
         negOnePowCast R i • kernelProduct hnT' (kernelOfMatrix_mem hF₀ r₁ r₂₃ r₀ _) a (δ₂₃ b)}
 
-include hμ₁ hμ₂ hμ₃ hμ₀ in
 /-- **Associativity of class-indexed counts on cohomology.** Let the four products of
 class-indexed counts in `(x ⋆ y) ⋆' z` and `x ⋆''' (y ⋆'' z)`, as ground-ring bilinear maps for any
 potential bounds of their kernels, induce products on the cohomology of the cylinder
@@ -939,7 +955,8 @@ variable {ι₁' ι₂' ι₀' : Type*} {P₁' : ι₁' → Type*} {P₂' : ι�
   (D₁ : ι₁ → ι₁ → NovikovSeries R G ωG) (D₂ : ι₂ → ι₂ → NovikovSeries R G ωG)
   (D₀' : ι₀' → ι₀' → NovikovSeries R G ωG) (n : ℤ)
 
-include hμ₁ in
+include hμ₁
+
 /-- **Compatibility of class-indexed counts with continuation maps up to homotopy.** Let `Q` be the
 generating series of rigid pairs of pants between reference capped orbits for one choice of end
 Hamiltonians and `Q'` those for another, let `Φ₁`, `Φ₂`, `Φ₀` be those of rigid continuation
@@ -986,12 +1003,9 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_a
   refine novikovMapOfMatrix_novikovProductOfMatrix_sub_novikovProductOfMatrix_novikovMapOfMatrix
     hF₁ hF₂ hF₀ hF₁' hF₂' hF₀' r₁ r₂ r₀ r₁' r₂' r₀' _ _ _ _ _ _ _ _ _
     (even_cochain_vadd_sub hμ₁ n) (fun i j l => ?_) ha b
-  have h := congrArg (coefficientComparison q hq) (hcont i j l)
-  simp only [map_sum, map_add, map_sub, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
-    Units.smul_def, map_zsmul] at h ⊢
-  exact h
+  simpa only [map_sum, map_add, map_sub, _root_.map_mul, map_negOnePowCast_smul] using
+    congrArg (coefficientComparison q hq) (hcont i j l)
 
-include hμ₁ in
 /-- **Compatibility of class-indexed counts with continuation maps on cohomology.** Under the
 identity of `novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_add`, suppose
 that every class counted by `K` satisfies the index condition
@@ -1034,26 +1048,13 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_mem_
           (novikovMapOfMatrix hF₂ hF₂' r₂ r₂' (fun j t => coefficientComparison q hq (Φ₂ j t)) b) ∈
       (kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀' r₀' r₀' _)).coboundaries
         (gradeBy R F₀' fun p => n - μ₀' p) (e + f) := by
-  rw [LinearMap.mem_cocycles_iff] at ha hb
-  have hDa : novikovMapOfMatrix hF₁ hF₁ r₁ r₁ (fun i k => coefficientComparison q hq (D₁ i k)) a =
-      0 := by
-    rw [novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁]
-    exact ha.1
-  have hDb : novikovMapOfMatrix hF₂ hF₂ r₂ r₂ (fun j k => coefficientComparison q hq (D₂ j k)) b =
-      0 := by
-    rw [novikovMapOfMatrix_eq_kernelMap hF₂ hF₂ r₂ r₂ _ hδ₂]
-    exact hb.1
-  -- `K` is the product of rigid counts for the gradings `μ₀' - 1`, so `K(a, b)` has cochain
-  -- degree `e + f - 1`.
-  have hKab := novikovProductOfMatrix_coefficientComparison_mem_cochain_gradeBy r₁ r₂ r₀' q hq hF₁
-    hF₂ hF₀' hμ₁ hμ₂ (μ₀ := fun p => μ₀' p - 1) (fun l γ D => by rw [hμ₀']; ring) K
-    (fun i j l A hA => by linarith [hK i j l A hA]) ha.2 hb.2
-  have hdeg : ((fun x : ℤ => x - 1) ∘ fun p => n - (μ₀' p - 1)) = fun p => n - μ₀' p := by
-    funext p
-    simp only [Function.comp_apply]
-    ring
-  have hKab' := gradeBy_le_gradeBy_comp (R := R) (fun x : ℤ => x - 1) (e + f) hKab
-  rw [hdeg] at hKab'
+  rw [LinearMap.mem_cocycles_iff, ← novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁] at ha
+  rw [LinearMap.mem_cocycles_iff, ← novikovMapOfMatrix_eq_kernelMap hF₂ hF₂ r₂ r₂ _ hδ₂] at hb
+  -- `K(a, b)` has cochain degree `e + f - 1`.
+  have hKab' := novikovProductOfMatrix_coefficientComparison_mem_cochain_gradeBy_add r₁ r₂ r₀'
+    q hq hF₁ hF₂ hF₀' hμ₁ hμ₂ hμ₀' K (ε := -1) (fun i j l A hA => by rw [hK i j l A hA]; ring)
+    ha.2 hb.2
+  rw [← sub_eq_add_neg] at hKab'
   refine LinearMap.mem_coboundaries_iff.2 ⟨_, hKab', ?_⟩
   -- The Novikov module structures, for the vanishing of the products with `d₁ a = 0`, `d₂ b = 0`.
   let := module (R := R) hF₁
@@ -1062,7 +1063,7 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_mem_
   rw [novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_add
       r₁ r₂ r₀ q hq r₁' r₂' r₀' hF₁ hF₂ hF₀ hF₁' hF₂' hF₀' hμ₁ Q Q' Φ₁ Φ₂ Φ₀ K D₁ D₂ D₀' n hcont
       ha.2 b,
-    hDa, hDb, map_zero, LinearMap.zero_apply, map_zero, smul_zero, add_zero, add_zero,
+    ha.1, hb.1, map_zero, LinearMap.zero_apply, map_zero, smul_zero, add_zero, add_zero,
     novikovMapOfMatrix_eq_kernelMap hF₀' hF₀' r₀' r₀' _ hδ₀]
 
 end Continuation
@@ -1071,7 +1072,7 @@ end Monoid
 
 section Reference
 
-variable {G : Type*} [AddCommGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
+variable {G : Type*} [AddGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
   (hq : ∀ A, area ω c (q A) = ωG A)
 
 /-- **Change of reference caps.** Moving the reference caps to `q gₗ # rₗ` changes the class of a
@@ -1083,14 +1084,16 @@ theorem kernelOfMatrix_coefficientComparison_vadd [Semiring R]
         (fun k => q (g₀ k) +ᵥ r₀ k) (fun i j k => coefficientComparison q hq
           (NovikovSeries.single (g₀ k - g₁ i - g₂ j) 1 * Q i j k)) =
       kernelOfMatrix r₁ r₂ r₀ (fun i j k => coefficientComparison q hq (Q i j k)) := by
-  funext ⟨i, D₁⟩ ⟨j, D₂⟩ ⟨k, D₀⟩
-  rw [kernelOfMatrix_apply, kernelOfMatrix_apply, _root_.map_mul, coefficientComparison_single,
-    coeff_single_mul, one_mul, vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub,
-    vsub_vadd_eq_vsub_sub, map_sub, map_sub]
+  refine Eq.trans ?_ (kernelOfMatrix_vadd_single_mul r₁ r₂ r₀
+    (fun i j k => coefficientComparison q hq (Q i j k)) (fun i => q (g₁ i)) (fun j => q (g₂ j))
+    fun k => q (g₀ k))
   congr 1
+  funext i j k
+  simp only [_root_.map_mul, coefficientComparison_single, map_sub]
+  congr 2
   abel
 
-variable [CommSemiring R] [Finite ι₁] [Finite ι₂] [Finite ι₀] {F₁ : (Σ i, P₁ i) → ℝ}
+variable [CommSemiring R] {F₁ : (Σ i, P₁ i) → ℝ}
   {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
   (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
   (hF₂ : ∀ j γ (D : P₂ j), F₂ ⟨j, γ +ᵥ D⟩ = F₂ ⟨j, D⟩ - (-area ω c) γ)
@@ -1099,7 +1102,7 @@ variable [CommSemiring R] [Finite ι₁] [Finite ι₂] [Finite ι₀] {F₁ : (
 /-- **The product of class-indexed counts does not depend on the reference caps.** Moving the
 reference caps to `q gₗ # rₗ` and the generating series to `q^(g₀ - g₁ - g₂) Q` gives the same
 product on capped generators. -/
-theorem novikovProductOfMatrix_coefficientComparison_vadd
+theorem novikovProductOfMatrix_coefficientComparison_vadd [Finite ι₁] [Finite ι₂] [Finite ι₀]
     (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG) (g₁ : ι₁ → G) (g₂ : ι₂ → G) (g₀ : ι₀ → G) :
     novikovProductOfMatrix hF₁ hF₂ hF₀ (fun i => q (g₁ i) +ᵥ r₁ i) (fun j => q (g₂ j) +ᵥ r₂ j)
         (fun k => q (g₀ k) +ᵥ r₀ k) (fun i j k => coefficientComparison q hq
@@ -1112,6 +1115,31 @@ theorem novikovProductOfMatrix_coefficientComparison_vadd
   refine LinearMap.ext fun a => LinearMap.ext fun b => Subtype.ext (funext fun p₀ => ?_)
   rw [novikovProductOfMatrix_apply_val, novikovProductOfMatrix_apply_val,
     kernelOfMatrix_coefficientComparison_vadd]
+
+/-- **The associativity homotopy of class-indexed counts does not depend on the reference caps.**
+Moving the reference caps to `q gₗ # rₗ` changes the class of a counted four-punctured sphere
+relative to the reference caps by `g₀ - g₁ - g₂ - g₃`, so the generating series become
+`q^(g₀ - g₁ - g₂ - g₃) K`; the trilinear map on capped generators is unchanged. -/
+theorem novikovTrilinearOfMatrix_coefficientComparison_vadd {ι₃ : Type*} {P₃ : ι₃ → Type*}
+    [∀ k, AddTorsor (PeriodGroup ω c) (P₃ k)] (r₃ : ∀ k, P₃ k) [Fintype ι₁] [Fintype ι₂]
+    [Fintype ι₃] [Fintype ι₀] {F₃ : (Σ k, P₃ k) → ℝ}
+    (hF₃ : ∀ k γ (D : P₃ k), F₃ ⟨k, γ +ᵥ D⟩ = F₃ ⟨k, D⟩ - (-area ω c) γ)
+    (K : ι₁ → ι₂ → ι₃ → ι₀ → NovikovSeries R G ωG) (g₁ : ι₁ → G) (g₂ : ι₂ → G) (g₃ : ι₃ → G)
+    (g₀ : ι₀ → G) :
+    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ (fun i => q (g₁ i) +ᵥ r₁ i)
+        (fun j => q (g₂ j) +ᵥ r₂ j) (fun k => q (g₃ k) +ᵥ r₃ k) (fun l => q (g₀ l) +ᵥ r₀ l)
+        (fun i j k l => coefficientComparison q hq
+          (NovikovSeries.single (g₀ l - g₁ i - g₂ j - g₃ k) 1 * K i j k l)) =
+      novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+        (fun i j k l => coefficientComparison q hq (K i j k l)) := by
+  refine Eq.trans ?_ (novikovTrilinearOfMatrix_vadd_single_mul hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+    (fun i j k l => coefficientComparison q hq (K i j k l)) (fun i => q (g₁ i))
+    (fun j => q (g₂ j)) (fun k => q (g₃ k)) fun l => q (g₀ l))
+  congr 1
+  funext i j k l
+  simp only [_root_.map_mul, coefficientComparison_single, map_sub]
+  congr 2
+  abel
 
 end Reference
 

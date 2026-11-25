@@ -7,7 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.FiniteAlgebra
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Generalizing
-public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Torsor
+public import TauCeti.RingTheory.Etale.Torsor.Basic
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Invariant
 
 /-!
 # The adic spectrum of a finite étale torsor
@@ -16,11 +17,10 @@ Let `(A, A⁺)` be a Huber pair, `B` a finite étale `G`-torsor over `A`
 (`TauCeti.Algebra.IsFiniteEtaleTorsor G A B`) and `φ : (A, A⁺) → (B, B⁺)` a morphism of Huber
 pairs whose underlying ring map is `algebraMap A B`. The group `G` acts on `Spv B` by
 `(g • y)(b) = y(g⁻¹ • b)`. The fibres of `Spa(B, B⁺) → Spa(A, A⁺)` are exactly the intersections
-of `Spa(B, B⁺)` with the `G`-orbits
-(`TauCeti.Huber.Pair.Hom.spaComap_eq_spaComap_iff_of_isFiniteEtaleTorsor`). This is the
-valuation-theoretic statement
-`TauCeti.ValuationSpectrum.comap_algebraMap_eq_comap_algebraMap_iff_of_isFiniteEtaleTorsor`
-and needs no completeness, sheafiness or Tate hypothesis.
+of `Spa(B, B⁺)` with the `G`-orbits: a torsor satisfies `Algebra.IsInvariant A B G`
+(`TauCeti.Algebra.IsFiniteEtaleTorsor.isInvariant`), so this is
+`TauCeti.Huber.Pair.Hom.spaComap_eq_spaComap_iff_of_isInvariant`, which needs no completeness,
+sheafiness or Tate hypothesis.
 
 When `A` is Tate and `(B, B⁺)` is the Huber pair of the finite étale algebra `B` (natural
 topology, `B⁺` the integral closure of the image of `A⁺`), the orbits lie in `Spa(B, B⁺)`, since
@@ -46,29 +46,6 @@ surjectivity, openness and the description of the fibres.
 -/
 
 public section
-
-namespace TauCeti.Huber.Pair.Hom
-
-open ValuationSpectrum
-
-variable {G A B : Type*} [Group G] [Finite G] [CommRing A] [TopologicalSpace A]
-  [IsTopologicalRing A] [IsHuberRing A] [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
-  [IsHuberRing B] [Algebra A B] [MulSemiringAction G B] [SMulCommClass G A B]
-  [Algebra.IsFiniteEtaleTorsor G A B]
-  {S : Pair A} {T : Pair B}
-
-/-- **The fibres of the adic spectrum of a finite étale torsor are the `G`-orbits.** For a
-finite étale `G`-torsor `B` over `A` and a morphism of Huber pairs `φ : (A, A⁺) → (B, B⁺)` with
-underlying map `algebraMap A B`, two points `x` and `y` of `Spa(B, B⁺)` have the same image in
-`Spa(A, A⁺)` exactly when `y = g • x` for some `g ∈ G`, where `(g • x)(b) = x(g⁻¹ • b)`. -/
-theorem spaComap_eq_spaComap_iff_of_isFiniteEtaleTorsor {φ : Hom S T}
-    (hφ : φ.toRingHom = algebraMap A B) {x y : spa T.plus} :
-    φ.spaComap x = φ.spaComap y ↔
-      ∃ g : G, (y : Spv B) = comap (MulSemiringAction.toRingHom G B g⁻¹) x := by
-  rw [← comap_algebraMap_eq_comap_algebraMap_iff_of_isFiniteEtaleTorsor (A := A), Subtype.ext_iff,
-    spaComap_val, spaComap_val, hφ]
-
-end TauCeti.Huber.Pair.Hom
 
 namespace TauCeti.Huber.Pair.Hom
 
@@ -136,12 +113,12 @@ theorem isOpenMap_spaComap_of_isFiniteEtaleTorsor {φ : Hom S T}
   simp only [Set.mem_preimage, Set.mem_image, Set.mem_iUnion]
   constructor
   · rintro ⟨u, hu, huy⟩
-    obtain ⟨g, hg⟩ := (spaComap_eq_spaComap_iff_of_isFiniteEtaleTorsor (G := G) hφ).mp huy
+    obtain ⟨g, hg⟩ := (spaComap_eq_spaComap_iff_of_isInvariant (G := G) hφ).mp huy
     refine ⟨g, ?_⟩
     convert hu using 1
     exact Subtype.ext <| by simpa [σ, hg] using hinv g⁻¹ u.val
   · rintro ⟨g, hg⟩
-    refine ⟨σ g y, hg, (spaComap_eq_spaComap_iff_of_isFiniteEtaleTorsor (G := G) hφ).mpr
+    refine ⟨σ g y, hg, (spaComap_eq_spaComap_iff_of_isInvariant (G := G) hφ).mpr
       ⟨g, (hinv g y.val).symm⟩⟩
 
 /-- **The base is the `G`-quotient of the adic spectrum of a finite étale torsor.** If `B` is a
@@ -157,6 +134,6 @@ theorem spaComap_orbits_of_isFiniteEtaleTorsor {φ : Hom S T}
         ∃ g : G, (y : Spv B) = comap (MulSemiringAction.toRingHom G B g⁻¹) x :=
   ⟨surjective_spaComap_of_isFiniteEtaleTorsor (G := G) hφ hT,
     isOpenMap_spaComap_of_isFiniteEtaleTorsor (G := G) hφ hT,
-    fun _ _ ↦ spaComap_eq_spaComap_iff_of_isFiniteEtaleTorsor hφ⟩
+    fun _ _ ↦ spaComap_eq_spaComap_iff_of_isInvariant hφ⟩
 
 end TauCeti.Huber.Pair.Hom

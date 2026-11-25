@@ -29,6 +29,8 @@ hypothesis on the fibres in the comparison theorem for Serre fibrations modulo a
 
 * `AddCommGrpCat.isTorsion`: the torsion abelian groups, as an object property of
   `AddCommGrpCat`, with its `IsSerreClass` instance.
+* `AddCommGrpCat.prop_inverseImage_isTorsion_iff`: a module lies in the torsion class read in
+  `ModuleCat R` exactly when its underlying group is torsion.
 * `AddCommGrpCat.isClosedUnderColimitsOfShape_discrete_inverseImage_isTorsion`: modules whose
   underlying groups are torsion are closed under coproducts.
 
@@ -74,6 +76,14 @@ lemma isKilledBySomePower_le_isTorsion {d : ℕ} (hd : d ≠ 0) :
   obtain ⟨n, hn⟩ := (prop_isKilledBySomePower_iff d M).1 hM
   exact isOfFinAddOrder_iff_nsmul_eq_zero.2
     ⟨d ^ n, pow_pos (Nat.pos_of_ne_zero hd) n, by rw [← natCast_zsmul, Nat.cast_pow, hn]⟩
+
+/-- A module lies in the torsion class read in `ModuleCat R` through the forgetful functor exactly
+when its underlying abelian group is a torsion group. `simp` proves this from
+`ObjectProperty.prop_inverseImage_iff` and `prop_isTorsion_iff`, so it is not a `simp` lemma; it
+is the form to apply in either direction. -/
+lemma prop_inverseImage_isTorsion_iff {R : Type u} [Ring R] (M : ModuleCat.{u} R) :
+    isTorsion.inverseImage (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) M ↔ IsAddTorsion M :=
+  Iff.rfl
 
 /-- **Torsion is closed under direct sums.** A coproduct in `ModuleCat R` of modules whose
 underlying abelian groups are torsion is torsion: it is the direct sum, each element of which is a

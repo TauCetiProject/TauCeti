@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Product
 public import TauCeti.AlgebraicTopology.Singular.AddCircle
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
+import TauCeti.Geometry.Manifold.Instances.AddCircle
 import TauCeti.Geometry.Sphere.Circle
 
 /-!
@@ -41,12 +43,54 @@ torsion of `Y` included, of the second cohomology of a product of a circle with 
 Its cross summand `H¹(Y; ℤ)` is torsion-free: if `g : M ⟶ M'` is injective, a class of
 `H²((ℝ / pℤ) × Y; M)` whose image in `H²((ℝ / pℤ) × Y; M')` is pulled back from `Y` is itself
 pulled back from `Y` (`TopCat.mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective`).
-For `ℤ → ℝ`, an integral class with a pulled-back real class is pulled back integrally.
+Conversely, every change of coefficients keeps pulled-back classes pulled back
+(`TopCat.homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle`).
+For `ℤ → ℝ`, an integral class with a pulled-back real class is pulled back integrally. For the
+same reason a class of `H²((ℝ / pℤ) × Y; ℤ)` is pulled back from `Y` as soon as one of its nonzero
+multiples is (`TopCat.zsmul_mem_range_singularCohomologyMap_snd_addCircle_iff`).
+
+**Torsion.** Since the decomposition is an additive equivalence, a class has finite order exactly
+when both slant products do (`TopCat.isOfFinAddOrder_iff_singularSlant_addCircle`,
+`TopCat.isOfFinAddOrder_singularCohomologyMap_snd_add_singularCup_addCircle_iff`). When `Hⁿ(Y; M)`
+is torsion-free, every class of finite order of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is pulled back from a
+class of finite order of `Hⁿ⁺¹(Y; M)`
+(`TopCat.isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle`); this is always the case
+for `n = 1` and `M = ℤ`, by the instance `TopCat.isAddTorsionFree_singularCohomology_one`, so the
+torsion labels of `H²((ℝ / pℤ) × Y; ℤ)` are those of `H²(Y; ℤ)`. If
+`Hⁿ⁺¹(Y; M)` and `Hⁿ(Y; M)` are generated modulo torsion by `v` and `a`, then `pr₂^* v` and
+`pr₁^* θ_p ⌣ pr₂^* a` generate `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` modulo torsion
+(`TopCat.exists_isOfFinAddOrder_sub_smul_add_smul_addCircle`), and they are independent modulo
+torsion when `v` and `a` are (`TopCat.isOfFinAddOrder_smul_add_smul_addCircle_iff`).
 
 These results are the decomposition of `Sᵈ⁺¹ × Y` in
 `TauCeti.AlgebraicTopology.Cohomology.Sphere.Product`, transported along a homeomorphism of the unit
 circle with `ℝ / pℤ` which carries the standard generator of `H₁(S¹; ℤ)` to the circuit class. The
 second component is thus taken against the orientation of increasing `s`.
+
+**Cup products and the intersection form.** Since `H²(ℝ / pℤ; ℤ) = 0`, the angular class has
+`θ_p ⌣ θ_p = 0` (`AddCircle.singularCup_angularClass_self`), so the cup product of two decomposed
+classes is
+`(pr₂^* b + θ_p ⌣ pr₂^* c) ⌣ (pr₂^* b' + θ_p ⌣ pr₂^* c')`
+`  = pr₂^* (b ⌣ b') + θ_p ⌣ pr₂^* (c ⌣ b' + (-1)^(deg b) b ⌣ c')`. Its Kronecker pairing with the
+homology cross product `[ℝ / pℤ] × y` of the circuit class with a class `y` of `Y` is the pairing
+of its slant product by `[ℝ / pℤ]` with `y` (`TopCat.singularKronecker_singularSlant`), which
+discards the summand pulled back from `Y`. So
+
+`⟨x ⌣ x', [ℝ / pℤ] × y⟩ = ⟨c ⌣ b', y⟩ + (-1)^(deg b) ⟨b ⌣ c', y⟩`
+
+(`TopCat.singularKronecker_singularCup_addCircle_singularHomologyCross`), for every space `Y`, with
+no manifold or finiteness hypothesis. For a closed oriented three-manifold `Y` with fundamental
+class `y = [Y]`, the class `[ℝ / pℤ] × [Y]` is a fundamental class of `(ℝ / pℤ) × Y`, for the
+orientation of increasing `s` followed by that of `Y` (this is not proved here), and the cup
+pairing against it on `H²((ℝ / pℤ) × Y; ℤ)` is the intersection form. In degree two the formula
+reads `x · x' = ⟨b ⌣ c', y⟩ + ⟨b' ⌣ c, y⟩`
+(`TopCat.singularCupPairing_addCircle_singularHomologyCross`):
+the summands `pr₂^* H²(Y; ℤ)` and `θ_p ⌣ pr₂^* H¹(Y; ℤ)` are isotropic and are paired by the cup
+pairing `(b, c) ↦ ⟨b ⌣ c, y⟩` of `Y`. In particular `pr₂^* b · pr₂^* b' = 0`,
+`t · t' = 0` and `pr₂^* b · t = t · pr₂^* b = ⟨b ⌣ c, y⟩` for `t = θ_p ⌣ pr₂^* c`, and every
+square `x · x = 2 ⟨b ⌣ c, y⟩` is even. For the symplectic suspension `(ℝ / ℤ)_s × Y_φ` of a surface
+mapping torus with `b₁(Y_φ) = 1`, these are the intersection numbers `v · v = t · t = 0` and
+`v · t = t · v = ⟨v ⌣ a, y⟩` of its line-label classes `v` and `t = [ds] ⌣ a`.
 
 The coefficients of the chains are `ℤ`, so `M = ℝ` gives real cohomology and `M = ℤ` integral
 cohomology.
@@ -57,9 +101,39 @@ cohomology.
 * `AddCircle.singularKronecker_angularClass`: `θ_p` evaluates a class to its winding number.
 * `TopCat.singularCohomologyAddCircleProdSlantEquiv`: the cohomology of `(ℝ / pℤ) × Y`.
 * `TopCat.singularCohomologyMap_snd_add_singularCup_addCircle`: the decomposition of a class.
+* `TopCat.singularCohomologyAddCircleProdSlantEquiv_symm_mk_zero`,
+  `TopCat.singularCohomologyAddCircleProdSlantEquiv_symm_zero_singularCohomologyZeroOne`: the
+  classes `pr₂^* b` and, in degree one, `pr₁^* θ_p` in the decomposition.
+* `TopCat.singularCohomologyAddCircleProdBasis`: bases of `Hⁿ⁺¹(Y; M)` and `Hⁿ(Y; M)` give a basis
+  `(pr₂^* b, pr₁^* θ_p ⌣ pr₂^* c)` of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)`.
+* `TopCat.singularCohomologyOneAddCircleProdBasis`: for a path-connected `Y`, a basis of
+  `H¹(Y; ℤ)` together with `pr₁^* θ_p` gives a basis of `H¹((ℝ / pℤ) × Y; ℤ)`.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_iff`: the classes pulled back from `Y`.
+* `TopCat.homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle`: a change
+  of coefficients keeps pulled-back classes pulled back, and
+  `TopCat.homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle_iff`
+  detects them when it is injective on `Hⁿ(Y; -)`.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective`: classes of degree
   two pulled back after an injective change of coefficients are pulled back.
+* `TopCat.zsmul_mem_range_singularCohomologyMap_snd_addCircle_iff`: when `Hⁿ(Y; M)` is
+  torsion-free, a nonzero multiple of a class is pulled back from `Y` only if the class is.
+* `TopCat.isOfFinAddOrder_iff_singularSlant_addCircle`: the classes of finite order.
+* `TopCat.isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle`: when `Hⁿ(Y; M)` is
+  torsion-free, as `H¹(Y; ℤ)` always is, the torsion of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is pulled back
+  from `Y`.
+* `TopCat.exists_isOfFinAddOrder_sub_smul_add_smul_addCircle`,
+  `TopCat.isOfFinAddOrder_smul_add_smul_addCircle_iff`: generators modulo torsion.
+* `AddCircle.singularCup_angularClass_self`: `θ_p ⌣ θ_p = 0`.
+* `TopCat.singularKronecker_singularCup_addCircle_singularHomologyCross`: the Kronecker pairing of
+  a cup product of decomposed classes with `[ℝ / pℤ] × y`.
+* `TopCat.singularCupPairing_addCircle_singularHomologyCross`: the cup pairing on
+  `H²((ℝ / pℤ) × Y; ℤ)` against `[ℝ / pℤ] × y`, and its values
+  `TopCat.singularCupPairing_snd_snd_addCircle_singularHomologyCross`,
+  `TopCat.singularCupPairing_fst_snd_fst_snd_addCircle_singularHomologyCross`,
+  `TopCat.singularCupPairing_snd_fst_snd_addCircle_singularHomologyCross` and
+  `TopCat.singularCupPairing_fst_snd_snd_addCircle_singularHomologyCross` on the two summands.
+* `TopCat.singularCupPairing_self_addCircle_singularHomologyCross`,
+  `TopCat.even_singularCupPairing_self_addCircle_singularHomologyCross`: the squares are even.
 
 ## References
 
@@ -109,6 +183,16 @@ theorem singularKronecker_angularClass_fundamentalClass :
     (TopCat.of (AddCircle p)).singularKronecker ℤ 1 (angularClass p) (fundamentalClass p) =
       (1 : ℤ) := by
   rw [singularKronecker_angularClass, firstHomologyAddEquiv_fundamentalClass]
+
+/-- **The cup square of the angular class vanishes**: `θ_p ⌣ θ_p = 0`, because
+`H²(ℝ / pℤ; ℤ) = 0` for the compact one-dimensional manifold `ℝ / pℤ`. -/
+@[simp]
+theorem singularCup_angularClass_self :
+    (TopCat.of (AddCircle p)).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+      (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 (1 + 1) rfl (angularClass p) (angularClass p) = 0 :=
+  (ModuleCat.subsingleton_of_isZero (TauCeti.isZero_singularCohomology_of_compactSpace
+    (M := AddCircle p) (E := ℝ) (𝟙_ (ModuleCat.{0} ℤ)) (𝟙_ (ModuleCat.{0} ℤ))
+    (Module.finrank_self ℝ) one_lt_two)).elim _ _
 
 /-- The unit circle `S¹ ⊆ ℝ²` and `ℝ / pℤ` are identified by a homeomorphism carrying the standard
 generator of `H₁(S¹; ℤ)` to the circuit class. -/
@@ -244,6 +328,181 @@ lemma singularCohomologyAddCircleProdSlantEquiv_symm_apply (s₀ : AddCircle p) 
     rw [AddCircle.singularKronecker_angularClass_fundamentalClass, one_smul] at h
     exact h.symm
 
+/-- The decomposition of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` sends the pullback `pr₂^* b` of a class of `Y` to
+`(b, 0)`. -/
+theorem singularCohomologyAddCircleProdSlantEquiv_symm_mk_zero (s₀ : AddCircle p) (n : ℕ)
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    (singularCohomologyAddCircleProdSlantEquiv M Y s₀ n).symm (b, 0) =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) b := by
+  rw [singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zero, map_zero, add_zero]
+
+/-- The decomposition of `H¹((ℝ / pℤ) × Y; ℤ)` sends the angular class `pr₁^* θ_p` of the circle
+factor to `(0, 1)`, where `1 ∈ H⁰(Y; ℤ)` is the unit class. -/
+theorem singularCohomologyAddCircleProdSlantEquiv_symm_zero_singularCohomologyZeroOne
+    (s₀ : AddCircle p) :
+    (singularCohomologyAddCircleProdSlantEquiv (𝟙_ (ModuleCat.{0} ℤ)) Y s₀ 0).symm
+        (0, Y.singularCohomologyZeroOne) =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+        (AddCircle.angularClass p) := by
+  rw [singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zero]
+  -- `zero_add` is applied to the classes only: rewriting would also reach the degree `0 + 1`.
+  refine (zero_add _).trans ?_
+  rw [TauCeti.singularCohomologyMap_singularCohomologyZeroOne]
+  exact singularCup_singularCohomologyZeroOne_right _ _ _
+
+section Basis
+
+-- Instance search finds `AddCommGroup.toIntModule` on a product of `ℤ`-modules before
+-- `Prod.instModule`, the structure of the product basis `Module.Basis.prod`.
+attribute [local instance 1100] Prod.instModule
+
+/-- **A basis of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)`.** For bases `b` of `Hⁿ⁺¹(Y; M)` and `c` of `Hⁿ(Y; M)`,
+the pullbacks `pr₂^* (b i)` and the products `pr₁^* θ_p ⌣ pr₂^* (c j)` with the angular class
+`θ_p` form a basis of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)`, indexed by `ι ⊕ κ`. It is the basis `(b, c)` of
+`Hⁿ⁺¹(Y; M) × Hⁿ(Y; M)` transported along the decomposition
+`TopCat.singularCohomologyAddCircleProdSlantEquiv`. -/
+def singularCohomologyAddCircleProdBasis (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)) :
+    Module.Basis (ι ⊕ κ) ℤ
+      ((TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :=
+  (b.prod c).map (singularCohomologyAddCircleProdSlantEquiv M Y s₀ n).symm.toIntLinearEquiv
+
+/-- The vector of `TopCat.singularCohomologyAddCircleProdBasis` at `Sum.inl i` is the pullback
+`pr₂^* (b i)`. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_inl (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)) (i : ι) :
+    singularCohomologyAddCircleProdBasis M Y s₀ n b c (Sum.inl i) =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) (b i) := by
+  simp only [singularCohomologyAddCircleProdBasis, Module.Basis.map_apply,
+    Module.Basis.prod_apply, LinearMap.coe_inl, Sum.elim_inl, AddEquiv.coe_toIntLinearEquiv]
+  exact singularCohomologyAddCircleProdSlantEquiv_symm_mk_zero M Y s₀ n (b i)
+
+/-- The vector of `TopCat.singularCohomologyAddCircleProdBasis` at `Sum.inr j` is the product
+`pr₁^* θ_p ⌣ pr₂^* (c j)`. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_inr (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)) (j : κ) :
+    singularCohomologyAddCircleProdBasis M Y s₀ n b c (Sum.inr j) =
+      (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ M).hom
+        1 n (n + 1) (add_comm 1 n)
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+          (AddCircle.angularClass p))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n (c j)) := by
+  simp only [singularCohomologyAddCircleProdBasis, Module.Basis.map_apply,
+    Module.Basis.prod_apply, LinearMap.coe_inr, Sum.elim_inr, Function.comp_apply,
+    AddEquiv.coe_toIntLinearEquiv, singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zero,
+    zero_add]
+
+/-- The coordinate of `φ` at `Sum.inl i` in `TopCat.singularCohomologyAddCircleProdBasis` is the
+coordinate at `i`, in the basis `b`, of the slant product `φ / [s₀]` by the class of `s₀`. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_repr_inl (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1))
+    (i : ι) :
+    (singularCohomologyAddCircleProdBasis M Y s₀ n b c).repr φ (Sum.inl i) =
+      b.repr (singularSlant ℤ M _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 0 (n + 1) (n + 1)
+        (zero_add _) (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{0} ℤ)) s₀ (1 : ℤ)) φ) i := by
+  simp [singularCohomologyAddCircleProdBasis]
+
+/-- The coordinate of `φ` at `Sum.inr j` in `TopCat.singularCohomologyAddCircleProdBasis` is the
+coordinate at `j`, in the basis `c`, of the slant product `φ / [ℝ / pℤ]` by the circuit class. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_repr_inr (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1))
+    (j : κ) :
+    (singularCohomologyAddCircleProdBasis M Y s₀ n b c).repr φ (Sum.inr j) =
+      c.repr (singularSlant ℤ M _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 n (n + 1) (add_comm 1 n)
+        (AddCircle.fundamentalClass p) φ) j := by
+  simp [singularCohomologyAddCircleProdBasis]
+
+/-- **A basis of `H¹((ℝ / pℤ) × Y; ℤ)`.** For a path-connected `Y` and a basis `b` of `H¹(Y; ℤ)`,
+the pullbacks `pr₂^* (b i)` and the angular class `pr₁^* θ_p` of the circle factor form a basis of
+`H¹((ℝ / pℤ) × Y; ℤ)`, indexed by `Option ι`, with `pr₁^* θ_p` at `none`. It is the case `n = 0`
+of `TopCat.singularCohomologyAddCircleProdBasis`, for the basis `1` of `H⁰(Y; ℤ) ≅ ℤ`. -/
+def singularCohomologyOneAddCircleProdBasis [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1)) :
+    Module.Basis (Option ι) ℤ
+      ((TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+        (𝟙_ (ModuleCat.{0} ℤ)) 1) :=
+  (singularCohomologyAddCircleProdBasis _ Y (0 : AddCircle p) 0 b
+      ((Module.Basis.singleton Unit ℤ).map
+        (singularCohomologyZeroEvalEquiv (Classical.arbitrary Y)).symm)).reindex
+    (Equiv.optionEquivSumPUnit.{0} ι).symm
+
+/-- The vector of `TopCat.singularCohomologyOneAddCircleProdBasis` at `none` is the angular class
+`pr₁^* θ_p` of the circle factor. -/
+@[simp]
+lemma singularCohomologyOneAddCircleProdBasis_none [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1)) :
+    singularCohomologyOneAddCircleProdBasis (p := p) Y b none =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+        (AddCircle.angularClass p) := by
+  -- The basis vector `1` of `ℤ` is sent to the unit class. (The scalar action in
+  -- `singularCohomologyZeroEvalEquiv_symm_apply` is not reducibly the instance `one_smul` finds.)
+  have h₁ : (singularCohomologyZeroEvalEquiv (Classical.arbitrary Y)).symm (1 : ℤ) =
+      Y.singularCohomologyZeroOne := by
+    rw [LinearEquiv.symm_apply_eq, singularCohomologyZeroEvalEquiv_apply,
+      singularCohomologyZeroEval_singularCohomologyZeroOne]
+  simp only [singularCohomologyOneAddCircleProdBasis, singularCohomologyAddCircleProdBasis,
+    Module.Basis.coe_reindex, Equiv.symm_symm, Function.comp_apply,
+    Equiv.optionEquivSumPUnit_none, Module.Basis.map_apply, Module.Basis.prod_apply,
+    LinearMap.coe_inr, Sum.elim_inr, Module.Basis.singleton_apply, AddEquiv.coe_toIntLinearEquiv,
+    h₁]
+  exact singularCohomologyAddCircleProdSlantEquiv_symm_zero_singularCohomologyZeroOne Y
+    (0 : AddCircle p)
+
+/-- The vector of `TopCat.singularCohomologyOneAddCircleProdBasis` at `some i` is the pullback
+`pr₂^* (b i)`. -/
+@[simp]
+lemma singularCohomologyOneAddCircleProdBasis_some [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1))
+    (i : ι) :
+    singularCohomologyOneAddCircleProdBasis (p := p) Y b (some i) =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 (b i) := by
+  simp [singularCohomologyOneAddCircleProdBasis]
+
+/-- The coordinate of `φ` at `none` in `TopCat.singularCohomologyOneAddCircleProdBasis`, the
+coefficient of the angular class `pr₁^* θ_p`, is the value at any point `y` of the slant product
+`φ / [ℝ / pℤ] ∈ H⁰(Y; ℤ)` by the circuit class. -/
+lemma singularCohomologyOneAddCircleProdBasis_repr_none [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (𝟙_ (ModuleCat.{0} ℤ)) 1) (y : Y) :
+    (singularCohomologyOneAddCircleProdBasis (p := p) Y b).repr φ none =
+      singularCohomologyZeroEval y
+        (singularSlant ℤ (𝟙_ (ModuleCat.{0} ℤ)) _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 0 1
+          (add_comm 1 0) (AddCircle.fundamentalClass p) φ) := by
+  simp [singularCohomologyOneAddCircleProdBasis,
+    singularCohomologyZeroEval_eq_of_joined (PathConnectedSpace.joined (Classical.arbitrary Y) y)]
+
+/-- The coordinate of `φ` at `some i` in `TopCat.singularCohomologyOneAddCircleProdBasis` is the
+coordinate at `i`, in the basis `b`, of the slant product `φ / [0]` by the class of `0`. -/
+@[simp]
+lemma singularCohomologyOneAddCircleProdBasis_repr_some [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (𝟙_ (ModuleCat.{0} ℤ)) 1) (i : ι) :
+    (singularCohomologyOneAddCircleProdBasis (p := p) Y b).repr φ (some i) =
+      b.repr (singularSlant ℤ (𝟙_ (ModuleCat.{0} ℤ)) _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 0 1 1
+        (zero_add _) (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{0} ℤ)) (0 : AddCircle p)
+          (1 : ℤ)) φ) i := by
+  simp [singularCohomologyOneAddCircleProdBasis]
+
+end Basis
+
 /-- **The decomposition of a class of `(ℝ / pℤ) × Y`**: for `s₀ ∈ ℝ / pℤ`, every
 `φ ∈ Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is `pr₂^* (φ / [s₀]) + pr₁^* θ_p ⌣ pr₂^* (φ / [ℝ / pℤ])`, where `θ_p`
 is the angular class and `[ℝ / pℤ]` the circuit class. For `n = 1` and `M = ℤ` this splits
@@ -281,6 +540,115 @@ theorem mem_range_singularCohomologyMap_snd_addCircle_iff {n : ℕ}
     rw [hφ, map_zero, map_zero, add_zero] at h
     exact ⟨_, h⟩
 
+/-- **Classes of finite order on `(ℝ / pℤ) × Y`**: for `s₀ ∈ ℝ / pℤ`, a class
+`φ ∈ Hⁿ⁺¹((ℝ / pℤ) × Y; M)` has finite order exactly when both of its slant products, `φ / [s₀]`
+by the class of the point `s₀` and `φ / [ℝ / pℤ]` by the circuit class, have finite order. -/
+theorem isOfFinAddOrder_iff_singularSlant_addCircle (s₀ : AddCircle p) {n : ℕ}
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    IsOfFinAddOrder φ ↔
+      IsOfFinAddOrder (singularSlant ℤ M _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 0 (n + 1) (n + 1)
+          (zero_add _) (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{0} ℤ)) s₀ (1 : ℤ)) φ) ∧
+        IsOfFinAddOrder (singularSlant ℤ M _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 n (n + 1)
+          (add_comm 1 n) (AddCircle.fundamentalClass p) φ) := by
+  rw [← Function.Injective.isOfFinAddOrder_iff
+      (f := (singularCohomologyAddCircleProdSlantEquiv M Y s₀ n).toAddMonoidHom)
+      (singularCohomologyAddCircleProdSlantEquiv M Y s₀ n).injective,
+    AddEquiv.coe_toAddMonoidHom, IsOfFinAddOrder.prod_iff,
+    singularCohomologyAddCircleProdSlantEquiv_apply]
+
+/-- **Classes of finite order in the decomposition of `(ℝ / pℤ) × Y`**: the class
+`pr₂^* b + pr₁^* θ_p ⌣ pr₂^* c` of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)`, for the angular class `θ_p`, has finite
+order exactly when both `b ∈ Hⁿ⁺¹(Y; M)` and `c ∈ Hⁿ(Y; M)` have finite order. So the torsion of
+`Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is the sum of the torsion of `Hⁿ⁺¹(Y; M)` and of `Hⁿ(Y; M)`, each
+placed by the decomposition. -/
+theorem isOfFinAddOrder_singularCohomologyMap_snd_add_singularCup_addCircle_iff {n : ℕ}
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1))
+    (c : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n) :
+    IsOfFinAddOrder (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) b +
+        (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ M).hom
+          1 n (n + 1) (add_comm 1 n)
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n c)) ↔
+      IsOfFinAddOrder b ∧ IsOfFinAddOrder c := by
+  rw [← singularCohomologyAddCircleProdSlantEquiv_symm_apply M Y (0 : AddCircle p) n (b, c)]
+  exact (Function.Injective.isOfFinAddOrder_iff
+    (f := (singularCohomologyAddCircleProdSlantEquiv M Y (0 : AddCircle p) n).symm.toAddMonoidHom)
+    (singularCohomologyAddCircleProdSlantEquiv M Y (0 : AddCircle p) n).symm.injective).trans
+      IsOfFinAddOrder.prod_iff
+
+/-- **The torsion of `(ℝ / pℤ) × Y` when `Hⁿ(Y; M)` is torsion-free**: if `Hⁿ(Y; M)` has no
+nonzero element of finite order, then a class of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` has finite order exactly
+when it is pulled back from a class of finite order of `Hⁿ⁺¹(Y; M)`. -/
+theorem isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle {n : ℕ}
+    [IsAddTorsionFree (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)]
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    IsOfFinAddOrder φ ↔ ∃ b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1),
+      IsOfFinAddOrder b ∧
+        TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) b = φ := by
+  refine ⟨fun hφ ↦ ?_, ?_⟩
+  · obtain ⟨hb, hc⟩ := (isOfFinAddOrder_iff_singularSlant_addCircle M Y (0 : AddCircle p) φ).1 hφ
+    refine ⟨_, hb, ?_⟩
+    have h := singularCohomologyMap_snd_add_singularCup_addCircle M Y (0 : AddCircle p) φ
+    rwa [(isOfFinAddOrder_iff_eq_zero _).1 hc, map_zero, map_zero, add_zero] at h
+  · rintro ⟨b, hb, rfl⟩
+    exact (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ) (M := M)
+      (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom.toAddMonoidHom
+        |>.isOfFinAddOrder hb
+
+/-- **Generators modulo torsion of `(ℝ / pℤ) × Y`**: if every class of `Hⁿ⁺¹(Y; M)` differs from a
+multiple of `v` by an element of finite order, and every class of `Hⁿ(Y; M)` from a multiple of
+`a`, then every class of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` differs from a combination of `pr₂^* v` and
+`pr₁^* θ_p ⌣ pr₂^* a` by an element of finite order, for the angular class `θ_p`. -/
+theorem exists_isOfFinAddOrder_sub_smul_add_smul_addCircle {n : ℕ}
+    {v : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)}
+    {a : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n}
+    (hv : ∀ b, ∃ m : ℤ, IsOfFinAddOrder (b - m • v))
+    (ha : ∀ c, ∃ m : ℤ, IsOfFinAddOrder (c - m • a))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    ∃ m c : ℤ, IsOfFinAddOrder (φ -
+      (m • TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) v +
+        c • (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+          (λ_ M).hom 1 n (n + 1) (add_comm 1 n)
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n a))) := by
+  obtain ⟨m, hm⟩ := hv (singularSlant ℤ M _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 0 (n + 1) (n + 1)
+    (zero_add _) (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{0} ℤ)) (0 : AddCircle p) (1 : ℤ))
+    φ)
+  obtain ⟨c, hc⟩ := ha (singularSlant ℤ M _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 n (n + 1)
+    (add_comm 1 n) (AddCircle.fundamentalClass p) φ)
+  refine ⟨m, c, ?_⟩
+  -- The difference is the decomposed class with the two slant products replaced by their
+  -- differences with `m • v` and `c • a`.
+  have h := (isOfFinAddOrder_singularCohomologyMap_snd_add_singularCup_addCircle_iff (p := p) M Y
+    _ _).2 ⟨hm, hc⟩
+  rw [← singularCohomologyMap_snd_add_singularCup_addCircle M Y (0 : AddCircle p) φ]
+  simpa only [map_sub, map_zsmul, sub_add_sub_comm] using h
+
+/-- **Independence modulo torsion in `(ℝ / pℤ) × Y`**: if no nonzero multiple of `v ∈ Hⁿ⁺¹(Y; M)`
+or of `a ∈ Hⁿ(Y; M)` has finite order, then `m • pr₂^* v + c • (pr₁^* θ_p ⌣ pr₂^* a)` has finite
+order only for `m = c = 0`. -/
+theorem isOfFinAddOrder_smul_add_smul_addCircle_iff {n : ℕ}
+    {v : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)}
+    {a : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n}
+    (hv : ∀ m : ℤ, IsOfFinAddOrder (m • v) → m = 0) (ha : ∀ m : ℤ, IsOfFinAddOrder (m • a) → m = 0)
+    (m c : ℤ) :
+    IsOfFinAddOrder
+      (m • TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) v +
+        c • (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+          (λ_ M).hom 1 n (n + 1) (add_comm 1 n)
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n a)) ↔
+      m = 0 ∧ c = 0 := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have h' := (isOfFinAddOrder_singularCohomologyMap_snd_add_singularCup_addCircle_iff (p := p) M Y
+      (m • v) (c • a)).1 (by simpa only [map_zsmul] using h)
+    exact ⟨hv m h'.1, ha c h'.2⟩
+  · rintro ⟨rfl, rfl⟩
+    simp
+
 variable {M}
 
 /-- **Pulled-back classes of `(ℝ / pℤ) × Y` under a change of coefficients**: let `g : M ⟶ M'`
@@ -303,6 +671,40 @@ theorem mem_range_singularCohomologyMap_snd_addCircle_of_injective {n : ℕ}
     φ).symm.trans ((mem_range_singularCohomologyMap_snd_addCircle_iff M' Y _).1 hφ)
   exact (mem_range_singularCohomologyMap_snd_addCircle_iff M Y φ).2 (hg (h.trans (map_zero _).symm))
 
+/-- **Pulled-back classes of `(ℝ / pℤ) × Y` under a change of coefficients**: for every
+`g : M ⟶ M'`, if `φ ∈ Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is pulled back from `Y`, then so is its image in
+`Hⁿ⁺¹((ℝ / pℤ) × Y; M')`. -/
+theorem homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle {n : ℕ}
+    {M' : ModuleCat.{0} ℤ} (g : M ⟶ M')
+    {φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)}
+    (hφ : φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom) :
+    HomologicalComplex.homologyMap (((toSSet.obj (TopCat.of (AddCircle p) ⊗ Y)).chainComplex
+        (𝟙_ (ModuleCat.{0} ℤ))).linearYonedaObjMap ℤ g) (n + 1) φ ∈
+      LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M') (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom := by
+  -- the slant product by the circuit class commutes with the change of coefficients
+  rw [mem_range_singularCohomologyMap_snd_addCircle_iff] at hφ ⊢
+  rw [singularSlant_linearYonedaObjMap M (TopCat.of (AddCircle p)) Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom
+    g 1 n (n + 1) (add_comm 1 n) (AddCircle.fundamentalClass p), hφ, map_zero]
+
+/-- **Pulled-back classes of `(ℝ / pℤ) × Y` under an injective change of coefficients**: let
+`g : M ⟶ M'` induce an injective map `Hⁿ(Y; M) → Hⁿ(Y; M')`. Then `φ ∈ Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is
+pulled back from `Y` if and only if its image in `Hⁿ⁺¹((ℝ / pℤ) × Y; M')` is. -/
+theorem homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle_iff
+    {n : ℕ} {M' : ModuleCat.{0} ℤ} (g : M ⟶ M')
+    (hg : Function.Injective (HomologicalComplex.homologyMap
+      (((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{0} ℤ))).linearYonedaObjMap ℤ g) n))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    HomologicalComplex.homologyMap (((toSSet.obj (TopCat.of (AddCircle p) ⊗ Y)).chainComplex
+        (𝟙_ (ModuleCat.{0} ℤ))).linearYonedaObjMap ℤ g) (n + 1) φ ∈
+      LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M') (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom ↔
+      φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom :=
+  ⟨mem_range_singularCohomologyMap_snd_addCircle_of_injective Y g hg φ,
+    homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle Y g⟩
+
 /-- **Classes of `(ℝ / pℤ) × Y` pulled back after an injective change of coefficients**: if
 `g : M ⟶ M'` is injective and the image of `φ ∈ H²((ℝ / pℤ) × Y; M)` in `H²((ℝ / pℤ) × Y; M')` is
 pulled back from `Y`, then so is `φ`. For `ℤ → ℝ`: an integral class of `H²((ℝ / ℤ)_s × Y)` whose
@@ -319,5 +721,244 @@ theorem mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective
         (M := M) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (1 + 1)).hom := by
   exact mem_range_singularCohomologyMap_snd_addCircle_of_injective (n := 1) Y g
     (Y.injective_homologyMap_linearYonedaObjMap_one g hg) φ hφ
+
+variable (M) in
+/-- **Classes of `(ℝ / pℤ) × Y` with a pulled-back multiple**: if `Hⁿ(Y; M)` is torsion-free, then
+for every integer `k ≠ 0` the class `k • φ` of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is pulled back from `Y` if
+and only if `φ` is. For `n = 1` and `M = ℤ`, `H¹(Y; ℤ)` is always torsion-free, so a class of
+`H²((ℝ / pℤ) × Y; ℤ)` is pulled back from `Y` as soon as one of its nonzero multiples is. -/
+theorem zsmul_mem_range_singularCohomologyMap_snd_addCircle_iff {n : ℕ}
+    [IsAddTorsionFree (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)] {k : ℤ} (hk : k ≠ 0)
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    k • φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom ↔
+      φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom := by
+  rw [mem_range_singularCohomologyMap_snd_addCircle_iff,
+    mem_range_singularCohomologyMap_snd_addCircle_iff, map_zsmul,
+    IsAddTorsionFree.zsmul_eq_zero_iff_right hk]
+
+
+/-! ### Cup products and the intersection form of `(ℝ / pℤ) × Y` -/
+
+section IntersectionForm
+
+/-- **The Kronecker pairing of a cup product on `(ℝ / pℤ) × Y` with `[ℝ / pℤ] × y`**: for
+`b ∈ Hᵐ⁺¹(Y; ℤ)`, `c ∈ Hᵐ(Y; ℤ)`, `b' ∈ Hᵐ'⁺¹(Y; ℤ)`, `c' ∈ Hᵐ'(Y; ℤ)` and a homology class
+`y ∈ Hₘ₊ₘ'₊₁(Y; ℤ)`,
+
+`⟨(pr₂^* b + θ_p ⌣ pr₂^* c) ⌣ (pr₂^* b' + θ_p ⌣ pr₂^* c'), [ℝ / pℤ] × y⟩`
+`  = ⟨c ⌣ b', y⟩ + (-1)^(m + 1) ⟨b ⌣ c', y⟩`,
+
+where `[ℝ / pℤ] × y` is the homology cross product of the circuit class with `y`, read with
+coefficients `ℤ` through `ℤ ⊗ ℤ ≅ ℤ`. No hypothesis on `Y` is needed: the summand `pr₂^* (b ⌣ b')`
+of the cup product is killed by the slant product by `[ℝ / pℤ]`. -/
+theorem singularKronecker_singularCup_addCircle_singularHomologyCross {m m' : ℕ}
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) (m + 1))
+    (c : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) m)
+    (b' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) (m' + 1))
+    (c' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) m')
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + m' + 1)).obj
+      (𝟙_ (ModuleCat.{0} ℤ))).obj Y) :
+    ((TopCat.of (AddCircle p) ⊗ Y).singularKronecker ℤ (m + m' + 1 + 1)
+      ((TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+        (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom (m + 1) (m' + 1) (m + m' + 1 + 1) (by omega)
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (m + 1) b +
+          (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+            (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 m (m + 1) (add_comm 1 m)
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+              (AddCircle.angularClass p))
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) m c))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (m' + 1) b' +
+          (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+            (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 m' (m' + 1) (add_comm 1 m')
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+              (AddCircle.angularClass p))
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) m' c')))).hom
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + m' + 1 + 1)).map
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app (TopCat.of (AddCircle p) ⊗ Y)
+        (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+          (𝟙_ (ModuleCat.{0} ℤ)) 1 (m + m' + 1) (m + m' + 1 + 1) (add_comm 1 _)
+          (AddCircle.fundamentalClass p ⊗ₜ y))) =
+      (Y.singularKronecker ℤ (m + m' + 1)
+          (Y.singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom m
+            (m' + 1) (m + m' + 1) (by omega) c b')).hom y +
+        (-1 : ℤ) ^ (m + 1) * (Y.singularKronecker ℤ (m + m' + 1)
+          (Y.singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom
+            (m + 1) m' (m + m' + 1) (by omega) b c')).hom y := by
+  -- expand the cup product, using `θ_p ⌣ θ_p = 0`
+  rw [singularCup_singularCohomologyMap_snd_add_singularCup (add_comm 1 m) (add_comm 1 m')
+      (by omega) (add_comm 1 _) _ (AddCircle.singularCup_angularClass_self p)]
+  -- evaluating on `[ℝ / pℤ] × y` is evaluating the slant product by `[ℝ / pℤ]` on `y`
+  rw [← singularKronecker_singularSlant (𝟙_ (ModuleCat.{0} ℤ)) (TopCat.of (AddCircle p)) Y
+    (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 (m + m' + 1) (m + m' + 1 + 1) (add_comm 1 _)
+    (AddCircle.fundamentalClass p)]
+  have h := singularSlant_singularCohomologyMap_snd_add_singularCup (𝟙_ (ModuleCat.{0} ℤ))
+    (TopCat.of (AddCircle p)) Y (add_comm 1 (m + m' + 1)) one_ne_zero
+    (AddCircle.fundamentalClass p) (AddCircle.angularClass p)
+    (Y.singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom (m + 1)
+      (m' + 1) (m + m' + 1 + 1) (by omega) b b')
+    (Y.singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom m
+        (m' + 1) (m + m' + 1) (by omega) c b' +
+      ((-1 : ℤ) ^ (1 * (m + 1))) •
+        Y.singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom (m + 1)
+          m' (m + m' + 1) (by omega) b c')
+  rw [h, AddCircle.singularKronecker_angularClass_fundamentalClass, one_smul, one_mul, map_add,
+    map_zsmul]
+  simp
+
+variable {Y}
+
+/-- **The cup pairing on `H²((ℝ / pℤ) × Y; ℤ)` against `[ℝ / pℤ] × y`**: for `y ∈ H₃(Y; ℤ)`,
+the cup pairing against the homology cross product `[ℝ / pℤ] × y` of the classes
+`x = pr₂^* b + θ_p ⌣ pr₂^* c` and `x' = pr₂^* b' + θ_p ⌣ pr₂^* c'` is
+`x · x' = ⟨b ⌣ c', y⟩ + ⟨b' ⌣ c, y⟩`. When `y` is the fundamental class of a closed oriented
+three-manifold `Y`, this is the intersection form of `(ℝ / pℤ) × Y` in the decomposition
+`H²((ℝ / pℤ) × Y; ℤ) = pr₂^* H²(Y; ℤ) ⊕ θ_p ⌣ pr₂^* H¹(Y; ℤ)`: both summands are isotropic, and
+they are paired by the cup pairing of `Y`. -/
+theorem singularCupPairing_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (b b' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 2)
+    (c c' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y)))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b +
+          (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+            (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+              (AddCircle.angularClass p))
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b' +
+          (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+            (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+              (AddCircle.angularClass p))
+            (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c')) =
+      Y.singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl y b c' +
+        Y.singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl y b' c := by
+  rw [singularCupPairing_apply, singularCupPairing_apply, singularCupPairing_apply]
+  have h := singularKronecker_singularCup_addCircle_singularHomologyCross (p := p) Y (m := 1)
+    (m' := 1) b c b' c' y
+  -- `c ⌣ b' = b' ⌣ c`, since the product of the degrees is even
+  rw [Y.singularCup_gradedComm_tensorUnit ℤ (μ := (λ_ _).hom) (IsCommMonObj.mul_comm _)
+    (p := 1 + 1) (q := 1) (n := 1 + 1 + 1) rfl b' c] at h
+  refine h.trans ?_
+  norm_num
+  abel
+
+/-- **Classes pulled back from `Y` are orthogonal** for the cup pairing on `H²((ℝ / pℤ) × Y; ℤ)`
+against `[ℝ / pℤ] × y`: `pr₂^* b · pr₂^* b' = 0`. -/
+theorem singularCupPairing_snd_snd_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (b b' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 2) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y)))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b)
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b') = 0 := by
+  simpa using singularCupPairing_addCircle_singularHomologyCross y b b' 0 0
+
+/-- **Classes `θ_p ⌣ pr₂^* c` are orthogonal** for the cup pairing on `H²((ℝ / pℤ) × Y; ℤ)`
+against `[ℝ / pℤ] × y`: `(θ_p ⌣ pr₂^* c) · (θ_p ⌣ pr₂^* c') = 0`. -/
+theorem singularCupPairing_fst_snd_fst_snd_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (c c' : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y)))
+        ((TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c))
+        ((TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c')) = 0 := by
+  simpa using singularCupPairing_addCircle_singularHomologyCross y 0 0 c c'
+
+/-- **The pairing of the two summands** of `H²((ℝ / pℤ) × Y; ℤ)` against `[ℝ / pℤ] × y` is the
+cup pairing of `Y`: `pr₂^* b · (θ_p ⌣ pr₂^* c) = ⟨b ⌣ c, y⟩`. -/
+theorem singularCupPairing_snd_fst_snd_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 2)
+    (c : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y)))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b)
+        ((TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c)) =
+      Y.singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl y b c := by
+  simpa using singularCupPairing_addCircle_singularHomologyCross y b 0 0 c
+
+/-- **The pairing of the two summands in the other order**: against `[ℝ / pℤ] × y`,
+`(θ_p ⌣ pr₂^* c) · pr₂^* b = ⟨b ⌣ c, y⟩` as well. -/
+theorem singularCupPairing_fst_snd_snd_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 2)
+    (c : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y)))
+        ((TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
+          (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 1 2 rfl
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+            (AddCircle.angularClass p))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 c))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 2 b) =
+      Y.singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl y b c := by
+  simpa using singularCupPairing_addCircle_singularHomologyCross y 0 b c 0
+
+/-- **The squares of the cup pairing on `H²((ℝ / pℤ) × Y; ℤ)` against `[ℝ / pℤ] × y`**: for
+every class `x` with components `(b, c) = (x / [s₀], x / [ℝ / pℤ])`, `x · x = 2 ⟨b ⌣ c, y⟩`. -/
+theorem singularCupPairing_self_addCircle_singularHomologyCross (s₀ : AddCircle p)
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (x : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (𝟙_ (ModuleCat.{0} ℤ)) 2) :
+    (TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y))) x x =
+      2 * Y.singularCupPairing ℤ (p := 2) (q := 1) (n := 3) rfl y
+        (singularCohomologyAddCircleProdSlantEquiv (𝟙_ (ModuleCat.{0} ℤ)) Y s₀ 1 x).1
+        (singularCohomologyAddCircleProdSlantEquiv (𝟙_ (ModuleCat.{0} ℤ)) Y s₀ 1 x).2 := by
+  obtain ⟨⟨b, c⟩, rfl⟩ :=
+    (singularCohomologyAddCircleProdSlantEquiv (𝟙_ (ModuleCat.{0} ℤ)) Y s₀ 1).symm.surjective x
+  rw [AddEquiv.apply_symm_apply, singularCohomologyAddCircleProdSlantEquiv_symm_apply]
+  exact (singularCupPairing_addCircle_singularHomologyCross y b b c c).trans (two_mul _).symm
+
+/-- **The cup pairing on `H²((ℝ / pℤ) × Y; ℤ)` against `[ℝ / pℤ] × y` is even**, for every space
+`Y`. When `y` is the fundamental class of a closed oriented three-manifold `Y`, this says that the
+intersection form of `(ℝ / pℤ) × Y` is even, so no class has square `-1`. -/
+theorem even_singularCupPairing_self_addCircle_singularHomologyCross
+    (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 3).obj (𝟙_ (ModuleCat.{0} ℤ))).obj Y)
+    (x : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (𝟙_ (ModuleCat.{0} ℤ)) 2) :
+    Even ((TopCat.of (AddCircle p) ⊗ Y).singularCupPairing ℤ (p := 2) (q := 2) (n := 4) rfl
+        (((singularHomologyFunctor (ModuleCat.{0} ℤ) 4).map (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom).app
+          (TopCat.of (AddCircle p) ⊗ Y)
+          (singularHomologyCross (TopCat.of (AddCircle p)) Y (𝟙_ (ModuleCat.{0} ℤ))
+            (𝟙_ (ModuleCat.{0} ℤ)) 1 3 4 rfl (AddCircle.fundamentalClass p ⊗ₜ y))) x x) := by
+  rw [singularCupPairing_self_addCircle_singularHomologyCross 0]
+  exact even_two_mul _
+
+end IntersectionForm
 
 end TopCat

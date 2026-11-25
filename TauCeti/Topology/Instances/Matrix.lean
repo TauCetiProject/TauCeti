@@ -19,6 +19,7 @@ public import TauCeti.LinearAlgebra.Matrix.Trace.Partial
 public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.Topology.Algebra.IsOpenUnits
 public import TauCeti.Topology.PiCurry
+import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 
 /-!
 # Topological properties of matrices
@@ -29,7 +30,8 @@ of pointwise limits of measurable maps, available for matrix-valued functions wi
 matrix norm.
 
 Matrices with countably many rows and columns are second countable when their entries are, and
-matrices with finitely many rows and columns are σ-compact when their entries are.
+matrices with finitely many rows and columns are σ-compact, respectively locally compact, when
+their entries are. Matrices over a compact space are compact.
 
 Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, the action of
 `Mathlib.LinearAlgebra.Matrix.Action`; through the unit group, so does `GL n R`
@@ -56,12 +58,20 @@ for the subspace topology, already for `n = 1`.
 Each characteristic coefficient is continuous over a commutative topological ring
 (`Matrix.continuous_charpoly_coeff`). The proof uses Mathlib's universal characteristic polynomial
 `Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries.
+Hence two continuous maps `ρ ρ' : Γ → Mₙ(A)` into a Hausdorff topological ring whose
+characteristic polynomials agree on a dense subset of `Γ` have the same characteristic polynomial
+everywhere (`Matrix.charpoly_eq_of_dense`). In size two the characteristic polynomial is
+determined by the trace and the determinant (`Matrix.charpoly_eq_charpoly_iff_fin_two`), so for
+maps `ρ ρ' : Γ → M₂(A)`, such as continuous representations `Γ → GL₂(A)` composed with
+`Units.val`, it suffices that the traces and determinants agree on the dense subset
+(`Matrix.charpoly_eq_of_dense_fin_two`).
 
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
 In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous. So are
 both partial traces of a continuously varying matrix on a product index.
 
-The matrices with nonnegative diagonal form a closed set
+A matrix-valued function converges exactly when each of its entries does
+(`Matrix.tendsto_iff_tendsto_apply`). The matrices with nonnegative diagonal form a closed set
 (`Matrix.isClosed_setOfPred_nonneg_diag`).
 
 `Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
@@ -98,6 +108,17 @@ instance {m n α : Type*} [Countable m] [Countable n] [TopologicalSpace α]
 instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [SigmaCompactSpace α] :
     SigmaCompactSpace (Matrix m n α) :=
   inferInstanceAs (SigmaCompactSpace (m → n → α))
+
+/-- Matrices with finitely many rows and columns over a locally compact space form a locally
+compact space. -/
+instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [LocallyCompactSpace α] :
+    LocallyCompactSpace (Matrix m n α) :=
+  inferInstanceAs (LocallyCompactSpace (m → n → α))
+
+/-- Matrices over a compact space form a compact space (Tychonoff). -/
+instance {m n α : Type*} [TopologicalSpace α] [CompactSpace α] :
+    CompactSpace (Matrix m n α) :=
+  inferInstanceAs (CompactSpace (m → n → α))
 
 /-- Square matrices act jointly continuously on column vectors by `Matrix.mulVec`. -/
 instance {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R] [TopologicalSpace R]
@@ -275,6 +296,29 @@ theorem continuous_charpoly_coeff (k : ℕ) :
     rfl
   simpa only [MvPolynomial.eval, charpoly.univ_coeff_eval₂Hom, hmatrix] using h
 
+/-- **Recognition on a dense subset.** Two continuous matrix-valued maps `ρ ρ' : Γ → Mₙ(A)` into a
+Hausdorff topological ring whose characteristic polynomials agree on a dense subset of `Γ` have
+the same characteristic polynomial at every point. -/
+theorem charpoly_eq_of_dense [T2Space R] {Γ : Type*} [TopologicalSpace Γ]
+    {ρ ρ' : Γ → Matrix n n R} (hρ : Continuous ρ) (hρ' : Continuous ρ') {S : Set Γ}
+    (hS : Dense S) (h : ∀ g ∈ S, (ρ g).charpoly = (ρ' g).charpoly) (g : Γ) :
+    (ρ g).charpoly = (ρ' g).charpoly := by
+  ext k
+  exact congrFun (((continuous_charpoly_coeff k).comp hρ).ext_on hS
+    ((continuous_charpoly_coeff k).comp hρ') fun x hx ↦ by simp [h x hx]) g
+
+/-- **Recognition on a dense subset in rank two.** Two continuous maps `ρ ρ' : Γ → M₂(A)` into a
+Hausdorff topological ring, such as continuous representations into `GL₂(A)` composed with
+`Units.val`, whose traces and determinants agree on a dense subset of `Γ` have the same
+characteristic polynomial at every point. -/
+theorem charpoly_eq_of_dense_fin_two [T2Space R] {Γ : Type*} [TopologicalSpace Γ]
+    {ρ ρ' : Γ → Matrix (Fin 2) (Fin 2) R} (hρ : Continuous ρ) (hρ' : Continuous ρ') {S : Set Γ}
+    (hS : Dense S) (htr : ∀ g ∈ S, (ρ g).trace = (ρ' g).trace)
+    (hdet : ∀ g ∈ S, (ρ g).det = (ρ' g).det) (g : Γ) :
+    (ρ g).charpoly = (ρ' g).charpoly :=
+  charpoly_eq_of_dense hρ hρ' hS
+    (fun x hx ↦ (charpoly_eq_charpoly_iff_fin_two _ _).2 ⟨htr x hx, hdet x hx⟩) g
+
 variable [IsOpenUnits R]
 
 /-- Square matrices over a commutative topological ring with open units have open units: the
@@ -354,6 +398,13 @@ theorem continuous_oneKroneckerStarAlgHom :
 end Matrix
 
 namespace Matrix
+
+open Filter Topology in
+/-- Convergence of a matrix-valued function is entrywise convergence. -/
+theorem tendsto_iff_tendsto_apply {α m n R : Type*} [TopologicalSpace R] {l : Filter α}
+    {M : α → Matrix m n R} {D : Matrix m n R} :
+    Tendsto M l (𝓝 D) ↔ ∀ i j, Tendsto (fun x ↦ M x i j) l (𝓝 (D i j)) :=
+  tendsto_pi_nhds.trans <| forall_congr' fun _ ↦ tendsto_pi_nhds
 
 /-- The matrices with nonnegative diagonal form a closed set. -/
 theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]

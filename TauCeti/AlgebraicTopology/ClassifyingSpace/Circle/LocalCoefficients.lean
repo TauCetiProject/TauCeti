@@ -9,14 +9,17 @@ public import Mathlib.Data.ZMod.QuotientRing
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Circle.Basic
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.LocalCoefficients
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Monodromy
+import TauCeti.AlgebraicTopology.Cohomology.Twisted.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 public import TauCeti.RepresentationTheory.Cyclic.IntSign
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.InfiniteCyclic
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.InfiniteCyclic
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 import TauCeti.RepresentationTheory.Homological.GroupHomology.LowDegree
 
 /-!
-# Homology of the circle with local coefficients
+# Homology and cohomology of the circle with local coefficients
 
 A representation `A` of `ℤ` over a commutative ring `k` gives a local coefficient system on the
 circle (`TauCeti.circleLocalSystem A`): the system `TauCeti.classifyingSpaceLocalSystem k A` on
@@ -53,6 +56,23 @@ bundle over the circle, the simplest nonorientable line bundle; in Morse–Bott 
 systems are the coefficients carried by critical circles whose negative normal bundle is a Möbius
 line.
 
+Dually, the cochains of the circle with coefficients in `circleLocalSystem A` and values in a
+`k`-module `N` are the maps from its twisted chains to `N`. A homotopy equivalence also induces
+isomorphisms on this cohomology, with no hypothesis on `A`
+(`ContinuousMap.HomotopyEquiv.isIso_twistedCohomologyMap`), so it is the group cohomology of `ℤ`
+with coefficients in `Homₖ(A, N)` (`TauCeti.circleTwistedCohomologyIsoGroupCohomology`). The
+generator acts on `Homₖ(A, N)` through precomposition with `T`, so this is the cohomology of the
+dual complex `Homₖ(A, N) --(φ ↦ φ ∘ (T - 𝟙))--> Homₖ(A, N)`:
+
+* `H⁰(S¹; A, N) ≅ {φ | φ ∘ (T - 𝟙) = 0}` (`TauCeti.circleTwistedCohomologyIso₀`);
+* `H¹(S¹; A, N) ≅ Homₖ(A, N) / {φ ∘ (T - 𝟙)}` (`TauCeti.circleTwistedCohomologyIso₁`);
+* `Hⁿ(S¹; A, N) = 0` for `n ≥ 2` (`TauCeti.isZero_circleTwistedCohomology_add_two`).
+
+For the sign system with values in `ℤ`, precomposition with `T - 𝟙 = -2` is multiplication by
+`-2` on `Hom(ℤ, ℤ) ≅ ℤ`, so `H⁰ = 0` (`TauCeti.isZero_circleTwistedCohomology_zero_intSignRep`)
+and `H¹ = ℤ / 2` (`TauCeti.circleTwistedCohomologyIntSignRepIso₁ZMod`): the torsion of `H₀`
+reappears in `H¹`, as the universal coefficient theorem predicts.
+
 ## Main definitions
 
 * `TauCeti.circleLocalSystem`: the local system on the circle of a representation of `ℤ`.
@@ -61,6 +81,10 @@ line.
 * `TauCeti.circleTwistedHomologyIso₀`, `TauCeti.circleTwistedHomologyIso₁`: the homology in
   degrees `0` and `1`.
 * `TauCeti.circleTwistedHomologyIntSignRepIso₀ZMod`: `H₀(S¹; ℤ⁻) ≅ ℤ / 2`.
+* `TauCeti.circleTwistedCohomologyIsoGroupCohomology`: `Hⁿ(S¹; A, N) ≅ Hⁿ(ℤ, Homₖ(A, N))`.
+* `TauCeti.circleTwistedCohomologyIso₀`, `TauCeti.circleTwistedCohomologyIso₁`: the cohomology
+  in degrees `0` and `1`.
+* `TauCeti.circleTwistedCohomologyIntSignRepIso₁ZMod`: `H¹(S¹; ℤ⁻, ℤ) ≅ ℤ / 2`.
 
 ## Main results
 
@@ -68,6 +92,8 @@ line.
   degree.
 * `TauCeti.isZero_circleTwistedHomology_add_two`: `Hₙ(S¹; A) = 0` for `n ≥ 2`.
 * `TauCeti.isZero_circleTwistedHomology_one_intSignRep`: `H₁(S¹; ℤ⁻) = 0`.
+* `TauCeti.isZero_circleTwistedCohomology_add_two`: `Hⁿ(S¹; A, N) = 0` for `n ≥ 2`.
+* `TauCeti.isZero_circleTwistedCohomology_zero_intSignRep`: `H⁰(S¹; ℤ⁻, ℤ) = 0`.
 
 ## References
 
@@ -177,5 +203,83 @@ theorem isZero_circleTwistedHomology_one_intSignRep :
     linarith
   rw [h]
   exact ModuleCat.isZero_of_subsingleton _
+
+section Cohomology
+
+variable (N : Type) [AddCommGroup N] [Module k N]
+
+/-- **The cohomology of the circle with local coefficients is the group cohomology of `ℤ`**: with
+coefficients in `circleLocalSystem A` and values in a `k`-module `N`, it is the group cohomology of
+`ℤ` with coefficients in `Homₖ(A, N)`. This is the inverse of the map induced by the homotopy
+equivalence with the classifying space of `ℤ`, followed by
+`TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology`. -/
+def circleTwistedCohomologyIsoGroupCohomology (n : ℕ) :
+    (circleLocalSystem A).twistedCohomology k (ModuleCat.of k N) n ≅
+      groupCohomology ((Rep.ihom A).obj (Rep.trivial k (Multiplicative ℤ) N)) n :=
+  have := circleHomotopyEquivClassifyingSpace.isIso_twistedCohomologyMap k (ModuleCat.of k N)
+    (classifyingSpaceLocalSystem k A) n
+  (asIso (twistedCohomologyMap k (ModuleCat.of k N)
+    (TopCat.ofHom circleHomotopyEquivClassifyingSpace.toFun) (classifyingSpaceLocalSystem k A)
+      n)).symm ≪≫ classifyingSpaceTwistedCohomologyIsoGroupCohomology k A N n
+
+/-- **The zeroth cohomology of the circle with local coefficients** in a representation `A` of `ℤ`
+and values in `N` is the module of the `k`-linear maps `φ : A → N` with `φ ∘ T = φ`, the kernel of
+`φ ↦ φ ∘ (T - 𝟙)`, for the monodromy `T = A.ρ (Multiplicative.ofAdd 1)`. -/
+def circleTwistedCohomologyIso₀ :
+    (circleLocalSystem A).twistedCohomology k (ModuleCat.of k N) 0 ≅
+      ModuleCat.of k (LinearMap.ker
+        (LinearMap.lcomp k N (A.ρ (Multiplicative.ofAdd 1) - LinearMap.id))) :=
+  circleTwistedCohomologyIsoGroupCohomology A N 0 ≪≫
+    TauCeti.groupCohomology.H0IsoOfForallMemZpowers _
+      (fun x ↦ by rw [Subgroup.zpowers_inv]; exact Int.mem_zpowers_ofAdd_one x) ≪≫
+    (LinearEquiv.ofEq _ _
+      (congrArg LinearMap.ker (Rep.ihom_obj_trivial_ρ_inv_sub_id A N _))).toModuleIso
+
+/-- **The first cohomology of the circle with local coefficients** in a representation `A` of `ℤ`
+and values in `N` is `Homₖ(A, N)` modulo the maps `φ ∘ (T - 𝟙)`, for the monodromy
+`T = A.ρ (Multiplicative.ofAdd 1)`. -/
+def circleTwistedCohomologyIso₁ :
+    (circleLocalSystem A).twistedCohomology k (ModuleCat.of k N) 1 ≅
+      ModuleCat.of k ((A →ₗ[k] N) ⧸ LinearMap.range
+        (LinearMap.lcomp k N (A.ρ (Multiplicative.ofAdd 1) - LinearMap.id))) :=
+  circleTwistedCohomologyIsoGroupCohomology A N 1 ≪≫
+    Rep.InfiniteCyclicGroup.groupCohomologyIso₁ _
+      (fun x ↦ by rw [Subgroup.zpowers_inv]; exact Int.mem_zpowers_ofAdd_one x)
+      (isOfFinOrder_inv_iff.not.2 Int.not_isOfFinOrder_ofAdd_one) ≪≫
+    (Submodule.quotEquivOfEq _ _
+      (congrArg LinearMap.range (Rep.ihom_obj_trivial_ρ_inv_sub_id A N _))).toModuleIso
+
+/-- **The cohomology of the circle with local coefficients vanishes in degrees at least `2`.** -/
+theorem isZero_circleTwistedCohomology_add_two (n : ℕ) :
+    Limits.IsZero ((circleLocalSystem A).twistedCohomology k (ModuleCat.of k N) (n + 2)) :=
+  (Rep.InfiniteCyclicGroup.isZero_groupCohomology_add_two _ Int.mem_zpowers_ofAdd_one
+    Int.not_isOfFinOrder_ofAdd_one n).of_iso (circleTwistedCohomologyIsoGroupCohomology A N (n + 2))
+
+end Cohomology
+
+/-- **The circle with integral coefficients of monodromy `-1` has `H⁰ = 0`** for the cochains with
+values in `ℤ`: a map `φ : ℤ → ℤ` with `φ ∘ (-1) = φ` vanishes. -/
+theorem isZero_circleTwistedCohomology_zero_intSignRep :
+    Limits.IsZero ((circleLocalSystem intSignRep).twistedCohomology ℤ (ModuleCat.of ℤ ℤ) 0) := by
+  refine Limits.IsZero.of_iso ?_ (circleTwistedCohomologyIso₀ intSignRep ℤ)
+  have h : LinearMap.ker
+      (LinearMap.lcomp ℤ ℤ (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id)) = ⊥ := by
+    rw [LinearMap.ker_eq_bot']
+    intro φ hφ
+    rw [lcomp_intSignRep_ρ_ofAdd_one_sub_id_apply] at hφ
+    exact (smul_eq_zero.1 hφ).resolve_left (by norm_num)
+  rw [h]
+  exact ModuleCat.isZero_of_subsingleton _
+
+/-- **The circle with integral coefficients of monodromy `-1` has `H¹ = ℤ / 2`** for the cochains
+with values in `ℤ`: `Hom(ℤ, ℤ) ≅ ℤ`, and precomposition with `T - 𝟙 = -2` is multiplication by
+`-2`. -/
+def circleTwistedCohomologyIntSignRepIso₁ZMod :
+    (circleLocalSystem intSignRep).twistedCohomology ℤ (ModuleCat.of ℤ ℤ) 1 ≅
+      ModuleCat.of ℤ (ZMod 2) :=
+  circleTwistedCohomologyIso₁ intSignRep ℤ ≪≫
+    (Submodule.Quotient.equiv _ _ (LinearMap.ringLmapEquivSelf ℤ ℤ ℤ)
+        (map_range_lcomp_intSignRep_ρ_ofAdd_one_sub_id.trans (by rw [Nat.cast_ofNat])) ≪≫ₗ
+      (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv).toModuleIso
 
 end TauCeti

@@ -27,7 +27,8 @@ is Mathlib's Lie bracket of vector fields `VectorField.mlieBracket` (in a chart,
 antihomomorphism into the Lie algebra of vector fields. Infinitesimal actions are the input of
 moment maps (`TauCeti.SmoothTwoForm.IsMomentMap`).
 
-An infinitesimal action restricts along a Lie algebra homomorphism `𝔥 → 𝔤`
+The trivial action `0` generates the zero vector field from every element. An infinitesimal action
+restricts along a Lie algebra homomorphism `𝔥 → 𝔤`
 (`TauCeti.InfinitesimalAction.comp`), for instance to a Lie subalgebra. Two infinitesimal actions of
 the same Lie algebra on `M` and on `N` give the diagonal action `Z ↦ (Z_M, Z_N)` on `M × N`
 (`TauCeti.InfinitesimalAction.prod`), because Lie brackets of product vector fields are computed
@@ -147,6 +148,22 @@ theorem contMDiff (a : InfinitesimalAction 𝔤 I M) (Z : 𝔤) :
 theorem map_lie (a : InfinitesimalAction 𝔤 I M) (Z Z' : 𝔤) :
     a ⁅Z, Z'⁆ = -mlieBracket I (a Z) (a Z') :=
   a.toLinearMap_lie' Z Z'
+
+/-- The trivial infinitesimal action, generating the zero vector field from every element. -/
+instance : Zero (InfinitesimalAction 𝔤 I M) where
+  zero :=
+    { toLinearMap := 0
+      contMDiff_toLinearMap' _ := by
+        simp only [LinearMap.zero_apply, Pi.zero_apply]
+        -- The zero section of the tangent bundle is `x ↦ ⟨x, 0⟩`.
+        exact Bundle.contMDiff_zeroSection ℝ (TangentSpace I : M → Type _)
+      toLinearMap_lie' Z Z' := by
+        ext x
+        simp }
+
+@[simp]
+theorem zero_apply (Z : 𝔤) : (0 : InfinitesimalAction 𝔤 I M) Z = 0 :=
+  (rfl)
 
 section comp
 
@@ -283,6 +300,17 @@ theorem orbitTangent_comp (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) :
     (a.comp f).orbitTangent x = (LinearMap.range (f : 𝔥 →ₗ[ℝ] 𝔤)).map (a.eval x) := by
   ext v
   simp
+
+/-- Every element of `𝔤` lies in the isotropy algebra of the trivial action. -/
+@[simp]
+theorem isotropy_zero : (0 : InfinitesimalAction 𝔤 I M).isotropy x = ⊤ :=
+  LieSubalgebra.ext _ _ fun _ ↦ by simp
+
+/-- The orbit tangent spaces of the trivial action vanish. -/
+@[simp]
+theorem orbitTangent_zero : (0 : InfinitesimalAction 𝔤 I M).orbitTangent x = ⊥ := by
+  ext v
+  simp [eq_comm]
 
 end orbit
 

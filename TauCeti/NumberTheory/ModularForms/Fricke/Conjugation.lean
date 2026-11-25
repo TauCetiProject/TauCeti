@@ -188,13 +188,13 @@ Over a field `K` with `(N : K) ≠ 0` this is `W · σ · W⁻¹`, and equally `
 `mapGL_mul_frickeGL`, which carry the invertibility hypothesis. At `N = 0` the formula still
 defines a matrix, but a degenerate one; see the `Level` section of the module docstring. -/
 public def frickeConjSL (σ : ↥(Gamma0 N)) : SL(2, ℤ) :=
-  ⟨!![(σ : Matrix (Fin 2) (Fin 2) ℤ) 1 1, -((σ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 / (N : ℤ));
-      -(N : ℤ) * (σ : Matrix (Fin 2) (Fin 2) ℤ) 0 1, (σ : Matrix (Fin 2) (Fin 2) ℤ) 0 0], by
+  .mk !![(σ : Matrix (Fin 2) (Fin 2) ℤ) 1 1, -((σ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 / (N : ℤ));
+      -(N : ℤ) * (σ : Matrix (Fin 2) (Fin 2) ℤ) 0 1, (σ : Matrix (Fin 2) (Fin 2) ℤ) 0 0] (by
     have hc := (natCast_mul_lowerLeft_ediv σ).symm
     set M := (σ : Matrix (Fin 2) (Fin 2) ℤ)
     have hdet : M 0 0 * M 1 1 - M 0 1 * M 1 0 = 1 := fin_two_mul_sub_mul_eq_one (σ : SL(2, ℤ))
     rw [det_fin_two_of]
-    linear_combination hdet + M 0 1 * hc⟩
+    linear_combination hdet + M 0 1 * hc)
 
 /-- The underlying matrix of `frickeConjSL σ`, with the exact quotient `c / N` of the lower-left
 entry `c` written out. -/

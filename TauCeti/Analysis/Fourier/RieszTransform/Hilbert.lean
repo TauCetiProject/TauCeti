@@ -36,12 +36,23 @@ norm and shows, on an explicit example, that it is not bounded on `L¹`:
   `L² ∩ L¹` (`TauCeti.not_exists_eLpNorm_one_rieszTransform_real_le`). At `p = 1` the weak type
   `(1, 1)` bound, `TauCeti.HasStandardKernel.exists_mul_volume_lt_enorm_le` applied to
   `TauCeti.hasStandardKernel_rieszTransform`, cannot be upgraded to a strong type bound.
+* The commutator of `R_v` with multiplication by `x` is constant off the support of its argument:
+  if `f` vanishes off a compact set `s`, then `x • R_v f (x) - R_v (x • f) (x) = (v / π) • ∫ f`
+  for almost every `x ∉ s`
+  (`TauCeti.ae_smul_rieszTransform_sub_rieszTransform_eq_smul_integral`). Hence this commutator
+  is not bounded on any `Lᵖ`, `0 < p < ∞`
+  (`TauCeti.not_exists_eLpNorm_smul_rieszTransform_sub_rieszTransform_le`). The
+  Coifman–Rochberg–Weiss theorem bounds the commutator `[b, R_v]` for `b` of bounded mean
+  oscillation, and `x` is not of bounded mean oscillation
+  (`ContinuousLinearMap.bmoSeminorm_eq_top`), so the hypothesis on `b` cannot be dropped.
 
 ## References
 
 * E. M. Stein, *Singular Integrals and Differentiability Properties of Functions*, Chapter II,
   §1 and Chapter III, §1.
 * L. Grafakos, *Classical Fourier Analysis*, 3rd ed., Section 5.1.
+* R. R. Coifman, R. Rochberg and G. Weiss, *Factorization theorems for Hardy spaces in several
+  variables*, Ann. of Math. **103** (1976), 611–635 (the commutator theorem).
 -/
 
 public section
@@ -195,5 +206,105 @@ theorem not_exists_eLpNorm_one_rieszTransform_real_le [Nontrivial F] {v : ℝ} (
       (Or.inr measure_Icc_lt_top.ne)
   exact not_integrable_rieszTransform_indicatorConstLp hv zero_lt_one hc
     (memLp_one_iff_integrable.1 ((hC f).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hf)))
+
+/-! ### The commutator with multiplication by `x` -/
+
+/-- **The commutator of the Hilbert transform with `x`.** On the real line let `f ∈ L²` vanish
+almost everywhere off a compact set `s`, and let `g ∈ L²` be `x • f`. Off `s` the commutator of
+the Riesz transform `R_v` with multiplication by `x` is the constant
+
+`x • R_v f (x) - R_v g (x) = (v / π) • ∫ f`
+
+for almost every `x ∉ s`. -/
+theorem ae_smul_rieszTransform_sub_rieszTransform_eq_smul_integral (v : ℝ)
+    {f g : Lp F 2 (volume : Measure ℝ)} {s : Set ℝ} (hs : IsCompact s)
+    (hf : ∀ᵐ x, x ∉ s → f x = 0) (hg : ∀ᵐ x, g x = x • f x) :
+    ∀ᵐ x, x ∉ s → x • rieszTransform F v f x - rieszTransform F v g x = (v / π) • ∫ y, f y := by
+  have hg0 : ∀ᵐ x, x ∉ s → g x = 0 := by
+    filter_upwards [hf, hg] with x hfx hgx hxs
+    rw [hgx, hfx hxs, smul_zero]
+  have : IsFiniteMeasure (volume.restrict s) := isFiniteMeasure_restrict.2 hs.measure_lt_top.ne
+  have hfi : Integrable f :=
+    IntegrableOn.integrable_of_ae_notMem_eq_zero (s := s)
+      (((Lp.memLp f).restrict s).integrable one_le_two) hf
+  filter_upwards [ae_rieszTransform_eq_integral v f hs hf,
+    ae_rieszTransform_eq_integral v g hs hg0] with x hRf hRg hxs
+  rw [hRf hxs, hRg hxs]
+  have hKf : Integrable fun y ↦ rieszKernel v (x - y) • f y :=
+    integrable_rieszKernel_sub_smul_of_notMem v one_le_two (Lp.memLp f) hs hf hxs
+  -- Almost everywhere `K(x - y) • g y = x • (K(x - y) • f y) - (v / π) • f y`.
+  have hpt : (fun y ↦ rieszKernel v (x - y) • g y) =ᵐ[volume]
+      fun y ↦ x • (rieszKernel v (x - y) • f y) - (v / π) • f y := by
+    filter_upwards [hf, hg] with y hfy hgy
+    rw [hgy]
+    by_cases hys : y ∈ s
+    · have hxy : x - y ≠ 0 := sub_ne_zero.2 fun h ↦ hxs (h ▸ hys)
+      rw [smul_smul, smul_smul, ← sub_smul, rieszKernel_real]
+      congr 1
+      field_simp
+      ring
+    · simp [hfy hys]
+  have h₁ : Integrable fun y ↦ x • (rieszKernel v (x - y) • f y) := hKf.smul x
+  have h₂ : Integrable fun y ↦ (v / π) • f y := hfi.smul (v / π)
+  rw [integral_congr_ae hpt, integral_sub h₁ h₂, integral_smul, integral_smul, sub_sub_cancel]
+
+/-- **The commutator of the Hilbert transform with `x` is unbounded.** On the real line, for
+`v ≠ 0`, nonzero `F` and `0 < p < ∞`, there is no constant `C` with
+
+`‖x • R_v f - R_v (x • f)‖_p ≤ C ‖f‖_p`
+
+for all `f ∈ L²` with `x • f ∈ L²`. This is consistent with the
+Coifman–Rochberg–Weiss theorem `TauCeti.exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow`, which
+bounds `[b, T]` for `b` of bounded mean oscillation, since `x` does not have bounded mean
+oscillation (`ContinuousLinearMap.bmoSeminorm_eq_top`). -/
+theorem not_exists_eLpNorm_smul_rieszTransform_sub_rieszTransform_le [Nontrivial F] {v : ℝ}
+    (hv : v ≠ 0) {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) :
+    ¬ ∃ C : ℝ≥0, ∀ f g : Lp F 2 (volume : Measure ℝ), (∀ᵐ x, g x = x • f x) →
+      eLpNorm (fun x ↦ x • rieszTransform F v f x - rieszTransform F v g x) p volume ≤
+        C * eLpNorm f p volume := by
+  -- Test against `f`, the indicator of `[0, 1]` times `c ≠ 0`: by
+  -- `ae_smul_rieszTransform_sub_rieszTransform_eq_smul_integral`, the commutator is the nonzero
+  -- constant `(v / π) • c` on `(1, ∞)`, so its `Lᵖ` norm is infinite while `‖f‖_p` is finite.
+  rintro ⟨C, hC⟩
+  obtain ⟨c, hc⟩ := exists_ne (0 : F)
+  set f : Lp F 2 (volume : Measure ℝ) :=
+    indicatorConstLp (s := Icc 0 1) 2 measurableSet_Icc measure_Icc_lt_top.ne c
+  have hf : (f : ℝ → F) =ᵐ[volume] (Icc 0 1).indicator fun _ ↦ c := indicatorConstLp_coeFn
+  -- The function `x • f`, bounded by `‖c‖` and supported in `[0, 1]`, is in `L²`.
+  have hg : MemLp ((Icc (0 : ℝ) 1).indicator fun x ↦ x • c) 2 volume := by
+    rw [memLp_indicator_iff_restrict measurableSet_Icc.nullMeasurableSet]
+    have : IsFiniteMeasure (volume.restrict (Icc (0 : ℝ) 1)) :=
+      isFiniteMeasure_restrict.2 measure_Icc_lt_top.ne
+    refine MemLp.of_bound (continuous_id.smul continuous_const).aestronglyMeasurable ‖c‖
+      (ae_restrict_of_forall_mem measurableSet_Icc fun x hx ↦ ?_)
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hx.1]
+    exact mul_le_of_le_one_left (norm_nonneg c) hx.2
+  have hgf : ∀ᵐ x, hg.toLp _ x = x • f x := by
+    filter_upwards [hg.coeFn_toLp, hf] with x hgx hfx
+    rw [hgx, hfx]
+    by_cases hx : x ∈ Icc (0 : ℝ) 1 <;> simp [hx]
+  have hint : ∫ y, f y = c := by
+    rw [integral_indicatorConstLp, Real.volume_real_Icc_of_le zero_le_one, sub_zero, one_smul]
+  set w : F := (v / π) • c
+  have hw : w ≠ 0 := smul_ne_zero (div_ne_zero hv Real.pi_ne_zero) hc
+  -- On `(1, ∞)` the commutator is the nonzero constant `w`, so its `Lᵖ` norm is infinite.
+  have hcomm : ∀ᵐ x ∂volume.restrict (Ioi 1),
+      x • rieszTransform F v f x - rieszTransform F v (hg.toLp _) x = w := by
+    rw [ae_restrict_iff' measurableSet_Ioi]
+    filter_upwards [ae_smul_rieszTransform_sub_rieszTransform_eq_smul_integral v isCompact_Icc
+      (hf.mono fun x hx hxs ↦ by rw [hx, indicator_of_notMem hxs]) hgf] with x hx hx1
+    rw [hx fun h ↦ (not_le.2 (mem_Ioi.1 hx1)) h.2, hint]
+  have htop : eLpNorm (fun x ↦ x • rieszTransform F v f x - rieszTransform F v (hg.toLp _) x) p
+      volume = ∞ := by
+    refine top_le_iff.1 ((le_of_eq ?_).trans
+      (eLpNorm_mono_measure _ (Measure.restrict_le_self (s := Ioi 1))))
+    rw [eLpNorm_congr_ae hcomm, eLpNorm_const' w hp0 hp, Measure.restrict_apply_univ,
+      Real.volume_Ioi, ENNReal.top_rpow_of_pos (by simp [ENNReal.toReal_pos hp0 hp]),
+      ENNReal.mul_top (by simpa using hw)]
+  have hfp : eLpNorm f p volume ≠ ∞ := by
+    rw [eLpNorm_congr_ae hf]
+    exact (memLp_indicator_const p measurableSet_Icc.nullMeasurableSet c
+      (Or.inr measure_Icc_lt_top.ne)).eLpNorm_ne_top
+  exact (ENNReal.mul_ne_top ENNReal.coe_ne_top hfp) (top_le_iff.1 (htop ▸ hC f _ hgf))
 
 end TauCeti

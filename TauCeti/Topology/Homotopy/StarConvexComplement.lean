@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.Ball.Radial.PuncturedBall
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
@@ -199,32 +200,28 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K S T : Set E} 
 
 open TauCeti
 
-omit [NormedSpace ℝ E] in
-/-- The scale factor `max 1 (r / ‖g x - p‖)` of the outward radial push is continuous along a
-continuous map `g` avoiding `p`. -/
-private lemma continuous_max_one_div_norm_sub {X : Type*} [TopologicalSpace X] {g : X → E}
-    (hg : Continuous g) (hgp : ∀ x, g x ≠ p) (r : ℝ) :
-    Continuous fun x ↦ max 1 (r / ‖g x - p‖) :=
-  continuous_const.max (continuous_const.div (hg.sub continuous_const).norm fun x ↦
-    norm_ne_zero_iff.2 (sub_ne_zero.2 (hgp x)))
-
 /-- The outward radial push `z ↦ p + max 1 (r / ‖z - p‖) • (z - p)` of a set `T` not containing
 `p` and closed under moving its points away from `p` along rays from `p`. It moves every point of
-`T` to distance at least `r` from `p`. -/
+`T` to distance at least `r` from `p`; it is the endpoint of `TauCeti.puncturedBallPush r`
+centred at `p`. -/
 private def outwardPush (hpT : p ∉ T) (hT : ∀ z ∈ T, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ T)
     (r : ℝ) : C(T, T) where
-  toFun z := ⟨p + max 1 (r / ‖(z : E) - p‖) • ((z : E) - p), hT _ z.property _ (le_max_left _ _)⟩
+  toFun z := ⟨p + puncturedBallPush r 1 ((z : E) - p), by
+    rw [puncturedBallPush_apply]
+    exact hT _ z.property _ (le_max_left _ _)⟩
   continuous_toFun := by
-    refine Continuous.subtype_mk (continuous_const.add (Continuous.smul ?_
-      (continuous_subtypeVal.sub continuous_const))) _
-    exact continuous_max_one_div_norm_sub continuous_subtypeVal
-      (fun z ↦ ne_of_mem_of_not_mem z.property hpT) r
+    refine Continuous.subtype_mk (continuous_const.add ?_) _
+    refine continuous_iff_continuousAt.2 fun z ↦ ?_
+    have hz : (z : E) - p ≠ 0 := sub_ne_zero.2 (ne_of_mem_of_not_mem z.property hpT)
+    exact ContinuousAt.comp (g := fun q : I × E ↦ puncturedBallPush r q.1 q.2)
+      (f := fun z : T ↦ ((1 : I), (z : E) - p)) (continuousAt_puncturedBallPush r hz)
+      (continuous_const.prodMk (continuous_subtypeVal.sub continuous_const)).continuousAt
 
 /-- The value of the outward radial push. -/
 private lemma coe_outwardPush_apply (hpT : p ∉ T)
     (hT : ∀ z ∈ T, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ T) (r : ℝ) (z : T) :
-    (outwardPush hpT hT r z : E) = p + max 1 (r / ‖(z : E) - p‖) • ((z : E) - p) :=
-  rfl
+    (outwardPush hpT hT r z : E) = p + max 1 (r / ‖(z : E) - p‖) • ((z : E) - p) := by
+  simp [outwardPush, puncturedBallPush_apply]
 
 /-- A set `S` closed under outward radial moves from `p` stays so after removing `p`. -/
 private lemma add_smul_sub_mem_diff_singleton
@@ -232,21 +229,23 @@ private lemma add_smul_sub_mem_diff_singleton
     ∀ z ∈ S \ {p}, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ S \ {p} := fun z hz c hc ↦
   ⟨hS _ hz.1 _ hc, fun h ↦ hz.2 <| by simpa [sub_eq_zero, (one_pos.trans_le hc).ne'] using h⟩
 
-/-- The straight-line homotopy from the outward radial push to the identity of `T`. Every point
-of the segment from `z` to its push is `p + c • (z - p)` with `c ≥ 1`. -/
+/-- The homotopy from the outward radial push to the identity of `T`: at time `t` it is the
+punctured-ball push `TauCeti.puncturedBallPush r (σ t)` centred at `p`, which moves every point
+`z` to `p + c • (z - p)` with `c ≥ 1`. -/
 private def outwardPushHomotopy (hpT : p ∉ T)
     (hT : ∀ z ∈ T, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ T) (r : ℝ) :
     (outwardPush hpT hT r).Homotopy (ContinuousMap.id T) where
-  toFun x := ⟨p + ((1 - (x.1 : ℝ)) * max 1 (r / ‖(x.2 : E) - p‖) + x.1) • ((x.2 : E) - p),
-    hT _ x.2.property _
-        (by nlinarith [le_max_left 1 (r / ‖(x.2 : E) - p‖), x.1.property.1, x.1.property.2])⟩
+  toFun x := ⟨p + puncturedBallPush r (σ x.1) ((x.2 : E) - p), by
+    rw [puncturedBallPush_apply]
+    exact hT _ x.2.property _ (le_max_left _ _)⟩
   continuous_toFun := by
-    have hx : Continuous fun x : I × T ↦ (x.2 : E) := continuous_subtypeVal.comp continuous_snd
-    have ht : Continuous fun x : I × T ↦ (x.1 : ℝ) := continuous_subtypeVal.comp continuous_fst
-    have hmax := continuous_max_one_div_norm_sub hx (fun x ↦ ne_of_mem_of_not_mem x.2.property hpT)
-        r
-    exact Continuous.subtype_mk (continuous_const.add
-      ((((continuous_const.sub ht).mul hmax).add ht).smul (hx.sub continuous_const))) _
+    refine Continuous.subtype_mk (continuous_const.add ?_) _
+    refine continuous_iff_continuousAt.2 fun x ↦ ?_
+    have hx : (x.2 : E) - p ≠ 0 := sub_ne_zero.2 (ne_of_mem_of_not_mem x.2.property hpT)
+    exact ContinuousAt.comp (g := fun q : I × E ↦ puncturedBallPush r q.1 q.2)
+      (f := fun x : I × T ↦ (σ x.1, (x.2 : E) - p)) (continuousAt_puncturedBallPush r hx)
+      ((continuous_symm.comp continuous_fst).prodMk
+        ((continuous_subtypeVal.comp continuous_snd).sub continuous_const)).continuousAt
   map_zero_left z := by
     ext
     simp [outwardPush]
@@ -305,7 +304,7 @@ theorem coe_diffHomotopyEquivDiffSingleton_symm_apply (hK : StarConvex ℝ p K) 
     (z : ↥(S \ {p})) :
     ((hK.diffHomotopyEquivDiffSingleton hp hKr hS).symm z : E) =
       p + max 1 (r / ‖(z : E) - p‖) • ((z : E) - p) :=
-  (rfl)
+  coe_outwardPush_apply (T := S \ {p}) (fun h ↦ h.2 rfl) (add_smul_sub_mem_diff_singleton hS) r z
 
 /-- **The complement in a closed half-space of a bounded star-convex set about a boundary point is
 contractible.** Let `f` be a nonzero continuous linear functional and `K` a bounded set,
