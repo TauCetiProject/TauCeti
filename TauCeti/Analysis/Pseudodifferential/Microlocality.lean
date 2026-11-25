@@ -652,19 +652,18 @@ the coordinates of `v` in a basis `(e_j)` of `V`: with dual basis `(c_j)`,
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ V]
 
-/-- A finite-dimensional complex coefficient space is complete. -/
-local instance instCompleteSpaceOfFiniteDimensionalComplex : CompleteSpace V :=
-  FiniteDimensional.completeSpace ℂ V
-
 /-- **Microlocality of matrix-valued pseudodifferential operators.** Let `a` be a symbol of order
 `m` with values in `V →L[ℂ] W` and compact spatial support, where `V` is finite-dimensional. For
 every `v ∈ H^t(ℝⁿ; V)`, the wave front set of `Op(a) v` is contained in that of `v`:
 `WF(Op(a) v) ⊆ WF(v)`, for the wave front sets of vector-valued distributions. -/
 theorem vectorWaveFrontSet_toDistribution_quantizeSobolev_subset [CompleteSpace W]
     {a : Symbol n V W m}
-    (ha : a.HasCompactSpatialSupport) (t : ℝ) (v : H^{t}(CoordinateSpace n, V)) :
-    (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).vectorWaveFrontSet ⊆
-      (toDistribution ⊤ v.toDistr).vectorWaveFrontSet := by
+    (ha : a.HasCompactSpatialSupport) (t : ℝ) :
+    let _ := FiniteDimensional.completeSpace ℂ V
+    ∀ v : H^{t}(CoordinateSpace n, V),
+      (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).vectorWaveFrontSet ⊆
+        (toDistribution ⊤ v.toDistr).vectorWaveFrontSet := by
+  intro _ v
   let b := Module.finBasis ℂ V
   intro p hp
   obtain ⟨ℓ, hp⟩ := mem_vectorWaveFrontSet_iff.1 hp
@@ -691,10 +690,13 @@ values in `V →L[ℂ] W` between finite-dimensional spaces and compact spatial 
 `v ∈ H^t(ℝⁿ; V)`, the singular support of `Op(a) v` is contained in the singular support of
 `v`. -/
 theorem singularSupport_toDistribution_quantizeSobolev_subset [FiniteDimensional ℂ W]
-    {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) (t : ℝ)
-    (v : H^{t}(CoordinateSpace n, V)) :
-    (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).singularSupport ⊆
-      (toDistribution ⊤ v.toDistr).singularSupport := by
+    {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) (t : ℝ) :
+    let _ := FiniteDimensional.completeSpace ℂ V
+    let _ := FiniteDimensional.completeSpace ℂ W
+    ∀ v : H^{t}(CoordinateSpace n, V),
+      (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).singularSupport ⊆
+        (toDistribution ⊤ v.toDistr).singularSupport := by
+  intro _ _ v
   rw [← fst_image_vectorWaveFrontSet, ← fst_image_vectorWaveFrontSet]
   exact image_mono (vectorWaveFrontSet_toDistribution_quantizeSobolev_subset ha t v)
 
