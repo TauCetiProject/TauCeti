@@ -178,11 +178,8 @@ private lemma iCycles_app_mapCyclesIso_hom_cyclesMap {L : CochainComplex (Module
       U)).hom (HomologicalComplex.cyclesMap Φ 0
         (((L.sc 0).mapCyclesIso (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).inv z))) =
       Φ.f 0 (L.iCycles 0 z) := by
-  refine (ConcreteCategory.congr_hom (ShortComplex.mapCyclesIso_hom_iCycles (M.sc 0)
-    ((evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj U)) _).trans ?_
-  -- the cycles of the mapped short complex are those of the mapped complex in degree `0`
-  change ((((evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj U).mapHomologicalComplex
-    _).obj M).iCycles 0 _ = _
+  refine (ConcreteCategory.congr_hom (Functor.mapCyclesIso_hom_comp_map_iCycles
+    ((evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj U) _ 0 M) _).trans ?_
   refine (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i Φ 0) _).trans ?_
   exact congrArg (Φ.f 0) (ConcreteCategory.congr_hom
     (ShortComplex.mapCyclesIso_inv_comp_iCycles (L.sc 0)
@@ -274,31 +271,27 @@ theorem equiv₀_moduleCohomologyForgetComparison_hom_app_toRightDerivedZero
     ConcreteCategory.comp_apply, ModuleCat.forget₂_map]
   -- the objects of the composite agree only up to unfolding, so its factors are matched with `erw`
   erw [hA]
-  -- forgetting the module structure commutes with the class map; `erw` matches the class map
-  -- `(ΓK.sc 0).homologyπ` of the `let` cycle `c`, seen through `forget₂`, with the composite
-  -- `ΓK.liftCycles _ ≫ ΓK.homologyπ 0` applied to `s`, by unfolding `c`, the composite and
-  -- `HomologicalComplex.homologyπ`
-  rw [Functor.mapHomologicalComplexCompHomologyFunctorIso_inv_app]
-  erw [(ΓK.sc 0).map_homologyπ_comp_mapHomologyIso_inv_apply
-    (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) c]
-  -- the maps of complexes act on classes through their maps on cycles; `erw` reads the class map
-  -- of the mapped short complex `(ΓK.sc 0).map _` as `homologyπ _ 0` of the mapped complex, by
-  -- unfolding `HomologicalComplex.sc` and `HomologicalComplex.homologyπ`
-  erw [← ConcreteCategory.comp_apply (HomologicalComplex.homologyπ _ 0)]
-  rw [HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyπ_naturality,
+  -- forgetting the module structure commutes with the class map; the stated type reads
+  -- `forget₂` applied to the class map, on elements, as the class map itself, as the goal shows it
+  have hB : (Functor.mapHomologicalComplexCompHomologyFunctorIso
+      (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) _ 0).inv.app ΓK (ΓK.homologyπ 0 c) =
+        (((forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}).mapHomologicalComplex _).obj ΓK).homologyπ 0
+          (((ΓK.sc 0).mapCyclesIso (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).inv c) :=
+    Functor.map_homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_inv_app_apply
+      (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) _ 0 ΓK c
+  -- the maps of complexes act on classes through their maps on cycles
+  rw [hB, ← ConcreteCategory.comp_apply (HomologicalComplex.homologyπ _ 0),
+    HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyπ_naturality,
     ConcreteCategory.comp_apply]
-  -- evaluation at `⊤` commutes with the class map; `erw` reads `homologyπ _ 0` of the evaluated
-  -- complex as the class map of the evaluated short complex `(P.sc 0).map _`, by unfolding
-  -- `HomologicalComplex.homologyπ` and `HomologicalComplex.sc`
+  -- evaluation at `⊤` commutes with the class map
   let P := ((sheafToPresheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}).mapHomologicalComplex
     (ComplexShape.up ℕ)).obj (godementForget F)
-  rw [Functor.mapHomologicalComplexCompHomologyFunctorIso_hom_app]
-  erw [ShortComplex.homologyπ_comp_mapHomologyIso_hom_apply]
+  rw [Functor.homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app_apply]
   simp only [evaluation_obj_map]
   -- `erw`: the component of `NatIso.ofComponents` at the Godement resolution unfolds to
-  -- `homologyIsoCohomologyPresheaf` and `(P.sc 0).homologyπ` to `P.homologyπ 0`; the component
-  -- of `cohomologyPresheafEvaluationIsoFunctorH` is the abbreviation `cohomologyPresheafObjIsoH`,
-  -- whose source `H' _ 0 ⊤` is the object of the composite `cohomologyPresheafFunctor ⋙ evaluation`
+  -- `homologyIsoCohomologyPresheaf`; the component of `cohomologyPresheafEvaluationIsoFunctorH` is
+  -- the abbreviation `cohomologyPresheafObjIsoH`, whose source `H' _ 0 ⊤` is the object of the
+  -- composite `cohomologyPresheafFunctor ⋙ evaluation`
   erw [Sheaf.H'.homologyIsoCohomologyPresheaf_hom_app_homologyπ_apply,
     Sheaf.H.equiv₀_cohomologyPresheafObjIsoH_hom_apply]
   -- the class of the image of a section under the augmentation is that section
