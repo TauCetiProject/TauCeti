@@ -44,8 +44,9 @@ first factor are read in `Fin.append` coordinates.
   points, hence finite sets, are definable, so definability allows parameters from `R`.
 * `TauCeti.OMinimalStructure.DefinableMapOn.definable_image`,
   `TauCeti.OMinimalStructure.DefinableMapOn.definable_inter_preimage`,
-  `TauCeti.OMinimalStructure.DefinableMapOn.comp`: images and preimages of definable sets under
-  definable maps are definable, and definable maps compose.
+  `TauCeti.OMinimalStructure.DefinableMapOn.comp`: for a map `f` definable on `A`, the image
+  `f '' A` and, for definable `B`, the preimage `A ∩ f ⁻¹' B` taken within `A` are definable, and
+  definable maps compose.
 
 ## Implementation notes
 
@@ -418,7 +419,8 @@ theorem definable_image (hf : S.DefinableMapOn f A) : S.Definable k (f '' A) := 
   rw [image_image]
   simp [Function.comp_def]
 
-/-- The preimage of a definable set under a definable map is definable. -/
+/-- The preimage of a definable set under a map definable on `A`, taken within `A`, is
+definable. -/
 theorem definable_inter_preimage (hf : S.DefinableMapOn f A) {B : Set (Fin k → R)}
     (hB : S.Definable k B) : S.Definable m (A ∩ f ⁻¹' B) := by
   convert (hf.definable_graph.inter (hB.preimage_comp (Fin.natAdd m))).image_comp
@@ -451,7 +453,7 @@ theorem definableMapOn_empty (f : (Fin m → R) → Fin k → R) : S.DefinableMa
 
 /-- A coordinate map `x ↦ x ∘ ι` is definable on every definable set. This includes the identity,
 the coordinate projections and the diagonal embeddings. -/
-theorem definableMapOn_comp (hA : S.Definable m A) (ι : Fin k → Fin m) :
+theorem definableMapOn_precomp (hA : S.Definable m A) (ι : Fin k → Fin m) :
     S.DefinableMapOn (· ∘ ι) A := by
   rw [definableMapOn_def]
   convert (hA.preimage_comp (Fin.castAdd k)).inter
