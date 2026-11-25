@@ -148,12 +148,9 @@ theorem eq_representedQuotientRightMul_iff
     f = representedQuotientRightMul eP eQ g h ↔
       eP.hom ≫ (CommAlgCat.pointsSheafFunctor R).map f ≫ eQ.inv =
         fppfHomogeneousQuotientRightMul G g h := by
-  let eHom := (CommAlgCat.fullyFaithfulPointsSheafFunctor R).homEquiv.trans
-    (Iso.homCongr eP eQ).symm
-  change f = eHom.symm (fppfHomogeneousQuotientRightMul G g h) ↔
-    eHom f = fppfHomogeneousQuotientRightMul G g h
-  exact ⟨fun h ↦ h ▸ eHom.apply_symm_apply _, fun h ↦
-    eHom.injective (h.trans (eHom.apply_symm_apply _).symm)⟩
+  exact Equiv.eq_symm_apply
+    ((CommAlgCat.fullyFaithfulPointsSheafFunctor R).homEquiv.trans
+      (Iso.homCongr eP eQ).symm)
 
 /-- **Independence of the representative.** Two morphisms `xP ↦ xgQ` between representing
 schemes agree exactly when their representatives give the same scheme point `gQ` of `Y`. -/
