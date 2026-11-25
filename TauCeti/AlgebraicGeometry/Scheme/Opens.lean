@@ -440,7 +440,8 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.exists_mem_range_basicOpen_le_sup
 
 /-- A clopen piece of a scheme is a basic open: if `V` and `W` are complementary opens of `X`,
 the global function that is `1` on `V` and `0` on `W` has basic open `V`. -/
-theorem _root_.AlgebraicGeometry.Scheme.exists_basicOpen_eq_of_isCompl {V W : X.Opens}
+theorem _root_.AlgebraicGeometry.Scheme.exists_basicOpen_eq_of_isCompl (X : Scheme.{u})
+    {V W : X.Opens}
     (h : IsCompl V W) : ∃ e : Γ(X, ⊤), X.basicOpen e = V := by
   obtain ⟨a, hV, hW⟩ : ∃ a : Γ(X, V ⊔ W),
       X.presheaf.map (homOfLE le_sup_left : V ⟶ V ⊔ W).op a = 1 ∧

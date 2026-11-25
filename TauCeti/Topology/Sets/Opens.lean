@@ -150,13 +150,13 @@ theorem _root_.TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_
 
 /-- The preimages of two open sets under a continuous map are complementary exactly when the
 range of the map lies in their union and misses their intersection. -/
-theorem isCompl_comap_iff {Y : Type*} [TopologicalSpace Y] {f : C(X, Y)} {U V : Opens Y} :
+theorem isCompl_comap_iff {Y : Type*} [TopologicalSpace Y] {f : C(X, Y)} (U V : Opens Y) :
     IsCompl (comap f U) (comap f V) ↔
       Set.range f ⊆ (U : Set Y) ∪ V ∧ Disjoint (Set.range f) ((U : Set Y) ∩ V) := by
-  rw [isCompl_iff, disjoint_iff, codisjoint_iff, ← map_inf, ← map_sup,
-    SetLike.ext'_iff (p := comap f (U ⊓ V)), SetLike.ext'_iff (p := comap f (U ⊔ V)), coe_comap,
-    coe_comap, coe_bot, coe_top, coe_inf, coe_sup, Set.preimage_eq_empty_iff,
-    Set.preimage_eq_univ_iff, disjoint_comm, and_comm]
+  rw [isCompl_iff, disjoint_iff, codisjoint_iff, ← coe_eq_empty, ← coe_eq_univ]
+  simp only [coe_inf, coe_sup, coe_comap, ← Set.preimage_inter, ← Set.preimage_union,
+    Set.preimage_eq_empty_iff, Set.preimage_eq_univ_iff]
+  exact and_comm.trans (and_congr_right' disjoint_comm)
 
 /-- An open subset of a locally compact space is locally compact. -/
 instance instLocallyCompactSpace [LocallyCompactSpace X] (U : Opens X) : LocallyCompactSpace U :=
