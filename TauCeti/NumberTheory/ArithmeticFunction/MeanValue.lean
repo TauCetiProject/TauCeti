@@ -188,7 +188,7 @@ private theorem sum_powerset_filter_lt_le_half_mul_prod {f : ArithmeticFunction 
         rw [hσz, Real.exp_sum, ← prod_mul_distrib]
         gcongr with p hp
         · exact fun p hp ↦ by have := ha p hp; positivity
-        · exact one_add_mul_le_one_add_mul_exp_mul_sub_one (ha p hp) (Real.one_le_exp
+        · exact one_add_mul_le_one_add_mul_exp_mul_sub_one (Real.one_le_exp
             (mul_nonneg (inv_nonneg.2 hlogy.le)
               (Real.log_nonneg (by exact_mod_cast (Nat.mem_primesLE.1 hp).2.one_le))))
     _ ≤ Real.exp (-(M + 1)) * ((∏ p ∈ S, (1 + f p / p)) * Real.exp M) := by

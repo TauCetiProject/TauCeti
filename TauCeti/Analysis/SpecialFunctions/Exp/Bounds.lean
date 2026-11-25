@@ -63,7 +63,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
 * `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
 * `TauCeti.one_add_mul_le_one_add_mul_exp_mul_sub_one`:
-  `1 + a x ≤ (1 + a) exp (a (x - 1))` for `a ≥ 0` and `x ≥ 1`.
+  `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`.
 * `TauCeti.inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq`:
   `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`.
 -/
@@ -377,11 +377,16 @@ theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k �
   rw [exp_natCast_mul]
   exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
 
-/-- `1 + a x ≤ (1 + a) exp (a (x - 1))` for `a ≥ 0` and `x ≥ 1`. -/
-theorem one_add_mul_le_one_add_mul_exp_mul_sub_one {a x : ℝ} (ha : 0 ≤ a) (hx : 1 ≤ x) :
+/-- `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`. -/
+theorem one_add_mul_le_one_add_mul_exp_mul_sub_one {a x : ℝ} (hx : 1 ≤ x) :
     1 + a * x ≤ (1 + a) * Real.exp (a * (x - 1)) := by
-  have h := Real.add_one_le_exp (a * (x - 1))
-  nlinarith [mul_nonneg ha (sub_nonneg.2 hx), mul_nonneg (mul_nonneg ha ha) (sub_nonneg.2 hx)]
+  rcases le_or_gt (-1) a with ha | ha
+  · have h := Real.add_one_le_exp (a * (x - 1))
+    nlinarith [mul_le_mul_of_nonneg_left h (neg_le_iff_add_nonneg'.1 ha),
+      mul_nonneg (sq_nonneg a) (sub_nonneg.2 hx)]
+  · have h : Real.exp (a * (x - 1)) ≤ 1 :=
+      Real.exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg (by linarith) (sub_nonneg.2 hx))
+    nlinarith [mul_nonneg_of_nonpos_of_nonpos (by linarith : 1 + a ≤ 0) (sub_nonpos.2 h)]
 
 /-- `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`. -/
 theorem inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq {x t : ℝ} (hx : 0 ≤ x) (hxt : x ≤ t)
