@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Defs
+public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Field.Defs
 
 /-!
@@ -86,13 +86,6 @@ theorem isUnit_natCast_add_one (K : Type*) {A : Type*} [Semifield K] [CharZero K
     [Algebra K A] (m : ℕ) : IsUnit ((m : A) + 1) := by
   simpa only [Nat.cast_one] using isUnit_natCast_add_of_ne_zero K (A := A) m one_ne_zero
 
-/-- Multiplying by a natural number `m` and by the image of `m⁻¹ : K` cancel in an algebra over a
-semifield `K`, provided `m` is nonzero in `K`. -/
-@[simp]
-theorem natCast_mul_algebraMap_inv {K A : Type*} [Semifield K] [Semiring A] [Algebra K A] {m : ℕ}
-    (hm : (m : K) ≠ 0) : (m : A) * algebraMap K A (m : K)⁻¹ = 1 := by
-  simpa using congrArg (algebraMap K A) (mul_inv_cancel₀ hm)
-
 /-- In a scalar tower `R → K → A` over a semifield `K`, multiplying by the image of `a : R` and by
 the image of `a⁻¹ : K` cancel, provided `a` is nonzero in `K`; `natCast_mul_algebraMap_inv` is the
 case of a natural number. -/
@@ -103,6 +96,13 @@ theorem algebraMap_mul_algebraMap_inv {R K A : Type*} [CommSemiring R] [Semifiel
   rw [Algebra.algebraMap_eq_smul_one a, ← smul_one_smul K a (1 : A),
     ← Algebra.algebraMap_eq_smul_one, ← Algebra.algebraMap_eq_smul_one, ← map_mul,
     mul_inv_cancel₀ ha, map_one]
+
+/-- Multiplying by a natural number `m` and by the image of `m⁻¹ : K` cancel in an algebra over a
+semifield `K`, provided `m` is nonzero in `K`. -/
+@[simp]
+theorem natCast_mul_algebraMap_inv {K A : Type*} [Semifield K] [Semiring A] [Algebra K A] {m : ℕ}
+    (hm : (m : K) ≠ 0) : (m : A) * algebraMap K A (m : K)⁻¹ = 1 := by
+  simpa using algebraMap_mul_algebraMap_inv (R := ℕ) (A := A) (by simpa using hm)
 
 /-- Multiplying by a numeral `n` and by the image of `n⁻¹ : K` cancel in an algebra over a
 semifield `K`, provided `n` is nonzero in `K`; for instance `2 · (1 / 2) = 1` in a `ℚ`-algebra. -/

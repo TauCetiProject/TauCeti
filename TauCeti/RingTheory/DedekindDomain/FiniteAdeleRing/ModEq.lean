@@ -18,7 +18,8 @@ Let `R` be a Dedekind domain with fraction field `K`, write `𝔸_f` for its fin
 used to define the congruence subgroups of `GL₂(𝔸_f)`.
 
 Congruence modulo `N` is `SModEq` for the `Ô`-submodule `NÔ` of `𝔸_f`, so it is an equivalence
-relation compatible with addition and with multiplication by integral finite adeles. For `N ≠ 0`
+relation compatible with addition and with multiplication by integral finite adeles, and it
+passes to divisors of the modulus (`ModEq.of_dvd`). For `N ≠ 0`
 it says that `(x - y) / N` is integral (`modEq_iff_mul_inv_mem`); modulo `0` it is equality
 (`modEq_zero_iff`), since `0Ô = {0}`. The formula `(x - y) / N` cannot define congruence modulo
 `0`: there it is `0` for every pair. For integral `x` and `y`, congruence modulo `N` is membership
@@ -29,6 +30,8 @@ of `x - y` in the completed ideal `NÔ` of `(N)` (`modEq_iff_sub_mem_completedId
 * `IsDedekindDomain.FiniteAdeleRing.ModEq`: congruence modulo `N`, `x - y ∈ NÔ`.
 * `IsDedekindDomain.FiniteAdeleRing.modEq_iff_mul_inv_mem`: for `N ≠ 0`, `(x - y) / N ∈ Ô`.
 * `IsDedekindDomain.FiniteAdeleRing.modEq_zero_iff`: congruence modulo `0` is equality.
+* `IsDedekindDomain.FiniteAdeleRing.ModEq.of_dvd`: congruence modulo `M` implies congruence
+  modulo every divisor `N` of `M`.
 * `IsDedekindDomain.FiniteAdeleRing.modEq_iff_sub_mem_completedIdeal`: the comparison with
   `completedIdeal`.
 
@@ -65,6 +68,15 @@ theorem modEq_iff {N : R} {x y : FiniteAdeleRing R K} :
 @[simp]
 theorem modEq_zero_iff {x y : FiniteAdeleRing R K} : ModEq 0 x y ↔ x = y := by
   rw [ModEq, map_zero, Submodule.span_singleton_eq_bot.mpr rfl, SModEq.bot]
+
+/-- **Congruence passes to divisors of the modulus**: if `N ∣ M`, then congruence modulo `M`
+implies congruence modulo `N`, since `MÔ ⊆ NÔ`. -/
+theorem ModEq.of_dvd {N M : R} {x y : FiniteAdeleRing R K} (h : N ∣ M) (hxy : ModEq M x y) :
+    ModEq N x y := by
+  obtain ⟨c, rfl⟩ := h
+  refine SModEq.mono ((Submodule.span_singleton_le_iff_mem _ _).mpr
+    (Submodule.mem_span_singleton.mpr ⟨⟨_, (integralAdeles R K).algebraMap_mem c⟩, ?_⟩)) hxy
+  rw [Subalgebra.smul_def, smul_eq_mul, map_mul, mul_comm]
 
 /-- **For `N ≠ 0`, congruence modulo `N` says that `(x - y) / N` is integral.** -/
 theorem modEq_iff_mul_inv_mem {N : R} (hN : N ≠ 0) {x y : FiniteAdeleRing R K} :
