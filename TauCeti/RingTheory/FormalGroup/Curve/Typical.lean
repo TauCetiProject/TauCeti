@@ -36,7 +36,8 @@ each power-series degree `k` as soon as all primes `q ≤ k` have been applied, 
 below degree `q`. Taking the stabilized coefficient in each degree constructs **Cartier's
 `p`-typicalization projector** `FormalGroup.pTypicalProjectorCurve`: an idempotent additive
 endomorphism `F.Curve →+ F.Curve` with image `F.pTypicalCurveSubgroup p` that preserves linear
-coefficients, annihilates `V_n` whenever a prime `q ≠ p` divides `n`, and commutes with base change,
+coefficients and divisibility by `X ^ m`, annihilates `V_n` whenever a prime `q ≠ p` divides `n`,
+and commutes with base change,
 homomorphisms of formal group laws, elementary Cartier projectors, homotheties `[r]`, and `f_m`,
 `V_m` for every
 nonzero `m` coprime to all primes `q ≠ p` (in particular `f_{p^r}` and `V_{p^r}` when `p` is
@@ -686,6 +687,16 @@ theorem coeff_one_pTypicalProjectorCurve (p : ℕ)
       PowerSeries.coeff 1 γ.toPowerSeries :=
   F.coeff_pTypicalProjectorCurve_of_forall_prime_gt p hunit (fun _ hq _ ↦ hq.one_lt) γ
 
+/-- At `p = 2`, Cartier's `2`-typicalization projector also preserves the quadratic coefficient of
+every curve. -/
+@[simp]
+theorem coeff_two_pTypicalProjectorCurve_two
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ 2 → IsUnit (q : R)) (γ : F.Curve) :
+    PowerSeries.coeff 2 (F.pTypicalProjectorCurve 2 hunit γ).toPowerSeries =
+      PowerSeries.coeff 2 γ.toPowerSeries :=
+  F.coeff_pTypicalProjectorCurve_of_forall_prime_gt 2 hunit
+    (fun _ hq hq2 ↦ lt_of_le_of_ne hq.two_le hq2.symm) γ
+
 /-- The degree-`k` coefficient of `F.pTypicalProjectorCurve p hunit γ` depends only on the
 coefficients of `γ` in degrees `≤ k`. -/
 theorem coeff_pTypicalProjectorCurve_congr (p : ℕ)
@@ -708,6 +719,17 @@ theorem coeff_pTypicalProjectorCurve_congr (p : ℕ)
   rw [coeff_pTypicalProjectorCurve_eq_stage F p hunit le_rfl,
     coeff_pTypicalProjectorCurve_eq_stage F p hunit le_rfl]
   exact hstage k k le_rfl
+
+/-- Cartier's `p`-typicalization projector preserves divisibility of curves by `X ^ m`. -/
+theorem X_pow_dvd_toPowerSeries_pTypicalProjectorCurve (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {m : ℕ} {γ : F.Curve}
+    (hγ : PowerSeries.X ^ m ∣ γ.toPowerSeries) :
+    PowerSeries.X ^ m ∣ (F.pTypicalProjectorCurve p hunit γ).toPowerSeries :=
+  PowerSeries.X_pow_dvd_iff.mpr fun k hk ↦ by
+    have hcongr := F.coeff_pTypicalProjectorCurve_congr p hunit (γ₂ := 0) (k := k) fun i hi ↦ by
+      rw [PowerSeries.X_pow_dvd_iff.mp hγ i (lt_of_le_of_lt hi hk),
+        Curve.toPowerSeries_zero, map_zero]
+    rwa [map_zero, Curve.toPowerSeries_zero, map_zero] at hcongr
 
 /-- Base change along a ring homomorphism commutes with Cartier's `p`-typicalization projector. -/
 theorem map_pTypicalProjectorCurve (φ : R →+* S) (p : ℕ)
@@ -1087,6 +1109,17 @@ theorem pTypicalProjectorCurve_verschiebungCurve_eq_zero_of_forall_ne_pow (p : �
     F.pTypicalProjectorCurve p hunit (F.verschiebungCurve n hn γ) = 0 := by
   obtain ⟨q, hq, hqn, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow hpow
   exact F.pTypicalProjectorCurve_verschiebungCurve_of_dvd p hunit hq hqp hqn hn γ
+
+/-- Cartier's `p`-typicalization projector kills `V_n γ` for every `n > 1` coprime to `p`. -/
+theorem pTypicalProjectorCurve_verschiebungCurve_eq_zero_of_coprime (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {n : ℕ} (hn1 : 1 < n)
+    (hcop : n.Coprime p) (γ : F.Curve) :
+    F.pTypicalProjectorCurve p hunit (F.verschiebungCurve n (Nat.ne_zero_of_lt hn1) γ) = 0 := by
+  obtain ⟨q, hq, hqn⟩ := Nat.exists_prime_and_dvd hn1.ne'
+  have hqp : q ≠ p := fun hqp ↦
+    hq.ne_one (Nat.eq_one_of_dvd_coprimes hcop hqn (hqp ▸ dvd_rfl))
+  exact F.pTypicalProjectorCurve_verschiebungCurve_of_dvd p hunit hq hqp hqn
+    (Nat.ne_zero_of_lt hn1) γ
 
 /-- If a typical curve vanishes below a degree which is not a power of `p`, it
 also vanishes in that degree, provided every other prime is invertible. -/

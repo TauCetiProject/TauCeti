@@ -72,7 +72,8 @@ transport along homotheties `X ↦ u X` (which conjugate `F.pTypicalCoordinate`)
   `m_n(v) = [X^(p^n)] log_F(X)`.
 * `FormalGroup.isPTypical_homothety_smul_iff`, `FormalGroup.pTypicalCoordinate_homothety_smul`,
   `FormalGroup.pTypicalFormalGroup_homothety_smul`,
-  `FormalGroup.pTypicalCoordinate_mem_gradedSubgroup`, and
+  `FormalGroup.pTypicalCoordinate_mem_gradedSubgroup`,
+  `FormalGroup.coeff_pTypicalCoordinate_mem`, and
   `FormalGroup.coeff_pTypicalFormalGroup_mem`: homothety equivariance and preservation of grading.
 
 ## References
@@ -398,6 +399,27 @@ theorem pTypicalIso_toHom_mapCurve_pTypicalProjectorCurve_tautologicalCurve (p :
   ext1
   simp
 
+/-- Pushing the tautological curve of `F.pTypicalFormalGroup` along `(F.pTypicalIso p hunit).invHom`
+recovers Cartier's `p`-typicalization of `F.tautologicalCurve`. -/
+theorem pTypicalIso_invHom_mapCurve_tautologicalCurve (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    (F.pTypicalIso p hunit).invHom.mapCurve (F.pTypicalFormalGroup p hunit).tautologicalCurve =
+      F.pTypicalProjectorCurve p hunit F.tautologicalCurve := by
+  rw [← TauCeti.FormalGroupIso.curveEquiv_symm_apply, AddEquiv.symm_apply_eq,
+    TauCeti.FormalGroupIso.curveEquiv_apply,
+    F.pTypicalIso_toHom_mapCurve_pTypicalProjectorCurve_tautologicalCurve]
+
+/-- Precomposing any homomorphism `f : F → G` with `(F.pTypicalIso p hunit).invHom` projects the
+corresponding curve on `G` by Cartier's `p`-typicalization projector. -/
+theorem _root_.TauCeti.FormalGroupHom.mapCurve_comp_pTypicalIso_invHom_tautologicalCurve
+    {F G : FormalGroup R} [F.IsComm] [G.IsComm] (f : TauCeti.FormalGroupHom F G) (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    (f.comp (F.pTypicalIso p hunit).invHom).mapCurve
+        (F.pTypicalFormalGroup p hunit).tautologicalCurve =
+      G.pTypicalProjectorCurve p hunit (f.mapCurve F.tautologicalCurve) := by
+  rw [TauCeti.FormalGroupHom.comp_mapCurve, F.pTypicalIso_invHom_mapCurve_tautologicalCurve,
+    f.mapCurve_pTypicalProjectorCurve]
+
 /-- The canonical `p`-typicalization `F.pTypicalFormalGroup` is a `p`-typical formal group law. -/
 @[simp]
 theorem isPTypical_pTypicalFormalGroup (p : ℕ)
@@ -490,6 +512,24 @@ theorem pTypicalCoordinate_𝔾ₐ (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → q
 theorem pTypicalFormalGroup_𝔾ₐ (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
     (𝔾ₐ (R := R)).pTypicalFormalGroup p hunit = 𝔾ₐ :=
   (𝔾ₐ (R := R)).pTypicalFormalGroup_eq_self_of_isPTypical p hunit (isPTypical_𝔾ₐ p)
+
+/-- The canonical `p`-typicalization coordinate of `TauCeti.hazewinkelIntegralFormalGroup p v` is
+`1`. -/
+@[simp]
+theorem _root_.TauCeti.pTypicalCoordinate_hazewinkelIntegralFormalGroup (p : ℕ) [Fact p.Prime]
+    (v : ℕ+ → R) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    (TauCeti.hazewinkelIntegralFormalGroup p v).pTypicalCoordinate p hunit = 1 :=
+  (TauCeti.hazewinkelIntegralFormalGroup p v).pTypicalCoordinate_eq_one_of_isPTypical p hunit
+    (TauCeti.isPTypical_hazewinkelIntegralFormalGroup p v)
+
+/-- Canonical `p`-typicalization fixes `TauCeti.hazewinkelIntegralFormalGroup p v`. -/
+@[simp]
+theorem _root_.TauCeti.pTypicalFormalGroup_hazewinkelIntegralFormalGroup (p : ℕ) [Fact p.Prime]
+    (v : ℕ+ → R) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    (TauCeti.hazewinkelIntegralFormalGroup p v).pTypicalFormalGroup p hunit =
+      TauCeti.hazewinkelIntegralFormalGroup p v :=
+  (TauCeti.hazewinkelIntegralFormalGroup p v).pTypicalFormalGroup_eq_self_of_isPTypical p hunit
+    (TauCeti.isPTypical_hazewinkelIntegralFormalGroup p v)
 
 /-- Base change commutes with canonical `p`-typicalization of formal group laws. -/
 theorem map_pTypicalFormalGroup (φ : R →+* S) (p : ℕ)
@@ -653,6 +693,13 @@ theorem pTypicalCoordinate_mem_gradedSubgroup :
     pTypicalCoordinate_congr ((F.map_toLaurent_eq_homothety_smul_iff w).mpr hF) p _,
     pTypicalCoordinate_homothety_smul, ← F.map_pTypicalCoordinate LaurentPolynomial.C p hunit,
     ← map_inv, inv_inv]
+
+/-- For a graded commutative formal group law of weight `w`, the `n`-th coefficient of
+`F.pTypicalCoordinate p hunit` lies in degree `w * (n - 1)`. -/
+theorem coeff_pTypicalCoordinate_mem (n : ℕ) :
+    PowerSeries.coeff n (F.pTypicalCoordinate p hunit).toPowerSeries ∈ 𝒜 (w * (n - 1)) :=
+  (FormalCoordinate.mem_gradedSubgroup 𝒜 w _).mp
+    (F.pTypicalCoordinate_mem_gradedSubgroup w p hunit hF) n
 
 /-- **Canonical `p`-typicalization preserves grading**: if the coefficient of `Xⁱ Yʲ` in `F` lies
 in degree `w * (i + j - 1)`, then so does the coefficient of `Xⁱ Yʲ` in
