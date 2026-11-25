@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Basic
 public import TauCeti.NumberTheory.NumberField.Quadratic.EmbeddingBound
 public import TauCeti.NumberTheory.NumberField.Quadratic.Model
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm

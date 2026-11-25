@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Basic
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.TensorProduct
 public import TauCeti.RingTheory.PicardGroup.CardQuot
+public import TauCeti.Algebra.Module.Torsion.GenericRankOne
 public import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
@@ -22,9 +23,15 @@ field, with `E` flat and `F` invertible, the degree of `E ⊗ F` computed with a
 
 Both terms of the degree are additive: the norms by `‖s ⊗ t‖_σ = ‖s‖_σ ‖t‖_σ`
 (`TauCeti.HermitianMetric.norm_tmul_tmul`), and the lattice index by
-`#((E ⊗ F) / 𝓞 K (s ⊗ t)) = #(E / 𝓞 K s) · #(F / 𝓞 K t)` (`Submodule.cardQuot_span_tmul`). For
-hermitian line bundles this is `deg(L ⊗ M) = deg L + deg M`, the additivity of the Arakelov degree
-on tensor products of the roadmap ArakelovGeometryAndAbelianHeights, §1.5.
+`#((E ⊗ F) / 𝓞 K (s ⊗ t)) = #(E / 𝓞 K s) · #(F / 𝓞 K t)` (`Submodule.cardQuot_span_tmul`).
+Together with the independence of the degree from the chosen section, this gives the additivity
+`deg(L ⊗ M) = deg L + deg M` of the Arakelov degree on tensor products of hermitian line bundles.
+
+## References
+
+* J.-B. Bost, *Périodes et isogénies des variétés abéliennes sur les corps de nombres*,
+  Séminaire Bourbaki 795, Appendice A.
+* L. Szpiro, *Degrés, intersections, hauteurs*, Astérisque 127, §1.
 -/
 
 public noncomputable section
@@ -38,22 +45,25 @@ variable {K : Type*} [Field K] [NumberField K] {E F : Type*} [AddCommGroup E] [M
   [AddCommGroup F] [Module (𝓞 K) F] (h : HermitianMetric K E) (h' : HermitianMetric K F)
 
 /-- **The degree is additive on tensor products of hermitian lines.** For `E` flat and `F`
-invertible, and nonzero sections `s` of `E` and `t` of `F` spanning sublattices of finite index,
-the degree of `E ⊗ F` computed with `s ⊗ t` is the degree of `E` computed with `s` plus the degree
-of `F` computed with `t`. -/
+invertible, a nonzero section `s` of `E` spanning a sublattice of finite index and a nonzero
+section `t` of `F`, the degree of `E ⊗ F` computed with `s ⊗ t` is the degree of `E` computed
+with `s` plus the degree of `F` computed with `t`. -/
 theorem sectionDegree_tmul [Module.Flat (𝓞 K) E] [Module.Invertible (𝓞 K) F] {s : E}
-    (hs : s ≠ 0) {t : F} (ht : t ≠ 0) [Finite (E ⧸ Submodule.span (𝓞 K) {s})]
-    [Finite (F ⧸ Submodule.span (𝓞 K) {t})] :
+    (hs : s ≠ 0) {t : F} (ht : t ≠ 0) [Finite (E ⧸ Submodule.span (𝓞 K) {s})] :
     (h.tmul h').sectionDegree (s ⊗ₜ t) = h.sectionDegree s + h'.sectionDegree t := by
+  -- `F` is a line, so `t` spans a sublattice of finite index.
+  have : Finite (F ⧸ Submodule.span (𝓞 K) {t}) :=
+    Module.finite_quotient_span_singleton_of_finrank_eq_one (F := K)
+      (Module.Invertible.finrank_eq_one K (K ⊗[𝓞 K] F)) ht
   have hinj : Function.Injective (LinearMap.toSpanSingleton (𝓞 K) E s) := by
     refine (injective_iff_map_eq_zero _).2 fun r hr ↦ ?_
     rw [LinearMap.toSpanSingleton_apply] at hr
     exact (smul_eq_zero.1 hr).resolve_right hs
-  -- Both lattice indices are nonzero, since the quotients are finite and nonempty.
-  have hcs : ((Submodule.span (𝓞 K) {s}).cardQuot : ℝ) ≠ 0 := Nat.cast_ne_zero.2
-    ((Submodule.cardQuot_apply _).trans_ne (Nat.card_ne_zero.2 ⟨inferInstance, inferInstance⟩))
-  have hct : ((Submodule.span (𝓞 K) {t}).cardQuot : ℝ) ≠ 0 := Nat.cast_ne_zero.2
-    ((Submodule.cardQuot_apply _).trans_ne (Nat.card_ne_zero.2 ⟨inferInstance, inferInstance⟩))
+  -- Both lattice indices are nonzero, since the quotients are finite.
+  have hcs : ((Submodule.span (𝓞 K) {s}).cardQuot : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (AddSubgroup.index_ne_zero_of_finite (hH := ‹_›))
+  have hct : ((Submodule.span (𝓞 K) {t}).cardQuot : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (AddSubgroup.index_ne_zero_of_finite (hH := ‹_›))
   have hsσ (σ : K →+* ℂ) : h.norm σ (1 ⊗ₜ s) ≠ 0 :=
     (h.norm_pos (Codomain.one_tmul_ne_zero σ hs)).ne'
   have htσ (σ : K →+* ℂ) : h'.norm σ (1 ⊗ₜ t) ≠ 0 :=

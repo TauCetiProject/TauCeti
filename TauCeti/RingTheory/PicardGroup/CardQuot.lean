@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Quotient
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import Mathlib.RingTheory.PicardGroup
+public import TauCeti.RingTheory.Finiteness.Cardinality
 
 /-!
 # Lattice indices and tensor products with invertible modules
@@ -30,7 +31,7 @@ flat, so the first index is `#(M / R t)`, and the second quotient is `(L / R s) 
 cardinality `#(L / R s)`.
 
 This is the lattice-index part of the additivity of the Arakelov degree on tensor products of
-hermitian line bundles (roadmap ArakelovGeometryAndAbelianHeights, §1.5).
+hermitian line bundles.
 -/
 
 public section
@@ -48,16 +49,7 @@ theorem card_tensorProduct [Finite T] : Nat.card (T ⊗[R] M) = Nat.card T := by
   let I := Module.annihilator R T
   let : Module (R ⧸ I) T := Module.quotientAnnihilator
   have : IsScalarTower R (R ⧸ I) T := .of_algebraMap_smul fun r t ↦ rfl
-  have : Finite (R ⧸ I) := by
-    refine _root_.Finite.of_injective (fun r : R ⧸ I ↦ fun t : T ↦ r • t) fun a b hab ↦ ?_
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
-    obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective b
-    rw [Ideal.Quotient.eq, Module.mem_annihilator]
-    intro t
-    have := congrFun hab t
-    simp only at this
-    rw [sub_smul]
-    exact sub_eq_zero.2 this
+  have : Finite (R ⧸ I) := Module.finite_quotient_annihilator
   -- `R / Ann(T)` is finite, so the invertible module `(R / Ann(T)) ⊗ M` over it is free.
   obtain ⟨e⟩ : Nonempty ((R ⧸ I) ⊗[R] M ≃ₗ[R ⧸ I] R ⧸ I) :=
     free_iff_linearEquiv.mp inferInstance
@@ -108,8 +100,9 @@ theorem cardQuot_span_tmul {s : L} (hs : Function.Injective (LinearMap.toSpanSin
     exact (Nat.card_congr (TensorProduct.quotientTensorEquiv M (R ∙ s)).toEquiv).symm.trans
       Module.Invertible.card_tensorProduct
   unfold Submodule.cardQuot at hidx ⊢
-  rw [← hφt, Submodule.map_toAddSubgroup, AddSubgroup.index_map_of_injective _ hφ, mul_comm]
-  rw [← hidx]
-  rfl
+  rw [← hφt, Submodule.map_toAddSubgroup, AddSubgroup.index_map_of_injective _ hφ, mul_comm,
+    ← hidx, LinearMap.range_toAddSubgroup]
+  -- The coercion `↑φ : M →+ L ⊗ M` is `φ.toAddMonoidHom`, up to structure eta.
+  congr 3
 
 end Submodule
