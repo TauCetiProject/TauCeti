@@ -7,14 +7,13 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Local
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import TauCeti.Analysis.Distribution.ComplexPairing
+import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Extension
 import TauCeti.Analysis.Sobolev.Wkp.Gluing
 import TauCeti.Analysis.Sobolev.Wkp.Leibniz
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Local `W^{k,p}` regularity is local `H^{k,p}` regularity
@@ -42,8 +41,9 @@ images.
 ## The argument
 
 For a test function `φ`, the cut-off distribution `φ T` of the distribution `T` of `f` is the
-tempered distribution of the function `φ f` (`Distribution.cutoffTempered_ofFun_eq`), and
-conversely an `Lᵖ` function with that tempered distribution is `φ f` almost everywhere
+tempered distribution of the function `φ f` (`Distribution.cutoffTempered_ofFun_eq` in
+`TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff`), and conversely an `Lᵖ` function with
+that tempered distribution is `φ f` almost everywhere
 (`Distribution.ae_eq_of_cutoffTempered_ofFun_eq`).
 
 * If `T` is `H^{k,p}` near `x`, take a real cutoff `χ` equal to one on an open neighbourhood `V`
@@ -66,54 +66,6 @@ namespace Distribution
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Opens E}
-
-section Cutoff
-
-variable {f : E → ℂ}
-
-/-- The cut-off `φ T` of the distribution `T` of a locally integrable function `f`, evaluated on a
-Schwartz function `ψ`, is the integral of `ψ φ f`. -/
-theorem cutoffTempered_ofFun_apply (hf : LocallyIntegrableOn f Ω) (φ : 𝓓(Ω, ℂ)) (ψ : 𝓢(E, ℂ)) :
-    (ofFun Ω f volume ⊤).cutoffTempered φ ψ = ∫ x, ψ x * (φ x * f x) := by
-  rw [cutoffTempered_def, complexPairing_ofFun hf]
-  congr 1
-  ext x
-  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
-  ring
-
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- The cut-off `φ T` of the distribution `T` of a locally integrable function `f` is the tempered
-distribution of any `Lᵖ` function agreeing almost everywhere with `φ f`. -/
-theorem cutoffTempered_ofFun_eq (hf : LocallyIntegrableOn f Ω) (φ : 𝓓(Ω, ℂ))
-    {g : Lp ℂ p (volume : Measure E)} (hg : g =ᵐ[volume] fun x ↦ φ x * f x) :
-    (ofFun Ω f volume ⊤).cutoffTempered φ = (g : 𝓢'(E, ℂ)) := by
-  ext ψ
-  rw [cutoffTempered_ofFun_apply hf, Lp.toTemperedDistribution_apply]
-  refine integral_congr_ae ?_
-  filter_upwards [hg] with x hx
-  rw [hx, smul_eq_mul]
-
-/-- An `Lᵖ` function whose tempered distribution is the cut-off `φ T` of the distribution `T` of a
-locally integrable function `f` agrees almost everywhere with `φ f`. -/
-theorem ae_eq_of_cutoffTempered_ofFun_eq (hf : LocallyIntegrableOn f Ω) (φ : 𝓓(Ω, ℂ))
-    {g : Lp ℂ p (volume : Measure E)}
-    (hg : (ofFun Ω f volume ⊤).cutoffTempered φ = (g : 𝓢'(E, ℂ))) :
-    g =ᵐ[volume] fun x ↦ φ x * f x := by
-  have hφf : Integrable (fun x ↦ φ x * f x) volume :=
-    hf.integrable_smul_left_of_hasCompactSupport φ.continuous.continuousOn φ.hasCompactSupport
-      φ.tsupport_subset
-  refine ae_eq_of_integral_contDiff_smul_eq ((Lp.memLp g).locallyIntegrable Fact.out)
-    hφf.locallyIntegrable fun χ hχ hχc ↦ ?_
-  -- Test both sides against the complexification of `χ`, a Schwartz function.
-  have hχ' : ContDiff ℝ ∞ fun x ↦ (χ x : ℂ) := ofRealCLM.contDiff.comp hχ
-  have h := congrArg (fun T : 𝓢'(E, ℂ) ↦ T ((hχc.comp_left ofReal_zero).toSchwartzMap hχ')) hg
-  simp only [cutoffTempered_ofFun_apply hf, Lp.toTemperedDistribution_apply,
-    HasCompactSupport.toSchwartzMap_toFun] at h
-  simp only [real_smul]
-  exact h.symm
-
-end Cutoff
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : E → ℝ}
 
@@ -188,14 +140,7 @@ theorem isLocallyMemSobolevAt_ofFun_iff_exists_wkp (hp : 1 < p) (hp_top : p ≠ 
       obtain ⟨g, hg, hgS⟩ :=
         exists_memSobolev_mul_of_wkp hp hp_top hw ψ.contDiff ψ.hasCompactSupport hψ
       rwa [cutoffTempered_ofFun_eq hf' _ hg]
-    have hφ' : φ = postcompCLM (𝕜 := ℝ) ofRealCLM φr + I • postcompCLM (𝕜 := ℝ) ofRealCLM φi := by
-      ext y
-      change φ y = (postcompCLM (𝕜 := ℝ) ofRealCLM φr) y + I • (postcompCLM (𝕜 := ℝ) ofRealCLM φi) y
-      simp only [φr, φi, postcompCLM_apply, Function.comp_apply, ofRealCLM_apply, reCLM_apply,
-        imCLM_apply, smul_eq_mul]
-      rw [mul_comm]
-      exact (re_add_im (φ y)).symm
-    rw [hφ', cutoffTempered_add_cutoff, cutoffTempered_smul_cutoff]
+    rw [← postcompCLM_re_add_I_smul_im φ, cutoffTempered_add_cutoff, cutoffTempered_smul_cutoff]
     exact (hpart φr (hsupp reCLM)).add ((hpart φi (hsupp imCLM)).smul I)
 
 /-- **Local `W^{k,p}` regularity over a compact set.** Let `1 < p < ∞`, let `f` be a real function
