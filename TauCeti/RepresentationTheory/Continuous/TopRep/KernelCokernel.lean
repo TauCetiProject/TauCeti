@@ -62,6 +62,12 @@ theorem kerι_apply (a : ker f) : dsimp% only ((kerι f).hom a) = a.val :=
 theorem kerι_injective : Function.Injective (kerι f).hom :=
   Subtype.val_injective
 
+/-- The inclusion of the kernel is an embedding for its subspace topology. -/
+theorem isEmbedding_kerι : Topology.IsEmbedding (kerι f).hom := by
+  have hker : ⇑(kerι f).hom = (Subtype.val : ker f → A.V) := funext (kerι_apply f)
+  rw [hker]
+  exact Topology.IsEmbedding.subtypeVal
+
 /-- The inclusion of the kernel of `f` is exact at `A` with `f`. -/
 theorem exact_kerι : Function.Exact (kerι f).hom f.hom :=
   LinearMap.exact_subtype_ker_map (f.hom : A →ₗ[k] B)

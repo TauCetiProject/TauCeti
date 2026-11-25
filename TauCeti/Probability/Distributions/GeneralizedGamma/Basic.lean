@@ -17,7 +17,8 @@ are allowed; in particular, they give laws with only finitely many natural momen
 Invalid parameters give the zero measure.
 
 This file supplies the construction, probability and positivity results, positive scaling,
-and recovery of the Gamma variable by taking a power.
+and recovery of the Gamma variable by taking a power, together with the corresponding
+random-variable laws.
 Real-power moments are developed in `GeneralizedGamma.Moments`.
 
 The construction reuses Mathlib's `ProbabilityTheory.gammaMeasure` and its moment theory
@@ -139,3 +140,27 @@ theorem hasLaw_generalizedGammaMeasure_of_hasLaw_gammaMeasure
   exact (hasLaw_map (X := fun x : ℝ ↦ s * x ^ c⁻¹) (by fun_prop)).fun_comp hX
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open TauCeti.Probability
+
+/-- Standardizing and raising a generalized gamma variable to its power parameter recovers the
+unit-rate Gamma law. -/
+theorem HasLaw.standardized_rpow_generalizedGammaMeasure
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {a c s : ℝ}
+    (hX : HasLaw X (generalizedGammaMeasure a c s) P)
+    (ha : 0 < a) (hc : c ≠ 0) (hs : 0 < s) :
+    HasLaw (fun ω ↦ (X ω / s) ^ c) (gammaMeasure a 1) P := by
+  rw [← generalizedGammaMeasure_map_rpow ha hc hs]
+  exact (hasLaw_map (X := fun x : ℝ ↦ (x / s) ^ c) (by fun_prop)).fun_comp hX
+
+/-- Multiplying a generalized gamma variable by a positive constant multiplies its scale. -/
+theorem HasLaw.const_mul_generalizedGammaMeasure
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {a c s b : ℝ}
+    (hX : HasLaw X (generalizedGammaMeasure a c s) P) (hb : 0 < b) :
+    HasLaw (fun ω ↦ b * X ω) (generalizedGammaMeasure a c (b * s)) P := by
+  rw [← generalizedGammaMeasure_map_const_mul hb]
+  exact (hasLaw_map (X := fun x : ℝ ↦ b * x) (by fun_prop)).fun_comp hX
+
+end ProbabilityTheory

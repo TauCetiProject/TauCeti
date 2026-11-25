@@ -68,31 +68,24 @@ variable {R : Type u} {ι : Type w} {M : Type v}
 
 namespace SymmetricPower
 
-section CommSemiring
-
-variable [CommSemiring R]
-variable [AddCommMonoid M] [Module R M]
+variable [CommSemiring R] [AddCommMonoid M] [Module R M]
+variable {N : Type*} [AddCommMonoid N] [Module R N]
 
 /-- A linear map out of a symmetric power is determined by its values on pure symmetric
 tensors. -/
 @[ext]
-theorem ext {N : Type*} [AddCommMonoid N] [Module R N] {g h : Sym[R] ι M →ₗ[R] N}
-    (hgh : ∀ m : ι → M, g (⨂ₛ[R] i, m i) = h (⨂ₛ[R] i, m i)) : g = h := by
-  refine LinearMap.ext_on (span_tprod_eq_top R ι M) ?_
-  rintro _ ⟨m, rfl⟩
-  exact hgh m
+theorem ext {g h : Sym[R] ι M →ₗ[R] N}
+    (hgh : ∀ m : ι → M, g (⨂ₛ[R] i, m i) = h (⨂ₛ[R] i, m i)) : g = h :=
+  LinearMap.ext_on_range (span_tprod_eq_top R ι M) hgh
 
 /-- A linear map sends every symmetric tensor into a submodule if it does so on pure tensors. -/
-theorem _root_.LinearMap.apply_mem_of_forall_symmetricPower_tprod {N : Type*} [AddCommMonoid N]
-    [Module R N] (f : Sym[R] ι M →ₗ[R] N) (p : Submodule R N)
-    (h : ∀ m : ι → M, f (⨂ₛ[R] i, m i) ∈ p) (x : Sym[R] ι M) : f x ∈ p := by
-  have hle : (⊤ : Submodule R (Sym[R] ι M)) ≤ p.comap f := by
-    rw [← span_tprod_eq_top R ι M, Submodule.span_le]
-    rintro _ ⟨m, rfl⟩
-    exact h m
-  exact hle Submodule.mem_top
+theorem _root_.LinearMap.apply_mem_of_forall_symmetricPower_tprod (f : Sym[R] ι M →ₗ[R] N)
+    (p : Submodule R N) (h : ∀ m : ι → M, f (⨂ₛ[R] i, m i) ∈ p) (x : Sym[R] ι M) : f x ∈ p := by
+  have hle : Submodule.span R (Set.range (tprod R)) ≤ p.comap f :=
+    Submodule.span_le.2 (Set.range_subset_iff.2 fun m => Submodule.mem_comap.2 (h m))
+  exact hle (span_tprod_eq_top R ι M ▸ Submodule.mem_top)
 
-private theorem map_rel {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
+private theorem map_rel (f : M →ₗ[R] N) :
     addConGen (Rel R ι M) ≤
       AddCon.ker ((mk R ι N).toAddMonoidHom.comp
         (PiTensorProduct.map fun _ : ι => f).toAddMonoidHom) := by
@@ -106,26 +99,25 @@ private theorem map_rel {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ
         Function.comp_apply] using (tprod_equiv (R := R) e (f ∘ m)).symm
 
 /-- A linear map induces a linear map on every symmetric tensor power. -/
-noncomputable def map {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
-    Sym[R] ι M →ₗ[R] Sym[R] ι N where
+noncomputable def map (f : M →ₗ[R] N) : Sym[R] ι M →ₗ[R] Sym[R] ι N where
   toFun :=
     (addConGen (Rel R ι M)).lift
       ((mk R ι N).toAddMonoidHom.comp
         (PiTensorProduct.map fun _ : ι => f).toAddMonoidHom)
       (map_rel f)
   map_add' := map_add _
-  map_smul' r x := AddCon.induction_on x fun x => by
-    exact congrArg (mk R ι N) ((PiTensorProduct.map fun _ : ι => f).map_smul r x)
+  map_smul' r x := AddCon.induction_on x fun x =>
+    congrArg (mk R ι N) ((PiTensorProduct.map fun _ : ι => f).map_smul r x)
 
 /-- The map on symmetric powers commutes with the quotient map from the tensor power. -/
 @[simp]
-theorem map_mk {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) (x : ⨂[R] (_ : ι), M) :
+theorem map_mk (f : M →ₗ[R] N) (x : ⨂[R] (_ : ι), M) :
     map f (mk R ι M x) = mk R ι N (PiTensorProduct.map (fun _ : ι => f) x) :=
   AddCon.lift_mk' (map_rel f) x
 
 /-- The map induced on symmetric powers sends a pure tensor to the tensor of the images. -/
 @[simp]
-theorem map_tprod {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) (m : ι → M) :
+theorem map_tprod (f : M →ₗ[R] N) (m : ι → M) :
     map f (⨂ₛ[R] i, m i) = ⨂ₛ[R] i, f (m i) := by
   simp only [tprod, LinearMap.compMultilinearMap_apply, map_mk,
     PiTensorProduct.map_tprod]
@@ -139,8 +131,7 @@ theorem map_id :
 
 /-- Symmetric powers preserve composition of linear maps. -/
 @[simp]
-theorem map_comp {N : Type*} {P : Type*}
-    [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P] (f : M →ₗ[R] N) (g : N →ₗ[R] P) :
+theorem map_comp {P : Type*} [AddCommMonoid P] [Module R P] (f : M →ₗ[R] N) (g : N →ₗ[R] P) :
     map (ι := ι) (g.comp f) = (map (ι := ι) g).comp (map (ι := ι) f) := by
   ext m
   simp
@@ -148,16 +139,13 @@ theorem map_comp {N : Type*} {P : Type*}
 /-- A symmetric power indexed by a finite type is finitely generated when the underlying module
 is finitely generated. -/
 noncomputable instance finite [Finite ι] [Module.Finite R M] : Module.Finite R (Sym[R] ι M) :=
-  Module.Finite.of_surjective (mk R ι M)
-    (LinearMap.range_eq_top.mp (range_mk R ι M))
-
-end CommSemiring
+  Module.Finite.of_surjective (mk R ι M) (LinearMap.range_eq_top.mp (range_mk R ι M))
 
 /-! ### The symmetrization back into the tensor power -/
 
 section Symmetrization
 
-variable [CommSemiring R] [AddCommMonoid M] [Module R M] [Fintype ι] [DecidableEq ι]
+variable [Fintype ι] [DecidableEq ι]
 
 variable (R ι M) in
 /-- The symmetrization operator `∑_σ σ` on the tensor power, permuting the tensor factors. -/
@@ -178,10 +166,7 @@ private theorem symmetrizer_rel :
   | perm e m =>
       refine (AddCon.ker_rel _).2 ?_
       simp only [LinearMap.toAddMonoidHom_coe, symmetrizer_tprod]
-      refine Fintype.sum_bijective (e⁻¹ * ·) (Group.mulLeft_bijective _) _ _ fun σ => ?_
-      congr 1
-      funext i
-      simp
+      exact Fintype.sum_bijective (e⁻¹ * ·) (Group.mulLeft_bijective _) _ _ fun σ => by simp
 
 variable (R ι M) in
 /-- **The symmetrization**, from the symmetric power back into the tensor power: the descent of
@@ -195,29 +180,28 @@ noncomputable def toTensorPower : Sym[R] ι M →ₗ[R] ⨂[R] (_ : ι), M where
 
 private theorem toTensorPower_mk' (x : ⨂[R] (_ : ι), M) :
     toTensorPower R ι M (mk R ι M x) = (symmetrizer R ι M).toAddMonoidHom x :=
-  (rfl)
+  AddCon.lift_mk' (f := (symmetrizer R ι M).toAddMonoidHom) symmetrizer_rel x
 
+/-- The symmetrization of the class of a tensor is the sum of its reindexings by all
+permutations. -/
 @[simp]
 theorem toTensorPower_mk (x : ⨂[R] (_ : ι), M) :
     toTensorPower R ι M (mk R ι M x) =
       ∑ σ : Equiv.Perm ι, PiTensorProduct.reindex R (fun _ : ι => M) σ x := by
-  rw [toTensorPower_mk', LinearMap.toAddMonoidHom_coe, symmetrizer, LinearMap.sum_apply]
-  rfl
+  simp [toTensorPower_mk', symmetrizer]
 
 /-- The symmetrization of a pure symmetric tensor is the sum of the pure tensors over all
 orderings of its factors. -/
 @[simp]
 theorem toTensorPower_tprod (m : ι → M) :
     toTensorPower R ι M (⨂ₛ[R] i, m i) = ∑ σ : Equiv.Perm ι, ⨂ₜ[R] i, m (σ i) := by
-  rw [tprod, LinearMap.compMultilinearMap_apply, toTensorPower_mk']
-  exact symmetrizer_tprod m
+  rw [tprod, LinearMap.compMultilinearMap_apply, toTensorPower_mk', LinearMap.toAddMonoidHom_coe,
+    symmetrizer_tprod]
 
 private theorem toTensorPower_comp_mk :
     (toTensorPower R ι M) ∘ₗ mk R ι M =
       ∑ σ : Equiv.Perm ι, (PiTensorProduct.reindex R (fun _ : ι => M) σ).toLinearMap :=
-  LinearMap.ext fun x => by
-    rw [LinearMap.comp_apply, toTensorPower_mk, LinearMap.sum_apply]
-    simp only [LinearEquiv.coe_coe]
+  LinearMap.ext fun x => by simp
 
 /-- The image of the symmetrization is the image of the symmetrization operator `∑_σ σ` on the
 tensor power. -/
@@ -245,11 +229,11 @@ theorem toTensorPower_injective (h : IsUnit ((Fintype.card ι).factorial : R)) :
   obtain ⟨u, hu⟩ := h
   -- Rescaling the quotient map by `u⁻¹` makes it a left inverse of the symmetrization.
   refine LinearMap.injective_of_comp_eq_id _ (((u⁻¹ : Rˣ) : R) • mk R ι M) ?_
-  rw [LinearMap.smul_comp, mk_comp_toTensorPower, ← Nat.cast_smul_eq_nsmul R, smul_smul, ← hu,
-    u.inv_mul, one_smul]
+  rw [LinearMap.smul_comp, mk_comp_toTensorPower, ← Nat.cast_smul_eq_nsmul R, smul_smul, ← hu]
+  simp
 
 /-- The symmetrization is natural in the module. -/
-theorem toTensorPower_comp_map {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
+theorem toTensorPower_comp_map (f : M →ₗ[R] N) :
     (toTensorPower R ι N) ∘ₗ (map (ι := ι) f) =
       (PiTensorProduct.map fun _ : ι => f) ∘ₗ (toTensorPower R ι M) := by
   ext m

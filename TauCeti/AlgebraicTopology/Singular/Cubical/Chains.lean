@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Basic
 import Mathlib.Data.Fin.Parity
+import Mathlib.Tactic.Abel
 import Mathlib.Topology.CompactOpen
 import TauCeti.Data.Fin.FaceSwap
 
@@ -32,8 +33,8 @@ only the central signs `(-1) ^ i` enter the boundary.
 ## Main definitions
 
 * `TauCeti.CubicalChain X R n`: unnormalized cubical `n`-chains.
-* `TauCeti.CubicalChain.boundary X R n`: the boundary
-  `CubicalChain X R (n + 1) →ₗ[R] CubicalChain X R n`.
+* `TauCeti.CubicalChain.boundary X R M n`: the boundary on original raw cubes with arbitrary
+  module coefficients. Scalar, module and space universes are independent.
 * `TauCeti.CubicalChain.map R f n`: the chains pushed forward along a continuous map.
 * `TauCeti.CubicalChain.cast R h`: reindexing of chains along an equality of dimensions.
 
@@ -143,6 +144,46 @@ end Cast
 
 section Boundary
 
+variable (R : Type*) [Semiring R] (M : Type*) [AddCommGroup M] [Module R M]
+
+variable (X) in
+/-- The boundary on original raw cubical chains with arbitrary module coefficients.
+Central integer signs give the native interval boundary `[0] - [1]`. -/
+def boundary (n : ℕ) :
+    (SingularCube X (n + 1) →₀ M) →ₗ[R] (SingularCube X n →₀ M) :=
+  ∑ j : Fin (n + 1), ((-1 : ℤ) ^ (j : ℕ)) •
+    (lmapDomain M R (face j 0) - lmapDomain M R (face j 1))
+
+variable {M} in
+/-- The module boundary is the alternating sum of its endpoint faces. -/
+@[simp]
+theorem boundary_single {n : ℕ} (c : SingularCube X (n + 1)) (a : M) :
+    boundary X R M n (single c a) =
+      ∑ j : Fin (n + 1), ((-1 : ℤ) ^ (j : ℕ)) •
+        (single (face j 0 c) a - single (face j 1 c) a) := by
+  simp [boundary]
+
+/-- The cubical boundary squares to zero for arbitrary module coefficients. -/
+theorem boundary_boundary (n : ℕ) : boundary X R M n ∘ₗ boundary X R M (n + 1) = 0 := by
+  -- The terms of `∂ ∂ c` cancel in pairs under `Fin.faceSwap`, by the cubical identity and
+  -- the parity of the swapped exponent.
+  apply lhom_ext
+  intro c a
+  simp only [LinearMap.comp_apply, boundary_single, LinearMap.zero_apply,
+    map_sum, map_zsmul, map_sub, ← Finset.sum_sub_distrib, Finset.smul_sum]
+  rw [← Finset.sum_product']
+  refine Finset.sum_involution (fun p _ ↦ Fin.faceSwap p) (fun p _ ↦ ?_)
+    (fun p _ _ ↦ Fin.faceSwap_ne p) (fun _ _ ↦ Finset.mem_univ _)
+    (fun p _ ↦ Fin.faceSwap_faceSwap p)
+  obtain ⟨i, j⟩ := p
+  simp only [Fin.faceSwap_def, ← face_face, smul_sub, smul_smul,
+    ← pow_add, Fin.neg_one_pow_succAbove_add_predAbove, neg_smul]
+  abel
+
+end Boundary
+
+section RingBoundary
+
 variable (R : Type*) [Ring R]
 
 /-- The boundary of a single `(n+1)`-cube, as an `n`-chain:
@@ -155,50 +196,22 @@ theorem boundaryCube_def {n : ℕ} (c : SingularCube X (n + 1)) :
       ∑ i : Fin (n + 1), (-1 : R) ^ (i : ℕ) • (single (face i 0 c) 1 - single (face i 1 c) 1) := by
   rw [boundaryCube]
 
-variable (X) in
-/-- The **boundary** of cubical chains, `∂ c = Σᵢ (-1) ^ i (face i 0 c - face i 1 c)` on a cube,
-extended linearly. -/
-def boundary (n : ℕ) : CubicalChain X R (n + 1) →ₗ[R] CubicalChain X R n :=
-  linearCombination R (boundaryCube R)
-
-/-- The boundary of a cube with coefficient one is `boundaryCube`. -/
+/-- The scalar boundary agrees with the boundary of a cube with coefficient one. -/
 theorem boundary_single_one {n : ℕ} (c : SingularCube X (n + 1)) :
-    boundary X R n (single c 1) = boundaryCube R c := by
-  rw [boundary, linearCombination_single, one_smul]
+    boundary X R R n (single c 1) = boundaryCube R c := by
+  rw [boundary_single, boundaryCube_def]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have h := Int.cast_smul_eq_zsmul R ((-1 : ℤ) ^ (j : ℕ))
+    (single (face j 0 c) (1 : R) - single (face j 1 c) (1 : R))
+  simpa only [Int.cast_pow, Int.cast_neg, Int.cast_one] using h.symm
 
-@[simp]
-theorem boundary_single {n : ℕ} (c : SingularCube X (n + 1)) (a : R) :
-    boundary X R n (single c a) =
-      ∑ i : Fin (n + 1), (-1 : R) ^ (i : ℕ) • (single (face i 0 c) a - single (face i 1 c) a) := by
-  -- The coefficient `a` commutes with the signs, which are central.
-  have hc : ∀ i : ℕ, a * (-1 : R) ^ i = (-1) ^ i * a := fun i ↦
-    ((Commute.neg_one_right a).pow_right i).eq
-  simp only [boundary, linearCombination_single, boundaryCube, Finset.smul_sum, smul_sub,
-    smul_single, smul_eq_mul, mul_one, hc]
-
-/-- The boundary of a boundary vanishes. -/
-theorem boundary_boundary (n : ℕ) : boundary X R n ∘ₗ boundary X R (n + 1) = 0 := by
-  -- As for `AffineChain.boundary_boundary`: the terms of `∂ ∂ c` cancel in pairs under
-  -- `Fin.faceSwap`, by the cubical identity and the parity of the swapped exponent.
-  refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
-  simp only [LinearMap.coe_comp, Function.comp_apply, lsingle_apply, LinearMap.zero_apply,
-    boundary_single, map_sum, map_smul, map_sub, ← Finset.sum_sub_distrib, Finset.smul_sum]
-  rw [← Finset.sum_product']
-  refine Finset.sum_involution (fun p _ ↦ Fin.faceSwap p) (fun p _ ↦ ?_)
-    (fun p _ _ ↦ Fin.faceSwap_ne p) (fun _ _ ↦ Finset.mem_univ _)
-    (fun p _ ↦ Fin.faceSwap_faceSwap p)
-  obtain ⟨i, j⟩ := p
-  simp only [Fin.faceSwap_def, ← face_face, smul_sub, smul_smul, ← pow_add,
-    Fin.neg_one_pow_succAbove_add_predAbove, neg_smul]
-  abel
-
-/-- The boundary is natural. -/
+/-- The scalar boundary commutes with push-forward along a continuous map. -/
 theorem map_boundary (f : C(X, Y)) (n : ℕ) :
-    map R f n ∘ₗ boundary X R n = boundary Y R n ∘ₗ map R f (n + 1) := by
+    map R f n ∘ₗ boundary X R R n = boundary Y R R n ∘ₗ map R f (n + 1) := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp [face_comp]
 
-end Boundary
+end RingBoundary
 
 end CubicalChain
 

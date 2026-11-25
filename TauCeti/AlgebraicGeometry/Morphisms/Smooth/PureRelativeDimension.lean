@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.SourceDescent
 public import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 
 /-!
 # Smooth morphisms of pure relative dimension
@@ -57,12 +58,8 @@ the relative dimension of a standard smooth chart of `f` around the point. -/
 theorem exists_smoothOfRelativeDimension_ι_comp {Y S : Scheme.{u}} (f : Y ⟶ S)
     [Smooth f] (y : Y) :
     ∃ (V : Y.Opens) (k : ℕ), y ∈ V ∧ SmoothOfRelativeDimension k (V.ι ≫ f) := by
-  obtain ⟨U, hU, V, hV, hy, e, h⟩ := Smooth.exists_isStandardSmooth f y
   -- the standard smooth chart `Γ(S, U) → Γ(Y, V)` has some relative dimension `k`
-  obtain ⟨k, hk⟩ : ∃ k, (f.appLE U V e).hom.IsStandardSmoothOfRelativeDimension k := by
-    let := (f.appLE U V e).hom.toAlgebra
-    obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := h
-    exact ⟨P.dimension, _, _, _, ‹_›, P, rfl⟩
+  obtain ⟨k, U, hU, V, hV, hy, e, hk⟩ := f.exists_isStandardSmoothOfRelativeDimension_of_smooth y
   have : SmoothOfRelativeDimension k (Spec.map (f.appLE U V e)) := by
     rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension k)]
     exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hk

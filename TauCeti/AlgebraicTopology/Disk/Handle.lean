@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.Category.TopCat.Pushout
-import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # A handle attachment deformation retracts onto the attachment of its cores
@@ -101,7 +101,8 @@ def handleCoreRetraction (k l : ℕ) :
         (ballRadialProjection_spec _).2.1⟩,
       ULift.up ⟨((ballRadialProjection (handleCylinderPoint p)).1 / ‖p.2.down.val‖) • p.2.down.val,
         mem_closedBall_zero_iff.2 <|
-          (norm_div_norm_smul_le _ (ballRadialProjection_spec _).1.1).trans
+          ((norm_div_norm_smul_le _ _).trans_eq
+            (Real.norm_of_nonneg (ballRadialProjection_spec _).1.1)).trans
             ((ballRadialProjection_handleCylinderPoint_fst_le p).trans
               (mem_closedBall_zero_iff.1 p.2.down.property))⟩)
   continuous_toFun := by
@@ -110,9 +111,10 @@ def handleCoreRetraction (k l : ℕ) :
     have hy : Continuous fun p : TopCat.disk.{u} k × TopCat.disk.{u} l ↦ p.2.down.val :=
       continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_snd)
     exact (continuous_uliftUp.comp (hp.snd.subtype_mk _)).prodMk
-      (continuous_uliftUp.comp ((hp.fst.div_norm_smul hy
-        (fun p ↦ (ballRadialProjection_spec _).1.1)
-        ballRadialProjection_handleCylinderPoint_fst_le).subtype_mk _))
+      (continuous_uliftUp.comp ((hp.fst.div_norm_smul hy fun p h ↦
+        le_antisymm ((ballRadialProjection_handleCylinderPoint_fst_le p).trans
+          (Eq.le ((isClosed_eq hy.norm continuous_const).frontier_subset h)))
+          (ballRadialProjection_spec _).1.1).subtype_mk _))
 
 @[simp]
 private theorem coe_handleCoreRetraction_fst (p : TopCat.disk.{u} k × TopCat.disk.{u} l) :

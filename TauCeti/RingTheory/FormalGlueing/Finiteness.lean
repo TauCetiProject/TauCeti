@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGlueing.Detection
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.Algebra.Module.FinitePresentation
+import TauCeti.Algebra.Module.LocalizedModule.BaseChange
 import TauCeti.LinearAlgebra.TensorProduct.Kernel
 
 /-!
@@ -149,8 +150,7 @@ theorem finite_of_formalGlueing_localizedModule
     (hM : ∀ r ∈ G, Module.Finite (Localization.Away r) (LocalizedModule (.powers r) M)) :
     Module.Finite R E :=
   hφ.finite_of_formalGlueing G hG
-    (fun r hr ↦ (LocalizedModule.equivTensorProduct (.powers r) E).symm.trans
-      ((e_loc r hr).trans (LocalizedModule.equivTensorProduct (.powers r) M)))
+    (fun r hr ↦ LocalizedModule.tensorProductEquivOfEquiv (e_loc r hr))
     (fun r hr ↦ by
       have := hM r hr
       exact Module.Finite.equiv (LocalizedModule.equivTensorProduct (.powers r) M))
@@ -170,8 +170,7 @@ theorem finitePresentation_of_formalGlueing_localizedModule
       Module.FinitePresentation (Localization.Away r) (LocalizedModule (.powers r) M)) :
     Module.FinitePresentation R E :=
   hφ.finitePresentation_of_formalGlueing G hG
-    (fun r hr ↦ (LocalizedModule.equivTensorProduct (.powers r) E).symm.trans
-      ((e_loc r hr).trans (LocalizedModule.equivTensorProduct (.powers r) M)))
+    (fun r hr ↦ LocalizedModule.tensorProductEquivOfEquiv (e_loc r hr))
     (fun r hr ↦ by
       have := hM r hr
       exact .of_equiv (LocalizedModule.equivTensorProduct (.powers r) M))

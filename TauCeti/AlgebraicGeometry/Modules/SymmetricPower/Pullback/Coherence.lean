@@ -18,9 +18,9 @@ finiteness hypotheses.
 
 The pushforward equations are checked on sheafified sectionwise symmetric tensors; the pullback
 equations then follow from Mathlib's conjugacy of the canonical pullback and pushforward
-comparisons by `CategoryTheory.Adjunction.app_comp_map_hom_app_of_mateEquiv` and
-`CategoryTheory.Adjunction.app_comp_map_inv_app_of_mateEquiv`, exactly as for exterior powers in
-`TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Coherence`.
+comparisons by `CategoryTheory.Adjunction.app_comp_map_app_eq_app_of_mateEquiv` and
+`CategoryTheory.Adjunction.app_comp_map_app_eq_app_comp_map_app_comp_app_of_mateEquiv`, exactly
+as for exterior powers in `TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Coherence`.
 
 ## Main results
 
@@ -171,7 +171,7 @@ theorem pullbackSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
   have hcq : mateEquiv adj adj c = q :=
     Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison (𝟙 X) n
   -- The typed endofunctor `W` avoids repeatedly reconstructing the scheme's sheaf category.
-  exact adj.app_comp_map_hom_app_of_mateEquiv (Scheme.Modules.pullbackId X)
+  exact adj.app_comp_map_app_eq_app_of_mateEquiv (Scheme.Modules.pullbackId X).hom
     (Scheme.Modules.pushforwardId X) (Scheme.Modules.conjugateEquiv_pullbackId_hom X) c q hcq
     (pushforwardSymmetricPowerComparison_id n) M
 
@@ -214,8 +214,9 @@ theorem pullbackSymmetricPowerComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
     Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison f n
   have h₃ : mateEquiv C C c₃ = q₃ :=
     Scheme.Modules.mateEquiv_pullbackSymmetricPowerComparison (f ≫ g) n
-  exact A.app_comp_map_inv_app_of_mateEquiv B C (Scheme.Modules.pullbackComp f g)
-    (Scheme.Modules.pushforwardComp f g) (Scheme.Modules.conjugateEquiv_pullbackComp_inv f g)
+  exact A.app_comp_map_app_eq_app_comp_map_app_comp_app_of_mateEquiv B C
+    (Scheme.Modules.pullbackComp f g).inv (Scheme.Modules.pushforwardComp f g).hom
+    (Scheme.Modules.conjugateEquiv_pullbackComp_inv f g)
     c₁ c₂ c₃ q₁ q₂ q₃ h₁ h₂ h₃ (pushforwardSymmetricPowerComparison_comp f g n) M
 
 end

@@ -169,8 +169,7 @@ noncomputable def monodromyGroupCosetTripleMulEquivQuotientNormalCore
 theorem natCard_monodromyGroup_cosetTriple (H : Subgroup (TriangleGroup a b c))
     (e : TriangleGroup a b c ⧸ H ≃ Fin n) :
     Nat.card (cosetTriple H e).monodromyGroup = H.normalCore.index := by
-  rw [Subgroup.index_eq_card]
-  exact Nat.card_congr (monodromyGroupCosetTripleMulEquivQuotientNormalCore H e).toEquiv
+  rw [monodromyGroup_cosetTriple, Equiv.natCard_range_permutationRepresentation_quotient]
 
 /-- `H` is normal in `Δ(a, b, c)` if and only if the monodromy group of `cosetTriple H e` has
 order `n`. -/

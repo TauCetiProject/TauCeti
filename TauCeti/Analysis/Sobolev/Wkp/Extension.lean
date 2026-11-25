@@ -191,6 +191,16 @@ theorem Wkp0.iteratedGradient_extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : 
       Wkp.iteratedGradient_ofTestFunctionₗ k, Wkp.iteratedGradient_ofTestFunctionₗ k phi]
     exact (extend_testFunction_iteratedGradient hsub k phi).symm
 
+/-- Almost everywhere on `Ω'`, the highest weak derivative of the extension by zero is the highest
+weak derivative of the original function, extended by zero off `Ω`. -/
+theorem Wkp0.iteratedGradient_extendByZeroₗᵢ_ae_eq_indicator (hsub : Omega ≤ Omega') (k : ℕ)
+    (u : Wkp0 mu Omega p (k + 1)) :
+    (Wkp.iteratedGradient k (Wkp0.extendByZeroₗᵢ hsub (k + 1) u : Wkp mu Omega' p (k + 1)) :
+        E → IteratedGradient E k) =ᵐ[mu.restrict Omega']
+      (Omega : Set E).indicator (Wkp.iteratedGradient k (u : Wkp mu Omega p (k + 1))) := by
+  rw [Wkp0.iteratedGradient_extendByZeroₗᵢ]
+  exact coeFn_extendByZeroLpₗᵢ ℝ _ _ _
+
 /-- Zero extension commutes with forgetting the highest weak derivative. -/
 -- The dependent successor index prevents this rule from matching in `simp`.
 theorem Wkp0.lowerOrderL_extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : ℕ)

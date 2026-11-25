@@ -41,6 +41,7 @@ private def restrictScalarsExteriorPowerApp (n : ℕ) (M : ModuleCat.{max u v w}
     { toFun m := ModuleCat.exteriorPower.mk (M := M) m
       map_update_add' m i a b :=
         (ModuleCat.exteriorPower.mk (M := M)).map_update_add m i a b
+      -- `r` acts on the restricted module through `f` (`ModuleCat.restrictScalars.smul_def`).
       map_update_smul' m i r a :=
         (ModuleCat.exteriorPower.mk (M := M)).map_update_smul m i (f r) a
       map_eq_zero_of_eq' m _ _ h hij :=
@@ -83,30 +84,25 @@ theorem restrictScalarsExteriorPowerComparison_app_mk (n : ℕ)
       (ModuleCat.exteriorPower.mk m) = ModuleCat.exteriorPower.mk (M := M) m :=
   restrictScalarsExteriorPowerApp_mk f n M m
 
--- The reverse wedge map, with the target action transported by the inverse ring map.
+-- The reverse wedge map: the comparison for `e.symm`, after identifying `M` with its
+-- restriction along `e` followed by `e.symm`.
 private def restrictScalarsExteriorPowerInvAux (e : S ≃+* R) (n : ℕ)
     (M : ModuleCat.{max u v w} R) :
     M.exteriorPower n ⟶ (ModuleCat.restrictScalars e.symm.toRingHom).obj
-      (((ModuleCat.restrictScalars e.toRingHom).obj M).exteriorPower n) := by
-  let N := (ModuleCat.restrictScalars e.toRingHom).obj M
-  let P := (ModuleCat.restrictScalars e.symm.toRingHom).obj (N.exteriorPower n)
-  let a : M.AlternatingMap P n :=
-    { toFun m := ModuleCat.exteriorPower.mk (M := N) m
-      map_update_add' m i a b := (ModuleCat.exteriorPower.mk (M := N)).map_update_add m i a b
-      map_update_smul' m i r a := by
-        -- The action of `e.symm r` on `N` is the original action of `r` on `M`.
-        have hw := (ModuleCat.exteriorPower.mk (M := N)).map_update_smul m i (e.symm r) a
-        erw [ModuleCat.restrictScalars.smul_def e.toRingHom, RingEquiv.apply_symm_apply] at hw
-        exact hw
-      map_eq_zero_of_eq' m _ _ h hij :=
-        (ModuleCat.exteriorPower.mk (M := N)).map_eq_zero_of_eq m h hij }
-  exact ModuleCat.exteriorPower.desc a
+      (((ModuleCat.restrictScalars e.toRingHom).obj M).exteriorPower n) :=
+  ModuleCat.exteriorPower.map ((ModuleCat.restrictScalarsId'App _
+      e.toRingHom_comp_symm_toRingHom M).inv ≫
+      (ModuleCat.restrictScalarsComp'App e.symm.toRingHom e.toRingHom _ rfl M).hom) n ≫
+    restrictScalarsExteriorPowerApp e.symm.toRingHom n _
 
 private lemma restrictScalarsExteriorPowerInvAux_mk (e : S ≃+* R) (n : ℕ)
     (M : ModuleCat.{max u v w} R) (m : Fin n → M) :
     restrictScalarsExteriorPowerInvAux e n M (ModuleCat.exteriorPower.mk m) =
       ModuleCat.exteriorPower.mk (M := (ModuleCat.restrictScalars e.toRingHom).obj M) m :=
-  ModuleCat.exteriorPower.desc_mk _ m
+  -- The identifications of `M` with its double restriction are the identity on elements.
+  (congrArg (restrictScalarsExteriorPowerApp e.symm.toRingHom n _)
+    (ModuleCat.exteriorPower.map_mk _ m)).trans
+      (restrictScalarsExteriorPowerApp_mk e.symm.toRingHom n _ _)
 
 /-- Restriction along an isomorphism of coefficient rings preserves exterior powers. -/
 theorem isIso_restrictScalarsExteriorPowerComparison_app_of_bijective
@@ -114,6 +110,7 @@ theorem isIso_restrictScalarsExteriorPowerComparison_app_of_bijective
     IsIso ((restrictScalarsExteriorPowerComparison f n).app M) := by
   let e := RingEquiv.ofBijective f hf
   let : RingHomInvPair e.toRingHom e.symm.toRingHom := RingHomInvPair.of_ringEquiv e
+  let : RingHomInvPair e.symm.toRingHom e.toRingHom := RingHomInvPair.of_ringEquiv_symm e
   let N := (ModuleCat.restrictScalars e.toRingHom).obj M
   -- Opposite coefficient changes make both composites linear over their source rings.
   let c : N.exteriorPower n →ₛₗ[e.toRingHom] M.exteriorPower n :=
@@ -131,22 +128,14 @@ theorem isIso_restrictScalarsExteriorPowerComparison_app_of_bijective
       h (ModuleCat.exteriorPower.mk m) = ModuleCat.exteriorPower.mk (M := N) m := by
     exact (ModuleCat.semilinearMapAddEquiv_symm_apply_apply e.symm.toRingHom _ _ _ _).trans
       (restrictScalarsExteriorPowerInvAux_mk e n M m)
-  have hleft : Function.LeftInverse h c := by
-    have heq : (h.comp c : N.exteriorPower n →ₗ[S] N.exteriorPower n) = LinearMap.id := by
-      apply _root_.exteriorPower.linearMap_ext
-      apply _root_.AlternatingMap.ext
-      intro m
-      exact (congrArg h (hc m)).trans (hh m)
-    exact fun x ↦ DFunLike.congr_fun heq x
-  have hright : Function.RightInverse h c := by
-    have heq : (c.comp h : M.exteriorPower n →ₗ[R] M.exteriorPower n) = LinearMap.id := by
-      apply _root_.exteriorPower.linearMap_ext
-      apply _root_.AlternatingMap.ext
-      intro m
-      exact (congrArg c (hh m)).trans (hc m)
-    exact fun x ↦ DFunLike.congr_fun heq x
-  exact (ConcreteCategory.isIso_iff_bijective _).mpr
-    ⟨hleft.injective, hright.surjective⟩
+  -- Both composites fix decomposable wedges, so they are the identity.
+  let ce : N.exteriorPower n ≃ₛₗ[e.toRingHom] M.exteriorPower n :=
+    .ofLinearMap c h
+      (_root_.exteriorPower.linearMap_ext <| _root_.AlternatingMap.ext fun m ↦
+        (congrArg c (hh m)).trans (hc m))
+      (_root_.exteriorPower.linearMap_ext <| _root_.AlternatingMap.ext fun m ↦
+        (congrArg h (hc m)).trans (hh m))
+  exact (ConcreteCategory.isIso_iff_bijective _).mpr ce.bijective
 
 end
 
