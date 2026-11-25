@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Character
 import TauCeti.Algebra.Coalgebra.Comodule.Evaluation
 public import TauCeti.LinearAlgebra.Unimodular
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # Matrix coefficients detect Chevalley-line cosets
@@ -19,7 +18,9 @@ line realizing a closed subgroup as a stabilizer, this is precisely equality of 
 cosets. The criterion holds over arbitrary commutative value rings, including nonreduced
 rings; checking only field-valued points would lose the infinitesimal fiber relation.
 
-The construction uses `HopfIdeal.exists_finite_subcomodule_exteriorPower_line_stabilizer`,
+The construction uses
+`HopfIdeal.exists_finite_subcomodule_exteriorPower_unimodular_line_stabilizer`
+from `ExteriorStabilizer.Character`,
 `Comodule.pointsAction`, and scalar-extended dual evaluation. It supplies the algebraic
 fiber relation used to compare a projective orbit with a homogeneous quotient.
 
@@ -120,24 +121,14 @@ theorem exists_finite_subcomodule_exteriorPower_coset_matrixCoefficient
             ∃ c : Aˣ, ∀ φ : Module.Dual k (⋀[k]^n V),
               h.ofConv (Comodule.matrixCoefficient (C := H) φ m) =
                 c * g.ofConv (Comodule.matrixCoefficient (C := H) φ m) := by
-  obtain ⟨V, n, hV, L, hL, _, hstab⟩ :=
-    I.exists_finite_subcomodule_exteriorPower_line_stabilizer hI
+  obtain ⟨V, n, hV, m, huni, hstab⟩ :=
+    I.exists_finite_subcomodule_exteriorPower_unimodular_line_stabilizer hI
   let : Module.Finite k V := hV
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   let : AddCommGroup (⋀[k]^n V) := Module.addCommMonoidToAddCommGroup k
-  let : AddCommGroup L := Module.addCommMonoidToAddCommGroup k
-  obtain ⟨m, hm, hgen⟩ := (finrank_eq_one_iff' (K := k) (V := L)).mp hL
-  have hspan : L = k ∙ (m : ⋀[k]^n V) := by
-    apply le_antisymm
-    · intro z hz
-      obtain ⟨c, hc⟩ := hgen ⟨z, hz⟩
-      exact Submodule.mem_span_singleton.mpr ⟨c, congrArg Subtype.val hc⟩
-    · exact Submodule.span_le.mpr (Set.singleton_subset_iff.mpr m.property)
-  have huni : Module.IsUnimodular k (m : ⋀[k]^n V) :=
-    Module.isUnimodular_iff.mpr
-      (Module.Projective.exists_dual_eq_one k (Subtype.coe_injective.ne hm))
   refine ⟨V, n, hV, m, huni, fun A g h ↦ ?_⟩
   exact I.coset_eq_iff_exists_units_matrixCoefficient (m : ⋀[k]^n V) huni A
-    (fun a ↦ by simpa only [hspan] using hstab A a) g h
+    (fun a ↦ by
+      rw [← hstab, Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint]) g h
 
 end TauCeti.HopfIdeal
