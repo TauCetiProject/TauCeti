@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
-import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Values
 
 /-!
 # Airy functions: connection formulas
@@ -71,11 +71,6 @@ private theorem three_cpow_neg_five_div_six :
   rw [← cpow_add _ _ (by norm_num)]
   norm_num
 
-/-- `(√3)² = 3` in `ℂ`. -/
-private theorem ofReal_sqrt_three_sq : (√3 : ℂ) ^ 2 = 3 := by
-  rw [← ofReal_pow, Real.sq_sqrt (by norm_num)]
-  norm_num
-
 /-- For a cube root of unity `ν`, `Ai(νz) = ((1 + ν) Ai(z) + (1 − ν) Bi(z)/√3)/2`. -/
 theorem airyAi_mul_of_pow_three_eq_one {ν : ℂ} (hν : ν ^ 3 = 1) (z : ℂ) :
     airyAi (ν * z) = ((1 + ν) * airyAi z + (1 - ν) * airyBi z / √3) / 2 := by
@@ -91,58 +86,6 @@ theorem airyBi_mul_of_pow_three_eq_one {ν : ℂ} (hν : ν ^ 3 = 1) (z : ℂ) :
     three_cpow_neg_five_div_six]
   ring
 
-/-- `ω = e^{2πi/3} = −1/2 + (√3/2) i`. -/
-private theorem exp_two_pi_mul_I_div_three : cexp (2 * π * I / 3) = -1 / 2 + √3 / 2 * I := by
-  rw [show 2 * π * I / 3 = ((π - π / 3 : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I,
-    Real.cos_pi_sub, Real.sin_pi_sub, Real.cos_pi_div_three, Real.sin_pi_div_three]
-  push_cast
-  ring
-
-/-- `ω^{−1} = e^{−2πi/3} = −1/2 − (√3/2) i`. -/
-private theorem exp_neg_two_pi_mul_I_div_three :
-    cexp (-(2 * π * I / 3)) = -1 / 2 - √3 / 2 * I := by
-  rw [show -(2 * π * I / 3) = ((-(π - π / 3) : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I,
-    Real.cos_neg, Real.sin_neg, Real.cos_pi_sub, Real.sin_pi_sub, Real.cos_pi_div_three,
-    Real.sin_pi_div_three]
-  push_cast
-  ring
-
-/-- `e^{πi/3} = 1/2 + (√3/2) i`. -/
-private theorem exp_pi_mul_I_div_three : cexp (π * I / 3) = 1 / 2 + √3 / 2 * I := by
-  rw [show π * I / 3 = ((π / 3 : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I,
-    Real.cos_pi_div_three, Real.sin_pi_div_three]
-  push_cast
-  ring
-
-/-- `e^{−πi/3} = 1/2 − (√3/2) i`. -/
-private theorem exp_neg_pi_mul_I_div_three : cexp (-(π * I / 3)) = 1 / 2 - √3 / 2 * I := by
-  rw [show -(π * I / 3) = ((-(π / 3) : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I,
-    Real.cos_neg, Real.sin_neg, Real.cos_pi_div_three, Real.sin_pi_div_three]
-  push_cast
-  ring
-
-/-- `e^{πi/6} = √3/2 + i/2`. -/
-private theorem exp_pi_mul_I_div_six : cexp (π * I / 6) = √3 / 2 + 1 / 2 * I := by
-  rw [show π * I / 6 = ((π / 6 : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I,
-    Real.cos_pi_div_six, Real.sin_pi_div_six]
-  push_cast
-  ring
-
-/-- `e^{−πi/6} = √3/2 − i/2`. -/
-private theorem exp_neg_pi_mul_I_div_six : cexp (-(π * I / 6)) = √3 / 2 - 1 / 2 * I := by
-  rw [show -(π * I / 6) = ((-(π / 6) : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I,
-    Real.cos_neg, Real.sin_neg, Real.cos_pi_div_six, Real.sin_pi_div_six]
-  push_cast
-  ring
-
-/-- `ω³ = 1`. -/
-private theorem exp_two_pi_mul_I_div_three_pow_three : cexp (2 * π * I / 3) ^ 3 = 1 := by
-  exact_mod_cast (isPrimitiveRoot_exp 3 (by norm_num)).pow_eq_one
-
-/-- `ω^{−3} = 1`. -/
-private theorem exp_neg_two_pi_mul_I_div_three_pow_three : cexp (-(2 * π * I / 3)) ^ 3 = 1 := by
-  rw [exp_neg, inv_pow, exp_two_pi_mul_I_div_three_pow_three, inv_one]
-
 /-- `Ai(z e^{−2πi/3}) = ½ e^{−πi/3} (Ai(z) + i Bi(z))` (DLMF 9.2.11, upper signs). -/
 theorem airyAi_mul_exp_neg_two_pi_mul_I_div_three (z : ℂ) :
     airyAi (z * cexp (-(2 * π * I / 3))) =
@@ -150,7 +93,7 @@ theorem airyAi_mul_exp_neg_two_pi_mul_I_div_three (z : ℂ) :
   rw [mul_comm, airyAi_mul_of_pow_three_eq_one exp_neg_two_pi_mul_I_div_three_pow_three,
     exp_neg_two_pi_mul_I_div_three, exp_neg_pi_mul_I_div_three]
   field_simp
-  linear_combination (I ^ 2 * airyBi z) * ofReal_sqrt_three_sq + 3 * airyBi z * I_sq
+  linear_combination (I ^ 2 * airyBi z) * ofReal_sqrt_ofNat_sq 3 + 3 * airyBi z * I_sq
 
 /-- `Ai(z e^{2πi/3}) = ½ e^{πi/3} (Ai(z) − i Bi(z))` (DLMF 9.2.11, lower signs). -/
 theorem airyAi_mul_exp_two_pi_mul_I_div_three (z : ℂ) :
@@ -159,7 +102,7 @@ theorem airyAi_mul_exp_two_pi_mul_I_div_three (z : ℂ) :
   rw [mul_comm, airyAi_mul_of_pow_three_eq_one exp_two_pi_mul_I_div_three_pow_three,
     exp_two_pi_mul_I_div_three, exp_pi_mul_I_div_three]
   field_simp
-  linear_combination (I ^ 2 * airyBi z) * ofReal_sqrt_three_sq + 3 * airyBi z * I_sq
+  linear_combination (I ^ 2 * airyBi z) * ofReal_sqrt_ofNat_sq 3 + 3 * airyBi z * I_sq
 
 /-- **Connection formula** `Bi(z) = e^{−πi/6} Ai(z e^{−2πi/3}) + e^{πi/6} Ai(z e^{2πi/3})`
 (DLMF 9.2.10). -/
@@ -169,7 +112,7 @@ theorem airyBi_eq_airyAi_rotations (z : ℂ) :
   rw [airyAi_mul_exp_neg_two_pi_mul_I_div_three, airyAi_mul_exp_two_pi_mul_I_div_three,
     exp_neg_pi_mul_I_div_six, exp_pi_mul_I_div_six, exp_neg_pi_mul_I_div_three,
     exp_pi_mul_I_div_three]
-  linear_combination (I ^ 2 * airyBi z / 4) * ofReal_sqrt_three_sq +
+  linear_combination (I ^ 2 * airyBi z / 4) * ofReal_sqrt_ofNat_sq 3 +
     (airyBi z - √3 * airyAi z / 4) * I_sq
 
 /-- `Ai(z) + e^{−2πi/3} Ai(z e^{−2πi/3}) + e^{2πi/3} Ai(z e^{2πi/3}) = 0` (DLMF 9.2.12). -/
@@ -179,7 +122,7 @@ theorem airyAi_add_rotations_eq_zero (z : ℂ) :
   rw [airyAi_mul_exp_neg_two_pi_mul_I_div_three, airyAi_mul_exp_two_pi_mul_I_div_three,
     exp_neg_two_pi_mul_I_div_three, exp_two_pi_mul_I_div_three, exp_neg_pi_mul_I_div_three,
     exp_pi_mul_I_div_three]
-  linear_combination (I ^ 2 * airyAi z / 4) * ofReal_sqrt_three_sq + 3 * airyAi z / 4 * I_sq
+  linear_combination (I ^ 2 * airyAi z / 4) * ofReal_sqrt_ofNat_sq 3 + 3 * airyAi z / 4 * I_sq
 
 /-- `Bi(z) + e^{−2πi/3} Bi(z e^{−2πi/3}) + e^{2πi/3} Bi(z e^{2πi/3}) = 0` (DLMF 9.2.13). -/
 theorem airyBi_add_rotations_eq_zero (z : ℂ) :
@@ -189,7 +132,7 @@ theorem airyBi_add_rotations_eq_zero (z : ℂ) :
     airyBi_mul_of_pow_three_eq_one exp_neg_two_pi_mul_I_div_three_pow_three,
     airyBi_mul_of_pow_three_eq_one exp_two_pi_mul_I_div_three_pow_three,
     exp_neg_two_pi_mul_I_div_three, exp_two_pi_mul_I_div_three]
-  linear_combination (I ^ 2 * (airyBi z - √3 * airyAi z) / 4) * ofReal_sqrt_three_sq +
+  linear_combination (I ^ 2 * (airyBi z - √3 * airyAi z) / 4) * ofReal_sqrt_ofNat_sq 3 +
     3 * (airyBi z - √3 * airyAi z) / 4 * I_sq
 
 /-- `−z e^{−2πi/3} = z e^{πi/3}`: the rotations of `−z` by `ω^{∓1}` are the rotations of `z`
