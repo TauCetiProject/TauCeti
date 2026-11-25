@@ -67,7 +67,6 @@ needed.
   pointwise equal maps differ by a continuous family of automorphisms of the model fibre.
 * `TauCeti.trans_symm_eq_of_mk'_eq`, `TauCeti.eq_of_mk'_eq`: frames that agree as maps to the
   total space have the same transitions, and determine the automorphisms they are composed with.
-  `TauCeti.frameCast` reads a frame at an equal base point (`TauCeti.mk'_frameCast`).
 * `TauCeti.exists_orthonormal_trivialization_baseSet_eq_univ_of_contractibleSpace`: for a
   finite-rank real bundle with continuous fibre metric, the trivialization can be chosen
   isometric on every fibre.
@@ -175,13 +174,12 @@ theorem trans_symm_eq_of_mk'_eq {b b' : X} {σ₁ σ₂ : F ≃L[𝕜] E b} {ρ�
   rfl
 
 /-- A frame at `b`, read at a point `b'` equal to `b`. -/
-def frameCast {b b' : X} (h : b = b') (φ : F ≃L[𝕜] E b) : F ≃L[𝕜] E b' :=
+private def frameCast {b b' : X} (h : b = b') (φ : F ≃L[𝕜] E b) : F ≃L[𝕜] E b' :=
   h ▸ φ
 
-/-- A frame read at an equal point by `TauCeti.frameCast` has the same values in the total
-space. -/
+/-- A frame read at an equal point by `frameCast` has the same values in the total space. -/
 @[simp]
-theorem mk'_frameCast {b b' : X} (h : b = b') (φ : F ≃L[𝕜] E b) (v : F) :
+private theorem mk'_frameCast {b b' : X} (h : b = b') (φ : F ≃L[𝕜] E b) (v : F) :
     TotalSpace.mk' F b' (frameCast h φ v) = TotalSpace.mk' F b (φ v) := by
   subst h
   rfl
