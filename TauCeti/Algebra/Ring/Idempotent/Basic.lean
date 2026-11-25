@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Defs
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.Algebra.Ring.Idempotent
 import Mathlib.Algebra.Algebra.Basic
+import Mathlib.RingTheory.Idempotents
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NoncommRing
@@ -33,6 +36,13 @@ The cubic analogue: for `u ^ 3 = 1`, `1 + u + u ^ 2` squares to `3 * (1 + u + u 
 reduces to `3 * (1 + u + u ^ 2)`. These are the Temperley–Lieb relations at loop value `√3` for the
 projections `3⁻¹ • (1 + u + u ^ 2)` built from the generators of a cubic quantum torus.
 
+A finite family `(eᵢ)` with pairwise zero products summing to `1` consists of idempotents (Mathlib's
+`CompleteOrthogonalIdempotents.iff_ortho_complete`), and each `eᵢ` extracts the `i`-th component of
+a combination of the family:
+`eᵢ (∑ₖ cₖ eₖ) = (∑ₖ cₖ eₖ) eᵢ = cᵢ eᵢ`. For operators these are the spectral projections of a
+finite spectral decomposition, and the identity says that each projection commutes with the
+operator and restricts it to a scalar.
+
 ## Main results
 
 * `IsIdempotentElem.mul_add_one_sub_mul`: elements of the form `e x + (1 - e) y`, with `x` and `y`
@@ -56,6 +66,10 @@ projections `3⁻¹ • (1 + u + u ^ 2)` built from the generators of a cubic qu
 * `TauCeti.one_add_add_sq_mul_one_add_add_sq_mul_one_add_add_sq_of_pow_three_eq_one`: if
   `u ^ 3 = 1`, `v * u = c • (u * v)` and `1 + c + c ^ 2 = 0`, then
   `(1 + u + u ^ 2) * (1 + v + v ^ 2) * (1 + u + u ^ 2) = 3 * (1 + u + u ^ 2)`.
+* `TauCeti.mul_sum_smul_eq_smul_of_pairwise_mul_eq_zero_of_sum_eq_one`,
+  `TauCeti.sum_smul_mul_eq_smul_of_pairwise_mul_eq_zero_of_sum_eq_one`: in a finite family with
+  pairwise zero products summing to `1`,
+  `eᵢ (∑ₖ cₖ eₖ) = cᵢ eᵢ` and `(∑ₖ cₖ eₖ) eᵢ = cᵢ eᵢ`.
 -/
 
 public section
@@ -197,5 +211,34 @@ theorem one_add_add_sq_mul_one_add_add_sq_mul_one_add_add_sq_of_pow_three_eq_one
     _ = 3 * S := by
         rw [hvS, hv2S, ← mul_assoc, ← mul_assoc, hSlin, hSlin, hc, hc', hSS]
         simp only [zero_smul, zero_mul, add_zero]
+
+section Family
+
+variable {ι K R : Type*} [Semiring R] {s : Finset ι} {e : ι → R} {i : ι}
+  [SMulZeroClass K R]
+
+/-- In a finite family with pairwise zero products summing to `1`, multiplying a combination
+`∑ₖ cₖ eₖ` on the left by `eᵢ` extracts its `i`-th term: `eᵢ (∑ₖ cₖ eₖ) = cᵢ eᵢ`. -/
+theorem mul_sum_smul_eq_smul_of_pairwise_mul_eq_zero_of_sum_eq_one [SMulCommClass K R R]
+    (he : (s : Set ι).Pairwise fun i j ↦ e i * e j = 0) (h1 : ∑ k ∈ s, e k = 1) (c : ι → K)
+    (hi : i ∈ s) : e i * ∑ k ∈ s, c k • e k = c i • e i := by
+  have hidem := ((CompleteOrthogonalIdempotents.iff_ortho_complete (e := fun k : s ↦ e k)).2
+    ⟨fun a b hab ↦ he a.property b.property (Subtype.coe_ne_coe.2 hab),
+      by rw [Finset.sum_coe_sort, h1]⟩).idem ⟨i, hi⟩
+  rw [Finset.mul_sum, Finset.sum_eq_single_of_mem i hi fun k hk hki ↦ by
+    rw [mul_smul_comm, he hi hk hki.symm, smul_zero], mul_smul_comm, hidem.eq]
+
+/-- In a finite family with pairwise zero products summing to `1`, multiplying a combination
+`∑ₖ cₖ eₖ` on the right by `eᵢ` extracts its `i`-th term: `(∑ₖ cₖ eₖ) eᵢ = cᵢ eᵢ`. -/
+theorem sum_smul_mul_eq_smul_of_pairwise_mul_eq_zero_of_sum_eq_one [IsScalarTower K R R]
+    (he : (s : Set ι).Pairwise fun i j ↦ e i * e j = 0) (h1 : ∑ k ∈ s, e k = 1) (c : ι → K)
+    (hi : i ∈ s) : (∑ k ∈ s, c k • e k) * e i = c i • e i := by
+  have hidem := ((CompleteOrthogonalIdempotents.iff_ortho_complete (e := fun k : s ↦ e k)).2
+    ⟨fun a b hab ↦ he a.property b.property (Subtype.coe_ne_coe.2 hab),
+      by rw [Finset.sum_coe_sort, h1]⟩).idem ⟨i, hi⟩
+  rw [Finset.sum_mul, Finset.sum_eq_single_of_mem i hi fun k hk hki ↦ by
+    rw [smul_mul_assoc, he hk hi hki, smul_zero], smul_mul_assoc, hidem.eq]
+
+end Family
 
 end TauCeti

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.RingTheory.Jacobson.Ideal
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import TauCeti.Algebra.Ring.Idempotent.Basic
 
@@ -49,6 +51,8 @@ differences of the remaining columns.
   determinant over every field of characteristic zero.
 * `RingHom.det_map_ne_zero_of_isUnit_det`: the image of a matrix with unit determinant under a ring
   homomorphism to a nontrivial commutative ring has nonzero determinant.
+* `Matrix.isUnit_det_one_add_smul`: a matrix congruent to `1` modulo an element of the Jacobson
+  radical has unit determinant.
 -/
 
 public section
@@ -181,6 +185,14 @@ theorem isUnit_det_mul_add_one_sub {n R : Type*} [Fintype n] [DecidableEq n] [Co
     {P g : Matrix n n R} (hP : IsIdempotentElem P) (hg : IsUnit g) (hPg : Commute P g) :
     IsUnit (P * g + 1 - P).det :=
   (isUnit_iff_isUnit_det _).1 (hP.isUnit_mul_add_one_sub hg hPg)
+
+/-- A matrix congruent to `1` modulo an element of the Jacobson radical is invertible. -/
+theorem isUnit_det_one_add_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] {r : R}
+    (hr : r ∈ Ring.jacobson R) (D : Matrix n n R) : IsUnit (1 + r • D).det := by
+  refine Ideal.isUnit_of_sub_one_mem_jacobson _ ?_
+  rw [det_one_add_smul, add_assoc, add_sub_cancel_left]
+  exact (Ring.jacobson R).add_mem (Ideal.mul_mem_left _ _ hr)
+    (Ideal.mul_mem_left _ _ (Ideal.pow_mem_of_mem _ hr 2 two_pos))
 
 end Matrix
 
