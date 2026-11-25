@@ -939,17 +939,10 @@ private theorem norm_le_of_toDistr_eq_of_le (hs : s' ≤ s) (hq : q ≤ q')
     {u : BesovSpace F φ s p q} {v : BesovSpace F φ s' p q'} (h : u.toDistr = v.toDistr) :
     ‖v‖ ≤ ‖u‖ := by
   rw [← norm_weightedBlocks, ← norm_weightedBlocks]
-  set w : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q' :=
-    ⟨u.weightedBlocks, (lp.memℓp u.weightedBlocks).of_exponent_ge hq⟩
-  -- The entries of the anonymous `lp` element `w` are those of `u.weightedBlocks` by definition:
-  -- `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
-  have hw : ∀ j, w j = u.weightedBlocks j := fun _ ↦ rfl
-  calc _ ≤ ‖w‖ := lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
-          rw [hw j, norm_weightedBlocks_apply, norm_weightedBlocks_apply,
-            block_eq_of_toDistr_eq h j]
-          gcongr
-          exact one_le_two
-    _ ≤ _ := lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le Fact.out).ne' hq hw
+  refine lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le Fact.out).ne' hq fun j ↦ ?_
+  rw [norm_weightedBlocks_apply, norm_weightedBlocks_apply, block_eq_of_toDistr_eq h j]
+  gcongr
+  exact one_le_two
 
 /-- For `s' < s`, the `B^{s'}_{p,q'}` norm of a distribution is at most `(1 - 2^{s' - s})⁻¹` times
 its `B^s_{p,q}` norm: the weighted blocks for `s'` decay geometrically. -/

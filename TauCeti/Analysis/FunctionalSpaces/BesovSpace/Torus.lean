@@ -13,6 +13,7 @@ import TauCeti.Analysis.Fourier.Torus.Bernstein
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
@@ -387,13 +388,8 @@ theorem exists_norm_littlewoodPaleyBlockLp_le_of_le :
         inhomogeneousLittlewoodPaley_latticePoint_eq_zero hn, Complex.ofReal_zero, zero_mul]
   rw [volume_eq_pi_haarAddCircle] at h
   -- `R^a ≤ M^d 2^{a j}`, since `M ≥ 1` and `a ≤ d`.
-  have hp1 : p.toReal⁻¹ ≤ 1 := by
-    rcases eq_or_ne p ∞ with rfl | hp
-    · simp
-    · exact inv_le_one_of_one_le₀ (by
-        simpa using ENNReal.toReal_mono hp (Fact.out : (1 : ℝ≥0∞) ≤ p))
   have ha : a ≤ Fintype.card d :=
-    mul_le_of_le_one_right (Nat.cast_nonneg _) (by linarith [inv_nonneg.2 r.toReal_nonneg])
+    mul_le_of_le_one_right (Nat.cast_nonneg _) (ENNReal.toReal_inv_sub_toReal_inv_le_one Fact.out r)
   have hRa : (2 ^ j * M) ^ a ≤ M ^ (Fintype.card d : ℝ) * 2 ^ (a * j) := by
     rw [Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast_mul zero_le_two,
       mul_comm (j : ℝ) a, mul_comm]
@@ -860,16 +856,10 @@ private theorem norm_le_of_coeff_eq_of_le (hs : s' ≤ s) (hq : q ≤ q')
     {u : BesovSpace φ s p q} {v : BesovSpace φ s' p q'} (h : u.coeff = v.coeff) :
     ‖v‖ ≤ ‖u‖ := by
   rw [← norm_weightedBlocks, ← norm_weightedBlocks]
-  set w : lp (fun _ : ℕ ↦ Lp ℂ p (volume : Measure (UnitAddTorus d))) q' :=
-    ⟨u.weightedBlocks, (lp.memℓp u.weightedBlocks).of_exponent_ge hq⟩
-  -- The entries of the anonymous `lp` element `w` are those of `u.weightedBlocks` by definition:
-  -- `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
-  have hw : ∀ j, w j = u.weightedBlocks j := fun _ ↦ rfl
-  calc _ ≤ ‖w‖ := lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
-          rw [hw j, norm_weightedBlocks_apply, norm_weightedBlocks_apply, h]
-          gcongr
-          exact one_le_two
-    _ ≤ _ := lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le Fact.out).ne' hq hw
+  refine lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le Fact.out).ne' hq fun j ↦ ?_
+  rw [norm_weightedBlocks_apply, norm_weightedBlocks_apply, h]
+  gcongr
+  exact one_le_two
 
 /-- For `s' < s`, the `B^{s'}_{p,q'}(𝕋ᵈ)` norm of a formal Fourier series is at most
 `(1 - 2^{s' - s})⁻¹` times its `B^s_{p,q}(𝕋ᵈ)` norm. -/
