@@ -21,8 +21,11 @@ core (`GluingData.contMDiffOn_coordChange_glue`) and the chart operators of the 
 built from these by composing with the fixed reindexing equivalence and by inverting operators,
 and inversion is `C^n` where it is applied (`ContMDiffOn.clm_inverse`).
 
-The hypotheses take the form used by `FiniteRankBundleCore.exists_pullbackComparison` for the
-morphism, and by `SchottkyDouble.contMDiffOn_coordChange_doubledBundleCore` for the transitions.
+The transitions of `P` and `Q` are assumed real `C^n` on chart overlaps, as in
+`SchottkyDouble.contMDiffOn_coordChange_doubledBundleCore`. The morphism `Φ` is assumed real `C^n`
+in charts: for all labels `i` and `j`, its fibre maps read in the chart `i` of `P` and the chart `j`
+of `Q`, `x ↦ P.core.inChartCoordinates Q.core i j x (Φ.fiberMap x)`, are real `C^n` on the overlap
+of the two charts.
 -/
 
 public section
@@ -36,6 +39,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
   {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {n : WithTop ℕ∞}
   {P Q : FiniteRankBundleCore 𝕜 M} {Φ : P ⟶ Q} (D : GluingData Φ)
+
+/-- Precomposing operators with the reindexing back to the coordinates of `P` is real `C^n`. -/
+theorem contDiff_comp_rankEquiv_symm {m : ℕ} :
+    ContDiff ℝ n fun f : (Fin P.rank → 𝕜) →L[𝕜] (Fin m → 𝕜) ↦
+      f.comp D.rankEquiv.symm.toContinuousLinearMap :=
+  (contDiff_id.clm_comp contDiff_const).restrict_scalars ℝ
+
+/-- Postcomposing operators with the reindexing to the coordinates of `Q` is real `C^n`. -/
+theorem contDiff_rankEquiv_comp {m : ℕ} :
+    ContDiff ℝ n fun f : (Fin m → 𝕜) →L[𝕜] (Fin P.rank → 𝕜) ↦
+      D.rankEquiv.toContinuousLinearMap.comp f :=
+  (contDiff_const.clm_comp contDiff_id).restrict_scalars ℝ
 
 section
 
@@ -54,16 +69,11 @@ theorem contMDiffOn_chartToQ (i k : M) :
     ContMDiffOn I 𝓘(ℝ, (Fin Q.rank → 𝕜) →L[𝕜] (Fin Q.rank → 𝕜)) n (D.chartToQ i k)
       (D.baseSet i ∩ Q.core.baseSet k) := by
   by_cases hi : i ∈ D.V
-  · rw [D.baseSet_of_mem hi]
-    have hpre : ContDiff ℝ n fun f : (Fin P.rank → 𝕜) →L[𝕜] (Fin Q.rank → 𝕜) ↦
-        f.comp D.rankEquiv.symm.toContinuousLinearMap :=
-      (contDiff_id.clm_comp contDiff_const).restrict_scalars ℝ
-    refine ((ContDiff.contMDiff hpre).comp_contMDiffOn
-        ((hΦ i k).mono fun x (hx : x ∈ (P.core.baseSet i ∩ D.V) ∩ Q.core.baseSet k) ↦
-          ⟨hx.1.1, hx.2⟩)).congr fun x _ ↦ D.chartToQ_of_mem hi
-  · rw [D.baseSet_of_notMem hi]
-    exact ((hQ i k).mono fun x (hx : x ∈ (Q.core.baseSet i ∩ D.Kᶜ) ∩ Q.core.baseSet k) ↦
-      ⟨hx.1.1, hx.2⟩).congr fun x _ ↦ D.chartToQ_of_notMem hi
+  · exact ((ContDiff.contMDiff D.contDiff_comp_rankEquiv_symm).comp_contMDiffOn
+      ((hΦ i k).mono (inter_subset_inter_left _ (D.baseSet_subset_of_mem hi)))).congr
+        fun x _ ↦ D.chartToQ_of_mem hi
+  · exact ((hQ i k).mono (inter_subset_inter_left _ (D.baseSet_subset_of_notMem hi))).congr
+      fun x _ ↦ D.chartToQ_of_notMem hi
 
 /-- In charts, the comparison of the glued core with `Q` is real `C^n` when the transitions of `Q`
 and the chart operators of `Φ` are. -/
@@ -96,31 +106,19 @@ theorem contMDiffOn_coordChange_glue
       (P.core.coordChange i j) (P.core.baseSet i ∩ P.core.baseSet j)) (i j : M) :
     ContMDiffOn I 𝓘(ℝ, (Fin D.glue.rank → 𝕜) →L[𝕜] (Fin D.glue.rank → 𝕜)) n
       (D.glue.core.coordChange i j) (D.glue.core.baseSet i ∩ D.glue.core.baseSet j) := by
-  have hpost : ContDiff ℝ n fun f : (Fin Q.rank → 𝕜) →L[𝕜] (Fin P.rank → 𝕜) ↦
-      D.rankEquiv.toContinuousLinearMap.comp f :=
-    (contDiff_const.clm_comp contDiff_id).restrict_scalars ℝ
-  have hpre : ContDiff ℝ n fun f : (Fin P.rank → 𝕜) →L[𝕜] (Fin P.rank → 𝕜) ↦
-      f.comp D.rankEquiv.symm.toContinuousLinearMap :=
-    (contDiff_id.clm_comp contDiff_const).restrict_scalars ℝ
+  have hpost := ContDiff.contMDiff (D.contDiff_rankEquiv_comp (n := n) (m := Q.rank))
   simp only [baseSet_glue]
   by_cases hjV : j ∈ D.V
   · by_cases hiV : i ∈ D.V
-    · have hs : D.baseSet i ∩ D.baseSet j ⊆ P.core.baseSet i ∩ P.core.baseSet j := by
-        rw [D.baseSet_of_mem hiV, D.baseSet_of_mem hjV]
-        exact fun x hx ↦ ⟨hx.1.1, hx.2.1⟩
-      exact ((ContDiff.contMDiff hpost).comp_contMDiffOn
-        ((ContDiff.contMDiff hpre).comp_contMDiffOn ((hP i j).mono hs))).congr
+    · have hpre := ContDiff.contMDiff (D.contDiff_comp_rankEquiv_symm (n := n) (m := P.rank))
+      exact (hpost.comp_contMDiffOn (hpre.comp_contMDiffOn
+        ((hP i j).mono (D.baseSet_inter_subset_of_mem_of_mem hiV hjV)))).congr
           fun x _ ↦ D.coordChange_of_mem_of_mem hiV hjV
-    · have hs : D.baseSet i ∩ D.baseSet j ⊆ P.core.baseSet j ∩ Q.core.baseSet i := by
-        rw [D.baseSet_of_notMem hiV, D.baseSet_of_mem hjV]
-        exact fun x hx ↦ ⟨hx.2.1, hx.1.1⟩
-      exact ((ContDiff.contMDiff hpost).comp_contMDiffOn (((hΦ j i).mono hs).clm_inverse fun x hx ↦
+    · have hs := D.baseSet_inter_subset_of_notMem_of_mem hiV hjV
+      exact (hpost.comp_contMDiffOn (((hΦ j i).mono hs).clm_inverse fun x hx ↦
         D.isInvertible_inChartCoordinates hjV hx.2 (hs hx).2)).congr
           fun x _ ↦ D.coordChange_of_notMem_of_mem hiV hjV
-  · have hs : D.baseSet i ∩ D.baseSet j ⊆ D.baseSet i ∩ Q.core.baseSet j := by
-      rw [D.baseSet_of_notMem hjV]
-      exact fun x hx ↦ ⟨hx.1, hx.2.1⟩
-    exact ((D.contMDiffOn_chartToQ hQ hΦ i j).mono hs).congr
+  · exact ((D.contMDiffOn_chartToQ hQ hΦ i j).mono (D.baseSet_inter_subset_of_notMem hjV)).congr
       fun x _ ↦ D.coordChange_of_notMem hjV
 
 end

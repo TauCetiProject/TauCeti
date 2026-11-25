@@ -76,6 +76,13 @@ def rankEquiv : (Fin P.rank → 𝕜) ≃L[𝕜] (Fin Q.rank → 𝕜) :=
     D.rankEquiv v l = v (Fin.cast D.rank_eq.symm l) := by
   simp [rankEquiv, ContinuousLinearEquiv.piCongrLeft, Equiv.piCongrLeft_apply_eq_cast]
 
+/-- Reindexing back and then forward is the identity, in the form composed with a further map. -/
+@[simp] theorem rankEquiv_symm_comp_rankEquiv_comp {m : ℕ}
+    (f : (Fin m → 𝕜) →L[𝕜] (Fin P.rank → 𝕜)) :
+    D.rankEquiv.symm.toContinuousLinearMap.comp (D.rankEquiv.toContinuousLinearMap.comp f) = f := by
+  ext v : 1
+  exact D.rankEquiv.symm_apply_apply (f v)
+
 open Classical in
 /-- The chart domain of the glued core labelled by `i`: the chart of `P` inside `V` when `i ∈ V`,
 and the chart of `Q` outside `K` otherwise. -/
@@ -85,6 +92,30 @@ def baseSet (i : B) : Set B :=
 theorem baseSet_of_mem (hi : i ∈ D.V) : D.baseSet i = P.core.baseSet i ∩ D.V := ite_eq_left hi
 
 theorem baseSet_of_notMem (hi : i ∉ D.V) : D.baseSet i = Q.core.baseSet i ∩ D.Kᶜ := ite_eq_right hi
+
+theorem baseSet_subset_of_mem (hi : i ∈ D.V) : D.baseSet i ⊆ P.core.baseSet i :=
+  D.baseSet_of_mem hi ▸ inter_subset_left
+
+theorem baseSet_subset_of_notMem (hi : i ∉ D.V) : D.baseSet i ⊆ Q.core.baseSet i :=
+  D.baseSet_of_notMem hi ▸ inter_subset_left
+
+/-- The overlap of two charts of the glued core coming from `P` lies in the overlap of the charts of
+`P`. -/
+theorem baseSet_inter_subset_of_mem_of_mem (hi : i ∈ D.V) (hj : j ∈ D.V) :
+    D.baseSet i ∩ D.baseSet j ⊆ P.core.baseSet i ∩ P.core.baseSet j :=
+  inter_subset_inter (D.baseSet_subset_of_mem hi) (D.baseSet_subset_of_mem hj)
+
+/-- The overlap of a chart of the glued core coming from `Q` with one coming from `P` lies in the
+overlap of the chart of `P` with the chart of `Q`. -/
+theorem baseSet_inter_subset_of_notMem_of_mem (hi : i ∉ D.V) (hj : j ∈ D.V) :
+    D.baseSet i ∩ D.baseSet j ⊆ P.core.baseSet j ∩ Q.core.baseSet i :=
+  fun _ hx ↦ ⟨D.baseSet_subset_of_mem hj hx.2, D.baseSet_subset_of_notMem hi hx.1⟩
+
+/-- The overlap of a chart of the glued core with one coming from `Q` lies in the overlap of the
+first with the chart of `Q`. -/
+theorem baseSet_inter_subset_of_notMem (hj : j ∉ D.V) :
+    D.baseSet i ∩ D.baseSet j ⊆ D.baseSet i ∩ Q.core.baseSet j :=
+  inter_subset_inter_right _ (D.baseSet_subset_of_notMem hj)
 
 theorem isOpen_baseSet (i : B) : IsOpen (D.baseSet i) := by
   by_cases hi : i ∈ D.V
@@ -125,14 +156,13 @@ theorem coordChange_comp_chartToQ (hx : x ∈ D.baseSet i) (hk : x ∈ Q.core.ba
     (hk' : x ∈ Q.core.baseSet k') :
     (Q.core.coordChange k k' x).comp (D.chartToQ i k x) = D.chartToQ i k' x := by
   by_cases hi : i ∈ D.V
-  · rw [D.baseSet_of_mem hi] at hx
-    rw [D.chartToQ_eq_operator hi hx.1 hk, D.chartToQ_eq_operator hi hx.1 hk',
-      ← ContinuousLinearMap.comp_assoc,
-      Φ.coordChange_comp_operator i i k k' x hx.1 hx.1 hk hk', P.core.coordChange_self_eq_id hx.1,
-      ContinuousLinearMap.comp_id]
-  · rw [D.baseSet_of_notMem hi] at hx
-    rw [D.chartToQ_of_notMem hi, D.chartToQ_of_notMem hi]
-    exact Q.core.coordChange_linear_comp i k k' x ⟨⟨hx.1, hk⟩, hk'⟩
+  · have hP := D.baseSet_subset_of_mem hi hx
+    have h := Φ.coordChange_comp_operator i i k k' x hP hP hk hk'
+    rw [P.core.coordChange_self_eq_id hP, ContinuousLinearMap.comp_id] at h
+    rw [D.chartToQ_eq_operator hi hP hk, D.chartToQ_eq_operator hi hP hk',
+      ← ContinuousLinearMap.comp_assoc, h]
+  · rw [D.chartToQ_of_notMem hi, D.chartToQ_of_notMem hi]
+    exact Q.core.coordChange_linear_comp i k k' x ⟨⟨D.baseSet_subset_of_notMem hi hx, hk⟩, hk'⟩
 
 /-- From a chart of `P` in the glued core, the chart operator of `Φ` is invertible. -/
 theorem isInvertible_inChartCoordinates (hj : j ∈ D.V) (hx : x ∈ D.baseSet j)
@@ -156,13 +186,11 @@ theorem isInvertible_chartToQ (hx : x ∈ D.baseSet i) (hk : x ∈ Q.core.baseSe
 theorem continuousOn_chartToQ (i k : B) :
     ContinuousOn (D.chartToQ i k) (D.baseSet i ∩ Q.core.baseSet k) := by
   by_cases hi : i ∈ D.V
-  · rw [D.baseSet_of_mem hi]
-    refine ((continuousOn_inChartCoordinates Φ.continuous_fiberMap.continuousOn).mono
-      fun x (hx : x ∈ (P.core.baseSet i ∩ D.V) ∩ Q.core.baseSet k) ↦ ⟨hx.1.1, hx.2⟩).clm_comp
+  · exact ((continuousOn_inChartCoordinates Φ.continuous_fiberMap.continuousOn).mono
+      (inter_subset_inter_left _ (D.baseSet_subset_of_mem hi))).clm_comp
       continuousOn_const |>.congr fun x _ ↦ D.chartToQ_of_mem hi
-  · rw [D.baseSet_of_notMem hi]
-    exact ((Q.core.continuousOn_coordChange i k).mono
-      fun x (hx : x ∈ (Q.core.baseSet i ∩ D.Kᶜ) ∩ Q.core.baseSet k) ↦ ⟨hx.1.1, hx.2⟩).congr
+  · exact ((Q.core.continuousOn_coordChange i k).mono
+      (inter_subset_inter_left _ (D.baseSet_subset_of_notMem hi))).congr
       fun x _ ↦ D.chartToQ_of_notMem hi
 
 open Classical in
@@ -197,29 +225,25 @@ theorem chartToQ_comp_coordChange (hi : x ∈ D.baseSet i) (hj : x ∈ D.baseSet
     (hk : x ∈ Q.core.baseSet k) :
     (D.chartToQ j k x).comp (D.coordChange i j x) = D.chartToQ i k x := by
   by_cases hjV : j ∈ D.V
-  · rw [D.baseSet_of_mem hjV] at hj
+  · have hPj := D.baseSet_subset_of_mem hjV hj
     by_cases hiV : i ∈ D.V
-    · rw [D.baseSet_of_mem hiV] at hi
-      rw [D.coordChange_of_mem_of_mem hiV hjV, D.chartToQ_eq_operator hjV hj.1 hk,
-        D.chartToQ_eq_operator hiV hi.1 hk, ContinuousLinearMap.comp_assoc,
-        ← ContinuousLinearMap.comp_assoc _ D.rankEquiv.toContinuousLinearMap,
-        ContinuousLinearEquiv.coe_symm_comp_coe, ContinuousLinearMap.id_comp,
-        ← ContinuousLinearMap.comp_assoc,
-        ← Φ.coordChange_comp_operator i j k k x hi.1 hj.1 hk hk, Q.core.coordChange_self_eq_id hk,
-        ContinuousLinearMap.id_comp]
-    · rw [D.baseSet_of_notMem hiV] at hi
-      have hinv := (Φ.operator_isInvertible_iff hj.1 hi.1).2 (D.isInvertible_fiberMap x hj.2)
-      rw [D.coordChange_of_notMem_of_mem hiV hjV, D.chartToQ_eq_operator hjV hj.1 hk,
-        D.chartToQ_of_notMem hiV, ← Φ.operator_eq j i ⟨x, hj.1, hi.1⟩,
-        ContinuousLinearMap.comp_assoc,
-        ← ContinuousLinearMap.comp_assoc _ D.rankEquiv.toContinuousLinearMap,
-        ContinuousLinearEquiv.coe_symm_comp_coe, ContinuousLinearMap.id_comp]
-      have h := Φ.coordChange_comp_operator j j i k x hj.1 hj.1 hi.1 hk
-      rw [P.core.coordChange_self_eq_id hj.1, ContinuousLinearMap.comp_id] at h
-      rw [← h, ContinuousLinearMap.comp_assoc, hinv.self_comp_inverse, ContinuousLinearMap.comp_id]
+    · -- Both are charts of `P`: `Φ` intertwines the transition of `P` with that of `Q` from `k`.
+      have h := Φ.coordChange_comp_operator i j k k x (D.baseSet_subset_of_mem hiV hi) hPj hk hk
+      rw [Q.core.coordChange_self_eq_id hk, ContinuousLinearMap.id_comp] at h
+      simp only [D.coordChange_of_mem_of_mem hiV hjV, D.chartToQ_eq_operator hjV hPj hk,
+        D.chartToQ_eq_operator hiV (D.baseSet_subset_of_mem hiV hi) hk,
+        ContinuousLinearMap.comp_assoc, rankEquiv_symm_comp_rankEquiv_comp, h]
+    · -- From a chart of `Q` to one of `P`: the transition inverts the chart operator of `Φ`.
+      have hQi := D.baseSet_subset_of_notMem hiV hi
+      have h := Φ.coordChange_comp_operator j j i k x hPj hPj hQi hk
+      rw [P.core.coordChange_self_eq_id hPj, ContinuousLinearMap.comp_id] at h
+      simp only [D.coordChange_of_notMem_of_mem hiV hjV, D.chartToQ_eq_operator hjV hPj hk,
+        D.chartToQ_of_notMem hiV, ← Φ.operator_eq j i ⟨x, hPj, hQi⟩, ← h,
+        ContinuousLinearMap.comp_assoc, rankEquiv_symm_comp_rankEquiv_comp,
+        ((Φ.operator_isInvertible_iff hPj hQi).2 (D.isInvertible_fiberMap x
+          (D.baseSet_of_mem hjV ▸ hj).2)).self_comp_inverse, ContinuousLinearMap.comp_id]
   · rw [D.coordChange_of_notMem hjV, D.chartToQ_of_notMem hjV]
-    rw [D.baseSet_of_notMem hjV] at hj
-    exact D.coordChange_comp_chartToQ hi hj.1 hk
+    exact D.coordChange_comp_chartToQ hi (D.baseSet_subset_of_notMem hjV hj) hk
 
 theorem coordChange_self (hx : x ∈ D.baseSet i) (v : Fin Q.rank → 𝕜) :
     D.coordChange i i x v = v := by
@@ -242,14 +266,10 @@ theorem continuousOn_coordChange (i j : B) :
     ContinuousOn (D.coordChange i j) (D.baseSet i ∩ D.baseSet j) := by
   by_cases hjV : j ∈ D.V
   · by_cases hiV : i ∈ D.V
-    · have hs : D.baseSet i ∩ D.baseSet j ⊆ P.core.baseSet i ∩ P.core.baseSet j := by
-        rw [D.baseSet_of_mem hiV, D.baseSet_of_mem hjV]
-        exact fun x hx ↦ ⟨hx.1.1, hx.2.1⟩
-      exact (continuousOn_const.clm_comp (((P.core.continuousOn_coordChange i j).mono hs).clm_comp
+    · exact (continuousOn_const.clm_comp (((P.core.continuousOn_coordChange i j).mono
+        (D.baseSet_inter_subset_of_mem_of_mem hiV hjV)).clm_comp
         continuousOn_const)).congr fun x _ ↦ D.coordChange_of_mem_of_mem hiV hjV
-    · have hs : D.baseSet i ∩ D.baseSet j ⊆ P.core.baseSet j ∩ Q.core.baseSet i := by
-        rw [D.baseSet_of_notMem hiV, D.baseSet_of_mem hjV]
-        exact fun x hx ↦ ⟨hx.2.1, hx.1.1⟩
+    · have hs := D.baseSet_inter_subset_of_notMem_of_mem hiV hjV
       have hc := (continuousOn_inChartCoordinates (Φ.continuous_fiberMap.continuousOn) (i := j)
         (j := i)).mono hs
       have hinv : ∀ x ∈ D.baseSet i ∩ D.baseSet j,
@@ -258,11 +278,8 @@ theorem continuousOn_coordChange (i j : B) :
       exact (continuousOn_const.clm_comp fun x hx ↦ (hc x hx).clm_inverse_of_eventually_isInvertible
         (hinv x hx) (eventually_nhdsWithin_of_forall hinv)).congr
         fun x _ ↦ D.coordChange_of_notMem_of_mem hiV hjV
-  · have hs : D.baseSet i ∩ D.baseSet j ⊆ D.baseSet i ∩ Q.core.baseSet j := by
-      rw [D.baseSet_of_notMem hjV]
-      exact fun x hx ↦ ⟨hx.1, hx.2.1⟩
-    exact ((D.continuousOn_chartToQ i j).mono hs).congr fun x _ ↦ D.coordChange_of_notMem hjV
-
+  · exact ((D.continuousOn_chartToQ i j).mono (D.baseSet_inter_subset_of_notMem hjV)).congr
+      fun x _ ↦ D.coordChange_of_notMem hjV
 
 /-- The glued core: at a point of `V` the chart of `P` labelled by it, restricted to `V`, and at
 any other point the chart of `Q` labelled by it, restricted to the complement of `K`. -/
@@ -344,6 +361,9 @@ def glueIso : D.glue ≅ Q where
   inv_hom_id := D.glueHom.comp_invOfIsInvertible D.isInvertible_fiberMap_glueHom
 
 @[simp] theorem glueIso_hom : D.glueIso.hom = D.glueHom := (rfl)
+
+@[simp] theorem glueIso_inv :
+    D.glueIso.inv = D.glueHom.invOfIsInvertible D.isInvertible_fiberMap_glueHom := (rfl)
 
 /-- In charts, the inverse comparison inverts the reading of a chart of the glued core in a chart
 of `Q`. -/
