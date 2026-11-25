@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Action.Basic
 public import Mathlib.CategoryTheory.EssentiallySmall
+public import Mathlib.CategoryTheory.FintypeCat
 
 /-!
 # Actions on an essentially small category are essentially small
@@ -26,10 +27,14 @@ homomorphisms `G →* Multiplicative (ZMod 2)`, pairwise non-isomorphic and too 
 This supplies the smallness hypothesis of `TauCeti.SplitK0` for `FDRep k G`, used by the
 representation ring `TauCeti.repRing`.
 
+Finite types form an essentially small category (`FintypeCat.essentiallySmall`), so finite
+`G`-sets `Action FintypeCat G` do too.
+
 ## Main statements
 
 * `CategoryTheory.Action.essentiallySmall`: actions of a monoid on an essentially small category
   form an essentially small category.
+* `FintypeCat.essentiallySmall`: finite types form an essentially small category.
 
 ## Implementation notes
 
@@ -59,3 +64,8 @@ instance essentiallySmall {V : Type u} [Category.{w} V] [EssentiallySmall.{z} V]
 end Action
 
 end CategoryTheory
+
+/-- Finite types form an essentially small category: Mathlib's `FintypeCat.Skeleton` is a small
+model. -/
+instance FintypeCat.essentiallySmall : CategoryTheory.EssentiallySmall.{u} FintypeCat.{u} :=
+  .mk' FintypeCat.Skeleton.equivalence.symm

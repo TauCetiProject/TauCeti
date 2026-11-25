@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Grassmannian.UniversalQuotient
 
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.TargetLocal
 
 /-!
 # The universal family over the Hopf-ideal locus is finite locally free
@@ -281,10 +282,6 @@ private theorem schemeHopfIdealLocusFamilyHom_of_forall {P : MorphismProperty Sc
 ideals. -/
 instance isFinite_schemeHopfIdealLocusFamilyHom :
     IsFinite (schemeHopfIdealLocusFamilyHom R H k) := by
-  -- Instance search does not find the locality of finiteness through `HasAffineProperty`.
-  observe h : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  have := @HasAffineProperty.instIsZariskiLocalAtTarget _ _ h
   refine schemeHopfIdealLocusFamilyHom_of_forall fun _ _ _ _ _ ↦ ?_
   rw [IsFinite.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.finite_algebraMap]
   infer_instance

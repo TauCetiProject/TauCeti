@@ -191,6 +191,16 @@ theorem mapL_smul_right (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
   continuousLinearMap_ext fun _ _ ↦ by
     simp [TensorProduct.tmul_smul, ProjectiveTensor.mk_smul, Completion.coe_smul]
 
+/-- The induced operator vanishes when the left operator does. -/
+@[simp]
+theorem mapL_zero_left (g : F →L[𝕜] F') : mapL (0 : E →L[𝕜] E') g = 0 := by
+  simpa using mapL_smul_left (0 : 𝕜) (0 : E →L[𝕜] E') g
+
+/-- The induced operator vanishes when the right operator does. -/
+@[simp]
+theorem mapL_zero_right (f : E →L[𝕜] E') : mapL f (0 : F →L[𝕜] F') = 0 := by
+  simpa using mapL_smul_right (0 : 𝕜) f (0 : F →L[𝕜] F')
+
 variable (𝕜 E F) in
 /-- The contraction from the completed projective to the completed injective tensor product: the
 extension of the identity of the underlying algebraic tensors. -/

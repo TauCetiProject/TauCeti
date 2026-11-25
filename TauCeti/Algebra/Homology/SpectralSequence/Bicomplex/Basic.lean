@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
+public import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 public import TauCeti.Algebra.Homology.TotalComplex.Basic
 
@@ -46,6 +47,14 @@ object stabilizes after finitely many pages to the corresponding graded piece of
 
 ## Main definitions and results
 
+* `HomologicalComplex₂.mapTotalRowsGE`: the morphism of the total complexes of the rows `≥ s`
+  induced by a morphism of bicomplexes, compatible with the projections from the total complexes
+  and between the rows (`HomologicalComplex₂.toTotalRowsGE_naturality`,
+  `HomologicalComplex₂.totalRowsGEMap_naturality`).
+* `HomologicalComplex₂.mapTotalRow`: the morphism of the rows `s`, placed in the degrees of the
+  total complexes, induced by a morphism of bicomplexes, compatible with the inclusions of the rows
+  (`HomologicalComplex₂.totalRowι_naturality`) and with the identifications of their homology
+  (`HomologicalComplex₂.totalRowHomologyIso_hom_naturality`).
 * `HomologicalComplex₂.rowFiltration`: the filtration of the total complex by rows.
 * `HomologicalComplex₂.ιTotalRowsGE`: the summand inclusions of the total complex of the rows
   `≥ s`, which describe the projection `HomologicalComplex₂.toTotalRowsGE` onto it.
@@ -53,14 +62,17 @@ object stabilizes after finitely many pages to the corresponding graded piece of
   and the homology of a row placed in the degrees of the total complex are those of the row.
 * `HomologicalComplex₂.rowFiltrationGradedIso`: the graded pieces of the row filtration are the
   rows.
-* `HomologicalComplex₂.rowFiltrationSpectralSequence`: its spectral sequence.
+* `HomologicalComplex₂.rowFiltrationSpectralObject`,
+  `HomologicalComplex₂.rowFiltrationSpectralSequence`: its spectral object and its spectral
+  sequence.
 * `HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIso`: the first page is the homology
   of the rows.
 * `HomologicalComplex₂.columnFiltrationSpectralSequenceFirstPageXIso`: the first page of the row
   filtration of the flipped bicomplex is the homology of the original columns.
 * `HomologicalComplex₂.isZero_rowFiltrationSpectralSequence_page_two_X_of_pos`,
   `HomologicalComplex₂.isZero_rowFiltrationSpectralSequence_page_two_X_of_neg`: the first page
-  vanishes outside the range of the rows.
+  vanishes outside the range of the rows, and hence so does every later page
+  (`HomologicalComplex₂.isZero_rowFiltrationSpectralSequence_page_X`).
 * `HomologicalComplex₂.rowFiltrationAbutmentIso`,
   `HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty`,
   `HomologicalComplex₂.isZero_rowFiltration_abutmentFiltration`,
@@ -168,6 +180,24 @@ variable (K : HomologicalComplex₂ C (down ℕ) (down ℕ))
 @[simp]
 lemma toTotalRowsGE_zero : K.toTotalRowsGE 0 = 𝟙 _ := (rfl)
 
+/-- The projection of the total complex onto the rows `≥ 1` drops row `0`. -/
+@[simp]
+lemma totalRowsGEMap_zero : K.totalRowsGEMap 0 = K.dropRowZero := (rfl)
+
+/-- The projection of the rows `≥ s + 1` onto the rows `≥ s + 2` is that of the rows `≥ s` of the
+bicomplex of rows `≥ 1` onto its rows `≥ s + 1`, placed one degree higher. -/
+lemma totalRowsGEMap_succ (s : ℕ) :
+    K.totalRowsGEMap (s + 1) =
+      HomologicalComplex.extendMap (K.rowsSucc.totalRowsGEMap s) (embeddingDownNatAdd 1) :=
+  (rfl)
+
+/-- The projection onto the total complex of the rows `≥ s + 1` drops row `0` and then projects
+the rows `≥ 1` onto their rows `≥ s`. -/
+lemma toTotalRowsGE_succ (s : ℕ) :
+    K.toTotalRowsGE (s + 1) = K.dropRowZero ≫
+      HomologicalComplex.extendMap (K.rowsSucc.toTotalRowsGE s) (embeddingDownNatAdd 1) :=
+  (rfl)
+
 /-- The projection onto the total complex of the rows `≥ s` is the identity on the summands of the
 rows `≥ s`. -/
 @[reassoc (attr := simp)]
@@ -261,6 +291,135 @@ abbrev totalRowShortComplex (s : ℕ) : ShortComplex (ChainComplex C ℕ) :=
   ShortComplex.mk (K.totalRowι s) (K.totalRowsGEMap s) (K.totalRowι_comp_totalRowsGEMap s)
 
 end Preadditive
+
+section MapTotalRowsGE
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasFiniteCoproducts C] [HasZeroObject C]
+
+/-! ### Morphisms of bicomplexes -/
+
+/-- The morphism of the total complexes of the rows `≥ s` induced by a morphism of bicomplexes. -/
+def mapTotalRowsGE : (s : ℕ) → {K L : HomologicalComplex₂ C (down ℕ) (down ℕ)} → (K ⟶ L) →
+    (K.totalRowsGE s ⟶ L.totalRowsGE s)
+  | 0, _, _, φ => total.map φ (down ℕ)
+  | s + 1, _, _, φ =>
+    HomologicalComplex.extendMap (mapTotalRowsGE s (rowsSuccMap φ)) (embeddingDownNatAdd 1)
+
+variable {K L M : HomologicalComplex₂ C (down ℕ) (down ℕ)} (φ : K ⟶ L) (ψ : L ⟶ M)
+
+/-- On the rows `≥ 0`, the morphism of total complexes is that of the whole total complexes. -/
+@[simp]
+lemma mapTotalRowsGE_zero : mapTotalRowsGE 0 φ = total.map φ (down ℕ) := (rfl)
+
+/-- On the rows `≥ s + 1`, the morphism of total complexes is that of the rows `≥ s` of the
+bicomplexes of rows `≥ 1`, placed one degree higher. -/
+lemma mapTotalRowsGE_succ (s : ℕ) :
+    mapTotalRowsGE (s + 1) φ =
+      HomologicalComplex.extendMap (mapTotalRowsGE s (rowsSuccMap φ)) (embeddingDownNatAdd 1) :=
+  (rfl)
+
+@[simp]
+lemma mapTotalRowsGE_id (s : ℕ) : mapTotalRowsGE s (𝟙 K) = 𝟙 _ := by
+  induction s generalizing K with
+  | zero => simp
+  | succ s ih => rw [mapTotalRowsGE_succ, rowsSuccMap_id, ih, HomologicalComplex.extendMap_id]
+
+@[simp]
+lemma mapTotalRowsGE_comp (s : ℕ) :
+    mapTotalRowsGE s (φ ≫ ψ) = mapTotalRowsGE s φ ≫ mapTotalRowsGE s ψ := by
+  induction s generalizing K L M with
+  | zero => simp [total.map_comp]
+  | succ s ih =>
+    simp only [mapTotalRowsGE_succ, rowsSuccMap_comp, ih, HomologicalComplex.extendMap_comp]
+
+/-- The projections onto the total complexes of the rows `≥ s` are natural. -/
+@[reassoc]
+lemma toTotalRowsGE_naturality (s : ℕ) :
+    K.toTotalRowsGE s ≫ mapTotalRowsGE s φ = total.map φ (down ℕ) ≫ L.toTotalRowsGE s := by
+  induction s generalizing K L with
+  | zero => simp
+  | succ s ih =>
+    simp only [toTotalRowsGE_succ, mapTotalRowsGE_succ, Category.assoc,
+      ← HomologicalComplex.extendMap_comp, ih]
+    rw [HomologicalComplex.extendMap_comp, dropRowZero_naturality_assoc]
+
+/-- The projections of the total complexes of the rows `≥ s` onto the rows `≥ s + 1` are
+natural. -/
+@[reassoc]
+lemma totalRowsGEMap_naturality (s : ℕ) :
+    mapTotalRowsGE s φ ≫ L.totalRowsGEMap s = K.totalRowsGEMap s ≫ mapTotalRowsGE (s + 1) φ := by
+  induction s generalizing K L with
+  | zero =>
+    rw [mapTotalRowsGE_zero, totalRowsGEMap_zero, totalRowsGEMap_zero, mapTotalRowsGE_succ,
+      mapTotalRowsGE_zero, dropRowZero_naturality]
+  | succ s ih =>
+    simp only [mapTotalRowsGE_succ, totalRowsGEMap_succ, ← HomologicalComplex.extendMap_comp, ih]
+
+/-- On the summand `(K.X p).X q`, `s ≤ q`, the morphism of the total complexes of the rows `≥ s`
+is the component `(φ.f p).f q`. -/
+@[reassoc (attr := simp)]
+lemma ιTotalRowsGE_mapTotalRowsGE_f (s p q n : ℕ) (hs : s ≤ q) (h : p + q = n) :
+    K.ιTotalRowsGE s p q n hs h ≫ (mapTotalRowsGE s φ).f n =
+      (φ.f p).f q ≫ L.ιTotalRowsGE s p q n hs h := by
+  rw [← ιTotal_toTotalRowsGE_f, ← ιTotal_toTotalRowsGE_f, Category.assoc,
+    ← HomologicalComplex.comp_f, toTotalRowsGE_naturality, HomologicalComplex.comp_f,
+    ιTotal_map_assoc]
+
+/-- The morphism of the rows `s`, placed in the degrees they occupy in the total complexes,
+induced by a morphism of bicomplexes. -/
+def mapTotalRow : (s : ℕ) → {K L : HomologicalComplex₂ C (down ℕ) (down ℕ)} → (K ⟶ L) →
+    (K.totalRow s ⟶ L.totalRow s)
+  | 0, _, _, φ => ((HomologicalComplex.eval C (down ℕ) 0).mapHomologicalComplex (down ℕ)).map φ
+  | s + 1, _, _, φ =>
+    HomologicalComplex.extendMap (mapTotalRow s (rowsSuccMap φ)) (embeddingDownNatAdd 1)
+
+omit [HasFiniteCoproducts C] in
+/-- On the row `0`, the morphism of rows is the morphism induced by `φ` on the rows `0`. -/
+@[simp]
+lemma mapTotalRow_zero :
+    mapTotalRow 0 φ =
+      ((HomologicalComplex.eval C (down ℕ) 0).mapHomologicalComplex (down ℕ)).map φ :=
+  (rfl)
+
+omit [HasFiniteCoproducts C] in
+/-- On the row `s + 1`, the morphism of rows is that of the rows `s` of the bicomplexes of rows
+`≥ 1`, placed one degree higher. -/
+lemma mapTotalRow_succ (s : ℕ) :
+    mapTotalRow (s + 1) φ =
+      HomologicalComplex.extendMap (mapTotalRow s (rowsSuccMap φ)) (embeddingDownNatAdd 1) :=
+  (rfl)
+
+omit [HasFiniteCoproducts C] in
+/-- The identity of a bicomplex induces the identity of its rows. -/
+@[simp]
+lemma mapTotalRow_id (s : ℕ) : mapTotalRow s (𝟙 K) = 𝟙 _ := by
+  induction s generalizing K with
+  | zero => simp
+  | succ s ih => rw [mapTotalRow_succ, rowsSuccMap_id, ih, HomologicalComplex.extendMap_id]
+
+omit [HasFiniteCoproducts C] in
+/-- The morphisms of rows induced by morphisms of bicomplexes are compatible with composition. -/
+@[simp]
+lemma mapTotalRow_comp (s : ℕ) :
+    mapTotalRow s (φ ≫ ψ) = mapTotalRow s φ ≫ mapTotalRow s ψ := by
+  induction s generalizing K L M with
+  | zero => simp
+  | succ s ih =>
+    simp only [mapTotalRow_succ, rowsSuccMap_comp, ih, HomologicalComplex.extendMap_comp]
+
+/-- The inclusions of the rows `s` into the total complexes of the rows `≥ s` are natural. -/
+@[reassoc]
+lemma totalRowι_naturality (s : ℕ) :
+    K.totalRowι s ≫ mapTotalRowsGE s φ = mapTotalRow s φ ≫ L.totalRowι s := by
+  induction s generalizing K L with
+  | zero =>
+    ext n
+    simp [totalRowι]
+  | succ s ih =>
+    simp only [totalRowι, mapTotalRowsGE_succ, mapTotalRow_succ,
+      ← HomologicalComplex.extendMap_comp, ih]
+
+end MapTotalRowsGE
 
 section Abelian
 
@@ -487,6 +646,14 @@ lemma isZero_homology_cokernel_rowFiltration_arrow (b m : ℤ) (hm : -b < m) :
 
 /-! ### The spectral sequence -/
 
+/-- The spectral object of the filtration of the total complex of `K` (extended to `ℤ`) by its
+rows. Its spectral sequence is `HomologicalComplex₂.rowFiltrationSpectralSequence`, its abutment
+is the homology of the total complex (`HomologicalComplex₂.rowFiltrationAbutmentIso`), and its
+limit objects and abutment filtration give the convergence of that spectral sequence. -/
+abbrev rowFiltrationSpectralObject :=
+  CochainComplex.spectralObject
+    (CochainComplex.filtrationFunctor K.rowFiltration K.monotone_rowFiltration)
+
 /-- The spectral sequence of the filtration of the total complex of `K` by its rows. It uses
 Mathlib's cohomological indexing, in which the first page is numbered `2`: its object at `(p, q)`
 is `H_k` of the row `q` with `p = -(k + 2q)`
@@ -596,54 +763,121 @@ lemma isZero_rowFiltrationSpectralSequence_page_two_X_of_neg (p q : ℤ) (hq : q
   rw [CochainComplex.filtrationEInt_coe, K.rowFiltration_eq_bot _ (by omega)]
   exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
 
+/-- **The spectral sequence of the row filtration lives in the first quadrant.** The object at
+`(p, q)` comes from the row `q` in the row-internal homological degree `k = -(p + 2q)`, that is,
+in the total homological degree `q + k = -(p + q)`. On every page `r ≥ 2` it vanishes outside the
+first quadrant of the coordinates `(q, k)`: when `q < 0` or `k < 0`, that is, `0 < p + 2q`. -/
+lemma isZero_rowFiltrationSpectralSequence_page_X (r : ℤ) (hr : 2 ≤ r) (p q : ℤ)
+    (h : q < 0 ∨ 0 < p + 2 * q) : IsZero ((K.rowFiltrationSpectralSequence.page r).X (p, q)) := by
+  refine K.rowFiltrationSpectralSequence.isZero_page_X_of_le le_rfl ?_ r hr
+  by_cases hq : q < 0
+  · exact K.isZero_rowFiltrationSpectralSequence_page_two_X_of_neg p q hq
+  · obtain ⟨s, rfl⟩ : ∃ s : ℕ, q = s := ⟨q.toNat, by omega⟩
+    exact K.isZero_rowFiltrationSpectralSequence_page_two_X_of_pos p s (by omega)
+
 /-- The abutment of the spectral sequence of the row filtration in degree `-n` is the homology of
 the total complex of `K` in degree `n`. -/
 def rowFiltrationAbutmentIso (n : ℕ) :
-    (CochainComplex.spectralObject (CochainComplex.filtrationFunctor K.rowFiltration
-      K.monotone_rowFiltration)).abutment (-n) ≅ (K.total (down ℕ)).homology n :=
+    K.rowFiltrationSpectralObject.abutment (-n) ≅ (K.total (down ℕ)).homology n :=
   CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
     (K.total (down ℕ)).extendHomologyIso embeddingDownNat (by simp)
+
+/-- The identification `HomologicalComplex₂.rowFiltrationAbutmentIso` is the identification
+`CochainComplex.filtrationAbutmentIso` of the abutment with the cohomology in degree `-n` of the
+total complex extended to `ℤ`, followed by the reindexing `extendHomologyIso` of that cohomology
+with the homology of the total complex in degree `n`. -/
+lemma rowFiltrationAbutmentIso_hom (n : ℕ) :
+    (K.rowFiltrationAbutmentIso n).hom =
+      (CochainComplex.filtrationAbutmentIso _ K.monotone_rowFiltration (-n)).hom ≫
+        ((K.total (down ℕ)).extendHomologyIso embeddingDownNat (by simp)).hom := by
+  simp only [rowFiltrationAbutmentIso, Iso.trans_hom]
 
 /-- The abutment of the column-filtration spectral sequence is the homology of the original total
 complex. The comparison incorporates the Koszul sign of the total-complex flip. -/
 def columnFiltrationAbutmentIso (n : ℕ) :
-    (CochainComplex.spectralObject (CochainComplex.filtrationFunctor K.flip.rowFiltration
-      K.flip.monotone_rowFiltration)).abutment (-n) ≅ (K.total (down ℕ)).homology n :=
+    K.flip.rowFiltrationSpectralObject.abutment (-n) ≅ (K.total (down ℕ)).homology n :=
   K.flip.rowFiltrationAbutmentIso n ≪≫
     HomologicalComplex.homologyMapIso (K.totalFlipIso (down ℕ)) n
+
+/-- The identification `HomologicalComplex₂.columnFiltrationAbutmentIso` is the identification
+`HomologicalComplex₂.rowFiltrationAbutmentIso` for the flipped bicomplex, followed by the map
+induced on homology by the signed isomorphism `HomologicalComplex₂.totalFlipIso` between the total
+complexes of `K.flip` and `K`. -/
+lemma columnFiltrationAbutmentIso_hom (n : ℕ) :
+    (K.columnFiltrationAbutmentIso n).hom =
+      (K.flip.rowFiltrationAbutmentIso n).hom ≫
+        HomologicalComplex.homologyMap (K.totalFlipIso (down ℕ)).hom n := by
+  simp only [columnFiltrationAbutmentIso, Iso.trans_hom, HomologicalComplex.homologyMapIso_hom]
 
 /-! ### Convergence -/
 
 /-- **Convergence of the spectral sequence of the row filtration.** On every page `r ≥ 2` with
 `q + 2 ≤ r` and `p + 2q + r > 2`, the object at `(p, q)` is the limit object
-`E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)`, which is the `q`th graded piece of the filtration of the abutment
-(`CategoryTheory.Abelian.SpectralObject.EInftyIsoCokernel`). In particular the object at a
-fixed position stabilizes after finitely many pages. -/
-def rowFiltrationSpectralSequencePageXIsoEInfty (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
-    (h₀ : pq.2 + 2 ≤ r) (h₃ : 2 < pq.1 + 2 * pq.2 + r) :
+`E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)`, `n = p + q`, which is the `q`th graded piece of the filtration of the
+abutment (`CategoryTheory.Abelian.SpectralObject.EInftyIsoCokernel`). In particular the object at
+a fixed position stabilizes after finitely many pages. The degree `n` is a parameter, so that it
+can be given in any form equal to `p + q`. -/
+def rowFiltrationSpectralSequencePageXIsoEInfty (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (n : ℤ)
+    (hn : n = pq.1 + pq.2) (h₀ : pq.2 + 2 ≤ r) (h₃ : 2 < pq.1 + 2 * pq.2 + r) :
     (K.rowFiltrationSpectralSequence.page r).X pq ≅
-      (CochainComplex.spectralObject (CochainComplex.filtrationFunctor K.rowFiltration
-        K.monotone_rowFiltration)).EInfty pq.2 (pq.1 + pq.2) :=
-  CochainComplex.filtrationSpectralSequencePageXIsoEInfty _ _ r hr pq _ rfl
+      K.rowFiltrationSpectralObject.EInfty pq.2 n :=
+  CochainComplex.filtrationSpectralSequencePageXIsoEInfty _ _ r hr pq n hn
     (Subobject.isZero_homology_of_eq_bot _ (K.rowFiltration_eq_bot _ (by omega)) _)
     (K.isZero_homology_cokernel_rowFiltration_arrow _ _ (by omega))
 
+/-- The isomorphism `HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty` is the
+epimorphism `spectralSequencePageXToEInfty` from the page object onto `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)`. -/
+lemma rowFiltrationSpectralSequencePageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (n : ℤ)
+    (hn : n = pq.1 + pq.2) (h₀ : pq.2 + 2 ≤ r) (h₃ : 2 < pq.1 + 2 * pq.2 + r) :
+    (K.rowFiltrationSpectralSequencePageXIsoEInfty r hr pq n hn h₀ h₃).hom =
+      K.rowFiltrationSpectralObject.spectralSequencePageXToEInfty r hr pq n hn
+        (CochainComplex.isZero_spectralObject_H_bot _ _ _ _
+          (Subobject.isZero_homology_of_eq_bot _ (K.rowFiltration_eq_bot _ (by omega)) _)) :=
+  CochainComplex.filtrationSpectralSequencePageXIsoEInfty_hom ..
+
 /-- The filtration of the abutment of the spectral sequence of the row filtration vanishes at
-`0`. -/
-lemma isZero_rowFiltration_abutmentFiltration (n : ℤ) :
-    IsZero ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor K.rowFiltration
-      K.monotone_rowFiltration)).abutmentFiltration 0 n) :=
-  CochainComplex.isZero_filtrationAbutmentFiltration _ _ (K.rowFiltration_eq_bot 0 le_rfl) n
+every `p ≤ 0`, the `p`th piece coming from the rows `< p`. -/
+lemma isZero_rowFiltration_abutmentFiltration (p : ℤ) (hp : p ≤ 0) (n : ℤ) :
+    IsZero (K.rowFiltrationSpectralObject.abutmentFiltration p n) :=
+  CochainComplex.isZero_filtrationAbutmentFiltration _ _ (K.rowFiltration_eq_bot p hp) n
 
 /-- The filtration of the abutment of the spectral sequence of the row filtration is exhaustive
 in each degree: its `b`th piece in degree `n` is everything when `-b < n`. -/
 lemma isIso_rowFiltration_abutmentFiltrationι (b n : ℤ) (h : -b < n) :
-    IsIso ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor K.rowFiltration
-      K.monotone_rowFiltration)).abutmentFiltrationι b n) :=
+    IsIso (K.rowFiltrationSpectralObject.abutmentFiltrationι b n) :=
   Abelian.SpectralObject.isIso_abutmentFiltrationι _
     (CochainComplex.isZero_spectralObject_H_top _ _ b n
       (K.isZero_homology_cokernel_rowFiltration_arrow b n h))
 
 end Abelian
+
+section MapAbelian
+
+variable {C : Type*} [Category* C] [Abelian C] {K L : HomologicalComplex₂ C (down ℕ) (down ℕ)}
+  (φ : K ⟶ L)
+
+/-- The identifications `HomologicalComplex₂.totalRowHomologyIso` of the homology of the rows
+placed in the degrees of the total complexes with the homology of the rows are natural. -/
+@[reassoc]
+lemma totalRowHomologyIso_hom_naturality (s k : ℕ) :
+    HomologicalComplex.homologyMap (mapTotalRow s φ) (k + s) ≫ (L.totalRowHomologyIso s k).hom =
+      (K.totalRowHomologyIso s k).hom ≫ HomologicalComplex.homologyMap
+        (((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).map φ) k := by
+  induction s generalizing K L with
+  | zero => simp
+  | succ s ih =>
+    have e : ((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).map
+        (rowsSuccMap φ) =
+        ((HomologicalComplex.eval C (down ℕ) (s + 1)).mapHomologicalComplex (down ℕ)).map φ := by
+      ext p
+      exact rowsSuccMap_f_f φ p s
+    have h := ih (rowsSuccMap φ)
+    rw [e] at h
+    simp only [mapTotalRow_succ, totalRowHomologyIso_succ, Iso.trans_hom,
+      HomologicalComplex.extendHomologyIso_hom_naturality_assoc, Category.assoc]
+    -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
+    exact congrArg (_ ≫ ·) h
+
+end MapAbelian
 
 end HomologicalComplex₂

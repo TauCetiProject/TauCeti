@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 public import TauCeti.Analysis.SpecificLimits.Normed
+public import TauCeti.Analysis.Analytic.MultiIndex.TaylorCoeff
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.Analysis.Calculus.FDeriv.Pi
@@ -32,6 +33,13 @@ open polydisc is uniformly approximated by entire functions on every smaller clo
 `DifferentiableOn.exists_differentiable_norm_sub_lt`. On `ι → ℂ` with its sup norm the polydiscs
 with equal radii are the balls.
 
+For a function complex differentiable on an open polydisc, the Cauchy coefficients on every
+smaller torus are its multi-index Taylor coefficients `TauCeti.mvTaylorCoeff`
+(`DifferentiableOn.mvTaylorCoeff_eq_torusIntegral`). So its Taylor series at the centre converges
+on the whole open polydisc (`DifferentiableOn.hasSum_mvTaylorCoeff`), and a bound `M` on the
+polydisc of radius `r` gives Cauchy's inequality `‖mvTaylorCoeff f z α‖ ≤ M r⁻¹ ^ |α|`
+(`DifferentiableOn.norm_mvTaylorCoeff_le`).
+
 ## References
 
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, §2.2.
@@ -40,6 +48,7 @@ with equal radii are the balls.
 public section
 
 open Complex Filter MeasureTheory Metric Real Set
+open scoped NNReal
 
 namespace TauCeti
 
@@ -297,5 +306,95 @@ theorem _root_.DifferentiableOn.exists_differentiable_norm_sub_lt_of_pi {ι : Ty
       rwa [mem_ball, ← hL, L.apply_symm_apply]) hrs hε
   refine ⟨P ∘ L, hP.comp L.differentiable, fun z hz ↦ ?_⟩
   simpa using hPh (L z) (by rwa [mem_closedBall, hL])
+
+/-! ### Multi-index Taylor coefficients on polydiscs -/
+
+section TaylorCoeff
+
+variable {f : (Fin n → ℂ) → E} {U : Set (Fin n → ℂ)} {z : Fin n → ℂ} {r : ℝ}
+
+/-- On a closed polydisc inside an open set where `f` is complex differentiable, the Cauchy
+coefficients of `f` are its multi-index Taylor coefficients. -/
+private theorem mvTaylorCoeff_eq_cauchyCoeff (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
+    (hr : 0 < r) (hzr : closedBall z r ⊆ U) :
+    (∀ w : Fin n → ℂ, ‖w‖ < r → HasSum (fun α : Fin n → ℕ ↦ (∏ i, w i ^ α i) •
+      ((2 * π * I : ℂ)⁻¹ ^ n • ∯ ζ in T(z, fun _ ↦ r), (∏ i, (ζ i - z i) ^ (α i + 1))⁻¹ • f ζ))
+      (f (z + w))) ∧
+    ∀ α, mvTaylorCoeff f z α = (2 * π * I : ℂ)⁻¹ ^ n •
+      ∯ ζ in T(z, fun _ ↦ r), (∏ i, (ζ i - z i) ^ (α i + 1))⁻¹ • f ζ := by
+  rw [closedBall_pi z hr.le] at hzr
+  have hcont : ContinuousOn f (univ.pi fun i ↦ closedBall (z i) r) := hf.continuousOn.mono hzr
+  have hd (y) (hy : y ∈ univ.pi fun i ↦ closedBall (z i) r) (i) (_ : y i ∈ ball (z i) r) :
+      DifferentiableAt ℂ (fun x ↦ f (Function.update y i x)) (y i) := by
+    refine DifferentiableAt.comp (y i) ?_ (hasFDerivAt_update y (y i)).differentiableAt
+    rw [Function.update_eq_self]
+    exact hf.differentiableAt (hU.mem_nhds (hzr hy))
+  have hexp (w : Fin n → ℂ) (hw : ‖w‖ < r) := hcont.hasSum_torusIntegral_cauchyCoeff hd
+    (R := fun _ ↦ r) fun i ↦ (norm_le_pi_norm w i).trans_lt hw
+  refine ⟨hexp, fun α ↦ ?_⟩
+  obtain ⟨M, hM⟩ := (isCompact_univ_pi fun i ↦ isCompact_closedBall (z i) r)
+    |>.exists_bound_of_continuousOn hcont
+  have hbound (β : Fin n → ℕ) := norm_torusIntegral_cauchyCoeff_le (f := f) (c := z)
+    (R := fun _ ↦ r) (M := M) (fun _ ↦ hr)
+    (fun y hy ↦ hM y fun i _ ↦ sphere_subset_closedBall (hy i trivial)) β
+  have hhalf : ‖(1 / 2 : ℝ)‖ < 1 := by norm_num
+  set ρ : ℝ≥0 := ⟨r / 2, by positivity⟩
+  have hρ : (ρ : ℝ) = r / 2 := rfl
+  refine mvTaylorCoeff_eq_of_hasSum (ρ := ρ) (NNReal.coe_pos.1 (by rw [hρ]; positivity))
+    ((hasSum_prod_geometric_of_norm_lt_one fun _ : Fin n ↦ hhalf).summable.mul_left M
+      |>.of_nonneg_of_le (fun _ ↦ by positivity) fun β ↦ ?_)
+    (fun w hw ↦ hexp w (hw.trans (by rw [hρ]; linarith))) α
+  rw [hρ]
+  calc _ ≤ M * (∏ i, r⁻¹ ^ β i) * (r / 2) ^ (∑ i, β i) := by
+        gcongr
+        exact hbound β
+    _ = M * ∏ i, (1 / 2 : ℝ) ^ β i := by
+        rw [mul_assoc, ← Finset.prod_pow_eq_pow_sum, ← Finset.prod_mul_distrib]
+        congr 1
+        refine Finset.prod_congr rfl fun i _ ↦ ?_
+        rw [← mul_pow]
+        congr 1
+        field_simp
+
+/-- **Cauchy's integral formula for Taylor coefficients on a polydisc.** If `f` is complex
+differentiable on the open polydisc `ball z R` of `Fin n → ℂ` and `0 < r < R`, then the
+multi-index Taylor coefficient `mvTaylorCoeff f z α` is the Cauchy integral
+`(2πi)⁻ⁿ ∯ ζ in T(z, r), (∏ i, (ζ i - z i) ^ (α i + 1))⁻¹ • f ζ`. -/
+theorem _root_.DifferentiableOn.mvTaylorCoeff_eq_torusIntegral {R : ℝ}
+    (hf : DifferentiableOn ℂ f (ball z R)) (hr : 0 < r) (hrR : r < R) (α : Fin n → ℕ) :
+    mvTaylorCoeff f z α = (2 * π * I : ℂ)⁻¹ ^ n •
+      ∯ ζ in T(z, fun _ ↦ r), (∏ i, (ζ i - z i) ^ (α i + 1))⁻¹ • f ζ :=
+  (mvTaylorCoeff_eq_cauchyCoeff isOpen_ball hf hr (closedBall_subset_ball hrR)).2 α
+
+/-- **Taylor expansion on a polydisc.** If `f` is complex differentiable on the open polydisc
+`ball z r` of `Fin n → ℂ`, then its multi-index Taylor series at `z` converges to `f (z + w)`
+throughout that polydisc, `‖w‖ < r`. -/
+theorem _root_.DifferentiableOn.hasSum_mvTaylorCoeff (hf : DifferentiableOn ℂ f (ball z r))
+    {w : Fin n → ℂ} (hw : ‖w‖ < r) :
+    HasSum (fun α : Fin n → ℕ ↦ (∏ i, w i ^ α i) • mvTaylorCoeff f z α) (f (z + w)) := by
+  obtain ⟨r', hwr', hr'⟩ := exists_between hw
+  obtain ⟨hexp, hcoeff⟩ := mvTaylorCoeff_eq_cauchyCoeff isOpen_ball hf
+    ((norm_nonneg w).trans_lt hwr') (closedBall_subset_ball hr')
+  simpa only [hcoeff] using hexp w hwr'
+
+/-- **Cauchy's inequality on a polydisc.** If `f` is complex differentiable on the open polydisc
+`ball z r` of `Fin n → ℂ`, `0 < r`, and `‖f‖ ≤ M` there, then
+`‖mvTaylorCoeff f z α‖ ≤ M * r⁻¹ ^ (∑ i, α i)` for every multi-index `α`. -/
+theorem _root_.DifferentiableOn.norm_mvTaylorCoeff_le (hf : DifferentiableOn ℂ f (ball z r))
+    (hr : 0 < r) {M : ℝ} (hM : ∀ w ∈ ball z r, ‖f w‖ ≤ M) (α : Fin n → ℕ) :
+    ‖mvTaylorCoeff f z α‖ ≤ M * r⁻¹ ^ (∑ i, α i) := by
+  -- Cauchy's inequality on each smaller closed polydisc, then let its radius tend to `r`.
+  have h (r' : ℝ) (hr' : r' ∈ Ioo 0 r) : ‖mvTaylorCoeff f z α‖ ≤ M * r'⁻¹ ^ (∑ i, α i) := by
+    rw [hf.mvTaylorCoeff_eq_torusIntegral hr'.1 hr'.2 α, ← Finset.prod_pow_eq_pow_sum]
+    refine norm_torusIntegral_cauchyCoeff_le (R := fun _ ↦ r') (fun _ ↦ hr'.1)
+      (fun y hy ↦ hM y (closedBall_subset_ball hr'.2 ?_)) α
+    rw [closedBall_pi z hr'.1.le]
+    exact fun i _ ↦ sphere_subset_closedBall (hy i trivial)
+  have hc : ContinuousAt (fun r' : ℝ ↦ M * r'⁻¹ ^ (∑ i, α i)) r :=
+    continuousAt_const.mul ((continuousAt_inv₀ hr.ne').pow _)
+  exact ge_of_tendsto (hc.tendsto.mono_left nhdsWithin_le_nhds)
+    (Filter.mem_of_superset (Ioo_mem_nhdsLT hr) h)
+
+end TaylorCoeff
 
 end TauCeti
