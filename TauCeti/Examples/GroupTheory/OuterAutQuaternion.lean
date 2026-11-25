@@ -157,23 +157,14 @@ private theorem diagonalMap_mul (φ ψ : MulAut Q₈) (d : Fin 4) :
 private theorem diagonalMap_one (d : Fin 4) : diagonalMap 1 d = d := by
   simp [diagonalMap, diagonal_vertex]
 
-/-- The permutation of the four body diagonals induced by an automorphism. -/
-private def diagonalPerm (φ : MulAut Q₈) : Equiv.Perm (Fin 4) :=
-  Equiv.mk (diagonalMap φ) (diagonalMap φ⁻¹)
-    (fun d ↦ by rw [← diagonalMap_mul, inv_mul_cancel, diagonalMap_one])
-    (fun d ↦ by rw [← diagonalMap_mul, mul_inv_cancel, diagonalMap_one])
-
-private theorem diagonalPerm_apply (φ : MulAut Q₈) (d : Fin 4) :
-    diagonalPerm φ d = diagonalMap φ d :=
-  rfl
-
 /-- The action of `MulAut Q₈` on the four body diagonals of the cube. -/
-private def toPerm : MulAut Q₈ →* Equiv.Perm (Fin 4) where
-  toFun := diagonalPerm
-  map_one' := Equiv.ext fun d ↦ (diagonalPerm_apply 1 d).trans (diagonalMap_one d)
-  map_mul' φ ψ := Equiv.ext fun d ↦ by
-    rw [Equiv.Perm.mul_apply, diagonalPerm_apply, diagonalPerm_apply, diagonalPerm_apply,
-      diagonalMap_mul]
+private def toPerm : MulAut Q₈ →* Equiv.Perm (Fin 4) :=
+  MonoidHom.toHomPerm
+    { toFun := diagonalMap
+      map_one' := funext diagonalMap_one
+      map_mul' φ ψ :=
+        (funext fun d ↦ (diagonalMap_mul φ ψ d).trans Function.comp_apply.symm).trans
+          (Function.End.mul_def (diagonalMap φ) (diagonalMap ψ)).symm }
 
 private theorem toPerm_apply (φ : MulAut Q₈) (d : Fin 4) : toPerm φ d = diagonalMap φ d :=
   rfl
