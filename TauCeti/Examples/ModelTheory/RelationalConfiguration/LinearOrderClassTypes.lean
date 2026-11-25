@@ -41,11 +41,10 @@ theorem codeRel_addDiag (c : RelationalConfiguration Language.order V) (x y : V)
     codeRel leSymb (addDiag c) x y ↔ x = y ∨ codeRel leSymb c x y := by
   rw [addDiag, codeRel_ofRel]
 
-/-- Adding the diagonal to a coded strict well-order gives a coded linear order: its relation is
-the order of Mathlib's `linearOrderOfSTO`. -/
+/-- Adding the diagonal to a coded strict total order gives a coded linear order: its relation
+is the order of Mathlib's `linearOrderOfSTO`. -/
 theorem addDiag_mem_linearOrderClass {c : RelationalConfiguration Language.order V}
-    (hc : c ∈ wellOrderClass leSymb) : addDiag c ∈ linearOrderClass := by
-  rw [mem_wellOrderClass] at hc
+    [IsStrictTotalOrder V (codeRel leSymb c)] : addDiag c ∈ linearOrderClass := by
   classical
   have h : codeRel leSymb (addDiag c) = (linearOrderOfSTO (codeRel leSymb c)).le := by
     ext x y
@@ -88,8 +87,9 @@ theorem not_countable_image_mk_linearOrderClass :
   choose c hc htype using hcode
   let f : (Ico ω ω₁ : Set Ordinal.{0}) →
       (Quotient.mk (isoSetoid Language.order ℕ)) '' linearOrderClass :=
-    fun β => ⟨Quotient.mk _ (addDiag (c β)), addDiag (c β), addDiag_mem_linearOrderClass (hc β),
-      rfl⟩
+    fun β =>
+      have := mem_wellOrderClass.1 (hc β)
+      ⟨Quotient.mk _ (addDiag (c β)), addDiag (c β), addDiag_mem_linearOrderClass, rfl⟩
   have hf : Function.Injective f := fun β γ hβγ => by
     have := type_eq_of_isoSetoid_addDiag (hc β) (hc γ)
       (Quotient.exact (congrArg Subtype.val hβγ))
