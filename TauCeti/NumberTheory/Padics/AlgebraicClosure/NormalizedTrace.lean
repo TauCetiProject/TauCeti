@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.Cyclotomic.Tower
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
+import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
 import TauCeti.RingTheory.RootsOfUnity.Ultrametric
 
 /-!
@@ -58,28 +59,6 @@ namespace PadicAlgCl
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
-/-- The coefficient below the leading one of the cyclotomic polynomial of order `p ^ (m + 1)`
-is `1` for `m = 0` and `0` otherwise. -/
-private theorem nextCoeff_cyclotomic_prime_pow (R : Type*) [CommRing R] [Nontrivial R] (m : ℕ) :
-    (cyclotomic (p ^ (m + 1)) R).nextCoeff = if m = 0 then 1 else 0 := by
-  have hp2 := hp.out.two_le
-  have hpos : 0 < p ^ m := pow_pos hp.out.pos m
-  have hdeg : (cyclotomic (p ^ (m + 1)) R).natDegree = p ^ m * (p - 1) := by
-    rw [natDegree_cyclotomic, Nat.totient_prime_pow_succ hp.out]
-  have hdeg0 : p ^ m * (p - 1) ≠ 0 := Nat.mul_ne_zero hpos.ne' (by omega)
-  rw [nextCoeff, hdeg, ite_eq_right hdeg0, cyclotomic_prime_pow_eq_geom_sum hp.out, finsetSum_coeff]
-  simp_rw [← pow_mul, coeff_X_pow]
-  split_ifs with hm
-  · subst hm
-    rw [Finset.sum_eq_single (p - 2) (fun b _ hb ↦ ite_eq_right (by simp; omega)) (by simp; omega)]
-    simp; omega
-  · refine Finset.sum_eq_zero fun i _ ↦ ite_eq_right fun h ↦ ?_
-    -- `p ^ m` divides `p ^ m * i` and `p ^ m * (p - 1)`, hence `1`, but `p ^ m ≥ p ≥ 2`.
-    have hpm : 2 ≤ p ^ m := le_trans hp2 (Nat.le_self_pow hm p)
-    have h' : p ^ m * (p - 1) = p ^ m * i + 1 := by omega
-    have h1 : p ^ m ∣ 1 := (Nat.dvd_add_right (dvd_mul_right _ _)).mp (h' ▸ dvd_mul_right _ _)
-    exact absurd (Nat.dvd_one.mp h1) (by omega)
-
 /-- The normalized trace to `ℚ_p` of a root of unity of `p`-power order has norm at most one: it
 is `1` at `1`, `-(p - 1)⁻¹` on a root of order `p`, and `0` on a root of higher order. -/
 theorem norm_normalizedTrace_le_one_of_pow_eq_one {ζ : PadicAlgCl p} {n : ℕ}
@@ -93,7 +72,7 @@ theorem norm_normalizedTrace_le_one_of_pow_eq_one {ζ : PadicAlgCl p} {n : ℕ}
       simpa using normalizedTrace_algebraMap_apply ℚ_[p] ℚ_[p] (PadicAlgCl p) 1
     simp [h1]
   rw [normalizedTrace_minpoly, ← hprim.minpoly_eq_cyclotomic_of_irreducible
-    (TauCeti.irreducible_cyclotomic_prime_pow_ratPadic p _), nextCoeff_cyclotomic_prime_pow,
+    (TauCeti.irreducible_cyclotomic_prime_pow_ratPadic p _), nextCoeff_cyclotomic_prime_pow p,
     natDegree_cyclotomic, Nat.totient_prime_pow_succ hp.out]
   split_ifs with hm
   · subst hm

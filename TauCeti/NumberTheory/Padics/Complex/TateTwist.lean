@@ -45,7 +45,7 @@ embeddings are linearly independent characters of `K` (Dedekind), so `y = 0`.
 * `PadicComplex.eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq`: `ℂ_p(i)` has no nonzero
   `G_K`-invariants for `i ≠ 0` and `K` finite over `ℚ_p`.
 * `PadicComplex.forall_cyclotomicCharacter_zpow_mul_smul_eq_iff`: the `G_K`-invariants of
-  `ℂ_p(i)` are `K` for `i = 0` and `0` otherwise (roadmap target `tateSen_H0` for finite `K`).
+  `ℂ_p(i)` are `K` for `i = 0` and `0` otherwise: Tate's computation of `H⁰(G_K, ℂ_p(i))`.
 
 ## References
 
@@ -76,9 +76,22 @@ variable {p : ℕ} [hp : Fact p.Prime]
 private noncomputable def twist (i : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) : ℂ_[p] :=
   algebraMap ℚ_[p] ℂ_[p] (((cyclotomicCharacter (PadicAlgCl p) p σ ^ i : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p])
 
+private theorem twist_def (i : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) :
+    twist i σ =
+      algebraMap ℚ_[p] ℂ_[p] (((cyclotomicCharacter (PadicAlgCl p) p σ ^ i : ℤ_[p]ˣ) : ℤ_[p]) :
+        ℚ_[p]) :=
+  rfl
+
 private theorem twist_mul (i : ℤ) (σ τ : PadicAlgCl p ≃+* PadicAlgCl p) :
     twist i (σ * τ) = twist i σ * twist i τ := by
   simp [twist, mul_zpow]
+
+/-- `twist_mul` for automorphisms over a subfield: the product of algebra automorphisms has the
+product of the underlying ring automorphisms as its underlying ring automorphism. -/
+private theorem twist_algEquiv_mul {K : Type*} [Field K] [Algebra K (PadicAlgCl p)] (i : ℤ)
+    (σ τ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) :
+    twist i (σ * τ).toRingEquiv = twist i σ.toRingEquiv * twist i τ.toRingEquiv :=
+  twist_mul i σ.toRingEquiv τ.toRingEquiv
 
 private theorem twist_ne_zero (i : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) : twist i σ ≠ 0 := by
   simp [twist]
@@ -104,12 +117,6 @@ private theorem mem_closure_of_forall_smul_eq {x : ℂ_[p]}
   rw [← TauCeti.cyclotomicTower_def, IntermediateField.mem_fixingSubgroup_iff]
   exact fun w hw ↦ σ.commutes ⟨w, hw⟩
 
-/-- The Galois group of `ℚ_p` maps `ℚ_p(μ_{p^∞})` into itself. -/
-private theorem apply_mem_cyclotomicTower (σ : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p)
-    {w : PadicAlgCl p} (hw : w ∈ 𝔽) : σ w ∈ 𝔽 :=
-  have : NeZero p := ⟨hp.out.ne_zero⟩
-  normal_iff_forall_map_le'.mp inferInstance σ ⟨w, hw, rfl⟩
-
 /-- **The trace estimate.** For `σ ∈ G_{ℚ_p}` and `z` in the closure of `ℚ_p(μ_{p^∞})`,
 `1 ≤ p ‖1 - (σ z - z)‖`: on `ℚ_p(μ_{p^∞})` the element `1 - (σ z - z)` has normalized trace `1`,
 and Tate's bound applies. -/
@@ -126,7 +133,7 @@ private theorem one_le_mul_norm_one_sub (σ : PadicAlgCl p ≃ₐ[ℚ_[p]] Padic
     rw [map_sub, map_sub, h1, show T (σ w) = T w from
       Algebra.normalizedTrace_map ℚ_[p] (PadicAlgCl p) σ.toAlgHom w, sub_self, sub_zero]
   have h_mem : 1 - (σ w - w) ∈ 𝔽 :=
-    sub_mem (one_mem _) (sub_mem (apply_mem_cyclotomicTower σ hw) hw)
+    sub_mem (one_mem _) (sub_mem (TauCeti.apply_mem_cyclotomicTower σ hw) hw)
   have h := PadicAlgCl.norm_normalizedTrace_le h_mem
   rw [h_trace, norm_one] at h
   simpa [Set.mem_ofPred_eq, algEquiv_smul_coe, ← coe_one, ← coe_sub] using h
@@ -169,14 +176,6 @@ private theorem exists_apply_eq_and_cyclotomicCharacter_zpow_ne_one {i : ℤ} (h
     · omega
     · exact hi (Int.natAbs_eq_zero.mp h)
 
-/-- An automorphism with trivial cyclotomic character fixes `ℚ_p(μ_{p^∞})` pointwise. -/
-private theorem apply_eq_of_cyclotomicCharacter_eq_one {σ : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p}
-    (hσ : cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv = 1) {w : PadicAlgCl p} (hw : w ∈ 𝔽) :
-    σ w = w :=
-  (IntermediateField.mem_fixingSubgroup_iff _ σ).mp
-    ((TauCeti.mem_fixingSubgroup_adjoin_iff_cyclotomicCharacter_eq_one p).mpr hσ) w
-      (TauCeti.cyclotomicTower_def p ℚ_[p] (PadicAlgCl p) ▸ hw)
-
 /-- The key estimate in Tate's argument: if `y` is invariant in `ℂ_p(i)`, `i ≠ 0`, then
 `1 ≤ p ‖1 - y w‖` for every `w ∈ ℚ_p(μ_{p^∞})`. -/
 private theorem one_le_mul_norm_one_sub_mul {i : ℤ} (hi : i ≠ 0) {y : ℂ_[p]}
@@ -198,7 +197,7 @@ private theorem one_le_mul_norm_one_sub_mul {i : ℤ} (hi : i ≠ 0) {y : ℂ_[p
     refine mem_closure_of_forall_smul_eq fun σ hσ ↦ ?_
     have hσy : σ • y = y := by simpa [twist, hσ] using hy σ
     rw [smul_mul', smul_mul', hσc, hσy, algEquiv_smul_coe,
-      apply_eq_of_cyclotomicCharacter_eq_one hσ hw]
+      TauCeti.apply_eq_of_cyclotomicCharacter_eq_one hσ hw]
   have h_diff : γ • ((c - 1)⁻¹ * (y * (w : ℂ_[p]))) - (c - 1)⁻¹ * (y * (w : ℂ_[p])) =
       y * w := by
     rw [smul_mul', smul_mul', hσc, hγy, algEquiv_smul_coe, hγw]
@@ -231,20 +230,17 @@ section Descent
 
 variable {K : IntermediateField ℚ_[p] (PadicAlgCl p)}
 
-/-- An automorphism of `PadicAlgCl p` over `ℚ_p` fixing `K` pointwise, as an automorphism
-over `K`. -/
-private def algEquivOfFix (σ : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p) (hσ : ∀ a : K, σ a = a) :
-    PadicAlgCl p ≃ₐ[K] PadicAlgCl p :=
-  { σ with commutes' := hσ }
-
 /-- Invariance in `ℂ_p(i)` under `G_K` is invariance under the elements of `G_{ℚ_p}` fixing `K`. -/
 private theorem twist_mul_smul_eq_of_forall_apply_eq {i : ℤ} {y : ℂ_[p]}
     (hy : ∀ σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p, twist i σ.toRingEquiv * σ • y = y)
     {σ : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p} (hσ : ∀ a : K, σ a = a) :
     twist i σ.toRingEquiv * σ • y = y := by
-  have h := hy (algEquivOfFix σ hσ)
-  rwa [← algEquiv_restrictScalars_smul (R := ℚ_[p]),
-    show (algEquivOfFix σ hσ).restrictScalars ℚ_[p] = σ from AlgEquiv.ext fun _ ↦ rfl] at h
+  -- `σ` as an automorphism over `K`.
+  set σK := K.fixingSubgroupEquiv ⟨σ, (mem_fixingSubgroup_iff _ σ).2 fun a ha ↦ hσ ⟨a, ha⟩⟩
+  have hσK : σK.restrictScalars ℚ_[p] = σ :=
+    AlgEquiv.ext fun x ↦ congrFun (coe_fixingSubgroupEquiv_apply K _) x
+  have h := hy σK
+  rwa [← algEquiv_restrictScalars_smul (R := ℚ_[p]), hσK] at h
 
 /-- If `y` is invariant in `ℂ_p(i)` under `G_K`, then for `a ∈ K` the twisted conjugate
 `χ(g) ^ i g(a y)`, `g ∈ G_{ℚ_p}`, only depends on the restriction of `g` to `K`. -/
@@ -263,7 +259,7 @@ private theorem twist_mul_smul_eq_of_apply_eq {i : ℤ} {y : ℂ_[p]}
   calc twist i (g' * u).toRingEquiv * (g' * u) • ((a : PadicAlgCl p) * y : ℂ_[p])
       = twist i g'.toRingEquiv *
           g' • (twist i u.toRingEquiv * u • ((a : PadicAlgCl p) * y : ℂ_[p])) := by
-        rw [show (g' * u).toRingEquiv = g'.toRingEquiv * u.toRingEquiv from rfl, twist_mul,
+        rw [twist_algEquiv_mul,
           mul_smul, smul_mul' g', smul_twist, mul_assoc]
     _ = twist i g'.toRingEquiv * g' • ((a : PadicAlgCl p) * y : ℂ_[p]) := by
         rw [smul_mul' u, algEquiv_smul_coe, hu, mul_left_comm, hu_y]
@@ -284,7 +280,7 @@ theorem eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq [FiniteDimensiona
           (((cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv ^ i : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) *
         σ • y = y) : y = 0 := by
   classical
-  replace hy : ∀ σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p, twist i σ.toRingEquiv * σ • y = y := hy
+  simp only [← twist_def] at hy
   choose g hg using exists_algEquiv_apply_eq K
   -- The twisted conjugates of `y` by the extensions `g φ` of the embeddings `φ` of `K`.
   set c : (K →ₐ[ℚ_[p]] PadicAlgCl p) → ℂ_[p] := fun φ ↦ twist i (g φ).toRingEquiv * g φ • y
@@ -296,7 +292,7 @@ theorem eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq [FiniteDimensiona
       rw [smul_mul', algEquiv_smul_coe, hg, mul_left_comm]
     rw [h_eq]
     refine eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq_ratPadic hi fun h ↦ ?_
-    change twist i h.toRingEquiv * h • _ = _
+    rw [← twist_def]
     rw [Finset.smul_sum, Finset.mul_sum]
     -- Composition with `h` permutes the embeddings.
     let e : (K →ₐ[ℚ_[p]] PadicAlgCl p) ≃ (K →ₐ[ℚ_[p]] PadicAlgCl p) :=
@@ -304,12 +300,13 @@ theorem eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq [FiniteDimensiona
         invFun φ := (h.symm : PadicAlgCl p →ₐ[ℚ_[p]] PadicAlgCl p).comp φ
         left_inv φ := AlgHom.ext fun _ ↦ h.symm_apply_apply _
         right_inv φ := AlgHom.ext fun _ ↦ h.apply_symm_apply _ }
+    have he (φ : K →ₐ[ℚ_[p]] PadicAlgCl p) :
+        e φ = (h : PadicAlgCl p →ₐ[ℚ_[p]] PadicAlgCl p).comp φ :=
+      rfl
     refine Fintype.sum_equiv e _ _ fun φ ↦ ?_
-    rw [smul_mul', smul_twist, ← mul_assoc, ← twist_mul, ← mul_smul,
-      show h.toRingEquiv * (g φ).toRingEquiv = (h * g φ).toRingEquiv from rfl]
+    rw [smul_mul', smul_twist, ← mul_assoc, ← twist_algEquiv_mul, ← mul_smul]
     refine twist_mul_smul_eq_of_apply_eq hy (fun b ↦ ?_) a
-    rw [AlgEquiv.mul_apply, hg, hg]
-    rfl
+    rw [AlgEquiv.mul_apply, hg, hg, he, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
   -- The embeddings are linearly independent characters of `K` (Dedekind), so each `c φ` is `0`.
   let f : (K →ₐ[ℚ_[p]] PadicAlgCl p) → (K →* ℂ_[p]) := fun φ ↦
     (coeRingHom : PadicAlgCl p →+* ℂ_[p]).toMonoidHom.comp (φ : K →* PadicAlgCl p)
@@ -337,7 +334,7 @@ theorem forall_cyclotomicCharacter_zpow_mul_smul_eq_iff
   · subst hi
     simp only [zpow_zero, Units.val_one, PadicInt.coe_one, map_one, one_mul]
     rw [← fixedPoints_algEquiv_eq_range]
-    rfl
+    exact MulAction.mem_fixedPoints.symm
   · exact ⟨eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq hi, by rintro rfl; simp⟩
 
 end PadicComplex
