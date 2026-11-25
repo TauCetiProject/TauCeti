@@ -9,6 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Algebra.UniformFilterBasis
 public import Mathlib.Topology.Metrizable.Uniformity
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.Seminorm
+import TauCeti.Analysis.LocallyConvex.WithSeminorms
 
 /-!
 # The topology of the word seminorms on smooth vectors
@@ -277,12 +278,8 @@ theorem inclusion_injective : Function.Injective (inclusion I π X) := fun _ _ h
 /-- **Convergence in `LieSmoothSpace I π X` is convergence in every word seminorm.** -/
 theorem tendsto_nhds {α : Type*} {l : Filter α} {u : α → LieSmoothSpace I π X}
     {v : LieSmoothSpace I π X} :
-    Tendsto u l (𝓝 v) ↔ ∀ k, Tendsto (fun a ↦ seminormFamily I π X k (u a - v)) l (𝓝 0) := by
-  rw [(withSeminorms I π X).tendsto_nhds]
-  refine ⟨fun h k ↦ Metric.tendsto_nhds.2 fun ε hε ↦ (h k ε hε).mono fun a ha ↦ ?_,
-    fun h k ε hε ↦ (Metric.tendsto_nhds.1 (h k) ε hε).mono fun a ha ↦ ?_⟩
-  · rwa [Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg _ _)]
-  · rwa [Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg _ _)] at ha
+    Tendsto u l (𝓝 v) ↔ ∀ k, Tendsto (fun a ↦ seminormFamily I π X k (u a - v)) l (𝓝 0) :=
+  (withSeminorms I π X).tendsto_nhds_iff_tendsto_zero
 
 section Derivative
 
