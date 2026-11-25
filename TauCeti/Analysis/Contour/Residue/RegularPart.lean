@@ -33,5 +33,5 @@ theorem MeromorphicAt.exists_analyticAt_eventuallyEq_inv_smul_residue_add
     simpa using residue_eq_of_eventuallyEq_zpow_smul (n := -1) (by decide) hg hfg
   refine ⟨dslope g ρ, hg.dslope _, ?_⟩
   filter_upwards [hfg, self_mem_nhdsWithin] with s hs hsρ
-  rw [hs, zpow_neg_one, hres, dslope_of_ne _ (Set.mem_compl_singleton_iff.1 hsρ), slope_def_module,
-    ← smul_add, add_sub_cancel]
+  rw [hs, hres, dslope_of_ne _ (Set.mem_compl_singleton_iff.1 hsρ), slope_def_module]
+  simp [smul_sub]

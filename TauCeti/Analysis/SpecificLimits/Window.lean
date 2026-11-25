@@ -51,8 +51,7 @@ theorem le_of_window_exp_div_pow_bound {v : ℕ → ℝ} {a d R : ℝ} (ha : 0 <
   have hv' : v k ≤ |C| / r ^ k := calc
     v k ≤ C * Real.exp (η * U) / R ^ k := hv
     _ ≤ |C| * (R / r) ^ k / R ^ k := by gcongr; exact le_abs_self _
-    _ = |C| / r ^ k := by
-      rw [div_pow, mul_div_assoc, div_right_comm, div_self (pow_ne_zero _ hpos.ne'), mul_one_div]
+    _ = |C| / r ^ k := by rw [div_pow]; field_simp
   obtain ⟨hlo, hhi⟩ := hN k hkN
   have hhalf : a / 2 / d ^ (k + 1) < a / d ^ (k + 1) := by
     gcongr
