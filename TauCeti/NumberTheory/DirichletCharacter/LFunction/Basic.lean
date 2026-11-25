@@ -41,6 +41,8 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   function `LFunctionTrivChar₁ N`, which is `(s - 1) L(s)` away from `s = 1` and, for `N = 1`,
   `(s - 1) ζ(s)` away from `1` and `1` at `1`; it is nonzero wherever `ζ` is, and away from `1`
   its analytic orders agree with `ζ`.
+* `DirichletCharacter.one_le_toNat_analyticOrderAt_riemannZeta`: at a zero of `ζ` the analytic
+  order of `ζ` is a positive natural number.
 * `DirichletCharacter.re_lt_one_of_LFunction_eq_zero`: every zero of `χ.LFunction` away from the
   simple pole `(s = 1, χ = 1)` satisfies `s.re < 1`.
 
@@ -90,6 +92,28 @@ theorem analyticOrderAt_LFunctionTrivChar₁_one {ρ : ℂ} (hρ : ρ ≠ 1) :
   have hlin : AnalyticAt ℂ (fun z : ℂ ↦ z - 1) ρ := by fun_prop
   rw [analyticOrderAt_congr hev, analyticOrderAt_mul hlin (analyticOn_riemannZeta ρ hρ),
     hlin.analyticOrderAt_eq_zero.mpr (sub_ne_zero.mpr hρ), zero_add]
+
+/-- At a zero of `ζ`, the analytic order of `ζ` is finite and positive, so its `toNat` is at
+least `1`. -/
+theorem one_le_toNat_analyticOrderAt_riemannZeta {ρ : ℂ} (hρ : riemannZeta ρ = 0) :
+    1 ≤ (analyticOrderAt riemannZeta ρ).toNat := by
+  have hρ1 : ρ ≠ 1 := by
+    rintro rfl
+    exact riemannZeta_one_ne_zero hρ
+  have hF := (differentiable_LFunctionTrivChar₁ 1).differentiableOn.analyticOnNhd isOpen_univ
+  -- the order of the entire function `(s - 1) ζ(s)` is `0` at `2`, hence finite everywhere
+  have h2 : analyticOrderAt (LFunctionTrivChar₁ 1) 2 ≠ ⊤ := by
+    rw [analyticOrderAt_eq_zero.mpr (Or.inr (LFunctionTrivChar₁_one_ne_zero
+      (riemannZeta_ne_zero_of_one_lt_re (by norm_num))))]
+    exact ENat.zero_ne_top
+  have htop := hF.analyticOrderAt_ne_top_of_isPreconnected isPreconnected_univ
+    (Set.mem_univ 2) (Set.mem_univ ρ) h2
+  rw [analyticOrderAt_LFunctionTrivChar₁_one hρ1] at htop
+  have h0 : analyticOrderAt riemannZeta ρ ≠ 0 := by
+    rw [Ne, analyticOrderAt_eq_zero, not_or, not_not]
+    exact ⟨analyticOn_riemannZeta ρ hρ1, not_not.mpr hρ⟩
+  rw [Nat.one_le_iff_ne_zero, Ne, ENat.toNat_eq_zero, not_or]
+  exact ⟨h0, htop⟩
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 

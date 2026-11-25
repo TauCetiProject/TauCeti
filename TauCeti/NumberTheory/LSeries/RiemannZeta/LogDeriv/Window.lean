@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.NumberTheory.LSeries.ZetaZeros
 import TauCeti.Analysis.Complex.JensenFormula
+import TauCeti.Data.Real.Pigeonhole
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Local
 
@@ -27,6 +28,8 @@ by their analytic order `m(ρ)`.
 * `TauCeti.exists_finsum_analyticOrderAt_riemannZeta_le`: the zeros of `ζ` in a closed disc of
   fixed radius centred on a vertical line, counted with order, number `O(log(|Im s₀| + 2))`.
 * `TauCeti.riemannZeta_logDeriv_window`: the window form of the local expansion of `ζ′/ζ`.
+* `TauCeti.riemannZeta_safe_height`: every `[T, T + 1]` with `T ≥ 2` contains a height `T′` with
+  `ζ(σ ± i T′) ≠ 0` and `‖ζ′/ζ(σ ± i T′)‖ ≤ C log² (T + 2)` for `-1 ≤ σ ≤ 2`.
 
 ## Implementation notes
 
@@ -39,10 +42,17 @@ least `1` from `s`: zeros with `Re ρ ≤ 0` are the trivial zeros `-2, -4, …`
 (`riemannZeta_eq_zero_iff_of_re_nonpos`), there are none with `Re ρ ≥ 1`, and the rest have
 `|Im ρ - Im s| > 1`. So the zeros of the disc outside the window contribute at most their count.
 
+For the safe height, the zeros of the windows about the points `σ ± i T′` with `T ≤ T′ ≤ T + 1`
+lie in the two discs of radius `4` about `2 ± i T`. They number `K = O(log (T + 2))` with order,
+so their ordinates take at most `K` absolute values, and the pigeonhole lemma
+`TauCeti.exists_mem_Icc_forall_le_abs_sub` gives `T′ ∈ [T, T + 1]` at distance at least
+`1 / (2 (K + 1))` from all of them. At such a height `ζ` has no zero on the horizontal segments,
+and the window sum is at most `2 K (K + 1) = O(log² (T + 2))`.
+
 ## References
 
-* D. Koukoulopoulos, *The Distribution of Prime Numbers*, Lemma 8.6, pp.90–91, and
-  Lemma 11.2, p.113.
+* D. Koukoulopoulos, *The Distribution of Prime Numbers*, Lemma 8.6, pp.90–91,
+  Lemma 11.2, p.113, and Lemma 11.4, pp.114–115.
 -/
 
 public section
@@ -207,5 +217,207 @@ theorem riemannZeta_logDeriv_window :
     _ ≤ _ := norm_add_le _ _
     _ ≤ C₁ * Real.log (|s.im| + 2) + C₂ * Real.log (|s.im| + 2) := add_le_add hloc hrest
     _ = _ := by ring
+
+/-- A zero `ρ` of `ζ` with `|Re ρ - 2| ≤ 2` and `|Im ρ - t| ≤ 2` lies in the closed disc of
+radius `4` about `2 + i t`. -/
+private theorem mem_riemannZetaZerosClosedBall_two_add {ρ : ℂ} {t : ℝ} (hre : |ρ.re - 2| ≤ 2)
+    (him : |ρ.im - t| ≤ 2) (hζ : riemannZeta ρ = 0) :
+    ρ ∈ riemannZetaZerosClosedBall (2 + t * I) 4 := by
+  refine mem_riemannZetaZerosClosedBall.mpr ⟨(Complex.norm_le_abs_re_add_abs_im _).trans ?_, hζ⟩
+  have h1 : (ρ - (2 + t * I)).re = ρ.re - 2 := by simp
+  have h2 : (ρ - (2 + t * I)).im = ρ.im - t := by simp
+  rw [h1, h2]
+  linarith
+
+/-- A zero `ρ` of `ζ` in the window `0 < Re ρ < 1`, `|Im ρ - Im s| ≤ 1` about a point `s` with
+`T ≤ |Im s| ≤ T + 1` lies in the closed disc of radius `4` about `2 + i T` or about `2 - i T`. -/
+private theorem mem_union_riemannZetaZerosClosedBall_of_window {T : ℝ} {s ρ : ℂ}
+    (hT : T ≤ |s.im|) (hT' : |s.im| ≤ T + 1) (hρ : 0 < ρ.re ∧ ρ.re < 1 ∧ |ρ.im - s.im| ≤ 1)
+    (hζ : riemannZeta ρ = 0) :
+    ρ ∈ riemannZetaZerosClosedBall (2 + T * I) 4 ∪
+      riemannZetaZerosClosedBall (2 + ((-T : ℝ) : ℂ) * I) 4 := by
+  have hre : |ρ.re - 2| ≤ 2 := abs_le.mpr ⟨by linarith [hρ.1], by linarith [hρ.2.1]⟩
+  -- `||Im ρ| - T| ≤ ||Im ρ| - |Im s|| + 1 ≤ |Im ρ - Im s| + 1 ≤ 2`
+  have him : |(|ρ.im| - T)| ≤ 2 := by
+    have := (abs_abs_sub_abs_le_abs_sub ρ.im s.im).trans hρ.2.2
+    rw [abs_le] at this ⊢
+    constructor <;> linarith
+  rw [Finset.mem_union]
+  rcases le_or_gt 0 ρ.im with h | h
+  · rw [abs_of_nonneg h] at him
+    exact Or.inl (mem_riemannZetaZerosClosedBall_two_add hre him hζ)
+  · have hneg : ρ.im - -T = -(|ρ.im| - T) := by
+      rw [abs_of_neg h]
+      ring
+    exact Or.inr (mem_riemannZetaZerosClosedBall_two_add hre (by rwa [hneg, abs_neg]) hζ)
+
+/-- If a finite set `Z` contains the zeros of the window about `s` and every point of `Z` is at
+distance at least `δ > 0` from `s`, the window sum `∑ m(ρ)/(s - ρ)` has norm at most
+`∑_{z ∈ Z} m(z) / δ`. -/
+private theorem norm_finsum_window_le {s : ℂ} {Z : Finset ℂ} {δ : ℝ} (hδ : 0 < δ)
+    (hZ : ∀ z : ℂ, 0 < z.re → z.re < 1 → |z.im - s.im| ≤ 1 → riemannZeta z = 0 → z ∈ Z)
+    (hsep : ∀ z ∈ Z, δ ≤ ‖s - z‖) :
+    ‖∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0},
+        ((analyticOrderAt riemannZeta ρ.val).toNat : ℂ) / (s - ρ.val)‖ ≤
+      (∑ z ∈ Z, ((analyticOrderAt riemannZeta z).toNat : ℝ)) / δ := by
+  classical
+  set f : ℂ → ℂ := fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℂ) / (s - z)
+  have hsum : ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0},
+      f ρ = ∑ z ∈ Z with 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0, f z := by
+    rw [finsum_subtype_eq_finsum_cond (f := f)]
+    refine finsum_cond_eq_sum_of_cond_iff _ fun {z} _ ↦ ?_
+    rw [Finset.mem_filter]
+    exact ⟨fun h ↦ ⟨hZ z h.1 h.2.1 h.2.2.1 h.2.2.2, h⟩, fun h ↦ h.2⟩
+  rw [hsum, Finset.sum_div]
+  refine (norm_sum_le _ _).trans ((Finset.sum_le_sum fun z hz ↦ ?_).trans
+    (Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _) fun _ _ _ ↦ by positivity))
+  rw [norm_div, Complex.norm_natCast]
+  exact div_le_div_of_nonneg_left (by positivity) hδ (hsep z (Finset.mem_filter.mp hz).1)
+
+/-- **The estimate at a separated point.** Let `C` be a constant of the window form
+`TauCeti.riemannZeta_logDeriv_window`. If `-1 ≤ Re s ≤ 2`, `|Im s| ≥ 2`, a finite set `Z`
+contains the zeros of the window about `s`, and every point of `Z` is at distance at least
+`δ > 0` from `s`, then `ζ(s) ≠ 0` and
+`‖ζ′/ζ(s)‖ ≤ C log(|Im s| + 2) + ∑_{z ∈ Z} m(z) / δ + 1`. -/
+private theorem riemannZeta_ne_zero_and_norm_logDeriv_le {C : ℝ}
+    (hC : ∀ s : ℂ, -1 ≤ s.re → s.re ≤ 2 → s ≠ 1 → riemannZeta s ≠ 0 →
+      ‖deriv riemannZeta s / riemannZeta s + 1 / (s - 1) -
+          ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0},
+            ((analyticOrderAt riemannZeta ρ.val).toNat : ℂ) / (s - ρ.val)‖ ≤
+        C * Real.log (|s.im| + 2))
+    {s : ℂ} {Z : Finset ℂ} {δ : ℝ} (hδ : 0 < δ) (hs₁ : -1 ≤ s.re) (hs₂ : s.re ≤ 2)
+    (hsim : 2 ≤ |s.im|)
+    (hZ : ∀ z : ℂ, 0 < z.re → z.re < 1 → |z.im - s.im| ≤ 1 → riemannZeta z = 0 → z ∈ Z)
+    (hsep : ∀ z ∈ Z, δ ≤ ‖s - z‖) :
+    riemannZeta s ≠ 0 ∧ ‖deriv riemannZeta s / riemannZeta s‖ ≤
+      C * Real.log (|s.im| + 2) +
+        (∑ z ∈ Z, ((analyticOrderAt riemannZeta z).toNat : ℝ)) / δ + 1 := by
+  -- a zero at `s` would lie in `Z`, or outside the window at distance `≥ 1` from itself
+  have hζ : riemannZeta s ≠ 0 := fun hζ ↦ by
+    by_cases hw : 0 < s.re ∧ s.re < 1 ∧ |s.im - s.im| ≤ 1
+    · have := hsep s (hZ s hw.1 hw.2.1 hw.2.2 hζ)
+      rw [sub_self, norm_zero] at this
+      linarith
+    · have := one_le_norm_sub_of_riemannZeta_eq_zero hs₁ hζ hw
+      rw [sub_self, norm_zero] at this
+      linarith
+  refine ⟨hζ, ?_⟩
+  have hs1 : 2 ≤ ‖s - 1‖ := hsim.trans (by simpa using abs_im_le_norm (s - 1))
+  have hpole : ‖1 / (s - 1)‖ ≤ 1 := by
+    rw [norm_div, norm_one, div_le_one (by linarith)]
+    linarith
+  have hs1' : s ≠ 1 := fun h ↦ by norm_num [h] at hs1
+  set W := ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0},
+    ((analyticOrderAt riemannZeta ρ.val).toNat : ℂ) / (s - ρ.val)
+  have hsplit : deriv riemannZeta s / riemannZeta s =
+      (deriv riemannZeta s / riemannZeta s + 1 / (s - 1) - W) + W - 1 / (s - 1) := by ring
+  rw [hsplit]
+  exact (norm_sub_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add
+    (hC s hs₁ hs₂ hs1' hζ) (norm_finsum_window_le hδ hZ hsep))) hpole)
+
+/-- If `C` bounds the zero count of `exists_finsum_analyticOrderAt_riemannZeta_le` for centres on
+the line `Re s₀ = 2` and radius `4`, then the zeros of `ζ` in the discs of radius `4` about
+`2 ± i T`, counted with order, number at most `2 |C| log (|T| + 2)`. -/
+private theorem sum_toNat_analyticOrderAt_union_le {C : ℝ}
+    (hC : ∀ s₀ : ℂ, s₀.re = 2 →
+      ∑ᶠ ρ : {z : ℂ // ‖z - s₀‖ ≤ 4 ∧ riemannZeta z = 0},
+          ((analyticOrderAt riemannZeta ρ.val).toNat : ℝ) ≤ C * Real.log (|s₀.im| + 2))
+    (T : ℝ) :
+    ∑ z ∈ riemannZetaZerosClosedBall (2 + T * I) 4 ∪
+        riemannZetaZerosClosedBall (2 + ((-T : ℝ) : ℂ) * I) 4,
+        ((analyticOrderAt riemannZeta z).toNat : ℝ) ≤ 2 * |C| * Real.log (|T| + 2) := by
+  classical
+  have hdisc (t : ℝ) : ∑ z ∈ riemannZetaZerosClosedBall (2 + t * I) 4,
+      ((analyticOrderAt riemannZeta z).toNat : ℝ) ≤ |C| * Real.log (|t| + 2) := by
+    have him : (2 + t * I).im = t := by simp
+    have := hC (2 + t * I) (by simp)
+    rw [finsum_subtype_riemannZeta_eq_sum _ 4
+      fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℝ), him] at this
+    exact this.trans (mul_le_mul_of_nonneg_right (le_abs_self C)
+      (Real.log_nonneg (by linarith [abs_nonneg t])))
+  have h := Finset.sum_union_inter (s₁ := riemannZetaZerosClosedBall (2 + T * I) 4)
+    (s₂ := riemannZetaZerosClosedBall (2 + ((-T : ℝ) : ℂ) * I) 4)
+    (f := fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℝ))
+  have h0 : 0 ≤ ∑ z ∈ riemannZetaZerosClosedBall (2 + T * I) 4 ∩
+      riemannZetaZerosClosedBall (2 + ((-T : ℝ) : ℂ) * I) 4,
+      ((analyticOrderAt riemannZeta z).toNat : ℝ) := by positivity
+  have h1 := hdisc T
+  have h2 := hdisc (-T)
+  rw [abs_neg] at h2
+  linarith
+
+/-- Every point of a finite set `Z` of zeros of `ζ` has order at least `1`, so the set of the
+absolute values of their ordinates has at most `∑_{z ∈ Z} m(z)` elements. -/
+private theorem card_image_abs_im_le_sum {Z : Finset ℂ} (hZ : ∀ z ∈ Z, riemannZeta z = 0) :
+    ((Z.image fun z ↦ |z.im|).card : ℝ) ≤ ∑ z ∈ Z, ((analyticOrderAt riemannZeta z).toNat : ℝ) := by
+  refine (Nat.cast_le.2 Finset.card_image_le).trans ?_
+  rw [Finset.card_eq_sum_ones, Nat.cast_sum, Nat.cast_one]
+  exact Finset.sum_le_sum fun z hz ↦ by
+    exact_mod_cast one_le_toNat_analyticOrderAt_riemannZeta (hZ z hz)
+
+/-- The final arithmetic: if `1 ≤ L`, `0 ≤ l ≤ 2 L` and `0 ≤ K ≤ 2 |C'| L`, then
+`C l + 2 K (K + 1) + 1 ≤ (2 |C| + 8 C'² + 4 |C'| + 1) L²`. -/
+private theorem mul_add_two_mul_mul_add_one_le {C C' K L l : ℝ} (hL : 1 ≤ L) (hl : 0 ≤ l)
+    (hlL : l ≤ 2 * L) (hK0 : 0 ≤ K) (hK : K ≤ 2 * |C'| * L) :
+    C * l + 2 * K * (K + 1) + 1 ≤ (2 * |C| + 8 * C' ^ 2 + 4 * |C'| + 1) * L ^ 2 := by
+  have hC : C * l ≤ |C| * (2 * L) :=
+    (mul_le_mul_of_nonneg_right (le_abs_self C) hl).trans
+      (mul_le_mul_of_nonneg_left hlL (abs_nonneg C))
+  have hL2 : L ≤ L ^ 2 := by nlinarith
+  nlinarith [abs_nonneg C', abs_nonneg C, sq_abs C',
+    mul_le_mul hK hK hK0 (by nlinarith [abs_nonneg C']),
+    mul_le_mul_of_nonneg_left hL2 (abs_nonneg C), mul_le_mul_of_nonneg_left hL2 (abs_nonneg C')]
+
+/-- **A safe height for `ζ′/ζ`.** There is a constant `C` such that every `T ≥ 2` has some
+`T′ ∈ [T, T + 1]` with `ζ(σ ± i T′) ≠ 0` and `‖ζ′/ζ(σ ± i T′)‖ ≤ C log² (T + 2)` for every
+`σ ∈ [-1, 2]`. -/
+theorem riemannZeta_safe_height :
+    ∃ C : ℝ, ∀ T : ℝ, 2 ≤ T → ∃ T' ∈ Set.Icc T (T + 1), ∀ σ : ℝ, -1 ≤ σ → σ ≤ 2 →
+      ∀ s ∈ ({(σ : ℂ) + (T' : ℂ) * I, (σ : ℂ) - (T' : ℂ) * I} : Set ℂ),
+        riemannZeta s ≠ 0 ∧
+          ‖deriv riemannZeta s / riemannZeta s‖ ≤ C * Real.log (T + 2) ^ 2 := by
+  classical
+  obtain ⟨Cw, hCw⟩ := riemannZeta_logDeriv_window
+  obtain ⟨Cc, hCc⟩ := exists_finsum_analyticOrderAt_riemannZeta_le 2 4
+  refine ⟨2 * |Cw| + 8 * Cc ^ 2 + 4 * |Cc| + 1, fun T hT ↦ ?_⟩
+  -- the zeros of `ζ` in the discs of radius `4` about `2 ± i T`; their ordinates are avoided
+  set Z := riemannZetaZerosClosedBall (2 + T * I) 4 ∪
+    riemannZetaZerosClosedBall (2 + ((-T : ℝ) : ℂ) * I) 4
+  set K := ∑ z ∈ Z, ((analyticOrderAt riemannZeta z).toNat : ℝ)
+  have hK0 : 0 ≤ K := Finset.sum_nonneg fun _ _ ↦ Nat.cast_nonneg _
+  have hcard := card_image_abs_im_le_sum (Z := Z) fun z hz ↦ by
+    rcases Finset.mem_union.1 hz with hz | hz <;> exact (mem_riemannZetaZerosClosedBall.1 hz).2
+  obtain ⟨T', hT', hsepT'⟩ := exists_mem_Icc_forall_le_abs_sub (Z.image fun z ↦ |z.im|)
+    (by linarith : T ≤ T + 1)
+  have hδ : 1 / (2 * (K + 1)) ≤ (T + 1 - T) / (2 * ((Z.image fun z ↦ |z.im|).card + 1)) := by
+    rw [add_sub_cancel_left]
+    gcongr
+  refine ⟨T', hT', fun σ hσ₁ hσ₂ s hs ↦ ?_⟩
+  have hsre : s.re = σ := by rcases hs with rfl | rfl <;> simp
+  have hsim : |s.im| = T' := by
+    rcases hs with rfl | rfl <;> simp [abs_of_nonneg (by linarith [hT'.1] : (0 : ℝ) ≤ T')]
+  have hsep (z : ℂ) (hz : z ∈ Z) : 1 / (2 * (K + 1)) ≤ ‖s - z‖ := by
+    refine (hδ.trans (hsepT' _ (Finset.mem_image_of_mem _ hz))).trans ?_
+    rw [← hsim]
+    exact (abs_abs_sub_abs_le_abs_sub _ _).trans (by simpa using abs_im_le_norm (s - z))
+  obtain ⟨hζ, hbound⟩ := riemannZeta_ne_zero_and_norm_logDeriv_le hCw (Z := Z)
+    (one_div_pos.2 (by linarith)) (hsre ▸ hσ₁) (hsre ▸ hσ₂) (by linarith [hT'.1])
+    (fun z h1 h2 h3 h4 ↦ mem_union_riemannZetaZerosClosedBall_of_window (hsim ▸ hT'.1)
+      (hsim ▸ hT'.2) ⟨h1, h2, h3⟩ h4) hsep
+  refine ⟨hζ, hbound.trans ?_⟩
+  -- `log (|Im s| + 2) ≤ log ((T + 2)²)`, and `K / δ = 2 K (K + 1)`
+  have hlog2 : Real.log ((T + 2) ^ 2) = 2 * Real.log (T + 2) := by
+    rw [Real.log_pow, Nat.cast_ofNat]
+  have hlog : Real.log (|s.im| + 2) ≤ 2 * Real.log (T + 2) := by
+    rw [← hlog2, hsim]
+    exact Real.log_le_log (by linarith [hT'.1]) (by nlinarith [hT'.2])
+  have hKδ : K / (1 / (2 * (K + 1))) = 2 * K * (K + 1) := by
+    rw [div_div_eq_mul_div, div_one]
+    ring
+  rw [hKδ]
+  exact mul_add_two_mul_mul_add_one_le
+    ((Real.le_log_iff_exp_le (by linarith)).2 (by linarith [Real.exp_one_lt_d9]))
+    (Real.log_nonneg (by linarith [abs_nonneg s.im])) hlog hK0
+    (abs_of_nonneg (by linarith : (0 : ℝ) ≤ T) ▸ sum_toNat_analyticOrderAt_union_le hCc T)
 
 end TauCeti
