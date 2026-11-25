@@ -38,7 +38,10 @@ Hermitian metric `ω`, a smooth two-form compatible with `J`, it is the Hermitia
 
 `TauCeti.SymplecticForm.complexAssociatedForm_eq_hermitianForm`, in
 `TauCeti.Geometry.Symplectic.Hermitian`, identifies `H_α` with the complex associated form of a
-symplectic form agreeing with `α`, for `J` multiplication by `i`.
+symplectic form agreeing with `α`, for `J` multiplication by `i`. Continuity of `H_α` for a
+continuous `α`, read in a chart, is
+`TauCeti.IsSmoothForm.tendsto_twoFormHermitianForm_tangentCoordChange`, in
+`TauCeti.Geometry.Manifold.Complex.TwoFormHermitianForm.Continuity`.
 -/
 
 public section

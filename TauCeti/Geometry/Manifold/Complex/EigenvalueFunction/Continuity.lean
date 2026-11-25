@@ -10,8 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Continuity
 import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.LinearEquiv
 import TauCeti.Geometry.Manifold.Complex.LeviForm
-import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Tangent.CoordChange
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.CoordChange
+import TauCeti.Geometry.Manifold.Complex.TwoFormHermitianForm.Continuity
 import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
@@ -29,9 +28,9 @@ change `B x` from the chart at `x₀` to the chart at `x`, which is complex line
 holomorphic. Relative eigenvalues do not change under the complex linear equivalence `B x`
 (`TauCeti.relEigenvalueVector_comp_linearEquiv`). In these coordinates:
 
-* the Hermitian forms `H_κ(x)` and `H_α(x)` converge, by continuity of the forms evaluated along
-  converging tangent vectors (`TauCeti.IsSmoothForm.tendsto_apply`,
-  `TangentBundle.tendsto_mk_tangentCoordChange`);
+* the Hermitian forms `H_κ(x)` and `H_α(x)` converge
+  (`TauCeti.IsSmoothForm.tendsto_twoFormHermitianForm_tangentCoordChange`), by continuity of the
+  forms evaluated along converging tangent vectors;
 * the Levi form of `φ` converges (`TauCeti.tendsto_manifoldLeviForm_tangentCoordChange`): it is
   the Levi form of the coordinate expression of `φ` in the chart at `x₀`, which is continuous
   because it is built from the second derivative of a `C²` function.
@@ -51,33 +50,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℂ, E) ∞ X]
-
-/-- **The Hermitian form of a continuous two-form, read in the chart at `x₀`, is continuous at
-`x₀`**: `H_α(x)(B x u, B x v) → H_α(x₀)(u, v)`. -/
-theorem IsSmoothForm.tendsto_twoFormHermitianForm_tangentCoordChange
-    {α : RoughForm 𝓘(ℝ, E) X ℝ 2} (hα : IsSmoothForm 𝓘(ℝ, E) 0 α) (x₀ : X) (u v : E) :
-    Tendsto (fun x ↦ twoFormHermitianForm E α x (tangentCoordChange 𝓘(ℂ, E) x₀ x x u)
-      (tangentCoordChange 𝓘(ℂ, E) x₀ x x v)) (𝓝 x₀) (𝓝 (twoFormHermitianForm E α x₀ u v)) := by
-  have hvec (w w' : E) : ∀ j, Tendsto (fun x ↦ (⟨x, ![tangentCoordChange 𝓘(ℂ, E) x₀ x x w,
-      tangentCoordChange 𝓘(ℂ, E) x₀ x x w'] j⟩ : TangentBundle 𝓘(ℝ, E) X)) (𝓝 x₀)
-      (𝓝 ⟨x₀, ![w, w'] j⟩) := by
-    -- The real and complex tangent coordinate changes agree on the chart at `x₀`.
-    have hB (w : E) : Tendsto (fun x ↦ (⟨x, tangentCoordChange 𝓘(ℂ, E) x₀ x x w⟩ :
-        TangentBundle 𝓘(ℝ, E) X)) (𝓝 x₀) (𝓝 ⟨x₀, w⟩) := by
-      refine (TangentBundle.tendsto_mk_tangentCoordChange x₀ w).congr' ?_
-      filter_upwards [(chartAt E x₀).open_source.mem_nhds (mem_chart_source E x₀)] with x hx
-      rw [tangentCoordChange_modelWithCornersSelf_restrictScalars_apply ℝ (𝕜' := ℂ)
-        ⟨hx, mem_chart_source E x⟩]
-    intro j
-    fin_cases j
-    · exact hB w
-    · exact hB w'
-  have hre := hα.tendsto_apply tendsto_id (hvec u (I • v))
-  have him := hα.tendsto_apply tendsto_id (hvec u v)
-  simp only [map_smul, id] at hre
-  simp only [twoFormHermitianForm_def, Complex.mk_eq_add_mul_I]
-  exact ((continuous_ofReal.tendsto _).comp hre).add
-    (((continuous_ofReal.tendsto _).comp him).mul_const I)
 
 namespace SmoothTwoForm
 
