@@ -64,8 +64,10 @@ half-cylinder `ε s > a` and the datum is `H(t) dt` from `ε s = 2` on.
   estimate holds for such planes
   (`exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization_of_finite_energy`).
 * **The formal adjoint.** A covector field `η` is read in end coordinates as the `(0, 1)`-form
-  `η' = η (φ ·) ∘ (a + b J)` (`TauCeti.Floer.covectorPullback`). On the part `ε s ≥ 2` of the end,
-  the formal adjoint of the cylindrical end data on `η'` is `det (dφ)` times `D_u^* η`
+  `η' = η (φ ·) ∘ (a + b J)` (`TauCeti.Floer.covectorPullback`); for a `C¹` field with compact
+  support in the end, `η'` has integrable `W^{1,2}` energy density over the cylinder
+  (`TauCeti.Floer.PSSPlane.integrableOn_sobolevDensity_covectorPullback`). On the part `ε s ≥ 2`
+  of the end, the formal adjoint of the cylindrical end data on `η'` is `det (dφ)` times `D_u^* η`
   (`TauCeti.SymplecticForm.floerLinearizationAdjoint_comp_realChart_cylindricalEndLift`). On the
   positive plane, whose end lies at `s → ∞` in end coordinates, the estimate of the adjoint of a
   half-cylinder at a nondegenerate orbit then bounds the `W^{1,2}` energy of `η'` by
@@ -1030,3 +1032,45 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
 end InnerProductSpace
 
 end TauCeti.SymplecticForm
+
+namespace TauCeti.Floer.PSSPlane
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- If `J` is `C¹` along `u` and `u` is `C¹`, a `C¹` covector field `η` with compact support in the
+part `‖w‖ > exp (2π R)` of the end has integrable `W^{1,2}` energy density over `ℝ × [0, 1]` when
+read in end coordinates as the pulled-back form: in end coordinates it vanishes off a band. -/
+theorem integrableOn_sobolevDensity_covectorPullback (p : PSSPlane)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V} (hJ : ∀ z, ContDiffAt ℝ 1 (uncurry J) (z, u z))
+    (hu : ContDiff ℝ 1 u) {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 1 η)
+    (hηc : HasCompactSupport η) {R : ℝ}
+    (hηR : tsupport η ⊆ {z | Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm z‖}) :
+    IntegrableOn (sobolevDensity (covectorPullback (realChart p.cylindricalEndLift) J u η))
+      (univ ×ˢ Icc (0 : ℝ) 1) := by
+  set φ := realChart p.cylindricalEndLift
+  have hφ : ContDiff ℝ 2 φ := contDiff_realChart p.contDiff_cylindricalEndLift
+  -- The pulled-back form is `C¹`, since `J` is `C¹` along `u`.
+  have hη' : ContDiff ℝ 1 (covectorPullback φ J u η) := by
+    refine contDiff_covectorPullback_of_contDiffOn isOpen_univ (fun ζ _ ↦ ?_)
+      (hη.comp (hφ.of_le one_le_two)) (subset_univ _)
+    have hdφ : ContDiff ℝ 1 fun ζ ↦ fderiv ℝ φ ζ stdComplexLineReal :=
+      (hφ.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const
+    have hJu : ContDiffAt ℝ 1 (fun ζ ↦ J (φ ζ) (u (φ ζ))) ζ :=
+      (hJ (φ ζ)).comp (f := fun ζ ↦ (φ ζ, u (φ ζ))) ζ
+        ((hφ.of_le one_le_two).contDiffAt.prodMk (hu.comp (hφ.of_le one_le_two)).contDiffAt)
+    exact (((contDiff_fst.comp hdφ).contDiffAt.smul
+      (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add
+      ((contDiff_snd.comp hdφ).contDiffAt.smul hJu)).contDiffWithinAt
+  -- In end coordinates, `η` vanishes off a band `[a, b] × ℝ`.
+  obtain ⟨a, b, -, -, -, -, hout⟩ := p.exists_band_of_tsupport_subset hηc hηR
+  refine IntegrableOn.of_forall_sdiff_eq_zero (s := Icc a b ×ˢ Icc 0 1)
+    ((continuous_sobolevDensity hη').continuousOn.integrableOn_compact
+      (isCompact_Icc.prod isCompact_Icc)) (MeasurableSet.univ.prod measurableSet_Icc)
+    fun ζ hζ ↦ ?_
+  have h0 : covectorPullback φ J u η =ᶠ[𝓝 ζ] 0 := by
+    filter_upwards [hout ζ fun h ↦ hζ.2 ⟨h, hζ.1.2⟩] with ζ' h
+    have h' : η (φ ζ') = 0 := by simpa only [Function.comp_apply, Pi.zero_apply] using h
+    exact covectorPullback_eq_zero_of_apply_eq_zero φ J u h'
+  rw [sobolevDensity_congr_of_eventuallyEq h0, sobolevDensity_zero]
+
+end TauCeti.Floer.PSSPlane
