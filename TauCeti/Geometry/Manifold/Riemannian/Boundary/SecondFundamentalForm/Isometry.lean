@@ -75,8 +75,11 @@ theorem RiemannianIsometry.boundarySecondFundamentalForm_map
   have hWq : W q = mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
       (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w :=
     (hΦ.mpullback_apply_eq_iff W' _).2 (hW'q.trans hw)
-  have hWt : ∀ᶠ p in 𝓝 q, W p ∈ boundaryTangentSpace p :=
-    eventually_mpullback_mem_boundaryTangentSpace (by simp) Φ.toDiffeomorph hW't
+  have hWt : ∀ᶠ p in 𝓝 q, W p ∈ boundaryTangentSpace p := by
+    have h := fun hV ↦ eventually_mpullback_mem_boundaryTangentSpace (by simp) Φ.toDiffeomorph
+      (q := q) (V := W') hV
+    simp only [RiemannianIsometry.coe_toDiffeomorph] at h
+    exact h hW't
   rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
     boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal _ u' w' hW' hW'q hW't,
     ← Φ.inner_mfderiv (q : M), hΦ.mfderiv_leviCivitaConnection_mpullback hW',
