@@ -8,15 +8,21 @@ module
 public import Mathlib.Order.KrullDimension
 
 /-!
-# Krull dimension of products and of adjacent intervals
+# Krull dimension of products, adjacent intervals and unions of upper sets
 
-Two inequalities about Krull dimension that hold in every preorder. The height of a pair is at
+Three facts about Krull dimension that hold in every preorder. The height of a pair is at
 most the sum of the heights of its components, so the Krull dimension of a product is at most the
 sum of the Krull dimensions of the factors. In the other direction, for `a ≤ b ≤ c` a strict chain
 in `[a, b]` and one in `[b, c]` concatenate to a strict chain in `[a, c]`, so the Krull dimension of
 `[a, c]` is at least the sum of those of `[a, b]` and `[b, c]`. In a modular lattice the two
 combine into additivity of Krull dimension on intervals
 (`Order.krullDim_Icc_eq_krullDim_Icc_add_krullDim_Icc`).
+
+Finally, a strict chain in a union of two upper sets lies entirely in the set that contains its
+first element, so the Krull dimension of the union is the larger of the two Krull dimensions. In a
+prime spectrum the closed sets are upper sets for the inclusion order, so this computes the
+dimension of a union of two closed subsets, for instance the support of `M ⧸ r s M` as the union
+of the supports of `M ⧸ r M` and `M ⧸ s M`.
 
 ## Main results
 
@@ -25,6 +31,8 @@ combine into additivity of Krull dimension on intervals
 * `Order.krullDim_prod_le`: `dim (α × β) ≤ dim α + dim β`.
 * `Order.krullDim_Icc_add_krullDim_Icc_le`: `dim [a, b] + dim [b, c] ≤ dim [a, c]` for
   `a ≤ b ≤ c`.
+* `Order.krullDim_union_of_isUpperSet`: the Krull dimension of a union of two upper sets is the
+  larger of their Krull dimensions.
 
 ## Implementation notes
 
@@ -105,5 +113,22 @@ theorem krullDim_Icc_add_krullDim_Icc_le {a b c : α} (hab : a ≤ b) (hbc : b �
   refine (add_le_add h₁ h₂).trans ?_
   rw [krullDim_eq_iSup_height_add_coheight_of_nonempty, ← WithBot.coe_add, WithBot.coe_le_coe]
   exact le_iSup (fun x ↦ height x + coheight x) b'
+
+/-- The Krull dimension of a union of two upper sets is the larger of their Krull dimensions. -/
+theorem krullDim_union_of_isUpperSet {s t : Set α} (hs : IsUpperSet s) (ht : IsUpperSet t) :
+    krullDim ↥(s ∪ t) = max (krullDim ↥s) (krullDim ↥t) := by
+  refine le_antisymm ?_ (max_le
+    (krullDim_le_of_strictMono (Set.inclusion Set.subset_union_left) fun _ _ h ↦ h)
+    (krullDim_le_of_strictMono (Set.inclusion Set.subset_union_right) fun _ _ h ↦ h))
+  refine iSup_le fun p ↦ ?_
+  -- The whole chain lies in whichever of `s` and `t` contains its first element.
+  have hmem {u : Set α} (hu : IsUpperSet u) (h : (p.head : α) ∈ u) (i : Fin (p.length + 1)) :
+      (p i : α) ∈ u :=
+    hu (p.monotone (Fin.zero_le i)) h
+  rcases p.head.property with h | h
+  · exact le_max_of_le_left (LTSeries.length_le_krullDim
+      ⟨p.length, fun i ↦ ⟨p i, hmem hs h i⟩, fun i ↦ p.step i⟩)
+  · exact le_max_of_le_right (LTSeries.length_le_krullDim
+      ⟨p.length, fun i ↦ ⟨p i, hmem ht h i⟩, fun i ↦ p.step i⟩)
 
 end Order

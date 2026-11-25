@@ -70,6 +70,24 @@ theorem mem_puncturedAffineSpaceOpens_iff (x : Spec (.of (MvPolynomial ι R))) :
       x ∉ PrimeSpectrum.zeroLocus (Set.range (MvPolynomial.X : ι → MvPolynomial ι R)) :=
   Iff.rfl
 
+/-- Punctured affine space is the union of the basic opens `D(Xᵢ)` of the coordinates. -/
+theorem puncturedAffineSpaceOpens_eq_iSup_basicOpen :
+    puncturedAffineSpaceOpens R ι = ⨆ i, (Spec (.of (MvPolynomial ι R))).basicOpen
+      ((Scheme.ΓSpecIso (.of (MvPolynomial ι R))).inv (MvPolynomial.X i)) := by
+  -- The points of `Spec R[Xᵢ]` are the primes of `R[Xᵢ]`, so the membership lemmas of
+  -- `PrimeSpectrum` apply to them.
+  have hmem (i : ι) (x : Spec (.of (MvPolynomial ι R))) :
+      x ∈ (Spec (.of (MvPolynomial ι R))).basicOpen
+          ((Scheme.ΓSpecIso (.of (MvPolynomial ι R))).inv (MvPolynomial.X i)) ↔
+        MvPolynomial.X i ∉ x.asIdeal := by
+    rw [basicOpen_eq_of_affine]
+    exact PrimeSpectrum.mem_basicOpen _ x
+  ext x
+  rw [SetLike.mem_coe, SetLike.mem_coe, TopologicalSpace.Opens.mem_iSup,
+    mem_puncturedAffineSpaceOpens_iff]
+  simp only [hmem]
+  exact (not_congr ((PrimeSpectrum.mem_zeroLocus x _).trans Set.range_subset_iff)).trans not_forall
+
 /-- **Punctured affine space** `𝔸^ι_R \ 0`, the open subscheme of `Spec R[Xᵢ]` where the
 coordinates do not all vanish, as a scheme over `Spec R`.
 

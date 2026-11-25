@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Tower
 public import Mathlib.RingTheory.Adjoin.FG
 public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
 public import TauCeti.Data.Finset.Basic
-public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.RowSubset
 import TauCeti.Data.Finset.Sort
 import TauCeti.Data.Fintype.Sort

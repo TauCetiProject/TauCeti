@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.Topology.Algebra.Support
 public import Mathlib.Topology.LocallyConstant.Algebra
 public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Topology.LocallyConstant.Compact
+public import TauCeti.Topology.LocallyConstant.Fiber
 
 /-!
 # Locally constant functions with compact support
@@ -91,14 +93,23 @@ theorem hasCompactSupport_iff_isCompact_support {f : LocallyConstant X M} :
 /-- A locally constant function with compact support takes only finitely many values. -/
 theorem finite_range_of_hasCompactSupport {f : LocallyConstant X M} (hf : HasCompactSupport f) :
     (range f).Finite := by
-  have := isCompact_iff_compactSpace.1 hf.isCompact
-  -- Off the compact support `f` vanishes; on it, `f` is locally constant on a compact space.
-  refine ((f.isLocallyConstant.comp_continuous
-    (continuous_subtypeVal (p := (· ∈ tsupport f)))).range_finite.insert 0).subset ?_
+  -- Off the compact support `f` vanishes, and on it `f` takes finitely many values.
+  refine ((f.isLocallyConstant.finite_image_of_isCompact hf.isCompact).insert 0).subset ?_
   rintro _ ⟨x, rfl⟩
   by_cases hx : x ∈ tsupport f
-  · exact mem_insert_of_mem _ ⟨⟨x, hx⟩, rfl⟩
+  · exact mem_insert_of_mem _ ⟨x, hx, rfl⟩
   · exact .inl (image_eq_zero_of_notMem_tsupport hx)
+
+/-- A compactly supported locally constant function on `X` whose support lies in a set `U`
+restricts to a compactly supported function on `U`. -/
+theorem hasCompactSupport_comap_subtypeVal_of_support_subset {U : Set X}
+    {f : LocallyConstant X M} (hf : HasCompactSupport f) (hsupp : support f ⊆ U) :
+    HasCompactSupport (f.comap ⟨Subtype.val, continuous_subtypeVal⟩ : LocallyConstant U M) := by
+  rw [hasCompactSupport_iff_isCompact_support, coe_comap, ContinuousMap.coe_mk,
+    support_comp_eq_preimage]
+  refine Topology.IsInducing.subtypeVal.isCompact_preimage' ?_ (by rwa [Subtype.range_coe])
+  rw [← tsupport_eq_support]
+  exact hf.isCompact
 
 section Indicator
 
@@ -217,24 +228,22 @@ theorem exists_pairwiseDisjoint_sum_indicator {f : LocallyConstant X M}
       (s : Set M).PairwiseDisjoint (fun m => (K m : Set X)) ∧
       ⇑f = ∑ m ∈ s, (K m : Set X).indicator fun _ => m := by
   classical
-  -- The nonzero part of the fibre over `m` is open, and compact as a closed part of the support.
-  let K : M → CompactOpens X := fun m =>
-    ⟨⟨f ⁻¹' {m} ∩ support f, hf.of_isClosed_subset
-      ((f.isLocallyConstant.isClopen_fiber m).isClosed.inter f.isClopen_support.isClosed)
-      (inter_subset_right.trans (subset_tsupport f))⟩,
-      (f.isLocallyConstant.isClopen_fiber m).isOpen.inter f.isClopen_support.isOpen⟩
-  have hK (m : M) (x : X) : x ∈ (K m : Set X) ↔ f x = m ∧ f x ≠ 0 := Iff.rfl
+  -- The fibres over nonzero values are compact open, as `f` vanishes off its compact support.
+  have hf0 : ∀ x ∉ tsupport f, f x = 0 := fun _ hx => image_eq_zero_of_notMem_tsupport hx
+  let K := f.isLocallyConstant.fiberCompactOpens hf.isCompact hf0
+  have hK (m : M) (x : X) : x ∈ (K m : Set X) ↔ f x = m ∧ m ≠ 0 :=
+    f.isLocallyConstant.mem_fiberCompactOpens hf.isCompact hf0
   refine ⟨(finite_range_of_hasCompactSupport hf).toFinset.erase 0, K, Finset.notMem_erase 0 _,
-    fun m hm => ?_, fun m _ m' _ hmm' => disjoint_left.2 fun x hx hx' => hmm' ?_,
+    fun m hm => ?_, f.isLocallyConstant.pairwiseDisjoint_fiberCompactOpens hf.isCompact hf0 _,
     funext fun x => ?_⟩
-  · -- For `m ≠ 0`, the condition `f x ≠ 0` is implied by `f x = m`.
+  · -- For `m` in the erased range, the condition `m ≠ 0` holds.
     ext x
     simp only [hK, mem_preimage, mem_singleton_iff, and_iff_left_iff_imp]
-    exact fun h => h ▸ Finset.ne_of_mem_erase hm
-  · exact ((hK m x).1 hx).1.symm.trans ((hK m' x).1 hx').1
+    exact fun _ => Finset.ne_of_mem_erase hm
   rw [Finset.sum_apply]
   by_cases hx : f x = 0
-  · exact hx.trans (Finset.sum_eq_zero fun m _ => Set.indicator_of_notMem (by simp [hK, hx]) _).symm
+  · exact hx.trans (Finset.sum_eq_zero fun m _ =>
+      Set.indicator_of_notMem (by simp [hK, hx, eq_comm]) _).symm
   rw [Finset.sum_eq_single_of_mem (f x) (by simp [hx]) fun m _ hm =>
     Set.indicator_of_notMem (by simp [hK, Ne.symm hm]) _]
   exact (Set.indicator_of_mem ((hK _ x).2 ⟨rfl, hx⟩) _).symm

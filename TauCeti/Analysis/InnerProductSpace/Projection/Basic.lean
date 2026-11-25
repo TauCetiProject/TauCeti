@@ -26,6 +26,12 @@ span of a finite linearly independent family has codimension its cardinality, an
 vector followed by a linearly independent family in its orthogonal complement is linearly
 independent.
 
+In a seminormed inner product space, the explicit projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` is orthogonal
+to `ν` and does not increase norms, and neither does the projection `(⟪ν, z⟫ / ‖ν‖²) ν` onto the
+line spanned by `ν`. In a normed space they are `z - (𝕜 ∙ ν).starProjection z` and
+`(𝕜 ∙ ν).starProjection z`, and a linear map `ℓ` takes the projection of `a` onto the line
+`𝕜 ∙ ν` to `⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`.
+
 For a family of subspaces `K x` of a finite-dimensional real inner product space whose orthogonal
 projections are continuous at `x₀`, projecting linearly independent vectors of `K x₀` onto `K x`
 keeps them linearly independent near `x₀`. If moreover a second such family `L x` has
@@ -54,6 +60,9 @@ nonzero vector of `U` is orthogonal to `V`. In that case the rank of `U` is at m
 
 Compressing the square of the difference `P_U - P_V` to `U`, from either side, gives
 `P_U - P_U P_V P_U`.
+
+The complementary projection `1 - P_U` has range `Uᗮ`, and more generally `1 - P` has range
+`(range P)ᗮ` for every star projection `P` of a complete space.
 
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
 complement of its kernel whenever the kernel admits an orthogonal projection.
@@ -84,6 +93,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
   for a nonzero vector `v`.
+* `Submodule.range_one_sub_starProjection`, `IsStarProjection.range_one_sub`: the range of
+  `1 - P_U` is `Uᗮ`, and the range of `1 - P` is `(range P)ᗮ` for every star projection `P`.
 * `Submodule.isCompl_orthogonal_span_of_finite`: the span of finitely many vectors is
   complemented by its orthogonal complement.
 * `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`,
@@ -94,6 +105,13 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `‖⟪w, z⟫‖ ≤ ‖w‖ * infDist z P`.
 * `TauCeti.exists_mem_orthogonal_inner_ne_zero_of_not_le`: if `S` is not contained in `P`, some
   vector orthogonal to `P` is not orthogonal to `S`.
+* `TauCeti.inner_sub_div_norm_sq_smul_self_eq_zero`, `TauCeti.norm_sub_div_norm_sq_smul_self_le`:
+  the explicit projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` is orthogonal to `ν` and does not increase
+  norms, in a seminormed inner product space.
+* `TauCeti.norm_inner_div_norm_sq_smul_self_le`: the explicit projection `(⟪ν, z⟫ / ‖ν‖²) ν`
+  onto the line spanned by `ν` does not increase norms, in a seminormed inner product space.
+* `TauCeti.apply_starProjection_singleton`: a linear map `ℓ` at the projection onto the line
+  `𝕜 ∙ ν` is `⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`.
 * `TauCeti.eventually_linearIndependent_starProjection_apply`,
   `TauCeti.eventually_linearIndependent_and_span_starProjection`: projected bases of a
   continuously varying family of subspaces stay linearly independent, and stay bases under a
@@ -130,6 +148,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
 * `Submodule.span_range_starProjection_orthogonal_basis_succ`: if the zeroth coordinate of `v` in
   a basis is nonzero, the projections onto `(𝕜 ∙ v)ᗮ` of the other basis vectors span it.
+* `Submodule.starProjection_comp_eq_self_iff`: `P_U T = T` if and only if the range of `T` lies
+  in `U`.
 * `Submodule.apply_starProjection_eq_of_forall_mem_orthogonal`,
   `Submodule.mul_starProjection_eq_self`, `Submodule.commute_starProjection_orthogonal_iff`,
   `Submodule.apply_mem_of_commute_starProjection`: additive maps vanishing on `Uᗮ` factor through
@@ -385,6 +405,13 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.eq, hP.mul_self_mul]
   abel
 
+/-- The range of the complementary projection `1 - P_U` is the orthogonal complement `Uᗮ`. -/
+@[simp]
+theorem range_one_sub_starProjection :
+    LinearMap.range (1 - (U.starProjection : E →ₗ[𝕜] E)) = Uᗮ := by
+  rw [← ContinuousLinearMap.toLinearMap_one, ← ContinuousLinearMap.toLinearMap_sub,
+    ← starProjection_orthogonal', range_starProjection]
+
 /-- Restricting the orthogonal projection onto `U` to `U` itself gives the identity map. -/
 @[simp]
 theorem orthogonalProjectionOnto_comp_subtypeL :
@@ -525,6 +552,17 @@ theorem mul_starProjection_eq_self {U : Submodule 𝕜 E} [U.HasOrthogonalProjec
   simpa only [_root_.mul_apply_eq_comp] using
     U.apply_starProjection_eq_of_forall_mem_orthogonal hker x
 
+/-- An operator into `E` is fixed by left composition with `U.starProjection` exactly when its
+range lies in `U`. -/
+theorem starProjection_comp_eq_self_iff {F : Type*} [AddCommMonoid F] [Module 𝕜 F]
+    [TopologicalSpace F] {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] {T : F →L[𝕜] E} :
+    U.starProjection ∘L T = T ↔ T.range ≤ U := by
+  refine ⟨?_, fun hT ↦ ContinuousLinearMap.ext fun x ↦
+    U.starProjection_eq_self_iff.mpr (hT ⟨x, rfl⟩)⟩
+  rintro hT _ ⟨x, rfl⟩
+  rw [← hT]
+  exact U.starProjection_apply_mem _
+
 /-- A bounded operator commutes with `Uᗮ.starProjection` if and only if it commutes with
 `U.starProjection`. -/
 @[simp]
@@ -568,7 +606,54 @@ namespace TauCeti
 
 open scoped InnerProductSpace
 
+section Seminormed
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- The projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` onto the subspace orthogonal to `ν` is orthogonal to
+`ν`. In a normed space it is `z - (𝕜 ∙ ν).starProjection z`, by
+`Submodule.starProjection_singleton`. -/
+@[simp]
+theorem inner_sub_div_norm_sq_smul_self_eq_zero (z ν : E) :
+    ⟪z - (⟪ν, z⟫_𝕜 / (‖ν‖ : 𝕜) ^ 2) • ν, ν⟫_𝕜 = 0 := by
+  rcases eq_or_ne ‖ν‖ 0 with hν | hν
+  · exact inner_eq_zero_of_right _ hν
+  rw [inner_eq_zero_symm]
+  simp [inner_sub_right, inner_smul_right, hν]
+
+/-- The projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` onto the subspace orthogonal to `ν` does not increase
+norms. -/
+theorem norm_sub_div_norm_sq_smul_self_le (z ν : E) :
+    ‖z - (⟪ν, z⟫_𝕜 / (‖ν‖ : 𝕜) ^ 2) • ν‖ ≤ ‖z‖ := by
+  set a := ⟪ν, z⟫_𝕜 / (‖ν‖ : 𝕜) ^ 2
+  -- Pythagoras for `z = (z - a • ν) + a • ν`, whose two summands are orthogonal.
+  have h := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (𝕜 := 𝕜) (z - a • ν) (a • ν)
+    (by simp only [inner_smul_right, a, inner_sub_div_norm_sq_smul_self_eq_zero, mul_zero])
+  rw [sub_add_cancel] at h
+  rw [mul_self_le_mul_self_iff (norm_nonneg _) (norm_nonneg _), h]
+  exact le_add_of_nonneg_right (mul_self_nonneg _)
+
+/-- The projection `(⟪ν, z⟫ / ‖ν‖²) ν` onto the line spanned by `ν` does not increase norms. In a
+normed space it is `(𝕜 ∙ ν).starProjection z`, by `Submodule.starProjection_singleton`. -/
+theorem norm_inner_div_norm_sq_smul_self_le (z ν : E) :
+    ‖(⟪ν, z⟫_𝕜 / (‖ν‖ : 𝕜) ^ 2) • ν‖ ≤ ‖z‖ := by
+  rcases eq_or_ne ‖ν‖ 0 with hν | hν
+  · simp [hν]
+  -- `‖(⟪ν, z⟫ / ‖ν‖²) ν‖ = ‖⟪ν, z⟫‖ / ‖ν‖`, and Cauchy–Schwarz bounds `‖⟪ν, z⟫‖` by `‖ν‖ ‖z‖`.
+  rw [norm_smul, norm_div, norm_pow, RCLike.norm_ofReal, abs_norm, pow_two, div_mul_eq_mul_div,
+    mul_div_mul_right _ _ hν, div_le_iff₀ (lt_of_le_of_ne (norm_nonneg ν) hν.symm), mul_comm]
+  exact norm_inner_le_norm ν z
+
+end Seminormed
+
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- A linear map at the projection of `a` onto the line `𝕜 ∙ ν` is
+`⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`. -/
+theorem apply_starProjection_singleton {M F : Type*} [AddCommMonoid M] [Module 𝕜 M]
+    [FunLike F E M] [LinearMapClass F 𝕜 E M] (ℓ : F) (ν a : E) :
+    ℓ ((𝕜 ∙ ν).starProjection a) = ⟪ν, a⟫_𝕜 • ℓ (((‖ν‖ : 𝕜) ^ 2)⁻¹ • ν) := by
+  rw [Submodule.starProjection_singleton, RCLike.ofReal_pow, div_eq_mul_inv, ← smul_smul, map_smul]
 
 /-- Fewer than `dim E` vectors have a common nonzero orthogonal vector: the orthogonal complement
 of their span is nontrivial. -/
@@ -589,6 +674,13 @@ theorem exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E
   obtain ⟨e, he₀, he⟩ := exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank s hs
   exact ⟨(‖e‖⁻¹ : 𝕜) • e, norm_smul_inv_norm he₀, fun u hu ↦ by
     rw [inner_smul_right, he u hu, mul_zero]⟩
+
+/-- In dimension at least two, the orthogonal complement of any vector contains a unit vector. -/
+theorem exists_norm_eq_one_mem_orthogonal_singleton (e : E) (hE : 2 ≤ Module.finrank 𝕜 E) :
+    ∃ w : (𝕜 ∙ e)ᗮ, ‖(w : E)‖ = 1 := by
+  obtain ⟨w, hw, horth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
+    (𝕜 := 𝕜) ({e} : Finset E) (by simp; omega)
+  exact ⟨⟨w, Submodule.mem_orthogonal_singleton_iff_inner_right.2 (horth e (by simp))⟩, hw⟩
 
 /-- A vector orthogonal to a nonzero vector `b` is not `-b`. -/
 theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 = 0) : a ≠ -b := by
@@ -760,6 +852,14 @@ theorem comp_starProjection_orthogonal_ker (u : E →L[𝕜] F) [u.ker.HasOrthog
     u.toLinearMap.apply_sub_starProjection_ker x
 
 end ContinuousLinearMap
+
+/-- The range of the complementary projection `1 - P` of a star projection `P` is the orthogonal
+complement of the range of `P`. -/
+theorem IsStarProjection.range_one_sub {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] {P : E →L[𝕜] E} (hP : IsStarProjection P) :
+    LinearMap.range (1 - (P : E →ₗ[𝕜] E)) = P.rangeᗮ := by
+  obtain ⟨_, h⟩ := isStarProjection_iff_eq_starProjection_range.mp hP
+  rw [h, Submodule.range_one_sub_starProjection, Submodule.range_starProjection]
 
 namespace LinearIsometryEquiv
 

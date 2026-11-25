@@ -5,15 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LambdaRing.Binomial
-public import TauCeti.RingTheory.LambdaRing.MonoidAlgebra
+public import TauCeti.RingTheory.LambdaRing.Adams
 import TauCeti.RingTheory.Binomial
 
 /-!
 # Examples of pre-λ structures
 
-These examples test the definitions of pre-λ structures, their morphisms, λ-ideals and line
-elements against the standard small cases.
+These examples test the definitions of pre-λ structures, their morphisms, λ-ideals, line
+elements and Adams operations against the standard small cases.
 
 * In the binomial structure on `ℤ`, `λ² 2 = 1` and `λ² 1 = 0`, so `λ²` is not additive and the
   ideal `(2)` is not a λ-ideal: a quotient structure on `ℤ ⧸ (2)` would identify `λ² 2 = 1` with
@@ -25,6 +24,12 @@ elements against the standard small cases.
 * In the line-monomial structure on the Laurent polynomials `ℤ[u, u⁻¹]`,
   `λ² (u + u⁻¹) = u u⁻¹ = 1`.
 * For the trivial monoid the line-monomial structure is the binomial structure on `ℤ`.
+* Adams operations are not power maps: in the binomial structure on `ℤ`, `ψ² (-1) = -1`, while
+  the line `u` of `ℤ[u, u⁻¹]` has `ψ² u = u²`.
+* The integral formula `ψ³ x = x³ - 3 x λ² x + 3 λ³ x` gives `ψ³ 2 = 8 - 6 + 0 = 2` in binomial
+  `ℤ`, as it must since the binomial Adams operations are the identity.
+* In the sum-law structure `λ_t m = (1 + t + t²)ᵐ`, `ψ² 1 = 1 - 2 = -1`, so `ψ²` does not fix
+  `1` and is not a ring homomorphism; this structure is not special.
 
 ## References
 
@@ -139,5 +144,27 @@ example (n : ℕ) (c : ℤ) :
       (binomial ℤ).lambda n c := by
   rw [MonoidAlgebra.uniqueRingEquiv_symm_apply, lineMonomial_lambda_single]
   simp
+
+/-- In the binomial structure on `ℤ`, `ψ² (-1) = -1`, whereas `(-1) ^ 2 = 1`: Adams operations
+are not power maps. -/
+example : (binomial ℤ).adams 2 (-1) = -1 ∧ (-1 : ℤ) ^ 2 = 1 :=
+  ⟨binomial_adams_apply two_ne_zero _, by norm_num⟩
+
+/-- In the line-monomial structure on the Laurent polynomials `ℤ[u, u⁻¹]`, `ψ² u = u²`. -/
+example :
+    (lineMonomial (Multiplicative ℤ)).adams 2 (MonoidAlgebra.of ℤ _ (Multiplicative.ofAdd 1)) =
+      MonoidAlgebra.of ℤ _ (Multiplicative.ofAdd 2) := by
+  rw [lineMonomial_adams_of two_ne_zero, ← ofAdd_nsmul, nsmul_eq_mul, mul_one, Nat.cast_ofNat]
+
+/-- The integral formula for `ψ³` in binomial `ℤ`: `ψ³ 2 = 2³ - 3 · 2 · λ² 2 + 3 λ³ 2 = 2`. -/
+example : (binomial ℤ).adams 3 2 = 2 := by
+  rw [adams_three, binomial_lambda_two_two, ← Nat.cast_ofNat (R := ℤ) (n := 2),
+    binomial_lambda_natCast]
+  norm_num
+
+/-- In the sum-law structure on `ℤ`, `ψ² 1 = -1`, so `ψ²` is not a ring homomorphism. -/
+example : sumLaw.adams 2 1 = -1 := by
+  rw [adams_two, sumLaw_lambda_two_one]
+  norm_num
 
 end TauCeti.PreLambdaStructure.Examples

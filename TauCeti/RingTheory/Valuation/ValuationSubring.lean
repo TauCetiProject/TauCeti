@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 import Mathlib.RingTheory.Valuation.LocalSubring
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # Nonunits and domination for valuation subrings
@@ -17,7 +18,9 @@ valuation subring back along a field homomorphism `f` detects nonunits through `
 valuation subring dominates its pullback, and conversely a valuation subring pulls back to any
 valuation subring that it dominates through `f`. Units of a valuation subring stay units in any
 valuation subring whose pullback contains it, and among finitely many elements of the field, not
-all zero, one of largest valuation divides all the others in the valuation subring.
+all zero, one of largest valuation divides all the others in the valuation subring. The
+valuation ring of a surjective valuation is a proper subring once the units of its target are
+nontrivial.
 
 For a group acting on `L` by ring automorphisms, the translate `g • A` of a valuation subring is
 its pullback along `g⁻¹`, with units and nonunits translated accordingly; automorphisms fixing a
@@ -40,6 +43,14 @@ subfield `K` do not change the restriction to `K`.
   the action of `g⁻¹`.
 * `ValuationSubring.comap_algebraMap_pointwise_smul`: translates of `A` by automorphisms fixing
   `K` have the same restriction to `K`.
+* `ValuationSubring.exists_comap_eq`: any valuation subring extends along a field embedding.
+* `ValuationSubring.integralClosure_toSubring_le_iff`: containment of the integral closure is
+  equivalent to containment of the base valuation subring upon restriction.
+* `ValuationSubring.isIntegral_iff_forall_comap_le`: the integral closure is the intersection of
+  valuation subrings whose restrictions contain the base valuation subring.
+* `Valuation.valuationSubring_ne_top_of_surjective`: for a surjective valuation from a field into
+  a linearly ordered commutative group with zero `Γ₀` with `Γ₀ˣ` nontrivial, the valuation ring is
+  a proper subring.
 
 ## References
 
@@ -176,3 +187,52 @@ theorem exists_valuationSubring_mem_and_image_subset_nonunits {R L : Type*} [Com
     hnon ⟨ψ.rangeRestrict x, Ideal.mem_map_of_mem _ hx, rfl⟩⟩
 
 end RingHom
+
+namespace ValuationSubring
+
+variable {K L : Type*} [Field K] [Field L]
+
+/-- A valuation subring of `K` extends along any embedding into a field `L`. -/
+theorem exists_comap_eq (A : ValuationSubring K) (f : K →+* L) :
+    ∃ B : ValuationSubring L, B.comap f = A := by
+  let ψ := f.comp A.subtype
+  obtain ⟨B, hmem, hnon⟩ := ψ.exists_valuationSubring_mem_and_image_subset_nonunits
+    (maximalIdeal.isMaximal A).ne_top (by
+      rw [(RingHom.injective_iff_ker_eq_bot ψ).mp (f.injective.comp A.subtype_injective)]
+      exact bot_le)
+  have hmax : (maximalIdeal A).map (RingHom.id A) ≤ maximalIdeal A := by rw [Ideal.map_id]
+  -- The composite `ψ` applies `f` to the underlying field element.
+  exact ⟨B, comap_eq_of_map_maximalIdeal_le (RingHom.id A) ψ hmax hmem hnon f fun _ ↦ rfl⟩
+
+/-- A valuation subring contains the integral closure of a base valuation subring exactly when
+its restriction contains that base valuation subring. -/
+theorem integralClosure_toSubring_le_iff [Algebra K L] (B : ValuationSubring L)
+    {A : ValuationSubring K} :
+    (integralClosure A L).toSubring ≤ B.toSubring ↔ A ≤ B.comap (algebraMap K L) := by
+  have : IsIntegrallyClosedIn B.toSubring L := inferInstanceAs (IsIntegrallyClosedIn B L)
+  rw [Subring.integralClosure_le_iff]
+  simp only [mem_toSubring, IsScalarTower.algebraMap_apply A K L, algebraMap_apply, ← mem_comap,
+    Subtype.forall, IsConcreteLE.le_iff]
+
+/-- An element is integral over the base valuation subring exactly when it belongs to every
+valuation subring whose restriction contains the base. -/
+theorem isIntegral_iff_forall_comap_le [Algebra K L] (A : ValuationSubring K) {x : L} :
+    IsIntegral A x ↔ ∀ B : ValuationSubring L, A ≤ B.comap (algebraMap K L) → x ∈ B := by
+  rw [← mem_integralClosure_iff, ← Subalgebra.mem_toSubring,
+    Subring.eq_iInf_of_isIntegrallyClosedIn (R := (integralClosure A L).toSubring),
+    Subring.mem_iInf]
+  exact ⟨fun h B hB ↦ (B.mem_toSubring x).mp (h ⟨B, B.integralClosure_toSubring_le_iff.mpr hB⟩),
+    fun h ⟨B, hB⟩ ↦ (B.mem_toSubring x).mpr (h B (B.integralClosure_toSubring_le_iff.mp hB))⟩
+
+end ValuationSubring
+
+namespace Valuation
+
+variable {K : Type*} [Field K] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+
+/-- The valuation ring of a surjective valuation is a proper subring once `Γ₀ˣ` is nontrivial. -/
+theorem valuationSubring_ne_top_of_surjective [Nontrivial Γ₀ˣ] (v : Valuation K Γ₀)
+    (hv : Function.Surjective v) : v.valuationSubring ≠ ⊤ :=
+  fun h ↦ (valuationSubring_eq_top_iff v).mp h (isNontrivial_of_surjective hv)
+
+end Valuation
