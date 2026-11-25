@@ -13,29 +13,33 @@ public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 /-!
 # Lattices in locally compact groups
 
-A *lattice* in a locally compact group `G` is a discrete subgroup `Γ` of finite covolume: the
-right action of `Γ` on `G`, `g ↦ g γ`, has a measurable fundamental domain of finite Haar
-measure. The quotient `G ⧸ Γ` is the space of left cosets `g Γ`. A lattice is *uniform* if
+A *lattice* in a unimodular locally compact group `G` is a discrete subgroup `Γ` of finite
+covolume: the right action of `Γ` on `G`, `g ↦ g γ`, has a measurable fundamental domain of finite
+Haar measure. The quotient `G ⧸ Γ` is the space of left cosets `g Γ`. A lattice is *uniform* if
 `G = K Γ` for a compact set `K`.
 
-The theory is set in a unimodular group: `μ` is a left Haar measure which is also right
-invariant, so that the measure of a fundamental domain of the right action does not depend on the
-choice of domain. A discrete subgroup of a second countable, locally compact Hausdorff group has
-a measurable fundamental domain (`Subgroup.exists_isFundamentalDomain_op`); the lattice condition
-asks that it have finite measure. Integrals over `G` unfold to integrals over `G ⧸ Γ` by Weil's
+The theory is set in a unimodular group: the lattice condition asks that `μ` be right invariant,
+so that the measure of a fundamental domain of the right action does not depend on the choice of
+domain. Without this the finiteness of the measure of one fundamental domain says nothing: a group
+containing a lattice is unimodular, while in the non-unimodular `ax + b` group the discrete
+subgroup `{(2ⁿ, 0)}` has fundamental domains of both finite and infinite left Haar measure.
+
+A discrete subgroup of a second countable, locally compact Hausdorff group has a measurable
+fundamental domain (`Subgroup.exists_isFundamentalDomain_op`); the lattice condition asks that it
+have finite measure. Integrals over `G` unfold to integrals over `G ⧸ Γ` by Weil's
 formula (`QuotientGroup.lintegral_eq_lintegral_automorphize`), and `G ⧸ Γ` is compact exactly when
 `K * Γ = G` for a compact set `K` (`QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ`).
 
 ## Main definitions
 
-* `Subgroup.IsLattice Γ μ`: `Γ` is discrete and the right action of `Γ` on `G` has a fundamental
-  domain of finite `μ`-measure.
+* `Subgroup.IsLattice Γ μ`: `μ` is right invariant, `Γ` is discrete and the right action of `Γ`
+  on `G` has a fundamental domain of finite `μ`-measure.
 * `Subgroup.IsUniformLattice Γ μ`: a lattice `Γ` with `K * Γ = G` for some compact `K`.
 
 ## Main results
 
-* `Subgroup.isLattice_iff_discreteTopology_and_covolume_lt_top`: in a unimodular group, `Γ` is a
-  lattice exactly when it is discrete and `MeasureTheory.covolume Γ.op G μ` is finite.
+* `Subgroup.isLattice_iff_discreteTopology_and_covolume_lt_top`: for a right invariant `μ`, `Γ` is
+  a lattice exactly when it is discrete and `MeasureTheory.covolume Γ.op G μ` is finite.
 * `Subgroup.IsLattice.of_isHaarMeasure`, `Subgroup.IsUniformLattice.of_isHaarMeasure`: being a
   (uniform) lattice does not depend on the Haar measure.
 * `Subgroup.IsLattice.isFiniteMeasure_quotient`: the quotient measure on `G ⧸ Γ` of a lattice is
@@ -64,13 +68,16 @@ variable {G : Type*} [Group G] [MeasurableSpace G]
 
 namespace Subgroup
 
-/-- A subgroup `Γ` of `G` is a **lattice** with respect to the measure `μ` if it is discrete and
-the right action of `Γ` on `G`, `g ↦ g γ`, has a fundamental domain of finite `μ`-measure. The
-intended setting is a unimodular locally compact group `G` with Haar measure `μ`; then the
-condition does not depend on the Haar measure (`Subgroup.IsLattice.of_isHaarMeasure`) nor on the
-fundamental domain, and for discrete `Γ` it says that `MeasureTheory.covolume Γ.op G μ` is finite
+/-- A subgroup `Γ` of `G` is a **lattice** with respect to the measure `μ` if `μ` is right
+invariant, `Γ` is discrete and the right action of `Γ` on `G`, `g ↦ g γ`, has a fundamental domain
+of finite `μ`-measure. The intended setting is a unimodular locally compact group `G` with Haar
+measure `μ`; right invariance makes the condition independent of the fundamental domain, it does
+not depend on the Haar measure (`Subgroup.IsLattice.of_isHaarMeasure`), and for discrete `Γ` it
+says that `MeasureTheory.covolume Γ.op G μ` is finite
 (`Subgroup.isLattice_iff_discreteTopology_and_covolume_lt_top`). -/
 structure IsLattice [TopologicalSpace G] (Γ : Subgroup G) (μ : Measure G) : Prop where
+  /-- A lattice lives in a unimodular group: the measure is right invariant. -/
+  isMulRightInvariant : μ.IsMulRightInvariant
   /-- A lattice is a discrete subgroup. -/
   discreteTopology : DiscreteTopology Γ
   /-- A lattice has a fundamental domain of finite measure. -/
@@ -107,9 +114,12 @@ variable [IsTopologicalGroup G]
 theorem IsLattice.of_isHaarMeasure [BorelSpace G] [LocallyCompactSpace G]
     [SecondCountableTopology G] {ν : Measure G} [μ.IsHaarMeasure] [ν.IsHaarMeasure]
     (h : Γ.IsLattice μ) : Γ.IsLattice ν := by
+  have := h.isMulRightInvariant
   obtain ⟨s, hs, hμs⟩ := h.exists_isFundamentalDomain_measure_lt_top
-  refine ⟨h.discreteTopology, s, hs.mono (Measure.absolutelyContinuous_isHaarMeasure ν μ), ?_⟩
-  rw [Measure.isMulLeftInvariant_eq_smul ν μ, Measure.coe_nnreal_smul_apply]
+  -- `ν` is a constant multiple of `μ`, so it is right invariant as well
+  rw [Measure.isMulLeftInvariant_eq_smul ν μ]
+  refine ⟨inferInstance, h.discreteTopology, s, hs.mono Measure.smul_absolutelyContinuous, ?_⟩
+  rw [Measure.coe_nnreal_smul_apply]
   exact ENNReal.mul_lt_top ENNReal.coe_lt_top hμs
 
 /-- Being a uniform lattice does not depend on the choice of Haar measure. -/
@@ -118,29 +128,24 @@ theorem IsUniformLattice.of_isHaarMeasure [BorelSpace G] [LocallyCompactSpace G]
     (h : Γ.IsUniformLattice μ) : Γ.IsUniformLattice ν :=
   ⟨h.toIsLattice.of_isHaarMeasure, h.exists_isCompact_mul_eq_univ⟩
 
-section Unimodular
-
-variable [BorelSpace G] [μ.IsMulRightInvariant]
-
-omit [IsTopologicalGroup G] [BorelSpace G] in
-/-- In a unimodular group, a lattice has finite covolume. -/
+omit [IsTopologicalGroup G] in
+/-- A lattice has finite covolume. -/
 theorem IsLattice.covolume_lt_top [MeasurableConstSMul Gᵐᵒᵖ G] [Countable Γ] (h : Γ.IsLattice μ) :
     covolume Γ.op G μ < ∞ := by
+  have := h.isMulRightInvariant
   obtain ⟨s, hs, hμs⟩ := h.exists_isFundamentalDomain_measure_lt_top
   rwa [hs.covolume_eq_volume]
 
-/-- In a unimodular, second countable, locally compact Hausdorff group, a subgroup is a lattice
-exactly when it is discrete and its right action has finite covolume. -/
-theorem isLattice_iff_discreteTopology_and_covolume_lt_top [T2Space G] [LocallyCompactSpace G]
-    [SecondCountableTopology G] :
+/-- For a right invariant measure on a second countable, locally compact Hausdorff group, a
+subgroup is a lattice exactly when it is discrete and its right action has finite covolume. -/
+theorem isLattice_iff_discreteTopology_and_covolume_lt_top [BorelSpace G] [μ.IsMulRightInvariant]
+    [T2Space G] [LocallyCompactSpace G] [SecondCountableTopology G] :
     Γ.IsLattice μ ↔ DiscreteTopology Γ ∧ covolume Γ.op G μ < ∞ := by
   refine ⟨fun h ↦ ⟨h.discreteTopology, have := h.countable; h.covolume_lt_top⟩,
-    fun ⟨hd, hcov⟩ ↦ ⟨hd, ?_⟩⟩
+    fun ⟨hd, hcov⟩ ↦ ⟨inferInstance, hd, ?_⟩⟩
   have : Countable Γ := countable_of_Lindelof_of_discrete
   obtain ⟨s, -, hs⟩ := Γ.exists_isFundamentalDomain_op μ
   exact ⟨s, hs, hs.covolume_eq_volume μ ▸ hcov⟩
-
-end Unimodular
 
 omit [IsTopologicalGroup G] in
 /-- The quotient measure on `G ⧸ Γ` of a lattice `Γ` is finite. -/
@@ -182,7 +187,7 @@ theorem isUniformLattice_iff_discreteTopology_and_compactSpace [IsTopologicalGro
     obtain ⟨k, hk, γ, hγ, rfl⟩ : x ∈ K * (Γ : Set G) := hKΓ ▸ mem_univ x
     refine mem_iUnion.mpr ⟨⟨MulOpposite.op γ, Subgroup.mem_op.mpr hγ⟩, k, hk, ?_⟩
     simp only [Subgroup.mk_smul, op_smul_eq_mul]
-  exact ⟨⟨hd, s, hs, (hs.measure_le_of_subset_iUnion_smul hcov).trans_lt hK.measure_lt_top⟩,
-    K, hK, hKΓ⟩
+  exact ⟨⟨inferInstance, hd, s, hs,
+    (hs.measure_le_of_subset_iUnion_smul hcov).trans_lt hK.measure_lt_top⟩, K, hK, hKΓ⟩
 
 end Subgroup
