@@ -27,6 +27,10 @@ coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global special
 `TauCeti.IsContMDiffDistribution.exists_isDistributionFrameOn_of_eventually_eq_comap` is the local
 version: a distribution that a local diffeomorphism pulls back from a `C^m` one near a point has a
 `C^m` local frame there.
+When `D x` is the preimage of `D' (f x)` under the differential of a local diffeomorphism `f` at
+`x`, the differential restricts to a linear equivalence `D x ≃ D' (f x)`
+(`IsLocalDiffeomorphAt.mfderivRestrictEquiv`) and induces one of normal spaces
+`T_x M ⧸ D x ≃ T_(f x) N ⧸ D' (f x)` (`IsLocalDiffeomorphAt.mfderivQuotientEquiv`).
 `PartialDiffeomorph.isInvolutiveDistributionOn` transports local involutivity,
 `TauCeti.IsInvolutiveDistribution.diffeomorph` is its global specialization, and
 `Diffeomorph.isInvolutiveDistribution_iff` gives the equivalence for identified distributions.
@@ -174,6 +178,73 @@ theorem IsContMDiffDistribution.exists_isDistributionFrameOn_of_eventually_eq_co
 end Regularity
 
 end TauCeti
+
+namespace IsLocalDiffeomorphAt
+
+section Restrict
+
+omit [CompleteSpace E]
+
+variable {f : M → N} {x : M}
+
+/-- The differential of a local diffeomorphism `f` at `x` carries `D x` onto `D' (f x)` when `D x`
+is the preimage of `D' (f x)`. -/
+theorem map_mfderiv_eq (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0)
+    (hD : D x = (D' (f x)).comap (mfderiv I J f x).toLinearMap) :
+    (D x).map (mfderiv I J f x).toLinearMap = D' (f x) := by
+  rw [hD]
+  exact Submodule.map_comap_eq_of_surjective (hf.isInvertible_mfderiv hn).surjective _
+
+/-- The differential of a local diffeomorphism `f` at `x`, restricted to a linear equivalence
+`D x ≃ D' (f x)` when `D x` is the preimage of `D' (f x)`. -/
+def mfderivRestrictEquiv (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0)
+    (hD : D x = (D' (f x)).comap (mfderiv I J f x).toLinearMap) : D x ≃ₗ[𝕜] D' (f x) :=
+  (hf.mfderivToContinuousLinearEquiv hn).toLinearEquiv.ofSubmodules _ _ <| by
+    rw [← hf.map_mfderiv_eq hn hD, ← hf.mfderivToContinuousLinearEquiv_coe hn,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+
+/-- The restricted differential sends `u` to `df_x u`. -/
+@[simp]
+theorem coe_mfderivRestrictEquiv_apply (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0)
+    (hD : D x = (D' (f x)).comap (mfderiv I J f x).toLinearMap) (u : D x) :
+    (hf.mfderivRestrictEquiv hn hD u : TangentSpace J (f x)) = mfderiv I J f x u := by
+  rw [mfderivRestrictEquiv, LinearEquiv.ofSubmodules_apply,
+    ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe,
+    hf.mfderivToContinuousLinearEquiv_coe hn]
+
+/-- The differential of a local diffeomorphism `f` at `x` induces a linear equivalence
+`T_x M ⧸ D x ≃ T_(f x) N ⧸ D' (f x)` of normal spaces when `D x` is the preimage of
+`D' (f x)`. -/
+def mfderivQuotientEquiv (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0)
+    (hD : D x = (D' (f x)).comap (mfderiv I J f x).toLinearMap) :
+    (TangentSpace I x ⧸ D x) ≃ₗ[𝕜] TangentSpace J (f x) ⧸ D' (f x) :=
+  Submodule.Quotient.equiv _ _ (hf.mfderivToContinuousLinearEquiv hn).toLinearEquiv <| by
+    rw [← hf.map_mfderiv_eq hn hD, ← hf.mfderivToContinuousLinearEquiv_coe hn,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+
+/-- The induced map of normal spaces sends the class of `u` to the class of `df_x u`. -/
+@[simp]
+theorem mfderivQuotientEquiv_mk (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0)
+    (hD : D x = (D' (f x)).comap (mfderiv I J f x).toLinearMap) (u : TangentSpace I x) :
+    hf.mfderivQuotientEquiv hn hD (Submodule.Quotient.mk u) =
+      Submodule.Quotient.mk (mfderiv I J f x u) := by
+  rw [mfderivQuotientEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply,
+    LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe,
+    hf.mfderivToContinuousLinearEquiv_coe hn]
+
+/-- As a linear map, the induced map of normal spaces is the quotient map `Submodule.mapQ` of
+`df_x`. -/
+theorem coe_mfderivQuotientEquiv (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0)
+    (hD : D x = (D' (f x)).comap (mfderiv I J f x).toLinearMap) :
+    (hf.mfderivQuotientEquiv hn hD :
+        (TangentSpace I x ⧸ D x) →ₗ[𝕜] TangentSpace J (f x) ⧸ D' (f x)) =
+      (D x).mapQ (D' (f x)) (mfderiv I J f x).toLinearMap hD.le := by
+  ext u
+  simp
+
+end Restrict
+
+end IsLocalDiffeomorphAt
 
 namespace PartialDiffeomorph
 

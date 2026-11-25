@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution.VectorBundle
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.Distribution.Diffeomorph
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-import TauCeti.Geometry.Manifold.Distribution.Diffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Related
@@ -54,10 +53,10 @@ spaces of isotropic submanifolds built from it, invariants of contactomorphisms.
 * `TauCeti.IsDistributionFrameOn.distributionLeviForm_apply_eq_zero_iff` and
   `TauCeti.distributionLeviForm_apply_eq_zero_iff`: the Levi form vanishes on two values exactly
   when the Lie bracket of their extensions is tangent to `D`.
-* `TauCeti.distributionLeviForm_restrict_mfderiv`: the Levi form is natural under local
+* `TauCeti.distributionLeviForm_mfderivRestrictEquiv`: the Levi form is natural under local
   diffeomorphisms: if `f` pulls a `C¹` distribution `D'` back to `D` near `x`, then `df_x` carries
-  the Levi form of `D` at `x` to that of `D'` at `f x`, through the map of normal spaces
-  `T_x M ⧸ D x → T_(f x) N ⧸ D' (f x)` it induces.
+  the Levi form of `D` at `x` to that of `D'` at `f x`, through the isomorphism of normal spaces
+  `T_x M ⧸ D x ≃ T_(f x) N ⧸ D' (f x)` it induces (`IsLocalDiffeomorphAt.mfderivQuotientEquiv`).
 * `TauCeti.distributionLeviForm_swap` and `TauCeti.distributionLeviForm_self`: the Levi form is
   antisymmetric and alternating.
 * `TauCeti.distributionLeviForm_eq_zero_iff`: vanishing at a point can be tested on local
@@ -399,14 +398,14 @@ private theorem exists_related_extension (hD' : IsContMDiffDistribution J n k D'
 diffeomorphism at `x` and let `D'` be a `C¹` distribution on `N` whose preimage under the
 differential of `f` is `D` near `x`. Then `df_x` carries the Levi form of `D` at `x` to the Levi
 form of `D'` at `f x`: for `u, v ∈ D x`, `L_D' (df u, df v)` is the image of `L_D (u, v)` under the
-map `T_x M ⧸ D x → T_(f x) N ⧸ D' (f x)` induced by `df_x`. -/
-theorem distributionLeviForm_restrict_mfderiv (hD' : IsContMDiffDistribution J n k D')
+isomorphism `T_x M ⧸ D x ≃ T_(f x) N ⧸ D' (f x)` induced by `df_x`. -/
+theorem distributionLeviForm_mfderivRestrictEquiv (hD' : IsContMDiffDistribution J n k D')
     (hn : 1 ≤ n) (hf : IsLocalDiffeomorphAt I J m f x) (hm : 2 ≤ m)
     (hDf : ∀ᶠ z in 𝓝 x, D z = (D' (f z)).comap (mfderiv I J f z).toLinearMap) (u v : D x) :
     distributionLeviForm D' (f x)
-        ((mfderiv I J f x).toLinearMap.restrict (fun w hw ↦ hDf.self_of_nhds.le hw) u)
-        ((mfderiv I J f x).toLinearMap.restrict (fun w hw ↦ hDf.self_of_nhds.le hw) v) =
-      (D x).mapQ (D' (f x)) (mfderiv I J f x).toLinearMap hDf.self_of_nhds.le
+        (hf.mfderivRestrictEquiv (zero_lt_two.trans_le hm).ne' hDf.self_of_nhds u)
+        (hf.mfderivRestrictEquiv (zero_lt_two.trans_le hm).ne' hDf.self_of_nhds v) =
+      hf.mfderivQuotientEquiv (zero_lt_two.trans_le hm).ne' hDf.self_of_nhds
         (distributionLeviForm D x u v) := by
   have : IsManifold I (minSmoothness 𝕜 2) M := by
     rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
@@ -421,14 +420,14 @@ theorem distributionLeviForm_restrict_mfderiv (hD' : IsContMDiffDistribution J n
   -- Read both Levi forms on these extensions and compare the brackets by naturality.
   have hres (Y : Π y : M, TangentSpace I y) (Y' : Π y : N, TangentSpace J y)
       (hYY' : ∀ᶠ z in 𝓝 x, mfderiv I J f z (Y z) = Y' (f z)) (hY : Y x ∈ D x) :
-      (mfderiv I J f x).toLinearMap.restrict (fun w hw ↦ hDf.self_of_nhds.le hw) ⟨Y x, hY⟩ =
+      hf.mfderivRestrictEquiv (zero_lt_two.trans_le hm).ne' hDf.self_of_nhds ⟨Y x, hY⟩ =
         ⟨Y' (f x), hYY'.self_of_nhds ▸ hDf.self_of_nhds.le hY⟩ :=
-    Subtype.ext hYY'.self_of_nhds
+    Subtype.ext <| (hf.coe_mfderivRestrictEquiv_apply _ _ _).trans hYY'.self_of_nhds
   rw [hres V V' hVV', hres W W' hWW', hX.distributionLeviForm_apply le_rfl hU hV hW hVD hWD,
-    distributionLeviForm_apply hD' hn hV' hW' hV'D hW'D, map_neg, Submodule.mkQ_apply,
-    Submodule.mkQ_apply, Submodule.mapQ_apply, ContinuousLinearMap.coe_coe,
-    mfderiv_mlieBracket_of_eventually_related hf.contMDiffAt
+    distributionLeviForm_apply hD' hn hV' hW' hV'D hW'D,
+    ← mfderiv_mlieBracket_of_eventually_related hf.contMDiffAt
       (by rwa [minSmoothness_of_isRCLikeNormedField]) hV hW hV' hW' hVV' hWW']
+  simp
 
 end Naturality
 
