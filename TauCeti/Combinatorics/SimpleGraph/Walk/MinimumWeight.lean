@@ -50,8 +50,9 @@ def minEdgeWeight [LinearOrder K] (p : G.Walk u v) (wt : Sym2 V → K)
 /-- Some edge of a nonempty walk attains its minimum edge weight. -/
 theorem exists_weight_eq_minEdgeWeight [LinearOrder K] (p : G.Walk u v) (wt : Sym2 V → K)
     (hp : ¬p.Nil) : ∃ e ∈ p.edges, wt e = p.minEdgeWeight wt hp := by
-  obtain ⟨e, he, hwt⟩ := List.mem_map.mp
-    (List.min_mem (show p.edges.map wt ≠ [] by simpa using (p.edges_eq_nil.not.mpr hp)))
+  unfold minEdgeWeight
+  have hne : p.edges.map wt ≠ [] := by simpa using (p.edges_eq_nil.not.mpr hp)
+  obtain ⟨e, he, hwt⟩ := List.mem_map.mp (List.min_mem hne)
   exact ⟨e, he, hwt⟩
 
 /-- The minimum edge weight of a walk is at most the weight of every traversed edge. -/
@@ -117,10 +118,9 @@ edge weight. -/
 theorem minEdgeWeight_cons [LinearOrder K] (h : G.Adj u v) (p : G.Walk v w)
     (wt : Sym2 V → K) (hp : ¬p.Nil) :
     (p.cons h).minEdgeWeight wt (by simp) = min (wt s(u, v)) (p.minEdgeWeight wt hp) := by
-  unfold minEdgeWeight
-  simp only [edges_cons, List.map_cons]
-  have hmap : p.edges.map wt ≠ [] := by simpa using (p.edges_eq_nil.not.mpr hp)
-  rw [List.min_cons, List.min?_eq_some_min hmap]
-  rfl
+  apply eq_of_forall_le_iff
+  intro k
+  rw [(p.cons h).le_minEdgeWeight_iff, le_min_iff, p.le_minEdgeWeight_iff]
+  simp
 
 end SimpleGraph.Walk
