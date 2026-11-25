@@ -63,7 +63,7 @@ example (n : ℕ) :
         (Multiplicative ℤ_[p] ⧸ (padicIntLevel p n).toSubgroup)).invariants = 1 := by
   have : (padicIntLevel p n).toSubgroup.FiniteIndex :=
     ⟨by rw [index_padicIntLevel]; exact pow_ne_zero n (Fact.out : p.Prime).ne_zero⟩
-  refine ⟨IsAdmissible.of_isNoetherian, ?_⟩
+  refine ⟨inferInstance, ?_⟩
   rw [Module.finrank_eq_nat_card_basis (invariantOrbitSumBasis ℚ _ _)]
   have := (pretransitive_iff_subsingleton_quotient (Multiplicative ℤ_[p])
     (Multiplicative ℤ_[p] ⧸ (padicIntLevel p n).toSubgroup)).1 inferInstance

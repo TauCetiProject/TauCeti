@@ -227,7 +227,7 @@ instance IsAdmissible.of_isTrivial [ρ.IsTrivial] [Module.Finite A V] : IsAdmiss
 
 /-- A smooth representation on a noetherian module, such as a finitely generated module over a
 noetherian ring, is admissible: each `V^U` is a submodule of the noetherian module `V`. -/
-theorem IsAdmissible.of_isNoetherian [IsNoetherian A V] [IsSmooth ρ] :
+instance IsAdmissible.of_isNoetherian [IsNoetherian A V] [IsSmooth ρ] :
     IsAdmissible ρ :=
   ⟨fun _ _ ↦ inferInstance⟩
 
