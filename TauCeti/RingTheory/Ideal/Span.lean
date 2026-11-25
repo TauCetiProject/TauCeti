@@ -17,6 +17,8 @@ In any ring `R`, an integer `a : ℤ` casts to `±(a.natAbs : R)`, so the two-si
 `Int.span_natAbs` from `ℤ` to an arbitrary ring. In a commutative semiring, an element is
 determined by its products with any set generating the unit ideal.
 
+A minimal nonzero ideal is spanned by any of its nonzero elements (`IsAtom.span_singleton_eq`).
+
 ## Main results
 
 * `Ideal.span_singleton_intCast_eq_natAbs`: `Ideal.span {(a : R)} = Ideal.span {(a.natAbs : R)}` in
@@ -52,3 +54,9 @@ theorem eq_of_forall_mul_eq_of_span_eq_top {R : Type*} [CommSemiring R] {T : Set
   simpa using LinearMap.mem_eqLocus.mp (hle (hT ▸ Submodule.mem_top : (1 : R) ∈ span T))
 
 end Ideal
+
+/-- A minimal nonzero ideal is spanned by any of its nonzero elements. -/
+theorem IsAtom.span_singleton_eq {R : Type*} [Semiring R] {I : Ideal R} (hI : IsAtom I) {t : R}
+    (ht : t ∈ I) (ht0 : t ≠ 0) : Ideal.span {t} = I :=
+  (hI.le_iff.mp ((Ideal.span_singleton_le_iff_mem _).mpr ht)).resolve_left
+    (by rwa [Ideal.span_singleton_eq_bot])

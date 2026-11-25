@@ -21,11 +21,15 @@ is `x₀ ^ p y₁ + y₀ ^ p x₁` (`WittVector.mul_coeff_one_charP`).
 Over a ring of characteristic `p`, `x` is a unit exactly when its zeroth Witt coordinate `x₀` is a
 unit of `R` (`WittVector.isUnit_iff_isUnit_coeff_zero`); the inverse is Mathlib's
 `WittVector.mkUnit`. Mathlib states the criterion only over a field
-(`WittVector.isUnit_of_coeff_zero_ne_zero`). Consequently the Jacobson radical of `𝕎 R` consists
-of the Witt vectors whose zeroth coordinate lies in the Jacobson radical of `R`, and contains `p`.
-In characteristic `p` the Verschiebung of `F u` is `p u`, so a sum `[a] + p u` has Witt
-coordinates `a` in degree `0` and `u_n ^ p` in degree `n + 1`
+(`WittVector.isUnit_of_coeff_zero_ne_zero`). In characteristic `p` the Verschiebung of `F u` is
+`p u`, so a sum `[a] + p u` has Witt coordinates `a` in degree `0` and `u_n ^ p` in degree `n + 1`
 (`WittVector.teichmuller_add_p_mul_coeff_succ`).
+
+Consequently the Jacobson radical of `𝕎 R` consists of the Witt vectors whose zeroth coordinate
+lies in the Jacobson radical of `R` (`WittVector.mem_jacobson_iff`), and contains `p`
+(`WittVector.p_mem_jacobson`). Over a perfect ring, where `p ^ n 𝕎 R` consists of the Witt
+vectors whose first `n` coordinates vanish, `x` is `p ^ n` times a unit exactly when
+`x₀ = ⋯ = x_{n-1} = 0` and `xₙ` is a unit (`WittVector.associated_p_pow_iff`).
 
 ## Main results
 
@@ -33,6 +37,7 @@ coordinates `a` in degree `0` and `u_n ^ p` in degree `n + 1`
   `WittVector.teichmuller_add_verschiebung_coeff_succ`: the Witt coordinates of `[a] + V x`.
 * `WittVector.exists_eq_teichmuller_add_verschiebung`: every Witt vector is `[x₀] + V u`.
 * `WittVector.sub_coeff_zero`: the zeroth Witt coordinate of `x - y` is `x₀ - y₀`.
+* `WittVector.ghostComponent_one`: the first ghost component is `x₀ ^ p + p * x₁`.
 * `WittVector.coeff_frobenius_zero`, `WittVector.mul_coeff_one`: the zeroth Witt coordinate of
   `F x` and the first Witt coordinate of `x y`.
 * `WittVector.mul_coeff_one_charP`: in characteristic `p`, `(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁`.
@@ -40,7 +45,10 @@ coordinates `a` in degree `0` and `u_n ^ p` in degree `n + 1`
   the Witt coordinates of `[a] + p u` in characteristic `p`.
 * `WittVector.isUnit_iff_isUnit_coeff_zero`: in characteristic `p`, `x` is a unit iff `x₀` is.
 * `WittVector.mem_jacobson_iff`: in characteristic `p`, `x` lies in the Jacobson radical of
-  `𝕎 R` iff `x₀` lies in that of `R`; in particular `p` does (`WittVector.natCast_mem_jacobson`).
+  `𝕎 R` iff `x₀` lies in that of `R`.
+* `WittVector.p_mem_jacobson`: in characteristic `p`, `p` lies in the Jacobson radical of `𝕎 R`.
+* `WittVector.associated_p_pow_iff`: over a perfect ring, `x` is `p ^ n` times a unit iff
+  `x₀ = ⋯ = x_{n-1} = 0` and `xₙ` is a unit.
 
 ## References
 
@@ -84,13 +92,16 @@ theorem exists_eq_teichmuller_add_verschiebung (x : 𝕎 R) :
   intro i hi
   rw [Nat.lt_one_iff.mp hi, sub_coeff_zero, teichmuller_coeff_zero, sub_self]
 
+/-- The first ghost component of a Witt vector is `x₀ ^ p + p * x₁`. -/
+theorem ghostComponent_one (x : 𝕎 R) :
+    ghostComponent 1 x = x.coeff 0 ^ p + p * x.coeff 1 := by
+  simp [ghostComponent_apply, add_comm]
+
 /-- The zeroth Witt coordinate of `F x` is `x₀ ^ p + p x₁`, the first ghost component of `x`. -/
 theorem coeff_frobenius_zero (x : 𝕎 R) :
     (frobenius x).coeff 0 = x.coeff 0 ^ p + p * x.coeff 1 := by
-  have h := ghostComponent_frobenius 0 x
-  rw [ghostComponent_apply, ghostComponent_apply, wittPolynomial_zero, wittPolynomial_one] at h
-  simp only [MvPolynomial.aeval_X, map_add, map_mul, map_pow, map_natCast] at h
-  rw [h, add_comm]
+  rw [← ghostComponent_one, ← ghostComponent_frobenius]
+  simp [ghostComponent_apply]
 
 /-- The first Witt coordinate of a product: `(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁ + p x₁ y₁`. -/
 theorem mul_coeff_one (x y : 𝕎 R) :
@@ -148,11 +159,33 @@ theorem mem_jacobson_iff {x : 𝕎 R} : x ∈ Ring.jacobson (𝕎 R) ↔ x.coeff
     one_coeff_zero]
   exact ⟨fun h r ↦ by simpa using h (teichmuller p r), fun h y ↦ h _⟩
 
-/-- In characteristic `p`, the element `p` lies in the Jacobson radical of `𝕎 R`: every `1 + p y`
-is a unit. -/
-theorem natCast_mem_jacobson : (p : 𝕎 R) ∈ Ring.jacobson (𝕎 R) := by
-  rw [mem_jacobson_iff, ← constantCoeff_apply, map_natCast, CharP.cast_eq_zero]
-  exact zero_mem _
+/-- In characteristic `p`, `p` lies in the Jacobson radical of `𝕎 R`: every `p y + 1` has zeroth
+Witt coordinate `1`. -/
+theorem p_mem_jacobson : (p : 𝕎 R) ∈ Ring.jacobson (𝕎 R) :=
+  Ring.mem_jacobson_iff.mpr fun y ↦ isUnit_iff_isUnit_coeff_zero.mpr <| by
+    have h : constantCoeff (p := p) ((p : 𝕎 R) * y + 1) = 1 := by
+      simp only [map_add, map_mul, map_natCast, map_one, CharP.cast_eq_zero, zero_mul, zero_add]
+    rw [constantCoeff_apply] at h
+    exact h ▸ isUnit_one
+
+/-- Over a perfect ring of characteristic `p`, a Witt vector is `p ^ n` times a unit exactly when
+its first `n` Witt coordinates vanish and its `n`-th Witt coordinate is a unit. -/
+theorem associated_p_pow_iff [PerfectRing R p] {x : 𝕎 R} {n : ℕ} :
+    Associated ((p : 𝕎 R) ^ n) x ↔ (∀ m < n, x.coeff m = 0) ∧ IsUnit (x.coeff n) := by
+  have hcoeff (y : 𝕎 R) : ((p : 𝕎 R) ^ n * y).coeff n = y.coeff 0 ^ p ^ n := by
+    simpa [mul_comm] using mul_pow_charP_coeff_succ (p := p) y (m := 0) (n := n)
+  constructor
+  · rintro ⟨u, rfl⟩
+    refine ⟨fun m hm ↦ ?_, ?_⟩
+    · rw [mul_comm, mul_pow_charP_coeff_zero _ hm]
+    · rw [hcoeff]
+      exact (isUnit_iff_isUnit_coeff_zero.mp u.isUnit).pow _
+  · rintro ⟨h0, hn⟩
+    obtain ⟨y, rfl⟩ := Ideal.mem_span_singleton.mp
+      ((mem_span_p_pow_iff_le_coeff_eq_zero x n).mpr h0)
+    rw [hcoeff, isUnit_pow_iff (pow_ne_zero _ hp.out.ne_zero), ← isUnit_iff_isUnit_coeff_zero]
+      at hn
+    exact associated_mul_unit_right ((p : 𝕎 R) ^ n) y hn
 
 end CharP
 

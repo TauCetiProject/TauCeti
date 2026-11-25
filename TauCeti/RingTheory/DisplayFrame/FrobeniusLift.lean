@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.DeltaRing.PowerSeries
 public import TauCeti.RingTheory.DisplayFrame.Basic
 public import TauCeti.RingTheory.PowerSeries.Jacobson
 public import TauCeti.RingTheory.WittVector.Frobenius
-public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
+public import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 public import TauCeti.RingTheory.WittVector.Units
 
 /-!
@@ -177,14 +177,14 @@ ideal is the image `V W(R)` of the Verschiebung, and its divided Frobenius is th
 Verschiebung (`TauCeti.DisplayFrame.wittVector_divFrobenius_verschiebung`). -/
 noncomputable def wittVector : DisplayFrame p (Ideal.span {(p : WittVector p R)}) :=
   ofFrobeniusLift (isRegular_iff_mem_nonZeroDivisors.mpr WittVector.p_mem_nonZeroDivisors)
-    WittVector.natCast_mem_jacobson WittVector.frobenius ⟨WittVector.natCast_dvd_frobenius_sub_pow⟩
+    WittVector.p_mem_jacobson WittVector.frobenius (WittVector.isFrobeniusLift_frobenius p R)
 
 /-- The Witt frame is the `p`-frame `ofFrobeniusLift` of the Witt-vector Frobenius. -/
 theorem wittVector_eq_ofFrobeniusLift :
     wittVector p R =
       ofFrobeniusLift (isRegular_iff_mem_nonZeroDivisors.mpr WittVector.p_mem_nonZeroDivisors)
-        WittVector.natCast_mem_jacobson WittVector.frobenius
-        ⟨WittVector.natCast_dvd_frobenius_sub_pow⟩ :=
+        WittVector.p_mem_jacobson WittVector.frobenius
+        (WittVector.isFrobeniusLift_frobenius p R) :=
   (rfl)
 
 @[simp]
@@ -320,14 +320,14 @@ variable (p : ℕ) [Fact p.Prime] (R : Type u) [CommRing R] [CharP R p] [Perfect
 characteristic `p`, with `φ` the Witt-vector Frobenius on coefficients and `φ(u) = u ^ p`. -/
 noncomputable def wittVectorPowerSeries : DisplayFrame p (Ideal.span {(p : (WittVector p R)⟦X⟧)}) :=
   powerSeries (isRegular_iff_mem_nonZeroDivisors.mpr WittVector.p_mem_nonZeroDivisors)
-    WittVector.natCast_mem_jacobson WittVector.frobenius ⟨WittVector.natCast_dvd_frobenius_sub_pow⟩
+    WittVector.p_mem_jacobson WittVector.frobenius (WittVector.isFrobeniusLift_frobenius p R)
 
 /-- The Breuil–Kisin frame is the power-series frame over the Witt frame's Frobenius lift. -/
 theorem wittVectorPowerSeries_eq_powerSeries :
     wittVectorPowerSeries p R =
       powerSeries (isRegular_iff_mem_nonZeroDivisors.mpr WittVector.p_mem_nonZeroDivisors)
-        WittVector.natCast_mem_jacobson WittVector.frobenius
-        ⟨WittVector.natCast_dvd_frobenius_sub_pow⟩ :=
+        WittVector.p_mem_jacobson WittVector.frobenius
+        (WittVector.isFrobeniusLift_frobenius p R) :=
   (rfl)
 
 /-- The Breuil–Kisin frame `W(R)⟦u⟧` is a `p`-frame. -/
