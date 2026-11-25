@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 public import TauCeti.AlgebraicGeometry.LineBundle.Monoidal
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.MonoidalFunctor
 
 /-!
 # Tensor powers of line bundles
@@ -19,8 +20,16 @@ underlying sheaves are the same tensor powers used for powers of sections.
 An isomorphism `e : L ≅ K` induces the isomorphism `TauCeti.tensorPowMapIso e n` of tensor powers,
 functorial in `e`, and the powers of the trivial line bundle are trivial by a specified
 isomorphism. These are the operations on tensor powers needed to compare `n`-th roots
-`M^{⊗n} ≅ L` of a line bundle. The exponent laws and the compatibility with pullback below are
-still only stated as the existence of isomorphisms.
+`M^{⊗n} ≅ L` of a line bundle. The exponent laws below are still only stated as the existence of
+isomorphisms.
+
+Since pullback of line bundles is strong monoidal (`InvertibleSheaf.pullbackMonoidal`), pullback
+commutes with tensor powers by the specified isomorphism
+`(InvertibleSheaf.pullback f).mapTensorPowIso L n : f^*(L^{⊗n}) ≅ (f^*L)^{⊗n}` of
+`CategoryTheory.Functor.mapTensorPowIso`. It is natural in `L`
+(`CategoryTheory.Functor.mapTensorPowIso_hom_naturality`), and compatible with the identity and
+composition comparisons `InvertibleSheaf.pullbackId` and `InvertibleSheaf.pullbackComp`, because
+these are monoidal natural isomorphisms.
 
 Ported from `roed-math/TauCeti-w2-fresh`, branch
 `lookahead/StableReduction/relative-ampleness`, commit `efa6fc8f3735`.
@@ -37,8 +46,10 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_add_iso` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_tensorPow_iso`: the exponent laws
   `L^{⊗(m + n)} ≅ L^{⊗m} ⊗ L^{⊗n}` and `(L^{⊗m})^{⊗n} ≅ L^{⊗(m * n)}`.
-* `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_pullback_tensorPow_iso`: pullback commutes
-  with tensor powers up to isomorphism.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.pullbackId_hom_app_tensorPow` and
+  `InvertibleSheaf.pullbackComp_hom_app_tensorPow_comp_mapTensorPowIso_hom`: the comparison
+  `f^*(L^{⊗n}) ≅ (f^*L)^{⊗n}` is compatible with the identity and composition comparisons of
+  pullback.
 
 ## References
 
@@ -55,7 +66,7 @@ namespace AlgebraicGeometry
 
 universe u
 
-variable {X Y : Scheme.{u}}
+variable {X Y Z : Scheme.{u}}
 
 namespace InvertibleSheaf
 
@@ -110,13 +121,29 @@ theorem nonempty_tensorPow_tensorPow_iso (L : InvertibleSheaf X) (m n : ℕ) :
   rw [← LineBundleClass.mk_eq_mk_iff]
   simp [pow_mul]
 
-/-- **Pullback commutes with tensor powers.** For `f : X ⟶ Y` and a line bundle `L` on `Y`, the
-pullback of `L^{⊗n}` is isomorphic to `(f^* L)^{⊗n}`. -/
-theorem nonempty_pullback_tensorPow_iso (f : X ⟶ Y) (L : InvertibleSheaf Y) (n : ℕ) :
-    Nonempty (((pullback f).obj (TauCeti.tensorPow L n)).obj ≅
-      (TauCeti.tensorPow ((pullback f).obj L) n).obj) := by
-  rw [← LineBundleClass.mk_eq_mk_iff, ← LineBundleClass.pullback_mk]
-  simp
+/-- Along the identity, the comparison `(𝟙 X)^*(L^{⊗n}) ≅ ((𝟙 X)^*L)^{⊗n}` followed by the
+`n`-th tensor power of the identity comparison `(𝟙 X)^*L ≅ L` is the identity comparison of
+`L^{⊗n}`. -/
+theorem pullbackId_hom_app_tensorPow (L : InvertibleSheaf X) (n : ℕ) :
+    (pullbackId X).hom.app (TauCeti.tensorPow L n) =
+      ((pullback (𝟙 X)).mapTensorPowIso L n).hom ≫
+        TauCeti.tensorPowMap ((pullbackId X).hom.app L) n := by
+  simpa using NatTrans.app_tensorPow_comp_mapTensorPowIso_hom (pullbackId X).hom L n
+
+/-- The comparison `f^*(L^{⊗n}) ≅ (f^*L)^{⊗n}` is compatible with composition: the composition
+comparison of `L^{⊗n}` followed by the comparison for `f ≫ g` is the pullback along `f` of the
+comparison for `g`, followed by the comparison for `f` and the `n`-th tensor power of the
+composition comparison of `L`. -/
+@[reassoc]
+theorem pullbackComp_hom_app_tensorPow_comp_mapTensorPowIso_hom (f : X ⟶ Y) (g : Y ⟶ Z)
+    (L : InvertibleSheaf Z) (n : ℕ) :
+    (pullbackComp f g).hom.app (TauCeti.tensorPow L n) ≫
+        ((pullback (f ≫ g)).mapTensorPowIso L n).hom =
+      (pullback f).map ((pullback g).mapTensorPowIso L n).hom ≫
+        ((pullback f).mapTensorPowIso ((pullback g).obj L) n).hom ≫
+          TauCeti.tensorPowMap ((pullbackComp f g).hom.app L) n := by
+  rw [NatTrans.app_tensorPow_comp_mapTensorPowIso_hom, Functor.mapTensorPowIso_comp,
+    Iso.trans_hom, Functor.mapIso_hom, Category.assoc]
 
 end InvertibleSheaf
 
