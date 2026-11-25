@@ -202,25 +202,6 @@ theorem IsContactForm.orientation_eq_orientationAt_volumeOrientation_iff
 /-! ### Changing the contact form -/
 
 omit [FiniteDimensional ℝ E] in
-/-- The exterior derivative of `β = u α` at a point where `u` is differentiable, as a two-form:
-`dβ = u dα + du ∧ α`. -/
-private theorem mextDeriv_apply_of_eq_smul {α β : SmoothForm I M ℝ 1} {u : M → ℝ} {x : M}
-    (hu : MDifferentiableAt I 𝓘(ℝ) u x) (hβ : ∀ y, β.val y = u y • α.val y) :
-    mextDeriv β.val x = u x • mextDeriv α.val x +
-      ContinuousAlternatingMap.pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1)
-          (mvfderiv I u x)) (α.val x) := by
-  have hβ' : β.val = fun y ↦ u y • α.val y := funext hβ
-  ext v
-  rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm, hβ',
-    mextDeriv_fun_smul_apply hu (α.mdifferentiableAt x)]
-  simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-    ContinuousAlternatingMap.pairedWedge_apply_one_one, ContinuousLinearMap.mul_apply',
-    ContinuousAlternatingMap.ofSubsingleton_apply_apply, Matrix.cons_val_fin_one]
-  ring
-
-omit [FiniteDimensional ℝ E] in
 /-- **The scaling law of the contact volume form.** If `β = u α`, then at every point where `u`
 is differentiable, `β ∧ (dβ)ⁿ = uⁿ⁺¹ α ∧ (dα)ⁿ`. This holds in every dimension, and for every
 one-form `α`. -/
@@ -230,7 +211,8 @@ theorem wedge_wedgePow_apply_of_eq_smul {α β : SmoothForm I M ℝ 1} {u : M �
       u x ^ (n + 1) • (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val x := by
   simp only [coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply', wedgePow_apply,
     mextDerivₗ_apply]
-  rw [hβ x, mextDeriv_apply_of_eq_smul hu hβ]
+  rw [show β.val = fun y ↦ u y • α.val y from funext hβ,
+    mextDeriv_fun_smul_eq_smul_add_pairedWedge hu (α.mdifferentiableAt x)]
   -- The degree `1 + 1` of `dα` is the degree `2` of the linear identity only definitionally.
   exact ContinuousAlternatingMap.pairedWedge_smul_wedgePow_smul_add_pairedWedge n (u x) _ _ _
 

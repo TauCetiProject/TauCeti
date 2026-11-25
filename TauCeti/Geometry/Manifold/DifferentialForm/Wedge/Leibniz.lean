@@ -200,6 +200,22 @@ theorem mextDeriv_fun_smul_apply {f : M → ℝ} {α : RoughForm I M ℝ 1}
   rw [mextDeriv_fun_smul hf hα, hvw, RoughForm.wedge_apply_one_one, mextDeriv_ofFunction]
   simp only [ContinuousAlternatingMap.ofSubsingleton_apply_apply, Matrix.cons_val_fin_one]
 
+/-- The Leibniz rule for a function times a one-form as an identity of two-forms:
+`d (f α) = f dα + df ∧ α`, at a point where `f` and `α` are differentiable. -/
+theorem mextDeriv_fun_smul_eq_smul_add_pairedWedge {f : M → ℝ} {α : RoughForm I M ℝ 1}
+    (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f x)
+    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x) :
+    mextDeriv (fun y ↦ f y • α y) x = f x • mextDeriv α x +
+      pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+        (ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1) (mvfderiv I f x)) (α x) := by
+  ext v
+  rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm, mextDeriv_fun_smul_apply hf hα]
+  simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    pairedWedge_apply_one_one, ContinuousLinearMap.mul_apply', ofSubsingleton_apply_apply,
+    Matrix.cons_val_fin_one]
+  ring
+
 namespace SmoothForm
 
 /-! ### Smooth-form interface -/

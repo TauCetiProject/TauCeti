@@ -122,6 +122,19 @@ theorem wedgePow_smul (c : ℝ) (φ : E [⋀^Fin k]→L[ℝ] ℝ) (m : ℕ) :
     rw [wedgePow_succ, wedgePow_succ, ih, pairedWedge_smul_left, pairedWedge_smul_right, smul_smul,
       pow_succ]
 
+/-- The real wedge is associative, up to the canonical reassociation of its degree. -/
+private theorem pairedWedge_mul_assoc {k l m : ℕ} (φ : E [⋀^Fin k]→L[ℝ] ℝ)
+    (ψ : E [⋀^Fin l]→L[ℝ] ℝ) (χ : E [⋀^Fin m]→L[ℝ] ℝ) (v : Fin (k + l + m) → E) :
+    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+        (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ φ ψ)
+        χ v =
+      pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ φ
+        (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ ψ χ)
+        (v ∘ Fin.cast (Nat.add_assoc k l m).symm) :=
+  pairedWedge_assoc _ _ _ _ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (fun a b c ↦ mul_assoc a b c) φ ψ χ v
+
 /-! ### The power rule for two-forms -/
 
 /-- **The power rule for interior products.** Inserting a vector `v` into the `(m + 1)`-th wedge
@@ -145,11 +158,7 @@ theorem wedgePow_succ_apply_vecCons (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) 
       curryLeftTopological_pairedWedge (k := 2 * m + 1) (l := 1),
       pairedWedge_apply_of_left_eq_smul_cast _ _ (Nat.add_comm 1 (2 * m)) ((m : ℝ) + 1)
         (fun w ↦ by rw [curryLeftTopological_apply_apply, ih, smul_eq_mul]),
-      pairedWedge_assoc (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (fun a b c ↦ by simp [mul_assoc]),
+      pairedWedge_mul_assoc,
       pairedWedge_comm _ (fun a b ↦ mul_comm a b) (wedgePow ω (m + 1))]
     have h₁ : (-1 : ℝ) ^ (2 * m + 1 + 1) = 1 := Even.neg_one_pow ⟨m + 1, by ring⟩
     have h₂ : (-1 : ℝ) ^ (2 * (m + 1) * 1) = 1 := Even.neg_one_pow ⟨m + 1, by ring⟩
@@ -189,11 +198,8 @@ private theorem pairedWedge_mul_assoc_apply {k l m : ℕ} (φ : E [⋀^Fin k]→
       pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
         (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ φ ψ)
         χ (v ∘ Fin.cast (Nat.add_assoc k l m)) := by
-  rw [pairedWedge_assoc (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
-    (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-    (fun x y z ↦ by simp [mul_assoc])]
+  rw [pairedWedge_mul_assoc]
+  -- The two reindexings `Fin.cast` cancel.
   congr 1
 
 /-- For real one-forms `a` and `b` and any form `Q`, `a ∧ Q ∧ b ∧ a = 0`, because `a` occurs
@@ -211,12 +217,8 @@ private theorem pairedWedge_pairedWedge_pairedWedge_eq_zero {p : ℕ}
       (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ b a)
       a = 0 := by
     ext v
-    rw [pairedWedge_assoc (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
-      (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
-      (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-      (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-      (fun x y z ↦ by simp [mul_assoc]), haa, pairedWedge_zero_right]
-    rfl
+    rw [pairedWedge_mul_assoc, haa, pairedWedge_zero_right]
+    simp only [coe_zero, Pi.zero_apply]
   -- `a ∧ (Q ∧ (b ∧ a)) = ±((b ∧ a) ∧ a) ∧ Q`, up to reindexing the arguments.
   ext v
   rw [pairedWedge_mul_assoc_apply, pairedWedge_comm _ mul_comm, pairedWedge_mul_assoc_apply, hba]
