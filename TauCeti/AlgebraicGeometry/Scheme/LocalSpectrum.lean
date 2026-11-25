@@ -95,7 +95,7 @@ theorem notMem_closure_basicOpen_of_isNilpotent_germ {Y : Scheme.{u}} {W : Y.Ope
     rw [Scheme.basicOpen_res, Scheme.basicOpen_pow _ _ n.succ_pos]
     exact ⟨hzV, hz⟩
   rw [hV, map_zero, Scheme.basicOpen_zero] at this
-  exact this
+  simp at this
 
 namespace Hom
 

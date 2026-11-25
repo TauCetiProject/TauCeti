@@ -146,11 +146,13 @@ theorem isOpen_preimage_singleton [IsLocallyNoetherian X] {E : Set X}
     X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f y)) isOpen_univ
   have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
   obtain ⟨S, hS⟩ := IsNoetherian.noetherian (hU.primeIdealOf ⟨f y, hxU⟩).asIdeal
+  have hy : y ∈ f ⁻¹ᵁ U := f.mem_preimage.mpr hxU
   -- Near `y`, the pullbacks of the finitely many generators `S` of the prime of `f y` vanish.
   refine ⟨(f ⁻¹ᵁ U : Set Y) ∩ ⋂ s ∈ S, (closure (Y.basicOpen (f.app U s) : Set Y))ᶜ, ?_,
-    (f ⁻¹ᵁ U).isOpen.inter (isOpen_biInter_finset fun _ _ ↦ isClosed_closure.isOpen_compl), hxU,
+    (f ⁻¹ᵁ U).isOpen.inter (isOpen_biInter_finset fun _ _ ↦ isClosed_closure.isOpen_compl), hy,
     Set.mem_iInter₂.mpr fun s hs ↦ ?_⟩
   · rintro y' ⟨hy'U, hy'S⟩
+    have hy'U : f y' ∈ U := f.mem_preimage.mp hy'U
     have hle : (hU.primeIdealOf ⟨f y, hxU⟩).asIdeal ≤ (hU.primeIdealOf ⟨f y', hy'U⟩).asIdeal := by
       rw [← hS, Ideal.span_le]
       intro s hs
@@ -160,8 +162,7 @@ theorem isOpen_preimage_singleton [IsLocallyNoetherian X] {E : Set X}
     have hspec := ((PrimeSpectrum.le_iff_specializes _ _).mp hle).map hU.fromSpec.continuous
     rw [hU.fromSpec_primeIdealOf, hU.fromSpec_primeIdealOf] at hspec
     exact (hE _ (hf y) _ (hf y') hspec).symm
-  · have hy : y ∈ f ⁻¹ᵁ U := f.mem_preimage.mpr hxU
-    exact notMem_closure_basicOpen_of_isNilpotent_germ hy <|
+  · exact notMem_closure_basicOpen_of_isNilpotent_germ hy <|
       f.isNilpotent_germ_app (fun y' hy' ↦ hE _ (hf y') _ (hf y) (hy'.map f.continuous)) hy
         fun h ↦ (hU.mem_basicOpen_iff_notMem_primeIdealOf ⟨f y, hxU⟩ s).mp h
           (hS ▸ Submodule.subset_span hs)
