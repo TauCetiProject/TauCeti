@@ -385,12 +385,16 @@ theorem orderedCrossings_restrictPrefunctor (e : x ⟶ y) :
     rw [hsome] at hb hb'
     simpa only [← hb.2, ← hb'.2] using haa
   · rcases b with ⟨P, t⟩
-    simp only [List.mem_filterMap, mem_orderedCrossings, Prod.exists, mem_crossings]
+    have hmem := WallComplement.mem_crossings_restrictPrefunctor
+      (W := fun P : C.walls => (P : Set V))
+      (fun P : D.walls => (⟨P.val, hW P.property⟩ : C.walls)) x y P t
+    simp only [List.mem_filterMap, mem_orderedCrossings, Prod.exists]
     constructor
     · rintro ⟨Q, s, ha, hf⟩
       obtain ⟨hab, rfl⟩ := (hsome (Q, s) (P, t)).mp hf
-      exact hab ▸ ha
-    · exact fun hb => ⟨⟨P.val, hW P.property⟩, t, hb, (hsome _ _).mpr ⟨rfl, rfl⟩⟩
+      obtain rfl : Q = ⟨P.val, hW P.property⟩ := Subtype.ext hab
+      exact hmem.mpr ha
+    · exact fun hb => ⟨⟨P.val, hW P.property⟩, t, hmem.mp hb, (hsome _ _).mpr ⟨rfl, rfl⟩⟩
 
 /-- Wall deletion sends a crossing letter of a retained wall to the crossing letter of that wall
 at the restricted endpoints, and the letter of a deleted wall to `1`. -/
@@ -405,7 +409,10 @@ theorem wallDeletion_crossingLetter (ν : C.walls → V →ₗ[ℝ] ℝ) (P : C.
       else 1 := by
   rw [crossingLetter_eq_zpow, map_zpow, wallDeletion_of]
   by_cases hP : P.val ∈ D.walls
-  · simp only [dite_eq_left hP, crossingLetter_eq_zpow]
+  · -- `simp` reduces the restricted endpoint values to `x.val` and `y.val` by projection
+    -- reduction of the `abbrev` `restrictPrefunctor`; this is `restrictPrefunctor_obj_val`, which
+    -- is `rfl`, so passing it to `simp only` is rejected as an unused argument.
+    simp only [dite_eq_left hP, crossingLetter_eq_zpow]
   · simp only [dite_eq_right hP, one_zpow]
 
 /-- Deleting walls maps a segment word by `wallDeletion`, the remaining walls keeping their

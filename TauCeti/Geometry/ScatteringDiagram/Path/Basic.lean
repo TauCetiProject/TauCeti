@@ -273,6 +273,14 @@ abbrev restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → ι) :
 theorem restrictPrefunctor_obj_val {κ : Type*} (W : ι → Set V) (f : κ → ι)
     (x : WallComplement W) : ((restrictPrefunctor W f).obj x).val = x.val := (rfl)
 
+/-- Forgetting walls retains exactly the crossings of the selected walls, at the same affine
+parameters. -/
+theorem mem_crossings_restrictPrefunctor {κ : Type*} (f : κ → ι) (x y : WallComplement W)
+    (k : κ) (t : ℝ) :
+    (k, t) ∈ crossings ((restrictPrefunctor W f).obj x) ((restrictPrefunctor W f).obj y) ↔
+      (f k, t) ∈ crossings x y :=
+  Iff.rfl
+
 /-- Forgetting walls preserves the entire ambient vertex list. -/
 theorem vertices_restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → ι)
     {x y : WallComplement W} (p : Quiver.Path x y) :
