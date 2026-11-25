@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Smooth
 public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import Mathlib.Geometry.Manifold.Instances.Icc
+public import TauCeti.Geometry.Manifold.Orientation.Interval
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
@@ -45,19 +46,10 @@ namespace TauCeti
 open Fact.Manifold
 open _root_.TauCeti.EuclideanHalfSpace
 
-/-- The interval charts of `[0, 1]`, with the model dimension written as the successor `0 + 1`
-used by the boundary constructions. -/
-@[reducible] local instance instChartedSpaceUnitIntervalZeroAddOne :
-    ChartedSpace (EuclideanHalfSpace (0 + 1)) (Icc (0 : ℝ) 1) :=
-  instIccChartedSpace 0 1
-
-/-- The zero-dimensional charts of the two endpoints of `[0, 1]`. -/
-@[reducible] local instance instChartedSpaceUnitIntervalBoundary :
-    ChartedSpace (EuclideanSpace ℝ (Fin 0)) ((𝓡∂ (0 + 1)).boundary (Icc (0 : ℝ) 1)) :=
-  boundaryChartedSpace (n := 0)
+attribute [local instance] intervalSuccessorChartedSpace intervalBoundaryChartedSpace
 
 /-- The interval `[0, 1]` is an analytic manifold for the charts
-`instChartedSpaceUnitIntervalZeroAddOne`. -/
+`intervalSuccessorChartedSpace`. -/
 local instance instIsManifoldUnitIntervalZeroAddOne {k : ℕ∞ω} :
     IsManifold (𝓡∂ (0 + 1)) k (Icc (0 : ℝ) 1) :=
   instIsManifoldIcc 0 1
@@ -71,11 +63,11 @@ private theorem boundary_coe_eq (x : B) : ((x : Icc (0 : ℝ) 1) : ℝ) = 0 ∨
   have hx : (x : Icc (0 : ℝ) 1) ∈ ({⊥, ⊤} : Set (Icc (0 : ℝ) 1)) :=
     (Set.ext_iff.1 boundary_Icc _).1 x.property
   rcases hx with hx | hx
-  · left; rw [hx]; rfl
-  · right; rw [Set.mem_singleton_iff.1 hx]; rfl
+  · left; rw [hx, Icc.coe_bot]
+  · right; rw [Set.mem_singleton_iff.1 hx, Icc.coe_top]
 
-/-- The real value `x + (1 - 2 x) t / 2` of the interval collar at the endpoint `x` and normal
-coordinate `t`. -/
+/-- The value `x + (1 - 2 x) t / 2` of the interval collar at an endpoint `x` and normal
+coordinate `t ∈ [0, 1)` lies in `[0, 1]`. -/
 private theorem collar_mem_Icc (x : B) (t : D) :
     ((x : Icc (0 : ℝ) 1) : ℝ) + (1 - 2 * ((x : Icc (0 : ℝ) 1) : ℝ)) *
       ((t : EuclideanHalfSpace 1).val 0 / 2) ∈ Icc (0 : ℝ) 1 := by
@@ -85,19 +77,19 @@ private theorem collar_mem_Icc (x : B) (t : D) :
 
 /-- The underlying map of the interval collar of `[0, 1]`:
 `(x, t) ↦ x + (1 - 2 x) t / 2`, that is `(0, t) ↦ t / 2` and `(1, t) ↦ 1 - t / 2`. -/
-def unitIntervalCollarFun (p : B × D) : Icc (0 : ℝ) 1 :=
+private def unitIntervalCollarFun (p : B × D) : Icc (0 : ℝ) 1 :=
   ⟨((p.1 : Icc (0 : ℝ) 1) : ℝ) + (1 - 2 * ((p.1 : Icc (0 : ℝ) 1) : ℝ)) *
       ((p.2 : EuclideanHalfSpace 1).val 0 / 2), collar_mem_Icc p.1 p.2⟩
 
 /-- The interval collar reads as `x + (1 - 2 x) t / 2` in `ℝ`. -/
 @[simp]
-theorem coe_unitIntervalCollarFun (p : B × D) :
+private theorem coe_unitIntervalCollarFun (p : B × D) :
     (unitIntervalCollarFun p : ℝ) = ((p.1 : Icc (0 : ℝ) 1) : ℝ) +
       (1 - 2 * ((p.1 : Icc (0 : ℝ) 1) : ℝ)) * ((p.2 : EuclideanHalfSpace 1).val 0 / 2) :=
   (rfl)
 
 /-- The interval collar is analytic. -/
-theorem contMDiff_unitIntervalCollarFun {k : ℕ∞ω} :
+private theorem contMDiff_unitIntervalCollarFun {k : ℕ∞ω} :
     ContMDiff ((𝓡 0).prod (𝓡∂ 1)) (𝓡∂ (0 + 1)) k unitIntervalCollarFun := by
   have hx : ContMDiff (𝓡 0) 𝓘(ℝ) k (fun x : B ↦ ((x : Icc (0 : ℝ) 1) : ℝ)) :=
     contMDiff_subtypeVal_Icc.comp
@@ -152,25 +144,49 @@ private theorem contMDiff_normalPoint {k : ℕ∞ω} (x : B) :
     exact mul_nonneg zero_le_two (sign_mul_sub_nonneg x z)
   exact h.congr fun z ↦ normalRay_eq_symm _
 
-/-- Two endpoints at distance less than `1/2` are equal. -/
+/-- Two endpoints at distance less than `1` are equal. -/
 private theorem eq_of_abs_sub_lt {x y : B}
-    (h : |((y : Icc (0 : ℝ) 1) : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ)| < 1 / 2) : y = x := by
+    (h : |((y : Icc (0 : ℝ) 1) : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ)| < 1) : y = x := by
   refine Subtype.ext (Subtype.ext ?_)
   rcases boundary_coe_eq x with hx | hx <;> rcases boundary_coe_eq y with hy | hy <;>
     simp only [hx, hy] at h ⊢ <;> norm_num at h
 
+/-- The points of `[0, 1]` at distance less than `1/2` from the endpoint `x`. -/
+private def nearEnd (x : B) : Set (Icc (0 : ℝ) 1) :=
+  {z | |(z : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ)| < 1 / 2}
+
 /-- The interval collar stays within distance `1/2` of its endpoint. -/
-private theorem abs_unitIntervalCollarFun_sub_lt (p : B × D) :
-    |(unitIntervalCollarFun p : ℝ) - ((p.1 : Icc (0 : ℝ) 1) : ℝ)| < 1 / 2 := by
+private theorem unitIntervalCollarFun_mem_nearEnd (p : B × D) :
+    unitIntervalCollarFun p ∈ nearEnd p.1 := by
+  simp only [nearEnd, mem_ofPred_eq]
   obtain ⟨h0, h1⟩ := (homeomorphNormalIioOpens 1 p.2).property
   rw [coe_homeomorphNormalIioOpens] at h0 h1
   rw [coe_unitIntervalCollarFun, add_sub_cancel_left]
   rcases boundary_coe_eq p.1 with hx | hx <;> rw [hx] <;> norm_num <;>
     rw [abs_of_nonneg (by linarith)] <;> linarith
 
-/-- The points of `[0, 1]` at distance less than `1/2` from the endpoint `x`. -/
-private def nearEnd (x : B) : Set (Icc (0 : ℝ) 1) :=
-  {z | |(z : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ)| < 1 / 2}
+/-- The regions near the two endpoints are disjoint: a point near both `x` and `y` forces
+`x = y`. -/
+private theorem eq_of_mem_nearEnd {x y : B} {z : Icc (0 : ℝ) 1} (hx : z ∈ nearEnd x)
+    (hy : z ∈ nearEnd y) : x = y := by
+  refine eq_of_abs_sub_lt ?_
+  calc |((x : Icc (0 : ℝ) 1) : ℝ) - ((y : Icc (0 : ℝ) 1) : ℝ)|
+      ≤ |((x : Icc (0 : ℝ) 1) : ℝ) - (z : ℝ)| + |(z : ℝ) - ((y : Icc (0 : ℝ) 1) : ℝ)| :=
+        abs_sub_le _ _ _
+    _ < 1 / 2 + 1 / 2 := add_lt_add (by rwa [abs_sub_comm]) hy
+    _ = 1 := by norm_num
+
+/-- A point of `[0, 1]` other than its midpoint is near one of the endpoints. -/
+private theorem exists_mem_nearEnd {z : Icc (0 : ℝ) 1} (hz : (z : ℝ) ≠ 1 / 2) :
+    ∃ x : B, z ∈ nearEnd x := by
+  obtain ⟨h0, h1⟩ := z.property
+  rcases lt_or_gt_of_ne hz with h | h
+  · refine ⟨⟨⊥, Icc_isBoundaryPoint_bot⟩, ?_⟩
+    simp only [nearEnd, mem_ofPred_eq, Icc.coe_bot, abs_lt]
+    constructor <;> linarith
+  · refine ⟨⟨⊤, Icc_isBoundaryPoint_top⟩, ?_⟩
+    simp only [nearEnd, mem_ofPred_eq, Icc.coe_top, abs_lt]
+    constructor <;> linarith
 
 private theorem isOpen_nearEnd (x : B) : IsOpen (nearEnd x) :=
   isOpen_lt (by fun_prop) continuous_const
@@ -201,16 +217,12 @@ private def localCollar (k : ℕ∞ω) (x : B) :
   invFun := localInv x
   source := {p | |((p.1 : Icc (0 : ℝ) 1) : ℝ) - ((x : Icc (0 : ℝ) 1) : ℝ)| < 1 / 2}
   target := nearEnd x
-  map_source' p hp := by
-    have hx := eq_of_abs_sub_lt hp
-    have h := abs_unitIntervalCollarFun_sub_lt p
-    rwa [hx] at h
+  map_source' p hp :=
+    eq_of_abs_sub_lt (hp.trans (by norm_num)) ▸ unitIntervalCollarFun_mem_nearEnd p
   map_target' z _ := by simp [localInv]
   left_inv' p hp := by
-    have hx := eq_of_abs_sub_lt hp
-    have hz : unitIntervalCollarFun p ∈ nearEnd x := by
-      have h := abs_unitIntervalCollarFun_sub_lt p
-      rwa [hx] at h
+    have hx := eq_of_abs_sub_lt (hp.trans (by norm_num))
+    have hz : unitIntervalCollarFun p ∈ nearEnd x := hx ▸ unitIntervalCollarFun_mem_nearEnd p
     refine Prod.ext hx.symm (Subtype.ext (Subtype.ext ?_))
     simp only [localInv, hz, ↓reduceDIte]
     ext i
@@ -233,29 +245,24 @@ private def localCollar (k : ℕ∞ω) (x : B) :
     exact (contMDiffAt_const.prodMk h).contMDiffWithinAt
 
 /-- The interval collar is a local diffeomorphism. -/
-theorem isLocalDiffeomorph_unitIntervalCollarFun {k : ℕ∞ω} :
+private theorem isLocalDiffeomorph_unitIntervalCollarFun {k : ℕ∞ω} :
     IsLocalDiffeomorph ((𝓡 0).prod (𝓡∂ 1)) (𝓡∂ (0 + 1)) k unitIntervalCollarFun := fun p ↦
   isLocalDiffeomorphAt_of_eqOn (Φ := localCollar k p.1) (by simp [localCollar])
     fun _ _ ↦ rfl
 
 /-- The interval collar is injective. -/
-theorem injective_unitIntervalCollarFun : Injective unitIntervalCollarFun := by
+private theorem injective_unitIntervalCollarFun : Injective unitIntervalCollarFun := by
   intro p q h
-  have hx : q.1 = p.1 := by
-    apply eq_of_abs_sub_lt
-    have hp := abs_unitIntervalCollarFun_sub_lt p
-    have hq := abs_unitIntervalCollarFun_sub_lt q
-    rw [h] at hp
-    rcases boundary_coe_eq p.1 with h₁ | h₁ <;> rcases boundary_coe_eq q.1 with h₂ | h₂ <;>
-      rw [h₁] at hp <;> rw [h₂] at hq <;> rw [h₁, h₂] <;> norm_num <;>
-      rw [abs_lt] at hp hq <;> linarith [hp.1, hp.2, hq.1, hq.2]
+  have hx : q.1 = p.1 :=
+    eq_of_mem_nearEnd (unitIntervalCollarFun_mem_nearEnd q)
+      (h ▸ unitIntervalCollarFun_mem_nearEnd p)
   have hp : p ∈ (localCollar ⊤ p.1).source := by simp [localCollar]
   have hq : q ∈ (localCollar ⊤ p.1).source := by simp [localCollar, hx]
   rw [← (localCollar ⊤ p.1).left_inv hp, ← (localCollar ⊤ p.1).left_inv hq]
   exact congrArg _ h
 
 /-- The interval collar sends the zero slice to the endpoints. -/
-theorem unitIntervalCollarFun_zero (x : B) :
+private theorem unitIntervalCollarFun_zero (x : B) :
     unitIntervalCollarFun (x, normalIioOpensZero one_pos) = x := by
   apply Subtype.ext
   simp
@@ -283,24 +290,14 @@ theorem SmoothCollar.range_unitInterval {k : ℕ∞ω} :
   ext z
   constructor
   · rintro ⟨p, rfl⟩
-    have h := abs_unitIntervalCollarFun_sub_lt p
-    change (unitIntervalCollarFun p : ℝ) ≠ 1 / 2
+    have h := unitIntervalCollarFun_mem_nearEnd p
+    simp only [nearEnd, mem_ofPred_eq, coe_unitIntervalCollarFun] at h
+    simp only [mem_ofPred_eq, SmoothCollar.coe_unitInterval_apply]
     intro he
     rw [he] at h
     rcases boundary_coe_eq p.1 with hx | hx <;> rw [hx] at h <;> norm_num at h
   · intro hz
-    obtain ⟨h0, h1⟩ := z.property
-    have hz' : (z : ℝ) ≠ 1 / 2 := hz
-    obtain ⟨x, hx⟩ : ∃ x : B, z ∈ nearEnd x := by
-      rcases lt_or_gt_of_ne hz' with h | h
-      · refine ⟨⟨⊥, Icc_isBoundaryPoint_bot⟩, ?_⟩
-        simp only [nearEnd, mem_ofPred_eq]
-        rw [abs_lt]
-        constructor <;> simp <;> linarith
-      · refine ⟨⟨⊤, Icc_isBoundaryPoint_top⟩, ?_⟩
-        simp only [nearEnd, mem_ofPred_eq]
-        rw [abs_lt]
-        constructor <;> simp <;> linarith
+    obtain ⟨x, hx⟩ := exists_mem_nearEnd hz
     exact ⟨localInv x z, (localCollar k x).right_inv hx⟩
 
 /-- **The factor `1/2` is needed.** Without it, the map `(x, t) ↦ x + (1 - 2 x) t`, that is
