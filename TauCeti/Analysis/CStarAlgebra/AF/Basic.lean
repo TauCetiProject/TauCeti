@@ -163,13 +163,14 @@ theorem unitization (hA : IsAF A) : IsAF (Unitization ℂ A) := by
     have : FiniteDimensional ℂ (Unitization ℂ (S n)) :=
       (Unitization.linearEquiv ℂ ℂ (S n)).symm.finiteDimensional
     infer_instance
-  · have he (x : Unitization ℂ A) : Unitization.uniformEquivProd x = (x.fst, x.snd) := rfl
-    have h : (⋃ n, (T n : Set (Unitization ℂ A))) =
-        Unitization.uniformEquivProd ⁻¹' (univ ×ˢ ⋃ n, (S n : Set A)) := by
+  · have h : (⋃ n, (T n : Set (Unitization ℂ A))) =
+        Unitization.addEquiv ℂ A ⁻¹' (univ ×ˢ ⋃ n, (S n : Set A)) := by
       ext x
-      simp only [mem_iUnion, SetLike.mem_coe, hT, mem_preimage, he, mem_prod, mem_univ, true_and]
+      simp [hT]
     rw [h]
-    exact (dense_univ.prod hdense).preimage Unitization.uniformEquivProd.toHomeomorph.isOpenMap
+    exact (dense_univ.prod hdense).preimage <|
+      Unitization.isUniformEmbedding_addEquiv.isEmbedding.isInducing.isOpenMap <| by
+        simp [(Unitization.addEquiv ℂ A).surjective.range_eq]
 
 end IsAF
 

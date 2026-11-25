@@ -43,8 +43,8 @@ theorem isAF_continuousMap_pi : IsAF C((n : ℕ) → E n, ℂ) := by
     ⟨Preorder.frestrictLe (π := E) n, Preorder.continuous_frestrictLe n⟩
   have hcoe (n : ℕ) :
       ((φ n).toNonUnitalStarAlgHom.range : Set C((n : ℕ) → E n, ℂ)) = (φ n).range := by
-    rw [NonUnitalStarAlgHom.coe_range, StarAlgHom.coe_toNonUnitalStarAlgHom,
-      StarAlgHom.range_eq_map_top, StarSubalgebra.coe_map, StarSubalgebra.coe_top, image_univ]
+    ext
+    simp [StarAlgHom.range_eq_map_top]
   have hmono : Monotone fun n ↦ (φ n).range := by
     rintro m n hmn _ ⟨g, rfl⟩
     refine ⟨g.comp ⟨Preorder.frestrictLe₂ hmn, Preorder.continuous_frestrictLe₂ hmn⟩, ?_⟩
@@ -53,11 +53,11 @@ theorem isAF_continuousMap_pi : IsAF C((n : ℕ) → E n, ℂ) := by
   refine isAF_iff.2 ⟨fun n ↦ (φ n).toNonUnitalStarAlgHom.range, fun m n hmn ↦ ?_,
     fun _ ↦ inferInstance, ?_⟩
   · simpa only [← SetLike.coe_subset_coe, hcoe] using hmono hmn
-  · simp_rw [hcoe]
-    rw [← StarSubalgebra.coe_iSup_of_directed hmono.directed_le, dense_iff_closure_eq,
-      ← StarSubalgebra.topologicalClosure_coe,
-      ContinuousMap.starSubalgebra_topologicalClosure_eq_top_of_separatesPoints,
-      StarSubalgebra.coe_top]
+  · simp_rw [hcoe, ← StarSubalgebra.coe_iSup_of_directed hmono.directed_le]
+    refine dense_iff_closure_eq.2 ?_
+    rw [← StarSubalgebra.topologicalClosure_coe,
+      ContinuousMap.starSubalgebra_topologicalClosure_eq_top_of_separatesPoints _ ?_]
+    · simp
     intro x y hxy
     obtain ⟨i, hi⟩ := Function.ne_iff.1 hxy
     classical
