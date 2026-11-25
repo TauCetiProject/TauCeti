@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
-import TauCeti.RingTheory.Ideal.Quotient.Operations
+import TauCeti.Algebra.Category.ModuleCat.Quotient
 
 /-!
 # Complete flatness of modules
@@ -132,10 +132,8 @@ theorem not_isCompletelyFlatModule_quotient_self {a : A} (ha : IsRegular a) (hu 
     ¬ IsCompletelyFlatModule A (Ideal.span {a}) (ModuleCat.of A (A ⧸ Ideal.span {a})) := by
   intro h
   let J := Ideal.span {a}
-  have hex := Ideal.exact_mulLeft_mkₐ_span_singleton (R := A) a
-  let S := ModuleCat.shortComplexOfCompEqZero _ _ hex.linearMap_comp_eq_zero
-  have hS : S.ShortExact :=
-    ModuleCat.shortComplex_shortExact S hex ha.left (Ideal.Quotient.mkₐ_surjective A J)
+  let S := mulQuotientSpanSingletonShortComplex a
+  have hS : S.ShortExact := ha.left.mulQuotientSpanSingletonShortComplex_shortExact
   have hinj := hS.rTensor_injective_of_isZero_Tor_one (ModuleCat.of A (A ⧸ J)) (h.1 1 one_pos)
   have ha0 : ∀ z : A ⧸ J, a • z = 0 := fun z => by
     obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective z
