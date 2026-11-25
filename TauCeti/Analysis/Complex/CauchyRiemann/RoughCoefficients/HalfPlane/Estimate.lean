@@ -42,6 +42,13 @@ reflection by the isometry `R` at most doubles `Lᵖ` norms
 
 Both constants are uniform over coefficients whose reflections are bounded by `M`.
 
+* `TauCeti.exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf_of_hasWeakFDerivOn` and
+  `TauCeti.exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf_of_le_of_hasWeakFDerivOn`: the same
+  estimates with hypotheses on the half-plane coefficients in place of the hypothesis that the
+  reflected coefficients are Sobolev coefficients: `J` continuous up to the axis with weak
+  derivative `DJ`, anticommuting with `R` on the axis (the totally real boundary condition), and
+  `DJ`, `S` locally `Lᵖ` up to the axis (`TauCeti.isSobolevCRCoefficients_crReflection`).
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -171,5 +178,64 @@ theorem exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf_of_le (hΩ : MapsTo (st
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_one_le_of_isWeakCRSolution_of_le (V := V) hp hpq hr hr_top
     hrp hUc hUΩ M
   exact ⟨2 * C, fun J S DJ ξ η => eLpNormWkp_inter_le_of_interior hR hΩ hΛ hpq.le hr.le hC⟩
+
+/-- **The order-zero estimate up to the real axis for Sobolev coefficients** (McDuff–Salamon,
+Lemma B.4.6 with a totally real boundary condition). Under the hypotheses of
+`TauCeti.exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf`, the constant `C` applies to all
+coefficients `J`, `S` such that `J` is continuous on `Ω ∩ {0 ≤ t}` with weak derivative `DJ` on
+the open upper part and anticommutes with `R` on `Ω ∩ ℝ`, and `DJ`, `S` are locally `Lᵖ` up to the
+axis: then the reflected coefficients are Sobolev coefficients on `Ω`
+(`TauCeti.isSobolevCRCoefficients_crReflection`). -/
+theorem exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf_of_hasWeakFDerivOn
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hΛ : ∀ v, R v = v → v ∈ Λ) (hp : 2 < p)
+    (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) (hr : 1 < r) (hr_top : r ≠ ⊤) (hUc : IsCompact (closure U))
+    (hUΩ : closure U ⊆ Ω) (M : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ (J S : ℂ → V →L[ℝ] V) (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (ξ η : ℂ → V),
+      IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η →
+      HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) J DJ →
+      ContinuousOn J ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) →
+      (∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (J x v) = -J x (R v)) →
+      MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) DJ →
+      MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) S →
+      (∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), J z * J z = -1) →
+      eLpNormWkp p Ω 1 (crReflectionCoeff R.toContinuousLinearEquiv J) ≤ M →
+      eLpNorm (crReflectionZeroth R.toContinuousLinearEquiv S) p (volume.restrict Ω) ≤ M →
+      MemLpLoc r ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) η →
+      eLpNormWkp r (U ∩ {z | 0 ≤ z.im}) 1 ξ ≤
+        C * (eLpNorm η r (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) +
+          eLpNorm ξ q (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))) := by
+  obtain ⟨C, hC⟩ := exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf hR hΩ hΛ hp hpqr hr hr_top
+    hUc hUΩ M
+  exact ⟨C, fun J S DJ ξ η h hJW hJc hJR hDJ hS => hC J S DJ ξ η h
+    (isSobolevCRCoefficients_crReflection hΩ (one_le_two.trans hp.le) hJW hJc hJR hDJ hS)⟩
+
+/-- **The `W^{1,r}` estimate up to the real axis for Sobolev coefficients** (McDuff–Salamon,
+Lemmas B.4.4 and B.4.6 with a totally real boundary condition). Under the hypotheses of
+`TauCeti.exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf_of_le`, the constant `C` applies to all
+coefficients `J`, `S` such that `J` is continuous on `Ω ∩ {0 ≤ t}` with weak derivative `DJ` on
+the open upper part and anticommutes with `R` on `Ω ∩ ℝ`, and `DJ`, `S` are locally `Lᵖ` up to the
+axis (`TauCeti.isSobolevCRCoefficients_crReflection`). -/
+theorem exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf_of_le_of_hasWeakFDerivOn
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hΛ : ∀ v, R v = v → v ∈ Λ) (hp : 2 < p)
+    (hpq : p⁻¹ + q⁻¹ < 1) (hr : 1 < r) (hr_top : r ≠ ⊤) (hrp : r ≤ p)
+    (hUc : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) (M : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ (J S : ℂ → V →L[ℝ] V) (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (ξ η : ℂ → V),
+      IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η →
+      HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) J DJ →
+      ContinuousOn J ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) →
+      (∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (J x v) = -J x (R v)) →
+      MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) DJ →
+      MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) S →
+      (∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), J z * J z = -1) →
+      eLpNormWkp p Ω 1 (crReflectionCoeff R.toContinuousLinearEquiv J) ≤ M →
+      eLpNorm (crReflectionZeroth R.toContinuousLinearEquiv S) p (volume.restrict Ω) ≤ M →
+      MemLpLoc r ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) η →
+      eLpNormWkp r (U ∩ {z | 0 ≤ z.im}) 1 ξ ≤
+        C * (eLpNorm η r (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) +
+          eLpNorm ξ q (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))) := by
+  obtain ⟨C, hC⟩ := exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf_of_le hR hΩ hΛ hp hpq hr
+    hr_top hrp hUc hUΩ M
+  exact ⟨C, fun J S DJ ξ η h hJW hJc hJR hDJ hS => hC J S DJ ξ η h
+    (isSobolevCRCoefficients_crReflection hΩ (one_le_two.trans hp.le) hJW hJc hJR hDJ hS)⟩
 
 end TauCeti
