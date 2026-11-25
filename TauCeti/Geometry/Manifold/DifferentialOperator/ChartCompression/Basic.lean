@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
+import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
@@ -187,9 +188,8 @@ theorem exists_cutoffPullback_one_eq [FiniteDimensional ℝ E] {g : C^∞⟮𝓘
   ext p
   by_cases hp : p ∈ e.source
   · rw [cutoffPullback_one_apply_of_mem he _ hp, TestFunction.coe_mk, e.left_inv hp]
-    by_cases hgp : g p = 0
-    · rw [hgp, mul_zero]
-    · rw [hθ.self_of_nhdsSet _ (mem_image_of_mem e (subset_tsupport _ hgp)), one_mul]
+    exact congrFun (EqOn.mul_eq_right (f := fun q ↦ θ (e q)) fun q hq ↦
+      hθ.self_of_nhdsSet _ (mem_image_of_mem e (subset_tsupport _ hq))) p
   · rw [cutoffPullback_apply_of_notMem he _ _ hp,
       image_eq_zero_of_notMem_tsupport fun h ↦ hp (hg h)]
 

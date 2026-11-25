@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Pi
+public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.Algebra.GroupWithZero.Commute
 public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Logic.Pairwise
@@ -14,13 +16,14 @@ public import Mathlib.Logic.Pairwise
 
 A family `x` commuting pairwise on a set `s` extends by zero outside `s`, via `Set.indicator`, to a
 family commuting pairwise everywhere, since `0` commutes with every element. Multiplying a function
-`g` by a function equal to `1` on the support of `g` does not change `g`.
+`g`, or acting on `g`, by a function equal to `1` on the support of `g` does not change `g`.
 
 ## Main results
 
 * `Set.Pairwise.pairwise_commute_indicator`: the family `s.indicator x` commutes pairwise.
 * `Set.EqOn.mul_eq_right`, `Set.EqOn.mul_eq_left`: if `f = 1` on `Function.support g`, then
   `f * g = g` and `g * f = g`.
+* `Set.EqOn.smul_eq_right`: if `f = 1` on `Function.support g`, then `f • g = g`.
 -/
 
 public section
@@ -56,6 +59,14 @@ theorem EqOn.mul_eq_right (h : EqOn f 1 (Function.support g)) : f * g = g :=
 /-- Multiplying `g` on the right by a function equal to `1` on the support of `g` does not
 change `g`. -/
 theorem EqOn.mul_eq_left (h : EqOn f 1 (Function.support g)) : g * f = g :=
+  funext fun y => by
+    by_cases hy : g y = 0
+    · simp [hy]
+    · simp [h hy]
+
+/-- Acting on `g` by a function equal to `1` on the support of `g` does not change `g`. -/
+theorem EqOn.smul_eq_right {R M : Type*} [MonoidWithZero R] [Zero M] [MulActionWithZero R M]
+    {f : α → R} {g : α → M} (h : EqOn f 1 (Function.support g)) : f • g = g :=
   funext fun y => by
     by_cases hy : g y = 0
     · simp [hy]

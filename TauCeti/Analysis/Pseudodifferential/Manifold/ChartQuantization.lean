@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Basic
+import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -213,20 +214,19 @@ theorem chartQuantization_eq_mulLeft_comp_comp_mulLeft {φ ψ : 𝓓(⟨e.target
     by_cases hq : q ∈ e.source
     · simp only [complexCutoffPullback_apply_of_mem he _ _ hq, ContMDiffMap.coe_mul,
         Pi.mul_apply, ContMDiffMap.coe_ofContDiff, hv, e.left_inv hq, ContMDiffMap.coe_one,
-        Pi.one_apply, Complex.real_smul, mul_one]
-      by_cases hψq : ψ (e q) = 0
-      · simp [hψq]
-      rw [hψ₁ (subset_tsupport _ hψq), Pi.one_apply, Complex.ofReal_one, one_mul]
+        Pi.one_apply, smul_one_mul]
+      rw [smul_comm]
+      exact congrFun (EqOn.smul_eq_right (f := fun q ↦ ψ₁ (e q)) fun q hq ↦
+        hψ₁ (subset_tsupport _ (left_ne_zero_of_smul hq))) q
     · simp [complexCutoffPullback_apply_of_notMem he _ _ hq]
   by_cases hp : p ∈ e.source
   · rw [chartQuantization_apply_of_mem he φ₁ ψ₁ a u hv hp, ha, complexChartCompression_apply,
       e.left_inv hp, hpull]
     simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
       complexCutoffPullback_apply_of_mem he _ _ hp, ContMDiffMap.coe_one, Pi.one_apply,
-      Complex.real_smul, mul_one]
-    by_cases hφp : φ (e p) = 0
-    · simp [hφp]
-    rw [hφ₁ (subset_tsupport _ hφp), Pi.one_apply, Complex.ofReal_one, one_mul]
+      smul_one_mul]
+    exact congrFun (EqOn.smul_eq_right (f := fun q ↦ φ₁ (e q)) fun q hq ↦
+      hφ₁ (subset_tsupport _ (left_ne_zero_of_smul hq))) p
   · simp [chartQuantization_apply_of_notMem he _ _ a u hp,
       complexCutoffPullback_apply_of_notMem he _ _ hp]
 

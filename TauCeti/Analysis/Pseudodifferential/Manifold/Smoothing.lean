@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.ChartQuantization
 public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
+import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
@@ -192,22 +193,18 @@ private theorem complexChartCompression_mulLeft_comp_comp_mulLeft_eq_smul
     · simp only [ContMDiffMap.coe_mul, Pi.mul_apply,
         OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he _ _ hp,
         ContMDiffMap.coe_ofContDiff, hw]
-      by_cases hgp : g p = 0
-      · simp [hgp]
-      by_cases hψp : ψ (e p) = 0
-      · simp [hψp]
-      have hG : e p ∈ tsupport ψ ∩ e.symm ⁻¹' tsupport g := by
-        rw [mem_inter_iff, mem_preimage, e.left_inv hp]
-        exact ⟨subset_tsupport _ hψp, subset_tsupport _ hgp⟩
-      rw [hψ₁ hG, Pi.one_apply, one_smul]
+      have h := congrFun (EqOn.smul_eq_right (f := fun q ↦ ψ₁ (e q))
+        (g := fun q ↦ g (e.symm (e q)) * ψ (e q) • u (e q)) fun q hq ↦
+          hψ₁ ⟨subset_tsupport _ (left_ne_zero_of_smul (right_ne_zero_of_mul hq)),
+            subset_tsupport _ (left_ne_zero_of_mul hq)⟩) p
+      simp only [Pi.smul_apply', e.left_inv hp] at h
+      rw [smul_comm (ψ (e p)) (ψ₁ (e p)), mul_smul_comm, h]
     · simp [OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he _ _ hp]
   simp only [OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply,
     LinearMap.mulLeft_apply, hinput, ContMDiffMap.coe_mul, Pi.mul_apply]
-  by_cases hφx : φ x = 0
-  · simp [hφx]
-  by_cases hfx : f (e.symm x) = 0
-  · simp [hfx]
-  rw [hφ₁ ⟨subset_tsupport _ hφx, subset_tsupport _ hfx⟩, Pi.one_apply, one_smul]
+  exact congrFun (EqOn.smul_eq_right (f := φ₁) fun y hy ↦
+    hφ₁ ⟨subset_tsupport _ (left_ne_zero_of_smul hy),
+      subset_tsupport _ (left_ne_zero_of_mul (right_ne_zero_of_smul hy))⟩) x
 
 /-- **Pseudolocality.** If `P` is a classical pseudodifferential operator and `f`, `g` are smooth
 functions with disjoint supports, then `u ↦ f · P (g u)` has order `-∞`. -/
