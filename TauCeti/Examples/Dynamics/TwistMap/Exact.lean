@@ -160,29 +160,6 @@ example {c : ℝ} (hc : c ≠ 0) :
   rw [h1, shiftedShear_apply]
   simp
 
-/-- The first component of the derivative of the standard map is
-`(1 + 2πε cos 2πx) dx + dy`. -/
-theorem fst_comp_fderiv_standardMap (ε : ℝ) (p : ℝ × ℝ) :
-    (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ (standardMap ε) p) =
-      (1 + ε * (Real.cos (2 * Real.pi * p.1) * (2 * Real.pi))) • ContinuousLinearMap.fst ℝ ℝ ℝ +
-        ContinuousLinearMap.snd ℝ ℝ ℝ := by
-  have hd : DifferentiableAt ℝ (standardMap ε) p := by
-    rw [show ⇑(standardMap ε) = _ from funext (standardMap_apply ε)]
-    fun_prop
-  have hfst : HasFDerivAt (Prod.fst : ℝ × ℝ → ℝ) (ContinuousLinearMap.fst ℝ ℝ ℝ) p :=
-    hasFDerivAt_fst
-  have hsnd : HasFDerivAt (Prod.snd : ℝ × ℝ → ℝ) (ContinuousLinearMap.snd ℝ ℝ ℝ) p :=
-    hasFDerivAt_snd
-  have h₁ : HasFDerivAt (fun q : ℝ × ℝ => (standardMap ε q).1)
-      ((1 + ε * (Real.cos (2 * Real.pi * p.1) * (2 * Real.pi))) •
-        ContinuousLinearMap.fst ℝ ℝ ℝ + ContinuousLinearMap.snd ℝ ℝ ℝ) p := by
-    simp only [standardMap_apply]
-    refine ((hfst.add hsnd).add (((hfst.const_mul (2 * Real.pi)).sin).const_mul ε)).congr_fderiv
-      (ContinuousLinearMap.ext fun v => ?_)
-    simp
-    ring
-  exact hd.hasFDerivAt.fst.unique h₁
-
 /-- The standard map is exact for `λ = y dx` for every `ε`, with
 `S = −ε cos(2πx)/(2π) + (y + ε sin 2πx)²/2`. -/
 theorem isExactForPrimitive_standardMap (ε : ℝ) :
