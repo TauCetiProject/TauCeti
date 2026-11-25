@@ -74,6 +74,8 @@ compared with its real extension.
   domain is, with no hypothesis on the structure map.
 * `LinearMap.BilinForm.nondegenerate_baseChange_iff`: along an injective structure map between
   integral domains the implication is an equivalence.
+* `LinearMap.BilinForm.nondegenerate_baseChange_toBilin'_iff`: for the form on `ι → R` given by a
+  Gram matrix, that base change is nondegenerate exactly when the determinant is nonzero.
 * `LinearMap.BilinForm.IsometryEquiv.baseChange`: an isometric equivalence of bilinear forms
   base-changes to an isometric equivalence of their base changes.
 * `TauCeti.bilinFormBaseChangeProdIsometry`: base change commutes with products of
@@ -454,6 +456,15 @@ theorem nondegenerate_baseChange_iff [Finite ι] [IsDomain A] [FaithfulSMul R A]
     det_toMatrix_baseChange]
   exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective R A)).mpr
     ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).mp h)
+
+/-- Along an injective structure map into an integral domain, the base change of the bilinear form
+on `ι → R` with Gram matrix `G` is nondegenerate exactly when `det G ≠ 0`. -/
+theorem nondegenerate_baseChange_toBilin'_iff [Fintype ι] [DecidableEq ι] [IsDomain A]
+    [FaithfulSMul R A] (G : Matrix ι ι R) :
+    ((Matrix.toBilin' G).baseChange A).Nondegenerate ↔ G.det ≠ 0 := by
+  have : IsDomain R :=
+    Function.Injective.isDomain (algebraMap R A) (FaithfulSMul.algebraMap_injective R A)
+  rw [nondegenerate_baseChange_iff _ (Pi.basisFun R ι), nondegenerate_toBilin'_iff_det_ne_zero]
 
 end Nondegenerate
 

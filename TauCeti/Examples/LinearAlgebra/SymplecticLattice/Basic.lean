@@ -25,14 +25,6 @@ open Matrix
 
 namespace TauCeti.Examples
 
-/-- The bilinear form on `ℤ^ι` with integral Gram matrix `M` is nondegenerate over `ℚ` exactly when
-`det M ≠ 0`. -/
-theorem nondegenerate_baseChange_toBilin'_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (M : Matrix ι ι ℤ) : ((Matrix.toBilin' M).baseChange ℚ).Nondegenerate ↔ M.det ≠ 0 := by
-  rw [LinearMap.BilinForm.nondegenerate_baseChange_iff (A := ℚ) _ (Pi.basisFun ℤ ι),
-    LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (Pi.basisFun ℤ ι),
-    LinearMap.BilinForm.toMatrix_basisFun, LinearMap.BilinForm.toMatrix'_toBilin']
-
 /-- The symplectic lattice `ℤ^ι` with alternating integral Gram matrix `M` has dual index
 `|det M|`. -/
 theorem dualIndex_ofIsAlt_toBilin' {ι : Type*} [Fintype ι] [DecidableEq ι] (M : Matrix ι ι ℤ)
@@ -53,7 +45,7 @@ theorem isAlt_toBilin'_symplecticPlaneGram : (Matrix.toBilin' symplecticPlaneGra
 /-- The standard symplectic plane `ℤ²` with `⟨e, f⟩ = 1`. -/
 noncomputable def symplecticPlane : SymplecticOLattice ℤ (Fin 2 → ℤ) :=
   .ofIsAlt (Matrix.toBilin' symplecticPlaneGram) isAlt_toBilin'_symplecticPlaneGram
-    ((nondegenerate_baseChange_toBilin'_iff _).2 (by simp [det_fin_two]))
+    ((LinearMap.BilinForm.nondegenerate_baseChange_toBilin'_iff _).2 (by simp [det_fin_two]))
 
 /-- The standard symplectic plane is self-dual: its dual index is one. -/
 theorem symplecticPlane_dualIndex : symplecticPlane.dualIndex = 1 := by
@@ -81,7 +73,8 @@ theorem isAlt_toBilin'_weightedGram (d : ℤ) : (Matrix.toBilin' (weightedGram d
 noncomputable def weightedLattice (d : ℤ) (hd : d ≠ 0) : SymplecticOLattice ℤ (Fin 4 → ℤ) :=
   .ofIsAlt (Matrix.toBilin' (weightedGram d))
     (isAlt_toBilin'_weightedGram d)
-    ((nondegenerate_baseChange_toBilin'_iff _).2 (det_weightedGram d ▸ pow_ne_zero 2 hd))
+    ((LinearMap.BilinForm.nondegenerate_baseChange_toBilin'_iff _).2
+      (det_weightedGram d ▸ pow_ne_zero 2 hd))
 
 /-- The lattice with blocks of weights `1` and `d` has dual index `d²`. -/
 theorem weightedLattice_dualIndex (d : ℤ) (hd : d ≠ 0) :
