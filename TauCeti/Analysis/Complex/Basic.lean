@@ -81,8 +81,8 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 
-There is no ring homomorphism from `ℂ` to a semireal ring, such as `ℝ` or any linearly ordered
-ring (`Complex.instIsEmptyRingHom`).
+There is no ring homomorphism from `ℂ` to a semireal semiring, such as `ℝ` or any linearly
+ordered ring (`Complex.instIsEmptyRingHom`).
 -/
 
 public section
@@ -461,12 +461,13 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [h0, abs_neg] at h
     exact h.false
 
-/-- There is no ring homomorphism from `ℂ` to a semireal ring `R` (one in which `-1` is not a sum
-of squares), such as `ℝ` or any linearly ordered ring: it would send `I` to an element of `R`
-whose square is `-1`. -/
-instance instIsEmptyRingHom {R : Type*} [NonAssocRing R] [IsSemireal R] : IsEmpty (ℂ →+* R) :=
-  ⟨fun f => IsSemireal.not_isSumSq_neg_one R <| by
-    simpa [← map_mul, ← sq, I_sq] using IsSumSq.mul_self (f I)⟩
+/-- There is no ring homomorphism from `ℂ` to a semireal semiring `R` (one in which `1 + s ≠ 0`
+for every sum of squares `s`), such as `ℝ` or any linearly ordered ring: it would send
+`1 + I * I = 0` to `1 + f I * f I = 0`. -/
+instance instIsEmptyRingHom {R : Type*} [NonAssocSemiring R] [IsSemireal R] :
+    IsEmpty (ℂ →+* R) :=
+  ⟨fun f => IsSemireal.one_add_ne_zero (IsSumSq.mul_self (f I)) <| by
+    rw [← map_one f, ← map_mul, ← map_add, I_mul_I, add_neg_cancel, map_zero]⟩
 
 end Complex
 
