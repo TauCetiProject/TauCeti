@@ -127,13 +127,21 @@ theorem delta_mem_deltaStabilization {x : A} (hx : x ∈ deltaStabilization p I)
   rw [← Function.iterate_succ_apply' (delta p)]
   exact iterate_delta_mem_deltaStabilization ha (n + 1)
 
+/-- The `δ`-stabilization of `I` lies in an ideal `J` if and only if every iterate of `δ` maps
+`I` into `J`. -/
+theorem deltaStabilization_le_iff_forall_iterate :
+    deltaStabilization p I ≤ J ↔ ∀ a ∈ I, ∀ n : ℕ, (delta p)^[n] a ∈ J := by
+  refine ⟨fun h a ha n => h (iterate_delta_mem_deltaStabilization ha n), fun h =>
+    Ideal.span_le.mpr ?_⟩
+  rintro _ ⟨a, ha, n, rfl⟩
+  exact h a ha n
+
 /-- The `δ`-stabilization of `I` is the smallest ideal containing `I` that `δ` maps into
 itself. -/
 theorem deltaStabilization_le_iff (hJ : ∀ x ∈ J, delta p x ∈ J) :
-    deltaStabilization p I ≤ J ↔ I ≤ J := by
-  refine ⟨(le_deltaStabilization p I).trans, fun h => Ideal.span_le.mpr ?_⟩
-  rintro _ ⟨a, ha, n, rfl⟩
-  exact Set.MapsTo.iterate (fun x hx => hJ x hx) n (h ha)
+    deltaStabilization p I ≤ J ↔ I ≤ J :=
+  ⟨(le_deltaStabilization p I).trans, fun h => deltaStabilization_le_iff_forall_iterate.mpr
+    fun _ ha n => Set.MapsTo.iterate (fun x hx => hJ x hx) n (h ha)⟩
 
 /-- `δ`-stabilization is monotone. -/
 @[gcongr]
@@ -278,7 +286,7 @@ theorem isDeltaMap_mk_deltaStabilization :
 theorem delta_mk_deltaStabilization (a : A) :
     delta p (Ideal.Quotient.mk (deltaStabilization p I) a) =
       Ideal.Quotient.mk (deltaStabilization p I) (delta p a) :=
-  (rfl)
+  delta_quotient_mk (fun _ => delta_mem_deltaStabilization) a
 
 variable {I} in
 /-- The quotient map `A → A ⧸ deltaStabilization p I` sends every element of `I` to zero. -/

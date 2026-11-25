@@ -60,25 +60,19 @@ example [hp : Fact p.Prime] :
     exact hp.out.one_lt.ne' (by exact_mod_cast Int.eq_one_of_dvd_one (by positivity) h1)
   exact fun ⟨_, hd⟩ => key fun _ hx => delta_mem_of_isDeltaMap_quotient_mk hd hx
 
--- The `δ`-stabilization of `(2)` is the unit ideal of `ℤ`.
-example : deltaStabilization 2 (Ideal.span {(2 : ℤ)}) = ⊤ := by
-  have h := iterate_delta_mem_deltaStabilization (p := 2) (Ideal.mem_span_singleton_self (2 : ℤ)) 1
-  rw [Function.iterate_one, delta_int_two] at h
-  exact Ideal.eq_top_of_isUnit_mem _ h isUnit_one.neg
-
+-- Since `δ 2 = -1`, the `δ`-stabilization of `(2)` contains the unit `-1`, so it is the unit
+-- ideal of `ℤ` and the universal `δ`-quotient of `ℤ` in which `2` vanishes is the zero ring.
 -- `deltaStabilization_le_iff` needs its target to be `δ`-stable: `(2) ≤ (2)`, but the
 -- `δ`-stabilization of `(2)` does not lie in `(2)`, which is not `δ`-stable.
-example : ¬ deltaStabilization 2 (Ideal.span {(2 : ℤ)}) ≤ Ideal.span {(2 : ℤ)} := by
-  intro h
-  have h1 := h (iterate_delta_mem_deltaStabilization (p := 2)
-    (Ideal.mem_span_singleton_self (2 : ℤ)) 1)
-  rw [Function.iterate_one, delta_int_two, Ideal.mem_span_singleton] at h1
-  norm_num at h1
-
--- The universal `δ`-quotient of `ℤ` in which `2` vanishes is the zero ring.
-example : Subsingleton (ℤ ⧸ deltaStabilization 2 (Ideal.span {(2 : ℤ)})) := by
+example : deltaStabilization 2 (Ideal.span {(2 : ℤ)}) = ⊤ ∧
+    ¬ deltaStabilization 2 (Ideal.span {(2 : ℤ)}) ≤ Ideal.span {(2 : ℤ)} ∧
+    Subsingleton (ℤ ⧸ deltaStabilization 2 (Ideal.span {(2 : ℤ)})) := by
   have h := iterate_delta_mem_deltaStabilization (p := 2) (Ideal.mem_span_singleton_self (2 : ℤ)) 1
   rw [Function.iterate_one, delta_int_two] at h
-  exact Ideal.Quotient.subsingleton_iff.mpr (Ideal.eq_top_of_isUnit_mem _ h isUnit_one.neg)
+  have htop := Ideal.eq_top_of_isUnit_mem _ h isUnit_one.neg
+  refine ⟨htop, fun hle => ?_, Ideal.Quotient.subsingleton_iff.mpr htop⟩
+  have h1 := hle h
+  rw [Ideal.mem_span_singleton] at h1
+  norm_num at h1
 
 end TauCeti.Examples
