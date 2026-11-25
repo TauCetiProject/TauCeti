@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
-import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
 import TauCeti.Data.ENNReal.Holder
