@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.MeasurableSpace
-public import Mathlib.LinearAlgebra.SymplecticGroup
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import TauCeti.RepresentationTheory.Compact.Haar
 public import TauCeti.RepresentationTheory.SU2.Basic
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
@@ -37,12 +37,13 @@ subgroup of finite index `n` it is `n⁻¹` times the Haar probability measure o
 The symplectic form is `Ω_d = [[0, I], [−I, 0]]` in block form, with `I` of size `d / 2`, and
 `USp(d) = {g ∈ U(d) | gᵀ Ω_d g = Ω_d}`; this is the convention of Fité–Kedlaya–Rotger–Sutherland
 (§3.4, Remark 3.6). For `d = g + g`, reindexing along `finSumFinEquiv : Fin g ⊕ Fin g ≃ Fin (g + g)`
-carries Mathlib's form `Matrix.J (Fin g) ℂ = [[0, −I], [I, 0]]` to `−Ω_d`, so a unitary matrix lies
-in `USp(d)` exactly when its reindexing lies in Mathlib's `Matrix.symplecticGroup`. This gives
-`det g = 1` on `USp(d)` for even `d` (`Matrix.SymplecticGroup.det_eq_one`) and closure under
-transposition. For `d = 2` the condition `gᵀ Ω g = Ω` is `det g = 1`, so `USp(2)` is `SU(2)`, and
-the resulting isomorphism of topological groups carries Haar measure to Haar measure; statements
-about `SU(2)` transfer to `USp(2)` along it.
+carries Mathlib's form `Matrix.J (Fin g) ℂ = [[0, −I], [I, 0]]` to `−Ω_d`, that is
+`Ω_{g+g} = −TauCeti.JFin g ℂ` (`TauCeti.SatoTate.symplecticForm_eq_neg_JFin`), so a unitary
+matrix lies in `USp(d)` exactly when its reindexing lies in Mathlib's `Matrix.symplecticGroup`.
+This gives `det g = 1` on `USp(d)` for even `d` (`Matrix.SymplecticGroup.det_eq_one`) and closure
+under transposition. For `d = 2` the condition `gᵀ Ω g = Ω` is `det g = 1`, so `USp(2)` is
+`SU(2)`, and the resulting isomorphism of topological groups carries Haar measure to Haar measure;
+statements about `SU(2)` transfer to `USp(2)` along it.
 
 The same compact group appears in `TauCeti/Geometry/Lie/Subgroup/CompactSymplectic.lean` as
 `TauCeti.GLSymplectic l ℂ ⊓ unitarySubgroup (GL (l ⊕ l) ℂ)`, a subgroup of the general linear
@@ -103,11 +104,12 @@ theorem symplecticForm_apply (i j : Fin d) :
       if (j : ℕ) = i + d / 2 then 1 else if (i : ℕ) = j + d / 2 then -1 else 0 :=
   (rfl)
 
-/-- `Ω_{g+g}` is the negative of Mathlib's symplectic form `Matrix.J (Fin g) ℂ = [[0, −I], [I, 0]]`,
-reindexed along `finSumFinEquiv : Fin g ⊕ Fin g ≃ Fin (g + g)`. -/
-theorem symplecticForm_eq_neg_reindex_J (g : ℕ) :
-    symplecticForm (g + g) = -reindex finSumFinEquiv finSumFinEquiv (J (Fin g) ℂ) := by
+/-- `Ω_{g+g}` is the negative of Tau Ceti's `TauCeti.JFin g ℂ`, Mathlib's symplectic form
+`Matrix.J (Fin g) ℂ = [[0, −I], [I, 0]]` reindexed along
+`finSumFinEquiv : Fin g ⊕ Fin g ≃ Fin (g + g)`. -/
+theorem symplecticForm_eq_neg_JFin (g : ℕ) : symplecticForm (g + g) = -JFin g ℂ := by
   have hg : (g + g) / 2 = g := by omega
+  rw [JFin_eq_submatrix]
   ext i j
   obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i <;>
     obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j <;>
@@ -122,15 +124,13 @@ theorem symplecticForm_eq_neg_reindex_J (g : ℕ) :
 theorem transpose_symplecticForm (hd : Even d) :
     (symplecticForm d)ᵀ = -symplecticForm d := by
   obtain ⟨g, rfl⟩ := hd
-  rw [symplecticForm_eq_neg_reindex_J, transpose_neg, transpose_reindex, J_transpose,
-    ← coe_reindexAlgEquiv ℂ ℂ, map_neg]
+  rw [symplecticForm_eq_neg_JFin, transpose_neg, JFin_transpose]
 
 /-- `Ω_d² = −1` for even `d`. -/
 theorem symplecticForm_mul_self (hd : Even d) :
     symplecticForm d * symplecticForm d = -1 := by
   obtain ⟨g, rfl⟩ := hd
-  rw [symplecticForm_eq_neg_reindex_J, neg_mul_neg, ← coe_reindexAlgEquiv ℂ ℂ, ← map_mul,
-    J_squared, map_neg, map_one]
+  rw [symplecticForm_eq_neg_JFin, neg_mul_neg, JFin_mul_self]
 
 /-- `Ω_d` has entries in `{0, 1, −1}`, so every additive map `ℂ → ℂ` preserving `1` fixes it
 entrywise; in particular complex conjugation `starRingEnd ℂ` does. This is the analogue of
@@ -196,7 +196,7 @@ theorem mem_USp_iff_reindex_mem_symplecticGroup {g : ℕ} (x : U (g + g)) :
       (x : Matrix (Fin (g + g)) (Fin (g + g)) ℂ) ∈ symplecticGroup (Fin g) ℂ := by
   have hJ : J (Fin g) ℂ =
       reindex finSumFinEquiv.symm finSumFinEquiv.symm (-symplecticForm (g + g)) := by
-    rw [symplecticForm_eq_neg_reindex_J, neg_neg, ← reindex_symm, Equiv.symm_apply_apply]
+    rw [symplecticForm_eq_neg_JFin, neg_neg, reindex_apply, Equiv.symm_symm, JFin_submatrix]
   rw [SymplecticGroup.mem_iff', hJ, transpose_reindex, ← coe_reindexAlgEquiv ℂ ℂ, ← map_mul,
     ← map_mul, (reindexAlgEquiv ℂ ℂ _).injective.eq_iff, Matrix.mul_neg, Matrix.neg_mul, neg_inj,
     mem_USp_iff]
