@@ -161,7 +161,7 @@ theorem nullMeasurableSet_debut_lt [OrderClosedTopology ι]
   let : StandardBorelSpace (Iic t) := measurableSet_Iic.standardBorel
   let A : Set (Iic t × Ω) := {p | (p.1 : ι) < t ∧ ((p.1 : ι), p.2) ∈ s}
   have hA : MeasurableSet A :=
-    (measurableSet_Iio.preimage (measurable_subtype_coe.comp measurable_fst)).inter hs'
+    (measurableSet_Iio.preimage (measurable_subtypeVal.comp measurable_fst)).inter hs'
   have he : {ω | debut s ω < t} = Prod.snd '' A := by
     ext ω
     constructor

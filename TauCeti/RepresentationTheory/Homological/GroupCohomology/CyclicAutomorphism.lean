@@ -13,6 +13,7 @@ public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestric
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import Mathlib.Tactic.Abel
+import TauCeti.Data.ZMod.Torsion
 import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -85,7 +86,7 @@ identifications its connecting homomorphism is the product of the two connecting
 isomorphism of a product of tori is the product of their connecting isomorphisms
 (`TauCeti.groupCohomologyProdEquiv_cyclicConnectingEquiv`).
 
-The last part of the file specializes to the trivial action, given by the identity automorphism.
+The file then specializes to the trivial action, given by the identity automorphism.
 Then the odd-degree cohomology of `C_m` is the `m`-torsion `T[m]`
 (`TauCeti.groupCohomologyOddEquivTorsionBy`) and its positive even-degree cohomology is `T ⧸ m T`
 (`TauCeti.groupCohomologyEvenEquivQuotSMulTop`). Through these identifications the connecting
@@ -95,6 +96,15 @@ multiplication by `m`, which sends `t` to the coset of `v` when `m • s = i v` 
 `E`, the snake-lemma isomorphism `T[m] ≃ Λ ⧸ m Λ` is therefore the connecting isomorphism
 (`TauCeti.torsionByδEquiv_eq_trans_cyclicConnectingEquiv`). For a torus `E ⧸ Λ` this is the
 description of its `m`-torsion points as `(1 / m) Λ ⧸ Λ ≃ Λ ⧸ m Λ`.
+
+The last part of the file treats the action of `C₂` by negation, given by the automorphism
+`x ↦ -x` (`AddEquiv.iterate_neg_two`). Its norm `x + (-x)` vanishes, so the even-degree cohomology
+is the fixed points of negation, the `2`-torsion `T[2]`
+(`TauCeti.groupCohomologyEvenNegEquivTorsionBy`), and the odd-degree cohomology is `T ⧸ 2 T`
+(`TauCeti.groupCohomologyOddNegEquivQuotSMulTop`). These are the cohomology groups of `C₂` acting
+on an abelian group by inversion, as in the extensions of `C₂` by a cyclic group with the dihedral
+action. For `T = ZMod d` with `d ≠ 0`, the second cohomology therefore has `gcd 2 d` elements
+(`TauCeti.natCard_groupCohomology_two_neg_zmod`).
 
 ## Main definitions
 
@@ -106,9 +116,15 @@ description of its `m`-torsion points as `(1 / m) Λ ⧸ Λ ≃ Λ ⧸ m Λ`.
   `T[m]`.
 * `TauCeti.groupCohomologyEvenEquivQuotSMulTop`: positive even-degree cohomology of the trivial
   action is `T ⧸ m T`.
+* `TauCeti.groupCohomologyOddNegEquivQuotSMulTop`: odd-degree cohomology of the action of `C₂` by
+  negation is `T ⧸ 2 T`.
+* `TauCeti.groupCohomologyEvenNegEquivTorsionBy`: positive even-degree cohomology of the action of
+  `C₂` by negation is `T[2]`.
 
 ## Main results
 
+* `TauCeti.natCard_groupCohomology_two_neg_zmod`: for `d ≠ 0`, `H²(C₂, ZMod d)` with the action
+  by negation has `gcd 2 d` elements.
 * `AddEquiv.groupCohomologyπOdd_cyclicRep_eq_zero_iff`,
   `AddEquiv.groupCohomologyπOdd_cyclicRep_eq_iff`: odd-degree classes are norm-zero elements
   modulo the image of `1 - A`.
@@ -384,7 +400,7 @@ theorem δ_cyclicRepShortComplex_groupCohomologyπOdd_one_of_nsmul_eq
   -- `s` is fixed by `AE`, since `m • AE s = AE (i v) = i (AΛ v) = i v = m • s`.
   have hfix : AE s = s := hm <| by
     simp only
-    rw [← map_nsmul, hv, ← hi, (AΛ.mem_ker_cyclicRep_applyAsHom_sub_iff hΛ v.1).1 v.2]
+    rw [← map_nsmul, hv, ← hi, (AΛ.mem_ker_cyclicRep_applyAsHom_sub_iff hΛ v.val).1 v.property]
   rw [Finset.sum_congr rfl fun j _ ↦ Function.iterate_fixed hfix j, Finset.sum_const,
     Finset.card_range, hv]
 
@@ -663,7 +679,7 @@ noncomputable def groupCohomologyOddEquivTorsionBy (i : ℕ) (hi : Odd i) :
     groupCohomology ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) i ≃ₗ[ℤ]
       Submodule.torsionBy ℤ T m :=
   let ι := (Submodule.torsionBy ℤ T m).subtype.codRestrict _ fun x ↦
-    (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 x.2
+    (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 x.property
   (LinearEquiv.ofBijective ((groupCohomologyπOdd ((AddEquiv.refl T).cyclicRep
       (AddEquiv.iterate_refl m)) (.ofAdd 1) mem_zpowers_ofAdd_one i hi).hom ∘ₗ ι)
     ⟨fun x y h ↦ by
@@ -673,14 +689,14 @@ noncomputable def groupCohomologyOddEquivTorsionBy (i : ℕ) (hi : Odd i) :
     fun c ↦ by
       obtain ⟨x, rfl⟩ := groupCohomologyπOdd_surjective _ _ mem_zpowers_ofAdd_one i hi c
       -- `ι` sends `⟨x, _⟩` to `x`.
-      exact ⟨⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).1 x.2⟩, rfl⟩⟩).symm
+      exact ⟨⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).1 x.property⟩, rfl⟩⟩).symm
 
 /-- The odd-degree class corresponding to `x : T[m]` is the class of `x`. -/
 theorem groupCohomologyOddEquivTorsionBy_symm_apply (i : ℕ) (hi : Odd i)
     (x : Submodule.torsionBy ℤ T m) :
     (groupCohomologyOddEquivTorsionBy T m i hi).symm x =
       groupCohomologyπOdd ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) (.ofAdd 1)
-        mem_zpowers_ofAdd_one i hi ⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 x.2⟩ :=
+        mem_zpowers_ofAdd_one i hi ⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 x.property⟩ :=
   (rfl)
 
 /-- The odd-degree class of a norm-zero element `x` corresponds to `x` in `T[m]`. -/
@@ -690,7 +706,7 @@ theorem groupCohomologyOddEquivTorsionBy_groupCohomologyπOdd (i : ℕ) (hi : Od
     groupCohomologyOddEquivTorsionBy T m i hi
       (groupCohomologyπOdd ((AddEquiv.refl T).cyclicRep (AddEquiv.iterate_refl m)) (.ofAdd 1)
         mem_zpowers_ofAdd_one i hi x) =
-      ⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).1 x.2⟩ := by
+      ⟨x, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).1 x.property⟩ := by
   rw [← LinearEquiv.eq_symm_apply, groupCohomologyOddEquivTorsionBy_symm_apply]
 
 /-- **Even-degree cohomology of the trivial action.** When `C_m` acts trivially on `T`, its
@@ -763,14 +779,14 @@ theorem groupCohomologyEvenEquivQuotSMulTop_δ
   obtain ⟨s, hs⟩ := hsurj t
   obtain ⟨v, hv⟩ := (hexact (m • s)).1 <| by
     rw [map_nsmul, hs, ← natCast_zsmul]
-    exact (Submodule.mem_torsionBy_iff _ _).1 t.2
+    exact (Submodule.mem_torsionBy_iff _ _).1 t.property
   -- `δ` sends the class of `t` to the class of `v`, and so does the snake map.
   have hδ := δ_cyclicRepShortComplex_groupCohomologyπOdd_one
     (i.toAddMonoidHom.shortExact_cyclicRepShortComplex p.toAddMonoidHom
       (hΛ := AddEquiv.iterate_refl m) (hE := AddEquiv.iterate_refl m)
       (hT := AddEquiv.iterate_refl m) (hi := by simp) (hp := by simp)
       (hpi := by simpa using hexact.apply_apply_eq_zero) hinj hexact hsurj)
-    ⟨t, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 t.2⟩ s (by simpa using hs)
+    ⟨t, (AddEquiv.mem_ker_cyclicRep_refl_norm_iff _).2 t.property⟩ s (by simpa using hs)
     ⟨v, AddEquiv.mem_ker_cyclicRep_refl_applyAsHom_sub v⟩ (by simp [hv])
   rw [LinearEquiv.apply_symm_apply, groupCohomologyOddEquivTorsionBy_symm_apply, hδ,
     groupCohomologyEvenEquivQuotSMulTop_groupCohomologyπEven,
@@ -792,5 +808,99 @@ theorem torsionByδEquiv_eq_trans_cyclicConnectingEquiv
     simp [groupCohomologyEvenEquivQuotSMulTop_δ hinj hexact hsurj]
 
 end TrivialConnecting
+
+/-! ### The action of `C₂` by negation -/
+
+section Negation
+
+variable (T : Type) [AddCommGroup T]
+
+/-- **Odd-degree cohomology of the action by negation.** When the generator of `C₂` acts on `T`
+by `x ↦ -x`, the norm `x + (-x)` vanishes and the image of `ρ(g) - 𝟙` is `2 T`, so the
+cohomology in odd degree is `T ⧸ 2 T`: the class of `x` corresponds to the coset of `x`. -/
+noncomputable def groupCohomologyOddNegEquivQuotSMulTop (i : ℕ) (hi : Odd i) :
+    groupCohomology ((AddEquiv.neg T).cyclicRep (AddEquiv.iterate_neg_two T)) i ≃ₗ[ℤ]
+      QuotSMulTop (2 : ℤ) T :=
+  let ι := (LinearMap.id : T →ₗ[ℤ] T).codRestrict _ AddEquiv.mem_ker_cyclicRep_neg_norm
+  let φ := (groupCohomologyπOdd ((AddEquiv.neg T).cyclicRep (AddEquiv.iterate_neg_two T))
+    (.ofAdd 1) mem_zpowers_ofAdd_one i hi).hom ∘ₗ ι
+  have hφ : Function.Surjective φ := fun c ↦ by
+    obtain ⟨x, rfl⟩ := groupCohomologyπOdd_surjective _ _ mem_zpowers_ofAdd_one i hi c
+    -- `ι` sends `x` to `⟨x, _⟩`.
+    exact ⟨x, rfl⟩
+  have hker : LinearMap.ker φ = (2 : ℤ) • (⊤ : Submodule ℤ T) := by
+    ext x
+    rw [LinearMap.mem_ker, LinearMap.comp_apply, groupCohomologyπOdd_eq_zero_iff,
+      AddEquiv.mem_range_cyclicRep_neg_applyAsHom_sub_iff]
+    simp [ι, Submodule.mem_smul_pointwise_iff_exists]
+  ((Submodule.quotEquivOfEq _ _ hker.symm).trans (φ.quotKerEquivOfSurjective hφ)).symm
+
+/-- The odd-degree class corresponding to the coset of `x` is the class of `x`. -/
+theorem groupCohomologyOddNegEquivQuotSMulTop_symm_mk (i : ℕ) (hi : Odd i) (x : T) :
+    (groupCohomologyOddNegEquivQuotSMulTop T i hi).symm (Submodule.Quotient.mk x) =
+      groupCohomologyπOdd ((AddEquiv.neg T).cyclicRep (AddEquiv.iterate_neg_two T)) (.ofAdd 1)
+        mem_zpowers_ofAdd_one i hi ⟨x, AddEquiv.mem_ker_cyclicRep_neg_norm x⟩ :=
+  -- As for `groupCohomologyEvenEquivQuotSMulTop_symm_mk`, each step holds by `rfl` in Mathlib,
+  -- but rewriting with them is not possible once the definition is unfolded.
+  (rfl)
+
+/-- The odd-degree class of `x` corresponds to the coset of `x` in `T ⧸ 2 T`. -/
+theorem groupCohomologyOddNegEquivQuotSMulTop_groupCohomologyπOdd (i : ℕ) (hi : Odd i)
+    (x : LinearMap.ker
+      ((AddEquiv.neg T).cyclicRep (AddEquiv.iterate_neg_two T)).norm.asHom.hom.toLinearMap) :
+    groupCohomologyOddNegEquivQuotSMulTop T i hi
+      (groupCohomologyπOdd ((AddEquiv.neg T).cyclicRep (AddEquiv.iterate_neg_two T)) (.ofAdd 1)
+        mem_zpowers_ofAdd_one i hi x) = Submodule.Quotient.mk (x : T) := by
+  rw [← LinearEquiv.eq_symm_apply, groupCohomologyOddNegEquivQuotSMulTop_symm_mk]
+
+/-- **Even-degree cohomology of the action by negation.** When the generator of `C₂` acts on `T`
+by `x ↦ -x`, its fixed points are the `2`-torsion `T[2]` and the norm `x + (-x)` vanishes, so the
+cohomology in positive even degree is `T[2]`: the class of `x ∈ T[2]` corresponds to `x`. -/
+noncomputable def groupCohomologyEvenNegEquivTorsionBy (i : ℕ) [NeZero i] (hi : Even i) :
+    groupCohomology ((AddEquiv.neg T).cyclicRep (AddEquiv.iterate_neg_two T)) i ≃ₗ[ℤ]
+      Submodule.torsionBy ℤ T 2 :=
+  let ι := (Submodule.torsionBy ℤ T 2).subtype.codRestrict _ fun x ↦
+    (AddEquiv.mem_ker_cyclicRep_neg_applyAsHom_sub_iff _).2 x.property
+  (LinearEquiv.ofBijective ((groupCohomologyπEven ((AddEquiv.neg T).cyclicRep
+      (AddEquiv.iterate_neg_two T)) (.ofAdd 1) mem_zpowers_ofAdd_one i hi).hom ∘ₗ ι)
+    ⟨fun x y h ↦ by
+      simp only [LinearMap.comp_apply] at h
+      rw [groupCohomologyπEven_eq_iff, AddEquiv.mem_range_cyclicRep_neg_norm_iff] at h
+      simpa [ι, sub_eq_zero] using h,
+    fun c ↦ by
+      obtain ⟨x, rfl⟩ := groupCohomologyπEven_surjective _ _ mem_zpowers_ofAdd_one i hi c
+      -- `ι` sends `⟨x, _⟩` to `x`.
+      exact ⟨⟨x, (AddEquiv.mem_ker_cyclicRep_neg_applyAsHom_sub_iff _).1 x.property⟩, rfl⟩⟩).symm
+
+/-- The even-degree class corresponding to `x : T[2]` is the class of `x`. -/
+theorem groupCohomologyEvenNegEquivTorsionBy_symm_apply (i : ℕ) [NeZero i] (hi : Even i)
+    (x : Submodule.torsionBy ℤ T 2) :
+    (groupCohomologyEvenNegEquivTorsionBy T i hi).symm x =
+      groupCohomologyπEven ((AddEquiv.neg T).cyclicRep (AddEquiv.iterate_neg_two T)) (.ofAdd 1)
+        mem_zpowers_ofAdd_one i hi
+        ⟨x, (AddEquiv.mem_ker_cyclicRep_neg_applyAsHom_sub_iff _).2 x.property⟩ :=
+  (rfl)
+
+/-- The even-degree class of a fixed point `x` corresponds to `x` in `T[2]`. -/
+theorem groupCohomologyEvenNegEquivTorsionBy_groupCohomologyπEven (i : ℕ) [NeZero i]
+    (hi : Even i)
+    (x : LinearMap.ker (applyAsHom ((AddEquiv.neg T).cyclicRep (AddEquiv.iterate_neg_two T))
+      (.ofAdd 1) - 𝟙 _).hom.toLinearMap) :
+    groupCohomologyEvenNegEquivTorsionBy T i hi
+      (groupCohomologyπEven ((AddEquiv.neg T).cyclicRep (AddEquiv.iterate_neg_two T)) (.ofAdd 1)
+        mem_zpowers_ofAdd_one i hi x) =
+      ⟨x, (AddEquiv.mem_ker_cyclicRep_neg_applyAsHom_sub_iff _).1 x.property⟩ := by
+  rw [← LinearEquiv.eq_symm_apply, groupCohomologyEvenNegEquivTorsionBy_symm_apply]
+
+/-- For `d ≠ 0`, the second cohomology of `C₂` acting on `ZMod d` by negation has `gcd 2 d`
+elements: it is the `2`-torsion of `ZMod d`. -/
+theorem natCard_groupCohomology_two_neg_zmod (d : ℕ) [NeZero d] :
+    Nat.card (groupCohomology ((AddEquiv.neg (ZMod d)).cyclicRep (AddEquiv.iterate_neg_two _)) 2) =
+      Nat.gcd 2 d := by
+  rw [Nat.card_congr (groupCohomologyEvenNegEquivTorsionBy (ZMod d) 2 even_two).toEquiv]
+  -- `AddSubgroup.torsionBy` is the additive subgroup underlying `Submodule.torsionBy ℤ`.
+  simpa using ZMod.card_torsionBy 2 d
+
+end Negation
 
 end TauCeti

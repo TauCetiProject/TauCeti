@@ -107,7 +107,7 @@ theorem wallComplementPrefunctor_obj (e : V ≃ᴬ[ℝ] U) (x : WallComplement W
 
 /-- Affine transport preserves reversal of segments. -/
 instance (e : V ≃ᴬ[ℝ] U) : (e.wallComplementPrefunctor (W := W)).MapReverse where
-  map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
+  map_reverse' _ := Subsingleton.elim _ _
 
 end ContinuousAffineEquiv
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Inner
+public import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.SphereBoost
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Straightening
 public import TauCeti.KnotTheory.ConnectedSum.Concordance
@@ -228,7 +228,7 @@ theorem eventually_isConnectedSumPosition_boost {F : Concordance K K'} {z₀ : C
   -- `Uᶜ × [0, 1]`, since `F` is a product beyond the times `0` and `1`.
   set C := (fun p => ((F p).1 : E)) '' (Uᶜ ×ˢ Icc 0 1)
   have hC : IsCompact C := (hUo.isClosed_compl.isCompact.prod isCompact_Icc).image
-    (continuous_subtype_val.comp (continuous_fst.comp F.toSmoothEmbedding.contMDiff.continuous))
+    (continuous_subtypeVal.comp (continuous_fst.comp F.toSmoothEmbedding.contMDiff.continuous))
   have hmemC {z : Circle} (hz : z ∉ U) (t : ℝ) : ((F (z, t)).1 : E) ∈ C := by
     rcases le_or_gt t 0 with ht | ht
     · exact ⟨(z, 0), ⟨hz, le_rfl, zero_le_one⟩, by

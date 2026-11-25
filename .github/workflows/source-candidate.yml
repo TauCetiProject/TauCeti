@@ -16,10 +16,9 @@ jobs:
   candidate:
     # Deployment remains a separate, explicit operation. Unset is inert.
     if: ${{ vars.TAUCETI_MIXED_QUEUE_CI_ENABLED == 'true' }}
-    uses: TauCetiProject/TauCetiTools/.github/workflows/pr-build.yml@3efe7c2dac753c6acaec93b9398cd2260493735d
+    uses: TauCetiProject/TauCetiTools/.github/workflows/pr-build.yml@main
     with:
       tools_repository: TauCetiProject/TauCetiTools
-      tools_ref: 3efe7c2dac753c6acaec93b9398cd2260493735d
       project_ref: ${{ github.workflow_sha }}
       lean_root: TauCeti
       roadmap_dir: TauCetiRoadmap

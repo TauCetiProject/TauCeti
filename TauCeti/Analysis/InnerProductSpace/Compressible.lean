@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Normed.Module.FiniteSpan
+import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
 # Compressible and incompressible vectors
@@ -156,6 +157,23 @@ theorem isCompressibleVector_zero_right_iff :
     exact ⟨hn, s, hs, hxy ▸ hy⟩
   · rintro ⟨hn, s, hs, hx⟩
     exact ⟨hn, s, hs, x, hx, by simp⟩
+
+/-- A compressible vector at radius less than one is within twice that radius of a sparse
+unit vector with the same sparsity budget. -/
+theorem IsCompressibleVector.exists_isCompressibleVector_zero_dist_le
+    (hx : IsCompressibleVector k ρ x) (hρ : ρ < 1) :
+    ∃ y : EuclideanSpace 𝕜 ι, IsCompressibleVector k 0 y ∧ dist x y ≤ 2 * ρ := by
+  obtain ⟨hn, s, hs, y, hy, hxy⟩ := isCompressibleVector_iff.mp hx
+  have hy0 : y ≠ 0 := by
+    rintro rfl
+    simp [hn] at hxy
+    linarith
+  let u := NormedSpace.normalize y
+  have hu : ‖u‖ = 1 := NormedSpace.norm_normalize hy0
+  refine ⟨u, isCompressibleVector_zero_right_iff.mpr
+    ⟨hu, s, hs, fun i hi ↦ by simp [u, NormedSpace.normalize, hy i hi]⟩, ?_⟩
+  rw [← dist_eq_norm] at hxy
+  exact (NormedSpace.dist_normalize_le_two_mul_dist hn y).trans (by linarith)
 
 /-- At radius zero, an incompressible unit vector has more than `k` nonzero coordinates. -/
 theorem isIncompressibleVector_zero_right_iff :

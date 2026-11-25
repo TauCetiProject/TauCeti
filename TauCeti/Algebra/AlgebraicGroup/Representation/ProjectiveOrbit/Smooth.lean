@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.StabilizerDimension
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Dimension
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
 /-!

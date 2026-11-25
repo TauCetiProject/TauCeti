@@ -6,16 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import TauCeti.Algebra.Ring.Idempotent.Pair
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 
 /-!
 # Smooth Kato intertwiners
 
-The intertwiner of two nearby projections is polynomial in the varying projection. Its inverse
-is smooth on the open set of invertible intertwiners, by native smooth inversion in a Banach
-algebra. The ground field may differ from the operator field: in particular a real parameter
-may act on complex-linear operators. No idempotence is needed for these regularity facts.
+The intertwiner `TauCeti.intertwiner` of two nearby projections is polynomial in the varying
+projection. Its inverse is smooth on the open set of invertible intertwiners, by native smooth
+inversion in a Banach algebra. The ground field may differ from the operator field: in particular
+a real parameter may act on complex-linear operators. No idempotence is needed for these
+regularity facts.
 
 These are the operator prerequisites for smooth range bundles; see Kato, *Perturbation Theory
 for Linear Operators*, Chapter I, §4.6.
@@ -39,8 +41,8 @@ variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormed
 omit [CompleteSpace F] in
 /-- The Kato intertwiner of a smooth operator family and a fixed member is smooth. -/
 theorem contMDiff_intertwiner (hp : ContMDiff I 𝓘(𝕜, F →L[𝕜'] F) n p) (x₀ : B) :
-    ContMDiff I 𝓘(𝕜, F →L[𝕜'] F) n
-      (fun x ↦ p x * p x₀ + (1 - p x) * (1 - p x₀)) := by
+    ContMDiff I 𝓘(𝕜, F →L[𝕜'] F) n (fun x ↦ intertwiner (p x₀) (p x)) := by
+  simp only [intertwiner_def]
   let : NormedAlgebra 𝕜 (F →L[𝕜'] F) :=
     { ContinuousLinearMap.toNormedSpace, ContinuousLinearMap.algebra with }
   have hsub : ContMDiff I 𝓘(𝕜, F →L[𝕜'] F) n (fun x ↦ 1 - p x) :=
@@ -52,15 +54,14 @@ theorem contMDiff_intertwiner (hp : ContMDiff I 𝓘(𝕜, F →L[𝕜'] F) n p)
 /-- The inverse Kato intertwiner is smooth on its native invertibility domain. -/
 theorem contMDiffOn_inverse_intertwiner (hp : ContMDiff I 𝓘(𝕜, F →L[𝕜'] F) n p) (x₀ : B) :
     ContMDiffOn I 𝓘(𝕜, F →L[𝕜'] F) n
-      (fun x ↦ (p x * p x₀ + (1 - p x) * (1 - p x₀))⁻¹ʳ)
-      {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))} := by
+      (fun x ↦ (intertwiner (p x₀) (p x))⁻¹ʳ) {x | IsUnit (intertwiner (p x₀) (p x))} := by
   let : NormedAlgebra 𝕜 (F →L[𝕜'] F) :=
     { ContinuousLinearMap.toNormedSpace, ContinuousLinearMap.algebra with }
   intro x hx
   have hi := contDiffAt_ringInverse 𝕜 hx.unit (n := n)
   rw [hx.unit_spec] at hi
   exact (hi.comp_contMDiffAt
-    (f := fun x ↦ p x * p x₀ + (1 - p x) * (1 - p x₀))
+    (f := fun x ↦ intertwiner (p x₀) (p x))
     (contMDiff_intertwiner hp x₀ x)).contMDiffWithinAt
 
 end TauCeti

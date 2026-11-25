@@ -8,10 +8,11 @@ module
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Analysis.Matrix.Realify
 public import TauCeti.Probability.Independence.Decoupling
-public import TauCeti.Probability.Moments.SubGaussian
+public import TauCeti.Probability.Moments.SubGaussian.ExponentialMoments
 import TauCeti.Analysis.Complex.Euclidean.Matrix
 import TauCeti.Analysis.Matrix.DotProduct
 import TauCeti.Probability.Independence.Integration
+import TauCeti.Probability.Moments.SubGaussian.LinearForms
 import TauCeti.Probability.Moments.SubExponential
 
 /-!
@@ -525,7 +526,7 @@ theorem measureReal_norm_star_dotProduct_mulVec_sub_integral_gt_le
   by_cases hu_half : 1 / 2 ≤ u
   · exact ((measureReal_mono (Set.subset_univ _)).trans_eq probReal_univ).trans (by linarith)
   · have hu_cube : 4 * exp (-(1 / 50176) * m) = 4 * u ^ 2 * u := by
-      dsimp [u]; rw [mul_assoc, ← pow_succ, ← exp_nat_mul]; congr 2; push_cast; ring
+      dsimp [u]; rw [mul_assoc, ← pow_succ, ← exp_natCast_mul]; congr 2; push_cast; ring
     have hu_nonneg : 0 ≤ u := (exp_pos _).le
     exact h4.trans (hu_cube.trans_le
       (mul_le_mul_of_nonneg_right (by nlinarith) (exp_pos _).le))

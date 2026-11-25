@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Spin.Polarization.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Dual
 public import Mathlib.LinearAlgebra.StdBasis
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.HyperbolicPair
 
 /-!
 # The standard split odd-dimensional polarization
@@ -31,6 +32,8 @@ polarization can be used directly by the type-`B` spin representation.
 * `TauCeti.splitOddPolarization`: its canonical polarization.
 * `TauCeti.splitOddBasis`: the coordinate basis of the first isotropic summand.
 * `TauCeti.splitOddRemainderOne`: the distinguished norm-one remainder vector.
+* `TauCeti.isHyperbolicFamily_splitOddForm`: the coordinate hyperbolic pairs form a family of
+  mutually orthogonal hyperbolic pairs.
 
 ## References
 
@@ -89,7 +92,7 @@ private abbrev splitOddLine (K : Type u) [CommRing K] (n : ℕ) :
 /-- Coordinate identification of the first isotropic summand with the standard module. -/
 private noncomputable def splitOddWEquiv (K : Type u) [CommRing K] (n : ℕ) :
     splitOddW K n ≃ₗ[K] Fin n → K where
-  toFun x := x.1.1.2
+  toFun x := x.val.1.2
   invFun x := ⟨((0, x), 0), by simp [splitOddW]⟩
   left_inv x := by
     apply Subtype.ext
@@ -105,7 +108,7 @@ private noncomputable def splitOddWEquiv (K : Type u) [CommRing K] (n : ℕ) :
 /-- Coordinate identification of the second isotropic summand with the dual module. -/
 private noncomputable def splitOddW'Equiv (K : Type u) [CommRing K] (n : ℕ) :
     splitOddW' K n ≃ₗ[K] Module.Dual K (Fin n → K) where
-  toFun x := x.1.1.1
+  toFun x := x.val.1.1
   invFun f := ⟨((f, 0), 0), by simp [splitOddW']⟩
   left_inv x := by
     apply Subtype.ext
@@ -121,7 +124,7 @@ private noncomputable def splitOddW'Equiv (K : Type u) [CommRing K] (n : ℕ) :
 /-- Coordinate identification of the orthogonal remainder with the scalar module. -/
 private noncomputable def splitOddLineEquiv (K : Type u) [CommRing K] (n : ℕ) :
     splitOddLine K n ≃ₗ[K] K where
-  toFun z := z.1.2
+  toFun z := z.val.2
   invFun z := ⟨((0, 0), z), by simp [splitOddLine]⟩
   left_inv z := by
     apply Subtype.ext
@@ -309,5 +312,17 @@ theorem splitOddPolarization_lineCoordinate_remainderOne
 theorem splitOddForm_remainderOne (K : Type u) [CommRing K] (n : ℕ) :
     splitOddForm K n (splitOddRemainderOne K n : SplitOddSpace K n) = 1 := by
   simp
+
+/-- The coordinate pairs `e_i = ((0, δ_i), 0)`, `f_i = ((δ_i^*, 0), 0)` form a family of mutually
+orthogonal hyperbolic pairs for the standard split odd form `((φ, x), z) ↦ φ x + z²`. -/
+theorem isHyperbolicFamily_splitOddForm (K : Type u) [CommRing K] (n : ℕ) :
+    QuadraticMap.IsHyperbolicFamily (splitOddForm K n) (fun i => ((0, Pi.single i 1), 0))
+      (fun i => ((LinearMap.proj i, 0), 0)) where
+  left_isotropic _ := by simp
+  right_isotropic _ := by simp
+  polar_left_right _ := by simp
+  polar_left_left _ _ _ := by simp
+  polar_left_right_of_ne _ _ hij := by simp [Pi.single_eq_of_ne' hij]
+  polar_right_right _ _ _ := by simp
 
 end TauCeti

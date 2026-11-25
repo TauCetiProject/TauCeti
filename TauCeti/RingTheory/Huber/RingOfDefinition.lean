@@ -71,6 +71,9 @@ one — which Lemma 6.2, being an existence statement, does not.
   and `enlargeIdeal_idealOfDefinition` naming its two components — the ring is unchanged and the
   ideal becomes `I ⊔ span {y}` — and `mem_enlargeIdeal_idealOfDefinition` recording that the
   adjoined element is in it, which is the form consumers use.
+* `TauCeti.Huber.PairOfDefinition.mem_radical_idealOfDefinition_iff`: the radical of the ideal of
+  definition consists of the elements of the ring of definition that are topologically nilpotent
+  in `A`, `√J = A₀ ∩ A°°`.
 * `TauCeti.Huber.isTopologicallyNilpotent_iff_exists_mem_idealOfDefinition`: the topologically
   nilpotent elements are exactly the union of the ideals of definition — the ideal-side companion
   of Corollary 6.4 below.
@@ -198,6 +201,15 @@ theorem mem_enlargeIdeal_idealOfDefinition (Q : PairOfDefinition A) {y : Q.ringO
   rw [Q.enlargeIdeal_idealOfDefinition hy]
   exact Ideal.mem_sup_right (Ideal.mem_span_singleton_self y)
 
+/-- The radical of the ideal of definition consists of exactly those elements of the ring of
+definition that are topologically nilpotent in `A`: `√J = A₀ ∩ A°°`. -/
+theorem mem_radical_idealOfDefinition_iff (P : PairOfDefinition A)
+    {a : P.ringOfDefinition} :
+    a ∈ P.idealOfDefinition.radical ↔ IsTopologicallyNilpotent (a : A) := by
+  rw [← P.isAdic_idealOfDefinition.isTopologicallyNilpotent_iff_mem_radical]
+  exact ⟨fun h ↦ h.map (φ := P.ringOfDefinition.subtype) continuous_subtypeVal,
+    fun h ↦ isTopologicallyNilpotent_mk a.property h⟩
+
 variable [IsTopologicalRing A]
 
 /-- Every power of the ideal of definition, carried into a larger subring `B`, is open in `B`.
@@ -210,7 +222,7 @@ private theorem isOpen_idealOfDefinition_map_pow (P : PairOfDefinition A) (B : S
     ((P.idealOfDefinition.map (Subring.inclusion hle) ^ n).toAddSubgroup) <| by
     rw [Submodule.coe_toAddSubgroup]
     have hnhd : Subtype.val ⁻¹' (P.idealImage n : Set A) ∈ 𝓝 (0 : B) :=
-      continuous_subtype_val.continuousAt.preimage_mem_nhds <|
+      continuous_subtypeVal.continuousAt.preimage_mem_nhds <|
         (P.isOpen_idealImage n).mem_nhds (P.idealImage n).zero_mem
     refine mem_of_superset hnhd ?_
     rintro ⟨x, hxB⟩ hx
@@ -508,13 +520,13 @@ private theorem idealImage_subset_image_span_pow (P : PairOfDefinition A) {B : S
       fun z ↦ ih ((P.mem_idealImage _).mpr ⟨c z, hc z, rfl⟩)
     choose w hw hweq using hcof
     choose u hu hueq using hS
-    refine ⟨∑ z ∈ Gk.attach, u z.1 z.2 * w z.1, Submodule.sum_mem _ fun z _ ↦ ?_, ?_⟩
+    refine ⟨∑ z ∈ Gk.attach, u z.val z.property * w z.val, Submodule.sum_mem _ fun z _ ↦ ?_, ?_⟩
     · rw [pow_succ']
-      exact Ideal.mul_mem_mul (Ideal.subset_span (hu z.1 z.2)) (hw z.1)
+      exact Ideal.mul_mem_mul (Ideal.subset_span (hu z.val z.property)) (hw z.val)
     · rw [← hsum]
       push_cast
       rw [← Finset.sum_attach Gk fun z ↦ (z : A) * (c z : A)]
-      exact Finset.sum_congr rfl fun z _ ↦ by rw [hueq z.1 z.2, hweq z.1]
+      exact Finset.sum_congr rfl fun z _ ↦ by rw [hueq z.val z.property, hweq z.val]
 
 variable [IsTopologicalRing A]
 
@@ -582,7 +594,7 @@ theorem exists_pairOfDefinition_ringOfDefinition_eq (B : Subring A)
   · -- `Jⁿ` contains the trace of the open set `I ^ ((k₀ + 1) * (n + 1))`, hence is open.
     refine AddSubgroup.isOpen_of_mem_nhds (g := 0) (Ideal.span S ^ n).toAddSubgroup ?_
     rw [Submodule.coe_toAddSubgroup]
-    refine mem_of_superset (continuous_subtype_val.continuousAt.preimage_mem_nhds
+    refine mem_of_superset (continuous_subtypeVal.continuousAt.preimage_mem_nhds
       ((P.isOpen_idealImage ((k₀ + 1) * (n + 1))).mem_nhds (P.idealImage _).zero_mem)) ?_
     intro y hy
     obtain ⟨v, hv, hveq⟩ := P.idealImage_subset_image_span_pow hk hspan hSmem n hy
@@ -604,7 +616,7 @@ theorem isBounded_of_isAdic {B : Subring A} (hopen : IsOpen (B : Set A)) {J : Id
   rw [isBounded_iff]
   intro U hU
   obtain ⟨n, hn⟩ := (isAdic_iff.mp hJ).2 _
-    (continuous_subtype_val.continuousAt.preimage_mem_nhds hU)
+    (continuous_subtypeVal.continuousAt.preimage_mem_nhds hU)
   refine ⟨Subtype.val '' ((J ^ n : Ideal B) : Set B),
     (hopen.isOpenEmbedding_subtypeVal.isOpenMap _ ((isAdic_iff.mp hJ).1 n)).mem_nhds
       ⟨0, (J ^ n).zero_mem, rfl⟩, ?_⟩

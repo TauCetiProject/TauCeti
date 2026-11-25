@@ -47,6 +47,8 @@ itself an isomorphism.
 * `TauCeti.ValuationSpectrum.toPresentationLimit_comp_πToPresentation` and
   `TauCeti.ValuationSpectrum.toPresentationLimit_comp_presentationLimitMap` : the canonical map
   projects to the structure maps and commutes with restriction.
+* `TauCeti.ValuationSpectrum.toCompletionLocObjHom_comp_presentationLimitRationalIso_inv` : over a
+  rational open `R(p)`, the canonical map is the structure map `A → A⟨p⟩`.
 * `TauCeti.ValuationSpectrum.presentationLimit_spaBasicOpen_hom_ext` : morphisms out of the
   sections over a rational open are determined by their composites with the canonical map.
 * `TauCeti.ValuationSpectrum.isIso_toPresentationLimit_top` : on the whole spectrum the canonical
@@ -115,6 +117,26 @@ theorem toPresentationLimit_comp_presentationLimitMap {V W : Opens ↥(spa Aplus
     simp
   exact key (presentationIndexRestrict_obj_pres h i)
 
+/-- **The canonical map commutes with transport along an equality of opens.** -/
+theorem toPresentationLimit_comp_eqToHom {V W : Opens ↥(spa Aplus)} (e : V = W) :
+    toPresentationLimit Aplus V ≫
+        eqToHom (congrArg (presentationLimit (P := P) Aplus) e) =
+      toPresentationLimit Aplus W := by
+  subst e
+  simp
+
+/-- **The canonical map over a rational open is the structure map**: read through
+`presentationLimitRationalIso`, the canonical map from `A` to the sections over `R(p)` is the
+structure map `A → A⟨p⟩`. -/
+@[reassoc]
+theorem toCompletionLocObjHom_comp_presentationLimitRationalIso_inv
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
+    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
+    p.toCompletionLocObjHom ≫ (presentationLimitRationalIso Aplus hAplus p hp).inv =
+      toPresentationLimit Aplus (spaBasicOpen Aplus p.num p.den) := by
+  rw [Iso.comp_inv_eq]
+  simp
+
 /-- **Morphisms out of the sections over a rational open are determined on `A`**: two morphisms
 out of `presentationLimit (R(p))` into a complete separated topological ring agree once they agree
 after the canonical map from `A`. The sections over `R(p)` are `A⟨p⟩`, in which the image of
@@ -128,10 +150,8 @@ theorem presentationLimit_spaBasicOpen_hom_ext (hAplus : ∀ ⦃a⦄, a ∈ Aplu
     ← (presentationLimitRationalIso Aplus hAplus p hp).hom_inv_id_assoc g]
   refine congrArg _ (p.hom_ext ?_)
   -- through `presentationLimitRationalIso`, the canonical map is the structure map `A → A⟨p⟩`
-  have key : toPresentationLimit Aplus _ ≫ (presentationLimitRationalIso Aplus hAplus p hp).hom =
-      p.toCompletionLocObjHom := by simp
-  rw [← Iso.eq_comp_inv] at key
-  rw [key, Category.assoc, Category.assoc] at h
+  rw [← toCompletionLocObjHom_comp_presentationLimitRationalIso_inv Aplus hAplus p hp,
+    Category.assoc, Category.assoc] at h
   have h' := congrArg (·.hom) h
   simp only [ObjectProperty.FullSubcategory.comp_hom, Presentation.toCompletionLocObjHom_hom,
     Category.assoc] at h'

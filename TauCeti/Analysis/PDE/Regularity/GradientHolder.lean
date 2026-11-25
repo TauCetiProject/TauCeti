@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder
+public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
 
 /-!
 # Hölder continuity of the gradient for `-Δu = -div G`
