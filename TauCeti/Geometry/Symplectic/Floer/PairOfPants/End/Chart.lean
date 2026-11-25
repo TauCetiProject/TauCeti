@@ -1097,12 +1097,10 @@ by `e^{-2π (±L)}`, with the sign `±` of the end. -/
 theorem positiveEndChartScale_add_fst (q : Puncture) (ζ : ℝ × ℝ) (L : ℝ) :
     positiveEndChartScale q (ζ + (L, 0)) =
       Real.exp (-(2 * π * (q.endSign * L))) * positiveEndChartScale q ζ := by
-  rw [positiveEndChartScale_apply, positiveEndChartScale_apply, positiveEndChart_apply,
-    positiveEndChart_apply, endChart_apply, endChart_apply,
-    ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.symm_apply_apply,
-    equivRealProdCLM_symm_endSign_smul_add_fst, q.cylindricalEndLift_add_endSign_mul,
-    q.endShift_apply]
-  simp [Complex.norm_exp]
+  simp only [positiveEndChartScale_apply, positiveEndChart_apply, endChart_apply,
+    ContinuousLinearEquiv.symm_apply_apply, equivRealProdCLM_symm_endSign_smul_add_fst,
+    q.cylindricalEndLift_add_endSign_mul, q.endShift_apply, add_sub_cancel_left, norm_mul,
+    Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
   ring
 
 /-- **The rotation of the positive end chart depends only on the angular coordinate.** The
