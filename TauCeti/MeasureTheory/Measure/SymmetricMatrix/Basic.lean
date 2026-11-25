@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix
+public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic
 public import Mathlib.Data.Sym.Card
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Order.Sym2
@@ -18,10 +18,11 @@ self-adjoint subspace `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)`. 
 transpose, so this is exactly the subspace of symmetric matrices, and
 `Matrix.isHermitian_iff_isSelfAdjoint` connects membership to the spectral API.
 
-`TauCeti.MeasureTheory.Measure.SelfAdjointMatrix` equips
+`TauCeti.Analysis.Matrix.SelfAdjoint` equips
 `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)` with the ambient Frobenius norm and real
 inner product while keeping the subtype topology and uniformity definitionally equal to the induced
-product ones, with Borel measurable structure and `volume` from `measureSpaceOfInnerProductSpace`.
+product ones, and `TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic` adds the Borel measurable
+structure, with `volume` from `measureSpaceOfInnerProductSpace`.
 
 This file specializes the entry and trace-pairing API to `ℝ` and fixes the upper-triangular
 coordinate system used to normalize Lebesgue measure on the subspace:

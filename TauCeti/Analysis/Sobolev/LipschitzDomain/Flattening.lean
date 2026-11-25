@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.GraphFlattening
+public import TauCeti.Analysis.Calculus.GraphFlattening.Basic
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 
 /-!
 # Flattening a `Cᵏ` boundary graph by a change of variables
@@ -44,6 +45,9 @@ compactness, which bounds those of the shear.
   the flattening chart `e⁻¹ ∘ G⁻¹` maps the normal half-space `{0 < x.fst}`, in standard position,
   onto the domain near the boundary point, which is the form the half-space estimates are stated
   in.
+* `TauCeti.exists_isChangeOfVariables_halfSpace_of_contDiff_graph`: the flattening chart fixes the
+  boundary point, which lies in the closure of the flat half-space, and maps the part of a
+  neighbourhood in that half-space onto the domain near the boundary point.
 
 ## References
 
@@ -60,6 +64,7 @@ noncomputable section
 namespace TauCeti
 
 open Metric Set TopologicalSpace
+open scoped InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
@@ -258,5 +263,52 @@ theorem exists_isChangeOfVariables_normalHalfSpace_of_contDiff
   rw [coe_normalHalfSpace, image_comp, himage, image_preimage_inter,
     image_eq_preimage_of_inverse e.apply_symm_apply e.symm_apply_apply]
   rfl
+
+omit [FiniteDimensional ℝ E] in
+/-- **Flattening a boundary graph.** Let `F` be finite-dimensional, and suppose that in rigid
+coordinates `e : F ≃ ℝ × E` centred at `x₀ = e⁻¹ 0`, inside the normal cylinder of half-height
+`h₀` and radius `r₀`, `Ω` is the region above the graph of a `Cᵏ` function `γ`, `k ≥ 1`, with
+`γ 0 = 0`. Let `G` be the graph flattening of `γ`. Then `Φ = e⁻¹ ∘ G⁻¹ ∘ e` and
+`Ψ = e⁻¹ ∘ G ∘ e` are mutually inverse changes of variables of order `k` between open sets
+`U' ∋ x₀` and `U`, with Jacobian determinants at least one in absolute value; `Φ` fixes `x₀` and
+maps the part of `U'` in a half-space `H`, whose closure contains `x₀`, onto `Ω ∩ U`. -/
+theorem exists_isChangeOfVariables_halfSpace_of_contDiff_graph [FiniteDimensional ℝ F]
+    {Omega : Set F} {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ}
+    {h₀ r₀ : ℝ} {k : ℕ} (hk : 1 ≤ k) (hh₀ : 0 < h₀) (hr₀ : 0 < r₀) (hγ0 : γ 0 = 0)
+    (hγ : ContDiff ℝ k γ)
+    (hgraph : ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ γ z.snd < z.fst)) :
+    ∃ (U' U : Opens F) (L : ℝ) (ν : F) (c₀ : ℝ),
+      Wkp.IsChangeOfVariables k U' U (e.symm ∘ (graphFlattening γ hγ.continuous).symm ∘ e) L 1 ∧
+      Wkp.IsChangeOfVariables k U U' (e.symm ∘ graphFlattening γ hγ.continuous ∘ e) L 1 ∧
+      ν ≠ 0 ∧ (e.symm ∘ (graphFlattening γ hγ.continuous).symm ∘ e) ''
+        ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') = Omega ∩ U ∧ e.symm 0 ∈ U' ∧
+      e.symm 0 ∈ closure {x | c₀ < ⟪x, ν⟫_ℝ} ∧
+      (e.symm ∘ (graphFlattening γ hγ.continuous).symm ∘ e) (e.symm 0) = e.symm 0 := by
+  -- `E` is finite-dimensional, being a factor of `ℝ × E ≃ F`.
+  have : FiniteDimensional ℝ (WithLp 2 (ℝ × E)) :=
+    e.linearIsometryEquiv.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional ℝ E := Module.Finite.of_surjective (WithLp.sndₗ 2 ℝ ℝ E)
+    fun y => ⟨WithLp.toLp 2 (0, y), rfl⟩
+  obtain ⟨U', U, L, hx₀U, -, hΦ, hΨ, himage⟩ :=
+    exists_isChangeOfVariables_of_contDiff hk hh₀ hr₀ hγ0 hγ hgraph
+  set G := graphFlattening γ hγ.continuous
+  -- `Ψ` fixes `x₀`, hence so does its inverse `Φ`.
+  have hΨx₀ : (e.symm ∘ G ∘ e) (e.symm 0) = e.symm 0 := by simp [G, hγ0]
+  have hΦx₀ : (e.symm ∘ G.symm ∘ e) (e.symm 0) = e.symm 0 := by
+    conv_lhs => rw [← hΨx₀]
+    simp
+  -- In rigid coordinates the flat side is the half-space `{-(e 0).fst < ⟪x, ν⟫}`.
+  set ν := e.linearIsometryEquiv.symm (WithLp.toLp 2 (1, 0))
+  have hHν (x : F) : 0 < (e x).fst ↔ -(e 0).fst < ⟪x, ν⟫_ℝ := by
+    rw [e.fst_apply_eq_inner_add]
+    constructor <;> intro h <;> linarith
+  have hH : {x | 0 < (e x).fst} = {x | -(e 0).fst < ⟪x, ν⟫_ℝ} := Set.ext hHν
+  refine ⟨U', U, L, ν, -(e 0).fst, hΦ, hΨ, by simp [ν], hH ▸ himage,
+    hΨx₀ ▸ hΨ.mapsTo hx₀U, ?_, hΦx₀⟩
+  -- `x₀` is a limit of the points `e⁻¹ (t, 0)`, `t > 0`, of the flat side.
+  refine Metric.mem_closure_iff.2 fun ε hε => ⟨e.symm (WithLp.toLp 2 (ε / 2, 0)), ?_, ?_⟩
+  · exact (hHν _).1 (by simpa using half_pos hε)
+  · rw [dist_comm, e.symm.dist_map, dist_zero_right]
+    simpa [WithLp.prod_norm_eq_of_L2, abs_of_pos hε] using half_lt_self hε
 
 end TauCeti
