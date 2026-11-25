@@ -7,9 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
 public import TauCeti.AlgebraicGeometry.Blowup.Pullback
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.AffineLine
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.StrictTransform.Basic
 public import TauCeti.Examples.AlgebraicGeometry.Blowup.Modification
-import TauCeti.Algebra.Regular.SMul
 
 /-!
 # The strict transform of a line under the blowup of the plane at the origin
@@ -23,8 +23,7 @@ sheaf of the closed immersion `Bl_{(t)} L ⟶ L ×_{𝔸²} Bl_0 𝔸²`
 (`Scheme.Hom.strictTransform_blowupToBase`), is the ideal sheaf of a closed immersion
 `L ⟶ L ×_{𝔸²} Bl_0 𝔸²` that is a section of the projection to `L`: the strict transform is a copy
 of the line. The exceptional divisor of `Bl_0 𝔸²` pulls back along it to the origin `V(t)` of `L`,
-a single point. This is the SchemeAndStackFoundations §4.11 Check on the blowup of `𝔸²` at the
-origin and a line through the origin.
+a single point.
 
 * `TauCeti.BlowupStrictTransformLineExample.lineι`: the line `V(y)`.
 * `TauCeti.BlowupStrictTransformLineExample.comap_originIdealSheaf_lineι`: the origin pulls back
@@ -33,7 +32,7 @@ origin and a line through the origin.
   is an isomorphism.
 * `TauCeti.BlowupStrictTransformLineExample.strictTransformι`: the closed immersion of `L` onto
   its strict transform, with `ker_strictTransformι` and `strictTransformι_fst`.
-* `TauCeti.BlowupStrictTransformLineExample.comap_exceptional_strictTransformι`: the exceptional
+* `TauCeti.BlowupStrictTransformLineExample.comap_comap_strictTransformι_snd`: the exceptional
   divisor pulls back to `V(t)`.
 -/
 
@@ -56,22 +55,16 @@ abbrev lineι : Spec (.of (Polynomial k)) ⟶ Spec (.of (MvPolynomial (Fin 2) k)
 
 /-- The ideal of the origin of `𝔸²_k` pulls back to the ideal `(t)` of the origin of the line. -/
 theorem comap_originIdealSheaf_lineι :
-    (originIdealSheaf k).comap (lineι k) = ofIdealTop
-      ((Ideal.span {Polynomial.X}).map (Scheme.ΓSpecIso (.of (Polynomial k))).inv.hom) := by
-  rw [originIdealSheaf_def, comap_ofIdealTop_map_ΓSpecIso_inv, Ideal.map_span, Set.image_pair]
+    (originIdealSheaf k).comap (lineι k) = (Polynomial.X : Polynomial k).zeroIdealSheaf := by
+  rw [originIdealSheaf_def, comap_ofIdealTop_map_ΓSpecIso_inv,
+    Polynomial.zeroIdealSheaf_eq_ofIdealTop, Ideal.map_span, Set.image_pair]
   simp [Set.pair_comm _ (0 : Polynomial k)]
 
 /-- The origin of the line is an effective Cartier divisor. -/
 theorem isEffectiveCartier_comap_originIdealSheaf_lineι :
     ((originIdealSheaf k).comap (lineι k)).IsEffectiveCartier := by
-  rw [comap_originIdealSheaf_lineι, Ideal.map_span, Set.image_singleton]
-  have hb : IsSMulRegular Γ(Spec (.of (Polynomial k)), ⊤)
-      ((Scheme.ΓSpecIso (.of (Polynomial k))).inv Polynomial.X) :=
-    (TauCeti.isSMulRegular_map_iff
-      (Scheme.ΓSpecIso (.of (Polynomial k))).symm.commRingCatIsoToRingEquiv _).mpr
-      Polynomial.monic_X.isRegular.left.isSMulRegular
-  exact isEffectiveCartier_ofIdealTop_span_singleton _ fun _ ↦
-    (isAffineOpen_top _).isSMulRegular_map le_top hb
+  rw [comap_originIdealSheaf_lineι]
+  exact Polynomial.monic_X.isRelativeEffectiveCartier_zeroIdealSheaf.isEffectiveCartier
 
 /-- The blowup of the line at the origin is an isomorphism. -/
 instance isIso_blowupToBase : IsIso ((originIdealSheaf k).comap (lineι k)).blowupToBase :=
@@ -97,18 +90,16 @@ instance isClosedImmersion_strictTransformι : IsClosedImmersion (strictTransfor
 blowup of `𝔸²_k` at the origin is the ideal sheaf of the closed immersion `strictTransformι` of
 `L` into `L ×_{𝔸²} Bl_0 𝔸²`. -/
 theorem ker_strictTransformι :
-    Scheme.Hom.strictTransform (lineι k) (originIdealSheaf k).blowupToBase
-      (originIdealSheaf k).support.compl = (strictTransformι k).ker := by
+    (strictTransformι k).ker = Scheme.Hom.strictTransform (lineι k)
+      (originIdealSheaf k).blowupToBase (originIdealSheaf k).support.compl := by
   rw [Scheme.Hom.strictTransform_blowupToBase, strictTransformι, Scheme.Hom.ker_comp_of_isIso]
 
 /-- **The exceptional divisor meets the strict transform of the line in the origin.** The
 exceptional divisor of `Bl_0 𝔸²_k` pulls back along `L ⟶ L ×_{𝔸²} Bl_0 𝔸² ⟶ Bl_0 𝔸²` to the
 ideal `(t)` of the origin of `L`. -/
-theorem comap_exceptional_strictTransformι :
+theorem comap_comap_strictTransformι_snd :
     ((originIdealSheaf k).comap (originIdealSheaf k).blowupToBase).comap
-        (strictTransformι k ≫ pullback.snd _ _) =
-      ofIdealTop ((Ideal.span {Polynomial.X}).map
-        (Scheme.ΓSpecIso (.of (Polynomial k))).inv.hom) := by
+        (strictTransformι k ≫ pullback.snd _ _) = (Polynomial.X : Polynomial k).zeroIdealSheaf := by
   rw [strictTransformι, Category.assoc, blowupBaseChangeHom_snd, comap_comp, comap_comap_blowupMap,
     ← comap_comp, IsIso.inv_hom_id, comap_id, comap_originIdealSheaf_lineι]
 
