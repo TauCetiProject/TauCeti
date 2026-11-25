@@ -122,7 +122,7 @@ private theorem IsContractedReflection.eLpNorm_le {p : ℝ≥0∞} (hp : 1 ≤ p
   have hlo' := (ae_restrict_iff'
     (Ω.isOpen.measurableSet.inter (measurableSet_lt measurable_im measurable_const))).1 hlo
   have hax : ∀ᵐ z ∂(volume : Measure ℂ), z ∉ {z : ℂ | z.im = 0} :=
-    measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
+    Complex.ae_im_ne_zero
   -- Pointwise, `‖f‖` is dominated by the reflection of `‖g‖` with the weights `|d j|`.
   have hle : ∀ᵐ z ∂volume.restrict Ω,
       ‖f z‖ ≤ ‖planarReflection (fun j => |d j|) (fun w => ‖g w‖) z‖ := by
