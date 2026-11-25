@@ -62,6 +62,7 @@ are described through them.
 * `TauCeti.relTrace R Q P`: the relative trace `Tr_Q^P : R[G]^Q → R[G]^P`.
 * `TauCeti.relTraceIdeal R hQP`: its image `R[G]^P_Q`, a two-sided ideal of `R[G]^P`.
 * `TauCeti.conjInvariantsEquiv R g H`: conjugation by `g` as `R[G]^H ≃ₐ R[G]^{gHg⁻¹}`.
+* `TauCeti.conjInvariantsBotEquiv R`: `R[G] ≃ₐ R[G]^1`, each element as a `1`-fixed element.
 
 ## Main results
 
@@ -253,6 +254,18 @@ theorem conjInvariants_top :
 theorem conjInvariants_bot : conjInvariants R (⊥ : Subgroup G) = ⊤ :=
   eq_top_iff.2 fun x _ => mem_conjInvariants_iff.2 fun h hh => by
     rw [Subgroup.mem_bot.1 hh, map_one, one_apply_eq_self]
+
+variable (R) in
+/-- `R[G]` as the subalgebra `R[G]^1` of elements fixed by the trivial subgroup. -/
+noncomputable def conjInvariantsBotEquiv :
+    MonoidAlgebra R G ≃ₐ[R] conjInvariants R (⊥ : Subgroup G) :=
+  Subalgebra.topEquiv.symm.trans (Subalgebra.equivOfEq _ _ conjInvariants_bot.symm)
+
+/-- The isomorphism `R[G] ≃ R[G]^1` is the identity on underlying elements. -/
+@[simp]
+theorem coe_conjInvariantsBotEquiv (x : MonoidAlgebra R G) :
+    (conjInvariantsBotEquiv R x : MonoidAlgebra R G) = x := by
+  simp [conjInvariantsBotEquiv]
 
 end Semiring
 

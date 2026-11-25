@@ -36,6 +36,10 @@ theorem index_zpowers_s : (Subgroup.zpowers s).index = 3 := by
   simp only [Nat.factorial] at h
   omega
 
+/-- `⟨s⟩` has index `3` in `S₃`, as a subgroup of `⊤`. -/
+private theorem index_subgroupOf_top_zpowers_s : ((Subgroup.zpowers s).subgroupOf ⊤).index = 3 :=
+  (Subgroup.zpowers s).relIndex_top_right.trans index_zpowers_s
+
 /-- The number of `g` with `g⁻¹ c g = h`, read in `𝔽₂`: `|C_G(c)|` if `h` is conjugate to `c`,
 which is odd only for the `3`-cycles. -/
 private theorem card_filter_conj_eq (c h : S₃) :
@@ -86,26 +90,16 @@ theorem relTrace_bot_top_eq (a : conjInvariants (ZMod 2) (⊥ : Subgroup S₃)) 
     ← coe_blockTwoS₃, coeff_blockTwoS₃]
   rw [sum_conj_eq, mul_comm]
 
-/-- An element of `𝔽₂[S₃]`, as an element of `𝔽₂[S₃]^1`. -/
-noncomputable def toBot (x : MonoidAlgebra (ZMod 2) S₃) :
-    conjInvariants (ZMod 2) (⊥ : Subgroup S₃) :=
-  ⟨x, by rw [conjInvariants_bot]; trivial⟩
-
-/-- `toBot x` is `x`. -/
-@[simp]
-theorem coe_toBot (x : MonoidAlgebra (ZMod 2) S₃) :
-    (toBot x : MonoidAlgebra (ZMod 2) S₃) = x := by
-  rw [toBot]
-
 /-- `e₁ = ρ + ρ² = Tr_1^{S₃}(ρ)`. -/
 theorem relTrace_bot_top_of_ρ :
-    (relTrace (ZMod 2) ⊥ ⊤ (toBot (of (ZMod 2) S₃ ρ)) : MonoidAlgebra (ZMod 2) S₃) =
+    (relTrace (ZMod 2) ⊥ ⊤ (conjInvariantsBotEquiv (ZMod 2) (of (ZMod 2) S₃ ρ)) :
+        MonoidAlgebra (ZMod 2) S₃) =
       of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) := by
   rw [relTrace_bot_top_eq]
   have h : (of (ZMod 2) S₃ ρ).coeff ρ + (of (ZMod 2) S₃ ρ).coeff (ρ ^ 2) = 1 := by
     simp only [of_apply, coeff_single, Finsupp.single_apply]
     decide +kernel
-  rw [coe_toBot, h, one_smul]
+  rw [coe_conjInvariantsBotEquiv, h, one_smul]
 
 /-- The principal block `e₀ = 1 + ρ + ρ²` is not a trace from the trivial subgroup: every
 `Tr_1^{S₃}(a)` has coefficient `0` at `1`. -/
@@ -128,8 +122,8 @@ theorem relTrace_zpowers_s_top_one_add_of_ρ_add_of_ρ_sq :
         MonoidAlgebra (ZMod 2) S₃) =
       1 + of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) := by
   rw [relTrace_apply_of_mem (center_le_conjInvariants ⊤ one_add_of_ρ_add_of_ρ_sq_mem_center),
-    ← Subgroup.relIndex, Subgroup.relIndex_top_right, index_zpowers_s,
-    ← Nat.cast_smul_eq_nsmul (ZMod 2), show ((3 : ℕ) : ZMod 2) = 1 by decide, one_smul]
+    index_subgroupOf_top_zpowers_s, ← Nat.cast_smul_eq_nsmul (ZMod 2)]
+  simp [show (3 : ZMod 2) = 1 by decide]
 
 /-- Taking maximal instead of minimal subgroups would give `S₃` for both blocks: every element of
 `𝔽₂[S₃]^{S₃}` is a trace from `S₃` itself. -/
