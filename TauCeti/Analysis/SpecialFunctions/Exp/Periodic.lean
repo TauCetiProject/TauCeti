@@ -40,6 +40,7 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
   `Complex.exp_neg_two_pi_mul_I_mul_ne_one_of_re_mem_Ioo`,
   `Complex.exp_neg_two_pi_mul_I_mul_intCast_add_ne_one_of_norm_lt_one`: pole-exclusion lemmas for
   `exp (-2 π i z) - 1` off the real axis, strictly between integers, and near an integer.
+* `Complex.exp_two_pi_mul_I_mul_pow`: `(exp (2π i a)) ^ n = exp (2π i n a)` for `a : ℂ` and `n : ℕ`.
 * `Complex.norm_exp_two_pi_mul_I_mul_ofReal`: `‖exp (2 π i x)‖ = 1` for real `x`.
 * `Complex.norm_exp_two_pi_mul_ofReal_mul_I`: the same with the factors ordered `2 π x i`.
 * `Complex.exists_div_two_pi_I_smul_eq_add_zsmul`: if `exp a = exp b`, then
@@ -143,6 +144,13 @@ theorem exp_neg_two_pi_mul_I_mul_intCast_add_ne_one_of_norm_lt_one (k : ℤ) {w 
   have : (0 : ℤ) < |m| := by exact_mod_cast hw0
   have : |m| < (1 : ℤ) := by exact_mod_cast hw1
   omega
+
+/-- Raising `e^{2π i a}` to a natural power `n` multiplies the exponent by `n`. -/
+theorem exp_two_pi_mul_I_mul_pow (a : ℂ) (n : ℕ) :
+    cexp (2 * π * I * a) ^ n = cexp (2 * π * I * n * a) := by
+  rw [← Complex.exp_natCast_mul]
+  congr 1
+  ring
 
 /-- `‖e(x)‖ = 1` for `e(x) = exp (2 π i x)` and real `x`. -/
 @[simp]
