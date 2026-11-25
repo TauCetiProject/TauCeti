@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+-- `Ideal.Quotient.mk` occurs in the statements about principal congruence subgroups below.
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
 import TauCeti.Data.Matrix.Block
 
 /-!
@@ -65,6 +67,13 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
   block diagonal matrices along `Equiv.sumAssoc` and `Equiv.sumCongr`.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
   block unipotent matrices are elementary.
+* `TauCeti.transvectionUnit_mem_commutator_elementarySubgroup_ker`,
+  `Matrix.upperBlockGL_mem_commutator_elementarySubgroup_ker`,
+  `Matrix.lowerBlockGL_mem_commutator_elementarySubgroup_ker`: in size at least three, elementary
+  and block unipotent matrices with entries in an ideal `I` lie in the commutator
+  `⁅E(A), GL(A, I)⁆` of the elementary subgroup with the principal congruence subgroup.
+* `TauCeti.fromBlocksGL_mem_ker_iff`: a block diagonal matrix lies in the kernel of a scalar
+  change exactly when both blocks do.
 * `Matrix.GeneralLinearGroup.eq_fromBlocksGL_mul_upperBlockGL`: block upper-triangular
   factorization of a matrix in `GL (m ⊕ k) A` with bottom row `(0, 1)`.
 * `TauCeti.fromBlocksGL_inv_mem_elementarySubgroup`: Whitehead's lemma, `u ⊕ u⁻¹ ∈ E`.
@@ -144,9 +153,7 @@ theorem commutator_elementarySubgroup_self (hn : 3 ≤ Fintype.card n) :
     exact mul_mem (mul_mem (mul_mem hg hh) (inv_mem hg)) (inv_mem hh)
   refine elementarySubgroup_le_iff.2 fun i j hij a ↦ ?_
   -- A third index `l`, distinct from `i` and `j`.
-  obtain ⟨l, -, hl⟩ := Finset.exists_mem_notMem_of_card_lt_card (s := {i, j})
-    (t := Finset.univ) (Finset.card_le_two.trans_lt (by rw [Finset.card_univ]; omega))
-  obtain ⟨hli, hlj⟩ : l ≠ i ∧ l ≠ j := by simpa [not_or] using hl
+  obtain ⟨l, hli, hlj⟩ := Cardinal.exists_ne_ne_of_three_le (by simpa using hn) i j
   rw [← mul_one a, ← commutatorElement_transvectionUnit hli.symm hlj hij]
   exact Subgroup.commutator_mem_commutator (transvectionUnit_mem_elementarySubgroup _ _)
     (transvectionUnit_mem_elementarySubgroup _ _)
@@ -388,6 +395,90 @@ theorem lowerBlockGL_mem_elementarySubgroup (Y : Matrix k m A) :
     convert transvectionUnit_mem_elementarySubgroup (Sum.inr_ne_inl (a := a) (b := b)) c
     ext (p | p) (q | q) <;>
       simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+
+end Matrix
+
+/-! ## The commutator with a principal congruence subgroup -/
+
+namespace TauCeti
+
+section CommRing
+
+variable {n A : Type*} [DecidableEq n] [Fintype n] [CommRing A] {I : Ideal A} {i j l : n}
+
+/-- An elementary matrix with coefficient in `I` lies in the commutator of the elementary
+subgroup with the principal congruence subgroup of level `I`, as soon as a third index exists:
+`eᵢⱼ(c) = ⁅eᵢₗ(c), eₗⱼ(1)⁆`. -/
+theorem transvectionUnit_mem_commutator_elementarySubgroup_ker (hij : i ≠ j) (hil : i ≠ l)
+    (hlj : l ≠ j) {c : A} (hc : c ∈ I) :
+    transvectionUnit hij c ∈ ⁅elementarySubgroup n A,
+      (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker⁆ := by
+  rw [Subgroup.commutator_comm, ← mul_one c, ← commutatorElement_transvectionUnit hil hlj hij]
+  refine Subgroup.commutator_mem_commutator ?_ (transvectionUnit_mem_elementarySubgroup _ _)
+  rw [MonoidHom.mem_ker, map_transvectionUnit, Ideal.Quotient.eq_zero_iff_mem.2 hc,
+    transvectionUnit_zero]
+
+variable {m k B : Type*} [DecidableEq m] [Fintype m] [DecidableEq k] [Fintype k] [CommRing B]
+
+/-- A block diagonal matrix `x ⊕ y` lies in the kernel of the scalar change along `f` exactly when
+both `x` and `y` do. -/
+theorem fromBlocksGL_mem_ker_iff {f : A →+* B} {x : GL m A} {y : GL k A} :
+    fromBlocksGL (x, y) ∈ (Matrix.GeneralLinearGroup.map f).ker ↔
+      x ∈ (Matrix.GeneralLinearGroup.map f).ker ∧ y ∈ (Matrix.GeneralLinearGroup.map f).ker := by
+  have hmap : Matrix.GeneralLinearGroup.map f (fromBlocksGL (x, y)) =
+      fromBlocksGL (Matrix.GeneralLinearGroup.map f x, Matrix.GeneralLinearGroup.map f y) := by
+    ext (i | i) (j | j) <;> simp
+  rw [MonoidHom.mem_ker, MonoidHom.mem_ker, MonoidHom.mem_ker, hmap, ← map_one fromBlocksGL,
+    fromBlocksGL_injective.eq_iff, ← Prod.mk_one_one, Prod.mk.injEq]
+
+end CommRing
+
+end TauCeti
+
+namespace Matrix
+
+open TauCeti
+
+variable {A m k : Type*} [CommRing A] [DecidableEq m] [Fintype m] [DecidableEq k] [Fintype k]
+  {I : Ideal A}
+
+/-- In size at least three, an upper block unipotent matrix whose block has entries in `I` lies in
+the commutator of the elementary subgroup with the principal congruence subgroup of level `I`. -/
+theorem upperBlockGL_mem_commutator_elementarySubgroup_ker (hn : 3 ≤ Fintype.card (m ⊕ k))
+    {X : Matrix m k A} (hX : ∀ a b, X a b ∈ I) :
+    upperBlockGL X ∈ ⁅elementarySubgroup (m ⊕ k) A,
+      (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker⁆ := by
+  rw [matrix_eq_sum_single X]
+  refine Finset.sum_induction _ (fun Y ↦ upperBlockGL Y ∈ _) (fun Y Z hY hZ ↦ ?_) (by simp)
+    fun a _ ↦ Finset.sum_induction _ (fun Y ↦ upperBlockGL Y ∈ _) (fun Y Z hY hZ ↦ ?_) (by simp)
+      fun b _ ↦ ?_
+  · simpa only [upperBlockGL_add] using mul_mem hY hZ
+  · simpa only [upperBlockGL_add] using mul_mem hY hZ
+  obtain ⟨l, hla, hlb⟩ := Cardinal.exists_ne_ne_of_three_le (α := m ⊕ k)
+    (by rw [Cardinal.mk_fintype]; exact_mod_cast hn) (.inl a) (.inr b)
+  convert transvectionUnit_mem_commutator_elementarySubgroup_ker Sum.inl_ne_inr hla.symm hlb
+    (hX a b)
+  ext (p | p) (q | q) <;>
+    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+
+/-- In size at least three, a lower block unipotent matrix whose block has entries in `I` lies in
+the commutator of the elementary subgroup with the principal congruence subgroup of level `I`. -/
+theorem lowerBlockGL_mem_commutator_elementarySubgroup_ker (hn : 3 ≤ Fintype.card (m ⊕ k))
+    {Y : Matrix k m A} (hY : ∀ b a, Y b a ∈ I) :
+    lowerBlockGL Y ∈ ⁅elementarySubgroup (m ⊕ k) A,
+      (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker⁆ := by
+  rw [matrix_eq_sum_single Y]
+  refine Finset.sum_induction _ (fun Z ↦ lowerBlockGL Z ∈ _) (fun Z Z' hZ hZ' ↦ ?_) (by simp)
+    fun b _ ↦ Finset.sum_induction _ (fun Z ↦ lowerBlockGL Z ∈ _) (fun Z Z' hZ hZ' ↦ ?_)
+      (by simp) fun a _ ↦ ?_
+  · simpa only [lowerBlockGL_add] using mul_mem hZ hZ'
+  · simpa only [lowerBlockGL_add] using mul_mem hZ hZ'
+  obtain ⟨l, hlb, hla⟩ := Cardinal.exists_ne_ne_of_three_le (α := m ⊕ k)
+    (by rw [Cardinal.mk_fintype]; exact_mod_cast hn) (.inr b) (.inl a)
+  convert transvectionUnit_mem_commutator_elementarySubgroup_ker Sum.inr_ne_inl hlb.symm hla
+    (hY b a)
+  ext (p | p) (q | q) <;>
+    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
 
 end Matrix
 

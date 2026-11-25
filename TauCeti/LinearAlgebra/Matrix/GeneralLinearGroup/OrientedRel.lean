@@ -14,7 +14,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.Defs
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
-# Moving a scalar from the first column to the first row
+# The oriented relation of Bass–Milnor–Serre
 
 Let `A` be a commutative ring, `I` an ideal, `i₀` a distinguished index and `t ∈ A`. Write
 `D = diag(1, …, t, …, 1)` for the diagonal matrix scaling the `i₀`-th coordinate by `t`. Two
@@ -48,8 +48,8 @@ The stabilization statement rests on the explicit identity, in `GL (ι ⊕ Unit)
 elementary matrices between `i₀` and the new coordinate, `w` is the Weyl element they generate,
 `u` is the block unipotent matrix carrying the `i₀`-th column of `U` into the new column, and `v`
 the one carrying the off-diagonal part of the `i₀`-th row of `U` into the new row. Neither `t ∈ I`
-nor a stable range hypothesis is needed. Along the way, relative block unipotent matrices are shown
-to lie in `⁅E(A), GL(A, I)⁆` (`Matrix.upperBlockGL_mem_commutator_elementarySubgroup_ker`).
+nor a stable range hypothesis is needed. The factors `u`, `v` and `x₊(s)` lie in `⁅E(A), GL(A, I)⁆`
+by `Matrix.upperBlockGL_mem_commutator_elementarySubgroup_ker` and its lower analogue.
 
 ## References
 
@@ -62,76 +62,6 @@ public section
 open Matrix TauCeti
 
 open scoped commutatorElement
-
-/-! ## Relative elementary matrices -/
-
-namespace TauCeti
-
-variable {n A : Type*} [DecidableEq n] [Fintype n] [CommRing A] {I : Ideal A} {i j l : n}
-
-/-- An elementary matrix with coefficient in `I` lies in the commutator of the elementary
-subgroup with the principal congruence subgroup of level `I`, as soon as a third index exists:
-`eᵢⱼ(c) = ⁅eᵢₗ(c), eₗⱼ(1)⁆`. -/
-theorem transvectionUnit_mem_commutator_elementarySubgroup_ker (hij : i ≠ j) (hil : i ≠ l)
-    (hlj : l ≠ j) {c : A} (hc : c ∈ I) :
-    transvectionUnit hij c ∈ ⁅elementarySubgroup n A,
-      (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker⁆ := by
-  rw [Subgroup.commutator_comm, ← mul_one c, ← commutatorElement_transvectionUnit hil hlj hij]
-  refine Subgroup.commutator_mem_commutator ?_ (transvectionUnit_mem_elementarySubgroup _ _)
-  rw [MonoidHom.mem_ker, map_transvectionUnit, Ideal.Quotient.eq_zero_iff_mem.2 hc,
-    transvectionUnit_zero]
-
-end TauCeti
-
-namespace Matrix
-
-variable {A m k : Type*} [CommRing A] [DecidableEq m] [Fintype m] [DecidableEq k] [Fintype k]
-  {I : Ideal A}
-
-/-- In size at least three, every index pair `(a, b)` admits a third index. -/
-private theorem exists_ne_ne_of_three_le_card {n : Type*} [Fintype n]
-    (hn : 3 ≤ Fintype.card n) (a b : n) : ∃ l, a ≠ l ∧ l ≠ b := by
-  classical
-  obtain ⟨l, -, hl⟩ := Finset.exists_mem_notMem_of_card_lt_card (s := {a, b})
-    (t := Finset.univ) (Finset.card_le_two.trans_lt (by rw [Finset.card_univ]; omega))
-  obtain ⟨hla, hlb⟩ : l ≠ a ∧ l ≠ b := by simpa [not_or] using hl
-  exact ⟨l, hla.symm, hlb⟩
-
-/-- In size at least three, an upper block unipotent matrix whose block has entries in `I` lies in
-the commutator of the elementary subgroup with the principal congruence subgroup of level `I`. -/
-theorem upperBlockGL_mem_commutator_elementarySubgroup_ker (hn : 3 ≤ Fintype.card (m ⊕ k))
-    {X : Matrix m k A} (hX : ∀ a b, X a b ∈ I) :
-    upperBlockGL X ∈ ⁅elementarySubgroup (m ⊕ k) A,
-      (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker⁆ := by
-  rw [matrix_eq_sum_single X]
-  refine Finset.sum_induction _ (fun Y ↦ upperBlockGL Y ∈ _) (fun Y Z hY hZ ↦ ?_) (by simp)
-    fun a _ ↦ Finset.sum_induction _ (fun Y ↦ upperBlockGL Y ∈ _) (fun Y Z hY hZ ↦ ?_) (by simp)
-      fun b _ ↦ ?_
-  · simpa only [upperBlockGL_add] using mul_mem hY hZ
-  · simpa only [upperBlockGL_add] using mul_mem hY hZ
-  obtain ⟨l, hal, hlb⟩ := exists_ne_ne_of_three_le_card hn (.inl a) (.inr b)
-  convert transvectionUnit_mem_commutator_elementarySubgroup_ker Sum.inl_ne_inr hal hlb (hX a b)
-  ext (p | p) (q | q) <;>
-    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
-
-/-- In size at least three, a lower block unipotent matrix whose block has entries in `I` lies in
-the commutator of the elementary subgroup with the principal congruence subgroup of level `I`. -/
-theorem lowerBlockGL_mem_commutator_elementarySubgroup_ker (hn : 3 ≤ Fintype.card (m ⊕ k))
-    {Y : Matrix k m A} (hY : ∀ b a, Y b a ∈ I) :
-    lowerBlockGL Y ∈ ⁅elementarySubgroup (m ⊕ k) A,
-      (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker⁆ := by
-  rw [matrix_eq_sum_single Y]
-  refine Finset.sum_induction _ (fun Z ↦ lowerBlockGL Z ∈ _) (fun Z Z' hZ hZ' ↦ ?_) (by simp)
-    fun b _ ↦ Finset.sum_induction _ (fun Z ↦ lowerBlockGL Z ∈ _) (fun Z Z' hZ hZ' ↦ ?_)
-      (by simp) fun a _ ↦ ?_
-  · simpa only [lowerBlockGL_add] using mul_mem hZ hZ'
-  · simpa only [lowerBlockGL_add] using mul_mem hZ hZ'
-  obtain ⟨l, hbl, hla⟩ := exists_ne_ne_of_three_le_card hn (.inr b) (.inl a)
-  convert transvectionUnit_mem_commutator_elementarySubgroup_ker Sum.inr_ne_inl hbl hla (hY b a)
-  ext (p | p) (q | q) <;>
-    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
-
-end Matrix
 
 /-! ## The oriented relation -/
 
@@ -328,16 +258,6 @@ private theorem sub_one_apply_mem_of_mem_ker {x : GL ι A}
   simpa [Matrix.one_apply, apply_ite (Ideal.Quotient.mk I)]
     using (Matrix.GeneralLinearGroup.ext_iff _ _).1 (MonoidHom.mem_ker.1 hx) i j
 
-/-- The stabilization of a matrix congruent to `1` modulo `I` is congruent to `1` modulo `I`. -/
-private theorem fromBlocksGL_mem_ker {x : GL ι A}
-    (hx : x ∈ (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker) :
-    fromBlocksGL (x, (1 : GL Unit A)) ∈
-      (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker := by
-  have hx' := (Matrix.GeneralLinearGroup.ext_iff _ _).1 (MonoidHom.mem_ker.1 hx)
-  rw [MonoidHom.mem_ker, Matrix.GeneralLinearGroup.ext_iff]
-  rintro (i | i) (j | j) <;> simp [Matrix.one_apply]
-  simpa [Matrix.one_apply] using hx' i j
-
 /-- The factorization `h ⊕ 1 = w x₋(t) u (g ⊕ 1) x₋(t)⁻¹ x₊(s)⁻¹ w⁻¹ v` in `GL (ι ⊕ Unit) A`, for
 `g = 1 + U D`, `h = 1 + D U` and `s = U i₀ i₀`. -/
 private theorem fromBlocksGL_eq_mul {g h : GL ι A} {U : Matrix ι ι A}
@@ -348,15 +268,16 @@ private theorem fromBlocksGL_eq_mul {g h : GL ι A} {U : Matrix ι ι A}
       ((lowerGL i₀ t)⁻¹ * (upperGL i₀ (U i₀ i₀))⁻¹) * (weylGL i₀)⁻¹ *
       lowerBlockGL (of fun (_ : Unit) j ↦ if j = i₀ then 0 else U i₀ j) := by
   ext : 1
-  rw [Units.val_mul, Units.val_mul, Units.val_mul, Units.val_mul, Units.val_mul,
-    coe_weylGL_mul_lowerGL, coe_lowerGL_inv_mul_upperGL_inv, coe_weylGL_inv, coe_upperBlockGL,
-    coe_lowerBlockGL, coe_fromBlocksGL, coe_fromBlocksGL, ← hgU, ← hhU]
+  -- The grouped factors `w x₋(t)`, `x₋(t)⁻¹ x₊(s)⁻¹` and `w⁻¹` are rewritten as pre-lemmas (`↓`),
+  -- before `Units.val_mul` would split them into their elementary factors.
+  simp only [Units.val_mul, ↓coe_weylGL_mul_lowerGL, ↓coe_lowerGL_inv_mul_upperGL_inv,
+    ↓coe_weylGL_inv, coe_upperBlockGL, coe_lowerBlockGL, coe_fromBlocksGL, ← hgU, ← hhU]
   exact fromBlocks_one_add_diagonal_mul_eq U
 
 namespace OrientedRel
 
-/-- **After one stabilization, related matrices differ by a commutator of an elementary matrix
-with a congruence matrix.** If `g` and `h` are invertible, congruent to `1` modulo `I` and in
+/-- **After one stabilization, related matrices differ by an element of the commutator subgroup
+`⁅E(A), GL(A, I)⁆`.** If `g` and `h` are invertible, congruent to `1` modulo `I` and in
 oriented relation, then `(g⁻¹ h) ⊕ 1` lies in `⁅E_{n+1}(A), GL_{n+1}(A, I)⁆`. No hypothesis on
 `t` is needed. -/
 theorem fromBlocksGL_inv_mul_mem_commutator {g h : GL ι A}
@@ -375,7 +296,7 @@ theorem fromBlocksGL_inv_mul_mem_commutator {g h : GL ι A}
       ext i j
       rw [← hgU, ← hhU, Subsingleton.elim i i₀, Subsingleton.elim j i₀]
       simp [mul_comm]
-    rw [this, inv_mul_cancel, show ((1 : GL ι A), (1 : GL Unit A)) = 1 from rfl, map_one]
+    rw [this, inv_mul_cancel, Prod.mk_one_one, map_one]
     exact one_mem _
   have hn : 3 ≤ Fintype.card (ι ⊕ Unit) := by
     rw [Fintype.card_sum, Fintype.card_unit]
@@ -404,7 +325,7 @@ theorem fromBlocksGL_inv_mul_mem_commutator {g h : GL ι A}
     (lowerBlockGL_mem_elementarySubgroup _)) (upperBlockGL_mem_elementarySubgroup _)
   have : ((g⁻¹ * h, 1) : GL ι A × GL Unit A) = (g, 1)⁻¹ * (h, 1) := by simp
   rw [this, map_mul, map_inv]
-  exact inv_mul_mem_commutator_of_eq (fromBlocksGL_mem_ker hg) hw
+  exact inv_mul_mem_commutator_of_eq (fromBlocksGL_mem_ker_iff.2 ⟨hg, one_mem _⟩) hw
     (lowerBlockGL_mem_elementarySubgroup _) hu hs hv (fromBlocksGL_eq_mul hgU hhU)
 
 end OrientedRel
