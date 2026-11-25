@@ -171,14 +171,13 @@ namespace TwoSidedIdeal
 variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R]
 
 /-- In a normed ring with summable geometric series (for instance a unital Banach algebra), the
-topological closure of a proper two-sided ideal is proper: the ideal consists of nonunits, which
-form a closed set. -/
+topological closure of a proper two-sided ideal is proper. This is Mathlib's `Ideal.closure_ne_top`
+applied to the underlying left ideal `I.asIdeal`. -/
 theorem topologicalClosure_ne_top {I : TwoSidedIdeal R} (hI : I ≠ ⊤) :
     I.topologicalClosure ≠ ⊤ := by
-  have hsub : (I : Set R) ⊆ nonunits R := fun x hx ⟨u, hu⟩ ↦
-    hI <| I.eq_top <| by simpa [← hu] using I.mul_mem_left (↑u⁻¹ : R) x hx
-  rw [Ne, ← one_mem_iff, mem_topologicalClosure]
-  exact fun h ↦ one_notMem_nonunits (closure_minimal hsub nonunits.isClosed h)
+  rw [Ne, ← one_mem_iff, mem_topologicalClosure, ← coe_asIdeal, ← Ideal.coe_closure,
+    SetLike.mem_coe, ← Ideal.eq_top_iff_one]
+  exact I.asIdeal.closure_ne_top <| by rwa [Ne, Ideal.eq_top_iff_one, mem_asIdeal, one_mem_iff]
 
 /-- In a normed ring with summable geometric series (for instance a unital Banach algebra), if
 every closed two-sided ideal is `⊥` or `⊤`, then so is every two-sided ideal. -/
