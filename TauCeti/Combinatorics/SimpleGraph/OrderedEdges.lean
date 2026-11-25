@@ -19,9 +19,10 @@ sums, edge counts, and cut-toggled edge counts with sums and filters over strict
 
 ## Main results
 
-* `SimpleGraph.fromRel_adj_self`, `SimpleGraph.symmDiff_adj`, `SimpleGraph.edgeSet_symmDiff`, and
-  `SimpleGraph.edgeFinset_symmDiff`: round-trip `fromRel G.Adj = G` and adjacency, edge sets, and
-  edge finsets of the symmetric difference `G₁ ∆ G₂`.
+* `SimpleGraph.fromRel_adj_self`, `SimpleGraph.fromRel_ite_ne_one`, `SimpleGraph.symmDiff_adj`,
+  `SimpleGraph.edgeSet_symmDiff`, and `SimpleGraph.edgeFinset_symmDiff`: round-trips
+  `fromRel G.Adj = G` and `fromRel (fun u v => (if G.Adj u v then t else 1) ≠ 1) = G`, and
+  adjacency, edge sets, and edge finsets of the symmetric difference `G₁ ∆ G₂`.
 * `SimpleGraph.top_between_compl_adj` and `SimpleGraph.symmDiff_top_between_compl_adj`: adjacency in
   the complete-graph cut `(⊤ : SimpleGraph V).between S Sᶜ` and in `G ∆ (⊤ : SimpleGraph V).between
   S Sᶜ` is given unconditionally by `Xor`.
@@ -50,6 +51,13 @@ the graph. -/
 theorem fromRel_adj_self (G : SimpleGraph V) : fromRel G.Adj = G := by
   ext u v
   exact ⟨fun ⟨_, h⟩ => h.elim id (G.adj_comm v u).mp, fun h => ⟨G.ne_of_adj h, Or.inl h⟩⟩
+
+/-- Recovering a simple graph from its `{1, t}` edge indicator (`t ≠ 1`) returns the original
+graph. -/
+theorem fromRel_ite_ne_one {M : Type*} [One M] (G : SimpleGraph V) [DecidableRel G.Adj]
+    {t : M} (ht : t ≠ 1) :
+    fromRel (fun u v => (if G.Adj u v then t else 1) ≠ 1) = G := by
+  simp [ht]
 
 /-- Two vertices are adjacent in `G₁ ∆ G₂` if and only if they are adjacent in exactly one of `G₁`
 and `G₂`. -/

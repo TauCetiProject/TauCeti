@@ -5,7 +5,6 @@ Authors: pi
 -/
 module
 
-public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Data.Finset.Basic
@@ -33,7 +32,7 @@ or coefficient group.
   `SimpleGraph.isCutMinimal_iff_forall_finset`: switching any cut (or any finset cut) does not
   decrease the edge count.
 * `SimpleGraph.ciInf_card_symmDiff_edgeFinset_le`,
-  `SimpleGraph.ciInf_card_symmDiff_edgeFinset_eq_iff`: real-infimum bound and characterization of
+  `SimpleGraph.ciInf_card_symmDiff_edgeFinset_eq_iff`: infimum bound and characterization of
   `SimpleGraph.IsCutMinimal` over `Finset V`.
 -/
 
@@ -186,14 +185,10 @@ theorem isCutMinimal_iff_forall_finset (G : SimpleGraph V) [DecidableRel G.Adj] 
 `#G.edgeFinset`, since `S = ∅` toggles the empty cut. -/
 theorem ciInf_card_symmDiff_edgeFinset_le (G : SimpleGraph V) [DecidableRel G.Adj] :
     (⨅ S : Finset V,
-        (#(G.edgeFinset ∆
-          ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) ≤
+        #(G.edgeFinset ∆
+          ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset)) ≤
       #G.edgeFinset := by
-  have hbdd : BddBelow (Set.range fun S : Finset V =>
-      (#(G.edgeFinset ∆
-        ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) :=
-    ⟨0, by rintro _ ⟨S, rfl⟩; exact Nat.cast_nonneg _⟩
-  refine (ciInf_le hbdd ∅).trans_eq ?_
+  refine (ciInf_le (OrderBot.bddBelow _) ∅).trans_eq ?_
   have hempty : ((⊤ : SimpleGraph V).between (↑(∅ : Finset V) : Set V)
       (↑(∅ : Finset V) : Set V)ᶜ).edgeFinset = ∅ := by
     ext e
@@ -205,20 +200,12 @@ theorem ciInf_card_symmDiff_edgeFinset_le (G : SimpleGraph V) [DecidableRel G.Ad
 cut-minimal. -/
 theorem ciInf_card_symmDiff_edgeFinset_eq_iff (G : SimpleGraph V) [DecidableRel G.Adj] :
     (⨅ S : Finset V,
-        (#(G.edgeFinset ∆
-          ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) =
+        #(G.edgeFinset ∆
+          ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset)) =
       #G.edgeFinset ↔ G.IsCutMinimal := by
   rw [isCutMinimal_iff_forall_finset]
-  have hbdd : BddBelow (Set.range fun S : Finset V =>
-      (#(G.edgeFinset ∆
-        ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) :=
-    ⟨0, by rintro _ ⟨S, rfl⟩; exact Nat.cast_nonneg _⟩
-  constructor
-  · intro h S
-    exact_mod_cast h ▸ ciInf_le hbdd S
-  · intro h
-    refine le_antisymm G.ciInf_card_symmDiff_edgeFinset_le ?_
-    exact le_ciInf fun S => by exact_mod_cast h S
+  exact ⟨fun h S => h ▸ ciInf_le (OrderBot.bddBelow _) S,
+    fun h => le_antisymm G.ciInf_card_symmDiff_edgeFinset_le (le_ciInf h)⟩
 
 end Finite
 

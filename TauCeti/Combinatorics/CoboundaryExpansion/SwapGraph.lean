@@ -11,6 +11,7 @@ public import TauCeti.Combinatorics.SimpleGraph.OrderedEdges
 public import TauCeti.GroupTheory.Perm.DistErr.Basic
 import Mathlib.Algebra.Order.GroupWithZero.OrderIso
 import Mathlib.GroupTheory.Perm.Cycle.Basic
+import Mathlib.Order.ConditionallyCompleteLattice.Finset
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
@@ -33,7 +34,7 @@ combinatorics via the transposition-holonomy and parity-retracted edge bounds in
 `TauCeti.GroupTheory.Perm.MovedNorm` and `TauCeti.GroupTheory.Perm.ParityRetract`:
 
 * **Binary edge-set dictionary, degree-independent gauge distance, and cut-minimality**
-  (`TauCeti.perm_fin_two_eq_ite_fromRel`, `SimpleGraph.fromRel_ite_ne_one`,
+  (`TauCeti.perm_fin_two_eq_ite_fromRel`,
   `SimpleGraph.sum_filter_lt_movedNorm_triple_ite_isSwap`,
   `SimpleGraph.sum_filter_lt_movedNorm_ite_isSwap_of_forall_eq_one_or`,
   `SimpleGraph.ciInf_sum_filter_lt_movedNorm_ite_isSwap`, and
@@ -48,7 +49,7 @@ combinatorics via the transposition-holonomy and parity-retracted edge bounds in
   `SimpleGraph.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_isCutMinimal`,
   `SimpleGraph.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_pos`,
   `SimpleGraph.normalized_defect_div_ciInf₂_distErr_three_ite_isSwap_eq_card_div_three`,
-  `TauCeti.six_mul_add_three_lt_mul_four_mul_sq_add`, and
+  `TauCeti.eight_mul_half_lt_three_mul_choose_two_kozlov`, and
   `SimpleGraph.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_kozlov`): when `G.IsCutMinimal` and
   `8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2`, no unequal-degree gauge in `Perm (Fin m)`
   (`m ≠ 3`) beats the degree-`3` transposition gauge-cost infimum `2 * #G.edgeFinset / 3`, giving a
@@ -95,13 +96,6 @@ theorem perm_fin_two_eq_ite_fromRel {V : Type*} [DecidableEq V] (α : V → V �
 end TauCeti
 
 namespace SimpleGraph
-
-/-- Recovering a simple graph from its `{1, t}` edge indicator (`t ≠ 1`) returns the original
-graph. -/
-theorem fromRel_ite_ne_one {V M : Type*} [One M] (G : SimpleGraph V) [DecidableRel G.Adj]
-    {t : M} (ht : t ≠ 1) :
-    SimpleGraph.fromRel (fun u v => (if G.Adj u v then t else 1) ≠ 1) = G := by
-  simp [ht]
 
 section GraphBridge
 
@@ -282,8 +276,14 @@ theorem ciInf_sum_filter_lt_movedNorm_ite_isSwap_eq_two_mul_card_iff (G : Simple
         ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
           movedNorm A ((β e.1)⁻¹ * (if G.Adj e.1 e.2 then τ else 1) * β e.2)) =
       2 * (#G.edgeFinset : ℝ) ↔ G.IsCutMinimal := by
+  let f (S : Finset V) : ℕ :=
+    #(G.edgeFinset ∆ ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset)
+  have hcast : ((⨅ S, f S : ℕ) : ℝ) = ⨅ S, (f S : ℝ) := by
+    simpa only [iInf, ← Set.range_comp, Function.comp_def] using
+      (Set.finite_range f).map_sInf_of_monotone (Set.range_nonempty f) Nat.mono_cast
   rw [G.ciInf_sum_filter_lt_movedNorm_ite_isSwap hτ,
-    mul_right_inj' (by norm_num : (2 : ℝ) ≠ 0), G.ciInf_card_symmDiff_edgeFinset_eq_iff]
+    mul_right_inj' (by norm_num : (2 : ℝ) ≠ 0), ← hcast, Nat.cast_inj,
+    G.ciInf_card_symmDiff_edgeFinset_eq_iff]
 
 /-- A cut-minimal graph `G` with at least one edge has strictly positive moved-point gauge-cost
 infimum for any transposition `τ : Perm A`. -/
@@ -364,7 +364,8 @@ theorem ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff {n : ℕ} (G : SimpleGraph
   have hn2 : 2 ≤ n := hτ.two_le
   have hn_ne : (n : ℝ) ≠ 0 := by exact_mod_cast (by omega : n ≠ 0)
   rw [G.ciInf_sum_filter_lt_distErr_ite_isSwap hτ, div_left_inj₀ hn_ne,
-    mul_right_inj' (by norm_num : (2 : ℝ) ≠ 0), G.ciInf_card_symmDiff_edgeFinset_eq_iff]
+    ← G.ciInf_sum_filter_lt_movedNorm_ite_isSwap hτ,
+    G.ciInf_sum_filter_lt_movedNorm_ite_isSwap_eq_two_mul_card_iff hτ]
 
 /-- If `G` is cut-minimal and `8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2`, then every gauge
 `β : V → Perm (Fin m)` of every degree `m : ℕ` has cross-degree cost at least
@@ -465,19 +466,6 @@ private theorem two_mul_cast_half_kozlov (q t : ℕ) :
 
 namespace TauCeti
 
-/-- Polynomial inequality comparing Kozlov's degree-`3` staircase cost with the `1 / 4` cross-degree
-mismatch baseline: for `1 ≤ q` and `1 ≤ t`, `6 * t + 3 < q * (4 * t ^ 2 + 4 * t + 3)`. -/
-theorem six_mul_add_three_lt_mul_four_mul_sq_add {q t : ℕ} (hq : 1 ≤ q) (ht : 1 ≤ t) :
-    6 * t + 3 < q * (4 * t ^ 2 + 4 * t + 3) := by
-  rcases Nat.exists_eq_add_of_le' hq with ⟨q', rfl⟩
-  rcases Nat.exists_eq_add_of_le' ht with ⟨t', rfl⟩
-  nlinarith
-
-/-- Weak form of `TauCeti.six_mul_add_three_lt_mul_four_mul_sq_add`. -/
-theorem six_mul_add_three_le_mul_four_mul_sq_add {q t : ℕ} (hq : 1 ≤ q) (ht : 1 ≤ t) :
-    6 * t + 3 ≤ q * (4 * t ^ 2 + 4 * t + 3) :=
-  (six_mul_add_three_lt_mul_four_mul_sq_add hq ht).le
-
 /-- For `1 ≤ q` and `1 ≤ t`, eight times Kozlov's staircase edge count `q ^ 2 * t * (t + 1) / 2` is
 strictly smaller than three times `(q * (2 * t + 1)).choose 2`. -/
 theorem eight_mul_half_lt_three_mul_choose_two_kozlov {q t : ℕ} (hq : 1 ≤ q) (ht : 1 ≤ t) :
@@ -497,16 +485,16 @@ theorem eight_mul_half_lt_three_mul_choose_two_kozlov {q t : ℕ} (hq : 1 ≤ q)
       ring
     omega
   rw [hsub]
+  have hlt : 6 * (t' + 1) + 3 < (q' + 1) * (4 * (t' + 1) ^ 2 + 4 * (t' + 1) + 3) := by nlinarith
   have hdiff : 3 * ((q' + 1) * (2 * (t' + 1) + 1) * (2 * q' * t' + 3 * q' + 2 * t' + 2)) =
       8 * ((q' + 1) ^ 2 * (t' + 1) * (t' + 1 + 1)) +
         (q' + 1) * ((q' + 1) * (4 * (t' + 1) ^ 2 + 4 * (t' + 1) + 3) -
           (6 * (t' + 1) + 3)) := by
-    have hlt := six_mul_add_three_le_mul_four_mul_sq_add hq ht
-    zify [hlt]
+    zify [hlt.le]
     ring
   have hpos : 0 < (q' + 1) *
       ((q' + 1) * (4 * (t' + 1) ^ 2 + 4 * (t' + 1) + 3) - (6 * (t' + 1) + 3)) :=
-    Nat.mul_pos (by omega) (Nat.sub_pos_of_lt (six_mul_add_three_lt_mul_four_mul_sq_add hq ht))
+    Nat.mul_pos (by omega) (Nat.sub_pos_of_lt hlt)
   omega
 
 /-- On a vertex set of size `q * (2 * t + 1)` (`1 ≤ q`, `1 ≤ t`), every unequal-degree gauge
