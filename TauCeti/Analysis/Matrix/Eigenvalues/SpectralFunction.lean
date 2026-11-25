@@ -81,6 +81,9 @@ for a unitary `U` diagonalizing `A`, so `f` is the spectral function composed wi
   are constant on eigenvalue clusters is differentiable.
 * `Matrix.hasFDerivAt_spectralFunction`, `Matrix.fderiv_spectralFunction_apply`: the derivative of
   `x ↦ f(λ(M x))` for a symmetric `f` differentiable at `λ(M x₀)`.
+* `Matrix.conjDiagonalSelfAdjoint`, `Matrix.eigenvalues₀_conjDiagonalSelfAdjoint`: the real-linear
+  map `μ ↦ U diag(μ) U*` into the Hermitian matrices, whose sorted eigenvalues for a unitary `U`
+  are a rearrangement of `μ`.
 * `Matrix.differentiableAt_spectralFunction_iff`: Lewis's differentiability criterion on Hermitian
   matrices.
 * `Matrix.fderiv_spectralFunction_selfAdjoint_apply`: the gradient formula on Hermitian matrices.
@@ -268,6 +271,42 @@ open scoped Matrix.Norms.Frobenius
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
 
+/-- The real-linear map `μ ↦ U diag(μ) U*` from `ℝⁿ` to the Hermitian matrices, for a square
+matrix `U`. The entries of `μ` are transported to the index type `ι` along the equivalence used by
+`Matrix.IsHermitian.eigenvalues`. For a unitary `U` the sorted eigenvalues of `U diag(μ) U*` are a
+rearrangement of `μ` (`Matrix.eigenvalues₀_conjDiagonalSelfAdjoint`), so a symmetric function `f`
+equals its spectral function composed with this map. -/
+@[expose] def conjDiagonalSelfAdjoint (U : Matrix ι ι 𝕜) :
+    (Fin (Fintype.card ι) → ℝ) →ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) where
+  toFun μ := ⟨U * diagonal (fun k ↦
+      (μ ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜)) * star U,
+    (isHermitian_diagonal_of_self_adjoint _
+      (funext fun _ ↦ RCLike.conj_ofReal _)).isSelfAdjoint.conjugate U⟩
+  map_add' μ ν := Subtype.ext <| by
+    rw [Submodule.coe_add, ← Matrix.add_mul, ← Matrix.mul_add, diagonal_add]
+    simp only [Pi.add_apply, RCLike.ofReal_add]
+  map_smul' c μ := Subtype.ext <| by
+    rw [RingHom.id_apply, Submodule.coe_smul, ← Matrix.smul_mul, ← Matrix.mul_smul,
+      ← diagonal_smul,
+      show (c • fun k ↦ (μ ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜)) =
+        fun k ↦ ((c • μ) ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜) from
+        funext fun k ↦ by simp [RCLike.real_smul_eq_coe_mul]]
+
+/-- The matrix `U diag(μ) U*` underlying `Matrix.conjDiagonalSelfAdjoint U μ`. -/
+theorem coe_conjDiagonalSelfAdjoint_apply (U : Matrix ι ι 𝕜) (μ : Fin (Fintype.card ι) → ℝ) :
+    (conjDiagonalSelfAdjoint U μ : Matrix ι ι 𝕜) = U * diagonal (fun k ↦
+      (μ ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜)) * star U :=
+  rfl
+
+/-- **The sorted eigenvalues of `U diag(μ) U*`** for a unitary `U` are the entries of `μ`, sorted
+decreasingly by `Tuple.sortDesc`. -/
+theorem eigenvalues₀_conjDiagonalSelfAdjoint {U : Matrix ι ι 𝕜} (hU : U ∈ unitaryGroup ι 𝕜)
+    (μ : Fin (Fintype.card ι) → ℝ) :
+    (conjDiagonalSelfAdjoint U μ).property.isHermitian.eigenvalues₀ = μ ∘ Tuple.sortDesc μ :=
+  (IsHermitian.eigenvalues₀_mul_mul_star
+    (isHermitian_diagonal_of_self_adjoint _ (funext fun _ ↦ RCLike.conj_ofReal _)) hU _).trans
+    (IsHermitian.eigenvalues₀_diagonal_eq_comp_sortDesc μ _)
+
 /-- **Lewis's theorem**, differentiability (Lewis 1996, Theorem 1.1). For a symmetric function `f`
 on `ℝⁿ`, the spectral function `A ↦ f(λ(A))` on the real vector space of Hermitian matrices is
 differentiable at `A` if and only if `f` is differentiable at the sorted eigenvalue vector
@@ -281,33 +320,20 @@ theorem differentiableAt_spectralFunction_iff
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · -- `f` is the spectral function along the linear map `μ ↦ U diag(μ) U*`, for a unitary `U`
     -- diagonalizing `A`.
-    set e := Fintype.equivOfCardEq (α := Fin (Fintype.card ι)) (β := ι) (Fintype.card_fin _)
     set U : Matrix ι ι 𝕜 := (A.property.isHermitian.eigenvectorUnitary : Matrix ι ι 𝕜)
-    have hD (μ : Fin (Fintype.card ι) → ℝ) :
-        (diagonal fun k ↦ (μ (e.symm k) : 𝕜)).IsHermitian :=
-      isHermitian_diagonal_of_self_adjoint _ (funext fun _ ↦ RCLike.conj_ofReal _)
-    let Φ : (Fin (Fintype.card ι) → ℝ) →ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) :=
-      { toFun μ := ⟨U * diagonal (fun k ↦ (μ (e.symm k) : 𝕜)) * star U,
-          (hD μ).isSelfAdjoint.conjugate U⟩
-        map_add' μ ν := Subtype.ext <| by
-          rw [Submodule.coe_add, ← Matrix.add_mul, ← Matrix.mul_add, diagonal_add]
-          simp only [Pi.add_apply, RCLike.ofReal_add]
-        map_smul' c μ := Subtype.ext <| by
-          rw [RingHom.id_apply, Submodule.coe_smul, ← Matrix.smul_mul, ← Matrix.mul_smul,
-            ← diagonal_smul]
-          rw [show (c • fun k ↦ (μ (e.symm k) : 𝕜)) = fun k ↦ ((c • μ) (e.symm k) : 𝕜) from
-            funext fun k ↦ by simp [RCLike.real_smul_eq_coe_mul]] }
+    set Φ := conjDiagonalSelfAdjoint U
     have hΦ (μ : Fin (Fintype.card ι) → ℝ) : f (Φ μ).property.isHermitian.eigenvalues₀ = f μ := by
-      have hU : U ∈ unitaryGroup ι 𝕜 := A.property.isHermitian.eigenvectorUnitary.property
-      rw [(hD μ).eigenvalues₀_mul_mul_star hU (Φ μ).property.isHermitian,
-        IsHermitian.eigenvalues₀_diagonal_eq_comp_sortDesc, hf]
+      rw [eigenvalues₀_conjDiagonalSelfAdjoint
+        A.property.isHermitian.eigenvectorUnitary.property, hf]
     have hΦA : Φ A.property.isHermitian.eigenvalues₀ = A := by
       refine Subtype.ext ?_
       conv_rhs => rw [A.property.isHermitian.spectral_theorem]
-      have he (k : ι) : A.property.isHermitian.eigenvalues₀ (e.symm k) =
+      have he (k : ι) : A.property.isHermitian.eigenvalues₀
+          ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) =
           A.property.isHermitian.eigenvalues k := by
         rw [← A.property.isHermitian.eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]
-      simp [Φ, U, Unitary.conjStarAlgAut_apply, he, Function.comp_def]
+      simp [Φ, U, coe_conjDiagonalSelfAdjoint_apply, Unitary.conjStarAlgAut_apply, he,
+        Function.comp_def]
     have hc := (hΦA ▸ h).comp _ (LinearMap.toContinuousLinearMap Φ).differentiableAt
     simpa [Function.comp_def, hΦ] using hc
   · obtain ⟨u, hu⟩ := A.property.isHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul

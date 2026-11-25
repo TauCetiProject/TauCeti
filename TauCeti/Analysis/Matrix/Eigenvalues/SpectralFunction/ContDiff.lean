@@ -208,24 +208,11 @@ theorem contDiffOn_spectralFunction_iff
       ContDiffOn ℝ 1 f Ω := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · -- `f` is the spectral function along the linear map `μ ↦ diag(μ)`.
-    set e := Fintype.equivOfCardEq (α := Fin (Fintype.card ι)) (β := ι) (Fintype.card_fin _)
-    have hD (μ : Fin (Fintype.card ι) → ℝ) :
-        (diagonal fun k ↦ (μ (e.symm k) : 𝕜)).IsHermitian :=
-      isHermitian_diagonal_of_self_adjoint _ (funext fun _ ↦ RCLike.conj_ofReal _)
-    let Φ : (Fin (Fintype.card ι) → ℝ) →ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) :=
-      { toFun μ := ⟨diagonal fun k ↦ (μ (e.symm k) : 𝕜), (hD μ).isSelfAdjoint⟩
-        map_add' μ ν := Subtype.ext <| by
-          simp only [Submodule.coe_add, diagonal_add, Pi.add_apply, RCLike.ofReal_add]
-        map_smul' c μ := Subtype.ext <| by
-          simp only [RingHom.id_apply, Submodule.coe_smul, ← diagonal_smul, Pi.smul_apply,
-            smul_eq_mul, RCLike.ofReal_mul]
-          congr 1
-          funext k
-          simp [RCLike.real_smul_eq_coe_mul] }
+    set Φ := conjDiagonalSelfAdjoint (1 : Matrix ι ι 𝕜)
     -- The sorted eigenvalues of `diag(μ)` are a rearrangement of `μ`.
     have hΦ (μ : Fin (Fintype.card ι) → ℝ) :
         (Φ μ).property.isHermitian.eigenvalues₀ = μ ∘ Tuple.sortDesc μ :=
-      IsHermitian.eigenvalues₀_diagonal_eq_comp_sortDesc μ _
+      eigenvalues₀_conjDiagonalSelfAdjoint (one_mem _) μ
     have hmaps : MapsTo Φ Ω
         {B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) | B.property.isHermitian.eigenvalues₀ ∈ Ω} :=
       fun μ hμ ↦ by
