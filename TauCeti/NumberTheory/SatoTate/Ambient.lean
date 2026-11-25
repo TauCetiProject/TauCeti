@@ -69,8 +69,8 @@ those coordinates.
 * `TauCeti.SatoTate.det_eq_one_of_mem_USp`: elements of `USp(d)` have determinant one for even `d`.
 * `TauCeti.SatoTate.transpose_mem_USp_iff`, `TauCeti.SatoTate.map_star_mem_USp_iff`: `USp(d)` is
   closed under transposition (for even `d`) and entrywise complex conjugation.
-* `TauCeti.SatoTate.transpose_mul_symplecticForm_two_mul`: `Mᵀ Ω_2 M = det M • Ω_2` for every
-  `2 × 2` matrix `M`.
+* `TauCeti.SatoTate.transpose_mul_symplecticForm_two_mul_eq_det_smul`: `Mᵀ Ω_2 M = det M • Ω_2`
+  for every `2 × 2` matrix `M`.
 * `TauCeti.SatoTate.mem_USp_two_iff`: `USp(2)` is the determinant-one subgroup of `U(2)`.
 * `TauCeti.SatoTate.map_haarProb_uSpTwoEquivSU2`: `USp(2) ≃ₜ* SU(2)` carries Haar measure to Haar
   measure.
@@ -241,7 +241,7 @@ theorem map_star_mem_USp_iff {x : U d} : UnitaryGroup.map_star x ∈ USp d ↔ x
 /-- For every `2 × 2` matrix `M`, `Mᵀ Ω_2 M = det M • Ω_2`. This is
 `TauCeti.mul_JFin_one_mul_transpose_eq_det_smul` applied to `Mᵀ`, read through
 `Ω_{1+1} = −JFin 1 ℂ`. -/
-theorem transpose_mul_symplecticForm_two_mul (M : Matrix (Fin 2) (Fin 2) ℂ) :
+theorem transpose_mul_symplecticForm_two_mul_eq_det_smul (M : Matrix (Fin 2) (Fin 2) ℂ) :
     Mᵀ * symplecticForm 2 * M = M.det • symplecticForm 2 := by
   have h := mul_JFin_one_mul_transpose_eq_det_smul Mᵀ
   rw [transpose_transpose, det_transpose] at h
@@ -251,9 +251,9 @@ theorem transpose_mul_symplecticForm_two_mul (M : Matrix (Fin 2) (Fin 2) ℂ) :
   rw [symplecticForm_eq_neg_JFin, Matrix.mul_neg, Matrix.neg_mul, h, smul_neg]
 
 /-- `USp(2)` is the determinant-one subgroup of `U(2)`, since `gᵀ Ω_2 g = det g • Ω_2`
-(`transpose_mul_symplecticForm_two_mul`). -/
+(`transpose_mul_symplecticForm_two_mul_eq_det_smul`). -/
 theorem mem_USp_two_iff {x : U 2} : x ∈ USp 2 ↔ (x : Matrix (Fin 2) (Fin 2) ℂ).det = 1 := by
-  rw [mem_USp_iff, transpose_mul_symplecticForm_two_mul]
+  rw [mem_USp_iff, transpose_mul_symplecticForm_two_mul_eq_det_smul]
   constructor
   · intro h
     simpa [symplecticForm_apply] using congrFun (congrFun h 0) 1
