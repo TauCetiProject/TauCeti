@@ -13,7 +13,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
-import TauCeti.Topology.Algebra.Module.SmulRight
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # First-order operators through a connection
@@ -109,7 +109,8 @@ map `A_x : Hom(T_xM, V_x) → W_x`, `A_x(L) = ∑ₖ σ(P)(eᵏ)(L eₖ)`, contr
 one-form `L` with the principal symbol `σ(P)` of an operator `P : Γ(V) → Γ(W)` of order at most
 one, for a basis `(eₖ)` of `T_xM` with dual basis `(eᵏ)`. It does not depend on the basis: it is
 the unique linear map with `A_x(ξ ⊗ v) = σ(P)(ξ) v` (`TauCeti.eq_sectionPrincipalCoefficient_iff`),
-and for any connection `∇` on `V`, `P σ = A(∇σ) + B σ` for a bundle map `B`
+and for any smooth connection `∇` on `V` over a boundaryless manifold, `P σ = A(∇σ) + B σ` for a
+bundle map `B`
 (`CovariantDerivative.apply_eq_sectionPrincipalCoefficient_add_zerothCoefficient`). -/
 def sectionPrincipalCoefficient (hx : I.IsInteriorPoint x)
     (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 1) :
@@ -146,9 +147,7 @@ theorem sectionPrincipalCoefficient_smulRight (hx : I.IsInteriorPoint x)
     b (fun ζ ↦ ?_) ξ v]
   · simp [sectionPrincipalCoefficient, b]
   · ext w
-    simp only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply,
-      LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply, smul_eq_mul]
-    simp_rw [mul_comm (ζ _), ← smul_eq_mul, ← map_smul, ← map_sum, b.sum_repr]
+    simpa using LinearMap.congr_fun (b.sum_dual_apply_smul_coord ζ.toLinearMap) w
 
 /-- **Characterization of the leading coefficient.** It is the unique linear map on
 `Hom(T_xM, V_x)` sending each rank-one map `ξ ⊗ v` to `σ(P)(ξ) v`. -/
@@ -181,11 +180,9 @@ theorem sectionPrincipalCoefficient_apply_eq_sum (hx : I.IsInteriorPoint x)
 
 /-! ### Smoothness of the leading coefficient -/
 
-/-- **The leading coefficient is a smooth bundle map.** On a boundaryless manifold, the leading
-coefficient of an operator of order at most one sends a smooth `V`-valued one-form `θ` to the
-smooth section `x ↦ A_x(θ x)` of `W`. Near each point it is the sum of the commutators
-`[P, u_j] (θ(X_j))`, for cut-off coordinate functions `u_j` and the coordinate frame `X_j` of a
-chart, which are dual bases there. -/
+/-- **The leading coefficient sends smooth one-forms to smooth sections.** On a boundaryless
+manifold, the leading coefficient of an operator of order at most one sends a smooth `V`-valued
+one-form `θ` to the smooth section `x ↦ A_x(θ x)` of `W`. -/
 theorem contMDiff_sectionPrincipalCoefficient [BoundarylessManifold I M]
     (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 1)
     {θ : Π x : M, TangentSpace I x →L[ℝ] V x}
@@ -194,6 +191,8 @@ theorem contMDiff_sectionPrincipalCoefficient [BoundarylessManifold I M]
     ContMDiff I (I.prod 𝓘(ℝ, F')) ∞
       (fun x ↦ TotalSpace.mk' F' x
         (sectionPrincipalCoefficient I BoundarylessManifold.isInteriorPoint P (θ x))) := by
+  -- Near each point, `A(θ)` is the sum of the commutators `[P, u_j] (θ(X_j))`, for cut-off
+  -- coordinate functions `u_j` and the coordinate frame `X_j` of a chart, dual bases there.
   intro x₀
   obtain ⟨u, X, hu⟩ := Manifold.exists_eventually_sum_smul_mvfderiv_eq (I := I) x₀
   -- The smooth sections `θ(X_j)` of `V`, and the sum of the commutators of `P` applied to them.
@@ -233,16 +232,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [FiberBundle F' W] [VectorBundle ℝ F' W]
   (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [BoundarylessManifold I M]
-  [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] [ContMDiffCovariantDerivative cov ∞] in
-/-- The Leibniz rule `∇(f σ) = f ∇σ + df ⊗ σ` for a smooth function `f` and a smooth section
-`σ`. -/
-private theorem apply_smul_section (f : C^∞⟮I, M; ℝ⟯) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
-    cov ⇑(f • σ) x = f x • cov σ x + (mvfderiv I f x).smulRight (σ x) := by
-  have hfun : ⇑(f • σ) = (⇑f : M → ℝ) • ⇑σ := funext fun y ↦ ContMDiffSection.smul_apply f σ y
-  rw [hfun, cov.isCovariantDerivativeOnUniv.leibniz σ.mdifferentiableAt
-    (f.contMDiff.mdifferentiableAt (by simp))]
-
 /-- **The principal part of a first-order operator relative to a connection**: the operator
 `σ ↦ A(∇σ)` on smooth sections, where `A` is the leading coefficient
 `TauCeti.sectionPrincipalCoefficient` of an operator `P : Γ(V) → Γ(W)` of order at most one. Its
@@ -275,7 +264,7 @@ theorem principalPart_smul_apply
     (f : C^∞⟮I, M; ℝ⟯) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
     cov.principalPart P (f • σ) x = f x • cov.principalPart P σ x +
       sectionPrincipalSymbol I BoundarylessManifold.isInteriorPoint P (mvfderiv I f x) (σ x) := by
-  simp [apply_smul_section]
+  simp [cov.apply_smul]
 
 /-- **A first-order operator minus its principal part is a bundle map.** For an operator `P` of
 order at most one and a smooth connection `∇`, the operator `σ ↦ P σ - A(∇σ)` is linear over the
@@ -361,7 +350,7 @@ private theorem apply_smul_sub_of_forall_apply_eq_add {Q : Cₛ^∞⟮I; F, V⟯
     (A : ∀ x, (TangentSpace I x →L[ℝ] V x) →ₗ[ℝ] W x) (B : ∀ x, V x →ₗ[ℝ] W x)
     (h : ∀ σ x, Q σ x = A x (cov σ x) + B x (σ x)) (f : C^∞⟮I, M; ℝ⟯) (σ : Cₛ^∞⟮I; F, V⟯)
     (x : M) : Q (f • σ) x - f x • Q σ x = A x ((mvfderiv I f x).smulRight (σ x)) := by
-  rw [h, h, apply_smul_section, ContMDiffSection.smul_apply]
+  rw [h, h, cov.apply_smul, ContMDiffSection.smul_apply]
   simp only [map_add, map_smul]
   module
 
