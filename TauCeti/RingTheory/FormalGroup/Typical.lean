@@ -129,8 +129,7 @@ degrees on a `p`-typical law is `p`-typical. -/
 theorem IsPTypical.sum_monomialCurve_pow {F : FormalGroup R} [F.IsComm] {p : ℕ}
     (hF : F.IsPTypical p) (hp : p.Prime) (s : Finset ℕ) (t : ℕ → R) :
     (∑ j ∈ s, F.monomialCurve (p ^ j) (pow_ne_zero j hp.ne_zero) (t j)).IsPTypical p :=
-  (mem_pTypicalCurveSubgroup F p _).mp <| AddSubgroup.sum_mem _ fun j _ ↦
-    (mem_pTypicalCurveSubgroup F p _).mpr (hF.monomialCurve_pow hp j _)
+  Curve.IsPTypical.sum s fun j _ ↦ hF.monomialCurve_pow hp j _
 
 /-- Base change along a ring homomorphism preserves `p`-typicality of formal group laws. -/
 theorem IsPTypical.map {F : FormalGroup R} [F.IsComm] {p : ℕ} (hF : F.IsPTypical p)

@@ -142,17 +142,9 @@ theorem mem_criticalPoints_orbitMap_coadjointRepresentation_apply_iff_mem [Finit
         𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
         (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X) ↔
       q ∈ t := by
-  classical
-  have := Fintype.ofFinite ι
   rw [Module.Dual.mem_criticalPoints_orbitMap_coadjointRepresentation_apply_iff_lie_eq_zero hB
     hsep hq]
-  refine ⟨fun h ↦ ?_, fun h ↦ hD.lie_eq_zero X.property h⟩
-  -- The stabilizer of `B X` is `t`, since no root vanishes at `X`.
-  have hmem : q ∈ (lieAnnihilator ℝ _ (B X)).toSubmodule := by
-    rw [LieSubalgebra.mem_toSubmodule, hB.mem_lieAnnihilator_iff, ← lie_skew, h, neg_zero,
-      map_zero]
-  rw [hD.lieAnnihilator_eq hB hsep X] at hmem
-  simpa [hX] using hmem
+  exact ⟨hD.mem_of_lie_eq_zero hB hsep hX, hD.lie_eq_zero X.property⟩
 
 /-- **The height of a regular torus element is a Morse function.** In a root-plane decomposition of
 `𝔤` for a separating invariant form `B`, let `X ∈ t` be regular, `α_i(X) ≠ 0` for every root.

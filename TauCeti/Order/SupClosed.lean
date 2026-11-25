@@ -10,14 +10,17 @@ public import Mathlib.Order.CompleteBooleanAlgebra
 
 import Mathlib.Data.Nat.Pairing
 import Mathlib.Data.Finset.Lattice.Prod
+import Mathlib.Order.CompleteLattice.Finset
 
 /-!
 # Finite and disjoint joins of intersection-stable families
 
 Finite joins of an inf-closed family are inf-closed, as are countable disjoint joins in a
 frame. A property satisfying binary Mayer–Vietoris gluing extends from an inf-closed family
-to its finite joins, provided it also holds at bottom. These are the lattice ingredients
-of Mayer–Vietoris induction on open sets.
+to its finite joins, provided it also holds at bottom. In a frame, a property that holds at bottom
+and passes to joins of two disjoint elements and to joins of monotone families holds at the join of
+every pairwise disjoint family on which it holds. These are the lattice ingredients of
+Mayer–Vietoris induction on open sets.
 -/
 
 public section
@@ -51,6 +54,25 @@ theorem finset_sup_of_inf_closed {α : Type*} [DistribLattice α] [OrderBot α]
     have hs' : ∀ W ∈ s, W ∈ B := fun W hW ↦ hs W (Finset.mem_insert_of_mem hW)
     simpa only [Finset.sup_insert, id_eq] using
       hsup V (s.sup id) (hbase V hV) (ih hs') (hbase_fin s hs' V hV)
+
+/-- A property of the elements of a frame that holds at bottom, passes to the join of two disjoint
+elements and passes to the join of a monotone family indexed by the finite subsets of `ι` holds at
+the join of every pairwise disjoint family indexed by `ι` on which it holds: that join is the
+directed join of the finite partial joins. -/
+theorem iSup_of_pairwise_disjoint {α ι : Type*} [Order.Frame α] (P : α → Prop) (hbot : P ⊥)
+    (hsup : ∀ a b, Disjoint a b → P a → P b → P (a ⊔ b))
+    (hdir : ∀ t : Finset ι → α, Monotone t → (∀ F, P (t F)) → P (⨆ F, t F)) {s : ι → α}
+    (hs : Pairwise fun i j ↦ Disjoint (s i) (s j)) (h : ∀ i, P (s i)) : P (⨆ i, s i) := by
+  classical
+  rw [iSup_eq_iSup_finset]
+  refine hdir _ (fun _ _ hFG ↦ biSup_mono fun _ hi ↦ hFG hi) fun F ↦ ?_
+  induction F using Finset.induction_on with
+  | empty => simpa using hbot
+  | insert a F ha ih =>
+    rw [Finset.iSup_insert]
+    refine hsup _ _ ?_ (h a) ih
+    simp only [disjoint_iSup_iff]
+    exact fun i hi ↦ hs fun hai ↦ ha (hai ▸ hi)
 
 end TauCeti
 
