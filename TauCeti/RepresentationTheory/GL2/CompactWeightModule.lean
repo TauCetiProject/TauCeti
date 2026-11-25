@@ -356,8 +356,7 @@ theorem smul_weightVector_mem
   set u := ⁅compactCartanH, v⁆ - (ℓ : ℂ) • v with hu_def
   have hu : u ∈ N := sub_mem (N.lie_mem hv) (N.smul_mem _ hv)
   have hcoord (j : ℤ) : equivFinsupp k μ u j = (j - ℓ) * equivFinsupp k μ v j := by
-    rw [hu_def, map_sub, map_smul, Finsupp.sub_apply, Finsupp.smul_apply,
-      equivFinsupp_lie_compactCartanH_apply, smul_eq_mul, sub_mul]
+    simp [hu_def, sub_mul]
   have hsupp : (equivFinsupp k μ u).support = (equivFinsupp k μ v).support.erase ℓ := by
     ext j
     simp only [Finsupp.mem_support_iff, Finset.mem_erase, hcoord, ne_eq, mul_eq_zero, not_or,
