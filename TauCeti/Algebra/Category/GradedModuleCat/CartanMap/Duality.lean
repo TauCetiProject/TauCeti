@@ -175,16 +175,8 @@ private theorem finite_of_smulGradedDimension_ne_zero
   have hmem (i : I) : i ∈ (bS.repr (LaurentK0.of.{uA} _ reg)).support := by
     rw [Finsupp.mem_support_iff]
     intro hi
-    have hei : e i ≠ 0 := by
-      intro h0
-      apply hself i
-      ext p
-      rw [GradedModuleCat.coeff_smulGradedDimension, h0, AddMonoidAlgebra.coeff_zero,
-        Finsupp.zero_apply, Nat.cast_eq_zero, Module.finrank_zero_iff]
-      refine ⟨fun x y => Subtype.ext ?_⟩
-      obtain ⟨_, -, hx⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp x.property
-      obtain ⟨_, -, hy⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp y.property
-      rw [← hx, ← hy, zero_smul, zero_smul]
+    have hei : e i ≠ 0 :=
+      fun h0 => hself i (by rw [h0, GradedModuleCat.smulGradedDimension_zero])
     have hcoord := gradedIdempotentCoordinate_eq_mul_gradedSimpleClassBasisOfNeZero_repr
       S he he₀ hne hself hS (LaurentK0.of.{uA} _ reg) i
     rw [gradedIdempotentCoordinate_of, hi, mul_zero] at hcoord

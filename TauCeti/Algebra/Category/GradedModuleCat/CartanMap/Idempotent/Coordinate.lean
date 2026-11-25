@@ -233,8 +233,7 @@ theorem smulGradedDimension_regular_ne_zero {f : A} (hf : IsIdempotentElem f) (h
     (GradedModuleCat.regular (𝒜 := 𝒜)).smulGradedDimension f ≠ 0 := by
   have hf_mem : f ∈ f • (GradedModuleCat.regular (𝒜 := 𝒜)).grading.piece 0 :=
     (Submodule.mem_smul_pointwise_iff_exists _ _ _).mpr
-      ⟨f, by simpa only [GradedModuleCat.regular, InternalGrading.ofDecomposition_piece] using hf₀,
-        hf.eq⟩
+      ⟨f, by rw [GradedModuleCat.regular_grading_piece]; exact hf₀, hf.eq⟩
   have hnt : Nontrivial ↥(f • (GradedModuleCat.regular (𝒜 := 𝒜)).grading.piece 0) :=
     ⟨⟨⟨f, hf_mem⟩, 0, fun h => hf_ne (congrArg Subtype.val h)⟩⟩
   intro hzero

@@ -105,23 +105,18 @@ theorem IsLinear.smulGradedDimension_mul_repr_finiteProjectiveTerm (hr : r.IsLin
     N.smulGradedDimension (e i) *
         bP.repr (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n)) i =
       C (Module.finrank k (Ext.{uA} M (N.shiftObj n) n) : ℤ) * T n := by
-  have hgen : (r.finiteProjectiveTerm n).obj.grading.IsGeneratedInDegree A (n : ℤ) :=
-    (isLinear_iff.mp hr) n
+  have hgen : (r.finiteProjectiveTerm n).obj.grading.IsGeneratedInDegree A (n : ℤ) := by
+    rw [finiteProjectiveTerm_obj]
+    exact (isLinear_iff.mp hr) n
   rw [smulGradedDimension_mul_repr_of_isGeneratedInDegree he he₀ bP hbP
     (r.finiteProjectiveTerm n) hgen N hconc i hne, finiteProjectiveTerm_obj]
   suffices Module.finrank k (r.termObj n ⟶ N.shiftObj n) =
       Module.finrank k (Ext.{uA} M (N.shiftObj n) n) by rw [this]
   cases n with
   | zero =>
-      let aug : (M ⟶ N.shiftObj 0) ≃ₗ[k] (r.termObj 0 ⟶ N.shiftObj 0) :=
-        LinearEquiv.ofBijective (Linear.leftComp k _ r.augmentation) ⟨
-          fun _ _ h ↦ (cancel_epi r.augmentation).mp h, fun f ↦ by
-            let c := ShortComplex.mk (r.differential 0) r.augmentation
-              r.differential_zero_comp_augmentation
-            have hc : c.Exact := (GradedModuleCat.exact_iff).mpr r.exact_d_π
-            exact hc.desc' f (hr.hom_eq_zero 1
-              (GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated hconc 0 1 (by omega))
-              (r.differential 0 ≫ f))⟩
+      let aug := r.augmentationLinearEquiv fun f ↦ hr.hom_eq_zero 1
+        (GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated hconc 0 1 (by omega))
+        (r.differential 0 ≫ f)
       exact (aug.symm.trans (Ext.linearEquiv₀ (R := k)).symm).finrank_eq
   | succ n =>
       exact (hr.extLinearEquivShiftObj hconc n).finrank_eq

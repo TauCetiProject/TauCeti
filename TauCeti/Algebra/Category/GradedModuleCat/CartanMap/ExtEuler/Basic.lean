@@ -244,22 +244,23 @@ theorem gradedProjectiveExtEuler_of_right
     (M : (gradedFiniteModules 𝒜).FullSubcategory) :
     gradedProjectiveExtEuler 𝒜 x (LaurentK0.of.{uA} _ M) =
       gradedProjectiveExtEulerTarget M.obj x := by
-  have hinv (r : LaurentPolynomial ℤ) :
-      invert ((LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom r) = r :=
-    involutive_invert (R := ℤ) r
+  have : RingHomCompTriple
+      (LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom
+      (LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom
+      (RingHom.id (LaurentPolynomial ℤ)) :=
+    ⟨RingHom.ext fun r ↦ involutive_invert (R := ℤ) r⟩
   let φ₁ : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
       →ₗ[LaurentPolynomial ℤ] LaurentPolynomial ℤ :=
-    { toFun := fun y ↦ invert (gradedProjectiveExtEuler 𝒜 y (LaurentK0.of.{uA} _ M))
-      map_add' := fun y z ↦ by rw [map_add, LinearMap.add_apply, map_add]
-      map_smul' := fun r y ↦ by
-        rw [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul, map_mul, hinv r,
-          RingHom.id_apply, smul_eq_mul] }
+    (LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom.toSemilinearMap.comp
+      ((gradedProjectiveExtEuler 𝒜).flip (LaurentK0.of.{uA} _ M))
+  have hφ (y) : φ₁ y = invert (gradedProjectiveExtEuler 𝒜 y (LaurentK0.of.{uA} _ M)) := by
+    rw [LinearMap.comp_apply, LinearMap.flip_apply]
+    rfl
   have hlin : φ₁ = gradedHomShiftCoordinate M.obj := LaurentK0.hom_ext _ fun P ↦ by
-    dsimp only [φ₁, LinearMap.coe_mk, AddHom.coe_mk]
-    rw [gradedProjectiveExtEuler_of_of, ← gradedProjectiveExtEulerTarget_of,
+    rw [hφ, gradedProjectiveExtEuler_of_of, ← gradedProjectiveExtEulerTarget_of,
       gradedProjectiveExtEulerTarget_apply, involutive_invert]
   have hx := LinearMap.congr_fun hlin x
-  dsimp only [φ₁, LinearMap.coe_mk, AddHom.coe_mk] at hx
+  rw [hφ] at hx
   rw [gradedProjectiveExtEulerTarget_apply, ← hx, involutive_invert]
 
 /-- **Pairing against `[Af]` is the idempotent coordinate of `f`**: for an idempotent `f` of degree

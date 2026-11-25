@@ -35,22 +35,30 @@ Without assuming a field, `Ext`, or finite-dimensionality of `A`:
   `IsMinimal.bettiPoincarePowerSeries_eq_of_finite`).
 
 Over a field `k` (with `A` possibly infinite-dimensional over `k`, such as `k[x]`), let `[Pᵢ]` be
-the basis of degree-zero idempotent projectives `[A eᵢ]` paired with degree-zero targets `Sᵢ` that
-are finite-dimensional over `k` and satisfy `gdim(eᵢ • Sⱼ) = 0` for `i ≠ j`. When `P` is minimal,
-differentials vanish on graded maps into `Sᵢ{j}`, so `Extⁿ(M, Sᵢ{j})` is isomorphic to
-`Pₙ ⟶ Sᵢ{j}`, whose `k`-dimension is the coefficient of `qʲ` in `dᵢ βⁿᵢ(q)` with
-`dᵢ = dim_k(eᵢ • (Sᵢ)₀)`. Hence:
+the basis of degree-zero idempotent projectives `[A eᵢ]`. For a single index `i` and a single
+finite-dimensional degree-zero target `N` satisfying `gdim(eⱼ • N) = 0` for every `j ≠ i`, the
+diagonal value `gdim(eᵢ • N) = dim_k(eᵢ • N₀)` is a constant Laurent polynomial, and:
 
-* `dᵢ` times the Betti Poincaré series is the bigraded Ext Poincaré power series of `M` against
-  `Sᵢ` (`IsMinimal.C_smulGradedDimension_mul_bettiPoincarePowerSeries`), and when `dᵢ = 1` for all
-  `i` the transposed Betti Poincaré matrix of minimal resolutions of `S` equals
-  `bigradedExtPoincarePowerSeriesMatrix`;
-* at each `Pᵢ` with `dᵢ ≠ 0`, the Betti Poincaré series of a minimal resolution has nonnegative
+* for a linear resolution with finitely generated terms (without minimality or `HasExt`), all
+  off-diagonal coefficients of the Betti Poincaré series at `Pᵢ` vanish whenever
+  `gdim(eᵢ • N) ≠ 0` (`IsLinear.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_ne`);
+* when `P` is minimal, differentials vanish on graded maps into `N{j}`, so `Extⁿ(M, N{j})` is
+  isomorphic to `Pₙ ⟶ N{j}`, whose `k`-dimension is the coefficient of `qʲ` in
+  `gdim(eᵢ • N) · βⁿᵢ(q)`. Consequently `gdim(eᵢ • N)` times the Betti Poincaré series at `Pᵢ` is
+  the bigraded Ext Poincaré power series of `M` against `N`
+  (`IsMinimal.C_smulGradedDimension_mul_bettiPoincarePowerSeries`);
+* when `P` is minimal and `gdim(eᵢ • N) ≠ 0`, the Betti Poincaré series at `Pᵢ` has nonnegative
   coefficients and, when `M` vanishes below degree `c` and resolution terms are bounded below,
-  vanishes strictly below `j = c + n`, giving `Bigraded.HasEulerPowerSeries` when `c = 0`;
+  vanishes strictly below `j = c + n`, giving `Bigraded.HasEulerPowerSeries` when `c = 0`.
+
+For the matrix and exhaustive linearity criteria, take an indexed family `S` of finite-dimensional
+degree-zero targets satisfying `gdim(eᵢ • Sⱼ) = 0` for `i ≠ j`:
+
+* when `gdim(eᵢ • Sᵢ) = 1` for all `i`, the transposed Betti Poincaré matrix of minimal
+  resolutions of `S` equals `bigradedExtPoincarePowerSeriesMatrix`;
 * over a nonnegatively graded algebra whose degree-zero piece `𝒜 0` is finite-dimensional over `k`,
-  a minimal resolution is linear if and only if its Betti Poincaré series against an exhaustive
-  degree-zero simple family are supported on the diagonal `j = n`
+  if `S` is an exhaustive degree-zero simple family with `gdim(eᵢ • Sᵢ) ≠ 0`, a minimal resolution
+  is linear if and only if its Betti Poincaré series are supported on the diagonal `j = n`
   (`IsMinimal.isLinear_iff_diagonal_bettiPoincarePowerSeries`).
 
 The resolution may be infinite: each coefficient of the series is a coordinate of the class of a
@@ -76,23 +84,27 @@ In the namespace `TauCeti.GradedProjectiveResolution`:
   `IsMinimal.bettiPoincarePowerSeries_eq_of_nonneg`, and
   `IsMinimal.bettiPoincarePowerSeries_shiftObj_eq`: unconditional minimal-resolution independence
   and shift laws via uniqueness of minimal resolutions.
+* `IsLinear.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_ne`: Ext-free off-diagonal vanishing
+  for a linear resolution with finitely generated terms against a single isolated target `N`.
 * `IsMinimal.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries`,
   `IsMinimal.C_smulGradedDimension_mul_bettiPoincarePowerSeries`, and
-  `IsMinimal.C_finrank_mul_eulerPowerSeries`: Betti–Ext comparisons without assuming `A` is
-  finite-dimensional over `k`.
+  `IsMinimal.C_finrank_mul_eulerPowerSeries`: scalar Betti–Ext comparisons against a single
+  isolated target `N` without assuming `A` is finite-dimensional over `k`.
 * `IsMinimal.coeff_coeff_bettiPoincarePowerSeries_nonneg`,
   `IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt_of_bddBelow`, and
   `IsMinimal.hasEulerPowerSeries_bettiPoincarePowerSeries_of_bddBelow`: nonnegativity,
-  lower-triangular vanishing, and `Bigraded.HasEulerPowerSeries` at `Pᵢ` with `dᵢ ≠ 0`.
+  lower-triangular vanishing, and `Bigraded.HasEulerPowerSeries` at `Pᵢ` detected by a target `N`
+  with `gdim(eᵢ • N) ≠ 0`.
 * `IsMinimal.isLinear_iff_diagonal_bettiPoincarePowerSeries`: diagonal-support characterization of
-  linear resolutions when `𝒜 0` is finite-dimensional over `k`.
+  linear resolutions against an exhaustive simple family `S` when `𝒜 0` is finite-dimensional over
+  `k`.
 
 In the namespace `TauCeti`:
 
 * `bettiPoincarePowerSeriesMatrix_eq` and `bettiPoincarePowerSeriesMatrix_eq_of_nonneg`:
   independence of the Betti Poincaré matrix from the chosen minimal resolutions.
 * `bettiPoincarePowerSeriesMatrix_transpose_eq_bigradedExtPoincarePowerSeriesMatrix`: transposed
-  Betti–Ext matrix identity when `dᵢ = 1`.
+  Betti–Ext matrix identity for a family `S` with `gdim(eᵢ • Sᵢ) = 1`.
 * `forall_isLinear_iff_diagonal_bettiPoincarePowerSeriesMatrix` and
   `forall_exists_isLinear_iff_diagonal_bettiPoincarePowerSeriesMatrix`: diagonal-support
   characterizations of linear resolutions for families.
@@ -106,10 +118,12 @@ In the namespace `TauCeti`:
 * P. Webb, *A Course in Finite Group Representation Theory*, Proposition 7.4.1, for the factor
   `dim_k End_A(Sᵢ)` in the pairing of projective covers with simples over a general field.
 
-The Betti–Ext comparison generalizes
-`TauCeti.GradedProjectiveResolution.IsLinear.smulGradedDimension_mul_repr_finiteProjectiveTerm` via
-`TauCeti.gradedProjectiveExtEulerTarget_eq_mul_invert_repr` and
-`TauCeti.coeff_invert_smulGradedDimension_mul_repr`, and the diagonal linearity criteria adapt
+The scalar Betti–Ext comparison and Ext-free linear off-diagonal vanishing go directly through the
+Hom-coordinate API in `TauCeti.Algebra.Category.GradedModuleCat.CartanMap.HomCoordinate`
+(`TauCeti.coeff_invert_smulGradedDimension_mul_repr` and
+`TauCeti.smulGradedDimension_mul_repr_of_isGeneratedInDegree`), where a single isolated target `N`
+suffices; an indexed family `S` is needed only for the matrix comparison and the exhaustive
+diagonal linearity criteria, which adapt
 `TauCeti.forall_isLinear_iff_diagonal_bigradedExtPoincarePowerSeriesMatrix` and its siblings in
 `TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.PowerSeries`.
 -/
@@ -575,10 +589,10 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
 namespace GradedProjectiveResolution
 
 include hbP in
-/-- For any linear resolution `r` (without assuming minimality, `HasExt`, finite-dimensionality of
-`A`, or a nonnegative algebra grading), all off-diagonal coefficients of
-`r.bettiPoincarePowerSeries bP i` vanish when there is a finite-dimensional degree-zero target `N`
-with `gdim(eⱼ • N) = 0` for `j ≠ i` and `gdim(eᵢ • N) ≠ 0`. -/
+/-- For a linear resolution `r` with finitely generated terms (without assuming minimality,
+`HasExt`, finite-dimensionality of `A`, or a nonnegative algebra grading), all off-diagonal
+coefficients of `r.bettiPoincarePowerSeries bP i` vanish when there is a finite-dimensional
+degree-zero target `N` with `gdim(eⱼ • N) = 0` for `j ≠ i` and `gdim(eᵢ • N) ≠ 0`. -/
 theorem IsLinear.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_ne
     {M : GradedModuleCat.{uA} 𝒜}
     {r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading}

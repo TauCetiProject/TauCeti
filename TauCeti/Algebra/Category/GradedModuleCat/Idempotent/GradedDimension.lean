@@ -179,6 +179,16 @@ theorem coeff_smulGradedDimension [Module.Finite k M] (p : ℤ) :
     (M.smulGradedDimension e).coeff p = Module.finrank k ↥(e • M.grading.piece p) :=
   coeff_gradedDimension _ p
 
+/-- Acting by `0` has vanishing graded dimension. -/
+@[simp]
+theorem smulGradedDimension_zero [Module.Finite k M] :
+    M.smulGradedDimension (0 : A) = 0 := by
+  ext p
+  have hbot : (0 : A) • M.grading.piece p = ⊥ := eq_bot_iff.mpr fun _ hx ↦ by
+    rcases (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx with ⟨_, _, rfl⟩
+    simp
+  simp [coeff_smulGradedDimension, hbot]
+
 /-- If a graded module is concentrated in degree zero, the graded dimension of `e • M` is
 constant. No idempotence assumption on `e` is needed. -/
 theorem smulGradedDimension_eq_C_of_concentrated [Module.Finite k M]

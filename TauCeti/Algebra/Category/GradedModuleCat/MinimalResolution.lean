@@ -92,22 +92,15 @@ theorem IsMinimal.differential_comp_eq_zero (hr : r.IsMinimal)
 positive-action-annihilated target. This also explains the degree-zero Ext computation. -/
 noncomputable def IsMinimal.augmentationLinearEquiv (hr : r.IsMinimal)
     (hN : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) = ⊥) :
-    (M ⟶ N) ≃ₗ[k] (r.termObj 0 ⟶ N) := by
-  refine LinearEquiv.ofBijective (Linear.leftComp k N r.augmentation) ⟨?_, ?_⟩
-  · intro f g hfg
-    exact (cancel_epi r.augmentation).mp hfg
-  · intro f
-    let S := ShortComplex.mk (r.differential 0) r.augmentation
-      r.differential_zero_comp_augmentation
-    have hS : S.Exact := (GradedModuleCat.exact_iff).mpr r.exact_d_π
-    exact hS.desc' f (hr.differential_comp_eq_zero hN 0 f)
+    (M ⟶ N) ≃ₗ[k] (r.termObj 0 ⟶ N) :=
+  r.augmentationLinearEquiv (hr.differential_comp_eq_zero hN 0)
 
 /-- The augmentation equivalence is precomposition with the original augmentation. -/
 @[simp]
 theorem IsMinimal.augmentationLinearEquiv_apply (hr : r.IsMinimal)
     (hN : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) = ⊥) (f : M ⟶ N) :
     hr.augmentationLinearEquiv hN f = r.augmentation ≫ f :=
-  (rfl)
+  r.augmentationLinearEquiv_apply (hr.differential_comp_eq_zero hN 0) f
 
 open GradedModuleCat in
 /-- Iterating minimal projective surjections along successive kernels gives a minimal resolution.
