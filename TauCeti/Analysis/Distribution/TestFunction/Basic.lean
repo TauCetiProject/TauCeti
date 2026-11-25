@@ -32,6 +32,7 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
 
 ## Main declarations
 
+* `TestFunction.monoCLM_eq_id`: extension by zero from `Ω` to itself is the identity.
 * `TestFunction.coe_monoCLM_of_le`: the inclusion `monoCLM` to a lower regularity and a larger
   open set does not change the underlying function.
 * `TestFunction.exists_monoCLM_eq_of_tsupport_subset`: a test function supported in a smaller
@@ -76,6 +77,11 @@ theorem toBoundedContinuousFunction_eq_zero (φ : 𝓓^{n}(Ω, F)) :
     (φ : E →ᵇ F) = 0 ↔ φ = 0 := by
   simpa only [map_zero, toBoundedContinuousFunctionCLM_apply] using
     ((injective_toBoundedContinuousFunctionCLM ℝ).eq_iff (a := φ) (b := 0))
+
+/-- Extension by zero from `Ω` to itself is the identity. -/
+@[simp]
+theorem monoCLM_eq_id : (monoCLM ℝ : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) = ContinuousLinearMap.id ℝ _ :=
+  ContinuousLinearMap.ext fun φ ↦ TestFunction.ext fun x ↦ by simp
 
 /-- For `n₂ ≤ n₁` and `Ω₁ ≤ Ω₂`, the inclusion `monoCLM` of test functions of class `C^{n₁}` on
 `Ω₁` into those of class `C^{n₂}` on `Ω₂` does not change the underlying function. -/

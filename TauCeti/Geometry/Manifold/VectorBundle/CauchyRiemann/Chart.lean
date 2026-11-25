@@ -54,6 +54,9 @@ bounded operator between Sobolev spaces of sections, whose chart data are
   chart `i`, so it does not depend on the basis used to define it.
 * `TauCeti.FiniteBundleAtlas.complexAntilinearPartL_fderiv_coordChangeL_add_chartZeroOrder`: the
   zeroth-order terms of two charts on their overlap.
+* `TauCeti.FiniteBundleAtlas.exists_norm_complexAntilinearPartL_fderiv_coord_le`: a `C¹`
+  section in the kernel of `D` satisfies a Cauchy–Riemann inequality `‖\bar∂ sᵢ‖ ≤ C ‖sᵢ‖` in
+  each chart.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_chartZeroOrder`,
   `TauCeti.FiniteBundleAtlas.exists_norm_chartZeroOrder_apply_le`: smoothness and boundedness of
   the zeroth-order term of a smooth operator.
@@ -149,6 +152,24 @@ theorem contDiffOn_chartZeroOrder (hD : IsRealCauchyRiemannOperator F j D) {u : 
   · intro x hx
     simp only [hom_trivializationAt_baseSet, TangentBundle.trivializationAt_baseSet]
     exact ⟨hx.1, hx.2.1⟩
+
+/-- **Smoothness of the zeroth-order term near the chart image.** If a real Cauchy–Riemann
+operator is `C^n` on `M`, its zeroth-order term in chart `i` is `C^n` on the open set of points of
+the chart target lying over the base set of the trivialization of chart `i`, which contains the
+chart image. -/
+theorem contDiffOn_chartZeroOrder_of_univ (hD : IsRealCauchyRiemannOperator F j D)
+    (hDs : ContMDiffCovariantDerivativeOn F n D univ) (i : Fin A.n) :
+    ContDiffOn ℝ n (A.chartZeroOrder D i)
+      ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) := by
+  simpa only [inter_univ] using A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i
+
+/-- The zeroth-order term in chart `i` of a real Cauchy–Riemann operator which is `C^n` on `M` is
+`C^n` on the chart image. -/
+theorem contDiffOn_chartZeroOrder_image (hD : IsRealCauchyRiemannOperator F j D)
+    (hDs : ContMDiffCovariantDerivativeOn F n D univ) (i : Fin A.n) :
+    ContDiffOn ℝ n (A.chartZeroOrder D i) (A.image i) :=
+  (A.contDiffOn_chartZeroOrder_of_univ hD hDs i).mono
+    (A.image_subset_target_inter_preimage_baseSet i)
 
 /-- **Boundedness of the zeroth-order term.** The zeroth-order term in chart `i` of a real
 Cauchy–Riemann operator which is `C^n` on `M` is bounded on the closure of the image of chart `i`,
@@ -247,6 +268,29 @@ theorem complexAntilinearPartL_fderiv_coordChangeL_add_chartZeroOrder
     ← A.coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder hD hz'
       (Manifold.mdifferentiableAt_symm_of_mem_baseSet v hx),
     A.coord_tangentHom_eq_coordChange _ hz, A.chartZeroOrder_apply_eq_coord_tangentHom hD hτ]
+
+/-- **A section in the kernel solves a Cauchy–Riemann inequality in each chart.** Let `D` be a real
+Cauchy–Riemann operator of class `C^n` on a complex vector bundle `V` over a complex manifold. In
+chart `i` of a finite bundle atlas, the reading `sᵢ` of a `C¹` section `s` with `D s = 0`
+satisfies `‖\bar∂ sᵢ‖ ≤ C ‖sᵢ‖` on the chart image, where `\bar∂ sᵢ` is the complex antilinear
+part of the derivative and `C ≥ 0` bounds the zeroth-order term of `D` in that chart: there
+`\bar∂ sᵢ = -Zᵢ sᵢ` by the chart formula. -/
+theorem exists_norm_complexAntilinearPartL_fderiv_coord_le [FiniteDimensional ℝ E] [T2Space M]
+    [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] {n : ℕ∞ω} [ENat.LEInfty n]
+    (hD : IsRealCauchyRiemannOperator F (ofComplexManifold E M) D)
+    (hDs : ContMDiffCovariantDerivativeOn F n D univ) (i : Fin A.n) {s : Π x, V x}
+    (hs : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) 1 fun x ↦ TotalSpace.mk' F x (s x))
+    (hs0 : D s = 0) :
+    ∃ C, 0 ≤ C ∧ ∀ y ∈ A.image i,
+      ‖complexAntilinearPartL (fderiv ℝ (A.coord i s) y)‖ ≤ C * ‖A.coord i s y‖ := by
+  obtain ⟨C, hC⟩ := A.exists_norm_chartZeroOrder_apply_le hD hDs i
+  refine ⟨max C 0, le_max_right _ _, fun y hy ↦ ?_⟩
+  have h := A.coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder hD hy
+    ((hs _).mdifferentiableAt one_ne_zero)
+  -- The reading of the one-form `D s = 0` is zero.
+  rw [hs0, A.tangentHom.coord_zero i (by rwa [image_tangentHom])] at h
+  rw [eq_neg_of_add_eq_zero_left h.symm, norm_neg]
+  exact (hC y (subset_closure hy) _).trans (by gcongr; exact le_max_left _ _)
 
 end Complex
 

@@ -96,6 +96,20 @@ theorem riemannianVolumeForm_neg (o : Manifold.Orientation I M (Fin m)) :
   let := (-o).fact_finrank_tangentSpace x
   simp [riemannianVolumeForm_apply, _root_.Orientation.volumeForm_neg_orientation]
 
+open scoped Classical in
+/-- The volume form on a tangent basis `b` is `±√(det G)` for the Gram matrix `G` of `b`, with
+sign `+` exactly when `b` is positively oriented. -/
+theorem riemannianVolumeForm_apply_basis (o : Manifold.Orientation I M (Fin m)) (x : M)
+    (b : Module.Basis (Fin m) ℝ (TangentSpace I x)) :
+    riemannianVolumeForm o x b =
+      if b.orientation = o.orientationAt x then √(Matrix.gram ℝ b).det
+        else -√(Matrix.gram ℝ b).det := by
+  let := o.fact_finrank_tangentSpace x
+  rw [riemannianVolumeForm_apply]
+  split_ifs with hb
+  · exact (o.orientationAt x).volumeForm_apply_eq_sqrt_det_gram b hb
+  · exact (o.orientationAt x).volumeForm_apply_eq_neg_sqrt_det_gram b hb
+
 /-- The volume form takes value `1` on a positively oriented orthonormal tangent basis. -/
 theorem riemannianVolumeForm_apply_orthonormal
     (o : Manifold.Orientation I M (Fin m)) (x : M)
@@ -351,7 +365,6 @@ private theorem riemannianVolumeForm_basisAt (o : Manifold.Orientation I M (Fin 
         else -chartVolumeDensity (I := I) x y := by
   set e := trivializationAt E (TangentSpace I) x
   set b := (Module.finBasis ℝ E).reindex σ
-  let := o.fact_finrank_tangentSpace y
   have hdet : (Matrix.gram ℝ (e.basisAt b hy)).det =
       (Riemannian.Tensor.chartGramMatrix (I := I) x y).det := by
     rw [Riemannian.Tensor.gram_basisAt_finBasis_reindex, Matrix.det_submatrix_equiv_self]
@@ -359,10 +372,8 @@ private theorem riemannianVolumeForm_basisAt (o : Manifold.Orientation I M (Fin 
       b.orientation = e.mapOrientation (Fin m) hy (o.orientationAt y) := by
     rw [Trivialization.basisAt, Module.Basis.orientation_map, Trivialization.mapOrientation_apply,
       ← Orientation.map_symm, Equiv.symm_apply_eq]
-  rw [riemannianVolumeForm_apply, chartVolumeDensity_def, ← hdet]
-  split_ifs with h
-  · exact (o.orientationAt y).volumeForm_apply_eq_sqrt_det_gram _ (hor.2 h)
-  · exact (o.orientationAt y).volumeForm_apply_eq_neg_sqrt_det_gram _ (mt hor.1 h)
+  rw [riemannianVolumeForm_apply_basis, chartVolumeDensity_def, ← hdet]
+  exact if_congr hor rfl rfl
 
 /-- **The volume form in a coordinate frame.** Near `x`, the volume form evaluated on the
 coordinate frame of the chart at `x`, reindexed along `σ`, is `±√(det g)`: the chart volume
