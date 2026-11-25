@@ -216,4 +216,57 @@ theorem coeff_gradedCartanMatrix_of_ofIdeal_span_singleton {I J : Type*} [Fintyp
 
 end CartanColumn
 
+/-! ### Nonvanishing of idempotent coordinates -/
+
+section Nonvanishing
+
+open scoped Pointwise
+
+variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A} [Module.Finite k A]
+  [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜]
+
+/-- A nonzero degree-zero idempotent `f` has nonzero graded dimension on the regular graded
+module `A`: the element `f = f • f` is a nonzero vector of `f • 𝒜 0`. -/
+theorem smulGradedDimension_regular_ne_zero {f : A} (hf : IsIdempotentElem f) (hf₀ : f ∈ 𝒜 0)
+    (hf_ne : f ≠ 0) :
+    (GradedModuleCat.regular (𝒜 := 𝒜)).smulGradedDimension f ≠ 0 := by
+  have hf_mem : f ∈ f • (GradedModuleCat.regular (𝒜 := 𝒜)).grading.piece 0 :=
+    (Submodule.mem_smul_pointwise_iff_exists _ _ _).mpr
+      ⟨f, by simpa only [GradedModuleCat.regular, InternalGrading.ofDecomposition_piece] using hf₀,
+        hf.eq⟩
+  have hnt : Nontrivial ↥(f • (GradedModuleCat.regular (𝒜 := 𝒜)).grading.piece 0) :=
+    ⟨⟨⟨f, hf_mem⟩, 0, fun h => hf_ne (congrArg Subtype.val h)⟩⟩
+  intro hzero
+  have h0 := congrArg (fun p : LaurentPolynomial ℤ => p.coeff 0) hzero
+  rw [GradedModuleCat.coeff_smulGradedDimension, AddMonoidAlgebra.coeff_zero,
+    Finsupp.zero_apply, Nat.cast_eq_zero] at h0
+  exact (Module.finrank_pos (R := k)).ne' h0
+
+/-- **Nonvanishing on an isolated spanning generator.** If the classes `[Sⱼ]` span `G₀^gr(mod A)`
+over `ℤ[q,q⁻¹]` and a nonzero degree-zero idempotent `f` satisfies `gdim(f • Sⱼ) = 0` for every
+`j ≠ i`, then `gdim(f • Sᵢ) ≠ 0`. -/
+theorem smulGradedDimension_ne_zero_of_span_eq_top {I : Type uI}
+    (S : I → (gradedFiniteModules 𝒜).FullSubcategory)
+    (hspan : Submodule.span (LaurentPolynomial ℤ)
+      (Set.range fun j => LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) (S j)) = ⊤)
+    {f : A} (hf : IsIdempotentElem f) (hf₀ : f ∈ 𝒜 0) (hf_ne : f ≠ 0)
+    (i : I) (hne : ∀ j, j ≠ i → (S j).obj.smulGradedDimension f = 0) :
+    (S i).obj.smulGradedDimension f ≠ 0 := by
+  intro hi
+  have hzero : gradedIdempotentCoordinate hf hf₀ = 0 := by
+    refine LinearMap.ext_on hspan ?_
+    rintro _ ⟨j, rfl⟩
+    rw [LinearMap.zero_apply, gradedIdempotentCoordinate_of]
+    by_cases hji : j = i
+    · exact hji ▸ hi
+    · exact hne j hji
+  have hreg := LinearMap.congr_fun hzero
+    (LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
+      ⟨GradedModuleCat.regular (𝒜 := 𝒜), gradedFiniteModules_iff.mpr inferInstance⟩)
+  rw [gradedIdempotentCoordinate_of, LinearMap.zero_apply] at hreg
+  exact smulGradedDimension_regular_ne_zero hf hf₀ hf_ne hreg
+
+end Nonvanishing
+
 end TauCeti

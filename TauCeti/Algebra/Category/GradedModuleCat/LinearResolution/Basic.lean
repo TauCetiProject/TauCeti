@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
+import TauCeti.Algebra.Category.GradedModuleCat.Concentrated
 
 /-!
 # Diagonal Ext from linear graded resolutions
@@ -50,11 +51,8 @@ omit [DirectSum.Decomposition 𝒜] in
 /-- A term of a linear resolution has no nonzero graded map to a target whose piece in the
 term's generating degree vanishes. -/
 theorem IsLinear.hom_eq_zero (hr : r.IsLinear) (n : ℕ)
-    (hN : N.grading.piece n = ⊥) (f : r.termObj n ⟶ N) : f = 0 := by
-  apply GradedModuleCat.hom_ext
-  rw [GradedModuleCat.hom_zero]
-  exact (r.grading n).linearMap_eq_zero_of_isGeneratedInDegree (isLinear_iff.mp hr n)
-    f.isHomogeneous (by simpa using hN)
+    (hN : N.grading.piece n = ⊥) (f : r.termObj n ⟶ N) : f = 0 :=
+  GradedModuleCat.hom_eq_zero_of_isGeneratedInDegree (isLinear_iff.mp hr n) hN f
 
 variable [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
 
