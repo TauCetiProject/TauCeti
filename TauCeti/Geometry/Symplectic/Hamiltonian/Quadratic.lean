@@ -381,28 +381,19 @@ theorem quadraticPoissonBracket_eq_zero_of_mem_span {ι : Type*} {Q : ι → Qua
 of every form in its span. -/
 theorem commute_hamiltonianEnd_of_mem_span {ι : Type*} {Q : ι → QuadraticForm ℝ V}
     {E : Module.End ℝ V} (hE : ∀ i, Commute E (ω.hamiltonianEnd (Q i))) {R : QuadraticForm ℝ V}
-    (hR : R ∈ Submodule.span ℝ (Set.range Q)) : Commute E (ω.hamiltonianEnd R) := by
-  induction hR using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    exact hE i
-  | zero => simp
-  | add x y _ _ hx hy => simpa using hx.add_right hy
-  | smul c x _ hx => simpa using hx.smul_right c
+    (hR : R ∈ Submodule.span ℝ (Set.range Q)) : Commute E (ω.hamiltonianEnd R) :=
+  ((Submodule.span_le (p := (Subalgebra.centralizer ℝ {E}).toSubmodule.comap
+    ω.hamiltonianEnd)).2 (Set.range_subset_iff.2 fun i ↦ (Subalgebra.mem_centralizer_iff ℝ).2
+      fun _ hg ↦ (Set.mem_singleton_iff.1 hg) ▸ hE i) hR) E rfl
 
 /-- A subspace preserved by the Hamiltonian endomorphisms of a family is preserved by those of
 every form in its span. -/
 theorem hamiltonianEnd_apply_mem_of_mem_span {ι : Type*} {Q : ι → QuadraticForm ℝ V}
     {L : Submodule ℝ V} (hQL : ∀ i, ∀ v ∈ L, ω.hamiltonianEnd (Q i) v ∈ L)
     {R : QuadraticForm ℝ V} (hR : R ∈ Submodule.span ℝ (Set.range Q)) :
-    ∀ v ∈ L, ω.hamiltonianEnd R v ∈ L := by
-  induction hR using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    exact hQL i
-  | zero => simp
-  | add x y _ _ hx hy => exact fun v hv ↦ by simpa using add_mem (hx v hv) (hy v hv)
-  | smul c x _ hx => exact fun v hv ↦ by simpa using L.smul_mem c (hx v hv)
+    ∀ v ∈ L, ω.hamiltonianEnd R v ∈ L :=
+  (Submodule.span_le (p := (L.compatibleMaps L).comap ω.hamiltonianEnd)).2
+    (Set.range_subset_iff.2 fun i ↦ (L.mem_compatibleMaps L).2 (hQL i)) hR
 
 /-! ### Direct sums -/
 

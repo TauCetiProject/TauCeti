@@ -472,21 +472,24 @@ private theorem hasRegularSpectrum_of_forall_eq_algebraMap (h : ω.IsNondegenera
   have hd : ω (A v) v ≠ 0 := by
     rw [apply_hamiltonianEnd, QuadraticMap.polar_self]
     simpa using hv
-  set U := Submodule.span ℝ (Set.range ![v, A v])
+  set U := Submodule.span ℝ ({A v, v} : Set V)
   have hUinv (i : ι) : U ∈ Module.End.invtSubmodule (ω.hamiltonianEnd (Q i)) := by
     obtain ⟨c, hc⟩ := hmul i
-    refine (Module.End.mem_invtSubmodule _).2 (Submodule.span_le.2 (Set.range_subset_iff.2 ?_))
-    intro k
-    fin_cases k
-    · simpa [hc] using Submodule.smul_mem U c (Submodule.subset_span ⟨1, rfl⟩)
+    refine (Module.End.mem_invtSubmodule _).2 (Submodule.span_le.2 (Set.insert_subset_iff.2
+      ⟨?_, Set.singleton_subset_iff.2 ?_⟩))
     · simpa [hc, hAA, smul_smul] using Submodule.smul_mem U (c * μ)
-        (Submodule.subset_span ⟨0, rfl⟩)
+        (Submodule.subset_span (by simp))
+    · simpa [hc] using Submodule.smul_mem U c (Submodule.subset_span (by simp))
   have hfin : finrank ℝ V = 2 := by
-    rcases hirr U (isSymplectic_span_range_pair hd) hUinv with hU | hU
-    · have hvU : v ∈ U := Submodule.subset_span ⟨0, rfl⟩
+    rcases hirr U (isSymplectic_iff_disjoint.2 (ω.disjoint_span_pair_orthogonal hd)) hUinv with
+      hU | hU
+    · have hvU : v ∈ U := Submodule.subset_span (by simp)
       rw [hU, Submodule.mem_bot] at hvU
       simp [hvU] at hv
-    · have h₁ : finrank ℝ U ≤ 2 := (finrank_range_le_card _).trans (by simp)
+    · have h₁ : finrank ℝ U ≤ 2 := by
+        classical
+        exact (finrank_span_le_card ({A v, v} : Set V)).trans (by
+          simpa using Finset.card_insert_le (A v) {v})
       rw [hU, finrank_top] at h₁
       have h₂ := Module.finrank_pos (R := ℝ) (M := V)
       obtain ⟨k, hk⟩ := ω.even_finrank
