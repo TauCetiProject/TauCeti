@@ -5,10 +5,10 @@ Authors: Codex
 -/
 module
 
-import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.Algebra.Field.ZMod
 public import Mathlib.GroupTheory.PGroup
 import Mathlib.RingTheory.Idempotents
+import TauCeti.Algebra.CharP.Unipotent
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 import TauCeti.Algebra.MonoidAlgebra.Exactness
 import TauCeti.Algebra.MonoidAlgebra.Frobenius
@@ -163,9 +163,10 @@ theorem isNilpotent_of_isNilpotent_mapDomainRingHom_mk' {G : Type*} [Group G] {z
   have hcomm : Commute w (single z (1 : S) - 1) :=
     ((single_commute (fun g ↦ (Subgroup.mem_center_iff.mp hzc g).symm)
       (fun r ↦ Commute.one_left r) w).symm.sub_right (Commute.one_right w))
-  refine ⟨m * p ^ k, ?_⟩
-  rw [pow_mul, ← hw, hcomm.mul_pow, sub_pow_expChar_pow_of_commute _ _ (Commute.one_right _),
-    single_pow, one_pow, hk, one_pow, ← one_def, sub_self, mul_zero]
+  obtain ⟨j, hj⟩ := hw ▸ hcomm.isNilpotent_mul_left
+    (isNilpotent_sub_one_of_pow_expChar_pow_eq_one (p := p) (n := k)
+      (by rw [single_pow, one_pow, hk, one_def]))
+  exact ⟨m * j, by rw [pow_mul, hj]⟩
 
 /-- **The augmentation ideal of a finite `p`-group algebra is nil in characteristic `p`.** In the
 group algebra of a finite, possibly noncommutative, `p`-group over a commutative ring of
