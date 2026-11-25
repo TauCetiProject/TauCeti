@@ -73,8 +73,6 @@ space diagram with `p = 1`, of class `[𝔽, 1]`, which differs from that of `S�
 * `TauCeti.stableClass_tensorProduct_prod`: the generating move `(V ⊗ W, b + 1) ~ (V, b)`.
 * `TauCeti.stableClass_tensorProduct_piTensorProduct`: its `k`-fold iterate
   `(V ⊗ W^{⊗ k}, b + k) ~ (V, b)`.
-* `TauCeti.finrank_tensorProduct_piTensorProduct_prod`: the dimension of `V ⊗ W^{⊗ k}` is
-  `dim V * 2 ^ k`.
 * `TauCeti.stableClass_eq_stableClass_add_iff`: equal classes are related by one move.
 * `TauCeti.stableClass_eq_stableClass_iff`: two pairs have the same class exactly when
   `dim V * 2 ^ b' = dim V' * 2 ^ b`.
@@ -140,11 +138,6 @@ theorem stableClass_tensorProduct_prod (b : ℕ) :
     stableClass K (V ⊗[K] (K × K)) (b + 1) = stableClass K V b := by
   rw [stableClass_eq_stableClass_iff, finrank_tensorProduct, finrank_prod, finrank_self, pow_succ]
   ring
-
-/-- The dimension of `V ⊗ W^{⊗ k}` with `W = K × K` is `dim V * 2 ^ k`. -/
-theorem finrank_tensorProduct_piTensorProduct_prod (k : ℕ) :
-    finrank K (V ⊗[K] (⨂[K] _ : Fin k, K × K)) = finrank K V * 2 ^ k := by
-  simp [finrank_tensorProduct, finrank_piTensorProduct]
 
 /-- The `k`-fold **generating move** `(V ⊗ W^{⊗ k}, b + k) ~ (V, b)` with `W = K × K`. -/
 @[simp]
@@ -226,7 +219,7 @@ variable [Fintype Point] [DecidableEq Region] [Fintype Region] (r₀ : Region) {
 
 /-- The hat differential of a stabilized diagram squares to zero when that of the original one
 does. -/
-theorem hatDifferential_comp_self_stabilize
+theorem hatDifferential_stabilize_comp_self_eq_zero
     (hd : H.hatDifferential χ ∘ₗ H.hatDifferential χ = 0) :
     (H.stabilize r₀).hatDifferential (stabilizeEuler χ r₀) ∘ₗ
       (H.stabilize r₀).hatDifferential (stabilizeEuler χ r₀) = 0 := by
@@ -241,7 +234,7 @@ noncomputable def hatHomologyStabilizeEquiv
     (hd : H.hatDifferential χ ∘ₗ H.hatDifferential χ = 0) :
     H.hatHomology χ hd ≃ₗ[ZMod 2]
       (H.stabilize r₀).hatHomology (stabilizeEuler χ r₀)
-        (H.hatDifferential_comp_self_stabilize r₀ hd) :=
+        (H.hatDifferential_stabilize_comp_self_eq_zero r₀ hd) :=
   (H.stabilizeChainEquiv r₀).homologyEquiv hd _ (H.hatDifferential_comp_stabilizeChainEquiv r₀).symm
 
 /-- `TauCeti.HeegaardRegionSystem.hatHomologyStabilizeEquiv` sends the class of a cycle `z` to the
@@ -260,7 +253,7 @@ theorem hatHomologyStabilizeEquiv_mk (hd : H.hatDifferential χ ∘ₗ H.hatDiff
 theorem hatStableClass_stabilize [Fintype Basepoint]
     (hd : H.hatDifferential χ ∘ₗ H.hatDifferential χ = 0) :
     (H.stabilize r₀).hatStableClass (stabilizeEuler χ r₀)
-        (H.hatDifferential_comp_self_stabilize r₀ hd) =
+        (H.hatDifferential_stabilize_comp_self_eq_zero r₀ hd) =
       H.hatStableClass χ hd :=
   ((H.hatHomologyStabilizeEquiv r₀ hd).stableClass_eq _).symm
 
@@ -325,7 +318,7 @@ theorem hatDifferential_comp_addBasepointProdEquiv_symm (hr₀ : r₀ ∈ Set.ra
 
 /-- The hat differential of the diagram with a basepoint added in a region containing a basepoint
 squares to zero when that of the original diagram does. -/
-theorem hatDifferential_comp_self_addBasepoint (hr₀ : r₀ ∈ Set.range H.basepoint)
+theorem hatDifferential_addBasepoint_comp_self_eq_zero (hr₀ : r₀ ∈ Set.range H.basepoint)
     (hd : H.hatDifferential χ ∘ₗ H.hatDifferential χ = 0) :
     (H.addBasepoint r₀).hatDifferential (addBasepointEuler χ r₀) ∘ₗ
       (H.addBasepoint r₀).hatDifferential (addBasepointEuler χ r₀) = 0 := by
@@ -340,7 +333,7 @@ containing a basepoint, a stabilization of type `b`, the hat homology of the new
 noncomputable def hatHomologyAddBasepointEquiv (hr₀ : r₀ ∈ Set.range H.basepoint)
     (hd : H.hatDifferential χ ∘ₗ H.hatDifferential χ = 0) :
     (H.addBasepoint r₀).hatHomology (addBasepointEuler χ r₀)
-        (H.hatDifferential_comp_self_addBasepoint hr₀ hd) ≃ₗ[ZMod 2]
+        (H.hatDifferential_addBasepoint_comp_self_eq_zero hr₀ hd) ≃ₗ[ZMod 2]
       H.hatHomology χ hd ⊗[ZMod 2] (ZMod 2 × ZMod 2) :=
   ((H.addBasepointProdEquiv r₀).homologyEquiv _ _
       (addBasepointProdEquiv_comp_hatDifferential hr₀)).trans
@@ -358,18 +351,14 @@ theorem hatHomologyAddBasepointEquiv_symm_mk_tmul (hr₀ : r₀ ∈ Set.range H.
         LinearMap.map_mem_ker_of_comp_eq (H.addBasepointProdEquiv r₀).symm.toLinearMap
           (H.hatDifferential_comp_addBasepointProdEquiv_symm hr₀).symm
           (LinearMap.tmul_mem_ker_rTensor z.property w)⟩ := by
-  rw [LinearEquiv.symm_apply_eq, hatHomologyAddBasepointEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.homologyEquiv_mk]
-  refine (LinearEquiv.symm_apply_eq _).mp ?_
-  rw [LinearMap.homologyRTensorProdEquiv_symm_mk_tmul]
-  exact congrArg _ (Subtype.ext (LinearEquiv.apply_symm_apply _ _).symm)
+  simp [hatHomologyAddBasepointEquiv, LinearEquiv.symm_apply_eq, -addBasepointProdEquiv_symm_tmul]
 
 /-- The hat homology doubles in dimension when a basepoint is added in a region containing a
 basepoint. -/
 theorem finrank_hatHomology_addBasepoint (hr₀ : r₀ ∈ Set.range H.basepoint)
     (hd : H.hatDifferential χ ∘ₗ H.hatDifferential χ = 0) :
     finrank (ZMod 2) ((H.addBasepoint r₀).hatHomology (addBasepointEuler χ r₀)
-        (H.hatDifferential_comp_self_addBasepoint hr₀ hd)) =
+        (H.hatDifferential_addBasepoint_comp_self_eq_zero hr₀ hd)) =
       2 * finrank (ZMod 2) (H.hatHomology χ hd) := by
   rw [(H.hatHomologyAddBasepointEquiv hr₀ hd).finrank_eq, finrank_tensorProduct, finrank_prod,
     finrank_self, mul_comm]
@@ -380,7 +369,7 @@ a region containing a basepoint tensors `\widetilde{HF}(D)` with `W` and adds on
 theorem hatStableClass_addBasepoint [Fintype Basepoint] (hr₀ : r₀ ∈ Set.range H.basepoint)
     (hd : H.hatDifferential χ ∘ₗ H.hatDifferential χ = 0) :
     (H.addBasepoint r₀).hatStableClass (addBasepointEuler χ r₀)
-        (H.hatDifferential_comp_self_addBasepoint hr₀ hd) =
+        (H.hatDifferential_addBasepoint_comp_self_eq_zero hr₀ hd) =
       H.hatStableClass χ hd := by
   rw [hatStableClass_def, hatStableClass_def, Fintype.card_sum, Fintype.card_unit,
     (H.hatHomologyAddBasepointEquiv hr₀ hd).stableClass_eq, stableClass_tensorProduct_prod]
@@ -393,14 +382,16 @@ section Examples
 
 /-- The hat differential of the genus-one diagram of `L(p, q)` squares to zero, since it
 vanishes. -/
-theorem hatDifferential_comp_self_lensSpace (p : ℕ) [NeZero p] (q : (ZMod p)ˣ) (r : ZMod p) :
+theorem hatDifferential_lensSpace_comp_self_eq_zero (p : ℕ) [NeZero p] (q : (ZMod p)ˣ)
+    (r : ZMod p) :
     (lensSpace p q r).hatDifferential 1 ∘ₗ (lensSpace p q r).hatDifferential 1 = 0 := by
   simp
 
 /-- The stable hat invariant of the genus-one diagram of `L(p, q)` is `[𝔽^p, 1]`, recorded as
 `p / 2`: one generator for each `Spin^c` structure and one basepoint. -/
 theorem hatStableClass_lensSpace (p : ℕ) [NeZero p] (q : (ZMod p)ˣ) (r : ZMod p) :
-    (lensSpace p q r).hatStableClass 1 (hatDifferential_comp_self_lensSpace p q r) = p / 2 := by
+    (lensSpace p q r).hatStableClass 1 (hatDifferential_lensSpace_comp_self_eq_zero p q r) =
+      p / 2 := by
   rw [hatStableClass_of_hatDifferential_eq_zero
       (hatDifferential_lensSpace (p := p) (q := q) (r := r)),
     ← Fintype.card_of_bijective (lensSpaceGenerator_bijective (p := p) (q := q) (r := r)),
@@ -409,7 +400,7 @@ theorem hatStableClass_lensSpace (p : ℕ) [NeZero p] (q : (ZMod p)ˣ) (r : ZMod
 
 /-- The hat differential of the genus-one diagram of `S¹ × S²` with the basepoint in the annulus
 squares to zero, since it vanishes. -/
-theorem hatDifferential_comp_self_circleTimesSphere :
+theorem hatDifferential_circleTimesSphere_comp_self_eq_zero :
     (circleTimesSphere 0).hatDifferential ![0, 1, 1] ∘ₗ
       (circleTimesSphere 0).hatDifferential ![0, 1, 1] = 0 := by
   simp [hatDifferential_circleTimesSphere_zero]
@@ -419,8 +410,8 @@ annulus is `[𝔽², 1]`, recorded as `1`. It differs from the invariant `[𝔽,
 `S³`, the lens space diagram with `p = 1`, of value `1 / 2`
 (`TauCeti.HeegaardRegionSystem.hatStableClass_lensSpace`). -/
 theorem hatStableClass_circleTimesSphere :
-    (circleTimesSphere 0).hatStableClass ![0, 1, 1] hatDifferential_comp_self_circleTimesSphere =
-      1 := by
+    (circleTimesSphere 0).hatStableClass ![0, 1, 1]
+        hatDifferential_circleTimesSphere_comp_self_eq_zero = 1 := by
   rw [hatStableClass_of_hatDifferential_eq_zero hatDifferential_circleTimesSphere_zero,
     ← Fintype.card_of_bijective (circleTimesSphereGenerator_bijective 0)]
   norm_num

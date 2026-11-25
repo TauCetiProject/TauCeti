@@ -18,7 +18,8 @@ import Mathlib.RingTheory.Flat.Equalizer
 Mathlib's `Submodule.baseChange` extends a submodule of `M` to an `A`-submodule of `A ⊗[R] M`,
 and `LinearMap.baseChange` extends a linear map.  For a general map the two constructions satisfy
 only the containment `(ker f).baseChange A ≤ ker (f.baseChange A)`; it is an equality when `A` is
-flat over `R`. This file records that case and two cases in which it is an equality for an
+flat over `R`. This file records the containment on pure tensors, for a map tensored with the
+identity of any module, then that case and two cases in which it is an equality for an
 arbitrary coefficient algebra, flat or not: the kernel of a *surjective* map, and more generally
 the kernel of a map whose cokernel `N ⧸ range f` is flat.
 
@@ -30,6 +31,8 @@ where flatness of the cokernel is its torsion-freeness.
 
 ## Main results
 
+* `LinearMap.tmul_mem_ker_rTensor`: tensoring an element of the kernel of `f` with any `w` gives
+  an element of the kernel of `f ⊗ 1`.
 * `LinearMap.ker_baseChange_of_flat`: over a flat coefficient algebra, the kernel of an extended
   linear map is the extension of its kernel.
 * `LinearMap.ker_baseChange_of_surjective`: **for a surjective map the kernel of an extended
@@ -58,6 +61,12 @@ universe u v w x
 variable {R : Type u} (A : Type v) {M : Type w} {N : Type x}
 variable [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 variable [Ring A] [Algebra R A]
+
+/-- Tensoring with any `w` sends the kernel of a linear map `f` into the kernel of `f ⊗ 1`. -/
+theorem tmul_mem_ker_rTensor {R P N W : Type*} [CommSemiring R] [AddCommMonoid P] [Module R P]
+    [AddCommMonoid N] [Module R N] [AddCommMonoid W] [Module R W] {f : P →ₗ[R] N} {x : P}
+    (hx : x ∈ ker f) (w : W) : x ⊗ₜ w ∈ ker (f.rTensor W) := by
+  rw [mem_ker, rTensor_tmul, mem_ker.mp hx, zero_tmul]
 
 /-- Over a flat coefficient algebra, extension of scalars commutes with kernels. -/
 theorem ker_baseChange_of_flat [Module.Flat R A] (f : M →ₗ[R] N) :
