@@ -97,22 +97,22 @@ theorem not_isIrreducible_induceRepresentation_of_comp_star_eq
       fin_cases i <;> simp [hv, hstar]
     · refine ⟨s * χ z, ?_⟩
       ext i
-      fin_cases i <;> simp [hv, map_mul, hstar, hs, mul_assoc, mul_comm, mul_left_comm]
-  let σ : Subrepresentation (induceRepresentation χ) :=
-    { toSubmodule := Submodule.span ℂ {v}
-      apply_mem_toSubmodule := fun w x hx ↦ by
-        obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hx
-        obtain ⟨t, ht⟩ := hinv w
-        rw [map_smul, ht, smul_smul]
-        exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v) }
+      fin_cases i <;>
+        simp only [hv, map_mul, mul_apply_eq_comp, induceRepresentation_includeComplex,
+          induceRepresentation_j, hstar, hs, cons_val_zero, cons_val_one, cons_val_fin_one, mul_one,
+          Pi.smul_apply, smul_eq_mul, Fin.zero_eta, Fin.mk_one] <;>
+        ring
+  let σ := Subrepresentation.spanSingleton v hinv
   rcases hirr.eq_bot_or_eq_top σ with hσ | hσ
-  · have hmem : v ∈ (⊥ : Subrepresentation (induceRepresentation χ)).toSubmodule :=
-      hσ ▸ Submodule.mem_span_singleton_self v
-    rw [Subrepresentation.toSubmodule_bot, Submodule.mem_bot] at hmem
+  · have hmem : v ∈ σ.toSubmodule := by
+      rw [Subrepresentation.toSubmodule_spanSingleton]
+      exact Submodule.mem_span_singleton_self v
+    rw [hσ, Subrepresentation.toSubmodule_bot, Submodule.mem_bot] at hmem
     simpa [hv] using congr_fun hmem 1
   · have hmem : (![1, 0] : Fin 2 → ℂ) ∈ σ.toSubmodule := by
       rw [hσ, Subrepresentation.toSubmodule_top]
       exact Submodule.mem_top
+    rw [Subrepresentation.toSubmodule_spanSingleton] at hmem
     obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp hmem
     -- the second coordinate forces `a = 0`, and then the first coordinate reads `0 = 1`
     have ha0 : a = 0 := by simpa [hv] using congr_fun ha 1
