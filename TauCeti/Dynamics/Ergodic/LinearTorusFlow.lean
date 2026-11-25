@@ -60,14 +60,18 @@ theorem linearTorusFlow_apply (v : ι → ℝ) (t : ℝ) (x : UnitAddTorus ι) (
     linearTorusFlow v t x i = x i + ((t * v i : ℝ) : UnitAddCircle) :=
   (rfl)
 
+/-- The time-`t` map of the linear flow is translation by `i ↦ [t * v i]`. -/
+theorem linearTorusFlow_eq_add (v : ι → ℝ) (t : ℝ) (x : UnitAddTorus ι) :
+    linearTorusFlow v t x = x + fun i ↦ ((t * v i : ℝ) : UnitAddCircle) :=
+  (rfl)
+
 /-- The linear flow of velocity `fun _ ↦ 1` is Mathlib's translation action of `ℝ` on each
 circle factor. -/
 theorem linearTorusFlow_one_apply (t : ℝ) (x : UnitAddTorus ι) :
     linearTorusFlow 1 t x = t +ᵥ x := by
   ext i
-  rw [linearTorusFlow_apply, Pi.one_apply, mul_one, add_comm]
   obtain ⟨a, ha⟩ := QuotientAddGroup.mk_surjective (x i)
-  rw [Pi.vadd_apply, ← ha, AddAction.Quotient.vadd_mk, vadd_eq_add, QuotientAddGroup.mk_add]
+  simp [← ha, add_comm]
 
 /-- The linear flow on the unit torus is jointly measurable in time and space. -/
 theorem measurable_uncurry_linearTorusFlow (v : ι → ℝ) :
@@ -81,7 +85,8 @@ variable [Fintype ι]
 /-- **Linear flows preserve volume.** Each time-`t` map of a linear flow on the unit torus is a
 translation, so it preserves the volume. -/
 theorem measurePreserving_linearTorusFlow (v : ι → ℝ) (t : ℝ) :
-    MeasurePreserving (linearTorusFlow v t) volume volume :=
-  measurePreserving_add_right volume (fun i ↦ ((t * v i : ℝ) : UnitAddCircle))
+    MeasurePreserving (linearTorusFlow v t) volume volume := by
+  simpa only [funext (linearTorusFlow_eq_add v t)] using
+    measurePreserving_add_right volume (fun i ↦ ((t * v i : ℝ) : UnitAddCircle))
 
 end TauCeti
