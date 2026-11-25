@@ -68,20 +68,9 @@ def PullbackData.ofObj :
   β i := f i
   w _ := rfl
   iso T i b c h :=
-    { hom := (F.mapComp' (f i).op.toLoc b.op.toLoc c.op.toLoc
-          (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, ← h])).inv.toNatTrans.app M ≫
-        (F.mapComp' (𝟙 U).op.toLoc c.op.toLoc c.op.toLoc
-          (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, Category.comp_id])).hom.toNatTrans.app M
-      inv := (F.mapComp' (𝟙 U).op.toLoc c.op.toLoc c.op.toLoc
-          (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, Category.comp_id])).inv.toNatTrans.app M ≫
-        (F.mapComp' (f i).op.toLoc b.op.toLoc c.op.toLoc
-          (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, ← h])).hom.toNatTrans.app M
-      hom_inv_id := (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
-        (Cat.Hom.hom_inv_id_toNatTrans_app_assoc _ _ _)).trans
-          (Cat.Hom.inv_hom_id_toNatTrans_app _ _))
-      inv_hom_id := (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
-        (Cat.Hom.hom_inv_id_toNatTrans_app_assoc _ _ _)).trans
-          (Cat.Hom.inv_hom_id_toNatTrans_app _ _)) }
+    ((Cat.Hom.toNatIso (F.mapComp' (f i).op.toLoc b.op.toLoc c.op.toLoc
+      (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, ← h]))).app M).symm ≪≫
+        (Cat.Hom.toNatIso (F.mapComp' (𝟙 U).op.toLoc c.op.toLoc c.op.toLoc)).app M
   pullHom_iso T i b c h T' g gb gc hgb hgc :=
     (pullHom_comp _ _ g gb gc gc hgb hgc hgc).trans (congrArg₂ (· ≫ ·)
       (pullHom_mapComp'_inv _ _ _ _ h _ _ _ hgb hgc)
@@ -94,24 +83,87 @@ def PullbackData.ofObj :
     have key {A B D E : F.obj (.mk (op T))} (x : A ⟶ B) (e : B ≅ D) (y : D ⟶ D) (hy : y = 𝟙 D)
         (z : B ⟶ E) : x ≫ z = (x ≫ e.hom) ≫ y ≫ e.inv ≫ z := by
       simp [hy]
-    exact key _ ((Cat.Hom.toNatIso (F.mapComp' _ _ _
-      (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, Category.comp_id]))).app M) _
+    exact key _ ((Cat.Hom.toNatIso (F.mapComp' (𝟙 U).op.toLoc c'.op.toLoc c'.op.toLoc)).app M) _
       (DescentData.hom_self _ _ _ rfl) _
+
+/-- The morphisms of `PullbackData.ofObj` are the members of the covering family. -/
+@[simp]
+lemma PullbackData.ofObj_β (i : ι) : (PullbackData.ofObj f M hf).β i = f i :=
+  (rfl)
+
+/-- The identifications of `PullbackData.ofObj` are composites of comparison isomorphisms. -/
+@[simp]
+lemma PullbackData.ofObj_iso_hom ⦃T : C⦄ ⦃i : ι⦄ (b : T ⟶ X i) (c : T ⟶ U)
+    (h : b ≫ (PullbackData.ofObj f M hf).β i = c) :
+    ((PullbackData.ofObj f M hf).iso b c h).hom =
+      (F.mapComp' (f i).op.toLoc b.op.toLoc c.op.toLoc
+        (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, ← h, ofObj_β])).inv.toNatTrans.app M ≫
+        (F.mapComp' (𝟙 U).op.toLoc c.op.toLoc c.op.toLoc).hom.toNatTrans.app M :=
+  (rfl)
+
+/-- The inverse identifications of `PullbackData.ofObj` are composites of comparison
+isomorphisms. -/
+@[simp]
+lemma PullbackData.ofObj_iso_inv ⦃T : C⦄ ⦃i : ι⦄ (b : T ⟶ X i) (c : T ⟶ U)
+    (h : b ≫ (PullbackData.ofObj f M hf).β i = c) :
+    ((PullbackData.ofObj f M hf).iso b c h).inv =
+      (F.mapComp' (𝟙 U).op.toLoc c.op.toLoc c.op.toLoc).inv.toNatTrans.app M ≫
+        (F.mapComp' (f i).op.toLoc b.op.toLoc c.op.toLoc
+          (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, ← h, ofObj_β])).hom.toNatTrans.app M :=
+  (rfl)
 
 /-- **Descent data of an object along two covering families are isomorphic.** For a prestack `F`,
 an object `M` of `F` over `U` and two `w`-small covering families `f` and `g` of `U`, the descent
 data of `M` along `f` and along `g` are isomorphic in `Obj J F U`, as pullbacks of the image of
 `M` under `toObjFunctor` along the identity of `U`. -/
-abbrev ofObjIso :
+def ofObjIso :
     ofDescentData f hf ((F.toDescentData f).obj M) ≅
       ofDescentData g hg ((F.toDescentData g).obj M) :=
   PullbackData.isoOfData (PullbackData.ofObj f M hf) (PullbackData.ofObj g M hg)
 
+/-- The morphism of `ofObjIso` is the transport of the identity of the image of `M` under
+`toObjFunctor`. -/
+@[simp]
+lemma ofObjIso_hom :
+    (ofObjIso f g M hf hg).hom = PullbackData.transport (PullbackData.ofObj f M hf)
+      (PullbackData.ofObj g M hg) (𝟙 _) :=
+  PullbackData.isoOfData_hom _ _
+
+/-- The inverse of `ofObjIso` is the transport of the identity of the image of `M` under
+`toObjFunctor`. -/
+@[simp]
+lemma ofObjIso_inv :
+    (ofObjIso f g M hf hg).inv = PullbackData.transport (PullbackData.ofObj g M hg)
+      (PullbackData.ofObj f M hf) (𝟙 _) :=
+  PullbackData.isoOfData_inv _ _
+
 /-- The descent datum of `M` along a covering family `f` is isomorphic to the image of `M` under
 `toObjFunctor`, its descent datum along the identity of `U`. -/
-abbrev ofObjIsoToObjFunctor :
+def ofObjIsoToObjFunctor :
     ofDescentData f hf ((F.toDescentData f).obj M) ≅ (toObjFunctor.{w} J F U).obj M :=
   PullbackData.isoOfData (PullbackData.ofObj f M hf) (PullbackData.refl _)
+
+/-- The morphism of `ofObjIsoToObjFunctor` is the transport of the identity. -/
+@[simp]
+lemma ofObjIsoToObjFunctor_hom :
+    (ofObjIsoToObjFunctor f M hf).hom =
+      PullbackData.transport (PullbackData.ofObj f M hf) (PullbackData.refl _) (𝟙 _) :=
+  PullbackData.isoOfData_hom _ _
+
+/-- The inverse of `ofObjIsoToObjFunctor` is the transport of the identity. -/
+@[simp]
+lemma ofObjIsoToObjFunctor_inv :
+    (ofObjIsoToObjFunctor f M hf).inv =
+      PullbackData.transport (PullbackData.refl _) (PullbackData.ofObj f M hf) (𝟙 _) :=
+  PullbackData.isoOfData_inv _ _
+
+/-- The isomorphism between the descent data of `M` along two covering families factors through
+the image of `M` under `toObjFunctor`. -/
+lemma ofObjIso_eq :
+    ofObjIso f g M hf hg = ofObjIsoToObjFunctor f M hf ≪≫ (ofObjIsoToObjFunctor g M hg).symm :=
+  Iso.ext <| by
+    rw [Iso.trans_hom, Iso.symm_hom, ofObjIso_hom, ofObjIsoToObjFunctor_hom,
+      ofObjIsoToObjFunctor_inv, PullbackData.transport_comp, Category.comp_id]
 
 end
 
@@ -138,8 +190,14 @@ instance isEquivalence_toObjFunctor (U : C) : (toObjFunctor.{w} J F U).IsEquival
 /-- **Stackification fixes a stack**, fibre by fibre: for a stack `F`, the fibre `F.obj U` is
 equivalent to the fibre `Obj J F U` of descent data along `w`-small covering families, through
 `toObjFunctor` (part of Stacks, Lemma 02ZN). -/
-abbrev toObjEquivalence (U : C) : F.obj (.mk (op U)) ≌ Obj.{w} J F U :=
+def toObjEquivalence (U : C) : F.obj (.mk (op U)) ≌ Obj.{w} J F U :=
   (toObjFunctor.{w} J F U).asEquivalence
+
+/-- The functor of `toObjEquivalence` is `toObjFunctor`. -/
+@[simp]
+lemma toObjEquivalence_functor (U : C) :
+    (toObjEquivalence.{w} J F U).functor = toObjFunctor.{w} J F U :=
+  (rfl)
 
 end IsStack
 
