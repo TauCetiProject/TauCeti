@@ -228,43 +228,49 @@ private theorem sum_natCard_lrTableau_shift_eq_hiveCount {n : ℕ} (lam μ γ : 
       else 0) = hiveCount (productBoundary lam μ γ) := by
   let Sub := {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
     (ofPartition ν).colLen 0 ≤ n}
-  let w (ν : Sub) : DominantWeight n :=
-    (weightOfShape n (ofPartition ν.val)).shift (lam.detShift + μ.detShift)
   rw [hiveCount_productBoundary]
   split_ifs with hdet
   · set γ' := γ.shift (-(lam.detShift + μ.detShift))
     have hγ' : γ'.IsPolynomial := DominantWeight.isPolynomial_shift_neg_of_le_detShift hdet
-    have heq_iff (ν : Sub) : γ = w ν ↔ γ'.shape = ofPartition ν.val :=
+    have heq_iff (ν : Sub) :
+        γ = (weightOfShape n (ofPartition ν.val)).shift (lam.detShift + μ.detShift) ↔
+          γ'.shape = ofPartition ν.val :=
       ⟨fun h => by
-        have h' : γ' = weightOfShape n (ofPartition ν.val) := by simp [γ', h, w]
+        have h' : γ' = weightOfShape n (ofPartition ν.val) := by simp [γ', h]
         rw [h', shape_weightOfShape ν.property],
       fun h => by
         have h' : weightOfShape n (ofPartition ν.val) = γ' := by rw [← h, weightOfShape_shape hγ']
-        simp [w, h', γ']⟩
+        simp [h', γ']⟩
+    have hsummand (ν : Sub) :
+        (if γ = (weightOfShape n (ofPartition ν.val)).shift (lam.detShift + μ.detShift) then
+          Nat.card (LRTableau lam.detShiftShape (ofPartition ν.val) μ.detShiftShape)
+        else 0) =
+          if γ'.shape = ofPartition ν.val then
+            Nat.card (LRTableau lam.detShiftShape (ofPartition ν.val) μ.detShiftShape)
+          else 0 :=
+      if_congr (heq_iff ν) rfl rfl
+    rw [Finset.sum_congr rfl fun ν _ => hsummand ν]
     by_cases hcard : γ'.shape.card = lam.detShiftShape.card + μ.detShiftShape.card
     · let ν₀ : Sub := ⟨γ'.shape.toPartition hcard, by simp⟩
-      rw [Finset.sum_eq_single ν₀]
-      · have h0 : γ = w ν₀ := (heq_iff ν₀).mpr (YoungDiagram.ofPartition_toPartition hcard).symm
-        dsimp only [w] at h0; simp only [h0, ↓reduceIte]; simp [ν₀]
-      · intro ν _ hne
-        have hne' : γ ≠ w ν := fun h => hne <| Subtype.ext <| YoungDiagram.ofPartition_injective <|
-          by rw [← (heq_iff ν).mp h, YoungDiagram.ofPartition_toPartition]
-        dsimp only [w] at hne'; simp only [hne', ↓reduceIte]
-      · exact fun h => absurd (Finset.mem_univ ν₀) h
-    · rw [Finset.sum_eq_zero]
-      · have := isEmpty_lrTableau_of_card_ne hcard; exact Nat.card_of_isEmpty.symm
-      · intro ν _
-        have hne' : γ ≠ w ν := fun h => hcard <| by
-          rw [(heq_iff ν).mp h, YoungDiagram.card_ofPartition]
-        dsimp only [w] at hne'; simp only [hne', ↓reduceIte]
-  · refine Finset.sum_eq_zero fun ν _ => ?_
-    have hne' : γ ≠ w ν := fun h => hdet <| by
-      cases n with
-      | zero => simp
-      | succ m =>
-        refine DominantWeight.isPolynomial_shift_neg_iff_le_detShift.mp ?_
-        simp [w, h]
-    dsimp only [w] at hne'; simp only [hne', ↓reduceIte]
+      have hν₀ (ν : Sub) : γ'.shape = ofPartition ν.val ↔ ν = ν₀ :=
+        ⟨fun h => Subtype.ext <| YoungDiagram.ofPartition_injective <| by
+          rw [← h, YoungDiagram.ofPartition_toPartition],
+        fun h => by rw [h, YoungDiagram.ofPartition_toPartition]⟩
+      rw [Finset.sum_congr rfl fun ν _ => if_congr (hν₀ ν) rfl rfl,
+        Finset.sum_ite_eq' Finset.univ ν₀]
+      simp [ν₀]
+    · have hne (ν : Sub) : γ'.shape ≠ ofPartition ν.val := fun h =>
+        hcard (by rw [h, YoungDiagram.card_ofPartition])
+      simp [hne, isEmpty_lrTableau_of_card_ne hcard]
+  · have hne (ν : Sub) :
+        γ ≠ (weightOfShape n (ofPartition ν.val)).shift (lam.detShift + μ.detShift) := fun h =>
+      hdet <| by
+        cases n with
+        | zero => simp
+        | succ m =>
+          refine DominantWeight.isPolynomial_shift_neg_iff_le_detShift.mp ?_
+          simp [h]
+    simp [hne]
 
 /-- **The hive model of tensor-product multiplicities for `GL n ℂ`**: for all dominant weights
 `λ, μ, γ` of `GL n ℂ`, the complex dimension of the space of intertwiners from `V_γ` to

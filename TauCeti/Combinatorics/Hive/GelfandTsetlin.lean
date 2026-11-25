@@ -1026,6 +1026,23 @@ theorem hiveCount_two_productBoundary (lam μ γ : DominantWeight 2) :
   rw [heq, GTPattern.card_topRow_rowWeight_two μ.val (γ.val - lam.val)]
   simp only [Pi.sub_apply, max_le_iff]; split_ifs <;> omega
 
+/-- Rank-`2` hive classification for `λ = μ = (1, 0)`: `hiveCount (productBoundary λ μ γ)` is `1`
+for `γ = (2, 0)` and `γ = (1, 1)`, and `0` for every other dominant weight `γ`. -/
+theorem hiveCount_two_std_std_eq (γ : DominantWeight 2) :
+    hiveCount (productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ γ) =
+      if γ = ⟨![2, 0], by decide⟩ ∨ γ = ⟨![1, 1], by decide⟩ then 1 else 0 := by
+  rw [hiveCount_two_productBoundary]
+  refine if_congr ?_ rfl rfl
+  have hanti : γ.val 1 ≤ γ.val 0 := γ.antitone (by decide)
+  simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one]
+  constructor
+  · rintro ⟨_, _, _⟩
+    rcases (by omega : (γ.val 0 = 2 ∧ γ.val 1 = 0) ∨ (γ.val 0 = 1 ∧ γ.val 1 = 1)) with
+      ⟨h0, h1⟩ | ⟨h0, h1⟩
+    · exact Or.inl (Subtype.ext (funext fun i => by fin_cases i <;> assumption))
+    · exact Or.inr (Subtype.ext (funext fun i => by fin_cases i <;> assumption))
+  · rintro (rfl | rfl) <;> simp
+
 /-- Rank-`2` exclusion outside the stable range: although the weight-`(1, 1)` Gelfand–Tsetlin fibre
 over `μ = (2, 0)` has cardinality `1` (`GTPattern.card_topRow_rowWeight_two_two_zero_one_one`), the
 remaining rhombus inequality `λ₁ + μ₀ ≤ γ₀` (`2 ≤ 1`) fails at `λ = (0, 0)` and `γ = (1, 1)`. -/
