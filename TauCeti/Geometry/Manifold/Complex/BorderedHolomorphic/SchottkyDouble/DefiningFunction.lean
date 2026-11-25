@@ -182,7 +182,7 @@ private theorem exists_sheet_sign_function [T2Space M] [SecondCountableTopology 
     φ.finsum_smul_mem_convex (g := fun i z ↦ (chartAt ℂ i z).im) (t := Iio 0) (mem_univ z)
       (fun i hi ↦ (mem_range_interiorInr_iff_im_chartAt_neg (hmem hi)).1 hz) (convex_Iio 0)
   -- At the seam every local function vanishes and has positive differential on `i`.
-  exact ⟨g₀, hg₀, hpos, hneg, fun q hq ↦ φ.mvfderiv_finsum_smul_pos hφ
+  exact ⟨g₀, hg₀, hpos, hneg, fun q hq ↦ φ.mvfderiv_finsum_smul_pos hφ (mem_univ q)
     (fun i hi ↦ mdifferentiableAt_im_chartAt hi)
     (fun i hi ↦ (mem_image_inl_compl_iff_im_chartAt_eq_zero hi).1 hq)
     fun i hi ↦ mvfderiv_im_chartAt_I_pos hi hq⟩

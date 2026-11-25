@@ -12,13 +12,13 @@ import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 /-!
 # The differential of a partition-of-unity sum at a common zero
 
-Let `φ` be a smooth partition of unity subordinate to sets `U i`, and let `ρ i` be real functions
-which vanish at a point `q` whenever `q ∈ U i`. Near `q` the sum `∑ᶠ i, φ i • ρ i` is the finite
-sum over the indices `i` with `q` in the topological support of `φ i`, and since every such `ρ i`
-vanishes at `q`, its differential at `q` is `∑ φ i q • dρ_i`. So if every `dρ_i` with `q ∈ U i` is
-positive on a tangent vector `v`, so is the differential of the sum
-(`SmoothPartitionOfUnity.mvfderiv_finsum_smul_pos`). This is how local defining functions of a
-hypersurface glue to a global one.
+Let `φ` be a smooth partition of unity on a set `s`, subordinate to sets `U i`, and let `ρ i` be
+real functions which vanish at a point `q ∈ s` whenever `q ∈ U i`. Near `q` the sum
+`∑ᶠ i, φ i • ρ i` is the finite sum over the indices `i` with `q` in the topological support of
+`φ i`, and since every such `ρ i` vanishes at `q`, its differential at `q` is
+`∑ φ i q • dρ_i`. So if every `dρ_i` with `q ∈ U i` is positive on a tangent vector `v`, so is the
+differential of the sum (`SmoothPartitionOfUnity.mvfderiv_finsum_smul_pos`). This is how local
+defining functions of a hypersurface glue to a global one.
 
 ## Main results
 
@@ -35,12 +35,13 @@ namespace SmoothPartitionOfUnity
 variable {ι E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- **The glued differential at a common zero.** Let `φ` be a smooth partition of unity subordinate
-to `U`, and let `ρ i` be differentiable at `q` and vanish there whenever `q ∈ U i`. If
-`dρ_i (v) > 0` for every such `i`, then the differential of `∑ᶠ i, φ i • ρ i` at `q` is positive
-on `v`. -/
-theorem mvfderiv_finsum_smul_pos {φ : SmoothPartitionOfUnity ι I M univ} {U : ι → Set M}
-    (hφ : φ.IsSubordinate U) {ρ : ι → M → ℝ} {q : M} {v : TangentSpace I q}
+/-- **The glued differential at a common zero.** Let `φ` be a smooth partition of unity on a set
+`s` subordinate to `U`, let `q ∈ s`, and let `ρ i` be differentiable at `q` and vanish there
+whenever `q ∈ U i`. If `dρ_i (v) > 0` for every such `i`, then the differential of
+`∑ᶠ i, φ i • ρ i` at `q` is positive on `v`. -/
+theorem mvfderiv_finsum_smul_pos {s : Set M} {φ : SmoothPartitionOfUnity ι I M s}
+    {U : ι → Set M} (hφ : φ.IsSubordinate U) {q : M} (hq : q ∈ s) {ρ : ι → M → ℝ}
+    {v : TangentSpace I q}
     (hd : ∀ i, q ∈ U i → MDifferentiableAt I 𝓘(ℝ) (ρ i) q) (h0 : ∀ i, q ∈ U i → ρ i q = 0)
     (hpos : ∀ i, q ∈ U i → 0 < mvfderiv I (ρ i) q v) :
     0 < mvfderiv I (fun x ↦ ∑ᶠ i, φ i x • ρ i x) q v := by
@@ -61,7 +62,7 @@ theorem mvfderiv_finsum_smul_pos {φ : SmoothPartitionOfUnity ι I M univ} {U : 
       add_zero]
   rw [heq.mvfderiv_eq, TauCeti.mvfderiv_fun_sum (f := fun i x ↦ φ i x • ρ i x) fun i hi ↦
       (hdφ i).smul (hd i (hU hi)), sum_apply, Finset.sum_congr rfl hterm]
-  obtain ⟨j, hj⟩ := φ.exists_pos_of_mem (mem_univ q)
+  obtain ⟨j, hj⟩ := φ.exists_pos_of_mem hq
   have hjF : j ∈ φ.fintsupport q := (φ.mem_fintsupport_iff q j).mpr (subset_tsupport _ hj.ne')
   exact Finset.sum_pos' (fun i hi ↦ mul_nonneg (φ.nonneg i q) (hpos i (hU hi)).le)
     ⟨j, hjF, mul_pos hj (hpos j (hU hjF))⟩

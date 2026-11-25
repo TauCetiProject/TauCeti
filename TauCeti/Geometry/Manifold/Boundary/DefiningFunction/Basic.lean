@@ -238,21 +238,6 @@ theorem isBoundaryDefiningFunctionOn_one {U : Set M} (hU : IsOpen U)
   mvfderiv_ne_zero _ hx hb := absurd (hUi hx) fun hi ↦
     (ModelWithCorners.disjoint_interior_boundary (I := 𝓡∂ (n + 1))).ne_of_mem hi hb rfl
 
-/-- The differential at a boundary point `q` of the sum `∑ᶠ i, φ i • ρ i`, for a smooth partition
-of unity `φ` subordinate to the domains of boundary defining functions `ρ i`, is positive on the
-inward vectors: it is the finite sum `∑ i, φ i q • dρ_i` over the indices `i` with `q` in the
-topological support (the closure of the support) of `φ i`, since every such `ρ i` vanishes at
-`q`. -/
-private theorem mvfderiv_finsum_smul_pos {ι : Type*}
-    {U : ι → Set M} {ρ : ι → M → ℝ} (hρ : ∀ i, IsBoundaryDefiningFunctionOn n (ρ i) (U i))
-    {φ : SmoothPartitionOfUnity ι (𝓡∂ (n + 1)) M univ} (hφ : φ.IsSubordinate U) {q : M}
-    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) {v : TangentSpace (𝓡∂ (n + 1)) q}
-    (hv : IsOutwardPointing q (-v)) :
-    0 < mvfderiv (𝓡∂ (n + 1)) (fun x ↦ ∑ᶠ i, φ i x • ρ i x) q v :=
-  φ.mvfderiv_finsum_smul_pos hφ (fun i hi ↦ (hρ i).mdifferentiableAt hi)
-    (fun i hi ↦ (hρ i).eq_zero q hi hq)
-    fun i hi ↦ ((hρ i).isOutwardPointing_neg_iff_mvfderiv_pos hi hq v).mp hv
-
 /-- **Gluing.** For a smooth partition of unity `φ` on `M` subordinate to the domains of boundary
 defining functions `ρ i`, the sum `∑ᶠ i, φ i • ρ i` is a global boundary defining function. -/
 theorem isBoundaryDefiningFunctionOn_finsum_smul {ι : Type*} {U : ι → Set M} {ρ : ι → M → ℝ}
@@ -267,8 +252,12 @@ theorem isBoundaryDefiningFunctionOn_finsum_smul {ι : Type*} {U : ι → Set M}
       (convex_Ioi 0)
   · exact φ.finsum_smul_mem_convex (g := ρ) (t := {0}) (mem_univ x)
       (fun i hi ↦ (hρ i).eq_zero x (hmem hi) hx) (convex_singleton 0)
-  · -- The differential is positive on the inward vector `e₀` of the preferred chart.
-    have h := mvfderiv_finsum_smul_pos hρ hφ hq (isOutwardPointing_neg_single_zero hq)
+  · -- The differential is positive on the inward vector `e₀` of the preferred chart, since each
+    -- `ρ i` with `q ∈ U i` vanishes at `q` and is positive on inward vectors there.
+    have h := φ.mvfderiv_finsum_smul_pos hφ (mem_univ q) (fun i hi ↦ (hρ i).mdifferentiableAt hi)
+      (fun i hi ↦ (hρ i).eq_zero q hi hq) fun i hi ↦
+        ((hρ i).isOutwardPointing_neg_iff_mvfderiv_pos hi hq _).mp
+          (isOutwardPointing_neg_single_zero hq)
     rw [h0] at h
     exact h.ne rfl
 
