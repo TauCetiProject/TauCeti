@@ -37,16 +37,16 @@ public noncomputable section
 
 namespace TauCeti.Examples.GaussianTails
 
-/-- `φ(0) = 0.398942`. -/
-example : |gaussianPDFReal 0 1 0 - 0.398942| < 5e-7 := by
+/-- `φ(0) ≈ 0.398942`, to within `5 · 10⁻⁷`. -/
+theorem abs_gaussianPDFReal_zero_sub_lt : |gaussianPDFReal 0 1 0 - 0.398942| < 5e-7 := by
   rw [gaussianPDFReal_zero_one, abs_sub_lt_iff]
   have h1 := inv_sqrt_two_mul_pi_gt_d8
   have h2 := inv_sqrt_two_mul_pi_lt_d8
   norm_num at h1 h2 ⊢
   constructor <;> linarith
 
-/-- `φ(1) = 0.241971`. -/
-example : |gaussianPDFReal 0 1 1 - 0.241971| < 5e-7 := by
+/-- `φ(1) ≈ 0.241971`, to within `5 · 10⁻⁷`. -/
+theorem abs_gaussianPDFReal_one_sub_lt : |gaussianPDFReal 0 1 1 - 0.241971| < 5e-7 := by
   rw [gaussianPDFReal_zero_one, abs_sub_lt_iff]
   have h1 := inv_sqrt_two_mul_pi_gt_d8
   have h2 := inv_sqrt_two_mul_pi_lt_d8

@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.BoundedVariation.Weighted.HalfSpace
 public import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import TauCeti.Analysis.SpecialFunctions.Gaussian.DecimalBounds
 import TauCeti.Examples.Analysis.BoundedVariation.GaussianHalfSpace
+import TauCeti.Examples.Probability.Distributions.Gaussian.Tails
 
 /-!
 # Checks: Gaussian cylinders
@@ -25,7 +25,7 @@ statement `γ_E(U ⊕ Fᗮ) = γ_F(U)`, `P_{γ_E}(U ⊕ Fᗮ) = P_{γ_F}(U)`, wi
 * For `F = {0}`, a subset `U` of `F` is `∅` or `F`, the cylinder is `∅` or `E`, and both
   perimeters vanish.
 * Gaussian perimeter is not translation invariant: translating `{x | x₀ < 0}` in `ℝ²` by `e₀`
-  gives `{x | x₀ < 1}`, and the perimeter changes from `φ(0) = 0.398942` to `φ(1) = 0.241971`.
+  gives `{x | x₀ < 1}`, and the perimeter changes from `φ(0) ≈ 0.398942` to `φ(1) ≈ 0.241971`.
 -/
 
 public section
@@ -48,17 +48,9 @@ def lineVec (ν : E) : (ℝ ∙ ν) :=
 theorem coe_lineVec (ν : E) : (lineVec ν : E) = ν :=
   (rfl)
 
-/-- A unit vector is a unit vector of its line. -/
-theorem norm_lineVec {ν : E} (hν : ‖ν‖ = 1) : ‖lineVec ν‖ = 1 :=
-  hν
-
-/-- Over the line `F = ℝ ν`, the cylinder over the half-line `{y | ⟪y, ν⟫ < s}` is the half-space
-`{x | ⟪x, ν⟫ < s}`. -/
-theorem preimage_orthogonalProjectionOnto_halfLine (ν : E) (s : ℝ) :
-    (ℝ ∙ ν).orthogonalProjectionOnto ⁻¹' {y | ⟪y, lineVec ν⟫ < s} = {x : E | ⟪x, ν⟫ < s} := by
-  ext x
-  simp only [mem_preimage, mem_ofPred_eq, Submodule.inner_orthogonalProjectionOnto_eq_of_mem_right,
-    coe_lineVec]
+/-- `lineVec ν` has the norm of `ν`. -/
+theorem norm_lineVec (ν : E) : ‖lineVec ν‖ = ‖ν‖ := by
+  rw [← Submodule.norm_coe, coe_lineVec]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
@@ -68,7 +60,7 @@ example {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) :
       (stdGaussian (ℝ ∙ ν)).real {y | ⟪y, lineVec ν⟫ < s} = cdf (gaussianReal 0 1) s := by
   refine ⟨measureReal_stdGaussian_setOf_inner_lt hν s, ?_⟩
   rw [measureReal_def, ← Submodule.stdGaussian_preimage_orthogonalProjectionOnto,
-    preimage_orthogonalProjectionOnto_halfLine, ← measureReal_def,
+    Submodule.preimage_orthogonalProjectionOnto_setOf_inner_lt, coe_lineVec, ← measureReal_def,
     measureReal_stdGaussian_setOf_inner_lt hν s]
 
 /-- The cylinder over a half-line and the half-line have the same Gaussian perimeter `φ(s)`. -/
@@ -77,9 +69,9 @@ example {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) :
         ENNReal.ofReal (gaussianPDFReal 0 1 s) ∧
       gaussianPerimeter {y : (ℝ ∙ ν) | ⟪y, lineVec ν⟫ < s} =
         ENNReal.ofReal (gaussianPDFReal 0 1 s) := by
-  rw [preimage_orthogonalProjectionOnto_halfLine]
+  rw [Submodule.preimage_orthogonalProjectionOnto_setOf_inner_lt, coe_lineVec]
   exact ⟨gaussianPerimeter_setOf_inner_lt hν s,
-    gaussianPerimeter_setOf_inner_lt (norm_lineVec hν) s⟩
+    gaussianPerimeter_setOf_inner_lt ((norm_lineVec ν).trans hν) s⟩
 
 /-- In `ℝ²`, over the first coordinate axis `F = ℝ e₀`, the cylinder over `(-∞, s)` is
 `{x | x₀ < s}`, of Gaussian perimeter `φ(s)`. -/
@@ -92,7 +84,7 @@ example (s : ℝ) :
       {x | x 0 < s} := by
     ext x
     simp [EuclideanSpace.inner_single_right]
-  rw [preimage_orthogonalProjectionOnto_halfLine, hset]
+  rw [Submodule.preimage_orthogonalProjectionOnto_setOf_inner_lt, coe_lineVec, hset]
   exact ⟨rfl, GaussianHalfSpace.gaussianPerimeter_setOf_lt s⟩
 
 /-- Over `F = {0}`, every subset of `F` is `∅` or `F`, its cylinder is `∅` or `E`, and the two
@@ -120,7 +112,8 @@ theorem vadd_setOf_lt_zero :
   simp [add_comm]
 
 /-- Gaussian perimeter is not translation invariant: `{x | x₀ < 0}` in `ℝ²` has perimeter
-`φ(0) = 0.398942`, and its translate by `e₀` has perimeter `φ(1) = 0.241971`. -/
+`φ(0) ≈ 0.398942`, and its translate by `e₀` has perimeter `φ(1) ≈ 0.241971`, both to within
+`5 · 10⁻⁷`. -/
 example :
     |(gaussianPerimeter {x : EuclideanSpace ℝ (Fin 2) | x 0 < 0}).toReal - 0.398942| < 5e-7 ∧
       |(gaussianPerimeter (EuclideanSpace.single (0 : Fin 2) (1 : ℝ) +ᵥ
@@ -128,13 +121,8 @@ example :
   rw [vadd_setOf_lt_zero, GaussianHalfSpace.gaussianPerimeter_setOf_lt,
     GaussianHalfSpace.gaussianPerimeter_setOf_lt,
     ENNReal.toReal_ofReal (gaussianPDFReal_nonneg _ _ _),
-    ENNReal.toReal_ofReal (gaussianPDFReal_nonneg _ _ _), gaussianPDFReal_zero_one,
-    gaussianPDFReal_zero_one, abs_sub_lt_iff, abs_sub_lt_iff]
-  have h1 := Real.inv_sqrt_two_mul_pi_gt_d8
-  have h2 := Real.inv_sqrt_two_mul_pi_lt_d8
-  have h3 := Real.exp_neg_half_gt_d8
-  have h4 := Real.exp_neg_half_lt_d8
-  norm_num at h1 h2 h3 h4 ⊢
-  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> nlinarith
+    ENNReal.toReal_ofReal (gaussianPDFReal_nonneg _ _ _)]
+  exact ⟨GaussianTails.abs_gaussianPDFReal_zero_sub_lt,
+    GaussianTails.abs_gaussianPDFReal_one_sub_lt⟩
 
 end TauCeti.Examples.GaussianCylinder
