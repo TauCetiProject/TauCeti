@@ -31,6 +31,8 @@ the error function (`erf z = z γ*(1/2, z²)`) are built.
 
 * `Complex.hasSum_tricomiIncompleteGamma` — the series
   `γ*(a, z) = e^{−z} ∑ zᵏ / Γ(a + k + 1)` (DLMF 8.7.1), for all `a` and `z`;
+* `Complex.tricomiIncompleteGamma_eq_regularizedHGFun` — the Kummer representation
+  `γ*(a, z) = 𝐌(a, a + 1, −z)` (DLMF 8.5.2), for all `a` and `z`;
 * `Complex.hasSum_tricomiIncompleteGamma_of_ne_neg_natCast` — the series
   `γ*(a, z) = Γ(a)⁻¹ ∑ (−z)ᵏ / (k! (a + k))` (DLMF 8.7.1), for `a ∉ −ℕ`, and its real form
   `Complex.hasSum_Gamma_mul_re_tricomiIncompleteGamma_ofReal`;
@@ -212,16 +214,24 @@ theorem differentiable_tricomiIncompleteGamma_left (z : ℂ) :
 /- By Kummer's transformation, `γ*(a, z) = e^{−z} 𝐌(1, a + 1, z) = 𝐌(a, a + 1, −z)`, whose series
 is the second form of 8.7.1; the integral 8.2.7 follows from it by termwise integration. -/
 
+/-- **Kummer representation** of Tricomi's function (DLMF 8.5.2):
+`γ*(a, z) = 𝐌(a, a + 1, −z)` for all `a` and `z`. The other form of 8.5.2,
+`γ*(a, z) = e^{−z} 𝐌(1, a + 1, z)`, is `tricomiIncompleteGamma_def`.
+
+Adapted from `tricomiIncompleteGamma_regularized_pair` of the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/IncompleteGamma/SpecialValues.lean`. -/
+theorem tricomiIncompleteGamma_eq_regularizedHGFun (a z : ℂ) :
+    tricomiIncompleteGamma a z = regularizedHGFun {a} {a + 1} (-z) := by
+  rw [regularizedHGFun_singleton_eq_exp_mul, add_sub_cancel_left, neg_neg,
+    tricomiIncompleteGamma_def]
+
 /-- The power series of Tricomi's function in `−z` (DLMF 8.7.1): for `a ∉ −ℕ`,
 `γ*(a, z) = Γ(a)⁻¹ ∑ (−z)ᵏ / (k! (a + k))`. -/
 theorem hasSum_tricomiIncompleteGamma_of_ne_neg_natCast {a : ℂ} (ha : ∀ n : ℕ, a ≠ -n)
     (z : ℂ) :
     HasSum (fun k : ℕ => (Gamma a)⁻¹ * ((-z) ^ k / (k ! * (a + k))))
       (tricomiIncompleteGamma a z) := by
-  have hT : tricomiIncompleteGamma a z = regularizedHGFun {a} {a + 1} (-z) := by
-    rw [regularizedHGFun_singleton_eq_exp_mul, add_sub_cancel_left, neg_neg,
-      tricomiIncompleteGamma_def]
-  rw [hT]
+  rw [tricomiIncompleteGamma_eq_regularizedHGFun]
   refine (hasSum_regularizedHGFun (a := {a}) (b := {a + 1}) (by simp) (-z)).congr_fun fun k => ?_
   have hak : a + k ≠ 0 := fun h => ha k (by linear_combination h)
   have hΓk : Gamma (a + k) ≠ 0 :=

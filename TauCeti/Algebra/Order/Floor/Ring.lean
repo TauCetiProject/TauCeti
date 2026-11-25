@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Floor.Ring
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Data.Int.Interval
+public import Mathlib.Data.Set.Card
 
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Set.Finite.Range
@@ -24,8 +25,10 @@ fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to on
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
 the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every point `x` lies in the
 interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its index between
-`⌈-R / δ⌉ - 1` and `⌊R / δ⌋`. Rounding up to the multiples of `δ` moves a point by less than
-`δ`, and on a finite index type only finitely many rounded families have entries in `[-R, R]`.
+`⌈-R / δ⌉ - 1` and `⌊R / δ⌋`. Two points with no multiple of `δ` between them lie in the same
+interval, and an open interval of length `L` contains at most `⌈L / δ⌉₊` multiples of `δ`.
+Rounding up to the multiples of `δ` moves a point by less than `δ`, and on a finite index type
+only finitely many rounded families have entries in `[-R, R]`.
 
 ## Main results
 
@@ -41,6 +44,10 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
 * `TauCeti.exists_finset_forall_exists_le_lt_add`: finitely many families round up, by less
   than `δ` in each entry, every family with entries in `[-R, R]`.
+* `TauCeti.floor_div_eq_of_forall_intCast_mul_notMem_uIcc`: if no multiple of `δ > 0` lies
+  between `a` and `b`, then `⌊a / δ⌋ = ⌊b / δ⌋`.
+* `TauCeti.encard_setOf_intCast_mul_mem_Ioo_le`: an open interval of length `L` contains at most
+  `⌈L / δ⌉₊` multiples of `δ > 0`.
 * `TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq`: for `t > 0`, nonnegative elements `a`, `b`
   with `⌊a * t⌋₊ = ⌊b * t⌋₊` differ by less than `1 / t`.
 -/
@@ -115,6 +122,40 @@ theorem mem_Icc_ceil_floor_of_mem_Icc (hδ : 0 < δ) {R x : K} {m : ℤ}
   · refine Int.le_floor.2 ?_
     rw [le_div_iff₀ hδ]
     linarith [hx.1]
+
+/-- For a step `δ > 0`, two points with no multiple of `δ` between them have the same index
+`⌊x / δ⌋`. -/
+theorem floor_div_eq_of_forall_intCast_mul_notMem_uIcc (hδ : 0 < δ) {a b : K}
+    (h : ∀ m : ℤ, (m : K) * δ ∉ Set.uIcc a b) : ⌊a / δ⌋ = ⌊b / δ⌋ := by
+  wlog hab : a ≤ b generalizing a b
+  · exact (this (fun m hm ↦ h m (Set.uIcc_comm a b ▸ hm)) (le_of_not_ge hab)).symm
+  refine le_antisymm (Int.floor_mono (div_le_div_of_nonneg_right hab hδ.le)) (not_lt.1 fun hlt ↦ ?_)
+  -- the multiple `δ (⌊a / δ⌋ + 1)` would lie in `(a, b]`
+  refine h (⌊a / δ⌋ + 1) (Set.mem_uIcc_of_le ?_ ?_)
+  · rw [← div_le_iff₀ hδ]
+    push_cast
+    exact (Int.lt_floor_add_one _).le
+  · rw [← le_div_iff₀ hδ]
+    exact (Int.cast_le.2 (Int.add_one_le_iff.2 hlt)).trans (Int.floor_le _)
+
+/-- An open interval of length `L` contains at most `⌈L / δ⌉₊` multiples of a step `δ > 0`. -/
+theorem encard_setOf_intCast_mul_mem_Ioo_le (hδ : 0 < δ) (c L : K) :
+    {k : ℤ | (k : K) * δ ∈ Set.Ioo c (c + L)}.encard ≤ ⌈L / δ⌉₊ := by
+  have hsub : {k : ℤ | (k : K) * δ ∈ Set.Ioo c (c + L)} ⊆
+      (Finset.Ioo ⌊c / δ⌋ ⌈(c + L) / δ⌉ : Set ℤ) := by
+    rintro k ⟨h1, h2⟩
+    simp only [Finset.coe_Ioo, Set.mem_Ioo]
+    exact ⟨Int.floor_lt.2 ((div_lt_iff₀ hδ).2 h1), Int.lt_ceil.2 ((lt_div_iff₀ hδ).2 h2)⟩
+  refine (Set.encard_le_encard hsub).trans ?_
+  rw [Set.encard_coe_eq_coe_finsetCard, Int.card_Ioo]
+  have hceil : ⌈(c + L) / δ⌉ ≤ ⌈c / δ⌉ + ⌈L / δ⌉ := by
+    rw [add_div]
+    exact Int.ceil_add_le _ _
+  have hfl : ⌈c / δ⌉ ≤ ⌊c / δ⌋ + 1 := Int.ceil_le_floor_add_one _
+  have : (⌈(c + L) / δ⌉ - ⌊c / δ⌋ - 1).toNat ≤ ⌈L / δ⌉₊ := by
+    rw [← Int.ceil_toNat]
+    exact Int.toNat_le_toNat (by omega)
+  exact_mod_cast this
 
 /-- **Rounding up to a grid.** For a step `δ > 0` and a bound `R`, finitely many families on a
 finite index type round up every family `a` with entries in `[-R, R]`: some `c` among them has

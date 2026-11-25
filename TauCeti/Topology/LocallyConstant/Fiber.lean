@@ -16,7 +16,8 @@ The fibers `f⁻¹{a}` of a locally constant function `f : X → α` are clopen
 (`IsLocallyConstant.isClopen_fiber`). Because these open fibers cover `X`, a map out of `X` is
 continuous if and only if its restriction to each fiber is continuous
 (`IsLocallyConstant.continuous_iff`), and likewise for joint fibers of two locally constant
-functions (`IsLocallyConstant.continuous_iff₂`).
+functions (`IsLocallyConstant.continuous_iff₂`) and for maps into a sigma space landing in each
+corresponding summand (`IsLocallyConstant.continuous_iff_of_eq_sigmaMk`).
 
 This file also packages the fibers of `f : LocallyConstant X α` as elements of `Clopens X`
 (`LocallyConstant.fiberClopens`). Their underlying open sets `(f.fiberClopens a).toOpens` can
@@ -45,6 +46,20 @@ theorem continuous_iff {X α T : Type*} [TopologicalSpace X] [TopologicalSpace T
   exact continuous_of_cover_nhds (s := fun a => {x : X | f x = a})
     (fun x => ⟨f x, (hf.isOpen_fiber (f x)).mem_nhds rfl⟩)
     (fun a => continuousOn_iff_continuous_domRestrict.2 (hg a))
+
+/-- A map `g : X → Σ a, Z a` into a disjoint union that lands in summand `Z a` via `h a` on each
+fiber `{x // f x = a}` of a locally constant function `f` is continuous if and only if each `h a`
+is continuous. -/
+theorem continuous_iff_of_eq_sigmaMk {X α : Type*} {Z : α → Type*}
+    [TopologicalSpace X] [∀ a, TopologicalSpace (Z a)]
+    {f : X → α} (hf : IsLocallyConstant f) {g : X → Σ a, Z a}
+    (h : ∀ a, {x : X // f x = a} → Z a)
+    (hg : ∀ a (x : {x : X // f x = a}), g x.val = ⟨a, h a x⟩) :
+    Continuous g ↔ ∀ a : α, Continuous (h a) := by
+  rw [hf.continuous_iff]
+  refine forall_congr' fun a ↦ ?_
+  rw [(Topology.IsEmbedding.sigmaMk (σ := Z) (i := a)).continuous_iff]
+  exact ⟨fun h' ↦ h'.congr (hg a), fun h' ↦ h'.congr fun x ↦ (hg a x).symm⟩
 
 /-- A map out of `X` is continuous if and only if its restriction to each joint fiber of two
 locally constant functions `f₁ : X → α` and `f₂ : X → β` is continuous. -/

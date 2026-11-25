@@ -47,6 +47,8 @@ not belong to any particular application.
   `[a, b]` and `a < c < b`, the symmetric excision integral
   `∫ t in a..(c - ε), g t ∂μ + ∫ t in (c + ε)..b, g t ∂μ` tends to `∫ t in a..b, g t ∂μ` as
   `ε → 0⁺`.
+* `TauCeti.intervalIntegral.integral_eq_zero_of_forall_lt`: for `b ≤ a` and a measure vanishing
+  on singletons, the integral over `a..b` of a function vanishing on `(-∞, a)` is zero.
 * `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
   function leaves a function of integral zero over `a..b`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
@@ -66,6 +68,8 @@ not belong to any particular application.
   by the integral of a function dominating `‖f‖` almost everywhere on `(a, b)`.
 * `TauCeti.intervalIntegral.abs_integral_norm_le`: for `M` integrable on `[a, b]`, the integral
   of `‖M‖` between two points of `[a, b]` is at most its integral over `[a, b]`.
+* `TauCeti.intervalIntegral.abs_integral_norm_le_abs_integral_of_norm_le`: if `‖M‖ ≤ m` almost
+  everywhere between `c` and `d`, then `|∫ r in c..d, ‖M r‖| ≤ |∫ r in c..d, m r|`.
 * `MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub`: for `f` integrable on `(a, b)`, the
   integral over a subinterval `(s, t)` is a difference of primitives based at any `c ∈ [a, b]`.
 * `MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm`: an interval integral of an
@@ -461,6 +465,17 @@ theorem tendsto_principalValue_of_continuousOn {E : Type*} [NormedAddCommGroup E
     (hg_int.mono_set (uIcc_subset_uIcc hcp right_mem_uIcc))
   rw [← hadj, add_sub_cancel_left]
 
+/-- For `b ≤ a` and a measure vanishing on singletons, the integral over `a..b` of a function
+vanishing on `(-∞, a)` is zero. -/
+theorem integral_eq_zero_of_forall_lt {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} [NullSingletonClass μ] {F : ℝ → E} {a b : ℝ} (hF : ∀ t < a, F t = 0)
+    (hb : b ≤ a) :
+    ∫ t in a..b, F t ∂μ = 0 := by
+  refine _root_.intervalIntegral.integral_zero_ae ?_
+  filter_upwards [Measure.ae_ne μ a] with t hta ht
+  rw [uIoc_of_ge hb] at ht
+  exact hF t (lt_of_le_of_ne ht.2 hta)
+
 end intervalIntegral
 
 /-- A function vanishing on `(-∞, a]` and on a ball around `a` has zero integral on `a..t` for
@@ -637,6 +652,16 @@ theorem abs_integral_norm_le {G : Type*} [NormedAddCommGroup G] {M : ℝ → G}
     ⟨(le_min hc.1 hd.1).trans_lt hx.1, hx.2.trans (max_le hc.2 hd.2)⟩
   exact setIntegral_mono_set (IntegrableOn.mono_set hM.norm Ioc_subset_Icc_self)
     (ae_of_all _ fun _ ↦ norm_nonneg _) hsub.eventuallySubset
+
+/-- For a function `M` into a normed group and `m` integrable between `c` and `d` with
+`‖M r‖ ≤ m r` for almost every `r` between them, `|∫ r in c..d, ‖M r‖| ≤ |∫ r in c..d, m r|`. -/
+theorem abs_integral_norm_le_abs_integral_of_norm_le {G : Type*} [NormedAddCommGroup G]
+    {M : ℝ → G} {m : ℝ → ℝ} {c d : ℝ} (hm : IntervalIntegrable m volume c d)
+    (hMm : ∀ᵐ r, r ∈ Ι c d → ‖M r‖ ≤ m r) :
+    |∫ r in c..d, ‖M r‖| ≤ |∫ r in c..d, m r| := by
+  simpa only [Real.norm_eq_abs] using
+    _root_.intervalIntegral.norm_integral_le_abs_of_norm_le (f := fun r ↦ ‖M r‖)
+      ((ae_restrict_iff' measurableSet_uIoc).2 (by simpa only [norm_norm] using hMm)) hm
 
 end TauCeti.intervalIntegral
 
