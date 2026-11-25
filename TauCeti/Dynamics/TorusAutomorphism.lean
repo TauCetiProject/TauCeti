@@ -241,6 +241,13 @@ theorem isNondegenerateUpToPeriod_generalLinearGroup_smul_iff (A : GL ι ℤ) (N
 
 section FinTwo
 
+/-- The determinant `det (1 - Aⁿ)` of an integer `2 × 2` matrix, cast to `ℚ`, is computed by the
+rational matrix of `A`. -/
+private theorem intCast_det_one_sub_pow (A : Matrix (Fin 2) (Fin 2) ℤ) (n : ℕ) :
+    (((1 - A ^ n).det : ℤ) : ℚ) = (1 - A.map (Int.castRingHom ℚ) ^ n).det := by
+  rw [← eq_intCast (Int.castRingHom ℚ), RingHom.map_det, map_sub, map_one, map_pow,
+    RingHom.mapMatrix_apply]
+
 /-- The signed fixed-point count of the `n`-th iterate of `x ↦ A • x` on the two-torus, as a
 rational number, is `det (1 - Bⁿ)` for the rational matrix `B` of `A`. -/
 private theorem intCast_finsum_sign_det_id_sub_fixedPointDerivative_iterate (A : GL (Fin 2) ℤ)
@@ -250,8 +257,7 @@ private theorem intCast_finsum_sign_det_id_sub_fixedPointDerivative_iterate (A :
           (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) (fun y ↦ A • y)^[n] x)) : ℤ) : ℤ) : ℚ) =
       (1 - ((A : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℚ)) ^ n).det := by
   rw [finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul,
-    ← eq_intCast (Int.castRingHom ℚ), RingHom.map_det, map_sub, map_one, map_pow,
-    RingHom.mapMatrix_apply]
+    intCast_det_one_sub_pow]
 
 /-- **The dynamical zeta function of a linear map of the two-torus.** Let `A ∈ GL(2, ℤ)` act on
 the torus `Fin 2 → AddCircle p` by `φ(x) = A • x`. Its dynamical zeta function
@@ -273,7 +279,7 @@ theorem subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLin
           (1 - PowerSeries.C (((A : Matrix (Fin 2) (Fin 2) ℤ).det : ℤ) : ℚ) * PowerSeries.X)) =
       (((A : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℚ)).charpolyRev : PowerSeries ℚ) := by
   simp_rw [intCast_finsum_sign_det_id_sub_fixedPointDerivative_iterate]
-  rw [← eq_intCast (Int.castRingHom ℚ), RingHom.map_det, RingHom.mapMatrix_apply]
+  rw [Int.cast_det]
   exact Matrix.subst_exp_det_one_sub_pow_mul_fin_two _
 
 /-- **The dynamical zeta function of an area-preserving linear map of the two-torus.** For
@@ -288,8 +294,8 @@ theorem subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLin
       (((A : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℚ)).charpolyRev : PowerSeries ℚ) *
         PowerSeries.mk 1 ^ 2 := by
   simp_rw [intCast_finsum_sign_det_id_sub_fixedPointDerivative_iterate]
-  refine Matrix.subst_exp_det_one_sub_pow_fin_two_of_det_eq_one ?_
-  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hA, map_one]
+  exact Matrix.subst_exp_det_one_sub_pow_fin_two_of_det_eq_one
+    ((Int.cast_det _).symm.trans (by rw [hA, Int.cast_one]))
 
 /-- **The coefficients of the dynamical zeta function of an area-preserving linear map of the
 two-torus.** For `A ∈ SL(2, ℤ)` acting on the torus and `n ≠ 0`, the coefficient of `tⁿ` in the
@@ -303,11 +309,11 @@ theorem coeff_subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_gene
             (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) (fun y ↦ A • y)^[n] x)) : ℤ) : ℤ) : ℚ))) =
       n * (1 - (A : Matrix (Fin 2) (Fin 2) ℤ)).det := by
   simp_rw [intCast_finsum_sign_det_id_sub_fixedPointDerivative_iterate]
-  have hB : ((A : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℚ)).det = 1 := by
-    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hA, map_one]
+  have hB : ((A : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℚ)).det = 1 :=
+    (Int.cast_det _).symm.trans (by rw [hA, Int.cast_one])
   rw [Matrix.coeff_subst_exp_det_one_sub_pow_fin_two_of_det_eq_one hB hn,
-    ← RingHom.mapMatrix_apply, ← map_one ((Int.castRingHom ℚ).mapMatrix), ← map_sub,
-    ← RingHom.map_det, eq_intCast]
+    ← pow_one ((A : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℚ)), ← intCast_det_one_sub_pow,
+    pow_one]
 
 end FinTwo
 

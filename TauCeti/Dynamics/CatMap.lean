@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.TorusAutomorphism
-public import TauCeti.LinearAlgebra.Matrix.Charpoly.Symplectic
+public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Zeta
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
@@ -105,19 +105,11 @@ theorem det_one_sub_catMap_pow_neg {n : ℕ} (hn : n ≠ 0) : (1 - catMap ^ n).d
   det_one_sub_pow_neg_of_two_lt_trace det_catMap (by decide) hn
 
 /-- The coefficient of `t ^ n` in `det (1 - t P) / (1 - t) ^ 2` is `-n` for `n ≠ 0`. This is the
-genus-one case `det (1 - P) (n + 1 - g)` of
-`SymplecticGroup.coeff_coe_charpolyRev_mul_mk_one_sq`. -/
+case `n det (1 - P)` of `Matrix.coeff_coe_charpolyRev_mul_mk_one_sq_fin_two`, since `det P = 1`. -/
 theorem coeff_coe_charpolyRev_catMap_mul_mk_one_sq {n : ℕ} (hn : n ≠ 0) :
     PowerSeries.coeff n ((catMap.charpolyRev : PowerSeries ℤ) * PowerSeries.mk 1 ^ 2) =
       -(n : ℤ) := by
-  have h := SymplecticGroup.coeff_coe_charpolyRev_mul_mk_one_sq
-    reindex_catMap_mem_symplecticGroup (a := n) (by simp; omega)
-  have hdet (e : Fin 2 ≃ Fin 1 ⊕ Fin 1) : (1 - reindex e e catMap).det = (1 - catMap).det := by
-    rw [← det_reindex_self e (1 - catMap)]
-    simp [submatrix_sub]
-  rw [charpolyRev_reindex] at h
-  rw [h, hdet, det_one_sub_catMap]
-  simp
+  rw [coeff_coe_charpolyRev_mul_mk_one_sq_fin_two det_catMap hn, det_one_sub_catMap, mul_neg_one]
 
 /-- `det (1 - t P) / (1 - t) ^ 2 = (1 - 3 t + t ^ 2) / (1 - t) ^ 2 = 1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`
 for the cat map `P`. -/
@@ -142,8 +134,8 @@ theorem subst_exp_two_sub_trace_catMap_pow :
         (PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • (2 - ((catMap ^ n).trace : ℚ))) =
       PowerSeries.mk fun n ↦ if n = 0 then 1 else -(n : ℚ) := by
   set P := catMap.map (Int.castRingHom ℚ)
-  have hmap (M : Matrix (Fin 2) (Fin 2) ℤ) : (M.det : ℚ) = (M.map (Int.castRingHom ℚ)).det := by
-    rw [← eq_intCast (Int.castRingHom ℚ), RingHom.map_det, RingHom.mapMatrix_apply]
+  have hmap (M : Matrix (Fin 2) (Fin 2) ℤ) : (M.det : ℚ) = (M.map (Int.castRingHom ℚ)).det :=
+    Int.cast_det M
   have hpow (n : ℕ) : (1 - catMap ^ n).map (Int.castRingHom ℚ) = 1 - P ^ n := by
     rw [← RingHom.mapMatrix_apply, map_sub, map_one, map_pow, RingHom.mapMatrix_apply]
   -- The Lefschetz numbers are `2 - tr (P ^ n) = det (1 - P ^ n)`.

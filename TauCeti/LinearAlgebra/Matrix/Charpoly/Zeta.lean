@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 public import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
+import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!
 # The trace–determinant formula and Lefschetz zeta functions
@@ -65,6 +66,8 @@ surface of genus one acting on `H₁` by `A` is
   `det (1 - X fᵢ)`.
 * `Matrix.subst_exp_det_one_sub_pow_mul_fin_two`: for a `2 × 2` matrix,
   `exp (∑ₙ det (1 - A ^ n) Xⁿ / n) = det (1 - X A) / ((1 - X) (1 - det A X))`.
+* `Matrix.coeff_coe_charpolyRev_mul_mk_one_sq_fin_two`: for `det A = 1` and `n ≠ 0`, the
+  coefficient of `Xⁿ` in `det (1 - X A) / (1 - X) ^ 2` is `n det (1 - A)`.
 * `Matrix.subst_exp_det_one_sub_pow_fin_two_of_det_eq_one`,
   `Matrix.coeff_subst_exp_det_one_sub_pow_fin_two_of_det_eq_one`: for `det A = 1`, the same series
   is `det (1 - X A) / (1 - X) ^ 2`, with coefficients `n det (1 - A)` for `n ≠ 0`.
@@ -168,32 +171,23 @@ theorem subst_exp_det_one_sub_pow_fin_two_of_det_eq_one (hA : A.det = 1) :
   rw [← h, mul_assoc, ← sq, ← mul_pow, mul_comm (1 - X), mk_one_mul_one_sub_eq_one, one_pow,
     mul_one]
 
+omit [Algebra ℚ R] in
+/-- For a `2 × 2` matrix `A` of determinant one and `n ≠ 0`, the coefficient of `Xⁿ` in
+`det (1 - X A) / (1 - X) ^ 2 = det (1 - X A) (∑ Xᵏ) ^ 2` is `n det (1 - A)`. -/
+theorem coeff_coe_charpolyRev_mul_mk_one_sq_fin_two (hA : A.det = 1) {n : ℕ} (hn : n ≠ 0) :
+    coeff n ((A.charpolyRev : R⟦X⟧) * mk 1 ^ 2) = n * (1 - A).det := by
+  rw [Polynomial.coeff_coe_mul_mk_one_sq _ ((natDegree_charpolyRev_le A).trans (by simp; omega)),
+    eval_one_charpolyRev, charpolyRev_fin_two, det_one_sub_fin_two, hA]
+  simp
+  ring
+
 /-- **The coefficients of the Lefschetz zeta function of a `2 × 2` matrix of determinant one.**
 For `n ≠ 0`, the coefficient of `Xⁿ` in `exp (∑ₙ det (1 - A ^ n) Xⁿ / n)` is `n det (1 - A)`. -/
 theorem coeff_subst_exp_det_one_sub_pow_fin_two_of_det_eq_one (hA : A.det = 1) {n : ℕ}
     (hn : n ≠ 0) :
     coeff n ((exp R).subst (mk fun n ↦ (n : ℚ)⁻¹ • (1 - A ^ n).det)) = (n : R) * (1 - A).det := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  have hsq : (mk 1 : R⟦X⟧) ^ 2 = mk fun k ↦ (k : R) + 1 := by
-    rw [show 2 = 1 + 1 by rfl, mk_one_pow_eq_mk_choose_add]
-    ext k
-    simp [add_comm]
-  -- The coefficient of `Xᵐ⁺¹` in `(1 - tr A X + X²) ∑ₖ (k + 1) Xᵏ` is
-  -- `(m + 2) - tr A (m + 1) + m = (m + 1) (2 - tr A)`.
-  have hX2 : coeff (m + 1) ((X : R⟦X⟧) ^ 2 * mk fun k ↦ (k : R) + 1) = (m : R) := by
-    rw [coeff_X_pow_mul', coeff_mk]
-    split_ifs with h
-    · rw [Nat.cast_sub h]
-      push_cast
-      ring
-    · simp [show m = 0 by omega]
-  rw [subst_exp_det_one_sub_pow_fin_two_of_det_eq_one hA, charpolyRev_fin_two, hA, hsq,
-    det_one_sub_fin_two, hA]
-  simp only [Polynomial.coe_add, Polynomial.coe_sub, Polynomial.coe_one, Polynomial.coe_mul,
-    Polynomial.coe_C, Polynomial.coe_X, Polynomial.coe_pow, map_one, one_mul, add_mul, sub_mul,
-    map_add, map_sub, mul_assoc, coeff_C_mul, coeff_succ_X_mul, coeff_mk, hX2]
-  push_cast
-  ring
+  rw [subst_exp_det_one_sub_pow_fin_two_of_det_eq_one hA,
+    coeff_coe_charpolyRev_mul_mk_one_sq_fin_two hA hn]
 
 end FinTwo
 
