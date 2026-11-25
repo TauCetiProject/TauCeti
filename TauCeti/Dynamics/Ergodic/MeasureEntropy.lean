@@ -7,7 +7,7 @@ module
 
 public import TauCeti.InformationTheory.PartitionEntropy
 public import Mathlib.MeasureTheory.MeasurableSpace.Pi
-public import Mathlib.Analysis.Subadditive
+import Mathlib.Analysis.Subadditive
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 
 /-!

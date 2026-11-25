@@ -10,6 +10,8 @@ public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
+import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Entropy of countable measurable partitions
@@ -137,11 +139,6 @@ theorem countablePartitionEntropy_pair_self (μ : Measure X) (a : X → ι) :
   countablePartitionEntropy_comp_of_injective (e := fun i ↦ (i, i)) a
     fun _ _ h ↦ congrArg Prod.fst h
 
-/-- `negMulLog x = x * (-log x)`, read in `ℝ≥0∞` for `0 ≤ x`. -/
-private theorem ofReal_negMulLog {x : ℝ} (hx : 0 ≤ x) :
-    ENNReal.ofReal (negMulLog x) = ENNReal.ofReal x * ENNReal.ofReal (-log x) := by
-  rw [← ENNReal.ofReal_mul hx, negMulLog, neg_mul, mul_neg]
-
 /-- **Refinement.** Refining a partition by a countable label `a` does not decrease its entropy:
 `H(b) ≤ H(a ∨ b)`. This holds for every measure: a cell of `b` of mass `p ≤ 1` is covered by its
 cells in `a ∨ b`, each of mass `c ≤ p`, and `-c log c ≥ -c log p`. -/
@@ -222,15 +219,6 @@ private theorem ofReal_negMulLog_eq_add {p q : ℝ} (hp : 0 ≤ p) (hpq : p ≤ 
     (mul_nonneg hp.le (log_nonneg ((one_le_div hp).mpr hpq))),
     log_div hq0.ne' hp.ne', negMulLog]
   ring_nf
-
-/-- Summing the measures of the cells `S ∩ a ⁻¹' {i}` of a set `S` over a measurable countable
-label `a` gives the measure of `S`. -/
-private theorem tsum_measure_inter_preimage_singleton {a : X → ι} (ha : Measurable a)
-    (S : Set X) : ∑' i, μ (S ∩ a ⁻¹' {i}) = μ S := by
-  have := tsum_measure_preimage_singleton (μ := μ.restrict S) Set.countable_univ
-    fun i _ ↦ ha (measurableSet_singleton i)
-  rw [tsum_univ (f := fun i ↦ μ.restrict S (a ⁻¹' {i}))] at this
-  simpa [Measure.restrict_apply (ha (measurableSet_singleton _)), Set.inter_comm] using this
 
 section ChainRule
 
