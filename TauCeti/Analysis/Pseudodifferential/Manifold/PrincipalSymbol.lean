@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Manifold
-import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.Pseudodifferential.Manifold.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -237,60 +234,6 @@ private theorem exists_cutoff_chartAt (x : M) :
     (singleton_subset_iff.2 (mem_chart_target (CoordinateSpace n) x))
   ⟨χ, by simpa only [nhdsSet_singleton] using hχ⟩
 
-omit [T2Space M] in
-/-- The frequency in the chart `e₂` of the covector `⟪η, ·⟫ ∘ de₁_x` is the image of `η` under the
-inverse adjoint of the derivative of the transition `e₂ ∘ e₁⁻¹` at `e₁ x`. -/
-private theorem toDual_symm_comp_inverse_mvfderiv
-    {e₁ e₂ : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he₁ : e₁ ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (he₂ : e₂ ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    {x : M} (hx₁ : x ∈ e₁.source) (hx₂ : x ∈ e₂.source) (η : CoordinateSpace n) :
-    (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
-        (((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e₁ x)).comp
-          (mvfderiv 𝓘(ℝ, CoordinateSpace n) e₂ x).inverse) =
-      ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ (e₁.symm.trans e₂) (e₁ x))) η := by
-  have hxκ : e₁ x ∈ (e₁.symm.trans e₂).source := by
-    simp [e₁.map_source hx₁, e₁.left_inv hx₁, hx₂]
-  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans (by simp) he₁ he₂ hxκ
-  -- The chain rule: `de₂_x = A ∘ de₁_x`.
-  have hD : ∀ w, A (mvfderiv 𝓘(ℝ, CoordinateSpace n) e₁ x w) =
-      mvfderiv 𝓘(ℝ, CoordinateSpace n) e₂ x w := fun w ↦ by
-    have h := OpenPartialHomeomorph.mvfderiv_eq_fderiv_symm_trans_comp hxκ
-      (by rw [e₁.left_inv hx₁]
-          exact (contMDiffAt_of_mem_maximalAtlas he₁ hx₁).mdifferentiableAt (by simp))
-      hA.differentiableAt
-    rw [e₁.left_inv hx₁, hA.fderiv] at h
-    exact (DFunLike.congr_fun h w).symm
-  rw [hA.fderiv, ContinuousLinearMap.ringInverse_eq_inverse, ContinuousLinearMap.inverse_equiv,
-    LinearIsometryEquiv.symm_apply_eq]
-  ext v
-  rw [InnerProductSpace.toDual_apply_apply, ContinuousLinearMap.adjoint_inner_left]
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
-  congr 1
-  refine A.injective ?_
-  rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
-  -- The extension of `e₂` by the model `𝓘(ℝ, ℝⁿ)` is `e₂` itself.
-  have hinv : (mvfderiv 𝓘(ℝ, CoordinateSpace n) e₂ x).IsInvertible := by
-    simpa using isInvertible_mvfderiv_extend (IsManifold.maximalAtlas_subset_of_le (by simp) he₂)
-      hx₂
-  exact (hD _).trans (hinv.self_apply_inverse v)
-
-omit [T2Space M] in
-/-- The covector dual to `ξ ∘ (de_x)⁻¹`, composed with `de_x`, is `ξ`. -/
-private theorem innerSL_toDual_symm_comp_inverse_mvfderiv
-    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M) {x : M} (hx : x ∈ e.source)
-    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
-    (innerSL ℝ ((InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
-      (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse))).comp
-        (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x) = ξ := by
-  -- The extension of `e` by the model `𝓘(ℝ, ℝⁿ)` is `e` itself.
-  have hinv : (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).IsInvertible := by
-    simpa using isInvertible_mvfderiv_extend (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx
-  ext v
-  rw [ContinuousLinearMap.comp_apply, innerSL_apply_apply, InnerProductSpace.toDual_symm_apply,
-    ContinuousLinearMap.comp_apply, hinv.inverse_apply_self]
-
 /-! ### The principal symbol on the cotangent bundle -/
 
 variable [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
@@ -383,13 +326,14 @@ theorem coefficient_principal_eq_classicalPrincipalSymbol
     (fun z hz ↦ (hθW hz).1) (fun z hz ↦ hNχ _ (hθW hz).2) (fun z hz ↦ hNχ _ (hθW hz).2)
     (isChartSymbol_chartSymbol hP he θ θ) (isChartSymbol_chartSymbol hP he₂ χ χ) (e x) η
   rw [hθy, one_mul, one_smul] at h₂ h₃
-  rw [h₁, ← h₂, h₃, e.left_inv hx, classicalPrincipalSymbol, dite_eq_left_of_eq_true (eq_true hP),
-    ← toDual_symm_comp_inverse_mvfderiv he he₂ hx hx₂ η]
+  rw [h₁, ← h₂, h₃, e.left_inv hx, classicalPrincipalSymbol, dite_eq_left hP, preferredChartSymbol,
+    ← toDual_symm_comp_inverse_mvfderiv (IsManifold.maximalAtlas_subset_of_le (by simp) he)
+      (IsManifold.maximalAtlas_subset_of_le (by simp) he₂) hx hx₂ η]
   refine ContinuousLinearMap.ext_ring ?_
   simp only [FunLike.coe_smul, Pi.smul_apply, ContinuousLinearMap.id_apply,
     Complex.real_smul, smul_eq_mul, mul_one]
-  -- Both sides now read the same symbol `a₂`, once through the local names `e₂` and `χ` and once
-  -- through the preferred chart and its chosen cutoff that these names abbreviate.
+  -- Both sides now read the same symbol `chartSymbol hP he₂ χ χ`, once through the local names
+  -- `e₂` and `χ` and once through the preferred chart and its chosen cutoff that they abbreviate.
   rfl
 
 /-- **The principal symbol in a chart, at a covector.** Let `a` be the symbol of the chart
@@ -409,7 +353,8 @@ theorem coefficient_principal_apply_eq_classicalPrincipalSymbol
         (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse)) 1 =
       (φ (e x) * ψ (e x) : ℝ) * classicalPrincipalSymbol m P x ξ := by
   rw [coefficient_principal_eq_classicalPrincipalSymbol hP he φ ψ ha hx,
-    innerSL_toDual_symm_comp_inverse_mvfderiv he hx]
+    innerSL_toDual_symm_comp_inverse_mvfderiv (IsManifold.maximalAtlas_subset_of_le (by simp) he)
+      hx]
   simp
 
 /-! ### Homogeneity -/
@@ -526,7 +471,8 @@ theorem classicalPrincipalSymbol_complexifyLinearMap {m : ℕ}
   -- The chart frequency `η` of `ξ`, which is nonzero since `⟪η, ·⟫ ∘ de_x = ξ`.
   set η := (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
     (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse)
-  have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv he hx ξ
+  have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv
+    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx ξ
   have hη : η ≠ 0 := fun h ↦ hξ <| by
     rw [← hηξ]
     simp [η, h]
