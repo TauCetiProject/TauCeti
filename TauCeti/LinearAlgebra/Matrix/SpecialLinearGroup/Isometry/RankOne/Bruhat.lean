@@ -276,8 +276,7 @@ theorem torus_le_borel : torus K σ ≤ borel K σ := fun t ht ↦ by
 
 /-- The Weyl representative moves the point at infinity. -/
 theorem weyl_notMem_borel : weyl K σ ∉ borel K σ := fun h ↦
-  point_ne_infinity _ ((origin_eq_point K σ).symm.trans
-    ((weyl_smul_infinity K σ).symm.trans (mem_borel_iff_smul_infinity.mp h)))
+  origin_ne_infinity K σ ((weyl_smul_infinity K σ).symm.trans (mem_borel_iff_smul_infinity.mp h))
 
 variable {K σ}
 
@@ -354,8 +353,8 @@ theorem weyl_mul_mul_weyl_mem_borel_iff {u : UnitaryRankOne.Group K σ} (hu : u 
     weyl K σ * u * weyl K σ ∈ borel K σ ↔ u = 1 := by
   obtain ⟨a, rfl⟩ := mem_unipotent_iff_exists.mp hu
   rw [mem_borel_iff_smul_infinity, mul_smul, mul_smul, weyl_smul_infinity,
-    smul_eq_iff_eq_inv_smul, weyl_inv, weyl_smul_infinity, origin_eq_point,
-    upperRootHom_smul_eq_self_iff _ _ (point_ne_infinity _),
+    smul_eq_iff_eq_inv_smul, weyl_inv, weyl_smul_infinity,
+    upperRootHom_smul_eq_self_iff _ _ (origin_ne_infinity K σ),
     map_eq_one_iff _ (upperRootHom_injective K σ)]
 
 variable (K σ) in

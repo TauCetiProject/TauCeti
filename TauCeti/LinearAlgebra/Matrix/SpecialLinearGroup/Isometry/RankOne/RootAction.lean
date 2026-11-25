@@ -126,6 +126,7 @@ theorem upperRootHom_smul_point (a : HeisenbergGroup.unitarySubgroup σ)
   fin_cases i <;> simp <;> ring
 
 /-- The orbit of `[0 : 0 : 1]` records the two free root parameters. -/
+@[simp]
 theorem upperRootHom_smul_origin (a : HeisenbergGroup.unitarySubgroup σ) :
     upperRootHom K σ a • origin K σ =
       point K σ ⟨((a : HeisenbergGroup K).z, σ (a : HeisenbergGroup K).x), by

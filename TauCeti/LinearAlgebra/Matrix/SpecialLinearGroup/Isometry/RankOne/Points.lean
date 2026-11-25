@@ -128,6 +128,18 @@ theorem infinity_ne_point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
     infinity K σ ≠ point K σ c :=
   (point_ne_infinity c).symm
 
+variable (K σ) in
+/-- The isotropic point `[0 : 0 : 1]` is not the point at infinity. -/
+@[simp]
+theorem origin_ne_infinity : origin K σ ≠ infinity K σ :=
+  point_ne_infinity _
+
+variable (K σ) in
+/-- The point at infinity is not the isotropic point `[0 : 0 : 1]`. -/
+@[simp]
+theorem infinity_ne_origin : infinity K σ ≠ origin K σ :=
+  (origin_ne_infinity K σ).symm
+
 /-- An isotropic point lies outside the last standard affine chart exactly when it is the
 point at infinity. -/
 theorem eq_infinity_iff (p :
