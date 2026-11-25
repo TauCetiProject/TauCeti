@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.Algebra.Module.LinearMap.Polynomial
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.MvPolynomial.PDeriv
@@ -75,6 +76,8 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
 * `TauCeti.polynomialAction_mul`: the substitution of standard vectors is a left action.
 * `TauCeti.polynomialAction_sum_C_mul_X`: on linear forms it is matrix-vector multiplication of
   the coefficient vector.
+* `Matrix.eval_aeval_toMvPolynomial`: substituting the rows of a rectangular matrix `A` as linear
+  forms gives the polynomial `x ↦ p(A x)`.
 -/
 
 public section
@@ -366,3 +369,19 @@ theorem coe_polynomialRep_apply [DecidableEq σ] {d : ℕ} (g : GL σ R)
 end Action
 
 end TauCeti
+
+namespace Matrix
+
+/-- Substituting the linear forms `∑ⱼ Aᵢⱼ Xⱼ` given by the rows of a rectangular matrix `A` into
+`p` gives the polynomial `x ↦ p(A x)`: this is the pullback of polynomial functions along the
+linear map `A`, generalizing `MvPolynomial.eval_linearSubst` to rectangular matrices. -/
+theorem eval_aeval_toMvPolynomial {m n R : Type*} [Fintype n] [CommSemiring R]
+    (A : Matrix m n R) (x : n → R) (p : MvPolynomial m R) :
+    MvPolynomial.eval x (MvPolynomial.aeval A.toMvPolynomial p) = MvPolynomial.eval (A *ᵥ x) p := by
+  have hpt : (fun i ↦ MvPolynomial.eval x (A.toMvPolynomial i)) = A *ᵥ x :=
+    funext (A.toMvPolynomial_eval_eq_apply · x)
+  rw [← hpt]
+  simpa only [MvPolynomial.aeval_eq_eval] using
+    MvPolynomial.comp_aeval_apply (f := A.toMvPolynomial) (MvPolynomial.aeval x) p
+
+end Matrix

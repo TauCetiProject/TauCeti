@@ -12,6 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.DiagonalMeasure
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.DominatedConvergence
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.OfRepresentation
 public import TauCeti.MeasureTheory.MeasurableSpace.Subtype
+import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 
 /-!
 # The Borel functional calculus of a normal operator
@@ -45,6 +46,8 @@ commutes with every spectral projection, equivalently with every value of the Bo
 * `ContinuousLinearMap.borelCalculus_ofContinuousMap`: the Borel calculus extends `cfcHom`.
 * `ContinuousLinearMap.borelCalculus_restrict_id`: the coordinate function recovers `a`.
 * `ContinuousLinearMap.borelCalculus_indicator`: indicators give the spectral projections.
+* `ContinuousLinearMap.exists_seq_tendsto_borelCalculus_ofSimpleFunc`: `a` is the norm limit of
+  finite sums `∑ c • P(B_c)` of spectral projections with `c` in the spectrum.
 * `ContinuousLinearMap.eq_spectralPVM_iff`: uniqueness of the spectral measure.
 * `ContinuousLinearMap.spectralPVM_proj_eq_zero_iff`: the spectral measure has full support.
 * `ContinuousLinearMap.mul_spectralPVM_proj_preimage_singleton`,
@@ -66,7 +69,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory TauCeti
+open MeasureTheory TauCeti Filter Topology
 open scoped InnerProductSpace
 
 namespace ContinuousLinearMap
@@ -128,6 +131,36 @@ theorem borelCalculus_restrict_id :
 theorem borelCalculus_indicator {B : Set (spectrum ℂ a)} (hB : MeasurableSet B) :
     a.borelCalculus (BoundedBorelFunction.indicator B hB 1) = a.spectralPVM.proj B hB :=
   a.spectralPVM.integral_indicator hB
+
+/-- **Approximation by finite spectral sums.** A normal operator `a` is the norm limit of the Borel
+calculi of simple functions on its spectrum that take their values in the spectrum, that is of
+finite sums `∑ c • P(B_c)` of spectral projections with `c ∈ spectrum ℂ a`
+(`ProjValMeasure.integral_ofSimpleFunc`). -/
+theorem exists_seq_tendsto_borelCalculus_ofSimpleFunc :
+    ∃ s : ℕ → SimpleFunc (spectrum ℂ a) ℂ, (∀ n z, s n z ∈ spectrum ℂ a) ∧
+      Tendsto (fun n ↦ a.borelCalculus (BoundedBorelFunction.ofSimpleFunc (s n))) atTop (𝓝 a) := by
+  -- On a zero space the spectrum is empty and every operator is `0`.
+  rcases subsingleton_or_nontrivial H with hH | hH
+  · refine ⟨fun _ ↦ SimpleFunc.const _ 0, fun n z ↦ absurd z.property (by simp), ?_⟩
+    simpa only [Subsingleton.elim _ a] using tendsto_const_nhds
+  obtain ⟨y₀, h₀⟩ := spectrum.nonempty a
+  refine ⟨fun n ↦ SimpleFunc.approxOn Subtype.val measurable_subtypeVal _ y₀ h₀ n,
+    fun n z ↦ SimpleFunc.approxOn_mem _ h₀ n z, ?_⟩
+  -- The simple approximants of the coordinate function converge to it uniformly.
+  have hlim : Tendsto (fun n ↦ BoundedBorelFunction.ofSimpleFunc
+      (SimpleFunc.approxOn Subtype.val measurable_subtypeVal _ y₀ h₀ n)) atTop
+      (𝓝 (BoundedBorelFunction.ofContinuousMap
+        ((ContinuousMap.id ℂ).restrict (spectrum ℂ a)))) := by
+    simp only [BoundedBorelFunction.tendsto_iff_tendstoUniformly,
+      BoundedBorelFunction.coe_ofSimpleFunc, BoundedBorelFunction.coe_ofContinuousMap,
+      ContinuousMap.coe_restrict, ContinuousMap.coe_id]
+    exact SimpleFunc.tendstoUniformly_approxOn measurable_subtypeVal h₀
+      (spectrum.isCompact (𝕜 := ℂ) a).totallyBounded fun z ↦ subset_closure z.property
+  have hcont : Continuous a.borelCalculus := by
+    rw [← integral_spectralPVM]
+    exact a.spectralPVM.continuous_integral
+  have := (hcont.tendsto _).comp hlim
+  rwa [borelCalculus_restrict_id] at this
 
 /-- Diagonal matrix elements of the Borel calculus are integrals against the diagonal measures:
 `⟪ξ, f(a) ξ⟫ = ∫ f dμ_ξ`. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Contracted.Vertex
 
 /-!
@@ -64,6 +65,11 @@ In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
   changes to the geometric points have discrete fibres does not change stability;
   `isStableMap_postcomp_iff_of_locallyQuasiFinite` and `isStableMap_postcomp_iff` are the locally
   quasi-finite and universally injective cases.
+* `isStableFiber_iff_of_iso` and `isStableMap_iff_of_iso`: being a stable fibre and being stable
+  are invariant under isomorphism of prestable maps: over a field, the isomorphism of dual graphs
+  `PointedPrestableFamily.dualGraphIsoOfIso` of the source curves matches the contracted vertices
+  and their log-canonical degrees.
+* `IsStableMap.pullback`: the base change of a stable map along any morphism of bases is stable.
 
 ## References
 
@@ -149,6 +155,22 @@ theorem isStableFiber_postcomp_iff {r : W ⟶ Spec (.of K)} (h : V ⟶ W) [Unive
     (hh : h ≫ r = q) : (F.postcomp h hh).IsStableFiber ↔ F.IsStableFiber :=
   F.isStableFiber_postcomp_iff_of_injective h h.injective hh
 
+variable {F} {G : PrestableMap q n}
+
+/-- Being a stable fibre is invariant under isomorphism of prestable maps. -/
+theorem IsStableFiber.of_iso (e : F ≅ G) (hF : F.IsStableFiber) : G.IsStableFiber := by
+  intro w hw
+  -- Naming the curves keeps the vertices typed by `G.curve.dualGraph` rather than by the
+  -- unreduced `(toCurve.obj G).dualGraph`, which `rw` cannot match against the goal.
+  obtain ⟨v, rfl⟩ := (PointedPrestableFamily.dualGraphIsoOfIso (P := F.curve) (Q := G.curve)
+    (toCurve.mapIso e)).vertexEquiv.surjective w
+  rw [DualGraph.Iso.logCanonicalDegree_vertexEquiv]
+  exact hF v ((isContractedVertex_dualGraphIsoOfIso_vertexEquiv_iff _ e.hom.hom_comp_map v).mp hw)
+
+/-- Isomorphic prestable maps over a separably closed field are stable fibres simultaneously. -/
+theorem isStableFiber_iff_of_iso (e : F ≅ G) : F.IsStableFiber ↔ G.IsStableFiber :=
+  ⟨.of_iso e, .of_iso e.symm⟩
+
 end Fiber
 
 variable {q : V ⟶ S}
@@ -222,6 +244,35 @@ theorem isStableMap_postcomp_iff (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶
       MorphismProperty.pullbackMap (P := @UniversallyInjective) ‹_› inferInstance hh.symm
         (Category.id_comp x).symm
     (Set.subsingleton_singleton.preimage (Scheme.Hom.injective _)).isDiscrete
+
+section Invariance
+
+variable {T : Scheme.{u}}
+
+/-- **Stability is invariant under isomorphism.** Isomorphic prestable maps have isomorphic base
+changes to every geometric point, so they are stable simultaneously. -/
+theorem isStableMap_iff_of_iso {F G : PrestableMap q n} (e : F ≅ G) :
+    F.IsStableMap ↔ G.IsStableMap :=
+  forall₄_congr fun _ _ _ x ↦ isStableFiber_iff_of_iso ((pullbackFunctor x).mapIso e)
+
+/-- If two prestable maps are isomorphic and one is stable, so is the other. -/
+theorem IsStableMap.of_iso {F G : PrestableMap q n} (e : F ≅ G) (hF : F.IsStableMap) :
+    G.IsStableMap :=
+  (isStableMap_iff_of_iso e).mp hF
+
+/-- **Stability is stable under base change.** If a prestable map is stable, so is its base
+change along any morphism `g : T ⟶ S`: a geometric point `x` of `T` gives the geometric point
+`x ≫ g` of `S`, and the base change of `F.pullback g` to `x` is canonically isomorphic, after
+postcomposition with the canonical isomorphism of targets, to the base change of `F` to
+`x ≫ g`. -/
+theorem IsStableMap.pullback {F : PrestableMap q n} (hF : F.IsStableMap) (g : T ⟶ S) :
+    (F.pullback g).IsStableMap := by
+  intro Ω _ _ x
+  rw [← isStableFiber_postcomp_iff _ (Limits.pullbackLeftPullbackSndIso q g x).hom
+    (Limits.pullbackLeftPullbackSndIso_hom_snd q g x)]
+  exact (hF Ω (x ≫ g)).of_iso (pullbackCompIso F g x).symm
+
+end Invariance
 
 end PrestableMap
 
