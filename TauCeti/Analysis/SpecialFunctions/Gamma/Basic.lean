@@ -551,9 +551,12 @@ theorem isEquivalent_factorial_div_ascPochhammer_eval_succ {s : ℂ} (hs : ∀ m
 
 end Complex
 
+namespace Complex
+
 /-- Gamma is analytic away from the nonpositive integers. -/
 @[fun_prop]
 theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
   have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
   simpa only [Pi.inv_def, inv_inv] using h
 
+end Complex

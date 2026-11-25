@@ -32,8 +32,8 @@ This file proves:
 * the derivative `ϑ'(T) = (Re ψ(1/4 + iT/2) - log π) / 2` and the oddness `ϑ(-T) = -ϑ(T)`;
 * `TauCeti.Gammaℝ_half_add_mul_I_eq_norm_mul_exp_riemannSiegelTheta`:
   `Γℝ(1/2 + it) = |Γℝ(1/2 + it)| e^{iϑ(t)}`, and its converse
-  `TauCeti.eq_riemannSiegelTheta_of_continuous_normalized_phase`: every continuous real phase of `Γℝ(1/2 + it)`
-  vanishing at `0` is `ϑ`.
+  `TauCeti.eq_riemannSiegelTheta_of_continuous_normalized_phase`: every continuous real phase
+  of `Γℝ(1/2 + it)` vanishing at `0` is `ϑ`.
 
 The integral is the continuous branch: the principal logarithm of `Γ(1/4 + iT/2)` has bounded
 imaginary part, while `ϑ(T)` grows like `(T/2) log (T/(2πe))`. Hardy's function is related to `ϑ`
@@ -102,20 +102,12 @@ private theorem hasDerivAt_im_logGamma_sub (T : ℝ) :
 `ϑ(T) = Im log Γ(1/4 + iT/2) - (T/2) log π`. -/
 theorem riemannSiegelTheta_eq_im_logGamma_sub (T : ℝ) :
     riemannSiegelTheta T = (logGamma (1 / 4 + (T : ℂ) / 2 * I)).im - T / 2 * Real.log π := by
-  have hs :
-      2 * ∫ x in (0 : ℝ)..T / 2, (digamma ((1 / 4 : ℝ) + x * I)).re =
-        ∫ x in (0 : ℝ)..T, (digamma (1 / 4 + (x : ℂ) / 2 * I)).re := by
-    have h := intervalIntegral.smul_integral_comp_mul_left
-      (f := fun x : ℝ ↦ (digamma ((1 / 4 : ℝ) + (x / 2 : ℂ) * I)).re)
-      (a := 0) (b := T / 2) (c := 2) two_ne_zero
-    norm_num [smul_eq_mul] at h ⊢
-    convert h using 1 <;> push_cast <;> ring
-  have h := integral_re_digamma_ofReal_add_mul_I (by norm_num : 0 < (1 / 4 : ℝ)) (T / 2)
-  rw [riemannSiegelTheta_def]
-  simp only [intervalIntegral.integral_sub, intervalIntegral.integral_div,
-    intervalIntegral.integral_const, sub_zero, smul_eq_mul]
-  rw [h] at hs
-  linear_combination hs / 2
+  rw [riemannSiegelTheta_def, intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (fun t _ ↦ hasDerivAt_im_logGamma_sub t)
+    (continuous_riemannSiegelTheta_integrand.intervalIntegrable 0 T)]
+  have h0 : (1 / 4 + ((0 : ℝ) : ℂ) / 2 * I) = ((1 / 4 : ℝ) : ℂ) := by push_cast; ring
+  rw [h0, logGamma_ofReal (by norm_num)]
+  simp
 
 /-- The derivative of the Riemann–Siegel theta function:
 `ϑ'(T) = (Re ψ(1/4 + iT/2) - log π) / 2`. -/
@@ -158,15 +150,25 @@ theorem Gammaℝ_half_add_mul_I_eq_norm_mul_exp_riemannSiegelTheta (t : ℝ) :
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
   -- `Γℝ(1/2 + it) = π^(-z) Γ(z) = exp w` with `w = log Γ(z) - z log π`.
   set w : ℂ := logGamma z - z * (Real.log π : ℂ) with hw_def
+  have hp_pow : ((π : ℂ) ^ (-z)) = exp (-z * (Real.log π : ℂ)) := by
+    rw [cpow_def_of_ne_zero hπ, ← ofReal_log Real.pi_pos.le]
+    congr 1
+    ring
   have hG : Gammaℝ (1 / 2 + t * I) = exp w := by
-    rw [Gammaℝ_def, neg_div, hz, cpow_def_of_ne_zero hπ, ← ofReal_log Real.pi_pos.le,
+    rw [Gammaℝ_def, neg_div, hz, hp_pow,
       ← exp_logGamma (Complex.mem_slitPlane_iff.mpr (Or.inl (by simp [z]))), ← exp_add, hw_def]
     congr 1
     ring
+  have hdecomp : exp w = ‖exp w‖ * exp (w.im * I) := by
+    rw [norm_exp, ofReal_exp, ← exp_add, re_add_im]
   have hw : w.im = riemannSiegelTheta t := by
     rw [riemannSiegelTheta_eq_im_logGamma_sub]
     simp [w, z]
-  rw [hG, norm_exp, ← hw, ofReal_exp, ← exp_add, re_add_im]
+  calc
+    Gammaℝ (1 / 2 + t * I) = exp w := hG
+    _ = ‖exp w‖ * exp (w.im * I) := hdecomp
+    _ = ‖Gammaℝ (1 / 2 + t * I)‖ * exp (riemannSiegelTheta t * I) := by
+      rw [hw, ← hG]
 
 /-- **Uniqueness of the normalized phase.** A continuous real function `f` with
 `Γℝ(1/2 + it) = |Γℝ(1/2 + it)| e^{i f(t)}` for all `t` and `f(0) = 0` is the Riemann–Siegel theta

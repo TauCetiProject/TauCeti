@@ -29,7 +29,8 @@ namespace Complex
 /-- The digamma function is analytic at every `s` that is not a nonpositive integer. -/
 @[fun_prop]
 theorem analyticAt_digamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ digamma s := by
-  simpa only [digamma_def] using (analyticAt_Gamma hs).logDeriv (Gamma_ne_zero hs)
+  have h := (analyticAt_Gamma hs).deriv.div (analyticAt_Gamma hs) (Gamma_ne_zero hs)
+  simpa only [digamma_def, logDeriv, Pi.div_def] using h
 
 /-- The digamma function is analytic on the right half-plane `0 < Re s`. -/
 theorem analyticOnNhd_digamma_re_pos : AnalyticOnNhd ℂ digamma {s : ℂ | 0 < s.re} :=

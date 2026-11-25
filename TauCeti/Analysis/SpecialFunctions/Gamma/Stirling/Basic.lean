@@ -32,7 +32,8 @@ Combining the Stieltjes representation with
 `‖stirlingRemainder z‖ ≤ 1 / (8 * cos (arg z / 2) ^ 2 * ‖z‖)` on `slitPlane` and
 `‖stirlingRemainder z‖ ≤ 1 / (8 * sin (δ / 2) ^ 2 * ‖z‖)` on every closed sector `|arg z| ≤ π - δ`
 (`0 < δ`, `z ≠ 0`); at `δ = π / 2` the latter reads `‖stirlingRemainder z‖ ≤ 1 / (4 * ‖z‖)` on the
-nonzero points of the closed right half-plane. Taking real parts gives the corresponding bound for `log ‖Γ s‖`, whose
+nonzero points of the closed right half-plane. Taking real parts gives the corresponding
+bound for `log ‖Γ s‖`, whose
 consequence on vertical strips is in
 `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Vertical.lean`. Higher derivatives and positive-
 axis sign alternation are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Remainder.lean`.

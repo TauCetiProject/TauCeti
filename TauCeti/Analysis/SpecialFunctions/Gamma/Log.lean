@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.ContinuousLog.Basic
@@ -230,8 +232,7 @@ theorem integral_re_digamma_ofReal_add_mul_I {σ : ℝ} (hσ : 0 < σ) (T : ℝ)
     (fun _ _ ↦ hasDerivAt_im_logGamma_ofReal_add_mul_I
       (Complex.mem_slitPlane_iff.mpr (Or.inl (by simpa using hσ))))
     (hre.intervalIntegrable 0 T)]
-  rw [logGamma_ofReal hσ]
-  simp
+  simp [logGamma_ofReal hσ]
 
 /-- Holomorphy on every sector avoiding the negative real axis. All these sectors use the same
 branch, so their restrictions agree on every overlap. -/

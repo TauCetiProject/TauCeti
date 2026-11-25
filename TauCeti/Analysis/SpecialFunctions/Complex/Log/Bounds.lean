@@ -277,7 +277,7 @@ theorem abs_log_norm_ofReal_add_mul_I_sub_le {x : ℝ} (hx : 2 ≤ x) (t : ℝ) 
 /-- Off the real axis, `Real.log ‖z‖` differs from `Real.log |im z|` by at most
 `(re z / im z) ^ 2 / 2`, since `(‖z‖ / |im z|) ^ 2 = 1 + (re z / im z) ^ 2`. -/
 theorem abs_log_norm_sub_log_im_le {z : ℂ} (hz : z.im ≠ 0) :
-    |Real.log ‖z‖ - Real.log |z.im|| ≤ (z.re / z.im) ^ 2 / 2 := by
+    abs (Real.log ‖z‖ - Real.log |z.im|) ≤ (z.re / z.im) ^ 2 / 2 := by
   have upper {w : ℂ} (hw : 0 < w.im) :
       Real.log ‖w‖ - Real.log w.im ≤ (w.re / w.im) ^ 2 / 2 := by
     have hw0 : 0 < ‖w‖ := hw.trans_le (im_le_norm w)
@@ -292,7 +292,7 @@ theorem abs_log_norm_sub_log_im_le {z : ℂ} (hz : z.im ≠ 0) :
   rw [abs_of_nonneg (sub_nonneg.mpr
     (Real.log_le_log (abs_pos.mpr hz) (abs_im_le_norm z)))]
   rcases hz.lt_or_gt with hz | hz
-  · simpa [abs_of_neg hz, neg_div] using
+  · simpa [abs_of_neg hz, div_neg] using
       (upper (w := (starRingEnd ℂ) z) (by simpa using hz))
   · simpa [abs_of_pos hz] using upper hz
 
