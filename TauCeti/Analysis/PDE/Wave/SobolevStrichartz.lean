@@ -33,14 +33,12 @@ wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 < q < ∞` and `
   for `f = u(0)` and `g = ∂ₜu(0)`, so it satisfies the estimate on that interval, with a
   constant independent of the interval.
 
-For `W₊(t)` and `W₋(t)` the same estimates hold at the pairs `q = 2`,
-`2 (n - 1) / (n - 3) ≤ r < ∞` in dimension `n ≥ 4`; they are proved in
-`TauCeti.Analysis.PDE.Wave.TimeExponentTwo`. All five estimates also hold in mixed norm at the
-pairs `(∞, r)` with `2 ≤ r < ∞`, with `γ = n / 2 - n / r`; there they bound the `L^r` norms of the
-free waves uniformly in time, as the Sobolev embedding `\dot H^γ ⊆ L^r` predicts. These are the
-estimates of Tao, Theorem 2.6, for finite `r`, except that at `q = 2` only `W₊(t)` and `W₋(t)` are
-treated. The square
-sums are at most the `\dot B^γ_{2,1}` and `\dot B^{γ - 1}_{2,1}` norms of
+All these estimates also hold at the pairs `q = 2`, `2 (n - 1) / (n - 3) ≤ r < ∞` in dimension
+`n ≥ 4`; they are proved in `TauCeti.Analysis.PDE.Wave.TimeExponentTwo`. All five estimates also
+hold in mixed norm at the pairs `(∞, r)` with `2 ≤ r < ∞`, with `γ = n / 2 - n / r`; there they
+bound the `L^r` norms of the free waves uniformly in time, as the Sobolev embedding
+`\dot H^γ ⊆ L^r` predicts. With those, these are the estimates of Tao, Theorem 2.6, for finite
+`r`. The square sums are at most the `\dot B^γ_{2,1}` and `\dot B^{γ - 1}_{2,1}` norms of
 `TauCeti.Analysis.PDE.Wave.HomogeneousStrichartz`, so for `r < ∞` these estimates are stronger.
 At `r = ∞` the Littlewood–Paley inequality is not available, and the Besov estimates remain the
 statement there; in particular the false embedding `\dot H^{n/2} ⊆ L^∞` is not asserted.
@@ -99,34 +97,6 @@ namespace ContDiffBump
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [Nontrivial E] (φ : ContDiffBump (0 : E))
   {q : ℝ≥0} {r : ℝ≥0∞}
-
-/-- Sum frequency-localized mixed-norm estimates with weights `2^{jσ}` in square-sum form, for a
-family `T(t)` of operators on `L²(E)` commuting with the Fourier multipliers, over the
-Littlewood–Paley blocks, for `2 ≤ q` and `2 ≤ r < ∞`. This is the common step of the estimates
-for `W₊(t)`, `cos(tD)` and `D⁻¹ sin(tD)`. -/
-private theorem exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le {q : ℝ≥0∞}
-    (hq : 2 ≤ q) (hr2 : 2 ≤ r) (hr : r ≠ ∞) (σ : ℝ)
-    (T : ℝ → Lp ℂ 2 (volume : Measure E) →L[ℂ] Lp ℂ 2 (volume : Measure E))
-    (hT : ∀ x, AEStronglyMeasurable (fun t ↦ T t x))
-    (hcomm : ∀ t (n : Lp ℂ ∞ (volume : Measure E)) x,
-      T t (Lp.fourierMultiplierCLM ℂ n x) = Lp.fourierMultiplierCLM ℂ n (T t x))
-    (hloc : ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
-      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp ℂ 2 (volume : Measure E),
-        eLpNorm (fun t ↦ eLpNorm (T t (Lp.fourierMultiplierCLM ℂ m f)) r volume) q volume ≤
-          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) * ‖f‖ₑ) :
-    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
-      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
-      ∀ f : Lp ℂ 2 (volume : Measure E),
-        eLpNorm (fun t ↦ eLpNorm (T t f) r volume) q volume ≤
-          C * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
-            ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) := by
-  obtain ⟨C, hC⟩ := hloc
-  obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow (F := ℂ) (β := ℝ)
-    (ρ := volume) σ hq hr2 hr
-  refine ⟨K * C, fun m hm f ↦ (hK m hm T hT (fun t k x ↦ hcomm t (m k) x) C
-    (fun k x ↦ hC k (m k) (hm k) x) f).trans_eq ?_⟩
-  push_cast
-  ring
 
 /-- `ContDiffBump.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le` for a strongly
 continuous family `T(t)` and a wave-admissible pair `(q, r)` with `2 < q` and `r < ∞`. At `r = 0`

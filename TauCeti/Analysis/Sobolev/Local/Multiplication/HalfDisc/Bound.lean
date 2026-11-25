@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.ImDilation
 public import TauCeti.Analysis.Sobolev.Local.Norm
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Higher
 import TauCeti.Analysis.Sobolev.Local.Reflection.Bound
@@ -43,6 +44,8 @@ reflection bound returns to `Ω⁺`.
 
 ## Main declarations
 
+* `TauCeti.exists_bilin_le_halfPlane_of_reflectionCore`: product bounds on the reflection core
+  give product bounds on half-discs.
 * `TauCeti.exists_eLpNorm_bilin_le_eLpNormWkp_one_halfPlane`: the order-zero bound.
 * `TauCeti.exists_eLpNormWkp_succ_bilin_le_halfPlane`: the bound at every positive order. At
   `q = p` it is the local bound for the algebra property of `W^{k+1,p}_loc(Ω⁺)`.
@@ -68,6 +71,52 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {Ω : Opens ℂ} {p q : ℝ≥0}
+
+omit [FiniteDimensional ℝ G] in
+/-- **Transfer of product bounds from the reflection core to half-discs.** Let `1 ≤ p`, `1 ≤ q`,
+let `r` be an exponent and `a`, `b`, `c` orders, and let `U ⊆ ℂ`. Suppose that
+`‖B(f, g)‖_{W^{c,r}(U ∩ {0 ≤ im})} ≤ C ‖B‖ ‖f‖_{W^{a,p}(Ω.reflectionCore)}
+‖g‖_{W^{b,q}(Ω.reflectionCore)}` for every continuous bilinear map `B : F →L[ℝ] G →L[ℝ] H` and all
+`f` and `g`. Then there is a constant `C'` with, for `Ω⁺ = Ω ∩ {0 ≤ im}`,
+`‖B(f, g)‖_{W^{c,r}(U ∩ {0 ≤ im})} ≤ C' ‖B‖ ‖f‖_{W^{a,p}(Ω⁺)} ‖g‖_{W^{b,q}(Ω⁺)}`.
+The proof applies the hypothesis to the higher reflections of `f` of order `a` and of `g` of order
+`b`, which agree with `f` and `g` almost everywhere on `U ∩ {0 ≤ im}`
+(`TauCeti.planarReflection_ae_eq_inter_setOf_im_nonneg`) and are controlled by
+`TauCeti.eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le`. This turns the
+interior product bounds, applied on the reflection core, into bounds on half-discs. -/
+theorem exists_bilin_le_halfPlane_of_reflectionCore {p q r : ℝ≥0∞} (hp : 1 ≤ p) (hq : 1 ≤ q)
+    {a b c : ℕ} {U : Set ℂ} {C : ℝ≥0}
+    (hC : ∀ (B : F →L[ℝ] G →L[ℝ] H) (f : ℂ → F) (g : ℂ → G),
+      eLpNormWkp r (U ∩ {z | 0 ≤ z.im}) c (fun z => B (f z) (g z)) ≤
+        C * ‖B‖ₑ * eLpNormWkp p Ω.reflectionCore a f * eLpNormWkp q Ω.reflectionCore b g) :
+    ∃ C' : ℝ≥0, ∀ (B : F →L[ℝ] G →L[ℝ] H) (f : ℂ → F) (g : ℂ → G),
+      eLpNormWkp r (U ∩ {z | 0 ≤ z.im}) c (fun z => B (f z) (g z)) ≤
+        C' * ‖B‖ₑ * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) a f *
+          eLpNormWkp q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) b g := by
+  set Ma := higherReflectionBound a p
+  set Mb := higherReflectionBound b q
+  refine ⟨C * Ma.toNNReal * Mb.toNNReal, fun B f g => ?_⟩
+  calc
+    _ = eLpNormWkp r (U ∩ {z | 0 ≤ z.im}) c
+          (fun z => B (planarReflection (higherReflectionCoeff a) f z)
+            (planarReflection (higherReflectionCoeff b) g z)) :=
+      eLpNormWkp_congr_ae ((planarReflection_ae_eq_inter_setOf_im_nonneg
+        (higherReflectionCoeff a) f U).mp ((planarReflection_ae_eq_inter_setOf_im_nonneg
+          (higherReflectionCoeff b) g U).mono fun z hg hf => by simp only [hf, hg]))
+    _ ≤ C * ‖B‖ₑ *
+          eLpNormWkp p Ω.reflectionCore a (planarReflection (higherReflectionCoeff a) f) *
+          eLpNormWkp q Ω.reflectionCore b (planarReflection (higherReflectionCoeff b) g) :=
+      hC B _ _
+    _ ≤ C * ‖B‖ₑ * (Ma * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) a f) *
+          (Mb * eLpNormWkp q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) b g) := by
+      gcongr
+      exacts [eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le hp f,
+        eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le hq g]
+    _ = _ := by
+      rw [ENNReal.coe_mul, ENNReal.coe_mul,
+        ENNReal.coe_toNNReal (higherReflectionBound_ne_top a p),
+        ENNReal.coe_toNNReal (higherReflectionBound_ne_top b q)]
+      ring
 
 /-- **Local bound for order-zero mixed products on half-discs.** Fix real normed spaces `F`, `G`
 and `H` with `G` finite-dimensional. For `p > 2`, `1 ≤ q ≤ p` and a set `U` whose closure is
@@ -122,39 +171,12 @@ theorem exists_eLpNormWkp_succ_bilin_le_halfPlane [CompleteSpace H] (hp : 2 < p)
       eLpNormWkp q (U ∩ {z | 0 ≤ z.im}) (k + 1) (fun z => B (f z) (g z)) ≤
         C * ‖B‖ₑ * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) f *
           eLpNormWkp q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) g := by
-  have hUc : IsCompact (closure (U ∩ {z | 0 ≤ z.im})) :=
-    hU.of_isClosed_subset isClosed_closure (closure_mono inter_subset_left)
-  have hUcore := Opens.closure_inter_setOf_im_nonneg_subset_reflectionCore hUΩ
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_bilin_le (F := F) (G := G) (H := H)
-    (Ω := Ω.reflectionCore) hp hq hqp k hUc hUcore
-  set Mp := higherReflectionBound (k + 1) p
-  set Mq := higherReflectionBound (k + 1) q
-  refine ⟨C * Mp.toNNReal * Mq.toNNReal, fun B f g => ?_⟩
+    (Ω := Ω.reflectionCore) hp hq hqp k
+    (hU.of_isClosed_subset isClosed_closure (closure_mono inter_subset_left))
+    (Opens.closure_inter_setOf_im_nonneg_subset_reflectionCore hUΩ)
   have hq1 : (1 : ℝ≥0∞) ≤ q := by exact_mod_cast hq.le
-  calc
-    _ = eLpNormWkp q (U ∩ {z | 0 ≤ z.im}) (k + 1)
-          (fun z => B (planarReflection (higherReflectionCoeff (k + 1)) f z)
-            (planarReflection (higherReflectionCoeff (k + 1)) g z)) :=
-      eLpNormWkp_congr_ae ((planarReflection_ae_eq_inter_setOf_im_nonneg
-        (higherReflectionCoeff (k + 1)) f U).mp ((planarReflection_ae_eq_inter_setOf_im_nonneg
-          (higherReflectionCoeff (k + 1)) g U).mono fun z hg hf => by simp only [hf, hg]))
-    _ ≤ C * ‖B‖ₑ *
-          eLpNormWkp p Ω.reflectionCore (k + 1)
-            (planarReflection (higherReflectionCoeff (k + 1)) f) *
-          eLpNormWkp q Ω.reflectionCore (k + 1)
-            (planarReflection (higherReflectionCoeff (k + 1)) g) :=
-      hC B _ _
-    _ ≤ C * ‖B‖ₑ * (Mp * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) f) *
-          (Mq * eLpNormWkp q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) g) := by
-      gcongr
-      · exact eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le
-          (hq1.trans (by exact_mod_cast hqp)) f
-      · exact eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le hq1 g
-    _ = _ := by
-      rw [ENNReal.coe_mul, ENNReal.coe_mul,
-        ENNReal.coe_toNNReal (higherReflectionBound_ne_top (k + 1) p),
-        ENNReal.coe_toNNReal (higherReflectionBound_ne_top (k + 1) q)]
-      ring
+  exact exists_bilin_le_halfPlane_of_reflectionCore (hq1.trans (by exact_mod_cast hqp)) hq1 hC
 
 /-- **Local bound for coefficient fields on half-discs.** Fix finite-dimensional real normed spaces
 `F` and `G`. For `p > 2`, `1 < q ≤ p`, every `k` and a set `U` whose closure is compact and
