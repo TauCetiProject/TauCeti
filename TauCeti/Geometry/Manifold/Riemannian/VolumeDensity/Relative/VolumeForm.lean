@@ -20,7 +20,7 @@ In particular `J` does not depend on the orientation, and reversing it negates b
 
 The proof evaluates both volume forms on one basis `b` of `T_x M`: on it they are `± √(det G)`
 for the Gram matrices `G` of `b` for `g` and `g'`, with the same sign, positive exactly when `b`
-is positively oriented (`Orientation.volumeForm_apply_eq_sqrt_det_gram`), while
+is positively oriented (`TauCeti.riemannianVolumeForm_apply_basis`), while
 `J = √(det G' / det G)` (`Module.Basis.relativeVolumeDensity_eq_sqrt_div`). A top-degree
 alternating form is determined by its value on a basis.
 -/
@@ -39,42 +39,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {n n' : ℕ∞ω} {m : ℕ}
 
-open scoped Classical in
-/-- The value of an oriented volume form on a basis `b` is `± √(det G)` for the Gram matrix `G`
-of `b`, with the sign given by the orientation of `b`. -/
-private theorem riemannianVolumeForm_basis
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
-    (o : Manifold.Orientation I M (Fin m)) (x : M)
-    (b : Module.Basis (Fin m) ℝ (TangentSpace I x)) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      riemannianVolumeForm o x b) =
-    (if b.orientation = Manifold.Orientation.orientationAt o x then 1 else -1) *
-      √(Matrix.of fun i j ↦ g.inner x (b i) (b j)).det := by
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  let := o.fact_finrank_tangentSpace x
-  have hgram : Matrix.gram ℝ b = Matrix.of fun i j ↦ g.inner x (b i) (b j) := by
-    ext i j
-    exact inner_riemannianBundle g x (b i) (b j)
-  rw [riemannianVolumeForm_apply, ← hgram]
-  split_ifs with hb
-  · rw [one_mul, Orientation.volumeForm_apply_eq_sqrt_det_gram _ b hb]
-  · rw [neg_one_mul, Orientation.volumeForm_apply_eq_neg_sqrt_det_gram _ b hb]
-
-/-- An oriented volume form is its value on a basis `b` times the determinant in `b`. -/
-private theorem riemannianVolumeForm_eq_mul_det
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
-    (o : Manifold.Orientation I M (Fin m)) (x : M)
-    (b : Module.Basis (Fin m) ℝ (TangentSpace I x)) (v : Fin m → TangentSpace I x) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      riemannianVolumeForm o x v) =
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      riemannianVolumeForm o x b) * b.det v := by
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  let := o.fact_finrank_tangentSpace x
-  simp only [riemannianVolumeForm_apply]
-  rw [← smul_eq_mul, ← smul_apply,
-    ← AlternatingMap.eq_smul_basis_det b (Manifold.Orientation.orientationAt o x).volumeForm]
-
 /-- **The relative density is the ratio of the oriented volume forms**: for every orientation of
 `M`, `vol_{g'} = J(g, g') vol_g` at every point. -/
 theorem riemannianVolumeForm_apply_eq_relativeVolumeDensity_mul
@@ -89,6 +53,11 @@ theorem riemannianVolumeForm_apply_eq_relativeVolumeDensity_mul
   have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
   let b : Module.Basis (Fin m) ℝ (TangentSpace I x) :=
     Module.finBasisOfFinrankEq ℝ _ (o.fact_finrank_tangentSpace x).out
+  have hgram {k : ℕ∞ω} (h : ContMDiffRiemannianMetric I k E (fun x : M ↦ TangentSpace I x)) :
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨h.toRiemannianMetric⟩;
+        Matrix.gram ℝ b) = Matrix.of fun i j ↦ h.inner x (b i) (b j) := by
+    ext i j
+    exact inner_riemannianBundle h x (b i) (b j)
   have hpos : 0 < (Matrix.of fun i j ↦ g.inner x (b i) (b j)).det := by
     convert b.det_bilinFormToMatrix_pos (B := (g.inner x).toBilinForm) (g.symm x) (g.pos x)
       using 2
@@ -96,10 +65,14 @@ theorem riemannianVolumeForm_apply_eq_relativeVolumeDensity_mul
     simp [LinearMap.BilinForm.toMatrix_apply]
   have hs : √(Matrix.of fun i j ↦ g.inner x (b i) (b j)).det ≠ 0 :=
     (Real.sqrt_pos.2 hpos).ne'
-  rw [riemannianVolumeForm_eq_mul_det g' o x b v, riemannianVolumeForm_eq_mul_det g o x b v,
-    riemannianVolumeForm_basis g' o x b, riemannianVolumeForm_basis g o x b,
+  rw [ContinuousAlternatingMap.apply_eq_det_mul _ b v,
+    ContinuousAlternatingMap.apply_eq_det_mul _ b v,
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩;
+      riemannianVolumeForm_apply_basis o x b),
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      riemannianVolumeForm_apply_basis o x b), hgram g', hgram g,
     b.relativeVolumeDensity_eq_sqrt_div, Real.sqrt_div' _ hpos.le]
-  field_simp
+  split_ifs <;> field_simp
 
 /-- **The relative density is the ratio of the oriented volume forms**, as forms: for every
 orientation of `M`, `vol_{g'} = J(g, g') • vol_g`. -/
