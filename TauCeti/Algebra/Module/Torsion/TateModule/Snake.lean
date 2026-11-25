@@ -98,9 +98,11 @@ theorem bijective_tateModuleLevelδ (hp : Bijective fun x : M₂ ↦ (p : ℤ) �
   have hn : Bijective fun x : M₂ ↦ ((p ^ n : ℕ) : ℤ) • x := by
     rw [Nat.cast_pow, ← smul_iterate]
     exact hp.iterate n
-  rw [tateModuleLevelδ, AddMonoidHom.coe_comp]
-  exact (LinearEquiv.bijective _).comp <|
-    funext (torsionByδEquiv_apply hfg hf hg hn) ▸ (torsionByδEquiv _ hfg hf hg hn).bijective
+  -- the connecting map is the connecting isomorphism `torsionByδEquiv`
+  have he : ⇑(torsionByδ ((p ^ n : ℕ) : ℤ) hfg hf hg) = torsionByδEquiv _ hfg hf hg hn :=
+    funext fun x ↦ (torsionByδEquiv_apply hfg hf hg hn x).symm
+  simp only [tateModuleLevelδ, AddMonoidHom.coe_comp, LinearMap.toAddMonoidHom_coe, he]
+  exact (LinearEquiv.bijective _).comp (LinearEquiv.bijective _)
 
 /-- The map from the `p`-adic Tate module of `M₃` to the `p`-adic completion of `M₁`, assembled
 from the level maps. -/
