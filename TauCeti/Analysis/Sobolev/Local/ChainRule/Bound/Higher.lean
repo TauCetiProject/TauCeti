@@ -36,9 +36,10 @@ product bound `TauCeti.exists_eLpNormWkp_succ_compL_le` for `(A, T) ↦ A ∘L T
 ## Main declarations
 
 * `TauCeti.exists_eLpNormWkp_succ_comp_le`: the local bound for `g ∘ u` in `W^{k+1,p}`.
-* `TauCeti.exists_eLpNormWkp_one_comp_le_one_add` and
-  `TauCeti.eLpNormWkp_succ_succ_comp_le_of_le`: the base case and the inductive step, for sets
-  that agree almost everywhere with their interior, shared with the bounds on half-discs.
+* `TauCeti.exists_eLpNormWkp_one_comp_le_one_add`: the base case, for every set `S` containing
+  the compact closure of `U`.
+* `TauCeti.eLpNormWkp_succ_succ_comp_le_of_le`: the inductive step, for sets that agree almost
+  everywhere with their interior. Both are shared with the bounds on half-discs.
 
 ## References
 

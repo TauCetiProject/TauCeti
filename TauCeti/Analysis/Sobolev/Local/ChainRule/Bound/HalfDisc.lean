@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Norm
+import TauCeti.Analysis.Complex.ImDilation
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Bound.Higher
 import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc.Bound
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -74,12 +75,8 @@ private theorem exists_eLpNormWkp_succ_comp_le_halfPlane_aux (hp : 2 < p) (k : �
   | zero =>
     have hUc : IsCompact (closure (U ∩ {z | 0 ≤ z.im})) :=
       hU.of_isClosed_subset isClosed_closure (closure_mono inter_subset_left)
-    have hUS : closure (U ∩ {z | 0 ≤ z.im}) ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
-      (closure_minimal (inter_subset_inter_left _ subset_closure)
-        (isClosed_closure.inter (isClosed_le continuous_const Complex.continuous_im))).trans
-        (inter_subset_inter_left _ hUΩ)
     obtain ⟨C, hC⟩ := exists_eLpNormWkp_one_comp_le_one_add (p := p) hW (by simpa using hg) hL
-      hLW hUc hUS
+      hLW hUc (closure_inter_setOf_im_nonneg_subset hUΩ)
     exact ⟨C, fun u huc huL => by simpa using hC u huc huL⟩
   | succ k ih =>
     obtain ⟨V, hUV, hVΩ, hVc⟩ := Opens.exists_between_and_isCompact_closure hU hUΩ
