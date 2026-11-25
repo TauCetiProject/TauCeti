@@ -180,6 +180,31 @@ theorem isRepresentingCycle_of_eq_sum [T2Space A] [CompactSpace A] [ChartedSpace
   exact NormalizedCubicalChain.supportedIn_mono k
     (Set.subset_compl_iff_disjoint_right.2 (hFU i j (Finset.ne_of_mem_erase hj))) m (hcF j)
 
+/-- The form of `isRepresentingCycle_of_eq_sum` used by chain systems: a sum of face chains of `A`
+whose push-forward to `X` is a cycle there represents the class it represents face by face. -/
+private theorem isRepresentingCycle_map_sum [T2Space A] [CompactSpace A] [ChartedSpace E A]
+    [FiniteDimensional ℝ E] {m : ℕ} (hm : finrank ℝ E = m)
+    {ν : ((normalizedCubicalChainComplex k).obj (TopPair.ofSubset A).snd).homology m}
+    {ι : Type*} [Fintype ι] (c : ι → NormalizedCubicalChain (TopPair.ofSubset A).snd k m)
+    (hcyc : cubicalChainDifferential X k (cubicalChainLof X k m
+      (NormalizedCubicalChain.map k (ContinuousMap.subtypeVal A) m (∑ i, c i))) = 0)
+    {F U : ι → Set (TopPair.ofSubset A).snd}
+    (hcF : ∀ i, c i ∈ NormalizedCubicalChain.supportedIn k (F i) m)
+    (hFU : ∀ i j, j ≠ i → Disjoint (F j) (U i)) (hU : Dense (⋃ i, U i))
+    (hc : ∀ i, ∀ a ∈ U i,
+      (TopPair.ofSubset ({a}ᶜ : Set (TopPair.ofSubset A).snd)).IsCubicalRepresentative k (c i)
+        ((HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+          (TopPair.ofSubset ({a}ᶜ : Set (TopPair.ofSubset A).snd)).map)) m).hom ν)) :
+    IsRepresentingCycle (cubicalChainLof X k m
+      (NormalizedCubicalChain.map k (ContinuousMap.subtypeVal A) m (∑ i, c i))) ν := by
+  -- The sum is a cycle of `A`, since the push-forward along the inclusion is injective.
+  have h : cubicalChainDifferential A k (cubicalChainLof _ k _ (∑ i, c i)) = 0 := by
+    refine cubicalChainSumMap_injective (f := ContinuousMap.subtypeVal A) Subtype.val_injective ?_
+    rwa [map_zero, ← cubicalChainDifferential_cubicalChainSumMap, cubicalChainSumMap_lof]
+  obtain ⟨z, hz⟩ := exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero _ h
+  rw [← hz]
+  exact isRepresentingCycle_of_eq_sum hm z c hz hcF hFU hU hc
+
 end TauCeti
 
 namespace TauCeti
@@ -355,21 +380,16 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
   -- The twisting sum is the sum of the face chains, pushed forward from the boundary.
   have hsum := twistingChainSum_eq_sum_face hs (fun z ↦ hιA x z.val y z.prop.1 z.prop.2) a ha b
     hb hpq
-  -- So the sum of the face chains is a cycle of `A x y`, since the twisting sum is a cycle of
-  -- `M x y` and the push-forward along the inclusion is injective.
-  have hcyc : cubicalChainDifferential (A x y) k (cubicalChainLof _ k _ (∑ z, c z)) = 0 := by
-    refine cubicalChainSumMap_injective (f := ContinuousMap.subtypeVal (A x y))
-      Subtype.val_injective ?_
-    rw [map_zero, ← cubicalChainDifferential_cubicalChainSumMap, cubicalChainSumMap_lof, ← hsum]
-    exact cubicalChainDifferential_twistingChainSum hs (hι x · · y) fun z h₁ h₂ ↦
-      ⟨(hd x z (by omega)).1, (hd z y (by omega)).1⟩
-  obtain ⟨w, hw⟩ := exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero _ hcyc
-  rw [hsum, ← hw]
-  refine isRepresentingCycle_of_eq_sum (hE x y (by omega)) w c hw
+  rw [hsum]
+  refine isRepresentingCycle_map_sum (hE x y (by omega)) c ?_
     (F := fun z ↦ (Set.range (g z) : Set (A x y)))
     (U := fun z ↦ (Subtype.val ⁻¹' U x z.val y : Set (A x y))) (fun z ↦ ?_)
     (fun z z' hz ↦ Set.disjoint_left.2 ?_) (Dense.mono ?_ (hU x y (by omega)))
     (fun z a ha ↦ ?_)
+  · -- The sum of the face chains, pushed forward to `M x y`, is the twisting sum, a cycle.
+    rw [← hsum]
+    exact cubicalChainDifferential_twistingChainSum hs (hι x · · y) fun z h₁ h₂ ↦
+      ⟨(hd x z (by omega)).1, (hd z y (by omega)).1⟩
   · simp only [c, Units.smul_def]
     exact zsmul_mem (map_mem_supportedIn_range k (g z) _) _
   · rintro _ ⟨p, rfl⟩ hp
@@ -566,22 +586,17 @@ theorem ContinuationChainSystem.exists_isRepresenting_of_faces (hS : S.IsReprese
     rw [Fintype.sum_sum_type]
     exact continuationChainSum_eq_sum_face ht (fun z ↦ hκB x z.val y z.prop.1 z.prop.2)
       (fun w ↦ hκ'B x w.val y w.prop.1 w.prop.2) a ha b hb a' ha' b' hb' hpq hpq'
-  -- So the sum of the face chains is a cycle of `B x y`, since the continuation sum is a cycle of
-  -- `N x y` and the push-forward along the inclusion is injective.
-  have hcyc : cubicalChainDifferential (B x y) k (cubicalChainLof _ k _ (∑ i, c i)) = 0 := by
-    refine cubicalChainSumMap_injective (f := ContinuousMap.subtypeVal (B x y))
-      Subtype.val_injective ?_
-    rw [map_zero, ← cubicalChainDifferential_cubicalChainSumMap, cubicalChainSumMap_lof, ← hsum]
-    exact cubicalChainDifferential_continuationChainSum S S' ht (hκ x · · y) (hκκ' x · · y)
-      (hκ' x · · y) (fun z _ _ ↦ (hd z y (by omega)).1) fun w _ _ ↦ (hd x w (by omega)).1
-  obtain ⟨r, hr⟩ := exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero _ hcyc
-  rw [hsum, ← hr]
-  refine isRepresentingCycle_of_eq_sum (hE x y (by omega)) r c hr
+  rw [hsum]
+  refine isRepresentingCycle_map_sum (hE x y (by omega)) c ?_
     (F := Sum.elim (fun z ↦ (Set.range (g z) : Set (B x y)))
       fun w ↦ (Set.range (g' w) : Set (B x y)))
     (U := Sum.elim (fun z ↦ (Subtype.val ⁻¹' U x z.val y : Set (B x y)))
       fun w ↦ (Subtype.val ⁻¹' U' x w.val y : Set (B x y))) (fun i ↦ ?_) (fun i i' hi ↦ ?_)
     (Dense.mono ?_ (hU x y (by omega))) (fun i a ha ↦ ?_)
+  · -- The sum of the face chains, pushed forward to `N x y`, is the continuation sum, a cycle.
+    rw [← hsum]
+    exact cubicalChainDifferential_continuationChainSum S S' ht (hκ x · · y) (hκκ' x · · y)
+      (hκ' x · · y) (fun z _ _ ↦ (hd z y (by omega)).1) fun w _ _ ↦ (hd x w (by omega)).1
   · rcases i with z | w
     · exact map_mem_supportedIn_range k (g z) _
     · simp only [c, Sum.elim_inr, Units.smul_def]
