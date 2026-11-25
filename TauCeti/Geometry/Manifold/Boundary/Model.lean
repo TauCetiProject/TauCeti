@@ -337,7 +337,8 @@ private theorem smul_val_zero_nonneg (hε : 0 < ε) (x : EuclideanHalfSpace m) :
 
 private theorem smul_mem_range (hε : 0 < ε) (x : EuclideanHalfSpace m) :
     ε • (𝓡∂ m) x ∈ range (𝓡∂ m) := by
-  rw [range_modelWithCornersEuclideanHalfSpace]
+  rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq,
+    modelWithCornersEuclideanHalfSpace_apply]
   exact smul_val_zero_nonneg hε x
 
 /-- Multiplication by `ε` on the half-space model, the map underlying `smulDiffeomorph`. -/
