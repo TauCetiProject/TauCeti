@@ -112,11 +112,9 @@ finite-dimensionality, or measurability instances are assumed on `E`, as
 theorem BV.isCompactOperator_toL1CLM_of_isLipschitzDomainWith_image {L : ℝ≥0}
     (f : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
     (hΩ : (f '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F)) :
-    IsCompactOperator (BV.toL1CLM (μ := μ) (Ω := Ω)) := by
-  rw [Measure.isAddLeftInvariant_eq_smul μ volume]
-  exact BV.isCompactOperator_toL1CLM_smul_measure _
-    (BV.isCompactOperator_toL1CLM_iff_isCompactOperator_valueL.mpr
-      (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image f hΩ hb))
+    IsCompactOperator (BV.toL1CLM (μ := μ) (Ω := Ω)) :=
+  BV.isCompactOperator_toL1CLM_iff_isCompactOperator_valueL.mpr
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image f hΩ hb)
 
 /-- **Global `L¹` compactness of `BV` on bounded Lipschitz domains.** Let `F` be a
 finite-dimensional real inner product space, `μ` an additive Haar measure on `F`, and `Ω ⊆ F` a

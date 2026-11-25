@@ -45,12 +45,12 @@ finite `q`. For `q ≤ p` the inclusion factors through `Lᵖ(Ω)`, as `Ω` has 
 strict: at `q = p⋆` the inclusion is bounded but not compact.
 
 Compactness of the value map is invariant under measure-preserving changes of variables with a
-Lipschitz inverse (`TauCeti.W1p.isCompactOperator_valueL_of_measurePreserving`). Transporting
-along the affine isometries of the boundary charts, and through the change of Haar measure
-`TauCeti.W1p.addHaarEquivL`, it holds for every bounded open subset of a finite-dimensional inner
-product space satisfying the intrinsic Lipschitz-domain predicate `Set.IsLipschitzDomain`, such
-as a bounded Lipschitz domain of `EuclideanSpace ℝ (Fin n)`, on which the energy forms of
-divergence-form operators live.
+Lipschitz inverse (`TauCeti.W1p.isCompactOperator_valueL_of_measurePreserving`) and under changes
+of Haar measure (`TauCeti.W1p.isCompactOperator_valueL_of_addHaar`). Transporting along the affine
+isometries of the boundary charts, it holds for every additive Haar measure on every bounded open
+subset of a finite-dimensional inner product space satisfying the intrinsic Lipschitz-domain
+predicate `Set.IsLipschitzDomain`, such as a bounded Lipschitz domain of
+`EuclideanSpace ℝ (Fin n)`, on which the energy forms of divergence-form operators live.
 
 ## Main declarations
 
@@ -66,8 +66,8 @@ divergence-form operators live.
   compactness of `W^{1,p}(Ω) → L^q(Ω)` for every subcritical `q`.
 * `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image` and
   `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomain`: Rellich–Kondrachov compactness on
-  isometric copies of Lipschitz domains, with respect to Lebesgue measure `volume`, and for the
-  intrinsic predicate, with respect to any additive Haar measure.
+  isometric copies of Lipschitz domains and for the intrinsic predicate, with respect to any
+  additive Haar measure.
 
 ## References
 
@@ -220,14 +220,14 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDim
 
 /-- **Rellich–Kondrachov on isometric copies of bounded Lipschitz domains.** Let
 `g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)` be an affine isometry equivalence and `Ω ⊆ F` a bounded open set
-whose image `g '' Ω` is a Lipschitz domain with constant `L`. Then, with respect to Lebesgue
-measure `volume`, the value map `W^{1,p}(Ω) → Lᵖ(Ω)` is compact for `1 ≤ p ≤ ∞`. No
+whose image `g '' Ω` is a Lipschitz domain with constant `L`. Then, with respect to any additive
+Haar measure `μ` on `F`, the value map `W^{1,p}(Ω) → Lᵖ(Ω)` is compact for `1 ≤ p ≤ ∞`. No
 inner-product, finite-dimensionality or measurability instances are assumed on `E`, as `g` embeds
 `E` linearly and isometrically into `F`. -/
-theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image
-    (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image {μ : Measure F}
+    [μ.IsAddHaarMeasure] (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
     (hΩ : (g '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F)) :
-    IsCompactOperator (W1p.valueL (mu := volume) (Omega := Ω) (p := p)) := by
+    IsCompactOperator (W1p.valueL (mu := μ) (Omega := Ω) (p := p)) := by
   -- The inner product of `F` restricts to `E` along the isometric embedding given by `g`.
   let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E) := g.linearIsometryEquiv
   let _ : InnerProductSpace ℝ E := .ofLinearIsometry e.symmInr
@@ -237,17 +237,9 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image
   let W : Opens (WithLp 2 (ℝ × E)) := ⟨g '' (Ω : Set F), ((isLipschitzDomainWith_iff _ _).1 hΩ).1⟩
   have hWΩ : (W : Set (WithLp 2 (ℝ × E))) = g.symm ⁻¹' Ω :=
     congrFun (image_eq_preimage_of_inverse g.symm_apply_apply g.apply_symm_apply) _
-  exact W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv hΩ
-    (g.lipschitzWith.isBounded_image hb) g hWΩ
-
-/-- Rellich–Kondrachov for the intrinsic predicate and Lebesgue measure. -/
-private theorem W1p.isCompactOperator_valueL_volume_of_isLipschitzDomain {Ω : Opens F}
-    (hΩ : (Ω : Set F).IsLipschitzDomain E) (hb : IsBounded (Ω : Set F)) :
-    IsCompactOperator (W1p.valueL (mu := volume) (Omega := Ω) (p := p)) := by
-  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | hne
-  · exact W1p.isCompactOperator_valueL_of_frontier_eq_empty hb hfr
-  obtain ⟨g, L, hL⟩ := hΩ.exists_isLipschitzDomainWith_image hb hne
-  exact W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image g hL hb
+  exact W1p.isCompactOperator_valueL_of_addHaar
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv hΩ
+      (g.lipschitzWith.isBounded_image hb) g hWΩ)
 
 /-- **Rellich–Kondrachov on bounded Lipschitz domains of a Euclidean space.** Let `F` be a
 finite-dimensional real inner product space with an additive Haar measure `μ`, and `Ω ⊆ F` a
@@ -257,26 +249,10 @@ bounded open set satisfying the intrinsic Lipschitz-domain condition
 theorem W1p.isCompactOperator_valueL_of_isLipschitzDomain {μ : Measure F} [μ.IsAddHaarMeasure]
     (hΩ : (Ω : Set F).IsLipschitzDomain E) (hb : IsBounded (Ω : Set F)) :
     IsCompactOperator (W1p.valueL (mu := μ) (Omega := Ω) (p := p)) := by
-  -- `μ` is a finite multiple of `volume`, so `Lᵖ(Ω, volume)` maps into `Lᵖ(Ω, μ)` by the identity.
-  have hle : μ.restrict Ω ≤ (μ.addHaarScalarFactor volume : ℝ≥0∞) • volume.restrict Ω := by
-    conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul μ volume]
-    rw [Measure.restrict_smul]
-    exact le_rfl
-  -- The value map for `μ` factors through the change of Haar measure and the one for `volume`.
-  have h : W1p.valueL (mu := μ) (Omega := Ω) (p := p) =
-      (Lp.LpToLpOfMeasureLeSMul ENNReal.coe_ne_top hle).comp
-        ((W1p.valueL (mu := volume) (Omega := Ω) (p := p)).comp
-          ((W1p.addHaarEquivL μ volume : W1p μ Ω p ≃L[ℝ] W1p volume Ω p) :
-            W1p μ Ω p →L[ℝ] W1p volume Ω p)) := by
-    refine ContinuousLinearMap.ext fun u => Lp.ext ?_
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, W1p.valueL_apply]
-    filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul ENNReal.coe_ne_top hle
-      (W1p.value (W1p.addHaarEquivL μ volume u)),
-      (Measure.absolutelyContinuous_of_le_smul hle).ae_le
-        (W1p.value_addHaarEquivL_ae μ volume u)] with x h₁ h₂
-    rw [h₁, h₂]
-  rw [h]
-  exact ((W1p.isCompactOperator_valueL_volume_of_isLipschitzDomain hΩ hb).comp_clm _).clm_comp _
+  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | hne
+  · exact W1p.isCompactOperator_valueL_of_frontier_eq_empty hb hfr
+  obtain ⟨g, L, hL⟩ := hΩ.exists_isLipschitzDomainWith_image hb hne
+  exact W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image g hL hb
 
 end Intrinsic
 
