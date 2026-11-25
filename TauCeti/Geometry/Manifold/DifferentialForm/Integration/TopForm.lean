@@ -772,6 +772,16 @@ public theorem integralTopForm_smul (o : Manifold.Orientation I M (Fin k))
     rw [integralTopForm_eq_zero_of_not_integrable _ _ hi',
       integralTopForm_eq_zero_of_not_integrable _ _ hi, mul_zero]
 
+/-- Constant factors of the coefficient function come out of the integral against a fixed top
+form, even for nonintegrable rough forms: `∫_M (c f)·φ = c ∫_M f·φ`. -/
+public theorem integralTopForm_mul_smul (o : Manifold.Orientation I M (Fin k)) (c : ℝ)
+    (f : M → ℝ) (φ : RoughForm I M ℝ k) :
+    integralTopForm o (fun x ↦ (c * f x) • φ x) = c * integralTopForm o (fun x ↦ f x • φ x) := by
+  rw [← integralTopForm_smul]
+  congr 1
+  funext x
+  rw [Pi.smul_apply, mul_smul]
+
 /-- The top-form integral respects subtraction of integrable rough forms. -/
 public theorem integralTopForm_sub_of_integrable [IsManifold I 1 M]
     (o : Manifold.Orientation I M (Fin k)) {φ ψ : RoughForm I M ℝ k}

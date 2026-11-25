@@ -48,7 +48,8 @@ theorem standardKahlerForm_wedgePow_two_frame :
       · simp [b, EuclideanSpace.inner_single_left, hij])
   have hb : (fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 2) r))) = frame := by
     funext r
-    fin_cases r <;> simp [frame, b, finProdFinEquiv, Fin.divNat, Fin.modNat]
+    rw [finProdFinEquiv_symm_apply]
+    fin_cases r <;> simp [frame, b, Fin.divNat, Fin.modNat]
   rw [hb] at h
   simpa using h
 

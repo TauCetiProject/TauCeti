@@ -27,16 +27,16 @@ is positively oriented for the canonical orientation `TauCeti.complexManifoldOri
 is the complex orientation.
 
 The integral `∫_X g·κ^n` of a function `g` against the top power, for the canonical orientation,
-is `TauCeti.formPowIntegral E κ g`. On a compact manifold it is linear in continuous `g`. For a
-taming `κ` on a manifold of positive dimension it is nonnegative on `g ≥ 0` and monotone, and on a
-compact manifold it is strictly positive on a continuous `g ≥ 0` that is positive somewhere; so
-its value `V = ∫_X κ^n` at `g = 1` is positive on a nonempty compact manifold of positive dimension
-(`TauCeti.SmoothTwoForm.Tames.formPowIntegral_one_pos`). The opposite orientation would make it
-negative.
+is `TauCeti.formPowIntegral κ g`. On a compact manifold it is linear in continuous `g`. For a
+taming `κ` on a manifold of positive dimension it is nonnegative on `g ≥ 0`; on a compact manifold
+it is moreover monotone in continuous `g`, and strictly positive on a continuous `g ≥ 0` that is
+positive somewhere. So its value `V = ∫_X κ^n` at `g = 1` is positive on a nonempty compact
+manifold of positive dimension (`TauCeti.SmoothTwoForm.Tames.formPowIntegral_one_pos`). The
+opposite orientation would make it negative.
 
 ## Main definitions
 
-* `TauCeti.formPowIntegral E κ g`: the integral `∫_X g·κ^n` for the canonical orientation.
+* `TauCeti.formPowIntegral κ g`: the integral `∫_X g·κ^n` for the canonical orientation.
 
 ## Main results
 
@@ -45,9 +45,10 @@ negative.
 * `TauCeti.formPowIntegral_zero`, `TauCeti.formPowIntegral_const_mul`,
   `TauCeti.formPowIntegral_neg`, `TauCeti.formPowIntegral_add`, `TauCeti.formPowIntegral_sub`:
   linearity in `g`, additivity on continuous `g` on a compact manifold.
-* `TauCeti.SmoothTwoForm.Tames.formPowIntegral_nonneg`,
-  `TauCeti.SmoothTwoForm.Tames.formPowIntegral_mono`: for a taming `κ` on a manifold of positive
-  dimension, positivity and monotonicity in `g`.
+* `TauCeti.SmoothTwoForm.Tames.formPowIntegral_nonneg`: for a taming `κ` on a manifold of
+  positive dimension, `g ≥ 0` has nonnegative integral.
+* `TauCeti.SmoothTwoForm.Tames.formPowIntegral_mono`: for a taming `κ` on a compact manifold of
+  positive dimension, monotonicity in continuous `g`.
 * `TauCeti.SmoothTwoForm.Tames.formPowIntegral_pos`,
   `TauCeti.SmoothTwoForm.Tames.formPowIntegral_one_pos`: on a compact manifold of positive
   dimension, a continuous `g ≥ 0` that is positive somewhere has positive integral; in particular
@@ -99,7 +100,6 @@ theorem Compatible.wedgePow_apply_pos {κ : SmoothTwoForm 𝓘(ℝ, E) X}
 
 end SmoothTwoForm
 
-variable (E) in
 /-- The integral `∫_X g·κ^n` of a function `g` against the top power `κ^n`, `n = finrank ℂ E`, of
 a smooth two-form, for the canonical orientation of the complex manifold `X`. -/
 def formPowIntegral (κ : SmoothTwoForm 𝓘(ℝ, E) X) (g : X → ℝ) : ℝ :=
@@ -108,13 +108,13 @@ def formPowIntegral (κ : SmoothTwoForm 𝓘(ℝ, E) X) (g : X → ℝ) : ℝ :=
 
 /-- Unfolding lemma for `formPowIntegral`. -/
 theorem formPowIntegral_def (κ : SmoothTwoForm 𝓘(ℝ, E) X) (g : X → ℝ) :
-    formPowIntegral E κ g = integralTopForm (complexManifoldOrientation E X)
+    formPowIntegral κ g = integralTopForm (complexManifoldOrientation E X)
       (fun x ↦ g x • (SmoothForm.wedgePow κ (finrank ℂ E)).val x) :=
   (rfl)
 
 /-- The integral of the zero function vanishes: `∫_X 0·κ^n = 0`. -/
 @[simp]
-theorem formPowIntegral_zero (κ : SmoothTwoForm 𝓘(ℝ, E) X) : formPowIntegral E κ 0 = 0 := by
+theorem formPowIntegral_zero (κ : SmoothTwoForm 𝓘(ℝ, E) X) : formPowIntegral κ 0 = 0 := by
   rw [formPowIntegral_def, ← integralTopForm_zero (complexManifoldOrientation E X)]
   congr 1
   funext x
@@ -122,22 +122,19 @@ theorem formPowIntegral_zero (κ : SmoothTwoForm 𝓘(ℝ, E) X) : formPowIntegr
 
 /-- Constant factors come out of the integral: `∫_X (c·g)·κ^n = c·∫_X g·κ^n`. -/
 theorem formPowIntegral_const_mul (κ : SmoothTwoForm 𝓘(ℝ, E) X) (c : ℝ) (g : X → ℝ) :
-    formPowIntegral E κ (fun x ↦ c * g x) = c * formPowIntegral E κ g := by
-  rw [formPowIntegral_def, formPowIntegral_def, ← integralTopForm_smul]
-  congr 1
-  funext x
-  rw [Pi.smul_apply, mul_smul]
+    formPowIntegral κ (fun x ↦ c * g x) = c * formPowIntegral κ g :=
+  integralTopForm_mul_smul _ c g _
 
 /-- Negation comes out of the integral: `∫_X (-g)·κ^n = -∫_X g·κ^n`. -/
 theorem formPowIntegral_neg (κ : SmoothTwoForm 𝓘(ℝ, E) X) (g : X → ℝ) :
-    formPowIntegral E κ (fun x ↦ -g x) = -formPowIntegral E κ g := by
+    formPowIntegral κ (fun x ↦ -g x) = -formPowIntegral κ g := by
   simpa only [neg_one_mul] using formPowIntegral_const_mul κ (-1) g
 
 /-- **Additivity**: on a compact complex manifold, `∫_X (g + h)·κ^n = ∫_X g·κ^n + ∫_X h·κ^n` for
 continuous `g` and `h`. -/
 theorem formPowIntegral_add [CompactSpace X] (κ : SmoothTwoForm 𝓘(ℝ, E) X) {g h : X → ℝ}
     (hg : Continuous g) (hh : Continuous h) :
-    formPowIntegral E κ (fun x ↦ g x + h x) = formPowIntegral E κ g + formPowIntegral E κ h :=
+    formPowIntegral κ (fun x ↦ g x + h x) = formPowIntegral κ g + formPowIntegral κ h :=
   integralTopForm_add_smul_of_compactSpace _ (SmoothForm.wedgePow κ (finrank ℂ E)).isSmoothForm
     hg hh
 
@@ -145,7 +142,7 @@ theorem formPowIntegral_add [CompactSpace X] (κ : SmoothTwoForm 𝓘(ℝ, E) X)
 and `h`. -/
 theorem formPowIntegral_sub [CompactSpace X] (κ : SmoothTwoForm 𝓘(ℝ, E) X) {g h : X → ℝ}
     (hg : Continuous g) (hh : Continuous h) :
-    formPowIntegral E κ (fun x ↦ g x - h x) = formPowIntegral E κ g - formPowIntegral E κ h := by
+    formPowIntegral κ (fun x ↦ g x - h x) = formPowIntegral κ g - formPowIntegral κ h := by
   simp only [sub_eq_add_neg]
   rw [formPowIntegral_add κ (h := fun x ↦ -h x) hg hh.neg, formPowIntegral_neg]
 
@@ -157,26 +154,24 @@ variable [NeZero (finrank ℂ E)] {κ : SmoothTwoForm 𝓘(ℝ, E) X}
 structure, then `∫_X g·κ^n ≥ 0` for every `g ≥ 0`. -/
 theorem Tames.formPowIntegral_nonneg
     (hκ : κ.Tames (SmoothAlmostComplexStructure.ofComplexManifold E X)) {g : X → ℝ}
-    (hg : ∀ x, 0 ≤ g x) : 0 ≤ formPowIntegral E κ g :=
-  integralTopForm_nonneg _ fun x b hb ↦ by
-    rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul]
-    exact mul_nonneg (hg x) (hκ.wedgePow_apply_pos b hb).le
+    (hg : ∀ x, 0 ≤ g x) : 0 ≤ formPowIntegral κ g :=
+  integralTopForm_smul_nonneg _ (fun _ b hb ↦ (hκ.wedgePow_apply_pos b hb).le) hg
 
 /-- **Monotonicity**: on a compact complex manifold of positive dimension and for `κ` taming the
 complex structure, continuous functions with `g ≤ h` satisfy `∫_X g·κ^n ≤ ∫_X h·κ^n`. -/
 theorem Tames.formPowIntegral_mono [CompactSpace X]
     (hκ : κ.Tames (SmoothAlmostComplexStructure.ofComplexManifold E X)) {g h : X → ℝ}
     (hg : Continuous g) (hh : Continuous h) (hgh : ∀ x, g x ≤ h x) :
-    formPowIntegral E κ g ≤ formPowIntegral E κ h := by
-  rw [← sub_nonneg, ← formPowIntegral_sub κ hh hg]
-  exact hκ.formPowIntegral_nonneg fun x ↦ sub_nonneg.2 (hgh x)
+    formPowIntegral κ g ≤ formPowIntegral κ h :=
+  integralTopForm_smul_mono_of_compactSpace _ (SmoothForm.wedgePow κ (finrank ℂ E)).isSmoothForm
+    (fun _ b hb ↦ (hκ.wedgePow_apply_pos b hb).le) hg hh hgh
 
 /-- **Strict positivity**: on a compact complex manifold of positive dimension and for `κ` taming
 the complex structure, a continuous `g ≥ 0` that is positive at some point has `∫_X g·κ^n > 0`. -/
 theorem Tames.formPowIntegral_pos [CompactSpace X]
     (hκ : κ.Tames (SmoothAlmostComplexStructure.ofComplexManifold E X)) {g : X → ℝ}
     (hg : Continuous g) (hg0 : ∀ x, 0 ≤ g x) {x₀ : X} (hx₀ : 0 < g x₀) :
-    0 < formPowIntegral E κ g := by
+    0 < formPowIntegral κ g := by
   have : Nonempty (Fin (2 * finrank ℂ E)) :=
     ⟨⟨0, Nat.mul_pos two_pos (Nat.pos_of_ne_zero (NeZero.ne _))⟩⟩
   let b := ((complexManifoldOrientation E X).orientationAt x₀).someBasis
@@ -197,7 +192,7 @@ two-form `κ` taming the complex structure, for instance a Hermitian metric, has
 `V = ∫_X κ^n > 0`. -/
 theorem Tames.formPowIntegral_one_pos [CompactSpace X] [Nonempty X]
     (hκ : κ.Tames (SmoothAlmostComplexStructure.ofComplexManifold E X)) :
-    0 < formPowIntegral E κ 1 :=
+    0 < formPowIntegral κ 1 :=
   hκ.formPowIntegral_pos continuous_const (fun _ ↦ zero_le_one)
     (x₀ := Classical.arbitrary X) one_pos
 
