@@ -49,20 +49,6 @@ theorem isIso_π_of_isEmpty (s t : R ⟶ U) :
 
 variable (U)
 
-/-- The fold map `h_{U ⨿ U} ⟶ h_U ⟶ U/∅` is invariant under the restricted empty pre-relation,
-whose total space is empty. -/
-theorem restrictRel_condition (s t : R ⟶ U) :
-    Scheme.fppfTopology.uliftYoneda.{u + 1}.map
-        (restrictRel.fst (coprod.desc (𝟙 U) (𝟙 U)) t s) ≫
-        Scheme.fppfTopology.uliftYoneda.{u + 1}.map (coprod.desc (𝟙 U) (𝟙 U)) ≫
-          TauCeti.CategoryTheory.quotientSheaf.π.{u + 1} Scheme.fppfTopology s t =
-      Scheme.fppfTopology.uliftYoneda.{u + 1}.map
-          (restrictRel.snd (coprod.desc (𝟙 U) (𝟙 U)) t s) ≫
-        Scheme.fppfTopology.uliftYoneda.{u + 1}.map (coprod.desc (𝟙 U) (𝟙 U)) ≫
-          TauCeti.CategoryTheory.quotientSheaf.π.{u + 1} Scheme.fppfTopology s t := by
-  rw [AlgebraicGeometry.isInitialOfIsEmpty.hom_ext (restrictRel.fst (coprod.desc (𝟙 U) (𝟙 U)) t s)
-    (restrictRel.snd (coprod.desc (𝟙 U) (𝟙 U)) t s)]
-
 /-- **Restriction fails for the empty pre-relation.** For a nonempty scheme `U`, an empty scheme
 `R` and the empty pre-relation `s, t : R ⟶ U`, the map `U'/R' ⟶ U/R` from the quotient sheaf of
 the restriction of the pre-relation along the fold map `U' = U ⨿ U ⟶ U`, induced by the fold
@@ -72,14 +58,16 @@ theorem not_isIso_desc_restrictRel [Nonempty U] (s t : R ⟶ U) :
     ¬ IsIso (TauCeti.CategoryTheory.quotientSheaf.desc
       (Scheme.fppfTopology.uliftYoneda.{u + 1}.map (coprod.desc (𝟙 U) (𝟙 U)) ≫
         TauCeti.CategoryTheory.quotientSheaf.π.{u + 1} Scheme.fppfTopology s t)
-      (restrictRel_condition U s t)) := by
+      (quotientSheaf.restrictRel_condition.{u + 1} Scheme.fppfTopology s t
+        (coprod.desc (𝟙 U) (𝟙 U)))) := by
   intro h
   have := isIso_π_of_isEmpty s t
   have := isIso_π_of_isEmpty (restrictRel.snd (coprod.desc (𝟙 U) (𝟙 U)) t s)
     (restrictRel.fst (coprod.desc (𝟙 U) (𝟙 U)) t s)
   -- `h g ≫ π = π' ≫ desc` and `π` are isomorphisms, so `h g` and `g` are, and `g` is mono.
-  have := IsIso.of_isIso_fac_right
-    (TauCeti.CategoryTheory.quotientSheaf.π_desc _ (restrictRel_condition U s t)).symm
+  have := IsIso.of_isIso_fac_right (TauCeti.CategoryTheory.quotientSheaf.π_desc _
+    (quotientSheaf.restrictRel_condition.{u + 1} Scheme.fppfTopology s t
+      (coprod.desc (𝟙 U) (𝟙 U)))).symm
   have := isIso_of_fully_faithful Scheme.fppfTopology.uliftYoneda.{u + 1}
     (coprod.desc (𝟙 U) (𝟙 U))
   exact not_mono_coprodDesc (𝟙 U) inferInstance

@@ -99,6 +99,17 @@ theorem quotientSheaf.condition :
   simp only [ObjectProperty.FullSubcategory.comp_hom, quotientSheaf.π_hom]
   exact quotientPresheaf.uliftπ_condition_assoc.{w} s t _
 
+/-- For any `g : U' ⟶ U`, the composite `h_{U'} ⟶ h_U ⟶ U/R` is invariant under the restriction
+`TauCeti.CategoryTheory.restrictRel g t s` of the pre-relation along `g`. -/
+theorem quotientSheaf.restrictRel_condition {U' : C} (g : U' ⟶ U) [HasPullback g t]
+    [HasPullback (pullback.snd g t ≫ s) g] :
+    J.uliftYoneda.{w}.map (restrictRel.fst g t s) ≫ J.uliftYoneda.{w}.map g ≫
+        quotientSheaf.π.{w} J s t =
+      J.uliftYoneda.{w}.map (restrictRel.snd g t s) ≫ J.uliftYoneda.{w}.map g ≫
+        quotientSheaf.π.{w} J s t := by
+  simp only [← Functor.map_comp_assoc, ← restrictRel.proj_p₁, ← restrictRel.proj_p₂]
+  simp only [Functor.map_comp, Category.assoc, quotientSheaf.condition]
+
 variable {J s t}
 
 /-- A morphism `φ : h_U ⟶ F` to a `J`-sheaf which agrees on `t r` and `s r` for every point `r`
