@@ -90,11 +90,10 @@ theorem prod_fderiv_prod_rpow_apply_single {μ : ι → ℝ} (hμ : ∀ i, 0 < �
   rcases isEmpty_or_nonempty ι with hι | hι
   · simp
   have hP : 0 < ∏ i, μ i := prod_pos fun i _ ↦ hμ i
-  have hn : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
   simp_rw [fderiv_prod_rpow_apply_single hμ, div_eq_mul_inv, prod_mul_distrib, prod_const,
     prod_inv_distrib, card_univ]
-  rw [← Real.rpow_natCast ((∏ i, μ i) ^ _), ← Real.rpow_mul hP.le, inv_mul_cancel₀ hn,
-    Real.rpow_one, mul_assoc, mul_inv_cancel₀ hP.ne', mul_one]
+  rw [Real.rpow_inv_natCast_pow hP.le Fintype.card_ne_zero, mul_assoc, mul_inv_cancel₀ hP.ne',
+    mul_one]
 
 /-! ### The pair `σ_1 − ε|λ|` on `Γ_1` -/
 
