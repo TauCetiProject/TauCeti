@@ -190,20 +190,6 @@ theorem forall_chartComponent_microlocal_iff_of_chart (hP : IsInvariantMicroloca
     (hc' := hc) (hct' := hct') hP hcs hcs T hy (c.map_target hy) η
   rwa [hid, ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply, c.right_inv hy] at h
 
-/-- If over an open set `B` the local representative of `S` is `g` times that of `T`, then so are
-its components. -/
-theorem restrictCLM_chartComponent_eq_smulLeftCLM {S T : BundleTest I F V →L_c[ℝ] ℝ} {B : Opens E}
-    {g : E → ℝ} (hg : ContDiff ℝ ∞ g)
-    (h : (restrictCLM (t.chartDistributionCLM c hc hct S) : 𝓓'(B, F →L[ℝ] ℝ)) =
-      Distribution.smulLeftCLM hg (restrictCLM (t.chartDistributionCLM c hc hct T))) (v : F) :
-    (restrictCLM (t.chartComponent c hc hct S v) : 𝓓'(B, ℂ)) =
-      Distribution.smulLeftCLM hg (restrictCLM (t.chartComponent c hc hct T v)) := by
-  ext φ
-  have h := congr($h φ v)
-  simp only [restrictCLM_apply, chartDistributionCLM_apply_apply,
-    Distribution.smulLeftCLM_apply] at h
-  simp [h]
-
 end Bundle.Trivialization
 
 /-! ### Microlocal regularity on the manifold -/

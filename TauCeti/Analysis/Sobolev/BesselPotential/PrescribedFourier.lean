@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Sobolev
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Elements of `H^s` with a prescribed Fourier transform
@@ -69,9 +70,8 @@ theorem exists_memSobolev_fourier_apply_eq_integral {s : ℝ} {F : E → ℂ}
   have hb : (fun η : E ↦ (((1 + ‖η‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
   have hwb : (w * fun η : E ↦ (((1 + ‖η‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) = fun _ ↦ 1 := by
     funext η
-    have hpos : (0 : ℝ) < 1 + ‖η‖ ^ 2 := by positivity
     simp only [w, Pi.mul_apply]
-    rw [← ofReal_mul, ← Real.rpow_add hpos, neg_div, neg_add_cancel, Real.rpow_zero, ofReal_one]
+    rw [← ofReal_mul, TauCeti.one_add_norm_sq_rpow_neg_mul_rpow, ofReal_one]
   set v : 𝓢'(E, ℂ) := smulLeftCLM ℂ w (hF.toLp _ : 𝓢'(E, ℂ))
   have hv : 𝓕 (𝓕⁻ v) = v := FourierTransform.fourier_fourierInv_eq v
   refine ⟨𝓕⁻ v, memSobolev_iff_exists_smulLeftCLM_fourier.2 ⟨hF.toLp _, ?_⟩, fun g ↦ ?_⟩
