@@ -55,7 +55,7 @@ example (n : ℕ) :
     |>.unipotentRadicalDefiningIdeal_eq_augmentation
 
 /-- The radical ideal of `SL_n` is the augmentation ideal: `R_u(SL_n) = 1`, in every
-characteristic; `n = 2` is the roadmap's `SL₂` Check. -/
+characteristic; in particular for `SL₂`. -/
 example (n : ℕ) :
     unipotentRadicalDefiningIdeal (SpecialLinear.finiteTypeCoordinateHopfAlgebra k n) =
       HopfIdeal.augmentation k (SpecialLinear.finiteTypeCoordinateHopfAlgebra k n) :=
