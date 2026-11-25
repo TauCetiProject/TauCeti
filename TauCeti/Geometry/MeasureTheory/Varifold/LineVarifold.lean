@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.MeasureTheory.Varifold.Euclidean
 public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
@@ -39,6 +40,8 @@ Hence no bound `|δV(X)| ≤ C sup |X|` holds for the fields supported in any cl
 
 ## Main results
 
+* `Euclidean.weight_lineVarifold`: the weight of `Euclidean.lineVarifold a u P` is Lebesgue
+  measure transported by `t ↦ a + t u`.
 * `Euclidean.firstVariation_lineVarifold_apply`: `δV(X) = ∫ tr (P ∘ DX(a + t u)) dt`.
 * `Euclidean.firstVariation_verticalLift_verticalField`: `δV(X_n) = ∫ ψ(a + t u) dt`.
 * `Euclidean.not_exists_abs_firstVariation_verticalLift_le`: the vertical lift does not have
@@ -177,6 +180,22 @@ theorem lineVarifold_apply (a u : E) (P : grassmannian ℝ E k)
     {s : Set ((⊤ : Opens E) × grassmannian ℝ E k)} (hs : MeasurableSet s) :
     lineVarifold a u P s = volume (lineVarifoldParam a u P ⁻¹' s) := by
   rw [lineVarifold_def, Measure.map_apply (continuous_lineVarifoldParam a u P).measurable hs]
+
+/-- The weight of the image of a measure `μ` on `ℝ` under `t ↦ (a + t u, P)` is the image of `μ`
+under `t ↦ a + t u`, whatever the plane `P`. -/
+theorem weight_map_lineVarifoldParam (μ : Measure ℝ) (a u : E) (P : grassmannian ℝ E k) :
+    weight (μ.map (lineVarifoldParam a u P)) = μ.map fun t => a + t • u := by
+  have hm : Measurable fun p : (⊤ : Opens E) × grassmannian ℝ E k => (p.1 : E) :=
+    measurable_subtypeVal.comp measurable_fst
+  rw [weight_def, Measure.map_map hm (continuous_lineVarifoldParam a u P).measurable,
+    Function.comp_def]
+  simp only [lineVarifoldParam_apply]
+
+/-- The weight of a line varifold is Lebesgue measure transported to the line, whatever the
+plane it carries. -/
+theorem weight_lineVarifold (a u : E) (P : grassmannian ℝ E k) :
+    weight (lineVarifold a u P) = (volume : Measure ℝ).map fun t => a + t • u := by
+  rw [lineVarifold_def, weight_map_lineVarifoldParam]
 
 /-- Integrating against the line varifold is integrating along the parametrization
 `t ↦ (a + t u, P)`. -/

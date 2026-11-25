@@ -8,32 +8,32 @@ module
 public import TauCeti.Geometry.MeasureTheory.Varifold.Euclidean
 public import TauCeti.Geometry.MeasureTheory.Varifold.LineVarifold
 public import TauCeti.Topology.Algebra.Module.Trace
-public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-import TauCeti.MeasureTheory.Measure.Dirac
+public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 import TauCeti.MeasureTheory.Measure.Support
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Checks for the weight of a varifold
 
-Checks of Varifolds roadmap §1.3 in the plane `ℝ² = EuclideanSpace ℝ (Fin 2)`, for `1`-varifolds
-on `W = ℝ²` in the Euclidean form `Measure (W × G(ℝ², 1))`. The line `ℝ e₀` (the `x`-axis),
-parametrized by Lebesgue measure, is lifted with the horizontal plane `ℝ e₀` (`horizontalLift`)
-and with the vertical plane `ℝ e₁` (`verticalLift'`, which is `Euclidean.verticalLift`).
+Examples in the plane `ℝ² = EuclideanSpace ℝ (Fin 2)` of `1`-varifolds on `W = ℝ²` in the
+Euclidean form `Measure (W × G(ℝ², 1))`. The line `ℝ e₀` (the `x`-axis), parametrized by Lebesgue
+measure, is lifted with the horizontal plane `ℝ e₀` (`horizontalLift`) and with the vertical
+plane `ℝ e₁` (`Euclidean.verticalLift 0 (e 0) (e 1) _`).
 
 * *The weight does not determine the varifold.* The two lifts have the same weight
-  (`weight_horizontalLift_eq_weight_verticalLift'`) but are different
-  (`horizontalLift_ne_verticalLift'`): the test function `χ(x) tr(P ∘ diag(1, 0))`, where
+  (`weight_horizontalLift_eq_weight_verticalLift`) but are different
+  (`horizontalLift_ne_verticalLift`): the test function `χ(x) tr(P ∘ diag(1, 0))`, where
   `diag(1, 0)` is the projection onto `ℝ e₀`, integrates to `∫ χ(t e₀) dt` against the first and
-  to `0` against the second (`integral_horizontalLift`, `integral_verticalLift'`).
+  to `0` against the second (`integral_mul_traceDiag_horizontalLift`,
+  `integral_mul_traceDiag_verticalLift`).
 * *Mass on the unit disc.* The horizontal lift has mass `2` on the open unit disc
   (`weight_horizontalLift_ball`).
 * *The support of a restriction is relative.* The horizontal lift of the segment `[0, 1] e₀`
   (`segmentLift`), restricted to the open disc `W'` of radius `½` about `0`, has support
-  `[0, ½) e₀ = spt ‖V‖ ∩ W'` relative to `W'`, a set that is closed in `W'` but not in `ℝ²`: its
-  closure adds the point `½ e₀` outside `W'` (`support_restrictOpens_segmentLift`).
+  `[0, ½) e₀ = spt ‖V‖ ∩ W'` relative to `W'`, a set that is not closed in `ℝ²`: its closure
+  adds the point `½ e₀` outside `W'` (`support_restrictOpens_segmentLift`).
 * *Dirac varifolds and trivial restrictions.* `spt ‖δ_{(x, P)}‖ = {x}`
-  (`support_weight_dirac`), `V⌞∅ = 0` and `V⌞W = V` (`restrict_preimage_empty`,
+  (`Euclidean.support_weight_dirac`), `V⌞∅ = 0` and `V⌞W = V` (`restrict_preimage_empty`,
   `restrict_preimage_opens`).
 -/
 
@@ -44,37 +44,18 @@ public noncomputable section
 
 namespace TauCeti.Examples.VarifoldWeight
 
-/-! ### General facts -/
+/-! ### Trivial restrictions -/
 
 section General
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {k : ℕ}
+  [MeasurableSpace E] {k : ℕ}
 
-/-- The weight of a line varifold is Lebesgue measure transported to the line, whatever the
-plane it carries. -/
-theorem weight_lineVarifold (a u : E) (P : grassmannian ℝ E k) :
-    weight (lineVarifold a u P) = (volume : Measure ℝ).map fun t => a + t • u := by
-  have hm : Measurable fun p : (⊤ : Opens E) × grassmannian ℝ E k => (p.1 : E) :=
-    measurable_subtypeVal.comp measurable_fst
-  rw [weight_def, lineVarifold_def, Measure.map_map hm
-    (continuous_lineVarifoldParam a u P).measurable]
-  congr 1
-  funext t
-  simp only [Function.comp_apply, lineVarifoldParam_apply]
-
-/-- **The weight of a Dirac varifold** `δ_{(x, P)}` has support `{x}`. -/
-theorem support_weight_dirac {W : Opens E} (p : W × grassmannian ℝ E k) :
-    (weight (Measure.dirac p)).support = {(p.1 : E)} := by
-  rw [weight_dirac, Measure.support_dirac, closure_singleton]
-
-omit [BorelSpace E] in
 /-- Restricting a varifold to the pairs over the empty set gives `0`. -/
 theorem restrict_preimage_empty {W : Opens E} (V : Measure (W × grassmannian ℝ E k)) :
     V.restrict (Prod.fst ⁻¹' (Subtype.val ⁻¹' (∅ : Set E))) = 0 := by
   simp
 
-omit [BorelSpace E] in
 /-- Restricting a varifold on `W` to the pairs over `W` does nothing. -/
 theorem restrict_preimage_opens {W : Opens E} (V : Measure (W × grassmannian ℝ E k)) :
     V.restrict (Prod.fst ⁻¹' (Subtype.val ⁻¹' (W : Set E))) = V := by
@@ -114,21 +95,16 @@ def horizontalLift : Measure ((⊤ : Opens Plane) ×
     grassmannian ℝ Plane 1) :=
   lineVarifold 0 (e 0) (line 0)
 
-/-- The vertical lift of the `x`-axis: the line `ℝ e₀`, parametrized by Lebesgue measure, with the
-vertical plane `ℝ e₁` at every point. -/
-def verticalLift' : Measure ((⊤ : Opens Plane) ×
-    grassmannian ℝ Plane 1) :=
-  lineVarifold 0 (e 0) (line 1)
-
-/-- The vertical lift of this file is `Euclidean.verticalLift` along `e₁`. -/
-theorem verticalLift'_eq : verticalLift' = verticalLift 0 (e 0) (e 1) (e_ne_zero 1) := by
-  rw [verticalLift_def]
-  rfl
+/-- The vertical lift along `eᵢ` is the line varifold carrying the plane `line i`. -/
+theorem verticalLift_eq_lineVarifold_line (a u : Plane) (i : Fin 2) :
+    verticalLift a u (e i) (e_ne_zero i) = lineVarifold a u (line i) := by
+  rw [verticalLift_def, line]
 
 /-- The two lifts have the same weight. -/
-theorem weight_horizontalLift_eq_weight_verticalLift' :
-    weight horizontalLift = weight verticalLift' := by
-  rw [horizontalLift, verticalLift', weight_lineVarifold, weight_lineVarifold]
+theorem weight_horizontalLift_eq_weight_verticalLift :
+    weight horizontalLift = weight (verticalLift 0 (e 0) (e 1) (e_ne_zero 1)) := by
+  rw [horizontalLift, verticalLift_eq_lineVarifold_line, weight_lineVarifold,
+    weight_lineVarifold]
 
 /-- The two lines are different points of `G(ℝ², 1)`. -/
 theorem line_zero_ne_line_one : line 0 ≠ line 1 := by
@@ -143,13 +119,14 @@ theorem line_zero_ne_line_one : line 0 ≠ line 1 := by
 
 /-- **The weight does not determine the varifold**: the horizontal and the vertical lift of the
 `x`-axis have the same weight but are different. -/
-theorem horizontalLift_ne_verticalLift' : horizontalLift ≠ verticalLift' := by
+theorem horizontalLift_ne_verticalLift :
+    horizontalLift ≠ verticalLift 0 (e 0) (e 1) (e_ne_zero 1) := by
   intro h
   have hS : MeasurableSet (univ ×ˢ {line 1} : Set ((⊤ : Opens Plane) ×
       grassmannian ℝ Plane 1)) :=
     MeasurableSet.univ.prod (measurableSet_singleton _)
   have h' := congrArg (fun V : Measure _ => V (univ ×ˢ {line 1})) h
-  simp only [horizontalLift, verticalLift', lineVarifold_apply _ _ _ hS] at h'
+  simp only [horizontalLift, verticalLift_eq_lineVarifold_line, lineVarifold_apply _ _ _ hS] at h'
   have h₀ : lineVarifoldParam 0 (e 0) (line 0) ⁻¹' (univ ×ˢ {line 1}) = ∅ := by
     ext t
     simp [line_zero_ne_line_one]
@@ -191,16 +168,17 @@ theorem continuous_testFunction {χ : Plane → ℝ} (hχ : Continuous χ) :
     (continuous_traceDiag.comp (continuous_subtypeVal.comp continuous_snd))
 
 /-- Against the horizontal lift, `χ(x) tr(P ∘ diag(1, 0))` integrates to `∫ χ(t e₀) dt`. -/
-theorem integral_horizontalLift {χ : Plane → ℝ} (hχ : Continuous χ) :
+theorem integral_mul_traceDiag_horizontalLift {χ : Plane → ℝ} (hχ : Continuous χ) :
     ∫ z, χ z.1 * traceDiag (z.2 : Plane →L[ℝ] Plane) ∂horizontalLift = ∫ t : ℝ, χ (t • e 0) := by
   rw [horizontalLift, integral_lineVarifold _ _ _
     (continuous_testFunction hχ).aestronglyMeasurable]
   simp only [lineVarifoldParam_apply, traceDiag_line_zero, mul_one, zero_add]
 
 /-- Against the vertical lift, `χ(x) tr(P ∘ diag(1, 0))` integrates to `0`. -/
-theorem integral_verticalLift' {χ : Plane → ℝ} (hχ : Continuous χ) :
-    ∫ z, χ z.1 * traceDiag (z.2 : Plane →L[ℝ] Plane) ∂verticalLift' = 0 := by
-  rw [verticalLift', integral_lineVarifold _ _ _
+theorem integral_mul_traceDiag_verticalLift {χ : Plane → ℝ} (hχ : Continuous χ) :
+    ∫ z, χ z.1 * traceDiag (z.2 : Plane →L[ℝ] Plane) ∂verticalLift 0 (e 0) (e 1) (e_ne_zero 1) =
+      0 := by
+  rw [verticalLift_eq_lineVarifold_line, integral_lineVarifold _ _ _
     (continuous_testFunction hχ).aestronglyMeasurable]
   simp only [lineVarifoldParam_apply, traceDiag_line_one, mul_zero, integral_zero]
 
@@ -241,32 +219,20 @@ def segmentLift : Measure ((⊤ : Opens Plane) × grassmannian ℝ Plane 1) :=
 def halfDisc : Opens Plane :=
   ⟨ball 0 (1 / 2), isOpen_ball⟩
 
-/-- Lebesgue measure restricted to `[0, 1]` has support `[0, 1]`. -/
-theorem support_volume_restrict_Icc :
-    ((volume : Measure ℝ).restrict (Icc 0 1)).support = Icc 0 1 := by
-  refine Subset.antisymm (Measure.support_restrict_subset.trans ?_) ?_
-  · rw [closure_Icc]
-    exact inter_subset_left
-  · have h := Measure.interior_inter_support (μ := (volume : Measure ℝ)) (s := Icc 0 1)
-    rw [interior_Icc, Measure.support_eq_univ, inter_univ] at h
-    have := closure_minimal h Measure.isClosed_support
-    rwa [closure_Ioo zero_ne_one] at this
-
 /-- The weight of `segmentLift` is Lebesgue measure on `[0, 1]` transported by `t ↦ t e₀`. -/
 theorem weight_segmentLift :
     weight segmentLift = ((volume : Measure ℝ).restrict (Icc 0 1)).map axisMap := by
-  have hm : Measurable fun p : (⊤ : Opens Plane) × grassmannian ℝ Plane 1 => (p.1 : Plane) :=
-    measurable_subtypeVal.comp measurable_fst
-  rw [weight_def, segmentLift, Measure.map_map hm (continuous_lineVarifoldParam _ _ _).measurable]
+  rw [segmentLift, weight_map_lineVarifoldParam]
   congr 1
   funext t
-  simp only [Function.comp_apply, lineVarifoldParam_apply, zero_add, axisMap_def]
+  rw [zero_add, axisMap_def]
 
 /-- `spt ‖V‖` is the segment `[0, 1] e₀`. -/
 theorem support_weight_segmentLift : (weight segmentLift).support = axisMap '' Icc 0 1 := by
   rw [weight_segmentLift, Measure.support_map_of_isInducing_of_isClosed_range _
     isClosedEmbedding_axisMap.isInducing isClosedEmbedding_axisMap.isClosed_range,
-    support_volume_restrict_Icc]
+    ← Measure.restrict_congr_set Ioo_ae_eq_Icc, Measure.support_restrict_of_isOpen _ isOpen_Ioo,
+    closure_Ioo zero_ne_one]
 
 /-- The part of the segment `[0, 1] e₀` in the disc of radius `½` is `[0, ½) e₀`. -/
 theorem image_Icc_inter_halfDisc :
@@ -284,8 +250,8 @@ theorem image_Icc_inter_halfDisc :
 
 /-- **The support of a restriction is relative to the open set.** For the horizontal lift `V` of
 the segment `[0, 1] e₀` and its restriction `V'` to the open disc `W'` of radius `½`, the support
-of `‖V'‖` in `W'` is `[0, ½) e₀ = spt ‖V‖ ∩ W'`. This set is closed in `W'` but not in `ℝ²`: its
-closure in `ℝ²` contains the point `½ e₀`, which lies outside `W'`. -/
+of `‖V'‖` in `W'` is `[0, ½) e₀ = spt ‖V‖ ∩ W'`. This set is not closed in `ℝ²`: its closure in
+`ℝ²` contains the point `½ e₀`, which lies outside `W'`. -/
 theorem support_restrictOpens_segmentLift :
     (weight (restrictOpens segmentLift (le_top : halfDisc ≤ ⊤))).support ∩ halfDisc =
         axisMap '' Ico 0 (1 / 2) ∧
