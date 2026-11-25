@@ -143,7 +143,7 @@ instance (ι R : Type*) [MulZeroOneClass R] : IsIdempotented (ι →₀ R) := by
       rcases key i with h | h <;> simp [Finsupp.mul_apply, h]
 
 /-- Scalars commute past the pointwise product of finitely supported functions on the left. -/
-instance instIsScalarTowerFinsuppPointwise (ι R : Type*) [CommSemiring R] :
+instance instIsScalarTowerFinsuppPointwise (ι R : Type*) [Semiring R] :
     IsScalarTower R (ι →₀ R) (ι →₀ R) :=
   ⟨fun a f g ↦ Finsupp.ext fun i ↦ by simp [mul_assoc]⟩
 
