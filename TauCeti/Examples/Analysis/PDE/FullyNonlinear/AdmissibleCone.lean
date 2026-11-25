@@ -26,9 +26,10 @@ half-plane `{μ₀ + μ₁ > 0}`.
   midpoint `(1, -3/20)`. It also violates `Γ + Γ_2 ⊆ Γ`, at `(1, -2/5) + (1/100, 1/4)`. So an
   admissible cone need not be convex; results about concave admissible pairs get convexity of the
   cone from `ConcaveOn ℝ Γ f`, whose first component is `Convex ℝ Γ`.
-* Only finite intersections of admissible cones are admissible: for every `ε ≥ 0` the cone
-  `{μ₀ + μ₁ > 0, μᵢ > -ε (μ₀ + μ₁)}` is admissible, but the intersection over all `ε > 0` is
-  not open, since it contains `(1, 0)` and none of the points `(1, -t)`, `0 < t < 1`.
+* Admissibility is preserved by finite intersections (`IsAdmissibleCone.iInter`) but not by
+  arbitrary ones: for every `ε ≥ 0` the cone `{μ₀ + μ₁ > 0, μᵢ > -ε (μ₀ + μ₁)}` is admissible,
+  but the intersection over all `ε > 0` is not open, since it contains `(1, 0)` and none of the
+  points `(1, -t)`, `0 < t < 1`.
 -/
 
 public section
@@ -52,6 +53,11 @@ example : (![1, -1 / 2] : Fin 2 → ℝ) ∈ {μ : Fin 2 → ℝ | 0 < ∑ i, μ
 def shiftedQuadrant : Set (Fin 2 → ℝ) :=
   {μ | ∀ i, -1 < μ i}
 
+/-- Membership in `shiftedQuadrant` in terms of the coordinates. -/
+@[simp]
+theorem mem_shiftedQuadrant {μ : Fin 2 → ℝ} : μ ∈ shiftedQuadrant ↔ ∀ i, -1 < μ i :=
+  Iff.rfl
+
 /-- The shifted quadrant is open. -/
 theorem isOpen_shiftedQuadrant : IsOpen shiftedQuadrant := by
   simpa only [shiftedQuadrant, Set.ofPred_forall] using
@@ -60,12 +66,12 @@ theorem isOpen_shiftedQuadrant : IsOpen shiftedQuadrant := by
 /-- The shifted quadrant is invariant under permutations of the coordinates. -/
 theorem comp_perm_mem_shiftedQuadrant (σ : Equiv.Perm (Fin 2)) {μ : Fin 2 → ℝ}
     (hμ : μ ∈ shiftedQuadrant) : μ ∘ σ ∈ shiftedQuadrant :=
-  fun i ↦ hμ (σ i)
+  mem_shiftedQuadrant.2 fun i ↦ mem_shiftedQuadrant.1 hμ (σ i)
 
 /-- The shifted quadrant contains the positive quadrant `Γ_2`. -/
 theorem mem_shiftedQuadrant_of_forall_pos {μ : Fin 2 → ℝ} (hμ : ∀ i, 0 < μ i) :
     μ ∈ shiftedQuadrant :=
-  fun i ↦ by linarith [hμ i]
+  mem_shiftedQuadrant.2 fun i ↦ by linarith [hμ i]
 
 /-- The shifted quadrant contains `(-1/2, 1)` but not `3 • (-1/2, 1) = (-3/2, 3)`: it is not
 invariant under positive dilations. -/
@@ -96,6 +102,7 @@ def wedgeCone : Set (Fin 2 → ℝ) :=
     {μ | 0 < μ 1 ∧ -(μ 1 / 2) < μ 0 ∧ μ 0 < -(μ 1 / 3)}
 
 /-- Membership in `wedgeCone` in terms of the two coordinates. -/
+@[simp]
 theorem mem_wedgeCone {μ : Fin 2 → ℝ} :
     μ ∈ wedgeCone ↔ (0 < μ 0 ∧ 0 < μ 1) ∨ (0 < μ 0 ∧ -(μ 0 / 2) < μ 1 ∧ μ 1 < -(μ 0 / 3)) ∨
       (0 < μ 1 ∧ -(μ 1 / 2) < μ 0 ∧ μ 0 < -(μ 1 / 3)) := by
@@ -151,11 +158,17 @@ theorem add_notMem_wedgeCone :
   rw [mem_wedgeCone] at h
   norm_num at h
 
-/-! ### Only finite intersections -/
+/-! ### Infinite intersections -/
 
 /-- The cone `{μ₀ + μ₁ > 0, μᵢ > -ε (μ₀ + μ₁)}`. -/
 def epsCone (ε : ℝ) : Set (Fin 2 → ℝ) :=
   {μ | 0 < μ 0 + μ 1 ∧ -(ε * (μ 0 + μ 1)) < μ 0 ∧ -(ε * (μ 0 + μ 1)) < μ 1}
+
+/-- Membership in `epsCone ε` in terms of the two coordinates. -/
+@[simp]
+theorem mem_epsCone {ε : ℝ} {μ : Fin 2 → ℝ} :
+    μ ∈ epsCone ε ↔ 0 < μ 0 + μ 1 ∧ -(ε * (μ 0 + μ 1)) < μ 0 ∧ -(ε * (μ 0 + μ 1)) < μ 1 :=
+  Iff.rfl
 
 /-- For `ε ≥ 0`, `{μ₀ + μ₁ > 0, μᵢ > -ε (μ₀ + μ₁)}` is an admissible cone. -/
 theorem isAdmissibleCone_epsCone {ε : ℝ} (hε : 0 ≤ ε) : IsAdmissibleCone (epsCone ε) where
@@ -166,23 +179,24 @@ theorem isAdmissibleCone_epsCone {ε : ℝ} (hε : 0 ≤ ε) : IsAdmissibleCone 
     exact (isOpen_lt continuous_const (by fun_prop)).inter
       ((isOpen_lt (by fun_prop) h0).inter (isOpen_lt (by fun_prop) h1))
   comp_perm_mem σ μ hμ := by
-    obtain ⟨hs, h0, h1⟩ := hμ
+    obtain ⟨hs, h0, h1⟩ := mem_epsCone.1 hμ
+    rw [mem_epsCone]
     rcases Equiv.Perm.eq_one_or_swap_fin_two σ with rfl | rfl
     · exact ⟨hs, h0, h1⟩
     · refine ⟨?_, ?_, ?_⟩ <;>
         simp only [Function.comp_apply, Equiv.swap_apply_left, Equiv.swap_apply_right] <;>
         linarith
   smul_mem {t} ht μ hμ := by
-    obtain ⟨hs, h0, h1⟩ := hμ
-    simp only [epsCone, mem_ofPred_eq, Pi.smul_apply, smul_eq_mul]
+    obtain ⟨hs, h0, h1⟩ := mem_epsCone.1 hμ
+    simp only [mem_epsCone, Pi.smul_apply, smul_eq_mul]
     refine ⟨by nlinarith, by nlinarith, by nlinarith⟩
   mem_of_forall_pos hμ := by
     have h0 := hμ 0
     have h1 := hμ 1
-    refine ⟨by linarith, ?_, ?_⟩ <;> nlinarith
+    refine mem_epsCone.2 ⟨by linarith, ?_, ?_⟩ <;> nlinarith
   sum_pos hμ := by
     rw [Fin.sum_univ_two]
-    exact hμ.1
+    exact (mem_epsCone.1 hμ).1
 
 /-- The intersection of the cones `{μ₀ + μ₁ > 0, μᵢ > -ε (μ₀ + μ₁)}` over all `ε > 0` is not
 open: it contains `(1, 0)` but not `(1, -t)` for any `0 < t < 1`. -/
