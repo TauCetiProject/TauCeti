@@ -25,7 +25,9 @@ cover, whose deck group is the opposite of its fundamental group, the free group
 universal cover of a wedge of circles other than the identity has finite order
 (`TauCeti.UniversalCover.isMulTorsionFree_deck`). The generator `i` of the free group
 corresponds to the deck transformation given by the inverse of the loop around the `i`-th circle
-(`TauCeti.WedgeSum.deckCircleMulEquiv_symm_op_of`).
+(`TauCeti.WedgeSum.deckCircleMulEquiv_symm_op_of`); more generally, the deck transformation of a
+loop class `g` corresponds to the inverse of the word of `g`
+(`TauCeti.WedgeSum.deckCircleMulEquiv_loopDeck`).
 -/
 
 public section
@@ -46,6 +48,19 @@ def deckCircleMulEquiv :
   (UniversalCover.deckFundamentalGroupEquiv _).trans (circleFundamentalGroupMulEquiv ι).op
 
 variable {ι} in
+/-- The deck transformation given by a loop class `g` corresponds to the inverse of the opposite of
+the free-group word of `g`. -/
+@[simp]
+theorem deckCircleMulEquiv_loopDeck
+    (g : FundamentalGroup (WedgeSum fun _ : ι ↦ (1 : Circle)) (base _)) :
+    deckCircleMulEquiv ι (UniversalCover.loopDeck _ g) =
+      (MulOpposite.op (circleFundamentalGroupMulEquiv ι g))⁻¹ := by
+  have h : UniversalCover.deckFundamentalGroupEquiv _ (UniversalCover.loopDeck _ g) =
+      MulOpposite.op g⁻¹ :=
+    (MulEquiv.eq_symm_apply _).1 (by rw [UniversalCover.deckFundamentalGroupEquiv_symm_op, inv_inv])
+  simp [deckCircleMulEquiv, h]
+
+variable {ι} in
 /-- The generator `i` of the free group corresponds to the deck transformation given by the inverse
 of the loop going once counterclockwise around the `i`-th circle. -/
 @[simp]
@@ -54,7 +69,6 @@ theorem deckCircleMulEquiv_symm_op_of (i : ι) :
       UniversalCover.loopDeck _
         (FundamentalGroup.mapOfEq (incl _ i) (incl_apply_self i)
           (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop)))⁻¹ := by
-  simp [deckCircleMulEquiv,
-    (MulEquiv.symm_apply_eq _).2 (circleFundamentalGroupMulEquiv_expLoop i).symm]
+  simp [MulEquiv.symm_apply_eq]
 
 end TauCeti.WedgeSum
