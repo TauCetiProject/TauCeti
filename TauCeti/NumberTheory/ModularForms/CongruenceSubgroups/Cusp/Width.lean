@@ -118,15 +118,6 @@ theorem conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd (N : ℕ) [NeZero N]
   simpa only [gcd_eq_nat_gcd, mul_comm j.natAbs] using
     (dvd_gcd_mul_iff_dvd_mul (k := N) (m := (γ 1 0).natAbs ^ 2) (n := j.natAbs)).symm
 
-/-- Conjugating a translation by `h γ M`, for `M` fixing `∞`, is conjugating it by `γ` and then
-by `h`: `M` commutes with the translations. -/
-private theorem mul_mul_T_zpow_mul_inv (h γ : SL(2, ℤ)) {M : SL(2, ℤ)} (hM : M 1 0 = 0) (j : ℤ) :
-    h * γ * M * ModularGroup.T ^ j * (h * γ * M)⁻¹ =
-      h * (γ * ModularGroup.T ^ j * γ⁻¹) * h⁻¹ := by
-  calc h * γ * M * ModularGroup.T ^ j * (h * γ * M)⁻¹ =
-        h * γ * (M * ModularGroup.T ^ j * M⁻¹) * γ⁻¹ * h⁻¹ := by group
-    _ = _ := by rw [ModularGroup.mul_T_zpow_mul_inv_of_c_eq_zero hM]; group
-
 /-- The width is unchanged when `γ` is multiplied on the left by an element of `Γ₀(N)` and on
 the right by an element fixing `∞`: the translations of `Γ₀(N)` fixing the two cusps are
 conjugate by an element of `Γ₀(N)`. -/
@@ -136,13 +127,14 @@ theorem cuspWidthGamma0_mul_mul (N : ℕ) {h : SL(2, ℤ)} (hh : h ∈ Gamma0 N)
   rcases eq_zero_or_neZero N with rfl | _
   · simp
   refine Nat.dvd_antisymm ?_ ?_ <;> rw [← Int.natCast_dvd_natCast]
-  · rw [← conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd, mul_mul_T_zpow_mul_inv h γ hM]
+  · rw [← conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd,
+      ModularGroup.mul_mul_T_zpow_mul_inv_of_c_eq_zero h γ hM]
     exact mul_mem
       (mul_mem hh ((conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd N γ _).mpr dvd_rfl))
       (inv_mem hh)
   · rw [← conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd]
     have hmem := (conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd N (h * γ * M) _).mpr dvd_rfl
-    rw [mul_mul_T_zpow_mul_inv h γ hM] at hmem
+    rw [ModularGroup.mul_mul_T_zpow_mul_inv_of_c_eq_zero h γ hM] at hmem
     exact (Subgroup.mul_mem_cancel_left _ hh).mp
       ((Subgroup.mul_mem_cancel_right _ (inv_mem hh)).mp hmem)
 
@@ -194,7 +186,7 @@ theorem coe_cuspGeneratorGamma0_mul_mul (N : ℕ) {h : SL(2, ℤ)} (hh : h ∈ G
     (γ : SL(2, ℤ)) {M : SL(2, ℤ)} (hM : M 1 0 = 0) :
     (cuspGeneratorGamma0 N (h * γ * M) : SL(2, ℤ)) = h * cuspGeneratorGamma0 N γ * h⁻¹ := by
   rw [coe_cuspGeneratorGamma0, cuspWidthGamma0_mul_mul N hh γ hM,
-    mul_mul_T_zpow_mul_inv h γ hM, coe_cuspGeneratorGamma0]
+    ModularGroup.mul_mul_T_zpow_mul_inv_of_c_eq_zero h γ hM, coe_cuspGeneratorGamma0]
 
 /-- The lower-right entry modulo `N` of the generator of `h γ M`, for `h ∈ Γ₀(N)` and `M`
 fixing `∞`, is that of the generator of `γ`. -/

@@ -168,6 +168,15 @@ theorem cuspDatumInftyGamma_generator :
     ((cuspDatumInftyGamma N).generator : PSL(2, ℝ)) = sl2zToPSL2R (ModularGroup.T ^ (N : ℤ)) :=
   (rfl)
 
+omit [NeZero N] in
+/-- The image of the generator `γ T^w γ⁻¹` in `PSL(2, ℝ)` is the conjugate by `γ` of the
+translation `z ↦ z + w` by the width `w = cuspWidthGamma0 N γ`. -/
+theorem sl2zToPSL2R_cuspGeneratorGamma0 (γ : SL(2, ℤ)) :
+    sl2zToPSL2R (cuspGeneratorGamma0 N γ : SL(2, ℤ)) =
+      sl2zToPSL2R γ * upperRightHom (cuspWidthGamma0 N γ : ℝ) * (sl2zToPSL2R γ)⁻¹ := by
+  rw [coe_cuspGeneratorGamma0, map_mul, map_mul, map_inv, UpperHalfPlane.sl2zToPSL2R_T_zpow,
+    Int.cast_natCast]
+
 /-- If `γ⁻¹ a γ` fixes `∞` and `a ∈ Γ₀(N)`, then `a` has the same image in `PSL(2, ℝ)` as a power
 of the generator `cuspGeneratorGamma0 N γ`. -/
 private theorem exists_sl2zToPSL2R_eq_cuspGeneratorGamma0_zpow {γ a : SL(2, ℤ)}
@@ -209,8 +218,8 @@ def cuspDatumGamma0 (γ : SL(2, ℤ)) : ((Gamma0 N).map sl2zToPSL2R).CuspDatum w
   zpowers_generator := by
     refine le_antisymm ?_ ?_
     · rw [zpowers_le, mem_stabilizer_iff, Subgroup.smul_def, Subgroup.coe_mk,
-        coe_cuspGeneratorGamma0, map_mul, map_mul, map_inv, mul_smul, mul_smul, inv_smul_smul,
-        UpperHalfPlane.sl2zToPSL2R_T_zpow, upperRightHom_smul_infty]
+        sl2zToPSL2R_cuspGeneratorGamma0, mul_smul, mul_smul, inv_smul_smul,
+        upperRightHom_smul_infty]
     · rintro ⟨_, a, ha, rfl⟩ hg
       have hc : (γ⁻¹ * a * γ) 1 0 = 0 := by
         rw [← sl2zToPSL2R_smul_infty_eq_infty_iff, map_mul, map_mul, map_inv, mul_smul, mul_smul,
@@ -219,8 +228,7 @@ def cuspDatumGamma0 (γ : SL(2, ℤ)) : ((Gamma0 N).map sl2zToPSL2R).CuspDatum w
       obtain ⟨k, hk⟩ := exists_sl2zToPSL2R_eq_cuspGeneratorGamma0_zpow N ha hc
       exact mem_zpowers_iff.mpr ⟨k, Subtype.ext (by simp [hk])⟩
   scaling_mul_generator_mul_inv := by
-    rw [Subgroup.coe_mk, coe_cuspGeneratorGamma0, inv_inv, map_mul, map_mul, map_inv,
-      UpperHalfPlane.sl2zToPSL2R_T_zpow]
+    rw [Subgroup.coe_mk, sl2zToPSL2R_cuspGeneratorGamma0, inv_inv]
     simp [mul_assoc]
 
 /-- The cusp of the normalized datum of `Γ₀(N)` at `γ ∞` is `γ ∞`. -/
@@ -245,19 +253,11 @@ theorem cuspDatumGamma0_width (γ : SL(2, ℤ)) :
 theorem cuspDatumGamma0_generator (γ : SL(2, ℤ)) :
     ((cuspDatumGamma0 N γ).generator : PSL(2, ℝ)) = sl2zToPSL2R (cuspGeneratorGamma0 N γ) := (rfl)
 
-/-- Matrices representing the same cusp of `Γ₀(N)` differ by an element of `Γ₀(N)` on the left
-and an element fixing `∞` on the right. -/
-private theorem exists_eq_mul_mul_of_cuspOrbitOfSL2Z_eq {γ γ' : SL(2, ℤ)}
-    (hγ : (Gamma0 N).cuspOrbitOfSL2Z γ = (Gamma0 N).cuspOrbitOfSL2Z γ') :
-    ∃ g ∈ Gamma0 N, ∃ M : SL(2, ℤ), M 1 0 = 0 ∧ γ' = g * γ * M := by
-  obtain ⟨g, hg, hc⟩ := (Subgroup.cuspOrbitOfSL2Z_eq_iff _ γ γ').mp hγ
-  exact ⟨g⁻¹, inv_mem hg, γ⁻¹ * g * γ', hc, by group⟩
-
 /-- Matrices representing the same cusp of `Γ₀(N)` have the same width. -/
 theorem cuspWidthGamma0_eq_of_cuspOrbitOfSL2Z_eq {γ γ' : SL(2, ℤ)}
     (hγ : (Gamma0 N).cuspOrbitOfSL2Z γ = (Gamma0 N).cuspOrbitOfSL2Z γ') :
     cuspWidthGamma0 N γ' = cuspWidthGamma0 N γ := by
-  obtain ⟨g, hg, M, hM, rfl⟩ := exists_eq_mul_mul_of_cuspOrbitOfSL2Z_eq N hγ
+  obtain ⟨g, hg, M, hM, rfl⟩ := (Gamma0 N).exists_eq_mul_mul_of_cuspOrbitOfSL2Z_eq hγ
   exact cuspWidthGamma0_mul_mul N hg γ hM
 
 /-- Matrices representing the same cusp of `Γ₀(N)` have generators with the same lower-right
@@ -265,7 +265,7 @@ entry modulo `N`. -/
 theorem Gamma0Map_cuspGeneratorGamma0_eq_of_cuspOrbitOfSL2Z_eq {γ γ' : SL(2, ℤ)}
     (hγ : (Gamma0 N).cuspOrbitOfSL2Z γ = (Gamma0 N).cuspOrbitOfSL2Z γ') :
     Gamma0Map N (cuspGeneratorGamma0 N γ') = Gamma0Map N (cuspGeneratorGamma0 N γ) := by
-  obtain ⟨g, hg, M, hM, rfl⟩ := exists_eq_mul_mul_of_cuspOrbitOfSL2Z_eq N hγ
+  obtain ⟨g, hg, M, hM, rfl⟩ := (Gamma0 N).exists_eq_mul_mul_of_cuspOrbitOfSL2Z_eq hγ
   exact Gamma0Map_cuspGeneratorGamma0_mul_mul N hg γ hM
 
 end TauCeti

@@ -82,6 +82,16 @@ theorem ModularGroup.mul_T_zpow_mul_inv_of_c_eq_zero {g : SL(2, ℤ)} (hc : g 1 
     · exact (Commute.zpow_zpow_self _ _ _).neg_left
   rw [hcomm.eq, mul_inv_cancel_right]
 
+/-- Conjugating a translation by `h γ M`, for `M` fixing `∞`, is conjugating it by `γ` and then
+by `h`: `M` commutes with the translations. -/
+theorem ModularGroup.mul_mul_T_zpow_mul_inv_of_c_eq_zero (h γ : SL(2, ℤ)) {M : SL(2, ℤ)}
+    (hM : M 1 0 = 0) (j : ℤ) :
+    h * γ * M * ModularGroup.T ^ j * (h * γ * M)⁻¹ =
+      h * (γ * ModularGroup.T ^ j * γ⁻¹) * h⁻¹ := by
+  calc h * γ * M * ModularGroup.T ^ j * (h * γ * M)⁻¹ =
+        h * γ * (M * ModularGroup.T ^ j * M⁻¹) * γ⁻¹ * h⁻¹ := by group
+    _ = _ := by rw [ModularGroup.mul_T_zpow_mul_inv_of_c_eq_zero hM]; group
+
 /-- Distinct integer powers of `T` are pairwise non-conjugate in `PSL(2, ℤ)`: since elements of
 `SL(2, ℤ)` have determinant `+1`, any element conjugating a nontrivial power of `T` into `⟨T⟩`
 fixes `∞` and hence centralizes `T`. -/
