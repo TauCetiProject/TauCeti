@@ -126,16 +126,15 @@ private lemma cyclesComparison_comp_iCycles (M : X.Modules) (n : ℕ) :
     (HomologicalComplex.cyclesMap_i _ n).trans
       ((congrArg (_ ≫ ·) (pushforwardSectionsComplexIso_hom_app_f f _ n)).trans
         (Category.comp_id _))
-  have b3 : ((Kmod.sc n).mapCyclesIso t).inv ≫ ((t.mapHomologicalComplex _).obj Kmod).iCycles n =
-      t.map (Kmod.iCycles n) :=
-    ShortComplex.mapCyclesIso_inv_comp_iCycles (Kmod.sc n) t
-  -- Reassociate and apply `mapCyclesIso_hom_comp_map_iCycles`, `b2`, `b3`. The objects between
+  -- Reassociate and apply `mapCyclesIso_hom_comp_map_iCycles`, `b2` and
+  -- `mapCyclesIso_inv_comp_iCycles`. The objects between
   -- the factors agree only up to unfolding `mapHomologicalComplex` (the cycles of `t` applied to
   -- `f_* P` versus `W` applied to `P`), so `rw [Category.assoc]` fails with a motive type error and
   -- the chain is built by hand.
   refine (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
     (congrArg (_ ≫ ·) (W.mapCyclesIso_hom_comp_map_iCycles _ n Kab)))).trans ?_)
-  exact (congrArg (((Kmod.sc n).mapCyclesIso t).inv ≫ ·) b2).trans b3
+  exact (congrArg (((Kmod.sc n).mapCyclesIso t).inv ≫ ·) b2).trans
+    (t.mapCyclesIso_inv_comp_iCycles _ n Kmod)
 
 /-- **Classes of cycles.** Let `P` be the injective resolution of `M` used to construct the presheaf
 `V ↦ Hⁿ(f⁻¹ V, M)`, so that its sections over `V` are the homology of the complex `Γ(f⁻¹ V, P)`.

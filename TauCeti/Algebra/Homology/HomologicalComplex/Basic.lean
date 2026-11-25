@@ -593,7 +593,7 @@ lemma map_homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_inv_app
 /-- Under the identification `ShortComplex.mapCyclesIso` of the cycles, `F` applied to the
 inclusion of the cycles of `K` is the inclusion of the cycles of `F` applied to `K`. This is
 `ShortComplex.mapCyclesIso_hom_iCycles` stated for the mapped complex. -/
-@[reassoc, elementwise]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma mapCyclesIso_hom_comp_map_iCycles (K : HomologicalComplex C c) :
     ((K.sc i).mapCyclesIso F).hom ≫ F.map (K.iCycles i) =
       ((F.mapHomologicalComplex c).obj K).iCycles i :=
@@ -603,7 +603,7 @@ lemma mapCyclesIso_hom_comp_map_iCycles (K : HomologicalComplex C c) :
 `ShortComplex.mapCyclesIso` of the cycles, the inclusion of the cycles of `F` applied to `K` is `F`
 applied to the inclusion of the cycles of `K`. This is `ShortComplex.mapCyclesIso_inv_comp_iCycles`
 stated for the mapped complex. -/
-@[reassoc, elementwise]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma mapCyclesIso_inv_comp_iCycles (K : HomologicalComplex C c) :
     ((K.sc i).mapCyclesIso F).inv ≫ ((F.mapHomologicalComplex c).obj K).iCycles i =
       F.map (K.iCycles i) :=
@@ -616,7 +616,7 @@ variable {E : Type*} [Category* E] [Preadditive E] [CategoryWithHomology E] (G :
 underlying chains: carried along the identifications `ShortComplex.mapCyclesIso` of the cycles,
 its map of cycles followed by `G` applied to the inclusion of the cycles of `L` is `F` applied to
 the inclusion of the cycles of `K` followed by `Φ`. -/
-@[reassoc, elementwise]
+@[reassoc, elementwise nosimp]
 lemma mapCyclesIso_inv_comp_cyclesMap_comp_mapCyclesIso_hom_comp_map_iCycles
     (K : HomologicalComplex C c) (L : HomologicalComplex E c)
     (Φ : (F.mapHomologicalComplex c).obj K ⟶ (G.mapHomologicalComplex c).obj L) :
