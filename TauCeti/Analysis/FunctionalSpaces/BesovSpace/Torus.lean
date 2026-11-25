@@ -352,15 +352,16 @@ theorem exists_littlewoodPaleyBlockLp_eq_sum_Ico (φ φ' : ContDiffBump (0 : Euc
   exact Finset.sum_congr rfl fun k _ ↦ by ring
 
 /-- **Uniform `Lᵖ` bounds across bump functions.** There is `C`, depending only on `φ'`, such
-that `‖Δ'ⱼ (ψₖ c)‖_p ≤ C ‖Δₖ c‖_p` for every `j`, `k`, `1 ≤ p ≤ ∞` and `c`, where the blocks
-`Δₖ` are built from `φ` and `Δ'ⱼ` from `φ'`. -/
-theorem exists_norm_littlewoodPaleyBlockLp_mul_le (φ φ' : ContDiffBump (0 : EuclideanSpace ℝ d)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (p : ℝ≥0∞) [Fact (1 ≤ p)] (j k : ℕ) (c : (d → ℤ) → ℂ),
+that `‖Δ'ⱼ (ψₖ c)‖_p ≤ C ‖Δₖ c‖_p` for every bump function `φ`, every `j`, `k`, `1 ≤ p ≤ ∞` and
+`c`, where the blocks `Δₖ` are built from `φ` and `Δ'ⱼ` from `φ'`. -/
+theorem exists_norm_littlewoodPaleyBlockLp_mul_le (φ' : ContDiffBump (0 : EuclideanSpace ℝ d)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (φ : ContDiffBump (0 : EuclideanSpace ℝ d)) (p : ℝ≥0∞) [Fact (1 ≤ p)]
+      (j k : ℕ) (c : (d → ℤ) → ℂ),
       ‖littlewoodPaleyBlockLp φ' p j
           (fun n ↦ (φ.inhomogeneousLittlewoodPaley k (latticePoint n) : ℂ) * c n)‖ ≤
         C * ‖littlewoodPaleyBlockLp φ p k c‖ := by
   obtain ⟨C, hC⟩ := exists_eLpNorm_littlewoodPaleyBlock_le φ'
-  refine ⟨C, C.coe_nonneg, fun p _ j k c ↦ ?_⟩
+  refine ⟨C, C.coe_nonneg, fun φ p _ j k c ↦ ?_⟩
   -- Apply the `Lᵖ` bound of the `L²` block `Δ'ⱼ` to the trigonometric polynomial `f = Δₖ c`.
   set f := littlewoodPaleyBlockLp φ 2 k c
   have hf : littlewoodPaleyBlock φ' j f = littlewoodPaleyBlockLp φ' 2 j
@@ -473,13 +474,13 @@ theorem exists_rpow_mul_norm_littlewoodPaleyBlockLp_le_sum_Ico
       2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ' p j c‖ ≤
         K * ∑ k ∈ Finset.Ico (j - L) (j + L), 2 ^ (s * k) * ‖littlewoodPaleyBlockLp φ p k c‖ := by
   obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlockLp_eq_sum_Ico φ φ'
-  obtain ⟨C, hC0, hC⟩ := exists_norm_littlewoodPaleyBlockLp_mul_le φ φ'
+  obtain ⟨C, hC0, hC⟩ := exists_norm_littlewoodPaleyBlockLp_mul_le φ'
   refine ⟨C * 2 ^ (|s| * L), L, by positivity, fun p _ j c ↦ ?_⟩
   rw [hL p j c]
   have h := TauCeti.two_rpow_mul_norm_sum_Ico_le s
     (g := fun k ↦ littlewoodPaleyBlockLp φ' p j
       (fun n ↦ (φ.inhomogeneousLittlewoodPaley k (latticePoint n) : ℂ) * c n))
-    (x := fun k ↦ littlewoodPaleyBlockLp φ p k c) (fun k ↦ hC p j k c) j L
+    (x := fun k ↦ littlewoodPaleyBlockLp φ p k c) (fun k ↦ hC φ p j k c) j L
   rwa [max_eq_left hC0] at h
 
 /-- **Independence of the bump function.** A formal Fourier series in the periodic Besov space
@@ -753,12 +754,12 @@ instance : CompleteSpace (BesovSpace φ s p q) := by
   exact isClosed_range_weightedBlocks.isComplete
 
 /-- The norms of `B^s_{p,q}(𝕋ᵈ)` built from two bump functions are comparable: there is `C`,
-depending only on `φ`, `φ'` and `s`, with `‖u‖_{B'} ≤ C ‖u‖_B`. -/
+depending only on `φ`, `φ'` and `s`, with `‖u‖_{B'} ≤ C ‖u‖_B` for all `1 ≤ p, q ≤ ∞`. -/
 private theorem exists_norm_of_bump_le (φ' : ContDiffBump (0 : EuclideanSpace ℝ d)) :
-    ∃ C : ℝ, ∀ u : BesovSpace φ s p q,
+    ∃ C : ℝ, ∀ (p q : ℝ≥0∞) [Fact (1 ≤ p)] [Fact (1 ≤ q)] (u : BesovSpace φ s p q),
       ‖(⟨u.coeff, u.memBesov_coeff.of_bump φ'⟩ : BesovSpace φ' s p q)‖ ≤ C * ‖u‖ := by
   obtain ⟨K, L, hK, hKL⟩ := exists_rpow_mul_norm_littlewoodPaleyBlockLp_le_sum_Ico φ φ' s
-  refine ⟨K * (2 * L), fun u ↦ ?_⟩
+  refine ⟨K * (2 * L), fun p q _ _ u ↦ ?_⟩
   -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
   set b := lp.normSeq u.weightedBlocks
   obtain ⟨w, hw, hwn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le b L
@@ -785,7 +786,8 @@ def bumpEquiv (φ φ' : ContDiffBump (0 : EuclideanSpace ℝ d)) (s : ℝ) (p q 
       map_smul' _ _ := ext rfl
       left_inv _ := ext rfl
       right_inv _ := ext rfl }
-    _ _ (exists_norm_of_bump_le φ').choose_spec (exists_norm_of_bump_le φ).choose_spec
+    _ _ ((exists_norm_of_bump_le (φ := φ) (s := s) φ').choose_spec p q)
+    ((exists_norm_of_bump_le (φ := φ') (s := s) φ).choose_spec p q)
 
 @[simp]
 theorem coeff_bumpEquiv (φ' : ContDiffBump (0 : EuclideanSpace ℝ d)) (u : BesovSpace φ s p q) :
