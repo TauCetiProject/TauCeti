@@ -21,9 +21,9 @@ Hausdorff measure of its reduced boundary, and of the part of its essential boun
 `P_μ(U; Ω) = ∫_{∂*U} e^{−W} dHⁿ⁻¹ = ∫_{∂ᵉU ∩ Ω} e^{−W} dHⁿ⁻¹`
 
 (`TauCeti.weightedPerimeter_eq_lintegral_reducedBoundary`,
-`TauCeti.weightedPerimeter_eq_lintegral_essentialBoundary`). Sets of finite weighted perimeter
-have locally finite perimeter, so the formulas hold for them
-(`TauCeti.weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top`).
+`TauCeti.weightedPerimeter_eq_lintegral_essentialBoundary_inter`). A null-measurable set of
+finite weighted perimeter in `Ω` has locally finite perimeter there, so the reduced-boundary
+formula holds for it (`TauCeti.weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top`).
 
 The proof combines `V_μ(u; Ω) = ∫_Ω e^{−W} d|Du|`
 (`TauCeti.weightedVariation_eq_lintegral_variationMeasure`) with De Giorgi's theorem
@@ -70,7 +70,7 @@ theorem weightedPerimeter_eq_lintegral_reducedBoundary (hW : ContDiff ℝ 1 W)
 /-- **The weighted perimeter is the weighted Hausdorff measure of the essential boundary.** For a
 `C¹` weight `W`, in dimension `n ≥ 2`, a set `s` of locally finite perimeter in `Ω` has
 `P_μ(s; Ω) = ∫_{∂ᵉs ∩ Ω} e^{−W} dHⁿ⁻¹`. -/
-theorem weightedPerimeter_eq_lintegral_essentialBoundary (hW : ContDiff ℝ 1 W)
+theorem weightedPerimeter_eq_lintegral_essentialBoundary_inter (hW : ContDiff ℝ 1 W)
     (hn : 2 ≤ finrank ℝ E) (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞) :
