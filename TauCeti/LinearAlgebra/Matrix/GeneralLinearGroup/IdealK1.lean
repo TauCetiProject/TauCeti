@@ -49,9 +49,9 @@ unitization of a nonunital algebra.
   `GL_∞(R, I)`.
 * `TauCeti.StableGeneralLinearGroup.relativeElementarySubgroup`: the stable relative elementary
   subgroup `E_∞(R, I)`.
-* `TauCeti.RelativeAlgebraicK1`: the relative `K₁(R, I) = GL_∞(R, I) / E_∞(R, I)`, a commutative
+* `TauCeti.IdealAlgebraicK1`: the relative `K₁(R, I) = GL_∞(R, I) / E_∞(R, I)`, a commutative
   group.
-* `TauCeti.RelativeAlgebraicK1.toAlgebraicK1`: the homomorphism `K₁(R, I) → K₁(R)`.
+* `TauCeti.IdealAlgebraicK1.toAlgebraicK1`: the homomorphism `K₁(R, I) → K₁(R)`.
 
 ## Main results
 
@@ -66,7 +66,7 @@ unitization of a nonunital algebra.
 * `TauCeti.StableGeneralLinearGroup.commutator_elementarySubgroup_relativeElementarySubgroup`,
   `TauCeti.StableGeneralLinearGroup.relativeElementarySubgroup_eq_commutator`: the relative
   commutator formula.
-* `TauCeti.RelativeAlgebraicK1.range_toAlgebraicK1_eq_ker_map`: exactness of
+* `TauCeti.IdealAlgebraicK1.range_toAlgebraicK1_eq_ker_map`: exactness of
   `K₁(R, I) → K₁(R) → K₁(R/I)` at `K₁(R)`.
 
 ## References
@@ -226,30 +226,16 @@ variable {m k : Type*} [DecidableEq m] [Fintype m] [DecidableEq k] [Fintype k] {
 /-- An upper block unipotent matrix whose off-diagonal block has entries in `I` is relatively
 elementary: it is the product of the elementary matrices of its entries. -/
 theorem upperBlockGL_mem_relativeElementarySubgroup {X : Matrix m k R} (hX : ∀ a b, X a b ∈ I) :
-    upperBlockGL X ∈ relativeElementarySubgroup (m ⊕ k) I := by
-  rw [X.matrix_eq_sum_single]
-  refine Finset.sum_induction _ (fun Y ↦ upperBlockGL Y ∈ relativeElementarySubgroup (m ⊕ k) I)
-    (fun Y Z hY hZ ↦ by simpa only [upperBlockGL_add] using mul_mem hY hZ) (by simp) ?_
-  intro a _
-  refine Finset.sum_induction _ (fun Y ↦ upperBlockGL Y ∈ relativeElementarySubgroup (m ⊕ k) I)
-    (fun Y Z hY hZ ↦ by simpa only [upperBlockGL_add] using mul_mem hY hZ) (by simp) ?_
-  intro b _
-  rw [upperBlockGL_single]
-  exact transvectionUnit_mem_relativeElementarySubgroup _ (hX a b)
+    upperBlockGL X ∈ relativeElementarySubgroup (m ⊕ k) I :=
+  upperBlockGL_mem_of_forall_transvectionUnit_mem fun a b ↦
+    transvectionUnit_mem_relativeElementarySubgroup _ (hX a b)
 
 /-- A lower block unipotent matrix whose off-diagonal block has entries in `I` is relatively
 elementary: it is the product of the elementary matrices of its entries. -/
 theorem lowerBlockGL_mem_relativeElementarySubgroup {Y : Matrix k m R} (hY : ∀ b a, Y b a ∈ I) :
-    lowerBlockGL Y ∈ relativeElementarySubgroup (m ⊕ k) I := by
-  rw [Y.matrix_eq_sum_single]
-  refine Finset.sum_induction _ (fun Z ↦ lowerBlockGL Z ∈ relativeElementarySubgroup (m ⊕ k) I)
-    (fun Z W hZ hW ↦ by simpa only [lowerBlockGL_add] using mul_mem hZ hW) (by simp) ?_
-  intro b _
-  refine Finset.sum_induction _ (fun Z ↦ lowerBlockGL Z ∈ relativeElementarySubgroup (m ⊕ k) I)
-    (fun Z W hZ hW ↦ by simpa only [lowerBlockGL_add] using mul_mem hZ hW) (by simp) ?_
-  intro a _
-  rw [lowerBlockGL_single]
-  exact transvectionUnit_mem_relativeElementarySubgroup _ (hY b a)
+    lowerBlockGL Y ∈ relativeElementarySubgroup (m ⊕ k) I :=
+  lowerBlockGL_mem_of_forall_transvectionUnit_mem fun b a ↦
+    transvectionUnit_mem_relativeElementarySubgroup _ (hY b a)
 
 end Matrix
 
@@ -470,7 +456,7 @@ theorem relativeElementarySubgroup_eq_closure :
 
 /-- **The relative commutator formula, first half**: the commutators of invertible matrices with
 matrices congruent to the identity modulo `I` are stably relatively elementary. -/
-theorem commutator_le_relativeElementarySubgroup [I.IsTwoSided] :
+theorem commutator_top_congruenceSubgroup_le_relativeElementarySubgroup [I.IsTwoSided] :
     ⁅(⊤ : Subgroup (StableGeneralLinearGroup R)), congruenceSubgroup I⁆ ≤
       relativeElementarySubgroup I := by
   refine Subgroup.commutator_le.2 fun x _ y hy ↦ ?_
@@ -524,12 +510,13 @@ theorem relativeElementarySubgroup_eq_commutator [I.IsTwoSided] :
   le_antisymm
     ((commutator_elementarySubgroup_relativeElementarySubgroup (I := I)).symm.trans_le
       (Subgroup.commutator_mono le_top relativeElementarySubgroup_le_congruenceSubgroup))
-    commutator_le_relativeElementarySubgroup
+    commutator_top_congruenceSubgroup_le_relativeElementarySubgroup
 
 /-- The commutator subgroup of the stable congruence subgroup is stably relatively elementary. -/
 theorem commutator_congruenceSubgroup_le_relativeElementarySubgroup [I.IsTwoSided] :
     ⁅congruenceSubgroup I, congruenceSubgroup I⁆ ≤ relativeElementarySubgroup I :=
-  (Subgroup.commutator_mono le_top le_rfl).trans commutator_le_relativeElementarySubgroup
+  (Subgroup.commutator_mono le_top le_rfl).trans
+    commutator_top_congruenceSubgroup_le_relativeElementarySubgroup
 
 end StableGeneralLinearGroup
 
@@ -542,12 +529,12 @@ variable {R : Type*} [Ring R] (I : Ideal R) [I.IsTwoSided]
 /-- The **relative `K₁`** of a ring `R` and a two-sided ideal `I`:
 `K₁(R, I) = GL_∞(R, I) / E_∞(R, I)`, the quotient of the stable congruence subgroup by the stable
 relative elementary subgroup. It is a commutative group by the relative commutator formula. -/
-def RelativeAlgebraicK1 : Type _ :=
+def IdealAlgebraicK1 : Type _ :=
   StableGeneralLinearGroup.congruenceSubgroup I ⧸
     (StableGeneralLinearGroup.relativeElementarySubgroup I).subgroupOf
       (StableGeneralLinearGroup.congruenceSubgroup I)
 
-namespace RelativeAlgebraicK1
+namespace IdealAlgebraicK1
 
 /-- The quotient defining relative `K₁` is commutative, because the commutator subgroup of
 `GL_∞(R, I)` is stably relatively elementary. -/
@@ -562,14 +549,14 @@ instance : IsMulCommutative
       rwa [← Subgroup.coe_subtype, ← map_commutatorElement] at h
 
 open scoped IsMulCommutative in
-instance : CommGroup (RelativeAlgebraicK1 I) :=
+instance : CommGroup (IdealAlgebraicK1 I) :=
   inferInstanceAs (CommGroup
     (StableGeneralLinearGroup.congruenceSubgroup I ⧸
       (StableGeneralLinearGroup.relativeElementarySubgroup I).subgroupOf
         (StableGeneralLinearGroup.congruenceSubgroup I)))
 
 /-- The class in relative `K₁` of an element of the stable congruence subgroup. -/
-def mk : congruenceSubgroup I →* RelativeAlgebraicK1 I :=
+def mk : congruenceSubgroup I →* IdealAlgebraicK1 I :=
   QuotientGroup.mk' _
 
 variable {I}
@@ -588,7 +575,7 @@ theorem mk_eq_one_iff {x : congruenceSubgroup I} :
 
 /-- Every class in relative `K₁` is the class of an invertible matrix of some size congruent to
 the identity modulo `I`. -/
-theorem exists_mk_of (y : RelativeAlgebraicK1 I) :
+theorem exists_mk_of (y : IdealAlgebraicK1 I) :
     ∃ (n : ℕ) (u : GL (Fin n) R) (hu : u ∈ congruenceSubgroupGL (Fin n) I),
       mk I ⟨of R n u, of_mem_congruenceSubgroup_iff.2 hu⟩ = y := by
   obtain ⟨⟨x, hx⟩, rfl⟩ := mk_surjective y
@@ -598,14 +585,14 @@ theorem exists_mk_of (y : RelativeAlgebraicK1 I) :
 /-- Homomorphisms out of relative `K₁` agree when they agree on the classes of elements of the
 stable congruence subgroup. -/
 @[ext]
-theorem hom_ext {G : Type*} [Monoid G] {f g : RelativeAlgebraicK1 I →* G}
+theorem hom_ext {G : Type*} [Monoid G] {f g : IdealAlgebraicK1 I →* G}
     (h : f.comp (mk I) = g.comp (mk I)) : f = g :=
   QuotientGroup.monoidHom_ext _ h
 
 variable (I) in
 /-- The homomorphism `K₁(R, I) → K₁(R)` induced by the inclusion of the stable congruence subgroup
 into `GL_∞(R)`. -/
-def toAlgebraicK1 : RelativeAlgebraicK1 I →* AlgebraicK1 R :=
+def toAlgebraicK1 : IdealAlgebraicK1 I →* AlgebraicK1 R :=
   QuotientGroup.lift _ (Group.Abelianization.of.comp (congruenceSubgroup I).subtype) fun x hx ↦ by
     rw [MonoidHom.mem_ker, MonoidHom.comp_apply, ← MonoidHom.mem_ker, AlgebraicK1.ker_of]
     exact StableGeneralLinearGroup.relativeElementarySubgroup_le_elementarySubgroup
@@ -644,10 +631,10 @@ theorem range_toAlgebraicK1_eq_ker_map :
 
 /-- The composite `K₁(R, I) → K₁(R) → K₁(R/I)` is trivial. -/
 @[simp]
-theorem map_toAlgebraicK1_eq_one (y : RelativeAlgebraicK1 I) :
+theorem map_toAlgebraicK1_eq_one (y : IdealAlgebraicK1 I) :
     AlgebraicK1.map (Ideal.Quotient.mk I) (toAlgebraicK1 I y) = 1 :=
   range_toAlgebraicK1_eq_ker_map.le ⟨y, rfl⟩
 
-end RelativeAlgebraicK1
+end IdealAlgebraicK1
 
 end TauCeti
