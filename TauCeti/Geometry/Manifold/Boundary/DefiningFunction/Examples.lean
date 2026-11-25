@@ -21,8 +21,8 @@ two model manifolds with boundary.
   (`TauCeti.isBoundaryDefiningFunctionOn_closedBall`), whose differential sends the radial vector
   `x` to `-2 ‖x‖²`, so to `-2` on the sphere
   (`TauCeti.mvfderiv_closedBallDefiningFunction_radial`). For every `a` with `‖a‖ ≤ 1`,
-  `(2 + ⟪a, x⟫) ρ` is another one, with ratio `2 + ⟪a, x⟫ ∈ [1, 3]`
-  (`TauCeti.isBoundaryDefiningFunctionOn_closedBall_mul`); `ρ²` is not one, since its
+  `(2 + ⟪a, x⟫) ρ` is another one (`TauCeti.isBoundaryDefiningFunctionOn_closedBall_mul`), with
+  ratio `2 + ⟪a, x⟫ ∈ [1, 3]` (`TauCeti.two_add_inner_mem_Icc`); `ρ²` is not one, since its
   differential vanishes on the sphere, and `-ρ` is not one, since it is negative inside.
 * On `[0, 1]`, `ρ(x) = x (1 - x)` is a global boundary defining function
   (`TauCeti.isBoundaryDefiningFunctionOn_unitInterval`), whose differential sends the unit tangent
@@ -49,6 +49,12 @@ variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- The boundary defining function `1 - ‖x‖²` of the closed unit ball. -/
 def closedBallDefiningFunction (x : closedBall (0 : E) 1) : ℝ := 1 - ‖(x : E)‖ ^ 2
 
+omit [InnerProductSpace ℝ E] in
+@[simp]
+theorem closedBallDefiningFunction_apply (x : closedBall (0 : E) 1) :
+    closedBallDefiningFunction x = 1 - ‖(x : E)‖ ^ 2 :=
+  (rfl)
+
 private theorem contDiff_one_sub_norm_sq {k : ℕ∞ω} :
     ContDiff ℝ k (fun y : E ↦ 1 - ‖y‖ ^ 2) :=
   contDiff_const.sub (contDiff_norm_sq ℝ)
@@ -74,6 +80,8 @@ theorem mvfderiv_closedBallDefiningFunction_radial (x : closedBall (0 : E) 1) :
     exact he.symm
   rw [hcomp, mvfderiv_comp_apply x hg hι, hv, mvfderiv_eq_fderiv,
     fderiv_const_sub, fderiv_norm_sq_apply]
+  -- The tangent vector `x` lives in `TangentSpace 𝓘(ℝ, E) x`, which is `E` by definition;
+  -- re-type it so that the evaluation lemmas of `E →L[ℝ] ℝ` apply.
   change (-(2 • innerSL ℝ (x : E)) : E →L[ℝ] ℝ) (x : E) = -2 * ‖(x : E)‖ ^ 2
   rw [neg_apply, smul_apply, innerSL_apply_apply, real_inner_self_eq_norm_sq, two_smul]
   ring
@@ -87,29 +95,14 @@ theorem isBoundaryDefiningFunctionOn_closedBall :
   pos x _ hx := by
     have h := (isInteriorPoint_closedBall_iff (n := n + 1)).1 hx
     have h0 := norm_nonneg (x : E)
-    change 0 < 1 - ‖(x : E)‖ ^ 2
+    rw [closedBallDefiningFunction_apply]
     nlinarith
   eq_zero x _ hx := by
-    change 1 - ‖(x : E)‖ ^ 2 = 0
     simp [(isBoundaryPoint_closedBall_iff (n := n + 1)).1 hx]
   mvfderiv_ne_zero x _ hx h0 := by
     have h := mvfderiv_closedBallDefiningFunction_radial (n := n) x
     rw [h0, (isBoundaryPoint_closedBall_iff (n := n + 1)).1 hx] at h
     simp at h
-
-/-- For every `a` with `‖a‖ ≤ 1`, the product `(2 + ⟪a, x⟫)(1 - ‖x‖²)` is another global boundary
-defining function of the closed unit ball, with ratio `2 + ⟪a, x⟫ ∈ [1, 3]` to `1 - ‖x‖²`. -/
-theorem isBoundaryDefiningFunctionOn_closedBall_mul {a : E} (ha : ‖a‖ ≤ 1) :
-    IsBoundaryDefiningFunctionOn n
-      (fun x : closedBall (0 : E) 1 ↦ (2 + ⟪a, (x : E)⟫) * closedBallDefiningFunction x) univ := by
-  refine (isBoundaryDefiningFunctionOn_closedBall (n := n)).mul_left ?_ fun x _ ↦ ?_
-  · exact ((contDiff_const.add (contDiff_const.inner ℝ contDiff_id)).contMDiff.comp
-      (contMDiff_subtypeVal_closedBall (n := n + 1))).contMDiffOn
-  · have h := abs_real_inner_le_norm a (x : E)
-    have hx := mem_closedBall_zero_iff.1 x.property
-    have : ‖a‖ * ‖(x : E)‖ ≤ 1 := by nlinarith [norm_nonneg a, norm_nonneg (x : E)]
-    rw [abs_le] at h
-    linarith
 
 /-- The ratio `2 + ⟪a, x⟫` lies in `[1, 3]` on the closed unit ball when `‖a‖ ≤ 1`. -/
 theorem two_add_inner_mem_Icc {a : E} (ha : ‖a‖ ≤ 1) (x : closedBall (0 : E) 1) :
@@ -120,9 +113,20 @@ theorem two_add_inner_mem_Icc {a : E} (ha : ‖a‖ ≤ 1) (x : closedBall (0 : 
   rw [abs_le] at h
   constructor <;> linarith
 
+/-- For every `a` with `‖a‖ ≤ 1`, the product `(2 + ⟪a, x⟫)(1 - ‖x‖²)` is another global boundary
+defining function of the closed unit ball; its ratio to `1 - ‖x‖²` lies in `[1, 3]` by
+`two_add_inner_mem_Icc`. -/
+theorem isBoundaryDefiningFunctionOn_closedBall_mul {a : E} (ha : ‖a‖ ≤ 1) :
+    IsBoundaryDefiningFunctionOn n
+      (fun x : closedBall (0 : E) 1 ↦ (2 + ⟪a, (x : E)⟫) * closedBallDefiningFunction x) univ := by
+  refine (isBoundaryDefiningFunctionOn_closedBall (n := n)).mul_left ?_ fun x _ ↦ ?_
+  · exact ((contDiff_const.add (contDiff_const.inner ℝ contDiff_id)).contMDiff.comp
+      (contMDiff_subtypeVal_closedBall (n := n + 1))).contMDiffOn
+  · exact one_pos.trans_le (two_add_inner_mem_Icc ha x).1
+
 /-- The square `(1 - ‖x‖²)²` is not a boundary defining function of the closed unit ball: its
 differential vanishes on the boundary sphere. -/
-theorem not_isBoundaryDefiningFunctionOn_closedBall_sq :
+theorem not_isBoundaryDefiningFunctionOn_closedBall_mul_self :
     ¬IsBoundaryDefiningFunctionOn n
       (fun x : closedBall (0 : E) 1 ↦ closedBallDefiningFunction x * closedBallDefiningFunction x)
       univ := by
@@ -164,6 +168,27 @@ local instance instIsManifoldUnitIntervalZeroAddOne {k : ℕ∞ω} :
 /-- The boundary defining function `x (1 - x)` of `[0, 1]`. -/
 def unitIntervalDefiningFunction (x : Icc (0 : ℝ) 1) : ℝ := (x : ℝ) * (1 - x)
 
+@[simp]
+theorem unitIntervalDefiningFunction_apply (x : Icc (0 : ℝ) 1) :
+    unitIntervalDefiningFunction x = (x : ℝ) * (1 - x) :=
+  (rfl)
+
+private theorem mem_boundary_unitInterval_iff (x : Icc (0 : ℝ) 1) :
+    x ∈ (𝓡∂ (0 + 1)).boundary (Icc (0 : ℝ) 1) ↔ (x : ℝ) = 0 ∨ (x : ℝ) = 1 :=
+  (Set.ext_iff.1 boundary_Icc x).trans <| by
+    rw [mem_insert_iff, mem_singleton_iff, Subtype.ext_iff, Subtype.ext_iff, Set.Icc.coe_bot,
+      Set.Icc.coe_top]
+
+private theorem mem_interior_unitInterval_iff (x : Icc (0 : ℝ) 1) :
+    x ∈ (𝓡∂ (0 + 1)).interior (Icc (0 : ℝ) 1) ↔ 0 < (x : ℝ) ∧ (x : ℝ) < 1 := by
+  rw [← ModelWithCorners.compl_boundary, mem_compl_iff, mem_boundary_unitInterval_iff]
+  obtain ⟨h0, h1⟩ := x.property
+  constructor
+  · intro h
+    push Not at h
+    exact ⟨h0.lt_of_ne' h.1, h1.lt_of_ne h.2⟩
+  · rintro ⟨h0', h1'⟩ (h | h) <;> linarith
+
 private theorem contDiff_mul_one_sub {k : ℕ∞ω} : ContDiff ℝ k (fun r : ℝ ↦ r * (1 - r)) := by
   fun_prop
 
@@ -181,10 +206,10 @@ theorem mvfderiv_unitIntervalDefiningFunction_one (x : Icc (0 : ℝ) 1) :
   rw [hcomp, mvfderiv_comp_apply x hg hι, mfderiv_subtypeVal_Icc_one, mvfderiv_eq_fderiv]
   have hd : HasDerivAt (fun r : ℝ ↦ r * (1 - r)) (1 * (1 - (x : ℝ)) + (x : ℝ) * (0 - 1))
       (x : ℝ) := (hasDerivAt_id _).mul ((hasDerivAt_const _ _).sub (hasDerivAt_id _))
-  rw [hd.hasFDerivAt.fderiv]
-  change ContinuousLinearMap.toSpanSingleton ℝ (1 * (1 - (x : ℝ)) + (x : ℝ) * (0 - 1)) (1 : ℝ) =
-    1 - 2 * (x : ℝ)
-  rw [ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul]
+  -- `mvfderiv_eq_fderiv` composes with the identification `TangentSpace 𝓘(ℝ) x = ℝ`, which is
+  -- the identity by definition; drop it to read the differential as the derivative.
+  change fderiv ℝ (fun r : ℝ ↦ r * (1 - r)) (x : ℝ) 1 = 1 - 2 * (x : ℝ)
+  rw [fderiv_apply_one_eq_deriv, hd.deriv]
   ring
 
 /-- **`x (1 - x)` is a global boundary defining function of `[0, 1]`.** -/
@@ -193,27 +218,15 @@ theorem isBoundaryDefiningFunctionOn_unitInterval :
   isOpen := isOpen_univ
   contMDiffOn := (contDiff_mul_one_sub.contMDiff.comp contMDiff_subtypeVal_Icc).contMDiffOn
   pos x _ hx := by
-    have hb : x ∉ ({⊥, ⊤} : Set (Icc (0 : ℝ) 1)) := fun h ↦
-      (ModelWithCorners.disjoint_interior_boundary (I := 𝓡∂ (0 + 1))).ne_of_mem hx
-        ((Set.ext_iff.1 boundary_Icc x).2 h) rfl
-    simp only [mem_insert_iff, mem_singleton_iff, not_or] at hb
-    have h0 : (0 : ℝ) < x := lt_of_le_of_ne x.property.1 fun h ↦ hb.1 (Subtype.ext h.symm)
-    have h1 : (x : ℝ) < 1 := lt_of_le_of_ne x.property.2 fun h ↦ hb.2 (Subtype.ext h)
+    obtain ⟨h0, h1⟩ := (mem_interior_unitInterval_iff x).1 hx
+    rw [unitIntervalDefiningFunction_apply]
     exact mul_pos h0 (by linarith)
   eq_zero x _ hx := by
-    rcases (Set.ext_iff.1 boundary_Icc x).1 hx with h | h
-    · simp [unitIntervalDefiningFunction, h]
-    · rw [mem_singleton_iff] at h
-      simp [unitIntervalDefiningFunction, h]
+    rcases (mem_boundary_unitInterval_iff x).1 hx with h | h <;> simp [h]
   mvfderiv_ne_zero x _ hx h0 := by
     have h := mvfderiv_unitIntervalDefiningFunction_one x
     rw [h0] at h
-    rcases (Set.ext_iff.1 boundary_Icc x).1 hx with hb | hb
-    · rw [hb] at h
-      norm_num at h
-    · rw [mem_singleton_iff] at hb
-      rw [hb] at h
-      norm_num at h
+    rcases (mem_boundary_unitInterval_iff x).1 hx with hb | hb <;> rw [hb] at h <;> norm_num at h
 
 end UnitInterval
 
