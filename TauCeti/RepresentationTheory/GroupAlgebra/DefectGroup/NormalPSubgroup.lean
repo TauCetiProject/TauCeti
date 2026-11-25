@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Irreducible
 public import TauCeti.GroupTheory.PiCore
-public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup
+public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 import Mathlib.RingTheory.SimpleModule.Basic
 import TauCeti.RepresentationTheory.AsAlgebraHom
 import TauCeti.RepresentationTheory.OfModule
