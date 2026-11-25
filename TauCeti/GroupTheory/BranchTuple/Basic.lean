@@ -57,6 +57,8 @@ classes of the entries are invariants of inner Nielsen classes.
 
 ## Main results
 
+* `TauCeti.BranchTuple.product_append` and `TauCeti.BranchTuple.generated_append`:
+  concatenation multiplies the ordered products and joins the generated subgroups.
 * `TauCeti.NielsenClass.mk_eq_mk_iff`, `TauCeti.InnerNielsenClass.mk_eq_mk_iff` and
   `TauCeti.AbsoluteNielsenClass.mk_eq_mk_iff`: when two tuples have the same class.
 * `TauCeti.NielsenClass.product_eq_one_iff_of_mk_eq_mk` and

@@ -16,8 +16,10 @@ Concatenating branch tuples models gluing marked covers. Independent braids act 
 blocks through `BraidGroup.blockSum`. A fixed prefix gives an equivariant map along
 `BraidGroup.shiftHom`, which supplies the gluing maps used for stabilization. Concatenation
 preserves the class condition, and a full-monodromy suffix still generates the group after
-any prefix is added. The ordered boundary products multiply in block order and the generated
-subgroups form a join.
+any prefix is added. `TauCeti.HurwitzFiber.product_glue` computes the ordered boundary product
+after a constant block is added. The underlying concatenation identities for ordered products
+and generated subgroups, `TauCeti.BranchTuple.product_append` and
+`TauCeti.BranchTuple.generated_append`, are in `TauCeti.GroupTheory.BranchTuple.Basic`.
 
 ## References
 
@@ -34,14 +36,6 @@ open BraidGroup
 variable {G : Type*} [Group G] {m n : ℕ}
 
 namespace BranchTuple
-
-/-- The update formula used to move a Hurwitz move through tuple concatenation. -/
-private theorem hurwitzMove_eq_update {r : ℕ} (i : Fin (r - 1)) (t : BranchTuple r G) :
-    hurwitzMove i t = Function.update
-      (Function.update t (strand i) (t (strand i) * t (strandSucc i) * (t (strand i))⁻¹))
-      (strandSucc i) (t (strand i)) := by
-  funext k
-  simp only [hurwitzMove_apply, Function.update_apply]
 
 /-- A Hurwitz move in the right block leaves the prefix unchanged. -/
 private theorem hurwitzMove_append (t : BranchTuple m G) (s : BranchTuple n G) (i : Fin (n - 1)) :
@@ -74,14 +68,14 @@ private theorem hurwitzMove_append_left (t : BranchTuple m G) (s : BranchTuple n
   simp only [hurwitzMove_eq_update, h₀, h₁, Fin.append_left, Fin.update_append_castAdd]
 
 /-- Acting on the prefix uses the inclusion on the first block of strands. -/
-theorem hurwitzAction_appendHom (t : BranchTuple m G) (s : BranchTuple n G)
+theorem hurwitzAction_castAddHom (t : BranchTuple m G) (s : BranchTuple n G)
     (b : BraidGroup m) :
-    hurwitzAction (appendHom m n b) (Fin.append t s) = Fin.append (hurwitzAction b t) s := by
+    hurwitzAction (castAddHom m n b) (Fin.append t s) = Fin.append (hurwitzAction b t) s := by
   symm
   apply apply_hurwitzAction_of_apply_hurwitzMove
-    (hurwitzAction.comp (appendHom m n)) (F := fun u ↦ Fin.append u s)
+    (hurwitzAction.comp (castAddHom m n)) (F := fun u ↦ Fin.append u s)
   intro i u
-  rw [MonoidHom.comp_apply, appendHom_sigma, hurwitzAction_sigma, hurwitzMove_append_left]
+  rw [MonoidHom.comp_apply, castAddHom_sigma, hurwitzAction_sigma, hurwitzMove_append_left]
 
 /-- Independent braids on the two blocks act on their concatenation through the block sum. -/
 theorem hurwitzAction_blockSum (t : BranchTuple m G) (s : BranchTuple n G)
@@ -89,7 +83,7 @@ theorem hurwitzAction_blockSum (t : BranchTuple m G) (s : BranchTuple n G)
     hurwitzAction (blockSum m n (b, d)) (Fin.append t s) =
       Fin.append (hurwitzAction b t) (hurwitzAction d s) := by
   rw [blockSum_apply, map_mul, Equiv.Perm.mul_apply, hurwitzAction_shift,
-    hurwitzAction_appendHom]
+    hurwitzAction_castAddHom]
 
 end BranchTuple
 
