@@ -93,6 +93,19 @@ private theorem SemianalyticAt.exists_partition_analyticDim (hA : SemianalyticAt
   rw [hd.analyticDim_eq, he.analyticDim_eq]
   exact_mod_cast h𝒞dim B hB C hC (h𝒞front B hB C hC ⟨y, hyB, hyC⟩) hBC d e hd he
 
+/-- A `d`-dimensional analytic submanifold `S ⊆ T ∩ ⋃₀ 𝒞`, for a finite family `𝒞` of analytic
+submanifolds, has dimension at most that of some member of `𝒞` meeting `T`. -/
+private theorem IsAnalyticSubmanifold.exists_le_analyticDim_of_subset_inter_sUnion {d : ℕ}
+    {S T : Set (Fin n → ℝ)} {𝒞 : Set (Set (Fin n → ℝ))} (hd : IsAnalyticSubmanifold d S)
+    (h𝒞fin : 𝒞.Finite) (h𝒞 : ∀ B ∈ 𝒞, ∃ e, IsAnalyticSubmanifold e B) (hS : S ⊆ T ∩ ⋃₀ 𝒞) :
+    ∃ B ∈ 𝒞, (B ∩ T).Nonempty ∧ (d : WithBot ℕ∞) ≤ analyticDim B := by
+  obtain ⟨B, ⟨hB, hBT⟩, hdB⟩ := hd.exists_le_analyticDim_of_subset_sUnion
+    (𝒞 := {B ∈ 𝒞 | (B ∩ T).Nonempty}) (h𝒞fin.subset (sep_subset _ _))
+    (fun B hB ↦ h𝒞 B hB.1) fun y hy ↦ by
+      obtain ⟨B, hB, hyB⟩ := mem_sUnion.1 (hS hy).2
+      exact ⟨B, ⟨hB, y, hyB, (hS hy).1⟩, hyB⟩
+  exact ⟨B, hB, hBT, hdB⟩
+
 /-- **The closure of a semianalytic germ has the same local dimension.** -/
 theorem SemianalyticAt.analyticDimAt_closure (hA : SemianalyticAt A x) :
     analyticDimAt (closure A) x = analyticDimAt A x := by
@@ -101,18 +114,15 @@ theorem SemianalyticAt.analyticDimAt_closure (hA : SemianalyticAt A x) :
   refine (analyticDimAt_le_analyticDim_inter (hUo.mem_nhds hxU)).trans <|
     analyticDim_le_iff.2 fun S hS d hd ↦ ?_
   -- `S ⊆ closure A ∩ U` is covered by the pieces meeting `closure A`.
-  obtain ⟨B, ⟨hB, hBA⟩, hdB⟩ := hd.exists_le_analyticDim_of_subset_sUnion
-    (𝒞 := {B ∈ 𝒞 | (B ∩ closure A).Nonempty}) (h𝒞fin.subset (sep_subset _ _))
-    (fun B hB ↦ (h𝒞cell B hB.1).2.1) fun y hy ↦ by
-      obtain ⟨B, hB, hyB⟩ := mem_sUnion.1 (h𝒞cov ▸ (hS hy).2)
-      exact ⟨B, ⟨hB, y, hyB, (hS hy).1⟩, hyB⟩
+  obtain ⟨B, hB, hBA, hdB⟩ := hd.exists_le_analyticDim_of_subset_inter_sUnion h𝒞fin
+    (fun B hB ↦ (h𝒞cell B hB).2.1) (h𝒞cov ▸ hS)
   obtain ⟨C, hC, hCA, hBC⟩ := h𝒞front B hB hBA
   have hBC' : analyticDim B ≤ analyticDim C := hBC.elim (fun h ↦ h ▸ le_rfl) le_of_lt
   exact hdB.trans <| hBC'.trans <| h𝒞A C hC hCA
 
-/-- **The frontier of a semianalytic germ has smaller local dimension.** At a point of the closure
-of a set semianalytic there, the part `closure A \ A` of the closure outside `A` has strictly
-smaller local dimension than `A`. -/
+/-- **The part of the closure outside a semianalytic germ has smaller local dimension.** At a
+point of the closure of a set semianalytic there, the part `closure A \ A` of the closure outside
+`A` has strictly smaller local dimension than `A`. -/
 theorem SemianalyticAt.analyticDimAt_closure_diff_lt (hA : SemianalyticAt A x)
     (hx : x ∈ closure A) : analyticDimAt (closure A \ A) x < analyticDimAt A x := by
   obtain ⟨U, 𝒞, hUo, hxU, h𝒞fin, h𝒞cov, h𝒞cell, h𝒞A, h𝒞front⟩ := hA.exists_partition_analyticDim
@@ -123,11 +133,8 @@ theorem SemianalyticAt.analyticDimAt_closure_diff_lt (hA : SemianalyticAt A x)
   obtain ⟨S, hS, d, hdim, hd⟩ := exists_isAnalyticSubmanifold_analyticDim_eq h
   rw [hdim]
   -- `S` is covered by the pieces meeting `closure A \ A`; none of them is a piece inside `A`.
-  obtain ⟨B, ⟨hB, y, hyB, hyA, hyA'⟩, hdB⟩ := hd.exists_le_analyticDim_of_subset_sUnion
-    (𝒞 := {B ∈ 𝒞 | (B ∩ (closure A \ A)).Nonempty}) (h𝒞fin.subset (sep_subset _ _))
-    (fun B hB ↦ (h𝒞cell B hB.1).2.1) fun y hy ↦ by
-      obtain ⟨B, hB, hyB⟩ := mem_sUnion.1 (h𝒞cov ▸ (hS hy).2)
-      exact ⟨B, ⟨hB, y, hyB, (hS hy).1⟩, hyB⟩
+  obtain ⟨B, hB, ⟨y, hyB, hyA, hyA'⟩, hdB⟩ := hd.exists_le_analyticDim_of_subset_inter_sUnion
+    h𝒞fin (fun B hB ↦ (h𝒞cell B hB).2.1) (h𝒞cov ▸ hS)
   obtain ⟨C, hC, hCA, hBC⟩ := h𝒞front B hB ⟨y, hyB, hyA⟩
   have hBC' : analyticDim B < analyticDim C :=
     hBC.resolve_left fun h ↦ hyA' (hCA (h ▸ hyB))
@@ -138,9 +145,9 @@ theorem IsSemianalytic.analyticDim_closure (hA : IsSemianalytic A) :
     analyticDim (closure A) = analyticDim A := by
   simp_rw [← iSup_analyticDimAt, (hA.semianalyticAt _).analyticDimAt_closure]
 
-/-- **The frontier of a semianalytic set has smaller dimension.** For a nonempty semianalytic set
-`A`, the part `closure A \ A` of the closure outside `A` has strictly smaller dimension than `A`.
--/
+/-- **The part of the closure outside a semianalytic set has smaller dimension.** For a nonempty
+semianalytic set `A`, the part `closure A \ A` of the closure outside `A` has strictly smaller
+dimension than `A`. -/
 theorem IsSemianalytic.analyticDim_closure_diff_lt (hA : IsSemianalytic A) (hne : A.Nonempty) :
     analyticDim (closure A \ A) < analyticDim A := by
   rcases (closure A \ A).eq_empty_or_nonempty with h | h

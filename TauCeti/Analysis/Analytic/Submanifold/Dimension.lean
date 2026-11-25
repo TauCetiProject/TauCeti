@@ -12,7 +12,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Topology.LocallyClosed
 
 /-!
-# Dimension comparison for analytic submanifolds
+# Dimension of analytic submanifolds and analytic dimension of sets
 
 An immersion taking values locally in a `d`-dimensional analytic submanifold has source
 dimension at most `d`. Applying this to chart parametrizations shows that local inclusion of
@@ -383,7 +383,7 @@ theorem analyticDimAt_eq_iSup_of_subset_iUnion {ι : Type*} [Finite ι]
   refine (analyticDimAt_le_analyticDim_inter hU).trans <| (analyticDim_mono hsU).trans <|
     analyticDim_le_iff.2 fun S hS d hd ↦ ?_
   obtain ⟨i, hi⟩ := hd.exists_dim_le_of_subset_iUnion hC hS
-  exact (WithBot.coe_le_coe.2 (ENat.natCast_le_natCast.2 hi)).trans (le_iSup_of_le i le_rfl)
+  exact (show (d : WithBot ℕ∞) ≤ e i by exact_mod_cast hi).trans (le_iSup_of_le i le_rfl)
 
 end AnalyticDim
 
