@@ -29,7 +29,8 @@ across the `L²` pairing: `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f
 costs at most `q ‖u‖₂` on `e` and the weight `exp(c ρ)` at most `a` on `u`, then
 `‖exp(c ρ) u‖₂ ≤ a q ‖exp(c ρ) A‖₂` (`eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner`). By the
 same duality, an operator on `L²` that preserves decay at the rate `-c` has an adjoint that
-preserves decay at the rate `c`, with the same constant (`eLpNorm_exp_mul_smul_adjoint_apply_le`).
+preserves decay at the rate `c`, with the same constant
+(`ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le`).
 -/
 
 public section
@@ -261,12 +262,14 @@ theorem eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner {c : ℝ} {u e A : Lp F 2 μ}
 
 end L2
 
-section Adjoint
+end TauCeti
 
-open MeasureTheory
+namespace ContinuousLinearMap
+
+open MeasureTheory TauCeti
 open scoped ENNReal
 
-variable {X F : Type*} [NormedAddCommGroup X] [MeasurableSpace X]
+variable {b : ℝ} {X F : Type*} [NormedAddCommGroup X] [MeasurableSpace X]
   [OpensMeasurableSpace X] {μ : Measure X} [SigmaFinite μ]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
 
@@ -280,7 +283,7 @@ theorem eLpNorm_exp_mul_smul_adjoint_apply_le {c : ℝ} {C : ℝ≥0∞} (T : Lp
     (g : Lp F 2 μ) :
     eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • ContinuousLinearMap.adjoint T g z) 2 μ ≤
       C * eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • g z) 2 μ := by
-  have h := ContinuousLinearMap.eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le
+  have h := eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le
     (ContinuousLinearMap.adjoint T) (p := 2) (p' := 2) (q := 2) (q' := 2)
     (ae_of_all _ fun z ↦ (Real.exp_pos (c * √(b + ‖z‖ ^ 2))).ne')
     (continuous_exp_mul_sqrt_add_norm_sq (b := b) c).aestronglyMeasurable (C := C) (fun f ↦ ?_) g
@@ -288,6 +291,4 @@ theorem eLpNorm_exp_mul_smul_adjoint_apply_le {c : ℝ} {C : ℝ≥0∞} (T : Lp
   · -- `T†† = T`, and `exp(c ρ)⁻¹ = exp(-c ρ)`.
     simpa [ContinuousLinearMap.adjoint_adjoint, ← Real.exp_neg, neg_mul] using hT f
 
-end Adjoint
-
-end TauCeti
+end ContinuousLinearMap

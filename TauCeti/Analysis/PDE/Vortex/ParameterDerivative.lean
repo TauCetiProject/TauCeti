@@ -61,7 +61,7 @@ coefficient. Here `‖g‖_c` denotes the weighted norm `‖exp(c ρ) g‖₂` o
   with Hilbert space adjoint `Q†`, formally `(L_a L_a*)⁻¹ L_a`. The derivative of `p ↦ Q†` is
   `(Q')†` (`fderiv_clm_adjoint`). Both rates `±c` are allowed above, so the estimates for `Q` and
   `Q'` at the rate `-c` pass to their adjoints by duality
-  (`TauCeti.eLpNorm_exp_mul_smul_adjoint_apply_le`). This gives `‖Q† g‖_c ≤ K ‖g‖_c`
+  (`ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le`). This gives `‖Q† g‖_c ≤ K ‖g‖_c`
   (`exists_forall_eLpNorm_exp_mul_smul_adjoint_orthogonalRightInverse_le_of_forall_mem_norm_le`)
   and `‖(Q†)' g‖_c ≤ K ‖b‖∞ ‖g‖_c` (the same name with `fderiv_adjoint` in place of `adjoint`).
 
@@ -542,7 +542,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_adjoint_orthogonalRightInverse_le_of_
   refine ⟨K, fun x D hx hsol hframe hD hD₀ a hax g ↦ ?_⟩
   rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
     ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
-  refine eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
+  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
   have h := hK x D hx hsol hframe hD hD₀ a hax f
   rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
     ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h
@@ -594,7 +594,7 @@ theorem
     adjointRealCLM_apply, compL_apply]
   rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
     ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
-  refine eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
+  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
   have h := hK x D hx hbound hsol hframe hD hD₀ hax ha v f
   rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
     ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h

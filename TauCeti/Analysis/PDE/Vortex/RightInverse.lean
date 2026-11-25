@@ -68,7 +68,7 @@ adjoint equation: `Q† g` is a weak solution of `L_x* η = g` there
 (`TauCeti.Vortex.integral_inner_adjoint_apply_gaugeFixedOperator_eq`). It satisfies the same
 weighted estimate, `‖exp(c ρ) Q† g‖₂ ≤ K ‖exp(c ρ) g‖₂` for `|c| < 1/2`
 (`TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_adjoint_apply_le`). This is dual to the estimate for
-`Q` at the rate `-c`, by `TauCeti.eLpNorm_exp_mul_smul_adjoint_apply_le`.
+`Q` at the rate `-c`, by `ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le`.
 
 The constant `K` depends on the vortex only through its spectral gap `c₀` and a radius `R`
 beyond which its squared mass `|α|² / 4` exceeds a fixed `a` with `c² < a ≤ 1/4`
@@ -958,7 +958,7 @@ theorem exists_eLpNorm_exp_mul_smul_adjoint_apply_le (hx : ContDiff ℝ 1 x)
           K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ := by
   obtain ⟨K, hK⟩ := exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq (μ := μ)
     hx hsol hlim (c := -c) (by rwa [abs_neg])
-  exact ⟨K, fun Q hweak horth ↦ eLpNorm_exp_mul_smul_adjoint_apply_le Q
+  exact ⟨K, fun Q hweak horth ↦ Q.eLpNorm_exp_mul_smul_adjoint_apply_le
     fun f ↦ hK f (Q f) (hweak f) (horth f)⟩
 
 /-! ### Uniformity over windows of divisors -/
@@ -1036,7 +1036,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_adjoint_apply_le_of_forall_mem_norm_l
   obtain ⟨K, hK⟩ := exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le (μ := μ) m r
     (c := -c) (by rwa [abs_neg])
   exact ⟨K, fun x D hx hsol hframe hD hDr Q hweak horth ↦
-    eLpNorm_exp_mul_smul_adjoint_apply_le Q
+    Q.eLpNorm_exp_mul_smul_adjoint_apply_le
       fun f ↦ hK x D hx hsol hframe hD hDr f (Q f) (hweak f) (horth f)⟩
 
 end TauCeti.Vortex
