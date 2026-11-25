@@ -48,6 +48,8 @@ in `TauCeti/Combinatorics/Graph/Serre/DualGraph/Tree.lean`.
 * `TauCeti.SerreGraph.dualGraph`: the graph dual to the pattern of `f`.
 * `TauCeti.SerreGraph.DualPlace.toVertex`, `TauCeti.SerreGraph.DualDart.toDart`: the vertex of the
   dual graph containing a place and the dart through a crossing.
+* `TauCeti.SerreGraph.DualPlace.liftVertex`: a function on places which agrees on linked places,
+  as a function on the vertices of the dual graph.
 * `TauCeti.SerreGraph.DualPlace.swap`: a place with its two ends exchanged, in the same vertex of
   the dual graph.
 * `TauCeti.SerreGraph.dualVertex`: the component of the complement containing a vertex of `Γ`.
@@ -232,7 +234,7 @@ variable (Γ Δ f)
 /-- The graph dual to the pattern of `f`: its vertices are the classes of places, which stand for
 the components of the complement of the pattern, and its darts are the classes of crossings,
 which stand for the tracks with a transverse orientation. -/
-@[expose] def dualGraph : SerreGraph.{max w u, max w v} where
+def dualGraph : SerreGraph.{max w u, max w v} where
   V := Quot (DualPlace.Linked (Γ := Γ) (Δ := Δ) (f := f))
   E := Quot (DualDart.Linked (Γ := Γ) (Δ := Δ) (f := f))
   src := Quot.map DualDart.srcPlace fun _ _ h => DualDart.Linked.srcPlace h
@@ -247,7 +249,7 @@ which stand for the tracks with a transverse orientation. -/
 variable {Γ Δ f}
 
 /-- The vertex of the dual graph containing a place: the class of the place. -/
-@[expose] def DualPlace.toVertex (p : DualPlace Γ Δ f) : (dualGraph Γ Δ f).V :=
+def DualPlace.toVertex (p : DualPlace Γ Δ f) : (dualGraph Γ Δ f).V :=
   Quot.mk _ p
 
 /-- The dart of the dual graph through a crossing: the class of the crossing. -/
@@ -295,6 +297,16 @@ theorem DualPlace.Linked.toVertex_eq {p q : DualPlace Γ Δ f} (h : p.Linked q) 
 theorem DualDart.Linked.toDart_eq {p q : DualDart Γ Δ f} (h : p.Linked q) :
     p.toDart = q.toDart :=
   Quot.sound h
+
+/-- A function on places which agrees on linked places descends to the vertices of the dual
+graph. -/
+def DualPlace.liftVertex {α : Sort*} (g : DualPlace Γ Δ f → α)
+    (hg : ∀ p q : DualPlace Γ Δ f, p.Linked q → g p = g q) : (dualGraph Γ Δ f).V → α :=
+  Quot.lift g hg
+
+@[simp] theorem DualPlace.liftVertex_toVertex {α : Sort*} (g : DualPlace Γ Δ f → α)
+    (hg : ∀ p q : DualPlace Γ Δ f, p.Linked q → g p = g q) (p : DualPlace Γ Δ f) :
+    DualPlace.liftVertex g hg p.toVertex = g p := (rfl)
 
 /-- A property of places which passes along the links between the places of a vertex of the dual
 graph holds at every place of the vertex as soon as it holds at one of them. -/

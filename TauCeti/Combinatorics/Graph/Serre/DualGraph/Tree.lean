@@ -272,12 +272,12 @@ private theorem placeColour_eq_of_linked (hΔ : Δ.IsAcyclic) {c : V → A}
 private noncomputable def vertexColour (hΔ : Δ.IsAcyclic) {c : V → A}
     (hc : ∀ a b, Γ.Adj a b → trackCount a₀ t a b (f b) = c b - c a) :
     (dualGraph Γ Δ f).V → A :=
-  Quot.lift (placeColour a₀ t c) fun _ _ => placeColour_eq_of_linked a₀ t hΔ hc
+  DualPlace.liftVertex (placeColour a₀ t c) fun _ _ => placeColour_eq_of_linked a₀ t hΔ hc
 
 @[simp] private theorem vertexColour_toVertex (hΔ : Δ.IsAcyclic) {c : V → A}
     (hc : ∀ a b, Γ.Adj a b → trackCount a₀ t a b (f b) = c b - c a) (p : DualPlace Γ Δ f) :
     vertexColour a₀ t hΔ hc p.toVertex = placeColour a₀ t c p :=
-  rfl
+  DualPlace.liftVertex_toVertex _ _ p
 
 /-- Across a crossing `q` the colour changes by `a₀` if `q` lies on `t`, by `-a₀` if it lies on
 the reverse of `t`, and not at all otherwise. -/
