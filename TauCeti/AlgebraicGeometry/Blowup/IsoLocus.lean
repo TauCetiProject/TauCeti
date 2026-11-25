@@ -5,20 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
-public import TauCeti.AlgebraicGeometry.Blowup.BaseChange
+public import TauCeti.AlgebraicGeometry.Blowup.Pullback
 public import TauCeti.AlgebraicGeometry.Morphisms.IsoLocus
-import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 
 /-!
 # Where a blowup is an isomorphism
 
 The blowup `Bl_I X ⟶ X` along an ideal sheaf `I` is an isomorphism exactly when `V(I)` is an
 effective Cartier divisor (`Scheme.IdealSheafData.isIso_blowupToBase_iff`). This file localizes
-that statement: over an affine open `U`, the blowup is an isomorphism over `U` exactly when the
-pullback of `I` to `Spec Γ(X, U)` is an effective Cartier divisor
+that statement: over an open `U`, the blowup is an isomorphism over `U` exactly when the
+restriction of `I` to `U` is an effective Cartier divisor
 (`Scheme.IdealSheafData.isIso_blowupToBase_restrict_iff`). Hence a point lies off the centre of
-the blowup exactly when it has an affine neighbourhood on which `I` is an effective Cartier divisor
+the blowup exactly when it has an open neighbourhood on which `I` is an effective Cartier divisor
 (`Scheme.IdealSheafData.mem_isoLocus_blowupToBase_iff`): the centre is the locus where `I` is not
 locally invertible.
 -/
@@ -31,41 +29,26 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-open TauCeti.AlgebraicGeometry
-
 variable {X : Scheme.{u}} (I : X.IdealSheafData)
 
-/-- **The blowup is an isomorphism over an affine open exactly where `I` is invertible.** Over an
-affine open `U`, the blowup `Bl_I X ⟶ X` is an isomorphism over `U` iff the pullback of `I` to
-`Spec Γ(X, U)` is an effective Cartier divisor. -/
-theorem isIso_blowupToBase_restrict_iff {U : X.Opens} (hU : IsAffineOpen U) :
-    IsIso (I.blowupToBase ∣_ U) ↔ (I.comap hU.fromSpec).IsEffectiveCartier := by
-  -- Both `blowupToBase ∣_ U` and the affine chart are pullbacks of the blowup along `U ⟶ X`.
-  let e := (isPullback_morphismRestrict I.blowupToBase U).isoIsPullback _ _
-    (I.isPullback_blowupChart hU)
-  have he : e.hom ≫ (Proj.toSpecCoeff (reesAlgebra.grade (I.ideal ⟨U, hU⟩)) ≫ hU.isoSpec.inv) =
-      I.blowupToBase ∣_ U :=
-    IsPullback.isoIsPullback_hom_fst _ _ _ _
-  rw [← he, comap_fromSpec_eq_ofIdealTop, ← isIso_toSpecZero_reesAlgebra_iff,
-    ← toSpecCoeff_reesAlgebra]
-  constructor
-  · intro h
-    have : IsIso (Proj.toSpecCoeff (reesAlgebra.grade (I.ideal ⟨U, hU⟩)) ≫ hU.isoSpec.inv) :=
-      IsIso.of_isIso_comp_left e.hom _
-    exact IsIso.of_isIso_comp_right _ hU.isoSpec.inv
-  · intro h
-    infer_instance
+/-- **The blowup is an isomorphism over an open exactly where `I` is invertible.** Over an open
+`U`, the blowup `Bl_I X ⟶ X` is an isomorphism over `U` iff the restriction of `I` to `U` is an
+effective Cartier divisor. -/
+theorem isIso_blowupToBase_restrict_iff (U : X.Opens) :
+    IsIso (I.blowupToBase ∣_ U) ↔ (I.comap U.ι).IsEffectiveCartier := by
+  -- Both `blowupToBase ∣_ U` and the blowup of `I.comap U.ι` are pullbacks of the blowup
+  -- along `U ⟶ X`.
+  rw [← IsPullback.isoIsPullback_hom_fst _ _ (isPullback_morphismRestrict I.blowupToBase U)
+    (I.isPullback_blowupMap_of_flat U.ι), isIso_comp_left_iff, isIso_blowupToBase_iff]
 
 /-- **The iso locus of a blowup.** A point `x` lies off the centre of `Bl_I X ⟶ X` exactly when it
-has an affine open neighbourhood `U` such that the pullback of `I` to `Spec Γ(X, U)` is an
-effective Cartier divisor. -/
+has an open neighbourhood `U` such that the restriction of `I` to `U` is an effective Cartier
+divisor. -/
 theorem mem_isoLocus_blowupToBase_iff {x : X} :
-    x ∈ I.blowupToBase.isoLocus ↔
-      ∃ (U : X.Opens) (hU : IsAffineOpen U), x ∈ U ∧ (I.comap hU.fromSpec).IsEffectiveCartier := by
-  refine ⟨fun hx ↦ ?_, fun ⟨U, hU, hxU, hI⟩ ↦ ?_⟩
-  · obtain ⟨U, hU, hxU, hle⟩ := exists_isAffineOpen_mem_and_subset hx
-    exact ⟨U, hU, hxU, (I.isIso_blowupToBase_restrict_iff hU).mp
-      ((I.blowupToBase.le_isoLocus_iff).mp hle)⟩
-  · exact (I.blowupToBase.le_isoLocus_iff.mpr ((I.isIso_blowupToBase_restrict_iff hU).mpr hI)) hxU
+    x ∈ I.blowupToBase.isoLocus ↔ ∃ U : X.Opens, x ∈ U ∧ (I.comap U.ι).IsEffectiveCartier :=
+  ⟨fun hx ↦ ⟨_, hx, (I.isIso_blowupToBase_restrict_iff _).mp
+      (I.blowupToBase.le_isoLocus_iff.mp le_rfl)⟩,
+    fun ⟨U, hxU, hI⟩ ↦
+      I.blowupToBase.le_isoLocus_iff.mpr ((I.isIso_blowupToBase_restrict_iff U).mpr hI) hxU⟩
 
 end AlgebraicGeometry.Scheme.IdealSheafData
