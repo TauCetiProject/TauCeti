@@ -42,8 +42,7 @@ connectivity and certifies a minimum disconnecting edge cut.
   `IsCutTree.not_reachable_deleteEdges_crossing_edgeSide`, `IsCutTree.encard_crossing_edgeSide_le`,
   and `IsCutTree.exists_edgeSide_crossing_eq_simpleGraph_edgeConnectivity`: minimum-cut recovery and
   edge-separator optimality certificates.
-* `SimpleGraph.isCutTree_starGraph_top` and `SimpleGraph.edgeConnectivity_top`: star cut trees and
-  edge connectivity of complete graphs.
+* `SimpleGraph.isCutTree_starGraph_top`: star cut trees for complete graphs.
 
 ## References
 
@@ -445,15 +444,5 @@ theorem isCutTree_starGraph_top [Fintype V] (r : V) :
     exact ⟨self_mem_edgeSide _ u v, hbridge.notMem_edgeSide, hval⟩
   · intro u v huv
     exact (pairMinimumValue_unitCutCapacity_top huv.ne).symm
-
-/-- The global edge connectivity of the complete graph on a finite nontrivial vertex type `V` is
-`|V| - 1`. -/
-theorem edgeConnectivity_top [Fintype V] [Nontrivial V] :
-    (⊤ : SimpleGraph V).edgeConnectivity = ((Fintype.card V - 1 : ℕ) : ℕ∞) := by
-  obtain ⟨r⟩ := (inferInstance : Nonempty V)
-  obtain ⟨_, _, -, -, h⟩ :=
-    (isCutTree_starGraph_top r).toIsFlowEquivalentTree
-      |>.exists_edge_simpleGraph_edgeConnectivity_eq_weight
-  exact h
 
 end SimpleGraph

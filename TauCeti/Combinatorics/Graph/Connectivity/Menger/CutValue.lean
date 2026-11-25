@@ -22,11 +22,10 @@ loops never contribute to a cut.
 The threshold form is useful without choosing a minimum cut. The numerical form lets results about
 minimum cut values, such as cut trees, apply to the deletion-based invariant.
 
-For a simple graph `G : SimpleGraph V`, weighted and unit minimum cuts on `Graph.ofSimpleGraph G`
-agree with those of `TauCeti.pairCutCapacity` and `G.unitCutCapacity` directly on `V`. This yields
-threshold and numerical characterizations of `G.IsEdgeReachable`, `G.edgeReachability`,
-`G.IsEdgeConnected`, and `G.edgeConnectivity`, together with monotonicity, isomorphism invariance,
-and complete-graph values.
+For a simple graph `G : SimpleGraph V`, equating local edge reachability with minimum
+`G.unitCutCapacity` cut values directly on `V` yields threshold and numerical characterizations of
+`G.IsEdgeReachable`, `G.edgeReachability`, `G.IsEdgeConnected`, and `G.edgeConnectivity`, together
+with monotonicity, isomorphism invariance, and complete-graph values.
 
 ## Main results
 
@@ -36,9 +35,6 @@ and complete-graph values.
   minimum unit cut value, viewed in `ℕ∞`.
 * `Graph.edgeReachability_eq_pairMinimumValue_pairCapacity`: aggregating parallel unit edges by
   their unordered endpoint pairs preserves this value.
-* `SimpleGraph.isMinimum_ofSimpleGraph_iff` and `SimpleGraph.pairMinimumValue_ofSimpleGraph`:
-  weighted minimum cuts and pairwise minimum cut values on `Graph.ofSimpleGraph G` agree with those
-  of `TauCeti.pairCutCapacity` on `V`.
 * `SimpleGraph.edgeReachability_eq_pairMinimumValue_unitCutCapacity`,
   `SimpleGraph.isEdgeReachable_iff_le_pairMinimumValue_unitCutCapacity`, and
   `SimpleGraph.edgeConnectivity_eq_iInf_pairMinimumValue_unitCutCapacity`: native simple-graph local
@@ -48,8 +44,9 @@ and complete-graph values.
   `SimpleGraph.pairMinimumValue_unitCutCapacity_mono` and
   `SimpleGraph.Iso.pairMinimumValue_unitCutCapacity`): monotonicity and isomorphism invariance of
   simple-graph pairwise minimum cut values.
-* `SimpleGraph.pairMinimumValue_unitCutCapacity_top` and `SimpleGraph.edgeReachability_top`:
-  minimum unit cut value and local edge reachability `|V| - 1` between distinct vertices of `⊤`.
+* `SimpleGraph.pairMinimumValue_unitCutCapacity_top`, `SimpleGraph.edgeReachability_top`, and
+  `SimpleGraph.edgeConnectivity_top`: minimum unit cut value, local edge reachability, and global
+  edge connectivity `|V| - 1` of complete graphs.
 
 ## References
 
@@ -218,63 +215,6 @@ section
 
 variable {W K : Type*} (G : SimpleGraph V)
 
-/-- Minimum cuts of `Graph.ofSimpleGraph G` correspond to minimum cuts of `TauCeti.pairCutCapacity`
-whenever off-diagonal weights vanish away from the edges of `G`. -/
-theorem isMinimum_ofSimpleGraph_iff [Fintype V] [AddCommMonoid K] [Preorder K]
-    (c : Sym2 V → K) (hsupport : ∀ p, ¬p.IsDiag → p ∉ G.edgeSet → c p = 0)
-    {A B S : Finset V} :
-    TerminalCut.IsMinimum
-        ((Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c))
-        (G.toOfSimpleGraphFinset A) (G.toOfSimpleGraphFinset B) (G.toOfSimpleGraphFinset S) ↔
-      TerminalCut.IsMinimum (pairCutCapacity c) A B S := by
-  simpa only [toOfSimpleGraphFinset_eq_map] using
-    TerminalCut.isMinimum_map_iff (f := pairCutCapacity c)
-      G.ofSimpleGraphVertexEquiv
-      (g := (Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c))
-      (fun T ↦ by
-        rw [← G.toOfSimpleGraphFinset_eq_map T]
-        exact G.edgeCutCapacity_eq_pairCutCapacity c hsupport T)
-
-/-- Pairwise minimum cut values of `Graph.ofSimpleGraph G` equal those of `TauCeti.pairCutCapacity`
-whenever off-diagonal weights vanish away from the edges of `G`. -/
-theorem pairMinimumValue_ofSimpleGraph [Fintype V] [AddCommMonoid K] [LinearOrder K]
-    (c : Sym2 V → K) (hsupport : ∀ p, ¬p.IsDiag → p ∉ G.edgeSet → c p = 0) (s t : V) :
-    TerminalCut.pairMinimumValue
-        ((Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c))
-        (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t) =
-      TerminalCut.pairMinimumValue (pairCutCapacity c) s t :=
-  TerminalCut.pairMinimumValue_map (pairCutCapacity c)
-    G.ofSimpleGraphVertexEquiv
-    ((Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c))
-    (fun S ↦ by
-      rw [← G.toOfSimpleGraphFinset_eq_map S]
-      exact G.edgeCutCapacity_eq_pairCutCapacity c hsupport S) s t
-
-/-- Pairwise minimum cut values of `Graph.ofSimpleGraph G` with weights `c` equal those of
-`TauCeti.pairCutCapacity (G.edgeSet.indicator c)`. -/
-theorem pairMinimumValue_ofSimpleGraph_indicator [Fintype V] [AddCommMonoid K] [LinearOrder K]
-    (c : Sym2 V → K) (s t : V) :
-    TerminalCut.pairMinimumValue
-        ((Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c))
-        (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t) =
-      TerminalCut.pairMinimumValue
-        (pairCutCapacity (G.edgeSet.indicator c)) s t := by
-  rw [← G.ofSimpleGraphCapacity_indicator_edgeSet c]
-  exact G.pairMinimumValue_ofSimpleGraph (G.edgeSet.indicator c)
-    (fun p _ hp ↦ Set.indicator_of_notMem hp c) s t
-
-/-- Pairwise minimum cut values of `Graph.ofSimpleGraph G` with constant weight `a` equal those of
-`TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ a)`. -/
-theorem pairMinimumValue_ofSimpleGraph_const [Fintype V] [AddCommMonoid K] [LinearOrder K]
-    (a : K) (s t : V) :
-    TerminalCut.pairMinimumValue
-        ((Graph.ofSimpleGraph G).edgeCutCapacity fun _ ↦ a)
-        (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t) =
-      TerminalCut.pairMinimumValue
-        (pairCutCapacity (G.edgeSet.indicator fun _ ↦ a)) s t := by
-  rw [← G.ofSimpleGraphCapacity_const a]
-  exact G.pairMinimumValue_ofSimpleGraph_indicator (fun _ ↦ a) s t
-
 /-- For distinct vertices of a finite simple graph, local edge reachability at threshold
 `k : ℕ∞` holds exactly when `k` is at most the minimum unit cut value between `s` and `t`. -/
 theorem isEdgeReachable_iff_le_pairMinimumValue_unitCutCapacity [Finite V] {s t : V}
@@ -369,6 +309,20 @@ theorem edgeReachability_top [Fintype V] {s t : V} (hst : s ≠ t) :
     (⊤ : SimpleGraph V).edgeReachability s t = ((Fintype.card V - 1 : ℕ) : ℕ∞) := by
   rw [edgeReachability_eq_pairMinimumValue_unitCutCapacity _ hst,
     pairMinimumValue_unitCutCapacity_top hst]
+
+/-- The global edge connectivity of the complete graph on a finite nontrivial vertex type `V` is
+`|V| - 1`. -/
+theorem edgeConnectivity_top [Fintype V] [Nontrivial V] :
+    (⊤ : SimpleGraph V).edgeConnectivity = ((Fintype.card V - 1 : ℕ) : ℕ∞) := by
+  obtain ⟨u, v, huv⟩ := exists_pair_ne V
+  refine le_antisymm ?_ ?_
+  · exact ((⊤ : SimpleGraph V).edgeConnectivity_le_edgeReachability u v).trans_eq
+      (edgeReachability_top huv)
+  · rw [(⊤ : SimpleGraph V).edgeConnectivity_eq_iInf_edgeReachability]
+    refine le_iInf fun x ↦ le_iInf fun y ↦ ?_
+    rcases eq_or_ne x y with rfl | hxy
+    · simp
+    · exact (edgeReachability_top hxy).ge
 
 /-- A finite simple graph is `k`-edge-connected iff every pair of distinct vertices has minimum
 unit cut value at least `k`. -/
