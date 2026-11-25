@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.Birational.Dominant
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Birational.RationalMap.Basic
-public import TauCeti.AlgebraicGeometry.Birational.RationalMap.ValuationRing
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Composition
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.GraphClosure
 public import TauCeti.AlgebraicGeometry.Morphisms.Separated
@@ -208,7 +207,8 @@ theorem surjective_graphSnd [f.IsOver sX sY] [IsProper sX] [f.IsDominant] :
   have e : h ≫ pullbackToProd sX sY = X.homOfLE hgV ≫ graphLift f := by
     apply pullback.hom_ext <;> simp [h, hg, Scheme.homOfLE_ι]
   have H : (graphι f).ker ≤ (h.imageι ≫ pullbackToProd sX sY).ker := by
-    rw [Scheme.Hom.ker_imageι_comp, e, IdealSheafData.ker_subschemeι]
+    rw [show (h.imageι ≫ pullbackToProd sX sY).ker = _ from
+      IdealSheafData.map_ker h (pullbackToProd sX sY), e, IdealSheafData.ker_subschemeι]
     exact Scheme.Hom.le_ker_comp _ _
   have e' : IsClosedImmersion.lift _ _ H ≫ graphSnd f =
       graphClosureSnd sX sY g.domain g.hom (g.over sX sY) := by
@@ -230,7 +230,8 @@ variable [IsReduced X] [Y.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
 private theorem ker_imageι_comp_pullbackToProd :
     ((opensGraph sX sY f.toPartialMap.domain f.toPartialMap.hom
       (f.toPartialMap.over sX sY)).imageι ≫ pullbackToProd sX sY).ker = (graphι f).ker := by
-  rw [Scheme.Hom.ker_imageι_comp, IdealSheafData.ker_subschemeι,
+  rw [show (Scheme.Hom.imageι _ ≫ pullbackToProd sX sY).ker = _ from
+      IdealSheafData.map_ker _ (pullbackToProd sX sY), IdealSheafData.ker_subschemeι,
     ← ker_opensGraph_eq_ker_graphLift f f.toPartialMap f.toRationalMap_toPartialMap]
   congr 1
   apply pullback.hom_ext <;> simp
