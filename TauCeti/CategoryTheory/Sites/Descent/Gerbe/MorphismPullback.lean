@@ -40,7 +40,7 @@ In the namespace `CategoryTheory.Pseudofunctor.GerbeMorphismPullback`:
   the identity transformation.
 * `mapIso_act`, `mapIso_difference`, `mapIso_injective`, `homMap_injective`: compatibility with
   the bands.
-* `preimageIso`, `map_preimageIso`, `preimageIso_mapIso`, `preimageIso_eq`, `preimageIso_act`,
+* `preimageIso`, `mapIso_preimageIso`, `preimageIso_mapIso`, `preimageIso_eq`, `preimageIso_act`,
   `preimageIso_restrict`, `isomEquiv`, `homMap_surjective_of_anchor`: the anchored inverse.
 
 ## References
@@ -96,8 +96,7 @@ theorem homMap_comp
     (p : (F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y)
     (q : (F.map f.op.toLoc).toFunctor.obj y ⟶ (F.map f.op.toLoc).toFunctor.obj z) :
     homMap η f (p ≫ q) = homMap η f p ≫ homMap η f q := by
-  rw [homMap, Functor.map_comp, Iso.homCongr_comp _ (η.naturalityObjIso f.op.toLoc y)]
-  rfl
+  simp [homMap_def]
 
 /-- The transport `M_f(p) = c_f(x)⁻¹ ≪≫ η_V(p) ≪≫ c_f(y)` of a local isomorphism
 `p : F(f) x ≅ F(f) y`. -/
@@ -174,8 +173,8 @@ theorem mapIso_act
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
     (a : Multiplicative (A.obj.obj (op V))) :
     mapIso η f (bF.act p a) = bG.act (mapIso η f p) a := by
-  rw [mapIso, BandedMorphism.map_act bF bG η, Iso.isoCongr_apply, AbelianBanding.act_trans,
-    AbelianBanding.trans_act, mapIso, Iso.isoCongr_apply]
+  rw [mapIso, BandedMorphism.map_act bF bG η]
+  simp [mapIso, AbelianBanding.act_trans]
 
 /-- **Compatibility with the difference.** The difference of transported local isomorphisms is the
 difference of the local isomorphisms. -/
@@ -228,8 +227,7 @@ noncomputable def isomEquiv
 theorem isomEquiv_apply
     (p q : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
     isomEquiv η f bF bG p q = mapIso η f q := by
-  rw [isomEquiv, Equiv.trans_apply, BandedMorphism.isomEquiv_apply]
-  rfl
+  rw [isomEquiv, Equiv.trans_apply, BandedMorphism.isomEquiv_apply, mapIso]
 
 @[simp]
 theorem isomEquiv_symm_apply
@@ -237,12 +235,11 @@ theorem isomEquiv_symm_apply
     (q : (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
       (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) :
     (isomEquiv η f bF bG p).symm q = preimageIso η f bF bG p q := by
-  rw [isomEquiv, Equiv.symm_trans_apply, BandedMorphism.isomEquiv_symm_apply]
-  rfl
+  rw [isomEquiv, Equiv.symm_trans_apply, BandedMorphism.isomEquiv_symm_apply, preimageIso]
 
 /-- `M_f` maps the preimage of `q` to `q`. -/
 @[simp]
-theorem map_preimageIso
+theorem mapIso_preimageIso
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
     (q : (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
       (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) :
@@ -262,7 +259,7 @@ theorem preimageIso_eq
     (q : (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) ≅
       (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y)) :
     preimageIso η f bF bG p q = preimageIso η f bF bG p' q :=
-  mapIso_injective η f bF bG (by simp only [map_preimageIso])
+  mapIso_injective η f bF bG (by simp only [mapIso_preimageIso])
 
 /-- The preimage is compatible with the action of the coefficients. -/
 theorem preimageIso_act
@@ -271,7 +268,7 @@ theorem preimageIso_act
       (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj y))
     (a : Multiplicative (A.obj.obj (op V))) :
     preimageIso η f bF bG p (bG.act q a) = bF.act (preimageIso η f bF bG p q) a :=
-  mapIso_injective η f bF bG (by simp only [map_preimageIso, mapIso_act η f bF bG])
+  mapIso_injective η f bF bG (by simp only [mapIso_preimageIso, mapIso_act η f bF bG])
 
 /-- On restrictions of a global anchor `p : x ≅ y` and of a global `q : η_U x ≅ η_U y`, the
 preimage is the restriction of the global preimage `BandedMorphism.preimageIso p q`. -/
@@ -281,7 +278,7 @@ theorem preimageIso_restrict (p : x ≅ y)
         ((G.map f.op.toLoc).toFunctor.mapIso q) =
       (F.map f.op.toLoc).toFunctor.mapIso (BandedMorphism.preimageIso bF bG η p q) :=
   mapIso_injective η f bF bG (by
-    simp only [map_preimageIso, mapIso_restrict, BandedMorphism.map_preimageIso])
+    simp only [mapIso_preimageIso, mapIso_restrict, BandedMorphism.map_preimageIso])
 
 include bF bG in
 /-- **Surjectivity on local morphisms with an anchor.** When the fibre of `G` over `V` is a
