@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
 
 /-!
-# Contracting two slots of an indexed tensor power
+# Contracting slots of an indexed tensor power
 
 A bilinear form contracts two distinct slots of a tensor power and leaves the other slots
 unchanged. The output is indexed by the complement of those two slots, avoiding a choice of
