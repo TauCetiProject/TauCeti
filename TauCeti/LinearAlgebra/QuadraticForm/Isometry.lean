@@ -27,9 +27,10 @@ This file records general properties of quadratic-map isometries.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
 * `QuadraticMap.IsometryEquiv.polarBilin_compl₁₂`: an isometric equivalence pulls the polar
   bilinear form of the target back to that of the source.
-* `QuadraticMap.IsometryEquiv.polarKernelEquiv` and
-  `QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin`: an isometric equivalence restricts to an
-  equivalence of polar kernels and transports polar-orthogonal complements.
+* `QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin`: an isometric equivalence maps polar
+  orthogonal complements to polar orthogonal complements.
+* `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
+  equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`, and
   `QuadraticMap.IsometryEquiv.trans_apply`: basic evaluation and involution lemmas for isometric
   equivalences.
@@ -131,6 +132,25 @@ theorem _root_.QuadraticMap.IsometryEquiv.map_polarKernel
     IsometryEquiv.coe_symm_toLinearEquiv, IsometryEquiv.coe_toLinearEquiv]
   rw [← e.polar_apply x (e.symm y), e.apply_symm_apply]
 
+/-- An isometric equivalence maps the polar orthogonal complement of a submodule onto the polar
+orthogonal complement of its image. -/
+theorem _root_.QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} (e : Q₁.IsometryEquiv Q₂)
+    (W : Submodule R M₁) :
+    (LinearMap.BilinForm.orthogonal Q₁.polarBilin W).map e.toLinearMap =
+      LinearMap.BilinForm.orthogonal Q₂.polarBilin (W.map e.toLinearMap) := by
+  ext y
+  simp only [Submodule.mem_map_equiv, LinearMap.BilinForm.mem_orthogonal_iff,
+    polarBilin_apply_apply, IsometryEquiv.coe_symm_toLinearEquiv,
+    IsometryEquiv.coe_toLinearEquiv]
+  refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
+  · rw [← e.apply_symm_apply x, ← e.apply_symm_apply y, e.polar_apply]
+    exact h _ hx
+  · rw [← e.polar_apply, e.apply_symm_apply]
+    exact h (e x) (by simpa using hx)
+
 /-- The restriction of an isometric equivalence to the kernels of polarization against
 corresponding vectors. -/
 def _root_.QuadraticMap.IsometryEquiv.polarKernelEquiv
@@ -160,25 +180,6 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_polarKernelEquiv_symm_apply
     (e : Q₁.IsometryEquiv Q₂) (x : M₁) (y : LinearMap.ker (Q₂.polarBilin (e x))) :
     (((e.polarKernelEquiv x).symm y : LinearMap.ker (Q₁.polarBilin x)) : M₁) = e.symm y :=
   e.toLinearEquiv.ofSubmodules_symm_apply (e.map_polarKernel x) y
-
-/-- An isometric equivalence maps the polar-orthogonal complement of a submodule `U` onto the
-polar-orthogonal complement of `U.map e.toLinearMap`. -/
-@[simp]
-theorem _root_.QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin
-    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
-    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
-    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
-    (e : Q₁.IsometryEquiv Q₂) (U : Submodule R M₁) :
-    (LinearMap.BilinForm.orthogonal Q₁.polarBilin U).map e.toLinearMap =
-      LinearMap.BilinForm.orthogonal Q₂.polarBilin (U.map e.toLinearMap) := by
-  ext y
-  simp only [Submodule.mem_map_equiv, LinearMap.BilinForm.mem_orthogonal_iff,
-    polarBilin_apply_apply, IsometryEquiv.coe_symm_toLinearEquiv, IsometryEquiv.coe_toLinearEquiv]
-  refine ⟨fun hy z hz ↦ ?_, fun hy x hx ↦ ?_⟩
-  · rw [← e.symm.polar_apply z y]
-    exact hy (e.symm z) hz
-  · rw [← e.polar_apply x (e.symm y), e.apply_symm_apply]
-    exact hy (e x) (by simpa using hx)
 
 /-- The identity isometric equivalence acts as the identity on vectors. -/
 @[simp]

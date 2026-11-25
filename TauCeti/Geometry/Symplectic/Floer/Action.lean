@@ -12,6 +12,7 @@ import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.MeasureTheory.Integral.Rectangle
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -79,15 +80,19 @@ loop, its speed and the Hamiltonian along it (`SymplecticForm.abs_hamiltonianAct
 the actions of the loops of `L`-Lipschitz maps with periodic loops in a compact set are bounded
 uniformly in the map (`SymplecticForm.exists_forall_abs_hamiltonianAction_le`). The action
 is continuous for uniform `C¹` convergence of loops
-(`SymplecticForm.tendsto_hamiltonianAction`). Uniform convergence of the loops alone, with a bound
-on their speed, still controls differences of actions: loops `x i` and `y i` with a common uniform
-limit have `A_H(x i) - A_H(y i) → 0`
-(`SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`). Consequently, if the two
-boundary loops of maps `u i` on a window `[a, b] × [0, 1]` converge uniformly to the same loop,
-with bounded derivatives along them, then the energy of `u i` over the window tends to zero
-(`SymplecticForm.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn`). This is the form of
-convergence that compactness off the bubbling points provides, without convergence of the
-derivatives.
+(`SymplecticForm.tendsto_hamiltonianAction`); so the actions of the loops `v i (s, ·)` of maps
+converging locally uniformly with their derivatives converge
+(`SymplecticForm.tendsto_hamiltonianAction_slice_of_tendstoLocallyUniformly`). Uniform convergence
+of the loops alone, with a bound on their speed, still controls differences of actions: loops
+`x i` and `y i` with a common uniform limit have `A_H(x i) - A_H(y i) → 0`
+(`SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`). In particular, if the loops
+`g(s, ·)` of a Lipschitz `C¹` map converge uniformly to a closed `C¹` loop `x`, then their actions
+converge to `A_H(x)` (`SymplecticForm.tendsto_hamiltonianAction_slice_of_tendstoUniformly`).
+Consequently, if the two boundary loops of maps `u i` on a window `[a, b] × [0, 1]` converge
+uniformly to the same loop, with bounded derivatives along them, then the energy of `u i` over the
+window tends to zero (`SymplecticForm.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn`).
+This is the form of convergence that compactness off the bubbling points provides, without
+convergence of the derivatives.
 
 ## Main definitions
 
@@ -123,8 +128,12 @@ derivatives.
   loops of Lipschitz maps with periodic loops in a compact set.
 * `SymplecticForm.tendsto_hamiltonianAction`: the action is continuous for uniform `C¹`
   convergence of loops.
+* `SymplecticForm.tendsto_hamiltonianAction_slice_of_tendstoLocallyUniformly`: the actions of the
+  loops of maps converging locally uniformly in `C¹` converge.
 * `SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`: loops of bounded speed with a
   common uniform limit have asymptotically equal actions.
+* `SymplecticForm.tendsto_hamiltonianAction_slice_of_tendstoUniformly`: the actions of the loops of
+  a Lipschitz `C¹` map converge to the action of their uniform limit.
 * `SymplecticForm.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn`: the energy over a
   window tends to zero when its two boundary loops converge uniformly to the same loop.
 * `SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral`: the energy
@@ -675,6 +684,36 @@ theorem tendsto_hamiltonianAction (ω : SymplecticForm V) (hH : Continuous (uncu
     (tendsto_const_nhds.mul (hP.tendsto_intervalIntegral_comp hg1 hPc)).add
       (hP.tendsto_intervalIntegral_comp hg2 hPc)
 
+/-- **Actions of loops converge under locally uniform `C¹` convergence.** Let `H` be a continuous
+time-dependent Hamiltonian. If maps `u_i`, eventually `C¹`, converge locally uniformly to a `C¹`
+map `g` together with their derivatives, then for every `s` the actions of the loops `u_i(s, ·)`
+converge to the action of the loop `g(s, ·)`. -/
+theorem tendsto_hamiltonianAction_slice_of_tendstoLocallyUniformly (ω : SymplecticForm V)
+    (hH : Continuous (uncurry H)) {v : ι → ℝ × ℝ → V} {g : ℝ × ℝ → V}
+    (hv : ∀ᶠ i in l, ContDiff ℝ 1 (v i)) (hg : ContDiff ℝ 1 g)
+    (hlim : TendstoLocallyUniformly v g l)
+    (hdlim : TendstoLocallyUniformly (fun i ↦ fderiv ℝ (v i)) (fderiv ℝ g) l) (s : ℝ) :
+    Tendsto (fun i ↦ ω.hamiltonianAction H (fun t ↦ v i (s, t))) l
+      (𝓝 (ω.hamiltonianAction H (fun t ↦ g (s, t)))) := by
+  -- The derivative of the loop at `s` of a `C¹` map is its derivative in the direction `(0, 1)`.
+  have hd {f : ℝ × ℝ → V} (hf : ContDiff ℝ 1 f) :
+      deriv (fun t ↦ f (s, t)) = fun t ↦ fderiv ℝ f (s, t) (0, 1) :=
+    funext fun t ↦ (hasDerivAt_slice_right ((hf.differentiable one_ne_zero) (s, t))).deriv
+  -- On the segment `{s} × [0, 1]` the loops and their derivatives converge uniformly.
+  have hdslice : TendstoUniformlyOn (fun i t ↦ fderiv ℝ (v i) (s, t)) (fun t ↦ fderiv ℝ g (s, t))
+      l (Icc 0 1) := (hdlim.tendstoLocallyUniformlyOn (s := univ)).tendstoUniformlyOn_slice_right
+    isCompact_Icc fun _ _ ↦ mem_univ _
+  have hdunif := (ContinuousLinearMap.apply ℝ V ((0 : ℝ), (1 : ℝ))).uniformContinuous
+    |>.comp_tendstoUniformlyOn hdslice
+  refine ω.tendsto_hamiltonianAction hH
+    (hv.mono fun i hi ↦ (hi.continuous.comp (continuous_const.prodMk continuous_id)).continuousOn)
+    (hv.mono fun i hi ↦ hi.contDiffOn.continuousOn_deriv_slice_right isOpen_univ
+      fun _ _ ↦ mem_univ _)
+    ((hlim.tendstoLocallyUniformlyOn (s := univ)).tendstoUniformlyOn_slice_right isCompact_Icc
+      fun _ _ ↦ mem_univ _) ?_
+  rw [hd hg]
+  exact hdunif.congr (hv.mono fun i hi t _ ↦ by simp [hd hi])
+
 /-- **Loops of bounded speed with a common uniform limit have asymptotically equal actions.** Let
 `H` be a continuous time-dependent Hamiltonian, and let `x i` and `y i` be closed loops which are
 eventually differentiable at every point of `[0, 1]`, with derivatives continuous there and of
@@ -730,6 +769,36 @@ theorem tendsto_hamiltonianAction_sub_hamiltonianAction (ω : SymplecticForm V)
   refine h.congr fun i ↦ ?_
   rw [hamiltonianAction_def, hamiltonianAction_def]
   ring
+
+/-- **The actions of the loops of a Lipschitz map at its ends.** Let `H` be a continuous
+time-dependent Hamiltonian and `g` a `C¹` map with closed loops `g(s, 1) = g(s, 0)` and
+`‖dg‖ ≤ L`. If the loops `g(s, ·)` converge uniformly along a countably generated filter `l` to a
+closed `C¹` loop `x`, then their actions converge to the action of `x`. -/
+theorem tendsto_hamiltonianAction_slice_of_tendstoUniformly (ω : SymplecticForm V)
+    (hH : Continuous (uncurry H)) {l : Filter ℝ} [l.IsCountablyGenerated] {g : ℝ × ℝ → V}
+    (hg : ContDiff ℝ 1 g)
+    (hgper : ∀ s, g (s, 1) = g (s, 0)) {L : ℝ} (hgL : ∀ z, ‖fderiv ℝ g z‖ ≤ L) {x : ℝ → V}
+    (hx : ContDiff ℝ 1 x) (hxper : x 1 = x 0)
+    (hlim : TendstoUniformly (fun s t ↦ g (s, t)) x l) :
+    Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ g (s, t))) l
+      (𝓝 (ω.hamiltonianAction H x)) := by
+  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    (hx.continuous_deriv le_rfl).continuousOn (s := Icc (0 : ℝ) 1)
+  -- Both loops have speed at most `max L M`, so the difference of the actions tends to zero.
+  have h := ω.tendsto_hamiltonianAction_sub_hamiltonianAction hH (L := max L M)
+    (x := fun s t ↦ g (s, t)) (y := fun _ ↦ x) (x₀ := x)
+    (.of_forall fun s t _ ↦
+      (hasDerivAt_slice_right ((hg.differentiable one_ne_zero) (s, t))).differentiableAt)
+    (.of_forall fun _ t _ ↦ (hx.differentiable one_ne_zero) t)
+    (.of_forall fun _ ↦ hg.contDiffOn.continuousOn_deriv_slice_right isOpen_univ
+      fun _ _ ↦ mem_univ _)
+    (.of_forall fun _ ↦ (hx.continuous_deriv le_rfl).continuousOn) (.of_forall hgper)
+    (.of_forall fun _ ↦ hxper)
+    (.of_forall fun s t _ ↦ (norm_deriv_slice_right_le
+      ((hg.differentiable one_ne_zero) (s, t))).trans ((hgL _).trans (le_max_left _ _)))
+    (.of_forall fun _ t ht ↦ (hM t ht).trans (le_max_right _ _)) hlim.tendstoUniformlyOn
+    fun _ hu ↦ .of_forall fun _ _ _ ↦ refl_mem_uniformity hu
+  simpa using h.add_const (ω.hamiltonianAction H x)
 
 /-- **The energy over a window tends to zero when its two boundary loops converge to the same
 loop.** Let `H` be a `C¹` time-dependent Hamiltonian, and let the maps `u i` be eventually `C²` on

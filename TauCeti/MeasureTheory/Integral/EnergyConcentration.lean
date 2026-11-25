@@ -33,9 +33,10 @@ satisfies `#T * δ ≤ E` (`TauCeti.card_mul_le_of_forall_eventually_le_measure`
 densities `e k` on `Ω` concentrate mass `δ` at every energy concentration point
 (`TauCeti.eventually_ofReal_le_withDensity_of_forall_eventually_le_setIntegral_ball`), so a finite
 set `Z` of energy concentration points satisfies `#Z * δ ≤ E`
-(`TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`). If instead the
-densities `1 + e k` concentrate energy `δ` at a null point `z`, then the `e k` concentrate energy
-`δ'` there for every `δ' < δ`, since small balls about `z` have small measure
+(`TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`), and for `δ > 0` every set of
+energy concentration points is finite (`TauCeti.finite_of_forall_eventually_le_setIntegral_ball`).
+If instead the densities `1 + e k` concentrate energy `δ` at a null point `z`, then the `e k`
+concentrate energy `δ'` there for every `δ' < δ`, since small balls about `z` have small measure
 (`TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`). A pointwise
 bound `g ≤ A e + B` with `A, B ≥ 0` bounds the energy of `g` on `S` by a multiple of
 `μ(S) + ∫_S e` (`TauCeti.setIntegral_le_mul_measureReal_add_setIntegral_of_le`), which brings
@@ -92,6 +93,8 @@ to zero; when energy `δ` concentrates at every point of `Z`, both steps togethe
   measures.
 * `TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`: a finite set of energy
   concentration points of threshold `δ` has at most `E / δ` elements.
+* `TauCeti.finite_of_forall_eventually_le_setIntegral_ball`: a set of energy concentration points
+  of threshold `δ > 0` is finite.
 * `TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`: removing the
   measure of small balls from concentrating energy loses arbitrarily little of it.
 * `TauCeti.exists_strictMono_finset_forall_le_of_concentration`: when energy concentrates at
@@ -224,6 +227,20 @@ theorem card_mul_le_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : F
   obtain ⟨i⟩ := l.nonempty_of_neBot
   exact (ENNReal.natCast_mul_ofReal_le_ofReal_iff
     ((setIntegral_nonneg hΩ (he i)).trans (hE i))).1 hcard
+
+/-- **Finitely many energy concentration points.** Let `e i ≥ 0` be densities on a measurable set
+`Ω` with `∫_Ω e i ≤ E`. For `δ > 0`, a set `T` of points at which energy at least `δ` concentrates,
+for every `z ∈ T` and `ε > 0` eventually `δ ≤ ∫_{B_ε(z) ∩ Ω} e i`, is finite: its finite subsets
+have at most `E / δ` elements (`TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`). -/
+theorem finite_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : Filter ι} [l.NeBot]
+    {e : ι → X → ℝ} (hδ : 0 < δ) (hΩ : MeasurableSet Ω) (he : ∀ i, ∀ y ∈ Ω, 0 ≤ e i y)
+    (hint : ∀ i, IntegrableOn (e i) Ω μ) (hE : ∀ i, ∫ y in Ω, e i y ∂μ ≤ E) {T : Set X}
+    (hT : ∀ z ∈ T, ∀ ε > 0, ∀ᶠ i in l, δ ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ) : T.Finite :=
+  Set.finite_of_forall_finset_card_mul_le (ENNReal.ofReal_pos.2 hδ).ne' ENNReal.ofReal_ne_top
+    fun F hF ↦ by
+      rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg _)]
+      exact ENNReal.ofReal_le_ofReal (card_mul_le_of_forall_eventually_le_setIntegral_ball hΩ he
+        hint hE fun z hz ↦ hT z (hF hz))
 
 /-- **Concentration without the area term.** Let `e i ≥ 0` be integrable densities on a measurable
 set `Ω`, and let `z` be a point of measure zero about which some ball has finite measure. If for

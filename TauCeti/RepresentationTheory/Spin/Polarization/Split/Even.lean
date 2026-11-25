@@ -35,6 +35,9 @@ directly into the spin representation and Kostant-lattice constructions.
 * `TauCeti.finrank_splitEvenPolarization_W`: the first isotropic summand has dimension `n`.
 * `TauCeti.isHyperbolicFamily_splitEvenForm`: the coordinate hyperbolic pairs form a family of
   mutually orthogonal hyperbolic pairs.
+* `TauCeti.splitEvenSpaceBaseChange`: the base change `SplitEvenSpace R n → SplitEvenSpace S n`
+  along an algebra `R → S`, with `TauCeti.splitEvenForm_splitEvenSpaceBaseChange` showing that it
+  carries the split form to its image in `S`.
 
 ## References
 
@@ -157,6 +160,59 @@ theorem toMatrix_polarBilin_splitEvenForm (K : Type u) [CommRing K] (n : ℕ) :
       Matrix.fromBlocks 0 1 1 0 := by
   ext (i | i) (j | j) <;>
     simp [LinearMap.BilinForm.toMatrix_apply, Matrix.one_apply, Pi.single_apply, eq_comm]
+
+section BaseChange
+
+variable (R S : Type*) [CommRing R] [CommRing S] [Algebra R S] (n : ℕ)
+
+/-- The base change `(f, x) ↦ (f_S, x_S)` of a vector of the standard split space along an
+algebra `R → S`: `f_S` is the functional whose coordinates `f_S eᵢ` are the images of `f eᵢ`, and
+`x_S` is the coordinatewise image of `x`. -/
+noncomputable def splitEvenSpaceBaseChange : SplitEvenSpace R n →ₗ[R] SplitEvenSpace S n where
+  toFun m := (∑ i, algebraMap R S (m.1 (Pi.single i 1)) • LinearMap.proj i,
+    fun i ↦ algebraMap R S (m.2 i))
+  map_add' m m' := by
+    refine Prod.ext (LinearMap.ext fun y ↦ ?_) (funext fun i ↦ ?_)
+    · simp only [Prod.fst_add, LinearMap.add_apply, map_add, add_smul, Finset.sum_add_distrib]
+    · simp
+  map_smul' c m := by
+    refine Prod.ext (LinearMap.ext fun y ↦ ?_) (funext fun i ↦ ?_)
+    · simp only [Prod.smul_fst, LinearMap.smul_apply, smul_eq_mul, map_mul, mul_smul,
+        ← Finset.smul_sum, RingHom.id_apply, algebraMap_smul]
+    · simp [Algebra.smul_def]
+
+/-- The functional of a base-changed vector sends `y` to `∑ i, f eᵢ • yᵢ`. -/
+theorem splitEvenSpaceBaseChange_fst_apply (m : SplitEvenSpace R n) (y : Fin n → S) :
+    (splitEvenSpaceBaseChange R S n m).1 y = ∑ i, m.1 (Pi.single i 1) • y i := by
+  simp only [splitEvenSpaceBaseChange, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.coe_sum,
+    Finset.sum_apply, LinearMap.smul_apply, LinearMap.proj_apply, algebraMap_smul]
+
+/-- The coordinates of the functional of a base-changed vector are the images of the coordinates
+of the original functional. -/
+@[simp]
+theorem splitEvenSpaceBaseChange_fst_single (m : SplitEvenSpace R n) (i : Fin n) :
+    (splitEvenSpaceBaseChange R S n m).1 (Pi.single i 1) =
+      algebraMap R S (m.1 (Pi.single i 1)) := by
+  rw [splitEvenSpaceBaseChange_fst_apply,
+    Finset.sum_eq_single i (fun j _ hj ↦ by simp [hj]) (by simp), Pi.single_eq_same,
+    Algebra.algebraMap_eq_smul_one]
+
+/-- The vector part of a base-changed vector is the coordinatewise image of the vector part. -/
+@[simp]
+theorem splitEvenSpaceBaseChange_snd (m : SplitEvenSpace R n) (i : Fin n) :
+    (splitEvenSpaceBaseChange R S n m).2 i = algebraMap R S (m.2 i) :=
+  (rfl)
+
+/-- The split form of a base-changed vector is the image of the split form of the vector. -/
+theorem splitEvenForm_splitEvenSpaceBaseChange (m : SplitEvenSpace R n) :
+    splitEvenForm S n (splitEvenSpaceBaseChange R S n m) =
+      algebraMap R S (splitEvenForm R n m) := by
+  rw [splitEvenForm_apply, splitEvenForm_apply, splitEvenSpaceBaseChange_fst_apply]
+  conv_rhs => rw [pi_eq_sum_univ' m.2, map_sum, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [map_smul, smul_eq_mul, map_mul, splitEvenSpaceBaseChange_snd, Algebra.smul_def, mul_comm]
+
+end BaseChange
 
 variable (K : Type u) [Field K]
 

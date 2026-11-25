@@ -136,7 +136,7 @@ example :
     (H.prod H).IsTotallyIsotropic L ∧
       LinearMap.BilinForm.orthogonal (H.prod H).polarBilin L = L := by
   intro H Δ e L
-  refine ⟨e.isTotallyIsotropic_map_iff.mpr
+  refine ⟨e.toIsometry.isTotallyIsotropic_map_iff.mpr
     (isTotallyIsotropic_range_inl_add_inr_prod_self (binaryQuadraticForm (ZMod 2) 1 1)), ?_⟩
   dsimp only [H, L]
   rw [← e.map_orthogonal_polarBilin,

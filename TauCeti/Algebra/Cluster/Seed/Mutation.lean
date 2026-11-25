@@ -70,8 +70,11 @@ theorem IsMutation.isUnit_exchangeElement (h : s.IsMutation k t) :
     IsUnit (s.exchangeElement k) :=
   h.coordinate_eq ▸ (t.chart.monomial (Finsupp.single (row k) 1)).isUnit
 
-/-- Compatibility determines the same weights after mutation. -/
-theorem IsMutation.weights_eq (h : s.IsMutation k t) : t.weights = s.weights := by
+/-- Mutating the matrix and the form of a seed together keeps column compatibility with the
+same weights. -/
+theorem isColumnCompatible_formMutation (s : Seed c row u B) (k : K) :
+    (matrixMutation row s.state.exchange.matrix k).IsColumnCompatible row
+      (formMutation row s.state.exchange.matrix s.formMatrix k) s.weights := by
   have hs : s.state.exchange.matrix.transpose * s.formMatrix =
       Matrix.of fun i j ↦ if j = row i then s.weights i else 0 := by
     ext i j
@@ -79,11 +82,15 @@ theorem IsMutation.weights_eq (h : s.IsMutation k t) : t.weights = s.weights := 
       Seed.formMatrix_def] using Matrix.isColumnCompatible_iff.mp s.compatibility i j
   have hm := transpose_matrixMutation_mul_formMutation row s.state.exchange.matrix
     s.isAlt_formMatrix s.state.exchange.isSkewSymmetrizer hs k
+  refine Matrix.isColumnCompatible_iff.mpr fun i j ↦ ?_
+  simpa [Matrix.mul_apply, eq_comm] using congrFun (congrFun hm i) j
+
+/-- Compatibility determines the same weights after mutation. -/
+theorem IsMutation.weights_eq (h : s.IsMutation k t) : t.weights = s.weights := by
   funext j
   rw [t.weights_apply, h.state_eq, ExchangeData.mutation_exchange,
     ExchangeMatrix.mutation_matrix, h.formMatrix_eq]
-  simpa [Matrix.mul_apply] using
-    congrArg (fun M : Matrix K I ℤ ↦ M j (row j)) hm
+  simpa using Matrix.isColumnCompatible_iff.mp (s.isColumnCompatible_formMutation k) j (row j)
 
 /-- The mutation relation is single-valued. -/
 theorem IsMutation.eq (h : s.IsMutation k t) (h' : s.IsMutation k t') : t = t' := by
