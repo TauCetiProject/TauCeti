@@ -64,16 +64,12 @@ variable [Finite (E →+* ℂ)]
 of `ιΦ`, which has the same reflex field. -/
 theorem conj_mem_reflexField (Φ : CMType E) {x : ℂ} (hx : x ∈ Φ.reflexField) :
     conj x ∈ Φ.reflexField := by
-  rw [reflexField_def] at hx
-  induction hx using IntermediateField.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨a, rfl⟩ := hx
-    rw [← typeTrace_star, ← reflexField_star Φ]
-    exact typeTrace_mem_reflexField _ a
-  | algebraMap r => simp
-  | add x y _ _ hx hy => simpa using add_mem hx hy
-  | inv x _ hx => simpa using inv_mem hx
-  | mul x y _ _ hx hy => simpa using mul_mem hx hy
+  have : Φ.reflexField ≤ Φ.reflexField.comap (Complex.conjAe.restrictScalars ℚ : ℂ →ₐ[ℚ] ℂ) :=
+    reflexField_le_iff.mpr fun a ↦ by
+      rw [IntermediateField.mem_comap, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_restrictScalars,
+        Complex.conjAe_coe, ← typeTrace_star, ← reflexField_star Φ]
+      exact typeTrace_mem_reflexField _ a
+  exact this hx
 
 /-- **Complex conjugation on the reflex field**, the automorphism `x ↦ conj x` of `E*`. -/
 noncomputable def reflexFieldConj (Φ : CMType E) : Gal(Φ.reflexField/ℚ) where
@@ -100,16 +96,18 @@ theorem reflexFieldConj_apply_apply (Φ : CMType E) (x : Φ.reflexField) :
 trace both `σ ∘ ι` and `ι ∘ σ` give the type trace of `σ(ιΦ) = ι(σΦ)`. -/
 theorem apply_conj_eq_conj_apply [StarCompCommute E] (Φ : CMType E) (σ : RingAut ℂ) {x : ℂ}
     (hx : x ∈ Φ.reflexField) : σ (conj x) = conj (σ x) := by
-  rw [reflexField_def] at hx
-  induction hx using IntermediateField.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨a, rfl⟩ := hx
-    rw [← typeTrace_star, ← typeTrace_smul_ringAut, ← typeTrace_smul_ringAut, ← star_smul,
-      typeTrace_star]
-  | algebraMap r => simp
-  | add x y _ _ hx hy => simp only [map_add, hx, hy]
-  | inv x _ hx => simp only [map_inv₀, hx]
-  | mul x y _ _ hx hy => simp only [map_mul, hx, hy]
+  let f : ℂ →ₐ[ℚ] ℂ := (σ : ℂ →+* ℂ).toRatAlgHom
+  let c : ℂ →ₐ[ℚ] ℂ := Complex.conjAe.restrictScalars ℚ
+  -- Both composites are `ℚ`-algebra maps on `E*`, so it suffices to compare them on type traces.
+  have h : (f.comp c).comp Φ.reflexField.val = (c.comp f).comp Φ.reflexField.val :=
+    IntermediateField.algHom_ext_of_eq_adjoin ℚ Φ.reflexField_def <| by
+      rintro _ ⟨a, rfl⟩
+      simp only [f, c, AlgHom.comp_apply, IntermediateField.coe_val, AlgEquiv.coe_toAlgHom,
+        AlgEquiv.coe_restrictScalars, Complex.conjAe_coe, RingHom.toRatAlgHom_apply,
+        RingEquiv.coe_toRingHom]
+      rw [← typeTrace_star, ← typeTrace_smul_ringAut, ← typeTrace_smul_ringAut, ← star_smul,
+        typeTrace_star]
+  simpa [f, c] using AlgHom.congr_fun h ⟨x, hx⟩
 
 /-- Complex conjugation on the reflex field is the conjugation of every complex embedding `ρ` of
 the reflex field: `conj ∘ ρ = ρ ∘ ι`, since `ρ` extends to an automorphism of `ℂ`. -/
@@ -117,9 +115,7 @@ theorem isConj_reflexFieldConj [StarCompCommute E] [Algebra ℚ E] [FiniteDimens
     (Φ : CMType E) (ρ : Φ.reflexField →+* ℂ) : IsConj ρ Φ.reflexFieldConj := by
   obtain ⟨σ, hσ⟩ := IntermediateField.exists_ringEquiv_apply_eq_of_isAlgebraic Φ.reflexField ρ
   refine RingHom.ext fun x ↦ ?_
-  rw [conjugate_coe_eq, RingHom.comp_apply, ← hσ, ← hσ, RingHom.coe_coe,
-    coe_reflexFieldConj_apply]
-  exact (Φ.apply_conj_eq_conj_apply σ x.property).symm
+  simpa [conjugate_coe_eq, ← hσ] using (Φ.apply_conj_eq_conj_apply σ x.property).symm
 
 /-- Complex conjugation is not the identity on the reflex field of a CM type on a ring with a
 complex embedding: it would then preserve `Φ`, whereas `ιΦ` is the complement of `Φ`. -/

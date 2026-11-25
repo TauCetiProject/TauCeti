@@ -53,8 +53,7 @@ theorem exists_algEquiv_apply_eq_of_isAlgebraic (K : IntermediateField F Ω)
   obtain ⟨τ, hτ⟩ := AlgEquiv.exists_algEquiv_apply_algebraMap (R := A) (Ω := Ω) (K := F) e
   refine ⟨τ, fun x ↦ ?_⟩
   have := hτ (inclusion hKA x)
-  rw [← AlgEquiv.smul_algHom_apply, he, IntermediateField.algebraMap_apply,
-    IntermediateField.algebraMap_apply, coe_inclusion] at this
+  simp only [← AlgEquiv.smul_algHom_apply, he, algebraMap_apply, coe_inclusion] at this
   -- The right side is the coercion to `Ω` of the codomain restriction of `φ`.
   exact this.trans (AlgHom.coe_codRestrict φ A.toSubalgebra hmem x)
 
