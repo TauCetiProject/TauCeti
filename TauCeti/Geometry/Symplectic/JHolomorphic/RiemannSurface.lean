@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import Mathlib.Topology.DiscreteSubset
 import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import TauCeti.Geometry.Symplectic.JHolomorphic.Coincidence
 import TauCeti.Geometry.Symplectic.JHolomorphic.CriticalPoint
 import TauCeti.Geometry.Symplectic.JHolomorphic.UniqueContinuation
