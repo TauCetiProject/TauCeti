@@ -161,17 +161,8 @@ theorem integrable_energyDensity
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     Integrable (energyDensity x) μ := by
-  have hs1 := normSq_le_one_of_tendsto hp hq hsol hlim
-  have hpot : Integrable (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) ^ 2) μ := by
-    apply (integrable_one_sub_normSq μ hp hq hsol hlim).mono'
-      ((continuous_const.sub (continuous_const.mul
-        ((hp.continuous.pow 2).add (hq.continuous.pow 2)))).pow 2).aestronglyMeasurable
-    apply ae_of_all
-    intro z
-    dsimp only [Pi.pow_apply, Pi.sub_apply, Pi.mul_apply, Pi.add_apply]
-    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-    have : 0 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by positivity
-    nlinarith [hs1 z]
+  have hpot : Integrable (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) ^ 2) μ :=
+    (memLp_one_sub_normSq μ hp hq hsol hlim).integrable_sq
   have hcurv : Integrable (fun z ↦ curvature x z ^ 2) μ := by
     exact (hpot.div_const 64).congr (ae_of_all μ fun z ↦ by
       dsimp only

@@ -23,7 +23,8 @@ either side.
   `M_m(A) ⊗[R] M_n(B) ≃ₐ[R] M_(mn)(A ⊗[R] B)`.
 * `Matrix.kroneckerFinAlgEquiv`: its scalar case `M_m(R) ⊗[R] M_n(R) ≃ₐ[R] M_(mn)(R)`.
 * `Matrix.kroneckerOneStarAlgHom`, `Matrix.oneKroneckerStarAlgHom`: the unital ⋆-algebra
-  homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B`.
+  homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B`, injective when the identity factor is nonempty
+  (`Matrix.kroneckerOneStarAlgHom_injective`, `Matrix.oneKroneckerStarAlgHom_injective`).
 -/
 
 public section
@@ -137,6 +138,18 @@ theorem kroneckerOneStarAlgHom_apply (A : Matrix m m α) :
 theorem oneKroneckerStarAlgHom_apply (B : Matrix n n α) :
     oneKroneckerStarAlgHom R (m := m) n B = (1 : Matrix m m α) ⊗ₖ B :=
   (rfl)
+
+/-- Tensoring by the identity `A ↦ A ⊗ₖ 1` is injective when the identity factor is nonempty. -/
+theorem kroneckerOneStarAlgHom_injective [Nonempty n] :
+    Function.Injective (kroneckerOneStarAlgHom R n (α := α) (m := m)) := fun A B h ↦
+  ext fun i j ↦ by
+    simpa [kronecker_apply] using congrFun₂ h (i, Classical.arbitrary n) (j, Classical.arbitrary n)
+
+/-- Tensoring by the identity `B ↦ 1 ⊗ₖ B` is injective when the identity factor is nonempty. -/
+theorem oneKroneckerStarAlgHom_injective [Nonempty m] :
+    Function.Injective (oneKroneckerStarAlgHom R n (α := α) (m := m)) := fun A B h ↦
+  ext fun i j ↦ by
+    simpa [kronecker_apply] using congrFun₂ h (Classical.arbitrary m, i) (Classical.arbitrary m, j)
 
 end StarAlgHom
 
