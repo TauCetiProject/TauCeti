@@ -277,9 +277,9 @@ theorem apply_notMem_openSegment {p q : E} (hp : p ∈ range χ) (hq : q ∈ ran
   have h₁ := χ.areaForm_pos s t fun h ↦ hpq (left_mem_openSegment_iff.1 (by rwa [← h] at hs))
   have h₂ := χ.areaForm_pos s u fun h ↦ hpq (right_mem_openSegment_iff.1 (by rwa [← h] at hs))
   have h0 : a • (χ t - χ s) + b • (χ u - χ s) = 0 := by
-    rw [smul_sub, smul_sub, sub_add_sub_comm, ← add_smul, hab, one_smul, hs', sub_self]
+    linear_combination (norm := module) hs' - hab • χ s
   have h := congrArg (o.areaForm (deriv χ s)) h0
-  rw [map_add, map_smul, map_smul, map_zero, smul_eq_mul, smul_eq_mul] at h
+  simp only [map_add, map_smul, map_zero, smul_eq_mul] at h
   linarith [mul_pos ha h₁, mul_pos hb h₂]
 
 /-- **The boundary contains no segment.** No nondegenerate segment lies in the boundary of a
