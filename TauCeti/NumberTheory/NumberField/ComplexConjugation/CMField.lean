@@ -46,6 +46,8 @@ automorphism, not the identity, conjugating every complex embedding is CM.
   `NumberField.IsCMField.of_forall_isConj` assumes that the field is Galois over `ℚ` and totally
   complex; this criterion assumes only that the field is algebraic over `ℚ` and has one
   automorphism, not the identity, conjugating every complex embedding.
+* `RingHom.star_comp`: on a CM field, every ring endomorphism of `ℂ` commutes with complex
+  conjugation on embeddings.
 
 ## References
 
@@ -110,5 +112,20 @@ theorem complexConjugationAt_eq_complexConjugationAt (w w' : InfinitePlace K)
   simp
 
 end TauCeti.NumberField
+
+namespace RingHom
+
+variable {K : Type*} [Field K] [CharZero K] [Algebra.IsIntegral ℚ K] [NumberField.IsCMField K]
+
+/-- On a CM field, every ring endomorphism `σ` of `ℂ` commutes with complex conjugation on the
+image of an embedding: `conj ∘ σ ∘ φ = σ ∘ conj ∘ φ` (Milne, *Complex Multiplication*, p.13,
+footnote 3). -/
+theorem star_comp (σ : ℂ →+* ℂ) (φ : K →+* ℂ) : star (σ.comp φ) = σ.comp (star φ) := by
+  ext x
+  have h := NumberField.IsCMField.complexEmbedding_complexConj K (σ.comp φ) x
+  simpa only [star_apply, comp_apply, Complex.star_def,
+    NumberField.IsCMField.complexEmbedding_complexConj K φ x] using h.symm
+
+end RingHom
 
 end

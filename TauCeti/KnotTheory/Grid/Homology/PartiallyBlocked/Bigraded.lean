@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.GradedModule.Homology
-public import TauCeti.KnotTheory.Grid.Homology.FullyBlockedBigraded
+public import TauCeti.KnotTheory.Grid.Homology.FullyBlocked.Bigraded
 public import TauCeti.KnotTheory.Grid.Homology.HatBigrading
 public import TauCeti.KnotTheory.Grid.Homology.PartiallyBlocked.Basic
 import Mathlib.RingTheory.MvPolynomial.Ideal

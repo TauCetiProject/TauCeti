@@ -57,7 +57,8 @@ along it, so no canonical sample space is imposed on users.
   `TauCeti.Probability.markovChainLaw_dirac_ae_apply_zero` — started at `a₀`, it is almost surely
   at `a₀` at time zero.
 * `MeasureTheory.Measure.markovChainLaw_eq_comp` — the path law with initial law `ν` is the path-law
-  kernel integrated against `ν`.
+  kernel integrated against `ν`. Consequently the path law is additive in a countable sum of initial
+  measures (`MeasureTheory.Measure.markovChainLaw_sum`).
 * `MeasureTheory.Measure.markovChainLaw_map_eval` — the state at time `n` has law `(κ ^ n) ∘ₘ ν`;
   `ProbabilityTheory.Kernel.markovChainKernel_map_eval` is the kernel form, and
   `MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_comp` evaluates it at a singleton.
@@ -88,9 +89,9 @@ along it, so no canonical sample space is imposed on users.
 * `TauCeti.Probability.hasLaw_markovChainLaw_iff_prefixLaw_singleton` — on a countable state space,
   a process has path law `markovChainLaw ν κ` exactly when its finite path masses are given by the
   product formula.
-* `ProbabilityTheory.HasLaw.eval_markovChainLaw`,
-  `ProbabilityTheory.HasLaw.pair_succ_markovChainLaw` — the time-`n` and one-step laws of such a
-  process.
+* `ProbabilityTheory.HasLaw.eval_markovChainLaw` — the time-`n` law of such a process. The joint
+  law of `(X n, X (n + k))` is `ProbabilityTheory.HasLaw.pair_add_markovChainLaw` in
+  `TauCeti.Probability.MarkovChain.Cylinder`.
 
 ## References
 
@@ -198,6 +199,13 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_eq_comp :
   rw [markovChainLaw, Kernel.trajMeasure,
     Measure.bind_map (MeasurableEquiv.measurable _).aemeasurable (Kernel.aemeasurable _),
     Kernel.markovChainKernel, Kernel.coe_comap, Function.comp_def]
+
+/-- The path law of a countable sum of initial measures is the sum of their path laws. This
+extends statements about finite initial measures to s-finite ones through `sum_sfiniteSeq`. -/
+theorem _root_.MeasureTheory.Measure.markovChainLaw_sum {ι : Type*} (μ : ι → Measure α) :
+    markovChainLaw (Measure.sum μ) κ = Measure.sum fun i => markovChainLaw (μ i) κ := by
+  simp_rw [Measure.markovChainLaw_eq_comp]
+  exact Measure.bind_sum _ _ κ.markovChainKernel.aemeasurable
 
 /-- The path-law kernel evaluated at a state `x` is the law of the chain started at `x`. -/
 @[simp]
@@ -472,18 +480,10 @@ theorem _root_.MeasureTheory.Measure.eq_markovChainLaw [IsFiniteMeasure ν]
       exact map_comp_eq_of_map_eq (by fun_prop) (by fun_prop)
         (h₀.trans (markovChainLaw_map_eval_zero ν κ).symm)
     | succ n ih =>
-      have hc : (fun (x : ℕ → α) (i : Fin (n + 2)) => x i.val)
-          = (fun p : (Fin (n + 1) → α) × α => Fin.snoc p.1 p.2) ∘
-            (fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.val), x (n + 1))) := by
-        funext x i
-        refine Fin.lastCases ?_ (fun j => ?_) i <;> simp
-      have hsnoc : Measurable
-          fun p : (Fin (n + 1) → α) × α => (Fin.snoc p.1 p.2 : Fin (n + 2) → α) :=
-        measurable_pi_iff.2 fun i => Fin.lastCases (by simp only [Fin.snoc_last]; fun_prop)
-          (fun j => by simp only [Fin.snoc_castSucc]; fun_prop) i
-      rw [hc]
-      refine map_comp_eq_of_map_eq hsnoc (by fun_prop) ?_
-      rw [hstep, ih, markovChainLaw_map_prefix_succ_eq_compProd]
+      have hX (ρ : Measure (ℕ → α)) (k : ℕ) : AEMeasurable (fun x : ℕ → α => x k) ρ :=
+        (measurable_pi_apply k).aemeasurable
+      rw [← map_finSnoc_map_prefix_eval μ (hX μ), ← map_finSnoc_map_prefix_eval _ (hX _), hstep,
+        ih, markovChainLaw_map_prefix_succ_eq_compProd]
   -- Every prefix law is a pushforward of one of these, so finite-marginal uniqueness applies.
   refine (measure_eq_of_prefixProj_map_eq fun n => ?_).symm
   have hc : prefixProj α n = (fun (w : Fin (n + 1) → α) (i : Fin n) => w i.castSucc) ∘
@@ -640,15 +640,6 @@ theorem _root_.ProbabilityTheory.HasLaw.eval_markovChainLaw
     HasLaw (X n) ((κ ^ n : Kernel α α) ∘ₘ ν) μ := by
   rw [← Measure.markovChainLaw_map_eval]
   exact (hasLaw_map (measurable_pi_apply n).aemeasurable).comp h
-
-/-- **The one-step transition law of a Markov chain.** If the path of `X` has law
-`markovChainLaw ν κ`, then the pair `(X n, X (n + 1))` has law `((κ ^ n) ∘ₘ ν) ⊗ₘ κ`. -/
-theorem _root_.ProbabilityTheory.HasLaw.pair_succ_markovChainLaw [SFinite ν]
-    (h : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ) (n : ℕ) :
-    HasLaw (fun ω => (X n ω, X (n + 1) ω)) (((κ ^ n : Kernel α α) ∘ₘ ν) ⊗ₘ κ) μ := by
-  rw [← Measure.markovChainLaw_map_eval, ← markovChainLaw_map_pair_succ]
-  exact (hasLaw_map
-    ((measurable_pi_apply n).prodMk (measurable_pi_apply (n + 1))).aemeasurable).comp h
 
 end Process
 

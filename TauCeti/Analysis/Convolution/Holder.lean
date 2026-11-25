@@ -15,7 +15,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 /-!
 # Integrable kernels preserve bounded Hölder estimates
 
-Convolution with an integrable scalar kernel preserves both a uniform bound and a Hölder
+Convolution with an integrable scalar kernel preserves both an almost-everywhere bound and a Hölder
 constant, multiplying each by the integral of the kernel norm. This applies to truncated planar
 Cauchy and Newtonian kernels, and to the normalized smoothing kernels used to pass their
 estimates from smooth to Hölder data. An even kernel with vanishing integral sees only the second
@@ -30,6 +30,25 @@ open MeasureTheory Metric Set
 open scoped NNReal
 
 namespace TauCeti
+
+section
+
+variable {E 𝕜 F : Type*} [Sub E] [MeasurableSpace E] {μ : Measure E}
+  [NormedAddCommGroup 𝕜] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [SMulZeroClass 𝕜 F] [IsBoundedSMul 𝕜 F]
+  {K : E → 𝕜} {f : E → F} {M : ℝ}
+
+/-- An integrable scalar kernel multiplies an almost-everywhere bound on the translated function by
+its `L¹` norm. -/
+theorem norm_integral_kernel_smul_sub_le (hK : Integrable K μ) {w : E}
+    (hM : ∀ᵐ z ∂μ, ‖f (w - z)‖ ≤ M) :
+    ‖∫ z, K z • f (w - z) ∂μ‖ ≤ (∫ z, ‖K z‖ ∂μ) * M := by
+  calc
+    _ ≤ ∫ z : E, ‖K z‖ * M ∂μ := norm_integral_le_of_norm_le (hK.norm.mul_const M)
+      (hM.mono fun z hz ↦ (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left hz (norm_nonneg _)))
+    _ = _ := integral_mul_const _ _
+
+end
 
 variable {E 𝕜 F : Type*} [NormedAddCommGroup E] [RCLike 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedSpace ℝ F]
@@ -70,18 +89,6 @@ theorem integrable_kernel_smul_sub (hK : Integrable K μ) (hf : Continuous f)
   · exact ae_of_all _ fun z ↦ by
       rw [norm_smul]
       exact mul_le_mul_of_nonneg_left (hM _) (norm_nonneg _)
-
-omit [OpensMeasurableSpace E] [SecondCountableTopologyEither E F] in
-/-- An integrable scalar kernel multiplies the uniform bound by its `L¹` norm. -/
-theorem norm_integral_kernel_smul_sub_le (hK : Integrable K μ)
-    (hM : ∀ x, ‖f x‖ ≤ M) (w : E) :
-    ‖∫ z, K z • f (w - z) ∂μ‖ ≤ (∫ z, ‖K z‖ ∂μ) * M := by
-  calc
-    _ ≤ ∫ z : E, ‖K z‖ * M ∂μ := norm_integral_le_of_norm_le (hK.norm.mul_const M)
-      (ae_of_all _ fun z ↦ by
-        rw [norm_smul]
-        exact mul_le_mul_of_nonneg_left (hM _) (norm_nonneg _))
-    _ = _ := integral_mul_const _ _
 
 omit [OpensMeasurableSpace E] [SecondCountableTopologyEither E F] in
 /-- **Even kernels with vanishing integral see second differences.** Let `K` be an even integrable

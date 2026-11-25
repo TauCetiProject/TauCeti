@@ -27,6 +27,8 @@ and so identifies the strict transform of a closed subscheme with a scheme-theor
 * `IsEffectiveCartier.isSchemeTheoreticallyDominant_support_compl_ι`, in the namespace
   `AlgebraicGeometry.Scheme.IdealSheafData`: the inclusion of the complement of an effective
   Cartier divisor is scheme-theoretically dominant.
+* `IsEffectiveCartier.dense_support_compl`, in the same namespace: the complement of an effective
+  Cartier divisor is dense.
 
 ## References
 
@@ -56,12 +58,7 @@ theorem IsEffectiveCartier.isSchemeTheoreticallyDominant_support_compl_ι
   refine ext_of_iSup_eq_top U (eq_top_iff.mpr fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr
     ⟨x, hxU x⟩) fun x ↦ le_antisymm (fun s hs ↦ ?_) bot_le
   -- A section on `U x` vanishing on the complement of `I` vanishes on `D(a x) ⊆ U x`.
-  have hle : X.basicOpen (a x) ≤ I.support.compl := by
-    -- membership in `I.support.compl` is by definition non-membership in `I.support`
-    intro y hy hyI
-    have hyU : y ∈ (U x).val := X.basicOpen_le (a x) hy
-    rw [SetLike.mem_coe, mem_support_iff_of_mem hyU, hUa x, Scheme.mem_zeroLocus_iff] at hyI
-    exact hyI (a x) (Ideal.mem_span_singleton_self _) hy
+  have hle := I.basicOpen_le_support_compl (hUa x ▸ Ideal.mem_span_singleton_self _)
   have hs0 : X.presheaf.map (homOfLE (X.basicOpen_le (a x))).op s = 0 := by
     let ι := Scheme.Opens.ι I.support.compl
     have hs' := ι.ideal_ker_le (U x) hs
@@ -78,5 +75,23 @@ theorem IsEffectiveCartier.isSchemeTheoreticallyDominant_support_compl_ι
     (S := Γ(X, X.basicOpen (a x)))).mpr ?_ (hs0.trans (map_zero _).symm)
   rintro ⟨_, n, rfl⟩
   exact ((Commute.isRegular_iff (Commute.all _)).mpr (ha x).isLeftRegular).pow n
+
+/-- **The complement of an effective Cartier divisor is dense.** -/
+theorem IsEffectiveCartier.dense_support_compl (hI : I.IsEffectiveCartier) :
+    Dense (I.support.compl : Set X) := by
+  refine dense_iff_inter_open.2 fun W hW ⟨y, hyW⟩ ↦ ?_
+  obtain ⟨U, hUW, hyU, a, ha, hUa⟩ := hI.exists_eq_span_singleton_le ⟨W, hW⟩ hyW
+  -- `D(a) ⊆ U ∩ W` lies in the complement, and it is nonempty: otherwise `a` would be nilpotent,
+  -- and a nilpotent nonzerodivisor forces `Γ(X, U)` to be the zero ring.
+  have hne : X.basicOpen a ≠ ⊥ := by
+    intro h
+    obtain ⟨n, hn⟩ :=
+      (Scheme.isNilpotent_iff_basicOpen_eq_bot_of_isCompact U.property.isCompact a).2 h
+    have : Nonempty U.val := ⟨⟨y, hyU⟩⟩
+    obtain ⟨s, t, hst⟩ := exists_pair_ne Γ(X, U.val)
+    exact hst ((ha.pow n) (by simp [hn]))
+  obtain ⟨z, hz⟩ := (Opens.ne_bot_iff_nonempty _).1 hne
+  exact ⟨z, hUW (X.basicOpen_le a hz),
+    I.basicOpen_le_support_compl (hUa ▸ Ideal.mem_span_singleton_self _) hz⟩
 
 end AlgebraicGeometry.Scheme.IdealSheafData
