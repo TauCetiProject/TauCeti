@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.FlatTorus.Lattice
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The flat torus `ℝⁿ / ℤⁿ`
@@ -56,6 +57,9 @@ and it satisfies `IsRiemannianManifold`. This follows the construction of the ro
 * `TauCeti.FlatTorus.inner_mfderiv_mk`, `TauCeti.FlatTorus.norm_mfderiv_mk`,
   `TauCeti.FlatTorus.norm_tangentSpace_mk`: the flat metric is the Euclidean inner product.
 * `TauCeti.FlatTorus.isLocalRiemannianIsometry_mk`: the projection is a local isometry.
+* `TauCeti.FlatTorus.riemannianIsometryFlatQuotient`: the identification with the general
+  flat lattice quotient, commuting with the projections.
+* `TauCeti.FlatTorus.riemannianVolume_univ`: the standard flat torus has unit volume.
 * `TauCeti.FlatTorus.instIsRiemannianManifold`, `TauCeti.FlatTorus.instCompactSpace`,
   `TauCeti.FlatTorus.instConnectedSpace`: the flat torus is a compact connected Riemannian
   manifold.
@@ -137,7 +141,7 @@ private abbrev proj (n : ℕ) : (ℝ^n) → 𝕋 n :=
 projection. -/
 def flatMetric (n : ℕ) :
     ContMDiffRiemannianMetric 𝓘(ℝ, ℝ^n) ∞ (ℝ^n) (fun x : 𝕋 n ↦ TangentSpace 𝓘(ℝ, ℝ^n) x) :=
-  ZLattice.quotientMetric (lattice n)
+  Submodule.quotientMetric (lattice n)
 
 /-! ### The flat torus as a Riemannian manifold -/
 
@@ -200,7 +204,7 @@ coordinates. -/
 @[simp]
 theorem flatMetric_inner_mk (x v w : ℝ^n) :
     (flatMetric n).inner (mk x) v w = ⟪v, w⟫_ℝ :=
-  ZLattice.quotientMetric_inner_mk (lattice n) x v w
+  Submodule.quotientMetric_inner_mk (lattice n) x v w
 
 theorem mk_surjective : Surjective (mk : (ℝ^n) → FlatTorus n) :=
   Quotient.mk_surjective
@@ -285,9 +289,40 @@ theorem norm_tangentSpace_mk (x v : ℝ^n) :
 
 /-- **The projection is a local Riemannian isometry.** -/
 theorem isLocalRiemannianIsometry_mk :
-    IsLocalRiemannianIsometry 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (mk : (ℝ^n) → FlatTorus n) := by
-  exact ⟨contMDiff_mk, (isLocalDiffeomorph_mk (k := ∞)).isInvertible_mfderiv (by simp),
-    inner_mfderiv_mk⟩
+    IsLocalRiemannianIsometry 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (mk : (ℝ^n) → FlatTorus n) :=
+  (lattice n).isLocalRiemannianIsometry_orbitRelQuotient_mk
+
+/-- The standard flat torus is Riemannian isometric to the general flat lattice quotient. -/
+def riemannianIsometryFlatQuotient (n : ℕ) :
+    RiemannianIsometry 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n)
+      (FlatTorus n) (Submodule.FlatQuotient (lattice n)) :=
+  letI : RiemannianBundle (fun x : 𝕋 n ↦ TangentSpace 𝓘(ℝ, ℝ^n) x) :=
+    ⟨(flatMetric n).toRiemannianMetric⟩
+  (WithMetric.riemannianIsometry (flatMetric n)).symm
+
+/-- The identification with the lattice quotient commutes with the Euclidean projections. -/
+@[simp]
+theorem riemannianIsometryFlatQuotient_mk (x : ℝ^n) :
+    riemannianIsometryFlatQuotient n (mk x) = (lattice n).flatQuotientMk x := by
+  let : RiemannianBundle (fun y : 𝕋 n ↦ TangentSpace 𝓘(ℝ, ℝ^n) y) :=
+    ⟨(flatMetric n).toRiemannianMetric⟩
+  rw [Submodule.flatQuotientMk_eq_comp, comp_apply]
+  exact congrFun (WithMetric.coe_riemannianIsometry_symm (flatMetric n)) (proj n x)
+
+/-- The standard flat torus has unit Riemannian volume in every dimension. -/
+@[simp]
+theorem riemannianVolume_univ : riemannianVolume 𝓘(ℝ, ℝ^n) (FlatTorus n) univ = 1 := by
+  have hcov : ZLattice.covolume (lattice n) MeasureTheory.volume = 1 := by
+    rw [lattice, ZLattice.covolume_eq_measure_fundamentalDomain _ _
+      (ZSpan.isAddFundamentalDomain (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
+        MeasureTheory.volume), MeasureTheory.measureReal_def,
+      MeasureTheory.measure_congr (ZSpan.fundamentalDomain_ae_parallelepiped _ _),
+      OrthonormalBasis.coe_toBasis, OrthonormalBasis.volume_parallelepiped, ENNReal.toReal_one]
+  have h := (riemannianIsometryFlatQuotient n).measurePreserving_riemannianVolume.measure_preimage
+    (s := univ) MeasurableSet.univ.nullMeasurableSet
+  rw [preimage_univ, Submodule.riemannianVolume_univ_flatQuotient_eq_covolume, hcov,
+    ENNReal.ofReal_one] at h
+  exact h
 
 end FlatTorus
 

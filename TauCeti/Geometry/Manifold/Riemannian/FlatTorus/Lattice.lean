@@ -24,46 +24,49 @@ public section
 
 noncomputable section
 
-open Bundle Function MeasureTheory Module Set TauCeti
+open Bundle Function MeasureTheory Module Set TauCeti ZLattice
 open scoped ContDiff InnerProductSpace Manifold
 
-namespace ZLattice
+namespace Submodule
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   (L : Submodule ℤ E) [DiscreteTopology L]
 
 local notation "𝓘E" => 𝓘(ℝ, E)
 local notation "Q" => AddAction.orbitRel.Quotient L E
-local notation "q" => Quotient.mk (AddAction.orbitRel L E)
+local notation "q" => _root_.Quotient.mk (AddAction.orbitRel L E)
 
 private abbrev sourceMetric :
     ContMDiffRiemannianMetric 𝓘E ∞ E (fun x : E ↦ TangentSpace 𝓘E x) :=
   ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
 
+omit [FiniteDimensional ℝ E] in
+private theorem sourceMetric_inner (x : E) (v w : TangentSpace 𝓘E x) :
+    sourceMetric.inner x v w = ⟪(v : E), (w : E)⟫_ℝ := by
+  rw [ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
+  rfl
+
 private theorem compatible_inner (x x' : E) (v w : TangentSpace 𝓘E x) (v' w' : TangentSpace 𝓘E x')
-    (hv : mfderiv 𝓘E 𝓘E q x v = mfderiv 𝓘E 𝓘E q x' v')
+    (_h : q x = q x') (hv : mfderiv 𝓘E 𝓘E q x v = mfderiv 𝓘E 𝓘E q x' v')
     (hw : mfderiv 𝓘E 𝓘E q x w = mfderiv 𝓘E 𝓘E q x' w') :
     sourceMetric.inner x v w = sourceMetric.inner x' v' w' := by
   simp only [L.mfderiv_orbitRelQuotient_mk] at hv hw
-  rw [ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner,
-    ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
+  rw [sourceMetric_inner, sourceMetric_inner]
   exact congrArg₂ (fun a b : E ↦ ⟪a, b⟫_ℝ) hv hw
 
 /-- The Euclidean metric descended to the quotient by translations in a discrete subgroup. -/
 def quotientMetric : ContMDiffRiemannianMetric 𝓘E ∞ E (fun x : Q ↦ TangentSpace 𝓘E x) :=
   sourceMetric.descend (f := q) TauCeti.isLocalDiffeomorph_addQuotientMk
-    Quotient.mk_surjective (fun x y v w v' w' _ ↦ compatible_inner L x y v w v' w')
+    _root_.Quotient.mk_surjective (compatible_inner L)
 
 /-- In the quotient charts the descended metric is the Euclidean inner product. -/
+@[simp]
 theorem quotientMetric_inner_mk (x v w : E) :
     (quotientMetric L).inner (q x) v w = ⟪v, w⟫_ℝ := by
   have h := sourceMetric.descend_inner_mfderiv (f := q) TauCeti.isLocalDiffeomorph_addQuotientMk
-    Quotient.mk_surjective (fun x y v w v' w' _ ↦ compatible_inner L x y v w v' w') x v w
+    _root_.Quotient.mk_surjective (compatible_inner L) x v w
   rw [L.mfderiv_orbitRelQuotient_mk] at h
-  have he (v w : TangentSpace 𝓘E x) : sourceMetric.inner x v w = ⟪(v : E), (w : E)⟫_ℝ := by
-    rw [ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
-    rfl
-  exact h.trans (he v w)
+  exact h.trans (sourceMetric_inner x v w)
 
 /-- The quotient by a discrete subgroup equipped with its descended Euclidean metric. -/
 abbrev FlatQuotient := WithMetric (quotientMetric L)
@@ -71,31 +74,90 @@ abbrev FlatQuotient := WithMetric (quotientMetric L)
 /-- The projection from the Euclidean space to its flat quotient. -/
 def flatQuotientMk (x : E) : FlatQuotient L := WithMetric.toWithMetric _ (q x)
 
+/-- The flat projection is the orbit projection followed by the metric-copy inclusion. -/
+theorem flatQuotientMk_eq_comp :
+    flatQuotientMk L = WithMetric.toWithMetric (quotientMetric L) ∘ q :=
+  (rfl)
+
+/-- Forgetting the chosen metric recovers the native orbit projection. -/
+@[simp]
+theorem ofWithMetric_flatQuotientMk (x : E) :
+    WithMetric.ofWithMetric (flatQuotientMk L x) = q x :=
+  (rfl)
+
+/-- The native orbit projection is a local Riemannian isometry for the descended metric. -/
+theorem isLocalRiemannianIsometry_orbitRelQuotient_mk :
+    let : RiemannianBundle (fun x : Q ↦ TangentSpace 𝓘E x) :=
+      ⟨(quotientMetric L).toRiemannianMetric⟩
+    IsLocalRiemannianIsometry 𝓘E 𝓘E q := by
+  let : RiemannianBundle (fun x : Q ↦ TangentSpace 𝓘E x) :=
+    ⟨(quotientMetric L).toRiemannianMetric⟩
+  have hd : IsLocalDiffeomorph 𝓘E 𝓘E ∞ q := TauCeti.isLocalDiffeomorph_addQuotientMk
+  refine ⟨hd.contMDiff, hd.isInvertible_mfderiv (by simp), fun x v w ↦ ?_⟩
+  rw [L.mfderiv_orbitRelQuotient_mk]
+  exact quotientMetric_inner_mk L x v w
+
 /-- The projection to a flat quotient preserves the metric locally. -/
 theorem isLocalRiemannianIsometry_flatQuotientMk :
     IsLocalRiemannianIsometry 𝓘E 𝓘E (flatQuotientMk L) := by
-  let : RiemannianBundle (fun x : Q ↦ TangentSpace 𝓘E x) := ⟨(quotientMetric L).toRiemannianMetric⟩
-  have hq : IsLocalRiemannianIsometry 𝓘E 𝓘E q := by
-    have hd : IsLocalDiffeomorph 𝓘E 𝓘E ∞ q := TauCeti.isLocalDiffeomorph_addQuotientMk
-    refine ⟨hd.contMDiff, hd.isInvertible_mfderiv (by simp), fun x v w ↦ ?_⟩
-    rw [L.mfderiv_orbitRelQuotient_mk]
-    exact quotientMetric_inner_mk L x v w
-  change IsLocalRiemannianIsometry 𝓘E 𝓘E (WithMetric.toWithMetric (quotientMetric L) ∘ q)
+  let : RiemannianBundle (fun x : Q ↦ TangentSpace 𝓘E x) :=
+    ⟨(quotientMetric L).toRiemannianMetric⟩
+  rw [flatQuotientMk_eq_comp]
   simpa only [WithMetric.coe_riemannianIsometry_symm] using
-    (WithMetric.riemannianIsometry (quotientMetric L)).symm.isLocalRiemannianIsometry.comp hq
+    (WithMetric.riemannianIsometry (quotientMetric L)).symm.isLocalRiemannianIsometry.comp
+      (isLocalRiemannianIsometry_orbitRelQuotient_mk L)
+
+/-- The flat quotient projection is smooth of every order. -/
+theorem contMDiff_flatQuotientMk {k : ℕ∞ω} : ContMDiff 𝓘E 𝓘E k (flatQuotientMk L) := by
+  rw [flatQuotientMk_eq_comp]
+  exact WithMetric.contMDiff_toWithMetric.comp TauCeti.isLocalDiffeomorph_addQuotientMk.contMDiff
+
+/-- The flat quotient projection is continuous. -/
+theorem continuous_flatQuotientMk : Continuous (flatQuotientMk L) :=
+  (contMDiff_flatQuotientMk L (k := 0)).continuous
+
+/-- The differential of the flat quotient projection is the identity in quotient charts. -/
+theorem hasMFDerivAt_flatQuotientMk (x : E) :
+    HasMFDerivAt 𝓘E 𝓘E (flatQuotientMk L) x (ContinuousLinearMap.id ℝ E) := by
+  rw [flatQuotientMk_eq_comp]
+  -- Both tangent spaces are the model space; composing their identity maps computes to `id`.
+  convert (WithMetric.hasMFDerivAt_toWithMetric (g := quotientMetric L) (q x)).comp x
+    (L.hasMFDerivAt_orbitRelQuotient_mk x) using 1
+  rfl
+
+/-- In quotient charts the tangent map of the projection is the identity. -/
+@[simp]
+theorem mfderiv_flatQuotientMk (x : E) :
+    mfderiv 𝓘E 𝓘E (flatQuotientMk L) x = ContinuousLinearMap.id ℝ E :=
+  (hasMFDerivAt_flatQuotientMk L x).mfderiv
+
+/-- The flat quotient projection is a local diffeomorphism of every order. -/
+theorem isLocalDiffeomorph_flatQuotientMk {k : ℕ∞ω} :
+    IsLocalDiffeomorph 𝓘E 𝓘E k (flatQuotientMk L) := by
+  rw [flatQuotientMk_eq_comp, ← WithMetric.coe_diffeomorph_symm (g := quotientMetric L) k]
+  intro x
+  exact (TauCeti.isLocalDiffeomorph_addQuotientMk x).comp 𝓘E (FlatQuotient L)
+    ((WithMetric.diffeomorph (quotientMetric L) k).symm.isLocalDiffeomorph _)
 
 /-- Every point of the flat quotient has a Euclidean representative. -/
-theorem surjective_flatQuotientMk : Surjective (flatQuotientMk L) := by
+theorem flatQuotientMk_surjective : Surjective (flatQuotientMk L) := by
   rintro ⟨x⟩
-  obtain ⟨y, rfl⟩ := Quotient.mk_surjective x
+  obtain ⟨y, rfl⟩ := _root_.Quotient.mk_surjective x
   exact ⟨y, rfl⟩
 
 /-- Two points have the same image exactly when their difference belongs to the lattice. -/
 @[simp]
-theorem flatQuotientMk_eq_iff {x y : E} :
+theorem flatQuotientMk_eq_mk_iff {x y : E} :
     flatQuotientMk L x = flatQuotientMk L y ↔ x - y ∈ L := by
   rw [flatQuotientMk, flatQuotientMk, WithMetric.toWithMetric_inj]
   exact Submodule.orbitRelQuotient_mk_eq_mk_iff L
+
+/-- Translation by a lattice vector leaves the flat quotient projection unchanged. -/
+@[simp]
+theorem flatQuotientMk_add_of_mem (x : E) {l : E} (hl : l ∈ L) :
+    flatQuotientMk L (x + l) = flatQuotientMk L x := by
+  rw [flatQuotientMk_eq_mk_iff, add_sub_cancel_left]
+  exact hl
 
 /-- A half-open fundamental parallelepiped parametrizes the entire flat torus bijectively. -/
 theorem bijOn_flatQuotientMk_fundamentalDomain [IsZLattice ℝ L] {ι : Type*}
@@ -106,16 +168,16 @@ theorem bijOn_flatQuotientMk_fundamentalDomain [IsZLattice ℝ L] {ι : Type*}
   let B := b.ofZLatticeBasis ℝ
   refine ⟨mapsTo_univ _ _, ?_, ?_⟩
   · intro x hx y hy hxy
-    have hL := (flatQuotientMk_eq_iff L).mp hxy
+    have hL := (flatQuotientMk_eq_mk_iff L).mp hxy
     have heq : ZSpan.fract B y = ZSpan.fract B x := (ZSpan.fract_eq_fract B y x).mpr (by
       simpa only [B, b.ofZLatticeBasis_span ℝ, neg_add_eq_sub] using hL)
     exact ((ZSpan.fract_eq_self (b := B)).mpr hx).symm.trans
       (heq.symm.trans (ZSpan.fract_eq_self.mpr hy))
   · rintro ⟨y⟩ _
-    obtain ⟨x, rfl⟩ := Quotient.mk_surjective y
+    obtain ⟨x, rfl⟩ := _root_.Quotient.mk_surjective y
     refine ⟨ZSpan.fract B x, ZSpan.fract_mem_fundamentalDomain B x, ?_⟩
-    apply (flatQuotientMk_eq_iff L).2
-    rw [ZSpan.fract, sub_right_comm, sub_self, zero_sub]
+    apply (flatQuotientMk_eq_mk_iff L).2
+    rw [ZSpan.fract_apply, sub_right_comm, sub_self, zero_sub]
     exact L.neg_mem (b.ofZLatticeBasis_span ℝ ▸ (ZSpan.floor B x).property)
 
 variable [IsZLattice ℝ L] [MeasurableSpace E] [BorelSpace E]
@@ -145,12 +207,20 @@ theorem measurePreserving_flatQuotientMk {ι : Type*} (b : Basis ι ℤ L) :
   exact hv.symm
 
 /-- The Riemannian volume of a flat torus is the Euclidean covolume of its lattice. -/
-theorem volume_real_flatQuotient :
-    (riemannianVolume 𝓘E (FlatQuotient L)).real univ = covolume L volume := by
+theorem riemannianVolume_univ_flatQuotient_eq_covolume :
+    riemannianVolume 𝓘E (FlatQuotient L) univ = ENNReal.ofReal (covolume L volume) := by
   let b := Free.chooseBasis ℤ L
-  rw [← (measurePreserving_flatQuotientMk L b).map_eq, measureReal_def, Measure.map_apply
-    (measurePreserving_flatQuotientMk L b).measurable MeasurableSet.univ, preimage_univ,
-    Measure.restrict_apply_univ, covolume_eq_measure_fundamentalDomain _ _
-      (isAddFundamentalDomain b volume), measureReal_def]
+  have h := (measurePreserving_flatQuotientMk L b).measure_preimage
+    (s := univ) MeasurableSet.univ.nullMeasurableSet
+  rw [preimage_univ, Measure.restrict_apply_univ] at h
+  rw [← h,
+    covolume_eq_measure_fundamentalDomain _ _ (isAddFundamentalDomain b volume), measureReal_def,
+    ENNReal.ofReal_toReal (ne_of_lt (ZSpan.fundamentalDomain_isBounded _).measure_lt_top)]
 
-end ZLattice
+/-- The real-valued Riemannian volume of a flat torus is its lattice covolume. -/
+theorem riemannianVolume_real_univ_flatQuotient_eq_covolume :
+    (riemannianVolume 𝓘E (FlatQuotient L)).real univ = covolume L volume := by
+  rw [measureReal_def, riemannianVolume_univ_flatQuotient_eq_covolume,
+    ENNReal.toReal_ofReal (covolume_pos L volume).le]
+
+end Submodule
