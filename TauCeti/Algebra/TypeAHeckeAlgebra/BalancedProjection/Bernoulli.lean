@@ -21,11 +21,13 @@ subset `s ⊆ ℕ`, that is each point of `{0, 1} ^ ℕ`, gives an indicator cha
 For every `η : R` this file constructs the Bernoulli Markov trace
 `TauCeti.BalancedProjectionAlgebra.bernoulliTrace η`: a normalized tracial `R`-linear functional
 which multiplies by `η` when a new last projection `e n` is appended to an element of the stage of
-the first `n + 1` strands. It is the expectation for the Bernoulli product measure of parameter
-`η` on `{0, 1} ^ ℕ`: on the stage of the first `N + 1` strands it is the average of the indicator
-characters at the subsets `s` of `{0, …, N - 1}` with weights `η ^ |s| * (1 - η) ^ (N - |s|)`
-(`TauCeti.BalancedProjectionAlgebra.bernoulliTrace_eq_sum`). For real `0 ≤ η ≤ 1` these weights
-are those of the Bernoulli product distribution. On a product of generators it takes the value `η`
+the first `n + 1` strands. It is an algebraic Bernoulli functional on `{0, 1} ^ ℕ`: on the stage
+of the first `N + 1` strands it is the sum of the indicator characters at the subsets `s` of
+`{0, …, N - 1}` with weights `η ^ |s| * (1 - η) ^ (N - |s|)`, which add up to `1`
+(`TauCeti.BalancedProjectionAlgebra.bernoulliTrace_eq_sum`). Only for real `0 ≤ η ≤ 1` are these
+weights the probabilities of the Bernoulli product distribution of parameter `η`, so that the
+trace is the expectation for that measure; for a general `η` in a commutative ring no such
+measure need exist. On a product of generators it takes the value `η`
 to the number of distinct generators occurring in it
 (`TauCeti.BalancedProjectionAlgebra.bernoulliTrace_prod_map_e`).
 
@@ -186,7 +188,7 @@ variable (η : R)
 /-- The Bernoulli Markov trace with parameter `η` on the balanced projection algebra at `τ = 0`:
 the normalized tracial functional which multiplies by `η` when a new last projection is appended
 (`TauCeti.BalancedProjectionAlgebra.bernoulliTrace_mul_e`). On the stage of the first `N + 1`
-strands it averages the indicator characters with the Bernoulli product weights
+strands it is the sum of the indicator characters weighted by the Bernoulli product weights
 (`TauCeti.BalancedProjectionAlgebra.bernoulliTrace_eq_sum`). -/
 noncomputable def bernoulliTrace : BalancedProjectionAlgebra R (0 : R) →ₗ[R] R :=
   boolTrace η ∘ₗ (toBool R).toLinearMap
@@ -299,8 +301,8 @@ private theorem boolExpect_monomial_eq_sum (s : Finset ℕ) {m : ℕ →₀ ℕ}
     rw [hg, hind, mul_zero, mul_zero]
 
 /-- **The Bernoulli product expansion.** On the stage of the first `N + 1` strands, the Bernoulli
-trace is the average of the indicator characters at the subsets `s` of `{0, …, N - 1}` with the
-weights `η ^ |s| * (1 - η) ^ (N - |s|)`. -/
+trace is the sum of the indicator characters at the subsets `s` of `{0, …, N - 1}` with the
+weights `η ^ |s| * (1 - η) ^ (N - |s|)`, which add up to `1`. -/
 theorem bernoulliTrace_eq_sum {N : ℕ} {x : BalancedProjectionAlgebra R (0 : R)}
     (hx : x ∈ stage R 0 (N + 1)) :
     bernoulliTrace η x = ∑ s ∈ (Finset.range N).powerset,
