@@ -43,11 +43,12 @@ compact topological groups, `G₁` and `G₁^ι` are the groups whose completed 
   `TauCeti.mem_firstCongruenceSubgroup_iff_map_eq_one`: `G₁` is the kernel of reduction modulo
   `p`.
 * `TauCeti.mem_firstCongruenceSubgroup_iff`: `g ∈ G₁` exactly when `p` divides every entry of
-  `g - 1`; `TauCeti.mk_upperRight_mem_firstCongruenceSubgroup_iff`: so `!![1, a; 0, 1] ∈ G₁`
-  exactly when `p ∣ a`.
+  `g - 1`; `TauCeti.transvection_mem_firstCongruenceSubgroup_iff`: an elementary transvection
+  is in `G₁` exactly when its off-diagonal coefficient is divisible by `p`.
 * `TauCeti.isOpen_firstCongruenceSubgroup`, `TauCeti.isClosed_firstCongruenceSubgroup` and the
   instances `CompactSpace (firstCongruenceSubgroup n p)` and
   `(firstCongruenceSubgroup n p).Normal`: `G₁` is a compact open normal subgroup.
+* `TauCeti.firstCongruenceSubgroupQuotientEquiv`: reduction gives `SL_n(ℤ_p) / G₁ ≃* SL_n(𝔽_p)`.
 * `TauCeti.index_firstCongruenceSubgroup`: `[SL_n(ℤ_p) : G₁] = |SL_n(𝔽_p)|`;
   `TauCeti.index_firstCongruenceSubgroup_fin_two`: `[SL₂(ℤ_p) : G₁] = p(p² - 1)`.
 * `TauCeti.ker_compLeft_specialLinearGroupMap_toZMod`: `G₁^ι` is the kernel of reduction
@@ -105,6 +106,15 @@ theorem mem_firstCongruenceSubgroup_iff {g : SpecialLinearGroup n ℤ_[p]} :
   refine forall₂_congr fun i j ↦ ?_
   rcases eq_or_ne i j with rfl | hij <;> simp [← toZMod_eq_zero_iff_dvd, sub_eq_zero, *]
 
+/-- An elementary transvection is in the first congruence subgroup exactly when its
+off-diagonal coefficient is divisible by `p`. -/
+@[simp]
+theorem transvection_mem_firstCongruenceSubgroup_iff {i j : n} (hij : i ≠ j) (a : ℤ_[p]) :
+    SpecialLinearGroup.transvection hij a ∈ firstCongruenceSubgroup n p ↔ (p : ℤ_[p]) ∣ a := by
+  rw [mem_firstCongruenceSubgroup_iff, SpecialLinearGroup.transvection_coe, add_sub_cancel_left]
+  refine ⟨fun h ↦ by simpa using h i j, fun h k l ↦ ?_⟩
+  by_cases hkl : i = k ∧ j = l <;> simp [hkl, h]
+
 variable (n p)
 
 instance : (firstCongruenceSubgroup n p).Normal :=
@@ -122,12 +132,26 @@ instance isClosed_firstCongruenceSubgroup :
     IsClosed (firstCongruenceSubgroup n p : Set (SpecialLinearGroup n ℤ_[p])) :=
   Subgroup.isClosed_of_isOpen _ (isOpen_firstCongruenceSubgroup n p)
 
+/-- Reduction modulo `p` identifies the quotient by the first congruence subgroup with
+`SL_n(𝔽_p)`. -/
+noncomputable def firstCongruenceSubgroupQuotientEquiv :
+    (SpecialLinearGroup n ℤ_[p] ⧸ firstCongruenceSubgroup n p) ≃*
+      SpecialLinearGroup n (ZMod p) :=
+  QuotientGroup.quotientKerEquivOfSurjective _
+    (SpecialLinearGroup.map_surjective _ (ZMod.ringHom_surjective _))
+
+/-- The quotient equivalence sends the class of a matrix to its reduction modulo `p`. -/
+@[simp]
+theorem firstCongruenceSubgroupQuotientEquiv_mk (g : SpecialLinearGroup n ℤ_[p]) :
+    firstCongruenceSubgroupQuotientEquiv n p (QuotientGroup.mk g) =
+      SpecialLinearGroup.map toZMod g := by
+  rfl
+
 /-- The index of the first congruence subgroup of `SL_n(ℤ_p)` is the order of `SL_n(𝔽_p)`:
 reduction modulo `p` maps `SL_n(ℤ_p)` onto `SL_n(𝔽_p)`, since `ℤ_p` is local. -/
 theorem index_firstCongruenceSubgroup :
     (firstCongruenceSubgroup n p).index = Nat.card (SpecialLinearGroup n (ZMod p)) := by
-  rw [← ker_specialLinearGroupMap_toZMod, Subgroup.index_ker, MonoidHom.range_eq_top.mpr
-    (SpecialLinearGroup.map_surjective _ (ZMod.ringHom_surjective _)), Subgroup.card_top]
+  rw [Subgroup.index_eq_card, Nat.card_congr (firstCongruenceSubgroupQuotientEquiv n p).toEquiv]
 
 /-- The first congruence subgroup of `SL₂(ℤ_p)` has index `|SL₂(𝔽_p)| = p(p² - 1)`. -/
 theorem index_firstCongruenceSubgroup_fin_two :
