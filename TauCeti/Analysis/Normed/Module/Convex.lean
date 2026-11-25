@@ -25,7 +25,17 @@ for `0 < t ≤ 1` (`TauCeti.closedBall_add_smul_sub_subset_interior_of_forall_st
 set `K` has its closed `δ`-thickening inside `ball z (r / 2)` and `t * (dist x z + r / 2) ≤ δ`,
 that translated closed ball either lies in `interior s` or is disjoint from `K`
 (`TauCeti.closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex`). For a
-convex set containing `ball x r`, this yields `Convex.ball_add_smul_sub_subset`.
+convex set containing `ball x r`, this yields `Convex.ball_add_smul_sub_subset`. For a convex set
+`s` containing `ball z ρ` and a point `x ∈ closure s`, the homothety with centre `x` and ratio
+`r / R`, for `‖z - x‖ + ρ ≤ R` and `0 ≤ r ≤ R`, sends `ball z ρ` into `interior s ∩ ball x r`
+(`Convex.ball_add_smul_sub_subset_interior_inter_ball`), and when `x` is not interior the
+homothety with the opposite ratio sends it into `sᶜ ∩ ball x r`
+(`Convex.ball_sub_smul_sub_subset_compl_inter_ball`).
+
+In a nontrivial real seminormed space a punctured ball `ball c r \ {c}`, `r > 0`, is not convex
+(`TauCeti.not_convex_ball_sdiff_singleton`), so it is neither an open nor a closed ball
+(`TauCeti.ball_sdiff_singleton_ne_ball`, `TauCeti.ball_sdiff_singleton_ne_closedBall`), although it
+agrees with `ball c r` up to a null set for every measure without atoms.
 -/
 
 public section
@@ -155,3 +165,95 @@ theorem Convex.ball_add_smul_sub_subset {E : Type*} [SeminormedAddCommGroup E] [
     (ht₀ : 0 ≤ t) (ht : t ≤ 1) : Metric.ball (x + t • (y - x)) ((1 - t) * r) ⊆ s :=
   (TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
     (fun _ hz => hs.starConvex (hball hz)) (subset_closure hy) ht₀ ht).trans interior_subset
+
+/-- Let `s` be a convex set containing `ball z ρ`, and let `x ∈ closure s`. For
+`‖z - x‖ + ρ ≤ R` and `0 ≤ r ≤ R`, the image of `ball z ρ` under the homothety with centre `x` and
+ratio `r / R` is a ball in `interior s ∩ ball x r`. -/
+theorem Convex.ball_add_smul_sub_subset_interior_inter_ball {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] {s : Set E} (hs : Convex ℝ s) {x z : E}
+    {ρ r R : ℝ} (hz : Metric.ball z ρ ⊆ s) (hx : x ∈ closure s)
+    (hR : ‖z - x‖ + ρ ≤ R) (hr : 0 ≤ r) (hrR : r ≤ R) :
+    Metric.ball (x + (r / R) • (z - x)) (r / R * ρ) ⊆ interior s ∩ Metric.ball x r := by
+  have hl : 0 ≤ r / R := div_nonneg hr (hr.trans hrR)
+  -- For `ρ ≤ 0` the homothetic ball is empty.
+  rcases le_or_gt ρ 0 with hρ | hρ
+  · simp [Metric.ball_eq_empty.2 (mul_nonpos_of_nonneg_of_nonpos hl hρ)]
+  have hR₀ : 0 < R := by have := norm_nonneg (z - x); linarith
+  have hl1 : r / R ≤ 1 := (div_le_one hR₀).2 hrR
+  refine Set.subset_inter ?_ (Metric.ball_subset_ball' ?_)
+  · convert TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
+      (fun w hw => hs.starConvex (hz hw)) hx (t := 1 - r / R) (by linarith)
+      (by linarith) using 2
+    · module
+    · ring
+  · have hc : dist (x + (r / R) • (z - x)) x = r / R * ‖z - x‖ := by
+      simp [dist_eq_norm, norm_smul, abs_of_nonneg hr, abs_of_pos hR₀]
+    calc r / R * ρ + dist (x + (r / R) • (z - x)) x = r / R * (‖z - x‖ + ρ) := by
+          rw [hc]; ring
+      _ ≤ r / R * R := by gcongr
+      _ = r := div_mul_cancel₀ r hR₀.ne'
+
+/-- Let `s` be a convex set containing `ball z ρ`, and let `x ∈ closure s` not be an
+interior point. For `‖z - x‖ + ρ ≤ R` and `0 ≤ r ≤ R`, the image of `ball z ρ` under the homothety
+with centre `x` and ratio `-r / R` is a ball in `sᶜ ∩ ball x r`: the midpoint of a point of `s` and
+an interior point is interior. -/
+theorem Convex.ball_sub_smul_sub_subset_compl_inter_ball {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] {s : Set E} (hs : Convex ℝ s) {x z : E}
+    {ρ r R : ℝ} (hz : Metric.ball z ρ ⊆ s) (hx : x ∈ closure s)
+    (hxs : x ∉ interior s) (hR : ‖z - x‖ + ρ ≤ R) (hr : 0 ≤ r) (hrR : r ≤ R) :
+    Metric.ball (x - (r / R) • (z - x)) (r / R * ρ) ⊆ sᶜ ∩ Metric.ball x r := by
+  intro y hy
+  -- The reflection `2 • x - y` of `y` through `x` lies in the homothetic ball inside `s`.
+  have hy' : (2 : ℝ) • x - y ∈ Metric.ball (x + (r / R) • (z - x)) (r / R * ρ) := by
+    rw [mem_ball_iff_norm] at hy ⊢
+    rw [← norm_neg]
+    convert hy using 2
+    module
+  obtain ⟨hyi, hyr⟩ := hs.ball_add_smul_sub_subset_interior_inter_ball hz hx hR hr hrR hy'
+  refine ⟨fun hys => hxs ?_, ?_⟩
+  · convert hs.add_smul_sub_mem_interior' (subset_closure hys) hyi
+      (t := 1 / 2) ⟨by norm_num, by norm_num⟩ using 1
+    module
+  · rw [mem_ball_iff_norm] at hyr ⊢
+    rw [← norm_neg]
+    convert hyr using 2
+    module
+
+namespace TauCeti
+
+open Metric Set
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [Nontrivial E] {r : ℝ}
+
+/-- **A punctured ball is not convex.** In a nontrivial real seminormed space, a ball of positive
+radius with its centre removed is not convex: the centre is the midpoint of two of its points. -/
+theorem not_convex_ball_sdiff_singleton (c : E) (hr : 0 < r) : ¬Convex ℝ (ball c r \ {c}) := by
+  -- For a small multiple `w ≠ 0` of a nonzero vector, the points `c ± w` lie in the punctured
+  -- ball, and their midpoint `c` does not.
+  obtain ⟨v, hv⟩ := exists_ne (0 : E)
+  set t := r / (2 * (‖v‖ + 1))
+  have ht : 0 < t := by positivity
+  have hw : ‖t • v‖ < r := by
+    rw [norm_smul, Real.norm_of_nonneg ht.le, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+    nlinarith [norm_nonneg v]
+  have hw0 : t • v ≠ 0 := smul_ne_zero ht.ne' hv
+  have hmem {w : E} (hw : ‖w‖ < r) (hw0 : w ≠ 0) : c + w ∈ ball c r \ {c} :=
+    ⟨by rwa [mem_ball, dist_self_add_left], by simpa using hw0⟩
+  intro hconv
+  refine (hconv (hmem hw hw0) (hmem (by rwa [norm_neg]) (neg_ne_zero.2 hw0))
+    (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)).2 ?_
+  rw [mem_singleton_iff]
+  module
+
+/-- In a nontrivial real seminormed space, a punctured ball of positive radius is not a ball. -/
+theorem ball_sdiff_singleton_ne_ball (c : E) (hr : 0 < r) (c' : E) (r' : ℝ) :
+    ball c r \ {c} ≠ ball c' r' :=
+  fun h => not_convex_ball_sdiff_singleton c hr (h ▸ convex_ball c' r')
+
+/-- In a nontrivial real seminormed space, a punctured ball of positive radius is not a closed
+ball. -/
+theorem ball_sdiff_singleton_ne_closedBall (c : E) (hr : 0 < r) (c' : E) (r' : ℝ) :
+    ball c r \ {c} ≠ closedBall c' r' :=
+  fun h => not_convex_ball_sdiff_singleton c hr (h ▸ convex_closedBall c' r')
+
+end TauCeti

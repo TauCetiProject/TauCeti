@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.Index
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
+import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 
 /-!

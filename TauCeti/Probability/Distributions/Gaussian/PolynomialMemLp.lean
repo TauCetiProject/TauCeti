@@ -19,7 +19,7 @@ Lebesgue-integrable and that a Gaussian weight has finite exponential moments. T
 `TauCeti.Probability.Distributions.Gaussian.Hermite.MemLp` and the Hermite-function integrability
 in `TauCeti.Analysis.SpecialFunctions.Hermite.Function.MemLp`.
 
-The `L²` argument factors through the family-agnostic `memLp_two_eval_of_forall_integrable_pow`
+The `L²` argument factors through the family-agnostic `memLp_eval_of_forall_integrable_pow`
 (`TauCeti.MeasureTheory.Function.PolynomialMemLp`), which holds for any reference measure on `ℝ`
 all of whose polynomial moments are finite.  The Gaussian instance supplies that moment hypothesis
 `∀ k, Integrable (x ↦ xᵏ)` from Mathlib's `memLp_id_gaussianReal'` (all moments of a real Gaussian
@@ -89,7 +89,8 @@ theorem integrable_pow_gaussianReal (μ : ℝ) (v : ℝ≥0) (n : ℕ) :
 /-- A real polynomial is square-integrable against every real Gaussian measure. -/
 theorem memLp_two_eval_gaussianReal (μ : ℝ) (v : ℝ≥0) (q : ℝ[X]) :
     MemLp (fun x : ℝ => q.eval x) 2 (gaussianReal μ v) :=
-  memLp_two_eval_of_forall_integrable_pow (fun k => integrable_pow_gaussianReal μ v k) q
+  memLp_eval_of_forall_integrable_pow (fun x _ _ => norm_pow x _) ENNReal.ofNat_ne_top
+    (integrable_pow_gaussianReal μ v) q
 
 /-! ## Polynomial times a Gaussian envelope -/
 

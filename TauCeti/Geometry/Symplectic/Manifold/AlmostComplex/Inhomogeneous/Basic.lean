@@ -135,6 +135,13 @@ def tangentHom (A : DomainDependentHomSection I M IP P n) (q : P × M) :
 theorem tangentHom_apply (A : DomainDependentHomSection I M IP P n) (q : P × M)
     (v : TangentSpace IP q.1) : A.tangentHom q v = A q v := (rfl)
 
+/-- Domain-dependent Hom sections are equal when their readings in the tangent spaces agree. -/
+theorem ext_tangentHom {A B : DomainDependentHomSection I M IP P n}
+    (h : ∀ q, A.tangentHom q = B.tangentHom q) : A = B :=
+  ContMDiffSection.ext fun q ↦ ContinuousLinearMap.ext fun v ↦
+    (tangentHom_apply A q v).symm.trans
+      ((DFunLike.congr_fun (h q) v).trans (tangentHom_apply B q v))
+
 @[simp]
 theorem tangentHom_zero (q : P × M) :
     (0 : DomainDependentHomSection I M IP P n).tangentHom q = 0 := (rfl)
@@ -162,6 +169,48 @@ theorem contMDiff_tangentHom (A : DomainDependentHomSection I M IP P n) :
         (E := fun q : P × M ↦ horizontalTangentBundle I M IP P q →L[ℝ]
           verticalTangentBundle I M IP P q) q (A.tangentHom q)) := by
   exact A.contMDiff.congr fun _ ↦ rfl
+
+/-- Evaluating a native Hom section along a `Cⁿ` map `b` on a `Cⁿ` field `ξ` of domain tangent
+vectors over `(b y).1` gives a `Cⁿ` field of target tangent vectors over `(b y).2`. -/
+theorem contMDiff_apply {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] (A : DomainDependentHomSection I M IP P n) {b : N → P × M}
+    (hb : ContMDiff I' (IP.prod I) n b) {ξ : ∀ y, TangentSpace IP (b y).1}
+    (hξ : ContMDiff I' IP.tangent n (fun y ↦ TotalSpace.mk' EP (b y).1 (ξ y))) :
+    ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y).2 (A.tangentHom (b y) (ξ y))) := by
+  -- Read `ξ` in the pulled-back horizontal bundle, apply `A` there, and push the result to `TM`.
+  have hξ' : ContMDiff I' ((IP.prod I).prod 𝓘(ℝ, EP)) n
+      (fun y ↦ TotalSpace.mk' EP (E := horizontalTangentBundle I M IP P) (b y) (ξ y)) :=
+    (Pullback.contMDiff_iff (ContMDiffMap.fst : C^∞⟮IP.prod I, P × M; IP, P⟯)
+      contMDiff_fst).2 ⟨hb, hξ⟩
+  simp only [tangentHom_apply]
+  exact (Pullback.contMDiff_lift (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯)
+    contMDiff_snd).comp ((A.contMDiff.comp hb).clm_bundle_apply hξ')
+
+/-- A native Hom section read in the tangent trivializations at `x` and `y` is `Cⁿ` on the product
+of the chart sources at `x` and `y`. -/
+theorem contMDiffOn_inCoordinates (A : DomainDependentHomSection I M IP P n) (x : P) (y : M) :
+    ContMDiffOn (IP.prod I) 𝓘(ℝ, EP →L[ℝ] E) n
+      (fun q : P × M ↦ ContinuousLinearMap.inCoordinates EP (TangentSpace IP) E
+        (TangentSpace I) x q.1 y q.2 (A q))
+      ((chartAt HP x).source ×ˢ (chartAt H y).source) := by
+  -- Read `A` in the trivialization at `(x, y)` of the Hom bundle between the pullbacks, and
+  -- compare the pulled-back trivializations with those of the factors.
+  let eh := trivializationAt (EP →L[ℝ] E) (fun q : P × M ↦
+    horizontalTangentBundle I M IP P q →L[ℝ] verticalTangentBundle I M IP P q) (x, y)
+  have h := (eh.contMDiffOn_iff (IM := IP.prod I) (n := n)
+    (f := fun q ↦ TotalSpace.mk' (EP →L[ℝ] E) (E := fun q : P × M ↦
+      horizontalTangentBundle I M IP P q →L[ℝ] verticalTangentBundle I M IP P q) q (A q))
+    (s := (chartAt HP x).source ×ˢ (chartAt H y).source) fun q hq ↦ eh.mem_source.2 ?_).1
+      A.contMDiff.contMDiffOn
+  · refine h.2.congr fun q hq ↦ ?_
+    exact (ContinuousLinearMap.inCoordinates_pullback_of_mem
+      (ContMDiffMap.fst : C^∞⟮IP.prod I, P × M; IP, P⟯)
+      (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯) (x, y) q (A q)
+      (by rw [TangentBundle.trivializationAt_baseSet]; exact hq.1)
+      (by rw [TangentBundle.trivializationAt_baseSet]; exact hq.2)).symm
+  · simp only [eh, hom_trivializationAt_baseSet]
+    exact hq
 
 /-- Restrict a native ambient Hom section to the intrinsic tangent bundles of an open product. -/
 def restrictOpen (A : DomainDependentHomSection I M IP P n)
@@ -237,6 +286,12 @@ theorem ext {ν μ : InhomogeneousTerm j J}
   ext q v
   exact h q v
 
+/-- Two forcing terms are equal when their readings in the tangent spaces agree. -/
+theorem ext_tangentHom {ν μ : InhomogeneousTerm j J}
+    (h : ∀ q v, ν.val.tangentHom q v = μ.val.tangentHom q v) : ν = μ :=
+  ext fun q v ↦ (DomainDependentHomSection.tangentHom_apply _ q v).symm.trans
+    ((h q v).trans (DomainDependentHomSection.tangentHom_apply _ q v))
+
 /-- The pointwise antilinearity of a native inhomogeneous term. -/
 theorem isComplexAntilinear (ν : InhomogeneousTerm j J) (q : P × M) :
     IsComplexAntilinear (j.horizontalEndomorphism (I := I) (M := M) q).toLinearMap
@@ -258,6 +313,23 @@ theorem tangentHom_apply_j (ν : InhomogeneousTerm j J) (q : P × M)
   erw [DomainDependentHomSection.tangentHom_apply,
     ContMDiffAlmostComplexStructureFamily.tangentEndomorphism_apply,
     DomainDependentHomSection.tangentHom_apply]
+  exact h
+
+/-- A Hom section is an inhomogeneous term exactly when it satisfies the antilinearity equation
+read in the original domain and target tangent spaces. -/
+theorem _root_.TauCeti.mem_inhomogeneousTerms_iff_tangentHom
+    (j : ContMDiffAlmostComplexStructure IP n P)
+    (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
+    (A : DomainDependentHomSection I M IP P n) :
+    A ∈ inhomogeneousTerms j J ↔ ∀ (q : P × M) (v : TangentSpace IP q.1),
+      A.tangentHom q (j q.1 v) = -J.tangentEndomorphism q (A.tangentHom q v) := by
+  refine ⟨fun hA q v ↦ tangentHom_apply_j ⟨A, hA⟩ q v, fun hA q ↦ ?_⟩
+  apply isComplexAntilinear_of_apply
+  intro v
+  have h := hA q v
+  rw [ContMDiffAlmostComplexStructureFamily.tangentEndomorphism_apply] at h
+  -- The horizontal fibre at `q` is a type synonym of `TangentSpace IP q.1`, and
+  -- `horizontalEndomorphism` and `tangentHom` are `j` and `A` read through it.
   exact h
 
 /-- The raw tangent Hom map is antilinear for the domain structure and frozen target structure. -/

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
-public import TauCeti.Analysis.Complex.CauchyRiemann.StandardFrame
+public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
+import TauCeti.Analysis.Complex.CauchyRiemann.Similarity.Weak
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
 
 /-!
@@ -34,17 +34,17 @@ zero structure of holomorphic maps:
   (`TauCeti.exists_isTheta_pow_of_contDiffOn_of_complexStructure`).
 
 For a constant structure `J = i` on a complex space these are the classical statements of
-`TauCeti.Analysis.Complex.CauchyRiemann.Similarity`, which proves Carleman's similarity principle.
-The variable structure is reduced to the constant one in two steps.
+`TauCeti.Analysis.Complex.CauchyRiemann.Similarity`. The variable structure is handled in two
+steps.
 
-* **A complex frame.** When `V` is a complex space, the standard frame
-  `Φ(z) = ½(1 - J(z) J(z₀)) Φ₁` of `TauCeti.standardFrame` satisfies `J(z) Φ(z) = Φ(z) i` and is
-  invertible near `z₀`. It is an affine function of `J`, hence `C¹`, and so is its pointwise
-  inverse. Writing `ξ = Φ η`, the Leibniz rule gives
-  `∂ₛξ + J ∂ₜξ + C ξ = Φ (∂ₛη + i ∂ₜη + C' η)` with `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`
-  (`TauCeti.frameCoeff`), so `η` solves the equation for the constant structure `i`, and the
-  similarity principle factors it near `z₀`. Hence `ξ = Φ η` has a similarity factorization at
-  every point of `Ω` (`TauCeti.hasSimilarityFactorizationAt_of_contDiffOn_of_complexStructure`).
+* **The weak similarity principle.** When `V` is a complex space, a `C¹` solution is a weak
+  solution in the sense of `TauCeti.IsWeakLinearCauchyRiemannOn`, the `C¹` field `J` is
+  continuous and of class `W^{1,p}_loc`, and the locally bounded `C` is locally `Lᵖ` for every
+  `p` (`TauCeti.memLpLoc_of_forall_eventually_norm_le`), say `p = 3`. The similarity principle for
+  weak solutions with a variable structure
+  (`TauCeti.hasSimilarityFactorizationAt_of_isWeakLinearCauchyRiemannOn`)
+  then gives `ξ` a similarity factorization at every point of `Ω`
+  (`TauCeti.hasSimilarityFactorizationAt_of_contDiffOn_of_complexStructure`).
 * **A complex model of `V`.** A real space carrying one complex structure `J(z₁)` has even
   dimension, so it is real-linearly isomorphic to `ℂⁿ`
   (`ContinuousLinearMap.exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul`).
@@ -65,7 +65,8 @@ The zero structure then follows from the factorizations by
 
 public noncomputable section
 
-open Asymptotics Complex Filter Function MeasureTheory Metric Set Topology
+open Asymptotics Complex Filter Function MeasureTheory Metric Set Topology TopologicalSpace
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -88,48 +89,13 @@ theorem hasSimilarityFactorizationAt_of_contDiffOn_of_complexStructure (hΩ : Is
     (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0) {z₀ : ℂ}
     (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt ξ z₀ := by
   have := FiniteDimensional.completeSpace ℂ V
-  obtain ⟨Φ₁, hΦ₁⟩ := (J z₀).exists_continuousLinearEquiv_comp_eq_comp_I_smul (hJJ z₀ hz₀)
-  set Φ := standardFrame J z₀ Φ₁
-  obtain ⟨r, hr, hrΩ, hunit⟩ :=
-    exists_ball_isUnit_standardFrame (Φ₁ := Φ₁) hΩ hz₀ hJ.continuousOn (hJJ z₀ hz₀)
-  set B := ball z₀ r
-  -- The frame is `C¹`, and so is its pointwise inverse on the disc where it is invertible.
-  have hΦ : ContDiffOn ℝ 1 Φ Ω := contDiffOn_standardFrame hJ
-  have hDΦ : ContinuousOn (fderiv ℝ Φ) B := (hΦ.continuousOn_fderiv_of_isOpen hΩ le_rfl).mono hrΩ
-  have hΨ : ContDiffOn ℝ 1 (fun z ↦ Ring.inverse (Φ z)) B := fun z hz ↦ by
-    obtain ⟨v, hv⟩ := hunit z hz
-    exact (hv ▸ contDiffAt_ringInverse ℝ v).comp_contDiffWithinAt z ((hΦ z (hrΩ hz)).mono hrΩ)
-  have hinj (z : ℂ) (hz : z ∈ B) : Injective (Φ z) :=
-    LeftInverse.injective (ContinuousLinearMap.ringInverse_apply_apply (hunit z hz))
-  -- `η = Φ⁻¹ ξ` is `C¹` on the disc, `ξ = Φ η` there, and `η` solves the equation for the
-  -- constant structure `i` with the coefficient `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`.
-  set η : ℂ → V := fun z ↦ Ring.inverse (Φ z) (ξ z)
-  have hη : ContDiffOn ℝ 1 η B := hΨ.clm_apply (hξ.mono hrΩ)
-  have hξη : EqOn ξ (fun z ↦ Φ z (η z)) B := fun z hz ↦
-    (ContinuousLinearMap.apply_ringInverse_apply (hunit z hz) (ξ z)).symm
-  have heqη (z : ℂ) (hz : z ∈ B) :
-      fderiv ℝ η z 1 + I • fderiv ℝ η z I + frameCoeff J C Φ (fderiv ℝ Φ) z (η z) = 0 := by
-    refine hinj z hz ?_
-    rw [map_zero, ← fderiv_add_apply_fderiv_add_apply_eq_apply_frameCoeff
-      (eventuallyEq_of_mem (isOpen_ball.mem_nhds hz) hξη)
-      ((hΦ.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds (hrΩ hz)))
-      ((hη.differentiableOn one_ne_zero).differentiableAt (isOpen_ball.mem_nhds hz)) (hunit z hz)
-      (comp_standardFrame (hJJ z (hrΩ hz)) (hJJ z₀ hz₀) hΦ₁), heq z (hrΩ hz)]
-  -- The similarity principle factors `η` at `z₀`, hence `ξ = Φ η` as well.
-  obtain ⟨Φ', σ, hΦ', hΦ'₀, hσ, hfac⟩ := hasSimilarityFactorizationAt_iff.1 <|
-    (hasSimilarityFactorizationAt_of_contDiffOn isOpen_ball hη
-      (aestronglyMeasurable_frameCoeff measurableSet_ball (hJ.continuousOn.mono hrΩ)
-        (hΦ.continuousOn.mono hrΩ) hΨ.continuousOn hDΦ
-        (hCm.mono_measure (Measure.restrict_mono hrΩ le_rfl)))
-      (fun z hz ↦ have hzB := isOpen_ball.mem_nhds hz
-        exists_eventually_norm_frameCoeff_le (hJ.continuousOn.continuousAt (hΩ.mem_nhds (hrΩ hz)))
-          (hΦ.continuousOn.continuousAt (hΩ.mem_nhds (hrΩ hz))) (hΨ.continuousOn.continuousAt hzB)
-          (hDΦ.continuousAt hzB) (hCb z (hrΩ hz)))
-      heqη (mem_ball_self hr)).clm_apply (hΦ.continuousOn.continuousAt (hΩ.mem_nhds hz₀))
-      (hunit z₀ (mem_ball_self hr))
-  refine hasSimilarityFactorizationAt_iff.2 ⟨Φ', σ, hΦ', hΦ'₀, hσ, ?_⟩
-  filter_upwards [hfac, isOpen_ball.mem_nhds (mem_ball_self hr)] with z hz hzB
-  exact (hξη hzB).trans hz
+  -- `ξ` is a weak solution on `Ω`, `J` is `W^{1,3}_loc` and the locally bounded `C` is `L³_loc`
+  let B : Opens ℂ := ⟨Ω, hΩ⟩
+  have h : IsWeakLinearCauchyRiemannOn ((3 : ℝ≥0) : ℝ≥0∞) B J C ξ :=
+    isWeakCauchyRiemannOn_of_contDiffOn hξ fun z hz ↦ eq_neg_of_add_eq_zero_left (heq z hz)
+  exact hasSimilarityFactorizationAt_of_isWeakLinearCauchyRiemannOn (Ω := B) (by norm_num)
+    (hJ.memWkpLoc subset_rfl) hJ.continuousOn hJJ (memLpLoc_of_forall_eventually_norm_le hCm hCb)
+    h hz₀
 
 end Complex
 
@@ -239,10 +205,9 @@ theorem exists_isTheta_pow_of_contDiffOn_of_complexStructure (hΩ : IsOpen Ω)
   obtain ⟨z₁, hz₁, hξz₁⟩ := hne
   obtain ⟨n, T, hfac⟩ :=
     exists_hasSimilarityFactorizationAt_symm_comp hΩ hJ hJJ hξ hCm hCb heq hz₁
-  obtain ⟨m, hm, hθ, -⟩ := exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt hΩ hΩc
-    (T.symm.continuous.comp_continuousOn hξ.continuousOn) (fun z hz _ ↦ hfac z hz)
-    ⟨z₁, hz₁, by simpa using hξz₁⟩ hz₀ (by simp [hξ₀])
-  exact ⟨m, hm, IsTheta.trans ⟨T.symm.isBigO_comp_rev _ _, T.symm.isBigO_comp _ _⟩ hθ⟩
+  exact exists_isTheta_pow_of_continuousLinearEquiv_of_hasSimilarityFactorizationAt T.symm hΩ
+    hΩc (T.symm.continuous.comp_continuousOn hξ.continuousOn) (fun z hz _ ↦ hfac z hz)
+    ⟨z₁, hz₁, hξz₁⟩ hz₀ hξ₀
 
 end Real
 

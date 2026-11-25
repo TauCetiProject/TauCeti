@@ -70,6 +70,13 @@ lemma hasFiniteSupport_iff_of_iso {X Y : GradedObject I C} (e : X ≅ Y) :
   unfold HasFiniteSupport
   rw [support_eq_of_iso e]
 
+/-- A graded object `Z` is finitely supported when `X` is and, along an injective map `f`, each
+`Z j` is a zero object as soon as `X (f j)` is. -/
+lemma HasFiniteSupport.of_injective {X : GradedObject I C} {Z : GradedObject J C}
+    (hX : X.HasFiniteSupport) {f : J → I} (hf : Function.Injective f)
+    (h : ∀ j, IsZero (X (f j)) → IsZero (Z j)) : Z.HasFiniteSupport :=
+  (hX.preimage hf.injOn).subset fun j hj hXj ↦ hj (h j hXj)
+
 /-- An object concentrated in one degree has support contained in that singleton. -/
 lemma support_single_subset [DecidableEq I] [HasInitial C] [HasZeroMorphisms C]
     (i : I) (A : C) : ((single i).obj A).support ⊆ {i} := by

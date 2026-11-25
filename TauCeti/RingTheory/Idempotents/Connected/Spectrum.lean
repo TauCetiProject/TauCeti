@@ -24,6 +24,8 @@ coordinate rings of geometrically connected affine schemes.
   `Spec R` is preconnected.
 * `Ideal.eq_bot_of_isIdempotentElem_of_ne_top`: a finitely generated idempotent proper ideal is
   zero when `Spec R` is preconnected.
+* `TauCeti.nontrivial_of_connectedSpace_primeSpectrum`: a ring with connected prime spectrum is
+  nontrivial.
 * `TauCeti.connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one`: `Spec R` is connected
   if and only if every idempotent of `R` is zero or one.
 * `TauCeti.connectedSpace_primeSpectrum_of_isLocalRing`: the prime spectrum of a local ring is
@@ -60,6 +62,11 @@ theorem Ideal.eq_bot_of_isIdempotentElem_of_ne_top [PreconnectedSpace (PrimeSpec
   · exact absurd (by simpa using hspan) hne
 
 namespace TauCeti
+
+/-- A commutative ring with connected, hence nonempty, prime spectrum is nontrivial. -/
+theorem nontrivial_of_connectedSpace_primeSpectrum [ConnectedSpace (PrimeSpectrum R)] :
+    Nontrivial R :=
+  PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
 
 /-- **The prime spectrum of a nontrivial commutative ring is connected exactly when its only
 idempotents are zero and one.** -/

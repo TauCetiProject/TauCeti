@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.MatrixNormal.PDF
 
 import TauCeti.Analysis.Matrix.Sqrt
 import TauCeti.LinearAlgebra.Matrix.PosDef.Rank
-import TauCeti.MeasureTheory.Measure.Matrix
+import TauCeti.MeasureTheory.Measure.Matrix.Basic
 
 /-!
 # Almost-sure rank of matrix normal laws

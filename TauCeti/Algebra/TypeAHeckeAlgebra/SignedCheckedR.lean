@@ -60,6 +60,8 @@ alphabets of this kind arise from the vector representation of the quantum super
 * `TauCeti.signedCheckedR_braid`: the braid relation.
 * `TauCeti.signedCheckedR_single_apply_comm`: the matrix in the word basis is symmetric.
 * `TauCeti.signedCheckedR_apply`: the coefficient of a word in the image of an arbitrary vector.
+* `TauCeti.isSelfAdjoint_signedCheckedR_single_apply`: for self-adjoint `s` the coefficients in
+  the word basis are self-adjoint.
 * `TauCeti.signedCheckedR_comp_lmapDomain`: the operators are local, so an embedding of words
   along a map of strands intertwines the operators on corresponding strands. Special cases are
   `TauCeti.signedCheckedR_comp_lmapDomain_snoc`, appending a letter, and
@@ -259,6 +261,23 @@ theorem signedCheckedR_apply (s : R) (j k : Fin n) (v : (Fin n → ι) →₀ R)
       signedCheckedR_single_one]
     split_ifs <;> simp only [Finsupp.sub_apply, Finsupp.smul_apply, Finsupp.neg_apply, single_apply,
       smul_eq_mul, eq_comm (a := w)] <;> split_ifs <;> ring
+
+/-- For self-adjoint `s`, the coefficients of the signed checked R-matrix in the word basis are
+self-adjoint. -/
+theorem isSelfAdjoint_signedCheckedR_single_apply [StarRing R] {s : R} (hs : IsSelfAdjoint s)
+    (j k : Fin n) (w u : Fin n → ι) :
+    IsSelfAdjoint (signedCheckedR pos s j k (single w 1) u) := by
+  have hQ : IsSelfAdjoint (s ^ 2) := hs.pow 2
+  rw [signedCheckedR_apply]
+  simp only [Finsupp.single_apply]
+  split_ifs <;> simp only [mul_one, mul_zero, sub_zero, zero_sub, neg_zero] <;>
+    first
+    | exact .zero R
+    | exact hQ
+    | exact (IsSelfAdjoint.one R).neg
+    | exact hQ.sub (.one R)
+    | exact hs.neg
+    | exact (hQ.sub (.one R)).sub hs
 
 /-- **Locality of the signed checked R-matrix.** Let `E` embed the words on `m` strands into the
 words on `n` strands along the strand map `f`, so that `E u` carries the letter `u i` at the

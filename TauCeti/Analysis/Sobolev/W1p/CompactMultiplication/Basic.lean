@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 public import TauCeti.Analysis.Sobolev.RellichKondrachov
-public import TauCeti.Analysis.Sobolev.W1p.MixedMultiplication
+public import TauCeti.Analysis.Sobolev.W1p.Mixed.Multiplication
 public import TauCeti.MeasureTheory.Function.Lp.Holder
+import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
 
 /-!
 # Compact multiplication by `Lᵖ` functions on first-order Sobolev spaces
@@ -31,6 +32,9 @@ factors through the Rellich--Kondrachov embedding `W^{1,q} → L^q`, and simple 
 dense in `Lᵖ` (`ContinuousLinearMap.isCompactOperator_holderL_comp_of_ae_eq`).
 
 ## Main declarations
+
+* `TauCeti.W1p.isCompactOperator_mixedBilinL`: interior compactness for a fixed coefficient in
+  the mixed bilinear product, including the equal-exponent endpoint.
 
 * `TauCeti.W1p0.exists_isCompactOperator_value_smul`: compact multiplication on
   `W^{1,q}_0(Ω)` for bounded open `Ω`.
@@ -221,6 +225,40 @@ theorem W1p.exists_isCompactOperator_value_smul_of_memLp_top_of_isLipschitzDomai
     (V := W1p.valueL (mu := volume) (Omega := Ω) (p := q))
     (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb) hα
   exact ⟨M, fun u => by simpa only [W1p.valueL_apply] using hM u, hMc⟩
+
+/-- **Interior compact mixed multiplication.** On an open set with compact closure in `Ω`, fixing
+an `Lᵖ` coefficient in the bounded mixed bilinear product gives a compact operator. This includes
+`q = p`, where the interior value embedding has exponent infinity. -/
+theorem W1p.isCompactOperator_mixedBilinL [Nontrivial E]
+    [Fact (1 ≤ (p : ℝ≥0∞))] {F H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H] {Ω V : Opens E}
+    (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p)
+    (hVc : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Ω)
+    (B : F →L[ℝ] ℝ →L[ℝ] H) (α : Lp F p (μ.restrict V)) :
+    IsCompactOperator (W1p.mixedBilinL hp hqp hVc hVΩ B α) := by
+  obtain ⟨s, hs, hhs, S, hS⟩ := W1p.exists_mixed_valueEmbedding (μ := μ) hp hqp hVc hVΩ
+  let : Fact (1 ≤ s) := ⟨hs⟩
+  let : ENNReal.HolderTriple (p : ℝ≥0∞) s (q : ℝ≥0∞) := hhs
+  have hP : (B.holderL _ p s q).bilinearComp (ContinuousLinearMap.id ℝ _) S =
+      W1p.mixedBilinL hp hqp hVc hVΩ B :=
+    W1p.mixedBilinL_unique hp hqp hVc hVΩ B fun f g => by
+      rw [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.id_apply]
+      filter_upwards [B.coeFn_holder (r := (q : ℝ≥0∞)) f (S g), hS g] with x h₁ h₂
+      rw [ContinuousLinearMap.holderL_apply_apply, h₁, h₂]
+  have heq : W1p.mixedBilinL hp hqp hVc hVΩ B α = (B.holderL _ p s q α).comp S := by
+    rw [← hP]
+    ext g : 1
+    simp only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.id_apply,
+      ContinuousLinearMap.comp_apply]
+  rw [heq]
+  let hle : V ≤ Ω := SetLike.coe_subset_coe.2 (subset_closure.trans hVΩ)
+  let R : W1p μ Ω q →L[ℝ] Lp ℝ q (μ.restrict V) := W1p.valueL.comp (W1p.restrictL hle)
+  have hR (g : W1p μ Ω q) : R g =ᵐ[μ.restrict V] W1p.value g := by
+    simpa only [R, ContinuousLinearMap.comp_apply, W1p.valueL_apply] using
+      W1p.value_restrictL_ae hle g
+  exact B.isCompactOperator_holderL_comp_of_ae_eq ENNReal.coe_ne_top
+    (V := R) (W1p.isCompactOperator_valueL_restrictL hVc hVΩ) S
+    (fun g => (hS g).trans (hR g).symm) α
 
 end TauCeti
 

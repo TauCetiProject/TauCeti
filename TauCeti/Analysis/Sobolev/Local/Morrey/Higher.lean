@@ -7,6 +7,11 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
+public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Analysis.Holder.CompLinear
+import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Planar
+import TauCeti.Analysis.Sobolev.Local.Wkp
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
 
@@ -45,12 +50,19 @@ maps needed by the order-one estimates is `ContinuousMultilinearMap.instModuleFi
 
 ## Main declarations
 
-* `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq`: `W^{k+1,p}_loc ⊆ Cᵏ` for `p > 2`.
+* `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq`: `W^{k+1,p}_loc ⊆ Cᵏ` for `p > 2`, and
+  `TauCeti.MemWkpLoc.contDiffOn_of_continuousOn`: every continuous representative is `Cᵏ`.
 * `TauCeti.MemWkpLoc.memLpLoc_top`: `W^{1,p}_loc ⊆ L^∞_loc` for `p > 2`.
 * `TauCeti.MemWkpLoc.exists_dist_iteratedFDeriv_le`: the local Morrey inequality for the top
   derivative.
 * `TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact`: Hölder continuity of the
   top derivative on compact subsets of `Ω`.
+* `TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball`: for real-valued maps and
+  `2 < p < ∞`, the local `C^{j,1-2/p}` bound on a disc whose closure lies in `Ω`, by the norm in
+  `W^{j+1,p}` of the disc.
+* `TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_basis`: the same bound
+  for values in a finite-dimensional space, by the norms in `W^{j+1,p}` of the disc of the
+  coordinates in a finite basis.
 
 ## References
 
@@ -93,6 +105,14 @@ theorem MemWkpLoc.exists_contDiffOn_ae_eq (hp : 2 < p) (hu : MemWkpLoc p Ω (k +
     obtain ⟨h, hh, hDh⟩ := ih hDk
     obtain ⟨g, hg, hug, -⟩ := (hD.congr_ae_deriv hDh).exists_contDiffOn_succ_ae_eq (n := k) hh
     exact ⟨g, by exact_mod_cast hg, hug⟩
+
+/-- **Continuous representatives are `Cᵏ`.** For `p > 2`, every representative of
+`u ∈ MemWkpLoc p Ω (k + 1)` that is continuous on `Ω` is `Cᵏ` on `Ω`: it agrees on `Ω` with the
+`Cᵏ` representative of `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq`. -/
+theorem MemWkpLoc.contDiffOn_of_continuousOn (hp : 2 < p) (hu : MemWkpLoc p Ω (k + 1) u)
+    (hg : ContinuousOn g Ω) (hug : u =ᵐ[volume.restrict Ω] g) : ContDiffOn ℝ k g Ω := by
+  obtain ⟨g', hg', hug'⟩ := hu.exists_contDiffOn_ae_eq hp
+  exact hg'.congr (Measure.eqOn_open_of_ae_eq (hug.symm.trans hug') Ω.isOpen hg hg'.continuousOn)
 
 /-- **`W^{1,p}_loc` is locally bounded for `p > 2`.** A map `u ∈ MemWkpLoc p Ω 1` agrees almost
 everywhere on `Ω` with a continuous map, by Morrey's embedding, so it is locally `L^∞` on `Ω`. -/
@@ -154,5 +174,87 @@ theorem MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact (hp : 2 < p)
   refine ⟨C, fun x hx y hy => ?_⟩
   rw [← heq (hKΩ hx), ← heq (hKΩ hy)]
   exact hC x hx y hy
+
+/-- **Local `C^{j,1-2/q}` bounds on a disc.** For `2 < q < ∞`, a centre `c` and a radius `s`
+there is a constant `K` such that, for every open `Ω` containing the closure of `ball c s`, every
+real `u ∈ MemWkpLoc q Ω (j + 1)` is represented on `ball c s` by some
+`v ∈ W^{j+1,q}(ball c s)` and agrees almost everywhere there with a map `g` that is `Cʲ` on
+`ball c s`, whose derivatives of order `i ≤ j` are bounded by `K ‖v‖` and Hölder of exponent
+`1 - 2 / q` with constant `K ‖v‖` on `ball c s`. -/
+theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball {q : ℝ≥0}
+    [Fact (1 ≤ (q : ℝ≥0∞))] (hq : 2 < q) (c : ℂ) (s : ℝ) (j : ℕ) :
+    ∃ K : ℝ≥0, ∀ {Ω : Opens ℂ} (u : ℂ → ℝ), closure (ball c s) ⊆ Ω →
+      MemWkpLoc q Ω (j + 1) u →
+      ∃ v : Wkp volume (⟨ball c s, isOpen_ball⟩ : Opens ℂ) q (j + 1),
+        Wkp.value (j + 1) v =ᵐ[volume.restrict (ball c s)] u ∧
+        ∃ g : ℂ → ℝ, ContDiffOn ℝ j g (ball c s) ∧ u =ᵐ[volume.restrict (ball c s)] g ∧
+          ∀ i ≤ j, (∀ z ∈ ball c s, ‖iteratedFDeriv ℝ i g z‖ ≤ K * ‖v‖) ∧
+            HolderOnWith (K * ‖v‖₊) (1 - 2 / q) (iteratedFDeriv ℝ i g) (ball c s) := by
+  obtain ⟨K, hK⟩ := Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall c s hq j
+  refine ⟨K, fun u hsub hu => ?_⟩
+  obtain ⟨v, hv⟩ := hu.exists_wkp (W := ⟨ball c s, isOpen_ball⟩)
+    ((isCompact_closedBall c s).of_isClosed_subset isClosed_closure closure_ball_subset_closedBall)
+    hsub
+  obtain ⟨g, hg, hvg, hb⟩ := hK v
+  exact ⟨v, hv, g, hg, hv.symm.trans hvg, hb⟩
+
+
+/-- **Local `C^{j,1-2/q}` bounds on a disc, for finite-dimensional values.** For `2 < q < ∞`, a
+finite basis `b` of `F`, a centre `c` and a radius `s` there is a constant `K` such that, for
+every open `Ω` containing the closure of `ball c s`, every `u ∈ MemWkpLoc q Ω (j + 1)` with values
+in `F` has coordinates in `b` represented on `ball c s` by elements `v l` of
+`W^{j+1,q}(ball c s)`, and agrees almost everywhere on `ball c s` with a map `g` that is `Cʲ` on
+`ball c s`, whose derivatives of order `i ≤ j` are bounded by `K ∑ₗ ‖v l‖` and Hölder of exponent
+`1 - 2 / q` with constant `K ∑ₗ ‖v l‖` on `ball c s`. This is
+`TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball` applied to each
+coordinate. -/
+theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_basis {q : ℝ≥0}
+    [Fact (1 ≤ (q : ℝ≥0∞))] (hq : 2 < q) {ι : Type*} [Fintype ι] (b : Basis ι ℝ F) (c : ℂ)
+    (s : ℝ) (j : ℕ) :
+    ∃ K : ℝ≥0, ∀ {Ω : Opens ℂ} (u : ℂ → F), closure (ball c s) ⊆ Ω →
+      MemWkpLoc q Ω (j + 1) u →
+      ∃ v : ι → Wkp volume (⟨ball c s, isOpen_ball⟩ : Opens ℂ) q (j + 1),
+        (∀ l, Wkp.value (j + 1) (v l) =ᵐ[volume.restrict (ball c s)] fun z => b.coord l (u z)) ∧
+        ∃ g : ℂ → F, ContDiffOn ℝ j g (ball c s) ∧ u =ᵐ[volume.restrict (ball c s)] g ∧
+          ∀ i ≤ j, (∀ z ∈ ball c s, ‖iteratedFDeriv ℝ i g z‖ ≤ K * ∑ l, ‖v l‖) ∧
+            HolderOnWith (K * ∑ l, ‖v l‖₊) (1 - 2 / q) (iteratedFDeriv ℝ i g) (ball c s) := by
+  obtain ⟨K, hK⟩ := exists_contDiffOn_holderOnWith_iteratedFDeriv_ball (j := j) hq c s
+  -- Coordinates `ℓ l` and the inverse maps `A l : t ↦ t • b l`.
+  set ℓ : ι → F →L[ℝ] ℝ := fun l => (b.coord l).toContinuousLinearMap
+  set A : ι → ℝ →L[ℝ] F := fun l => (ContinuousLinearMap.id ℝ ℝ).smulRight (b l)
+  refine ⟨(∑ l, ‖A l‖₊) * K, fun {Ω} u hsub hu => ?_⟩
+  choose v hv g hg hug hb using fun l =>
+    hK (Ω := Ω) (fun z => ℓ l (u z)) hsub (hu.clm_comp (ℓ l))
+  have hsum (x : F) : x = ∑ l, A l (ℓ l x) := by
+    simp only [A, ℓ, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
+      LinearMap.coe_toContinuousLinearMap', Basis.coord_apply]
+    exact (b.sum_repr x).symm
+  have hvl (l : ι) : ‖v l‖₊ ≤ ∑ l', ‖v l'‖₊ :=
+    Finset.single_le_sum (f := fun l' => ‖v l'‖₊) (fun _ _ => zero_le) (Finset.mem_univ l)
+  have hC : ∑ l, ‖A l‖₊ * (K * ∑ l', ‖v l'‖₊) = (∑ l, ‖A l‖₊) * K * ∑ l, ‖v l‖₊ := by
+    rw [← Finset.sum_mul]
+    ring
+  refine ⟨v, hv, fun z => ∑ l, A l (g l z),
+    ContDiffOn.sum fun l _ => (A l).contDiff.comp_contDiffOn (hg l), ?_, fun i hi => ⟨?_, ?_⟩⟩
+  · filter_upwards [ae_all_iff.2 hug] with z hz
+    rw [hsum (u z)]
+    exact Finset.sum_congr rfl fun l _ => by rw [hz l]
+  · intro z hz
+    refine (norm_iteratedFDeriv_sum_comp_left_le Finset.univ A fun l _ =>
+      ((hg l).contDiffAt (isOpen_ball.mem_nhds hz)).of_le (by exact_mod_cast hi)).trans ?_
+    calc
+      _ ≤ ∑ l, ‖A l‖ * (K * ∑ l', ‖v l'‖) :=
+        Finset.sum_le_sum fun l _ => mul_le_mul_of_nonneg_left
+          (((hb l i hi).1 z hz).trans (by
+            gcongr
+            simpa using NNReal.coe_le_coe.2 (hvl l))) (norm_nonneg _)
+      _ = _ := by
+        rw [← Finset.sum_mul]
+        push_cast
+        ring
+  · rw [← hC]
+    exact holderOnWith_iteratedFDeriv_sum_comp_left A isOpen_ball
+      (fun l => (hg l).of_le (by exact_mod_cast hi))
+      fun l => (hb l i hi).2.mono_const (mul_le_mul' le_rfl (hvl l))
 
 end TauCeti
