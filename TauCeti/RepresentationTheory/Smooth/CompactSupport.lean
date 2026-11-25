@@ -16,9 +16,10 @@ public import Mathlib.Topology.Algebra.ConstMulAction
 Let a topological group `G` act on a topological space `X`, by homeomorphisms. Then `G` acts on
 the `R`-module `C_c^∞(X, M)` of locally constant functions with compact support
 (`LocallyConstant.compactlySupported`) by translation, `(g • f)(x) = f(g⁻¹ • x)`. When the action
-on `X` is jointly continuous this representation is smooth: for a test function `f`, the tube
-lemma over the compact support of `f` gives a neighbourhood `U` of `1` with `f(g • y) = f(y)` and
-`f(g⁻¹ • y) = f(y)` for every `g ∈ U` and every `y` in the support, and then `U` fixes `f`.
+on `X` is jointly continuous this representation is smooth: for a test function `f`, uniform
+local constancy over the compact support of `f` gives a neighbourhood `U` of `1` with
+`f(g • y) = f(y)` and `f(g⁻¹ • y) = f(y)` for every `g ∈ U` and every `y` in the support, and then
+`U` fixes `f`.
 
 ## Main definitions
 
@@ -73,8 +74,10 @@ theorem compactlySupportedRep_apply_smul (g : G) (f : LocallyConstant.compactlyS
 /-- **Translation by `g` moves the support by `g`.** -/
 theorem support_compactlySupportedRep_apply (g : G)
     (f : LocallyConstant.compactlySupported R X M) :
-    support (compactlySupportedRep R G X M g f : LocallyConstant X M) = g • support f.val :=
-  support_comp_inv_smul g f.val
+    support (compactlySupportedRep R G X M g f : LocallyConstant X M) = g • support f.val := by
+  rw [show ⇑(compactlySupportedRep R G X M g f : LocallyConstant X M) = fun x ↦ f.val (g⁻¹ • x)
+    from funext (compactlySupportedRep_apply_coe g f)]
+  exact support_comp_inv_smul g f.val
 
 /-- An element acting trivially on `X` acts trivially on `C_c^∞(X, M)`. -/
 theorem compactlySupportedRep_apply_eq_one {g : G} (hg : ∀ x : X, g • x = x) :
@@ -89,34 +92,22 @@ instance isSmooth_compactlySupportedRep [TopologicalSpace G] [IsTopologicalGroup
     [ContinuousSMul G X] : (compactlySupportedRep R G X M).IsSmooth where
   isOpen_stabilizer f := by
     set φ : LocallyConstant X M := f.val
-    have hK : IsCompact (support φ) := by
-      rw [← LocallyConstant.tsupport_eq_support]
-      exact LocallyConstant.mem_compactlySupported.1 f.property
-    -- The pairs `(g, y)` with `φ(g • y) = φ y = φ(g⁻¹ • y)` form an open set.
-    let n : Set (G × X) := {p | φ (p.1 • p.2) = φ p.2 ∧ φ (p.1⁻¹ • p.2) = φ p.2}
-    have hn : IsOpen n := by
-      have h₁ : IsLocallyConstant fun p : G × X ↦ (φ (p.1 • p.2), φ p.2, φ (p.1⁻¹ • p.2)) :=
-        ((φ.isLocallyConstant.comp_continuous continuous_smul).prodMk
-          ((φ.isLocallyConstant.comp_continuous continuous_snd).prodMk
-            (φ.isLocallyConstant.comp_continuous
-              ((continuous_inv.comp continuous_fst).smul continuous_snd))))
-      -- By definition `n` is the preimage of `{t | t.1 = t.2.1 ∧ t.2.2 = t.2.1}` under this map.
-      exact h₁ {t | t.1 = t.2.1 ∧ t.2.2 = t.2.1}
-    obtain ⟨u, v, hu, -, h1u, hKv, huv⟩ := generalized_tube_lemma
-      (isCompact_singleton (x := (1 : G))) hK hn fun ⟨g, y⟩ ⟨hg, _⟩ ↦ by
-        obtain rfl : g = 1 := hg
-        simp [n]
-    refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (hu.mem_nhds (h1u rfl))
-      fun g hg ↦ ?_)
+    -- Uniform local constancy of `(y, g) ↦ φ (g • y)` on the compact support, near `1`.
+    obtain ⟨V, hVopen, hV1, hV⟩ := (φ.isLocallyConstant.comp_continuous
+      (continuous_snd.smul continuous_fst)).exists_isOpen_forall_mem_eq
+        (LocallyConstant.mem_compactlySupported.1 f.property).isCompact (1 : G)
+    have hVn : V ∈ nhds (1 : G) := hVopen.mem_nhds hV1
+    refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (Filter.inter_mem hVn
+      (inv_mem_nhds_one G hVn)) fun g hg ↦ ?_)
     rw [SetLike.mem_coe, Representation.mem_stabilizer]
     refine Subtype.ext <| LocallyConstant.ext fun y ↦ ?_
     rw [compactlySupportedRep_apply_coe]
-    by_cases hy : y ∈ support φ
-    · exact (huv (a := (g, y)) ⟨hg, hKv hy⟩).2
-    by_cases hy' : g⁻¹ • y ∈ support φ
-    · have := (huv (a := (g, g⁻¹ • y)) ⟨hg, hKv hy'⟩).1
-      rw [smul_inv_smul] at this
-      exact this.symm
-    · rw [notMem_support.1 hy, notMem_support.1 hy']
+    -- If `y` or `g⁻¹ • y` lies in the support, translate from that point; otherwise both values
+    -- vanish.
+    by_cases hy : y ∈ tsupport φ
+    · simpa using hV g⁻¹ hg.2 y hy
+    by_cases hy' : g⁻¹ • y ∈ tsupport φ
+    · simpa using (hV g hg.1 (g⁻¹ • y) hy').symm
+    rw [image_eq_zero_of_notMem_tsupport hy, image_eq_zero_of_notMem_tsupport hy']
 
 end TauCeti
