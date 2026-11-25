@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.WildInertia
+public import TauCeti.NumberTheory.LocalField.WildInertia.Basic
 public import TauCeti.NumberTheory.LocalField.TamelyRamified.Basic
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.NumberTheory.LocalField.Unramified.Factorization

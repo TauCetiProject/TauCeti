@@ -161,23 +161,23 @@ theorem Ad_pauliLieAlgebraEquiv (g : SU2) (x : Fin 3 → ℝ) :
   exact (unitsLieAlgebraLieEquiv (R := Matrix (Fin 2) (Fin 2) ℂ)).injective he
 
 
+/-- The inclusion of `SU(2)` into `GL(2, ℂ)`, through
+`TauCeti.GLSpecialUnitary.continuousMulEquiv`. -/
 private def unitsHom : SU2 →* (Matrix (Fin 2) (Fin 2) ℂ)ˣ :=
-  Unitary.toUnits.comp (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup)
+  (GLSpecialUnitary (Fin 2) ℂ).subtype.comp
+    (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm.toMonoidHom
 
 private theorem unitsHom_apply (g : SU2) :
-    unitsHom g = Unitary.toUnits
-      (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup g) := by
+    unitsHom g = ((GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm g : GL (Fin 2) ℂ) :=
   rfl
-
-private theorem unitsHom_mem (g : SU2) : unitsHom g ∈ GLSpecialUnitary (Fin 2) ℂ :=
-  GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup.mpr g.property
 
 private theorem stable (g : SU2) (X : LeftInvariantDerivation
     𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ) (Matrix (Fin 2) (Fin 2) ℂ)ˣ) (hX : X ∈ 𝔰𝔲₂) :
     ((continuousAdjointRepresentation (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
       (G := (Matrix (Fin 2) (Fin 2) ℂ)ˣ)).restrict unitsHom) g X ∈ 𝔰𝔲₂ := by
-  simpa only [ContRepresentation.restrict_apply_apply, continuousAdjointRepresentation_apply]
-    using Ad_mem_lieSubalgebraOfSubgroup (Subgroup.le_normalizer (unitsHom_mem g)) hX
+  simpa only [ContRepresentation.restrict_apply_apply, continuousAdjointRepresentation_apply,
+    unitsHom_apply] using Ad_mem_lieSubalgebraOfSubgroup
+      (Subgroup.le_normalizer ((GLSpecialUnitary.continuousMulEquiv _ _).symm g).property) hX
 
 /-- The adjoint representation of SU(2) restricted to its native Lie subalgebra. -/
 def adjointRepresentation : ContRepresentation ℝ SU2 𝔰𝔲₂ :=
@@ -196,13 +196,15 @@ theorem coe_adjointRepresentation_apply (g : SU2) (X : 𝔰𝔲₂) :
   rw [adjointRepresentation, ContRepresentation.coe_subrepresentation_apply,
     ContRepresentation.restrict_apply_apply, continuousAdjointRepresentation_apply,
     unitsHom_apply]
+  congr 2
+  exact Units.ext (GLSpecialUnitary.coe_continuousMulEquiv_symm_apply g)
 
 /-- The native SU(2) adjoint representation is continuous in its group argument. -/
 @[fun_prop]
 theorem continuous_adjointRepresentation : Continuous adjointRepresentation := by
   apply ContRepresentation.continuous_subrepresentation
-  have hu : Continuous unitsHom := Unitary.continuous_toUnits.comp
-    (continuous_inclusion Matrix.specialUnitaryGroup_le_unitaryGroup)
+  have hu : Continuous unitsHom :=
+    continuous_subtypeVal.comp (GLSpecialUnitary.continuousMulEquiv _ _).symm.continuous
   exact (contMDiff_continuousAdjointRepresentation
     (I := 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ))
     (G := (Matrix (Fin 2) (Fin 2) ℂ)ˣ)).continuous.comp hu
