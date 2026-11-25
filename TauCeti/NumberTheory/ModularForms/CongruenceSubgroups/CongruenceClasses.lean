@@ -221,6 +221,7 @@ is a congruence class. For `Γ = Γ(N)` and `A = 𝔽_q` this is `H¹_cong(Γ(N)
 noncomputable def congruenceClassesH1 : Submodule k (H1 A) :=
   (congruenceClasses Γ k A).comap (H1IsoOfIsTrivial A).toLinearEquiv.toLinearMap
 
+@[simp]
 theorem mem_congruenceClassesH1 {x : H1 A} :
     x ∈ congruenceClassesH1 Γ A ↔ (H1IsoOfIsTrivial A).hom x ∈ congruenceClasses Γ k A := by
   simp [congruenceClassesH1]
@@ -230,7 +231,7 @@ some positive level `m`. -/
 theorem H1π_mem_congruenceClassesH1_iff (f : cocycles₁ A) :
     H1π A f ∈ congruenceClassesH1 Γ A ↔
       ∃ m, 0 < m ∧ ∀ g : Γ, (g : SL(2, ℤ)) ∈ Gamma m → f g = 0 := by
-  simp [mem_congruenceClassesH1, mem_congruenceClasses]
+  simp
 
 variable (Γ) in
 /-- The isomorphism `H¹(Γ, A) ≅ Hom(Γ, A)` restricts to an isomorphism between the congruence
