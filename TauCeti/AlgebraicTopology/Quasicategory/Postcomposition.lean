@@ -40,6 +40,10 @@ independent of the choice of section up to homotopy
 (`SSet.rightMappingSpace.exists_homotopy_postcomp`). This is the composition of mapping spaces
 of a quasicategory with a fixed morphism.
 
+Over the nerve of a category, postcomposition with `g` sends the maps lying over an edge `e` of
+the base to the maps lying over the composite of `e` and the image of `g`
+(`SSet.rightMappingSpaceOver.postcomp`), since composites in a nerve are unique.
+
 ## Main definitions
 
 * `SSet.rightMappingSpace.postcompSpace x g`: the simplicial set `Hom^R_X(x, g)` of composites
@@ -48,6 +52,8 @@ of a quasicategory with a fixed morphism.
   maps to `Hom^R_X(x, y)` and `Hom^R_X(x, z)`.
 * `SSet.rightMappingSpace.postcomp x g`: for a quasicategory, a postcomposition map
   `Hom^R_X(x, y) ⟶ Hom^R_X(x, z)`.
+* `SSet.rightMappingSpaceOver.postcomp g h`: its restriction to the spaces of maps lying over
+  edges of the nerve of a category.
 
 ## Main results
 
@@ -326,5 +332,42 @@ theorem exists_homotopy_postcomp [X.Quasicategory] (g : Edge y z)
   exact ⟨H.postcomp _⟩
 
 end rightMappingSpace
+
+/-! ### Postcomposition on maps lying over an edge -/
+
+namespace rightMappingSpaceOver
+
+variable {x y z : X _⦋0⦌} {C : Type u} [SmallCategory C]
+
+/-- For a quasicategory `X` over the nerve of a category, postcomposition with an edge
+`g : y ⟶ z` (`SSet.rightMappingSpace.postcomp`) sends maps lying over `e` to maps lying over
+any edge `e'` whose morphism is the composite of those of `e` and `p g`: in the nerve, the
+composite of two edges is unique. -/
+noncomputable def postcomp [X.Quasicategory] {p : X ⟶ nerve C} (g : Edge y z)
+    {e : Edge (p.app _ x) (p.app _ y)} {e' : Edge (p.app _ x) (p.app _ z)}
+    (h : nerve.homEquiv e ≫ nerve.homEquiv (g.map p) = nerve.homEquiv e') :
+    (rightMappingSpaceOver p e : SSet.{u}) ⟶ (rightMappingSpaceOver p e' : SSet.{u}) :=
+  Subcomplex.lift ((rightMappingSpaceOver p e).ι ≫ rightMappingSpace.postcomp x g)
+    ((range_le_iff _ _).2 fun k ↦ by
+      -- The image of `k` is a composite of `k` and `g`, so its image in the nerve is the composite
+      -- of `e` and `p g`.
+      have hk := (mem_obj₀_iff e k.val).1 k.property
+      obtain ⟨c⟩ := rightMappingSpace.postcomp_compStruct g (rightMappingSpace.obj₀Equiv k.val)
+      rw [Equiv.symm_apply_apply] at c
+      have hc := nerve.homEquiv_comp (c.map p)
+      rw [hk] at hc
+      apply nerve.homEquiv.injective
+      rw [← h]
+      exact hc.symm)
+
+@[reassoc (attr := simp)]
+lemma postcomp_ι [X.Quasicategory] {p : X ⟶ nerve C} (g : Edge y z)
+    {e : Edge (p.app _ x) (p.app _ y)} {e' : Edge (p.app _ x) (p.app _ z)}
+    (h : nerve.homEquiv e ≫ nerve.homEquiv (g.map p) = nerve.homEquiv e') :
+    postcomp g h ≫ (rightMappingSpaceOver p e').ι =
+      (rightMappingSpaceOver p e).ι ≫ rightMappingSpace.postcomp x g :=
+  Subcomplex.lift_ι _ _
+
+end rightMappingSpaceOver
 
 end SSet
