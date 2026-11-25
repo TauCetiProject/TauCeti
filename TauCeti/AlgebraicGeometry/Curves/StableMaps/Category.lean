@@ -75,6 +75,8 @@ canonically isomorphic to the chosen base change.
   an isomorphism exactly when its map of total spaces is one.
 * `TauCeti.AlgebraicGeometry.PrestableMap.mem_range_autToCurve_iff`: an automorphism of the
   pointed source curve comes from the prestable map exactly when it commutes with the map.
+* `TauCeti.AlgebraicGeometry.PrestableMap.subsingleton_hom_of_mono`: there is at most one morphism
+  into a prestable map whose map is a monomorphism.
 * `TauCeti.AlgebraicGeometry.PrestableMap.subsingleton_aut_of_mono`: a prestable map whose map is
   a monomorphism has no nontrivial automorphisms.
 * The instances `(postcompFunctor h hh).Full` for a monomorphism `h` and
@@ -234,17 +236,24 @@ theorem mem_range_autToCurve_iff (e : Aut F.curve) :
     simp
   · simp
 
+/-- Morphisms into a prestable map whose map is a monomorphism are unique: two morphisms of
+source curves commuting with a monomorphism to the target agree. -/
+instance subsingleton_hom_of_mono (F G : PrestableMap q n) [Mono G.map] : Subsingleton (F ⟶ G) :=
+  ⟨fun f g ↦ hom_ext <| PointedPrestableFamily.hom_ext <|
+    (cancel_mono G.map).1 <| f.hom_comp_map.trans g.hom_comp_map.symm⟩
+
 /-- **A prestable map whose map is a monomorphism has no nontrivial automorphisms**: an
 automorphism of the source curve commuting with a monomorphism to the target is the identity. -/
 theorem subsingleton_aut_of_mono (F : PrestableMap q n) [Mono F.map] : Subsingleton (Aut F) :=
-  ⟨fun e e' ↦ Aut.ext <| Iso.ext <| hom_ext <| PointedPrestableFamily.hom_ext <|
-    (cancel_mono F.map).1 <| e.asIso.hom.hom_comp_map.trans e'.asIso.hom.hom_comp_map.symm⟩
+  ⟨fun _ _ ↦ Aut.ext <| Iso.ext <| Subsingleton.elim _ _⟩
 
 /-- Every automorphism of the source curve of a constant prestable map commutes with the map, so
 comes from an automorphism of the constant map. -/
 theorem autToCurve_const_surjective (P : PointedPrestableFamily S n) (σ : S ⟶ V)
     (hσ : σ ≫ q = 𝟙 S) : Function.Surjective (autToCurve (const P σ hσ)) :=
-  fun e ↦ (mem_range_autToCurve_iff e).2 (e.asIso.hom.hom_comp_toBase_assoc σ)
+  fun e ↦ (mem_range_autToCurve_iff e).2 <| by
+    rw [const_map]
+    exact e.asIso.hom.hom_comp_toBase_assoc σ
 
 /-- **The automorphisms of a constant prestable map are those of its source curve**: forgetting
 the map is an isomorphism `Aut (const P σ) ≃* Aut P`. -/
@@ -259,6 +268,13 @@ theorem autConstMulEquiv_apply_asIso_hom (P : PointedPrestableFamily S n) (σ : 
     (hσ : σ ≫ q = 𝟙 S) (e : Aut (const P σ hσ)) :
     (autConstMulEquiv P σ hσ e).asIso.hom = e.asIso.hom.curve :=
   autToCurve_apply_asIso_hom e
+
+/-- The inverse of `autConstMulEquiv` keeps the automorphism of the source curve. -/
+@[simp]
+theorem autConstMulEquiv_symm_apply_asIso_hom_curve (P : PointedPrestableFamily S n)
+    (σ : S ⟶ V) (hσ : σ ≫ q = 𝟙 S) (e : Aut P) :
+    ((autConstMulEquiv P σ hσ).symm e).asIso.hom.curve = e.asIso.hom := by
+  rw [← autConstMulEquiv_apply_asIso_hom, MulEquiv.apply_symm_apply]
 
 /-! ### Postcomposition -/
 
