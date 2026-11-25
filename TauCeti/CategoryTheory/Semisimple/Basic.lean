@@ -9,9 +9,9 @@ public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.Schur
-public import Mathlib.CategoryTheory.Simple
 public import TauCeti.CategoryTheory.Abelian.Injective.Basic
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
+public import TauCeti.CategoryTheory.Simple.Basic
 
 /-!
 # Finite semisimple categories
@@ -39,9 +39,8 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
   epimorphism).
 * `TauCeti.exists_nonzero_from_simple_iff_exists_nonzero_to_simple`: a simple object maps
   nontrivially to an object exactly when the object maps nontrivially to it.
-* `TauCeti.biproduct_ι_comp_inv_ne_zero`: the inclusion of a simple summand is nonzero.
-* `TauCeti.exists_simple_hom_ne_zero`: a nonzero object receives a nonzero morphism from a simple
-  object.
+* `TauCeti.exists_simple_hom_ne_zero`: a nonzero object of a finite semisimple category receives
+  a nonzero morphism from a simple object.
 * `TauCeti.IsFiniteSemisimpleCategory.injective`: every object of a finite semisimple category is
   injective.
 * `TauCeti.IsFiniteSemisimpleCategory.splitMonoCategory`: every monomorphism of a finite
@@ -83,27 +82,14 @@ variable {D : Type u'} [Category.{v'} D] [Abelian D]
 theorem of_equivalence (e : C ≌ D) [IsFiniteSemisimpleCategory C] :
     IsFiniteSemisimpleCategory D where
   exists_biproduct_simples X := by
-    obtain ⟨ι, hι, f, hf, hbf, ⟨i⟩⟩ :=
-      exists_biproduct_simples (e.inverse.obj X)
-    let _ := hι
-    let _ : ∀ j, Simple (f j) := hf
-    let _ := hbf
-    let _ : HasFiniteBiproducts D := Abelian.hasFiniteBiproducts
-    refine ⟨ι, inferInstance, fun j ↦ e.functor.obj (f j), fun j ↦ ?_, inferInstance, ?_⟩
-    · exact CategoryTheory.simple_obj e.functor (f j)
-    · have := preservesBiproduct_of_preservesProduct e.functor (f := f)
-      exact ⟨(e.counitIso.app X).symm ≪≫ e.functor.mapIso i ≪≫ e.functor.mapBiproduct f⟩
+    obtain ⟨ι, _, f, _, _, ⟨i⟩⟩ := exists_biproduct_simples (e.inverse.obj X)
+    exact ⟨ι, inferInstance, fun j ↦ e.functor.obj (f j), fun j ↦ simple_obj e.functor (f j),
+      inferInstance, ⟨(e.counitIso.app X).symm ≪≫ e.functor.mapIso i ≪≫ e.functor.mapBiproduct f⟩⟩
 
 /-- Equivalent abelian categories are finite semisimple simultaneously. -/
 theorem iff_of_equivalence (e : C ≌ D) :
-    IsFiniteSemisimpleCategory C ↔ IsFiniteSemisimpleCategory D := by
-  constructor
-  · intro h
-    let _ := h
-    exact of_equivalence e
-  · intro h
-    let _ := h
-    exact of_equivalence e.symm
+    IsFiniteSemisimpleCategory C ↔ IsFiniteSemisimpleCategory D :=
+  ⟨fun _ ↦ of_equivalence e, fun _ ↦ of_equivalence e.symm⟩
 
 end Abelian
 
@@ -119,22 +105,16 @@ theorem exists_biproduct_simples_of_isZero {X : C} (hX : IsZero X) :
   have : HasBiproduct (Empty.elim : Empty → C) := HasBiproduct.mk
     { bicone := { pt := X, π := fun i ↦ i.elim, ι := fun i ↦ i.elim, ι_π := fun i ↦ i.elim }
       isBilimit :=
-        { isLimit :=
-            { lift := fun s ↦ hX.from_ s.pt
-              fac := fun _ j ↦ j.as.elim
-              uniq := fun _ _ _ ↦ hX.eq_of_tgt _ _ }
-          isColimit :=
-            { desc := fun s ↦ hX.to_ s.pt
-              fac := fun _ j ↦ j.as.elim
-              uniq := fun _ _ _ ↦ hX.eq_of_src _ _ } } }
-  refine ⟨Empty, inferInstance, Empty.elim, fun i ↦ i.elim, this, ⟨hX.iso ?_⟩⟩
-  exact (IsZero.iff_id_eq_zero _).2 (biproduct.hom_ext _ _ fun i ↦ i.elim)
+        { isLimit := (isLimitEquivIsTerminalOfIsEmpty C _).symm hX.isTerminal
+          isColimit := (isColimitEquivIsInitialOfIsEmpty C _).symm hX.isInitial } }
+  exact ⟨Empty, inferInstance, Empty.elim, fun i ↦ i.elim, this,
+    ⟨hX.iso (isZero_biproduct_of_isEmpty _)⟩⟩
 
 /-- A simple object is the biproduct of the family consisting of itself. -/
 theorem exists_biproduct_simples_of_simple (X : C) [Simple X] :
     ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
-      Nonempty (X ≅ ⨁ f) := by
-  exact ⟨Unit, inferInstance, fun _ ↦ X, fun _ ↦ inferInstance, inferInstance,
+      Nonempty (X ≅ ⨁ f) :=
+  ⟨Unit, inferInstance, fun _ ↦ X, fun _ ↦ inferInstance, inferInstance,
     ⟨(biproductUniqueIso fun _ : Unit ↦ X).symm⟩⟩
 
 /-- Decompositions of `X` and `Y` into finite biproducts of simple objects combine to one of
@@ -202,23 +182,13 @@ theorem exists_nonzero_from_simple_iff_exists_nonzero_to_simple {C : Type u} [Ca
     exact ⟨section_ g, fun h ↦ CategoryTheory.id_ne_zero S (by rw [← IsSplitEpi.id g, h,
       zero_comp])⟩
 
-/-- The inclusion of a simple summand into an object decomposed as a biproduct is nonzero. -/
-theorem biproduct_ι_comp_inv_ne_zero {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
-    {ι : Type*} {a : ι → C} [HasBiproduct a] {Y : C} (e : Y ≅ ⨁ a) (i : ι) [Simple (a i)] :
-    biproduct.ι a i ≫ e.inv ≠ 0 := fun h ↦
-  CategoryTheory.id_ne_zero (a i) (by simpa using h =≫ (e.hom ≫ biproduct.π a i))
-
 /-- In a finite semisimple category, a nonzero object receives a nonzero morphism from a simple
 object: the inclusion of a summand of a decomposition into simple objects. -/
 theorem exists_simple_hom_ne_zero {C : Type u} [Category.{v} C] [Abelian C]
     [IsFiniteSemisimpleCategory C] {Y : C} (hY : ¬IsZero Y) :
     ∃ (S : C) (_ : Simple S) (f : S ⟶ Y), f ≠ 0 := by
-  obtain ⟨ι, _, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  obtain ⟨i⟩ : Nonempty ι := by
-    by_contra h
-    have : IsEmpty ι := not_nonempty_iff.mp h
-    exact hY (((IsZero.iff_id_eq_zero _).2 (by ext i; exact isEmptyElim i)).of_iso e)
-  exact ⟨a i, ha i, _, biproduct_ι_comp_inv_ne_zero e i⟩
+  obtain ⟨ι, _, a, ha, _, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
+  exact exists_simple_hom_ne_zero_of_iso_sigma hY ha (e ≪≫ biproduct.isoCoproduct a)
 
 namespace IsFiniteSemisimpleCategory
 

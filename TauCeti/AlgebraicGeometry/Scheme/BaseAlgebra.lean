@@ -28,8 +28,9 @@ the base, stalk, and function-field algebra structures form a scalar tower.
 * `Scheme.fromSpecStalk_comp_over`: the spectrum of a stalk maps to `X` over the affine base.
 * `Scheme.fromSpecResidueField_comp_over`: the spectrum of a residue field maps to `X` over the
   affine base.
-* `Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over`: a `k`-algebra map of function fields
-  gives a morphism over the affine base between the spectra of the function fields.
+* `Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over_iff`: a map of function fields is a
+  `k`-algebra map exactly when it gives a morphism over the affine base between the spectra of the
+  function fields; `Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over` is one direction.
 * `Scheme.Hom.functionFieldAlgHom`: conversely, the pullback of rational functions along a
   dominant morphism over the affine base is a `k`-algebra map of function fields.
 * `Scheme.Hom.residueFieldMap_algebraMap`: the residue field maps of a morphism over the affine
@@ -42,9 +43,8 @@ the base, stalk, and function-field algebra structures form a scalar tower.
   is the one used by Mathlib's `Scheme.Hom.residueDegree_eq_finrank`.
 * `Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion`: an affine open immersion over `Spec k`
   identifies the residue fields of `X` with those of the chart as `k`-algebras.
-* `Scheme.Hom.nonempty_functionField_algEquiv_of_isOpenImmersion`: the function field of an
-  integral scheme over `Spec k` is, as a `k`-algebra, the fraction field of any affine chart over
-  `Spec k`.
+* `Scheme.Hom.functionFieldAlgEquivOfIsOpenImmersion`: the function field of an integral scheme
+  over `Spec k` is, as a `k`-algebra, the fraction field of any affine chart over `Spec k`.
 * `TauCeti.AlgebraicGeometry.exists_affineOpen_isFractionRing`: an integral scheme over `Spec k`
   has a nonempty affine open `U` whose sections are a `k`-algebra with fraction field the function
   field, compatibly with the structure morphism.
@@ -262,6 +262,19 @@ theorem fromSpecStalk_genericPoint_comp_over [IsIntegral X] :
     Scheme.baseRingToFunctionField]
 
 /-- Through the generic points of integral schemes over `Spec k`, `Spec` of a map of function
+fields is compatible with the structure morphisms to `Spec k` exactly when the map is compatible
+with the `k`-algebra structures. -/
+theorem specMap_comp_fromSpecStalk_genericPoint_comp_over_iff
+    {Y Z : Scheme.{u}} [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [IsIntegral Y]
+    [IsIntegral Z] (f : Z.functionField ⟶ Y.functionField) :
+    (Spec.map f ≫ Z.fromSpecStalk _) ≫ Z ↘ Spec (.of k) =
+        Y.fromSpecStalk _ ≫ Y ↘ Spec (.of k) ↔
+      ∀ c : k, f (algebraMap k Z.functionField c) = algebraMap k Y.functionField c := by
+  rw [Category.assoc, Scheme.fromSpecStalk_genericPoint_comp_over,
+    Scheme.fromSpecStalk_genericPoint_comp_over, ← Spec.map_comp, Spec.map_inj]
+  exact ⟨fun h c ↦ congr($h c), fun h ↦ CommRingCat.hom_ext (RingHom.ext h)⟩
+
+/-- Through the generic points of integral schemes over `Spec k`, `Spec` of a map of function
 fields compatible with the `k`-algebra structures is compatible with the structure morphisms to
 `Spec k`. -/
 theorem specMap_comp_fromSpecStalk_genericPoint_comp_over
@@ -269,12 +282,8 @@ theorem specMap_comp_fromSpecStalk_genericPoint_comp_over
     [IsIntegral Z] (f : Z.functionField ⟶ Y.functionField)
     (hf : ∀ c : k, f (algebraMap k Z.functionField c) = algebraMap k Y.functionField c) :
     (Spec.map f ≫ Z.fromSpecStalk _) ≫ Z ↘ Spec (.of k) =
-      Y.fromSpecStalk _ ≫ Y ↘ Spec (.of k) := by
-  rw [Category.assoc, Scheme.fromSpecStalk_genericPoint_comp_over,
-    Scheme.fromSpecStalk_genericPoint_comp_over, ← Spec.map_comp]
-  congr 1
-  ext c
-  exact hf c
+      Y.fromSpecStalk _ ≫ Y ↘ Spec (.of k) :=
+  (specMap_comp_fromSpecStalk_genericPoint_comp_over_iff k f).mpr hf
 
 end CommRing
 
@@ -347,46 +356,46 @@ section FunctionFieldChart
 
 namespace AlgebraicGeometry.Scheme.Hom
 
+variable {k R : Type u} [CommRing k] [CommRing R] [Algebra k R] {Y : Scheme.{u}}
+  [Y.Over (Spec (.of k))] [IsIntegral Y] (ι : Spec (.of R) ⟶ Y) [IsOpenImmersion ι]
+  (hι : ι ≫ (Y ↘ Spec (.of k)) = Spec.map (CommRingCat.ofHom (algebraMap k R)))
+  (L : Type*) [CommRing L] [Nontrivial L] [Algebra k L] [Algebra R L] [IsScalarTower k R L]
+  [IsFractionRing R L]
+
+include hι in
 /-- **The function field of an integral scheme is the fraction field of an affine chart.** If
 `ι : Spec R ⟶ Y` is an open immersion over `Spec k` into an integral scheme `Y`, then the function
-field of `Y` is, as a `k`-algebra, every fraction field `L` of `R`. -/
-theorem nonempty_functionField_algEquiv_of_isOpenImmersion
-    {k R : Type u} [CommRing k] [CommRing R] [Algebra k R] {Y : Scheme.{u}} [Y.Over (Spec (.of k))]
-    [IsIntegral Y] (ι : Spec (.of R) ⟶ Y) [IsOpenImmersion ι]
-    (hι : ι ≫ (Y ↘ Spec (.of k)) = Spec.map (CommRingCat.ofHom (algebraMap k R)))
-    (L : Type*) [Field L] [Algebra k L] [Algebra R L] [IsScalarTower k R L] [IsFractionRing R L] :
-    Nonempty (Y.functionField ≃ₐ[k] L) := by
-  have : Nontrivial R := (IsFractionRing.nontrivial_iff_nontrivial R L).mpr inferInstance
-  have hV : IsAffineOpen (ι ''ᵁ ⊤) := (isAffineOpen_top _).image_of_isOpenImmersion ι
-  have : Nonempty (ι ''ᵁ ⊤) := ⟨⟨ι (Classical.arbitrary _), ⟨_, trivial, rfl⟩⟩⟩
-  have := functionField_isFractionRing_of_isAffineOpen Y _ hV
-  -- the sections of `Y` over the image of `ι` are `R`, compatibly with the constants
-  let θ : Γ(Y, ι ''ᵁ ⊤) ≃+* R :=
-    ((ι.appIso ⊤) ≪≫ Scheme.ΓSpecIso (.of R)).commRingCatIsoToRingEquiv
-  have hθ (c : Γ(Spec (.of k), ⊤)) : θ ((Y ↘ Spec (.of k)).appLE ⊤ (ι ''ᵁ ⊤) le_top c) =
-      algebraMap k R ((Scheme.ΓSpecIso (.of k)).hom c) := by
-    suffices hs : (Y ↘ Spec (.of k)).appLE ⊤ (ι ''ᵁ ⊤) le_top ≫ (ι.appIso ⊤).hom ≫
-        (Scheme.ΓSpecIso _).hom =
-          (Scheme.ΓSpecIso (.of k)).hom ≫ CommRingCat.ofHom (algebraMap k R) from
-      congr($hs c)
-    rw [← cancel_epi (Scheme.ΓSpecIso (.of k)).inv, Iso.inv_hom_id_assoc, Scheme.Hom.appIso_hom',
-      reassoc_of% Scheme.Hom.appLE_comp_appLE ι (Y ↘ Spec (.of k)) ⊤ (ι ''ᵁ ⊤) ⊤ le_top
-      (Scheme.Hom.preimage_image_eq _ _).ge]
-    -- the proof that `⊤` lies over `⊤` mentions `ι ≫ (Y ↘ Spec k)`, so it has to be generalized
-    -- before rewriting the composite
-    generalize_proofs e
-    revert e
-    rw [hι]
-    intro e
-    -- `⊤` is the preimage of `⊤`, so this `appLE` is `appTop`; the `show` states that form
-    rw [show Scheme.Hom.appLE _ ⊤ ⊤ e = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
-      Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
-  refine ⟨AlgEquiv.ofRingEquiv (f := IsFractionRing.ringEquivOfRingEquiv θ) fun c ↦ ?_⟩
-  rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField,
-    Scheme.baseRingToFunctionField_eq_comp_appLE k _ (ι ''ᵁ ⊤), RingHom.comp_apply]
-  refine (IsFractionRing.ringEquivOfRingEquiv_algebraMap _ _).trans ?_
-  rw [CommRingCat.hom_comp, RingHom.comp_apply, hθ, Iso.inv_hom_id_apply,
-    ← IsScalarTower.algebraMap_apply]
+field of `Y` is, as a `k`-algebra, every nontrivial fraction ring `L` of `R`: the map of fraction
+rings induced by the identification of the sections of `Y` over the image of `ι` with `R`
+(`AlgebraicGeometry.Scheme.Hom.functionFieldAlgEquivOfIsOpenImmersion_germToFunctionField`). -/
+def functionFieldAlgEquivOfIsOpenImmersion : Y.functionField ≃ₐ[k] L :=
+  haveI : Nontrivial R := (IsFractionRing.nontrivial_iff_nontrivial R L).mpr inferInstance
+  haveI : Nonempty (ι ''ᵁ ⊤) := ⟨⟨ι (Classical.arbitrary _), ⟨_, trivial, rfl⟩⟩⟩
+  haveI := functionField_isFractionRing_of_isAffineOpen Y _
+    ((isAffineOpen_top _).image_of_isOpenImmersion ι)
+  AlgEquiv.ofRingEquiv (f := IsFractionRing.ringEquivOfRingEquiv
+      ((ι.appIso ⊤) ≪≫ Scheme.ΓSpecIso (.of R)).commRingCatIsoToRingEquiv)
+    fun c ↦ by
+      rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField,
+        Scheme.baseRingToFunctionField_eq_comp_appLE k _ (ι ''ᵁ ⊤), RingHom.comp_apply]
+      -- `germToFunctionField` is by definition the algebra map of `Γ(Y, U)` to `k(Y)`.
+      refine (IsFractionRing.ringEquivOfRingEquiv_algebraMap _ _).trans ?_
+      rw [CommRingCat.hom_comp, RingHom.comp_apply]
+      refine congr(algebraMap R L $(Scheme.ΓSpecIso_appIso_hom_appLE ι _ _ hι _)).trans ?_
+      rw [Iso.inv_hom_id_apply]
+      exact (IsScalarTower.algebraMap_apply k R L c).symm
+
+/-- `AlgebraicGeometry.Scheme.Hom.functionFieldAlgEquivOfIsOpenImmersion` sends the germ of a
+function on the image of `ι` to the corresponding element of `R ⊆ L`. -/
+@[simp]
+theorem functionFieldAlgEquivOfIsOpenImmersion_germToFunctionField [Nonempty (ι ''ᵁ ⊤)]
+    (a : Γ(Y, ι ''ᵁ ⊤)) :
+    ι.functionFieldAlgEquivOfIsOpenImmersion hι L (Y.germToFunctionField _ a) =
+      algebraMap R L ((Scheme.ΓSpecIso (.of R)).hom ((ι.appIso ⊤).hom a)) := by
+  have := functionField_isFractionRing_of_isAffineOpen Y _
+    ((isAffineOpen_top _).image_of_isOpenImmersion ι)
+  -- `germToFunctionField` is by definition the algebra map of `Γ(Y, U)` to `k(Y)`.
+  exact IsFractionRing.ringEquivOfRingEquiv_algebraMap _ a
 
 end AlgebraicGeometry.Scheme.Hom
 
@@ -429,13 +438,9 @@ variable (k : Type u) [CommRing k] {X Y Z : Scheme.{u}} [X.Over (Spec (.of k))]
 `Spec k` is compatible with the `k`-algebra structures of the function fields. -/
 theorem functionFieldMap_algebraMap (f : X ⟶ Y)
     [f.IsOver (Spec (.of k))] [IsDominant f] (c : k) :
-    f.functionFieldMap (algebraMap k Y.functionField c) = algebraMap k X.functionField c := by
-  have h : Spec.map (CommRingCat.ofHom (algebraMap k Y.functionField) ≫ f.functionFieldMap) =
-      Spec.map (CommRingCat.ofHom (algebraMap k X.functionField)) := by
-    rw [Spec.map_comp, ← Scheme.fromSpecStalk_genericPoint_comp_over,
-      ← Scheme.fromSpecStalk_genericPoint_comp_over,
-      Scheme.Hom.SpecMap_functionFieldMap_fromSpecStalk_assoc, comp_over]
-  exact congr($(Spec.map_injective h) c)
+    f.functionFieldMap (algebraMap k Y.functionField c) = algebraMap k X.functionField c :=
+  (Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over_iff k f.functionFieldMap).mp
+    (by rw [Scheme.Hom.SpecMap_functionFieldMap_fromSpecStalk, Category.assoc, comp_over]) c
 
 /-- The pullback of rational functions `f^* : k(Y) → k(X)` along a dominant morphism `f : X ⟶ Y`
 of integral schemes over `Spec k`, as a `k`-algebra homomorphism. -/

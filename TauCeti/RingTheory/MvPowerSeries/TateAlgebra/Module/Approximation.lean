@@ -55,9 +55,7 @@ def truncFinsetAddHom (s : Finset (σ →₀ ℕ)) : Gauss c E →+ Gauss c E wh
 
 private theorem truncFinsetAddHom_apply_indicator (s : Finset (σ →₀ ℕ)) (a : Gauss c E)
     (t : σ →₀ ℕ) : truncFinsetAddHom s a t = Finsupp.indicator s (fun u _ ↦ a u) t := by
-  unfold truncFinsetAddHom
-  change ofAddSubgroup _ t = _
-  rw [ofAddSubgroup_apply]
+  simp only [truncFinsetAddHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
 
 /-- Truncation preserves coefficients at exponents in the truncation set. -/
 @[simp, grind =]
@@ -101,6 +99,18 @@ theorem truncFinsetAddHom_empty : truncFinsetAddHom (c := c) (E := E) ∅ = 0 :=
   ext a t
   exact truncFinsetAddHom_apply_of_notMem a (notMem_empty t)
 
+/-- Truncation to a finite set is the sum of the singleton truncations over that set. -/
+theorem truncFinsetAddHom_eq_sum_singleton (s : Finset (σ →₀ ℕ)) (a : Gauss c E) :
+    truncFinsetAddHom s a = ∑ t ∈ s, truncFinsetAddHom {t} a := by
+  ext u
+  have h : (∑ t ∈ s, truncFinsetAddHom {t} a) u = ∑ t ∈ s, truncFinsetAddHom {t} a u := by
+    simpa only [toAddSubgroupAddEquiv_apply, AddSubmonoidClass.coe_finsetSum, Finset.sum_apply]
+      using congrArg (fun f : IsRestrictedFamily.addSubgroup E c ↦ f.val u)
+        (map_sum toAddSubgroupAddEquiv (fun t ↦ truncFinsetAddHom {t} a) s)
+  rw [h, truncFinsetAddHom_apply_indicator, Finsupp.indicator_eq_sum_single,
+    Finsupp.finsetSum_apply]
+  simp only [truncFinsetAddHom_apply_indicator, Finsupp.indicator_singleton]
+
 section Module
 
 variable (R : Type*) [SeminormedRing R] [Module R E] [IsBoundedSMul R E]
@@ -114,6 +124,7 @@ private theorem truncFinsetAddHom_eq_ofFinsupp_indicator (s : Finset (σ →₀ 
 def truncFinset (s : Finset (σ →₀ ℕ)) : Gauss c E →ₗ[R] Gauss c E where
   toAddHom := (truncFinsetAddHom s).toAddHom
   map_smul' r a := by
+    -- The function of the linear map is the function of its underlying additive map.
     change truncFinsetAddHom s (r • a) = r • truncFinsetAddHom s a
     ext t
     by_cases ht : t ∈ s <;> simp [ht]
@@ -125,11 +136,15 @@ theorem truncFinset_apply_eq_truncFinsetAddHom (s : Finset (σ →₀ ℕ)) (a :
   unfold truncFinset
   rfl
 
+private theorem truncFinsetAddHom_singleton_eq_ofFinsupp_single (t : σ →₀ ℕ) (a : Gauss c E) :
+    truncFinsetAddHom {t} a = ofFinsupp R c (Finsupp.single t (a t)) := by
+  rw [truncFinsetAddHom_eq_ofFinsupp_indicator R, Finsupp.indicator_singleton]
+
 /-- A finite-support truncation is the sum of the retained single-coefficient families. -/
 theorem truncFinset_eq_sum_ofFinsupp_single (s : Finset (σ →₀ ℕ)) (a : Gauss c E) :
     truncFinset R s a = ∑ t ∈ s, ofFinsupp R c (Finsupp.single t (a t)) := by
-  rw [truncFinset_apply_eq_truncFinsetAddHom, truncFinsetAddHom_eq_ofFinsupp_indicator R,
-    Finsupp.indicator_eq_sum_single, map_sum]
+  rw [truncFinset_apply_eq_truncFinsetAddHom, truncFinsetAddHom_eq_sum_singleton]
+  simp only [truncFinsetAddHom_singleton_eq_ofFinsupp_single R]
 
 /-- Truncating to the empty set gives the zero linear map. -/
 @[simp]
@@ -153,10 +168,6 @@ theorem mapLinearMap_truncFinset {F : Type*} [SeminormedAddCommGroup F]
     mapLinearMap φ hφ (truncFinset R s a) = truncFinset R s (mapLinearMap φ hφ a) := by
   ext t
   by_cases ht : t ∈ s <;> simp [ht]
-
-private theorem truncFinsetAddHom_singleton_eq_ofFinsupp_single (t : σ →₀ ℕ) (a : Gauss c E) :
-    truncFinsetAddHom {t} a = ofFinsupp R c (Finsupp.single t (a t)) := by
-  rw [truncFinsetAddHom_eq_ofFinsupp_indicator R, Finsupp.indicator_singleton]
 
 end Module
 
@@ -207,7 +218,7 @@ theorem tendsto_truncFinsetAddHom_atTop (a : Gauss c E) :
 
 /-- With finitely many variables, keeping only exponents of total degree less than `n`
 approximates every restricted family in Gauss seminorm. -/
-theorem tendsto_truncFinsetAddHom_finite_of_degree_lt_atTop [Finite σ] (a : Gauss c E) :
+theorem tendsto_truncFinsetAddHom_degree_lt_atTop [Finite σ] (a : Gauss c E) :
     Tendsto (fun n : ℕ ↦ truncFinsetAddHom (Finsupp.finite_of_degree_lt n).toFinset a)
       atTop (𝓝 a) := by
   refine (tendsto_truncFinsetAddHom_atTop a).comp
@@ -219,16 +230,8 @@ theorem tendsto_truncFinsetAddHom_finite_of_degree_lt_atTop [Finite σ] (a : Gau
 /-- A restricted family is the unconditional sum of its singleton truncations. -/
 theorem hasSum_truncFinsetAddHom_singleton (a : Gauss c E) :
     HasSum (fun t ↦ truncFinsetAddHom {t} a) a := by
-  change Tendsto (fun s : Finset (σ →₀ ℕ) ↦ ∑ t ∈ s, truncFinsetAddHom {t} a) atTop (𝓝 a)
-  refine (tendsto_truncFinsetAddHom_atTop a).congr fun s ↦ ?_
-  change truncFinsetAddHom s a = ∑ t ∈ s, truncFinsetAddHom {t} a
-  -- Use the canonical integer action to apply the finite-sum formula.
-  let : IsBoundedSMul ℤ E := .of_norm_smul_le norm_zsmul_le
-  calc
-    _ = ∑ t ∈ s, ofFinsupp ℤ c (Finsupp.single t (a t)) := by
-      rw [← truncFinset_eq_sum_ofFinsupp_single, truncFinset_apply_eq_truncFinsetAddHom]
-    _ = _ := Finset.sum_congr rfl fun t _ ↦
-      (truncFinsetAddHom_singleton_eq_ofFinsupp_single ℤ t a).symm
+  rw [HasSum, SummationFilter.unconditional_filter]
+  exact (tendsto_truncFinsetAddHom_atTop a).congr (truncFinsetAddHom_eq_sum_singleton · a)
 
 /-- The families fixed by some finite-support truncation are dense. -/
 theorem dense_setOf_exists_truncFinsetAddHom_eq_self :

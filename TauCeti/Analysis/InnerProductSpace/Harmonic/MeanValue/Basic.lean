@@ -45,7 +45,7 @@ needed.
 A harmonic function is weakly harmonic
 (`InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero`): `∫ Δχ • u ∂μ = 0` for every
 test function `χ` supported in the ball. Taking `χ` radial, `χ x = ρ (‖x‖ ^ 2)`, the Laplacian
-`Δχ x = 4 ‖x‖² ρ'' (‖x‖²) + 2 n ρ' (‖x‖²)` is radial too (`ContDiff.laplacian_comp_norm_sq`),
+`Δχ x = 4 ‖x‖² ρ'' (‖x‖²) + 2 n ρ' (‖x‖²)` is radial too (`ContDiffAt.laplacian_comp_norm_sq`),
 and integrating in polar coordinates with the radial variable
 outermost (`TauCeti.integral_eq_integral_Ioi_integral_toSphere`) turns the identity into
 
@@ -133,7 +133,7 @@ private lemma exists_integral_smul_laplacian_eq_two_smul_integral_deriv_smul [No
   have hΔ : Δ (χ : E → ℝ) = fun x ↦ 4 * ‖x‖ ^ 2 * deriv (deriv ρ) (‖x‖ ^ 2) +
       2 * (Module.finrank ℝ E : ℝ) * deriv ρ (‖x‖ ^ 2) := by
     funext x
-    rw [hχ, (hρ.of_le (by simp)).laplacian_comp_norm_sq]
+    rw [hχ, (hρ.of_le (by simp)).contDiffAt.laplacian_comp_norm_sq]
   -- Green's identity against `χ`, in polar coordinates.
   -- `Ω` is the ball, as a set.
   have hu' : ContDiffOn ℝ 2 u Ω := hu

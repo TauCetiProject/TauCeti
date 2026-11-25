@@ -52,8 +52,8 @@ constants and variables, and commutes with bounded coefficient maps by
   uniform structure on polynomials are given by the Gauss norm of differences.
 
 Dense coefficient subsets give dense polynomials with coefficients in them by
-`MvPowerSeries.dense_closure_monomial`, and injectivity of the polynomial embedding is Mathlib's
-`MvPolynomial.toRestricted_injective`.
+`MvPowerSeries.dense_setOfPred_coe_eq_sum_monomial`, and injectivity of the polynomial embedding
+is Mathlib's `MvPolynomial.toRestricted_injective`.
 
 The packaging as an `AbstractCompletion` follows Mathlib's `LaurentSeries.LaurentSeriesPkg` in
 `Mathlib/RingTheory/LaurentSeries.lean`, as does `TauCeti.NovikovSeries.completionPkg`.
@@ -72,25 +72,22 @@ open scoped Topology Uniformity
 
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ}
 
-open IsRestrictedFamily.Gauss (subringAddEquiv subringAddEquiv_apply
-  subringAddEquiv_apply_apply norm_subringLinearEquiv truncFinsetAddHom
-  truncFinsetAddHom_apply_of_mem truncFinsetAddHom_apply_of_notMem norm_sub_truncFinsetAddHom_le
-  isometry_subringAddEquiv tendsto_truncFinsetAddHom_atTop
-  tendsto_truncFinsetAddHom_finite_of_degree_lt_atTop)
-
-private theorem subringAddEquiv_truncFinset (f : IsRestricted.subring (R := R) c)
-    (s : Finset (σ →₀ ℕ)) :
-    subringAddEquiv (polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))) =
-      truncFinsetAddHom s (subringAddEquiv f) := by
-  ext t
-  rw [subringAddEquiv_apply_apply, coe_polynomialToRestricted, MvPolynomial.coeff_coe]
-  by_cases ht : t ∈ s
-  · rw [truncFinsetAddHom_apply_of_mem _ ht, subringAddEquiv_apply_apply]
-    exact coeff_truncFinset_of_mem f.val ht
-  · rw [truncFinsetAddHom_apply_of_notMem _ ht]
-    exact coeff_truncFinset_eq_zero f.val ht
+open IsRestrictedFamily.Gauss (subringLinearIsometryEquiv subringLinearIsometryEquiv_apply
+  truncFinsetAddHom truncFinsetAddHom_apply_of_mem truncFinsetAddHom_apply_of_notMem
+  norm_sub_truncFinsetAddHom_le tendsto_truncFinsetAddHom_atTop
+  tendsto_truncFinsetAddHom_degree_lt_atTop)
 
 variable [∀ i, Fact (0 < c i)]
+
+private theorem subringLinearIsometryEquiv_truncFinset (f : IsRestricted.subring (R := R) c)
+    (s : Finset (σ →₀ ℕ)) :
+    subringLinearIsometryEquiv R
+        (polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))) =
+      truncFinsetAddHom s (subringLinearIsometryEquiv R f) := by
+  ext t
+  by_cases ht : t ∈ s <;>
+    simp [subringLinearIsometryEquiv_apply, coe_polynomialToRestricted, MvPolynomial.coeff_coe,
+      ht, coeff_truncFinset_of_mem, coeff_truncFinset_eq_zero]
 
 /-- The truncation of a restricted series to a finite set `s` of exponents approximates it within
 any bound on its weighted coefficient norms `‖aₜ‖ cᵗ` outside `s`. -/
@@ -98,32 +95,28 @@ theorem norm_sub_truncFinset_le (f : IsRestricted.subring (R := R) c) (s : Finse
     {ε : ℝ} (hε : 0 ≤ ε)
     (h : ∀ t ∉ s, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ ε) :
     ‖f - polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))‖ ≤ ε := by
-  calc
-    _ = ‖subringAddEquiv
-        (f - polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R)))‖ := by
-      rw [subringAddEquiv_apply, norm_subringLinearEquiv]
-    _ ≤ ε := by
-      rw [map_sub, subringAddEquiv_truncFinset]
-      refine norm_sub_truncFinsetAddHom_le (subringAddEquiv f) s hε ?_
-      simpa only [subringAddEquiv_apply_apply] using h
+  have h' := norm_sub_truncFinsetAddHom_le (subringLinearIsometryEquiv R f) s hε
+    (by simpa only [subringLinearIsometryEquiv_apply] using h)
+  rwa [← subringLinearIsometryEquiv_truncFinset, ← map_sub, LinearIsometryEquiv.norm_map] at h'
 
 /-- **Finite-support truncations converge**: as the finite set `s` of exponents grows, the
-truncations `∑_{t ∈ s} aₜ Xᵗ` of a restricted series tend to it in the Gauss norm. -/
+truncations `∑_{t ∈ s} aₜ Xᵗ` of a restricted series tend to it in the Gauss norm. This is the
+scalar case of `TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.tendsto_truncFinsetAddHom_atTop`. -/
 theorem tendsto_truncFinset_atTop (f : IsRestricted.subring (R := R) c) :
     Tendsto (fun s : Finset (σ →₀ ℕ) ↦
       polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))) atTop (𝓝 f) := by
-  apply isometry_subringAddEquiv.tendsto_nhds_iff.mpr
-  simpa only [Function.comp_def, subringAddEquiv_truncFinset] using
-    tendsto_truncFinsetAddHom_atTop (subringAddEquiv f)
+  apply (subringLinearIsometryEquiv R).isometry.tendsto_nhds_iff.mpr
+  simpa only [Function.comp_def, subringLinearIsometryEquiv_truncFinset] using
+    tendsto_truncFinsetAddHom_atTop (subringLinearIsometryEquiv R f)
 
 /-- **Total-degree truncations converge**: in finitely many variables, the truncations of a
 restricted series below total degree `n` tend to it in the Gauss norm as `n → ∞`. -/
 theorem tendsto_truncTotal_atTop [Finite σ] (f : IsRestricted.subring (R := R) c) :
     Tendsto (fun n : ℕ ↦ polynomialToRestricted c (truncTotal n (f : MvPowerSeries σ R)))
       atTop (𝓝 f) := by
-  apply isometry_subringAddEquiv.tendsto_nhds_iff.mpr
-  simpa only [Function.comp_def, truncTotal, subringAddEquiv_truncFinset] using
-    tendsto_truncFinsetAddHom_finite_of_degree_lt_atTop (subringAddEquiv f)
+  apply (subringLinearIsometryEquiv R).isometry.tendsto_nhds_iff.mpr
+  simpa only [Function.comp_def, truncTotal, subringLinearIsometryEquiv_truncFinset] using
+    tendsto_truncFinsetAddHom_degree_lt_atTop (subringLinearIsometryEquiv R f)
 
 /-- **The polynomials are dense** in the restricted series for the Gauss norm. -/
 theorem denseRange_polynomialToRestricted : DenseRange (polynomialToRestricted (R := R) c) :=

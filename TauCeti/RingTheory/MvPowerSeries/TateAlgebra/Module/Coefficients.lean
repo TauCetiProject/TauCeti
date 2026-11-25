@@ -19,9 +19,9 @@ coefficient equivalence preserves the Gauss seminorm defined in `Module.Norm`. I
 the coefficient seminorm is a norm, and it is complete when the coefficient space is complete.
 
 The coefficient comparison is linearly isometric for every bounded coefficient-module action
-and sends single coefficients to coordinate vectors. The unit Gauss seminorm is attained by
-some coefficient. For unconditional expansion and density at arbitrary positive polyradii, see
-`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Approximation`.
+and sends single-coefficient families to the corresponding coordinate vectors. The unit Gauss
+seminorm is attained by some coefficient. For unconditional expansion and density at arbitrary
+positive polyradii, see `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Approximation`.
 
 The scalar coefficient comparison in `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients`
 specializes this construction; `IsRestrictedFamily.Gauss.norm_subringLinearEquiv` identifies its

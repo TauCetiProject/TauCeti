@@ -21,13 +21,18 @@ norm bound, so the induced map is open and is a quotient map. This extends the
 coefficient-lifting argument of
 `TauCeti.MvPowerSeries.exists_restrictedMap_eq_and_norm_coeff_le` to module coefficients.
 
-Complete coefficient groups give complete restricted families. The construction allows arbitrary
-variable sets and seminormed additive coefficient groups. It is a norm for normed coefficients.
-Neither completeness nor an ultrametric norm is needed for the additive norm; the latter is
+Complete coefficient groups give complete restricted families. For finite-support approximation
+in the Gauss norm, see `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Approximation`.
+The construction allows arbitrary variable sets and seminormed additive coefficient groups, and
+is a norm for normed coefficients. Neither completeness nor an ultrametric norm is needed for
+the additive norm; the latter is
 required for the convolution estimate. For ring-valued coefficients, the existing comparison
-with scalar restricted series preserves the Gauss norm. Over an ultrametric ring, bounded
-coefficient maps induce continuous linear maps over the scalar restricted series, and
-coefficient equivalences bounded in both directions induce topological isomorphisms.
+with scalar restricted series preserves the Gauss norm, so over a commutative ultrametric ring it
+is a linear isometric equivalence
+(`TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.subringLinearIsometryEquiv`). Over an
+ultrametric ring, bounded coefficient maps induce continuous linear maps over the scalar
+restricted series, and coefficient equivalences bounded in both directions induce topological
+isomorphisms.
 
 ## References
 
@@ -186,30 +191,6 @@ theorem _root_.LinearMap.toAddSubgroup_mapGaussFamily
   simp [mapLinearMap_apply]
 
 end Module
-
-section ScalarComparison
-
-variable [NormedRing R] [IsUltrametricDist R]
-
-/-- A scalar restricted series as a Gauss coefficient family, before equipping either carrier
-with its Gauss topology. -/
-noncomputable def subringAddEquiv : IsRestricted.subring (R := R) c ≃+ Gauss c R :=
-  IsRestrictedFamily.subringLinearEquiv.toAddEquiv.trans toAddSubgroupAddEquiv.symm
-
-/-- The scalar-to-family equivalence sends a restricted series to its coefficient family. -/
-theorem subringAddEquiv_apply (f : IsRestricted.subring (R := R) c) :
-    subringAddEquiv f = ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f) := by
-  rw [subringAddEquiv, AddEquiv.trans_apply, toAddSubgroupAddEquiv_symm_apply]
-  rfl
-
-/-- Evaluation of the Gauss family at an exponent gives the original series coefficient. -/
-@[simp]
-theorem subringAddEquiv_apply_apply (f : IsRestricted.subring (R := R) c) (t : σ →₀ ℕ) :
-    subringAddEquiv f t = _root_.MvPowerSeries.coeff t (f : MvPowerSeries σ R) := by
-  rw [subringAddEquiv_apply, ofAddSubgroup_apply]
-  exact congrFun (IsRestrictedFamily.coe_subringLinearEquiv f) t
-
-end ScalarComparison
 
 variable [hc : ∀ i, Fact (0 < c i)]
 
@@ -492,11 +473,36 @@ theorem norm_subringLinearEquiv (f : IsRestricted.subring (R := R) c) :
   rw [norm_eq_iSup, _root_.MvPowerSeries.norm_eq_gaussNorm, gaussNorm]
   simp only [coe_subringLinearEquiv]
 
-/-- Passing from a scalar restricted series to its coefficient family preserves distances at
-positive polyradii. -/
-theorem isometry_subringAddEquiv : Isometry (subringAddEquiv (c := c) (R := R)) :=
-  AddMonoidHomClass.isometry_of_norm _ fun f ↦ by
-    rw [subringAddEquiv_apply, norm_subringLinearEquiv]
+section Comm
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+
+variable (R) in
+/-- The ring-valued coefficient comparison as a linear isometric equivalence between the scalar
+restricted series and the Gauss families of their coefficients, at every positive polyradius. -/
+def subringLinearIsometryEquiv : IsRestricted.subring (R := R) c ≃ₗᵢ[R] Gauss c R where
+  toLinearEquiv := (IsRestrictedFamily.subringLinearEquiv.restrictScalars R).trans
+    (toAddSubgroupLinearEquiv R).symm
+  norm_map' := norm_subringLinearEquiv
+
+/-- The coefficient isometry sends a restricted series to its family of coefficients. -/
+@[simp]
+theorem subringLinearIsometryEquiv_apply (f : IsRestricted.subring (R := R) c) (t : σ →₀ ℕ) :
+    subringLinearIsometryEquiv R f t = _root_.MvPowerSeries.coeff t (f : MvPowerSeries σ R) := by
+  rw [← LinearIsometryEquiv.coe_toLinearEquiv]
+  simp only [subringLinearIsometryEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.restrictScalars_apply, toAddSubgroupLinearEquiv_symm_apply,
+    coe_subringLinearEquiv]
+
+/-- The inverse coefficient isometry sends a Gauss family to the series with those
+coefficients. -/
+@[simp]
+theorem subringLinearIsometryEquiv_symm_apply (a : Gauss c R) (t : σ →₀ ℕ) :
+    _root_.MvPowerSeries.coeff t
+      ((subringLinearIsometryEquiv R).symm a : MvPowerSeries σ R) = a t := by
+  rw [← subringLinearIsometryEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
+
+end Comm
 
 variable [SeminormedAddCommGroup F] [IsUltrametricDist F] [Module R F] [IsBoundedSMul R F]
 
