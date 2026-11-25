@@ -9,9 +9,8 @@ public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
 public import TauCeti.Combinatorics.SimpleGraph.OddTriangles
 import TauCeti.Algebra.BigOperators.Sym
-import TauCeti.Data.Fin.Basic
-import TauCeti.GroupTheory.Perm.Basic
-import TauCeti.GroupTheory.Perm.ParityRetract
+import TauCeti.Algebra.Group.Basic
+import TauCeti.Combinatorics.CoboundaryExpansion.SwapGraph
 import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.Tactic.Positivity
 
@@ -35,9 +34,10 @@ cochains, and the defect and gauge cost become counts of edges and triangles:
   `TauCeti.Cochain.defect_eq_two_mul_card_oddTriangleFinset` and
   `TauCeti.Cochain.cost_eq_two_mul_card_symmDiff`.
 
-For permutation coefficients `Equiv.Perm α` with the moved-point norm and a transposition `t`, the
-parity retraction onto `{1, t}` (`Equiv.Perm.parityRetract`) does not increase any gauge cost, so
-the cheapest gauges are the cuts. Hence:
+For permutation coefficients `Equiv.Perm α` with the moved-point norm and a transposition `t`, every
+gauge costs at least the cut gauge of its odd-sign vertices
+(`SimpleGraph.two_mul_card_symmDiff_le_sum_filter_lt_movedNorm_ite_isSwap`), so the cheapest gauges
+are the cuts. Hence:
 
 * `SimpleGraph.isCutMinimal_iff_gaugeDist_eq`: `G` is cut-minimal exactly when the gauge distance
   of its cochain is `2 * #G.edgeFinset`;
@@ -64,23 +64,16 @@ namespace SimpleGraph
 
 variable {V K : Type*} [Fintype V] [LinearOrder V] [Group K] {t : K}
 
-/-- A product of three factors from `{1, t}`, the last inverted, is `t` exactly when an odd number
-of the factors are `t`. -/
-private theorem ite_mul_ite_mul_ite_inv (ht : t * t = 1) (p r s : Prop) [Decidable p]
-    [Decidable r] [Decidable s] :
-    (if p then t else 1) * (if r then t else 1) * (if s then t else 1)⁻¹ =
-      if Xor p (Xor s r) then t else 1 := by
-  have hinv : t⁻¹ = t := inv_eq_of_mul_eq_one_right ht
-  by_cases hp : p <;> by_cases hr : r <;> by_cases hs : s <;> simp [hp, hr, hs, hinv, ht]
-
-/-- An edge term with gauge values in `{1, t}` is `t` exactly when an odd number of the edge label
-and the two gauge values are `t`. -/
-private theorem ite_inv_mul_ite_mul_ite (ht : t * t = 1) (p r s : Prop) [Decidable p]
-    [Decidable r] [Decidable s] :
-    (if r then t else 1)⁻¹ * (if p then t else 1) * (if s then t else 1) =
-      if Xor p (Xor r s) then t else 1 := by
-  have hinv : t⁻¹ = t := inv_eq_of_mul_eq_one_right ht
-  by_cases hp : p <;> by_cases hr : r <;> by_cases hs : s <;> simp [hp, hr, hs, hinv, ht]
+/-- The gauge cost of the cochain of `G` as a sum over the increasing pairs. -/
+private theorem cost_ofLt_ite_adj_eq_sum (G : SimpleGraph V) [DecidableRel G.Adj]
+    (ℓ : GroupNorm K) (β : V → K) :
+    (Cochain.ofLt (complete V) fun u v => if G.Adj u v then t else 1).cost ℓ β =
+      ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
+        ℓ ((β e.1)⁻¹ * (if G.Adj e.1 e.2 then t else 1) * β e.2) := by
+  rw [Cochain.cost_complete]
+  refine sum_congr rfl fun e he => ?_
+  have h := (mem_filter.mp he).2
+  rw [Cochain.ofLt_apply_of_lt _ ((adj_complete _ _).mpr h.ne) h]
 
 /-- **Defect of a graph cochain.** The cochain equal to an involution `t` on the edges of `G` and
 `1` elsewhere has defect `ℓ t * #G.oddTriangleFinset`. -/
@@ -94,7 +87,9 @@ theorem defect_ofLt_ite_adj (G : SimpleGraph V) [DecidableRel G.Adj] (ℓ : Grou
   simp only [mul_sum]
   refine sum_congr rfl fun u _ => sum_congr rfl fun v _ => sum_congr rfl fun w _ => ?_
   by_cases h : u < v ∧ v < w
-  · rw [ite_eq_left h, Cochain.holonomy_ofLt_complete _ h.1 h.2, ite_mul_ite_mul_ite_inv ht]
+  · rw [ite_eq_left h, Cochain.holonomy_ofLt_complete _ h.1 h.2, ite_inv_of_mul_self ht,
+      ite_mul_ite_mul_ite_of_mul_self ht]
+    simp only [xor_comm (G.Adj v w)]
     by_cases hx : Xor (G.Adj u v) (Xor (G.Adj u w) (G.Adj v w)) <;> simp [h, hx]
   · rw [ite_eq_right h, ite_eq_right fun h' => h ⟨h'.1, h'.2.1⟩]
     simp
@@ -114,7 +109,7 @@ theorem cost_ofLt_ite_adj (G : SimpleGraph V) [DecidableRel G.Adj] (ℓ : GroupN
   refine sum_congr rfl fun u _ => sum_congr rfl fun v _ => ?_
   by_cases huv : u < v
   · rw [Cochain.ofLt_apply_of_lt _ ((adj_complete u v).mpr huv.ne) huv,
-      ite_inv_mul_ite_mul_ite ht]
+      ite_inv_of_mul_self ht, ite_mul_ite_mul_ite_of_mul_self ht]
     by_cases ha : G.Adj u v <;> by_cases hu : u ∈ S <;> by_cases hv : v ∈ S <;>
       simp [huv, huv.ne, ha, hu, hv, mem_symmDiff, between_adj]
   · simp [huv]
@@ -143,26 +138,9 @@ theorem two_mul_card_edgeFinset_le_cost {t : Perm α} (ht : t.IsSwap) (G : Simpl
     (2 * #G.edgeFinset : ℝ) ≤
       (Cochain.ofLt (complete V) fun u v => if G.Adj u v then t else 1).cost
         (Perm.movedNorm α) β := by
-  set c := Cochain.ofLt (complete V) fun u v => if G.Adj u v then t else 1
-  have hφc : c.map (Perm.parityRetract ht) = c := by
-    refine Cochain.ext fun u v _ => ?_
-    rw [Cochain.map_apply, Perm.parityRetract_eq_self_iff]
-    rcases lt_trichotomy u v with h | rfl | h
-    · rw [Cochain.ofLt_apply_of_lt _ ((adj_complete u v).mpr h.ne) h]
-      split_ifs <;> simp
-    · simp
-    · rw [Cochain.ofLt_apply_of_gt _ ((adj_complete u v).mpr h.ne') h]
-      split_ifs <;> simp [inv_eq_of_mul_eq_one_right ht.mul_self_eq_one]
-  refine le_trans ?_ (Cochain.cost_map_le (Perm.movedNorm_parityRetract_le ht) c β)
-  -- The retracted gauge takes values in `{1, t}`: it is the cut gauge of the vertices sent to `t`.
-  let S : Set V := {u | Perm.parityRetract ht (β u) = t}
-  have hγ : Perm.parityRetract ht ∘ β = fun u => if u ∈ S then t else 1 := by
-    funext u
-    rcases (Perm.mem_range_parityRetract ht _).mp ⟨β u, rfl⟩ with h | h
-    · simp [S, h, ht.isCycle.ne_one.symm]
-    · simp [S, h]
-  rw [hφc, hγ, G.cost_ofLt_ite_adj _ ht.mul_self_eq_one, ht.movedNorm]
-  exact_mod_cast Nat.mul_le_mul_left 2 ((isCutMinimal_iff_card_le_card_symmDiff G).mp hG S)
+  rw [cost_ofLt_ite_adj_eq_sum]
+  refine le_trans ?_ (G.two_mul_card_symmDiff_le_sum_filter_lt_movedNorm_ite_isSwap ht β)
+  exact_mod_cast Nat.mul_le_mul_left 2 ((isCutMinimal_iff_card_le_card_symmDiff G).mp hG _)
 
 /-- **Cut-minimality as a gauge distance.** For a transposition `t`, a graph `G` is cut-minimal
 exactly when the cochain equal to `t` on its edges has gauge distance `2 * #G.edgeFinset`, the cost
@@ -172,15 +150,9 @@ theorem isCutMinimal_iff_gaugeDist_eq {t : Perm α} (ht : t.IsSwap) (G : SimpleG
     G.IsCutMinimal ↔
       (Cochain.ofLt (complete V) fun u v => if G.Adj u v then t else 1).gaugeDist
         (Perm.movedNorm α) = 2 * #G.edgeFinset := by
-  refine ⟨fun hG => le_antisymm ?_ ?_, fun h => ?_⟩
-  · simpa [ht.movedNorm] using G.gaugeDist_ofLt_ite_adj_le (Perm.movedNorm α) ht.mul_self_eq_one
-  · exact (Cochain.le_gaugeDist_iff _ _).mpr (G.two_mul_card_edgeFinset_le_cost ht hG)
-  · refine (isCutMinimal_iff_card_le_card_symmDiff G).mpr fun S _ => ?_
-    have hS := Cochain.gaugeDist_le_cost (Perm.movedNorm α)
-      (Cochain.ofLt (complete V) fun u v => if G.Adj u v then t else 1)
-      (fun u => if u ∈ S then t else 1)
-    rw [h, G.cost_ofLt_ite_adj _ ht.mul_self_eq_one, ht.movedNorm] at hS
-    exact_mod_cast (mul_le_mul_iff_right₀ (by norm_num : (0 : ℝ) < 2)).mp hS
+  rw [Cochain.gaugeDist_def]
+  simp only [cost_ofLt_ite_adj_eq_sum]
+  exact (G.ciInf_sum_filter_lt_movedNorm_ite_isSwap_eq_two_mul_card_iff ht).symm
 
 /-- **Cut-minimal graphs bound the permutation constant.** For a cut-minimal graph `G` on `V` with
 at least one edge,
@@ -228,12 +200,9 @@ edges of its support graph and `1` elsewhere. -/
 theorem eq_ofLt_ite_supportGraph (α : Cochain (complete V) (Perm (Fin 2))) :
     α = Cochain.ofLt (complete V) fun u v => if α.supportGraph.Adj u v then swap 0 1 else 1 := by
   refine ext_of_lt fun u v huv hadj => ?_
-  rw [ofLt_apply_of_lt _ hadj huv]
-  by_cases h : α.supportGraph.Adj u v
-  · rw [ite_eq_left h]
-    exact (Perm.eq_one_or_swap_fin_two _).resolve_left h
-  · rw [ite_eq_right h]
-    simpa using h
+  rw [ofLt_apply_of_lt _ hadj huv, perm_fin_two_eq_ite_fromRel α α.apply_self α.apply_swap u v]
+  refine if_congr ?_ rfl rfl
+  simp [SimpleGraph.fromRel_adj, huv.ne, α.apply_swap v u]
 
 /-- The defect of an `Equiv.Perm (Fin 2)`-valued cochain on the complete complex is twice the
 number of triangles spanning an odd number of edges of its support graph. -/
@@ -251,14 +220,9 @@ theorem cost_eq_two_mul_card_symmDiff (α : Cochain (complete V) (Perm (Fin 2)))
     α.cost (Perm.movedNorm (Fin 2)) β =
       2 * #(α.supportGraph.edgeFinset ∆
         ((⊤ : SimpleGraph V).between {u | β u ≠ 1} {u | β u ≠ 1}ᶜ).edgeFinset) := by
-  have hβ : β = fun u => if u ∈ {u | β u ≠ 1} then swap 0 1 else 1 := by
-    funext u
-    by_cases h : β u = 1
-    · simp [h]
-    · simp [(Perm.eq_one_or_swap_fin_two _).resolve_left h]
-  conv_lhs => rw [α.eq_ofLt_ite_supportGraph, hβ]
-  rw [SimpleGraph.cost_ofLt_ite_adj _ _ (swap_mul_self 0 1),
-    Perm.IsSwap.movedNorm ⟨0, 1, by decide, rfl⟩]
+  conv_lhs => rw [α.eq_ofLt_ite_supportGraph]
+  rw [SimpleGraph.cost_ofLt_ite_adj_eq_sum]
+  exact α.supportGraph.sum_filter_lt_movedNorm_fin_two_ite_swap β
 
 end TauCeti.Cochain
 
