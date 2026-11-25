@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.BrauerNesbitt
+public import TauCeti.RepresentationTheory.BaseChange.BrauerNesbitt
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
 
 /-!
@@ -14,12 +14,16 @@ public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
 For jointly continuous finite-dimensional semisimple representations on modules with their module
 topologies, over an algebraically closed topological field, the equivalence given by Brauer–Nesbitt
 (`Representation.nonempty_equiv_of_charpoly_eq_of_isSemisimpleRepresentation`) is automatically a
-homeomorphism (`TauCeti.ContinuousRep.nonempty_iso_of_charpoly_eq`).
+homeomorphism (`TauCeti.ContinuousRep.nonempty_iso_of_charpoly_eq`). The same holds over any
+perfect topological field (`TauCeti.ContinuousRep.nonempty_iso_of_charpoly_eq_of_perfectField`),
+through `Representation.nonempty_equiv_of_charpoly_eq_of_perfectField`.
 
 ## Main results
 
 * `TauCeti.ContinuousRep.nonempty_iso_of_charpoly_eq`: Brauer–Nesbitt for continuous
   representations.
+* `TauCeti.ContinuousRep.nonempty_iso_of_charpoly_eq_of_perfectField`: Brauer–Nesbitt for
+  continuous representations over a perfect field.
 -/
 
 public section
@@ -40,5 +44,16 @@ theorem nonempty_iso_of_charpoly_eq (ρ : ContinuousRep Γ k V) (σ : Continuous
     (h : ∀ g, (ρ g).charpoly = (σ g).charpoly) : Nonempty (Iso ρ σ) :=
   (Representation.nonempty_equiv_of_charpoly_eq_of_isSemisimpleRepresentation _ _ h).map
     Iso.ofEquiv
+
+omit [IsAlgClosed k] in
+/-- **Brauer–Nesbitt for continuous representations over a perfect field.** Over a perfect
+topological field, two jointly continuous finite-dimensional semisimple representations with their
+module topologies and the same characteristic polynomial at every element are isomorphic as
+continuous representations. -/
+theorem nonempty_iso_of_charpoly_eq_of_perfectField [PerfectField k] (ρ : ContinuousRep Γ k V)
+    (σ : ContinuousRep Γ k W) [ρ.toRepresentation.IsSemisimpleRepresentation]
+    [σ.toRepresentation.IsSemisimpleRepresentation]
+    (h : ∀ g, (ρ g).charpoly = (σ g).charpoly) : Nonempty (Iso ρ σ) :=
+  (Representation.nonempty_equiv_of_charpoly_eq_of_perfectField _ _ h).map Iso.ofEquiv
 
 end TauCeti.ContinuousRep
