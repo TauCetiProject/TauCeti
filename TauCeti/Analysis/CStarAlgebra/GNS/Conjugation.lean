@@ -31,6 +31,8 @@ GNS representation by `J` gives right multiplication: `J π(a) J [b] = [b a⋆]`
 * `PositiveLinearMap.inner_gnsConj_gnsConj`: `⟪J x, J y⟫ = ⟪y, x⟫`.
 * `PositiveLinearMap.gnsConj_apply_gnsVector`: `J Ω = Ω`.
 * `PositiveLinearMap.gnsConj_gnsNonUnitalStarAlgHom_gnsConj_toGNS`: `J π(a) J [b] = [b a⋆]`.
+* `PositiveLinearMap.gnsConj_gnsNonUnitalStarAlgHom_smul_gnsConj`: `a ↦ J π(a) J` is conjugate
+  linear.
 
 ## References
 
@@ -112,6 +114,13 @@ theorem gnsConj_gnsNonUnitalStarAlgHom_gnsConj_toGNS (a b : A) :
       f.toGNS (b * star a) := by
   rw [gnsConj_apply_toGNS, gnsNonUnitalStarAlgHom_apply_toGNS, gnsConj_apply_toGNS, star_mul,
     star_star]
+
+/-- Conjugating the GNS representation by the modular conjugation is conjugate linear:
+`J π(c • a) J x = conj c • J π(a) J x`. -/
+theorem gnsConj_gnsNonUnitalStarAlgHom_smul_gnsConj (c : ℂ) (a : A) (x : f.GNS) :
+    gnsConj f hf (f.gnsNonUnitalStarAlgHom (c • a) (gnsConj f hf x)) =
+      starRingEnd ℂ c • gnsConj f hf (f.gnsNonUnitalStarAlgHom a (gnsConj f hf x)) := by
+  rw [map_smul, _root_.smul_apply, LinearIsometryEquiv.map_smulₛₗ]
 
 /-- For a unital algebra, the modular conjugation fixes the cyclic vector `Ω = [1]`. -/
 @[simp]
