@@ -12,6 +12,9 @@ public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
+import TauCeti.Analysis.Holder.Jet.Bounds
+import TauCeti.Analysis.InnerProductSpace.PiL2
+
 /-!
 # `ACL` and `ACL^p` maps
 
@@ -81,16 +84,6 @@ theorem formalDeriv_apply_single (u : EuclideanSpace ℝ (Fin n) → F) (x : Euc
     (i : Fin n) :
     formalDeriv u x (EuclideanSpace.single i 1) = lineDeriv ℝ u x (EuclideanSpace.single i 1) := by
   simp [formalDeriv_apply, PiLp.single_apply]
-
-/-- Two continuous linear maps on `EuclideanSpace 𝕜 ι` agreeing on the standard basis vectors
-`EuclideanSpace.single i 1` are equal. -/
-theorem _root_.EuclideanSpace.ext_continuousLinearMap_single {𝕜 ι E : Type*} [RCLike 𝕜]
-    [Finite ι] [DecidableEq ι] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
-    {L L' : EuclideanSpace 𝕜 ι →L[𝕜] E}
-    (h : ∀ i, L (EuclideanSpace.single i 1) = L' (EuclideanSpace.single i 1)) : L = L' := by
-  have := Fintype.ofFinite ι
-  exact ContinuousLinearMap.coe_injective <| (EuclideanSpace.basisFun ι 𝕜).toBasis.ext fun i ↦ by
-    simpa using h i
 
 /-- Where `u` is differentiable, its formal derivative is its Fréchet derivative. -/
 theorem formalDeriv_eq_fderiv {u : EuclideanSpace ℝ (Fin n) → F} {x : EuclideanSpace ℝ (Fin n)}
@@ -165,14 +158,6 @@ theorem lineFunction_apply (u : EuclideanSpace ℝ (Fin n) → F) (x : Euclidean
     lineFunction u x i t = u (x + (t - x i) • EuclideanSpace.single i 1) := by
   simp [lineFunction]
 
-/-- The coordinates of the point `x + (t - xᵢ) eᵢ`: the `i`-th one is `t`, the others are
-those of `x`. -/
-theorem add_sub_smul_single_apply (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) (t : ℝ) :
-    (x + (t - x i) • EuclideanSpace.single i (1 : ℝ)) j = if j = i then t else x j := by
-  by_cases h : j = i
-  · subst h; simp
-  · simp [h]
-
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
 /-- The line function at the `i`-th coordinate of `x` is the value of `u` at `x`. -/
 @[simp]
@@ -190,7 +175,7 @@ theorem lineFunction_add_smul_single (u : EuclideanSpace ℝ (Fin n) → F)
   simp only [lineFunction]
   congr 1
   ext j
-  rw [add_sub_smul_single_apply, add_sub_smul_single_apply]
+  rw [EuclideanSpace.add_sub_smul_single_apply, EuclideanSpace.add_sub_smul_single_apply]
   split_ifs with h
   · rfl
   · simp [h]
@@ -201,16 +186,10 @@ theorem add_sub_smul_single_mem_coordinateBox {a b : Fin n → ℝ} {x : Euclide
     (hx : x ∈ coordinateBox a b) {i : Fin n} {t : ℝ} (ht : t ∈ Icc (a i) (b i)) :
     x + (t - x i) • EuclideanSpace.single i 1 ∈ coordinateBox a b := by
   intro j
-  rw [add_sub_smul_single_apply]
+  rw [EuclideanSpace.add_sub_smul_single_apply]
   split_ifs with h
   · exact h ▸ ht
   · exact hx j
-
-/-- The map `t ↦ x + (t - xᵢ) eᵢ` is an isometry, so `1`-Lipschitz. -/
-theorem lipschitzWith_add_sub_smul_single (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
-    LipschitzWith 1 fun t : ℝ ↦ x + (t - x i) • EuclideanSpace.single i (1 : ℝ) :=
-  LipschitzWith.of_dist_le_mul fun s t ↦ by
-    simp [dist_eq_norm, ← sub_smul, norm_smul]
 
 omit [NormedSpace ℝ F] in
 /-- If `u` is `C`-Lipschitz on a closed coordinate box containing `x`, the line function of `u`
@@ -219,7 +198,7 @@ theorem _root_.LipschitzOnWith.lineFunction {u : EuclideanSpace ℝ (Fin n) → 
     {a b : Fin n → ℝ} (hu : LipschitzOnWith C u (coordinateBox a b))
     {x : EuclideanSpace ℝ (Fin n)} (hx : x ∈ coordinateBox a b) (i : Fin n) :
     LipschitzOnWith C (lineFunction u x i) (Icc (a i) (b i)) := by
-  have h := hu.comp (lipschitzWith_add_sub_smul_single x i).lipschitzOnWith
+  have h := hu.comp (EuclideanSpace.lipschitzWith_add_sub_smul_single x i).lipschitzOnWith
     fun t ht ↦ add_sub_smul_single_mem_coordinateBox hx ht
   rwa [mul_one, show u ∘ _ = TauCeti.lineFunction u x i from
     funext fun t ↦ (lineFunction_apply u x i t).symm] at h
@@ -309,22 +288,17 @@ theorem _root_.LocallyLipschitz.isACLpOn [CompleteSpace F] (hu : LocallyLipschit
   obtain ⟨C, hC⟩ := hu.locallyLipschitzOn.exists_lipschitzOnWith_of_compact hK'
   refine ⟨∑ _i : Fin n, (C : ℝ), fun x hx ↦ (norm_formalDeriv_le u x).trans ?_⟩
   refine Finset.sum_le_sum fun i _ ↦ ?_
-  have hmem : cthickening 1 K ∈ 𝓝 x :=
-    mem_of_superset (isOpen_thickening.mem_nhds (self_subset_thickening one_pos K hx))
-      (thickening_subset_cthickening 1 K)
+  have hmem : cthickening 1 K ∈ 𝓝 x := nhds_le_nhdsSet hx (cthickening_mem_nhdsSet K one_pos)
   simpa using norm_lineDeriv_le_of_lipschitzOn ℝ hmem hC (v := EuclideanSpace.single i 1)
 
 /-- A map that is `C¹` on an open set `Ω` is `ACL^p` on `Ω` for every exponent `p`. -/
 theorem _root_.ContDiffOn.isACLpOn (hu : ContDiffOn ℝ 1 u Ω) (hΩ : IsOpen Ω) (p : ℝ≥0∞) :
     IsACLpOn u p Ω := by
-  have hloc : LocallyLipschitzOn Ω u := fun x hx ↦ by
-    obtain ⟨C, t, ht, hC⟩ := ((hu x hx).contDiffAt (hΩ.mem_nhds hx)).exists_lipschitzOnWith
-    exact ⟨C, t, mem_nhdsWithin_of_mem_nhds ht, hC⟩
   have hfd : ContinuousOn (fderiv ℝ u) Ω := hu.continuousOn_fderiv_of_isOpen hΩ le_rfl
   have heq : EqOn (formalDeriv u) (fderiv ℝ u) Ω := fun x hx ↦
     formalDeriv_eq_fderiv ((hu.differentiableOn one_ne_zero x hx).differentiableAt
       (hΩ.mem_nhds hx))
-  refine hloc.isACLOn.isACLpOn_of_bound fun K hKΩ hK ↦ ⟨?_, ?_⟩
+  refine (hu.locallyLipschitzOn_of_isOpen hΩ).isACLOn.isACLpOn_of_bound fun K hKΩ hK ↦ ⟨?_, ?_⟩
   · refine ((hfd.mono hKΩ).aestronglyMeasurable hK.measurableSet).congr ?_
     exact (ae_restrict_mem hK.measurableSet).mono fun x hx ↦ (heq (hKΩ hx)).symm
   · obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (hfd.mono hKΩ)
