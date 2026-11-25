@@ -39,7 +39,8 @@ coincide. This uniqueness result and the corresponding filled-hull alternative a
 ## Main results
 
 * `TauCeti.isPathConnected_compl_closedBall` — the exterior of a closed ball is path-connected in
-  a real normed space of dimension at least two.
+  a real normed space of dimension at least two, and so preconnected
+  (`TauCeti.isPreconnected_compl_closedBall`).
 * `TauCeti.simplyConnectedSpace_compl_closedBall` — the exterior of a closed ball is simply
   connected in a real normed space of dimension at least three.
 * `TauCeti.isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded` — the exterior of a
@@ -79,6 +80,12 @@ theorem isPathConnected_compl_closedBall (h : 1 < Module.rank ℝ E) (x : E) (r 
       by simp [smul_smul, hw']⟩
   · rintro ⟨u, t, ⟨hu, ht⟩, rfl⟩
     simpa [norm_smul, hu, abs_of_nonneg (hr.trans ht.le)] using ht
+
+/-- The exterior of a closed ball is preconnected in a real normed space of dimension at least
+two. -/
+theorem isPreconnected_compl_closedBall (h : 1 < Module.rank ℝ E) (x : E) (r : ℝ) :
+    IsPreconnected (closedBall x r)ᶜ :=
+  (isPathConnected_compl_closedBall h x r).isConnected.isPreconnected
 
 /-- **The exterior of a closed ball is simply connected** in a real normed space of dimension at
 least three: it deformation retracts radially onto a sphere. -/
