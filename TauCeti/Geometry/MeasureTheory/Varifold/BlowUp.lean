@@ -42,10 +42,11 @@ are the limits of `V_{x,r}` as `r ↓ 0` (Simon, *Lectures on Geometric Measure 
   Consequently dilations of stationary varifolds are stationary
   (`Euclidean.IsStationary.integral_tangentialDivergence_blowUp_eq_zero`,
   `Euclidean.IsStationary.blowUp`).
-* For the line varifold `V` of `x + ℝu` with constant plane `P ∈ G(E, k)`,
-  `V_{x,r} = r^{1-k} V'`, where `V'` is the line varifold of `ℝu` with the same plane
-  (`Euclidean.blowUp_lineVarifold`); for `k = 1` the dilations of a line through `x` are all
-  the line through `0` (`Euclidean.blowUp_lineVarifold_one_dim`).
+* For the line varifold `V` of `a + ℝu` with constant plane `P ∈ G(E, k)`,
+  `V_{x,r} = r^{1-k} V'`, where `V'` is the line varifold of the dilated line `r⁻¹ (a - x) + ℝu`
+  with the same plane (`Euclidean.blowUp_lineVarifold`); for `k = 1` the dilations of a line are
+  lines, and those of a line through `x` are all the line through `0`
+  (`Euclidean.blowUp_lineVarifold_one_dim`).
 
 ## References
 
@@ -97,6 +98,15 @@ private theorem range_blowUpMap (x : E) (hr : r ≠ 0) :
     simp [blowUpMap, smul_smul, mul_inv_cancel₀ hr]
   · intro hq
     exact ⟨(⟨x + r • (q.1 : E), hq⟩, q.2), by simp [blowUpMap, smul_smul, inv_mul_cancel₀ hr]⟩
+
+/-- The pairs over `W` that the dilation sends into a compact set lying over `η_{x,r}(W)` form a
+compact set. -/
+private theorem isCompact_preimage_blowUpMap (hr : r ≠ 0)
+    {K : Set ((⊤ : Opens E) × grassmannian ℝ E k)} (hK : IsCompact K)
+    (hKW : ∀ q ∈ K, x + r • (q.1 : E) ∈ W) : IsCompact (blowUpMap (W := W) x r ⁻¹' K) := by
+  refine (isOpenEmbedding_blowUpMap x hr).isInducing.isCompact_preimage' hK ?_
+  rw [range_blowUpMap x hr]
+  exact hKW
 
 /-! ### The dilation of a varifold -/
 
@@ -219,10 +229,8 @@ theorem blowUp_lt_top_of_isCompact [IsFiniteMeasureOnCompacts V] (hr : 0 < r)
     (hKW : ∀ q ∈ K, x + r • (q.1 : E) ∈ W) : blowUp V x r K < ∞ := by
   rw [blowUp_eq, smul_apply, smul_eq_mul,
     (measurableEmbedding_blowUpMap x hr.ne').map_apply]
-  refine ENNReal.mul_lt_top (by simp [hr]) (IsCompact.measure_lt_top ?_)
-  refine (isOpenEmbedding_blowUpMap x hr.ne').isInducing.isCompact_preimage' hK ?_
-  rw [range_blowUpMap x hr.ne']
-  exact hKW
+  exact ENNReal.mul_lt_top (by simp [hr])
+    (isCompact_preimage_blowUpMap hr.ne' hK hKW).measure_lt_top
 
 /-- The dilation of a varifold on `E` is a varifold on `E`. -/
 theorem isFiniteMeasureOnCompacts_blowUp (V : Measure ((⊤ : Opens E) × grassmannian ℝ E k))
@@ -251,15 +259,16 @@ theorem tendsto_integral_blowUp {V : ℕ → Measure (W × grassmannian ℝ E k)
     (f : C_c((⊤ : Opens E) × grassmannian ℝ E k, ℝ))
     (hf : ∀ q ∈ tsupport f, x + r • (q.1 : E) ∈ W) :
     Tendsto (fun n ↦ ∫ q, f q ∂blowUp (V n) x r) atTop (𝓝 (∫ q, f q ∂blowUp V₀ x r)) := by
-  have he := isOpenEmbedding_blowUpMap (W := W) (k := k) x hr.ne'
   let g : C_c(W × grassmannian ℝ E k, ℝ) :=
     { toFun := f ∘ blowUpMap x r
       continuous_toFun := f.continuous.comp (continuous_blowUpMap x r)
       hasCompactSupport' := HasCompactSupport.intro
-        (he.isInducing.isCompact_preimage' f.hasCompactSupport
-          (by rw [range_blowUpMap x hr.ne']; exact hf))
+        (isCompact_preimage_blowUpMap hr.ne' f.hasCompactSupport hf)
         fun _ hp ↦ image_eq_zero_of_notMem_tsupport (f := ⇑f) hp }
-  simp_rw [integral_blowUp hr]
+  -- `g` is `f` composed with the dilation map, by definition.
+  have hg (p : W × grassmannian ℝ E k) :
+      g p = f (⟨r⁻¹ • ((p.1 : E) - x), Opens.mem_top _⟩, p.2) := rfl
+  simp_rw [integral_blowUp hr, ← hg]
   exact (h.tendsto_integral g).const_smul _
 
 /-- **Continuity of dilations under varifold convergence**, for varifolds on all of `E`: if
@@ -320,28 +329,31 @@ theorem IsStationary.blowUp {V : Measure ((⊤ : Opens E) × grassmannian ℝ E 
 
 /-! ### Lines -/
 
-/-- The dilation of the line varifold of `x + ℝu` with constant plane `P` about `x` is
-`r^{1-k}` times the line varifold of `ℝu` with the same plane. -/
-theorem blowUp_lineVarifold (x u : E) (P : grassmannian ℝ E k) (hr : 0 < r) :
-    blowUp (lineVarifold x u P) x r =
-      ((ENNReal.ofReal r)⁻¹ ^ k * ENNReal.ofReal r) • lineVarifold 0 u P := by
-  have hcomp : blowUpMap x r ∘ lineVarifoldParam x u P = lineVarifoldParam 0 u P ∘ (r⁻¹ * ·) := by
-    ext t <;> simp [blowUpMap, smul_smul]
+/-- The dilation about `x` of the line varifold of `a + ℝu` with constant plane `P` is `r^{1-k}`
+times the line varifold of the dilated line `r⁻¹ (a - x) + ℝu` with the same plane. -/
+theorem blowUp_lineVarifold (a u : E) (P : grassmannian ℝ E k) (x : E) (hr : 0 < r) :
+    blowUp (lineVarifold a u P) x r =
+      ((ENNReal.ofReal r)⁻¹ ^ k * ENNReal.ofReal r) • lineVarifold (r⁻¹ • (a - x)) u P := by
+  have hcomp : blowUpMap x r ∘ lineVarifoldParam a u P =
+      lineVarifoldParam (r⁻¹ • (a - x)) u P ∘ (r⁻¹ * ·) := by
+    ext t <;> simp [blowUpMap, smul_smul, smul_sub, smul_add, add_sub_right_comm]
   rw [blowUp_eq, lineVarifold_def, lineVarifold_def,
     Measure.map_map (continuous_blowUpMap x r).measurable
-      (continuous_lineVarifoldParam x u P).measurable, hcomp,
-    ← Measure.map_map (continuous_lineVarifoldParam 0 u P).measurable (measurable_const_mul _),
+      (continuous_lineVarifoldParam a u P).measurable, hcomp,
+    ← Measure.map_map (continuous_lineVarifoldParam (r⁻¹ • (a - x)) u P).measurable
+      (measurable_const_mul _),
     Real.map_volume_mul_left (inv_ne_zero hr.ne'),
-    Measure.map_smul (hf := (continuous_lineVarifoldParam 0 u P).measurable.aemeasurable),
+    Measure.map_smul
+      (hf := (continuous_lineVarifoldParam (r⁻¹ • (a - x)) u P).measurable.aemeasurable),
     smul_smul]
   simp [abs_of_pos hr]
 
-/-- **The dilations of a line through `x` are the line through `0`**: for `1`-planes, the
-dilation about `x` of the line varifold of `x + ℝu` with constant plane `P` is the line varifold
-of `ℝu` with the plane `P`, for every `r > 0`. -/
-theorem blowUp_lineVarifold_one_dim (x u : E) (P : grassmannian ℝ E 1) (hr : 0 < r) :
-    blowUp (lineVarifold x u P) x r = lineVarifold 0 u P := by
-  rw [blowUp_lineVarifold x u P hr, pow_one,
+/-- **The dilations of a line are lines**: for `1`-planes, the dilation about `x` of the line
+varifold of `a + ℝu` with constant plane `P` is the line varifold of `r⁻¹ (a - x) + ℝu` with the
+plane `P`, for every `r > 0`; for `a = x` this is the line through `0`, whatever `r`. -/
+theorem blowUp_lineVarifold_one_dim (a u : E) (P : grassmannian ℝ E 1) (x : E) (hr : 0 < r) :
+    blowUp (lineVarifold a u P) x r = lineVarifold (r⁻¹ • (a - x)) u P := by
+  rw [blowUp_lineVarifold a u P x hr, pow_one,
     ENNReal.inv_mul_cancel (ENNReal.ofReal_pos.2 hr).ne' ENNReal.ofReal_ne_top, one_smul]
 
 end Euclidean
