@@ -26,7 +26,7 @@ Full subcategories of `TauCeti.CoveringSpace X` cut out by a further property of
 object of `TopCat / X` are packaged once as `TauCeti.CoveringSpace.FullSubcategory X P`, which
 carries the constructor API. `TauCeti.ConnectedCoveringSpace X`, the covers with connected total
 space, is the instance taking `P` to be connectedness; `TauCeti.FiniteCoveringSpace` in
-`TauCeti.Topology.Covering.Finite` is the other.
+`TauCeti.Topology.Covering.Finite.Basic` is the other.
 
 Each is a reducible abbreviation, so the general API applies to it unchanged. What a subcategory
 restates is its constructor together with the computation lemmas that mention it — `mk`,

@@ -22,7 +22,8 @@ radical commutes with extending scalars to `L`:
 rad(L ⊗[K] A) = L ⊗[K] rad(A).
 ```
 
-In particular `L ⊗[K] A` is semisimple whenever `A` is.
+In particular `L ⊗[K] A` is semisimple whenever `A` is; that holds more generally over every
+perfect field (`TauCeti.isSemisimpleRing_tensorProduct_of_perfectField`).
 
 The proof goes through the regular trace form `(x, y) ↦ tr(L_{xy})`. In characteristic zero the
 Jacobson radical of a finite-dimensional algebra is the kernel of this form
@@ -30,7 +31,8 @@ Jacobson radical of a finite-dimensional algebra is the kernel of this form
 is the base change of that of `A` (`Algebra.regularTraceForm_baseChange`), and the kernel of a
 bilinear form commutes with extension of scalars (`LinearMap.BilinForm.ker_baseChange`).
 
-Characteristic zero is essential. Over `K = 𝔽_p(t)`, the field `A = K(t^{1/p})` has zero radical,
+The trace-form argument needs characteristic zero, and the statement fails over imperfect fields.
+Over `K = 𝔽_p(t)`, the field `A = K(t^{1/p})` has zero radical,
 but `A ⊗[K] A` contains the nonzero nilpotent `t^{1/p} ⊗ 1 - 1 ⊗ t^{1/p}`, whose `p`-th power is
 `t ⊗ 1 - 1 ⊗ t = 0`.
 
@@ -42,8 +44,6 @@ a Weil cohomology, where traces are available, and the radical must be computed 
 
 * `TauCeti.restrictScalars_jacobson_tensorProduct_eq_baseChange`: **the Jacobson radical of
   `L ⊗[K] A` is the base change of the Jacobson radical of `A`.**
-* `TauCeti.isSemisimpleRing_tensorProduct`: the base change of a finite-dimensional semisimple
-  algebra in characteristic zero is semisimple.
 
 ## References
 
@@ -74,13 +74,5 @@ theorem restrictScalars_jacobson_tensorProduct_eq_baseChange :
   have : CharZero L := charZero_of_injective_algebraMap (algebraMap K L).injective
   rw [restrictScalars_jacobson_eq_ker_regularTraceForm, regularTraceForm_baseChange,
     LinearMap.BilinForm.ker_baseChange, restrictScalars_jacobson_eq_ker_regularTraceForm]
-
-/-- **Semisimplicity is preserved by extension of scalars in characteristic zero.** The base change
-of a finite-dimensional semisimple algebra over a field of characteristic zero to a field extension
-is semisimple, its regular trace form being the base change of a nondegenerate form. -/
-instance isSemisimpleRing_tensorProduct [IsSemisimpleRing A] : IsSemisimpleRing (L ⊗[K] A) :=
-  isSemisimpleRing_of_nondegenerate_regularTraceForm (K := L) <| by
-    rw [regularTraceForm_baseChange]
-    exact nondegenerate_regularTraceForm.baseChange L
 
 end TauCeti

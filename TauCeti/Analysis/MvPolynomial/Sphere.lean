@@ -290,6 +290,25 @@ theorem harmonicSphereRestriction_harmonicRep_apply {d : ℕ} (g : Matrix.orthog
   simpa [harmonicSphereRestriction_coe, coe_harmonicRep_apply] using
     sphereEval_linearSubst_transpose_orthogonal_apply (R := ℝ) g (p : MvPolynomial σ ℝ) x
 
+omit [DecidableEq σ] in
+/-- Spherical harmonics are closed under pullback by Euclidean linear isometries. -/
+theorem comp_unitSphereIsometryEquiv_mem_range_harmonicSphereRestriction {d : ℕ}
+    {e : EuclideanSpace ℝ σ ≃ₗᵢ[ℝ] EuclideanSpace ℝ σ}
+    {f : C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, ℝ)}
+    (hf : f ∈ LinearMap.range (harmonicSphereRestriction σ (R := ℝ) d)) :
+    f.comp ⟨e.unitSphereIsometryEquiv, e.unitSphereIsometryEquiv.isometry.continuous⟩ ∈
+      LinearMap.range (harmonicSphereRestriction σ (R := ℝ) d) := by
+  classical
+  obtain ⟨p, rfl⟩ := hf
+  set g : Matrix.orthogonalGroup σ ℝ :=
+    (Matrix.UnitaryGroup.toLinearIsometryEquiv).symm e⁻¹
+  have hg : Matrix.UnitaryGroup.toLinearIsometryEquiv g⁻¹ = e := by
+    rw [map_inv, MulEquiv.apply_symm_apply, inv_inv]
+  refine ⟨harmonicRep σ ℝ d g p, ContinuousMap.ext fun x ↦ ?_⟩
+  rw [harmonicSphereRestriction_harmonicRep_apply, hg]
+  exact congrArg (harmonicSphereRestriction σ (R := ℝ) d p)
+    (e.unitSphereIsometryEquiv_apply_eq_smul x).symm
+
 end OrthogonalEquivariance
 
 section Injective
@@ -409,6 +428,23 @@ theorem finrank_range_harmonicSphereRestriction_eq_choose_sub {m : ℕ}
   have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℝ K).injective
   have : Nonempty σ := Fintype.card_pos_iff.1 (by omega)
   rw [finrank_range_harmonicSphereRestriction, finrank_harmonicSubmodule_eq_choose_sub hσ]
+
+/-- Every degree of spherical harmonics has positive dimension on a positive-dimensional sphere. -/
+theorem finrank_range_harmonicSphereRestriction_pos {m : ℕ}
+    (hσ : Fintype.card σ = m + 1) (d : ℕ) (hm : 1 ≤ m) :
+    0 < Module.finrank K (LinearMap.range (harmonicSphereRestriction (R := K) σ d)) := by
+  rw [finrank_range_harmonicSphereRestriction_eq_choose_sub hσ]
+  split_ifs with hd
+  · obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le' hd
+    apply Nat.sub_pos_of_lt
+    have hpos : 0 < (m + e + 1).choose (e + 1 + 1) := Nat.choose_pos (by omega)
+    have hpascal : (m + e + 1 + 1).choose (e + 1 + 1) =
+        (m + e).choose e + (m + e).choose (e + 1) + (m + e + 1).choose (e + 1 + 1) := by
+      rw [Nat.choose_succ_succ', Nat.choose_succ_succ']
+    have hlt : (m + e).choose e < (m + e + 1 + 1).choose (e + 1 + 1) := by omega
+    rw [show m + (e + 2) - 2 = m + e by omega, Nat.add_sub_cancel]
+    simpa only [Nat.add_assoc] using hlt
+  · simpa using Nat.choose_pos (show d ≤ m + d by omega)
 
 end Field
 

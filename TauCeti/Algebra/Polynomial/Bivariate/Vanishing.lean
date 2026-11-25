@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.Algebra.Polynomial.Bivariate.Basic
 import TauCeti.Algebra.Polynomial.Bivariate.SchwartzZippel
@@ -16,7 +15,6 @@ import TauCeti.Algebra.Polynomial.HasseDeriv
 import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.Polynomial.IrreducibleBasis.Basic
-import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import TauCeti.RingTheory.Polynomial.Resultant.Multiplicity
 
@@ -32,12 +30,12 @@ Note that this reverses the `R[X][Y]` variable naming convention used in
 `TauCeti.Algebra.Polynomial.Bivariate.Basic` and
 `TauCeti.Algebra.Polynomial.Bivariate.Specialization`.
 
-Whenever the fixed-degree resultant `F.resultant F.derivative F.natDegree (F.natDegree - 1)` is
-nonzero over an integral domain `K` (in particular, when `F` is squarefree over a GCD domain of
-characteristic zero), summing `(F.map (evalRingHom p.2)).rootMultiplicity p.1` over a finite set
-`Ω` with distinct second coordinates is bounded by the zero count of `F` in `Ω` plus
-`(2 * F.natDegree - 1) * dY` (`Polynomial.sum_rootMultiplicity_le_of_resultant_deriv_ne_zero` and
-`Polynomial.sum_rootMultiplicity_le_of_squarefree`). By Mathlib's convention
+For a squarefree `F : K[X][X]` over a GCD domain of characteristic zero, the resultant
+`F.resultant F.derivative` is nonzero by `Squarefree.resultant_derivative_ne_zero`, so
+`Polynomial.sum_rootMultiplicity_map_le` bounds the sum of
+`(F.map (evalRingHom p.2)).rootMultiplicity p.1` over a finite set `Ω` with distinct second
+coordinates by the zero count of `F` in `Ω` plus `(2 * F.natDegree - 1) * dY`
+(`Polynomial.sum_rootMultiplicity_le_of_squarefree`). By Mathlib's convention
 `(0 : K[X]).rootMultiplicity a = 0`, an identically zero fiber `F.map (evalRingHom p.2) = 0`
 contributes `0` to the sum, not an unbounded vanishing order (in contrast to divisibility by every
 power `(X - C p.1) ^ k`).
@@ -62,9 +60,6 @@ derivatives
 
 ## Main results
 
-* `Polynomial.sum_rootMultiplicity_le_of_resultant_deriv_ne_zero`: sum of fiberwise root
-  multiplicities over a set with distinct second coordinates whenever the fixed-degree resultant
-  with the derivative is nonzero.
 * `Polynomial.sum_rootMultiplicity_le_of_squarefree`: sum of fiberwise root multiplicities of a
   squarefree bivariate polynomial over a set with distinct second coordinates in characteristic
   zero.
@@ -93,60 +88,6 @@ namespace Polynomial
 
 section SquarefreeBound
 
-/-- **Sum of fiberwise root multiplicities when the fixed-degree resultant is nonzero.**
-Over an integral domain `K`, if `F : K[X][X]` has nonzero fixed-degree resultant
-`F.resultant F.derivative F.natDegree (F.natDegree - 1) ≠ 0` and every coefficient `F.coeff i` has
-natural degree at most `dY`, then the sum of `(F.map (evalRingHom p.2)).rootMultiplicity p.1` over
-a finite set `Ω` of points with distinct second coordinates is bounded by the number of zeros of `F`
-in `Ω` (`F.evalEval p.2 p.1 = 0`) plus `(2 * F.natDegree - 1) * dY`.
-
-By Mathlib's convention `(0 : K[X]).rootMultiplicity a = 0`, any point `p ∈ Ω` whose fiber
-`F.map (evalRingHom p.2)` vanishes identically contributes `0` to the sum rather than an unbounded
-vanishing order (in contrast to divisibility by every power `(X - C p.1) ^ k`). -/
-theorem sum_rootMultiplicity_le_of_resultant_deriv_ne_zero {K : Type*} [CommRing K] [IsDomain K]
-    [DecidableEq K] {F : K[X][X]}
-    (hres : F.resultant F.derivative F.natDegree (F.natDegree - 1) ≠ 0)
-    {dY : ℕ} (hdY : ∀ i, (F.coeff i).natDegree ≤ dY)
-    {Ω : Finset (K × K)} (hinj : Set.InjOn Prod.snd (Ω : Set (K × K))) :
-    ∑ p ∈ Ω, (F.map (evalRingHom p.2)).rootMultiplicity p.1 ≤
-      (Ω.filter fun p : K × K ↦ F.evalEval p.2 p.1 = 0).card +
-        (2 * F.natDegree - 1) * dY := by
-  set res := F.resultant F.derivative F.natDegree (F.natDegree - 1)
-  have hres_deg : res.natDegree ≤ (2 * F.natDegree - 1) * dY := by
-    have hder_deg : ∀ i ≤ F.natDegree - 1, (F.derivative.coeff i).natDegree ≤ dY := by
-      intro i _
-      rw [coeff_derivative]
-      exact (natDegree_mul_le).trans (by simpa [natDegree_natCast] using hdY (i + 1))
-    calc res.natDegree ≤ F.natDegree * dY + (F.natDegree - 1) * dY :=
-          natDegree_resultant_le (fun i _ ↦ hdY i) hder_deg
-      _ = (2 * F.natDegree - 1) * dY := by
-          rw [← add_mul]
-          congr 1
-          omega
-  let Z : Finset (K × K) := Ω.filter fun p ↦ F.evalEval p.2 p.1 = 0
-  have hsum_eq : ∑ p ∈ Ω, (F.map (evalRingHom p.2)).rootMultiplicity p.1 =
-      ∑ p ∈ Z, (F.map (evalRingHom p.2)).rootMultiplicity p.1 := by
-    symm
-    refine Finset.sum_subset (Finset.filter_subset _ Ω) fun p hp hpZ ↦ ?_
-    have hne : (F.map (evalRingHom p.2)).eval p.1 ≠ 0 := by
-      rw [map_evalRingHom_eval]
-      simpa [Z, hp] using hpZ
-    exact rootMultiplicity_eq_zero hne
-  have hsum_Z : ∑ p ∈ Z, (F.map (evalRingHom p.2)).rootMultiplicity p.1 ≤
-      Z.card + ∑ p ∈ Z, res.rootMultiplicity p.2 := by
-    calc ∑ p ∈ Z, (F.map (evalRingHom p.2)).rootMultiplicity p.1
-        ≤ ∑ p ∈ Z, (1 + res.rootMultiplicity p.2) :=
-          Finset.sum_le_sum fun _ _ ↦
-            rootMultiplicity_le_one_add_rootMultiplicity_resultant_deriv hres
-      _ = Z.card + ∑ p ∈ Z, res.rootMultiplicity p.2 := by
-          rw [Finset.sum_add_distrib, Finset.sum_const, smul_eq_mul, mul_one]
-  have hinjZ : Set.InjOn Prod.snd (Z : Set (K × K)) :=
-    hinj.mono (Finset.coe_subset.mpr (Finset.filter_subset _ Ω))
-  have hsum_res : ∑ p ∈ Z, res.rootMultiplicity p.2 ≤ res.natDegree := by
-    rw [← Finset.sum_image (f := fun b ↦ res.rootMultiplicity b) (g := Prod.snd) hinjZ]
-    exact sum_rootMultiplicity_le_natDegree res (Z.image Prod.snd)
-  exact hsum_eq.le.trans (hsum_Z.trans (Nat.add_le_add_left (hsum_res.trans hres_deg) Z.card))
-
 /-- **Sum of fiberwise root multiplicities of a squarefree bivariate polynomial.**
 Over a GCD domain of characteristic zero, if `F : K[X][X]` is squarefree and every coefficient
 `F.coeff i` has natural degree at most `dY`, then the sum of
@@ -160,9 +101,10 @@ theorem sum_rootMultiplicity_le_of_squarefree {K : Type*} [CommRing K] [IsDomain
     {Ω : Finset (K × K)} (hinj : Set.InjOn Prod.snd (Ω : Set (K × K))) :
     ∑ p ∈ Ω, (F.map (evalRingHom p.2)).rootMultiplicity p.1 ≤
       (Ω.filter fun p : K × K ↦ F.evalEval p.2 p.1 = 0).card +
-        (2 * F.natDegree - 1) * dY :=
-  sum_rootMultiplicity_le_of_resultant_deriv_ne_zero
-    hF.resultant_deriv_ne_zero hdY hinj
+        (2 * F.natDegree - 1) * dY := by
+  let := Classical.arbitrary (NormalizedGCDMonoid K)
+  simpa [IsRoot, map_evalRingHom_eval] using
+    sum_rootMultiplicity_map_le hinj hF.resultant_derivative_ne_zero hdY
 
 end SquarefreeBound
 

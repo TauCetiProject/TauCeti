@@ -39,7 +39,8 @@ tag 01M1).
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraDegreeIso`: the natural isomorphism between
   the degree-`n` component of `Sym F` and the quasicoherent symmetric power `Symⁿ F`;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraDegreeOneIso`: the natural isomorphism between
-  the degree-one component of `Sym F` and `F`;
+  the degree-one component of `Sym F` and `F`, and its component
+  `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraXOneIso` as an isomorphism of module sheaves;
 * `TauCeti.AlgebraicGeometry.isIso_one_gradedSymmetricAlgebra` and
   `TauCeti.AlgebraicGeometry.epi_mul_gradedSymmetricAlgebra`: the unit and the multiplications of
   `Sym F` are respectively an isomorphism and epimorphisms;
@@ -259,6 +260,32 @@ theorem gradedSymmetricAlgebraDegreeOneIso_inv_app_hom (F : QuasicoherentSheaf X
     ((gradedSymmetricAlgebraDegreeOneIso X).inv.app F).hom =
       (SheafOfModules.symmetricPowerOneIso X.sheaf).inv.app F.obj ≫
         eqToHom (degree_obj_gradedSymmetricAlgebra_obj F 1).symm :=
+  (rfl)
+
+/-- The degree-one component of the graded symmetric algebra of `F` is isomorphic to `F`, through
+the identification `Sym¹ F ≅ F`. This is the isomorphism of module sheaves underlying the component
+of `gradedSymmetricAlgebraDegreeOneIso` at `F`. -/
+def gradedSymmetricAlgebraXOneIso (F : QuasicoherentSheaf X) :
+    ((gradedSymmetricAlgebra X).obj F).obj.X 1 ≅ F.obj :=
+  eqToIso (gradedSymmetricAlgebra_obj_obj_X F 1) ≪≫
+    (SheafOfModules.symmetricPowerOneIso X.sheaf).app F.obj
+
+/-- The isomorphism `gradedSymmetricAlgebraXOneIso` is the identification `Sym¹ F ≅ F`, after
+identifying the degree-one component with `Sym¹ F`. -/
+@[simp]
+theorem gradedSymmetricAlgebraXOneIso_hom (F : QuasicoherentSheaf X) :
+    (gradedSymmetricAlgebraXOneIso F).hom =
+      eqToHom (gradedSymmetricAlgebra_obj_obj_X F 1) ≫
+        (SheafOfModules.symmetricPowerOneIso X.sheaf).hom.app F.obj :=
+  (rfl)
+
+/-- The inverse of `gradedSymmetricAlgebraXOneIso` is the identification `F ≅ Sym¹ F`, followed
+by the identification of `Sym¹ F` with the degree-one component. -/
+@[simp]
+theorem gradedSymmetricAlgebraXOneIso_inv (F : QuasicoherentSheaf X) :
+    (gradedSymmetricAlgebraXOneIso F).inv =
+      (SheafOfModules.symmetricPowerOneIso X.sheaf).inv.app F.obj ≫
+        eqToHom (gradedSymmetricAlgebra_obj_obj_X F 1).symm :=
   (rfl)
 
 /-- The graded symmetric algebra functor is faithful: a morphism of quasicoherent sheaves is

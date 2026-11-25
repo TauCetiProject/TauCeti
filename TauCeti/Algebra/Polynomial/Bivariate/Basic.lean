@@ -74,16 +74,12 @@ theorem Bivariate.aevalAeval_comp_equivMvPolynomial_symm {R A : Type*}
 theorem Bivariate.eval_equivMvPolynomial {R : Type*} [CommSemiring R] (F : R[X][Y])
     (v : Fin 2 → R) :
     MvPolynomial.eval v (Bivariate.equivMvPolynomial R F) = F.evalEval (v 0) (v 1) := by
-  induction F using Polynomial.induction_on' with
-  | add p q hp hq => simp [hp, hq]
-  | monomial n a =>
-    rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, Bivariate.equivMvPolynomial_X,
-      evalEval_mul, evalEval_pow, evalEval_X, MvPolynomial.eval_mul, MvPolynomial.eval_pow,
-      MvPolynomial.eval_X]
-    congr 1
-    induction a using Polynomial.induction_on' with
-    | add p q hp hq => simp [hp, hq]
-    | monomial m r => simp [← C_mul_X_pow_eq_monomial, evalEval_C]
+  have hv : ![v 0, v 1] = v := by ext i; fin_cases i <;> rfl
+  have h := congrArg (· (Bivariate.equivMvPolynomial R F))
+    (Bivariate.aevalAeval_comp_equivMvPolynomial_symm (R := R) (A := R) (v 0) (v 1))
+  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply,
+    coe_aevalAeval_eq_evalEval, hv] at h
+  simpa [MvPolynomial.coe_aeval_eq_eval] using h.symm
 
 /-- If `F : R[X][Y]` has outer natural degree at most `a` and every coefficient `F.coeff i` has
 natural degree at most `b`, then `Bivariate.equivMvPolynomial R F` has total degree at most

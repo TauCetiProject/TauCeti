@@ -17,6 +17,7 @@ import TauCeti.LinearAlgebra.Matrix.Charpoly.Resultant
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.RingTheory.Polynomial.Resultant.Multiplicity
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
@@ -229,7 +230,7 @@ theorem colemanDBounded_map (φ : R →+* S) (B P : R[X]) (n m : ℕ) :
 theorem natDegree_colemanDBounded_le (B P : R[X]) (n m : ℕ) :
     (colemanDBounded B P n m).natDegree ≤ n := by
   rw [colemanDBounded]
-  refine (natDegree_resultant_le (df := 0) (dg := 1) (fun i _ ↦ ?_) (fun i _ ↦ ?_)).trans_eq
+  refine (natDegree_resultant_le (a := 0) (b := 1) (fun i ↦ ?_) (fun i ↦ ?_) n m).trans_eq
     (by simp)
   · simp
   · rw [coeff_sub, coeff_one, coeff_C_mul, coeff_map]
