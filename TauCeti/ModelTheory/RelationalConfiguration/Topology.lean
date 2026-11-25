@@ -11,6 +11,7 @@ public import Mathlib.SetTheory.Cardinal.Continuum
 public import TauCeti.Topology.Algebra.Group.Perm
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Perm
 public import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
+public import TauCeti.Dynamics.SymbolicDynamics.Basic
 
 /-!
 # Topology of relational configurations
@@ -22,7 +23,7 @@ truth value gives a clopen, measurable cylinder, and so does specifying the trut
 finite set of atoms (`SymbolicDynamics.FullShift.cylinder`, clopen by
 `SymbolicDynamics.FullShift.isOpen_cylinder` and `SymbolicDynamics.FullShift.isClosed_cylinder`,
 measurable by `SymbolicDynamics.FullShift.measurableSet_cylinder`); these finite cylinders form a
-basis of the topology (`TauCeti.RelationalConfiguration.isTopologicalBasis_cylinder`). On
+basis of the topology (`SymbolicDynamics.FullShift.isTopologicalBasis_cylinder`). On
 countable carriers in countable relational vocabularies the topology is Polish and its Borel
 σ-algebra is the existing product σ-algebra. There are at most continuum many configurations, and
 exactly continuum many on a countably infinite carrier when some relation symbol has positive
@@ -123,22 +124,6 @@ instance instContinuousSMulPerm [TopologicalSpace V] [DiscreteTopology V] :
 theorem isClopen_setOf_eval (a : Atom L V) (b : Bool) :
     IsClopen {c : RelationalConfiguration L V | c.eval a = b} :=
   (isClopen_discrete {b}).preimage (continuous_eval a)
-
-/-- The finite cylinders form a basis of the topology of the coding space. -/
-theorem isTopologicalBasis_cylinder :
-    IsTopologicalBasis
-      (Set.range fun p : Finset (Atom L V) × (Atom L V → Bool) =>
-        (SymbolicDynamics.FullShift.cylinder p.1 p.2 : Set (RelationalConfiguration L V))) := by
-  convert isTopologicalBasis_pi fun _ : Atom L V => isTopologicalBasis_singletons Bool using 1
-  ext S
-  constructor
-  · rintro ⟨⟨s, f⟩, rfl⟩
-    exact ⟨fun a => {f a}, s, fun a _ => ⟨f a, rfl⟩,
-      SymbolicDynamics.FullShift.cylinder_eq_set_pi s f⟩
-  · rintro ⟨U, s, hU, rfl⟩
-    choose! f hf using hU
-    exact ⟨(s, f), (SymbolicDynamics.FullShift.cylinder_eq_set_pi s f).trans
-      (Set.pi_congr rfl fun a ha => (hf a ha).symm)⟩
 
 instance [∀ n, Countable (L.Relations n)] [Countable V] :
     SecondCountableTopology (RelationalConfiguration L V) :=

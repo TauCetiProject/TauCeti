@@ -71,3 +71,10 @@ example {L : Language} {V : Type*} (s : Finset (Atom L V)) (f : Atom L V → Boo
     MeasurableSet
       (SymbolicDynamics.FullShift.cylinder s f : Set (RelationalConfiguration L V)) :=
   SymbolicDynamics.FullShift.measurableSet_cylinder s f
+
+-- The finite cylinders form a basis of the topology of the coding space.
+example {L : Language} {V : Type*} :
+    TopologicalSpace.IsTopologicalBasis
+      (Set.range fun p : Finset (Atom L V) × (Atom L V → Bool) =>
+        (SymbolicDynamics.FullShift.cylinder p.1 p.2 : Set (RelationalConfiguration L V))) :=
+  SymbolicDynamics.FullShift.isTopologicalBasis_cylinder
