@@ -62,8 +62,8 @@ carries the frequency read in `e` to the one read in the chart at `p`.
   cutoffs, the principal symbol of the local symbol is the principal symbol of `P` read in the
   chart, times the cutoffs.
 * `TauCeti.pseudodifferentialPrincipalSymbol_smul_covector`: homogeneity of degree `m`.
-* `TauCeti.pseudodifferentialPrincipalSymbol_add`, `TauCeti.pseudodifferentialPrincipalSymbol_smul`:
-  linearity in the operator.
+* `TauCeti.pseudodifferentialPrincipalSymbol_add`, `TauCeti.pseudodifferentialPrincipalSymbol_smul`
+  (and `_zero`, `_neg`, `_sub`): linearity in the operator.
 * `TauCeti.pseudodifferentialPrincipalSymbol_eq_zero_iff`: the principal symbol vanishes exactly
   on the operators of order `m - 1`; so two operators with the same principal symbol differ by an
   operator of order `m - 1`
@@ -89,60 +89,6 @@ open scoped ContDiff Manifold Distributions SchwartzMap Topology
 namespace TauCeti
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M] {m : ℝ}
-
-/-! ### Two charts -/
-
-section Transition
-
-variable {e e₀ : OpenPartialHomeomorph M (CoordinateSpace n)}
-  (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-  (he₀ : e₀ ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-
-include he he₀ in
-/-- The inverse of the derivative at `e p` of the transition `κ = e₀ ∘ e⁻¹` is
-`de_p ∘ (de₀_p)⁻¹`. -/
-private theorem ring_inverse_fderiv_transition {p : M} (hp : p ∈ e.source)
-    (hp₀ : p ∈ e₀.source) :
-    Ring.inverse (fderiv ℝ (e.symm.trans e₀) (e p)) =
-      ((mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e p).comp
-        (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e₀.symm (e₀ p)) :
-          CoordinateSpace n →L[ℝ] CoordinateSpace n) := by
-  set D := fderiv ℝ (e.symm.trans e₀) (e p)
-  set L : CoordinateSpace n →L[ℝ] CoordinateSpace n :=
-    (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e p).comp
-      (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e₀.symm (e₀ p))
-  have he1 : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M :=
-    IsManifold.maximalAtlas_subset_of_le (by simp) he
-  have he₀1 : e₀ ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M :=
-    IsManifold.maximalAtlas_subset_of_le (by simp) he₀
-  have hw : e p ∈ (e.symm.trans e₀).source := by
-    simp [e.map_source hp, e.left_inv hp, hp₀]
-  have hκp : e.symm.trans e₀ (e p) = e₀ p := by simp [e.left_inv hp]
-  -- `L` evaluates as a composite (`ContinuousLinearMap.comp_apply`); the tangent spaces in its
-  -- middle are the model space only up to unfolding, so this is stated by `rfl`.
-  have hL (w : CoordinateSpace n) : L w = mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n)
-      e p (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e₀.symm (e₀ p) w) := rfl
-  -- `L ∘ D = id`: the chain rule `d(e⁻¹) = d(e₀⁻¹) ∘ Dκ` at `e p`, followed by `de_p`.
-  have hchain := OpenPartialHomeomorph.mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans
-    (I := 𝓘(ℝ, CoordinateSpace n)) hw
-    (by rw [hκp]; exact mdifferentiableAt_symm_of_mem_maximalAtlas he₀1 (e₀.map_source hp₀))
-    ((contDiffAt_symm_trans_of_mem_maximalAtlas he he₀ hw).differentiableAt (by simp))
-  rw [hκp] at hchain
-  have hLD (v : CoordinateSpace n) : L (D v) = v := by
-    have h := e.mfderiv_apply_mfderiv_symm_apply (I := 𝓘(ℝ, CoordinateSpace n))
-      (J := 𝓘(ℝ, CoordinateSpace n)) (e.map_source hp)
-      (by rw [e.left_inv hp]; exact mdifferentiableAt_of_mem_maximalAtlas he1 hp)
-      (mdifferentiableAt_symm_of_mem_maximalAtlas he1 (e.map_source hp)) v
-    rw [e.left_inv hp] at h
-    rw [hL]
-    exact (congrArg _ (DFunLike.congr_fun hchain v)).symm.trans h
-  -- In finite dimension a left inverse is a right inverse.
-  have hDL : (D : CoordinateSpace n →ₗ[ℝ] CoordinateSpace n) ∘ₗ L = LinearMap.id :=
-    (LinearMap.comp_eq_id_comm ℝ (CoordinateSpace n)).1 (LinearMap.ext hLD)
-  exact Ring.inverse_unit ⟨D, L, ContinuousLinearMap.ext (LinearMap.congr_fun hDL),
-    ContinuousLinearMap.ext hLD⟩
-
-end Transition
 
 /-! ### Comparison of the symbols in two charts -/
 
@@ -329,6 +275,9 @@ private def chartFrequency (p : M) :
   toFun ξ := (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
     (ξ.comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n)
       (chartAt (CoordinateSpace n) p).symm (chartAt (CoordinateSpace n) p p)))
+  -- `ContinuousLinearMap.add_comp` and `ContinuousLinearMap.smul_comp` do not apply: the
+  -- differential lands in the tangent space at `e⁻¹ (e p)`, which is the domain `T_pM` of `ξ` only
+  -- up to unfolding, so the composites are compared pointwise by `rfl`.
   map_add' ξ ζ := by
     rw [← map_add]
     exact congrArg _ (ContinuousLinearMap.ext fun _ ↦ rfl)
@@ -401,10 +350,23 @@ theorem coefficient_principal_eq_pseudodifferentialPrincipalSymbol
       pseudodifferentialPrincipalSymbol P p
         ((innerSL ℝ η).comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e p)) := by
   have hspec := quantizeSchwartzValue_chartSymbol P p
-  rw [coefficient_principal_eq_of_transition ha hspec hp (mem_chart_source _ p)
+  have he₀ := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞) p
+  have hp₀ := mem_chart_source (CoordinateSpace n) p
+  have he1 : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (by simp) he
+  have he₀1 : chartAt (CoordinateSpace n) p ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (by simp) he₀
+  have hw : e p ∈ (e.symm.trans (chartAt (CoordinateSpace n) p)).source := by
+    simp [e.map_source hp, e.left_inv hp, hp₀]
+  rw [coefficient_principal_eq_of_transition ha hspec hp hp₀
       ((chartCutoff_eventuallyEq_one p).mono fun _ hz ↦ ⟨hz, hz⟩) η,
-    ring_inverse_fderiv_transition he (IsManifold.chart_mem_maximalAtlas p) hp
-      (mem_chart_source _ p), pseudodifferentialPrincipalSymbol_eq_of_chartAt P p hspec]
+    OpenPartialHomeomorph.ring_inverse_fderiv_symm_trans hp hp₀
+      (mdifferentiableAt_of_mem_maximalAtlas he1 hp)
+      (mdifferentiableAt_symm_of_mem_maximalAtlas he1 (e.map_source hp))
+      (mdifferentiableAt_of_mem_maximalAtlas he₀1 hp₀)
+      (mdifferentiableAt_symm_of_mem_maximalAtlas he₀1 (mem_chart_target _ p))
+      ((contDiffAt_symm_trans_of_mem_maximalAtlas he he₀ hw).differentiableAt (by simp)),
+    pseudodifferentialPrincipalSymbol_eq_of_chartAt P p hspec]
   congr 3
   exact (InnerProductSpace.toDual_symm_innerSL_comp η _).symm
 
@@ -435,10 +397,9 @@ theorem pseudodifferentialPrincipalSymbol_add
   rw [pseudodifferentialPrincipalSymbol_eq_of_chartAt (P + Q) p
       (a := chartSymbol P p + chartSymbol Q p) (fun u x ↦ by
         rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_add, quantizeSchwartzValue_chartSymbol,
-          quantizeSchwartzValue_chartSymbol, Submodule.coe_add, map_add, LinearMap.add_apply,
-          ContMDiffMap.coe_add, Pi.add_apply]),
-    ClassicalSymbol.principal_add, HomogeneousSymbol.coefficient_add, Pi.add_apply,
-    pseudodifferentialPrincipalSymbol, pseudodifferentialPrincipalSymbol]
+          quantizeSchwartzValue_chartSymbol]
+        simp)]
+  simp [pseudodifferentialPrincipalSymbol]
 
 /-- The principal symbol is linear over `ℂ` in the operator. -/
 @[simp]
@@ -449,28 +410,45 @@ theorem pseudodifferentialPrincipalSymbol_smul
       c • pseudodifferentialPrincipalSymbol P p ξ := by
   rw [pseudodifferentialPrincipalSymbol_eq_of_chartAt (c • P) p (a := c • chartSymbol P p)
       (fun u x ↦ by
-        rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, quantizeSchwartzValue_chartSymbol,
-          Submodule.coe_smul, map_smul, LinearMap.smul_apply, ContMDiffMap.complex_smul_apply,
-          smul_eq_mul]),
-    ClassicalSymbol.principal_smul, HomogeneousSymbol.coefficient_smul, Pi.smul_apply,
-    pseudodifferentialPrincipalSymbol]
+        rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, quantizeSchwartzValue_chartSymbol]
+        simp)]
+  simp [pseudodifferentialPrincipalSymbol]
 
-/-- A classical symbol whose quantization vanishes at the position `y` vanishes at `y`, and so
-does its principal symbol. -/
-private theorem coefficient_principal_eq_zero_of_quantizeSchwartzValue_eq_zero
-    {a : ClassicalSymbol n ℂ ℂ m} {y : CoordinateSpace n}
-    (h : ∀ u : 𝓢(CoordinateSpace n, ℂ), quantizeSchwartzValue a.toSymbol.coefficient u y = 0)
-    (η : CoordinateSpace n) : a.principal.coefficient (y, η) = 0 := by
-  rcases eq_or_ne η 0 with rfl | hη
-  · simp
-  obtain ⟨C, hC⟩ := a.toSymbol.exists_norm_coefficient_le {y} isCompact_singleton
-  have h0 (ζ : CoordinateSpace n) : a.toSymbol.coefficient (y, ζ) = 0 :=
-    eq_zero_of_forall_quantizeSchwartzValue_eq_zero (a.toSymbol.continuous_coefficient_slice y)
-      (hC y rfl) (fun u _ ↦ h u) ζ
-  -- The principal symbol is the limit of `t ^ (-m) a(y, t η)`, which vanishes identically.
-  refine tendsto_nhds_unique ((a.tendsto_rpow_neg_smul_coefficient_smul hη).comp
-    (tendsto_id.prodMk tendsto_const_nhds)) ?_
-  simp [Function.comp_def, h0]
+/-- The principal symbol of the zero operator vanishes. -/
+@[simp]
+theorem pseudodifferentialPrincipalSymbol_zero (p : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) p →L[ℝ] ℝ) :
+    pseudodifferentialPrincipalSymbol (0 : classicalPseudodifferentialOperators (n := n) (M := M) m)
+      p ξ = 0 := by
+  rw [← zero_smul ℂ (0 : classicalPseudodifferentialOperators (n := n) (M := M) m),
+    pseudodifferentialPrincipalSymbol_smul]
+  -- The action of `ℂ` here is reached through the action on the operators, which `zero_smul`
+  -- matches only up to instance unfolding (neither `rw` nor `simp` sees it), so it is applied.
+  exact zero_smul ℂ (pseudodifferentialPrincipalSymbol 0 p ξ)
+
+/-- The principal symbol of `-P` is minus that of `P`. -/
+@[simp]
+theorem pseudodifferentialPrincipalSymbol_neg
+    (P : classicalPseudodifferentialOperators (n := n) (M := M) m) (p : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) p →L[ℝ] ℝ) :
+    pseudodifferentialPrincipalSymbol (-P) p ξ = -pseudodifferentialPrincipalSymbol P p ξ := by
+  refine eq_neg_of_add_eq_zero_right ?_
+  rw [← pseudodifferentialPrincipalSymbol_add]
+  -- The negation of the submodule matches `add_neg_cancel` only up to instance unfolding, so the
+  -- lemma is applied rather than rewritten; likewise `sub_eq_add_neg` below.
+  exact (congrArg (pseudodifferentialPrincipalSymbol · p ξ) (add_neg_cancel P)).trans
+    (pseudodifferentialPrincipalSymbol_zero p ξ)
+
+/-- The principal symbol of `P - Q` is the difference of those of `P` and `Q`. -/
+@[simp]
+theorem pseudodifferentialPrincipalSymbol_sub
+    (P Q : classicalPseudodifferentialOperators (n := n) (M := M) m) (p : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) p →L[ℝ] ℝ) :
+    pseudodifferentialPrincipalSymbol (P - Q) p ξ =
+      pseudodifferentialPrincipalSymbol P p ξ - pseudodifferentialPrincipalSymbol Q p ξ := by
+  rw [sub_eq_add_neg (pseudodifferentialPrincipalSymbol P p ξ),
+    ← pseudodifferentialPrincipalSymbol_neg, ← pseudodifferentialPrincipalSymbol_add]
+  exact congrArg (pseudodifferentialPrincipalSymbol · p ξ) (sub_eq_add_neg P Q)
 
 /-- **The kernel of the principal symbol.** A classical pseudodifferential operator of order `m`
 has vanishing principal symbol exactly when it is a classical pseudodifferential operator of order
@@ -495,7 +473,10 @@ theorem pseudodifferentialPrincipalSymbol_eq_zero_iff
       · rw [← e.right_inv hy, coefficient_principal_eq_pseudodifferentialPrincipalSymbol P he φ ψ ha
           (e.map_target hy), h]
         simp
-      · refine coefficient_principal_eq_zero_of_quantizeSchwartzValue_eq_zero (fun u ↦ ?_) η
+      · obtain ⟨C, hC⟩ := a.toSymbol.exists_norm_coefficient_le {y} isCompact_singleton
+        refine a.coefficient_principal_eq_zero_of_forall (fun ζ ↦
+          eq_zero_of_forall_quantizeSchwartzValue_eq_zero
+            (a.toSymbol.continuous_coefficient_slice y) (hC y rfl) (fun u _ ↦ ?_) ζ) η
         rw [ha, OpenPartialHomeomorph.complexChartCompression_apply,
           image_eq_zero_of_notMem_tsupport fun h ↦ hy (φ.tsupport_subset h), zero_smul]
     obtain ⟨b, rfl⟩ := (ClassicalSymbol.principal_eq_zero_iff_exists_inclusion a).1 h0
@@ -518,19 +499,9 @@ theorem sub_mem_classicalPseudodifferentialOperators_of_pseudodifferentialPrinci
     (P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) - Q ∈
         classicalPseudodifferentialOperators (m - 1) := by
-  -- Write `P - Q` as the operator `P + (-1) • Q` of the class, whose principal symbol vanishes.
-  have hPQ : (P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) - Q =
-        ((P + (-1 : ℂ) • Q : classicalPseudodifferentialOperators (n := n) (M := M) m) :
-          C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-            C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) := by
-    rw [Submodule.coe_add, Submodule.coe_smul, neg_one_smul, sub_eq_add_neg]
-  rw [hPQ, ← pseudodifferentialPrincipalSymbol_eq_zero_iff]
+  rw [← Submodule.coe_sub, ← pseudodifferentialPrincipalSymbol_eq_zero_iff]
   intro p ξ
-  rw [pseudodifferentialPrincipalSymbol_add, pseudodifferentialPrincipalSymbol_smul, h]
-  -- The scalar `-1` here carries the instance path of the action on the submodule, which
-  -- `neg_one_smul` matches only up to instance unfolding, so it is applied rather than rewritten.
-  exact (congrArg _ (neg_one_smul ℂ _)).trans (add_neg_cancel _)
+  rw [pseudodifferentialPrincipalSymbol_sub, h, sub_self]
 
 /-- **The principal symbol of a differential operator.** The complexification of a differential
 operator `D` of order at most `m` on the real-valued smooth functions on `M` has, at a nonzero
@@ -554,6 +525,9 @@ theorem pseudodifferentialPrincipalSymbol_complexifyLinearMap {m : ℕ}
   have hη : chartFrequency p ξ ≠ 0 := by
     intro hη
     rw [hη, map_zero] at hξη
+    -- `ContinuousLinearMap.zero_comp` does not apply: `de₀_p` lands in the tangent space at
+    -- `e₀ p`, which is the domain of `innerSL ℝ 0` only up to unfolding, so `0 ∘ de₀_p = 0` is
+    -- checked pointwise by `rfl`.
     exact hξ (hξη.symm.trans (ContinuousLinearMap.ext fun _ ↦ rfl))
   have h1 := (chartCutoff_eventuallyEq_one (n := n) p).self_of_nhds
   rw [pseudodifferentialPrincipalSymbol_eq_of_chartAt ⟨ContMDiffMap.complexifyLinearMap D,

@@ -51,6 +51,8 @@ at `f x`.
 * `OpenPartialHomeomorph.mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans`: dually, the
   differential of `ψ₁⁻¹` is the derivative of the transition `ψ₂ ∘ ψ₁⁻¹` followed by the
   differential of `ψ₂⁻¹`.
+* `OpenPartialHomeomorph.ring_inverse_fderiv_symm_trans`: the inverse of the derivative of the
+  transition `ψ₂ ∘ ψ₁⁻¹` is the differential of `ψ₂⁻¹` followed by that of `ψ₁`.
 * `PartialDiffeomorph.mfderivWithin_source`: the differential within the source is the differential.
 * `PartialDiffeomorph.mfderiv_symm_apply_mfderiv_apply`: the differential of the inverse undoes the
   differential.
@@ -242,6 +244,41 @@ theorem mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans {ψ₁ ψ₂ : OpenP
   -- The casts `tangentSpaceCast` and `NormedSpace.fromTangentSpace` inserted by the chain rule
   -- and by `mfderiv_eq_fderiv` act as the identity by definition.
   rfl
+
+/-- **The inverse derivative of a change of chart.** Let `ψ₁` and `ψ₂` be open partial
+homeomorphisms from `M` into a normed space `F`, and let `x` lie in both sources. If `ψ₁` and `ψ₂`
+are differentiable at `x`, their inverses at `ψ₁ x` and `ψ₂ x`, and the transition `ψ₂ ∘ ψ₁⁻¹` at
+`ψ₁ x`, then the inverse of the derivative of the transition at `ψ₁ x` is the differential of
+`ψ₂⁻¹` at `ψ₂ x` followed by the differential of `ψ₁` at `x`. -/
+theorem ring_inverse_fderiv_symm_trans {ψ₁ ψ₂ : OpenPartialHomeomorph M F} {x : M}
+    (hx₁ : x ∈ ψ₁.source) (hx₂ : x ∈ ψ₂.source) (hψ₁ : MDifferentiableAt I 𝓘(𝕜, F) ψ₁ x)
+    (hψ₁s : MDifferentiableAt 𝓘(𝕜, F) I ψ₁.symm (ψ₁ x))
+    (hψ₂ : MDifferentiableAt I 𝓘(𝕜, F) ψ₂ x)
+    (hψ₂s : MDifferentiableAt 𝓘(𝕜, F) I ψ₂.symm (ψ₂ x))
+    (hΘ : DifferentiableAt 𝕜 (ψ₁.symm.trans ψ₂) (ψ₁ x)) :
+    Ring.inverse (fderiv 𝕜 (ψ₁.symm.trans ψ₂) (ψ₁ x)) =
+      ((mfderiv I 𝓘(𝕜, F) ψ₁ x).comp (mfderiv 𝓘(𝕜, F) I ψ₂.symm (ψ₂ x)) : F →L[𝕜] F) := by
+  have hw : ψ₁ x ∈ (ψ₁.symm.trans ψ₂).source := by
+    simp [ψ₁.map_source hx₁, ψ₁.left_inv hx₁, hx₂]
+  have hκx : ψ₁.symm.trans ψ₂ (ψ₁ x) = ψ₂ x := by simp [ψ₁.left_inv hx₁]
+  -- The chain rule: `d(ψ₁⁻¹) = d(ψ₂⁻¹) ∘ D` at `ψ₁ x` and `dψ₂ = D ∘ dψ₁` at `x`, where `D` is the
+  -- derivative of the transition.
+  have h₁ := mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans hw (by rwa [hκx]) hΘ
+  have h₂ := mvfderiv_eq_fderiv_symm_trans_comp hw (by rwa [ψ₁.left_inv hx₁]) hΘ
+  rw [hκx] at h₁
+  rw [ψ₁.left_inv hx₁] at h₂
+  have hψ₁v := ψ₁.mfderiv_apply_mfderiv_symm_apply (ψ₁.map_source hx₁)
+    (by rwa [ψ₁.left_inv hx₁]) hψ₁s
+  have hψ₂v := ψ₂.mfderiv_apply_mfderiv_symm_apply (ψ₂.map_source hx₂)
+    (by rwa [ψ₂.left_inv hx₂]) hψ₂s
+  rw [ψ₁.left_inv hx₁] at hψ₁v
+  rw [ψ₂.left_inv hx₂] at hψ₂v
+  refine Ring.inverse_unit ⟨_, _, ContinuousLinearMap.ext fun v ↦ ?_,
+    ContinuousLinearMap.ext fun v ↦ ?_⟩
+  · -- `D ∘ dψ₁ ∘ d(ψ₂⁻¹) = dψ₂ ∘ d(ψ₂⁻¹) = id`.
+    exact (DFunLike.congr_fun h₂ _).symm.trans (hψ₂v v)
+  · -- `dψ₁ ∘ d(ψ₂⁻¹) ∘ D = dψ₁ ∘ d(ψ₁⁻¹) = id`.
+    exact (congrArg _ (DFunLike.congr_fun h₁ v)).symm.trans (hψ₁v v)
 
 end OpenPartialHomeomorph
 
