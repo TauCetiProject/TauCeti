@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Iso
 public import TauCeti.Combinatorics.Graph.Serre.Reduction
+import TauCeti.Combinatorics.Quiver.Prefunctor
 
 /-!
 # Trees of Serre graphs
@@ -213,17 +214,16 @@ private theorem isAcyclic_of_forall_mem_or_rev_mem_darts
       simpa using congrArg Quiver.Path.length this
     · -- The closed paths before and after `rev e` are empty, and `rev e` is followed by `e`.
       have hpr := hp.of_cons Γ
-      have hq : Path.darts Γ q = [] := by
-        rw [← List.length_eq_zero_iff, Path.length_darts]
-        exact (congrArg Quiver.Path.length
-          (ih q.length (by simp [← hn]; lia) _ q (hpr.of_comp_left Γ |>.of_cons Γ) rfl)).trans rfl
-      have hr : Path.darts Γ r = [] := by
-        have hlen : (r.cast (Γ.tgt_rev e) rfl).length = r.length := by
-          rw [← Path.length_darts, Path.darts_cast, Path.length_darts]
-        rw [← Path.darts_cast Γ (Γ.tgt_rev e) rfl, ih _ (by simp [hlen, ← hn]) _ _
-          ((Path.isReduced_cast Γ _ _ r).mpr (hpr.of_comp_right Γ)) rfl, Path.darts_nil]
+      have hq : q = .nil :=
+        ih q.length (by simp [← hn]; lia) _ q (hpr.of_comp_left Γ |>.of_cons Γ) rfl
+      have hr : r.cast (Γ.tgt_rev e) rfl = .nil := ih _ (by simp [← hn]) _ _
+        ((Path.isReduced_cast Γ _ _ r).mpr (hpr.of_comp_right Γ)) rfl
+      have hqd : Path.darts Γ q = [] := by
+        rw [hq]
+        exact Path.darts_nil Γ _
+      have hrd : Path.darts Γ r = [] := by simpa using congrArg (Path.darts Γ) hr
       rw [Path.isReduced_iff_isChain] at hp
-      simp [hq, hr] at hp
+      simp [hqd, hrd] at hp
 
 /-- A graph is acyclic exactly when each of its edges separates it: every path from the target of a
 dart back to its source passes through the dart or its reverse. -/
