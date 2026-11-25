@@ -68,13 +68,14 @@ everywhere, in every chart `j`, off the localized image. -/
 theorem value_eq_zero_ae_of_mem_aeZeroOff {i : Fin A.n} {Q : Opens E}
     (hQi : (Q : Set E) ⊆ A.image i) {w : SobolevSection A μ p 0}
     (hw : w ∈ aeZeroOff A μ p 0 ((A.chart i).symm '' Q))
-    (j : Fin A.sectionChartData.n) (c : Fin (finrank ℝ F)) :
+    (j : Fin A.n) (c : Fin (finrank ℝ F)) :
     ∀ᵐ y ∂μ.restrict (A.sectionChartData.image j : Set E),
       y ∉ A.localizedImage i j Q →
         Wkp.value 0 ((w : A.sectionChartData.SobolevData μ p 0) j c) y = 0 := by
   filter_upwards [mem_aeZeroOff.1 hw j, A.sectionChartData.chartValueL_apply_ae μ p 0 j w,
     ae_restrict_mem (A.sectionChartData.image j).isOpen.measurableSet] with y hy hsum hyj hyP
-  have h0 := hy (symm_notMem_image_of_notMem_localizedImage subset_rfl hQi hyj hyP)
+  have hyj' : y ∈ A.image j := by rwa [sectionChartData_image] at hyj
+  have h0 := hy (symm_notMem_image_of_notMem_localizedImage subset_rfl hQi hyj' hyP)
   rw [hsum] at h0
   simpa [Finsupp.single_apply] using congrArg (fun v ↦ (finBasis ℝ F).repr v c) h0
 
@@ -130,9 +131,10 @@ private theorem exists_localization [T2Space M] (hp : 1 < p) (hp_top : p ≠ ⊤
   choose H hH hΛ using exists_memLp_apply_single_eq (q := q) A hp hp_top Λ'
   -- The localized images and the transfer of chart-`i` data to them.
   set P : Fin A.sectionChartData.n → Opens E := fun j ↦ A.localizedImage i j Q
-  have hPj (j : Fin A.sectionChartData.n) :
-      P j ≤ A.sectionChartData.image j :=
-    A.localizedImage_le_image i j Q
+  have hPj (j : Fin A.n) :
+      P j ≤ A.sectionChartData.image j := by
+    rw [sectionChartData_image]
+    exact A.localizedImage_le_image i j Q
   have hPc (j : Fin A.sectionChartData.n) :=
     A.isCompact_closure_localizedImage i j Q
   have hPD (j : Fin A.sectionChartData.n) :=
@@ -153,6 +155,8 @@ private theorem exists_localization [T2Space M] (hp : 1 < p) (hp_top : p ≠ ⊤
   rw [hΛ j]
   refine Finset.sum_congr rfl fun c _ ↦ ?_
   -- The chart-`j` data on the localized image are the transfer of the chart-`i` data over `Q`.
+  -- `restrictL_eq_transferL` is stated for the chart images `A.image`, which are the domains
+  -- `A.sectionChartData.image` of the chart data by definition (`sectionChartData_image`).
   have htr : Wkp.restrictL (hPj j) 0 (w j c) =
       A.transferL μ p 0 i j (hPc j) (hPD j) (hPQ j) (fun l ↦ Wkp.restrictL hQ 0 (w i l)) c :=
     A.restrictL_eq_transferL μ p 0 hw (A.localizedImage_subset_overlap i j Q) (hPc j) (hPD j) hQ
