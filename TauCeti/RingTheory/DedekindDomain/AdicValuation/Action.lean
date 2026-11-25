@@ -8,7 +8,8 @@ module
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.RingTheory.DedekindDomain.HeightOneSpectrumAction
--- Proof-only: membership in `valuationSubringAtPrime` as a quotient `a / s`.
+-- Proof-only: membership in `valuationSubringAtPrime` as a quotient `a / s`, and injectivity of
+-- `valuationSubringAtPrime`.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 
 /-!
@@ -32,8 +33,6 @@ places of `L`, and the stabilizer of a finite place is its decomposition group.
 
 * `IsDedekindDomain.HeightOneSpectrum.smul_valuationSubringAtPrime`:
   `σ • valuationSubringAtPrime L w = valuationSubringAtPrime L (σ • w)`.
-* `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_injective`: a place is determined
-  by its localization.
 * `IsDedekindDomain.HeightOneSpectrum.stabilizer_valuationSubringAtPrime`: for any group acting
   compatibly, the stabilizer of a place is the stabilizer of its valuation subring.
 * `IsDedekindDomain.HeightOneSpectrum.stabilizer_eq_decompositionSubgroup`: the stabilizer of a
@@ -54,14 +53,6 @@ section DedekindDomain
 
 variable {L R : Type*} [Field L] [CommRing R] [IsDedekindDomain R] [Algebra R L]
   [IsFractionRing R L]
-
-variable (L) in
-/-- A place of `R` is determined by its localization, as a valuation subring of `L`. -/
-theorem valuationSubringAtPrime_injective :
-    Function.Injective (valuationSubringAtPrime (R := R) L) := fun v w h ↦ by
-  rw [valuationSubringAtPrime_eq_valuationSubring,
-    valuationSubringAtPrime_eq_valuationSubring] at h
-  exact valuationSubring_valuation_injective L h
 
 section Group
 

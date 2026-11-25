@@ -49,6 +49,8 @@ by the class-group interface and the multiplicative value can be read off from o
   valuation to the additive order of vanishing used by the class-group interface.
 * `IsDedekindDomain.HeightOneSpectrum.mem_valuationSubringAtPrime_iff`: the localization of `R`
   at `v`, as a valuation subring of `K`, consists of the fractions `a / s` with `s ∉ v`.
+* `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_injective`: a place is determined
+  by its localization, as a valuation subring of `K`.
 * `IsDedekindDomain.HeightOneSpectrum.algebraMap_mem_maximalIdeal_valuationSubring_iff`: an
   element of `R` lies in `v` exactly when its image in the valuation ring of `K` at `v` lies in
   the maximal ideal.
@@ -257,6 +259,14 @@ theorem mem_valuationSubringAtPrime_iff {v : HeightOneSpectrum R} {x : K} :
       ∃ a, ∃ s ∈ v.asIdeal.primeCompl, x = algebraMap R K a * (algebraMap R K s)⁻¹ := by
   rw [← ValuationSubring.mem_toSubring, valuationSubringAtPrime_toSubring,
     Subalgebra.mem_toSubring, Localization.subalgebra.mem_ofField_iff]
+
+variable (K) in
+/-- A place of `R` is determined by its localization, as a valuation subring of `K`. -/
+theorem valuationSubringAtPrime_injective :
+    Function.Injective (valuationSubringAtPrime (R := R) K) := fun v w h ↦ by
+  rw [valuationSubringAtPrime_eq_valuationSubring,
+    valuationSubringAtPrime_eq_valuationSubring] at h
+  exact valuationSubring_valuation_injective K h
 
 /-- An element of `R` lies in the prime `v` exactly when its image in the valuation ring of `K` at
 `v` lies in the maximal ideal. The algebra structure of `R` on the valuation ring is taken as a
