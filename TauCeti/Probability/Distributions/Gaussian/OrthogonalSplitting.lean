@@ -29,8 +29,9 @@ under `stdGaussian E`, so for a unit vector `ν` the half-space `{x | ⟪x, ν�
 * `Submodule.stdGaussian_preimage_orthogonalProjectionOnto`: for any `U ⊆ F`, the cylinder
   `U ⊕ Fᗮ`, the preimage of `U` under the orthogonal projection onto `F` (see
   `Submodule.preimage_orthogonalProjectionOnto_eq`), has Gaussian measure `γ_F(U)`.
-* `Submodule.preimage_orthogonalProjectionOnto_setOf_inner_lt`: for `u ∈ F`, the cylinder over
-  the half-space `{y ∈ F | ⟪y, u⟫ < s}` is the half-space `{x | ⟪x, u⟫ < s}` of `E`.
+* `Submodule.preimage_orthogonalProjectionOnto_setOf_inner`: for `u ∈ F` and a predicate `p`,
+  the cylinder over `{y ∈ F | p ⟪y, u⟫}` is `{x | p ⟪x, u⟫}`; for instance, the cylinder over the
+  half-space `{y ∈ F | ⟪y, u⟫ < s}` is the half-space `{x | ⟪x, u⟫ < s}` of `E`.
 * `TauCeti.Probability.map_inner_stdGaussian`: the law of `⟪x, ν⟫` is `gaussianReal 0 ‖ν‖²`,
   and `gaussianReal 0 1` for a unit vector (`map_inner_stdGaussian_of_norm_eq_one`).
 * `TauCeti.Probability.measureReal_stdGaussian_setOf_inner_lt`,
@@ -56,11 +57,12 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 namespace Submodule
 
-/-- For `u ∈ K`, the cylinder over the half-space `{y ∈ K | ⟪y, u⟫ < s}` of `K` is the half-space
-`{x ∈ E | ⟪x, u⟫ < s}` of `E`. -/
-theorem preimage_orthogonalProjectionOnto_setOf_inner_lt (K : Submodule ℝ E)
-    [K.HasOrthogonalProjection] (u : K) (s : ℝ) :
-    K.orthogonalProjectionOnto ⁻¹' {y | ⟪y, u⟫ < s} = {x : E | ⟪x, (u : E)⟫ < s} := by
+/-- For `u ∈ K` and any predicate `p` on `ℝ`, the cylinder over `{y ∈ K | p ⟪y, u⟫}` is
+`{x ∈ E | p ⟪x, u⟫}`. With `p = (· < s)`, the cylinder over the half-space
+`{y ∈ K | ⟪y, u⟫ < s}` of `K` is the half-space `{x ∈ E | ⟪x, u⟫ < s}` of `E`. -/
+theorem preimage_orthogonalProjectionOnto_setOf_inner (K : Submodule ℝ E)
+    [K.HasOrthogonalProjection] (u : K) (p : ℝ → Prop) :
+    K.orthogonalProjectionOnto ⁻¹' {y | p ⟪y, u⟫} = {x : E | p ⟪x, (u : E)⟫} := by
   ext x
   simp only [mem_preimage, mem_ofPred_eq, inner_orthogonalProjectionOnto_eq_of_mem_right]
 

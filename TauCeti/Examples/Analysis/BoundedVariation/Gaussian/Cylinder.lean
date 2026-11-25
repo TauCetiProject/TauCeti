@@ -60,8 +60,8 @@ example {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) :
       (stdGaussian (ℝ ∙ ν)).real {y | ⟪y, lineVec ν⟫ < s} = cdf (gaussianReal 0 1) s := by
   refine ⟨measureReal_stdGaussian_setOf_inner_lt hν s, ?_⟩
   rw [measureReal_def, ← Submodule.stdGaussian_preimage_orthogonalProjectionOnto,
-    Submodule.preimage_orthogonalProjectionOnto_setOf_inner_lt, coe_lineVec, ← measureReal_def,
-    measureReal_stdGaussian_setOf_inner_lt hν s]
+    Submodule.preimage_orthogonalProjectionOnto_setOf_inner _ _ (· < s), coe_lineVec,
+    ← measureReal_def, measureReal_stdGaussian_setOf_inner_lt hν s]
 
 /-- The cylinder over a half-line and the half-line have the same Gaussian perimeter `φ(s)`. -/
 example {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) :
@@ -69,7 +69,7 @@ example {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) :
         ENNReal.ofReal (gaussianPDFReal 0 1 s) ∧
       gaussianPerimeter {y : (ℝ ∙ ν) | ⟪y, lineVec ν⟫ < s} =
         ENNReal.ofReal (gaussianPDFReal 0 1 s) := by
-  rw [Submodule.preimage_orthogonalProjectionOnto_setOf_inner_lt, coe_lineVec]
+  rw [Submodule.preimage_orthogonalProjectionOnto_setOf_inner _ _ (· < s), coe_lineVec]
   exact ⟨gaussianPerimeter_setOf_inner_lt hν s,
     gaussianPerimeter_setOf_inner_lt ((norm_lineVec ν).trans hν) s⟩
 
@@ -84,7 +84,7 @@ example (s : ℝ) :
       {x | x 0 < s} := by
     ext x
     simp [EuclideanSpace.inner_single_right]
-  rw [Submodule.preimage_orthogonalProjectionOnto_setOf_inner_lt, coe_lineVec, hset]
+  rw [Submodule.preimage_orthogonalProjectionOnto_setOf_inner _ _ (· < s), coe_lineVec, hset]
   exact ⟨rfl, GaussianHalfSpace.gaussianPerimeter_setOf_lt s⟩
 
 /-- Over `F = {0}`, every subset of `F` is `∅` or `F`, its cylinder is `∅` or `E`, and the two
