@@ -11,10 +11,12 @@ public import TauCeti.NumberTheory.ModularForms.Fricke.Involution
 # The Fricke operator on nebentypus character spaces
 
 The Fricke operator `W_N` of `TauCeti/NumberTheory/ModularForms/Fricke/Operator.lean` shifts the
-diamond label by an inverse, `W_N ∘ ⟨d⟩ = ⟨d⁻¹⟩ ∘ W_N` (`frickeOperator_diamondOp`). Reading that
-on a joint eigenspace of the diamond operators turns it into a statement about nebentypus: `W_N`
-carries `M_k(Γ₁(N), χ)` into `M_k(Γ₁(N), χ⁻¹)`, and since `W_N ∘ W_N` is the nonzero scalar
-`frickeScalar N k` (`frickeOperator_frickeOperator_apply`), that transport is an isomorphism.
+diamond label by an inverse, `W_N ∘ ⟨d⟩ = ⟨d⁻¹⟩ ∘ W_N` (`frickeOperator_diamondOp`). Read on the
+nebentypus relation itself, where `W_N` moves `g ∈ Γ₀(N)` across it as a matrix with the inverse
+label, this is a statement about nebentypus that needs no holomorphy: the slash by `W_N` carries
+the `χ`-invariant functions into the `χ⁻¹`-invariant ones, so `W_N` carries `M_k(Γ₁(N), χ)` into
+`M_k(Γ₁(N), χ⁻¹)`. Since `W_N ∘ W_N` is the nonzero scalar `frickeScalar N k`
+(`frickeOperator_frickeOperator_apply`), that transport is an isomorphism.
 
 ## Main definitions
 
@@ -26,9 +28,13 @@ carries `M_k(Γ₁(N), χ)` into `M_k(Γ₁(N), χ⁻¹)`, and since `W_N ∘ W_
 
 ## Main results
 
+* `TauCeti.slash_frickeGL_mem_functionCharSpace`: the transport for a bare function, the slash
+  by `W_N` maps the `χ`-invariant functions of weight `k` for `Γ₀(N)` into the `χ⁻¹`-invariant
+  ones. It needs no holomorphy.
 * `TauCeti.frickeOperator_mem_modFormCharSpace`,
-  `TauCeti.frickeOperatorCusp_mem_cuspFormCharSpace`: the transport itself, `W_N` maps the
-  `χ`-nebentypus space into the `χ⁻¹`-nebentypus space.
+  `TauCeti.frickeOperatorCusp_mem_cuspFormCharSpace`: the transport on forms, `W_N` maps the
+  `χ`-nebentypus space into the `χ⁻¹`-nebentypus space; these read the function statement on
+  the underlying function.
 
 ## The inverse character
 
@@ -78,41 +84,38 @@ private theorem inv_inv_monoidHom {N : ℕ} (χ : (ZMod N)ˣ →* ℂˣ) : χ⁻
 
 variable {N : ℕ} [NeZero N]
 
-/-- **The Fricke operator shifts the nebentypus to its inverse**: it carries `M_k(Γ₁(N), χ)` into
-`M_k(Γ₁(N), χ⁻¹)`.
+/-- **The Fricke slash shifts the nebentypus to its inverse, on functions**: the slash by `W`
+carries a `χ`-invariant function of weight `k` for `Γ₀(N)` to a `χ⁻¹`-invariant one.
 
-On an `f` with `⟨d⟩ f = χ(d) • f`, the diamond-shift `frickeOperator_diamondOp` read at `d⁻¹`
-gives `⟨d⟩ (W f) = W (⟨d⁻¹⟩ f) = χ(d⁻¹) • (W f)`, and `χ(d⁻¹) = χ⁻¹(d)`. -/
+`W` moves `g ∈ Γ₀(N)` across it as `frickeConjSL g` (`frickeGL_mul_mapGL`), whose diamond label
+is the inverse of that of `g` (`toHomUnits_gamma0Map_frickeConjGamma0_eq_inv`). No analytic
+condition on `f` is involved. -/
+public theorem slash_frickeGL_mem_functionCharSpace {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ} {f : ℍ → ℂ}
+    (hf : f ∈ functionCharSpace k χ) : f ∣[k] frickeGL ℝ N ∈ functionCharSpace k χ⁻¹ := by
+  refine (mem_functionCharSpace_iff _ _ _).mpr fun g ↦ ?_
+  rw [← SlashAction.slash_mul, frickeGL_mul_mapGL, SlashAction.slash_mul, ← coe_frickeConjGamma0,
+    slash_mapGL_eq_smul_of_mem_functionCharSpace hf,
+    ModularForm.smul_slash_of_det_pos k val_det_frickeGL_pos,
+    toHomUnits_gamma0Map_frickeConjGamma0_eq_inv, map_inv, MonoidHom.inv_apply]
+
+/-- **The Fricke operator shifts the nebentypus to its inverse**: it carries `M_k(Γ₁(N), χ)` into
+`M_k(Γ₁(N), χ⁻¹)`. This is `slash_frickeGL_mem_functionCharSpace` read on the underlying
+function. -/
 public theorem frickeOperator_mem_modFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
     {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
     frickeOperator k f ∈ modFormCharSpace k χ⁻¹ := by
-  rw [mem_modFormCharSpace_iff]
-  intro d
-  -- `diamondOpHom` is not `@[expose]`d, so it is not interchangeable with `diamondOp` by
-  -- definitional unfolding; `diamondOpHom_apply` is the bridge.
-  have hd : diamondOpHom k d⁻¹ f = ((χ d⁻¹ : ℂˣ) : ℂ) • f :=
-    (mem_modFormCharSpace_iff k χ f).mp hf d⁻¹
-  rw [diamondOpHom_apply] at hd
-  have h := LinearMap.congr_fun (frickeOperator_diamondOp (N := N) k d⁻¹) f
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, inv_inv, hd, map_smul] at h
-  simpa only [diamondOpHom_apply, MonoidHom.inv_apply, map_inv, Units.val_inv_eq_inv_val]
-    using h.symm
+  rw [← coe_mem_functionCharSpace_iff, coe_frickeOperator]
+  exact slash_frickeGL_mem_functionCharSpace ((coe_mem_functionCharSpace_iff k χ f).mpr hf)
 
 /-- **The Fricke operator shifts the nebentypus to its inverse, on cusp forms**: it carries
 `S_k(Γ₁(N), χ)` into `S_k(Γ₁(N), χ⁻¹)`. The cusp-form counterpart of
-`frickeOperator_mem_modFormCharSpace`, from the cusp-form diamond-shift. -/
+`frickeOperator_mem_modFormCharSpace`. -/
 public theorem frickeOperatorCusp_mem_cuspFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
     frickeOperatorCusp k f ∈ cuspFormCharSpace k χ⁻¹ := by
-  rw [mem_cuspFormCharSpace_iff]
-  intro d
-  have hd : diamondOpCuspHom k d⁻¹ f = ((χ d⁻¹ : ℂˣ) : ℂ) • f :=
-    (mem_cuspFormCharSpace_iff k χ f).mp hf d⁻¹
-  rw [diamondOpCuspHom_apply] at hd
-  have h := LinearMap.congr_fun (frickeOperatorCusp_diamondOpCusp (N := N) k d⁻¹) f
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, inv_inv, hd, map_smul] at h
-  simpa only [diamondOpCuspHom_apply, MonoidHom.inv_apply, map_inv, Units.val_inv_eq_inv_val]
-    using h.symm
+  rw [← coe_mem_functionCharSpace_iff_mem_cuspFormCharSpace, coe_frickeOperatorCusp]
+  exact slash_frickeGL_mem_functionCharSpace
+    ((coe_mem_functionCharSpace_iff_mem_cuspFormCharSpace k χ f).mpr hf)
 
 /-- **The Fricke operator restricted to a nebentypus space**, as a `ℂ`-linear map
 `M_k(Γ₁(N), χ) →ₗ[ℂ] M_k(Γ₁(N), χ⁻¹)`.

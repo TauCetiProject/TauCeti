@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.Sequence.SlopeData.Basic
 public import TauCeti.Analysis.Convex.Sequence.Rationality
+public import TauCeti.Data.Rat.Cast.Order
 import Mathlib.Data.Set.Finite.Lattice
 
 /-!
@@ -45,12 +46,11 @@ theorem FiniteSlopeData.existsUnique_rat_heights_eq_iff {h : ℕ → WithTop ℝ
       (fun n => WithTop.map ((↑) : ℚ → ℝ) (d.heights n)) = h) ↔
       IsConvexSeq h ∧ {n | h n ≠ ⊤}.Nonempty ∧ {n | h n ≠ ⊤}.Finite ∧
         ∀ n, h n ≠ ⊤ → ∃ q : ℚ, h n = ((q : ℝ) : WithTop ℝ) := by
-  let f : ℚ →+o ℝ :=
-    { (Rat.castHom ℝ).toAddMonoidHom with monotone' := Rat.cast_mono }
+  let f := Rat.castOrderAddMonoidHom ℝ
   have hmap (d : FiniteSlopeData ℚ) :
       (d.map f).heights = fun n => WithTop.map ((↑) : ℚ → ℝ) (d.heights n) := by
     funext n
-    exact d.heights_map f n
+    simp [f]
   constructor
   · rintro ⟨d, hd, -⟩
     obtain ⟨hc, hne, hfin⟩ := exists_heights_eq_iff.mp ⟨d.map f, (hmap d).trans hd⟩

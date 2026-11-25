@@ -12,10 +12,10 @@ import TauCeti.Algebra.MvPolynomial.PDeriv
 /-!
 # Coordinate expansion of Kähler differentials for multivariate polynomials
 
-This file records the coordinate expansion of `KaehlerDifferential.D R (MvPolynomial σ R) p` as
-a finite sum over `p.vars` (valid for arbitrary, possibly infinite variable sets `σ`) via
-`Derivation.apply_eq_sum_pderiv`, together with its specialization to a `[Fintype σ]` sum,
-mirroring `KaehlerDifferential.polynomial_D_apply`.
+This file records the coordinate expansion of `KaehlerDifferential.D R (MvPolynomial σ R) p` as a
+finite sum over `p.vars` (valid for arbitrary, possibly infinite variable sets `σ`), the special
+case `D = KaehlerDifferential.D` of `MvPolynomial.derivation_apply_eq_sum_vars`, together with its
+specialization to a `[Fintype σ]` sum, mirroring `KaehlerDifferential.polynomial_D_apply`.
 
 ## Main results
 
@@ -38,7 +38,7 @@ theorem mvPolynomial_D_apply_eq_sum_vars (p : MvPolynomial σ R) :
       ∑ i ∈ p.vars,
         MvPolynomial.pderiv i p •
           KaehlerDifferential.D R (MvPolynomial σ R) (MvPolynomial.X i) :=
-  (KaehlerDifferential.D R (MvPolynomial σ R)).apply_eq_sum_pderiv p
+  MvPolynomial.derivation_apply_eq_sum_vars _ p
 
 /-- Over a multivariate polynomial ring on a finite variable set `σ`, the universal Kähler
 differential of `p` is `∑ i : σ, MvPolynomial.pderiv i p • D (X i)`. -/
