@@ -141,6 +141,17 @@ theorem prodEquiv_symm_apply (y : UnitizationKZero R A × ProjectionKZero R) :
     (prodEquiv R A).symm y = y.1 + inl R A y.2 :=
   (rfl)
 
+/-- The split decomposition sends an element `y` of `K₀(A)` to `(y, 0)`. -/
+@[simp]
+theorem prodEquiv_apply_coe (y : UnitizationKZero R A) : prodEquiv R A y = (y, 0) := by
+  have hy : augmentation R A y = 0 := y.property
+  ext <;> simp [hy]
+
+/-- The split decomposition sends the scalar class `K₀(ι) z` to `(0, z)`. -/
+@[simp]
+theorem prodEquiv_inl (z : ProjectionKZero R) : prodEquiv R A (inl R A z) = (0, z) := by
+  ext <;> simp
+
 section map
 
 variable {B C : Type*} [NonUnitalSemiring B] [StarRing B] [Module R B] [IsScalarTower R B B]
