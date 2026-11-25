@@ -13,10 +13,10 @@ import TauCeti.Analysis.Contour.Crossing.Finiteness
 import TauCeti.Analysis.Contour.Crossing.PVAggregation
 import TauCeti.Analysis.Contour.Crossing.Windows
 import TauCeti.Analysis.Contour.InvSubCPVExistence
-import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 public import TauCeti.Analysis.Contour.Winding.LipschitzBoundedIntegrand
 import TauCeti.Analysis.Contour.Winding.SegmentSum
 import TauCeti.Analysis.Contour.Winding.PrincipalValueRealIntegral
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 
 /-!
 # The real bounded-integrand formula for the winding number, allowing crossings
@@ -76,10 +76,10 @@ contour-integration infrastructure: the per-crossing window value
 (`exists_radius_perWindow_tendsto_log_norm_add_arg`), the existence-and-real-part aggregation
 (`exists_hasCauchyPVAt_re_eq_of_perWindow_tendsto_of_interiorDisjoint`), the integral-identity
 bridge (`HasCauchyPVAt.im_eq_integral_realWindingIntegrand`), and the plain-piece log-norm
-telescoping (`Winding.SegmentSum.re_integral_inv_sub_mul_deriv_eq_log_norm`), which feeds the
-real-part telescoping hypothesis of the aggregation theorem. This file's own content is deriving
-the real winding integrand's boundedness and interval-integrability from the crossing regularity
-rather than assuming them, via `Winding.LipschitzBoundedIntegrand`'s one-sided bounds
+telescoping (`AbsolutelyContinuousOnInterval.re_integral_inv_sub_mul_deriv_eq_log_norm`), which
+feeds the real-part telescoping hypothesis of the aggregation theorem. This file's own content is
+deriving the real winding integrand's boundedness and interval-integrability from the crossing
+regularity rather than assuming them, via `Winding.LipschitzBoundedIntegrand`'s one-sided bounds
 instantiating `Crossing.Windows`'s generic sorted-crossing-list gluing induction
 (`sorted_crossing_gluing_induction`) with that integrability invariant directly, the same way
 `Crossing.PVAggregation`'s own per-window aggregation theorems instantiate it for their
@@ -292,13 +292,11 @@ private theorem re_integral_inv_sub_mul_deriv_eq_log_norm_of_le_norm_sub {γ : �
     {l u : ℝ} (hA : a ≤ l) (hlu : l ≤ u) (hu : u ≤ b) (h_far : ∀ t ∈ Icc l u, m ≤ ‖γ t - s‖) :
     (∫ t in l..u, (γ t - s)⁻¹ * deriv γ t).re = Real.log ‖γ u - s‖ - Real.log ‖γ l - s‖ := by
   have hγ_cont : ContinuousOn γ (Icc a b) := h_imm.continuousOn.mono (uIcc_of_le hab).ge
-  obtain ⟨p, hp⟩ := h_imm.isPiecewiseC1On.exists_finset_differentiableAt
-  rw [min_eq_left hab, max_eq_right hab] at hp
-  obtain ⟨h_ne, hcplx⟩ := ne_and_intervalIntegrable_inv_sub_mul_deriv_of_le_norm_sub hγ_cont
+  obtain ⟨h_ne, -⟩ := ne_and_intervalIntegrable_inv_sub_mul_deriv_of_le_norm_sub hγ_cont
     h_imm.isPiecewiseC1On.intervalIntegrable_deriv hm_pos hA hlu hu h_far
-  exact re_integral_inv_sub_mul_deriv_eq_log_norm hlu p.countable_toSet
-    (hγ_cont.mono (Icc_subset_Icc hA hu))
-    (fun t ht ↦ hp t ⟨Ioo_subset_Ioo hA hu ht.1, ht.2⟩) h_ne hcplx
+  have hac := h_imm.isPiecewiseC1On.absolutelyContinuousOnInterval.mono (uIcc_subset_uIcc
+    (mem_uIcc_of_le hA (hlu.trans hu)) (mem_uIcc_of_le (hA.trans hlu) hu))
+  exact hac.re_integral_inv_sub_mul_deriv_eq_log_norm (uIcc_of_le hlu ▸ h_ne)
 
 /-- **Interval-integrability of the real winding integrand from crossing windows.** If every
 crossing `t₀ ∈ T` of `s` has a symmetric window of radius `ρ ≤ ρ_lip t₀` on which the integrand is
@@ -380,8 +378,9 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
       h_endpts h_pair hρ_le_R hR_int hm_pos hm
   -- Both the principal-value witness and the real-part telescoping are read off in one call:
   -- the plain pieces telescope in real part to the log-norm difference
-  -- (`re_integral_inv_sub_mul_deriv_eq_log_norm`), and each window's explicit limit value has
-  -- exactly that real part built in already (`exists_radius_perWindow_tendsto_log_norm_add_arg`).
+  -- (`re_integral_inv_sub_mul_deriv_eq_log_norm_of_le_norm_sub`), and each window's explicit
+  -- limit value has exactly that real part built in already
+  -- (`exists_radius_perWindow_tendsto_log_norm_add_arg`).
   obtain ⟨L, hHCPV, hRe0⟩ := exists_hasCauchyPVAt_re_eq_of_perWindow_tendsto_of_interiorDisjoint
     (g := fun z ↦ (z - s)⁻¹) (Ψ := fun t ↦ Real.log ‖γ t - s‖) hab T
     (fun t ht ↦ by linarith [(h_endpts t ht).1])
