@@ -36,6 +36,8 @@ and hence also its opposite group.
 * `TauCeti.ModularGroup.tPrime`, `TauCeti.ModularGroup.coe_tPrime`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_mul_coe_S`: the matrix `T′ = (1 0; 1 1)` and
   `U² * S = T′`.
+* `TauCeti.ModularGroup.coe_tPrime_sq`, `TauCeti.ModularGroup.tPrime_sq_eq`: the matrix
+  `T′² = (1 0; 2 1)` and `T′² = S T⁻² S⁻¹`.
 * `TauCeti.ModularGroup.closure_T_tPrime`: `T` and `T′` generate `SL(2, ℤ)`.
 * `TauCeti.ModularGroup.hom_ext_T_tPrime`: homomorphisms out of `SL(2, ℤ)` agreeing on `T` and
   `T′` are equal.
@@ -153,6 +155,18 @@ def tPrime : SL(2, ℤ) := .mk !![1, 0; 1, 1] (by decide +kernel)
 @[simp]
 theorem coe_tPrime : (tPrime : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; 1, 1] :=
   (rfl)
+
+/-- The matrix of `T′² = (1 0; 2 1)`. -/
+theorem coe_tPrime_sq : ((tPrime ^ 2 : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; 2, 1] := by
+  rw [SpecialLinearGroup.coe_pow, coe_tPrime]
+  decide
+
+/-- `T′² = (1 0; 2 1)` is the conjugate `S T⁻² S⁻¹` of the translation by `-2`. -/
+theorem tPrime_sq_eq : tPrime ^ 2 = S * T ^ (-2 : ℤ) * S⁻¹ := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [sq, Matrix.mul_apply, Fin.sum_univ_two, ModularGroup.coe_S,
+      Matrix.SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two]
 
 /-- `T` and `T′` generate `SL(2, ℤ)`: `S = (T T′⁻¹ T)⁻¹`. -/
 theorem closure_T_tPrime : Subgroup.closure {T, tPrime} = (⊤ : Subgroup SL(2, ℤ)) := by
