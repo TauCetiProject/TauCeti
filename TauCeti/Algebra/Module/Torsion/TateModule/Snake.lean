@@ -166,6 +166,15 @@ theorem tateModuleLevelδ_proj_tateModuleδEquiv_symm (hp : Bijective fun x : M�
       c.val n := by
   rw [← tateModuleδ_apply_val, ← tateModuleδEquiv_apply p hfg hf hg hp, AddEquiv.apply_symm_apply]
 
+/-- The `n`-th level of the inverse image of `c` is the torsion point that the level map sends to
+the `n`-th class of `c`. -/
+theorem proj_tateModuleδEquiv_symm_eq_of_tateModuleLevelδ_eq
+    (hp : Bijective fun x : M₂ ↦ (p : ℤ) • x) (c : AdicCompletion (Ideal.span {(p : ℤ)}) M₁)
+    {n : ℕ} {y : TateModuleLevel p M₃ n} (hy : tateModuleLevelδ p hfg hf hg n y = c.val n) :
+    TateModule.proj n ((tateModuleδEquiv p hfg hf hg hp).symm c) = y :=
+  (bijective_tateModuleLevelδ p hfg hf hg hp n).1 <| by
+    rw [tateModuleLevelδ_proj_tateModuleδEquiv_symm, hy]
+
 end Level
 
 section Finite

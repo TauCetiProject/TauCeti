@@ -86,23 +86,14 @@ theorem proj_lieExpTateModuleEquiv_symm (hp : p ≠ 0)
     (TateModule.proj n ((lieExpTateModuleEquiv I G p hp).symm c) : Additive G) =
       Additive.ofMul (lieExp (((p ^ n : ℕ) : ℝ)⁻¹ • (l : LeftInvariantDerivation I G))) := by
   have hpn : (((p ^ n : ℕ) : ℤ) : ℝ) ≠ 0 := by exact_mod_cast pow_ne_zero n hp
-  let y : TateModuleLevel p (Additive G) n :=
-    ⟨_, lieExp_inv_smul_mem_torsionBy (I := I) _ (by exact_mod_cast hpn) l⟩
   have hl : (l : LeftInvariantDerivation I G) =
       ((p ^ n : ℕ) : ℤ) • (((p ^ n : ℕ) : ℤ) : ℝ)⁻¹ • (l : LeftInvariantDerivation I G) := by
     rw [← Int.cast_smul_eq_zsmul ℝ, smul_inv_smul₀ hpn]
-  have hy : tateModuleLevelδ p exact_subtype_lieExpLattice
-      (lieExpLattice (I := I) (G := G)).injective_subtype
-      surjective_toIntLinearMap_lieExpAddMonoidHom n y = Submodule.Quotient.mk l :=
-    tateModuleLevelδ_eq p _ _ _ y
-      (by rw [AddMonoidHom.coe_toIntLinearMap, lieExpAddMonoidHom_apply]) hl
-  have hinj := (bijective_tateModuleLevelδ p exact_subtype_lieExpLattice
-    (lieExpLattice (I := I) (G := G)).injective_subtype surjective_toIntLinearMap_lieExpAddMonoidHom
-    (bijective_zsmul_of_ne_zero ℝ (Int.natCast_ne_zero.mpr hp)) n).1
-  rw [← hc] at hy
-  rw [lieExpTateModuleEquiv, hinj ((tateModuleLevelδ_proj_tateModuleδEquiv_symm p _ _ _ _ c n).trans
-    hy.symm)]
-  simp only [y, Int.cast_natCast]
+  rw [lieExpTateModuleEquiv, proj_tateModuleδEquiv_symm_eq_of_tateModuleLevelδ_eq p _ _ _ _ c
+    (y := ⟨_, lieExp_inv_smul_mem_torsionBy (I := I) _ (by exact_mod_cast hpn) l⟩)
+    ((tateModuleLevelδ_eq p _ _ _ _
+      (by rw [AddMonoidHom.coe_toIntLinearMap, lieExpAddMonoidHom_apply]) hl).trans hc.symm)]
+  simp only [Int.cast_natCast]
 
 end Completion
 
