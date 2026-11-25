@@ -415,7 +415,8 @@ variable {A} {B : CommMon X.Modules}
 
 /-- The unit of a commutative `𝒪ₓ`-algebra sends a regular function to its image under the
 structure map. -/
-private lemma one_app_eq_algebraMap (A : CommMon X.Modules) (U : X.Opens) (r : Γ(X, U)) :
+lemma _root_.CategoryTheory.CommMon.one_app_eq_algebraMap (A : CommMon X.Modules) (U : X.Opens)
+    (r : Γ(X, U)) :
     (MonObj.one (X := A.X)).app U r = algebraMap Γ(X, U) Γ(A.X, U) r := by
   rw [CommMon.sections_algebraMap_def, Scheme.Modules.sectionsFunctor_ε]
   rfl
@@ -459,8 +460,8 @@ private lemma isMonHom_moduleHomOfSectionsPresheaf (φ : A.sectionsPresheaf ⟶ 
     have hU := NatTrans.congr_app h (op U)
     rw [NatTrans.comp_app, CommMon.toSectionsPresheaf_app,
       CommMon.toSectionsPresheaf_app] at hU
-    exact (congrArg (φ.app (op U)) (one_app_eq_algebraMap A U r)).trans
-      ((congrArg (fun f ↦ f.hom r) hU).trans (one_app_eq_algebraMap B U r).symm)
+    exact (congrArg (φ.app (op U)) (A.one_app_eq_algebraMap U r)).trans
+      ((congrArg (fun f ↦ f.hom r) hU).trans (B.one_app_eq_algebraMap U r).symm)
   mul_hom := by
     -- Morphisms out of the sheafified tensor product are determined on pure tensors of
     -- sections, where both sides compute products of sections.

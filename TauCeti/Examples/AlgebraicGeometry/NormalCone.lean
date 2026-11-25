@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.NormalCone.OpenImmersion
 /-!
 # Examples: normal cones of the identity and of an empty source
 
-Checks of SchemeAndStackFoundations §5.5 (Fulton, *Intersection Theory*, §4.1):
+Examples of normal cones (Fulton, *Intersection Theory*, §4.1):
 
 * the identity of a scheme has zero conormal sheaf, and the projections of its normal cone and of
   its normal sheaf (the normal bundle) are isomorphisms;

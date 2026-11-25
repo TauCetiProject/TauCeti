@@ -44,6 +44,8 @@ tag 01M1).
 * `TauCeti.AlgebraicGeometry.isIso_one_gradedSymmetricAlgebra` and
   `TauCeti.AlgebraicGeometry.epi_mul_gradedSymmetricAlgebra`: the unit and the multiplications of
   `Sym F` are respectively an isomorphism and epimorphisms;
+* `TauCeti.AlgebraicGeometry.isZero_gradedSymmetricAlgebra_obj_X`: the symmetric powers of
+  positive degree of a zero sheaf vanish;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_hom_ext`: a graded algebra morphism out of
   `Sym F` is determined by its degree-one component;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_map_degreeOne`: a graded algebra morphism
@@ -311,6 +313,21 @@ instance epi_mul_gradedSymmetricAlgebra (F : QuasicoherentSheaf X) (i j : ℕ) :
   rw [mul_gradedSymmetricAlgebra]
   exact epi_comp' (h _) (epi_comp' (SheafOfModules.epi_symmetricPowerMul (R := X.sheaf) F.obj i j)
     (h _))
+
+open Limits in
+/-- The symmetric powers `Symⁿ F` of positive degree of a zero quasicoherent sheaf `F` vanish:
+the multiplication `Symⁿ⁻¹ F ⊗ F ⟶ Symⁿ F` is an epimorphism out of a zero sheaf. -/
+theorem isZero_gradedSymmetricAlgebra_obj_X {F : QuasicoherentSheaf X} (hF : IsZero F.obj)
+    {n : ℕ} (hn : n ≠ 0) : IsZero (((gradedSymmetricAlgebra X).obj F).obj.X n) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  set A := ((gradedSymmetricAlgebra X).obj F).obj
+  have h1 : IsZero (A.X 1) := hF.of_iso (gradedSymmetricAlgebraXOneIso F)
+  have h : IsZero (A.X m ⊗ A.X 1) := by
+    rw [IsZero.iff_id_eq_zero, ← MonoidalCategory.whiskerLeft_id, h1.eq_of_src (𝟙 _) 0,
+      MonoidalPreadditive.whiskerLeft_zero]
+  -- The epimorphism instance is passed explicitly: instance search does not find it for the
+  -- multiplication as elaborated here.
+  exact @IsZero.of_epi _ _ _ _ _ _ (epi_mul_gradedSymmetricAlgebra F m 1) h
 
 /-- Morphisms of graded quasicoherent algebras out of the graded symmetric algebra `Sym F` are
 determined by their degree-one components. -/
