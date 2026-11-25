@@ -102,6 +102,8 @@ private theorem exists_memLp_apply_single_eq (hp : 1 < p) (hp_top : p ≠ ⊤)
       ∀ g : Fin (finrank ℝ F) →
           Lp ℝ p (μ.restrict (A.sectionChartData.image j : Set E)),
         Λ' (Pi.single j g) = ∑ c, ∫ x in A.sectionChartData.image j, H x c * g c x ∂μ := by
+  -- The block of chart `j` is `Fin _ → Wkp μ (image j) p 0`, which is `Fin _ → Lᵖ` by definition
+  -- (`Wkp.value_zero` is `rfl`), so the duality for `Lᵖ` tuples applies to it directly.
   obtain ⟨H, hH, -, hΛ⟩ := MeasureTheory.Lp.exists_memLp_forall_dual_pi_apply_eq (p := q) (q := p)
     hp hp_top (EuclideanSpace.basisFun (Fin (finrank ℝ F)) ℝ)
     (Λ'.comp (ContinuousLinearMap.single ℝ
@@ -141,22 +143,21 @@ private theorem exists_localization [T2Space M] (hp : 1 < p) (hp_top : p ≠ ⊤
       Lp ℝ q (μ.restrict (P j : Set E)) :=
     fun j c ↦ (((hH j).continuousLinearMap_comp (EuclideanSpace.proj (𝕜 := ℝ) c)).mono_measure
       (Measure.restrict_mono (hPj j) le_rfl)).toLp _
-  refine ⟨∑ j, ∑ c, (MeasureTheory.Lp.toDual ℝ _ q p (G j c)).comp
+  refine ⟨∑ j, ∑ c, (MeasureTheory.Lp.toDual ℝ _ q p (G j c)).comp ((Wkp.valueL 0).comp
     ((ContinuousLinearMap.proj c).comp (A.transferL μ p 0 i j (hPc j) (hPD j)
-      (hPQ j))), fun w hw hvan ↦ ?_⟩
+      (hPQ j)))), fun w hw hvan ↦ ?_⟩
   rw [apply_eq_sum_single A Λ' w]
   simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.proj_apply]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [hΛ j]
   refine Finset.sum_congr rfl fun c _ ↦ ?_
-  have htr := A.restrictL_eq_transferL μ p 0 hw
-    (A.localizedImage_subset_overlap i j Q) (hPc j) (hPD j) hQ (hPQ j) c
-  rw [MeasureTheory.Lp.toDual_apply]
-  -- `transferL` is valued in `Wkp _ _ p 0`, which the composite with `Lp.toDual` reads as `Lp`
-  -- (`Wkp _ _ p 0` is `Lp` by definition, see `Wkp.value_zero`), so the occurrence is behind
-  -- that identification and `erw` is needed to see it.
-  erw [← htr]
+  -- The chart-`j` data on the localized image are the transfer of the chart-`i` data over `Q`.
+  have htr : Wkp.restrictL (hPj j) 0 (w j c) =
+      A.transferL μ p 0 i j (hPc j) (hPD j) (hPQ j) (fun l ↦ Wkp.restrictL hQ 0 (w i l)) c :=
+    A.restrictL_eq_transferL μ p 0 hw (A.localizedImage_subset_overlap i j Q) (hPc j) (hPD j) hQ
+      (hPQ j) c
+  rw [← htr, Wkp.valueL_apply, MeasureTheory.Lp.toDual_apply]
   -- Pass from the chart image to the localized image, where the data are the restricted data.
   rw [setIntegral_eq_of_subset_of_ae_sdiff_eq_zero
     (A.sectionChartData.image j).isOpen.measurableSet.nullMeasurableSet (hPj j) ?_]
@@ -165,9 +166,7 @@ private theorem exists_localization [T2Space M] (hp : 1 < p) (hp_top : p ≠ ⊤
         (EuclideanSpace.proj (𝕜 := ℝ) c)).mono_measure (Measure.restrict_mono (hPj j) le_rfl)),
       Wkp.value_restrictL_ae (hPj j) 0 (w j c)] with y hy₁ hy₂
     simp only [G]
-    rw [hy₁]
-    rw [Wkp.value_zero, Wkp.value_zero] at hy₂
-    exact (congrArg (fun t ↦ (EuclideanSpace.proj (𝕜 := ℝ) c) (H j y) * t) hy₂).symm
+    rw [hy₁, hy₂, Wkp.value_zero, PiLp.proj_apply]
   · have h := (ae_restrict_iff' (A.sectionChartData.image j).isOpen.measurableSet).1
       (hvan j c)
     filter_upwards [h] with y hy hyd
@@ -190,6 +189,8 @@ theorem exists_memLp_forall_apply_eq_sum_setIntegral [T2Space M] (hp : 1 < p) (h
     rw [sectionChartData_image]
     exact fun y hy ↦ hQi (subset_closure hy)
   obtain ⟨ℓ, hℓ⟩ := exists_localization (q := q) A hp hp_top Λ i hQi hQ
+  -- `ℓ` acts on `Fin _ → Wkp μ Q p 0`, which is `Fin _ → Lᵖ(Q)` by definition (`Wkp.value_zero`
+  -- is `rfl`), so it is read as a functional on `Lᵖ` tuples.
   obtain ⟨H, hH, -, hHℓ⟩ := MeasureTheory.Lp.exists_memLp_forall_dual_pi_apply_eq (p := q) (q := p)
     (μ := μ.restrict (Q : Set E)) hp hp_top (EuclideanSpace.basisFun (Fin (finrank ℝ F)) ℝ)
     (ℓ : StrongDual ℝ (Fin (finrank ℝ F) → Lp ℝ p (μ.restrict (Q : Set E))))

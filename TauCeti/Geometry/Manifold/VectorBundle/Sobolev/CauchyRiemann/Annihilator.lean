@@ -154,8 +154,8 @@ theorem exists_memLp_forall_eq_setIntegral_of_mem_aeZeroOff (hp : 1 < p) (hp_top
           A.tangentHom.sectionChartData.SobolevData volume p 0))] with z hza hzs
   simp only [T, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.smulRight_apply,
     smul_apply, smul_eq_mul, PiLp.proj_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.antilinearOfOneL_apply_one _ hza, LinearMap.coe_toContinuousLinearMap',
-    Basis.coord_apply]
+    ContinuousLinearMap.antilinearOfOneL_apply_eq_of_antilinear _ hza,
+    LinearMap.coe_toContinuousLinearMap', Basis.coord_apply]
   refine Finset.sum_congr rfl fun c _ ↦ ?_
   rw [hzs]
   simp [Finsupp.single_apply]
