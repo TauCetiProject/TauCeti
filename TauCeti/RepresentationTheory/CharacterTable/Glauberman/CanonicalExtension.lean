@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.Determined
 public import TauCeti.RepresentationTheory.CharacterTable.Glauberman.NormalizedExtension
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 public import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.RepresentationTheory.Charpoly
 
 /-!
 # Glauberman's canonical extension
@@ -140,13 +141,15 @@ theorem existsUnique_canonicalExtension (hcop : (Nat.card Γ).Coprime (Nat.card 
         LinearEquiv.conj_apply, LinearMap.comp_assoc]
     have h₂inl (g : Γ) : ρ₂ (inl g) = ρ₀ g := by
       rw [hρ₂, ← E.conj_apply_self g, MonoidHom.comp_apply]
+    have E₂ : ρ₁.Equiv ρ₂ := .mk E.toLinearEquiv fun x => by
+      rw [hρ₂, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.comp_assoc,
+        LinearEquiv.symm_comp, LinearMap.comp_id]
     have h₂det (s : S) : (ρ₂ (inr s)).det = 1 := by
-      rw [hρ₂, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj, hdet₁]
+      rw [← E₂.det_apply_eq, hdet₁]
     have h₂ := Representation.semidirectProduct_extension_det_eq_one_unique hscalar hcop'
       h₂inl hinl h₂det hdet
-    funext x
-    rw [Representation.character, Representation.character, ← h₂, hρ₂,
-      LinearMap.trace_conj']
+    rw [← h₂]
+    exact Representation.char_iso E₂
 
 /-- A canonical extension of the trivial character is the trivial character. -/
 theorem IsCanonicalExtension.eq_one (hcop : (Nat.card Γ).Coprime (Nat.card S))
@@ -256,7 +259,7 @@ theorem IsCanonicalExtension.det_inr_eq_one [Finite S] {χ : Γ → k} {ψ : Γ 
   have : Finite (Γ ⋊[φ] S) := Finite.of_equiv _ equivProd.symm
   obtain ⟨-, -, m, ρ', hρ', hdet⟩ := h
   obtain ⟨E⟩ := Representation.nonempty_equiv_of_character_eq ρ' ρ (hρ'.trans hρ.symm)
-  rw [← E.conj_apply_self, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj, hdet]
+  rw [← E.det_apply_eq, hdet]
 
 end Transport
 
