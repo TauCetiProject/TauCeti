@@ -7,10 +7,8 @@ module
 
 public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsAlgClosed.Classification
-public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 public import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import Mathlib.FieldTheory.IsSepClosed
-import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # Extending automorphisms to an algebraically closed field
@@ -25,9 +23,7 @@ by a bijection of the bases over a fixed base ring, and records how the extensio
 Two consequences describe the automorphism group of an algebraically closed field `Ω`, for
 instance `ℂ`, relative to a subring `R`:
 
-* every ring automorphism of `R` extends to a ring automorphism of `Ω`; in particular, when the
-  cyclotomic polynomial `Φ_n` is irreducible over a base field `K`, some automorphism of `Ω` over
-  `K` sends a primitive `n`-th root of unity to any prescribed coprime power;
+* every ring automorphism of `R` extends to a ring automorphism of `Ω`;
 * the elements of `Ω` fixed by every automorphism of `Ω` over a perfect field `K` are exactly
   the elements of `K`. An element algebraic over `K` but not in `K` is moved by an automorphism
   of the algebraic closure of `K` in `Ω`, which is Galois over `K`, extended to `Ω`; an element
@@ -50,9 +46,6 @@ unique `p`-th root of `a` in `Ω` is fixed by every automorphism of `Ω` over `K
   extends to an automorphism of `Ω`.
 * `AlgEquiv.exists_algEquiv_apply_algebraMap`: every automorphism of a subring over a base ring
   extends to an automorphism of `Ω` over that base.
-* `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime_of_isAlgClosed`: if `Φ_n` is
-  irreducible over `K`, a primitive `n`-th root of unity `ζ ∈ Ω` is sent to every coprime power
-  `ζ ^ j` by an automorphism of `Ω` over `K`.
 * `Transcendental.exists_algEquiv_apply_eq_add_one`: an element transcendental over the
   base is sent to itself plus one by some automorphism of `Ω` over the base.
 * `TauCeti.IsAlgClosed.mem_range_algebraMap_iff_fixed`,
@@ -134,33 +127,6 @@ theorem exists_algEquiv_apply_algebraMap {K : Type*} [CommRing K] [Algebra K R] 
   exact congrArg (algebraMap R Ω) (σ.commutes k)
 
 end AlgEquiv
-
-namespace IsPrimitiveRoot
-
-/-- If the cyclotomic polynomial `Φ_n` is irreducible over `K`, every coprime power `ζ ^ j` of a
-primitive `n`-th root of unity `ζ` in an algebraically closed field `Ω` is the image of `ζ` under
-an automorphism of `Ω` over `K`. For `Ω = ℂ` and `K = ℚ`, every unit modulo `n` is realised by
-an automorphism of `ℂ`. -/
-theorem exists_algEquiv_apply_eq_pow_of_coprime_of_isAlgClosed {K : Type*} [Field K]
-    [Algebra K Ω] {n j : ℕ} {ζ : Ω} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j)
-    (hirr : Irreducible (Polynomial.cyclotomic n K)) :
-    ∃ τ : Ω ≃ₐ[K] Ω, τ ζ = ζ ^ j := by
-  -- `Φ₀ = 1` is not irreducible
-  have : NeZero n :=
-    ⟨by rintro rfl; exact not_irreducible_one (Polynomial.cyclotomic_zero K ▸ hirr)⟩
-  -- realise the power on the algebraic closure `A` of `K` in `Ω`, which is normal over `K`,
-  -- and extend the automorphism of `A` to `Ω`
-  let A := algebraicClosure K Ω
-  let η : A := ⟨ζ, mem_algebraicClosure_iff.2 (IsIntegral.of_pow (NeZero.pos n)
-    (hζ.pow_eq_one ▸ isIntegral_one)).isAlgebraic⟩
-  have hη : IsPrimitiveRoot η n := hζ.of_map_of_injective (f := algebraMap A Ω)
-    (algebraMap A Ω).injective
-  obtain ⟨σ, hσ⟩ := hη.exists_algEquiv_apply_eq_pow_of_coprime hj hirr
-  obtain ⟨τ, hτ⟩ := σ.exists_algEquiv_apply_algebraMap (Ω := Ω)
-  refine ⟨τ, ?_⟩
-  simpa [η, hσ] using hτ η
-
-end IsPrimitiveRoot
 
 namespace Transcendental
 

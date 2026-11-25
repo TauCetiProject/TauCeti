@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Fricke
-import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
+import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.QExpansion
 import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
 

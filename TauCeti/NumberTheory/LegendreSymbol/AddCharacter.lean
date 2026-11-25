@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import TauCeti.Algebra.Group.AddChar.Basic
 
 /-!
 # Primitive additive characters
@@ -35,6 +36,8 @@ character.
 * `AddChar.IsPrimitive.mulShift`: the shift of a primitive character by a unit is primitive.
 * `AddChar.IsPrimitive.isPrimitive_mulShift_iff`: on a finite ring, the shift of a primitive
   character by `a` is primitive if and only if `a` is a unit.
+* `AddChar.IsPrimitive.isPrimitiveRoot`: the value at `1` of a primitive character of `ZMod n`
+  is a primitive `n`th root, including the infinite-order case `n = 0`.
 * `AddChar.IsPrimitive.natCast_ne_zero`: the level of a primitive additive character of `ZMod n`
   with values in a domain is nonzero in that domain.
 * `AddChar.sum_units_mul_eq_neg_one`: a nontrivial additive character of a finite field sums to
@@ -120,3 +123,25 @@ theorem sum_eq_zero_of_sub_one_mem_nonZeroDivisors {A S : Type*} [AddGroup A] [F
   rw [← mul_left_mem_nonZeroDivisors_eq_zero_iff hb, sub_mul, one_mul, h, sub_self]
 
 end AddChar
+
+/-- A primitive additive character of `ZMod n` sends `1` to a primitive `n`th root of unity. -/
+theorem AddChar.IsPrimitive.isPrimitiveRoot {n : ℕ} {M : Type*} [CommMonoid M]
+    {ψ : AddChar (ZMod n) M} (hψ : ψ.IsPrimitive) : IsPrimitiveRoot (ψ 1) n where
+  pow_eq_one := ψ.pow_char_eq_one n 1
+  dvd_of_pow_eq_one l hl := by
+    by_contra hdiv
+    have ha : (l : ZMod n) ≠ 0 := fun h ↦ hdiv ((ZMod.natCast_eq_zero_iff l n).mp h)
+    apply hψ ha
+    apply AddChar.eq_one_iff.mpr
+    have hφ : AddChar.mulShift ψ (l : ZMod n) 1 = 1 := by
+      simpa only [AddChar.mulShift_apply, mul_one, ← nsmul_one l,
+        AddChar.map_nsmul_eq_pow] using hl
+    have hnat (k : ℕ) : AddChar.mulShift ψ (l : ZMod n) (k : ZMod n) = 1 := by
+      rw [← nsmul_one k, AddChar.map_nsmul_eq_pow, hφ, one_pow]
+    intro a
+    obtain ⟨a, rfl⟩ := ZMod.intCast_surjective a
+    cases a with
+    | ofNat k => simpa using hnat k
+    | negSucc k =>
+      exact (AddChar.mulShift ψ (l : ZMod n)).map_eq_one_of_add_eq_zero
+        (hnat (k + 1)) (by simp)

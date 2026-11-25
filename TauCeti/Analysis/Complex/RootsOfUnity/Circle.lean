@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 
 /-!
 # Roots of unity in the circle
@@ -18,6 +19,9 @@ spaces.
 
 ## Main results
 
+* `ZMod.isPrimitiveRoot_stdAddChar_one`: the standard complex character at `1` is primitive.
+* `MonoidHom.exists_map_stdAddChar_one_eq`: an injective multiplicative map permutes primitive
+  standard character values.
 * `ZMod.toCircle_pow_eq_one`: every value of `ZMod.toCircle` is an `n`-th root of unity.
 * `ZMod.exists_toCircle_eq_of_pow_eq_one`: every `n`-th root of unity in the circle is a value
   of `ZMod.toCircle`.
@@ -66,3 +70,36 @@ theorem natCard_toCircle_pow_eq_one (b : ℕ) :
   rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, toCircle_pow_eq_one_iff]
 
 end ZMod
+
+namespace ZMod
+
+variable {N : ℕ} [NeZero N]
+
+/-- A standard character value at a natural number is a power of its value at `1`. -/
+theorem stdAddChar_natCast (i : ℕ) :
+    stdAddChar (i : ZMod N) = stdAddChar (1 : ZMod N) ^ i := by
+  rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one]
+
+/-- The generator `ζ_N = stdAddChar 1` is a primitive `N`th root of unity. -/
+theorem isPrimitiveRoot_stdAddChar_one : IsPrimitiveRoot (stdAddChar (1 : ZMod N)) N :=
+  (isPrimitive_stdAddChar N).isPrimitiveRoot
+
+/-- A multiplicative map of `ℂ` sending the generator `ζ_N = stdAddChar 1` to
+`stdAddChar d = ζ_N^d` sends every value `stdAddChar j` to `stdAddChar (d * j)`. -/
+theorem map_stdAddChar_of_map_stdAddChar_one {F : Type*} [FunLike F ℂ ℂ]
+    [MonoidHomClass F ℂ ℂ] {σ : F} {d : ZMod N}
+    (hσ : σ (stdAddChar (1 : ZMod N)) = stdAddChar d)
+    (j : ZMod N) : σ (stdAddChar j) = stdAddChar (d * j) := by
+  rw [← natCast_zmod_val j, stdAddChar_natCast, map_pow, hσ,
+    ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, natCast_zmod_val, mul_comm]
+
+end ZMod
+
+/-- Every injective multiplicative map of `ℂ` sends `ζ_N` to a character value indexed by a unit. -/
+theorem MonoidHom.exists_map_stdAddChar_one_eq {N : ℕ} [NeZero N] (σ : ℂ →* ℂ)
+    (hσ : Function.Injective σ) :
+    ∃ d : (ZMod N)ˣ, σ (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N) := by
+  have hζ := ZMod.isPrimitiveRoot_stdAddChar_one (N := N)
+  obtain ⟨i, -, hi, hpow⟩ := hζ.isPrimitiveRoot_iff.mp (hζ.map_of_injective hσ)
+  refine ⟨ZMod.unitOfCoprime i hi, ?_⟩
+  rw [ZMod.coe_unitOfCoprime, ZMod.stdAddChar_natCast, ← hpow]

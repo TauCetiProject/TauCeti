@@ -75,10 +75,9 @@ theorem IsNondegenerate.ne_one [Nontrivial Λ] (hψ : ψ.IsNondegenerate) : ψ �
 /-- Over a nontrivial ring, the value at `1` of a nondegenerate character is a primitive `p`-th
 root of unity. -/
 theorem IsNondegenerate.isPrimitiveRoot [Nontrivial Λ] (hψ : ψ.IsNondegenerate) :
-    IsPrimitiveRoot (ψ 1) p where
-  pow_eq_one := ψ.pow_char_eq_one p 1
-  dvd_of_pow_eq_one l hl := by
-    rwa [← map_nsmul_eq_pow, nsmul_one, hψ.apply_eq_one_iff, ZMod.natCast_eq_zero_iff] at hl
+    IsPrimitiveRoot (ψ 1) p :=
+  (zmod_char_primitive_of_eq_one_only_at_zero p ψ
+    fun _ h ↦ hψ.apply_eq_one_iff.mp h).isPrimitiveRoot
 
 /-- Composing a nondegenerate character with the trace of a `ZMod p`-algebra `A` gives Mathlib's
 `AddChar.traceChar` at the primitive root `ψ 1`. -/

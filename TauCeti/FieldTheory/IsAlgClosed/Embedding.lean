@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.IsAlgClosed.Automorphism
+public import Mathlib.FieldTheory.Minpoly.IsConjRoot
 
 /-!
 # Embeddings into an algebraically closed field of large transcendence degree
@@ -40,6 +41,8 @@ countable field into `ℂ` to a field of cardinality at most the continuum.
   transcendence degrees.
 * `Transcendental.exists_algHom_apply_eq`, `Transcendental.exists_algEquiv_apply_eq`: the same,
   sending a transcendental element to a prescribed transcendental element.
+* `IsConjRoot.exists_algEquiv_of_isAlgClosed`: conjugate elements, including transcendental
+  ones, are related by an automorphism of the ambient algebraically closed field.
 * `TauCeti.IsAlgClosed.trdeg_eq_cardinalMk`: the transcendence degree of an uncountable
   algebraically closed field over a countable field is its cardinality.
 
@@ -171,3 +174,25 @@ theorem exists_algEquiv_apply_eq {E : Type u} [Field E] [Algebra k E] [IsAlgClos
   exact ⟨φ, (hφ ⟨α, hαs⟩).trans (congrArg Subtype.val (e.setValue_eq _ _))⟩
 
 end Transcendental
+
+/-- Conjugate elements of an algebraically closed field are related by a base-field
+automorphism. This includes transcendental elements, whose minimal polynomials are both zero. -/
+theorem IsConjRoot.exists_algEquiv_of_isAlgClosed {x y : Ω} (h : IsConjRoot k y x) :
+    ∃ τ : Ω ≃ₐ[k] Ω, τ x = y := by
+  by_cases hx : IsAlgebraic k x
+  · let A := algebraicClosure k Ω
+    let x' : A := ⟨x, mem_algebraicClosure_iff.mpr hx⟩
+    have hy : IsAlgebraic k y := (h.symm.isIntegral hx.isIntegral).isAlgebraic
+    let y' : A := ⟨y, mem_algebraicClosure_iff.mpr hy⟩
+    have h' : IsConjRoot k y' x' := by
+      rw [isConjRoot_def, ← minpoly.algHom_eq A.val (algebraMap A Ω).injective y',
+        ← minpoly.algHom_eq A.val (algebraMap A Ω).injective x']
+      exact h
+    obtain ⟨σ, hσ⟩ := h'.exists_algEquiv
+    obtain ⟨τ, hτ⟩ := σ.exists_algEquiv_apply_algebraMap (Ω := Ω)
+    refine ⟨τ, ?_⟩
+    have ht := hτ x'
+    rw [hσ] at ht
+    exact ht
+  · have hy : Transcendental k y := fun hy ↦ hx (h.isIntegral hy.isIntegral).isAlgebraic
+    exact Transcendental.exists_algEquiv_apply_eq hx hy rfl
