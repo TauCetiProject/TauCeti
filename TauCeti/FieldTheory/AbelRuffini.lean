@@ -34,6 +34,8 @@ elements of `E` may need roots of unity that are not in `E`. For the cyclic cubi
 * `solvableByRad.map_le_of_algHom`: a field embedding maps radicals to radicals.
 * `solvableByRad.restrictScalars_eq`: if `K` consists of radicals over `F`, then the radicals over
   `K` are exactly the radicals over `F`.
+* `Irreducible.forall_rootSet_mem_solvableByRad`: in a normal extension, if one root of an
+  irreducible polynomial is solvable by radicals, then so are all of its roots.
 * `IsPrimitiveRoot.isSeparable_of_finrank_dvd`: an extension `L / K` is separable if some
   extension of `K` contains a primitive `n`-th root of unity with `[L : K] ∣ n`.
 * `TauCeti.solvableByRad_eq_top_of_isSolvable`: a normal extension `L / K` with solvable group is
@@ -95,6 +97,17 @@ theorem solvableByRad.restrictScalars_eq {K : Type*} [Field K] [Algebra F K] [Al
   | add y z _ _ hy hz => exact add_mem hy hz
   | mul y z _ _ hy hz => exact mul_mem hy hz
   | rad n y hn _ hy => exact solvableByRad.rad_mem hn hy
+
+/-- In a normal extension `E / F`, if one root of an irreducible polynomial over `F` is solvable
+by radicals over `F`, then so are all of its roots in `E`: they are conjugate under `Gal(E/F)`. -/
+theorem Irreducible.forall_rootSet_mem_solvableByRad [Normal F E] {q : F[X]} (hq : Irreducible q)
+    {x : E} (hx : aeval x q = 0) (hxR : x ∈ solvableByRad F E) :
+    ∀ y ∈ q.rootSet E, y ∈ solvableByRad F E := by
+  intro y hy
+  obtain ⟨σ, rfl⟩ := (Normal.minpoly_eq_iff_mem_orbit E).mp <|
+    (minpoly.eq_of_irreducible hq ((mem_rootSet.mp hy).2)).symm.trans
+      (minpoly.eq_of_irreducible hq hx)
+  exact solvableByRad.map_le_of_algHom (σ : E →ₐ[F] E) ⟨x, hxR, rfl⟩
 
 end solvableByRad
 

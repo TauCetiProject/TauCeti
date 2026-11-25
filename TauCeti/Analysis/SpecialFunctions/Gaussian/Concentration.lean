@@ -10,6 +10,7 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 
 /-!
 # Gaussian densities and complex-kernel estimates
@@ -23,7 +24,8 @@ This file also defines the complex translated Gaussian kernel
 integrability, entire differentiation under the integral sign
 (`Complex.differentiable_integral_gaussianKernel_smul`), and concentration limit as `c → ∞`
 (`Complex.tendsto_integral_gaussianKernel_smul`) for integrals of bounded continuous vector-valued
-functions against this kernel.
+functions against this kernel. The complex derivative in `z` is the case `a = -c²`, `b = t` of
+`Complex.hasDerivAt_cexp_mul_sub_sq` in `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 
 ## Main definitions
 
@@ -37,8 +39,6 @@ functions against this kernel.
 * `Real.integral_gaussianDensity`: for `c > 0` it has total mass one.
 * `Complex.norm_cexp_neg_mul_sub_sq_le`: the Gaussian bound
   `‖exp (-(c (t - z))²)‖ ≤ exp (c² D²) exp (-(c² / 2) t²)` for `‖z‖ ≤ D`.
-* `Complex.hasDerivAt_cexp_neg_mul_sub_sq`: the complex derivative of
-  `z ↦ exp (-(c (t - z))²)`.
 * `Complex.differentiable_integral_gaussianKernel_smul`: integrating a bounded continuous function
   against `Complex.gaussianKernel c · z` yields an entire function of `z`.
 * `Complex.tendsto_integral_gaussianKernel_smul`: as `c → ∞`, integrating a bounded continuous
@@ -95,13 +95,6 @@ theorem norm_cexp_neg_mul_sub_sq_le (c t : ℝ) {z : ℂ} {D : ℝ} (hz : ‖z�
   simp only [sq, neg_re, mul_re, mul_im, sub_re, sub_im, ofReal_re, ofReal_im] at hz' ⊢
   nlinarith [mul_nonneg (sq_nonneg c) (sq_nonneg (t - 2 * z.re)), mul_le_mul_of_nonneg_left hz'
     (sq_nonneg c)]
-
-/-- The complex derivative of the translated Gaussian `z ↦ exp (-(c (t - z))²)`. -/
-theorem hasDerivAt_cexp_neg_mul_sub_sq (c t : ℝ) (z : ℂ) :
-    HasDerivAt (fun z : ℂ => cexp (-(c * (t - z)) ^ 2))
-      (cexp (-(c * (t - z)) ^ 2) * (2 * c ^ 2 * (t - z))) z := by
-  convert (((hasDerivAt_id' z).const_sub (t : ℂ)).const_mul (c : ℂ)).fun_pow 2 |>.fun_neg.cexp
-    using 1; ring
 
 /-- Complex translated Gaussian kernel `(c / √π) * exp (-(c * (t - z))²)`. -/
 def gaussianKernel (c t : ℝ) (z : ℂ) : ℂ :=
@@ -163,6 +156,11 @@ theorem differentiable_integral_gaussianKernel_smul {E : Type*} [NormedAddCommGr
   have hcontF' : Continuous fun t : ℝ =>
       (gaussianKernel c t z₀ * (2 * (c : ℂ) ^ 2 * (t - z₀))) • f t :=
     ((continuous_gaussianKernel c z₀).mul (by fun_prop)).smul hf
+  have hderiv (t : ℝ) (z : ℂ) : HasDerivAt (fun z : ℂ => cexp (-((c : ℂ) * (t - z)) ^ 2))
+      (cexp (-((c : ℂ) * (t - z)) ^ 2) * (2 * (c : ℂ) ^ 2 * (t - z))) z := by
+    convert Complex.hasDerivAt_cexp_mul_sub_sq (-(c : ℂ) ^ 2) t z using 1
+    · exact funext fun w => by ring_nf
+    · ring_nf
   refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le (Metric.ball_mem_nhds z₀ one_pos)
     (F := fun z t => gaussianKernel c t z • f t)
     (F' := fun z t => (gaussianKernel c t z * (2 * (c : ℂ) ^ 2 * (t - z))) • f t)
@@ -172,8 +170,7 @@ theorem differentiable_integral_gaussianKernel_smul {E : Type*} [NormedAddCommGr
     (ae_of_all _ fun t z hz => ?_) (hG'.const_mul _)
     (ae_of_all _ fun t z _ => by
       simpa only [gaussianKernel, mul_assoc] using
-        ((hasDerivAt_cexp_neg_mul_sub_sq c t z).const_mul ((c : ℂ) / √π)).smul_const
-          (f t))).2.differentiableAt
+        ((hderiv t z).const_mul ((c : ℂ) / √π)).smul_const (f t))).2.differentiableAt
   · refine (hG.const_mul (‖(c : ℂ) / √π‖ * rexp (c ^ 2 * D ^ 2) * B)).mono'
       (hcontF z₀).aestronglyMeasurable (ae_of_all _ fun t => ?_)
     rw [norm_smul]

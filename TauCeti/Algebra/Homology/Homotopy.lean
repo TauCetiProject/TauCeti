@@ -57,7 +57,11 @@ homotopy identities in degree zero and in positive degrees.  It is the non-induc
 Mathlib's `Homotopy.mkInductive`, for the situation where the components are constructed by a
 recursion of their own rather than one degree at a time from the previous two.
 
-`Homotopy.mkCochainComplexInt` is its counterpart for `ℤ`-indexed cochain complexes: a
+`Homotopy.mkCochainComplex` is its counterpart for `ℕ`-indexed cochain complexes: a null-homotopy
+of `e : P ⟶ Q` from components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy identities in degree
+zero and in positive degrees. It is the non-inductive counterpart of `Homotopy.mkCoinductive`.
+
+`Homotopy.mkCochainComplexInt` is the counterpart for `ℤ`-indexed cochain complexes: a
 null-homotopy of `e : P ⟶ Q` from components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy
 identities `e.f (n + 1) = d ≫ h (n + 1) + h n ≫ d`, stated in every degree `n + 1` so that no
 index is a difference.
@@ -360,6 +364,44 @@ lemma mkChainComplex_hom_succ (e : P ⟶ Q) (h : ∀ n, P.X n ⟶ Q.X (n + 1))
 end Homotopy
 
 end MkChainComplex
+
+section MkCochainComplex
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {P Q : CochainComplex C ℕ}
+
+namespace Homotopy
+
+/-- A null-homotopy of a map `e : P ⟶ Q` between `ℕ`-indexed cochain complexes, from its
+components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy identities `e.f 0 = d ≫ h 0` and
+`e.f (n + 1) = d ≫ h (n + 1) + h n ≫ d`. The components are given all at once, as in
+`Homotopy.mkChainComplex`; compare `Homotopy.mkCoinductive`, which constructs them one degree at a
+time. -/
+@[no_expose]
+def mkCochainComplex (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
+    (comm_zero : e.f 0 = P.d 0 1 ≫ h 0)
+    (comm_succ : ∀ n, e.f (n + 1) = P.d (n + 1) (n + 2) ≫ h (n + 1) + h n ≫ Q.d n (n + 1)) :
+    Homotopy e 0 where
+  hom i j := if hij : j + 1 = i then eqToHom (congrArg P.X hij.symm) ≫ h j else 0
+  zero i j hij := dite_eq_right (by simpa [ComplexShape.up_Rel] using hij)
+  comm i := by
+    cases i with
+    | zero =>
+        rw [dNext_cochainComplex, prevD_zero_cochainComplex]
+        simpa using comm_zero
+    | succ i =>
+        rw [dNext_cochainComplex, prevD_succ_cochainComplex]
+        simpa using comm_succ i
+
+@[simp]
+lemma mkCochainComplex_hom_succ (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
+    (comm_zero : e.f 0 = P.d 0 1 ≫ h 0)
+    (comm_succ : ∀ n, e.f (n + 1) = P.d (n + 1) (n + 2) ≫ h (n + 1) + h n ≫ Q.d n (n + 1))
+    (n : ℕ) : (mkCochainComplex e h comm_zero comm_succ).hom (n + 1) n = h n := by
+  simp [mkCochainComplex]
+
+end Homotopy
+
+end MkCochainComplex
 
 section MkCochainComplexInt
 

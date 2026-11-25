@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQuotient
 import Mathlib.RepresentationTheory.Homological.GroupCohomology.Hilbert90
 import Mathlib.GroupTheory.Abelianization.Finite
