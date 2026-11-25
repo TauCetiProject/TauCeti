@@ -19,9 +19,10 @@ A measure `μ` on a manifold `M` modelled on a real normed space `E` has a **smo
 density** when in every chart `e` of the maximal smooth atlas it is `ρ(y) dy` for a function `ρ`
 smooth and positive on the chart target (`TauCeti.HasSmoothPositiveDensity`): the integral against
 `μ` of a continuous complex-valued function `f` with compact support in the chart source is
-`∫_{e.target} ρ(y) f(e⁻¹ y) dy`. These are the measures for which formal adjoints and transposes of
-differential and pseudodifferential operators on `M` are taken; the Riemannian volume of a smooth
-metric is one, although that is not shown here.
+`∫_{e.target} ρ(y) f(e⁻¹ y) dy`. Here `dy` is the measure `volume` of the `MeasureSpace E`
+instance on the model space, which is Lebesgue measure for `CoordinateSpace n`. These are the
+measures for which formal adjoints and transposes of differential and pseudodifferential operators
+on `M` are taken; the Riemannian volume of a smooth metric is one, although that is not shown here.
 
 Lebesgue measure on `E` itself is one (`TauCeti.hasSmoothPositiveDensity_volume`): in a chart `e`
 of the maximal atlas of `E`, its density is the absolute Jacobian determinant `|det D(e⁻¹)(y)|`, by
@@ -30,7 +31,8 @@ the change of variables formula.
 ## Main definitions
 
 * `TauCeti.HasSmoothPositiveDensity E μ`: the measure `μ` on a manifold modelled on `E` is given in
-  every chart of the maximal atlas by a smooth positive density with respect to Lebesgue measure.
+  every chart of the maximal atlas by a smooth positive density with respect to the measure
+  `volume` of the `MeasureSpace E` instance (Lebesgue measure for `CoordinateSpace n`).
 
 ## Main results
 
@@ -61,7 +63,8 @@ variable (E) in
 density** when in every chart `e` of the maximal smooth atlas it is `ρ(y) dy` for a function `ρ`
 smooth and positive on the chart target: the integral against `μ` of every continuous
 complex-valued function `f` with compact support in the chart source is
-`∫_{e.target} ρ(y) f(e⁻¹ y) dy`. -/
+`∫_{e.target} ρ(y) f(e⁻¹ y) dy`, where `dy` is the measure `volume` of the `MeasureSpace E` instance
+(Lebesgue measure for `CoordinateSpace n`). -/
 def HasSmoothPositiveDensity (μ : Measure M) : Prop :=
   ∀ e : OpenPartialHomeomorph M E, e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M →
     ∃ ρ : E → ℝ, ContDiffOn ℝ ∞ ρ e.target ∧ (∀ y ∈ e.target, 0 < ρ y) ∧
@@ -93,14 +96,12 @@ theorem hasSmoothPositiveDensity_volume [FiniteDimensional ℝ E] [BorelSpace E]
     e.symm.contDiffOn_abs_det_fderiv_of_contDiffOn (by simp) hs' hs,
     fun y hy ↦ abs_pos.2 (e.symm.det_fderiv_ne_zero_of_contDiffOn hs' hs (by simp) hy),
     fun f _ _ hfs ↦ ?_⟩
-  have hd : ∀ y ∈ e.target, HasFDerivWithinAt e.symm (fderiv ℝ e.symm y) e.target y :=
+  have hd : ∀ y ∈ e.symm.source, HasFDerivAt e.symm (fderiv ℝ e.symm y) y :=
     fun y hy ↦ ((hs'.differentiableOn (by simp)).differentiableAt
-      (e.open_target.mem_nhds hy)).hasFDerivAt.hasFDerivWithinAt
+      (e.open_target.mem_nhds hy)).hasFDerivAt
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := e.source)
       fun x hx ↦ image_eq_zero_of_notMem_tsupport fun h ↦ hx (hfs h),
-    ← e.symm_image_target_eq_source,
-    integral_image_eq_integral_abs_det_fderiv_smul volume e.open_target.measurableSet hd
-      e.symm.injOn]
+    ← e.symm_target, integral_target_eq_integral_abs_det_fderiv_smul volume hd]
   simp [Complex.real_smul]
 
 end TauCeti
