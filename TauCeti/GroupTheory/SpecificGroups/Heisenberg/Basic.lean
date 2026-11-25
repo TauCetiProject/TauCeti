@@ -52,6 +52,7 @@ group.
 
 * `TauCeti.HeisenbergGroup.commutatorElement_eq`: the commutator formula.
 * `TauCeti.HeisenbergGroup.commutator_eq_zAxis`: the commutator subgroup is the `z`-axis.
+* The Heisenberg group is nilpotent (`Group.IsNilpotent` instance).
 * `TauCeti.HeisenbergGroup.pow_eq`: the power formula
   `(x, y, z) ^ n = (n • x, n • y, n • z + (n choose 2) • (x * y))`.
 * `TauCeti.HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot`: over a ring of characteristic
@@ -276,6 +277,11 @@ theorem projXY_apply (a : HeisenbergGroup R) : projXY a = .ofAdd (a.x, a.y) :=
 theorem ker_projXY : (projXY : HeisenbergGroup R →* _).ker = zAxis := by
   ext a
   simp [MonoidHom.mem_ker, Prod.ext_iff]
+
+/-- **The Heisenberg group is nilpotent**: the kernel of the projection onto the abelian group
+`R × R` is the central `z`-axis. -/
+instance : Group.IsNilpotent (HeisenbergGroup R) :=
+  isNilpotent_of_ker_le_center projXY (ker_projXY.trans_le zAxis_le_center)
 
 /-- **The abelianization of the Heisenberg group** is the additive group `R × R`, through the
 projection `(x, y, z) ↦ (x, y)`. -/

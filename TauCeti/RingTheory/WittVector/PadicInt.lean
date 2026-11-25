@@ -31,6 +31,9 @@ ideal containing `p`, such as the `(p, [ϖ])`-adic topology of `A_inf`
 ## Main results
 
 * `TauCeti.WittVector.padicIntHom_zmod`: for `R = ZMod p` it is `WittVector.fromPadicInt`.
+* `TauCeti.WittVector.padicIntHom_injective`: it is injective.
+* `TauCeti.WittVector.instCharZero`: Witt vectors of a ring of characteristic `p` have
+  characteristic zero.
 * `TauCeti.WittVector.map_comp_padicIntHom`, `TauCeti.WittVector.map_padicIntHom`: it is natural
   in `R`.
 * `TauCeti.WittVector.frobenius_comp_padicIntHom`, `TauCeti.WittVector.frobenius_padicIntHom`:
@@ -63,6 +66,21 @@ theorem coeff_padicIntHom (x : ℤ_[p]) (n : ℕ) :
 theorem padicIntHom_zmod : padicIntHom p (ZMod p) = fromPadicInt p := by
   ext x n
   simp [coeff_padicIntHom]
+
+/-- The structure map `ℤ_[p] → 𝕎 R` is injective: `R` is nontrivial, so `ZMod p → R` is injective,
+and so is the map it induces on Witt vectors. -/
+theorem padicIntHom_injective : Function.Injective (padicIntHom p R) := by
+  have := CharP.nontrivial_of_char_ne_one (R := R) (Fact.out : p.Prime).one_lt.ne'
+  have hfrom : Function.Injective (fromPadicInt p) :=
+    Function.LeftInverse.injective (g := toPadicInt p) fun x => by
+      rw [← RingHom.comp_apply, toPadicInt_comp_fromPadicInt, RingHom.id_apply]
+  rw [padicIntHom, RingHom.coe_comp]
+  exact (map_injective _ (ZMod.castHom (dvd_refl p) R).injective).comp hfrom
+
+/-- The Witt vectors of a ring of characteristic `p` have characteristic zero, since `ℤ_[p]`
+injects into them. -/
+instance instCharZero : CharZero (𝕎 R) :=
+  charZero_of_injective_ringHom (padicIntHom_injective p R)
 
 variable {R} in
 /-- **Naturality**: the map of Witt vectors induced by a ring homomorphism `R → S` of rings of

@@ -166,8 +166,16 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom (x : V ⟶ T) (f : T ⟶ S) (g : 
         eqToHom (congrArg (fun x ↦ (pullback x).obj X) (Category.assoc x f g).symm) =
       (pullback x).map ((pullbackComp f g).hom.app X) ≫
         (pullbackComp x f).inv.app ((pullback g).obj X) ≫ (pullbackComp (x ≫ f) g).inv.app X :=
-  -- As above, the identity is checked in `Over V`.
-  ObjectProperty.hom_ext _ (Over.pullbackComp_comp_inv_app_comp_eqToHom x f g X.obj)
+  -- As above, the identity is checked in `Over V`. The component lemmas reduce it to the coherence
+  -- of `Over.pullbackCompIsoOfEq`, whose objects agree with these by `pullback_obj_obj`.
+  ObjectProperty.hom_ext _ (by
+    have h := Over.pullbackCompIsoOfEq_hom_app_eq (a := f) (b := g) (x := x)
+      rfl rfl rfl (Category.assoc x f g).symm X.obj
+    simp only [Over.pullbackCompIsoOfEq_hom_app, Over.pullbackCompIsoOfEq_rfl, Iso.symm_hom,
+      Iso.symm_inv] at h
+    simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.eqToHom_hom,
+      pullbackComp_inv_app_hom, pullbackComp_hom_app_hom, pullback_map_hom]
+    exact h)
 
 private lemma eqToIso_congrArg_pullback_hom_app_hom {f g : T ⟶ S} (h : f = g)
     (X : FiniteEtaleScheme S) :
