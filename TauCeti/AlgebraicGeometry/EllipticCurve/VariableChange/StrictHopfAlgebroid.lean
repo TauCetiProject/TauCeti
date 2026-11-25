@@ -621,6 +621,30 @@ factor. -/
 def strictPairWeight : Coeff ⊕ (Fin 3 ⊕ Fin 3) → ℕ :=
   Sum.elim coefficientWeight (Sum.elim ![2, 1, 3] ![2, 1, 3])
 
+/-- A coefficient `aᵢ` has weight `i`. -/
+@[simp] theorem strictWeight_inl (i : Coeff) : strictWeight (.inl i) = coefficientWeight i := (rfl)
+
+/-- `r` has weight `2`. -/
+@[simp] theorem strictWeight_inr_zero : strictWeight (.inr 0) = 2 := (rfl)
+
+/-- `s` has weight `1`. -/
+@[simp] theorem strictWeight_inr_one : strictWeight (.inr 1) = 1 := (rfl)
+
+/-- `t` has weight `3`. -/
+@[simp] theorem strictWeight_inr_two : strictWeight (.inr 2) = 3 := (rfl)
+
+/-- A coefficient `aᵢ` has weight `i`. -/
+@[simp] theorem strictPairWeight_inl (i : Coeff) :
+    strictPairWeight (.inl i) = coefficientWeight i := (rfl)
+
+/-- On the generators `r₁, s₁, t₁` of the left factor, `strictPairWeight` is `strictWeight`. -/
+@[simp] theorem strictPairWeight_inr_inl (j : Fin 3) :
+    strictPairWeight (.inr (.inl j)) = strictWeight (.inr j) := (rfl)
+
+/-- On the generators `r₂, s₂, t₂` of the right factor, `strictPairWeight` is `strictWeight`. -/
+@[simp] theorem strictPairWeight_inr_inr (j : Fin 3) :
+    strictPairWeight (.inr (.inr j)) = strictWeight (.inr j) := (rfl)
+
 /-- The left unit is graded. -/
 theorem isWeightedHomogeneous_strictLeftUnit {k : ℕ} {f : MvPolynomial Coeff ℤ}
     (hf : f.IsWeightedHomogeneous coefficientWeight k) :
@@ -634,7 +658,7 @@ theorem isWeightedHomogeneous_strictRightUnit_X (i : Coeff) :
   isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq (pow_right_injective₀ two_pos (by norm_num)) <| by
     cases i <;>
       simp [strictRightUnit_X_A₁, strictRightUnit_X_A₂, strictRightUnit_X_A₃,
-        strictRightUnit_X_A₄, strictRightUnit_X_A₆, strictWeight] <;> ring
+        strictRightUnit_X_A₄, strictRightUnit_X_A₆] <;> ring
 
 /-- **The strict right unit is graded**: it carries a polynomial of weight `k` in the coefficients
 to an element of weight `k` of `A[r, s, t]`. -/
@@ -654,7 +678,7 @@ theorem isWeightedHomogeneous_strictCounit {k : ℕ} {f : StrictArrowRing}
   refine (WeightedHomogeneousSubmodule.map_mem_iff strictWeight
     (weightedHomogeneousSubmodule ℤ coefficientWeight) (.id ℕ) strictCounit).2 (fun i ↦ ?_) hf
   rcases i with i | j
-  · simpa [strictWeight] using isWeightedHomogeneous_X ℤ coefficientWeight i
+  · simpa using isWeightedHomogeneous_X ℤ coefficientWeight i
   · simp
 
 /-- **The strict coproduct is graded**: it carries an element of weight `k` of `A[r, s, t]` to an
@@ -668,10 +692,10 @@ theorem isWeightedHomogeneous_strictCoproduct {k : ℕ} {f : StrictArrowRing}
       isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq (pow_right_injective₀ two_pos (by norm_num))
         ?_) hf
   rcases i with i | j
-  · simp [strictWeight, strictPairWeight]
+  · simp
   · fin_cases j <;>
-      simp [strictCoproduct_X_inr_zero, strictCoproduct_X_inr_one, strictCoproduct_X_inr_two,
-        strictWeight, strictPairWeight] <;> ring
+      simp [strictCoproduct_X_inr_zero, strictCoproduct_X_inr_one,
+        strictCoproduct_X_inr_two] <;> ring
 
 /-- **The strict conjugation is graded.** -/
 theorem isWeightedHomogeneous_strictConjugation {k : ℕ} {f : StrictArrowRing}
@@ -689,7 +713,7 @@ theorem isWeightedHomogeneous_strictConjugation {k : ℕ} {f : StrictArrowRing}
       (pow_right_injective₀ two_pos (by norm_num)) ?_
     fin_cases j <;>
       simp [strictConjugation_X_inr_zero, strictConjugation_X_inr_one,
-        strictConjugation_X_inr_two, strictWeight] <;> ring
+        strictConjugation_X_inr_two] <;> ring
 
 /-! ### The dictionary with the Weierstrass Hopf algebroid `(A, Γ)` -/
 
@@ -749,11 +773,9 @@ theorem toStrict_comp_conjugation :
   refine ChangeRing.ringHom_ext ?_ ?_
   · rw [RingHom.comp_assoc, conjugation_comp_algebraMap, toStrict_comp_rightUnit,
       RingHom.comp_assoc, toStrict_comp_algebraMap, strictConjugation_comp_strictLeftUnit]
-  · have h : ((universalChange (MvPolynomial Coeff ℤ))⁻¹).map toStrict =
-        ((universalChange (MvPolynomial Coeff ℤ)).map toStrict)⁻¹ :=
-      map_inv (VariableChange.mapHom toStrict) _
-    rw [← VariableChange.map_map, ← VariableChange.map_map, universalChange_map_conjugation, h,
-      universalChange_map_toStrict, WeierstrassCurve.VariableChange.map_heisenbergHom,
+  · rw [← VariableChange.map_map, ← VariableChange.map_map, universalChange_map_conjugation,
+      VariableChange.map_inv, universalChange_map_toStrict,
+      WeierstrassCurve.VariableChange.map_heisenbergHom,
       heisenbergGroupMap_strictConjugation_strictChange, map_inv]
 
 /-- The map `Γ ⊗_A Γ →+* A[r, s, t] ⊗_A A[r, s, t]` setting `u₁ = u₂ = 1`. -/
@@ -910,7 +932,7 @@ theorem rightUnit_eq_of_isWeightedHomogeneous {k : ℕ} {f : MvPolynomial Coeff 
   -- stated for a general ring to keep the `ℤ`-algebra structure of `MvPolynomial.aeval` canonical.
   have hscale {S : Type} [CommRing S] (W' : _root_.WeierstrassCurve S) (v : Sˣ) :
       ((⟨v, 0, 0, 0⟩ : VariableChange S) • W').specialize f = ↑v⁻¹ ^ k * W'.specialize f := by
-    rw [specialize_mk_smul, hf.aeval_pow_mul]
+    rw [specialize_mk_smul, hf.aeval_pow_mul, aeval_def]
     exact congrArg _ (eval₂Hom_X _ W'.specialize f)
   rw [hR, hC, WeierstrassCurve.VariableChange.scaling_apply, hscale, ← RingHom.comp_apply,
     hstrict]
