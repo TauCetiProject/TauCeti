@@ -38,7 +38,8 @@ isomorphism classes therefore identifies the monoidal `Skeleton` of `InvertibleS
   sheaves are invertible, and computed on underlying sheaves;
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorProductIsoTensor` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.trivialIsoTensorUnit`: comparisons between the
-  explicit line-bundle operations and the inherited monoidal operations;
+  explicit line-bundle operations and the inherited monoidal operations, the first natural in
+  both factors (`InvertibleSheaf.tensorProductCongr_hom_comp_tensorProductIsoTensor_hom`);
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorObj`,
   `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorUnit`, and
   `TauCeti.AlgebraicGeometry.LineBundleClass.skeletonMulEquiv`: compatibility of `LineBundleClass`
@@ -125,6 +126,21 @@ theorem tensorProductIsoTensor_hom_hom (L K : InvertibleSheaf X) :
 theorem tensorProductIsoTensor_inv_hom (L K : InvertibleSheaf X) :
     (tensorProductIsoTensor L K).inv.hom = (tensorProductObjIso L K).inv :=
   (rfl)
+
+/-- `tensorProductIsoTensor` is natural with respect to isomorphisms in both factors, transported
+through the explicit tensor product by `tensorProductCongrLeft` and `tensorProductCongrRight`. -/
+@[reassoc]
+theorem tensorProductCongr_hom_comp_tensorProductIsoTensor_hom {L L' K K' : InvertibleSheaf X}
+    (e : L ≅ L') (e' : K ≅ K') :
+    (tensorProductCongrLeft (K := K) e).hom ≫ (tensorProductCongrRight (L := L') e').hom ≫
+        (tensorProductIsoTensor L' K').hom =
+      (tensorProductIsoTensor L K).hom ≫ (e.hom ⊗ₘ e'.hom) := by
+  apply ObjectProperty.hom_ext
+  simp only [ObjectProperty.FullSubcategory.comp_hom, tensorProductIsoTensor_hom_hom,
+    tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom,
+    tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom_assoc]
+  -- The tensor product of morphisms of line bundles is computed on underlying sheaves.
+  exact congrArg _ (tensorHom_def _ _).symm
 
 /-- `InvertibleSheaf.trivial X` is canonically isomorphic to the monoidal unit
 `𝟙_ (InvertibleSheaf X)`. -/
