@@ -38,9 +38,10 @@ The projections of `X ×_S (Y ×_S Z)` to the absolute products `X × Y`, `X × 
 `AlgebraicGeometry.Scheme.RationalMap.graph` (through their closed immersions), giving `(q_X, q_Y)`,
 `(q_X, q_Z)` and `(q_Y, q_Z)`. For the first two this is
 `AlgebraicGeometry.Scheme.RationalMap.ker_graphLift_le`, since `f_U` and `(g ∘ f)_U` are
-restrictions of the representatives of `f` and `g ∘ f` on their domains. For `(q_Y, q_Z)` the dense
-open is `U` intersected with the domain of the composite of the representatives of `f` and `g`,
-where `(g ∘ f)_U` factors through `f_U` and the representative of `g`. The three morphisms are
+restrictions of the representatives of `f` and `g ∘ f` on their domains. For `(q_Y, q_Z)` it is
+`AlgebraicGeometry.Scheme.RationalMap.ker_graphLift_le_of_homOfLE_comp_eq` on `U` intersected with
+the domain of the composite of the representatives of `f` and `g`, where `(f_U, (g ∘ f)_U)` is
+`γ_g` after the restriction of the representative of `f`. The three morphisms are
 proper when their composites with the first projection of the target graph (`q_X`, `q_X`, `q_Y`)
 are, since the projections are separated: for the first two when `Y` and `Z` are proper over `S`,
 and for the third when `X` and `Z` are.
@@ -55,9 +56,8 @@ and for the third when `X` and `Z` are.
   with its closed immersion `compositeCorrespondenceι` into `X ×_S (Y ×_S Z)`, its projections
   `compositeCorrespondenceFst`, `compositeCorrespondenceSndY`, `compositeCorrespondenceSndZ`, and
   the factorization `toCompositeCorrespondence` of `U` through it.
-* `AlgebraicGeometry.Scheme.RationalMap.tripleToXY`,
-  `AlgebraicGeometry.Scheme.RationalMap.tripleToXZ`,
-  `AlgebraicGeometry.Scheme.RationalMap.tripleToYZ`: the projections of `X ×_S (Y ×_S Z)` to the
+* `AlgebraicGeometry.Scheme.tripleToXY`, `AlgebraicGeometry.Scheme.tripleToXZ`,
+  `AlgebraicGeometry.Scheme.tripleToYZ`: the projections of `X ×_S (Y ×_S Z)` to the
   absolute products `X × Y`, `X × Z` and `Y × Z`.
 * `AlgebraicGeometry.Scheme.RationalMap.compositeCorrespondenceToGraphXY`,
   `AlgebraicGeometry.Scheme.RationalMap.compositeCorrespondenceToGraphXZ`,
@@ -92,8 +92,6 @@ noncomputable section
 namespace AlgebraicGeometry.Scheme
 
 universe u
-
-namespace RationalMap
 
 section Triple
 
@@ -146,6 +144,8 @@ theorem tripleToYZ_snd :
   pullback.lift_snd _ _ _
 
 end Triple
+
+namespace RationalMap
 
 variable {S X Y Z : Scheme.{u}} (sX : X ⟶ S) (sY : Y ⟶ S) (sZ : Z ⟶ S)
   [IsReduced X] [PreirreducibleSpace X] [Nonempty Y] [Y.IsSeparated] [Z.IsSeparated]
@@ -322,18 +322,17 @@ theorem ker_graphLift_le_map_tripleToYZ :
       (by rw [toRationalMap_representative_comp_representative, toPartialMap_domain]))
   -- the composite of the representatives is the restriction of `f`'s followed by `g`'s
   rw [PartialMap.comp_hom] at hP
-  refine Hom.ker_le_ker_of_homOfLE_comp_eq
+  refine ker_graphLift_le_of_homOfLE_comp_eq g
     ((dense_compositeDomain f g).inter_of_isOpen_left
       (f.representative.comp g.representative).dense_domain (compositeDomain f g).isOpen)
     inf_le_left _
     (X.homOfLE (inf_le_right : compositeDomain f g ⊓
         f.representative.domain.ι ''ᵁ f.representative.hom ⁻¹ᵁ g.representative.domain ≤ _) ≫
       (f.representative.domain.ι.isoImage _).inv ≫
-      f.representative.hom ∣_ g.representative.domain) _ ?_
-  apply pullback.hom_ext
+      f.representative.hom ∣_ g.representative.domain) ?_ ?_
   · simp [compositeToY_eq, representative_hom_eq f]
   · simp only [Category.assoc, tripleToYZ_snd, opensGraph_snd_assoc, compositeLift_snd,
-      compositeToZ_eq, opensGraph_snd, hP, Scheme.homOfLE_homOfLE_assoc]
+      compositeToZ_eq, hP, Scheme.homOfLE_homOfLE_assoc]
     -- the middle open of the right side is the domain of the composite of the representatives,
     -- which is only definitionally the image form appearing in `hP`, so `simp` cannot merge it
     exact (X.homOfLE_homOfLE_assoc _ _ _).symm
