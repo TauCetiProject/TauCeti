@@ -98,14 +98,19 @@ private theorem presentationHom_surjective : Function.Surjective presentationHom
 
 /-! ### Relations in the amalgam -/
 
+/-- A generator of the amalgam is the image of the corresponding free generator. -/
+private theorem mk_of (i : Fin 2) :
+    PresentedGroup.mk sl2zRelators (FreeGroup.of i) = .of i :=
+  rfl
+
 private theorem of_zero_pow_four : (.of 0 : PresentedGroup sl2zRelators) ^ 4 = 1 := by
-  rw [PresentedGroup.of, ← map_pow]
+  rw [← mk_of, ← map_pow]
   exact PresentedGroup.one_of_mem (by simp [sl2zRelators])
 
 private theorem of_zero_sq : (.of 0 : PresentedGroup sl2zRelators) ^ 2 = .of 1 ^ 3 := by
   have h := PresentedGroup.one_of_mem (rels := sl2zRelators)
     (x := FreeGroup.of 0 ^ 2 * (FreeGroup.of 1 ^ 3)⁻¹) (by simp [sl2zRelators])
-  rw [map_mul, map_inv, map_pow, map_pow] at h
+  rw [map_mul, map_inv, map_pow, map_pow, mk_of, mk_of] at h
   exact mul_inv_eq_one.1 h
 
 /-- The square of `s` is central in the amalgam: it commutes with `s`, and with `v` since it

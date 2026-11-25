@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.RankOne
-import TauCeti.LinearAlgebra.Matrix.SymplecticMultiplier
 
 /-!
 # `Sp₂ = SL₂`
@@ -22,10 +21,6 @@ group scheme `SL₂`, as subgroup schemes of `GL₂`.
 
 ## Main declarations
 
-* `TauCeti.submatrix_mul_JFin_mul_transpose`: reindexing `M J Mᵀ` along `finSumFinEquiv` gives the
-  same product with Mathlib's `Matrix.J`.
-* `TauCeti.mul_JFin_one_mul_transpose_eq_det_smul`: a `2 × 2` matrix `M` satisfies
-  `M J Mᵀ = det(M) J`.
 * `TauCeti.Symplectic.definingHopfIdeal_one`: the defining Hopf ideal of `Sp₂` in `GL₂` is that
   of `SL₂`, so the two closed subgroup schemes of `GL₂` agree.
 -/
@@ -37,34 +32,6 @@ open Matrix
 namespace TauCeti
 
 universe u
-
-section JFin
-
-variable {R : Type u} [CommRing R]
-
-/-- Reindexing `M J Mᵀ` along `finSumFinEquiv` gives the same product for the reindexed `M` and
-Mathlib's `Matrix.J`. -/
-theorem submatrix_mul_JFin_mul_transpose {m : ℕ} (M : Matrix (Fin (m + m)) (Fin (m + m)) R) :
-    (M * JFin m R * Mᵀ).submatrix finSumFinEquiv finSumFinEquiv =
-      M.submatrix finSumFinEquiv finSumFinEquiv * J (Fin m) R *
-        Mᵀ.submatrix finSumFinEquiv finSumFinEquiv := by
-  rw [← JFin_submatrix, submatrix_mul_equiv, submatrix_mul_equiv]
-
-/-- A `2 × 2` matrix scales the transported alternating form by its determinant:
-`M J Mᵀ = det(M) J`. This is `Matrix.transpose_mul_J_mul_eq_det_smul` read through the
-reindexing. -/
-theorem mul_JFin_one_mul_transpose_eq_det_smul (M : Matrix (Fin (1 + 1)) (Fin (1 + 1)) R) :
-    M * JFin 1 R * Mᵀ = M.det • JFin 1 R := by
-  -- Apply the `Fin 1 ⊕ Fin 1` statement to `Mᵀ` read in those coordinates, then compare both
-  -- sides after reindexing along `finSumFinEquiv`.
-  apply (reindex finSumFinEquiv.symm finSumFinEquiv.symm).injective
-  have h := transpose_mul_J_mul_eq_det_smul (Mᵀ.submatrix finSumFinEquiv finSumFinEquiv)
-  rw [transpose_submatrix, transpose_transpose, det_submatrix_equiv_self, det_transpose] at h
-  rw [reindex_apply, reindex_apply, Equiv.symm_symm, submatrix_mul_JFin_mul_transpose, h,
-    ← JFin_submatrix]
-  exact (congrFun₂ (submatrix_smul M.det (JFin 1 R)) _ _).symm
-
-end JFin
 
 namespace Symplectic
 
