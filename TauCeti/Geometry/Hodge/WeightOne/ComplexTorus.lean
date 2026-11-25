@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZLattice.BaseChange
-public import TauCeti.Geometry.Hodge.WeightOne.RiemannForm
+public import TauCeti.Geometry.Hodge.WeightOne.RiemannForm.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Transport
 import TauCeti.Algebra.Module.ZLattice.Rank
