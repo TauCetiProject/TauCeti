@@ -82,7 +82,7 @@ theorem exists_contMDiffOn_boundaryFlow (v : (x : M) → TangentSpace (𝓡∂ (
   have hPopen (a) : IsOpen (P a) := isOpen_interior.prod isOpen_Ioo
   -- On a piece, the forward times lie in `[0, ε a)`.
   have hPIco {a} {x : M} {t : ℝ} (hp : (x, t) ∈ P a) (ht : 0 ≤ t) :
-      x ∈ U a ∧ t ∈ Ico 0 (ε a) :=
+      (x, t) ∈ U a ×ˢ Ico 0 (ε a) :=
     ⟨interior_subset hp.1, ht, hp.2.2⟩
   -- Two local flows agree on their common forward domain.
   have hagree {a b} {x : M} (ha : x ∈ U a) (hb : x ∈ U b) {t : ℝ} (hta : t ∈ Ico 0 (ε a))
@@ -99,22 +99,20 @@ theorem exists_contMDiffOn_boundaryFlow (v : (x : M) → TangentSpace (𝓡∂ (
     if h : ∃ a, x ∈ U a ∧ t ∈ Ico 0 (ε a) then φ h.choose x t else x
   have hΦeq {a} {x : M} {t : ℝ} (hx : x ∈ U a) (ht : t ∈ Ico 0 (ε a)) : Φ x t = φ a x t := by
     have h : ∃ a, x ∈ U a ∧ t ∈ Ico 0 (ε a) := ⟨a, hx, ht⟩
-    rw [show Φ x t = φ h.choose x t from dite_eq_left_of_eq_true (eq_true h)]
+    simp only [Φ, dite_eq_left h]
     exact hagree h.choose_spec.1 hx h.choose_spec.2 ht
   refine ⟨⋃ a, P a, isOpen_iUnion hPopen, fun a ha ↦ mem_iUnion.2 ⟨⟨a, ha⟩,
     mem_interior_iff_mem_nhds.2 (hU ⟨a, ha⟩), by simpa using hε ⟨a, ha⟩⟩, Φ, ?_, ?_⟩
   · -- Smoothness: near a point of a piece, `Φ` is the local flow of that piece.
     rintro ⟨x, t⟩ ⟨hp, ht⟩
     obtain ⟨a, ha⟩ := mem_iUnion.1 hp
-    have ht0 : 0 ≤ t := by simpa using ht
+    have hxt : (x, t) ∈ U a ×ˢ Ico 0 (ε a) := hPIco ha (by simpa using ht)
     have hsub : P a ∩ ((⋃ a, P a) ∩ univ ×ˢ Ici 0) ⊆ U a ×ˢ Ico 0 (ε a) := fun q hq ↦
-      ⟨(hPIco hq.1 (by simpa using hq.2.2.2)).1, (hPIco hq.1 (by simpa using hq.2.2.2)).2⟩
+      hPIco hq.1 (by simpa using hq.2.2.2)
     have hmem : U a ×ˢ Ico 0 (ε a) ∈ 𝓝[(⋃ a, P a) ∩ univ ×ˢ Ici 0] (x, t) :=
       mem_nhdsWithin.2 ⟨P a, hPopen a, ha, hsub⟩
-    refine ((hφ a (x, t) ⟨(hPIco ha ht0).1, (hPIco ha ht0).2⟩).congr (fun q hq ↦ ?_)
-      ?_).mono_of_mem_nhdsWithin hmem
-    · exact hΦeq hq.1 hq.2
-    · exact hΦeq (hPIco ha ht0).1 (hPIco ha ht0).2
+    exact ((hφ a (x, t) hxt).congr (fun q hq ↦ hΦeq hq.1 hq.2)
+      (hΦeq hxt.1 hxt.2)).mono_of_mem_nhdsWithin hmem
   · intro x t hp ht
     obtain ⟨a, ha⟩ := mem_iUnion.1 hp
     obtain ⟨hxU, htI⟩ := hPIco ha ht
