@@ -14,7 +14,7 @@ import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Rev
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRankOne
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.Basic
 
 /-!
 # Perfectness and projective simplicity of the standard special unitary group

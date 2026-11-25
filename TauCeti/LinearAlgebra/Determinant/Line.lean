@@ -77,6 +77,12 @@ the linear algebra itself is standard.
   is not finite, by the `finrank = 0` convention).
 * `TauCeti.instInvertibleDetLine`: the determinant line of a finite free module is an invertible
   module.
+* `TauCeti.exists_detLine_coe_eq_ιMulti`: an exterior product of `dim V` vectors, counted through
+  any `n = dim V`, is an element of `det V`; over a field, for independent vectors it is a nonzero
+  element at which some functional is `1` (`TauCeti.exists_detLine_coe_eq_ιMulti_and_apply_eq_one`).
+* `TauCeti.exteriorPower.alternatingMapLinearEquiv_bijective`: over a field, a nonzero alternating
+  `n`-form on an `n`-dimensional space with values in a line induces an isomorphism of the top
+  exterior power onto the line.
 * `LinearEquiv.detLineCongr_refl`, `LinearEquiv.detLineCongr_trans`,
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
@@ -154,6 +160,29 @@ against its dual: `det V ⊗ (det V)^* ≃ R` (`Module.Invertible.linearEquiv`).
 instance instInvertibleDetLine [Module.Free R V] [Module.Finite R V] :
     Module.Invertible R (detLine R V) :=
   exteriorPower.invertible_of_rankAtStalk_eq fun p ↦ by simp
+
+namespace exteriorPower
+
+variable {K : Type*} [Field K] {V W : Type*} [AddCommGroup V] [Module K V]
+  [AddCommGroup W] [Module K W]
+
+/-- **The top exterior power of a space.** Over a field, a nonzero alternating `n`-form `η` on an
+`n`-dimensional space `V` with values in a line `W` induces a bijection from `⋀ⁿ V` onto `W`. -/
+theorem alternatingMapLinearEquiv_bijective {n : ℕ} (hV : finrank K V = n)
+    (hW : finrank K W = 1) {η : V [⋀^Fin n]→ₗ[K] W} (hη : η ≠ 0) :
+    Function.Bijective (_root_.exteriorPower.alternatingMapLinearEquiv η) := by
+  have hdom : finrank K (⋀[K]^n V) = 1 := by
+    subst hV
+    exact finrank_detLine K V
+  have : FiniteDimensional K (⋀[K]^n V) := Module.finite_of_finrank_eq_succ hdom
+  have : FiniteDimensional K W := Module.finite_of_finrank_eq_succ hW
+  have hsurj : Function.Surjective (_root_.exteriorPower.alternatingMapLinearEquiv η) :=
+    surjective_of_ne_zero_of_finrank_eq_one hW
+      (_root_.exteriorPower.alternatingMapLinearEquiv.map_ne_zero_iff.2 hη)
+  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (hdom.trans hW.symm)).2 hsurj, hsurj⟩
+
+end exteriorPower
 
 end TauCeti
 
@@ -288,6 +317,30 @@ theorem detLineEquivOfFinrankEqZero_smul_ιMulti (h : finrank R V = 0) (x : detL
     (v : Fin (finrank R V) → V) :
     detLineEquivOfFinrankEqZero h x • exteriorPower.ιMulti R _ v = x :=
   (detLineEquivOfFinrankEqZero h).injective (by simp)
+
+/-- An exterior product of `n` vectors, with `n = dim V` not necessarily definitionally, is an
+element of the determinant line `det V`. -/
+theorem exists_detLine_coe_eq_ιMulti {n : ℕ} (hn : finrank R V = n) (a : Fin n → V) :
+    ∃ γ : detLine R V, (γ : _root_.ExteriorAlgebra R V) = _root_.ExteriorAlgebra.ιMulti R n a :=
+  ⟨exteriorPower.ιMulti R _ (a ∘ Fin.cast hn), by
+    rw [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_comp_cast]⟩
+
+section Field
+
+variable {K : Type*} [Field K] {W : Type*} [AddCommGroup W] [Module K W]
+
+/-- An exterior product of `dim W` linearly independent vectors is a nonzero element of the
+determinant line `det W`, at which some functional takes the value `1`. -/
+theorem exists_detLine_coe_eq_ιMulti_and_apply_eq_one {n : ℕ} (hn : finrank K W = n)
+    {a : Fin n → W} (ha : LinearIndependent K a) :
+    ∃ (γ : detLine K W) (ξ : Dual K (detLine K W)),
+      (γ : _root_.ExteriorAlgebra K W) = _root_.ExteriorAlgebra.ιMulti K n a ∧ ξ γ = 1 := by
+  have hγ : exteriorPower.ιMulti K _ (a ∘ Fin.cast hn) ≠ 0 :=
+    (exteriorPower.ιMulti_ne_zero_iff _).2 (ha.comp _ (Fin.cast_injective hn))
+  obtain ⟨ξ, hξ⟩ := Projective.exists_dual_eq_one K hγ
+  exact ⟨_, ξ, by rw [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_comp_cast], hξ⟩
+
+end Field
 
 end TauCeti
 
