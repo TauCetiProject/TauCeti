@@ -44,6 +44,10 @@ type. It is dominant because it sends the generic point of `X` into the image of
   `AlgebraicGeometry.Scheme.RationalMap.ofFunctionFieldAlgHom_comp`: functoriality.
 * `AlgebraicGeometry.Scheme.RationalMap.existsUnique_functionFieldAlgHom_eq`: every `k`-algebra
   map of function fields is the pullback along exactly one dominant `k`-rational map.
+
+## References
+
+* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Theorem I.4.4.
 -/
 
 public section
