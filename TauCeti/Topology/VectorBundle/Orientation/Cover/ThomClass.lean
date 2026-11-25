@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover
+public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.Basic
 
 /-!
 # The Thom class of a bundle pulled back to its orientation cover
@@ -20,7 +20,7 @@ lift `δ` of `σ` to the Thom pair `(E', E'₀)`
 tautological orientation back to `-U`, so the homology Thom map `Φ(x) = π_*(x ⌢ U)` anticommutes
 with the two involutions, `Φ ∘ δ_* = -σ_* ∘ Φ`
 (`TauCeti.VectorBundleOrientationCover.singularHomologyMap_deckThomPairMap_comp_homologyThomMap`);
-these are in `TauCeti.Topology.VectorBundle.Thom.Orientation.Cover`.
+these are in `TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.Basic`.
 
 This file records that with coefficients in a field `K`, when `g`
 generates `Hʳ(F, F ∖ {0}; K)`, `Φ` carries the classes of `Hₚ₊ᵣ(E', E'₀; K)` fixed by `δ_*` onto
