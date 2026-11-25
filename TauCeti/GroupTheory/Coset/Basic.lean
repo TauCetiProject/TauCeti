@@ -36,7 +36,8 @@ isomorphism of groups, and under translation:
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
   translated coset `g • q` lies in the coset of `g * q.out`, and `QuotientGroup.inv_smul_of_mk_eq`
   and `QuotientGroup.out_inv_smul`: the inverse of a representative of `q`, for instance
-  `q.out⁻¹`, translates `q` to the base point.
+  `q.out⁻¹`, translates `q` to the base point; `QuotientGroup.smul_mk_one_eq_mk`: the orbit map
+  of the base point is the projection `G → G ⧸ H`.
 * `QuotientGroup.outCocycle`: the element `(g • q).out⁻¹ * g * q.out` of `H` relating the two, with
   the cocycle identity `QuotientGroup.outCocycle_mul`.
 * `QuotientGroup.iUnion_out_smul_eq` and `QuotientGroup.pairwise_disjoint_out_smul`: for an
@@ -328,6 +329,12 @@ theorem inv_smul_of_mk_eq {g : G} {q : G ⧸ H} (h : (g : G ⧸ H) = q) :
 translates `q` to the base point `⟦0⟧`. -/]
 theorem out_inv_smul (q : G ⧸ H) : q.out⁻¹ • q = ((1 : G) : G ⧸ H) :=
   inv_smul_of_mk_eq (QuotientGroup.out_eq' q)
+
+/-- The orbit map `g ↦ g • ⟦1⟧` of the base point of `G ⧸ H` is the projection `G → G ⧸ H`. -/
+@[to_additive /-- The orbit map `g ↦ g +ᵥ ⟦0⟧` of the base point of `G ⧸ H` is the projection
+`G → G ⧸ H`. -/]
+theorem smul_mk_one_eq_mk : (fun g : G ↦ g • ((1 : G) : G ⧸ H)) = (QuotientGroup.mk : G → G ⧸ H) :=
+  funext fun g ↦ by rw [MulAction.Quotient.smul_coe, smul_eq_mul, mul_one]
 
 /-- For `h ∈ H` and a coset `k ∈ H ⧸ K.subgroupOf H`, the elements `a * (h • k).out` and
 `a * h * k.out` of `G` lie in the same left coset of `K`, for every `a ∈ G`. No inclusion `K ≤ H`

@@ -632,9 +632,7 @@ theorem completeSpace_ofRiemannianMetric_of_inner_mfderiv_smul :
   intro _ _ hm
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   have : IsClosed (K : Set G) := hK
-  have := contMDiffSMul_quotientOfIsClosed (I := I) hK
-  have := ContMDiffSMul.contMDiffConstSMul I (I' := 𝓘(ℝ, QuotientModelSpace I K)) (G := G)
-    (M := G ⧸ K) (n := ∞)
+  have := contMDiffConstSMul_quotientOfIsClosed (I := I) hK
   have : MulAction.IsPretransitive (Isom 𝓘(ℝ, QuotientModelSpace I K) (G ⧸ K)) (G ⧸ K) :=
     .of_smul_eq (RiemannianIsometry.constSMulHom hm) fun {_ _} ↦ by
       rw [RiemannianIsometry.smul_def, RiemannianIsometry.constSMulHom_apply,

@@ -202,7 +202,9 @@ theorem ContMDiffConstSMul.mfderiv_inv_smul_mfderiv_smul {𝕜 : Type*} [Nontriv
   rw [mfderiv_const_smul_comp hn g⁻¹ g x hy (inv_mul_cancel g) v]
   have hid : (fun z : M ↦ (1 : G) • z) = id := funext (one_smul G)
   rw [hid, mfderiv_id]
-  rfl
+  -- `ContinuousLinearMap.id` is stated in the fibre at `x` but applied in the fibre at `1 • x`;
+  -- the two fibres coincide only up to defeq, so `id_apply` closes the goal by `exact`, not `rw`.
+  exact ContinuousLinearMap.id_apply v
 
 /-- For an action of a group by `C^n` maps, with `n ≠ 0`, the differential of each translation is
 injective. -/
