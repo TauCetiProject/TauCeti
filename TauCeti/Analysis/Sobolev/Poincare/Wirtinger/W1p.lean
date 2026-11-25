@@ -72,8 +72,6 @@ measure, and letting `q → ∞` (`TauCeti.tendsto_eLpNorm_atTop`).
 * `TauCeti.W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero`: on a preconnected `Ω`, a
   Sobolev function with vanishing gradient and vanishing integral over a set of positive measure
   is zero.
-* `TauCeti.W1p.integralL`: the integral `∫_Ω u` as a continuous linear functional on
-  `W^{1,p}(Ω)`, for `Ω` of finite measure.
 * `TauCeti.W1p.eq_zero_of_gradient_eq_zero_of_integralL_eq_zero`: on a preconnected `Ω` of finite
   measure, a Sobolev function with vanishing gradient and vanishing integral over `Ω` is zero.
 * `TauCeti.W1p.eq_zero_of_gradient_eq_zero`: for `p < ∞`, a Sobolev function on the whole of a
@@ -585,26 +583,6 @@ theorem W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero
 section IntegralL
 
 variable [IsFiniteMeasure (mu.restrict (Omega : Set E))]
-
-/-- The integral `∫_Ω u` as a continuous linear functional on `W^{1,p}(Ω)`, for `Ω` of finite
-measure. -/
-def W1p.integralL : W1p mu Omega p →L[ℝ] ℝ :=
-  (setIntegralLp (μ := mu.restrict (Omega : Set E)) (𝕜 := ℝ) univ (measure_lt_top _ _)).comp
-    W1p.valueL
-
-omit [FiniteDimensional ℝ E] in
-/-- `TauCeti.W1p.integralL` is the integral of the value over `Ω`. -/
-@[simp]
-theorem W1p.integralL_apply (u : W1p mu Omega p) :
-    W1p.integralL u = ∫ x in Omega, W1p.value u x ∂mu := by
-  rw [W1p.integralL, ContinuousLinearMap.comp_apply, setIntegralLp_apply, Measure.restrict_univ,
-    W1p.valueL_apply]
-
-/-- The integral of a constant `c` over `Ω` is `|Ω| c`. -/
-theorem W1p.integralL_const (c : ℝ) :
-    W1p.integralL (W1p.const c : W1p mu Omega p) = mu.real Omega * c := by
-  rw [W1p.integralL_apply, ← smul_eq_mul, ← setIntegral_const]
-  exact integral_congr_ae (W1p.value_const_ae c)
 
 /-- **A Sobolev function with vanishing gradient and mean is zero.** On a preconnected domain of
 finite measure, if the weak gradient of `u ∈ W^{1,p}(Ω)` and its integral over `Ω` both vanish,

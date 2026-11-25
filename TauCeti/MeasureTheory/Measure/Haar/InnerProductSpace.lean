@@ -42,6 +42,8 @@ conditions on single coordinates, such as polydiscs, are measured.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
+* `AffineIsometryEquiv.isFiniteMeasure_volume_restrict_preimage`: an affine-isometric preimage of
+  a bounded set has finite volume.
 * `Submodule.ae_of_ae_orthogonalProjectionOnto_prod`: a property of almost every point of a
   space linearly isomorphic to `K × Kᗮ` holds, for almost every `a`, at the image of the
   components of `a` along `K` and `Kᗮ`.
@@ -159,6 +161,13 @@ theorem measurePreserving (f : E ≃ᵃⁱ[ℝ] F) : MeasurePreserving f := by
     simpa using f.map_vadd 0 x
   rw [hf]
   exact (measurePreserving_add_right volume (f 0)).comp f.linearIsometryEquiv.measurePreserving
+
+omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] in
+/-- **A rigid copy of a bounded set has finite volume.** For an affine isometric equivalence `g`
+and a bounded set `t`, the restriction of the volume to `g⁻¹(t)` is a finite measure. -/
+theorem isFiniteMeasure_volume_restrict_preimage (g : E ≃ᵃⁱ[ℝ] F) {t : Set F}
+    (ht : Bornology.IsBounded t) : IsFiniteMeasure (volume.restrict (g ⁻¹' t)) :=
+  isFiniteMeasure_restrict.2 (g.isometry.antilipschitzWith.isBounded_preimage ht).measure_lt_top.ne
 
 end AffineIsometryEquiv
 

@@ -56,8 +56,6 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`).
 * `TauCeti.W1p.isCompactOperator_valueL_of_affineIsometryEquiv`: compactness of the value map
   `W^{1,p} → Lᵖ` transfers along an affine isometry.
-* `AffineIsometryEquiv.isFiniteMeasure_volume_restrict_preimage`: an affine-isometric preimage of
-  a bounded set has finite volume.
 * `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL`: the Dirichlet pairing
   `∫ ⟪∇u, ∇φ⟫` of `u` against a test function `φ` is invariant under a linear isometric change of
   coordinates.
@@ -296,13 +294,6 @@ section AffineIsometry
 variable {F F' : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F] [NormedAddCommGroup F'] [InnerProductSpace ℝ F']
   [FiniteDimensional ℝ F'] [MeasurableSpace F'] [BorelSpace F'] {U : Opens F} {V : Opens F'}
-
-omit [FiniteDimensional ℝ F'] [MeasurableSpace F'] [BorelSpace F'] in
-/-- **A rigid copy of a bounded set has finite volume.** For an affine isometric equivalence `g`
-and a bounded set `t`, the restriction of the volume to `g⁻¹(t)` is a finite measure. -/
-theorem _root_.AffineIsometryEquiv.isFiniteMeasure_volume_restrict_preimage (g : F ≃ᵃⁱ[ℝ] F')
-    {t : Set F'} (ht : Bornology.IsBounded t) : IsFiniteMeasure (volume.restrict (g ⁻¹' t)) :=
-  isFiniteMeasure_restrict.2 (g.isometry.antilipschitzWith.isBounded_preimage ht).measure_lt_top.ne
 
 /-- **Rigid changes of variables in `W^{1,p}`.** Precomposition with an affine isometry `g` is a
 bounded operator from `W^{1,p}(V)` to `W^{1,p}(U)` for `U = g⁻¹(V)`, of norm at most one
