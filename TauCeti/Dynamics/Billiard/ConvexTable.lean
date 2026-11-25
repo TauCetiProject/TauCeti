@@ -473,8 +473,10 @@ theorem toStrictConvexBilliardTable_period : T.toStrictConvexBilliardTable.perio
 /-- Lowering the regularity does not change the underlying strictly convex billiard table. -/
 @[simp]
 theorem toStrictConvexBilliardTable_ofLE (hj : 1 ≤ j) (hjk : j ≤ k) :
-    (T.ofLE hj hjk).toStrictConvexBilliardTable = T.toStrictConvexBilliardTable :=
-  (rfl)
+    (T.ofLE hj hjk).toStrictConvexBilliardTable = T.toStrictConvexBilliardTable := by
+  refine StrictConvexBilliardTable.ext (funext fun s => ?_) ?_
+  · rw [coe_toStrictConvexBilliardTable, coe_toStrictConvexBilliardTable, coe_ofLE]
+  · rw [toStrictConvexBilliardTable_period, toStrictConvexBilliardTable_period]
 
 /-- **Injectivity modulo the period.** Two parameters give the same point of a table exactly when
 they agree modulo `ℓ`. -/
