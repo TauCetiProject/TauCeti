@@ -88,18 +88,23 @@ theorem one_mul_norm_sq_le_re_inner_diagOneTwo (u : EuclideanSpace ℝ (Fin 2)) 
   nlinarith [sq_nonneg (u 1)]
 
 /-- The form `a(u, v) = u₁ v₁ + 2 u₂ v₂` on `ℝ²`, that is `⟪u, diag(1, 2) v⟫`. Its diagonal
-values `a(u, u)` are `⟪u, diag(1, 2) u⟫` by `ContinuousLinearMap.toSesqForm_apply_coe`, so the
-coercivity bound is `one_mul_norm_sq_le_re_inner_diagOneTwo`. -/
+values `a(u, u)` simplify to `⟪u, diag(1, 2) u⟫` by `ContinuousLinearMap.toSesqForm_apply_coe`,
+so the coercivity bound comes from `one_mul_norm_sq_le_re_inner_diagOneTwo`. -/
 def diagOneTwoForm : CoerciveHermitianForm ℝ (EuclideanSpace ℝ (Fin 2)) where
   form := ContinuousLinearMap.toSesqForm diagOneTwo
   form_apply_eq_star u v := by simp [inner_diagOneTwo, mul_comm]
-  exists_coercive := ⟨1, one_pos, one_mul_norm_sq_le_re_inner_diagOneTwo⟩
+  exists_coercive := ⟨1, one_pos, fun u ↦ by simpa using one_mul_norm_sq_le_re_inner_diagOneTwo u⟩
 
 /-- The values of the form `diag(1, 2)`. -/
 @[simp]
 theorem diagOneTwoForm_form_apply (u v : EuclideanSpace ℝ (Fin 2)) :
     diagOneTwoForm.form u v = u 0 * v 0 + 2 * (u 1 * v 1) := by
   simp [diagOneTwoForm, inner_diagOneTwo]
+
+/-- The form `diag(1, 2)` is coercive with constant `1`: `1 * ‖u‖² ≤ re a(u, u)`. -/
+theorem one_mul_norm_sq_le_re_diagOneTwoForm_form (u : EuclideanSpace ℝ (Fin 2)) :
+    1 * ‖u‖ ^ 2 ≤ RCLike.re (diagOneTwoForm.form u u) := by
+  simpa [inner_diagOneTwo] using one_mul_norm_sq_le_re_inner_diagOneTwo u
 
 /-- The dual-forcing map of `diag(1, 2)` is `F ℓ = (ℓ e₁, ℓ e₂ / 2)`. -/
 theorem diagOneTwoForm_dualForcing_apply (ℓ : StrongDual ℝ (EuclideanSpace ℝ (Fin 2))) :
@@ -117,7 +122,7 @@ theorem diagOneTwoForm_dualForcing_apply (ℓ : StrongDual ℝ (EuclideanSpace �
 /-- The bound `‖F ℓ‖ ≤ c⁻¹ ‖ℓ‖` with `c = 1`, which is a coercivity constant of `diag(1, 2)`. -/
 example (ℓ : StrongDual ℝ (EuclideanSpace ℝ (Fin 2))) :
     ‖diagOneTwoForm.dualForcing ℓ‖ ≤ 1⁻¹ * ‖ℓ‖ :=
-  diagOneTwoForm.norm_dualForcing_le one_pos one_mul_norm_sq_le_re_inner_diagOneTwo ℓ
+  diagOneTwoForm.norm_dualForcing_le one_pos one_mul_norm_sq_le_re_diagOneTwoForm_form ℓ
 
 /-- With `c = 2` the bound fails for `ℓ = e₁*`: `F e₁* = e₁` has norm `1 > 2⁻¹ ‖e₁*‖`. -/
 example :
