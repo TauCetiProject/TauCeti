@@ -24,21 +24,15 @@ namespace TauCeti.Examples.SiegelPeriodMatrix
 
 variable {g : ℕ}
 
-/-- The inverse of a translation `[[1, B], [0, 1]]` is `[[1, -B], [0, 1]]`. -/
-theorem inv_translation (B : Matrix (Fin g) (Fin g) ℤ) :
-    (fromBlocks 1 B 0 1 : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ)⁻¹ = fromBlocks 1 (-B) 0 1 :=
-  inv_eq_left_inv (by simp [fromBlocks_multiply])
-
 /-- The lattice action of a translation is `[[1, 0], [-Bᵀ, 1]]`. -/
-theorem siegelLatticeMap_translation (B : Matrix (Fin g) (Fin g) ℤ) :
+example (B : Matrix (Fin g) (Fin g) ℤ) :
     siegelLatticeMap (fromBlocks 1 B 0 1) = fromBlocks 1 0 (-Bᵀ) 1 := by
-  rw [siegelLatticeMap_def, inv_translation, fromBlocks_transpose]
   simp
 
 /-- The fibre map of a translation is the identity. -/
 example (B : Matrix (Fin g) (Fin g) ℤ) (Ω : Matrix (Fin g) (Fin g) ℂ) :
-    siegelFibreMap (fromBlocks 1 B 0 1) Ω = 1 := by
-  simp [siegelFibreMap_def]
+    siegelFiberMap (fromBlocks 1 B 0 1) Ω = 1 := by
+  simp
 
 /-- Period equivariance for a translation by a symmetric `B`, in coordinates:
 `Π_Ω(a, b) = Π_{Ω + B}(a, b - Bᵀ a)`. -/
