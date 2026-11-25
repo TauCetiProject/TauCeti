@@ -10,7 +10,6 @@ public import Mathlib.Topology.LocallyConstant.Algebra
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
-import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 
 /-!
 # Dirac measures and the norm topology
@@ -43,7 +42,8 @@ variable {X R K : Type*} [TopologicalSpace X]
 /-- The Dirac map is continuous for the weak topology of test-function evaluations. -/
 theorem continuous_dirac_weak [NormedCommRing R] :
     @Continuous X D(X, R) _ WeakTopology (dirac R) := by
-  exact (continuous_weak_iff _).mpr fun f ↦ by simpa only [dirac_apply] using f.continuous
+  apply continuous_induced_rng.2
+  exact continuous_pi fun f ↦ by simpa using f.continuous
 
 variable [CompactSpace X] [NontriviallyNormedField K]
 

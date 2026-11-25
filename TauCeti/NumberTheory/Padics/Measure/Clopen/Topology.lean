@@ -7,16 +7,13 @@ module
 
 public import TauCeti.NumberTheory.Padics.Measure.Clopen.Basic
 public import TauCeti.NumberTheory.Padics.Measure.Pushforward
-import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 
 /-!
 # Topologies on clopen measure decompositions
 
 Restriction to a clopen subset and inclusion pushforward are continuous for both the weak
 and strong topologies on abstract measures. Inclusion is a closed embedding, and the algebraic
-clopen decomposition is a homeomorphism in either topology, for arbitrary `X`. The strong topology
-is the topology of bounded convergence on continuous linear maps; on compact `X` it agrees with
-the continuous-dual operator-norm topology. For compact `X` and measures with values in a
+clopen decomposition is a homeomorphism in either topology. For measures with values in a
 seminormed module over a field, restriction contracts the continuous-dual operator norm and
 inclusion preserves it exactly.
 
@@ -41,8 +38,7 @@ variable {X R E : Type*} [TopologicalSpace X]
 
 section Weak
 
-variable [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
-  [NormedAddCommGroup E] [Module R E] [ContinuousSMul R E]
+variable [NormedCommRing R] [NormedAddCommGroup E] [Module R E] [ContinuousSMul R E]
 
 /-- Restriction to a clopen subset is continuous for the weak measure topologies. -/
 theorem continuous_restrictClopen_weak (s : Clopens X) :
@@ -50,8 +46,10 @@ theorem continuous_restrictClopen_weak (s : Clopens X) :
       (WeakTopology (X := s) (R := R) (E := E)) (restrictClopen s) := by
   let : TopologicalSpace (AbstractMeasure X R E) := WeakTopology
   let : TopologicalSpace (AbstractMeasure s R E) := WeakTopology
-  refine (continuous_weak_iff _).mpr fun f ↦ ?_
-  exact (continuous_apply_weak (zeroExtendClopen R s f)).congr fun μ ↦
+  have heval : Continuous (fun μ : AbstractMeasure X R E ↦ fun f : C(X, R) ↦ μ f) :=
+    continuous_induced_dom
+  refine continuous_induced_rng.mpr <| continuous_pi fun f ↦ ?_
+  exact ((continuous_apply (zeroExtendClopen R s f)).comp heval).congr fun μ ↦
     (restrictClopen_apply s μ f).symm
 
 /-- Inclusion of measures from a clopen subset is a closed embedding for the weak topologies.
@@ -63,7 +61,7 @@ theorem isClosedEmbedding_map_subtype_weak (s : Clopens X) :
   let : TopologicalSpace (AbstractMeasure X R E) := WeakTopology
   let : TopologicalSpace (AbstractMeasure s R E) := WeakTopology
   have heval : Continuous (fun μ : AbstractMeasure X R E ↦ fun f : C(X, R) ↦ μ f) :=
-    continuous_pi fun f ↦ continuous_apply_weak f
+    continuous_induced_dom
   let : T2Space (AbstractMeasure X R E) :=
     T2Space.of_injective_continuous DFunLike.coe_injective heval
   exact Function.LeftInverse.isClosedEmbedding
@@ -83,11 +81,15 @@ theorem isHomeomorph_clopenDecomposition_weak (s : Clopens X) :
   constructor
   · exact ((continuous_restrictClopen_weak s).prodMk
       (continuous_restrictClopen_weak sᶜ)).congr fun μ ↦ (clopenDecomposition_apply s μ).symm
-  · refine (continuous_weak_iff _).mpr fun f ↦ ?_
-    exact (((continuous_apply_weak (f.comp (subtypeVal (s : Set X)))).comp
-      continuous_fst).add
-      ((continuous_apply_weak (f.comp (subtypeVal ((sᶜ : Clopens X) : Set X)))).comp
-        continuous_snd)).congr fun μ ↦ by
+  · have heval (t : Clopens X) :
+        @Continuous _ _ (WeakTopology (X := t) (R := R) (E := E)) inferInstance
+          (fun μ : AbstractMeasure t R E ↦ fun f : C(t, R) ↦ μ f) :=
+      continuous_induced_dom
+    refine continuous_induced_rng.mpr <| continuous_pi fun f ↦ ?_
+    exact (((continuous_apply (f.comp (subtypeVal (s : Set X)))).comp
+      ((heval s).comp continuous_fst)).add
+      ((continuous_apply (f.comp (subtypeVal ((sᶜ : Clopens X) : Set X)))).comp
+        ((heval sᶜ).comp continuous_snd))).congr fun μ ↦ by
           simp only [Pi.add_apply, Function.comp_apply, clopenDecomposition_symm_apply,
             _root_.add_apply, map_apply]
 
@@ -95,9 +97,7 @@ end Weak
 
 section OperatorNorm
 
-variable [CompactSpace X]
-
-variable [NontriviallyNormedField R] [SeminormedAddCommGroup E] [NormedSpace R E]
+variable [CompactSpace X] [NontriviallyNormedField R] [SeminormedAddCommGroup E] [NormedSpace R E]
 
 /-- Clopen restriction does not increase the continuous-dual operator norm. -/
 theorem norm_toCLMEquiv_restrictClopen_le (s : Clopens X) (μ : AbstractMeasure X R E) :
@@ -151,10 +151,8 @@ theorem isClosedEmbedding_map_subtype_strong (s : Clopens X) :
     (subtypeVal (s : Set X)).continuous_abstractMeasure_map_strong
 
 /-- The clopen decomposition is a homeomorphism for the strong measure topologies and their
-product topology, for arbitrary `X`. The strong topology is that of bounded convergence on
-continuous linear maps and agrees with the operator-norm topology when `X` is compact.
-No completeness or ultrametricity of the coefficients is required. -/
-theorem isHomeomorph_clopenDecomposition_strong (s : Clopens X) :
+product topology. No completeness or ultrametricity of the coefficients is required. -/
+theorem isHomeomorph_clopenDecomposition_strong [CompactSpace X] (s : Clopens X) :
     @IsHomeomorph _ _ (StrongTopology (X := X) (R := R) (E := E))
       (@instTopologicalSpaceProd _ _ (StrongTopology (X := s) (R := R) (E := E))
         (StrongTopology (X := ↥sᶜ) (R := R) (E := E))) (clopenDecomposition s) := by
@@ -166,8 +164,8 @@ theorem isHomeomorph_clopenDecomposition_strong (s : Clopens X) :
   · exact ((continuous_restrictClopen_strong s).prodMk
       (continuous_restrictClopen_strong sᶜ)).congr fun μ ↦ (clopenDecomposition_apply s μ).symm
   · -- StrongTopology is the continuous-dual topology, so addition of measures is continuous.
-    let : IsTopologicalAddGroup (AbstractMeasure X R E) :=
-      ContinuousLinearMap.isTopologicalAddGroup
+    let : ContinuousAdd (AbstractMeasure X R E) :=
+      inferInstanceAs (ContinuousAdd (C(X, R) →L[R] E))
     exact (((subtypeVal (s : Set X)).continuous_abstractMeasure_map_strong.comp continuous_fst).add
       ((subtypeVal ((sᶜ : Clopens X) : Set X)).continuous_abstractMeasure_map_strong.comp
         continuous_snd)).congr fun μ ↦ (clopenDecomposition_symm_apply s μ).symm

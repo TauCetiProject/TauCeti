@@ -12,7 +12,6 @@ public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
 public import TauCeti.Topology.ContinuousMap.AutomaticContinuity
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.RingTheory.TensorProduct.Maps
-import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 
 /-!
 # Finite free base change of abstract measures
@@ -540,10 +539,11 @@ theorem continuous_mapScalars_weak [Module.Finite R O] (l : O →ₗ[R] R) :
     @Continuous _ _ (WeakTopology (X := X) (R := O) (E := O))
       (WeakTopology (X := X) (R := R) (E := R)) (mapScalars l) := by
   let _ : TopologicalSpace D(X, O) := WeakTopology
-  refine (continuous_weak_iff _).mpr fun g ↦ ?_
-  simp only [mapScalars_apply]
+  let _ : TopologicalSpace D(X, R) := WeakTopology
+  refine continuous_induced_rng.mpr (continuous_pi fun g : C(X, R) ↦ ?_)
+  simp only [Function.comp_apply, mapScalars_apply]
   exact l.continuous_of_finite_of_compactSpace.comp
-    (continuous_apply_weak ((algebraMapCLM R O : C(R, O)).comp g))
+    ((continuous_apply ((algebraMapCLM R O : C(R, O)).comp g)).comp continuous_induced_dom)
 
 /-- Over a compact normed commutative ring `R`, `extendScalars O : D(X, R) → D(X, O)` is
 continuous for the weak topologies whenever `O` is finite and free over `R`. -/
@@ -551,13 +551,15 @@ theorem continuous_extendScalars_weak [Module.Free R O] [Module.Finite R O] :
     @Continuous _ _ (WeakTopology (X := X) (R := R) (E := R))
       (WeakTopology (X := X) (R := O) (E := O)) (extendScalars O) := by
   let _ : TopologicalSpace D(X, R) := WeakTopology
+  let _ : TopologicalSpace D(X, O) := WeakTopology
   let b := Module.Free.chooseBasis R O
-  refine (continuous_weak_iff _).mpr fun f ↦ ?_
-  simp only [extendScalars_apply_eq_sum b]
-  exact continuous_finsetSum _ fun i _ ↦
-    (continuous_apply_weak
-      (((b.coord i).toContinuousLinearMapOfFiniteOfCompactSpace : C(O, R)).comp f)).smul
-      continuous_const
+  refine continuous_induced_rng.mpr (continuous_pi fun f : C(X, O) ↦ ?_)
+  simp only [Function.comp_apply, extendScalars_apply_eq_sum b]
+  refine continuous_finsetSum _ fun i _ ↦ ?_
+  have heval : Continuous (fun μ : D(X, R) ↦
+      μ (((b.coord i).toContinuousLinearMapOfFiniteOfCompactSpace : C(O, R)).comp f)) :=
+    (continuous_apply _).comp continuous_induced_dom
+  exact heval.smul continuous_const
 
 end WeakTopology
 
