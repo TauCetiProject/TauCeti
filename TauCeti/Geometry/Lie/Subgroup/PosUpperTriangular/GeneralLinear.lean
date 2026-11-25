@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.PosUpperTriangular.Immersed
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
-import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
 # Lie groups immersed in `GL_n` through the positive triangular group
@@ -28,8 +26,6 @@ global diffeomorphism and `f` is a smooth embedding with closed image.
 
 ## Main results
 
-* `TauCeti.Lie.isImmersion_codRestrict_posUpperTriangularGroup`: the corestriction of `f` to `AN`
-  is an immersion.
 * `TauCeti.Lie.lieExp_bijective_of_immersed_posUpperTriangular`: the exponential of `C` is
   bijective.
 * `TauCeti.Lie.isSmoothEmbedding_of_immersed_posUpperTriangular` and
@@ -63,27 +59,6 @@ attribute [local instance] ImmersedLieSubgroupData.group
   ImmersedLieSubgroupData.modelTopology ImmersedLieSubgroupData.chartedSpace
   ImmersedLieSubgroupData.lieGroup ImmersedLieSubgroupData.connectedSpace
 
-section Immersion
-
-variable {ι : Type*} [Fintype ι] [LinearOrder ι] {𝕜 : Type*} [RCLike 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  {C : Type*} [Group C] [TopologicalSpace C] [ChartedSpace H C] [IsManifold I ∞ C]
-
-/-- A smooth immersion into `GL ι 𝕜` with values in the positive triangular group `AN` is a
-smooth immersion into `AN`, for the closed-subgroup smooth structure of `AN`. -/
-theorem isImmersion_codRestrict_posUpperTriangularGroup {f : C →* GL ι 𝕜}
-    (himm : IsImmersion I 𝓘(ℝ, Matrix ι ι 𝕜) ∞ f) (hf : ∀ c, f c ∈ posUpperTriangularGroup ι 𝕜) :
-    IsImmersion I 𝓘(ℝ, LieSubalgebra.toSubmodule (lieSubalgebraOfSubgroup
-      (I := 𝓘(ℝ, Matrix ι ι 𝕜)) (posUpperTriangularGroup ι 𝕜))) ∞
-      (f.codRestrict (posUpperTriangularGroup ι 𝕜) hf) := by
-  have he :=
-    (posUpperTriangularEmbeddedLieSubgroupData (ι := ι) (𝕜 := 𝕜)).isSmoothEmbedding_subtypeVal
-  exact (he.contMDiff_iff_comp.2 himm.contMDiff).isImmersion_of_isImmersion_comp (by simp)
-    (fun _ ↦ he.contMDiff.mdifferentiableAt (by simp)) himm
-
-end Immersion
-
 section GeneralLinear
 
 variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
@@ -111,7 +86,7 @@ private def immersedLieSubgroupDataOfPosUpperTriangular (f : C →* GL (Fin n) �
   toHom := f.codRestrict AN hf
   injective _ _ hab := hinj (congrArg Subtype.val hab)
   range_eq := rfl
-  isImmersion := isImmersion_codRestrict_posUpperTriangularGroup himm hf
+  isImmersion := posUpperTriangularEmbeddedLieSubgroupData.isImmersion_codRestrict himm hf
 
 /-- **Exponential coordinates on Lie groups immersed in the positive triangular group.** If a
 connected real Lie group `C` has an injective smooth immersive homomorphism into `GL_n(𝕜)` with
