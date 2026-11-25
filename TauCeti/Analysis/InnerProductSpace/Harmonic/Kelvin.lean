@@ -226,8 +226,8 @@ theorem harmonicOnNhd_update_kelvinTransform [DecidableEq E] (hn : 3 ≤ finrank
     (tendsto_kelvinTransform_nhdsNE_zero (by simpa only [smul_eq_mul] using ha))
   have hy0 : y ≠ 0 := hy.2
   refine (hf _ ?_).kelvinTransform hy0
-  rw [mem_ofPred_eq, norm_inversion_zero_one]
-  exact (lt_inv_comm₀ (norm_pos_iff.2 hy0) hR).1 (mem_ball_zero_iff.1 hy.1)
+  simpa only [mem_ofPred_eq, inv_inv] using
+    (inv_lt_norm_inversion_iff (inv_pos.2 hR) hy0).2 (mem_ball_zero_iff.1 hy.1)
 
 omit [FiniteDimensional ℝ E] in
 /-- **Positivity of the closed-off end.** If `f` is positive on the exterior region `‖x‖ > R` and
@@ -241,7 +241,7 @@ theorem update_kelvinTransform_pos [DecidableEq E] {f : E → ℝ} {R a : ℝ}
   have hR : 0 < R := inv_pos.1 (pos_of_mem_ball hy)
   rw [Function.update_of_ne hy0]
   refine kelvinTransform_pos hy0 (hf _ ?_)
-  rw [norm_inversion_zero_one]
-  exact (lt_inv_comm₀ (norm_pos_iff.2 hy0) hR).1 (mem_ball_zero_iff.1 hy)
+  simpa only [inv_inv] using
+    (inv_lt_norm_inversion_iff (inv_pos.2 hR) hy0).2 (mem_ball_zero_iff.1 hy)
 
 end TauCeti
