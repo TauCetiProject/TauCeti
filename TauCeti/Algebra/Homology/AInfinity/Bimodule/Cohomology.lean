@@ -84,6 +84,12 @@ theorem isHomogeneous_differential (MM : AInfinityBimodule AA BB M) :
     LinearMap.IsHomogeneous MM.differential MM.grading.piece MM.grading.piece 1 :=
   LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ MM.differential_mem_piece hx
 
+/-- The unary differential has degree one for the suspended grading. -/
+theorem isHomogeneous_differential_shift (MM : AInfinityBimodule AA BB M) :
+    LinearMap.IsHomogeneous MM.differential (MM.grading.shift 1).piece
+      (MM.grading.shift 1).piece 1 :=
+  LinearMap.isHomogeneous_shift_piece_iff.2 MM.isHomogeneous_differential
+
 /-- The underlying cochain complex, with the original grading and unary differential. -/
 abbrev cochainComplex (MM : AInfinityBimodule AA BB M) : CochainComplex (ModuleCat R) ℤ :=
   gradedCochainComplex MM.grading.piece MM.differential MM.isHomogeneous_differential

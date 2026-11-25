@@ -20,6 +20,8 @@ needed to view `q` as a unit of `ZMod (q ^ N - 1)`.
 
 The least common multiple of two nonzero naturals is nonzero, also as a `NeZero` instance.
 
+For divisors `m` and `d` of `n`, `d / gcd (m, d) * (n / lcm (m, d)) = n / m`.
+
 If a nonzero `m` does not divide some `b`, then `m ≠ 1`, so `2 ≤ m`. Conversely, if `b` is prime to
 `m ≥ 2`, then `m ∤ b`, since a divisor of `b` prime to `b` is `1`.
 
@@ -32,6 +34,8 @@ coprime only to `1`.
 * `Nat.coprime_add_self_add_right`: shifting an inner summand by `m` preserves coprimality with `m`.
 * `Nat.coprime_pow_sub_one`: `q` is coprime to `q ^ N - 1`.
 * `Nat.neZero_lcm`: `NeZero (lcm m n)` for nonzero `m` and `n`.
+* `Nat.div_gcd_mul_div_lcm`: `d / gcd (m, d) * (n / lcm (m, d)) = n / m` for divisors `m` and
+  `d` of `n`.
 * `Nat.Coprime.eq_one_of_exists_eq_zero`: coprime products and a zero entry in one family force the
   other family to be `1`.
 * `Nat.gcd_mul_right_div_gcd`: `m.gcd (n * k) = m.gcd n * (m / m.gcd n).gcd k`.
@@ -46,6 +50,16 @@ namespace Nat
 /-- The least common multiple of two nonzero natural numbers is nonzero. -/
 instance neZero_lcm (m n : ℕ) [NeZero m] [NeZero n] : NeZero (lcm m n) :=
   ⟨lcm_ne_zero (NeZero.ne m) (NeZero.ne n)⟩
+
+/-- For divisors `m` and `d` of `n`, `d / gcd (m, d) * (n / lcm (m, d)) = n / m`. For the
+cyclic group of order `n`, an orbit of size `n / m` splits into `n / lcm (m, d)` orbits of the
+subgroup of order `d`, each of size `d / gcd (m, d)`. -/
+theorem div_gcd_mul_div_lcm {n m d : ℕ} (hm : m ∣ n) (hd : d ∣ n) :
+    d / m.gcd d * (n / m.lcm d) = n / m := by
+  rcases eq_or_ne d 0 with rfl | hd0
+  · simp [Nat.eq_zero_of_zero_dvd hd]
+  rw [Nat.div_mul_div_comm (Nat.gcd_dvd_right m d) (Nat.lcm_dvd hm hd), Nat.gcd_mul_lcm,
+    mul_comm m d, Nat.mul_div_mul_left _ _ (Nat.pos_of_ne_zero hd0)]
 
 /-- Shifting an inner summand by `m` preserves coprimality with `m`. -/
 @[simp]
