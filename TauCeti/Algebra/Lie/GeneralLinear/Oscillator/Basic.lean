@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.Algebra.Lie.Matrix.Single
 import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 import Mathlib.Tactic.NoncommRing
+import TauCeti.Algebra.MvPolynomial.PDeriv
 
 /-!
 # The oscillator representation of `gl ι` on polynomials
@@ -53,6 +54,8 @@ the degree when `i` and `j` have the same parity.
 * `TauCeti.rename_oscRaise`, `TauCeti.rename_oscLower`: renaming the variables.
 * `TauCeti.oscRaise_mul_oscLower_mem_homogeneousSubmodule`: for two variables of the same parity,
   `R i L j` preserves the degree.
+* `TauCeti.oscRaise_mul_oscLower_of_not_iff`: for two variables of opposite parity, `R i L j` is
+  multiplication by `X i X j` or the second-order operator `-∂ ∂ / ∂ X i ∂ X j`.
 
 ## References
 
@@ -109,11 +112,6 @@ theorem oscLower_apply_of_neg {i : ι} (h : ¬p i) (P : MvPolynomial ι K) :
   simp [oscLower, h]
 
 /-! ### The canonical commutation relations -/
-
-/-- Multiplication by a variable commutes with the derivative in another variable. -/
-private theorem pderiv_X_mul_of_ne {i j : ι} (hij : i ≠ j) (P : MvPolynomial ι K) :
-    pderiv j (X i * P) = X i * pderiv j P := by
-  rw [Derivation.leibniz, pderiv_X_of_ne hij, smul_zero, add_zero, smul_eq_mul]
 
 /-- The operators `R i` and `R j` commute. -/
 theorem commute_oscRaise (i j : ι) : Commute (oscRaise K p i) (oscRaise K p j) := by
@@ -219,6 +217,17 @@ theorem oscRaise_mul_oscLower_one_of_ne {i j : ι} (hij : i ≠ j) (h : p i ↔ 
   · simp [hj]
   · simp [hj, h.not.2 hj, pderiv_X_of_ne hij.symm]
 
+/-- For two variables of opposite parity, `R i L j` is multiplication by `X i X j` if `i` is even,
+and the second-order operator `-∂ ∂ / ∂ X i ∂ X j` if `i` is odd. -/
+theorem oscRaise_mul_oscLower_of_not_iff {i j : ι} (h : ¬(p i ↔ p j)) (P : MvPolynomial ι K) :
+    (oscRaise K p i * oscLower K p j) P =
+      (if p i then X i * X j * P else 0) - if p i then 0 else pderiv i (pderiv j P) := by
+  by_cases hi : p i
+  · have hj : ¬p j := fun hj ↦ h (iff_of_true hi hj)
+    simp [hi, hj, mul_assoc]
+  · have hj : p j := by tauto
+    simp [hi, hj]
+
 /-- For two variables of the same parity, `R i L j` preserves the degree of homogeneous
 polynomials. -/
 theorem oscRaise_mul_oscLower_mem_homogeneousSubmodule {i j : ι} (h : p i ↔ p j) {d : ℕ}
@@ -247,10 +256,14 @@ private noncomputable def oscillatorLinearMap :
   map_add' A B := by simp [add_smul, sum_add_distrib]
   map_smul' c A := by simp [smul_sum, smul_smul]
 
+omit [DecidableEq ι] in
+private theorem oscillatorLinearMap_apply (A : Matrix ι ι K) :
+    oscillatorLinearMap K p A = ∑ i, ∑ j, A i j • (oscRaise K p i * oscLower K p j) :=
+  (rfl)
+
 private theorem oscillatorLinearMap_single (i j : ι) (c : K) :
     oscillatorLinearMap K p (Matrix.single i j c) = c • (oscRaise K p i * oscLower K p j) := by
-  change ∑ a, ∑ b, _ = _
-  rw [sum_eq_single i, sum_eq_single j]
+  rw [oscillatorLinearMap_apply, sum_eq_single i, sum_eq_single j]
   · simp
   · intro b _ hb
     simp [Ne.symm hb]

@@ -25,28 +25,23 @@ Casimir operators differ by a scalar (`TauCeti.lift_fockColHom_glCasimir`):
 
 `Ω' = Ω + n n' (n - n') / 4`.
 
-This is the relation between the two Casimir operators on the Fock module in route step (2) of the
-roadmap target below. On the side of the parameters, if `λ'` is `λ` with the string
-`σ_t = ((t - 1) / 2, …, -(t - 1) / 2)` inserted (in any blocks), then
-`|λ'|² - |ρ_{n'}|² = |λ|² - |ρ_n|² - n n' (n' - n) / 4`
-(`TauCeti.sum_sq_sub_eq_of_equiv_sum`), where `ρ_N = ((N - 1) / 2, …, -(N - 1) / 2)` has
-`|ρ_N|² = N (N² - 1) / 12` (`TauCeti.sum_rho_sq`); and `|λ|² - |ρ|²` is the eigenvalue of
-`TauCeti.glCasimir` on a highest weight vector of weight `λ - ρ`
-(`TauCeti.glCasimir_eigenvalue_eq_sum_sq_sub`), so the two relations match.
+On a common eigenvector the two Casimir eigenvalues therefore differ by `n n' (n - n') / 4`. This
+matches the parameters: if `λ'` is `λ` with the string `σ_t = ((t - 1) / 2, …, -(t - 1) / 2)`
+inserted, then `|λ'|² - |ρ_{n'}|² = |λ|² - |ρ_n|² - n n' (n' - n) / 4`
+(`TauCeti.sum_sq_sub_eq_of_equiv_sum` in `TauCeti/Algebra/Lie/GeneralLinear/Casimir.lean`), and
+`|λ|² - |ρ|²` is the eigenvalue of `TauCeti.glCasimir` on a highest weight vector of weight
+`λ - ρ` (`TauCeti.glCasimir_eigenvalue_eq_sum_sq_sub`).
 
 ## Main results
 
+* `TauCeti.sum_mul_eq_normal_order`: normal ordering of a Casimir sum of elements `∑ c, x a c d b c`
+  under the canonical commutation relations.
 * `TauCeti.lift_fockRowHom_glCasimir`, `TauCeti.lift_fockColHom_glCasimir`: the Casimir operators
   on the Fock module, and their difference.
 * `TauCeti.casimir_eigenvalue_fockCol_eq`: on a common eigenvector the eigenvalues differ by
   `n n' (n - n') / 4`.
-* `TauCeti.sum_rho_sq`, `TauCeti.glCasimir_eigenvalue_eq_sum_sq_sub`,
-  `TauCeti.sum_sq_sub_eq_of_equiv_sum`: the parameters.
 
 ## References
-
-This is part of route step (2) of target 3.46a of the roadmap
-`RiemannHypothesisForDirichletLFunctions/ThetaKernelsForUnitaryDualPairs`.
 
 * A. Paul, *First occurrence for the dual pairs `(U(p, q), U(r, s))`*, Canad. J. Math. 51
   (1999), 636--657, Theorem 2.11.
@@ -75,7 +70,7 @@ variable {K A R C : Type*} [Field K] [Ring A] [Algebra K A] [Fintype R] [Decidab
 
 /-- Adding a scalar `t` to the diagonal of a square array `F` adds `2 t ∑ F a a + n t²` to the
 sum `∑ F a b F b a`, where `n` is the size of the array. -/
-private theorem sum_add_scalar_mul_add_scalar (F : R → R → A) (t : K) :
+theorem sum_add_scalar_mul_add_scalar (F : R → R → A) (t : K) :
     ∑ a, ∑ b, (F a b + if a = b then t • 1 else 0) * (F b a + if b = a then t • 1 else 0) =
       ∑ a, ∑ b, F a b * F b a + (2 * t) • ∑ a, F a a + (card R * t ^ 2) • (1 : A) := by
   have h_term (a b : R) :
@@ -93,7 +88,7 @@ private theorem sum_add_scalar_mul_add_scalar (F : R → R → A) (t : K) :
 `d r c x r c' = x r c' d r c + δ c c'`. Then the Casimir sum of the elements
 `∑ c, x a c d b c + t δ a b` is `D₄ + (n + 2 t) D₂ + n t²`, where
 `D₄ = ∑ x a c x b c' d b c d a c'`, `D₂ = ∑ x r c d r c`, and `n` is the number of rows. -/
-private theorem sum_mul_eq_normal_order (x d : R → C → A) (t : K)
+theorem sum_mul_eq_normal_order (x d : R → C → A) (t : K)
     (h_comm : ∀ (r : R) (c c' : C), d r c * x r c' = x r c' * d r c + if c = c' then 1 else 0) :
     ∑ a, ∑ b, (∑ c, x a c * d b c + if a = b then t • 1 else 0) *
         (∑ c, x b c * d a c + if b = a then t • 1 else 0) =
@@ -110,14 +105,6 @@ private theorem sum_mul_eq_normal_order (x d : R → C → A) (t : K)
       card_univ, Nat.cast_smul_eq_nsmul, smul_sum]
   rw [sum_add_scalar_mul_add_scalar (fun a b ↦ ∑ c, x a c * d b c), h_quartic]
   module
-
-/-- Exchanging the two outer and the two inner summation variables of a fourfold sum. -/
-private theorem sum_sum_sum_sum_comm {α β M : Type*} [Fintype α] [Fintype β] [AddCommMonoid M]
-    (f : α → α → β → β → M) :
-    ∑ c, ∑ d, ∑ a, ∑ b, f a b c d = ∑ a, ∑ b, ∑ c, ∑ d, f a b c d := by
-  simp only [← Finset.sum_product']
-  exact Finset.sum_nbij' (fun x ↦ (x.2.2.1, x.2.2.2, x.1, x.2.1))
-    (fun y ↦ (y.2.2.1, y.2.2.2, y.1, y.2.1)) (by simp) (by simp) (by simp) (by simp) (by simp)
 
 end NormalOrder
 
@@ -151,7 +138,8 @@ private theorem lift_fockRowHom_glCasimir_eq [NeZero (2 : K)] :
     fun r c c' ↦ by simp [oscLower_mul_oscRaise]]
   rw [fockQuartic, fockQuadratic, mul_div_cancel₀ _ two_ne_zero]
   congr 2
-  rw [div_pow, show (2 : K) ^ 2 = 4 by norm_num]
+  rw [div_pow]
+  norm_num
   ring
 
 private theorem lift_fockColHom_glCasimir_eq [NeZero (2 : K)] :
@@ -168,12 +156,18 @@ private theorem lift_fockColHom_glCasimir_eq [NeZero (2 : K)] :
       oscRaise K (IsEvenPair ε ε') (a, c) * oscRaise K (IsEvenPair ε ε') (b, d) *
         oscLower K (IsEvenPair ε ε') (a, d) * oscLower K (IsEvenPair ε ε') (b, c) =
       fockQuartic K ε ε' := by
-    rw [fockQuartic, sum_sum_sum_sum_comm]
+    have h := sum_comm (s := (univ : Finset (I' × I'))) (t := (univ : Finset (I × I)))
+      (f := fun x y ↦ oscRaise K (IsEvenPair ε ε') (y.1, x.1) *
+        oscRaise K (IsEvenPair ε ε') (y.2, x.2) * oscLower K (IsEvenPair ε ε') (y.1, x.2) *
+          oscLower K (IsEvenPair ε ε') (y.2, x.1))
+    simp only [Fintype.sum_prod_type] at h
+    rw [h, fockQuartic]
     simp only [mul_assoc, (commute_oscLower (_, _) (_, _)).eq]
   rw [h_quartic, fockQuadratic, sum_comm (s := univ (α := I')), mul_div_cancel₀ _ two_ne_zero]
   congr 2
   · rw [add_comm (card I' : K)]
-  · rw [div_pow, show (2 : K) ^ 2 = 4 by norm_num]
+  · rw [div_pow]
+    norm_num
     ring
 
 /-- **The Casimir operator of `gl I` on the Fock module**, in normal order: with `n` rows and `n'`
@@ -207,71 +201,5 @@ theorem casimir_eigenvalue_fockCol_eq [NeZero (2 : K)] {v : MvPolynomial (I × I
   rw [lift_fockColHom_glCasimir, LinearMap.add_apply, h, LinearMap.smul_apply,
     one_apply_eq_self, ← add_smul] at h'
   exact smul_left_injective K hv h'.symm
-
-/-! ### The parameters -/
-
-section Parameters
-
-variable [CharZero K]
-
-private theorem sum_range_sq_mul_six (N : ℕ) :
-    (∑ i ∈ range N, (i : K) ^ 2) * 6 = N * (N - 1) * (2 * N - 1) := by
-  induction N with
-  | zero => simp
-  | succ N ih =>
-    rw [sum_range_succ, add_mul, ih]
-    push_cast
-    ring
-
-private theorem sum_range_mul_two (N : ℕ) : (∑ i ∈ range N, (i : K)) * 2 = N * (N - 1) := by
-  have h := congrArg (fun m : ℕ ↦ (m : K)) (sum_range_id_mul_two N)
-  rcases N with _ | N
-  · simp
-  · simpa using h
-
-/-- The vector `ρ_N = ((N - 1) / 2, (N - 3) / 2, …, -(N - 1) / 2)`, half the sum of the positive
-roots of `gl N`, has `|ρ_N|² = N (N² - 1) / 12`. -/
-theorem sum_rho_sq (N : ℕ) :
-    ∑ i : Fin N, (((N : K) - 1) / 2 - i) ^ 2 = (N : K) * (N ^ 2 - 1) / 12 := by
-  have h6 := sum_range_sq_mul_six (K := K) N
-  have h2 := sum_range_mul_two (K := K) N
-  rw [Fin.sum_univ_eq_sum_range (fun i ↦ (((N : K) - 1) / 2 - i) ^ 2)]
-  have h_term (i : ℕ) : (((N : K) - 1) / 2 - i) ^ 2 =
-      (i : K) ^ 2 - (N - 1) * i + ((N - 1) / 2) ^ 2 := by ring
-  simp only [h_term, sum_add_distrib, sum_sub_distrib, ← mul_sum, sum_const, card_range,
-    nsmul_eq_mul]
-  linear_combination (1 / 6 : K) * h6 - ((N : K) - 1) / 2 * h2
-
-/-- **The `gl N` Casimir eigenvalue as `|λ|² - |ρ|²`.** On a highest weight vector of weight `μ`
-the trace-form Casimir acts by `∑ μ i (μ i + N - 1 - 2 i)`
-(`TauCeti.glCasimir_smul_of_isGlHighestWeightVector`); this is `|μ + ρ|² - |ρ|²` for
-`ρ = ((N - 1) / 2, …, -(N - 1) / 2)`. -/
-theorem glCasimir_eigenvalue_eq_sum_sq_sub (N : ℕ) (μ : Fin N → K) :
-    ∑ i : Fin N, μ i * (μ i + N - 1 - 2 * i) =
-      ∑ i : Fin N, (μ i + (((N : K) - 1) / 2 - i)) ^ 2 - (N : K) * (N ^ 2 - 1) / 12 := by
-  rw [← sum_rho_sq, ← sum_sub_distrib]
-  refine sum_congr rfl fun i _ ↦ ?_
-  ring
-
-omit [DecidableEq I] [DecidableEq I'] in
-/-- **Inserting the string `ρ_t` into a parameter.** If `λ'` is `λ` with the string
-`σ_t = ((t - 1) / 2, …, -(t - 1) / 2)` inserted, as described by an equivalence
-`e : I ⊕ Fin t ≃ I'`, then `|λ'|² - |ρ_{n'}|² = |λ|² - |ρ_n|² - n n' (n' - n) / 4`, where `n` and
-`n'` are the numbers of entries. -/
-theorem sum_sq_sub_eq_of_equiv_sum {t : ℕ} (e : I ⊕ Fin t ≃ I') (lam : I → K) (lam' : I' → K)
-    (h_left : ∀ a, lam' (e (.inl a)) = lam a)
-    (h_right : ∀ k : Fin t, lam' (e (.inr k)) = ((t : K) - 1) / 2 - k) :
-    ∑ c, lam' c ^ 2 - card I' * (card I' ^ 2 - 1) / 12 =
-      ∑ a, lam a ^ 2 - card I * (card I ^ 2 - 1) / 12 -
-        card I * card I' * (card I' - card I) / 4 := by
-  have h_card : (card I' : K) = card I + t := by
-    rw [← Fintype.card_congr e, Fintype.card_sum, Fintype.card_fin]
-    push_cast
-    rfl
-  rw [← e.sum_comp, Fintype.sum_sum_type]
-  simp only [h_left, h_right, sum_rho_sq, h_card]
-  ring
-
-end Parameters
 
 end TauCeti

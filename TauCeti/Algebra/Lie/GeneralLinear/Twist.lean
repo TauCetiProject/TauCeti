@@ -56,6 +56,8 @@ A dominant weight `μ : Fin N → R` is `a + c` for an antitone `a : Fin N → �
   antitone `a` it carries a highest weight vector of the dominant weight `a + c · (1, …, 1)`.
 * `TauCeti.glTraceTwistedYoungWedge.linearEquiv`: the underlying `R`-module of that carrier is the
   exterior power it twists.
+* `TauCeti.glTraceTwistHom`: the same twist for a representation `f : gl ι → A` in an associative
+  algebra, `X ↦ f X + c · tr(X) · 1`.
 
 ## Main results
 
@@ -375,5 +377,36 @@ theorem exists_isGlHighestWeightVector_of_isGlDominantIntegral (hmu : IsGlDomina
   exact ⟨a, c, ha, hac, exists_isGlHighestWeightVector_glTraceTwistedYoungWedge ha hac⟩
 
 end Dominant
+
+/-! ### The trace twist of a representation in an associative algebra -/
+
+section Hom
+
+variable {R : Type u} [CommRing R] {ι : Type*} [DecidableEq ι] [Fintype ι] {A : Type v} [Ring A]
+  [Algebra R A]
+
+/-- **The trace twist of a representation** `f : gl ι → A` in an associative algebra by a scalar
+`c`: the map `X ↦ f X + c · tr(X) · 1`. It is again a Lie algebra homomorphism because the trace
+kills every commutator and `1` is central. -/
+noncomputable def glTraceTwistHom (f : Matrix ι ι R →ₗ⁅R⁆ A) (c : R) : Matrix ι ι R →ₗ⁅R⁆ A where
+  toFun X := f X + (c * X.trace) • 1
+  map_add' X Y := by
+    simp only [map_add, trace_add, mul_add, add_smul]
+    abel
+  map_smul' r X := by
+    simp only [map_smul, trace_smul, smul_eq_mul, RingHom.id_apply, smul_add, smul_smul,
+      mul_left_comm r c]
+  map_lie' {X Y} := by
+    rw [LieAlgebra.matrix_trace_commutator_zero, mul_zero, zero_smul, add_zero, LieHom.map_lie]
+    simp only [LieRing.of_associative_ring_bracket, add_mul, mul_add, smul_mul_assoc,
+      mul_smul_comm, one_mul, mul_one]
+    module
+
+@[simp]
+theorem glTraceTwistHom_apply (f : Matrix ι ι R →ₗ⁅R⁆ A) (c : R) (X : Matrix ι ι R) :
+    glTraceTwistHom f c X = f X + (c * X.trace) • 1 :=
+  (rfl)
+
+end Hom
 
 end TauCeti
