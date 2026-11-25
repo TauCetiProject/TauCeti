@@ -86,10 +86,12 @@ With this convention a fixed point at which every eigenvalue of `df_x` has modul
 (a hyperbolic attracting fixed point) has sign `1`; a degenerate attracting fixed point, such as
 `0` for `x ↦ x - x ^ 3` on `ℝ`, has `fixedPointDet = 0` and sign `-1`. At a fixed point
 `fixedPointDet` is computed from the fixed-point derivative
-(`TauCeti.fixedPointDet_eq_det_id_sub_fixedPointDerivative`), so it can be computed in any chart
-(`TauCeti.fixedPointDet_eq_det_id_sub_fderivWithin_extChartAt`), it is nonzero exactly at
-nondegenerate fixed points (`TauCeti.fixedPointDet_ne_zero_iff`), and it is `det (1 - D ^ n)` for
-`f^[n]` (`TauCeti.fixedPointDet_iterate`). Conjugation by a diffeomorphism
+(`TauCeti.fixedPointDet_eq_det_id_sub_fixedPointDerivative`). So, when `f` is continuous at `x`
+and `M` is a `C¹` manifold, it can be computed in any chart
+(`TauCeti.fixedPointDet_eq_det_id_sub_fderivWithin_extChartAt`). When `f` is differentiable at
+`x`, it is `det (1 - D ^ n)` for `f^[n]` (`TauCeti.fixedPointDet_iterate`), and if moreover the
+model space is finite-dimensional, it is nonzero exactly when `x` is a nondegenerate fixed point
+(`TauCeti.fixedPointDet_ne_zero_iff`). Conjugation by a diffeomorphism
 preserves it, whether or not the diffeomorphism preserves an orientation
 (`Diffeomorph.fixedPointDet_eq_of_semiconj`). On a zero-dimensional manifold every point has
 `fixedPointDet I f x = 1` and Lefschetz sign `1`. Along the iterates of a fixed point, the
@@ -149,13 +151,14 @@ eigenvalues of `D` below `-1`.
   nondegeneracy, as injectivity of `B - 1` for the derivative `B` of the coordinate expression.
 * `TauCeti.fixedPointDet_eq_det_id_sub_fixedPointDerivative`,
   `TauCeti.fixedPointDet_eq_det_id_sub_fderivWithin_extChartAt`: at a fixed point,
-  `fixedPointDet` is `det (1 - df_x)` for the fixed-point derivative, and can be computed in any
-  chart.
+  `fixedPointDet` is `det (1 - df_x)` for the fixed-point derivative, and, when `f` is continuous
+  at `x` on a `C¹` manifold, can be computed in any chart.
 * `TauCeti.fixedPointDet_ne_zero_iff`: in finite dimensions, a fixed point at which `f` is
   differentiable is nondegenerate exactly when `fixedPointDet I f x ≠ 0`.
 * `Diffeomorph.fixedPointDet_eq_of_semiconj`, `Diffeomorph.fixedPointSign_eq_of_semiconj`:
   invariance under conjugation by a diffeomorphism.
-* `TauCeti.fixedPointDet_iterate`: `fixedPointDet I f^[n] x = det (1 - D ^ n)` at a fixed point.
+* `TauCeti.fixedPointDet_iterate`: `fixedPointDet I f^[n] x = det (1 - D ^ n)` at a fixed point
+  where `f` is differentiable.
 * `TauCeti.fixedPointSign_eq_sign`: where `fixedPointDet I f x ≠ 0`, the Lefschetz sign is its
   sign.
 * `TauCeti.fixedPointSign_iterate_apply_iterate`: the Lefschetz sign of `f^[n]` is constant along
