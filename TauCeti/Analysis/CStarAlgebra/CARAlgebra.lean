@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.Reindex
 public import TauCeti.Algebra.Star.StarAlgHom
 public import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Ideal
 
 /-!
 # The CAR algebra as a C⋆-inductive limit
@@ -28,10 +30,13 @@ embeddings `a ↦ a ⊗ 1₂`. It is the UHF algebra of type `2^∞`.
 ## Main statements
 
 * `TauCeti.CARAlgebra.isometry_of`: the canonical maps `M_{2^n} → CARAlgebra` are isometric.
+* `TauCeti.CARAlgebra.forall_isClosed_eq_bot_or_eq_top`: the CAR algebra is simple, since every
+  stage `M_{2^n}` is.
 
 ## References
 
 * K. R. Davidson, *C*-Algebras by Example*, §III.5.
+* B. Blackadar, *Operator Algebras: Theory of C*-Algebras and von Neumann Algebras*, II.8.2.5.
 -/
 
 public section
@@ -100,5 +105,12 @@ abbrev CARAlgebra : Type := CStarInductiveLimit Stage (StarAlgHom.natLERec step)
 theorem CARAlgebra.isometry_of (n : ℕ) :
     Isometry (CStarInductiveLimit.of Stage (StarAlgHom.natLERec step) n) :=
   CStarInductiveLimit.isometry_of (StarAlgHom.natLERec_injective step_injective n)
+
+/-- **The CAR algebra is simple**: its only closed two-sided ideals are `⊥` and `⊤`, because every
+stage `M_{2^n}` is a simple ring (Blackadar, II.8.2.5). -/
+theorem CARAlgebra.forall_isClosed_eq_bot_or_eq_top (J : TwoSidedIdeal CARAlgebra)
+    (hJ : IsClosed (J : Set CARAlgebra)) : J = ⊥ ∨ J = ⊤ :=
+  CStarInductiveLimit.forall_isClosed_eq_bot_or_eq_top
+    (fun _ I _ ↦ IsSimpleOrder.eq_bot_or_eq_top I) J hJ
 
 end TauCeti
