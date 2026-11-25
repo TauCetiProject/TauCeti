@@ -102,9 +102,11 @@ private theorem quantizeSchwartzValue_eq_complexChartCompression_intrinsicConj
       ContMDiffMap.ofContDiff (SchwartzMap.conjCLM u) ((SchwartzMap.conjCLM u).smooth ⊤) := by
     ext y
     simp [ContMDiffMap.coe_ofContDiff]
-  rw [e.complexChartCompression_intrinsicConj, ContMDiffMap.intrinsicConj_apply,
-    ContMDiffMap.conj_apply, hconj, ← ha, ← SchwartzMap.conjCLM_conjCLM u,
-    ClassicalSymbol.quantizeSchwartzValue_conjCLM, SchwartzMap.conjCLM_conjCLM, starRingEnd_apply]
+  -- The Euclidean identity, applied to `conj u`.
+  have hq := ClassicalSymbol.quantizeSchwartzValue_conjCLM a (SchwartzMap.conjCLM u) x
+  rw [SchwartzMap.conjCLM_conjCLM] at hq
+  rw [hq, e.complexChartCompression_intrinsicConj, ContMDiffMap.intrinsicConj_apply,
+    ContMDiffMap.conj_apply, hconj, ← ha, starRingEnd_apply]
 
 /-- The conjugate of a classical pseudodifferential operator of order `m` is one. In each chart
 compression the symbol `a` is replaced by `ã(x, ξ) = conj a(x, -ξ)`. -/

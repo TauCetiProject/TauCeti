@@ -66,16 +66,18 @@ theorem quantizeSchwartzValue_conjCLM (a : E × E → ℂ →L[ℂ] ℂ) (u : �
       conj (quantizeSchwartzValue a u x) := by
   rw [quantizeSchwartzValue_def, quantizeSchwartzValue_def, ← integral_conj,
     ← integral_neg_eq_self]
-  congr 1
-  ext ζ
-  rw [SchwartzMap.fourier_conjCLM_apply, ContinuousLinearMap.adjoint_apply_eq_star_apply_star,
-    Complex.star_def, Complex.conj_conj,
-    SchwartzMap.fourierInv_coe, Real.fourierInv_eq_fourier_neg, ← SchwartzMap.fourier_coe]
-  simp only [Circle.smul_def, smul_eq_mul, map_mul, smul_neg, Real.fourierChar_apply,
-    inner_neg_left, ← Complex.exp_conj]
-  congr 2
-  · simp [map_ofNat]
-  · simp
+  congr 1 with ζ
+  -- Conjugation reverses the phase.
+  have hphase : ((𝐞 ⟪-ζ, x⟫ : Circle) : ℂ) = conj (𝐞 ⟪ζ, x⟫ : ℂ) := by
+    simp [Real.fourierChar_apply, ← Complex.exp_conj, map_ofNat]
+  -- The sign change of the frequency in `ã` undoes the substitution `ζ ↦ -ζ`.
+  have hfreq : -((2 * π) • -ζ) = (2 * π) • ζ := by simp
+  -- `𝓕 (conj u) (-ζ) = conj (𝓕⁻ u (-ζ)) = conj (𝓕 u ζ)`.
+  have hfourier : 𝓕 (SchwartzMap.conjCLM u) (-ζ) = conj (𝓕 u ζ) := by
+    rw [SchwartzMap.fourier_conjCLM_apply, SchwartzMap.fourierInv_coe,
+      Real.fourierInv_eq_fourier_neg, neg_neg, SchwartzMap.fourier_coe]
+  rw [Circle.smul_def, Circle.smul_def, hphase, hfreq, hfourier]
+  simp [ContinuousLinearMap.adjoint_apply_eq_star_apply_star]
 
 namespace ClassicalSymbol
 
