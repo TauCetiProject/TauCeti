@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.RingTheory.Idempotents
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 /-!
@@ -20,6 +21,10 @@ If `R` is projective over a coefficient semiring `k` acting compatibly with mult
 For an idempotent `e` of an `R`-algebra `S` that is projective over a commutative semiring `R`, with
 `e S = R e`, the surjection `R → R e` splits, so some `c : R` acts as the identity on `e` and
 kills the annihilator of `e` (`IsIdempotentElem.exists_smul_eq_self_and_mul_eq_zero`).
+
+For an idempotent `e` of a commutative ring `R`, the quotient `R ⧸ (e)` is projective, being a
+direct summand of `R` with complement `R ⧸ (1 - e)`
+(`Module.Projective.quotient_span_singleton_of_isIdempotentElem`).
 
 ## References
 
@@ -74,3 +79,12 @@ theorem exists_smul_eq_self_and_mul_eq_zero {R S : Type*} [CommSemiring R] [Semi
   rw [← smul_eq_mul, ← map_smul, hre, map_zero]
 
 end IsIdempotentElem
+
+/-- For an idempotent `e`, the quotient `R ⧸ (e)` is projective: it is a direct summand of `R`,
+with complement `R ⧸ (1 - e)`. -/
+theorem Module.Projective.quotient_span_singleton_of_isIdempotentElem {R : Type*} [CommRing R]
+    {e : R} (he : IsIdempotentElem e) : Module.Projective R (R ⧸ Ideal.span {e}) := by
+  let φ := (AlgEquiv.prodQuotientOfIsIdempotentElem R he he.one_sub (add_sub_cancel e 1)
+    he.mul_one_sub_self).toLinearEquiv
+  exact .of_split (φ.symm.toLinearMap ∘ₗ LinearMap.inl R _ _) (LinearMap.fst R _ _ ∘ₗ φ.toLinearMap)
+    (by ext; simp)

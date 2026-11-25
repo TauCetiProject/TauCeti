@@ -54,7 +54,7 @@ relations, for instance the rationalisation of a module over an integral group r
 * `LinearMap.cokernelBaseChangeEquiv`: the `S`-linear isomorphism
   `S ⊗[R] cokernel f ≃ₗ[S] cokernel (S ⊗[R] f)`.
 * `TensorProduct.quotTensorQuotEquivQuotSup`: the `R`-linear isomorphism
-  `(R ⧸ I) ⊗[R] (R ⧸ J) ≃ₗ[R] R ⧸ (I ⊔ J)`.
+  `(R ⧸ I) ⊗[R] (R ⧸ J) ≃ₗ[R] R ⧸ (I ⊔ J)`, with its values on representatives.
 
 ## Main results
 
@@ -132,9 +132,21 @@ noncomputable def quotTensorQuotEquivQuotSup (I J : Ideal R) :
 theorem quotTensorQuotEquivQuotSup_mk_tmul_mk (I J : Ideal R) (a b : R) :
     quotTensorQuotEquivQuotSup I J (Ideal.Quotient.mk I a ⊗ₜ Ideal.Quotient.mk J b) =
       Ideal.Quotient.mk (I ⊔ J) (a * b) := by
-  simp only [quotTensorQuotEquivQuotSup, LinearEquiv.trans_apply, quotTensorEquivQuotSMul_mk_tmul]
-  -- The remaining equivalences are the identity on representatives.
-  rfl
+  rw [quotTensorQuotEquivQuotSup, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    LinearEquiv.trans_apply, quotTensorEquivQuotSMul_mk_tmul, ← Ideal.Quotient.mk_eq_mk,
+    ← Submodule.Quotient.mk_smul, smul_eq_mul, Submodule.quotEquivOfEq_mk]
+  -- The third isomorphism theorem sends the class of the class of `a * b` to the class of
+  -- `a * b`; Mathlib states this only for the auxiliary map, which it unfolds to.
+  rw [Submodule.quotientQuotientEquivQuotientSup, LinearEquiv.trans_apply,
+    Submodule.quotEquivOfEq_mk]
+  exact congrArg _ (Submodule.quotientQuotientEquivQuotientAux_mk_mk _ _ _ _)
+
+/-- The inverse of `TensorProduct.quotTensorQuotEquivQuotSup` sends `[a]` to `[a] ⊗ [1]`. -/
+@[simp]
+theorem quotTensorQuotEquivQuotSup_symm_mk (I J : Ideal R) (a : R) :
+    (quotTensorQuotEquivQuotSup I J).symm (Ideal.Quotient.mk (I ⊔ J) a) =
+      Ideal.Quotient.mk I a ⊗ₜ Ideal.Quotient.mk J 1 := by
+  rw [LinearEquiv.symm_apply_eq, quotTensorQuotEquivQuotSup_mk_tmul_mk, mul_one]
 
 /-- **Base change along a surjective ring map.** If `R → S` is surjective with kernel `I`, then
 `x ↦ 1 ⊗ x` from `M` to `S ⊗[R] M` has kernel `I M`: writing `S = R ⧸ I`, the tensor product is

@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
-public import TauCeti.RingTheory.Ideal.Pure
+public import TauCeti.RingTheory.Idempotents.Projective
 public import TauCeti.Topology.LocallyConstant.ClopenRingHom
 
 /-!
@@ -57,6 +57,8 @@ reduced `K₀` of `R`.
   `TauCeti.FiniteProjectiveModules.of_clopenProjective_inf` and
   `TauCeti.FiniteProjectiveModules.of_clopenProjective_compl`: the classes `[P_U]` form a
   homomorphism of Boolean algebras from the clopen sets to the idempotents of `K₀(R)`.
+* `TauCeti.FiniteProjectiveModules.rankSection_apply`: the rank section sends `f` to
+  `∑ n [P_{f⁻¹{n}}]`.
 * `TauCeti.FiniteProjectiveModules.rank_rankSection`: the rank is a retraction of the section, so
   `rank` is surjective and `rankSection` is injective.
 
@@ -107,12 +109,13 @@ noncomputable def rank :
     (by
       ext p
       have := p.nontrivial
-      simp only [rankInvariant, LocallyConstant.coe_mk, LocallyConstant.coe_one, Pi.one_apply,
-        Nat.cast_eq_one, Module.rankAtStalk_eq_finrank_of_free]
+      simp only [rankInvariant, tensorUnit_obj, LocallyConstant.coe_mk, LocallyConstant.coe_one,
+        Pi.one_apply, Nat.cast_eq_one, Module.rankAtStalk_eq_finrank_of_free]
       exact Module.finrank_self R)
     (fun P Q ↦ by
       ext p
-      simp only [rankInvariant, LocallyConstant.coe_mk, LocallyConstant.coe_mul, Pi.mul_apply]
+      simp only [rankInvariant, tensorObj_obj, LocallyConstant.coe_mk, LocallyConstant.coe_mul,
+        Pi.mul_apply]
       exact_mod_cast congr_fun (Module.rankAtStalk_tensorProduct Q.obj) p)
 
 /-- The rank of the class of `P` at a prime `p` is the rank of the free `Rₚ`-module `Pₚ`. -/
@@ -174,6 +177,8 @@ theorem rank_of_clopenProjective (U : Clopens (PrimeSpectrum R)) :
 @[simp]
 theorem of_clopenProjective_top : SplitK0.of.{u} (clopenProjective R ⊤) = 1 := by
   rw [SplitK0.one_def]
+  -- The isomorphism is built on underlying modules: `P_⊤` is `R ⧸ (1 - 1)` by
+  -- `clopenProjective_obj`, and the unit is `R` by `tensorUnit_obj`.
   refine SplitK0.of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
     (LinearEquiv.toModuleIso (Submodule.quotEquivOfEqBot _ ?_)))
   rw [isIdempotentElemEquivClopens_symm_top, sub_self, Ideal.span_singleton_eq_bot]
@@ -199,6 +204,8 @@ theorem of_clopenProjective_inf (U V : Clopens (PrimeSpectrum R)) :
       exact add_mem (Ideal.mem_sup_left (Ideal.mem_span_singleton_self _))
         (Ideal.mem_sup_right (Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)))
   rw [SplitK0.of_mul_of]
+  -- The isomorphism is built on underlying modules: `P_U` is `R ⧸ (1 - e)` by
+  -- `clopenProjective_obj`, and the tensor product is that of modules by `tensorObj_obj`.
   exact SplitK0.of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
     (LinearEquiv.toModuleIso ((Submodule.quotEquivOfEq _ _ hspan).symm ≪≫ₗ
       (TensorProduct.quotTensorQuotEquivQuotSup _ _).symm)))
@@ -231,6 +238,13 @@ noncomputable def rankSection :
 theorem rankSection_charFn (U : Clopens (PrimeSpectrum R)) :
     rankSection R (LocallyConstant.charFn ℤ U.isClopen) = SplitK0.of.{u} (clopenProjective R U) :=
   LocallyConstant.ringHomOfClopens_charFn _ _ _ U
+
+/-- The rank section sends a locally constant function `f` to `∑ n [P_{f⁻¹{n}}]`, summed over any
+finite set of integers containing the values of `f`. -/
+theorem rankSection_apply (f : LocallyConstant (PrimeSpectrum R) ℤ) {s : Finset ℤ}
+    (hs : Set.range f ⊆ s) :
+    rankSection R f = ∑ n ∈ s, n • SplitK0.of.{u} (clopenProjective R (f.fiberClopens n)) :=
+  LocallyConstant.ringHomOfClopens_apply _ _ _ f hs
 
 /-- **The rank is split surjective.** The rank section is a right inverse of the rank: the class
 `rankSection f` has rank `f`. -/

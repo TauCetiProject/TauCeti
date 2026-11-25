@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Topology.LocallyConstant.Algebra
 public import TauCeti.Topology.LocallyConstant.Fiber
+import Mathlib.Tactic.Abel
 
 /-!
 # Ring homomorphisms out of locally constant integer functions
@@ -97,11 +98,10 @@ include htop hinf hcompl in
 private theorem map_sup_of_inf_eq_bot {U V : Clopens X} (h : U ⊓ V = ⊥) :
     c (U ⊔ V) = c U + c V := by
   have hUV : c U * c V = 0 := by rw [← hinf, h, map_bot htop hcompl]
-  have := hcompl (U ⊔ V)
-  rw [compl_sup, hinf, hcompl, hcompl, sub_mul, one_mul, mul_sub, mul_one, hUV, sub_zero,
-    sub_sub, sub_right_inj] at this
-  -- `this : c V + c U = c (U ⊔ V)`
-  rw [← this, add_comm]
+  have h' := hcompl (U ⊔ V)
+  rw [compl_sup, hinf, hcompl, hcompl] at h'
+  calc c (U ⊔ V) = 1 - (1 - c U) * (1 - c V) := by rw [h', sub_sub_cancel]
+    _ = c U + c V := by simp only [sub_mul, mul_sub, one_mul, mul_one, hUV]; abel
 
 include htop hinf hcompl in
 /-- The values of a Boolean algebra homomorphism into the idempotents on the fibres of a locally
@@ -126,42 +126,6 @@ private theorem sum_map_fiberClopens (g : LocallyConstant X ℤ) {s : Finset ℤ
 private noncomputable def fiberSum (c : Clopens X → A) (f : LocallyConstant X ℤ) (s : Finset ℤ) :
     A :=
   ∑ n ∈ s, n • c (f.fiberClopens n)
-
-include htop hinf hcompl in
-/-- **Pairing of fibres.** If `h x = op (f x) (g x)`, the sum over the fibres of `h` is the double
-sum over the fibres of `f` and `g`. This is the common step behind additivity and
-multiplicativity of `LocallyConstant.ringHomOfClopens`. -/
-private theorem fiberSum_eq_sum_sum (op : ℤ → ℤ → ℤ) (f g h : LocallyConstant X ℤ)
-    (hfg : ∀ x, h x = op (f x) (g x)) {s t : Finset ℤ} (hs : Set.range f ⊆ s)
-    (ht : Set.range g ⊆ t) :
-    fiberSum c h (Finset.image (fun p : ℤ × ℤ ↦ op p.1 p.2) (s ×ˢ t)) =
-      ∑ a ∈ s, ∑ b ∈ t, op a b • (c (f.fiberClopens a) * c (g.fiberClopens b)) := by
-  set u := Finset.image (fun p : ℤ × ℤ ↦ op p.1 p.2) (s ×ˢ t)
-  -- The fibre of `h` at `k` meets the fibres of `f` at `a` and of `g` at `b` exactly when
-  -- `op a b = k`.
-  have hfib : ∀ k a b, h.fiberClopens k ⊓ (f.fiberClopens a ⊓ g.fiberClopens b) =
-      if op a b = k then f.fiberClopens a ⊓ g.fiberClopens b else ⊥ := by
-    intro k a b
-    split_ifs with hk <;> ext x <;> simp only [Clopens.coe_inf, coe_fiberClopens, Clopens.coe_bot,
-      Set.mem_inter_iff, Set.mem_preimage, Set.mem_singleton_iff, hfg] <;> grind
-  calc fiberSum c h u
-      = ∑ k ∈ u, k • (c (h.fiberClopens k) *
-          ((∑ a ∈ s, c (f.fiberClopens a)) * ∑ b ∈ t, c (g.fiberClopens b))) := by
-        simp_rw [sum_map_fiberClopens htop hinf hcompl f hs,
-          sum_map_fiberClopens htop hinf hcompl g ht, mul_one, fiberSum]
-    _ = ∑ k ∈ u, ∑ a ∈ s, ∑ b ∈ t,
-          if op a b = k then k • (c (f.fiberClopens a) * c (g.fiberClopens b)) else 0 := by
-        refine Finset.sum_congr rfl fun k _ ↦ ?_
-        simp_rw [Finset.sum_mul_sum, Finset.mul_sum, Finset.smul_sum, ← hinf, hfib]
-        refine Finset.sum_congr rfl fun a _ ↦ Finset.sum_congr rfl fun b _ ↦ ?_
-        split_ifs <;> simp [hinf, map_bot htop hcompl]
-    _ = ∑ a ∈ s, ∑ b ∈ t, op a b • (c (f.fiberClopens a) * c (g.fiberClopens b)) := by
-        rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun a ha ↦ ?_
-        rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun b hb ↦ ?_
-        exact Finset.sum_ite_eq_of_mem _ _ _
-          (Finset.mem_image_of_mem _ (Finset.mk_mem_product ha hb))
 
 variable [CompactSpace X]
 
@@ -189,6 +153,47 @@ private theorem ringHomOfClopensFun_eq (f : LocallyConstant X ℤ) {s : Finset �
     (hs : Set.range f ⊆ s) : ringHomOfClopensFun c f = fiberSum c f s :=
   fiberSum_eq_fiberSum htop hcompl f (by simp) hs
 
+include htop hinf hcompl in
+/-- **Pairing of fibres.** If `h x = op (f x) (g x)`, the value of
+`LocallyConstant.ringHomOfClopens` on `h` is the double sum over the fibres of `f` and `g`. This
+is the common step behind additivity and multiplicativity of `LocallyConstant.ringHomOfClopens`. -/
+private theorem ringHomOfClopensFun_eq_sum_sum (op : ℤ → ℤ → ℤ) (f g h : LocallyConstant X ℤ)
+    (hfg : ∀ x, h x = op (f x) (g x)) {s t : Finset ℤ} (hs : Set.range f ⊆ s)
+    (ht : Set.range g ⊆ t) :
+    ringHomOfClopensFun c h =
+      ∑ a ∈ s, ∑ b ∈ t, op a b • (c (f.fiberClopens a) * c (g.fiberClopens b)) := by
+  set u := Finset.image (fun p : ℤ × ℤ ↦ op p.1 p.2) (s ×ˢ t)
+  have hu : Set.range h ⊆ u := by
+    rintro _ ⟨x, rfl⟩
+    rw [hfg]
+    exact Finset.mem_image_of_mem _ (Finset.mk_mem_product (hs ⟨x, rfl⟩) (ht ⟨x, rfl⟩))
+  rw [ringHomOfClopensFun_eq htop hcompl h hu]
+  -- The fibre of `h` at `k` meets the fibres of `f` at `a` and of `g` at `b` exactly when
+  -- `op a b = k`.
+  have hfib : ∀ k a b, h.fiberClopens k ⊓ (f.fiberClopens a ⊓ g.fiberClopens b) =
+      if op a b = k then f.fiberClopens a ⊓ g.fiberClopens b else ⊥ := by
+    intro k a b
+    split_ifs with hk <;> ext x <;> simp only [Clopens.coe_inf, coe_fiberClopens, Clopens.coe_bot,
+      Set.mem_inter_iff, Set.mem_preimage, Set.mem_singleton_iff, hfg] <;> grind
+  calc fiberSum c h u
+      = ∑ k ∈ u, k • (c (h.fiberClopens k) *
+          ((∑ a ∈ s, c (f.fiberClopens a)) * ∑ b ∈ t, c (g.fiberClopens b))) := by
+        simp_rw [sum_map_fiberClopens htop hinf hcompl f hs,
+          sum_map_fiberClopens htop hinf hcompl g ht, mul_one, fiberSum]
+    _ = ∑ k ∈ u, ∑ a ∈ s, ∑ b ∈ t,
+          if op a b = k then k • (c (f.fiberClopens a) * c (g.fiberClopens b)) else 0 := by
+        refine Finset.sum_congr rfl fun k _ ↦ ?_
+        simp_rw [Finset.sum_mul_sum, Finset.mul_sum, Finset.smul_sum, ← hinf, hfib]
+        refine Finset.sum_congr rfl fun a _ ↦ Finset.sum_congr rfl fun b _ ↦ ?_
+        split_ifs <;> simp [hinf, map_bot htop hcompl]
+    _ = ∑ a ∈ s, ∑ b ∈ t, op a b • (c (f.fiberClopens a) * c (g.fiberClopens b)) := by
+        rw [Finset.sum_comm]
+        refine Finset.sum_congr rfl fun a ha ↦ ?_
+        rw [Finset.sum_comm]
+        refine Finset.sum_congr rfl fun b hb ↦ ?_
+        exact Finset.sum_ite_eq_of_mem _ _ _
+          (Finset.mem_image_of_mem _ (Finset.mk_mem_product ha hb))
+
 /-- **Ring homomorphisms out of locally constant integer functions.** On a compact space `X`, a
 map `c` from the clopen sets of `X` to a ring with `c ⊤ = 1`, `c (U ⊓ V) = c U * c V` and
 `c Uᶜ = 1 - c U` induces the ring homomorphism `LocallyConstant X ℤ →+* A`,
@@ -203,35 +208,27 @@ noncomputable def ringHomOfClopens : LocallyConstant X ℤ →+* A where
   map_mul' f g := by
     obtain ⟨s, hs⟩ : ∃ s : Finset ℤ, Set.range f ⊆ s := ⟨_, f.range_finite.coe_toFinset.ge⟩
     obtain ⟨t, ht⟩ : ∃ t : Finset ℤ, Set.range g ⊆ t := ⟨_, g.range_finite.coe_toFinset.ge⟩
-    rw [ringHomOfClopensFun_eq htop hcompl (f * g) (s := Finset.image (fun p : ℤ × ℤ ↦ p.1 * p.2)
-        (s ×ˢ t)) ?_, fiberSum_eq_sum_sum htop hinf hcompl (· * ·) f g (f * g) (fun _ ↦ rfl) hs ht,
+    rw [ringHomOfClopensFun_eq_sum_sum htop hinf hcompl (· * ·) f g (f * g) (fun _ ↦ rfl) hs ht,
       ringHomOfClopensFun_eq htop hcompl f hs, ringHomOfClopensFun_eq htop hcompl g ht, fiberSum,
       fiberSum, Finset.sum_mul_sum]
-    · simp_rw [smul_mul_smul_comm]
-    · rintro _ ⟨x, rfl⟩
-      exact Finset.mem_image_of_mem _ (Finset.mk_mem_product (hs ⟨x, rfl⟩) (ht ⟨x, rfl⟩))
+    simp_rw [smul_mul_smul_comm]
   map_zero' := by
     rw [ringHomOfClopensFun_eq htop hcompl 0 (s := {0}) (by simp),
       fiberSum, Finset.sum_singleton, zero_smul]
   map_add' f g := by
     obtain ⟨s, hs⟩ : ∃ s : Finset ℤ, Set.range f ⊆ s := ⟨_, f.range_finite.coe_toFinset.ge⟩
     obtain ⟨t, ht⟩ : ∃ t : Finset ℤ, Set.range g ⊆ t := ⟨_, g.range_finite.coe_toFinset.ge⟩
-    rw [ringHomOfClopensFun_eq htop hcompl (f + g) (s := Finset.image (fun p : ℤ × ℤ ↦ p.1 + p.2)
-        (s ×ˢ t)) ?_, fiberSum_eq_sum_sum htop hinf hcompl (· + ·) f g (f + g) (fun _ ↦ rfl) hs ht,
+    rw [ringHomOfClopensFun_eq_sum_sum htop hinf hcompl (· + ·) f g (f + g) (fun _ ↦ rfl) hs ht,
       ringHomOfClopensFun_eq htop hcompl f hs, ringHomOfClopensFun_eq htop hcompl g ht, fiberSum,
       fiberSum]
-    · -- Split `(a + b) • (c_a * c_b)` and sum out the fibres of the other function.
-      simp_rw [add_smul, Finset.sum_add_distrib]
-      congr 1
-      · refine Finset.sum_congr rfl fun a _ ↦ ?_
-        rw [← Finset.smul_sum, ← Finset.mul_sum, sum_map_fiberClopens htop hinf hcompl g ht,
-          mul_one]
-      · rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun b _ ↦ ?_
-        rw [← Finset.smul_sum, ← Finset.sum_mul, sum_map_fiberClopens htop hinf hcompl f hs,
-          one_mul]
-    · rintro _ ⟨x, rfl⟩
-      exact Finset.mem_image_of_mem _ (Finset.mk_mem_product (hs ⟨x, rfl⟩) (ht ⟨x, rfl⟩))
+    -- Split `(a + b) • (c_a * c_b)` and sum out the fibres of the other function.
+    simp_rw [add_smul, Finset.sum_add_distrib]
+    congr 1
+    · refine Finset.sum_congr rfl fun a _ ↦ ?_
+      rw [← Finset.smul_sum, ← Finset.mul_sum, sum_map_fiberClopens htop hinf hcompl g ht, mul_one]
+    · rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun b _ ↦ ?_
+      rw [← Finset.smul_sum, ← Finset.sum_mul, sum_map_fiberClopens htop hinf hcompl f hs, one_mul]
 
 /-- `LocallyConstant.ringHomOfClopens` sends `f` to `∑ n • c (f⁻¹{n})`, summed over any finite set
 of integers containing the values of `f`. -/
