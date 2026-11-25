@@ -28,8 +28,8 @@ reindexing the markings are functors. Postcomposition is faithful, it is full fo
 of targets, and it is an equivalence of categories for an isomorphism of targets: an isomorphism
 of targets over `S` transports prestable maps and their isomorphisms. In particular, for a
 monomorphism of targets the automorphisms of a prestable map are those of its postcomposition.
-Base change of automorphisms is injective when the projection of source curves is an
-epimorphism, for instance along a flat surjective morphism.
+Base change of morphisms, and so of automorphisms, is injective when the projection of source
+curves is an epimorphism, for instance along a flat surjective morphism.
 
 Base change also changes the target, from `q` to `V ×_S T ⟶ T`, so its coherence is stated after
 transporting along the canonical isomorphisms of targets. Base change along the identity and along
@@ -75,6 +75,8 @@ canonically isomorphic to the chosen base change.
   pointed source curve comes from the prestable map exactly when it commutes with the map.
 * The instances `(postcompFunctor h hh).Full` for a monomorphism `h` and
   `(postcompFunctor h hh).IsEquivalence` for an isomorphism `h`.
+* `TauCeti.AlgebraicGeometry.PrestableMap.pullbackMap_injective_of_epi`: base change is injective
+  on morphisms when the projection of source curves is an epimorphism.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackAut_injective_of_epi`,
   `TauCeti.AlgebraicGeometry.PrestableMap.pullbackAut_injective`: base change is injective on
   automorphisms when the projection of source curves is an epimorphism, in particular along a
@@ -325,19 +327,19 @@ theorem pullbackAut_apply_asIso_hom (F : PrestableMap q n) (g : T ⟶ S) (e : Au
     (F.pullbackAut g e).asIso.hom = pullbackMap g e.asIso.hom :=
   (rfl)
 
+/-- Base change along `g` is injective on morphisms `F ⟶ G` of prestable maps when the projection
+`C ×_S T ⟶ C` of total spaces of source curves is an epimorphism. -/
+theorem pullbackMap_injective_of_epi (g : T ⟶ S) [Epi (Limits.pullback.fst F.curve.toBase g)] :
+    Function.Injective (pullbackMap g : (F ⟶ G) → (F.pullback g ⟶ G.pullback g)) :=
+  fun f f' hff' ↦ hom_ext (PointedPrestableFamily.pullbackMap_injective_of_epi g
+    ((pullbackMap_curve g f).symm.trans ((congrArg Hom.curve hff').trans (pullbackMap_curve g f'))))
+
 /-- Base change along `g : T ⟶ S` is injective on automorphisms when the projection
 `C ×_S T ⟶ C` of source curves is an epimorphism of schemes: an automorphism of `F` is determined
 by its composite with this projection. -/
 theorem pullbackAut_injective_of_epi (F : PrestableMap q n) (g : T ⟶ S)
-    [Epi (Limits.pullback.fst F.curve.toBase g)] : Function.Injective (F.pullbackAut g) := by
-  intro e e' hee'
-  refine Aut.ext (Iso.ext (hom_ext (PointedPrestableFamily.hom_ext ?_)))
-  rw [← cancel_epi (Limits.pullback.fst F.curve.toBase g),
-    (PointedPrestableFamily.isPullback_pullbackMap_hom g e.asIso.hom.curve).w,
-    (PointedPrestableFamily.isPullback_pullbackMap_hom g e'.asIso.hom.curve).w]
-  have := congr(($hee').asIso.hom.curve.hom ≫ Limits.pullback.fst F.curve.toBase g)
-  simp only [pullbackAut_apply_asIso_hom, pullbackMap_curve] at this
-  exact this
+    [Epi (Limits.pullback.fst F.curve.toBase g)] : Function.Injective (F.pullbackAut g) :=
+  fun _ _ hee' ↦ Aut.ext (Iso.ext (pullbackMap_injective_of_epi g congr(($hee').asIso.hom)))
 
 /-- **Base change along a flat surjective morphism is injective on automorphisms.** The
 projection `C ×_S T ⟶ C` of source curves is then flat and surjective, hence an epimorphism of
