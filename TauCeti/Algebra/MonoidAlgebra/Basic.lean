@@ -62,8 +62,6 @@ none of the further theory built on it.
   scalar multiple `r • single g 1` of the basis element there.
 * `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by the monomial `single u 1` at a
   unit `u` of `M` conjugates the indices of the coefficients.
-* `MonoidAlgebra.mapRingHom_injective`: the coefficientwise map along an injective ring
-  homomorphism is injective.
 * `MonoidAlgebra.lift_apply_eq_sum`: over a finite monoid, `lift F x` is the finite sum
   `∑ m, x_m • F m`.
 * `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
@@ -392,19 +390,6 @@ theorem coeff_single_mul_mul_single_inv {R M : Type*} [Semiring R] [Monoid M]
   rw [coeff_mul_single_eq_coeff_mul (h * u) fun _ _ ↦ Units.mul_inv_eq_iff_eq_mul u,
     coeff_single_mul_eq_mul_coeff (↑u⁻¹ * (h * u)) fun _ _ ↦ (Units.eq_inv_mul_iff_mul_eq u).symm,
     one_mul, mul_one, mul_assoc]
-
-section Map
-
-variable {R S M : Type*} [Semiring R] [Semiring S] [Monoid M]
-
-/-- The coefficientwise map `R[M] → S[M]` along an injective ring homomorphism is injective. -/
-@[to_additive (dont_translate := R S)
-  /-- The coefficientwise map along an injective ring homomorphism is injective. -/]
-theorem mapRingHom_injective (f : R →+* S) (hf : Function.Injective f) :
-    Function.Injective (mapRingHom M f) :=
-  map_injective (f : R →+ S) hf
-
-end Map
 
 /-- Over a finite monoid, the algebra map `lift F` out of `R[M]` sends `x` to the finite sum
 `∑ m, x_m • F m`. -/

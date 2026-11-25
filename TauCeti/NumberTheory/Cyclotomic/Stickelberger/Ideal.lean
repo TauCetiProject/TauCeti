@@ -229,11 +229,14 @@ see `mapRingHom_stickelbergerMul`. -/
 noncomputable def stickelbergerMul :
     stickelbergerDenominatorIdeal m →ₗ[MonoidAlgebra ℤ (ZMod m)ˣ] stickelbergerIdeal m where
   toFun x := ⟨stickelbergerMulFun m x, x, mapRingHom_stickelbergerMulFun m x⟩
-  map_add' x y := Subtype.ext <| mapRingHom_injective (Int.castRingHom ℚ) Int.cast_injective <| by
-    simp only [Submodule.coe_add, map_add, mapRingHom_stickelbergerMulFun, add_mul]
-  map_smul' r x := Subtype.ext <| mapRingHom_injective (Int.castRingHom ℚ) Int.cast_injective <| by
-    simp only [SetLike.val_smul, smul_eq_mul, map_mul, mapRingHom_stickelbergerMulFun, mul_assoc,
-      RingHom.id_apply]
+  map_add' x y := Subtype.ext <|
+    map_injective (Int.castRingHom ℚ : ℤ →+ ℚ) Int.cast_injective <| by
+    simp only [← coe_mapRingHom, Submodule.coe_add, map_add, mapRingHom_stickelbergerMulFun,
+      add_mul]
+  map_smul' r x := Subtype.ext <|
+    map_injective (Int.castRingHom ℚ : ℤ →+ ℚ) Int.cast_injective <| by
+    simp only [← coe_mapRingHom, SetLike.val_smul, smul_eq_mul, map_mul,
+      mapRingHom_stickelbergerMulFun, mul_assoc, RingHom.id_apply]
 
 variable {m}
 
@@ -248,7 +251,8 @@ theorem mapRingHom_stickelbergerMul (x : stickelbergerDenominatorIdeal m) :
 theorem stickelbergerMul_surjective : Function.Surjective (stickelbergerMul m) := by
   rintro ⟨y, hy⟩
   obtain ⟨x, hxJ, hx⟩ := exists_mem_stickelbergerDenominatorIdeal_of_mem_stickelbergerIdeal hy
-  refine ⟨⟨x, hxJ⟩, Subtype.ext <| mapRingHom_injective (Int.castRingHom ℚ) Int.cast_injective ?_⟩
-  rw [mapRingHom_stickelbergerMul, hx]
+  refine ⟨⟨x, hxJ⟩,
+    Subtype.ext <| map_injective (Int.castRingHom ℚ : ℤ →+ ℚ) Int.cast_injective ?_⟩
+  rw [← coe_mapRingHom, mapRingHom_stickelbergerMul, hx]
 
 end TauCeti
