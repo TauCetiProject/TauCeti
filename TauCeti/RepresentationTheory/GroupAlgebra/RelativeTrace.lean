@@ -267,6 +267,13 @@ theorem coe_conjInvariantsBotEquiv (x : MonoidAlgebra R G) :
     (conjInvariantsBotEquiv R x : MonoidAlgebra R G) = x := by
   simp [conjInvariantsBotEquiv]
 
+/-- The inverse of `R[G] ≃ R[G]^1` forgets that an element is `1`-fixed. -/
+@[simp]
+theorem conjInvariantsBotEquiv_symm_apply (y : conjInvariants R (⊥ : Subgroup G)) :
+    (conjInvariantsBotEquiv R).symm y = (y : MonoidAlgebra R G) := by
+  obtain ⟨x, rfl⟩ := (conjInvariantsBotEquiv R).surjective y
+  simp
+
 end Semiring
 
 section Ring
