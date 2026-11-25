@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Points
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Center
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
@@ -33,9 +32,6 @@ the universally central quotient point of the center is a scalar point
   ideal of `GLₙ` exactly when it vanishes on scalar matrices.
 * `TauCeti.GeneralLinear.ker_weightCocharacter_const_one`: the center ideal of `GLₙ` is the kernel
   of the scalar cocharacter, so the center is the scalar subgroup.
-* `TauCeti.GeneralLinear.powCocharacter_weightCocharacter`: the `m`-th power of the weight
-  cocharacter with weights `w` has weights `w i * m`; so `t ↦ t ^ m • 1` is the `m`-th power of
-  `t ↦ t • 1`.
 * `TauCeti.GeneralLinear.ker_weightCocharacter_const`: for `m ≠ 0`, the kernel of
   `t ↦ t ^ m • 1` is still the center ideal.
 
@@ -62,31 +58,6 @@ theorem weightCocharacterPoints_const_one {A : Type w} [CommRing A] [Algebra R A
   rw [pointsMulEquiv_weightCocharacterPoints, pointsMulEquiv_scalarTorusPoints]
   ext i j
   simp [Matrix.diagonal_apply]
-
-/-- The `m`-th power `t ↦ λ(t ^ m)` of the weight cocharacter with weights `w` is the weight
-cocharacter with weights `w i * m`. -/
-theorem powCocharacter_weightCocharacter (w : Fin n → ℤ) (m : ℤ) :
-    (weightCocharacter (R := R) w).powCocharacter m = weightCocharacter (fun i ↦ w i * m) := by
-  -- Both cocharacters send a unit `u` to the diagonal point with entries `u ^ (w i * m)`.
-  have hpts : ∀ u : (R[T;T⁻¹])ˣ,
-      Cocharacter.pointsHom R[T;T⁻¹] ((weightCocharacter (R := R) w).powCocharacter m) u =
-        Cocharacter.pointsHom R[T;T⁻¹] (weightCocharacter (R := R) (fun i ↦ w i * m)) u := by
-    intro u
-    rw [BialgHom.pointsHom_powCocharacter, Cocharacter.pointsHom_apply,
-      Cocharacter.pointsHom_apply, mapDomain_weightCocharacter, mapDomain_weightCocharacter]
-    apply (pointsMulEquiv (R := R) (A := R[T;T⁻¹]) n).injective
-    rw [pointsMulEquiv_weightCocharacterPoints, pointsMulEquiv_weightCocharacterPoints,
-      ← MultiplicativeGroup.pointsMulEquiv_symm_apply, MulEquiv.apply_symm_apply,
-      ← MultiplicativeGroup.pointsMulEquiv_symm_apply, MulEquiv.apply_symm_apply]
-    congr 1
-    funext i
-    rw [weightDiagonalUnits_apply, weightDiagonalUnits_apply, ← zpow_mul, mul_comm]
-  -- Read off coordinates at the generic point `T` of `𝔾ₘ`.
-  have hgen := congrArg WithConv.ofConv (hpts (LaurentPolynomial.genericUnit R))
-  rw [← Cocharacter.genericPoint_eq_pointsHom, ← Cocharacter.genericPoint_eq_pointsHom,
-    Cocharacter.genericPoint_ofConv, Cocharacter.genericPoint_ofConv] at hgen
-  refine BialgHom.ext fun x ↦ ?_
-  simpa using congrArg (fun f ↦ f x) hgen
 
 section Field
 
@@ -142,7 +113,7 @@ ideal of `GLₙ`. Scheme-theoretically its image is the whole scalar subgroup. -
 theorem ker_weightCocharacter_const {m : ℤ} (hm : m ≠ 0) :
     HopfIdeal.ker (weightCocharacter (R := k) (N := n) (fun _ ↦ m)) =
       CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) := by
-  have hpow := powCocharacter_weightCocharacter (R := k) n (fun _ ↦ 1) m
+  have hpow := powCocharacter_weightCocharacter (R := k) (N := n) (fun _ ↦ 1) m
   simp only [one_mul] at hpow
   ext x
   rw [HopfIdeal.mem_ker, mem_centerDefiningIdeal_iff, ← hpow, BialgHom.powCocharacter_apply,

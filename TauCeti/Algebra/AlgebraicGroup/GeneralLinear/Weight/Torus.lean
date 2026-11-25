@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.GeneralLinear
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Points
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Determinant
@@ -82,6 +83,8 @@ No faithfulness is asserted: an arbitrary weight family may have a common kernel
   weights.
 * `TauCeti.GeneralLinear.mapDomain_weightCocharacter`: its concrete action on algebra-valued
   points.
+* `TauCeti.GeneralLinear.powCocharacter_weightCocharacter`: the `m`-th power of the weight
+  cocharacter with weights `w` is the weight cocharacter with weights `w i * m`.
 
 ## References
 
@@ -830,6 +833,33 @@ theorem mapDomain_weightCocharacter (w : Fin N → ℤ)
   change (CommHopfAlgCat.Hom.mapPointsFunctor
       (weightCocharacterCoordinateMap (R := R) w)).app (CommAlgCat.of R A) f = _
   exact mapPointsFunctor_weightCocharacterCoordinateMap_app w (CommAlgCat.of R A) f
+
+/-- The `m`-th power `t ↦ λ(t ^ m)` of the weight cocharacter with weights `w` is the weight
+cocharacter with weights `w i * m`. -/
+theorem powCocharacter_weightCocharacter (w : Fin N → ℤ) (m : ℤ) :
+    (weightCocharacter (R := R) w).powCocharacter m = weightCocharacter (fun i ↦ w i * m) := by
+  -- Both cocharacters send a unit `u` to the diagonal point with entries `u ^ (w i * m)`.
+  have hpts : ∀ u : (LaurentPolynomial R)ˣ,
+      Cocharacter.pointsHom (LaurentPolynomial R)
+          ((weightCocharacter (R := R) w).powCocharacter m) u =
+        Cocharacter.pointsHom (LaurentPolynomial R)
+          (weightCocharacter (R := R) (fun i ↦ w i * m)) u := by
+    intro u
+    rw [BialgHom.pointsHom_powCocharacter, Cocharacter.pointsHom_apply,
+      Cocharacter.pointsHom_apply, mapDomain_weightCocharacter, mapDomain_weightCocharacter]
+    apply (pointsMulEquiv (R := R) (A := LaurentPolynomial R) N).injective
+    rw [pointsMulEquiv_weightCocharacterPoints, pointsMulEquiv_weightCocharacterPoints,
+      ← MultiplicativeGroup.pointsMulEquiv_symm_apply, MulEquiv.apply_symm_apply,
+      ← MultiplicativeGroup.pointsMulEquiv_symm_apply, MulEquiv.apply_symm_apply]
+    congr 1
+    funext i
+    rw [weightDiagonalUnits_apply, weightDiagonalUnits_apply, ← zpow_mul, mul_comm]
+  -- Read off coordinates at the generic point `T` of `𝔾ₘ`.
+  have hgen := congrArg WithConv.ofConv (hpts (LaurentPolynomial.genericUnit R))
+  rw [← Cocharacter.genericPoint_eq_pointsHom, ← Cocharacter.genericPoint_eq_pointsHom,
+    Cocharacter.genericPoint_ofConv, Cocharacter.genericPoint_ofConv] at hgen
+  refine BialgHom.ext fun x ↦ ?_
+  simpa using congrArg (fun f ↦ f x) hgen
 
 end WeightCocharacter
 
