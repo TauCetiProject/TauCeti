@@ -303,6 +303,17 @@ theorem kummerCoverDeck_hom_comp_kummerCoverMap {m : ℕ} (hm : IsUnit (m : R)) 
 
 end Deck
 
+/-- A natural number `n` invertible in `R` stays nonzero in any nontrivial `R`-algebra `A`. -/
+theorem neZero_natCast_of_isUnit (A : Type*) [Semiring A] [Nontrivial A] [Algebra R A] {n : ℕ}
+    (hn : IsUnit (n : R)) : NeZero (n : A) :=
+  ⟨by simpa using (hn.map (algebraMap R A)).ne_zero⟩
+
+/-- A natural number `n` invertible in `R` is nonzero when `R` has a nontrivial algebra `A`. -/
+theorem neZero_of_isUnit_natCast (A : Type*) [Semiring A] [Nontrivial A] [Algebra R A] {n : ℕ}
+    (hn : IsUnit (n : R)) : NeZero n :=
+  haveI := neZero_natCast_of_isUnit A hn
+  .of_neZero_natCast A
+
 section Fiber
 
 variable (Ω : Type u) [Field Ω] [IsSepClosed Ω] [Algebra R Ω]
@@ -367,7 +378,7 @@ theorem kummerCoverFiberEquiv_map_kummerCoverDeck (ζ : rootsOfUnity n R)
 `n`-th root of the image of `t`, since `n` is invertible in `Ω`. -/
 theorem nonempty_fiber_kummerCover :
     Nonempty ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :=
-  haveI : NeZero (n : Ω) := ⟨by simpa using (hn.map (algebraMap R Ω)).ne_zero⟩
+  haveI := neZero_natCast_of_isUnit Ω hn
   have ⟨ω, hω⟩ := IsSepClosed.exists_pow_nat_eq (algebraMap R Ω t) n
   ⟨(kummerCoverFiberEquiv t Ω n hn).symm ⟨ω, hω⟩⟩
 
@@ -376,8 +387,7 @@ theorem nonempty_fiber_kummerCover :
 theorem kummerCoverFiberEquiv_ne_zero
     (y : (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :
     (kummerCoverFiberEquiv t Ω n hn y : Ω) ≠ 0 := by
-  have : NeZero (n : Ω) := ⟨by simpa using (hn.map (algebraMap R Ω)).ne_zero⟩
-  have : NeZero n := .of_neZero_natCast Ω
+  have := neZero_of_isUnit_natCast Ω hn
   refine ne_zero_pow (NeZero.ne n) ?_
   rw [(kummerCoverFiberEquiv t Ω n hn y).property]
   exact (t.isUnit.map (algebraMap R Ω)).ne_zero
@@ -390,8 +400,7 @@ theorem exists_fiber_map_kummerCoverDeck_eq
     (y y' : (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :
     ∃ ζ : rootsOfUnity n R, (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).map
       (kummerCoverDeck t hn ζ).hom y = y' := by
-  have : NeZero (n : Ω) := ⟨by simpa using (hn.map (algebraMap R Ω)).ne_zero⟩
-  have : NeZero n := .of_neZero_natCast Ω
+  have := neZero_of_isUnit_natCast Ω hn
   set e := kummerCoverFiberEquiv t Ω n hn
   obtain ⟨ω, hω⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne n)).mp
     ((e y).property.trans (e y').property.symm)
@@ -409,8 +418,7 @@ of `Ω`. -/
 noncomputable def kummerCoverFiberEquivRootsOfUnity (h : algebraMap R Ω t = 1) :
     (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn) ≃
       rootsOfUnity n Ω :=
-  -- `n ≠ 0`: otherwise `R` would be the zero ring, which has no map to the field `Ω`.
-  haveI : NeZero n := ⟨by rintro rfl; simpa using hn.map (algebraMap R Ω)⟩
+  haveI := neZero_of_isUnit_natCast Ω hn
   (kummerCoverFiberEquiv t Ω n hn).trans <|
     (Equiv.subtypeEquivRight fun ω ↦ by rw [mem_nthRoots (NeZero.pos n), h]).trans
       (rootsOfUnityEquivNthRoots Ω n).symm

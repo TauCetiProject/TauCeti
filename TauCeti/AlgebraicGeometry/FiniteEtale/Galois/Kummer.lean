@@ -185,9 +185,8 @@ Kummer cover has cardinality `n`. -/
 theorem card_kummerCoverFiber (n : ℕ) (hn : IsUnit (n : R)) (ht : algebraMap R Ω t = 1) :
     Nat.card ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj
       (kummerCover t n hn)) = n := by
-  have hnΩ : (n : Ω) ≠ 0 := (by simpa using hn.map (algebraMap R Ω) : IsUnit (n : Ω)).ne_zero
-  have : NeZero (n : Ω) := ⟨hnΩ⟩
-  have : NeZero n := .of_neZero_natCast Ω
+  have := neZero_natCast_of_isUnit Ω hn
+  have := neZero_of_isUnit_natCast Ω hn
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot Ω n
   rw [Nat.card_congr (kummerCoverFiberEquivRootsOfUnity t Ω n hn ht)]
   exact hζ.card_rootsOfUnity
