@@ -99,24 +99,26 @@ theorem Representation.isSemisimpleRepresentation_iff_iSup_atoms_eq_top :
         (fun σ _ hx ↦ Submodule.mem_iSup_of_mem σ (σ.val.apply_mem_toSubmodule g hx))
         (by rw [map_zero]; exact zero_mem _)
         fun x y hx hy ↦ by rw [map_add]; exact add_mem hx hy⟩
+  have hτ : τ.toSubmodule =
+      ⨆ σ : {σ : Subrepresentation ρ // IsAtom σ}, (σ : Subrepresentation ρ).toSubmodule :=
+    rfl
   have hle (σ : Subrepresentation ρ) : τ ≤ σ ↔
       sSup {m : Submodule k[G] ρ.asModule | IsSimpleModule k[G] m} ≤ e σ := by
     rw [← Subrepresentation.toSubmodule_le_toSubmodule, sSup_le_iff]
-    refine ⟨fun h m hm ↦ ?_, fun h ↦ iSup_le fun τ ↦ Subrepresentation.toSubmodule_le_toSubmodule.2
-      (e.le_iff_le.1 <| h _ (Subrepresentation.isSimpleModule_asSubmodule_iff.2 τ.property))⟩
+    refine ⟨fun h m hm ↦ ?_, fun h ↦ iSup_le fun σ ↦ Subrepresentation.toSubmodule_le_toSubmodule.2
+      (e.le_iff_le.1 <| h _ (Subrepresentation.isSimpleModule_asSubmodule_iff.2 σ.property))⟩
     rw [← e.apply_symm_apply m, e.le_iff_le, ← Subrepresentation.toSubmodule_le_toSubmodule]
     exact le_trans (le_iSup_of_le
       ⟨e.symm m, Subrepresentation.isSimpleModule_asSubmodule_iff.1 hm⟩ le_rfl) h
   rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule,
-    ← sSup_simples_eq_top_iff_isSemisimpleModule]
-  change _ ↔ τ.toSubmodule = ⊤
-  rw [← Subrepresentation.toSubmodule_top (ρ := ρ), Subrepresentation.toSubmodule_injective.eq_iff]
+    ← sSup_simples_eq_top_iff_isSemisimpleModule, ← hτ,
+    ← Subrepresentation.toSubmodule_top (ρ := ρ), Subrepresentation.toSubmodule_injective.eq_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have hτ := (hle τ).1 le_rfl
-    rwa [h, top_le_iff, map_eq_top_iff] at hτ
-  · have hτ := (hle (e.symm _)).2 (e.apply_symm_apply _).ge
-    rw [h, top_le_iff] at hτ
-    rw [← e.apply_symm_apply (sSup _), hτ, map_top]
+  · have h' := (hle τ).1 le_rfl
+    rwa [h, top_le_iff, map_eq_top_iff] at h'
+  · have h' := (hle (e.symm _)).2 (e.apply_symm_apply _).ge
+    rw [h, top_le_iff] at h'
+    rw [← e.apply_symm_apply (sSup _), h', map_top]
 
 namespace Subrepresentation
 

@@ -117,11 +117,8 @@ theorem span_setOf_forall_apply_eq_smul_eq_top [ρ.IsSemisimpleRepresentation] :
 algebraically closed field and in finite dimension: a basis of common eigenvectors of the
 operators `ρ g`. -/
 theorem exists_basis_forall_apply_eq_smul [ρ.IsSemisimpleRepresentation] :
-    ∃ (s : Set V) (b : Basis s k V), ∀ i g, ∃ c : k, ρ g (b i) = c • b i := by
-  obtain ⟨s, hs, hspan, hli⟩ := exists_linearIndependent k {v : V | ∀ g, ∃ c : k, ρ g v = c • v}
-  refine ⟨s, Basis.mk hli ?_, fun i g ↦ ?_⟩
-  · rw [Subtype.range_coe, hspan, span_setOf_forall_apply_eq_smul_eq_top]
-  · rw [Basis.mk_apply]
-    exact hs i.property g
+    ∃ (s : Set V) (b : Basis s k V), ∀ i g, ∃ c : k, ρ g (b i) = c • b i :=
+  ⟨_, Basis.ofSpan (span_setOf_forall_apply_eq_smul_eq_top ρ).ge,
+    fun i ↦ Basis.ofSpan_subset _ ⟨i, rfl⟩⟩
 
 end Representation
