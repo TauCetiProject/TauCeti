@@ -996,31 +996,17 @@ theorem exists_isOpen_contDiffOn_forall_realSubRef_smul_eq (hk : 3 ≤ k)
           ∃ g : SobolevTopologicalGaugeGroup hs, g • y ∈ coulombSlice x ∧
             (g • y).realSubRef (Nat.cast_nonneg k) = π (y.realSubRef (Nat.cast_nonneg k)) := by
   -- Take `g = exp (i Φ y)` with the smooth phase `Φ`; `π` is smooth because the gauge action is
-  -- (`contDiff_smulCoord_expGauge`).
+  -- (`contDiff_realSubRef_expGauge_smul_ofRealSubRef`).
   obtain ⟨U, hUo, hxU, Φ, hΦd, hΦ0, hΦ, -⟩ := exists_isOpen_contDiffOn_coulombPhase hs hk x
-  -- The real part of the coordinates of `exp (i Φ u) · (x_m + u)`.
-  set R : (Fin 4 → H^{(k : ℝ)}(ℂ)) →L[ℝ]
-      Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k) :=
-    ContinuousLinearMap.pi fun i ↦ (realPartCLM ℂ _).comp (ContinuousLinearMap.proj i)
-  set ι := coordInclusion (Nat.cast_nonneg k : (0 : ℝ) ≤ k) with hιdef
-  have hπ (g : SobolevTopologicalGaugeGroup hs) (y : SobolevFieldSpace f m k) :
-      R (smulCoord f m (reSubOne g) (imPart g) (ι (y.realSubRef (Nat.cast_nonneg k)))) =
-        (g • y).realSubRef (Nat.cast_nonneg k) := by
-    have hι : ι (y.realSubRef (Nat.cast_nonneg k)) = subRef y := by
-      rw [hιdef, coordInclusion_apply]
-      exact funext fun i ↦ coe_realSubRef _ y i
-    funext i
-    rw [hι, ← subRef_smul, ← funext (coe_realSubRef (Nat.cast_nonneg k) (g • y))]
-    simp only [R, ContinuousLinearMap.pi_apply, ContinuousLinearMap.coe_comp,
-      Function.comp_apply, ContinuousLinearMap.proj_apply, realPartCLM_coe]
-  refine ⟨U, hUo, hxU, fun u ↦ R (smulCoord f m (reSubOne (expGauge hs (Φ u)))
-    (imPart (expGauge hs (Φ u))) (ι u)), ?_, ?_, fun y hy ↦
-      ⟨expGauge hs (Φ (y.realSubRef (Nat.cast_nonneg k))), hΦ y hy, (hπ _ y).symm⟩⟩
-  · exact R.contDiff.comp_contDiffOn
-      ((contDiff_smulCoord_expGauge (f := f) (m := m)).comp_contDiffOn
-        (hΦd.prodMk ι.contDiff.contDiffOn))
+  have hk' : 1 < (k : ℝ) := by exact_mod_cast (Fact.out : 1 < k)
+  refine ⟨U, hUo, hxU, fun u ↦ (expGauge hs (Φ u) • ofRealSubRef (f := f) (m := m) hk' u).realSubRef
+    (Nat.cast_nonneg k), ?_, ?_, fun y hy ↦
+      ⟨expGauge hs (Φ (y.realSubRef (Nat.cast_nonneg k))), hΦ y hy, by
+        beta_reduce; rw [ofRealSubRef_realSubRef]⟩⟩
+  · exact contDiff_realSubRef_expGauge_smul_ofRealSubRef.comp_contDiffOn
+      (hΦd.prodMk contDiffOn_id)
   · beta_reduce
-    rw [hΦ0, AddChar.map_zero_eq_one, hπ, one_smul]
+    rw [hΦ0, AddChar.map_zero_eq_one, one_smul, ofRealSubRef_realSubRef]
 
 variable (hs) in
 /-- **Existence of the Coulomb gauge near a field.** Let `x` be a continuous field of `A_m^k`,

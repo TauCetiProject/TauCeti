@@ -149,6 +149,15 @@ theorem continuousRepField_mem_sobolevFields (hs : 1 < s) {h : 0 ≤ s}
   mem_sobolevFields.2 fun j ↦
     continuousRep_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul hs) (u j)
 
+/-- The inclusion of real coordinates into complexified coordinates. -/
+def coordInclusion (h : 0 ≤ s) :
+    (Fin 4 → realSubmodule ℂ h) →L[ℝ] (Fin 4 → H^{s}(ℂ)) :=
+  ContinuousLinearMap.piMap fun _ ↦ (realSubmodule ℂ h).subtypeL
+
+theorem coordInclusion_apply (h : 0 ≤ s) (u : Fin 4 → realSubmodule ℂ h) :
+    coordInclusion h u = fun a ↦ (u a : H^{s}(ℂ)) :=
+  (rfl)
+
 namespace SobolevFieldSpace
 
 /-! ### The real chart -/
@@ -237,8 +246,8 @@ theorem realSubRef_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSu
 `u`. -/
 @[simp]
 theorem subRef_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
-    subRef (ofRealSubRef (f := f) (m := m) hs u) = fun j ↦ (u j : H^{s}(ℂ)) :=
-  funext fun j ↦ by rw [← coe_realSubRef h, realSubRef_ofRealSubRef]
+    subRef (ofRealSubRef (f := f) (m := m) hs u) = coordInclusion h u :=
+  funext fun j ↦ by rw [← coe_realSubRef h, realSubRef_ofRealSubRef, coordInclusion_apply]
 
 @[simp]
 theorem ofRealSubRef_realSubRef (hs : 1 < s) {h : 0 ≤ s} (x : SobolevFieldSpace f m s) :
@@ -257,7 +266,7 @@ theorem continuous_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} :
     Continuous (ofRealSubRef (f := f) (m := m) hs (h := h)) := by
   refine (isEmbedding_subRef h).continuous_iff.2 ?_
   simp_rw [Function.comp_def, subRef_ofRealSubRef]
-  exact continuous_pi fun j ↦ continuous_subtypeVal.comp (continuous_apply j)
+  exact (coordInclusion h).continuous
 
 /-- **The real chart of `A_m^s`**, `s > 1`: the real coordinates of `x - x_m` identify the
 continuous fields of `A_m^s` with the real Hilbert space `(H^s_ℝ)⁴`, as topological spaces. -/
@@ -333,15 +342,6 @@ theorem coe_realSobolevEquation_apply (hk : 2 ≤ k)
     (u : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) (i : Fin 3) :
     (realSobolevEquation f m hk u i : H^{(k : ℝ)}(ℂ)) =
       sobolevEquation f m (one_le_two.trans hk) (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ))) i :=
-  (rfl)
-
-/-- The inclusion of real coordinates into complexified coordinates. -/
-def coordInclusion (h : 0 ≤ s) :
-    (Fin 4 → realSubmodule ℂ h) →L[ℝ] (Fin 4 → H^{s}(ℂ)) :=
-  ContinuousLinearMap.piMap fun _ ↦ (realSubmodule ℂ h).subtypeL
-
-theorem coordInclusion_apply (h : 0 ≤ s) (u : Fin 4 → realSubmodule ℂ h) :
-    coordInclusion h u = fun a ↦ (u a : H^{s}(ℂ)) :=
   (rfl)
 
 variable (f m) in

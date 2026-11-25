@@ -156,9 +156,7 @@ theorem contDiff_realSubRef_smul_ofRealSubRef (u : SobolevTopologicalGaugeGroup 
   simp_rw [realSubRef_eq_realPartCLM_subRef, subRef_smul, subRef_ofRealSubRef]
   refine contDiff_pi.2 fun j ↦ (realPartCLM ℂ _).contDiff.comp ((contDiff_apply ℝ _ j).comp
     ((contDiff_smulCoord.restrict_scalars ℝ).comp
-      (contDiff_const.prodMk (contDiff_const.prodMk (contDiff_pi.2 fun i ↦
-        (realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)).subtypeL.contDiff.comp
-          (contDiff_apply ℝ _ i))))))
+      (contDiff_const.prodMk (contDiff_const.prodMk (coordInclusion _).contDiff))))
 
 /-- **The action in exponential and real coordinates is smooth**: the real coordinates of
 `exp (i F) · x` are a smooth function of the real phase `F ∈ H^(k+1)` and of the real coordinates
@@ -170,9 +168,8 @@ theorem contDiff_realSubRef_expGauge_smul_ofRealSubRef :
         p.2).realSubRef (Nat.cast_nonneg k) := by
   simp_rw [realSubRef_eq_realPartCLM_subRef, subRef_smul, subRef_ofRealSubRef]
   refine contDiff_pi.2 fun j ↦ (realPartCLM ℂ _).contDiff.comp ((contDiff_apply ℝ _ j).comp
-    ((contDiff_smulCoord_expGauge (f := f) (m := m)).comp (contDiff_fst.prodMk (contDiff_pi.2
-      fun i ↦ (realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)).subtypeL.contDiff.comp
-        ((contDiff_apply ℝ _ i).comp contDiff_snd)))))
+    ((contDiff_smulCoord_expGauge (f := f) (m := m)).comp
+      (contDiff_fst.prodMk ((coordInclusion _).contDiff.comp contDiff_snd))))
 
 variable (f m) in
 /-- **The infinitesimal gauge action in the coordinates of `A_m^k`.** At the field `x_m + y`, with
