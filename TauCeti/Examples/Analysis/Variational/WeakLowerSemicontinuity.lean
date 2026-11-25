@@ -102,8 +102,8 @@ theorem tendsto_toWeakSpace_e :
 
 /-- A function on `ℓ²` that vanishes at `0` and is at most some `c < 0` on every `eₙ` is not
 sequentially weakly lower semicontinuous. -/
-theorem not_seqLowerSemicontinuous_comp_toWeakSpace_symm_of_lt {f : lp (fun _ : ℕ ↦ ℝ) 2 → ℝ}
-    {c : ℝ} (hc : c < 0) (hf0 : f 0 = 0) (hfe : ∀ n, f (e n) ≤ c) :
+theorem not_seqLowerSemicontinuous_comp_toWeakSpace_symm_of_forall_le_neg
+    {f : lp (fun _ : ℕ ↦ ℝ) 2 → ℝ} {c : ℝ} (hc : c < 0) (hf0 : f 0 = 0) (hfe : ∀ n, f (e n) ≤ c) :
     ¬ SeqLowerSemicontinuous fun w : WeakSpace ℝ (lp (fun _ : ℕ ↦ ℝ) 2) ↦
       f ((toWeakSpace ℝ _).symm w) := by
   intro h
@@ -122,8 +122,8 @@ theorem continuous_neg_norm : Continuous fun u : lp (fun _ : ℕ ↦ ℝ) 2 ↦ 
 theorem not_seqLowerSemicontinuous_neg_norm_comp_toWeakSpace_symm :
     ¬ SeqLowerSemicontinuous fun w : WeakSpace ℝ (lp (fun _ : ℕ ↦ ℝ) 2) ↦
       -‖(toWeakSpace ℝ _).symm w‖ :=
-  not_seqLowerSemicontinuous_comp_toWeakSpace_symm_of_lt (f := fun u ↦ -‖u‖) (c := -1)
-    (by norm_num) (by simp) fun n ↦ by simp [e.orthonormal.1 n]
+  not_seqLowerSemicontinuous_comp_toWeakSpace_symm_of_forall_le_neg (f := fun u ↦ -‖u‖)
+    (c := -1) (by norm_num) (by simp) fun n ↦ by simp [e.orthonormal.1 n]
 
 /-- The norm of `ℓ²` is weakly lower semicontinuous. -/
 theorem lowerSemicontinuous_norm_comp_toWeakSpace_symm :
@@ -144,7 +144,7 @@ theorem lowerSemicontinuous_norm_sq_comp_toWeakSpace_symm :
 theorem not_seqLowerSemicontinuous_neg_norm_sq_comp_toWeakSpace_symm :
     ¬ SeqLowerSemicontinuous fun w : WeakSpace ℝ (lp (fun _ : ℕ ↦ ℝ) 2) ↦
       -‖(toWeakSpace ℝ _).symm w‖ ^ 2 :=
-  not_seqLowerSemicontinuous_comp_toWeakSpace_symm_of_lt (f := fun u ↦ -‖u‖ ^ 2) (c := -1)
-    (by norm_num) (by simp) fun n ↦ by simp [e.orthonormal.1 n]
+  not_seqLowerSemicontinuous_comp_toWeakSpace_symm_of_forall_le_neg (f := fun u ↦ -‖u‖ ^ 2)
+    (c := -1) (by norm_num) (by simp) fun n ↦ by simp [e.orthonormal.1 n]
 
 end TauCeti.VariationalChecks
