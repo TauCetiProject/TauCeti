@@ -34,11 +34,10 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
   punctured disc of radius `R`.
 * `TauCeti.hasDerivAt_circleMap_div`: the circle of radius `R` parametrized by arclength,
   `s ↦ c + R e^{i s / R}`, has unit velocity `e^{i s / R} i`.
-* `TauCeti.im_conj_mul_I_mul_circleMap_div_sub`: for every `R` and `γ(s) = c + R e^{i s / R}`,
-  the identity `Im(conj (e^{i s / R} i) · (γ(t) - γ(s))) = R (1 - cos ((t - s) / R))`; for
-  `R ≠ 0` it says that the unit velocity at `s` crossed with the chord to `t` is
-  `R (1 - cos ((t - s) / R))`.
 * `TauCeti.contDiff_circleMap_zpow`: the integer powers `θ ↦ (R e^{iθ}) ^ k` are smooth.
+* `TauCeti.continuous_circleMap_uncurry`: `circleMap c r θ` is jointly continuous in `(r, θ)`.
+* `ContinuousOn.continuous_uncurry_circleMap`: a function jointly continuous on a product of two
+  circles pulls back along the two angle parametrizations to a continuous function on `ℝ × ℝ`.
 -/
 
 public section
@@ -128,22 +127,6 @@ theorem hasDerivAt_circleMap_div (c : ℂ) {R : ℝ} (hR : R ≠ 0) (s : ℝ) :
   push_cast
   field_simp [ofReal_ne_zero.2 hR]
 
-/-- For `γ(s) = c + R e^{i s / R}` and `τ(s) = e^{i s / R} i`, the quantity
-`Im(conj τ(s) · (γ(t) - γ(s)))` equals `R (1 - cos ((t - s) / R))`, for every `R`. When `R ≠ 0`,
-`γ` is the circle of radius `R` about `c` parametrized by arclength and `τ` is its unit velocity
-(`TauCeti.hasDerivAt_circleMap_div`), so this is the cross product of the unit velocity at `s` with
-the chord from `γ(s)` to `γ(t)`; when `R = 0`, both sides vanish. -/
-theorem im_conj_mul_I_mul_circleMap_div_sub (c : ℂ) (R s t : ℝ) :
-    (starRingEnd ℂ (circleMap 0 1 (s / R) * I) *
-        (circleMap c R (t / R) - circleMap c R (s / R))).im =
-      R * (1 - Real.cos ((t - s) / R)) := by
-  simp only [circleMap, zero_add, ofReal_one, one_mul, add_sub_add_left_eq_sub, map_mul, conj_I,
-    ← exp_conj, map_mul, conj_ofReal, mul_neg, ← neg_mul, ← ofReal_neg, mul_im, mul_re, sub_im,
-    sub_re, neg_re, neg_im, I_re, I_im, ofReal_re, ofReal_im, exp_ofReal_mul_I_re,
-    exp_ofReal_mul_I_im]
-  rw [sub_div, Real.cos_sub, Real.cos_neg, Real.sin_neg]
-  linear_combination R * Real.sin_sq_add_cos_sq (s / R)
-
 /-- The integer powers `θ ↦ (R e^{iθ}) ^ k = R ^ k e^{ikθ}` of a circle about the origin are
 smooth. -/
 theorem contDiff_circleMap_zpow (R : ℝ) (k : ℤ) {n : WithTop ℕ∞} :
@@ -151,4 +134,24 @@ theorem contDiff_circleMap_zpow (R : ℝ) (k : ℤ) {n : WithTop ℕ∞} :
   simp_rw [circleMap_zero_zpow]
   exact (contDiff_circleMap 0 (R ^ k)).comp (contDiff_const.mul contDiff_id)
 
+/-- The point `circleMap c r θ` depends jointly continuously on the radius `r` and the angle `θ`. -/
+theorem continuous_circleMap_uncurry (c : ℂ) : Continuous fun p : ℝ × ℝ ↦ circleMap c p.1 p.2 := by
+  unfold circleMap
+  fun_prop
+
 end TauCeti
+
+namespace ContinuousOn
+
+open Metric
+
+/-- The pullback of a function jointly continuous on a product of circles
+`sphere c |R| ×ˢ sphere c' |R'|` along the two angle parametrizations is continuous on `ℝ × ℝ`. -/
+theorem continuous_uncurry_circleMap {X : Type*} [TopologicalSpace X] {F : ℂ → ℂ → X}
+    {c c' : ℂ} {R R' : ℝ}
+    (hF : ContinuousOn (Function.uncurry F) (sphere c |R| ×ˢ sphere c' |R'|)) :
+    Continuous (Function.uncurry fun θ φ ↦ F (circleMap c R θ) (circleMap c' R' φ)) :=
+  hF.comp_continuous (f := fun p : ℝ × ℝ ↦ (circleMap c R p.1, circleMap c' R' p.2))
+    (by fun_prop) fun p ↦ ⟨circleMap_mem_sphere' c R p.1, circleMap_mem_sphere' c' R' p.2⟩
+
+end ContinuousOn

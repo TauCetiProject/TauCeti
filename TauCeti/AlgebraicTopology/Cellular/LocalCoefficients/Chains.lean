@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.Chains
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Triple
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # The cellular chain complex with local coefficients
@@ -39,6 +40,8 @@ system of fibre homology of a fibration over a CW complex, this homology is the 
 * `TauCeti.twistedCellularDifferential C L n`: the connecting morphism of the triple
   `(Xⁿ⁺¹, Xⁿ, Xⁿ⁻¹)`.
 * `TauCeti.twistedCellularChainComplex C L`: the cellular chain complex with coefficients in `L`.
+* `TauCeti.twistedCellularChainComplexHomologyZeroIso C L`: its homology in degree zero is the
+  cokernel of the cellular differential out of the `1`-cells.
 
 ## References
 
@@ -190,5 +193,25 @@ lemma twistedCellularChainComplex_d (n : ℕ) :
   unfold twistedCellularChainComplex
   simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
   exact ChainComplex.of_d _ _ n
+
+/-- The cellular homology in degree zero with local coefficients is the cokernel of the cellular
+differential out of the `1`-cells. -/
+def twistedCellularChainComplexHomologyZeroIso :
+    (twistedCellularChainComplex C L).homology 0 ≅ cokernel (twistedCellularDifferential C L 0) :=
+  (twistedCellularChainComplex C L).homologyZeroIsoCokernel ≪≫
+    cokernelIsoOfEq (twistedCellularChainComplex_d C L 0) ≪≫ cokernelEpiComp _ _ ≪≫
+    cokernelCompIsIso _ _
+
+/-- Under `TauCeti.twistedCellularChainComplexHomologyZeroIso`, the projection of the cycles onto
+the cellular homology in degree zero is the projection of the cellular chains onto the cokernel of
+the cellular differential out of the `1`-cells, read across
+`TauCeti.twistedCellularChainComplex_X`. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_comp_twistedCellularChainComplexHomologyZeroIso_hom :
+    (twistedCellularChainComplex C L).homologyπ 0 ≫
+        (twistedCellularChainComplexHomologyZeroIso C L).hom =
+      (twistedCellularChainComplex C L).iCycles 0 ≫ eqToHom (twistedCellularChainComplex_X C L 0) ≫
+        cokernel.π (twistedCellularDifferential C L 0) := by
+  simp [twistedCellularChainComplexHomologyZeroIso]
 
 end TauCeti

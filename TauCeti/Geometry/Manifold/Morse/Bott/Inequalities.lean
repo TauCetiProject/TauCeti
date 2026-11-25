@@ -52,8 +52,7 @@ inequalities.
 Without a Thom class the untwisted statement can fail: over a field of characteristic other than
 `2`, the contribution of a piece whose negative normal bundle is not orientable is its homology
 twisted by the orientation local system of that bundle, not its ordinary homology. Those
-inequalities, over fields in which `2` is invertible, are in
-`TauCeti.Geometry.Manifold.Morse.Bott.TwistedInequalities`.
+inequalities, over every field, are in `TauCeti.Geometry.Manifold.Morse.Bott.TwistedInequalities`.
 
 The proof follows Bott. Cut the values of `f` at regular values `s 0 < ⋯ < s (N + 1)` so that each
 band `f⁻¹[s j, s (j + 1)]` contains at most one critical value. The Morse–Bott inequalities are then
@@ -456,9 +455,8 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_of_finrank_thomPair (d : ι
   let _ (j : ι) := (hV j).fiberBundle
   have (j : ι) := (hV j).vectorBundle
   -- The frames have size the dimension of the negative normal spaces, which is the index.
-  have hr (j : ι) (s : S j) : manifoldMorseIndex I f (i j s) = r j := by
-    rw [← (h.isNondegenerateCriticalSubmanifold j).finrank_negativeNormalSpace hn
-      (g j).toRiemannianMetric, (hV j).finrank_eq, Fintype.card_fin]
+  have hr (j : ι) := (h.isNondegenerateCriticalSubmanifold j)
+    |>.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV j)
   rw [h.finrank_singularHomology_sublevelPair_eq_sum_finrank_thomPair hn K hdim g hr hac hcb hcrit
     n]
   -- Each Thom pair has the homology `d j` shifted by the index, and none below the index.
