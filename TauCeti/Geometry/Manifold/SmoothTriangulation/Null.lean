@@ -16,10 +16,11 @@ import TauCeti.Geometry.Manifold.SmoothTriangulation.LocallyFinite
 # Lower-dimensional simplices of a smooth triangulation are null
 
 An immersion `g` of the closed simplex on a vertex set `σ` into a manifold `M` modelled on `E`,
-of any class `Cⁿ`, is the restriction of a map `F : (σ → ℝ) → M` with an injective derivative,
-so in particular a derivative, at every point of the standard simplex. The standard simplex has
-Hausdorff dimension below `|σ|` (`Convexity.StdSimplex.dimH_range_weights_lt_card`), so when
-`|σ| ≤ dim E` its image under `F` is null
+of any class `Cⁿ`, is the restriction of a map `F : (σ → ℝ) → M` with a derivative within the
+standard simplex at every point of it, injective on the zero-sum directions; only the existence of
+the derivative is used here. The standard simplex has Hausdorff dimension below `|σ|`
+(`Convexity.StdSimplex.dimH_range_weights_lt_card`), so when `|σ| ≤ dim E` its image under `F` is
+null
 (`MDifferentiableOn.isNullSet_image_of_dimH_lt_finrank`): `range g` is a null set of `M`
 (`TauCeti.IsSimplexImmersion.isNullSet_range`).
 
@@ -82,9 +83,8 @@ theorem IsSmoothTriangulation.isNullSet_image_range_faceInclusion
   exact (isSmoothTriangulation_iff.mp h σ).isNullSet_range hσ
 
 /-- In a smooth triangulation of a manifold modelled on `E`, the image of the union of the closed
-simplices of dimension below `dim E` is null. The complex may have uncountably many simplices:
-nullity is local, and a compact neighbourhood of a point meets only finitely many closed
-simplices. -/
+simplices of dimension below `dim E` is null. No countability hypothesis on the simplices is
+needed. -/
 theorem IsSmoothTriangulation.isNullSet_biUnion_image_range_faceInclusion
     {K : AbstractSimplicialComplex ι} {κ : Realization K ≃ₜ M} (h : IsSmoothTriangulation I n κ) :
     IsNullSet I (⋃ σ ∈ {σ : Face K | σ.val.card ≤ finrank ℝ E},
