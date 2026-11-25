@@ -16,6 +16,7 @@ import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 import TauCeti.Analysis.ODE.DysonSeries
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
 
 /-!
 # The index of the linearized operator along a time-independent cylinder
@@ -88,6 +89,15 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDim
   {ω : SymplecticForm F} {H : F → ℝ} {γ : ℝ → F}
   {A : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))}
 
+/-- Multiplication by `i` on `F`, as a continuous real-linear map. -/
+local notation "𝕁" => LinearMap.toContinuousLinearMap
+  (AlmostComplexStructure.toLinearMap (AlmostComplexStructure.ofComplexModule F))
+
+/-- `𝔻 K c` is the Sobolev realization of the linearized operator of the autonomous Hamiltonian `K`
+along the time-independent cylinder `(s, t) ↦ c(s)`, in the trivialization `i`. -/
+local notation:max "𝔻" K:max c:max => SymplecticForm.floerSobolevOperator ω (fun _ _ ↦ 𝕁)
+  (fun _ _ ↦ 0) (fun _ ↦ K) (fun z ↦ c (Prod.fst z))
+
 section Homotopy
 
 /-! ### The homotopy to a quadratic Hamiltonian -/
@@ -95,8 +105,7 @@ section Homotopy
 /-- In a unitary trivialization, the Hamiltonian vector field of `π ‖v‖² / 2` is `-π i v`. -/
 private theorem hamiltonianVectorField_pi_div_two_mul_norm_sq
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) :
-    ω.hamiltonianVectorField (fun v ↦ π / 2 * ‖v‖ ^ 2) =
-      ⇑(-(π • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)) := by
+    ω.hamiltonianVectorField (fun v ↦ π / 2 * ‖v‖ ^ 2) = ⇑(-(π • 𝕁)) := by
   funext x
   have h : (fun v : F ↦ π / 2 * ‖v‖ ^ 2) = fun v ↦ π * (‖v‖ ^ 2 / 2) := by
     funext v
@@ -107,13 +116,11 @@ private theorem hamiltonianVectorField_pi_div_two_mul_norm_sq
 /-- The derivative of the Hamiltonian vector field of `π ‖v‖² / 2` is the constant `-π i`. -/
 private theorem fderiv_hamiltonianVectorField_pi_div_two_mul_norm_sq
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) (y : F) :
-    fderiv ℝ (ω.hamiltonianVectorField fun v ↦ π / 2 * ‖v‖ ^ 2) y =
-      -(π • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) := by
+    fderiv ℝ (ω.hamiltonianVectorField fun v ↦ π / 2 * ‖v‖ ^ 2) y = -(π • 𝕁) := by
   rw [hamiltonianVectorField_pi_div_two_mul_norm_sq hω, ContinuousLinearMap.fderiv]
 
 /-- The norm of `-π i` is at most `π`. -/
-private theorem norm_neg_pi_smul_ofComplexModule_le :
-    ‖-(π • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)‖ ≤ π := by
+private theorem norm_neg_pi_smul_ofComplexModule_le : ‖-(π • 𝕁)‖ ≤ π := by
   rw [norm_neg, norm_smul, Real.norm_of_nonneg pi_pos.le]
   exact mul_le_of_le_one_right pi_pos.le (opNorm_le_bound _ zero_le_one fun v ↦ by simp [norm_smul])
 
@@ -129,12 +136,9 @@ combination `(1 - τ) dX_H - τ π i`. -/
 private theorem fderiv_hamiltonianVectorField_homotopy (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hH : ContDiff ℝ 2 H) (τ : ℝ) (y : F) :
     fderiv ℝ (ω.hamiltonianVectorField fun v ↦ (1 - τ) * H v + τ * (π / 2 * ‖v‖ ^ 2)) y =
-      (1 - τ) • fderiv ℝ (ω.hamiltonianVectorField H) y +
-        τ • -(π •
-          (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) := by
+      (1 - τ) • fderiv ℝ (ω.hamiltonianVectorField H) y + τ • -(π • 𝕁) := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  set S₀ : F →L[ℝ] F :=
-    -(π • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+  set S₀ : F →L[ℝ] F := -(π • 𝕁)
   have hQ : Differentiable ℝ fun v : F ↦ π / 2 * ‖v‖ ^ 2 :=
     ((contDiff_norm_sq ℝ (n := 1)).differentiable one_ne_zero).const_mul _
   have hXH : Differentiable ℝ (ω.hamiltonianVectorField H) :=
@@ -157,8 +161,7 @@ private theorem norm_fderiv_hamiltonianVectorField_homotopy_le
   have h₁ : ‖(1 - τ) • fderiv ℝ (ω.hamiltonianVectorField H) y‖ ≤ (1 - τ) * a := by
     rw [norm_smul, Real.norm_of_nonneg (sub_nonneg.2 hτ.2)]
     exact mul_le_mul_of_nonneg_left hy (sub_nonneg.2 hτ.2)
-  have h₂ : ‖τ • -(π •
-      (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)‖ ≤ τ * π := by
+  have h₂ : ‖τ • -(π • 𝕁)‖ ≤ τ * π := by
     rw [norm_smul, Real.norm_of_nonneg hτ.1]
     exact mul_le_mul_of_nonneg_left norm_neg_pi_smul_ofComplexModule_le hτ.1
   refine (norm_add_le _ _).trans ((add_le_add h₁ h₂).trans ?_)
@@ -171,15 +174,8 @@ private theorem floerSobolevOperator_homotopy_apply (hω : ∀ v w, ω v w = (in
     (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
     (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) {τ : ℝ}
     (hτ : τ ∈ Icc (0 : ℝ) 1) (x : H1 F) :
-    ω.floerSobolevOperator
-        (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ v ↦ (1 - τ) * H v + τ * (π / 2 * ‖v‖ ^ 2)) (fun z ↦ γ z.1) x =
-      (1 - τ) • ω.floerSobolevOperator
-          (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-          (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) x +
-        τ • ω.floerSobolevOperator
-          (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-          (fun _ _ ↦ 0) (fun _ v ↦ π / 2 * ‖v‖ ^ 2) (fun z ↦ γ z.1) x := by
+    𝔻 (fun v ↦ (1 - τ) * H v + τ * (π / 2 * ‖v‖ ^ 2)) γ x =
+      (1 - τ) • 𝔻 H γ x + τ • 𝔻 (fun v ↦ π / 2 * ‖v‖ ^ 2) γ x := by
   have hMτ := memLp_floerJetCoeff_const_comp_fst (J := AlmostComplexStructure.ofComplexModule F)
     (contDiff_homotopy hH τ) hγ fun s ↦ norm_fderiv_hamiltonianVectorField_homotopy_le hω hH hτ
       (haγ s)
@@ -189,12 +185,8 @@ private theorem floerSobolevOperator_homotopy_apply (hω : ∀ v w, ω v w = (in
     (by simpa using contDiff_homotopy (F := F) hH 1) hγ fun s ↦
       (fderiv_hamiltonianVectorField_pi_div_two_mul_norm_sq hω (γ s)).symm ▸
         norm_neg_pi_smul_ofComplexModule_le
-  set D₀ := ω.floerSobolevOperator
-    (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-    (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)
-  set D₁ := ω.floerSobolevOperator
-    (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-    (fun _ _ ↦ 0) (fun _ v ↦ π / 2 * ‖v‖ ^ 2) (fun z ↦ γ z.1)
+  set D₀ := 𝔻 H γ
+  set D₁ := 𝔻 (fun v ↦ π / 2 * ‖v‖ ^ 2) γ
   refine Lp.ext ?_
   filter_upwards [coeFn_floerSobolevOperator ω hMτ x, coeFn_floerSobolevOperator ω hM₀ x,
     coeFn_floerSobolevOperator ω hM₁ x, Lp.coeFn_add ((1 - τ) • D₀ x) (τ • D₁ x),
@@ -214,21 +206,18 @@ section Endpoint
 /-- The return map of `ζ' = -π i ζ` is `-1`: the left Dyson series of the constant path `-π i` at
 time `1` is `-1`. -/
 private theorem dysonSeriesLeft_neg_pi_smul_ofComplexModule_one :
-    dysonSeriesLeft (fun _ : ℝ ↦
-      -(π • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)) 1 =
-      -1 := by
-  set J : F →L[ℝ] F := (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap
-  have hJ : J * J = -1 := by
+    dysonSeriesLeft (fun _ : ℝ ↦ -(π • 𝕁)) 1 = -1 := by
+  have hJ : 𝕁 * 𝕁 = -1 := by
     ext v
-    simp [J]
+    simp
   -- The solution of `f' = -π i f` with `f 0 = 1` is `f t = cos (π t) - sin (π t) i`.
-  set f : ℝ → F →L[ℝ] F := fun t ↦ Real.cos (π * t) • 1 - Real.sin (π * t) • J
-  have hf (t : ℝ) : HasDerivAt f (-(π • J) * f t) t := by
+  set f : ℝ → F →L[ℝ] F := fun t ↦ Real.cos (π * t) • 1 - Real.sin (π * t) • 𝕁
+  have hf (t : ℝ) : HasDerivAt f (-(π • 𝕁) * f t) t := by
     have hc : HasDerivAt (fun t ↦ Real.cos (π * t)) (-Real.sin (π * t) * π) t := by
       simpa using ((hasDerivAt_id t).const_mul π).cos
     have hs : HasDerivAt (fun t ↦ Real.sin (π * t)) (Real.cos (π * t) * π) t := by
       simpa using ((hasDerivAt_id t).const_mul π).sin
-    convert (hc.smul_const (1 : F →L[ℝ] F)).sub (hs.smul_const J) using 1
+    convert (hc.smul_const (1 : F →L[ℝ] F)).sub (hs.smul_const 𝕁) using 1
     rw [mul_sub, mul_smul_comm, mul_smul_comm, mul_one, neg_mul, smul_mul_assoc, hJ]
     module
   have h := eq_dysonSeriesLeft_mul continuous_const hf 1
@@ -241,13 +230,9 @@ linearized operator along `(s, t) ↦ γ(s)` of the Hamiltonian `π ‖v‖² / 
 operator `∂s + i ∂t - π`, which is bijective from `W^{1,2}(ℝ × S¹, F)` onto `L²(ℝ × S¹, F)`. -/
 private theorem bijective_floerSobolevOperator_pi_div_two_mul_norm_sq
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) :
-    Bijective (ω.floerSobolevOperator
-      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun _ v ↦ π / 2 * ‖v‖ ^ 2) (fun z ↦ γ z.1)) := by
-  set J : F →L[ℝ] F := (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap
-  set S₀ : F →L[ℝ] F := -(π • J)
-  have hD : ω.floerSobolevOperator (fun _ _ ↦ J) (fun _ _ ↦ 0) (fun _ v ↦ π / 2 * ‖v‖ ^ 2)
-      (fun z ↦ γ z.1) = Floer.stationarySobolevOperator
+    Bijective (𝔻 (fun v ↦ π / 2 * ‖v‖ ^ 2) γ) := by
+  set S₀ : F →L[ℝ] F := -(π • 𝕁)
+  have hD : 𝔻 (fun v ↦ π / 2 * ‖v‖ ^ 2) γ = Floer.stationarySobolevOperator
         (fun _ ↦ AlmostComplexStructure.ofComplexModule F)
         (fun t : ℝ ↦ (ContinuousMap.const (AddCircle (1 : ℝ)) S₀) t) := by
     rw [floerSobolevOperator_def, Floer.stationarySobolevOperator_def]
@@ -256,12 +241,12 @@ private theorem bijective_floerSobolevOperator_pi_div_two_mul_norm_sq
     rw [floerJetCoeff_const_eq, fderiv_hamiltonianVectorField_pi_div_two_mul_norm_sq hω]
     refine ContinuousLinearMap.ext fun v ↦ ?_
     simp only [firstOrderJetCoeff_apply, Floer.stationaryJetCoeff_apply, neg_apply,
-      ContinuousMap.const_apply, map_sub, J, S₀]
+      ContinuousMap.const_apply, map_sub, S₀]
     abel
   have hS (t : AddCircle (1 : ℝ)) (v w : F) :
       (inner ℂ ((ContinuousMap.const (AddCircle (1 : ℝ)) S₀) t v) w).im +
         (inner ℂ v ((ContinuousMap.const (AddCircle (1 : ℝ)) S₀) t w)).im = 0 := by
-    simp [S₀, J, AlmostComplexStructure.ofComplexModule_apply, ← Complex.coe_smul, inner_smul_left,
+    simp [S₀, AlmostComplexStructure.ofComplexModule_apply, ← Complex.coe_smul, inner_smul_left,
       inner_smul_right]
   have hdet : LinearMap.det ((1 - dysonSeriesLeft
       (fun t : ℝ ↦ (ContinuousMap.const (AddCircle (1 : ℝ)) S₀) t) 1 : F →L[ℝ] F) :
@@ -269,7 +254,7 @@ private theorem bijective_floerSobolevOperator_pi_div_two_mul_norm_sq
     have h₁ : (1 - dysonSeriesLeft
         (fun t : ℝ ↦ (ContinuousMap.const (AddCircle (1 : ℝ)) S₀) t) 1 : F →L[ℝ] F) =
           (2 : ℝ) • (1 : F →L[ℝ] F) := by
-      simp only [ContinuousMap.const_apply, S₀, J, dysonSeriesLeft_neg_pi_smul_ofComplexModule_one]
+      simp only [ContinuousMap.const_apply, S₀, dysonSeriesLeft_neg_pi_smul_ofComplexModule_one]
       module
     rw [h₁, ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul]
     simp
@@ -316,18 +301,14 @@ variable (ω) in
 since it commutes with the slice averages. -/
 private def nonzeroModes (K : F → ℝ) (c : ℝ → F) :
     nonzeroModeSobolev F →L[ℝ] nonzeroModeLp F :=
-  ((ω.floerSobolevOperator
-    (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-    (fun _ _ ↦ 0) (fun _ ↦ K) (fun z ↦ c z.1)).comp (nonzeroModeSobolev F).subtypeL).codRestrict _
+  ((𝔻 K c).comp (nonzeroModeSobolev F).subtypeL).codRestrict _
     fun x ↦ mem_nonzeroModeLp.2 (by
       rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
         ← floerSobolevOperator_sliceAverageL, sliceAverageL_coe_nonzeroModeSobolev, map_zero])
 
 private theorem coe_nonzeroModes_apply (K : F → ℝ) (c : ℝ → F) (x : nonzeroModeSobolev F) :
-    (nonzeroModes ω K c x : Lp F 2 stripMeasure) = ω.floerSobolevOperator
-      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun _ ↦ K) (fun z ↦ c z.1) x :=
-  (rfl)
+    (nonzeroModes ω K c x : Lp F 2 stripMeasure) = 𝔻 K c x := by
+  rw [nonzeroModes, coe_codRestrict_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
 
 /-- **The nonzero modes are onto**, as a statement about the restriction to the nonzero modes. -/
 private theorem surjective_nonzeroModes (hω : ∀ v w, ω v w = (inner ℂ v w).im)
@@ -377,9 +358,7 @@ theorem exists_sliceAverageL_eq_zero_and_floerSobolevOperator_eq
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
     (ha : a < 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
     {y : Lp F 2 stripMeasure} (hy : sliceAverageLp y = 0) :
-    ∃ x : H1 F, sliceAverageL x = 0 ∧ ω.floerSobolevOperator
-      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) x = y := by
+    ∃ x : H1 F, sliceAverageL x = 0 ∧ 𝔻 H γ x = y := by
   obtain ⟨x, hx⟩ := surjective_nonzeroModes hω hH hγ ha haγ ⟨y, mem_nonzeroModeLp.2 hy⟩
   exact ⟨x, sliceAverageL_coe_nonzeroModeSobolev x, congrArg Subtype.val hx⟩
 
@@ -412,27 +391,10 @@ variable (F) in
 /-- `W^{1,2}(ℝ, F)`, the zero mode of `W^{1,2}(ℝ × S¹, F)`. -/
 private abbrev pathSobolev := WeakDerivStep volume ⊤ 2 (ContinuousLinearMap.id ℝ (pathLp F))
 
-/-- Let `P` fix the range of an injective `U` and map into it. Every vector is uniquely `U u` plus
-an element of the kernel of `P`. -/
-private theorem bijective_coprod_subtypeL_ker {E G : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] {P : E →L[ℝ] E} {U : G →L[ℝ] E}
-    (hU : Injective U) (hPU : ∀ u, P (U u) = U u) (hP : ∀ x, P x ∈ Set.range U) :
-    Bijective (U.coprod (LinearMap.ker (P : E →ₗ[ℝ] E)).subtypeL) := by
-  refine ⟨(injective_iff_map_eq_zero _).2 fun p hp ↦ ?_, fun x ↦ ?_⟩
-  · have hp' : U p.1 + (p.2 : E) = 0 := by simpa using hp
-    have hu : U p.1 = 0 := by
-      simpa [hPU, LinearMap.mem_ker.1 p.2.property] using congrArg P hp'
-    rw [hu, zero_add] at hp'
-    exact Prod.ext (hU (by simpa using hu)) (Subtype.ext hp')
-  · obtain ⟨u, hu⟩ := hP x
-    refine ⟨(u, ⟨x - P x, LinearMap.mem_ker.2 ?_⟩), ?_⟩
-    · rw [ContinuousLinearMap.coe_coe, map_sub, ← hu, hPU, sub_self]
-    · simp [hu]
-
 variable (F) in
 /-- `W^{1,2}(ℝ × S¹, F)` is the zero mode of `W^{1,2}(ℝ, F)` plus the nonzero modes. -/
 private def zeroModeProdEquiv : (pathSobolev F × nonzeroModeSobolev F) ≃L[ℝ] H1 F :=
-  have h := bijective_coprod_subtypeL_ker (U := zeroModeL F) zeroModeL_injective
+  have h := ContinuousLinearMap.bijective_coprod_subtypeL_ker (U := zeroModeL F) zeroModeL_injective
     sliceAverageL_zeroModeL sliceAverageL_mem_range_zeroModeL
   ContinuousLinearEquiv.ofBijective (𝕜 := ℝ) (E := pathSobolev F × nonzeroModeSobolev F)
     (F := H1 F) ((zeroModeL F).coprod (nonzeroModeSobolev F).subtypeL)
@@ -441,8 +403,9 @@ private def zeroModeProdEquiv : (pathSobolev F × nonzeroModeSobolev F) ≃L[ℝ
 variable (F) in
 /-- `L²(ℝ × S¹, F)` is the zero mode of `L²(ℝ, F)` plus the nonzero modes. -/
 private def zeroModeLpProdEquiv : (pathLp F × nonzeroModeLp F) ≃L[ℝ] Lp F 2 stripMeasure :=
-  have h := bijective_coprod_subtypeL_ker (U := (zeroModeLp F).toContinuousLinearMap)
-    (zeroModeLp F).injective sliceAverageLp_zeroModeLp sliceAverageLp_mem_range_zeroModeLp
+  have h := ContinuousLinearMap.bijective_coprod_subtypeL_ker
+    (U := (zeroModeLp F).toContinuousLinearMap) (zeroModeLp F).injective sliceAverageLp_zeroModeLp
+    sliceAverageLp_mem_range_zeroModeLp
   ContinuousLinearEquiv.ofBijective (𝕜 := ℝ) (E := pathLp F × nonzeroModeLp F)
     (F := Lp F 2 stripMeasure)
     ((zeroModeLp F).toContinuousLinearMap.coprod (nonzeroModeLp F).subtypeL)
@@ -454,12 +417,8 @@ modes. -/
 private theorem floerSobolevOperator_comp_zeroModeProdEquiv (hH : ContDiff ℝ 2 H)
     (hγ : Continuous γ) {a : ℝ} (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
-      fun s ↦ -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s)))) :
-    (ω.floerSobolevOperator
-        (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)).comp
-        (zeroModeProdEquiv F : _ →L[ℝ] H1 F) =
+      fun s ↦ -(𝕁 ∘L fderiv ℝ (ω.hamiltonianVectorField H) (γ s))) :
+    (𝔻 H γ).comp (zeroModeProdEquiv F : _ →L[ℝ] H1 F) =
       (zeroModeLpProdEquiv F : _ →L[ℝ] Lp F 2 stripMeasure).comp
         ((WeakDerivStep.trajectoryOperator (p := 2) A).prodMap
           (nonzeroModes ω H γ)) := by
@@ -478,11 +437,8 @@ zero mode and the nonzero modes. -/
 private theorem floerSobolevOperator_eq_comp (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
     (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
-      fun s ↦ -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s)))) :
-    ω.floerSobolevOperator
-        (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) =
+      fun s ↦ -(𝕁 ∘L fderiv ℝ (ω.hamiltonianVectorField H) (γ s))) :
+    𝔻 H γ =
       (zeroModeLpProdEquiv F : _ →L[ℝ] Lp F 2 stripMeasure).comp
         (((WeakDerivStep.trajectoryOperator (p := 2) A).prodMap
           (nonzeroModes ω H γ)).comp
@@ -520,11 +476,8 @@ theorem surjective_floerSobolevOperator_iff_surjective_trajectoryOperator
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
     (ha : a < 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
-      fun s ↦ -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s)))) :
-    Surjective (ω.floerSobolevOperator
-        (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)) ↔
+      fun s ↦ -(𝕁 ∘L fderiv ℝ (ω.hamiltonianVectorField H) (γ s))) :
+    Surjective (𝔻 H γ) ↔
       Surjective (WeakDerivStep.trajectoryOperator (p := 2) A) := by
   rw [floerSobolevOperator_eq_comp hH hγ haγ hA, coe_comp, coe_comp,
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
@@ -541,17 +494,11 @@ theorem isFredholm_floerSobolevOperator_iff_isFredholm_trajectoryOperator
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
     (ha : a < 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
-      fun s ↦ -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s)))) :
-    (ω.floerSobolevOperator
-        (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)).IsFredholm ↔
+      fun s ↦ -(𝕁 ∘L fderiv ℝ (ω.hamiltonianVectorField H) (γ s))) :
+    (𝔻 H γ).IsFredholm ↔
       (WeakDerivStep.trajectoryOperator (p := 2) A).IsFredholm := by
   -- Explicit types let the instances of the splittings be synthesized rather than unified.
-  have hconj : ((zeroModeLpProdEquiv F).symm : Lp F 2 stripMeasure →L[ℝ] _).comp
-      (ω.floerSobolevOperator
-        (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)) =
+  have hconj : ((zeroModeLpProdEquiv F).symm : Lp F 2 stripMeasure →L[ℝ] _).comp (𝔻 H γ) =
       ((WeakDerivStep.trajectoryOperator (p := 2) A).prodMap
         (nonzeroModes ω H γ)).comp
           ((zeroModeProdEquiv F).symm : H1 F →L[ℝ] _) := by
@@ -574,12 +521,9 @@ theorem index_floerSobolevOperator_eq_index_trajectoryOperator
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
     (ha : a < 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
-      fun s ↦ -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s))))
+      fun s ↦ -(𝕁 ∘L fderiv ℝ (ω.hamiltonianVectorField H) (γ s)))
     (hM : (WeakDerivStep.trajectoryOperator (p := 2) A).IsFredholm) :
-    (ω.floerSobolevOperator
-        (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)).index =
+    (𝔻 H γ).index =
       (WeakDerivStep.trajectoryOperator (p := 2) A).index := by
   obtain ⟨hQ, hQ₀⟩ := isFredholm_nonzeroModes_and_index_eq_zero hω hH hγ ha haγ
   rw [floerSobolevOperator_eq_comp hH hγ haγ hA,

@@ -236,7 +236,8 @@ the underlying real inner product `InnerProductSpace.complexToReal`. -/
 theorem apply_ofComplexModule_eq_real_inner (ω : SymplecticForm F)
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) (v w : F) :
     letI := InnerProductSpace.complexToReal (G := F)
-    ω v (AlmostComplexStructure.ofComplexModule F w) = inner ℝ v w :=
-  ω.apply_ofComplexModule_eq_re_inner hω v w
+    ω v (AlmostComplexStructure.ofComplexModule F w) = inner ℝ v w := by
+  rw [real_inner_eq_re_inner ℂ, RCLike.re_to_complex]
+  exact ω.apply_ofComplexModule_eq_re_inner hω v w
 
 end TauCeti.SymplecticForm
