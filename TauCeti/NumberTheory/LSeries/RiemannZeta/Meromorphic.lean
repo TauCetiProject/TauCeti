@@ -32,6 +32,8 @@ is less than the distance `|Im c|` from its centre `c` to the real axis avoids t
 * `TauCeti.analyticOnNhd_riemannZeta_closedBall`: analyticity on `closedBall c r` for
   `r < |Im c|`.
 * `TauCeti.re_lt_one_of_riemannZeta_eq_zero`: every zero of `riemannZeta` has `Re s < 1`.
+* `TauCeti.one_le_toNat_analyticOrderAt_riemannZeta`: at a zero of `riemannZeta` the analytic
+  order is a positive natural number.
 
 ## References
 
@@ -93,5 +95,24 @@ theorem analyticOnNhd_riemannZeta_closedBall {c : ℂ} {r : ℝ} (hr : r < |c.im
 /-- Every zero of the Riemann zeta function lies in the open half-plane `Re s < 1`. -/
 theorem re_lt_one_of_riemannZeta_eq_zero {s : ℂ} (h : riemannZeta s = 0) : s.re < 1 :=
   not_le.mp fun hs ↦ riemannZeta_ne_zero_of_one_le_re hs h
+
+/-- At a zero of `riemannZeta`, the analytic order is finite and positive, so its `toNat` is at
+least `1`. It is finite because `riemannZeta` is meromorphic on the connected set `ℂ` and has
+finite order `-1` at `1`. -/
+theorem one_le_toNat_analyticOrderAt_riemannZeta {ρ : ℂ} (hρ : riemannZeta ρ = 0) :
+    1 ≤ (analyticOrderAt riemannZeta ρ).toNat := by
+  have hρ1 : ρ ≠ 1 := by
+    rintro rfl
+    exact riemannZeta_one_ne_zero hρ
+  have htop : meromorphicOrderAt riemannZeta ρ ≠ ⊤ :=
+    meromorphic_riemannZeta.meromorphicOn.meromorphicOrderAt_ne_top_of_isPreconnected
+      isPreconnected_univ (Set.mem_univ 1) (Set.mem_univ ρ) (by simp)
+  have hpos := meromorphicOrderAt_riemannZeta_pos_iff.mpr hρ
+  rw [(analyticOn_riemannZeta ρ hρ1).meromorphicOrderAt_eq] at htop hpos
+  cases h : analyticOrderAt riemannZeta ρ with
+  | top => simp [h] at htop
+  | coe n =>
+    simp only [h, ENat.map_natCast] at hpos
+    simpa using Nat.one_le_iff_ne_zero.mpr (by exact_mod_cast hpos.ne')
 
 end TauCeti

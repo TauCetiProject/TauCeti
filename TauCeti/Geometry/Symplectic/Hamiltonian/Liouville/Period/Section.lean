@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Lattice
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.CoordinateCover
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # The section map of a regular Lagrangian torus fibration

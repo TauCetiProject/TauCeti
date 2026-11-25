@@ -67,6 +67,10 @@ polynomial lifts from the reductions modulo an ideal in the Jacobson radical.
   argument.
 * `Polynomial.Monic.resultant_eq_zero_iff_dvd`: over an integrally closed domain, for a monic
   irreducible `f`, `f.resultant g = 0` iff `f ∣ g`.
+* `Polynomial.resultant_sub_mem_of_map_eq`: polynomials congruent modulo an ideal have congruent
+  resultants.
+* `Polynomial.Monic.resultant_ne_zero_of_not_dvd`: over an integrally closed domain, a monic
+  irreducible polynomial has nonzero resultant against every polynomial it does not divide.
 * `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
   the coefficients of index at most `m` and `n`.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
@@ -366,5 +370,28 @@ theorem resultant_congr_of_coeff_eq {f f' g g' : R[X]} {m n : ℕ}
     split_ifs with h
     · exact hf _ (by simp only [Set.mem_Icc] at h; omega)
     · rfl
+
+/-- **Resultants of congruent polynomials are congruent.** If `f ≡ f'` and `g ≡ g'` modulo an
+ideal `I`, then the resultants at the same degree bounds are congruent modulo `I`. -/
+theorem resultant_sub_mem_of_map_eq {I : Ideal R} {f f' g g' : R[X]}
+    (hf : f.map (Ideal.Quotient.mk I) = f'.map (Ideal.Quotient.mk I))
+    (hg : g.map (Ideal.Quotient.mk I) = g'.map (Ideal.Quotient.mk I)) (m n : ℕ) :
+    f.resultant g m n - f'.resultant g' m n ∈ I := by
+  rw [← Ideal.Quotient.eq, ← resultant_map_map, ← resultant_map_map, hf, hg]
+
+/-- **A monic irreducible non-divisor has nonzero resultant.** Over an integrally closed domain,
+if a monic irreducible `g` does not divide `f`, then `Res(f, g) ≠ 0`: by Gauss's lemma `g` stays
+irreducible over the fraction field, where it is therefore coprime to `f`. -/
+theorem Monic.resultant_ne_zero_of_not_dvd [IsDomain R] [IsIntegrallyClosed R] {f g : R[X]}
+    (hg : g.Monic) (hirr : Irreducible g) (hdvd : ¬g ∣ f) : f.resultant g ≠ 0 := by
+  let K := FractionRing R
+  have hinj := IsFractionRing.injective R K
+  have hcop : IsCoprime (f.map (algebraMap R K)) (g.map (algebraMap R K)) :=
+    (((hg.irreducible_iff_irreducible_map_fraction_map (K := K)).mp hirr).coprime_iff_not_dvd.mpr
+      fun h ↦ hdvd ((map_dvd_map _ hinj hg).mp h)).symm
+  intro h0
+  apply resultant_ne_zero _ _ hcop
+  rw [resultant_map_of_natDegree_eq _ (natDegree_map_eq_of_injective hinj _)
+    (natDegree_map_eq_of_injective hinj _), h0, map_zero]
 
 end Polynomial

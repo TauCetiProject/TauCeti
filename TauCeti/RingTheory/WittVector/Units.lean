@@ -25,6 +25,11 @@ unit of `R` (`WittVector.isUnit_iff_isUnit_coeff_zero`); the inverse is Mathlib'
 `p u`, so a sum `[a] + p u` has Witt coordinates `a` in degree `0` and `u_n ^ p` in degree `n + 1`
 (`WittVector.teichmuller_add_p_mul_coeff_succ`).
 
+Consequently `p` lies in the Jacobson radical of `𝕎 R` (`WittVector.p_mem_jacobson`). Over a
+perfect ring, where `p ^ n 𝕎 R` consists of the Witt vectors whose first `n` coordinates vanish,
+`x` is `p ^ n` times a unit exactly when `x₀ = ⋯ = x_{n-1} = 0` and `xₙ` is a unit
+(`WittVector.associated_p_pow_iff`).
+
 ## Main results
 
 * `WittVector.teichmuller_add_verschiebung_coeff_zero`,
@@ -38,6 +43,9 @@ unit of `R` (`WittVector.isUnit_iff_isUnit_coeff_zero`); the inverse is Mathlib'
 * `WittVector.teichmuller_add_p_mul_coeff_zero`, `WittVector.teichmuller_add_p_mul_coeff_succ`:
   the Witt coordinates of `[a] + p u` in characteristic `p`.
 * `WittVector.isUnit_iff_isUnit_coeff_zero`: in characteristic `p`, `x` is a unit iff `x₀` is.
+* `WittVector.p_mem_jacobson`: in characteristic `p`, `p` lies in the Jacobson radical of `𝕎 R`.
+* `WittVector.associated_p_pow_iff`: over a perfect ring, `x` is `p ^ n` times a unit iff
+  `x₀ = ⋯ = x_{n-1} = 0` and `xₙ` is a unit.
 
 ## References
 
@@ -139,6 +147,34 @@ Witt vector is a unit exactly when its zeroth Witt coordinate is a unit of `R`. 
 theorem isUnit_iff_isUnit_coeff_zero {x : 𝕎 R} : IsUnit x ↔ IsUnit (x.coeff 0) :=
   ⟨fun h ↦ by simpa using h.map (constantCoeff (p := p) (R := R)),
     fun ⟨_, ha⟩ ↦ (mkUnit ha.symm).isUnit⟩
+
+/-- In characteristic `p`, `p` lies in the Jacobson radical of `𝕎 R`: every `p y + 1` has zeroth
+Witt coordinate `1`. -/
+theorem p_mem_jacobson : (p : 𝕎 R) ∈ Ring.jacobson (𝕎 R) :=
+  Ring.mem_jacobson_iff.mpr fun y ↦ isUnit_iff_isUnit_coeff_zero.mpr <| by
+    have h : constantCoeff (p := p) ((p : 𝕎 R) * y + 1) = 1 := by
+      simp only [map_add, map_mul, map_natCast, map_one, CharP.cast_eq_zero, zero_mul, zero_add]
+    rw [constantCoeff_apply] at h
+    exact h ▸ isUnit_one
+
+/-- Over a perfect ring of characteristic `p`, a Witt vector is `p ^ n` times a unit exactly when
+its first `n` Witt coordinates vanish and its `n`-th Witt coordinate is a unit. -/
+theorem associated_p_pow_iff [PerfectRing R p] {x : 𝕎 R} {n : ℕ} :
+    Associated ((p : 𝕎 R) ^ n) x ↔ (∀ m < n, x.coeff m = 0) ∧ IsUnit (x.coeff n) := by
+  have hcoeff (y : 𝕎 R) : ((p : 𝕎 R) ^ n * y).coeff n = y.coeff 0 ^ p ^ n := by
+    simpa [mul_comm] using mul_pow_charP_coeff_succ (p := p) y (m := 0) (n := n)
+  constructor
+  · rintro ⟨u, rfl⟩
+    refine ⟨fun m hm ↦ ?_, ?_⟩
+    · rw [mul_comm, mul_pow_charP_coeff_zero _ hm]
+    · rw [hcoeff]
+      exact (isUnit_iff_isUnit_coeff_zero.mp u.isUnit).pow _
+  · rintro ⟨h0, hn⟩
+    obtain ⟨y, rfl⟩ := Ideal.mem_span_singleton.mp
+      ((mem_span_p_pow_iff_le_coeff_eq_zero x n).mpr h0)
+    rw [hcoeff, isUnit_pow_iff (pow_ne_zero _ hp.out.ne_zero), ← isUnit_iff_isUnit_coeff_zero]
+      at hn
+    exact associated_mul_unit_right ((p : 𝕎 R) ^ n) y hn
 
 end CharP
 

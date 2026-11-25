@@ -235,26 +235,22 @@ theorem IsPseudoIsomorphism.restrict_torsion [IsDomain A] [IsNoetherianRing A] {
     rw [mul_smul]
     exact congr(($hb : M))
 
-/-- Over a domain, a pseudo-isomorphism preserves and reflects torsion. -/
+/-- Over a domain, the source of a pseudo-isomorphism is torsion iff its target is: the kernel
+and the cokernel are pseudo-null, hence torsion. -/
 theorem IsPseudoIsomorphism.isTorsion_iff [IsDomain A] {f : M →ₗ[A] N}
     (hf : IsPseudoIsomorphism f) : Module.IsTorsion A M ↔ Module.IsTorsion A N := by
-  refine ⟨fun hM y ↦ ?_, fun hN x ↦ ?_⟩
-  · obtain ⟨a, ha⟩ := hf.isPseudoNull_coker.isTorsion
-      (x := (Submodule.Quotient.mk y : N ⧸ LinearMap.range f))
-    rw [Submonoid.smul_def, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at ha
-    obtain ⟨x, hx⟩ := ha
-    obtain ⟨b, hb⟩ := @hM x
-    rw [Submonoid.smul_def] at hb
-    exact ⟨b * a, by rw [Submonoid.smul_def, Submonoid.coe_mul, mul_smul, ← hx, ← map_smul, hb,
-      map_zero]⟩
-  · obtain ⟨a, ha⟩ := @hN (f x)
-    have hker : (a : A) • x ∈ LinearMap.ker f := by
-      rw [LinearMap.mem_ker, map_smul]
-      exact ha
-    obtain ⟨b, hb⟩ := hf.isPseudoNull_ker.isTorsion (x := ⟨(a : A) • x, hker⟩)
-    exact ⟨b * a, by
-      rw [mul_smul]
-      exact congr(($hb : M))⟩
+  refine ⟨fun hM n ↦ ?_, fun hN m ↦ ?_⟩
+  · -- Some `a` moves `n` into the range of `f`, and some `b` kills the preimage.
+    obtain ⟨a, ha⟩ := hf.isPseudoNull_coker.isTorsion (x := Submodule.Quotient.mk n)
+    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at ha
+    obtain ⟨m, hm⟩ := ha
+    obtain ⟨b, hb⟩ := hM (x := m)
+    exact ⟨b * a, by rw [mul_smul, ← hm, ← LinearMap.map_smul_of_tower, hb, map_zero]⟩
+  · -- Some `a` moves `m` into the kernel of `f`, and some `b` kills it there.
+    obtain ⟨a, ha⟩ := hN (x := f m)
+    obtain ⟨b, hb⟩ := hf.isPseudoNull_ker.isTorsion (x := ⟨a • m, by
+      rw [LinearMap.mem_ker, LinearMap.map_smul_of_tower, ha]⟩)
+    exact ⟨b * a, by rw [mul_smul]; exact congr(($hb : M))⟩
 
 /-- The multiplication criterion: over a noetherian ring, multiplication by `a` on a finitely
 generated module `M` is a pseudo-isomorphism if `a` lies in no prime of height at most one in the
