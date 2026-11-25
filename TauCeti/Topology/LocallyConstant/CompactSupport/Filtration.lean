@@ -80,6 +80,7 @@ def compactlySupportedIn (U : Set X) : Submodule R (LocallyConstant X M) where
   zero_mem' := ⟨HasCompactSupport.zero, fun _ _ => rfl⟩
   smul_mem' c f hf := ⟨hf.1.mono (support_const_smul_subset c f), fun x hx => by simp [hf.2 x hx]⟩
 
+@[simp]
 theorem mem_compactlySupportedIn {U : Set X} {f : LocallyConstant X M} :
     f ∈ compactlySupportedIn R M U ↔ HasCompactSupport f ∧ ∀ x, x ∉ U → f x = 0 :=
   Iff.rfl
@@ -163,9 +164,8 @@ theorem hasCompactSupport_comap_stratum (hV : IsOpen V) {W : Set X} (hS : S = W 
       ⟨Subtype.val, continuous_subtypeVal⟩ : LocallyConstant (W \ V : Set X) M) =
       support (f : LocallyConstant X M) ∩ Vᶜ := by
     ext x
-    simp only [mem_image, mem_support, coe_comap, ContinuousMap.coe_mk, comp_apply,
-      Subtype.exists, mem_sdiff, exists_and_right, exists_eq_right, mem_inter_iff, mem_compl_iff]
-    exact ⟨fun ⟨⟨_, hxV⟩, hx⟩ => ⟨hx, hxV⟩, fun ⟨hx, hxV⟩ => ⟨⟨hsupp hx, hxV⟩, hx⟩⟩
+    simp
+    grind
   rw [himage]
   exact (hasCompactSupport_iff_isCompact_support.1 f.property.1).inter_right hV.isClosed_compl
 

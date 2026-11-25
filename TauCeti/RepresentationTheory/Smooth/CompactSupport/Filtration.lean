@@ -108,6 +108,13 @@ def compactlySupportedRestrictStratum (V W : SubMulAction G X) (hV : IsOpen (V :
     simp [LocallyConstant.restrictStratum_apply hV (SubMulAction.coe_inf_compl W V)]
 
 @[simp]
+theorem coe_compactlySupportedRestrictStratum (V W : SubMulAction G X)
+    (hV : IsOpen (V : Set X)) :
+    ⇑(compactlySupportedRestrictStratum (R := R) (M := M) V W hV) =
+      LocallyConstant.restrictStratum R M hV W (SubMulAction.coe_inf_compl W V) :=
+  (rfl)
+
+@[simp]
 theorem toLinearMap_compactlySupportedRestrictStratum (V W : SubMulAction G X)
     (hV : IsOpen (V : Set X)) :
     (compactlySupportedRestrictStratum (R := R) (M := M) V W hV).toLinearMap =
