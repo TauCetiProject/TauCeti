@@ -51,7 +51,7 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 theorem memLp_two_algebraMap_eval {ν : Measure ℝ}
     (hexp : ∃ a : ℝ, 0 < a ∧ Integrable (fun x : ℝ => Real.exp (a * |x|)) ν) (q : Polynomial ℝ) :
     MemLp (fun x : ℝ => (algebraMap ℝ 𝕜) (q.eval x)) 2 ν :=
-  memLp_two_algebraMap_eval_of_forall_integrable_pow (𝕜 := 𝕜)
+  memLp_algebraMap_eval_of_forall_integrable_pow (𝕜 := 𝕜) ENNReal.ofNat_ne_top
     (integrable_pow_of_exp_moment hexp) q
 
 /-- Dividing by a constant keeps a polynomial in `L²`: `q/r` is again the evaluation of a

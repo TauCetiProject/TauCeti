@@ -27,8 +27,9 @@ On a seminormed group, as `‖s‖ → ∞`:
 * every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`, and `o(exp (c ‖s‖))` whenever
   `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
   every `a < c`;
-* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`;
-  in particular `√‖s‖ = o(s)`.
+* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`,
+  and `O(‖s‖ ^ b)` whenever `a ≤ b`; in particular `√‖s‖ = o(s)`, and `√x / (x ^ a) ^ k → 0`
+  for real `x → ∞` whenever `1 / 2 < a k`.
 
 These are the comparisons behind the order of growth of an entire function.
 
@@ -44,6 +45,12 @@ rates in a small scale `h` become inequalities for all small `h`. Power laws mul
 
 A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a → -∞`,
 tends to zero. This is how valuation bounds on coefficients give convergence of series.
+
+## Rounded logarithmic orders
+
+For every real `B` and every `s > 0`, the rounded-up orders `⌈B * log x⌉₊` are `o(x ^ s)`, and so
+are the shifted orders `⌈B * log (x + c)⌉₊` for every real `c`. This is how orders of logarithmic
+size are chosen in the moment method for the largest eigenvalue of a random matrix.
 
 ## Powers of a fixed base tending to one
 
@@ -182,10 +189,25 @@ theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
   · filter_upwards [eventually_gt_atTop 0] with x hx
     rw [← Real.rpow_sub hx, neg_sub]
 
+/-- For `1 / 2 < a * k`, the square root is negligible against the `k`-th power of `x ^ a`:
+`√x / (x ^ a) ^ k → 0` as `x → ∞`. -/
+theorem tendsto_sqrt_div_rpow_pow_atTop_nhds_zero {a : ℝ} {k : ℕ} (h : 1 / 2 < a * k) :
+    Tendsto (fun x : ℝ ↦ √x / (x ^ a) ^ k) atTop (𝓝 0) := by
+  refine (tendsto_rpow_neg_atTop (sub_pos.2 h)).congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast hx.le, ← Real.rpow_sub hx, neg_sub]
+
 /-- For `a < b`, `‖s‖ ^ a` is `o(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
 theorem isLittleO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a < b) :
     (fun s : E ↦ ‖s‖ ^ a) =o[cobounded E] fun s ↦ ‖s‖ ^ b :=
   (isLittleO_rpow_rpow_atTop hab).comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- For `a ≤ b`, `‖s‖ ^ a` is `O(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
+theorem isBigO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a ≤ b) :
+    (fun s : E ↦ ‖s‖ ^ a) =O[cobounded E] fun s ↦ ‖s‖ ^ b := by
+  rcases hab.lt_or_eq with hab | rfl
+  · exact (isLittleO_norm_rpow_norm_rpow_cobounded hab).isBigO
+  · exact isBigO_refl _ _
 
 /-- `√‖s‖` is `o(s)` as `‖s‖ → ∞`. -/
 theorem isLittleO_sqrt_norm_id_cobounded : (fun s : E ↦ √‖s‖) =o[cobounded E] fun s ↦ s := by
@@ -337,6 +359,42 @@ theorem pow_mul_rpow_lt_one_of_four_mul_sq_le (C : ℝ) {r : ℕ} (hCr : 4 * C ^
     _ < 1 := by
         rw [div_lt_one (by positivity)]
         exact hsr.trans_lt (by exact_mod_cast Nat.lt_two_pow_self)
+
+/-- Rounded-up logarithmic orders are negligible against every positive power: for every real `B`
+and every `s > 0`, `⌈B * log x⌉₊ / x ^ s` tends to zero as `x → ∞`. -/
+theorem tendsto_natCeil_mul_log_div_rpow_atTop_nhds_zero (B : ℝ) {s : ℝ} (hs : 0 < s) :
+    Tendsto (fun x : ℝ ↦ (⌈B * log x⌉₊ : ℝ) / x ^ s) atTop (𝓝 0) := by
+  have hlim := (((isLittleO_log_rpow_atTop hs).tendsto_div_nhds_zero).const_mul |B|).add
+    (tendsto_rpow_atTop hs).inv_tendsto_atTop
+  rw [mul_zero, zero_add] at hlim
+  -- For `x ≥ 1`, `0 ≤ ⌈B * log x⌉₊ ≤ |B| * log x + 1`.
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim ?_ ?_ <;>
+    filter_upwards [eventually_ge_atTop 1] with x hx
+  · exact div_nonneg (Nat.cast_nonneg _) (rpow_nonneg (zero_le_one.trans hx) _)
+  have hlog : 0 ≤ log x := log_nonneg hx
+  have hceil : (⌈B * log x⌉₊ : ℝ) ≤ |B| * log x + 1 :=
+    (Nat.cast_le.mpr (Nat.ceil_mono (mul_le_mul_of_nonneg_right (le_abs_self B) hlog))).trans
+      (Nat.ceil_lt_add_one (by positivity)).le
+  calc (⌈B * log x⌉₊ : ℝ) / x ^ s ≤ (|B| * log x + 1) / x ^ s :=
+        div_le_div_of_nonneg_right hceil (rpow_nonneg (zero_le_one.trans hx) _)
+    _ = |B| * (log x / x ^ s) + (x ^ s)⁻¹ := by ring
+
+/-- Shifting the logarithm keeps rounded-up logarithmic orders negligible against every positive
+power: for all reals `B` and `c` and every `s > 0`, `⌈B * log (x + c)⌉₊ / x ^ s` tends to zero as
+`x → ∞`. -/
+theorem tendsto_natCeil_mul_log_add_div_rpow_atTop_nhds_zero (B c : ℝ) {s : ℝ} (hs : 0 < s) :
+    Tendsto (fun x : ℝ ↦ (⌈B * log (x + c)⌉₊ : ℝ) / x ^ s) atTop (𝓝 0) := by
+  -- Compare with `⌈B * log (x + c)⌉₊ / (x + c) ^ s`, as `((x + c) / x) ^ s` tends to `1`.
+  have hratio := (TauCeti.tendsto_add_div_add_atTop c 0).rpow_const (p := s) (Or.inr hs.le)
+  have hlim := ((tendsto_natCeil_mul_log_div_rpow_atTop_nhds_zero B hs).comp
+    (tendsto_atTop_add_const_right atTop c tendsto_id)).mul hratio
+  rw [one_rpow, zero_mul] at hlim
+  refine hlim.congr' ?_
+  filter_upwards [eventually_gt_atTop 0, eventually_gt_atTop (-c)] with x hx hxc
+  have hx' : 0 < x + c := by linarith
+  simp only [Function.comp_apply, id, add_zero]
+  rw [div_rpow hx'.le hx.le]
+  field_simp [(rpow_pos_of_pos hx' s).ne']
 
 /-- For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the real number `q` tends to `∞`. -/
 theorem tendsto_const_rpow_inv_atTop {B : ℝ} (hB : B ≠ 0) :
