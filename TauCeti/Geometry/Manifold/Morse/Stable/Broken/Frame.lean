@@ -251,9 +251,8 @@ theorem tendsto_mvfderiv_comp_unstableFrame_flow (hf : IsMorse 𝓘(ℝ, E) f) {
     fun y ↦ (mvfderiv 𝓘(ℝ, E) (φr.toChart ∘ hX.flow a) y).comp (hX.unstableFrame φp y)
   have hL : Tendsto (fun n ↦ L (y n)) l (𝓝 (L y₀)) :=
     (hX.continuousWithinAt_mvfderiv_comp_unstableFrame hφp hf
-      (((contMDiffAt_of_mem_maximalAtlas φr.mem_maximalAtlas
-        ((hX.mem_linearForwardTimes φr).1 ha).1).comp _
-          (hX.contMDiff_flow_apply a).contMDiffAt).of_le (by norm_cast)) hy₀).tendsto.comp
+      ((contMDiffAt_toChart_comp_flow ((hX.mem_linearForwardTimes φr).1 ha).1).of_le
+        (by norm_cast)) hy₀).tendsto.comp
       (tendsto_nhdsWithin_iff.2 ⟨hy, hyu⟩)
   have hez : Tendsto (fun n ↦ e (hX.flow (T n) (y n))) l (𝓝 (e z₀)) :=
     (e.continuousAt (by simpa [e] using hz₀r)).tendsto.comp hz

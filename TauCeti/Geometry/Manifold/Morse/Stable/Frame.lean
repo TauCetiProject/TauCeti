@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Derivative
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 public import TauCeti.Geometry.Manifold.TangentCone.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
@@ -82,6 +83,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   positive multiple of the frame at the critical point, read in the chart.
 * `eventually_span_mtangentConeAt_stableSet_eq_comap`: for all large times `T`, the tangent space
   of the stable manifold is read off the derivative of `φ ∘ Φ_T`.
+* `stableNormal_eq_comp_mvfderiv`: at a time `T` of linear forward flow, the normal coordinates are
+  read off the derivative of `φ ∘ Φ_T`, which is smooth (`contMDiffAt_toChart_comp_flow`).
 * `stableNormal_eq_zero_iff`, `surjective_stableNormal`: the normal coordinates vanish exactly on
   the tangent space of the stable manifold, and are onto.
 * `range_unstableFrame`, `injective_unstableFrame`: the frame is an isomorphism onto the tangent
@@ -416,6 +419,25 @@ theorem stableNormal_apply_of_zero_mem {y : M} (hy : 0 ∈ hX.linearForwardTimes
     (w : TangentSpace 𝓘(ℝ, E) y) :
     hX.stableNormal φ y w = φ.negativeCoord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y w) := by
   rw [stableNormal_apply hφ hy, neg_zero, Real.exp_zero, one_smul, Flow.map_zero, comp_id]
+
+omit hφ in
+/-- If the orbit of `y` lies in the Morse chart `φ` at time `T`, the function `φ ∘ Φ_T` is smooth
+at `y`. -/
+theorem contMDiffAt_toChart_comp_flow {y : M} {T : ℝ} (hy : hX.flow T y ∈ φ.toChart.source) :
+    ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ (φ.toChart ∘ hX.flow T) y :=
+  (contMDiffAt_of_mem_maximalAtlas φ.mem_maximalAtlas hy).comp _
+    (hX.contMDiff_flow_apply T).contMDiffAt
+
+/-- At a time `T` of linear forward flow, the normal coordinates of the stable manifold are
+`e^{-T}` times the coordinates of negative weight of the derivative of `φ ∘ Φ_T`, as a map of the
+model space. -/
+theorem stableNormal_eq_comp_mvfderiv {y : M} {T : ℝ} (hT : T ∈ hX.linearForwardTimes φ y) :
+    hX.stableNormal φ y = (Real.exp (-T) • LinearMap.toContinuousLinearMap φ.negativeCoord).comp
+      (mvfderiv 𝓘(ℝ, E) (φ.toChart ∘ hX.flow T) y) := by
+  ext w : 1
+  simp only [ContinuousLinearMap.comp_apply, smul_apply,
+    LinearMap.coe_toContinuousLinearMap', stableNormal_apply hφ hT]
+  rw [mvfderiv_apply_eq_mfderiv_apply]
 
 /-- **The tangent space of the stable manifold, read along the flow.** At a point `y` of `W^s(x)`,
 for all large times `T`, the span of the tangent cone of `W^s(x)` at `y` is the preimage of the
@@ -981,15 +1003,11 @@ theorem contDiffAt_comp_symm_transOpenPartialHomeomorph {F : Type*} [NormedAddCo
     (hg : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) 1 g z) :
     ContDiffAt ℝ 1
       (g ∘ ((hX.flowDiffeomorph (-T)).toHomeomorph.transOpenPartialHomeomorph φ.toChart).symm)
-      (((hX.flowDiffeomorph (-T)).toHomeomorph.transOpenPartialHomeomorph φ.toChart) z) := by
-  set e := (hX.flowDiffeomorph (-T)).toHomeomorph.transOpenPartialHomeomorph φ.toChart
-  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
-    (hX.flowDiffeomorph (-T)).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
-      φ.mem_maximalAtlas
-  have hze : z ∈ e.source := by simpa [e] using hz
-  rw [← contMDiffAt_iff_contDiffAt]
-  exact hg.comp_of_eq ((contMDiffAt_symm_of_mem_maximalAtlas he (e.map_source hze)).of_le
-    (by norm_cast)) (e.left_inv hze)
+      (((hX.flowDiffeomorph (-T)).toHomeomorph.transOpenPartialHomeomorph φ.toChart) z) :=
+  ContMDiffAt.contDiffAt_comp_symm_of_mem_maximalAtlas hg
+    (IsManifold.maximalAtlas_subset_of_le (by norm_cast)
+      ((hX.flowDiffeomorph (-T)).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
+        φ.mem_maximalAtlas)) (by simpa using hz)
 
 /-- **The unstable frame is continuous along the unstable manifold.** For a function `g` which is
 `C¹` at a point `y₀` of `W^u(x)`, the derivative of `g` along the unstable frame,

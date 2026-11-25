@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
 public import TauCeti.Geometry.Manifold.Morse.Stable.Broken.Frame
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Comparison maps near a broken trajectory
@@ -107,32 +106,20 @@ theorem tendsto_stableNormal_comp_unstableFrame_of_broken (hf : IsMorse 𝓘(ℝ
         ((hX.stableNormal φr y₀).comp (hX.unstableFrame φp y₀))))) := by
   -- The second component is invariant under the flow, so it may be read at `zₙ`; near `z₀` on
   -- `W^s(q)` the normal coordinates are read at one time `c` of linear forward flow, through the
-  -- function `g = φq ∘ Φ_c`, and the λ-lemma on frames applies to `g`.
+  -- function `φq ∘ Φ_c`, and the λ-lemma on frames applies to it.
   obtain ⟨c, hc⟩ := hX.exists_eventually_mem_linearForwardTimes hφq hz₀
   have hc₀ : c ∈ hX.linearForwardTimes φq z₀ := hc.self_of_nhds hz₀
-  set g : M → E := φq.toChart ∘ hX.flow c
-  have hg : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) 1 g z₀ :=
-    ((contMDiffAt_of_mem_maximalAtlas φq.mem_maximalAtlas
-      ((hX.mem_linearForwardTimes φq).1 hc₀).1).comp _
-        (hX.contMDiff_flow_apply c).contMDiffAt).of_le (by norm_cast)
-  set C : E →L[ℝ] ({i // φq.weight i < 0} → ℝ) :=
-    Real.exp (-c) • LinearMap.toContinuousLinearMap φq.negativeCoord
-  have hN (z : M) (hz : c ∈ hX.linearForwardTimes φq z) :
-      hX.stableNormal φq z = C.comp (mvfderiv 𝓘(ℝ, E) g z) := by
-    ext w : 1
-    simp only [C, g, ContinuousLinearMap.comp_apply, smul_apply,
-      LinearMap.coe_toContinuousLinearMap', stableNormal_apply hφq hz]
-    rw [mvfderiv_apply_eq_mfderiv_apply]
-  have hlam := hX.tendsto_mvfderiv_comp_unstableFrame_flow hφp hφr hf hy₀ ha hb hg hy
-    (hyl.mono fun _ h ↦ h.1) hT hcross hz
-  rw [hN z₀ hc₀, ContinuousLinearMap.comp_assoc]
+  have hlam := hX.tendsto_mvfderiv_comp_unstableFrame_flow hφp hφr hf hy₀ ha hb
+    ((contMDiffAt_toChart_comp_flow ((hX.mem_linearForwardTimes φq).1 hc₀).1).of_le
+      (by norm_cast)) hy (hyl.mono fun _ h ↦ h.1) hT hcross hz
+  rw [stableNormal_eq_comp_mvfderiv hφq hc₀, ContinuousLinearMap.comp_assoc]
   refine ((isBoundedBilinearMap_comp.continuous.tendsto _).comp
-    (tendsto_const_nhds (x := C).prodMk_nhds hlam)).congr' ?_
+    (tendsto_const_nhds.prodMk_nhds hlam)).congr' ?_
   filter_upwards [hyl, hz.eventually hc] with n hn hcn
   have hzq : hX.flow (T n) (y n) ∈ hX.flow.stableSet q :=
     (Flow.apply_mem_stableSet_iff _ _).2 hn.2
-  rw [comp_apply, ← stableNormal_comp_unstableFrame_flow hφp hφq hf hn (T n), hN _ (hcn hzq),
-    ContinuousLinearMap.comp_assoc]
+  rw [comp_apply, ← stableNormal_comp_unstableFrame_flow hφp hφq hf hn (T n),
+    stableNormal_eq_comp_mvfderiv hφq (hcn hzq), ContinuousLinearMap.comp_assoc]
 
 /-- **Comparison maps near a broken trajectory.** Let `y₀` be a point of `W^u(p)` with a time `a`
 of linear forward flow in the Morse chart `φr` of `r`, on a trajectory from `p` to `r`, and `z₀` a
@@ -166,30 +153,20 @@ theorem tendsto_trajectoryComparison_of_broken (hf : IsMorse 𝓘(ℝ, E) f) {y�
         (tendsto_nhdsWithin_iff.2 ⟨hy, hyl.mono fun _ h ↦ h.1⟩)
   have h₂ := tendsto_stableNormal_comp_unstableFrame_of_broken hφp hφr hφq hf hy₀ ha hb hz₀ hy hyl
     hT hcross hz
-  -- The comparison map is the pairing of its two components by `ContinuousLinearMap.prodₗᵢ`.
-  -- Mathlib has no apply lemma for `prodₗᵢ`: after `trajectoryComparison_apply` the goal closes by
-  -- `rfl` because `prodₗᵢ ℝ (A, B) v` is `(A v, B v)` by definition.
-  have hprod : hX.trajectoryComparison φp φq = fun y ↦ ContinuousLinearMap.prodₗᵢ ℝ
-      ((mvfderiv 𝓘(ℝ, E) f y).comp (hX.unstableFrame φp y),
-        (hX.stableNormal φq y).comp (hX.unstableFrame φp y)) := by
-    funext y
-    ext v : 1
-    rw [trajectoryComparison_apply]
-    rfl
+  -- Both the comparison maps and the limit are pairings of two components by
+  -- `ContinuousLinearMap.prodL`.
   have hlim : ((ContinuousLinearMap.id ℝ ℝ).prodMap
         ((hX.stableNormal φq z₀).comp (hX.unstableFrame φr z₀))).comp
           (hX.trajectoryComparison φp φr y₀) =
-      ContinuousLinearMap.prodₗᵢ ℝ ((mvfderiv 𝓘(ℝ, E) f y₀).comp (hX.unstableFrame φp y₀),
+      ContinuousLinearMap.prodL ℝ ((mvfderiv 𝓘(ℝ, E) f y₀).comp (hX.unstableFrame φp y₀),
         (hX.stableNormal φq z₀).comp ((hX.unstableFrame φr z₀).comp
           ((hX.stableNormal φr y₀).comp (hX.unstableFrame φp y₀)))) := by
-    -- As for `hprod`, `prodₗᵢ ℝ (A, B) v` is `(A v, B v)` by definition, closing the goal by `rfl`
-    -- once both sides are evaluated.
     ext v : 1
-    rw [ContinuousLinearMap.comp_apply, trajectoryComparison_apply,
-      ContinuousLinearMap.coe_prodMap', Prod.map_apply, ContinuousLinearMap.id_apply]
-    rfl
-  rw [hprod, hlim]
-  exact (ContinuousLinearMap.prodₗᵢ ℝ).continuous.continuousAt.tendsto.comp (h₁.prodMk_nhds h₂)
+    simp only [ContinuousLinearMap.prodL_apply, ContinuousLinearMap.prod_apply,
+      ContinuousLinearMap.comp_apply, trajectoryComparison_apply, ContinuousLinearMap.coe_prodMap',
+      Prod.map_apply, ContinuousLinearMap.id_apply]
+  rw [trajectoryComparison_eq_prodL, hlim]
+  exact (ContinuousLinearMap.prodL ℝ).continuous.continuousAt.tendsto.comp (h₁.prodMk_nhds h₂)
 
 end IsAdaptedPseudoGradient
 
