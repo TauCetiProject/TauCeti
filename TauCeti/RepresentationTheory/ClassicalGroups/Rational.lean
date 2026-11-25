@@ -72,6 +72,7 @@ reducibility of rational representations, which requires the theory of reductive
   `g ↦ f (ρ g w)` of a rational representation are rational functions, and
   `TauCeti.isRationalRep_iff_forall_dual_apply_mem_rationalFunctions`: this characterises
   rationality of a finite-dimensional representation.
+* `TauCeti.IsRationalRep.dual`: the contragredient of a rational representation is rational.
 * `TauCeti.IsRationalRep.directSum`: a finite direct sum of rational representations is rational.
 * `TauCeti.IsPolynomialRep.isRationalRep`: a polynomial representation is rational.
 * `TauCeti.isPolynomialRep_stdRep`: the standard representation is polynomial.
@@ -293,6 +294,20 @@ theorem isRationalRep_iff_forall_dual_apply_mem_rationalFunctions [Module.Finite
   let b := Module.finBasis ℂ W
   refine (isRationalRep_iff_forall_mem_rationalFunctions b).mpr fun i j => ?_
   simpa only [LinearMap.toMatrix_apply, Module.Basis.coord_apply] using h (b.coord i) (b j)
+
+/-- **The contragredient of a rational representation is rational.** A matrix coefficient of
+`ρ.dual` is `g ↦ φ (ρ g⁻¹ w)`, a matrix coefficient of `ρ` composed with inversion, which preserves
+rational functions (`TauCeti.Matrix.GeneralLinearGroup.comp_inv_mem_rationalFunctions`). -/
+theorem IsRationalRep.dual {V : Type y} [AddCommMonoid V] [Module ℂ V]
+    {σ : Representation ℂ (GL (Fin n) ℂ) V} (h : IsRationalRep σ) : IsRationalRep σ.dual := by
+  -- The carrier is a `ℂ`-module, so its additive monoid is a group; this structure is
+  -- recovered from the module structure, with negation `(-1) • ·`, extending the given monoid.
+  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup ℂ
+  have := h.finite
+  refine isRationalRep_iff_forall_dual_apply_mem_rationalFunctions.mpr fun F φ ↦ ?_
+  obtain ⟨w, rfl⟩ := (Module.evalEquiv ℂ V).surjective F
+  simpa [Representation.dual_apply, Module.Dual.transpose_apply] using
+    comp_inv_mem_rationalFunctions (h.dual_apply_mem_rationalFunctions φ w)
 
 /-- **A finite direct sum of rational representations is rational.** A matrix coefficient of the
 direct sum is a sum of matrix coefficients of the summands. -/
