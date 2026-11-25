@@ -855,10 +855,11 @@ variable {n A : Type*} [Fintype n] [DecidableEq n] [CStarAlgebra A]
 
 /-- Invertible matrices over a unital C⋆-algebra `A` are the invertible elements of the
 C⋆-algebra `CStarMatrix n n A`, as an isomorphism of topological groups. -/
-def toCStarMatrixUnits : GL n A ≃ₜ* (CStarMatrix n n A)ˣ where
-  toMulEquiv := Units.mapEquiv CStarMatrix.ofMatrixRingEquiv.toMulEquiv
-  continuous_toFun := Continuous.units_map _ CStarMatrix.ofMatrixL.continuous
-  continuous_invFun := Continuous.units_map _ CStarMatrix.ofMatrixL.symm.continuous
+noncomputable def toCStarMatrixUnits : GL n A ≃ₜ* (CStarMatrix n n A)ˣ :=
+  Units.mapContinuousMulEquiv
+    { CStarMatrix.ofMatrixRingEquiv.toMulEquiv with
+      continuous_toFun := CStarMatrix.ofMatrixL.continuous
+      continuous_invFun := CStarMatrix.ofMatrixL.symm.continuous }
 
 @[simp]
 theorem coe_toCStarMatrixUnits (u : GL n A) :

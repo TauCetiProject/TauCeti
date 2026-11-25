@@ -131,13 +131,14 @@ theorem ContinuousLinearMap.IsInvertible.exists_path_to_id {T : E →L[ℂ] E}
     rw [← ContinuousLinearEquiv.unitsEquiv_apply, MulEquiv.apply_symm_apply]
     simp only [ContinuousLinearEquiv.coe_coe]
   let u := a.polarUnitary
-  -- The polar deformation joins `a` to its polar unitary through invertible operators.
+  -- The straight-line path `u((1 - t)|a| + t)` joins `a` to its polar unitary through invertible
+  -- operators.
   obtain ⟨γ⟩ := a.joined_polarUnitary
   have h₁ : JoinedIn {S : E →L[ℂ] E | S.IsInvertible} T (u : E →L[ℂ] E) := by
     rw [← he, ← ha]
     exact ⟨γ.map Units.continuous_val, fun t ↦
       ContinuousLinearMap.isInvertible_iff_isUnit.2 (γ t).isUnit⟩
-  -- Concatenate the polar deformation with a unitary path to the identity.
+  -- Concatenate this path with a unitary path to the identity.
   obtain ⟨δ⟩ := (Unitary.joined_one u).symm
   have h₂ : JoinedIn {S : E →L[ℂ] E | S.IsInvertible} (u : E →L[ℂ] E) 1 := by
     refine ⟨δ.map continuous_subtypeVal, fun t ↦ ?_⟩
