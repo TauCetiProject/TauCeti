@@ -18,8 +18,8 @@ the limit as `sSup`/`sInf` of an image.
 
 ## Main results
 
-* `Monotone.tendsto_nhdsLT_iSup`, `Monotone.tendsto_nhdsGT_iInf`
-* `Antitone.tendsto_nhdsLT_iInf`, `Antitone.tendsto_nhdsGT_iSup`
+* `Monotone.tendsto_nhdsLT_biSup`, `Monotone.tendsto_nhdsGT_biInf`
+* `Antitone.tendsto_nhdsLT_biInf`, `Antitone.tendsto_nhdsGT_biSup`
 -/
 
 public section
@@ -31,28 +31,28 @@ variable {α β : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology �
 
 /-- A monotone function tends to the supremum of its values to the left of `x` as its argument
 tends to `x` from the left. -/
-theorem Monotone.tendsto_nhdsLT_iSup (hf : Monotone f) (x : α) :
+theorem Monotone.tendsto_nhdsLT_biSup (hf : Monotone f) (x : α) :
     Tendsto f (𝓝[<] x) (𝓝 (⨆ y < x, f y)) := by
   have h := hf.tendsto_nhdsLT x
   rwa [sSup_image] at h
 
 /-- A monotone function tends to the infimum of its values to the right of `x` as its argument
 tends to `x` from the right. -/
-theorem Monotone.tendsto_nhdsGT_iInf (hf : Monotone f) (x : α) :
+theorem Monotone.tendsto_nhdsGT_biInf (hf : Monotone f) (x : α) :
     Tendsto f (𝓝[>] x) (𝓝 (⨅ y > x, f y)) := by
   have h := hf.tendsto_nhdsGT x
   rwa [sInf_image] at h
 
 /-- An antitone function tends to the infimum of its values to the left of `x` as its argument
 tends to `x` from the left. -/
-theorem Antitone.tendsto_nhdsLT_iInf (hf : Antitone f) (x : α) :
+theorem Antitone.tendsto_nhdsLT_biInf (hf : Antitone f) (x : α) :
     Tendsto f (𝓝[<] x) (𝓝 (⨅ y < x, f y)) := by
   have h := hf.tendsto_nhdsLT x
   rwa [sInf_image] at h
 
 /-- An antitone function tends to the supremum of its values to the right of `x` as its argument
 tends to `x` from the right. -/
-theorem Antitone.tendsto_nhdsGT_iSup (hf : Antitone f) (x : α) :
+theorem Antitone.tendsto_nhdsGT_biSup (hf : Antitone f) (x : α) :
     Tendsto f (𝓝[>] x) (𝓝 (⨆ y > x, f y)) := by
   have h := hf.tendsto_nhdsGT x
   rwa [sSup_image] at h
