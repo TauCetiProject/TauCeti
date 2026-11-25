@@ -260,6 +260,16 @@ theorem mpullback_apply_pair (f : M → M') (ω : RoughForm I' M' F 2) (x : M)
   funext i
   fin_cases i <;> rfl
 
+/-- Evaluation of the pullback of a one-form on a tangent vector. -/
+theorem mpullback_apply_one (f : M → M') (ω : RoughForm I' M' F 1) (x : M)
+    (v : TangentSpace I x) :
+    mpullback I I' f ω x ![v] = ω (f x) ![mfderiv I I' f x v] := by
+  rw [mpullback_apply]
+  congr 1
+  funext i
+  fin_cases i
+  rfl
+
 /-- Pullback within the whole manifold is ordinary pullback. -/
 @[simp]
 theorem mpullbackWithin_univ (f : M → M') (ω : RoughForm I' M' F k) :

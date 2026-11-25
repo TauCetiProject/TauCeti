@@ -339,8 +339,8 @@ private theorem exists_spectralFlow_eq_sigNeg_sub_sigNeg {s : Set ℝ} (ht₀ : 
           (sigNeg (compressedForm A c K.subtypeL a).toBilinForm.toQuadraticMap : ℤ) -
             sigNeg (compressedForm A c K.subtypeL b).toBilinForm.toQuadraticMap := by
   have hsa₀ := hsa.self_of_nhdsWithin ht₀
-  obtain ⟨c, hc, hfr, hP₀, hev⟩ :=
-    hsa₀.exists_pos_cfc_indicator_Icc_eq_starProjection_ker_of_isFredholm hF
+  obtain ⟨c, hc, -, hfr, hP₀, hev⟩ :=
+    hsa₀.exists_pos_cfc_indicator_Icc_eq_starProjection_ker_of_isFredholm hF one_pos
   set P := fun t ↦ cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A t)
   have hPK (v : K) : P t₀ v = v := by
     simp only [P, hP₀]

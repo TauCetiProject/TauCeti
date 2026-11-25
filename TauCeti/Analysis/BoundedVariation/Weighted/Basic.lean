@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Weighted variation and weighted perimeter
@@ -49,6 +50,10 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
   and perimeter.
 * `TauCeti.gaussianWeight E`, `TauCeti.gaussianPerimeter U`: the Gaussian weight and the
   Gaussian perimeter.
+* `TauCeti.weightedMeasure W`: the measure `e^{−W} · volume`, absolutely continuous with
+  respect to `volume` (`TauCeti.weightedMeasure_absolutelyContinuous`), and, for an almost
+  everywhere measurable weight, conversely
+  (`TauCeti.volume_absolutelyContinuous_weightedMeasure`).
 * `LinearIsometryEquiv.gaussianWeight_apply`, `LinearIsometryEquiv.gaussianWeight_comp`: the
   Gaussian weight is invariant under linear isometry equivalences.
 * `TauCeti.weightedVariation_eq_iSup_trace_fderiv`: for a differentiable weight, the weighted
@@ -63,11 +68,15 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
 * `TauCeti.weightedVariation_le_mul_totalVariationOn` and
   `TauCeti.mul_totalVariationOn_le_weightedVariation`: comparison with the Euclidean variation
   under bounds `m ≤ e^{−W} ≤ M` on `Ω`.
+* `TauCeti.exists_mul_totalVariationOn_le_weightedVariation`: every compact subset of `Ω` has an
+  open neighbourhood `U` and a constant `m > 0` with `m |Du|(U) ≤ V_μ(u; Ω)` for all `u`.
 * `TauCeti.exists_totalVariationOn_ne_top_of_weightedVariation_ne_top`: a function of finite
   weighted variation on `Ω` has locally finite Euclidean variation on `Ω`.
 * `TauCeti.weightedVariation_congr_ae`, `TauCeti.weightedVariation_mono`,
   `TauCeti.weightedVariation_smul` and `TauCeti.weightedVariation_add_le`: locality,
-  monotonicity in the open set, absolute homogeneity and subadditivity.
+  monotonicity in the open set, absolute homogeneity and subadditivity, also over finite sums
+  (`TauCeti.weightedVariation_sum_le`) and, for the perimeter, over finite disjoint unions
+  (`TauCeti.weightedPerimeter_biUnion_le`).
 * `TauCeti.weightedVariation_add_const`, `TauCeti.weightedPerimeter_compl`,
   `TauCeti.weightedPerimeter_empty` and `TauCeti.weightedPerimeter_univ`: for a `C¹` weight,
   constants have no variation and complements have the same perimeter.
@@ -118,6 +127,15 @@ theorem contDiff_gaussianWeight {n : WithTop ℕ∞} : ContDiff ℝ n (gaussianW
     funext gaussianWeight_def
   rw [h]
   exact ((contDiff_norm_sq ℝ).div_const _).add contDiff_const
+
+/-- The Gaussian density on the sphere of radius `r` about the origin is
+`(2π)^{−n/2} e^{−r²/2}`. -/
+theorem exp_neg_gaussianWeight_of_norm_eq {r : ℝ} {x : E} (hx : ‖x‖ = r) :
+    Real.exp (-gaussianWeight E x) =
+      (2 * Real.pi) ^ (-(Module.finrank ℝ E : ℝ) / 2) * Real.exp (-(r ^ 2 / 2)) := by
+  rw [gaussianWeight_def, hx, Real.rpow_def_of_pos (by positivity), ← Real.exp_add]
+  congr 1
+  ring
 
 /-- The Gaussian weight is invariant under linear isometry equivalences:
 `W_{E'}(e x) = W_E(x)`. -/
@@ -175,6 +193,30 @@ def gaussianPerimeter (U : Set E) : ℝ≥0∞ :=
 weight. -/
 theorem gaussianPerimeter_def : gaussianPerimeter s = weightedPerimeter (gaussianWeight E) ⊤ s :=
   (rfl)
+
+variable (W) in
+/-- The measure `μ = e^{−W} · volume` of the weight `W`. -/
+def weightedMeasure : Measure E :=
+  volume.withDensity fun x => ENNReal.ofReal (Real.exp (-W x))
+
+variable (W) in
+/-- The measure of a weight is `volume` with the density `e^{−W}`. -/
+theorem weightedMeasure_def :
+    weightedMeasure W = volume.withDensity fun x => ENNReal.ofReal (Real.exp (-W x)) :=
+  (rfl)
+
+/-- The measure of a weight is absolutely continuous with respect to `volume`. -/
+theorem weightedMeasure_absolutelyContinuous : weightedMeasure W ≪ volume := by
+  rw [weightedMeasure_def]
+  exact withDensity_absolutelyContinuous _ _
+
+/-- For an almost everywhere measurable weight, `volume` is absolutely continuous with respect to
+the measure of the weight, the density `e^{−W}` being positive. -/
+theorem volume_absolutelyContinuous_weightedMeasure (hW : AEMeasurable W volume) :
+    volume ≪ weightedMeasure W := by
+  rw [weightedMeasure_def]
+  exact withDensity_absolutelyContinuous' hW.neg.exp.ennreal_ofReal
+    (.of_forall fun x => (ENNReal.ofReal_pos.2 (Real.exp_pos _)).ne')
 
 /-! ### Admissible fields -/
 
@@ -440,6 +482,28 @@ theorem weightedVariation_add_le (hW : ContDiff ℝ 1 W) (hu : LocallyIntegrable
   · rw [integral_undef fun h => hiv ((h.sub hiu).congr (.of_forall fun x => by simp [mul_add]))]
     simp
 
+/-- **Subadditivity over a finite sum.** For a `C¹` weight and functions locally integrable on
+`Ω`, `V_μ(∑ᵢ uᵢ; Ω) ≤ ∑ᵢ V_μ(uᵢ; Ω)`. -/
+theorem weightedVariation_sum_le (hW : ContDiff ℝ 1 W) {ι : Type*} (t : Finset ι)
+    {f : ι → E → ℝ} (hf : ∀ i ∈ t, LocallyIntegrableOn (f i) Ω) :
+    weightedVariation W Ω (∑ i ∈ t, f i) ≤ ∑ i ∈ t, weightedVariation W Ω (f i) :=
+  Finset.le_sum_of_subadditive_on_pred (weightedVariation W Ω) (LocallyIntegrableOn · Ω) (by simp)
+    (fun _ _ hu _ => weightedVariation_add_le hW hu) (fun _ _ hu hv => hu.add hv) f hf
+
+/-- **Subadditivity over a finite disjoint union.** For a `C¹` weight, the weighted perimeter of
+the union of finitely many pairwise disjoint null-measurable sets is at most the sum of their
+weighted perimeters. -/
+theorem weightedPerimeter_biUnion_le (hW : ContDiff ℝ 1 W) {ι : Type*} (t : Finset ι)
+    {s : ι → Set E} (hs : ∀ i ∈ t, NullMeasurableSet (s i) (volume.restrict Ω))
+    (hd : (t : Set ι).PairwiseDisjoint s) :
+    weightedPerimeter W Ω (⋃ i ∈ t, s i) ≤ ∑ i ∈ t, weightedPerimeter W Ω (s i) := by
+  have hind : (⋃ i ∈ t, s i).indicator (1 : E → ℝ) = ∑ i ∈ t, (s i).indicator 1 := by
+    rw [Finset.indicator_biUnion t _ hd]
+    ext x
+    simp
+  simp only [weightedPerimeter_def, hind]
+  exact weightedVariation_sum_le hW t fun i hi => locallyIntegrableOn_indicator_const (hs i hi) 1
+
 /-- For a `C¹` weight, adding a constant does not change the weighted variation. No
 integrability of `u` is needed. -/
 @[simp]
@@ -574,6 +638,28 @@ theorem mul_totalVariationOn_le_weightedVariation (hW : ContDiff ℝ 1 W)
       exact (Real.exp_pos _).le
   exact le_iSup₂_of_le ((m : ℝ) • X) hmX (ofReal_integral_divergenceCLM_smul_mul m X).ge
 
+/-- **Local comparison with the Euclidean variation.** For a `C¹` weight, every compact subset
+`K` of `Ω` has an open neighbourhood `U ≤ Ω` and a constant `m > 0` such that
+`m |Du|(U) ≤ V_μ(u; Ω)` for every `u` locally integrable on `Ω`, where
+`|Du|(U) = TauCeti.totalVariationOn volume U u`: `e^{−W}` is bounded below by a positive constant
+near `K`. -/
+theorem exists_mul_totalVariationOn_le_weightedVariation (hW : ContDiff ℝ 1 W) {K : Set E}
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ U : Opens E, K ⊆ (U : Set E) ∧ U ≤ Ω ∧ ∃ m : ℝ≥0, m ≠ 0 ∧
+      ∀ v : E → ℝ, LocallyIntegrableOn v Ω →
+        m * totalVariationOn volume U v ≤ weightedVariation W Ω v := by
+  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
+  let U : Opens E := ⟨Metric.thickening δ K, Metric.isOpen_thickening⟩
+  have hUΩ : U ≤ Ω := (Metric.thickening_subset_cthickening δ K).trans hδΩ
+  -- `e^{−W}` has a positive lower bound `m` on the compact set `cthickening δ K ⊇ U`.
+  obtain ⟨m, hm, hmW⟩ := hK.cthickening.exists_forall_le'
+    (contDiff_exp_neg hW).continuous.continuousOn fun x _ => Real.exp_pos (-W x)
+  refine ⟨U, Metric.self_subset_thickening hδ K, hUΩ, ⟨m, hm.le⟩, NNReal.coe_ne_zero.1 hm.ne',
+    fun v hv => ?_⟩
+  exact (mul_totalVariationOn_le_weightedVariation (m := ⟨m, hm.le⟩) hW (hv.mono_set hUΩ)
+    fun x hx => hmW x (Metric.thickening_subset_cthickening δ K hx)).trans
+    (weightedVariation_mono hUΩ)
+
 /-- **Finite weighted variation gives locally bounded variation.** For a `C¹` weight and `u`
 locally integrable on `Ω`, if `V_μ(u; Ω) < ∞`, then every compact subset of `Ω` has an open
 neighbourhood on which `u` has finite Euclidean variation `TauCeti.totalVariationOn volume`. -/
@@ -582,21 +668,11 @@ theorem exists_totalVariationOn_ne_top_of_weightedVariation_ne_top (hW : ContDif
     ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U u ≠ ∞ := by
   intro K hK hKΩ
-  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
-  let U : Opens E := ⟨Metric.thickening δ K, Metric.isOpen_thickening⟩
-  have hUΩ : U ≤ Ω := (Metric.thickening_subset_cthickening δ K).trans hδΩ
-  -- `e^{−W}` has a positive lower bound `m` on the compact set `cthickening δ K ⊇ U`.
-  obtain ⟨m', hm', hm'W⟩ := hK.cthickening.exists_forall_le'
-    (contDiff_exp_neg hW).continuous.continuousOn fun x _ => Real.exp_pos (-W x)
-  let m : ℝ≥0 := ⟨m', hm'.le⟩
-  have hm0 : m ≠ 0 := NNReal.coe_ne_zero.1 hm'.ne'
-  have hm (x : E) (hx : x ∈ U) : (m : ℝ) ≤ Real.exp (-W x) :=
-    hm'W x (Metric.thickening_subset_cthickening δ K hx)
-  have hle := (mul_totalVariationOn_le_weightedVariation hW (hu.mono_set hUΩ) hm).trans
-    (weightedVariation_mono hUΩ)
-  refine ⟨U, Metric.self_subset_thickening hδ K, fun htop => h ?_⟩
-  rw [htop, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hm0)] at hle
-  exact top_le_iff.1 hle
+  obtain ⟨U, hKU, -, m, hm0, hle⟩ := exists_mul_totalVariationOn_le_weightedVariation hW hK hKΩ
+  refine ⟨U, hKU, fun htop => h ?_⟩
+  have hmu := hle u hu
+  rw [htop, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hm0)] at hmu
+  exact top_le_iff.1 hmu
 
 /-! ### The Gaussian perimeter -/
 

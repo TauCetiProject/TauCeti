@@ -60,9 +60,14 @@ null-measurable set and equal to `1` off it, preserves integrability
 (`MeasureTheory.Integrable.prod_mulIndicator_const_smul`). A function integrable for the measure
 `μ` weighted by `‖h‖ₑ` has an integrable scalar product with `h`
 (`MeasureTheory.integrable_smul_of_integrable_withDensity_enorm`).
+
+The reciprocal of a density over a finite base measure is integrable under the weighted measure,
+even when that measure is infinite (`AEMeasurable.integrable_inv_toReal_withDensity`).
 -/
 
 public section
+
+open scoped ENNReal
 
 namespace MeasureTheory
 
@@ -210,6 +215,19 @@ theorem Integrable.smul_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
     Integrable (fun x ↦ g x • f x) μ :=
   (hf.norm.const_mul K).mono' (hg.smul hf.1)
     (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
+
+/-- The reciprocal of a density is integrable under the changed measure when the
+original measure is finite, even if the changed measure is infinite. Zero and infinite
+density values give reciprocal zero by totalization. No lower bound is required. -/
+theorem _root_.AEMeasurable.integrable_inv_toReal_withDensity {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsFiniteMeasure μ] {w : Ω → ℝ≥0∞} (hw : AEMeasurable w μ) :
+    Integrable (fun x ↦ ((w x).toReal)⁻¹) (μ.withDensity w) := by
+  have hle := Measure.le_iff.mp (withDensity_inv_same_le hw) Set.univ MeasurableSet.univ
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at hle
+  have hi : AEMeasurable (fun x ↦ (w x)⁻¹) (μ.withDensity w) :=
+    hw.fun_inv.mono_ac (withDensity_absolutelyContinuous μ w)
+  simpa only [ENNReal.toReal_inv] using
+    integrable_toReal_of_lintegral_ne_top hi (hle.trans_lt (measure_lt_top μ _)).ne
 
 /-- An integrable function vanishing almost everywhere outside a set stays integrable when an
 operator-valued function bounded on that set is applied to it. -/
