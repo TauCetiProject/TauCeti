@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Bicategory.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.Functor.Pseudofunctor
 public import Mathlib.CategoryTheory.Center.Basic
 public import Mathlib.CategoryTheory.Category.Cat
+public import TauCeti.CategoryTheory.Center.Basic
 
 /-!
 # Intrinsic central sections of a fibred category
@@ -27,13 +28,7 @@ varying-`U` step).
 `ZF(U)` is a subgroup of the product of the unit groups, with pointwise operations, and it is
 commutative because each categorical centre is. Restriction along `f : V ⟶ U` reindexes a
 section by composition with `f`; it is a group homomorphism `ZF(U) →* ZF(V)`, the identity for
-`f = 𝟙` and compatible with composition, using only associativity in `C`. No topology, gerbe
-condition, chosen object or commutativity of the automorphism groups of `F` is needed.
-
-This is the first part of AlgebraicModuliForArithmeticGeometry §4.6: `IntrinsicBandSections`,
-`bandCenterExt` (`IntrinsicBandSections.ext`), `bandCenterCommute`
-(`IntrinsicBandSections.mul_comm`), `IntrinsicBandSections.restrict`, `bandCenterRestrictId` and
-`bandCenterRestrictComp`.
+`f = 𝟙` and compatible with composition.
 
 ## Main definitions
 
@@ -93,22 +88,17 @@ def IntrinsicBandSections (U : C) :
       hb f g x]
   inv_mem' := by
     intro a ha V W f g x
-    simp only [Pi.inv_apply]
-    set G := (F.map g.op.toLoc).toFunctor
-    set y := G.obj x
-    -- both sides are inverse to the same isomorphism
-    have h₁ : (a V f)⁻¹.val.app x ≫ (a V f).val.app x = 𝟙 x := by
-      rw [← CatCenter.mul_app, Units.inv_mul, CatCenter.app_one]
-    have h₂ : (a W (g ≫ f)).val.app y ≫ (a W (g ≫ f))⁻¹.val.app y = 𝟙 y := by
-      rw [← CatCenter.mul_app, Units.mul_inv, CatCenter.app_one]
-    have h₃ := congrArg G.map h₁
-    rw [Functor.map_comp, Functor.map_id, ha f g x] at h₃
-    calc G.map ((a V f)⁻¹.val.app x)
-        = G.map ((a V f)⁻¹.val.app x) ≫ (a W (g ≫ f)).val.app y ≫
-            (a W (g ≫ f))⁻¹.val.app y := by rw [h₂, Category.comp_id]
-      _ = (a W (g ≫ f))⁻¹.val.app y := by rw [← Category.assoc, h₃, Category.id_comp]
+    simp only [Pi.inv_apply, CatCenter.inv_val_app, Functor.map_inv, ha f g x]
 
 variable {F}
+
+/-- Unfolding of `CategoryTheory.Pseudofunctor.IsPullbackCompatible`. -/
+theorem isPullbackCompatible_iff {U : C}
+    (z : ∀ (V : C) (_ : V ⟶ U), (CatCenter (F.obj (.mk (op V))))ˣ) :
+    F.IsPullbackCompatible z ↔ ∀ ⦃V W : C⦄ (f : V ⟶ U) (g : W ⟶ V) (x : F.obj (.mk (op V))),
+      (F.map g.op.toLoc).toFunctor.map ((z V f).val.app x) =
+        (z W (g ≫ f)).val.app ((F.map g.op.toLoc).toFunctor.obj x) :=
+  Iff.rfl
 
 namespace IntrinsicBandSections
 
@@ -138,20 +128,20 @@ theorem val_ofCompatible (z : ∀ (V : C) (_ : V ⟶ U), (CatCenter (F.obj (.mk 
   (rfl)
 
 @[simp]
-theorem one_val (V : C) (f : V ⟶ U) : (1 : IntrinsicBandSections F U).val V f = 1 :=
+theorem val_one (V : C) (f : V ⟶ U) : (1 : IntrinsicBandSections F U).val V f = 1 :=
   rfl
 
 @[simp]
-theorem mul_val (s t : IntrinsicBandSections F U) (V : C) (f : V ⟶ U) :
+theorem val_mul (s t : IntrinsicBandSections F U) (V : C) (f : V ⟶ U) :
     (s * t).val V f = s.val V f * t.val V f :=
   rfl
 
 @[simp]
-theorem inv_val (s : IntrinsicBandSections F U) (V : C) (f : V ⟶ U) :
+theorem val_inv (s : IntrinsicBandSections F U) (V : C) (f : V ⟶ U) :
     s⁻¹.val V f = (s.val V f)⁻¹ :=
   rfl
 
-/-- **Extensionality** (`bandCenterExt`): two sections with the same component automorphism at
+/-- **Extensionality**: two sections with the same component automorphism at
 every arrow `f : V ⟶ U` and every object `x` over `V` are equal. -/
 @[ext]
 theorem ext {s t : IntrinsicBandSections F U}
@@ -160,17 +150,17 @@ theorem ext {s t : IntrinsicBandSections F U}
     s = t :=
   Subtype.ext <| funext fun V ↦ funext fun f ↦ Units.ext <| CatCenter.ext _ _ (h V f)
 
-/-- **Commutativity** (`bandCenterCommute`): the intrinsic central sections commute, because the
+/-- **Commutativity**: the intrinsic central sections commute, because the
 categorical centre of each fibre is commutative. No commutativity of the automorphism groups of
 `F` is needed. -/
-theorem mul_comm (s t : IntrinsicBandSections F U) : s * t = t * s := by
+protected theorem mul_comm (s t : IntrinsicBandSections F U) : s * t = t * s := by
   ext V f x
-  simp only [mul_val, Units.val_mul]
+  simp only [val_mul, Units.val_mul]
   congr 1
   exact Std.Commutative.comm _ _
 
 instance : CommGroup (IntrinsicBandSections F U) where
-  mul_comm := mul_comm
+  mul_comm := IntrinsicBandSections.mul_comm
 
 /-- **Restriction** along `f : V ⟶ U`: `(r_f s)(W, a) = s(W, a ≫ f)`. -/
 def restrict {V : C} (f : V ⟶ U) : IntrinsicBandSections F U →* IntrinsicBandSections F V where
@@ -180,22 +170,22 @@ def restrict {V : C} (f : V ⟶ U) : IntrinsicBandSections F U →* IntrinsicBan
   map_mul' _ _ := rfl
 
 @[simp]
-theorem restrict_val {V : C} (f : V ⟶ U) (s : IntrinsicBandSections F U) (W : C) (a : W ⟶ V) :
+theorem val_restrict {V : C} (f : V ⟶ U) (s : IntrinsicBandSections F U) (W : C) (a : W ⟶ V) :
     (restrict f s).val W a = s.val W (a ≫ f) :=
   (rfl)
 
-/-- Restriction along the identity is the identity (`bandCenterRestrictId`). -/
+/-- Restriction along the identity is the identity. -/
 @[simp]
 theorem restrict_id (s : IntrinsicBandSections F U) : restrict (𝟙 U) s = s := by
   ext W a x
-  rw [restrict_val, Category.comp_id]
+  rw [val_restrict, Category.comp_id]
 
-/-- Restriction is compatible with composition (`bandCenterRestrictComp`):
-`r_g (r_f s) = r_{g ≫ f} s`. -/
+/-- Restriction is compatible with composition: `r_g (r_f s) = r_{g ≫ f} s`. -/
+@[simp]
 theorem restrict_comp {V W : C} (f : V ⟶ U) (g : W ⟶ V) (s : IntrinsicBandSections F U) :
     restrict g (restrict f s) = restrict (g ≫ f) s := by
   ext T a x
-  rw [restrict_val, restrict_val, restrict_val, Category.assoc]
+  rw [val_restrict, val_restrict, val_restrict, Category.assoc]
 
 /-- If every fibre is thin, for instance the terminal category, the only intrinsic central
 section is the identity. -/
