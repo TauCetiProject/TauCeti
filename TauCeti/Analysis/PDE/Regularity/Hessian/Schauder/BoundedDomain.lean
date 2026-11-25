@@ -600,10 +600,8 @@ theorem exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fd
       ((hL i j).continuousOn hα).smul ((hd2.clm_apply continuousOn_const).clm_apply
         continuousOn_const)
   have hFcl : ∀ z ∈ closure Ω, |∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ F := fun z hz => by
-    refine (closure_minimal ?_ (hLc.abs.preimage_isClosed_of_isClosed isClosed_closure
-      (isClosed_Iic (a := (F : ℝ)))) hz).2
-    exact fun y hy => ⟨subset_closure hy, hF y hy⟩
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ F :=
+    fun z hz => le_on_closure hF hLc.abs continuousOn_const hz
   -- The maximum principle bounds `|u|` by `D F`.
   have hu0' : ∀ z ∈ closure Ω, |u z| ≤ D * F := fun z hz => by
     have h := abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_frontier
