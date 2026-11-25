@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.EulerClass
-public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Negative
+public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Negative.Basic
 
 /-!
 # The Euler number of a negative point twist
@@ -40,7 +40,8 @@ with `x`.
   local index is `1` (`TauCeti.sectionIndex_negPointTwist_pointTwistDiv_self`, through
   `TauCeti.sectionIndex_eq_one_of_hasFDerivAt_smulRight`).
 
-Summing over zeros gives `⟨e(L_ℝ), [X]⟩ = ⟨e(L(-x)_ℝ), [X]⟩ + 1`.
+Summing over zeros gives `⟨e(L_ℝ), [X]⟩ = ⟨e(L(-x)_ℝ), [X]⟩ + 1`
+(`TauCeti.evalFundamentalClass_complexEulerClass_eq_add_one_of_setOf_eq_insert`).
 
 ## Main results
 
@@ -155,7 +156,7 @@ private theorem hasFDerivAt_negPointTwist_pointTwistDiv_chartAt (x : X)
           (TotalSpace.mk' ℂ x (τ x))).2))
       (chartAt ℂ x x) := by
   set φ := chartAt ℂ x
-  set eN := trivializationAt ℂ (negPointTwistCore ℂ L x).Fiber x
+  set eN := trivializationAt ℂ (negPointTwistCore ℂ L x).Fiber x with heN
   have hxφ : x ∈ φ.source := mem_chart_source ℂ x
   have hxN : x ∈ eN.baseSet := mem_baseSet_trivializationAt ℂ _ x
   -- The included section read in the charts is `w ↦ (w - φ x) g(w)`.
@@ -170,14 +171,10 @@ private theorem hasFDerivAt_negPointTwist_pointTwistDiv_chartAt (x : X)
       simpa using mem_signedPointTwistCore_trivializationAt_baseSet.1 hwe
     refine (trivializationAt_pointTwistDiv_negPointTwistCore (i := (x, true)) hwe'
       (τ (φ.symm w))).trans ?_
-    rw [pointTwistFactor_false_true, pointTwistCoord_chartAt_symm hw,
-      show eN = _ from signedPointTwistCore_trivializationAt_self ℂ L x false]
-  have hG : ContinuousAt ((fun z ↦ (eN (TotalSpace.mk' ℂ z (τ z))).2) ∘ φ.symm) (φ x) :=
-    ContinuousAt.comp_of_eq ((eN.continuousOn_snd_apply_mk hτ).continuousAt
-      (eN.open_baseSet.mem_nhds hxN)) (φ.continuousAt_symm (φ.map_source hxφ)) (φ.left_inv hxφ)
-  have hA := (((hasFDerivAt_id (𝕜 := ℝ) (φ x)).sub_const (φ x)).smul_of_eq_zero hG
-    (sub_self _)).congr_of_eventuallyEq hfeq
-  rwa [Function.comp_apply, φ.left_inv hxφ] at hA
+    rw [pointTwistFactor_false_true, pointTwistCoord_chartAt_symm hw, heN,
+      signedPointTwistCore_trivializationAt_self ℂ L x false]
+  exact hasFDerivAt_sub_smul_comp_chartAt_symm
+    ((eN.continuousOn_snd_apply_mk hτ).continuousAt (eN.open_baseSet.mem_nhds hxN)) hfeq
 
 /-- **The local index of the included section at the twisting point is one.** For a continuous
 section `τ` of the negative point twist `L(-x)` with `τ x ≠ 0`, the section `pointTwistDiv ∘ τ`
@@ -242,22 +239,10 @@ theorem evalFundamentalClass_complexEulerClass_negPointTwist [CompactSpace X] (x
     -- `pointTwistDiv_eq_zero_iff` with the model fibre `ℂ` of `L(-x)` made explicit.
     simp only [mem_ofPred_eq, mem_insert_iff]
     exact pointTwistDiv_eq_zero_iff (F := ℂ) (E := L) _
-  have hZx : {z | pointTwistDiv ℂ L x z (τ z) = 0}.Finite := hZ' ▸ hZ.insert x
-  rw [eq_sub_iff_add_eq, complexEulerClass_def, complexEulerClass_def,
-    VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex _ _ _ hτ _ hZ,
-    VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex _ _ _
-      (continuous_negPointTwist_pointTwistDiv_section hτ) _ hZx]
-  have hfin : hZx.toFinset = insert x hZ.toFinset := by
-    ext z
-    simp only [Set.Finite.mem_toFinset, Finset.mem_insert, hZ', Set.mem_insert_iff]
-  have hx : x ∉ hZ.toFinset := by simpa using hτx
-  refine Eq.trans ?_ (Finset.sum_congr hfin fun _ _ ↦ rfl).symm
-  rw [Finset.sum_insert hx, add_comm]
-  congr 1
-  · exact (sectionIndex_negPointTwist_pointTwistDiv_self x hτ hτx).symm
-  · exact Finset.sum_congr rfl fun z hz ↦
-      (sectionIndex_negPointTwist_pointTwistDiv_of_ne (finrank_self ℂ)
-        (by rintro rfl; exact hx hz) hτ).symm
+  refine eq_sub_of_add_eq (evalFundamentalClass_complexEulerClass_eq_add_one_of_setOf_eq_insert x hτ
+    (continuous_negPointTwist_pointTwistDiv_section hτ) hZ hZ' hτx
+    (fun _ hz ↦ sectionIndex_negPointTwist_pointTwistDiv_of_ne (finrank_self ℂ) hz hτ)
+    (sectionIndex_negPointTwist_pointTwistDiv_self x hτ hτx)).symm
 
 end Line
 
