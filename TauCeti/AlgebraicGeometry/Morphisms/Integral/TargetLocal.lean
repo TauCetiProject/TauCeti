@@ -17,9 +17,9 @@ dependent function type, not `AffineTargetMorphismProperty`. Instance search can
 the out-parameter of `HasAffineProperty`, so `IsZariskiLocalAtTarget @IsIntegralHom` and
 `HasAffineProperty @IsIntegralHom _` fail to synthesize.
 
-This file restates the affine property as a constant of type `AffineTargetMorphismProperty`
-(`AlgebraicGeometry.affineAndIsIntegralAffineTarget`) and registers the instances through it, so
-instance search finds them. The same is done for affine morphisms in
+This file restates the instance with the affine property written as Mathlib's constant
+`affineAnd RingHom.IsIntegral`, of type `AffineTargetMorphismProperty`, so instance search finds
+it. The same is done for affine morphisms in
 `TauCeti.AlgebraicGeometry.Morphisms.Affine.TargetLocal`.
 
 ## Main results
@@ -37,19 +37,14 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- The affine target property of integral morphisms: the source is affine and the map of global
-sections is integral. -/
-abbrev affineAndIsIntegralAffineTarget : AffineTargetMorphismProperty.{u} :=
-  fun X _ f _ ↦ IsAffine X ∧ RingHom.IsIntegral (f.app ⊤).hom
-
 /-- A morphism to an affine scheme is integral exactly when its source is affine and its map of
 global sections is integral, as an instance that instance search can use. -/
 instance hasAffineProperty_isIntegralHom :
-    HasAffineProperty @IsIntegralHom.{u} affineAndIsIntegralAffineTarget :=
+    HasAffineProperty @IsIntegralHom.{u} (affineAnd RingHom.IsIntegral) :=
   IsIntegralHom.hasAffineProperty
 
 /-- **Being integral is local on the target.** -/
 instance isZariskiLocalAtTarget_isIntegralHom : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
-  HasAffineProperty.instIsZariskiLocalAtTarget (Q := affineAndIsIntegralAffineTarget)
+  HasAffineProperty.instIsZariskiLocalAtTarget (Q := affineAnd RingHom.IsIntegral)
 
 end AlgebraicGeometry

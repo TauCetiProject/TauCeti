@@ -18,11 +18,10 @@ dependent function type, not `AffineTargetMorphismProperty`, so it cannot be ass
 out-parameter of `HasAffineProperty`. Hence `IsZariskiLocalAtTarget @IsFinite` and
 `HasAffineProperty @IsFinite _` fail to synthesize.
 
-This file restates the affine property as a constant of type `AffineTargetMorphismProperty`
-(`AlgebraicGeometry.affineAndFiniteAffineTarget`) and registers the instances through it, so
-instance search finds them. The same is done for affine morphisms in
-`TauCeti.AlgebraicGeometry.Morphisms.Affine.TargetLocal` and for integral morphisms in
-`TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal`.
+This file restates the instance with the affine property written as Mathlib's constant
+`affineAnd RingHom.Finite`, of type `AffineTargetMorphismProperty`, so instance search finds it.
+The same is done for affine morphisms in `TauCeti.AlgebraicGeometry.Morphisms.Affine.TargetLocal`
+and for integral morphisms in `TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal`.
 
 ## Main results
 
@@ -38,22 +37,18 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- The affine target property of finite morphisms: the source is affine and the map of global
-sections is finite. -/
-abbrev affineAndFiniteAffineTarget : AffineTargetMorphismProperty.{u} :=
-  fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom
-
 /-- A morphism to an affine scheme is finite exactly when its source is affine and its map of
 global sections is finite, as an instance that instance search can use. -/
 instance hasAffineProperty_isFinite :
-    HasAffineProperty @IsFinite.{u} affineAndFiniteAffineTarget := by
+    HasAffineProperty @IsFinite.{u} (affineAnd RingHom.Finite) := by
   -- Mathlib's instance has an automatically generated name too long to write within the line
   -- length limit, so it is retrieved by `observe`.
-  observe h : HasAffineProperty @IsFinite.{u} affineAndFiniteAffineTarget
+  observe h : HasAffineProperty @IsFinite.{u}
+    fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom
   exact h
 
 /-- **Being finite is local on the target.** -/
 instance isZariskiLocalAtTarget_isFinite : IsZariskiLocalAtTarget @IsFinite.{u} :=
-  HasAffineProperty.instIsZariskiLocalAtTarget (Q := affineAndFiniteAffineTarget)
+  HasAffineProperty.instIsZariskiLocalAtTarget (Q := affineAnd RingHom.Finite)
 
 end AlgebraicGeometry
