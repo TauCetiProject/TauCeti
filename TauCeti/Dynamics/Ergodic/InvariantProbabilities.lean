@@ -75,6 +75,11 @@ theorem invariantProbabilities_eq_setOf_map_eq (hT : Measurable T) :
 def UniquelyErgodic (T : X → X) : Prop :=
   ∃ ν, invariantProbabilities T = {ν}
 
+/-- `T` is uniquely ergodic if and only if its invariant probability measures form a
+singleton. -/
+theorem uniquelyErgodic_def : UniquelyErgodic T ↔ ∃ ν, invariantProbabilities T = {ν} :=
+  Iff.rfl
+
 /-- `T` is uniquely ergodic if and only if it has an invariant probability measure and any two
 invariant probability measures are equal. -/
 theorem uniquelyErgodic_iff :
@@ -87,6 +92,10 @@ uniquely ergodic. -/
 theorem UniquelyErgodic.of_mem {ν : ProbabilityMeasure X} (hν : ν ∈ invariantProbabilities T)
     (h : ∀ μ ∈ invariantProbabilities T, μ = ν) : UniquelyErgodic T :=
   ⟨ν, eq_singleton_iff_unique_mem.mpr ⟨hν, h⟩⟩
+
+/-- A uniquely ergodic map has an invariant probability measure. -/
+theorem UniquelyErgodic.nonempty (h : UniquelyErgodic T) : (invariantProbabilities T).Nonempty :=
+  (uniquelyErgodic_iff.mp h).1
 
 /-- Any two invariant probability measures of a uniquely ergodic map are equal. -/
 theorem UniquelyErgodic.eq_of_mem (h : UniquelyErgodic T) {μ ν : ProbabilityMeasure X}
