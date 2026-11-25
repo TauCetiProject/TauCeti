@@ -50,8 +50,8 @@ By contrast `ℤ/p` is powerful but not uniform, since it has torsion.
   most `p ^ d(G)`.
 * `TauCeti.isUniform_congr`, `TauCeti.IsUniform.prod`: uniformity is invariant under topological
   group isomorphism and stable under binary products.
-* `TauCeti.isUniform_pLowerCentralSeries`: the terms `λ_k = G^{p^k}` of the lower `p`-series of a
-  uniform group are uniform.
+* `TauCeti.IsUniform.to_pLowerCentralSeries`, `TauCeti.IsUniform.closedPowerSubgroup_pow`: the terms
+  `λ_k = G^{p^k}` of the lower `p`-series of a uniform group are uniform.
 * `TauCeti.isUniform_of_subsingleton`: the trivial group is uniform; its dimension is `0` by
   `TauCeti.topologicalGeneratorRankNat_of_subsingleton`.
 * `TauCeti.isUniform_multiplicative_pi_padicInt`, `TauCeti.isUniform_multiplicative_padicInt`:
@@ -192,8 +192,8 @@ variable [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [IsTopo
 /-- **The canonical power subgroups of a uniform group are uniform**: every term
 `λ_k = G^{p^k}` (`TauCeti.IsPowerful.pLowerCentralSeries_eq_closedPowerSubgroup`) of the lower
 `p`-series of a uniform group is uniform. It is open, hence topologically finitely generated, and
-powerful by `TauCeti.isPowerful_pLowerCentralSeries`. -/
-theorem isUniform_pLowerCentralSeries (hG : IsUniform p G) (k : ℕ) :
+powerful by `TauCeti.IsPowerful.to_pLowerCentralSeries`. -/
+theorem IsUniform.to_pLowerCentralSeries (hG : IsUniform p G) (k : ℕ) :
     IsUniform p (pLowerCentralSeries p G k) where
   isProP := hG.isProP.subgroup _
   isTopologicallyFinitelyGenerated := hG.isTopologicallyFinitelyGenerated.of_openSubgroup
@@ -203,8 +203,16 @@ theorem isUniform_pLowerCentralSeries (hG : IsUniform p G) (k : ℕ) :
     have := hG.isMulTorsionFree
     Function.Injective.isMulTorsionFree (pLowerCentralSeries p G k).subtype
       (pLowerCentralSeries p G k).subtype_injective
-  isPowerful := isPowerful_pLowerCentralSeries hp.out hG.isPowerful hG.isProP
+  isPowerful := hG.isPowerful.to_pLowerCentralSeries hp.out hG.isProP
     hG.isTopologicallyFinitelyGenerated k
+
+/-- **The closed power subgroups `G^{p^n}` of a uniform group are uniform**: they are the terms of
+the lower `p`-series (`TauCeti.IsPowerful.pLowerCentralSeries_eq_closedPowerSubgroup`), which are
+uniform by `TauCeti.IsUniform.to_pLowerCentralSeries`. -/
+theorem IsUniform.closedPowerSubgroup_pow (hG : IsUniform p G) (n : ℕ) :
+    IsUniform p (closedPowerSubgroup (p ^ n) G) :=
+  hG.isPowerful.pLowerCentralSeries_eq_closedPowerSubgroup hp.out hG.isProP
+    hG.isTopologicallyFinitelyGenerated n ▸ hG.to_pLowerCentralSeries n
 
 end PowerSubgroups
 

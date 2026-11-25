@@ -34,7 +34,7 @@ For a topologically finitely generated pro-`p` group this gives the structure of
   (`TauCeti.IsPowerful.pLowerCentralSeries_eq_closedPowerSubgroup`);
 * `λ_{k+1} = (λ_k)ᵖ`: each term is the closed power subgroup of the previous one, computed inside
   it (`TauCeti.IsPowerful.map_subtype_closedPowerSubgroup_pLowerCentralSeries`);
-* each `λ_k` is again powerful (`TauCeti.isPowerful_pLowerCentralSeries`);
+* each `λ_k` is again powerful (`TauCeti.IsPowerful.to_pLowerCentralSeries`);
 * the successive indices `[λ_k : λ_{k+1}]` are non-increasing
   (`TauCeti.IsPowerful.relIndex_pLowerCentralSeries_succ_le`), since `π` maps `gr_k(G)` onto
   `gr_{k+1}(G)`.
@@ -51,7 +51,7 @@ proved here.
   maps `gr_k(G)` onto `gr_{k+1}(G)`, and `π^k` maps `gr_0(G)` onto `gr_k(G)`.
 * `TauCeti.IsPowerful.pLowerCentralSeries_eq_closedPowerSubgroup`: `λ_k = G^{p^k}`.
 * `TauCeti.IsPowerful.map_subtype_closedPowerSubgroup_pLowerCentralSeries`: `λ_{k+1} = (λ_k)ᵖ`.
-* `TauCeti.isPowerful_pLowerCentralSeries`: `λ_k` is powerful.
+* `TauCeti.IsPowerful.to_pLowerCentralSeries`: `λ_k` is powerful.
 * `TauCeti.IsPowerful.relIndex_pLowerCentralSeries_succ_le`:
   `[λ_{k+1} : λ_{k+2}] ≤ [λ_k : λ_{k+1}]`.
 
@@ -79,9 +79,8 @@ theorem IsPowerful.gradedBracket_zero_zero_eq_zero_of_two (hG : IsPowerful 2 G)
   obtain ⟨g, rfl⟩ := gradedMkZero_surjective x
   obtain ⟨h, rfl⟩ := gradedMkZero_surjective y
   rw [gradedBracket_gradedMkZero, gradedMk_eq_zero_iff]
-  have h4 : closedPowerSubgroup 4 G ≤ pLowerCentralSeries 2 G 2 :=
-    (closedPowerSubgroup_le_iff (isClosed_pLowerCentralSeries 2)).mpr fun g ↦ by
-      simpa using pow_pow_mem_pLowerCentralSeries (p := 2) (mem_pLowerCentralSeries_zero 2 g) 2
+  have h4 : closedPowerSubgroup 4 G ≤ pLowerCentralSeries 2 G 2 := by
+    simpa using closedPowerSubgroup_pow_le_pLowerCentralSeries (G := G) (p := 2) 2
   exact h4 (isPowerful_two_iff.mp hG (commutator_mem_commutator (mem_top g) (mem_top h)))
 
 /-- **In a powerful group `π` is additive in degree zero**, for a prime `p`: the defect
@@ -181,8 +180,7 @@ variable [CompactSpace G] [TotallyDisconnectedSpace G]
 theorem IsPowerful.pLowerCentralSeries_eq_closedPowerSubgroup (hp : p.Prime) (hG : IsPowerful p G)
     (hP : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G) (k : ℕ) :
     pLowerCentralSeries p G k = closedPowerSubgroup (p ^ k) G := by
-  refine le_antisymm ?_ ((closedPowerSubgroup_le_iff (isClosed_pLowerCentralSeries k)).mpr
-    fun g ↦ by simpa using pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) k)
+  refine le_antisymm ?_ (closedPowerSubgroup_pow_le_pLowerCentralSeries k)
   -- By Nakayama's lemma it suffices that `λ_k ≤ G^{p^k} λ_{k+1}`, which is the surjectivity of
   -- `π^k` onto `gr_k(G)`.
   refine hP.le_of_le_topologicalClosure_sup_pLowerCentralStep hp isClosed_closedPowerSubgroup ?_
@@ -211,13 +209,13 @@ theorem IsPowerful.map_subtype_closedPowerSubgroup_pLowerCentralSeries (hp : p.P
   · rw [hG.pLowerCentralSeries_eq_closedPowerSubgroup hp hP hfg, pow_succ]
     exact closedPowerSubgroup_mul_le_map_subtype_closedPowerSubgroup
       (isClosed_pLowerCentralSeries k)
-      fun g ↦ by simpa using pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) k
+      fun g ↦ closedPowerSubgroup_pow_le_pLowerCentralSeries k (pow_mem_closedPowerSubgroup g)
 
 /-- **The terms of the lower `p`-series of a powerful pro-`p` group are powerful**, for a
 topologically finitely generated powerful pro-`p` group and a prime `p`. For `k ≥ 1` the
 commutators of `λ_k` lie in `λ_{2k+1} ≤ λ_{k+2} = G^{p^{k+2}}`, which lies in `(λ_k)ᵖ` and, for
 `p = 2`, in `(λ_k)⁴`. -/
-theorem isPowerful_pLowerCentralSeries (hp : p.Prime) (hG : IsPowerful p G) (hP : IsProP p G)
+theorem IsPowerful.to_pLowerCentralSeries (hp : p.Prime) (hG : IsPowerful p G) (hP : IsProP p G)
     (hfg : IsTopologicallyFinitelyGenerated G) (k : ℕ) :
     IsPowerful p (pLowerCentralSeries p G k) := by
   rw [isPowerful_iff,
@@ -225,7 +223,7 @@ theorem isPowerful_pLowerCentralSeries (hp : p.Prime) (hG : IsPowerful p G) (hP 
     commutator_def, map_commutator, ← MonoidHom.range_eq_map, range_subtype]
   refine le_trans ?_ (closedPowerSubgroup_mul_le_map_subtype_closedPowerSubgroup
     (isClosed_pLowerCentralSeries k)
-    fun g ↦ by simpa using pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) k)
+    fun g ↦ closedPowerSubgroup_pow_le_pLowerCentralSeries k (pow_mem_closedPowerSubgroup g))
   cases k with
   | zero => simpa [commutator_def, isPowerful_iff] using hG
   | succ k =>
