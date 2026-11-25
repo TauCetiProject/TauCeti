@@ -124,11 +124,8 @@ theorem labelEntropy_pair (μ : Measure Ω) (X : Ω → A) (Y : Ω → B) :
 /-- A label joined with itself has the same entropy: `H((X, X)) = H(X)`. -/
 @[simp]
 theorem labelEntropy_pair_self (μ : Measure Ω) (X : Ω → A) :
-    labelEntropy μ (fun ω ↦ (X ω, X ω)) = labelEntropy μ X := by
-  rw [labelEntropy_pair, labelEntropy_def]
-  refine Finset.sum_congr rfl fun a _ ↦ ?_
-  rw [Finset.sum_eq_single a (fun b _ hb ↦ ?_) (by simp), Set.inter_self]
-  simp [((Set.disjoint_singleton.mpr hb.symm).preimage X).inter_eq]
+    labelEntropy μ (fun ω ↦ (X ω, X ω)) = labelEntropy μ X :=
+  labelEntropy_comp_of_injective (e := fun a ↦ (a, a)) X fun _ _ h ↦ (Prod.mk.inj h).1
 
 /-- A label conditioned on itself has conditional entropy zero. -/
 @[simp]
@@ -142,6 +139,25 @@ theorem condLabelEntropy_self (μ : Measure Ω) (X : Ω → A) : condLabelEntrop
     · simp [h0]
     · simp [div_self h0]
   · simp [((Set.disjoint_singleton.mpr h).preimage X).inter_eq]
+
+/-- Under the zero measure every conditional entropy is zero. -/
+@[simp]
+theorem condLabelEntropy_zero_measure (X : Ω → A) (Y : Ω → B) :
+    condLabelEntropy (0 : Measure Ω) X Y = 0 := by
+  simp [condLabelEntropy]
+
+/-- The conditional entropy is nonnegative, for every measure: a cell of positive finite mass
+`p_ab` lies in `Y ⁻¹' {b}`, so `p_ab ≤ p_b` unless `Y ⁻¹' {b}` has infinite mass, in which case
+`p_b = 0` and the term vanishes through `log 0 = 0`. -/
+theorem condLabelEntropy_nonneg (μ : Measure Ω) (X : Ω → A) (Y : Ω → B) :
+    0 ≤ condLabelEntropy μ X Y := by
+  refine Finset.sum_nonneg fun a _ ↦ Finset.sum_nonneg fun b _ ↦ ?_
+  rcases eq_or_ne (μ (Y ⁻¹' {b})) ⊤ with h | h
+  · simp [measureReal_def, h]
+  rcases (measureReal_nonneg (μ := μ) (s := X ⁻¹' {a} ∩ Y ⁻¹' {b})).eq_or_lt with h0 | h0
+  · simp [← h0]
+  exact mul_nonneg h0.le
+    (log_nonneg ((one_le_div h0).mpr (measureReal_mono Set.inter_subset_right h)))
 
 end Basic
 
