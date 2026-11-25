@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Nilpotent.Exp
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Substitution
 import Mathlib.RingTheory.Adjoin.Singleton
+import TauCeti.RingTheory.PowerSeries.Trunc
 public import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
 /-!
@@ -116,7 +117,7 @@ theorem subst_C_exp {a : A} (ha : IsNilpotent a) :
   obtain ⟨n, hn⟩ := ha
   rw [subst_C_eq_C_aeval_trunc hn, IsNilpotent.exp_eq_sum hn]
   congr 1
-  rw [Polynomial.aeval_def, eval₂_trunc_eq_sum_range]
+  rw [aeval_trunc]
   simp [coeff_exp, Algebra.smul_def]
 
 /-- The formal logarithm at a nilpotent constant is the finite logarithm of one plus it. -/
@@ -125,7 +126,7 @@ theorem subst_C_log {a : A} (ha : IsNilpotent a) :
   obtain ⟨n, hn⟩ := ha
   rw [subst_C_eq_C_aeval_trunc hn, IsNilpotent.log_eq_sum (n := n) (by simpa using hn)]
   congr 1
-  rw [Polynomial.aeval_def, eval₂_trunc_eq_sum_range]
+  rw [aeval_trunc]
   apply Finset.sum_congr rfl
   intro i _
   by_cases hi : i = 0 <;> simp [coeff_log, hi, Algebra.smul_def]

@@ -70,7 +70,6 @@ positive-action-annihilated target. This also explains the degree-zero Ext compu
 noncomputable def IsMinimal.augmentationLinearEquiv (hr : r.IsMinimal)
     (hN : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) = ⊥) :
     (M ⟶ N) ≃ₗ[k] (r.termObj 0 ⟶ N) := by
-  have : Epi r.augmentation := (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
   refine LinearEquiv.ofBijective (Linear.leftComp k N r.augmentation) ⟨?_, ?_⟩
   · intro f g hfg
     exact (cancel_epi r.augmentation).mp hfg

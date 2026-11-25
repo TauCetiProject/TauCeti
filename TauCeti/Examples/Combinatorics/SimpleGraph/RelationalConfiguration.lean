@@ -7,7 +7,7 @@ module
 
 import TauCeti.Combinatorics.SimpleGraph.RelationalConfiguration
 import TauCeti.Combinatorics.SimpleGraph.Maps
-import TauCeti.Combinatorics.SimpleGraph.Measurable
+import TauCeti.Combinatorics.SimpleGraph.Measurable.Basic
 
 /-!
 # Regression examples: relational configurations and simple graphs

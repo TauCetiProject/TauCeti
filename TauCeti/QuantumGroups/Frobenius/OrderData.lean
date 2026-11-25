@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Symmetrizable
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
 import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
@@ -333,6 +334,17 @@ lemma frobeniusOrder_mul_modifiedDatum_cartan (L : ℕ) (hL : 0 < L) (i j : I) :
       A.frobeniusOrder L j * A.cartan i j :=
   Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j)
 
+/-- The modified datum has the Cartan products of `A`: `aᵢⱼ* aⱼᵢ* = aᵢⱼ aⱼᵢ`. -/
+theorem modifiedDatum_cartan_mul_cartan (L : ℕ) (hL : 0 < L) (i j : I) :
+    (A.modifiedDatum L hL).cartan i j * (A.modifiedDatum L hL).cartan j i =
+      A.cartan i j * A.cartan j i := by
+  have hi := A.frobeniusOrder_mul_modifiedDatum_cartan L hL i j
+  have hj := A.frobeniusOrder_mul_modifiedDatum_cartan L hL j i
+  refine mul_left_cancel₀ (mul_ne_zero (Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL i))
+    (Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL j))) ?_
+  linear_combination (A.frobeniusOrder L j * (A.modifiedDatum L hL).cartan j i : ℤ) * hi +
+    (A.frobeniusOrder L j * A.cartan i j : ℤ) * hj
+
 /-- **Lusztig's modified inner product `i ∘ j = ℓᵢ ℓⱼ (i · j)`.** Entry `(i, j)` of the symmetrized
 matrix of the modified datum is `ℓᵢ ℓⱼ` times entry `(i, j)` of the original symmetrized matrix. -/
 theorem symmetrizedMatrix_modifiedDatum_apply (L : ℕ) (hL : 0 < L) (i j : I) :
@@ -366,6 +378,19 @@ theorem diagramGraph_modifiedDatum_cartan (L : ℕ) (hL : 0 < L) :
     diagramGraph (A.modifiedDatum L hL).cartan = diagramGraph A.cartan := by
   ext i j
   simp only [diagramGraph_adj, ne_eq, modifiedDatum_cartan_eq_zero_iff]
+
+/-- Modifying the datum preserves the braid lengths: both Coxeter matrices only see the Cartan
+products `aᵢⱼ aⱼᵢ` (`TauCeti.SymmetrizableDatum.modifiedDatum_cartan_mul_cartan`). -/
+@[simp]
+theorem coxeterMatrixOfGeneralizedCartanMatrix_modifiedDatum_cartan [DecidableEq I] (L : ℕ)
+    (hL : 0 < L) :
+    coxeterMatrixOfGeneralizedCartanMatrix (A.modifiedDatum L hL).cartan =
+      coxeterMatrixOfGeneralizedCartanMatrix A.cartan := by
+  ext i j
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  · simp only [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne _ hij,
+      modifiedDatum_cartan_mul_cartan]
 
 /-- Modifying the datum preserves indecomposability of the Cartan matrix. -/
 @[simp]

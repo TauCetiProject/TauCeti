@@ -57,6 +57,8 @@ interval of length `d`; this is the companion of Mathlib's `div_mul_cancel_of_im
 * `TauCeti.instInfiniteUnitsOfInfiniteGroupWithZero`: the units of an infinite group with zero
   are infinite.
 * `TauCeti.div_mul_div_cancel_of_imp`: `a / b * (b / c) = a / c` when `b = 0` forces `a = 0`.
+* `TauCeti.inv_ne_zero_and_inv_eq_iff_mul_eq_one`: `a⁻¹` is a nonzero `b` exactly when
+  `a * b = 1`.
 -/
 
 public section
@@ -111,5 +113,12 @@ companion of Mathlib's `div_mul_div_cancel₀`, as `div_mul_cancel_of_imp` is of
 theorem div_mul_div_cancel_of_imp {G₀ : Type*} [GroupWithZero G₀] {a b c : G₀}
     (h : b = 0 → a = 0) : a / b * (b / c) = a / c := by
   rw [← mul_div_assoc, div_mul_cancel_of_imp h]
+
+/-- In a group with zero, `a⁻¹` is a nonzero element `b` exactly when `a * b = 1`; with the
+convention `0⁻¹ = 0`, the condition `a⁻¹ ≠ 0` rules out `a = 0`. -/
+theorem inv_ne_zero_and_inv_eq_iff_mul_eq_one {G₀ : Type*} [GroupWithZero G₀] {a b : G₀} :
+    a⁻¹ ≠ 0 ∧ a⁻¹ = b ↔ a * b = 1 :=
+  ⟨fun ⟨ha, hb⟩ ↦ hb ▸ mul_inv_cancel₀ (inv_eq_zero.not.1 ha), fun h ↦
+    ⟨inv_ne_zero (left_ne_zero_of_mul_eq_one h), inv_eq_of_mul_eq_one_right h⟩⟩
 
 end TauCeti

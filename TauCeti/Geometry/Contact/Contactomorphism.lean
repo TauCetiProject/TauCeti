@@ -330,7 +330,9 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-private theorem mpullback_innerProductContactForm_of_coe_eq {c : ℝ}
+/-- A diffeomorphism `(q, p, z) ↦ (q, c p, c z)` of the standard contact space pulls the standard
+contact form back to `c` times itself. -/
+theorem mpullback_innerProductContactForm_of_coe_eq {c : ℝ}
     {e : (V × V × ℝ) ≃ₘ[ℝ] (V × V × ℝ)} (he : ⇑e = fun x ↦ (x.1, c • x.2)) :
     SmoothForm.mpullback e e.contMDiff (innerProductContactForm V) =
       c • innerProductContactForm V := by
