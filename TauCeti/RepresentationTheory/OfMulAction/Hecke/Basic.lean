@@ -38,9 +38,9 @@ No measure is used, so the construction works over every coefficient ring.
 * `TauCeti.permutationHeckeModule G S A`: the `A`-module `Fun_G(S × S, A)`, containing each
   orbit indicator (`TauCeti.PermutationHecke.indicator_orbit_mem`).
 * `TauCeti.PermutationHecke.toEnd`: the action of `Fun_G(S × S, A)` on `S →₀ A`, with
-  `toEnd_single` (`h * s = Σ_t h(t, s) t`) and `toEnd_injective`.
+  `toEnd_single` (`h * s = Σ_t h(t, s) t`), `toEnd_single_eq` and `toEnd_injective`.
 * `TauCeti.PermutationHecke.toIntertwiningMap`: the same action on `A[S]`, by intertwining maps of
-  `Representation.ofMulAction A G S`.
+  `Representation.ofMulAction A G S`, with `toIntertwiningMap_single`.
 * `TauCeti.PermutationHecke.mul_apply`: the matrix product, with `toEnd_mul`.
 * `TauCeti.PermutationHecke.one_apply`, `TauCeti.PermutationHecke.algebraMap_apply`,
   `TauCeti.PermutationHecke.toIntertwiningMapAlgEquiv`: for finitely many orbits, the unit, the
@@ -155,6 +155,11 @@ theorem toEnd_single (h : permutationHeckeModule G S A) (s t : S) (c : A) :
     toEnd G S A h (Finsupp.single s c) t = c * (h : S × S → A) (t, s) := by
   simp [toEnd, Finsupp.linearCombination_single]
 
+/-- `h` sends `c • s` to `c` times the column of `h` at `s`. -/
+theorem toEnd_single_eq (h : permutationHeckeModule G S A) (s : S) (c : A) :
+    toEnd G S A h (Finsupp.single s c) = c • column h s := by
+  simp [toEnd, Finsupp.linearCombination_single]
+
 /-- The action of `h` on a finitely supported function, as a finite sum. -/
 theorem toEnd_apply (h : permutationHeckeModule G S A) (f : S →₀ A) (t : S) :
     toEnd G S A h f t = ∑ᶠ s, (h : S × S → A) (t, s) * f s := by
@@ -191,6 +196,16 @@ def toIntertwiningMap : permutationHeckeModule G S A →ₗ[A]
 theorem coeff_toIntertwiningMap_apply (h : permutationHeckeModule G S A) (f : MonoidAlgebra A S) :
     (toIntertwiningMap G S A h f).coeff = toEnd G S A h f.coeff :=
   (rfl)
+
+/-- `h` sends the basis vector `c • s` of `A[S]` to `Σ_t c h(t, s) t`. -/
+theorem toIntertwiningMap_single (h : permutationHeckeModule G S A) (s : S) (c : A) :
+    toIntertwiningMap G S A h (MonoidAlgebra.single s c) =
+      (column h s).sum fun t a ↦ MonoidAlgebra.single t (c * a) := by
+  classical
+  apply MonoidAlgebra.coeff_injective
+  ext t
+  simp +contextual [toEnd_single_eq, Finsupp.sum, MonoidAlgebra.coeff_sum,
+    Finsupp.finsetSum_apply, Finsupp.single_apply]
 
 variable (G S A) in
 /-- An element of `Fun_G(S × S, A)` is determined by its action on `A[S]`. -/
