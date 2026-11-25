@@ -24,7 +24,10 @@ with `δ tⱼ = δᵢⱼ` sends a monomial `∏ⱼ tⱼ ^ βⱼ` to `βᵢ ∏�
 
 Iterates of a derivation remain linear over the scalars, so they commute with finite scalar
 linear combinations. On products they satisfy the general Leibniz rule
-`Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`.
+`Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`. The iterates of a multiple `b • D` by `b : A` are
+combinations `(b • D)^[n] = ∑ k ≤ n, c n k * D^[k]` of the iterates of `D`, with coefficients
+`c n k = smulIterCoeff D b n k` given by an explicit recursion; the coefficient of `D` in
+`(b • D)^[n + 1]` is `(b • D)^[n] b`.
 
 The derivative of the total inverse `Ring.inverse a` is `-(Ring.inverse a) ^ 2 • D a`, as for
 `⅟a`; for instance a derivation kills the inverse of every invertible natural number. Hence, if
@@ -47,16 +50,20 @@ A derivation over any scalars `S` which vanishes on the image of `R` is `R`-line
   differentiates a monomial in the coordinates by lowering its `i`-th exponent.
 * `Derivation.iterate_sum_smul`: iterated differentiation commutes with scalar linear combinations.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
+* `Derivation.iterate_apply_pow_of_apply_eq_one`: if `D x = 1`, then `D^[j] (x ^ k)` is the
+  descending factorial `k (k - 1) ⋯ (k - j + 1)` times `x ^ (k - j)`.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
+* `Derivation.smulIterCoeff`: the coefficients of the expansion of `(b • D)^[n]`, `b : A`.
+* `Derivation.iterate_smul_apply_eq_sum`: `(b • D)^[n]` as a combination of the `D^[k]`.
+* `Derivation.smulIterCoeff_succ_one`: the coefficient of `D` in `(b • D)^[n + 1]`.
+* `Derivation.map_smulIterCoeff`: the coefficients are natural in the ring.
 * `Derivation.leibniz_ringInverse`: the derivative of `Ring.inverse a`.
 * `Derivation.leibniz_ringInverse_factorial_mul_pow_succ`: the derivative of the divided power
   `x ^ (j + 1) / (j + 1)!` when `D x = 1`.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
 * `Derivation.ofMapAlgebraMap`: a derivation killing the image of `R` as an `R`-derivation.
 * `Derivation.conjAlgEquiv`: a derivation transported along an algebra isomorphism.
-* `Derivation.hochschildCoeff`: recursive coefficients in the triangular expansion of `(a • D)^[n]`.
-* `Derivation.iterate_smul_eq_sum_hochschildCoeff`: triangular expansion of `(f a • E)^[n]`.
 -/
 
 public section
@@ -129,6 +136,19 @@ theorem iterate_apply_mul (D : Derivation R A A) (n : ℕ) (a b : A) :
     refine Finset.sum_congr rfl fun ij hij => ?_
     rw [n.choose_symm_of_eq_add (Finset.mem_antidiagonal.1 hij).symm, mul_comm]
 
+/-- **Iterated derivatives of powers of a coordinate.** If `D x = 1`, then
+`D^[j] (x ^ k)` is the descending factorial `k (k - 1) ⋯ (k - j + 1)` times `x ^ (k - j)`. In
+particular `D^[k] (x ^ k) = k !`, and `D^[j] (x ^ k) = 0` for `j > k`. -/
+theorem iterate_apply_pow_of_apply_eq_one (D : Derivation R A A) {x : A} (hx : D x = 1)
+    (k j : ℕ) : D^[j] (x ^ k) = k.descFactorial j * x ^ (k - j) := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [Function.iterate_succ_apply', ih, leibniz, leibniz_pow, hx, map_natCast,
+      Nat.descFactorial_succ, Nat.sub_sub]
+    simp only [smul_eq_mul, nsmul_eq_mul, mul_one, mul_zero, add_zero, Nat.cast_mul]
+    ring
+
 /-- Iterating a scalar multiple of a derivation scales its iterates by the corresponding power. -/
 theorem iterate_smul_apply (D : Derivation R A A) (r : R) (n : ℕ) (a : A) :
     (r • D)^[n] a = r ^ n • D^[n] a := by
@@ -140,6 +160,99 @@ theorem exists_iterate_smul_eq_zero (D : Derivation R A A)
     (hD : ∀ a, ∃ n, D^[n] a = 0) (r : R) (a : A) : ∃ n, (r • D)^[n] a = 0 := by
   obtain ⟨n, hn⟩ := hD a
   exact ⟨n, by rw [iterate_smul_apply, hn, smul_zero]⟩
+
+/-- The coefficients `c n k` of the expansion `(b • D)^[n] = ∑ k ≤ n, c n k * D^[k]` for `b : A`
+(`iterate_smul_apply_eq_sum`): `c 0 k` is `1` for `k = 0` and `0` otherwise, and
+`c (n + 1) k = b * D (c n k) + b * c n (k - 1)`, the second term absent for `k = 0`. -/
+def smulIterCoeff (D : Derivation R A A) (b : A) : ℕ → ℕ → A
+  | 0, k => if k = 0 then 1 else 0
+  | n + 1, 0 => b * D (smulIterCoeff D b n 0)
+  | n + 1, k + 1 => b * D (smulIterCoeff D b n (k + 1)) + b * smulIterCoeff D b n k
+
+/-- The coefficients of `(b • D)^[0]`: `1` for `k = 0` and `0` otherwise. -/
+theorem smulIterCoeff_zero_left (D : Derivation R A A) (b : A) (k : ℕ) :
+    smulIterCoeff D b 0 k = if k = 0 then 1 else 0 := by
+  rw [smulIterCoeff]
+
+/-- The recursion for the coefficients of `(b • D)^[n + 1]` beyond the constant term. -/
+theorem smulIterCoeff_succ_succ (D : Derivation R A A) (b : A) (n k : ℕ) :
+    smulIterCoeff D b (n + 1) (k + 1) =
+      b * D (smulIterCoeff D b n (k + 1)) + b * smulIterCoeff D b n k := by
+  rw [smulIterCoeff]
+
+/-- For `n ≥ 1`, the expansion of `(b • D)^[n]` has no constant term. -/
+@[simp]
+theorem smulIterCoeff_succ_zero (D : Derivation R A A) (b : A) (n : ℕ) :
+    smulIterCoeff D b (n + 1) 0 = 0 := by
+  induction n with
+  | zero => simp [smulIterCoeff]
+  | succ n ih => rw [smulIterCoeff, ih, map_zero, mul_zero]
+
+/-- The expansion of `(b • D)^[n]` involves only the iterates `D^[k]` with `k ≤ n`. -/
+theorem smulIterCoeff_eq_zero_of_lt (D : Derivation R A A) (b : A) {n k : ℕ} (h : n < k) :
+    smulIterCoeff D b n k = 0 := by
+  induction n generalizing k with
+  | zero => simp [smulIterCoeff_zero_left, h.ne']
+  | succ n ih =>
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : k ≠ 0)
+    simp [smulIterCoeff_succ_succ, ih (by omega : n < k + 1), ih (by omega : n < k)]
+
+/-- The leading coefficient of the expansion of `(b • D)^[n]` is `b ^ n`. -/
+@[simp]
+theorem smulIterCoeff_self (D : Derivation R A A) (b : A) (n : ℕ) :
+    smulIterCoeff D b n n = b ^ n := by
+  induction n with
+  | zero => simp [smulIterCoeff_zero_left]
+  | succ n ih =>
+    simp [smulIterCoeff_succ_succ, ih, smulIterCoeff_eq_zero_of_lt D b n.lt_succ_self, pow_succ']
+
+/-- The coefficient of `D` in the expansion of `(b • D)^[n + 1]` is `(b • D)^[n] b`. -/
+theorem smulIterCoeff_succ_one (D : Derivation R A A) (b : A) (n : ℕ) :
+    smulIterCoeff D b (n + 1) 1 = (b • D)^[n] b := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [smulIterCoeff_succ_succ, ih, smulIterCoeff_succ_zero, mul_zero, add_zero,
+      Function.iterate_succ_apply', smul_apply, smul_eq_mul]
+
+/-- The coefficients `smulIterCoeff` are natural: a ring homomorphism `f` intertwining `D` with
+`E` carries the coefficients of `D` and `b` to those of `E` and `f b`. -/
+theorem map_smulIterCoeff {S B : Type*} [CommSemiring S] [CommSemiring B] [Algebra S B]
+    (f : A →+* B) (D : Derivation R A A) (E : Derivation S B B) (hf : ∀ y, f (D y) = E (f y))
+    (b : A) (n k : ℕ) : f (smulIterCoeff D b n k) = smulIterCoeff E (f b) n k := by
+  induction n generalizing k with
+  | zero => simp only [smulIterCoeff_zero_left]; split_ifs <;> simp
+  | succ n ih =>
+    cases k with
+    | zero => simp
+    | succ k => simp [smulIterCoeff_succ_succ, hf, ih]
+
+/-- **Iterates of `b • D`** for `b : A`: the `n`-th iterate is a combination of the iterates
+`D^[k]`, `k ≤ n`, with coefficients `smulIterCoeff D b n k`. -/
+theorem iterate_smul_apply_eq_sum (D : Derivation R A A) (b y : A) (n : ℕ) :
+    (b • D)^[n] y = ∑ k ∈ Finset.range (n + 1), smulIterCoeff D b n k * D^[k] y := by
+  induction n with
+  | zero => simp [smulIterCoeff_zero_left]
+  | succ n ih =>
+    -- Differentiating the coefficients shifts the index by one; the top term vanishes.
+    have hshift : ∑ k ∈ Finset.range (n + 1), b * (D^[k] y * D (smulIterCoeff D b n k)) =
+        ∑ k ∈ Finset.range (n + 1), b * D (smulIterCoeff D b n (k + 1)) * D (D^[k] y) +
+          b * D (smulIterCoeff D b n 0) * y := by
+      have key (f : ℕ → A) (hf : f (n + 1) = 0) :
+          ∑ k ∈ Finset.range (n + 1), f k = ∑ k ∈ Finset.range (n + 1), f (k + 1) + f 0 := by
+        rw [← Finset.sum_range_succ', Finset.sum_range_succ f (n + 1), hf, add_zero]
+      rw [key]
+      · simp only [Function.iterate_succ_apply', Function.iterate_zero_apply]
+        congr 1
+        · exact Finset.sum_congr rfl fun k _ ↦ by ring
+        · ring
+      · simp [smulIterCoeff_eq_zero_of_lt D b n.lt_succ_self]
+    rw [Function.iterate_succ_apply', ih, smul_apply, map_sum, Finset.sum_range_succ' _ (n + 1)]
+    simp only [leibniz, smul_eq_mul, smulIterCoeff, Finset.sum_add_distrib, add_mul,
+      Function.iterate_succ_apply', Function.iterate_zero_apply]
+    rw [mul_add, Finset.mul_sum, Finset.mul_sum, hshift]
+    simp only [mul_assoc]
+    ring
 
 /-- An element whose derivative is a unit is squarefree: if `a = x * x * y`, then `x` divides
 `D a = x * D (x * y) + x * y * D x`. -/
@@ -185,136 +298,6 @@ end Ring
 end Derivation
 
 namespace Derivation
-
-section Rescale
-
-/-!
-### Triangular rescaling expansion
-
-The coefficients `hochschildCoeff` and the triangular expansion
-`iterate_smul_eq_sum_hochschildCoeff` give the general triangular rescaling expansion of
-`(a • D)^[n]` (after D. M. Goldschmidt, *Algebraic Functions and Projective Curves*, GTM 215,
-Springer, 2003), used by `Derivation.wronskian_smul` in
-`TauCeti/RingTheory/Derivation/Wronskian/Rescale.lean` and by Hochschild's formula in
-`TauCeti/RingTheory/Derivation/PPow.lean`, allowing an arbitrary target derivation over
-independent scalars `S` intertwined via a ring homomorphism `f`.
--/
-
-variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
-
-/-- Recursive coefficients `P n k` in the triangular expansion
-`((a • D)^[n]) y = ∑ k ∈ Finset.range (n + 1), P n k * D^[k] y` over any commutative semiring. -/
-def hochschildCoeff (D : Derivation R A A) (a : A) : ℕ → ℕ → A
-  | 0, 0 => 1
-  | 0, _ + 1 => 0
-  | _ + 1, 0 => 0
-  | n + 1, k + 1 => a * D (hochschildCoeff D a n (k + 1)) + a * hochschildCoeff D a n k
-
-/-- `hochschildCoeff D a 0 0 = 1`. -/
-theorem hochschildCoeff_zero_zero (D : Derivation R A A) (a : A) :
-    hochschildCoeff D a 0 0 = 1 :=
-  (rfl)
-
-/-- `hochschildCoeff D a 0 (k + 1) = 0`. -/
-@[simp]
-theorem hochschildCoeff_zero_succ (D : Derivation R A A) (a : A) (k : ℕ) :
-    hochschildCoeff D a 0 (k + 1) = 0 :=
-  (rfl)
-
-/-- `hochschildCoeff D a (n + 1) 0 = 0`. -/
-@[simp]
-theorem hochschildCoeff_succ_zero (D : Derivation R A A) (a : A) (n : ℕ) :
-    hochschildCoeff D a (n + 1) 0 = 0 :=
-  (rfl)
-
-/-- Recursion step for `hochschildCoeff`. -/
-theorem hochschildCoeff_succ_succ (D : Derivation R A A) (a : A) (n k : ℕ) :
-    hochschildCoeff D a (n + 1) (k + 1) =
-      a * D (hochschildCoeff D a n (k + 1)) + a * hochschildCoeff D a n k :=
-  (rfl)
-
-/-- `hochschildCoeff D a n k` vanishes whenever `n < k`. -/
-theorem hochschildCoeff_eq_zero_of_lt (D : Derivation R A A) (a : A) :
-    ∀ {n k : ℕ}, n < k → hochschildCoeff D a n k = 0
-  | 0, _ + 1, _ => hochschildCoeff_zero_succ D a _
-  | n + 1, k + 1, h => by
-    rw [hochschildCoeff_succ_succ, hochschildCoeff_eq_zero_of_lt D a (by omega : n < k + 1),
-      hochschildCoeff_eq_zero_of_lt D a (by omega : n < k), map_zero, mul_zero, add_zero]
-
-/-- The diagonal Hochschild coefficient `hochschildCoeff D a n n` equals `a ^ n`. -/
-@[simp]
-theorem hochschildCoeff_self (D : Derivation R A A) (a : A) :
-    ∀ n : ℕ, hochschildCoeff D a n n = a ^ n
-  | 0 => (pow_zero a).symm
-  | n + 1 => by
-    rw [hochschildCoeff_succ_succ, hochschildCoeff_eq_zero_of_lt D a (Nat.lt_succ_self n),
-      map_zero, mul_zero, zero_add, hochschildCoeff_self D a n, pow_succ']
-
-/-- For `0 < n`, the zeroth Hochschild coefficient `hochschildCoeff D a n 0` vanishes. -/
-theorem hochschildCoeff_zero_right_eq_zero_of_pos (D : Derivation R A A) (a : A) {n : ℕ}
-    (hn : 0 < n) : hochschildCoeff D a n 0 = 0 := by
-  cases n with
-  | zero => omega
-  | succ m => exact hochschildCoeff_succ_zero D a m
-
-/-- The first-column Hochschild coefficient `hochschildCoeff D a (n + 1) 1` equals
-`(⇑(a • D))^[n] a`. -/
-theorem hochschildCoeff_one (D : Derivation R A A) (a : A) :
-    ∀ n : ℕ, hochschildCoeff D a (n + 1) 1 = (⇑(a • D))^[n] a
-  | 0 => by rw [hochschildCoeff_succ_succ]; simp
-  | n + 1 => by
-    rw [hochschildCoeff_succ_succ, hochschildCoeff_zero_right_eq_zero_of_pos D a (Nat.succ_pos n),
-      mul_zero, add_zero, hochschildCoeff_one D a n, Function.iterate_succ_apply', smul_apply,
-      smul_eq_mul]
-
-private theorem map_hochschildCoeff_zero (D : Derivation R A A) (a : A) (n : ℕ) :
-    D (hochschildCoeff D a n 0) = 0 := by
-  cases n with
-  | zero => exact D.map_one_eq_zero
-  | succ m => simp
-
-/-- Universal triangular expansion of `(f a • E)^[n] y` along any ring homomorphism
-`f : A →+* B` and derivation `E : Derivation S B B` intertwining `D` via `f`. -/
-theorem iterate_smul_eq_sum_hochschildCoeff {S B : Type*} [CommSemiring S] [CommSemiring B]
-    [Algebra S B] (D : Derivation R A A) (E : Derivation S B B) (f : A →+* B)
-    (hf : ∀ x : A, E (f x) = f (D x)) (a : A) :
-    ∀ (n : ℕ) (y : B),
-      (⇑(f a • E))^[n] y =
-        ∑ k ∈ Finset.range (n + 1), f (hochschildCoeff D a n k) * E^[k] y
-  | 0, y => by simp
-  | n + 1, y => by
-    calc
-      (⇑(f a • E))^[n + 1] y
-        = f a * E (∑ k ∈ Finset.range (n + 1), f (hochschildCoeff D a n k) * E^[k] y) := by
-            rw [Function.iterate_succ_apply',
-              iterate_smul_eq_sum_hochschildCoeff D E f hf a n y, smul_apply, smul_eq_mul]
-      _ = (∑ k ∈ Finset.range (n + 1), f (a * D (hochschildCoeff D a n k)) * E^[k] y) +
-            ∑ k ∈ Finset.range (n + 1), f (a * hochschildCoeff D a n k) * E^[k + 1] y := by
-            simp only [map_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
-            refine Finset.sum_congr rfl fun k _ => ?_
-            simp only [E.leibniz, smul_eq_mul, hf, map_mul, Function.iterate_succ_apply']
-            ring
-      _ = (∑ k ∈ Finset.range (n + 1), f (a * D (hochschildCoeff D a n (k + 1))) * E^[k + 1] y) +
-            ∑ k ∈ Finset.range (n + 1), f (a * hochschildCoeff D a n k) * E^[k + 1] y := by
-            congr 1
-            calc
-              _ = ∑ k ∈ Finset.range n,
-                    f (a * D (hochschildCoeff D a n (k + 1))) * E^[k + 1] y := by
-                  rw [Finset.sum_range_succ']
-                  simp [map_hochschildCoeff_zero]
-              _ = _ := by
-                  rw [Finset.sum_range_succ]
-                  simp [hochschildCoeff_eq_zero_of_lt D a (Nat.lt_succ_self n)]
-      _ = ∑ k ∈ Finset.range (n + 1), f (hochschildCoeff D a (n + 1) (k + 1)) * E^[k + 1] y := by
-            rw [← Finset.sum_add_distrib]
-            refine Finset.sum_congr rfl fun k _ => ?_
-            rw [hochschildCoeff_succ_succ, map_add, map_mul, map_mul, add_mul]
-      _ = ∑ k ∈ Finset.range (n + 2), f (hochschildCoeff D a (n + 1) k) * E^[k] y := by
-            symm
-            rw [Finset.sum_range_succ']
-            simp [hochschildCoeff_zero_right_eq_zero_of_pos D a (Nat.succ_pos n)]
-
-end Rescale
 
 section OfMapAlgebraMap
 

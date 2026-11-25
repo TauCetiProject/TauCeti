@@ -12,7 +12,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Finitely generated modules

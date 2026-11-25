@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.IsoClassModel
 public import TauCeti.CategoryTheory.GrothendieckGroup.ObjectCodeMonoid
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup

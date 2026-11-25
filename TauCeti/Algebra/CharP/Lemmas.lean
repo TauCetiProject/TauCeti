@@ -17,11 +17,13 @@ In an additive monoid with one of exponential characteristic `p`, the natural-nu
 one in which `1 ≠ 0` some prime, `2` or `3`, has a nonzero cast; this is how one picks a prime `ℓ`
 different from the characteristic of a field. In a nontrivial ring only the characteristic can
 vanish among the primes, so there are arbitrarily large primes with nonzero cast. A natural number
-prime to the characteristic of a nontrivial ring is nonzero. In characteristic a prime `p`, the
+prime to the characteristic of a nontrivial ring is nonzero; conversely, when the characteristic
+is prime, a natural number with nonzero cast is prime to it. In characteristic a prime `p`, the
 binomial coefficient `(p - 1).choose k` is `(-1) ^ k` for `k ≤ p - 1`. In characteristic `p`, the
 natural-number representative of the inverse of `m` modulo `p` inverts the cast of `m` when `m` is
-prime to `p`, making `m` (and `m!` for `m < p` when `p` is prime) a unit in any semiring of
-characteristic `p`.
+prime to `p`, so in a semiring of characteristic `p` every natural number prime to `p` (and
+`m!` for `m < p` when `p` is prime) is a unit; Mathlib's `CharP.isUnit_natCast_iff` states this
+for rings.
 
 In a ring of exponential characteristic `p`, raising to the power `q = p ^ n` commutes with
 negation. Mathlib records the special case `(-1) ^ q = -1` (`neg_one_pow_expChar_pow`) and the
@@ -38,12 +40,16 @@ law.
   nonzero cast.
 * `TauCeti.ne_zero_of_coprime_ringChar`: a natural number prime to the characteristic of a
   nontrivial ring is nonzero.
+* `TauCeti.coprime_ringChar_of_natCast_ne_zero`: when the characteristic is prime, a natural
+  number with nonzero cast is prime to it.
 * `TauCeti.natCast_choose_sub_one_eq_neg_one_pow`: `(p - 1).choose k = (-1) ^ k` in
   characteristic `p`.
 * `TauCeti.natCast_mul_natCast_val_inv_eq_one`: `m * (m⁻¹ : ZMod p).val = 1` in characteristic
   `p` when `m` is prime to `p`.
 * `TauCeti.isUnit_natCast_of_coprime`: `(m : R)` is a unit in characteristic `p` when `m` is
   prime to `p`.
+* `TauCeti.isUnit_natCast_of_not_dvd`: in a semiring of characteristic a prime `p`, a natural
+  number prime to `p` is a unit.
 * `TauCeti.isUnit_natCast_factorial_of_lt`: `(m ! : R)` is a unit in prime characteristic `p`
   for `m < p`.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
@@ -82,6 +88,12 @@ theorem ne_zero_of_coprime_ringChar {R : Type*} [NonAssocSemiring R] [Nontrivial
   rintro rfl
   exact CharP.ringChar_ne_one (Nat.coprime_zero_left _ |>.1 hm)
 
+/-- When the characteristic of a semiring is prime, a natural number with nonzero cast is prime to
+it. -/
+theorem coprime_ringChar_of_natCast_ne_zero {R : Type*} [NonAssocSemiring R]
+    (hp : (ringChar R).Prime) {m : ℕ} (hm : (m : R) ≠ 0) : m.Coprime (ringChar R) :=
+  (hp.coprime_iff_not_dvd.2 fun h ↦ hm ((ringChar.spec R m).2 h)).symm
+
 /-- **Arbitrarily large primes have nonzero cast** in a nontrivial ring: a prime with zero cast is
 divisible by the characteristic, so it is the characteristic. -/
 theorem exists_prime_lt_natCast_ne_zero (R : Type*) [NonAssocSemiring R] [Nontrivial R] (m : ℕ) :
@@ -119,6 +131,13 @@ theorem isUnit_natCast_of_coprime {R : Type*} [Semiring R] (p : ℕ) [CharP R p]
     (hm : m.Coprime p) : IsUnit (m : R) :=
   ((Nat.cast_commute (α := R) m ((m⁻¹ : ZMod p).val)).isUnit_mul_iff.mp
     (by rw [natCast_mul_natCast_val_inv_eq_one p hm]; exact isUnit_one)).1
+
+/-- In a semiring of characteristic a prime `p`, a natural number prime to `p` is a unit. This is
+the semiring version of one direction of Mathlib's `CharP.isUnit_natCast_iff`, which needs a
+ring. -/
+theorem isUnit_natCast_of_not_dvd {R : Type*} [Semiring R] {p : ℕ} [CharP R p] (hp : p.Prime)
+    {n : ℕ} (hn : ¬p ∣ n) : IsUnit (n : R) :=
+  isUnit_natCast_of_coprime p (hp.coprime_iff_not_dvd.2 hn).symm
 
 open scoped Nat in
 /-- In prime characteristic `p`, `(m ! : R)` is a unit in any semiring `R` for every `m < p`. -/

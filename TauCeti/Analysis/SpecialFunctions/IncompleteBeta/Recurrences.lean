@@ -235,7 +235,7 @@ theorem add_mul_regularizedIncompleteBeta_eq_mul_add_one_left_sub_one_right_add 
         regularizedIncompleteBeta_zero_left (by norm_num) hx0]
       ring
     rw [regularizedIncompleteBeta_add_one_right ha one_pos hx0 hx1,
-      regularizedIncompleteBeta_one_right ha hx0 hx1, beta_one_right ha, Real.rpow_one]
+      regularizedIncompleteBeta_one_right ha hx0 hx1, beta_one_right ha.le, Real.rpow_one]
     field_simp
   rcases ha.eq_or_lt with rfl | ha
   · rcases lt_or_ge x 0 with hx0 | hx0

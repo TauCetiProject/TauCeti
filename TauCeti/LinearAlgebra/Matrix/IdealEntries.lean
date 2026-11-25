@@ -34,6 +34,10 @@ matrix identity.
 
 * `Matrix.mul_mul_apply_mem`: every entry of `P * A * Q` lies in a two-sided ideal containing
   every entry of `A`.
+* `Matrix.mul_apply_mem_left`, `Matrix.mul_apply_mem_right`: the same for one-sided products
+  `P * A` (for a left ideal) and `A * Q`.
+* `Matrix.mul_apply_mem_mul`: every entry of `A * B` lies in `I * J` when the entries of `A` lie
+  in `I` and those of `B` lie in `J`.
 * `Matrix.sum_smul_apply_mem`: every entry of `∑ a, c a • F a` lies in a submodule containing
   every entry of every `F a`.
 * `Matrix.mul_eq_zero_of_mul_eq_bot`: the product of a matrix with entries in `I` and a matrix
@@ -61,6 +65,29 @@ theorem mul_mul_apply_mem [Semiring S] [Fintype m] [Fintype n] {A : Matrix m n S
   simp only [Matrix.mul_apply, Finset.sum_mul]
   exact Ideal.sum_mem _ fun k _ => Ideal.sum_mem _ fun t _ =>
     I.mul_mem_right _ (I.mul_mem_left _ (hA t k))
+
+/-- **A left ideal containing the entries of a matrix contains the entries of every left multiple
+of it.** -/
+theorem mul_apply_mem_left [Semiring S] [Fintype m] {A : Matrix m n S} {I : Ideal S}
+    (hA : ∀ i j, A i j ∈ I) (P : Matrix l m S) (i : l) (j : n) : (P * A) i j ∈ I := by
+  rw [Matrix.mul_apply]
+  exact Ideal.sum_mem _ fun k _ => I.mul_mem_left _ (hA k j)
+
+/-- **A two-sided ideal containing the entries of a matrix contains the entries of every right
+multiple of it.** -/
+theorem mul_apply_mem_right [Semiring S] [Fintype n] {A : Matrix m n S} {I : Ideal S}
+    [I.IsTwoSided] (hA : ∀ i j, A i j ∈ I) (Q : Matrix n o S) (i : m) (j : o) :
+    (A * Q) i j ∈ I := by
+  rw [Matrix.mul_apply]
+  exact Ideal.sum_mem _ fun k _ => I.mul_mem_right _ (hA i k)
+
+/-- **The entries of a product of matrices with entries in two ideals lie in the product
+ideal.** -/
+theorem mul_apply_mem_mul [Semiring S] [Fintype m] {I J : Ideal S} {A : Matrix l m S}
+    {B : Matrix m o S} (hA : ∀ i j, A i j ∈ I) (hB : ∀ i j, B i j ∈ J) (i : l) (j : o) :
+    (A * B) i j ∈ I * J := by
+  rw [Matrix.mul_apply]
+  exact Ideal.sum_mem _ fun k _ => Ideal.mul_mem_mul (hA i k) (hB k j)
 
 /-- **A submodule containing the entries of a family of matrices contains the entries of every
 linear combination of them.** -/

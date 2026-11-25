@@ -38,12 +38,12 @@ variable {k R : Type*} [CommSemiring k] [CommRing R] [Algebra k R]
 @[simp]
 theorem wronskian_smul (D : Derivation k R R) (a : R) {n : ℕ} (f : Fin n → R) :
     (a • D).wronskian f = a ^ (n * (n - 1) / 2) * D.wronskian f := by
-  let c : ℕ → ℕ → R := hochschildCoeff D a
-  have hc : ∀ i j, i < j → c i j = 0 := fun _ _ hij ↦ hochschildCoeff_eq_zero_of_lt D a hij
-  have hdiag : ∀ i, c i i = a ^ i := hochschildCoeff_self D a
+  let c : ℕ → ℕ → R := smulIterCoeff D a
+  have hc : ∀ i j, i < j → c i j = 0 := fun _ _ hij ↦ smulIterCoeff_eq_zero_of_lt D a hij
+  have hdiag : ∀ i, c i i = a ^ i := smulIterCoeff_self D a
   have hiter : ∀ i z, ((a • D : Derivation k R R) : R → R)^[i] z =
       ∑ j ∈ Finset.range (i + 1), c i j * (D : R → R)^[j] z :=
-    fun i z ↦ iterate_smul_eq_sum_hochschildCoeff D D (RingHom.id R) (fun _ ↦ rfl) a i z
+    fun i z ↦ iterate_smul_apply_eq_sum D a z i
   let A : Matrix (Fin n) (Fin n) R := Matrix.of fun i j ↦ c i.val j.val
   have htri : A.IsLowerTriangular := by
     intro i j hij
