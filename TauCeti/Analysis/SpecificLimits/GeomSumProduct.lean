@@ -34,6 +34,7 @@ series of `σ_α(n) σ_β(n)` (Ramanujan's identity).
 
 ## Main results
 
+* `TauCeti.summable_norm_geom_sum_mul_geom_sum_mul_pow`: the series converges absolutely.
 * `TauCeti.hasSum_geom_sum_mul_geom_sum_mul_geometric`: the identity above.
 
 ## References
@@ -72,8 +73,11 @@ private theorem norm_pow_mul_pow_mul_pow_le {i j k : ℕ} (hi : i ≤ k) (hj : j
   · exact le_max_of_le_right (le_max_left _ _)
   · exact le_max_of_le_left (le_max_left _ _)
 
-/-- The series `∑_k S_a(k) S_b(k) xᵏ` converges absolutely. -/
-private theorem summable_norm_geom_sum_mul_geom_sum_mul_pow (hx : ‖x‖ < 1) (ha : ‖a * x‖ < 1)
+/-- If `x`, `a x`, `b x` and `a b x` have norm less than one, the series
+`∑_k S_a(k) S_b(k) xᵏ`, where `S_a(k) = ∑_{i ≤ k} aⁱ`, converges absolutely: its `k`-th term has
+norm at most `(k + 1)² Rᵏ`, where `R < 1` is the largest of `‖x‖`, `‖a x‖`, `‖b x‖` and
+`‖a b x‖`. -/
+theorem summable_norm_geom_sum_mul_geom_sum_mul_pow (hx : ‖x‖ < 1) (ha : ‖a * x‖ < 1)
     (hb : ‖b * x‖ < 1) (hab : ‖a * b * x‖ < 1) :
     Summable fun k : ℕ ↦
       ‖(∑ i ∈ range (k + 1), a ^ i) * (∑ i ∈ range (k + 1), b ^ i) * x ^ k‖ := by
@@ -138,8 +142,13 @@ theorem hasSum_geom_sum_mul_geom_sum_mul_geometric (hx : ‖x‖ < 1) (ha : ‖a
   have h := hasSum_geom_sum_mul_geom_sum_mul_geometric_of_complete (a := φ a) (b := φ b)
     (x := φ x) (by rwa [hφ]) (by rwa [← map_mul, hφ]) (by rwa [← map_mul, hφ])
     (by rwa [← map_mul, ← map_mul, hφ])
+  -- `toCompl` and `coeRingHom` are both the coercion `K → Completion K`
+  have hcoe (y : K) : (y : UniformSpace.Completion K) = φ y := by
+    simp [φ, UniformSpace.Completion.coeRingHom]
+  have htoCompl (y : K) : UniformSpace.Completion.toCompl y = φ y := by
+    simp [UniformSpace.Completion.toCompl, hcoe]
   rw [← hasSum_iff_hasSum_compl]
-  change HasSum (fun k ↦ φ (_ : K)) (φ _)
+  simp only [Function.comp_def, htoCompl, hcoe]
   simpa only [map_div₀, map_sub, map_mul, map_one, map_pow, map_sum] using h
 
 end TauCeti
