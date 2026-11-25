@@ -354,6 +354,25 @@ theorem restrictCLM_smulLeftDualCLM (f : C^∞⟮I, M; ℝ⟯) (T : TauCeti.Bund
   rw [restrictCLM_apply_eq_restrictDualCLM, restrictDualCLM_smulLeftDualCLM, smulLeftDualCLM_apply,
     smulLeftDualCLM_apply, restrictCLM_apply_eq_restrictDualCLM, openDensityHomCLE_smulLeftCLM]
 
+omit [T2Space M] in
+/-- `localizeCLM_apply` for tests valued in the ambient dual densities, read on
+`pullbackAmbientHomBundle`. -/
+private theorem localizeCLM_ambientHomBundle_apply {N : Type*} [TopologicalSpace N]
+    [ChartedSpace H N] [IsManifold I ∞ N] {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {Z : N → Type*} [∀ x, AddCommGroup (Z x)] [∀ x, Module ℝ (Z x)]
+    [∀ x, TopologicalSpace (Z x)] [TopologicalSpace (TotalSpace G Z)] [FiberBundle G Z]
+    [VectorBundle ℝ G Z] [ContMDiffVectorBundle ∞ G Z I]
+    (T : TauCeti.BundleTest I G Z →L[ℝ]
+      TauCeti.BundleTest I (F →L[ℝ] ℝ) (ambientHomBundle (I := I) (V := V)))
+    (q : C(N, U)) (hT : ∀ s, closure {x : M | T s x ≠ 0} ⊆
+      Subtype.val '' q '' closure {x : N | s x ≠ 0})
+    (s : TauCeti.BundleTest I G Z) (u : U) :
+    TauCeti.BundleTest.localizeCLM (I := I) (F := F →L[ℝ] ℝ)
+      (V := ambientHomBundle (I := I) (V := V)) T q hT s u = T s (u : M) := by
+  -- `localizeCLM_apply` is stated (in `dsimp%` form) on the unbundled pullback `Subtype.val *ᵖ V`,
+  -- which `rw` does not match against `pullbackAmbientHomBundle`.
+  erw [TauCeti.BundleTest.localizeCLM_apply]
+
 private def intrinsicInclusionCLM {D : Opens M} (h : U ≤ D) :
     TauCeti.BundleTest I (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := U)) →L[ℝ]
       TauCeti.BundleTest I (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := D)) := by
@@ -428,9 +447,7 @@ private theorem intrinsicNestedTestComparisonCLM_apply {D : Opens M} (h : U ≤ 
           (V := (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V) x (s x))) := by
   unfold intrinsicNestedTestComparisonCLM
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, openDensityHomCLE_symm_apply]
-  -- `localizeCLM_apply` is stated (in `dsimp%` form) on the unbundled pullback `Subtype.val *ᵖ V`,
-  -- which `rw` does not match against `pullbackAmbientHomBundle`.
-  erw [TauCeti.BundleTest.localizeCLM_apply]
+  rw [localizeCLM_ambientHomBundle_apply]
   congr 1
   rw [iteratedIntrinsicTestExtensionCLM_apply]
   rw [testExtensionCLM_apply_of_mem _ x.val,
@@ -498,9 +515,7 @@ private theorem intrinsicNestedTestInverseCLM_apply {D : Opens M} (h : U ≤ D)
             (s (⟨x.val.val, x.property⟩ : U)))) := by
   unfold intrinsicNestedTestInverseCLM
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, openDensityHomCLE_symm_apply]
-  -- `localizeCLM_apply` is stated (in `dsimp%` form) on the unbundled pullback `Subtype.val *ᵖ V`,
-  -- which `rw` does not match against `pullbackAmbientHomBundle`.
-  erw [TauCeti.BundleTest.localizeCLM_apply]
+  rw [localizeCLM_ambientHomBundle_apply]
   have hi := intrinsicInclusionCLM_apply (I := I) (F := F) (V := V) h s
     (⟨x.val.val, x.property⟩ : U)
   exact congrArg (TauCeti.DensityBundle.openHomEquiv (I := I) (M := D)
@@ -522,13 +537,9 @@ private theorem intrinsicNestedTestComparison_right_inv {D : Opens M} (h : U ≤
     intrinsicNestedTestComparisonCLM (I := I) (F := F) (V := V) h
       (intrinsicNestedTestInverseCLM (I := I) (F := F) (V := V) h s) = s := by
   apply TauCeti.BundleTest.ext
-  intro u
-  -- The public inverse formula fixes the concrete point where the dependent fibre is read.
-  let x : nestedOpen U D := ⟨⟨u.val, h u.property⟩, u.property⟩
-  -- The CLE packages this already constructed comparison map on the identical test carrier.
-  change intrinsicNestedTestComparisonCLM (I := I) (F := F) (V := V) h
-    (intrinsicNestedTestInverseCLM (I := I) (F := F) (V := V) h s)
-    (⟨x.val.val, x.property⟩ : U) = s u
+  rintro ⟨u, hu⟩
+  -- The evaluation lemmas read the point of `U` as the image of this point of `nestedOpen U D`.
+  let x : nestedOpen U D := ⟨⟨u, h hu⟩, hu⟩
   rw [intrinsicNestedTestComparisonCLM_apply (I := I) (F := F) (V := V) h _ x,
     intrinsicNestedTestInverseCLM_apply (I := I) (F := F) (V := V) h s x]
   rw [ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply,
@@ -550,6 +561,50 @@ def nestedTestCLE {D : Opens M} (h : U ≤ D) :
     (by apply ContinuousLinearMap.ext; intro s; exact intrinsicNestedTestComparison_right_inv h s)
     (by apply ContinuousLinearMap.ext; intro s; exact intrinsicNestedTestComparison_left_inv h s)
 
+/-- The nested comparison is the comparison map it is built from. -/
+private theorem nestedTestCLE_apply_eq {D : Opens M} (h : U ≤ D)
+    (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) (doubleHomBundle (I := I) (V := V) (U := U) D)) :
+    nestedTestCLE (I := I) (F := F) (V := V) h s =
+      intrinsicNestedTestComparisonCLM (I := I) (F := F) (V := V) h s :=
+  (rfl)
+
+/-- The inverse nested comparison is the inverse map it is built from. -/
+private theorem nestedTestCLE_symm_apply_eq {D : Opens M} (h : U ≤ D)
+    (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := U))) :
+    (nestedTestCLE (I := I) (F := F) (V := V) h).symm s =
+      intrinsicNestedTestInverseCLM (I := I) (F := F) (V := V) h s :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
+/-- The three open dual-density comparisons along `nestedOpen U D ⊆ D ⊆ M` and back to `U`
+preserve the underlying functional. -/
+private theorem openHomEquiv_nested_apply {D : Opens M} (x : nestedOpen U D)
+    (ℓ : doubleHomBundle (I := I) (V := V) (U := U) D x) :
+    (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) (⟨x.val.val, x.property⟩ : U)).symm
+      (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) x.val
+        (TauCeti.DensityBundle.openHomEquiv (I := I) (M := D)
+          (V := (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V) x ℓ)) = ℓ := by
+  -- Over `D` the implicit bundle of `openHomEquiv` is the unfolded pullback
+  -- `⇑⟨Subtype.val, _⟩ *ᵖ V`; `rw` and `simp only` do not match the lemma's `cD *ᵖ V` there.
+  erw [TauCeti.DensityBundle.openHomEquiv_apply (I := I) (M := D),
+    TauCeti.DensityBundle.openHomEquiv_apply (I := I) (V := V),
+    TauCeti.DensityBundle.openHomEquiv_symm_apply (I := I) (V := V)]
+
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
+/-- The inverse comparisons from `U` back to `nestedOpen U D` preserve the underlying functional. -/
+private theorem openHomEquiv_nested_symm_apply {D : Opens M} (x : nestedOpen U D)
+    (ℓ : openHomBundle (I := I) (V := V) (U := U) (⟨x.val.val, x.property⟩ : U)) :
+    (TauCeti.DensityBundle.openHomEquiv (I := I) (M := D)
+        (V := (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V) x).symm
+      ((TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) x.val).symm
+        (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) (⟨x.val.val, x.property⟩ : U) ℓ)) =
+      ℓ := by
+  -- Over `D` the implicit bundle of `openHomEquiv` is the unfolded pullback
+  -- `⇑⟨Subtype.val, _⟩ *ᵖ V`; `rw` and `simp only` do not match the lemma's `cD *ᵖ V` there.
+  erw [TauCeti.DensityBundle.openHomEquiv_apply (I := I) (V := V),
+    TauCeti.DensityBundle.openHomEquiv_symm_apply (I := I) (V := V),
+    TauCeti.DensityBundle.openHomEquiv_symm_apply (I := I) (M := D)]
+
 /-- The nested comparison preserves each underlying fibrewise functional. -/
 @[simp]
 theorem nestedTestCLE_apply {D : Opens M} (h : U ≤ D) :
@@ -560,18 +615,10 @@ theorem nestedTestCLE_apply {D : Opens M} (h : U ≤ D) :
       (openHomBundle (I := I) (V := cD *ᵖ V) (U := N))) (x : N),
       nestedTestCLE (I := I) (F := F) (V := V) h s
         (⟨x.val.val, x.property⟩ : U) = s x) := by
-  let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
   intro s x
-  -- The CLE packages this already constructed comparison map on the identical test carrier.
-  change intrinsicNestedTestComparisonCLM (I := I) (F := F) (V := V) h s _ = _
+  rw [nestedTestCLE_apply_eq]
   rw [intrinsicNestedTestComparisonCLM_apply (I := I) (F := F) (V := V) h s x]
-  -- Over `D` the implicit bundle of `openHomEquiv` is the unfolded pullback
-  -- `⇑⟨Subtype.val, _⟩ *ᵖ V`; `rw` and `simp only` do not match the lemma's `cD *ᵖ V` there.
-  erw [TauCeti.DensityBundle.openHomEquiv_apply (I := I) (M := D) (V := cD *ᵖ V),
-    TauCeti.DensityBundle.openHomEquiv_apply (I := I) (V := V),
-    TauCeti.DensityBundle.openHomEquiv_symm_apply (I := I) (V := V)]
-  -- Both sides are the same fibre value read through different carrier abbreviations.
-  rfl
+  exact openHomEquiv_nested_apply x (s x)
 
 /-- The inverse nested comparison evaluates at the canonical nested-base identification. -/
 @[simp]
@@ -583,16 +630,10 @@ theorem nestedTestCLE_symm_apply {D : Opens M} (h : U ≤ D) :
       (openHomBundle (I := I) (V := V) (U := U))) (x : N),
       (nestedTestCLE (I := I) (F := F) (V := V) h).symm s x =
         s (⟨x.val.val, x.property⟩ : U)) := by
-  let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
   intro s x
-  -- The inverse CLE packages this map without changing its fibre values.
-  change intrinsicNestedTestInverseCLM (I := I) (F := F) (V := V) h s x = _
-  rw [intrinsicNestedTestInverseCLM_apply (I := I) (F := F) (V := V) h s x]
-  -- Over `D` the implicit bundle of `openHomEquiv` is the unfolded pullback
-  -- `⇑⟨Subtype.val, _⟩ *ᵖ V`; `rw` and `simp only` do not match the lemma's `cD *ᵖ V` there.
-  erw [TauCeti.DensityBundle.openHomEquiv_apply (I := I) (V := V),
-    TauCeti.DensityBundle.openHomEquiv_symm_apply (I := I) (V := V),
-    TauCeti.DensityBundle.openHomEquiv_symm_apply (I := I) (M := D) (V := cD *ᵖ V)]
+  rw [nestedTestCLE_symm_apply_eq]
+  exact (intrinsicNestedTestInverseCLM_apply (I := I) (F := F) (V := V) h s x).trans
+    (openHomEquiv_nested_symm_apply x _)
 
 /-- Actual direct and successive intrinsic test extensions agree through the comparison. -/
 theorem testExtensionCLM_nested {D : Opens M} (h : U ≤ D) :
@@ -607,12 +648,9 @@ theorem testExtensionCLM_nested {D : Opens M} (h : U ≤ D) :
     (Diffeomorph.nestedOpen (I := I) (n := ∞) h).continuous⟩
   apply ContinuousLinearMap.ext
   intro s
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, testExtensionCLM_apply]
-  -- `nestedTestCLE` is `ContinuousLinearEquiv.ofContinuousLinearMap` of this comparison map.
-  change TauCeti.BundleTest.extendByZeroCLM (I := I) (F := F →L[ℝ] ℝ)
-    (V := ambientHomBundle (I := I) (V := V)) (U := U) (openDensityHomCLE (I := I) (F := F) (V := V)
-      (intrinsicNestedTestComparisonCLM (I := I) (F := F) (V := V) h s)) =
-    iteratedIntrinsicTestExtensionCLM (I := I) (F := F) (V := V) D s
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, testExtensionCLM_apply,
+    ContinuousLinearEquiv.coe_coe, nestedTestCLE_apply_eq,
+    ← iteratedIntrinsicTestExtensionCLM_apply]
   unfold intrinsicNestedTestComparisonCLM
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     ContinuousLinearEquiv.apply_symm_apply]
@@ -687,11 +725,20 @@ theorem univTestCLE_apply
     univTestCLE (I := I) (F := F) (V := V) s x =
       TauCeti.DensityBundle.openHomEquiv ⟨x, Set.mem_univ x⟩
         (s ⟨x, Set.mem_univ x⟩) := by
-  -- Universal intrinsic transport is the composite of density transport and generic tests.
-  change TauCeti.BundleTest.univCLE (I := I) (F := F →L[ℝ] ℝ)
-    (V := ambientHomBundle (I := I) (V := V)) (openDensityHomCLE s) x = _
-  rw [TauCeti.BundleTest.univCLE_apply]
+  rw [univTestCLE, ContinuousLinearEquiv.trans_apply, TauCeti.BundleTest.univCLE_apply]
   exact openDensityHomCLE_apply s ⟨x, Set.mem_univ x⟩
+
+/-- `univTestCLE_symm_apply` before `ContinuousMap.coe_mk` normalization: the bundled inclusion
+keeps the bundle instances the rewrites in its proof need. -/
+private theorem univTestCLE_symm_apply_aux
+    (s : TauCeti.BundleTest I (F →L[ℝ] ℝ) (ambientHomBundle (I := I) (V := V)))
+    (x : (⊤ : Opens M)) :
+    (univTestCLE (I := I) (F := F) (V := V)).symm s x =
+      (TauCeti.DensityBundle.openHomEquiv x).symm (s (x : M)) := by
+  rw [univTestCLE, ContinuousLinearEquiv.symm_trans_apply, openDensityHomCLE_symm_apply]
+  exact congrArg (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) x).symm
+    (TauCeti.BundleTest.univCLE_symm_apply (I := I) (F := F →L[ℝ] ℝ)
+      (V := ambientHomBundle (I := I) (V := V)) s x)
 
 /-- The inverse universal intrinsic test comparison evaluates by inverse density transport. -/
 @[simp]
@@ -700,15 +747,8 @@ theorem univTestCLE_symm_apply
     (x : (⊤ : Opens M)) :
     dsimp% only [ContinuousMap.coe_mk] (
     (univTestCLE (I := I) (F := F) (V := V)).symm s x =
-      (TauCeti.DensityBundle.openHomEquiv x).symm (s (x : M))) := by
-  -- This composition is evaluated before applying the public inverse-density law.
-  change (openDensityHomCLE (I := I) (F := F) (V := V) (U := ⊤)).symm
-    ((TauCeti.BundleTest.univCLE (I := I) (F := F →L[ℝ] ℝ)
-      (V := ambientHomBundle (I := I) (V := V))).symm s) x = _
-  rw [openDensityHomCLE_symm_apply]
-  exact congrArg (TauCeti.DensityBundle.openHomEquiv (I := I) (V := V) x).symm
-    (TauCeti.BundleTest.univCLE_symm_apply (I := I) (F := F →L[ℝ] ℝ)
-      (V := ambientHomBundle (I := I) (V := V)) s x)
+      (TauCeti.DensityBundle.openHomEquiv x).symm (s (x : M))) :=
+  univTestCLE_symm_apply_aux s x
 
 /-- Restriction to the universal open subset is a compact-convergence equivalence. -/
 def univCLE :
@@ -720,20 +760,16 @@ def univCLE :
   refine ContinuousLinearEquiv.ofContinuousLinearMap
     (e.toContinuousLinearMap.precompCompactConvergenceCLM ℝ)
     (e.symm.toContinuousLinearMap.precompCompactConvergenceCLM ℝ) ?_ ?_
-  · apply ContinuousLinearMap.ext
-    intro T
-    apply ContinuousLinearMap.ext
-    intro s
-    -- Evaluate the transpose pair before the public inverse law for the test equivalence.
-    change T (e.symm (e s)) = T s
-    exact congrArg T (e.symm_apply_apply s)
-  · apply ContinuousLinearMap.ext
-    intro T
-    apply ContinuousLinearMap.ext
-    intro s
-    -- Evaluate the transpose pair before the public inverse law for the test equivalence.
-    change T (e (e.symm s)) = T s
-    exact congrArg T (e.apply_symm_apply s)
+  · refine ContinuousLinearMap.ext fun T ↦ DFunLike.ext _ _ fun s ↦ ?_
+    rw [ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply,
+      ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.coe_coe, e.symm_apply_apply, ContinuousLinearMap.id_apply]
+  · refine ContinuousLinearMap.ext fun T ↦ DFunLike.ext _ _ fun s ↦ ?_
+    rw [ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply,
+      ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.coe_coe, e.apply_symm_apply, ContinuousLinearMap.id_apply]
 
 /-- Universal-open distribution restriction pairs against the intrinsic test comparison. -/
 @[simp]
@@ -755,6 +791,7 @@ theorem univCLE_symm_apply
   exact ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply _ _ _
 
 /-- The universal-open equivalence has the actual intrinsic restriction as its forward map. -/
+@[simp]
 theorem univCLE_toContinuousLinearMap :
     (univCLE (I := I) (F := F) (V := V)).toContinuousLinearMap =
       restrictCLM (I := I) (F := F) (V := V) (U := ⊤) := by
