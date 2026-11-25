@@ -49,7 +49,7 @@ theorem norm_pi_inv_smul_integral_sub_inv_smul_le
     ‖(Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z‖ ≤ 2 * (r + R) * M := by
   rw [integral_sub_inv_smul_eq_truncatedCauchyKernel_smul hs hw, norm_smul]
   have hb := norm_integral_kernel_smul_sub_le
-    (integrable_truncatedCauchyKernel (r + R)) hM w
+    (integrable_truncatedCauchyKernel (r + R)) (ae_of_all _ fun z ↦ hM (w - z))
   rw [integral_norm_truncatedCauchyKernel (add_nonneg hr hR)] at hb
   calc
     _ ≤ ‖(Real.pi : ℂ)⁻¹‖ * ((2 * Real.pi * (r + R)) * M) :=

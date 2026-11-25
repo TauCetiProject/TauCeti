@@ -128,10 +128,10 @@ private theorem setToSimpleFunc_smulProj_add (P : ProjValMeasure X H) (s t : Sim
 
 private theorem setToSimpleFunc_smulProj_piecewise (P : ProjValMeasure X H) (c : ℂ) {B : Set X}
     (hB : MeasurableSet B) :
-    (SimpleFunc.piecewise B hB (SimpleFunc.const X c) (SimpleFunc.const X 0)).setToSimpleFunc
-      P.smulProj = c • P.proj B hB := by
-  rw [SimpleFunc.setToSimpleFunc_indicator _ P.smulProj_empty hB, smulProj_apply,
-    projOrZero_of_measurableSet P hB]
+    (SimpleFunc.piecewise B hB (SimpleFunc.const X c) 0).setToSimpleFunc P.smulProj =
+      c • P.proj B hB := by
+  rw [← SimpleFunc.const_zero, SimpleFunc.setToSimpleFunc_indicator _ P.smulProj_empty hB,
+    smulProj_apply, projOrZero_of_measurableSet P hB]
 
 /-- The integral of simple symbols against `P`, as a unital star algebra homomorphism. -/
 private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆ₐ[ℂ] (H →L[ℂ] H) where
@@ -147,9 +147,9 @@ private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆�
     | const c hA =>
       induction t using SimpleFunc.induction with
       | const d hB =>
-        rw [SimpleFunc.piecewise_const_mul_piecewise_const, setToSimpleFunc_smulProj_piecewise,
-          setToSimpleFunc_smulProj_piecewise, setToSimpleFunc_smulProj_piecewise,
-          smul_mul_smul_comm, P.proj_inter]
+        simp only [SimpleFunc.const_zero, SimpleFunc.piecewise_zero_mul_piecewise_zero,
+          SimpleFunc.const_mul_const, setToSimpleFunc_smulProj_piecewise, smul_mul_smul_comm,
+          P.proj_inter]
       | add _ ht₁ ht₂ =>
         rw [mul_add, setToSimpleFunc_smulProj_add,
           setToSimpleFunc_smulProj_add, mul_add, ht₁, ht₂]
@@ -165,8 +165,9 @@ private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆�
   map_star' s := by
     induction s using SimpleFunc.induction with
     | const c hA =>
-      rw [SimpleFunc.star_piecewise_const, setToSimpleFunc_smulProj_piecewise,
-        setToSimpleFunc_smulProj_piecewise, star_smul, (P.isSelfAdjoint_proj _ hA).star_eq]
+      simp only [SimpleFunc.const_zero, SimpleFunc.star_piecewise, SimpleFunc.star_const,
+        star_zero, setToSimpleFunc_smulProj_piecewise, star_smul,
+        (P.isSelfAdjoint_proj _ hA).star_eq]
     | add _ hs₁ hs₂ =>
       rw [star_add, setToSimpleFunc_smulProj_add,
         setToSimpleFunc_smulProj_add, star_add, hs₁, hs₂]
