@@ -10,6 +10,7 @@ public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 public import TauCeti.Algebra.Lie.Quotient
 public import TauCeti.Algebra.Lie.UniversalEnveloping.HopfAlgebra
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # The augmentation ideal of a universal enveloping algebra
@@ -317,20 +318,11 @@ theorem augmentation_toIdeal_pow_le_comap_map (f : L →ₗ⁅R⁆ L') (n : ℕ)
     (HopfIdeal.augmentation R U).toIdeal ^ n ≤
       ((HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L')).toIdeal ^ n).comap
         (map R f) := by
-  have h₁ : (HopfIdeal.augmentation R U).toIdeal ≤
-      (HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L')).toIdeal.comap
-        (map R f) := by
-    rw [augmentation_toIdeal_eq_span_range_ι, Ideal.span_le]
-    rintro _ ⟨x, rfl⟩
-    simpa only [SetLike.mem_coe, Ideal.mem_comap, map_ι] using
-      HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L' (f x))
-  induction n with
-  | zero => simp [Submodule.pow_zero, Ideal.one_eq_top]
-  | succ n ih =>
-    rw [Submodule.pow_succ]
-    exact Ideal.mul_le.mpr fun _ ha _ hb => by
-      rw [Ideal.mem_comap, map_mul, Submodule.pow_succ]
-      exact Ideal.mul_mem_mul (ih ha) (h₁ hb)
+  refine Ideal.pow_le_comap_pow (map R f) ?_ n
+  rw [augmentation_toIdeal_eq_span_range_ι, Ideal.span_le]
+  rintro _ ⟨x, rfl⟩
+  simpa only [SetLike.mem_coe, Ideal.mem_comap, map_ι] using
+    HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L' (f x))
 
 /-- `lowerCentralQuotientι` is natural with respect to Lie homomorphisms on lower-central
 quotients. -/

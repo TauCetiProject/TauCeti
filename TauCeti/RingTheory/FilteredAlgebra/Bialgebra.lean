@@ -26,8 +26,8 @@ completed primitive elements of `F.completionIdeal 1` and completed group-like e
 ## Main definitions
 
 * `TauCeti.AlgFiltration.IsBialgFiltration`: filtration compatibility with comultiplication/counit.
-* `TauCeti.AlgFiltration.completedCoproduct`, `TauCeti.AlgFiltration.completedCounit`: induced maps
-  on `F.completion`.
+* `TauCeti.AlgFiltration.completedCoproduct`, `TauCeti.AlgFiltration.completedCounit`,
+  `TauCeti.AlgFiltration.completedTensorCounit`: induced bialgebra maps on completions.
 * `TauCeti.AlgFiltration.IsCompletedGroupLike`, `TauCeti.AlgFiltration.IsCompletedPrimitive`:
   group-like and primitive predicates in `F.completion`.
 * `TauCeti.AlgFiltration.completedGroupLikeSubgroup`,
@@ -59,6 +59,26 @@ class IsBialgFiltration (R : Type*) {A : Type*} [CommSemiring R] [Semiring A]
   /-- The counit vanishes on the first filtration ideal. -/
   ideal_one_le_ker_counit :
     F.ideal 1 ≤ RingHom.ker (Bialgebra.counitAlgHom R A)
+
+/-- For two filtered bialgebras, the tensor counit `ε_A ⊗ ε_B` vanishes on the first ideal of the
+total-degree tensor filtration. -/
+theorem tensorProduct_ideal_one_le_ker_lift_counitAlgHom (R : Type*) {A B : Type*}
+    [CommSemiring R] [Semiring A] [Semiring B] [Bialgebra R A] [Bialgebra R B]
+    (F : AlgFiltration A) [F.IsBialgFiltration R] (G : AlgFiltration B) [G.IsBialgFiltration R] :
+    (F.tensorProduct R G).ideal 1 ≤ RingHom.ker (Algebra.TensorProduct.lift
+      (Bialgebra.counitAlgHom R A) (Bialgebra.counitAlgHom R B) fun _ _ => Commute.all _ _) :=
+  fun _ ht => by
+    have hsub : tensorFiltrationTail (fun n => (F.ideal n).restrictScalars R)
+        (fun n => (G.ideal n).restrictScalars R) 1 ≤ LinearMap.ker (Algebra.TensorProduct.lift
+          (Bialgebra.counitAlgHom R A) (Bialgebra.counitAlgHom R B)
+          fun _ _ => Commute.all _ _).toLinearMap :=
+      (tensorFiltrationTail_le_iff _ _).mpr fun a _ _ u hu v hv => by
+        rw [LinearMap.mem_ker, AlgHom.toLinearMap_apply, Algebra.TensorProduct.lift_tmul]
+        by_cases ha : 1 ≤ a
+        · simp [RingHom.mem_ker.mp (IsBialgFiltration.ideal_one_le_ker_counit (F.antitone ha hu))]
+        · simp [RingHom.mem_ker.mp (IsBialgFiltration.ideal_one_le_ker_counit
+            (G.antitone (by omega) hv))]
+    exact hsub ((F.mem_tensorProduct_ideal_iff R G).mp ht)
 
 section Completion
 
@@ -114,7 +134,8 @@ noncomputable def completedCounit : F.completion →ₐ[R] R :=
 theorem completedCounit_of_representative (x : F.completion) (a : A)
     (ha : Ideal.Quotient.mk (F.ideal 1) a = F.projection 0 x) :
     F.completedCounit R x = Coalgebra.counit (R := R) a := by
-  simp only [completedCounit, AlgHom.comp_apply, projectionₐ_apply, ← ha]; rfl
+  rw [completedCounit, AlgHom.comp_apply, projectionₐ_apply, ← ha, ← Ideal.Quotient.mkₐ_eq_mk R,
+    ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp, Bialgebra.counitAlgHom_apply]
 
 /-- On canonical images of elements of `A`, `completedCounit` agrees with `Coalgebra.counit`. -/
 @[simp] theorem completedCounit_toCompletion (a : A) :
@@ -148,6 +169,105 @@ theorem sub_one_mem_completionIdeal_one_iff_completedCounit_eq_one
     u - 1 ∈ F.completionIdeal 1 ↔ F.completedCounit R u = 1 := by
   rw [F.mem_completionIdeal_one_iff_completedCounit_eq_zero R hker (u - 1), map_sub, map_one,
     sub_eq_zero]
+
+/-- The completed counit `ε̂_A ⊗̂ ε̂_B : (F.tensorProduct R G).completion →ₐ[R] R` induced through
+`(A ⊗[R] B) ⧸ (F.tensorProduct R G).ideal 1`. -/
+noncomputable def completedTensorCounit {B : Type*} [Ring B] [Bialgebra R B]
+    (G : AlgFiltration B) [G.IsBialgFiltration R] :
+    (F.tensorProduct R G).completion →ₐ[R] R :=
+  (Ideal.Quotient.liftₐ ((F.tensorProduct R G).ideal 1)
+    (Algebra.TensorProduct.lift (Bialgebra.counitAlgHom R A) (Bialgebra.counitAlgHom R B)
+      fun _ _ => Commute.all _ _)
+    fun _ ht => RingHom.mem_ker.mp
+      (F.tensorProduct_ideal_one_le_ker_lift_counitAlgHom R G ht)).comp
+    ((F.tensorProduct R G).projectionₐ (R := R) 0)
+
+/-- Any representative of the order-zero projection computes `completedTensorCounit`. -/
+theorem completedTensorCounit_of_representative {B : Type*} [Ring B] [Bialgebra R B]
+    (G : AlgFiltration B) [G.IsBialgFiltration R]
+    (z : (F.tensorProduct R G).completion) (t : A ⊗[R] B)
+    (ht : Ideal.Quotient.mk ((F.tensorProduct R G).ideal 1) t =
+      (F.tensorProduct R G).projection 0 z) :
+    F.completedTensorCounit R G z =
+      Algebra.TensorProduct.lift (Bialgebra.counitAlgHom R A) (Bialgebra.counitAlgHom R B)
+        (fun _ _ => Commute.all _ _) t := by
+  rw [completedTensorCounit, AlgHom.comp_apply, projectionₐ_apply, ← ht,
+    ← Ideal.Quotient.mkₐ_eq_mk R, ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp]
+
+/-- On canonical images of elements of `A ⊗[R] B`, `completedTensorCounit` agrees with the tensor
+product of the counits. -/
+@[simp] theorem completedTensorCounit_toCompletion {B : Type*} [Ring B] [Bialgebra R B]
+    (G : AlgFiltration B) [G.IsBialgFiltration R] (t : A ⊗[R] B) :
+    F.completedTensorCounit R G ((F.tensorProduct R G).toCompletion t) =
+      Algebra.TensorProduct.lift (Bialgebra.counitAlgHom R A) (Bialgebra.counitAlgHom R B)
+        (fun _ _ => Commute.all _ _) t :=
+  F.completedTensorCounit_of_representative R G _ t
+    ((F.tensorProduct R G).projection_toCompletion 0 t).symm
+
+/-- `completedTensorCounit` vanishes on `(F.tensorProduct R G).completionIdeal 1`. -/
+theorem completedTensorCounit_eq_zero_of_mem {B : Type*} [Ring B] [Bialgebra R B]
+    (G : AlgFiltration B) [G.IsBialgFiltration R] {z : (F.tensorProduct R G).completion}
+    (hz : z ∈ (F.tensorProduct R G).completionIdeal 1) :
+    F.completedTensorCounit R G z = 0 := by
+  have hz0 : (F.tensorProduct R G).projection 0 z = 0 := by
+    simpa only [completionIdeal_succ, RingHom.mem_ker] using hz
+  simp [completedTensorCounit, hz0]
+
+/-- On completed pure tensors, `completedTensorCounit` multiplies the completed counits of the
+factors. -/
+@[simp] theorem completedTensorCounit_completedTensor {B : Type*} [Ring B] [Bialgebra R B]
+    (G : AlgFiltration B) [G.IsBialgFiltration R] (x : F.completion) (y : G.completion) :
+    F.completedTensorCounit R G (F.completedTensor R G x y) =
+      F.completedCounit R x * G.completedCounit R y := by
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection 0 x)
+  obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective (G.projection 0 y)
+  rw [F.completedTensorCounit_of_representative R G _ (a ⊗ₜ[R] b)
+      (F.projection_completedTensor_of_representatives R G 0 x y a b ha hb).symm,
+    F.completedCounit_of_representative R x a ha,
+    G.completedCounit_of_representative R y b hb, Algebra.TensorProduct.lift_tmul,
+    Bialgebra.counitAlgHom_apply, Bialgebra.counitAlgHom_apply]
+
+/-- Composing `completedTensorCounit` with `includeLeftCompletion` recovers `completedCounit`. -/
+@[simp] theorem completedTensorCounit_includeLeftCompletion {B : Type*} [Ring B] [Bialgebra R B]
+    (G : AlgFiltration B) [G.IsBialgFiltration R] (x : F.completion) :
+    F.completedTensorCounit R G (F.includeLeftCompletion R G x) = F.completedCounit R x := by
+  rw [← F.completedTensor_one_right R G x, completedTensorCounit_completedTensor, map_one,
+    mul_one]
+
+/-- Composing `completedTensorCounit` with `includeRightCompletion` recovers `completedCounit`. -/
+@[simp] theorem completedTensorCounit_includeRightCompletion {B : Type*} [Ring B] [Bialgebra R B]
+    (G : AlgFiltration B) [G.IsBialgFiltration R] (y : G.completion) :
+    F.completedTensorCounit R G (F.includeRightCompletion R G y) = G.completedCounit R y := by
+  rw [← F.completedTensor_one_left R G y, completedTensorCounit_completedTensor, map_one,
+    one_mul]
+
+/-- `completedTensorCounit` is invariant under completed factor exchange. -/
+@[simp] theorem completedTensorCounit_completedTensorComm {B : Type*} [Ring B] [Bialgebra R B]
+    (G : AlgFiltration B) [G.IsBialgFiltration R] (z : (F.tensorProduct R G).completion) :
+    G.completedTensorCounit R F (F.completedTensorComm R G z) =
+      F.completedTensorCounit R G z := by
+  obtain ⟨t, ht⟩ := Ideal.Quotient.mk_surjective ((F.tensorProduct R G).projection 0 z)
+  rw [G.completedTensorCounit_of_representative R F _ (Algebra.TensorProduct.comm R A B t)
+      (by simp [projection_completedTensorComm, ← ht]),
+    F.completedTensorCounit_of_representative R G z t ht, ← AlgEquiv.coe_toAlgHom,
+    ← AlgHom.comp_apply]
+  exact AlgHom.congr_fun (by ext <;> simp) t
+
+/-- Applying `completedTensorCounit` after `completedCoproduct` recovers `completedCounit`. -/
+@[simp] theorem completedTensorCounit_completedCoproduct (x : F.completion) :
+    F.completedTensorCounit R F (F.completedCoproduct R x) = F.completedCounit R x := by
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection 0 x)
+  rw [F.completedTensorCounit_of_representative R F _ (Coalgebra.comul (R := R) a)
+      (by simp [projection_completedCoproduct, ← ha]),
+    F.completedCounit_of_representative R x a ha]
+  have hlin : (Algebra.TensorProduct.lift (Bialgebra.counitAlgHom R A)
+      (Bialgebra.counitAlgHom R A) fun _ _ => Commute.all _ _).toLinearMap =
+      (Coalgebra.counit (R := R)).comp
+        ((TensorProduct.lid R A).toLinearMap.comp (Coalgebra.counit.rTensor A)) :=
+    TensorProduct.ext' fun _ _ => by simp
+  simpa only [AlgHom.toLinearMap_apply, LinearMap.comp_apply, Coalgebra.rTensor_counit_comul,
+    LinearEquiv.coe_coe, TensorProduct.lid_tmul, one_smul] using
+    LinearMap.congr_fun hlin (Coalgebra.comul (R := R) a)
 
 /-- A filtered bialgebra homomorphism intertwines `completedCoproduct` along a monotone modulus. -/
 theorem completedCoproduct_mapCompletionₐ {B : Type*} [Ring B] [Bialgebra R B]
@@ -300,39 +420,10 @@ variable {R F}
 /-- Every completed primitive element has completed counit zero. -/
 theorem IsCompletedPrimitive.completedCounit_eq_zero {x : F.completion}
     (hx : F.IsCompletedPrimitive R x) : F.completedCounit R x = 0 := by
-  let ε₂ : A ⊗[R] A →ₐ[R] R := Algebra.TensorProduct.lift
-    (Bialgebra.counitAlgHom R A) (Bialgebra.counitAlgHom R A) fun _ _ => Commute.all _ _
-  have hker₂ : (F.tensorProduct R F).ideal 1 ≤ RingHom.ker ε₂ := fun t ht => by
-    have hsub : tensorFiltrationTail (fun n => (F.ideal n).restrictScalars R)
-        (fun n => (F.ideal n).restrictScalars R) 1 ≤ LinearMap.ker ε₂.toLinearMap :=
-      (tensorFiltrationTail_le_iff _ _).mpr fun a b hab u hu v hv => by
-        rw [LinearMap.mem_ker, AlgHom.toLinearMap_apply]; dsimp [ε₂]
-        by_cases ha : 1 ≤ a
-        · simp [RingHom.mem_ker.mp (IsBialgFiltration.ideal_one_le_ker_counit (F.antitone ha hu))]
-        · simp [RingHom.mem_ker.mp (IsBialgFiltration.ideal_one_le_ker_counit
-            (F.antitone (by omega) hv))]
-    exact hsub ((F.mem_tensorProduct_ideal_iff R F).mp ht)
-  let E : (F.tensorProduct R F).completion →ₐ[R] R :=
-    (Ideal.Quotient.liftₐ ((F.tensorProduct R F).ideal 1) ε₂
-      fun _ ht => RingHom.mem_ker.mp (hker₂ ht)).comp ((F.tensorProduct R F).projectionₐ (R := R) 0)
-  have hε₂_comul (a : A) : ε₂ (Coalgebra.comul (R := R) a) = Coalgebra.counit (R := R) a := by
-    have hlin : ε₂.toLinearMap = (Coalgebra.counit (R := R)).comp
-        ((TensorProduct.lid R A).toLinearMap.comp (Coalgebra.counit.rTensor A)) :=
-      TensorProduct.ext' fun _ _ => by simp [ε₂]
-    simpa only [AlgHom.toLinearMap_apply, LinearMap.comp_apply, Coalgebra.rTensor_counit_comul,
-      LinearEquiv.coe_coe, TensorProduct.lid_tmul, one_smul] using
-      LinearMap.congr_fun hlin (Coalgebra.comul (R := R) a)
-  have hE_mk {t z} (hz : (F.tensorProduct R F).projection 0 z = Ideal.Quotient.mk _ t) :
-      E z = ε₂ t := by simp only [E, AlgHom.comp_apply, projectionₐ_apply, hz]; rfl
-  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection 0 x)
-  have hsum := congrArg E hx
-  rw [map_add, hE_mk (t := Coalgebra.comul (R := R) a)
-      (by simp [projection_completedCoproduct, ← ha]), hε₂_comul a,
-    hE_mk (F.projection_completedTensor_of_representatives R F 0 x 1 a 1 ha (by simp)),
-    hE_mk (F.projection_completedTensor_of_representatives R F 0 1 x 1 a (by simp) ha)] at hsum
-  simp only [ε₂, Algebra.TensorProduct.lift_tmul, map_one, mul_one, one_mul,
-    Bialgebra.counitAlgHom_apply, ← F.completedCounit_of_representative R x a ha] at hsum
-  simpa using congrArg (· - F.completedCounit R x) hsum.symm
+  have hsum := congrArg (F.completedTensorCounit R F) hx
+  simp only [completedTensorCounit_completedCoproduct, map_add,
+    completedTensorCounit_completedTensor, map_one, mul_one, one_mul] at hsum
+  exact left_eq_add.mp hsum
 
 /-- When `ker ε ≤ F.ideal 1`, every completed primitive element belongs to `F.completionIdeal 1`. -/
 theorem IsCompletedPrimitive.mem_completionIdeal_one {x : F.completion}

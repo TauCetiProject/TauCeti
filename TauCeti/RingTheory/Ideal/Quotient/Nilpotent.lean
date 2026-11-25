@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Nilpotence in ring quotients
@@ -68,16 +69,6 @@ has vanishing `n`-th power. -/
 @[simp]
 theorem _root_.Ideal.map_quotient_mk_pow_eq_bot (I : Ideal A) [I.IsTwoSided] (n : ℕ) :
     (Ideal.map (Ideal.Quotient.mk (I ^ n)) I) ^ n = ⊥ := by
-  have hle (m : ℕ) : (Ideal.map (Ideal.Quotient.mk (I ^ n)) I) ^ m ≤
-      Ideal.map (Ideal.Quotient.mk (I ^ n)) (I ^ m) := by
-    induction m with
-    | zero => simp [Submodule.pow_zero, Ideal.one_eq_top, Ideal.map_top]
-    | succ m ih =>
-      rw [Submodule.pow_succ, Submodule.pow_succ]
-      refine (Ideal.mul_mono_left ih).trans (Ideal.mul_le.mpr fun r hr s hs => ?_)
-      obtain ⟨a, ha, rfl⟩ := (Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective).mp hr
-      obtain ⟨b, hb, rfl⟩ := (Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective).mp hs
-      rw [← map_mul]; exact Ideal.mem_map_of_mem _ (Ideal.mul_mem_mul ha hb)
-  exact le_bot_iff.mp ((hle n).trans_eq (Ideal.map_quotient_self (I ^ n)))
+  rw [← Ideal.map_pow_of_surjective _ Ideal.Quotient.mk_surjective, Ideal.map_quotient_self]
 
 end TauCeti
