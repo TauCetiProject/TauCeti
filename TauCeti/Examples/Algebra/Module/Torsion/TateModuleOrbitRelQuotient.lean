@@ -11,9 +11,9 @@ import TauCeti.Algebra.Module.Torsion.TateModule.OrbitRelQuotient
 /-!
 # Checks for the Tate module of a torus
 
-AbelianSchemesAndArithmeticModuli §A5.1 Checks for the torsion of a torus `E / f(Λ)`: for `n = 1`
-the killed-by-`n` subgroup is zero, and for `n = ℓ ^ r` multiplication by `ℓ` on torus torsion
-corresponds to reduction of lattice classes modulo `ℓ ^ (r - 1)`. For the circle `ℝ / ℤ` the
+Checks for the torsion of a torus `E / f(Λ)`: for `n = 1` the killed-by-`n` subgroup is zero, and
+for `n = ℓ ^ r` multiplication by `ℓ` on torus torsion corresponds to reduction of lattice classes
+modulo `ℓ ^ (r - 1)`. For the circle `ℝ / ℤ` the
 `2`-adic Tate module is the `2`-adic completion of `ℤ`.
 -/
 
