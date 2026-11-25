@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
+public import TauCeti.Geometry.Manifold.Riemannian.InwardUnitNormal
 import TauCeti.Geometry.Manifold.MFDeriv.Slice
 
 /-!
@@ -40,6 +41,11 @@ With this sign the closed unit ball has `II = h`, the induced metric. The bounda
 * `TauCeti.boundarySecondFundamentalForm_apply_of_mem_chart_source`: the Hessian formula in every
   preferred chart whose source contains `q`. In particular `II_q` does not depend on the chart used
   to define it.
+* `TauCeti.IsBoundaryDefiningFunctionOn.boundarySecondFundamentalForm_apply`: for every boundary
+  defining function `ρ` on a neighbourhood of `q`, `II_q(u, w) = -Hess ρ(dι u, dι w) / |dρ_q|`.
+* `TauCeti.boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal`: for every vector
+  field `N` differentiable at `q` and equal to `ν_out` along `∂M` near `q`,
+  `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩`.
 
 ## References
 
@@ -181,5 +187,83 @@ theorem boundarySecondFundamentalForm_apply_of_mem_chart_source {α : M}
   obtain ⟨W, hW, hWq, hWt⟩ := exists_mdifferentiableAt_extension_mem_boundaryTangentSpace q w
   rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
     inv_norm_mul_hessian_eq_neg_inner_outwardUnitNormal hq u w hW hWq hWt]
+
+
+/-- **The second fundamental form through a boundary defining function.** For a boundary defining
+function `ρ` on an open set containing `q ∈ ∂M`, `II_q(u, w) = -Hess ρ(dι u, dι w) / |dρ_q|`. -/
+theorem IsBoundaryDefiningFunctionOn.boundarySecondFundamentalForm_apply {ρ : M → ℝ} {U : Set M}
+    (hρ : IsBoundaryDefiningFunctionOn n ρ U) {q : (𝓡∂ (n + 1)).boundary M} (hqU : (q : M) ∈ U)
+    (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    boundarySecondFundamentalForm q u w =
+      -Manifold.hessian (𝓡∂ (n + 1)) ρ q
+          (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+            (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
+          (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+            (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w) /
+        ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ := by
+  set ι : (𝓡∂ (n + 1)).boundary M → M := Subtype.val
+  obtain ⟨W, hW, hWq, hWt⟩ := exists_mdifferentiableAt_extension_mem_boundaryTangentSpace q w
+  set V : (y : M) → TangentSpace (𝓡∂ (n + 1)) y :=
+    FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1)))
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) ι q u)
+  have hV : V q = mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) ι q u :=
+    FiberBundle.extend_apply_self _ _
+  have hρq : ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) 2 ρ q :=
+    ((hρ.contMDiffOn (q : M) hqU).contMDiffAt (hρ.isOpen.mem_nhds hqU)).of_le
+      (by simp)
+  have hH := Manifold.hessian_apply_eq_mvfderiv_sub (q : M) hρq V W hW
+  rw [hV, hWq] at hH
+  -- The function `y ↦ dρ_y (W y)` vanishes on the boundary near `q`, so its derivative along the
+  -- boundary vanishes at `q`.
+  have hgι : (fun y ↦ mvfderiv (𝓡∂ (n + 1)) ρ y (W y)) ∘ ι =ᶠ[𝓝 q] 0 := by
+    filter_upwards [hWt, (hρ.isOpen.preimage continuous_subtypeVal).mem_nhds hqU] with p hp hpU
+    exact (hρ.mvfderiv_eq_zero_iff hpU (W p)).mpr hp
+  have hzero := mvfderiv_mfderiv_apply_eq_zero_of_comp_eventuallyEq_zero (I := 𝓡∂ (n + 1)) hgι u
+  have hne : ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ ≠ 0 :=
+    by simpa using hρ.mvfderiv_ne_zero (q : M) hqU q.property
+  rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt, hH,
+    hzero, zero_sub, neg_neg, ← Manifold.inner_mgradient,
+    hρ.mgradient_eq_norm_smul_inwardUnitNormal hqU, inner_smul_left, inwardUnitNormal_def,
+    inner_neg_left, real_inner_comm]
+  exact (mul_div_cancel_left₀ _ hne).symm
+
+
+/-- **The second fundamental form through an extension of the outward normal.** Let `N` be a
+vector field on `M`, differentiable at `q ∈ ∂M`, equal to the outward unit normal at the boundary
+points near `q`. Then `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩`; with the inward normal `ν_in = -N` this
+is `-⟨∇_{dι u} ν_in, dι w⟩`. -/
+theorem boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal
+    (q : (𝓡∂ (n + 1)).boundary M) (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)
+    {N : (y : M) → TangentSpace (𝓡∂ (n + 1)) y} (hN : MDiffAt (T% N) (q : M))
+    (hNν : ∀ᶠ p : (𝓡∂ (n + 1)).boundary M in 𝓝 q, N p = outwardUnitNormal p) :
+    boundarySecondFundamentalForm q u w =
+      ⟪CovariantDerivative.leviCivitaConnection (𝓡∂ (n + 1)) M N q
+        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u),
+        mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w⟫_ℝ := by
+  obtain ⟨W, hW, hWq, hWt⟩ := exists_mdifferentiableAt_extension_mem_boundaryTangentSpace q w
+  set V : (y : M) → TangentSpace (𝓡∂ (n + 1)) y :=
+    FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1)))
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
+  have hV : V q = mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u :=
+    FiberBundle.extend_apply_self _ _
+  -- Metric compatibility: `d⟨N, W⟩(V) = ⟨∇_V N, W⟩ + ⟨N, ∇_V W⟩` at `q`.
+  have hc :=
+    (CovariantDerivative.isMetricCompatible_leviCivitaConnection (𝓡∂ (n + 1)) (M := M)
+      ).mvfderiv_inner_eq (x := (q : M)) V hN hW
+  -- The function `⟨N, W⟩` vanishes on the boundary near `q`.
+  have hgι : (fun y ↦ ⟪N y, W y⟫_ℝ) ∘ (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) =ᶠ[𝓝 q] 0 := by
+    filter_upwards [hWt, hNν] with p hp hpN
+    simp only [Function.comp_apply, Pi.zero_apply, hpN]
+    exact inner_outwardUnitNormal_of_mem_boundaryTangentSpace hp
+  have hzero := mvfderiv_mfderiv_apply_eq_zero_of_comp_eventuallyEq_zero (I := 𝓡∂ (n + 1)) hgι u
+  rw [hV] at hc
+  rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
+    ← hWq, ← hNν.self_of_nhds, real_inner_comm (N q)]
+  simp only [hV] at hc
+  linarith
 
 end TauCeti
