@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
+import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
@@ -91,22 +92,6 @@ private theorem lintegral_ball_floerEnergyDensity_comp_add_le {H : ℝ → V →
   exact (ω.floerEnergyDensity_cylindrical_comp_add_right H u s₀ w).trans
     (ω.floerEnergyDensity_comp_add_right _ _ u _ w).symm
 
-/-- A translate `(s, t) ↦ u(s + s₀, t)` of a Floer cylinder of a Hamiltonian `H_t` for an almost
-complex structure `J_t(x)` is again one. -/
-private theorem isComplexLinearMap_perturbedFDeriv_comp_add_right {H : ℝ → V → ℝ}
-    {J : ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
-    (hfl : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (s₀ : ℝ) (w : ℝ × ℝ) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J w.2 (u (w + (s₀, 0))))
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (s₀, 0))) w :
-        ℝ × ℝ →ₗ[ℝ] V) := by
-  have h := ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s₀, 0) w
-  simp only [Prod.snd_add, add_zero] at h
-  have h2 : (w + (s₀, (0 : ℝ))).2 = w.2 := by rw [Prod.snd_add, add_zero]
-  rw [h, ← h2]
-  exact hfl _
-
 /-- The energy bound on the window `(-1, 1) × (-1/2, 3/2)` in the form that the compactness
 theorems take: if a Floer cylinder `u` of period one, of a Hamiltonian `H_t` of period one in `t`
 for an almost complex structure `J_t(x)` tamed by `ω` on `ℝ × K`, has image in `K` and energy at
@@ -129,7 +114,8 @@ private theorem integrableOn_and_setIntegral_floerEnergyDensity_comp_add_le {H :
     subset_rfl (((hu.comp (contDiff_id.add contDiff_const)).of_le (by norm_num)).contDiffOn)
     contDiffOn_const ((contDiff_uncurry_cylindrical hH).of_le (by norm_num)).contDiffOn
     (fun w _ ↦ ω.floerEnergyDensity_nonneg (hJ _ _ (huK _))
-      (isComplexLinearMap_perturbedFDeriv_comp_add_right hfl _ w)) (by positivity) ?_
+      (isComplexLinearMap_perturbedFDeriv_comp_add _ (by simpa using hfl (w + (s₀, 0)))))
+    (by positivity) ?_
   refine (lintegral_ball_floerEnergyDensity_comp_add_le hHper hper _).trans ?_
   rw [ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_ofNat]
   gcongr
@@ -193,7 +179,9 @@ theorem exists_pos_forall_norm_fderiv_le_of_mem_of_setLIntegral_floerEnergyDensi
   set v : ℕ → ℝ × ℝ → V := fun k w ↦ u k (w + ((z k).1, 0))
   have hvd (k : ℕ) (w : ℝ × ℝ) : fderiv ℝ (v k) w = fderiv ℝ (u k) (w + ((z k).1, 0)) :=
     fderiv_comp_add_right _
-  have hvfl (k : ℕ) := isComplexLinearMap_perturbedFDeriv_comp_add_right (hfl k) (z k).1
+  have hvfl (k : ℕ) (w : ℝ × ℝ) := isComplexLinearMap_perturbedFDeriv_comp_add (ω := ω)
+    (H := Hs (p k)) (u := u k) (J := Js (p k) w.2 (v k w)) (z := w) (z k).1
+    (by rw [show w.2 = (w + ((z k).1, 0)).2 by rw [Prod.snd_add, add_zero]]; exact hfl k _)
   have hint (k : ℕ) := integrableOn_and_setIntegral_floerEnergyDensity_comp_add_le
     (H := Hs (p k)) (hJt _ (hp k)) (hHs.comp ((contDiff_const (c := p k)).prodMk contDiff_id))
     (hHper _ (hp k)) (hu k) (hper k) (hfl k) (huK k) (by positivity) (hE k) (z k).1

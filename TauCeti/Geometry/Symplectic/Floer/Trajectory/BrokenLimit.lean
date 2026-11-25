@@ -24,8 +24,9 @@ that the two levels on either side of a neck are joined at `x`: the lower level 
 `s → ∞`, and the upper level converges to `x` as `s → -∞`, uniformly in `t`. Likewise the first
 and the last level converge to the common end orbits of the `u_k`. These are the matching
 conditions of a broken limit: the end of each level is the start of the next, and the chain runs
-from the start orbit to the end orbit. Combining the end theorems with the selection of the levels,
-and showing that the levels are themselves Floer trajectories, are not done here.
+from the start orbit to the end orbit. The end theorems are combined with the selection of the
+levels, and the levels are shown to be Floer trajectories, in `Trajectory/Convergence.lean`, in
+the theorem `exists_subseq_forall_tendstoLocallyUniformly_comp_add_and_sum_setLIntegral_eq`.
 
 **Necks are close to one orbit throughout.** Suppose that the actions of the loops at `σ_k` are at
 least `b`, those at `σ'_k` at most `b'`, and that at most one orbit action `c` lies in `[b, b']`. A

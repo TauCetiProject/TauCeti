@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Breaking.Basic
+import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.Separation.Periodic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
@@ -90,9 +91,6 @@ bounded derivatives, read in the complex coordinate `z = s + i t`, it is the sub
 
 ## Main results
 
-* `SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_add`: a translate
-  `(s, t) ↦ u (s + r, t)` of a Floer trajectory is again one, for the translated almost complex
-  structures.
 * `SymplecticForm.exists_apply_ne_apply_zero_of_tendstoLocallyUniformly`: a limit of Floer
   trajectories normalized at a regular action value is not stationary.
 * `SymplecticForm.exists_apply_ne_apply_zero_of_tendstoLocallyUniformly_comp_add`: the same for
@@ -245,25 +243,6 @@ theorem exists_apply_ne_apply_zero_of_tendstoLocallyUniformly
     linarith
   exact ha ⟨x, ⟨hxper, hxd, hxK⟩, hxa⟩
 
-/-- **Translates of Floer trajectories.** If `u` solves the Floer equation
-`∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on the strip `ℝ × [0, 1]`, then for every `r` the translate
-`z ↦ u (z + (r, 0))` solves the Floer equation for the translated almost complex structures
-`z ↦ J (z + (r, 0))`. -/
-theorem isComplexLinearMap_perturbedFDeriv_comp_add {u : ℝ × ℝ → V}
-    {J : ℝ × ℝ → AlmostComplexStructure V}
-    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (r : ℝ) : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (z + (r, 0)))
-        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (r, 0))) z :
-          ℝ × ℝ →ₗ[ℝ] V) := by
-  intro z hz
-  have hzr (z : ℝ × ℝ) : z + (r, 0) = (z.1 + r, z.2) := by ext <;> simp
-  have h := ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, 0) z
-  simp only [hzr] at h
-  simpa [hzr, h] using hfloer _ ⟨mem_univ _, by simpa [hzr] using hz.2⟩
-
 /-- **A limit of translates normalized at a regular action value is not stationary.** Under the
 hypotheses of `TauCeti.SymplecticForm.exists_apply_ne_apply_zero_of_tendstoLocallyUniformly`, let
 `σ k` be shifts such that the actions of the loops `u k (σ k, ·)` tend to a value `a` which is not
@@ -294,7 +273,7 @@ theorem exists_apply_ne_apply_zero_of_tendstoLocallyUniformly_comp_add
     (f := fun k z ↦ u k (z + (σ k, 0))) (fun k ↦ (hu k).comp (contDiff_id.add contDiff_const))
     (fun k s t ↦ by simpa using hper k (s + σ k) t)
     (fun k z ↦ huK _ _) hc (fun k z hz ↦ hJc _ _ (hmem _ hz)) (fun k z hz ↦ hJM _ _ (hmem _ hz))
-    (fun k ↦ isComplexLinearMap_perturbedFDeriv_comp_add (hfloer k) (σ k))
+    (fun k z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_add (σ k) (hfloer k _ (hmem _ hz)))
     (fun k ↦ ((hL k).comp (IsometryEquiv.addRight ((σ k, 0) : ℝ × ℝ)).isometry.lipschitzWith).weaken
       (mul_one L).le) ha (by simpa using hσa) hg
 

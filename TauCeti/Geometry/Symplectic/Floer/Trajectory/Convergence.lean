@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory.BrokenLimit
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory.Limit
 import TauCeti.Analysis.ODE.Regularity
+import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 import TauCeti.Topology.Separation.Periodic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.Translate
@@ -21,7 +22,7 @@ all of whose `1`-periodic orbits in `K` are nondegenerate. Let `u_k` be smooth F
 solutions of `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` with `1`-periodic loops in `K` and a common
 Lipschitz constant, none of them stationary, all running from the orbit `x₀` at `s → -∞` to the
 orbit `x₁` at `s → ∞`. This file proves Floer's compactness theorem up to breaking for such a
-sequence, `exists_subseq_forall_tendstoLocallyUniformly_comp_add_and_sum_lintegral_eq` in the
+sequence, `exists_subseq_forall_tendstoLocallyUniformly_comp_add_and_sum_setLIntegral_eq` in the
 namespace `TauCeti.SymplecticForm`: there are a subsequence `u (φ n)` and a *broken trajectory*
 from `x₀` to `x₁`, that is
 
@@ -141,7 +142,7 @@ complex structures, `C¹` on an open set `W ⊇ ℝ × K` and tamed by `ω` on `
 in `K`, and let their translates at shifts `τ_k` converge locally uniformly to `g`. If the loops of
 `g` converge uniformly to closed `C¹` loops `x₀` as `s → -∞` and `x₁` as `s → ∞`, then `g` is a
 `C¹` Floer trajectory, `A_H(x₀) ≤ A_H(x₁)`, and the energy of `g` is `A_H(x₁) - A_H(x₀)`. -/
-private theorem contDiff_and_lintegral_eq_of_comp_add
+private theorem contDiff_and_setLIntegral_eq_of_comp_add
     (hH : ContDiff ℝ 2 (uncurry H)) (hHper : Periodic H 1) (hW : IsOpen W)
     (hJ : ContDiffOn ℝ 1 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
     (hJper : Periodic J 1) (hK : IsClosed K) (hKW : univ ×ˢ K ⊆ W)
@@ -171,8 +172,8 @@ private theorem contDiff_and_lintegral_eq_of_comp_add
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (v k z))
         (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (v k) z : ℝ × ℝ →ₗ[ℝ] V) :=
     fun z hz ↦ by
-      simpa using isComplexLinearMap_perturbedFDeriv_comp_add (J := fun z ↦ J z.2 (u k z))
-        (hfloer k) (τ k) z hz
+      simpa using isComplexLinearMap_perturbedFDeriv_comp_add (τ k)
+        (hfloer k _ ⟨mem_univ _, by simpa using hz.2⟩)
   have hvL (k : ℕ) : LipschitzWith L (v k) :=
     ((hL k).comp (IsometryEquiv.addRight ((τ k, 0) : ℝ × ℝ)).isometry.lipschitzWith).weaken
       (mul_one L).le
@@ -191,7 +192,7 @@ private theorem contDiff_and_lintegral_eq_of_comp_add
       htop⟩
 
 /-- **The levels of a sequence of trajectories from `x₀` to `x₁`.** Under the hypotheses of
-`exists_subseq_forall_tendstoLocallyUniformly_comp_add_and_sum_lintegral_eq`, there are a
+`exists_subseq_forall_tendstoLocallyUniformly_comp_add_and_sum_setLIntegral_eq`, there are a
 subsequence `u (φ n)` and finitely many nonstationary levels `G 0, …, G m`, limits of translates of
 the `u (φ n)` at shifts `σ i n`, such that `G 0` starts at `x₀`, `G m` ends at `x₁`, and any two
 consecutive levels either differ by a translation, the differences of their shifts converging, or
@@ -284,7 +285,7 @@ to a loop `x₁` as `s → ∞`, both solving `x'(t) = X_{H_t}(x(t))`. Then ther
   to `y j` as `s → -∞` and to `y (j + 1)` as `s → ∞`;
 * consecutive shifts drift apart, `τ (j + 1) n - τ j n → ∞`;
 * no energy is lost: the energies of the `g j` add up to the energy of every `u (φ n)`. -/
-theorem exists_subseq_forall_tendstoLocallyUniformly_comp_add_and_sum_lintegral_eq
+theorem exists_subseq_forall_tendstoLocallyUniformly_comp_add_and_sum_setLIntegral_eq
     (hH : ContDiff ℝ 3 (uncurry H)) (hHper : Periodic H 1) (hW : IsOpen W)
     (hJ : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
     (hJper : Periodic J 1) (hK : IsCompact K) (hKW : univ ×ˢ K ⊆ W)
@@ -344,12 +345,12 @@ theorem exists_subseq_forall_tendstoLocallyUniformly_comp_add_and_sum_lintegral_
       (hP j).2.1
   have hyper (j : Fin (p + 2)) : y j 1 = y j 0 := by simpa using (hP j).1 0
   have hlevel (j : Fin (p + 1)) :=
-    contDiff_and_lintegral_eq_of_comp_add (u := u ∘ φ) (hH.of_le (by norm_num)) hHper hW
+    contDiff_and_setLIntegral_eq_of_comp_add (u := u ∘ φ) (hH.of_le (by norm_num)) hHper hW
       (hJ.of_le (by norm_num)) hJper hK.isClosed hKW hJt (fun _ ↦ hu _) (fun _ ↦ hper _)
       (fun _ ↦ huK _) (fun _ ↦ hfloer _) (fun _ ↦ hL _) (hG (ι j)).1 (hyc _) (hyper _) (hyc _)
       (hyper _) (hends' j).1 (hends' j).2
   -- The energy of every trajectory of the subsequence is `A_H(x₁) - A_H(x₀)`.
-  have henergy (k : ℕ) := (contDiff_and_lintegral_eq_of_comp_add (u := fun _ ↦ u k) (τ := 0)
+  have henergy (k : ℕ) := (contDiff_and_setLIntegral_eq_of_comp_add (u := fun _ ↦ u k) (τ := 0)
       (hH.of_le (by norm_num)) hHper hW (hJ.of_le (by norm_num)) hJper hK.isClosed hKW hJt
       (fun _ ↦ hu k) (fun _ ↦ hper k) (fun _ ↦ huK k) (fun _ ↦ hfloer k) (fun _ ↦ hL k) (g := u k)
       (by simpa only [Pi.zero_apply, Prod.mk_zero_zero, add_zero] using

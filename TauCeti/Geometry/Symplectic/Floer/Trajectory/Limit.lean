@@ -54,11 +54,10 @@ energy; so it applies to the levels of a breaking sequence of smooth trajectorie
   energy of `g` is `A_H(x₁) - A_H(x₀)`
   (`setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub_of_tendstoUniformly`).
 
-The results here do not sum the energies of the levels of a broken limit. Showing that no energy
-is lost along the necks, i.e. that these energies add up to the energy of each trajectory, would
-in addition need taming of `J` along every level, `C¹` neck orbits, uniform end convergence of
-the first and last levels, the energy identity for the `u_k` themselves, and consecutive levels
-meeting at an orbit rather than being translates of each other; this is not formalized here.
+The energies of the levels of a broken limit are summed in `Trajectory/Convergence.lean`: no
+energy is lost along the necks, i.e. the energies of the levels add up to the energy of each
+trajectory, in the theorem
+`exists_subseq_forall_tendstoLocallyUniformly_comp_add_and_sum_setLIntegral_eq`.
 
 ## References
 
