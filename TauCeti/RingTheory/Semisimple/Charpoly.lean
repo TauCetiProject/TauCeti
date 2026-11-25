@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.Charpoly.Pi
 public import TauCeti.LinearAlgebra.Charpoly.Trace
 public import TauCeti.RingTheory.Semisimple.Trace.Basic
 
+import TauCeti.LinearAlgebra.Pi
+
 /-!
 # Brauer–Nesbitt: semisimple modules are determined by characteristic polynomials
 
