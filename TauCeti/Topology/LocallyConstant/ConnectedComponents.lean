@@ -37,19 +37,28 @@ open scoped Classical in
 noncomputable def componentFun [Zero β] (φ : ConnectedComponents s → β) (x : X) : β :=
   if hx : x ∈ s then φ (ConnectedComponents.mk ⟨x, hx⟩) else 0
 
+@[simp]
 theorem componentFun_of_mem [Zero β] (φ : ConnectedComponents s → β) {x : X} (hx : x ∈ s) :
     componentFun φ x = φ (ConnectedComponents.mk ⟨x, hx⟩) := by
   simp [componentFun, hx]
 
+@[simp]
 theorem componentFun_of_notMem [Zero β] (φ : ConnectedComponents s → β) {x : X} (hx : x ∉ s) :
     componentFun φ x = 0 := by
   simp [componentFun, hx]
 
+@[simp]
+theorem componentFun_zero [Zero β] : componentFun (0 : ConnectedComponents s → β) = 0 := by
+  funext x
+  by_cases hx : x ∈ s <;> simp [hx]
+
+@[simp]
 theorem componentFun_add [AddZeroClass β] (φ ψ : ConnectedComponents s → β) :
     componentFun (φ + ψ) = componentFun φ + componentFun ψ := by
   funext x
   by_cases hx : x ∈ s <;> simp [componentFun, hx]
 
+@[simp]
 theorem componentFun_smul {R : Type*} [Zero β] [SMulZeroClass R β] (c : R)
     (φ : ConnectedComponents s → β) :
     componentFun (c • φ) = c • componentFun φ := by

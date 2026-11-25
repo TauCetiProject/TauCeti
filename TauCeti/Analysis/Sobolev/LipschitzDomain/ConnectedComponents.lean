@@ -166,11 +166,11 @@ theorem exists_isOpen_isPreconnected_inter (hΩ : Ω.IsLipschitzDomain E) {x : F
     _ ≤ K * r' := by gcongr
     _ < h := hKr
 
-/-- **A Lipschitz domain with compact frontier has finitely many connected components.** Finitely
-many open sets `N`, each meeting `Ω` in a preconnected set, cover the frontier; every component of
-`Ω` other than the whole space reaches the frontier, hence one of these sets. -/
+/-- **A Lipschitz domain with compact frontier has finitely many connected components.** -/
 theorem finite_connectedComponents (hΩ : Ω.IsLipschitzDomain E)
     (hcompact : IsCompact (frontier Ω)) : Finite (ConnectedComponents Ω) := by
+  -- Finitely many open sets `N`, each meeting `Ω` in a preconnected set, cover the frontier;
+  -- every component of `Ω` other than the whole space reaches the frontier, hence one of them.
   choose N hNo hxN hNc using fun x : frontier Ω => hΩ.exists_isOpen_isPreconnected_inter x.property
   obtain ⟨t, ht⟩ := hcompact.elim_finite_subcover (fun x : frontier Ω => N x) hNo
     fun x hx => mem_iUnion.2 ⟨⟨x, hx⟩, hxN ⟨x, hx⟩⟩
@@ -210,7 +210,7 @@ theorem finite_connectedComponents (hΩ : Ω.IsLipschitzDomain E)
     exact ⟨none, ConnectedComponents.mk_eq_mk_iff_mem_connectedComponentIn.2
       (huniv ▸ mem_univ _)⟩
 
-/-- **A bounded Lipschitz domain has finitely many connected components.** -/
+/-- **A bounded Lipschitz domain in a proper space has finitely many connected components.** -/
 theorem finite_connectedComponents_of_isBounded [ProperSpace F] (hΩ : Ω.IsLipschitzDomain E)
     (hb : Bornology.IsBounded Ω) : Finite (ConnectedComponents Ω) :=
   hΩ.finite_connectedComponents <| Metric.isCompact_of_isClosed_isBounded isClosed_frontier
