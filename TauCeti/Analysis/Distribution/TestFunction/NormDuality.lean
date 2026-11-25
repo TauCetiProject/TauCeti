@@ -154,20 +154,15 @@ theorem exists_contDiff_enorm_integral_sub_setIntegral_le (hG : LocallyIntegrabl
     refine hψs.trans ((cthickening_subset_of_subset _ ((closure_mono hhK).trans
       (closure_thickening_subset_cthickening _ _))).trans ?_)
     simpa using cthickening_cthickening_subset (half_pos hδ).le (half_pos hδ).le K
-  have hhs' : ∫⁻ x, ‖h x - s x‖ₑ ∂ρ ≤ ε / 2 := by
+  have hhs' : ∫⁻ x, edist (s x) (h x) ∂ρ ≤ ε / 2 := by
     have := ofReal_integral_norm_eq_lintegral_eNorm (hsi.sub hhi)
-    simp only [Pi.sub_apply, eNorm_sub_rev (s _)] at this
+    simp only [Pi.sub_apply, ← eDist_eq_eNorm_sub] at this
     exact this ▸ (ENNReal.ofReal_le_ofReal hhs).trans hr.le
-  have hψn : ∫⁻ x, ‖ψ x - s x‖ₑ ∂ρ ≤ ε :=
-    calc ∫⁻ x, ‖ψ x - s x‖ₑ ∂ρ ≤ ∫⁻ x, ‖ψ x - h x‖ₑ + ‖h x - s x‖ₑ ∂ρ :=
-          lintegral_mono fun x => by
-            rw [← sub_add_sub_cancel (ψ x) (h x) (s x)]
-            exact eNorm_add_le _ _
-      _ ≤ ε / 2 + ε / 2 := by
-          rw [lintegral_add_left (f := fun x => ‖ψ x - h x‖ₑ)
-            (hψd.continuous.sub h.continuous).eNorm.measurable]
-          gcongr
-      _ = ε := ENNReal.add_halves ε
+  have hψn : ∫⁻ x, ‖ψ x - s x‖ₑ ∂ρ ≤ ε := by
+    simp_rw [← eDist_eq_eNorm_sub] at hψh ⊢
+    exact (lintegral_edist_triangle hψd.continuous.aestronglyMeasurable
+      h.continuous.aestronglyMeasurable).trans
+      ((add_le_add hψh hhs').trans (ENNReal.add_halves ε).le)
   refine ⟨ψ, hψd, hK.cthickening.of_isClosed_subset (isClosed_tsupport _) hψL, hψL.trans hδW,
     hψ1, ?_⟩
   -- The pairing with `G` is controlled by the distance in `L¹(ρ)`.
