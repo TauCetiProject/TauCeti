@@ -68,6 +68,8 @@ support-containment lemmas provide the shared geometry for chart trace and exten
 * `TauCeti.exists_isLipschitzChartWith_of_lipschitzOnWith`: extension of a local Lipschitz graph
   to a global graph defining the same boundary chart.
 * `Set.IsLipschitzChartWith.mono_radii`: restriction of a chart to a smaller cylinder.
+* `Set.IsLipschitzChart.exists_preimage_normalCylinder_subset`: a chart centred at `x` restricts
+  to one whose cylinder corresponds to a subset of a given neighbourhood of `x`.
 * `Set.IsLipschitzChartWith.exists_mono_radii_two_mul_lt`: restriction to a cylinder whose
   normal radius exceeds twice the graph's tangential rise.
 * `Set.IsLipschitzChartWith.smul`: positive dilation of a chart, with explicit coordinates
@@ -151,6 +153,16 @@ theorem mem_normalCylinder_abs_add_one (x : WithLp 2 (ℝ × E)) :
     x ∈ normalCylinder (|x.fst| + 1) (‖x.snd‖ + 1) := by
   rw [mem_normalCylinder]
   exact ⟨by linarith [neg_abs_le x.fst], by linarith [le_abs_self x.fst], by linarith⟩
+
+/-- A normal product cylinder lies in the ball about the origin whose radius is the sum of its two
+radii. -/
+theorem normalCylinder_subset_ball (a b : ℝ) : normalCylinder (E := E) a b ⊆ ball 0 (a + b) := by
+  intro x hx
+  rw [mem_normalCylinder] at hx
+  have hfst : ‖x.fst‖ < a := by rw [Real.norm_eq_abs, abs_lt]; exact ⟨hx.1, hx.2.1⟩
+  have hsnd := norm_nonneg x.snd
+  rw [mem_ball_zero_iff, WithLp.prod_norm_eq_of_L2, Real.sqrt_lt' (by linarith [norm_nonneg x.fst])]
+  nlinarith [norm_nonneg x.fst]
 
 /-- A normal product cylinder with positive radii contains its centre. -/
 theorem zero_mem_normalCylinder {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
@@ -313,6 +325,21 @@ theorem exists_isLipschitzChart_eq_zero (hc : IsLipschitzChart Ω e γ K h r) {x
     simpa only [mem_normalCylinder, abs_lt, and_assoc] using hx
   exact ⟨_, _, _, _, hc.trans_constVAdd (e x) (sub_pos.2 hx'.1) (sub_pos.2 hx'.2)
     (by linarith) (by linarith), by simp⟩
+
+/-- A Lipschitz chart centred at `x` restricts to a chart whose cylinder corresponds to a subset
+of any given neighbourhood of `x`. -/
+theorem exists_preimage_normalCylinder_subset (hc : IsLipschitzChart Ω e γ K h r) {x : F}
+    (hx : e x = 0) {s : Set F} (hs : s ∈ 𝓝 x) :
+    ∃ h' r' : ℝ, IsLipschitzChart Ω e γ K h' r' ∧ e ⁻¹' normalCylinder h' r' ⊆ s := by
+  have hs' : e.symm ⁻¹' s ∈ 𝓝 (0 : WithLp 2 (ℝ × E)) :=
+    e.symm.continuous.continuousAt.preimage_mem_nhds (by rwa [← hx, e.symm_apply_apply])
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hs'
+  set ρ := min (min h r) (ε / 2)
+  have hρ : 0 < ρ := lt_min (lt_min hc.height_pos hc.radius_pos) (half_pos hε)
+  refine ⟨ρ, ρ, hc.mono hρ hρ ((min_le_left _ _).trans (min_le_left _ _))
+    ((min_le_left _ _).trans (min_le_right _ _)), fun y hy => ?_⟩
+  have hρε : ρ + ρ ≤ ε := by linarith [min_le_right (min h r) (ε / 2)]
+  simpa using hball (ball_subset_ball hρε (normalCylinder_subset_ball ρ ρ hy))
 
 /-- Transporting a Lipschitz chart along an affine isometry `g : F ≃ᵃⁱ[ℝ] G`. -/
 theorem image (hc : IsLipschitzChart Ω e γ K h r) (g : F ≃ᵃⁱ[ℝ] G) :
