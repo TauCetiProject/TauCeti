@@ -54,11 +54,7 @@ unimodular lattice has a theta series of level one.
 * `ZLattice.IsEven.isIntegral`: an even lattice is integral.
 * `ZLattice.IsIntegral.discreteTopology`: an integral lattice is discrete.
 * `ZLattice.IsUnimodular.span_eq_top`: a unimodular lattice in a finite-dimensional space spans it.
-* `ZLattice.isEven_span_singleton_iff`, `ZLattice.isIntegral_span_singleton_iff`,
-  `ZLattice.isIntegral_span_inv_natCast_iff`, `ZLattice.isUnimodular_span_singleton_iff`:
-  `ℤ v` is even iff `‖v‖² ∈ 2ℤ` and integral iff `‖v‖² ∈ ℤ`, `n⁻¹ ℤ ⊆ ℝ` is integral iff `n ≤ 1`
-  (`ZLattice.not_isIntegral_span_inv_natCast`, `ZLattice.not_isIntegral_span_one_half`), and
-  `c ℤ ⊆ ℝ` is unimodular iff `|c| = 1`.
+* `ZLattice.isEven_span_singleton_iff`: the lattice `ℤ v` is even if and only if `‖v‖² ∈ 2ℤ`.
 * `ZLattice.IsEven.exists_norm_add_sq_sub_norm_sq_eq`,
   `ZLattice.IsIntegral.exists_norm_add_sq_sub_norm_sq_eq`: for `γ ∈ L^∨` and `v ∈ L`,
   `‖γ + v‖² - ‖γ‖²` lies in `2ℤ` when `L` is even and in `ℤ` when `L` is integral, so `‖γ‖² / 2`
@@ -164,47 +160,6 @@ theorem IsIntegral.mono {L M : Submodule ℤ E} (hM : IsIntegral M) (h : L ≤ M
 @[simp]
 theorem isIntegral_bot : IsIntegral (⊥ : Submodule ℤ E) :=
   bot_le
-
-/-- The lattice spanned by a single vector `v` is integral if and only if `‖v‖²` is an integer. -/
-theorem isIntegral_span_singleton_iff {v : E} :
-    IsIntegral (span ℤ {v}) ↔ ∃ m : ℤ, ‖v‖ ^ 2 = m := by
-  refine ⟨fun h ↦ ?_, fun ⟨m, hm⟩ ↦ isIntegral_iff.mpr fun x hx y hy ↦ ?_⟩
-  · obtain ⟨m, hm⟩ := isIntegral_iff.mp h v (mem_span_singleton_self v) v
-      (mem_span_singleton_self v)
-    exact ⟨m, real_inner_self_eq_norm_sq v ▸ hm⟩
-  · obtain ⟨a, rfl⟩ := mem_span_singleton.mp hx
-    obtain ⟨b, rfl⟩ := mem_span_singleton.mp hy
-    refine ⟨a * b * m, ?_⟩
-    rw [← Int.cast_smul_eq_zsmul ℝ, ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left,
-      real_inner_smul_right, real_inner_self_eq_norm_sq, hm]
-    push_cast
-    ring
-
-/-- For `n : ℕ`, the rank-one lattice `n⁻¹ ℤ ⊆ ℝ` is integral if and only if `n ≤ 1` (`0` for
-`n = 0` and `ℤ` for `n = 1`; for `n > 1` the generator has squared norm `n⁻² ∈ (0, 1)`). -/
-theorem isIntegral_span_inv_natCast_iff {n : ℕ} :
-    IsIntegral (span ℤ {((n : ℝ)⁻¹)} : Submodule ℤ ℝ) ↔ n ≤ 1 := by
-  rw [isIntegral_span_singleton_iff]
-  refine ⟨fun ⟨m, hm⟩ ↦ ?_, fun hn ↦ ?_⟩
-  · by_contra hgt
-    have hn1 : (1 : ℝ) < n := by exact_mod_cast not_le.mp hgt
-    have hpos : (0 : ℝ) < m := by
-      rw [← hm, Real.norm_eq_abs, sq_abs]
-      positivity
-    have hlt : (m : ℝ) < 1 := by
-      rw [← hm, Real.norm_eq_abs, sq_abs, inv_pow]
-      exact inv_lt_one_of_one_lt₀ (one_lt_pow₀ hn1 two_ne_zero)
-    have hm0 : 0 < m := by exact_mod_cast hpos
-    have hm1 : m < 1 := by exact_mod_cast hlt
-    omega
-  · interval_cases n
-    · exact ⟨0, by simp⟩
-    · exact ⟨1, by simp⟩
-
-/-- For a natural number `n > 1`, the rank-one lattice `n⁻¹ ℤ ⊆ ℝ` is not integral. -/
-theorem not_isIntegral_span_inv_natCast {n : ℕ} (hn : 1 < n) :
-    ¬ IsIntegral (span ℤ {((n : ℝ)⁻¹)} : Submodule ℤ ℝ) :=
-  mt isIntegral_span_inv_natCast_iff.mp hn.not_ge
 
 /-- An integral lattice is discrete. -/
 theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :
@@ -355,25 +310,6 @@ theorem isUnimodular_span_orthonormalBasis {ι : Type*} [Fintype ι]
 /-- The lattice `ℤ ⊆ ℝ` is unimodular. -/
 theorem isUnimodular_span_one : IsUnimodular (span ℤ {1} : Submodule ℤ ℝ) := by
   simpa using isUnimodular_span_orthonormalBasis (OrthonormalBasis.singleton Unit ℝ)
-
-/-- The rank-one lattice `c ℤ ⊆ ℝ` is unimodular if and only if `|c| = 1`. -/
-@[simp]
-theorem isUnimodular_span_singleton_iff {c : ℝ} :
-    IsUnimodular (span ℤ {c} : Submodule ℤ ℝ) ↔ |c| = 1 := by
-  refine ⟨fun hu ↦ ?_, fun hc ↦ ?_⟩
-  · have hc0 : c ≠ 0 := by rintro rfl; simpa using hu.dual_eq
-    have heq : (span ℤ {c} : Submodule ℤ ℝ) = span ℤ {c⁻¹} := by
-      simpa [dual_span_singleton hc0] using isUnimodular_iff_eq_dual.mp hu
-    obtain ⟨u, hu'⟩ := span_singleton_eq_span_singleton.mp heq
-    have habs : |c| = |c|⁻¹ := by
-      rcases Int.units_eq_one_or u with rfl | rfl <;>
-        simpa [Units.smul_def] using congrArg abs hu'
-    have hsq : |c| ^ 2 = 1 := by rw [sq, ← mul_inv_cancel₀ (abs_ne_zero.mpr hc0), ← habs]
-    exact (sq_eq_one_iff.mp hsq).resolve_right (by linarith [abs_nonneg c])
-  · rcases abs_eq (zero_le_one' ℝ) |>.mp hc with rfl | rfl
-    · exact isUnimodular_span_one
-    · rw [← Set.neg_singleton, Submodule.span_neg]
-      exact isUnimodular_span_one
 
 /-! ### Invariance under isometries -/
 

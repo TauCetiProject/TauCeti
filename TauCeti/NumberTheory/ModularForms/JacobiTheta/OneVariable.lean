@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 import TauCeti.Analysis.SpecialFunctions.Gaussian.PoissonSummation
-import TauCeti.Analysis.SpecialFunctions.Gaussian.Summable
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
@@ -24,9 +23,6 @@ Three identities, a positivity statement and two estimates for Mathlib's `jacobi
   `θ(τ - N/2) = e^{-πiN/2} θ(τ) + (1 - e^{-πiN/2}) θ(4τ)` for every natural number `N`.
 * `TauCeti.jacobiTheta_I_mul`: the functional equation on the imaginary axis,
   `θ(iy) = θ(i/y) / √y` (both sides are `0` for `y ≤ 0`).
-* `TauCeti.jacobiTheta_I_mul_eq_tsum`, `TauCeti.one_lt_jacobiTheta_I_mul`,
-  `TauCeti.strictAntiOn_jacobiTheta_I_mul`: on the imaginary axis `θ(iy) = ∑_n e^{-π n² y}`, so
-  `1 < θ(iy)` for `y > 0` and `y ↦ θ(iy)` is strictly decreasing on `(0, ∞)`.
 * `TauCeti.jacobiTheta_one_add_I_mul`: the functional equation on the line `re τ = 1`,
   `θ(1 + iy) = ∑_n e^{-π (n - 1/2)² / y} / √y` (both sides are `0` for `y ≤ 0`).
 * `TauCeti.jacobiTheta_one_add_I_mul_pos`: hence `θ(1 + iy)` is a positive real number, although
@@ -107,49 +103,6 @@ theorem jacobiTheta_I_mul {y : ℝ} :
     norm_num
   rw [h1, h2, h3]
   simp [div_eq_inv_mul]
-
-/-- On the imaginary axis, `θ(iy) = ∑_n e^{-π n² y}` as a real series; for `y ≤ 0` neither series
-is summable and both sides vanish. -/
-theorem jacobiTheta_I_mul_eq_tsum (y : ℝ) :
-    jacobiTheta (I * y) = ∑' n : ℤ, Real.exp (-π * (n : ℝ) ^ 2 * y) := by
-  rw [jacobiTheta, ofReal_tsum]
-  refine tsum_congr fun n ↦ ?_
-  rw [ofReal_exp]
-  congr 1
-  push_cast
-  ring_nf
-  rw [I_sq]
-  ring
-
-/-- For `y > 0`, `θ(iy)` is a real number strictly greater than `1`: the `n = 0` term is `1` and
-every nonzero integer contributes a positive exponential. -/
-theorem one_lt_jacobiTheta_I_mul {y : ℝ} (hy : 0 < y) : 1 < jacobiTheta (I * y) := by
-  have hs : Summable fun n : ℤ ↦ Real.exp (-π * (n : ℝ) ^ 2 * y) :=
-    (summable_exp_neg_mul_sq (mul_pos Real.pi_pos hy)).congr fun _ ↦ congrArg Real.exp (by ring)
-  rw [jacobiTheta_I_mul_eq_tsum, ← ofReal_one, real_lt_real, hs.tsum_eq_add_tsum_ite 0]
-  simp only [Int.cast_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero,
-    zero_mul, Real.exp_zero, lt_add_iff_pos_right]
-  exact (hasSum_ite_sub_hasSum hs.hasSum 0).summable.tsum_pos
-    (fun n ↦ by split_ifs <;> positivity) 1 (by simp [Real.exp_pos])
-
-/-- For `y > 0`, `θ(iy)` is a positive real number. -/
-theorem jacobiTheta_I_mul_pos {y : ℝ} (hy : 0 < y) : 0 < jacobiTheta (I * y) :=
-  zero_lt_one.trans (one_lt_jacobiTheta_I_mul hy)
-
-/-- On the positive imaginary axis `(0, ∞)`, `y ↦ θ(iy)` is strictly decreasing: every nonzero term
-`e^{-π n² y}` decreases strictly with `y`, while the `n = 0` term is `1`. -/
-theorem strictAntiOn_jacobiTheta_I_mul :
-    StrictAntiOn (fun y : ℝ ↦ jacobiTheta (I * y)) (Set.Ioi 0) := by
-  intro y₁ hy₁ y₂ hy₂ hy
-  have hs {y : ℝ} (hy : 0 < y) : Summable fun n : ℤ ↦ Real.exp (-π * (n : ℝ) ^ 2 * y) :=
-    (summable_exp_neg_mul_sq (mul_pos Real.pi_pos hy)).congr fun _ ↦ congrArg Real.exp (by ring)
-  dsimp only
-  rw [jacobiTheta_I_mul_eq_tsum, jacobiTheta_I_mul_eq_tsum, real_lt_real]
-  refine Summable.tsum_lt_tsum (i := 1) (fun n ↦ Real.exp_le_exp.mpr ?_)
-    (Real.exp_lt_exp.mpr ?_) (hs hy₂) (hs hy₁)
-  · have : 0 ≤ π * (n : ℝ) ^ 2 := by positivity
-    nlinarith
-  · simpa using mul_lt_mul_of_neg_left hy (neg_lt_zero.mpr Real.pi_pos)
 
 /-- The series `∑_n e^{-π (n - 1/2)² / y}` is the Gaussian lattice sum `Z(1/2, s)` of width
 `s = √(y / (2π))`. -/

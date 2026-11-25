@@ -52,11 +52,9 @@ equal as functions if and only if `M = L`.
   `q`-expansion of `Θ_L` is `1`; `ZLattice.IsIntegral.qExpansion_two_thetaSeries_coeff_zero` is
   the same statement in `exp (π i τ)` for integral `L`.
 * `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.thetaSeries_eq_ofReal_of_re_eq_zero`,
-  `ZLattice.re_thetaCoset_pos`, `ZLattice.one_le_re_thetaSeries`,
-  `ZLattice.one_lt_re_thetaSeries_iff`, `ZLattice.thetaSeries_ne_zero`,
+  `ZLattice.re_thetaCoset_pos`, `ZLattice.one_le_re_thetaSeries`, `ZLattice.thetaSeries_ne_zero`,
   `ZLattice.ne_zero_of_coe_eq_thetaSeries`: on the imaginary axis `θ_{γ+L}` and `Θ_L` are real and
-  positive, and `Θ_L ≥ 1` (strictly iff `L ≠ ⊥`), so `Θ_L` and any bundled form with underlying
-  function `Θ_L` are nonzero.
+  positive and `Θ_L ≥ 1`, so `Θ_L` and any bundled form with underlying function `Θ_L` are nonzero.
 * `ZLattice.re_thetaCoset_mono`, `ZLattice.re_thetaCoset_lt_of_lt`,
   `ZLattice.re_thetaSeries_mono`, `ZLattice.re_thetaSeries_lt_of_lt`,
   `ZLattice.thetaCoset_eq_iff_eq_of_le_of_re_eq_zero`,
@@ -315,23 +313,6 @@ theorem thetaSeries_ne_zero : thetaSeries L ≠ 0 := fun h =>
 theorem ne_zero_of_coe_eq_thetaSeries {F : Type*} [FunLike F ℍ ℂ] [Zero F] [IsZeroApply F]
     {f : F} (hf : ⇑f = thetaSeries L) : f ≠ 0 := fun h =>
   thetaSeries_ne_zero L <| hf.symm.trans <| (congrArg DFunLike.coe h).trans FunLike.coe_zero
-
-/-- On the imaginary axis the theta series of a discrete subgroup has real part strictly greater
-than `1` if and only if the subgroup is nontrivial. -/
-theorem one_lt_re_thetaSeries_iff {τ : ℍ} (hτ : τ.re = 0) :
-    1 < (thetaSeries L τ).re ↔ L ≠ ⊥ := by
-  classical
-  refine ⟨?_, fun hL ↦ ?_⟩
-  · rintro hlt rfl
-    simp at hlt
-  · obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hL
-    have hs := summable_exp_neg_mul_norm_add_sq L (c := π * τ.im) (by positivity) 0
-    rw [← thetaCoset_zero, thetaCoset_eq_ofReal_of_re_eq_zero L 0 hτ, ofReal_re,
-      hs.tsum_eq_add_tsum_ite (0 : L)]
-    simp only [ZeroMemClass.coe_zero, add_zero, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
-      not_false_eq_true, zero_pow, mul_zero, Real.exp_zero, lt_add_iff_pos_right]
-    exact (hasSum_ite_sub_hasSum hs.hasSum 0).summable.tsum_pos
-      (fun _ ↦ by split_ifs <;> positivity) ⟨v, hv⟩ (by simp [Subtype.ext_iff, hv0, Real.exp_pos])
 
 section Sublattice
 

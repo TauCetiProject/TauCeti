@@ -311,7 +311,7 @@ the dual lattice is the sum of the coset theta series over `A_L`: `Θ_{L^∨} = 
 an integral full lattice in a finite-dimensional space, the discriminant group is automatically
 finite (`IsIntegral.finite_discriminantGroup`), so a `Fintype` instance is always available. -/
 theorem IsIntegral.thetaSeries_dual_eq_sum (h : IsIntegral L) [Fintype (DiscriminantGroup L)]
-     (τ : ℍ) : thetaSeries (dual L) τ = ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ := by
+    (τ : ℍ) : thetaSeries (dual L) τ = ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ := by
   rw [← sup_eq_right.mpr (isIntegral_iff_le_dual.mp h), thetaSeries_sup_dual_eq_sum]
 
 variable [FiniteDimensional ℝ E]
