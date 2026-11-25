@@ -10,16 +10,19 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 /-!
 # The function `x ↦ x - ρ log x`
 
-For `ρ ≥ 0` the function `x ↦ x - ρ log x` is convex on `(0, ∞)`, with derivative `1 - ρ / x`
-and minimum at `x = ρ`. It is the first integral of the SIR epidemic model and of the
-Lotka–Volterra equations. This file proves its tangent line inequality from
-`Real.log_le_sub_one_of_pos`, and that it is strictly decreasing on `(0, ρ]`.
+For `ρ ≥ 0` the function `x ↦ x - ρ log x` is convex on `(0, ∞)`, with derivative `1 - ρ / x`;
+for `ρ > 0` it has its minimum at `x = ρ`. It is the building block of the first integrals of
+the SIR epidemic model and of the Lotka–Volterra equations. This file proves its tangent line
+inequality from `Real.log_le_sub_one_of_pos`, and that it is strictly decreasing on `(0, ρ]` and
+strictly increasing on `[ρ, ∞)`.
 
 ## Main results
 
 * `Real.sub_mul_one_sub_div_le_sub_mul_log_sub_sub_mul_log`: the tangent line inequality at `a`.
 * `Real.sub_mul_one_sub_div_lt_sub_mul_log_sub_sub_mul_log`: its strict form for `b ≠ a`, `ρ > 0`.
 * `Real.strictAntiOn_sub_mul_log`: `x ↦ x - ρ log x` is strictly decreasing on `(0, ρ]`.
+* `Real.strictMonoOn_sub_mul_log`: for `ρ ≥ 0`, `x ↦ x - ρ log x` is strictly increasing on
+  `[ρ, ∞)`.
 -/
 
 public section
@@ -59,5 +62,20 @@ theorem strictAntiOn_sub_mul_log (ρ : ℝ) : StrictAntiOn (fun x ↦ x - ρ * l
     exact hy.2
   linarith [sub_mul_one_sub_div_lt_sub_mul_log_sub_sub_mul_log (hy.1.trans_le hy.2) hy.1 hx.1
     hxy.ne, mul_nonneg_of_nonpos_of_nonpos (sub_nonpos.2 hxy.le) hnonpos]
+
+/-- For `ρ ≥ 0`, the function `x ↦ x - ρ log x` is strictly increasing on `[ρ, ∞)`. -/
+theorem strictMonoOn_sub_mul_log {ρ : ℝ} (hρ : 0 ≤ ρ) :
+    StrictMonoOn (fun x ↦ x - ρ * log x) (Ici ρ) := by
+  rcases hρ.eq_or_lt with rfl | hρ
+  · intro x _ y _ hxy
+    simpa using hxy
+  intro x hx y _ hxy
+  -- The tangent line at `ρ ≤ x < y` puts the value at `y` strictly above the value at `x`.
+  have hx₀ : 0 < x := hρ.trans_le hx
+  have hnonneg : 0 ≤ 1 - ρ / x := by
+    rw [sub_nonneg, div_le_one hx₀]
+    exact hx
+  linarith [sub_mul_one_sub_div_lt_sub_mul_log_sub_sub_mul_log hρ hx₀ (hx₀.trans hxy) hxy.ne',
+    mul_nonneg (sub_nonneg.2 hxy.le) hnonneg]
 
 end Real

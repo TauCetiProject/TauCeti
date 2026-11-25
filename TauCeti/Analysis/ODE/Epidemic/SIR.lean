@@ -27,8 +27,8 @@ and infectives are removed at rate `γ`:
 This file states the model as the vector field `TauCeti.sirField β γ` on `ℝ × ℝ`, whose solutions
 on `[0, ∞)` (in the sense of Mathlib's `IsIntegralCurveOn`, with a one-sided derivative at `0`)
 enter every statement as a hypothesis, and proves the final size relation: along a solution with
-`S(0) > 0` and `I(0) > 0`, the epidemic dies out, `I(t) → 0`, and the number of susceptibles that
-escape it is the unique `s ∈ (0, γ / β)` with
+`β, γ > 0`, `S(0) > 0` and `I(0) > 0`, the epidemic dies out, `I(t) → 0`, and the number of
+susceptibles that escape it is the unique `s ∈ (0, γ / β)` with
 `s - (γ / β) log s = S(0) + I(0) - (γ / β) log S(0)`.
 
 ## Main definitions
