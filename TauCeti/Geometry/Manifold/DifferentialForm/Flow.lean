@@ -61,16 +61,16 @@ In the preferred chart at a point the statement reduces to its flat counterpart
 in the chart is known to solve the variational equation. This reduction holds for every jointly
 `C²` family of maps `ψᵤ` which is the identity near `y` at a time `t` and moves the points near `y`
 with the velocity of a vector field `V` at time `t`: then `d/du|_{u = t} (ψᵤ^* α)_y = (L_V α)_y`
-(`TauCeti.hasDerivAt_mpullback_of_eq_id`). Time-dependent flows
-(`TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent`) and smooth isotopies with their
-Eulerian velocity fields (`TauCeti.Geometry.Manifold.DifferentialForm.Flow.Eulerian`) are further
-instances. The maximal flow of a `C¹` field is only a `C¹` family, but it moves the points near
-`y` with the velocity of `V` at every time near `t`; then the spatial derivative of its chart
-expression solves the variational equation by
-`TauCeti.hasDerivAt_fderiv_slice_of_contDiffAt_velocity`, with no second derivative of the family,
-and the same conclusion holds (`TauCeti.hasDerivAt_mpullback_of_eq_id_of_eventually_nhds_prod`).
+(`TauCeti.hasDerivAt_mpullback_of_eq_id`). Smooth isotopies with their Eulerian velocity fields
+(`TauCeti.Geometry.Manifold.DifferentialForm.Flow.Eulerian`) are further instances. The maximal
+flow of a `C¹` field is only a `C¹` family, but it moves the points near `y` with the velocity of
+`V` at every time near `t`; then the spatial derivative of its chart expression solves the
+variational equation by `TauCeti.hasDerivAt_fderiv_slice_of_contDiffAt_velocity`, with no second
+derivative of the family, and the same conclusion holds
+(`TauCeti.hasDerivAt_mpullback_of_eq_id_of_eventually_nhds_prod`).
 The velocity may also be that of a field `V u` depending on the time `u`, jointly `C¹`, as for the
-time-dependent flow of a jointly `C¹` time-dependent vector field; the Lie derivative is then
+time-dependent flow of a jointly `C¹` time-dependent vector field
+(`TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent`); the Lie derivative is then
 along `V t`.
 
 ## Main results
