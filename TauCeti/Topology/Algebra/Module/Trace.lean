@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
+import TauCeti.LinearAlgebra.Trace.Basic
+
 /-!
 # The trace of a continuous endomorphism as a continuous linear functional
 
@@ -18,7 +20,9 @@ linear functional `TauCeti.traceCLM 𝕜 V : (V →L[𝕜] V) →L[𝕜] 𝕜`, 
 usual topology of uniform convergence on bounded sets (the operator-norm topology when `V` is
 normed). Continuity is not something the algebraic `LinearMap.trace` can see: it holds because
 `V →L[𝕜] V` is again a finite-dimensional Hausdorff topological vector space over the complete
-field `𝕜`, and every linear map out of such a space is continuous.
+field `𝕜`, and every linear map out of such a space is continuous. The unbundled trace
+`T ↦ LinearMap.trace 𝕜 V T` is continuous with no finite-dimensionality assumption
+(`TauCeti.continuous_trace`), being zero in infinite dimension.
 
 This bundled form is what lets the trace commute with limits, continuity and integrals: it is
 used, for instance, for the continuity of the character of a continuous representation, to move
@@ -48,6 +52,16 @@ variable {𝕜 V}
 theorem traceCLM_apply (T : V →L[𝕜] V) :
     traceCLM 𝕜 V T = LinearMap.trace 𝕜 V (T : V →ₗ[𝕜] V) :=
   (rfl)
+
+omit [FiniteDimensional 𝕜 V] in
+/-- The trace `T ↦ trace T` of continuous endomorphisms of a Hausdorff topological vector space
+is continuous. When `V` is infinite-dimensional, `LinearMap.trace` is the zero map. -/
+theorem continuous_trace :
+    Continuous fun T : V →L[𝕜] V ↦ LinearMap.trace 𝕜 V (T : V →ₗ[𝕜] V) := by
+  by_cases hV : FiniteDimensional 𝕜 V
+  · exact (traceCLM 𝕜 V).continuous
+  · simpa only [TauCeti.LinearMap.trace_eq_zero_of_not_finite hV, LinearMap.zero_apply] using
+      continuous_const
 
 /-- The trace of a composition does not depend on the order of the factors:
 `tr (S ∘ T) = tr (T ∘ S)`. -/

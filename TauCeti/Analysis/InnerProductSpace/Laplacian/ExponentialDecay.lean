@@ -10,17 +10,23 @@ public import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPri
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Laplacian.PlaneWave
+import TauCeti.Analysis.InnerProductSpace.Sphere.Cap
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # Exponential decay of subsolutions of `-Δ + c²` outside and into a ball
 
-Let `u` be a function on the exterior `‖x‖ ≥ R` of a ball in a finite-dimensional real inner
-product space, with `u → 0` at infinity and `c² u ≤ Δ u` for some `c ≥ 0`, so that `u` is a
-subsolution of the screened operator `-Δ + c²`. Then `u` decays at the exponential rate `c`:
-if `u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then
+Let `u` be a subsolution of the screened operator `-Δ + c²` for some `c ≥ 0`, that is `c² u ≤ Δ u`,
+on a region of a finite-dimensional real inner product space. Such a function decays exponentially
+away from the boundary of the region. This file proves this at rate `c` outside a ball, and at
+every rate below `c` inside a ball.
+
+**Outside a ball.** If `u` is defined on the exterior `‖x‖ ≥ R`, with `u → 0` at infinity, and
+`u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then
 
 `u x ≤ M exp (-c (‖x‖ - R))` for `‖x‖ ≥ R`.
 
@@ -30,21 +36,20 @@ comparison principle for `-Δ + c²` on the compact annuli `R ≤ ‖x‖ ≤ R'
 (`TauCeti.le_of_mul_le_laplacian_le_of_le_frontier`) and the limit at infinity, which controls the
 outer sphere as `R' → ∞`, then give the bound.
 
-The same bound holds for subsolutions of `-Δ + V` with a variable potential `V ≥ c²`, since the
-barrier is nonnegative and hence also a supersolution of `-Δ + V`. Such potentials arise for
+The exterior bound holds for subsolutions of `-Δ + V` with a variable potential `V ≥ c²`, since
+the barrier is nonnegative and hence also a supersolution of `-Δ + V`. Such potentials arise for
 solutions of a linear equation `Δ u = V u` of indefinite sign, to which the constant form does not
 apply: both `u` and `-u` are subsolutions of `-Δ + V`, so `|u|` decays at the rate `c`.
 
-A forcing of size `B exp (-c ‖x‖)` is absorbed when the potential is bounded below by `a²` with
-`a > c > 0`: then `u x ≤ M exp (-c (‖x‖ - R)) + B / (a² - c²) exp (-c ‖x‖)`. This forced version
-is what differentiating a screened equation produces.
+Outside a ball, a forcing of size `B exp (-c ‖x‖)` is absorbed when the potential is bounded
+below by `a²` with `a > c > 0`: then `u x ≤ M exp (-c (‖x‖ - R)) + B / (a² - c²) exp (-c ‖x‖)`.
+This forced version is what differentiating a screened equation produces. Outside a large disc
+the logarithmic modulus defect `-log |α|²` of a plane vortex is such a subsolution for every rate
+`c < 1 / 2`.
 
-This is the decay mechanism of massive fields: for instance, outside a large disc the logarithmic
-modulus defect `-log |α|²` of a plane vortex is such a subsolution for every rate `c < 1 / 2`.
-
-The same mechanism works inward. If `V u ≤ Δ u` with `V ≥ c²` on a closed ball of radius `R`
-about `z`, and `u ≤ M` on its boundary sphere with `M ≥ 0`, then `u` is exponentially small at the
-centre: for every rate `0 ≤ k < c`,
+**Inside a ball.** If `V u ≤ Δ u` with `V ≥ c²` on a closed ball of radius `R` about `z`, and
+`u ≤ M` on its boundary sphere with `M ≥ 0`, then `u` is exponentially small at the centre: for
+every rate `0 ≤ k < c`,
 
 `u z ≤ 2 M exp (-k (R - n c / (c² - k²)))`,  `n = dim E`,
 
@@ -56,6 +61,24 @@ forcing `V u - B ≤ Δ u`, `B ≥ 0`, adds `B / c²` to the bound, since `u - B
 subsolution. Such interior bounds express that a massive field is exponentially close to its
 vacuum deep inside a region where the screening potential stays bounded below, for instance
 far from the zeros of a vortex.
+
+**Inside a ball, above a threshold.** The interior bound also holds when `u` is only assumed `C²`
+and a subsolution at the points of the open ball where `u > 0`, as for positive parts: for every
+`κ < 1`,
+
+`u x ≤ N M exp (-κ c R)`,
+
+with a constant `N` depending only on the space and `κ`, not on `c`, `R` or `u`. Here the barrier
+is a sum `∑_θ cosh (c ⟪θ, y - x⟫)` of plane waves along finitely many unit vectors `θ`, an
+eigenfunction of `Δ` with eigenvalue `c²` (`TauCeti.laplacian_cosh_inner_sub`). The directions
+are chosen so that every unit vector `v` has `⟪θ, v⟫ ≥ κ` for one of them, so on the boundary
+sphere one plane wave is at least `exp (κ c R) / 2`, while at the centre the barrier is the number
+of plane waves. Where `u > 0`, `V u ≤ Δ u` with `V ≥ c²` already gives `c² u ≤ Δ u`, so these
+bounds are stated for the constant potential `c²`. A constant source `K ≥ 0`,
+`c² u ≤ Δ u + K` with `c > 0`, assumed where `u > K / c²`, costs the additive term `K / c²`. For
+the large-parameter Seiberg–Witten equations the screening rate is of order `√r`, and this bound
+has the shape `C / r + C exp (-c √r R)` of Taubes's estimates on balls of radius `R` missing the
+zeros of the spinor.
 
 ## Main declarations
 
@@ -71,11 +94,17 @@ far from the zeros of a vortex.
   closed ball is bounded at the centre by `2 M exp (-k (R - n c / (c² - k²)))` for `0 ≤ k < c`.
 * `TauCeti.le_div_sq_add_two_mul_mul_exp_of_mul_sub_le_laplacian`: the same with a constant
   forcing `B`, at the cost of `B / c²`.
+* `TauCeti.exists_forall_le_mul_mul_exp_of_sq_mul_le_laplacian`: a subsolution of `-Δ + c²` where
+  it is positive on a ball of radius `R` is bounded at the centre by `N M exp (-κ c R)`.
+* `TauCeti.exists_forall_le_div_sq_add_mul_mul_exp_of_sq_mul_le_laplacian_add`: the same with a
+  constant source `K`, with the bound `K / c² + N M exp (-κ c R)`.
 
 ## References
 
 * D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Springer, Chapter 3 (the maximum principle and comparison with barriers).
+* C. H. Taubes, *SW ⇒ Gr: From the Seiberg–Witten equations to pseudo-holomorphic curves*,
+  J. Amer. Math. Soc. 9 (1996), 845–918.
 -/
 
 public section
@@ -426,9 +455,8 @@ theorem le_two_mul_mul_exp_of_mul_le_laplacian {u V : E → ℝ} {z : E} {R c k 
   -- Bound the ratio of the barrier values by `cosh x ≤ exp x` for `x ≥ 0` and `exp y ≤ 2 cosh y`.
   have h₁ : Real.cosh (k * a) ≤ Real.exp (k * a) := by
     linarith [Real.exp_sub_cosh (k * a), Real.sinh_nonneg_iff.mpr (by positivity : 0 ≤ k * a)]
-  have h₂ : Real.exp (k * R) ≤ 2 * Real.cosh (k * √(R ^ 2 + a ^ 2)) := by
-    rw [Real.cosh_eq]
-    linarith [Real.exp_le_exp.mpr hRa, Real.exp_pos (-(k * √(R ^ 2 + a ^ 2)))]
+  have h₂ : Real.exp (k * R) ≤ 2 * Real.cosh (k * √(R ^ 2 + a ^ 2)) :=
+    (Real.exp_le_exp.mpr hRa).trans (Real.exp_le_two_mul_cosh _)
   have hratio : Real.cosh (k * a) / Real.cosh (k * √(R ^ 2 + a ^ 2)) ≤
       2 * Real.exp (-(k * (R - a))) := by
     rw [div_le_iff₀ (Real.cosh_pos _), show -(k * (R - a)) = k * a - k * R by ring, Real.exp_sub]
@@ -484,5 +512,151 @@ theorem le_div_sq_add_two_mul_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} 
   linarith
 
 end Interior
+
+/-! ### Decay inside a ball above a threshold -/
+
+section PlaneWaveBarrier
+
+omit [FiniteDimensional ℝ E] in
+/-- The plane wave `cosh (c ⟪θ, z - x⟫)` is `C²`. -/
+private theorem contDiff_cosh_mul_inner_sub (c : ℝ) (θ x : E) :
+    ContDiff ℝ 2 (fun z ↦ Real.cosh (c * ⟪θ, z - x⟫_ℝ)) :=
+  -- `fun_prop` has no rules for the inner product, so the composition is assembled by hand.
+  Real.contDiff_cosh.comp
+    (contDiff_const.mul (contDiff_const.inner ℝ (contDiff_id.sub contDiff_const)))
+
+/-- A sum of plane waves `∑_θ cosh (c ⟪θ, z - x⟫)` along unit vectors `θ` is an eigenfunction of
+`Δ` with eigenvalue `c²`. -/
+private theorem laplacian_sum_cosh_mul_inner_sub {S : Finset E} (hS : ∀ θ ∈ S, ‖θ‖ = 1) (c : ℝ)
+    (x y : E) :
+    Δ (fun z ↦ ∑ θ ∈ S, Real.cosh (c * ⟪θ, z - x⟫_ℝ)) y =
+      c ^ 2 * ∑ θ ∈ S, Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
+  rw [laplacian_fun_sum (f := fun θ z ↦ Real.cosh (c * ⟪θ, z - x⟫_ℝ)) fun θ _ ↦
+    (contDiff_cosh_mul_inner_sub c θ x).contDiffAt, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun θ hθ ↦ ?_
+  -- `c ⟪θ, z - x⟫ = ⟪c • θ, z - x⟫`, and `‖c • θ‖² = c²` for a unit vector `θ`.
+  simp_rw [← real_inner_smul_left]
+  simp [laplacian_cosh_inner_sub, norm_smul, hS θ hθ]
+
+omit [FiniteDimensional ℝ E] in
+/-- On the sphere `‖y - x‖ = R`, the sum of the plane waves `cosh (c ⟪θ, y - x⟫)` over directions
+`θ` as in `exists_finset_forall_exists_le_inner` is at least `exp (κ c R) / 2`. -/
+private theorem exp_div_two_le_sum_cosh_mul_inner_sub {S : Finset E} {κ : ℝ}
+    (hS : ∀ v : E, ‖v‖ = 1 → ∃ θ ∈ S, κ ≤ ⟪θ, v⟫_ℝ) {x y : E} {R c : ℝ} (hR : 0 < R)
+    (hc : 0 ≤ c) (hy : y ∈ sphere x R) :
+    Real.exp (κ * c * R) / 2 ≤ ∑ θ ∈ S, Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
+  have hyR : ‖y - x‖ = R := by simpa [dist_eq_norm] using hy
+  have hne : y - x ≠ 0 := norm_ne_zero_iff.1 (hyR ▸ hR.ne')
+  obtain ⟨θ, hθS, hθ⟩ := hS (R⁻¹ • (y - x)) (hyR ▸ norm_smul_inv_norm hne)
+  rw [real_inner_smul_right, le_inv_mul_iff₀ hR] at hθ
+  -- The plane wave along `θ` alone is at least `exp (κ c R) / 2`.
+  have h1 : κ * c * R ≤ c * ⟪θ, y - x⟫_ℝ := by
+    linarith [mul_le_mul_of_nonneg_left hθ hc]
+  have h2 : Real.exp (κ * c * R) / 2 ≤ Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
+    linarith [(Real.exp_le_exp.2 h1).trans (Real.exp_le_two_mul_cosh _)]
+  exact h2.trans (Finset.single_le_sum (f := fun θ ↦ Real.cosh (c * ⟪θ, y - x⟫_ℝ))
+      (fun θ _ ↦ (Real.cosh_pos _).le) hθS)
+
+variable [Nontrivial E]
+
+/-- **Exponential decay inside a ball of subsolutions of `-Δ + c²`.** For every `κ < 1` there is
+a constant `N`, depending only on `E` and `κ`, with the following property. Let `u` be continuous
+on the closed ball of radius `R ≥ 0` about `x` and, at the points of the open ball where `u > 0`,
+`C²` with `c² u ≤ Δ u`, `c ≥ 0`. If `u ≤ M` on the boundary sphere, with `M ≥ 0`, then at the
+centre
+
+`u x ≤ N M exp (-κ c R)`.
+
+The constant does not depend on `c`, `R`, `x` or `u`, so the bound is uniform as the screening
+rate `c` grows. A subsolution of `-Δ + V` with `V ≥ c²` where `u > 0` is in particular one of
+`-Δ + c²` there. -/
+theorem exists_forall_le_mul_mul_exp_of_sq_mul_le_laplacian {κ : ℝ} (hκ : κ < 1) :
+    ∃ N : ℝ, 0 < N ∧ ∀ ⦃u : E → ℝ⦄ ⦃x : E⦄ ⦃R c M : ℝ⦄, 0 ≤ R → 0 ≤ c → 0 ≤ M →
+      ContinuousOn u (closedBall x R) → (∀ y ∈ ball x R, 0 < u y → ContDiffAt ℝ 2 u y) →
+      (∀ y ∈ ball x R, 0 < u y → c ^ 2 * u y ≤ Δ u y) →
+      (∀ y ∈ sphere x R, u y ≤ M) → u x ≤ N * M * Real.exp (-(κ * c * R)) := by
+  obtain ⟨S, hSunit, hS⟩ := exists_finset_forall_exists_le_inner (F := E) hκ
+  refine ⟨2 * (S.card + 1), by positivity, fun u x R c M hR hc hM hcont hcd hsub hbdry ↦ ?_⟩
+  rcases hR.eq_or_lt with rfl | hR
+  · have := hbdry x (by simp)
+    rw [mul_zero, neg_zero, Real.exp_zero, mul_one]
+    nlinarith
+  -- The barrier `A • w`, with `w = ∑_θ cosh (c ⟪θ, y - x⟫)` and `A = 2 M exp (-κ c R)`.
+  set A := 2 * M * Real.exp (-(κ * c * R)) with hA
+  have hA0 : 0 ≤ A := by positivity
+  set w : E → ℝ := fun y ↦ ∑ θ ∈ S, Real.cosh (c * ⟪θ, y - x⟫_ℝ) with hw
+  have hw2 : ContDiff ℝ 2 w := ContDiff.sum fun θ _ ↦ contDiff_cosh_mul_inner_sub c θ x
+  have hAw : ContDiff ℝ 2 (A • w) := hw2.const_smul A
+  have hw0 (y : E) : 0 ≤ w y := Finset.sum_nonneg fun θ _ ↦ (Real.cosh_pos _).le
+  have hint : interior (closedBall x R) = ball x R := interior_closedBall x hR.ne'
+  -- The maximum principle above `0` for `u - A • w`, which is positive only where `u` is.
+  have hpos {y : E} (hy : 0 < (u - A • w) y) : 0 < u y := by
+    rw [Pi.sub_apply, Pi.smul_apply, smul_eq_mul] at hy
+    linarith [mul_nonneg hA0 (hw0 y)]
+  have hle := le_of_laplacian_nonneg_of_lt_le_frontier (f := u - A • w) (m := 0)
+    (isCompact_closedBall x R) (hcont.sub hAw.continuous.continuousOn)
+    (fun y hy hy0 ↦ (hcd y (hint ▸ hy) (hpos hy0)).sub hAw.contDiffAt)
+    (fun y hy hy0 ↦ by
+      have hy' : y ∈ ball x R := hint ▸ hy
+      have h2 := mul_nonneg (sq_nonneg c) hy0.le
+      rw [Pi.sub_apply, mul_sub] at h2
+      rw [(hcd y hy' (hpos hy0)).laplacian_sub hAw.contDiffAt, laplacian_smul A hw2.contDiffAt,
+        laplacian_sum_cosh_mul_inner_sub hSunit]
+      simp only [hw, Pi.smul_apply, smul_eq_mul] at h2 ⊢
+      linarith [hsub y hy' (hpos hy0)])
+    (fun y hy ↦ by
+      rw [frontier_closedBall x hR.ne'] at hy
+      rw [Pi.sub_apply, sub_nonpos]
+      calc u y ≤ M := hbdry y hy
+        _ = A * (Real.exp (κ * c * R) / 2) := by
+          rw [hA, Real.exp_neg]
+          field_simp
+        _ ≤ (A • w) y := mul_le_mul_of_nonneg_left
+          (exp_div_two_le_sum_cosh_mul_inner_sub hS hR hc hy) hA0)
+    (mem_closedBall_self hR.le)
+  -- At the centre every plane wave equals one.
+  have hwx : w x = S.card := by simp [hw]
+  rw [Pi.sub_apply, sub_nonpos, Pi.smul_apply, smul_eq_mul, hwx, hA] at hle
+  have : 0 ≤ M * Real.exp (-(κ * c * R)) := by positivity
+  nlinarith
+
+/-- **Exponential decay inside a ball of subsolutions of `-Δ + c²` with a source.** For every
+`κ < 1` there is a constant `N`, depending only on `E` and `κ`, with the following property. Let
+`u` be continuous on the closed ball of radius `R ≥ 0` about `x` and, at the points of the open
+ball where `u > K / c²`, `C²` with `c² u ≤ Δ u + K` for a constant `K ≥ 0` and `c > 0`. If
+`u ≤ M` on the boundary sphere, with `M ≥ 0`, then at the centre
+
+`u x ≤ K / c² + N M exp (-κ c R)`.
+
+This is the form in which the bound is used for large-parameter equations, where `c` is of order
+`√r`: the first term is of order `K / r` and the second decays exponentially in `√r R`. -/
+theorem exists_forall_le_div_sq_add_mul_mul_exp_of_sq_mul_le_laplacian_add {κ : ℝ}
+    (hκ : κ < 1) :
+    ∃ N : ℝ, 0 < N ∧ ∀ ⦃u : E → ℝ⦄ ⦃x : E⦄ ⦃R c M K : ℝ⦄, 0 ≤ R → 0 < c → 0 ≤ M → 0 ≤ K →
+      ContinuousOn u (closedBall x R) →
+      (∀ y ∈ ball x R, K / c ^ 2 < u y → ContDiffAt ℝ 2 u y) →
+      (∀ y ∈ ball x R, K / c ^ 2 < u y → c ^ 2 * u y ≤ Δ u y + K) →
+      (∀ y ∈ sphere x R, u y ≤ M) → u x ≤ K / c ^ 2 + N * M * Real.exp (-(κ * c * R)) := by
+  obtain ⟨N, hN0, hN⟩ := exists_forall_le_mul_mul_exp_of_sq_mul_le_laplacian (E := E) hκ
+  refine ⟨N, hN0, fun u x R c M K hR hc hM hK hcont hcd hsub hbdry ↦ ?_⟩
+  have hKc : 0 ≤ K / c ^ 2 := by positivity
+  -- The shifted function `v = u - K / c²` is a subsolution of `-Δ + c²`.
+  set v : E → ℝ := fun y ↦ u y - K / c ^ 2 with hv
+  have hvu {y : E} (hy : 0 < v y) : K / c ^ 2 < u y := sub_pos.1 hy
+  have hvsub (y : E) (hy : y ∈ ball x R) (hvy : 0 < v y) : c ^ 2 * v y ≤ Δ v y := by
+    have hΔ : Δ v y = Δ u y := by
+      have hvu' : v = u - fun _ ↦ K / c ^ 2 := by ext; simp [hv]
+      rw [hvu', (hcd y hy (hvu hvy)).laplacian_sub contDiffAt_const, laplacian_const,
+        Pi.zero_apply, sub_zero]
+    have h1 : c ^ 2 * (K / c ^ 2) = K := by field_simp
+    rw [hΔ, hv, mul_sub, h1]
+    linarith [hsub y hy (hvu hvy)]
+  have h := hN (u := v) hR hc.le hM (hcont.sub continuousOn_const)
+    (fun y hy hvy ↦ (hcd y hy (hvu hvy)).sub contDiffAt_const) hvsub
+    (fun y hy ↦ (sub_le_self _ hKc).trans (hbdry y hy))
+  rw [hv] at h
+  linarith
+
+end PlaneWaveBarrier
 
 end TauCeti

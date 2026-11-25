@@ -165,6 +165,16 @@ theorem prime_apply {w : A[X]} (hw : w ∈ W) (hp : Prime w) : Prime (φ w) := b
   rw [← Ideal.span_singleton_prime hw0, ← Ideal.Quotient.isDomain_iff_prime]
   exact (h.quotientEquiv hw).symm.toMulEquiv.isDomain _
 
+/-- A member of `W` is prime when its image is. -/
+theorem prime_of_prime_apply {w : A[X]} (hw : w ∈ W) (hp : Prime (φ w)) : Prime w := by
+  have hw0 : w ≠ 0 := by
+    rintro rfl
+    exact hp.ne_zero (map_zero φ)
+  have : IsDomain (B ⧸ Ideal.span {φ w}) :=
+    (Ideal.Quotient.isDomain_iff_prime _).mpr ((Ideal.span_singleton_prime hp.ne_zero).mpr hp)
+  rw [← Ideal.span_singleton_prime hw0, ← Ideal.Quotient.isDomain_iff_prime]
+  exact (h.quotientEquiv hw).toMulEquiv.isDomain _
+
 /-- Over a unique factorisation domain `A`, the image of every member of `W` is associated to a
 product of primes. -/
 theorem exists_prime_factors_apply [IsDomain A] [UniqueFactorizationMonoid A] {w : A[X]}

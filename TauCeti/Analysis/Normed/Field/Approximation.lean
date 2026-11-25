@@ -29,6 +29,9 @@ separable.
 * `Polynomial.exists_monic_natDegree_eq_aeval_eq_zero_norm_sub_lt`: a root in `L` of a monic
   polynomial over `K` can be approximated arbitrarily closely by a root of a monic polynomial of
   the same degree over the dense subfield `k`.
+* `IsAlgebraic.exists_monic_and_natDegree_eq_and_aeval_eq_zero_and_norm_sub_lt`: an element of `L`
+  algebraic over `K` is arbitrarily close to a root of a monic polynomial over `k` of the same
+  degree as its minimal polynomial.
 * `IsAlgebraic.mem_closure_setOf_isAlgebraic`: an element of `L` algebraic over `K` lies in the
   closure of the elements algebraic over `k`.
 
@@ -66,12 +69,24 @@ theorem Polynomial.exists_monic_natDegree_eq_aeval_eq_zero_norm_sub_lt
     div_mul_cancel₀ _ hM.ne'] at hxβ
   exact ⟨g, β, hgm, hdeg.symm, by simpa [aeval_map_algebraMap] using (mem_aroots.mp hβ).2, hxβ⟩
 
+/-- **An element algebraic over `K` is close to a root of a polynomial over a dense subfield `k`**
+of the same degree as its minimal polynomial, in an algebraically closed normed field `L` over `K`:
+for every `δ > 0` there is a monic `g` over `k` with `deg g = deg (minpoly K x)` and a root `y` of
+`g` in `L` with `‖x - y‖ < δ`. -/
+theorem IsAlgebraic.exists_monic_and_natDegree_eq_and_aeval_eq_zero_and_norm_sub_lt {x : L}
+    (hx : IsAlgebraic K x) (hk : DenseRange (algebraMap k K)) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ (g : k[X]) (y : L), g.Monic ∧ (minpoly K x).natDegree = g.natDegree ∧ aeval y g = 0 ∧
+      ‖x - y‖ < δ := by
+  obtain ⟨g, y, hgm, hdeg, hgy, hxy⟩ :=
+    exists_monic_natDegree_eq_aeval_eq_zero_norm_sub_lt (minpoly.monic hx.isIntegral)
+      (minpoly.aeval K x) hk hδ
+  exact ⟨g, y, hgm, hdeg.symm, hgy, hxy⟩
+
 /-- **Elements algebraic over `K` are limits of elements algebraic over a dense subfield `k`**,
 in an algebraically closed normed field `L` over `K`. -/
 theorem IsAlgebraic.mem_closure_setOf_isAlgebraic {x : L} (hx : IsAlgebraic K x)
     (hk : DenseRange (algebraMap k K)) : x ∈ closure {y : L | IsAlgebraic k y} := by
   refine Metric.mem_closure_iff.mpr fun δ hδ ↦ ?_
-  obtain ⟨g, β, hgm, -, hβ, hxβ⟩ :=
-    exists_monic_natDegree_eq_aeval_eq_zero_norm_sub_lt (minpoly.monic hx.isIntegral)
-      (minpoly.aeval K x) hk hδ
-  exact ⟨β, ⟨g, hgm.ne_zero, hβ⟩, by rwa [dist_eq_norm]⟩
+  obtain ⟨g, y, hgm, -, hgy, hxy⟩ :=
+    hx.exists_monic_and_natDegree_eq_and_aeval_eq_zero_and_norm_sub_lt hk hδ
+  exact ⟨y, ⟨g, hgm.ne_zero, hgy⟩, by rwa [dist_eq_norm]⟩

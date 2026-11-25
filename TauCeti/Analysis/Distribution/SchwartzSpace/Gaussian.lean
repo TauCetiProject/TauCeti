@@ -41,11 +41,13 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 * `SchwartzMap.gaussian`: the Gaussian `x ↦ exp (-b ‖x‖²)`, `0 < b.re`, as a Schwartz function.
 * `SchwartzMap.gaussian_apply`, `SchwartzMap.coe_gaussian`, `SchwartzMap.coe_gaussian_ofReal`:
   its values.
-* `SchwartzMap.norm_gaussian_apply`: its modulus `exp (-b.re ‖x‖²)`.
+* `SchwartzMap.norm_gaussian_apply`, `SchwartzMap.norm_gaussian_apply_sq`: its modulus
+  `exp (-b.re ‖x‖²)` and squared modulus `exp (-2 b.re ‖x‖²)`.
 * `SchwartzMap.fourierInv_gaussian`: its inverse Fourier transform
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
 * `SchwartzMap.eLpNorm_gaussian`, `SchwartzMap.eLpNorm_gaussian_top`: its `Lᵖ` norms
   `(π / (p b.re))^(n/(2p))`, `0 < p < ∞`, and its `L^∞` norm `1`.
+* `TauCeti.norm_toLp_gaussian_sq`: its squared `L²` norm `(π / (2 b.re))^(n/2)`.
 * `SchwartzMap.eLpNorm_fourier_gaussian`: the `L^q` norms
   `π^(n/2) (π b.re q)^(-n/(2q)) ‖b‖^(n/q - n/2)`, `0 < q < ∞`, of its Fourier transform. For fixed
   `b.re` they grow with `‖b‖` exactly when `q < 2`, while the norms of the Gaussian itself depend
@@ -126,6 +128,13 @@ theorem norm_gaussian_apply {b : ℂ} (hb : 0 < b.re) (x : V) :
     ‖gaussian hb x‖ = Real.exp (-b.re * ‖x‖ ^ 2) := by
   rw [gaussian_apply]
   exact norm_cexp_neg_mul_sq b ‖x‖
+
+/-- The squared modulus of the Schwartz Gaussian at `x` is the real Gaussian
+`exp (-2 b.re ‖x‖²)`. -/
+theorem norm_gaussian_apply_sq {b : ℂ} (hb : 0 < b.re) (x : V) :
+    ‖gaussian hb x‖ ^ 2 = Real.exp (-(2 * b.re) * ‖x‖ ^ 2) := by
+  rw [norm_gaussian_apply, ← Real.exp_natCast_mul]
+  ring_nf
 
 /-- The Schwartz Gaussian, as a function, is `x ↦ exp (-b ‖x‖²)`. -/
 theorem coe_gaussian {b : ℂ} (hb : 0 < b.re) :
@@ -254,6 +263,26 @@ theorem eLpNorm_fourier_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [
   field_simp
 
 end SchwartzMap
+
+namespace TauCeti
+
+open MeasureTheory
+open scoped Real
+
+/-- **The `L²` norm of a Gaussian.** For `g(x) = exp(-b ‖x‖²)`, `0 < Re b`, on a real inner
+product space of dimension `n`,
+`‖g‖²_{L²} = ∫ |exp(-b ‖x‖²)|² dx = (π / (2 Re b))^(n/2)`; on `ℝ` this is `√(π / (2 Re b))`. -/
+theorem norm_toLp_gaussian_sq {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {b : ℂ} (hb : 0 < b.re) :
+    ‖(SchwartzMap.gaussian (V := V) hb).toLp 2‖ ^ 2 =
+      (π / (2 * b.re)) ^ (Module.finrank ℝ V / 2 : ℝ) := by
+  rw [SchwartzMap.norm_toLp, SchwartzMap.eLpNorm_gaussian hb two_ne_zero ENNReal.ofNat_ne_top,
+    ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat, ← Real.rpow_natCast,
+    ← Real.rpow_mul (by positivity), mul_comm b.re]
+  congr 1
+  ring
+
+end TauCeti
 
 /-- The real Gaussian `x ↦ exp (-c ‖x‖²)`, `0 ≤ c`, has temperate growth: for `c > 0` it is the
 real part of the Schwartz function `SchwartzMap.gaussian`, and for `c = 0` it is constant.

@@ -32,8 +32,10 @@ over the strip: the Sobolev space with boundary conditions in
 fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
 
 * `TauCeti.StripSobolev.stripMeasure` is Lebesgue measure on `ℝ × [0, 1]`; it is the product of
-  Lebesgue measure on `ℝ` and on `[0, 1]` (`TauCeti.StripSobolev.stripMeasure_eq_prod`). A
-  section that is bounded on a box `[-R, R] × [0, 1]` and vanishes outside it lies in every `Lᵖ`
+  Lebesgue measure on `ℝ` and on `[0, 1]` (`TauCeti.StripSobolev.stripMeasure_eq_prod`), and
+  Lebesgue measure on the band `ℝ × [0, 1)`
+  (`TauCeti.StripSobolev.stripMeasure_eq_restrict_univ_prod_Ico`).
+  A section that is bounded on a box `[-R, R] × [0, 1]` and vanishes outside it lies in every `Lᵖ`
   of the strip (`TauCeti.StripSobolev.memLp_stripMeasure_of_bound_of_eq_zero`), in particular a
   continuous section vanishing for `|s|` large
   (`TauCeti.StripSobolev.memLp_stripMeasure_of_continuous`).
@@ -92,6 +94,14 @@ theorem stripMeasure_eq_prod :
     stripMeasure = (volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1)) := by
   unfold stripMeasure
   rw [Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
+
+/-- The strip measure is Lebesgue measure on the band `ℝ × [0, 1)`: the two differ by the null
+line `ℝ × {1}`. -/
+theorem stripMeasure_eq_restrict_univ_prod_Ico :
+    stripMeasure = volume.restrict ((univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1) := by
+  rw [stripMeasure_eq_prod, Measure.restrict_congr_set (μ := volume (α := ℝ))
+    (Ico_ae_eq_Icc (a := (0 : ℝ)) (b := 1)).symm, Measure.volume_eq_prod,
+    ← Measure.prod_restrict, Measure.restrict_univ]
 
 /-- The jet `(ξ, ∂s ξ, ∂t ξ)` of a map `ξ : ℝ × ℝ → V`. -/
 def jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V :=
