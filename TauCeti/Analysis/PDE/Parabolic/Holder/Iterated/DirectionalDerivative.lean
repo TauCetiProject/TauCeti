@@ -364,6 +364,7 @@ theorem norm_spatialLineDerivL_le (h : E) :
 
 /-- The spatial trace of `∂_h u` at a time `t` is the derivative of the spatial trace of `u` at
 `t` in the direction `h`. -/
+@[simp]
 theorem spatialTrace_spatialLineDerivL (h : E) (u : ParabolicCkHolderSpace (k + 1) α E F hab)
     (t : Icc a b) :
     (spatialLineDerivL h u).spatialTrace t = CkHolderSpace.compLeftL

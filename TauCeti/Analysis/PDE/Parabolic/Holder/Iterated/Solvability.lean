@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.CauchyProblem
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Backward
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.DirectionalDerivative
 import TauCeti.Analysis.Holder.Inclusion
+import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.DifferentiatedEquation
 
 /-!
 # The initial-data and terminal-data isomorphisms at every order, with their estimates
@@ -81,8 +81,6 @@ norms of the coefficients and of the data.
 * `TauCeti.ParabolicCkHolderSpace.coe_euclideanInitialDataCLE_symm_of_le` and
   `coe_euclideanTerminalDataCLE_symm_of_le`: the isomorphisms at different orders agree on the
   smaller spaces.
-* `TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_spatialLineDerivL`: the differentiated
-  equation solved by a directional derivative.
 * `TauCeti.ParabolicCkHolderSpace.exists_norm_le_parabolicOperatorL`: the Schauder estimate at
   every order, uniform in the coefficients.
 * `TauCeti.ParabolicCkHolderSpace.exists_norm_euclideanInitialDataCLE_symm_le` and
@@ -698,117 +696,6 @@ private theorem schauderBound_zero (hα₀ : 0 < α) (hα₁ : α < 1) {lam : �
   have h₀ := norm_le_two_mul_norm_equivParabolicC2HolderSpace u
   have h₃ := mul_le_mul_of_nonneg_left h₂ hC
   nlinarith
-
-/-- The values of the Euclidean operator, written out in coordinates through the directional
-derivatives `∂ᵢ` in the coordinate directions. -/
-private theorem parabolicOperatorL_apply_eq_sum (hα : α ≤ 1) {k : ℕ} {T : ℝ≥0}
-    {hT : (0 : ℝ) < T} (a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
-    (b : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
-    (c : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
-    (u : ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT)
-    (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
-    parabolicOperatorL hα (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b)
-        (euclideanZerothOrderCoeff c) u p =
-      timeDerivL k α _ ℝ hT u p -
-        (∑ i, ∑ l, a i l p * spatialLineDerivL (EuclideanSpace.single i 1)
-            (spatialLineDerivL (EuclideanSpace.single l 1) u) p +
-          ∑ i, b i p * spatialLineDerivL (EuclideanSpace.single i 1) u p + c p * u p) := by
-  simp [spatialFDerivBCF_apply, ← Matrix.vec_single_eq_const]
-
-/-- The values of the differentiated equation `parabolicOperatorL_spatialLineDerivL`, with the
-lower-order part of the forcing written out in coordinates. On each time slice, `∂ₑ(P u)` is
-computed by the product rule, and the derivatives of `u` are reordered by
-`TauCeti.ParabolicCkHolderSpace.timeDerivL_spatialLineDerivL` and
-`TauCeti.ParabolicCkHolderSpace.spatialLineDerivL_comm`. -/
-private theorem parabolicOperatorL_spatialLineDerivL_apply (hα : α ≤ 1) {k : ℕ}
-    {T : ℝ≥0} {hT : (0 : ℝ) < T}
-    (a : ι → ι → ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT)
-    (b : ι → ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT)
-    (c : ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT)
-    (u : ParabolicCkHolderSpace (k + 1 + 2) α (EuclideanSpace ℝ ι) ℝ hT) (e : EuclideanSpace ℝ ι)
-    (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
-    parabolicOperatorL hα
-        (euclideanSecondOrderCoeff fun i j ↦ inclusionOfLEL hα k.le_succ (a i j))
-        (euclideanFirstOrderCoeff fun i ↦ inclusionOfLEL hα k.le_succ (b i))
-        (euclideanZerothOrderCoeff (inclusionOfLEL hα k.le_succ c)) (spatialLineDerivL e u) p =
-      spatialLineDerivL e (parabolicOperatorL hα (euclideanSecondOrderCoeff a)
-          (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u) p +
-        (∑ i, ∑ l, spatialLineDerivL e (a i l) p *
-            spatialLineDerivL (EuclideanSpace.single i 1) (spatialLineDerivL
-              (EuclideanSpace.single l 1)
-              (inclusionOfLEL hα (Nat.add_le_add_right k.le_succ 2) u)) p +
-          ∑ i, spatialLineDerivL e (b i) p * spatialLineDerivL (EuclideanSpace.single i 1)
-              (inclusionOfLEL hα (Nat.add_le_add_right k.le_succ 2) u) p +
-          spatialLineDerivL e c p * u p) := by
-  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
-  have hD := ((timeDerivL _ α _ ℝ hT u).hasSpatialFDerivAt t x).fun_sub
-    (((HasFDerivAt.fun_sum (u := Finset.univ) fun i _ ↦
-      HasFDerivAt.fun_sum (u := Finset.univ) fun l _ ↦
-      ((a i l).hasSpatialFDerivAt t x).fun_mul ((spatialLineDerivL (EuclideanSpace.single i 1)
-        (spatialLineDerivL (EuclideanSpace.single l 1) u)).hasSpatialFDerivAt t x)).fun_add
-      (HasFDerivAt.fun_sum (u := Finset.univ) fun i _ ↦ ((b i).hasSpatialFDerivAt t x).fun_mul
-        ((spatialLineDerivL (EuclideanSpace.single i 1) u).hasSpatialFDerivAt t x))).fun_add
-      ((c.hasSpatialFDerivAt t x).fun_mul (u.hasSpatialFDerivAt t x)))
-  have hPu := hD.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦
-    parabolicOperatorL_apply_eq_sum hα a b c u (slabMk y t))
-  rw [spatialLineDerivL_slabMk_eq_lineDeriv, (hPu.hasLineDerivAt e).lineDeriv,
-    parabolicOperatorL_apply_eq_sum]
-  simp only [_root_.sub_apply, _root_.add_apply, FunLike.coe_sum, Finset.sum_apply,
-    _root_.smul_apply, smul_eq_mul, ← spatialLineDerivL_apply_eq_spatialFDerivL,
-    inclusionOfLEL_apply]
-  have h₁ (i : ι) : spatialLineDerivL e (spatialLineDerivL (EuclideanSpace.single i 1) u) =
-      spatialLineDerivL (EuclideanSpace.single i 1) (spatialLineDerivL e u) :=
-    spatialLineDerivL_comm _ _ _
-  have h₂ (i l : ι) : spatialLineDerivL e (spatialLineDerivL (EuclideanSpace.single i 1)
-      (spatialLineDerivL (EuclideanSpace.single l 1) u)) =
-      spatialLineDerivL (EuclideanSpace.single i 1)
-        (spatialLineDerivL (EuclideanSpace.single l 1) (spatialLineDerivL e u)) := by
-    rw [spatialLineDerivL_comm, spatialLineDerivL_comm e]
-  have hu₁ (i : ι) : spatialLineDerivL (EuclideanSpace.single i 1)
-      (inclusionOfLEL hα (Nat.add_le_add_right k.le_succ 2) u) (slabMk x t) =
-      spatialLineDerivL (EuclideanSpace.single i 1) u (slabMk x t) := by
-    simp only [spatialLineDerivL_apply,
-      mixedDerivL_inclusionOfLEL hα _ u (by omega : 2 * 0 + 1 ≤ k + 2)]
-  have hu₂ (i l : ι) : spatialLineDerivL (EuclideanSpace.single i 1) (spatialLineDerivL
-      (EuclideanSpace.single l 1) (inclusionOfLEL hα (Nat.add_le_add_right k.le_succ 2) u))
-        (slabMk x t) = spatialLineDerivL (EuclideanSpace.single i 1)
-          (spatialLineDerivL (EuclideanSpace.single l 1) u) (slabMk x t) := by
-    simp only [spatialLineDerivL_apply, mixedDerivL_spatialLineDerivL_apply,
-      mixedDerivL_inclusionOfLEL hα _ u (by omega : 2 * 0 + 2 ≤ k + 2)]
-  simp only [timeDerivL_spatialLineDerivL, h₁, h₂, hu₁, hu₂, Finset.sum_add_distrib,
-    mul_comm (spatialLineDerivL e _ _)]
-  ring
-
-/-- **The differentiated equation.** Let `α ≤ 1`, let `aⁱʲ`, `bⁱ`, `c` be coefficients in
-`C_{par,b}^{k+1+α}`, and let `u ∈ C_{par,b}^{k+3+α}`. For every direction `e`, the directional
-derivative `∂ₑu` satisfies
-
-`P (∂ₑu) = ∂ₑ(P u) + (∂ₑaⁱʲ) ∂ᵢ∂ⱼu + (∂ₑbⁱ) ∂ᵢu + (∂ₑc) u`,
-
-where on the left the coefficients of `P` are read at order `k`, and the last three terms are the
-spatial operator with the differentiated coefficients, applied to `u` read at order `k + 2`. This
-is the product rule together with the commutation of the derivatives of `u`; no ellipticity is
-needed. -/
-theorem parabolicOperatorL_spatialLineDerivL (hα : α ≤ 1) {k : ℕ} {T : ℝ≥0}
-    {hT : (0 : ℝ) < T} (a : ι → ι → ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT)
-    (b : ι → ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT)
-    (c : ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT)
-    (u : ParabolicCkHolderSpace (k + 1 + 2) α (EuclideanSpace ℝ ι) ℝ hT) (e : EuclideanSpace ℝ ι) :
-    parabolicOperatorL hα
-        (euclideanSecondOrderCoeff fun i j ↦ inclusionOfLEL hα k.le_succ (a i j))
-        (euclideanFirstOrderCoeff fun i ↦ inclusionOfLEL hα k.le_succ (b i))
-        (euclideanZerothOrderCoeff (inclusionOfLEL hα k.le_succ c)) (spatialLineDerivL e u) =
-      spatialLineDerivL e (parabolicOperatorL hα (euclideanSecondOrderCoeff a)
-          (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u) +
-        spatialOperatorL hα
-          (euclideanSecondOrderCoeff fun i j ↦ spatialLineDerivL e (a i j))
-          (euclideanFirstOrderCoeff fun i ↦ spatialLineDerivL e (b i))
-          (euclideanZerothOrderCoeff (spatialLineDerivL e c))
-          (inclusionOfLEL hα (Nat.add_le_add_right k.le_succ 2) u) :=
-  ext fun p ↦ by
-    rw [parabolicOperatorL_spatialLineDerivL_apply hα a b c u e, coe_add, Pi.add_apply,
-      spatialOperatorL_apply]
-    simp [spatialFDerivBCF_apply, ← Matrix.vec_single_eq_const]
 
 /-- By the equation, the time derivative of `u` is the forcing plus the spatial part of the
 operator, a field of order `k + 1` bounded through the directional derivatives of `u`. -/
