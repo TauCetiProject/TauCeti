@@ -60,6 +60,26 @@ theorem mem_specialLinearDiagonal_iff (X : sl (Fin (r + 1)) A) :
     X ∈ specialLinearDiagonal r A ↔ (X : Matrix (Fin (r + 1)) (Fin (r + 1)) A).IsDiag :=
   mem_diagonalCartan_iff_isDiag
 
+variable {r A} in
+/-- The bracket with a trace-zero diagonal matrix scales the entries:
+`[H, X] k l = (H k k - H l l) X k l`. -/
+theorem lie_apply_of_mem_specialLinearDiagonal {H : sl (Fin (r + 1)) A}
+    (hH : H ∈ specialLinearDiagonal r A) (X : sl (Fin (r + 1)) A) (k l : Fin (r + 1)) :
+    ((⁅H, X⁆ : sl (Fin (r + 1)) A) : Matrix (Fin (r + 1)) (Fin (r + 1)) A) k l =
+      ((H : Matrix (Fin (r + 1)) (Fin (r + 1)) A) k k -
+        (H : Matrix (Fin (r + 1)) (Fin (r + 1)) A) l l) *
+        (X : Matrix (Fin (r + 1)) (Fin (r + 1)) A) k l := by
+  rw [LieSubalgebra.coe_bracket]
+  exact lie_apply_of_mem_diagonalCartan
+    (mem_diagonalCartan_iff_isDiag.mpr ((mem_specialLinearDiagonal_iff r A H).mp hH)) _ k l
+
+variable {r A} in
+/-- Trace-zero diagonal matrices commute. -/
+theorem lie_eq_zero_of_mem_specialLinearDiagonal {X Y : sl (Fin (r + 1)) A}
+    (hX : X ∈ specialLinearDiagonal r A) (hY : Y ∈ specialLinearDiagonal r A) : ⁅X, Y⁆ = 0 :=
+  Subtype.ext (lie_eq_zero_of_isDiag ((mem_specialLinearDiagonal_iff r A X).mp hX)
+    ((mem_specialLinearDiagonal_iff r A Y).mp hY))
+
 /-- Reading the first diagonal entries identifies a trace-zero diagonal matrix with a tuple.
 The final diagonal entry is minus the sum of that tuple. -/
 def specialLinearDiagonalEquiv : specialLinearDiagonal r A ≃ₗ[A] (Fin r → A) where
@@ -182,12 +202,9 @@ theorem specialLinearCorootBasis_apply (i : Fin r) :
 
 /-- Simple coroots commute over every coefficient ring. -/
 theorem lie_specialLinearCoroot_eq_zero (s t : Fin r) :
-    ⁅(specialLinearCorootBasis r A s).val, (specialLinearCorootBasis r A t).val⁆ = 0 := by
-  apply Subtype.ext
-  rw [LieSubalgebra.coe_bracket]
-  exact lie_eq_zero_of_isDiag
-    ((mem_specialLinearDiagonal_iff r A _).mp (specialLinearCorootBasis r A s).property)
-    ((mem_specialLinearDiagonal_iff r A _).mp (specialLinearCorootBasis r A t).property)
+    ⁅(specialLinearCorootBasis r A s).val, (specialLinearCorootBasis r A t).val⁆ = 0 :=
+  lie_eq_zero_of_mem_specialLinearDiagonal (specialLinearCorootBasis r A s).property
+    (specialLinearCorootBasis r A t).property
 
 /-- Summing adjacent coroots over an interval gives its endpoint difference. -/
 theorem sum_Icc_specialLinearCoroot (i j : Fin r) (hij : i ≤ j) :
@@ -284,12 +301,10 @@ theorem specialLinearDiagonalCartan_normalizer_eq_self (h : r ≠ 1 ∨ IsRegula
     have hmem := ((specialLinearDiagonalCartan r A).mem_normalizer_iff X).mp hX
       (singleSubSingle a c 1)
       (singleSubSingle_mem_specialLinearDiagonal r A a c 1)
-    have hdiag : (singleSubSingle a c (1 : A) : Matrix (Fin (r + 1)) (Fin (r + 1)) A).IsDiag :=
-      (mem_specialLinearDiagonal_iff r A _).mp
-        (singleSubSingle_mem_specialLinearDiagonal r A a c 1)
     have h := (mem_specialLinearDiagonalCartan_iff r A _).mp hmem hab
-    rw [LieSubalgebra.coe_bracket, ← lie_skew, Matrix.neg_apply, neg_eq_zero,
-      lie_apply_of_mem_diagonalCartan (mem_diagonalCartan_iff_isDiag.mpr hdiag)] at h
+    rw [← lie_skew, NegMemClass.coe_neg, Matrix.neg_apply, neg_eq_zero,
+      lie_apply_of_mem_specialLinearDiagonal
+        (singleSubSingle_mem_specialLinearDiagonal r A a c 1)] at h
     exact h
   rcases h with hr | h2
   · obtain ⟨c, hca, hcb⟩ : ∃ c : Fin (r + 1), c ≠ a ∧ c ≠ b := by
