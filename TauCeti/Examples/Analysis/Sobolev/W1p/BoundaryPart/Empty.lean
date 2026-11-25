@@ -34,6 +34,7 @@ example : ¬∃ C : ℝ, ∀ u ∈ w1pVanishingOnSubmodule volume ⟨Ioo (0 : �
   -- a bump on `ℝ` equal to `1` on `[0, 1] = closedBall (1/2) (1/2)`
   let f : ContDiffBump (1 / 2 : ℝ) := ⟨1 / 2, 1, by norm_num, by norm_num⟩
   let φ : 𝓓((⊤ : Opens ℝ), ℝ) := ⟨⇑f, f.contDiff, f.hasCompactSupport, by simp⟩
+  have hφ : (⇑φ : ℝ → ℝ) = ⇑f := TestFunction.coe_mk
   have hle : (⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤ := le_top
   set u := restrictL hle (ofTestFunctionₗ volume ⊤ p φ)
   have hone (x : ℝ) (hx : x ∈ Ioo (0 : ℝ) 1) : (⇑f : ℝ → ℝ) =ᶠ[nhds x] fun _ ↦ 1 := by
@@ -42,19 +43,15 @@ example : ¬∃ C : ℝ, ∀ u ∈ w1pVanishingOnSubmodule volume ⟨Ioo (0 : �
     rw [Metric.mem_closedBall, Real.dist_eq, abs_le]
     exact ⟨by linarith [hy.1], by linarith [hy.2]⟩
   have hval : value u =ᵐ[volume.restrict (Ioo (0 : ℝ) 1)] fun _ ↦ (1 : ℝ) := by
-    filter_upwards [value_restrictL_ae (mu := volume) hle (ofTestFunctionₗ volume ⊤ p φ),
-      ae_restrict_of_ae (value_ofTestFunctionₗ_top_ae (mu := volume) (p := p) φ),
-      ae_restrict_mem measurableSet_Ioo] with x h1 h2 hx
-    exact h1.trans (h2.trans (hone x hx).eq_of_nhds)
+    filter_upwards [value_restrictL_ofTestFunctionₗ_ae (p := p) hle φ,
+      ae_restrict_mem measurableSet_Ioo] with x h1 hx
+    rw [h1, hφ]
+    exact (hone x hx).eq_of_nhds
   have hgrad : gradient u = 0 := by
     refine Lp.eq_zero_iff_ae_eq_zero.2 ?_
-    filter_upwards [gradient_restrictL_ae (mu := volume) hle (ofTestFunctionₗ volume ⊤ p φ),
-      ae_restrict_of_ae (gradient_ofTestFunctionₗ_top_ae (mu := volume) (p := p) φ),
-      ae_restrict_mem measurableSet_Ioo]
-      with x h1 h2 hx
-    rw [h1, h2, Pi.zero_apply]
-    change ∇ (⇑f : ℝ → ℝ) x = 0
-    rw [gradient_eq_deriv', (hone x hx).deriv_eq, deriv_const]
+    filter_upwards [gradient_restrictL_ofTestFunctionₗ_ae (p := p) hle φ,
+      ae_restrict_mem measurableSet_Ioo] with x h1 hx
+    rw [h1, Pi.zero_apply, hφ, gradient_eq_deriv', (hone x hx).deriv_eq, deriv_const]
   have hu := hC u (restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule (by simp))
   rw [hgrad, norm_zero, mul_zero, norm_le_zero_iff] at hu
   have h0 : (fun _ ↦ (1 : ℝ)) =ᵐ[volume.restrict (Ioo (0 : ℝ) 1)] 0 :=

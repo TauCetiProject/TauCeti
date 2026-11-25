@@ -13,9 +13,9 @@ public import TauCeti.Analysis.Sobolev.W1p.Interval.Trace
 
 On `(0, 1)` with `Γ = {0}`, every generator of `W^{1,∞}_Γ(0, 1)` has derivative `0` near `0`,
 while `u(x) = x` has `u' = 1`; so `u` is at `W^{1,∞}` distance at least `1` from
-`W^{1,∞}_Γ(0, 1)` and does not lie in it, although `u(0) = 0`. Thus `W^{1,∞}_Γ` is strictly
-smaller than `{u | u = 0 on Γ}`, and the trace characterization of `W^{1,p}_Γ` is for finite `p`
-only.
+`W^{1,∞}_Γ(0, 1)` and does not lie in it, although its trace `u(0)` is `0`. Thus `W^{1,∞}_Γ` is
+strictly smaller than `{u | u = 0 on Γ}`, and the trace characterization of `W^{1,p}_Γ` is for
+finite `p` only.
 -/
 
 public section
@@ -25,8 +25,10 @@ open scoped ENNReal
 
 namespace TauCeti.W1pVanishingOnInfinityExamples
 
-/-- `x` is at `W^{1,∞}` distance at least `1` from `W^{1,∞}_{{0}}(0, 1)`, and not in it. -/
-example : (∀ v ∈ w1pVanishingOnSubmodule volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ ⊤ {0},
+/-- `x` vanishes at `0`, but is at `W^{1,∞}` distance at least `1` from `W^{1,∞}_{{0}}(0, 1)`,
+and not in it. -/
+example : (intervalTraceL zero_lt_one (intervalCoord (a := 0) (b := 1) (p := ⊤))).1 = 0 ∧
+    (∀ v ∈ w1pVanishingOnSubmodule volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ ⊤ {0},
       1 ≤ dist (intervalCoord (a := 0) (b := 1) (p := ⊤)) v) ∧
     intervalCoord (a := 0) (b := 1) (p := ⊤) ∉
       w1pVanishingOnSubmodule volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ ⊤ {0} := by
@@ -35,6 +37,7 @@ example : (∀ v ∈ w1pVanishingOnSubmodule volume ⟨Ioo (0 : ℝ) 1, isOpen_I
     simpa using abs_gradient_le_dist_of_mem_w1pVanishingOnSubmodule zero_lt_one
       (g := fun _ ↦ 1) continuousOn_const gradient_intervalCoord hv
       (left_mem_Icc.2 zero_le_one) (subset_closure rfl)
-  exact ⟨hdist, fun h ↦ (not_le_of_gt zero_lt_one) (by simpa using hdist _ h)⟩
+  exact ⟨by simp [intervalTraceL_intervalCoord], hdist,
+    fun h ↦ (not_le_of_gt zero_lt_one) (by simpa using hdist _ h)⟩
 
 end TauCeti.W1pVanishingOnInfinityExamples
