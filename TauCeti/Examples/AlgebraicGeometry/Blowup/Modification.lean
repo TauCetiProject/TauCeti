@@ -91,7 +91,7 @@ theorem ringKrullDim_stalk_origin :
   rw [ringKrullDim_eq_of_ringEquiv (Spec.stalkIso _ (origin k)).commRingCatIsoToRingEquiv,
     IsLocalization.AtPrime.ringKrullDim_eq_height (origin k).asIdeal,
     MvPolynomial.height_eq_natCard_of_isMaximal, Nat.card_fin]
-  rfl
+  norm_cast
 
 /-- The stalk of the ideal sheaf of the origin at the origin is the maximal ideal of the local
 ring there. -/
