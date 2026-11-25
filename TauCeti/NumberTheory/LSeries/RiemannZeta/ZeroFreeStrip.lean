@@ -7,10 +7,10 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.Analysis.Complex.Convex
-import Mathlib.Analysis.ODE.Gronwall
 import TauCeti.Algebra.Order.GroupWithZero.Basic
+import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.ODE.Gronwall.Segment
 import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
-import TauCeti.NumberTheory.LSeries.Moebius
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.RightOfCurve
@@ -32,18 +32,18 @@ and to `1` at `1`. The extension of `1/ζ` is `R(s) = (s - 1) / riemannZeta₁ s
 
 ## Main results
 
-* `TauCeti.norm_riemannZeta_inv_lt_one_add_one_div_sub_one`: `‖ζ(s)‖⁻¹ < 1 + 1/(Re s - 1)` on
-  `1 < Re s`.
 * `TauCeti.riemannZeta_zeroFreeStrip_bounds`: nonvanishing, analyticity of `R` on a
   neighbourhood of `Z`, and `‖G s‖, ‖R s‖ ≤ C L` on `Z`.
 
 ## Implementation notes
 
 The bound for `G` is `TauCeti.exists_norm_riemannZeta₀_le_mul_log`. For `R` put
-`s₁ = 1 + 1/L + i Im s`. Right of `Re s = 1 + 1/L` the Möbius series gives `‖R s‖ ≤ 1 + L`.
+`s₁ = 1 + 1/L + i Im s`. Right of `Re s = 1 + 1/L` the Möbius series gives `‖R s‖ ≤ 1 + L`
+(`TauCeti.inv_norm_riemannZeta_lt_one_add_one_div_sub_one`).
 At height `|Im s| ≥ 1` and left of that line, the bound `‖ζ′/ζ + 1/(s - 1)‖ ≤ C L` of
 `TauCeti.riemannZeta_deriv_logDeriv_bound` gives `‖ζ′/ζ‖ = O(L)` on the horizontal segment from `s`
-to `s₁`, whose length is at most `2/L`. Grönwall's inequality along the segment bounds
+to `s₁`, whose length is at most `2/L`. Grönwall's inequality along the segment
+(`TauCeti.norm_le_norm_mul_exp_of_norm_deriv_le`) bounds
 `‖ζ(s₁)‖ / ‖ζ(s)‖` by an absolute constant, so `‖R s‖ ≤ e^O(1) ‖R s₁‖ = O(L)`. This uses the
 logarithmic bound for `ζ′/ζ` rather than a bound for `ζ′`, which would only give `log³`. Below
 height `1` the remaining part of `Z` is compact and `R` is continuous on it.
@@ -65,55 +65,14 @@ open Complex
 
 namespace TauCeti
 
-/-- On `1 < Re s`, the Möbius series bounds `1/ζ`: `‖ζ(s)‖⁻¹ < 1 + 1/(Re s - 1)`. -/
-theorem norm_riemannZeta_inv_lt_one_add_one_div_sub_one {s : ℂ} (hs : 1 < s.re) :
-    ‖riemannZeta s‖⁻¹ < 1 + 1 / (s.re - 1) := by
-  have h := inv_norm_riemannZeta_le_norm_riemannZeta_re_div hs
-  have h2 : 1 ≤ ‖riemannZeta (2 * s.re)‖ := by
-    have := one_lt_riemannZeta_re (by linarith : 1 < 2 * s.re)
-    push_cast at this
-    exact this.le.trans (re_le_norm _)
-  have hσ := norm_riemannZeta_lt_one_add_one_div_sub_one (s := (s.re : ℂ)) (by simpa using hs)
-  rw [ofReal_re] at hσ
-  rw [norm_div] at h
-  exact h.trans_lt ((div_le_self (norm_nonneg _) h2).trans_lt hσ)
-
-/-- **Grönwall along a segment.** If `f` is complex differentiable on the segment `[a, b]` and
-`‖f′‖ ≤ K ‖f‖` there, then `‖f b‖ ≤ ‖f a‖ exp (K ‖b - a‖)`. -/
-private lemma norm_le_norm_mul_exp_of_norm_deriv_le {f : ℂ → ℂ} {a b : ℂ} {K : ℝ}
-    (hf : ∀ z ∈ segment ℝ a b, DifferentiableAt ℂ f z)
-    (hK : ∀ z ∈ segment ℝ a b, ‖deriv f z‖ ≤ K * ‖f z‖) :
-    ‖f b‖ ≤ ‖f a‖ * Real.exp (K * ‖b - a‖) := by
-  set p : ℝ → ℂ := fun θ ↦ a + θ • (b - a)
-  have hp : ∀ θ ∈ Set.Icc (0 : ℝ) 1, p θ ∈ segment ℝ a b := fun θ hθ ↦ by
-    rw [segment_eq_image']
-    exact ⟨θ, hθ, rfl⟩
-  have hderiv : ∀ θ ∈ Set.Icc (0 : ℝ) 1, HasDerivAt (f ∘ p) (deriv f (p θ) * (b - a)) θ := by
-    intro θ hθ
-    have hpd : HasDerivAt p (b - a) θ := by
-      simpa [p] using ((hasDerivAt_id θ).smul_const (b - a)).const_add a
-    exact (hf _ (hp θ hθ)).hasDerivAt.comp θ hpd
-  have h := norm_le_gronwallBound_of_norm_deriv_right_le (f := f ∘ p)
-    (f' := fun θ ↦ deriv f (p θ) * (b - a)) (δ := ‖f a‖) (K := K * ‖b - a‖) (ε := 0)
-    (fun θ hθ ↦ (hderiv θ hθ).continuousAt.continuousWithinAt)
-    (fun θ hθ ↦ (hderiv θ (Set.Ico_subset_Icc_self hθ)).hasDerivWithinAt)
-    (by simp [p]) (fun θ hθ ↦ by
-      rw [norm_mul, add_zero, Function.comp_apply]
-      have := hK _ (hp θ (Set.Ico_subset_Icc_self hθ))
-      calc _ ≤ K * ‖f (p θ)‖ * ‖b - a‖ := by gcongr
-        _ = _ := by ring)
-    1 ⟨zero_le_one, le_rfl⟩
-  simpa [p, gronwallBound_ε0] using h
-
 /-- Right of `Re s = 1 + 1/L`, with `L = log (|Im s| + 2)`, `‖ζ(s)‖⁻¹ ≤ 3 L`. -/
-private lemma norm_riemannZeta_inv_le_of_one_add_inv_le {s : ℂ}
+private lemma inv_norm_riemannZeta_le_of_one_add_inv_le {s : ℂ}
     (hs : 1 + (Real.log (|s.im| + 2))⁻¹ ≤ s.re) :
     ‖riemannZeta s‖⁻¹ ≤ 3 * Real.log (|s.im| + 2) := by
   set L := Real.log (|s.im| + 2)
-  have hL : 1 / 2 ≤ L := by
-    simpa [L, add_comm] using Real.one_half_le_log_two_add (abs_nonneg s.im)
+  have hL : 1 / 2 ≤ L := Real.one_half_le_log_add_two (abs_nonneg s.im)
   have hpos : 0 < s.re - 1 := by linarith [inv_pos.mpr (by linarith : (0 : ℝ) < L)]
-  have h := norm_riemannZeta_inv_lt_one_add_one_div_sub_one (by linarith : 1 < s.re)
+  have h := inv_norm_riemannZeta_lt_one_add_one_div_sub_one (by linarith : 1 < s.re)
   have : 1 / (s.re - 1) ≤ L := by
     calc 1 / (s.re - 1) ≤ 1 / L⁻¹ := one_div_le_one_div_of_le (by positivity) (by linarith)
       _ = L := by rw [one_div, inv_inv]
@@ -127,8 +86,7 @@ private lemma norm_deriv_riemannZeta_le_of_one_le_abs_im {C₄ : ℝ} {z : ℂ} 
     (hbd : ‖deriv riemannZeta z / riemannZeta z + 1 / (z - 1)‖ ≤ C₄ * Real.log (|z.im| + 2)) :
     ‖deriv riemannZeta z‖ ≤ (|C₄| + 2) * Real.log (|z.im| + 2) * ‖riemannZeta z‖ := by
   set L := Real.log (|z.im| + 2)
-  have hL : 1 / 2 ≤ L := by
-    simpa [L, add_comm] using Real.one_half_le_log_two_add (abs_nonneg z.im)
+  have hL : 1 / 2 ≤ L := Real.one_half_le_log_add_two (abs_nonneg z.im)
   have hpole : ‖1 / (z - 1)‖ ≤ 1 := by simpa [one_div] using norm_inv_sub_one_le_one ht
   have hlog : ‖deriv riemannZeta z / riemannZeta z‖ ≤ (|C₄| + 2) * L := by
     have := norm_sub_le (deriv riemannZeta z / riemannZeta z + 1 / (z - 1)) (1 / (z - 1))
@@ -143,7 +101,7 @@ private lemma norm_deriv_riemannZeta_le_of_one_le_abs_im {C₄ : ℝ} {z : ℂ} 
 `‖ζ′/ζ + 1/(s - 1)‖ ≤ C₄ L` with nonvanishing, Grönwall along the segment to
 `1 + 1/L + i Im s`, of length at most `(1 + β)/L`, gives
 `‖ζ(s)‖⁻¹ ≤ 3 exp ((1 + β)(|C₄| + 2)) L`. -/
-private lemma norm_riemannZeta_inv_le_of_one_le_abs_im {β C₄ : ℝ}
+private lemma inv_norm_riemannZeta_le_of_one_le_abs_im {β C₄ : ℝ}
     (h4 : ∀ s : ℂ, s ≠ 1 → 1 - β / Real.log (|s.im| + 2) ≤ s.re →
       riemannZeta s ≠ 0 ∧
         ‖deriv riemannZeta s / riemannZeta s + 1 / (s - 1)‖ ≤ C₄ * Real.log (|s.im| + 2))
@@ -152,8 +110,7 @@ private lemma norm_riemannZeta_inv_le_of_one_le_abs_im {β C₄ : ℝ}
     ‖riemannZeta s‖⁻¹ ≤ 3 * Real.exp ((1 + β) * (|C₄| + 2)) * Real.log (|s.im| + 2) := by
   set t := s.im with ht_def
   set L := Real.log (|t| + 2)
-  have hL : 1 / 2 ≤ L := by
-    simpa [L, add_comm] using Real.one_half_le_log_two_add (abs_nonneg t)
+  have hL : 1 / 2 ≤ L := Real.one_half_le_log_add_two (abs_nonneg t)
   have hL0 : 0 < L := by linarith
   set s₁ : ℂ := ((1 + L⁻¹ : ℝ) : ℂ) + t * I
   obtain ⟨hs₁re, hs₁im⟩ : s₁.re = 1 + L⁻¹ ∧ s₁.im = t := by simp [s₁]
@@ -161,9 +118,9 @@ private lemma norm_riemannZeta_inv_le_of_one_le_abs_im {β C₄ : ℝ}
   have hseg : segment ℝ s s₁ ⊆ {z | s.re ≤ z.re} ∩ ({z | z.im ≤ t} ∩ {z | t ≤ z.im}) :=
     (Convex.inter (convex_halfSpace_re_ge s.re)
       (Convex.inter (convex_halfSpace_im_le t) (convex_halfSpace_im_ge t))).segment_subset
-      (show s.re ≤ s.re ∧ s.im ≤ t ∧ t ≤ s.im from ⟨le_rfl, ht_def.ge, ht_def.le⟩)
-      (show s.re ≤ s₁.re ∧ s₁.im ≤ t ∧ t ≤ s₁.im from
-        ⟨by rw [hs₁re]; linarith, hs₁im.le, hs₁im.ge⟩)
+      (Set.mem_inter (le_refl s.re) (Set.mem_inter ht_def.ge ht_def.le))
+      (Set.mem_inter (by rw [Set.mem_ofPred_eq, hs₁re]; linarith)
+        (Set.mem_inter hs₁im.le hs₁im.ge))
   have hmem (z) (hz : z ∈ segment ℝ s s₁) : z.im = t ∧ s.re ≤ z.re :=
     ⟨le_antisymm (hseg hz).2.1 (hseg hz).2.2, (hseg hz).1⟩
   set K := (|C₄| + 2) * L
@@ -190,7 +147,7 @@ private lemma norm_riemannZeta_inv_le_of_one_le_abs_im {β C₄ : ℝ}
   have hζ₁ : riemannZeta s₁ ≠ 0 := riemannZeta_ne_zero_of_one_lt_re (by
     rw [hs₁re]; linarith [inv_pos.mpr hL0])
   have hinv₁ : ‖riemannZeta s₁‖⁻¹ ≤ 3 * L := by
-    have := norm_riemannZeta_inv_le_of_one_add_inv_le (s := s₁) (by rw [hs₁re, hs₁im])
+    have := inv_norm_riemannZeta_le_of_one_add_inv_le (s := s₁) (by rw [hs₁re, hs₁im])
     rwa [hs₁im] at this
   calc ‖riemannZeta s‖⁻¹ = ‖riemannZeta s₁‖ / ‖riemannZeta s‖ * ‖riemannZeta s₁‖⁻¹ := by
         field_simp
@@ -205,7 +162,7 @@ compact. -/
 private lemma isCompact_strip_of_abs_im_le_one (β : ℝ) :
     IsCompact {s : ℂ | |s.im| ≤ 1 ∧ s.re ≤ 3 ∧ 1 - β / Real.log (|s.im| + 2) ≤ s.re} := by
   have hlog (z : ℂ) : 1 / 2 ≤ Real.log (|z.im| + 2) :=
-    add_comm |z.im| 2 ▸ Real.one_half_le_log_two_add (abs_nonneg z.im)
+    Real.one_half_le_log_add_two (abs_nonneg z.im)
   refine (isCompact_closedBall (0 : ℂ) (4 + 2 * |β|)).of_isClosed_subset ?_ ?_
   · have hc : Continuous fun z : ℂ ↦ Real.log (|z.im| + 2) :=
       (continuous_im.abs.add continuous_const : Continuous fun z : ℂ ↦ |z.im| + 2).log
@@ -271,17 +228,17 @@ theorem riemannZeta_zeroFreeStrip_bounds :
       rw [h, one_re] at hsη
       linarith [inv_pos.mpr hL]
     rw [div_eq_mul_inv, ← inv_riemannZeta_eq_sub_mul_of_ne_one hs1, norm_inv]
-    refine (norm_riemannZeta_inv_le_of_one_add_inv_le hsη).trans (le_trans ?_ h3E)
+    refine (inv_norm_riemannZeta_le_of_one_add_inv_le hsη).trans (le_trans ?_ h3E)
     nlinarith
   rcases le_or_gt 1 |s.im| with ht | ht
   · rw [div_eq_mul_inv, ← inv_riemannZeta_eq_sub_mul_of_ne_one (ne_one_of_one_le_abs_im ht),
       norm_inv]
     have h4' := fun z hz1 hz ↦ And.intro (h4 z hz1 hz).1 (h4 z hz1 hz).2.2
-    exact (norm_riemannZeta_inv_le_of_one_le_abs_im h4' ht hs hsη).trans h3E
+    exact (inv_norm_riemannZeta_le_of_one_le_abs_im h4' ht hs hsη).trans h3E
   · have hs3 : s.re ≤ 3 := by
       have : L⁻¹ ≤ 2 := by
-        rw [inv_le_comm₀ hL two_pos]
-        simpa [L, add_comm] using Real.one_half_le_log_two_add (abs_nonneg s.im)
+        rw [inv_le_comm₀ hL two_pos, ← one_div]
+        exact Real.one_half_le_log_add_two (abs_nonneg s.im)
       linarith
     calc _ ≤ M := hM s ⟨ht.le, hs3, hs⟩
       _ ≤ |M| := le_abs_self M
