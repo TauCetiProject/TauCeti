@@ -96,9 +96,8 @@ theorem connectedSpace_annihilatorPunctured_iff [ConnectedSpace M] [T2Space M]
   by
   rw [hξ.exists_isContactForm_kerDistribution_eq_iff_nonempty_vectorBundleOrientation,
     not_nonempty_iff,
-    ← connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation (finrank_fin_fun ℝ),
-    ← coe_annihilatorPunctured]
-  exact Iff.rfl
+    ← connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation (finrank_fin_fun ℝ)]
+  exact hξ.connectedSpace_annihilatorPunctured_iff_connectedSpace_zeroSectionCompl
 
 /-- **The symplectization of a coorientable contact structure is disconnected.** If `ξ = ker α`
 for a contact form `α`, the symplectization `ξ⁰ ∖ 0` is not connected. -/
@@ -117,11 +116,9 @@ theorem not_connectedSpace_annihilatorPunctured {α : SmoothForm I M ℝ 1} (hα
       SmoothForm.proj_symplectizationToAnnihilator hαξ _⟩)
     ((FiberBundle.continuous_proj _ _).comp continuous_subtypeVal)
   obtain ⟨o⟩ := hξ.nonempty_vectorBundleOrientation_of_isContactForm hα hαξ
-  have h' : ConnectedSpace (zeroSectionCompl (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x) := by
-    rw [← coe_annihilatorPunctured]
-    exact h
   exact ((connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation
-    (finrank_fin_fun ℝ)).1 h').false o
+    (finrank_fin_fun ℝ)).1
+      (hξ.connectedSpace_annihilatorPunctured_iff_connectedSpace_zeroSectionCompl.1 h)).false o
 
 /-- For a nowhere vanishing one-form `α` with kernel a contact structure `ξ`, the covectors
 `eᵗ α_x` of `ξ⁰ ∖ 0`, the image of `κ_α`, form a preconnected set when `M` is preconnected. -/

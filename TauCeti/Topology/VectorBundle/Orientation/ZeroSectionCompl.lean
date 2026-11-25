@@ -119,7 +119,7 @@ theorem continuous_zeroSectionComplOrientation :
 
 /-- Every orientation of every fibre of a line bundle is the orientation through some nonzero
 vector. -/
-theorem surjective_zeroSectionComplOrientation :
+theorem zeroSectionComplOrientation_surjective :
     Function.Surjective (zeroSectionComplOrientation (E := E) hF) := by
   rintro ⟨b, o⟩
   have hb := (VectorBundle.finrank_eq ℝ F E b).trans hF
@@ -209,7 +209,7 @@ cover. -/
 theorem isQuotientMap_zeroSectionComplOrientation :
     IsQuotientMap (zeroSectionComplOrientation (E := E) hF) :=
   (isOpenMap_zeroSectionComplOrientation hF).isQuotientMap
-    (continuous_zeroSectionComplOrientation hF) (surjective_zeroSectionComplOrientation hF)
+    (continuous_zeroSectionComplOrientation hF) (zeroSectionComplOrientation_surjective hF)
 
 /-- **The fibres of the orientation map are connected.** The nonzero vectors through which a
 given orientation of a fibre passes form an open half-line, a connected set. -/
@@ -217,7 +217,7 @@ theorem isConnected_preimage_zeroSectionComplOrientation
     (p : VectorBundleOrientationCover F E (Fin 1)) :
     IsConnected (zeroSectionComplOrientation hF ⁻¹' {p}) := by
   obtain ⟨b, o⟩ := p
-  obtain ⟨v₀, hv₀⟩ := surjective_zeroSectionComplOrientation hF ⟨b, o⟩
+  obtain ⟨v₀, hv₀⟩ := zeroSectionComplOrientation_surjective hF ⟨b, o⟩
   refine ⟨⟨v₀, hv₀⟩, ?_⟩
   -- In the total space the fibre is the image of the convex set of positive vectors of `o`.
   set P := {w : E b | ∃ β : Basis (Fin 1) ℝ (E b), β default = w ∧ β.orientation = o}
@@ -255,10 +255,10 @@ double cover is connected. -/
 theorem connectedSpace_zeroSectionCompl_iff (hF : finrank ℝ F = 1) :
     ConnectedSpace (zeroSectionCompl F E) ↔
       ConnectedSpace (VectorBundleOrientationCover F E (Fin 1)) := by
-  refine ⟨fun _ ↦ (surjective_zeroSectionComplOrientation hF).connectedSpace
+  refine ⟨fun _ ↦ (zeroSectionComplOrientation_surjective hF).connectedSpace
     (continuous_zeroSectionComplOrientation hF), fun h ↦ ?_⟩
   obtain ⟨p⟩ := h.toNonempty
-  obtain ⟨v, -⟩ := surjective_zeroSectionComplOrientation hF p
+  obtain ⟨v, -⟩ := zeroSectionComplOrientation_surjective hF p
   rw [connectedSpace_iff_connectedComponent]
   refine ⟨v, ?_⟩
   rw [← preimage_connectedComponent_zeroSectionComplOrientation hF,

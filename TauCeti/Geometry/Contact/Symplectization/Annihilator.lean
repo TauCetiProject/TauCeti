@@ -337,6 +337,17 @@ theorem coe_annihilatorPunctured :
       zeroSectionCompl (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x :=
   (rfl)
 
+/-- The symplectization `ξ⁰ ∖ 0` is connected exactly when the complement of the zero section of
+the annihilator line is: the `Opens` subtype and the `Set` subtype have the same carrier
+(`TauCeti.IsContactDistribution.coe_annihilatorPunctured`), so `Homeomorph.setCongr` identifies
+them. -/
+theorem connectedSpace_annihilatorPunctured_iff_connectedSpace_zeroSectionCompl :
+    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+    ConnectedSpace hξ.annihilatorPunctured ↔
+      ConnectedSpace (zeroSectionCompl (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x) :=
+  letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
+  (Homeomorph.setCongr hξ.coe_annihilatorPunctured).connectedSpace_iff
+
 variable [T2Space M]
 
 /-- **The symplectization of a contact structure is nondegenerate.** The exterior derivative of
