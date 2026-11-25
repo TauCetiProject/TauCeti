@@ -72,7 +72,7 @@ theorem coefficient_circleFourierIndexSymbol_apply_one (x s : ℝ) :
 @[simp] theorem circleIndexSymbolScalar_one_left (s : ℝ) :
     circleIndexSymbolScalar ρ (1, s) = 1 := by simp [circleIndexSymbolScalar_apply]
 
-/-- At frequencies at most one the positive branch is absent or killed by the cutoff. -/
+/-- For `s ≤ 1 / 2` (Fourier frequency `2 * s ≤ 1`), the cylinder scalar is `1`. -/
 theorem circleIndexSymbolScalar_of_le_half (z : Circle) {s : ℝ} (hs : s ≤ 1 / 2) :
     circleIndexSymbolScalar ρ (z, s) = 1 := by
   rw [circleIndexSymbolScalar_apply]
@@ -84,7 +84,7 @@ theorem circleIndexSymbolScalar_of_le_half (z : Circle) {s : ℝ} (hs : s ≤ 1 
     simp [h]
   · simp
 
-/-- At frequencies at least two the full symbol is the first circle character. -/
+/-- For `1 ≤ s` (Fourier frequency `2 ≤ 2 * s`), the cylinder scalar is `z`. -/
 theorem circleIndexSymbolScalar_of_one_le (z : Circle) {s : ℝ} (hs : 1 ≤ s) :
     circleIndexSymbolScalar ρ (z, s) = z := by
   have h := ρ.apply_eq_one_of_two_le_norm (ξ := ι (2 * s)) (by
