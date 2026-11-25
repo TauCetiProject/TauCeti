@@ -16,15 +16,15 @@ public import Mathlib.Topology.Separation.Connected
 
 An element `f` of a finite-dimensional subalgebra of `C(X, 𝕜)` satisfies a nonzero polynomial
 equation: the powers `f, f², f³, …` are linearly dependent. So `f` takes only finitely many
-values. If `X` is preconnected, the range of `f` is preconnected, hence a point, and `f` is
-constant.
+values. If `X` is preconnected and `𝕜` is a T1 space, the range of `f` is a finite preconnected
+subset of `𝕜`, hence a point, and `f` is constant.
 
 ## Main statements
 
 * `ContinuousMap.finite_range_of_mem_finiteDimensional`: elements of a finite-dimensional
   subalgebra of `C(X, 𝕜)` have finite range.
-* `ContinuousMap.apply_eq_apply_of_mem_finiteDimensional`: on a preconnected space they are
-  constant.
+* `ContinuousMap.apply_eq_apply_of_mem_finiteDimensional`: on a preconnected space, with `𝕜` a
+  T1 space, they are constant.
 -/
 
 public section
@@ -55,8 +55,8 @@ theorem finite_range_of_mem_finiteDimensional (S : NonUnitalSubalgebra 𝕜 C(X,
   have := congrArg (fun h : S ↦ (h : C(X, 𝕜)) x) hsum
   simpa [P, Polynomial.eval_finsetSum] using this
 
-/-- On a preconnected space, an element of a finite-dimensional subalgebra of `C(X, 𝕜)` is
-constant. -/
+/-- On a preconnected space, with `𝕜` a T1 space, an element of a finite-dimensional subalgebra of
+`C(X, 𝕜)` is constant. -/
 theorem apply_eq_apply_of_mem_finiteDimensional [PreconnectedSpace X] [T1Space 𝕜]
     (S : NonUnitalSubalgebra 𝕜 C(X, 𝕜)) [FiniteDimensional 𝕜 S] {f : C(X, 𝕜)} (hf : f ∈ S)
     (x y : X) : f x = f y := by

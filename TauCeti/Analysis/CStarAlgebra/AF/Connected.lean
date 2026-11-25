@@ -13,7 +13,8 @@ public import TauCeti.Topology.ContinuousMap.FiniteDimensional
 # AF algebras of continuous functions on a connected space are trivial
 
 Every element of a finite-dimensional subalgebra of `C(X, 𝕜)` is constant when `X` is
-preconnected (`ContinuousMap.apply_eq_apply_of_mem_finiteDimensional`). Consequently, if `X` is
+preconnected and `𝕜` is a T1 space such as `ℂ`
+(`ContinuousMap.apply_eq_apply_of_mem_finiteDimensional`). Consequently, if `X` is
 compact and preconnected and `C(X, ℂ)` is AF, then the dense union of its finite-dimensional
 stages consists of constant functions, and so does `C(X, ℂ)`. So `C(X, ℂ)` is not AF once `X` is
 compact, connected and has two points; for instance `C([0, 1], ℂ)` is not AF.
