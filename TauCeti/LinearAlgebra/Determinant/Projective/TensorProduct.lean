@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Determinant.ConstantRank
 public import TauCeti.LinearAlgebra.Determinant.TensorProduct
+public import TauCeti.LinearAlgebra.TensorProduct.Tower
 
 /-!
 # The determinant of a tensor product of finite projective modules
@@ -35,18 +36,6 @@ variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Fini
   [Module.Projective R M] [AddCommGroup N] [Module R N] [Module.Finite R N]
   [Module.Projective R N]
 
-omit [Module.Finite R M] [Module.Projective R M] [Module.Finite R N] [Module.Projective R N] in
-/-- Base change of `f ⊗ g` along `R → A` is `(A ⊗ f) ⊗ (A ⊗ g)`, transported along
-`A ⊗ (M ⊗ N) ≅ (A ⊗ M) ⊗ (A ⊗ N)`. -/
-theorem baseChange_tensorProductMap (A : Type*) [CommRing A] [Algebra R A] (f : Module.End R M)
-    (g : Module.End R N) :
-    (TensorProduct.map f g).baseChange A =
-      ((AlgebraTensorModule.distribBaseChange R A M N).symm : _ →ₗ[A] _) ∘ₗ
-        TensorProduct.map (f.baseChange A) (g.baseChange A) ∘ₗ
-          (AlgebraTensorModule.distribBaseChange R A M N : _ →ₗ[A] _) := by
-  ext x y
-  simp
-
 /-- After a base change `R → A` making `M` and `N` free, the determinant of `f ⊗ g` is
 `det f ^ rank N * det g ^ rank M`, ranks taken over `A`. -/
 theorem algebraMap_projectiveDet_tensorProductMap (A : Type*) [CommRing A] [Algebra R A]
@@ -55,8 +44,13 @@ theorem algebraMap_projectiveDet_tensorProductMap (A : Type*) [CommRing A] [Alge
     algebraMap R A (projectiveDet (TensorProduct.map f g)) =
       algebraMap R A (projectiveDet f) ^ finrank A (A ⊗[R] N) *
         algebraMap R A (projectiveDet g) ^ finrank A (A ⊗[R] M) := by
-  rw [← projectiveDet_baseChange, ← projectiveDet_baseChange, ← projectiveDet_baseChange,
-    baseChange_tensorProductMap]
+  have h : (TensorProduct.map f g).baseChange A =
+      (AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap ∘ₗ
+        TensorProduct.map (f.baseChange A) (g.baseChange A) ∘ₗ
+          (AlgebraTensorModule.distribBaseChange R A M N).toLinearMap := by
+    rw [← comp_assoc, AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange, comp_assoc,
+      LinearEquiv.symm_comp, comp_id]
+  rw [← projectiveDet_baseChange, ← projectiveDet_baseChange, ← projectiveDet_baseChange, h]
   have := projectiveDet_conj (R := A) (M := (A ⊗[R] M) ⊗[A] (A ⊗[R] N))
     (N := A ⊗[R] (M ⊗[R] N)) (TensorProduct.map (f.baseChange A) (g.baseChange A))
     (AlgebraTensorModule.distribBaseChange R A M N).symm
@@ -73,11 +67,9 @@ theorem projectiveDet_tensorProductMap {m n : ℕ} (hM : ∀ p, rankAtStalk (R :
   let A := Localization.AtPrime P
   have : Module.Free A (A ⊗[R] M) := Module.free_of_flat_of_isLocalRing
   have : Module.Free A (A ⊗[R] N) := Module.free_of_flat_of_isLocalRing
-  have hm : finrank A (A ⊗[R] M) = m := by
-    rw [← rankAtStalk_eq_finrank_tensorProduct (M := M) ⟨P, inferInstance⟩, hM]
-  have hn : finrank A (A ⊗[R] N) = n := by
-    rw [← rankAtStalk_eq_finrank_tensorProduct (M := N) ⟨P, inferInstance⟩, hN]
   simp only [Algebra.linearMap_apply, map_mul, map_pow]
-  rw [algebraMap_projectiveDet_tensorProductMap A, hm, hn]
+  rw [algebraMap_projectiveDet_tensorProductMap A,
+    TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq (funext hM),
+    TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq (funext hN)]
 
 end LinearMap
