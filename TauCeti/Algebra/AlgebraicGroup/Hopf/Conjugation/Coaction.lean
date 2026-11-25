@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.ClassFunction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
 
@@ -44,6 +45,8 @@ of the quotient map `χ_G : G → G // G` on points.
 * `TauCeti.HopfAlgebra.mem_conjugationInvariants_iff_forall_conj`: a function is invariant
   exactly when it is constant on conjugacy classes of points with values in every commutative
   algebra.
+* `TauCeti.HopfAlgebra.conjugationInvariants_eq_classFunctions`: the invariant functions are the
+  class functions.
 
 ## References
 
@@ -160,7 +163,7 @@ theorem assoc_comp_map_conjugationCoactAlgHom :
     rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft, AlgHom.comp_assoc]
   have hcomul : toConv ((Algebra.TensorProduct.map (AlgHom.id R H)
       (Bialgebra.comulAlgHom R H)).comp Algebra.TensorProduct.includeRight) = g₁ * g₂ := by
-    rw [Algebra.TensorProduct.map_comp_includeRight, Bialgebra.toConv_comp_comulAlgHom]
+    rw [Algebra.TensorProduct.map_comp_includeRight, AlgHom.toConv_comp_comulAlgHom]
   have hmapLeft : (Algebra.TensorProduct.map (AlgHom.id R H)
       (Bialgebra.comulAlgHom R H)).comp Algebra.TensorProduct.includeLeft =
       (Algebra.TensorProduct.includeLeft : H →ₐ[R] H ⊗[R] (H ⊗[R] H)) := by
@@ -288,6 +291,15 @@ theorem mem_conjugationInvariants_iff_conjugationAlgHom {f : H} :
       (productMap_comp_conjugationAlgHom (R := R) (H := H) g x) f
     rw [AlgHom.comp_apply, h] at hc
     simpa using hc.symm
+
+variable (R H) in
+/-- **The conjugation-invariant functions are the class functions**: the coinvariants of the right
+conjugation coaction are the equalizer `TauCeti.HopfAlgebra.classFunctions` of the left
+conjugation coordinate map and the second-factor inclusion. -/
+theorem conjugationInvariants_eq_classFunctions :
+    conjugationInvariants R H = classFunctions R H :=
+  SetLike.ext fun _ ↦
+    mem_conjugationInvariants_iff_conjugationAlgHom.trans mem_classFunctions_iff.symm
 
 end HopfAlgebra
 

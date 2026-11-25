@@ -23,6 +23,7 @@ transpose on invertible real or complex matrices, viewed as a real smooth map.
 
 * `Units.mvfderiv_val`: the vector-valued derivative of the units inclusion is the identity.
 * `Units.hasMFDerivAt_val`: the units inclusion has the identity as derivative.
+* `Units.isInvertible_mfderiv_val`: the derivative of the units inclusion is invertible.
 * `Units.contMDiff_star`: star is smooth on the group of units.
 
 ## References
@@ -64,6 +65,13 @@ theorem hasMFDerivAt_val (u : Rˣ) :
   -- The tangent space `TangentSpace 𝓘(𝕜, R) u` is `R`, so both sides are `v`.
   rw [← mvfderiv_apply_eq_mfderiv_apply, mvfderiv_val]
   rfl
+
+/-- The derivative of the units inclusion is invertible at every unit. -/
+theorem isInvertible_mfderiv_val (u : Rˣ) :
+    (mfderiv 𝓘(𝕜, R) 𝓘(𝕜, R) (val : Rˣ → R) u).IsInvertible := by
+  have hc : (extChartAt 𝓘(𝕜, R) u : Rˣ → R) = val := funext fun _ ↦ by simp
+  rw [← hc]
+  exact isInvertible_mfderiv_extChartAt (mem_extChartAt_source u)
 
 end Deriv
 

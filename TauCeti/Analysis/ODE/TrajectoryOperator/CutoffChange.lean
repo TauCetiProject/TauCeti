@@ -40,7 +40,10 @@ the cutoffs `χ'` to the one for `χ`
 (`TauCeti.WeakDerivStep.coprod_endTailL_comp_cutoffChangeEquiv`). Consequently the two extended
 operators have the same range, isomorphic kernels and the same index, and one is Fredholm exactly
 when the other is. The shears are coherent: the one from a family of cutoffs to itself is the
-identity, they compose, and the inverse of a shear is the shear back.
+identity, they compose, and the inverse of a shear is the shear back. For the same reason the
+space `TauCeti.weightedAsymptoticSolutions` of initial values and free endpoint variables of the
+solutions whose weighted difference from the free variables is square integrable does not depend
+on the cutoffs.
 
 ## Main declarations
 
@@ -60,6 +63,8 @@ identity, they compose, and the inverse of a shear is the shear back.
   `TauCeti.WeakDerivStep.index_coprod_endTailL_eq_of_hasCompactSupport_sub` and
   `TauCeti.WeakDerivStep.isFredholm_coprod_endTailL_iff_of_hasCompactSupport_sub`: the range, the
   kernel, the index and Fredholmness do not depend on the cutoffs.
+* `TauCeti.weightedAsymptoticSolutions_eq_of_hasCompactSupport_sub`: neither does the space of
+  solutions with prescribed initial value and free endpoint variables.
 
 ## References
 
@@ -155,6 +160,30 @@ theorem hasDerivAt_cutoffChangePath {A : ℝ → F →L[ℝ] F} {s : ℝ} (hw : 
     ContinuousLinearMap.id_apply, map_smul, map_sum, map_sub, sub_smul, Finset.sum_sub_distrib,
     Finset.smul_sum, smul_add, smul_sub, Finset.sum_add_distrib, mul_smul, smul_comm (w' s)]
   abel
+
+/-- **The solutions with given initial value and free endpoint variables do not depend on the
+cutoffs**, as long as each difference of cutoffs is continuous with compact support: changing the
+cutoffs adds `TauCeti.cutoffChangePath` to the weighted difference
+`exp w • (u - ∑ i, χ i • v i)` of a solution `u`, and this path is square integrable. -/
+theorem weightedAsymptoticSolutions_eq_of_hasCompactSupport_sub (A : ℝ → F →L[ℝ] F)
+    (hw : Continuous w) (hχ : ∀ i, Continuous (χ i - χ' i))
+    (hsupp : ∀ i, HasCompactSupport (χ i - χ' i)) :
+    weightedAsymptoticSolutions A w K χ = weightedAsymptoticSolutions A w K χ' := by
+  ext q
+  have hg : MemLp (cutoffChangePath w χ χ' q.2) 2 :=
+    (hw.rexp.smul (continuous_finsetSum _ fun i _ ↦ (hχ i).smul continuous_const)
+      |>.memLp_of_hasCompactSupport (hasCompactSupport_cutoffChangePath hsupp q.2))
+  have heq (u : ℝ → F) : (fun s ↦ Real.exp (w s) • (u s - ∑ i, χ' i s • (q.2 i : F))) =
+      (fun s ↦ Real.exp (w s) • (u s - ∑ i, χ i s • (q.2 i : F))) +
+        cutoffChangePath w χ χ' q.2 := by
+    ext s
+    rw [Pi.add_apply, cutoffChangePath_apply, ← smul_add]
+    congr 1
+    simp only [sub_smul, Finset.sum_sub_distrib]
+    abel
+  simp only [mem_weightedAsymptoticSolutions, heq]
+  exact exists_congr fun u ↦ and_congr_right' <| and_congr_right'
+    ⟨fun h ↦ h.add hg, fun h ↦ by simpa using h.sub hg⟩
 
 end CutoffChangePath
 

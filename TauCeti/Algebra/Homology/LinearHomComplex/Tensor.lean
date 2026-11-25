@@ -130,8 +130,9 @@ lemma δ_tensor {p q n m : ℤ} (z₁ : Cochain X₁ Y₁ p) (z₂ : Cochain X�
   -- `Y₁ ⊗ Y₂` and `X₁ ⊗ X₂`; each of the latter splits into two summand terms.
   rw [ιTensorObj_tensor_v_assoc z₁ z₂ rfl a b i (j - 1) (a + p) (b + q) hab (by omega) rfl rfl,
     Linear.units_smul_comp, Category.assoc,
-    ι_tensorObj_d' Y₁ Y₂ (by omega : a + p + (b + q) = j - 1) rfl rfl (by omega : j - 1 + 1 = j),
-    ι_tensorObj_d'_assoc X₁ X₂ hab rfl rfl rfl, Preadditive.add_comp, Linear.units_smul_comp,
+    ιTensorObj_tensor_d' Y₁ Y₂ (by omega : a + p + (b + q) = j - 1) rfl rfl
+      (by omega : j - 1 + 1 = j),
+    ιTensorObj_tensor_d'_assoc X₁ X₂ hab rfl rfl rfl, Preadditive.add_comp, Linear.units_smul_comp,
     Category.assoc, Category.assoc]
   -- Evaluate every remaining tensor product of cochains on its summand.
   rw [ιTensorObj_tensor_v z₁ z₂ rfl (a + 1) b (i + 1) j (a + p + 1) (b + q) _ _ (by omega) rfl,
@@ -364,7 +365,7 @@ lemma cochainTensorTensor_tmul (p q j : ℤ)
   (rfl)
 
 /- As in `TauCeti.linearHomComplexComp`, the totalized tensor differential of the two Hom
-complexes is expanded on a summand by `HomologicalComplex.ι_tensorObj_d`, and the Leibniz rule
+complexes is expanded on a summand by `HomologicalComplex.ιTensorObj_tensor_d`, and the Leibniz rule
 `Cochain.δ_tensor` closes the square. -/
 private lemma cochainTensorTensor_d (p q j : ℤ)
     (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q) = j) :
@@ -374,33 +375,22 @@ private lemma cochainTensorTensor_d (p q j : ℤ)
         HomologicalComplex.mapBifunctorDesc (cochainTensorTensor R X₁ Y₁ X₂ Y₂ · · (j + 1) ·) =
       cochainTensorTensor R X₁ Y₁ X₂ Y₂ p q j h ≫
         (linearHomComplex R (X₁ ⊗ X₂) (Y₁ ⊗ Y₂)).d j (j + 1) := by
-  -- `ComplexShape.π` is an abbreviation; Mathlib has no named specialization at
-  -- `ComplexShape.up ℤ`.
-  replace h : p + q = j := h
-  rw [HomologicalComplex.ι_tensorObj_d_assoc _ _ p q j h, Preadditive.add_comp,
-    Linear.units_smul_comp, Category.assoc, Category.assoc,
-    HomologicalComplex.ι_mapBifunctorDesc, HomologicalComplex.ι_mapBifunctorDesc]
+  rw [ComplexShape.π_eq_add] at h
+  rw [HomologicalComplex.ιTensorObj_tensor_d_assoc _ _ p q j h]
+  simp only [Preadditive.add_comp, Linear.units_smul_comp, Category.assoc,
+    HomologicalComplex.ι_mapBifunctorDesc]
   apply ModuleCat.MonoidalCategory.tensor_ext
-  intro z₁ z₂
-  let z₁' : ModuleCat.of R (Cochain X₁ Y₁ p) := z₁
-  let z₂' : ModuleCat.of R (Cochain X₂ Y₂ q) := z₂
-  simp only [curriedTensor_obj_obj, ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
-    curriedTensor_map_app, curriedTensor_obj_map, ModuleCat.hom_add, ModuleCat.hom_smul,
-    LinearMap.add_apply, ModuleCat.MonoidalCategory.whiskerRight_apply, LinearMap.smul_apply,
-    ModuleCat.MonoidalCategory.whiskerLeft_apply]
-  -- Read the differential of the tensor product on this pure tensor in the degreewise cochain
-  -- modules characterized by `linearHomComplex_X`.
-  change ModuleCat.Hom.hom (cochainTensorTensor R X₁ Y₁ X₂ Y₂ (p + 1) q (j + 1)
-        (show p + 1 + q = j + 1 by omega)) (
-        ModuleCat.Hom.hom ((linearHomComplex R X₁ Y₁).d p (p + 1)) z₁' ⊗ₜ z₂') +
-      p.negOnePow • ModuleCat.Hom.hom (cochainTensorTensor R X₁ Y₁ X₂ Y₂ p (q + 1) (j + 1)
-        (show p + (q + 1) = j + 1 by omega))
-        (z₁' ⊗ₜ ModuleCat.Hom.hom ((linearHomComplex R X₂ Y₂).d q (q + 1)) z₂') =
-    ModuleCat.Hom.hom ((linearHomComplex R (X₁ ⊗ X₂) (Y₁ ⊗ Y₂)).d j (j + 1))
-      (ModuleCat.Hom.hom (cochainTensorTensor R X₁ Y₁ X₂ Y₂ p q j h) (z₁' ⊗ₜ z₂'))
-  rw [linearHomComplex_d_hom_apply, linearHomComplex_d_hom_apply, cochainTensorTensor_tmul,
-    cochainTensorTensor_tmul, cochainTensorTensor_tmul, linearHomComplex_d_hom_apply]
-  exact (Cochain.δ_tensor z₁' z₂' h (by omega)).symm
+  intro (z₁ : Cochain X₁ Y₁ p) (z₂ : Cochain X₂ Y₂ q)
+  simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, ModuleCat.hom_add,
+    ModuleCat.hom_smul, LinearMap.add_apply, ModuleCat.MonoidalCategory.whiskerRight_apply,
+    LinearMap.smul_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
+  -- The evaluation lemmas `linearHomComplex_d_hom_apply` and `cochainTensorTensor_tmul` are
+  -- stated on the modules `ModuleCat.of R (Cochain _ _ _)`, while the maps here still have source
+  -- and target `(linearHomComplex _ _ _).X _`; `simp` does not unfold `linearHomComplex` to match
+  -- them, so first align these coefficient modules by `linearHomComplex_X`.
+  dsimp only [CochainComplex.linearHomComplex_X]
+  simp only [CochainComplex.linearHomComplex_d_hom_apply, cochainTensorTensor_tmul]
+  exact (Cochain.δ_tensor z₁ z₂ h (by omega)).symm
 
 /-- **The tensor product of cochains is a closed degree-zero map.** It assembles into a morphism
 of cochain complexes of `R`-modules

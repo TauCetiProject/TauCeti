@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.Topology.Compactness.Normed
 
 /-!
@@ -26,7 +26,8 @@ of `TauCeti.Geometry.Symplectic.Floer.Perturbation.Basic` and
 `TauCeti.Geometry.Symplectic.Floer.Transversality.AlmostComplexVariation` take them: Hamiltonian
 variations of the perturbation, and variations of the almost complex structure at injective
 points, force such an `η` to vanish on an open set. The pairing uses no metric on `V`, so no
-compatibility of `J` with `ω` is needed in this file, and `J` need not square to `-1`.
+compatibility of `J` with `ω` is needed in this file (the `ω`-form below only asks that `J`
+preserve `ω`), and `J` need not square to `-1`.
 
 Integrating by parts against this pairing gives the **formal adjoint**
 
@@ -39,21 +40,35 @@ Integrating by parts against this pairing gives the **formal adjoint**
   (`floerLinearizationAdjoint_eq_neg`), where `∂t J` is the `t`-derivative of `z ↦ J(z, u z)`.
   So `D^* η = 0` is a first-order real Cauchy–Riemann equation for `η` with leading coefficient
   `θ ↦ θ ∘ J`, which is again a complex structure, on the dual space, when `J` is one: this is the
-  equation on which unique continuation for cokernel elements acts. Two adjoints therefore differ
-  on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`, with `A = ∂t J - C`
+  equation on which unique continuation for cokernel elements acts. Written through `ω` as the
+  vector field `ζ = ω♭⁻¹ ∘ η` (`fderiv_flatEquiv_symm_apply`), at a point where `J` preserves `ω`
+  the adjoint is `-ω♭` of `∂s ζ - J ∂t ζ + Aᵀ ζ`, a Cauchy–Riemann operator for `-J`, with
+  `A = ∂t J - C` and `ᵀ` the `ω`-transpose (`floerLinearizationAdjoint_eq_neg_flatEquiv`). From
+  the first form, two adjoints differ on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`
   (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`), and translating the data,
   the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`).
 * **Weights.** Multiplying `η` by a function `β(s)` gives `β D^* η - β' η`
-  (`floerLinearizationAdjoint_smul_fst`), and in particular the weight `e^{δ s}` shifts the adjoint
-  by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
+  (`floerLinearizationAdjoint_smul_fst`); for a function `f` of both variables the derivative of
+  `f` in `t` also enters, through `η ∘ J` (`floerLinearizationAdjoint_fun_smul`), so
+  `‖D^* (f η)‖ ≤ |f| ‖D^* η‖ + ‖df‖ (1 + ‖J‖) ‖η‖`
+  (`norm_floerLinearizationAdjoint_fun_smul_le`), and for `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B`,
+  `‖D^* (f η)‖² ≤ 2 ‖D^* η‖² + 2 (M (1 + B))² ‖η‖²`
+  (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). In particular the weight `e^{δ s}` shifts
+  the adjoint by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since
+  `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
   (`TauCeti.SymplecticForm.floerLinearization_exp_smul`), this is the weight dual to `e^{-δ s}`:
   both conjugated operators are `D - δ` and its adjoint `D^* - δ`.
 * **Green's formula.** Pointwise,
   `η(D ξ) = (D^* η)(ξ) + ∂s (η(ξ)) + ∂t ((η ∘ J)(ξ))`
-  (`apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add`). Integrated, for a `C¹`
-  map `ξ` with compact support and data that are `C¹` (Hamiltonians `C²`) near its support,
-  `∫ η(D ξ) = ∫ (D^* η)(ξ)` over the plane
-  (`integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_apply`).
+  (`apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add`). Integrated, when the
+  common support of `η` and `ξ` is compact and `η`, `ξ` and the data are `C¹` (Hamiltonians `C²`)
+  on it, `∫ η(D ξ) = ∫ (D^* η)(ξ)` over the plane
+  (`integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_apply`). Over a closed
+  rectangle, with regularity only on the rectangle, the same identity holds when `η(ξ)` takes
+  equal values on the two vertical sides and `(η ∘ J)(ξ)` on the two horizontal sides
+  (`setIntegral_apply_floerLinearization_eq_setIntegral_floerLinearizationAdjoint_apply`, by the
+  divergence theorem); on `[a, b] × [0, 1]` this covers `ξ` vanishing at `s = a, b` with `η`, `ξ`
+  and `J(·, u ·)` of period one in `t`.
 * **Classical cokernel elements.** If `η` is `C¹` on an open set `U`, then it annihilates `D ξ` for
   every smooth `ξ` compactly supported in `U` exactly when `D^* η = 0` on `U`
   (`forall_integral_apply_floerLinearization_eq_zero_iff`). This is the fundamental lemma of
@@ -216,6 +231,36 @@ theorem floerLinearizationAdjoint_eq_neg (hη : DifferentiableAt ℝ η z)
   simp only [add_apply, comp_apply, compL_apply, flip_apply, comp_sub]
   abel
 
+/-- **The formal adjoint through `ω`.** Write a covector field as `η = ω♭ ∘ ζ`, where
+`ω♭ v = ω(v, ·)`. At a point where `J(z, u z)` preserves `ω`, the formal adjoint is `-ω♭` of
+
+`∂s ζ - J(z, u z) ∂t ζ + Aᵀ ζ`,
+
+where `A = ∂t J - C` is the zeroth-order coefficient of `floerLinearizationAdjoint_eq_neg` and `ᵀ`
+is the `ω`-transpose. This is a Cauchy–Riemann operator for `-J`, which is compatible with `-ω`
+when `J` is compatible with `ω`. -/
+theorem floerLinearizationAdjoint_eq_neg_flatEquiv (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} {z : ℝ × ℝ} (hη : DifferentiableAt ℝ η z)
+    (hJu : DifferentiableAt ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) z)
+    (hc : ω.Invariant (J z (u z))) :
+    ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η
+        z =
+      -ω.flatEquiv (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineReal +
+        (-J z (u z)) (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineImag) +
+        ω.leftAdjointL (fderiv ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) z
+            stdComplexLineImag -
+          ω.floerLinearizationCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+            u z) (ω.flatEquiv.symm (η z))) := by
+  rw [floerLinearizationAdjoint_eq_neg hη hJu, fderiv_flatEquiv_symm_apply,
+    fderiv_flatEquiv_symm_apply]
+  ext w
+  simp only [ContinuousLinearMap.comp_apply, map_neg,
+    flatEquiv_apply, map_add, apply_leftAdjointL_apply, apply_flatEquiv_symm_apply, neg_apply,
+    add_apply, AlmostComplexStructure.neg_apply, hc.apply_apply_eq_neg,
+    LinearMap.coe_toContinuousLinearMap']
+  ring
+
 /-- **Comparing two formal adjoints.** At a point where `w ↦ J(w, u w)` and
 `w ↦ J₁(w, u₁ w)` are differentiable, the formal adjoints along two data sets differ on `η` by at
 most `‖J(z, u z) - J₁(z, u₁ z)‖ ‖∂t η‖ + ‖A(z) - A₁(z)‖ ‖η‖`, where `A = ∂t J - C` is the
@@ -237,25 +282,81 @@ theorem norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
     exact (opNorm_comp_le _ _).trans_eq (mul_comm _ _)
 
+/-- **Multiplying by a function.** If `f` and `η` are differentiable at `z`, the formal adjoint
+sends `f η` to `f D^* η - (∂s f) η - (∂t f) (η ∘ J(z, u z))`: the leading terms `-∂s η` and
+`-∂t (η ∘ J)` differentiate the factor. This is the adjoint counterpart of
+`floerLinearization_fun_smul`. -/
+theorem floerLinearizationAdjoint_fun_smul {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z)
+    (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
+    ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z =
+      f z • ω.floerLinearizationAdjoint J Ks Kt u η z - fderiv ℝ f z stdComplexLineReal • η z -
+        fderiv ℝ f z stdComplexLineImag • (η z).comp (J z (u z)) := by
+  have hd : HasFDerivAt (fun w ↦ f w • η w) _ z := hf.hasFDerivAt.smul hη.hasFDerivAt
+  have hc : (fun w ↦ (f w • η w).comp (J w (u w))) = fun w ↦ f w • (η w).comp (J w (u w)) := by
+    ext w
+    simp
+  have hdc : HasFDerivAt (fun w ↦ f w • (η w).comp (J w (u w))) _ z :=
+    hf.hasFDerivAt.smul (hη.clm_comp hJu).hasFDerivAt
+  rw [floerLinearizationAdjoint_def, hd.fderiv, hc, hdc.fderiv, floerLinearizationAdjoint_def]
+  simp only [add_apply, smul_apply, smulRight_apply, smul_comp]
+  module
+
 /-- **Multiplying by a function of `s`.** If `β` has derivative `β'` at `s`, the formal adjoint at
 `z = (s, t)` sends `β(s) η` to `β(s) D^* η - β' η`: the factor only differentiates in the `s`
-direction, where the adjoint has the leading term `-∂s`. -/
+direction, where the adjoint has the leading term `-∂s`. This is the case `f(s, t) = β(s)` of
+`floerLinearizationAdjoint_fun_smul`. -/
 theorem floerLinearizationAdjoint_smul_fst {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
     (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
     ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ β w.1 • η w) z =
       β z.1 • ω.floerLinearizationAdjoint J Ks Kt u η z - β' • η z := by
   have hb : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1) _ z := hβ.hasFDerivAt.comp z hasFDerivAt_fst
-  have hd : HasFDerivAt (fun w ↦ β w.1 • η w) _ z := hb.smul hη.hasFDerivAt
-  have hc : (fun w ↦ (β w.1 • η w).comp (J w (u w))) =
-      fun w ↦ β w.1 • (η w).comp (J w (u w)) := by
-    ext w
-    simp
-  have hdc : HasFDerivAt (fun w ↦ β w.1 • (η w).comp (J w (u w))) _ z :=
-    hb.smul (hη.clm_comp hJu).hasFDerivAt
-  rw [floerLinearizationAdjoint_def, hd.fderiv, hc, hdc.fderiv, floerLinearizationAdjoint_def]
-  simp only [add_apply, smul_apply, smulRight_apply, comp_apply, ContinuousLinearMap.coe_fst',
-    toSpanSingleton_apply, stdComplexLineReal_fst, stdComplexLineImag_fst, smul_comp, smul_eq_mul]
-  module
+  rw [floerLinearizationAdjoint_fun_smul hb.differentiableAt hη hJu, hb.fderiv]
+  simp [stdComplexLineReal_fst, stdComplexLineImag_fst]
+
+/-- **The adjoint on a cut-off covector field, pointwise.** At a point where `f`, `η` and
+`w ↦ J(w, u w)` are differentiable, `‖D^* (f η)‖ ≤ |f| ‖D^* η‖ + ‖df‖ (1 + ‖J‖) ‖η‖`. -/
+theorem norm_floerLinearizationAdjoint_fun_smul_le {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z)
+    (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
+    ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ≤
+      |f z| * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ +
+        ‖fderiv ℝ f z‖ * (1 + ‖J z (u z)‖) * ‖η z‖ := by
+  have hre : ‖fderiv ℝ f z stdComplexLineReal‖ ≤ ‖fderiv ℝ f z‖ :=
+    (le_opNorm _ _).trans (by simp [stdComplexLineReal])
+  have him : ‖fderiv ℝ f z stdComplexLineImag‖ ≤ ‖fderiv ℝ f z‖ :=
+    (le_opNorm _ _).trans (by simp [stdComplexLineImag])
+  have hJ : ‖(η z).comp (J z (u z))‖ ≤ ‖J z (u z)‖ * ‖η z‖ :=
+    (opNorm_comp_le _ _).trans_eq (mul_comm _ _)
+  rw [floerLinearizationAdjoint_fun_smul hf hη hJu, sub_sub]
+  refine (norm_sub_le _ _).trans ?_
+  rw [norm_smul, Real.norm_eq_abs]
+  have h := norm_add_le (fderiv ℝ f z stdComplexLineReal • η z)
+    (fderiv ℝ f z stdComplexLineImag • (η z).comp (J z (u z)))
+  rw [norm_smul, norm_smul] at h
+  have h₁ := mul_le_mul_of_nonneg_right hre (norm_nonneg (η z))
+  have h₂ := mul_le_mul hJ him (norm_nonneg _) (by positivity)
+  nlinarith [norm_nonneg (fderiv ℝ f z), norm_nonneg (η z), norm_nonneg (J z (u z))]
+
+/-- **The formal adjoint on a cut-off covector field, pointwise.** If `|f| ≤ 1`, `‖df‖ ≤ M` and
+`‖J‖ ≤ B` at `z`, then `‖D^* (f η)‖² ≤ 2 ‖D^* η‖² + 2 (M (1 + B))² ‖η‖²` at `z`. This is the
+adjoint counterpart of `norm_floerLinearization_fun_smul_sq_le`. -/
+theorem norm_floerLinearizationAdjoint_fun_smul_sq_le {f : ℝ × ℝ → ℝ}
+    (hf : DifferentiableAt ℝ f z) (hη : DifferentiableAt ℝ η z)
+    (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) (hf₁ : |f z| ≤ 1) {M B : ℝ}
+    (hM : ‖fderiv ℝ f z‖ ≤ M) (hB : ‖J z (u z)‖ ≤ B) :
+    ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ^ 2 ≤
+      2 * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 + 2 * (M * (1 + B)) ^ 2 * ‖η z‖ ^ 2 := by
+  have hM₀ : 0 ≤ M := (norm_nonneg _).trans hM
+  have h₁ : ‖fderiv ℝ f z stdComplexLineReal • η z‖ ≤ M * ‖η z‖ := by
+    rw [norm_smul]
+    gcongr
+    exact (le_opNorm _ _).trans (by simp [stdComplexLineReal, hM])
+  have h₂ : ‖fderiv ℝ f z stdComplexLineImag • (η z).comp (J z (u z))‖ ≤ M * (B * ‖η z‖) := by
+    rw [norm_smul]
+    gcongr
+    · exact (le_opNorm _ _).trans (by simp [stdComplexLineImag, hM])
+    · exact (opNorm_comp_le _ _).trans (by rw [mul_comm]; gcongr)
+  rw [floerLinearizationAdjoint_fun_smul hf hη hJu, sub_eq_add_neg, sub_eq_add_neg]
+  exact norm_smul_add_add_sq_le hf₁ ((norm_neg _).trans_le h₁) ((norm_neg _).trans_le h₂)
 
 /-- **Conjugating the formal adjoint by an exponential weight.** On covector fields of the form
 `e^{δ s} η`, the formal adjoint acts as `e^{δ s} (D^* - δ) η`. This is the dual of
@@ -332,67 +433,152 @@ theorem continuous_floerLinearizationAdjoint_of_tsupport_subset {U : Set (ℝ ×
         fun w hw ↦ floerLinearizationAdjoint_of_notMem_tsupport hw
     exact continuousAt_const.congr h.symm
 
-/-- **Green's formula for compactly supported maps.** Let `ξ` be `C¹` with compact support, and
-let `u` and the covector field `η` be `C¹`, the coefficients `J` be `C¹` and the Hamiltonians
-`K_s`, `K_t` be `C²`, at each point of the support of `ξ` (at `(z, u z)` for the coefficients).
-Then `∫ η(D ξ) = ∫ (D^* η)(ξ)` over the whole plane. -/
+/-- Off the common topological support of `η` and `ξ`, the pairings `η(D ξ)`, `(D^* η)(ξ)`,
+`η(ξ)` and `(η ∘ J)(ξ)` all vanish near the point. -/
+private theorem eventually_notMem_tsupport_inter (hz : z ∉ tsupport η ∩ tsupport ξ) :
+    ∀ᶠ w in 𝓝 z, η w (ω.floerLinearization J Ks Kt u ξ w) = 0 ∧
+      ω.floerLinearizationAdjoint J Ks Kt u η w (ξ w) = 0 ∧ η w (ξ w) = 0 ∧
+        (η w).comp (J w (u w)) (ξ w) = 0 := by
+  filter_upwards [((isClosed_tsupport η).inter (isClosed_tsupport ξ)).isOpen_compl.mem_nhds hz]
+    with w hw
+  rcases not_and_or.1 hw with h | h
+  · simp [floerLinearizationAdjoint_of_notMem_tsupport (ω := ω) (J := J) (Ks := Ks) (Kt := Kt)
+      (u := u) h, image_eq_zero_of_notMem_tsupport h]
+  · rw [ω.floerLinearization_congr_of_eventuallyEq J Ks Kt u
+      (notMem_tsupport_iff_eventuallyEq.1 h)]
+    simp [image_eq_zero_of_notMem_tsupport h]
+
+/-- **Green's formula over the plane.** Let the common topological support of the covector field
+`η` and the map `ξ` be compact, and on it let `u`, `η` and `ξ` be `C¹`, the coefficients `J` be
+`C¹` and the Hamiltonians `K_s`, `K_t` be `C²` (at `(z, u z)` for the coefficients). Then
+`∫ η(D ξ) = ∫ (D^* η)(ξ)` over the whole plane. This covers both a compactly supported `ξ` paired
+with any `η` that is `C¹` near its support, and a compactly supported `η` paired with any `ξ` that
+is `C¹` near the support of `η`. -/
 theorem integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_apply
-    (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ)
-    (hJ : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hKs : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
-    (hKt : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
-    (hu : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 1 u z) (hη : ∀ z ∈ tsupport ξ, ContDiffAt ℝ 1 η z) :
+    (hJ : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 1 u z)
+    (hη : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 1 η z)
+    (hξ : ∀ z ∈ tsupport η ∩ tsupport ξ, ContDiffAt ℝ 1 ξ z)
+    (hc : IsCompact (tsupport η ∩ tsupport ξ)) :
     ∫ z, η z (ω.floerLinearization J Ks Kt u ξ z) =
       ∫ z, ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z) := by
+  set K := tsupport η ∩ tsupport ξ
+  have hK : IsClosed K := (isClosed_tsupport η).inter (isClosed_tsupport ξ)
+  have hev {z : ℝ × ℝ} (hz : z ∉ K) :=
+    eventually_notMem_tsupport_inter (ω := ω) (J := J) (Ks := Ks) (Kt := Kt) (u := u) hz
+  have hJu (z : ℝ × ℝ) (hz : z ∈ K) : ContDiffAt ℝ 1 (fun w ↦ J w (u w)) z :=
+    (hJ z hz).comp₂ contDiffAt_id (hu z hz)
+  -- The two divergence terms of the pointwise Green formula are derivatives of compactly
+  -- supported `C¹` functions, so they integrate to zero.
+  set F : ℝ × ℝ → ℝ := fun w ↦ η w (ξ w)
+  set G : ℝ × ℝ → ℝ := fun w ↦ (η w).comp (J w (u w)) (ξ w)
+  have hF : ContDiff ℝ 1 F := contDiff_iff_contDiffAt.2 fun z ↦ by
+    by_cases hz : z ∈ K
+    · exact (hη z hz).clm_apply (hξ z hz)
+    · exact contDiffAt_const.congr_of_eventuallyEq ((hev hz).mono fun _ hw ↦ hw.2.2.1)
+  have hG : ContDiff ℝ 1 G := contDiff_iff_contDiffAt.2 fun z ↦ by
+    by_cases hz : z ∈ K
+    · exact ((hη z hz).clm_comp (hJu z hz)).clm_apply (hξ z hz)
+    · exact contDiffAt_const.congr_of_eventuallyEq ((hev hz).mono fun _ hw ↦ hw.2.2.2)
+  have hFc : HasCompactSupport F := .intro' hc hK fun _ hz ↦ (hev hz).self_of_nhds.2.2.1
+  have hGc : HasCompactSupport G := .intro' hc hK fun _ hz ↦ (hev hz).self_of_nhds.2.2.2
+  -- The term `(D^* η)(ξ)` is continuous with compact support.
+  have hT : Integrable fun z ↦ ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z) := by
+    refine Continuous.integrable_of_hasCompactSupport (continuous_iff_continuousAt.2 fun z ↦ ?_)
+      (.intro' hc hK fun _ hz ↦ (hev hz).self_of_nhds.2.1)
+    by_cases hz : z ∈ K
+    · exact (continuousAt_floerLinearizationAdjoint (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz)
+        (hη z hz)).clm_apply (hξ z hz).continuousAt
+    · exact continuousAt_const.congr ((hev hz).mono fun _ hw ↦ hw.2.1.symm)
+  -- The pointwise Green formula holds everywhere.
+  have hpt (z : ℝ × ℝ) : η z (ω.floerLinearization J Ks Kt u ξ z) =
+      ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z) + fderiv ℝ F z stdComplexLineReal +
+        fderiv ℝ G z stdComplexLineImag := by
+    by_cases hz : z ∈ K
+    · exact apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add
+        ((hξ z hz).differentiableAt one_ne_zero) ((hη z hz).differentiableAt one_ne_zero)
+        ((hJu z hz).differentiableAt one_ne_zero)
+    · have hF0 : F =ᶠ[𝓝 z] fun _ ↦ 0 := (hev hz).mono fun _ hw ↦ hw.2.2.1
+      have hG0 : G =ᶠ[𝓝 z] fun _ ↦ 0 := (hev hz).mono fun _ hw ↦ hw.2.2.2
+      rw [(hev hz).self_of_nhds.1, (hev hz).self_of_nhds.2.1, hF0.fderiv_eq, hG0.fderiv_eq]
+      simp
+  simp_rw [hpt]
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  set K := tsupport ξ
-  set A : ℝ × ℝ → V →L[ℝ] ℝ := fun w ↦ (η w).comp (J w (u w))
-  set C := ω.floerLinearizationCoeff J Ks Kt u
-  have hA (z : ℝ × ℝ) (hz : z ∈ K) : ContDiffAt ℝ 1 A z :=
-    (hη z hz).clm_comp ((hJ z hz).comp₂ contDiffAt_id (hu z hz))
-  -- The pairings of `η`, `A` and their derivatives with `ξ` and its derivatives are integrable:
-  -- each is continuous on the support of `ξ`, which is compact.
-  have hdξ (v : ℝ × ℝ) {F : ℝ × ℝ → V →L[ℝ] ℝ} (hF : ∀ z ∈ K, ContinuousAt F z) :
-      Integrable fun z ↦ F z (fderiv ℝ ξ z v) :=
-    Continuous.integrable_clm_apply_of_continuousOn
-      ((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const) (hξc.fderiv_apply (𝕜 := ℝ) v)
-      (tsupport_fderiv_apply_subset ℝ v) fun z hz ↦ (hF z hz).continuousWithinAt
-  have hξK {F : ℝ × ℝ → V →L[ℝ] ℝ} (hF : ∀ z ∈ K, ContinuousAt F z) :
-      Integrable fun z ↦ F z (ξ z) :=
-    hξ.continuous.integrable_clm_apply_of_continuousOn hξc subset_rfl fun z hz ↦
-      (hF z hz).continuousWithinAt
-  have hd {F : ℝ × ℝ → V →L[ℝ] ℝ} (hF : ∀ z ∈ K, ContDiffAt ℝ 1 F z) (v : ℝ × ℝ) (z : ℝ × ℝ)
-      (hz : z ∈ K) : ContinuousAt (fun w ↦ fderiv ℝ F w v) z :=
-    ((hF z hz).continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const
-  have ha := hdξ stdComplexLineReal fun z hz ↦ (hη z hz).continuousAt
-  have hb := hdξ stdComplexLineImag fun z hz ↦ (hA z hz).continuousAt
-  have ha' := (hξK (hd hη stdComplexLineReal)).neg
-  have hb' := hξK (hd hA stdComplexLineImag)
-  have hc := hξK (F := fun z ↦ (η z).comp (C z)) fun z hz ↦
-    (hη z hz).continuousAt.clm_comp (ω.continuousAt_floerLinearizationCoeff
-      (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz))
-  -- Integration by parts in `s` for `η(∂s ξ)` and in `t` for `(η ∘ J)(∂t ξ)`.
-  have hIs := integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport (μ := volume)
-    (ContinuousLinearMap.id ℝ (V →L[ℝ] ℝ)) hη hξ hξc stdComplexLineReal
-  have hIt := integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport (μ := volume)
-    (ContinuousLinearMap.id ℝ (V →L[ℝ] ℝ)) hA hξ hξc stdComplexLineImag
-  -- Both sides split into the same three integrals.
-  have e₁ := integral_add (ha.add hb) hc
-  have e₂ := integral_add (ha'.sub hb') hc
-  have e₃ := integral_sub ha' hb'
-  simp only [Pi.add_apply, Pi.sub_apply, Pi.neg_apply, comp_apply, id_apply] at e₁ e₂ e₃ hIs hIt
-  have hL : (fun z ↦ η z (ω.floerLinearization J Ks Kt u ξ z)) = fun z ↦
-      η z (fderiv ℝ ξ z stdComplexLineReal) + A z (fderiv ℝ ξ z stdComplexLineImag) +
-        η z (C z (ξ z)) := by
-    ext z
-    simp only [floerLinearization_eq_add, map_add, A, C, comp_apply]
-  have hR : (fun z ↦ ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z)) = fun z ↦
-      -fderiv ℝ η z stdComplexLineReal (ξ z) - fderiv ℝ A z stdComplexLineImag (ξ z) +
-        η z (C z (ξ z)) := by
-    ext z
-    simp only [floerLinearizationAdjoint_def, add_apply, sub_apply, neg_apply, comp_apply, A, C]
-  rw [hL, hR, e₁, e₂, integral_add ha hb, e₃, integral_neg, hIs, hIt]
-  ring
+  have hdF : Integrable fun z ↦ fderiv ℝ F z stdComplexLineReal :=
+    integrable_fderiv_apply_of_hasCompactSupport (μ := volume) hF hFc _
+  have hdG : Integrable fun z ↦ fderiv ℝ G z stdComplexLineImag :=
+    integrable_fderiv_apply_of_hasCompactSupport (μ := volume) hG hGc _
+  rw [integral_add (hT.fun_add hdF) hdG, integral_add hT hdF,
+    integral_fderiv_apply_eq_zero_of_hasCompactSupport (μ := volume) hF hFc,
+    integral_fderiv_apply_eq_zero_of_hasCompactSupport (μ := volume) hG hGc, add_zero, add_zero]
+
+/-- **Green's formula on a rectangle.** On the closed rectangle `R = [a₁, b₁] × [a₂, b₂]` let `u`,
+the covector field `η` and the map `ξ` be `C¹`, the coefficients `J` be `C¹` and the Hamiltonians
+`K_s`, `K_t` be `C²` (at `(z, u z)` for the coefficients). If the pairing `η(ξ)` takes equal values
+on the vertical sides `s = a₁` and `s = b₁`, and `(η ∘ J)(ξ)` takes equal values on the horizontal
+sides `t = a₂` and `t = b₂`, then `∫ η(D ξ) = ∫ (D^* η)(ξ)` over `R`. On the fundamental domain
+`[a, b] × [0, 1]` of the cylinder, both side conditions hold when `ξ` vanishes at `s = a, b` and
+`η`, `ξ` and `J(·, u ·)` have period one in `t`. -/
+theorem setIntegral_apply_floerLinearization_eq_setIntegral_floerLinearizationAdjoint_apply
+    {a₁ b₁ a₂ b₂ : ℝ}
+    (hJ : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 1 u z)
+    (hη : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 1 η z)
+    (hξ : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, ContDiffAt ℝ 1 ξ z)
+    (hvert : ∀ t ∈ Icc a₂ b₂, η (b₁, t) (ξ (b₁, t)) = η (a₁, t) (ξ (a₁, t)))
+    (hhor : ∀ s ∈ Icc a₁ b₁, η (s, b₂) (J (s, b₂) (u (s, b₂)) (ξ (s, b₂))) =
+      η (s, a₂) (J (s, a₂) (u (s, a₂)) (ξ (s, a₂)))) :
+    ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, η z (ω.floerLinearization J Ks Kt u ξ z) =
+      ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z) := by
+  rcases lt_or_ge b₁ a₁ with h₁ | h₁
+  · simp [Icc_eq_empty_of_lt h₁]
+  rcases lt_or_ge b₂ a₂ with h₂ | h₂
+  · simp [Icc_eq_empty_of_lt h₂]
+  set R := Icc a₁ b₁ ×ˢ Icc a₂ b₂
+  have hR : IsCompact R := isCompact_Icc.prod isCompact_Icc
+  have hJu (z : ℝ × ℝ) (hz : z ∈ R) : ContDiffAt ℝ 1 (fun w ↦ J w (u w)) z :=
+    (hJ z hz).comp₂ contDiffAt_id (hu z hz)
+  set F : ℝ × ℝ → ℝ := fun w ↦ η w (ξ w)
+  set G : ℝ × ℝ → ℝ := fun w ↦ (η w).comp (J w (u w)) (ξ w)
+  have hF (z : ℝ × ℝ) (hz : z ∈ R) : ContDiffAt ℝ 1 F z := (hη z hz).clm_apply (hξ z hz)
+  have hG (z : ℝ × ℝ) (hz : z ∈ R) : ContDiffAt ℝ 1 G z :=
+    ((hη z hz).clm_comp (hJu z hz)).clm_apply (hξ z hz)
+  have hT : ContinuousOn (fun z ↦ ω.floerLinearizationAdjoint J Ks Kt u η z (ξ z)) R :=
+    fun z hz ↦ ((continuousAt_floerLinearizationAdjoint (hJ z hz) (hKs z hz) (hKt z hz)
+      (hu z hz) (hη z hz)).clm_apply (hξ z hz).continuousAt).continuousWithinAt
+  have hdiv : ContinuousOn
+      (fun z ↦ fderiv ℝ F z stdComplexLineReal + fderiv ℝ G z stdComplexLineImag) R :=
+    fun z hz ↦ ((((hF z hz).continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const).add
+      (((hG z hz).continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const)).continuousWithinAt
+  -- By the divergence theorem, the divergence terms integrate to the differences of the values on
+  -- opposite sides, which vanish.
+  have hint :
+      ∫ z in R, (fderiv ℝ F z stdComplexLineReal + fderiv ℝ G z stdComplexLineImag) = 0 := by
+    have hRI : R = Icc (a₁, a₂) (b₁, b₂) := Icc_prod_Icc a₁ b₁ a₂ b₂
+    have hsub : Ioo a₁ b₁ ×ˢ Ioo a₂ b₂ ⊆ R := prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
+    rw [hRI] at hR hdiv ⊢
+    rw [stdComplexLineReal_eq, stdComplexLineImag_eq,
+      integral_divergence_prod_Icc_of_hasFDerivAt_of_le F G (fderiv ℝ F) (fderiv ℝ G) _ _ ⟨h₁, h₂⟩
+        (fun z hz ↦ (hF z (hRI ▸ hz)).continuousAt.continuousWithinAt)
+        (fun z hz ↦ (hG z (hRI ▸ hz)).continuousAt.continuousWithinAt)
+        (fun z hz ↦ ((hF z (hsub hz)).differentiableAt one_ne_zero).hasFDerivAt)
+        (fun z hz ↦ ((hG z (hsub hz)).differentiableAt one_ne_zero).hasFDerivAt)
+        (hdiv.integrableOn_compact hR)]
+    dsimp only
+    rw [intervalIntegral.integral_congr (f := fun s ↦ G (s, b₂)) (g := fun s ↦ G (s, a₂))
+        fun s hs ↦ hhor s (uIcc_of_le h₁ ▸ hs),
+      intervalIntegral.integral_congr (f := fun t ↦ F (b₁, t)) (g := fun t ↦ F (a₁, t))
+        fun t ht ↦ hvert t (uIcc_of_le h₂ ▸ ht)]
+    simp
+  rw [setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦
+      (apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add
+        ((hξ z hz).differentiableAt one_ne_zero) ((hη z hz).differentiableAt one_ne_zero)
+        ((hJu z hz).differentiableAt one_ne_zero)).trans (add_assoc _ _ _),
+    integral_add (hT.integrableOn_compact hR) (hdiv.integrableOn_compact hR), hint, add_zero]
 
 /-! ### Classical cokernel elements -/
 
@@ -414,8 +600,9 @@ theorem forall_integral_apply_floerLinearization_eq_zero_iff {U : Set (ℝ × �
       (hξU : tsupport ξ ⊆ U) :
       ∫ z, η z (ω.floerLinearization J Ks Kt u ξ z) = ∫ z, f z (ξ z) :=
     integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_apply
-      (hξ.of_le (by simp)) hξc (fun z hz ↦ hJ z (hξU hz)) (fun z hz ↦ hKs z (hξU hz))
-      (fun z hz ↦ hKt z (hξU hz)) (fun z hz ↦ hu z (hξU hz)) fun z hz ↦ hη z (hξU hz)
+      (fun z hz ↦ hJ z (hξU hz.2)) (fun z hz ↦ hKs z (hξU hz.2)) (fun z hz ↦ hKt z (hξU hz.2))
+      (fun z hz ↦ hu z (hξU hz.2)) (fun z hz ↦ hη z (hξU hz.2))
+      (fun _ _ ↦ (hξ.of_le (by simp)).contDiffAt) (hξc.isCompact.inter_left (isClosed_tsupport η))
   refine ⟨fun h ↦ ?_, fun h ξ hξ hξc hξU ↦ ?_⟩
   · have hf : ContinuousOn f U := fun z hz ↦
       (continuousAt_floerLinearizationAdjoint (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz)

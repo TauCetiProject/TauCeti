@@ -190,7 +190,8 @@ theorem exists_riemannianIsometry_prod_zeroLevel
     exists_riemannianIsometry_prod_zeroLevel_of_isCompleteVectorField hf hι hc
       (((isMetricCompatible_leviCivitaConnection (M := M) I).isKillingField_iff_inner_self
         (torsion_leviCivitaConnection_eq_zero I)).2
-          ⟨hgrad, fun x v ↦ by simpa only [hessian_def] using hzero x v v⟩)
+          ⟨hgrad, fun x v ↦ by
+            simpa only [I.hessian_eq_inner_leviCivitaConnection_mgradient] using hzero x v v⟩)
       hunit gL hL
   have hconn : ConnectedSpace L := by
     have hsurj : Surjective (fun x : M ↦ (e.symm x).2) := fun z ↦

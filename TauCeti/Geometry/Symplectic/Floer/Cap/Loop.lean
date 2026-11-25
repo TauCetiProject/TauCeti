@@ -326,6 +326,14 @@ theorem mk_vsub_mk (D' D : RawCap γ) :
     mk ω c D' -ᵥ mk ω c D = SphericalPeriodGroup.ofHomotopyGroup ω c x (D' -ᵥ D) :=
   (rfl)
 
+/-- Two cap classes are equal exactly when the class of the period group by which they differ is
+zero. Unlike the torsor lemma `vsub_eq_zero_iff_eq`, this needs no path-connectedness. -/
+protected theorem vsub_eq_zero_iff_eq {q' q : SphericalCapClass ω c γ} : q' -ᵥ q = 0 ↔ q' = q := by
+  induction q' using induction_on with | h D' =>
+  induction q using induction_on with
+  | h D => rw [mk_vsub_mk, mk_eq_mk_iff, PeriodGroup.ext_iff, map_zero, map_zero,
+      SphericalPeriodGroup.area_ofHomotopyGroup, SphericalPeriodGroup.chern_ofHomotopyGroup]
+
 variable {A : Type*} [AddMonoid A]
 
 /-- The descent to cap classes of a function `f` on raw caps obeying the recapping law

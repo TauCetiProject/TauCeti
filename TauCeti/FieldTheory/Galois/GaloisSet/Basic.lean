@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.GroupAction.Transitive
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.GroupTheory.Perm.FiberSubgroup
 import TauCeti.Logic.Equiv.Basic
 import TauCeti.Logic.Equiv.Option
@@ -144,8 +145,7 @@ theorem fixingSubgroup_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n) :
       (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i)).fixingSubgroup =
       MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i := by
   let := ρ.mulAction
-  exact InfiniteGalois.fixingSubgroup_fixedField
-    ⟨_, Subgroup.isClosed_of_isOpen _ (ρ.isOpen_stabilizer i)⟩
+  exact IntermediateField.fixingSubgroup_fixedField_of_isOpen (ρ.isOpen_stabilizer i)
 
 /-- The field fixed by a point stabilizer is a finite extension of `K`. -/
 theorem finiteDimensional_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n) :
@@ -153,8 +153,7 @@ theorem finiteDimensional_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n)
     FiniteDimensional K (IntermediateField.fixedField
       (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i)) := by
   let := ρ.mulAction
-  rw [← InfiniteGalois.isOpen_iff_finite, ρ.fixingSubgroup_fixedField_stabilizer]
-  exact ρ.isOpen_stabilizer i
+  exact IntermediateField.finiteDimensional_fixedField_of_isOpen (ρ.isOpen_stabilizer i)
 
 /-- The degree of the fixed field of a point stabilizer is the size of its orbit. -/
 theorem finrank_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n) :
@@ -163,8 +162,7 @@ theorem finrank_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n) :
       (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i)) =
       Nat.card (MulAction.orbit (SeparableClosure K ≃ₐ[K] SeparableClosure K) i) := by
   let := ρ.mulAction
-  rw [IntermediateField.finrank_eq_fixingSubgroup_index,
-    ρ.fixingSubgroup_fixedField_stabilizer, MulAction.index_stabilizer, Nat.card_coe_set_eq]
+  exact IntermediateField.finrank_fixedField_stabilizer_of_isOpen (ρ.isOpen_stabilizer i)
 
 /-- The cardinality of an orbit equals the degree of its stabilizer's fixed field. -/
 theorem finrank_fixedField_stabilizer_eq_card_fiber (ρ : GaloisSet K n)

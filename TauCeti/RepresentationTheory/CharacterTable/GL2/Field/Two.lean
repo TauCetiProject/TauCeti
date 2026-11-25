@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NormalForm
 import TauCeti.FieldTheory.Quadratic
 import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # The character table of `GL₂(𝔽₂)`
@@ -159,9 +160,7 @@ private theorem fieldTwo_cuspidal_value (hF : Fintype.card F = 2) {u : Eˣ}
     rw [← Units.val_pow_eq_pow_val, ← map_pow, hu3, map_one, Units.val_one]
   have hprim := isPrimitiveRoot_of_mem_nthRootsFinset Nat.prime_three
     ((Polynomial.mem_nthRootsFinset (by norm_num) (1 : ℂ)).mpr hζ3) hne
-  have hz := hprim.geom_sum_eq_zero (by norm_num)
-  norm_num [Finset.sum_range_succ] at hz
-  linear_combination hz
+  linear_combination hprim.one_add_add_sq
 
 end Columns
 
