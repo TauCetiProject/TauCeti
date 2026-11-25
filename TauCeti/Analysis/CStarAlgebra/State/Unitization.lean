@@ -11,7 +11,6 @@ import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.StarAlgebra.GNS.Basic
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
-import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 
 /-!
 # Extending positive functionals to the unitization
@@ -46,8 +45,9 @@ extension of a tracial state is again a tracial state is
 * `PositiveContinuousLinearMap.norm_apply_sub_apply_mul_sq_le`: **the approximate unit
   estimate**: for a positive functional `γ` and a positive contraction `e`,
   `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`, from the Cauchy–Schwarz inequality for `γ⁺¹`,
-  with the left and two-sided variants `norm_apply_sub_apply_mul_left_sq_le` and
-  `norm_apply_sub_apply_mul_mul_le`.
+  with the left variant `norm_apply_sub_apply_mul_left_sq_le`, the unsquared forms
+  `norm_apply_sub_apply_mul_le` and `norm_apply_sub_apply_mul_left_le`, and the two-sided
+  variant `norm_apply_sub_apply_mul_mul_le`.
 * `TauCeti.surjOn_pullbackFunctional_inr_stateSpace`: every state of `A` is the restriction of a
   state of `A⁺¹`.
 
@@ -233,7 +233,6 @@ theorem eq_zero_of_unitization_map_star_mul_self_eq_zero
     have hc : c * x.snd = -(x.fst • c) := eq_neg_of_add_eq_zero_right (hl c)
     simp [mul_smul_comm, hc, h0]
 
-
 /-- **The approximate unit estimate.** For a positive functional `γ` and a positive contraction
 `e`, `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`: the Cauchy–Schwarz inequality for the extension
 of `γ` to the unitization, with `(1 - e)² ≤ 1 - e`. -/
@@ -283,6 +282,24 @@ theorem norm_apply_sub_apply_mul_left_sq_le (γ : A →P[ℂ] ℂ) {e : A} (he :
   have hs : star y * e = star (e * y) := by rw [star_mul, he.star_eq]
   rwa [hs, map_star, map_star, ← star_sub, norm_star, norm_star] at h
 
+/-- The unsquared form of `norm_apply_sub_apply_mul_sq_le`:
+`‖γ y - γ (y e)‖ ≤ √(‖γ‖ (‖γ‖ - Re γ e)) ‖y‖` for a positive contraction `e`. -/
+theorem norm_apply_sub_apply_mul_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
+    (y : A) :
+    ‖γ y - γ (y * e)‖ ≤
+      Real.sqrt (‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)) * ‖y‖ :=
+  (Real.le_sqrt_of_sq_le (norm_apply_sub_apply_mul_sq_le γ he he1 y)).trans_eq
+    (by rw [Real.sqrt_mul_sq, abs_norm])
+
+/-- The unsquared form of `norm_apply_sub_apply_mul_left_sq_le`:
+`‖γ y - γ (e y)‖ ≤ √(‖γ‖ (‖γ‖ - Re γ e)) ‖y‖` for a positive contraction `e`. -/
+theorem norm_apply_sub_apply_mul_left_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
+    (y : A) :
+    ‖γ y - γ (e * y)‖ ≤
+      Real.sqrt (‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)) * ‖y‖ :=
+  (Real.le_sqrt_of_sq_le (norm_apply_sub_apply_mul_left_sq_le γ he he1 y)).trans_eq
+    (by rw [Real.sqrt_mul_sq, abs_norm])
+
 /-- The two-sided version of `norm_apply_sub_apply_mul_sq_le`:
 `‖γ y - γ (e y e)‖ ≤ 2 √(‖γ‖ (‖γ‖ - Re γ e)) ‖y‖` for a positive contraction `e`. -/
 theorem norm_apply_sub_apply_mul_mul_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
@@ -290,12 +307,8 @@ theorem norm_apply_sub_apply_mul_mul_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 �
     ‖γ y - γ (e * y * e)‖ ≤
       2 * Real.sqrt (‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)) * ‖y‖ := by
   set c := ‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)
-  have h1 : ‖γ y - γ (e * y)‖ ≤ Real.sqrt c * ‖y‖ :=
-    (Real.le_sqrt_of_sq_le (norm_apply_sub_apply_mul_left_sq_le γ he he1 y)).trans_eq
-      (by rw [Real.sqrt_mul_sq, abs_norm])
-  have h2 : ‖γ (e * y) - γ (e * y * e)‖ ≤ Real.sqrt c * ‖e * y‖ :=
-    (Real.le_sqrt_of_sq_le (norm_apply_sub_apply_mul_sq_le γ he he1 (e * y))).trans_eq
-      (by rw [Real.sqrt_mul_sq, abs_norm])
+  have h1 := norm_apply_sub_apply_mul_left_le γ he he1 y
+  have h2 := norm_apply_sub_apply_mul_le γ he he1 (e * y)
   have hey : ‖e * y‖ ≤ ‖y‖ := (norm_mul_le e y).trans (mul_le_of_le_one_left (norm_nonneg y) he1)
   calc ‖γ y - γ (e * y * e)‖ ≤ ‖γ y - γ (e * y)‖ + ‖γ (e * y) - γ (e * y * e)‖ :=
         norm_sub_le_norm_sub_add_norm_sub _ _ _

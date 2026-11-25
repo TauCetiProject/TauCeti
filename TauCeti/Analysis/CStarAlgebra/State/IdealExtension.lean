@@ -7,10 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.CStarAlgebra.State.Tracial
-import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
-import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 import TauCeti.Analysis.CStarAlgebra.State.Extension
-import TauCeti.Analysis.CStarAlgebra.State.Unitization
 import TauCeti.RingTheory.TraceFunctional.Star
 
 /-!
@@ -102,10 +99,8 @@ every increasing approximate unit `e` of `I`. -/
 theorem tendsto_apply_mul_mul_of_apply_coe_eq' {τ : I →P[ℂ] ℂ}
     {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : I →L[ℂ] ℂ)‖) (h : ∀ c : I, γ c = τ c)
     {l : Filter I} (hl : l.IsIncreasingApproximateUnit) (a : A) :
-    Tendsto (fun e : I ↦ τ ⟨(e : A) * a * e, I.mul_mem_right _ _ (I.mul_mem_right _ _ e.property)⟩)
-      l (𝓝 (γ a)) :=
-  (tendsto_apply_mul_mul_of_apply_coe_eq hγ h hl a).congr fun e ↦
-    h ⟨_, I.mul_mem_right _ _ (I.mul_mem_right _ _ e.property)⟩
+    Tendsto (fun e : I ↦ τ ⟨(e : A) * a * e, I.mul_mem_left _ _ e.property⟩) l (𝓝 (γ a)) :=
+  (tendsto_apply_mul_mul_of_apply_coe_eq hγ h hl a).congr fun _ ↦ h _
 
 /-- **Uniqueness of the extension** from a closed ideal: two positive functionals of norm at most
 `‖τ‖` on `A` that restrict to the same positive functional `τ` of a closed ideal are equal. -/
@@ -113,7 +108,7 @@ theorem eq_of_apply_coe_eq {τ : I →P[ℂ] ℂ} {γ₁ γ₂ : A →P[ℂ] ℂ
     (hγ₁ : ‖(γ₁ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : I →L[ℂ] ℂ)‖) (hγ₂ : ‖(γ₂ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : I →L[ℂ] ℂ)‖)
     (h₁ : ∀ c : I, γ₁ c = τ c) (h₂ : ∀ c : I, γ₂ c = τ c) : γ₁ = γ₂ :=
   eq_of_apply_map_eq I.starAlgHom
-    (fun e a ↦ ⟨⟨(e : A) * a * e, I.mul_mem_right _ _ (I.mul_mem_right _ _ e.property)⟩,
+    (fun e a ↦ ⟨⟨(e : A) * a * e, I.mul_mem_left _ _ e.property⟩,
       by simp [TwoSidedIdeal.starAlgHom_apply]⟩) hγ₁ hγ₂
     (by simpa using h₁) (by simpa using h₂)
 

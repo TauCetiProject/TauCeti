@@ -13,8 +13,6 @@ import Mathlib.Analysis.CStarAlgebra.Hom
 import TauCeti.Analysis.CStarAlgebra.State.Unitization
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
-import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
-import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 
 /-!
 # Restriction and extension of states
@@ -329,31 +327,11 @@ theorem exists_mem_extremePoints_stateSpace_forall_apply_coe_eq (S : NonUnitalSt
 end NonUnitalStarSubalgebra
 
 open Filter Topology
+open scoped NNReal
 
 namespace PositiveContinuousLinearMap
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-section Smul
-
-variable {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-
-/-- `c • τ` for a real `c ≥ 0`, as a positive functional. -/
-private noncomputable def smulOfNonneg {c : ℝ} (hc : 0 ≤ c) (τ : B →P[ℂ] ℂ) : B →P[ℂ] ℂ where
-  toPositiveLinearMap := PositiveLinearMap.mk₀ ((c : ℂ) • (τ : B →L[ℂ] ℂ) : B →L[ℂ] ℂ)
-    fun x hx ↦ by
-      simpa using mul_nonneg (Complex.zero_le_real.mpr hc) (τ.map_nonneg hx)
-  cont := ((c : ℂ) • (τ : B →L[ℂ] ℂ)).continuous
-
-private theorem smulOfNonneg_apply {c : ℝ} (hc : 0 ≤ c) (τ : B →P[ℂ] ℂ) (b : B) :
-    smulOfNonneg hc τ b = (c : ℂ) • τ b :=
-  rfl
-
-private theorem toContinuousLinearMap_smulOfNonneg {c : ℝ} (hc : 0 ≤ c) (τ : B →P[ℂ] ℂ) :
-    (smulOfNonneg hc τ : B →L[ℂ] ℂ) = (c : ℂ) • (τ : B →L[ℂ] ℂ) :=
-  ContinuousLinearMap.ext fun _ ↦ rfl
-
-end Smul
 
 section Hom
 
@@ -429,21 +407,16 @@ along an injective star homomorphism `f : B → A`, of a positive functional on 
 norm. For `τ ≠ 0` this extends the state `τ / ‖τ‖` and rescales. -/
 theorem exists_apply_map_eq (f : F) (hf : Function.Injective f) (τ : B →P[ℂ] ℂ) :
     ∃ γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = ‖(τ : B →L[ℂ] ℂ)‖ ∧ ∀ b, γ (f b) = τ b := by
-  set N := ‖(τ : B →L[ℂ] ℂ)‖
-  rcases (norm_nonneg (τ : B →L[ℂ] ℂ)).eq_or_lt with h0 | hN
-  · refine ⟨0, by simp [N, ← h0], fun b ↦ ?_⟩
-    have := (τ : B →L[ℂ] ℂ).le_opNorm b
-    rw [← h0, zero_mul, norm_le_zero_iff, coe_toContinuousLinearMap] at this
-    simp [this]
-  obtain ⟨γ, hγ, h⟩ := exists_apply_map_eq_of_norm_eq_one f hf
-    (τ := smulOfNonneg (inv_nonneg.mpr hN.le) τ) (by
-      rw [toContinuousLinearMap_smulOfNonneg, norm_smul, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_pos (inv_pos.mpr hN), inv_mul_cancel₀ hN.ne'])
-  refine ⟨smulOfNonneg hN.le γ, ?_, fun b ↦ ?_⟩
-  · rw [toContinuousLinearMap_smulOfNonneg, norm_smul, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_pos hN, hγ, mul_one]
-  · rw [smulOfNonneg_apply, h, smulOfNonneg_apply, smul_smul, ← Complex.ofReal_mul,
-      mul_inv_cancel₀ hN.ne', Complex.ofReal_one, one_smul]
+  set c := ‖(τ : B →L[ℂ] ℂ)‖₊ with hc
+  rcases eq_zero_or_pos c with h0 | hc0
+  · have hτ : (τ : B →L[ℂ] ℂ) = 0 := nnNorm_eq_zero.mp h0
+    refine ⟨0, by simp [hτ], fun b ↦ ?_⟩
+    simpa using (DFunLike.congr_fun hτ b).symm
+  obtain ⟨γ, hγ, h⟩ := exists_apply_map_eq_of_norm_eq_one f hf (τ := c⁻¹ • τ) (by
+    rw [opNorm_smul, ← coe_nnNorm, ← hc, ← NNReal.coe_mul, inv_mul_cancel₀ hc0.ne',
+      NNReal.coe_one])
+  refine ⟨c • γ, by rw [opNorm_smul, hγ, mul_one, hc, coe_nnNorm], fun b ↦ ?_⟩
+  rw [smul_apply, h, smul_apply, smul_smul, mul_inv_cancel₀ hc0.ne', one_smul]
 
 end Hom
 
