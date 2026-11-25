@@ -13,7 +13,7 @@ public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.DedekindDomain.Basic
 import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Flat.TorsionFree
-import TauCeti.LinearAlgebra.TensorProduct.Cyclic
+import TauCeti.Algebra.Module.Torsion.GenericRankOne
 
 /-!
 # `ℂ` as an algebra over a number field through a complex embedding
@@ -22,8 +22,9 @@ For a complex embedding `σ : K → ℂ`, `NumberField.ComplexEmbedding.Codomain
 carrying the `K`-algebra (and `𝓞 K`-algebra) structure given by `σ`, identified with `ℂ` by
 `NumberField.ComplexEmbedding.Codomain.equiv`. This lets the scalar extension
 `Codomain σ ⊗[𝓞 K] E` of an `𝓞 K`-module `E` along `σ`, its complex fibre `E ⊗_{O_K,σ} ℂ`, be
-formed for every `σ` at once. When `s` generates `E`, the complex fibre is the line spanned by
-`1 ⊗ s` (`NumberField.ComplexEmbedding.Codomain.exists_eq_smul_one_tmul`). The complex fibres
+formed for every `σ` at once. When `E` is torsion-free of generic rank one and `s ≠ 0`, the
+complex fibre is the line spanned by `1 ⊗ s`
+(`NumberField.ComplexEmbedding.Codomain.exists_eq_smul_one_tmul`). The complex fibres
 of `E × F` and of `E ⊗[𝓞 K] F` are the product and the complex tensor product of those of `E` and
 `F` (`Codomain.prodEquiv`, `Codomain.tensorProductEquiv`).
 
@@ -136,12 +137,25 @@ theorem tmul_smul (c : Codomain σ) (a : 𝓞 K) (x : E) :
   rw [← TensorProduct.smul_tmul, TensorProduct.smul_tmul']
   rfl
 
-/-- If `s` generates `E`, the complex fibre at `σ` is the line spanned by `1 ⊗ s`: every vector is
-a complex multiple of `1 ⊗ s`. -/
-theorem exists_eq_smul_one_tmul {s : E} (hs : Submodule.span (𝓞 K) {s} = ⊤)
-    (u : Codomain σ ⊗[𝓞 K] E) : ∃ c : ℂ, u = c • (1 ⊗ₜ[𝓞 K] s) := by
-  obtain ⟨c, rfl⟩ := TensorProduct.exists_eq_tmul_of_span_singleton_eq_top hs u
-  exact ⟨equiv σ c, tmul_eq_smul σ c s⟩
+/-- If `E` is torsion-free of generic rank one and `s ≠ 0`, the complex fibre at `σ` is the line
+spanned by `1 ⊗ s`: every vector is a complex multiple of `1 ⊗ s`. -/
+theorem exists_eq_smul_one_tmul [NumberField K] [Module.IsTorsionFree (𝓞 K) E]
+    (hE : Module.finrank K (K ⊗[𝓞 K] E) = 1) {s : E} (hs : s ≠ 0) (u : Codomain σ ⊗[𝓞 K] E) :
+    ∃ c : ℂ, u = c • (1 ⊗ₜ[𝓞 K] s) := by
+  induction u using TensorProduct.inductionOn with
+  | tmul c x =>
+    obtain ⟨a, b, ha, hab⟩ := Module.exists_smul_eq_smul_of_finrank_eq_one hE hs x
+    have hσa : σ a ≠ 0 := by simpa using ha
+    have h : σ a • (c ⊗ₜ[𝓞 K] x) = σ b • (c ⊗ₜ[𝓞 K] s) := by
+      rw [← tmul_smul, ← tmul_smul, hab]
+    refine ⟨equiv σ c * σ b / σ a, ?_⟩
+    rw [← inv_smul_smul₀ hσa (c ⊗ₜ[𝓞 K] x), h, tmul_eq_smul σ c s, smul_smul, smul_smul]
+    congr 1
+    field_simp
+  | add u v hu hv =>
+    obtain ⟨c, rfl⟩ := hu
+    obtain ⟨d, rfl⟩ := hv
+    exact ⟨c + d, (add_smul c d _).symm⟩
 
 /-- Elements of `Codomain σ` pass between the factors of a complex tensor product of complex
 fibres, since they act as complex numbers. -/
