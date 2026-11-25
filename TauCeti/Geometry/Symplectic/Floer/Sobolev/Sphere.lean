@@ -33,16 +33,17 @@ sections are dense in `W^{1,2}` of the sphere.
   `J₀` and the Hamiltonian perturbation vanishes. There the zeroth-order part of `D_u` vanishes,
   so the coefficient field of `D_u` on the conformal jets `(√ρ ξ, ∂s ξ, ∂t ξ)` is that of the
   Cauchy–Riemann operator `∂s + J₀ ∂t`; on the compact square `‖w‖ ≤ T` it is continuous. Hence
-  it is essentially bounded on the plane
-  (`TauCeti.SymplecticForm.memLp_floerConformalJetCoeff_sphereWeight_of_eq_base`), and
+  it is essentially bounded on the plane, as for every conformal weight on the plane
+  (`TauCeti.SymplecticForm.memLp_floerConformalJetCoeff_of_eq_base`), and
   `TauCeti.SymplecticForm.floerConformalSobolevOperator` realizes `D_u` from `W^{1,2}` to `L²`.
 * **Finite-dimensional kernel and closed range.** If moreover `J(w, u w)` is compatible with `ω`,
   the semi-Fredholm estimate on the sphere,
   `exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base` in the namespace
   `TauCeti.SymplecticForm`, bounds the norm of `W^{1,2}` by `‖D_u ξ‖_{L²}` and an `L²` norm on a
   compact square, and Peetre's argument gives finite-dimensional kernel
-  (`TauCeti.SymplecticForm.finiteDimensional_ker_floerConformalSobolevOperator_of_eq_base`) and
-  closed range (`TauCeti.SymplecticForm.isClosed_range_floerConformalSobolevOperator_of_eq_base`).
+  (`finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base`) and closed range
+  (`isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base`), both in the namespace
+  `TauCeti.SymplecticForm`.
 
 The target is a symplectic vector space. The finiteness of the cokernel and the index are not
 treated here.
@@ -100,49 +101,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {J : ℝ × ℝ → V → AlmostComplexStructure V}
   {J₀ : AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {T : ℝ}
 
-/-- Where the data are `J₀` and `0`, the zeroth-order part of the linearized operator vanishes. -/
-private theorem floerLinearizationCoeff_eq_zero_of_eq_base {ω : SymplecticForm V} {z : ℝ × ℝ}
-    (hJ₀ : ∀ y, J z y = J₀) (hKs₀ : ∀ y, Ks z y = 0) (hKt₀ : ∀ y, Kt z y = 0) :
-    ω.floerLinearizationCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u z =
-      0 := by
-  have hKs : Ks z = fun _ ↦ 0 := funext hKs₀
-  have hKt : Kt z = fun _ ↦ 0 := funext hKt₀
-  ext v
-  simp [floerLinearizationCoeff_apply, hJ₀, hKs, hKt, hamiltonianVectorField_const]
-
-/-- **The coefficient field on the sphere is bounded.** Let the Floer data `J`, `K_s`, `K_t` on the
-plane `ℝ × ℝ ≅ ℂ` be the fixed structure `J₀` and the zero perturbation on `‖w‖ ≥ T`, a
-neighbourhood of the point at infinity of the sphere, and let `J` be `C¹` and `K_s`, `K_t` be `C²`
-along a `C¹` map `u`. Then the coefficient field of the linearized Floer operator on the conformal
-jets of the weight of the sphere is essentially bounded on the plane, so that
-`TauCeti.SymplecticForm.floerConformalSobolevOperator` realizes `D_u` from `W^{1,2}` of the sphere
-to `L²`. -/
-theorem memLp_floerConformalJetCoeff_sphereWeight_of_eq_base (ω : SymplecticForm V)
-    (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
-    (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
-    (hKt₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt z y = 0)
-    (hJ : ∀ z, ContDiffAt ℝ 1
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u) :
-    MemLp (ω.floerConformalJetCoeff sphereWeight
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u) ∞
-      (volume.restrict univ) := by
-  have hcont := ω.continuousOn_floerConformalJetCoeff isWeight_sphereWeight
-    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (fun z _ ↦ hJ z)
-    (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) hu.contDiffOn
-  -- On the compact square `‖w‖ ≤ T` the field is continuous, hence bounded.
-  obtain ⟨B, hB⟩ := (isCompact_closedBall (0 : ℝ × ℝ) T).exists_bound_of_continuousOn
-    (hcont.mono (subset_univ _))
-  refine memLp_top_of_bound (hcont.aestronglyMeasurable MeasurableSet.univ)
-    (max B (1 + ‖J₀.toLinearMap.toContinuousLinearMap‖)) (Eventually.of_forall fun z ↦ ?_)
-  rcases le_or_gt ‖z‖ T with hz | hz
-  · exact (hB z (mem_closedBall_zero_iff.2 hz)).trans (le_max_left _ _)
-  -- Beyond the square the field is that of the Cauchy–Riemann operator of `J₀`.
-  refine le_max_of_le_right ((ω.norm_floerConformalJetCoeff_le _ _ _ _ _ z).trans_eq ?_)
-  rw [floerLinearizationCoeff_eq_zero_of_eq_base (hJ₀ z hz.le) (hKs₀ z hz.le) (hKt₀ z hz.le),
-    norm_zero, mul_zero, add_zero, hJ₀ z hz.le]
-
 /-- **Peetre's estimate on the sphere.** Under the hypotheses of the semi-Fredholm estimate on the
 sphere, `exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base`, the realization
 of `D_u` on `W^{1,2}` of the sphere satisfies `‖x‖ ≤ A (‖D_u x‖ + ‖√ρ ξ‖_{L²(K)})` on the jets `x`
@@ -167,7 +125,9 @@ private theorem exists_norm_le_floerConformalSobolevOperator_sphereWeight_of_eq_
   obtain ⟨A, hA⟩ :=
     ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le
       isWeight_sphereWeight
-      (ω.memLp_floerConformalJetCoeff_sphereWeight_of_eq_base hJ₀ hKs₀ hKt₀ hJ hKs hKt hu)
+      (ω.memLp_floerConformalJetCoeff_of_eq_base isWeight_sphereWeight
+        (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+        (fun z hz y ↦ by rw [hJ₀ z hz y]) hKs₀ hKt₀ hJ hKs hKt hu)
       (isCompact_closedBall 0 R) (subset_univ _) (C := C) fun ξ hξ ↦ by
         obtain ⟨hξs, hξc, -⟩ := mem_testSection_iff.1 hξ
         simpa only [setIntegral_univ, sphereWeight_apply, stdComplexLineReal_eq,
@@ -179,7 +139,8 @@ Floer data `J`, `K_s`, `K_t` on the plane `ℝ × ℝ ≅ ℂ` be the fixed stru
 perturbation on `‖w‖ ≥ T`, a neighbourhood of the point at infinity of the sphere. Let `J` be `C¹`
 and `K_s`, `K_t` be `C²` along a `C¹` map `u`, with `J(w, u w)` compatible. Then the realization of
 `D_u` from `W^{1,2}` of the sphere to `L²` has finite-dimensional kernel. -/
-theorem finiteDimensional_ker_floerConformalSobolevOperator_of_eq_base (ω : SymplecticForm V)
+theorem finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base
+    (ω : SymplecticForm V)
     (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
     (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
     (hKt₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt z y = 0)
@@ -196,9 +157,10 @@ theorem finiteDimensional_ker_floerConformalSobolevOperator_of_eq_base (ω : Sym
     (subset_univ _) _ hA
 
 /-- **The linearized operator on the sphere has closed range on `W^{1,2}`.** Under the hypotheses
-of `TauCeti.SymplecticForm.finiteDimensional_ker_floerConformalSobolevOperator_of_eq_base`, the
-realization of `D_u` from `W^{1,2}` of the sphere to `L²` has closed range. -/
-theorem isClosed_range_floerConformalSobolevOperator_of_eq_base (ω : SymplecticForm V)
+of `finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base`, the realization
+of `D_u` from `W^{1,2}` of the sphere to `L²` has closed range. -/
+theorem isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base
+    (ω : SymplecticForm V)
     (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
     (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
     (hKt₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt z y = 0)

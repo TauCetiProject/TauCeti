@@ -160,8 +160,9 @@ theorem memLp_floerConformalJetCoeff_cappedComparison (ω : SymplecticForm V)
       (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y I) u) ∞
       (volume.restrict univ) := by
   obtain ⟨T, hJ₀, hK₀⟩ := exists_cappedComparison_eq_base (H := H) h₀ hJ R
-  exact ω.memLp_floerConformalJetCoeff_sphereWeight_of_eq_base
-    (T := T) hJ₀ (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
+  exact ω.memLp_floerConformalJetCoeff_of_eq_base isWeight_sphereWeight
+    (J₀ := J₀.toLinearMap.toContinuousLinearMap) (T := T) (fun z hz y ↦ by rw [hJ₀ z hz y])
+    (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
     (fun z ↦ (contDiff_cappedComparisonAlmostComplex_comp h₀ hJ hJp hJs R).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R 1).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R I).contDiffAt) hu
@@ -183,7 +184,7 @@ theorem finiteDimensional_ker_floerConformalSobolevOperator_cappedComparison
       (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y 1)
       (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y I) u).ker := by
   obtain ⟨T, hJ₀, hK₀⟩ := exists_cappedComparison_eq_base (H := H) h₀ hJ R
-  exact ω.finiteDimensional_ker_floerConformalSobolevOperator_of_eq_base
+  exact ω.finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base
     (T := T) hJ₀ (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
     (fun z ↦ (contDiff_cappedComparisonAlmostComplex_comp h₀ hJ hJp hJs R).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R 1).contDiffAt)
@@ -208,7 +209,7 @@ theorem isClosed_range_floerConformalSobolevOperator_cappedComparison
       (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y 1)
       (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y I) u)) := by
   obtain ⟨T, hJ₀, hK₀⟩ := exists_cappedComparison_eq_base (H := H) h₀ hJ R
-  exact ω.isClosed_range_floerConformalSobolevOperator_of_eq_base
+  exact ω.isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base
     (T := T) hJ₀ (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
     (fun z ↦ (contDiff_cappedComparisonAlmostComplex_comp h₀ hJ hJp hJs R).contDiffAt)
     (fun z ↦ (contDiff_cappedComparisonPerturbation_comp hH hHs R 1).contDiffAt)

@@ -93,10 +93,9 @@ private theorem floerLinearization_eq_of_eq_base
       mem_of_superset ((isOpen_lt continuous_norm continuous_const).mem_nhds hz) fun w hw ↦ hχ w hw
     rw [floerLinearization_congr_of_eventuallyEq _ _ _ _ _ hev, hev.fderiv_eq]
     simp
-  · rw [floerLinearization_eq_add, floerLinearizationCoeff_apply]
-    have hKs : Ks z = fun _ ↦ 0 := funext (hKs₀ z hz)
-    have hKt : Kt z = fun _ ↦ 0 := funext (hKt₀ z hz)
-    simp [hJ₀ z hz, hKs, hKt, hamiltonianVectorField_const]
+  · rw [floerLinearization_eq_add, ω.floerLinearizationCoeff_eq_zero_of_eq_base u
+      (fun y ↦ by rw [hJ₀ z hz y]) (hKs₀ z hz) (hKt₀ z hz)]
+    simp [hJ₀ z hz]
 
 /-- **The Cauchy–Riemann operator of `J₀` controls the Dirichlet energy.** On compactly supported
 `C²` sections vanishing where the data differ from `J₀` and `0`, the linearized operator bounds
