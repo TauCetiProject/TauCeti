@@ -208,10 +208,9 @@ theorem nonempty_subscheme_schemeIsotropicLocus_of_toMatrix_eq_J [Nontrivial R] 
     Fintype.equivOfCardEq (by simp; omega)
   let b' := b.reindex (σ.sumCongr σ)
   have hb' : LinearMap.BilinForm.toMatrix b' ω = Matrix.J _ R := by
+    rw [← Matrix.reindex_sumCongr_J R σ, ← hb]
     ext i j
-    rw [LinearMap.BilinForm.toMatrix_apply, Basis.reindex_apply, Basis.reindex_apply,
-      ← LinearMap.BilinForm.toMatrix_apply, hb]
-    rcases i with i | i <;> rcases j with j | j <;> simp [Matrix.J, Matrix.one_apply]
+    simp [b', LinearMap.BilinForm.toMatrix_apply]
   let e : Fin k ≃ Fin (k - Fintype.card ι) ⊕ (Fin (2 * Fintype.card ι - k) ⊕
       Fin (k - Fintype.card ι)) :=
     Fintype.equivFinOfCardEq (by simp; omega) |>.symm

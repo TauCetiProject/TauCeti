@@ -179,9 +179,8 @@ is a subspace of dimension `dim V - k` of at most half the dimension of `V`, so 
 theorem finrank_le_two_mul_of_le_orthogonal {ω : LinearMap.BilinForm K V} (hnd : ω.Nondegenerate)
     {N : G(k, V; K)} (hN : N.toSubmodule ≤ ω.orthogonal N.toSubmodule) :
     Module.finrank K V ≤ 2 * k := by
-  have hdim := Submodule.finrank_quotient_add_finrank N.toSubmodule
-  rw [finrank_quotient] at hdim
   have := LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal hnd hN
+  rw [N.finrank_toSubmodule] at this
   omega
 
 /-- **The symplectic group is transitive on isotropic points.** For a nondegenerate alternating
@@ -193,10 +192,8 @@ theorem exists_mem_isometryGroup_grassmannianCongr_eq {ω : LinearMap.BilinForm 
     (hN : N.toSubmodule ≤ ω.orthogonal N.toSubmodule)
     (hN' : N'.toSubmodule ≤ ω.orthogonal N'.toSubmodule) :
     ∃ g ∈ LinearMap.BilinForm.isometryGroup ω, g.grassmannianCongr N = N' := by
-  have h := Submodule.finrank_quotient_add_finrank N.toSubmodule
-  have h' := Submodule.finrank_quotient_add_finrank N'.toSubmodule
-  rw [finrank_quotient] at h h'
-  obtain ⟨g, hgN⟩ := hω.exists_isometryEquiv_map_eq hnd hN hN' (by omega)
+  obtain ⟨g, hgN⟩ := hω.exists_isometryEquiv_map_eq hnd hN hN'
+    (by rw [N.finrank_toSubmodule, N'.finrank_toSubmodule])
   exact ⟨g.toLinearEquiv, LinearMap.BilinForm.mem_isometryGroup_iff.mpr fun x y ↦ g.map_app y x,
     Module.Grassmannian.ext <| by simpa using hgN⟩
 
