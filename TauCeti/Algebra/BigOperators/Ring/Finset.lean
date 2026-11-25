@@ -30,6 +30,10 @@ inequalities with coefficients in a `d`-dimensional space, into inequalities for
 `∑ x, ∑ y, ∑ z, a x y * b x z * c y z` and the sum of the constant product of the three constants
 over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one-factor discrepancies.
 
+## Weights of total weight one
+
+`TauCeti.sum_mul_const_of_sum_eq_one`: weights of total weight `1` average a constant to itself.
+
 ## Restricting a weighted sum to the points in a set
 
 `Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
@@ -78,6 +82,11 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
   simp only [mul_sum, ← sum_add_distrib, ← sum_sub_distrib]
   refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ sum_congr rfl fun z _ ↦ ?_
   ring
+
+/-- Weights of total weight `1` average a constant to itself. -/
+theorem sum_mul_const_of_sum_eq_one {ι α : Type*} [NonAssocSemiring α] {s : Finset ι}
+    {p : ι → α} (hp : ∑ i ∈ s, p i = 1) (c : α) : ∑ i ∈ s, p i * c = c := by
+  rw [← Finset.sum_mul, hp, one_mul]
 
 end TauCeti
 

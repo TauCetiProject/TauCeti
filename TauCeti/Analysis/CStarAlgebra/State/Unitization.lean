@@ -9,7 +9,7 @@ public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.StarAlgebra.GNS.Basic
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 
@@ -48,6 +48,8 @@ extension of a tracial state is again a tracial state is
   `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`, from the Cauchy–Schwarz inequality for `γ⁺¹`,
   with the left and two-sided variants `norm_apply_sub_apply_mul_left_sq_le` and
   `norm_apply_sub_apply_mul_mul_le`.
+* `TauCeti.surjOn_pullbackFunctional_inr_stateSpace`: every state of `A` is the restriction of a
+  state of `A⁺¹`.
 
 ## Implementation notes
 
@@ -288,10 +290,12 @@ theorem norm_apply_sub_apply_mul_mul_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 �
     ‖γ y - γ (e * y * e)‖ ≤
       2 * Real.sqrt (‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)) * ‖y‖ := by
   set c := ‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)
-  have h1 := Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg y)
-    (norm_apply_sub_apply_mul_left_sq_le γ he he1 y)
-  have h2 := Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg (e * y))
-    (norm_apply_sub_apply_mul_sq_le γ he he1 (e * y))
+  have h1 : ‖γ y - γ (e * y)‖ ≤ Real.sqrt c * ‖y‖ :=
+    (Real.le_sqrt_of_sq_le (norm_apply_sub_apply_mul_left_sq_le γ he he1 y)).trans_eq
+      (by rw [Real.sqrt_mul_sq, abs_norm])
+  have h2 : ‖γ (e * y) - γ (e * y * e)‖ ≤ Real.sqrt c * ‖e * y‖ :=
+    (Real.le_sqrt_of_sq_le (norm_apply_sub_apply_mul_sq_le γ he he1 (e * y))).trans_eq
+      (by rw [Real.sqrt_mul_sq, abs_norm])
   have hey : ‖e * y‖ ≤ ‖y‖ := (norm_mul_le e y).trans (mul_le_of_le_one_left (norm_nonneg y) he1)
   calc ‖γ y - γ (e * y * e)‖ ≤ ‖γ y - γ (e * y)‖ + ‖γ (e * y) - γ (e * y * e)‖ :=
         norm_sub_le_norm_sub_add_norm_sub _ _ _
@@ -300,3 +304,32 @@ theorem norm_apply_sub_apply_mul_mul_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 �
     _ = 2 * Real.sqrt c * ‖y‖ := by ring
 
 end PositiveContinuousLinearMap
+
+namespace TauCeti
+
+open Set WeakDual
+
+section Unitization
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- Every state `φ` of `A` is the restriction of a state of `Unitization ℂ A`, namely
+`λ + a ↦ λ + φ a`. -/
+theorem surjOn_pullbackFunctional_inr_stateSpace :
+    SurjOn (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A))
+      (stateSpace (Unitization ℂ A)) (stateSpace A) := by
+  intro φ hφ
+  let τ : A →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun _ => map_nonneg_of_mem_stateSpace hφ
+  refine ⟨StrongDual.toWeakDual (τ.unitization : Unitization ℂ A →L[ℂ] ℂ), ?_,
+    DFunLike.ext _ _ fun a => ?_⟩
+  · rw [PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff,
+      PositiveContinuousLinearMap.norm_unitization]
+    exact norm_toStrongDual_of_mem_stateSpace hφ
+  · simp only [pullbackFunctional_apply, Unitization.inrNonUnitalStarAlgHom_apply,
+      StrongDual.toWeakDual_apply]
+    exact (τ.unitization_apply_inr a).trans
+      (PositiveContinuousLinearMap.mk₀_apply (R := ℂ) _ _ a)
+
+end Unitization
+
+end TauCeti
