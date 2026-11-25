@@ -43,8 +43,8 @@ gradient bound for solutions of the system on a compact boundaryless manifold.
   setting, the Riemann curvature and the divergence `∑ᵢ (∇_{eᵢ}R)(·, eᵢ)` of `R`, which the
   curvature equation controls although `∇R` itself is not bounded
   (`neg_laplaceBeltrami_innerCovariantDerivative_self_div_two_add_le_of_roughLaplacian_eq`
-  and its analogue for `β`). For `β` the derivative of the potential `(r / 4) (1 + |α|² + |β|²)`
-  has a good sign, and the remaining derivative of the potential carries a factor `|β|`.
+  and its analogue for `β`). For `β` the potential term `-(r / 4) (1 + |α|² + |β|²) |∇β|²`
+  has a good sign, and the derivative of the potential carries a factor `|β|`.
 * **The gradient bound.** Under the bounds of Taubes's setting, `|𝔞| ≤ c (|∇β| + |α| + |β|)`,
   `|∇𝔞| ≤ c (|∇²β| + |∇α| + |∇β| + 1)`, the analogues for `𝔟`, `|R| ≤ c r` for both
   connections, `|Rᵀ| ≤ c`, the divergence bounds `c r (|∇α| + |∇β| + 1)` and
@@ -578,7 +578,7 @@ theorem innerCovariantDerivative_self_add_mul_innerCovariantDerivative_self_le [
       150 * (1 + (c + 4 * finrank ℝ E ^ 2 * (1 + c) * (1 + (1 + C) ^ 2)) + C) ^ 5 * r *
           max (1 - ‖α x‖ ^ 2) 0 +
         150 * (1 + (c + 4 * finrank ℝ E ^ 2 * (1 + c) * (1 + (1 + C) ^ 2)) + C) ^ 5 := by
-  have hC : 0 ≤ C := nonneg_of_sq_le (by linarith) (ht x)
+  have hC : 0 ≤ C := nonneg_of_sq_le_div_mul_max_add_div (by linarith) (ht x)
   have hB (y : M) : ‖α y‖ ≤ 1 + C ∧ ‖β y‖ ≤ 1 + C :=
     ⟨le_one_add_of_sq_add_sq_le hr hC (norm_nonneg _) (hs y),
       le_one_add_of_sq_add_sq_le hr hC (norm_nonneg _) ((add_comm _ _).trans_le (hs y))⟩

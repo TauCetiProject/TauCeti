@@ -560,7 +560,7 @@ private theorem additiveConst_le (hc : 0 ≤ c) (hC : 0 ≤ C) :
   linarith
 
 /-- The bound `|β|² ≤ (C / r) w₊ + C / r²` with `r > 0` forces `C ≥ 0`. -/
-theorem nonneg_of_sq_le {r C b w : ℝ} (hr : 0 < r)
+theorem nonneg_of_sq_le_div_mul_max_add_div {r C b w : ℝ} (hr : 0 < r)
     (h : b ^ 2 ≤ C / r * max w 0 + C / r ^ 2) : 0 ≤ C := by
   by_contra! hC
   have h1 : C / r * max w 0 ≤ 0 :=
@@ -614,7 +614,7 @@ theorem norm_sq_add_mul_norm_sq_le (hc : 0 ≤ c) (hr : 1 ≤ r)
     ‖Dα x‖ ^ 2 + r * ‖Dβ x‖ ^ 2 ≤
       150 * (1 + c + C) ^ 5 * r * max (1 - ‖α x‖ ^ 2) 0 + 150 * (1 + c + C) ^ 5 := by
   have hr0 : 0 < r := by linarith
-  have hC : 0 ≤ C := nonneg_of_sq_le hr0 (ht x)
+  have hC : 0 ≤ C := nonneg_of_sq_le_div_mul_max_add_div hr0 (ht x)
   obtain ⟨m, hm⟩ : ∃ m : ℝ, m = 1 + 2 * C := ⟨_, rfl⟩
   obtain ⟨K, hK⟩ : ∃ K : ℝ, K = 60 * (1 + c + C) ^ 3 := ⟨_, rfl⟩
   have hm1 : 1 ≤ m := by linarith
