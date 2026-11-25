@@ -39,8 +39,10 @@ structure is installed.
 * `FreeRigid.lift fo fc`: the strong monoidal functor into an arbitrary (not necessarily strict)
   rigid monoidal category determined by images `fo` of the generating objects and `fc` of the
   coupons. It interprets objects by `RigidObject.eval`, so it sends the chosen duals of
-  `S.FreeRigid` to the chosen duals of the target, and the formal evaluations and coevaluations to
-  those of the target (`FreeRigid.lift_mapRightDualIso`, `FreeRigid.lift_mapLeftDualIso`).
+  `S.FreeRigid` to the chosen duals of the target (`FreeRigid.lift_mapRightDualIso`,
+  `FreeRigid.lift_mapLeftDualIso`), and the formal evaluations and coevaluations to those of the
+  target (`FreeRigid.lift_map_evaluation_rightDual`, `FreeRigid.lift_map_coevaluation_rightDual`,
+  `FreeRigid.lift_map_evaluation_leftDual`, `FreeRigid.lift_map_coevaluation_leftDual`).
 * `FreeRigid.monoidalNatIso`: two strong monoidal functors into an arbitrary monoidal category that
   agree up to isomorphism on the generating objects, compatibly with the coupons, are isomorphic
   by a monoidal natural isomorphism extending the given isomorphisms. At a dual, its component is
