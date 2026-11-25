@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+public import TauCeti.MeasureTheory.Measure.Restrict
 public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Topology.FiberBundle.Countable
 public import TauCeti.Topology.FiberBundle.Separation
@@ -66,12 +67,8 @@ variable {B F : Type*} {E : B → Type*} [TopologicalSpace B]
 each set of an open cover of `B` are equal. -/
 theorem ext_of_restrict_preimage [LindelofSpace B] {ι : Type*} {U : ι → Set B}
     (hU : ∀ i, IsOpen (U i)) (hcover : ⋃ i, U i = univ)
-    (h : ∀ i, V₁.restrict (proj ⁻¹' U i) = V₂.restrict (proj ⁻¹' U i)) : V₁ = V₂ := by
-  obtain ⟨T, hT, hTU⟩ := isLindelof_univ.elim_countable_subcover U hU hcover.ge
-  have : Countable T := hT.to_subtype
-  refine (Measure.ext_iff_of_iUnion_eq_univ (s := fun i : T ↦ proj ⁻¹' U i) ?_).mpr
-    fun i ↦ h i
-  rw [← preimage_iUnion, iUnion_subtype, univ_subset_iff.mp hTU, preimage_univ]
+    (h : ∀ i, V₁.restrict (proj ⁻¹' U i) = V₂.restrict (proj ⁻¹' U i)) : V₁ = V₂ :=
+  Measure.ext_of_restrict_preimage proj hU hcover h
 
 /-! ### The weight of a varifold -/
 
