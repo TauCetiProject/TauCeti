@@ -162,11 +162,14 @@ private theorem chartProduct_hom (α : BorderedSobolevSection (A.hom (𝕜 := �
     (A.ofBaseSet h).halfSectionChartData.chartProduct (A.hom (𝕜 := ℝ) h).halfSectionChartData
       A.halfSectionChartData (ContinuousLinearMap.id ℝ (F₁ →L[ℝ] F₂)) (fun i ↦ i) (fun i ↦ i)
       α ξ i z = (A.hom (𝕜 := ℝ) h).halfSectionChartData.chartValueL volume p k i α z
-        (A.halfSectionChartData.chartValueL volume p k i ξ z) :=
-  -- `ContinuousLinearMap.id` applies as the identity.
-  SectionChartData.chartProduct_apply (C₃ := (A.ofBaseSet h).halfSectionChartData)
+        (A.halfSectionChartData.chartValueL volume p k i ξ z) := by
+  -- The chart indices of the three chart data agree only after unfolding the hom atlas, so
+  -- `chartProduct_apply` is instantiated explicitly rather than found by `rw` or `simp`.
+  refine (SectionChartData.chartProduct_apply (C₃ := (A.ofBaseSet h).halfSectionChartData)
     (C₁ := (A.hom (𝕜 := ℝ) h).halfSectionChartData) (C₂ := A.halfSectionChartData)
-    (b := ContinuousLinearMap.id ℝ (F₁ →L[ℝ] F₂)) (e₁ := fun i ↦ i) (e₂ := fun i ↦ i) α ξ i z
+    (b := ContinuousLinearMap.id ℝ (F₁ →L[ℝ] F₂)) (e₁ := fun i ↦ i) (e₂ := fun i ↦ i)
+    α ξ i z).trans ?_
+  rw [ContinuousLinearMap.id_apply]
 
 /-- **Products lie in `W^{k,p}`.** For `1 < p`, orders `k ≤ n` with `kp > 2`, a `W^{k,p}`
 section `α` of the hom bundle and a `W^{k,p}` section `ξ` of `V₁`, some `W^{k,p}` section of `V₂`

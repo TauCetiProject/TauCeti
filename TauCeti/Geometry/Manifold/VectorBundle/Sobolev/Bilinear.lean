@@ -161,41 +161,65 @@ private theorem mulAux_eq_smul_add_smul {x x₁ x₂ : C₁.sobolevSections μ p
     simp only [Submodule.coe_add, Submodule.coe_smul, map_add, map_smul, hadd, Pi.add_apply, hs₁,
       hs₂, Pi.smul_apply, h₁, h₂, ht]).symm
 
+omit [FiniteDimensional ℝ F₃] in
+include h₁ in
+/-- The chart products are additive in the first factor, almost everywhere. -/
+theorem chartProduct_add_left_ae (x x' : C₁.sobolevSections μ p₁ k₁)
+    (y : C₂.sobolevSections μ p₂ k₂) (i : Fin C₃.n) :
+    C₃.chartProduct C₁ C₂ b e₁ e₂ (x + x') y i =ᵐ[μ.restrict (C₃.image i)]
+      C₃.chartProduct C₁ C₂ b e₁ e₂ x y i + C₃.chartProduct C₁ C₂ b e₁ e₂ x' y i := by
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₁ i) (Lp.coeFn_add
+    (C₁.chartValueL μ p₁ k₁ (e₁ i) x) (C₁.chartValueL μ p₁ k₁ (e₁ i) x'))] with t ht
+  simp only [chartProduct_apply, Submodule.coe_add, map_add, ht, Pi.add_apply, add_apply]
+
+omit [FiniteDimensional ℝ F₃] in
+include h₁ in
+/-- The chart products are homogeneous in the first factor, almost everywhere. -/
+theorem chartProduct_smul_left_ae (c : ℝ) (x : C₁.sobolevSections μ p₁ k₁)
+    (y : C₂.sobolevSections μ p₂ k₂) (i : Fin C₃.n) :
+    C₃.chartProduct C₁ C₂ b e₁ e₂ (c • x) y i =ᵐ[μ.restrict (C₃.image i)]
+      c • C₃.chartProduct C₁ C₂ b e₁ e₂ x y i := by
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₁ i)
+    (Lp.coeFn_smul c (C₁.chartValueL μ p₁ k₁ (e₁ i) x))] with t ht
+  simp only [chartProduct_apply, Submodule.coe_smul, map_smul, ht, Pi.smul_apply, smul_apply]
+
+omit [FiniteDimensional ℝ F₃] in
+include h₂ in
+/-- The chart products are additive in the second factor, almost everywhere. -/
+theorem chartProduct_add_right_ae (x : C₁.sobolevSections μ p₁ k₁)
+    (y y' : C₂.sobolevSections μ p₂ k₂) (i : Fin C₃.n) :
+    C₃.chartProduct C₁ C₂ b e₁ e₂ x (y + y') i =ᵐ[μ.restrict (C₃.image i)]
+      C₃.chartProduct C₁ C₂ b e₁ e₂ x y i + C₃.chartProduct C₁ C₂ b e₁ e₂ x y' i := by
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₂ i) (Lp.coeFn_add
+    (C₂.chartValueL μ p₂ k₂ (e₂ i) y) (C₂.chartValueL μ p₂ k₂ (e₂ i) y'))] with t ht
+  simp only [chartProduct_apply, Submodule.coe_add, map_add, ht, Pi.add_apply]
+
+omit [FiniteDimensional ℝ F₃] in
+include h₂ in
+/-- The chart products are homogeneous in the second factor, almost everywhere. -/
+theorem chartProduct_smul_right_ae (c : ℝ) (x : C₁.sobolevSections μ p₁ k₁)
+    (y : C₂.sobolevSections μ p₂ k₂) (i : Fin C₃.n) :
+    C₃.chartProduct C₁ C₂ b e₁ e₂ x (c • y) i =ᵐ[μ.restrict (C₃.image i)]
+      c • C₃.chartProduct C₁ C₂ b e₁ e₂ x y i := by
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₂ i)
+    (Lp.coeFn_smul c (C₂.chartValueL μ p₂ k₂ (e₂ i) y))] with t ht
+  simp only [chartProduct_apply, Submodule.coe_smul, map_smul, ht, Pi.smul_apply]
+
 include h₁ h₂
 
-/-- The chosen product, as a bilinear map. Each linearity law is
-`mulAux_eq_smul_add_smul`, from the corresponding law of the chart data. -/
+/-- The chosen product, as a bilinear map: each linearity law is `mulAux_eq_smul_add_smul` applied
+to the corresponding law of the chart products. -/
 private def mulₗ : C₁.sobolevSections μ p₁ k₁ →ₗ[ℝ] C₂.sobolevSections μ p₂ k₂ →ₗ[ℝ]
     C₃.sobolevSections μ p₃ k₃ :=
   LinearMap.mk₂ ℝ (mulAux hb)
-    (fun x x' y ↦ by
-      simpa using mulAux_eq_smul_add_smul hb (x₁ := x) (x₂ := x') (y₁ := y) (y₂ := y) 1 1
-        fun i ↦ by
-          filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₁ i) (Lp.coeFn_add
-            (C₁.chartValueL μ p₁ k₁ (e₁ i) x) (C₁.chartValueL μ p₁ k₁ (e₁ i) x'))] with t ht
-          simp only [chartProduct_apply, Submodule.coe_add, map_add, ht, Pi.add_apply,
-            add_apply, one_smul])
-    (fun c x y ↦ by
-      simpa using mulAux_eq_smul_add_smul hb (x₁ := x) (x₂ := x) (y₁ := y) (y₂ := y) c 0
-        fun i ↦ by
-          filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₁ i)
-            (Lp.coeFn_smul c (C₁.chartValueL μ p₁ k₁ (e₁ i) x))] with t ht
-          simp only [chartProduct_apply, Submodule.coe_smul, map_smul, ht, Pi.smul_apply,
-            smul_apply, zero_smul, add_zero])
-    (fun x y y' ↦ by
-      simpa using mulAux_eq_smul_add_smul hb (x₁ := x) (x₂ := x) (y₁ := y) (y₂ := y') 1 1
-        fun i ↦ by
-          filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₂ i) (Lp.coeFn_add
-            (C₂.chartValueL μ p₂ k₂ (e₂ i) y) (C₂.chartValueL μ p₂ k₂ (e₂ i) y'))] with t ht
-          simp only [chartProduct_apply, Submodule.coe_add, map_add, ht, Pi.add_apply,
-            one_smul])
-    (fun c x y ↦ by
-      simpa using mulAux_eq_smul_add_smul hb (x₁ := x) (x₂ := x) (y₁ := y) (y₂ := y) c 0
-        fun i ↦ by
-          filter_upwards [ae_restrict_of_ae_restrict_of_subset (h₂ i)
-            (Lp.coeFn_smul c (C₂.chartValueL μ p₂ k₂ (e₂ i) y))] with t ht
-          simp only [chartProduct_apply, Submodule.coe_smul, map_smul, ht, Pi.smul_apply,
-            zero_smul, add_zero])
+    (fun x x' y ↦ by simpa using mulAux_eq_smul_add_smul hb 1 1 fun i ↦
+      (chartProduct_add_left_ae h₁ x x' y i).trans (by simp))
+    (fun c x y ↦ by simpa using mulAux_eq_smul_add_smul hb c 0 (x₂ := x) (y₂ := y) fun i ↦
+      (chartProduct_smul_left_ae h₁ c x y i).trans (by simp))
+    (fun x y y' ↦ by simpa using mulAux_eq_smul_add_smul hb 1 1 fun i ↦
+      (chartProduct_add_right_ae h₂ x y y' i).trans (by simp))
+    (fun c x y ↦ by simpa using mulAux_eq_smul_add_smul hb c 0 (x₂ := x) (y₂ := y) fun i ↦
+      (chartProduct_smul_right_ae h₂ c x y i).trans (by simp))
 
 private theorem mulₗ_apply (x : C₁.sobolevSections μ p₁ k₁) (y : C₂.sobolevSections μ p₂ k₂) :
     mulₗ h₁ h₂ hb x y = mulAux hb x y :=
