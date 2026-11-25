@@ -13,10 +13,13 @@ public import Mathlib.RingTheory.PicardGroup
 A submodule whose underlying module is invertible is free exactly when it is principal.
 This identifies trivial invertible-module classes with principal submodules, over any
 commutative semiring. An invertible ideal is principal near each prime
-(`Ideal.exists_mul_mem_span_singleton`).
+(`Ideal.exists_mul_mem_span_singleton`). The isomorphism `I ⊗ J ≃ I * J` of invertible submodules
+of an algebra is multiplication (`Submodule.coe_tensorEquivMul_tmul`).
 -/
 
 public section
+
+open scoped TensorProduct
 
 namespace Submodule
 
@@ -40,6 +43,13 @@ theorem free_iff_isPrincipal (I : Submodule R P) [Module.Invertible R I] :
       obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp (hx ▸ hy : y ∈ Submodule.span R {x})
       exact ⟨a, rfl⟩
     exact ⟨(LinearEquiv.ofBijective f (Module.Invertible.bijective_of_surjective hf)).symm⟩
+
+/-- The isomorphism `I ⊗ J ≃ I * J` of invertible submodules of an algebra is multiplication. -/
+theorem coe_tensorEquivMul_tmul {A : Type*} [Semiring A] [Algebra R A] [FaithfulSMul R A]
+    (I J : (Submodule R A)ˣ) (x : (I : Submodule R A)) (y : (J : Submodule R A)) :
+    (tensorEquivMul I J (x ⊗ₜ y) : A) = x * y := by
+  rw [tensorEquivMul]
+  exact (congrArg Subtype.val (LinearEquiv.ofBijective_apply _ _)).trans (val_mulMap'_tmul x y)
 
 end Submodule
 
