@@ -23,13 +23,14 @@ open scoped CStarAlgebra ComplexOrder
 namespace TauCeti.NuclearExample
 
 /-- `ℂ` is nuclear. -/
-example : CStarAlgebra.IsNuclear ℂ := inferInstance
+example : TauCeti.CStarAlgebra.IsNuclear ℂ := inferInstance
 
 /-- `M_3(ℂ)` is nuclear. -/
-example : CStarAlgebra.IsNuclear (CStarMatrix (Fin 3) (Fin 3) ℂ) := inferInstance
+example : TauCeti.CStarAlgebra.IsNuclear (CStarMatrix (Fin 3) (Fin 3) ℂ) := inferInstance
 
 /-- `M_{Bool × Bool}(ℂ)`, a matrix algebra over an index type other than `Fin n`, is nuclear. -/
-example : CStarAlgebra.IsNuclear (CStarMatrix (Bool × Bool) (Bool × Bool) ℂ) := inferInstance
+example : TauCeti.CStarAlgebra.IsNuclear (CStarMatrix (Bool × Bool) (Bool × Bool) ℂ) :=
+  inferInstance
 
 /-- The zero map `ℂ → M_2(ℂ)` is a nuclear contraction, through `M_0`. -/
 example : (0 : ℂ →CP CStarMatrix (Fin 2) (Fin 2) ℂ).IsNuclearContraction :=
@@ -37,6 +38,6 @@ example : (0 : ℂ →CP CStarMatrix (Fin 2) (Fin 2) ℂ).IsNuclearContraction :
 
 /-- Half the identity of `ℂ` is a nuclear contraction, and so it is nuclear. -/
 example : ((1 / 2 : NNReal) • CompletelyPositiveMap.id ℂ).IsNuclear :=
-  (CStarAlgebra.IsNuclear.isNuclearContraction_id.smul (by norm_num)).isNuclear
+  (TauCeti.CStarAlgebra.IsNuclear.isNuclearContraction_id.smul (by norm_num)).isNuclear
 
 end TauCeti.NuclearExample

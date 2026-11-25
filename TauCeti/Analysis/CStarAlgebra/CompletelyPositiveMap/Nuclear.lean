@@ -22,7 +22,7 @@ contraction (`CompletelyPositiveMap.IsNuclearContraction.norm_apply_le`).
 
 A general completely positive map is *nuclear* (`CompletelyPositiveMap.IsNuclear`) when it is a
 nonnegative multiple of a nuclear contraction, and a C⋆-algebra `A` is *nuclear*
-(`CStarAlgebra.IsNuclear`) when its identity map is a nuclear contraction. This is the
+(`TauCeti.CStarAlgebra.IsNuclear`) when its identity map is a nuclear contraction. This is the
 completely positive approximation property; it is a different notion from nuclear operators
 between Banach spaces, and from the approximation property of a Banach space.
 
@@ -30,7 +30,7 @@ between Banach spaces, and from the approximation property of a Banach space.
 
 * `CompletelyPositiveMap.IsNuclearContraction`: the finite-set form of nuclearity.
 * `CompletelyPositiveMap.IsNuclear`: nonnegative multiples of nuclear contractions.
-* `CStarAlgebra.IsNuclear`: the identity of `A` is a nuclear contraction.
+* `TauCeti.CStarAlgebra.IsNuclear`: the identity of `A` is a nuclear contraction.
 
 ## Main statements
 
@@ -45,11 +45,11 @@ between Banach spaces, and from the approximation property of a Banach space.
   limit of nuclear contractions is a nuclear contraction.
 * `CompletelyPositiveMap.IsNuclearContraction.smul`: multiples `c • φ` with `c ≤ 1` of nuclear
   contractions are nuclear contractions.
-* `CStarAlgebra.IsNuclear.of_retract`: a retract of a nuclear C⋆-algebra through completely
-  positive contractions is nuclear.
-* `CStarAlgebra.IsNuclear.of_starAlgEquiv`: nuclearity is invariant under star isomorphism, and the
-  matrix algebras `M_n(ℂ)` (`CStarAlgebra.isNuclear_cstarMatrix`) and `ℂ`
-  (`CStarAlgebra.isNuclear_complex`) are nuclear.
+* `TauCeti.CStarAlgebra.IsNuclear.of_retract`: a retract of a nuclear C⋆-algebra through
+  completely positive contractions is nuclear.
+* `TauCeti.CStarAlgebra.IsNuclear.of_starAlgEquiv`: nuclearity is invariant under star
+  isomorphism, and the matrix algebras `M_n(ℂ)` (`TauCeti.CStarAlgebra.isNuclear_cstarMatrix`)
+  and `ℂ` (`TauCeti.CStarAlgebra.isNuclear_complex`) are nuclear.
 
 ## References
 
@@ -226,7 +226,7 @@ theorem IsNuclear.comp_right {φ : A →CP B} (h : φ.IsNuclear) (θ : D →CP A
 
 end CompletelyPositiveMap
 
-namespace CStarAlgebra
+namespace TauCeti.CStarAlgebra
 
 open CompletelyPositiveMap
 
@@ -273,4 +273,4 @@ instance isNuclear_cstarMatrix (m : Type*) [Fintype m] :
 instance isNuclear_complex : IsNuclear ℂ :=
   .of_starAlgEquiv (CStarMatrix.toOneByOne (Fin 1) ℂ ℂ)
 
-end CStarAlgebra
+end TauCeti.CStarAlgebra
