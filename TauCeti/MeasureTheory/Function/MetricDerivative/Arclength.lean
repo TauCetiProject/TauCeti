@@ -77,8 +77,7 @@ theorem ae_deriv_variationOnFromTo_eq_norm_deriv (hγ : AbsolutelyContinuousOnIn
       rw [← derivWithin_of_mem_nhds (Icc_mem_nhds hIoo.1 hIoo.2)]
       exact hmono.derivWithin_nonneg
     have h := (ht₂ (Ioc_subset_Icc_self hmem)).symm.trans_le (ht₁ (Ioc_subset_Icc_self hmem))
-    rwa [← ofReal_norm, ← ofReal_norm, ENNReal.ofReal_le_ofReal_iff (norm_nonneg _),
-      Real.norm_of_nonneg hnn] at h
+    rwa [eNorm_le_iff_norm_le, Real.norm_of_nonneg hnn] at h
   -- Both sides integrate to the length of `γ`.
   have hint : ∫ t in a..b, (deriv s t - ‖deriv γ t‖) = 0 := by
     have hsb : s b = (eVariationOn γ (Icc a b)).toReal :=
