@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.Algebra.Category.FiniteIsocrystal.Splitting
-public import TauCeti.RingTheory.LaurentSeries.DifferenceEquation
+public import TauCeti.RingTheory.LaurentSeries.DifferenceEquation.Frobenius
 
 /-!
 # Splitting extensions of equal-characteristic isocrystals
