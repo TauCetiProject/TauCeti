@@ -206,7 +206,7 @@ noncomputable def constIso {A D : ContMDiffFiniteRankBundleCore I n B}
           (e : (Fin A.toCore.rank → 𝕜) →L[𝕜] (Fin D.toCore.rank → 𝕜))) :
     A ≅ D :=
   let Φ := FiniteRankBundleCore.constIsoDiffeomorph (I := I) (n := n) hbase e he
-  isoMk (FiniteRankBundleCore.constIso hbase e he)
+  isoMk (FiniteRankBundleCore.constIso (fun i ↦ (hbase i).le) e he)
     (FiniteRankBundleCore.coe_constIsoDiffeomorph (I := I) (n := n) hbase e he ▸ Φ.contMDiff)
     (FiniteRankBundleCore.coe_constIsoDiffeomorph_symm (I := I) (n := n) hbase e he ▸
       Φ.symm.contMDiff)
@@ -219,7 +219,8 @@ noncomputable def constIso {A D : ContMDiffFiniteRankBundleCore I n B}
           (A.toCore.core.coordChange i j x) =
         (D.toCore.core.coordChange i j x).comp
           (e : (Fin A.toCore.rank → 𝕜) →L[𝕜] (Fin D.toCore.rank → 𝕜))) :
-    (constIso hbase e he).hom.toHom = (FiniteRankBundleCore.constIso hbase e he).hom := (rfl)
+    (constIso hbase e he).hom.toHom =
+      (FiniteRankBundleCore.constIso (fun i ↦ (hbase i).le) e he).hom := (rfl)
 
 @[simp] theorem constIso_inv_toHom {A D : ContMDiffFiniteRankBundleCore I n B}
     (hbase : ∀ i, A.toCore.core.baseSet i = D.toCore.core.baseSet i)
@@ -229,7 +230,8 @@ noncomputable def constIso {A D : ContMDiffFiniteRankBundleCore I n B}
           (A.toCore.core.coordChange i j x) =
         (D.toCore.core.coordChange i j x).comp
           (e : (Fin A.toCore.rank → 𝕜) →L[𝕜] (Fin D.toCore.rank → 𝕜))) :
-    (constIso hbase e he).inv.toHom = (FiniteRankBundleCore.constIso hbase e he).inv := (rfl)
+    (constIso hbase e he).inv.toHom =
+      (FiniteRankBundleCore.constIso (fun i ↦ (hbase i).le) e he).inv := (rfl)
 
 /-! ### Symmetric monoidal structure -/
 

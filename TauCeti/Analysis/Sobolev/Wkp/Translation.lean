@@ -188,6 +188,17 @@ theorem continuous_translate (hp : p ≠ ∞) :
         by simpa only [iteratedGradient_translate] using
           Measure.continuous_translateLp hp (iteratedGradient k u)⟩
 
+open Filter Topology in
+/-- For finite `p`, the whole-space translates `x ↦ w (x + g t)` of a fixed `w ∈ W^{1,p}` tend to
+`w` along any filter on which the translation vectors `g t` tend to zero. -/
+theorem _root_.TauCeti.W1p.tendsto_translate (hp : p ≠ ∞) {X : Type*} {l : Filter X} {g : X → E}
+    (hg : Tendsto g l (𝓝 0)) (w : W1p mu ⊤ p) :
+    Tendsto (fun t => W1p.translate (Omega := ⊤) (V := ⊤) (h := g t) (fun _ _ => by simp) w) l
+      (𝓝 w) := by
+  have h := ((continuous_translate hp 1 w).tendsto 0).comp hg
+  rw [translate_zero 1 w] at h
+  exact h.congr fun t => translate_one_eq_W1p_translate (g t) w
+
 /-- Translation preserves the iterated graph norm at every Sobolev order. -/
 @[simp]
 theorem norm_translate (h : E) : ∀ (k : ℕ) (u : Wkp mu ⊤ p k),

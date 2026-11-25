@@ -153,12 +153,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 support of the function. -/
 theorem tsupport_vectorFieldDerivation_apply_subset
     (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (f : C^∞⟮I, M; 𝕜⟯) :
-    tsupport (vectorFieldDerivation X f) ⊆ tsupport f := by
-  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport _)
-  by_contra h
-  have hf : (f : M → 𝕜) =ᶠ[𝓝 x] fun _ ↦ 0 := notMem_tsupport_iff_eventuallyEq.1 h
-  simp [Function.mem_support, ContMDiffSection.vectorFieldDerivation_apply_apply, hf.mvfderiv_eq,
-    mvfderiv_const] at hx
+    tsupport (vectorFieldDerivation X f) ⊆ tsupport f :=
+  tsupport_mvfderiv_apply_subset f (X ·)
 
 end VectorFieldDerivation
 

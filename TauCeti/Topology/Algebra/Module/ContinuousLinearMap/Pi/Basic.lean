@@ -5,106 +5,213 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import TauCeti.Topology.Algebra.Module.Equiv.Pi
+import Mathlib.LinearAlgebra.Matrix.ToLin
+import Mathlib.Topology.Instances.Matrix
+import TauCeti.Analysis.Normed.Module.ContinuousInverse
 
 /-!
-# Continuous linear maps out of finite coordinate spaces
+# Bounded-convergence continuity and inversion on finite coordinate spaces
 
-Every continuous linear map `L : (ι → R) →L[R] G` out of a finite product of scalars expands as the
-finite sum of rank-one operators `(proj i).smulRight (L (Pi.single i 1))`
-(`ContinuousLinearMap.eq_sum_smulRight_proj`).
-
-Consequently, over any nontrivially normed field `𝕜` and into any topological `𝕜`-vector space `G`,
-convergence and continuity of a family `T : Z → (ι → 𝕜) →L[𝕜] G` in the topology of bounded
-convergence (which coincides with the operator-norm topology when `G` is normed) are equivalent to
-pointwise convergence and continuity on every vector `v : ι → 𝕜` (`TauCeti.tendsto_clm_pi_iff`,
-`TauCeti.continuousWithinAt_clm_pi_iff`, `TauCeti.continuousAt_clm_pi_iff`,
-`TauCeti.continuousOn_clm_pi_iff`, `TauCeti.continuous_clm_pi_iff`). Unlike Mathlib's
-`continuousAt_clm_apply` for an arbitrary finite-dimensional normed domain, these results require
-neither completeness of `𝕜` nor a norm on `G`.
-
-The constructions build on Mathlib's `ContinuousLinearMap.proj`, `ContinuousLinearMap.smulRight`,
-`ContinuousLinearMap.toSpanSingletonCLE`, and `ContinuousLinearMap.precomp`.
+On a finite coordinate space `ι → 𝕜` over a nontrivially normed field `𝕜`, neither
+bounded-convergence continuity nor continuous inversion of linear equivalences requires
+`CompleteSpace 𝕜`:
+* `TauCeti.piRingContinuousLinearEquiv` packages the bounded-convergence continuous linear
+  equivalence `((ι → 𝕜) →L[𝕜] G) ≃L[𝕜] (ι → G)` for a finite index type `ι` and a topological
+  `𝕜`-module `G`, yielding `TauCeti.continuousWithinAt_pi_clm_iff_apply_single_one`,
+  `TauCeti.continuousAt_pi_clm_iff_apply_single_one`,
+  `TauCeti.continuousOn_pi_clm_iff_apply_single_one`, and
+  `TauCeti.continuous_pi_clm_iff_apply_single_one`;
+* `ContinuousLinearMap.isInvertible_of_bijective_pi` equips any bijective continuous linear map
+  `M →L[R] (κ → R)` from a topological `R`-module `M` into a finite coordinate space `κ → R`
+  with a continuous inverse;
+* `ContinuousAt.pi_clm_inverse`, `ContinuousWithinAt.pi_clm_inverse`, and
+  `ContinuousOn.pi_clm_inverse` prove that for a continuous family
+  `T : Y → (ι → 𝕜) →L[𝕜] (κ → 𝕜)` of continuous linear maps between finite coordinate spaces,
+  `y ↦ (T y).inverse` is continuous wherever `T` is bijective.
 -/
 
 public section
 
-open Filter
 open scoped Topology
 
-namespace ContinuousLinearMap
-
-/-- Every continuous linear map out of a finite product `ι → R` expands as the sum of rank-one
-operators along the coordinate projections `proj i` and standard basis vectors `Pi.single i 1`. -/
-theorem eq_sum_smulRight_proj {R ι G : Type*} [Semiring R] [TopologicalSpace R]
-    [Fintype ι] [DecidableEq ι] [AddCommMonoid G] [Module R G] [TopologicalSpace G]
-    [ContinuousAdd G] [ContinuousSMul R G] (L : (ι → R) →L[R] G) :
-    L = ∑ i : ι, (proj (R := R) i).smulRight (L (Pi.single i 1)) := by
-  ext v
-  have hv : ∑ i : ι, v i • (Pi.single i (1 : R) : ι → R) = v := by
-    ext j
-    simp [Pi.single_apply]
-  simpa only [sum_apply, smulRight_apply, proj_apply, ← map_smul, ← map_sum] using
-    congrArg L hv.symm
-
-end ContinuousLinearMap
+section EvalBasis
 
 namespace TauCeti
 
-variable {𝕜 Z G ι : Type*} [NontriviallyNormedField 𝕜]
-  [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-  [ContinuousSMul 𝕜 G] [Finite ι]
+/-- For a finite index type `ι` over a nontrivially normed field `𝕜` and a topological `𝕜`-module
+`G`, evaluating at the standard basis vectors `Pi.single i 1` gives a continuous linear equivalence
+between `(ι → 𝕜) →L[𝕜] G` (with the bounded-convergence topology) and `ι → G` without requiring
+`CompleteSpace 𝕜`. -/
+noncomputable def piRingContinuousLinearEquiv (𝕜 ι G : Type*) [NontriviallyNormedField 𝕜]
+    [Finite ι] [DecidableEq ι] [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+    [Module 𝕜 G] [ContinuousSMul 𝕜 G] : ((ι → 𝕜) →L[𝕜] G) ≃L[𝕜] (ι → G) :=
+  letI := Fintype.ofFinite ι
+  let e := LinearEquiv.piRing 𝕜 G ι 𝕜
+  let rankOne (i : ι) : G →L[𝕜] ((ι → 𝕜) →L[𝕜] G) :=
+    ((ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : ι ↦ 𝕜) i).precomp G).comp
+      ContinuousLinearMap.toSpanSingletonCLE.toContinuousLinearMap
+  { toFun L := e L.toLinearMap
+    map_add' L₁ L₂ := e.map_add L₁.toLinearMap L₂.toLinearMap
+    map_smul' c L := e.map_smul c L.toLinearMap
+    invFun g := ⟨e.symm g, (e.symm g).continuous_on_pi⟩
+    left_inv L := ContinuousLinearMap.ext fun v ↦ DFunLike.congr_fun (e.left_inv L.toLinearMap) v
+    right_inv := e.right_inv
+    continuous_toFun := continuous_pi fun i ↦ continuous_eval_const (Pi.single i 1)
+    continuous_invFun :=
+      (continuous_finsetSum Finset.univ fun i _ ↦
+        (rankOne i).continuous.comp (continuous_apply i)).congr
+        fun g ↦ ContinuousLinearMap.ext fun v ↦ by
+          simp [rankOne, e] }
 
-/-- A family of continuous linear maps out of a finite coordinate space `ι → 𝕜` converges in the
-topology of bounded convergence (the operator-norm topology when `G` is normed) if and only if its
-evaluations at every vector `v : ι → 𝕜` converge. Neither completeness of `𝕜` nor a norm on `G` is
-required. -/
-theorem tendsto_clm_pi_iff {l : Filter Z} {T : Z → (ι → 𝕜) →L[𝕜] G} {L : (ι → 𝕜) →L[𝕜] G} :
-    Tendsto T l (𝓝 L) ↔ ∀ v, Tendsto (fun z ↦ T z v) l (𝓝 (L v)) := by
-  refine ⟨fun h v ↦ ((continuous_eval_const v).tendsto L).comp h, fun h ↦ ?_⟩
-  cases nonempty_fintype ι
-  classical
-  let p (i : ι) : (ι → 𝕜) →L[𝕜] 𝕜 := ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : ι ↦ 𝕜) i
-  let r (i : ι) : G →L[𝕜] (ι → 𝕜) →L[𝕜] G :=
-    ((p i).precomp G).comp
-      (ContinuousLinearMap.toSpanSingletonCLE (𝕜 := 𝕜) (E := G)).toContinuousLinearMap
-  have hr (i : ι) (g : G) : r i g = (p i).smulRight g := by
-    ext v
-    rfl
-  have hterm (A : (ι → 𝕜) →L[𝕜] G) : ∑ i : ι, r i (A (Pi.single i 1)) = A := by
-    simpa only [hr] using A.eq_sum_smulRight_proj.symm
-  have hsum : Tendsto (fun z ↦ ∑ i : ι, r i (T z (Pi.single i 1))) l
-      (𝓝 (∑ i : ι, r i (L (Pi.single i 1)))) :=
-    tendsto_finsetSum Finset.univ fun i _ ↦
-      ((r i).continuous.tendsto (L (Pi.single i 1))).comp (h (Pi.single i 1))
-  simpa only [hterm] using hsum
+section
 
-variable [TopologicalSpace Z]
+variable {𝕜 ι Y G : Type*} [NontriviallyNormedField 𝕜] [Finite ι] [TopologicalSpace Y]
+  [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G] [Module 𝕜 G] [ContinuousSMul 𝕜 G]
 
-/-- A family of continuous linear maps out of a finite coordinate space `ι → 𝕜` is continuous within
-a set at a point if and only if all of its pointwise evaluations are. -/
-theorem continuousWithinAt_clm_pi_iff {T : Z → (ι → 𝕜) →L[𝕜] G} {s : Set Z} {z₀ : Z} :
-    ContinuousWithinAt T s z₀ ↔ ∀ v, ContinuousWithinAt (fun z ↦ T z v) s z₀ :=
-  tendsto_clm_pi_iff
+/-- `TauCeti.piRingContinuousLinearEquiv` evaluates a continuous linear map on `Pi.single i 1`. -/
+@[simp] theorem piRingContinuousLinearEquiv_apply [DecidableEq ι]
+    (L : (ι → 𝕜) →L[𝕜] G) (i : ι) :
+    piRingContinuousLinearEquiv 𝕜 ι G L i = L (Pi.single i 1) :=
+  letI := Fintype.ofFinite ι
+  LinearEquiv.piRing_apply (S := 𝕜) L.toLinearMap i
 
-/-- A family of continuous linear maps out of a finite coordinate space `ι → 𝕜` is continuous at a
-point if and only if all of its pointwise evaluations are. -/
-theorem continuousAt_clm_pi_iff {T : Z → (ι → 𝕜) →L[𝕜] G} {z₀ : Z} :
-    ContinuousAt T z₀ ↔ ∀ v, ContinuousAt (fun z ↦ T z v) z₀ :=
-  tendsto_clm_pi_iff
+/-- The inverse of `TauCeti.piRingContinuousLinearEquiv` expands a vector in the standard basis. -/
+@[simp] theorem piRingContinuousLinearEquiv_symm_apply {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (g : κ → G) (v : κ → 𝕜) :
+    (piRingContinuousLinearEquiv 𝕜 κ G).symm g v = ∑ i : κ, v i • g i := by
+  -- `piRingContinuousLinearEquiv` only assumes `[Finite κ]` and uses `Fintype.ofFinite κ`
+  -- internally, whereas the RHS sum uses the caller's `[Fintype κ]` instance.
+  let _ := Fintype.ofFinite κ
+  refine (LinearEquiv.piRing_symm_apply (S := 𝕜) g v).trans ?_
+  congr!
 
-/-- A family of continuous linear maps out of a finite coordinate space `ι → 𝕜` is continuous on a
-set if and only if all of its pointwise evaluations are. -/
-theorem continuousOn_clm_pi_iff {T : Z → (ι → 𝕜) →L[𝕜] G} {s : Set Z} :
-    ContinuousOn T s ↔ ∀ v, ContinuousOn (fun z ↦ T z v) s := by
-  simp_rw [ContinuousOn, continuousWithinAt_clm_pi_iff, imp_forall_iff]
-  exact forall_comm
+/-- Over a nontrivially normed field `𝕜` and a finite index type `ι`, a family
+`T : Y → (ι → 𝕜) →L[𝕜] G` into a topological `𝕜`-module `G` is continuous within `s` at `y₀` if
+and only if each basis evaluation `y ↦ T y (Pi.single i 1)` is continuous within `s` at `y₀`. -/
+theorem continuousWithinAt_pi_clm_iff_apply_single_one [DecidableEq ι]
+    {T : Y → (ι → 𝕜) →L[𝕜] G} {s : Set Y} {y₀ : Y} :
+    ContinuousWithinAt T s y₀ ↔
+      ∀ i : ι, ContinuousWithinAt (fun y ↦ T y (Pi.single i 1)) s y₀ :=
+  (piRingContinuousLinearEquiv 𝕜 ι G).toHomeomorph.isInducing.continuousWithinAt_iff.trans
+    continuousWithinAt_pi
 
-/-- A family of continuous linear maps out of a finite coordinate space `ι → 𝕜` is continuous if
-and only if all of its pointwise evaluations are. -/
-theorem continuous_clm_pi_iff {T : Z → (ι → 𝕜) →L[𝕜] G} :
-    Continuous T ↔ ∀ v, Continuous (fun z ↦ T z v) := by
-  simp_rw [continuous_iff_continuousAt, continuousAt_clm_pi_iff]
-  exact forall_comm
+/-- Over a nontrivially normed field `𝕜` and a finite index type `ι`, a family
+`T : Y → (ι → 𝕜) →L[𝕜] G` into a topological `𝕜`-module `G` is continuous at `y₀` if and only if
+each basis evaluation `y ↦ T y (Pi.single i 1)` is continuous at `y₀`. -/
+theorem continuousAt_pi_clm_iff_apply_single_one [DecidableEq ι]
+    {T : Y → (ι → 𝕜) →L[𝕜] G} {y₀ : Y} :
+    ContinuousAt T y₀ ↔ ∀ i : ι, ContinuousAt (fun y ↦ T y (Pi.single i 1)) y₀ :=
+  (piRingContinuousLinearEquiv 𝕜 ι G).toHomeomorph.isInducing.continuousAt_iff.trans continuousAt_pi
+
+/-- Over a nontrivially normed field `𝕜` and a finite index type `ι`, a family
+`T : Y → (ι → 𝕜) →L[𝕜] G` into a topological `𝕜`-module `G` is continuous on `s` if and only if
+each basis evaluation `y ↦ T y (Pi.single i 1)` is continuous on `s`. -/
+theorem continuousOn_pi_clm_iff_apply_single_one [DecidableEq ι]
+    {T : Y → (ι → 𝕜) →L[𝕜] G} {s : Set Y} :
+    ContinuousOn T s ↔ ∀ i : ι, ContinuousOn (fun y ↦ T y (Pi.single i 1)) s :=
+  (piRingContinuousLinearEquiv 𝕜 ι G).toHomeomorph.isInducing.continuousOn_iff.trans continuousOn_pi
+
+/-- Over a nontrivially normed field `𝕜` and a finite index type `ι`, a family
+`T : Y → (ι → 𝕜) →L[𝕜] G` into a topological `𝕜`-module `G` is continuous if and only if each
+basis evaluation `y ↦ T y (Pi.single i 1)` is continuous. -/
+theorem continuous_pi_clm_iff_apply_single_one [DecidableEq ι] {T : Y → (ι → 𝕜) →L[𝕜] G} :
+    Continuous T ↔ ∀ i : ι, Continuous fun y ↦ T y (Pi.single i 1) :=
+  (piRingContinuousLinearEquiv 𝕜 ι G).toHomeomorph.isInducing.continuous_iff.trans continuous_pi_iff
+
+end
 
 end TauCeti
+
+end EvalBasis
+
+section Inverse
+
+/-- Any bijective continuous linear map from a topological `R`-module `M` (with continuous addition
+and scalar multiplication) into a finite coordinate space `κ → R` has a continuous inverse. -/
+theorem ContinuousLinearMap.isInvertible_of_bijective_pi {R M κ : Type*}
+    [Semiring R] [TopologicalSpace R] [AddCommMonoid M] [Module R M]
+    [TopologicalSpace M] [ContinuousAdd M] [ContinuousSMul R M] [Finite κ]
+    {f : M →L[R] (κ → R)} (hf : Function.Bijective f) : f.IsInvertible := by
+  let e := LinearEquiv.ofBijective f.toLinearMap hf
+  exact .of_inverse (g := ⟨e.symm.toLinearMap, LinearMap.continuous_on_pi _⟩)
+    (ext e.apply_symm_apply) (ext e.symm_apply_apply)
+
+private theorem eventually_isInvertible_pi_clm_within {𝕜 ι κ Y : Type*}
+    [NontriviallyNormedField 𝕜] [Finite ι] [Finite κ] [TopologicalSpace Y]
+    {T : Y → (ι → 𝕜) →L[𝕜] (κ → 𝕜)} {s : Set Y} {y₀ : Y}
+    (hT : ContinuousWithinAt T s y₀) (hbij : Function.Bijective (T y₀)) :
+    ∀ᶠ y in 𝓝[s] y₀, (T y).IsInvertible := by
+  classical
+  have := Fintype.ofFinite ι
+  have := Fintype.ofFinite κ
+  have hcard : Fintype.card ι = Fintype.card κ := by
+    simpa only [Module.finrank_fintype_fun_eq_card] using
+      (LinearEquiv.ofBijective (T y₀).toLinearMap hbij).finrank_eq
+  let e : (κ → 𝕜) ≃L[𝕜] (ι → 𝕜) :=
+    ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : ι ↦ 𝕜) (Fintype.equivOfCardEq hcard).symm
+  let S : Y → (κ → 𝕜) →L[𝕜] (κ → 𝕜) := fun y ↦ (T y).comp (e : (κ → 𝕜) →L[𝕜] (ι → 𝕜))
+  have hS : ContinuousWithinAt S s y₀ :=
+    ((e : (κ → 𝕜) →L[𝕜] (ι → 𝕜)).precomp (κ → 𝕜)).continuous.continuousAt.comp_continuousWithinAt hT
+  let M : Y → Matrix κ κ 𝕜 := fun y ↦ LinearMap.toMatrix' (S y).toLinearMap
+  have hM : ContinuousWithinAt M s y₀ := continuousWithinAt_pi.2 fun i ↦
+    continuousWithinAt_pi.2 fun j ↦ (continuous_apply i).continuousAt.comp_continuousWithinAt
+      ((TauCeti.continuousWithinAt_pi_clm_iff_apply_single_one.1 hS) j)
+  have hMN₀ : M y₀ * LinearMap.toMatrix' (S y₀).inverse.toLinearMap = 1 := by
+    have hcomp : (S y₀).toLinearMap.comp (S y₀).inverse.toLinearMap = LinearMap.id :=
+      congrArg ContinuousLinearMap.toLinearMap
+        ((S y₀).isInvertible_of_bijective_pi (hbij.comp e.bijective)).self_comp_inverse
+    rw [← LinearMap.toMatrix'_comp, hcomp, LinearMap.toMatrix'_id]
+  have hdet₀ : (M y₀).det ≠ 0 :=
+    left_ne_zero_of_mul_eq_one (by rw [← Matrix.det_mul, hMN₀, Matrix.det_one])
+  have hev_det : ∀ᶠ y in 𝓝[s] y₀, (M y).det ≠ 0 :=
+    (continuous_id.matrix_det.continuousAt.comp_continuousWithinAt hM).eventually_ne hdet₀
+  have hSM (y : Y) (v : κ → 𝕜) : S y v = (M y).mulVec v :=
+    DFunLike.congr_fun (Matrix.toLin'_toMatrix' (S y).toLinearMap).symm v
+  refine hev_det.mono fun y hy ↦ (T y).isInvertible_of_bijective_pi ?_
+  have hleft : Function.LeftInverse (fun v ↦ (M y)⁻¹.mulVec v) (S y) := fun v ↦ by
+    simp [hSM y, Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul (M y) hy.isUnit]
+  have hright : Function.RightInverse (fun v ↦ (M y)⁻¹.mulVec v) (S y) := fun v ↦ by
+    simp [hSM y, Matrix.mulVec_mulVec, Matrix.mul_nonsing_inv (M y) hy.isUnit]
+  exact (e.bijective.of_comp_iff (f := T y)).1 ⟨hleft.injective, hright.surjective⟩
+
+section Pointwise
+
+variable {𝕜 ι κ Y : Type*} [NontriviallyNormedField 𝕜] [Finite ι] [Finite κ] [TopologicalSpace Y]
+  {T : Y → (ι → 𝕜) →L[𝕜] (κ → 𝕜)} {s : Set Y} {y₀ : Y}
+
+/-- If `T : Y → (ι → 𝕜) →L[𝕜] (κ → 𝕜)` between finite coordinate spaces over a nontrivially normed
+field `𝕜` is continuous within `s` at `y₀` and `T y₀` is bijective, then `y ↦ (T y).inverse` is
+continuous within `s` at `y₀` without requiring `CompleteSpace 𝕜`. -/
+theorem ContinuousWithinAt.pi_clm_inverse (hT : ContinuousWithinAt T s y₀)
+    (hbij : Function.Bijective (T y₀)) :
+    ContinuousWithinAt (fun y ↦ (T y).inverse) s y₀ := by
+  have := Fintype.ofFinite ι
+  have := Fintype.ofFinite κ
+  exact hT.clm_inverse_of_eventually_isInvertible ((T y₀).isInvertible_of_bijective_pi hbij)
+    (eventually_isInvertible_pi_clm_within hT hbij)
+
+/-- If `T : Y → (ι → 𝕜) →L[𝕜] (κ → 𝕜)` between finite coordinate spaces over a nontrivially normed
+field `𝕜` is continuous at `y₀` and `T y₀` is bijective, then `y ↦ (T y).inverse` is continuous at
+`y₀` without requiring `CompleteSpace 𝕜`. -/
+theorem ContinuousAt.pi_clm_inverse (hT : ContinuousAt T y₀) (hbij : Function.Bijective (T y₀)) :
+    ContinuousAt (fun y ↦ (T y).inverse) y₀ := by
+  have := Fintype.ofFinite ι
+  have := Fintype.ofFinite κ
+  exact hT.clm_inverse_of_eventually_isInvertible
+    (nhdsWithin_univ (a := y₀) ▸
+      eventually_isInvertible_pi_clm_within ((continuousWithinAt_univ T y₀).2 hT) hbij)
+
+/-- Along a family `T : Y → (ι → 𝕜) →L[𝕜] (κ → 𝕜)` between finite coordinate spaces over a
+nontrivially normed field `𝕜` that is continuous on `s` and bijective at every point of `s`,
+`y ↦ (T y).inverse` is continuous on `s`. -/
+theorem ContinuousOn.pi_clm_inverse (hT : ContinuousOn T s)
+    (hbij : ∀ y ∈ s, Function.Bijective (T y)) :
+    ContinuousOn (fun y ↦ (T y).inverse) s :=
+  fun y hy ↦ (hT y hy).pi_clm_inverse (hbij y hy)
+
+end Pointwise
+
+end Inverse

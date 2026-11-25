@@ -30,7 +30,8 @@ projective dimension at most one, for instance in a hereditary abelian category,
 projective (`Quiver.Hom.projective_of_projective_kernel_of_hasProjectiveDimensionLE_one`).
 
 The chosen projective presentation `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0` of an object is short exact
-(`CategoryTheory.Projective.kernelShortComplex_shortExact`).
+(`CategoryTheory.Projective.kernelShortComplex_shortExact`), and `ker π` is projective when the
+object has projective dimension at most one.
 
 When coproducts indexed by `ι` are exact, for instance for direct sums of modules, a coproduct of
 objects of projective dimension at most `n` has projective dimension at most `n`
@@ -122,6 +123,13 @@ theorem Projective.kernelShortComplex_shortExact (X : C) :
 
 instance (X : C) : Projective (Projective.kernelShortComplex X).X₂ :=
   inferInstanceAs (Projective (Projective.over X))
+
+/-- The kernel of the chosen projective cover of an object of projective dimension at most one is
+projective. -/
+instance (X : C) [HasProjectiveDimensionLE X 1] :
+    Projective (Projective.kernelShortComplex X).X₁ :=
+  projective_iff_hasProjectiveDimensionLT_one.2
+    ((Projective.kernelShortComplex_shortExact X).hasProjectiveDimensionLT_X₁ 1 inferInstance ‹_›)
 
 /-- Every object has projective dimension at most one precisely when every monomorphism into a
 projective object has projective source. -/

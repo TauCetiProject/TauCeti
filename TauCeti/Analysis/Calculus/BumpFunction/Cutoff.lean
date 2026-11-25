@@ -19,6 +19,8 @@ import TauCeti.Algebra.Order.Field.SquareGap
 import TauCeti.Analysis.Calculus.Deriv.AffineProfile
 import TauCeti.Analysis.Calculus.FDeriv.RadialField
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.SmoothSeries
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
@@ -46,9 +48,13 @@ which keeps its periods in the second coordinate
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
 (`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
-functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`); in particular the periodization
-`Σₙ f (x, t + n)` of a `C^k` map compactly supported in `E × (0, 1)` is a `C^k` map of period one
-in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported `C¹`
+functions are smooth (`Finset.contDiffAt_tsum_of_eventually_eq_zero`). In particular the
+integer translates `(x, t) ↦ f (x, t + n)` of a compactly supported map are locally finite
+(`TauCeti.exists_finset_eventually_eq_zero_add_intCast`), so its periodization `Σₙ f (x, t + n)`
+is `C^k` when `f` is (`TauCeti.contDiff_tsum_add_intCast`); it has period one in `t`
+(`TauCeti.periodic_tsum_add_intCast`), and when `f` is supported in `E × (0, 1)` it vanishes for
+`x` outside a compact set and agrees with `f` near `E × (0, 1)`
+(`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported `C¹`
 function is bounded and Hölder continuous with every exponent at most one
 (`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`); for a `C³` function one constant
 bounds it, its first two derivatives and their Hölder constants uniformly over all translates
@@ -56,6 +62,15 @@ bounds it, its first two derivatives and their Hölder constants uniformly over 
 for radii `ρ < R` the translates of one cutoff give cutoffs between `closedBall x₀ ρ` and
 `ball x₀ R` about every centre `x₀` with such a common constant
 (`TauCeti.exists_forall_contDiff_cutoff_holderWith_and_norm_le`).
+
+The cutoff of a compact set also comes in a form that is eventually equal to one near every point
+of the set (`IsCompact.exists_contDiff_cutoff_eventuallyEq_one`) and in a form whose value and
+gradient are bounded by a common constant (`IsCompact.exists_contDiff_cutoff_with_bounds`; for a
+given compactly supported `C¹` function, `ContDiff.exists_abs_le_and_norm_gradient_le`). A bilinear
+product `L (f x) (g x)` is globally `C^k` when `g` is supported inside an open set on which `f` and
+`g` are `C^k` (`ContinuousLinearMap.contDiff_of_tsupport_subset_right`), and satisfies the usual
+derivative rule when `g` is differentiable and `f` is differentiable on that set
+(`ContinuousLinearMap.fderiv_of_tsupport_subset_right`).
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose gradient
 is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a universal
@@ -74,12 +89,23 @@ function supported in a closed ball with bounded gradient there has integral at 
 bound times the volume of the ball
 (`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
 
+On a finite-dimensional real normed space, for a constant `C` depending only on the space, every
+ball of radius `r` has a cutoff that is one on it and zero beyond radius `2 r`, with derivative of
+norm at most `C r⁻¹` (`TauCeti.exists_cutoff_fderiv_bound`). For a cutoff `χ` equal to one on the
+closed ball of radius `R` and zero beyond radius `2 R`, with `‖Dχ‖ ≤ A` everywhere, and data `u`
+with `‖x‖ ‖u x‖ ≤ M` for `R ≤ ‖x‖ ≤ 2 R` and `0 ≤ M`, the product `‖Dχ x‖ ‖u x‖` is at most
+`A (M / R)` on the closed ball of radius `2 R` and vanishes outside it
+(`TauCeti.norm_fderiv_mul_norm_le_indicator`).
+
 Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
 a time interval, for a bump `χ` and a small scale `s`, have compact support
-(`ContDiffBump.hasCompactSupport_cutoff_mul`), an explicit derivative
-(`ContDiffBump.fderiv_cutoff_mul_apply`) with a bound
-(`ContDiffBump.norm_cutoff_fderiv_le`) that tends to the derivative of `φ` as `s → 0`
-(`ContDiffBump.tendsto_cutoff_fderiv_add`).
+(`ContDiffBump.hasCompactSupport_cutoff_mul`). Where `φ` is differentiable at `q`, the derivative
+at `q` applied to `(1, w)` is `χ (s • q.2) * φ' (1, w) + φ q * χ' (s • w)`
+(`ContDiffBump.fderiv_cutoff_mul_apply`), where `φ'` and `χ'` are the derivatives at `q` and at
+`s • q.2`. For `‖s‖ ≤ 1` and bounds `C`, `B`, `D` on `‖φ'‖`, `‖φ q‖` and `‖χ'‖`, this expression,
+which is defined without any differentiability, has norm at most `(C + B * D) * (1 + ‖w‖)`
+(`ContDiffBump.norm_cutoff_fderiv_le`). With `φ' (1, w)` and `φ q` replaced by arbitrary reals
+`c` and `d`, it tends to `c` as `s → 0` (`ContDiffBump.tendsto_cutoff_fderiv_add`).
 
 ## References
 
@@ -254,8 +280,9 @@ theorem _root_.ContinuousLinearMap.contDiff_of_tsupport_subset_right {𝕜 A B G
       simp [hy]
     exact contDiffAt_const.congr_of_eventuallyEq h0
 
-/-- The usual bilinear derivative rule holds globally when the second factor is supported
-inside the open set where the first factor is differentiable. Outside this set all terms vanish. -/
+/-- The usual bilinear derivative rule holds globally when the second factor `g` is
+differentiable everywhere and supported inside the open set `s` where the first factor `f` is
+differentiable. Outside `s` all terms vanish. -/
 theorem _root_.ContinuousLinearMap.fderiv_of_tsupport_subset_right {𝕜 A B G : Type*}
     [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
     [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup B] [NormedSpace 𝕜 B]
@@ -427,9 +454,7 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]
     exact FiniteDimensional.of_totallyBounded_nhds ℝ (hU.mem_nhds (hKU hx))
       (((K.isCompact (n + 1)).image continuous_subtypeVal).totallyBounded.subset
         (image_mono interior_subset))
-  obtain ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩ :=
-    hK.exists_contDiff_cutoff hU hKU
-  exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
+  exact hK.exists_contDiff_cutoff hU hKU
 
 /-- Prepending the zero function to a sequence of cutoffs `eta n`, where `eta n` is one near `L n`
 and supported in `V (n + 1)`, gives cutoffs `eta' n` that are one near `L m` for every `m < n` and
@@ -567,15 +592,38 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   · rw [hsum]
     exact one_of_mem (heta'_one n N (by omega) (hVL n hy))
 
-/-- A sum of functions which are smooth at `x` is smooth at `x` if, on a neighbourhood of `x`,
-all but finitely many of them vanish. This makes the locally finite sums built from
-`IsOpen.exists_contDiff_decomposition_cutoff` smooth on the open set. -/
-theorem contDiffAt_tsum_of_eventually_eq_zero {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜]
-    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : WithTop ℕ∞}
-    {g : ι → E → F} {x : E} (s : Finset ι) (hg : ∀ j ∈ s, ContDiffAt 𝕜 n (g j) x)
-    (hs : ∀ᶠ y in 𝓝 x, ∀ j ∉ s, g j y = 0) :
-    ContDiffAt 𝕜 n (fun y => ∑' j, g j y) x :=
-  (ContDiffAt.sum hg).congr_of_eventuallyEq (hs.mono fun _ hy => tsum_eq_sum hy)
+open Filter in
+/-- **The integer translates of a compactly supported map are locally finite.** Near any point,
+all but finitely many of the translates `(x, t) ↦ g (x, t + n)`, `n ∈ ℤ`, vanish. -/
+theorem exists_finset_eventually_eq_zero_add_intCast {X Y : Type*} [TopologicalSpace X] [Zero Y]
+    {g : X × ℝ → Y} (hg : HasCompactSupport g) (z : X × ℝ) :
+    ∃ S : Finset ℤ, ∀ᶠ w in 𝓝 z, ∀ n ∉ S, g (w.1, w.2 + n) = 0 := by
+  obtain ⟨N, hN⟩ := (hg.isCompact.image continuous_snd).isBounded.subset_closedBall 0
+  refine ⟨Finset.Icc ⌊-z.2 - N - 1⌋ ⌈-z.2 + N + 1⌉, ?_⟩
+  filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
+    (Ioo_mem_nhds (sub_one_lt z.2) (lt_add_one z.2))] with w hw n hn
+  refine image_eq_zero_of_notMem_tsupport fun h ↦ hn ?_
+  have hwn := hN ⟨_, h, rfl⟩
+  rw [Metric.mem_closedBall, Real.dist_eq, sub_zero, abs_le] at hwn
+  simp only [mem_preimage, mem_Ioo] at hw
+  refine Finset.mem_Icc.2 ⟨Int.floor_le_iff.2 ?_, Int.le_ceil_iff.2 ?_⟩ <;> linarith [hwn.1, hwn.2]
+
+/-- **The periodization in the last coordinate of a compactly supported `C^k` map is `C^k`.** -/
+theorem contDiff_tsum_add_intCast [NormedSpace ℝ E] {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {k : WithTop ℕ∞} {f : E × ℝ → F} (hf : ContDiff ℝ k f)
+    (hc : HasCompactSupport f) : ContDiff ℝ k fun z : E × ℝ ↦ ∑' n : ℤ, f (z.1, z.2 + n) :=
+  contDiff_iff_contDiffAt.2 fun z ↦ by
+    obtain ⟨S, hS⟩ := exists_finset_eventually_eq_zero_add_intCast hc z
+    exact S.contDiffAt_tsum_of_eventually_eq_zero
+      (fun n _ ↦ (hf.comp (contDiff_fst.prodMk (contDiff_snd.add contDiff_const))).contDiffAt) hS
+
+/-- **The periodization in the last coordinate has period one**: shifting `t` by one shifts the
+summation index. -/
+theorem periodic_tsum_add_intCast {X Y : Type*} [AddCommMonoid Y] [TopologicalSpace Y]
+    (f : X × ℝ → Y) (x : X) : Periodic (fun t : ℝ ↦ ∑' n : ℤ, f (x, t + n)) 1 := fun t ↦ by
+  refine Eq.trans (tsum_congr fun n ↦ ?_) ((Equiv.addRight (1 : ℤ)).tsum_eq fun n ↦ f (x, t + n))
+  simp only [Equiv.coe_addRight, Int.cast_add, Int.cast_one]
+  ring_nf
 
 open Filter in
 /-- **Periodization in the last coordinate.** The periodization `Σₙ f (x, t + n)` of a `C^k` map
@@ -590,18 +638,8 @@ theorem exists_contDiff_periodic_eventuallyEq [NormedSpace ℝ E] {F : Type*} [N
   set φ : ℤ → E × ℝ → F := fun n z ↦ f (z.1, z.2 + n)
   have hh {n : ℤ} {z : E × ℝ} (hz : z.2 + n ∉ Ioo (0 : ℝ) 1) : φ n z = 0 :=
     image_eq_zero_of_notMem_tsupport (x := (z.1, z.2 + n)) fun h ↦ hz (hU h).2
-  refine ⟨fun z ↦ ∑' n, φ n z, contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun x t ↦ ?_, ?_, ?_⟩
-  · -- Near `z`, only the terms with `-z.2 - 1 < n < 2 - z.2` can be nonzero.
-    refine contDiffAt_tsum_of_eventually_eq_zero (Finset.Ioo ⌊-z.2 - 1⌋ ⌈2 - z.2⌉)
-      (fun n _ ↦ (hf.comp (contDiff_fst.prodMk (contDiff_snd.add contDiff_const))).contDiffAt) ?_
-    filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
-      (Ioo_mem_nhds (sub_one_lt z.2) (lt_add_one z.2))] with w hw n hn
-    refine hh fun h ↦ hn (Finset.mem_Ioo.2 ⟨Int.floor_lt.2 ?_, Int.lt_ceil.2 ?_⟩) <;>
-      simp only [mem_preimage, mem_Ioo] at hw h <;> linarith
-  · -- Shifting `t` by one shifts the summation index.
-    refine Eq.trans (tsum_congr fun n ↦ ?_) ((Equiv.addRight (1 : ℤ)).tsum_eq fun n ↦ φ n (x, t))
-    simp only [φ, Equiv.coe_addRight, Int.cast_add, Int.cast_one]
-    ring_nf
+  refine ⟨fun z ↦ ∑' n, φ n z, contDiff_tsum_add_intCast hf hc,
+    fun x t ↦ periodic_tsum_add_intCast f x t, ?_, ?_⟩
   · -- Off the projection of the support of `f` to `E`, every term vanishes.
     filter_upwards [preimage_mem_comap (hc.isCompact.image continuous_fst).compl_mem_cocompact]
       with z hz
@@ -1058,32 +1096,27 @@ theorem fderiv_cutoff_mul_apply {φ : ℝ × E → ℝ} {q : ℝ × E} (hφd : D
   rw [fderiv_fun_mul hc.differentiableAt hφd, hc.fderiv]
   simp
 
-/-- The bound on the derivative at `q`, applied to `(1, w)`, of a cut-off
-`(t, x) ↦ χ (s • x) * φ (t, x)`: the cut-off does not increase the derivative of `φ`, and the
-derivative of `χ`, applied to `s • w`, contributes at most `B * D * (1 + ‖w‖)`, where `B` bounds `φ`
-and `D` bounds the derivative of `χ`; so the bound is `(C + B * D) * (1 + ‖w‖)`. -/
+/-- The bound on the expression
+`χ (s • q.2) * fderiv ℝ φ q (1, w) + φ q * fderiv ℝ χ (s • q.2) (s • w)`, which
+`ContDiffBump.fderiv_cutoff_mul_apply` identifies with the derivative at `q`, applied to `(1, w)`,
+of the cut-off `(t, x) ↦ χ (s • x) * φ (t, x)` when `φ` is differentiable at `q`. The statement
+itself assumes no differentiability: the cut-off does not increase the derivative of `φ`, whose
+norm is at most `C`, and the derivative of `χ`, applied to `s • w`, contributes at most
+`B * D * (1 + ‖w‖)`, where `B` bounds `φ` and `D` bounds the derivative of `χ` (for `‖s‖ ≤ 1`); so
+the bound is `(C + B * D) * (1 + ‖w‖)`. -/
 theorem norm_cutoff_fderiv_le (χ : ContDiffBump (0 : E)) {φ : ℝ × E → ℝ} {C D B : ℝ}
     {q : ℝ × E} (hC : ‖fderiv ℝ φ q‖ ≤ C) {s : ℝ} (hD : ‖fderiv ℝ χ (s • q.2)‖ ≤ D)
     (hB : ‖φ q‖ ≤ B) (hs : ‖s‖ ≤ 1) (w : E) :
     ‖χ (s • q.2) * fderiv ℝ φ q (1, w) + φ q * fderiv ℝ χ (s • q.2) (s • w)‖ ≤
       (C + B * D) * (1 + ‖w‖) := by
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans hC
-  have hD0 : 0 ≤ D := (norm_nonneg _).trans hD
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans hB
-  have h₁ : ‖χ (s • q.2) * fderiv ℝ φ q (1, w)‖ ≤ C * (1 + ‖w‖) := by
-    rw [norm_mul, Real.norm_of_nonneg χ.nonneg]
-    exact (mul_le_of_le_one_left (norm_nonneg _) χ.le_one).trans <|
-      ((fderiv ℝ φ q).le_opNorm _).trans (mul_le_mul hC
-        (norm_prod_le_iff.2 ⟨by simp, by simp⟩) (norm_nonneg _) hC0)
   have hsw : ‖s • w‖ ≤ 1 + ‖w‖ := by
     rw [norm_smul]
     nlinarith [norm_nonneg w, norm_nonneg s]
-  have h₂ : ‖φ q * fderiv ℝ χ (s • q.2) (s • w)‖ ≤ B * D * (1 + ‖w‖) := by
-    rw [norm_mul, mul_assoc]
-    exact mul_le_mul hB (((fderiv ℝ χ _).le_opNorm _).trans
-      (mul_le_mul hD hsw (norm_nonneg _) hD0)) (norm_nonneg _) hB0
-  linarith [norm_add_le (χ (s • q.2) * fderiv ℝ φ q (1, w))
-    (φ q * fderiv ℝ χ (s • q.2) (s • w))]
+  simpa only [smul_eq_mul, one_mul, ← add_mul] using
+    (fderiv ℝ φ q).norm_smul_apply_add_smul_apply_le (fderiv ℝ χ (s • q.2))
+      (a := χ (s • q.2)) (b := φ q) (v := (1, w)) (w := s • w) (A := 1) (R := 1 + ‖w‖)
+      (by simpa only [Real.norm_of_nonneg χ.nonneg] using χ.le_one) hB hC hD
+      (norm_prod_le_iff.2 ⟨by simp, by simp⟩) hsw
 
 /-- As the scale `s i` tends to `0` along a filter `l`, the cut-off factor `χ (s i • x)` tends to
 `1` and the derivative term `fderiv ℝ χ (s i • x) (s i • w)` to `0`. -/

@@ -15,6 +15,7 @@ public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Integral.FinMeasAdditive
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Integration of bounded Borel symbols against a projection-valued measure
@@ -43,6 +44,8 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.integral`: the integral against `P`, a unital star algebra homomorphism.
 * `ProjValMeasure.integral_ofSimpleFunc`: the integral of a simple symbol is the finite sum of
   its values times the projections of its fibres.
+* `ProjValMeasure.sum_proj_preimage_singleton`: the projections of the fibres of a simple symbol
+  sum to the identity.
 * `ProjValMeasure.eq_integral_of_continuous`: a continuous map agreeing with the integral on
   simple symbols is the integral.
 * `ProjValMeasure.integral_indicator`, `ProjValMeasure.proj_mul_integral`, and
@@ -50,13 +53,17 @@ continuous extension `LinearMap.extendOfNorm`.
   composing a projection with an integral restricts the symbol to that set.
 * `ProjValMeasure.forall_commute_integral_iff`: an operator commutes with every integral iff it
   commutes with every projection.
-* `ProjValMeasure.integral_diag_eq_inner_integral`: diagonal matrix elements of the integral are
-  integrals against the diagonal measures.
+* `ProjValMeasure.integral_diag_eq_inner_integral` and `ProjValMeasure.inner_integral_star_left`:
+  diagonal matrix elements of the integral and moving `P.integral (star g)` across the inner
+  product.
 * `ProjValMeasure.norm_integral_le`: a pointwise bound on the symbol bounds the operator norm.
 * `ProjValMeasure.norm_integral_diag_sub_le` and `ProjValMeasure.abs_integral_diag_sub_le`:
   Lipschitz bounds for integrals against `P.diag` as a function of the vector.
-* `ProjValMeasure.norm_sq_integral_apply`: the vector norm identity
-  `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
+* `ProjValMeasure.norm_sq_integral_apply`, `ProjValMeasure.enorm_sq_integral_apply`, and
+  `ProjValMeasure.enorm_integral_apply_eq_eLpNorm`: the vector norm identities
+  `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`,
+  `‖(∫ f dP) ξ‖ₑ ^ 2 = ∫⁻ ‖f x‖ₑ ^ 2 d(P.diag ξ)(x)`, and
+  `‖(∫ f dP) ξ‖ₑ = eLpNorm f 2 (P.diag ξ)`.
 * `ProjValMeasure.diag_integral`: the diagonal measure of `(∫ f dP) ξ` is `P.diag ξ` with density
   `x ↦ ‖f x‖ₑ ^ 2`.
 * `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
@@ -123,10 +130,10 @@ private theorem setToSimpleFunc_smulProj_add (P : ProjValMeasure X H) (s t : Sim
 
 private theorem setToSimpleFunc_smulProj_piecewise (P : ProjValMeasure X H) (c : ℂ) {B : Set X}
     (hB : MeasurableSet B) :
-    (SimpleFunc.piecewise B hB (SimpleFunc.const X c) (SimpleFunc.const X 0)).setToSimpleFunc
-      P.smulProj = c • P.proj B hB := by
-  rw [SimpleFunc.setToSimpleFunc_indicator _ P.smulProj_empty hB, smulProj_apply,
-    projOrZero_of_measurableSet P hB]
+    (SimpleFunc.piecewise B hB (SimpleFunc.const X c) 0).setToSimpleFunc P.smulProj =
+      c • P.proj B hB := by
+  rw [← SimpleFunc.const_zero, SimpleFunc.setToSimpleFunc_indicator _ P.smulProj_empty hB,
+    smulProj_apply, projOrZero_of_measurableSet P hB]
 
 /-- The integral of simple symbols against `P`, as a unital star algebra homomorphism. -/
 private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆ₐ[ℂ] (H →L[ℂ] H) where
@@ -142,9 +149,9 @@ private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆�
     | const c hA =>
       induction t using SimpleFunc.induction with
       | const d hB =>
-        rw [SimpleFunc.piecewise_const_mul_piecewise_const, setToSimpleFunc_smulProj_piecewise,
-          setToSimpleFunc_smulProj_piecewise, setToSimpleFunc_smulProj_piecewise,
-          smul_mul_smul_comm, P.proj_inter]
+        simp only [SimpleFunc.const_zero, SimpleFunc.piecewise_zero_mul_piecewise_zero,
+          SimpleFunc.const_mul_const, setToSimpleFunc_smulProj_piecewise, smul_mul_smul_comm,
+          P.proj_inter]
       | add _ ht₁ ht₂ =>
         rw [mul_add, setToSimpleFunc_smulProj_add,
           setToSimpleFunc_smulProj_add, mul_add, ht₁, ht₂]
@@ -160,8 +167,9 @@ private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆�
   map_star' s := by
     induction s using SimpleFunc.induction with
     | const c hA =>
-      rw [SimpleFunc.star_piecewise_const, setToSimpleFunc_smulProj_piecewise,
-        setToSimpleFunc_smulProj_piecewise, star_smul, (P.isSelfAdjoint_proj _ hA).star_eq]
+      simp only [SimpleFunc.const_zero, SimpleFunc.star_piecewise, SimpleFunc.star_const,
+        star_zero, setToSimpleFunc_smulProj_piecewise, star_smul,
+        (P.isSelfAdjoint_proj _ hA).star_eq]
     | add _ hs₁ hs₂ =>
       rw [star_add, setToSimpleFunc_smulProj_add,
         setToSimpleFunc_smulProj_add, star_add, hs₁, hs₂]
@@ -282,6 +290,21 @@ theorem integral_indicator (P : ProjValMeasure X H) {B : Set X} (hB : Measurable
     integral_ofSimpleFunc_eq_simpleIntegral]
   exact (P.setToSimpleFunc_smulProj_piecewise 1 hB).trans (one_smul ℂ _)
 
+/-- The projections `P(s ⁻¹' {c})` of the fibres of a simple symbol `s` sum to the identity: the
+fibres partition `X`. -/
+theorem sum_proj_preimage_singleton (P : ProjValMeasure X H) (s : SimpleFunc X ℂ) :
+    ∑ c ∈ s.range, P.proj (s ⁻¹' {c}) (s.measurableSet_fiber c) = 1 := by
+  -- The indicators of the fibres sum to the constant symbol `1`.
+  have h : ∑ c ∈ s.range, BoundedBorelFunction.indicator (s ⁻¹' {c}) (s.measurableSet_fiber c) 1
+      = 1 := by
+    ext x
+    rw [sum_apply, Finset.sum_eq_single_of_mem (s x) (s.mem_range_self x)]
+    · simp
+    · intro c _ hc
+      simp [Ne.symm hc]
+  rw [← map_one P.integral, ← h, map_sum]
+  simp
+
 /-- Multiplying an operator integral on the left by `P(B)` restricts the symbol to `B`. -/
 theorem proj_mul_integral (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B)
     (f : BoundedBorelFunction X) :
@@ -338,6 +361,12 @@ theorem integral_diag_eq_inner_integral (P : ProjValMeasure X H) (f : BoundedBor
     simpa using hs.tendsto_at x
   · rw [Function.comp_apply, integral_ofSimpleFunc_eq_simpleIntegral,
       integral_diag_eq_inner_simpleIntegral]
+
+/-- Moving `P.integral` with conjugated symbol across the inner product. -/
+theorem inner_integral_star_left (P : ProjValMeasure X H) (g : BoundedBorelFunction X)
+    (y x : H) :
+    ⟪P.integral (star g) y, x⟫_ℂ = ⟪y, P.integral g x⟫_ℂ := by
+  rw [map_star, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
 
 /-- A pointwise bound `‖f x‖ ≤ M` on a symbol bounds the operator norm of its integral. This
 includes an empty space, where every symbol and every operator integral has norm zero. -/
@@ -428,10 +457,27 @@ theorem diag_integral (P : ProjValMeasure X H) (g : BoundedBorelFunction X) (ξ 
       rw [← P.norm_sq_proj_apply B hB, P.proj_integral_apply hB g ξ, P.norm_sq_integral_apply,
         hind, MeasureTheory.integral_indicator hB]
     _ = ∫⁻ x in B, ‖g x‖ₑ ^ 2 ∂(P.diag ξ) := by
-      rw [ofReal_integral_eq_lintegral_ofReal hint.integrableOn (ae_of_all _ fun _ => sq_nonneg _)]
-      refine lintegral_congr fun x => ?_
-      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+      simpa only [ENNReal.rpow_two] using
+        MeasureTheory.ofReal_setIntegral_norm_sq_eq hint.integrableOn
     _ = ((P.diag ξ).withDensity fun x => ‖g x‖ₑ ^ 2) B := (withDensity_apply _ hB).symm
+
+/-- The squared extended norm of `(∫ g dP) ξ` is the second moment of `‖g‖ₑ` against
+`P.diag ξ`. -/
+theorem enorm_sq_integral_apply (P : ProjValMeasure X H) (g : BoundedBorelFunction X)
+    (ξ : H) :
+    ‖P.integral g ξ‖ₑ ^ 2 = ∫⁻ x, ‖g x‖ₑ ^ 2 ∂(P.diag ξ) := by
+  rw [← P.diag_univ, P.diag_integral, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ]
+
+/-- The extended norm of `(∫ g dP) ξ` is the `L²` seminorm `eLpNorm g 2 (P.diag ξ)`. -/
+theorem enorm_integral_apply_eq_eLpNorm (P : ProjValMeasure X H) (g : BoundedBorelFunction X)
+    (ξ : H) :
+    ‖P.integral g ξ‖ₑ = eLpNorm g 2 (P.diag ξ) := by
+  refine ENNReal.rpow_left_injective (show (2 : ℝ) ≠ 0 by norm_num) ?_
+  dsimp only
+  rw [ENNReal.rpow_two, P.enorm_sq_integral_apply,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal (by norm_num) (by norm_num)
+      g.measurable.aestronglyMeasurable, ← ENNReal.rpow_mul]
+  simp
 
 end ProjValMeasure
 end TauCeti
