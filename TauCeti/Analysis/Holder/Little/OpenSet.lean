@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Little.Basic
-public import TauCeti.Analysis.Holder.OpenSet
+public import TauCeti.Analysis.Holder.OpenSet.Basic
 
 /-!
 # Little Hölder spaces on an open set

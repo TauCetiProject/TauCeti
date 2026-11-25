@@ -244,6 +244,23 @@ lemma higherDirectImageSectionsAddEquiv_naturality {M N : X.Modules} [M.IsQuasic
     (f.higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app
       M n hV y).symm
 
+/-- Over an affine open `V`, the identification of `Hⁿ(f⁻¹ V, M)` with the sections of
+`Rⁿ f_* M` sends a class to the section defined by the corresponding section of the presheaf
+`V ↦ Hⁿ(f⁻¹ V, M)`. -/
+lemma higherDirectImageSectionsAddEquiv_eq_presheafToSheaf {V : Y.Opens} (hV : IsAffineOpen V)
+    (c : cohomologyOn M n (f ⁻¹ᵁ V)) :
+    f.higherDirectImageSectionsAddEquiv M n hV c =
+      ((f.higherDirectImagePresheafToSheaf n).app M).app (op V)
+        ((f.higherDirectImagePresheafToPresheafIso M n).inv.app (op V) c) := by
+  have e := f.higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app
+    M n hV ((f.higherDirectImagePresheafToPresheafIso M n).inv.app (op V) c)
+  simp only [Iso.inv_hom_id_app_apply] at e
+  refine e.trans ((f.higherDirectImagePresheafSectionsLinearEquiv_apply M n hV _).trans ?_)
+  rw [higherDirectImagePresheafToSheaf_app]
+  -- Both sides are the sheafification unit followed by the identification with `Rⁿ f_* M`;
+  -- restricting scalars along the identity leaves the underlying maps of sections unchanged.
+  rfl
+
 /-- **Higher direct images of quasi-coherent modules are quasi-coherent.** For a quasi-compact
 quasi-separated morphism `f : X ⟶ Y` and a quasi-coherent `𝒪_X`-module `M`, every higher direct
 image `Rⁿ f_* M` is quasi-coherent. -/

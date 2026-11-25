@@ -15,7 +15,9 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ComoduleAlgebra
 public import TauCeti.Algebra.Lie.AdjointAction.InvariantZeroLocus
 public import TauCeti.Algebra.Lie.TracePowerPolynomial
 public import TauCeti.Algebra.Lie.Reductive.InvariantZeroLocus
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Polynomial.Degree.Map
 
 /-!
 # The nilpotent cone of an affine group
@@ -76,6 +78,11 @@ then make the characteristic polynomial of the matrix `A` of the universal eleme
 equal to `T ^ d`, and the Cayley–Hamilton theorem gives `A ^ d = 0` there. So every point of the
 cone, with values in any semiring, acts on `M` by a matrix with `d`-th power zero.
 
+The characteristic coefficients of `A` are Lie invariants as well, and all but the leading one
+vanish at the origin, so they lie in the ideal of the cone directly, without Newton's identities.
+Hence at every point of the cone with values in any commutative ring, not only a `ℚ`-algebra, the
+matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
+
 ## Main declarations
 
 * `TauCeti.adjointPolynomialComoduleAlgebra`: the action of `G` on the polynomial functions on `𝔤`,
@@ -125,6 +132,9 @@ cone, with values in any semiring, acts on `M` by a matrix with `d`-th power zer
   ideal (`TauCeti.tracePowerPolynomial_mem_nilpotentConeIdeal`). Consequently every point of the
   cone, with values in any semiring, acts on `M` by a matrix whose `d`-th power vanishes
   (`TauCeti.map_genericActionMatrix_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker`).
+* `TauCeti.charpoly_map_genericActionMatrix_eq_X_pow_of_nilpotentConeIdeal_le_ker`: for a
+  connected group, at every point of the cone with values in a commutative ring the generic action
+  matrix of a module of rank `d` over the Lie algebra has characteristic polynomial `X ^ d`.
 
 ## References
 
@@ -512,6 +522,26 @@ theorem map_genericActionMatrix_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker {B
   ext p q
   rw [← RingHom.coe_coe φ, ← Matrix.map_pow, Matrix.map_apply, Matrix.zero_apply]
   exact hφ (c.genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal p q)
+
+/-- **The characteristic polynomial of a module on the nilpotent cone.** For a connected affine
+group over an algebraically closed field of characteristic zero, let `M` be a Lie module over its
+Lie algebra with a basis `c` of size `N`. At every point of the nilpotent cone with values in a
+commutative ring, that is after applying any ring homomorphism `f` killing the ideal of the cone,
+the generic action matrix of `M` has characteristic polynomial `X ^ N`: its other characteristic
+coefficients are invariant polynomial functions vanishing at the origin. -/
+theorem charpoly_map_genericActionMatrix_eq_X_pow_of_nilpotentConeIdeal_le_ker {B : Type*}
+    [CommRing B] {f : SymmetricAlgebra k (Module.Dual k 𝔤) →+* B}
+    (hf : nilpotentConeIdeal k H ≤ RingHom.ker f) (c : Module.Basis κ k M) :
+    ((genericActionMatrix k 𝔤 c).map f).charpoly = Polynomial.X ^ Fintype.card κ := by
+  set A := genericActionMatrix k 𝔤 c
+  have hcoeff (i : ℕ) (hi : i < Fintype.card κ) : f (A.charpoly.coeff i) = 0 := by
+    refine hf (mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials ?_
+      (algebraMapInv_charpoly_coeff_genericActionMatrix_of_lt k 𝔤 c hi))
+    rw [adjointInvariantPolynomials_eq_lieInvariants]
+    exact charpoly_coeff_genericActionMatrix_mem_lieInvariants k 𝔤 c i
+  rw [Matrix.charpoly_map, ← Matrix.charpoly_natDegree_eq_dim A]
+  exact (Matrix.charpoly_monic A).map_eq_X_pow_of_map_coeff_eq_zero fun i hi ↦
+    hcoeff i (A.charpoly_natDegree_eq_dim ▸ hi)
 
 end GenericActionMatrix
 

@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Geometrically.Integral
-public import Mathlib.AlgebraicGeometry.Morphisms.Proper
-public import TauCeti.AlgebraicGeometry.Cohomology.Basic
+public import TauCeti.AlgebraicGeometry.Cohomology.Genus.GeometricallyIntegral
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
-public import TauCeti.AlgebraicGeometry.Modules.Differentials.Forms
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.Forms.Basic
 
 /-!
 # K3 surfaces over a field
@@ -23,7 +21,8 @@ chosen trivialization, a polarization nor a projective embedding.
 
 The consequences proved here are those of the defining conditions themselves: a K3 surface is
 integral, so in particular nonempty, it has no differential forms of degree greater than two, and
-its canonical class `det Ω_{X/k}` is trivial in the group of line-bundle classes.
+its canonical class `det Ω_{X/k}` is trivial in the group of line-bundle classes, and its only
+global functions are the constants.
 
 ## Main declarations
 
@@ -32,7 +31,8 @@ its canonical class `det Ω_{X/k}` is trivial in the group of line-bundle classe
 * `IsK3.isIntegral` and `not_isK3_of_isEmpty`: a K3 surface is integral, and the empty scheme is
   not a K3 surface;
 * `IsK3.isZero_differentialForms`: `Ωᵖ_{X/k} = 0` for `p > 2`;
-* `IsK3.mk_det_relativeDifferentials_eq_one`: the canonical class of a K3 surface is trivial.
+* `IsK3.mk_det_relativeDifferentials_eq_one`: the canonical class of a K3 surface is trivial;
+* `IsK3.finrank_cohomology_zero_unit_eq_one`: `H⁰(X, 𝒪_X)` is one-dimensional over `k`.
 
 ## References
 
@@ -41,7 +41,7 @@ its canonical class `det Ω_{X/k}` is trivial in the group of line-bundle classe
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry
+open CategoryTheory Limits MonoidalCategory AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -107,6 +107,16 @@ theorem mk_det_relativeDifferentials_eq_one [X.Over (Spec (.of k))]
   have := h.smoothOfRelativeDimension
   obtain ⟨e⟩ := h.nonempty_differentialFormsIso
   exact LineBundleClass.mk_eq_one_iff.2 ⟨(differentialFormsIsoDet k X 2).symm ≪≫ e⟩
+
+/-- A K3 surface has only constant global functions: `H⁰(X, 𝒪_X)` is one-dimensional over `k`.
+No rational point is needed; this uses only properness and geometric integrality. -/
+theorem finrank_cohomology_zero_unit_eq_one [X.Over (Spec (.of k))]
+    (h : IsK3 k (X ↘ Spec (.of k))) :
+    Module.finrank k (Scheme.Modules.Cohomology (𝟙_ X.Modules) 0) = 1 := by
+  have := h.geometricallyIntegral
+  have := h.isProper
+  rw [← Scheme.Modules.finrank_cohomology_congr k (InvertibleSheaf.trivialObjIsoUnit X) 0]
+  exact finrank_cohomology_zero_trivial_eq_one_of_geometricallyIntegral k
 
 end IsK3
 

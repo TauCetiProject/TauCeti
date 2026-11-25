@@ -23,6 +23,8 @@ normality of `H` in the ambient group (`SemidirectProduct.mulEquivSup`).
 
 ## Main results
 
+* `SemidirectProduct.inr_mul_inl`: moving the acting group past the normal factor applies the
+  action.
 * `SemidirectProduct.lift_apply`: the external lift evaluates a pair by multiplying the
   images of its components.
 * `SemidirectProduct.range_monoidHomSubgroup`: the range of the semidirect-product
@@ -74,6 +76,13 @@ theorem normal_map_inl {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N}
 end Subgroup
 
 namespace SemidirectProduct
+
+/-- Moving an element of the acting group past an element of the normal factor applies the action
+to the latter: `inr g * inl n = inl (φ g n) * inr g`. This is Mathlib's `SemidirectProduct.inl_aut`
+with `inr g` moved to the right. -/
+theorem inr_mul_inl {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} (g : Q) (n : N) :
+    (inr g * inl n : N ⋊[φ] Q) = inl (φ g n) * inr g := by
+  rw [inl_aut, map_inv, inv_mul_cancel_right]
 
 /-- The lift of compatible homomorphisms evaluates a pair by multiplying the images of its
 components. -/
