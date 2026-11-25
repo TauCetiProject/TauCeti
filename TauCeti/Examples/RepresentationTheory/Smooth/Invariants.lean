@@ -48,7 +48,9 @@ example (p : ℕ) [Fact p.Prime] :
   have hconst (g : G) : x.coeff g = x.coeff 1 := by
     simpa [Representation.coeff_ofMulAction, Subgroup.smul_def] using
       (congrArg (·.coeff g) (hx ⟨g, trivial⟩)).symm
-  have h1 : ε.hom.hom x = 1 := congrArg Subtype.val hx1
+  have h1 : ε.hom.hom x = 1 :=
+    (SmoothRep.coe_invariantsFunctor_map_hom_apply _ ε ⟨x, hx⟩).symm.trans
+      (congrArg Subtype.val hx1)
   have hsum : ε.hom.hom x = ∑ g : G, x.coeff g := by
     simp [ε, Rep.leftRegularHom, Finsupp.sum_fintype]
   simp only [hsum, hconst, Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at h1

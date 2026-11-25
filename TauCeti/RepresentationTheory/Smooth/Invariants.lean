@@ -32,7 +32,9 @@ use no topology, so they live with the other generic results on invariants in
 
 ## Main definitions
 
-* `TauCeti.SmoothRep.invariantsFunctor U`: the functor `V ↦ V^U` on smooth representations.
+* `TauCeti.SmoothRep.invariantsFunctor U`: the functor `V ↦ V^U` on smooth representations,
+  with `TauCeti.SmoothRep.invariantsFunctor_obj` and
+  `TauCeti.SmoothRep.coe_invariantsFunctor_map_hom_apply` describing its objects and maps.
 
 ## Main results
 
@@ -64,6 +66,22 @@ noncomputable abbrev invariantsFunctor (U : Subgroup G) : SmoothRep.{w} A G ⥤ 
   ι A G ⋙ Rep.resFunctor U.subtype ⋙ Rep.invariantsFunctor A U
 
 variable {A}
+
+/-- The object `(invariantsFunctor A U).obj V` is the module `V^U` of `U`-invariants of `V`.
+Not a simp lemma: `simp` unfolds the abbreviation `invariantsFunctor` through
+`Functor.comp_obj` first. -/
+theorem invariantsFunctor_obj (U : Subgroup G) (V : SmoothRep.{w} A G) :
+    (invariantsFunctor A U).obj V =
+      ModuleCat.of A (Representation.invariants (V.obj.ρ.comp U.subtype)) :=
+  rfl
+
+/-- The map induced by `invariantsFunctor A U` on `U`-invariants is the restriction of the
+underlying map of representations. Not a simp lemma: `simp` unfolds the abbreviation
+`invariantsFunctor` through `Functor.comp_map` first, so use it with `rw` or as a term. -/
+theorem coe_invariantsFunctor_map_hom_apply (U : Subgroup G) {V W : SmoothRep.{w} A G}
+    (f : V ⟶ W) (v : Representation.invariants (V.obj.ρ.comp U.subtype)) :
+    Subtype.val (((invariantsFunctor A U).map f).hom v) = f.hom.hom v :=
+  rfl
 
 /-- **Invariants are left exact.** The inclusion `SmoothRep A G ⥤ Rep A G` preserves kernels,
 hence finite limits, while restriction preserves limits and Mathlib's invariants functor is a
