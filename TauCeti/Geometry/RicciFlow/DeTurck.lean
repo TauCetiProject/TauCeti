@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFr
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 import TauCeti.Geometry.Manifold.Riemannian.Scaling
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 
 /-!
 # The DeTurck vector field
