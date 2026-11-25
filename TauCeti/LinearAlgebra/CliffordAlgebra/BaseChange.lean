@@ -481,25 +481,13 @@ theorem liftBaseChange_ofBaseChange {Q : QuadraticForm R M} (f : CliffordAlgebra
     liftBaseChange A Q f (ofBaseChange A Q y) = f.liftEquiv R A (CliffordAlgebra Q) B y := by
   rw [liftBaseChange_apply, toBaseChange_ofBaseChange]
 
-/-- `CliffordAlgebra.liftBaseChange` agrees with `f` on the generators `ι (1 ⊗ₜ v)`. -/
-theorem liftBaseChange_ι_one_tmul {Q : QuadraticForm R M} (f : CliffordAlgebra Q →ₐ[R] B)
-    (v : M) : liftBaseChange A Q f (ι (Q.baseChange A) (1 ⊗ₜ v)) = f (ι Q v) := by
-  simp
-
-/-- The inverse of `CliffordAlgebra.liftBaseChangeEquiv` is composition with
-`CliffordAlgebra.ofBaseChangeAux`. -/
-theorem liftBaseChangeEquiv_symm_eq (Q : QuadraticForm R M)
-    (g : CliffordAlgebra (Q.baseChange A) →ₐ[A] B) :
-    (liftBaseChangeEquiv A Q).symm g = (g.restrictScalars R).comp (ofBaseChangeAux A Q) :=
-  (rfl)
-
 /-- **Generator uniqueness of the extension**: an `A`-algebra map `g` out of `Cℓ(A ⊗ M, Q_A)`
 equals `CliffordAlgebra.liftBaseChange A Q f` if and only if it agrees with `f` on every generator
 `ι (1 ⊗ₜ v)`. -/
 theorem eq_liftBaseChange_iff_ι {Q : QuadraticForm R M} {f : CliffordAlgebra Q →ₐ[R] B}
     {g : CliffordAlgebra (Q.baseChange A) →ₐ[A] B} :
     g = liftBaseChange A Q f ↔ ∀ v : M, g (ι (Q.baseChange A) (1 ⊗ₜ v)) = f (ι Q v) := by
-  refine ⟨fun h v ↦ h ▸ liftBaseChange_ι_one_tmul f v, fun h ↦ ?_⟩
+  refine ⟨fun h v ↦ h ▸ by simp, fun h ↦ ?_⟩
   apply (eq_liftBaseChange_iff Q f g).2
   have heq : (g.restrictScalars R).comp (ofBaseChangeAux A Q) = f := by
     ext v

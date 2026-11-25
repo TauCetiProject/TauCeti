@@ -36,8 +36,9 @@ Sets that agree on `ball x (r * R)` have preimages under the blow-up map `y ↦ 
 `r > 0`, that agree on `ball 0 R` (`TauCeti.preimage_add_smul_inter_ball_eq`), and hence the same
 symmetric difference with any set inside it (`TauCeti.preimage_add_smul_symmDiff_inter_eq`).
 
-The range formula identifies a positive real scaling of the unit sphere with the sphere
-of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
+The range formulas identify a positive real scaling of the unit sphere, and its translate by `a`,
+with the sphere of that radius about zero, respectively about `a`, in a seminormed real vector
+space. Two points on a sphere of nonzero radius
 centered at zero lie on the same line exactly when they are equal or antipodal.
 
 The normalization lemmas compute the norm of `R⁻¹ • z` when `R ≥ 0` and characterize the unit
@@ -217,6 +218,15 @@ theorem range_smul_coe_sphere {c : ℝ} (hc : 0 < c) :
     Set.range (fun u : Metric.sphere (0 : E) 1 ↦ c • (u : E)) = Metric.sphere 0 c := by
   rw [Set.range_comp' (c • ·) Subtype.val, Subtype.range_coe, Set.image_smul,
     smul_sphere' hc.ne', smul_zero, Real.norm_of_nonneg hc.le, mul_one]
+
+/-- The image of the unit sphere under `u ↦ a + c • u`, for a positive real `c`, is the sphere of
+radius `c` about `a`. -/
+@[simp]
+theorem range_add_smul_coe_sphere (a : E) {c : ℝ} (hc : 0 < c) :
+    Set.range (fun u : Metric.sphere (0 : E) 1 ↦ a + c • (u : E)) = Metric.sphere a c := by
+  rw [Set.range_comp' (a + ·) (fun u : Metric.sphere (0 : E) 1 ↦ c • (u : E)),
+    range_smul_coe_sphere hc]
+  simp
 
 /-- Two points of a sphere of nonzero radius centered at zero in a real seminormed space
 lie on the same line exactly when they are equal or antipodal. -/

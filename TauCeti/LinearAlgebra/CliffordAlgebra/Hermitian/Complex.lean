@@ -186,13 +186,15 @@ theorem existsUnique_pos_mul_of_surjective [Nontrivial S] (hsurj : Function.Surj
         -H x (ρ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) y)) :
     ∃! r : ℝ, 0 < r ∧ ∀ x y, H x y = (r : ℂ) * H₀ x y := by
   -- Make `H₀` the inner product of `S`.
-  let := (hH₀.toInnerProductCore hdef₀).toNormedAddCommGroup
-  let := InnerProductSpace.ofCore (hH₀.toInnerProductCore hdef₀).toCore
-  have hinner := hH₀.inner_ofCore_toInnerProductCore hdef₀
+  have hre₀ : ∀ x, x ≠ 0 → 0 < RCLike.re (H₀ x x) := fun x hx ↦
+    (RCLike.pos_iff.mp ((hH₀.isNonneg.nonneg x).lt_of_ne' (hdef₀ x hx))).1
+  let := (hH₀.isSymm.innerProductCore hre₀).toNormedAddCommGroup
+  let := InnerProductSpace.ofCore (hH₀.isSymm.innerProductCore hre₀).toCore
+  have hinner := hH₀.isSymm.inner_ofCore_innerProductCore hre₀
   simp_rw [← hinner]
   refine existsUnique_pos_mul_inner_of_surjective ρ hsurj (fun v ↦ ?_) H hpos hdef hH
   refine ((LinearMap.eq_adjoint_iff _ _).mpr fun x y ↦ ?_).symm
-  simp [hH₀ρ]
+  simp [hinner, hH₀ρ]
 
 end Uniqueness
 

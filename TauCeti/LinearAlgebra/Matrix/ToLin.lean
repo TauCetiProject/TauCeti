@@ -60,6 +60,9 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `Matrix.toLin_bijective_iff`, and `Matrix.toLin_bijective_iff_isUnit_det`: for bases of two
   modules indexed by the same finite type, the representing matrix (and, over a commutative ring,
   its determinant) is a unit if and only if the linear map is bijective.
+* `LinearEquiv.map_toMatrix_mul_map_toMatrix_symm`: even after applying a ring homomorphism to
+  their entries, the matrix of a linear equivalence is a left inverse of the matrix of its inverse;
+  applying the lemma to `T.symm` gives the product in the other order.
 * `Matrix.toLinAlgEquiv_eq_toLin`: `Matrix.toLinAlgEquiv b` agrees on every matrix with
   `Matrix.toLin b b`.
 * `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
@@ -308,6 +311,22 @@ theorem isUnit_det_toMatrix_iff_bijective {R V M ι : Type*} [CommRing R] [AddCo
   rw [← Matrix.isUnit_iff_isUnit_det, isUnit_toMatrix_iff_bijective]
 
 end LinearMap
+
+namespace LinearEquiv
+
+/-- **Matrices of a linear equivalence and its inverse.** For bases `v` and `b`, the image under a
+ring homomorphism `f` of the matrix `LinearMap.toMatrix v b T` of a linear equivalence `T` is a
+left inverse of the image of the matrix `LinearMap.toMatrix b v T.symm` of its inverse. -/
+theorem map_toMatrix_mul_map_toMatrix_symm {R S V M ι κ : Type*} [CommSemiring R] [Semiring S]
+    [AddCommMonoid V] [Module R V] [AddCommMonoid M] [Module R M] [Fintype ι] [DecidableEq ι]
+    [Fintype κ] [DecidableEq κ] (v : Module.Basis ι R V) (b : Module.Basis κ R M) (T : V ≃ₗ[R] M)
+    (f : R →+* S) :
+    (LinearMap.toMatrix v b T.toLinearMap).map f *
+      (LinearMap.toMatrix b v T.symm.toLinearMap).map f = 1 := by
+  rw [← Matrix.map_mul, ← LinearMap.toMatrix_comp, comp_symm, LinearMap.toMatrix_id,
+    Matrix.map_one _ (map_zero f) (map_one f)]
+
+end LinearEquiv
 
 namespace Matrix
 

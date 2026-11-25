@@ -368,6 +368,7 @@ end AlgHom
 
 namespace CliffordAlgebra
 
+open scoped ComplexOrder in
 /-- **Every complex spinor module admits a geometric Hermitian inner product**: for a
 finite-dimensional Euclidean space `V` with `Q v = -‖v‖²` and any complex algebra isomorphism
 `ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S`, there exists an
@@ -382,11 +383,14 @@ theorem exists_innerProductCore_isGeometricClifford
       letI : InnerProductSpace ℂ S := InnerProductSpace.ofCore c.toCore
       ((liftBaseChangeEquiv ℂ Q).symm ρ.toAlgHom).IsGeometricClifford := by
   obtain ⟨H, hpos, hdef, hH⟩ := exists_sesqForm_map_eq_map_conjStar hQ ρ
-  refine ⟨hpos.toInnerProductCore hdef, ?_⟩
-  let : NormedAddCommGroup S := (hpos.toInnerProductCore hdef).toNormedAddCommGroup
-  let : InnerProductSpace ℂ S := InnerProductSpace.ofCore (hpos.toInnerProductCore hdef).toCore
+  have hre : ∀ v, v ≠ 0 → 0 < RCLike.re (H v v) := fun v hv ↦
+    (RCLike.pos_iff.mp ((hpos.isNonneg.nonneg v).lt_of_ne' (hdef v hv))).1
+  refine ⟨hpos.isSymm.innerProductCore hre, ?_⟩
+  let : NormedAddCommGroup S := (hpos.isSymm.innerProductCore hre).toNormedAddCommGroup
+  let : InnerProductSpace ℂ S := InnerProductSpace.ofCore (hpos.isSymm.innerProductCore hre).toCore
   refine ⟨hQ, fun v x y ↦ ?_⟩
-  rw [hpos.inner_ofCore_toInnerProductCore hdef, hpos.inner_ofCore_toInnerProductCore hdef]
+  rw [hpos.isSymm.inner_ofCore_innerProductCore hre,
+    hpos.isSymm.inner_ofCore_innerProductCore hre]
   simpa using hH (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) x y
 
 end CliffordAlgebra
