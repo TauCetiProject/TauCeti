@@ -19,6 +19,11 @@ this ensures that extension by zero is smooth at the frontier.
 compactly supported section submodules. Restriction recovers the original section; conversely,
 extension recovers any ambient section whose closed support lies in the open subset. Extension
 also intertwines multiplication by ambient smooth scalar functions with their restrictions.
+
+`ContMDiffSection.extendByZeroToOpenLinearMap` extends compactly supported sections between
+nested open subsets, with its support, identity and composition laws, and
+`ContMDiffSection.restrictUnivLinearMap` restricts compactly supported sections to the universal
+open subset.
 These are algebraic operations on test sections; no topology on compactly supported sections is
 chosen here.
 -/

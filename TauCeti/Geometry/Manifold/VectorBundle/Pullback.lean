@@ -385,14 +385,6 @@ theorem Bundle.Pullback.contMDiffVectorBundle [ContMDiffVectorBundle n F E IB] {
     (hf : ContMDiff IB' IB n f) : ContMDiffVectorBundle n F ((f : B' → B) *ᵖ E) IB' :=
   ContMDiffVectorBundle.pullback F E IB' (⟨f, hf⟩ : C^n⟮IB', B'; IB, B⟯)
 
-/-- The canonical pullback to an open subset is a `C^n` vector bundle. This instance uses
-the smooth inclusion of the open submanifold and requires no completeness or dimension
-assumption on the model fibre. -/
-instance Bundle.Pullback.instContMDiffVectorBundleSubtypeVal
-    [ContMDiffVectorBundle n F E IB] (U : TopologicalSpace.Opens B) :
-    ContMDiffVectorBundle n F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, B)) *ᵖ E) IB :=
-  ContMDiffVectorBundle.pullback F E IB ⟨Subtype.val, contMDiff_subtypeVal⟩
-
 /-- The pullback of a `C^n` vector bundle along a `C^n` map `g`, taken along its underlying
 continuous map `(g : C(B', B))`, is a `C^n` vector bundle. Mathlib's instance
 `ContMDiffVectorBundle.pullback` does not apply here, since its base map is `g` itself rather than

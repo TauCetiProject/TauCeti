@@ -9,11 +9,12 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero.Topolo
 public import Mathlib.Geometry.Manifold.Instances.Real
 
 /-!
-# Nonzero open-extension examples for native bundle tests
+# Open-extension examples for native bundle tests
 
-The clients extend native tests from a genuine proper open interval, from the universal open of
-a manifold with corners at a boundary point, from the empty open subset, and with zero-rank
-fibres.
+The clients extend native tests from a genuine proper open interval and from the universal open
+of a manifold with corners, with nonzero values at an interior and a boundary point, and from the
+empty open subset, where extension is zero. A zero-rank sanity check shows that native tests with
+zero-dimensional fibres vanish.
 -/
 
 public noncomputable section
