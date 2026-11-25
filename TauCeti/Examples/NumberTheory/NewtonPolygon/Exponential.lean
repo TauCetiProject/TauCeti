@@ -220,15 +220,16 @@ theorem convergenceRadius_exp (L : Type*) [DenselyNormedField L] [NormedAlgebra 
 formal exponential evaluates to the analytic exponential `NormedSpace.exp x`. -/
 theorem evalAt_exp {x : L} (hx : ‖x‖ < amiceRadius p 0) :
     (exp ℚ_[p]).evalAt x = NormedSpace.exp x := by
-  rw [evalAt_def, ← (expSeries_div_hasSum_exp_of_norm_lt hx).tsum_eq]
+  rw [evalAt_def, ← (expSeries_hasSum_exp_of_norm_lt hx).tsum_eq]
   congr 1 with n
-  rw [coeff_exp_eq_inv_factorial, Algebra.smul_def, map_inv₀, map_natCast, inv_mul_eq_div]
+  rw [coeff_exp_eq_inv_factorial]
 
 /-- **No zeros in the disc of convergence.** On the open disc `‖x‖ < p ^ (-1 / (p - 1))` of a
 complete normed field over `ℚ_[p]`, such as `ℂ_[p]`, the exponential series does not vanish:
 its value has norm one. -/
 theorem evalAt_exp_ne_zero {x : L} (hx : ‖x‖ < amiceRadius p 0) :
     (exp ℚ_[p]).evalAt x ≠ 0 := by
+  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
   rw [evalAt_exp hx, ← norm_ne_zero_iff, norm_exp_of_norm_lt hx]
   exact one_ne_zero
 
