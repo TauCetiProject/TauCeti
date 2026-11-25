@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Sobolev.Local.Multiplication
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Supercritical
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
@@ -57,7 +58,6 @@ The case `B(x, c) = c x` and `v = 1` gives the theorem.
 * `TauCeti.MemWkpLoc.contDiffOn_comp_graph_of_two_lt_mul`: the domain-dependent composition
   `z ↦ g(z, u z)`.
 * `TauCeti.HasWeakFDerivOn.bilin_comp_of_two_lt_mul`: the weak Leibniz rule for `B(g ∘ u, v)`.
-* `TauCeti.exists_bilin_comp_precompL`: the bilinear map `Φ` with `B(A ∘ D, v) = Φ(D, v)(A)`.
 
 ## References
 
@@ -77,19 +77,6 @@ universe uF uG uH
 
 variable {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {Ω : Opens ℂ}
-
-omit [FiniteDimensional ℝ F] in
-/-- The continuous bilinear map `(D, v) ↦ (A ↦ B(A ∘ D, v))`, which writes `B(A ∘ D, v)` as a
-product of `A` with `Φ(D, v)`. It is stated as an existence statement so that `Φ` stays opaque in
-proofs, where unfolding it makes unification of its iterated operator spaces slow. -/
-theorem exists_bilin_comp_precompL {G V H : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup H]
-    [NormedSpace ℝ H] (B : G →L[ℝ] V →L[ℝ] H) :
-    ∃ Φ : (ℂ →L[ℝ] F) →L[ℝ] V →L[ℝ] (F →L[ℝ] G) →L[ℝ] ℂ →L[ℝ] H,
-      ∀ D v A, Φ D v A = B.precompL ℂ (A.comp D) v :=
-  ⟨(((ContinuousLinearMap.compL ℝ (F →L[ℝ] G) (ℂ →L[ℝ] G) (ℂ →L[ℝ] H)).comp
-    (B.precompL ℂ).flip).flip).comp (ContinuousLinearMap.compL ℝ ℂ F G).flip,
-    fun _ _ _ => rfl⟩
 
 /-- **The weak Leibniz rule for `B(g ∘ u, v)` for `kp > 2`.** Let `1 < p` and `k p > 2`, let
 `u ∈ W^{k,p}_loc(Ω)` be continuous with weak derivative `Du`, let `g` be `C¹` on an open set `W`
@@ -155,7 +142,10 @@ private theorem MemWkpLoc.bilin_comp_of_two_lt_mul {p : ℝ≥0} (hp : 1 < p) {k
       (hv.of_le (by omega))
     -- The first term is `Φ(Du, v)` evaluated at `Dg(u)`.
     have h₁ : MemWkpLoc p Ω m (fun z => B.precompL ℂ ((fderiv ℝ g (u z)).comp (Du z)) (v z)) := by
-      obtain ⟨Φ, hΦdef⟩ := exists_bilin_comp_precompL (F := F) B
+      -- `Φ = B.compPrecompL ℂ F`, kept opaque: unfolding it makes unification slow.
+      obtain ⟨Φ, hΦdef⟩ : ∃ Φ : (ℂ →L[ℝ] F) →L[ℝ] V →L[ℝ] (F →L[ℝ] G) →L[ℝ] ℂ →L[ℝ] H,
+          ∀ D v A, Φ D v A = B.precompL ℂ (A.comp D) v :=
+        ⟨B.compPrecompL ℂ F, B.compPrecompL_apply⟩
       have hΦ : MemWkpLoc p Ω m (fun z => Φ (Du z) (v z)) :=
         MemWkpLoc.bilin_of_two_lt_add_sub_mul (H := (F →L[ℝ] G) →L[ℝ] ℂ →L[ℝ] H) (B := Φ) hp hDuk
           hv (c := m) (by omega) (by omega)

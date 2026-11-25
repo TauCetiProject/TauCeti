@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Norm
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Supercritical
+import TauCeti.Data.ENNReal.Mul
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Supercritical
 
 /-!
@@ -32,7 +34,7 @@ By the weak Leibniz rule `TauCeti.HasWeakFDerivOn.bilin_comp_of_two_lt_mul`,
 `D B(g ∘ u, v) = B(Dg(u) ∘ Du, v) + B(g ∘ u, Dv)`.
 
 The second term is the case `m - 1` for the multiplier `Dv`. The first is `Φ(Du, v)` evaluated at
-`Dg(u)`, for the bilinear map `Φ` of `TauCeti.exists_bilin_comp_precompL`. On an open set `V`
+`Dg(u)`, for the bilinear map `Φ = ContinuousLinearMap.compPrecompL ℂ F B`. On an open set `V`
 between `U` and `Ω`, the case `m - 1` for `Dg` bounds it by `‖Φ(Du, v)‖_{W^{m-1,p}(V)}`, and the
 product bound `TauCeti.exists_eLpNormWkp_bilin_le_of_two_lt_add_sub_mul` bounds that by
 `‖Du‖_{W^{k-1,p}(Ω)} ‖v‖_{W^{b,p}(Ω)}`, raising the power by one. The case `B(x, c) = c x` and
@@ -118,23 +120,6 @@ private theorem exists_eLpNormWkp_bilin_le_of_two_lt_add_sub_mul_of_fixed {V E :
   refine ⟨C * ‖Φ‖₊, fun D v => (hC Φ D v).trans (le_of_eq ?_)⟩
   rw [ENNReal.coe_mul, eNorm_eq_nnNorm]
 
-/-- To bound `L` by `C (1 + X)^n Y` with `C ≠ 0` and `n ≠ 0`, it suffices to treat finite `X` and
-`Y`, provided `L` vanishes when `Y` does. -/
-private theorem le_mul_one_add_pow_mul_of_ne_top_imp_le {L X Y : ℝ≥0∞} {C : ℝ≥0} (hC : C ≠ 0)
-    {n : ℕ} (hn : n ≠ 0) (h0 : Y = 0 → L = 0) (hfin : X ≠ ∞ → Y ≠ ∞ → L ≤ C * (1 + X) ^ n * Y) :
-    L ≤ C * (1 + X) ^ n * Y := by
-  by_cases hY0 : Y = 0
-  · rw [h0 hY0]
-    exact zero_le
-  by_cases hX : X = ∞
-  · rw [hX, add_top, ENNReal.top_pow hn, ENNReal.mul_top (by simpa using hC),
-      ENNReal.top_mul hY0]
-    exact le_top
-  by_cases hY : Y = ∞
-  · rw [hY, ENNReal.mul_top (mul_ne_zero (by simpa using hC) (pow_ne_zero _ (by simp)))]
-    exact le_top
-  exact hfin hX hY
-
 /-- The arithmetic of the inductive step: the three bounds for the `Lᵖ` part and the two
 Leibniz terms combine into one bound with the power raised by one. -/
 private theorem add_add_le_mul_one_add_pow_succ_mul (C₀ Cl Cr N : ℝ≥0) (X Y : ℝ≥0∞) (m : ℕ) :
@@ -215,7 +200,10 @@ private theorem exists_eLpNormWkp_bilin_comp_le_aux {p : ℝ≥0} (hp : 1 < p) {
     obtain ⟨b, rfl⟩ : ∃ b', b = b' + 1 := ⟨b - 1, by omega⟩
     obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
     obtain ⟨V', hUV, hVΩ, hVc⟩ := Opens.exists_between_and_isCompact_closure hU hUΩ
-    obtain ⟨Φ, hΦdef⟩ := exists_bilin_comp_precompL (F := F) B
+    -- `Φ = B.compPrecompL ℂ F`, kept opaque: unfolding it makes unification slow.
+    obtain ⟨Φ, hΦdef⟩ : ∃ Φ : (ℂ →L[ℝ] F) →L[ℝ] V →L[ℝ] (F →L[ℝ] G) →L[ℝ] ℂ →L[ℝ] H,
+        ∀ D v A, Φ D v A = B.precompL ℂ (A.comp D) v :=
+      ⟨B.compPrecompL ℂ F, B.compPrecompL_apply⟩
     -- The order-`m` bounds for `B` itself (the `Lᵖ` part), for `B.precompR ℂ` (the term with
     -- `Dv`) and for `Dg` against `Φ(Du, v)` on `V'`, and the product bound for `Φ`.
     obtain ⟨C₀, hC₀⟩ := ih (by omega) B (hg.of_le (by norm_cast; omega)) (b := b + 1) (by omega)
@@ -236,13 +224,17 @@ private theorem exists_eLpNormWkp_bilin_comp_le_aux {p : ℝ≥0} (hp : 1 < p) {
     have hUΩ' : U ⊆ Ω := subset_closure.trans hUΩ
     set X := eLpNormWkp p Ω (k + 1) u
     set Y := eLpNormWkp p Ω (b + 1) v
-    refine le_mul_one_add_pow_mul_of_ne_top_imp_le (by positivity) (by omega) (fun hY0 => ?_)
-      fun hX hY => ?_
+    -- The reduction to finite norms: the factor `C (1 + X)^(m + 1)` vanishes never, and is
+    -- infinite when `X` is.
+    refine ENNReal.le_mul_of_ne_top_imp_le (fun h => absurd h (mul_ne_zero (by positivity)
+      (pow_ne_zero _ (by simp)))) (fun hY0 => ?_) fun ha hY => ?_
     · -- If `v` vanishes almost everywhere on `Ω`, so does the product on `U`.
       have h0 : (fun z => B (g (u z)) (v z)) =ᵐ[volume.restrict U] 0 :=
         Filter.Eventually.mono (ae_mono (Measure.restrict_mono hUΩ' le_rfl)
           (ae_eq_zero_of_eLpNormWkp_eq_zero hp0 hY0)) fun z hz => by simp [hz]
       rw [eLpNormWkp_congr_ae h0, eLpNormWkp_zero_fun]
+    have hX : X ≠ ∞ := fun h => ha (by
+      rw [h, add_top, ENNReal.top_pow (by omega), ENNReal.mul_top (by positivity)])
     obtain ⟨Du, Dv, hDuX, hDvY, hstep⟩ := exists_eLpNormWkp_succ_bilin_comp_le (m := m) B hΦdef hp
       hkp hW (hg.of_le (by norm_cast; omega)) hUΩ' huc (huL.mono_right hLW) hX hY
     have hVΩ' : (V' : Set ℂ) ⊆ Ω := subset_closure.trans hVΩ
