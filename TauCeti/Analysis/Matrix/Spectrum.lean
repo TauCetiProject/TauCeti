@@ -94,7 +94,8 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`;
 * `Matrix.IsSymm.exists_orthogonal_diagonal` — a real symmetric matrix is `O * diagonal d * O⁻¹`
   for an invertible `O` with `O⁻¹ = Oᵀ`;
-* `Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq` and
+* `Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq`,
+  `Matrix.IsHermitian.eigenvalues₀_equivOfCardEq_symm` and
   `Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq` — the canonical equivalence
   `Fin (Fintype.card ι) ≃ ι` reindexes the sorted eigenvalues `hB.eigenvalues₀` as the
   matrix-indexed eigenvalues `hB.eigenvalues`, so a simple sorted eigenvalue is simple as a
@@ -529,6 +530,13 @@ theorem eigenvalues_apply_equivOfCardEq (hA : A.IsHermitian)
     hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) =
       hA.eigenvalues₀ i := by
   simp only [IsHermitian.eigenvalues, Equiv.symm_apply_apply]
+
+/-- The sorted eigenvalue at the index the canonical finite equivalence sends to `i` is the
+matrix-indexed eigenvalue at `i`. -/
+theorem eigenvalues₀_equivOfCardEq_symm (hA : A.IsHermitian) (i : ι) :
+    hA.eigenvalues₀ ((Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))).symm i) =
+      hA.eigenvalues i := by
+  rw [← eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]
 
 /-- A product of a function over the matrix-indexed eigenvalues of a Hermitian matrix is its
 product over the sorted eigenvalues. -/
