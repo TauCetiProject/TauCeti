@@ -83,8 +83,11 @@ variable (V : Type*) [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 variable [FiniteDimensional ℝ V]
 
-/-- The defining representation of `GL(V)` on `V`, as a `(𝔤𝔩(V), GL(V))`-module. -/
-noncomputable def glStd : GKModule (EndLie.conj ℝ V) V where
+/-- The defining representation of `GL(V)` on `V`, as a `(𝔤𝔩(V), GL(V))`-module, with `GL(V)`
+acting on `𝔤𝔩(V)` by conjugation through its image in the units of `Module.End ℝ V`. -/
+noncomputable def glStd : GKModule ((EndLie.conj ℝ V).comp
+    (Units.map (ContinuousLinearMap.toLinearMapRingHom :
+      (V →L[ℝ] V) →+* Module.End ℝ V).toMonoidHom)) V where
   ρ := (ContinuousLinearMap.toLinearMapRingHom : (V →L[ℝ] V) →+* Module.End ℝ V).toMonoidHom.comp
     (Units.coeHom _)
   map_lie g X v := by

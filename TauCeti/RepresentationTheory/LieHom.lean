@@ -54,6 +54,12 @@ theorem IsLieAction.of_lieEquiv {Ad : Representation R K L} (φ : K → L ≃ₗ
 instance IsLieAction.instTrivial : IsLieAction (Representation.trivial R K L) :=
   .of_lieHom (fun _ ↦ 1) fun _ _ ↦ rfl
 
+/-- Restricting a representation by Lie algebra morphisms along a monoid morphism `f` gives a
+representation by Lie algebra morphisms. -/
+instance IsLieAction.comp {K' : Type*} [Monoid K'] (Ad : Representation R K L) [IsLieAction Ad]
+    (f : K' →* K) : IsLieAction (Ad.comp f) where
+  map_lie k := IsLieAction.map_lie (Ad := Ad) (f k)
+
 variable (Ad : Representation R K L) [IsLieAction Ad]
 
 /-- The action of `k` in a representation by Lie algebra morphisms, as a Lie algebra morphism. -/

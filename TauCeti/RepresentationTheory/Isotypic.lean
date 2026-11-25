@@ -24,21 +24,21 @@ of `M.ρ` are `K`-stable but not `𝔤`-stable in general, since `𝔤` moves `K
 
 ## Main definitions
 
-* `Representation.isotypic ρ σ`: the `σ`-isotypic component of `ρ`.
-* `Representation.isotypicSubrep ρ σ`: the isotypic component as a subrepresentation.
+* `Representation.isotypicComponent ρ σ`: the `σ`-isotypic component of `ρ`.
+* `Representation.isotypicComponentSubrep ρ σ`: the isotypic component as a subrepresentation.
 * `Representation.evalIntertwiningMap ρ σ w`: evaluation of `Hom_G(σ, ρ)` at `w`, with values in
   the isotypic component.
 
 ## Main statements
 
-* `Representation.mem_isotypic_iff`: for irreducible `σ`, the isotypic component is Mathlib's
-  `isotypicComponent` of the simple `k[G]`-module `σ.asModule`.
+* `Representation.mem_isotypicComponent_iff`: for irreducible `σ`, the isotypic component is
+  Mathlib's `isotypicComponent` of the simple `k[G]`-module `σ.asModule`.
 * `Representation.evalIntertwiningMap_injective`: for irreducible `σ` and `w ≠ 0`, evaluation at
   `w` embeds `Hom_G(σ, ρ)` into the isotypic component `V(σ)`.
-* `Representation.multiplicity_le_rank_isotypic`: for irreducible `σ`, the multiplicity of `σ` is
-  at most the dimension of the isotypic component.
-* `Representation.hasFiniteMultiplicities_of_finiteDimensional_isotypic`: a representation whose
-  isotypic components are finite-dimensional has finite multiplicities.
+* `Representation.multiplicity_le_rank_isotypicComponent`: for irreducible `σ`, the multiplicity
+  of `σ` is at most the dimension of the isotypic component.
+* `Representation.hasFiniteMultiplicities_of_finiteDimensional_isotypicComponent`: a
+  representation whose isotypic components are finite-dimensional has finite multiplicities.
 
 ## References
 
@@ -58,38 +58,39 @@ variable [CommSemiring k] [AddCommMonoid V] [Module k V] [AddCommMonoid W] [Modu
 
 /-- The **`σ`-isotypic component** `V(σ)` of a representation `ρ`: the sum of the images of the
 `G`-equivariant linear maps from `σ` to `ρ`. For irreducible `σ` it is the sum of the
-subrepresentations isomorphic to `σ` (`Representation.mem_isotypic_iff`). It is stable under `G`
-(`Representation.isotypicSubrep`). -/
-def isotypic : Submodule k V :=
+subrepresentations isomorphic to `σ` (`Representation.mem_isotypicComponent_iff`). It is stable
+under `G` (`Representation.isotypicComponentSubrep`). -/
+def isotypicComponent : Submodule k V :=
   ⨆ f : IntertwiningMap σ ρ, LinearMap.range f.toLinearMap
 
 /-- The isotypic component is the supremum of the ranges of the `G`-equivariant maps from `σ`. -/
-theorem isotypic_def :
-    ρ.isotypic σ = ⨆ f : IntertwiningMap σ ρ, LinearMap.range f.toLinearMap :=
+theorem isotypicComponent_def :
+    ρ.isotypicComponent σ = ⨆ f : IntertwiningMap σ ρ, LinearMap.range f.toLinearMap :=
   (rfl)
 
 /-- The isotypic component is the least submodule containing the ranges of all `G`-equivariant
 maps from `σ`. -/
-theorem isotypic_le_iff {P : Submodule k V} :
-    ρ.isotypic σ ≤ P ↔ ∀ f : IntertwiningMap σ ρ, LinearMap.range f.toLinearMap ≤ P := by
-  rw [isotypic_def, iSup_le_iff]
+theorem isotypicComponent_le_iff {P : Submodule k V} :
+    ρ.isotypicComponent σ ≤ P ↔ ∀ f : IntertwiningMap σ ρ, LinearMap.range f.toLinearMap ≤ P := by
+  rw [isotypicComponent_def, iSup_le_iff]
 
 variable {ρ σ}
 
-theorem range_le_isotypic (f : IntertwiningMap σ ρ) :
-    LinearMap.range f.toLinearMap ≤ ρ.isotypic σ :=
-  (ρ.isotypic_le_iff σ).1 le_rfl f
+theorem range_le_isotypicComponent (f : IntertwiningMap σ ρ) :
+    LinearMap.range f.toLinearMap ≤ ρ.isotypicComponent σ :=
+  (ρ.isotypicComponent_le_iff σ).1 le_rfl f
 
-theorem apply_mem_isotypic (f : IntertwiningMap σ ρ) (w : W) : f w ∈ ρ.isotypic σ :=
-  range_le_isotypic f ⟨w, rfl⟩
+theorem apply_mem_isotypicComponent (f : IntertwiningMap σ ρ) (w : W) :
+    f w ∈ ρ.isotypicComponent σ :=
+  range_le_isotypicComponent f ⟨w, rfl⟩
 
 /-- The isotypic component is stable under `G`. -/
-theorem apply_mem_isotypic_of_mem (g : G) {v : V} (hv : v ∈ ρ.isotypic σ) :
-    ρ g v ∈ ρ.isotypic σ := by
-  refine Submodule.iSup_induction _ (motive := fun v ↦ ρ g v ∈ ρ.isotypic σ) hv ?_ ?_ ?_
+theorem apply_mem_isotypicComponent_of_mem (g : G) {v : V} (hv : v ∈ ρ.isotypicComponent σ) :
+    ρ g v ∈ ρ.isotypicComponent σ := by
+  refine Submodule.iSup_induction _ (motive := fun v ↦ ρ g v ∈ ρ.isotypicComponent σ) hv ?_ ?_ ?_
   · rintro f _ ⟨w, rfl⟩
     rw [IntertwiningMap.toLinearMap_apply, ← f.isIntertwining]
-    exact apply_mem_isotypic f _
+    exact apply_mem_isotypicComponent f _
   · simp
   · intro v v' hv hv'
     simpa using add_mem hv hv'
@@ -97,18 +98,19 @@ theorem apply_mem_isotypic_of_mem (g : G) {v : V} (hv : v ∈ ρ.isotypic σ) :
 variable (ρ σ)
 
 /-- The isotypic component as a subrepresentation. -/
-def isotypicSubrep : Subrepresentation ρ where
-  toSubmodule := ρ.isotypic σ
-  apply_mem_toSubmodule g _ hv := apply_mem_isotypic_of_mem g hv
+def isotypicComponentSubrep : Subrepresentation ρ where
+  toSubmodule := ρ.isotypicComponent σ
+  apply_mem_toSubmodule g _ hv := apply_mem_isotypicComponent_of_mem g hv
 
 @[simp]
-theorem mem_isotypicSubrep {v : V} : v ∈ ρ.isotypicSubrep σ ↔ v ∈ ρ.isotypic σ :=
+theorem mem_isotypicComponentSubrep {v : V} :
+    v ∈ ρ.isotypicComponentSubrep σ ↔ v ∈ ρ.isotypicComponent σ :=
   Iff.rfl
 
 /-- Evaluation of `G`-equivariant maps `σ → ρ` at a vector `w`, which lands in the isotypic
 component `V(σ)`. -/
-def evalIntertwiningMap (w : W) : IntertwiningMap σ ρ →ₗ[k] ρ.isotypic σ where
-  toFun f := ⟨f w, apply_mem_isotypic f w⟩
+def evalIntertwiningMap (w : W) : IntertwiningMap σ ρ →ₗ[k] ρ.isotypicComponent σ where
+  toFun f := ⟨f w, apply_mem_isotypicComponent f w⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
@@ -127,13 +129,13 @@ variable [Field k] [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
 open scoped MonoidAlgebra in
 /-- For irreducible `σ`, the isotypic component is Mathlib's `isotypicComponent` of the simple
 `k[G]`-module `σ.asModule` in `ρ.asModule`, read on `V` through `Representation.asModuleEquiv`. -/
-theorem mem_isotypic_iff [σ.IsIrreducible] {v : V} :
-    v ∈ ρ.isotypic σ ↔
-      ρ.asModuleEquiv.symm v ∈ isotypicComponent k[G] ρ.asModule σ.asModule := by
+theorem mem_isotypicComponent_iff [σ.IsIrreducible] {v : V} :
+    v ∈ ρ.isotypicComponent σ ↔
+      ρ.asModuleEquiv.symm v ∈ _root_.isotypicComponent k[G] ρ.asModule σ.asModule := by
   constructor
   · intro hv
     refine Submodule.iSup_induction _
-      (motive := fun v ↦ ρ.asModuleEquiv.symm v ∈ isotypicComponent k[G] _ _) hv ?_ ?_ ?_
+      (motive := fun v ↦ ρ.asModuleEquiv.symm v ∈ _root_.isotypicComponent k[G] _ _) hv ?_ ?_ ?_
     · rintro f _ ⟨w, rfl⟩
       exact (IntertwiningMap.equivLinearMapAsModule σ ρ f).apply_mem_isotypicComponent
         (σ.asModuleEquiv.symm w)
@@ -141,10 +143,10 @@ theorem mem_isotypic_iff [σ.IsIrreducible] {v : V} :
     · intro v v' hv hv'
       simpa using add_mem hv hv'
   · intro hv
-    rw [isotypicComponent, sSup_eq_iSup'] at hv
+    rw [_root_.isotypicComponent, sSup_eq_iSup'] at hv
     rw [← ρ.asModuleEquiv.apply_symm_apply v]
     refine Submodule.iSup_induction _
-      (motive := fun x ↦ ρ.asModuleEquiv x ∈ ρ.isotypic σ) hv ?_ ?_ ?_
+      (motive := fun x ↦ ρ.asModuleEquiv x ∈ ρ.isotypicComponent σ) hv ?_ ?_ ?_
     · rintro ⟨m, ⟨e⟩⟩ x hx
       let f := (IntertwiningMap.equivLinearMapAsModule σ ρ).symm (m.subtype ∘ₗ e.symm.toLinearMap)
       have : ρ.asModuleEquiv x = f (σ.asModuleEquiv (e ⟨x, hx⟩)) := by
@@ -155,7 +157,7 @@ theorem mem_isotypic_iff [σ.IsIrreducible] {v : V} :
         rw [LinearEquiv.symm_apply_apply]
         rfl
       rw [this]
-      exact apply_mem_isotypic f _
+      exact apply_mem_isotypicComponent f _
     · simp
     · intro x y hx hy
       simpa using add_mem hx hy
@@ -172,16 +174,17 @@ theorem evalIntertwiningMap_injective [σ.IsIrreducible] {w : W} (hw : w ≠ 0) 
 
 /-- For irreducible `σ`, a finite-dimensional isotypic component `V(σ)` makes `Hom_G(σ, ρ)`
 finite-dimensional. -/
-theorem finiteDimensional_intertwiningMap_of_isotypic [σ.IsIrreducible]
-    [FiniteDimensional k (ρ.isotypic σ)] : FiniteDimensional k (IntertwiningMap σ ρ) := by
+theorem finiteDimensional_intertwiningMap_of_finiteDimensional_isotypicComponent
+    [σ.IsIrreducible] [FiniteDimensional k (ρ.isotypicComponent σ)] :
+    FiniteDimensional k (IntertwiningMap σ ρ) := by
   have := Representation.IsIrreducible.nontrivial (ρ := σ) inferInstance
   obtain ⟨w, hw⟩ := exists_ne (0 : W)
   exact Module.Finite.of_injective _ (evalIntertwiningMap_injective (ρ := ρ) hw)
 
 /-- For irreducible `σ`, the multiplicity of `σ` in `ρ` is at most the dimension of the isotypic
 component. -/
-theorem multiplicity_le_rank_isotypic [σ.IsIrreducible] :
-    ρ.multiplicity σ ≤ (Module.rank k (ρ.isotypic σ)).toENat := by
+theorem multiplicity_le_rank_isotypicComponent [σ.IsIrreducible] :
+    ρ.multiplicity σ ≤ (Module.rank k (ρ.isotypicComponent σ)).toENat := by
   have := Representation.IsIrreducible.nontrivial (ρ := σ) inferInstance
   obtain ⟨w, hw⟩ := exists_ne (0 : W)
   have h := OrderHomClass.mono Cardinal.toENat
@@ -190,13 +193,14 @@ theorem multiplicity_le_rank_isotypic [σ.IsIrreducible] :
 
 /-- A representation whose isotypic components are finite-dimensional has finite
 multiplicities. -/
-theorem hasFiniteMultiplicities_of_finiteDimensional_isotypic
+theorem hasFiniteMultiplicities_of_finiteDimensional_isotypicComponent
     (h : ∀ U : Subrepresentation ρ, U.toRepresentation.IsIrreducible →
-      FiniteDimensional k (ρ.isotypic U.toRepresentation)) :
+      FiniteDimensional k (ρ.isotypicComponent U.toRepresentation)) :
     ρ.HasFiniteMultiplicities :=
   ρ.hasFiniteMultiplicities_iff.2 fun U hU ↦
     have := h U hU
-    finiteDimensional_intertwiningMap_of_isotypic (σ := U.toRepresentation)
+    finiteDimensional_intertwiningMap_of_finiteDimensional_isotypicComponent
+      (σ := U.toRepresentation)
 
 end Field
 

@@ -39,11 +39,12 @@ condition is the further predicate `TauCeti.GKModule.IsCompatible` on a `TauCeti
   over the enveloping algebra `U(𝔤)`.
 
 Isotypic components, multiplicities and admissibility only involve the action of `K`, so they are
-stated for representations: the `σ`-isotypic component of `M` is `Representation.isotypic M.ρ σ`
-(`TauCeti/RepresentationTheory/Isotypic.lean`), which is `K`-stable but not `𝔤`-stable in general
-since `𝔤` moves `K`-types; the multiplicity of `σ` is `Representation.multiplicity M.ρ σ`, the
-dimension of `Hom_K(σ, V)`; and `M` is admissible when its `K`-action has finite multiplicities,
-`Representation.HasFiniteMultiplicities M.ρ` (`TauCeti/RepresentationTheory/Admissible.lean`).
+stated for representations: the `σ`-isotypic component of `M` is
+`Representation.isotypicComponent M.ρ σ` (`TauCeti/RepresentationTheory/Isotypic.lean`), which is
+`K`-stable but not `𝔤`-stable in general since `𝔤` moves `K`-types; the multiplicity of `σ` is
+`Representation.multiplicity M.ρ σ`, the dimension of `Hom_K(σ, V)`; and `M` is admissible when
+its `K`-action has finite multiplicities, `Representation.HasFiniteMultiplicities M.ρ`
+(`TauCeti/RepresentationTheory/Admissible.lean`).
 
 ## Main statements
 
