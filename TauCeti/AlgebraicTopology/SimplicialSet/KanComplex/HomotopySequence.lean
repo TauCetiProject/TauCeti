@@ -107,6 +107,43 @@ private lemma two_lt {n : ℕ} {j : Fin (n + 3)} (h₀ : j ≠ 0) (h₁ : j ≠ 
   rw [Fin.lt_def, val_two]
   omega
 
+/-- The instance `δ 0 ≫ δ 2 = δ 1 ≫ δ 0` of `stdSimplex.δ_comp_δ_zero`. -/
+@[reassoc]
+private lemma δ_zero_comp_δ_two {n : ℕ} :
+    stdSimplex.{u}.δ (0 : Fin (n + 2)) ≫ stdSimplex.δ (2 : Fin (n + 3)) =
+      stdSimplex.δ 1 ≫ stdSimplex.δ 0 := by
+  simpa using (stdSimplex.δ_comp_δ_zero.{u} (1 : Fin (n + 2))).symm
+
+/-- The instance `δ 1 ≫ δ 2 = δ 1 ≫ δ 1` of `stdSimplex.δ_comp_δ_self`. -/
+@[reassoc]
+private lemma δ_one_comp_δ_two {n : ℕ} :
+    stdSimplex.{u}.δ (1 : Fin (n + 2)) ≫ stdSimplex.δ (2 : Fin (n + 3)) =
+      stdSimplex.δ 1 ≫ stdSimplex.δ 1 := by
+  simpa using (stdSimplex.{u}.δ_comp_δ_self (i := (1 : Fin (n + 2)))).symm
+
+/-- The instance `δ 0 ≫ δ 1 = δ 0 ≫ δ 0` of `stdSimplex.δ_comp_δ_self`. -/
+@[reassoc]
+private lemma δ_zero_comp_δ_one {n : ℕ} :
+    stdSimplex.{u}.δ (0 : Fin (n + 2)) ≫ stdSimplex.δ (1 : Fin (n + 3)) =
+      stdSimplex.δ 0 ≫ stdSimplex.δ 0 := by
+  simpa using (stdSimplex.{u}.δ_comp_δ_self (i := (0 : Fin (n + 2)))).symm
+
+/-- The instance `δ j.succ ≫ δ 1 = δ 1 ≫ δ j.succ.succ` of `stdSimplex.δ_comp_δ`. -/
+@[reassoc]
+private lemma δ_succ_comp_δ_one {n : ℕ} (j : Fin (n + 1)) :
+    stdSimplex.{u}.δ j.succ ≫ stdSimplex.δ (1 : Fin (n + 3)) =
+      stdSimplex.δ 1 ≫ stdSimplex.δ j.succ.succ := by
+  simpa using (stdSimplex.{u}.δ_comp_δ (i := (1 : Fin (n + 2))) (j := j.succ)
+    (by simp [Fin.le_def])).symm
+
+/-- The faces of the fiber component of the `0`th face of a simplex `Φ` lying over `b` in that
+face: `δ j ≫ lift (δ 0 ≫ Φ) ≫ ι = δ 0 ≫ δ j.succ ≫ Φ`. -/
+private lemma δ_comp_lift_δ_zero_comp_ι {n : ℕ} (Φ : Δ[n + 2] ⟶ E)
+    (hΦ : (stdSimplex.δ 0 ≫ Φ) ≫ p = const b) (j : Fin (n + 2)) :
+    stdSimplex.δ j ≫ fiber.lift (stdSimplex.δ 0 ≫ Φ) p b hΦ ≫ (fiber p b).ι =
+      stdSimplex.δ 0 ≫ stdSimplex.δ j.succ ≫ Φ := by
+  rw [fiber.lift_ι, stdSimplex.δ_comp_δ_zero_assoc]
+
 /-- The composite of the maps induced by the fiber inclusion and by `p` is trivial. -/
 @[simp]
 lemma map_map_fiber_ι {n : ℕ} (x : π n (fiber p b : SSet) (fiber.basePoint p he)) :
@@ -169,13 +206,12 @@ private lemma nonempty_relStruct₀ {n : ℕ} {s s' : B.PtSimplex (n + 1) b}
     δ_succ_map := ?_
     δ_map_of_lt := fun j hj ↦ absurd hj (Fin.not_lt_zero _)
     δ_map_of_gt := fun j hj ↦ ?_ }⟩
-  · rw [← cancel_mono (fiber p b).ι, Category.assoc, fiber.lift_ι, Fin.castSucc_zero,
-      ← h.δ_zero_map, ← hf₁, ← hΦ 1 (by simp)]
-    simpa using stdSimplex.δ_comp_δ_self_assoc (i := (0 : Fin (n + 2))) Φ
-  · rw [← cancel_mono (fiber p b).ι, Category.assoc, fiber.lift_ι, Fin.succ_zero_eq_one,
-      stdSimplex.δ_comp_δ_zero_assoc, ← h'.δ_zero_map, hΦ _ (Fin.succ_ne_zero _)]
+  · rw [← cancel_mono (fiber p b).ι, Category.assoc, δ_comp_lift_δ_zero_comp_ι, Fin.castSucc_zero,
+      Fin.succ_zero_eq_one, ← h.δ_zero_map, ← hf₁, ← hΦ 1 (by simp)]
+  · rw [← cancel_mono (fiber p b).ι, Category.assoc, δ_comp_lift_δ_zero_comp_ι, ← h'.δ_zero_map,
+      hΦ _ (Fin.succ_ne_zero _)]
     simp [hf₂]
-  · rw [← cancel_mono (fiber p b).ι, Category.assoc, fiber.lift_ι, stdSimplex.δ_comp_δ_zero_assoc,
+  · rw [← cancel_mono (fiber p b).ι, Category.assoc, δ_comp_lift_δ_zero_comp_ι,
       hΦ _ (Fin.succ_ne_zero _), hf _ _ ?_ ?_]
     · simp
     all_goals exact Fin.ne_of_val_ne (by
@@ -245,14 +281,10 @@ private lemma nonempty_deltaStruct_of_relStruct₀ {n : ℕ} {s : B.PtSimplex (n
     map_comp := by simpa [hΦp] using (PtSimplex.RelStruct.refl s 1).δ_succ_map
     δ_zero_map := ?_
     δ_succ_map := fun j ↦ ?_ }⟩
-  · have := stdSimplex.{u}.δ_comp_δ_assoc (n := n) (i := 0) (j := 1) (by simp) Φ
-    simp only [Fin.succ_one_eq_two, Fin.castSucc_zero] at this
-    rw [this, hΦ₀]
+  · rw [δ_zero_comp_δ_two_assoc, hΦ₀]
     simpa using r.δ_succ_map =≫ (fiber p b).ι
   · obtain rfl | ⟨j, rfl⟩ := j.eq_zero_or_eq_succ
-    · have := stdSimplex.{u}.δ_comp_δ_self_assoc (n := n) (i := 1) Φ
-      simp only [Fin.castSucc_one, Fin.succ_one_eq_two] at this
-      rw [Fin.succ_zero_eq_one, ← this, hΦ₁]
+    · rw [Fin.succ_zero_eq_one, δ_one_comp_δ_two_assoc, hΦ₁]
       simpa using h.δ_succ_map 0
     · have := stdSimplex.{u}.δ_comp_δ''_assoc (n := n) (i := 2) (j := j.succ.succ)
         (by rw [Fin.le_def, val_two]; simp) Φ
@@ -388,8 +420,8 @@ private lemma exists_lift_of_δ_zero {n : ℕ} (σ : E.PtSimplex n e) (H : Δ[n 
   exact ⟨Φ, hΦp, by rw [hΦ 0 (by simp), hf₀], fun j hj ↦ by
     rw [hΦ j hj.ne', hf j hj.ne' (Fin.ne_zero_of_lt hj)]⟩
 
-/-- Exactness at `π n E e`: the kernel of the map induced by `p` is the image of the homotopy of
-the fiber. -/
+/-- Exactness at `π n E e`: the kernel of the map induced by `p` is the image of `π n F e` under the
+map induced by the fiber inclusion, where `F` is the fiber of `p` over `b`. -/
 lemma map_eq_one_iff {n : ℕ} (x : π n E e) :
     π.map p he x = 1 ↔ ∃ y, π.map (fiber p b).ι (fiber.ι_app_basePoint p he) y = x := by
   refine ⟨fun hx ↦ ?_, by rintro ⟨y, rfl⟩; exact map_map_fiber_ι y⟩
@@ -413,13 +445,8 @@ lemma map_eq_one_iff {n : ℕ} (x : π n E e) :
         simp only [boundary.ι_ι_assoc, Category.assoc, fiber.lift_ι, Subcomplex.ofSimplex_ι,
           comp_const, const_comp, fiber.ι_app_basePoint]
         obtain rfl | ⟨j, rfl⟩ := j.eq_zero_or_eq_succ
-        · have := stdSimplex.{u}.δ_comp_δ_self_assoc (n := n) (i := 0) Φ
-          simp only [Fin.castSucc_zero, Fin.succ_zero_eq_one] at this
-          rw [← this, hΦ₀, PtSimplex.δ_map]
-        · have := stdSimplex.{u}.δ_comp_δ_assoc (n := n) (i := 1) (j := j.succ)
-            (by simp [Fin.le_def]) Φ
-          simp only [Fin.castSucc_one] at this
-          rw [← this, hΦ _ (by simp [Fin.lt_def]), comp_const] }
+        · rw [δ_zero_comp_δ_one_assoc, hΦ₀, PtSimplex.δ_map]
+        · rw [δ_succ_comp_δ_one_assoc, hΦ _ (by simp [Fin.lt_def]), comp_const] }
   refine ⟨π.mk τ, ?_⟩
   rw [π.map_mk, eq_comm, π.mk_eq_mk_iff]
   exact ⟨{
@@ -487,23 +514,19 @@ lemma δ_mul {n : ℕ} (x y : π (n + 2) B b) :
   obtain ⟨Φ, hΦp, hΦ, hΦ₁₂, hΦ₀₂, hΦ₀₁⟩ := exists_lift_of_mulStruct hs h₀₁ h₁₂ h₀₂
   have hΦ₀ : (stdSimplex.δ 0 ≫ Φ) ≫ p = const b := by
     rw [Category.assoc, hΦp, hs.δ_map_of_lt 0 (by simp [Fin.lt_def])]
-  have hface (j : Fin (n + 3)) :
-      stdSimplex.δ j ≫ fiber.lift (stdSimplex.δ 0 ≫ Φ) p b hΦ₀ ≫ (fiber p b).ι =
-        stdSimplex.δ 0 ≫ stdSimplex.δ j.succ ≫ Φ := by
-    rw [fiber.lift_ι, stdSimplex.δ_comp_δ_zero_assoc]
   exact ⟨{
     map := fiber.lift (stdSimplex.δ 0 ≫ Φ) p b hΦ₀
     δ_castSucc_castSucc_map := by
-      rw [← cancel_mono (fiber p b).ι, Category.assoc, hface, hΦ₁₂ _ (by simp)]
+      rw [← cancel_mono (fiber p b).ι, Category.assoc, δ_comp_lift_δ_zero_comp_ι, hΦ₁₂ _ (by simp)]
       exact h₁₂.δ_zero_map
     δ_succ_castSucc_map := by
-      rw [← cancel_mono (fiber p b).ι, Category.assoc, hface, hΦ₀₂ _ (by simp)]
+      rw [← cancel_mono (fiber p b).ι, Category.assoc, δ_comp_lift_δ_zero_comp_ι, hΦ₀₂ _ (by simp)]
       exact h₀₂.δ_zero_map
     δ_succ_succ_map := by
-      rw [← cancel_mono (fiber p b).ι, Category.assoc, hface, hΦ₀₁ _ (by simp)]
+      rw [← cancel_mono (fiber p b).ι, Category.assoc, δ_comp_lift_δ_zero_comp_ι, hΦ₀₁ _ (by simp)]
       exact h₀₁.δ_zero_map
     δ_map_of_lt := fun j hj ↦ by
-      rw [← cancel_mono (fiber p b).ι, Category.assoc, hface,
+      rw [← cancel_mono (fiber p b).ι, Category.assoc, δ_comp_lift_δ_zero_comp_ι,
         hΦ _ (Fin.succ_ne_zero _) (by rw [Fin.val_succ]; simp [Fin.lt_def] at hj; omega)]
       simp
     δ_map_of_gt := fun j hj ↦ absurd hj (not_lt.2 (by simpa using Fin.le_last j)) }⟩

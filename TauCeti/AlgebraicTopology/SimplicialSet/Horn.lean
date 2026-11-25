@@ -84,12 +84,6 @@ lemma δ_yonedaEquiv_of_desc_eq (hf : horn.IsCompatible f) {σ : Δ[n + 1] ⟶ X
 
 end horn.IsCompatible
 
-/-- The faces of a face: `δ j ≫ δ 0 = δ 0 ≫ δ j.succ`. -/
-@[reassoc]
-lemma stdSimplex.δ_comp_δ_zero {n : ℕ} (j : Fin (n + 2)) :
-    stdSimplex.{u}.δ j ≫ stdSimplex.δ 0 = stdSimplex.δ 0 ≫ stdSimplex.δ j.succ := by
-  simpa using (stdSimplex.{u}.δ_comp_δ (Fin.zero_le j)).symm
-
 /-- A family of `(n + 1)`-simplices indexed by the nonzero `j : Fin (n + 3)` whose faces other than
 the `0`th are constant is compatible on the horn `Λ[n + 2, 0]`. -/
 lemma horn.IsCompatible.of_δ_succ {n : ℕ} {x : X _⦋0⦌}
