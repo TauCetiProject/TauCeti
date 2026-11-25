@@ -143,7 +143,7 @@ reduces to `1`. -/
 @[simp]
 theorem mem_Gamma0_iff {f : R →+* S} {M : GSp l R} :
     M ∈ Gamma0 l f ↔
-      (((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₂₁ = 0 ∧
+      ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₁.map f = 0 ∧
         f (multiplier l R M : R) = 1 := by
   simp [Gamma0, Units.ext_iff]
 
@@ -166,14 +166,14 @@ noncomputable def upperLeftHom (f : R →+* S) : Gamma0 l f →* GL l S :=
 @[simp]
 theorem coe_upperLeftHom (f : R →+* S) (M : Gamma0 l f) :
     (upperLeftHom l f M : Matrix l l S) =
-      (((M : GSp l R) : GL (l ⊕ l) R).val.map f).toBlocks₁₁ := by
+      ((M : GSp l R) : GL (l ⊕ l) R).val.toBlocks₁₁.map f := by
   simp [upperLeftHom]
 
 /-- `γ ∈ Γ₀(f)` lies in the kernel of the upper-left block of the reduction exactly when that
 block is the identity. -/
 theorem mem_ker_upperLeftHom_iff {f : R →+* S} {M : Gamma0 l f} :
     M ∈ (upperLeftHom l f).ker ↔
-      (((M : GSp l R) : GL (l ⊕ l) R).val.map f).toBlocks₁₁ = 1 := by
+      ((M : GSp l R) : GL (l ⊕ l) R).val.toBlocks₁₁.map f = 1 := by
   rw [MonoidHom.mem_ker, Units.ext_iff, coe_upperLeftHom, Units.val_one]
 
 end Gamma0
@@ -195,13 +195,13 @@ theorem Gamma1_le_Gamma0 (f : R →+* S) : Gamma1 l f ≤ Gamma0 l f := by
 @[simp]
 theorem mem_Gamma1_iff {f : R →+* S} {M : GSp l R} :
     M ∈ Gamma1 l f ↔
-      (((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₁₁ = 1 ∧
-        (((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₂₁ = 0 ∧
-          (((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₂₂ = 1 := by
+      ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₁₁.map f = 1 ∧
+        ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₁.map f = 0 ∧
+          ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₂.map f = 1 := by
   have hAD (N : GSp l R)
-      (h : (((N : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₂₁ = 0) :
-      (((N : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₁₁ *
-          (((N : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₂₂ᵀ =
+      (h : ((N : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₁.map f = 0) :
+      ((N : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₁₁.map f *
+          (((N : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₂.map f)ᵀ =
         f (multiplier l R N : R) • 1 := by
     simpa using toBlocks₁₁_mul_transpose_toBlocks₂₂_of_toBlocks₂₁_eq_zero (M := map l f N)
       (by simpa using h)
@@ -224,7 +224,7 @@ theorem mem_Gamma1_iff {f : R →+* S} {M : GSp l R} :
 theorem Gamma_le_Gamma1 (f : R →+* S) : Gamma l f ≤ Gamma1 l f := by
   intro M hM
   rw [mem_Gamma_iff] at hM
-  rw [mem_Gamma1_iff, hM]
+  simp only [mem_Gamma1_iff, ← toBlocks₁₁_map, ← toBlocks₂₁_map, ← toBlocks₂₂_map, hM]
   exact ⟨toBlocks₁₁_one, toBlocks₂₁_one, toBlocks₂₂_one⟩
 
 namespace Gamma0
@@ -253,11 +253,10 @@ theorem upperLeftHom_surjective {f : R →+* S} [IsLocalHom f] (hf : Function.Su
     GLSymplectic.coe_leviHom B
   have hc : multiplier l R L = 1 := (mem_GLSymplectic_iff L).1 (GLSymplectic.leviHom B).property
   have hL0 : L ∈ Gamma0 l f := by
-    rw [mem_Gamma0_iff, hL, hc, Units.val_one, map_one, fromBlocks_map]
+    rw [mem_Gamma0_iff, hL, hc, Units.val_one, map_one, toBlocks_fromBlocks₂₁]
     simp
   refine ⟨⟨L, hL0⟩, Units.ext ?_⟩
-  rw [coe_upperLeftHom, Matrix.GeneralLinearGroup.val_map_apply, hL, fromBlocks_map,
-    toBlocks_fromBlocks₁₁]
+  rw [coe_upperLeftHom, Matrix.GeneralLinearGroup.val_map_apply, hL, toBlocks_fromBlocks₁₁]
 
 variable (l) in
 /-- **`Γ₀(f) / Γ₁(f) ≃* GL l S`** through the upper-left block of the reduction, when `f` is
