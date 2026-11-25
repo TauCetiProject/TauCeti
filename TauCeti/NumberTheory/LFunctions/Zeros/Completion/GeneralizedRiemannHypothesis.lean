@@ -102,10 +102,8 @@ theorem HasFunctionalEquation.generalizedRiemannHypothesis_iff_zeroFreeRightOf_c
   rw [hfe.generalizedRiemannHypothesis_iff_zeroFreeRightOf_completed,
     zeroFreeRightOf_iff, zeroFreeRightOf_iff]
   refine forall₂_congr fun s hs ↦ ?_
-  have hγord : meromorphicOrderAt d.gammaFactor s = 0 :=
-    (d.analyticAt_gammaFactor (hγ s hs)).meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr
-      (hγ s hs)
-  rw [d.meromorphicOrderAt_continuedL hm, hγord, sub_zero]
+  rw [d.meromorphicOrderAt_continuedL hm,
+    (d.meromorphicOrderAt_gammaFactor_eq_zero_iff s).mpr (hγ s hs), sub_zero]
 
 /-- If every gamma shift has real part at least `-1/2`, the uncompleted function is zero-free
 right of the critical line exactly when the completed function satisfies the hypothesis. -/
