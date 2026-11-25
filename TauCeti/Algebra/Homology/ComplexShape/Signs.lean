@@ -220,6 +220,13 @@ theorem _root_.ComplexShape.σ_up_ℕ (p q : ℕ) :
       (-1 : ℤˣ) ^ (p * q) :=
   rfl
 
+/-- As an integer, the Koszul symmetry sign on `ComplexShape.up ℕ` in bidegree `(p, q)` is
+`(-1)^(p * q)`. -/
+theorem _root_.ComplexShape.val_σ_up_ℕ (p q : ℕ) :
+    (ComplexShape.σ (ComplexShape.up ℕ) (ComplexShape.up ℕ) (ComplexShape.up ℕ) p q : ℤ) =
+      (-1 : ℤ) ^ (p * q) := by
+  simp
+
 /-- The Koszul symmetry signs on `ComplexShape.up ℕ` are symmetric in the two factors. -/
 instance : TotalComplexShapeSymmetrySymmetry (ComplexShape.up ℕ) (ComplexShape.up ℕ)
     (ComplexShape.up ℕ) where

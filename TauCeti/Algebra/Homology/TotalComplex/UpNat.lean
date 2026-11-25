@@ -53,7 +53,12 @@ an induction on the degree compares the homology sequences of these short exact 
   This reindexes with unchanged differential and zero in degree `0`.
 * `HomologicalComplex₂.quasiIso_total_map_of_rows_up`: a map of bicomplexes which is a
   quasi-isomorphism on every row induces a quasi-isomorphism of total complexes.
-* `HomologicalComplex₂.quasiIso_totalCoaugmentation_of_rows`: exact coaugmented rows make the
+* `HomologicalComplex₂.quasiIso_totalCoaugmentation_of_rows`: a map from the bicomplex with the
+  single column `E` which is a quasi-isomorphism on every row makes the induced coaugmentation of
+  the total complex a quasi-isomorphism.
+* `HomologicalComplex₂.rowCoaugmentation`: the coaugmentation `E.X q ⟶ (K.X 0).X q ⟶ ⋯` of the
+  row `q` induced by a coaugmentation of the column `0`.
+* `HomologicalComplex₂.quasiIso_totalCoaugmentation`: exact coaugmented rows make the
   coaugmentation of the total complex a quasi-isomorphism.
 
 ## References
