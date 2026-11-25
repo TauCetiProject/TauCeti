@@ -80,11 +80,7 @@ theorem isFredholm_restrictScalars_real_iff {T : E →L[ℂ] F} :
   · -- The kernel of the realification is `T.ker` with its inherited real structure.
     have : Module.Finite ℝ T.ker := hT.finite_ker
     exact Module.Finite.of_restrictScalars_finite ℝ ℂ T.ker
-  · have : Module.Finite ℝ (F ⧸ T.range.restrictScalars ℝ) := by
-      simpa only [coe_restrictScalars, LinearMap.range_restrictScalars] using hT.finite_coker
-    have : Module.Finite ℝ (F ⧸ T.range) :=
-      (Submodule.Quotient.restrictScalarsEquiv ℝ T.range).finiteDimensional
-    exact Module.Finite.of_restrictScalars_finite ℝ ℂ (F ⧸ T.range)
+  · exact hT.finiteDimensional_quotient_range_of_restrictScalars_eq (f := (T : E →ₗ[ℂ] F)) rfl
   · exact .of_restrictScalars hT.closedComplemented_ker
 
 end RestrictScalars
