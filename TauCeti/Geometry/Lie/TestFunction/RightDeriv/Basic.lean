@@ -37,6 +37,8 @@ right-invariant vector field.
   translation, `R(X) (L(g) a) = L(g) (R(X) a)`.
 * `TauCeti.LieTestFunction.leftDeriv_rightDeriv`: left and right differentiation commute,
   `L_X (R(Y) a) = R(Y) (L_X a)`.
+* `TauCeti.LieTestFunction.leftDerivWord_rightDeriv`: iterated left differentiation commutes with
+  right differentiation, `L_w (R(X) a) = R(X) (L_w a)`.
 
 ## References
 
@@ -131,6 +133,15 @@ theorem leftDeriv_rightDeriv [CompleteSpace E] (X Y : GroupLieAlgebra I G)
   ext g
   exact Complex.ext (apply_leftDeriv_rightDeriv Complex.reCLM X Y a g)
     (apply_leftDeriv_rightDeriv Complex.imCLM X Y a g)
+
+/-- Iterated left differentiation commutes with right differentiation:
+`L_w (R(X) a) = R(X) (L_w a)`. -/
+theorem leftDerivWord_rightDeriv [CompleteSpace E] (w : List (GroupLieAlgebra I G))
+    (X : GroupLieAlgebra I G) (a : LieTestFunction I G) :
+    leftDerivWord w (rightDeriv X a) = rightDeriv X (leftDerivWord w a) := by
+  induction w with
+  | nil => simp
+  | cons Y w ih => simp only [leftDerivWord_cons, LinearMap.comp_apply, ih, leftDeriv_rightDeriv]
 
 end LieTestFunction
 
