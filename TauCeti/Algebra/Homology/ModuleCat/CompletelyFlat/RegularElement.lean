@@ -82,7 +82,8 @@ theorem not_isZero_homology_derivedReduction_quotient (hf : f ∈ nonZeroDivisor
   -- differential `R.complex.d 1 0` is multiplication by `f` (`resolutionComplex_d_one_zero`);
   -- rewriting along these equations would break the types of the degree identifications of
   -- `R.cochainComplex`, so the vanishing of the reduced differential is restated instead
-  have hd : F.map (R.complex.d 1 0) = 0 := extendScalars_map_ofHom_mulLeft f
+  have hd : F.map (R.complex.d 1 0) = 0 :=
+    Ideal.extendScalars_mk_map_ofHom_mulLeft (Ideal.mem_span_singleton_self f)
   have hout : B.d (-1) 0 = 0 := by
     simp only [B, Functor.mapHomologicalComplex_obj_d]
     rw [R.cochainComplex_d (-1) 0 1 0, Functor.map_comp, Functor.map_comp, hd, zero_comp,
