@@ -45,6 +45,8 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
   is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra)
   equivalence onto `R`.
 * `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
+* `Unitization.prodStarAlgEquiv`: for a unital star algebra `A`, the splitting
+  `Unitization R A ≃⋆ₐ[R] A × R`, `(r, a) ↦ (r • 1 + a, r)`.
 * `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
   `x ↦ 1 + (x - 1_B)` from `B` to its unitization.
 * `IsStarProjection.exists_star_mul_self_eq_of_mem_unitary_unitization`: projections of a
@@ -301,3 +303,37 @@ theorem exists_star_mul_self_eq_of_mem_unitary_unitization {R A : Type*} [CommSe
       hp.isIdempotentElem.eq, ← mul_assoc, hupq]
 
 end IsStarProjection
+
+namespace Unitization
+
+section Unital
+
+variable (R A : Type*) [CommRing R] [StarRing R] [Ring A] [StarRing A] [Algebra R A]
+  [StarModule R A]
+
+/-- For a unital star algebra `A`, the forced unitization splits as a product:
+`Unitization R A ≃⋆ₐ[R] A × R`, `(r, a) ↦ (r • 1 + a, r)`, with inverse
+`(b, r) ↦ (r, b - r • 1)`. -/
+def prodStarAlgEquiv : Unitization R A ≃⋆ₐ[R] A × R where
+  toFun x := (starLift (NonUnitalStarAlgHom.id R A) x, x.fst)
+  invFun y := (inl y.2 + inr (y.1 - algebraMap R A y.2) : Unitization R A)
+  left_inv x := by ext <;> simp
+  right_inv y := by ext <;> simp
+  map_mul' x y := Prod.ext (map_mul (starLift (NonUnitalStarAlgHom.id R A)) x y) (fst_mul x y)
+  map_add' x y := Prod.ext (map_add (starLift (NonUnitalStarAlgHom.id R A)) x y) (fst_add x y)
+  map_star' x := Prod.ext (map_star (starLift (NonUnitalStarAlgHom.id R A)) x) (fst_star x)
+  map_smul' r x := Prod.ext (map_smul (starLift (NonUnitalStarAlgHom.id R A)) r x) (fst_smul r x)
+
+/-- The splitting `Unitization R A ≃⋆ₐ[R] A × R` sends `(r, a)` to `(r • 1 + a, r)`. -/
+@[simp]
+theorem prodStarAlgEquiv_apply (x : Unitization R A) :
+    prodStarAlgEquiv R A x = (algebraMap R A x.fst + x.snd, x.fst) := by
+  simp [prodStarAlgEquiv]
+
+/-- The second component of the splitting `Unitization R A ≃⋆ₐ[R] A × R` is the augmentation. -/
+theorem snd_prodStarAlgEquiv (x : Unitization R A) : (prodStarAlgEquiv R A x).2 = x.fst :=
+  (rfl)
+
+end Unital
+
+end Unitization
