@@ -8,11 +8,12 @@ module
 public import Mathlib.NumberTheory.Chebyshev
 public import TauCeti.NumberTheory.Explicit.MultiplicativeFunctions.Liouville
 import Mathlib.Algebra.Order.Floor.Semifield
-import Mathlib.Analysis.Complex.Exponential
 import Mathlib.NumberTheory.ArithmeticFunction.Misc
 import Mathlib.NumberTheory.ArithmeticFunction.VonMangoldt
 import Mathlib.NumberTheory.Harmonic.Bounds
-import Mathlib.NumberTheory.LSeries.WeakPNT
+import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.SpecialFunctions.Log.Factorial
+import TauCeti.NumberTheory.Chebyshev.Asymptotics
 
 /-!
 # The Möbius form of the prime number theorem
@@ -24,11 +25,13 @@ sum `m(x) = ∑_{n ≤ x} μ(n) / n` tends to `0`.
 
 For `M`, summing `μ · log = -(μ * Λ)` over `n ≤ x` gives
 `M(x) log x = ∑_{k ≤ x} μ(k) (log (x / k) - ψ(x / k))`. Writing `ψ(y) = y + (ψ(y) - y)`, the
-three resulting sums are `O(x)`, `O(x)` (Meissel's identity) and `o(x log x)` (the prime number
-theorem and the harmonic bound), so `M(x) log x = o(x log x)`.
+three resulting sums are `O(x)` (`Real.sum_log_div_le`), `O(x)` (Meissel's identity) and
+`o(x log x)` (the prime number theorem in the form `Chebyshev.exists_abs_psi_sub_le` and the
+harmonic bound), so `M(x) log x = o(x log x)`.
 
-For `m`, take naturals `N` and `K`. Meissel's identity at `K N`, split at `N`, regroups the terms
-with `N < n ≤ K N` by the value `j = ⌊K N / n⌋ < K`, which gives
+For `m`, take naturals `N` and `K`. Split Meissel's identity at `K N` at `N`. In the terms with
+`N < n ≤ K N`, write the weight `⌊K N / n⌋` as the number of `1 ≤ j < K` with `n ≤ K N / j` and
+swap the sums (`Finset.sum_Ioc_div_smul_eq_sum_Ico_sum_Ioc`). This gives
 `K N |m(N)| ≤ 1 + N + ∑_{1 ≤ j < K} (|M(K N / j)| + |M(N)|)`. With `M(x) = o(x)` the right side
 is at most `1 + N + ε K² N` for large `N`, so `|m(N)| ≤ 2 / K + ε K`.
 
@@ -46,8 +49,6 @@ PrimeNumberTheoremAnd project (https://github.com/TauCetiProject/PrimeNumberTheo
   `|M(x)| log x ≤ ε x log x + (2 + ε + C) x + 1` for `x ≥ 1`.
 * `TauCeti.moebiusSum_isLittleO`: `M(x) = o(x)`.
 * `TauCeti.liouvilleSum_isLittleO`: `L_λ(x) = o(x)`.
-* `TauCeti.sum_Ioc_div_smul_eq_sum_Ico_sum_Ioc`: the regrouping of `∑_{N < n ≤ K N} ⌊K N / n⌋ f(n)`
-  by the value of `⌊K N / n⌋`.
 * `TauCeti.mul_abs_moebiusDivSum_le`: `K N |m(N)| ≤ 1 + N + ∑_{1 ≤ j < K} (|M(K N / j)| + |M(N)|)`.
 * `TauCeti.tendsto_moebiusDivSum_atTop`: `m(x) → 0`.
 -/
@@ -107,39 +108,13 @@ theorem moebiusSum_mul_log_eq (x : ℝ) :
   have hterm : ∀ k ∈ Icc 1 ⌊x⌋₊, (μ k : ℝ) * (Real.log (x / k) - ψ (x / k)) =
       (μ k : ℝ) * Real.log x - (μ k : ℝ) * Real.log k - (μ k : ℝ) * ψ (x / k) := by
     intro k hk
-    have hk : 1 ≤ k := (mem_Icc.mp hk).1
-    have hx : 0 < x := Nat.floor_pos.mp (hk.trans (mem_Icc.mp ‹_›).2) |>.trans_lt' one_pos
+    obtain ⟨hk1, hkx⟩ := mem_Icc.mp hk
+    have hx : 0 < x := Nat.floor_pos.mp (hk1.trans hkx) |>.trans_lt' one_pos
     rw [Real.log_div hx.ne' (by positivity)]
     ring
   rw [sum_congr rfl hterm, sum_sub_distrib, sum_sub_distrib, ← sum_mul,
     sum_moebius_mul_log_eq_neg_sum_moebius_mul_psi, moebiusSum_def]
   ring
-
-/-- `∑_{k ≤ x} log (x / k) ≤ x` for `x ≥ 0`: the sum is `log (x ^ N / N!)` with `N = ⌊x⌋`. -/
-private theorem sum_log_div_le (hx : 0 ≤ x) : ∑ k ∈ Icc 1 ⌊x⌋₊, Real.log (x / k) ≤ x := by
-  rcases Nat.eq_zero_or_pos ⌊x⌋₊ with h | h
-  · simpa [h] using hx
-  have hx1 : 0 < x := Nat.floor_pos.mp h |>.trans_lt' one_pos
-  have hprod : ∏ k ∈ Icc 1 ⌊x⌋₊, (x / k) = x ^ ⌊x⌋₊ / (⌊x⌋₊.factorial : ℝ) := by
-    rw [prod_div_distrib, prod_const, Nat.card_Icc, add_tsub_cancel_right,
-      ← Finset.prod_Ico_id_eq_factorial, Nat.cast_prod, Finset.Ico_add_one_right_eq_Icc]
-  rw [← Real.log_prod fun k hk ↦ (div_pos hx1 (by
-    exact_mod_cast (mem_Icc.mp hk).1)).ne', hprod]
-  exact (Real.log_le_iff_le_exp (by positivity)).mpr (Real.pow_div_factorial_le_exp x hx _)
-
-/-- `|ψ(y) - y| ≤ ε y + C` for every `y ≥ 0`, for some `C` depending on `ε > 0`. -/
-private theorem exists_abs_psi_sub_le {ε : ℝ} (hε : 0 < ε) :
-    ∃ C, ∀ y, 0 ≤ y → |ψ y - y| ≤ ε * y + C := by
-  obtain ⟨A, hA⟩ := eventually_atTop.mp (Chebyshev.isEquivalent_psi_id.isLittleO.def hε)
-  set B := max A 0
-  refine ⟨ψ B + B, fun y hy ↦ ?_⟩
-  rcases le_total B y with hBy | hyB
-  · have h := hA y ((le_max_left A 0).trans hBy)
-    simp only [Pi.sub_apply, id_eq, Real.norm_eq_abs, abs_of_nonneg hy] at h
-    linarith [Chebyshev.psi_nonneg B, le_max_right A 0]
-  · have hψ := Chebyshev.psi_mono hyB
-    rw [abs_le]
-    constructor <;> nlinarith [Chebyshev.psi_nonneg y, mul_nonneg hε.le hy]
 
 /-- `|∑_{k ≤ x} μ(k) x / k| ≤ x + 1` for `x ≥ 1`, by Meissel's identity. -/
 private theorem abs_sum_moebius_mul_div_le (hx1 : 1 ≤ x) :
@@ -154,7 +129,8 @@ private theorem abs_sum_moebius_mul_div_le (hx1 : 1 ≤ x) :
   linarith [abs_sum_moebius_mul_sub_natFloor_le hx0 ⌊x⌋₊, Nat.floor_le hx0]
 
 /-- If `|ψ(y) - y| ≤ ε y + C` for every `y ≥ 0`, then
-`|M(x)| log x ≤ ε x log x + (2 + ε + C) x + 1` for every `x ≥ 1`. -/
+`|M(x)| log x ≤ ε x log x + (2 + ε + C) x + 1` for every `x ≥ 1`. For `ε > 0` such a `C` exists by
+`Chebyshev.exists_abs_psi_sub_le`. -/
 theorem abs_moebiusSum_mul_log_le {ε C : ℝ} (hC : ∀ y, 0 ≤ y → |ψ y - y| ≤ ε * y + C)
     (hx1 : 1 ≤ x) :
     |moebiusSum x| * Real.log x ≤ ε * x * Real.log x + (2 + ε + C) * x + 1 := by
@@ -171,7 +147,8 @@ theorem abs_moebiusSum_mul_log_le {ε C : ℝ} (hC : ∀ y, 0 ≤ y → |ψ y - 
     ⟨by exact_mod_cast (mem_Icc.mp hk).1,
       (Nat.cast_le.mpr (mem_Icc.mp hk).2).trans (Nat.floor_le hx0)⟩
   have h1 : |∑ k ∈ S, (μ k : ℝ) * Real.log (x / k)| ≤ x := by
-    refine (abs_sum_le_sum_abs _ _).trans ((sum_le_sum fun k hkS ↦ ?_).trans (sum_log_div_le hx0))
+    refine (abs_sum_le_sum_abs _ _).trans
+      ((sum_le_sum fun k hkS ↦ ?_).trans (Real.sum_log_div_le hx0))
     refine (abs_moebius_mul_le k _).trans_eq (abs_of_nonneg (Real.log_nonneg ?_))
     exact (one_le_div (hk k hkS).1).mpr (hk k hkS).2
   have h2 := abs_sum_moebius_mul_div_le hx1
@@ -207,7 +184,7 @@ theorem moebiusSum_isLittleO : moebiusSum =o[atTop] fun x ↦ x := by
   refine isLittleO_iff.mpr fun c hc ↦ ?_
   set ε := c / 2 with hε_def
   have hε : 0 < ε := half_pos hc
-  obtain ⟨C, hC⟩ := exists_abs_psi_sub_le hε
+  obtain ⟨C, hC⟩ := Chebyshev.exists_abs_psi_sub_le hε
   have hC0 : 0 ≤ C := by simpa using hC 0 le_rfl
   set D := 3 + ε + C
   filter_upwards [Real.tendsto_log_atTop.eventually_ge_atTop (D / ε), eventually_ge_atTop 1]
@@ -227,41 +204,10 @@ theorem liouvilleSum_isLittleO : liouvilleSum =o[atTop] fun x ↦ x :=
 
 /-! ### The logarithmic sum -/
 
-/-- For naturals `N` and `K`, the terms of `∑_{N < n ≤ K N} ⌊K N / n⌋ f(n)` regrouped by the value
-`j` of `⌊K N / n⌋`, which is less than `K`:
-`∑_{N < n ≤ K N} ⌊K N / n⌋ f(n) = ∑_{1 ≤ j < K} ∑_{N < n ≤ K N / j} f(n)`. -/
-theorem sum_Ioc_div_smul_eq_sum_Ico_sum_Ioc {M : Type*} [AddCommMonoid M] (f : ℕ → M)
-    (N K : ℕ) :
-    ∑ n ∈ Ioc N (K * N), (K * N / n) • f n = ∑ j ∈ Ico 1 K, ∑ n ∈ Ioc N (K * N / j), f n := by
-  have hcard : ∀ n ∈ Ioc N (K * N), K * N / n = #{j ∈ Ico 1 K | n ≤ K * N / j} := by
-    intro n hn
-    have hn0 : 0 < n := (Nat.zero_le N).trans_lt (mem_Ioc.mp hn).1
-    have hlt : K * N / n < K := by
-      rcases Nat.eq_zero_or_pos K with rfl | hK
-      · exact absurd (mem_Ioc.mp hn).2 (by simpa using hn0.ne')
-      exact (Nat.div_lt_iff_lt_mul hn0).mpr (by nlinarith [(mem_Ioc.mp hn).1])
-    have hfilter : {j ∈ Ico 1 K | n ≤ K * N / j} = Icc 1 (K * N / n) := by
-      ext j
-      simp only [mem_filter, mem_Ico, mem_Icc]
-      constructor
-      · rintro ⟨⟨hj, -⟩, h⟩
-        exact ⟨hj, (Nat.le_div_iff_mul_le hn0).mpr
-          (by rw [mul_comm]; exact (Nat.le_div_iff_mul_le hj).mp h)⟩
-      · rintro ⟨hj, h⟩
-        exact ⟨⟨hj, h.trans_lt hlt⟩, (Nat.le_div_iff_mul_le hj).mpr
-          (by rw [mul_comm]; exact (Nat.le_div_iff_mul_le hn0).mp h)⟩
-    rw [hfilter, Nat.card_Icc, add_tsub_cancel_right]
-  calc ∑ n ∈ Ioc N (K * N), (K * N / n) • f n
-      = ∑ n ∈ Ioc N (K * N), ∑ j ∈ Ico 1 K, if n ≤ K * N / j then f n else 0 :=
-        sum_congr rfl fun n hn ↦ by rw [hcard n hn, ← sum_filter, sum_const]
-    _ = ∑ j ∈ Ico 1 K, ∑ n ∈ Ioc N (K * N), if n ≤ K * N / j then f n else 0 := sum_comm
-    _ = ∑ j ∈ Ico 1 K, ∑ n ∈ Ioc N (K * N / j), f n := by
-        refine sum_congr rfl fun j _ ↦ ?_
-        rw [← sum_filter]
-        congr 1
-        ext n
-        simp only [mem_filter, mem_Ioc]
-        exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.2.trans (Nat.div_le_self _ _)⟩, h.2⟩⟩
+/-- `N ≤ K N / j` for `1 ≤ j < K`. -/
+private theorem le_mul_div_of_mem_Ico {N K j : ℕ} (hj : j ∈ Ico 1 K) : N ≤ K * N / j :=
+  (Nat.le_div_iff_mul_le (mem_Ico.mp hj).1).mpr
+    (by rw [mul_comm]; exact Nat.mul_le_mul_right N (mem_Ico.mp hj).2.le)
 
 /-- For naturals `N` and `K`,
 `K N |m(N)| ≤ 1 + N + ∑_{1 ≤ j < K} (|M(K N / j)| + |M(N)|)`. -/
@@ -287,9 +233,7 @@ theorem mul_abs_moebiusDivSum_le (N K : ℕ) :
       ∑ j ∈ Ico 1 K, (moebiusSum ↑(K * N / j) - moebiusSum N) := by
     simp_rw [mul_comm (μ _ : ℝ), ← nsmul_eq_mul]
     rw [sum_Ioc_div_smul_eq_sum_Ico_sum_Ioc]
-    refine sum_congr rfl fun j hj ↦ hsplit _ ?_
-    exact (Nat.le_div_iff_mul_le (mem_Ico.mp hj).1).mpr
-      (by rw [mul_comm]; exact Nat.mul_le_mul_right N (mem_Ico.mp hj).2.le)
+    exact sum_congr rfl fun j hj ↦ hsplit _ (le_mul_div_of_mem_Ico hj)
   have hhead : ∑ n ∈ Icc 1 N, (μ n : ℝ) * ↑(K * N / n) =
       1 - ∑ j ∈ Ico 1 K, (moebiusSum ↑(K * N / j) - moebiusSum N) := by
     rw [← htail, hIcc]
@@ -331,12 +275,10 @@ theorem tendsto_moebiusDivSum_atTop : Tendsto moebiusDivSum atTop (𝓝 0) := by
     have hterm : ∀ j ∈ Ico 1 K, |moebiusSum ↑(K * N / j)| + |moebiusSum N| ≤ 2 * δ * (K * N) := by
       intro j hj
       have hj1 := (mem_Ico.mp hj).1
-      have hNle : N ≤ K * N / j := (Nat.le_div_iff_mul_le hj1).mpr
-        (by rw [mul_comm]; exact Nat.mul_le_mul_right N (mem_Ico.mp hj).2.le)
       have h1 : ((K * N / j : ℕ) : ℝ) ≤ K * N := by exact_mod_cast Nat.div_le_self _ _
       have hK1 : (1 : ℝ) ≤ K := by exact_mod_cast hj1.trans (mem_Ico.mp hj).2.le
       have h2 : (N : ℝ) ≤ K * N := le_mul_of_one_le_left (Nat.cast_nonneg N) hK1
-      linarith [hM _ hNle, hM N le_rfl, mul_le_mul_of_nonneg_left h1 hδ.le,
+      linarith [hM _ (le_mul_div_of_mem_Ico hj), hM N le_rfl, mul_le_mul_of_nonneg_left h1 hδ.le,
         mul_le_mul_of_nonneg_left h2 hδ.le]
     have hsum : ∑ j ∈ Ico 1 K, (|moebiusSum ↑(K * N / j)| + |moebiusSum N|) ≤
         K * (2 * δ * (K * N)) := by
@@ -352,7 +294,9 @@ theorem tendsto_moebiusDivSum_atTop : Tendsto moebiusDivSum atTop (𝓝 0) := by
     rw [Real.dist_eq, sub_zero]
     have hKN : (0 : ℝ) < K * N := by positivity
     refine lt_of_mul_lt_mul_left ?_ hKN.le
-    nlinarith
+    -- `ε K N > 4 N ≥ 2 (1 + N)`, so `1 + N + ε K N / 4 < ε K N`.
+    have h4N : 4 * N < ε * K * N := mul_lt_mul_of_pos_right hεK (by linarith)
+    linarith
   exact (hnat.comp tendsto_nat_floor_atTop).congr fun x ↦ moebiusDivSum_natFloor x
 
 end TauCeti
