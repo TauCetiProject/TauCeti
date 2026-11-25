@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import TauCeti.Topology.Category.TopCat.GlueData
 public import TauCeti.Topology.Category.TopCat.GlueData.Star
+public import TauCeti.Topology.ContinuousOn.ClosedGraph
 
 /-!
 # Gluing two spaces along an open partial homeomorphism
@@ -371,49 +372,17 @@ theorem t2Space_glueData [T2Space X] [T2Space Y]
     T2Space e.glueData.toGlueData.glued :=
   t2Space_glueData_iff.2 ⟨‹_›, ‹_›, he⟩
 
-/-- **The graph of a partial homeomorphism that extends beyond its source is closed.** Let
-`j : X → W` be a continuous injection into a Hausdorff space, and `F` a closed subset of `Y`
-containing the source of `e`. If `e` followed by `j` extends to a map `c` continuous on `F` which
-sends the points of `F` outside the source of `e` outside the image of `j`, then the graph of `e`
-on its source is closed in `Y × X`.
-
-This is the situation of a collar `(s, t) ↦ φ_t(s)`, `t < 0`, of the boundary `S` of a manifold
-with boundary `W` by the backward flow of an outward vector field, with `X` the interior of `W` and
-`F = S × (-∞, 0]`. -/
-theorem isClosed_graphOn_source_of_continuousOn {W : Type*} [TopologicalSpace W] [T2Space W]
-    {j : X → W} (hj : Continuous j) (hj' : Function.Injective j) {c : Y → W} {F : Set Y}
-    (hF : IsClosed F) (hc : ContinuousOn c F) (hsF : e.source ⊆ F)
-    (hce : ∀ y ∈ e.source, c y = j (e y)) (hcF : ∀ y ∈ F \ e.source, c y ∉ range j) :
-    IsClosed (e.source.graphOn e) := by
-  -- The graph lies in the closed set of pairs `(y, x)` with `y ∈ F` and `c y = j x`.
-  have hK : IsClosed ({p : Y × X | p.1 ∈ F} ∩
-      (fun p : Y × X ↦ (c p.1, j p.2)) ⁻¹' diagonal W) :=
-    ((hc.comp continuous_fst.continuousOn fun _ hp ↦ hp).prodMk
-      (hj.comp continuous_snd).continuousOn).preimage_isClosed_of_isClosed
-      (hF.preimage continuous_fst) isClosed_diagonal
-  have hsub : e.source.graphOn e ⊆ {p : Y × X | p.1 ∈ F} ∩
-      (fun p : Y × X ↦ (c p.1, j p.2)) ⁻¹' diagonal W := by
-    rintro ⟨y, x⟩ hyx
-    obtain ⟨hy, hyx⟩ := Set.mem_graphOn.1 hyx
-    exact ⟨hsF hy, mem_preimage.2 (mem_diagonal_iff.2 ((hce y hy).trans (congrArg j hyx)))⟩
-  refine isClosed_of_closure_subset fun p hp ↦ ?_
-  obtain ⟨hpF, hpc⟩ := hK.closure_subset_iff.2 hsub hp
-  have hpc' : c p.1 = j p.2 := mem_diagonal_iff.1 (mem_preimage.1 hpc)
-  -- The point `p.1` lies in `F` and `c` sends it into the image of `j`, so it lies in the source.
-  have hps : p.1 ∈ e.source := of_not_not fun h ↦ hcF p.1 ⟨hpF, h⟩ ⟨p.2, hpc'.symm⟩
-  exact Set.mem_graphOn.2 ⟨hps, hj' ((hce p.1 hps).symm.trans hpc')⟩
-
 /-- **Hausdorffness from an extension beyond the source.** The gluing of a space `X` with a
-Hausdorff space `Y` along `e` is Hausdorff when `e` extends as in
-`OpenPartialHomeomorph.isClosed_graphOn_source_of_continuousOn`; then `X` is Hausdorff, since it
-injects continuously into a Hausdorff space. -/
+Hausdorff space `Y` along `e` is Hausdorff when `e` extends beyond its source as in
+`TauCeti.isClosed_graphOn_of_continuousOn`, which shows that the graph of `e` on its source is
+closed; then `X` is Hausdorff, since it injects continuously into a Hausdorff space. -/
 theorem t2Space_glueData_of_continuousOn [T2Space Y] {W : Type*} [TopologicalSpace W] [T2Space W]
     {j : X → W} (hj : Continuous j) (hj' : Function.Injective j) {c : Y → W} {F : Set Y}
     (hF : IsClosed F) (hc : ContinuousOn c F) (hsF : e.source ⊆ F)
     (hce : ∀ y ∈ e.source, c y = j (e y)) (hcF : ∀ y ∈ F \ e.source, c y ∉ range j) :
     T2Space e.glueData.toGlueData.glued :=
   haveI : T2Space X := .of_injective_continuous hj' hj
-  t2Space_glueData (isClosed_graphOn_source_of_continuousOn hj hj' hF hc hsF hce hcF)
+  t2Space_glueData (isClosed_graphOn_of_continuousOn hj hj' hF hc hsF hce hcF)
 
 /-! ### Cylindrical ends -/
 

@@ -89,7 +89,13 @@ local diffeomorphisms. -/
 theorem isCompatible_glueData :
     Φ.toOpenPartialHomeomorph.glueData.IsCompatible I n :=
   isCompatible_starGlueData fun
-    | ⟨true⟩ => (Diffeomorph.refl I (⊤ : Opens X) n).isLocalDiffeomorph
+    | ⟨true⟩ => by
+      -- The attaching map of `X` is the identity of `X`.
+      have h : ⇑(Φ.toOpenPartialHomeomorph.glueMap ⟨true⟩) =
+          ⇑(Diffeomorph.refl I (⊤ : Opens X) n) :=
+        funext fun x ↦ Subtype.ext (coe_glueMap_true_apply _ x)
+      rw [h]
+      exact (Diffeomorph.refl I (⊤ : Opens X) n).isLocalDiffeomorph
     | ⟨false⟩ => by
       -- The attaching map of `Y` is `Φ` from its source onto its target.
       have h : ⇑(Φ.toOpenPartialHomeomorph.glueMap ⟨false⟩) =
