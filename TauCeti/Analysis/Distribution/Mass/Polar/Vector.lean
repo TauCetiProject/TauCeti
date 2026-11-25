@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Dual
+public import TauCeti.Analysis.Distribution.Mass.Extension
 public import TauCeti.Analysis.Distribution.Mass.Measure
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.Distribution.AELeOfIntegral
@@ -62,6 +63,12 @@ pairing that is not almost everywhere strongly measurable is `0` by convention.
 * `Distribution.massMeasure_eq_of_apply_eq_integral_inner`: a Radon measure `μ` against which
   `T` is represented by an almost everywhere strongly measurable field of norm one
   `μ`-almost everywhere is the mass measure of `T`.
+* `Distribution.apply_eq_zero_of_hasLocallyFiniteMass`: a map of locally finite mass that vanishes
+  on smooth tests vanishes.
+* `Distribution.extendContinuous T`: the extension of `T` to compactly supported continuous tests,
+  `φ ↦ ∫ ⟪η x, φ x⟫ d‖T‖` (`Distribution.extendContinuous_apply_eq_integral_inner`), with the same
+  mass measure (`Distribution.massMeasure_extendContinuous`); it is the only extension of locally
+  finite mass (`Distribution.extendContinuous_unique`).
 
 ## References
 
@@ -105,7 +112,7 @@ private theorem smoothRestrict_apply (hT : HasLocallyFiniteMass T) (ψ : 𝓓(Ω
 mass: there is a compact `K ⊆ Ω` with `localMass T K` finite and compact, measurable preimage in
 `Ω`, and for every `ε > 0` a smooth test `ψ` such that `φ - ψ` is supported in `K` and bounded by
 `ε`, so that `‖T (φ - ψ)‖ₑ ≤ localMass T K * ε`. -/
-private theorem exists_isCompact_localMass_ne_top_approx (hT : HasLocallyFiniteMass T)
+theorem exists_isCompact_localMass_ne_top_approx (hT : HasLocallyFiniteMass T)
     (φ : 𝓓^{n}(Ω, F)) :
     ∃ K : Set E, localMass T K ≠ ⊤ ∧ IsCompact ((↑) ⁻¹' K : Set Ω) ∧
       MeasurableSet ((↑) ⁻¹' K : Set Ω) ∧ ∀ ε : ℝ, 0 < ε → ∃ ψ : 𝓓(Ω, F),
@@ -416,5 +423,130 @@ theorem massMeasure_eq_of_apply_eq_integral_inner [IsFiniteMeasureOnCompacts μ]
     _ = μ A := setLIntegral_one A
 
 end Uniqueness
+
+/-! ### Extension to compactly supported continuous tests -/
+
+section Continuous
+
+/-- **Smooth tests determine a map of locally finite mass.** A real-linear map on tests of class
+`C^n` with locally finite mass that vanishes on smooth tests vanishes: smooth tests approximate a
+test uniformly, with supports in a fixed compact set of finite local mass. -/
+theorem apply_eq_zero_of_hasLocallyFiniteMass (hT : HasLocallyFiniteMass T)
+    (h : ∀ ψ : 𝓓(Ω, F), T (monoCLM ℝ ψ) = 0) (φ : 𝓓^{n}(Ω, F)) : T φ = 0 := by
+  obtain ⟨K, hKT, -, -, happrox⟩ := exists_isCompact_localMass_ne_top_approx hT φ
+  refine eNorm_eq_zero.1 (nonpos_iff_eq_zero.1
+    (ENNReal.le_of_forall_pos_le_add_ofReal_mul hKT fun ε hε => ?_))
+  obtain ⟨ψ, -, -, hψ⟩ := happrox ε hε
+  rw [map_sub, h ψ, sub_zero, mul_comm] at hψ
+  rwa [zero_add]
+
+/-- The **extension of `T` to compactly supported continuous tests**: for a real-linear map `T` on
+tests of class `C^n` with locally finite mass, the continuous linear map `φ ↦ extendL1 T φ` on the
+compactly supported continuous `F`-valued tests, through the extension `Distribution.extendL1` of
+`T` to `L¹(‖T‖; F)`. It extends `T` (`Distribution.extendContinuous_monoCLM`), it is
+`φ ↦ ∫ ⟪η x, φ x⟫ d‖T‖` for the polar vector field `η` of `T`
+(`Distribution.extendContinuous_apply_eq_integral_inner`), its mass measure is `‖T‖`
+(`Distribution.massMeasure_extendContinuous`), and it is the only linear extension of `T` with
+locally finite mass (`Distribution.extendContinuous_unique`). If `T` does not have locally finite
+mass, it is `0`. -/
+def extendContinuous (T : 𝓕) : 𝓓^{0}(Ω, F) →L[ℝ] ℝ :=
+  (extendL1 T).comp (TestFunction.toLp 1 (massMeasure T))
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+/-- Unfolding lemma for `Distribution.extendContinuous`. -/
+theorem extendContinuous_apply (φ : 𝓓^{0}(Ω, F)) :
+    extendContinuous T φ = extendL1 T (TestFunction.toLp 1 (massMeasure T) φ) :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+/-- **The extension extends `T`.** On a test of class `C^n`, the extension of a map `T` of locally
+finite mass is the value of `T`. -/
+@[simp]
+theorem extendContinuous_monoCLM (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
+    extendContinuous T (monoCLM ℝ φ) = T φ := by
+  rw [extendContinuous_apply, ← extendL1_toLp hT φ, TestFunction.toLp_apply,
+    TestFunction.toLp_apply]
+  exact congrArg _ (MemLp.toLp_congr _ _ (.of_eq (funext fun x => by
+    simp [coe_monoCLM_of_le zero_le le_rfl])))
+
+omit [FiniteDimensional ℝ E] in
+/-- **Domination of the extension by the mass measure.** `|extendContinuous T φ| ≤ ∫ ‖φ‖ d‖T‖`. -/
+theorem enorm_extendContinuous_apply_le (φ : 𝓓^{0}(Ω, F)) :
+    ‖extendContinuous T φ‖ₑ ≤ ∫⁻ x, ‖φ x‖ₑ ∂massMeasure T := by
+  rw [extendContinuous_apply, ← TestFunction.enorm_toLp_one]
+  exact eNorm_le_iff_norm_le.2 (norm_extendL1_apply_le _)
+
+omit [FiniteDimensional ℝ E] in
+/-- The extension of `T` to compactly supported continuous tests has locally finite mass. -/
+theorem hasLocallyFiniteMass_extendContinuous : HasLocallyFiniteMass (extendContinuous T) :=
+  hasLocallyFiniteMass_def.2 fun K hK hKΩ => by
+    obtain ⟨C, hC, h⟩ := hasLocallyFiniteMass_def.1
+      (TestFunction.hasLocallyFiniteMass_toLp (n := 0) (F := F) 1 (massMeasure T)) K hK hKΩ
+    exact ⟨C, hC, fun φ hφ => (norm_extendL1_apply_le _).trans (h φ hφ)⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- **The mass measure of the extension** of `T` to compactly supported continuous tests is the
+mass measure `‖T‖`. -/
+theorem massMeasure_extendContinuous : massMeasure (extendContinuous T) = massMeasure T := by
+  refine le_antisymm (massMeasure_le_of_enorm_apply_le _ enorm_extendContinuous_apply_le) ?_
+  by_cases hT : HasLocallyFiniteMass T
+  · refine massMeasure_le_of_enorm_apply_le _ fun φ => ?_
+    have h := enorm_apply_le_lintegral_massMeasure (hasLocallyFiniteMass_extendContinuous (T := T))
+      (monoCLM ℝ φ : 𝓓^{0}(Ω, F))
+    rwa [extendContinuous_monoCLM hT, coe_monoCLM_of_le zero_le le_rfl] at h
+  · rw [massMeasure_of_not_hasLocallyFiniteMass hT]
+    exact Measure.zero_le _
+
+/-- **The extension is integration against the polar vector field.** For every compactly
+supported continuous test `φ`, `extendContinuous T φ = ∫ ⟪η x, φ x⟫ d‖T‖`, where `η` is the polar
+vector field of `T`. -/
+theorem extendContinuous_apply_eq_integral_inner (φ : 𝓓^{0}(Ω, F)) :
+    extendContinuous T φ = ∫ x, ⟪polarVector T x, φ x⟫ ∂massMeasure T := by
+  by_cases hT : HasLocallyFiniteMass T
+  swap
+  · have h := enorm_extendContinuous_apply_le (T := T) φ
+    simp only [massMeasure_of_not_hasLocallyFiniteMass hT, lintegral_zero_measure,
+      nonpos_iff_eq_zero, eNorm_eq_zero] at h
+    simp [h, massMeasure_of_not_hasLocallyFiniteMass hT]
+  have hS := hasLocallyFiniteMass_extendContinuous (T := T)
+  have hμ := massMeasure_extendContinuous (T := T)
+  have hη : polarVector (extendContinuous T) =ᵐ[massMeasure T] polarVector T := by
+    refine ae_eq_polarVector (hμ ▸ locallyIntegrable_polarVector) fun ψ => ?_
+    rw [← extendContinuous_monoCLM hT, apply_eq_integral_inner_polarVector hS, hμ,
+      coe_monoCLM_of_le zero_le le_rfl]
+  rw [apply_eq_integral_inner_polarVector hS, hμ]
+  refine integral_congr_ae ?_
+  filter_upwards [hη] with x hx
+  rw [hx]
+
+/-- **Uniqueness of the extension.** A real-linear map on compactly supported continuous tests
+with locally finite mass that agrees with `T` on the tests of class `C^n` is the extension
+`Distribution.extendContinuous T`. -/
+theorem extendContinuous_unique {L : 𝓓^{0}(Ω, F) →ₗ[ℝ] ℝ} (hL : HasLocallyFiniteMass L)
+    (h : ∀ φ : 𝓓^{n}(Ω, F), L (monoCLM ℝ φ) = T φ) :
+    L = (extendContinuous T : 𝓓^{0}(Ω, F) →ₗ[ℝ] ℝ) := by
+  have hT : HasLocallyFiniteMass T := by
+    convert hL.comp_monoCLM (Ω' := Ω) (m := n) using 1
+    exact funext fun φ => (h φ).symm
+  have hsub : HasLocallyFiniteMass (L - (extendContinuous T : 𝓓^{0}(Ω, F) →ₗ[ℝ] ℝ)) :=
+    hL.sub hasLocallyFiniteMass_extendContinuous
+  refine LinearMap.ext fun φ => sub_eq_zero.1 ?_
+  refine apply_eq_zero_of_hasLocallyFiniteMass hsub (fun ψ => ?_) φ
+  have hψ : (monoCLM ℝ ψ : 𝓓^{0}(Ω, F)) = monoCLM ℝ (monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) :=
+    TestFunction.ext fun x => by
+      simp [coe_monoCLM_of_le le_top le_rfl, coe_monoCLM_of_le zero_le le_rfl]
+  rw [LinearMap.sub_apply, hψ, h, ContinuousLinearMap.coe_coe, extendContinuous_monoCLM hT,
+    sub_self]
+
+omit [FiniteDimensional ℝ E] in
+/-- **The local mass of the extension.** For `T` of locally finite mass and `U` open, the local
+mass of the extension on `U`, a supremum over continuous tests, is the local mass of `T` on `U`, a
+supremum over tests of class `C^n`. -/
+theorem localMass_extendContinuous (hT : HasLocallyFiniteMass T) {U : Set E} (hU : IsOpen U) :
+    localMass (extendContinuous T) U = localMass T U := by
+  rw [← massMeasure_preimage_coe hasLocallyFiniteMass_extendContinuous hU,
+    massMeasure_extendContinuous, massMeasure_preimage_coe hT hU]
+
+end Continuous
 
 end Distribution
