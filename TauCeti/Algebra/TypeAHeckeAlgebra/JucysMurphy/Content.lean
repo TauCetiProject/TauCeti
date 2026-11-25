@@ -212,7 +212,8 @@ theorem injOn_additiveContent_cellContent_of_forall_ne_zero (μ : YoungDiagram)
   have hbound := (Finset.mem_Icc.mp (hc.natAbs_cellContent_sub_mem hd hne)).2
   have habs : |cellContent c - cellContent d| < ((μ.card + 2 : ℕ) : ℤ) := by
     rw [← Int.natCast_natAbs]
-    exact_mod_cast (show (cellContent c - cellContent d).natAbs < μ.card + 2 by omega)
+    have hnat : (cellContent c - cellContent d).natAbs < μ.card + 2 := by omega
+    exact_mod_cast hnat
   exact hne (μ.injOn_cellContent hc hd
     ((additiveContent_inj hQ (fun e he' he'' => hQint e he' (by omega)) habs).mp he))
 

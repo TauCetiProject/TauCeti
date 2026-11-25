@@ -141,9 +141,10 @@ private theorem seminormalPi_surjective
         TypeAHeckeAlgebra K q (YoungDiagram.ofPartition μ).card :=
       AlgEquiv.cast (YoungDiagram.card_ofPartition μ).symm
     let y := e.symm x
+    -- The cast in seminormalPi_apply is e, so it cancels the inverse cast in y.
+    have hey : e y = x := e.apply_symm_apply x
     have hy : seminormalPi hn y μ = M μ := by
-      rw [seminormalPi_apply, show e y = x from e.apply_symm_apply x, hx,
-        LinearMap.toMatrixAlgEquiv'_toLinAlgEquiv']
+      rw [seminormalPi_apply, hey, hx, LinearMap.toMatrixAlgEquiv'_toLinAlgEquiv']
     have hdiag : jointDiagonal (fun T => if T.1 = μ then (1 : K) else 0) = Pi.single μ 1 := by
       funext ν
       by_cases h : ν = μ

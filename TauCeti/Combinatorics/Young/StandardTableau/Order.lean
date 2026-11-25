@@ -160,7 +160,8 @@ theorem mem_initialDiagram {T : StandardYoungTableau μ} {i : Fin μ.card} {c : 
     let c : ↥μ.cells :=
       ⟨(rowIndex T.toTableau j, colIndex T.toTableau j), rowIndex_colIndex_mem T.toTableau j⟩
     have h : T c = j := apply_eq_of_coe_eq T j (c := c) rfl
-    exact ⟨c.property, show T.toTableau c < i by rwa [toTableau_apply, h]⟩
+    have hlt : T.toTableau c < i := by rwa [toTableau_apply, h]
+    exact ⟨c.property, hlt⟩
 
 /-- Each label below the cutoff accounts for one cell of the initial diagram. -/
 @[simp]
