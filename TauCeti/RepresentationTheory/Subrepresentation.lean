@@ -66,14 +66,19 @@ The subrepresentations whose underlying submodule is finitely generated form a j
 (`Subrepresentation.instSemilatticeSupFG`), as the finitely generated submodules do in Mathlib, so
 they can index a filtered colimit.
 
-Restriction along a surjective monoid homomorphism identifies the lattices of invariant
-submodules, keeping the underlying submodule in both directions. In particular it preserves
-irreducibility, as does restriction along a monoid isomorphism. Restriction of an algebra action
-along a monoid homomorphism whose image spans the algebra keeps the invariant submodules too
+Restriction along any monoid homomorphism keeps the underlying submodule of a subrepresentation
+(`Subrepresentation.res`), and the restricted subrepresentation carries the restricted
+representation (`Subrepresentation.toRepresentation_res`). Restriction along a surjective monoid
+homomorphism identifies the lattices of invariant submodules, keeping the underlying submodule in
+both directions. In particular it preserves irreducibility, as does restriction along a monoid
+isomorphism. Restriction of an algebra action along a monoid homomorphism whose image spans the
+algebra keeps the invariant submodules too
 (`AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top`).
 
 ## Main results
 
+* `Subrepresentation.res`
+* `Subrepresentation.toRepresentation_res`
 * `MonoidHom.resSubrepresentationOrderIso`
 * `MonoidHom.isIrreducible_comp_surjective_iff`
 * `MulEquiv.isIrreducible_comp_equiv_iff`
@@ -492,6 +497,32 @@ instance instInhabitedFG : Inhabited {σ : Subrepresentation ρ // σ.toSubmodul
 
 end FG
 
+section Res
+
+variable {k : Type*} [Semiring k] {H K : Type*} [Monoid H] [Monoid K]
+  {V : Type*} [AddCommMonoid V] [Module k V] {ρ : Representation k K V}
+
+/-- The restriction of a subrepresentation of `ρ` along a monoid homomorphism `f`: the same
+underlying submodule, as a subrepresentation of `ρ.comp f`. Its body is exposed so that
+`Subrepresentation.toRepresentation_res` can be stated. -/
+@[expose] def res (f : H →* K) (σ : Subrepresentation ρ) : Subrepresentation (ρ.comp f) where
+  toSubmodule := σ.toSubmodule
+  apply_mem_toSubmodule h _ hv := σ.apply_mem_toSubmodule (f h) hv
+
+/-- Restriction along a monoid homomorphism keeps the underlying submodule. -/
+@[simp]
+theorem toSubmodule_res (f : H →* K) (σ : Subrepresentation ρ) :
+    (σ.res f).toSubmodule = σ.toSubmodule :=
+  rfl
+
+/-- The representation carried by the restriction of `σ` along `f` is the restriction along `f` of
+the representation carried by `σ`. -/
+theorem toRepresentation_res (f : H →* K) (σ : Subrepresentation ρ) :
+    (σ.res f).toRepresentation = σ.toRepresentation.comp f :=
+  rfl
+
+end Res
+
 end Subrepresentation
 
 namespace MonoidHom
@@ -510,9 +541,7 @@ def resSubrepresentationOrderIso (f : H →* K) (hf : Function.Surjective f)
       apply_mem_toSubmodule := fun h v hv ↦ by
         obtain ⟨g, rfl⟩ := hf h
         exact S.apply_mem_toSubmodule g hv }
-  invFun S :=
-    { toSubmodule := S.toSubmodule
-      apply_mem_toSubmodule := fun h v hv ↦ S.apply_mem_toSubmodule (f h) hv }
+  invFun S := S.res f
   left_inv S := by ext; rfl
   right_inv S := by ext; rfl
   map_rel_iff' := by rfl

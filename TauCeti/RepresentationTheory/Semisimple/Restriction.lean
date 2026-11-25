@@ -44,15 +44,11 @@ characteristic. -/
 theorem isSemisimpleRepresentation_comp_subtype (ρ : Representation k G V)
     (N : Subgroup G) [N.Normal] [FiniteDimensional k V] [ρ.IsSemisimpleRepresentation] :
     IsSemisimpleRepresentation (ρ.comp N.subtype) := by
-  let σN : {σ : Subrepresentation ρ // IsAtom σ} → Subrepresentation (ρ.comp N.subtype) :=
-    fun σ ↦ ⟨σ.val.toSubmodule, fun n _ hv ↦ σ.val.apply_mem_toSubmodule (n : G) hv⟩
-  refine isSemisimpleRepresentation_of_iSup_eq_top (σ := σN) (fun σ ↦ ?_)
+  refine isSemisimpleRepresentation_of_iSup_eq_top
+    (σ := fun σ : {σ : Subrepresentation ρ // IsAtom σ} ↦ σ.val.res N.subtype) (fun σ ↦ ?_)
     (IsSemisimpleRepresentation.iSup_atoms_eq_top ρ)
-  -- `σN σ` has the carrier of `σ` with the action restricted to `N`, so its representation is
-  -- `σ.val.toRepresentation` restricted along `N.subtype`, by definition.
-  have h : (σN σ).toRepresentation = σ.val.toRepresentation.comp N.subtype := rfl
   have := isIrreducible_toRepresentation_of_isAtom σ.property
-  rw [h]
+  rw [Subrepresentation.toRepresentation_res]
   exact isSemisimpleRepresentation_comp_subtype_of_isIrreducible (N := N) σ.val.toRepresentation
 
 /-- **Restriction to a subgroup containing a normal one.** Let `N ≤ H ≤ G` with `N` normal in `G`
