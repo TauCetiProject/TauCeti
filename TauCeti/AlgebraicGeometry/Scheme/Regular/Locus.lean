@@ -144,15 +144,11 @@ theorem Hom.smooth_iff_isRegularLocalRing_closedPoints {k : Type u} [Field k] [P
     (f : X ⟶ Spec (.of k)) [LocallyOfFiniteType f] :
     Smooth f ↔ ∀ x ∈ closedPoints X, IsRegularLocalRing (X.presheaf.stalk x) := by
   refine ⟨fun _ x _ ↦ ?_, fun h ↦ ?_⟩
-  · have hx : x ∈ f.smoothLocus := f.smoothLocus_eq_top ▸ trivial
+  · have hx : x ∈ f.smoothLocus := f.smoothLocus_eq_top ▸ TopologicalSpace.Opens.mem_top x
     exact f.mem_regularLocus_iff_mem_smoothLocus.mpr hx
   · have : JacobsonSpace X := LocallyOfFiniteType.jacobsonSpace f
-    rw [← Scheme.Hom.smoothLocus_eq_top_iff, ← TopologicalSpace.Opens.coe_eq_univ, ← not_ne_iff,
-      ← Set.nonempty_compl]
-    intro hne
-    obtain ⟨x, hx, hxc⟩ :=
-      nonempty_inter_closedPoints hne f.smoothLocus.isOpen.isClosed_compl.isLocallyClosed
-    exact hx (f.mem_regularLocus_iff_mem_smoothLocus.mp (h x hxc))
+    exact f.smooth_of_closedPoints_subset_smoothLocus fun x hxc ↦
+      f.mem_regularLocus_iff_mem_smoothLocus.mp (h x hxc)
 
 end AlgebraicGeometry.Scheme
 
