@@ -165,12 +165,18 @@ theorem exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplem
     refine ⟨⟨hfx, ?_⟩, (hmemW x).2 hx⟩
     rw [mem_preimage, key x hx]
     exact ⟨by rw [mem_preimage, hextend, I.left_inv]; exact h.domChart.map_source hx, mem_univ _⟩
+  have hmaps : (Ψ.restrOpen V hVopen).target ⊆ Ψ.target := fun q hq => by
+    have hqsrc : (Ψ.restrOpen V hVopen).symm q ∈ Ψ.source :=
+      ((Ψ.restrOpen V hVopen).map_target hq).1
+    rw [← (Ψ.restrOpen V hVopen).right_inv hq, Ψ.coe_restrOpen_symm hVopen]
+    exact Ψ.map_source hqsrc
+  have hsymm : EqOn (Ψ.restrOpen V hVopen).symm Ψ.symm (Ψ.restrOpen V hVopen).target :=
+    fun _ _ => by rw [Ψ.coe_restrOpen_symm hVopen]
   refine ⟨Ψ.restrOpen V hVopen, ⟨hfx, hfxV⟩, isSliceChart_iff.2 fun p hp => ?_,
     (h.codChart.contMDiffOn_extendTrans h.codChart_mem_maximalAtlas
       h.equiv.symm.contDiff).mono fun _ hp => hp.1,
     ((h.codChart.contMDiffOn_extendTrans_symm h.codChart_mem_maximalAtlas
-      h.equiv.contDiff).mono fun q hq => (Ψ.restrOpen V hVopen).right_inv hq ▸
-        Ψ.map_source ((Ψ.restrOpen V hVopen).map_target hq).1).congr fun _ _ => by simp [Ψ]⟩
+      h.equiv.contDiff).mono hmaps).congr hsymm⟩
   rw [OpenPartialHomeomorph.restrOpen_source] at hp
   simp only [OpenPartialHomeomorph.coe_restrOpen]
   constructor

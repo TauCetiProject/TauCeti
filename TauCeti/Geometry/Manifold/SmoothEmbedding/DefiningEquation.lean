@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocallyFlat.Smooth
-import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 
 /-!
 # Local transverse defining equations of smooth embeddings
@@ -59,16 +58,7 @@ theorem exists_contMDiffOn_eq_zero (f : SmoothEmbedding I J n M N) (hn : n ≠ 0
     f.isImmersion.isImmersionOfComplement_complement x₀
   obtain ⟨Φ, hfx₀, hslice, hΦ, hΦsymm⟩ :=
     exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplement f.isEmbedding h
-  have : FiniteDimensional 𝕜 (E × F) := h.equiv.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional 𝕜 E :=
-    Module.Finite.of_surjective (LinearMap.fst 𝕜 E F) Prod.fst_surjective
-  have : FiniteDimensional 𝕜 F :=
-    Module.Finite.of_surjective (LinearMap.snd 𝕜 E F) Prod.snd_surjective
-  have hFdim : Module.finrank 𝕜 F = Module.finrank 𝕜 P := by
-    have heq := h.equiv.toLinearEquiv.finrank_eq
-    have hadd := f.finrank_add_eq_of_eq_sub hn hdim x₀
-    rw [Module.finrank_prod] at heq; omega
-  let c : F ≃L[𝕜] P := ContinuousLinearEquiv.ofFinrankEq hFdim
+  obtain ⟨c⟩ := h.nonempty_continuousLinearEquiv hdim
   let π₂ : E × F →L[𝕜] P := c.toContinuousLinearMap.comp (ContinuousLinearMap.snd 𝕜 E F)
   refine ⟨Φ.source, Φ.open_source, hfx₀, π₂ ∘ Φ, π₂.contDiff.contMDiff.comp_contMDiffOn hΦ,
     fun y hy ↦ ?_, fun y hy ↦ ?_⟩

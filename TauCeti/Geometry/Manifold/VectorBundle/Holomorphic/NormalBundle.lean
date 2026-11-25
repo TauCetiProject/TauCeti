@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.DefiningEquation
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.DefiningFunctions
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Level
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.AlmostComplexStructure
 
 /-!
@@ -31,14 +30,11 @@ subbundle of `i* TM` biholomorphic to `TZ`; `SmoothEmbedding.finrank_normalSpace
 `i.NormalSpace` biholomorphically with the transition-cocycle model `DefiningFunctions.core` built
 from transverse local defining functions.
 
-This file characterizes closedness of complex hypersurfaces by holomorphic local defining equations
-(`isClosed_range_iff_forall_exists_mdifferentiableOn_eq_zero`), constructs compatible holomorphic
-trivializations of `i.NormalSpace` directly from local holomorphic equations without a separate
-derivative-continuity hypothesis (`normalSpaceTrivializationOfMDifferentiableOn`,
-`normalSpaceTrivializationOfMDifferentiableOn_mem_maximalAtlas`), upgrades the transition cocycle
-`DefiningFunctions.core` of any complex submanifold to complex-analytic (`C^ω`) regularity
-(`DefiningFunctions.contMDiffOn_omega_coordChange`, `DefiningFunctions.isContMDiff_omega_core`), and
-specializes the pointwise almost-complex obstructions of
+This file upgrades the transition cocycle `DefiningFunctions.core` of any complex submanifold to
+complex-analytic (`C^ω`) regularity (`DefiningFunctions.contMDiffOn_omega_coordChange`,
+`DefiningFunctions.isContMDiff_omega_core`), characterizes closedness of complex hypersurfaces by
+holomorphic local defining equations (`isClosed_range_iff_forall_exists_mdifferentiableOn_eq_zero`),
+and specializes the pointwise almost-complex obstructions of
 `TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.AlmostComplexStructure` to complex ambient
 manifolds (`not_forall_ofComplexManifold_mem_tangentRange`) and the closed real axis
 `TauCeti.realAxisEmbedding` (`one_mem_and_I_notMem_tangentRange_realAxisEmbedding`,
@@ -124,72 +120,6 @@ theorem isClosed_range_iff_forall_exists_mdifferentiableOn_eq_zero
         TauCeti.isRegularPoint_iff_mvfderiv_ne_zero)
 
 end ComplexHypersurface
-
-section HolomorphicLevelTrivialization
-
-variable {EZ EM Z M : Type*} [NormedAddCommGroup EZ] [NormedSpace ℂ EZ] [FiniteDimensional ℂ EZ]
-  [NormedAddCommGroup EM] [NormedSpace ℂ EM] [FiniteDimensional ℂ EM]
-  [TopologicalSpace Z] [ChartedSpace EZ Z] [IsManifold 𝓘(ℂ, EZ) 1 Z]
-  [TopologicalSpace M] [ChartedSpace EM M] [IsManifold 𝓘(ℂ, EM) 1 M]
-  {n m : ℕ∞ω} (i : SmoothEmbedding 𝓘(ℂ, EZ) 𝓘(ℂ, EM) n Z M) (hn : n ≠ 0) (hm : m + 1 ≤ n)
-  (hdim : Module.finrank ℂ ℂ = Module.finrank ℂ EM - Module.finrank ℂ EZ)
-  {W : Set Z} (hW : IsOpen W) {U : Set M} (hU : IsOpen U) (hiW : MapsTo i W U)
-  {g : M → ℂ} (hg : MDifferentiableOn 𝓘(ℂ, EM) 𝓘(ℂ) g U) {c : ℂ}
-  (hgi : ∀ z ∈ W, g (i z) = c) (hreg : ∀ z ∈ W, mvfderiv 𝓘(ℂ, EM) g (i z) ≠ 0)
-
-/-- **Holomorphic trivialization of the normal line bundle from a local holomorphic equation.**
-Given a holomorphic (`MDifferentiableOn`) function `g : M → ℂ` on an open `U ⊆ M` containing
-`i '' W` that is constant along `i '' W` with nonvanishing complex differential `mvfderiv 𝓘(ℂ, EM) g
-(i z) ≠ 0` along `W`, automatic complex analyticity promotes `g` without a separate `C¹` hypothesis
-and yields a `ℂ`-linear trivialization of `i.NormalSpace` over `W` in the `C^m` (`m = ∞` or `m = ω`)
-maximal atlas. -/
-def normalSpaceTrivializationOfMDifferentiableOn :
-    Trivialization ℂ (π ℂ (fun z ↦ i.NormalSpace z hn)) :=
-  haveI : IsManifold 𝓘(ℂ, EZ) (m + 1) Z := IsManifold.of_ne_zero (m + 1) one_ne_zero inferInstance
-  haveI : IsManifold 𝓘(ℂ, EM) (m + 1) M := IsManifold.of_ne_zero (m + 1) one_ne_zero inferInstance
-  i.normalSpaceTrivializationOfLevel hn hm hdim hW hU hiW
-    ((hg.contMDiffOn hU).of_le le_top) hgi
-    (fun z hz ↦ TauCeti.isRegularPoint_iff_mvfderiv_ne_zero.2 (hreg z hz))
-
-@[simp] theorem baseSet_normalSpaceTrivializationOfMDifferentiableOn :
-    (i.normalSpaceTrivializationOfMDifferentiableOn hn hm hdim hW hU hiW hg hgi hreg).baseSet =
-      W := by
-  have : IsManifold 𝓘(ℂ, EZ) (m + 1) Z := IsManifold.of_ne_zero (m + 1) one_ne_zero inferInstance
-  have : IsManifold 𝓘(ℂ, EM) (m + 1) M := IsManifold.of_ne_zero (m + 1) one_ne_zero inferInstance
-  rw [normalSpaceTrivializationOfMDifferentiableOn.eq_def]
-  exact i.baseSet_normalSpaceTrivializationOfLevel hn hm hdim hW hU hiW _ hgi _
-
-instance isLinear_normalSpaceTrivializationOfMDifferentiableOn :
-    (i.normalSpaceTrivializationOfMDifferentiableOn hn hm hdim hW hU hiW hg hgi hreg).IsLinear
-      ℂ := by
-  have : IsManifold 𝓘(ℂ, EZ) (m + 1) Z := IsManifold.of_ne_zero (m + 1) one_ne_zero inferInstance
-  have : IsManifold 𝓘(ℂ, EM) (m + 1) M := IsManifold.of_ne_zero (m + 1) one_ne_zero inferInstance
-  rw [normalSpaceTrivializationOfMDifferentiableOn.eq_def]
-  exact i.isLinear_normalSpaceTrivializationOfLevel hn hm hdim hW hU hiW _ hgi _
-
-/-- `normalSpaceTrivializationOfMDifferentiableOn` belongs to the `C^m` maximal atlas of
-`i.NormalSpace` (including `m = ∞`, and `m = ω` when `n = ω`). -/
-theorem normalSpaceTrivializationOfMDifferentiableOn_mem_maximalAtlas :
-    letI := i.normalSpaceFiberBundle hn hdim
-    (i.normalSpaceTrivializationOfMDifferentiableOn hn hm hdim hW hU hiW hg hgi
-      hreg).toOpenPartialHomeomorph ∈
-      (contMDiffFiberwiseLinear Z ℂ 𝓘(ℂ, EZ) m).maximalAtlas
-        (TotalSpace ℂ (fun z ↦ i.NormalSpace z hn)) := by
-  have : IsManifold 𝓘(ℂ, EZ) (m + 1) Z := IsManifold.of_ne_zero (m + 1) one_ne_zero inferInstance
-  have : IsManifold 𝓘(ℂ, EM) (m + 1) M := IsManifold.of_ne_zero (m + 1) one_ne_zero inferInstance
-  rw [normalSpaceTrivializationOfMDifferentiableOn.eq_def]
-  exact i.normalSpaceTrivializationOfLevel_mem_maximalAtlas hn hm hdim hW hU hiW _ hgi _
-
-@[simp] theorem normalSpaceTrivializationOfMDifferentiableOn_normalClass
-    {z : Z} (hz : z ∈ W) (v : TangentSpace 𝓘(ℂ, EM) (i z)) :
-    i.normalSpaceTrivializationOfMDifferentiableOn hn hm hdim hW hU hiW hg hgi hreg
-        ⟨z, i.normalClass z hn v⟩ = (z, mfderiv 𝓘(ℂ, EM) 𝓘(ℂ) g (i z) v) := by
-  have : IsManifold 𝓘(ℂ, EZ) (m + 1) Z := IsManifold.of_ne_zero (m + 1) one_ne_zero inferInstance
-  have : IsManifold 𝓘(ℂ, EM) (m + 1) M := IsManifold.of_ne_zero (m + 1) one_ne_zero inferInstance
-  rw [normalSpaceTrivializationOfMDifferentiableOn.eq_def]
-  exact i.normalSpaceTrivializationOfLevel_normalClass hn hm hdim hW hU hiW _ hgi _ hz v
-
-end HolomorphicLevelTrivialization
 
 /-- **A real-smooth hypersurface in a complex manifold never has `J`-invariant tangent spaces.**
 For any `C^n` (`n ≠ 0`) real embedding `f : H → M` of real codimension one

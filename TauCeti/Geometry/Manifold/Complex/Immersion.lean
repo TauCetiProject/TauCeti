@@ -118,20 +118,16 @@ variable {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
 /-- Promote a positive-regularity (`m₀ ≠ 0`) complex embedding to any smoothness order `n : ℕ∞ω`,
 including `n = ∞` and complex-analytic order `n = ω`, matching `IsManifold.of_ne_zero`. -/
 def ofNeZero : SmoothEmbedding I J n M N :=
-  haveI : IsManifold I 1 M := IsManifold.of_ne_zero 1 hm₀ inferInstance
-  haveI : IsManifold J 1 N := IsManifold.of_ne_zero 1 hm₀ inferInstance
+  letI : IsManifold I 1 M := IsManifold.of_ne_zero 1 hm₀ inferInstance
+  letI : IsManifold J 1 N := IsManifold.of_ne_zero 1 hm₀ inferInstance
   ofMDifferentiable f (f.contMDiff.mdifferentiable hm₀) f.isEmbedding
     (f.isImmersion.mfderiv_injective hm₀) n
 
 @[simp] theorem coe_ofNeZero : ⇑(f.ofNeZero hm₀ n) = f := by
-  have : IsManifold I 1 M := IsManifold.of_ne_zero 1 hm₀ inferInstance
-  have : IsManifold J 1 N := IsManifold.of_ne_zero 1 hm₀ inferInstance
-  rw [ofNeZero.eq_def, coe_ofMDifferentiable]
+  simp only [ofNeZero, ofMDifferentiable, coe_ofIsSmoothEmbedding]
 
-@[simp] theorem ofNeZero_apply (x : M) : f.ofNeZero hm₀ n x = f x := by
-  have : IsManifold I 1 M := IsManifold.of_ne_zero 1 hm₀ inferInstance
-  have : IsManifold J 1 N := IsManifold.of_ne_zero 1 hm₀ inferInstance
-  rw [ofNeZero.eq_def, ofMDifferentiable_apply]
+@[simp] theorem ofNeZero_apply (x : M) : f.ofNeZero hm₀ n x = f x :=
+  congrFun (f.coe_ofNeZero hm₀ n) x
 
 end SmoothEmbedding
 

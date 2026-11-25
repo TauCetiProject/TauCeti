@@ -55,8 +55,11 @@ both sides, in order to apply the rule to `e.symm` as well.
   `N × M` is an immersion when the preferred chart of `N` at `c` sends `c` to `0`.
 * `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
   an immersion exactly when it is an immersion at every point.
-* `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for nonempty manifolds
-  modelled on `ℝᵏ` and `ℝᵐ`, the complement of an immersion is a copy of `ℝᵐ⁻ᵏ`.
+* `Manifold.IsImmersionAtOfComplement.nonempty_continuousLinearEquiv`,
+  `Manifold.IsImmersionAt.nonempty_complement_continuousLinearEquiv`, and
+  `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for a finite-dimensional
+  target model, the complement of an immersion is isomorphic to any normed space of the codimension
+  (in particular `ℝᵐ⁻ᵏ` for nonempty manifolds modelled on `ℝᵏ` and `ℝᵐ`).
 * `Manifold.IsImmersion.of_le`, together with its `Manifold.IsImmersionAt`,
   `Manifold.IsImmersionAtOfComplement`, and `Manifold.IsImmersionOfComplement` counterparts:
   lowering the regularity order preserves immersions.
@@ -357,6 +360,34 @@ theorem isImmersion_iff_forall_isImmersionAt :
     (h x₀).isImmersionAtOfComplement_complement.equiv
   exact (h x).isImmersionAtOfComplement_complement.trans_F e
 
+/-- For an immersion at `x` with complement `F` into a finite-dimensional model space `E'`, any
+finite-dimensional normed space `Q` of dimension `finrank 𝕜 E' - finrank 𝕜 E` is continuously
+linearly isomorphic to `F`. -/
+theorem _root_.Manifold.IsImmersionAtOfComplement.nonempty_continuousLinearEquiv {Q : Type*}
+    [NormedAddCommGroup Q] [NormedSpace 𝕜 Q] [FiniteDimensional 𝕜 Q] {x : M}
+    (h : IsImmersionAtOfComplement F I J n f x)
+    (hdim : Module.finrank 𝕜 Q = Module.finrank 𝕜 E' - Module.finrank 𝕜 E) :
+    Nonempty (F ≃L[𝕜] Q) := by
+  have : FiniteDimensional 𝕜 (E × F) := h.equiv.symm.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional 𝕜 E :=
+    Module.Finite.of_surjective (LinearMap.fst 𝕜 E F) LinearMap.fst_surjective
+  have : FiniteDimensional 𝕜 F :=
+    Module.Finite.of_surjective (LinearMap.snd 𝕜 E F) LinearMap.snd_surjective
+  refine ⟨ContinuousLinearEquiv.ofFinrankEq ?_⟩
+  have heq := h.equiv.toLinearEquiv.finrank_eq
+  rw [Module.finrank_prod] at heq
+  omega
+
+/-- For an immersion `h` at `x` into a finite-dimensional model space `E'`, any finite-dimensional
+normed space `Q` of dimension `finrank 𝕜 E' - finrank 𝕜 E` is continuously linearly isomorphic to
+`h.complement`. -/
+theorem _root_.Manifold.IsImmersionAt.nonempty_complement_continuousLinearEquiv {Q : Type*}
+    [NormedAddCommGroup Q] [NormedSpace 𝕜 Q] [FiniteDimensional 𝕜 Q] {x : M}
+    (h : IsImmersionAt I J n f x)
+    (hdim : Module.finrank 𝕜 Q = Module.finrank 𝕜 E' - Module.finrank 𝕜 E) :
+    Nonempty (h.complement ≃L[𝕜] Q) :=
+  h.isImmersionAtOfComplement_complement.nonempty_continuousLinearEquiv hdim
+
 end FiniteDimensional
 
 /-! ### Euclidean complements -/
@@ -373,16 +404,7 @@ theorem _root_.Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv [N
     (h : IsImmersion I J n f) {j : ℕ} (hj : m - k = j) :
     Nonempty (h.complement ≃L[ℝ] EuclideanSpace ℝ (Fin j)) := by
   obtain ⟨x⟩ := ‹Nonempty M›
-  let L := (h.isImmersionOfComplement_complement x).equiv
-  have : FiniteDimensional ℝ (EuclideanSpace ℝ (Fin k) × h.complement) :=
-    L.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℝ h.complement :=
-    Module.Finite.of_surjective (LinearMap.snd ℝ (EuclideanSpace ℝ (Fin k)) _) Prod.snd_surjective
-  refine ⟨ContinuousLinearEquiv.ofFinrankEq ?_⟩
-  have := L.toLinearEquiv.finrank_eq
-  rw [Module.finrank_prod, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin] at this
-  rw [finrank_euclideanSpace_fin]
-  omega
+  exact (h.isImmersionOfComplement_complement x).nonempty_continuousLinearEquiv (by simp [hj])
 
 end Euclidean
 
