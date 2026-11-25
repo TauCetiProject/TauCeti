@@ -607,9 +607,7 @@ read through the equivalence with the direct sum, `α · c = α * c`. -/
 theorem cubicalChainModuleEquiv_op_smul_self {G : Type*} [Monoid G] [TopologicalSpace G]
     [ContinuousMul G] (c : normalizedCubicalChainAlgebra G R) (α : cubicalChainModule G G R) :
     cubicalChainModuleEquiv G G R (op c • α) = cubicalChainModuleEquiv G G R α * c := by
-  have h : actMap G G = mulMap G := ContinuousMap.ext fun p ↦ by
-    rw [actMap_apply, mulMap_apply, op_smul_eq_mul]
-  rw [cubicalChainModuleEquiv_op_smul, h, cubicalChainSumPairing_mulMap]
+  rw [cubicalChainModuleEquiv_op_smul, actMap_self, cubicalChainSumPairing_mulMap]
 
 end SumPairing
 

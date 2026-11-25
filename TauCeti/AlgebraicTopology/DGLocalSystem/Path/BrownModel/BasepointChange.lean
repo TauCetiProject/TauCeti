@@ -224,8 +224,7 @@ private theorem basepointChangeComparison_mapRange_loopChainPrepend
     simp only [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single,
       LinearMap.coe_restrictScalars, LinearEquiv.coe_coe, basepointChangeComparison_single,
       Finsupp.linearCombination_single]
-    -- The coercion of a morphism of DG right modules is its underlying linear map.
-    rw [show (loopChainPrepend R γ).toLinearMap α = _ from loopChainPrepend_apply R γ α,
+    rw [DGRightModuleHom.coe_toLinearMap, loopChainPrepend_apply,
       cubicalChainPairing_cubicalChainModuleLinearMap_left,
       cubicalChainModuleEquiv_smul_eq_cubicalChainPairing,
       cubicalChainModuleLinearMap_cubicalChainPairing]
