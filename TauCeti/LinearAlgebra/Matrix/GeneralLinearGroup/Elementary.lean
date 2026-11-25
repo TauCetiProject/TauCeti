@@ -81,6 +81,8 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
   corner embeddings into `GL (m ⊕ k) A` preserve elementary matrices.
 * `Equiv.reindexGL_sumAssoc_fromBlocksGL`, `Equiv.reindexGL_sumCongr_fromBlocksGL`: reindexing
   block diagonal matrices along `Equiv.sumAssoc` and `Equiv.sumCongr`.
+* `Matrix.upperBlockGL_single`, `Matrix.lowerBlockGL_single`: a block unipotent matrix with a
+  single nonzero entry is an elementary matrix.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
   block unipotent matrices are elementary.
 * `TauCeti.transvectionUnit_mem_commutator_elementarySubgroup_ker`,
@@ -88,6 +90,7 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
   `Matrix.lowerBlockGL_mem_commutator_elementarySubgroup_ker`: in size at least three, elementary
   and block unipotent matrices with entries in an ideal `I` lie in the commutator
   `⁅E(A), GL(A, I)⁆` of the elementary subgroup with the principal congruence subgroup.
+* `TauCeti.map_fromBlocksGL`: change of scalars commutes with the block diagonal homomorphism.
 * `TauCeti.fromBlocksGL_mem_ker_iff`: a block diagonal matrix lies in the kernel of a scalar
   change exactly when both blocks do.
 * `Matrix.GeneralLinearGroup.eq_fromBlocksGL_mul_upperBlockGL`: block upper-triangular
@@ -570,6 +573,20 @@ theorem upperBlockGL_inv (X : Matrix m k A) : (upperBlockGL X)⁻¹ = upperBlock
 theorem lowerBlockGL_inv (Y : Matrix k m A) : (lowerBlockGL Y)⁻¹ = lowerBlockGL (-Y) :=
   Units.ext (rfl)
 
+/-- The upper block unipotent matrix with the single entry `c` at `(a, b)` is the elementary matrix
+`e_(inl a, inr b)(c)`. -/
+theorem upperBlockGL_single (a : m) (b : k) (c : A) :
+    upperBlockGL (single a b c) = transvectionUnit (Sum.inl_ne_inr (a := a) (b := b)) c := by
+  ext (p | p) (q | q) <;>
+    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+
+/-- The lower block unipotent matrix with the single entry `c` at `(b, a)` is the elementary matrix
+`e_(inr b, inl a)(c)`. -/
+theorem lowerBlockGL_single (b : k) (a : m) (c : A) :
+    lowerBlockGL (single b a c) = transvectionUnit (Sum.inr_ne_inl (a := a) (b := b)) c := by
+  ext (p | p) (q | q) <;>
+    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+
 /-- Upper block unipotent matrices are elementary: they are products of the commuting elementary
 matrices `1 + X a b E_(inl a, inr b)`. -/
 theorem upperBlockGL_mem_elementarySubgroup (X : Matrix m k A) :
@@ -578,9 +595,8 @@ theorem upperBlockGL_mem_elementarySubgroup (X : Matrix m k A) :
   | h_zero => simp
   | h_add X Y hX hY => simpa only [upperBlockGL_add] using mul_mem hX hY
   | h_std_basis a b c =>
-    convert transvectionUnit_mem_elementarySubgroup (Sum.inl_ne_inr (a := a) (b := b)) c
-    ext (p | p) (q | q) <;>
-      simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+    rw [upperBlockGL_single]
+    exact transvectionUnit_mem_elementarySubgroup _ c
 
 /-- Lower block unipotent matrices are elementary: they are products of the commuting elementary
 matrices `1 + Y b a E_(inr b, inl a)`. -/
@@ -590,9 +606,8 @@ theorem lowerBlockGL_mem_elementarySubgroup (Y : Matrix k m A) :
   | h_zero => simp
   | h_add X Y hX hY => simpa only [lowerBlockGL_add] using mul_mem hX hY
   | h_std_basis b a c =>
-    convert transvectionUnit_mem_elementarySubgroup (Sum.inr_ne_inl (a := a) (b := b)) c
-    ext (p | p) (q | q) <;>
-      simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+    rw [lowerBlockGL_single]
+    exact transvectionUnit_mem_elementarySubgroup _ c
 
 end Matrix
 
@@ -618,15 +633,21 @@ theorem transvectionUnit_mem_commutator_elementarySubgroup_ker (hij : i ≠ j) (
 
 variable {m k B : Type*} [DecidableEq m] [Fintype m] [DecidableEq k] [Fintype k] [CommRing B]
 
+/-- Change of scalars along `f` commutes with the block diagonal homomorphism:
+`(x ⊕ y).map f = x.map f ⊕ y.map f`. -/
+@[simp]
+theorem map_fromBlocksGL (f : A →+* B) (u : GL m A × GL k A) :
+    Matrix.GeneralLinearGroup.map f (fromBlocksGL u) =
+      fromBlocksGL (Matrix.GeneralLinearGroup.map f u.1, Matrix.GeneralLinearGroup.map f u.2) := by
+  ext (i | i) (j | j) <;> simp
+
 /-- A block diagonal matrix `x ⊕ y` lies in the kernel of the scalar change along `f` exactly when
 both `x` and `y` do. -/
 theorem fromBlocksGL_mem_ker_iff {f : A →+* B} {x : GL m A} {y : GL k A} :
     fromBlocksGL (x, y) ∈ (Matrix.GeneralLinearGroup.map f).ker ↔
       x ∈ (Matrix.GeneralLinearGroup.map f).ker ∧ y ∈ (Matrix.GeneralLinearGroup.map f).ker := by
-  have hmap : Matrix.GeneralLinearGroup.map f (fromBlocksGL (x, y)) =
-      fromBlocksGL (Matrix.GeneralLinearGroup.map f x, Matrix.GeneralLinearGroup.map f y) := by
-    ext (i | i) (j | j) <;> simp
-  rw [MonoidHom.mem_ker, MonoidHom.mem_ker, MonoidHom.mem_ker, hmap, ← map_one fromBlocksGL,
+  rw [MonoidHom.mem_ker, MonoidHom.mem_ker, MonoidHom.mem_ker, map_fromBlocksGL,
+    ← map_one fromBlocksGL,
     fromBlocksGL_injective.eq_iff, ← Prod.mk_one_one, Prod.mk.injEq]
 
 end CommRing
@@ -654,10 +675,8 @@ theorem upperBlockGL_mem_commutator_elementarySubgroup_ker (hn : 3 ≤ Fintype.c
   · simpa only [upperBlockGL_add] using mul_mem hY hZ
   obtain ⟨l, hla, hlb⟩ := Cardinal.exists_ne_ne_of_three_le (α := m ⊕ k)
     (by rw [Cardinal.mk_fintype]; exact_mod_cast hn) (.inl a) (.inr b)
-  convert transvectionUnit_mem_commutator_elementarySubgroup_ker Sum.inl_ne_inr hla.symm hlb
-    (hX a b)
-  ext (p | p) (q | q) <;>
-    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+  rw [upperBlockGL_single]
+  exact transvectionUnit_mem_commutator_elementarySubgroup_ker _ hla.symm hlb (hX a b)
 
 /-- In size at least three, a lower block unipotent matrix whose block has entries in `I` lies in
 the commutator of the elementary subgroup with the principal congruence subgroup of level `I`. -/
@@ -673,10 +692,8 @@ theorem lowerBlockGL_mem_commutator_elementarySubgroup_ker (hn : 3 ≤ Fintype.c
   · simpa only [lowerBlockGL_add] using mul_mem hZ hZ'
   obtain ⟨l, hlb, hla⟩ := Cardinal.exists_ne_ne_of_three_le (α := m ⊕ k)
     (by rw [Cardinal.mk_fintype]; exact_mod_cast hn) (.inr b) (.inl a)
-  convert transvectionUnit_mem_commutator_elementarySubgroup_ker Sum.inr_ne_inl hlb.symm hla
-    (hY b a)
-  ext (p | p) (q | q) <;>
-    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+  rw [lowerBlockGL_single]
+  exact transvectionUnit_mem_commutator_elementarySubgroup_ker _ hlb.symm hla (hY b a)
 
 end Matrix
 

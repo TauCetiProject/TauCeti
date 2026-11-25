@@ -12,6 +12,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 -- Non-public: `Matrix.det_one_add_mul_comm` is used only in a proof below.
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
+-- Non-public: `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff` is used only in proofs.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # The oriented relation of Bass–Milnor–Serre
@@ -27,7 +29,8 @@ and `h` have the same diagonal entry `1 + t s` at `i₀`, with `s ∈ I`, and th
 the `i₀`-th row and column, while the off-diagonal entries of the `i₀`-th column of `g` are `t`
 times those of `h`, and the off-diagonal entries of the `i₀`-th row of `h` are `t` times those of
 `g`. Thus the factor `t` moves from the column to the row; for `t = 1` the relation is equality
-(`Ideal.orientedRel_one_iff`), and for `t = 0` it is neither reflexive nor symmetric.
+together with the congruence `g i₀ i₀ ≡ 1 (mod I)` (`Ideal.orientedRel_one_iff`), and for `t = 0`
+it is neither reflexive nor symmetric.
 
 This is the relation by which Bass, Milnor and Serre formulate the hypotheses of their extension
 theorem for homomorphisms `κ : GLₙ(A, I) → C`: `κ g = κ h` whenever `g` and `h` are in oriented
@@ -157,7 +160,7 @@ theorem mul (hR : I.OrientedRel i₀ t g h) (hR' : I.OrientedRel i₀ t g' h')
   -- The `(i₀, i₀)` entry of `U D U'` is `∑ⱼ U i₀ j D j j U' j i₀`; every term lies in `I`.
   refine add_mem (add_mem hU hU') ?_
   rw [Matrix.mul_apply]
-  refine sum_mem fun j _ ↦ ?_
+  refine I.sum_mem fun j _ ↦ ?_
   rw [mul_diagonal]
   by_cases hj : j = i₀
   · subst hj
@@ -250,14 +253,6 @@ private theorem inv_mul_mem_commutator_of_eq {G : Type*} [Group G] {E K : Subgro
     simpa using (Subgroup.mem_normalizer_iff.1 (hK (inv_mem hg)) _).1 hu
   · exact (Subgroup.mem_normalizer_iff.1 (hE hw) _).1 (inv_mem hx)
 
-/-- An invertible matrix congruent to `1` modulo `I` has entries congruent to those of `1`. -/
-private theorem sub_one_apply_mem_of_mem_ker {x : GL ι A}
-    (hx : x ∈ (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker) (i j : ι) :
-    (x : Matrix ι ι A) i j - (1 : Matrix ι ι A) i j ∈ I := by
-  rw [← Ideal.Quotient.eq]
-  simpa [Matrix.one_apply, apply_ite (Ideal.Quotient.mk I)]
-    using (Matrix.GeneralLinearGroup.ext_iff _ _).1 (MonoidHom.mem_ker.1 hx) i j
-
 /-- The factorization `h ⊕ 1 = w x₋(t) u (g ⊕ 1) x₋(t)⁻¹ x₊(s)⁻¹ w⁻¹ v` in `GL (ι ⊕ Unit) A`, for
 `g = 1 + U D`, `h = 1 + D U` and `s = U i₀ i₀`. -/
 private theorem fromBlocksGL_eq_mul {g h : GL ι A} {U : Matrix ι ι A}
@@ -309,13 +304,13 @@ theorem fromBlocksGL_inv_mul_mem_commutator {g h : GL ι A}
       by_cases hi : i = i₀
       · exact hi ▸ hU
       · simpa [← hhU, Pi.mulSingle_apply, hi, Matrix.one_apply_ne hi] using
-          sub_one_apply_mem_of_mem_ker hh i i₀
+          (Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff I).1 hh i i₀
   have hv : lowerBlockGL (of fun (_ : Unit) j ↦ if j = i₀ then 0 else U i₀ j) ∈ ⁅E, K⁆ :=
     lowerBlockGL_mem_commutator_elementarySubgroup_ker hn fun _ j ↦ by
       by_cases hj : j = i₀
       · simp [hj]
       · simpa [← hgU, Pi.mulSingle_apply, hj, Matrix.one_apply_ne' hj] using
-          sub_one_apply_mem_of_mem_ker hg i₀ j
+          (Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff I).1 hg i₀ j
   have hs : upperGL i₀ (U i₀ i₀) ∈ ⁅E, K⁆ :=
     upperBlockGL_mem_commutator_elementarySubgroup_ker hn fun _ _ ↦ by
       simp only [single_apply]
