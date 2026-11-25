@@ -359,48 +359,6 @@ section RatModP
 
 variable {K : Type*} [CommRing K] [Algebra ℚ K]
 
-private theorem coeff_pow_subst_smul_X_pow_hazewinkelLog {p : ℕ} (hp : 1 < p) (v : ℕ+ → K)
-    (j : ℕ+) (n : ℕ) :
-    PowerSeries.coeff (p ^ n) ((hazewinkelLog p v).toPowerSeries.subst
-        (v j • (PowerSeries.X : PowerSeries K) ^ p ^ (j : ℕ))) =
-      if (j : ℕ) ≤ n then
-        hazewinkelLogCoeff p v (n - (j : ℕ)) * v j ^ p ^ (n - (j : ℕ))
-      else 0 := by
-  have hq : p ^ (j : ℕ) ≠ 0 := pow_ne_zero (j : ℕ) (by omega)
-  have hsub : (hazewinkelLog p v).toPowerSeries.subst
-      (v j • (PowerSeries.X : PowerSeries K) ^ p ^ (j : ℕ)) =
-      PowerSeries.expand (p ^ (j : ℕ)) hq
-        (PowerSeries.rescale (v j) (hazewinkelLog p v).toPowerSeries) := by
-    rw [PowerSeries.rescale_eq_subst, PowerSeries.expand, PowerSeries.expand_subst _ hq
-      (.smul_X' _), ← PowerSeries.expand, PowerSeries.expand_smul, PowerSeries.expand_X]
-  rw [hsub]
-  split_ifs with hjn
-  · have hpow : p ^ n = p ^ (j : ℕ) * p ^ (n - (j : ℕ)) := by
-      rw [← pow_add, Nat.add_sub_of_le hjn]
-    rw [hpow, PowerSeries.coeff_expand_mul, PowerSeries.coeff_rescale,
-      coeff_hazewinkelLog_pow v hp, mul_comm]
-  · refine PowerSeries.coeff_expand_of_not_dvd _ hq _ ?_
-    exact Nat.not_dvd_of_pos_of_lt (pow_pos (by omega) n)
-      (Nat.pow_lt_pow_right hp (not_le.mp hjn))
-
-private theorem coeff_subst_smul_X_pow_hazewinkelLog_eq_zero {p : ℕ} (hp : p ≠ 0) (v : ℕ+ → K)
-    (j : ℕ+) {k : ℕ} (hk : ∀ n, p ^ n ≠ k) :
-    PowerSeries.coeff k ((hazewinkelLog p v).toPowerSeries.subst
-        (v j • (PowerSeries.X : PowerSeries K) ^ p ^ (j : ℕ))) = 0 := by
-  have hq : p ^ (j : ℕ) ≠ 0 := pow_ne_zero (j : ℕ) hp
-  have hsub : (hazewinkelLog p v).toPowerSeries.subst
-      (v j • (PowerSeries.X : PowerSeries K) ^ p ^ (j : ℕ)) =
-      PowerSeries.expand (p ^ (j : ℕ)) hq
-        (PowerSeries.rescale (v j) (hazewinkelLog p v).toPowerSeries) := by
-    rw [PowerSeries.rescale_eq_subst, PowerSeries.expand, PowerSeries.expand_subst _ hq
-      (.smul_X' _), ← PowerSeries.expand, PowerSeries.expand_smul, PowerSeries.expand_X]
-  rw [hsub, PowerSeries.coeff_expand]
-  split_ifs with hdvd
-  · obtain ⟨m, rfl⟩ := hdvd
-    rw [Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hq), PowerSeries.coeff_rescale,
-      coeff_hazewinkelLog_eq_zero v fun i hi ↦ hk ((j : ℕ) + i) (by rw [pow_add, hi]), mul_zero]
-  · rfl
-
 private theorem sum_hazewinkelLogCoeff_mul_pow_of_support {p : ℕ} (hp : p ≠ 0) {v : ℕ+ → K}
     {s : Finset ℕ+} (hv : ∀ j ∉ s, v j = 0) (m : ℕ) :
     (∑ j ∈ s, if (j : ℕ) ≤ m + 1 then
@@ -431,7 +389,8 @@ theorem nsmul_hazewinkelLog_sub_sum_subst {p : ℕ} (hp : 1 < p) {v : ℕ+ → K
   ext k
   rw [map_sub, map_sum, map_nsmul, nsmul_eq_mul, PowerSeries.coeff_smul, smul_eq_mul]
   by_cases hk : ∃ n, p ^ n = k
-  · obtain ⟨_ | m, rfl⟩ := hk <;> simp_rw [coeff_pow_subst_smul_X_pow_hazewinkelLog hp v _ _]
+  · obtain ⟨_ | m, rfl⟩ := hk <;>
+      simp_rw [coeff_pow_subst_smul_X_pow_hazewinkelLog v hp _ _ _]
     · simp only [pow_zero, coeff_one_hazewinkelLog, mul_one, PowerSeries.coeff_one_X]
       rw [sum_eq_zero fun j _ ↦ ite_eq_right (not_le.mpr j.pos), sub_zero]
     · rw [coeff_hazewinkelLog_pow v hp, natCast_mul_hazewinkelLogCoeff_succ v (by omega),
@@ -440,7 +399,7 @@ theorem nsmul_hazewinkelLog_sub_sum_subst {p : ℕ} (hp : 1 < p) {v : ℕ+ → K
   · push Not at hk
     rw [coeff_hazewinkelLog_eq_zero v hk, mul_zero, PowerSeries.coeff_X,
       ite_eq_right fun h1 ↦ hk 0 (by simp [h1]), mul_zero,
-      sum_eq_zero fun j _ ↦ coeff_subst_smul_X_pow_hazewinkelLog_eq_zero (by omega) v j hk,
+      sum_eq_zero fun j _ ↦ coeff_subst_smul_X_pow_hazewinkelLog_eq_zero v hp (v j) (j : ℕ) hk,
       sub_zero]
 
 private theorem subst_hazewinkelLog_curve_sub_eq_smul_X {p : ℕ} (hp : 1 < p) {v : ℕ+ → K}

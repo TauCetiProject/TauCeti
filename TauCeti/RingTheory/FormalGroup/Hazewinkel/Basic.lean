@@ -11,9 +11,11 @@ public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Module.Rat
 import Mathlib.Data.Nat.Log
+import Mathlib.RingTheory.PowerSeries.Expand
 import TauCeti.Algebra.Module.Rat
 import TauCeti.RingTheory.FormalGroup.BaseChange
 import TauCeti.RingTheory.FormalGroup.Logarithm.Naturality
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Hazewinkel's logarithm
@@ -278,6 +280,53 @@ theorem coeff_hazewinkelLog_pow (hp : 1 < p) (n : ℕ) :
 theorem coeff_hazewinkelLog_eq_zero {k : ℕ} (hk : ∀ n, p ^ n ≠ k) :
     coeff k (hazewinkelLog p v).toPowerSeries = 0 := by
   simp [hazewinkelLog, hk]
+
+/-- For `1 < p`, the coefficient of `X ^ k` in `f_v(c X ^ (p ^ j))` is
+`m_(log_p k - j)(v) c ^ (p ^ (log_p k - j))` when `k` is a power `p ^ n` with `j ≤ n`, and `0`
+otherwise. -/
+theorem coeff_subst_smul_X_pow_hazewinkelLog (hp : 1 < p) (c : K) (j k : ℕ) :
+    coeff k ((hazewinkelLog p v).toPowerSeries.subst (c • (X : PowerSeries K) ^ p ^ j)) =
+      if p ^ Nat.log p k = k ∧ j ≤ Nat.log p k then
+        hazewinkelLogCoeff p v (Nat.log p k - j) * c ^ p ^ (Nat.log p k - j)
+      else 0 := by
+  have hq : p ^ j ≠ 0 := pow_ne_zero j (by omega)
+  have hsub : (hazewinkelLog p v).toPowerSeries.subst (c • (X : PowerSeries K) ^ p ^ j) =
+      expand (p ^ j) hq (rescale c (hazewinkelLog p v).toPowerSeries) := by
+    rw [rescale_eq_subst, expand, expand_subst _ hq (.smul_X' _), ← expand, expand_smul, expand_X]
+  rw [hsub]
+  by_cases hpow : p ^ Nat.log p k = k
+  · obtain ⟨n, rfl⟩ : ∃ n, p ^ n = k := ⟨Nat.log p k, hpow⟩
+    rw [Nat.log_pow hp]
+    simp only [true_and]
+    split_ifs with hjn
+    · have hpow' : p ^ n = p ^ j * p ^ (n - j) := by rw [← pow_add, Nat.add_sub_of_le hjn]
+      rw [hpow', coeff_expand_mul, coeff_rescale, coeff_hazewinkelLog_pow v hp, mul_comm]
+    · exact coeff_expand_of_not_dvd _ hq _
+        (Nat.not_dvd_of_pos_of_lt (pow_pos (by omega) n) (Nat.pow_lt_pow_right hp (not_le.mp hjn)))
+  · simp only [hpow, false_and, ite_false, coeff_expand]
+    split_ifs with hdvd
+    · obtain ⟨m, rfl⟩ := hdvd
+      rw [Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hq), coeff_rescale,
+        coeff_hazewinkelLog_eq_zero v (fun i hi ↦ hpow <| by
+          have hk : p ^ j * m = p ^ (j + i) := by rw [pow_add, hi]
+          rw [hk, Nat.log_pow hp]), mul_zero]
+    · rfl
+
+/-- For `1 < p`, the coefficient of `X ^ (p ^ n)` in `f_v(c X ^ (p ^ j))` is
+`m_(n - j)(v) c ^ (p ^ (n - j))` when `j ≤ n` and `0` otherwise. -/
+theorem coeff_pow_subst_smul_X_pow_hazewinkelLog (hp : 1 < p) (c : K) (j n : ℕ) :
+    coeff (p ^ n) ((hazewinkelLog p v).toPowerSeries.subst (c • (X : PowerSeries K) ^ p ^ j)) =
+      if j ≤ n then hazewinkelLogCoeff p v (n - j) * c ^ p ^ (n - j) else 0 := by
+  rw [coeff_subst_smul_X_pow_hazewinkelLog v hp, Nat.log_pow hp]
+  simp
+
+/-- For `1 < p`, `f_v(c X ^ (p ^ j))` has no terms outside the degrees `p ^ n`. -/
+theorem coeff_subst_smul_X_pow_hazewinkelLog_eq_zero (hp : 1 < p) (c : K) (j : ℕ) {k : ℕ}
+    (hk : ∀ n, p ^ n ≠ k) :
+    coeff k ((hazewinkelLog p v).toPowerSeries.subst (c • (X : PowerSeries K) ^ p ^ j)) = 0 := by
+  rw [coeff_subst_smul_X_pow_hazewinkelLog v hp, ite_eq_right_iff]
+  rintro ⟨hpow, -⟩
+  exact absurd hpow (hk _)
 
 @[simp]
 theorem coeff_one_hazewinkelLog : coeff 1 (hazewinkelLog p v).toPowerSeries = 1 := by

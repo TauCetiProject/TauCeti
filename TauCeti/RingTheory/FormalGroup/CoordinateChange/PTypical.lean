@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.Curve.Arithmetic
+import TauCeti.Data.Nat.Pow
 
 /-!
 # Strict `p`-typical curves and coordinate changes on formal group laws
@@ -102,8 +103,8 @@ private theorem map_pTypicalStrictCurveStage (F : FormalGroup R) {p : ℕ} (hp :
   induction n with
   | zero => exact F.map_tautologicalCurve f
   | succ n ih =>
-    rw [pTypicalStrictCurveStage, map_add, ih, F.map_monomialCurve, pTypicalStrictCurveStage]
-    rfl
+    rw [pTypicalStrictCurveStage, map_add, ih, F.map_monomialCurve, pTypicalStrictCurveStage,
+      Function.comp_apply]
 
 /-- **The `p`-typical strict curve** `X +_F t₁ X^p +_F t₂ X^(p²) +_F ⋯` on `F` (`X` if `p ≤ 1`). -/
 def pTypicalStrictCurve (F : FormalGroup R) (p : ℕ) (t : ℕ+ → R) : F.Curve :=
@@ -128,7 +129,7 @@ private theorem coeff_pTypicalStrictCurve_eq_stage (F : FormalGroup R) {p : ℕ}
   rcases le_total n k with hnk | hkn
   · exact coeff_pTypicalStrictCurveStage_eq_of_le F hp t hnk hk
   · exact (coeff_pTypicalStrictCurveStage_eq_of_le F hp t hkn
-      ((Nat.lt_succ_self k).trans ((k + 1).lt_pow_self hp))).symm
+      (Nat.lt_pow_add_one_self hp k)).symm
 
 /-- On a commutative formal group law `F`, `F.pTypicalStrictCurve p t` agrees below degree
 `p ^ (n + 1)` with `X +_F ∑^F_{i < n} t_{i + 1} X ^ (p ^ (i + 1))`. -/
@@ -227,7 +228,7 @@ theorem pTypicalStrictCoordinate_mem_ker_linearCoeff (F : FormalGroup R) (p : �
     Curve.map f (F.pTypicalStrictCurve p t) = (F.map f).pTypicalStrictCurve p (f ∘ t) := by
   by_cases hp : 1 < p
   · ext k
-    have hk : k < p ^ (k + 1) := k.lt_succ_self.trans ((k + 1).lt_pow_self hp)
+    have hk : k < p ^ (k + 1) := Nat.lt_pow_add_one_self hp k
     rw [Curve.toPowerSeries_map, PowerSeries.coeff_map,
       coeff_pTypicalStrictCurve_eq_stage F hp t hk,
       coeff_pTypicalStrictCurve_eq_stage (F.map f) hp (f ∘ t) hk,
@@ -257,7 +258,7 @@ theorem coeff_pTypicalStrictCurve_𝔾ₐ {p : ℕ} (hp : 1 < p) (t : ℕ+ → R
     | succ n ih =>
       rw [pTypicalStrictCurveStage, Curve.toPowerSeries_add_𝔾ₐ, ih, sum_range_succ, add_assoc,
         toPowerSeries_monomialCurve]
-  rw [coeff_pTypicalStrictCurve_eq_stage _ hp t (k.lt_succ_self.trans ((k + 1).lt_pow_self hp)),
+  rw [coeff_pTypicalStrictCurve_eq_stage _ hp t (Nat.lt_pow_add_one_self hp k),
     hstage k, map_add, PowerSeries.coeff_X, map_sum]
   rcases eq_or_ne k 1 with rfl | hk1
   · simp [hp.ne]
@@ -284,7 +285,7 @@ theorem coeff_pTypicalStrictCurve_congr (F : FormalGroup R) {p : ℕ} (hp : 1 < 
     {k : ℕ} (ht : ∀ i : ℕ+, p ^ (i : ℕ) ≤ k → t i = t' i) :
     PowerSeries.coeff k (F.pTypicalStrictCurve p t).toPowerSeries =
       PowerSeries.coeff k (F.pTypicalStrictCurve p t').toPowerSeries := by
-  have hk : k < p ^ (k + 1) := k.lt_succ_self.trans ((k + 1).lt_pow_self hp)
+  have hk : k < p ^ (k + 1) := Nat.lt_pow_add_one_self hp k
   rw [coeff_pTypicalStrictCurve_eq_stage F hp t hk, coeff_pTypicalStrictCurve_eq_stage F hp t' hk]
   suffices ∀ n, ∀ j ≤ k,
       PowerSeries.coeff j (pTypicalStrictCurveStage F p hp t n).toPowerSeries =
@@ -330,16 +331,12 @@ theorem coeff_pow_succ_pTypicalStrictCurve_sub (F : FormalGroup R) {p : ℕ} (hp
 
 /-- For `1 < p`, `F.pTypicalStrictCurve p` is injective over any commutative ring. -/
 theorem pTypicalStrictCurve_injective (F : FormalGroup R) {p : ℕ} (hp : 1 < p) :
-    Function.Injective (F.pTypicalStrictCurve p) := fun t t' h ↦ by
-  suffices ∀ n, ∀ i : ℕ+, (i : ℕ) ≤ n → t i = t' i from funext fun i ↦ this (i : ℕ) i le_rfl
-  intro n; induction n with
-  | zero => intro i hi; have := i.pos; omega
-  | succ n ih =>
-    intro i hi; rcases lt_or_eq_of_le hi with hlt | heq
-    · exact ih i (Nat.lt_succ_iff.mp hlt)
-    · obtain rfl : i = n.succPNat := PNat.coe_injective heq
-      have hsub := F.coeff_pow_succ_pTypicalStrictCurve_sub hp ih
-      rwa [h, sub_self, map_zero, eq_comm, sub_eq_zero] at hsub
+    Function.Injective (F.pTypicalStrictCurve p) := fun t t' h ↦ funext fun i ↦ by
+  induction i using PNat.strongInductionOn with | _ i ih =>
+  obtain ⟨n, rfl⟩ : ∃ n, n.succPNat = i := ⟨i.natPred, i.succPNat_natPred⟩
+  have hsub := F.coeff_pow_succ_pTypicalStrictCurve_sub hp (n := n) fun j hj ↦
+    ih j ((PNat.coe_lt_coe j n.succPNat).mp (by simpa using Nat.lt_succ_of_le hj))
+  rwa [h, sub_self, map_zero, eq_comm, sub_eq_zero] at hsub
 
 /-- For `1 < p`, `F.pTypicalStrictCoordinate p` is injective over any commutative ring. -/
 theorem pTypicalStrictCoordinate_injective (F : FormalGroup R) {p : ℕ} (hp : 1 < p) :
@@ -348,11 +345,15 @@ theorem pTypicalStrictCoordinate_injective (F : FormalGroup R) {p : ℕ} (hp : 1
     simpa only [toPowerSeries_inv_pTypicalStrictCoordinate] using
       congrArg (fun φ : TauCeti.FormalCoordinate R ↦ φ⁻¹.toPowerSeries) h
 
-@[simp] theorem pTypicalStrictCurve_eq_iff (F : FormalGroup R) {p : ℕ} (hp : 1 < p)
+/-- For `1 < p`, two `p`-typical strict curves on `F` are equal if and only if their parameter
+families agree. -/
+@[simp] theorem pTypicalStrictCurve_inj (F : FormalGroup R) {p : ℕ} (hp : 1 < p)
     {t t' : ℕ+ → R} : F.pTypicalStrictCurve p t = F.pTypicalStrictCurve p t' ↔ t = t' :=
   (F.pTypicalStrictCurve_injective hp).eq_iff
 
-@[simp] theorem pTypicalStrictCoordinate_eq_iff (F : FormalGroup R) {p : ℕ} (hp : 1 < p)
+/-- For `1 < p`, two `p`-typical strict coordinates on `F` are equal if and only if their parameter
+families agree. -/
+@[simp] theorem pTypicalStrictCoordinate_inj (F : FormalGroup R) {p : ℕ} (hp : 1 < p)
     {t t' : ℕ+ → R} : F.pTypicalStrictCoordinate p t = F.pTypicalStrictCoordinate p t' ↔ t = t' :=
   (F.pTypicalStrictCoordinate_injective hp).eq_iff
 

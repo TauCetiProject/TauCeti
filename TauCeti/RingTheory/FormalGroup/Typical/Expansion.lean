@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.PTypical
 public import TauCeti.RingTheory.FormalGroup.Curve.Expansion
 public import TauCeti.RingTheory.FormalGroup.Typical
+import TauCeti.Data.Nat.Pow
 
 /-!
 # Expansions of curves in the degrees `p ^ i`
@@ -341,7 +342,7 @@ theorem IsPTypical.existsUnique_pTypicalStrictCoordinate_eq_of_isPTypical_smul
     | _ + 1 => rfl
   have hφ_eq : φ = F.pTypicalStrictCoordinate p t := by
     apply inv_injective; ext k
-    have hk : k < p ^ (k + 1) := k.lt_succ_self.trans ((k + 1).lt_pow_self hp.one_lt)
+    have hk : k < p ^ (k + 1) := Nat.lt_pow_add_one_self hp.one_lt k
     rw [toPowerSeries_inv_pTypicalStrictCoordinate,
       F.coeff_pTypicalStrictCurve_eq_coeff_sum hp.one_lt t hk]
     simpa only [γ, hcases] using ht₀ (k + 1) k hk

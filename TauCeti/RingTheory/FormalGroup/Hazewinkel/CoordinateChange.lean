@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.PTypical
 public import TauCeti.RingTheory.FormalGroup.Hazewinkel.Integral
 import Mathlib.Algebra.MvPolynomial.CommRing
+import TauCeti.Data.Nat.Pow
 import TauCeti.RingTheory.FormalGroup.Hazewinkel.LeadingDifference
 import TauCeti.RingTheory.FormalGroup.Typical.Expansion
 import TauCeti.RingTheory.FormalGroup.Typical.Universal
@@ -45,51 +46,13 @@ public section
 
 noncomputable section
 
-open Finset MvPowerSeries
+open Finset
 
 namespace TauCeti
 
 section Rational
 
 variable {K : Type*} [CommRing K] [Algebra ℚ K] {p : ℕ}
-
-open scoped Classical in
-private theorem coeff_subst_smul_X_pow_hazewinkelLog (hp : 1 < p) (v : ℕ+ → K) (c : K) (m k : ℕ) :
-    PowerSeries.coeff k
-        (PowerSeries.subst (c • PowerSeries.X ^ p ^ (m + 1)) (hazewinkelLog p v).toPowerSeries) =
-      if h : ∃ j, p ^ (j + m + 1) = k then c ^ p ^ h.choose * hazewinkelLogCoeff p v h.choose
-      else 0 := by
-  have h0 : constantCoeff (c • PowerSeries.X ^ p ^ (m + 1) : PowerSeries K) = 0 := by
-    simp [← PowerSeries.constantCoeff_eq, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
-      PowerSeries.coeff_X_pow, (pow_ne_zero (m + 1) (by omega : p ≠ 0)).symm]
-  rw [PowerSeries.coeff_def Finsupp.single_eq_same, PowerSeries.coeff_subst_eq_sum_range_degree
-    (τ := Unit) h0 (hazewinkelLog p v).toPowerSeries (Finsupp.single () k)]
-  simp only [Finsupp.degree_single]
-  have hoff (d : ℕ) (hne : ∀ r, p ^ r = d → k ≠ p ^ (r + m + 1)) :
-      coeff (Finsupp.single () d) (hazewinkelLog p v).toPowerSeries •
-        coeff (Finsupp.single () k)
-          ((c • PowerSeries.X ^ p ^ (m + 1) : PowerSeries K) ^ d) = 0 := by
-    by_cases hpow : ∃ r, p ^ r = d
-    · obtain ⟨r, rfl⟩ := hpow
-      have hne' : k ≠ p ^ (m + 1) * p ^ r := by
-        rw [← pow_add, add_right_comm, add_comm m r]; exact hne r rfl
-      rw [smul_pow, ← pow_mul]
-      simp [← PowerSeries.coeff_def Finsupp.single_eq_same, PowerSeries.coeff_X_pow, hne']
-    · push Not at hpow
-      rw [← PowerSeries.coeff_def Finsupp.single_eq_same, coeff_hazewinkelLog_eq_zero v hpow,
-        zero_smul]
-  split_ifs with hex
-  · have ⟨j, hj⟩ := hex; subst hj
-    rw [(by have := Nat.pow_right_injective hp hex.choose_spec; omega : hex.choose = j),
-      sum_eq_single (p ^ j)]
-    · rw [← PowerSeries.coeff_def Finsupp.single_eq_same, coeff_hazewinkelLog_pow v hp j, smul_pow,
-        ← pow_mul, ← pow_add, (by omega : m + 1 + j = j + m + 1)]
-      simp [PowerSeries.coeff_X_pow, mul_comm]
-    · exact fun d _ hdj ↦ hoff d fun r hr heq ↦ hdj <| by
-        subst hr; congr 1; have := Nat.pow_right_injective hp heq; omega
-    · exact fun hnot ↦ absurd
-        (mem_range.mpr (Nat.lt_succ_of_le (Nat.pow_le_pow_right (by omega) (by omega)))) hnot
-  · exact sum_eq_zero fun d _ ↦ hoff d fun r _ hk ↦ hex ⟨r, hk.symm⟩
 
 private theorem subst_pTypicalStrictCurve_hazewinkelLog_stage (hp : 1 < p) (v t : ℕ+ → K) (N k : ℕ)
     (hk : k < p ^ (N + 1)) :
@@ -137,7 +100,6 @@ theorem coeff_pow_subst_pTypicalStrictCurve_hazewinkelLog (hp : 1 < p) (v t : �
           (hazewinkelLog p v).toPowerSeries) =
       hazewinkelLogCoeff p v n +
         ∑ i ∈ range n, hazewinkelLogCoeff p v i * t (n - 1 - i).succPNat ^ p ^ i := by
-  classical
   rw [subst_pTypicalStrictCurve_hazewinkelLog_stage hp v t n (p ^ n)
       (Nat.pow_lt_pow_right hp (Nat.lt_succ_self n)),
     map_add, coeff_hazewinkelLog_pow v hp n, map_sum]; congr 1
@@ -146,11 +108,10 @@ theorem coeff_pow_subst_pTypicalStrictCurve_hazewinkelLog (hp : 1 < p) (v t : �
     (fun m₁ hm₁ m₂ hm₂ h ↦ by have := mem_range.mp hm₁; have := mem_range.mp hm₂; omega)
     (fun i hi ↦ ⟨n - 1 - i, mem_range.mpr (by have := mem_range.mp hi; omega),
       by have := mem_range.mp hi; omega⟩) fun m hm ↦ ?_
-  have hlt : m < n := mem_range.mp hm
-  have hex : ∃ j, p ^ (j + m + 1) = p ^ n := ⟨n - 1 - m, by congr 1; omega⟩
-  rw [coeff_subst_smul_X_pow_hazewinkelLog hp v (t m.succPNat) m (p ^ n), dite_eq_left hex,
-    (by have := Nat.pow_right_injective hp hex.choose_spec; omega : hex.choose = n - 1 - m),
-    (by congr 1; omega : (n - 1 - (n - 1 - m)).succPNat = m.succPNat), mul_comm]
+  have hle : m + 1 ≤ n := Nat.succ_le_of_lt (mem_range.mp hm)
+  rw [coeff_pow_subst_smul_X_pow_hazewinkelLog v hp (t m.succPNat) (m + 1) n, ite_eq_left hle,
+    (by omega : n - (m + 1) = n - 1 - m),
+    (by congr 1; omega : (n - 1 - (n - 1 - m)).succPNat = m.succPNat)]
 
 /-- Outside the degrees `pⁿ`, `f_v((F_v.pTypicalStrictCurve p t)(X))` vanishes. -/
 theorem coeff_subst_pTypicalStrictCurve_hazewinkelLog_eq_zero (hp : 1 < p) (v t : ℕ+ → K) {k : ℕ}
@@ -158,13 +119,10 @@ theorem coeff_subst_pTypicalStrictCurve_hazewinkelLog_eq_zero (hp : 1 < p) (v t 
     PowerSeries.coeff k
         (PowerSeries.subst ((hazewinkelFormalGroup p v).pTypicalStrictCurve p t).toPowerSeries
           (hazewinkelLog p v).toPowerSeries) = 0 := by
-  classical
-  rw [subst_pTypicalStrictCurve_hazewinkelLog_stage hp v t k k
-      ((Nat.lt_succ_self k).trans ((k + 1).lt_pow_self hp)),
+  rw [subst_pTypicalStrictCurve_hazewinkelLog_stage hp v t k k (Nat.lt_pow_add_one_self hp k),
     map_add, coeff_hazewinkelLog_eq_zero v hk, zero_add, map_sum]
-  exact sum_eq_zero fun m _ ↦ by
-    rw [coeff_subst_smul_X_pow_hazewinkelLog hp v (t m.succPNat) m k,
-      dite_eq_right fun ⟨j, hj⟩ ↦ hk (j + m + 1) hj]
+  exact sum_eq_zero fun m _ ↦
+    coeff_subst_smul_X_pow_hazewinkelLog_eq_zero v hp (t m.succPNat) (m + 1) hk
 
 /-- The formal logarithm of `(F_v.pTypicalStrictCoordinate p t) • F_v` is
 `f_v((F_v.pTypicalStrictCurve p t)(X))`. -/
@@ -209,11 +167,11 @@ theorem existsUnique_pTypicalStrictCoordinate_eq_inv_hazewinkelLog_mul (hp : 1 <
       · have ht_n : t n.succPNat = hazewinkelLogCoeff p w (n + 1) -
             hazewinkelLogCoeff p v (n + 1) - ∑ i ∈ range n,
               hazewinkelLogCoeff p v (i + 1) * t (n - (i + 1)).succPNat ^ p ^ (i + 1) := by
-          dsimp only [t]
-          rw [Nat.natPred_succPNat, pTypicalCoordParamsRat]
+          simp only [t, Nat.natPred_succPNat]
+          rw [pTypicalCoordParamsRat]
           dsimp only
           rw [Fin.sum_univ_eq_sum_range (fun j ↦ hazewinkelLogCoeff p v (j + 1) *
-            pTypicalCoordParamsRat p v w (n - (j + 1)) ^ p ^ (j + 1))]; rfl
+            pTypicalCoordParamsRat p v w (n - (j + 1)) ^ p ^ (j + 1))]
         rw [coeff_pow_subst_pTypicalStrictCurve_hazewinkelLog hp v t (n + 1),
           coeff_hazewinkelLog_pow w hp (n + 1), sum_range_succ', pow_zero, pow_one,
           hazewinkelLogCoeff_zero, one_mul, Nat.add_sub_cancel, Nat.sub_zero, ht_n]; ring
@@ -291,24 +249,22 @@ private theorem pTypicalParams_mem_range_of_injective
     {A B : Type*} [CommRing A] [CommRing B] {ι : A →+* B} (v : ℕ+ → A) (φ : FormalCoordinate A)
     {tB : ℕ+ → B}
     (hcurveB : (FormalCoordinate.map ι φ)⁻¹.toPowerSeries =
-      ((hazewinkelIntegralFormalGroup p (ι ∘ v)).pTypicalStrictCurve p tB).toPowerSeries) :
-    ∀ n (i : ℕ+), (i : ℕ) ≤ n → tB i ∈ ι.range := fun n ↦ by
-  induction n with
-  | zero => intro i hi; have := i.pos; omega
-  | succ n ih =>
-    intro i hi; rcases lt_or_eq_of_le hi with hlt | heq
-    · exact ih i (Nat.lt_succ_iff.mp hlt)
-    · obtain rfl : i = n.succPNat := PNat.coe_injective heq
-      let t_trunc : ℕ+ → A := fun j ↦ if hj : (j : ℕ) ≤ n then (ih j hj).choose else 0
-      have hsub := (hazewinkelIntegralFormalGroup p (ι ∘ v)).coeff_pow_succ_pTypicalStrictCurve_sub
-        hp.out.one_lt (t := tB) (t' := ι ∘ t_trunc) (n := n) fun j hj ↦ by
-          dsimp only [t_trunc, Function.comp_apply]; rw [dite_eq_left hj]
-          exact (ih j hj).choose_spec.symm
-      rw [(by simp [t_trunc] : (ι ∘ t_trunc) n.succPNat = 0), sub_zero, ← hcurveB, ← map_inv,
-        FormalCoordinate.toPowerSeries_map, ← map_hazewinkelIntegralFormalGroup,
-        ← FormalGroup.map_pTypicalStrictCurve, FormalGroup.Curve.toPowerSeries_map,
-        ← map_sub (PowerSeries.map ι), PowerSeries.coeff_map] at hsub
-      exact ⟨_, hsub⟩
+      ((hazewinkelIntegralFormalGroup p (ι ∘ v)).pTypicalStrictCurve p tB).toPowerSeries)
+    (i : ℕ+) : tB i ∈ ι.range := by
+  induction i using PNat.strongInductionOn with | _ i ih =>
+  obtain ⟨n, rfl⟩ : ∃ n, n.succPNat = i := ⟨i.natPred, i.succPNat_natPred⟩
+  let t_trunc : ℕ+ → A := fun j ↦ if hj : j < n.succPNat then (ih j hj).choose else 0
+  have hsub := (hazewinkelIntegralFormalGroup p (ι ∘ v)).coeff_pow_succ_pTypicalStrictCurve_sub
+    hp.out.one_lt (t := tB) (t' := ι ∘ t_trunc) (n := n) fun j hj ↦ by
+      have hlt : j < n.succPNat :=
+        (PNat.coe_lt_coe j n.succPNat).mp (by simpa using Nat.lt_succ_of_le hj)
+      simp only [t_trunc, Function.comp_apply, dite_eq_left hlt]
+      exact (ih j hlt).choose_spec.symm
+  rw [(by simp [t_trunc] : (ι ∘ t_trunc) n.succPNat = 0), sub_zero, ← hcurveB, ← map_inv,
+    FormalCoordinate.toPowerSeries_map, ← map_hazewinkelIntegralFormalGroup,
+    ← FormalGroup.map_pTypicalStrictCurve, FormalGroup.Curve.toPowerSeries_map,
+    ← map_sub (PowerSeries.map ι), PowerSeries.coeff_map] at hsub
+  exact ⟨_, hsub⟩
 
 /-- **Integral descent of `p`-typical strict coordinates** along an injection into a ring `B` in
 which every prime `q ≠ p` is a unit. -/
@@ -327,12 +283,12 @@ theorem existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq_of_injective
       congrArg (fun F : FormalGroup A ↦ F.map ι) hsmul)
   have hmem := pTypicalParams_mem_range_of_injective p v φ
     (by rw [htB, FormalGroup.toPowerSeries_inv_pTypicalStrictCoordinate])
-  let tA : ℕ+ → A := fun i ↦ (hmem i.val i le_rfl).choose
+  let tA : ℕ+ → A := fun i ↦ (hmem i).choose
   have htA : φ = (hazewinkelIntegralFormalGroup p v).pTypicalStrictCoordinate p tA := by
     have hmap : FormalCoordinate.map ι φ = FormalCoordinate.map ι
         ((hazewinkelIntegralFormalGroup p v).pTypicalStrictCoordinate p tA) := by
       rw [htB, FormalGroup.map_pTypicalStrictCoordinate, map_hazewinkelIntegralFormalGroup]
-      exact congrArg _ (funext fun i ↦ (hmem i.val i le_rfl).choose_spec.symm)
+      exact congrArg _ (funext fun i ↦ (hmem i).choose_spec.symm)
     ext1; refine PowerSeries.ext fun k ↦ hι ?_
     simpa only [FormalCoordinate.toPowerSeries_map, PowerSeries.coeff_map] using
       congrArg (fun ψ : FormalCoordinate B ↦ PowerSeries.coeff k ψ.toPowerSeries) hmap
