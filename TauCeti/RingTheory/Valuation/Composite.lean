@@ -36,6 +36,8 @@ of `A`.
   `k`, then `U` contains the residues of the elements of `k`.
 * `ValuationSubring.comapResidue_eq_self_iff`: it equals `A` exactly when `U = ⊤`.
 * `ValuationSubring.mapResidue`: the image in `κ(A)` of a valuation subring contained in `A`.
+* `ValuationSubring.residue_mem_mapResidue_iff`: a residue lies in that image exactly when the
+  element lies in the subring.
 * `ValuationSubring.comapResidue_mapResidue`: every valuation subring contained in `A` is the
   composite of `A` with its image in `κ(A)`.
 * `ValuationSubring.comapResidueOrderIso`: the order isomorphism between valuation subrings of
@@ -131,7 +133,7 @@ theorem nonunits_subset_comapResidue : (A.nonunits : Set K) ⊆ A.comapResidue U
 
 /-- If the composite of `A` with `U` contains a field `k`, then `U` contains the residues of the
 elements of `k`. -/
-theorem algebraMap_residueField_mem_of_isTrivialOn {k : Type*} [Field k] [Algebra k K]
+theorem algebraMap_residueField_mem_of_isTrivialOn {k : Type*} [CommRing k] [Algebra k K]
     [A.valuation.IsTrivialOn k] [(A.comapResidue U).valuation.IsTrivialOn k] (c : k) :
     algebraMap k (ResidueField A) c ∈ U := by
   simpa [IsScalarTower.algebraMap_apply k A (ResidueField A), ← coe_mem_comapResidue_iff]
@@ -179,6 +181,14 @@ theorem mem_mapResidue_iff {B : ValuationSubring K} {hBA : B ≤ A} {y : Residue
   simp only [mapResidue, mem_ofSubring, Subring.mem_map, Subring.mem_comap, mem_toSubring]
   exact ⟨fun ⟨a, ha, hy⟩ ↦ ⟨a, ha, hy⟩, fun ⟨b, hb, hy⟩ ↦ ⟨⟨b, hBA hb⟩, hb, hy⟩⟩
 
+/-- An element of `A` has its residue in the image of `B ⊆ A` exactly when it lies in `B`. -/
+@[simp]
+theorem residue_mem_mapResidue_iff {B : ValuationSubring K} {hBA : B ≤ A} {a : A} :
+    residue A a ∈ A.mapResidue hBA ↔ (a : K) ∈ B := by
+  refine ⟨fun h ↦ ?_, fun h ↦ mem_mapResidue_iff.mpr ⟨a, h, rfl⟩⟩
+  obtain ⟨b, hb, hba⟩ := mem_mapResidue_iff.mp h
+  exact A.mem_of_le_of_residue_eq hBA a.property hb hba.symm
+
 /-- Every valuation subring `B` contained in `A` is the composite of `A` with its image in
 `κ(A)`. -/
 @[simp]
@@ -195,6 +205,11 @@ theorem comapResidue_mapResidue {B : ValuationSubring K} (hBA : B ≤ A) :
 theorem mapResidue_comapResidue (U : ValuationSubring (ResidueField A)) :
     A.mapResidue (comapResidue_le (U := U)) = U :=
   comapResidue_injective (comapResidue_mapResidue _)
+
+/-- The image of `A` itself in `κ(A)` is all of `κ(A)`. -/
+@[simp]
+theorem mapResidue_self : A.mapResidue le_rfl = ⊤ :=
+  comapResidue_eq_self_iff.mp (comapResidue_mapResidue _)
 
 /-- Every valuation subring `B` contained in `A` is the composite of `A` with a valuation subring
 of `κ(A)`, namely the image of `B` in `κ(A)`. -/

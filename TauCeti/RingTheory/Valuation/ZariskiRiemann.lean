@@ -41,6 +41,8 @@ field `κ(W)` has no proper valuation subring containing the image of `A`.
 ## Main results
 
 * `ValuationSubring.sInfOfIsChain`: the intersection of a chain of valuation subrings.
+* `ValuationSubring.sInfOfIsChain_le`, `ValuationSubring.le_sInfOfIsChain_iff`: it is the greatest
+  lower bound of the chain.
 * `ValuationSubring.exists_le_minimal`: below a valuation subring containing a set `s` there is a
   valuation subring minimal among those containing `s`.
 * `Algebra.IsIntegral.of_forall_valuationSubring_eq_top`: a field with no proper valuation subring
@@ -83,9 +85,21 @@ def sInfOfIsChain (c : Set (ValuationSubring K)) (hc : IsChain (· ≤ ·) c) : 
     · exact (W.mem_or_inv_mem x).resolve_left fun hxW ↦ hxW₁ (h hxW)
 
 /-- The elements of the intersection of a chain are those lying in every member. -/
+@[simp]
 theorem mem_sInfOfIsChain_iff {c : Set (ValuationSubring K)} {hc : IsChain (· ≤ ·) c} {x : K} :
     x ∈ sInfOfIsChain c hc ↔ ∀ W ∈ c, x ∈ W := by
   simp [sInfOfIsChain, mem_ofSubring, Subring.mem_iInf]
+
+/-- The intersection of a chain lies in every member of the chain. -/
+theorem sInfOfIsChain_le {c : Set (ValuationSubring K)} {hc : IsChain (· ≤ ·) c}
+    {W : ValuationSubring K} (hW : W ∈ c) : sInfOfIsChain c hc ≤ W :=
+  fun _ hx ↦ mem_sInfOfIsChain_iff.mp hx W hW
+
+/-- The intersection of a chain is the greatest valuation subring contained in every member. -/
+theorem le_sInfOfIsChain_iff {c : Set (ValuationSubring K)} {hc : IsChain (· ≤ ·) c}
+    {V : ValuationSubring K} : V ≤ sInfOfIsChain c hc ↔ ∀ W ∈ c, V ≤ W :=
+  ⟨fun h _ hW ↦ h.trans (sInfOfIsChain_le hW),
+    fun h _ hx ↦ mem_sInfOfIsChain_iff.mpr fun W hW ↦ h W hW hx⟩
 
 /-- Below a valuation subring `V₀` containing a set `s` there is a valuation subring which is
 minimal among the valuation subrings containing `s`. -/
@@ -93,7 +107,7 @@ theorem exists_le_minimal (V₀ : ValuationSubring K) {s : Set K} (hs : s ⊆ V�
     ∃ W ≤ V₀, Minimal (fun W : ValuationSubring K ↦ s ⊆ W) W :=
   zorn_ge_nonempty₀ {W : ValuationSubring K | s ⊆ W} (fun c hcs hc _ _ ↦
     ⟨sInfOfIsChain c hc.symm, fun _ hx ↦ mem_sInfOfIsChain_iff.mpr fun _ hW ↦ hcs hW hx,
-      fun _ hW _ hx ↦ mem_sInfOfIsChain_iff.mp hx _ hW⟩) V₀ hs
+      fun _ hW ↦ sInfOfIsChain_le hW⟩) V₀ hs
 
 end ValuationSubring
 
