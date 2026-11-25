@@ -48,6 +48,7 @@ orbit, where products over all orbits converge in the period topology.
   monomial `r Xⁿ` goes to `r e^(n • γ)`.
 * `TauCeti.NovikovSeries.coeff_ofPowerSeries_nsmul`,
   `TauCeti.NovikovSeries.coeff_ofPowerSeries_of_forall_nsmul_ne`: the coefficients of the image.
+* `TauCeti.NovikovSeries.ofPowerSeries_injective`: the series map is injective.
 * `TauCeti.NovikovSeries.ofPowerSeries_mem_periodFiltration`: a series divisible by `Xⁿ` goes to
   the period neighbourhood `U_(N γ * n)`.
 * `TauCeti.NovikovSeries.ofPowerSeries_mem_nonnegSubring`: the image lies in the nonnegative
@@ -193,6 +194,12 @@ theorem coeff_ofPowerSeries_of_forall_nsmul_ne {h : H} (hh : ∀ n : ℕ, n • 
     (ofPowerSeries γ hγ f).coeff h = 0 := by
   rw [ofPowerSeries_apply]
   exact coeff_map_eq_zero_of_notMem_range _ _ _ _ fun ⟨n, hn⟩ => hh n hn
+
+/-- The series map is injective: the image of a power series has its `n`-th coefficient at
+`n • γ`. -/
+theorem ofPowerSeries_injective : Function.Injective (ofPowerSeries γ hγ : R⟦X⟧ →+* _) :=
+  fun f g h ↦ PowerSeries.ext fun n ↦ by
+    simpa using congrArg (fun a : NovikovSeries R H N ↦ a.coeff (n • γ)) h
 
 /-- **Naturality of the substitution.** Pushing the image of a power series at `e^γ` forward along
 a coefficient map `ρ` and an exponent homomorphism `φ` rescaling periods gives the image of the
