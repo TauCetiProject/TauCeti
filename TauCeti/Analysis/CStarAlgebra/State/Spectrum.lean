@@ -20,10 +20,11 @@ spectral value `z ∈ spectrum ℂ a` of a normal `a` a state sending `star a ^ 
 `star z ^ m * z ^ n`
 (`exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum`), hence a state on
 any `0 ≤ a` attaining `‖a‖ ^ n` (`exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow`,
-`exists_positiveContinuousLinearMap_apply_eq_norm`) and a state on any self-adjoint `a` attaining
-`|(ω a).re| = ‖a‖` (`exists_positiveContinuousLinearMap_abs_re_apply_eq_norm`). Pulling back
-along `A → 𝓜(ℂ, A)` yields a norm-one positive functional on any nontrivial C⋆-algebra `A` with
-`ω a = ‖a‖` and `ω (a * a) = ‖a‖ ^ 2`
+`exists_positiveContinuousLinearMap_apply_eq_norm`), a state on any self-adjoint `a` attaining
+`|(ω a).re| = ‖a‖` (`exists_positiveContinuousLinearMap_abs_re_apply_eq_norm`), and a state on
+any normal `a` with `‖ω a‖ = ‖a‖` (`exists_positiveContinuousLinearMap_norm_apply_eq_norm`).
+Pulling back along `A → 𝓜(ℂ, A)` yields a norm-one positive functional on any nontrivial
+C⋆-algebra `A` with `ω a = ‖a‖` and `ω (a * a) = ‖a‖ ^ 2`
 (`exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`).
 
 ## References
@@ -107,6 +108,18 @@ theorem exists_positiveContinuousLinearMap_abs_re_apply_eq_norm {a : M}
       have hωa := hω_pow 0 1
       simp only [pow_zero, one_mul, pow_one] at hωa
       simp [hωa, abs_of_nonneg (norm_nonneg a)]
+
+/-- On a nontrivial unital C⋆-algebra, every normal element `a` admits a state `ω` with
+`‖ω a‖ = ‖a‖`: evaluate at a spectral value of maximal modulus. -/
+theorem exists_positiveContinuousLinearMap_norm_apply_eq_norm (a : M) [IsStarNormal a] :
+    ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧ ‖ω a‖ = ‖a‖ := by
+  obtain ⟨z, hz, hza⟩ := exists_eNorm_spectrum_eq_spectralRadius_of_nonempty (spectrum.nonempty a)
+  rw [IsStarNormal.spectralRadius_eq_nnNorm, eNorm_eq_nnNorm, ENNReal.coe_inj] at hza
+  obtain ⟨ω, h1, hn, hp⟩ :=
+    exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum hz
+  refine ⟨ω, h1, hn, ?_⟩
+  have hωa : ω a = z := by simpa using hp 0 1
+  rw [hωa, ← coe_nnNorm, ← coe_nnNorm, hza]
 
 end Unital
 

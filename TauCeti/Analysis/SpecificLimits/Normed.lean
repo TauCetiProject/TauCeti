@@ -19,7 +19,8 @@ sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is su
 test. In any seminormed ring, the shifted polynomial-geometric terms `(n + c) ^ k * r ^ n` tend to
 zero whenever `‖r‖ < 1`, which absorbs polynomial growth after shifting an index; under the same
 hypothesis `‖r‖ < 1`, in any normed ring with summable geometric series, the series
-`∑ (n + c) ^ k * r ^ n` is summable.
+`∑ (n + c) ^ k * r ^ n` is summable. Summability of `∑ n * f n * r ^ n` and `∑ f n * r ^ n`
+yields summability of `∑ (n + 1) * f n * r ^ (n + 1)`.
 **Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
 products with a sequence of bounded partial sums have Cauchy partial sums.
 Quantitatively, Abel's inequality bounds a block `∑ n ∈ Ioc K M, w n • a n` by `2 B w (K + 1)`
@@ -141,6 +142,17 @@ theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [← mul_assoc, ← Nat.cast_pow, (Nat.cast_commute (n ^ i) _).symm.eq, Nat.cast_pow,
     ← mul_assoc]
+
+/-- Summability of `n * f n * r ^ n` and `f n * r ^ n` yields summability of
+`(n + 1) * f n * r ^ (n + 1)`. -/
+theorem summable_add_one_mul_pow_succ {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [IsTopologicalSemiring R] {f : ℕ → R} {r : R}
+    (hnf : Summable fun n : ℕ => (n : R) * f n * r ^ n)
+    (hf : Summable fun n : ℕ => f n * r ^ n) :
+    Summable fun n : ℕ => ((n : R) + 1) * f n * r ^ (n + 1) := by
+  refine ((hnf.mul_left r).add (hf.mul_left r)).congr fun n => ?_
+  rw [pow_succ r n]
+  ring
 
 /-- **Dirichlet's test** for coefficients of bounded variation. If `f n → 0`, the series of the
 differences `‖f (n + 1) - f n‖` converges, and the partial sums of `z` are bounded, then the
