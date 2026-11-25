@@ -94,7 +94,7 @@ theorem compactCayley_mul_single_one_zero :
 
 private theorem conj_of_mul_eq {M M' : Matrix (Fin 2) (Fin 2) ℂ}
     (h : compactCayley * M = M' * compactCayley) : compactCayley * M * compactCayley⁻¹ = M' := by
-  rw [h, Matrix.mul_assoc, mul_nonsing_inv _ isUnit_det_compactCayley, Matrix.mul_one]
+  rw [h, mul_nonsing_inv_cancel_right _ _ isUnit_det_compactCayley]
 
 /-- `C diag(1, -1) C⁻¹ = H_c`. -/
 theorem compactCayley_conj_compactCartanReflection :
