@@ -98,7 +98,7 @@ open Subgroup
 
 namespace MonoidHom
 
-variable {E G H : Type*} [Group E] [Group G] [Group H]
+variable {E G : Type*} [Group E] [Group G]
 
 /-- A **`c`-marking** of a homomorphism `p : E →* G`: a lift `s x ∈ E` of each `x ∈ c` such that
 `s (g x g⁻¹) = e (s x) e⁻¹` whenever `e ∈ E` lies over `g`. A `c`-marked central extension is a
@@ -165,8 +165,8 @@ theorem mul_apply_mul_inv_mem_range (hc : ∀ g x, x ∈ c → g * x * g⁻¹ �
 
 /-- Two homomorphisms out of `E` agree if they agree on the marked lifts, provided these
 generate `E`. -/
-theorem hom_ext (s : p.Marking c) (hs : closure (Set.range s) = ⊤) {f f' : E →* H}
-    (h : ∀ x, f (s x) = f' (s x)) : f = f' :=
+theorem hom_ext {M : Type*} [Monoid M] (s : p.Marking c) (hs : closure (Set.range s) = ⊤)
+    {f f' : E →* M} (h : ∀ x, f (s x) = f' (s x)) : f = f' :=
   eq_of_eqOn_dense hs (by rintro _ ⟨x, rfl⟩; exact h x)
 
 section OfBijOn
