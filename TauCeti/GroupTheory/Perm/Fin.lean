@@ -49,6 +49,7 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
 * `TauCeti.sum_sign_smul_eq_sum_consFin`: reindex a signed permutation sum through ordered
   first-coordinate insertion, including dimension zero.
 * `Equiv.Perm.card_filter_val_lt`: a permutation of `Fin n` maps `min n m` indices below `m`.
+* `Equiv.Perm.IsSwap.two_le`: if `Fin n` admits a transposition, then `2 ≤ n`.
 -/
 
 public section
@@ -207,6 +208,10 @@ theorem card_filter_val_lt {n m : ℕ} (σ : Perm (Fin n)) :
   (card_equiv σ fun _ => by simp).trans Fin.card_filter_val_lt
 
 end
+
+/-- If `Fin n` admits a transposition, then `2 ≤ n`. -/
+theorem IsSwap.two_le {n : ℕ} {τ : Perm (Fin n)} (hτ : τ.IsSwap) : 2 ≤ n := by
+  simpa only [Fintype.card_fin] using hτ.two_le_card
 
 end Equiv.Perm
 
