@@ -50,7 +50,8 @@ against a smooth function `φ` it is `∫ w Δ⁺φ dV`, where `Δ⁺ = -Δ` is 
 
 * `TauCeti.Manifold.SobolevH1`: the Sobolev space `H¹(M)`, with
   `TauCeti.Manifold.SobolevH1.ofSmooth` the inclusion of the smooth functions (injective by
-  `TauCeti.Manifold.SobolevH1.ofSmooth_injective`),
+  `TauCeti.Manifold.SobolevH1.ofSmooth_injective`, so a smooth function vanishes in `H¹(M)` only
+  if it is zero by `TauCeti.Manifold.SobolevH1.ofSmooth_eq_zero_iff`),
   `TauCeti.Manifold.SobolevH1.inner_ofSmooth` the inner product of two smooth functions, and
   `TauCeti.Manifold.SobolevH1.subsingleton_of_isEmpty` showing `H¹(M)` is a subsingleton on an empty
   manifold, and `TauCeti.Manifold.SobolevH1.nontrivial_of_nonempty` showing it is nontrivial on a
@@ -342,14 +343,18 @@ theorem ofSmooth_injective : Function.Injective (ofSmooth (I := I) (M := M)) := 
     (riemannianVolume I M) (by simpa only [toLp_ofSmooth] using congrArg toLp huv)
   exact ContMDiffMap.ext fun x ↦ DFunLike.congr_fun h x
 
-/-- On a nonempty manifold, `H¹(M)` is nontrivial: the constant function `1` is nonzero, since its
-integral is the positive total volume. -/
+/-- A smooth function is zero in `H¹(M)` if and only if it is zero. -/
+@[simp]
+theorem ofSmooth_eq_zero_iff {u : C^∞⟮I, M; ℝ⟯} : ofSmooth u = 0 ↔ u = 0 :=
+  map_eq_zero_iff _ ofSmooth_injective
+
+/-- On a nonempty manifold, the constant function `1` is nonzero in `H¹(M)`. -/
+theorem ofSmooth_one_ne_zero [Nonempty M] : ofSmooth (1 : C^∞⟮I, M; ℝ⟯) ≠ 0 :=
+  ofSmooth_eq_zero_iff.not.2 fun h ↦ one_ne_zero (congrArg (· (Classical.arbitrary M)) h)
+
+/-- On a nonempty manifold, `H¹(M)` is nontrivial: the constant function `1` is nonzero. -/
 instance nontrivial_of_nonempty [Nonempty M] : Nontrivial (SobolevH1 I M) :=
-  nontrivial_of_ne (ofSmooth 1) 0 fun h ↦ (riemannianTotalVolume_pos (I := I) (M := M)).ne' <| by
-    have h0 := toLp_ofSmooth_ae_eq (1 : C^∞⟮I, M; ℝ⟯)
-    rw [h, map_zero] at h0
-    rw [← one_mul (riemannianTotalVolume I M), ← integral_const_riemannianVolume, ← integral_zero]
-    exact integral_congr_ae (h0.symm.trans (Lp.coeFn_zero ..))
+  nontrivial_of_ne _ _ ofSmooth_one_ne_zero
 
 /-- The `L²` inner product of the values of two smooth functions is `∫ u v dV`. -/
 theorem inner_toLp_ofSmooth (u v : C^∞⟮I, M; ℝ⟯) :

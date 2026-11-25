@@ -125,12 +125,8 @@ theorem le_firstEigenvalue_iff [Nonempty M] (hn : 2 < finrank ℝ E) {c : ℝ} :
       ∀ w : SobolevH1 I M, c * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w := by
   refine ⟨fun h w ↦ (mul_le_mul_of_nonneg_right h (sq_nonneg _)).trans
     (firstEigenvalue_mul_le_energyForm hn w), fun h ↦ ?_⟩
-  have h1 : SobolevH1.ofSmooth (1 : C^∞⟮I, M; ℝ⟯) ≠ 0 := fun h ↦ by
-    have h2 := SobolevH1.norm_toLp_ofSmooth_one_sq (I := I) (M := M)
-    rw [h, map_zero, norm_zero, zero_pow two_ne_zero] at h2
-    exact riemannianTotalVolume_pos.ne' h2.symm
   rw [firstEigenvalue_def]
-  exact le_csInf ⟨_, _, h1, rfl⟩ fun _ ⟨w, hw, hw'⟩ ↦ hw' ▸
+  exact le_csInf ⟨_, _, SobolevH1.ofSmooth_one_ne_zero, rfl⟩ fun _ ⟨w, hw, hw'⟩ ↦ hw' ▸
     (le_div_iff₀ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hw) 2)).2 (h w)
 
 /-- **Rayleigh minimizers are weak eigenfunctions.** On a closed manifold of dimension `n > 2`, if
@@ -229,7 +225,7 @@ theorem firstEigenvalue_eq_of_conformalLaplacian_eq_mul [Nonempty M]
     | hp => exact isClosed_le (by fun_prop) ((energyForm I).continuous₂.comp
         (continuous_id.prodMk continuous_id))
     | h φ => exact mul_norm_toLp_sq_le_energyForm_ofSmooth (u := U) hu_pos hc φ
-  have hU0 : SobolevH1.ofSmooth U ≠ 0 := (map_ne_zero_iff _ SobolevH1.ofSmooth_injective).2
+  have hU0 : SobolevH1.ofSmooth U ≠ 0 := SobolevH1.ofSmooth_eq_zero_iff.not.2
     fun h ↦ (hu_pos (Classical.arbitrary M)).ne' <| by
       simpa [U] using congrArg (· (Classical.arbitrary M)) h
   refine le_antisymm ?_ ((le_firstEigenvalue_iff hn).2 hle)
