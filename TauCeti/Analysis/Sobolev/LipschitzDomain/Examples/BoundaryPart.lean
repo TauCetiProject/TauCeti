@@ -40,8 +40,8 @@ interval.
   relatively open in the frontier of the square.
 * `TauCeti.isAdmissibleBoundaryPart_unitSquareLeftSide_Ioo`: the open left side is admissible.
 * `TauCeti.not_isAdmissibleBoundaryPart_unitSquareLeftSide_iUnion`: the oscillating part is not.
-* `TauCeti.not_isAdmissibleBoundaryPart_unitSquareLeftSide_diff`: the punctured side is not.
-* `TauCeti.w1pVanishingOnSubmodule_unitSquareLeftSide_diff`: the punctured side and the whole
+* `TauCeti.not_isAdmissibleBoundaryPart_unitSquareLeftSide_sdiff`: the punctured side is not.
+* `TauCeti.w1pVanishingOnSubmodule_unitSquareLeftSide_sdiff`: the punctured side and the whole
   open side define the same space `W^{1,p}_Γ(Ω)`.
 
 ## References
@@ -286,28 +286,18 @@ theorem not_isAdmissibleBoundaryPart_unitSquareLeftSide_iUnion {E' : Type*}
   omega
 
 /-- The open interval `(0, 1)` with its midpoint removed has closure `[0, 1]`. -/
-private theorem closure_Ioo_diff_singleton :
+private theorem closure_Ioo_sdiff_singleton :
     closure (Ioo (0 : ℝ) 1 \ {1 / 2}) = Icc 0 1 := by
-  have h : Ioo (0 : ℝ) 1 \ {1 / 2} = Ioo 0 (1 / 2) ∪ Ioo (1 / 2) 1 := by
-    ext t
-    simp only [mem_sdiff, mem_Ioo, mem_singleton_iff, mem_union]
-    constructor
-    · rintro ⟨⟨h0, h1⟩, hne⟩
-      rcases lt_or_gt_of_ne hne with h | h
-      · exact Or.inl ⟨h0, h⟩
-      · exact Or.inr ⟨h, h1⟩
-    · rintro (⟨h0, h⟩ | ⟨h, h1⟩)
-      · exact ⟨⟨h0, by linarith⟩, h.ne⟩
-      · exact ⟨⟨by linarith, h1⟩, h.ne'⟩
-  rw [h, closure_union, closure_Ioo (by norm_num), closure_Ioo (by norm_num),
+  rw [← Ioo_union_Ioo_eq_Ioo_sdiff_singleton (by norm_num) (by norm_num), closure_union,
+    closure_Ioo (by norm_num), closure_Ioo (by norm_num),
     Icc_union_Icc_eq_Icc (by norm_num) (by norm_num)]
 
 /-- **A punctured side is not admissible.** The part `{0} × ((0, 1) ∖ {1/2})` lies over both
 sides of the base point of any boundary-part chart at `(0, 1/2)`, but not over the point itself.
 It is relatively open in the frontier by `TauCeti.exists_isOpen_frontier_openUnitSquare_inter_eq`,
 and has the same closure as the admissible open side
-(`TauCeti.closure_unitSquareLeftSide_diff`). -/
-theorem not_isAdmissibleBoundaryPart_unitSquareLeftSide_diff {E' : Type*}
+(`TauCeti.closure_unitSquareLeftSide_sdiff`). -/
+theorem not_isAdmissibleBoundaryPart_unitSquareLeftSide_sdiff {E' : Type*}
     [NormedAddCommGroup E'] [NormedSpace ℝ E'] :
     ¬ openUnitSquare.IsAdmissibleBoundaryPart (unitSquareLeftSide (Ioo 0 1 \ {1 / 2})) ℝ E' := by
   intro hΓ
@@ -317,40 +307,39 @@ theorem not_isAdmissibleBoundaryPart_unitSquareLeftSide_diff {E' : Type*}
   have hδ : 0 < δ := lt_min (half_pos hε) (by norm_num)
   have hδε : δ < ε := (min_le_left _ _).trans_lt (half_lt_self hε)
   have hδ4 : δ ≤ 1 / 4 := min_le_right _ _
-  have h₁ : 1 / 2 - δ ∈ Ioo (1 / 2 - ε) (1 / 2 + ε) ∩ Icc 0 1 ∩
+  have hmem : ∀ t : ℝ, t ≠ 1 / 2 → |t - 1 / 2| ≤ δ → t ∈ Ioo (1 / 2 - ε) (1 / 2 + ε) ∩
+      Icc 0 1 ∩
       (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) ⁻¹' unitSquareLeftSide (Ioo 0 1 \ {1 / 2}) := by
+    intro t hne ht
+    rw [abs_le] at ht
     refine ⟨⟨⟨by linarith, by linarith⟩, by linarith, by linarith⟩, ?_⟩
     simp only [mem_preimage, mem_unitSquareLeftSide, WithLp.toLp_fst, WithLp.toLp_snd, true_and,
       mem_sdiff, mem_Ioo, mem_singleton_iff]
-    exact ⟨⟨by linarith, by linarith⟩, by linarith⟩
-  have h₂ : 1 / 2 + δ ∈ Ioo (1 / 2 - ε) (1 / 2 + ε) ∩ Icc 0 1 ∩
-      (fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t)) ⁻¹' unitSquareLeftSide (Ioo 0 1 \ {1 / 2}) := by
-    refine ⟨⟨⟨by linarith, by linarith⟩, by linarith, by linarith⟩, ?_⟩
-    simp only [mem_preimage, mem_unitSquareLeftSide, WithLp.toLp_fst, WithLp.toLp_snd, true_and,
-      mem_sdiff, mem_Ioo, mem_singleton_iff]
-    exact ⟨⟨by linarith, by linarith⟩, by linarith⟩
+    exact ⟨⟨by linarith, by linarith⟩, hne⟩
+  have h₁ := hmem (1 / 2 - δ) (by linarith) (by rw [abs_le]; constructor <;> linarith)
+  have h₂ := hmem (1 / 2 + δ) (by linarith) (by rw [abs_le]; constructor <;> linarith)
   have hhalf : (1 / 2 : ℝ) ∈ Icc (1 / 2 - δ) (1 / 2 + δ) := ⟨by linarith, by linarith⟩
   have hmid := (hoc.out h₁ h₂ hhalf).2
   simp at hmid
 
 /-- The punctured side `{0} × ((0, 1) ∖ {1/2})` has the same closure as the open side
 `{0} × (0, 1)`, namely the closed side `{0} × [0, 1]`. -/
-theorem closure_unitSquareLeftSide_diff :
+theorem closure_unitSquareLeftSide_sdiff :
     closure (unitSquareLeftSide (Ioo 0 1 \ {1 / 2})) = closure (unitSquareLeftSide (Ioo 0 1)) := by
-  rw [closure_unitSquareLeftSide, closure_unitSquareLeftSide, closure_Ioo_diff_singleton,
+  rw [closure_unitSquareLeftSide, closure_unitSquareLeftSide, closure_Ioo_sdiff_singleton,
     closure_Ioo zero_ne_one]
 
 /-- **Admissibility is not a property of `closure Γ`.** The non-admissible punctured side
 `{0} × ((0, 1) ∖ {1/2})` and the admissible open side `{0} × (0, 1)` define the same space
 `W^{1,p}_Γ` on the open unit square, since `W^{1,p}_Γ` depends on `Γ` only through its
 closure. -/
-theorem w1pVanishingOnSubmodule_unitSquareLeftSide_diff (mu : Measure (WithLp 2 (ℝ × ℝ)))
+theorem w1pVanishingOnSubmodule_unitSquareLeftSide_sdiff (mu : Measure (WithLp 2 (ℝ × ℝ)))
     [mu.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     w1pVanishingOnSubmodule mu ⟨openUnitSquare, isOpen_openUnitSquare⟩ p
         (unitSquareLeftSide (Ioo 0 1 \ {1 / 2})) =
       w1pVanishingOnSubmodule mu ⟨openUnitSquare, isOpen_openUnitSquare⟩ p
         (unitSquareLeftSide (Ioo 0 1)) := by
-  rw [← w1pVanishingOnSubmodule_closure, closure_unitSquareLeftSide_diff,
+  rw [← w1pVanishingOnSubmodule_closure, closure_unitSquareLeftSide_sdiff,
     w1pVanishingOnSubmodule_closure]
 
 end TauCeti
