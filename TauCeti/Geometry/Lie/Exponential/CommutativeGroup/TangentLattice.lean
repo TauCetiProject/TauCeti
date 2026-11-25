@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
-import TauCeti.Topology.Algebra.Module.CompactQuotient
 
 /-!
 # The period lattice in the tangent space of a compact commutative Lie group
@@ -75,20 +74,31 @@ theorem mulInvariantExpAddMonoidHom_apply (v : E) :
     pointDerivationEquivTangentSpace_tangentToPointDerivation (I := I) (1 : G) _ v]
 
 /-- `mulInvariantExp` is continuous. -/
+@[fun_prop]
 theorem continuous_mulInvariantExpAddMonoidHom :
     Continuous (mulInvariantExpAddMonoidHom I G) :=
   continuous_lieExpAddMonoidHom.comp
     (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)).symm.continuous
 
+/-- The kernel of `mulInvariantExp` is the pullback of the kernel of `lieExpAddMonoidHom` along
+the identification of `E` with left-invariant derivations. -/
+private theorem toIntSubmodule_ker_mulInvariantExpAddMonoidHom :
+    (mulInvariantExpAddMonoidHom I G).ker.toIntSubmodule =
+      ZLattice.comap ℝ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule
+        (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I)
+          (G := G)).symm.toContinuousLinearEquiv.toLinearMap := by
+  apply Submodule.toAddSubgroup_injective
+  ext v
+  simp [mulInvariantExpAddMonoidHom]
+
 /-- **The kernel of `mulInvariantExp` is discrete.** -/
 instance discreteTopology_ker_mulInvariantExpAddMonoidHom :
     DiscreteTopology (mulInvariantExpAddMonoidHom I G).ker := by
-  refine SetLike.isDiscrete_iff_discreteTopology.mp ?_
-  rw [mulInvariantExpAddMonoidHom, ← AddMonoidHom.comap_ker, AddSubgroup.coe_comap]
-  exact (SetLike.isDiscrete_iff_discreteTopology.mpr inferInstance).preimage
-    (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I)
-      (G := G)).symm.continuous.continuousOn
-    (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G)).symm.injective
+  have : DiscreteTopology (mulInvariantExpAddMonoidHom I G).ker.toIntSubmodule := by
+    rw [toIntSubmodule_ker_mulInvariantExpAddMonoidHom]
+    infer_instance
+  rw [← AddSubgroup.toIntSubmodule_toAddSubgroup (mulInvariantExpAddMonoidHom I G).ker]
+  infer_instance
 
 variable [IsTopologicalGroup G]
 
@@ -107,11 +117,8 @@ tangent space at the identity.** -/
 instance isZLattice_ker_mulInvariantExpAddMonoidHom :
     IsZLattice ℝ (mulInvariantExpAddMonoidHom I G).ker.toIntSubmodule where
   span_top := by
-    have := AddMonoidHom.compactSpace_quotient_ker_of_isOpenMap _
-      (continuous_mulInvariantExpAddMonoidHom (I := I) (G := G))
-      (isOpenMap_mulInvariantExpAddMonoidHom (I := I) (G := G))
-    rw [AddSubgroup.coe_toIntSubmodule]
-    exact AddSubgroup.span_eq_top_of_compactSpace_quotient _
+    rw [toIntSubmodule_ker_mulInvariantExpAddMonoidHom]
+    exact IsZLattice.span_top
 
 end Compact
 
