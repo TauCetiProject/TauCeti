@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Topology.Connected.FiniteComponents
 import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Connected components of a Lipschitz domain
@@ -130,9 +131,8 @@ theorem exists_mem_nhds_isPreconnected_inter (hΩ : Ω.IsLipschitzDomain E) {x :
   have hy' : (K + 1) * ‖y‖ < h := by
     have := (lt_min_iff.1 (mem_ball_zero_iff.1 hy)).2
     rwa [lt_div_iff₀ (by positivity), mul_comm] at this
-  have hlip := hc.lipschitzWith.dist_le_mul y 0
-  rw [hγ0, Real.dist_eq, sub_zero, dist_zero_right] at hlip
-  nlinarith [le_abs_self (γ y), norm_nonneg y]
+  nlinarith [le_abs_self (γ y), norm_nonneg y, (Real.norm_eq_abs _).symm.trans_le
+    (hc.lipschitzWith.norm_le_mul hγ0 y)]
 
 /-- **A Lipschitz domain with compact frontier has finitely many connected components.** This
 includes exterior domains, whose frontier is compact although they are unbounded. -/
@@ -145,7 +145,6 @@ theorem finite_connectedComponents (hΩ : Ω.IsLipschitzDomain E) (hc : IsCompac
 as `ℝⁿ`. -/
 theorem finite_connectedComponents_of_isBounded [ProperSpace F] (hΩ : Ω.IsLipschitzDomain E)
     (hb : Bornology.IsBounded Ω) : Finite (ConnectedComponents Ω) :=
-  hΩ.finite_connectedComponents <| isCompact_of_isClosed_isBounded isClosed_frontier
-    (hb.closure.subset frontier_subset_closure)
+  hΩ.finite_connectedComponents hb.isCompact_frontier
 
 end Set.IsLipschitzDomain
