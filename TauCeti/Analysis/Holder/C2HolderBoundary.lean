@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.InnerProductSpace.Continuous
 public import Mathlib.Topology.MetricSpace.Holder
+public import TauCeti.Analysis.InnerProductSpace.GraphPatch
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Sets with `C^{2,α}` boundary
@@ -16,9 +18,11 @@ A set `Ω` in a real inner product space has `C^{2,α}` boundary (`Set.HasC2Hold
 near every point of `frontier Ω`, in some ball, `Ω` is the region `{x | γ x < ⟪x, ν⟫}` above the
 graph of a `C^{2,α}` function `γ` over the hyperplane `ν^⊥`. These are the domains of the global
 Schauder theory (Gilbarg–Trudinger, Section 6.2). Such a set is open
-(`Set.HasC2HolderBoundary.isOpen`). The geometry of the region above a graph near the boundary is
-in `TauCeti/Analysis/InnerProductSpace/GraphPatch.lean`, and the global Schauder estimate on such a
-domain is in `TauCeti/Analysis/PDE/Regularity/Hessian/Schauder/BoundedDomain.lean`.
+(`Set.HasC2HolderBoundary.isOpen`), and it has Lipschitz graph boundary
+(`Set.HasC2HolderBoundary.hasLipschitzGraphBoundary`). The geometry of the region above a graph
+near the boundary is in `TauCeti/Analysis/InnerProductSpace/GraphPatch.lean`, and the global
+Schauder estimate on such a domain is in
+`TauCeti/Analysis/PDE/Regularity/Hessian/Schauder/BoundedDomain.lean`.
 -/
 
 public section
@@ -61,5 +65,15 @@ theorem HasC2HolderBoundary.isOpen {Ω : Set E} {α : ℝ≥0} (h : Ω.HasC2Hold
     rw [hΩr]
     exact (isOpen_lt hγ.continuous (continuous_id.inner continuous_const)).inter isOpen_ball
   exact interior_maximal inter_subset_left hopen ⟨hzΩ, mem_ball_self hr⟩
+
+/-- A set with `C^{2,α}` boundary has Lipschitz graph boundary: near each frontier point the set is
+the region above the graph of a `G`-Lipschitz function, since `‖Dγ‖ ≤ G`. -/
+theorem HasC2HolderBoundary.hasLipschitzGraphBoundary {Ω : Set E} {α : ℝ≥0}
+    (h : Ω.HasC2HolderBoundary α) : Ω.HasLipschitzGraphBoundary := by
+  refine hasLipschitzGraphBoundary_iff.2 fun z hz => ?_
+  obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG1, -, -, hr, hpatch⟩ := h z hz
+  exact ⟨ν, γ, G, r, hν, lipschitzWith_of_nnNorm_fderiv_le (hγ.differentiable (by norm_num))
+    fun x => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hG1 x, hγν, hr,
+    by rw [inter_comm, hpatch, inter_comm]⟩
 
 end Set

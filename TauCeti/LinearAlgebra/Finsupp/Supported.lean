@@ -35,6 +35,8 @@ A finitely generated submodule of `ℕ →₀ M` consists of functions supported
 * `TauCeti.Finsupp.filterSupported_comp_inclusion`,
   `TauCeti.Finsupp.inclusion_comp_filterSupported`: the filter commutes with the inclusions
   `Finsupp.supported M R s ≤ Finsupp.supported M R s'` given by enlarging the support.
+* `TauCeti.Finsupp.sum_filterSupported_eq`: summing `filterSupported (g · = b)` over all `b` in
+  a finite decidable codomain recovers the original supported function.
 * `Finsupp.sub_single_mem_supported`: removing the value at one exceptional coordinate leaves a
   function supported on a prescribed set.
 * `Finsupp.map_mem_supported_of_forall_single_mem`: a linear map that sends the basis vectors
@@ -96,6 +98,14 @@ theorem inclusion_comp_filterSupported {s t t' : Set α} (p : α → Prop) [Deci
     (Submodule.inclusion (supported_mono (M := M) (R := R) ht)).comp (filterSupported p h) =
       filterSupported p fun a ha hp ↦ ht (h a ha hp) :=
   LinearMap.ext fun _ ↦ Subtype.ext (by simp)
+
+/-- Decomposing a function supported on `s` by the fibers of a map `g : α → β` into a finite
+decidable type and summing over `β` recovers the function. -/
+theorem sum_filterSupported_eq {β : Type*} [Fintype β] [DecidableEq β] {s : Set α} (g : α → β)
+    (f : supported M R s) :
+    ∑ b : β, filterSupported (g · = b) (fun _ ha _ ↦ ha) f = f := by
+  refine Subtype.ext (Finsupp.ext fun a ↦ ?_)
+  simp [Finsupp.finsetSum_apply, Finsupp.filter_apply]
 
 /-- **A finitely generated module maps into finitely many coordinates**: the values of a linear
 map from a finitely generated module into `α →₀ M` are all supported on one finite set, the union
