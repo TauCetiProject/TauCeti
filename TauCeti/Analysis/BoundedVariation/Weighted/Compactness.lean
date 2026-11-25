@@ -20,7 +20,8 @@ measurable set `U`: `μ(U (φ j) ∆ U) → 0`
 (`TauCeti.exists_subseq_tendsto_withDensity_symmDiff_of_weightedPerimeter_le`). For the
 Gaussian weight, `μ` is the standard Gaussian measure
 (`TauCeti.withDensity_exp_neg_gaussianWeight`), so sequences of bounded Gaussian perimeter have
-subsequences converging in `L¹(γ)` (`TauCeti.exists_subseq_tendsto_stdGaussian_symmDiff`).
+subsequences converging in `L¹(γ)`
+(`TauCeti.exists_subseq_tendsto_stdGaussian_symmDiff_of_gaussianPerimeter_le`).
 
 The route: the comparison of `V_μ` with the Euclidean variation bounds the Euclidean perimeters
 of the `U k` near every compact set, since `e^{−W}` is bounded below there, so the Euclidean
@@ -101,7 +102,7 @@ theorem exists_subseq_tendsto_withDensity_symmDiff_of_weightedPerimeter_le
 /-- **Compactness for bounded Gaussian perimeter.** Every sequence of null-measurable sets with
 Gaussian perimeters `P_γ(s n) ≤ M` has a subsequence converging in `L¹(γ)` to a measurable set
 `t`: `γ(s (φ j) ∆ t) → 0`. -/
-theorem exists_subseq_tendsto_stdGaussian_symmDiff {s : ℕ → Set E}
+theorem exists_subseq_tendsto_stdGaussian_symmDiff_of_gaussianPerimeter_le {s : ℕ → Set E}
     (hs : ∀ n, NullMeasurableSet (s n)) {M : ℝ≥0} (hP : ∀ n, gaussianPerimeter (s n) ≤ M) :
     ∃ t, MeasurableSet t ∧ ∃ φ : ℕ → ℕ, StrictMono φ ∧
       Tendsto (fun j => ProbabilityTheory.stdGaussian E (s (φ j) ∆ t)) atTop (𝓝 0) := by
