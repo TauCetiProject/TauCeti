@@ -17,9 +17,9 @@ public import Mathlib.Topology.MetricSpace.Antilipschitz
 direct method: every sublevel of the ordered-valued energy `E`, relative to the admissible set `S`,
 is bounded. It is stable under restriction and intersection, increasing the energy, positive
 scaling, addition of an energy bounded below, and changes of variable by antilipschitz maps,
-among them translations and continuous linear equivalences. In a pseudometric space it is
-equivalent to boundedness of every admissible sequence whose energies are bounded above; in
-particular, admissible sequences with convergent energies are bounded.
+among them translations and continuous linear equivalences, which do not affect it. In a
+pseudometric space it is equivalent to boundedness of every admissible sequence whose energies
+are bounded above; in particular, admissible sequences with convergent energies are bounded.
 -/
 
 public section
@@ -113,7 +113,7 @@ theorem div_const [Semifield β] [LinearOrder β] [IsStrictOrderedRing β]
   simpa only [div_eq_mul_inv] using h.mul_const (inv_pos.2 hc)
 
 /-- Bounded sublevels are inherited by the intersection with any set. -/
-theorem inter [LE β] (h : HasBoundedSublevelsOn E S) (T : Set X) :
+theorem inter_of_left [LE β] (h : HasBoundedSublevelsOn E S) (T : Set X) :
     HasBoundedSublevelsOn E (S ∩ T) :=
   h.mono inter_subset_left
 
@@ -259,6 +259,27 @@ variable {X β : Type*} [Bornology X] {E : X → β} {S T : Set X}
     hasBoundedSublevelsOn_mul_const_iff (E := E) (S := S) (inv_pos.2 hc)
 
 end NormalForms
+
+section ChangeOfVariables
+
+/-- Translating the variable does not affect bounded sublevels. -/
+@[simp] theorem hasBoundedSublevelsOn_comp_add_right_iff {V β : Type*}
+    [SeminormedAddCommGroup V] [LE β] {E : V → β} {S : Set V} (a : V) :
+    HasBoundedSublevelsOn (fun u ↦ E (u + a)) ((· + a) ⁻¹' S) ↔ HasBoundedSublevelsOn E S := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_add_right a⟩
+  simpa only [neg_add_cancel_right, preimage_preimage, preimage_id'] using h.comp_add_right (-a)
+
+/-- Changing variables by a continuous linear equivalence does not affect bounded sublevels. -/
+@[simp] theorem hasBoundedSublevelsOn_comp_continuousLinearEquiv_iff {𝕜 V W β : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    [NormedAddCommGroup W] [NormedSpace 𝕜 W] [LE β] {E : W → β} {S : Set W}
+    (L : V ≃L[𝕜] W) :
+    HasBoundedSublevelsOn (E ∘ L) (L ⁻¹' S) ↔ HasBoundedSublevelsOn E S := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_continuousLinearEquiv L⟩
+  simpa only [Function.comp_def, ContinuousLinearEquiv.apply_symm_apply, preimage_preimage,
+    preimage_id'] using h.comp_continuousLinearEquiv L.symm
+
+end ChangeOfVariables
 
 section PseudoMetric
 
