@@ -58,9 +58,8 @@ variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 /-- The adjoint of `ad X` for `Re tr(X Yᴴ)` is `ad Xᴴ`: `⟪[X, Y], Z⟫ = ⟪Y, [Xᴴ, Z]⟫`. -/
 theorem reTraceForm_lie_apply (X Y Z : Matrix n n 𝕜) :
     reTraceForm 𝕜 n n ⁅X, Y⁆ Z = reTraceForm 𝕜 n n Y ⁅Xᴴ, Z⁆ := by
-  simp only [reTraceForm_apply, Ring.lie_def, conjTranspose_sub, conjTranspose_mul,
-    conjTranspose_conjTranspose, sub_mul, mul_sub, trace_sub, Matrix.mul_assoc]
-  rw [trace_mul_comm X, Matrix.mul_assoc]
+  simp only [reTraceForm_eq_frobenius_real_inner, frobenius_real_inner_eq_re_inner (𝕜 := 𝕜),
+    frobenius_inner_lie_left]
 
 end TauCeti
 
