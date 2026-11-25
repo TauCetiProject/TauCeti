@@ -97,17 +97,18 @@ Its character basis is the standard basis of fundamental weights. -/
     (Matrix.toLin'_apply _ _).symm
 
 /-- The tripled datum uses the existing coordinate lattice. -/
-@[simp] theorem chevalleyDatum_lattice : chevalleyDatum.lattice = lattice.toAddSubgroup := (rfl)
+@[simp] theorem chevalleyDatum_lattice : chevalleyDatum.lattice = lattice.toAddSubgroup :=
+  congrArg Submodule.toAddSubgroup lattice_def.symm
 
-/-- The tripled datum uses the existing coordinate basis. -/
-@[simp] theorem chevalleyDatum_basis : chevalleyDatum.basis = latticeBasis := by
-  refine (weightTable.chevalleyDatum_basis (t := .D 4) (by decide)
-    weightTable_pinnedCartanMatrix weightTable_span).trans ?_
-  apply Module.Basis.eq_of_apply_eq
-  intro i
-  apply Subtype.ext
-  rw [coe_coordinateLatticeBasis, Pi.basisFun_apply]
-  exact (coe_latticeBasis i).symm
+/-- The datum basis agrees with the tripled lattice basis in the rational carrier. -/
+@[simp↓] theorem coe_chevalleyDatum_basis (i : Fin 24) :
+    (chevalleyDatum.basis i).val = (latticeBasis i : Fin 24 → ℚ) := by
+  calc
+    _ = ((coordinateLatticeBasis (Fin 24)) i).val :=
+      congrArg (fun b => (b i).val) (weightTable.chevalleyDatum_basis (t := .D 4) (by decide)
+        weightTable_pinnedCartanMatrix weightTable_span)
+    _ = Pi.single i 1 := by rw [coe_coordinateLatticeBasis, Pi.basisFun_apply]
+    _ = _ := (coe_latticeBasis i).symm
 
 /-- The tripled datum retains the numbered tripled weights. -/
 @[simp] theorem chevalleyDatum_weight :
