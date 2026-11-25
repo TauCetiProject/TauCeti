@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
+import TauCeti.Algebra.Exact.Split
 import TauCeti.LinearAlgebra.Prod
 
 /-!
@@ -29,6 +31,9 @@ inverse `g` of `f` pads to the right inverse `x ↦ (g x, 0)` of the extended ma
   equivalent to `f₁.range ⊔ f₂.range = ⊤`.
 * `ContinuousLinearMap.coprod_zero_right`: `f.coprod 0 = f.comp (fst R M₁ M₂)`.
 * `ContinuousLinearMap.coprod_zero_comp_prod_zero`: `(f.coprod 0).comp (g.prod 0) = f.comp g`.
+* `ContinuousLinearMap.bijective_coprod_subtypeL_ker`: if `P` fixes the range of an injective `U`
+  and maps into it, then `(u, k) ↦ U u + k` is a bijection from the product of the domain of `U`
+  and the kernel of `P`.
 -/
 
 public section
@@ -77,6 +82,25 @@ theorem surjective_coprod_neg_iff (f₁ : M₁ →L[R] M) (f₂ : M₂ →L[R] M
     Function.Surjective (f₁.coprod (-f₂)) ↔ f₁.range ⊔ f₂.range = ⊤ := by
   rw [← coe_coe, coe_coprod, toLinearMap_neg]
   exact LinearMap.surjective_coprod_neg_iff _ _
+
+/-- Let `P` fix the range of an injective `U` and map into it. Then every vector is uniquely `U u`
+plus an element of the kernel of `P`: the coproduct `(u, k) ↦ U u + k` is bijective. This is the
+split exact sequence `0 → M₂ → M → ker P → 0`, with `x ↦ x - P x` split by the inclusion. -/
+theorem bijective_coprod_subtypeL_ker {P : M →L[R] M} {U : M₂ →L[R] M}
+    (hU : Function.Injective U) (hPU : ∀ u, P (U u) = U u) (hP : ∀ x, P x ∈ Set.range U) :
+    Function.Bijective (U.coprod (LinearMap.ker (P : M →ₗ[R] M)).subtypeL) := by
+  have hker (x : M) : x - P x ∈ LinearMap.ker (P : M →ₗ[R] M) := by
+    obtain ⟨u, hu⟩ := hP x
+    rw [LinearMap.mem_ker, coe_coe, map_sub, ← hu, hPU, sub_self]
+  refine Function.Exact.bijective_coprod_of_comp_eq_id
+    (g := (LinearMap.id - (P : M →ₗ[R] M)).codRestrict _ hker) (fun x ↦ ?_) hU ?_
+  · rw [← Submodule.coe_eq_zero, LinearMap.codRestrict_apply, LinearMap.sub_apply,
+      LinearMap.id_apply, coe_coe, sub_eq_zero]
+    refine ⟨fun h ↦ h ▸ hP x, ?_⟩
+    rintro ⟨u, rfl⟩
+    exact (hPU u).symm
+  · ext k
+    simp [LinearMap.mem_ker.1 k.property]
 
 end Ring
 

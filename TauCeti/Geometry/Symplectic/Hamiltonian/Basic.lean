@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Symplectic.CompatibleMetric
@@ -47,7 +48,9 @@ For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gr
 the bilinear form `g = ω(·, J ·)`
 (`TauCeti.SymplecticForm.Invariant.associatedBilinForm_hamiltonianVectorField`). When `g` is the
 inner product of `V`, this says `J X_H = ∇H`
-(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`).
+(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`). On a complex inner product
+space with `ω = Im ⟪·, ·⟫`, the Hamiltonian vector field of `‖x‖² / 2` is `-i x`
+(`TauCeti.SymplecticForm.hamiltonianVectorField_half_norm_sq_eq_neg_I_smul`).
 
 Along a family of Hamiltonians whose derivatives vary continuously, for instance a jointly `C¹`
 family evaluated along a continuous map, the Hamiltonian vector fields vary continuously.
@@ -583,5 +586,30 @@ theorem apply_hamiltonianVectorField_eq_gradient {ω : SymplecticForm E}
     exact (ω.invariant_of_apply_apply_eq_inner hg).associatedBilinForm_hamiltonianVectorField H x w
 
 end Gradient
+
+section ComplexInnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℝ F]
+
+/-- **`‖x‖² / 2` generates the reversed rotation.** For a symplectic form `Ω` on a
+finite-dimensional complex inner product space with `Ω(v, w) = Im ⟪v, w⟫_ℂ`, and the convention
+`ι_(X_H) Ω = dH`, the Hamiltonian vector field of `‖x‖² / 2` is `-i x`, the generator of the circle
+action `x ↦ e^(-iθ) x`. So `‖x‖² / 2` is the moment map of that action. -/
+theorem hamiltonianVectorField_half_norm_sq_eq_neg_I_smul {Ω : SymplecticForm F}
+    (hΩ : ∀ v w, Ω v w = (inner ℂ v w).im) (x : F) :
+    Ω.hamiltonianVectorField (fun y ↦ ‖y‖ ^ 2 / 2) x = -(Complex.I • x) := by
+  let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  refine ((Ω.eq_hamiltonianVectorField_iff _ x _).2 fun v ↦ ?_).symm
+  have hd : HasFDerivAt (fun y : F ↦ ‖y‖ ^ 2 / 2) (innerSL ℝ x) x := by
+    convert (hasStrictFDerivAt_norm_sq x).hasFDerivAt.mul_const (1 / 2 : ℝ) using 1
+    · ext y
+      ring
+    · ext v
+      simp
+  rw [hd.fderiv, innerSL_apply_apply, real_inner_eq_re_inner, hΩ, inner_neg_left,
+    inner_smul_left]
+  simp
+
+end ComplexInnerProductSpace
 
 end TauCeti.SymplecticForm
