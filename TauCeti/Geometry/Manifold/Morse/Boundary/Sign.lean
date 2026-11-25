@@ -456,17 +456,16 @@ theorem trajectorySign_flow (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f
       e' v = hX.trajectoryComparison φp φq (hX.flow t y) v :=
     LinearEquiv.ofBijective_apply _ v
   obtain ⟨Tp, hTp⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hy.1).exists
-  obtain ⟨Tq, hTq⟩ := (hX.eventually_mem_linearForwardTimes hφq hy.2).exists
-  -- The unstable frame is rescaled by `e^{-t}` and the normal coordinates by `e^{t}`, so the
-  -- comparison maps at `y` and at `Φ_t y` have the same second component.
+  -- The unstable frame is rescaled by `e^{-t}`, and the comparison maps at `y` and at `Φ_t y` have
+  -- the same second component (`stableNormal_comp_unstableFrame_flow`).
   have hcomp (v : {i // φp.weight i < 0} → ℝ) :
       hX.trajectoryComparison φp φq (hX.flow t y) v =
         (Real.exp (-t) * mvfderiv 𝓘(ℝ, E) f (hX.flow t y)
           (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y (hX.unstableFrame φp y v)),
           hX.stableNormal φq y (hX.unstableFrame φp y v)) := by
-    rw [trajectoryComparison_apply, unstableFrame_flow hφp hTp, map_smul, map_smul,
-      stableNormal_mfderiv_flow hφq hTq, smul_smul, ← Real.exp_add, neg_add_cancel,
-      Real.exp_zero, one_smul, smul_eq_mul]
+    rw [trajectoryComparison_apply, ← ContinuousLinearMap.comp_apply (hX.stableNormal φq _),
+      stableNormal_comp_unstableFrame_flow hφp hφq hf hy t, ContinuousLinearMap.comp_apply,
+      unstableFrame_flow hφp hTp, map_smul, smul_eq_mul]
   -- So `e' = B ∘ e` for an endomorphism `B` of `ℝ × Vq` fixing the second component.
   set B := e.symm.trans e'
   have hBe (w : ℝ × ({i // φq.weight i < 0} → ℝ)) : B w = e' (e.symm w) :=

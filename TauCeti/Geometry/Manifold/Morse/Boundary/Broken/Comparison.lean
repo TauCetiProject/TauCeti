@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
-public import TauCeti.Geometry.Manifold.Morse.Stable.BrokenFrame
+public import TauCeti.Geometry.Manifold.Morse.Stable.Broken.Frame
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -28,7 +28,7 @@ through `z₀`. Write `A = C_{pr}(y₀)` and `B = (B₁, B₂) = C_{rq}(z₀)`. 
 
 (`TauCeti.IsAdaptedPseudoGradient.tendsto_trajectoryComparison_of_broken`), for points `yₙ` of
 `W^u(p) ∩ W^s(q)` tending to `y₀` whose orbits reach points `zₙ` tending to `z₀` at times
-`Tₙ → ∞`, crossing the Morse chart of `r` linearly in between. This is the convergence assumed in
+`Tₙ → ∞`, crossing the Morse chart of `r` linearly in between. This is the convergence used in
 `TauCeti.LinearAlgebra.Orientation.Breaking`, which computes the orientation of the kernel of
 `(id × B₂) ∘ A` from those of the kernels of `A` and `B`: when `ind p = ind r + 1 = ind q + 2`, the
 line `ker ((id × B₂) ∘ A)` is oriented by `-ε(u) ε(v)` times the gluing direction, where `ε(u)` and
@@ -120,8 +120,9 @@ theorem tendsto_stableNormal_comp_unstableFrame_of_broken (hf : IsMorse 𝓘(ℝ
   have hN (z : M) (hz : c ∈ hX.linearForwardTimes φq z) :
       hX.stableNormal φq z = C.comp (mvfderiv 𝓘(ℝ, E) g z) := by
     ext w : 1
-    rw [stableNormal_apply hφq hz]
-    rfl
+    simp only [C, g, ContinuousLinearMap.comp_apply, smul_apply,
+      LinearMap.coe_toContinuousLinearMap', stableNormal_apply hφq hz]
+    rw [mvfderiv_apply_eq_mfderiv_apply]
   have hlam := hX.tendsto_mvfderiv_comp_unstableFrame_flow hφp hφr hf hy₀ ha hb hg hy
     (hyl.mono fun _ h ↦ h.1) hT hcross hz
   rw [hN z₀ hc₀, ContinuousLinearMap.comp_assoc]
@@ -130,9 +131,8 @@ theorem tendsto_stableNormal_comp_unstableFrame_of_broken (hf : IsMorse 𝓘(ℝ
   filter_upwards [hyl, hz.eventually hc] with n hn hcn
   have hzq : hX.flow (T n) (y n) ∈ hX.flow.stableSet q :=
     (Flow.apply_mem_stableSet_iff _ _).2 hn.2
-  rw [← stableNormal_comp_unstableFrame_flow hφp hφq hf hn (T n), hN _ (hcn hzq),
+  rw [comp_apply, ← stableNormal_comp_unstableFrame_flow hφp hφq hf hn (T n), hN _ (hcn hzq),
     ContinuousLinearMap.comp_assoc]
-  rfl
 
 /-- **Comparison maps near a broken trajectory.** Let `y₀` be a point of `W^u(p)` with a time `a`
 of linear forward flow in the Morse chart `φr` of `r`, on a trajectory from `p` to `r`, and `z₀` a
@@ -166,7 +166,9 @@ theorem tendsto_trajectoryComparison_of_broken (hf : IsMorse 𝓘(ℝ, E) f) {y�
         (tendsto_nhdsWithin_iff.2 ⟨hy, hyl.mono fun _ h ↦ h.1⟩)
   have h₂ := tendsto_stableNormal_comp_unstableFrame_of_broken hφp hφr hφq hf hy₀ ha hb hz₀ hy hyl
     hT hcross hz
-  -- The comparison map pairs the two components.
+  -- The comparison map is the pairing of its two components by `ContinuousLinearMap.prodₗᵢ`.
+  -- Mathlib has no apply lemma for `prodₗᵢ`: after `trajectoryComparison_apply` the goal closes by
+  -- `rfl` because `prodₗᵢ ℝ (A, B) v` is `(A v, B v)` by definition.
   have hprod : hX.trajectoryComparison φp φq = fun y ↦ ContinuousLinearMap.prodₗᵢ ℝ
       ((mvfderiv 𝓘(ℝ, E) f y).comp (hX.unstableFrame φp y),
         (hX.stableNormal φq y).comp (hX.unstableFrame φp y)) := by
@@ -180,8 +182,11 @@ theorem tendsto_trajectoryComparison_of_broken (hf : IsMorse 𝓘(ℝ, E) f) {y�
       ContinuousLinearMap.prodₗᵢ ℝ ((mvfderiv 𝓘(ℝ, E) f y₀).comp (hX.unstableFrame φp y₀),
         (hX.stableNormal φq z₀).comp ((hX.unstableFrame φr z₀).comp
           ((hX.stableNormal φr y₀).comp (hX.unstableFrame φp y₀)))) := by
+    -- As for `hprod`, `prodₗᵢ ℝ (A, B) v` is `(A v, B v)` by definition, closing the goal by `rfl`
+    -- once both sides are evaluated.
     ext v : 1
-    rw [ContinuousLinearMap.comp_apply, trajectoryComparison_apply]
+    rw [ContinuousLinearMap.comp_apply, trajectoryComparison_apply,
+      ContinuousLinearMap.coe_prodMap', Prod.map_apply, ContinuousLinearMap.id_apply]
     rfl
   rw [hprod, hlim]
   exact (ContinuousLinearMap.prodₗᵢ ℝ).continuous.continuousAt.tendsto.comp (h₁.prodMk_nhds h₂)

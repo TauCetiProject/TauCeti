@@ -171,8 +171,8 @@ theorem mvfderiv_unstableFrame_flow_eq {F : Type*} [NormedAddCommGroup F] [Norme
       rw [hcompT, mfderiv_comp_apply y hed (hd _ _)]
     rw [hmf]
     apply φr.coord.injective
-    rw [LinearEquiv.apply_symm_apply, hX.coord_mfderiv_toChart_comp_flow_add hφr hya huIcc]
-    rfl
+    rw [LinearEquiv.apply_symm_apply, hX.coord_mfderiv_toChart_comp_flow_add hφr hya huIcc,
+      mvfderiv_apply_eq_mfderiv_apply]
   rw [hloc.mvfderiv_eq, mvfderiv_comp_apply z (mdifferentiableAt_iff_differentiableAt.2 hg) hed,
     mvfderiv_eq_fderiv_apply, unstableFrame_flow hφp hTp T c, ← hchain]
   exact (congrArg _ ((mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e z).map_smul _ _)).trans
@@ -203,13 +203,12 @@ private theorem exp_smul_fderiv_negativeExtend_eq {F : Type*} [NormedAddCommGrou
   have hN : φr.negativeCoord
       (mvfderiv 𝓘(ℝ, E) (φr.toChart ∘ hX.flow a) y₀ (hX.unstableFrame φp y₀ c)) =
         Real.exp a • hX.stableNormal φr y₀ (hX.unstableFrame φp y₀ c) := by
-    rw [stableNormal_apply hφr ha, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero,
-      one_smul]
-    rfl
-  simp only [ContinuousLinearMap.comp_apply, smul_apply] at hFr
+    rw [mvfderiv_apply_eq_mfderiv_apply, stableNormal_apply hφr ha, smul_smul, ← Real.exp_add,
+      add_neg_cancel, Real.exp_zero, one_smul]
+  simp only [ContinuousLinearMap.comp_apply, smul_apply, LinearMap.coe_toContinuousLinearMap']
+    at hFr
   rw [hFr, ← hecoe, hN, map_smul, map_smul, smul_smul, ← Real.exp_add,
     show -(a + b) + a = -b by ring]
-  rfl
 
 /-- **Unstable frames near a broken trajectory (the λ-lemma on frames).** Let `y₀` be a point of
 `W^u(p)` with a time `a` of linear forward flow in the Morse chart `φr` of `r`, so that
@@ -285,8 +284,8 @@ theorem tendsto_mvfderiv_comp_unstableFrame_flow (hf : IsMorse 𝓘(ℝ, E) f) {
   have hPQn : (P + Real.exp (-(2 * (T n - a - b))) • Q) (L (y n) c) =
       Real.exp (-(T n - a - b)) •
         φr.coord.symm (φr.linearFlow (T n - a - b) (φr.coord (L (y n) c))) := by
-    rw [φr.exp_neg_smul_coord_symm_linearFlow]
-    rfl
+    simp only [P, Q, add_apply, smul_apply, sub_apply, LinearMap.coe_toContinuousLinearMap',
+      ContinuousLinearMap.id_apply, LinearMap.comp_apply, φr.exp_neg_smul_coord_symm_linearFlow]
   simp only [comp_apply, ContinuousLinearMap.comp_apply, smul_apply]
   rw [mvfderiv_unstableFrame_flow_eq hφp hφr (hTpn hyun) hyan hTn hcrossn hhdn c, hPQn,
     (fderiv ℝ h _).map_smul, smul_smul, ← Real.exp_add]
