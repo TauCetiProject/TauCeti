@@ -11,11 +11,11 @@ public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Analysis.Calculus.Taylor
 import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Calculus.IteratedDeriv.Within
 import TauCeti.Analysis.Calculus.MeanValue.Exp
 import TauCeti.Analysis.Calculus.Taylor.Basic
 import TauCeti.Analysis.LaplaceTransform.Watson
+import TauCeti.MeasureTheory.Integral.Exp.Complex
 
 /-!
 # Laplace integrals by integration by parts
@@ -43,9 +43,6 @@ holds with that `M`; it also assumes `q` to be `C^∞`.
 * `TauCeti.integral_cexp_neg_mul_smul_eq_sum_add`: `n` integrations by parts in a Laplace
   integral, `L[q](s) = ∑_{k<n} s^{-k-1} q^{(k)}(0) + s^{-n} L[q^{(n)}](s)`, when the Laplace
   integrals of `q, q', …, q^{(n)}` converge at `s ≠ 0`.
-* `TauCeti.integrable_cexp_neg_mul_smul_of_norm_le_mul_exp`,
-  `TauCeti.norm_integral_cexp_neg_mul_smul_le_of_norm_le_mul_exp`: for `‖f(t)‖ ≤ M e^{σt}` and
-  `Re s > σ` the Laplace integral of `f` converges and has norm at most `M / (Re s - σ)`.
 * `Asymptotics.hasAsymptoticExpansion_laplace_of_contDiffOn`: the expansion (DLMF 2.3.2).
 * `Asymptotics.norm_integral_cexp_neg_mul_sub_sum_le`: the error bound (DLMF 2.3.3).
 
@@ -53,8 +50,7 @@ The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/
 file `DLMF/AsymptoticApproximations/Integrals/Parts.lean`
 (`laplace_hasAsymptoticExpansion_of_contDiffOn`, `laplace_error_bound`), with the Laplace
 integral identities of `DLMF/AlgebraicAnalytic/Transforms/Laplace.lean`
-(`laplaceTransform_iteratedDeriv`, `norm_laplaceTransform_le`). Here the integrations by parts
-are `TauCeti.hasLaplace_deriv`.
+(`laplaceTransform_iteratedDeriv`). Here the integrations by parts use `TauCeti.hasLaplace_deriv`.
 
 ## References
 
@@ -70,45 +66,7 @@ open scoped Topology ContDiff Nat
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-
-/-- At a point `t` with `‖f(t)‖ ≤ M e^{σt}`, the Laplace integrand has
-`‖e^{-st} f(t)‖ ≤ M e^{-(Re s - σ)t}`. -/
-theorem norm_cexp_neg_mul_smul_le_mul_exp {f : ℝ → E} {s : ℂ} {σ M t : ℝ}
-    (h : ‖f t‖ ≤ M * Real.exp (σ * t)) :
-    ‖cexp (-s * t) • f t‖ ≤ M * Real.exp (-(s.re - σ) * t) := by
-  rw [norm_smul, Complex.norm_exp, re_mul_ofReal, neg_re]
-  calc Real.exp (-s.re * t) * ‖f t‖ ≤ Real.exp (-s.re * t) * (M * Real.exp (σ * t)) := by
-        gcongr
-    _ = M * Real.exp (-(s.re - σ) * t) := by
-        rw [mul_left_comm, ← Real.exp_add]
-        congr 2
-        ring
-
-/-- If `f` is a.e. strongly measurable on `(0, ∞)` with `‖f(t)‖ ≤ M e^{σt}` there and
-`σ < Re s`, then the Laplace integrand `t ↦ e^{-st} f(t)` is integrable on `(0, ∞)`. -/
-theorem integrable_cexp_neg_mul_smul_of_norm_le_mul_exp {f : ℝ → E} {s : ℂ} {σ M : ℝ}
-    (hf : AEStronglyMeasurable f (volume.restrict (Ioi 0)))
-    (hb : ∀ t ∈ Ioi (0 : ℝ), ‖f t‖ ≤ M * Real.exp (σ * t)) (hs : σ < s.re) :
-    Integrable (fun t : ℝ => cexp (-s * t) • f t) (volume.restrict (Ioi 0)) :=
-  Integrable.mono' ((integrableOn_exp_mul_Ioi (by linarith) 0).const_mul M)
-    ((by fun_prop : Continuous fun t : ℝ => cexp (-s * t)).aestronglyMeasurable.smul hf)
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht =>
-      norm_cexp_neg_mul_smul_le_mul_exp (hb t ht))
-
-/-- If `‖f(t)‖ ≤ M e^{σt}` on `(0, ∞)` and `σ < Re s`, then the Laplace integral of `f` at `s`
-has norm at most `M / (Re s - σ)`. -/
-theorem norm_integral_cexp_neg_mul_smul_le_of_norm_le_mul_exp {f : ℝ → E} {s : ℂ} {σ M : ℝ}
-    (hb : ∀ t ∈ Ioi (0 : ℝ), ‖f t‖ ≤ M * Real.exp (σ * t)) (hs : σ < s.re) :
-    ‖∫ t in Ioi (0 : ℝ), cexp (-s * t) • f t‖ ≤ M / (s.re - σ) := by
-  have hσs : -(s.re - σ) < 0 := by linarith
-  refine (norm_integral_le_of_norm_le ((integrableOn_exp_mul_Ioi hσs 0).const_mul M)
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht =>
-      norm_cexp_neg_mul_smul_le_mul_exp (hb t ht))).trans_eq ?_
-  rw [integral_const_mul, integral_exp_mul_Ioi hσs, mul_zero, Real.exp_zero, neg_div_neg_eq,
-    mul_one_div]
-
-variable [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
 /-- **Repeated integration by parts in a Laplace integral.** Let `q` be `C^n` on `[0, ∞)`, let
 `s ≠ 0`, and let the Laplace integrands `t ↦ e^{-st} q^{(k)}(t)` be integrable on `(0, ∞)` for
