@@ -49,6 +49,8 @@ characters.
 * `ZMod.ker_castHom_sq_eq_bot`: for `m ∣ k` that kernel is a square-zero ideal, so that
   `ZMod n → ZMod k` is a square-zero extension; for `pʳ⁺¹ → pʳ` with `r ≥ 1` this is the step
   in which Hensel-type lifting arguments over `ℤ/pʳ` take place.
+* `ZMod.filter_castHom_eq_and_not_isUnit`: for a prime `k` not dividing `m`, the only non-unit
+  modulo `n` reducing to a unit `t` modulo `m` is `k (k⁻¹ t)`.
 -/
 
 public section
@@ -198,5 +200,39 @@ theorem ker_castHom_sq_eq_bot (hmk : m ∣ k) :
     exact mul_dvd_mul_right hmk k
   rw [Ideal.mem_bot, mulCastHom_apply, mulCastHom_apply, mul_mul_mul_comm, ← Nat.cast_mul, hkk,
     mul_zero]
+
+/-- **The non-unit in a fibre over a unit.** For a prime `k` not dividing `m`, `n = m * k` and a
+unit `t` modulo `m`, exactly one residue modulo `n` reducing to `t` modulo `m` is not a unit: the
+multiple `mulCastHom k h (k⁻¹ t)` of `k`, where `k⁻¹` is the inverse of `k` in `ZMod m`. -/
+theorem filter_castHom_eq_and_not_isUnit [Fact k.Prime] [NeZero m] [NeZero n]
+    (hkm : k.Coprime m) (t : (ZMod m)ˣ) :
+    ({y : ZMod n | castHom (Dvd.intro k h) (ZMod m) y = t ∧ ¬IsUnit y} : Finset _) =
+      {mulCastHom k h ((k : ZMod m)⁻¹ * (t : ZMod m))} := by
+  subst h
+  have hk : k.Prime := Fact.out
+  have hcm (a : ZMod m) :
+      castHom (Dvd.intro k rfl) (ZMod m) (mulCastHom k rfl a) = a * k := by
+    rw [mulCastHom_apply, map_mul, map_natCast, castHom_apply,
+      cast_cast_zmod_of_le (Nat.le_mul_of_pos_right m hk.pos)]
+  have hinv : (k : ZMod m) * (k : ZMod m)⁻¹ = 1 := coe_mul_inv_eq_one k hkm
+  refine Finset.eq_singleton_iff_unique_mem.2 ⟨?_, fun y hy ↦ ?_⟩
+  · refine Finset.mem_filter.2 ⟨Finset.mem_univ _, ?_, fun hu ↦ ?_⟩
+    · rw [hcm, mul_comm, ← mul_assoc, hinv, one_mul]
+    · have h0 := castHom_mulCastHom k rfl ((k : ZMod m)⁻¹ * (t : ZMod m))
+      exact not_isUnit_zero (h0 ▸ hu.map (castHom (Dvd.intro_left m rfl) (ZMod k)))
+  obtain ⟨-, hyt, hyu⟩ := Finset.mem_filter.1 hy
+  -- The representative of `y` is prime to `m`, so it is divisible by `k`.
+  have hym : y.val.Coprime m := by
+    rw [← isUnit_iff_coprime, ← cast_eq_val, ← castHom_apply (h := Dvd.intro k rfl), hyt]
+    exact t.isUnit
+  have hky : castHom (Dvd.intro_left m rfl) (ZMod k) y = 0 := by
+    rw [castHom_apply, cast_eq_val, natCast_eq_zero_iff]
+    by_contra hnd
+    refine hyu ?_
+    rw [← natCast_zmod_val y, isUnit_iff_coprime]
+    exact Nat.Coprime.mul_right hym (hk.coprime_iff_not_dvd.2 hnd).symm
+  obtain ⟨a, rfl⟩ := (exact_mulCastHom_castHom k rfl y).1 hky
+  rw [hcm] at hyt
+  rw [← hyt, mul_comm (k : ZMod m)⁻¹, mul_assoc, hinv, mul_one]
 
 end ZMod
