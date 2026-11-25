@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Basic
 public import TauCeti.Geometry.Manifold.Measure
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
+public import TauCeti.Geometry.Manifold.SmoothTriangulation.LocallyFinite
 import TauCeti.Analysis.Convex.StdSimplex.HausdorffDimension
 import TauCeti.Geometry.Manifold.Sard.Basic
 
@@ -24,7 +25,12 @@ null (`MDifferentiableOn.isNullSet_image_of_dimH_lt_finrank`): `range g` is a nu
 For a smooth triangulation `κ : |K| ≃ₜ M`, the image of every closed simplex of dimension below
 `dim E` is null (`TauCeti.IsSmoothTriangulation.isNullSet_image_range_faceInclusion`), and so is
 the image of the union of all of them when the complex has countably many simplices
-(`TauCeti.IsSmoothTriangulation.isNullSet_biUnion_image_range_faceInclusion`).
+(`TauCeti.IsSmoothTriangulation.isNullSet_biUnion_image_range_faceInclusion`). When `E` is
+finite-dimensional no countability is needed
+(`TauCeti.IsSmoothTriangulation.isNullSet_biUnion_image_range_faceInclusion_of_finiteDimensional`):
+nullity is local (`TauCeti.isNullSet_iff_forall_exists_nhds`), and a compact neighbourhood of a
+point meets only finitely many closed simplices
+(`AbstractSimplicialComplex.finite_setOf_image_range_faceInclusion_inter_nonempty_of_manifold`).
 -/
 
 public section
@@ -76,5 +82,28 @@ theorem IsSmoothTriangulation.isNullSet_biUnion_image_range_faceInclusion (hn : 
     IsNullSet I (⋃ σ ∈ {σ : Face K | σ.val.card ≤ finrank ℝ E},
       κ '' range (faceInclusion K σ)) :=
   IsNullSet.biUnion (to_countable _) fun σ hσ ↦ h.isNullSet_image_range_faceInclusion hn σ hσ
+
+/-- In a `C¹` smooth triangulation of a manifold modelled on a finite-dimensional space `E`, the
+image of the union of the closed simplices of dimension below `dim E` is null. The complex may
+have uncountably many simplices: nullity is local, and a compact neighbourhood of a point meets
+only finitely many closed simplices. -/
+theorem IsSmoothTriangulation.isNullSet_biUnion_image_range_faceInclusion_of_finiteDimensional
+    [FiniteDimensional ℝ E] (hn : 1 ≤ n) {K : AbstractSimplicialComplex ι}
+    {κ : Realization K ≃ₜ M} (h : IsSmoothTriangulation I n κ) :
+    IsNullSet I (⋃ σ ∈ {σ : Face K | σ.val.card ≤ finrank ℝ E},
+      κ '' range (faceInclusion K σ)) := by
+  have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
+  refine isNullSet_iff_forall_exists_nhds.2 fun x _ ↦ ?_
+  obtain ⟨C, hC, hCx⟩ := exists_compact_mem_nhds x
+  refine ⟨C, hCx, ?_⟩
+  -- Only the finitely many closed simplices meeting `C` contribute.
+  have hfin := finite_setOf_image_range_faceInclusion_inter_nonempty_of_manifold I κ hC
+  refine (IsNullSet.biUnion
+      (hfin.inter_of_left {σ : Face K | σ.val.card ≤ finrank ℝ E}).countable
+      fun σ hσ ↦ h.isNullSet_image_range_faceInclusion hn σ hσ.2).mono ?_
+  rintro y ⟨hy, hyC⟩
+  simp only [mem_iUnion] at hy ⊢
+  obtain ⟨σ, hσ, hyσ⟩ := hy
+  exact ⟨σ, ⟨⟨y, hyσ, hyC⟩, hσ⟩, hyσ⟩
 
 end TauCeti
