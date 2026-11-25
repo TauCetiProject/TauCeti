@@ -864,4 +864,29 @@ theorem continuous_mk_basis_orientation [Fintype ι] [DecidableEq ι] {X : Type*
 
 end VectorBundleOrientationCover
 
+namespace VectorBundleOrientation
+
+variable {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommGroup (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- A continuous nowhere-zero section `s` of a real line bundle orients it: the fibre over `b` is
+oriented by the basis `(s b)`. -/
+def ofContinuousNonvanishingSection (hE : ∀ b, finrank ℝ (E b) = 1) {s : ∀ b, E b}
+    (hs : Continuous fun b ↦ (⟨b, s b⟩ : TotalSpace F E)) (hs₀ : ∀ b, s b ≠ 0) :
+    VectorBundleOrientation F E (Fin 1) :=
+  ofContinuous _ <| VectorBundleOrientationCover.continuous_mk_basis_orientation continuous_id
+    (fun b ↦ FiniteDimensional.basisSingleton (Fin 1) (hE b) (s b) (hs₀ b))
+    fun _ ↦ by simpa only [FiniteDimensional.basisSingleton_apply, id_eq] using hs
+
+/-- The orientation given by a nowhere-zero section `s` is, over `b`, the orientation of the basis
+`(s b)`. -/
+@[simp]
+theorem ofContinuousNonvanishingSection_apply (hE : ∀ b, finrank ℝ (E b) = 1) {s : ∀ b, E b}
+    (hs : Continuous fun b ↦ (⟨b, s b⟩ : TotalSpace F E)) (hs₀ : ∀ b, s b ≠ 0) (b : B) :
+    ofContinuousNonvanishingSection hE hs hs₀ b =
+      (FiniteDimensional.basisSingleton (Fin 1) (hE b) (s b) (hs₀ b)).orientation :=
+  (rfl)
+
+end VectorBundleOrientation
+
 end TauCeti
