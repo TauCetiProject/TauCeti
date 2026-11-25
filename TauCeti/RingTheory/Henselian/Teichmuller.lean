@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.RootsOfUnity.Henselian
 public import TauCeti.RingTheory.RootsOfUnity.IntegrallyClosed
 
 import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.FieldTheory.Finite.Card
 import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
@@ -201,11 +202,9 @@ Teichmüller lift in `S` of the image of `x` under the induced map of residue fi
       teichmuller S (Units.map (ResidueField.map f : ResidueField R →* ResidueField S) x) := by
   refine ((teichmuller_eq_iff S).2 ⟨?_, ?_⟩).symm
   -- The residue field of `S` is a finite extension of that of `R`, so `q_R - 1 ∣ q_S - 1`.
-  · obtain ⟨k, hk⟩ : Nat.card (ResidueField R) - 1 ∣ Nat.card (ResidueField S) - 1 := by
-      let := (ResidueField.map f).toAlgebra
-      have : Module.Finite (ResidueField R) (ResidueField S) := .of_finite
-      rw [Module.natCard_eq_pow_finrank (K := ResidueField R) (V := ResidueField S)]
-      exact Nat.sub_one_dvd_pow_sub_one _ _
+  · let := (ResidueField.map f).toAlgebra
+    obtain ⟨k, hk⟩ :=
+      TauCeti.FiniteField.card_sub_one_dvd_card_sub_one (ResidueField R) (ResidueField S)
     rw [hk, pow_mul, ← map_pow, teichmuller_pow_card_sub_one, map_one, one_pow]
   · simp [← ResidueField.map_residue]
 
