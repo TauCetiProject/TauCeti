@@ -273,8 +273,10 @@ its reduction. -/
 @[simp]
 theorem quotientGamma1EquivGL_mk {f : R →+* S} [IsLocalHom f] (hf : Function.Surjective f)
     (M : Gamma0 l f) :
-    quotientGamma1EquivGL l hf (QuotientGroup.mk M) = upperLeftHom l f M :=
-  (rfl)
+    quotientGamma1EquivGL l hf (QuotientGroup.mk M) = upperLeftHom l f M := by
+  rw [quotientGamma1EquivGL, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    QuotientGroup.quotientKerEquivOfSurjective,
+    QuotientGroup.quotientKerEquivOfRightInverse_apply, QuotientGroup.kerLift_mk]
 
 end Gamma0
 
@@ -297,8 +299,7 @@ theorem Gamma0_le_of_comp {T : Type*} [CommRing T] {f : R →+* S} {f' : R →+*
   rw [mem_Gamma0_iff] at hM ⊢
   obtain ⟨h₂₁, hc⟩ := hM
   subst h
-  refine ⟨?_, by rw [RingHom.comp_apply, hc, map_one]⟩
-  rw [RingHom.coe_comp, ← Matrix.map_map, toBlocks₂₁_map, h₂₁, Matrix.map_zero _ (map_zero g)]
+  simp [← Matrix.map_map, h₂₁, hc]
 
 /-- A factorization `f' = g ∘ f` gives `Γ₁(f) ⊆ Γ₁(f')`. -/
 theorem Gamma1_le_of_comp {T : Type*} [CommRing T] {f : R →+* S} {f' : R →+* T} (g : S →+* T)
@@ -307,9 +308,7 @@ theorem Gamma1_le_of_comp {T : Type*} [CommRing T] {f : R →+* S} {f' : R →+*
   rw [mem_Gamma1_iff] at hM ⊢
   obtain ⟨h₁₁, h₂₁, h₂₂⟩ := hM
   subst h
-  rw [RingHom.coe_comp, ← Matrix.map_map, toBlocks₁₁_map, toBlocks₂₁_map, toBlocks₂₂_map, h₁₁,
-    h₂₁, h₂₂, Matrix.map_one _ (map_zero g) (map_one g), Matrix.map_zero _ (map_zero g)]
-  exact ⟨rfl, rfl, rfl⟩
+  simp [← Matrix.map_map, h₁₁, h₂₁, h₂₂]
 
 /-! ### Multiplier images -/
 

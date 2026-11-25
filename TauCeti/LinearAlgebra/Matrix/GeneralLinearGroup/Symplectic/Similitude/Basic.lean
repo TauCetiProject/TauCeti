@@ -88,8 +88,7 @@ def GSp : Subgroup (GL (l ⊕ l) R) where
     rintro M ⟨c, hc⟩
     refine ⟨c⁻¹, ?_⟩
     set N : Matrix (l ⊕ l) (l ⊕ l) R := ((M⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)
-    have hNM : N * (M : Matrix (l ⊕ l) (l ⊕ l) R) = 1 := by
-      rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
+    have hNM : N * (M : Matrix (l ⊕ l) (l ⊕ l) R) = 1 := Units.inv_mul M
     calc N * J l R * Nᵀ = ((c⁻¹ : Rˣ) : R) • (N * ((c : R) • J l R) * Nᵀ) := by
           rw [Matrix.mul_smul, Matrix.smul_mul, smul_smul, Units.inv_mul, one_smul]
       _ = ((c⁻¹ : Rˣ) : R) •
@@ -271,9 +270,7 @@ multiplier. -/
 theorem map_mem (f : R →+* S) {M : GL (l ⊕ l) R} (hM : M ∈ GSp l R) :
     Matrix.GeneralLinearGroup.map f M ∈ GSp l S := by
   obtain ⟨c, hc⟩ := hM
-  refine ⟨Units.map f c, ?_⟩
-  have := congrArg (Matrix.map · f) hc
-  simpa [Matrix.map_mul, Matrix.transpose_map, Matrix.map_smul', map_J] using this
+  exact ⟨Units.map (f : R →* S) c, map_mul_J_mul_transpose_map_eq_smul f hc⟩
 
 variable (l) in
 /-- The group morphism between similitude groups induced by a ring morphism of value rings: the
@@ -307,10 +304,8 @@ theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) :
 /-- The multiplier commutes with change of value ring. -/
 @[simp]
 theorem multiplier_map [Nonempty l] (f : R →+* S) (M : GSp l R) :
-    multiplier l S (map l f M) = Units.map f (multiplier l R M) := by
-  refine multiplier_eq_iff.2 ?_
-  have := congrArg (Matrix.map · f) (mul_J_mul_transpose M)
-  simpa [Matrix.map_mul, Matrix.transpose_map, Matrix.map_smul', map_J] using this
+    multiplier l S (map l f M) = Units.map f (multiplier l R M) :=
+  multiplier_eq_iff.2 (map_mul_J_mul_transpose_map_eq_smul f (mul_J_mul_transpose M))
 
 /-- The Siegel cocharacter commutes with change of value ring. -/
 @[simp]

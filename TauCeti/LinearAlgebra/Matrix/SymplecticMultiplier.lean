@@ -24,11 +24,13 @@ The second form, read left to right, is the useful one. A pairing on a rank-two 
 scale by some quantity under a given endomorphism identifies that quantity as the determinant,
 without computing it — and, since only the one endomorphism appears, without any additivity in it.
 
-For larger `l` the corresponding conclusion is `A.det = d ^ Fintype.card l`, whose usual proof
-goes through the Pfaffian; there is none in this Mathlib, and the cheap determinant argument
-yields only `A.det ^ 2 = (d ^ Fintype.card l) ^ 2`, which is strictly weaker over a general
-commutative ring. The determinant identity is proved here only in the rank-two case, that being
-the case in hand.
+For larger `l` the corresponding conclusion is `A.det = d ^ Fintype.card l`. When `A` is
+invertible and `d` is a unit, it holds in every rank without any Pfaffian: this is
+`TauCeti.GSp.det_eq_multiplier_pow`, which factors a similitude through the Siegel cocharacter
+and Mathlib's `Matrix.SymplecticGroup.det_eq_one`. For arbitrary `A` and `d` the usual proof goes
+through the Pfaffian; there is none in this Mathlib, and the cheap determinant argument yields
+only `A.det ^ 2 = (d ^ Fintype.card l) ^ 2`, which is strictly weaker over a general commutative
+ring. This file proves the determinant identity for arbitrary `A` only in the rank-two case.
 
 In every rank, the factor `c` in `M J Mᵀ = c • J` is unique when `l` is nonempty, multiplies
 under products, and for invertible `M` is also the factor in `Mᵀ J M = c • J`; the block-diagonal
@@ -40,6 +42,8 @@ symplectic similitude group.
 * `Matrix.smul_J_injective` and `Matrix.eq_of_mul_J_mul_transpose_eq`: for nonempty `l`, the
   factor by which a matrix scales `J` is unique.
 * `Matrix.mul_mul_J_mul_transpose_eq_mul_smul`: the scaling factors multiply under products.
+* `Matrix.map_mul_J_mul_transpose_map_eq_smul`: a ring morphism carries a matrix scaling `J` by
+  `c` to one scaling `J` by the image of `c`.
 * `Matrix.fromBlocks_one_smul_one_mul_J_mul_transpose`: `diag(1, c • 1)` scales `J` by `c`.
 * `Matrix.transpose_mul_J_mul_of_mul_J_mul_transpose` and
   `Matrix.GeneralLinearGroup.mul_J_mul_transpose_eq_smul_iff`: for an invertible matrix,
@@ -98,6 +102,14 @@ theorem mul_mul_J_mul_transpose_eq_mul_smul {M N : Matrix (l ⊕ l) (l ⊕ l) R}
     _ = (a * b) • J l R := by
         rw [hN, Matrix.mul_smul, Matrix.smul_mul, hM, smul_smul, mul_comm]
 
+/-- **Similitudes map to similitudes**: if `M` scales `J` by `c`, then its entrywise image under a
+ring morphism `f` scales `J` by `f c`. -/
+theorem map_mul_J_mul_transpose_map_eq_smul {S : Type*} [CommRing S] (f : R →+* S)
+    {M : Matrix (l ⊕ l) (l ⊕ l) R} {c : R} (h : M * J l R * Mᵀ = c • J l R) :
+    M.map f * J l S * (M.map f)ᵀ = f c • J l S := by
+  simpa [Matrix.map_mul, Matrix.transpose_map, Matrix.map_smul', map_J] using
+    congrArg (Matrix.map · f) h
+
 /-- The block-diagonal matrix `diag(1, c • 1)` scales `J` by `c`. -/
 theorem fromBlocks_one_smul_one_mul_J_mul_transpose (c : R) :
     fromBlocks (1 : Matrix l l R) 0 0 (c • 1) * J l R *
@@ -128,16 +140,10 @@ scalar `c`. -/
 theorem GeneralLinearGroup.mul_J_mul_transpose_eq_smul_iff (M : GL (l ⊕ l) R) (c : R) :
     (M : Matrix (l ⊕ l) (l ⊕ l) R) * J l R * (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = c • J l R ↔
       (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R * (M : Matrix (l ⊕ l) (l ⊕ l) R) = c • J l R := by
-  have hNM : ((M⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) *
-      (M : Matrix (l ⊕ l) (l ⊕ l) R) = 1 := by
-    rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
-  have hMN : (M : Matrix (l ⊕ l) (l ⊕ l) R) *
-      ((M⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) = 1 := by
-    rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
-  refine ⟨transpose_mul_J_mul_of_mul_J_mul_transpose hNM, fun h ↦ ?_⟩
+  refine ⟨transpose_mul_J_mul_of_mul_J_mul_transpose (Units.inv_mul M), fun h ↦ ?_⟩
   have hT : ((M⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ *
       (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = 1 := by
-    rw [← transpose_mul, hMN, transpose_one]
+    rw [← transpose_mul, Units.mul_inv, transpose_one]
   simpa only [transpose_transpose] using
     transpose_mul_J_mul_of_mul_J_mul_transpose hT (by simpa only [transpose_transpose] using h)
 
