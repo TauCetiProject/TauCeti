@@ -131,7 +131,8 @@ theorem hasSum_parabolicCylinderEven (a z : ℂ) :
   -- the upper parameter is `(a + ½)/2`, and the argument `4 (z²/2) = 2 z²`
   have hc : (a + 1 / 2) / 2 = a / 2 + 1 / 4 := by ring
   have hw : 4 * (z ^ 2 / 2) = 2 * z ^ 2 := by ring
-  rw [prod_range_add_two_mul, hc, hw, mul_pow, pow_mul]
+  rw [Finset.prod_congr rfl fun (r : ℕ) _ => add_comm (a + 1 / 2) (2 * (r : ℂ)),
+    ← two_pow_mul_ascPochhammer_eval_div_two, hc, hw, mul_pow, pow_mul]
   ring
 
 /-- **The power series DLMF 12.4.4** of the odd solution:
@@ -145,7 +146,8 @@ theorem hasSum_parabolicCylinderOdd (a z : ℂ) :
   -- the upper parameter is `(a + 3/2)/2`, and the argument `4 (z²/2) = 2 z²`
   have hc : (a + 3 / 2) / 2 = a / 2 + 3 / 4 := by ring
   have hw : 4 * (z ^ 2 / 2) = 2 * z ^ 2 := by ring
-  rw [prod_range_add_two_mul, hc, hw, mul_pow]
+  rw [Finset.prod_congr rfl fun (r : ℕ) _ => add_comm (a + 3 / 2) (2 * (r : ℂ)),
+    ← two_pow_mul_ascPochhammer_eval_div_two, hc, hw, mul_pow]
   ring
 
 /-- **The power series DLMF 12.4.5** of the even solution, from its Kummer-transformed form:
