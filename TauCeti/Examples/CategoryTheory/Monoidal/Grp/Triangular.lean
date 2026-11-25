@@ -29,9 +29,8 @@ the canonical comparison `PreservesProduct.iso` of fibre powers, nonreduced base
 
 For groups viewed as group objects in `Type`: in `GL₂(𝔽₂)` the two elementary matrices do not
 commute, so the head must stand on the right; in the cyclic group of order three the tails `a²` and
-`1` differ; over the dual numbers `ℚ[ε]`, in the units (the points of `G_m`), the forward map sends
-`(1 + ε, 1)` to `(1 + ε, 1 - ε)`, and the inverse restores `(1 + ε, 1)`, so a calculation on
-reduced points would miss the `ε` terms.
+`1` differ; in the unit group `ℚ[ε]ˣ` of the dual numbers, the forward map sends `(1 + ε, 1)` to
+`(1 + ε, 1 - ε)`, and the inverse restores `(1 + ε, 1)`.
 -/
 
 public section
@@ -48,13 +47,27 @@ variable {C : Type*} [Category* C] [CartesianMonoidalCategory C] (G : C) [GrpObj
 example : triangularIso G (0 : Fin 1) = Iso.refl _ :=
   triangularIso_eq_refl G 0
 
--- The inverse sends the pair `(f, g / f)` to `(f, g)`.
-example (f g : T ⟶ G) :
-    Pi.lift ![f, g / f] ≫ (triangularIso G 0).inv = Pi.lift ![f, g] := by
+/-- On a pair of points, the inverse triangular change of coordinates sends `(a, b)` to
+`(a, b a)`. -/
+theorem lift_pair_comp_triangularIso_inv (a b : T ⟶ G) :
+    Pi.lift ![a, b] ≫ (triangularIso G (0 : Fin 2)).inv = Pi.lift ![a, b * a] := by
   rw [lift_comp_triangularIso_inv]
   congr 1
   ext j
   fin_cases j <;> simp
+
+/-- On a pair of points, the triangular change of coordinates sends `(a, b)` to `(a, b / a)`. -/
+theorem lift_pair_comp_triangularIso_hom (a b : T ⟶ G) :
+    Pi.lift ![a, b] ≫ (triangularIso G (0 : Fin 2)).hom = Pi.lift ![a, b / a] := by
+  rw [lift_comp_triangularIso_hom]
+  congr 1
+  ext j
+  fin_cases j <;> simp
+
+-- The inverse sends the pair `(f, g / f)` to `(f, g)`.
+example (f g : T ⟶ G) :
+    Pi.lift ![f, g / f] ≫ (triangularIso G 0).inv = Pi.lift ![f, g] := by
+  rw [lift_pair_comp_triangularIso_inv, div_mul_cancel]
 
 -- The small diagonal `(f, …, f)` goes to `(f, 1, …, 1)`.
 example (n : ℕ) (f : T ⟶ G) :
@@ -70,11 +83,7 @@ example (n : ℕ) (f : T ⟶ G) :
 example (a b : T ⟶ G) (h : a * b ≠ b * a) :
     Pi.lift ![a, b] ≫ (triangularIso G 0).inv = Pi.lift ![a, b * a] ∧
       Pi.lift ![a, b] ≫ (triangularIso G 0).inv ≠ Pi.lift ![a, a * b] := by
-  have e : Pi.lift ![a, b] ≫ (triangularIso G 0).inv = Pi.lift ![a, b * a] := by
-    rw [lift_comp_triangularIso_inv]
-    congr 1
-    ext j
-    fin_cases j <;> simp
+  have e := lift_pair_comp_triangularIso_inv G a b
   refine ⟨e, fun h' ↦ h ?_⟩
   simpa using (congrArg (· ≫ Pi.π _ 1) (e.symm.trans h')).symm
 
@@ -82,11 +91,8 @@ example (a b : T ⟶ G) (h : a * b ≠ b * a) :
 example (a : T ⟶ G) :
     Pi.lift ![a, a] ≫ (triangularIso G 0).inv = Pi.lift ![a, a * a] ∧
       Pi.lift ![a, a] ≫ (triangularIso G 0).hom = Pi.lift ![a, 1] := by
-  rw [lift_comp_triangularIso_inv, lift_comp_triangularIso_hom]
-  constructor <;>
-  · congr 1
-    ext j
-    fin_cases j <;> simp
+  rw [lift_pair_comp_triangularIso_inv, lift_pair_comp_triangularIso_hom, div_self']
+  exact ⟨rfl, rfl⟩
 
 end General
 
@@ -175,10 +181,7 @@ example :
     pt (lowerElementary * upperElementary) ≠ pt (upperElementary * lowerElementary) := by
   refine ⟨?_, by decide, by decide,
     fun h ↦ absurd (congrArg Units.val (pt_injective h)) (by decide)⟩
-  rw [lift_comp_triangularIso_inv]
-  congr 1
-  ext j
-  fin_cases j <;> simp [pt_mul]
+  rw [lift_pair_comp_triangularIso_inv, pt_mul]
 
 -- On the diagonal `(a, a)` of the cyclic group of order three, with `a` a generator, the inverse
 -- gives `(a, a²)` and the forward map `(a, 1)`; the tails differ.
@@ -190,14 +193,8 @@ example :
         Pi.lift ![pt a, pt 1] ∧
       a * a ≠ 1 := by
   refine ⟨?_, ?_, by decide⟩
-  · rw [lift_comp_triangularIso_inv]
-    congr 1
-    ext j
-    fin_cases j <;> simp [pt_mul]
-  · rw [lift_comp_triangularIso_hom]
-    congr 1
-    ext j
-    fin_cases j <;> simp [pt_one]
+  · rw [lift_pair_comp_triangularIso_inv, pt_mul]
+  · rw [lift_pair_comp_triangularIso_hom, div_self', pt_one]
 
 /-- The unit `1 + ε` of the dual numbers `ℚ[ε]`, with inverse `1 - ε`. -/
 abbrev onePlusEps : (DualNumber ℚ)ˣ where
@@ -206,8 +203,8 @@ abbrev onePlusEps : (DualNumber ℚ)ˣ where
   val_inv := by linear_combination (-1 : DualNumber ℚ) * DualNumber.eps_mul_eps (R := ℚ)
   inv_val := by linear_combination (-1 : DualNumber ℚ) * DualNumber.eps_mul_eps (R := ℚ)
 
--- On the `ℚ[ε]`-points of `G_m`, the forward map sends `(1 + ε, 1)` to `(1 + ε, 1 - ε)`, and the
--- inverse restores `(1 + ε, 1)`: a calculation on reduced points would miss the `ε` terms.
+-- In the unit group `ℚ[ε]ˣ`, viewed as a group object in `Type`, the forward map sends
+-- `(1 + ε, 1)` to `(1 + ε, 1 - ε)`, and the inverse restores `(1 + ε, 1)`.
 example :
     Pi.lift ![pt onePlusEps, pt 1] ≫ (triangularIso (grpObjOf (DualNumber ℚ)ˣ) 0).hom =
         Pi.lift ![pt onePlusEps, pt onePlusEps⁻¹] ∧
@@ -215,10 +212,7 @@ example :
       Pi.lift ![pt onePlusEps, pt 1] ≫ (triangularIso (grpObjOf (DualNumber ℚ)ˣ) 0).hom ≫
         (triangularIso (grpObjOf (DualNumber ℚ)ˣ) 0).inv = Pi.lift ![pt onePlusEps, pt 1] := by
   refine ⟨?_, by simp [Units.inv_mk], by simp⟩
-  rw [lift_comp_triangularIso_hom]
-  congr 1
-  ext j
-  fin_cases j <;> simp [pt_div]
+  rw [lift_pair_comp_triangularIso_hom, pt_div, one_div]
 
 end Concrete
 
