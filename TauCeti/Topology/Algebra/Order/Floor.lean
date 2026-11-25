@@ -20,7 +20,8 @@ neighbourhood of `x`: every point near `x` shares one of these intervals with `x
 A map `G` on `X × K` which is periodic in the second coordinate near `0`, in the sense that
 `G (y, t + 1) = G (y, t)` for `t` slightly below `0`, has a periodization
 `(y, t) ↦ G (y, fract t)` which near every point `z` is a translate `(y, t) ↦ G (y, t - ⌊z.2⌋)`
-of `G`. So the periodization inherits every local property of `G`, such as smoothness.
+of `G`. So the periodization inherits every local property of `G`, such as smoothness. Near points
+whose second coordinate lies in `(0, 1)`, any periodization agrees with `G` itself.
 
 Away from the natural numbers, the natural floor `⌊·⌋₊` is locally constant.
 
@@ -30,6 +31,8 @@ Away from the natural numbers, the natural floor `⌊·⌋₊` is locally consta
   `[δ m, δ (m + 1)]` that contains `x`.
 * `TauCeti.apply_fract_snd_eventuallyEq`: near every point, the periodization of a map which is
   periodic near `0` is a translate of the map.
+* `TauCeti.apply_fract_snd_eventuallyEq_self`: near points whose second coordinate lies in
+  `(0, 1)`, a map read through `Int.fract` of the second coordinate agrees with the map.
 * `TauCeti.eventually_natFloor_eq`: `⌊y⌋₊ = ⌊x⌋₊` for all `y` near a point `x` which is not a
   natural number.
 -/
@@ -98,6 +101,15 @@ theorem apply_fract_snd_eventuallyEq {X M : Type*} [TopologicalSpace X] {G : X �
     have h' : Int.fract w.2 = w.2 - ⌊z.2⌋ :=
       Int.fract_eq_iff.2 ⟨by linarith, by linarith, ⌊z.2⌋, by ring⟩
     rw [h']
+
+omit [IsStrictOrderedRing K] in
+/-- Near a point whose second coordinate lies in `(0, 1)`, a map `G` read through the fractional
+part `Int.fract` of the second coordinate agrees with `G`. -/
+theorem apply_fract_snd_eventuallyEq_self {X M : Type*} [TopologicalSpace X] {G : X × K → M}
+    {z : X × K} (hz : z.2 ∈ Ioo (0 : K) 1) :
+    (fun w : X × K ↦ G (w.1, Int.fract w.2)) =ᶠ[𝓝 z] G := by
+  filter_upwards [(isOpen_Ioo.preimage continuous_snd).mem_nhds hz] with w hw
+  rw [Int.fract_eq_self.2 ⟨hw.1.le, hw.2⟩]
 
 /-- Away from the natural numbers `⌊·⌋₊` is locally constant. -/
 theorem eventually_natFloor_eq {R : Type*} [Semiring R] [LinearOrder R] [IsStrictOrderedRing R]
