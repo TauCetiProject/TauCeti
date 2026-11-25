@@ -196,8 +196,8 @@ theorem weightSpace_dual_gl2CoefficientRep_ne_bot_iff
   simp only [Pi.neg_apply]
   omega
 
-/-- **The highest weight of the contragredient of `V_(a,b)` is `(-b, -a)`**: it is a weight,
-when the weight characters of `k` separate weights. -/
+/-- **The highest weight `(-b, -a)` is a weight** of the contragredient of `V_(a,b)`, when the
+weight characters of `k` separate weights. -/
 theorem weightSpace_dual_gl2CoefficientRep_highest_ne_bot
     (hchar : Function.Injective (weightChar k (κ := Fin 2))) (hab : b ≤ a) :
     weightSpace (gl2CoefficientRep k a b).dual ![-b, -a] ≠ ⊥ :=

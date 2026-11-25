@@ -46,8 +46,11 @@ universe u v
 
 namespace TauCeti
 
-variable {k : Type u} [Field k] {n : ℕ}
-variable {W : Type v} [AddCommGroup W] [Module k W]
+variable {W : Type v} [AddCommGroup W]
+
+section CommRing
+
+variable {k : Type u} [CommRing k] {n : ℕ} [Module k W]
 
 /-- The contragredient action of a torus element on a functional of weight `l`, evaluated at a
 vector `w`: `f (ρ(t⁻¹) w) = χ_l(t) f(w)`. -/
@@ -56,6 +59,12 @@ theorem apply_inv_of_mem_weightSpace_dual {ρ : Representation k (GL (Fin n) k) 
     f (ρ (diagGL t)⁻¹ w) = ((weightChar k l t : kˣ) : k) * f w := by
   have h := congrArg (fun g : Dual k W ↦ g w) (apply_of_mem_weightSpace hf t)
   simpa [Representation.dual_apply, Module.Dual.transpose_apply] using h
+
+end CommRing
+
+section IsCancelMulZero
+
+variable {k : Type u} [CommRing k] [IsCancelMulZero k] {n : ℕ} [Module k W]
 
 /-- **A functional of weight `l` vanishes on the vectors of weight `l'` unless `l + l' = 0`**,
 when distinct weights give distinct characters: `χ_l(t) f(w) = f(ρ(t⁻¹) w) = χ_{l'}(t)⁻¹ f(w)`
@@ -66,33 +75,30 @@ theorem apply_eq_zero_of_mem_weightSpace_dual
     {f : Dual k W} (hf : f ∈ weightSpace ρ.dual l) {w : W} (hw : w ∈ weightSpace ρ l') :
     f w = 0 := by
   by_contra hfw
-  refine hll' (hchar (MonoidHom.ext fun t ↦ ?_))
-  have h := apply_inv_of_mem_weightSpace_dual hf t w
-  rw [← map_inv diagGL, apply_of_mem_weightSpace hw, map_smul, smul_eq_mul, map_inv] at h
-  have h' := mul_right_cancel₀ hfw h
-  rw [weightChar_add, weightChar_zero, MonoidHom.mul_apply, MonoidHom.one_apply, ← Units.val_inj,
-    Units.val_mul, ← h', ← Units.val_mul, inv_mul_cancel]
+  have hl : weightChar k l = weightChar k (-l') := MonoidHom.ext fun t ↦ Units.ext <| by
+    have h := apply_inv_of_mem_weightSpace_dual hf t w
+    rw [← map_inv diagGL, apply_of_mem_weightSpace hw, map_smul, smul_eq_mul] at h
+    rw [weightChar_neg, MonoidHom.inv_apply, ← map_inv]
+    exact (mul_right_cancel₀ hfw h).symm
+  exact hll' (by rw [hchar hl, neg_add_cancel])
+
+/-- A functional of weight `l` vanishes on the weight spaces other than `-l`, when distinct
+weights give distinct characters. -/
+theorem iSup_weightSpace_ne_le_ker (hchar : Function.Injective (weightChar k (κ := Fin n)))
+    {ρ : Representation k (GL (Fin n) k) W} {l : Fin n → ℤ} {f : Dual k W}
+    (hf : f ∈ weightSpace ρ.dual l) :
+    (⨆ (l' : Fin n → ℤ) (_ : l' ≠ -l), weightSpace ρ l') ≤ LinearMap.ker f :=
+  iSup₂_le fun _ hl' _ hw ↦ apply_eq_zero_of_mem_weightSpace_dual hchar
+    (fun h ↦ hl' (eq_neg_of_add_eq_zero_right h)) hf hw
+
+end IsCancelMulZero
 
 section Spanning
 
+variable {k : Type u} [Field k] {n : ℕ} [Module k W]
 variable (hchar : Function.Injective (weightChar k (κ := Fin n)))
   {ρ : Representation k (GL (Fin n) k) W} (hρ : ⨆ l : Fin n → ℤ, weightSpace ρ l = ⊤)
 include hchar hρ
-
-/-- A weight space is complementary to the span of all the other weight spaces, when the weight
-spaces span and distinct weights give distinct characters. -/
-theorem isCompl_weightSpace_iSup_ne (l : Fin n → ℤ) :
-    IsCompl (weightSpace ρ l) (⨆ (l' : Fin n → ℤ) (_ : l' ≠ l), weightSpace ρ l') :=
-  ⟨iSupIndep_weightSpace hchar ρ l, codisjoint_iff.mpr (by rw [← iSup_split_single, hρ])⟩
-
-omit hchar hρ in
-/-- The span of the weight spaces other than `l` is stable under the torus. -/
-theorem iSup_weightSpace_ne_le_comap (l : Fin n → ℤ) (t : Fin n → kˣ) :
-    (⨆ (l' : Fin n → ℤ) (_ : l' ≠ l), weightSpace ρ l') ≤
-      (⨆ (l' : Fin n → ℤ) (_ : l' ≠ l), weightSpace ρ l').comap (ρ (diagGL t)) := by
-  refine iSup₂_le fun l' hl' w hw ↦ ?_
-  rw [Submodule.mem_comap, apply_of_mem_weightSpace hw]
-  exact Submodule.smul_mem _ _ ((le_iSup₂ (f := fun l' (_ : l' ≠ l) ↦ weightSpace ρ l') l' hl') hw)
 
 /-- The functional of weight `l` extending a functional `φ` on the weight space of `-l` by zero
 on the other weight spaces. -/
@@ -122,22 +128,15 @@ theorem extendWeightSpaceDual_mem (l : Fin n → ℤ) (φ : Dual k (weightSpace 
     LinearMap.smul_apply, smul_eq_mul]
   obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.mp
     ((isCompl_weightSpace_iSup_ne hchar hρ (-l)).sup_eq_top ▸ Submodule.mem_top (x := w))
+  have ha' : ρ (diagGL t)⁻¹ a = ((weightChar k l t : kˣ) : k) • a := by
+    rw [← map_inv diagGL, apply_of_mem_weightSpace ha, weightChar_neg, MonoidHom.inv_apply,
+      map_inv, inv_inv]
   have hb' : ρ (diagGL t)⁻¹ b ∈ ⨆ (l' : Fin n → ℤ) (_ : l' ≠ -l), weightSpace ρ l' := by
     rw [← map_inv diagGL]
     exact iSup_weightSpace_ne_le_comap (-l) t⁻¹ hb
-  rw [map_add, map_add, map_add, extendWeightSpaceDual_apply_of_mem_iSup hchar hρ l φ hb,
-    extendWeightSpaceDual_apply_of_mem_iSup hchar hρ l φ hb', ← map_inv diagGL,
-    apply_of_mem_weightSpace ha, map_smul, extendWeightSpaceDual_apply_of_mem hchar hρ l φ ha,
-    map_inv, weightChar_apply, torusCharacter_neg, ← weightChar_apply, inv_inv, smul_eq_mul,
-    add_zero, add_zero]
-
-omit hρ in
-/-- A functional of weight `l` vanishes on the weight spaces other than `-l`. -/
-theorem iSup_weightSpace_ne_le_ker {l : Fin n → ℤ} {f : Dual k W}
-    (hf : f ∈ weightSpace ρ.dual l) :
-    (⨆ (l' : Fin n → ℤ) (_ : l' ≠ -l), weightSpace ρ l') ≤ LinearMap.ker f :=
-  iSup₂_le fun _ hl' _ hw ↦ apply_eq_zero_of_mem_weightSpace_dual hchar
-    (fun h ↦ hl' (eq_neg_of_add_eq_zero_right h)) hf hw
+  simp [ha', extendWeightSpaceDual_apply_of_mem_iSup hchar hρ l φ hb,
+    extendWeightSpaceDual_apply_of_mem_iSup hchar hρ l φ hb',
+    extendWeightSpaceDual_apply_of_mem hchar hρ l φ ha]
 
 /-- **The weight space of the contragredient of weight `l` is the dual of the weight space of
 weight `-l`**, by restriction, when the weight spaces span and distinct weights give distinct
@@ -156,6 +155,13 @@ noncomputable def weightSpaceDualEquiv (l : Fin n → ℤ) :
 @[simp]
 theorem weightSpaceDualEquiv_apply (l : Fin n → ℤ) (f : weightSpace ρ.dual l)
     (w : weightSpace ρ (-l)) : weightSpaceDualEquiv hchar hρ l f w = (f : Dual k W) w :=
+  (rfl)
+
+/-- The inverse of `weightSpaceDualEquiv` is extension by zero on the other weight spaces. -/
+@[simp]
+theorem coe_weightSpaceDualEquiv_symm_apply (l : Fin n → ℤ) (φ : Dual k (weightSpace ρ (-l))) :
+    (((weightSpaceDualEquiv hchar hρ l).symm φ : weightSpace ρ.dual l) : Dual k W) =
+      extendWeightSpaceDual hchar hρ l φ :=
   (rfl)
 
 /-- **The weights of the contragredient are the negatives of the weights, with the same

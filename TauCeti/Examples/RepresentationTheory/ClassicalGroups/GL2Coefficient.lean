@@ -12,8 +12,8 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.GL2Coefficient
 
 Checks of `TauCeti.RepresentationTheory.ClassicalGroups.GL2Coefficient` on
 `V_(2,0) = Sym²(Std)`: it has dimension three and scalar weight two, its contragredient has
-scalar weight minus two and highest weight `(0, -2)`, and a determinant twist `V_(a+m,b+m)`
-changes the scalar weight by `2 m`.
+scalar weight minus two and has its highest weight `(0, -2)` as a weight, and a determinant
+twist `V_(a+m,b+m)` changes the scalar weight by `2 m`.
 -/
 
 public section
@@ -40,7 +40,8 @@ example (z : kˣ) (f : Dual k (GL2CoefficientSpace k 2 0)) :
       ((z ^ (-2 : ℤ) : kˣ) : k) • f := by
   simpa using gl2CoefficientRep_dual_scalar (by norm_num) z f
 
-/-- The contragredient of `Sym²(Std)` has highest weight `(0, -2)`, over an infinite field. -/
+/-- `(0, -2)`, the highest weight of the contragredient of `Sym²(Std)`, is a weight of it, over
+an infinite field. -/
 example [Infinite k] :
     weightSpace (gl2CoefficientRep k 2 0).dual ![0, -2] ≠ ⊥ := by
   simpa using weightSpace_dual_gl2CoefficientRep_highest_ne_bot (k := k) weightChar_injective
