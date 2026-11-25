@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.MellinInversion
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.LSeries.Continuity
 
 /-!
@@ -43,7 +44,7 @@ inversion formula for the first Riesz sum:
 
 * `TauCeti.perronRieszKernel_eq_sub`: partial-fraction decomposition into `TauCeti.perronIntegrand`.
 * `TauCeti.norm_perronRieszKernel_le`: quadratic decay bound in height `t` for `0 ≤ x`.
-* `TauCeti.integrable_perronRieszKernel`, `TauCeti.integral_perronRieszKernel`: full-line
+* `TauCeti.integrable_perronRieszKernel`, `TauCeti.inv_mul_integral_perronRieszKernel`: full-line
   integrability for `0 ≤ x`, `c ≠ 0`, `c ≠ 1` and evaluation against `if 1 ≤ x then x - 1 else 0`
   for `0 ≤ x`, `1 < c`.
 * `TauCeti.integrable_LSeries_mul_perronRieszKernel`,
@@ -92,32 +93,13 @@ theorem perronRieszKernel_one (c t : ℝ) :
     perronRieszKernel 1 c t = (((c : ℂ) + t * I) * ((c : ℂ) + t * I - 1))⁻¹ := by
   rw [perronRieszKernel_def, Complex.ofReal_one, Complex.one_cpow, one_div]
 
-private theorem ofReal_add_mul_I_sub_one_eq (c t : ℝ) :
-    (c : ℂ) + t * I - 1 = ((c - 1 : ℝ) : ℂ) + t * I := by
-  push_cast
-  ring
-
-private theorem ofReal_add_mul_I_sub_one_ne_zero {c : ℝ} (hc1 : c ≠ 1) (t : ℝ) :
-    (c : ℂ) + t * I - 1 ≠ 0 := by
-  rw [ofReal_add_mul_I_sub_one_eq]
-  exact Complex.ofReal_add_mul_I_ne_zero (sub_ne_zero.mpr hc1) t
-
-private theorem ofReal_mul_cpow_sub_one {x : ℝ} (hx : x ≠ 0) (c t : ℝ) :
-    (x : ℂ) * (x : ℂ) ^ (((c - 1 : ℝ) : ℂ) + t * I) = (x : ℂ) ^ ((c : ℂ) + t * I) := by
-  have hxc : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx
-  conv_lhs => arg 1; rw [← Complex.cpow_one (x : ℂ)]
-  rw [← Complex.cpow_add _ _ hxc]
-  congr 1
-  push_cast
-  ring
-
 private theorem perronRieszKernel_eq_mul_shifted (x c t : ℝ) :
     perronRieszKernel x c t = (x : ℂ) * ((x : ℂ) ^ (((c - 1 : ℝ) : ℂ) + t * I) /
       ((((c - 1 : ℝ) : ℂ) + t * I) * ((((c - 1 : ℝ) : ℂ) + t * I) + 1))) := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp
-  · rw [perronRieszKernel_def, mul_div_assoc', ofReal_mul_cpow_sub_one hx c t,
-      ← ofReal_add_mul_I_sub_one_eq c t]
+  · rw [perronRieszKernel_def, mul_div_assoc', ← Complex.ofReal_add_mul_I_sub_one c t,
+      Complex.mul_cpow_sub_one (Complex.ofReal_ne_zero.mpr hx)]
     congr 1
     ring
 
@@ -130,7 +112,8 @@ theorem perronRieszKernel_eq_sub (x c t : ℝ) (h0 : (c : ℂ) + t * I ≠ 0)
   · simp
   · have h1' : (c : ℂ) + t * I - 1 ≠ 0 := sub_ne_zero.mpr h1
     rw [perronRieszKernel_def, perronIntegrand_def, perronIntegrand_def, mul_div_assoc',
-      ofReal_mul_cpow_sub_one hx c t, ← ofReal_add_mul_I_sub_one_eq c t]
+      ← Complex.ofReal_add_mul_I_sub_one c t,
+      Complex.mul_cpow_sub_one (Complex.ofReal_ne_zero.mpr hx)]
     field_simp
     ring
 
@@ -160,7 +143,7 @@ theorem norm_perronRieszKernel_le {x : ℝ} (hx : 0 ≤ x) (c t : ℝ) :
       have hn1 : Real.sqrt (δ ^ 2 + t ^ 2) ≤ ‖(c : ℂ) + t * I‖ :=
         Complex.sqrt_sq_add_sq_le_norm_add_mul_I hδ (min_le_left _ _)
       have hn2 : Real.sqrt (δ ^ 2 + t ^ 2) ≤ ‖(c : ℂ) + t * I - 1‖ := by
-        rw [ofReal_add_mul_I_sub_one_eq c t]
+        rw [Complex.ofReal_add_mul_I_sub_one c t]
         exact Complex.sqrt_sq_add_sq_le_norm_add_mul_I hδ (min_le_right _ _)
       have hden : δ ^ 2 + t ^ 2 ≤ ‖(c : ℂ) + t * I‖ * ‖(c : ℂ) + t * I - 1‖ := by
         calc δ ^ 2 + t ^ 2
@@ -181,7 +164,7 @@ theorem continuous_perronRieszKernel (x : ℝ) {c : ℝ} (hc0 : c ≠ 0) (hc1 : 
   · have hsub : perronRieszKernel x c =
         fun t : ℝ ↦ (x : ℂ) * perronIntegrand x (c - 1) t - perronIntegrand x c t :=
       funext fun t ↦ perronRieszKernel_eq_sub x c t (Complex.ofReal_add_mul_I_ne_zero hc0 t)
-        (fun h ↦ ofReal_add_mul_I_sub_one_ne_zero hc1 t (sub_eq_zero.mpr h))
+        (fun h ↦ Complex.ofReal_add_mul_I_sub_one_ne_zero hc1 t (sub_eq_zero.mpr h))
     rw [hsub]
     exact (continuous_const.mul (continuous_perronIntegrand hx (sub_ne_zero.mpr hc1))).sub
       (continuous_perronIntegrand hx hc0)
@@ -200,7 +183,7 @@ theorem integrable_perronRieszKernel {x c : ℝ} (hx : 0 ≤ x) (hc0 : c ≠ 0) 
 
 /-- **Evaluation of the Perron–Riesz kernel**: for `0 ≤ x` and `1 < c`,
 `((2 * π)⁻¹) * ∫ t : ℝ, perronRieszKernel x c t = if 1 ≤ x then x - 1 else 0`. -/
-theorem integral_perronRieszKernel {x c : ℝ} (hx : 0 ≤ x) (hc : 1 < c) :
+theorem inv_mul_integral_perronRieszKernel {x c : ℝ} (hx : 0 ≤ x) (hc : 1 < c) :
     ((2 * π : ℝ) : ℂ)⁻¹ * ∫ t : ℝ, perronRieszKernel x c t =
       if 1 ≤ x then (x : ℂ) - 1 else 0 := by
   rcases eq_or_lt_of_le hx with rfl | hxpos
@@ -233,10 +216,7 @@ theorem term_mul_perronRieszKernel (y c : ℝ) (a : ℕ → ℂ) (n : ℕ) (t : 
   rcases eq_or_ne n 0 with rfl | hn
   · by_cases h0 : (c : ℂ) + t * I = 0 <;> simp [perronRieszKernel_def, h0]
   · rw [LSeries.term_of_ne_zero hn, perronRieszKernel_def, perronRieszKernel_def,
-      show y / (n : ℝ) = (n : ℝ)⁻¹ * y by rw [div_eq_inv_mul, mul_comm],
-      Complex.ofReal_mul, Complex.ofReal_mul_cpow (by positivity),
-      Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg (Nat.cast_nonneg n),
-      Complex.ofReal_natCast]
+      Complex.ofReal_div, div_ofReal_cpow (Nat.cast_nonneg n), Complex.ofReal_natCast]
     ring
 
 private theorem lintegral_norm_term_mul_perronRieszKernel_ne_top {a : ℕ → ℂ} {y c : ℝ} (hy : 0 ≤ y)
@@ -275,17 +255,9 @@ theorem integrable_LSeries_mul_perronRieszKernel (a : ℕ → ℂ) {y c : ℝ} (
     (hc0 : c ≠ 0) (hc1 : c ≠ 1) :
     Integrable fun t : ℝ ↦ LSeries a ((c : ℂ) + t * I) * perronRieszKernel y c t := by
   by_cases h : LSeriesSummable a (c : ℂ)
-  · have hL : ∀ t : ℝ, ‖LSeries a ((c : ℂ) + t * I)‖ ≤ ∑' n : ℕ, ‖LSeries.term a (c : ℂ) n‖ := by
-      intro t
-      have hst : Summable fun n : ℕ ↦ LSeries.term a ((c : ℂ) + t * I) n :=
-        LSeriesSummable.of_re_le_re (by simp) h
-      calc ‖∑' n : ℕ, LSeries.term a ((c : ℂ) + t * I) n‖
-          ≤ ∑' n : ℕ, ‖LSeries.term a ((c : ℂ) + t * I) n‖ :=
-            norm_tsum_le_tsum_norm hst.norm
-        _ ≤ ∑' n : ℕ, ‖LSeries.term a (c : ℂ) n‖ :=
-            hst.norm.tsum_le_tsum (fun n ↦ LSeries.norm_term_le_of_re_le_re a (by simp) n) h.norm
-    exact (integrable_perronRieszKernel hy hc0 hc1).bdd_mul
-      (TauCeti.LSeries.continuous_vertical a (c : ℂ)).aestronglyMeasurable (.of_forall hL)
+  · exact (integrable_perronRieszKernel hy hc0 hc1).bdd_mul
+      (TauCeti.LSeries.continuous_vertical a (c : ℂ)).aestronglyMeasurable
+      (.of_forall fun t ↦ h.norm_LSeries_le (by simp))
   · have hzero : (fun t : ℝ ↦ LSeries a ((c : ℂ) + t * I) * perronRieszKernel y c t) = 0 := by
       ext t
       have hz : LSeries a ((c : ℂ) + t * I) = 0 :=
@@ -320,7 +292,7 @@ theorem inv_mul_integral_LSeries_mul_perronRieszKernel_eq_rieszSum {a : ℕ → 
     intro n
     simp_rw [term_mul_perronRieszKernel y c a n]
     rw [integral_const_mul, mul_left_comm,
-      integral_perronRieszKernel (div_nonneg hy (Nat.cast_nonneg n)) hc]
+      inv_mul_integral_perronRieszKernel (div_nonneg hy (Nat.cast_nonneg n)) hc]
     rcases eq_or_ne n 0 with rfl | hn0
     · simp
     · have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hn0

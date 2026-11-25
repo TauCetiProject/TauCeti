@@ -24,6 +24,8 @@ boundary line of that half-plane, which is exactly the situation in the Wiener--
 
 * `LSeriesSummable.continuousOn_LSeries`: `LSeries a` is continuous on the closed half-plane
   `{z | s.re ≤ z.re}` whenever `LSeriesSummable a s`.
+* `LSeriesSummable.norm_LSeries_le`: on the same closed half-plane, `‖LSeries a z‖` is at most
+  `∑' n, ‖LSeries.term a s n‖`.
 * `TauCeti.LSeries.continuous_vertical`: `fun t : ℝ ↦ LSeries a (s + t * I)` is continuous, with no
   summability hypothesis (when `LSeriesSummable a s` fails the function is identically `0`).
 * `TauCeti.LSeries.continuous_term_vertical`: `fun t : ℝ ↦ LSeries.term a (s + t * I) n` is
@@ -48,6 +50,14 @@ theorem continuousOn_LSeries (hs : LSeriesSummable a s) :
   continuousOn_tsum
     (fun n z _ ↦ (LSeries.hasDerivAt_term a n z).continuousAt.continuousWithinAt)
     (summable_norm_iff.mpr hs) (fun n _ hz ↦ LSeries.norm_term_le_of_re_le_re a hz n)
+
+/-- A Dirichlet series summable at `s` is bounded on the closed half-plane `{z | s.re ≤ z.re}` by
+the sum of the norms of its terms at `s`. -/
+theorem norm_LSeries_le (hs : LSeriesSummable a s) {z : ℂ} (hz : s.re ≤ z.re) :
+    ‖LSeries a z‖ ≤ ∑' n, ‖LSeries.term a s n‖ := by
+  have hz' : LSeriesSummable a z := hs.of_re_le_re hz
+  exact (norm_tsum_le_tsum_norm hz'.norm).trans
+    (hz'.norm.tsum_le_tsum (fun n ↦ LSeries.norm_term_le_of_re_le_re a hz n) hs.norm)
 
 /-- Approaching a real point of summability `σ` along the real half-line `[σ, ∞)`, the values of
 a Dirichlet series converge to its value at `σ`. -/

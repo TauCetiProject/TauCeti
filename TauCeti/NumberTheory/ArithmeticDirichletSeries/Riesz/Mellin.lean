@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.MellinTransform.UpperTail
 
 /-!
@@ -64,42 +64,11 @@ private theorem rampTerm_mul_cpow_ae_eq (a : ℕ → ℂ) (n : ℕ) (s : ℂ) :
   · simp [rampTerm]
   · have hn1 : 1 ≤ n := hn0
     refine ae_restrict_of_ae ?_
-    filter_upwards [ae_iff.mpr (by simp : volume {y : ℝ | ¬ y ≠ (n : ℝ)} = 0)] with y hy
-    change y ≠ (n : ℝ) at hy
+    filter_upwards [Measure.ae_ne volume (n : ℝ)] with y hy
     by_cases hyn : (n : ℝ) < y
     · simp [rampTerm, hn1, hyn.le, hyn, mul_assoc]
     · have hnotle : ¬ (n : ℝ) ≤ y := fun h ↦ hy (le_antisymm (not_lt.mp hyn) h)
       simp [rampTerm, hn1, hyn, hnotle]
-
-private theorem integrableOn_and_integral_real_ramp_mul_rpow {n : ℕ} (hn1 : 1 ≤ n) {σ : ℝ}
-    (hσ : 1 < σ) :
-    IntegrableOn (fun y : ℝ ↦ (y / n - 1) * y ^ (-σ - 1)) (Set.Ioi (n : ℝ)) ∧
-      ∫ y in Set.Ioi (n : ℝ), (y / n - 1) * y ^ (-σ - 1) = (n : ℝ) ^ (-σ) / (σ * (σ - 1)) := by
-  have hnpos : (0 : ℝ) < n := Nat.cast_pos.mpr hn1
-  have hσC : 1 < ((σ : ℂ)).re := by simpa using hσ
-  have hce : ∀ y ∈ Set.Ioi (n : ℝ),
-      ((y : ℂ) / ((n : ℝ) : ℂ) - 1) * (y : ℂ) ^ (-(σ : ℂ) - 1) =
-        (((y / n - 1) * y ^ (-σ - 1) : ℝ) : ℂ) := by
-    intro y hy
-    have hypos : 0 < y := hnpos.trans hy
-    rw [show -(σ : ℂ) - 1 = ((-σ - 1 : ℝ) : ℂ) by push_cast; ring,
-      ← Complex.ofReal_div, ← Complex.ofReal_one, ← Complex.ofReal_sub,
-      ← Complex.ofReal_cpow hypos.le, ← Complex.ofReal_mul]
-  have hint : IntegrableOn (fun y : ℝ ↦ (y / n - 1) * y ^ (-σ - 1)) (Set.Ioi (n : ℝ)) := by
-    refine (integrableOn_ramp_mul_cpow hnpos hσC).re.congr_fun (fun y hy ↦ ?_) measurableSet_Ioi
-    change Complex.re (((y : ℂ) / ((n : ℝ) : ℂ) - 1) * (y : ℂ) ^ (-(σ : ℂ) - 1)) = _
-    rw [hce y hy, Complex.ofReal_re]
-  refine ⟨hint, ?_⟩
-  have hset : ∫ y in Set.Ioi (n : ℝ), (((y / n - 1) * y ^ (-σ - 1) : ℝ) : ℂ) =
-      ∫ y in Set.Ioi (n : ℝ), ((y : ℂ) / ((n : ℝ) : ℂ) - 1) * (y : ℂ) ^ (-(σ : ℂ) - 1) :=
-    setIntegral_congr_fun measurableSet_Ioi fun y hy ↦ (hce y hy).symm
-  have hre : ∫ y in Set.Ioi (n : ℝ), (((y / n - 1) * y ^ (-σ - 1) : ℝ) : ℂ) =
-      (((n : ℝ) ^ (-σ) / (σ * (σ - 1)) : ℝ) : ℂ) := by
-    rw [hset, integral_ramp_mul_cpow hnpos hσC,
-      show -(σ : ℂ) = ((-σ : ℝ) : ℂ) by push_cast; ring, ← Complex.ofReal_cpow hnpos.le,
-      ← Complex.ofReal_one, ← Complex.ofReal_sub, ← Complex.ofReal_mul, ← Complex.ofReal_div]
-  rw [integral_complex_ofReal] at hre
-  exact Complex.ofReal_inj.mp hre
 
 private theorem lintegral_norm_rampTerm_mul_cpow_le (a : ℕ → ℂ) (n : ℕ) {s : ℂ} (hs : 1 < s.re) :
     ∫⁻ y in Set.Ioi (1 : ℝ), ‖rampTerm a n y * (y : ℂ) ^ (-s - 1)‖ₑ ≤
@@ -110,7 +79,7 @@ private theorem lintegral_norm_rampTerm_mul_cpow_le (a : ℕ → ℂ) (n : ℕ) 
     have hnpos : (0 : ℝ) < n := Nat.cast_pos.mpr hn1
     have hsub : Set.Ioi (n : ℝ) ⊆ Set.Ioi (1 : ℝ) :=
       Set.Ioi_subset_Ioi (by exact_mod_cast hn1)
-    obtain ⟨hint, hval⟩ := integrableOn_and_integral_real_ramp_mul_rpow hn1 hs
+    have hint := integrableOn_ramp_mul_rpow hnpos hs
     have heq : ∀ᵐ y : ℝ ∂volume.restrict (Set.Ioi 1),
         ‖rampTerm a n y * (y : ℂ) ^ (-s - 1)‖ₑ =
           (Set.Ioi (n : ℝ)).indicator (fun y : ℝ ↦
@@ -123,7 +92,8 @@ private theorem lintegral_norm_rampTerm_mul_cpow_le (a : ℕ → ℂ) (n : ℕ) 
         rw [Set.indicator_of_mem (Set.mem_Ioi.mpr hyn),
           Set.indicator_of_mem (Set.mem_Ioi.mpr hyn)]
         simp only [hn1, ↓reduceIte]
-        rw [← ofReal_norm, norm_mul, norm_mul, norm_ofReal_div_sub_one hyn1,
+        rw [← ofReal_norm, norm_mul, norm_mul, ← Complex.ofReal_natCast, ← Complex.ofReal_div,
+          Complex.norm_ofReal_sub_one hyn1,
           Complex.norm_cpow_eq_rpow_re_of_pos hypos, sub_re, neg_re, one_re]
       · simp [Set.indicator_of_notMem (Set.notMem_Ioi.mpr (not_lt.mp hyn))]
     have hnonneg : ∀ᵐ y : ℝ ∂volume.restrict (Set.Ioi (n : ℝ)),
@@ -135,10 +105,10 @@ private theorem lintegral_norm_rampTerm_mul_cpow_le (a : ℕ → ℂ) (n : ℕ) 
     rw [lintegral_congr_ae heq, lintegral_indicator measurableSet_Ioi,
       Measure.restrict_restrict measurableSet_Ioi, Set.inter_eq_left.mpr hsub,
       ← ofReal_integral_eq_lintegral_ofReal (hint.const_mul _) hnonneg, integral_const_mul,
-      hval, LSeries.term_of_ne_zero hn0.ne', norm_div, ← Complex.ofReal_natCast,
-      Complex.norm_cpow_eq_rpow_re_of_pos hnpos, Real.rpow_neg hnpos.le]
-    ring_nf
-    exact le_rfl
+      integral_ramp_mul_rpow hnpos hs]
+    refine (congrArg ENNReal.ofReal ?_).le
+    simp only [LSeries.norm_term_eq, hn0.ne', ↓reduceIte, Real.rpow_neg hnpos.le]
+    ring
 
 private theorem integrableOn_rampTerm_mul_cpow (a : ℕ → ℂ) (n : ℕ) {s : ℂ} (hs : 1 < s.re) :
     IntegrableOn (fun y : ℝ ↦ rampTerm a n y * (y : ℂ) ^ (-s - 1)) (Set.Ioi 1) := by

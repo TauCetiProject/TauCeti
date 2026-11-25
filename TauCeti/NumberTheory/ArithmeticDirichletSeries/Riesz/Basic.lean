@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.Basic
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # First Riesz sums
@@ -62,13 +63,18 @@ theorem rieszSum_smul (c : ℂ) (a : ℕ → ℂ) (y : ℝ) :
     rieszSum (c • a) y = c * rieszSum a y := by
   simp only [rieszSum_def, Pi.smul_apply, smul_eq_mul, mul_assoc, Finset.mul_sum]
 
+/-- An index `n ∈ Finset.Icc 1 ⌊y⌋₊` of a first Riesz sum satisfies `1 ≤ n` and `n ≤ y`. -/
+private theorem one_le_and_le_of_mem_Icc_floor {n : ℕ} {y : ℝ} (hn : n ∈ Finset.Icc 1 ⌊y⌋₊) :
+    1 ≤ n ∧ (n : ℝ) ≤ y :=
+  ⟨(Finset.mem_Icc.mp hn).1,
+    (Nat.le_floor_iff' (by have := (Finset.mem_Icc.mp hn).1; omega)).mp (Finset.mem_Icc.mp hn).2⟩
+
 /-- The first Riesz sum vanishes identically on `(-∞, 1]`. -/
 @[simp]
 theorem rieszSum_eq_zero_of_le_one (a : ℕ → ℂ) {y : ℝ} (hy : y ≤ 1) : rieszSum a y = 0 := by
   rw [rieszSum_def]
   refine Finset.sum_eq_zero fun n hn ↦ ?_
-  have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
-  have hn_le : (n : ℝ) ≤ y := (Nat.le_floor_iff' (by omega)).mp (Finset.mem_Icc.mp hn).2
+  obtain ⟨hn1, hn_le⟩ := one_le_and_le_of_mem_Icc_floor hn
   have hy1 : y = 1 := le_antisymm hy ((by exact_mod_cast hn1 : (1 : ℝ) ≤ n).trans hn_le)
   have hn_eq : n = 1 := le_antisymm (by exact_mod_cast (hn_le.trans hy)) hn1
   subst hy1 hn_eq
@@ -95,8 +101,7 @@ theorem tsum_ite_mul_div_sub_one_eq_rieszSum (a : ℕ → ℂ) (y : ℝ) :
     ∑' n : ℕ, (if 1 ≤ n ∧ (n : ℝ) ≤ y then a n * ((y : ℂ) / n - 1) else 0) = rieszSum a y := by
   rw [rieszSum_def, tsum_eq_sum (s := Finset.Icc 1 ⌊y⌋₊)]
   · refine Finset.sum_congr rfl fun n hn ↦ ?_
-    have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
-    have hny : (n : ℝ) ≤ y := (Nat.le_floor_iff' (by omega)).mp (Finset.mem_Icc.mp hn).2
+    obtain ⟨hn1, hny⟩ := one_le_and_le_of_mem_Icc_floor hn
     simp [hn1, hny]
   · intro n hn
     simp only [Finset.mem_Icc, not_and, not_le] at hn
@@ -111,8 +116,7 @@ private theorem rieszSum_eq_sum_of_le (a : ℕ → ℂ) {y : ℝ} {N : ℕ} (hyN
     Finset.Icc_subset_Icc_right (Nat.floor_le_of_le hyN)
   rw [rieszSum_def, ← Finset.sum_subset hsub]
   · refine Finset.sum_congr rfl fun n hn ↦ ?_
-    have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
-    have hny : (n : ℝ) ≤ y := (Nat.le_floor_iff' (by omega)).mp (Finset.mem_Icc.mp hn).2
+    obtain ⟨hn1, hny⟩ := one_le_and_le_of_mem_Icc_floor hn
     have hnpos : (0 : ℝ) < n := Nat.cast_pos.mpr hn1
     have hnn : 0 ≤ y / n - 1 := sub_nonneg.mpr ((one_le_div hnpos).mpr hny)
     rw [max_eq_left hnn]
@@ -183,12 +187,6 @@ theorem sum_mul_one_sub_div_eq_inv_mul_rieszSum (a : ℕ → ℂ) (y : ℝ) :
     have hy0 : (y : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hy.ne'
     field_simp
 
-/-- The norm of `(y : ℂ) / n - 1` equals `y / n - 1` whenever `1 ≤ y / n`. -/
-theorem norm_ofReal_div_sub_one {y : ℝ} {n : ℕ} (h : 1 ≤ y / n) :
-    ‖((y : ℂ) / n - 1)‖ = y / n - 1 := by
-  have hcast : ((y : ℂ) / n - 1) = (((y / n - 1 : ℝ) : ℂ)) := by push_cast; ring
-  rw [hcast, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (sub_nonneg.mpr h)]
-
 /-- **Growth bound for Riesz sums**: if `1 ≤ σ`, `0 ≤ y`, and `LSeriesSummable a (σ : ℂ)`, then
 `‖rieszSum a y‖ ≤ y ^ σ * ∑' n, ‖LSeries.term a (σ : ℂ) n‖`. -/
 theorem norm_rieszSum_le {a : ℕ → ℂ} {σ y : ℝ} (hσ : 1 ≤ σ) (hy : 0 ≤ y)
@@ -198,15 +196,15 @@ theorem norm_rieszSum_le {a : ℕ → ℂ} {σ y : ℝ} (hσ : 1 ≤ σ) (hy : 0
       ≤ ∑ n ∈ Finset.Icc 1 ⌊y⌋₊, ‖a n * ((y : ℂ) / n - 1)‖ := norm_sum_le _ _
     _ ≤ ∑ n ∈ Finset.Icc 1 ⌊y⌋₊, y ^ σ * ‖LSeries.term a (σ : ℂ) n‖ := by
         refine Finset.sum_le_sum fun n hn ↦ ?_
-        have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
-        have hny : (n : ℝ) ≤ y := (Nat.le_floor_iff' (by omega)).mp (Finset.mem_Icc.mp hn).2
+        obtain ⟨hn1, hny⟩ := one_le_and_le_of_mem_Icc_floor hn
         have hnpos : (0 : ℝ) < n := Nat.cast_pos.mpr hn1
         have hyn1 : 1 ≤ y / n := (one_le_div hnpos).mpr hny
         have hramp : y / n - 1 ≤ (y / n) ^ σ := by
           have hp : y / n ≤ (y / n) ^ σ := by
             simpa using Real.rpow_le_rpow_of_exponent_le hyn1 hσ
           linarith
-        rw [norm_mul, norm_ofReal_div_sub_one hyn1, LSeries.term_of_ne_zero (by omega), norm_div,
+        rw [norm_mul, ← Complex.ofReal_natCast, ← Complex.ofReal_div,
+          Complex.norm_ofReal_sub_one hyn1, LSeries.term_of_ne_zero (by omega), norm_div,
           ← Complex.ofReal_natCast, Complex.norm_cpow_eq_rpow_re_of_pos hnpos, Complex.ofReal_re]
         calc ‖a n‖ * (y / n - 1) ≤ ‖a n‖ * (y / n) ^ σ :=
               mul_le_mul_of_nonneg_left hramp (norm_nonneg _)

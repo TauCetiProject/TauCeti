@@ -45,6 +45,10 @@ The bounded-kernel estimate is extracted from the native partial-sum norm estima
 * `TauCeti.integrableOn_ramp_mul_cpow` and `TauCeti.integral_ramp_mul_cpow`: integrability and
   Mellin transform `r ^ (-s) / (s * (s - 1))` of the ramp `y ↦ (y / r - 1) * y ^ (-s - 1)` on
   `(r, ∞)` for `0 < r` and `1 < Re s`.
+* `TauCeti.integrableOn_ramp_mul_rpow` and `TauCeti.integral_ramp_mul_rpow`: the same for the real
+  ramp `y ↦ (y / r - 1) * y ^ (-σ - 1)` with `1 < σ`.
+* `TauCeti.hasMellin_max_one_sub_mul_inv`: the Mellin transform `r ^ (1 - s) / (s * (s - 1))` of
+  `y ↦ max (1 - r * y⁻¹) 0` at `1 - s`, for `0 < r` and `1 < Re s`.
 -/
 
 public section
@@ -204,7 +208,9 @@ theorem norm_integral_mul_cpow_le_of_bound {g : ℝ → ℂ} {C a : ℝ} (ha : 0
       rw [integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) ha, hexp, neg_div_neg_eq,
         mul_div_assoc]
 
-private theorem hasMellin_max_one_sub_mul_inv {r : ℝ} (hr : 0 < r) {s : ℂ} (hs : 1 < s.re) :
+/-- For `0 < r` and `1 < s.re`, the Mellin transform of `y ↦ max (1 - r * y⁻¹) 0` at `1 - s` is
+`r ^ (1 - s) / (s * (s - 1))`. -/
+theorem hasMellin_max_one_sub_mul_inv {r : ℝ} (hr : 0 < r) {s : ℂ} (hs : 1 < s.re) :
     HasMellin (fun y : ℝ ↦ ((max (1 - r * y⁻¹) 0 : ℝ) : ℂ)) (1 - s)
       ((r : ℂ) ^ (1 - s) / (s * (s - 1))) := by
   have hs1 : 0 < (s - 1).re := by simp only [sub_re, one_re]; linarith
@@ -216,10 +222,9 @@ private theorem hasMellin_max_one_sub_mul_inv {r : ℝ} (hr : 0 < r) {s : ℂ} (
         (s := 1 - s) (a := -1) (by norm_num)).mpr
         (by rw [hinv]; exact (MellinConvergent.comp_mul_left hr).mpr h1.1)
   refine ⟨hconv, ?_⟩
-  have hsub : -(1 - s) = s - 1 := by ring
-  rw [mellin_comp_inv (fun t : ℝ ↦ ((max (1 - r * t) 0 : ℝ) : ℂ)), hsub,
-    mellin_comp_mul_left (fun t : ℝ ↦ ((max (1 - t) 0 : ℝ) : ℂ)) (s - 1) hr, h1.2, smul_eq_mul,
-    show -(s - 1) = 1 - s by ring, sub_add_cancel, div_eq_mul_inv, mul_comm s (s - 1)]
+  rw [mellin_comp_inv (fun t : ℝ ↦ ((max (1 - r * t) 0 : ℝ) : ℂ)), neg_sub,
+    mellin_comp_mul_left (fun t : ℝ ↦ ((max (1 - t) 0 : ℝ) : ℂ)) (s - 1) hr, h1.2, smul_eq_mul]
+  simp only [neg_sub, sub_add_cancel, div_eq_mul_inv, mul_comm s]
 
 private theorem mul_ramp_mul_cpow_eq {r y : ℝ} (hr : 0 < r) (hy : r < y) (s : ℂ) :
     (y : ℂ) ^ (-s) * ((max (1 - r * y⁻¹) 0 : ℝ) : ℂ) =
@@ -276,7 +281,33 @@ theorem integral_ramp_mul_cpow {r : ℝ} (hr : 0 < r) {s : ℂ} (hs : 1 < s.re) 
           rw [inv_mul_cancel_left₀ hrc]
     _ = (r : ℂ)⁻¹ * ((r : ℂ) ^ (1 - s) / (s * (s - 1))) := by rw [← hint, ← heq, hval]
     _ = (r : ℂ) ^ (-s) / (s * (s - 1)) := by
-          rw [← mul_div_assoc, ← Complex.cpow_neg_one, ← Complex.cpow_add _ _ hrc]
-          congr 2; ring
+          rw [sub_eq_neg_add, Complex.cpow_add _ _ hrc, Complex.cpow_one]
+          field_simp
+
+/-- For `0 ≤ y`, the complex ramp term at a real exponent `σ` is the cast of the real ramp term. -/
+private theorem ramp_mul_cpow_ofReal {r y : ℝ} (hy : 0 ≤ y) (σ : ℝ) :
+    ((y : ℂ) / r - 1) * (y : ℂ) ^ (-(σ : ℂ) - 1) = (((y / r - 1) * y ^ (-σ - 1) : ℝ) : ℂ) := by
+  rw [Complex.ofReal_mul, Complex.ofReal_cpow hy]
+  push_cast
+  ring
+
+/-- For `0 < r` and `1 < σ`, the real ramp term `y ↦ (y / r - 1) * y ^ (-σ - 1)` is integrable on
+`(r, ∞)`. -/
+theorem integrableOn_ramp_mul_rpow {r : ℝ} (hr : 0 < r) {σ : ℝ} (hσ : 1 < σ) :
+    IntegrableOn (fun y : ℝ ↦ (y / r - 1) * y ^ (-σ - 1)) (Set.Ioi r) := by
+  have h := (integrableOn_ramp_mul_cpow hr (s := σ) (by simpa using hσ)).congr_fun
+    (fun y hy ↦ ramp_mul_cpow_ofReal (hr.trans hy).le σ) measurableSet_Ioi
+  simpa using h.re
+
+/-- For `0 < r` and `1 < σ`, the integral of the real ramp term `y ↦ (y / r - 1) * y ^ (-σ - 1)`
+on `(r, ∞)` equals `r ^ (-σ) / (σ * (σ - 1))`. -/
+theorem integral_ramp_mul_rpow {r : ℝ} (hr : 0 < r) {σ : ℝ} (hσ : 1 < σ) :
+    ∫ y in Set.Ioi r, (y / r - 1) * y ^ (-σ - 1) = r ^ (-σ) / (σ * (σ - 1)) := by
+  apply Complex.ofReal_injective
+  rw [← integral_complex_ofReal, ← setIntegral_congr_fun measurableSet_Ioi
+    (fun y hy ↦ ramp_mul_cpow_ofReal (hr.trans hy).le σ),
+    integral_ramp_mul_cpow hr (by simpa using hσ), Complex.ofReal_div, Complex.ofReal_cpow hr.le]
+  push_cast
+  rfl
 
 end TauCeti
