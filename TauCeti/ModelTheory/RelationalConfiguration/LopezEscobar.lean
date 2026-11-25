@@ -11,7 +11,7 @@ public import TauCeti.ModelTheory.RelationalConfiguration.LanguageMap
 import Mathlib.Topology.MetricSpace.PiNat
 
 /-!
-# The López–Escobar theorem and invariant analytic separation
+# The López–Escobar theorem and sentence separation
 
 On a countable carrier `V`, the model class `modelsOf φ` of any `L_{ω₁ω}` sentence is Borel and
 invariant under isomorphism (`measurableSet_modelsOf`, `isomorphismInvariant_modelsOf`). The
