@@ -300,20 +300,6 @@ private theorem derivedComparison_homotopy_arbitrary {X : C} (I : InjectiveResol
   exact ((comparisonHomotopyIso F G H' F' e n).hom.naturality I.iso.hom).symm
 
 
-omit [HasInjectiveResolutions C] in
-/-- On the class of a complex `L`, the homotopy-category comparison
-`G.mapHomotopyCategoryCompHomologyFunctorIso` is the homological-complex comparison conjugated by
-the identifications `homologyFunctorFactors`. -/
-private lemma mapHomotopyCategoryCompHomologyFunctorIso_app_quotient (L : CochainComplex D ℕ)
-    (n : ℕ) :
-    (G.mapHomotopyCategoryCompHomologyFunctorIso (ComplexShape.up ℕ) n).app
-        ((HomotopyCategory.quotient D (ComplexShape.up ℕ)).obj L) =
-      (HomotopyCategory.homologyFunctorFactors D' (ComplexShape.up ℕ) n).app
-          ((G.mapHomologicalComplex _).obj L) ≪≫
-        (G.mapHomologicalComplexCompHomologyFunctorIso _ n).app L ≪≫
-        (G.mapIso ((HomotopyCategory.homologyFunctorFactors D (ComplexShape.up ℕ) n).app L)).symm :=
-  Iso.ext (G.mapHomotopyCategoryCompHomologyFunctorIso_hom_app (ComplexShape.up ℕ) n L)
-
 omit [HasInjectiveResolutions C]
   [HasInjectiveResolutions C'] [H'.PreservesInjectiveObjects] [H'.PreservesHomology] in
 private theorem comparisonHomotopy_complex_component (K : CochainComplex C ℕ) (n : ℕ) :
@@ -337,8 +323,7 @@ private theorem comparisonHomotopy_complex_component (K : CochainComplex C ℕ) 
   have hG : (G.mapHomotopyCategoryCompHomologyFunctorIso (ComplexShape.up ℕ) n).inv.app
       ((F.mapHomotopyCategory (ComplexShape.up ℕ)).obj
         ((HomotopyCategory.quotient C (ComplexShape.up ℕ)).obj K)) = _ :=
-    congrArg Iso.inv (mapHomotopyCategoryCompHomologyFunctorIso_app_quotient G
-      ((F.mapHomologicalComplex _).obj K) n)
+    G.mapHomotopyCategoryCompHomologyFunctorIso_inv_app _ n ((F.mapHomologicalComplex _).obj K)
   have hn := (HomotopyCategory.homologyFunctorFactors D' (ComplexShape.up ℕ) n).inv.naturality
     ((Functor.mapHomologicalComplexCompIso e (ComplexShape.up ℕ)).hom.app K ≫
       (Functor.mapHomologicalComplexCompIso (Iso.refl (H' ⋙ F')) (ComplexShape.up ℕ)).inv.app K)
@@ -346,17 +331,9 @@ private theorem comparisonHomotopy_complex_component (K : CochainComplex C ℕ) 
   rw [hG, mapHomotopyCategoryCompIso_hom_app_quotient_obj,
     mapHomotopyCategoryCompIso_inv_app_quotient_obj,
     ← Functor.map_comp]
-  simp only [Iso.trans_inv, Iso.symm_inv, Iso.app_inv, Iso.app_hom, Functor.mapIso_hom,
-    Category.assoc]
+  simp only [Category.assoc]
   -- The remaining square is naturality of `homologyFunctorFactors` for the comparison map.
   rw [← hn]
-
-omit [HasInjectiveResolutions C] in
-/-- Reassociation of a composite of six morphisms. -/
-private lemma comp_assoc_five {E : Type*} [Category* E] {A₀ A₁ A₂ A₃ A₄ A₅ A₆ : E}
-    (f₁ : A₀ ⟶ A₁) (f₂ : A₁ ⟶ A₂) (f₃ : A₂ ⟶ A₃) (f₄ : A₃ ⟶ A₄) (f₅ : A₄ ⟶ A₅) (f₆ : A₅ ⟶ A₆) :
-    (f₁ ≫ f₂ ≫ f₃ ≫ f₄ ≫ f₅) ≫ f₆ = f₁ ≫ f₂ ≫ f₃ ≫ f₄ ≫ f₅ ≫ f₆ := by
-  simp only [Category.assoc]
 
 /-- Compute the native derived composition comparison using any injective resolution. -/
 theorem rightDerivedCompIso_app_injectiveResolution {X : C} (I : InjectiveResolution X) (n : ℕ) :
@@ -402,9 +379,12 @@ theorem rightDerivedCompIso_app_injectiveResolution {X : C} (I : InjectiveResolu
   rw [t, q, hI, Iso.symm_hom, hlast, Iso.app_inv]
   -- The two sides agree up to `Functor.map_comp` and reassociation. Some of the intermediate
   -- objects agree only after unfolding `Functor.mapHomotopyCategory` and
-  -- `Functor.mapInjectiveResolution`, so the steps are assembled by unification, not by `rw`.
-  exact (comp_assoc_five _ _ _ _ _ _).trans
-    ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) (G.map_comp _ _).symm))
+  -- `Functor.mapInjectiveResolution`, so the steps are assembled by unification, not by `rw`:
+  -- four `Category.assoc` steps reassociate the left side, then `G.map_comp` merges its first
+  -- two factors.
+  exact ((Category.assoc _ _ _).trans <| whisker_eq _ <| (Category.assoc _ _ _).trans <|
+      whisker_eq _ <| (Category.assoc _ _ _).trans <| whisker_eq _ (Category.assoc _ _ _)).trans
+    ((Category.assoc _ _ _).symm.trans (eq_whisker (G.map_comp _ _).symm _))
 
 /-- If `F ≅ H' ⋙ F''` where `H'` preserves homology and injective objects, then
 `RⁿF ≅ H' ⋙ RⁿF''`. This is `rightDerivedCompIso` with the identity functor as `G`. -/
