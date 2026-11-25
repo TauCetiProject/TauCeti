@@ -146,7 +146,7 @@ theorem restrictResidue_ofStage_of_le {h : ℕ} (hnh : n ≤ h) (c : AnalyticSta
 theorem eval_restrictResidue (f : LocallyAnalytic p S E) (x : ℤ_[p]) :
     eval S (restrictResidue S n a f) x =
       if PadicInt.toZModPow n x = a then eval S f x else 0 := by
-  obtain ⟨h, hnh, c, rfl⟩ := exists_ofStage_of_le S n f
+  obtain ⟨h, hnh, c, rfl⟩ := exists_ofStage_ge S n f
   rw [restrictResidue_ofStage_of_le S n a hnh, eval_ofStage, eval_ofStage, eval_indicatorCLM]
   simp [Set.indicator_apply, PadicInt.cast_toZModPow n h hnh]
 
@@ -154,7 +154,7 @@ theorem eval_restrictResidue (f : LocallyAnalytic p S E) (x : ℤ_[p]) :
 theorem restrictResidue_comp (b : ZMod (p ^ n)) (f : LocallyAnalytic p S E) :
     restrictResidue S n a (restrictResidue S n b f) =
       if a = b then restrictResidue S n a f else 0 := by
-  obtain ⟨h, hnh, c, rfl⟩ := exists_ofStage_of_le S n f
+  obtain ⟨h, hnh, c, rfl⟩ := exists_ofStage_ge S n f
   simp only [restrictResidue_ofStage_of_le S n _ hnh]
   split_ifs with hab
   · subst hab
@@ -177,7 +177,7 @@ theorem restrictResidue_idem (f : LocallyAnalytic p S E) :
 @[simp]
 theorem sum_restrictResidue (f : LocallyAnalytic p S E) :
     ∑ a : ZMod (p ^ n), restrictResidue S n a f = f := by
-  obtain ⟨h, hnh, c, rfl⟩ := exists_ofStage_of_le S n f
+  obtain ⟨h, hnh, c, rfl⟩ := exists_ofStage_ge S n f
   simp only [restrictResidue_ofStage_of_le S n _ hnh, ← map_sum]
   congr 1
   ext i
