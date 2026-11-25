@@ -271,7 +271,7 @@ end IsChevalleySystem
 
 /-- **Existence of a compact real form.** Every finite-dimensional complex Lie algebra with
 nondegenerate Killing form has a compact conjugation, whose fixed points are a real form of it with
-negative definite Killing form (`TauCeti.IsCompactConjugation.killingForm_realForm_neg`). -/
+negative definite Killing form (`TauCeti.IsCompactConjugation.killingForm_realForm_self_neg`). -/
 theorem exists_isCompactConjugation (L : Type*) [LieRing L] [LieAlgebra ℂ L] [IsKilling ℂ L] :
     ∃ τ : L →ₛₗ[starRingEnd ℂ] L, IsCompactConjugation τ := by
   have := finite_of_isKilling (R := ℂ) (L := L)

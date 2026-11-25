@@ -38,7 +38,7 @@ Killing form, `B(τ x, τ y) = conj B(x, y)`, so `H_τ` is Hermitian symmetric
 (`TauCeti.IsLieConjugation.killingHermitianForm_conj_symm`). The conjugation is *compact*
 (`TauCeti.IsCompactConjugation`) when `H_τ` is positive definite; its fixed points are then a
 *compact real form* of `L`, on which the real Killing form is negative definite, because
-`B(X, X) = -H_τ(X, X)` for `τ X = X` (`TauCeti.IsCompactConjugation.killingForm_realForm_neg`).
+`B(X, X) = -H_τ(X, X)` for `τ X = X` (`TauCeti.IsCompactConjugation.killingForm_realForm_self_neg`).
 
 For `𝔰𝔩₂(ℂ)` with `τ h = -h`, `τ e = -f`, `τ f = -e`, the compact real form is
 `span_ℝ(i h, e - f, i (e + f)) = 𝔰𝔲(2)`, and `H_τ(e, e) = B(e, f) = 4`, `H_τ(h, h) = B(h, h) = 8`.
@@ -61,8 +61,8 @@ complex subalgebra, and `-B(x, ω y)` is bilinear rather than Hermitian.
   `TauCeti.IsLieConjugation.killingHermitianForm_lie_left`: `H_τ(⁅z, x⁆, y) = -H_τ(x, ⁅τ z, y⁆)`.
 * `TauCeti.IsLieConjugation.killingForm_realForm`: the Killing form of the real form is the
   restriction of the Killing form of `L`.
-* `TauCeti.IsCompactConjugation.killingForm_realForm_neg`: the Killing form of a compact real form
-  is negative definite.
+* `TauCeti.IsCompactConjugation.killingForm_realForm_self_neg`: the Killing form of a compact real
+  form is negative definite.
 * `Module.Basis.isLieConjugation_coordConj`: the conjugation of the coordinates in a basis with
   real structure constants is a conjugation of Lie algebras.
 * `TauCeti.IsCompactConjugation.isKilling` and `TauCeti.IsCompactConjugation.finiteDimensional`:
@@ -327,7 +327,7 @@ variable [LieAlgebra ℝ L] [IsScalarTower ℝ ℂ L] (hτ : IsCompactConjugatio
 
 /-- **The Killing form of a compact real form is negative definite.** For `X` in the real form,
 `B(X, X) = -H_τ(X, X)`, and `H_τ` is positive definite. -/
-theorem killingForm_realForm_neg (x : hτ.realForm) (hx : x ≠ 0) :
+theorem killingForm_realForm_self_neg (x : hτ.realForm) (hx : x ≠ 0) :
     killingForm ℝ hτ.realForm x x < 0 := by
   have hpos := hτ.pos x (by simpa using hx)
   rw [LinearMap.killingHermitianForm_def, IsLieConjugation.apply_coe_realForm,
