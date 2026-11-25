@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Descent
-public import Mathlib.Algebra.Category.ModuleCat.Injective
 public import TauCeti.LinearAlgebra.Matrix.BaseChange
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
@@ -22,8 +21,7 @@ import TauCeti.LinearAlgebra.TensorProduct.Cyclic
 The counit of restriction of scalars along a ring equivalence, and its inverse, act as the
 identity on the underlying elements.
 Restriction of scalars along an isomorphism of `R`-algebras keeps the endomorphism algebra of a
-module (`ModuleCat.moduleEndRestrictScalarsAlgEquiv`). Along a ring isomorphism it keeps finitely
-generated projective-injective modules.
+module (`ModuleCat.moduleEndRestrictScalarsAlgEquiv`).
 
 It also records three facts about Mathlib's extension of scalars `ModuleCat.extendScalars`.
 

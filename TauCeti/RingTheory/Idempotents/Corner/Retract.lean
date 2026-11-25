@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Opposite
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
-public import TauCeti.RingTheory.Idempotents.Corner.Basic
+public import TauCeti.RingTheory.Idempotents.Corner.Opposite
 public import TauCeti.RingTheory.Idempotents.Module
 
 /-!
@@ -19,9 +19,11 @@ If `X` is a retract of a module `M`, with inclusion `i : X → M` and retraction
 The piece `(i ∘ p) • M` of `M` is a copy of `X`, by `i`, on which the corner acts as `End_A X` acts
 on `X`.
 
-The same statements are also made in the opposite ring `(End_A M)ᵐᵒᵖ`, the ring in which the regular
-module `A` recovers `A` itself: `(End_A A)ᵐᵒᵖ ≃ A`. They are derived from the statements in
-`End_A M`.
+In the opposite ring `(End_A M)ᵐᵒᵖ`, the ring in which the regular module `A` recovers `A` itself
+(`(End_A A)ᵐᵒᵖ ≃ A`), `op (i ∘ p)` is again an idempotent, full under the same condition, and its
+corner is `(End_A X)ᵐᵒᵖ`; these are derived from the statements in `End_A M`. The action on the
+piece of `M` has no counterpart there: evaluation makes `M` a left module over `End_A M`, so a right
+module over `(End_A M)ᵐᵒᵖ`.
 
 When `M = X ⊕ Y`, the idempotent of `X` is full as soon as `Y` is a retract of a finite power of
 `X`. This is what relates the module categories of the endomorphism rings of different modules in
@@ -183,7 +185,7 @@ noncomputable def cornerEndRetractAlgEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] 
     ext x
     simp [retract_apply hip]
 
-/-- The corner element `c` acts on `X` as `p ∘ c ∘ i`. -/
+/-- The endomorphism of `X` underlying the image of a corner element `c` is `p ∘ c ∘ i`. -/
 @[simp]
 theorem cornerEndRetractAlgEquiv_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
     (c : (isIdempotentElem_comp hip).Corner) :
@@ -237,32 +239,15 @@ theorem span_op_comp_eq_top {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘
     ← OrderIso.le_symm_apply, TwoSidedIdeal.span_le, Set.singleton_subset_iff]
   exact TwoSidedIdeal.mem_unop_iff.2 (TwoSidedIdeal.subset_span rfl)
 
-/-- The corner of `(End_A M)ᵐᵒᵖ` at the idempotent of a retract is the opposite of the corner of
-`End_A M`. -/
-private def cornerOpAlgEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id) :
-    (isIdempotentElem_op_comp hip).Corner ≃ₐ[R]
-      ((isIdempotentElem_comp hip).Corner)ᵐᵒᵖ where
-  toFun c := op ⟨unop c.val,
-    (Subsemigroup.mem_corner_iff (isIdempotentElem_comp hip)).2
-      ⟨congrArg unop ((isIdempotentElem_op_comp hip).corner_val_mul c),
-        congrArg unop ((isIdempotentElem_op_comp hip).mul_corner_val c)⟩⟩
-  invFun c := ⟨op (unop c).val, (Subsemigroup.mem_corner_iff (isIdempotentElem_op_comp hip)).2
-    ⟨congrArg op ((isIdempotentElem_comp hip).corner_val_mul (unop c)),
-      congrArg op ((isIdempotentElem_comp hip).mul_corner_val (unop c))⟩⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
-  commutes' _ := rfl
-
 /-- **The endomorphism ring of a retract is a corner.** If `X` is a retract of `M`, with inclusion
 `i` and retraction `p`, the corner of `(End_A M)ᵐᵒᵖ` at the idempotent `i ∘ p` is `(End_A X)ᵐᵒᵖ`,
 by `f ↦ p ∘ f ∘ i`. -/
 noncomputable def cornerOpEndRetractAlgEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id) :
     (isIdempotentElem_op_comp hip).Corner ≃ₐ[R] (Module.End A X)ᵐᵒᵖ :=
-  (cornerOpAlgEquiv R hip).trans (AlgEquiv.op (cornerEndRetractAlgEquiv R hip))
+  (IsIdempotentElem.cornerOpAlgEquiv R (isIdempotentElem_comp hip)
+    (isIdempotentElem_op_comp hip)).trans (AlgEquiv.op (cornerEndRetractAlgEquiv R hip))
 
-/-- The corner element `c` acts on `X` as `p ∘ c ∘ i`. -/
+/-- The endomorphism of `X` underlying the image of a corner element `c` is `p ∘ c ∘ i`. -/
 @[simp]
 theorem unop_cornerOpEndRetractAlgEquiv_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
     (c : (isIdempotentElem_op_comp hip).Corner) :
