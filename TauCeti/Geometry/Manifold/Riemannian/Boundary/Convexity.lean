@@ -149,24 +149,19 @@ theorem IsStrictlyConvexAt.not_isStrictlyConcaveAt [NeZero n] {q : (𝓡∂ (n +
   obtain ⟨u, hu⟩ := exists_ne (0 : EuclideanSpace ℝ (Fin n))
   exact (isStrictlyConvexAt_iff.1 h u hu).not_gt (isStrictlyConcaveAt_iff.1 h' u hu)
 
-/-- In dimension one (`n = 0`) every tangent vector of the boundary vanishes: `T_q∂M` is the type
-`EuclideanSpace ℝ (Fin 0)`, a subsingleton, under the name `TangentSpace`. -/
-private theorem eq_zero_of_eq_zero (hn : n = 0) {q : (𝓡∂ (n + 1)).boundary M}
-    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) : u = 0 := by
-  subst hn
-  exact Subsingleton.elim (α := EuclideanSpace ℝ (Fin 0)) u 0
-
 /-- In dimension one (`n = 0`) the tangent space of the boundary is zero, so the boundary is
 strictly convex at every point. -/
 theorem isStrictlyConvexAt_of_eq_zero (hn : n = 0) (q : (𝓡∂ (n + 1)).boundary M) :
-    IsStrictlyConvexAt q :=
-  isStrictlyConvexAt_iff.2 fun u hu ↦ (hu (eq_zero_of_eq_zero hn u)).elim
+    IsStrictlyConvexAt q := by
+  subst hn
+  exact isStrictlyConvexAt_iff.2 fun u hu ↦ (hu (eq_zero_of_boundaryTangent_of_dim_one u)).elim
 
 /-- In dimension one (`n = 0`) the tangent space of the boundary is zero, so the boundary is
 strictly concave at every point. -/
 theorem isStrictlyConcaveAt_of_eq_zero (hn : n = 0) (q : (𝓡∂ (n + 1)).boundary M) :
-    IsStrictlyConcaveAt q :=
-  isStrictlyConcaveAt_iff.2 fun u hu ↦ (hu (eq_zero_of_eq_zero hn u)).elim
+    IsStrictlyConcaveAt q := by
+  subst hn
+  exact isStrictlyConcaveAt_iff.2 fun u hu ↦ (hu (eq_zero_of_boundaryTangent_of_dim_one u)).elim
 
 /-! ### Invariance under isometries -/
 

@@ -49,6 +49,8 @@ With this sign the closed unit ball has `II = h`, the induced metric. The bounda
 * `TauCeti.boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal`: for every vector
   field `N` differentiable at `q` and equal to `ν_out` along `∂M` near `q`,
   `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩`.
+* `TauCeti.boundarySecondFundamentalForm_eq_zero_of_dim_one`: in dimension one the tangent space
+  of the boundary is zero (`TauCeti.eq_zero_of_boundaryTangent_of_dim_one`), so `II_q = 0`.
 
 ## References
 
@@ -331,5 +333,34 @@ theorem boundaryInducedForm_eq_inner_boundaryTangentEquiv (q : (𝓡∂ (n + 1))
     boundaryInducedForm_apply]
 
 end InducedForm
+
+/-! ### Dimension one -/
+
+section DimOne
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 + 1)) M]
+
+/-- On a one-dimensional manifold with boundary, every tangent vector of the boundary vanishes:
+the boundary manifold is modelled on `EuclideanSpace ℝ (Fin 0)`. -/
+theorem eq_zero_of_boundaryTangent_of_dim_one {q : (𝓡∂ (0 + 1)).boundary M}
+    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) q) : u = 0 :=
+  -- `TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) q` is `EuclideanSpace ℝ (Fin 0)` by definition.
+  Subsingleton.elim (α := EuclideanSpace ℝ (Fin 0)) u 0
+
+variable [IsManifold (𝓡∂ (0 + 1)) 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (0 + 1)) x)]
+  [IsContMDiffRiemannianBundle (𝓡∂ (0 + 1)) 1 (EuclideanSpace ℝ (Fin (0 + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (0 + 1)) x)]
+
+/-- On a one-dimensional Riemannian manifold with boundary, the second fundamental form of the
+boundary is the zero form: the tangent space of the boundary is zero. -/
+@[simp]
+theorem boundarySecondFundamentalForm_eq_zero_of_dim_one (q : (𝓡∂ (0 + 1)).boundary M) :
+    boundarySecondFundamentalForm q = 0 := by
+  ext u w
+  rw [eq_zero_of_boundaryTangent_of_dim_one w]
+  exact map_zero (boundarySecondFundamentalForm q u)
+
+end DimOne
 
 end TauCeti
