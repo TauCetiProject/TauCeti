@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.TestFunction.Topology
-public import TauCeti.RepresentationTheory.Continuous.Integrated.Lie
+public import TauCeti.RepresentationTheory.Continuous.Integrated.Lie.Basic
 import TauCeti.RepresentationTheory.Continuous.StronglyContinuous
 
 /-!
