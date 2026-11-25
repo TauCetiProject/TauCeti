@@ -211,10 +211,8 @@ theorem integral_restrictedHaar_finprod {𝕜 : Type*} [RCLike 𝕜] {f : ∀ i,
       (hT i hi).2]
   -- the local integrals are `1` off `T`
   have hloc : ∏ᶠ i, ∫ y, f i y ∂μ i = ∏ i : T, ∫ y, f i y ∂μ i := by
-    have hfin : Function.HasFiniteMulSupport fun i ↦ ∫ y, f i y ∂μ i :=
-      T.finite_toSet.subset fun i hi ↦ by_contra fun hiT ↦ hi (hint i hiT)
-    rw [finprod_eq_prod_mul_finprod_compl hfin T,
-      finprod_eq_one_of_forall_eq_one fun i : {i // i ∉ T} ↦ hint i.val i.property, mul_one]
+    rw [Finset.prod_coe_sort T fun i ↦ ∫ y, f i y ∂μ i]
+    exact finprod_eq_prod_of_mulSupport_subset _ fun i hi ↦ by_contra fun hiT ↦ hi (hint i hiT)
   -- the indicator of the box `Π i ∉ T, B i` has integral `1` over the complement of `T`
   have hbox : ∫ z, (box fun i : {i // i ∉ T} ↦ (B i.val : Set (G i.val))).indicator 1 z
       ∂restrictedHaar (fun i : {i // i ∉ T} ↦ B i.val) (fun i ↦ μ i.val)
