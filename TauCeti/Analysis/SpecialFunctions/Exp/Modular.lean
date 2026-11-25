@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # The exponential potential dominates the modular `√(1 + t²) - 1`

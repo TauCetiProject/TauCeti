@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
+public import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
-import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 
 /-!
 # Diagonal operators in a Hilbert basis
@@ -31,6 +31,11 @@ sets: if `m_a → m` pointwise on `ι` and `‖m_a‖ ≤ C`, then `b.diagonal m
 every `x` (`HilbertBasis.tendsto_diagonal_apply`). Fourier multipliers on `L²` of the torus are
 the diagonal operators in the Fourier basis.
 
+A diagonal operator is compact exactly when its entries tend to zero along the cofinite filter
+(`HilbertBasis.isCompactOperator_diagonal_iff`): it is then the operator-norm limit of its finite
+truncations, and conversely the entries are the eigenvalues of the orthonormal eigenvectors `b i`,
+which tend to zero for a compact operator.
+
 ## Main declarations
 
 * `HilbertBasis.diagonal`: the algebra homomorphism `m ↦ b.diagonal m`.
@@ -41,9 +46,8 @@ the diagonal operators in the Fourier basis.
 * `HilbertBasis.diagonal_injective`: the entries are determined by the operator.
 * `HilbertBasis.adjoint_diagonal`, `HilbertBasis.star_diagonal`,
   `HilbertBasis.isSelfAdjoint_diagonal`: adjoint and self-adjointness of diagonal operators.
-* `HilbertBasis.isCompactOperator_diagonal_iff`: a diagonal operator is compact iff its entries
-  tend to `0` along `cofinite`.
 * `HilbertBasis.tendsto_diagonal_apply`: strong continuity in the entries.
+* `HilbertBasis.isCompactOperator_diagonal_iff`: compactness of a diagonal operator.
 -/
 
 public section
@@ -164,18 +168,6 @@ theorem isSelfAdjoint_diagonal [CompleteSpace E] {m : ℓ^∞(ι, 𝕜)} (hm : I
     IsSelfAdjoint (b.diagonal m) := by
   rw [IsSelfAdjoint, b.star_diagonal, hm.star_eq]
 
-/-- A diagonal operator in a Hilbert basis is compact if and only if its entries tend to `0` along
-the cofinite filter. -/
-theorem isCompactOperator_diagonal_iff (m : ℓ^∞(ι, 𝕜)) :
-    IsCompactOperator (b.diagonal m) ↔ Tendsto (m : ι → 𝕜) cofinite (𝓝 0) := by
-  have : ProperSpace 𝕜 := FiniteDimensional.proper_rclike 𝕜 𝕜
-  refine ⟨fun h ↦ h.tendsto_cofinite_of_orthonormal b.orthonormal (b.diagonal_apply_self m),
-    fun hm ↦ ?_⟩
-  have hcomp : IsCompactOperator (lp.diagonalCLM (p := 2) m) :=
-    lp.isCompactOperator_diagonalCLM m (tendsto_zero_iff_norm_tendsto_zero.1 hm)
-  exact (hcomp.comp_clm b.repr.toContinuousLinearEquiv.toContinuousLinearMap).clm_comp
-    b.repr.symm.toContinuousLinearEquiv.toContinuousLinearMap
-
 /-- **Strong continuity of diagonal operators in the entries.** If the entries `m a` are bounded
 uniformly by `C` and converge pointwise on `ι` to `m₀`, then `b.diagonal (m a) x → b.diagonal m₀ x`
 for every `x`. -/
@@ -213,5 +205,25 @@ theorem tendsto_diagonal_apply {α : Type*} {l : Filter α} {m : α → ℓ^∞(
   simp_rw [← hsq] at hlim
   have := hlim.sqrt
   simpa [Real.sqrt_sq (norm_nonneg _)] using this
+
+/-- A diagonal operator is the bounded diagonal operator `lp.diagonalCLM m` on `ℓ²(ι, 𝕜)`
+conjugated by the isometry `b.repr`. -/
+theorem coe_diagonal_eq_comp (m : ℓ^∞(ι, 𝕜)) :
+    ⇑(b.diagonal m) = b.repr.symm ∘ lp.diagonalCLM (p := 2) m ∘ b.repr := by
+  ext1 x
+  apply b.repr.injective
+  ext i
+  simp [lp.diagonalCLM_apply]
+
+/-- **Compact diagonal operators.** A diagonal operator `b.diagonal m` is compact if and only if its
+entries `m i` tend to zero along the cofinite filter. -/
+theorem isCompactOperator_diagonal_iff (m : ℓ^∞(ι, 𝕜)) :
+    IsCompactOperator (b.diagonal m) ↔ Tendsto (fun i ↦ m i) cofinite (𝓝 0) := by
+  refine ⟨fun h ↦ h.tendsto_cofinite_of_orthonormal (T := (b.diagonal m : E →ₗ[𝕜] E))
+    b.orthonormal (b.diagonal_apply_self m), fun h ↦ ?_⟩
+  rw [coe_diagonal_eq_comp]
+  exact ((lp.isCompactOperator_diagonalCLM m (tendsto_zero_iff_norm_tendsto_zero.1 h)).comp_clm
+    b.repr.toContinuousLinearEquiv.toContinuousLinearMap).clm_comp
+    b.repr.symm.toContinuousLinearEquiv.toContinuousLinearMap
 
 end HilbertBasis

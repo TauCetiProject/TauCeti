@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Analysis.Calculus.Deriv.Mobius
 import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius
 public import TauCeti.Topology.Compactification.OnePoint.Stabilizer
@@ -136,15 +137,9 @@ charts at `z` and at its image, has derivative `(a d - b c) / (c z + d) ^ 2`. -/
 theorem hasDerivAt_writtenInExtChartAt_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜}
     (hz : g 1 0 * z + g 1 1 ≠ 0) :
     HasDerivAt (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) fun x ↦ g • x)
-      ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2) z := by
-  have hp : HasDerivAt (fun w : 𝕜 ↦ g 0 0 * w + g 0 1) (g 0 0) z := by
-    simpa using ((hasDerivAt_id z).const_mul (g 0 0)).add_const (c := g 0 1)
-  have hq' : HasDerivAt (fun w : 𝕜 ↦ g 1 0 * w + g 1 1) (g 1 0) z := by
-    simpa using ((hasDerivAt_id z).const_mul (g 1 0)).add_const (c := g 1 1)
-  refine ((hp.div hq' hz).congr_of_eventuallyEq
-    (writtenInExtChartAt_smul_coe_eventuallyEq g hz)).congr_deriv ?_
-  rw [det_fin_two]
-  ring
+      ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2) z :=
+  ((TauCeti.hasDerivAt_mul_add_div_mul_add hz).congr_of_eventuallyEq
+    (writtenInExtChartAt_smul_coe_eventuallyEq g hz)).congr_deriv (by rw [det_fin_two])
 
 /-- **The derivative of a Möbius transformation.** At a finite point `z` that is not a pole,
 `z ↦ (a z + b) / (c z + d)` has derivative `(a d - b c) / (c z + d) ^ 2`, read in the affine

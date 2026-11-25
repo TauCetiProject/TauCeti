@@ -33,7 +33,9 @@ gives it its smooth structure as a regular level and identifies it with the unit
   atlas `TauCeti.regularLevelChartedSpace` then makes `E` an analytic three-manifold, modelled on
   `ℝ³`, and its inclusion into `ℂ²` is an analytic embedding
   (`TauCeti.Toric.isSmoothEmbedding_coe_weightedEllipsoid`). No positivity of the weights is
-  needed for this, and for `ε < 0`, or for `a = b = 0`, the level is empty.
+  needed for this, and for `ε < 0`, or for `a = b = 0`, the level is empty. The weighted
+  rotations are restrictions of the polynomial map `(u, z) ↦ (u ^ a z₁, u ^ b z₂)`, so the
+  circle acts jointly analytically on `E` (a `ContMDiffSMul` instance).
 * **The unit sphere.** For positive weights and `ε > 0` the real rescaling
 
   `(z₁, z₂) ↦ (√(a / (2 ε)) z₁, √(b / (2 ε)) z₂)`
@@ -60,6 +62,8 @@ by the circle acting with weights `a` and `b`. For `a = b = 1` this is the Hopf 
   `IsManifold 𝓘(ℝ, Fin 3 → ℝ) ω (weightedEllipsoid a b ε)`, for `[NeZero ε]`.
 * `TauCeti.Toric.isSmoothEmbedding_coe_weightedEllipsoid`: the ellipsoid is an analytically
   embedded submanifold of `ℂ²`.
+* The instance `ContMDiffSMul (𝓡 1) 𝓘(ℝ, Fin 3 → ℝ) n Circle (weightedEllipsoid a b ε)`, for
+  `[NeZero ε]` and every `n`: the weighted circle action on the ellipsoid is jointly analytic.
 * `TauCeti.Toric.weightedEllipsoidSphereDiffeomorph`: the diffeomorphism of the ellipsoid with the
   unit sphere of `ℂ²`.
 * `TauCeti.Toric.euclideanWeightedRotation a b`: the circle acting on `ℂ²`, and so on `S³`, with
@@ -220,6 +224,32 @@ theorem contMDiff_weightedEllipsoid_iff [NeZero ε] {E H M : Type*} [NormedAddCo
     [ChartedSpace H M] {f : M → weightedEllipsoid a b ε} {n : ℕ∞ω} :
     ContMDiff I 𝓘(ℝ, Fin 3 → ℝ) n f ↔ ContMDiff I 𝓘(ℝ, ℂ × ℂ) n (Subtype.val ∘ f) :=
   (isSmoothEmbedding_coe_weightedEllipsoid.of_le le_top).contMDiff_iff_comp
+
+/-! ### The smooth circle action -/
+
+attribute [local instance] finrank_real_complex_fact'
+
+/-- **The circle acts analytically on the ellipsoid**, for `ε ≠ 0`: the weighted rotations
+`(u, z) ↦ (u ^ a z₁, u ^ b z₂)` form a jointly `C^n` action `Circle × E → E`, for every `n`. -/
+instance [NeZero ε] {n : ℕ∞ω} :
+    ContMDiffSMul (𝓡 1) 𝓘(ℝ, Fin 3 → ℝ) n Circle (weightedEllipsoid a b ε) where
+  contMDiff_smul := by
+    have hrot : (Subtype.val ∘ fun p : Circle × weightedEllipsoid a b ε ↦ p.1 • p.2) =
+        fun p ↦ ((p.1 : ℂ) ^ a * (p.2 : ℂ × ℂ).1, (p.1 : ℂ) ^ b * (p.2 : ℂ × ℂ).2) :=
+      funext fun p ↦ by
+        rw [Function.comp_apply, coe_smul_weightedEllipsoid]
+        exact Prod.ext (weightedRotation_fst _ _) (weightedRotation_snd _ _)
+    have hu : ContMDiff ((𝓡 1).prod 𝓘(ℝ, Fin 3 → ℝ)) 𝓘(ℝ, ℂ) n
+        fun p : Circle × weightedEllipsoid a b ε ↦ (p.1 : ℂ) :=
+      contMDiff_coe_sphere.comp contMDiff_fst
+    have hz : ContMDiff ((𝓡 1).prod 𝓘(ℝ, Fin 3 → ℝ)) 𝓘(ℝ, ℂ × ℂ) n
+        fun p : Circle × weightedEllipsoid a b ε ↦ (p.2 : ℂ × ℂ) :=
+      contMDiff_coe_weightedEllipsoid.comp contMDiff_snd
+    have hmul : ContDiff ℝ n fun q : ℂ × (ℂ × ℂ) ↦ (q.1 ^ a * q.2.1, q.1 ^ b * q.2.2) :=
+      ((contDiff_fst.pow a).mul (contDiff_fst.comp contDiff_snd)).prodMk
+        ((contDiff_fst.pow b).mul (contDiff_snd.comp contDiff_snd))
+    rw [contMDiff_weightedEllipsoid_iff, hrot]
+    exact hmul.comp_contMDiff (hu.prodMk_space hz)
 
 /-! ### The diffeomorphism with the unit sphere -/
 

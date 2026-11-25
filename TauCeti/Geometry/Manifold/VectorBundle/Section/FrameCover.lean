@@ -18,6 +18,9 @@ import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 The compact derivative topology on native sections is independent of the covering smooth
 frame system. Changes of frame act by the actual smooth transition matrix, including its
 higher derivatives. Open-cover locality is taken in the existing weak Whitney topology.
+Restriction to an open subset and multiplication by a smooth scalar function are continuous
+(`ContMDiffSection.continuous_restrict_frameTopology`,
+`ContMDiffSection.continuous_smul_function_frameTopology`).
 -/
 
 public noncomputable section
@@ -158,9 +161,6 @@ theorem frameTopology_le_of_refinement {κ : Type*}
 frames and the restricted frame domains. No global covering hypothesis is needed. -/
 theorem continuous_restrict_frameTopology (W : Opens M) :
     let c : C(W, M) := ⟨Subtype.val, continuous_subtypeVal⟩
-    let _ : ContMDiffVectorBundle n F (c *ᵖ V) I :=
-      ContMDiffVectorBundle.pullback F V I
-        (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, W; I, M⟯)
     let eW := fun i ↦ (e i).pullback c
     let UW := fun i ↦ Opens.comap c (U i)
     let hUW : ∀ i, (UW i : Set W) ⊆ (eW i).baseSet := fun i _ hx ↦ hU i hx
@@ -168,9 +168,6 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
     let _ := frameTopology (I := I) (n := n) eW UW hUW
     Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ s.restrict W) := by
   let c : C(W, M) := ⟨Subtype.val, continuous_subtypeVal⟩
-  let _ : ContMDiffVectorBundle n F (c *ᵖ V) I :=
-    ContMDiffVectorBundle.pullback F V I
-      (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, W; I, M⟯)
   let eW := fun i ↦ (e i).pullback c
   let UW := fun i ↦ Opens.comap c (U i)
   let hUW : ∀ i, (UW i : Set W) ⊆ (eW i).baseSet := fun i _ hx ↦ hU i hx
@@ -193,8 +190,21 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
   ext x
   simp only [Function.comp_apply, ContMDiffMap.comp_apply,
     Bundle.Trivialization.frameCoordinates_apply]
-  erw [Bundle.Trivialization.frameCoordinates_apply,
-    Bundle.Trivialization.pullback_apply, ContMDiffSection.restrict_apply]
+  rw [Bundle.Trivialization.pullback_apply, ContMDiffSection.restrict_apply]
   rfl
+
+omit [LocallyCompactSpace E] in
+/-- Multiplication of sections by a fixed smooth scalar function is continuous for the frame
+topology. In each frame it multiplies the coefficients by the restricted function. -/
+theorem continuous_smul_function_frameTopology (f : C^n⟮I, M; 𝕜⟯) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ f • s) := by
+  let A (i : ι) : C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
+    ⟨fun x ↦ f x • ContinuousLinearMap.id 𝕜 F,
+      (f.contMDiff.comp contMDiff_subtypeVal).smul contMDiff_const⟩
+  refine continuous_frameTopology_of_frameCoordinates_eq_clmApplyLinearMap e U hU e hU A
+    fun i s ↦ ContMDiffMap.ext fun x ↦ ?_
+  rw [ContMDiffMap.clmApplyLinearMap_apply]
+  simp [A, ← (e i).continuousLinearMapAt_apply_of_mem 𝕜 (hU i x.property)]
 
 end ContMDiffSection

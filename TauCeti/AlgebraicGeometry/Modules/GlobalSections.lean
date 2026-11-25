@@ -98,6 +98,17 @@ lemma globalSectionsSmul_app
     (globalSectionsSmul M r).app U = (M.smul (X.presheaf.map U.leTop.op r)).asHom := by
   rfl
 
+/-- On global sections, multiplication by a global function `r` is the scalar action of `r`. -/
+lemma globalSectionsSmul_app_top_apply (M : X.Modules) (r : Γ(X, ⊤)) (s : Γ(M, ⊤)) :
+    (M.globalSectionsSmul r).app ⊤ s = r • s := by
+  rw [globalSectionsSmul_app]
+  have h : X.presheaf.map (⊤ : X.Opens).leTop.op r = r := by
+    have hf : (⊤ : X.Opens).leTop.op = 𝟙 (Opposite.op (⊤ : X.Opens)) := Subsingleton.elim _ _
+    rw [hf]
+    exact ConcreteCategory.congr_hom (X.presheaf.map_id _) r
+  rw [h]
+  exact M.smul_apply r s
+
 -- In the next four proofs, sheaf-morphism extensionality leaves pointwise bundled-module goals.
 -- The wrappers have no pointwise equality lemmas, so each `change` records the corresponding
 -- public presheaf/module formulation before applying the ring and module laws.

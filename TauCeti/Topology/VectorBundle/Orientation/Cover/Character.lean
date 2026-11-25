@@ -48,7 +48,11 @@ character of the loop `t ↦ f(e^{2πit})` at `f 1` is an invariant of the path 
 when the orientations of the fibres `E_{f z}` can be chosen continuously in `z ∈ S¹`, that is when
 `f` lifts to the orientation double cover (`freeLoopOrientationCharacter_eq_one_iff`). Such a lift
 is a continuous choice of orientations of the fibres of `E` along `f`, the data of an orientation
-of the pulled-back bundle `f*E`; the pullback bundle itself is not formed here.
+of the pulled-back bundle `f*E`; the pullback bundle itself is not formed here. Accordingly, the
+sign exponent `IsCoveringMap.freeLoopSignExponent` of a Moore free loop in the orientation double
+cover is `0` exactly when the circle map it traces lifts, and `-1` exactly when it does not
+(`freeLoopSignExponent_eq_zero_iff_exists_lift`,
+`freeLoopSignExponent_eq_neg_one_iff_not_exists_lift`).
 
 For the tangent bundle of a closed manifold `Q`, these are the orientation data in the degree-zero
 twist `η₀` of the Viterbo isomorphism with local coefficients of Barraud–Damian–Humilière–Oancea:
@@ -78,6 +82,9 @@ and the orientation local system of `Q` has the orientation character as its mon
   path component in `C(S¹, B)`.
 * `freeLoopOrientationCharacter_eq_one_iff`: the character of a free loop is `1` exactly when the
   loop lifts to the orientation double cover.
+* `freeLoopSignExponent_eq_zero_iff_exists_lift`,
+  `freeLoopSignExponent_eq_neg_one_iff_not_exists_lift`: the sign exponent of a Moore free loop in
+  the orientation double cover is `0` exactly when it lifts.
 
 ## References
 
@@ -231,6 +238,13 @@ loop space (`freeLoopOrientationCharacter_eq_of_joined`). -/
 def freeLoopOrientationCharacter (hι : Fintype.card ι = finrank ℝ F) (f : C(Circle, B)) : ℤˣ :=
   (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignCharacter (finite_fiber hι) f
 
+/-- The orientation character of a free loop is its sign character in the orientation double
+cover. -/
+theorem freeLoopOrientationCharacter_eq_freeLoopSignCharacter (f : C(Circle, B)) :
+    freeLoopOrientationCharacter F E hι f =
+      (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignCharacter (finite_fiber hι) f :=
+  (rfl)
+
 /-- The orientation character of a free loop is the orientation character of its based loop at
 `f 1`. -/
 theorem freeLoopOrientationCharacter_def (f : C(Circle, B)) :
@@ -262,6 +276,29 @@ theorem freeLoopOrientationCharacter_eq_one_iff (f : C(Circle, B)) :
       ∃ s : C(Circle, VectorBundleOrientationCover F E ι), ∀ z, (s z).proj = f z :=
   IsCoveringMap.freeLoopSignCharacter_eq_one_iff _ _ (fun _ _ h ↦ eq_or_eq_deck hι h) f
     (surjective_proj hι (f 1))
+
+/-- **Orientability along a free loop.** In the orientation double cover, a free loop `γ` has
+exponent `0` exactly when the orientations of the fibres along the circle traced by `γ` can be
+chosen continuously, that is when `E` pulled back along it is orientable. -/
+theorem freeLoopSignExponent_eq_zero_iff_exists_lift (γ : MooreFreeLoopSpace B) :
+    (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignExponent (finite_fiber hι) γ = 0 ↔
+      ∃ s : C(Circle, VectorBundleOrientationCover F E ι),
+        ∀ z, (s z).proj = MooreFreeLoopSpace.toCircleMap γ z :=
+  (IsCoveringMap.freeLoopSignExponent_eq_zero_iff _ _ γ).trans <| by
+    rw [← freeLoopOrientationCharacter_eq_freeLoopSignCharacter]
+    exact freeLoopOrientationCharacter_eq_one_iff hι _
+
+/-- **Non-orientability along a free loop.** In the orientation double cover, a free loop `γ` has
+exponent `-1` exactly when the orientations of the fibres along the circle traced by `γ` cannot be
+chosen continuously, that is when `E` pulled back along it is not orientable. -/
+theorem freeLoopSignExponent_eq_neg_one_iff_not_exists_lift (γ : MooreFreeLoopSpace B) :
+    (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignExponent (finite_fiber hι) γ = -1 ↔
+      ¬∃ s : C(Circle, VectorBundleOrientationCover F E ι),
+        ∀ z, (s z).proj = MooreFreeLoopSpace.toCircleMap γ z :=
+  (IsCoveringMap.freeLoopSignExponent_eq_neg_one_iff _ _ γ).trans <|
+    Int.units_ne_iff_eq_neg.symm.trans <| not_congr <|
+      (IsCoveringMap.freeLoopSignExponent_eq_zero_iff _ _ γ).symm.trans <|
+        freeLoopSignExponent_eq_zero_iff_exists_lift hι γ
 
 /-- The orientation character of a free loop in an orientable bundle is `1`. -/
 theorem _root_.TauCeti.VectorBundleOrientation.freeLoopOrientationCharacter_eq_one

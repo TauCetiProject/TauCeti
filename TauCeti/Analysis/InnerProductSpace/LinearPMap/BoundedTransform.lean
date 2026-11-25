@@ -11,11 +11,11 @@ public import TauCeti.Topology.Algebra.Module.LinearPMap.Sylvester
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.ProjValMeasure.Conj
-import TauCeti.Analysis.InnerProductSpace.Sylvester
+import TauCeti.Analysis.InnerProductSpace.Sylvester.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Normed.Operator.Resolvent.Analytic
 import TauCeti.Analysis.SpecialFunctions.Integrals.InvSqrtAdd
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Sylvester
 
@@ -124,8 +124,7 @@ theorem one_sub_boundedTransform_mul_self :
     ← _root_.map_sub (A.spectralPVM hA).integral]
   congr 1
   ext t
-  simp only [BoundedBorelFunction.sub_apply, BoundedBorelFunction.one_apply,
-    BoundedBorelFunction.mul_apply, boundedTransformSymbol,
+  simp only [_root_.sub_apply, _root_.one_apply, _root_.mul_apply, boundedTransformSymbol,
     BoundedBorelFunction.ofFunction_apply,
     BoundedBorelFunction.resolventSymbol_apply (-Complex.I) hnegI,
     BoundedBorelFunction.resolventSymbol_apply Complex.I hI]

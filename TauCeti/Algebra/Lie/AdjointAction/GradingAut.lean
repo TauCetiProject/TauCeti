@@ -39,10 +39,11 @@ contracting action on a Slodowy slice (`TauCeti.Algebra.Lie.Sl2.SlodowySlice.Bas
 * `TauCeti.gradingAut_apply_of_mem`: the characterizing property of `TauCeti.gradingAut`.
 * `TauCeti.gradingAut_mul_apply`, `TauCeti.gradingAut_one_apply` and `TauCeti.gradingAut_symm`:
   `s ↦ gradingAut hh s` is a group homomorphism from `Rˣ` to the automorphisms of `L`.
-* `TauCeti.map_gradingAut_apply`: Lie endomorphisms fixing `h` commute with the grading
-  automorphisms.
 * `TauCeti.subsingleton_of_isInternal_eigenspace_of_charP_pos`: in positive characteristic the
   grading forces `L` to be trivial.
+* `LieHom.map_gradingAut`: a Lie algebra homomorphism `φ` with `φ h = h'` intertwines the
+  grading automorphisms of `h` and of `h'`. In particular Lie endomorphisms fixing `h` commute
+  with the grading automorphisms.
 -/
 
 public section
@@ -186,24 +187,33 @@ theorem gradingAut_apply_self (s : Rˣ) : gradingAut hh s h = h := by
     simp
   rw [gradingAut_apply_of_mem hh s hh0, zpow_zero, Units.val_one, one_smul]
 
-/-- **Lie endomorphisms fixing `h` commute with the grading automorphisms.** Such a map carries
-each eigenspace `L(j)` of `ad h` into itself, where the grading automorphism at `s` is the scalar
-`s ^ j`. For an algebraic group, this says that the centralizer of `h` commutes with the adjoint
-action of the cocharacter attached to `h`. -/
-theorem map_gradingAut_apply (φ : L →ₗ⁅R⁆ L) (hφ : φ h = h) (s : Rˣ) (x : L) :
-    φ (gradingAut hh s x) = gradingAut hh s (φ x) := by
-  have hmem {j : ℤ} {y : L} (hy : y ∈ (ad R L h).eigenspace (j : R)) :
-      φ y ∈ (ad R L h).eigenspace (j : R) := by
+end Grading
+
+section Naturality
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+/-- **Lie algebra homomorphisms intertwine grading automorphisms.** If the integer eigenspaces of
+`ad h` decompose `L`, those of `ad h'` decompose `L'` and `φ h = h'`, then `φ ∘ gradingAut s` is
+`gradingAut s ∘ φ` for every unit `s`. In particular Lie endomorphisms fixing `h` commute with the
+grading automorphisms; for an algebraic group, this says that the centralizer of `h` commutes with
+the adjoint action of the cocharacter attached to `h`. -/
+theorem _root_.LieHom.map_gradingAut (φ : L →ₗ⁅R⁆ L') {h : L} {h' : L'}
+    (hh : DirectSum.IsInternal fun j : ℤ ↦ (ad R L h).eigenspace (j : R))
+    (hh' : DirectSum.IsInternal fun j : ℤ ↦ (ad R L' h').eigenspace (j : R)) (hφ : φ h = h')
+    (s : Rˣ) (x : L) : φ (gradingAut hh s x) = gradingAut hh' s (φ x) := by
+  -- Both sides are linear in `x`; on the `j`-eigenspace of `ad h` both scale by `s ^ j`, because
+  -- `φ` carries it into the `j`-eigenspace of `ad h'`.
+  refine LinearMap.congr_fun (LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top
+    (f := (φ : L →ₗ[R] L') ∘ₗ (gradingAut hh s : L →ₗ[R] L))
+    (g := (gradingAut hh' s : L' →ₗ[R] L') ∘ₗ (φ : L →ₗ[R] L')) fun j y hy ↦ ?_) x
+  have hφy : φ y ∈ (ad R L' h').eigenspace (j : R) := by
     rw [Module.End.mem_eigenspace_iff, ad_apply] at hy ⊢
     rw [← hφ, ← LieHom.map_lie, hy, map_smul]
-  have hcomp : (φ : L →ₗ[R] L) ∘ₗ ((gradingAut hh s : L ≃ₗ[R] L) : L →ₗ[R] L) =
-      ((gradingAut hh s : L ≃ₗ[R] L) : L →ₗ[R] L) ∘ₗ (φ : L →ₗ[R] L) :=
-    LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top fun j y hy ↦ by
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv,
-        LieHom.coe_toLinearMap, gradingAut_apply_of_mem hh s hy,
-        gradingAut_apply_of_mem hh s (hmem hy), map_smul]
-  exact LinearMap.congr_fun hcomp x
+  simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LinearEquiv.coe_coe,
+    LieEquiv.coe_toLinearEquiv]
+  rw [gradingAut_apply_of_mem hh s hy, gradingAut_apply_of_mem hh' s hφy, map_smul]
 
-end Grading
+end Naturality
 
 end TauCeti
