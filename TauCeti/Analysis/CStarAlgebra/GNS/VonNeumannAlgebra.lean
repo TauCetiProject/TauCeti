@@ -88,13 +88,8 @@ commutes with the image of the GNS representation. -/
 theorem mem_gnsVonNeumannAlgebra_commutant_iff {T : f.GNS →L[ℂ] f.GNS} :
     T ∈ f.gnsVonNeumannAlgebra.commutant ↔
       ∀ a, f.gnsNonUnitalStarAlgHom a * T = T * f.gnsNonUnitalStarAlgHom a := by
-  refine ⟨fun hT a ↦ VonNeumannAlgebra.mem_commutant_iff.mp hT _
-    (f.gnsNonUnitalStarAlgHom_mem_gnsVonNeumannAlgebra a), fun h ↦ ?_⟩
-  rw [← SetLike.mem_coe, gnsVonNeumannAlgebra_def, VonNeumannAlgebra.coe_commutant_adjoin]
-  rintro x (⟨a, rfl⟩ | ⟨a, ha⟩)
-  · exact h a
-  · rw [← star_star x, ← ha, ← map_star]
-    exact h _
+  rw [gnsVonNeumannAlgebra_def, VonNeumannAlgebra.mem_commutant_adjoin_iff_of_star_subset
+    (by rintro _ ⟨a, ha⟩; exact ⟨star a, by rw [map_star, ha, star_star]⟩), Set.forall_mem_range]
 
 /-- The right representation of a tracial functional takes values in the commutant `M_f'` of the
 GNS von Neumann algebra. -/

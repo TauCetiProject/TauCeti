@@ -33,7 +33,7 @@ Neumann algebra `M_f = π(A)''`: for `x ∈ M_f`, the operator `J x J` commutes 
 * `PositiveLinearMap.gnsConjOperator_gnsRightNonUnitalStarAlgHom`: `J πᵒᵖ(bᵒᵖ) J = π(b⋆)`.
 * `PositiveLinearMap.gnsRightNonUnitalStarAlgHom_eq_gnsConjOperator`: `πᵒᵖ(bᵒᵖ) = J π(b⋆) J`.
 * `PositiveLinearMap.gnsConjOperator_mem_commutant`: `J M_f J ⊆ M_f'`.
-* `PositiveLinearMap.gnsConj_apply_gnsVector_of_mem`: `J x Ω = x⋆ Ω` for `x ∈ M_f`.
+* `PositiveLinearMap.gnsConj_apply_apply_gnsVector_of_mem`: `J x Ω = x⋆ Ω` for `x ∈ M_f`.
 
 ## References
 
@@ -151,7 +151,8 @@ variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
 /-- **`J x Ω = x⋆ Ω` on the GNS von Neumann algebra.** For a tracial positive functional on a
 unital C⋆-algebra and `x ∈ M_g`, the modular conjugation sends `x Ω` to `x⋆ Ω`. -/
-theorem gnsConj_apply_gnsVector_of_mem {x : g.GNS →L[ℂ] g.GNS} (hx : x ∈ g.gnsVonNeumannAlgebra) :
+theorem gnsConj_apply_apply_gnsVector_of_mem {x : g.GNS →L[ℂ] g.GNS}
+    (hx : x ∈ g.gnsVonNeumannAlgebra) :
     gnsConj g hg (x g.gnsVector) = star x g.gnsVector := by
   -- The vector functionals `x ↦ ⟪J u, x Ω⟫` and `x ↦ ⟪Ω, x u⟫` agree on `π(B)`, by traciality
   -- on classes `u = [b]` and by continuity in `u`, hence on `M_g`.
