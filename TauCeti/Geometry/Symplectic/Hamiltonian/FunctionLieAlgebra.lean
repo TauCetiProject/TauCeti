@@ -44,8 +44,8 @@ algebra, `TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra σ hσ`.
   bracket (`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.negVectorFieldLieHom`), whose
   kernel consists of the functions with vanishing differential
   (`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.mem_ker_negVectorFieldLieHom_iff`), the
-  constant functions when `M` is preconnected
-  (`HamiltonianFunctionLieAlgebra.mem_ker_negVectorFieldLieHom_iff_exists_const`).
+  constant functions when `M` is preconnected, by
+`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.mem_ker_negVectorFieldLieHom_iff_exists_const`.
 * The bracket satisfies the Leibniz rule `⁅f g, k⁆ = f ⁅g, k⁆ + g ⁅f, k⁆` for the pointwise product
   (`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.lie_apply_of_eq_mul`).
 
@@ -162,11 +162,13 @@ theorem mul_mem_hamiltonianFunctions {f g : C^∞⟮I, M; ℝ⟯} (hf : f ∈ σ
   rw [ContMDiffMap.coe_mul]
   exact hX.mul hY (f.contMDiff.mdifferentiable (by simp)) (g.contMDiff.mdifferentiable (by simp))
 
-/-- **Constant functions are Hamiltonian**, with the Hamiltonian vector field `0`. -/
+/-- **The constant function `1` is Hamiltonian**, with the Hamiltonian vector field `0`
+(`TauCeti.SmoothTwoForm.isHamiltonianVectorField_const`); other constants follow by scalar
+multiplication. -/
 theorem one_mem_hamiltonianFunctions : (1 : C^∞⟮I, M; ℝ⟯) ∈ σ.hamiltonianFunctions :=
-  ⟨0, isHamiltonianVectorField_iff.2 fun x v ↦ by
-    rw [ContMDiffSection.coe_zero, Pi.zero_apply, SmoothBundleForm.eval₂_zero_left,
-      ContMDiffMap.coe_one, Pi.one_def, mvfderiv_const, zero_apply]⟩
+  ⟨0, by
+    rw [ContMDiffSection.coe_zero, ContMDiffMap.coe_one, Pi.one_def]
+    exact σ.isHamiltonianVectorField_const 1⟩
 
 variable (σ) in
 /-- The Hamiltonian functions of `σ` as a subalgebra of the smooth functions: they contain the
