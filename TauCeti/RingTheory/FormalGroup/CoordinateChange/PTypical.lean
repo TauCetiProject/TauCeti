@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.Curve.Arithmetic
 import TauCeti.Data.Nat.Pow
+import TauCeti.Data.PNat.Basic
 
 /-!
 # Strict `p`-typical curves and coordinate changes on formal group laws
@@ -266,8 +267,9 @@ theorem coeff_pTypicalStrictCurve_𝔾ₐ {p : ℕ} (hp : 1 < p) (t : ℕ+ → R
     split_ifs with hex
     · obtain ⟨hpow, hpos⟩ := hex
       set m := Nat.log p k - 1; have hm : Nat.log p k = m + 1 := by omega
+      have hlog_eq : (⟨Nat.log p k, hpos⟩ : ℕ+) = m.succPNat := PNat.coe_injective hm
       rw [sum_eq_single m]
-      · rw [(PNat.coe_injective hm : (⟨Nat.log p k, hpos⟩ : ℕ+) = m.succPNat), ← hpow, hm]
+      · rw [hlog_eq, ← hpow, hm]
         simp [PowerSeries.coeff_X_pow]
       · exact fun j _ hjm ↦ by
           have hne : k ≠ p ^ (j + 1) := fun h ↦ hjm <| by
@@ -331,12 +333,10 @@ theorem coeff_pow_succ_pTypicalStrictCurve_sub (F : FormalGroup R) {p : ℕ} (hp
 
 /-- For `1 < p`, `F.pTypicalStrictCurve p` is injective over any commutative ring. -/
 theorem pTypicalStrictCurve_injective (F : FormalGroup R) {p : ℕ} (hp : 1 < p) :
-    Function.Injective (F.pTypicalStrictCurve p) := fun t t' h ↦ funext fun i ↦ by
-  induction i using PNat.strongInductionOn with | _ i ih =>
-  obtain ⟨n, rfl⟩ : ∃ n, n.succPNat = i := ⟨i.natPred, i.succPNat_natPred⟩
-  have hsub := F.coeff_pow_succ_pTypicalStrictCurve_sub hp (n := n) fun j hj ↦
-    ih j ((PNat.coe_lt_coe j n.succPNat).mp (by simpa using Nat.lt_succ_of_le hj))
-  rwa [h, sub_self, map_zero, eq_comm, sub_eq_zero] at hsub
+    Function.Injective (F.pTypicalStrictCurve p) := fun t t' h ↦ funext fun i ↦
+  i.strongInductionOnSuccPNat fun n ih ↦ by
+    have hsub := F.coeff_pow_succ_pTypicalStrictCurve_sub hp (n := n) ih
+    rwa [h, sub_self, map_zero, eq_comm, sub_eq_zero] at hsub
 
 /-- For `1 < p`, `F.pTypicalStrictCoordinate p` is injective over any commutative ring. -/
 theorem pTypicalStrictCoordinate_injective (F : FormalGroup R) {p : ℕ} (hp : 1 < p) :

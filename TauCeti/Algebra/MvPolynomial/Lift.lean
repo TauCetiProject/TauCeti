@@ -212,6 +212,20 @@ noncomputable def iteratedRingHomEquivAlgHom :
     (iteratedRingHomEquivAlgHom A).symm g = g.toRingHom.comp (map (map (Int.castRingHom A))) :=
   (rfl)
 
+/-- Restricting `iteratedRingHomEquivAlgHom A f` along `ℤ[X_σ][X_τ] →+* A[X_σ][X_τ]` recovers
+`f`. -/
+@[simp] theorem coe_iteratedRingHomEquivAlgHom_comp_map_map
+    (f : MvPolynomial τ (MvPolynomial σ ℤ) →+* R) :
+    (iteratedRingHomEquivAlgHom A f : MvPolynomial τ (MvPolynomial σ A) →+* R).comp
+        (map (map (Int.castRingHom A))) = f :=
+  (iteratedRingHomEquivAlgHom A).symm_apply_apply f
+
+/-- `iteratedRingHomEquivAlgHom A f` agrees with `f` on the image of `ℤ[X_σ][X_τ]`. -/
+@[simp] theorem iteratedRingHomEquivAlgHom_map_map
+    (f : MvPolynomial τ (MvPolynomial σ ℤ) →+* R) (x : MvPolynomial τ (MvPolynomial σ ℤ)) :
+    iteratedRingHomEquivAlgHom A f (map (map (Int.castRingHom A)) x) = f x :=
+  RingHom.congr_fun (coe_iteratedRingHomEquivAlgHom_comp_map_map A f) x
+
 end Iterated
 
 end MvPolynomial

@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.CoordinateChange.PTypical
 public import TauCeti.RingTheory.FormalGroup.Hazewinkel.Integral
 import Mathlib.Algebra.MvPolynomial.CommRing
 import TauCeti.Data.Nat.Pow
+import TauCeti.Data.PNat.Basic
 import TauCeti.RingTheory.FormalGroup.Hazewinkel.LeadingDifference
 import TauCeti.RingTheory.FormalGroup.Typical.Expansion
 import TauCeti.RingTheory.FormalGroup.Typical.Universal
@@ -17,23 +18,23 @@ import TauCeti.RingTheory.PowerSeries.Substitution
 /-!
 # Strict `p`-typical coordinate changes and classification of Hazewinkel isomorphisms
 
-Importing the generic strict `p`-typical curves `FormalGroup.pTypicalStrictCurve` and coordinates
-`FormalGroup.pTypicalStrictCoordinate` from
-`TauCeti.RingTheory.FormalGroup.CoordinateChange.PTypical` and their `p`-typical parametrization
-`FormalGroup.IsPTypical.existsUnique_pTypicalStrictCoordinate_eq_of_isPTypical_smul` from
-`TauCeti.RingTheory.FormalGroup.Typical.Expansion`, we classify strict `p`-typical coordinate
-changes on Hazewinkel's formal group laws.
+Using `FormalGroup.pTypicalStrictCurve`, `FormalGroup.pTypicalStrictCoordinate`, and
+`FormalGroup.IsPTypical.existsUnique_pTypicalStrictCoordinate_eq_of_isPTypical_smul`, we classify
+strict `p`-typical coordinate changes between Hazewinkel's formal group laws. Over a `ℚ`-algebra,
+substituting `pTypicalStrictCurve` into Hazewinkel's logarithm `f_v` satisfies Ravenel's recursion;
+combining universal `p`-typicality over `ℤ[v₁, …, t₁, …] ↪ ℚ[v₁, …, t₁, …]` with universal
+injectivity of `TauCeti.hazewinkelIntegralFormalGroup` yields integrality over every commutative
+ring, `p`-local classification, and descent along injective ring homomorphisms.
 
-Over a `ℚ`-algebra, substituting `pTypicalStrictCurve` into Hazewinkel's logarithm `f_v` satisfies
-Ravenel's recursion (`TauCeti.coeff_pow_subst_pTypicalStrictCurve_hazewinkelLog`,
-`TauCeti.coeff_subst_pTypicalStrictCurve_hazewinkelLog_eq_zero`). Combining universal
-`p`-typicality over `ℤ[v₁, …, t₁, …] ↪ ℚ[v₁, …, t₁, …]` with universal injectivity of
-`TauCeti.hazewinkelIntegralFormalGroup` yields unconditional integrality of strict `p`-typical
-coordinate transport
-(`TauCeti.existsUnique_pTypicalStrictCoordinate_smul_hazewinkelIntegralFormalGroup`), `p`-local
-classification (`TauCeti.existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq`,
-`TauCeti.exists_hazewinkelIntegralFormalGroup_eq_smul_iff`), and coordinate descent along injective
-ring homomorphisms (`TauCeti.existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq_of_injective`).
+## Main results
+
+* `TauCeti.coeff_pow_subst_pTypicalStrictCurve_hazewinkelLog`,
+  `TauCeti.log_pTypicalStrictCoordinate_smul_hazewinkelFormalGroup`: Ravenel's logarithm formula.
+* `TauCeti.existsUnique_pTypicalStrictCoordinate_smul_hazewinkelIntegralFormalGroup`: universal
+  integrality of strict `p`-typical coordinate transport over every commutative ring.
+* `TauCeti.existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq`,
+  `TauCeti.existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq_of_injective`: `p`-local
+  classification and injective descent of strict `p`-typical coordinates.
 
 ## References
 
@@ -109,9 +110,10 @@ theorem coeff_pow_subst_pTypicalStrictCurve_hazewinkelLog (hp : 1 < p) (v t : �
     (fun i hi ↦ ⟨n - 1 - i, mem_range.mpr (by have := mem_range.mp hi; omega),
       by have := mem_range.mp hi; omega⟩) fun m hm ↦ ?_
   have hle : m + 1 ≤ n := Nat.succ_le_of_lt (mem_range.mp hm)
+  have hsub₁ : n - (m + 1) = n - 1 - m := by omega
+  have hsub₂ : (n - 1 - (n - 1 - m)).succPNat = m.succPNat := by congr 1; omega
   rw [coeff_pow_subst_smul_X_pow_hazewinkelLog v hp (t m.succPNat) (m + 1) n, ite_eq_left hle,
-    (by omega : n - (m + 1) = n - 1 - m),
-    (by congr 1; omega : (n - 1 - (n - 1 - m)).succPNat = m.succPNat)]
+    hsub₁, hsub₂]
 
 /-- Outside the degrees `pⁿ`, `f_v((F_v.pTypicalStrictCurve p t)(X))` vanishes. -/
 theorem coeff_subst_pTypicalStrictCurve_hazewinkelLog_eq_zero (hp : 1 < p) (v t : ℕ+ → K) {k : ℕ}
@@ -122,7 +124,7 @@ theorem coeff_subst_pTypicalStrictCurve_hazewinkelLog_eq_zero (hp : 1 < p) (v t 
   rw [subst_pTypicalStrictCurve_hazewinkelLog_stage hp v t k k (Nat.lt_pow_add_one_self hp k),
     map_add, coeff_hazewinkelLog_eq_zero v hk, zero_add, map_sum]
   exact sum_eq_zero fun m _ ↦
-    coeff_subst_smul_X_pow_hazewinkelLog_eq_zero v hp (t m.succPNat) (m + 1) hk
+    coeff_subst_smul_X_pow_hazewinkelLog_eq_zero v (by omega) (t m.succPNat) (m + 1) hk
 
 /-- The formal logarithm of `(F_v.pTypicalStrictCoordinate p t) • F_v` is
 `f_v((F_v.pTypicalStrictCurve p t)(X))`. -/
@@ -144,11 +146,19 @@ theorem existsUnique_pTypicalStrictCoordinate_smul_hazewinkelFormalGroup (hp : 1
     rw [log_pTypicalStrictCoordinate_smul_hazewinkelFormalGroup,
       coeff_subst_pTypicalStrictCurve_hazewinkelLog_eq_zero hp v t hk]
 
-private def pTypicalCoordParamsRat (p : ℕ) (v w : ℕ+ → K) : ℕ → K
-  | n => hazewinkelLogCoeff p w (n + 1) - hazewinkelLogCoeff p v (n + 1) -
-      ∑ i : Fin n, hazewinkelLogCoeff p v ((i : ℕ) + 1) *
-        pTypicalCoordParamsRat p v w (n - ((i : ℕ) + 1)) ^ p ^ ((i : ℕ) + 1)
+private def pTypicalCoordParamsRat (p : ℕ) (v w : ℕ+ → K) (n : ℕ) : K :=
+  hazewinkelLogCoeff p w (n + 1) - hazewinkelLogCoeff p v (n + 1) -
+    ∑ i : Fin n, hazewinkelLogCoeff p v ((i : ℕ) + 1) *
+      pTypicalCoordParamsRat p v w (n - ((i : ℕ) + 1)) ^ p ^ ((i : ℕ) + 1)
 decreasing_by have := i.isLt; omega
+
+private theorem pTypicalCoordParamsRat_eq (p : ℕ) (v w : ℕ+ → K) (n : ℕ) :
+    pTypicalCoordParamsRat p v w n = hazewinkelLogCoeff p w (n + 1) -
+      hazewinkelLogCoeff p v (n + 1) - ∑ i ∈ range n,
+        hazewinkelLogCoeff p v (i + 1) *
+          pTypicalCoordParamsRat p v w (n - (i + 1)) ^ p ^ (i + 1) := by
+  rw [pTypicalCoordParamsRat, Fin.sum_univ_eq_sum_range fun j ↦
+    hazewinkelLogCoeff p v (j + 1) * pTypicalCoordParamsRat p v w (n - (j + 1)) ^ p ^ (j + 1)]
 
 /-- Over a `ℚ`-algebra, `(hazewinkelLog p w)⁻¹ * hazewinkelLog p v` equals
 `(hazewinkelFormalGroup p v).pTypicalStrictCoordinate p t` for a unique `t : ℕ+ → K`. -/
@@ -167,25 +177,21 @@ theorem existsUnique_pTypicalStrictCoordinate_eq_inv_hazewinkelLog_mul (hp : 1 <
       · have ht_n : t n.succPNat = hazewinkelLogCoeff p w (n + 1) -
             hazewinkelLogCoeff p v (n + 1) - ∑ i ∈ range n,
               hazewinkelLogCoeff p v (i + 1) * t (n - (i + 1)).succPNat ^ p ^ (i + 1) := by
-          simp only [t, Nat.natPred_succPNat]
-          rw [pTypicalCoordParamsRat]
-          dsimp only
-          rw [Fin.sum_univ_eq_sum_range (fun j ↦ hazewinkelLogCoeff p v (j + 1) *
-            pTypicalCoordParamsRat p v w (n - (j + 1)) ^ p ^ (j + 1))]
+          simpa only [t, Nat.natPred_succPNat] using pTypicalCoordParamsRat_eq p v w n
         rw [coeff_pow_subst_pTypicalStrictCurve_hazewinkelLog hp v t (n + 1),
           coeff_hazewinkelLog_pow w hp (n + 1), sum_range_succ', pow_zero, pow_one,
           hazewinkelLogCoeff_zero, one_mul, Nat.add_sub_cancel, Nat.sub_zero, ht_n]; ring
     · push Not at hpow
       rw [coeff_subst_pTypicalStrictCurve_hazewinkelLog_eq_zero hp v t hpow,
         coeff_hazewinkelLog_eq_zero w hpow]
+  have hmul : hazewinkelLog p v * ((hazewinkelFormalGroup p v).pTypicalStrictCoordinate p t)⁻¹ =
+      hazewinkelLog p w := FormalCoordinate.ext <| by
+    rw [FormalCoordinate.toPowerSeries_mul,
+      FormalGroup.toPowerSeries_inv_pTypicalStrictCoordinate, hlog]
   have hcoord : (hazewinkelFormalGroup p v).pTypicalStrictCoordinate p t =
       (hazewinkelLog p w)⁻¹ * hazewinkelLog p v := by
-    apply inv_injective; rw [mul_inv_rev, inv_inv]
-    rw [← (FormalCoordinate.ext <| by
-      rw [FormalCoordinate.toPowerSeries_mul,
-        FormalGroup.toPowerSeries_inv_pTypicalStrictCoordinate, hlog] :
-      hazewinkelLog p v * ((hazewinkelFormalGroup p v).pTypicalStrictCoordinate p t)⁻¹ =
-        hazewinkelLog p w), inv_mul_cancel_left]
+    apply inv_injective
+    rw [mul_inv_rev, inv_inv, ← hmul, inv_mul_cancel_left]
   exact ⟨t, hcoord, fun t' ht' ↦
     (hazewinkelFormalGroup p v).pTypicalStrictCoordinate_injective hp (ht'.trans hcoord.symm)⟩
 
@@ -212,11 +218,12 @@ theorem existsUnique_pTypicalStrictCoordinate_smul_hazewinkelIntegralFormalGroup
     (K := MvPolynomial (ℕ+ ⊕ ℕ+) ℚ) (ι := MvPolynomial.map (Int.castRingHom ℚ))
     (MvPolynomial.map_injective _ Int.cast_injective)
   let ev : UZ →+* R := MvPolynomial.eval₂Hom (Int.castRingHom R) (Sum.elim v t)
+  have hv : ev ∘ vZ = v := funext fun _ ↦ by simp [UZ, ev, vZ]
+  have ht : ev ∘ tZ = t := funext fun _ ↦ by simp [UZ, ev, tZ]
   have hR : ((hazewinkelIntegralFormalGroup p v).pTypicalStrictCoordinate p t) •
       hazewinkelIntegralFormalGroup p v = hazewinkelIntegralFormalGroup p (ev ∘ wZ) := by
     simpa only [FormalGroup.map_smul, FormalGroup.map_pTypicalStrictCoordinate,
-      map_hazewinkelIntegralFormalGroup, (funext fun _ ↦ by simp [UZ, ev, vZ] : ev ∘ vZ = v),
-      (funext fun _ ↦ by simp [UZ, ev, tZ] : ev ∘ tZ = t)] using
+      map_hazewinkelIntegralFormalGroup, hv, ht] using
       congrArg (fun F : FormalGroup UZ ↦ F.map ev) hwZ
   exact ⟨ev ∘ wZ, hR, fun w' hw' ↦ hazewinkelIntegralFormalGroup_injective p (hw'.symm.trans hR)⟩
 
@@ -250,21 +257,19 @@ private theorem pTypicalParams_mem_range_of_injective
     {tB : ℕ+ → B}
     (hcurveB : (FormalCoordinate.map ι φ)⁻¹.toPowerSeries =
       ((hazewinkelIntegralFormalGroup p (ι ∘ v)).pTypicalStrictCurve p tB).toPowerSeries)
-    (i : ℕ+) : tB i ∈ ι.range := by
-  induction i using PNat.strongInductionOn with | _ i ih =>
-  obtain ⟨n, rfl⟩ : ∃ n, n.succPNat = i := ⟨i.natPred, i.succPNat_natPred⟩
-  let t_trunc : ℕ+ → A := fun j ↦ if hj : j < n.succPNat then (ih j hj).choose else 0
-  have hsub := (hazewinkelIntegralFormalGroup p (ι ∘ v)).coeff_pow_succ_pTypicalStrictCurve_sub
-    hp.out.one_lt (t := tB) (t' := ι ∘ t_trunc) (n := n) fun j hj ↦ by
-      have hlt : j < n.succPNat :=
-        (PNat.coe_lt_coe j n.succPNat).mp (by simpa using Nat.lt_succ_of_le hj)
-      simp only [t_trunc, Function.comp_apply, dite_eq_left hlt]
-      exact (ih j hlt).choose_spec.symm
-  rw [(by simp [t_trunc] : (ι ∘ t_trunc) n.succPNat = 0), sub_zero, ← hcurveB, ← map_inv,
-    FormalCoordinate.toPowerSeries_map, ← map_hazewinkelIntegralFormalGroup,
-    ← FormalGroup.map_pTypicalStrictCurve, FormalGroup.Curve.toPowerSeries_map,
-    ← map_sub (PowerSeries.map ι), PowerSeries.coeff_map] at hsub
-  exact ⟨_, hsub⟩
+    (i : ℕ+) : tB i ∈ ι.range :=
+  i.strongInductionOnSuccPNat fun n ih ↦ by
+    let t_trunc : ℕ+ → A := fun j ↦ if hj : (j : ℕ) ≤ n then (ih j hj).choose else 0
+    have hsub := (hazewinkelIntegralFormalGroup p (ι ∘ v)).coeff_pow_succ_pTypicalStrictCurve_sub
+      hp.out.one_lt (t := tB) (t' := ι ∘ t_trunc) (n := n) fun j hj ↦ by
+        simp only [t_trunc, Function.comp_apply, dite_eq_left hj]
+        exact (ih j hj).choose_spec.symm
+    have ht_n : (ι ∘ t_trunc) n.succPNat = 0 := by simp [t_trunc]
+    rw [ht_n, sub_zero, ← hcurveB, ← map_inv,
+      FormalCoordinate.toPowerSeries_map, ← map_hazewinkelIntegralFormalGroup,
+      ← FormalGroup.map_pTypicalStrictCurve, FormalGroup.Curve.toPowerSeries_map,
+      ← map_sub (PowerSeries.map ι), PowerSeries.coeff_map] at hsub
+    exact ⟨_, hsub⟩
 
 /-- **Integral descent of `p`-typical strict coordinates** along an injection into a ring `B` in
 which every prime `q ≠ p` is a unit. -/

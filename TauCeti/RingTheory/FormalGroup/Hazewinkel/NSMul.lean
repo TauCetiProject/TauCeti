@@ -399,7 +399,8 @@ theorem nsmul_hazewinkelLog_sub_sum_subst {p : ℕ} (hp : 1 < p) {v : ℕ+ → K
   · push Not at hk
     rw [coeff_hazewinkelLog_eq_zero v hk, mul_zero, PowerSeries.coeff_X,
       ite_eq_right fun h1 ↦ hk 0 (by simp [h1]), mul_zero,
-      sum_eq_zero fun j _ ↦ coeff_subst_smul_X_pow_hazewinkelLog_eq_zero v hp (v j) (j : ℕ) hk,
+      sum_eq_zero fun j _ ↦
+        coeff_subst_smul_X_pow_hazewinkelLog_eq_zero v (by omega) (v j) (j : ℕ) hk,
       sub_zero]
 
 private theorem subst_hazewinkelLog_curve_sub_eq_smul_X {p : ℕ} (hp : 1 < p) {v : ℕ+ → K}
