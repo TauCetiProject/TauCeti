@@ -23,9 +23,9 @@ lifts them to roots `α β ∈ A` of `P`, which are distinct eigenvalues of `M`,
 
 ## Main results
 
-* `TauCeti.exists_conj_eq_diagonal_of_henselian`: a `2 × 2` matrix with integral characteristic
-  polynomial and residually distinct eigenvalues is conjugate to a diagonal matrix whose entries
-  are integral lifts of the residual eigenvalues.
+* `TauCeti.exists_conj_eq_diagonal_of_henselian_fin_two`: a `2 × 2` matrix with integral
+  characteristic polynomial and residually distinct eigenvalues is conjugate to a diagonal matrix
+  whose entries are integral lifts of the residual eigenvalues.
 -/
 
 public section
@@ -39,7 +39,7 @@ variable {A K : Type*} [CommRing A] [IsLocalRing A] [HenselianRing A (maximalIde
 
 /-- A `2 × 2` matrix whose characteristic polynomial is integral with residually distinct roots
 `u ≠ v` is conjugate to a diagonal matrix whose entries are integral, with residues `u` and `v`. -/
-theorem exists_conj_eq_diagonal_of_henselian
+theorem exists_conj_eq_diagonal_of_henselian_fin_two
     {M : Matrix (Fin 2) (Fin 2) K} {P : A[X]} {u v : ResidueField A} (huv : u ≠ v)
     (hP : P.map (algebraMap A K) = M.charpoly)
     (hPr : P.map (residue A) = (X - C u) * (X - C v)) :

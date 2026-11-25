@@ -205,7 +205,8 @@ private theorem exists_conj_nonsplit [HenselianRing A (maximalIdeal A)]
     by_contra! h
     exact hdistinct (MonoidHom.ext fun g => Units.ext (h g))
   -- Diagonalize `ρ g₀`, whose eigenvalues are integral and residually distinct.
-  obtain ⟨Q₀, α, β, hQ₀, hα, hβ⟩ := exists_conj_eq_diagonal_of_henselian hg₀ (hP g₀) (hPr g₀)
+  obtain ⟨Q₀, α, β, hQ₀, hα, hβ⟩ :=
+    exists_conj_eq_diagonal_of_henselian_fin_two hg₀ (hP g₀) (hPr g₀)
   set N₀ : G →* (Matrix (Fin 2) (Fin 2) K)ˣ := (MulAut.conj Q₀⁻¹).toMonoidHom.comp ρ
   have hN₀ (g : G) : (N₀ g : Matrix (Fin 2) (Fin 2) K) =
       (↑Q₀⁻¹ : Matrix (Fin 2) (Fin 2) K) * ρ g * Q₀ := by
@@ -213,7 +214,7 @@ private theorem exists_conj_nonsplit [HenselianRing A (maximalIdeal A)]
   have htr (g : G) : ∃ t : A, algebraMap A K t = (N₀ g : Matrix (Fin 2) (Fin 2) K).trace ∧
       residue A t = χ g + ψ g := by
     rw [hN₀, trace_mul_cycle, Units.mul_inv, Matrix.one_mul]
-    exact exists_algebraMap_eq_trace (hP g) (hPr g)
+    exact exists_algebraMap_eq_trace_fin_two (hP g) (hPr g)
   choose x y hx hy hxr hyr using
     exists_diagonal_entries N₀ χ ψ htr (hN₀ g₀ ▸ hQ₀) hα hβ hg₀
   -- Choose `g₁` maximizing the norm of the upper right entry; it is nonzero by irreducibility.

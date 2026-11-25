@@ -49,9 +49,9 @@ over the residue field, then the trace of `M` comes from `A` and has residue `u 
   `± 1` of `M`.
 * `Matrix.charpoly_eq_charpoly_iff_fin_two`: two `2 × 2` matrices have the same characteristic
   polynomial exactly when they have the same trace and determinant, over any commutative ring.
-* `TauCeti.exists_algebraMap_eq_trace`: a `2 × 2` matrix whose characteristic polynomial comes
-  from `P` over a local ring, with reduction `(X - u) (X - v)`, has integral trace with residue
-  `u + v`.
+* `TauCeti.exists_algebraMap_eq_trace_fin_two`: a `2 × 2` matrix whose characteristic
+  polynomial comes from `P` over a local ring, with reduction `(X - u) (X - v)`, has integral
+  trace with residue `u + v`.
 
 ## Provenance
 
@@ -62,8 +62,8 @@ Ported from the AINTLIB `HasseWeil` project (Apache-2.0), revision `513e83879e2f
 
 The source's `det_smul_sub_smul_one_fin_two_of`, which rewrites the identity under hypotheses
 `M.det = q` and `M.trace = t`, is deliberately not ported: it is a one-line consequence better
-written at its call sites than carried as API. `TauCeti.exists_algebraMap_eq_trace` is not from
-that source.
+written at its call sites than carried as API. `TauCeti.exists_algebraMap_eq_trace_fin_two` is
+not from that source.
 -/
 
 public section
@@ -150,7 +150,7 @@ variable {A K : Type*} [CommRing A] [IsLocalRing A] [CommRing K] [Algebra A K]
 
 /-- The trace of a `2 × 2` matrix whose characteristic polynomial comes from `P` over `A` is
 integral, and its residue is the sum of the residual roots of `P`. -/
-theorem exists_algebraMap_eq_trace {M : Matrix (Fin 2) (Fin 2) K} {P : A[X]}
+theorem exists_algebraMap_eq_trace_fin_two {M : Matrix (Fin 2) (Fin 2) K} {P : A[X]}
     {u v : ResidueField A} (hP : P.map (algebraMap A K) = M.charpoly)
     (hPr : P.map (residue A) = (X - C u) * (X - C v)) :
     ∃ t : A, algebraMap A K t = M.trace ∧ residue A t = u + v := by
