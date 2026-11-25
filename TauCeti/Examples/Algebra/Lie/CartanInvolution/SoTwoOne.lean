@@ -42,8 +42,16 @@ theorem killingForm_soTwoOne_apply (X Y : so' (Fin 2) (Fin 1) ℝ) :
   norm_num
 
 /-- The Cartan involution `X ↦ -Xᵀ` of `𝔰𝔬(2, 1)`. -/
-noncomputable abbrev soTwoOneCartanInvolution : so' (Fin 2) (Fin 1) ℝ ≃ₗ⁅ℝ⁆ so' (Fin 2) (Fin 1) ℝ :=
+noncomputable def soTwoOneCartanInvolution : so' (Fin 2) (Fin 1) ℝ ≃ₗ⁅ℝ⁆ so' (Fin 2) (Fin 1) ℝ :=
   (so' (Fin 2) (Fin 1) ℝ).restrictNegConjTranspose fun _ ↦ conjTranspose_mem_so'
+
+/-- `soTwoOneCartanInvolution` sends `X` to `-Xᵀ`. -/
+@[simp]
+theorem coe_soTwoOneCartanInvolution_apply (X : so' (Fin 2) (Fin 1) ℝ) :
+    (soTwoOneCartanInvolution X : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) =
+      -(X : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ)ᵀ := by
+  rw [soTwoOneCartanInvolution, LieSubalgebra.coe_restrictNegConjTranspose_apply,
+    conjTranspose_eq_transpose_of_trivial]
 
 /-- `X ↦ -Xᵀ` is a Cartan involution of `𝔰𝔬(2, 1)`. -/
 theorem isCartanInvolution_soTwoOneCartanInvolution :
@@ -51,20 +59,19 @@ theorem isCartanInvolution_soTwoOneCartanInvolution :
   isCartanInvolution_restrictNegConjTranspose_so' (by simp)
 
 /-- `X ↦ -Xᵀ` sends `TauCeti.soTwoOneMatrix x y z` to `TauCeti.soTwoOneMatrix (-x) (-z) (-y)`. -/
-theorem coe_soTwoOneCartanInvolution_apply {X : so' (Fin 2) (Fin 1) ℝ} {x y z : ℝ}
+theorem coe_soTwoOneCartanInvolution_apply_of_coe_eq {X : so' (Fin 2) (Fin 1) ℝ} {x y z : ℝ}
     (hX : (X : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) = soTwoOneMatrix x y z) :
     (soTwoOneCartanInvolution X : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) =
       soTwoOneMatrix (-x) (-z) (-y) := by
-  rw [LieSubalgebra.coe_restrictNegConjTranspose_apply, hX, conjTranspose_eq_transpose_of_trivial,
-    soTwoOneMatrix_transpose, soTwoOneMatrix_neg]
+  rw [coe_soTwoOneCartanInvolution_apply, hX, soTwoOneMatrix_transpose, soTwoOneMatrix_neg]
 
 /-- The fixed subalgebra `𝔨` of `X ↦ -Xᵀ` on `𝔰𝔬(2, 1)` in coordinates: `x = 0` and `z = -y`. -/
-theorem mem_fixedSubalgebra_soTwoOne_iff {X : so' (Fin 2) (Fin 1) ℝ} :
+theorem mem_fixedSubalgebra_soTwoOneCartanInvolution_iff {X : so' (Fin 2) (Fin 1) ℝ} :
     X ∈ soTwoOneCartanInvolution.toLieHom.fixedSubalgebra ↔
       ∃ y, (X : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) = soTwoOneMatrix 0 y (-y) := by
   obtain ⟨x, y, z, hX⟩ := exists_eq_soTwoOneMatrix X
   rw [LieHom.mem_fixedSubalgebra, LieEquiv.coe_toLieHom, ← Subtype.coe_inj,
-    coe_soTwoOneCartanInvolution_apply hX, hX]
+    coe_soTwoOneCartanInvolution_apply_of_coe_eq hX, hX]
   constructor
   · intro h
     obtain ⟨h₁, h₂, -⟩ := soTwoOneMatrix_inj.mp h
@@ -74,11 +81,11 @@ theorem mem_fixedSubalgebra_soTwoOne_iff {X : so' (Fin 2) (Fin 1) ℝ} :
     simp
 
 /-- The `-1`-eigenspace `𝔭` of `X ↦ -Xᵀ` on `𝔰𝔬(2, 1)` in coordinates: `y = z`. -/
-theorem mem_cartanP_soTwoOne_iff {X : so' (Fin 2) (Fin 1) ℝ} :
+theorem mem_cartanP_soTwoOneCartanInvolution_iff {X : so' (Fin 2) (Fin 1) ℝ} :
     X ∈ soTwoOneCartanInvolution.cartanP ↔
       ∃ x y, (X : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) = soTwoOneMatrix x y y := by
   obtain ⟨x, y, z, hX⟩ := exists_eq_soTwoOneMatrix X
-  rw [LieEquiv.mem_cartanP, ← Subtype.coe_inj, coe_soTwoOneCartanInvolution_apply hX,
+  rw [LieEquiv.mem_cartanP, ← Subtype.coe_inj, coe_soTwoOneCartanInvolution_apply_of_coe_eq hX,
     NegMemClass.coe_neg, hX, ← soTwoOneMatrix_neg]
   constructor
   · intro h
@@ -97,10 +104,11 @@ private theorem soTwoOneMatrix_zero_neg (y : ℝ) :
 
 /-- `𝔨 = 𝔰𝔬(2)`: the fixed subalgebra of `X ↦ -Xᵀ` on `𝔰𝔬(2, 1)` consists of the block matrices
 `[[A, 0], [0, 0]]` with `A` skew-symmetric of size two. -/
-theorem mem_fixedSubalgebra_soTwoOne_iff_fromBlocks {X : so' (Fin 2) (Fin 1) ℝ} :
+theorem mem_fixedSubalgebra_soTwoOneCartanInvolution_iff_fromBlocks
+    {X : so' (Fin 2) (Fin 1) ℝ} :
     X ∈ soTwoOneCartanInvolution.toLieHom.fixedSubalgebra ↔
       ∃ A ∈ so (Fin 2) ℝ, (X : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) = fromBlocks A 0 0 0 := by
-  rw [mem_fixedSubalgebra_soTwoOne_iff]
+  rw [mem_fixedSubalgebra_soTwoOneCartanInvolution_iff]
   constructor
   · rintro ⟨y, hy⟩
     refine ⟨!![0, 2 * y; -(2 * y), 0], ?_, hy.trans (soTwoOneMatrix_zero_neg y)⟩
@@ -144,7 +152,7 @@ private theorem coe_soTwoOneP_apply (v : ℝ × ℝ) :
   rfl
 
 /-- `𝔨 = 𝔰𝔬(2)` is one-dimensional. -/
-theorem finrank_fixedSubalgebra_soTwoOne :
+theorem finrank_fixedSubalgebra_soTwoOneCartanInvolution :
     finrank ℝ soTwoOneCartanInvolution.toLieHom.fixedSubalgebra = 1 := by
   have hinj : Function.Injective soTwoOneK := fun y y' h ↦ by
     rw [← Subtype.coe_inj, coe_soTwoOneK_apply, coe_soTwoOneK_apply, soTwoOneMatrix_inj] at h
@@ -152,7 +160,8 @@ theorem finrank_fixedSubalgebra_soTwoOne :
   have hrange : LinearMap.range soTwoOneK =
       soTwoOneCartanInvolution.toLieHom.fixedSubalgebra.toSubmodule := by
     ext X
-    rw [LinearMap.mem_range, LieSubalgebra.mem_toSubmodule, mem_fixedSubalgebra_soTwoOne_iff]
+    rw [LinearMap.mem_range, LieSubalgebra.mem_toSubmodule,
+      mem_fixedSubalgebra_soTwoOneCartanInvolution_iff]
     constructor
     · rintro ⟨y, rfl⟩
       exact ⟨y, coe_soTwoOneK_apply y⟩
@@ -163,13 +172,14 @@ theorem finrank_fixedSubalgebra_soTwoOne :
   exact this
 
 /-- `𝔭` is two-dimensional. -/
-theorem finrank_cartanP_soTwoOne : finrank ℝ soTwoOneCartanInvolution.cartanP = 2 := by
+theorem finrank_cartanP_soTwoOneCartanInvolution :
+    finrank ℝ soTwoOneCartanInvolution.cartanP = 2 := by
   have hinj : Function.Injective soTwoOneP := fun v w h ↦ by
     rw [← Subtype.coe_inj, coe_soTwoOneP_apply, coe_soTwoOneP_apply, soTwoOneMatrix_inj] at h
     exact Prod.ext h.1 h.2.1
   have hrange : LinearMap.range soTwoOneP = soTwoOneCartanInvolution.cartanP := by
     ext X
-    rw [LinearMap.mem_range, mem_cartanP_soTwoOne_iff]
+    rw [LinearMap.mem_range, mem_cartanP_soTwoOneCartanInvolution_iff]
     constructor
     · rintro ⟨v, rfl⟩
       exact ⟨v.1, v.2, coe_soTwoOneP_apply v⟩
