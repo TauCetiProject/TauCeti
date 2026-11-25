@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Basic
 public import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.Geometry.Manifold.MFDeriv.Slice
 
 /-!
@@ -103,11 +104,8 @@ theorem boundaryInducedForm_isSymm (q : (𝓡∂ (n + 1)).boundary M) :
 
 /-- The induced metric is nondegenerate: the differential of the inclusion is injective. -/
 theorem boundaryInducedForm_nondegenerate (q : (𝓡∂ (n + 1)).boundary M) :
-    (boundaryInducedForm q).Nondegenerate := by
-  refine (boundaryInducedForm_isSymm q).isRefl.nondegenerate_iff_separatingLeft.mpr fun u hu ↦ ?_
-  have h := hu u
-  rw [boundaryInducedForm_apply, real_inner_self_eq_norm_sq, sq_eq_zero_iff, norm_eq_zero] at h
-  exact injective_mfderiv_subtypeVal_boundary q (h.trans (map_zero _).symm)
+    (boundaryInducedForm q).Nondegenerate :=
+  nondegenerate_inner_comp (injective_mfderiv_subtypeVal_boundary q)
 
 /-- The induced metric is the inner product of `T_q∂M ⊆ T_qM`, transported along
 `TauCeti.boundaryTangentEquiv`. -/
@@ -141,8 +139,9 @@ theorem eq_boundaryWeingarten_iff (q : (𝓡∂ (n + 1)).boundary M)
       ∀ u w, boundaryInducedForm q (S u) w = boundarySecondFundamentalForm q u w := by
   refine ⟨fun h ↦ h ▸ boundaryInducedForm_boundaryWeingarten q, fun h ↦ ?_⟩
   ext u
-  refine sub_eq_zero.mp ((boundaryInducedForm_nondegenerate q).1 _ fun w ↦ ?_)
-  rw [map_sub, LinearMap.sub_apply, h, boundaryInducedForm_boundaryWeingarten, sub_self]
+  refine eq_of_forall_inner_comp (injective_mfderiv_subtypeVal_boundary q) fun w ↦ ?_
+  rw [ContinuousLinearMap.coe_coe, ← boundaryInducedForm_apply, h,
+    ← boundaryInducedForm_boundaryWeingarten, boundaryInducedForm_apply]
 
 /-- **The Weingarten map is self-adjoint** for the induced metric: `h(S_q u, w) = h(u, S_q w)`. -/
 theorem boundaryInducedForm_boundaryWeingarten_comm (q : (𝓡∂ (n + 1)).boundary M)
@@ -197,11 +196,10 @@ theorem leviCivitaConnection_eq_mfderiv_boundaryWeingarten (q : (𝓡∂ (n + 1)
   rw [← hv]
   congr 1
   -- `h(v, w) = ⟨∇_{dι u} N, dι w⟩ = II_q(u, w) = h(S_q u, w)` for every `w`.
-  refine sub_eq_zero.mp ((boundaryInducedForm_nondegenerate q).1 _ fun w ↦ ?_)
-  rw [map_sub, LinearMap.sub_apply, boundaryInducedForm_boundaryWeingarten,
-    boundaryInducedForm_apply, hv,
+  refine eq_of_forall_inner_comp (injective_mfderiv_subtypeVal_boundary q) fun w ↦ ?_
+  rw [ContinuousLinearMap.coe_coe, hv,
     ← boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal q u w hN hNν,
-    sub_self]
+    ← boundaryInducedForm_boundaryWeingarten, boundaryInducedForm_apply]
 
 /-! ### Principal curvatures and principal directions -/
 
