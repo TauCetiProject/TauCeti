@@ -7,12 +7,12 @@ module
 
 public import TauCeti.Analysis.ODE.NonlinearCaratheodory.Basic
 public import TauCeti.Analysis.ODE.VariationOfConstants
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Checks for the nonlinear Carathéodory theorem
 
-Two Checks of §1.7 of the roadmap `DiracScatteringAndNonlinearFourierTransform`.
+Examples for the nonlinear Carathéodory theorem: the linear field recovers the variation of
+constants formula, and without the Lipschitz bound uniqueness fails.
 
 * **The linear field.** For `P` and `G` integrable on `[a, b]`, the field
   `F(t, x) = P(t) x + G(t)` satisfies the hypotheses of the nonlinear Carathéodory theorem with
@@ -20,7 +20,7 @@ Two Checks of §1.7 of the roadmap `DiracScatteringAndNonlinearFourierTransform`
   (`TauCeti.Examples.NonlinearCaratheodory.lipschitzWith_linear`,
   `TauCeti.Examples.NonlinearCaratheodory.norm_linear_le`), and its solution is that of the linear
   theory, the variation of constants formula `N_P(t, t₀) x₀ + ∫ s in t₀..t, N_P(t, s) G(s)`
-  (`TauCeti.Examples.NonlinearCaratheodory.eq_propagator_of_linear`).
+  (`TauCeti.Examples.NonlinearCaratheodory.eq_propagator_apply_add_integral_of_linear`).
 * **The Lipschitz bound is needed.** The field `F(t, x) = 2 √|x|` on `ℝ`, from `x₀ = 0` at
   `t₀ = 0`, has the two solutions `0` and `t²` on `[0, 1]`
   (`TauCeti.Examples.NonlinearCaratheodory.sq_eq_picard_sqrt`,
@@ -58,9 +58,10 @@ theorem integrableOn_linear (hP : IntegrableOn P (Icc a b)) (hG : IntegrableOn G
 on `[a, b]` and `t₀, t ∈ [a, b]`, a curve continuous on `[a, b]` solving
 `x t = x₀ + ∫ s in t₀..t, (P(s) x(s) + G(s))` there is the variation of constants formula
 `N_P(t, t₀) x₀ + ∫ s in t₀..t, N_P(t, s) G(s)`. Such a curve exists by the nonlinear Carathéodory
-theorem with `L = ‖P‖` (`TauCeti.Examples.NonlinearCaratheodory.exists_eq_propagator_of_linear`). -/
-theorem eq_propagator_of_linear [CompleteSpace E] (hP : IntegrableOn P (Icc a b))
-    (hG : IntegrableOn G (Icc a b)) (ht₀ : t₀ ∈ Icc a b) {Y : ℝ → E}
+theorem with `L = ‖P‖`
+(`TauCeti.Examples.NonlinearCaratheodory.exists_eq_propagator_apply_add_integral_of_linear`). -/
+theorem eq_propagator_apply_add_integral_of_linear [CompleteSpace E]
+    (hP : IntegrableOn P (Icc a b)) (hG : IntegrableOn G (Icc a b)) (ht₀ : t₀ ∈ Icc a b) {Y : ℝ → E}
     (hY : ContinuousOn Y (Icc a b))
     (h : ∀ t ∈ Icc a b, Y t = ODE.picard (fun s x ↦ P s x + G s) t₀ x₀ Y t) {t : ℝ}
     (ht : t ∈ Icc a b) :
@@ -72,8 +73,8 @@ theorem eq_propagator_of_linear [CompleteSpace E] (hP : IntegrableOn P (Icc a b)
 
 /-- **The linear field: existence.** The nonlinear Carathéodory theorem, applied to the linear
 field with `L = ‖P‖`, gives a solution, and it is the variation of constants formula. -/
-theorem exists_eq_propagator_of_linear [CompleteSpace E] (hP : IntegrableOn P (Icc a b))
-    (hG : IntegrableOn G (Icc a b)) (ht₀ : t₀ ∈ Icc a b) :
+theorem exists_eq_propagator_apply_add_integral_of_linear [CompleteSpace E]
+    (hP : IntegrableOn P (Icc a b)) (hG : IntegrableOn G (Icc a b)) (ht₀ : t₀ ∈ Icc a b) :
     ∃ Y : ℝ → E, ContinuousOn Y (Icc a b) ∧
       ∀ t ∈ Icc a b, Y t = ODE.picard (fun s x ↦ P s x + G s) t₀ x₀ Y t ∧
         Y t = propagator P t t₀ x₀ + ∫ s in t₀..t, propagator P t s (G s) := by
@@ -83,7 +84,7 @@ theorem exists_eq_propagator_of_linear [CompleteSpace E] (hP : IntegrableOn P (I
       have h : IntegrableOn (fun t ↦ ‖P t‖) (Icc a b) := hP.norm
       simpa only [coe_nnNorm] using h)
     (.of_forall fun t ↦ lipschitzWith_linear t) ht₀ x₀
-  exact ⟨Y, hY, fun t ht ↦ ⟨h t ht, eq_propagator_of_linear hP hG ht₀ hY h ht⟩⟩
+  exact ⟨Y, hY, fun t ht ↦ ⟨h t ht, eq_propagator_apply_add_integral_of_linear hP hG ht₀ hY h ht⟩⟩
 
 end Linear
 
