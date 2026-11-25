@@ -246,7 +246,7 @@ theorem Convex.ofReal_div_pow_mul_addHaar_closedBall_le_addHaar_closedBall_inter
   set t := r / R
   have ht₀ : 0 < t := div_pos hr hR₀
   have hsub : ball (x + t • (z - x)) (t * ρ) ⊆ closedBall x r ∩ s :=
-    (hs.ball_add_smul_sub_subset_interior_inter_ball hball hρ hx
+    (hs.ball_add_smul_sub_subset_interior_inter_ball hball hx
       (by rwa [← dist_eq_norm, dist_comm]) hr.le hrR).trans fun _ hw =>
       ⟨ball_subset_closedBall hw.2, interior_subset hw.1⟩
   have hscale : ρ / R * r = t * ρ := by simp only [t]; ring

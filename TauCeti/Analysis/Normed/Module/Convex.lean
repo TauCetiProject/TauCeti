@@ -166,16 +166,19 @@ theorem Convex.ball_add_smul_sub_subset {E : Type*} [SeminormedAddCommGroup E] [
   (TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
     (fun _ hz => hs.starConvex (hball hz)) (subset_closure hy) ht₀ ht).trans interior_subset
 
-/-- Let `s` be a convex set containing `ball z ρ`, `ρ > 0`, and let `x ∈ closure s`. For
+/-- Let `s` be a convex set containing `ball z ρ`, and let `x ∈ closure s`. For
 `‖z - x‖ + ρ ≤ R` and `0 ≤ r ≤ R`, the image of `ball z ρ` under the homothety with centre `x` and
 ratio `r / R` is a ball in `interior s ∩ ball x r`. -/
 theorem Convex.ball_add_smul_sub_subset_interior_inter_ball {E : Type*}
     [SeminormedAddCommGroup E] [NormedSpace ℝ E] {s : Set E} (hs : Convex ℝ s) {x z : E}
-    {ρ r R : ℝ} (hz : Metric.ball z ρ ⊆ s) (hρ : 0 < ρ) (hx : x ∈ closure s)
+    {ρ r R : ℝ} (hz : Metric.ball z ρ ⊆ s) (hx : x ∈ closure s)
     (hR : ‖z - x‖ + ρ ≤ R) (hr : 0 ≤ r) (hrR : r ≤ R) :
     Metric.ball (x + (r / R) • (z - x)) (r / R * ρ) ⊆ interior s ∩ Metric.ball x r := by
+  have hl : 0 ≤ r / R := div_nonneg hr (hr.trans hrR)
+  -- For `ρ ≤ 0` the homothetic ball is empty.
+  rcases le_or_gt ρ 0 with hρ | hρ
+  · simp [Metric.ball_eq_empty.2 (mul_nonpos_of_nonneg_of_nonpos hl hρ)]
   have hR₀ : 0 < R := by have := norm_nonneg (z - x); linarith
-  have hl : 0 ≤ r / R := by positivity
   have hl1 : r / R ≤ 1 := (div_le_one hR₀).2 hrR
   refine Set.subset_inter ?_ (Metric.ball_subset_ball' ?_)
   · convert TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
@@ -183,17 +186,20 @@ theorem Convex.ball_add_smul_sub_subset_interior_inter_ball {E : Type*}
       (by linarith) using 2
     · module
     · ring
-  · rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hl, ← mul_add]
-    calc r / R * (ρ + ‖z - x‖) ≤ r / R * R := by gcongr; linarith
+  · have hc : dist (x + (r / R) • (z - x)) x = r / R * ‖z - x‖ := by
+      simp [dist_eq_norm, norm_smul, abs_of_nonneg hr, abs_of_pos hR₀]
+    calc r / R * ρ + dist (x + (r / R) • (z - x)) x = r / R * (‖z - x‖ + ρ) := by
+          rw [hc]; ring
+      _ ≤ r / R * R := by gcongr
       _ = r := div_mul_cancel₀ r hR₀.ne'
 
-/-- Let `s` be a convex set containing `ball z ρ`, `ρ > 0`, and let `x ∈ closure s` not be an
+/-- Let `s` be a convex set containing `ball z ρ`, and let `x ∈ closure s` not be an
 interior point. For `‖z - x‖ + ρ ≤ R` and `0 ≤ r ≤ R`, the image of `ball z ρ` under the homothety
 with centre `x` and ratio `-r / R` is a ball in `sᶜ ∩ ball x r`: the midpoint of a point of `s` and
 an interior point is interior. -/
 theorem Convex.ball_sub_smul_sub_subset_compl_inter_ball {E : Type*}
     [SeminormedAddCommGroup E] [NormedSpace ℝ E] {s : Set E} (hs : Convex ℝ s) {x z : E}
-    {ρ r R : ℝ} (hz : Metric.ball z ρ ⊆ s) (hρ : 0 < ρ) (hx : x ∈ closure s)
+    {ρ r R : ℝ} (hz : Metric.ball z ρ ⊆ s) (hx : x ∈ closure s)
     (hxs : x ∉ interior s) (hR : ‖z - x‖ + ρ ≤ R) (hr : 0 ≤ r) (hrR : r ≤ R) :
     Metric.ball (x - (r / R) • (z - x)) (r / R * ρ) ⊆ sᶜ ∩ Metric.ball x r := by
   intro y hy
@@ -203,7 +209,7 @@ theorem Convex.ball_sub_smul_sub_subset_compl_inter_ball {E : Type*}
     rw [← norm_neg]
     convert hy using 2
     module
-  obtain ⟨hyi, hyr⟩ := hs.ball_add_smul_sub_subset_interior_inter_ball hz hρ hx hR hr hrR hy'
+  obtain ⟨hyi, hyr⟩ := hs.ball_add_smul_sub_subset_interior_inter_ball hz hx hR hr hrR hy'
   refine ⟨fun hys => hxs ?_, ?_⟩
   · convert hs.add_smul_sub_mem_interior' (subset_closure hys) hyi
       (t := 1 / 2) ⟨by norm_num, by norm_num⟩ using 1

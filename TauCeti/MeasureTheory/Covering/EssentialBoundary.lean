@@ -624,8 +624,13 @@ theorem _root_.Convex.frontier_subset_essentialBoundary (hs : Convex ℝ s)
     have h : r ^ n = (R / ρ) ^ n * (r / R * ρ) ^ n := by
       rw [← mul_pow]
       field_simp
-    rw [Measure.addHaar_ball_of_pos μ y (by positivity), h, ENNReal.ofReal_mul (by positivity),
-      mul_mul_mul_comm, ENNReal.inv_mul_cancel hB0 hBtop, mul_one]
+    rw [Measure.addHaar_ball_of_pos μ y (by positivity), h, ENNReal.ofReal_mul (by positivity)]
+    calc ENNReal.ofReal ((R / ρ) ^ n) * ENNReal.ofReal ((r / R * ρ) ^ n)
+        = ENNReal.ofReal ((R / ρ) ^ n) * ENNReal.ofReal ((r / R * ρ) ^ n) *
+            ((μ (ball (0 : E) 1))⁻¹ * μ (ball (0 : E) 1)) := by
+          simp [ENNReal.inv_mul_cancel hB0 hBtop]
+      _ = c * (ENNReal.ofReal ((r / R * ρ) ^ n) * μ (ball (0 : E) 1)) := by
+          simp only [c]; ring
   have hev : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < r ∧ r ≤ R := Ioc_mem_nhdsGT hR
   rw [mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior]
   constructor
@@ -638,14 +643,14 @@ theorem _root_.Convex.frontier_subset_essentialBoundary (hs : Convex ℝ s)
     filter_upwards [hev] with r hr
     rw [hball (x - (r / R) • (z - x)) hr.1]
     gcongr
-    exact (hs.ball_sub_smul_sub_subset_compl_inter_ball (hzρ.trans interior_subset) hρ hx.1 hx.2
-      le_rfl hr.1.le hr.2)
+    exact hs.ball_sub_smul_sub_subset_compl_inter_ball (hzρ.trans interior_subset) hx.1 hx.2
+      le_rfl hr.1.le hr.2
   · -- The set fills a fixed proportion of small balls, so it has no density zero.
     refine not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc ?_
     filter_upwards [hev] with r hr
     rw [hball (x + (r / R) • (z - x)) hr.1]
     gcongr
-    exact (hs.ball_add_smul_sub_subset_interior_inter_ball (hzρ.trans interior_subset) hρ hx.1
+    exact (hs.ball_add_smul_sub_subset_interior_inter_ball (hzρ.trans interior_subset) hx.1
       le_rfl hr.1.le hr.2).trans
       (inter_subset_inter_left _ interior_subset)
 
