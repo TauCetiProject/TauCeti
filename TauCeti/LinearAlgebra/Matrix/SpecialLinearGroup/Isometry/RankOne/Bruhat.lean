@@ -31,7 +31,7 @@ This file builds the split Tits system of rank one of `G`:
 
 The unipotent subgroup acts simply transitively on the affine isotropic points: the root element
 with parameters `(x, z)` sends `[0 : 0 : 1] = w [1 : 0 : 0]` to `[z : σ(x) : 1]`
-(`TauCeti.UnitaryRankOne.upperRootHom_smul_zero`). Hence every
+(`TauCeti.UnitaryRankOne.upperRootHom_smul_origin`). Hence every
 element of `G` outside `B` lies in `U w B`, which is the **Bruhat decomposition**
 `G = B ∪ B w B`. Since a nontrivial element of `U` moves `[0 : 0 : 1]`, its conjugate by `w` lies
 outside `B`, and no nontrivial element of `U` lies in every conjugate of `B`. Together with
@@ -335,12 +335,11 @@ theorem exists_eq_unipotent_mul_weyl_mul (hσ : Function.Involutive σ)
     {g : UnitaryRankOne.Group K σ} (hg : g ∉ borel K σ) :
     ∃ u ∈ unipotent K σ, ∃ b ∈ borel K σ, g = u * weyl K σ * b := by
   -- Some root element sends `[0 : 0 : 1] = w [1 : 0 : 0]` to `g [1 : 0 : 0]`.
-  obtain ⟨a, ha, -⟩ := existsUnique_upperRootHom_smul_zero hσ (g • infinity K σ)
+  obtain ⟨a, ha, -⟩ := existsUnique_upperRootHom_smul_origin hσ (g • infinity K σ)
     fun h ↦ hg (mem_borel_iff_smul_infinity.mpr h)
   refine ⟨upperRootHom K σ a, upperRootHom_mem_unipotent K σ a,
     (upperRootHom K σ a * weyl K σ)⁻¹ * g, ?_, by group⟩
-  rw [mem_borel_iff_smul_infinity, mul_smul, inv_smul_eq_iff, mul_smul, weyl_smul_infinity,
-    origin_eq_point, ha]
+  rw [mem_borel_iff_smul_infinity, mul_smul, inv_smul_eq_iff, mul_smul, weyl_smul_infinity, ha]
 
 /-- **The Bruhat decomposition** `G = B ∪ B w B` of the rank-one unitary group. -/
 theorem mem_borel_or_mem_doubleCoset (hσ : Function.Involutive σ) (g : UnitaryRankOne.Group K σ) :
