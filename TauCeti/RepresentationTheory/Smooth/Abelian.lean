@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Subcategory
+public import Mathlib.CategoryTheory.Preadditive.LeftExact
 public import TauCeti.RepresentationTheory.Smooth.Category
 
 /-!
@@ -32,6 +33,8 @@ intersection of the stabilizers of its two components (`Representation.instIsSmo
   `TauCeti.SmoothRep.containsZero`, `TauCeti.SmoothRep.isClosedUnderFiniteProducts`: the closure
   properties of smoothness on `Rep A G`.
 * `TauCeti.SmoothRep.abelian`: `SmoothRep A G` is an abelian category.
+* `TauCeti.SmoothRep.preservesFiniteLimits_ι`: the inclusion into `Rep A G` preserves finite
+  limits.
 * `TauCeti.SmoothRep.mono_iff_injective`, `TauCeti.SmoothRep.epi_iff_surjective`.
 
 ## References
@@ -109,6 +112,11 @@ instance isClosedUnderQuotients : (isSmoothProperty.{w} A G).IsClosedUnderQuotie
 under kernels, cokernels and finite products. -/
 noncomputable instance abelian : Abelian (SmoothRep.{w} A G) :=
   inferInstanceAs (Abelian (isSmoothProperty.{w} A G).FullSubcategory)
+
+/-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves finite limits: it preserves kernels, and
+finite products are computed in `Rep A G`. -/
+instance preservesFiniteLimits_ι : PreservesFiniteLimits (ι.{w} A G) :=
+  Functor.preservesFiniteLimits_of_preservesKernels _
 
 /-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves cokernels. -/
 instance preservesCokernels_ι {V W : SmoothRep.{w} A G} (f : V ⟶ W) :

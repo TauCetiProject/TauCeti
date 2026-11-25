@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Preadditive.LeftExact
 public import TauCeti.Algebra.Category.ModuleCat.Colimits
 public import TauCeti.RepresentationTheory.Smooth.Abelian
 
@@ -14,9 +13,10 @@ public import TauCeti.RepresentationTheory.Smooth.Abelian
 
 Let `A` be a ring and `G` a topological group with separately continuous multiplication. A
 representation whose underlying module is spanned by the images of intertwining maps out of smooth
-representations is smooth: the smooth vectors form a submodule, and an intertwining map sends
-smooth vectors to smooth vectors. The legs of a colimit cocone in `Rep A G` jointly span its point,
-because the forgetful functor to `ModuleCat A` preserves colimits. So the property "smooth" on
+representations is smooth (`Representation.isSmooth_of_iSup_range_eq_top`): the smooth vectors
+form a submodule, and an intertwining map sends smooth vectors to smooth vectors. The legs of a
+colimit cocone in `Rep A G` jointly span its point, because the forgetful functor to
+`ModuleCat A` preserves colimits. So the property "smooth" on
 `Rep A G` is closed under colimits of every shape, in particular under arbitrary direct sums and
 filtered colimits. Hence `SmoothRep A G` has all colimits, computed in `Rep A G`, and the
 inclusion `SmoothRep A G ⥤ Rep A G` preserves them. Together with the preservation of kernels and
@@ -24,15 +24,13 @@ finite products, the inclusion is exact.
 
 ## Main results
 
-* `Representation.isSmooth_of_iSup_range_eq_top`: a representation spanned by the images of
-  intertwining maps out of smooth representations is smooth.
 * `TauCeti.SmoothRep.isClosedUnderColimitsOfShape`: smoothness is closed under colimits in
   `Rep A G`.
 * `TauCeti.SmoothRep.hasColimitsOfSize`: `SmoothRep A G` has all colimits.
 * `TauCeti.SmoothRep.preservesColimitsOfSize_ι`: the inclusion into `Rep A G` preserves all
   colimits.
-* `TauCeti.SmoothRep.preservesFiniteLimits_ι`, `TauCeti.SmoothRep.preservesFiniteColimits_ι`:
-  the inclusion into `Rep A G` is exact.
+* `TauCeti.SmoothRep.preservesFiniteColimits_ι`: the inclusion into `Rep A G` preserves finite
+  colimits; with `TauCeti.SmoothRep.preservesFiniteLimits_ι` it is exact.
 
 ## References
 
@@ -45,26 +43,6 @@ finite products, the inclusion is exact.
 open CategoryTheory Limits Representation
 
 universe w u v
-
-namespace Representation
-
-variable {A G : Type*} [Ring A] [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
-  {W : Type*} [AddCommGroup W] [Module A W] {σ : Representation A G W}
-
-/-- **A representation spanned by smooth images is smooth.** If the ranges of a family of
-intertwining maps out of smooth representations span `W`, then `W` is smooth. -/
-theorem isSmooth_of_iSup_range_eq_top {κ : Type*} {V : κ → Type*} [∀ k, AddCommGroup (V k)]
-    [∀ k, Module A (V k)] {ρ : ∀ k, Representation A G (V k)} [∀ k, IsSmooth (ρ k)]
-    (f : ∀ k, (ρ k).IntertwiningMap σ)
-    (hf : ⨆ k, LinearMap.range (f k).toLinearMap = ⊤) : IsSmooth σ := by
-  refine isSmooth_iff_forall_mem_smoothVectors.2 fun w ↦ ?_
-  have hle : ⨆ k, LinearMap.range (f k).toLinearMap ≤ σ.smoothVectors.toSubmodule :=
-    iSup_le fun k ↦ by
-      rintro _ ⟨v, rfl⟩
-      exact (f k).apply_mem_smoothVectors (IsSmooth.mem_smoothVectors v)
-  exact hle (hf ▸ Submodule.mem_top)
-
-end Representation
 
 namespace TauCeti
 
@@ -95,11 +73,6 @@ instance preservesColimitsOfSize_ι : PreservesColimitsOfSize.{w, w} (ι.{w} A G
 /-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves finite colimits. -/
 instance preservesFiniteColimits_ι : PreservesFiniteColimits (ι.{w} A G) :=
   PreservesColimitsOfSize.preservesFiniteColimits _
-
-/-- The inclusion `SmoothRep A G ⥤ Rep A G` preserves finite limits: it preserves kernels, and
-finite products are computed in `Rep A G`. -/
-instance preservesFiniteLimits_ι : PreservesFiniteLimits (ι.{w} A G) :=
-  Functor.preservesFiniteLimits_of_preservesKernels _
 
 end SmoothRep
 
