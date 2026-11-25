@@ -60,6 +60,12 @@ of a hyperplane.
   proper measure-preserving changes of variables, for `1 ≤ p < ∞`.
 * `TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_iff_of_lipschitzWith`: the
   equivalence for bi-Lipschitz measure-preserving homeomorphisms, for `1 ≤ p < ∞`.
+
+## References
+
+* S. Bauer, D. Pauly, M. Schomburg, *The Maxwell compactness property in bounded weak Lipschitz
+  domains with mixed boundary conditions*, SIAM J. Math. Anal. 48 (2016), Lemma 3.1 and
+  Appendix A (boundary parts are transported by bi-Lipschitz charts).
 -/
 
 public section
@@ -211,7 +217,9 @@ Unlike `TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule`, `Φ` ne
 so this applies to the shear `(t, y) ↦ (t - γ y, y)` flattening the graph of a Lipschitz `γ`. The
 composite `φ ∘ Φ` of a generator is then only Lipschitz, but it is a whole-space Sobolev function
 vanishing outside the compact set `Φ⁻¹(tsupport φ)`, which misses `closure (Φ⁻¹(Γ))`
-(`TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact`). -/
+(`TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact`). This adapts the
+compact-support argument of `TauCeti.W1p.compMeasurePreservingL_mem_w1p0Submodule`, where the
+compact set `Φ⁻¹(tsupport φ)` lies in `U` instead of missing `closure (Φ⁻¹(Γ))`. -/
 theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_lipschitzWith
     (hp : p ≠ (∞ : ℝ≥0∞)) {K : ℝ≥0} (hΦL : LipschitzWith K Φ) (hΦp : IsProperMap Φ)
     (hΦ : MeasurePreserving Φ mu nu) (hUV : (U : Set E) = Φ ⁻¹' V)

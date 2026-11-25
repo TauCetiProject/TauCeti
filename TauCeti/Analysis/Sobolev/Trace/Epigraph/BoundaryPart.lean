@@ -58,19 +58,9 @@ theorem W1p.normalEpigraphEquivL_mem_w1pVanishingOnSubmodule_iff (hp : p ≠ ∞
     W1p.normalEpigraphEquivL hφ u ∈ w1pVanishingOnSubmodule volume (normalHalfSpace 0) p
         (graphFlattening φ φ.continuous '' Γ) ↔
       u ∈ w1pVanishingOnSubmodule volume (normalEpigraph φ) p Γ := by
-  have hUV : ((normalHalfSpace (E := E) 0 : Opens (WithLp 2 (ℝ × E))) :
-      Set (WithLp 2 (ℝ × E))) = (graphFlattening φ φ.continuous).symm ⁻¹' normalEpigraph φ := by
-    rw [← Homeomorph.image_eq_preimage_symm, coe_normalEpigraph, graphFlattening_image_lt]
-    ext x
-    exact mem_normalHalfSpace 0 x
   have hL := lipschitzWith_graphFlattening_symm hφ
-  -- The flattening is precomposition with inverse graph flattening.
-  have heq : W1p.normalEpigraphEquivL hφ u = W1p.compMeasurePreservingL
-      (measurePreserving_graphFlattening_symm φ φ.continuous) hUV
-      hL.locallyLipschitz.locallyLipschitzOn (fun x _ => norm_fderiv_le_of_lipschitz ℝ hL) u :=
-    W1p.ext_value (Lp.ext ((W1p.value_normalEpigraphEquivL_ae hφ u).trans
-      (W1p.value_compMeasurePreservingL_ae _ _ _ _ u).symm))
-  rw [heq, ← Homeomorph.preimage_symm]
+  rw [W1p.normalEpigraphEquivL_apply hφ hL.locallyLipschitz.locallyLipschitzOn
+    (fun x _ => norm_fderiv_le_of_lipschitz ℝ hL), ← Homeomorph.preimage_symm]
   exact W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_iff_of_lipschitzWith hp _ hL
     (lipschitzWith_graphFlattening hφ) _ _ _ _
 

@@ -333,7 +333,8 @@ theorem W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact (hp : p ≠ (∞ 
       (fun x _ => hchigradM x) w, hw] with x h1 h2
     rw [h1]
     by_cases hxK : x ∈ K
-    · rw [show chi x = 1 from interior_subset (hchi_one hxK), one_smul]
+    · -- The cutoff is one on a neighbourhood of `K`.
+      rw [mem_singleton_iff.1 (mem_preimage.1 (interior_subset (hchi_one hxK))), one_smul]
     · rw [h2 hxK, smul_zero]
   rw [← hchiw]
   exact W1p.restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule hp hchi hM0 _ _
