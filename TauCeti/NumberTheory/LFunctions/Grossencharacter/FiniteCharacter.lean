@@ -28,8 +28,11 @@ idelic archimedean component, which by Neukirch VII (6.13) is the inverse of the
 character in `χ((a)) = χ_f(a) χ_∞(a)` of VII (6.1) (see `Grossencharacter.compatibility`), so
 Neukirch's `χ_f(a) = χ((a)) χ_∞(a)⁻¹` becomes multiplication by the archimedean value. It is the
 monomial `∏_τ τ(a) ^ (n τ)` of the infinity type when `a` is positive at the real places of `𝔪`
-(`Grossencharacter.archimedeanValue_eq_embeddingCharacter`), and differs from it by a sign at a
-real place of `𝔪` where the parity of the Hecke character differs from that of `n`. With the
+(`Grossencharacter.archimedeanValue_eq_embeddingCharacter`). In general it is the monomial times,
+at each real place `w`, the sign of `a` there to the power `ε_w - n_w`, the difference between the
+sign parity `ε_w` of the Hecke character and the parity `n_w` of `n` at `w`
+(`Grossencharacter.coe_archimedeanValue_eq_embeddingCharacter_mul_sign`); this sign factor is
+trivial at the real places outside `𝔪`. With the
 monomial alone, the odd character `χ₄` modulo `4∞` of `ℚ`, of exponent `0`, would give the even
 function `a ↦ χ₄(|a|)` on `ℤ`, which is `1` at `-1` and `-1` at `3`, so does not even factor
 through the residues modulo `4`.
@@ -60,7 +63,8 @@ the residue units congruent to `1` modulo `𝔫`
 
 The coefficient and the residue character must be kept apart at `0`. When `𝔪₀ = 𝓞 K`, the residue
 ring has one element, a unit, at which the residue character is `1`, while the coefficient at the
-integer `0` is `0`. Accordingly the comparison is stated for nonzero integers only.
+integer `0` is `0` (`Grossencharacter.residueCharacter_eq_one_of_finitePart_eq_top`).
+Accordingly the comparison is stated for nonzero integers only.
 
 ## Main definitions
 
@@ -72,6 +76,8 @@ integer `0` is `0`. Accordingly the comparison is stated for nonzero integers on
 
 ## Main results
 
+* `TauCeti.LFunctions.Grossencharacter.coe_archimedeanValue_eq_embeddingCharacter_mul_sign`: the
+  archimedean value is the monomial of the infinity type times the signs at the real places.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacterK_eq_one_of_residueHom_eq_one`: the finite
   character is trivial on the fractions congruent to `1` modulo `𝔪₀`.
 * `TauCeti.LFunctions.Grossencharacter.coe_finiteCharacterK_of_algebraMap_eq`: on an algebraic
@@ -83,6 +89,8 @@ integer `0` is `0`. Accordingly the comparison is stated for nonzero integers on
   finite character is a function of the residue modulo `𝔪₀`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacter_eq_zero_iff`: it vanishes exactly at the
   integers not prime to `𝔪`.
+* `TauCeti.LFunctions.Grossencharacter.finiteCharacter_eq_one_of_mk_eq_one`: it is `1` on the
+  nonzero integers congruent to one modulo `𝔪₀`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacter_unit`: on a unit it is the archimedean
   value.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacterK_eq_prod_finiteComponent_inv`: the finite
@@ -140,6 +148,21 @@ theorem archimedeanValue_eq_embeddingCharacter (χ : Grossencharacter K 𝔪) {x
   exact χ.toHeckeCharacter.coe_prod_infiniteComponent_eq_embeddingCharacter_of_realParity
     χ.infinityType χ.agreesOnIdentityComponent x
     fun w hw ↦ hx w (not_imp_comm.mp (χ.realParity_eq w) hw)
+
+open scoped Classical in
+/-- **The archimedean value is the monomial of the infinity type times signs at the real places**:
+at each real place `w`, the sign of `x` there to the power `ε_w - n_w`, the difference between the
+sign parity of the Hecke character and the parity of the algebraic infinity type `n` at `w`. The
+factor is trivial at the real places outside `𝔪` (`realParity_eq`). -/
+theorem coe_archimedeanValue_eq_embeddingCharacter_mul_sign (χ : Grossencharacter K 𝔪) (x : Kˣ) :
+    (χ.archimedeanValue x : ℂ) = (χ.infinityType.embeddingCharacter x : ℂ) *
+      ∏ w : {w : InfinitePlace K // w.IsReal},
+        (SignType.sign (InfinitePlace.embedding_of_isReal w.property (x : K)) : ℂ) ^
+          (χ.toHeckeCharacter.infinityType.realParity w -
+            (AlgebraicInfinityType.toContinuous χ.infinityType).realParity w).val := by
+  rw [archimedeanValue_apply, Units.coe_prod]
+  exact χ.toHeckeCharacter.coe_prod_infiniteComponent_eq_embeddingCharacter_mul_sign
+    χ.infinityType χ.agreesOnIdentityComponent x
 
 /-! ### The finite character on the fractions prime to the modulus -/
 
@@ -323,6 +346,13 @@ theorem finiteCharacter_eq_of_sub_mem (χ : Grossencharacter K 𝔪) {a b : 𝓞
   rw [χ.finiteCharacter_eq_residueCharacter ha, χ.finiteCharacter_eq_residueCharacter hb,
     Ideal.Quotient.eq.mpr hab]
 
+/-- **The finite character is `1` on the nonzero integers congruent to one modulo `𝔪₀`**, with no
+sign condition at the real places of `𝔪`. The integer `0` is excluded: when `𝔪₀ = 𝓞 K` it is
+congruent to one, while `χ_f(0) = 0`. -/
+theorem finiteCharacter_eq_one_of_mk_eq_one (χ : Grossencharacter K 𝔪) {a : 𝓞 K} (ha₀ : a ≠ 0)
+    (ha : Ideal.Quotient.mk 𝔪.finitePart a = 1) : χ.finiteCharacter a = 1 := by
+  rw [χ.finiteCharacter_eq_residueCharacter ha₀, ha, MulChar.map_one]
+
 /-- **The residue character is determined by the finite character**: it is the unique character
 of `𝓞 K ⧸ 𝔪₀` whose value at the class of every nonzero integer `a` is `χ_f(a)`. Every class has a
 nonzero representative, since `𝔪₀ ≠ 0`. -/
@@ -333,6 +363,14 @@ theorem existsUnique_residueCharacter (χ : Grossencharacter K 𝔪) :
     fun ψ hψ ↦ MulChar.ext' fun r ↦ ?_⟩
   obtain ⟨b, hb₀, rfl⟩ := Ideal.Quotient.exists_ne_zero_mk_eq 𝔪.finitePart_ne_bot r
   rw [hψ b hb₀, χ.finiteCharacter_eq_residueCharacter hb₀]
+
+/-- **At finite part `𝓞 K` the residue character is trivial**: the residue ring has a single
+element, the unit `1`. The finite character is nevertheless `0` at `0`. -/
+theorem residueCharacter_eq_one_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
+    (h : 𝔪.finitePart = ⊤) : χ.residueCharacter = 1 := by
+  have : Subsingleton (𝓞 K ⧸ 𝔪.finitePart) := Ideal.Quotient.subsingleton_iff.mpr h
+  refine MulChar.ext fun u ↦ ?_
+  rw [Subsingleton.elim (u : 𝓞 K ⧸ 𝔪.finitePart) 1, MulChar.map_one, MulChar.map_one]
 
 /-! ### The finite character as a product of local components -/
 

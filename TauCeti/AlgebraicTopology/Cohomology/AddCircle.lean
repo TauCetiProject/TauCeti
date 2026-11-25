@@ -43,7 +43,11 @@ torsion of `Y` included, of the second cohomology of a product of a circle with 
 Its cross summand `H¹(Y; ℤ)` is torsion-free: if `g : M ⟶ M'` is injective, a class of
 `H²((ℝ / pℤ) × Y; M)` whose image in `H²((ℝ / pℤ) × Y; M')` is pulled back from `Y` is itself
 pulled back from `Y` (`TopCat.mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective`).
-For `ℤ → ℝ`, an integral class with a pulled-back real class is pulled back integrally.
+Conversely, every change of coefficients keeps pulled-back classes pulled back
+(`TopCat.homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle`).
+For `ℤ → ℝ`, an integral class with a pulled-back real class is pulled back integrally. For the
+same reason a class of `H²((ℝ / pℤ) × Y; ℤ)` is pulled back from `Y` as soon as one of its nonzero
+multiples is (`TopCat.zsmul_mem_range_singularCohomologyMap_snd_addCircle_iff`).
 
 **Torsion.** Since the decomposition is an additive equivalence, a class has finite order exactly
 when both slant products do (`TopCat.isOfFinAddOrder_iff_singularSlant_addCircle`,
@@ -105,8 +109,14 @@ cohomology.
 * `TopCat.singularCohomologyOneAddCircleProdBasis`: for a path-connected `Y`, a basis of
   `H¹(Y; ℤ)` together with `pr₁^* θ_p` gives a basis of `H¹((ℝ / pℤ) × Y; ℤ)`.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_iff`: the classes pulled back from `Y`.
+* `TopCat.homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle`: a change
+  of coefficients keeps pulled-back classes pulled back, and
+  `TopCat.homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle_iff`
+  detects them when it is injective on `Hⁿ(Y; -)`.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective`: classes of degree
   two pulled back after an injective change of coefficients are pulled back.
+* `TopCat.zsmul_mem_range_singularCohomologyMap_snd_addCircle_iff`: when `Hⁿ(Y; M)` is
+  torsion-free, a nonzero multiple of a class is pulled back from `Y` only if the class is.
 * `TopCat.isOfFinAddOrder_iff_singularSlant_addCircle`: the classes of finite order.
 * `TopCat.isOfFinAddOrder_iff_exists_singularCohomologyMap_snd_addCircle`: when `Hⁿ(Y; M)` is
   torsion-free, as `H¹(Y; ℤ)` always is, the torsion of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is pulled back
@@ -661,6 +671,40 @@ theorem mem_range_singularCohomologyMap_snd_addCircle_of_injective {n : ℕ}
     φ).symm.trans ((mem_range_singularCohomologyMap_snd_addCircle_iff M' Y _).1 hφ)
   exact (mem_range_singularCohomologyMap_snd_addCircle_iff M Y φ).2 (hg (h.trans (map_zero _).symm))
 
+/-- **Pulled-back classes of `(ℝ / pℤ) × Y` under a change of coefficients**: for every
+`g : M ⟶ M'`, if `φ ∈ Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is pulled back from `Y`, then so is its image in
+`Hⁿ⁺¹((ℝ / pℤ) × Y; M')`. -/
+theorem homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle {n : ℕ}
+    {M' : ModuleCat.{0} ℤ} (g : M ⟶ M')
+    {φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)}
+    (hφ : φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom) :
+    HomologicalComplex.homologyMap (((toSSet.obj (TopCat.of (AddCircle p) ⊗ Y)).chainComplex
+        (𝟙_ (ModuleCat.{0} ℤ))).linearYonedaObjMap ℤ g) (n + 1) φ ∈
+      LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M') (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom := by
+  -- the slant product by the circuit class commutes with the change of coefficients
+  rw [mem_range_singularCohomologyMap_snd_addCircle_iff] at hφ ⊢
+  rw [singularSlant_linearYonedaObjMap M (TopCat.of (AddCircle p)) Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom
+    g 1 n (n + 1) (add_comm 1 n) (AddCircle.fundamentalClass p), hφ, map_zero]
+
+/-- **Pulled-back classes of `(ℝ / pℤ) × Y` under an injective change of coefficients**: let
+`g : M ⟶ M'` induce an injective map `Hⁿ(Y; M) → Hⁿ(Y; M')`. Then `φ ∈ Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is
+pulled back from `Y` if and only if its image in `Hⁿ⁺¹((ℝ / pℤ) × Y; M')` is. -/
+theorem homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle_iff
+    {n : ℕ} {M' : ModuleCat.{0} ℤ} (g : M ⟶ M')
+    (hg : Function.Injective (HomologicalComplex.homologyMap
+      (((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{0} ℤ))).linearYonedaObjMap ℤ g) n))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    HomologicalComplex.homologyMap (((toSSet.obj (TopCat.of (AddCircle p) ⊗ Y)).chainComplex
+        (𝟙_ (ModuleCat.{0} ℤ))).linearYonedaObjMap ℤ g) (n + 1) φ ∈
+      LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M') (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom ↔
+      φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom :=
+  ⟨mem_range_singularCohomologyMap_snd_addCircle_of_injective Y g hg φ,
+    homologyMap_linearYonedaObjMap_mem_range_singularCohomologyMap_snd_addCircle Y g⟩
+
 /-- **Classes of `(ℝ / pℤ) × Y` pulled back after an injective change of coefficients**: if
 `g : M ⟶ M'` is injective and the image of `φ ∈ H²((ℝ / pℤ) × Y; M)` in `H²((ℝ / pℤ) × Y; M')` is
 pulled back from `Y`, then so is `φ`. For `ℤ → ℝ`: an integral class of `H²((ℝ / ℤ)_s × Y)` whose
@@ -677,6 +721,22 @@ theorem mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective
         (M := M) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (1 + 1)).hom := by
   exact mem_range_singularCohomologyMap_snd_addCircle_of_injective (n := 1) Y g
     (Y.injective_homologyMap_linearYonedaObjMap_one g hg) φ hφ
+
+variable (M) in
+/-- **Classes of `(ℝ / pℤ) × Y` with a pulled-back multiple**: if `Hⁿ(Y; M)` is torsion-free, then
+for every integer `k ≠ 0` the class `k • φ` of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is pulled back from `Y` if
+and only if `φ` is. For `n = 1` and `M = ℤ`, `H¹(Y; ℤ)` is always torsion-free, so a class of
+`H²((ℝ / pℤ) × Y; ℤ)` is pulled back from `Y` as soon as one of its nonzero multiples is. -/
+theorem zsmul_mem_range_singularCohomologyMap_snd_addCircle_iff {n : ℕ}
+    [IsAddTorsionFree (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)] {k : ℤ} (hk : k ≠ 0)
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    k • φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom ↔
+      φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{0} ℤ)) (k := ℤ)
+        (M := M) (CartesianMonoidalCategory.snd (TopCat.of (AddCircle p)) Y) (n + 1)).hom := by
+  rw [mem_range_singularCohomologyMap_snd_addCircle_iff,
+    mem_range_singularCohomologyMap_snd_addCircle_iff, map_zsmul,
+    IsAddTorsionFree.zsmul_eq_zero_iff_right hk]
 
 
 /-! ### Cup products and the intersection form of `(ℝ / pℤ) × Y` -/

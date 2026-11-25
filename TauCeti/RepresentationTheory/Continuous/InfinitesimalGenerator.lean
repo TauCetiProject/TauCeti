@@ -1,0 +1,310 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Semigroups.Group.ComplexLinear
+public import TauCeti.Analysis.Semigroups.Group.Rescale
+public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector
+public import TauCeti.RepresentationTheory.Continuous.OneParameter.Basic
+
+/-!
+# Infinitesimal generators of a strongly continuous representation of a Lie group
+
+Let `π` be a continuous representation of a real Lie group `G` on a real or complex Banach space
+`V` which is *strongly continuous*: every orbit `g ↦ π g v` is continuous, while `g ↦ π g` need
+not be continuous for the operator norm. For a left-invariant derivation `X` of `G`, restricting
+`π` along the one-parameter subgroup `t ↦ lieExp (t • X)` gives the C₀-group
+`t ↦ π (lieExp (t • X))`, `ContRepresentation.lieOneParameterGroup`, and its generator is the
+**infinitesimal generator** `A_X = ContRepresentation.lieGenerator π hπ X`, a real-linear
+operator on `V`, closed and densely defined by the generator theory of C₀-groups. A vector `v`
+lies in the domain of `A_X` exactly when `t ↦ π (lieExp (t • X)) v` is differentiable at `0`, and
+`A_X v` is then the derivative. The domain of `A_X` contains the smooth vectors, on which `A_X` is
+the derived action `ContRepresentation.lieDerivative π X`.
+
+This file proves the laws of `A_X` that depend on `X` and on the coefficient field:
+
+* scaling `X` by a real `s ≠ 0` scales the generator, on the same domain: `A_{s X} = s • A_X`,
+  while `A_0` is the zero operator on all of `V`;
+* the domain of `A_X` is closed under multiplication by the coefficient field, and `A_X` is
+  linear over it. Over `ℂ` the one-parameter groups are complex linear, so the complex generator
+  `complexGenerator` of the semigroup library applies to them.
+
+No additivity `A_{X + Y} = A_X + A_Y` is asserted: the domains of `A_X`, `A_Y` and `A_{X + Y}`
+need not be comparable.
+
+## Main definitions
+
+* `ContRepresentation.lieOneParameterGroup π hπ X`: the C₀-group `t ↦ π (lieExp (t • X))`.
+* `ContRepresentation.lieGenerator π hπ X`: its generator `A_X`, a real `LinearPMap` on `V`.
+
+## Main results
+
+* `ContRepresentation.hasDerivAt_lieGenerator`,
+  `ContRepresentation.mem_domain_lieGenerator_of_hasDerivAt` and
+  `ContRepresentation.lieGenerator_eq_of_hasDerivAt`: the domain of `A_X` consists of the vectors
+  whose orbit along `X` is differentiable at `0`, and `A_X` is the derivative there (the
+  first for complete `V`); in the form of an equivalence, for complete `V`,
+  `ContRepresentation.mem_domain_lieGenerator_iff`.
+* `ContRepresentation.lieGenerator_apply`: on its domain, `A_X` is the derived action
+  `ContRepresentation.lieDerivative π X`.
+* `ContRepresentation.IsLieSmoothVector.lieGenerator_apply`: on a smooth vector, `A_X` is the
+  derived action.
+* `ContRepresentation.lieGenerator_smul`: `A_{s X} = s • A_X` for `s ≠ 0`.
+* `ContRepresentation.lieGenerator_neg` and `ContRepresentation.lieGenerator_zero`:
+  `A_{-X} = -A_X`, and `A_0 = 0` with domain `V`.
+* `ContRepresentation.smul_mem_domain_lieGenerator` and
+  `ContRepresentation.lieGenerator_map_smul`: the domain of `A_X` is closed under the coefficient
+  field, and `A_X` is linear over it.
+* `ContRepresentation.isComplexLinear_lieOneParameterGroup`: over `ℂ`, the one-parameter groups
+  are complex linear.
+* `ContRepresentation.lieGenerator_eq_restrictScalars_complexGenerator`: over `ℂ`, for any
+  compatible real structure, `A_X` is the restriction to `ℝ` of the complex generator.
+
+## References
+
+* W. Casselman, *Introduction to the Schwartz space of `Γ \ G`*, Canad. J. Math. 41 (1989), §1.
+* J. Bernstein and B. Krötz, *Smooth Fréchet globalizations of Harish-Chandra modules*,
+  Israel J. Math. 199 (2014), §2.
+* K.-J. Engel and R. Nagel, *One-Parameter Semigroups for Linear Evolution Equations*,
+  Section II.3.11 (generators of C₀-groups).
+-/
+
+public section
+
+noncomputable section
+
+open Manifold TauCeti.Semigroups
+open scoped ContDiff Manifold
+
+namespace ContRepresentation
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [T2Space G]
+  [BoundarylessManifold I G]
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+section RCLike
+
+variable {𝕜 : Type*} [RCLike 𝕜] {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V] (π : ContRepresentation 𝕜 G V)
+  (hπ : ∀ v, Continuous fun g ↦ π g v)
+
+/-! ### The one-parameter groups and their generators -/
+
+/-- The C₀-group `t ↦ π (lieExp (t • X))` of a strongly continuous representation `π` along a
+left-invariant derivation `X`: the restriction of `π` to the one-parameter subgroup generated by
+`X`, regarded as a strongly continuous group of real operators. -/
+def lieOneParameterGroup (X : LeftInvariantDerivation I G) : StronglyContinuousGroup V :=
+  (π.restrict (oneParameterSubgroup X).toMonoidHom).toStronglyContinuousGroup
+    fun v ↦ (hπ v).comp (map_continuous (oneParameterSubgroup X))
+
+@[simp]
+theorem lieOneParameterGroup_apply (X : LeftInvariantDerivation I G) (t : ℝ) (v : V) :
+    π.lieOneParameterGroup hπ X t v = π (lieExp (t • X)) v := by
+  simp only [lieOneParameterGroup, toStronglyContinuousGroup_apply, restrict_apply_apply,
+    ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass, oneParameterSubgroup_apply]
+
+/-- The one-parameter group of `s • X` is the one-parameter group of `X` run at speed `s`. -/
+@[simp]
+theorem lieOneParameterGroup_smul (s : ℝ) (X : LeftInvariantDerivation I G) :
+    π.lieOneParameterGroup hπ (s • X) = (π.lieOneParameterGroup hπ X).rescale s :=
+  StronglyContinuousGroup.ext fun t ↦ ContinuousLinearMap.ext fun v ↦ by
+    rw [StronglyContinuousGroup.rescale_apply, lieOneParameterGroup_apply,
+      lieOneParameterGroup_apply, smul_smul, mul_comm]
+
+/-- The one-parameter group of `-X` is the time reversal of the one-parameter group of `X`. -/
+@[simp]
+theorem lieOneParameterGroup_neg (X : LeftInvariantDerivation I G) :
+    π.lieOneParameterGroup hπ (-X) = (π.lieOneParameterGroup hπ X).reflect := by
+  rw [← neg_one_smul ℝ X, lieOneParameterGroup_smul,
+    StronglyContinuousGroup.rescale_neg_one]
+
+/-- The **infinitesimal generator** `A_X` of a strongly continuous representation `π` along a
+left-invariant derivation `X`: the generator of the C₀-group `t ↦ π (lieExp (t • X))`, a real
+linear operator defined on the generator domain of that group. When `V` is complete, this domain
+consists of the vectors whose orbit along `X` is differentiable at `0`
+(`ContRepresentation.mem_domain_lieGenerator_iff`). -/
+def lieGenerator (X : LeftInvariantDerivation I G) : V →ₗ.[ℝ] V :=
+  (π.lieOneParameterGroup hπ X).generator
+
+theorem lieGenerator_def (X : LeftInvariantDerivation I G) :
+    π.lieGenerator hπ X = (π.lieOneParameterGroup hπ X).generator := by
+  rw [lieGenerator]
+
+/-- The domain of `A_X` is the generator domain of the C₀-group `t ↦ π (lieExp (t • X))`. -/
+@[simp]
+theorem lieGenerator_domain (X : LeftInvariantDerivation I G) :
+    (π.lieGenerator hπ X).domain = (π.lieOneParameterGroup hπ X).domain := by
+  rw [lieGenerator_def, StronglyContinuousGroup.generator_domain]
+
+/-- Pointwise form of `ContRepresentation.lieGenerator_def`, for any proofs of membership in the
+two domains. -/
+private theorem lieGenerator_apply_eq_generator_apply (X : LeftInvariantDerivation I G) {v : V}
+    (h₁ : v ∈ (π.lieGenerator hπ X).domain)
+    (h₂ : v ∈ (π.lieOneParameterGroup hπ X).generator.domain) :
+    π.lieGenerator hπ X ⟨v, h₁⟩ = (π.lieOneParameterGroup hπ X).generator ⟨v, h₂⟩ := by
+  obtain ⟨-, h⟩ := LinearPMap.ext_iff.1 (lieGenerator_def π hπ X)
+  exact @h v h₁ h₂
+
+/-! ### The derivative dictionary -/
+
+variable {π hπ}
+
+/-- A vector whose orbit along `X` is differentiable at `0` lies in the domain of `A_X`. -/
+theorem mem_domain_lieGenerator_of_hasDerivAt {X : LeftInvariantDerivation I G} {v w : V}
+    (h : HasDerivAt (fun t : ℝ ↦ π (lieExp (t • X)) v) w 0) :
+    v ∈ (π.lieGenerator hπ X).domain := by
+  rw [lieGenerator_domain]
+  exact (π.lieOneParameterGroup hπ X).mem_domain_of_hasDerivAt_zero
+    (by simpa only [lieOneParameterGroup_apply] using h)
+
+/-- On a vector whose orbit along `X` is differentiable at `0`, `A_X` is the derivative. -/
+theorem lieGenerator_eq_of_hasDerivAt {X : LeftInvariantDerivation I G} {v w : V}
+    (h : HasDerivAt (fun t : ℝ ↦ π (lieExp (t • X)) v) w 0) :
+    π.lieGenerator hπ X ⟨v, mem_domain_lieGenerator_of_hasDerivAt h⟩ = w := by
+  have h' : HasDerivAt (fun t : ℝ ↦ π.lieOneParameterGroup hπ X t v) w 0 := by
+    simpa only [lieOneParameterGroup_apply] using h
+  rw [lieGenerator_apply_eq_generator_apply]
+  exact (π.lieOneParameterGroup hπ X).generator_eq_of_hasDerivAt_zero h'
+
+/-- A smooth vector lies in the domain of every infinitesimal generator. -/
+theorem IsLieSmoothVector.mem_domain_lieGenerator {v : V} (hv : IsLieSmoothVector I π v)
+    (X : LeftInvariantDerivation I G) : v ∈ (π.lieGenerator hπ X).domain :=
+  mem_domain_lieGenerator_of_hasDerivAt (hv.hasDerivAt_lieDerivative X)
+
+/-- On a smooth vector, the infinitesimal generator `A_X` is the derived action of `X`. -/
+theorem IsLieSmoothVector.lieGenerator_apply {v : V} (hv : IsLieSmoothVector I π v)
+    (X : LeftInvariantDerivation I G) :
+    π.lieGenerator hπ X ⟨v, hv.mem_domain_lieGenerator X⟩ = lieDerivative π X v :=
+  lieGenerator_eq_of_hasDerivAt (hv.hasDerivAt_lieDerivative X)
+
+variable [CompleteSpace V]
+
+/-- **The orbit of a domain vector is differentiable**: for `v` in the domain of `A_X`, the map
+`t ↦ π (lieExp (t • X)) v` has derivative `A_X v` at `0`, from both sides. -/
+theorem hasDerivAt_lieGenerator {X : LeftInvariantDerivation I G}
+    (v : (π.lieGenerator hπ X).domain) :
+    HasDerivAt (fun t : ℝ ↦ π (lieExp (t • X)) v) (π.lieGenerator hπ X v) 0 := by
+  have h := (π.lieOneParameterGroup hπ X).hasDerivAt_zero
+    ⟨v, (lieGenerator_domain π hπ X).le v.property⟩
+  simp only [lieOneParameterGroup_apply] at h
+  rwa [lieGenerator_apply_eq_generator_apply]
+
+/-- **The domain of `A_X`** consists of the vectors `v` for which `t ↦ π (lieExp (t • X)) v` is
+differentiable at `0`. -/
+theorem mem_domain_lieGenerator_iff {X : LeftInvariantDerivation I G} {v : V} :
+    v ∈ (π.lieGenerator hπ X).domain ↔
+      DifferentiableAt ℝ (fun t : ℝ ↦ π (lieExp (t • X)) v) 0 :=
+  ⟨fun hv ↦ (hasDerivAt_lieGenerator ⟨v, hv⟩).differentiableAt,
+    fun h ↦ mem_domain_lieGenerator_of_hasDerivAt h.hasDerivAt⟩
+
+/-- On its domain, `A_X` is the derived action of `X`: the derivative at `0` of
+`t ↦ π (lieExp (t • X)) v`. -/
+theorem lieGenerator_apply {X : LeftInvariantDerivation I G} (v : (π.lieGenerator hπ X).domain) :
+    π.lieGenerator hπ X v = lieDerivative π X v := by
+  rw [lieDerivative_def, (hasDerivAt_lieGenerator v).deriv]
+
+/-! ### Dependence on `X` -/
+
+variable (π hπ)
+
+/-- **Scaling the Lie algebra scales the generator.** For `s ≠ 0`, the infinitesimal generator
+of `s • X` is `s • A_X`, defined on the domain of `A_X`. -/
+@[simp]
+theorem lieGenerator_smul {s : ℝ} (hs : s ≠ 0) (X : LeftInvariantDerivation I G) :
+    π.lieGenerator hπ (s • X) = s • π.lieGenerator hπ X := by
+  rw [lieGenerator_def, lieGenerator_def, lieOneParameterGroup_smul,
+    StronglyContinuousGroup.rescale_generator _ hs]
+
+/-- The infinitesimal generator of `-X` is `-A_X`, on the same domain. -/
+@[simp]
+theorem lieGenerator_neg (X : LeftInvariantDerivation I G) :
+    π.lieGenerator hπ (-X) = -π.lieGenerator hπ X := by
+  rw [lieGenerator_def, lieGenerator_def, lieOneParameterGroup_neg,
+    StronglyContinuousGroup.reflect_generator]
+
+omit [CompleteSpace V]
+
+/-- The infinitesimal generator of the zero derivation is the zero operator, defined on all of
+`V`. -/
+@[simp]
+theorem lieGenerator_zero : π.lieGenerator hπ (0 : LeftInvariantDerivation I G) = 0 := by
+  rw [lieGenerator_def, ← zero_smul ℝ (0 : LeftInvariantDerivation I G),
+    lieOneParameterGroup_smul, StronglyContinuousGroup.rescale_zero_generator]
+
+/-! ### Linearity over the coefficient field -/
+
+/-- The infinitesimal generator `A_X` commutes with multiplication by a scalar of the coefficient
+field: it preserves the domain, and intertwines the action there. -/
+private theorem exists_generator_lieOneParameterGroup_map_smul (X : LeftInvariantDerivation I G)
+    (c : 𝕜) (v : (π.lieOneParameterGroup hπ X).domain) :
+    ∃ hmem : c • (v : V) ∈ (π.lieOneParameterGroup hπ X).domain,
+      (π.lieOneParameterGroup hπ X).generator ⟨c • (v : V), by
+          rw [StronglyContinuousGroup.generator_domain]; exact hmem⟩ =
+        c • (π.lieOneParameterGroup hπ X).generator ⟨v, by
+          rw [StronglyContinuousGroup.generator_domain]; exact v.property⟩ :=
+  (π.lieOneParameterGroup hπ X).generator_commute_of_commute
+    ((c • ContinuousLinearMap.id 𝕜 V).restrictScalars ℝ)
+    (fun t w ↦ by simp) v
+
+/-- The domain of the infinitesimal generator `A_X` is closed under multiplication by scalars of
+the coefficient field. -/
+theorem smul_mem_domain_lieGenerator (X : LeftInvariantDerivation I G) (c : 𝕜) {v : V}
+    (hv : v ∈ (π.lieGenerator hπ X).domain) : c • v ∈ (π.lieGenerator hπ X).domain := by
+  rw [lieGenerator_domain] at hv ⊢
+  exact (exists_generator_lieOneParameterGroup_map_smul π hπ X c ⟨v, hv⟩).1
+
+/-- The infinitesimal generator `A_X` is linear over the coefficient field of the
+representation. -/
+theorem lieGenerator_map_smul (X : LeftInvariantDerivation I G) (c : 𝕜)
+    (v : (π.lieGenerator hπ X).domain) :
+    π.lieGenerator hπ X ⟨c • (v : V), smul_mem_domain_lieGenerator π hπ X c v.property⟩ =
+      c • π.lieGenerator hπ X v := by
+  have hv := (lieGenerator_domain π hπ X).le v.property
+  obtain ⟨hmem, h⟩ := exists_generator_lieOneParameterGroup_map_smul π hπ X c ⟨v, hv⟩
+  rw [lieGenerator_apply_eq_generator_apply π hπ X _
+      (by rw [StronglyContinuousGroup.generator_domain]; exact hmem),
+    lieGenerator_apply_eq_generator_apply π hπ X _
+      (by rw [StronglyContinuousGroup.generator_domain]; exact hv)]
+  exact h
+
+end RCLike
+
+/-! ### Complex representations -/
+
+section Complex
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] (π : ContRepresentation ℂ G V)
+  (hπ : ∀ v, Continuous fun g ↦ π g v)
+
+/-- The one-parameter groups of a strongly continuous complex representation are complex linear,
+so their generators are complex-linear operators
+(`TauCeti.Semigroups.StronglyContinuousSemigroup.complexGenerator`). -/
+theorem isComplexLinear_lieOneParameterGroup (X : LeftInvariantDerivation I G) :
+    (π.lieOneParameterGroup hπ X).toSemigroup.IsComplexLinear :=
+  (StronglyContinuousSemigroup.isComplexLinear_iff _).2 fun t z v ↦ by
+    rw [StronglyContinuousGroup.toSemigroup_apply, lieOneParameterGroup_apply,
+      lieOneParameterGroup_apply, map_smul]
+
+/-- **The complex generator of a complex representation.** For any real structure on `V`
+compatible with its complex structure, the infinitesimal generator `A_X` is the restriction to
+real scalars of the complex generator
+(`TauCeti.Semigroups.StronglyContinuousSemigroup.complexGenerator`) of the one-parameter group
+built from the real structure obtained by restricting the complex one; in particular the domain
+of `A_X` is its complex domain. -/
+theorem lieGenerator_eq_restrictScalars_complexGenerator [NormedSpace ℝ V] [IsScalarTower ℝ ℂ V]
+    (X : LeftInvariantDerivation I G) :
+    π.lieGenerator hπ X = (StronglyContinuousSemigroup.complexGenerator _
+      (π.isComplexLinear_lieOneParameterGroup hπ X)).restrictScalars ℝ := by
+  obtain rfl := (NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := V)).symm
+  rw [StronglyContinuousSemigroup.complexGenerator_restrictScalars, lieGenerator_def,
+    StronglyContinuousGroup.generator_def]
+
+end Complex
+
+end ContRepresentation

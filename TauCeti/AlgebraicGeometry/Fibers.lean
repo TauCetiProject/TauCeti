@@ -448,7 +448,7 @@ lemma isPullback_genericFiberMap :
       (genericFiber R K toBase).hom (Spec.map (CommRingCat.ofHom φ.toRingHom)) :=
   IsPullback.of_right (by
       rw [genericFiberMap_genericFiberι, AlgHom.toRingHom_eq_coe,
-        φ.SpecMap_comp_SpecMap_algebraMap]
+        Spec.map_algHom_comp_map_algebraMap φ]
       exact isPullback_genericFiber R L toBase)
     (genericFiberMap_snd R φ toBase) (isPullback_genericFiber R K toBase)
 

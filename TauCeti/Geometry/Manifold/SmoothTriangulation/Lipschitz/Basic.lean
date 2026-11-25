@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.SmoothTriangulation.Approximation
 public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Edgewise
 
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Analysis.Convex.StdSimplex.Faces
 import TauCeti.Analysis.Convex.Lipschitz
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite

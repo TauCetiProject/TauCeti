@@ -491,15 +491,15 @@ private theorem tateKerWeilPairingOfH2MuHom_eq_zero_of_mem_range_kummerMap [Char
   simp only [tateKerWeilPairingOfH2MuHom, AddMonoidHom.comp_apply, AddMonoidHom.compHom_apply_apply,
     φ.kerH1WeilPairing_eq_zero_of_mem_range_kummerMap hn ha hb, map_zero]
 
-private theorem tateKerWeilPairingOfH2MuHom_eq_zero_of_mem_ker (hn : IsUnit (φ.degree : F))
+private theorem tateKerWeilPairingOfH2MuHom_eq_zero_of_mem_localKummerCondition
+    (hn : IsUnit (φ.degree : F))
     (h : continuousCohomology 2 (muNRep φ.degree F) →+ ZMod φ.degree)
     {a : H1 (Gal F) (ofIsogeny φ).KerCoeff} {b : H1 (Gal F) (ofIsogeny φ.dual).KerCoeff}
-    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker)
-    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-      continuous_of_discreteTopology).ker) :
+    (ha : a ∈ φ.localKummerCondition)
+    (hb : b ∈ φ.dual.localKummerCondition) :
     φ.tateKerWeilPairingOfH2MuHom hn h a b = 0 := by
   simp only [tateKerWeilPairingOfH2MuHom, AddMonoidHom.comp_apply, AddMonoidHom.compHom_apply_apply,
-    φ.kerH1WeilPairing_eq_zero_of_mem_ker hn ha hb, map_zero]
+    φ.kerH1WeilPairing_eq_zero_of_mem_localKummerCondition hn ha hb, map_zero]
 
 private theorem degree_pow_mul_natCard_H1_kerCoeff_of_euler [DecidableEq F]
     (hn : IsUnit (φ.degree : F)) {k : ℕ}
@@ -519,7 +519,7 @@ private theorem degree_pow_mul_natCard_H1_kerCoeff_of_euler [DecidableEq F]
   rw [← φ.natCard_kerCoeff_eq_degree, heuler, hdual,
     Nat.card_congr (ofIsogeny φ).kerPointMapEquivInvariants.symm.toEquiv]
 
-private theorem natCard_ker_kerCoeffIncl_mul_dual_eq_natCard_H1 [DecidableEq F]
+private theorem natCard_localKummerCondition_mul_dual_eq_natCard_H1_of_euler [DecidableEq F]
     (hn : IsUnit (φ.degree : F)) {k : ℕ}
     (heuler : φ.degree ^ k * Nat.card (H1 (Gal F) (ofIsogeny φ).KerCoeff) =
       Nat.card (ofIsogeny φ).pointMapHom.ker * Nat.card (ofIsogeny φ.dual).pointMapHom.ker)
@@ -527,13 +527,13 @@ private theorem natCard_ker_kerCoeffIncl_mul_dual_eq_natCard_H1 [DecidableEq F]
           (ofIsogeny φ.dual).pointMapHom.range.index) =
         Nat.card (ofIsogeny φ).pointMapHom.ker * Nat.card (ofIsogeny φ.dual).pointMapHom.ker) ∨
       Subsingleton (Gal F)) :
-    Nat.card (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker *
-      Nat.card (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-        continuous_of_discreteTopology).ker = Nat.card (H1 (Gal F) (ofIsogeny φ).KerCoeff) := by
+    Nat.card φ.localKummerCondition *
+      Nat.card φ.dual.localKummerCondition = Nat.card (H1 (Gal F) (ofIsogeny φ).KerCoeff) := by
   have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
   have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).1
   rcases hcase with ⟨rfl, hidx⟩ | _
-  · rw [← φ.range_kummerMap, ← φ.dual.range_kummerMap, natCard_range_kummerMap,
+  · rw [← φ.range_kummerMap,
+      ← φ.dual.range_kummerMap, natCard_range_kummerMap,
       natCard_range_kummerMap]
     refine Nat.eq_of_mul_eq_mul_left φ.degree_pos ?_
     rw [pow_one] at heuler; exact hidx.trans heuler.symm
@@ -543,17 +543,14 @@ private theorem natCard_ker_kerCoeffIncl_mul_dual_eq_natCard_H1 [DecidableEq F]
       Nat.card_eq_one_iff_unique.mpr ⟨inferInstance, ⟨0⟩⟩,
       Nat.card_eq_one_iff_unique.mpr ⟨h1, ⟨0⟩⟩, mul_one]
 
-private theorem ker_kerCoeffIncl_eq_ker_tateKerWeilPairingOfH2MuHom [Finite (Gal F)]
+private theorem localKummerCondition_eq_ker_tateKerWeilPairingOfH2MuHom [Finite (Gal F)]
     (hn : IsUnit (φ.degree : F)) (h : continuousCohomology 2 (muNRep φ.degree F) →+ ZMod φ.degree)
     (hbij : Function.Bijective (φ.tateKerWeilPairingOfH2MuHom hn h))
-    (hcard : Nat.card (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl
-        continuous_of_discreteTopology).ker *
-      Nat.card (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-        continuous_of_discreteTopology).ker = Nat.card (H1 (Gal F) (ofIsogeny φ).KerCoeff)) :
-    (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker =
+    (hcard : Nat.card φ.localKummerCondition *
+      Nat.card φ.dual.localKummerCondition = Nat.card (H1 (Gal F) (ofIsogeny φ).KerCoeff)) :
+    φ.localKummerCondition =
       ((φ.tateKerWeilPairingOfH2MuHom hn h).compl₂
-        (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-          continuous_of_discreteTopology).ker.subtype).ker := by
+        φ.dual.localKummerCondition.subtype).ker := by
   have : Finite (Z1 (Gal F) (ofIsogeny φ.dual).KerCoeff) := Subtype.finite
   have : Finite (H1 (Gal F) (ofIsogeny φ.dual).KerCoeff) := Quotient.finite _
   have hkill : ∀ Q : (ofIsogeny φ.dual).KerCoeff, φ.degree • Q = 0 := fun Q => by
@@ -561,16 +558,17 @@ private theorem ker_kerCoeffIncl_eq_ker_tateKerWeilPairingOfH2MuHom [Finite (Gal
   exact ((φ.tateKerWeilPairingOfH2MuHom hn h
     ).eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod hbij
     (nsmul_H1_eq_zero hkill) _ _).mpr
-    ⟨fun _ ha _ hb => φ.tateKerWeilPairingOfH2MuHom_eq_zero_of_mem_ker hn h ha hb, hcard⟩
+    ⟨fun _ ha _ hb =>
+      φ.tateKerWeilPairingOfH2MuHom_eq_zero_of_mem_localKummerCondition hn h ha hb, hcard⟩
 
 private theorem range_kummerMap_eq_ker_compl₂ [CharZero F] [DecidableEq F]
     (pair : H1 (Gal F) (ofIsogeny φ).KerCoeff →+
       H1 (Gal F) (ofIsogeny φ.dual).KerCoeff →+ ZMod φ.degree)
-    (hker : (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker =
-      (pair.compl₂ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-        continuous_of_discreteTopology).ker.subtype).ker) :
+    (hker : φ.localKummerCondition =
+      (pair.compl₂ φ.dual.localKummerCondition.subtype).ker) :
     φ.kummerMap.range = (pair.compl₂ φ.dual.kummerMap.range.subtype).ker := by
-  rw [φ.range_kummerMap, φ.dual.range_kummerMap]; exact hker
+  rw [φ.range_kummerMap, φ.dual.range_kummerMap]
+  exact hker
 
 end AbstractField
 
@@ -636,13 +634,13 @@ theorem realTateKerWeilPairing_eq_zero_of_mem_range_kummerMap
     (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero) (realH2MuToZMod φ.degree) ha hb
 
 /-- Classes in the real Selmer local conditions of `φ` and `φ̂` pair to zero. -/
-theorem realTateKerWeilPairing_eq_zero_of_mem_ker
+theorem realTateKerWeilPairing_eq_zero_of_mem_localKummerCondition
     {a : H1 (Gal ℝ) (ofIsogeny φ).KerCoeff} {b : H1 (Gal ℝ) (ofIsogeny φ.dual).KerCoeff}
-    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker)
-    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-      continuous_of_discreteTopology).ker) :
+    (ha : a ∈ φ.localKummerCondition)
+    (hb : b ∈ φ.dual.localKummerCondition) :
     φ.realTateKerWeilPairing a b = 0 :=
-  φ.tateKerWeilPairingOfH2MuHom_eq_zero_of_mem_ker (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero)
+  φ.tateKerWeilPairingOfH2MuHom_eq_zero_of_mem_localKummerCondition
+    (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero)
     (realH2MuToZMod φ.degree) ha hb
 
 /-- **Real local Euler characteristic:** `deg φ · #H¹(G_ℝ, E₁[φ]) = #E₁(ℝ)[φ] · #E₂(ℝ)[φ̂]`. -/
@@ -664,22 +662,22 @@ theorem natCard_range_kummerMap_mul_dual_eq_natCard_H1_real :
     φ.degree_mul_natCard_H1_kerCoeff_real]
 
 /-- **The real Selmer local condition of `φ` is the exact annihilator of that of `φ̂`.** -/
-theorem ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_realTateKerWeilPairing_dual_subtype :
-    (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker =
+theorem localKummerCondition_eq_ker_compl₂_realTateKerWeilPairing_dual_subtype :
+    φ.localKummerCondition =
       (φ.realTateKerWeilPairing.compl₂
-        (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-          continuous_of_discreteTopology).ker.subtype).ker :=
-  φ.ker_kerCoeffIncl_eq_ker_tateKerWeilPairingOfH2MuHom
+        φ.dual.localKummerCondition.subtype).ker :=
+  φ.localKummerCondition_eq_ker_tateKerWeilPairingOfH2MuHom
     (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero) (realH2MuToZMod φ.degree)
     φ.realTateKerWeilPairing_bijective (by
-      rw [← φ.range_kummerMap, ← φ.dual.range_kummerMap,
+      rw [← φ.range_kummerMap,
+        ← φ.dual.range_kummerMap,
         φ.natCard_range_kummerMap_mul_dual_eq_natCard_H1_real])
 
 /-- **The real Kummer image of `φ` is the exact annihilator of the real Kummer image of `φ̂`.** -/
 theorem range_kummerMap_eq_ker_compl₂_realTateKerWeilPairing_dual_subtype :
     φ.kummerMap.range = (φ.realTateKerWeilPairing.compl₂ φ.dual.kummerMap.range.subtype).ker :=
   φ.range_kummerMap_eq_ker_compl₂ φ.realTateKerWeilPairing
-    φ.ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_realTateKerWeilPairing_dual_subtype
+    φ.localKummerCondition_eq_ker_compl₂_realTateKerWeilPairing_dual_subtype
 
 end Real
 
@@ -779,14 +777,14 @@ theorem infiniteTateKerWeilPairing_eq_zero_of_mem_range_kummerMap [DecidableEq w
     (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero) (infiniteH2MuToZMod w φ.degree) ha hb
 
 /-- Classes in the Selmer local conditions of `φ` and `φ̂` at `w` pair to zero. -/
-theorem infiniteTateKerWeilPairing_eq_zero_of_mem_ker
+theorem infiniteTateKerWeilPairing_eq_zero_of_mem_localKummerCondition
     {a : H1 (Gal w.Completion) (ofIsogeny φ).KerCoeff}
     {b : H1 (Gal w.Completion) (ofIsogeny φ.dual).KerCoeff}
-    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker)
-    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-      continuous_of_discreteTopology).ker) :
+    (ha : a ∈ φ.localKummerCondition)
+    (hb : b ∈ φ.dual.localKummerCondition) :
     φ.infiniteTateKerWeilPairing a b = 0 :=
-  φ.tateKerWeilPairingOfH2MuHom_eq_zero_of_mem_ker (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero)
+  φ.tateKerWeilPairingOfH2MuHom_eq_zero_of_mem_localKummerCondition
+    (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero)
     (infiniteH2MuToZMod w φ.degree) ha hb
 
 /-- **Archimedean Euler characteristic:**
@@ -803,7 +801,7 @@ theorem natCard_range_kummerMap_mul_dual_eq_natCard_H1_completion [DecidableEq w
     Nat.card φ.kummerMap.range * Nat.card φ.dual.kummerMap.range =
       Nat.card (H1 (Gal w.Completion) (ofIsogeny φ).KerCoeff) := by
   rw [φ.range_kummerMap, φ.dual.range_kummerMap]
-  exact φ.natCard_ker_kerCoeffIncl_mul_dual_eq_natCard_H1
+  exact φ.natCard_localKummerCondition_mul_dual_eq_natCard_H1_of_euler
     (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero) (k := w.mult)
     φ.degree_pow_mult_mul_natCard_H1_kerCoeff_completion
     φ.real_isogeny_index_or_subsingleton_completion
@@ -818,16 +816,15 @@ theorem degree_pow_mult_mul_natCard_range_kummerMap_mul_dual_completion
     ).trans φ.degree_pow_mult_mul_natCard_H1_kerCoeff_completion
 
 /-- **The Selmer local condition of `φ` at `w` is the exact annihilator of that of `φ̂`.** -/
-theorem ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_infiniteTateKerWeilPairing_dual_subtype :
-    (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker =
+theorem localKummerCondition_eq_ker_compl₂_infiniteTateKerWeilPairing_dual_subtype :
+    φ.localKummerCondition =
       (φ.infiniteTateKerWeilPairing.compl₂
-        (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-          continuous_of_discreteTopology).ker.subtype).ker := by
+        φ.dual.localKummerCondition.subtype).ker := by
   let : DecidableEq w.Completion := Classical.decEq w.Completion
-  exact φ.ker_kerCoeffIncl_eq_ker_tateKerWeilPairingOfH2MuHom
+  exact φ.localKummerCondition_eq_ker_tateKerWeilPairingOfH2MuHom
     (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero) (infiniteH2MuToZMod w φ.degree)
     φ.infiniteTateKerWeilPairing_bijective
-    (φ.natCard_ker_kerCoeffIncl_mul_dual_eq_natCard_H1
+    (φ.natCard_localKummerCondition_mul_dual_eq_natCard_H1_of_euler
       (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero)
       (k := w.mult) φ.degree_pow_mult_mul_natCard_H1_kerCoeff_completion
       φ.real_isogeny_index_or_subsingleton_completion)
@@ -838,7 +835,7 @@ theorem range_kummerMap_eq_ker_compl₂_infiniteTateKerWeilPairing_dual_subtype
     φ.kummerMap.range =
       (φ.infiniteTateKerWeilPairing.compl₂ φ.dual.kummerMap.range.subtype).ker :=
   φ.range_kummerMap_eq_ker_compl₂ φ.infiniteTateKerWeilPairing
-    φ.ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_infiniteTateKerWeilPairing_dual_subtype
+    φ.localKummerCondition_eq_ker_compl₂_infiniteTateKerWeilPairing_dual_subtype
 
 end InfinitePlace
 
