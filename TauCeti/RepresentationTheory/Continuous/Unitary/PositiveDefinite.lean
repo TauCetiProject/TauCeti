@@ -44,7 +44,9 @@ representations on Hilbert spaces.
 * `Matrix.PosSemidef.gnsRepresentation`: the GNS unitary representation of a positive-definite
   function, with `Matrix.PosSemidef.isUnitary_gnsRepresentation`,
   `Matrix.PosSemidef.inner_gnsVector_one_gnsRepresentation`,
-  `Matrix.PosSemidef.norm_gnsVector_eq_one`, `Matrix.PosSemidef.norm_gnsVector_sub_lt` and
+  `Matrix.PosSemidef.norm_gnsVector_eq_one`, `Matrix.PosSemidef.norm_gnsVector_one`,
+  `Matrix.PosSemidef.norm_gnsVector_sub_lt`,
+  `Matrix.PosSemidef.norm_gnsRepresentation_gnsVector_one_sub_sq_le`, and
   `Matrix.PosSemidef.norm_gnsRepresentation_gnsVector_one_sub_lt`.
 * `Matrix.PosSemidef.tendsto_inner_gnsRepresentation_of_tendsto_mul`,
   `Matrix.PosSemidef.eq_zero_of_eventually_gnsRepresentation_eq_self`,
@@ -198,6 +200,19 @@ theorem norm_gnsVector_sub_sq (g h : G) :
   rw [@norm_sub_sq 𝕜, ← inner_self_eq_norm_sq (𝕜 := 𝕜), ← inner_self_eq_norm_sq (𝕜 := 𝕜)]
   simp only [inner_gnsVector, inv_mul_cancel]
   ring
+
+/-- For a positive-definite function normalized by `φ 1 = 1`, the GNS vector at the identity is a
+unit vector. -/
+theorem norm_gnsVector_one (hφ1 : φ 1 = 1) : ‖hφ.gnsVector 1‖ = 1 :=
+  hφ.norm_gnsVector_eq_one hφ1 1
+
+/-- For a positive-definite function normalized by `φ 1 = 1`, the GNS representation moves the GNS
+vector at the identity by `g` a distance whose square is at most `2 * ‖φ g - 1‖`. -/
+theorem norm_gnsRepresentation_gnsVector_one_sub_sq_le (hφ1 : φ 1 = 1) (g : G) :
+    ‖hφ.gnsRepresentation g (hφ.gnsVector 1) - hφ.gnsVector 1‖ ^ 2 ≤ 2 * ‖φ g - 1‖ := by
+  rw [hφ.gnsRepresentation_gnsVector_one, norm_sub_rev, hφ.norm_gnsVector_sub_sq, inv_one,
+    one_mul, hφ1, RCLike.one_re]
+  linarith [RCLike.one_sub_re_le_norm_sub_one (φ g)]
 
 /-- If a normalized positive-definite function `φ` satisfies `‖φ (g⁻¹ * h) - 1‖ < δ ^ 2 / 2` with
 `δ > 0`, then the GNS vectors at `g` and `h` lie within distance `δ`. -/

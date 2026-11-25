@@ -130,7 +130,7 @@ theorem exists_contDiff_support_subset_holderWith_tendstoUniformly
       rfl
     rw [heq]
     simpa only [hInt, Real.toNNReal_one, one_mul] using h
-  · exact (ρ n).norm_normed_convolution_le hM x
+  · exact (ρ n).norm_normed_convolution_le (Eventually.of_forall hM) x
   · exact ContDiffBump.tendstoUniformly_normed_convolution
       (ContDiffBump.tendsto_rOut_shrinking zero_lt_one) (hf.uniformContinuous hα)
 

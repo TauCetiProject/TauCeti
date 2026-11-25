@@ -6,30 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Finite
+import TauCeti.Topology.Maps.DomRestrict
 
 /-!
 # Extending and pushing forward relative CW complexes along embeddings
 
-Let `f : X → Y` be an embedding and let `C` be a CW complex relative to `D` in `X`.
+Let `C` be a CW complex relative to `D` in `X`, and let `f : X → Y` be a map.
 
+* Suppose that `f` restricts to an embedding on a closed set `S ⊇ C`. Let `D'` be a closed subset
+  of `Y` with `f ⁻¹' D' ∩ C = D`, and suppose that the cells of `C` do not accumulate outside
+  `f '' S`: `closure (f '' (C \ D)) ⊆ f '' S`. Then `C' = D' ∪ f '' C` is a CW complex relative
+  to `D'` in `Y` (`Topology.IsEmbedding.relCWComplex`), with the same cells
+  (`Topology.IsEmbedding.relCWComplexCellEquiv`), characteristic maps `f ∘ map n i`
+  (`Topology.IsEmbedding.coe_map_relCWComplex`, `Topology.IsEmbedding.map_relCWComplex_symm_apply`),
+  skeleta `D' ∪ f '' skeletonLT C n` (`Topology.IsEmbedding.coe_skeletonLT_relCWComplex`),
+  and finiteness properties (`Topology.IsEmbedding.finiteDimensional_relCWComplex`,
+  `Topology.IsEmbedding.finiteType_relCWComplex`, and `Topology.IsEmbedding.finite_relCWComplex`).
+  Away from `S` the map `f` is arbitrary. Without the closure condition, cells of `C` may
+  accumulate at points outside `f '' S`, and then `D' ∪ f '' C` need not carry the weak topology
+  in `Y`. For an embedding `f` and `S = univ`, the condition holds when `range f` is closed, and
+  when `(range f)ᶜ ⊆ interior D'`, as for the open manifold part of a space whose complement lies
+  in the interior of a sublevel set `D'`.
 * When `f` is a closed embedding, `f '' C` is a CW complex relative to `f '' D` in `Y`
-  (`Topology.IsClosedEmbedding.relCWComplex`), with the same cells
-  (`Topology.IsClosedEmbedding.relCWComplexCellEquiv`) and the characteristic maps of `C` followed
-  by `f` (`Topology.IsClosedEmbedding.coe_map_relCWComplex`). For an absolute CW complex, the base
-  is `f '' ∅ = ∅`, and `Topology.RelCWComplex.toCWComplex` turns the result into an absolute CW
-  complex.
-* When `f` is an open embedding, `f` need not be a closed map, so `f '' C` alone need not carry the
-  weak topology in `Y` when cells accumulate outside `range f`. If, however, `D'` is a closed subset
-  of `Y` whose preimage `f ⁻¹' D'` is `D` and whose interior contains `(range f)ᶜ`, then
-  `C' = D' ∪ f '' C` is a CW complex relative to `D'` in `Y`
-  (`Topology.IsOpenEmbedding.relCWComplex`), with the same cells
-  (`Topology.IsOpenEmbedding.relCWComplexCellEquiv`), characteristic maps `f ∘ map n i`, and
-  finiteness properties (`Topology.IsOpenEmbedding.finiteDimensional_relCWComplex`,
-  `Topology.IsOpenEmbedding.finiteType_relCWComplex`, and
-  `Topology.IsOpenEmbedding.finite_relCWComplex`).
-  In the open-embedding case, `{range f, interior D'}` is an open cover of `Y`: on `interior D'`
-  closedness relative to `C'` reduces to intersection with `D'`, and on `range f` the open embedding
-  identifies closed sets with those of `X` where the weak topology of `C` applies.
+  (`Topology.IsClosedEmbedding.relCWComplex`, the case `S = univ` and `D' = f '' D` of the
+  above), with the same cells (`Topology.IsClosedEmbedding.relCWComplexCellEquiv`), the
+  characteristic maps of `C` followed by `f` (`Topology.IsClosedEmbedding.coe_map_relCWComplex`),
+  skeleta `f '' skeletonLT C n` (`Topology.IsClosedEmbedding.coe_skeletonLT_relCWComplex`),
+  and the same finiteness properties (`Topology.IsClosedEmbedding.finite_relCWComplex` and its
+  siblings). For an absolute CW complex, the base is `f '' ∅ = ∅`, and
+  `Topology.RelCWComplex.toCWComplex` turns the result into an absolute CW complex.
 
 In both cases the two spaces lie in a common universe, since the cells of a CW complex are indexed
 by types in the universe of its ambient space.
@@ -54,40 +59,235 @@ namespace Topology.IsEmbedding
 
 section Map
 
-variable {X Y : Type u} [TopologicalSpace X] {f : X → Y} {C D : Set X} [RelCWComplex C D]
+variable {X Y : Type u} [TopologicalSpace X] {f : X → Y} {S C D : Set X} [RelCWComplex C D]
 
-/-- The characteristic map of a cell of `C`, followed by an injective map `f`. -/
-private def imageCellMap (hinj : Injective f) (n : ℕ) (i : cell C n) :
+/-- The characteristic map of a cell of `C`, followed by a map `f` that is injective on `S`. -/
+private def imageCellMap (hinj : InjOn f S) (n : ℕ) (i : cell C n) :
     PartialEquiv (Fin n → ℝ) Y :=
   haveI : Nonempty X := ⟨map n i 0⟩
-  (map n i).trans (hinj.injOn.toPartialEquiv f univ)
+  (map n i).trans (hinj.toPartialEquiv f S)
 
-private lemma coe_imageCellMap (hinj : Injective f) (n : ℕ) (i : cell C n) :
+private lemma coe_imageCellMap (hinj : InjOn f S) (n : ℕ) (i : cell C n) :
     ⇑(imageCellMap hinj n i) = f ∘ map n i :=
   rfl
 
-private lemma image_imageCellMap (hinj : Injective f) (n : ℕ) (i : cell C n)
-    (S : Set (Fin n → ℝ)) : imageCellMap hinj n i '' S = f '' (map n i '' S) := by
+private lemma image_imageCellMap (hinj : InjOn f S) (n : ℕ) (i : cell C n)
+    (s : Set (Fin n → ℝ)) : imageCellMap hinj n i '' s = f '' (map n i '' s) := by
   rw [coe_imageCellMap, image_comp]
 
-private lemma source_imageCellMap (hinj : Injective f) (n : ℕ) (i : cell C n) :
+private lemma source_imageCellMap (hinj : InjOn f S) (hCS : C ⊆ S) (n : ℕ) (i : cell C n) :
     (imageCellMap hinj n i).source = ball 0 1 := by
   have : Nonempty X := ⟨map n i 0⟩
-  simp [imageCellMap, source_eq]
+  rw [imageCellMap, PartialEquiv.trans_source, source_eq]
+  exact inter_eq_left.2 fun x hx ↦ hCS (openCell_subset_complex n i ⟨x, hx, rfl⟩)
 
 end Map
 
-private lemma continuousOn_symm_imageCellMap {X Y : Type u} [TopologicalSpace X]
-    [TopologicalSpace Y] {f : X → Y} (hf : IsEmbedding f) {C D : Set X} [RelCWComplex C D]
-    (n : ℕ) (i : cell C n) :
-    ContinuousOn (imageCellMap hf.injective n i).symm (imageCellMap hf.injective n i).target := by
+variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y} {S : Set X}
+  (hf : IsEmbedding (S.domRestrict f)) {C D : Set X} [RelCWComplex C D] {C' D' : Set Y}
+
+private lemma continuousOn_symm_imageCellMap (n : ℕ) (i : cell C n) :
+    ContinuousOn (imageCellMap (injOn_iff_injective.2 hf.injective) n i).symm
+      (imageCellMap (injOn_iff_injective.2 hf.injective) n i).target := by
   have : Nonempty X := ⟨map n i 0⟩
-  have hinv : ContinuousOn (invFunOn f univ) (f '' univ) := by
-    refine hf.isInducing.continuousOn_iff.2 (continuousOn_id.congr fun y hy ↦ ?_)
-    obtain ⟨x, hx, rfl⟩ := hy
-    exact invFunOn_eq ⟨x, hx, rfl⟩
   rw [imageCellMap, PartialEquiv.coe_trans_symm, PartialEquiv.trans_target]
-  exact (continuousOn_symm n i).comp (hinv.mono inter_subset_left) fun y hy ↦ hy.2
+  exact (continuousOn_symm n i).comp
+    ((hf.isInducing.continuousOn_toPartialEquiv_symm _).mono inter_subset_left) fun y hy ↦ hy.2
+
+/-- **The weak topology of `D' ∪ f '' C`.** Let `f` restrict to an embedding on a closed set
+`S ⊇ C`, let `D ⊆ f ⁻¹' D'`, and suppose that `closure (f '' (C \ D)) ⊆ f '' S`. Then a set
+`A ⊆ D' ∪ f '' C` is closed in `Y` if `A ∩ D'` and `A ∩ f '' closedCell n j`, for every cell `j`
+of `C`, are closed in `Y`. -/
+private lemma isClosed_of_isClosed_inter_imageCellMap (hS : IsClosed S) (hCS : C ⊆ S)
+    (hDD' : D ⊆ f ⁻¹' D') (hcl : closure (f '' (C \ D)) ⊆ f '' S) {A : Set Y}
+    (hAC : A ⊆ D' ∪ f '' C)
+    (hA : (∀ n (j : cell C n), IsClosed
+      (A ∩ imageCellMap (injOn_iff_injective.2 hf.injective) n j '' closedBall 0 1)) ∧
+      IsClosed (A ∩ D')) :
+    IsClosed A := by
+  have hinj : InjOn f S := injOn_iff_injective.2 hf.injective
+  have hfS : ContinuousOn f S := continuousOn_iff_continuous_domRestrict.2 hf.continuous
+  -- First, `f ⁻¹' A ∩ C` is closed in `X` by the weak topology of `C`.
+  have hpreClosed : IsClosed (f ⁻¹' A ∩ C) := by
+    refine RelCWComplex.closed' (C := C) _ inter_subset_right ⟨fun n j ↦ ?_, ?_⟩
+    · -- On a closed cell, it is the part of `S` that `f` maps to `A ∩ f '' closedCell n j`.
+      have hsub : map n j '' closedBall 0 1 ⊆ C := closedCell_subset_complex n j
+      have h : f ⁻¹' A ∩ C ∩ map n j '' closedBall 0 1 =
+          f ⁻¹' (A ∩ imageCellMap hinj n j '' closedBall 0 1) ∩ S := by
+        simp only [image_imageCellMap, preimage_inter, inter_assoc, inter_eq_right.2 hsub,
+          hinj.preimage_image_inter (hsub.trans hCS)]
+      rw [h, inter_comm]
+      exact hfS.preimage_isClosed_of_isClosed hS (hA.1 n j)
+    · -- On `D ⊆ C ∩ f ⁻¹' D'`, it is the preimage of `A ∩ D'`.
+      have h : f ⁻¹' A ∩ C ∩ D = f ⁻¹' (A ∩ D') ∩ D := by
+        simp only [preimage_inter, inter_assoc, inter_eq_right.2 (base_subset_complex (C := C)),
+          inter_eq_right.2 hDD']
+      rw [h, inter_comm]
+      exact (hfS.mono ((base_subset_complex (C := C)).trans hCS)).preimage_isClosed_of_isClosed
+        (isClosedBase C) hA.2
+  -- Hence its image `A ∩ f '' C` is cut out of `f '' S` by a closed `F ⊆ Y`.
+  obtain ⟨F, hF, hFA⟩ :=
+    hf.isInducing.image_eq_isClosed_inter_range (hpreClosed.preimage continuous_subtypeVal)
+  rw [image_domRestrict, range_domRestrict, inter_eq_left.2 (inter_subset_right.trans hCS),
+    image_preimage_inter] at hFA
+  -- Off `D'`, `A` lies in `f '' (C \ D)`, whose closure lies in `f '' S`.
+  have hAeq : A = (F ∩ closure (f '' (C \ D))) ∪ (A ∩ D') := by
+    refine subset_antisymm (fun y hy ↦ ?_) (union_subset ?_ inter_subset_left)
+    · by_cases hyD' : y ∈ D'
+      · exact .inr ⟨hy, hyD'⟩
+      obtain ⟨x, hx, rfl⟩ := (hAC hy).resolve_left hyD'
+      exact .inl ⟨(hFA.subset ⟨hy, mem_image_of_mem f hx⟩).1,
+        subset_closure ⟨x, ⟨hx, fun hxD ↦ hyD' (hDD' hxD)⟩, rfl⟩⟩
+    · rintro y ⟨hyF, hy⟩
+      exact (hFA.superset ⟨hyF, hcl hy⟩).1
+  rw [hAeq]
+  exact (hF.inter isClosed_closure).union hA.2
+
+/-- **Extending a relative CW complex along an embedding.** Let `C` be a CW complex relative to `D`
+in `X`, and let `f : X → Y` restrict to an embedding on a closed set `S ⊇ C`. Let `D'` be a closed
+subset of `Y` with `f ⁻¹' D' ∩ C = D` such that the cells of `C` do not accumulate outside `f '' S`:
+`closure (f '' (C \ D)) ⊆ f '' S`. Then `C' = D' ∪ f '' C` is a CW complex relative to `D'` in
+`Y`, with the cells of `C` and their characteristic maps followed by `f`. -/
+@[instance_reducible]
+def relCWComplex (hS : IsClosed S) (hCS : C ⊆ S) (hD' : IsClosed D') (hpre : f ⁻¹' D' ∩ C = D)
+    (hcl : closure (f '' (C \ D)) ⊆ f '' S) (hC' : D' ∪ f '' C = C') : RelCWComplex C' D' where
+  cell := cell C
+  map := imageCellMap (injOn_iff_injective.2 hf.injective)
+  source_eq := source_imageCellMap (injOn_iff_injective.2 hf.injective) hCS
+  continuousOn n i := (continuousOn_iff_continuous_domRestrict.2 hf.continuous).comp
+    (RelCWComplex.continuousOn n i)
+    ((mapsTo_image _ _).mono_right ((closedCell_subset_complex n i).trans hCS))
+  continuousOn_symm := continuousOn_symm_imageCellMap hf
+  pairwiseDisjoint' := by
+    rintro ⟨n, i⟩ - ⟨m, j⟩ - hne
+    simp only [Function.onFun, image_imageCellMap]
+    exact (pairwiseDisjoint (C := C) (mem_univ _) (mem_univ _) hne).image
+      (injOn_iff_injective.2 hf.injective) ((openCell_subset_complex n i).trans hCS)
+      ((openCell_subset_complex m j).trans hCS)
+  disjointBase' n i := by
+    rw [image_imageCellMap, disjoint_image_left]
+    exact disjoint_left.2 fun x hx hxD' ↦ disjoint_left.1 (disjointBase (C := C) n i) hx
+      (hpre ▸ ⟨hxD', openCell_subset_complex n i hx⟩)
+  mapsTo n i := by
+    obtain ⟨I, hI⟩ := RelCWComplex.mapsTo n i
+    refine ⟨I, ?_⟩
+    simp only [image_imageCellMap]
+    rw [coe_imageCellMap]
+    refine ((mapsTo_image f _).comp hI).mono_right ?_
+    rw [image_union]
+    exact union_subset_union (image_subset_iff.2 (hpre ▸ inter_subset_left))
+      (by simp only [image_iUnion]; exact Subset.rfl)
+  closed' _ hAC hA := isClosed_of_isClosed_inter_imageCellMap hf hS hCS
+    (hpre ▸ inter_subset_left) hcl (hC' ▸ hAC) hA
+  isClosedBase := hD'
+  union' := by
+    have hCD : f '' C = f '' D ∪ ⋃ n, ⋃ i : cell C n, f '' closedCell n i := by
+      have := congrArg (f '' ·) (RelCWComplex.union (C := C)).symm
+      simpa only [image_union, image_iUnion, closedCell] using this
+    have hsub : D' ∪ f '' D = D' :=
+      union_eq_left.2 (image_subset_iff.2 (hpre ▸ inter_subset_left))
+    simp only [image_imageCellMap]
+    calc
+      (D' ∪ ⋃ n, ⋃ i : cell C n, f '' (map n i '' closedBall 0 1)) =
+          (D' ∪ f '' D) ∪ ⋃ n, ⋃ i : cell C n, f '' closedCell n i := by
+        rw [hsub]
+        simp only [closedCell]
+      _ = D' ∪ f '' C := by rw [union_assoc, ← hCD]
+      _ = C' := hC'
+
+variable (hS : IsClosed S) (hCS : C ⊆ S) (hD' : IsClosed D') (hpre : f ⁻¹' D' ∩ C = D)
+  (hcl : closure (f '' (C \ D)) ⊆ f '' S) (hC' : D' ∪ f '' C = C')
+
+/-- The cells of `D' ∪ f '' C` relative to `D'` are the cells of `C`. -/
+def relCWComplexCellEquiv (n : ℕ) :
+    @cell Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n ≃ cell C n :=
+  Equiv.refl _
+
+private lemma map_relCWComplex_eq_imageCellMap (n : ℕ)
+    (i : @cell Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n) :
+    @map Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n i =
+      imageCellMap (injOn_iff_injective.2 hf.injective) n
+        (hf.relCWComplexCellEquiv hS hCS hD' hpre hcl hC' n i) :=
+  rfl
+
+/-- The characteristic maps of `D' ∪ f '' C` relative to `D'` are those of `C` followed by `f`. -/
+@[simp]
+lemma coe_map_relCWComplex (n : ℕ)
+    (i : @cell Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n) :
+    ⇑(@map Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n i) =
+      f ∘ map n (hf.relCWComplexCellEquiv hS hCS hD' hpre hcl hC' n i) := by
+  rw [map_relCWComplex_eq_imageCellMap, coe_imageCellMap]
+
+/-- At `f x`, for `x ∈ S`, the inverse of a characteristic map of `D' ∪ f '' C` relative to `D'`
+takes the value at `x` of the inverse of the corresponding characteristic map of `C`. For `x` in
+the open cell, these are the coordinates of `x` in that cell. -/
+@[simp]
+lemma map_relCWComplex_symm_apply (n : ℕ)
+    (i : @cell Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n) {x : X} (hx : x ∈ S) :
+    (@map Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n i).symm (f x) =
+      (map n (hf.relCWComplexCellEquiv hS hCS hD' hpre hcl hC' n i)).symm x := by
+  have : Nonempty X := ⟨x⟩
+  have hinj : InjOn f S := injOn_iff_injective.2 hf.injective
+  rw [map_relCWComplex_eq_imageCellMap, imageCellMap, PartialEquiv.coe_trans_symm, comp_apply,
+    InjOn.toPartialEquiv, BijOn.toPartialEquiv_symm_apply, hinj.leftInvOn_invFunOn hx]
+
+/-- The open cells of `D' ∪ f '' C` relative to `D'` are the images of the open cells of `C`. -/
+@[simp]
+lemma openCell_relCWComplex (n : ℕ)
+    (i : @cell Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n) :
+    @openCell Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n i =
+      f '' openCell n (hf.relCWComplexCellEquiv hS hCS hD' hpre hcl hC' n i) := by
+  simp only [openCell, map_relCWComplex_eq_imageCellMap, image_imageCellMap]
+
+/-- The closed cells of `D' ∪ f '' C` relative to `D'` are the images of the closed cells of `C`. -/
+@[simp]
+lemma closedCell_relCWComplex (n : ℕ)
+    (i : @cell Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n) :
+    @closedCell Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n i =
+      f '' closedCell n (hf.relCWComplexCellEquiv hS hCS hD' hpre hcl hC' n i) := by
+  simp only [closedCell, map_relCWComplex_eq_imageCellMap, image_imageCellMap]
+
+/-- The cell frontiers of `D' ∪ f '' C` relative to `D'` are the images of the cell frontiers of
+`C`. -/
+@[simp]
+lemma cellFrontier_relCWComplex (n : ℕ)
+    (i : @cell Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n) :
+    @cellFrontier Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n i =
+      f '' cellFrontier n (hf.relCWComplexCellEquiv hS hCS hD' hpre hcl hC' n i) := by
+  simp only [cellFrontier, map_relCWComplex_eq_imageCellMap, image_imageCellMap]
+
+/-- The `< n`-skeleton of `D' ∪ f '' C` relative to `D'` is `D'` together with the image of the
+`< n`-skeleton of `C`. -/
+@[simp]
+lemma coe_skeletonLT_relCWComplex [T2Space X] [T2Space Y] (n : ℕ∞) :
+    (@skeletonLT Y _ _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n : Set Y) =
+      D' ∪ f '' (skeletonLT C n : Set X) := by
+  have hsub : D' ∪ f '' D = D' :=
+    union_eq_left.2 (image_subset_iff.2 (hpre ▸ inter_subset_left))
+  rw [coe_skeletonLT, coe_skeletonLT, image_union, image_iUnion₂]
+  simp only [image_iUnion, closedCell_relCWComplex, ← union_assoc, hsub]
+  exact congrArg (D' ∪ ·) (iUnion₂_congr fun m _ ↦
+    (hf.relCWComplexCellEquiv hS hCS hD' hpre hcl hC' m).surjective.iUnion_comp
+      (fun j ↦ f '' closedCell m j))
+
+/-- Finite-dimensionality transfers from `C` to `D' ∪ f '' C` relative to `D'`. -/
+lemma finiteDimensional_relCWComplex [RelCWComplex.FiniteDimensional C] :
+    @RelCWComplex.FiniteDimensional Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') :=
+  @RelCWComplex.FiniteDimensional.mk Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC')
+    (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D))
+
+/-- Finite type transfers from `C` to `D' ∪ f '' C` relative to `D'`. -/
+lemma finiteType_relCWComplex [RelCWComplex.FiniteType C] :
+    @RelCWComplex.FiniteType Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') :=
+  @RelCWComplex.FiniteType.mk Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC')
+    (FiniteType.finite_cell (C := C) (D := D))
+
+/-- Finiteness transfers from `C` to `D' ∪ f '' C` relative to `D'`. -/
+lemma finite_relCWComplex [RelCWComplex.Finite C] :
+    @RelCWComplex.Finite Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') :=
+  @finite_of_finiteDimensional_finiteType Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC')
+    (hf.finiteDimensional_relCWComplex hS hCS hD' hpre hcl hC')
+    (hf.finiteType_relCWComplex hS hCS hD' hpre hcl hC')
 
 end Topology.IsEmbedding
 
@@ -98,46 +298,16 @@ variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y}
 
 /-- **The image of a relative CW complex under a closed embedding.** If `f` is a closed embedding
 and `C` is a CW complex relative to `D`, then `C' = f '' C` is a CW complex relative to
-`D' = f '' D`, with the cells of `C` and their characteristic maps followed by `f`. -/
+`D' = f '' D`, with the cells of `C` and their characteristic maps followed by `f`. This is
+`Topology.IsEmbedding.relCWComplex` for `S = univ`, whose closure condition holds since `range f`
+is closed. -/
 @[instance_reducible]
-def relCWComplex (hC : f '' C = C') (hD : f '' D = D') : RelCWComplex C' D' where
-  cell := cell C
-  map := IsEmbedding.imageCellMap hf.injective
-  source_eq := IsEmbedding.source_imageCellMap hf.injective
-  continuousOn n i := hf.continuous.comp_continuousOn (RelCWComplex.continuousOn n i)
-  continuousOn_symm := IsEmbedding.continuousOn_symm_imageCellMap hf.isEmbedding
-  pairwiseDisjoint' := by
-    rintro ⟨n, i⟩ - ⟨m, j⟩ - hne
-    simp only [Function.onFun, IsEmbedding.image_imageCellMap]
-    exact (disjoint_image_iff hf.injective).2 (pairwiseDisjoint (C := C) (mem_univ _)
-      (mem_univ _) hne)
-  disjointBase' n i := by
-    rw [IsEmbedding.image_imageCellMap, ← hD]
-    exact (disjoint_image_iff hf.injective).2 (disjointBase n i)
-  mapsTo n i := by
-    obtain ⟨I, hI⟩ := RelCWComplex.mapsTo n i
-    refine ⟨I, ?_⟩
-    simp only [IsEmbedding.image_imageCellMap]
-    rw [IsEmbedding.coe_imageCellMap, ← hD]
-    simpa only [image_union, image_iUnion₂] using (mapsTo_image f _).comp hI
-  closed' A hAC hA := by
-    have hAf : A ⊆ range f := hAC.trans (hC ▸ image_subset_range f C)
-    have hpre (S : Set X) : f ⁻¹' A ∩ S = f ⁻¹' (A ∩ f '' S) := by
-      rw [preimage_inter, preimage_image_eq _ hf.injective]
-    rw [← image_preimage_eq_of_subset hAf]
-    refine hf.isClosedMap _
-      (RelCWComplex.closed' (C := C) (f ⁻¹' A) (fun x hx ↦ ?_) ⟨fun n j ↦ ?_, ?_⟩)
-    · obtain ⟨y, hy, hyx⟩ := hC ▸ hAC hx
-      exact hf.injective hyx ▸ hy
-    · rw [hpre, ← IsEmbedding.image_imageCellMap hf.injective]
-      exact (hA.1 n j).preimage hf.continuous
-    · rw [hpre, hD]
-      exact hA.2.preimage hf.continuous
-  isClosedBase := hD ▸ hf.isClosedMap _ (isClosedBase C)
-  union' := by
-    have := congrArg (f '' ·) (RelCWComplex.union (C := C))
-    simp only [image_union, image_iUnion, closedCell] at this
-    simpa only [IsEmbedding.image_imageCellMap, hC, hD] using this
+def relCWComplex (hC : f '' C = C') (hD : f '' D = D') : RelCWComplex C' D' :=
+  IsEmbedding.relCWComplex (S := univ) (hf.isEmbedding.comp .subtypeVal) isClosed_univ
+    (subset_univ C) (hD ▸ hf.isClosedMap _ (isClosedBase C))
+    (by rw [← hD, hf.injective.preimage_image, inter_eq_left.2 base_subset_complex])
+    (image_univ (f := f) ▸ hf.isClosed_range.closure_subset_iff.2 (image_subset_range _ _))
+    (hC ▸ hD ▸ union_eq_right.2 (image_mono base_subset_complex))
 
 variable (hC : f '' C = C') (hD : f '' D = D')
 
@@ -158,14 +328,14 @@ lemma coe_map_relCWComplex (n : ℕ) (i : @cell Y _ C' D' (hf.relCWComplex hC hD
 lemma openCell_relCWComplex (n : ℕ) (i : @cell Y _ C' D' (hf.relCWComplex hC hD) n) :
     @openCell Y _ C' D' (hf.relCWComplex hC hD) n i =
       f '' openCell n (hf.relCWComplexCellEquiv hC hD n i) :=
-  IsEmbedding.image_imageCellMap hf.injective n _ _
+  IsEmbedding.openCell_relCWComplex _ _ _ _ _ _ _ n i
 
 /-- The closed cells of the image of `C` under `f` are the images of the closed cells of `C`. -/
 @[simp]
 lemma closedCell_relCWComplex (n : ℕ) (i : @cell Y _ C' D' (hf.relCWComplex hC hD) n) :
     @closedCell Y _ C' D' (hf.relCWComplex hC hD) n i =
       f '' closedCell n (hf.relCWComplexCellEquiv hC hD n i) :=
-  IsEmbedding.image_imageCellMap hf.injective n _ _
+  IsEmbedding.closedCell_relCWComplex _ _ _ _ _ _ _ n i
 
 /-- The boundaries of the cells of the image of `C` under `f` are the images of the boundaries of
 the cells of `C`. -/
@@ -173,150 +343,39 @@ the cells of `C`. -/
 lemma cellFrontier_relCWComplex (n : ℕ) (i : @cell Y _ C' D' (hf.relCWComplex hC hD) n) :
     @cellFrontier Y _ C' D' (hf.relCWComplex hC hD) n i =
       f '' cellFrontier n (hf.relCWComplexCellEquiv hC hD n i) :=
-  IsEmbedding.image_imageCellMap hf.injective n _ _
+  IsEmbedding.cellFrontier_relCWComplex _ _ _ _ _ _ _ n i
+
+/-- The `< n`-skeleton of the image of `C` under a closed embedding `f` is the image of the
+`< n`-skeleton of `C`. -/
+@[simp]
+lemma coe_skeletonLT_relCWComplex [T2Space X] [T2Space Y] (n : ℕ∞) :
+    (@skeletonLT Y _ _ C' D' (hf.relCWComplex hC hD) n : Set Y) =
+      f '' (skeletonLT C n : Set X) :=
+  (IsEmbedding.coe_skeletonLT_relCWComplex _ _ _ _ _ _ _ n).trans <| by
+    rw [← hD, union_eq_right.2 (image_mono (skeletonLT C n).base_subset)]
+
+/-- At `f x`, the inverse of a characteristic map of the image of `C` under a closed embedding `f`
+takes the value at `x` of the inverse of the corresponding characteristic map of `C`. For `x` in
+the open cell, these are the coordinates of `x` in that cell. -/
+@[simp]
+lemma map_relCWComplex_symm_apply (n : ℕ) (i : @cell Y _ C' D' (hf.relCWComplex hC hD) n) (x : X) :
+    (@map Y _ C' D' (hf.relCWComplex hC hD) n i).symm (f x) =
+      (map n (hf.relCWComplexCellEquiv hC hD n i)).symm x :=
+  IsEmbedding.map_relCWComplex_symm_apply _ _ _ _ _ _ _ n i (mem_univ x)
+
+/-- Finite-dimensionality transfers from `C` to its image under a closed embedding. -/
+lemma finiteDimensional_relCWComplex [RelCWComplex.FiniteDimensional C] :
+    @RelCWComplex.FiniteDimensional Y _ C' D' (hf.relCWComplex hC hD) :=
+  IsEmbedding.finiteDimensional_relCWComplex _ _ _ _ _ _ _
+
+/-- Finite type transfers from `C` to its image under a closed embedding. -/
+lemma finiteType_relCWComplex [RelCWComplex.FiniteType C] :
+    @RelCWComplex.FiniteType Y _ C' D' (hf.relCWComplex hC hD) :=
+  IsEmbedding.finiteType_relCWComplex _ _ _ _ _ _ _
+
+/-- Finiteness transfers from `C` to its image under a closed embedding. -/
+lemma finite_relCWComplex [RelCWComplex.Finite C] :
+    @RelCWComplex.Finite Y _ C' D' (hf.relCWComplex hC hD) :=
+  IsEmbedding.finite_relCWComplex _ _ _ _ _ _ _
 
 end Topology.IsClosedEmbedding
-
-namespace Topology.IsOpenEmbedding
-
-variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y}
-  (hf : IsOpenEmbedding f) {C D : Set X} [RelCWComplex C D] {C' D' : Set Y}
-
-/-- **Extending a relative CW complex along an open embedding.** Let `f : X → Y` be an open
-embedding, `C` a CW complex relative to `D` in `X`, and `D'` a closed subset of `Y` with
-`f ⁻¹' D' = D` and `(range f)ᶜ ⊆ interior D'`. Then `C' = D' ∪ f '' C` is a CW complex relative to
-`D'` in `Y`, with the cells of `C` and their characteristic maps followed by `f`. -/
-@[instance_reducible]
-def relCWComplex (hD' : IsClosed D') (hpre : f ⁻¹' D' = D) (hcompl : (range f)ᶜ ⊆ interior D')
-    (hC' : D' ∪ f '' C = C') : RelCWComplex C' D' where
-  cell := cell C
-  map := IsEmbedding.imageCellMap hf.injective
-  source_eq := IsEmbedding.source_imageCellMap hf.injective
-  continuousOn n i := hf.continuous.comp_continuousOn (RelCWComplex.continuousOn n i)
-  continuousOn_symm := IsEmbedding.continuousOn_symm_imageCellMap hf.isEmbedding
-  pairwiseDisjoint' := by
-    rintro ⟨n, i⟩ - ⟨m, j⟩ - hne
-    simp only [Function.onFun, IsEmbedding.image_imageCellMap]
-    exact (disjoint_image_iff hf.injective).2 (pairwiseDisjoint (C := C) (mem_univ _)
-      (mem_univ _) hne)
-  disjointBase' n i := by
-    rw [IsEmbedding.image_imageCellMap]
-    refine disjoint_left.2 ?_
-    rintro _ ⟨x, hx, rfl⟩ hxD'
-    exact disjoint_left.1 (disjointBase (C := C) n i) hx (hpre ▸ hxD')
-  mapsTo n i := by
-    obtain ⟨I, hI⟩ := RelCWComplex.mapsTo n i
-    refine ⟨I, ?_⟩
-    simp only [IsEmbedding.image_imageCellMap]
-    rw [IsEmbedding.coe_imageCellMap]
-    refine ((mapsTo_image f _).comp hI).mono_right ?_
-    rw [image_union]
-    exact union_subset_union (image_subset_iff.2 hpre.symm.le)
-      (by simp only [image_iUnion]; exact Subset.rfl)
-  closed' A hAC hA := by
-    -- Show `Aᶜ` is open using the open cover `{range f, interior D'}` of `Y`.
-    rw [← isOpen_compl_iff]
-    have hpreC : f ⁻¹' A ⊆ C := fun x hx ↦ by
-      rcases hC' ▸ hAC hx with hxD' | ⟨x', hx', hxx'⟩
-      · exact base_subset_complex (C := C) (hpre ▸ hxD')
-      · exact hf.injective hxx' ▸ hx'
-    have hpreClosed : IsClosed (f ⁻¹' A) := by
-      refine RelCWComplex.closed' (C := C) (f ⁻¹' A) hpreC ⟨fun n j ↦ ?_, ?_⟩
-      · have h : f ⁻¹' A ∩ map n j '' closedBall 0 1 =
-            f ⁻¹' (A ∩ IsEmbedding.imageCellMap hf.injective n j '' closedBall 0 1) := by
-          rw [IsEmbedding.image_imageCellMap, preimage_inter, preimage_image_eq _ hf.injective]
-        rw [h]
-        exact (hA.1 n j).preimage hf.continuous
-      · rw [← hpre, ← preimage_inter]
-        exact hA.2.preimage hf.continuous
-    have hcomplEq : Aᶜ = f '' (f ⁻¹' A)ᶜ ∪ (interior D' ∩ (A ∩ D')ᶜ) := by
-      ext y
-      simp only [mem_compl_iff, mem_union, mem_image, mem_inter_iff]
-      refine ⟨fun hy ↦ ?_, ?_⟩
-      · by_cases hyr : y ∈ range f
-        · obtain ⟨x, rfl⟩ := hyr
-          exact .inl ⟨x, hy, rfl⟩
-        · exact .inr ⟨hcompl hyr, fun h ↦ hy h.1⟩
-      · rintro (⟨x, hx, rfl⟩ | ⟨hyint, hyAD⟩)
-        · exact hx
-        · exact fun hyA ↦ hyAD ⟨hyA, interior_subset hyint⟩
-    rw [hcomplEq]
-    exact (hf.isOpenMap _ hpreClosed.isOpen_compl).union (isOpen_interior.inter hA.2.isOpen_compl)
-  isClosedBase := hD'
-  union' := by
-    have hCD : f '' C = f '' D ∪ ⋃ n, ⋃ i : cell C n, f '' closedCell n i := by
-      have := congrArg (f '' ·) (RelCWComplex.union (C := C)).symm
-      simpa only [image_union, image_iUnion, closedCell] using this
-    have hsub : D' ∪ f '' D = D' := union_eq_left.2 (image_subset_iff.2 hpre.symm.le)
-    simp only [IsEmbedding.image_imageCellMap]
-    calc
-      (D' ∪ ⋃ n, ⋃ i : cell C n, f '' (map n i '' closedBall 0 1)) =
-          (D' ∪ f '' D) ∪ ⋃ n, ⋃ i : cell C n, f '' closedCell n i := by
-        rw [hsub]
-        simp only [closedCell]
-      _ = D' ∪ f '' C := by rw [union_assoc, ← hCD]
-      _ = C' := hC'
-
-variable (hD' : IsClosed D') (hpre : f ⁻¹' D' = D) (hcompl : (range f)ᶜ ⊆ interior D')
-  (hC' : D' ∪ f '' C = C')
-
-/-- The cells of `D' ∪ f '' C` relative to `D'` are the cells of `C`. -/
-def relCWComplexCellEquiv (n : ℕ) :
-    @cell Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') n ≃ cell C n :=
-  Equiv.refl _
-
-/-- The characteristic maps of `D' ∪ f '' C` relative to `D'` are those of `C` followed by `f`. -/
-@[simp]
-lemma coe_map_relCWComplex (n : ℕ)
-    (i : @cell Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') n) :
-    ⇑(@map Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') n i) =
-      f ∘ map n (hf.relCWComplexCellEquiv hD' hpre hcompl hC' n i) :=
-  (rfl)
-
-/-- The open cells of `D' ∪ f '' C` relative to `D'` are the images of the open cells of `C`. -/
-@[simp]
-lemma openCell_relCWComplex (n : ℕ)
-    (i : @cell Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') n) :
-    @openCell Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') n i =
-      f '' openCell n (hf.relCWComplexCellEquiv hD' hpre hcompl hC' n i) :=
-  IsEmbedding.image_imageCellMap hf.injective n _ _
-
-/-- The closed cells of `D' ∪ f '' C` relative to `D'` are the images of the closed cells of `C`. -/
-@[simp]
-lemma closedCell_relCWComplex (n : ℕ)
-    (i : @cell Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') n) :
-    @closedCell Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') n i =
-      f '' closedCell n (hf.relCWComplexCellEquiv hD' hpre hcompl hC' n i) :=
-  IsEmbedding.image_imageCellMap hf.injective n _ _
-
-/-- The cell frontiers of `D' ∪ f '' C` relative to `D'` are the images of the cell frontiers of
-`C`. -/
-@[simp]
-lemma cellFrontier_relCWComplex (n : ℕ)
-    (i : @cell Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') n) :
-    @cellFrontier Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') n i =
-      f '' cellFrontier n (hf.relCWComplexCellEquiv hD' hpre hcompl hC' n i) :=
-  IsEmbedding.image_imageCellMap hf.injective n _ _
-
-/-- Finite-dimensionality transfers from `C` to `D' ∪ f '' C` relative to `D'`. -/
-lemma finiteDimensional_relCWComplex [RelCWComplex.FiniteDimensional C] :
-    @RelCWComplex.FiniteDimensional Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') :=
-  @RelCWComplex.FiniteDimensional.mk Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') <| by
-    filter_upwards [FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D)] with n hn
-    exact (hf.relCWComplexCellEquiv hD' hpre hcompl hC' n).isEmpty_congr.2 hn
-
-/-- Finite type transfers from `C` to `D' ∪ f '' C` relative to `D'`. -/
-lemma finiteType_relCWComplex [RelCWComplex.FiniteType C] :
-    @RelCWComplex.FiniteType Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') :=
-  @RelCWComplex.FiniteType.mk Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') fun n ↦
-    (hf.relCWComplexCellEquiv hD' hpre hcompl hC' n).finite_iff.2
-      (FiniteType.finite_cell (C := C) (D := D) n)
-
-/-- Finiteness transfers from `C` to `D' ∪ f '' C` relative to `D'`. -/
-lemma finite_relCWComplex [RelCWComplex.Finite C] :
-    @RelCWComplex.Finite Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC') :=
-  @finite_of_finiteDimensional_finiteType Y _ C' D' (hf.relCWComplex hD' hpre hcompl hC')
-    (hf.finiteDimensional_relCWComplex hD' hpre hcompl hC')
-    (hf.finiteType_relCWComplex hD' hpre hcompl hC')
-
-end Topology.IsOpenEmbedding

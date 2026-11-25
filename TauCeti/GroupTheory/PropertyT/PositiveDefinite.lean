@@ -8,13 +8,15 @@ module
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.GroupTheory.PropertyT.KazhdanPair
+public import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
+import TauCeti.Analysis.InnerProductSpace.UnitVector
 import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
 import TauCeti.Analysis.PositiveDefinite.Kernel.Schoenberg
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.GroupTheory.PositiveDefinite.Metric
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvex
-import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
+import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvexHull
 
 /-!
 # Quantitative and positive-definite characterizations of relative property (T)
@@ -22,11 +24,13 @@ import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
 This file establishes the quantitative invariant-vector and positive-definite characterizations of
 relative property (T) for a subgroup `Λ` of a discrete group `Γ`:
 
-* For a normal subgroup `Λ` of an arbitrary discrete group `Γ`, quantitative Kazhdan approximation
-  (`IsKazhdanPair.exists_mem_invariants_norm_sub_lt`) yields the quantitative and net
-  uniform-convergence positive-definite characterizations without countability.
-* For an arbitrary subgroup `Λ` of a countable discrete group `Γ`, relative property (T) is
-  equivalent to:
+* For an arbitrary subgroup `Λ` of any discrete group `Γ`, quantitative positive-definite
+  approximation or net uniform convergence implies relative property (T) in every universe. For a
+  normal subgroup `Λ`, quantitative Kazhdan approximation
+  (`IsKazhdanPair.exists_mem_invariants_norm_sub_lt`) yields the converse without countability in
+  the universe `v` of `Γ`.
+* For an arbitrary subgroup `Λ` of a countable discrete group `Γ`, relative property (T) in any
+  universe `u` is equivalent to:
   1. **Quantitative invariant-vector approximation**: for every `ε > 0`, there exist a finite set
      `F ⊆ Γ` and `δ > 0` such that every `(F, δ)`-invariant unit vector of a unitary representation
      is within `ε` of a `Λ`-invariant vector;
@@ -46,19 +50,27 @@ normalized positive-definite function `Φ = exp (-t * ψ)` whose GNS representat
 
 ## Main statements
 
+* `Subgroup.RelativePropertyT.exists_forall_norm_sub_one_lt`,
+  `Subgroup.RelativePropertyT.tendstoUniformlyOn`,
+  `Subgroup.relativePropertyT_iff_forall_exists_forall_norm_sub_one_lt`, and
+  `Subgroup.relativePropertyT_iff_forall_tendstoUniformlyOn`: positive-definite characterizations
+  for normal subgroups without countability.
+* `Subgroup.relativePropertyT_of_exists_forall_norm_sub_one_lt` and
+  `Subgroup.relativePropertyT_of_forall_tendstoUniformlyOn`: sufficient conditions for arbitrary
+  subgroups and universes.
 * `Subgroup.relativePropertyT_iff_forall_exists_invariant_norm_sub_lt`: quantitative
   `Λ`-invariant vector characterization for countable groups.
 * `Subgroup.relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt`: quantitative
-  positive-definite characterization for countable groups (and `_of_normal` without countability).
-* `Subgroup.RelativePropertyT.tendstoUniformlyOn`,
-  `Subgroup.relativePropertyT_iff_tendstoUniformlyOn_nat`,
+  positive-definite characterization for countable groups.
+* `Subgroup.RelativePropertyT.tendstoUniformlyOn_of_countable`,
+  `Subgroup.relativePropertyT_iff_tendstoUniformlyOn_nat`, and
   `Subgroup.relativePropertyT_iff_tendstoUniformlyOn`: uniform convergence of normalized
-  positive-definite functions on `Λ`.
+  positive-definite functions on `Λ` for countable groups.
 
 ## References
 
 * C. Anantharaman and S. Popa, *An Introduction to II₁ Factors*, Proposition 14.1.2.
-* P. Jolissaint, *On Property (T) for pairs of topological groups*, Enseign. Math. (2) 51 (2005),
+* P. Jolissaint, *On property (T) for pairs of topological groups*, Enseign. Math. (2) 51 (2005),
   31–45, Theorem 1.2.
 * B. Bekka, P. de la Harpe and A. Valette, *Kazhdan's Property (T)*, Proposition 1.1.9 and
   Appendix C.5.
@@ -127,42 +139,6 @@ private theorem approx_invariant_of_posSemidef_approx {Λ : Subgroup Γ}
   obtain ⟨v, hv, hvξ⟩ := (hρ.restrict Λ.subtype).exists_invariant_norm_sub_le horb
   exact ⟨v, hv, hvξ.trans_lt (by linarith)⟩
 
-/-- Quantitative `Λ`-invariant vector approximation in universe `v` yields quantitative
-positive-definite approximation on `Λ`, via the GNS representation. -/
-private theorem posSemidef_approx_of_approx_invariant {Λ : Subgroup Γ}
-    (hinv : ∀ ε : ℝ, 0 < ε →
-      ∃ (F : Finset Γ) (δ : ℝ), 0 < δ ∧
-        ∀ (H : Type v) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-          (ρ : ContRepresentation ℂ Γ H), ρ.IsUnitary →
-            ∀ ξ : H, ‖ξ‖ = 1 → (∀ g ∈ F, ‖ρ g ξ - ξ‖ < δ) →
-              ∃ v ∈ (ρ.restrict Λ.subtype).invariants, ‖v - ξ‖ < ε) :
-    PosSemidefApprox Λ := by
-  intro ε hε
-  obtain ⟨F, δ₀, hδ₀, hF⟩ := hinv (ε / 2) (half_pos hε)
-  refine ⟨F, δ₀ ^ 2 / 2, by positivity, fun φ hφ h1 hφF h hh ↦ ?_⟩
-  let ξ := hφ.gnsVector 1
-  have hξ : ‖ξ‖ = 1 := hφ.norm_gnsVector_eq_one h1 1
-  have hξF (g : Γ) (hg : g ∈ F) : ‖hφ.gnsRepresentation g ξ - ξ‖ < δ₀ :=
-    hφ.norm_gnsRepresentation_gnsVector_one_sub_lt h1 hδ₀ (hφF g hg)
-  obtain ⟨v, hv, hvξ⟩ := hF hφ.gnsSpace hφ.gnsRepresentation hφ.isUnitary_gnsRepresentation
-    ξ hξ hξF
-  have hvh : hφ.gnsRepresentation h v = v := hv ⟨h, hh⟩
-  have hsub : φ h - 1 = ⟪ξ, hφ.gnsRepresentation h ξ - ξ⟫_ℂ := by
-    rw [inner_sub_right, hφ.inner_gnsVector_one_gnsRepresentation,
-      inner_self_eq_one_of_norm_eq_one (𝕜 := ℂ) hξ]
-  have hdiff : hφ.gnsRepresentation h ξ - ξ =
-      hφ.gnsRepresentation h (ξ - v) - (ξ - v) := by
-    rw [map_sub, hvh]
-    abel
-  calc ‖φ h - 1‖ = ‖⟪ξ, hφ.gnsRepresentation h ξ - ξ⟫_ℂ‖ := by rw [hsub]
-    _ ≤ ‖ξ‖ * ‖hφ.gnsRepresentation h ξ - ξ‖ := norm_inner_le_norm _ _
-    _ = ‖hφ.gnsRepresentation h (ξ - v) - (ξ - v)‖ := by rw [hξ, one_mul, hdiff]
-    _ ≤ ‖hφ.gnsRepresentation h (ξ - v)‖ + ‖ξ - v‖ := norm_sub_le _ _
-    _ = 2 * ‖v - ξ‖ := by
-        rw [hφ.isUnitary_gnsRepresentation.norm_map, norm_sub_rev]
-        ring
-    _ < ε := by linarith
-
 /-- Quantitative positive-definite approximation on `Λ` implies uniform convergence on `Λ` along
 any filter of normalized positive-definite functions converging pointwise to `1`. -/
 private theorem tendstoUniformlyOn_of_posSemidef_approx {Λ : Subgroup Γ}
@@ -213,23 +189,6 @@ private theorem posSemidef_approx_of_tendstoUniformlyOn_of_exhaustion {Λ : Subg
   have hlt : ‖φ i (h i) - 1‖ < ε₀ := by
     simpa only [Pi.one_apply, dist_eq_norm, norm_sub_rev] using hi (h i) (hΛ i)
   exact (not_lt_of_ge (hge i)) hlt
-
-/-- Uniform convergence on `Λ` along arbitrary filters in universe `v` implies quantitative
-positive-definite approximation on `Λ`. -/
-private theorem posSemidef_approx_of_tendstoUniformlyOn {Λ : Subgroup Γ}
-    (hunif : ∀ (ι : Type v) (l : Filter ι) (φ : ι → Γ → ℂ),
-      (∀ i, (Matrix.of fun a b : Γ ↦ φ i (a⁻¹ * b)).PosSemidef) →
-        (∀ i, φ i 1 = 1) → (∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) →
-          TendstoUniformlyOn φ 1 l Λ) :
-    PosSemidefApprox Λ := by
-  classical
-  exact posSemidef_approx_of_tendstoUniformlyOn_of_exhaustion
-    (ι := Finset Γ × ℕ) (l := atTop) Prod.fst (fun i ↦ 1 / (i.2 + 1 : ℝ))
-    (fun _ ↦ Nat.one_div_pos_of_nat)
-    (fun g ↦ eventually_atTop.mpr ⟨({g}, 0), fun _ hi ↦ hi.1 (Finset.mem_singleton_self g)⟩)
-    (by rw [← prod_atTop_atTop_eq]
-        exact tendsto_one_div_add_atTop_nhds_zero_nat.comp tendsto_snd)
-    (hunif (Finset Γ × ℕ) atTop)
 
 /-- When `Γ` is countable, sequential uniform convergence on `Λ` already implies quantitative
 positive-definite approximation on `Λ`. -/
@@ -419,50 +378,130 @@ end Bridges
 
 /-! ### Main characterizations of relative property (T) -/
 
-/-- **Positive-definite characterization for normal subgroups.** Without any countability assumption
-on `Γ`, a normal subgroup `Λ` has relative property (T) in the universe `v` of `Γ` if and only if
-normalized positive-definite functions close to `1` on a finite set are uniformly close to `1` on
-`Λ`. -/
-theorem relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt_of_normal
-    (Λ : Subgroup Γ) [Λ.Normal] :
-    Λ.RelativePropertyT.{v} ↔
-      ∀ ε : ℝ, 0 < ε →
-        ∃ (F : Finset Γ) (δ : ℝ), 0 < δ ∧
-          ∀ φ : Γ → ℂ, (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef → φ 1 = 1 →
-            (∀ g ∈ F, ‖φ g - 1‖ < δ) → ∀ h ∈ Λ, ‖φ h - 1‖ < ε := by
-  refine ⟨fun hΛ ↦ ?_, fun hpd_approx ↦ ?_⟩
-  · refine posSemidef_approx_of_approx_invariant fun ε hε ↦ ?_
-    obtain ⟨F, δ, hδ, hF⟩ := hΛ.exists_mem_invariants_norm_sub_lt.{v, v} hε
-    exact ⟨F, δ, hδ, fun H _ _ _ ρ hρ ξ _ hξF ↦ by
-      obtain ⟨η, hη, hξη⟩ := hF H ρ hρ ξ hξF
-      exact ⟨η, hη, by rwa [norm_sub_rev]⟩⟩
-  · obtain ⟨F, δ, hδ, hF⟩ := approx_invariant_of_posSemidef_approx.{v} hpd_approx zero_lt_one
-    exact (isKazhdanPair_of_exists_invariant_norm_sub_lt_one hF).relativePropertyT hδ
+section
 
-/-- For a normal subgroup `Λ` with relative property (T) in the universe `v` of `Γ`, every filter
-of normalized positive-definite functions converging pointwise to `1` on `Γ` converges uniformly
-to `1` on `Λ`. -/
-theorem RelativePropertyT.tendstoUniformlyOn_of_normal {Λ : Subgroup Γ} [Λ.Normal]
-    (hΛ : Λ.RelativePropertyT.{v}) {ι : Type w} {l : Filter ι} {φ : ι → Γ → ℂ}
-    (hpd : ∀ i, (Matrix.of fun a b : Γ ↦ φ i (a⁻¹ * b)).PosSemidef)
-    (h1 : ∀ i, φ i 1 = 1) (hpt : ∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) :
-    TendstoUniformlyOn φ 1 l Λ :=
-  tendstoUniformlyOn_of_posSemidef_approx
-    ((relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt_of_normal Λ).mp hΛ) hpd h1 hpt
+variable {Λ : Subgroup Γ}
 
-/-- **Net uniform-convergence characterization for normal subgroups.** Without countability, a
-normal subgroup `Λ` has relative property (T) in the universe `v` of `Γ` if and only if every
-filter of normalized positive-definite functions converging pointwise to `1` on `Γ` converges
-uniformly to `1` on `Λ`. -/
-theorem relativePropertyT_iff_tendstoUniformlyOn_of_normal (Λ : Subgroup Γ) [Λ.Normal] :
-    Λ.RelativePropertyT.{v} ↔
-      ∀ (ι : Type v) (l : Filter ι) (φ : ι → Γ → ℂ),
-        (∀ i, (Matrix.of fun a b : Γ ↦ φ i (a⁻¹ * b)).PosSemidef) →
-          (∀ i, φ i 1 = 1) → (∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) →
-            TendstoUniformlyOn φ 1 l Λ :=
-  ⟨fun hΛ _ _ _ hpd h1 hpt ↦ hΛ.tendstoUniformlyOn_of_normal hpd h1 hpt, fun hunif ↦
-    (relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt_of_normal Λ).mpr
-      (posSemidef_approx_of_tendstoUniformlyOn hunif)⟩
+/-- **Relative property (T) by positive-definite functions, uniform form.** If a normal subgroup
+`Λ` has relative property (T), then for every `ε > 0` there are a finite set `F` and a `δ > 0` such
+that every positive-definite function `φ` with `φ 1 = 1` and `‖φ g - 1‖ < δ` for `g ∈ F` satisfies
+`‖φ h - 1‖ < ε` for every `h ∈ Λ`. -/
+theorem RelativePropertyT.exists_forall_norm_sub_one_lt [Λ.Normal]
+    (hΛ : Λ.RelativePropertyT.{v}) {ε : ℝ} (hε : 0 < ε) :
+    ∃ (F : Finset Γ) (δ : ℝ), 0 < δ ∧ ∀ φ : Γ → ℂ,
+      (Matrix.of fun g h ↦ φ (g⁻¹ * h)).PosSemidef → φ 1 = 1 →
+        (∀ g ∈ F, ‖φ g - 1‖ < δ) → ∀ h ∈ Λ, ‖φ h - 1‖ < ε := by
+  obtain ⟨F, δ, hδ, hK⟩ := hΛ.exists_mem_invariants_norm_sub_lt.{v, v} (half_pos hε)
+  refine ⟨F, δ ^ 2 / 2, by positivity, fun φ hφ hφ1 hφF h hh ↦ ?_⟩
+  set π := hφ.gnsRepresentation
+  set ξ := hφ.gnsVector 1
+  have hπ : π.IsUnitary := hφ.isUnitary_gnsRepresentation
+  -- The GNS vector at the identity is moved by less than `δ` by each element of `F`, so it lies
+  -- within `ε / 2` of a `Λ`-invariant vector `η`.
+  obtain ⟨η, hη, hξη⟩ := hK hφ.gnsSpace π hπ ξ fun g hg ↦ (sq_lt_sq₀ (norm_nonneg _) hδ.le).mp <|
+    (hφ.norm_gnsRepresentation_gnsVector_one_sub_sq_le hφ1 g).trans_lt (by linarith [hφF g hg])
+  -- Hence `h ∈ Λ` moves `ξ` by at most `2 * ‖ξ - η‖ < ε`.
+  have hπη : π h η = η := (mem_invariants_restrict.mp hη) h hh
+  have hmove : ‖π h ξ - ξ‖ ≤ 2 * ‖ξ - η‖ := by
+    calc ‖π h ξ - ξ‖ = ‖π h (ξ - η) - (ξ - η)‖ := by rw [map_sub, hπη]; abel_nf
+      _ ≤ ‖π h (ξ - η)‖ + ‖ξ - η‖ := norm_sub_le _ _
+      _ = 2 * ‖ξ - η‖ := by rw [hπ.norm_map]; ring
+  calc ‖φ h - 1‖ = ‖⟪ξ, π h ξ⟫_ℂ - 1‖ := by rw [hφ.inner_gnsVector_one_gnsRepresentation]
+    _ ≤ ‖π h ξ - ξ‖ := TauCeti.norm_inner_sub_one_le (hφ.norm_gnsVector_one hφ1) _
+    _ < ε := by linarith
+
+/-- **Relative property (T) by positive-definite functions.** If a normal subgroup `Λ` has relative
+property (T), then every net of positive-definite functions `φᵢ` with `φᵢ 1 = 1` converging
+pointwise to `1` converges to `1` uniformly on `Λ`. -/
+theorem RelativePropertyT.tendstoUniformlyOn [Λ.Normal] (hΛ : Λ.RelativePropertyT.{v})
+    {ι : Type*} {l : Filter ι} {φ : ι → Γ → ℂ}
+    (hφ : ∀ i, (Matrix.of fun g h ↦ φ i (g⁻¹ * h)).PosSemidef) (hφ1 : ∀ i, φ i 1 = 1)
+    (hlim : ∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) :
+    TendstoUniformlyOn φ (fun _ ↦ 1) l Λ := by
+  refine Metric.tendstoUniformlyOn_iff.mpr fun ε hε ↦ ?_
+  obtain ⟨F, δ, hδ, hF⟩ := hΛ.exists_forall_norm_sub_one_lt hε
+  have hev : ∀ᶠ i in l, ∀ g ∈ F, ‖φ i g - 1‖ < δ :=
+    (F.eventually_all).mpr fun g _ ↦ by
+      simpa [dist_eq_norm] using Metric.tendsto_nhds.mp (hlim g) δ hδ
+  filter_upwards [hev] with i hi h hh
+  rw [dist_comm, dist_eq_norm]
+  exact hF (φ i) (hφ i) (hφ1 i) hi h hh
+
+/-- **Relative property (T) from positive-definite functions, uniform form.** Let `ε < 1`. If there
+are a finite set `F` and a `δ > 0` such that every positive-definite function `φ` with `φ 1 = 1`
+and `‖φ g - 1‖ < δ` for `g ∈ F` satisfies `‖φ h - 1‖ < ε` for every `h ∈ Λ`, then `Λ` has relative
+property (T), in every universe of representations. -/
+theorem relativePropertyT_of_exists_forall_norm_sub_one_lt {ε : ℝ} (hε : ε < 1)
+    (hΛ : ∃ (F : Finset Γ) (δ : ℝ), 0 < δ ∧ ∀ φ : Γ → ℂ,
+      (Matrix.of fun g h ↦ φ (g⁻¹ * h)).PosSemidef → φ 1 = 1 →
+        (∀ g ∈ F, ‖φ g - 1‖ < δ) → ∀ h ∈ Λ, ‖φ h - 1‖ < ε) :
+    Λ.RelativePropertyT.{u} := by
+  obtain ⟨F, δ, hδ, hF⟩ := hΛ
+  refine (relativePropertyT_def Λ).mpr fun H _ _ _ ρ hρ hal ↦ ?_
+  obtain ⟨ξ, hξ, hξF⟩ := (hasAlmostInvariantVectors_def ρ).mp hal F δ hδ
+  -- The coefficient of `ξ` is a normalized positive-definite function close to `1` on `F`.
+  have hclose := hF (fun g ↦ ⟪ξ, ρ g ξ⟫_ℂ) (hρ.posSemidef_inner_map_inv_mul ξ)
+    (by simpa using inner_self_eq_one_of_norm_eq_one (𝕜 := ℂ) hξ)
+    fun g hg ↦ (TauCeti.norm_inner_sub_one_le hξ _).trans_lt (hξF g hg)
+  -- So its real part is at least `1 - ε > 0` on `Λ`.
+  refine (hρ.restrict Λ.subtype).exists_ne_zero_mem_invariants_of_le_re_inner (ξ := ξ)
+    (sub_pos.mpr hε) fun h ↦ ?_
+  simp only [restrict_apply_apply, coe_subtype]
+  linarith [hclose h h.property, RCLike.one_sub_re_le_norm_sub_one ⟪ξ, ρ h ξ⟫_ℂ]
+
+/-- **Relative property (T) from positive-definite functions.** If every net of positive-definite
+functions `φᵢ` with `φᵢ 1 = 1` converging pointwise to `1`, indexed by a type in the universe of
+`Γ`, converges to `1` uniformly on `Λ`, then `Λ` has relative property (T), in every universe of
+representations. -/
+theorem relativePropertyT_of_forall_tendstoUniformlyOn
+    (hΛ : ∀ (ι : Type v) (l : Filter ι) (φ : ι → Γ → ℂ),
+      (∀ i, (Matrix.of fun g h ↦ φ i (g⁻¹ * h)).PosSemidef) → (∀ i, φ i 1 = 1) →
+        (∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) → TendstoUniformlyOn φ (fun _ ↦ 1) l Λ) :
+    Λ.RelativePropertyT.{u} := by
+  classical
+  refine relativePropertyT_of_exists_forall_norm_sub_one_lt (ε := 1 / 2) (by norm_num) ?_
+  by_contra! hne
+  -- Otherwise, for each finite set `F` and each `n`, choose a normalized positive-definite
+  -- function within `1 / (n + 1)` of `1` on `F` and at least `1 / 2` away from `1` somewhere
+  -- on `Λ`.
+  have key (i : Finset Γ × ℕ) := hne i.1 (1 / (i.2 + 1)) Nat.one_div_pos_of_nat
+  choose φ hφ hφ1 hφF h hh hφh using key
+  -- These converge pointwise to `1`, but not uniformly on `Λ`.
+  have hlim (g : Γ) : Tendsto (fun i ↦ φ i g) atTop (𝓝 1) := by
+    refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
+    filter_upwards [eventually_ge_atTop (({g}, n) : Finset Γ × ℕ)] with i hi
+    rw [dist_eq_norm]
+    refine (hφF i g (hi.1 (Finset.mem_singleton_self g))).trans_le ((one_div_le_one_div_of_le
+      (by positivity) (by exact_mod_cast Nat.add_le_add_right hi.2 1)).trans hn.le)
+  obtain ⟨i, hi⟩ := ((Metric.tendstoUniformlyOn_iff.mp (hΛ _ atTop φ hφ hφ1 hlim)) (1 / 2)
+    (by norm_num)).exists
+  have := hi (h i) (hh i)
+  rw [dist_comm, dist_eq_norm] at this
+  exact (hφh i).not_gt this
+
+/-- **Relative property (T) by positive-definite functions, uniform form.** A normal subgroup `Λ`
+has relative property (T) exactly when for every `ε > 0` there are a finite set `F` and a `δ > 0`
+such that every positive-definite function `φ` with `φ 1 = 1` and `‖φ g - 1‖ < δ` for `g ∈ F`
+satisfies `‖φ h - 1‖ < ε` for every `h ∈ Λ`. -/
+theorem relativePropertyT_iff_forall_exists_forall_norm_sub_one_lt [Λ.Normal] :
+    Λ.RelativePropertyT.{v} ↔ ∀ ε > 0, ∃ (F : Finset Γ) (δ : ℝ), 0 < δ ∧ ∀ φ : Γ → ℂ,
+      (Matrix.of fun g h ↦ φ (g⁻¹ * h)).PosSemidef → φ 1 = 1 →
+        (∀ g ∈ F, ‖φ g - 1‖ < δ) → ∀ h ∈ Λ, ‖φ h - 1‖ < ε :=
+  ⟨fun hΛ _ hε ↦ hΛ.exists_forall_norm_sub_one_lt hε, fun h ↦
+    relativePropertyT_of_exists_forall_norm_sub_one_lt (by norm_num) (h (1 / 2) (by norm_num))⟩
+
+/-- **Relative property (T) by positive-definite functions.** A normal subgroup `Λ` has relative
+property (T) exactly when every net of positive-definite functions `φᵢ` with `φᵢ 1 = 1` converging
+pointwise to `1` converges to `1` uniformly on `Λ` (Anantharaman–Popa, Proposition 14.1.2). -/
+theorem relativePropertyT_iff_forall_tendstoUniformlyOn [Λ.Normal] :
+    Λ.RelativePropertyT.{v} ↔ ∀ (ι : Type v) (l : Filter ι) (φ : ι → Γ → ℂ),
+      (∀ i, (Matrix.of fun g h ↦ φ i (g⁻¹ * h)).PosSemidef) → (∀ i, φ i 1 = 1) →
+        (∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) → TendstoUniformlyOn φ (fun _ ↦ 1) l Λ :=
+  ⟨fun hΛ _ _ _ hφ hφ1 hlim ↦ hΛ.tendstoUniformlyOn hφ hφ1 hlim,
+    relativePropertyT_of_forall_tendstoUniformlyOn⟩
+
+end
 
 section Countable
 
@@ -494,16 +533,16 @@ theorem relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt (Λ : Subgroup �
       ∀ ε : ℝ, 0 < ε →
         ∃ (F : Finset Γ) (δ : ℝ), 0 < δ ∧
           ∀ φ : Γ → ℂ, (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef → φ 1 = 1 →
-            (∀ g ∈ F, ‖φ g - 1‖ < δ) → ∀ h ∈ Λ, ‖φ h - 1‖ < ε := by
-  refine ⟨fun hΛ ↦ posSemidef_approx_of_relativePropertyT hΛ.of_universe, fun hpd_approx ↦ ?_⟩
-  exact (Λ.relativePropertyT_iff_forall_exists_invariant_norm_sub_lt.{u}).mpr fun ε hε ↦
-    approx_invariant_of_posSemidef_approx hpd_approx hε
+            (∀ g ∈ F, ‖φ g - 1‖ < δ) → ∀ h ∈ Λ, ‖φ h - 1‖ < ε :=
+  ⟨fun hΛ ↦ posSemidef_approx_of_relativePropertyT hΛ.of_universe, fun hpd_approx ↦
+    relativePropertyT_of_exists_forall_norm_sub_one_lt (by norm_num)
+      (hpd_approx (1 / 2) (by norm_num))⟩
 
 /-- **Uniform convergence of positive-definite nets.** If a subgroup `Λ` of a countable discrete
 group `Γ` has relative property (T), every filter of normalized positive-definite functions
 converging pointwise to `1` on `Γ` converges uniformly to `1` on `Λ`. -/
-theorem RelativePropertyT.tendstoUniformlyOn {Λ : Subgroup Γ} (hΛ : Λ.RelativePropertyT.{u})
-    {ι : Type w} {l : Filter ι} {φ : ι → Γ → ℂ}
+theorem RelativePropertyT.tendstoUniformlyOn_of_countable {Λ : Subgroup Γ}
+    (hΛ : Λ.RelativePropertyT.{u}) {ι : Type w} {l : Filter ι} {φ : ι → Γ → ℂ}
     (hpd : ∀ i, (Matrix.of fun a b : Γ ↦ φ i (a⁻¹ * b)).PosSemidef)
     (h1 : ∀ i, φ i 1 = 1) (hpt : ∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) :
     TendstoUniformlyOn φ 1 l Λ :=
@@ -519,7 +558,7 @@ theorem relativePropertyT_iff_tendstoUniformlyOn_nat (Λ : Subgroup Γ) :
         (∀ n, (Matrix.of fun a b : Γ ↦ φ n (a⁻¹ * b)).PosSemidef) →
           (∀ n, φ n 1 = 1) → (∀ g, Tendsto (fun n ↦ φ n g) atTop (𝓝 1)) →
             TendstoUniformlyOn φ 1 atTop Λ :=
-  ⟨fun hΛ _ hpd h1 hpt ↦ hΛ.tendstoUniformlyOn hpd h1 hpt, fun hunif ↦
+  ⟨fun hΛ _ hpd h1 hpt ↦ hΛ.tendstoUniformlyOn_of_countable hpd h1 hpt, fun hunif ↦
     (Λ.relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt.{u}).mpr
       (posSemidef_approx_of_tendstoUniformlyOn_nat hunif)⟩
 
@@ -532,7 +571,7 @@ theorem relativePropertyT_iff_tendstoUniformlyOn (Λ : Subgroup Γ) :
         (∀ i, (Matrix.of fun a b : Γ ↦ φ i (a⁻¹ * b)).PosSemidef) →
           (∀ i, φ i 1 = 1) → (∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) →
             TendstoUniformlyOn φ 1 l Λ := by
-  refine ⟨fun hΛ _ _ _ hpd h1 hpt ↦ hΛ.tendstoUniformlyOn hpd h1 hpt, fun hunif ↦ ?_⟩
+  refine ⟨fun hΛ _ _ _ hpd h1 hpt ↦ hΛ.tendstoUniformlyOn_of_countable hpd h1 hpt, fun hunif ↦ ?_⟩
   refine (Λ.relativePropertyT_iff_tendstoUniformlyOn_nat.{u}).mpr fun φ hpd h1 hpt ↦ ?_
   have hu := hunif (ULift.{w} ℕ) (Filter.comap ULift.down atTop) (fun i ↦ φ i.down)
     (fun i ↦ hpd i.down) (fun i ↦ h1 i.down)
