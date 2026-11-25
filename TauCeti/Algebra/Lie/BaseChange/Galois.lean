@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.BaseChange.Radical
 public import TauCeti.Algebra.TensorProduct.Galois
+import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
 # Galois descent of Lie submodules and the nilradical under extension of scalars
@@ -100,14 +101,6 @@ section CommRing
 
 variable {R A L : Type*} [CommRing R] [CommRing A] [Algebra R A] [LieRing L] [LieAlgebra R L]
 
-/-- The scalar-factor action of an automorphism `σ` is `σ`-semilinear. -/
-private theorem tensorMap_smul (σ : A ≃ₐ[R] A) (a : A) (x : A ⊗[R] L) :
-    TensorProduct.map σ.toLinearMap LinearMap.id (a • x) =
-      σ a • TensorProduct.map σ.toLinearMap LinearMap.id x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul b y => simp [smul_tmul']
-  | add x y hx hy => simp only [smul_add, map_add, hx, hy]
-
 /-- The scalar-factor action of an automorphism preserves brackets. -/
 private theorem tensorMap_lie (σ : A ≃ₐ[R] A) (x y : A ⊗[R] L) :
     TensorProduct.map σ.toLinearMap LinearMap.id ⁅x, y⁆ =
@@ -115,14 +108,6 @@ private theorem tensorMap_lie (σ : A ≃ₐ[R] A) (x y : A ⊗[R] L) :
         TensorProduct.map σ.toLinearMap LinearMap.id y⁆ :=
   -- Mathlib's `ExtendScalars.map σ id` is `σ ⊗ id` by definition.
   (ExtendScalars.map σ.toAlgHom (LieHom.id : L →ₗ⁅R⁆ L)).map_lie x y
-
-/-- The scalar-factor actions of `σ⁻¹` and `σ` are mutually inverse. -/
-private theorem tensorMap_symm_tensorMap (σ : A ≃ₐ[R] A) (x : A ⊗[R] L) :
-    TensorProduct.map σ.symm.toLinearMap LinearMap.id
-      (TensorProduct.map σ.toLinearMap LinearMap.id x) = x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul a y => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The image `(σ ⊗ id) I` of an ideal `I` of `A ⊗[R] L`, described as the preimage of `I` under
 `σ⁻¹ ⊗ id`. -/
@@ -134,7 +119,8 @@ private def galoisTranslate (σ : A ≃ₐ[R] A) (I : LieIdeal A (A ⊗[R] L)) :
     exact add_mem hx hy
   zero_mem' := by simp
   smul_mem' a y hy := by
-    rw [Set.mem_ofPred_eq, tensorMap_smul]
+    rw [Set.mem_ofPred_eq, TauCeti.ScalarAut.tensorProductMap_eq_smul,
+      TauCeti.ScalarAut.smul_smulₛₗ, ← TauCeti.ScalarAut.tensorProductMap_eq_smul]
     exact I.smul_mem (σ.symm a) hy
   lie_mem {x y} hy := by
     rw [Set.mem_ofPred_eq, tensorMap_lie]
@@ -157,9 +143,10 @@ private theorem isNilpotent_galoisTranslate (σ : A ≃ₐ[R] A) (I : LieIdeal A
     { g.toIntLinearMap with
       map_lie' {y z} := Subtype.ext (tensorMap_lie σ.symm (y : A ⊗[R] L) z) }
   refine Function.Injective.lieAlgebra_isNilpotent (f := f) fun y z h ↦ Subtype.ext ?_
-  rw [← tensorMap_symm_tensorMap σ.symm (y : A ⊗[R] L),
-    ← tensorMap_symm_tensorMap σ.symm (z : A ⊗[R] L)]
-  exact congrArg _ (congrArg Subtype.val h)
+  have h' : TensorProduct.map σ.symm.toLinearMap LinearMap.id (y : A ⊗[R] L) =
+      TensorProduct.map σ.symm.toLinearMap LinearMap.id z := congrArg Subtype.val h
+  rwa [TauCeti.ScalarAut.tensorProductMap_eq_smul, TauCeti.ScalarAut.tensorProductMap_eq_smul,
+    smul_left_cancel_iff] at h'
 
 /-- **The nilradical of an extension of scalars is stable under the scalar-factor action.** For
 every algebra automorphism `σ` of `A`, the map `σ ⊗ id` carries the nilradical of `A ⊗[R] L` into
@@ -169,7 +156,8 @@ theorem map_mem_nilradical (σ : A ≃ₐ[R] A) {x : A ⊗[R] L}
     TensorProduct.map σ.toLinearMap LinearMap.id x ∈ nilradical A (A ⊗[R] L) := by
   obtain ⟨I, hI, hxI⟩ := exists_isNilpotent_ideal_of_mem_nilradical hx
   refine LieIdeal.le_nilradical A _ (galoisTranslate σ I) (isNilpotent_galoisTranslate σ I) ?_
-  rwa [mem_galoisTranslate, tensorMap_symm_tensorMap]
+  rwa [mem_galoisTranslate, TauCeti.ScalarAut.tensorProductMap_eq_smul,
+    TauCeti.ScalarAut.tensorProductMap_eq_smul, ← AlgEquiv.aut_inv, inv_smul_smul]
 
 end CommRing
 
