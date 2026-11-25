@@ -50,7 +50,9 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
   consequence for the domain point alone; along a `C^n` family of configurations over a normed
   space of parameters and for a normed target,
   `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_comp` is the form jointly in the
-  parameter;
+  parameter, and for a manifold target
+  `TauCeti.Floer.isOpen_and_contMDiffAt_puncturedSpherePerturbation` is that of its components on
+  the open set of parameters with nonzero scales and domain points off the centers;
 * for a symplectic vector space target, its integrated curvature along any map is at most
   `∑ i, sup |H i| + sup |Hout|`, whatever the configuration
   (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`),
@@ -421,6 +423,56 @@ theorem contMDiffAt_uncurry_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i
         contMDiffAt_fst).prodMk contMDiffAt_snd)
   exact ((contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts ha hz x).comp (z, x)
     hφ).clm_apply contMDiffAt_const
+
+/-- Along a `C^n` family of configurations `p ↦ (c p, a p)` of input ends on an open set `U` of a
+normed space of parameters, the points `(p, z)` with `p ∈ U`, nonzero scales and `z` off the centers
+form an open set, on which the components of the datum of the sphere with moving input ends are
+`C^n` jointly in `(p, z)` and the point of `M`. -/
+theorem isOpen_and_contMDiffAt_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry Hout)) {P : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] {c a : P → ι → ℂ} {U : Set P} (hU : IsOpen U)
+    (hc : ContDiffOn ℝ n c U) (ha : ContDiffOn ℝ n a U) :
+    IsOpen {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
+      ∀ i, Complex.equivRealProdCLM.symm q.2 ≠ c q.1 i} ∧
+    ∀ (w : ℂ), ∀ q ∈ {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
+      ∀ i, Complex.equivRealProdCLM.symm q.2 ≠ c q.1 i}, ∀ x : M,
+      ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ) n
+        (uncurry fun (q : P × (ℝ × ℝ)) x ↦
+          puncturedSpherePerturbation (c q.1) (a q.1) H Hout (Complex.equivRealProdCLM.symm q.2)
+            x w)
+        (q, x) := by
+  set S := {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
+    ∀ i, Complex.equivRealProdCLM.symm q.2 ≠ c q.1 i}
+  have hSo : IsOpen S := by
+    have hO : IsOpen {r : ((ι → ℂ) × (ι → ℂ)) × ℂ | (∀ i, r.1.2 i ≠ 0) ∧ ∀ i, r.2 ≠ r.1.1 i} := by
+      simp only [ofPred_and, ofPred_forall]
+      exact (isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const).inter
+        (isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) (by fun_prop))
+    have hcont : ContinuousOn
+        (fun q : P × (ℝ × ℝ) ↦ ((c q.1, a q.1), Complex.equivRealProdCLM.symm q.2)) (U ×ˢ univ) :=
+      ((hc.continuousOn.comp continuousOn_fst mapsTo_fst_prod).prodMk
+        (ha.continuousOn.comp continuousOn_fst mapsTo_fst_prod)).prodMk
+        (by fun_prop : Continuous fun q : P × (ℝ × ℝ) ↦
+          Complex.equivRealProdCLM.symm q.2).continuousOn
+    convert hcont.isOpen_inter_preimage (hU.prod isOpen_univ) hO using 1
+    ext q
+    simp [S]
+  refine ⟨hSo, fun w q hq x ↦ ?_⟩
+  have hfst : ContMDiff (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ, P) n
+      (fun y : (P × (ℝ × ℝ)) × M ↦ y.1.1) :=
+    contDiff_fst.contMDiff.comp contMDiff_fst
+  have hcq := (hc.contDiffAt (hU.mem_nhds hq.1)).contMDiffAt.comp (q, x) hfst.contMDiffAt
+  have haq := (ha.contDiffAt (hU.mem_nhds hq.1)).contMDiffAt.comp (q, x) hfst.contMDiffAt
+  have hg : ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I)
+      (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun y : (P × (ℝ × ℝ)) × M ↦
+        ((c y.1.1, a y.1.1), (Complex.equivRealProdCLM.symm y.1.2, y.2))) (q, x) :=
+    (hcq.prodMk_space haq).prodMk
+      ((((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp
+        contMDiff_fst).contMDiffAt).prodMk contMDiffAt_snd)
+  exact ((contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts hq.2.1 hq.2.2 x).comp (q, x)
+    hg).clm_apply contMDiffAt_const
 
 /-- Off the centers of the input ends, the components of the datum of period-one `C¹`
 Hamiltonians on a manifold are differentiable in the domain point, in real coordinates, for
