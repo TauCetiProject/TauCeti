@@ -37,8 +37,9 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
 
 ## Main results
 
-* `Matrix.isHermitian_sqrt_mul_mul_sqrt` — the sandwich of a Hermitian matrix by a square root
-  is Hermitian;
+* `Matrix.isHermitian_sqrt_mul_mul_sqrt` and `Matrix.PosSemidef.sqrt_mul_mul_sqrt` — the
+  sandwich of a Hermitian (positive-semidefinite) matrix by a square root is Hermitian (positive
+  semidefinite);
 * `Matrix.PosSemidef.rank_sqrt` — the square root of a positive-semidefinite matrix has the same
   rank;
 * `Matrix.PosSemidef.sqrt_mul_transpose_sqrt` — over the reals, the square root times its
@@ -46,12 +47,24 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
 * `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
+* `Matrix.PosSemidef.inv_sqrt_mul_inv_sqrt` — the inverse square root squares to the inverse;
+* `Matrix.PosSemidef.norm_sq_toEuclideanLin_inv_sqrt` — the squared length of `(CFC.sqrt S)⁻¹ x`
+  is the quadratic form of `S⁻¹` at `x` (in these two results `⁻¹` is Lean's totalized matrix
+  inverse, which is `0` on a singular matrix; for singular `S` the square root is singular too,
+  and both identities reduce to `0 = 0`);
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
   positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree;
-* `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
-  `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
-  of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
+* `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt`,
+  `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` and
+  `Matrix.PosSemidef.det_sqrt_mul_mul_sqrt` — for positive-semidefinite `S`, the traces of the
+  sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`, and its determinant is
+  `det S * det Θ`;
 * `Matrix.PosDef.isUnit_det_sqrt` — the square root of a positive-definite matrix is invertible;
+* `Matrix.PosDef.inv_sqrt_mul_mul_conjTranspose_inv_sqrt` — the inverse square root whitens `S`:
+  `(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1`, with the transpose form
+  `Matrix.PosDef.inv_sqrt_mul_mul_transpose_inv_sqrt` over a field with trivial star such as `ℝ`;
+* `Matrix.PosDef.rank_mul_mul_conjTranspose` — `M * S * Mᴴ` has the rank of `M` when `S` is
+  positive definite;
 * `Matrix.PosDef.inv_sub_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_iff` — the scale form
   `S⁻¹ - X` of the pencil and its positive-definiteness;
 * `Matrix.PosDef.inv_sub_smul_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_smul_iff` — the same
@@ -113,6 +126,14 @@ theorem isHermitian_sqrt_mul_mul_sqrt (S : Matrix ι ι 𝕜) {Θ : Matrix ι ι
   simpa only [(Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq] using
     isHermitian_conjTranspose_mul_mul (CFC.sqrt S) hΘ
 
+open scoped Classical in
+/-- Sandwiching a positive-semidefinite matrix between two copies of a square root gives a
+positive-semidefinite matrix. -/
+theorem PosSemidef.sqrt_mul_mul_sqrt (S : Matrix ι ι 𝕜) {Θ : Matrix ι ι 𝕜}
+    (hΘ : Θ.PosSemidef) : (CFC.sqrt S * Θ * CFC.sqrt S).PosSemidef := by
+  simpa only [(Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq] using
+    hΘ.mul_mul_conjTranspose_same (CFC.sqrt S)
+
 /-- The quadratic form of `Θ` at `CFC.sqrt S x` is the quadratic form of the sandwich
 `CFC.sqrt S * Θ * CFC.sqrt S` at `x`. -/
 theorem inner_toEuclideanCLM_sqrt_toEuclideanLin [DecidableEq ι] (S Θ : Matrix ι ι 𝕜)
@@ -122,6 +143,26 @@ theorem inner_toEuclideanCLM_sqrt_toEuclideanLin [DecidableEq ι] (S Θ : Matrix
       ⟪x, (CFC.sqrt S * Θ * CFC.sqrt S).toEuclideanLin x⟫_𝕜 := by
   simp only [← ContinuousLinearMap.coe_coe, coe_toEuclideanCLM_eq_toEuclideanLin,
     inner_toEuclideanLin_toEuclideanLin, (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq]
+
+/-- For positive-semidefinite `S`, the inverse of the square root squares to the inverse of
+`S`. Here `⁻¹` is Lean's totalized matrix inverse, which is `0` on a singular matrix; for singular
+`S` both sides are `0`. -/
+@[simp]
+theorem PosSemidef.inv_sqrt_mul_inv_sqrt [DecidableEq ι] {S : Matrix ι ι 𝕜} (hS : S.PosSemidef) :
+    (CFC.sqrt S)⁻¹ * (CFC.sqrt S)⁻¹ = S⁻¹ := by
+  rw [← Matrix.mul_inv_rev, CFC.sqrt_mul_sqrt_self S hS.nonneg]
+
+/-- For positive-semidefinite `S`, the squared length of `(CFC.sqrt S)⁻¹ x` is the quadratic form
+of `S⁻¹` at `x`. Here `⁻¹` is Lean's totalized matrix inverse, which is `0` on a singular matrix;
+for singular `S` both sides are `0`. -/
+theorem PosSemidef.norm_sq_toEuclideanLin_inv_sqrt [DecidableEq ι] {S : Matrix ι ι 𝕜}
+    (hS : S.PosSemidef) (x : EuclideanSpace 𝕜 ι) :
+    (‖(CFC.sqrt S)⁻¹.toEuclideanLin x‖ : 𝕜) ^ 2 = ⟪x, S⁻¹.toEuclideanLin x⟫_𝕜 := by
+  have hconj : ((CFC.sqrt S)⁻¹)ᴴ * 1 * (CFC.sqrt S)⁻¹ = S⁻¹ := by
+    rw [mul_one, (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.inv.eq,
+      hS.inv_sqrt_mul_inv_sqrt]
+  rw [← inner_self_eq_norm_sq_to_K, ← hconj, ← inner_toEuclideanLin_toEuclideanLin]
+  simp
 
 /-- For positive-semidefinite `S`, the pencils of the sandwich `CFC.sqrt S * Θ * CFC.sqrt S` and
 of the product `Θ * S` have the same determinant. -/
@@ -154,6 +195,12 @@ theorem PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self {S : Matrix ι ι 𝕜} (hS 
     simp only [Matrix.mul_assoc]
   rw [hreassoc, trace_mul_cycle, CFC.sqrt_mul_sqrt_self S hS.nonneg, trace_mul_comm]
 
+/-- For positive-semidefinite `S`, the determinant of the sandwich `CFC.sqrt S * M * CFC.sqrt S`
+is `det S * det M`. -/
+theorem PosSemidef.det_sqrt_mul_mul_sqrt [DecidableEq ι] {S : Matrix ι ι 𝕜} (hS : S.PosSemidef)
+    (M : Matrix ι ι 𝕜) : (CFC.sqrt S * M * CFC.sqrt S).det = S.det * M.det := by
+  rw [det_mul_right_comm, CFC.sqrt_mul_sqrt_self S hS.nonneg, det_mul]
+
 /-! ### The scale form of the pencil -/
 
 section PosDef
@@ -172,8 +219,7 @@ theorem PosDef.inv_sub_eq_conjugate (hS : S.PosDef) (X : Matrix ι ι 𝕜) :
   have hroot : (CFC.sqrt S)⁻¹ = CFC.sqrt (Ring.inverse S) := by
     rw [hS.posSemidef.inv_sqrt, Matrix.nonsing_inv_eq_ringInverse]
   have hone : (CFC.sqrt S)⁻¹ * 1 * (CFC.sqrt S)⁻¹ = S⁻¹ := by
-    rw [hroot, ← CFC.conjSqrt_apply, CFC.conjSqrt_one _ hsp.ringInverse.nonneg,
-      Matrix.nonsing_inv_eq_ringInverse]
+    rw [mul_one, hS.posSemidef.inv_sqrt_mul_inv_sqrt]
   have hundo : (CFC.sqrt S)⁻¹ * (CFC.sqrt S * X * CFC.sqrt S) * (CFC.sqrt S)⁻¹ = X := by
     rw [hroot, ← CFC.conjSqrt_apply, ← CFC.conjSqrt_apply,
       CFC.conjSqrt_ringInverse_conjSqrt S X hsp]
@@ -193,6 +239,24 @@ theorem PosDef.posDef_inv_sub_iff (hS : S.PosDef) (X : Matrix ι ι 𝕜) :
   nth_rewrite 1 [← hstar]
   exact Matrix.IsUnit.posDef_star_left_conjugate_iff hunit
 
+/-- For positive-definite `S`, the inverse square root whitens `S`:
+`(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1`. Over the reals simp rewrites the conjugate
+transpose to the transpose first; `Matrix.PosDef.inv_sqrt_mul_mul_transpose_inv_sqrt` is the form
+that applies there. -/
+@[simp]
+theorem PosDef.inv_sqrt_mul_mul_conjTranspose_inv_sqrt (hS : S.PosDef) :
+    (CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1 := by
+  rw [(Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.inv.eq, hS.posSemidef.inv_sqrt,
+    Matrix.nonsing_inv_eq_ringInverse, ← CFC.conjSqrt_apply,
+    CFC.conjSqrt_ringInverse_self S hS.isStrictlyPositive]
+
+/-- Over a field with trivial star, such as `ℝ`, the inverse square root whitens a
+positive-definite `S` with the transpose: `(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᵀ = 1`. -/
+@[simp]
+theorem PosDef.inv_sqrt_mul_mul_transpose_inv_sqrt [TrivialStar 𝕜] (hS : S.PosDef) :
+    (CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᵀ = 1 := by
+  rw [← Matrix.conjTranspose_eq_transpose_of_trivial, hS.inv_sqrt_mul_mul_conjTranspose_inv_sqrt]
+
 /-- The scale form of the pencil, for a scaled perturbation: `S⁻¹ - c • Θ` is the congruence of
 `1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` by `(CFC.sqrt S)⁻¹`. -/
 theorem PosDef.inv_sub_smul_eq_conjugate (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) (c : 𝕜) :
@@ -207,6 +271,20 @@ theorem PosDef.posDef_inv_sub_smul_iff (hS : S.PosDef) (Θ : Matrix ι ι 𝕜) 
   rw [hS.posDef_inv_sub_iff (c • Θ), Matrix.mul_smul, Matrix.smul_mul]
 
 end PosDef
+
+open scoped Classical in
+/-- Congruence of a positive-definite matrix `S` by `M` has the rank of `M`:
+`(M * S * Mᴴ).rank = M.rank`. -/
+theorem PosDef.rank_mul_mul_conjTranspose {m : Type*} [Finite m] {S : Matrix ι ι 𝕜}
+    (hS : S.PosDef) (M : Matrix m ι 𝕜) : (M * S * Mᴴ).rank = M.rank := by
+  have hh : (CFC.sqrt S).IsHermitian :=
+    (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg S)).isHermitian
+  calc (M * S * Mᴴ).rank = (M * CFC.sqrt S * (M * CFC.sqrt S)ᴴ).rank := by
+        conv_lhs => rw [← CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg]
+        rw [conjTranspose_mul, hh.eq]
+        simp only [Matrix.mul_assoc]
+    _ = (M * CFC.sqrt S).rank := rank_self_mul_conjTranspose _
+    _ = M.rank := rank_mul_eq_left_of_isUnit_det _ _ hS.isUnit_det_sqrt
 
 /-! ### The square-root factorization over the reals -/
 

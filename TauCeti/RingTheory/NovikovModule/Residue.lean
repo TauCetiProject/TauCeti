@@ -17,9 +17,9 @@ A degree function `d : S → D` on generators cuts the completed module `Novikov
 the homogeneous pieces `NovikovModule.gradeBy R F d k`. These pieces are always independent, but
 in general they do not span: a completed combination may meet infinitely many degrees, and then
 it is not a finite sum of homogeneous combinations. If `d` takes only finitely many values, every
-completed combination is the finite sum of its homogeneous parts
-(`NovikovModule.gradeProj`), so the completion is the internal direct sum of its homogeneous
-pieces (`NovikovModule.isInternal_gradeBy`).
+completed combination is the finite sum of its homogeneous components
+(`NovikovModule.homogeneousComponent`), so the completion is the internal direct sum of its
+homogeneous pieces (`NovikovModule.isInternal_gradeBy`).
 
 For a finite union of torsors `P i` under a group `H`, this applies to any degree that is
 constant on each orbit, which then has at most one value per orbit
@@ -39,8 +39,6 @@ soon as `δ ≠ 0`, and then the homogeneous integer pieces need not span the co
 
 ## Main definitions
 
-* `TauCeti.NovikovModule.gradeProj`: the homogeneous part of degree `k` of a completed
-  combination.
 * `TauCeti.NovikovModule.novikovGradeBy`: for an orbit-invariant degree, the homogeneous piece of
   degree `k` as a submodule over the Novikov ring.
 
@@ -50,12 +48,16 @@ soon as `δ ≠ 0`, and then the homogeneous integer pieces need not span the co
   `TauCeti.NovikovModule.isInternal_of_forall_mem_iff`: independence of the homogeneous pieces,
   and the internal direct sum decomposition for a degree with finite range, over any ring of
   scalars for which the pieces are submodules.
+* `TauCeti.NovikovModule.iSupIndep_gradeBy`: the homogeneous pieces are independent over the
+  ground ring, for every degree function.
 * `TauCeti.NovikovModule.mem_iSup_gradeBy_iff_finite`,
   `TauCeti.NovikovModule.isInternal_iff_of_forall_mem_iff`,
   `TauCeti.NovikovModule.isInternal_gradeBy_iff`: for an arbitrary degree, a completed combination
   is a finite sum of homogeneous combinations exactly when it meets finitely many degrees, so the
   completion is the internal direct sum of its homogeneous pieces, over any ring of scalars for
   which they are submodules, exactly when every completed combination does.
+* `TauCeti.NovikovModule.range_ofFinsupp_le_iSup_gradeBy`: every finite combination is a finite
+  sum of homogeneous combinations.
 * `TauCeti.NovikovModule.smul_mem_gradeBy_of_forall_vadd_eq`: every Novikov series preserves the
   homogeneous pieces of an orbit-invariant degree.
 * `TauCeti.NovikovModule.isInternal_novikovGradeBy`: the completion is the direct sum of its
@@ -86,71 +88,6 @@ section Generators
 
 variable {F : S → ℝ} {d : S → D}
 
-section Proj
-
-variable [DecidableEq D]
-
-variable (R F) in
-/-- The homogeneous part of degree `k` of a completed combination: the coefficients at generators
-of degree `k`, with all other coefficients set to zero. -/
-def gradeProj (d : S → D) (k : D) : NovikovModule R F →ₗ[R] NovikovModule R F where
-  toFun a := ⟨fun s => if d s = k then a.val s else 0, mem_iff.2 fun C => (finite_gt a C).subset
-    fun s hs => ⟨fun h => hs.1 (by simp [h]), hs.2⟩⟩
-  map_add' a b := by
-    ext s
-    by_cases h : d s = k <;> simp [h]
-  map_smul' r a := by
-    ext s
-    by_cases h : d s = k <;> simp [h]
-
-/-- The coefficients of the homogeneous part of degree `k`. -/
-@[simp]
-theorem gradeProj_val (d : S → D) (k : D) (a : NovikovModule R F) (s : S) :
-    (gradeProj R F d k a).val s = if d s = k then a.val s else 0 :=
-  (rfl)
-
-/-- The homogeneous part of degree `k` is homogeneous of degree `k`. -/
-theorem gradeProj_mem_gradeBy (d : S → D) (k : D) (a : NovikovModule R F) :
-    gradeProj R F d k a ∈ gradeBy R F d k :=
-  mem_gradeBy_iff.2 fun s hs => by
-    by_contra h
-    exact hs (by simp [h])
-
-/-- A homogeneous combination of degree `k` is its own homogeneous part of degree `k`. -/
-theorem gradeProj_eq_self_of_mem_gradeBy {k : D} {a : NovikovModule R F}
-    (ha : a ∈ gradeBy R F d k) : gradeProj R F d k a = a := by
-  ext s
-  by_cases h : d s = k
-  · simp [h]
-  · simp [h, val_eq_zero_of_mem_gradeBy ha h]
-
-/-- A homogeneous combination of degree `j` has no homogeneous part of another degree `k`. -/
-theorem gradeProj_eq_zero_of_mem_gradeBy {j k : D} (hjk : j ≠ k) {a : NovikovModule R F}
-    (ha : a ∈ gradeBy R F d j) : gradeProj R F d k a = 0 := by
-  ext s
-  by_cases h : d s = k
-  · simp [h, val_eq_zero_of_mem_gradeBy ha (h.trans_ne hjk.symm)]
-  · simp [h]
-
-/-- The sum of the homogeneous parts of the degrees in a finite set `T` keeps the coefficients at
-the generators whose degree lies in `T`. -/
-theorem sum_gradeProj_val (d : S → D) (T : Finset D) (a : NovikovModule R F) (s : S) :
-    (∑ k ∈ T, gradeProj R F d k a).val s = if d s ∈ T then a.val s else 0 := by
-  simp only [Submodule.coe_sum, Finset.sum_apply, gradeProj_val, Finset.sum_ite_eq]
-
-/-- If the degrees of the generators where `a` is nonzero lie in the finite set `T`, then `a` is
-the sum of its homogeneous parts of degrees in `T`. -/
-theorem sum_gradeProj {T : Finset D} {a : NovikovModule R F}
-    (hT : d '' Function.support a.val ⊆ T) : ∑ k ∈ T, gradeProj R F d k a = a := by
-  ext s
-  rw [sum_gradeProj_val]
-  split_ifs with hs
-  · rfl
-  · by_contra hne
-    exact hs (hT ⟨s, Ne.symm hne, rfl⟩)
-
-end Proj
-
 section Decomposition
 
 variable {Λ : Type*} [Semiring Λ] [Module Λ (NovikovModule R F)]
@@ -161,50 +98,55 @@ variable {Λ : Type*} [Semiring Λ] [Module Λ (NovikovModule R F)]
 degree, the Novikov ring. -/
 theorem iSupIndep_of_forall_mem_iff (hA : ∀ k a, a ∈ A k ↔ a ∈ gradeBy R F d k) :
     iSupIndep A := by
-  classical
   intro k
   rw [Submodule.disjoint_def]
   intro a hak ha
-  -- The homogeneous part of degree `k` vanishes on the pieces of other degrees, hence on their
-  -- supremum, but it is the identity on the piece of degree `k`.
-  have h0 : gradeProj R F d k a = 0 := by
-    refine Submodule.iSup_induction _ (motive := fun x => gradeProj R F d k x = 0) ha
+  -- The homogeneous component of degree `k` vanishes on the pieces of other degrees, hence on
+  -- their supremum, but it is the identity on the piece of degree `k`.
+  have h0 : homogeneousComponent R F d k a = 0 := by
+    refine Submodule.iSup_induction _ (motive := fun x => homogeneousComponent R F d k x = 0) ha
       (fun j x hx => ?_) (map_zero _) (fun x y hx hy => by rw [map_add, hx, hy, add_zero])
-    refine Submodule.iSup_induction _ (motive := fun x => gradeProj R F d k x = 0) hx
-      (fun hjk y hy => gradeProj_eq_zero_of_mem_gradeBy hjk ((hA j y).1 hy)) (map_zero _)
-      (fun x y hx hy => by rw [map_add, hx, hy, add_zero])
-  rwa [gradeProj_eq_self_of_mem_gradeBy ((hA k a).1 hak)] at h0
+    refine Submodule.iSup_induction _ (motive := fun x => homogeneousComponent R F d k x = 0) hx
+      (fun hjk y hy => homogeneousComponent_eq_zero_of_mem_gradeBy ((hA j y).1 hy) hjk)
+      (map_zero _) (fun x y hx hy => by rw [map_add, hx, hy, add_zero])
+  rwa [homogeneousComponent_of_mem_gradeBy ((hA k a).1 hak)] at h0
 
-/-- The homogeneous part of degree `k` of a sum of homogeneous combinations, one in each piece,
-is the summand of degree `k`. -/
-theorem gradeProj_coeAddMonoidHom [DecidableEq D] (hA : ∀ k a, a ∈ A k ↔ a ∈ gradeBy R F d k)
-    (f : ⨁ k, A k) (k : D) :
-    gradeProj R F d k (DirectSum.coeAddMonoidHom A f) = f k := by
-  induction f using DirectSum.induction_on with
-  | zero => simp
-  | of j x =>
-    rw [DirectSum.coeAddMonoidHom_of]
-    by_cases hjk : j = k
-    · subst hjk
-      rw [DirectSum.of_eq_same, gradeProj_eq_self_of_mem_gradeBy ((hA _ _).1 x.property)]
-    · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hjk),
-        gradeProj_eq_zero_of_mem_gradeBy hjk ((hA _ _).1 x.property), ZeroMemClass.coe_zero]
-  | add f g hf hg => simp only [map_add, hf, hg, DirectSum.add_apply, AddMemClass.coe_add]
+/-- The homogeneous pieces of the completed combinations are independent, for every degree
+function. -/
+theorem iSupIndep_gradeBy (d : S → D) : iSupIndep (gradeBy R F d) :=
+  iSupIndep_of_forall_mem_iff fun _ _ => Iff.rfl
 
 /-- A completed combination is a finite sum of homogeneous combinations exactly when its nonzero
 coefficients occur at generators of only finitely many degrees. -/
 theorem mem_iSup_gradeBy_iff_finite {a : NovikovModule R F} :
     a ∈ ⨆ k, gradeBy R F d k ↔ (d '' Function.support a.val).Finite := by
-  classical
   refine ⟨fun ha => ?_, fun ha => ?_⟩
   · refine Submodule.iSup_induction (motive := fun b => (d '' Function.support b.val).Finite) _ ha
       (fun k b hb => (finite_singleton k).subset ?_) (by simp) fun b c hb hc => ?_
     · rintro _ ⟨s, hs, rfl⟩
       exact mem_gradeBy_iff.1 hb s hs
     · exact (hb.union hc).subset
-        ((image_mono (Function.support_add b.val c.val)).trans (image_union d _ _).subset)
-  · rw [← sum_gradeProj (d := d) (T := ha.toFinset) (a := a) (by simp)]
-    exact Submodule.sum_mem _ fun k _ => Submodule.mem_iSup_of_mem k (gradeProj_mem_gradeBy d k a)
+        ((image_mono (Function.support_add _ _)).trans (image_union _ _ _).le)
+  · rw [← sum_homogeneousComponent (T := ha.toFinset) fun s hs => ha.mem_toFinset.2 ⟨s, hs, rfl⟩]
+    exact Submodule.sum_mem _ fun k _ =>
+      Submodule.mem_iSup_of_mem k (homogeneousComponent_mem_gradeBy d k a)
+
+/-- The homogeneous component of degree `k` of a sum of homogeneous combinations, one in each
+piece, is the summand of degree `k`. -/
+theorem homogeneousComponent_coeAddMonoidHom [DecidableEq D]
+    (hA : ∀ k a, a ∈ A k ↔ a ∈ gradeBy R F d k) (f : ⨁ k, A k) (k : D) :
+    homogeneousComponent R F d k (DirectSum.coeAddMonoidHom A f) = f k := by
+  induction f using DirectSum.induction_on with
+  | zero => simp
+  | of j x =>
+    rw [DirectSum.coeAddMonoidHom_of]
+    by_cases hjk : j = k
+    · subst hjk
+      rw [DirectSum.of_eq_same, homogeneousComponent_of_mem_gradeBy ((hA _ _).1 x.property)]
+    · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hjk),
+        homogeneousComponent_eq_zero_of_mem_gradeBy ((hA _ _).1 x.property) hjk,
+            ZeroMemClass.coe_zero]
+  | add f g hf hg => simp only [map_add, hf, hg, DirectSum.add_apply, AddMemClass.coe_add]
 
 /-- The homogeneous combinations span the completed module exactly when every completed
 combination meets only finitely many degrees. -/
@@ -212,6 +154,11 @@ theorem iSup_gradeBy_eq_top_iff :
     ⨆ k, gradeBy R F d k = ⊤ ↔
       ∀ a : NovikovModule R F, (d '' Function.support a.val).Finite := by
   simp only [Submodule.eq_top_iff', mem_iSup_gradeBy_iff_finite]
+
+/-- Every finite combination is a finite sum of homogeneous combinations. -/
+theorem range_ofFinsupp_le_iSup_gradeBy :
+    LinearMap.range (ofFinsupp F) ≤ ⨆ k, gradeBy R F d k := fun _ ha =>
+  mem_iSup_gradeBy_iff_finite.2 ((mem_range_ofFinsupp_iff.1 ha).image d)
 
 /-- The completed module is the internal direct sum of its homogeneous pieces exactly when every
 completed combination meets only finitely many degrees, over any ring of scalars `Λ` for which the
@@ -230,14 +177,15 @@ theorem isInternal_iff_of_forall_mem_iff [DecidableEq D]
       rw [DirectSum.coeAddMonoidHom_of]
       exact Submodule.mem_iSup_of_mem k ((hA k _).1 x.property)
     | add f g hf hg => rw [map_add]; exact add_mem hf hg
-  · -- The summands are recovered as homogeneous parts.
-    rw [← gradeProj_coeAddMonoidHom hA, ← gradeProj_coeAddMonoidHom hA, hfg]
-  · -- `a` is the sum of its finitely many homogeneous parts.
+  · -- The summands are recovered as homogeneous components.
+    rw [← homogeneousComponent_coeAddMonoidHom hA, ← homogeneousComponent_coeAddMonoidHom hA,
+      hfg]
+  · -- `a` is the sum of its finitely many homogeneous components.
     refine ⟨∑ k ∈ (h a).toFinset, DirectSum.of (fun k => A k) k
-      ⟨gradeProj R F d k a, (hA k _).2 (gradeProj_mem_gradeBy d k a)⟩, ?_⟩
+      ⟨homogeneousComponent R F d k a, (hA k _).2 (homogeneousComponent_mem_gradeBy d k a)⟩, ?_⟩
     rw [map_sum]
     simp only [DirectSum.coeAddMonoidHom_of]
-    exact sum_gradeProj (by simp)
+    exact sum_homogeneousComponent fun s hs => (h a).mem_toFinset.2 ⟨s, hs, rfl⟩
 
 /-- For a degree with finitely many values, the completed module is the internal direct sum of
 its homogeneous pieces, over any ring of scalars `Λ` for which the pieces are submodules. -/

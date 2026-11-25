@@ -37,6 +37,8 @@ by prime elements.
   minimal primes, a prime ideal is minimal if and only if it consists of zero divisors.
 * `Ideal.IsRadical.exists_ne_zero_eq_span_singleton`: finitely many minimal primes generated
   by prime elements give a nonzero principal generator for a radical ideal in a domain.
+* `Ideal.exists_eq_of_mem_minimalPrimes_of_inf_le`: if finitely many primes over `I` intersect
+  inside the radical of `I`, every minimal prime over `I` is one of them.
 -/
 
 public section
@@ -112,5 +114,14 @@ theorem IsRadical.exists_ne_zero_eq_span_singleton
     fun P hP ↦ h P (hfin.mem_toFinset.mp hP)
   refine ⟨a, ha, ?_⟩
   rw [← hgen, Finset.inf_id_eq_sInf, hfin.coe_toFinset, Ideal.sInf_minimalPrimes, hI.radical]
+
+/-- If finitely many primes `f i` over an ideal `I` intersect inside the radical of `I`, then every
+minimal prime over `I` is one of them. For `I = ⊥` this says that the minimal primes of a ring are
+among any finite family of primes whose elements in common are nilpotent. -/
+theorem exists_eq_of_mem_minimalPrimes_of_inf_le {A ι : Type*} [CommSemiring A] {I : Ideal A}
+    {s : Finset ι} {f : ι → Ideal A} (hf : ∀ i ∈ s, (f i).IsPrime) (hIf : ∀ i ∈ s, I ≤ f i)
+    (hs : s.inf f ≤ I.radical) {P : Ideal A} (hP : P ∈ I.minimalPrimes) : ∃ i ∈ s, P = f i := by
+  obtain ⟨i, hi, hiP⟩ := hP.1.1.inf_le'.mp (hs.trans (hP.1.1.radical_le_iff.2 hP.1.2))
+  exact ⟨i, hi, le_antisymm (hP.2 ⟨hf i hi, hIf i hi⟩ hiP) hiP⟩
 
 end Ideal

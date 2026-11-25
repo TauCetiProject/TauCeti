@@ -28,8 +28,14 @@ such actions.
   elliptic when it fixes a vertex. The vertices fixed by an element or a subgroup form a convex
   set, and an element is elliptic exactly when its translation length
   `ℓ(g) = min_v d(v, g v)` vanishes. Translation length is invariant under conjugation and
-  inversion. The action maps convex sets of vertices to convex sets and commutes with convex
-  hulls; the segment from `x` to `(g h) x` lies in the union of `[x, g x]` and `g [x, h x]`.
+  inversion, it does not increase along an equivariant map that does not increase distances, and
+  equivariantly isomorphic trees have the same translation lengths. A vertex `x` is moved by
+  exactly `ℓ(g)` if and only if the reduced path from `x` to `g • x` is followed by its translate
+  under `g` without backtracking; the translates of the path by the powers of `g` then line up
+  into a reduced path, so `d(x, gⁿ x) = n d(x, g x)`, and `g` is hyperbolic as soon as it moves
+  `x`. In particular an element of finite order is elliptic. The action maps convex sets of
+  vertices to convex sets and commutes with convex hulls; the segment from `x` to `(g h) x` lies
+  in the union of `[x, g x]` and `g [x, h x]`.
 * A `G`-tree is *minimal* when no nonempty convex `G`-invariant proper set of vertices exists,
   and it is *relative* to families `𝒜` and `ℋ` of subgroups when its dart stabilizers lie in `𝒜`
   and every member of `ℋ` is elliptic.
@@ -39,16 +45,19 @@ such actions.
   point of an edge fixes the edge because there are no inversions. By `GTree.dominates_iff`,
   `T` dominates `T'` exactly when every vertex stabilizer of `T` is elliptic in `T'`. Two
   `G`-trees lie in the same deformation space when each dominates the other.
+* A `G`-tree `T` is *elliptic with respect to* `T'` when every dart stabilizer of `T` is elliptic
+  in `T'`. This holds when `T` dominates `T'`, and then also with respect to every tree that `T'`
+  dominates.
 
-A `G`-tree has at most one vertex exactly when it has no darts. Such a tree is minimal and
-relative to all families of subgroups, every subgroup is elliptic in it, and it is dominated by
-every `G`-tree; it dominates exactly the `G`-trees in which `G` fixes a vertex. The one-vertex
-`G`-tree is such a tree. In a `G`-tree with trivial vertex stabilizers only the trivial subgroup
-is elliptic, so such a tree is relative to every family containing the trivial subgroup and every
-family of trivial subgroups. The line, a `G`-tree for the infinite cyclic group, is in
-`TauCeti.GroupTheory.GTree.Line`, and the axis of a hyperbolic element is in
-`TauCeti.GroupTheory.GTree.Axis`. The automorphism of the segment exchanging its vertices inverts
-its edge (`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of a `G`-tree
+A `G`-tree has at most one vertex exactly when it has no darts. Such a tree is minimal and relative
+to all families of subgroups, every subgroup is elliptic in it, and it is dominated by every
+`G`-tree; it dominates exactly the `G`-trees in which `G` fixes a vertex, and it is elliptic with
+respect to every `G`-tree. The one-vertex `G`-tree is such a tree. In a `G`-tree with trivial vertex
+stabilizers only the trivial subgroup is elliptic, so such a tree is relative to every family
+containing the trivial subgroup and every family of trivial subgroups. The line, a `G`-tree for the
+infinite cyclic group, is in `TauCeti.GroupTheory.GTree.Line`, and the axis of a hyperbolic element
+is in `TauCeti.GroupTheory.GTree.Axis`. The automorphism of the segment exchanging its vertices
+inverts its edge (`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of a `G`-tree
 exchanges the endpoints of a dart.
 
 ## Main declarations
@@ -59,11 +68,16 @@ exchanges the endpoints of a dart.
 * `TauCeti.GTree.IsElliptic`, `TauCeti.GTree.IsHyperbolic`,
   `TauCeti.GTree.IsEllipticSubgroup`: elliptic and hyperbolic elements, elliptic subgroups.
 * `TauCeti.GTree.translationLength`: the translation length of an element.
+* `TauCeti.GTree.isHyperbolic_of_isReduced`: a criterion for hyperbolicity, with the vertices
+  moved by the translation length (`TauCeti.GTree.dist_smul_eq_translationLength_of_isReduced`,
+  `TauCeti.GTree.smul_ne_rev_of_dist_smul_eq_translationLength`).
+* `TauCeti.GTree.isElliptic_of_isOfFinOrder`: an element of finite order is elliptic.
 * `TauCeti.GTree.IsMinimal`, `TauCeti.GTree.IsRelative`: minimal and relative trees.
 * `TauCeti.GTree.incidentSubgroups`: the stabilizers of the darts at a vertex and the
   intersections of its stabilizer with the conjugates of the members of a family `ℋ`.
 * `TauCeti.GTree.Dominates`, `TauCeti.GTree.SameDeformationSpace`: domination and deformation
   spaces, with `TauCeti.GTree.dominates_iff`.
+* `TauCeti.GTree.IsEllipticWith`: ellipticity of one tree with respect to another.
 * `TauCeti.GTree.point`: the one-vertex tree.
 
 ## References
@@ -527,6 +541,13 @@ variable {T}
     T.IsConvex (g • S) ↔ T.IsConvex S := by
   rw [smul_set_vertex_def, Aut.isConvex_smul_set_iff]
 
+/-- An element that maps a set of vertices into itself maps the darts induced by the set to darts
+induced by the set. -/
+theorem smul_mem_inducedDarts {g : G} {C : Set T.V} (hinv : ∀ v ∈ C, g • v ∈ C) {e : T.E}
+    (he : e ∈ T.inducedDarts C) : g • e ∈ T.inducedDarts C := by
+  simp only [mem_inducedDarts_iff, src_smul, tgt_smul] at he ⊢
+  exact ⟨hinv _ he.1, hinv _ he.2⟩
+
 end Pointwise
 
 /-! ### Fixed vertices -/
@@ -600,10 +621,151 @@ theorem translationLength_pos_iff {g : G} : 0 < T.translationLength g ↔ T.IsHy
   exact ((MulAction.surjective h).iInf_congr (h • ·) fun v => by
     simp only [mul_smul, inv_smul_smul, dist_smul]).symm
 
+/-- An equivariant map of vertices that does not increase distances does not increase translation
+lengths. -/
+theorem translationLength_le_of_dist_le {T' : GTree.{u', v'} G} (f : T.V →[G] T'.V)
+    (hf : ∀ x y : T.V, T'.dist (f x) (f y) ≤ T.dist x y) (g : G) :
+    T'.translationLength g ≤ T.translationLength g := by
+  obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := T) g
+  calc T'.translationLength g ≤ T'.dist (f v) (g • f v) := translationLength_le g (f v)
+    _ = T'.dist (f v) (f (g • v)) := by rw [map_smul]
+    _ ≤ T.translationLength g := (hf v (g • v)).trans hv.le
+
+/-- Translation lengths are invariant under equivariant isomorphisms of trees. -/
+theorem translationLength_eq_of_iso {T' : GTree.{u', v'} G} (φ : T.toSerreGraph.Iso T'.toSerreGraph)
+    (hφ : ∀ (g : G) (x : T.V), φ.equivV (g • x) = g • φ.equivV x) (g : G) :
+    T'.translationLength g = T.translationLength g := by
+  refine le_antisymm (translationLength_le_of_dist_le ⟨φ.equivV, hφ⟩
+    (fun x y => φ.toHom.dist_le (T.nonempty_path x y)) g)
+    (translationLength_le_of_dist_le ⟨φ.equivV.symm, fun h y => ?_⟩
+      (fun x y => φ.symm.toHom.dist_le (T'.nonempty_path x y)) g)
+  -- The inverse bijection is equivariant too.
+  simp [Equiv.symm_apply_eq, hφ]
+
 variable (T)
 
 @[simp] theorem translationLength_one : T.translationLength 1 = 0 :=
   translationLength_eq_zero_iff.mpr (isElliptic_one T)
+
+variable {T}
+
+/-- If a reduced path from `x` to `g • x` is followed by its translate under `g` without
+backtracking, then `d(x, gⁿ x) = n d(x, g x)` for every `n`: the translates of the path by
+`1, g, …, gⁿ⁻¹` form a reduced path from `x` to `gⁿ • x`. -/
+theorem dist_pow_smul_eq_mul {g : G} {x : T.V} {p : T.Path x (g • x)}
+    (hp : Path.IsReduced T.toSerreGraph p)
+    (hg : ∀ e ∈ (Path.darts T.toSerreGraph p).getLast?,
+      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e) (n : ℕ) :
+    T.dist x (g ^ n • x) = n * T.dist x (g • x) := by
+  have hacyc := IsTree.isAcyclic _ T.isTree
+  -- Build the reduced path by induction, keeping track of its length and of the condition that
+  -- lets the next translate of `p` follow it without backtracking.
+  have key : ∀ n : ℕ, ∃ q : T.Path x (g ^ n • x), Path.IsReduced T.toSerreGraph q ∧
+      q.length = n * p.length ∧ ∀ e ∈ (Path.darts T.toSerreGraph q).getLast?,
+        ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g ^ n • f ≠ T.rev e := by
+    intro n
+    induction n with
+    | zero =>
+      refine ⟨(Quiver.Path.nil : T.Path x x).cast rfl (by rw [pow_zero, one_smul]), ?_, ?_, ?_⟩
+      · rw [Path.isReduced_cast]
+        exact Path.isReduced_nil _ x
+      · rw [← Path.length_darts, Path.darts_cast, Path.darts_nil, List.length_nil, zero_mul]
+      · simp
+    | succ n ih =>
+      obtain ⟨q, hq, hqlen, hqlast⟩ := ih
+      let r' : T.Path (g ^ n • x) (g ^ (n + 1) • x) :=
+        (smulPath (g ^ n) p).cast rfl (by rw [pow_succ, mul_smul])
+      have hr'darts : Path.darts T.toSerreGraph r' =
+          (Path.darts T.toSerreGraph p).map (g ^ n • ·) := by
+        rw [Path.darts_cast, darts_smulPath]
+      refine ⟨q.comp r', ?_, ?_, ?_⟩
+      · refine (Path.isReduced_comp_iff _ q r').mpr ⟨hq,
+          by rwa [Path.isReduced_cast, isReduced_smulPath], fun e he f hf => ?_⟩
+        rw [hr'darts, List.head?_map, Option.mem_def, Option.map_eq_some_iff] at hf
+        obtain ⟨f, hf, rfl⟩ := hf
+        exact hqlast e he f hf
+      · rw [Quiver.Path.length_comp, hqlen, ← Path.length_darts _ r', hr'darts,
+          List.length_map, Path.length_darts, Nat.succ_mul]
+      · intro e he f hf
+        cases hl : (Path.darts T.toSerreGraph p).getLast? with
+        | none => simp [List.getLast?_eq_none_iff.mp hl] at hf
+        | some e' =>
+          simp only [Path.darts_comp, hr'darts, List.getLast?_append, List.getLast?_map, hl,
+            Option.map_some, Option.some_or, Option.mem_some_iff] at he
+          subst he
+          rw [rev_smul, pow_succ, mul_smul, Ne, smul_left_cancel_iff]
+          exact hg e' hl f hf
+  obtain ⟨q, hq, hqlen, -⟩ := key n
+  rw [hacyc.dist_eq_length hq, hacyc.dist_eq_length hp, hqlen]
+
+/-- If a reduced path from `x` to `g • x` is followed by its translate under `g` without
+backtracking, then `x` is moved by the translation length of `g`. -/
+theorem dist_smul_eq_translationLength_of_isReduced {g : G} {x : T.V} {p : T.Path x (g • x)}
+    (hp : Path.IsReduced T.toSerreGraph p)
+    (hg : ∀ e ∈ (Path.darts T.toSerreGraph p).getLast?,
+      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e) :
+    T.dist x (g • x) = T.translationLength g := by
+  obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := T) g
+  refine le_antisymm ?_ (translationLength_le g x)
+  -- Compare the displacements of `x` and `v` under a large power of `g`: the first grows like
+  -- `n d(x, g x)`, the second at most like `n ℓ(g)`, and they differ by at most `2 d(x, v)`.
+  set n := 2 * T.dist x v + 1
+  have h₁ := dist_pow_smul_eq_mul hp hg n
+  have h₂ := T.dist_pow_smul_le g v n
+  have h₃ := T.dist_smul_le_dist_smul_add_two_mul_dist (g ^ n) v x
+  rw [hv] at h₂
+  have h : n * T.dist x (g • x) < n * (T.translationLength g + 1) := by
+    rw [mul_add, mul_one]
+    omega
+  exact Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_left h)
+
+/-- Conversely, at a vertex `x` moved by the translation length, the reduced path from `x` to
+`g • x` is followed by its translate under `g` without backtracking. -/
+theorem smul_ne_rev_of_dist_smul_eq_translationLength {g : G} {x : T.V}
+    (hx : T.dist x (g • x) = T.translationLength g) {p : T.Path x (g • x)}
+    (hp : Path.IsReduced T.toSerreGraph p) :
+    ∀ e ∈ (Path.darts T.toSerreGraph p).getLast?,
+      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e := by
+  intro e he f hf hfe
+  have hlen : p.length = T.translationLength g := by
+    rw [← hx, (IsTree.isAcyclic _ T.isTree).dist_eq_length hp]
+  rcases Nat.lt_or_ge p.length 2 with h | h
+  · -- A path with one dart: `g` would invert it.
+    obtain ⟨a, ha⟩ : ∃ a, Path.darts T.toSerreGraph p = [a] := by
+      rw [← List.length_eq_one_iff, Path.length_darts]
+      have : p.length ≠ 0 := fun h0 => by
+        rw [← Path.length_darts, List.length_eq_zero_iff] at h0
+        simp [h0] at he
+      omega
+    simp only [ha, List.getLast?_singleton, List.head?_cons, Option.mem_def,
+      Option.some.injEq] at he hf
+    subst he hf
+    exact T.smul_ne_rev g _ hfe
+  · -- Otherwise `g` moves the second vertex of the path by two less than the translation length.
+    have h₁ := Path.dist_tgt_src_add_two_le p hf he h
+    have h₂ := translationLength_le g (T.tgt f)
+    rw [← tgt_smul, hfe, tgt_rev] at h₂
+    omega
+
+/-- **A criterion for hyperbolicity.** If `g` moves `x` and a reduced path from `x` to `g • x` is
+followed by its translate under `g` without backtracking, then `g` is hyperbolic. -/
+theorem isHyperbolic_of_isReduced {g : G} {x : T.V} (hx : g • x ≠ x) {p : T.Path x (g • x)}
+    (hp : Path.IsReduced T.toSerreGraph p)
+    (hg : ∀ e ∈ (Path.darts T.toSerreGraph p).getLast?,
+      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e) :
+    T.IsHyperbolic g := by
+  rw [← translationLength_pos_iff, ← dist_smul_eq_translationLength_of_isReduced hp hg]
+  exact Nat.pos_of_ne_zero fun h => hx ((dist_eq_zero_iff (T.nonempty_path _ _)).mp h).symm
+
+/-- An element of finite order is elliptic: it fixes a vertex. -/
+theorem isElliptic_of_isOfFinOrder {g : G} (hg : IsOfFinOrder g) : T.IsElliptic g := by
+  -- At a vertex `x` moved by `ℓ(g)`, the power `gⁿ = 1` moves `x` by `n ℓ(g)`.
+  obtain ⟨n, hn, hgn⟩ := hg.exists_pow_eq_one
+  obtain ⟨x, hx⟩ := exists_dist_eq_translationLength (T := T) g
+  obtain ⟨p, hp, -⟩ := T.isTree.existsUnique_isReduced x (g • x)
+  have h := dist_pow_smul_eq_mul hp (smul_ne_rev_of_dist_smul_eq_translationLength hx hp) n
+  rw [hgn, one_smul, dist_self, hx, eq_comm, mul_eq_zero] at h
+  exact translationLength_eq_zero_iff.mp (h.resolve_left hn.ne')
 
 end TranslationLength
 
@@ -840,6 +1002,36 @@ theorem dominates_of_subsingleton [Subsingleton T'.V] : T.Dominates T' :=
   dominates_iff.mpr fun _ => T'.isEllipticSubgroup_of_subsingleton _
 
 end Dominates
+
+section IsEllipticWith
+
+variable (T : GTree.{u, v} G) (T' : GTree.{u', v'} G)
+
+/-- A `G`-tree `T` is *elliptic with respect to* a `G`-tree `T'` when the stabilizer of every dart
+of `T` fixes a vertex of `T'`. -/
+def IsEllipticWith : Prop :=
+  ∀ e : T.E, T'.IsEllipticSubgroup (stabilizer G e)
+
+/-- A `G`-tree with at most one vertex is elliptic with respect to every `G`-tree. -/
+theorem isEllipticWith_of_subsingleton [Subsingleton T.V] : T.IsEllipticWith T' :=
+  fun e => (T.isEmpty_dart_of_subsingleton.false e).elim
+
+variable {T T'} {T'' : GTree.{u'', v''} G}
+
+theorem isEllipticWith_iff :
+    T.IsEllipticWith T' ↔ ∀ e : T.E, T'.IsEllipticSubgroup (stabilizer G e) := Iff.rfl
+
+/-- If `T` is elliptic with respect to `T'`, it is elliptic with respect to every tree which `T'`
+dominates. -/
+theorem IsEllipticWith.trans_dominates (h : T.IsEllipticWith T') (h' : T'.Dominates T'') :
+    T.IsEllipticWith T'' :=
+  fun e => h'.isEllipticSubgroup (h e)
+
+/-- A `G`-tree is elliptic with respect to every `G`-tree it dominates. -/
+theorem Dominates.isEllipticWith (h : T.Dominates T') : T.IsEllipticWith T' :=
+  fun e => h.isEllipticSubgroup (T.isEllipticSubgroup_stabilizer_dart e)
+
+end IsEllipticWith
 
 section SameDeformationSpace
 

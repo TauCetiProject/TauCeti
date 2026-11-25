@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Wirtinger.Precompact
+public import TauCeti.Analysis.Complex.Wirtinger.Compactness
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+import TauCeti.Analysis.Complex.Wirtinger.Precompact
 import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Order.Filter.AtTopBot
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
@@ -30,18 +31,19 @@ the Seiberg–Witten equations; here they are a hypothesis. The roots `R(z)` of 
 `TauCeti.norm_le_of_mem_roots_newtonPolynomial_integral_pow_sub`.
 
 This file proves that such coefficient families are precompact. For a sequence of families with
-roots in a fixed disc, bounded `ν` and `μ`, and remainders bounded in `Lᵖ(U)` for some `p > 2`,
-a subsequence of every coefficient `b_j` converges locally uniformly on `U`, and the limits are
-Hölder continuous with exponent `1 - 2 / p` on compact subsets of `U`
+roots in a fixed disc, bounded `ν` and `μ`, and remainders bounded in `Lᵖ` on each compact subset
+of `U` for some `p > 2`, a subsequence of every coefficient `b_j` converges locally uniformly on
+`U`, and the limits are Hölder continuous with exponent `1 - 2 / p` on compact subsets of `U`
 (`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_esymm`). For `p = p_m` the exponent is
 `1 / (m + 1)` (`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_esymm_of_eq`), the Morrey
 exponent of `W^{1, p_m}` in the plane.
 
 The roots bound the coefficients and the zeroth-order terms of the equation
 (`Multiset.norm_esymm_le`), so `\bar∂ b_j` differs from the remainder by a uniformly bounded
-term, and each coefficient sequence is precompact by
-`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le`. A
-common subsequence for the finitely many coefficients is extracted one coefficient at a time
+term. It is therefore bounded in `Lᵖ` on each compact subset of `U`
+(`TauCeti.eLpNorm_conjWirtingerDeriv_restrict_le_of_norm_sub_le`), and each coefficient sequence is
+precompact by `TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le`.
+A common subsequence for the finitely many coefficients is extracted one coefficient at a time
 (`TauCeti.extraction_forall_mem_finset`).
 
 ## Main results
@@ -115,40 +117,48 @@ complex numbers of norm at most `ρ`, for `z ∈ U`, let `b n j` be smooth on `U
 
 `r_j = \bar∂ b_j + j ν b_j + μ ∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)`
 
-are bounded in `Lᵖ(U)` uniformly in `n`. Then along a subsequence every `b n j`, `1 ≤ j ≤ m`,
-converges locally uniformly on `U`, to a limit that is Hölder continuous with exponent
-`1 - 2 / p` on each compact subset of `U`. -/
+are bounded in `Lᵖ` on each compact subset of `U`, uniformly in `n`. Then along a subsequence
+every `b n j`, `1 ≤ j ≤ m`, converges locally uniformly on `U`, to a limit that is Hölder
+continuous with exponent `1 - 2 / p` on each compact subset of `U`. -/
 theorem exists_strictMono_tendstoLocallyUniformlyOn_of_esymm {m : ℕ} {p : ℝ≥0} (hp : 2 < p)
-    {U : Set ℂ} (hU : IsOpen U) {ρ Λ B : ℝ≥0} {b : ℕ → ℕ → ℂ → ℂ} {R : ℕ → ℂ → Multiset ℂ}
+    {U : Set ℂ} (hU : IsOpen U) {ρ Λ : ℝ≥0} {b : ℕ → ℕ → ℂ → ℂ} {R : ℕ → ℂ → Multiset ℂ}
     {ν μ : ℕ → ℂ → ℂ →L⋆[ℂ] ℂ} (hb : ∀ n, ∀ j ∈ Finset.Icc 1 m, ContDiffOn ℝ ∞ (b n j) U)
     (hcard : ∀ n, ∀ z ∈ U, Multiset.card (R n z) ≤ m)
     (hbR : ∀ n, ∀ j ∈ Finset.Icc 1 m, ∀ z ∈ U, b n j z = (R n z).esymm j)
     (hρ : ∀ n, ∀ z ∈ U, ∀ w ∈ R n z, ‖w‖ ≤ ρ) (hν : ∀ n, ∀ z ∈ U, ‖ν n z‖ ≤ Λ)
     (hμ : ∀ n, ∀ z ∈ U, ‖μ n z‖ ≤ Λ)
-    (hr : ∀ n, ∀ j ∈ Finset.Icc 1 m, eLpNorm (fun z ↦ (conjWirtingerDeriv (b n j) z +
-      (j * b n j z) • ν n z +
-      ((R n z).map fun w ↦ conj w * ((R n z).erase w).esymm (j - 1)).sum • μ n z) 1)
-        p (volume.restrict U) ≤ B) :
+    (hr : ∀ K ⊆ U, IsCompact K → ∃ B : ℝ≥0, ∀ n, ∀ j ∈ Finset.Icc 1 m,
+      eLpNorm (fun z ↦ (conjWirtingerDeriv (b n j) z + (j * b n j z) • ν n z +
+        ((R n z).map fun w ↦ conj w * ((R n z).erase w).esymm (j - 1)).sum • μ n z) 1)
+          p (volume.restrict K) ≤ B) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ c : ℕ → ℂ → ℂ, ∀ j ∈ Finset.Icc 1 m,
       TendstoLocallyUniformlyOn (fun n ↦ b (φ n) j) (c j) atTop U ∧
       ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, HolderOnWith C (1 - 2 / p) (c j) K := by
   -- Each coefficient is precompact along any subsequence.
   have h : ∀ j ∈ Finset.Icc 1 m, ∀ φ : ℕ → ℕ, StrictMono φ → ∃ ψ : ℕ → ℕ, StrictMono ψ ∧
       ∃ v : ℂ → ℂ, TendstoLocallyUniformlyOn (fun n ↦ b ((φ ∘ ψ) n) j) v atTop U ∧
-        ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, HolderOnWith C (1 - 2 / p) v K := fun j hj φ _ ↦
-    exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le (F := ℂ) hp hU
-      (A := m.choose j * ρ ^ j)
-      (M := j * (m.choose j * ρ ^ j) * Λ + m * ρ * (m.choose (j - 1) * ρ ^ (j - 1)) * Λ)
-      (B := B) (u := fun n ↦ b (φ n) j)
-      (fun n ↦ hb (φ n) _ hj)
-      (fun n z hz ↦ by
-        rw [hbR _ _ hj z hz]
-        push_cast
-        exact (Multiset.norm_esymm_le (hρ _ z hz) _).trans (by gcongr; exact hcard _ z hz))
-      (fun n z hz ↦ by
-        exact_mod_cast norm_conjWirtingerDeriv_sub_le_of_esymm (hcard (φ n) z hz)
-          (hbR (φ n) _ hj z hz) (hρ (φ n) z hz) (hν (φ n) z hz) (hμ (φ n) z hz))
-      (fun n ↦ hr (φ n) _ hj)
+        ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, HolderOnWith C (1 - 2 / p) v K := by
+    intro j hj φ _
+    -- On a compact `K ⊆ U`, `\bar∂ b_j` is bounded in `Lᵖ(K)`.
+    have hdbar (K : Set ℂ) (hKU : K ⊆ U) (hK : IsCompact K) : ∃ A : ℝ≥0∞, A ≠ (∞ : ℝ≥0∞) ∧
+        ∀ n, eLpNorm (fun z ↦ conjWirtingerDeriv (b (φ n) j) z 1) p (volume.restrict K) ≤ A := by
+      obtain ⟨B, hB⟩ := hr K hKU hK
+      refine ⟨_, by simp [ENNReal.mul_ne_top, hK.measure_lt_top.ne], fun n ↦
+        eLpNorm_conjWirtingerDeriv_restrict_le_of_norm_sub_le
+          (by exact_mod_cast one_le_two.trans hp.le) hU hK.measurableSet hKU (hb (φ n) _ hj)
+          (fun z hz ↦
+            norm_conjWirtingerDeriv_sub_le_of_esymm (hcard (φ n) z (hKU hz))
+              (hbR (φ n) _ hj z (hKU hz)) (hρ (φ n) z (hKU hz)) (hν (φ n) z (hKU hz))
+              (hμ (φ n) z (hKU hz))) (hB (φ n) j hj)⟩
+    obtain ⟨ψ, hψ, v, -, hv, hvH⟩ :=
+      exists_subseq_tendstoLocallyUniformlyOn_of_eLpNorm_conjWirtingerDeriv_le (F := ℂ) hp hU
+        (u := fun n ↦ b (φ n) j) (fun n ↦ hb (φ n) _ hj)
+        (fun _ hKU _ ↦ ⟨m.choose j * ρ ^ j, fun n z hz ↦ by
+          rw [hbR _ _ hj z (hKU hz)]
+          exact (Multiset.norm_esymm_le (hρ _ z (hKU hz)) _).trans
+            (by gcongr; exact hcard _ z (hKU hz))⟩)
+        hdbar
+    exact ⟨ψ, hψ, v, hv, fun K hK hKU ↦ hvH K hKU hK⟩
   -- Extract one common subsequence.
   obtain ⟨φ, hφ, hc⟩ := extraction_forall_mem_finset (P := fun j φ ↦ ∃ v : ℂ → ℂ,
       TendstoLocallyUniformlyOn (fun n ↦ b (φ n) j) v atTop U ∧
@@ -162,17 +172,17 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_esymm {m : ℕ} {p : ℝ�
 `1 ≤ j ≤ m`, have a subsequence converging locally uniformly on `U` to limits that are Hölder
 continuous with exponent `1 / (m + 1)` on each compact subset of `U`. -/
 theorem exists_strictMono_tendstoLocallyUniformlyOn_of_esymm_of_eq {m : ℕ} {p : ℝ≥0}
-    (hpm : p = 2 + 2 / m) {U : Set ℂ} (hU : IsOpen U) {ρ Λ B : ℝ≥0}
+    (hpm : p = 2 + 2 / m) {U : Set ℂ} (hU : IsOpen U) {ρ Λ : ℝ≥0}
     {b : ℕ → ℕ → ℂ → ℂ} {R : ℕ → ℂ → Multiset ℂ} {ν μ : ℕ → ℂ → ℂ →L⋆[ℂ] ℂ}
     (hb : ∀ n, ∀ j ∈ Finset.Icc 1 m, ContDiffOn ℝ ∞ (b n j) U)
     (hcard : ∀ n, ∀ z ∈ U, Multiset.card (R n z) ≤ m)
     (hbR : ∀ n, ∀ j ∈ Finset.Icc 1 m, ∀ z ∈ U, b n j z = (R n z).esymm j)
     (hρ : ∀ n, ∀ z ∈ U, ∀ w ∈ R n z, ‖w‖ ≤ ρ) (hν : ∀ n, ∀ z ∈ U, ‖ν n z‖ ≤ Λ)
     (hμ : ∀ n, ∀ z ∈ U, ‖μ n z‖ ≤ Λ)
-    (hr : ∀ n, ∀ j ∈ Finset.Icc 1 m, eLpNorm (fun z ↦ (conjWirtingerDeriv (b n j) z +
-      (j * b n j z) • ν n z +
-      ((R n z).map fun w ↦ conj w * ((R n z).erase w).esymm (j - 1)).sum • μ n z) 1)
-        p (volume.restrict U) ≤ B) :
+    (hr : ∀ K ⊆ U, IsCompact K → ∃ B : ℝ≥0, ∀ n, ∀ j ∈ Finset.Icc 1 m,
+      eLpNorm (fun z ↦ (conjWirtingerDeriv (b n j) z + (j * b n j z) • ν n z +
+        ((R n z).map fun w ↦ conj w * ((R n z).erase w).esymm (j - 1)).sum • μ n z) 1)
+          p (volume.restrict K) ≤ B) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ c : ℕ → ℂ → ℂ, ∀ j ∈ Finset.Icc 1 m,
       TendstoLocallyUniformlyOn (fun n ↦ b (φ n) j) (c j) atTop U ∧
       ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, HolderOnWith C (1 / (m + 1)) (c j) K := by

@@ -43,6 +43,10 @@ sections, which is what makes `I_x Γ(V)`, a submodule of *finite* sums, large e
 * `TauCeti.smoothSectionFiberEquiv`: the real-linear equivalence `Γ(V) / I_x Γ(V) ≃ V_x` sending
   the class of `s` to `s x`, and `TauCeti.smoothSectionFiberEquiv_smul`, its compatibility with
   multiplication by smooth functions through evaluation at `x`.
+* `TauCeti.smoothSectionFiberMap`: a `C^∞(M)`-linear map `L : Γ(V) → Γ(W)` is tensorial, and
+  induces the real-linear fibre map `V_x → W_x`, `s x ↦ (L s) x`
+  (`TauCeti.smoothSectionFiberMap_apply`); fibre maps are compatible with composition and with
+  multiplication by smooth functions.
 
 ## Implementation notes
 
@@ -166,7 +170,8 @@ theorem mem_smoothVanishingIdeal_pow_succ_smul_top_of_iteratedFDeriv_eq_zero
   have he : e.baseSet ∈ 𝓝 x := e.open_baseSet.mem_nhds hx
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) he).mem_iff.mp he
   let c := e.cutoffLocalFrameCoeff b ⟨ρ, ρ.contMDiff⟩ hρ
-  obtain ⟨fr', hfr', hfreq⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
+  obtain ⟨fr', hfr', hfreq⟩ :=
+    e.exists_contMDiff_eventuallyEq_localFrame (I := I) (n := ∞) b le_rfl hx
   let fr (i : Fin (Module.finrank ℝ F)) : Cₛ^∞⟮I; F, V⟯ := ⟨fr' i, hfr' i⟩
   -- Near `x`, the cut-off coefficient `c i s` is the `i`-th coordinate of the frame coefficients.
   have hcoeff (i : Fin (Module.finrank ℝ F)) : ((c i s : C^∞⟮I, M; ℝ⟯) : M → ℝ) =ᶠ[𝓝 x]
@@ -268,5 +273,82 @@ theorem smoothSectionFiberEquiv_smul (x : M) (f : C^∞⟮I, M; ℝ⟯)
   induction q using Submodule.Quotient.induction_on with
   | H s => rw [← Submodule.Quotient.mk_smul, smoothSectionFiberEquiv_mk,
       smoothSectionFiberEquiv_mk, ContMDiffSection.smul_apply]
+
+/-! ### Fibre maps of function-linear maps of sections -/
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+  {W : M → Type*} [TopologicalSpace (TotalSpace F' W)]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+  [FiberBundle F' W] [VectorBundle ℝ F' W]
+
+/-- **The fibre map of a function-linear map of sections.** A `C^∞(M)`-linear map
+`L : Γ(V) → Γ(W)` is tensorial: for a smooth real vector bundle `V` of finite rank, the value
+`(L s)(x)` depends only on `s(x)`. So `L` induces a real-linear map `V_x → W_x`, sending `s(x)` to
+`(L s)(x)` (`TauCeti.smoothSectionFiberMap_apply`); it depends real-linearly on `L`. -/
+def smoothSectionFiberMap (x : M) :
+    (Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) →ₗ[ℝ] (V x →ₗ[ℝ] W x) where
+  -- A section vanishing at `x` lies in `I_x Γ(V)`, which `L` maps into `I_x Γ(W)`.
+  toFun L := (ContMDiffSection.evalLinearMap I F ∞ V x).liftOfSurjective
+    (ContMDiffSection.evalLinearMap_surjective ∞ x)
+    ⟨ContMDiffSection.evalLinearMap I F' ∞ W x ∘ₗ L.restrictScalars ℝ, fun s hs ↦ by
+      simpa using apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top
+        (Submodule.smul_top_le_comap_smul_top _ L
+          (by simpa [ContMDiffSection.ker_evalLinearMap] using hs))⟩
+  map_add' _ _ := by
+    ext v
+    obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+    simp only [LinearMap.add_apply, LinearMap.equivOfSurjective_apply]
+    simp
+  map_smul' _ _ := by
+    ext v
+    obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+    simp only [LinearMap.smul_apply, LinearMap.equivOfSurjective_apply]
+    simp
+
+/-- The fibre map of a function-linear map `L` of sections sends `s(x)` to `(L s)(x)`. -/
+@[simp]
+theorem smoothSectionFiberMap_apply (x : M)
+    (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) (s : Cₛ^∞⟮I; F, V⟯) :
+    smoothSectionFiberMap x L (s x) = L s x := by
+  rw [← ContMDiffSection.evalLinearMap_apply (𝕜 := ℝ) (I := I) (F := F) (n := ∞) (V := V) x s]
+  simp only [smoothSectionFiberMap, LinearMap.coe_mk, AddHom.coe_mk,
+    LinearMap.equivOfSurjective_apply]
+  simp
+
+/-- A real-linear map `V_x → W_x` agrees with the fibre map of `L` as soon as it sends the value
+of every smooth section `s` at `x` to `(L s)(x)`. -/
+theorem smoothSectionFiberMap_eq_iff (x : M)
+    (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) (T : V x →ₗ[ℝ] W x) :
+    smoothSectionFiberMap x L = T ↔ ∀ s : Cₛ^∞⟮I; F, V⟯, T (s x) = L s x := by
+  refine ⟨fun h s ↦ h ▸ smoothSectionFiberMap_apply x L s, fun h ↦ LinearMap.ext fun v ↦ ?_⟩
+  obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+  rw [ContMDiffSection.evalLinearMap_apply, smoothSectionFiberMap_apply, h]
+
+/-- The fibre map of the identity is the identity. -/
+@[simp]
+theorem smoothSectionFiberMap_id (x : M) :
+    smoothSectionFiberMap x (LinearMap.id : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F, V⟯) =
+      LinearMap.id :=
+  (smoothSectionFiberMap_eq_iff x _ _).2 fun _ ↦ rfl
+
+/-- The fibre map turns multiplication by a smooth function into multiplication by its value. -/
+@[simp]
+theorem smoothSectionFiberMap_smul (x : M) (f : C^∞⟮I, M; ℝ⟯)
+    (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) :
+    smoothSectionFiberMap x (f • L) = f x • smoothSectionFiberMap x L :=
+  (smoothSectionFiberMap_eq_iff x _ _).2 fun s ↦ by
+    simp [ContMDiffSection.smul_apply]
+
+/-- Fibre maps compose: the fibre map of `L ∘ L'` is the composition of the fibre maps. -/
+@[simp]
+theorem smoothSectionFiberMap_comp [FiniteDimensional ℝ F'] [ContMDiffVectorBundle ∞ F' W I]
+    {F'' : Type*} [NormedAddCommGroup F''] [NormedSpace ℝ F'']
+    {U : M → Type*} [TopologicalSpace (TotalSpace F'' U)]
+    [∀ x, AddCommGroup (U x)] [∀ x, Module ℝ (U x)] [∀ x, TopologicalSpace (U x)]
+    [FiberBundle F'' U] [VectorBundle ℝ F'' U] (x : M)
+    (L : Cₛ^∞⟮I; F', W⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F'', U⟯)
+    (L' : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) :
+    smoothSectionFiberMap x (L ∘ₗ L') = smoothSectionFiberMap x L ∘ₗ smoothSectionFiberMap x L' :=
+  (smoothSectionFiberMap_eq_iff x _ _).2 fun s ↦ by simp
 
 end TauCeti

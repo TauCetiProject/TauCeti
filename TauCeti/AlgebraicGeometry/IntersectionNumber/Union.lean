@@ -40,7 +40,7 @@ is not assumed to be a curve, and no hypothesis on the singularities of `V(I)` a
 enters.
 
 By induction this gives additivity of degrees over a closed cover. Let `X` be a reduced scheme,
-quasi-compact, quasi-separated and locally of finite type over `k`, covered by a nonempty finite
+quasi-compact and locally of finite type over `k`, covered by a nonempty finite
 family of closed subsets which pairwise meet in finitely many points, and such that line bundles
 restricted to the reduced closed subschemes on these subsets have finite-dimensional `H⁰` and `H¹`.
 Then the degree of a line bundle on `X` is the sum of its
@@ -88,7 +88,7 @@ private lemma finiteDimensional_cohomology_pullback_toFixedRankOne {L : Invertib
       (Cohomology ((InvertibleSheaf.pullback I.subschemeι).obj L).obj i)) :
     ∀ i < 2, FiniteDimensional k (Cohomology ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj
       ((InvertibleSheaf.toFixedRankOne X).obj L).obj).obj i) := fun i hi ↦ by
-  rw [InvertibleSheaf.pullback_toFixedRankOne_obj_obj]
+  rw [InvertibleSheaf.toFixedRankOne_obj_obj, InvertibleSheaf.pullback_toFiniteLocallyFree_obj_obj]
   exact hI i hi
 
 namespace InvertibleSheaf
@@ -107,7 +107,8 @@ theorem finiteDimensional_cohomology_pullback_subschemeι_inf (L : InvertibleShe
     L).finiteDimensional_cohomology_pullback_subschemeι_inf k I J
       (finiteDimensional_cohomology_pullback_toFixedRankOne I hI)
       (finiteDimensional_cohomology_pullback_toFixedRankOne J hJ) hi
-  rwa [InvertibleSheaf.pullback_toFixedRankOne_obj_obj] at h
+  rwa [InvertibleSheaf.toFixedRankOne_obj_obj,
+    InvertibleSheaf.pullback_toFiniteLocallyFree_obj_obj] at h
 
 end InvertibleSheaf
 
@@ -131,7 +132,8 @@ theorem intersectionNumber_subschemeι_inf
       L).eulerCharBelow_pullback_subschemeι_inf_add k I J
         (finiteDimensional_cohomology_pullback_toFixedRankOne I (hI L))
         (finiteDimensional_cohomology_pullback_toFixedRankOne J (hJ L)) default
-    simp only [InvertibleSheaf.pullback_toFixedRankOne_obj_obj] at h
+    simp only [InvertibleSheaf.toFixedRankOne_obj_obj,
+      InvertibleSheaf.pullback_toFiniteLocallyFree_obj_obj] at h
     exact h
   have hL := key L
   have hT := key (InvertibleSheaf.trivial X)
@@ -174,7 +176,7 @@ private lemma intersectionNumber_vanishingIdeal_finset_sup (s : Finset (Closeds 
     exact intersectionNumber_subschemeι_inf _ _ (hcoh W hWs) ihc a
 
 /-- **Additivity of degrees over a closed cover.** Let `X` be a reduced scheme over a field `k`,
-quasi-compact, quasi-separated and locally of finite type over `k`, covered by a nonempty finite
+quasi-compact and locally of finite type over `k`, covered by a nonempty finite
 family `s` of closed subsets which pairwise meet in finitely many points, and such that line
 bundles restricted to the reduced closed subschemes on the members of `s` have finite-dimensional
 `H⁰` and `H¹`. Then the degree of a line-bundle class on `X` is the sum of its degrees on these
@@ -182,7 +184,7 @@ reduced closed subschemes. For a reduced proper curve, such as a nodal curve, an
 irreducible components, this is the additivity of degrees over the components, once the components
 meet in finitely many points and line bundles on them have finite-dimensional cohomology. -/
 theorem eulerDegree_eq_sum_intersectionNumber_vanishingIdeal [QuasiCompact (X ↘ Spec (.of k))]
-    [IsReduced X] [QuasiSeparatedSpace X] (s : Finset (Closeds X)) (hs : s.Nonempty)
+    [IsReduced X] (s : Finset (Closeds X)) (hs : s.Nonempty)
     (hcover : s.sup id = ⊤)
     (hmeet : ∀ Z ∈ s, ∀ W ∈ s, Z ≠ W → ((Z ⊓ W : Closeds X) : Set X).Finite)
     (hcoh : ∀ Z ∈ s, ∀ (L : InvertibleSheaf X), ∀ i < 2, FiniteDimensional k

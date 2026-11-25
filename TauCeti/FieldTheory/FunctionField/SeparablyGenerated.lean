@@ -29,7 +29,8 @@ integrally closed in `F` and `F / k` admits a separating element.
 In general a separating element need not exist. An element of `F` outside `k` with a
 `p`-power in `k`, such as `t^{1/p}` in `𝔽_p(t^{1/p})(X)` over `𝔽_p(t)`, would be both separable
 and purely inseparable over `k(x)` for a separating `x`, hence a constant of `k(x)`, which it is
-not.
+not. Even with exact constants, `y ^ p = a + b x ^ p` over `𝔽_p(a, b)` admits no separating
+element (`TauCeti.not_exists_transcendental_and_isSeparable_adjoin_of_pow_eq_add_mul_X_pow`).
 
 ## Main results
 

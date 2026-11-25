@@ -20,6 +20,7 @@ the interval is orientable although its half-line charts have opposite transitio
 
 * `orientationPreservingGroupoid` and `IsOrientedAtlas`: positive transitions and oriented atlases.
 * `isOrientedAtlas_atlas`: an atlas with orientation-preserving coordinate changes is oriented.
+* `isOrientedAtlas_maximalAtlas_of_subsingleton`: in dimension zero the maximal atlas is oriented.
 * `IsOrientedAtlas.det_fderivWithin_pos` and `IsOrientedAtlas.prod`: determinants and products.
 * `not_contDiffGroupoid_le_orientationPreservingGroupoid`: smooth changes can reverse orientation.
 
@@ -109,6 +110,17 @@ theorem OrientationPreservingOn.congr {f g : H → H} {s : Set H} (hs : IsOpen s
   have hx' : (I ∘ g ∘ I.symm) (I x) = (I ∘ f ∘ I.symm) (I x) := by simp [hfg hx]
   obtain ⟨hd, hdet⟩ := h x hx
   exact ⟨hd.congr_of_eventuallyEq heq hx', by rwa [heq.fderivWithin_eq hx']⟩
+
+/-- In dimension zero every map preserves orientation: its coordinate expression takes values in
+the zero space, so it is differentiable, and its derivative has determinant `1`. -/
+theorem orientationPreservingOn_of_subsingleton [Subsingleton E] (f : H → H) (s : Set H) :
+    OrientationPreservingOn I f s := by
+  rw [orientationPreservingOn_iff]
+  intro x _
+  refine ⟨(differentiableWithinAt_const (c := (0 : E))).congr
+    (fun _ _ ↦ Subsingleton.elim _ _) (Subsingleton.elim _ _), ?_⟩
+  rw [LinearMap.det_eq_one_of_subsingleton]
+  exact one_pos
 
 variable (I) in
 /-- Given a model with corners `(E, H)`, the pregroupoid of orientation-preserving maps of `H`:
@@ -297,6 +309,16 @@ theorem isOrientedAtlas_atlas [IsManifold I n M] [HasGroupoid M (orientationPres
   subset_maximalAtlas := IsManifold.subset_maximalAtlas
   exists_mem_source x := ⟨chartAt H x, chart_mem_atlas H x, mem_chart_source H x⟩
   symm_trans_mem he he' := HasGroupoid.compatible he he'
+
+variable (M) in
+/-- In dimension zero the maximal atlas of a manifold is oriented, since every coordinate change
+preserves orientation (`TauCeti.orientationPreservingOn_of_subsingleton`). -/
+theorem isOrientedAtlas_maximalAtlas_of_subsingleton [Subsingleton E] [IsManifold I n M] :
+    IsOrientedAtlas I n (IsManifold.maximalAtlas I n M) where
+  subset_maximalAtlas := subset_rfl
+  exists_mem_source x := ⟨chartAt H x, IsManifold.chart_mem_maximalAtlas x, mem_chart_source H x⟩
+  symm_trans_mem _ _ := mem_orientationPreservingGroupoid_iff.2
+    ⟨orientationPreservingOn_of_subsingleton _ _, orientationPreservingOn_of_subsingleton _ _⟩
 
 variable {I n}
 

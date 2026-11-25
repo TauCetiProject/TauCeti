@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Subpath
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Group
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
+import TauCeti.Topology.UnitInterval
 
 /-!
 # Base-point change for relative homotopy groups
@@ -237,8 +238,7 @@ end HomotopyAlong
 
 /-- The fold `u ↦ |2u - 1|` of the unit interval onto itself. -/
 private def foldI (u : I) : I :=
-  ⟨|2 * (u : ℝ) - 1|, abs_nonneg _, abs_le.2 ⟨by linarith [u.property.1], by linarith
-      [u.property.2]⟩⟩
+  ⟨|2 * (u : ℝ) - 1|, abs_nonneg _, unitInterval.abs_two_mul_sub_one_le_one u⟩
 
 private theorem continuous_foldI : Continuous foldI :=
   Continuous.subtype_mk (by fun_prop) _

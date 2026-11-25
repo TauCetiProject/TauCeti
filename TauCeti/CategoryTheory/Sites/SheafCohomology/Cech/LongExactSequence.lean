@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Colimit
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cofinal
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Exact
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 
@@ -24,6 +24,8 @@ topological space. A short exact sequence of sheaves need not be exact on sectio
 The connecting map `cechCohomologyδ` is induced by the native connecting maps of the
 fixed-family complexes. `cechCohomologyι_app_δ` identifies it on every structure map, and
 `cechCohomologyδ_naturality` gives naturality in short exact coefficient sequences.
+`δ_comp_toCechCohomology_app` extends the identification to every family refined by the system
+on which the Čech complexes are short exact, through `toCechCohomology`.
 The three exactness lemmas describe all positions in the long exact sequence, whose
 initial map in degree zero is monic. These sequences permit comparison of a presheaf
 with its sheafification using its locally zero kernel and cokernel.
@@ -50,8 +52,9 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {S : ShortComplex (Cᵒᵖ ⥤ A)}
   (hS : ∀ j, (S.map (cechComplexFunctor (E j).obj)).ShortExact)
 
-private def cechRefinementShortComplexHom {i j : J} (φ : E j ⟶ E i) :
-    S.map (cechComplexFunctor (E i).obj) ⟶ S.map (cechComplexFunctor (E j).obj) where
+omit hE in
+private def cechRefinementShortComplexHom {U V : FormalCoproduct.{w} C} (φ : V ⟶ U) :
+    S.map (cechComplexFunctor U.obj) ⟶ S.map (cechComplexFunctor V.obj) where
   τ₁ := cechComplexMap S.X₁ φ
   τ₂ := cechComplexMap S.X₂ φ
   τ₃ := cechComplexMap S.X₃ φ
@@ -69,7 +72,7 @@ private def cechCohomologyδDiagram (n : ℕ) :
       cechCohomologyDiagram_map A E hE (n + 1) f (hE (leOfHom f)).some,
       cechComplexHomologyMap_app, cechComplexHomologyMap_app]
     exact (HomologicalComplex.HomologySequence.δ_naturality
-      (cechRefinementShortComplexHom E (hE (leOfHom f)).some)
+      (cechRefinementShortComplexHom (hE (leOfHom f)).some)
       (hS i) (hS j) n (n + 1) rfl).symm
 
 variable [HasColimitsOfShape J A]
@@ -128,6 +131,25 @@ theorem cechCohomologyδ_comp (n : ℕ) :
     ext j
     exact (hS j).δ_comp n (n + 1) rfl
   exact (colim.map_comp _ _).symm.trans ((congrArg colim.map h).trans (colim.map_zero _ _))
+
+/-- **The connecting map on a refined family.** For a family `U` refined by a member of the
+directed system, on which the sequence of Čech complexes is short exact, the connecting map of
+these Čech complexes is compatible with `cechCohomologyδ` through `toCechCohomology`. -/
+@[reassoc]
+theorem δ_comp_toCechCohomology_app [IsDirectedOrder J] (U : FormalCoproduct.{w} C)
+    (hU : ∃ j, Nonempty (E j ⟶ U)) (hSU : (S.map (cechComplexFunctor U.obj)).ShortExact)
+    (n : ℕ) :
+    hSU.δ n (n + 1) rfl ≫ (toCechCohomology A E hE (n + 1) U hU).app S.X₁ =
+      (toCechCohomology A E hE n U hU).app S.X₃ ≫ cechCohomologyδ E hE hS n := by
+  obtain ⟨j, ⟨φ⟩⟩ := id hU
+  rw [toCechCohomology_eq A E hE (n + 1) U j φ, toCechCohomology_eq A E hE n U j φ]
+  -- the source of `cechComplexHomologyMap A n φ` is stated for `FormalCoproduct.mk U.I U.obj`,
+  -- which agrees with `U` only up to eta, so `rw` does not find the composite
+  erw [NatTrans.comp_app, NatTrans.comp_app]
+  rw [Category.assoc, cechComplexHomologyMap_app, cechComplexHomologyMap_app]
+  exact (HomologicalComplex.HomologySequence.δ_naturality_assoc
+    (cechRefinementShortComplexHom φ) hSU (hS j) n (n + 1) _ _).trans
+      (congrArg (_ ≫ ·) (cechCohomologyι_app_δ E hE hS n j).symm)
 
 variable [HasExactColimitsOfShape J A]
 

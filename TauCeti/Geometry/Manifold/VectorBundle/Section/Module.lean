@@ -17,14 +17,19 @@ public import TauCeti.Topology.VectorBundle.Pullback
 
 The native `ContMDiffSection` carrier is a module over scalar-valued `ContMDiffMap`s,
 with pointwise multiplication. This extends its vector-space structure: constant functions
-act by the original scalar action, and the two actions form a scalar tower and commute.
+act by the original scalar action, and the two actions form a scalar tower and commute. The
+coercion to functions takes finite sums to pointwise sums (`ContMDiffSection.coe_sum`).
 These structures allow function-linear maps on sections, in particular tensorial bundle
 operators, to be expressed using the usual `LinearMap` API. The points of `M` separate sections
 modulo the kernels of evaluation (`ContMDiffSection.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top`),
 as needed by the algebraic theory of differential operators between modules of sections.
 
+For `m ≤ n`, every `Cⁿ` section is a `Cᵐ` section (`ContMDiffSection.ofLE`), linearly over the
+ground field.
+
 Pullback along a `C^n` map takes values in the pullback bundle. It is linear over the
-ground field and intertwines multiplication with composition of scalar functions.
+ground field and intertwines multiplication with composition of scalar functions, so it is
+semilinear over the pullback of functions (`ContMDiffSection.pullbackSemilinearMap`).
 Restriction to an open subset is pullback along its inclusion. No finite-dimensionality,
 compactness, or boundary assumption is needed, and the construction works at every
 differentiability order.
@@ -52,6 +57,10 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω} {V : M → Type*}
   [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
 
+/-- On an empty base manifold, `C^n` sections form a subsingleton. -/
+instance subsingleton_of_isEmpty [IsEmpty M] : Subsingleton Cₛ^n⟮I; F, V⟯ :=
+  coe_injective.subsingleton
+
 section Module
 
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
@@ -73,6 +82,12 @@ instance instIsScalarTowerContMDiffMap : IsScalarTower 𝕜 C^n⟮I, M; 𝕜⟯ 
 instance instSMulCommClassContMDiffMap : SMulCommClass 𝕜 C^n⟮I, M; 𝕜⟯ Cₛ^n⟮I; F, V⟯ where
   smul_comm c f s := by ext x; simp [smul_comm c (f x)]
 
+/-- The coercion of a finite sum of sections is the pointwise sum. -/
+@[simp]
+theorem coe_sum {ι : Type*} (s : Finset ι) (f : ι → Cₛ^n⟮I; F, V⟯) :
+    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
+  map_sum (coeAddHom I F n V) f s
+
 variable (I F n V) in
 /-- Evaluation of sections at a point as a ground-field linear map. -/
 def evalLinearMap (x : M) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] V x where
@@ -82,6 +97,16 @@ def evalLinearMap (x : M) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] V x where
 
 @[simp]
 theorem evalLinearMap_apply (x : M) (s : Cₛ^n⟮I; F, V⟯) : evalLinearMap I F n V x s = s x :=
+  (rfl)
+
+/-- For `m ≤ n`, `Cⁿ` sections as `Cᵐ` sections, as a ground-field linear map. -/
+def ofLE {m : ℕ∞ω} (hmn : m ≤ n) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^m⟮I; F, V⟯ where
+  toFun s := ⟨s, s.contMDiff.of_le hmn⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem coe_ofLE {m : ℕ∞ω} (hmn : m ≤ n) (s : Cₛ^n⟮I; F, V⟯) : ⇑(ofLE hmn s) = s :=
   (rfl)
 
 /-- The points of `M` separate sections: a section lying in `ker (ev x) • Γ(V)` for every point
@@ -169,6 +194,24 @@ theorem pullbackLinearMap_apply (g : C^n⟮I', N; I, M⟯) (s : Cₛ^n⟮I; F, V
     dsimp% only [ContinuousMap.coe_ofClass]
       (pullbackLinearMap I F n V g s = s.pullback g) := (rfl)
 
+variable (I F n V) in
+/-- Pullback of sections along a `C^n` map `g`, semilinear over the pullback `f ↦ f ∘ g` of
+functions (`ContMDiffMap.compRightAlgHom`): `(f • s).pullback g = (f ∘ g) • s.pullback g`. -/
+def pullbackSemilinearMap (g : C^n⟮I', N; I, M⟯) :
+    Cₛ^n⟮I; F, V⟯ →ₛₗ[(ContMDiffMap.compRightAlgHom 𝕜 𝕜 g).toRingHom]
+      Cₛ^n⟮I'; F, (g : C(N, M)) *ᵖ V⟯ where
+  toFun s := s.pullback g
+  map_add' s t := pullback_add s t g
+  map_smul' f s := by
+    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ContMDiffMap.compRightAlgHom_apply]
+    exact pullback_smul_function f s g
+
+-- As for `pullback_apply`, normalize the implicit pullback-bundle type.
+@[simp]
+theorem pullbackSemilinearMap_apply (g : C^n⟮I', N; I, M⟯) (s : Cₛ^n⟮I; F, V⟯) :
+    dsimp% only [ContinuousMap.coe_ofClass]
+      (pullbackSemilinearMap I F n V g s = s.pullback g) := (rfl)
+
 end Pullback
 
 section Restriction
@@ -211,6 +254,11 @@ theorem restrict_zero (U : Opens M) : (0 : Cₛ^n⟮I; F, V⟯).restrict U = 0 :
 theorem restrict_add (s t : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (s + t).restrict U = s.restrict U + t.restrict U :=
   pullback_add s t _
+
+@[simp]
+theorem restrict_sub (s t : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
+    (s - t).restrict U = s.restrict U - t.restrict U :=
+  map_sub (pullbackLinearMap I F n V (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯)) s t
 
 @[simp]
 theorem restrict_smul (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :

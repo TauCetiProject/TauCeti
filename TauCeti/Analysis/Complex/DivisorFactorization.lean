@@ -9,14 +9,21 @@ public import TauCeti.Analysis.Complex.BranchLogRoot
 public import TauCeti.Analysis.Meromorphic.Order
 public import TauCeti.Analysis.Meromorphic.Divisor
 public import Mathlib.Analysis.Meromorphic.NormalForm
-public import TauCeti.Analysis.Meromorphic.FactorizedRational
+public import Mathlib.Analysis.Meromorphic.FactorizedRational
+import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Convex.SimplyConnected
 
 /-!
 # Holomorphic functions with equal divisors differ by an exponential factor
 
 On a simply connected open domain, two holomorphic functions that are nonzero
 somewhere and have equal divisors satisfy `f = g * exp L` for a holomorphic
-function `L`. The equality includes common zeros of `f` and `g`.
+function `L`, unique on any preconnected open domain up to an additive constant
+in `2πiℤ`. The equality includes common zeros of `f` and `g`. Specializing to
+`Set.univ` gives the entire equal-divisor factorization `f z = exp (g z) * F z`
+(either from equal whole-plane divisors or from equal `analyticOrderAt` at every
+point), with `g` entire and unique up to `2πiℤ`. The whole-plane divisor of an entire function
+at a point is its analytic order there.
 
 Equal divisors allow the zeros to cancel, reducing comparison of holomorphic
 functions to a nowhere-zero exponential factor. This is the step that separates
@@ -27,11 +34,13 @@ exponent, for example to an affine function in Hadamard's theorem.
 Both functions must be nonzero somewhere: Mathlib's divisor assigns zero to
 an infinite-order germ, so the divisor of an identically zero function is zero.
 
-On a closed disc, `AnalyticOnNhd.exists_eq_finprod_zpow_mul` divides out the zeros lying in a
-smaller concentric closed disc: `f = (∏ᶠ ρ, (· - ρ) ^ m_ρ) * G` with `G` zero-free on the smaller
-disc and `m_ρ` the divisor of `f` there. The product is stated as a function, in the normal form
-of Mathlib's `Function.FactorizedRational`, so the API of
-`TauCeti.Analysis.Meromorphic.FactorizedRational` applies to it directly.
+On nested closed discs, `AnalyticOnNhd.finprod_zpow_factorization` gives the canonical quotient
+after dividing out the inner-disc divisor. It applies to normed complex vector-valued functions,
+normalizes only on the divisor support, and preserves the raw quotient everywhere else. The
+factorization `f = (∏ᶠ ρ, (· - ρ) ^ m_ρ) • G` holds globally, including at the removed zeros.
+The product is stated as a function, in the normal form of Mathlib's
+`Function.FactorizedRational`, so the API of
+`Mathlib.Analysis.Meromorphic.FactorizedRational` applies to it directly.
 -/
 
 public section
@@ -87,61 +96,188 @@ theorem exists_differentiableOn_eqOn_mul_exp_of_divisor_eq {U : Set ℂ} {f g : 
     f z = g z * q z := hprod z hz
     _ = g z * exp (L z) := congrArg (fun a ↦ g z * a) (heq hz).symm
 
+/-- On a preconnected open domain, the holomorphic exponent in `g · * exp (L ·)` is unique up to
+an integer multiple of `2 * π * I` whenever `g` is continuous on the domain and not identically
+zero there. -/
+theorem exists_int_eqOn_add_mul_two_pi_I_of_eqOn_mul_exp {U : Set ℂ} {g L₁ L₂ : ℂ → ℂ}
+    (hUc : IsPreconnected U) (hUo : IsOpen U) (hg : ContinuousOn g U) (hg0 : ∃ z ∈ U, g z ≠ 0)
+    (hL₁ : DifferentiableOn ℂ L₁ U) (hL₂ : DifferentiableOn ℂ L₂ U)
+    (heq : EqOn (fun z ↦ g z * exp (L₁ z)) (fun z ↦ g z * exp (L₂ z)) U) :
+    ∃ k : ℤ, EqOn L₁ (fun z ↦ L₂ z + k * (2 * Real.pi * I)) U := by
+  obtain ⟨z₀, hz₀U, hgz₀⟩ := hg0
+  have hexp_loc : (fun z ↦ exp (L₁ z)) =ᶠ[𝓝 z₀] fun z ↦ exp (L₂ z) := by
+    filter_upwards [hUo.mem_nhds hz₀U, (hg.continuousAt (hUo.mem_nhds hz₀U)).eventually_ne hgz₀]
+      with w hwU hgw
+    exact mul_left_cancel₀ hgw (heq hwU)
+  have hexp : EqOn (fun z ↦ exp (L₁ z)) (fun z ↦ exp (L₂ z)) U :=
+    ((hL₁.analyticOnNhd hUo).cexp).eqOn_of_preconnected_of_eventuallyEq
+      ((hL₂.analyticOnNhd hUo).cexp) hUc hz₀U hexp_loc
+  obtain ⟨k, hk⟩ := exp_eq_exp_iff_exists_int.mp (hexp hz₀U)
+  refine ⟨k, hL₁.continuousOn.eqOn_of_eqOn_exp_comp (hL₂.add_const _).continuousOn hUc
+    (fun z hz ↦ (hexp hz).trans (exp_eq_exp_iff_exists_int.mpr ⟨k, rfl⟩).symm) hz₀U hk⟩
+
 end TauCeti
+
+namespace Differentiable
+
+/-- If `F` is continuous and not identically zero, two entire functions `g₁` and `g₂` satisfying
+`Complex.exp (g₁ z) * F z = Complex.exp (g₂ z) * F z` everywhere differ by an integer multiple of
+`2 * π * I`. -/
+theorem exists_int_eq_add_mul_two_pi_I_of_exp_mul_eq {F g₁ g₂ : ℂ → ℂ}
+    (hg₁ : Differentiable ℂ g₁) (hg₂ : Differentiable ℂ g₂) (hF : Continuous F)
+    (hF0 : ∃ z, F z ≠ 0) (heq : ∀ z, Complex.exp (g₁ z) * F z = Complex.exp (g₂ z) * F z) :
+    ∃ k : ℤ, ∀ z, g₁ z = g₂ z + k * (2 * Real.pi * I) := by
+  obtain ⟨z₀, hz₀⟩ := hF0
+  obtain ⟨k, hk⟩ := TauCeti.exists_int_eqOn_add_mul_two_pi_I_of_eqOn_mul_exp
+    isPreconnected_univ isOpen_univ hF.continuousOn ⟨z₀, mem_univ z₀, hz₀⟩
+    hg₁.differentiableOn hg₂.differentiableOn
+    (fun z _ ↦ by simpa only [mul_comm] using heq z)
+  exact ⟨k, fun z ↦ hk (mem_univ z)⟩
+
+/-- Two entire functions with equal whole-plane divisors, neither identically zero, satisfy
+`f z = Complex.exp (g z) * F z` for an entire function `g`, unique up to an additive constant in
+`2 * π * I * ℤ`. -/
+theorem exists_differentiable_eq_exp_mul_of_divisor_eq {f F : ℂ → ℂ}
+    (hf : Differentiable ℂ f) (hF : Differentiable ℂ F) (hf0 : ∃ z, f z ≠ 0) (hF0 : ∃ z, F z ≠ 0)
+    (hd : MeromorphicOn.divisor f Set.univ = MeromorphicOn.divisor F Set.univ) :
+    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ (∀ z, f z = Complex.exp (g z) * F z) ∧
+      ∀ g' : ℂ → ℂ, Differentiable ℂ g' → (∀ z, f z = Complex.exp (g' z) * F z) →
+        ∃ k : ℤ, ∀ z, g' z = g z + k * (2 * Real.pi * I) := by
+  obtain ⟨z₁, hz₁⟩ := hf0
+  obtain ⟨z₂, hz₂⟩ := hF0
+  obtain ⟨g, hg, heq⟩ := TauCeti.exists_differentiableOn_eqOn_mul_exp_of_divisor_eq
+    (convex_univ.isSimplyConnected univ_nonempty) isOpen_univ
+    (fun z _ ↦ hf.analyticAt z) (fun z _ ↦ hF.analyticAt z)
+    ⟨z₁, mem_univ z₁, hz₁⟩ ⟨z₂, mem_univ z₂, hz₂⟩ hd
+  have hg' : Differentiable ℂ g := differentiableOn_univ.mp hg
+  have hfg (z : ℂ) : f z = Complex.exp (g z) * F z := by
+    simpa only [mul_comm] using heq (mem_univ z)
+  refine ⟨g, hg', hfg, fun g₁ hg₁ hfg₁ ↦ ?_⟩
+  exact hg₁.exists_int_eq_add_mul_two_pi_I_of_exp_mul_eq hg' hF.continuous ⟨z₂, hz₂⟩
+    fun z ↦ (hfg₁ z).symm.trans (hfg z)
+
+/-- The whole-plane divisor of an entire function equals its natural-valued analytic order
+`analyticOrderNatAt f z`. -/
+theorem divisor_univ_eq_analyticOrderNatAt {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {f : ℂ → E} (hf : Differentiable ℂ f) (z : ℂ) :
+    MeromorphicOn.divisor f Set.univ z = (analyticOrderNatAt f z : ℤ) :=
+  (AnalyticOnNhd.meromorphicOn fun w _ ↦ hf.analyticAt w).divisor_eq_analyticOrderNatAt
+    (hf.analyticAt z) (mem_univ z)
+
+/-- The whole-plane divisor of an entire function at `z` is `n` whenever its analytic order at `z`
+is the natural number `n`. -/
+theorem divisor_univ_eq_of_analyticOrderAt_eq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {f : ℂ → E} (hf : Differentiable ℂ f) {z : ℂ} {n : ℕ}
+    (hord : analyticOrderAt f z = n) :
+    MeromorphicOn.divisor f Set.univ z = (n : ℤ) := by
+  rw [hf.divisor_univ_eq_analyticOrderNatAt z, analyticOrderNatAt, hord, ENat.toNat_natCast]
+
+/-- Variant of `Differentiable.exists_differentiable_eq_exp_mul_of_divisor_eq` assuming equal
+`analyticOrderAt` at every complex point rather than equality of `MeromorphicOn.divisor`. -/
+theorem exists_differentiable_eq_exp_mul_of_analyticOrderAt_eq {f F : ℂ → ℂ}
+    (hf : Differentiable ℂ f) (hF : Differentiable ℂ F) (hf0 : ∃ z, f z ≠ 0)
+    (hord : ∀ z, analyticOrderAt f z = analyticOrderAt F z) :
+    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ (∀ z, f z = Complex.exp (g z) * F z) ∧
+      ∀ g' : ℂ → ℂ, Differentiable ℂ g' → (∀ z, f z = Complex.exp (g' z) * F z) →
+        ∃ k : ℤ, ∀ z, g' z = g z + k * (2 * Real.pi * I) := by
+  obtain ⟨z₀, hz₀⟩ := hf0
+  have hF0 : ∃ z, F z ≠ 0 :=
+    ⟨z₀, (hF.analyticAt z₀).analyticOrderAt_eq_zero.mp
+      ((hord z₀).symm.trans ((hf.analyticAt z₀).analyticOrderAt_eq_zero.mpr hz₀))⟩
+  refine hf.exists_differentiable_eq_exp_mul_of_divisor_eq hF ⟨z₀, hz₀⟩ hF0 ?_
+  ext z
+  rw [hf.divisor_univ_eq_analyticOrderNatAt z, hF.divisor_univ_eq_analyticOrderNatAt z,
+    analyticOrderNatAt, analyticOrderNatAt, hord z]
+
+end Differentiable
 
 namespace AnalyticOnNhd
 
 open Metric MeromorphicOn
 
-variable {f : ℂ → ℂ} {z₀ : ℂ} {r R : ℝ}
-
-/-- **Dividing out the zeros in a smaller disc.** If `f` is analytic on `closedBall z₀ R` and not
-identically zero there, and `0 < R` and `r ≤ R`, then `f = (∏ᶠ ρ, (· - ρ) ^ m_ρ) * G` on
-`closedBall z₀ R`, where `m_ρ` is the divisor of `f` on `closedBall z₀ r` and `G` is analytic on
-`closedBall z₀ R` without zeros in `closedBall z₀ r`. -/
-theorem exists_eq_finprod_zpow_mul (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
-    (hR : 0 < R) (hrR : r ≤ R) (h₀ : ∃ u ∈ closedBall z₀ R, f u ≠ 0) :
-    ∃ G : ℂ → ℂ, AnalyticOnNhd ℂ G (closedBall z₀ R) ∧ (∀ z ∈ closedBall z₀ r, G z ≠ 0) ∧
-      ∀ z ∈ closedBall z₀ R,
-        f z = (∏ᶠ ρ, (· - ρ) ^ divisor f (closedBall z₀ r) ρ) z * G z := by
+/-- **Canonical removal of the inner-disc divisor.** For a function into a normed complex space,
+normalize the raw quotient only on the support of its inner-disc divisor. The resulting function
+is analytic on the outer disc and nonzero on the inner disc. The factorization holds globally,
+and outside the divisor support the cofactor is exactly the raw quotient. A nonzero value on the
+outer disc rules out infinite-order germs; no strict positivity of either radius is required. -/
+theorem finprod_zpow_factorization {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℂ → E} {z₀ : ℂ} {r R : ℝ}
+    (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)) (hrR : r ≤ R)
+    (h₀ : ∃ u ∈ closedBall z₀ R, f u ≠ 0) :
+    let D := MeromorphicOn.divisor f (closedBall z₀ r)
+    let P : ℂ → ℂ := ∏ᶠ ρ, (fun z : ℂ ↦ z - ρ) ^ D ρ
+    let G := toMeromorphicNFOn (P⁻¹ • f) D.support
+    AnalyticOnNhd ℂ G (closedBall z₀ R) ∧
+      (∀ z ∈ closedBall z₀ r, G z ≠ 0) ∧
+      f = P • G ∧ EqOn G (P⁻¹ • f) D.supportᶜ := by
   classical
-  set D := divisor f (closedBall z₀ R)
-  set D' := divisor f (closedBall z₀ r) with hD'_def
-  -- Extract all zeros of `f` on the large disc: `f = (∏ᶠ u, (· - u) ^ D u) • g` off a
-  -- codiscrete set, with `g` analytic and zero-free there.
-  have hz₀R : z₀ ∈ closedBall z₀ R := mem_closedBall_self hR.le
+  -- The finite inner divisor records exactly the zeros removed by the quotient.
+  let D := MeromorphicOn.divisor f (closedBall z₀ r)
+  let P : ℂ → ℂ := ∏ᶠ ρ, (fun z : ℂ ↦ z - ρ) ^ D ρ
+  let q := P⁻¹ • f
+  let G := toMeromorphicNFOn q D.support
+  have hsub : closedBall z₀ r ⊆ closedBall z₀ R := closedBall_subset_closedBall hrR
+  have hinner := hf.mono hsub
   have hconn : IsConnected (closedBall z₀ R) :=
-    (convex_closedBall z₀ R).isConnected ⟨z₀, hz₀R⟩
-  obtain ⟨g, hg, hg0, hfg⟩ := hf.meromorphicOn.extract_zeros_poles
-    (fun u ↦ hf.meromorphicOrderAt_ne_top_of_exists_ne_zero hconn h₀ u.property)
-    (D.finiteSupport (isCompact_closedBall z₀ R))
-  -- The divisor on the small disc is the restriction of `D`, so `0 ≤ D' ≤ D`.
-  have hD' (ρ : ℂ) : D' ρ = if ρ ∈ closedBall z₀ r then D ρ else 0 := by
-    rw [hD'_def, ← hf.meromorphicOn.divisor_restrict (closedBall_subset_closedBall hrR),
-      Function.locallyFinsuppWithin.restrict_apply]
-  have hD (ρ : ℂ) : 0 ≤ D ρ := hf.divisor_nonneg ρ
-  have hD'D (ρ : ℂ) : 0 ≤ D' ρ ∧ D' ρ ≤ D ρ := by
-    rw [hD']; split_ifs <;> simp [hD ρ]
-  -- Split the zeros into those in the small disc (exponent `D'`) and the rest (`D - D'`).
-  have hsplit := Function.FactorizedRational.finprod_eq_finprod_mul_finprod_sub
-    (D.finiteSupport (isCompact_closedBall _ _)) (d' := D') fun u hu hDu ↦ hu <| by
-      simp [hD' u, show D u = 0 from hDu]
-  -- `G` is the factor for the zeros outside the small disc times `g`.
-  refine ⟨(∏ᶠ u, (· - u) ^ (D u - D' u)) * g, fun z hz ↦ ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · exact (Function.FactorizedRational.analyticAt (d := fun u ↦ D u - D' u)
-      (sub_nonneg.2 (hD'D z).2)).mul (hg z hz)
-  · refine mul_ne_zero (Function.FactorizedRational.ne_zero (d := fun u ↦ D u - D' u) ?_)
-      (hg0 ⟨z, closedBall_subset_closedBall hrR hz⟩)
-    simp [hD' z, hz]
-  -- `f` agrees with `(∏ᶠ u, (· - u) ^ D u) • g` near `z₀`, hence on the whole connected disc.
-  · have hQ : AnalyticOnNhd ℂ ((∏ᶠ u, (· - u) ^ D u) • g) (closedBall z₀ R) := fun x hx ↦
-      (Function.FactorizedRational.analyticAt (d := fun u ↦ D u) (hD x)).smul (hg x hx)
-    have hfreq : ∃ᶠ x in 𝓝[≠] z₀, f x = ((∏ᶠ u, (· - u) ^ D u) • g) x := by
-      have := mem_codiscreteWithin_iff_forall_mem_nhdsNE.1 hfg z₀ hz₀R
-      refine Eventually.frequently ?_
-      filter_upwards [this, nhdsWithin_le_nhds (closedBall_mem_nhds z₀ hR)] with x hx hxU
-      exact hx.resolve_right (not_not_intro hxU)
-    rw [hf.eqOn_of_preconnected_of_frequently_eq hQ hconn.isPreconnected hz₀R hfreq hz, hsplit]
-    simp only [Pi.mul_apply, smul_eq_mul, mul_assoc]
+    (convex_closedBall z₀ R).isConnected (h₀.elim fun u hu ↦ ⟨u, hu.1⟩)
+  have hfinorder (z : ℂ) (hz : z ∈ closedBall z₀ R) :=
+    hf.meromorphicOrderAt_ne_top_of_exists_ne_zero hconn h₀ hz
+  have hfin : D.support.Finite := D.finiteSupport (isCompact_closedBall _ _)
+  have hD (z : ℂ) : 0 ≤ D z := hinner.divisor_nonneg z
+  have hP (z : ℂ) : MeromorphicAt P z :=
+    (Function.FactorizedRational.meromorphicNFOn_univ (D : ℂ → ℤ)).meromorphicOn z trivial
+  have hPorder (z : ℂ) : meromorphicOrderAt P z = (D z : WithTop ℤ) :=
+    Function.FactorizedRational.meromorphicOrderAt_eq (D : ℂ → ℤ) hfin
+  have horder (z : ℂ) (hz : z ∈ closedBall z₀ r) :
+      meromorphicOrderAt f z = (D z : WithTop ℤ) := by
+    rw [hinner.meromorphicOn.divisor_apply hz,
+      WithTop.coe_untop₀_of_ne_top (hfinorder z (hsub hz))]
+  have hzeros : closedBall z₀ r ∩ f ⁻¹' {0} = D.support :=
+    hinner.meromorphicNFOn.zero_set_eq_divisor_support
+      (fun u ↦ hfinorder u (hsub u.property))
+  have hqm : MeromorphicOn q D.support := fun z hz ↦
+    (hP z).inv.smul (hf z (hsub (D.supportWithinDomain hz))).meromorphicAt
+  -- Normalize only on the divisor support. On the rest of the outer disc, the raw quotient
+  -- is already analytic.
+  have hGnf : MeromorphicNFOn G D.support := meromorphicNFOn_toMeromorphicNFOn _ _
+  have hGorder (z : ℂ) (hz : z ∈ D.support) : meromorphicOrderAt G z = 0 := by
+    rw [meromorphicOrderAt_toMeromorphicNFOn hqm hz,
+      meromorphicOrderAt_smul (hP z).inv
+        (hf z (hsub (D.supportWithinDomain hz))).meromorphicAt,
+      meromorphicOrderAt_inv, hPorder z, horder z (D.supportWithinDomain hz)]
+    simp
+  have hraw : EqOn G q D.supportᶜ := toMeromorphicNFOn_eq_self_on_compl hqm
+  have hG : AnalyticOnNhd ℂ G (closedBall z₀ R) := by
+    intro z hz
+    by_cases hs : z ∈ D.support
+    · exact (hGnf hs).meromorphicOrderAt_nonneg_iff_analyticAt.mp (hGorder z hs).ge
+    · have hPz : P z ≠ 0 := Function.FactorizedRational.ne_zero (Function.notMem_support.mp hs)
+      have hqa : AnalyticAt ℂ q z :=
+        ((Function.FactorizedRational.analyticAt (hD z)).inv hPz).smul (hf z hz)
+      apply hqa.congr
+      filter_upwards [hfin.isClosed.isOpen_compl.mem_nhds hs] with w hw
+      exact (hraw hw).symm
+  -- Read nonvanishing from order zero and reconstruct the factorization at every point.
+  refine ⟨hG, ?_, ?_, hraw⟩
+  · intro z hz
+    -- Fold the displayed representative so the normal-form and complement equalities apply.
+    change G z ≠ 0
+    by_cases hs : z ∈ D.support
+    · exact (hGnf hs).meromorphicOrderAt_eq_zero_iff.mp (hGorder z hs)
+    · have hfz : f z ≠ 0 := fun h ↦ hs (hzeros ▸ ⟨hz, h⟩)
+      have hPz : P z ≠ 0 := Function.FactorizedRational.ne_zero (Function.notMem_support.mp hs)
+      rw [hraw hs]
+      exact smul_ne_zero (inv_ne_zero hPz) hfz
+  · ext z
+    -- Use the same local representative for pointwise reconstruction.
+    change f z = P z • G z
+    by_cases hs : z ∈ D.support
+    · have hfz : f z = 0 := (hzeros.symm ▸ hs).2
+      have hPz : P z = 0 :=
+        Function.FactorizedRational.eq_zero (d := (D : ℂ → ℤ)) hfin hs
+      simp [hfz, hPz]
+    · have hPz : P z ≠ 0 := Function.FactorizedRational.ne_zero (Function.notMem_support.mp hs)
+      rw [hraw hs]
+      simp only [q, Pi.smul_apply', Pi.inv_apply, smul_smul, mul_inv_cancel₀ hPz, one_smul]
 
 end AnalyticOnNhd

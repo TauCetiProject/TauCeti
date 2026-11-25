@@ -534,6 +534,15 @@ theorem heq_cycle_of_eq {s : α} {c₁ c₂ : G.Walk s s} (hc₁ : c₁.IsCycle)
   subst h
   rfl
 
+/-- Cycle walks that agree after changing their base vertex yield heterogeneously equal cycle
+initial witnesses. -/
+theorem heq_cycle_of_copy_eq {s s' : α} {c₁ : G.Walk s s} {c₂ : G.Walk s' s'} (hc₁ : c₁.IsCycle)
+    (hc₂ : c₂.IsCycle) (hs : s = s') (h : c₁.copy hs hs = c₂) :
+    HEq (EarStart.cycle c₁ hc₁) (EarStart.cycle c₂ hc₂) := by
+  subst hs
+  rw [Walk.copy_rfl_rfl] at h
+  exact heq_cycle_of_eq hc₁ hc₂ h
+
 /-- Every allowed initial graph is a subgraph of its ambient graph. -/
 theorem le : ∀ _start : G.EarStart H, H ≤ G
   | .vertex v => Graph.noEdge_le_iff.mpr (singleton_subset_iff.mpr v.property)
