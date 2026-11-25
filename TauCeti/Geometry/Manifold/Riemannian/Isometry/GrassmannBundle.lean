@@ -85,6 +85,8 @@ private theorem map_symm_comp_map (k : ℕ) (Φ : RiemannianIsometry I J M N) :
   refine grassmannBundle.map_congr fun x v ↦ TotalSpace.ext (Φ.symm_apply_apply x) (heq_of_eq ?_)
   rw [LinearIsometryEquiv.trans_apply, mfderivToLinearIsometryEquiv_apply Φ.symm,
     ← mfderivToLinearIsometryEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
+  -- Both sides are the vector `v`, typed in the fibres `TangentSpace I (Φ.symm (Φ x))` and
+  -- `TangentSpace I x`, which are both `E` by definition; `simp` only reduces this to `v = v`.
   rfl
 
 variable (k : ℕ) in
@@ -142,8 +144,7 @@ theorem grassmannBundleHomeomorph_refl :
     grassmannBundleHomeomorph k (RiemannianIsometry.refl I M) =
       Homeomorph.refl (grassmannBundle E (TangentSpace I : M → Type _) k) := by
   refine Homeomorph.ext (congrFun ?_)
-  change _ = id
-  rw [coe_grassmannBundleHomeomorph, ← grassmannBundle.map_id]
+  rw [Homeomorph.refl_apply, coe_grassmannBundleHomeomorph, ← grassmannBundle.map_id]
   exact grassmannBundle.map_congr fun x v ↦
     TotalSpace.ext (refl_apply I M x) (heq_of_eq (mfderivToLinearIsometryEquiv_refl_apply x v))
 
@@ -153,11 +154,11 @@ theorem grassmannBundleHomeomorph_trans [IsManifold K 1 P] [CompleteSpace G]
     (Φ : RiemannianIsometry I J M N) (Ψ : RiemannianIsometry J K N P) :
     grassmannBundleHomeomorph k (Φ.trans Ψ) =
       (grassmannBundleHomeomorph k Φ).trans (grassmannBundleHomeomorph k Ψ) := by
-  refine Homeomorph.ext (congrFun ?_)
-  change _ = grassmannBundleHomeomorph k Ψ ∘ grassmannBundleHomeomorph k Φ
-  rw [coe_grassmannBundleHomeomorph, coe_grassmannBundleHomeomorph, coe_grassmannBundleHomeomorph,
+  refine Homeomorph.ext fun p ↦ ?_
+  rw [Homeomorph.trans_apply, coe_grassmannBundleHomeomorph, coe_grassmannBundleHomeomorph,
+    coe_grassmannBundleHomeomorph, ← Function.comp_apply (f := grassmannBundle.map Ψ _),
     ← grassmannBundle.map_comp]
-  exact grassmannBundle.map_congr fun x v ↦ TotalSpace.ext (trans_apply Φ Ψ x)
-    (heq_of_eq (mfderivToLinearIsometryEquiv_trans_apply Φ Ψ x v))
+  exact congrFun (grassmannBundle.map_congr fun x v ↦ TotalSpace.ext (trans_apply Φ Ψ x)
+    (heq_of_eq (mfderivToLinearIsometryEquiv_trans_apply Φ Ψ x v))) p
 
 end TauCeti.RiemannianIsometry

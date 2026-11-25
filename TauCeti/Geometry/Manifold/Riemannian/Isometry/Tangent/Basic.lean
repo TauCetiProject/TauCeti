@@ -136,8 +136,8 @@ theorem coe_toContinuousLinearEquiv_mfderivToLinearIsometryEquiv
 theorem mfderivToLinearIsometryEquiv_refl_apply (x : M) (v : TangentSpace I x) :
     (RiemannianIsometry.refl I M).mfderivToLinearIsometryEquiv x v = v := by
   rw [mfderivToLinearIsometryEquiv_apply,
-    show (⇑(RiemannianIsometry.refl I M) : M → M) = id from funext (refl_apply I M), mfderiv_id]
-  rfl
+    show (⇑(RiemannianIsometry.refl I M) : M → M) = id from funext (refl_apply I M), mfderiv_id,
+    ContinuousLinearMap.id_apply]
 
 section Trans
 
