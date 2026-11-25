@@ -15,7 +15,9 @@ The values on `1` and `I` determine a continuous real-linear map on every comple
 (`ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I`).
 A real-linear map is the sum of its values at `1` and `I` weighted by the real and imaginary
 parts (`ContinuousLinearMap.eq_reCLM_smulRight_add_imCLM_smulRight`, and for families
-`ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`).
+`ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`). A complex antilinear one is
+determined by its value at `1`
+(`ContinuousLinearMap.eq_reCLM_smulRight_sub_imCLM_smulRight_of_antilinear`).
 For a real bilinear map `B` on `ℂ` with `B 1 I = B I 1`, the trace `B a a + B (I a) (I a)` over the
 orthogonal pair `a, I a` is `‖a‖²` times the trace over `1, I`
 (`ContinuousLinearMap.apply_add_apply_I_mul_eq_norm_sq_smul`).
@@ -45,6 +47,17 @@ theorem eq_reCLM_smulRight_add_imCLM_smulRight {V : Type*} [SeminormedAddCommGro
     L = Complex.reCLM.smulRight (L 1) + Complex.imCLM.smulRight (L Complex.I) := by
   ext z
   simp [L.apply_eq_re_smul_one_add_im_smul_I z]
+
+/-- A complex antilinear real-linear map out of `ℂ` is determined by its value at `1`:
+`L = re ⬝ L 1 - im ⬝ (I • L 1)`, that is, `L w = conj w • L 1`. -/
+theorem eq_reCLM_smulRight_sub_imCLM_smulRight_of_antilinear {V : Type*}
+    [SeminormedAddCommGroup V] [NormedSpace ℝ V] [Module ℂ V] (L : ℂ →L[ℝ] V)
+    (hL : ∀ v, L (Complex.I • v) = -(Complex.I • L v)) :
+    L = Complex.reCLM.smulRight (L 1) - Complex.imCLM.smulRight (Complex.I • L 1) := by
+  have hI : L Complex.I = -(Complex.I • L 1) := by simpa using hL 1
+  conv_lhs => rw [L.eq_reCLM_smulRight_add_imCLM_smulRight, hI]
+  ext z
+  simp [sub_eq_add_neg]
 
 /-- A family of real-linear maps out of `ℂ` splits through its values at `1` and `I`, written
 with the continuous linear maps `smulRightL` so that it can be postcomposed in families. -/
