@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Flat.FaithfullyFlat.Descent
 public import Mathlib.Tactic.Observe
 public import TauCeti.AlgebraicGeometry.Descent.Affine
 public import TauCeti.AlgebraicGeometry.Descent.AffineMorphism
+import TauCeti.AlgebraicGeometry.Morphisms.Affine.TargetLocal
 
 /-!
 # Affine morphisms satisfy fpqc descent
@@ -80,9 +81,9 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-! Mathlib proves the stability of `Surjective ⊓ Flat` and the target-locality of affine morphisms
-under `backward.isDefEq.respectTransparency`, so instance search does not find them here; they are
-supplied by name, as local instances. -/
+/-! Mathlib proves the stability of `Surjective ⊓ Flat` under
+`backward.isDefEq.respectTransparency`, so instance search does not find it here; the stability
+instances are supplied by name, as local instances. -/
 
 private theorem isStableUnderBaseChange_surjective_inf_flat :
     IsStableUnderBaseChange (@Surjective.{u} ⊓ @Flat.{u} : MorphismProperty Scheme.{u}) :=
@@ -93,11 +94,8 @@ private theorem isStableUnderComposition_surjective_inf_flat :
   have : IsStableUnderComposition @Surjective.{u} := IsMultiplicative.toIsStableUnderComposition
   IsStableUnderComposition.inf
 
-private theorem isZariskiLocalAtTarget_isAffineHom : IsZariskiLocalAtTarget @IsAffineHom.{u} :=
-  @HasAffineProperty.instIsZariskiLocalAtTarget _ _ instHasAffinePropertyIsAffineHomIsAffine
-
 attribute [local instance] isStableUnderBaseChange_surjective_inf_flat
-  isStableUnderComposition_surjective_inf_flat isZariskiLocalAtTarget_isAffineHom
+  isStableUnderComposition_surjective_inf_flat
 
 /-- Surjective local isomorphisms are surjective and flat: the condition under which
 `IsZariskiLocalAtTarget.descendsAlong_inf_quasiCompact` reduces fpqc descent to affine bases. -/

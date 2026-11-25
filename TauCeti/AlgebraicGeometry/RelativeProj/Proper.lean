@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Symm
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Proper
 public import TauCeti.AlgebraicGeometry.RelativeProj.Basic
 public import TauCeti.AlgebraicGeometry.RelativeProj.ClosedImmersion
-import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact.TargetLocal
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
 
 /-!
 # Properness of the relative `Proj`

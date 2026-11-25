@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.LineBundle.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
-import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact.TargetLocal
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
 
 /-!
 # Relatively ample line bundles
