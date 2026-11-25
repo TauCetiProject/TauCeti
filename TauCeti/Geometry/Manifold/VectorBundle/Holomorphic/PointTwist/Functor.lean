@@ -215,7 +215,7 @@ theorem contMDiff_signedPointTwistEquiv (x : X) (s : Bool) {e : ∀ z, E z ≃L[
   exact ⟨contMDiffAt_id, ((contMDiffAt_hom_bundle _).1 (h z₀)).2.congr_of_eventuallyEq
     (inCoordinates_signedPointTwistEquiv x s e z₀)⟩
 
-variable [FiniteDimensional ℝ F'] (F F') in
+variable (F F') in
 /-- **Functoriality of point twists.** A complex bundle isomorphism `E ≅ E'` which is a real `C^n`
 diffeomorphism of total spaces induces one `E(±x) ≅ E'(±x)` of the signed point twists. -/
 def signedPointTwistDiffeomorph (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ] E' z)
