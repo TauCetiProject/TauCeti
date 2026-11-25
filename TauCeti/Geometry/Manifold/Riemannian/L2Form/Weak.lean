@@ -337,14 +337,8 @@ theorem toL2Form_mem_ker_weakExtDeriv_iff (o : Manifold.Orientation I M (Fin m))
     toL2Form I M k α ∈ (weakExtDeriv o hkl).ker ↔
       compactlySupportedForms.mextDerivₗ I M k α = 0 := by
   have hα := (toL2Operator_mextDerivₗ_le_weakExtDeriv o hkl).1 (LinearMap.mem_range_self _ α)
-  constructor
-  · intro h
-    obtain ⟨y, hy, hy0⟩ := LinearPMap.mem_ker_iff.1 h
-    obtain rfl : y = ⟨_, hα⟩ := Subtype.ext hy.symm
-    rw [weakExtDeriv_toL2Form] at hy0
-    exact toL2Form_injective (hy0.trans (map_zero _).symm)
-  · intro h
-    exact LinearPMap.mem_ker_iff.2 ⟨⟨_, hα⟩, rfl, by rw [weakExtDeriv_toL2Form, h, map_zero]⟩
+  rw [LinearPMap.coe_mem_ker_iff (x := ⟨_, hα⟩), weakExtDeriv_toL2Form,
+    LinearMap.map_eq_zero_iff _ toL2Form_injective]
 
 /-- On an oriented boundaryless manifold, a compactly supported smooth form is weakly coclosed
 exactly when it is coclosed. -/
@@ -353,15 +347,8 @@ theorem toL2Form_mem_ker_weakCodifferential_iff (o : Manifold.Orientation I M (F
     toL2Form I M (k + 1) β ∈ (weakCodifferential I M k).ker ↔ codifferential o hkl β = 0 := by
   have hβ := (toL2Operator_codifferential_le_weakCodifferential o hkl).1
     (LinearMap.mem_range_self _ β)
-  constructor
-  · intro h
-    obtain ⟨y, hy, hy0⟩ := LinearPMap.mem_ker_iff.1 h
-    obtain rfl : y = ⟨_, hβ⟩ := Subtype.ext hy.symm
-    rw [weakCodifferential_toL2Form o hkl] at hy0
-    exact toL2Form_injective (hy0.trans (map_zero _).symm)
-  · intro h
-    exact LinearPMap.mem_ker_iff.2
-      ⟨⟨_, hβ⟩, rfl, by rw [weakCodifferential_toL2Form o hkl, h, map_zero]⟩
+  rw [LinearPMap.coe_mem_ker_iff (x := ⟨_, hβ⟩), weakCodifferential_toL2Form o hkl,
+    LinearMap.map_eq_zero_iff _ toL2Form_injective]
 
 /-- **`d ∘ d = 0` weakly**: on an oriented boundaryless manifold, the weak exterior derivative
 vanishes on the exterior derivatives of compactly supported smooth forms. -/
