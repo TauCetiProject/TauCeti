@@ -42,6 +42,8 @@ Compactness of `K` then needs finitely many charts (`IsCompact.induction_on`).
 For a jointly continuous family of structures
 (`TauCeti.ContMDiffAlmostComplexStructureFamily`), continuity in the charts is automatic
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_mul_norm_mvfderiv_sq_le_of_family`).
+Conversely, when `d e` is injective at `x`, uniform tameness through `e` at `x` implies tameness
+(`TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_mul_norm_sq_le`).
 
 ## References
 
@@ -173,6 +175,17 @@ theorem IsNondegenerate.exists_pos_forall_mul_norm_mvfderiv_sq_le_of_family {n :
       refine (J.contDiffOn_inChart (0, α)).continuousOn.mono fun p hp ↦ ?_
       simpa only [extChartAt_prod, PartialEquiv.prod_target, extChartAt_model_space_eq_id,
         PartialEquiv.refl_target, mem_prod, mem_univ, true_and] using hp.2) hJt he
+
+omit [FiniteDimensional ℝ E] in
+/-- Conversely, a structure `J` on `T_x M` with `c ‖d e v‖² ≤ ω(v, J v)` for some `c > 0`, where
+`d e` is injective at `x`, is tamed by `ω_x`. -/
+theorem IsNondegenerate.tames_of_mul_norm_sq_le (hω : ω.IsNondegenerate) {x : M}
+    (hde : Function.Injective (mvfderiv I e x)) {c : ℝ} (hc : 0 < c)
+    {J : AlmostComplexStructure (TangentSpace I x)}
+    (hJc : ∀ v, c * ‖mvfderiv I e x v‖ ^ 2 ≤ hω.symplecticFormAt x v (J v)) :
+    (hω.symplecticFormAt x).Tames J := fun v hv ↦
+  (mul_pos hc (pow_pos (norm_pos_iff.2 fun h ↦ hv (hde (h.trans (map_zero _).symm))) 2)).trans_le
+    (hJc v)
 
 end SmoothTwoForm
 

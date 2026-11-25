@@ -237,8 +237,7 @@ theorem star_hessianSymbolLp (v w : E) : star (hessianSymbolLp v w) = hessianSym
 
 /-- The `L^∞` norm of the symbol of `∂_v ∂_w Δ⁻¹` is at most `‖v‖ ‖w‖`. -/
 theorem norm_hessianSymbolLp_le (v w : E) : ‖hessianSymbolLp v w‖ ≤ ‖v‖ * ‖w‖ := by
-  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-  refine ENNReal.toReal_le_of_le_ofReal (by positivity) (eLpNormEssSup_le_of_ae_bound ?_)
+  refine Lp.norm_le_of_ae_bound_top (by positivity) ?_
   filter_upwards [coeFn_hessianSymbolLp v w] with ξ hξ
   rw [hξ]
   exact norm_hessianSymbol_le v w ξ

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.IntegralCup
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Geometry.Manifold.Degree.Boundaryless
@@ -89,7 +90,8 @@ disc.
 * `TauCeti.Manifold.Orientation.exists_singularHomologyMap_eq_degreeAtRegularValue_smul`: for a
   `C¹` map between compact connected boundaryless manifolds with any models, `f_* μ` is `±` the
   signed count of preimages of a regular value times `ν`, for any integral fundamental classes `μ`
-  and `ν`.
+  and `ν`; with coefficients in `ℤ` rather than `ULift ℤ` this is
+  `TauCeti.Manifold.Orientation.exists_singularHomologyMap_int_eq_degreeAtRegularValue_smul`.
 * `TauCeti.Manifold.Orientation.degree_toHomologicalOrientation_eq_degree`: the homological
   degree of a proper `C¹` map onto a preconnected σ-compact manifold is its mapping degree.
 * `TauCeti.Manifold.Orientation.integralTopForm_mpullback_eq_degree_toHomologicalOrientation_mul`:
@@ -539,6 +541,37 @@ theorem exists_singularHomologyMap_eq_degreeAtRegularValue_smul {k : ℕ}
       (BoundarylessModel.diffeomorph IN 1)).symm
   exact exists_singularHomologyMap_eq_degreeAtRegularValue_smul_of_diffeomorph hV ιM ιN o o' hf
     hy hμ hν
+
+/-- **The smooth degree is the homological degree, with coefficients in `ℤ`.** The formula
+`f_* μ = ±(degreeAtRegularValue o o' f y) • ν` of
+`TauCeti.Manifold.Orientation.exists_singularHomologyMap_eq_degreeAtRegularValue_smul` for integral
+fundamental classes `μ` and `ν` with coefficients in `ℤ`, the coefficients of
+`TauCeti.singularChains ℤ`, rather than `ULift ℤ`. The two are identified along
+`TauCeti.integralCoeffIso`. -/
+theorem exists_singularHomologyMap_int_eq_degreeAtRegularValue_smul {k : ℕ}
+    (hW : finrank ℝ W = k + 1) (hW' : finrank ℝ W' = k + 1)
+    (o : Manifold.Orientation I M (Fin (k + 1))) (o' : Manifold.Orientation J N (Fin (k + 1)))
+    {f : C(M, N)} (hf : ContMDiff I J 1 f) {y : N} (hy : IsRegularValue I J f y)
+    {μ : ((singularChains ℤ).obj (TopCat.of M)).homology (k + 1)}
+    (hμ : IsFundamentalClass (M := M) (N := ModuleCat.of ℤ ℤ) μ)
+    {ν : ((singularChains ℤ).obj (TopCat.of N)).homology (k + 1)}
+    (hν : IsFundamentalClass (M := N) (N := ModuleCat.of ℤ ℤ) ν) :
+    ∃ s : ℤ, (s = 1 ∨ s = -1) ∧
+      ContinuousMap.singularHomologyMap ℤ (k + 1) f μ =
+        (s * degreeAtRegularValue o o' f y) • ν := by
+  -- Carry the classes to the coefficients `ULift ℤ` along `τ`, apply the degree formula there and
+  -- come back by naturality of `τ`, which is injective.
+  set τ := (singularHomologyFunctor (ModuleCat.{0} ℤ) (k + 1)).map integralCoeffIso.inv
+  obtain ⟨s, hs, h⟩ := exists_singularHomologyMap_eq_degreeAtRegularValue_smul hW hW' o o' hf hy
+    ((isFundamentalClass_singularHomologyFunctor_map_app_iff integralCoeffIso.symm μ).2 hμ)
+    ((isFundamentalClass_singularHomologyFunctor_map_app_iff integralCoeffIso.symm ν).2 hν)
+  refine ⟨s, hs, ?_⟩
+  have hnat := CategoryTheory.ConcreteCategory.congr_hom (τ.naturality (TopCat.ofHom f)) μ
+  -- `τ` is the image of an isomorphism, so its components are injective.
+  have hinj : Function.Injective (τ.app (TopCat.of N)) :=
+    (((singularHomologyFunctor (ModuleCat.{0} ℤ) (k + 1)).mapIso integralCoeffIso.symm).app
+      (TopCat.of N)).toLinearEquiv.injective
+  exact hinj ((hnat.trans h).trans (map_zsmul (ModuleCat.Hom.hom _) _ ν).symm)
 
 end AnyModel
 

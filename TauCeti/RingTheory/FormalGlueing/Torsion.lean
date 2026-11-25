@@ -86,7 +86,8 @@ private theorem tensorProduct_mk_bijective_of_isTorsionBySet
   refine ⟨LeftInverse.injective (g := TensorProduct.lift β) fun m ↦ by simp [β], fun x ↦ ?_⟩
   induction x using TensorProduct.inductionOn with
   | tmul s m =>
-    obtain ⟨r, hr⟩ := Ideal.exists_sub_mem_of_surjective_quotientMap hI.2 s
+    obtain ⟨r, hr⟩ :=
+      Ideal.exists_sub_mem_of_surjective_quotient_mk_comp (hI.2.comp Ideal.Quotient.mk_surjective) s
     have hm : m ∈ torsionBySet R M I := (mem_torsionBySet_iff _ _).mpr fun a ↦ @hM m a
     have h := (Ideal.mem_torsionOf_iff _ _).mp (map_le_torsionOf_one_tmul (S := S) hm hr)
     rw [smul_tmul', smul_eq_mul, mul_one, sub_tmul, sub_eq_zero] at h
