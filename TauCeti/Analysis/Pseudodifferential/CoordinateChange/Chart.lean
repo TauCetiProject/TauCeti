@@ -190,17 +190,15 @@ theorem exists_schwartzMap_apply_eq_smul
   have hψ'κ : ∀ y ∈ κ.source, ψ' (κ y) = ψ y := fun y hy ↦ by
     simp [ψ', indicator_of_mem (κ.map_source hy), κ.left_inv hy]
   have hψ'0 : ∀ z ∉ κ.target, ψ' z = 0 := fun z hz ↦ indicator_of_notMem hz _
-  have hK : IsCompact (κ '' tsupport ψ) :=
-    hψc.isCompact.image_of_continuousOn (κ.continuousOn.mono hψs)
-  have hsub : Function.support ψ' ⊆ κ '' tsupport ψ := fun z hz ↦ by
-    have hzt : z ∈ κ.target := by_contra fun h ↦ hz (hψ'0 z h)
-    refine ⟨κ.symm z, subset_tsupport _ fun h ↦ hz ?_, κ.right_inv hzt⟩
-    rw [← κ.right_inv hzt, hψ'κ _ (κ.map_target hzt), h]
-  have hc : HasCompactSupport ψ' :=
-    .intro' hK hK.isClosed fun z hz ↦ Function.notMem_support.1 fun h ↦ hz (hsub h)
-  have hst : tsupport ψ' ⊆ κ.target := (hK.isClosed.closure_subset_iff.2 hsub).trans <| by
-    rintro _ ⟨y, hy, rfl⟩
-    exact κ.map_source (hψs hy)
+  -- Its support is controlled through its complex-valued copy, which has the same support.
+  obtain ⟨hc, hsK⟩ := hasCompactSupport_and_tsupport_subset_image hψc hψs
+    (u := fun _ ↦ (1 : ℂ)) (v := ((↑) : ℝ → ℂ) ∘ ψ') (fun y hy ↦ by simp [hψ'κ y hy])
+    fun z hz ↦ by simp [hψ'0 z hz]
+  rw [tsupport_comp_eq (g := ((↑) : ℝ → ℂ)) Complex.ofReal_eq_zero] at hsK
+  replace hc : HasCompactSupport ψ' :=
+    (hasCompactSupport_comp_left (g := ((↑) : ℝ → ℂ)) Complex.ofReal_eq_zero).1 hc
+  have hst : tsupport ψ' ⊆ κ.target :=
+    hsK.trans (image_subset_iff.2 fun y hy ↦ κ.map_source (hψs hy))
   have hψ'd : ContDiffOn ℝ ∞ ψ' κ.target :=
     (hψ.comp_contDiffOn hκ').congr fun z hz ↦ indicator_of_mem hz _
   have hv : ContDiff ℝ ∞ fun z ↦ ψ' z • u (κ.symm z) :=

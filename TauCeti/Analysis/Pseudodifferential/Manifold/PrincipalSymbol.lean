@@ -10,6 +10,7 @@ import Mathlib.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -50,8 +51,8 @@ depends on the cutoffs only through their values at the point.
   degree `m` and vanishes at the zero covector.
 * `TauCeti.classicalPrincipalSymbol_add`, `TauCeti.classicalPrincipalSymbol_smul`: the principal
   symbol is linear in the operator.
-* `TauCeti.classicalPrincipalSymbol_eq_zero_of_mem`: an operator of order `m - 1` has principal
-  symbol `0` in order `m`.
+* `TauCeti.classicalPrincipalSymbol_eq_zero_of_mem_sub_one`: an operator of order `m - 1` has
+  principal symbol `0` in order `m`.
 * `TauCeti.classicalPrincipalSymbol_complexifyLinearMap`: the principal symbol of the
   complexification of a differential operator `D` of order at most `m` is `i ^ m` times its
   geometric principal symbol (`TauCeti.smoothPrincipalSymbol`) at nonzero covectors, the
@@ -187,7 +188,7 @@ private theorem coefficient_principal_eq_of_isChartSymbol
   -- The transported operator `u ↦ φ₁ · Op(a₂) ((ψ₁ u) ∘ κ⁻¹) ∘ κ` is the chart compression in `e₁`.
   suffices hab : IsChartSymbol P he₁ φ₁ ψ₁ b by
     rw [ha₁.eq hab, hb]
-    rfl
+    simp only [κ, OpenPartialHomeomorph.coe_trans, Function.comp_apply]
   intro u x
   obtain ⟨v, hv, hv0⟩ := exists_schwartzMap_apply_eq_smul hκ' ψ₁.contDiff ψ₁.hasCompactSupport
     hψ₁ u
@@ -223,8 +224,8 @@ private theorem coefficient_principal_eq_smul_of_isChartSymbol
   have h := coefficient_principal_eq_of_isChartSymbol he he (hsource φ) (hsource ψ)
     (fun z hz ↦ by rw [e.right_inv (φ.tsupport_subset hz), hφ' z hz])
     (fun z hz ↦ by rw [e.right_inv (ψ.tsupport_subset hz), hψ' z hz]) ha ha' y η
-  rwa [e.right_inv hy, hid.fderiv_eq, fderiv_id, ← ContinuousLinearMap.one_def, Ring.inverse_one,
-    ContinuousLinearMap.one_def, ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply] at h
+  rw [e.right_inv hy, hid.fderiv_eq] at h
+  simpa [← ContinuousLinearMap.one_def, ContinuousLinearMap.adjoint_one] using h
 
 omit [T2Space M] in
 /-- A cutoff in the preferred chart at `x`, equal to `1` near the image of `x`. -/
@@ -235,15 +236,6 @@ private theorem exists_cutoff_chartAt (x : M) :
   let ⟨χ, hχ, _⟩ := TestFunction.exists_eventually_eq_one isCompact_singleton
     (singleton_subset_iff.2 (mem_chart_target (CoordinateSpace n) x))
   ⟨χ, by simpa only [nhdsSet_singleton] using hχ⟩
-
-omit [T2Space M] in
-/-- The differential of a chart of the maximal atlas, read in `ℝⁿ`, is invertible. -/
-private theorem isInvertible_mvfderiv_of_mem_maximalAtlas
-    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M) {x : M} (hx : x ∈ e.source) :
-    (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).IsInvertible :=
-  (ContinuousLinearMap.isInvertible_equiv (f := NormedSpace.fromTangentSpace (e x))).comp
-    (isInvertible_mfderiv_chart (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx)
 
 omit [T2Space M] in
 /-- The frequency in the chart `e₂` of the covector `⟪η, ·⟫ ∘ de₁_x` is the image of `η` under the
@@ -277,7 +269,11 @@ private theorem toDual_symm_comp_inverse_mvfderiv
   congr 1
   refine A.injective ?_
   rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
-  exact (hD _).trans ((isInvertible_mvfderiv_of_mem_maximalAtlas he₂ hx₂).self_apply_inverse v)
+  -- The extension of `e₂` by the model `𝓘(ℝ, ℝⁿ)` is `e₂` itself.
+  have hinv : (mvfderiv 𝓘(ℝ, CoordinateSpace n) e₂ x).IsInvertible := by
+    simpa using isInvertible_mvfderiv_extend (IsManifold.maximalAtlas_subset_of_le (by simp) he₂)
+      hx₂
+  exact (hD _).trans (hinv.self_apply_inverse v)
 
 omit [T2Space M] in
 /-- The covector dual to `ξ ∘ (de_x)⁻¹`, composed with `de_x`, is `ξ`. -/
@@ -288,30 +284,52 @@ private theorem innerSL_toDual_symm_comp_inverse_mvfderiv
     (innerSL ℝ ((InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
       (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse))).comp
         (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x) = ξ := by
+  -- The extension of `e` by the model `𝓘(ℝ, ℝⁿ)` is `e` itself.
+  have hinv : (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).IsInvertible := by
+    simpa using isInvertible_mvfderiv_extend (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx
   ext v
   rw [ContinuousLinearMap.comp_apply, innerSL_apply_apply, InnerProductSpace.toDual_symm_apply,
-    ContinuousLinearMap.comp_apply,
-    (isInvertible_mvfderiv_of_mem_maximalAtlas he hx).inverse_apply_self]
+    ContinuousLinearMap.comp_apply, hinv.inverse_apply_self]
 
 /-! ### The principal symbol on the cotangent bundle -/
 
 variable [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
 
+/-- The chart symbol of `P` that defines `σ_m(P)(x, ·)`: the symbol of the chart compression of
+`P` in the preferred chart at `x`, with the chosen cutoff equal to `1` near the image of `x`. -/
+private def preferredChartSymbol (hP : P ∈ classicalPseudodifferentialOperators m) (x : M) :
+    ClassicalSymbol n ℂ ℂ m :=
+  chartSymbol hP (IsManifold.chart_mem_maximalAtlas x) (exists_cutoff_chartAt x).choose
+    (exists_cutoff_chartAt x).choose
+
+/-- `preferredChartSymbol hP x` is the symbol of its chart compression. -/
+private theorem isChartSymbol_preferredChartSymbol
+    (hP : P ∈ classicalPseudodifferentialOperators m) (x : M) :
+    IsChartSymbol P (IsManifold.chart_mem_maximalAtlas x) (exists_cutoff_chartAt x).choose
+      (exists_cutoff_chartAt x).choose (preferredChartSymbol hP x) :=
+  isChartSymbol_chartSymbol hP _ _ _
+
 variable (m P) in
 /-- **The principal symbol** of order `m` of a classical pseudodifferential operator `P` of order
 `m` on `M`, at a covector `ξ ∈ T*ₓM`. In every chart `e` the principal symbol of the symbol of
 the chart compression of `P` by cutoffs `φ`, `ψ` is `φ(e x) ψ(e x) σ_m(P)(x, ξ)` at the frequency
-dual to `ξ ∘ (de_x)⁻¹` (`TauCeti.coefficient_principal_eq_classicalPrincipalSymbol`). It is
-`0` when `P` is not a classical pseudodifferential operator of order `m`. -/
+dual to `ξ ∘ (de_x)⁻¹` (`TauCeti.coefficient_principal_apply_eq_classicalPrincipalSymbol`). It
+is `0` when `P` is not a classical pseudodifferential operator of order `m`. -/
 def classicalPrincipalSymbol (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) : ℂ :=
   open Classical in
   if hP : P ∈ classicalPseudodifferentialOperators m then
-    (chartSymbol hP (IsManifold.chart_mem_maximalAtlas x) (exists_cutoff_chartAt x).choose
-      (exists_cutoff_chartAt x).choose).principal.coefficient
+    (preferredChartSymbol hP x).principal.coefficient
         (chartAt (CoordinateSpace n) x x, (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
           (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n)
             (chartAt (CoordinateSpace n) x) x).inverse)) 1
   else 0
+
+/-- The principal symbol of order `m` of an operator that is not a classical pseudodifferential
+operator of order `m` is `0`, by convention. -/
+theorem classicalPrincipalSymbol_of_notMem (hP : P ∉ classicalPseudodifferentialOperators m)
+    (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m P x ξ = 0 := by
+  simp [classicalPrincipalSymbol, hP]
 
 /-- **The principal symbol in a chart.** Let `P` be a classical pseudodifferential operator of
 order `m` on `M`, and `a` the symbol of its chart compression `u ↦ φ · (P ((ψ u) ∘ e)) ∘ e⁻¹` in a
@@ -438,31 +456,27 @@ theorem classicalPrincipalSymbol_add (hP : P ∈ classicalPseudodifferentialOper
     (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
     classicalPrincipalSymbol m (P + Q) x ξ =
       classicalPrincipalSymbol m P x ξ + classicalPrincipalSymbol m Q x ξ := by
-  have ha := isChartSymbol_chartSymbol hP (IsManifold.chart_mem_maximalAtlas x)
-    (exists_cutoff_chartAt x).choose (exists_cutoff_chartAt x).choose
-  have hb := isChartSymbol_chartSymbol hQ (IsManifold.chart_mem_maximalAtlas x)
-    (exists_cutoff_chartAt x).choose (exists_cutoff_chartAt x).choose
+  have ha := isChartSymbol_preferredChartSymbol hP x
+  have hb := isChartSymbol_preferredChartSymbol hQ x
   rw [classicalPrincipalSymbol_eq_coefficient_principal (add_mem hP hQ) x
-      (a := chartSymbol hP _ _ _ + chartSymbol hQ _ _ _)
+      (a := preferredChartSymbol hP x + preferredChartSymbol hQ x)
       fun u y ↦ by rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_add, ha, hb, map_add,
         LinearMap.add_apply, ContMDiffMap.coe_add, Pi.add_apply],
     classicalPrincipalSymbol_eq_coefficient_principal hP x ha,
-    classicalPrincipalSymbol_eq_coefficient_principal hQ x hb, ClassicalSymbol.principal_add,
-    HomogeneousSymbol.coefficient_add, Pi.add_apply, add_apply]
+    classicalPrincipalSymbol_eq_coefficient_principal hQ x hb]
+  simp [ClassicalSymbol.principal_add]
 
 /-- The principal symbol is homogeneous in the operator: `σ_m(c P) = c σ_m(P)`. -/
 theorem classicalPrincipalSymbol_smul (hP : P ∈ classicalPseudodifferentialOperators m) (c : ℂ)
     (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
     classicalPrincipalSymbol m (c • P) x ξ = c * classicalPrincipalSymbol m P x ξ := by
-  have ha := isChartSymbol_chartSymbol hP (IsManifold.chart_mem_maximalAtlas x)
-    (exists_cutoff_chartAt x).choose (exists_cutoff_chartAt x).choose
+  have ha := isChartSymbol_preferredChartSymbol hP x
   rw [classicalPrincipalSymbol_eq_coefficient_principal (Submodule.smul_mem _ c hP) x
-      (a := c • chartSymbol hP _ _ _) fun u y ↦ by
+      (a := c • preferredChartSymbol hP x) fun u y ↦ by
         rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, ha, map_smul,
           LinearMap.smul_apply, ContMDiffMap.complex_smul_apply, smul_eq_mul],
-    classicalPrincipalSymbol_eq_coefficient_principal hP x ha, ClassicalSymbol.principal_smul,
-    HomogeneousSymbol.coefficient_smul, Pi.smul_apply, FunLike.coe_smul, Pi.smul_apply,
-    smul_eq_mul]
+    classicalPrincipalSymbol_eq_coefficient_principal hP x ha]
+  simp [ClassicalSymbol.principal_smul]
 
 /-- The principal symbol of the zero operator is `0`. -/
 @[simp]
@@ -475,16 +489,15 @@ theorem classicalPrincipalSymbol_zero (x : M)
 /-- **Operators of lower order.** A classical pseudodifferential operator of order `m - 1` has
 principal symbol `0` in order `m`: its chart symbols, read in order `m`, have no term of order
 `m`. -/
-theorem classicalPrincipalSymbol_eq_zero_of_mem
+theorem classicalPrincipalSymbol_eq_zero_of_mem_sub_one
     (hP : P ∈ classicalPseudodifferentialOperators (m - 1)) (x : M)
     (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
     classicalPrincipalSymbol m P x ξ = 0 := by
   have hk : m - 1 = m - ((0 + 1 : ℕ) : ℝ) := by norm_num
-  have ha := isChartSymbol_chartSymbol hP (IsManifold.chart_mem_maximalAtlas x)
-    (exists_cutoff_chartAt x).choose (exists_cutoff_chartAt x).choose
+  have ha := isChartSymbol_preferredChartSymbol hP x
   rw [classicalPrincipalSymbol_eq_coefficient_principal
       (classicalPseudodifferentialOperators_le 1 (by norm_num) hP) x
-      (a := ClassicalSymbol.inclusion (0 + 1) hk (chartSymbol hP _ _ _)) fun u y ↦ by
+      (a := ClassicalSymbol.inclusion (0 + 1) hk (preferredChartSymbol hP x)) fun u y ↦ by
         rw [ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_inclusion, ha],
     ClassicalSymbol.principal_inclusion_succ]
   simp
@@ -527,7 +540,9 @@ theorem classicalPrincipalSymbol_complexifyLinearMap {m : ℕ}
   -- `mvfderiv` is `mfderiv` followed by the identification of the tangent spaces of `ℝⁿ` with
   -- `ℝⁿ`, which is the identity.
   have hmv : (innerSL ℝ η).comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e x) =
-      (innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x) := rfl
+      (innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x) := by
+    ext v
+    exact congrArg (innerSL ℝ η) (mvfderiv_apply_eq_mfderiv_apply _ x v).symm
   rw [e.left_inv hx, hmv] at h₂
   rw [h₁, hηξ, hχ] at h₂
   have h := congrArg (fun L : ℂ →L[ℂ] ℂ ↦ L 1) h₂
