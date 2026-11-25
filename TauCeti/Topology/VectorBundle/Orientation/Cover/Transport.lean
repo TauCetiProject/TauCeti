@@ -9,6 +9,7 @@ public import TauCeti.Topology.VectorBundle.Orientation.Cover
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Fiberwise
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
 public import TauCeti.Topology.Homotopy.Monodromy.Functoriality
+import TauCeti.LinearAlgebra.Ray
 
 /-!
 # Transport of orientations along paths
@@ -21,7 +22,8 @@ construction transports degree-zero data instead.) The orientation double cover 
 map (`TauCeti.VectorBundleOrientationCover.isCoveringMap_proj`), so a path `γ` from `b₀` to `b₁`
 in the base lifts uniquely from any orientation of the fibre `E b₀`, and the endpoint of the lift
 is an orientation of `E b₁`. This is the **orientation transport**
-`TauCeti.VectorBundleOrientationCover.orientationTransport`, the monodromy of the orientation
+`TauCeti.VectorBundleOrientationCover.orientationTransport` (and, on path homotopy classes,
+`TauCeti.VectorBundleOrientationCover.quotientTransport`), the monodromy of the orientation
 double cover read on orientations of the fibres. It is canonical: no connection or
 trivialization along `γ` is chosen. It does not determine a linear map between the fibres, only
 which of their two orientations correspond.
@@ -61,6 +63,8 @@ charts (`TauCeti.detLineOrientationTransport`), without forming the bundle or it
 
 * `TauCeti.VectorBundleOrientationCover.orientationTransport`: transport of orientations along a
   path.
+* `TauCeti.VectorBundleOrientationCover.quotientTransport`: transport of orientations along a
+  homotopy class of paths.
 
 ## Main results
 
@@ -68,6 +72,9 @@ charts (`TauCeti.detLineOrientationTransport`), without forming the bundle or it
   only on the homotopy class of the path relative to its endpoints.
 * `TauCeti.VectorBundleOrientationCover.orientationTransport_map`: naturality of transport under
   fibrewise isomorphisms of bundles.
+* `TauCeti.VectorBundleOrientationCover.quotientTransport_eq_self_or_eq_neg`: around any loop
+  homotopy class in a finite-dimensional real vector bundle, transport either fixes or reverses
+  every fibre orientation.
 
 ## References
 
@@ -164,6 +171,84 @@ theorem orientationTransport_neg (γ : Path b₀ b₁) (o : Orientation ℝ (E b
   let cov := isCoveringMap_proj (F := F) (E := E) hι
   rw [orientationTransport_apply, orientationTransport_apply, ← fiberMap_deck_mk,
     ← cov.fiberMap_monodromy cov _ proj_comp_deck, fiberEquiv_fiberMap_deck]
+
+@[simp]
+theorem orientationTransport_units_smul (γ : Path b₀ b₁) (u : ℝˣ) (o : Orientation ℝ (E b₀) ι) :
+    orientationTransport E hι γ (u • o) = u • orientationTransport E hι γ o :=
+  Module.Ray.units_smul_of_map_neg (orientationTransport_neg hι γ) u o
+
+section Quotient
+
+omit hι in
+variable (E) in
+/-- **Transport of orientations along a path homotopy class.** Conjugates
+`TauCeti.coveringFiberEquiv` of `TauCeti.VectorBundleOrientationCover.isCoveringMap_proj` by
+`fiberEquiv`. -/
+def quotientTransport (hι : Fintype.card ι = finrank ℝ F) {b₀ b₁ : B}
+    (γ : Path.Homotopic.Quotient b₀ b₁) : Orientation ℝ (E b₀) ι ≃ Orientation ℝ (E b₁) ι :=
+  (fiberEquiv F E ι b₀).symm.trans
+    ((coveringFiberEquiv (isCoveringMap_proj hι) γ).trans (fiberEquiv F E ι b₁))
+
+theorem quotientTransport_mk (γ : Path b₀ b₁) :
+    quotientTransport E hι (.mk γ) = orientationTransport E hι γ :=
+  (rfl)
+
+-- Keep for explicit rewriting: `@[simp]` unfolds the LHS of `quotientTransport_neg`/`_units_smul`.
+theorem quotientTransport_apply (γ : Path.Homotopic.Quotient b₀ b₁) (o : Orientation ℝ (E b₀) ι) :
+    quotientTransport E hι γ o =
+      fiberEquiv F E ι b₁ ((isCoveringMap_proj hι).monodromy γ ⟨⟨b₀, o⟩, rfl⟩) := by
+  simp only [quotientTransport, Equiv.trans_apply, coveringFiberEquiv_apply, fiberEquiv_symm_apply]
+
+@[simp]
+theorem quotientTransport_refl (b : B) :
+    quotientTransport E hι (.refl b) = Equiv.refl (Orientation ℝ (E b) ι) := by
+  ext1 o
+  simp [quotientTransport_apply, (isCoveringMap_proj hι).monodromy_refl]
+
+theorem quotientTransport_trans (γ₁ : Path.Homotopic.Quotient b₀ b₁)
+    (γ₂ : Path.Homotopic.Quotient b₁ b₂) :
+    quotientTransport E hι (γ₁.trans γ₂) =
+      (quotientTransport E hι γ₁).trans (quotientTransport E hι γ₂) := by
+  ext1 o
+  simp only [quotientTransport, Equiv.trans_apply, coveringFiberEquiv_apply,
+    (isCoveringMap_proj hι).monodromy_trans_apply, Equiv.symm_apply_apply]
+
+@[simp]
+theorem quotientTransport_symm (γ : Path.Homotopic.Quotient b₀ b₁) :
+    quotientTransport E hι γ.symm = (quotientTransport E hι γ).symm := by
+  ext1 o
+  simp only [quotientTransport, Equiv.symm_trans_apply, Equiv.trans_apply, Equiv.symm_symm,
+    coveringFiberEquiv_apply, coveringFiberEquiv_symm_apply]
+
+/-- Orientation transport along a homotopy class of paths commutes with reversing orientations. -/
+@[simp]
+theorem quotientTransport_neg (γ : Path.Homotopic.Quotient b₀ b₁) (o : Orientation ℝ (E b₀) ι) :
+    quotientTransport E hι γ (-o) = -quotientTransport E hι γ o := by
+  let cov := isCoveringMap_proj (F := F) (E := E) hι
+  rw [quotientTransport_apply, quotientTransport_apply, ← fiberMap_deck_mk,
+    ← cov.fiberMap_monodromy cov _ proj_comp_deck, fiberEquiv_fiberMap_deck]
+
+@[simp]
+theorem quotientTransport_units_smul (γ : Path.Homotopic.Quotient b₀ b₁) (u : ℝˣ)
+    (o : Orientation ℝ (E b₀) ι) :
+    quotientTransport E hι γ (u • o) = u • quotientTransport E hι γ o :=
+  Module.Ray.units_smul_of_map_neg (quotientTransport_neg hι γ) u o
+
+/-- Around any loop homotopy class based at `b₀`, orientation transport in a finite-dimensional
+real vector bundle either fixes every fibre orientation or reverses every fibre orientation. -/
+theorem quotientTransport_eq_self_or_eq_neg [FiniteDimensional ℝ F]
+    (γ : Path.Homotopic.Quotient b₀ b₀) :
+    (∀ o, quotientTransport E hι γ o = o) ∨ (∀ o, quotientTransport E hι γ o = -o) := by
+  obtain ⟨p₀, hp₀⟩ := surjective_proj (F := F) (E := E) hι b₀
+  let o₀ : Orientation ℝ (E b₀) ι := fiberEquiv F E ι b₀ ⟨p₀, hp₀⟩
+  have hor (o : Orientation ℝ (E b₀) ι) : o = o₀ ∨ o = -o₀ :=
+    (eq_or_eq_deck hι (p := (⟨b₀, o₀⟩ : VectorBundleOrientationCover F E ι)) (q := ⟨b₀, o⟩) rfl).imp
+      mk_eq_mk_iff.1 fun h ↦ mk_eq_mk_iff.1 (by rwa [deck_apply] at h)
+  refine (hor (quotientTransport E hι γ o₀)).imp
+    (fun h₀ o ↦ (hor o).elim (fun h ↦ by rw [h, h₀]) (fun h ↦ by rw [h, quotientTransport_neg, h₀]))
+    (fun h₀ o ↦ (hor o).elim (fun h ↦ by rw [h, h₀]) (fun h ↦ by rw [h, quotientTransport_neg, h₀]))
+
+end Quotient
 
 section Map
 

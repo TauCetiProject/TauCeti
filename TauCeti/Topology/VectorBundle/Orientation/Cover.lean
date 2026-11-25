@@ -55,7 +55,9 @@ in a trivialization have locally constant determinant sign.
 * `TauCeti.VectorBundleOrientationCover.deck`: the deck involution reversing orientations.
 * `TauCeti.VectorBundleOrientationCover.fiberEquiv`: the fibre of the cover over `b` is the set
   of orientations of `E b`.
-* `TauCeti.VectorBundleOrientation.ofContinuous`: an orientation from a continuous section.
+* `TauCeti.VectorBundleOrientation.ofContinuous`,
+  `TauCeti.VectorBundleOrientation.ofContinuousPullback`: orientations of `E` and `f *ᵖ E` from
+  continuous lifts into the orientation double cover.
 * `TauCeti.VectorBundleOrientation.coverSection`: the continuous section of the cover given by an
   orientation.
 
@@ -68,6 +70,8 @@ in a trivialization have locally constant determinant sign.
   nonempty proper clopen subset of the cover is the image of a continuous section.
 * `TauCeti.VectorBundleOrientationCover.mem_sheet_of_forall_proj_mem_baseSet`: a path in the
   cover over the base set of a trivialization stays in the sheet through its starting point.
+* `TauCeti.VectorBundleOrientation.continuous_mk_pullback_iff`: continuity of a pullback lift into
+  the cover is equivalent to local constancy in the preferred trivializations of `f *ᵖ E`.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_exists_section`: a bundle is orientable if and
   only if its orientation double cover has a continuous section.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_exists_homeomorph`: a bundle is orientable if
@@ -566,6 +570,43 @@ theorem coe_ofContinuous (o : ∀ b, Orientation ℝ (E b) ι)
     ⇑(ofContinuous o ho) = o :=
   (rfl)
 
+theorem ofContinuous_apply (o : ∀ b, Orientation ℝ (E b) ι)
+    (ho : Continuous fun b ↦ (⟨b, o b⟩ : VectorBundleOrientationCover F E ι)) (b : B) :
+    ofContinuous o ho b = o b := (rfl)
+
+/-- An orientation of the pullback bundle `f *ᵖ E` from a family of fibre orientations whose
+associated lift over `f` into `VectorBundleOrientationCover F E ι` is continuous (`((⇑f) *ᵖ E) b'`
+is a type synonym for `E (f b')` inheriting its module instances). -/
+def ofContinuousPullback {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
+    (o : ∀ b', Orientation ℝ (E (f b')) ι)
+    (ho : Continuous fun b' ↦ (⟨f b', o b'⟩ : VectorBundleOrientationCover F E ι)) :
+    VectorBundleOrientation F ((⇑f) *ᵖ E) ι where
+  toFun := o
+  eventually_mapOrientation_eq' b' := by
+    have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) (f b')
+    filter_upwards [ho.continuousAt.preimage_mem_nhds
+      ((VectorBundleOrientationCover.isOpen_sheet_trivializationAt _ _).mem_nhds ⟨hb, rfl⟩)]
+      with x ⟨_, hx⟩ hx'
+    -- `trivializationAt F ((⇑f) *ᵖ E) b'` is `(trivializationAt F E (f b')).pullback f`
+    -- (`FiberBundle.pullback_trivializationAt'`).
+    change ((trivializationAt F E (f b')).pullback f).mapOrientation ι hx' (o x) =
+      ((trivializationAt F E (f b')).pullback f).mapOrientation ι
+        (FiberBundle.mem_baseSet_trivializationAt' b') (o b')
+    exact ((trivializationAt F E (f b')).mapOrientation_pullback f hx' (o x)).trans <|
+      hx.trans ((trivializationAt F E (f b')).mapOrientation_pullback f
+        (FiberBundle.mem_baseSet_trivializationAt' b') (o b')).symm
+
+@[simp]
+theorem coe_ofContinuousPullback {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
+    (o : ∀ b', Orientation ℝ (E (f b')) ι)
+    (ho : Continuous fun b' ↦ (⟨f b', o b'⟩ : VectorBundleOrientationCover F E ι)) :
+    ⇑(ofContinuousPullback f o ho) = o := (rfl)
+
+theorem ofContinuousPullback_apply {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
+    (o : ∀ b', Orientation ℝ (E (f b')) ι)
+    (ho : Continuous fun b' ↦ (⟨f b', o b'⟩ : VectorBundleOrientationCover F E ι)) (b' : B') :
+    ofContinuousPullback f o ho b' = o b' := (rfl)
+
 /-- The points of the orientation double cover lying on the section given by an orientation `o`
 form an open set. -/
 theorem isOpen_setOf_orientation_eq (o : VectorBundleOrientation F E ι) :
@@ -593,6 +634,37 @@ theorem continuous_mk_cover (hι : Fintype.card ι = finrank ℝ F)
   filter_upwards [o.eventually_mapOrientation_eq hι _ hx,
     (trivializationAt F E b).open_baseSet.mem_nhds hx] with y hy hy'
   exact ⟨hy', (hy hy').trans hxo⟩
+
+/-- An orientation of the pullback bundle `f *ᵖ E` gives a continuous lift of `f` into
+`VectorBundleOrientationCover F E ι`, provided `ι` has cardinality the rank of the bundle. -/
+theorem continuous_mk_cover_pullback {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
+    (hι : Fintype.card ι = finrank ℝ F) (o : VectorBundleOrientation F ((⇑f) *ᵖ E) ι) :
+    Continuous fun b' ↦ (⟨f b', o b'⟩ : VectorBundleOrientationCover F E ι) := by
+  refine VectorBundleOrientationCover.continuous_of_isOpen_preimage_sheet f.continuous
+    fun b o' ↦ isOpen_iff_mem_nhds.2 fun x₀ ⟨hx₀, hxo⟩ ↦ ?_
+  have hpull : x₀ ∈ ((trivializationAt F E b).pullback f).baseSet := by
+    rwa [Trivialization.pullback_baseSet]
+  filter_upwards [o.eventually_mapOrientation_eq hι ((trivializationAt F E b).pullback f) hpull,
+    f.continuous.continuousAt.preimage_mem_nhds
+      ((trivializationAt F E b).open_baseSet.mem_nhds hx₀)] with x hx hx'
+  have hpullx : x ∈ ((trivializationAt F E b).pullback f).baseSet := by
+    rwa [Trivialization.pullback_baseSet]
+  exact ⟨hx', (((trivializationAt F E b).mapOrientation_pullback f hpullx (o x)).symm.trans
+    (hx hpullx)).trans (((trivializationAt F E b).mapOrientation_pullback f hpull (o x₀)).trans
+      hxo)⟩
+
+/-- For `f : C(B', B)` and `Fintype.card ι = finrank ℝ F`, a family of fibre orientations of
+`f *ᵖ E` is locally constant in the preferred trivializations of `f *ᵖ E` iff its lift over `f`
+into `VectorBundleOrientationCover F E ι` is continuous. -/
+theorem continuous_mk_pullback_iff {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
+    (hι : Fintype.card ι = finrank ℝ F) (o : ∀ b', Orientation ℝ (((⇑f) *ᵖ E) b') ι) :
+    Continuous (fun b' ↦ (⟨f b', o b'⟩ : VectorBundleOrientationCover F E ι)) ↔
+      ∀ b₀ : B', ∀ᶠ x in 𝓝 b₀, ∀ hx : x ∈ (trivializationAt F ((⇑f) *ᵖ E) b₀).baseSet,
+        (trivializationAt F ((⇑f) *ᵖ E) b₀).mapOrientation ι hx (o x) =
+          (trivializationAt F ((⇑f) *ᵖ E) b₀).mapOrientation ι
+            (FiberBundle.mem_baseSet_trivializationAt' b₀) (o b₀) :=
+  ⟨fun ho ↦ (ofContinuousPullback f o ho).eventually_mapOrientation_eq',
+    fun ho ↦ (⟨o, ho⟩ : VectorBundleOrientation F ((⇑f) *ᵖ E) ι).continuous_mk_cover_pullback f hι⟩
 
 /-- The continuous section `b ↦ (b, o b)` of the orientation double cover given by an orientation
 `o` of the bundle, provided `ι` has cardinality the rank of the bundle. -/

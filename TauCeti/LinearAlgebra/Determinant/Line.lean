@@ -36,7 +36,8 @@ carried out here. This file sets up the pointwise object:
 * the isomorphism `f.detLine ≃ g.detLine` induced by isomorphisms of kernels and of cokernels
   (`LinearMap.detLineCongrKerCoker`);
 * the transport of determinant lines along a commuting square whose horizontal sides are linear
-  isomorphisms (`LinearMap.detLineCongr`), which is how a change of trivialization acts.
+  isomorphisms (`LinearMap.detLineCongr`), which is how a change of trivialization acts, and its
+  specialization to equal maps (`LinearMap.detLineCongrOfEq`).
 
 An automorphism of a free module acts on its determinant line by its determinant
 (`LinearEquiv.detLineCongr_apply_eq_det_smul`). Consequently, automorphisms `e₁` of the source and
@@ -731,6 +732,10 @@ theorem finrank_detLine (f : M →ₗ[K] N) :
     finrank K f.detLine = 1 := by
   rw [finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
     TauCeti.finrank_detLine]
+
+/-- The determinant line of a linear map between vector spaces is nontrivial. -/
+instance instNontrivialDetLine (f : M →ₗ[K] N) : Nontrivial f.detLine :=
+  Module.nontrivial_of_finrank_eq_succ (finrank_detLine f)
 
 end Field
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Character
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 import TauCeti.Topology.VectorBundle.Orientation.Cover.FundamentalGroup
@@ -68,8 +69,10 @@ and the orientation local system of `Q` has the orientation character as its mon
 
 ## Main results
 
-* `orientationCharacter_eq_one_iff_monodromy_eq`, `orientationCharacter_eq_neg_one_iff`: the
-  character is `1` where transport preserves an orientation and `-1` where it reverses it.
+* `orientationCharacter_eq_one_iff_monodromy_eq`, `orientationCharacter_eq_neg_one_iff`,
+  `orientationCharacter_eq_one_iff_quotientTransport_eq`,
+  `orientationCharacter_eq_neg_one_iff_quotientTransport_eq`, `quotientTransport_toPath_eq_smul`:
+  the character is `1` where transport preserves an orientation and `-1` where it reverses it.
 * `TauCeti.VectorBundleOrientation.orientationCharacter_eq_one`,
   `TauCeti.VectorBundleOrientation.nonempty_iff_orientationCharacter_eq_one`: a bundle over a
   connected, locally path-connected base is orientable exactly when its orientation character is
@@ -163,6 +166,40 @@ theorem orientationCharacter_eq_neg_one_iff {b : B} (g : FundamentalGroup B b)
       ((isCoveringMap_proj hι).monodromy g.toPath e : VectorBundleOrientationCover F E ι) =
         deck e :=
   IsCoveringMap.signCharacter_eq_neg_one_iff _ deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) _ g e
+
+/-- **The orientation character detects loops whose transport fixes a fibre orientation.** -/
+theorem orientationCharacter_eq_one_iff_quotientTransport_eq {b : B} (g : FundamentalGroup B b)
+    (o : Orientation ℝ (E b) ι) :
+    orientationCharacter F E hι b g = 1 ↔ quotientTransport E hι g.toPath o = o := by
+  rw [orientationCharacter_eq_one_iff_monodromy_eq hι g ⟨⟨b, o⟩, rfl⟩,
+    ← (fiberEquiv F E ι b).injective.eq_iff, ← quotientTransport_apply hι g.toPath o,
+    fiberEquiv_mk]
+
+/-- **The orientation character detects loops whose transport reverses a fibre orientation.** -/
+theorem orientationCharacter_eq_neg_one_iff_quotientTransport_eq {b : B}
+    (g : FundamentalGroup B b) (o : Orientation ℝ (E b) ι) :
+    orientationCharacter F E hι b g = -1 ↔ quotientTransport E hι g.toPath o = -o := by
+  have hsub : (((isCoveringMap_proj hι).monodromy g.toPath ⟨⟨b, o⟩, rfl⟩ :
+      (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι))) :
+        VectorBundleOrientationCover F E ι) = ⟨b, -o⟩ ↔
+      (isCoveringMap_proj hι).monodromy g.toPath ⟨⟨b, o⟩, rfl⟩ = ⟨⟨b, -o⟩, rfl⟩ :=
+    ⟨fun h ↦ Subtype.ext h, congrArg Subtype.val⟩
+  rw [orientationCharacter_eq_neg_one_iff hι g ⟨⟨b, o⟩, rfl⟩, deck_apply, hsub,
+    ← (fiberEquiv F E ι b).injective.eq_iff, ← quotientTransport_apply hι g.toPath o,
+    fiberEquiv_mk]
+
+/-- **Orientation transport around a loop acts by the orientation character.** -/
+theorem quotientTransport_toPath_eq_smul {b : B} (g : FundamentalGroup B b)
+    (o : Orientation ℝ (E b) ι) :
+    quotientTransport E hι g.toPath o =
+      Units.map (Int.castRingHom ℝ).toMonoidHom (orientationCharacter F E hι b g) • o := by
+  rcases Int.units_eq_one_or (orientationCharacter F E hι b g) with h | h
+  · rw [h, map_one, one_smul]
+    exact (orientationCharacter_eq_one_iff_quotientTransport_eq hι g o).1 h
+  · have hneg : Units.map (Int.castRingHom ℝ).toMonoidHom (-1 : ℤˣ) • o = -o :=
+      Module.Ray.units_smul_of_neg _ (by simp) o
+    rw [h, hneg]
+    exact (orientationCharacter_eq_neg_one_iff_quotientTransport_eq hι g o).1 h
 
 /-! ### Orientability -/
 

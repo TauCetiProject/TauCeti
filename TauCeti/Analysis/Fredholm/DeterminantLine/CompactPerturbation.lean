@@ -172,13 +172,13 @@ theorem detLineOrientationTransport_canonicalDetLineOrientation {A : ℝ → E �
     hH.comp (Continuous.prodMk_left t).continuousOn fun _ hx ↦ ⟨hx, ht⟩
   have hbot := detLineOrientationTransport_map_detLineCongrOfEq
     (T₁ := fun x ↦ (A x).restrictScalars ℝ) (T₂ := fun x ↦ H (x, 0))
-    (fun x ↦ by rw [hHapp, zero_smul, add_zero]) hAℝ (fun x hx ↦ (hAF x hx).restrictScalars ℝ)
+    (fun x _ ↦ by rw [hHapp, zero_smul, add_zero]) hAℝ (fun x hx ↦ (hAF x hx).restrictScalars ℝ)
     (hhor 0 left_mem_uIcc) (fun x hx ↦ hHF _ ⟨hx, left_mem_uIcc⟩)
     (hAF a left_mem_uIcc).complexDetLineOrientation
   rw [detLineOrientationTransport_complexDetLineOrientation hA hAF] at hbot
   have htop := detLineOrientationTransport_map_detLineCongrOfEq
     (T₁ := fun x ↦ H (x, 1)) (T₂ := fun x ↦ (A x).restrictScalars ℝ + K x)
-    (fun x ↦ by rw [hHapp, one_smul]) (hhor 1 right_mem_uIcc)
+    (fun x _ ↦ by rw [hHapp, one_smul]) (hhor 1 right_mem_uIcc)
     (fun x hx ↦ hHF _ ⟨hx, right_mem_uIcc⟩) (hAℝ.add hK)
     (fun x hx ↦ ((hAF x hx).restrictScalars ℝ).add_of_isCompactOperator (hKc x hx))
   -- Up the left edge, along the top edge, then around the rectangle and down the right edge.
@@ -273,7 +273,7 @@ theorem canonicalDetLineOrientation_congr {A' : E →L[ℂ] F} {K K' : E →L[�
   -- the identity.
   have hconst := detLineOrientationTransport_map_detLineCongrOfEq
     (T₁ := fun _ ↦ A.restrictScalars ℝ + K) (T₂ := fun s ↦ (B s).restrictScalars ℝ + L s)
-    (a := 0) (b := 1) (fun s ↦ (hT s).symm) continuousOn_const
+    (a := 0) (b := 1) (fun s _ ↦ (hT s).symm) continuousOn_const
     (fun _ _ ↦ (hA.restrictScalars ℝ).add_of_isCompactOperator hK)
     (((restrictScalarsIsometry ℂ E F ℝ ℝ).continuous.comp_continuousOn hBc.continuousOn).add
       hLc'.continuousOn)
