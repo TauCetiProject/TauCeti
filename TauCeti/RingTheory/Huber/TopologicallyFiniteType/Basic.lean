@@ -202,6 +202,14 @@ theorem isStrictlyTopologicallyFiniteType_iff {φ : A →+* B} :
           π.comp (algebraMap A (restrictedMvPowerSeriesCompletion k A)) = φ :=
   (Iff.rfl)
 
+/-- A strictly topologically finite type `A`-algebra `B` admits a surjective `A`-algebra
+homomorphism from a completed restricted power-series algebra `A⟨X₁, …, Xₖ⟩`. -/
+theorem IsStrictlyTopologicallyFiniteType.exists_surjective_algHom [Algebra A B]
+    (h : IsStrictlyTopologicallyFiniteType (algebraMap A B)) :
+    ∃ (k : ℕ) (π : restrictedMvPowerSeriesCompletion k A →ₐ[A] B), Function.Surjective π := by
+  obtain ⟨k, π, hπ, hcomm⟩ := isStrictlyTopologicallyFiniteType_iff.mp h
+  exact ⟨k, { π with commutes' := RingHom.congr_fun hcomm }, hπ.surjective⟩
+
 /-- **The presentation by the identity**: the structure map `A → A⟨X₁, …, Xₖ⟩` is strictly
 topologically of finite type. This is the witness that the conditions are simultaneously
 satisfiable. At `k = 0` it presents the structure map `A → A⟨⟩`; for the completion map `A → Â`

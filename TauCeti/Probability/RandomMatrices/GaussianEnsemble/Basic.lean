@@ -31,9 +31,8 @@ GOE (`β = 1`) or the GUE (`β = 2`). Realizations are Wigner matrices
   `TauCeti.Probability.gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one`: imaginary-part and
   `β ≠ 1` entry properties.
 * `TauCeti.Probability.gaussianEnsemble_add` and `TauCeti.Probability.gaussianEnsemble_smul`: the
-  matrix is real-linear in the array.
-* `TauCeti.Probability.gaussianEnsemble_eq_sum_smul`: the expansion in the coordinate matrices
-  `gaussianEnsemble β n (Pi.single p 1)`.
+  matrix is real-linear in the array, so `TauCeti.Probability.gaussianEnsemble_eq_sum_smul_single`
+  expands it in the ensembles of the unit arrays.
 * `TauCeti.Probability.gaussianEnsemble_single_of_lt_of_ne_one` and its siblings: the
   coordinate matrices as combinations of matrix units.
 * `TauCeti.Probability.continuous_gaussianEnsemble`: it depends continuously on the array.
@@ -281,17 +280,20 @@ theorem gaussianEnsemble_sub (g h : Fin n × Fin n → ℝ) :
   simp only [gaussianEnsemble_apply, Pi.sub_apply, Matrix.sub_apply]
   split_ifs <;> push_cast <;> ring
 
-/-- **Expansion in coordinate matrices.** The Gaussian ensemble of an array `g` is the
-combination, with coefficients `g p`, of the ensembles `gaussianEnsemble β n (Pi.single p 1)` of
-the coordinate arrays. -/
-theorem gaussianEnsemble_eq_sum_smul (g : Fin n × Fin n → ℝ) :
-    gaussianEnsemble β n g = ∑ p, g p • gaussianEnsemble β n (Pi.single p 1) := by
-  have h := map_sum (AddMonoidHom.mk' (gaussianEnsemble β n) gaussianEnsemble_add)
-    (fun p ↦ Pi.single p (g p)) Finset.univ
-  simp only [AddMonoidHom.mk'_apply, Finset.univ_sum_single] at h
-  rw [h]
-  refine Finset.sum_congr rfl fun p _ ↦ ?_
-  rw [← gaussianEnsemble_smul, ← Pi.single_smul, smul_eq_mul, mul_one]
+/-- The Gaussian ensemble of an array `g` is the combination, with coefficients `g ab`, of the
+ensembles of the unit arrays `Pi.single ab 1`. -/
+theorem gaussianEnsemble_eq_sum_smul_single (β n : ℕ) (g : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n g = ∑ ab, g ab • gaussianEnsemble β n (Pi.single ab 1) := by
+  let L : (Fin n × Fin n → ℝ) →ₗ[ℝ] Matrix (Fin n) (Fin n) ℂ :=
+    { toFun := gaussianEnsemble β n
+      map_add' := gaussianEnsemble_add
+      map_smul' := gaussianEnsemble_smul }
+  refine (L.pi_apply_eq_sum_univ g).trans (Finset.sum_congr rfl fun ab _ ↦ ?_)
+  -- The basis vectors of `pi_apply_eq_sum_univ` are the unit arrays `Pi.single ab 1`.
+  have hab : (fun j ↦ if ab = j then (1 : ℝ) else 0) = Pi.single ab 1 := by
+    ext j
+    simp [Pi.single_apply, eq_comm]
+  simp only [hab, L, LinearMap.coe_mk, AddHom.coe_mk]
 
 /-- The Gaussian ensemble depends continuously on the array. -/
 @[fun_prop]

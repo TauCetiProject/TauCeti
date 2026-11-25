@@ -46,6 +46,8 @@ finite coproducts, quotients by finite groups and epimorphisms.
 
 * `TauCeti.FiniteEtaleScheme.toEtale S`: a finite étale `S`-scheme as an object of the small
   étale site of `S`.
+* `TauCeti.FiniteEtaleScheme.toEtaleObjOfHomIso s`: for a finite étale `s : X ⟶ S`, this
+  object is `Scheme.Etale.mk s`.
 * `TauCeti.FiniteEtaleScheme.toSheaf S`: the étale sheaf of sections of a finite étale
   `S`-scheme.
 * `TauCeti.FiniteEtaleScheme.toSheafCompSheafFiberIso x`: the stalk at a geometric point `x` of
@@ -100,6 +102,13 @@ theorem forget_obj_toEtale_obj (X : FiniteEtaleScheme S) :
 theorem forget_map_toEtale_map {X Y : FiniteEtaleScheme S} (f : X ⟶ Y) :
     (Scheme.Etale.forget S).map ((toEtale S).map f) = f.hom :=
   (rfl)
+
+/-- A finite étale morphism `s : X ⟶ S`, bundled as a finite étale `S`-scheme and regarded in the
+small étale site of `S`, is the étale `S`-scheme `Scheme.Etale.mk s`. -/
+noncomputable def toEtaleObjOfHomIso {X : Scheme.{u}} (s : X ⟶ S) [IsFinite s] [Etale s] :
+    (toEtale S).obj (ofHom s) ≅ Scheme.Etale.mk s :=
+  -- Both have underlying scheme over `S` equal to `Over.mk s`.
+  (Scheme.Etale.forgetFullyFaithful S).preimageIso (eqToIso (ofHom_obj s))
 
 /-- Finite étale `S`-schemes form a full subcategory of the small étale site of `S`. -/
 noncomputable def toEtaleFullyFaithful : (toEtale S).FullyFaithful :=
