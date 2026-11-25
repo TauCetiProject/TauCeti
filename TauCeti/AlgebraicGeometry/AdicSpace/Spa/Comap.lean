@@ -32,6 +32,8 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
 ## Main results
 
 * `TauCeti.ValuationSpectrum.comap_mem_spa`: pullback preserves the sub-unit locus.
+* `TauCeti.ValuationSpectrum.comap_preimage_spa_inter_inter_spa`: pulling back a subset
+  `spa A⁺ ∩ S` cut out by a condition `S`.
 * `TauCeti.ValuationSpectrum.mem_spa_map_iff`: a continuous point lies over the image plus ring
   exactly when its pullback lies over the original one.
 * `TauCeti.ValuationSpectrum.continuous_spaComap`: `spaComap` is continuous.
@@ -84,6 +86,15 @@ theorem comap_mem_spa {φ : A →+* B} (hφ : Continuous φ) {Aplus : Subring A}
   refine ⟨hv.1.comap hφ, fun a ha ↦ ?_⟩
   rw [comap_vle, map_one]
   exact hv.2 (φ a) (hplus a ha)
+
+/-- Pulling back a subset of `spa (A, A⁺)` cut out by a condition `S`: the points of
+`spa (B, B⁺)` whose pullback lies in `spa (A, A⁺) ∩ S` are those whose pullback lies in `S`. -/
+theorem comap_preimage_spa_inter_inter_spa {φ : A →+* B} (hφ : Continuous φ)
+    {Aplus : Subring A} {Bplus : Subring B} (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (S : Set (Spv A)) :
+    comap φ ⁻¹' (spa Aplus ∩ S) ∩ spa Bplus = spa Bplus ∩ comap φ ⁻¹' S := by
+  ext v
+  exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨comap_mem_spa hφ hplus h.1, h.2⟩, h.1⟩⟩
 
 /-- A continuous point of `Spv B` lies in `spa (φ(A⁺))` exactly when its pullback along a
 continuous ring homomorphism `φ : A →+* B` lies in `spa A⁺`. -/
