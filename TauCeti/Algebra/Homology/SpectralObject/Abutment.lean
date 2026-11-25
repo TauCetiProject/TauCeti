@@ -185,8 +185,8 @@ instance (a b n : ℤ) (hab : a ≤ b) : Mono (X.abutmentFiltrationMapOfLE a b n
 
 /-- The comparison between `F_a H^n` and `F_{a+1} H^n` is the inclusion
 `X.abutmentFiltrationMap a n`. -/
-lemma abutmentFiltrationMapOfLE_add_one (a n : ℤ) (h : a ≤ a + 1) :
-    X.abutmentFiltrationMapOfLE a (a + 1) n h = X.abutmentFiltrationMap a n := by
+lemma abutmentFiltrationMapOfLE_add_one (a n : ℤ) :
+    X.abutmentFiltrationMapOfLE a (a + 1) n (by omega) = X.abutmentFiltrationMap a n := by
   rw [← cancel_mono (X.abutmentFiltrationι (a + 1) n), abutmentFiltrationMapOfLE_ι,
     abutmentFiltrationMap_ι]
 
