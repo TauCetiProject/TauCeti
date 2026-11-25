@@ -14,6 +14,7 @@ public import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.Local.Compactness
 import TauCeti.Analysis.Sobolev.Local.Compactness.ContDiff.HalfDisc
+import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Oscillation
 import TauCeti.Data.ENNReal.Inv
@@ -469,7 +470,7 @@ theorem exists_subseq_memWkpLoc_halfDisc_tendsto_wkp_halfSine {p : ℝ≥0∞} [
 order-zero case of
 `TauCeti.exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendstoLocallyUniformlyOn_iteratedFDeriv`
 applies to `halfSine`: a subsequence converges uniformly on compact subsets of `halfDisc`, which
-may meet the real axis, to a limit continuous on a neighbourhood of `halfDisc`. -/
+may meet the real axis. -/
 theorem exists_subseq_tendstoLocallyUniformlyOn_halfDisc_halfSine {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp : 2 < p) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ v : ℂ → ℝ,
@@ -486,11 +487,7 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_halfDisc_halfSine {p : ℝ≥0�
   refine ⟨φ, hφ, v, ?_⟩
   have h := hconv halfSine (fun m => ⟨univ, isOpen_univ, subset_univ _,
     (contDiff_halfSine m).contDiffOn⟩) (fun _ => .rfl) 0 le_rfl
-  simp only [iteratedFDeriv_zero_eq_comp] at h
-  have h' := (continuousMultilinearCurryFin0 ℝ ℂ ℝ).isometry.uniformContinuous
-    |>.comp_tendstoLocallyUniformlyOn h
-  simp only [Function.comp_def, LinearIsometryEquiv.apply_symm_apply] at h'
   rw [halfDisc_def]
-  exact h'
+  exact tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 h
 
 end TauCeti.RellichExamples
