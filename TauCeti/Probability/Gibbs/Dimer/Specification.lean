@@ -62,11 +62,13 @@ section Specification
 variable [G.LocallyFinite] [Countable G.edgeSet] {Γ : Type*} [Group Γ] [MulAction Γ G.edgeSet]
   {hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e}
 
+variable (Γ hΓ) in
 /-- The subshift of dimer configurations is a measurable set. -/
 theorem measurableSet_dimerSubshift :
     MeasurableSet (G.dimerSubshift Γ hΓ : Set (G.edgeSet → Bool)) :=
   (G.dimerSubshift Γ hΓ).isClosed_coe.measurableSet
 
+variable (Γ hΓ) in
 /-- The mass `γ^w_F(s | ω)` of a measurable set is measurable in `ω ∈ 𝔛(G)` for the exterior
 σ-algebra of `F`. -/
 theorem measurable_dimerBoltzmann_apply (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
@@ -88,6 +90,7 @@ theorem measurable_dimerBoltzmann_apply (w : G.edgeSet → ℝ) (F : Finset G.ed
   refine Measurable.indicator ?_ (hglue η hs)
   exact (((measurable_dimerWeight w F).comp (hglue η)).div hZ).ennreal_ofReal
 
+variable (Γ hΓ) in
 /-- The kernel `γ^w_F` of the dimer specification: the Boltzmann law `γ^w_F(· | ω)` of a dimer
 configuration `ω`, as a measure on `𝔛(G)`, measurable in `ω` for the exterior σ-algebra of
 `F`. -/
@@ -97,50 +100,52 @@ def dimerKernel (w : G.edgeSet → ℝ) (F : Finset G.edgeSet) :
     (fun ω => (G.dimerBoltzmann w F ω.val).comap Subtype.val) <| by
     refine Measure.measurable_of_measurable_coe (mα := Subtype.instMeasurableSpace)
       (mβ := (G.dimerSubshift Γ hΓ).exterior F) _ fun C hC => ?_
-    simp_rw [(MeasurableEmbedding.subtypeVal measurableSet_dimerSubshift).comap_apply]
-    exact measurable_dimerBoltzmann_apply w F
-      ((MeasurableEmbedding.subtypeVal measurableSet_dimerSubshift).measurableSet_image' hC)
+    simp_rw [(MeasurableEmbedding.subtypeVal (measurableSet_dimerSubshift _ _)).comap_apply]
+    exact measurable_dimerBoltzmann_apply Γ hΓ w F
+      ((MeasurableEmbedding.subtypeVal (measurableSet_dimerSubshift Γ hΓ)).measurableSet_image' hC)
 
 /-- The measure `γ^w_F(· | ω)` on `𝔛(G)` is the pullback of the Boltzmann law along the inclusion
 of `𝔛(G)` into the configurations. This holds by definition of `SimpleGraph.dimerKernel`. -/
 theorem dimerKernel_apply_eq_comap (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
     (ω : G.dimerSubshift Γ hΓ) :
-    dimerKernel w F ω = (G.dimerBoltzmann w F ω.val).comap Subtype.val :=
+    dimerKernel Γ hΓ w F ω = (G.dimerBoltzmann w F ω.val).comap Subtype.val :=
   (rfl)
 
 /-- The kernel `γ^w_F` gives a set `C ⊆ 𝔛(G)` the Boltzmann mass of its image. -/
 @[simp]
 theorem dimerKernel_apply (w : G.edgeSet → ℝ) (F : Finset G.edgeSet) (ω : G.dimerSubshift Γ hΓ)
     (C : Set (G.dimerSubshift Γ hΓ)) :
-    dimerKernel w F ω C = G.dimerBoltzmann w F ω.val (Subtype.val '' C) := by
+    dimerKernel Γ hΓ w F ω C = G.dimerBoltzmann w F ω.val (Subtype.val '' C) := by
   rw [dimerKernel_apply_eq_comap]
-  exact (MeasurableEmbedding.subtypeVal measurableSet_dimerSubshift).comap_apply _ _
+  exact (MeasurableEmbedding.subtypeVal (measurableSet_dimerSubshift Γ hΓ)).comap_apply _ _
 
 /-- Integrating against `γ^w_F(· | ω)` on `𝔛(G)` is integrating against the Boltzmann law. -/
 theorem lintegral_dimerKernel (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
     (ω : G.dimerSubshift Γ hΓ) (f : (G.edgeSet → Bool) → ℝ≥0∞) :
-    ∫⁻ x, f x.val ∂dimerKernel w F ω = ∫⁻ x, f x ∂G.dimerBoltzmann w F ω.val := by
+    ∫⁻ x, f x.val ∂dimerKernel Γ hΓ w F ω = ∫⁻ x, f x ∂G.dimerBoltzmann w F ω.val := by
   have h := lintegral_subtype_comap (μ := G.dimerBoltzmann w F ω.val)
-    (measurableSet_dimerSubshift (Γ := Γ) (hΓ := hΓ)) f
+    (measurableSet_dimerSubshift Γ hΓ) f
   refine h.trans (congrArg (lintegral · f) (Measure.restrict_eq_self_of_ae_mem ?_))
   rw [ae_iff]
   simpa using dimerBoltzmann_setOf_not_isDimerConfiguration w F ω.val
 
+variable (Γ hΓ) in
 /-- For a positive weight, the kernel `γ^w_F` is Markov. -/
 theorem isMarkovKernel_dimerKernel {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e)
-    (F : Finset G.edgeSet) : IsMarkovKernel (dimerKernel (Γ := Γ) (hΓ := hΓ) w F) := by
+    (F : Finset G.edgeSet) : IsMarkovKernel (dimerKernel Γ hΓ w F) := by
   refine ⟨fun ω => ⟨?_⟩⟩
   have := isProbabilityMeasure_dimerBoltzmann hw F (mem_dimerSubshift.1 ω.property)
   rw [dimerKernel_apply, image_univ, Subtype.range_coe]
-  refine (prob_compl_eq_zero_iff measurableSet_dimerSubshift).1 ?_
+  refine (prob_compl_eq_zero_iff (measurableSet_dimerSubshift Γ hΓ)).1 ?_
   rw [coe_dimerSubshift, compl_ofPred]
   exact dimerBoltzmann_setOf_not_isDimerConfiguration w F ω.val
 
+variable (Γ hΓ) in
 /-- The kernel `γ^w_F` is proper: every member of the completion set agrees with `ω` off `F`, so
 an event of the exterior σ-algebra of `F` holds for it exactly when it holds for `ω`. -/
 theorem isProper_dimerKernel (w : G.edgeSet → ℝ) (F : Finset G.edgeSet) :
-    (dimerKernel (Γ := Γ) (hΓ := hΓ) w F).IsProper := by
-  have hemb := MeasurableEmbedding.subtypeVal (measurableSet_dimerSubshift (Γ := Γ) (hΓ := hΓ))
+    (dimerKernel Γ hΓ w F).IsProper := by
+  have hemb := MeasurableEmbedding.subtypeVal (measurableSet_dimerSubshift Γ hΓ)
   refine (Kernel.isProper_iff_inter_eq_indicator_mul
     ((G.dimerSubshift Γ hΓ).exterior_le F)).2 fun A hA B hB ω => ?_
   rw [TauCeti.Subshift.exterior_def, MeasurableSpace.measurableSet_comap] at hB
@@ -164,13 +169,14 @@ theorem isProper_dimerKernel (w : G.edgeSet → ℝ) (F : Finset G.edgeSet) :
     rw [indicator_of_notMem (fun h => hωB (mem_preimage.1 h)), zero_mul,
       indicator_of_notMem fun h => hω'B (mem_of_mem_inter_right h)]
 
+variable (Γ hΓ) in
 /-- **Consistency of the dimer kernels**: `γ^w_Λ ∘ γ^w_Δ = γ^w_Δ` for `Λ ⊆ Δ`. -/
 theorem dimerKernel_comp_eq {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e) {Λ Δ : Finset G.edgeSet}
     (h : Λ ⊆ Δ) :
-    (dimerKernel (Γ := Γ) (hΓ := hΓ) w Λ).comap id
-        (measurable_id'' ((G.dimerSubshift Γ hΓ).exterior_le Λ)) ∘ₖ dimerKernel w Δ =
-      dimerKernel w Δ := by
-  have hemb := MeasurableEmbedding.subtypeVal (measurableSet_dimerSubshift (Γ := Γ) (hΓ := hΓ))
+    (dimerKernel Γ hΓ w Λ).comap id
+        (measurable_id'' ((G.dimerSubshift Γ hΓ).exterior_le Λ)) ∘ₖ dimerKernel Γ hΓ w Δ =
+      dimerKernel Γ hΓ w Δ := by
+  have hemb := MeasurableEmbedding.subtypeVal (measurableSet_dimerSubshift Γ hΓ)
   ext ω A hA
   rw [Kernel.comp_apply' _ _ _ hA]
   simp only [Kernel.comap_apply, id, dimerKernel_apply]
@@ -183,14 +189,14 @@ variable (Γ hΓ) in
 configurations: its kernel at a finite set `F` is the Boltzmann law `γ^w_F(· | ω)`. -/
 def dimerSpecification {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e) :
     TauCeti.Specification (G.dimerSubshift Γ hΓ) where
-  kernel F := dimerKernel w F
-  isMarkovKernel F := isMarkovKernel_dimerKernel hw F
-  isProper F := isProper_dimerKernel w F
-  comp_eq _ _ h := dimerKernel_comp_eq hw h
+  kernel F := dimerKernel Γ hΓ w F
+  isMarkovKernel F := isMarkovKernel_dimerKernel Γ hΓ hw F
+  isProper F := isProper_dimerKernel Γ hΓ w F
+  comp_eq _ _ h := dimerKernel_comp_eq Γ hΓ hw h
 
 @[simp]
 theorem dimerSpecification_kernel {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e) (F : Finset G.edgeSet) :
-    (dimerSpecification Γ hΓ hw).kernel F = dimerKernel w F :=
+    (dimerSpecification Γ hΓ hw).kernel F = dimerKernel Γ hΓ w F :=
   (rfl)
 
 /-- **Gauge invariance of the dimer specification.** For a positive `g`, the gauge transform
