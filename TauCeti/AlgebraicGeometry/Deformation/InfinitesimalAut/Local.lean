@@ -14,11 +14,14 @@ import Mathlib.AlgebraicGeometry.PullbackCarrier
 import TauCeti.AlgebraicGeometry.Morphisms.Thickening
 
 /-!
-# Infinitesimal automorphisms are local
+# Infinitesimal automorphisms are determined by their restrictions to an open cover
 
 Let `X` be a scheme over `Spec R` and `X[ε] = X ×_{Spec R} Spec R[ε]` its trivial first-order
-deformation. This file shows that the infinitesimal automorphisms of `X`
-(`TauCeti.AlgebraicGeometry.infinitesimalAut`) are local on `X`.
+deformation. This file restricts the infinitesimal automorphisms of `X`
+(`TauCeti.AlgebraicGeometry.infinitesimalAut`) to open subschemes of `X` and shows that an
+infinitesimal automorphism is determined by its restrictions to the members of an open cover of
+`X`. This is the uniqueness half of locality; gluing compatible local infinitesimal automorphisms
+is not proved here.
 
 The inclusion `X ⟶ X[ε]` over `ε ↦ 0` is the base change of `Spec R ⟶ Spec R[ε]`, a homeomorphism
 because its kernel `ε R` is nilpotent
@@ -55,9 +58,11 @@ is the first step in identifying the infinitesimal automorphisms of `X` with the
 * `TauCeti.AlgebraicGeometry.infinitesimalAutRestrict_comp_dualNumberDeformationMap`: the
   restriction satisfies `e|_U ≫ (U[ε] ⟶ X[ε]) = (U[ε] ⟶ X[ε]) ≫ e`, and
   `TauCeti.AlgebraicGeometry.eq_infinitesimalAutRestrict_iff` says this characterizes it.
-* `TauCeti.AlgebraicGeometry.dualNumberDeformationMap_comp`,
-  `TauCeti.AlgebraicGeometry.infinitesimalAutRestrict_infinitesimalAutRestrict_comp`: compatibility
-  of `U[ε] ⟶ X[ε]` and of restriction with composition of open immersions.
+* `TauCeti.AlgebraicGeometry.dualNumberDeformationMap_comp`: compatibility of `U[ε] ⟶ X[ε]` with
+  composition of open immersions.
+* `TauCeti.AlgebraicGeometry.infinitesimalAutRestrict_infinitesimalAutRestrict_comp`: for open
+  immersions `k : V ⟶ U` and `j : U ⟶ X`, restricting `e` to `U` and then to `V` commutes with the
+  composite `V[ε] ⟶ U[ε] ⟶ X[ε]`.
 * `TauCeti.AlgebraicGeometry.infinitesimalAut_ext_of_openCover`: infinitesimal automorphisms with
   the same restrictions to the members of an open cover are equal.
 
@@ -247,9 +252,10 @@ theorem eq_infinitesimalAutRestrict_iff {e : infinitesimalAut f} {g : infinitesi
     fun h ↦ Subtype.ext <| aut_ext f j <|
       h.trans (infinitesimalAutRestrict_comp_dualNumberDeformationMap f j e).symm⟩
 
-/-- **Transitivity of restriction.** For open immersions `k : V ⟶ U` and `j : U ⟶ X`, restricting
-`e` to `U` and then to `V` commutes with the composite `V[ε] ⟶ U[ε] ⟶ X[ε]`, which is the morphism
-`V[ε] ⟶ X[ε]` for `k ≫ j` (`dualNumberDeformationMap_comp`). -/
+/-- For open immersions `k : V ⟶ U` and `j : U ⟶ X`, the twice-restricted automorphism `(e|_U)|_V`
+commutes with the composite `V[ε] ⟶ U[ε] ⟶ X[ε]`:
+`(e|_U)|_V ≫ (V[ε] ⟶ U[ε]) ≫ (U[ε] ⟶ X[ε]) = (V[ε] ⟶ U[ε]) ≫ (U[ε] ⟶ X[ε]) ≫ e`. By
+`dualNumberDeformationMap_comp`, this composite is the morphism `V[ε] ⟶ X[ε]` for `k ≫ j`. -/
 @[reassoc]
 theorem infinitesimalAutRestrict_infinitesimalAutRestrict_comp {V : Scheme.{u}} (k : V ⟶ U)
     [IsOpenImmersion k] (e : infinitesimalAut f) :
@@ -276,8 +282,9 @@ theorem dualNumberDeformationOpenCover_f (𝒰 : X.OpenCover) (i : 𝒰.I₀) :
     (dualNumberDeformationOpenCover f 𝒰).f i = dualNumberDeformationMap f (𝒰.f i) :=
   rfl
 
-/-- **Infinitesimal automorphisms are local.** Two infinitesimal automorphisms of `X` whose
-restrictions to the members of an open cover of `X` agree are equal. -/
+/-- **Infinitesimal automorphisms are determined by their restrictions to an open cover.** Two
+infinitesimal automorphisms of `X` whose restrictions to the members of an open cover of `X` agree
+are equal. -/
 theorem infinitesimalAut_ext_of_openCover (𝒰 : X.OpenCover) {e e' : infinitesimalAut f}
     (h : ∀ i, infinitesimalAutRestrict f (𝒰.f i) e = infinitesimalAutRestrict f (𝒰.f i) e') :
     e = e' := by
