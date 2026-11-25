@@ -27,7 +27,10 @@ function.
 * **Removable singularities.** A harmonic function on a punctured neighbourhood of `a` that is
   bounded near `a` has a limit at `a`, and extends to a harmonic function on the whole
   neighbourhood (`TauCeti.harmonicOnNhd_update_limUnder_of_isBoundedUnder`,
-  `TauCeti.tendsto_limUnder_of_harmonicAt_of_isBoundedUnder`).
+  `TauCeti.tendsto_limUnder_of_harmonicAt_of_isBoundedUnder`). It suffices that `u` is bounded on
+  the punctured neighbourhood (`TauCeti.harmonicOnNhd_update_limUnder_of_bddAbove`), and a
+  function harmonic on a punctured neighbourhood of `a` is harmonic at `a` exactly when it is
+  continuous there (`TauCeti.harmonicOnNhd_sdiff_singleton_and_continuousAt_iff`).
 
 Both fail in dimension one. On `(-1, 1) \ {0}` the function `1 - |x|` is harmonic, vanishes at
 `±1` and is positive, and the function equal to `0` on `(-1, 0)` and to `1` on `(0, 1)` is
@@ -254,5 +257,29 @@ theorem tendsto_limUnder_of_harmonicAt_of_isBoundedUnder (hE : 2 ≤ Module.finr
   rw [eventually_nhdsWithin_iff] at hu
   have H := harmonicOnNhd_update_limUnder_of_isBoundedUnder hE hu (fun x hx ↦ hx.1 hx.2) hb
   exact continuousAt_update_same.1 (H a (mem_of_mem_nhds hu)).1.continuousAt
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- **Removable singularity theorem for harmonic functions.** In dimension at least two, let `s`
+be a neighbourhood of `a` and let `u` be harmonic and bounded on `s \ {a}`. Then `u` redefined to
+be `limUnder (𝓝[≠] a) u` at `a` is harmonic on `s`. -/
+theorem harmonicOnNhd_update_limUnder_of_bddAbove [DecidableEq E] (hE : 2 ≤ Module.finrank ℝ E)
+    (hs : s ∈ 𝓝 a) (hu : HarmonicOnNhd u (s \ {a}))
+    (hb : BddAbove ((fun x ↦ |u x|) '' (s \ {a}))) :
+    HarmonicOnNhd (update u a (limUnder (𝓝[≠] a) u)) s :=
+  harmonicOnNhd_update_limUnder_of_isBoundedUnder hE hs hu
+    (hb.isBoundedUnder (sdiff_mem_nhdsWithin_compl hs {a}))
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- In dimension at least two, a function harmonic on a punctured neighbourhood `s \ {a}` of `a`
+is harmonic on `s` exactly when it is continuous at `a`. -/
+theorem harmonicOnNhd_sdiff_singleton_and_continuousAt_iff (hE : 2 ≤ Module.finrank ℝ E)
+    (hs : s ∈ 𝓝 a) : HarmonicOnNhd u (s \ {a}) ∧ ContinuousAt u a ↔ HarmonicOnNhd u s := by
+  classical
+  refine ⟨fun ⟨hu, hc⟩ ↦ ?_, fun hu ↦
+    ⟨hu.mono sdiff_subset, (hu a (mem_of_mem_nhds hs)).1.continuousAt⟩⟩
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  have htend : Tendsto u (𝓝[≠] a) (𝓝 (u a)) := hc.tendsto.mono_left nhdsWithin_le_nhds
+  simpa [htend.limUnder_eq] using
+    harmonicOnNhd_update_limUnder_of_isBoundedUnder hE hs hu htend.abs.isBoundedUnder_le
 
 end TauCeti
