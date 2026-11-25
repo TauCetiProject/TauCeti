@@ -73,10 +73,9 @@ theorem lineMap_vsub_lineMap_eq_vsub_add_smul_sub_smul {k V P : Type*} [Ring k] 
   abel
 
 /-- Over a division ring, an affine map which is injective on an affine subspace `S` has an affine
-left inverse on `S`. This is the affine counterpart of
-`LinearMap.exists_leftInverse_of_injective`, applied to the linear part of `f` on the direction of
-`S` and transported by translations. No topology is involved; for a continuous left inverse into
-a finite-dimensional normed target see `AffineMap.exists_leftInvOn_affineSpan`. -/
+left inverse on `S`. For a continuous affine left inverse on the affine span of a set where the
+original map is injective and has affinely independent image, with the original map's target a
+finite-dimensional normed space, see `AffineMap.exists_leftInvOn_affineSpan`. -/
 theorem exists_leftInvOn_of_injOn {k V₁ P₁ V₂ P₂ : Type*} [DivisionRing k] [AddCommGroup V₁]
     [Module k V₁] [AddTorsor V₁ P₁] [AddCommGroup V₂] [Module k V₂] [AddTorsor V₂ P₂]
     (f : P₁ →ᵃ[k] P₂) {S : AffineSubspace k P₁} (hf : Set.InjOn f S) :
@@ -85,7 +84,7 @@ theorem exists_leftInvOn_of_injOn {k V₁ P₁ V₂ P₂ : Type*} [DivisionRing 
   · obtain ⟨p⟩ := ‹AddTorsor V₁ P₁›.nonempty
     exact ⟨const k P₂ p, fun x hx => absurd (hS ▸ hx) (Set.notMem_empty x)⟩
   have : Nonempty S := ⟨⟨p₀, hp₀⟩⟩
-  -- The linear part of `f` is injective on the direction of `S`.
+  -- Use `LinearMap.exists_leftInverse_of_injective` on the direction, then translate back.
   obtain ⟨g, hg⟩ := (f.linear.domRestrict S.direction).exists_leftInverse_of_injective
     (LinearMap.ker_eq_bot.2 ((f.comp S.subtype).linear_injective_iff.2 hf.injective))
   refine ⟨(AffineEquiv.vaddConst k p₀).toAffineMap.comp ((S.direction.subtype ∘ₗ g).toAffineMap.comp

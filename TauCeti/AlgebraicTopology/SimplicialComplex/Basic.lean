@@ -113,8 +113,10 @@ theorem finite_faces_map_iff_of_injOn {κ : Type*} [DecidableEq κ]
   refine Set.finite_image_iff fun σ hσ τ hτ hστ => ?_
   have hsub {ρ : Finset ι} (hρ : ρ ∈ K) : (ρ : Set ι) ⊆ {v | ({v} : Finset ι) ∈ K} :=
     fun _ hv => singleton_mem_of_mem hρ hv
-  rw [← Finset.coe_inj, ← hf.image_eq_image_iff (hsub hσ) (hsub hτ), ← Finset.coe_image,
-    ← Finset.coe_image, hστ]
+  classical
+  exact (Finset.image_eq_image_iff_of_injOn
+    (hf.mono (by simpa only [Finset.coe_union] using Set.union_subset (hsub hσ) (hsub hτ)))
+    Finset.subset_union_left Finset.subset_union_right).1 hστ
 
 /-- The image of a complex depends only on the values of the vertex map at its vertices. -/
 theorem map_congr {κ : Type*} [DecidableEq κ] {f g : ι → κ}
@@ -162,11 +164,24 @@ theorem map_bot {κ : Type*} [DecidableEq κ] (f : ι → κ) :
     obtain ⟨_, hρ, -⟩ := mem_map_iff.mp hτ
     exact hρ.elim
 
-/-- Two pre-abstract simplicial complexes have the same image under an injective vertex map if and
-only if they are equal. -/
-theorem map_inj_of_injective {κ : Type*} [DecidableEq κ] (f : ι → κ)
-    (hf : Function.Injective f) : K.map f = L.map f ↔ K = L :=
-  (map_injective hf).eq_iff
+/-- Two precomplexes have the same image exactly when they are equal, provided the vertex map is
+injective on the union of their supported vertex sets. -/
+theorem map_inj_of_injOn {κ : Type*} [DecidableEq κ] (f : ι → κ)
+    (hf : Set.InjOn f ({v | ({v} : Finset ι) ∈ K} ∪ {v | ({v} : Finset ι) ∈ L})) :
+    K.map f = L.map f ↔ K = L := by
+  classical
+  have hsub {ρ : Finset ι} (hρ : ρ ∈ K.faces ∪ L.faces) :
+      (ρ : Set ι) ⊆ {v | ({v} : Finset ι) ∈ K} ∪ {v | ({v} : Finset ι) ∈ L} :=
+    fun _ hv => hρ.elim (fun h => Or.inl (singleton_mem_of_mem h hv))
+      (fun h => Or.inr (singleton_mem_of_mem h hv))
+  have hinj : Set.InjOn (fun ρ : Finset ι => ρ.image f) (K.faces ∪ L.faces) := by
+    intro σ hσ τ hτ hστ
+    exact (Finset.image_eq_image_iff_of_injOn
+      (hf.mono (by simpa only [Finset.coe_union] using Set.union_subset (hsub hσ) (hsub hτ)))
+      Finset.subset_union_left Finset.subset_union_right).1 hστ
+  refine ⟨fun h => PreAbstractSimplicialComplex.ext ?_, fun h => congrArg (·.map f) h⟩
+  apply (hinj.image_eq_image_iff Set.subset_union_left Set.subset_union_right).1
+  simpa only [faces_map] using congrArg PreAbstractSimplicialComplex.faces h
 
 /-- The image of a precomplex under any vertex map is void if and only if the source precomplex is
 void. -/

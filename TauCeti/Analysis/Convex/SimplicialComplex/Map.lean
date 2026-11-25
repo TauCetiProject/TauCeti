@@ -38,7 +38,7 @@ The map can be undone on the image. The inverse of `f` on `|K|` is again affine 
 the image, because an affine map injective on the convex hull of a face has an affine left inverse
 on its affine span (`AffineMap.exists_leftInvOn_of_injOn`), and it carries the image of `K` back to
 `K` (`Geometry.SimplicialComplex.map_invFunOn_map`). Images under `f` also determine complexes on
-whose underlying spaces `f` is injective (`Geometry.SimplicialComplex.map_inj_of_injOn`). The
+the union of whose vertex sets `f` is injective (`Geometry.SimplicialComplex.map_inj_of_injOn`). The
 correspondence of subdivisions this yields is in
 `TauCeti.Analysis.Convex.SimplicialComplex.Subdivision.Map`.
 
@@ -127,6 +127,13 @@ theorem faces_map [DecidableEq F] :
   ext t
   simp only [mem_map_faces, Set.mem_image, ← coe_inj, coe_image]
 
+/-- The underlying precomplex of a geometric image is the relabeling of the source precomplex. -/
+theorem toPreAbstractSimplicialComplex_map [DecidableEq F] :
+    (K.map f hf haff).toPreAbstractSimplicialComplex =
+      K.toPreAbstractSimplicialComplex.map f := by
+  apply PreAbstractSimplicialComplex.ext
+  rw [faces_map, PreAbstractSimplicialComplex.faces_map]
+
 /-- The image of `K` triangulates the image of the underlying space of `K`. -/
 @[simp]
 theorem space_map : (K.map f hf haff).space = f '' K.space := by
@@ -164,6 +171,7 @@ the vertices of `K`. -/
 @[simp]
 theorem finite_faces_map_iff : (K.map f hf haff).faces.Finite ↔ K.faces.Finite := by
   classical
+  rw [faces_map, ← PreAbstractSimplicialComplex.faces_map]
   exact PreAbstractSimplicialComplex.finite_faces_map_iff_of_injOn f
     (hf.mono fun v hv => K.subset_space hv (Finset.mem_singleton_self v))
 
@@ -198,19 +206,36 @@ theorem map_map {f₂ : F → G} {hf₂ : InjOn f₂ (K.map f hf haff).space}
   classical
   exact ⟨s.image f, ⟨s, hs, coe_image.symm⟩, by rw [coe_image, ← image_comp, hsu]⟩
 
+/-- A left inverse of `f` on `|K|` agrees with an affine map on each face of the image of `K`. -/
+theorem simplexwise_affine_of_leftInvOn {f₂ : F → E} (h : LeftInvOn f₂ f K.space) :
+    ∀ t ∈ (K.map f hf haff).faces,
+      ∃ g : F →ᵃ[𝕜] E, EqOn f₂ g (convexHull 𝕜 (t : Set F)) := by
+  intro t ht
+  obtain ⟨s, hs, hst⟩ := mem_map_faces.1 ht
+  obtain ⟨g, hg⟩ := haff s hs
+  -- Extend injectivity from the convex hull to its affine span, then take an affine left inverse.
+  have hinj : InjOn g (affineSpan 𝕜 (s : Set E)) :=
+    (g.injOn_affineSpan_iff_injOn_convexHull _).2 ((hf.mono (convexHull_subset_space hs)).congr hg)
+  obtain ⟨g', hg'⟩ := g.exists_leftInvOn_of_injOn hinj
+  refine ⟨g', ?_⟩
+  rw [← hst, ← hg.image_convexHull]
+  rintro _ ⟨x, hx, rfl⟩
+  rw [h (convexHull_subset_space hs hx), hg hx,
+    hg' (convexHull_subset_affineSpan _ hx)]
+
 /-- Mapping by `f` and then by a left inverse of `f` on `|K|` gives back `K`. -/
-theorem map_map_of_leftInvOn {f₂ : F → E} (h : LeftInvOn f₂ f K.space)
-    {hf₂ : InjOn f₂ (K.map f hf haff).space}
-    {haff₂ : ∀ t ∈ (K.map f hf haff).faces, ∃ g : F →ᵃ[𝕜] E, EqOn f₂ g (convexHull 𝕜 (t : Set F))} :
-    (K.map f hf haff).map f₂ hf₂ haff₂ = K := by
+theorem map_map_of_leftInvOn {f₂ : F → E} (h : LeftInvOn f₂ f K.space) :
+    (K.map f hf haff).map f₂ (by rw [space_map]; exact h.rightInvOn_image.injOn)
+      (simplexwise_affine_of_leftInvOn h) = K := by
   rw [map_map (hf₂₁ := (injOn_id _).congr h.eqOn.symm)
       (haff₂₁ := fun s hs => ⟨AffineMap.id 𝕜 E, h.eqOn.mono (convexHull_subset_space hs)⟩),
     map_congr h.eqOn (hf' := injOn_id _) (haff' := fun _ _ => ⟨AffineMap.id 𝕜 E, fun _ _ => rfl⟩),
     map_id]
 
-/-- **Cancellation of images.** Two complexes on whose union of underlying spaces `f` is
-injective have the same image under `f` exactly when they are equal. -/
-theorem map_inj_of_injOn {K₁ K₂ : SimplicialComplex 𝕜 E} (hf : InjOn f (K₁.space ∪ K₂.space))
+/-- **Cancellation of images.** Two complexes on the union of whose vertex sets `f` is injective
+have the same image under `f` exactly when they are equal. -/
+theorem map_inj_of_injOn {K₁ K₂ : SimplicialComplex 𝕜 E}
+    (hf : InjOn f (K₁.vertices ∪ K₂.vertices))
     {hf₁ : InjOn f K₁.space}
     {haff₁ : ∀ s ∈ K₁.faces, ∃ g : E →ᵃ[𝕜] F, EqOn f g (convexHull 𝕜 (s : Set E))}
     {hf₂ : InjOn f K₂.space}
@@ -218,20 +243,11 @@ theorem map_inj_of_injOn {K₁ K₂ : SimplicialComplex 𝕜 E} (hf : InjOn f (K
     K₁.map f hf₁ haff₁ = K₂.map f hf₂ haff₂ ↔ K₁ = K₂ := by
   classical
   refine ⟨fun h => ?_, fun h => by subst h; rfl⟩
-  have key (L₁ L₂ : SimplicialComplex 𝕜 E) (hL₁ : L₁.space ⊆ K₁.space ∪ K₂.space)
-      (hL₂ : L₂.space ⊆ K₁.space ∪ K₂.space) {hf₁ : InjOn f L₁.space}
-      {haff₁ : ∀ s ∈ L₁.faces, ∃ g : E →ᵃ[𝕜] F, EqOn f g (convexHull 𝕜 (s : Set E))}
-      {hf₂ : InjOn f L₂.space}
-      {haff₂ : ∀ s ∈ L₂.faces, ∃ g : E →ᵃ[𝕜] F, EqOn f g (convexHull 𝕜 (s : Set E))}
-      (h : L₁.map f hf₁ haff₁ = L₂.map f hf₂ haff₂) {s : Finset E} (hs : s ∈ L₁.faces) :
-      s ∈ L₂.faces := by
-    obtain ⟨u, hu, hus⟩ := mem_map_faces.1 (h ▸ image_mem_map_faces (hf := hf₁) (haff := haff₁) hs)
-    rw [coe_image, hf.image_eq_image_iff ((L₂.subset_space hu).trans hL₂)
-      ((L₁.subset_space hs).trans hL₁), coe_inj] at hus
-    exact hus ▸ hu
+  have hpre := congrArg SimplicialComplex.toPreAbstractSimplicialComplex h
+  rw [toPreAbstractSimplicialComplex_map, toPreAbstractSimplicialComplex_map] at hpre
+  have heq := (PreAbstractSimplicialComplex.map_inj_of_injOn f hf).1 hpre
   ext s
-  exact ⟨key K₁ K₂ subset_union_left subset_union_right h,
-    key K₂ K₁ subset_union_right subset_union_left h.symm⟩
+  exact iff_of_eq (congrArg (s ∈ ·.faces) heq)
 
 /-- The inverse of `f` on `|K|` is injective on the underlying space of the image of `K`. -/
 theorem injOn_invFunOn_space_map :
@@ -239,29 +255,11 @@ theorem injOn_invFunOn_space_map :
   rw [space_map]
   exact Function.invFunOn_injOn_image f K.space
 
-/-- The inverse of `f` on `|K|` agrees with an affine map on each face of the image of `K`: an
-affine map injective on the convex hull of a face is injective on its affine span, where it has
-an affine left inverse. -/
-theorem exists_affineMap_eqOn_invFunOn :
-    ∀ t ∈ (K.map f hf haff).faces,
-      ∃ g : F →ᵃ[𝕜] E, EqOn (Function.invFunOn f K.space) g (convexHull 𝕜 (t : Set F)) := by
-  intro t ht
-  obtain ⟨s, hs, hst⟩ := mem_map_faces.1 ht
-  obtain ⟨g, hg⟩ := haff s hs
-  have hinj : InjOn g (affineSpan 𝕜 (s : Set E)) :=
-    (g.injOn_affineSpan_iff_injOn_convexHull _).2 ((hf.mono (convexHull_subset_space hs)).congr hg)
-  obtain ⟨g', hg'⟩ := g.exists_leftInvOn_of_injOn hinj
-  refine ⟨g', ?_⟩
-  rw [← hst, ← hg.image_convexHull]
-  rintro _ ⟨x, hx, rfl⟩
-  rw [hf.leftInvOn_invFunOn (convexHull_subset_space hs hx), hg hx,
-    hg' (convexHull_subset_affineSpan _ hx)]
-
 /-- The inverse of `f` on `|K|` carries the image of `K` back to `K`. -/
 @[simp]
 theorem map_invFunOn_map :
     (K.map f hf haff).map (Function.invFunOn f K.space) injOn_invFunOn_space_map
-      exists_affineMap_eqOn_invFunOn = K :=
+      (simplexwise_affine_of_leftInvOn hf.leftInvOn_invFunOn) = K :=
   map_map_of_leftInvOn hf.leftInvOn_invFunOn
 
 end Geometry.SimplicialComplex

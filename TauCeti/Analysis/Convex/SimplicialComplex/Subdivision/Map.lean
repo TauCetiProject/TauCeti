@@ -15,11 +15,11 @@ Let `f` be injective on the underlying space `|K|` of a geometric simplicial com
 with an affine map on the convex hull of each face of `K`. Subdivisions correspond under `f`.
 A subdivision of `K` is carried to a subdivision of the image `K.map f`
 (`Geometry.SimplicialComplex.IsSubdivision.map`), since `f` is still affine on each of its faces
-(`Geometry.SimplicialComplex.IsSubdivision.exists_affineMap_eqOn`). Conversely every subdivision of
-the image is the image of exactly one subdivision of `K`
+(`Geometry.SimplicialComplex.simplexwise_affine_of_convexHull_subset`). Conversely every
+subdivision of the image is the image of exactly one subdivision of `K`
 (`Geometry.SimplicialComplex.IsSubdivision.existsUnique_isSubdivision_map_eq`): the inverse of `f`
 on `|K|` is again affine on every face of the image
-(`Geometry.SimplicialComplex.exists_affineMap_eqOn_invFunOn`), and images under `f` of complexes
+(`Geometry.SimplicialComplex.simplexwise_affine_of_leftInvOn`), and images under `f` of complexes
 inside `|K|` determine the complexes (`Geometry.SimplicialComplex.map_inj_of_injOn`). So a
 triangulation of the image polyhedron chosen in the target, for instance to fit it together with
 another polyhedron there, is pulled back to a subdivision of `K` on which `f` is still simplexwise
@@ -53,8 +53,9 @@ variable {𝕜 E F : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing
 /-- **Images of subdivisions are subdivisions.** If `K'` subdivides `K`, then the image of `K'`
 under a map injective on `|K|` and affine on every face of `K` subdivides the image of `K`. -/
 theorem IsSubdivision.map (h : K'.IsSubdivision K) :
-    (K'.map f (hf.mono h.space_eq.le) (h.exists_affineMap_eqOn haff)).IsSubdivision
-      (K.map f hf haff) := by
+    (K'.map f (hf.mono h.space_eq.le)
+      (simplexwise_affine_of_convexHull_subset h.exists_convexHull_subset haff)).IsSubdivision
+        (K.map f hf haff) := by
   classical
   refine ⟨by rw [space_map, space_map, h.space_eq], fun t ht => ?_⟩
   obtain ⟨s', hs', hst⟩ := mem_map_faces.1 ht
@@ -71,17 +72,21 @@ affine on every face of `K`. Every subdivision `L` of the image of `K` under `f`
 theorem IsSubdivision.existsUnique_isSubdivision_map_eq {L : SimplicialComplex 𝕜 F}
     (hL : L.IsSubdivision (K.map f hf haff)) :
     ∃! K' : SimplicialComplex 𝕜 E, ∃ hK' : K'.IsSubdivision K,
-      K'.map f (hf.mono hK'.space_eq.le) (hK'.exists_affineMap_eqOn haff) = L := by
+      K'.map f (hf.mono hK'.space_eq.le)
+        (simplexwise_affine_of_convexHull_subset hK'.exists_convexHull_subset haff) = L := by
   have hK' := hL.map (f := Function.invFunOn f K.space) (hf := injOn_invFunOn_space_map)
-    (haff := exists_affineMap_eqOn_invFunOn)
+    (haff := simplexwise_affine_of_leftInvOn hf.leftInvOn_invFunOn)
   rw [map_invFunOn_map] at hK'
   -- `f` undoes its inverse on `L.space = f '' K.space`.
   have hleft : LeftInvOn f (Function.invFunOn f K.space) L.space := by
     rw [hL.space_eq, space_map]
     exact (surjOn_image f K.space).rightInvOn_invFunOn
   refine ⟨_, ⟨hK', map_map_of_leftInvOn hleft⟩, fun K₁ ⟨hK₁, hK₁L⟩ => ?_⟩
-  exact (map_inj_of_injOn (hf.mono (union_subset hK₁.space_eq.le hK'.space_eq.le))
-    (hf₂ := hf.mono hK'.space_eq.le) (haff₂ := hK'.exists_affineMap_eqOn haff)).1
+  exact (map_inj_of_injOn (hf.mono (union_subset
+      (K₁.vertices_subset_space.trans hK₁.space_eq.le)
+      (vertices_subset_space.trans hK'.space_eq.le)))
+    (hf₂ := hf.mono hK'.space_eq.le)
+    (haff₂ := simplexwise_affine_of_convexHull_subset hK'.exists_convexHull_subset haff)).1
     (hK₁L.trans (map_map_of_leftInvOn hleft).symm)
 
 end Geometry.SimplicialComplex

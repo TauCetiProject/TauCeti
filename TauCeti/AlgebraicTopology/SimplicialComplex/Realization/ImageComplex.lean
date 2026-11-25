@@ -42,8 +42,8 @@ other polyhedra there needs exactly this, as in Munkres' construction of smooth 
 
 * `AbstractSimplicialComplex.mem_imageComplex_faces`,
   `AbstractSimplicialComplex.faces_imageComplex`: its faces are the images of the faces of `K`.
-* `AbstractSimplicialComplex.space_imageComplex`: it triangulates the image of the linear
-  extension.
+* `AbstractSimplicialComplex.space_imageComplex`: its underlying space equals the range of the
+  linear extension.
 * `AbstractSimplicialComplex.vertices_imageComplex`: its vertices are the points `p v`.
 * `AbstractSimplicialComplex.finite_faces_imageComplex_iff`: it is finite exactly when `K` is.
 
@@ -85,36 +85,32 @@ theorem imageComplex_def :
       (fun _ _ => ⟨(Finsupp.linearCombination ℝ p).toAffineMap, fun _ _ => rfl⟩) :=
   (rfl)
 
+/-- The underlying abstract complex of the image complex is the relabeling of `K` by `p`. -/
+theorem toPreAbstractSimplicialComplex_imageComplex [DecidableEq E] :
+    (K.imageComplex p hp).toPreAbstractSimplicialComplex =
+      K.toPreAbstractSimplicialComplex.map p := by
+  classical
+  rw [imageComplex_def, Geometry.SimplicialComplex.toPreAbstractSimplicialComplex_map,
+    toPreAbstractSimplicialComplex_standardGeometricComplex, PreAbstractSimplicialComplex.map_map]
+  -- The standard precomplex relabels vertices by coordinate vectors; compose this with `p`.
+  simp only [Function.comp_def, Finsupp.linearCombination_single, one_smul]
+
 /-- The faces of the image complex are the images under `p` of the faces of `K`. -/
 @[simp]
 theorem mem_imageComplex_faces {t : Finset E} :
     t ∈ (K.imageComplex p hp).faces ↔ ∃ σ ∈ K, p '' (σ : Set ι) = t := by
   classical
-  -- The linear combination of `p` sends the coordinate simplex of `σ` onto `p '' σ`.
-  have himage (σ : Finset ι) : Finsupp.linearCombination ℝ p ''
-      ((σ.image fun v => Finsupp.single v (1 : ℝ) : Finset (ι →₀ ℝ)) : Set (ι →₀ ℝ)) =
-      p '' σ := by
-    rw [Finset.coe_image, image_image]
-    simp
-  simp only [imageComplex_def, Geometry.SimplicialComplex.mem_map_faces,
-    mem_standardGeometricComplex_faces_iff]
-  refine ⟨fun ⟨_, ⟨σ, hσ, hσs⟩, hst⟩ => ⟨σ, hσ, ?_⟩, fun ⟨σ, hσ, hσt⟩ => ⟨_, ⟨σ, hσ, rfl⟩, ?_⟩⟩
-  · rw [← himage, hσs, hst]
-  · rw [himage, hσt]
-
-/-- The underlying abstract complex of the image complex is the relabeling of `K` by `p`. -/
-theorem toPreAbstractSimplicialComplex_imageComplex [DecidableEq E] :
-    (K.imageComplex p hp).toPreAbstractSimplicialComplex = K.toPreAbstractSimplicialComplex.map p :=
-  SetLike.ext fun _ => mem_imageComplex_faces.trans <| by
-    simp only [PreAbstractSimplicialComplex.mem_map_iff, mem_toPreAbstractSimplicialComplex,
-      ← Finset.coe_image, Finset.coe_inj]
+  rw [PreAbstractSimplicialComplex.mem_faces, toPreAbstractSimplicialComplex_imageComplex,
+    PreAbstractSimplicialComplex.mem_map_iff]
+  simp only [mem_toPreAbstractSimplicialComplex, ← Finset.coe_inj, Finset.coe_image]
 
 /-- The face set of the image complex is the direct image under `p` of the face set of `K`. -/
 theorem faces_imageComplex [DecidableEq E] :
-    (K.imageComplex p hp).faces = (fun σ : Finset ι => σ.image p) '' K.faces :=
-  congrArg PreAbstractSimplicialComplex.faces toPreAbstractSimplicialComplex_imageComplex
+    (K.imageComplex p hp).faces = (fun σ : Finset ι => σ.image p) '' K.faces := by
+  rw [← PreAbstractSimplicialComplex.faces_map]
+  exact congrArg PreAbstractSimplicialComplex.faces toPreAbstractSimplicialComplex_imageComplex
 
-/-- The image complex triangulates the image of the linear extension of `p`. -/
+/-- The underlying space of the image complex equals the range of the linear extension of `p`. -/
 @[simp]
 theorem space_imageComplex : (K.imageComplex p hp).space = range (K.linearExtension p) := by
   ext y
