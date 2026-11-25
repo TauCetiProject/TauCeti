@@ -61,6 +61,19 @@ namespace AlgebraicGeometry.Scheme
 
 variable {X Y Z : Scheme.{u}}
 
+/-- A partial map `f` from an irreducible scheme sends the closed point of `Spec K(X)` to the
+image under `f.hom` of the generic point of `X`, which lies in the domain of `f`. -/
+theorem PartialMap.fromFunctionField_closedPoint_eq_hom [IrreducibleSpace X] (f : X.PartialMap Y) :
+    f.fromFunctionField (closedPoint _) = f.hom ⟨genericPoint X, f.genericPoint_mem_domain⟩ := by
+  have hp : f.domain.fromSpecStalkOfMem (genericPoint X) f.genericPoint_mem_domain
+      (closedPoint _) = ⟨genericPoint X, f.genericPoint_mem_domain⟩ := by
+    apply f.domain.ι.isOpenEmbedding.injective
+    -- evaluate `fromSpecStalkOfMem ≫ ι = fromSpecStalk` at the closed point
+    have h := congr($(Opens.fromSpecStalkOfMem_ι f.domain _ f.genericPoint_mem_domain)
+      (closedPoint _))
+    exact (Scheme.Hom.comp_apply _ _ _).symm.trans (h.trans fromSpecStalk_closedPoint)
+  exact (Scheme.Hom.comp_apply _ _ _).trans (congrArg f.hom hp)
+
 section Irreducible
 
 variable [IrreducibleSpace X] [IrreducibleSpace Y]
@@ -71,14 +84,10 @@ theorem PartialMap.fromFunctionField_closedPoint (f : X.PartialMap Y) [IsDominan
     f.fromFunctionField (closedPoint _) = genericPoint Y := by
   have : Nonempty f.domain := f.dense_domain.nonempty.to_subtype
   have : IrreducibleSpace f.domain := f.domain.ι.isOpenEmbedding.irreducibleSpace
-  have hη := f.genericPoint_mem_domain
-  have hp : f.domain.fromSpecStalkOfMem (genericPoint X) hη (closedPoint _) =
-      genericPoint f.domain := f.domain.ι.isOpenEmbedding.injective <|
-    (Scheme.Hom.comp_apply _ _ _).symm.trans <|
-      congr($(Opens.fromSpecStalkOfMem_ι f.domain _ hη) _).trans <|
-        fromSpecStalk_closedPoint.trans f.domain.ι.genericPoint_eq_of_isDominant.symm
-  exact (Scheme.Hom.comp_apply _ _ _).trans
-    ((congrArg f.hom hp).trans f.hom.genericPoint_eq_of_isDominant)
+  -- the generic point of `X` is the generic point of the domain
+  have hη : (⟨genericPoint X, f.genericPoint_mem_domain⟩ : f.domain) = genericPoint f.domain :=
+    f.domain.ι.isOpenEmbedding.injective f.domain.ι.genericPoint_eq_of_isDominant.symm
+  rw [f.fromFunctionField_closedPoint_eq_hom, hη, f.hom.genericPoint_eq_of_isDominant]
 
 /-- A dominant rational map of irreducible schemes sends the closed point of `Spec K(X)` to the
 generic point of `Y`. -/
@@ -87,6 +96,17 @@ theorem RationalMap.fromFunctionField_closedPoint (f : X ⤏ Y) [f.IsDominant] :
   obtain ⟨g, rfl⟩ := f.exists_rep
   have : IsDominant g.hom := g.isDominant_toRationalMap_iff.mp ‹_›
   exact g.fromFunctionField_closedPoint
+
+/-- A rational map of irreducible schemes is dominant exactly when it sends the closed point of
+`Spec K(X)` to the generic point of `Y`. -/
+theorem RationalMap.isDominant_iff_fromFunctionField_closedPoint (f : X ⤏ Y) :
+    f.IsDominant ↔ f.fromFunctionField (closedPoint _) = genericPoint Y := by
+  refine ⟨fun _ ↦ f.fromFunctionField_closedPoint, fun h ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := f.exists_rep
+  rw [fromFunctionField_toRationalMap, g.fromFunctionField_closedPoint_eq_hom] at h
+  -- the range of `g.hom` contains the generic point of `Y`, so it is dense
+  exact g.isDominant_toRationalMap_iff.mpr ⟨(dense_iff_closure_eq.mpr (genericPoint_closure _)).mono
+    (Set.singleton_subset_iff.mpr ⟨_, h⟩)⟩
 
 /-- The **pullback of rational functions** `f^* : K(Y) ⟶ K(X)` along a dominant rational map
 `f : X ⤏ Y` of irreducible schemes: the map of stalks of `f.fromFunctionField : Spec K(X) ⟶ Y`
