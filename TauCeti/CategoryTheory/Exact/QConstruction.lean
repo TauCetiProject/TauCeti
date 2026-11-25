@@ -340,14 +340,14 @@ theorem homMk_comp_ofInflation {X Y Y' M : C} {p : M ⟶ X} (hp : E.IsDeflation 
 isomorphism. -/
 theorem homMk_eq_id_iff {X M : C} {p i : M ⟶ X} {hp : E.IsDeflation p} {hi : E.IsInflation i} :
     homMk p hp i hi = 𝟙 (mk E X) ↔ IsIso p ∧ p = i := by
-  rw [← homMk_id, homMk_eq_homMk_iff]
   constructor
-  · rintro ⟨e, hl, hr⟩
+  · rw [← homMk_id, homMk_eq_homMk_iff]
+    rintro ⟨e, hl, hr⟩
     simp only [Category.comp_id] at hl hr
     subst hl hr
     exact ⟨inferInstance, rfl⟩
   · rintro ⟨_, rfl⟩
-    exact ⟨asIso p, by simp, by simp⟩
+    exact homMk_self p
 
 /-- If the Q-morphism of an inflation `i` has a section `f`, that is `f ≫ ofInflation i = 𝟙`,
 then `i` is an isomorphism. -/
