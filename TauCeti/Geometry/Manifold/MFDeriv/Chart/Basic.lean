@@ -549,11 +549,8 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm :
     mfderiv I 𝓘(𝕜, F) f x = 0 ↔
       fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
   rw [← mvfderiv_eq_fderiv_comp_extChartAt_symm, mvfderiv]
-  have h := (NormedSpace.fromTangentSpace (f x)).eq_toContinuousLinearMap_symm_comp
-    (mfderiv I 𝓘(𝕜, F) f x) 0
-  rw [ContinuousLinearMap.comp_zero] at h
-  -- `TangentSpace I x` is definitionally `E`, so the two `0` continuous linear maps agree.
-  exact h
+  -- The tangent-space identification for the normed target acts by the identity.
+  rfl
 
 /-- On a boundaryless manifold, `mvfderiv I f x`, read on the model space `E`, agrees with the
 Fréchet derivative of the preferred coordinate expression at `extChartAt I x x`, even without a
@@ -707,14 +704,9 @@ theorem mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq {g : M → F} {f' g' : E 
     mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hf'.congr_of_eventuallyEq hf),
     mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hg'.congr_of_eventuallyEq hg),
     hf.fderiv_eq, hg.fderiv_eq, ← hL]
-  have h := (L.eq_comp_toContinuousLinearMap_symm (fderiv 𝕜 f' (extChartAt I x y))
-    ((fderiv 𝕜 g' (extChartAt I x y) : TangentSpace 𝓘(𝕜, E) (extChartAt I x y) →L[𝕜] F).comp
-      L.toContinuousLinearMap)).symm
-  rw [ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_comp_coe_symm,
-    ContinuousLinearMap.comp_id] at h
-  -- `NormedSpace.fromTangentSpace` is definitionally the identity on `F`, and
-  -- `TangentSpace 𝓘(𝕜, E) _` unfolds to `E`.
-  exact h
+  -- The model tangent spaces reduce to the model vector spaces on both sides.
+  simp only [← ContinuousLinearMap.coe_inj]
+  exact LinearMap.cancel_right (g := L.toLinearEquiv.toLinearMap) L.surjective
 
 open Filter in
 /-- Transfer of local uniqueness of critical points to the manifold. Suppose that `η q.1` lies in
