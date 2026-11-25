@@ -42,6 +42,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
+* `Finsupp.mapDomain_apply_eq_degree`: pushed forward to a type with a single element,
+  a finitely supported function takes its degree as value.
 * `Finsupp.degree_tsub`: for `g ≤ f`, `(f - g).degree = f.degree - g.degree`.
 * `Finsupp.lt_degree_of_ne_zero`: if `f j ≠ 0` for `j ≠ i`, then `f i < f.degree`.
 * `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
@@ -116,6 +118,12 @@ theorem degree_optionElim {σ R : Type*} [AddCommMonoid R] (f : σ →₀ R) (y 
   have h (g : Option σ →₀ R) : g.degree = g.sum fun _ e ↦ e := degree_apply g
   rw [h, sum_option_index _ _ (fun _ ↦ rfl) fun _ _ _ ↦ rfl, optionElim_apply_none,
     some_optionElim, degree_apply, Finsupp.sum]
+
+/-- Pushed forward to a type with a single element, a finitely supported function takes its
+degree as value. -/
+theorem mapDomain_apply_eq_degree {σ τ M : Type*} [Unique τ] [AddCommMonoid M]
+    (f : σ → τ) (e : σ →₀ M) (a : τ) : e.mapDomain f a = e.degree := by
+  rw [Unique.eq_default a, ← degree_mapDomain f e, degree_eq_sum, Fintype.sum_unique]
 
 /-- For `g ≤ f`, the degree of `f - g` is `f.degree - g.degree`. -/
 theorem degree_tsub {σ R : Type*} [AddCommMonoid R] [PartialOrder R]

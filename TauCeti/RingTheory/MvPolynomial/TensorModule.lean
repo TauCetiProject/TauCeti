@@ -30,7 +30,7 @@ kernel `ker (Δ ∘ r²)` under `[Nonempty σ] [HasUniqueDiv M]`.
 
 ## Main results
 
-* `MvPolynomial.ext_coeffTensor`, `MvPolynomial.mem_homogeneousTensorSubmodule_iff`,
+* `MvPolynomial.mem_homogeneousTensorSubmodule_iff`,
   `MvPolynomial.finrank_homogeneousTensorSubmodule`, `MvPolynomial.laplacian_normSq_mul_rTensor`,
   and `MvPolynomial.eq_zero_of_laplacian_normSq_mul_rTensor_eq_zero`.
 -/
@@ -49,6 +49,9 @@ variable {σ R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 noncomputable def coeffTensor (s : σ →₀ ℕ) : (MvPolynomial σ R ⊗[R] M) →ₗ[R] M :=
   TensorProduct.lid R M ∘ₗ (lcoeff R s).rTensor M
 
+theorem coeffTensor_apply (s : σ →₀ ℕ) (u : MvPolynomial σ R ⊗[R] M) :
+    coeffTensor s u = TensorProduct.lid R M ((lcoeff R s).rTensor M u) := (rfl)
+
 @[simp] theorem coeffTensor_tmul (s : σ →₀ ℕ) (p : MvPolynomial σ R) (m : M) :
     coeffTensor s (p ⊗ₜ[R] m) = p.coeff s • m := by simp [coeffTensor]
 
@@ -58,18 +61,6 @@ noncomputable def coeffTensor (s : σ →₀ ℕ) : (MvPolynomial σ R ⊗[R] M)
   induction u using TensorProduct.inductionOn with
   | tmul p m => simp
   | add x y hx hy => simp [hx, hy]
-
-/-- Two `M`-valued polynomials are equal iff all their monomial coefficients in `M` coincide. -/
-theorem ext_coeffTensor {u v : MvPolynomial σ R ⊗[R] M}
-    (h : ∀ s : σ →₀ ℕ, coeffTensor s u = coeffTensor s v) : u = v := by
-  classical
-  apply (TensorProduct.equivFinsuppOfBasisLeft (basisMonomials σ R)).injective
-  ext s
-  have hcoord : (basisMonomials σ R).coord s = lcoeff R s :=
-    (basisMonomials σ R).ext fun t ↦ by
-      rw [Module.Basis.coord_apply, Module.Basis.repr_self, coe_basisMonomials, lcoeff_apply,
-        coeff_monomial, Finsupp.single_apply]
-  simpa [TensorProduct.equivFinsuppOfBasisLeft_apply, hcoord, coeffTensor] using h s
 
 /-- Unique natural division transfers from `M` to `MvPolynomial σ R ⊗[R] M`. -/
 instance [HasUniqueDiv M] : HasUniqueDiv (MvPolynomial σ R ⊗[R] M) := by

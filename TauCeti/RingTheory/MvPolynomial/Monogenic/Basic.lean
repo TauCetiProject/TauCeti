@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.MvPolynomial.TensorModule
 import Mathlib.Algebra.Algebra.Rat
 import TauCeti.Data.Finsupp.Weight
+import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 /-!
 # Monogenic multivariate polynomials and the Clifford Fischer decomposition
@@ -123,7 +124,8 @@ theorem cliffordMul_injective [IsCancelAdd M] {c : σ → Module.End R M} {i₀ 
     (hc : Function.Injective (c i₀)) : Function.Injective (cliffordMul c) := by
   classical
   intro u v huv
-  refine ext_coeffTensor fun s ↦ ?_
+  refine ext_lid_rTensor_lcoeff fun s ↦ ?_
+  rw [← coeffTensor_apply, ← coeffTensor_apply]
   suffices ∀ n : ℕ, ∀ t : σ →₀ ℕ, t.degree - t i₀ = n → coeffTensor t u = coeffTensor t v from
     this _ s rfl
   intro n
@@ -200,8 +202,9 @@ theorem monogenicSubmodule_succ_eq_bot_of_subsingleton [Subsingleton σ] [HasUni
   · exact monogenicSubmodule_succ_eq_bot_of_isEmpty c k
   have huniv : (Finset.univ : Finset σ) = {i₀} :=
     Finset.eq_singleton_iff_unique_mem.mpr ⟨Finset.mem_univ i₀, fun j _ ↦ Subsingleton.elim j i₀⟩
-  refine eq_bot_iff.mpr fun u ⟨hu, hDu⟩ ↦ (Submodule.mem_bot R).mpr (ext_coeffTensor fun s ↦ ?_)
-  rw [map_zero]
+  refine eq_bot_iff.mpr fun u ⟨hu, hDu⟩ ↦
+    (Submodule.mem_bot R).mpr (ext_lid_rTensor_lcoeff fun s ↦ ?_)
+  rw [← coeffTensor_apply, map_zero, map_zero]
   rcases eq_or_ne s 0 with rfl | hs0
   · exact homogeneousTensorSubmodule_inductionOn hu
       (fun hp _ ↦ by rw [coeffTensor_tmul, hp.coeff_eq_zero (by simp), zero_smul])

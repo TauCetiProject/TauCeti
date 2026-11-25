@@ -267,8 +267,7 @@ private theorem integral_lineDeriv_smul_normed_convolution_eq
       -(∫ x, (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x • ((φ : E → ℝ) x • u' x) ∂μ +
         ∫ x, fderiv ℝ (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x v • ((φ : E → ℝ) x • u x) ∂μ) := by
   have hsmooth : ContDiff ℝ ∞ (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] ψ) :=
-    ρ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ)
-      ρ.contDiff_normed hψ.continuous.locallyIntegrable
+    ρ.contDiff_normed_convolution hψ.continuous.locallyIntegrable
   have hw₃ : Integrable (fun x => (φ : E → ℝ) x • u x) μ :=
     φ.integrable_smul h.locallyIntegrableOn
   have hw₂c : Integrable (fun x => (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x •

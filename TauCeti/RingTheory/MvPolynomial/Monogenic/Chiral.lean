@@ -11,6 +11,7 @@ import Mathlib.Algebra.Algebra.Rat
 import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import TauCeti.LinearAlgebra.Eigenspace.Involution
 import TauCeti.LinearAlgebra.End.Basic
+import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 /-!
 # Chiral homogeneous and monogenic polynomials
@@ -60,8 +61,9 @@ theorem _root_.Module.End.mem_eigenspace_lTensor_iff (γ : Module.End R M) (ε :
     u ∈ Module.End.eigenspace (γ.lTensor (MvPolynomial σ R)) ε ↔
       ∀ s : σ →₀ ℕ, coeffTensor s u ∈ γ.eigenspace ε := by
   simp only [Module.End.mem_eigenspace_iff]
-  exact ⟨fun h s ↦ by rw [← coeffTensor_lTensor, h, map_smul],
-    fun h ↦ ext_coeffTensor fun s ↦ by rw [coeffTensor_lTensor, h s, map_smul]⟩
+  refine ⟨fun h s ↦ by rw [← coeffTensor_lTensor, h, map_smul],
+    fun h ↦ ext_lid_rTensor_lcoeff fun s ↦ ?_⟩
+  rw [← coeffTensor_apply, ← coeffTensor_apply, coeffTensor_lTensor, h s, map_smul]
 
 variable (σ) in
 /-- Degree-`k` `M`-valued homogeneous polynomials in the `ε`-eigenspace of `γ.lTensor`. -/
@@ -98,8 +100,9 @@ private theorem subtype_lTensor_bijective (γ : Module.End R M) (ε : R) (k : �
           (homogeneousTensorSubmodule σ R (γ.eigenspace ε) k).subtype).codRestrict
         (chiralHomogeneousSubmodule σ γ ε k)
         (subtype_lTensor_mem_chiralHomogeneousSubmodule γ ε k)) := by
-  refine ⟨fun ⟨x, _⟩ ⟨y, _⟩ h ↦ Subtype.ext (ext_coeffTensor fun s ↦ ?_), fun ⟨u, hu⟩ ↦ ?_⟩
-  · have hs := congrArg (fun z ↦ coeffTensor s z.val) h
+  refine ⟨fun ⟨x, _⟩ ⟨y, _⟩ h ↦ Subtype.ext (ext_lid_rTensor_lcoeff fun s ↦ ?_), fun ⟨u, hu⟩ ↦ ?_⟩
+  · rw [← coeffTensor_apply, ← coeffTensor_apply]
+    have hs := congrArg (fun z ↦ coeffTensor s z.val) h
     simp only [LinearMap.codRestrict_apply, LinearMap.comp_apply, Submodule.coe_subtype,
       coeffTensor_lTensor] at hs
     exact Subtype.ext hs
