@@ -328,13 +328,15 @@ private theorem classicalPrincipalSymbol_eq_mul_of_eq_sharp
       classicalPrincipalSymbol k B x ξ * classicalPrincipalSymbol m C x ξ := by
   have hχx : χ (e x) = 1 := hχ _ (subset_tsupport _ (by simp [hφx]))
   have hχ₂x : χ₂ (e x) = 1 := hχ₂ _ (subset_tsupport _ (by simp [hχx]))
+  have hlin (f : ℂ →L[ℂ] ℂ) (w : ℂ) : f w = f 1 * w := by
+    rw [mul_comm, ← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
   have h := coefficient_principal_apply_eq_classicalPrincipalSymbol hA he φ φ hab hx ξ
   rw [ClassicalSymbol.principal_sharp, HomogeneousSymbol.coefficient_comp,
     ContinuousLinearMap.comp_apply, coefficient_principal_apply_eq_classicalPrincipalSymbol hC he
-      χ φ hb hx ξ, ← ContinuousLinearMap.coe_coe, ← Dual.apply_one_mul_eq,
-    ContinuousLinearMap.coe_coe,
-    coefficient_principal_apply_eq_classicalPrincipalSymbol hB he φ χ₂ ha hx ξ] at h
-  simpa [hφx, hχx, hχ₂x, mul_comm] using h.symm
+      χ φ hb hx ξ, hlin, coefficient_principal_apply_eq_classicalPrincipalSymbol hB he φ χ₂ ha hx ξ,
+    hφx, hχx, hχ₂x] at h
+  simp only [mul_one, Complex.ofReal_one, one_mul] at h
+  exact h.symm
 
 /-- **The principal symbol of a composition with a local operator on the left** is the product of
 the principal symbols: `σ_{k+m}(L ∘ P)(x, ξ) = σ_k(L)(x, ξ) σ_m(P)(x, ξ)`. -/
