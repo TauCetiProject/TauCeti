@@ -214,7 +214,7 @@ theorem generalizedGeodesic_def (γ : Measure (E × E × E)) (t : ℝ) :
 
 /-- The generalized geodesic at time `t` is the interpolation at time `t` of the endpoint coupling
 `γ.snd`: the law of `(1 - t) • y₀ + t • y₁` under `γ.snd`. -/
-theorem generalizedGeodesic_eq_map_snd [MeasurableAdd₂ E] [MeasurableSMul ℝ E]
+theorem generalizedGeodesic_eq_map_snd [MeasurableAdd₂ E] [MeasurableConstSMul ℝ E]
     (γ : Measure (E × E × E)) (t : ℝ) :
     generalizedGeodesic γ t = γ.snd.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
   rw [generalizedGeodesic_def, Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
@@ -398,12 +398,8 @@ theorem dist_sq_le_of_eq_generalizedGeodesic {γ : Measure (E × E × E)} {s r :
   have hcoupl : IsCoupling (γ.snd.map f) ((νs : ProbabilityMeasure E) : Measure E)
       ((νr : ProbabilityMeasure E) : Measure E) := by
     constructor
-    · rw [hνs, generalizedGeodesic_def, Measure.fst, Measure.map_map measurable_fst hf_meas,
-        Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
-      rfl
-    · rw [hνr, generalizedGeodesic_def, Measure.snd, Measure.map_map measurable_snd hf_meas,
-        Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
-      rfl
+    · rw [hνs, generalizedGeodesic_eq_map_snd, Measure.fst_map_prodMk (by fun_prop) (by fun_prop)]
+    · rw [hνr, generalizedGeodesic_eq_map_snd, Measure.snd_map_prodMk (by fun_prop) (by fun_prop)]
   refine (WassersteinSpace.dist_sq_le_integral hcoupl).trans ?_
   rw [integral_map (f := fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) hf_meas.aemeasurable (by fun_prop)]
   have hpoint : ∀ z : E × E, ‖(f z).1 - (f z).2‖ ^ 2 = (r - s) ^ 2 * ‖z.1 - z.2‖ ^ 2 := fun z ↦ by
