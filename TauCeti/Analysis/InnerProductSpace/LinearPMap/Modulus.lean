@@ -165,20 +165,20 @@ private theorem norm_modulus_apply_of_mem_adjointComp_domain {T : E →ₗ.[𝕜
 theorem IsClosed.modulus_domain {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) : T.modulus.domain = T.domain :=
   le_antisymm
-    ((hT.hasCore_adjointComp_domain_modulus hd).domain_le_and_norm_eq hT (adjointComp_domain_le T)
-      fun u hu ↦ (norm_modulus_apply_of_mem_adjointComp_domain hT hd u hu).symm).1
-    (hT.hasCore_adjointComp_domain.domain_le_and_norm_eq (hT.isClosed_modulus hd)
+    ((hT.hasCore_adjointComp_domain_modulus hd).domain_le_of_norm_eq hT (adjointComp_domain_le T)
+      fun u hu ↦ (norm_modulus_apply_of_mem_adjointComp_domain hT hd u hu).symm)
+    (hT.hasCore_adjointComp_domain.domain_le_of_norm_eq (hT.isClosed_modulus hd)
       (hT.adjointComp_domain_le_modulus_domain hd)
-      (norm_modulus_apply_of_mem_adjointComp_domain hT hd)).1
+      (norm_modulus_apply_of_mem_adjointComp_domain hT hd))
 
 /-- For a closed densely defined operator `T`, `‖|T| x‖ = ‖T x‖` on their common domain
 `D(|T|) = D(T)`. -/
 theorem IsClosed.norm_modulus_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) {x : E} (hxM : x ∈ T.modulus.domain) (hx : x ∈ T.domain) :
     ‖T.modulus ⟨x, hxM⟩‖ = ‖T ⟨x, hx⟩‖ :=
-  (hT.hasCore_adjointComp_domain.domain_le_and_norm_eq (hT.isClosed_modulus hd)
+  hT.hasCore_adjointComp_domain.norm_apply_eq_of_norm_eq (hT.isClosed_modulus hd)
     (hT.adjointComp_domain_le_modulus_domain hd)
-    (norm_modulus_apply_of_mem_adjointComp_domain hT hd)).2 ⟨x, hx⟩
+    (norm_modulus_apply_of_mem_adjointComp_domain hT hd) ⟨x, hx⟩ hxM
 
 /-- The modulus and the operator have the same kernel when `T` is closed and densely defined. -/
 @[simp]
