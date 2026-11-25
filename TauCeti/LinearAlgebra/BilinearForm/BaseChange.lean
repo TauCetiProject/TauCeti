@@ -229,6 +229,13 @@ theorem baseChange_smul (r : R) (B : LinearMap.BilinForm R M) :
   ext a x
   simp [Algebra.smul_def, mul_comm]
 
+/-- Scalar extension commutes with addition of bilinear forms. -/
+@[simp]
+theorem baseChange_add (B B' : LinearMap.BilinForm R M) :
+    (B + B').baseChange A = B.baseChange A + B'.baseChange A := by
+  ext a x
+  simp [add_smul]
+
 /-- An alternating bilinear form is skew-symmetric, `B + B.flip = 0`, over any commutative
 semiring (Mathlib's `LinearMap.IsAlt.neg` needs additive inverses). -/
 theorem IsAlt.add_flip_eq_zero {B : LinearMap.BilinForm R M} (hB : B.IsAlt) : B + B.flip = 0 := by
@@ -242,8 +249,7 @@ theorem IsAlt.baseChange {B : LinearMap.BilinForm R M} (hB : B.IsAlt) :
     (B.baseChange A).IsAlt := by
   have hB' := hB.add_flip_eq_zero
   have hskew : B.baseChange A + (B.baseChange A).flip = 0 := by
-    rw [← baseChange_flip, ← baseChange_zero, ← hB']
-    simp only [LinearMap.BilinForm.baseChange, BilinForm.tmul, TensorProduct.tmul_add, map_add]
+    rw [← baseChange_flip, ← baseChange_add, hB', baseChange_zero]
   intro x
   induction x using TensorProduct.inductionOn with
   | tmul a x => simp [hB x]
@@ -639,8 +645,7 @@ theorem posDef_toQuadraticMap_baseChange_iff (B : LinearMap.BilinForm F V) :
       intro x y
       simp [add_comm]
     have hbase : (B + B.flip).baseChange K = B.baseChange K + (B.baseChange K).flip := by
-      ext
-      simp [add_smul]
+      rw [baseChange_add, baseChange_flip]
     simpa only [hbase, posDef_toQuadraticMap_add_flip_iff] using this (B + B.flip) hsym
   constructor
   · -- Reflection: evaluate on the nonzero vector `1 ⊗ x`.
