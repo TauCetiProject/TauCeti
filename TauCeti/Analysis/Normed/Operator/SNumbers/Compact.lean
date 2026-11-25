@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.SNumbers.Entropy
+public import TauCeti.Analysis.Normed.Operator.SNumbers.Entropy.Basic
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
