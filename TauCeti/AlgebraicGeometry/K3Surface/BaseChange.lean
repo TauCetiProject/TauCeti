@@ -102,6 +102,9 @@ theorem isK3_iff_of_isPullback
     (H : IsPullback g f' f (Spec.map (CommRingCat.ofHom (algebraMap k K)))) :
     IsK3 K f' ↔ IsK3 k f := by
   refine ⟨fun h ↦ ?_, IsK3.of_isPullback H⟩
+  -- As in `IsK3.of_isPullback`, the base change isomorphisms are stated for the structure
+  -- morphisms of `Over` instances; for these instances `X ↘ Spec k` is `f` and `X' ↘ Spec K` is
+  -- `f'`, so `H'` is `H` up to definitional unfolding.
   let : X.Over (Spec (.of k)) := ⟨f⟩
   let : X'.Over (Spec (.of K)) := ⟨f'⟩
   have H' : IsPullback g (X' ↘ Spec (.of K)) (X ↘ Spec (.of k))

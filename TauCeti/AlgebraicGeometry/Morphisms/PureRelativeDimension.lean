@@ -35,9 +35,7 @@ For morphisms locally of finite type the property is stable under arbitrary base
 of a base change is the base change of a fibre along an extension of residue fields, and a scheme
 locally of finite type over a field is pure-dimensional of dimension `d` exactly when its
 extension of scalars to a larger field is
-(`TauCeti.AlgebraicGeometry.isPureDimensional_pullback_Spec_map_iff_of_field`). Since this is an
-equivalence, the property also descends along surjective base changes: every fibre of the original
-morphism then has some fibre of the base change lying over it.
+(`TauCeti.AlgebraicGeometry.isPureDimensional_pullback_Spec_map_iff_of_field`).
 
 ## Main declarations
 
@@ -61,8 +59,6 @@ morphism then has some fibre of the base change lying over it.
   morphisms locally of finite type.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.of_isPullback`: stability under base change of
   morphisms locally of finite type.
-* `TauCeti.AlgebraicGeometry.PureRelativeDimension.of_isPullback_of_surjective`: descent along
-  surjective base changes of morphisms locally of finite type.
 
 ## References
 
@@ -225,26 +221,6 @@ theorem of_isPullback {P : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y} {f : X �
     (isPureDimensional_pullback_Spec_map_iff_of_field (K := Z.residueField (g y))
       (L := Y.residueField y) (f.fiberToSpecResidueField (g y))).mpr
       (isPureDimensional_fiber f (g y))
-
-/-- Having pure relative dimension `d` descends along surjective base changes of morphisms locally
-of finite type: if `snd` is the base change of `f` along a surjective `g`, and `snd` has pure
-relative dimension `d`, so does `f`. -/
-theorem of_isPullback_of_surjective {P : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y} {f : X ⟶ Z}
-    {g : Y ⟶ Z} (h : IsPullback fst snd f g) [Surjective g] [LocallyOfFiniteType f]
-    [PureRelativeDimension d snd] : PureRelativeDimension d f := by
-  have : RelativeDimensionLE d f := .of_isPullback_of_surjective h
-  refine (pureRelativeDimension_iff_relativeDimensionLE_and_isPureDimensional_fiber f).mpr
-    ⟨this, fun z ↦ ?_⟩
-  obtain ⟨y, rfl⟩ := g.surjective z
-  have : LocallyOfFiniteType (f.fiberToSpecResidueField (g y)) :=
-    inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Z.fromSpecResidueField (g y))))
-  let := (g.residueFieldMap y).hom.toAlgebra
-  -- The fibre of `snd` at `y` is the base change of the fibre of `f` at `g y` along the
-  -- extension of residue fields `κ(g y) → κ(y)`.
-  exact (isPureDimensional_pullback_Spec_map_iff_of_field (K := Z.residueField (g y))
-      (L := Y.residueField y) (f.fiberToSpecResidueField (g y))).mp <|
-    (isPullback_fiberToSpecResidueField_of_isPullback h y).isoPullback.hom.homeomorph
-      |>.isPureDimensional_iff.mp (isPureDimensional_fiber snd y)
 
 /-- The base change `pullback.snd f g` of a morphism `f` locally of finite type has pure relative
 dimension that of `f`. -/
