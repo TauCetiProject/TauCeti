@@ -38,26 +38,29 @@ noncomputable abbrev ε :
       SmoothRep.of (trivial A (Multiplicative ℤ_[p]) A) :=
   ObjectProperty.homMk (permutationAugmentation A (Multiplicative ℤ_[p]) (X p))
 
+/-- The coefficient sum `ε` is surjective. -/
+private theorem ε_surjective : Function.Surjective (ε A p).hom.hom := by
+  rw [ObjectProperty.homMk_hom]
+  exact (Rep.epi_iff_surjective _).1 (permutationAugmentation_epi A _ (X p))
+
 /-- The kernel of `ε` in `SmoothRep A ℤ_p` is the augmentation submodule of `A[ℤ/p]`. -/
 example : LinearMap.range (kernel.ι (ε A p)).hom.hom.toLinearMap =
     (augmentationSubrepresentation A (Multiplicative ℤ_[p]) (X p)).toSubmodule := by
   rw [SmoothRep.range_kernel_ι, toSubmodule_augmentationSubrepresentation]
   ext v
-  simp only [LinearMap.mem_ker]
-  exact iff_of_eq (congrArg (· = 0) (permutationAugmentation_apply A _ _ v))
+  simp only [LinearMap.mem_ker, ObjectProperty.homMk_hom,
+    Representation.IntertwiningMap.toLinearMap_apply]
+  rw [permutationAugmentation_apply]
 
 /-- The cokernel of `ε` in `SmoothRep A ℤ_p` is zero: `ε` is surjective. -/
 example : IsZero (cokernel (ε A p)) := by
-  have : Epi (ε A p) := (SmoothRep.epi_iff_surjective _).2 fun a ↦
-    ⟨MonoidAlgebra.single 1 a,
-      (permutationAugmentation_apply A _ _ _).trans (by simp [Module.Basis.coe_sumCoords])⟩
+  have : Epi (ε A p) := (SmoothRep.epi_iff_surjective _).2 (ε_surjective A p)
   exact isZero_cokernel_of_epi _
 
 /-- Read on the underlying modules, the cokernel map of `ε` kills exactly the image of `ε`, which
 is all of `A`. -/
 example : LinearMap.ker (cokernel.π (ε A p)).hom.hom.toLinearMap = ⊤ := by
   rw [SmoothRep.ker_cokernel_π, LinearMap.range_eq_top]
-  exact fun a ↦ ⟨MonoidAlgebra.single 1 a,
-    (permutationAugmentation_apply A _ _ _).trans (by simp [Module.Basis.coe_sumCoords])⟩
+  exact ε_surjective A p
 
 end TauCeti.Examples.SmoothRepExact

@@ -5,17 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 public import TauCeti.RepresentationTheory.Smooth.Abelian
 
 /-!
 # Exactness of smooth representations on underlying modules
 
-The inclusion `SmoothRep A G ⥤ Rep A G` preserves kernels and cokernels, so it preserves
-homology (`TauCeti.SmoothRep.preservesHomology_ι`). Hence a short complex of smooth
-representations is exact exactly when the underlying linear maps form an exact pair
-(`TauCeti.SmoothRep.exact_iff_function_exact`): kernels and cokernels in `SmoothRep A G` are
+The inclusion `SmoothRep A G ⥤ Rep A G` preserves finite limits and colimits, so it preserves
+homology (Mathlib's instance `CategoryTheory.Functor.preservesHomologyOfExact`). Hence a short
+complex of smooth representations is exact exactly when the underlying linear maps form an exact
+pair (`TauCeti.SmoothRep.exact_iff_function_exact`): kernels and cokernels in `SmoothRep A G` are
 computed on the underlying `A`-modules. In particular the kernel of a morphism `f` is the linear
 kernel of `f` (`TauCeti.SmoothRep.range_kernel_ι`), and its cokernel is the linear cokernel
 (`TauCeti.SmoothRep.ker_cokernel_π`).
@@ -31,15 +30,12 @@ namespace SmoothRep
 
 variable {A G : Type*} [Ring A] [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
-/-- The inclusion of smooth representations into all representations preserves homology. -/
-instance preservesHomology_ι : (ι A G).PreservesHomology where
-
 /-- **Exactness is computed on underlying modules.** A short complex of smooth representations is
 exact if and only if the underlying linear maps form an exact pair. -/
 theorem exact_iff_function_exact (S : ShortComplex (SmoothRep A G)) :
     S.Exact ↔ Function.Exact S.f.hom.hom S.g.hom.hom := by
   rw [← ShortComplex.exact_map_iff_of_faithful S (ι A G), Rep.exact_iff_function_exact]
-  rfl
+  simp only [ShortComplex.map_f, ShortComplex.map_g, ObjectProperty.ι_map]
 
 /-- **The kernel of a morphism of smooth representations is its linear kernel**: the image of
 `kernel.ι f` is the kernel of the underlying linear map of `f`. -/
