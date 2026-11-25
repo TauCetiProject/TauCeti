@@ -39,11 +39,15 @@ The continuous representative of `u ∈ W^{1,p}(a, b)` is Hölder continuous of 
 `|u(t)| ≤ (t - a)^{1 - 1/p} ‖u'‖_{Lᵖ}` and the **Poincaré–Friedrichs inequality**
 `‖u‖_{Lᵖ(a,b)} ≤ (b - a) ‖u'‖_{Lᵖ(a,b)}`
 (`TauCeti.W1p.norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero`), with the constant
-scaling like the length of the interval. For finite `p` it holds on all of `W^{1,p}_{{a}}(a, b)`.
-Both hold for every `1 ≤ p ≤ ∞`, with `1 / p.toReal = 0` at `p = ∞`.
+scaling like the length of the interval. Both hold for every `1 ≤ p ≤ ∞`, with `1 / p.toReal = 0`
+at `p = ∞`, and so on all of `W^{1,p}_{{a}}(a, b)`, since every class there vanishes at `a`
+(`TauCeti.W1p.intervalTraceL_fst_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton`).
 
 ## Main declarations
 
+* `TauCeti.W1p.intervalTraceL_fst_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton` and
+  `TauCeti.W1p.intervalTraceL_snd_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton`: classes of
+  `W^{1,p}_{{a}}(a, b)` and `W^{1,p}_{{b}}(a, b)` vanish at the endpoint, for every `p`.
 * `TauCeti.W1p.mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_fst_eq_zero` and
   `TauCeti.W1p.mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero`: the trace
   characterization of `W^{1,p}_{{a}}(a, b)` and `W^{1,p}_{{b}}(a, b)` for finite `p`.
@@ -145,6 +149,32 @@ private theorem intervalLiftL_snd_zero_mem_w1pVanishingOnSubmodule (hp : p ≠ �
     field_simp
     ring
 
+/-- A class in `W^{1,p}_{{a}}(a, b)` has continuous representative vanishing at `a`, even at
+`p = ∞`: the condition is closed and holds for every generator, whose support misses `a`. -/
+theorem intervalTraceL_fst_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton (hab : a < b)
+    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
+    (hu : u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {a}) :
+    (intervalTraceL hab u).1 = 0 := by
+  refine w1pVanishingOnSubmodule_subset_of_isClosed
+    (isClosed_eq (continuous_fst.comp (intervalTraceL hab).continuous) continuous_const)
+    (fun φ hφ ↦ ?_) hu
+  rw [closure_singleton, disjoint_singleton_right] at hφ
+  rw [mem_ofPred_eq, Function.comp_apply, intervalTraceL_restrictL_ofTestFunctionₗ]
+  exact (image_eq_zero_of_notMem_tsupport hφ : φ a = 0)
+
+/-- A class in `W^{1,p}_{{b}}(a, b)` has continuous representative vanishing at `b`, even at
+`p = ∞`: the condition is closed and holds for every generator, whose support misses `b`. -/
+theorem intervalTraceL_snd_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton (hab : a < b)
+    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
+    (hu : u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {b}) :
+    (intervalTraceL hab u).2 = 0 := by
+  refine w1pVanishingOnSubmodule_subset_of_isClosed
+    (isClosed_eq (continuous_snd.comp (intervalTraceL hab).continuous) continuous_const)
+    (fun φ hφ ↦ ?_) hu
+  rw [closure_singleton, disjoint_singleton_right] at hφ
+  rw [mem_ofPred_eq, Function.comp_apply, intervalTraceL_restrictL_ofTestFunctionₗ]
+  exact (image_eq_zero_of_notMem_tsupport hφ : φ b = 0)
+
 /-- **The trace characterization of `W^{1,p}_{{a}}(a, b)`.** For `1 ≤ p < ∞`, a class lies in the
 space of Sobolev functions vanishing at the endpoint `a` exactly when its continuous representative
 vanishes at `a`. No condition is imposed at `b`. -/
@@ -154,22 +184,15 @@ theorem mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_fst_eq_zero (hp
     (hab : a < b) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p} :
     u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {a} ↔
       (intervalTraceL hab u).1 = 0 := by
-  refine ⟨fun hu ↦ ?_, fun hu ↦ ?_⟩
-  · -- The condition is closed and holds for every generator, whose support misses `a`.
-    refine w1pVanishingOnSubmodule_subset_of_isClosed
-      (isClosed_eq (continuous_fst.comp (intervalTraceL hab).continuous) continuous_const)
-      (fun φ hφ ↦ ?_) hu
-    rw [closure_singleton, disjoint_singleton_right] at hφ
-    rw [mem_ofPred_eq, Function.comp_apply, intervalTraceL_restrictL_ofTestFunctionₗ]
-    exact (image_eq_zero_of_notMem_tsupport hφ : φ a = 0)
-  · -- Split off the affine class with the same value at `b`; the rest has zero trace.
-    have h0 := (intervalTraceL_eq_iff_sub_intervalLiftL_mem hp hab u
-      (0, (intervalTraceL hab u).2)).1 (Prod.ext hu rfl)
-    have hmem := add_mem (w1p0Submodule_le_w1pVanishingOnSubmodule
-      (disjoint_singleton_left.2 (by simp)) h0)
-      (intervalLiftL_fst_zero_mem_w1pVanishingOnSubmodule hp hab
-        (intervalTraceL hab u).2)
-    rwa [sub_add_cancel] at hmem
+  refine ⟨intervalTraceL_fst_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton hab, fun hu ↦ ?_⟩
+  -- Split off the affine class with the same value at `b`; the rest has zero trace.
+  have h0 := (intervalTraceL_eq_iff_sub_intervalLiftL_mem hp hab u
+    (0, (intervalTraceL hab u).2)).1 (Prod.ext hu rfl)
+  have hmem := add_mem (w1p0Submodule_le_w1pVanishingOnSubmodule
+    (disjoint_singleton_left.2 (by simp)) h0)
+    (intervalLiftL_fst_zero_mem_w1pVanishingOnSubmodule hp hab
+      (intervalTraceL hab u).2)
+  rwa [sub_add_cancel] at hmem
 
 /-- **The trace characterization of `W^{1,p}_{{b}}(a, b)`.** For `1 ≤ p < ∞`, a class lies in the
 space of Sobolev functions vanishing at the endpoint `b` exactly when its continuous representative
@@ -180,22 +203,15 @@ theorem mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero (hp
     (hab : a < b) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p} :
     u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {b} ↔
       (intervalTraceL hab u).2 = 0 := by
-  refine ⟨fun hu ↦ ?_, fun hu ↦ ?_⟩
-  · -- The condition is closed and holds for every generator, whose support misses `b`.
-    refine w1pVanishingOnSubmodule_subset_of_isClosed
-      (isClosed_eq (continuous_snd.comp (intervalTraceL hab).continuous) continuous_const)
-      (fun φ hφ ↦ ?_) hu
-    rw [closure_singleton, disjoint_singleton_right] at hφ
-    rw [mem_ofPred_eq, Function.comp_apply, intervalTraceL_restrictL_ofTestFunctionₗ]
-    exact (image_eq_zero_of_notMem_tsupport hφ : φ b = 0)
-  · -- Split off the affine class with the same value at `a`; the rest has zero trace.
-    have h0 := (intervalTraceL_eq_iff_sub_intervalLiftL_mem hp hab u
-      ((intervalTraceL hab u).1, 0)).1 (Prod.ext rfl hu)
-    have hmem := add_mem (w1p0Submodule_le_w1pVanishingOnSubmodule
-      (disjoint_singleton_left.2 (by simp)) h0)
-      (intervalLiftL_snd_zero_mem_w1pVanishingOnSubmodule hp hab
-        (intervalTraceL hab u).1)
-    rwa [sub_add_cancel] at hmem
+  refine ⟨intervalTraceL_snd_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton hab, fun hu ↦ ?_⟩
+  -- Split off the affine class with the same value at `a`; the rest has zero trace.
+  have h0 := (intervalTraceL_eq_iff_sub_intervalLiftL_mem hp hab u
+    ((intervalTraceL hab u).1, 0)).1 (Prod.ext rfl hu)
+  have hmem := add_mem (w1p0Submodule_le_w1pVanishingOnSubmodule
+    (disjoint_singleton_left.2 (by simp)) h0)
+    (intervalLiftL_snd_zero_mem_w1pVanishingOnSubmodule hp hab
+      (intervalTraceL hab u).1)
+  rwa [sub_add_cancel] at hmem
 
 /-! ### Pointwise bounds and the Poincaré–Friedrichs inequality -/
 
@@ -233,15 +249,14 @@ private theorem norm_value_le_mul_norm_gradient_of_forall_abs_le (hab : a < b)
     exact hu _
   have hm : (measureUnivNNReal (volume.restrict
       ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) : ℝ) = b - a := by
-    rw [measureUnivNNReal, ENNReal.coe_toNNReal_eq_toReal, Measure.restrict_apply_univ,
-      Opens.coe_mk, Real.volume_Ioo, ENNReal.toReal_ofReal (sub_nonneg.2 hab.le)]
+    simp [measureUnivNNReal, ENNReal.coe_toNNReal_eq_toReal, hab.le]
   refine (Lp.norm_le_of_ae_bound (by positivity) hbound).trans_eq ?_
   rw [hm, ← mul_assoc, ← Real.rpow_add (sub_pos.2 hab), one_div, add_sub_cancel, Real.rpow_one]
 
 /-- **The Poincaré–Friedrichs inequality on an interval, vanishing at `a`.** If the continuous
 representative of `u ∈ W^{1,p}(a, b)` vanishes at `a`, then
-`‖u‖_{Lᵖ(a,b)} ≤ (b - a) ‖u'‖_{Lᵖ(a,b)}`. For finite `p` this holds on all of
-`W^{1,p}_{{a}}(a, b)`. -/
+`‖u‖_{Lᵖ(a,b)} ≤ (b - a) ‖u'‖_{Lᵖ(a,b)}`. This holds on all of `W^{1,p}_{{a}}(a, b)` for every
+`1 ≤ p ≤ ∞`. -/
 theorem norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero (hab : a < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p} (hu : (intervalTraceL hab u).1 = 0) :
     ‖value u‖ ≤ (b - a) * ‖gradient u‖ := by
@@ -253,8 +268,8 @@ theorem norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero (hab : a <
 
 /-- **The Poincaré–Friedrichs inequality on an interval, vanishing at `b`.** If the continuous
 representative of `u ∈ W^{1,p}(a, b)` vanishes at `b`, then
-`‖u‖_{Lᵖ(a,b)} ≤ (b - a) ‖u'‖_{Lᵖ(a,b)}`. For finite `p` this holds on all of
-`W^{1,p}_{{b}}(a, b)`. -/
+`‖u‖_{Lᵖ(a,b)} ≤ (b - a) ‖u'‖_{Lᵖ(a,b)}`. This holds on all of `W^{1,p}_{{b}}(a, b)` for every
+`1 ≤ p ≤ ∞`. -/
 theorem norm_value_le_mul_norm_gradient_of_intervalTraceL_snd_eq_zero (hab : a < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p} (hu : (intervalTraceL hab u).2 = 0) :
     ‖value u‖ ≤ (b - a) * ‖gradient u‖ := by
