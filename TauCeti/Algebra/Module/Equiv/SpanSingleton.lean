@@ -37,6 +37,8 @@ unit of `K` and `a ↦ a • x` is bijective.
 * `LinearEquiv.isUnit_apply_of_apply_eq_one`, `LinearEquiv.bijective_smul_of_apply_eq_one`: an
   element on which a linear functional takes the value `1` is carried to a unit, and generates
   freely.
+* `LinearEquiv.bijective_toSpanSingleton_of_span_eq_top`: a generator of a module isomorphic to the
+  base ring is a basis.
 * `LinearMap.span_singleton_apply_eq_top_of_leftInverse`: a linear map between modules isomorphic
   to the base ring which has a left inverse carries generators to generators.
 * `LinearMap.span_singleton_eq_top_of_span_singleton_apply_eq_top`: any linear map between
@@ -108,6 +110,15 @@ theorem bijective_smul_of_apply_eq_one {K N : Type*} [CommSemiring K] [AddCommMo
     (Units.mulRight (e.isUnit_apply_of_apply_eq_one Ψ hx).unit).bijective using 1
   funext a
   simp [← smul_eq_mul]
+
+/-- **A generator of a module isomorphic to the base ring is a basis**: for `e : M ≃ₗ[R] R`, if
+`x` spans `M`, then `a ↦ a • x` is a bijection `R → M`. The coordinate `e x` is a unit `u`, and
+`u⁻¹ • e` takes the value `1` on `x` (`LinearEquiv.bijective_smul_of_apply_eq_one`). -/
+theorem bijective_toSpanSingleton_of_span_eq_top {R M : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (e : M ≃ₗ[R] R) {x : M} (hx : Submodule.span R {x} = ⊤) :
+    Function.Bijective (LinearMap.toSpanSingleton R M x) := by
+  obtain ⟨u, hu⟩ := e.span_singleton_eq_top_iff_isUnit.1 hx
+  exact e.bijective_smul_of_apply_eq_one ((↑u⁻¹ : R) • e.toLinearMap) (by simp [← hu])
 
 open scoped TensorProduct in
 /-- **A pure tensor generates a tensor product of modules isomorphic to the base ring exactly when

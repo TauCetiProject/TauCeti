@@ -21,12 +21,14 @@ space with a zero, which is the form typeclass resolution consumes.
 Two points of a uniform space have the same image in the separated completion exactly when they
 are inseparable. Mathlib's `UniformSpace.Completion.coe_inj` is the case of a `T0Space`, where
 inseparable points are equal; without separation the canonical map identifies precisely the
-points that the separation quotient identifies.
+points that the separation quotient identifies. Consequently, completing a subsingleton space
+yields a subsingleton, and completing a nontrivial `T0Space` yields a nontrivial space.
 
 ## Main results
 
 * `UniformSpace.Completion.isCountablyGenerated_nhds_coe_iff`.
 * `UniformSpace.Completion.coe_eq_coe_iff_inseparable`.
+* `UniformSpace.Completion.instSubsingleton`, `UniformSpace.Completion.instNontrivial`.
 * `TauCeti.range_coe_completion_eq_univ`: a complete uniform space maps onto its completion.
 -/
 
@@ -52,6 +54,17 @@ they are inseparable. -/
 theorem coe_eq_coe_iff_inseparable {α : Type*} [UniformSpace α] {a b : α} :
     (a : Completion α) = b ↔ Inseparable a b := by
   rw [← inseparable_iff_eq, isDenseInducing_coe.isInducing.inseparable_iff]
+
+/-- The separated completion of a subsingleton uniform space is a subsingleton. -/
+instance instSubsingleton {α : Type*} [UniformSpace α] [Subsingleton α] :
+    Subsingleton (Completion α) :=
+  ⟨fun u v ↦ Completion.induction_on₂ u v (isClosed_eq continuous_fst continuous_snd)
+    fun a b ↦ congrArg _ (Subsingleton.elim a b)⟩
+
+/-- The separated completion of a nontrivial `T0Space` uniform space is nontrivial. -/
+instance instNontrivial {α : Type*} [UniformSpace α] [T0Space α] [Nontrivial α] :
+    Nontrivial (Completion α) :=
+  let ⟨a, b, hab⟩ := exists_pair_ne α; ⟨a, b, coe_inj.not.2 hab⟩
 
 end UniformSpace.Completion
 

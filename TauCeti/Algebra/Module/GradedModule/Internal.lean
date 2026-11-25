@@ -55,6 +55,8 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
 * `TauCeti.InternalGrading.coe_decompose_ofDecomposition_piece_apply`: the decomposition carried by
   `ofDecomposition ℳ` is the given decomposition of `ℳ`, componentwise.
+* `TauCeti.InternalGrading.instGradedMonoidOfDecompositionPiece`: the pieces of
+  `ofDecomposition 𝒜` inherit the graded-monoid structure of `𝒜`.
 * `TauCeti.InternalGrading.instGradedSMulOfDecompositionSelf`: left multiplication respects the
   grading of a graded algebra.
 * `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
@@ -155,6 +157,19 @@ noncomputable def ofDecomposition (ℳ : ι → Submodule R M) [DirectSum.Decomp
 @[simp]
 theorem ofDecomposition_piece (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] :
     (ofDecomposition ℳ).piece = ℳ := (rfl)
+
+/-- The pieces of `ofDecomposition 𝒜` are those of `𝒜`, so they inherit its graded-monoid
+structure. -/
+instance instGradedMonoidOfDecompositionPiece {A : Type*} [Semiring A] [Module R A]
+    [AddMonoid ι] (𝒜 : ι → Submodule R A) [DirectSum.Decomposition 𝒜]
+    [SetLike.GradedMonoid 𝒜] : SetLike.GradedMonoid (ofDecomposition 𝒜).piece := by
+  rw [ofDecomposition_piece]
+  infer_instance
+
+/-- Reconstructing an internal grading from any decomposition of its pieces recovers it. -/
+@[simp]
+theorem ofDecomposition_piece_eq (G : InternalGrading R M ι) [DirectSum.Decomposition G.piece] :
+    ofDecomposition G.piece = G := (rfl)
 
 /-- The decomposition carried by `ofDecomposition ℳ` is the given one, on every component. The two
 instances are not definitionally equal (the one on `(ofDecomposition ℳ).piece` is chosen from

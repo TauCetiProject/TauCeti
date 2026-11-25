@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Embedding.MapExtend
+public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Kronecker
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Coordinates
 public import TauCeti.AlgebraicTopology.Singular.Twisted.QuotientCovering
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
@@ -67,7 +68,10 @@ over every point. Its lift is a Thom class of `E'`
 (`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so over a compact base
 `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` holds for every bundle and every commutative ring `k`
 (`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`, in the namespace
-`TauCeti.VectorBundleOrientationCover`).
+`TauCeti.VectorBundleOrientationCover`). By the universal coefficient theorem it transposes to
+cohomology with values in any injective module
+(`nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`, in the same
+namespace).
 
 The lifts of cochains to the orientation cover are stated with the orientations indexed by a type
 `ι : Type`, so the base, the fibres and the ring live in `Type` here.
@@ -84,6 +88,8 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`.
 * `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`: over a compact base,
   `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` for every bundle and every commutative ring `k`.
+* `nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`: its transpose
+  `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in cohomology, for injective values `N`.
 
 ## References
 
@@ -244,5 +250,25 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace [
     ((Module.finBasis ℝ F).reindex (Fintype.equivFinOfCardEq hι).symm).orientation
   exact nonempty_singularHomology_thomPair_iso_twistedHomology hι k _
     (isThomClass_thomPairSignCohomologyMap_twistedThomClass hι ω) p
+
+variable (F E) in
+/-- **The Thom isomorphism in cohomology with orientation-twisted coefficients over a compact
+base.** Let `E → B` be a real vector bundle of rank `r` over a compact base, orientable or not, with
+orientation local system `o(E)`, let `k` be any commutative ring and `N` an injective `k`-module,
+for instance `k = ℤ` and `N = ℚ`. Then `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in every degree `p`.
+
+It is the transpose of `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`:
+with injective values both cohomologies are the duals `Hom(-, N)` of the corresponding homologies,
+by the universal coefficient theorem (`TopPair.singularKronecker_bijective` and
+`TauCeti.LocalCoefficientSystem.twistedKronecker_bijective`). -/
+theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace
+    [CompactSpace B] (N : ModuleCat.{0} k) [Injective N] (p : ℕ) :
+    Nonempty ((thomPair F E).singularCohomology (ModuleCat.of k k) k N (p + finrank ℝ F) ≅
+      (signLocalSystem F E k hι).twistedCohomology k N p) := by
+  obtain ⟨e⟩ := nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace
+    (F := F) (E := E) hι k p
+  exact ⟨((LinearEquiv.ofBijective _ ((thomPair F E).singularKronecker_bijective k _)).trans
+    ((Linear.homCongr k e (Iso.refl N)).trans
+      ((signLocalSystem F E k hι).twistedKroneckerEquiv k p).symm)).toModuleIso⟩
 
 end TauCeti.VectorBundleOrientationCover
