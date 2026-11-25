@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Drift
+import Mathlib.MeasureTheory.Function.UniformIntegrable
 import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
-import TauCeti.MeasureTheory.Function.UniformIntegrable
 
 /-!
 # The weak maximum principle with a drift in `Lᵖ`
@@ -52,7 +52,7 @@ where `σ` bounds `e` and `Γ = {u > l, ∇u ≠ 0}`, outside of which `∇v = 0
 `TauCeti.W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq` for the first step). If `u > l`
 on a set of positive measure then `∇v ≠ 0` (`TauCeti.W1p.enorm_gradient_posPartAbove_ne_zero`),
 so `λ ≤ S ‖1_Γ W‖_p`. As `|Γ| → 0`, `‖1_Γ W‖_p → 0`, because `p < ∞` and `d ∈ Lᵖ`
-(`MeasureTheory.MemLp.tendsto_eLpNorm_indicator_of_tendsto_measure`), and the level-set argument
+(`MeasureTheory.MemLp.tendsto_eLpNorm_restrict_zero`), and the level-set argument
 `TauCeti.W1p.ae_value_le_of_forall_le_of_tendsto` concludes, as it does for bounded drifts in
 `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le`.
 
@@ -344,8 +344,12 @@ theorem UniformlyEllipticOn.value_le_const_of_memLp_drift_of_forall_eLpNorm_le
       (((ENNReal.continuous_rpow_const (y := 1 / p.toReal)).tendsto 0).comp htend)
       (Or.inr eNorm_ne_top)
     rwa [ENNReal.zero_rpow_of_pos hexp, mul_zero] at h
-  have hdrift := MemLp.tendsto_eLpNorm_indicator_of_tendsto_measure hd.norm hp1 hp
-    (fun j ↦ (hΓ j).nullMeasurableSet) htend
+  have hdrift : Tendsto (fun j ↦ eLpNorm ((Γ j).indicator fun x ↦ ‖d x‖) p μ) atTop (𝓝 0) := by
+    simp_rw [eLpNorm_indicator_eq_eLpNorm_restrict (hΓ _).nullMeasurableSet]
+    exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+      ((hd.norm.tendsto_eLpNorm_restrict_zero hp1 hp).comp htend)
+      (Eventually.of_forall fun _ ↦ bot_le)
+      (Eventually.of_forall fun j ↦ le_iSup_of_le (Γ j) (le_iSup_of_le le_rfl le_rfl))
   have hsum : Tendsto (fun j ↦ eLpNorm ((Γ j).indicator fun x ↦ C + ‖d x‖) p μ) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (by simpa using hconst.add hdrift) (fun _ ↦ zero_le) fun j ↦ ?_
