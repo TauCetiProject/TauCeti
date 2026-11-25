@@ -183,13 +183,11 @@ private theorem isZero_obj_of_forall_isZero_singleton_aux (G : KPresheaf (Module
     obtain ⟨⟨M, hMp⟩, f, _, hfg⟩ := Concrete.isColimit_exists_of_rep_eq _ hcp
       (i := op ⟨L, hLp⟩) (j := op ⟨L, hLp⟩) y 0
       ((ModuleCat.subsingleton_of_isZero (hstalk p (hKW hp))).elim _ _)
-    -- The diagram of `coconeOfCompacts {p}` is `G` precomposed with the inclusion of compact
-    -- neighbourhoods, so by definition it sends `f` to `G.map` of the opposite of the inclusion
-    -- `M ⊆ L`, which is `opHomOfLE` up to proof irrelevance. Hence `hfg` says that `y`
-    -- restricts to zero on `M`.
+    -- The diagram of `coconeOfCompacts {p}` sends `f` to the restriction from `L` to `M`, so
+    -- `hfg` says that `y` restricts to zero on `M`.
     have hML : M ≤ L := leOfHom f.unop
     have hy : (G.map (opHomOfLE hML)).hom y = 0 := by
-      rw [Subsingleton.elim (opHomOfLE _) ((Set.mono_coe _).functor.map f.unop).op]
+      rw [mono_coe_functor_op_comp_map] at hfg
       simpa using hfg
     exact ⟨M, hMp ⟨p, (Compacts.mem_singleton _ _).2 rfl⟩, hML, hy⟩
   choose! M hM hML hMy using hloc
