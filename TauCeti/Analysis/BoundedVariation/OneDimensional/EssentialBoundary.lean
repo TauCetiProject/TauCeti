@@ -9,7 +9,6 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.BoundedVariation.Real
-import TauCeti.MeasureTheory.Covering.DensityTheorem
 import TauCeti.MeasureTheory.Covering.EssentialBoundary.Real
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
@@ -42,8 +41,8 @@ or at most `1` (`TauCeti.Real.perimeter_Iio`, `TauCeti.Real.perimeter_Ioi`), and
 Lower bound: at a point `x ∈ ∂ᵉs ∩ Ω`, both `s` and its complement fill a positive proportion of
 arbitrarily small balls around `x`
 (`TauCeti.exists_pos_frequently_ofReal_mul_measure_closedBall_le`), so such a ball inside `Ω`
-contains a Lebesgue point of `s` and one of its complement, and the variation along these two points
-(`TauCeti.Real.ofReal_sum_le_perimeter`) gives `1 ≤ P(s; Ω)`. For finitely many
+charges both `s` and its complement, which gives `1 ≤ P(s; Ω)`
+(`TauCeti.Real.one_le_perimeter_of_ordConnected`). For finitely many
 points of `∂ᵉs ∩ Ω`, split `Ω` into a small ball around one of them and the complement of its
 closure, and add the perimeters over these disjoint open sets
 (`TauCeti.totalVariationOn_sup_of_disjoint`).
@@ -214,35 +213,20 @@ theorem perimeter_le_encard_frontier_inter (hs : NullMeasurableSet s) (Ω : Open
 boundary of a null-measurable set `s ⊆ ℝ` lies in the open set `Ω`, then `1 ≤ P(s; Ω)`. -/
 theorem one_le_perimeter_of_mem_essentialBoundary (hs : NullMeasurableSet s) {Ω : Opens ℝ}
     (hx : x ∈ essentialBoundary volume s) (hxΩ : x ∈ Ω) : 1 ≤ perimeter volume Ω s := by
-  set t := toMeasurable volume s
-  have hst : s =ᵐ[volume] t := hs.toMeasurable_ae_eq.symm
-  have ht : MeasurableSet t := measurableSet_toMeasurable _ _
-  rw [perimeter_congr_ae (ae_restrict_of_ae hst)]
-  rw [essentialBoundary_congr_ae hst] at hx
   obtain ⟨ε, hε, hεΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x hxΩ
   obtain ⟨a, ha, hfreq⟩ := exists_pos_frequently_ofReal_mul_measure_closedBall_le hx
   obtain ⟨r, ⟨h₁, h₂⟩, hr0, hrε⟩ := (hfreq.and_eventually (Ioo_mem_nhdsGT hε)).exists
   have hpos : 0 < ENNReal.ofReal a * volume (closedBall x r) :=
     ENNReal.mul_pos (ENNReal.ofReal_pos.2 ha).ne' (measure_closedBall_pos volume x hr0).ne'
-  have hae := IsUnifLocDoublingMeasure.ae_tendsto_average_closedBall_norm_sub volume
-    (f := t.indicator (1 : ℝ → ℝ)) ((locallyIntegrable_const 1).indicator ht)
-  obtain ⟨p, ⟨hpt, hpB⟩, hp⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae
-    (hpos.trans_le h₁).ne' (ae_restrict_of_ae hae)
-  obtain ⟨q, ⟨hqB, hqt⟩, hq⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae
-    (hpos.trans_le h₂).ne' (ae_restrict_of_ae hae)
-  have hsub : ∀ {u v : ℝ}, u ∈ closedBall x r → v ∈ closedBall x r → Icc u v ⊆ Ω :=
-    fun hu hv => ((convex_closedBall x r).ordConnected.out hu hv).trans
-      ((closedBall_subset_ball hrε).trans hεΩ)
-  suffices h : ENNReal.ofReal |t.indicator 1 q - t.indicator (1 : ℝ → ℝ) p| ≤
-      perimeter volume Ω t by simpa [hpt, hqt] using h
-  clear hpt hqt
-  -- The bound is symmetric in `p` and `q`, so order them.
-  wlog hpq : p ≤ q generalizing p q
-  · rw [abs_sub_comm]
-    exact this q hq hqB p hp hpB (le_of_not_ge hpq)
-  simpa using ofReal_sum_le_perimeter ht (x := ![p, q])
-    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; simpa using hpq)
-    (by simpa using hsub hpB hqB) (fun i => by fin_cases i <;> assumption)
+  have hrB : closedBall x r ⊆ ball x ε := closedBall_subset_ball hrε
+  -- The ball `B(x, ε) ⊆ Ω` charges both `s` and its complement.
+  let V : Opens ℝ := ⟨ball x ε, isOpen_ball⟩
+  refine le_trans ?_ (perimeter_mono (μ := volume) (s := s) (show V ≤ Ω from hεΩ))
+  refine one_le_perimeter_of_ordConnected (hs.mono Measure.restrict_le_self)
+    (convex_ball x ε).ordConnected ?_ ?_
+  · exact (hpos.trans_le (h₁.trans (measure_mono (inter_subset_inter_right _ hrB)))).ne'
+  · have hsub : closedBall x r \ s ⊆ sᶜ ∩ V := fun y hy => ⟨hy.2, hrB hy.1⟩
+    exact (hpos.trans_le (h₂.trans (measure_mono hsub))).ne'
 
 /-- **Every finite set of essential boundary points is counted by the perimeter.** If a finite set
 `F` of points of the essential boundary of a null-measurable `s ⊆ ℝ` lies in the open set `Ω`, then

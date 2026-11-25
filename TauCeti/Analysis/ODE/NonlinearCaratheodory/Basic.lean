@@ -39,7 +39,8 @@ that is `x = ODE.picard F t₀ x₀ x` on `[a, b]`, for `x` continuous on `[a, b
   absolutely continuous on `[a, b]`, with derivative `F t (x t)` at almost every `t ∈ (a, b)`.
 * `TauCeti.norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith`: if
   `‖F t x₀‖ ≤ m t` almost everywhere, every solution satisfies
-  `‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| exp |∫ s in t₀..t, L s|`.
+  `‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| exp |∫ s in t₀..t, L s|`. The bound only uses the Lipschitz
+  estimate at `x₀` (`TauCeti.norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_dist_le`).
 * `TauCeti.dist_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith`: solutions from two
   initial values stay within `‖x₀ - y₀‖ exp |∫ s in t₀..t, L s|` of each other.
 
@@ -246,15 +247,18 @@ theorem ae_hasDerivAt_of_forall_mem_Icc_eq_picard_of_lipschitzWith [CompleteSpac
   filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs
   rw [h s (Ioo_subset_Icc_self hs), ODE.picard_apply]
 
-omit hF in
-/-- **A priori bound for the nonlinear Carathéodory theorem.** Let `F t` be Lipschitz with
-constant `L t` for almost every `t ∈ [a, b]`, where `L` is integrable on `[a, b]`, and let
-`‖F t x₀‖ ≤ m t` for almost every `t ∈ [a, b]`, where `m` is integrable on `[a, b]`. A solution of
-`x t = x₀ + ∫ s in t₀..t, F s (x s)` on `[a, b]` satisfies
-`‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| exp |∫ s in t₀..t, L s|` for every `t ∈ [a, b]`. -/
-theorem norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith (ht₀ : t₀ ∈ Icc a b)
+omit hF hLip in
+/-- **A priori bound for the nonlinear Carathéodory theorem, at the initial value.** Let
+`‖F t y - F t x₀‖ ≤ L t ‖y - x₀‖` for every `y` and almost every `t ∈ [a, b]`, where `L` is
+integrable on `[a, b]`, and let `‖F t x₀‖ ≤ m t` for almost every `t ∈ [a, b]`, where `m` is
+integrable on `[a, b]`. A curve continuous on `[a, b]` with `x t = x₀ + ∫ s in t₀..t, F s (x s)`
+there satisfies `‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| exp |∫ s in t₀..t, L s|` for every
+`t ∈ [a, b]`. Only the Lipschitz bound at `x₀` is used; the composite `s ↦ F s (x s)` need not be
+known to be integrable. -/
+theorem norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_dist_le (ht₀ : t₀ ∈ Icc a b)
     {m : ℝ → ℝ}
     (hm : IntegrableOn m (Icc a b)) (hFm : ∀ᵐ t ∂volume.restrict (Icc a b), ‖F t x₀‖ ≤ m t)
+    (hLx₀ : ∀ᵐ t ∂volume.restrict (Icc a b), ∀ y, dist (F t y) (F t x₀) ≤ L t * dist y x₀)
     {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
     (h : ∀ t ∈ Icc a b, x t = ODE.picard F t₀ x₀ x t) {t : ℝ} (ht : t ∈ Icc a b) :
     ‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| * exp |∫ s in t₀..t, (L s : ℝ)| := by
@@ -281,14 +285,29 @@ theorem norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith (ht₀ 
   calc ‖∫ r in t₀..s, F r (x r)‖ ≤ |∫ r in t₀..s, (m r + (L r : ℝ) * ‖x r - x₀‖)| := by
         refine norm_integral_le_abs_of_norm_le ?_ (hmi.add hLu)
         filter_upwards [ae_restrict_of_ae_restrict_of_subset (uIoc_subset_uIcc.trans hsub')
-          (hFm.and hLip)] with r ⟨hr, hrL⟩
+          (hFm.and hLx₀)] with r ⟨hr, hrL⟩
         rw [← dist_eq_norm]
-        exact (norm_le_norm_add_const_of_dist_le (hrL.dist_le_mul (x r) x₀)).trans
+        exact (norm_le_norm_add_const_of_dist_le (hrL (x r))).trans
           (add_le_add hr le_rfl)
     _ ≤ |∫ r in t₀..s, m r| + |∫ r in t₀..s, (L r : ℝ) * ‖x r - x₀‖| := by
         rw [integral_add hmi hLu]
         exact abs_add_le _ _
     _ ≤ _ := add_le_add hm_mono le_rfl
+
+omit hF in
+/-- **A priori bound for the nonlinear Carathéodory theorem.** Let `F t` be Lipschitz with
+constant `L t` for almost every `t ∈ [a, b]`, where `L` is integrable on `[a, b]`, and let
+`‖F t x₀‖ ≤ m t` for almost every `t ∈ [a, b]`, where `m` is integrable on `[a, b]`. A solution of
+`x t = x₀ + ∫ s in t₀..t, F s (x s)` on `[a, b]` satisfies
+`‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| exp |∫ s in t₀..t, L s|` for every `t ∈ [a, b]`. -/
+theorem norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_lipschitzWith (ht₀ : t₀ ∈ Icc a b)
+    {m : ℝ → ℝ}
+    (hm : IntegrableOn m (Icc a b)) (hFm : ∀ᵐ t ∂volume.restrict (Icc a b), ‖F t x₀‖ ≤ m t)
+    {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
+    (h : ∀ t ∈ Icc a b, x t = ODE.picard F t₀ x₀ x t) {t : ℝ} (ht : t ∈ Icc a b) :
+    ‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| * exp |∫ s in t₀..t, (L s : ℝ)| :=
+  norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard_of_dist_le hL ht₀ hm hFm
+    (hLip.mono fun _ hr y ↦ hr.dist_le_mul y x₀) hx h ht
 
 /-- **Continuous dependence on the initial value.** Under the hypotheses of
 `TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard_of_lipschitzWith`, solutions `x` and `y` on
