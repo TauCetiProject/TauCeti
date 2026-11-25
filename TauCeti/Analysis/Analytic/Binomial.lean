@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Binomial
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.RingTheory.Binomial
@@ -52,6 +53,8 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
   `(1 + y) ^ a * (1 + y) ^ b = (1 + y) ^ (a + b)` for the sums of the binomial series.
 * `TauCeti.binomialSeries_sum_natCast` — for a natural number `n` the binomial series sums to
   `(1 + y) ^ n`.
+* `TauCeti.differentiable_ringChoose` — the generalized binomial coefficient `Ring.choose r k` is
+  an entire function of `r`.
 -/
 
 public section
@@ -266,6 +269,13 @@ theorem binomialSeries_sum_natCast (n : ℕ) (y : 𝔸) :
       zero_smul]
 
 end NormedAlgebra
+
+/-- The generalized binomial coefficient `Ring.choose r k` is a polynomial in `r`, so it is an
+entire function of `r` over every nontrivially normed field of characteristic zero. -/
+theorem differentiable_ringChoose {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] (k : ℕ) :
+    Differentiable 𝕜 fun r : 𝕜 => Ring.choose r k := by
+  simp_rw [Ring.choose_eq_inv_factorial_mul_eval_descPochhammer]
+  exact (Polynomial.differentiable _).const_mul _
 
 end TauCeti
 

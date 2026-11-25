@@ -528,9 +528,13 @@ The identity combines them without division, which is the integral step needed i
 * `TauCeti.Ring.add_one_nsmul_choose_add_one` and `TauCeti.Ring.add_one_nsmul_multichoose_add_one`:
   the product recursions `(k + 1) (r choose (k + 1)) = (r choose k) (r - k)` and
   `(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k)`.
+* `TauCeti.Ring.add_one_nsmul_choose_add_one_add_one`: the absorption identity
+  `(k + 1) (r + 1 choose (k + 1)) = (r + 1) (r choose k)`.
 * `TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer`: expression of
   `Ring.multichoose x n` as `(n!)⁻¹ * (ascPochhammer R n).eval x` over a characteristic-zero
-  division semiring.
+  division semiring, and its analogue
+  `TauCeti.Ring.choose_eq_inv_factorial_mul_eval_descPochhammer` for `Ring.choose x n` over a
+  characteristic-zero field.
 
 ## References
 
@@ -605,6 +609,17 @@ theorem add_one_nsmul_choose_add_one (r : R) (k : ℕ) :
   simpa [Nat.choose_succ_self_right] using
     _root_.Ring.choose_smul_choose r (n := k + 1) (k := k) (Nat.le_succ k)
 
+/-- The absorption identity for generalized binomial coefficients:
+
+```text
+(k + 1) (r + 1 choose (k + 1)) = (r + 1) (r choose k).
+```
+-/
+theorem add_one_nsmul_choose_add_one_add_one (r : R) (k : ℕ) :
+    (k + 1) • _root_.Ring.choose (r + 1) (k + 1) = (r + 1) * _root_.Ring.choose r k := by
+  simpa [Nat.choose_one_right] using
+    _root_.Ring.choose_smul_choose (r + 1) (n := k + 1) (k := 1) (by omega)
+
 end WeightedPascal
 
 /-! ## The product recursion for multiset coefficients -/
@@ -634,6 +649,14 @@ theorem multichoose_eq_inv_factorial_mul_eval_ascPochhammer {R : Type*} [Divisio
   have h := _root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer x n
   rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
   rw [← h, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
+
+/-- Over a field of characteristic zero, `Ring.choose x n` equals
+`(n!)⁻¹ * (descPochhammer R n).eval x`. -/
+theorem choose_eq_inv_factorial_mul_eval_descPochhammer {R : Type*} [Field R] [CharZero R]
+    (x : R) (n : ℕ) :
+    _root_.Ring.choose x n = (n.factorial : R)⁻¹ * (descPochhammer R n).eval x := by
+  rw [_root_.Ring.choose_eq_smul, smul_eq_mul, ← Polynomial.aeval_eq_smeval,
+    ← descPochhammer_map (algebraMap ℤ R), Polynomial.aeval_def, Polynomial.eval_map]
 
 /-! ## The coefficients of one -/
 

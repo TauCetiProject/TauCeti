@@ -9,13 +9,13 @@ public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.ZetaValues
 public import Mathlib.RingTheory.Binomial
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
-import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.PSeriesComplex
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Data.Nat.Cast.SetInterval
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.Analysis.MellinTransform.UpperTail
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -62,11 +62,14 @@ that term in absolute value.
 ## Implementation notes
 
 The Euler–Maclaurin formula of order `k` (`TauCeti.sum_Icc_eq_eulerMaclaurin_of_hasDerivAt`)
-applied to `x ↦ x^α` on `[n, N]`, whose derivatives are `i! C(α, i) x^(α-i)`, gives the identity
+applied to `x ↦ x^α` on `[n, N]`, whose derivatives are `i! C(α, i) x^(α-i)`
+(`TauCeti.hasDerivAt_factorial_mul_choose_mul_cpow`), gives the identity
 with `∑_{j=n}^{N-1}` in place of `ζ(-α) - ∑_{j=1}^{n-1}`. For `Re α < -1` letting `N → ∞` gives
 the identity, the sums tending to `ζ(-α)`. Both sides are holomorphic in `α` on `Re α < k - 1`
 once the pole of `ζ(-α)` at `α = -1` is cancelled against that of `n^(α+1)/(α+1)`, so the identity
-theorem extends it. The remainder integral is `O(n^(Re α + 1 - k))`, which gives the expansion.
+theorem extends it; the coefficients `C(α, k)` are entire in `α` by
+`TauCeti.differentiable_ringChoose`. The remainder integral is `O(n^(Re α + 1 - k))`, which gives
+the expansion.
 
 For the enclosure, the remainders after the terms up to `s = 2m - 1` and up to `s = 2m + 1` are
 `C(α, 2m) ∫_n^∞ (B_{2m}({x}) - B_{2m}) x^(α-2m) dx` and its analogue for `m + 1`. The integrands
@@ -89,30 +92,6 @@ open scoped Nat Topology
 namespace TauCeti
 
 /-! ### Preliminaries -/
-
-/-- The binomial coefficient `C(r, k)` is an entire function of `r`. -/
-private theorem differentiable_choose (k : ℕ) : Differentiable ℂ fun r : ℂ => Ring.choose r k := by
-  have h (r : ℂ) : Ring.choose r k = (k ! : ℂ)⁻¹ * (descPochhammer ℂ k).eval r := by
-    rw [Ring.choose_eq_smul, smul_eq_mul, ← Polynomial.aeval_eq_smeval,
-      ← descPochhammer_map (algebraMap ℤ ℂ), Polynomial.aeval_def, Polynomial.eval_map]
-  simp_rw [h]
-  exact (Polynomial.differentiable _).const_mul _
-
-/-- The derivatives of `x ↦ x ^ α` on `x > 0`: `i! C(α, i) x^(α - i)` has derivative
-`(i + 1)! C(α, i + 1) x^(α - (i + 1))`. -/
-private theorem hasDerivAt_factorial_mul_choose_mul_cpow (α : ℂ) (i : ℕ) {x : ℝ} (hx : 0 < x) :
-    HasDerivAt (fun y : ℝ => (i ! : ℂ) * Ring.choose α i * (y : ℂ) ^ (α - i))
-      (((i + 1)! : ℂ) * Ring.choose α (i + 1) * (x : ℂ) ^ (α - (i + 1 : ℕ))) x := by
-  have h := ((Complex.hasStrictDerivAt_cpow_const (c := α - i)
-    (ofReal_mem_slitPlane.2 hx)).hasDerivAt.comp_ofReal).const_mul
-    ((i ! : ℂ) * Ring.choose α i)
-  convert h using 1
-  have hrec := Ring.add_one_nsmul_choose_add_one α i
-  rw [nsmul_eq_mul] at hrec
-  push_cast at hrec ⊢
-  rw [Nat.factorial_succ, Nat.cast_mul, show α - (i + 1) = α - i - 1 by ring]
-  push_cast
-  linear_combination (i ! : ℂ) * (x : ℂ) ^ (α - i - 1) * hrec
 
 /-- The kernel `x^(α - k)` of the remainder written as `x^(-(s + 1))` with `s = k - 1 - α`. -/
 private theorem cpow_sub_natCast_eq (α : ℂ) (k : ℕ) (x : ℝ) :
@@ -274,9 +253,9 @@ private theorem riemannZeta₀_add_dslope {α : ℂ} (hα : α ≠ -1) (n : ℕ)
     riemannZeta₀ (-α) + dslope (fun β : ℂ => (n : ℂ) ^ β) 0 (α + 1) =
       riemannZeta (-α) + (n : ℂ) ^ (α + 1) / (α + 1) := by
   have hα' : α + 1 ≠ 0 := fun h => hα (by linear_combination h)
-  rw [riemannZeta_eq_inv_sub_add (fun h => hα (by linear_combination -h)),
-    dslope_of_ne _ hα', slope_def_field, cpow_zero, sub_zero,
-    show -α - 1 = -(α + 1) by ring, inv_neg]
+  have hpole : -α - 1 = -(α + 1) := by ring
+  rw [riemannZeta_eq_inv_sub_add (fun h => hα (by linear_combination -h)), hpole,
+    dslope_of_ne _ hα', slope_def_field, cpow_zero]
   field_simp
   ring
 
@@ -291,9 +270,8 @@ private theorem differentiableOn_integral_bernoulliFun_fract_mul_cpow (k : ℕ) 
     IsBigO.of_bound M (Eventually.of_forall fun x => by simpa using hM x)
   have hmaps : Set.MapsTo (fun α : ℂ => (k : ℂ) - 1 - α) {α : ℂ | α.re < k - 1}
       {s : ℂ | 0 < s.re} := by
-    intro α (hα : α.re < k - 1)
-    change 0 < ((k : ℂ) - 1 - α).re
-    simp only [sub_re, natCast_re, one_re]
+    intro α hα
+    simp only [Set.mem_ofPred_eq, sub_re, natCast_re, one_re] at hα ⊢
     linarith
   have h := (differentiableOn_integral_mul_cpow_of_isBigO hc hO).comp
     (by fun_prop : Differentiable ℂ fun α : ℂ => (k : ℂ) - 1 - α).differentiableOn hmaps
@@ -336,16 +314,17 @@ private theorem sum_Ico_cpow_eq_powerSumPart {α : ℂ} (hα : α ≠ -1) {k : �
     · exact (hdslope.comp (differentiable_id.add_const 1)).differentiableOn
     · exact (Differentiable.fun_sum fun s _ => ((differentiable_id.add_const 1).sub_const
         _ |>.const_cpow (Or.inl (Nat.cast_ne_zero.mpr (by omega)))).mul
-        (((differentiable_choose _).mul_const _).div_const _)).differentiableOn
-    · exact (((differentiable_choose k).const_mul _).differentiableOn).mul
+        (((differentiable_ringChoose _).mul_const _).div_const _)).differentiableOn
+    · exact (((differentiable_ringChoose k).const_mul _).differentiableOn).mul
         (differentiableOn_integral_bernoulliFun_fract_mul_cpow k hn')
   -- `F` vanishes on `Re α < -1`, hence on the preconnected half-plane `Re α < k - 1`.
   have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  have hm2 : (-2 : ℂ).re < -1 := by norm_num
   have hzero := hFan.eqOn_zero_of_preconnected_of_eventuallyEq_zero
     (convex_halfSpace_re_lt (k - 1 : ℝ)).isPreconnected (z₀ := -2)
     (by simp only [Set.mem_ofPred_eq, neg_re, re_ofNat]; linarith) (by
-      filter_upwards [(isOpen_lt continuous_re continuous_const).mem_nhds
-        (show (-2 : ℂ).re < -1 by norm_num)] with α (hα : α.re < -1)
+      filter_upwards [(isOpen_lt continuous_re continuous_const).mem_nhds hm2] with α
+        (hα : α.re < -1)
       rw [hFeq (fun h => by simp [h] at hα), Pi.zero_apply,
         sum_Ico_cpow_eq_of_re_lt hα hk hn, sub_self])
   have h := hzero hαk
@@ -358,11 +337,9 @@ private theorem choose_add_one_mul_div {α : ℂ} (hα : α ≠ -1) {s : ℕ} (h
     Ring.choose (α + 1) s * b / (α + 1) = Ring.choose α (s - 1) * b / s := by
   obtain ⟨t, rfl⟩ : ∃ t, s = t + 1 := ⟨s - 1, by omega⟩
   -- The absorption identity `(t + 1) C(α + 1, t + 1) = (α + 1) C(α, t)`.
-  have h := Ring.choose_smul_choose (α + 1) (n := t + 1) (k := 1) (by omega)
-  simp only [Nat.choose_one_right, Ring.choose_one_right, add_tsub_cancel_right,
-    nsmul_eq_mul] at h
+  have h := Ring.add_one_nsmul_choose_add_one_add_one α t
+  rw [nsmul_eq_mul] at h
   push_cast at h
-  rw [add_sub_cancel_right] at h
   have hα' : α + 1 ≠ 0 := fun h => hα (by linear_combination h)
   have ht : (t : ℂ) + 1 ≠ 0 := by exact_mod_cast t.succ_ne_zero
   rw [add_tsub_cancel_right]
@@ -519,9 +496,8 @@ private theorem integral_ofReal_bernoulliFun_sub_mul_cpow (α : ℝ) (p : ℕ) {
           ℂ) := by
   rw [← integral_complex_ofReal]
   refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : c < x) => ?_
-  rw [ofReal_mul, ofReal_cpow (hc.trans hx).le]
-  push_cast
-  rfl
+  rw [ofReal_mul, ofReal_cpow (hc.trans hx).le, ofReal_sub, ofReal_sub, ofReal_natCast,
+    ofReal_ratCast]
 
 /-- The remainder integral `∫_c^∞ (B_{2p}({x}) - B_{2p}) x^(α - 2p) dx` after the terms `s < 2p`,
 for real `α`. -/
@@ -536,7 +512,8 @@ private theorem mul_choose_two_mul_add_one (α : ℝ) (m : ℕ) :
   have hc1 := Ring.add_one_nsmul_choose_add_one α (2 * m)
   have hc2 := Ring.add_one_nsmul_choose_add_one α (2 * m + 1)
   rw [nsmul_eq_mul] at hc1 hc2
-  rw [show 2 * (m + 1) = 2 * m + 1 + 1 by ring]
+  have h2 : 2 * (m + 1) = 2 * m + 1 + 1 := by ring
+  rw [h2]
   push_cast at hc1 hc2 ⊢
   linear_combination (2 * (m : ℝ) + 1) * hc2 + (α - (2 * m + 1)) * hc1
 
@@ -553,7 +530,8 @@ private theorem exists_mem_Icc_choose_mul_evenRemainder_eq {α : ℝ} {m : ℕ} 
       ∃ θ ∈ Set.Icc (0 : ℝ) 1, a = θ * (a - b) := by
     rcases eq_or_ne e 0 with he0 | he0
     · exact ⟨0, ⟨le_rfl, zero_le_one⟩, by rw [he he0, zero_mul]⟩
-    rcases (show 0 ≤ e * (a - b) by rw [mul_sub]; linarith).eq_or_lt with h0 | h0
+    have hab0 : 0 ≤ e * (a - b) := by rw [mul_sub]; linarith
+    rcases hab0.eq_or_lt with h0 | h0
     · refine ⟨0, ⟨le_rfl, zero_le_one⟩, ?_⟩
       rw [zero_mul]
       exact (mul_eq_zero.mp (by linarith [mul_sub e a b])).resolve_left he0
