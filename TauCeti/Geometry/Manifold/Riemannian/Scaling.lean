@@ -239,6 +239,27 @@ section Laplacian
 
 variable {n : ℕ∞ω}
 
+/-- Multiplying a metric by a positive function `f` divides the gradient of every function at `x`
+by `f x`. -/
+theorem mgradient_rescale [IsManifold I 1 M] {k : ℕ∞ω}
+    (g : ContMDiffRiemannianMetric I k E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) k f) (hf_pos : ∀ x, 0 < f x) (u : M → ℝ) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      TauCeti.Manifold.mgradient I u x) =
+    (f x)⁻¹ • (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      TauCeti.Manifold.mgradient I u x) := by
+  have hg (v : TangentSpace I x) :
+      g.inner x (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.toRiemannianMetric⟩; TauCeti.Manifold.mgradient I u x) v = mvfderiv I u x v := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    exact TauCeti.Manifold.inner_mgradient v
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+  refine (TauCeti.Manifold.eq_mgradient_iff.2 fun v ↦ ?_).symm
+  rw [inner_riemannianBundle, rescale_inner, map_smul, smul_apply, hg, smul_eq_mul,
+    ← mul_assoc, mul_inv_cancel₀ (hf_pos x).ne', one_mul]
+
 /-- Multiplying a metric by a positive constant `c` multiplies the gradient of every function by
 `c⁻¹`. -/
 theorem mgradient_rescale_const [IsManifold I 1 M]
@@ -248,17 +269,8 @@ theorem mgradient_rescale_const [IsManifold I 1 M]
         ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
       TauCeti.Manifold.mgradient I f x) =
     c⁻¹ • (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      TauCeti.Manifold.mgradient I f x) := by
-  have hg (v : TangentSpace I x) :
-      g.inner x (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨g.toRiemannianMetric⟩; TauCeti.Manifold.mgradient I f x) v = mvfderiv I f x v := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    exact TauCeti.Manifold.inner_mgradient v
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
-  refine (TauCeti.Manifold.eq_mgradient_iff.2 fun v ↦ ?_).symm
-  rw [inner_riemannianBundle, rescale_inner, map_smul, smul_apply, hg, smul_eq_mul,
-    ← mul_assoc, mul_inv_cancel₀ hc.ne', one_mul]
+      TauCeti.Manifold.mgradient I f x) :=
+  g.mgradient_rescale contMDiff_const (fun _ ↦ hc) f x
 
 /-- **Scaling of the Laplacian.** Multiplying a `C¹` metric by a positive constant `c` multiplies
 the Laplace–Beltrami operator of every `C²` function by `c⁻¹`. -/
