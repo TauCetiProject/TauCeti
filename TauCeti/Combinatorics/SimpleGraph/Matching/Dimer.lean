@@ -34,10 +34,16 @@ and a homomorphism `τ : Γ →* (G ≃g G)` induces an action of `Γ` of this k
 
 For a finite set `F` of edges and a configuration `ω`, the *completion set*
 `G.dimerCompletionSet F ω` is the set of dimer configurations agreeing with `ω` off `F`.
-It is finite (`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer
-configuration. When `ω` is a dimer configuration, the members of its completion set are the
-gluings `Function.updateFinset ω F η` of a configuration `η` on `F` to `ω` off `F` that cover
-every endpoint of an edge of `F` exactly once (`SimpleGraph.dimerCompletionSet_eq_image`), and
+It depends on `ω` only off `F` (`SimpleGraph.dimerCompletionSet_congr`), is finite
+(`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer configuration; at
+`F = ∅` it is then the singleton `{ω}` (`SimpleGraph.dimerCompletionSet_empty`).
+Its members cover the same vertices by edges of `F` of value `true`
+(`SimpleGraph.dimerCoveredVertices`, `SimpleGraph.dimerCoveredVertices_eq`): the endpoints of edges
+of `F` that are not covered by an edge outside `F`
+(`SimpleGraph.IsDimerConfiguration.mem_dimerCoveredVertices_iff`).
+When `ω` is a dimer configuration, the members of its completion set are the gluings
+`Function.updateFinset ω F η` of a configuration `η` on `F` to `ω` off `F` that cover every
+endpoint of an edge of `F` exactly once (`SimpleGraph.dimerCompletionSet_eq_image`), and
 the restrictions to `F` of its members are exactly those configurations `η`
 (`SimpleGraph.mem_image_restrict_dimerCompletionSet`). So for two dimer configurations `ω₁` and
 `ω₂` that agree on the edges outside `F` sharing a vertex with an edge of `F`, the restrictions to
@@ -247,6 +253,65 @@ theorem mem_dimerCompletionSet {F : Finset G.edgeSet} {ω ω' : G.edgeSet → Bo
 theorem mem_dimerCompletionSet_self {F : Finset G.edgeSet} {ω : G.edgeSet → Bool}
     (hω : G.IsDimerConfiguration ω) : ω ∈ G.dimerCompletionSet F ω :=
   ⟨hω, fun _ _ => rfl⟩
+
+/-- The completion set depends on `ω` only off `F`. -/
+theorem dimerCompletionSet_congr {F : Finset G.edgeSet} {ω₁ ω₂ : G.edgeSet → Bool}
+    (h : ∀ e ∉ F, ω₁ e = ω₂ e) : G.dimerCompletionSet F ω₁ = G.dimerCompletionSet F ω₂ := by
+  ext ω'
+  simp only [mem_dimerCompletionSet]
+  exact and_congr_right fun _ => forall₂_congr fun e he => by rw [h e he]
+
+variable (G) in
+/-- The vertices covered by the edges of `F` of value `true` under `ω`. -/
+def dimerCoveredVertices [DecidableEq V] (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) :
+    Finset V :=
+  (F.filter fun e => ω e = true).biUnion fun e => (e : Sym2 V).toFinset
+
+theorem dimerCoveredVertices_def [DecidableEq V] (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) :
+    G.dimerCoveredVertices F ω =
+      (F.filter fun e => ω e = true).biUnion fun e => (e : Sym2 V).toFinset :=
+  (rfl)
+
+@[simp]
+theorem mem_dimerCoveredVertices [DecidableEq V] {F : Finset G.edgeSet} {ω : G.edgeSet → Bool}
+    {v : V} : v ∈ G.dimerCoveredVertices F ω ↔ ∃ e ∈ F, ω e = true ∧ v ∈ (e : Sym2 V) := by
+  simp [dimerCoveredVertices_def, and_assoc]
+
+/-- For a dimer configuration, a vertex is covered by an edge of `F` of value `true` exactly when
+it is an endpoint of an edge of `F` and not covered by an edge outside `F`. -/
+theorem IsDimerConfiguration.mem_dimerCoveredVertices_iff [DecidableEq V] {F : Finset G.edgeSet}
+    {ω : G.edgeSet → Bool} (hω : G.IsDimerConfiguration ω) {v : V} :
+    v ∈ G.dimerCoveredVertices F ω ↔
+      (∃ f ∈ F, v ∈ (f : Sym2 V)) ∧ ∀ e ∉ F, ω e = true → v ∉ (e : Sym2 V) := by
+  rw [mem_dimerCoveredVertices]
+  obtain ⟨e₀, he₀, huniq⟩ := isDimerConfiguration_iff.1 hω v
+  constructor
+  · rintro ⟨e, heF, hωe, hve⟩
+    refine ⟨⟨e, heF, hve⟩, fun e' he'F hωe' hve' => he'F ?_⟩
+    rw [huniq e' ⟨hωe', hve'⟩, ← huniq e ⟨hωe, hve⟩]
+    exact heF
+  · rintro ⟨-, hout⟩
+    by_cases h : e₀ ∈ F
+    · exact ⟨e₀, h, he₀⟩
+    · exact absurd he₀.2 (hout e₀ h he₀.1)
+
+/-- **The covered vertices are determined off `F`.** Two dimer configurations agreeing off `F`
+cover the same vertices by edges of `F`. -/
+theorem dimerCoveredVertices_eq [DecidableEq V] {F : Finset G.edgeSet} {ω ω' : G.edgeSet → Bool}
+    (hω : G.IsDimerConfiguration ω) (hω' : G.IsDimerConfiguration ω')
+    (h : ∀ e ∉ F, ω e = ω' e) : G.dimerCoveredVertices F ω = G.dimerCoveredVertices F ω' := by
+  ext v
+  rw [hω.mem_dimerCoveredVertices_iff, hω'.mem_dimerCoveredVertices_iff]
+  exact and_congr_right fun _ => forall₂_congr fun e he => by rw [h e he]
+
+/-- The completion set of a dimer configuration at `F = ∅` is the singleton of it. -/
+@[simp]
+theorem dimerCompletionSet_empty {ω : G.edgeSet → Bool} (hω : G.IsDimerConfiguration ω) :
+    G.dimerCompletionSet ∅ ω = {ω} := by
+  ext ω'
+  simp only [mem_dimerCompletionSet, Finset.notMem_empty, not_false_eq_true, forall_const,
+    mem_singleton_iff]
+  exact ⟨fun ⟨_, h⟩ => funext h, by rintro rfl; exact ⟨hω, fun _ => rfl⟩⟩
 
 /-- A completion set is finite: its members are determined by their values on `F`. -/
 theorem finite_dimerCompletionSet (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) :
