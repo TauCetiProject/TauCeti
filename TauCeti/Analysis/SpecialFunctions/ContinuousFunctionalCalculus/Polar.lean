@@ -292,12 +292,9 @@ theorem coe_polarUnitary_map {B : Type*} [PartialOrder B] [Ring B] [StarRing B]
     [ContinuousFunctionalCalculus ℝ B IsSelfAdjoint] [NonnegSpectrumClass ℝ B]
     [IsSemitopologicalRing B] [T2Space B] {F : Type*} [FunLike F A B] [RingHomClass F A B]
     [StarHomClass F A B] (φ : F) :
-    ((Units.map (φ : A →* B) a).polarUnitary : B) = φ (a.polarUnitary : A) := by
-  have hv : φ (a.polarUnitary : A) ∈ unitary B := by
-    rw [Unitary.mem_iff, ← map_star, ← map_mul, ← map_mul, Unitary.coe_star_mul_self,
-      Unitary.mul_star_self_of_mem a.polarUnitary.prop, map_one, and_self]
-  exact congrArg Subtype.val (polarUnitary_eq_of_mul_eq (v := ⟨_, hv⟩) _
-    (map_nonneg φ (CFC.sqrt_nonneg ((a : A) * star (a : A))))
+    ((Units.map (φ : A →* B) a).polarUnitary : B) = φ (a.polarUnitary : A) :=
+  congrArg Subtype.val (polarUnitary_eq_of_mul_eq (v := ⟨_, Unitary.map_mem φ a.polarUnitary.prop⟩)
+    _ (map_nonneg φ (CFC.sqrt_nonneg ((a : A) * star (a : A))))
     (by simp [← map_mul, sqrt_mul_star_mul_polarUnitary]))
 
 end Units

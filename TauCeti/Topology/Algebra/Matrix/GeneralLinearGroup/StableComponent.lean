@@ -294,13 +294,13 @@ open scoped IsMulCommutative in
 instance [PreconnectedSpace A] : CommGroup (StableComponentGroup A) :=
   inferInstance
 
-/-! ## Functoriality -/
-
 /-- The class of the adjoint of a unitary matrix is the inverse of its class. -/
 @[simp]
 theorem mk_toUnits_star [StarRing A] {n : ℕ} (u : unitary (Matrix (Fin n) (Fin n) A)) :
     mk A n (Unitary.toUnits (star u)) = (mk A n (Unitary.toUnits u))⁻¹ := by
   rw [Unitary.star_eq_inv, map_inv, map_inv]
+
+/-! ## Functoriality -/
 
 section Map
 
