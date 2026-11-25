@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Dual
 public import TauCeti.CategoryTheory.Monoidal.Rigid.DoubleDual
-import TauCeti.CategoryTheory.Monoidal.Closed.Basic
 
 /-!
 # Reflexive sheaves of modules on a scheme
@@ -64,24 +63,27 @@ class _root_.AlgebraicGeometry.Scheme.Modules.IsReflexive (M : X.Modules) : Prop
 attribute [instance] _root_.AlgebraicGeometry.Scheme.Modules.IsReflexive.isIso_doubleDualMap
 
 /-- The isomorphism `M ≅ M^∨∨` of a reflexive module with its double dual, given by evaluation. -/
-abbrev _root_.AlgebraicGeometry.Scheme.Modules.IsReflexive.doubleDualIso (M : X.Modules)
+def _root_.AlgebraicGeometry.Scheme.Modules.IsReflexive.doubleDualIso (M : X.Modules)
     [M.IsReflexive] :
     M ≅ ((ihom ((ihom M).obj (𝟙_ X.Modules))).obj (𝟙_ X.Modules)) :=
   asIso (doubleDualMap M)
 
+/-- The forward map of `Scheme.Modules.IsReflexive.doubleDualIso` is the evaluation map. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.IsReflexive.doubleDualIso_hom (M : X.Modules)
+    [M.IsReflexive] : (Scheme.Modules.IsReflexive.doubleDualIso M).hom = doubleDualMap M :=
+  (rfl)
+
+/-- The inverse of `Scheme.Modules.IsReflexive.doubleDualIso` is the inverse of evaluation. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.IsReflexive.doubleDualIso_inv (M : X.Modules)
+    [M.IsReflexive] : (Scheme.Modules.IsReflexive.doubleDualIso M).inv = inv (doubleDualMap M) :=
+  (rfl)
+
 /-- Reflexivity is invariant under isomorphism. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.IsReflexive.of_iso {M N : X.Modules} (e : M ≅ N)
-    [M.IsReflexive] : N.IsReflexive := by
-  have : IsIso (pre e.hom) := pre_isIso e
-  have : IsIso ((pre e.hom).app (𝟙_ X.Modules)) := NatIso.isIso_app_of_isIso _ _
-  have : IsIso (pre ((pre e.hom).app (𝟙_ X.Modules))) :=
-    pre_isIso (asIso ((pre e.hom).app (𝟙_ X.Modules)))
-  have : IsIso ((pre ((pre e.hom).app (𝟙_ X.Modules))).app (𝟙_ X.Modules)) :=
-    NatIso.isIso_app_of_isIso _ _
-  have h : doubleDualMap N =
-      e.inv ≫ doubleDualMap M ≫ (pre ((pre e.hom).app (𝟙_ X.Modules))).app (𝟙_ X.Modules) := by
-    rw [← doubleDualMap_naturality, Iso.inv_hom_id_assoc]
-  exact ⟨h ▸ inferInstance⟩
+    [M.IsReflexive] : N.IsReflexive :=
+  ⟨isIso_doubleDualMap_of_iso e⟩
 
 /-- A locally free `𝒪_X`-module of finite type is reflexive: its dual `𝓗om(M, 𝒪_X)` is a left
 dual of `M`, and the double-dual map of a dualizable object is an isomorphism. -/
@@ -98,14 +100,8 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.IsReflexive.unit :
 /-- The dual `𝓗om(M, 𝒪_X)` of a reflexive module is reflexive: its double-dual map is a section of
 the dual of the double-dual map of `M`, which is an isomorphism. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.IsReflexive.dual (M : X.Modules)
-    [M.IsReflexive] : ((ihom M).obj (𝟙_ X.Modules)).IsReflexive := by
-  have : IsIso (pre (doubleDualMap M)) := pre_isIso (asIso (doubleDualMap M))
-  have : IsIso ((pre (doubleDualMap M)).app (𝟙_ X.Modules)) := NatIso.isIso_app_of_isIso _ _
-  have h := doubleDualMap_comp_pre_doubleDualMap M
-  have : doubleDualMap ((ihom M).obj (𝟙_ X.Modules)) =
-      inv ((pre (doubleDualMap M)).app (𝟙_ X.Modules)) := by
-    rw [← cancel_mono ((pre (doubleDualMap M)).app (𝟙_ X.Modules)), h, IsIso.inv_hom_id]
-  exact ⟨this ▸ inferInstance⟩
+    [M.IsReflexive] : ((ihom M).obj (𝟙_ X.Modules)).IsReflexive :=
+  ⟨inferInstance⟩
 
 end
 
