@@ -84,59 +84,39 @@ theorem doubledBundleCore_eq (C : FiniteRankBundleCore ℂ M)
 
 local notation "A" => (borderedInterior M : Set M)ᶜ
 
-open WithConv in
-/-- Intrinsic conjugation of complex operators, as a real continuous linear map. -/
-private noncomputable def conjOperatorL (r : ℕ) :
-    ((Fin r → ℂ) →L[ℂ] (Fin r → ℂ)) →L[ℝ] ((Fin r → ℂ) →L[ℂ] (Fin r → ℂ)) where
-  toFun T := (star (toConv T)).ofConv
-  map_add' S T := by ext; simp
-  map_smul' c T := by ext; simp
-  cont := ContinuousLinearMap.continuous_intrinsicStar
-
 open Filter Topology in
 /-- Off the seam, a doubled transition is `C^n` where the transition of `C` is: the fold is a local
 diffeomorphism onto the interior, followed on the second copy by conjugation of operators. -/
 private theorem contMDiffAt_doubleAlongCoordChange_of_mem_borderedInterior
-    (C : FiniteRankBundleCore ℂ M) (hC : C.IsRealAlong A) {n : ℕ∞ω} {i j y : SchottkyDouble M}
-    (hg : ContMDiffOn closedUpperHalfPlaneModel 𝓘(ℝ, (Fin C.rank → ℂ) →L[ℂ] (Fin C.rank → ℂ)) n
-      (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j))
-      (C.core.baseSet (DoubleAlong.fold A i) ∩ C.core.baseSet (DoubleAlong.fold A j)))
-    (hyS : DoubleAlong.fold A y ∈
-      C.core.baseSet (DoubleAlong.fold A i) ∩ C.core.baseSet (DoubleAlong.fold A j))
+    (C : FiniteRankBundleCore ℂ M) {n : ℕ∞ω} {i j y : SchottkyDouble M}
+    (hg : ContMDiffAt closedUpperHalfPlaneModel 𝓘(ℝ, (Fin C.rank → ℂ) →L[ℂ] (Fin C.rank → ℂ)) n
+      (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j)) (DoubleAlong.fold A y))
     (hyI : DoubleAlong.fold A y ∈ borderedInterior M) :
     ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, (Fin C.rank → ℂ) →L[ℂ] (Fin C.rank → ℂ)) n
       (FiniteRankBundleCore.doubleAlongCoordChange C A i j) y := by
-  have hS : IsOpen (C.core.baseSet (DoubleAlong.fold A i) ∩
-      C.core.baseSet (DoubleAlong.fold A j)) :=
-    (C.core.isOpen_baseSet _).inter (C.core.isOpen_baseSet _)
   induction y using DoubleAlong.induction_on with
   | hl x =>
-    simp only [DoubleAlong.fold_inl] at hyI hyS
+    simp only [DoubleAlong.fold_inl] at hyI hg
     have hN : Set.range (interiorInl M) ∈ 𝓝 (DoubleAlong.inl A x) :=
       isOpenEmbedding_interiorInl.isOpen_range.mem_nhds ⟨⟨x, hyI⟩, interiorInl_apply _⟩
-    refine ((hg.contMDiffAt (hS.mem_nhds hyS)).comp_of_eq (contMDiffAt_fold_inl hyI)
+    refine (hg.comp_of_eq (contMDiffAt_fold_inl hyI)
       (DoubleAlong.fold_inl A x)).congr_of_eventuallyEq ?_
     filter_upwards [hN] with z hz
     obtain ⟨u, rfl⟩ := hz
     simp only [interiorInl_apply, Function.comp_apply, DoubleAlong.fold_inl,
       FiniteRankBundleCore.doubleAlongCoordChange_inl]
   | hr x =>
-    simp only [DoubleAlong.fold_inr] at hyI hyS
-    have hN : Set.range (interiorInr M) ∩ DoubleAlong.fold A ⁻¹' (C.core.baseSet
-        (DoubleAlong.fold A i) ∩ C.core.baseSet (DoubleAlong.fold A j)) ∈
-          𝓝 (DoubleAlong.inr A x) :=
-      (isOpenEmbedding_interiorInr.isOpen_range.inter
-        (hS.preimage (DoubleAlong.fold A).continuous)).mem_nhds
-          ⟨⟨⟨x, hyI⟩, interiorInr_apply _⟩, by simpa using hyS⟩
-    refine ((conjOperatorL C.rank).contMDiff.contMDiffAt.comp _
-      ((hg.contMDiffAt (hS.mem_nhds hyS)).comp_of_eq (contMDiffAt_fold_inr hyI)
-        (DoubleAlong.fold_inr A x))).congr_of_eventuallyEq ?_
+    simp only [DoubleAlong.fold_inr] at hyI hg
+    have hN : Set.range (interiorInr M) ∈ 𝓝 (DoubleAlong.inr A x) :=
+      isOpenEmbedding_interiorInr.isOpen_range.mem_nhds ⟨⟨x, hyI⟩, interiorInr_apply _⟩
+    refine ((ContinuousLinearMap.intrinsicStarL (E := Fin C.rank → ℂ)
+      (F := Fin C.rank → ℂ)).contMDiff.contMDiffAt.comp _ (hg.comp_of_eq
+        (contMDiffAt_fold_inr hyI) (DoubleAlong.fold_inr A x))).congr_of_eventuallyEq ?_
     filter_upwards [hN] with z hz
-    obtain ⟨⟨u, rfl⟩, hu⟩ := hz
-    simp only [interiorInr_apply, Set.mem_preimage, Function.comp_apply,
-      DoubleAlong.fold_inr] at hu ⊢
-    rw [FiniteRankBundleCore.doubleAlongCoordChange_inr hC hu.1 hu.2]
-    rfl
+    obtain ⟨u, rfl⟩ := hz
+    simp only [interiorInr_apply, Function.comp_apply, DoubleAlong.fold_inr]
+    rw [FiniteRankBundleCore.doubleAlongCoordChange_inr_of_notMem C i j fun h ↦ h u.property,
+      ContinuousLinearMap.intrinsicStarL_apply]
 
 open Filter Topology in
 /-- **Smoothness of the doubled bundle through a collar projection.** Let the transitions of `C` be
@@ -176,8 +156,13 @@ theorem contMDiffOn_coordChange_doubledBundleCore (C : FiniteRankBundleCore ℂ 
       𝓘(ℝ, (Fin C.rank → ℂ) →L[ℂ] (Fin C.rank → ℂ)) n g x :=
     fun x hx ↦ (hg i' j').contMDiffAt (hS.mem_nhds hx)
   intro y hy
+  rw [doubledBundleCore_eq, Set.mem_inter_iff, FiniteRankBundleCore.mem_baseSet_doubleAlong,
+    FiniteRankBundleCore.mem_baseSet_doubleAlong] at hy
   have hyS : DoubleAlong.fold A y ∈ S := hy
   refine ContMDiffAt.contMDiffWithinAt ?_
+  -- The doubled core has rank `C.rank` and transitions `doubleAlongCoordChange C A`, both by
+  -- definition (`doubledBundleCore_eq`, `rank_doubleAlong`, `coordChange_doubleAlong`). The rank
+  -- occurs in the model of the target, so the statement is restated rather than rewritten.
   change ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, (Fin C.rank → ℂ) →L[ℂ] (Fin C.rank → ℂ)) n
     (FiniteRankBundleCore.doubleAlongCoordChange C A i j) y
   by_cases hyU : DoubleAlong.fold A y ∈ U
@@ -199,10 +184,9 @@ theorem contMDiffOn_coordChange_doubledBundleCore (C : FiniteRankBundleCore ℂ 
       simp only [DoubleAlong.fold_inr] at hzU hzi hzj hρg hρi hρj ⊢
       rw [FiniteRankBundleCore.doubleAlongCoordChange_inr hC hzi hzj, ← hρg]
       ext v : 1
-      rw [ContinuousLinearMap.intrinsicStar_apply]
-      change star (g (ρ x) (star v)) = g (ρ x) v
-      rw [hC.coordChange_star (hρA hzU) hρi hρj, star_star]
-  · exact contMDiffAt_doubleAlongCoordChange_of_mem_borderedInterior C hC (hg i' j') hyS
+      rw [ContinuousLinearMap.intrinsicStar_apply, WithConv.ofConv_toConv,
+        hC.coordChange_star (hρA hzU) hρi hρj, star_star]
+  · exact contMDiffAt_doubleAlongCoordChange_of_mem_borderedInterior C (hgS _ hyS)
       (not_not.1 fun h ↦ hyU (hAU h))
 
 open Bundle Filter Topology in
