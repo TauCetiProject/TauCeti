@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+public import TauCeti.AlgebraicTopology.Singular.Fibration.FiberInclusion
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Sphere
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.Sphere
+public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.Topology.Algebra.Quaternion.Unitary
 public import TauCeti.Topology.Grassmannian.SphereBundle.SpecialUnitary
 
@@ -193,11 +195,10 @@ def singularHomologySpecialUnitaryGroupThreeIsoOfLt {k : ℕ} (hk : k < 4) :
       ((singularHomologyFunctor (ModuleCat.{0} R) k).obj (ModuleCat.of R R)).obj
         (_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ)) :=
   -- `SU(3)` is `SU(1 + 2)`, the total space of the bundle, as `1 + 2` reduces to `3`.
-  eqToIso (singularHomologyFunctor_obj_obj_eq_toSSet_homology _ k
-      (_root_.TopCat.of (specialUnitaryGroup (Fin (1 + 2)) ℂ))) ≪≫
-    (@asIso _ _ _ _ _ (TopCat.isIso_homologyMap_sphereFibration_of_lt card_fin_six
-      serreFibrations_fiveSphereProj R (k := k) (by omega))).symm ≪≫
-    (eqToIso (singularHomologyFunctor_obj_obj_eq_toSSet_homology _ k _)).symm ≪≫
+  (@asIso _ _ _ _ _ (TopCat.isIso_singularHomologyMap_fiberι R serreFibrations_fiveSphereProj
+    (b := spherePolePoint card_fin_six) (n := 4) (fun j hj ↦
+      subsingleton_homotopyGroup_sphere_of_lt (n := 5) finrank_euclideanSpace_fin
+        (by simpa using Nat.lt_succ_of_le hj) _) hk)).symm ≪≫
     singularHomologyFiveSphereProjFiberIso R _ k
 
 /-- **`H₄(SU(3); R) = 0`**: both `H₄` of a fibre of `SU(3) → S⁵` and `H₄` of `SU(3)` modulo that
