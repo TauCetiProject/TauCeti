@@ -34,7 +34,8 @@ surjectivity of `F_m`: it identifies the Jones quotient at `δ = √3` with the 
 
 ## Main results
 
-* `TauCeti.TemperleyLieb.star_weyl`, `TauCeti.TemperleyLieb.star_cubicSite` and
+* `TauCeti.TemperleyLieb.star_weyl`, `TauCeti.TemperleyLieb.star_cubicSite`,
+  `TauCeti.TemperleyLieb.star_cubicProjection` and
   `TauCeti.TemperleyLieb.isSelfAdjoint_cubicProjection`: the adjoint on the cubic quantum torus.
 * `TauCeti.TemperleyLieb.cubicInversion_star`, `TauCeti.TemperleyLieb.star_mem_cubicFixed` and
   `TauCeti.TemperleyLieb.cubicIncl_star`: compatibility with the inversion and the inclusions.
@@ -104,11 +105,16 @@ theorem weyl_mem_unitary (a : Fin N → ZMod 3) : weyl N a ∈ unitary (CubicTor
 theorem star_cubicSite (j : Fin N) : star (cubicSite N j) = cubicSite N j ^ 2 := by
   rw [← cubicInversion_cubicSite, cubicSite_def, star_weyl, cubicInversion_weyl]
 
-/-- The cubic projections are self-adjoint. -/
-theorem isSelfAdjoint_cubicProjection (j : Fin N) : IsSelfAdjoint (cubicProjection N j) := by
+/-- The cubic projections are fixed by the adjoint: `p_j† = p_j`. -/
+@[simp]
+theorem star_cubicProjection (j : Fin N) : star (cubicProjection N j) = cubicProjection N j := by
   have h4 : cubicSite N j ^ 4 = cubicSite N j := by
     rw [pow_succ, cubicSite_pow_three, one_mul]
-  simp [IsSelfAdjoint, cubicProjection_def, star_pow, ← pow_mul, h4, add_right_comm]
+  simp [cubicProjection_def, star_pow, ← pow_mul, h4, add_right_comm]
+
+/-- The cubic projections are self-adjoint. -/
+theorem isSelfAdjoint_cubicProjection (j : Fin N) : IsSelfAdjoint (cubicProjection N j) :=
+  star_cubicProjection j
 
 /-- The inversion commutes with the adjoint. -/
 @[simp]
