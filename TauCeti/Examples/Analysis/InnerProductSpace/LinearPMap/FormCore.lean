@@ -45,13 +45,13 @@ variable (𝕜 : Type*) [RCLike 𝕜]
 
 /-- The diagonal operator `(S x)ₖ = 4ᵏ xₖ` on `ℓ²(ℕ, 𝕜)`, on its maximal domain
 `{x ∈ ℓ² | (4ᵏ xₖ) ∈ ℓ²}`: the diagonal operator `HilbertBasis.diagonalPMap` with coefficients `4ᵏ`
-in the standard Hilbert basis of `ℓ²(ℕ, 𝕜)` (`diagonalOperator_eq`). -/
+in the standard Hilbert basis of `ℓ²(ℕ, 𝕜)` (`diagonalOperator_def`). -/
 def diagonalOperator : ℓ²(ℕ, 𝕜) →ₗ.[𝕜] ℓ²(ℕ, 𝕜) :=
   (default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)).diagonalPMap fun k ↦ (4 : 𝕜) ^ k
 
 /-- The diagonal operator is `HilbertBasis.diagonalPMap` with coefficients `4ᵏ` in the standard
 Hilbert basis of `ℓ²(ℕ, 𝕜)`. -/
-theorem diagonalOperator_eq :
+theorem diagonalOperator_def :
     diagonalOperator 𝕜 =
       (default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)).diagonalPMap fun k ↦ (4 : 𝕜) ^ k :=
   (rfl)
@@ -60,13 +60,11 @@ variable {𝕜}
 
 @[simp]
 theorem diagonalOperator_apply (x : (diagonalOperator 𝕜).domain) (k : ℕ) :
-    (diagonalOperator 𝕜 x : ℓ²(ℕ, 𝕜)) k = (4 : 𝕜) ^ k * (x : ℓ²(ℕ, 𝕜)) k := by
-  rw [← HilbertBasis.inner_default_apply (diagonalOperator 𝕜 x : ℓ²(ℕ, 𝕜)) k,
-    ← HilbertBasis.inner_default_apply (x : ℓ²(ℕ, 𝕜)) k]
-  exact HilbertBasis.inner_diagonalPMap_apply _ _ x k
+    (diagonalOperator 𝕜 x : ℓ²(ℕ, 𝕜)) k = (4 : 𝕜) ^ k * (x : ℓ²(ℕ, 𝕜)) k :=
+  HilbertBasis.default_diagonalPMap_apply _ x k
 
 /-- The standard basis vectors lie in the domain of the diagonal operator. -/
-theorem default_mem_domain_diagonalOperator (k : ℕ) :
+theorem default_mem_diagonalOperator_domain (k : ℕ) :
     (default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)) k ∈ (diagonalOperator 𝕜).domain :=
   HilbertBasis.self_mem_diagonalPMap_domain _ _ k
 
@@ -237,7 +235,7 @@ theorem isFormCore_kernelDomain :
 /-- `⟪w, S e₀⟫ = 1` for the first vector `e₀` of the standard Hilbert basis. -/
 theorem inner_weightVector_diagonalOperator_default_zero :
     ⟪(weightVector : ℓ²(ℕ, 𝕜)), diagonalOperator 𝕜
-      ⟨(default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)) 0, default_mem_domain_diagonalOperator 0⟩⟫_𝕜 = 1 := by
+      ⟨(default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)) 0, default_mem_diagonalOperator_domain 0⟩⟫_𝕜 = 1 := by
   have h : diagonalOperator 𝕜 ⟨(default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)) 0,
       HilbertBasis.self_mem_diagonalPMap_domain _ _ 0⟩ =
       (4 : 𝕜) ^ 0 • (default : HilbertBasis ℕ 𝕜 ℓ²(ℕ, 𝕜)) 0 :=
