@@ -48,7 +48,7 @@ the orthonormal bases `b` and `J b`, give `(1/2) (2n - k - k) = n - k`.
 * `dualLefschetz_lefschetz_sub_lefschetz_dualLefschetz`: `[Λ, L] = (n - k) Id` on `⋀ᵏ V` for
   `k ≥ 2`, and `dualLefschetz_lefschetz_of_lt_two`: `Λ L = (n - k) Id` on `⋀ᵏ V` for `k < 2`.
 * `zeroEquiv_dualLefschetz_zero`: on two-vectors, `Λ y = ⟪ω, y⟫` in degree zero, and
-  `dualLefschetz_kahlerForm`: `Λ ω = n`.
+  `zeroEquiv_dualLefschetz_kahlerForm`: `Λ ω = n`.
 
 ## References
 
@@ -262,7 +262,7 @@ theorem dualLefschetz_lefschetz_of_lt_two {k : ℕ} (hk : k < 2) (x : ⋀[ℝ]^k
 
 /-- **`Λ ω = n`**, where `dim V = 2n`: the dual Lefschetz operator sends the Kähler two-vector to
 `n` under `⋀⁰ V ≃ ℝ`. -/
-theorem dualLefschetz_kahlerForm :
+theorem zeroEquiv_dualLefschetz_kahlerForm :
     zeroEquiv ℝ V (J.dualLefschetz 0 J.kahlerForm) = (finrank ℝ V : ℝ) / 2 := by
   rw [zeroEquiv_dualLefschetz_zero, inner_kahlerForm_self hJ]
 

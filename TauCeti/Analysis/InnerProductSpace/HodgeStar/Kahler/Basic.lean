@@ -119,9 +119,9 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 namespace TauCeti.AlmostComplexStructure
 
 /-- The **Kähler form** of an almost complex structure `J` on a real inner product space, as a
-two-vector: `ω = (1 / 2) ∑ᵢ bᵢ ∧ J bᵢ` for an orthonormal basis `b`. When `J` is orthogonal it
-represents the two-form `ω(u, w) = ⟪J u, w⟫` (`inner_kahlerForm_ιMulti`), so it does not depend
-on the basis. -/
+two-vector: `ω = (1 / 2) ∑ᵢ bᵢ ∧ J bᵢ` for an orthonormal basis `b`. It does not depend on the
+orthonormal basis (`sum_ιMulti_apply_eq_two_smul_kahlerForm`, `coe_kahlerForm`), and when `J` is
+orthogonal it represents the two-form `ω(u, w) = ⟪J u, w⟫` (`inner_kahlerForm_ιMulti`). -/
 def kahlerForm (J : AlmostComplexStructure V) : ⋀[ℝ]^2 V :=
   (2⁻¹ : ℝ) • ∑ i, ιMulti ℝ 2 ![stdOrthonormalBasis ℝ V i, J (stdOrthonormalBasis ℝ V i)]
 
