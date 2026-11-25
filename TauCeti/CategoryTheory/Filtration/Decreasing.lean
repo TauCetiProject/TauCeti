@@ -54,6 +54,17 @@ variable {C : Type*} [Category* C]
 lemma step_antitone (F : FilteredObject C ℤᵒᵖ) : Antitone fun p : ℤ ↦ F.step (op p) :=
   fun _ _ h ↦ F.step_le_step_of_hom (homOfLE h).op
 
+/-- In a decreasing filtration, every step after a zero step is zero. -/
+lemma step_eq_bot_of_le [HasZeroObject C] (F : FilteredObject C ℤᵒᵖ) {p q : ℤ} (hpq : p ≤ q)
+    (h : F.step (op p) = ⊥) : F.step (op q) = ⊥ :=
+  F.step_eq_bot_of_hom (homOfLE hpq).op h
+
+/-- In a decreasing filtration, every step before a step equal to the whole object is the whole
+object. -/
+lemma step_eq_top_of_le (F : FilteredObject C ℤᵒᵖ) {p q : ℤ} (hpq : p ≤ q)
+    (h : F.step (op q) = ⊤) : F.step (op p) = ⊤ :=
+  F.step_eq_top_of_hom (homOfLE hpq).op h
+
 section GradedPiece
 
 variable [HasZeroMorphisms C] [HasCokernels C]
@@ -142,8 +153,8 @@ an isomorphism on the graded pieces `gr^q` for `p ≤ q < b` is an isomorphism o
 lemma isIso_natTrans_app_of_isIso_gr {b : ℤ} (hF : F.step (op b) = ⊥) (hG : G.step (op b) = ⊥)
     {p : ℤ} (h : ∀ q, p ≤ q → q < b → IsIso ((gr q).map φ)) : IsIso (φ.natTrans.app (op p)) := by
   obtain hbp | hpb := le_or_gt b p
-  · exact isIso_natTrans_app_of_step_eq_bot φ (le_bot_iff.1 (hF ▸ F.step_antitone hbp))
-      (le_bot_iff.1 (hG ▸ G.step_antitone hbp))
+  · exact isIso_natTrans_app_of_step_eq_bot φ (F.step_eq_bot_of_le hbp hF)
+      (G.step_eq_bot_of_le hbp hG)
   -- descending induction on `p`, from `p = b` where both steps are zero
   replace hpb := hpb.le
   induction p, hpb using Int.leInductionDown with
@@ -164,14 +175,14 @@ lemma isIso_of_isIso_gr (hF : F.IsFinite) (hG : G.IsFinite) (h : ∀ p, IsIso ((
   obtain ⟨a₂, b₂, ha₂, hb₂⟩ := hG
   have hstep (p : ℤ) : IsIso (φ.natTrans.app (op p)) :=
     isIso_natTrans_app_of_isIso_gr φ (b := max b₁ b₂)
-      (le_bot_iff.1 (hb₁ ▸ F.step_antitone (le_max_left _ _)))
-      (le_bot_iff.1 (hb₂ ▸ G.step_antitone (le_max_right _ _))) fun q _ _ ↦ h q
+      (F.step_eq_bot_of_le (le_max_left _ _) hb₁) (G.step_eq_bot_of_le (le_max_right _ _) hb₂)
+      fun q _ _ ↦ h q
   refine (isIso_iff φ).2 ⟨?_, fun i ↦ hstep i.unop⟩
   -- on the underlying objects, compare through the steps `F^a = X` and `G^a = X`
   have : IsIso (F.stepι (op (min a₁ a₂))) :=
-    (F.step_eq_top_iff _).1 (top_unique (ha₁ ▸ F.step_antitone (min_le_left _ _)))
+    (F.step_eq_top_iff _).1 (F.step_eq_top_of_le (min_le_left _ _) ha₁)
   have : IsIso (G.stepι (op (min a₁ a₂))) :=
-    (G.step_eq_top_iff _).1 (top_unique (ha₂ ▸ G.step_antitone (min_le_right _ _)))
+    (G.step_eq_top_iff _).1 (G.step_eq_top_of_le (min_le_right _ _) ha₂)
   have : IsIso (F.stepι (op (min a₁ a₂)) ≫ φ.hom) := by
     rw [← Hom.natTrans_app_stepι]
     infer_instance

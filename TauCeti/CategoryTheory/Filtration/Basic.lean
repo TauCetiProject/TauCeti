@@ -54,7 +54,7 @@ instance {F G : FilteredObject C I} (f : F ⟶ G) [IsIso f] (i : I) : IsIso (f.n
 underlying objects and on every step of the filtrations. -/
 lemma isIso_iff {F G : FilteredObject C I} (f : F ⟶ G) :
     IsIso f ↔ IsIso f.hom ∧ ∀ i, IsIso (f.natTrans.app i) :=
-  ⟨fun _ ↦ ⟨inferInstanceAs (IsIso (forget.map f)), inferInstance⟩,
+  ⟨fun _ ↦ ⟨forget_map f ▸ Functor.map_isIso forget f, inferInstance⟩,
     fun ⟨_, _⟩ ↦ (isoMk (asIso f.hom) (fun i ↦ asIso (f.natTrans.app i))).isIso_hom⟩
 
 variable (F : FilteredObject C I)
@@ -125,6 +125,15 @@ lemma stepIso_hom_stepι (i : I) : (F.stepIso i).hom ≫ F.stepι i = (F.step i)
 /-- A morphism `i ⟶ j` of the index category includes the step `F_i` in the step `F_j`. -/
 lemma step_le_step_of_hom {i j : I} (f : i ⟶ j) : F.step i ≤ F.step j :=
   Subobject.mk_le_mk_of_comm (F.stepMap f) (F.stepMap_stepι f)
+
+/-- A step is zero if a step containing it is zero. -/
+lemma step_eq_bot_of_hom [HasZeroObject C] {i j : I} (f : i ⟶ j) (h : F.step j = ⊥) :
+    F.step i = ⊥ :=
+  le_bot_iff.1 (h ▸ F.step_le_step_of_hom f)
+
+/-- A step is everything if a step contained in it is everything. -/
+lemma step_eq_top_of_hom {i j : I} (f : i ⟶ j) (h : F.step i = ⊤) : F.step j = ⊤ :=
+  top_unique (h ▸ F.step_le_step_of_hom f)
 
 /-- A step is everything exactly when its inclusion is an isomorphism. -/
 lemma step_eq_top_iff (i : I) : F.step i = ⊤ ↔ IsIso (F.stepι i) :=
@@ -221,8 +230,7 @@ lemma IsComplete.hom_ext {F : FilteredObject C I} (hF : F.IsComplete) {W : C} {g
     (h : ∀ i, g ≫ cokernel.π (F.stepι i) = g' ≫ cokernel.π (F.stepι i)) : g = g' :=
   hF.isLimit.hom_ext h
 
-/-- A morphism into the underlying object vanishes in the quotient by a step through which it
-factors. -/
+/-- The arrow of a subobject contained in a step `F_i` vanishes in the quotient `X / F_i`. -/
 lemma arrow_comp_cokernel_π_eq_zero {S : Subobject F.X} {i : I} (h : S ≤ F.step i) :
     S.arrow ≫ cokernel.π (F.stepι i) = 0 := by
   rw [← Subobject.ofLEMk_comp (f := F.stepι i) h, Category.assoc, cokernel.condition, comp_zero]
@@ -247,7 +255,7 @@ on, the system of quotients is constant with value the underlying object. -/
 lemma isComplete_of_step_eq_bot [HasZeroObject C] [IsCofiltered I] {i₀ : I}
     (hi₀ : F.step i₀ = ⊥) : F.IsComplete := by
   have hiso : ∀ ⦃j : I⦄, (j ⟶ i₀) → IsIso (cokernel.π (F.stepι j)) := fun j f ↦
-    F.isIso_cokernel_π_stepι_of_step_eq_bot (le_bot_iff.1 (hi₀ ▸ F.step_le_step_of_hom f))
+    F.isIso_cokernel_π_stepι_of_step_eq_bot (F.step_eq_bot_of_hom f hi₀)
   have h : F.quotientDiagram.IsEventuallyConstantTo i₀ := fun j f ↦ by
     have := hiso f
     have := hiso (𝟙 i₀)
