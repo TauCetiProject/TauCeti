@@ -64,8 +64,6 @@ each summand of a finitely generated biproduct (`ModuleCat.finite_of_finite_bipr
   finite biproduct of objects with finitely generated values.
 * `CategoryTheory.Functor.map_biproductDesc_map_ι_apply`: for a functor to modules,
   `biproduct.desc g` after the `j`-th inclusion acts on values as `g j`.
-* `CategoryTheory.Functor.map_map_apply_eq_zero`: on values, `F.map g` kills the image of
-  `F.map f` when `f ≫ g = 0`.
 -/
 
 public section
@@ -253,13 +251,5 @@ theorem map_biproductDesc_map_ι_apply [HasZeroMorphisms C] {ι : Type*} {f : ι
     [HasBiproduct f] {Y : C} (g : ∀ j, f j ⟶ Y) (j : ι) (v : F.obj (f j)) :
     (F.map (biproduct.desc g)).hom ((F.map (biproduct.ι f j)).hom v) = (F.map (g j)).hom v := by
   rw [← ModuleCat.comp_apply, ← F.map_comp, biproduct.ι_desc]
-
-/-- For a functor to modules preserving zero morphisms, `F.map g` kills the image of `F.map f`
-when `f ≫ g = 0`. -/
-theorem map_map_apply_eq_zero [HasZeroMorphisms C] [F.PreservesZeroMorphisms] {A B Y : C}
-    {f : A ⟶ B} {g : B ⟶ Y} (h : f ≫ g = 0) (u : F.obj A) :
-    (F.map g).hom ((F.map f).hom u) = 0 := by
-  rw [← ModuleCat.comp_apply, ← F.map_comp, h]
-  simp
 
 end CategoryTheory.Functor
