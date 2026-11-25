@@ -169,7 +169,7 @@ instance isFirstOrderThickening_ι (n : ℕ) : IsFirstOrderThickening (𝔛.ι n
   ker_mul_self := by
     rw [𝔛.ker_ι n, ← pow_add]
     refine le_bot_iff.mp
-      ((pow_le_pow_of_le_one bot_le le_top (m := n + 2) (by omega)).trans_eq ?_)
+      ((Scheme.IdealSheafData.pow_le_pow_right _ (m := n + 2) (by omega)).trans_eq ?_)
     exact 𝔛.ker_levelMap_pow_succ_eq_bot (n + 1)
 
 /-- The composite transition thickening `X m ⟶ X n` for `m ≤ n`. -/
@@ -244,7 +244,7 @@ theorem ker_transition {m n : ℕ} (h : m ≤ n) :
     · have hh : 𝔛.transition h = 𝔛.transition h' ≫ 𝔛.ι n := 𝔛.transition_succ_of_le h'
       rw [hh, Scheme.Hom.ker_comp, ih h', ← 𝔛.ker_levelMap_comap_ι n,
         ← Scheme.IdealSheafData.comap_pow, Scheme.IdealSheafData.map_comap_of_isClosedImmersion,
-        𝔛.ker_ι n, sup_eq_left.mpr (pow_le_pow_of_le_one bot_le le_top (Nat.succ_le_succ h'))]
+        𝔛.ker_ι n, sup_eq_left.mpr (Scheme.IdealSheafData.pow_le_pow_right _ (Nat.succ_le_succ h'))]
     · obtain rfl : m = n + 1 := by omega
       rw [𝔛.transition_refl, Scheme.Hom.ker_eq_bot_of_isIso, 𝔛.ker_levelMap_pow_succ_eq_bot]
 

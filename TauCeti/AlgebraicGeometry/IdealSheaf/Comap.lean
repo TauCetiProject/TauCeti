@@ -27,6 +27,8 @@ divisor sums with pullback.
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_pow`: `(I ^ n).comap f = I.comap f ^ n`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.pow_le_map_pow`: if `J.comap f ≤ I`, then
   `J ^ n ≤ (I ^ n).map f`.
+* `AlgebraicGeometry.Scheme.IdealSheafData.pow_le_self`,
+  `AlgebraicGeometry.Scheme.IdealSheafData.pow_le_pow_right`: powers of an ideal sheaf decrease.
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_prod`: the inverse image of a finite product is
   the product of the inverse images.
 * `AlgebraicGeometry.Scheme.IdealSheafData.compl_support_comap`: the complement of the support of
@@ -127,6 +129,14 @@ theorem comap_pow (I : Y.IdealSheafData) (f : X ⟶ Y) (n : ℕ) :
 theorem pow_le_map_pow {I : X.IdealSheafData} {J : Y.IdealSheafData} {f : X ⟶ Y}
     (hf : J.comap f ≤ I) (n : ℕ) : J ^ n ≤ (I ^ n).map f :=
   le_map_iff_comap_le.mpr ((comap_pow J f n).trans_le (pow_le_pow_left₀ bot_le hf n))
+
+/-- A nonzero power of an ideal sheaf is contained in it, as for ideals (`Ideal.pow_le_self`). -/
+theorem pow_le_self (I : X.IdealSheafData) {n : ℕ} (hn : n ≠ 0) : I ^ n ≤ I :=
+  pow_le_of_le_one bot_le ((le_top : I ≤ ⊤).trans_eq one_eq_top.symm) hn
+
+/-- Powers of an ideal sheaf decrease, as for ideals (`Ideal.pow_le_pow_right`). -/
+theorem pow_le_pow_right (I : X.IdealSheafData) {m n : ℕ} (h : m ≤ n) : I ^ n ≤ I ^ m :=
+  pow_le_pow_of_le_one bot_le ((le_top : I ≤ ⊤).trans_eq one_eq_top.symm) h
 
 /-- The inverse image of a finite product of ideal sheaves is the product of the inverse images.
 When the ideals involved define effective Cartier divisors, this is the corresponding identity

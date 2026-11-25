@@ -53,9 +53,9 @@ module of homomorphisms into `I`.
   `I ≤ J`, the inclusion `V(J) ⟶ V(I)` is a first-order thickening if and only if `J ^ 2 ≤ I`,
   which holds in particular for successive positive powers `I ^ (n + 2) ≤ I ^ (n + 1)`.
 * `TauCeti.AlgebraicGeometry.IsThickening.factor_firstOrder`: a closed immersion whose ideal sheaf
-  `I` satisfies `I ^ (n + 2) = 0` factors, through `TauCeti.AlgebraicGeometry.factorPowSucc` (a
-  case of Mathlib's `IsClosedImmersion.lift`), through `V(I ^ (n + 1))` as a thickening with ideal
-  of vanishing `(n + 1)`-st power followed by a first-order thickening.
+  `I` satisfies `I ^ (n + 2) = 0` factors, by Mathlib's `IsClosedImmersion.lift`, through
+  `V(I ^ (n + 1))` as a thickening with ideal of vanishing `(n + 1)`-st power followed by a
+  first-order thickening.
 * `TauCeti.AlgebraicGeometry.isThickening_of_ker_pow_eq_bot`: a closed immersion with nilpotent
   ideal sheaf is a thickening.
 * `TauCeti.AlgebraicGeometry.IsThickening.ker_le_ker`: a morphism from a reduced scheme kills the
@@ -119,23 +119,6 @@ theorem isThickening_of_ker_pow_eq_bot (i : Z ⟶ X) [IsClosedImmersion i] {m : 
     calc i.ker ≤ i.ker.radical := Scheme.IdealSheafData.le_radical _
       _ = (i.ker ^ m).radical := (Scheme.IdealSheafData.radical_pow _ hm).symm
       _ = X.nilradical := by rw [h, Scheme.IdealSheafData.radical_bot]
-
-/-- For a morphism `i : Z ⟶ X` with ideal sheaf `I`, the factorization `Z ⟶ V(I ^ (n + 1))` of `i`
-through the closed subscheme `V(I ^ (n + 1))`, by Mathlib's `IsClosedImmersion.lift`. -/
-noncomputable def factorPowSucc (i : Z ⟶ X) (n : ℕ) :
-    Z ⟶ (i.ker ^ (n + 1)).subscheme :=
-  IsClosedImmersion.lift (i.ker ^ (n + 1)).subschemeι i
-    (by simpa using i.ker.pow_le_self n.succ_ne_zero)
-
-@[reassoc (attr := simp)]
-theorem factorPowSucc_fac (i : Z ⟶ X) (n : ℕ) :
-    factorPowSucc i n ≫ (i.ker ^ (n + 1)).subschemeι = i :=
-  IsClosedImmersion.lift_fac _ _ _
-
-instance isClosedImmersion_factorPowSucc (i : Z ⟶ X) [IsClosedImmersion i] (n : ℕ) :
-    IsClosedImmersion (factorPowSucc i n) := by
-  unfold factorPowSucc
-  infer_instance
 
 namespace IsThickening
 
@@ -333,7 +316,7 @@ theorem inclusion_pow_succ {I : X.IdealSheafData} {n : ℕ} (h : I ^ (n + 2) ≤
     IsFirstOrderThickening (Scheme.IdealSheafData.inclusion h) :=
   (inclusion_iff h).mpr <| by
     rw [← pow_mul]
-    exact pow_le_pow_of_le_one bot_le le_top (by omega)
+    exact I.pow_le_pow_right (by omega)
 
 end IsFirstOrderThickening
 
@@ -345,13 +328,17 @@ thickening (as `(I ^ (n + 1)) ^ 2 ≤ I ^ (n + 2) = 0`) and `Z ⟶ X'` is a thic
 sheaf `I / I ^ (n + 1)` has vanishing `(n + 1)`-st power. Inductively, a thickening with nilpotent
 ideal sheaf is a composite of first-order thickenings. -/
 theorem factor_firstOrder (i : Z ⟶ X) [IsClosedImmersion i] {n : ℕ} (h : i.ker ^ (n + 2) = ⊥) :
-    IsFirstOrderThickening (i.ker ^ (n + 1)).subschemeι ∧ IsThickening (factorPowSucc i n) ∧
-      (factorPowSucc i n).ker ^ (n + 1) = ⊥ := by
+    IsFirstOrderThickening (i.ker ^ (n + 1)).subschemeι ∧
+      IsThickening (IsClosedImmersion.lift (i.ker ^ (n + 1)).subschemeι i
+        (by simpa using i.ker.pow_le_self n.succ_ne_zero)) ∧
+      (IsClosedImmersion.lift (i.ker ^ (n + 1)).subschemeι i
+        (by simpa using i.ker.pow_le_self n.succ_ne_zero)).ker ^ (n + 1) = ⊥ := by
   -- The `(n + 1)`-st power of the ideal sheaf of `Z ⟶ X'` is the inverse image of `I ^ (n + 1)`,
   -- which vanishes on `X'`.
-  have hker : (factorPowSucc i n).ker ^ (n + 1) = ⊥ :=
+  have hker : (IsClosedImmersion.lift (i.ker ^ (n + 1)).subschemeι i
+      (by simpa using i.ker.pow_le_self n.succ_ne_zero)).ker ^ (n + 1) = ⊥ :=
     Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le _ (i.ker ^ (n + 1)).subschemeι
-      (by rw [factorPowSucc_fac, Scheme.IdealSheafData.ker_subschemeι])
+      (by rw [IsClosedImmersion.lift_fac, Scheme.IdealSheafData.ker_subschemeι])
   refine ⟨⟨?_⟩, isThickening_of_ker_pow_eq_bot _ (Nat.succ_ne_zero n) hker, hker⟩
   rw [Scheme.IdealSheafData.ker_subschemeι, ← pow_add, ← le_bot_iff, ← h]
   exact i.ker.pow_le_pow_right (by omega)

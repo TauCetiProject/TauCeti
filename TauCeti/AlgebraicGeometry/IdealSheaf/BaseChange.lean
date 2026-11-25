@@ -156,14 +156,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le {Y
     ← j.comap_ker_self]
   exact comap_mono j h
 
-/-- A nonzero power of an ideal sheaf is contained in it, as for ideals (`Ideal.pow_le_self`). -/
-theorem pow_le_self (I : X.IdealSheafData) {n : ℕ} (hn : n ≠ 0) : I ^ n ≤ I :=
-  pow_le_of_le_one bot_le ((le_top : I ≤ ⊤).trans_eq one_eq_top.symm) hn
-
-/-- Powers of an ideal sheaf decrease, as for ideals (`Ideal.pow_le_pow_right`). -/
-theorem pow_le_pow_right (I : X.IdealSheafData) {m n : ℕ} (h : m ≤ n) : I ^ n ≤ I ^ m :=
-  pow_le_pow_of_le_one bot_le ((le_top : I ≤ ⊤).trans_eq one_eq_top.symm) h
-
 /-- The lift of a closed immersion `g` along a closed immersion `f` is a closed immersion. -/
 instance _root_.AlgebraicGeometry.IsClosedImmersion.isClosedImmersion_lift {Y Z : Scheme.{u}}
     (f : X ⟶ Z) (g : Y ⟶ Z) [IsClosedImmersion f] [IsClosedImmersion g] (H : f.ker ≤ g.ker) :
