@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.BilinearForm.Finsupp
 public import TauCeti.Algebra.Cluster.BasedChart.Subalgebra
 public import TauCeti.Algebra.Cluster.OneExchange.Independence
 
@@ -119,20 +120,6 @@ theorem exchange_single_self_apply (Λ : LinearMap.BilinForm ℤ (I →₀ ℤ))
   simp only [exchange_apply, Finsupp.erase_single, Finsupp.single_eq_same, one_mul, map_zero]
   rw [LinearMap.zero_apply, zero_add, sub_eq_self, mul_eq_zero]
   exact Or.inr (map_zero l)
-
-/-- An alternating form on `I →₀ R`, expanded along `a = a_k e_k + a°` and `b = b_k e_k + b°`
-with `a° = a - a_k e_k`: `Λ'(a, b) = Λ'(a°, b°) + a_k * Λ'(e_k, b°) - b_k * Λ'(e_k, a°)`. -/
-theorem IsAlt.apply_eq_erase {R : Type*} [CommRing R] {Λ' : LinearMap.BilinForm R (I →₀ R)}
-    (hΛ' : Λ'.IsAlt) (k : I) (a b : I →₀ R) :
-    Λ' a b = Λ' (a.erase k) (b.erase k) + a k * Λ' (Finsupp.single k 1) (b.erase k) -
-      b k * Λ' (Finsupp.single k 1) (a.erase k) := by
-  have hs (n : R) : Finsupp.single k n = n • Finsupp.single k (1 : R) := by
-    rw [Finsupp.smul_single_one]
-  conv_lhs => rw [← Finsupp.single_add_erase k a, ← Finsupp.single_add_erase k b,
-    hs (a k), hs (b k)]
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
-    hΛ'.self_eq_zero, ← hΛ'.neg_eq (a.erase k)]
-  ring
 
 /-- An alternating form that agrees with `Λ` on the exponents vanishing at `k` and pairs `e_k`
 with them by `l` is the exchanged form `Λ.exchange k l`. -/
