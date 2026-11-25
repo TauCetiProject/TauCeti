@@ -72,12 +72,9 @@ theorem summable_of_summable_primes_of_squarefree {g : ℕ → ℝ} (hg₀ : ∀
         = ∏ p ∈ M.primesBelow, (1 + g p) :=
           prod_congr rfl fun p hp ↦
             tsum_pow_eq_one_add_of_squarefree hg₁ (hpow (Nat.prime_of_mem_primesBelow hp))
-      _ ≤ ∏ p ∈ M.primesBelow, Real.exp (g p) :=
-          prod_le_prod₀ (fun p _ ↦ by linarith [hg₀ p]) fun p _ ↦ by
-            linarith [Real.add_one_le_exp (g p)]
+      _ ≤ Real.exp (∑ p ∈ M.primesBelow, g p) := Real.prod_one_add_le_exp_sum _ hg₀
       _ = Real.exp (∑ n ∈ range M, {p : ℕ | p.Prime}.indicator g n) := by
-          simp only [← Real.exp_sum, Nat.primesBelow, sum_filter, Set.indicator_apply,
-            Set.mem_ofPred_eq]
+          simp only [Nat.primesBelow, sum_filter, Set.indicator_apply, Set.mem_ofPred_eq]
       _ ≤ _ := Real.exp_le_exp.2 <| hind.sum_le_tsum _ fun n _ ↦
           Set.indicator_nonneg (fun n _ ↦ hg₀ n) n
   rcases em (0 ∈ u) with h0 | h0
