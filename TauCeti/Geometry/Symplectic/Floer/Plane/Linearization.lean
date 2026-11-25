@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
+import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Geometry.Symplectic.Floer.Plane.ExponentialDecay
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint

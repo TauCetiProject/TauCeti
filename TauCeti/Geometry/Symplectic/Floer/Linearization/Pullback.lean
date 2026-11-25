@@ -189,14 +189,6 @@ theorem contDiff_covectorPullback_of_eqOn {φ : ℝ × ℝ → ℝ × ℝ} {J : 
   filter_upwards [hU.mem_nhds hζ] with ζ' hζ'
   simp only [Pi.smul_apply', ← hJeq hζ', Function.comp_apply]
 
-/-- A family `J_e(t)` that agrees with `J ∘ φ` along a line `{s} × ℝ` has period `c` when `φ` has
-period `c` along it, as an end structure agreeing with `J` in an end chart of a cylindrical end
-does for `c = 1`. -/
-theorem periodic_of_forall_comp_eq {β : Type*} {φ : ℝ × ℝ → ℝ × ℝ} {J : ℝ × ℝ → β}
-    {Je : ℝ → β} {s c : ℝ} (hφ : ∀ t, φ (s, t + c) = φ (s, t))
-    (hJeq : ∀ t, J (φ (s, t)) = Je t) : Periodic Je c := fun t ↦ by
-  rw [← hJeq, ← hJeq, hφ]
-
 end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm

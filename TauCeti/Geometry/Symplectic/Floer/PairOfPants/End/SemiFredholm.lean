@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Linearization
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
+import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
