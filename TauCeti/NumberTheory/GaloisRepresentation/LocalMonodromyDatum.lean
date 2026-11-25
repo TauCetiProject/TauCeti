@@ -62,6 +62,9 @@ character by `c` gives the datum `c • D`, isomorphic to `D` through the identi
   composition of isomorphisms, with constants `1`, `c⁻¹` and `c' * c`.
 * `TauCeti.LocalMonodromyDatum.isIso_refl_smul`, `isIso_smul_refl`: the identity is an isomorphism
   `D → c • D` with constant `c`, and `c • D → D` with constant `c⁻¹`.
+* `TauCeti.LocalMonodromyDatum.IsIso.smul_right`, `IsIso.smul_left`: rescaling the target or the
+  source of an isomorphism with constant `c` by `c'` changes the constant to `c' * c` or
+  `c * c'⁻¹`.
 * `TauCeti.LocalMonodromyDatum.IsIso.const_eq`, `isIso_refl_smul_iff`: the constant of an
   isomorphism is determined by the underlying group isomorphism.
 
@@ -381,6 +384,27 @@ theorem const_eq (h : IsIso D D' α c) (h' : IsIso D D' α c') : c = c' := by
   have hσ' := (h.map_mem_inertia_iff σ).2 σ.property
   exact Units.ext <| mul_right_cancel₀ hσ <|
     (h.toAdd_tame_map σ σ.property hσ').symm.trans (h'.toAdd_tame_map σ σ.property hσ')
+
+variable (c') in
+/-- An isomorphism `D → D'` with constant `c` is an isomorphism `D → c' • D'` with constant
+`c' * c`. -/
+theorem smul_right (h : IsIso D D' α c) : IsIso D (c' • D') α (c' * c) where
+  map_mem_inertia_iff := h.map_mem_inertia_iff
+  map_mem_frobenius_iff := h.map_mem_frobenius_iff
+  q_eq := h.q_eq
+  toAdd_tame_map σ hσ hσ' := by
+    rw [toAdd_smul_tame, h.toAdd_tame_map σ hσ hσ', Units.val_mul, mul_assoc]
+
+variable (c') in
+/-- An isomorphism `D → D'` with constant `c` is an isomorphism `c' • D → D'` with constant
+`c * c'⁻¹`. -/
+theorem smul_left (h : IsIso D D' α c) : IsIso (c' • D) D' α (c * c'⁻¹) where
+  map_mem_inertia_iff := h.map_mem_inertia_iff
+  map_mem_frobenius_iff := h.map_mem_frobenius_iff
+  q_eq := h.q_eq
+  toAdd_tame_map σ hσ hσ' := by
+    rw [toAdd_smul_tame, h.toAdd_tame_map σ hσ hσ', Units.val_mul, mul_assoc,
+      Units.inv_mul_cancel_left]
 
 end IsIso
 
