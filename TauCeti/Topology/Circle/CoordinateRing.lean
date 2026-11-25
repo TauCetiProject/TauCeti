@@ -74,11 +74,25 @@ continuously in the point. -/
 noncomputable def evalGL : GL n (CircleRing ℝ) →* C(Circle, GL n ℝ) :=
   ContinuousMap.evalGL.comp (Units.map evalCircle.toRingHom.mapMatrix.toMonoidHom)
 
+/-- The loop of an invertible matrix over the circle is the pointwise evaluation of its image
+under `evalCircle`. -/
+theorem evalGL_eq (g : GL n (CircleRing ℝ)) :
+    evalGL g = ContinuousMap.evalGL (Units.map evalCircle.toRingHom.mapMatrix.toMonoidHom g) :=
+  (rfl)
+
 /-- The entries of the loop of an invertible matrix over the circle are the evaluations of its
 entries. -/
 @[simp]
 theorem coe_evalGL_apply (g : GL n (CircleRing ℝ)) (z : Circle) (i j : n) :
     (evalGL g z : Matrix n n ℝ) i j = evalCircle ((g : Matrix n n (CircleRing ℝ)) i j) z := by
+  simp [evalGL]
+
+/-- The entries of the inverse of the loop of an invertible matrix over the circle are the
+evaluations of the entries of its inverse. -/
+@[simp]
+theorem coe_inv_evalGL_apply (g : GL n (CircleRing ℝ)) (z : Circle) (i j : n) :
+    (((evalGL g z)⁻¹ : GL n ℝ) : Matrix n n ℝ) i j =
+      evalCircle (((g⁻¹ : GL n (CircleRing ℝ)) : Matrix n n (CircleRing ℝ)) i j) z := by
   simp [evalGL]
 
 /-- **Elementary matrices over the circle give nullhomotopic loops.** -/
