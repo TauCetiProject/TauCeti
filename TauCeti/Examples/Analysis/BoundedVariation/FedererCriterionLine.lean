@@ -65,8 +65,9 @@ private theorem coe_window (k : ℕ) :
     (window k : Set ℝ) = Ioo (1 / (2 * (k : ℝ) + 3)) (1 / (2 * k + 1)) :=
   (rfl)
 
-theorem measurableSet_intervals : MeasurableSet intervals :=
-  MeasurableSet.iUnion fun _ => measurableSet_Ioo
+theorem measurableSet_intervals : MeasurableSet intervals := by
+  rw [intervals]
+  exact MeasurableSet.iUnion fun k => by rw [piece]; exact measurableSet_Ioo
 
 /-- For `j < k`, the right end `1/(2k + 1)` of the `k`-th gap lies left of `piece j`. -/
 private theorem one_div_two_mul_add_one_le_of_lt {j k : ℕ} (hjk : j < k) :
@@ -91,7 +92,7 @@ private theorem one_le_perimeter_window (k : ℕ) :
   have h₂ : 1 / (2 * (k : ℝ) + 2) < 1 / (2 * k + 1) := by gcongr; norm_num
   have hs : Ioo (1 / (2 * (k : ℝ) + 3)) (1 / (2 * k + 2)) ⊆ intervals ∩ window k := by
     rw [coe_window]
-    exact fun x hx => ⟨mem_iUnion.2 ⟨k, hx⟩, hx.1, hx.2.trans h₂⟩
+    exact fun x hx => ⟨mem_intervals_iff.2 ⟨k, hx⟩, hx.1, hx.2.trans h₂⟩
   have hc : Ioo (1 / (2 * (k : ℝ) + 2)) (1 / (2 * k + 1)) ⊆ intervalsᶜ ∩ window k := by
     rw [coe_window]
     exact fun x hx => ⟨Ioo_subset_compl_intervals k hx, h₁.trans hx.1, hx.2⟩
@@ -157,12 +158,14 @@ theorem infinite_essentialBoundary_inter :
 /-- On `(t, ∞)` with `1/(2N + 2) ≤ t`, the set `s` agrees with its first `N` intervals. -/
 private theorem intervals_inter_Ioi {t : ℝ} {N : ℕ} (hN : 1 / (2 * (N : ℝ) + 2) ≤ t) :
     intervals ∩ Ioi t = (⋃ k ∈ Finset.range N, piece k) ∩ Ioi t := by
+  rw [intervals]
   refine Subset.antisymm (fun x ⟨hx, hxt⟩ => ⟨?_, hxt⟩)
     (inter_subset_inter_left _ (iUnion₂_subset fun k _ => subset_iUnion piece k))
   obtain ⟨k, hk⟩ := mem_iUnion.1 hx
   refine mem_biUnion (Finset.mem_range.2 ?_) hk
   by_contra! hNk
   have : 1 / (2 * (k : ℝ) + 2) ≤ 1 / (2 * N + 2) := by gcongr
+  rw [piece] at hk
   exact absurd (hk.2.trans_le (this.trans hN)) (not_lt.2 hxt.le)
 
 /-- The frontier of the first `N` intervals is finite. -/
