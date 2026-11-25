@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Normed.Module.Connected
 public import TauCeti.GroupTheory.GroupAction.SubMulAction
 public import TauCeti.Geometry.Manifold.Instances.NonzeroVectors
 public import TauCeti.Geometry.Manifold.Instances.Quotient
+public import TauCeti.Topology.Algebra.ConstMulAction
 public import TauCeti.Topology.Compactness.LocallyCompact
 import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 import Mathlib.Topology.Instances.ZMultiples
@@ -26,7 +27,8 @@ For a unit `c` of a nontrivially normed field `𝕜` and a normed space `E` over
 **Hopf manifold** `TauCeti.HopfManifold E c` is the orbit space of the nonzero vectors of `E` under
 the group `⟨c⟩ = Subgroup.zpowers c` of dilations `v ↦ cᵏ v`, `k ∈ ℤ`. The group acts through
 Mathlib's action of `𝕜ˣ` on nonzero vectors, by analytic maps
-(`TauCeti.instContMDiffConstSMulSubgroupNonZero`) and freely (`Units.isCancelSMul_nonZero`).
+(`TauCeti.instContMDiffConstSMulNonZero` and `SetLike.contMDiffConstSMul`) and freely
+(`Units.isCancelSMul_nonZero`).
 
 When `‖c‖ ≠ 1` the action is properly discontinuous
 (`TauCeti.HopfManifold.instProperlyDiscontinuousSMul`): `log ‖cᵏ v‖ - log ‖v‖ = k log ‖c‖`, so
@@ -210,7 +212,7 @@ instance instCompactSpace [ProperSpace E] : CompactSpace (HopfManifold E c) := b
     obtain ⟨v, rfl⟩ := mk_surjective x
     obtain ⟨k, hk₁, hk₂⟩ := Units.exists_zpow_smul_mem_annulus hd v
     obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp (hdc ▸ zpow_mem (Subgroup.mem_zpowers d) k)
-    exact ⟨d ^ k • v, ⟨hk₁, hk₂⟩, mk_eq_mk_iff.mpr ⟨j, by rw [hj]⟩⟩
+    exact ⟨d ^ k • v, ⟨hk₁, hk₂.le⟩, mk_eq_mk_iff.mpr ⟨j, by rw [hj]⟩⟩
   exact ⟨hA' ▸ hA.image continuous_mk⟩
 
 omit [Nontrivial E] [LocallyCompactSpace E] [Fact (‖(c : 𝕜)‖ ≠ 1)] in

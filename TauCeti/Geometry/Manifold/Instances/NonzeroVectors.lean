@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Topology.Algebra.MulAction
+public import TauCeti.Geometry.Manifold.Algebra.SMul
 
 /-!
 # The nonzero vectors of a normed space as a manifold
@@ -26,8 +27,8 @@ of dilations are the Hopf manifolds.
   are an analytic manifold modelled on `E`, charted by the inclusion.
 * `TauCeti.contMDiff_val_nonZero`, `TauCeti.contMDiff_nonZero_iff`: the inclusion is analytic, and
   a map into the nonzero vectors is `C^n` exactly when its composite with the inclusion is.
-* `TauCeti.instContMDiffConstSMulNonZero`, `TauCeti.instContMDiffConstSMulSubgroupNonZero`: the
-  units of `𝕜`, and every subgroup of them, act by analytic maps.
+* `TauCeti.instContMDiffConstSMulNonZero`: the units of `𝕜` act by analytic maps, and so does
+  every subgroup of them, through `SetLike.contMDiffConstSMul`.
 -/
 
 public noncomputable section
@@ -81,16 +82,5 @@ theorem contMDiff_nonZero_iff {f : M → {v : E // v ≠ 0}} :
 instance instContMDiffConstSMulNonZero : ContMDiffConstSMul 𝓘(𝕜, E) n 𝕜ˣ {v : E // v ≠ 0} where
   contMDiff_const_smul a := contMDiff_nonZero_iff.mpr
     ((contDiff_const_smul (a : 𝕜)).contMDiff.comp contMDiff_val_nonZero)
-
-/-- Every subgroup of the units of `𝕜` acts on the nonzero vectors of `E` by analytic maps. -/
-instance instContMDiffConstSMulSubgroupNonZero (S : Subgroup 𝕜ˣ) :
-    ContMDiffConstSMul 𝓘(𝕜, E) n S {v : E // v ≠ 0} :=
-  IsScalarTower.contMDiffConstSMul 𝕜ˣ
-
-omit [Nontrivial E] in
-/-- Every subgroup of the units of `𝕜` acts on the nonzero vectors of `E` by homeomorphisms. -/
-instance instContinuousConstSMulSubgroupNonZero (S : Subgroup 𝕜ˣ) :
-    ContinuousConstSMul S {v : E // v ≠ 0} :=
-  IsScalarTower.continuousConstSMul S 𝕜ˣ _
 
 end TauCeti
