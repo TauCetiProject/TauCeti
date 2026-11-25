@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Operator.VectorFunctional
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.RingTheory.Flat.Basic
+import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
 # The spatial C*-norm on an algebraic tensor product of operator algebras
@@ -53,8 +54,8 @@ subalgebra of `B(E ⊗₂ F)`.
   `NonUnitalStarSubalgebra.spatialNorm_star_mul_self` and
   `NonUnitalStarSubalgebra.spatialNorm_tmul`.
 * `NonUnitalStarSubalgebra.minTensor A B`: the spatial tensor product `A ⊗_min B`, with
-  `NonUnitalStarSubalgebra.isClosed_minTensor`, `NonUnitalStarSubalgebra.minTensor_le` and
-  `NonUnitalStarSubalgebra.mapLCompletion_mem_minTensor`.
+  `NonUnitalStarSubalgebra.mem_minTensor_iff`, `NonUnitalStarSubalgebra.isClosed_minTensor`,
+  `NonUnitalStarSubalgebra.minTensor_le` and `NonUnitalStarSubalgebra.mapLCompletion_mem_minTensor`.
 * `NonUnitalStarSubalgebra.toMinTensor A B`: the star homomorphism `A ⊗[𝕜] B → A ⊗_min B`, with
   `NonUnitalStarSubalgebra.norm_toMinTensor` and `NonUnitalStarSubalgebra.denseRange_toMinTensor`.
 
@@ -254,6 +255,20 @@ theorem minTensor_def :
     minTensor A B = (NonUnitalStarAlgHom.range (spatialTensorHom A B)).topologicalClosure :=
   (rfl)
 
+/-- As a set of operators, the spatial tensor product is the closure of the range of the spatial
+tensor homomorphism. -/
+@[simp]
+theorem coe_minTensor :
+    (minTensor A B : Set (Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F))) =
+      closure (Set.range (spatialTensorHom A B)) := by
+  rw [minTensor_def, topologicalClosure_coe, NonUnitalStarAlgHom.coe_range]
+
+/-- An operator lies in the spatial tensor product iff it is a norm limit of images of the
+algebraic tensor product. -/
+theorem mem_minTensor_iff {T : Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F)} :
+    T ∈ minTensor A B ↔ T ∈ closure (Set.range (spatialTensorHom A B)) := by
+  rw [← SetLike.mem_coe, coe_minTensor]
+
 /-- The spatial tensor product is closed. -/
 theorem isClosed_minTensor :
     IsClosed (minTensor A B : Set (Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F))) :=
@@ -296,8 +311,7 @@ theorem norm_toMinTensor (x : A ⊗[𝕜] B) : ‖toMinTensor A B x‖ = spatial
 
 /-- The algebraic tensor product is dense in the spatial tensor product. -/
 theorem denseRange_toMinTensor : DenseRange (toMinTensor A B) := by
-  -- `A ⊗_min B` is by definition the closure of the range of `spatialTensorHom A B`.
   rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
-  exact subset_rfl
+  exact (coe_minTensor A B).subset
 
 end NonUnitalStarSubalgebra
