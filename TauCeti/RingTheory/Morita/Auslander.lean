@@ -11,13 +11,10 @@ public import TauCeti.CategoryTheory.Preadditive.AdditiveGenerator
 public import TauCeti.RingTheory.DominantDimension
 public import TauCeti.RingTheory.GlobalDimension
 
-import Mathlib.CategoryTheory.Functor.ReflectsIso.Balanced
-import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
 import TauCeti.Algebra.Category.FGModuleCat.Generator.Cogenerator
 import TauCeti.Algebra.Category.ModuleCat.Algebra
 import TauCeti.CategoryTheory.Functor.RingEquivEnd
-import TauCeti.CategoryTheory.Preadditive.Projectivization
-import TauCeti.RingTheory.Artinian.Module
+import TauCeti.CategoryTheory.Preadditive.Projectivization.GlobalDimension
 import TauCeti.RingTheory.GlobalDimension.AdditiveGenerator
 import TauCeti.RingTheory.GlobalDimension.MulOpposite
 import TauCeti.RingTheory.Morita.GlobalDimension
@@ -56,7 +53,8 @@ The functor `Hom(M, -)` is left exact and sends `add M` to finitely generated pr
 hence projective. By projectivization it is `Hom(M, Q')` for some `Q'` in `add M`, the isomorphism
 is composition with a morphism `Q' ⟶ X`, and this morphism is an isomorphism since `M` is a
 generator. This part works in any abelian category
-(`CategoryTheory.IsSeparator.isAdditiveGenerator_of_globalDimension_le_two`).
+(`CategoryTheory.IsSeparator.isAdditiveGenerator_of_globalDimension_le_two`, in
+`TauCeti.CategoryTheory.Preadditive.Projectivization.GlobalDimension`).
 
 ## Main definitions
 
@@ -68,11 +66,6 @@ generator. This part works in any abelian category
 * `TauCeti.isAuslanderAlgebra_end`: **the Auslander correspondence, forward direction**: the
   endomorphism ring of an additive generator of `mod A`, for an Artin algebra `A`, is an Auslander
   algebra.
-* `CategoryTheory.IsSeparator.additiveClosure_kernel`: for a separator `M` of an abelian category
-  with `End M` right Noetherian of right global dimension at most two, `add M` is closed under
-  kernels.
-* `CategoryTheory.IsSeparator.isAdditiveGenerator_of_globalDimension_le_two`: such a separator is
-  an additive generator if every object embeds into an object of `add M`.
 * `TauCeti.IsGeneratorCogenerator.isAdditiveGenerator_of_globalDimension_le_two`: a
   generator-cogenerator `M` of `mod B`, for an Artin algebra `B`, with `Module.End B M` of global
   dimension at most two is an additive generator.
@@ -93,7 +86,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory
 
 universe u v w
 
@@ -117,96 +110,6 @@ theorem isAuslanderAlgebra_end (R : Type u) [CommRing R] [IsArtinianRing R] {A :
     (hM : IsAdditiveGenerator M) : IsAuslanderAlgebra (Module.End A M.obj) :=
   isAuslanderAlgebra_iff.2 ⟨hM.globalDimension_moduleEnd_le_two R,
     two_le_dominantDimension_end R M (hM.isGeneratorCogenerator R)⟩
-
-
-/-! ### Additive generators from global dimension at most two -/
-
-section Abelian
-
-variable {C : Type u} [Category.{v} C] [Abelian C] {M : C}
-
-attribute [local instance] Abelian.hasFiniteBiproducts
-
-/-- Let `M` be an object of an abelian category whose endomorphism ring has right global dimension
-at most two, and let `d : Q₀ ⟶ Q₁` be a morphism in `add M`. Then `Hom(M, ker d)` is a projective
-right `End M`-module. Indeed `Hom(M, -)` is left exact, so `Hom(M, ker d)` is the kernel of the map
-`Hom(M, d)` between the projective modules `Hom(M, Q₀)` and `Hom(M, Q₁)`: a second syzygy of its
-cokernel, which has projective dimension at most two. -/
-theorem projective_preadditiveCoyonedaObj_obj_kernel
-    (hgl : globalDimension.{v} (End M)ᵐᵒᵖ ≤ 2) {Q₀ Q₁ : C} (h₀ : additiveClosure M Q₀)
-    (h₁ : additiveClosure M Q₁) (d : Q₀ ⟶ Q₁) :
-    Projective ((preadditiveCoyonedaObj M).obj (kernel d)) := by
-  have := (finiteProjectiveModules_iff.1 (finiteProjectiveModules_preadditiveCoyonedaObj_obj h₀)).2
-  have := (finiteProjectiveModules_iff.1 (finiteProjectiveModules_preadditiveCoyonedaObj_obj h₁)).2
-  have hC := (globalDimension_le_iff_hasProjectiveDimensionLE _ 2).1 hgl
-    (cokernel ((preadditiveCoyonedaObj M).map d))
-  have := (hasProjectiveDimensionLT_cokernel_iff_kernel ((preadditiveCoyonedaObj M).map d) 0).1 hC
-  exact Projective.of_iso (PreservesKernel.iso (preadditiveCoyonedaObj M) d).symm
-    (projective_iff_hasProjectiveDimensionLT_one.2 this)
-
-/-- Let `M` be a separator of an abelian category whose endomorphism ring is right Noetherian of
-right global dimension at most two. Then the kernel of every morphism `d : Q₀ ⟶ Q₁` in `add M` lies
-in `add M`. By projectivization, the finitely generated projective right `End M`-module
-`Hom(M, ker d)` is `Hom(M, Q')` for some `Q'` in `add M`, and the isomorphism is composition with
-some `h : Q' ⟶ ker d`. As `M` is a separator, `Hom(M, -)` is faithful, so it reflects isomorphisms
-in the balanced category `C`, and `h` is an isomorphism. -/
-theorem _root_.CategoryTheory.IsSeparator.additiveClosure_kernel
-    [IsNoetherianRing (End M)ᵐᵒᵖ] (hM : IsSeparator M)
-    (hgl : globalDimension.{v} (End M)ᵐᵒᵖ ≤ 2) {Q₀ Q₁ : C} (h₀ : additiveClosure M Q₀)
-    (h₁ : additiveClosure M Q₁) (d : Q₀ ⟶ Q₁) : additiveClosure M (kernel d) := by
-  let F := preadditiveCoyonedaObj M
-  have hP := projective_preadditiveCoyonedaObj_obj_kernel hgl h₀ h₁ d
-  -- `Hom(M, ker d)` is a submodule of the finitely generated module `Hom(M, Q₀)`.
-  have := (finiteProjectiveModules_iff.1 (finiteProjectiveModules_preadditiveCoyonedaObj_obj h₀)).1
-  have : Module.Finite (End M)ᵐᵒᵖ (F.obj (kernel d)) := Module.Finite.of_injective
-    (F.map (kernel.ι d)).hom ((ModuleCat.mono_iff_injective _).1 inferInstance)
-  obtain ⟨Q', ⟨e⟩⟩ := finiteProjectiveModules_le_essImage (M := M) (F.obj (kernel d))
-    (finiteProjectiveModules_iff.2 ⟨this, inferInstance⟩)
-  obtain ⟨h, hh⟩ := (preadditiveCoyonedaObj_map_bijective Q'.property (kernel d)).2 e.hom
-  have : F.Faithful := (isSeparator_iff_faithful_preadditiveCoyonedaObj M).1 hM
-  have : IsIso (F.map h) := hh ▸ inferInstance
-  have : IsIso h := isIso_of_reflects_iso h F
-  exact (additiveClosure M).prop_of_iso (asIso h) Q'.property
-
-/-- **Additive generators from global dimension at most two.** Let `M` be a separator of an abelian
-category whose endomorphism ring is right Noetherian of right global dimension at most two. If every
-object embeds into an object of `add M`, then `M` is an additive generator. Indeed every object `X`
-has a copresentation `0 ⟶ X ⟶ Q₀ ⟶ Q₁` with `Q₀`, `Q₁` in `add M`, so it is a kernel of a morphism
-in `add M` (`CategoryTheory.IsSeparator.additiveClosure_kernel`). -/
-theorem _root_.CategoryTheory.IsSeparator.isAdditiveGenerator_of_globalDimension_le_two
-    [IsNoetherianRing (End M)ᵐᵒᵖ] (hM : IsSeparator M)
-    (hgl : globalDimension.{v} (End M)ᵐᵒᵖ ≤ 2)
-    (hmono : ∀ X : C, ∃ (Y : C) (i : X ⟶ Y), additiveClosure M Y ∧ Mono i) :
-    IsAdditiveGenerator M := by
-  refine isAdditiveGenerator_def.2 fun X ↦ ?_
-  obtain ⟨Q₀, i, h₀, _⟩ := hmono X
-  obtain ⟨Q₁, j, h₁, _⟩ := hmono (cokernel i)
-  -- `X` is the kernel of `cokernel.π i`, hence of `cokernel.π i ≫ j` as `j` is a monomorphism.
-  let e : X ≅ kernel (cokernel.π i ≫ j) :=
-    (Abelian.monoIsKernelOfCokernel _ (colimit.isColimit _)).conePointUniqueUpToIso
-      (limit.isLimit _) ≪≫ (kernelCompMono _ _).symm
-  exact (additiveClosure M).prop_of_iso e.symm (hM.additiveClosure_kernel hgl h₀ h₁ _)
-
-end Abelian
-
-/-- **Finitely generated Artinian modules embed into finite sums of a coseparator**: if `M` is a
-coseparator of `mod A`, then every object `X` of `mod A` that is Artinian as a module admits a
-monomorphism into a finite biproduct of copies of `M`. -/
-theorem _root_.CategoryTheory.IsCoseparator.exists_mono_biproduct {A : Type u} [Ring A]
-    {M : FGModuleCat.{v} A} (hM : IsCoseparator M) (X : FGModuleCat.{v} A) [IsArtinian A X.obj] :
-    ∃ (n : ℕ) (i : X ⟶ ⨁ fun _ : Fin n ↦ M), Mono i := by
-  -- As `X` is Artinian, it embeds into a finite power `Mⁿ`.
-  obtain ⟨n, g, hg⟩ :=
-    IsArtinian.exists_injective_linearMap_pi ((FGModuleCat.isCoseparator_iff M).1 hM X)
-  let ι : X ⟶ ⨁ fun _ : Fin n ↦ M :=
-    biproduct.lift fun j ↦ ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.proj j ∘ₗ g))
-  -- The `j`-th coordinate of `ι` is `proj j ∘ g`, so `ι` is injective because `g` is.
-  refine ⟨n, ι, ConcreteCategory.mono_of_injective ι fun x y hxy ↦ hg <| funext fun j ↦ ?_⟩
-  have hπ : ι ≫ biproduct.π _ j =
-      ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.proj j ∘ₗ g)) := biproduct.lift_π _ j
-  have h := congrArg (ConcreteCategory.hom (biproduct.π (fun _ : Fin n ↦ M) j)) hxy
-  rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, hπ] at h
-  exact h
 
 open scoped ModuleCat.Algebra in
 /-- **Generator-cogenerators with endomorphism ring of global dimension at most two are additive
