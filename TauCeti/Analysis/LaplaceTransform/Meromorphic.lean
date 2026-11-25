@@ -13,6 +13,7 @@ import Mathlib.Analysis.Complex.Convex
 import TauCeti.Analysis.LaplaceTransform.Elementary
 import TauCeti.Analysis.LaplaceTransform.Landau
 import TauCeti.Analysis.Meromorphic.Identity
+import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.Analysis.Meromorphic.TrailingCoefficient
 
 /-!
@@ -28,6 +29,10 @@ a pole to the right of `θ`, the rightmost real pole has negative real trailing 
 We use the local Landau theorem `TauCeti.integrableOn_cexp_neg_mul_smul_ofReal_of_ae_nonneg`
 (Widder, *The Laplace Transform*, Chapter II, Theorem 5b) at the real abscissa, and the
 meromorphic identity theorem to identify the transform with the normal form of its continuation.
+
+The dichotomy is Landau's theorem (E. Landau, *Über einen Satz von Tschebyschef*, Math. Ann. 61
+(1905)), and the one-sided form follows the comparison argument in Montgomery and Vaughan,
+*Multiplicative Number Theory I*, Section 15.1.
 -/
 
 public section

@@ -56,32 +56,6 @@ theorem meromorphicTrailingCoeffAt_comp_mul_const {f : 𝕜 → E} {x c : 𝕜} 
           (g := (· * c⁻¹)) (by fun_prop)
     simp [hf, hcomp]
 
-/-- Subtracting `F` from a function analytic at `x` leaves `x` a pole exactly when it is a pole
-of `F`. If `F` is not meromorphic at `x`, both orders are the junk value `0`. -/
-theorem _root_.AnalyticAt.meromorphicOrderAt_fun_sub_nonneg_iff {P F : 𝕜 → E} {x : 𝕜}
-    (hP : AnalyticAt 𝕜 P x) :
-    0 ≤ meromorphicOrderAt (fun z ↦ P z - F z) x ↔ 0 ≤ meromorphicOrderAt F x := by
-  have hsub : (fun z ↦ P z - F z) = P + fun z ↦ -F z := funext fun z ↦ sub_eq_add_neg _ _
-  rw [hsub]
-  constructor
-  · intro h
-    by_contra! hp
-    have hlt : meromorphicOrderAt (fun z ↦ -F z) x < meromorphicOrderAt P x := by
-      rw [← meromorphicOrderAt_fun_neg]
-      exact hp.trans_le hP.meromorphicOrderAt_nonneg
-    rw [meromorphicOrderAt_add_eq_right_of_lt hP.meromorphicAt hlt,
-      ← meromorphicOrderAt_fun_neg] at h
-    exact h.not_gt hp
-  · intro h
-    by_cases hF : MeromorphicAt F x
-    · refine (le_min hP.meromorphicOrderAt_nonneg ?_).trans
-        (meromorphicOrderAt_add hP.meromorphicAt hF.fun_neg)
-      rwa [← meromorphicOrderAt_fun_neg]
-    · rw [meromorphicOrderAt_of_not_meromorphicAt fun hm ↦ hF ?_]
-      convert hP.meromorphicAt.sub hm using 1
-      funext z
-      simp
-
 /-- At a pole `x` of `F`, subtracting `F` from a function analytic at `x` negates the trailing
 coefficient. -/
 theorem _root_.AnalyticAt.meromorphicTrailingCoeffAt_fun_sub_of_neg {P F : 𝕜 → E} {x : 𝕜}
