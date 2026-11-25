@@ -103,73 +103,44 @@ variable (R : Type*) [CommRing R]
 
 /-- The base ring `A' = R[a₁, a₃]` of the `Γ₁(3)` Hopf algebroid over `R`, with `X 0 = a₁` and
 `X 1 = a₃`. -/
-abbrev BaseRing : Type _ :=
-  MvPolynomial (Fin 2) R
+abbrev BaseRing : Type _ := MvPolynomial (Fin 2) R
 
 /-- The universal coefficient `a₁ = X 0` in `BaseRing R`. -/
-def a₁ : BaseRing R :=
-  X 0
+def a₁ : BaseRing R := X 0
 
 /-- Explicit polynomial definition `a₁ R = X 0`. -/
-theorem a₁_def : a₁ R = X 0 :=
-  (rfl)
+theorem a₁_def : a₁ R = X 0 := (rfl)
 
 /-- The universal coefficient `a₃ = X 1` in `BaseRing R`. -/
-def a₃ : BaseRing R :=
-  X 1
+def a₃ : BaseRing R := X 1
 
 /-- Explicit polynomial definition `a₃ R = X 1`. -/
-theorem a₃_def : a₃ R = X 1 :=
-  (rfl)
+theorem a₃_def : a₃ R = X 1 := (rfl)
 
 /-- The universal `Γ₁(3)` normal-form curve `Y² + a₁XY + a₃Y = X³` over `BaseRing R`. -/
-def universalCurve : WeierstrassCurve (BaseRing R) :=
-  gammaOneThreeForm (a₁ R) (a₃ R)
+def universalCurve : WeierstrassCurve (BaseRing R) := gammaOneThreeForm (a₁ R) (a₃ R)
 
 /-- Explicit definition of `universalCurve R` as `gammaOneThreeForm (a₁ R) (a₃ R)`. -/
-theorem universalCurve_def : universalCurve R = gammaOneThreeForm (a₁ R) (a₃ R) :=
-  (rfl)
+theorem universalCurve_def : universalCurve R = gammaOneThreeForm (a₁ R) (a₃ R) := (rfl)
+
+@[simp] theorem universalCurve_a₁ : (universalCurve R).a₁ = a₁ R := gammaOneThreeForm_a₁ _ _
+@[simp] theorem universalCurve_a₂ : (universalCurve R).a₂ = 0 := gammaOneThreeForm_a₂ _ _
+@[simp] theorem universalCurve_a₃ : (universalCurve R).a₃ = a₃ R := gammaOneThreeForm_a₃ _ _
+@[simp] theorem universalCurve_a₄ : (universalCurve R).a₄ = 0 := gammaOneThreeForm_a₄ _ _
+@[simp] theorem universalCurve_a₆ : (universalCurve R).a₆ = 0 := gammaOneThreeForm_a₆ _ _
 
 @[simp]
-theorem universalCurve_a₁ : (universalCurve R).a₁ = a₁ R := by
-  rw [universalCurve_def]
-  exact gammaOneThreeForm_a₁ (a₁ R) (a₃ R)
-
-@[simp]
-theorem universalCurve_a₂ : (universalCurve R).a₂ = 0 := by
-  rw [universalCurve_def]
-  exact gammaOneThreeForm_a₂ (a₁ R) (a₃ R)
-
-@[simp]
-theorem universalCurve_a₃ : (universalCurve R).a₃ = a₃ R := by
-  rw [universalCurve_def]
-  exact gammaOneThreeForm_a₃ (a₁ R) (a₃ R)
-
-@[simp]
-theorem universalCurve_a₄ : (universalCurve R).a₄ = 0 := by
-  rw [universalCurve_def]
-  exact gammaOneThreeForm_a₄ (a₁ R) (a₃ R)
-
-@[simp]
-theorem universalCurve_a₆ : (universalCurve R).a₆ = 0 := by
-  rw [universalCurve_def]
-  exact gammaOneThreeForm_a₆ (a₁ R) (a₃ R)
-
-@[simp]
-theorem universalCurve_c₄ : (universalCurve R).c₄ = a₁ R ^ 4 - 24 * a₁ R * a₃ R := by
-  rw [universalCurve_def]
-  exact gammaOneThreeForm_c₄ (a₁ R) (a₃ R)
+theorem universalCurve_c₄ : (universalCurve R).c₄ = a₁ R ^ 4 - 24 * a₁ R * a₃ R :=
+  gammaOneThreeForm_c₄ (a₁ R) (a₃ R)
 
 @[simp]
 theorem universalCurve_c₆ :
-    (universalCurve R).c₆ = -a₁ R ^ 6 + 36 * a₁ R ^ 3 * a₃ R - 216 * a₃ R ^ 2 := by
-  rw [universalCurve_def]
-  exact gammaOneThreeForm_c₆ (a₁ R) (a₃ R)
+    (universalCurve R).c₆ = -a₁ R ^ 6 + 36 * a₁ R ^ 3 * a₃ R - 216 * a₃ R ^ 2 :=
+  gammaOneThreeForm_c₆ (a₁ R) (a₃ R)
 
 @[simp]
-theorem universalCurve_Δ : (universalCurve R).Δ = a₁ R ^ 3 * a₃ R ^ 3 - 27 * a₃ R ^ 4 := by
-  rw [universalCurve_def]
-  exact gammaOneThreeForm_Δ (a₁ R) (a₃ R)
+theorem universalCurve_Δ : (universalCurve R).Δ = a₁ R ^ 3 * a₃ R ^ 3 - 27 * a₃ R ^ 4 :=
+  gammaOneThreeForm_Δ (a₁ R) (a₃ R)
 
 /-- A ring homomorphism out of `BaseRing R` is determined by its restriction to `R` and its values
 on `a₁ R` and `a₃ R`. -/
@@ -179,20 +150,16 @@ theorem baseRing_ringHom_ext {S : Type*} [CommRing S] {f g : BaseRing R →+* S}
   MvPolynomial.ringHom_ext' hR fun i ↦ by fin_cases i <;> assumption
 
 /-- The arrow ring `Γ'` of the `Γ₁(3)` Hopf algebroid over `R`. -/
-abbrev UniversalArrowRing : Type _ :=
-  ArrowRing (a₁ R) (a₃ R)
+abbrev UniversalArrowRing : Type _ := ArrowRing (a₁ R) (a₃ R)
 
 /-- The coordinate `r` in `UniversalArrowRing R`. -/
-abbrev r : UniversalArrowRing R :=
-  ArrowRing.r
+abbrev r : UniversalArrowRing R := ArrowRing.r
 
 /-- The coordinate `s` in `UniversalArrowRing R`. -/
-abbrev s : UniversalArrowRing R :=
-  ArrowRing.s
+abbrev s : UniversalArrowRing R := ArrowRing.s
 
 /-- The coordinate `t` in `UniversalArrowRing R`. -/
-abbrev t : UniversalArrowRing R :=
-  ArrowRing.t
+abbrev t : UniversalArrowRing R := ArrowRing.t
 
 /-- The universal strict `Γ₁(3)` change of variables `⟨1, r, s, t⟩` over `UniversalArrowRing R`. -/
 abbrev universalChange : VariableChange (UniversalArrowRing R) :=
@@ -405,6 +372,16 @@ theorem map_rightUnit_universalCurve :
 theorem target_eq_map_rightUnit :
     ArrowRing.target (a₁ R) (a₃ R) = (universalCurve R).map (rightUnit R) := by
   rw [map_rightUnit_universalCurve, universalCurve_def, ArrowRing.target_def]
+
+/-- The `a₁` coordinate of `ArrowRing.target (a₁ R) (a₃ R)` is `rightUnit R (a₁ R)`. -/
+theorem target_a₁_eq_rightUnit_a₁ :
+    (ArrowRing.target (a₁ R) (a₃ R)).a₁ = rightUnit R (a₁ R) := by
+  rw [target_eq_map_rightUnit, WeierstrassCurve.map_a₁, universalCurve_a₁]
+
+/-- The `a₃` coordinate of `ArrowRing.target (a₁ R) (a₃ R)` is `rightUnit R (a₃ R)`. -/
+theorem target_a₃_eq_rightUnit_a₃ :
+    (ArrowRing.target (a₁ R) (a₃ R)).a₃ = rightUnit R (a₃ R) := by
+  rw [target_eq_map_rightUnit, WeierstrassCurve.map_a₃, universalCurve_a₃]
 
 /-- The `R`-subalgebra `H⁰(A', Γ')` of Hopf-algebroid invariants in `BaseRing R`, defined as the
 equalizer of `rightUnitAlgHom R` and the left unit
@@ -755,58 +732,33 @@ theorem pushoutLift_id_conjugation_comp_coproduct :
 
 /-- The base map `A = ℤ[a₁, a₂, a₃, a₄, a₆] →+* BaseRing R`, specializing `Universal.curve` to
 `universalCurve R = gammaOneThreeForm a₁ a₃`. -/
-def toBaseRing : MvPolynomial Coeff ℤ →+* BaseRing R :=
-  (universalCurve R).specialize
+def toBaseRing : MvPolynomial Coeff ℤ →+* BaseRing R := (universalCurve R).specialize
 
 /-- Explicit unfolding of `toBaseRing R` as `(universalCurve R).specialize`. -/
-theorem toBaseRing_def : toBaseRing R = (universalCurve R).specialize :=
-  (rfl)
+theorem toBaseRing_def : toBaseRing R = (universalCurve R).specialize := (rfl)
 
-@[simp]
-theorem toBaseRing_X_A₁ : toBaseRing R (X .A₁) = a₁ R := by
-  rw [toBaseRing_def]
-  simp
-
-@[simp]
-theorem toBaseRing_X_A₂ : toBaseRing R (X .A₂) = 0 := by
-  rw [toBaseRing_def]
-  simp
-
-@[simp]
-theorem toBaseRing_X_A₃ : toBaseRing R (X .A₃) = a₃ R := by
-  rw [toBaseRing_def]
-  simp
-
-@[simp]
-theorem toBaseRing_X_A₄ : toBaseRing R (X .A₄) = 0 := by
-  rw [toBaseRing_def]
-  simp
-
-@[simp]
-theorem toBaseRing_X_A₆ : toBaseRing R (X .A₆) = 0 := by
-  rw [toBaseRing_def]
-  simp
+@[simp] theorem toBaseRing_X_A₁ : toBaseRing R (X .A₁) = a₁ R := by simp [toBaseRing_def]
+@[simp] theorem toBaseRing_X_A₂ : toBaseRing R (X .A₂) = 0 := by simp [toBaseRing_def]
+@[simp] theorem toBaseRing_X_A₃ : toBaseRing R (X .A₃) = a₃ R := by simp [toBaseRing_def]
+@[simp] theorem toBaseRing_X_A₄ : toBaseRing R (X .A₄) = 0 := by simp [toBaseRing_def]
+@[simp] theorem toBaseRing_X_A₆ : toBaseRing R (X .A₆) = 0 := by simp [toBaseRing_def]
 
 @[simp]
 theorem map_toBaseRing_curve :
-    WeierstrassCurve.map Universal.curve (toBaseRing R) = universalCurve R := by
-  rw [toBaseRing_def]
-  exact map_specialize _
+    WeierstrassCurve.map Universal.curve (toBaseRing R) = universalCurve R :=
+  map_specialize _
 
 @[simp]
-theorem toBaseRing_c₄ : toBaseRing R Universal.curve.c₄ = (universalCurve R).c₄ := by
-  rw [toBaseRing_def]
-  exact specialize_c₄ _
+theorem toBaseRing_c₄ : toBaseRing R Universal.curve.c₄ = (universalCurve R).c₄ :=
+  specialize_c₄ _
 
 @[simp]
-theorem toBaseRing_c₆ : toBaseRing R Universal.curve.c₆ = (universalCurve R).c₆ := by
-  rw [toBaseRing_def]
-  exact specialize_c₆ _
+theorem toBaseRing_c₆ : toBaseRing R Universal.curve.c₆ = (universalCurve R).c₆ :=
+  specialize_c₆ _
 
 @[simp]
-theorem toBaseRing_Δ : toBaseRing R Universal.curve.Δ = (universalCurve R).Δ := by
-  rw [toBaseRing_def]
-  exact specialize_Δ _
+theorem toBaseRing_Δ : toBaseRing R Universal.curve.Δ = (universalCurve R).Δ :=
+  specialize_Δ _
 
 /-- The arrow map `Γ = A[u, u⁻¹, r, s, t] →+* UniversalArrowRing R`, specializing `Universal.curve`
 to `universalCurve R` and the universal variable change to `⟨1, r, s, t⟩`. -/
@@ -969,39 +921,30 @@ theorem trace_coproduct (y : UniversalArrowRing R) :
 /-- In `UniversalArrowRing R`, the trace of `rightUnit R (a₁ R)` vanishes. -/
 theorem trace_rightUnit_a₁ :
     Algebra.trace (BaseRing R) (UniversalArrowRing R) (rightUnit R (a₁ R)) = 0 := by
-  have h : rightUnit R (a₁ R) = (ArrowRing.target (a₁ R) (a₃ R)).a₁ := by
-    rw [target_eq_map_rightUnit, WeierstrassCurve.map_a₁, universalCurve_a₁]
-  rw [h]
-  exact ArrowRing.trace_target_a₁
+  simpa only [target_a₁_eq_rightUnit_a₁] using
+    ArrowRing.trace_target_a₁ (a₁ := a₁ R) (a₃ := a₃ R)
 
 /-- In `UniversalArrowRing R`, the trace of `rightUnit R (a₃ R)` vanishes. -/
 theorem trace_rightUnit_a₃ :
     Algebra.trace (BaseRing R) (UniversalArrowRing R) (rightUnit R (a₃ R)) = 0 := by
-  have h : rightUnit R (a₃ R) = (ArrowRing.target (a₁ R) (a₃ R)).a₃ := by
-    rw [target_eq_map_rightUnit, WeierstrassCurve.map_a₃, universalCurve_a₃]
-  rw [h]
-  exact ArrowRing.trace_target_a₃
+  simpa only [target_a₃_eq_rightUnit_a₃] using
+    ArrowRing.trace_target_a₃ (a₁ := a₁ R) (a₃ := a₃ R)
 
 /-- **`Tr(η_R(3 a₁ a₃)) = 2c₄`** in `(BaseRing R, UniversalArrowRing R)`. -/
 theorem trace_rightUnit_three_mul_a₁_mul_a₃ :
     Algebra.trace (BaseRing R) (UniversalArrowRing R) (rightUnit R (3 * a₁ R * a₃ R)) =
       2 * (universalCurve R).c₄ := by
-  have h : rightUnit R (3 * a₁ R * a₃ R) =
-      3 * (ArrowRing.target (a₁ R) (a₃ R)).a₁ * (ArrowRing.target (a₁ R) (a₃ R)).a₃ := by
-    rw [target_eq_map_rightUnit, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃,
-      universalCurve_a₁, universalCurve_a₃, map_mul, map_mul, map_ofNat]
-  rw [h, universalCurve_def]
-  exact ArrowRing.trace_three_mul_target_a₁_mul_target_a₃
+  simpa only [target_a₁_eq_rightUnit_a₁, target_a₃_eq_rightUnit_a₃, ← universalCurve_def,
+    map_mul, map_ofNat] using
+    ArrowRing.trace_three_mul_target_a₁_mul_target_a₃ (a₁ := a₁ R) (a₃ := a₃ R)
 
 /-- **`Tr(η_R(27 a₃²)) = 2c₆`** in `(BaseRing R, UniversalArrowRing R)`. -/
 theorem trace_rightUnit_twentySeven_mul_a₃_sq :
     Algebra.trace (BaseRing R) (UniversalArrowRing R) (rightUnit R (27 * a₃ R ^ 2)) =
       2 * (universalCurve R).c₆ := by
-  have h : rightUnit R (27 * a₃ R ^ 2) = 27 * (ArrowRing.target (a₁ R) (a₃ R)).a₃ ^ 2 := by
-    rw [target_eq_map_rightUnit, WeierstrassCurve.map_a₃, universalCurve_a₃, map_mul, map_pow,
-      map_ofNat]
-  rw [h, universalCurve_def]
-  exact ArrowRing.trace_twentySeven_mul_target_a₃_sq
+  simpa only [target_a₃_eq_rightUnit_a₃, ← universalCurve_def, map_mul, map_pow,
+    map_ofNat] using
+    ArrowRing.trace_twentySeven_mul_target_a₃_sq (a₁ := a₁ R) (a₃ := a₃ R)
 
 end UniversalTrace
 

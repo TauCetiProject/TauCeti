@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Ring.Basic
-public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Ring.Invertible
-public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
-public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.GammaOneThree
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.GammaOneThree.ArrowRing
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.GammaOneThree.Basic
+import Mathlib.Tactic.FinCases
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # Functoriality, pushouts, and shearing for strict `Γ₁(3)` arrow algebras
@@ -20,13 +19,14 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.GammaOneThr
 `TauCeti.GammaOneThreeHopfAlgebroid.ArrowRing a₁ a₃` is the quotient of `B[r, s, t]` cutting out
 strict changes of variables `C = (1, r, s, t)` carrying `WeierstrassCurve.gammaOneThreeForm a₁ a₃`
 to another curve in `Γ₁(3)` normal form. While `ArrowRing.arrowEquiv` in
-`TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/GammaOneThree.lean` establishes its
-universal property for `B`-algebra maps over a fixed base `B`, constructing the `Γ₁(3)` Hopf
+`TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/GammaOneThree/ArrowRing.lean` establishes
+its universal property for `B`-algebra maps over a fixed base `B`, constructing the `Γ₁(3)` Hopf
 algebroid requires ring homomorphisms across distinct coefficient extensions (notably the left and
 right units `η_L, η_R : BaseRing R →+* UniversalArrowRing R`).
 
 This file establishes for `ArrowRing a₁ a₃` over any commutative ring `B`:
-* its universal property for ring homomorphisms (`ArrowRing.lift`, `ArrowRing.ringHom_ext`);
+* its universal property for ring homomorphisms (`ArrowRing.lift`, `ArrowRing.ringHom_ext`),
+  derived fiberwise from `ArrowRing.arrowEquiv`;
 * functoriality in `(B, a₁, a₃)` (`ArrowRing.mapOfEq`, `ArrowRing.map`);
 * its pushout universal property (`ArrowRing.pushoutLiftOfEq`, `ArrowRing.pushoutLift`) and
   categorical pushout square in `CommRingCat` (`ArrowRing.isPushout`);
@@ -79,7 +79,7 @@ universe u
 
 namespace TauCeti.GammaOneThreeHopfAlgebroid
 
-open MvPolynomial _root_.WeierstrassCurve
+open _root_.WeierstrassCurve
 
 namespace ArrowRing
 
@@ -92,40 +92,7 @@ instance instInvertibleOfNat (a₁ a₃ : B) {n : ℕ} [n.AtLeastTwo] [Invertibl
     Invertible (ofNat(n) : ArrowRing a₁ a₃) :=
   TauCeti.invertibleMapOfNat (algebraMap B (ArrowRing a₁ a₃)) n
 
-/-- The universal change of variables over `ArrowRing a₁ a₃` is a strict `Γ₁(3)` arrow. -/
-theorem isStrictGammaOneThreeChange_universalChange (a₁ a₃ : B) :
-    IsStrictGammaOneThreeChange (algebraMap B (ArrowRing a₁ a₃) a₁)
-      (algebraMap B (ArrowRing a₁ a₃) a₃) (universalChange a₁ a₃) := by
-  rw [isStrictGammaOneThreeChange_iff]
-  refine ⟨universalChange_u a₁ a₃, ?_, ?_, ?_⟩ <;>
-    rw [← map_gammaOneThreeForm, ← target_def, target_eq] <;> simp
-
 variable {a₁ a₃ : B}
-
-private def evalPolyHom (f : B →+* S) (D : VariableChange S) : MvPolynomial (Fin 3) B →+* S :=
-  eval₂Hom f ![D.r, D.s, D.t]
-
-private theorem strictChange_map_evalPolyHom (f : B →+* S) {D : VariableChange S} (hu : D.u = 1) :
-    (strictChange B).map (evalPolyHom f D) = D := by
-  ext
-  · simp [hu]
-  · simp [evalPolyHom]
-  · simp [evalPolyHom]
-  · simp [evalPolyHom]
-
-private theorem arrowIdeal_le_ker_evalPolyHom {f : B →+* S} {D : VariableChange S}
-    (hD : IsStrictGammaOneThreeChange (f a₁) (f a₃) D) :
-    arrowIdeal a₁ a₃ ≤ RingHom.ker (evalPolyHom f D) := by
-  rw [arrowIdeal_def, Ideal.span_le]
-  have hsmul : (strictChange B • (gammaOneThreeForm a₁ a₃).map C).map (evalPolyHom f D) =
-      D • gammaOneThreeForm (f a₁) (f a₃) := by
-    rw [← map_variableChange, strictChange_map_evalPolyHom f hD.u_eq_one, WeierstrassCurve.map_map,
-      map_gammaOneThreeForm]
-    simp [evalPolyHom]
-  rintro _ (rfl | rfl | rfl)
-  · rw [SetLike.mem_coe, RingHom.mem_ker, ← map_a₂, hsmul, hD.a₂_eq_zero]
-  · rw [SetLike.mem_coe, RingHom.mem_ker, ← map_a₄, hsmul, hD.a₄_eq_zero]
-  · rw [SetLike.mem_coe, RingHom.mem_ker, ← map_a₆, hsmul, hD.a₆_eq_zero]
 
 /-- **Ring-homomorphism universal property of `ArrowRing a₁ a₃`**: ring homomorphisms out of
 `ArrowRing a₁ a₃` classify pairs `(f, D)` of a ring homomorphism `f : B →+* S` and a strict
@@ -133,24 +100,28 @@ private theorem arrowIdeal_le_ker_evalPolyHom {f : B →+* S} {D : VariableChang
 def lift :
     {p : (B →+* S) × VariableChange S // IsStrictGammaOneThreeChange (p.1 a₁) (p.1 a₃) p.2} ≃
       (ArrowRing a₁ a₃ →+* S) where
-  toFun p := Ideal.Quotient.lift (arrowIdeal a₁ a₃) (evalPolyHom p.val.1 p.val.2)
-    (arrowIdeal_le_ker_evalPolyHom p.property)
+  toFun p :=
+    letI : Algebra B S := p.val.1.toAlgebra
+    ((arrowEquiv a₁ a₃ S).symm ⟨p.val.2, p.property⟩).toRingHom
   invFun k := ⟨(k.comp (algebraMap B _), (universalChange a₁ a₃).map k),
     (isStrictGammaOneThreeChange_universalChange a₁ a₃).map k⟩
   left_inv p := by
-    refine Subtype.ext (Prod.ext (RingHom.ext fun b ↦ ?_) ?_)
-    · simp [IsScalarTower.algebraMap_apply B (MvPolynomial (Fin 3) B) (ArrowRing a₁ a₃),
-        evalPolyHom]
-    · ext
-      · simp [p.property.u_eq_one]
-      · simp [← mk_X_zero, evalPolyHom]
-      · simp [← mk_X_one, evalPolyHom]
-      · simp [← mk_X_two, evalPolyHom]
+    let _ : Algebra B S := p.val.1.toAlgebra
+    exact Subtype.ext (Prod.ext
+      (((arrowEquiv a₁ a₃ S).symm ⟨p.val.2, p.property⟩).comp_algebraMap)
+      (map_universalChange_arrowEquiv_symm_apply a₁ a₃ S ⟨p.val.2, p.property⟩))
   right_inv k := by
-    refine Ideal.Quotient.ringHom_ext (MvPolynomial.ringHom_ext (fun b ↦ ?_) fun i ↦ ?_)
-    · simp [evalPolyHom,
-        IsScalarTower.algebraMap_apply B (MvPolynomial (Fin 3) B) (ArrowRing a₁ a₃)]
-    · fin_cases i <;> simp [← mk_X_zero, ← mk_X_one, ← mk_X_two, evalPolyHom]
+    let _ : Algebra B S := (k.comp (algebraMap B _)).toAlgebra
+    let kₐ : ArrowRing a₁ a₃ →ₐ[B] S := ⟨k, fun _ ↦ rfl⟩
+    have hk : (⟨(universalChange a₁ a₃).map k,
+        (isStrictGammaOneThreeChange_universalChange a₁ a₃).map k⟩ :
+        {C : VariableChange S //
+          IsStrictGammaOneThreeChange (algebraMap B S a₁) (algebraMap B S a₃) C}) =
+        arrowEquiv a₁ a₃ S kₐ :=
+      Subtype.ext (coe_arrowEquiv_apply a₁ a₃ S kₐ).symm
+    dsimp only
+    rw [hk]
+    exact congrArg AlgHom.toRingHom ((arrowEquiv a₁ a₃ S).symm_apply_apply kₐ)
 
 @[simp]
 theorem lift_comp_algebraMap
@@ -521,13 +492,6 @@ theorem mapOfEq_basis [Invertible (3 : B')] {a₁' a₃' : B'}
     (f : B →+* B') (ha₁ : f a₁ = a₁') (ha₃ : f a₃ = a₃') (i : Fin 8) :
     mapOfEq f ha₁ ha₃ (basis a₁ a₃ i) = basis a₁' a₃' i := by
   fin_cases i <;> simp
-
-/-- `Algebra.trace` of a scalar `algebraMap B _ b` in `ArrowRing a₁ a₃` is `8 * b`. -/
-@[simp]
-theorem trace_algebraMap (a₁ a₃ b : B) :
-    Algebra.trace B (ArrowRing a₁ a₃) (algebraMap B _ b) = 8 * b := by
-  rw [Algebra.trace_algebraMap_of_basis (basis a₁ a₃), Fintype.card_fin, nsmul_eq_mul,
-    Nat.cast_ofNat]
 
 /-- **Base-change compatibility of `Algebra.trace`** for `ArrowRing`. -/
 theorem trace_mapOfEq {a₁' a₃' : B'}

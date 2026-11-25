@@ -27,10 +27,6 @@ construct the groupoid shearing equivalence and Hopf-algebroid conjugation.
 
 ## Main results
 
-* `WeierstrassCurve.eq_gammaOneThreeForm_iff`: a Weierstrass curve equals `gammaOneThreeForm` of
-  its own `a₁` and `a₃` if and only if `a₂ = a₄ = a₆ = 0`.
-* `WeierstrassCurve.baseChange_gammaOneThreeForm`: compatibility of `gammaOneThreeForm` with
-  `WeierstrassCurve.baseChange`.
 * `WeierstrassCurve.IsStrictGammaOneThreeChange.smul_eq`: explicit target curve
   `gammaOneThreeForm (a₁ + 2 * C.s) (a₃ + C.r * a₁ + 2 * C.t)`.
 * `WeierstrassCurve.IsStrictGammaOneThreeChange.one`, `.mul`, `.inv`, `.map`: groupoid and
@@ -51,21 +47,6 @@ public section
 namespace WeierstrassCurve
 
 variable {R S : Type*} [CommRing R] [CommRing S]
-
-/-- A Weierstrass curve equals `gammaOneThreeForm` of its own `a₁` and `a₃` if and only if
-`a₂ = a₄ = a₆ = 0`. -/
-theorem eq_gammaOneThreeForm_iff (W : WeierstrassCurve R) :
-    W = gammaOneThreeForm W.a₁ W.a₃ ↔ W.a₂ = 0 ∧ W.a₄ = 0 ∧ W.a₆ = 0 :=
-  ⟨fun h ↦ by rw [h]; simp, fun ⟨h₂, h₄, h₆⟩ ↦ by ext <;> simp [h₂, h₄, h₆]⟩
-
-/-- Base change carries `gammaOneThreeForm` to `gammaOneThreeForm` on the algebra images of the
-coefficients. Stated separately from `map_gammaOneThreeForm` because `simp` does not unfold
-`baseChange`. -/
-@[simp]
-theorem baseChange_gammaOneThreeForm [Algebra R S] (a₁ a₃ : R) :
-    (gammaOneThreeForm a₁ a₃).baseChange S =
-      gammaOneThreeForm (algebraMap R S a₁) (algebraMap R S a₃) := by
-  rw [baseChange, map_gammaOneThreeForm]
 
 /-- A change of variables `C` is a **strict `Γ₁(3)` arrow** out of `gammaOneThreeForm a₁ a₃` when
 `C.u = 1` and `C • gammaOneThreeForm a₁ a₃` again has `a₂ = a₄ = a₆ = 0`. -/
