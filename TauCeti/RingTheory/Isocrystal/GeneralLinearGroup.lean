@@ -73,8 +73,12 @@ noncomputable def wittGLConjugatorEquiv (b c : Matrix.GeneralLinearGroup (Fin n)
     let e := withWittGLIsocrystals(IsocrystalEquiv.toLinearEquiv, p, k, b, c) f
     let g := matrixLinearEquiv.symm e
     refine ⟨g, (intertwines_semilinearEquiv_iff _ b c g).mp ?_⟩
-    simpa only [wittGLIsocrystal_frobenius_eq_semilinearEquiv, g, MulEquiv.apply_symm_apply] using!
-      (withWittGLIsocrystals(IsocrystalEquiv.frob_equivariant, p, k, b, c) f)
+    have hf : ∀ x, (letI := wittGLIsocrystal p k c; Φ(p, k) (e x)) =
+        e (letI := wittGLIsocrystal p k b; Φ(p, k) x) :=
+      withWittGLIsocrystals(IsocrystalEquiv.frob_equivariant, p, k, b, c) f
+    rw [show matrixLinearEquiv g = e from matrixLinearEquiv.apply_symm_apply e]
+    simp only [wittGLIsocrystal_frobenius_eq_semilinearEquiv] at hf
+    exact hf
   left_inv g := Subtype.ext (matrixLinearEquiv.symm_apply_apply g.val)
   right_inv := by
     rintro ⟨f, hf⟩
