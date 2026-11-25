@@ -31,7 +31,8 @@ The cohomology itself is in
 
 * M. Borovoi, *Abelian Galois cohomology of reductive groups*, Mem. Amer. Math. Soc. 626 (1998),
   §3.
-* J.-P. Labesse, *Cohomologie, stabilisation et changement de base*, Astérisque 257 (1999), §1.2.
+* J.-P. Labesse, *Cohomologie, stabilisation et changement de base*, Astérisque 257 (1999),
+  §1.1–1.2.
 -/
 
 public section

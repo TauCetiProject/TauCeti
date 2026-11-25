@@ -72,7 +72,7 @@ needs no topology for the definition of `H⁰(G, T → H)`.
 ## References
 
 * J.-P. Labesse, *Cohomologie, stabilisation et changement de base*, Astérisque 257 (1999),
-  §1.2, Définition 1.1.1 and Lemme 1.2.1.
+  §1.1–1.2 (Définition 1.1.1, Lemme 1.2.1).
 * M. Borovoi, *Abelian Galois cohomology of reductive groups*, Mem. Amer. Math. Soc. 626 (1998),
   §3.
 * M. Kisin, *Mod p points on Shimura varieties of abelian type*, J. Amer. Math. Soc. 30 (2017),
