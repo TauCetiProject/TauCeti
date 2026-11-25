@@ -25,7 +25,7 @@ order notation: it is not the spectral order on positive elements. Mutual subequ
   `x⋆ (y⋆ c y) x = (yx)⋆ c (yx)`, so `{x⋆ b x}` lies in the closure of `{y⋆ c y}` once `b` does.
 * Star homomorphisms preserve it (`TauCeti.CuntzLE.map`).
 * Only `0` is subequivalent to `0` (`TauCeti.cuntzLE_zero_right_iff`).
-* The cutdowns `(a - ε)₊ = cfcₙ (fun t ↦ max (t - ε) 0) a` of a self-adjoint `a` satisfy
+* The cutdowns `(a - ε)₊ = cfcₙ (fun t ↦ max (t - ε) 0) a` satisfy
   `(a - ε)₊ ≼ a` (`TauCeti.cuntzLE_cfcₙ_sub_posPart`): `(a - ε)₊ = x⋆ a x` for
   `x = cfcₙ (fun t ↦ √(max (t - ε) 0 / t)) a`.
 
@@ -152,10 +152,14 @@ theorem cutdownRoot_sq_mul {ε : ℝ} (hε : 0 ≤ ε) (t : ℝ) :
       exact div_nonneg (sub_nonneg.mpr htε.le) (by linarith)
     rw [cutdownRoot, mul_comm _ t, mul_assoc, Real.mul_self_sqrt hpos, mul_div_cancel₀ _ ht]
 
-/-- **Cutdown**: for self-adjoint `a` and `ε > 0`, `(a - ε)₊ ≼ a`, where
+/-- **Cutdown**: for `ε > 0`, `(a - ε)₊ ≼ a`, where
 `(a - ε)₊ = cfcₙ (fun t ↦ max (t - ε) 0) a`. -/
-theorem cuntzLE_cfcₙ_sub_posPart {a : A} (ha : IsSelfAdjoint a) {ε : ℝ} (hε : 0 < ε) :
+theorem cuntzLE_cfcₙ_sub_posPart (a : A) {ε : ℝ} (hε : 0 < ε) :
     CuntzLE (cfcₙ (fun t : ℝ ↦ max (t - ε) 0) a) a := by
+  by_cases ha : IsSelfAdjoint a
+  swap
+  · rw [cfcₙ_apply_of_not_predicate a ha]
+    exact cuntzLE_zero_left a
   have hc := continuous_cutdownRoot hε
   have h0 : cutdownRoot ε 0 = 0 := by simp [cutdownRoot]
   have hx : IsSelfAdjoint (cfcₙ (cutdownRoot ε) a) := cfcₙ_predicate _ a
