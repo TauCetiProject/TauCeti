@@ -81,18 +81,10 @@ private theorem contDiffOn_chart (hu : ContMDiffOn closedUpperHalfPlaneModel I 1
       (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ (φ.extend closedUpperHalfPlaneModel).symm)
       ((φ.extend closedUpperHalfPlaneModel).target ∩
         (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) := by
-  have hφ' : φ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 X :=
-    borderedHolomorphicGroupoid_maximalAtlas_subset (by exact_mod_cast le_top) hφ
-  have hψ' : ContMDiffOn I 𝓘(ℝ, E) 1 (ψ.extendTrans I (Homeomorph.refl E)) ψ.source := by
-    have h : ContMDiffOn I 𝓘(ℝ, E) 1 (ψ.extendTrans I (Homeomorph.refl E))
-        (ψ.extendTrans I (Homeomorph.refl E)).source :=
-      (ψ.contMDiffOn_extendTrans hψ (Ψ := Homeomorph.refl E) contDiff_id).of_le
-        (by exact_mod_cast le_top)
-    rwa [OpenPartialHomeomorph.extendTrans_source] at h
-  refine contMDiffOn_iff_contDiffOn.mp (hψ'.comp (hu.comp ((contMDiffOn_extend_symm hφ').mono ?_)
-    fun _ hz ↦ hz.2.1) fun _ hz ↦ hz.2.2)
-  rw [← OpenPartialHomeomorph.extend_target']
-  exact inter_subset_left
+  rw [ψ.coe_extendTrans_refl I]
+  exact φ.contDiffOn_extend_comp
+    (borderedHolomorphicGroupoid_maximalAtlas_subset (n := 1) (by exact_mod_cast le_top) hφ)
+    (IsManifold.maximalAtlas_subset_of_le (by exact_mod_cast le_top) hψ) hu
 
 /-- **The equation reaches the real axis.** Let `f` be of class `C¹` and `A` continuous on the part
 of an open set `O ⊆ ℂ` in the closed upper half-plane. If `∂ₛf + A ∂ₜf = 0` at the points of `O`
