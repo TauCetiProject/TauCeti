@@ -1,0 +1,388 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Sobolev
+import TauCeti.Analysis.Calculus.Morse.NormSq
+import TauCeti.Analysis.Fredholm.SemiFredholm
+import TauCeti.Geometry.Symplectic.Floer.Sobolev.UnitaryFrame
+import TauCeti.Geometry.Symplectic.Hamiltonian.ConstantOrbit
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Geometry.Symplectic.Hamiltonian.Hessian
+
+/-!
+# The range of the linearized operator along a time-independent cylinder
+
+Let `(V, ω)` be a finite-dimensional symplectic vector space whose inner product is the metric
+`ω(·, J ·)` of a constant compatible almost complex structure `J` admitting a unitary frame, let
+`H : V → ℝ` be a `C²` autonomous Hamiltonian and `γ` a continuous curve with
+`‖dX_H(γ(s))‖ ≤ a < 2π` for every `s`. Along the time-independent cylinder `(s, t) ↦ γ(s)` the
+Sobolev realization
+
+`D : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)`, `D ξ = ∂s ξ + J (∂t ξ - dX_H(γ(s)) ξ)`
+
+of the linearized Floer operator commutes with the slice average, the projection onto the zero
+Fourier mode in `t`, and on the zero mode it is the Morse operator `M ζ = ζ' - J dX_H(γ) ζ`
+(`TauCeti/Geometry/Symplectic/Floer/TimeIndependent/Sobolev.lean`, where the kernels of `D` and
+`M` are identified). This file describes the range of `D`.
+
+* **`D` is onto the nonzero modes.** Every `y ∈ L²` whose slice average vanishes is `D x` for some
+  `x ∈ W^{1,2}` whose slice average vanishes
+  (`TauCeti.SymplecticForm.exists_floerSobolevOperator_eq_of_sliceAverageLp_eq_zero`).
+* **The range of `D` is read off on the zero mode.** Consequently `y` lies in the range of `D`
+  exactly when its slice average is the zero mode `(s, t) ↦ (M ζ)(s)` of an element of the range
+  of the Morse operator (`TauCeti.SymplecticForm.mem_range_floerSobolevOperator_iff`). In
+  particular the nonzero modes contribute nothing to the cokernel of `D`.
+
+On the nonzero modes `D` is bounded below with a constant depending only on `2π - a`
+(`mul_sq_norm_le_mul_sq_norm_floerSobolevOperator_of_sliceAverageL_eq_zero` in the namespace
+`TauCeti.SymplecticForm`), so it is injective with closed range there. Onto-ness comes from a
+continuity argument. Join `H` to the quadratic Hamiltonian `ε ‖y‖²` by the segment
+`(1 - τ) ε ‖y‖² + τ H`: for small `ε > 0` every member keeps `‖dX‖ ≤ max a (1 / 2) < 2π` along `γ`,
+so the restrictions of the operators to the nonzero modes form a continuous family of injective
+operators with closed range. At `τ = 0` the coefficient `-2ε J` is constant and the constant orbit
+at `0` is nondegenerate, so the operator is invertible
+(`isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatible` in the namespace
+`TauCeti.SymplecticForm`) and its restriction is bijective. The family is then Fredholm of constant
+index `0` along the segment, and an injective operator of index `0` is onto
+(`ContinuousOn.surjective_of_isPreconnected`).
+
+## References
+
+* A. Floer, *Witten's complex and infinite dimensional Morse theory*, J. Differential Geom.
+  **30** (1989), 207–221.
+* D. Salamon and E. Zehnder, *Morse theory for periodic solutions of Hamiltonian systems and the
+  Maslov index*, Comm. Pure Appl. Math. **45** (1992), 1303–1360, on the linearized operator at
+  time-independent solutions of a small Hamiltonian.
+-/
+
+public section
+
+open Real Set MeasureTheory ContinuousLinearMap
+open TauCeti.StripSobolev TauCeti.CylinderSobolev
+open scoped RealInnerProductSpace ENNReal
+
+namespace TauCeti.SymplecticForm
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ} {γ : ℝ → V}
+
+/-- The linearized operator of the quadratic Hamiltonian `ε ‖y‖²` has the constant coefficient
+`-2ε J`, whatever the curve; when `ε ≠ 0` and `2 |ε| ‖J‖ < log 2` it is invertible. -/
+private theorem isInvertible_floerSobolevOperator_const_mul_norm_sq
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    [FiniteDimensional ℂ F] {Φ : F ≃L[ℝ] V} (hΦ : ∀ v, Φ (Complex.I • v) = J (Φ v))
+    (hΦω : ∀ v w, ω (Φ v) (Φ w) = (inner ℂ v w).im) {ε : ℝ} (hε : ε ≠ 0)
+    (hsmall : |ε| * (2 * ‖J.toLinearMap.toContinuousLinearMap‖) < Real.log 2) (u : ℝ × ℝ → V) :
+    (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+      (fun _ y ↦ ε * ‖y‖ ^ 2) u).IsInvertible := by
+  set Jc := J.toLinearMap.toContinuousLinearMap
+  have hX : ω.hamiltonianVectorField (fun y ↦ ε * ‖y‖ ^ 2) = ⇑((ε * -2) • Jc) := by
+    funext y
+    rw [hamiltonianVectorField_const_mul, hamiltonianVectorField_norm_sq hg]
+    simp [Jc, smul_smul]
+  have hL : LipschitzWith ‖(ε * -2) • Jc‖₊
+      (ω.timeDependentHamiltonianSuspension fun _ y ↦ ε * ‖y‖ ^ 2) :=
+    ω.lipschitzWith_timeDependentHamiltonianSuspension_const _ (by rw [hX]; exact lipschitzWith _)
+  have hF : ContDiff ℝ 2 (fun y : V ↦ ‖y‖ ^ 2) := contDiff_norm_sq ℝ
+  have hp : fderiv ℝ (fun y : V ↦ ‖y‖ ^ 2) 0 = 0 :=
+    isNondegenerateCriticalPoint_norm_sq.fderiv_eq_zero
+  have hnd := (ω.isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff hF hp hL
+    (s := 0) (t := 1) (by simpa using hε) (by
+      rw [hamiltonianVectorField_norm_sq hg, ContinuousLinearMap.fderiv, norm_smul]
+      simpa using hsmall)).2 isNondegenerateCriticalPoint_norm_sq
+  have hJ : ω.Compatible J :=
+    ω.compatible_of_isInvertible_of_forall_eq_im_inner (Φ := (Φ : F →L[ℝ] V)) ⟨Φ, rfl⟩ hΦω
+      fun v ↦ (hΦ v).symm
+  have hinv := ω.isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatible hL
+    (contDiff_const.mul ((contDiff_norm_sq ℝ).comp contDiff_snd)) (fun _ ↦ rfl) (x := fun _ ↦ 0)
+    (fun t ↦ by
+      show HasDerivAt _ (ω.hamiltonianVectorField (fun y ↦ ε * ‖y‖ ^ 2) 0) t
+      rw [hX, map_zero]
+      exact hasDerivAt_const t 0) (fun _ ↦ rfl)
+    (J := fun _ _ ↦ J) hg hΦ hΦω (fun _ ↦ hJ) contDiff_const (fun _ ↦ rfl) hnd
+  convert hinv using 1
+  rw [floerSobolevOperator_def, floerSobolevOperator_def]
+  congr 2
+  funext z
+  rw [floerJetCoeff_const_eq, floerJetCoeff_const_eq]
+  simp only [hX, ContinuousLinearMap.fderiv]
+
+/-- Along the segment `(1 - τ) ε ‖y‖² + τ H` of Hamiltonians, the derivative of the Hamiltonian
+vector field is the affine combination `(1 - τ) (-2ε J) + τ dX_H`. -/
+private theorem fderiv_hamiltonianVectorField_lineMap (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hH : ContDiff ℝ 2 H) (ε τ : ℝ) (y : V) :
+    fderiv ℝ (ω.hamiltonianVectorField fun y ↦ (1 - τ) * (ε * ‖y‖ ^ 2) + τ * H y) y =
+      (1 - τ) • (ε * -2) • J.toLinearMap.toContinuousLinearMap +
+        τ • fderiv ℝ (ω.hamiltonianVectorField H) y := by
+  set Jc := J.toLinearMap.toContinuousLinearMap
+  have hXH : Differentiable ℝ (ω.hamiltonianVectorField H) :=
+    (ω.contDiff_hamiltonianVectorField (n := 1) hH).differentiable one_ne_zero
+  have hX : (ω.hamiltonianVectorField fun y ↦ (1 - τ) * (ε * ‖y‖ ^ 2) + τ * H y) =
+      fun y ↦ (1 - τ) • ((ε * -2) • Jc) y + τ • ω.hamiltonianVectorField H y := by
+    funext z
+    rw [ω.hamiltonianVectorField_const_mul_add_const_mul
+      ((contDiff_const.mul (contDiff_norm_sq ℝ)).differentiable two_ne_zero z)
+      (hH.differentiable two_ne_zero z), hamiltonianVectorField_const_mul,
+      hamiltonianVectorField_norm_sq hg]
+    simp [Jc, smul_smul]
+  rw [hX]
+  exact (((((ε * -2) • Jc).hasFDerivAt (x := y)).const_smul (1 - τ)).add
+    ((hXH y).hasFDerivAt.const_smul τ)).fderiv
+
+/-- The derivative of the Hamiltonian vector field along the segment of Hamiltonians is bounded by
+the affine combination of the bounds at its ends. -/
+private theorem norm_fderiv_hamiltonianVectorField_lineMap_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hH : ContDiff ℝ 2 H) {a : ℝ} (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (ε τ s : ℝ) :
+    ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ (1 - τ) * (ε * ‖y‖ ^ 2) + τ * H y) (γ s)‖ ≤
+      |1 - τ| * ‖(ε * -2) • J.toLinearMap.toContinuousLinearMap‖ + |τ| * a := by
+  rw [fderiv_hamiltonianVectorField_lineMap hg hH]
+  refine (norm_add_le _ _).trans (add_le_add (by rw [norm_smul, Real.norm_eq_abs]) ?_)
+  rw [norm_smul, Real.norm_eq_abs]
+  exact mul_le_mul_of_nonneg_left (haγ s) (abs_nonneg τ)
+
+/-- The Sobolev realizations of the linearized operators along `(s, t) ↦ γ(s)` for the segment
+`(1 - τ) ε ‖y‖² + τ H` of autonomous Hamiltonians. -/
+private noncomputable def segmentOperator (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (H : V → ℝ) (γ : ℝ → V) (ε τ : ℝ) : H1 V →L[ℝ] Lp V 2 stripMeasure :=
+  ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+    (fun _ y ↦ (1 - τ) * (ε * ‖y‖ ^ 2) + τ * H y) (fun z ↦ γ z.1)
+
+omit [FiniteDimensional ℝ V] in
+private theorem contDiff_lineMap (hH : ContDiff ℝ 2 H) (ε τ : ℝ) :
+    ContDiff ℝ 2 fun y : V ↦ (1 - τ) * (ε * ‖y‖ ^ 2) + τ * H y :=
+  (contDiff_const.mul (contDiff_const.mul (contDiff_norm_sq ℝ))).add (contDiff_const.mul hH)
+
+/-- The operators of the segment depend affinely on the parameter. -/
+private theorem segmentOperator_eq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H)
+    (hγ : Continuous γ) {a : ℝ} (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (ε τ : ℝ) :
+    segmentOperator ω J H γ ε τ = segmentOperator ω J H γ ε 0 +
+      τ • (segmentOperator ω J H γ ε 1 - segmentOperator ω J H γ ε 0) := by
+  have hM (σ : ℝ) := memLp_floerJetCoeff_const_comp_fst (J := J) (contDiff_lineMap hH ε σ) hγ
+    (norm_fderiv_hamiltonianVectorField_lineMap_le hg hH haγ ε σ)
+  ext1 x
+  rw [add_apply, _root_.smul_apply, sub_apply]
+  refine Lp.ext ?_
+  filter_upwards [coeFn_floerSobolevOperator ω (hM τ) x, coeFn_floerSobolevOperator ω (hM 0) x,
+    coeFn_floerSobolevOperator ω (hM 1) x, Lp.coeFn_add (segmentOperator ω J H γ ε 0 x)
+      (τ • (segmentOperator ω J H γ ε 1 x - segmentOperator ω J H γ ε 0 x)),
+    Lp.coeFn_smul τ (segmentOperator ω J H γ ε 1 x - segmentOperator ω J H γ ε 0 x),
+    Lp.coeFn_sub (segmentOperator ω J H γ ε 1 x) (segmentOperator ω J H γ ε 0 x)]
+    with z h h₀ h₁ hadd hsmul hsub
+  simp only [segmentOperator] at h h₀ h₁ hadd hsmul hsub ⊢
+  rw [hadd, Pi.add_apply, hsmul, Pi.smul_apply, hsub, Pi.sub_apply, h, h₀, h₁,
+    floerJetCoeff_const_eq, floerJetCoeff_const_eq, floerJetCoeff_const_eq,
+    fderiv_hamiltonianVectorField_lineMap hg hH, fderiv_hamiltonianVectorField_lineMap hg hH,
+    fderiv_hamiltonianVectorField_lineMap hg hH]
+  simp only [firstOrderJetCoeff_apply, neg_apply, comp_apply, add_apply, _root_.smul_apply,
+    map_add, map_smul]
+  module
+
+/-- On the nonzero modes, every operator of the segment for `τ ∈ [0, 1]` is bounded below with
+constants independent of `τ`. -/
+private theorem mul_norm_le_mul_norm_segmentOperator (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) {ε : ℝ}
+    (hε : |ε| * (2 * ‖J.toLinearMap.toContinuousLinearMap‖) ≤ 1 / 2) {τ : ℝ} (hτ : τ ∈ Icc 0 1)
+    {x : H1 V} (hx : sliceAverageL x = 0) :
+    (2 * π - max a (1 / 2)) * ‖x‖ ≤ (2 * π + 1) * ‖segmentOperator ω J H γ ε τ x‖ := by
+  have hb : max a (1 / 2) < 2 * π := max_lt ha (by linarith [two_le_pi])
+  have hQ : ‖(ε * -2) • J.toLinearMap.toContinuousLinearMap‖ ≤ max a (1 / 2) := by
+    rw [norm_smul, Real.norm_eq_abs, abs_mul, abs_neg, abs_two]
+    refine le_trans ?_ (le_max_right _ _)
+    linarith
+  have hbound : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField
+      fun y ↦ (1 - τ) * (ε * ‖y‖ ^ 2) + τ * H y) (γ s)‖ ≤ max a (1 / 2) := fun s ↦
+    (norm_fderiv_hamiltonianVectorField_lineMap_le hg hH haγ ε τ s).trans (by
+      rw [abs_of_nonneg (sub_nonneg.2 hτ.2), abs_of_nonneg hτ.1]
+      nlinarith [hτ.1, hτ.2, le_max_left a (1 / 2)])
+  have h := mul_sq_norm_le_mul_sq_norm_floerSobolevOperator_of_sliceAverageL_eq_zero hg
+    (contDiff_lineMap hH ε τ) hγ hb.le hbound hx
+  rw [← segmentOperator] at h
+  refine (pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).1 ?_
+  rw [mul_pow, mul_pow]
+  refine h.trans (mul_le_mul_of_nonneg_right ?_ (sq_nonneg _))
+  nlinarith [pi_pos]
+
+private theorem segmentOperator_one (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (H : V → ℝ) (γ : ℝ → V) (ε : ℝ) :
+    segmentOperator ω J H γ ε 1 = ω.floerSobolevOperator
+      (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+        (fun z ↦ γ z.1) := by
+  rw [segmentOperator]
+  congr 1
+  funext _ y
+  ring
+
+private theorem isInvertible_segmentOperator_zero (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F] {Φ : F ≃L[ℝ] V}
+    (hΦ : ∀ v, Φ (Complex.I • v) = J (Φ v)) (hΦω : ∀ v w, ω (Φ v) (Φ w) = (inner ℂ v w).im)
+    {ε : ℝ} (hε : ε ≠ 0)
+    (hsmall : |ε| * (2 * ‖J.toLinearMap.toContinuousLinearMap‖) < Real.log 2) :
+    (segmentOperator ω J H γ ε 0).IsInvertible := by
+  have h : (fun _ : ℝ × ℝ ↦ fun y : V ↦ (1 - 0) * (ε * ‖y‖ ^ 2) + 0 * H y) =
+      fun _ y ↦ ε * ‖y‖ ^ 2 := by
+    funext _ y
+    ring
+  rw [segmentOperator, h]
+  exact isInvertible_floerSobolevOperator_const_mul_norm_sq hg hΦ hΦω hε hsmall _
+
+private theorem segmentOperator_sliceAverageL (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (H : V → ℝ) (γ : ℝ → V) (ε τ : ℝ) (x : H1 V) :
+    segmentOperator ω J H γ ε τ (sliceAverageL x) =
+      sliceAverageLp (segmentOperator ω J H γ ε τ x) :=
+  floerSobolevOperator_sliceAverageL ω J _ γ x
+
+/-- **Onto the nonzero modes along a segment.** Let `D τ` be operators `W^{1,2} → L²` commuting
+with the slice average, depending affinely on `τ`, and bounded below on the nonzero modes uniformly
+for `τ ∈ [0, 1]`. If `D 0` maps the nonzero modes of `W^{1,2}` onto those of `L²`, so does `D 1`. -/
+private theorem exists_eq_of_sliceAverageLp_eq_zero_of_segment
+    {D : ℝ → H1 V →L[ℝ] Lp V 2 stripMeasure}
+    (hcomm : ∀ τ x, D τ (sliceAverageL x) = sliceAverageLp (D τ x))
+    (haff : ∀ τ, D τ = D 0 + τ • (D 1 - D 0)) {c : ℝ} (hc : 0 < c)
+    (hlow : ∀ τ ∈ Icc (0 : ℝ) 1, ∀ x : H1 V, sliceAverageL x = 0 → c * ‖x‖ ≤ ‖D τ x‖)
+    (h₀ : ∀ y, sliceAverageLp y = 0 → ∃ x, sliceAverageL x = 0 ∧ D 0 x = y)
+    {y : Lp V 2 stripMeasure} (hy : sliceAverageLp y = 0) :
+    ∃ x, sliceAverageL x = 0 ∧ D 1 x = y := by
+  -- The nonzero modes `E` of `W^{1,2}`, inside `L²` jets, and `G` of `L²`.
+  set E : Submodule ℝ (Lp (V × V × V) 2 stripMeasure) :=
+    H1 V ⊓ (sliceAverageLp : Lp (V × V × V) 2 stripMeasure →L[ℝ] _).ker
+  set G : Submodule ℝ (Lp V 2 stripMeasure) :=
+    (sliceAverageLp : Lp V 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure).ker
+  set ι : E →L[ℝ] H1 V :=
+    E.subtypeL.codRestrict (H1 V) fun x ↦ (Submodule.mem_inf.1 x.property).1
+  have hι (x : E) : sliceAverageL (ι x) = 0 := by
+    refine Subtype.ext ?_
+    rw [coe_sliceAverageL]
+    exact LinearMap.mem_ker.1 (Submodule.mem_inf.1 x.property).2
+  have hmaps (τ : ℝ) (x : E) : (D τ).comp ι x ∈ G := by
+    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, comp_apply, ← hcomm, hι, map_zero]
+  -- The restrictions `T τ` to the nonzero modes form an affine family.
+  set T : ℝ → E →L[ℝ] G := fun τ ↦ ((D τ).comp ι).codRestrict G (hmaps τ)
+  have hT : T = fun τ ↦ T 0 + τ • (T 1 - T 0) := by
+    funext τ
+    ext1 x
+    refine Subtype.ext ?_
+    simp only [T, coe_codRestrict_apply, comp_apply, add_apply, _root_.smul_apply, sub_apply,
+      Submodule.coe_add, Submodule.coe_smul, Submodule.coe_sub]
+    rw [haff τ, add_apply, _root_.smul_apply, sub_apply]
+  have hcont : ContinuousOn T (Icc 0 1) := by
+    rw [hT]
+    let : ContinuousAdd (E →L[ℝ] G) :=
+      (ContinuousLinearMap.isTopologicalAddGroup (E := E) (F := G)).toContinuousAdd
+    exact ((continuous_const (y := T 0)).add
+      ((continuous_id (X := ℝ)).smul (continuous_const (y := T 1 - T 0)))).continuousOn
+  -- Each `T τ` is injective with closed range, and `T 0` is onto.
+  have hH1 : IsClosed (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) := by
+    rw [coe_jetClosure]
+    exact isClosed_closure
+  have : CompleteSpace E := (hH1.inter (isClosed_ker _)).completeSpace_coe
+  have hK (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) (x : E) : ‖x‖ ≤ c⁻¹ * ‖T τ x‖ := by
+    rw [le_inv_mul_iff₀ hc]
+    exact hlow τ hτ (ι x) (hι x)
+  have hinj (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) : Function.Injective (T τ) := by
+    refine (injective_iff_map_eq_zero _).2 fun x hx ↦ norm_le_zero_iff.1 ?_
+    simpa [hx] using hK τ hτ x
+  have hclosed (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) : IsClosed ((T τ).range : Set G) := by
+    rw [LinearMap.coe_range]
+    exact ((T τ).antilipschitz_of_bound (K := ⟨_, by positivity⟩) (hK τ hτ)).isClosed_range
+      (T τ).uniformContinuous
+  have hsurj0 : Function.Surjective (T 0) := fun z ↦ by
+    obtain ⟨x, hx, hDx⟩ := h₀ z z.property
+    refine ⟨⟨x, Submodule.mem_inf.2 ⟨x.property, LinearMap.mem_ker.2 ?_⟩⟩, Subtype.ext hDx⟩
+    rw [ContinuousLinearMap.coe_coe, ← coe_sliceAverageL, hx]
+    rfl
+  obtain ⟨x, hx⟩ := hcont.surjective_of_isPreconnected hinj hclosed isPreconnected_Icc
+    (left_mem_Icc.2 zero_le_one) hsurj0 (right_mem_Icc.2 zero_le_one) ⟨y, hy⟩
+  exact ⟨ι x, hι x, congrArg Subtype.val hx⟩
+
+/-- At `τ = 0` the segment operator is invertible and commutes with the slice average, so it maps
+the nonzero modes of `W^{1,2}` onto those of `L²`. -/
+private theorem exists_segmentOperator_zero_eq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F] {Φ : F ≃L[ℝ] V}
+    (hΦ : ∀ v, Φ (Complex.I • v) = J (Φ v)) (hΦω : ∀ v w, ω (Φ v) (Φ w) = (inner ℂ v w).im)
+    {ε : ℝ} (hε : ε ≠ 0)
+    (hsmall : |ε| * (2 * ‖J.toLinearMap.toContinuousLinearMap‖) < Real.log 2)
+    {y : Lp V 2 stripMeasure} (hy : sliceAverageLp y = 0) :
+    ∃ x, sliceAverageL x = 0 ∧ segmentOperator ω J H γ ε 0 x = y := by
+  obtain ⟨e, he⟩ := isInvertible_segmentOperator_zero (H := H) (γ := γ) hg hΦ hΦω hε hsmall
+  have hDx : segmentOperator ω J H γ ε 0 (e.symm y) = y := by
+    rw [← he, ContinuousLinearEquiv.coe_coe, e.apply_symm_apply]
+  refine ⟨e.symm y, e.injective ?_, hDx⟩
+  rw [map_zero, ← ContinuousLinearEquiv.coe_coe, he, segmentOperator_sliceAverageL, hDx, hy]
+
+/-- **The linearized operator is onto the nonzero modes.** Let the inner product of `V` be the
+metric `ω(·, J ·)` of a structure `J` with a unitary frame `Φ : F ≃ V` from a finite-dimensional
+complex inner product space (`Φ (i v) = J (Φ v)` and `ω (Φ v) (Φ w) = Im ⟪v, w⟫`), let `H` be a
+`C²` autonomous Hamiltonian and `γ` a continuous curve with `‖dX_H(γ(s))‖ ≤ a < 2π` for every `s`.
+Then every `y ∈ L²(ℝ × S¹, V)` whose slice average vanishes is `D x` for the Sobolev realization `D`
+of the linearized operator along `(s, t) ↦ γ(s)` and some `x ∈ W^{1,2}(ℝ × S¹, V)` whose slice
+average vanishes. -/
+theorem exists_floerSobolevOperator_eq_of_sliceAverageLp_eq_zero
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    [FiniteDimensional ℂ F] {Φ : F ≃L[ℝ] V} (hΦ : ∀ v, Φ (Complex.I • v) = J (Φ v))
+    (hΦω : ∀ v w, ω (Φ v) (Φ w) = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ)
+    {a : ℝ} (ha : a < 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    {y : Lp V 2 stripMeasure} (hy : sliceAverageLp y = 0) :
+    ∃ x : H1 V, sliceAverageL x = 0 ∧
+      ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun _ ↦ H) (fun z ↦ γ z.1) x = y := by
+  set Jc := J.toLinearMap.toContinuousLinearMap
+  -- The quadratic end `ε ‖y‖²` of the segment is small enough for the gap and nondegenerate.
+  set ε : ℝ := Real.log 2 / (4 * (‖Jc‖ + 1)) with hεdef
+  have hε0 : 0 < ε := by positivity
+  have hεJ : |ε| * (2 * ‖Jc‖) ≤ Real.log 2 / 2 := by
+    rw [abs_of_pos hε0, hεdef, div_mul_eq_mul_div, div_le_div_iff₀ (by positivity) two_pos]
+    nlinarith [norm_nonneg Jc, Real.log_pos one_lt_two]
+  have hlog : Real.log 2 ≤ 1 := (Real.log_le_sub_one_of_pos two_pos).trans (by norm_num)
+  have hsmall : |ε| * (2 * ‖Jc‖) < Real.log 2 :=
+    hεJ.trans_lt (by linarith [Real.log_pos one_lt_two])
+  have hb : 0 < 2 * π - max a (1 / 2) := sub_pos.2 (max_lt ha (by linarith [two_le_pi]))
+  rw [← segmentOperator_one ω J H γ ε]
+  refine exists_eq_of_sliceAverageLp_eq_zero_of_segment (segmentOperator_sliceAverageL ω J H γ ε)
+    (segmentOperator_eq hg hH hγ haγ ε) (c := (2 * π - max a (1 / 2)) / (2 * π + 1))
+    (div_pos hb (by linarith [pi_pos])) (fun τ hτ x hx ↦ ?_)
+    (fun _ hz ↦ exists_segmentOperator_zero_eq hg hΦ hΦω hε0.ne' hsmall hz) hy
+  rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith [pi_pos])]
+  exact (mul_norm_le_mul_norm_segmentOperator hg hH hγ ha haγ (hεJ.trans (by linarith)) hτ
+    hx).trans_eq (mul_comm _ _)
+
+variable {A : Lp (V →L[ℝ] V) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))}
+
+/-- **The range of the linearized operator is read off on the zero mode.** Under the hypotheses of
+`TauCeti.SymplecticForm.exists_floerSobolevOperator_eq_of_sliceAverageLp_eq_zero`, let `A` be the
+`L∞` class of `s ↦ -J dX_H(γ(s))`. An element `y` of `L²(ℝ × S¹, V)` lies in the range of the
+Sobolev realization of the linearized operator along `(s, t) ↦ γ(s)` exactly when its slice average
+is the zero mode `(s, t) ↦ (M ζ)(s)` of the image of some `ζ ∈ W^{1,2}(ℝ, V)` under the Morse
+operator `M ζ = ζ' - J dX_H(γ) ζ`. -/
+theorem mem_range_floerSobolevOperator_iff (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F] {Φ : F ≃L[ℝ] V}
+    (hΦ : ∀ v, Φ (Complex.I • v) = J (Φ v)) (hΦω : ∀ v w, ω (Φ v) (Φ w) = (inner ℂ v w).im)
+    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
+      fun s ↦ -(J.toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s))))
+    (y : Lp V 2 stripMeasure) :
+    y ∈ range (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)) ↔
+      ∃ ζ : WeakDerivStep volume ⊤ 2 (ContinuousLinearMap.id ℝ
+          (Lp V 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)))),
+        sliceAverageLp y = zeroModeLp V (WeakDerivStep.trajectoryOperator A ζ) := by
+  constructor
+  · rintro ⟨x, rfl⟩
+    obtain ⟨u, hu⟩ := sliceAverageL_mem_range_zeroModeL x
+    refine ⟨u, ?_⟩
+    rw [← floerSobolevOperator_sliceAverageL, ← hu, floerSobolevOperator_zeroModeL hH hγ haγ hA]
+  · rintro ⟨ζ, hζ⟩
+    obtain ⟨x, -, hx⟩ := exists_floerSobolevOperator_eq_of_sliceAverageLp_eq_zero hg hΦ hΦω hH hγ
+      ha haγ (y := y - sliceAverageLp y) (by rw [map_sub, sliceAverageLp_sliceAverageLp, sub_self])
+    refine ⟨zeroModeL V ζ + x, ?_⟩
+    rw [map_add, floerSobolevOperator_zeroModeL hH hγ haγ hA, ← hζ, hx, add_sub_cancel]
+
+end TauCeti.SymplecticForm
