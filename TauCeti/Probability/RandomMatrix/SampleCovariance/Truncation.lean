@@ -230,19 +230,19 @@ variable [SeminormedAddGroup E] [MeasurableSpace E] {x : ℕ × ℕ → Ω → E
 law `ν` with finite second moment and `p(n) ≤ K n` eventually, then almost surely, for every
 `ε > 0`, every entry of the `p(n) × n` corner eventually has norm at most `ε n`. Independence is
 unnecessary. -/
-theorem ae_eventually_norm_le_mul (hx : ∀ ij, HasLaw (x ij) ν P) (h2 : MemLp id 2 ν)
-    {K : ℝ} (hp : ∀ᶠ n in atTop, (p n : ℝ) ≤ K * n) :
+theorem ae_eventually_norm_le_mul (hx : ∀ ij, HasLaw (x ij) ν P)
+    (h2 : Integrable (fun z ↦ ‖z‖ ^ 2) ν) {K : ℝ} (hp : ∀ᶠ n in atTop, (p n : ℝ) ≤ K * n) :
     ∀ᵐ ω ∂P, ∀ ε > (0 : ℝ), ∀ᶠ n in atTop, ∀ (i : Fin (p n)) (j : Fin n),
       ‖x (i, j) ω‖ ≤ ε * n := by
-  -- The square roots `‖x‖ ^ (1 / 2)` of the norms have a finite fourth moment.
-  have hnorm : AEStronglyMeasurable (fun z : E ↦ ‖z‖) ν :=
-    continuous_norm.comp_aestronglyMeasurable h2.aestronglyMeasurable
+  -- The norm is a.e. measurable as the square root of `‖·‖ ^ 2`, and the square roots
+  -- `‖x‖ ^ (1 / 2)` of the norms have a finite fourth moment.
+  have hnorm : AEMeasurable (fun z : E ↦ ‖z‖) ν :=
+    h2.aemeasurable.sqrt.congr (.of_forall fun z ↦ Real.sqrt_sq (norm_nonneg z))
   let f : E → ℝ := fun z ↦ ‖z‖ ^ (2⁻¹ : ℝ)
-  have hf : AEMeasurable f ν := hnorm.aemeasurable.pow_const _
+  have hf : AEMeasurable f ν := hnorm.pow_const _
   have h4 : MemLp id 4 (ν.map f) := by
     rw [memLp_map_measure_iff aestronglyMeasurable_id hf]
-    have h := (h2.of_eNorm_le_mul (c := 1) hnorm
-      (.of_forall fun z ↦ by simp [Real.eNorm_eq_ofReal_abs])).norm_rpow_div 2⁻¹
+    have h := ((memLp_two_iff_integrable_sq hnorm.aestronglyMeasurable).2 h2).norm_rpow_div 2⁻¹
     have h4 : (2 : ℝ≥0∞) / 2⁻¹ = 4 := by
       rw [div_eq_mul_inv, inv_inv]
       norm_num

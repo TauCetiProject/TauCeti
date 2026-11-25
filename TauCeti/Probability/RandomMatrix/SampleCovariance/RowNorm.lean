@@ -243,8 +243,9 @@ private theorem ae_eventually_forall_abs_sum_le_mul_of_integral_eq_zero
     hp.mono fun n hn ↦ hn.trans (by gcongr; exact le_max_left _ _)
   have hn : ∀ᶠ n : ℕ in atTop, (n : ℝ) ≤ max K 1 * n :=
     .of_forall fun n ↦ le_mul_of_one_le_left n.cast_nonneg (le_max_right _ _)
+  have h2' := h2.integrable_norm_pow two_ne_zero
   have hcount := ae_eventually_forall_card_filter_lt_norm_lt (ℓ := fun n ↦ n) (a := 3 / 4)
-    (q := 5) hξ hrow (h2.integrable_norm_pow two_ne_zero) hK hn (by norm_num)
+    (q := 5) hξ hrow h2' hK hn (by norm_num)
   -- The truncated means at `R` are at most `σ / R`, which tends to zero along `R = n ^ (3 / 4)`.
   have hmean' (R : ℝ) (hR : 0 < R) :
       |∫ z, {z : ℝ | ‖id z‖ ≤ R}.indicator id z ∂μ| ≤ σ / R := by
@@ -260,7 +261,7 @@ private theorem ae_eventually_forall_abs_sum_le_mul_of_integral_eq_zero
         1 / (k + 1) * n :=
     ae_all_iff.2 fun k ↦
       ae_eventually_forall_abs_sum_centeredTruncation_lt hξ hrow h2 hp (by positivity)
-  filter_upwards [hcount, ae_eventually_norm_le_mul hξ h2 hp, hbdd]
+  filter_upwards [hcount, ae_eventually_norm_le_mul hξ h2' hp, hbdd]
     with ω hω₁ hω₂ hω₃ ε hε
   obtain ⟨k, hk⟩ := exists_nat_one_div_lt (show 0 < ε / 3 by positivity)
   filter_upwards [hω₁, hω₂ (ε / 12) (by positivity), hω₃ k,
@@ -333,21 +334,20 @@ almost surely, for every `ε > 0`, eventually every row of the `r(n) × ℓ(n)` 
 squared norm `ℓ(n)⁻¹ ∑ⱼ ‖xᵢⱼ‖²` within `ε` of `∫ ‖z‖ ^ 2 ∂ν`. For `ℓ(n) = n` these are the
 squared row norms of the normalized corners `Xₙ / √n`. -/
 theorem ae_eventually_forall_abs_sum_norm_sq_div_sub_integral_le (hx : ∀ ij, HasLaw (x ij) ν P)
-    (hrow : ∀ i, iIndepFun (fun j ↦ x (i, j)) P) (h4 : MemLp id 4 ν) {r ℓ : ℕ → ℕ} {K : ℝ}
-    (hℓ : Tendsto ℓ atTop atTop) (hr : ∀ᶠ n in atTop, (r n : ℝ) ≤ K * ℓ n) :
+    (hrow : ∀ i, iIndepFun (fun j ↦ x (i, j)) P) (h4 : Integrable (fun z ↦ ‖z‖ ^ 4) ν)
+    {r ℓ : ℕ → ℕ} {K : ℝ} (hℓ : Tendsto ℓ atTop atTop) (hr : ∀ᶠ n in atTop, (r n : ℝ) ≤ K * ℓ n) :
     ∀ᵐ ω ∂P, ∀ ε > (0 : ℝ), ∀ᶠ n in atTop, ∀ i : Fin (r n),
       |(∑ j : Fin (ℓ n), ‖x (i, j) ω‖ ^ 2) / ℓ n - ∫ z, ‖z‖ ^ 2 ∂ν| ≤ ε := by
-  have hnorm : AEStronglyMeasurable (fun z : E ↦ ‖z‖) ν :=
-    continuous_norm.comp_aestronglyMeasurable h4.aestronglyMeasurable
-  have hs : AEStronglyMeasurable (fun z : E ↦ ‖z‖ ^ 2) ν := hnorm.pow 2
-  have hf : AEMeasurable (fun z : E ↦ ‖z‖ ^ 2) ν := hs.aemeasurable
+  -- The squared norm is a.e. measurable as the square root of `‖·‖ ^ 4`.
+  have hf : AEMeasurable (fun z : E ↦ ‖z‖ ^ 2) ν :=
+    h4.aemeasurable.sqrt.congr (.of_forall fun z ↦ by
+      dsimp only
+      rw [show ‖z‖ ^ 4 = (‖z‖ ^ 2) ^ 2 by ring, Real.sqrt_sq (by positivity)])
   -- The squared norms have the law `ν.map (‖·‖ ^ 2)`, with finite second moment.
   have h2 : MemLp id 2 (ν.map fun z ↦ ‖z‖ ^ 2) := by
     rw [memLp_map_measure_iff aestronglyMeasurable_id hf, Function.id_comp,
-      memLp_two_iff_integrable_sq hs]
-    simpa only [Real.norm_eq_abs, abs_norm, ← pow_mul] using
-      (h4.of_eNorm_le_mul (c := 1) hnorm (.of_forall fun z ↦ by
-        simp [Real.eNorm_eq_ofReal_abs])).integrable_norm_pow four_ne_zero
+      memLp_two_iff_integrable_sq hf.aestronglyMeasurable]
+    simpa only [← pow_mul] using h4
   have hmean : ∫ z, z ∂(ν.map fun z ↦ ‖z‖ ^ 2) = ∫ z, ‖z‖ ^ 2 ∂ν :=
     integral_map hf (by fun_prop)
   rw [← hmean]
@@ -362,7 +362,7 @@ surely, for every `ε > 0`, eventually every column of the normalized `p(n) × n
 has squared norm `n⁻¹ ∑ᵢ ‖xᵢⱼ‖²` within `ε` of `y ∫ ‖z‖ ^ 2 ∂ν`. -/
 theorem ae_eventually_forall_abs_sum_norm_sq_div_sub_mul_integral_le
     (hx : ∀ ij, HasLaw (x ij) ν P) (hcol : ∀ j, iIndepFun (fun i ↦ x (i, j)) P)
-    (h4 : MemLp id 4 ν) {p : ℕ → ℕ} {y : ℝ} (hy : 0 < y)
+    (h4 : Integrable (fun z ↦ ‖z‖ ^ 4) ν) {p : ℕ → ℕ} {y : ℝ} (hy : 0 < y)
     (hp : Tendsto (fun n ↦ (p n : ℝ) / n) atTop (𝓝 y)) :
     ∀ᵐ ω ∂P, ∀ ε > (0 : ℝ), ∀ᶠ n in atTop, ∀ j : Fin n,
       |(∑ i : Fin (p n), ‖x (i, j) ω‖ ^ 2) / n - y * ∫ z, ‖z‖ ^ 2 ∂ν| ≤ ε := by
