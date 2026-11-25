@@ -173,17 +173,22 @@ theorem isotropicLocus_fg [Module.Finite R M] (N : G(k, A ⊗[R] M; A))
 
 section Field
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
 /-- **Isotropic points over a field have dimension at most half.** For a nondegenerate bilinear
-form `ω` on a finite-dimensional space `V`, a point of `G(k, V; K)` contained in its own orthogonal
-is a subspace of dimension `dim V - k` of at most half the dimension of `V`, so `dim V ≤ 2 k`. -/
+form `ω` on `V`, a point of `G(k, V; K)` contained in its own orthogonal satisfies
+`finrank K V ≤ 2 k`: when `V` is finite-dimensional it is a subspace of dimension `dim V - k` of
+at most half the dimension of `V`, and otherwise `finrank K V = 0`. -/
 theorem finrank_le_two_mul_of_le_orthogonal {ω : LinearMap.BilinForm K V} (hnd : ω.Nondegenerate)
     {N : G(k, V; K)} (hN : N.toSubmodule ≤ ω.orthogonal N.toSubmodule) :
     Module.finrank K V ≤ 2 * k := by
-  have := LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal hnd hN
-  rw [N.finrank_toSubmodule] at this
-  omega
+  by_cases hV : FiniteDimensional K V
+  · have := LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal hnd hN
+    rw [N.finrank_toSubmodule] at this
+    omega
+  · simp [Module.finrank_of_not_finite hV]
+
+variable [FiniteDimensional K V]
 
 /-- **The symplectic group is transitive on isotropic points.** For a nondegenerate alternating
 form `ω` on a finite-dimensional vector space `V`, any two points of `G(k, V; K)` that are
@@ -214,7 +219,6 @@ theorem card_le_two_mul_of_le_orthogonal [Nontrivial A] {ι : Type*} [Fintype ι
     Fintype.card ι ≤ 2 * k := by
   obtain ⟨𝔪, h𝔪⟩ := Ideal.exists_maximal A
   let := Ideal.Quotient.field 𝔪
-  have := Module.Finite.of_basis b
   -- the image of `N` at the residue field `A ⧸ 𝔪` is still isotropic
   have hN' := (isotropicLocus_eq_bot_iff _ ω).mp <|
     isotropicLocus_map_eq_bot ((isotropicLocus_eq_bot_iff N ω).mpr hN) (Ideal.Quotient.mkₐ R 𝔪)
