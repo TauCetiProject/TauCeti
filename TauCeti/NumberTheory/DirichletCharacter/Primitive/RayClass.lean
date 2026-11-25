@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet
+import TauCeti.NumberTheory.NumberField.Ideal.DegreeOne
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
@@ -30,6 +31,12 @@ open Filter NumberField TauCeti.GlobalNumberFields TauCeti.LFunctions
 
 namespace TauCeti.PrimitiveDirichletCharacter
 
+/-- The finite conductor of a primitive ray class character of `ℚ` has nonzero norm, so it is a
+Dirichlet level. -/
+instance (η : PrimitiveRayClassCharacter ℚ) :
+    NeZero (Ideal.absNorm η.conductor.finitePart) :=
+  ⟨Ideal.absNorm_eq_zero_iff.not.mpr η.conductor.finitePart_ne_bot⟩
+
 /-- Changing the Dirichlet level before passing to the rational ray class dictionary does not
 change the primitive ray class character. -/
 private theorem rayClass_of_changeLevel {d n : ℕ} (hd : d ≠ 0) (hn : n ≠ 0)
@@ -50,8 +57,6 @@ noncomputable def toPrimitiveRayClassCharacter :
   let forward (ψ : PrimitiveDirichletCharacter) := PrimitiveRayClassCharacter.of
     ((ratDirichletEquiv ψ.level (NeZero.ne (ψ.level : ℕ))).symm ψ.character)
   let backward (η : PrimitiveRayClassCharacter ℚ) :=
-    haveI : NeZero (Ideal.absNorm η.conductor.finitePart) :=
-      ⟨Ideal.absNorm_eq_zero_iff.not.mpr η.conductor.finitePart_ne_bot⟩
     of (ratDirichletEquiv _ _ (η.character.induced (dvd_ratModulus_absNorm η.conductor)))
   have hlevel (ψ : PrimitiveDirichletCharacter) :
       Ideal.absNorm (forward ψ).conductor.finitePart = ψ.level := by
@@ -72,8 +77,6 @@ noncomputable def toPrimitiveRayClassCharacter :
     rfl
   have hright : Function.RightInverse backward forward := by
     intro η
-    have : NeZero (Ideal.absNorm η.conductor.finitePart) :=
-      ⟨Ideal.absNorm_eq_zero_iff.not.mpr η.conductor.finitePart_ne_bot⟩
     let χ := ratDirichletEquiv _ _ (η.character.induced (dvd_ratModulus_absNorm η.conductor))
     have h := rayClass_of_changeLevel (NeZero.ne ((of χ).level : ℕ))
       (NeZero.ne (Ideal.absNorm η.conductor.finitePart)) (level_of_dvd χ) (of χ).character
@@ -105,8 +108,6 @@ theorem toPrimitiveRayClassCharacter_of {n : ℕ} [NeZero n] (χ : DirichletChar
 Dirichlet presentation at the norm of the finite conductor. -/
 theorem toPrimitiveRayClassCharacter_symm_apply (η : PrimitiveRayClassCharacter ℚ) :
     toPrimitiveRayClassCharacter.symm η =
-      haveI : NeZero (Ideal.absNorm η.conductor.finitePart) :=
-        ⟨Ideal.absNorm_eq_zero_iff.not.mpr η.conductor.finitePart_ne_bot⟩
       of (ratDirichletEquiv _ _ (η.character.induced (dvd_ratModulus_absNorm η.conductor))) :=
   (rfl)
 
@@ -123,7 +124,7 @@ theorem level_toPrimitiveRayClassCharacter_symm (η : PrimitiveRayClassCharacter
     ((toPrimitiveRayClassCharacter.symm η).level : ℕ) = Ideal.absNorm η.conductor.finitePart := by
   have h := finitePart_conductor_toPrimitiveRayClassCharacter (toPrimitiveRayClassCharacter.symm η)
   rw [Equiv.apply_symm_apply] at h
-  rw [h, Ideal.absNorm_span_natCast, RingOfIntegers.rank, Module.finrank_self, pow_one]
+  rw [h, RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one (Module.finrank_self ℚ)]
 
 /-- The real place is omitted from the conductor exactly when the Dirichlet character is even. -/
 @[simp]
@@ -159,16 +160,8 @@ theorem toMultiplicativeIdealWeight_toPrimitiveRayClassCharacter_apply
   let 𝔫 := ratModulus ψ.level (NeZero.ne (ψ.level : ℕ))
   have hfin : (toPrimitiveRayClassCharacter ψ).conductor.finitePart = 𝔫.finitePart := by
     rw [finitePart_conductor_toPrimitiveRayClassCharacter, ratModulus_finitePart]
-  have hcop : 𝔫.IsCoprimeTo J ↔ (Ideal.absNorm J).Coprime ψ.level := by
-    rw [Modulus.isCoprimeTo_iff_sup_eq_top, and_iff_right hJ, ← Ideal.isCoprime_iff_sup_eq,
-      ratModulus_finitePart]
-    conv_lhs => rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self J]
-    rw [Ideal.isCoprime_span_singleton_iff, ← Nat.isCoprime_iff_coprime]
-    constructor
-    · intro hc
-      simpa only [map_natCast] using hc.map Rat.ringOfIntegersEquiv.toRingHom
-    · intro hc
-      simpa only [map_natCast, map_intCast] using hc.map Rat.ringOfIntegersEquiv.symm.toRingHom
+  have hcop : 𝔫.IsCoprimeTo J ↔ (Ideal.absNorm J).Coprime ψ.level :=
+    isCoprimeTo_ratModulus_iff hJ
   have hprime : J.IsPrimeTo (toPrimitiveRayClassCharacter ψ).conductor.support ↔
       𝔫.IsCoprimeTo J := by
     rw [← Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm,
@@ -198,7 +191,7 @@ theorem normCoeff_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCharacter
   rw [UnitaryIdealWeight.normCoeff_toIdealArithmeticFunction_of_finrank_eq_one
     (Module.finrank_self ℚ), RayClassCharacter.val_toUnitaryIdealWeight,
     toMultiplicativeIdealWeight_toPrimitiveRayClassCharacter_apply ψ hJ,
-    Ideal.absNorm_span_natCast, RingOfIntegers.rank, Module.finrank_self, pow_one]
+    RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one (Module.finrank_self ℚ)]
 
 /-- The continued ray class L-function is the meromorphic normal form of the corresponding
 Dirichlet L-function. In particular the comparison does not identify their values at a pole. -/
