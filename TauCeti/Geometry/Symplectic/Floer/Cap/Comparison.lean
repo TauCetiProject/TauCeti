@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Map
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Product
 public import TauCeti.RingTheory.NovikovModule.Comparison
+import TauCeti.Geometry.Symplectic.Floer.Grading
 
 /-!
 # The multiplicative PSS comparison for class-indexed counts on capped generators

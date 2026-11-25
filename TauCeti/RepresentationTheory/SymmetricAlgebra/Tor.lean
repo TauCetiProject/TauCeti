@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
-public import TauCeti.CategoryTheory.Monoidal.Tor
+public import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 public import TauCeti.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.DividedDifference
 
