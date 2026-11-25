@@ -9,8 +9,6 @@ public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.Field.Basic
 import Mathlib.RingTheory.SimpleRing.Field
 import Mathlib.Tactic.Abel
--- `QuadraticAlgebra.norm_eq_zero_iff_eq_zero`: the norm of `F[X] / (X² - t X - n)` is anisotropic.
-import Mathlib.Algebra.QuadraticAlgebra.Basic
 
 /-!
 # Rational identities under inversion
@@ -24,9 +22,7 @@ unless `u * x = 1` (`TauCeti.exists_unit_conj_of_mul_ne_one`). The rational func
 `x / (1 - x)²`, `x² / (1 - x)³` and `x / (1 - x)³` of the Tate coordinates satisfy the linear
 relation `TauCeti.div_one_sub_sq_add_sq_div_one_sub_cube`. A square root in a field extension of a
 non-square of the base field does not lie in the base field
-(`TauCeti.notMem_range_algebraMap_of_sq_eq_of_not_isSquare`). If `X² - t X - n` has no root in a
-field, the binary quadratic form `a² + t a b - n b²`, the norm form of `F[X] / (X² - t X - n)`, has
-no nontrivial zero (`TauCeti.sq_add_mul_mul_sub_mul_sq_eq_zero_iff`).
+(`TauCeti.notMem_range_algebraMap_of_sq_eq_of_not_isSquare`).
 -/
 
 public section
@@ -58,16 +54,6 @@ theorem notMem_range_algebraMap_of_sq_eq_of_not_isSquare {K L : Type*} [Field K]
   rintro ⟨y, rfl⟩
   rw [← map_pow, (algebraMap K L).injective.eq_iff] at hx2
   exact hsq ⟨y, by simpa only [sq] using hx2.symm⟩
-
-/-- **A quadratic without roots has an anisotropic norm form.** If `X² - t X - n` has no root in
-the field `F`, then `a² + t a b - n b²` vanishes only at `a = b = 0`: for `b ≠ 0` a zero would make
-`-a / b` a root. This is `QuadraticAlgebra.norm_eq_zero_iff_eq_zero` in coordinates. -/
-theorem sq_add_mul_mul_sub_mul_sq_eq_zero_iff {F : Type*} [Field F] {t n : F}
-    (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) {a b : F} :
-    a ^ 2 + t * a * b - n * b ^ 2 = 0 ↔ a = 0 ∧ b = 0 := by
-  have : Fact (∀ x : F, x ^ 2 ≠ n + t * x) := ⟨fun x ↦ add_comm n (t * x) ▸ hirr x⟩
-  simpa [QuadraticAlgebra.norm_def, QuadraticAlgebra.ext_iff, sq, mul_assoc] using
-    QuadraticAlgebra.norm_eq_zero_iff_eq_zero (z := (⟨a, b⟩ : QuadraticAlgebra F n t))
 
 variable {K : Type*} [DivisionRing K]
 

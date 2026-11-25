@@ -9,11 +9,15 @@ public import Mathlib.Algebra.QuadraticAlgebra.Basic
 import Mathlib.Algebra.Ring.Parity
 
 /-!
-# Powers of the generator of a quadratic algebra
+# Powers of the generator and the norm form of a quadratic algebra
 
 For the quadratic algebra `R[√r]` over any commutative semiring, powers of the generator
 alternate between scalars at even exponents and scalar multiples of the generator at odd
 exponents. These formulas include exponent zero and do not require finite-field hypotheses.
+
+If `X² - t X - n` has no root in a field, the binary quadratic form `a² + t a b - n b²`, the norm
+form of `F[X] / (X² - t X - n)`, has no nontrivial zero
+(`TauCeti.sq_add_mul_mul_sub_mul_sq_eq_zero_iff`).
 -/
 
 public section
@@ -34,3 +38,17 @@ theorem omega_pow_of_even {R : Type*} [CommSemiring R] {r : R} {n : ℕ} (hn : E
   rw [pow_mul, sq, omega_mul_omega_eq_algebraMap, map_zero, zero_mul, add_zero, ← map_pow]
 
 end QuadraticAlgebra
+
+namespace TauCeti
+
+/-- **A quadratic without roots has an anisotropic norm form.** If `X² - t X - n` has no root in
+the field `F`, then `a² + t a b - n b²` vanishes only at `a = b = 0`: for `b ≠ 0` a zero would make
+`-a / b` a root. This is `QuadraticAlgebra.norm_eq_zero_iff_eq_zero` in coordinates. -/
+theorem sq_add_mul_mul_sub_mul_sq_eq_zero_iff {F : Type*} [Field F] {t n : F}
+    (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) {a b : F} :
+    a ^ 2 + t * a * b - n * b ^ 2 = 0 ↔ a = 0 ∧ b = 0 := by
+  have : Fact (∀ x : F, x ^ 2 ≠ n + t * x) := ⟨fun x ↦ add_comm n (t * x) ▸ hirr x⟩
+  simpa [QuadraticAlgebra.norm_def, QuadraticAlgebra.ext_iff, sq, mul_assoc] using
+    QuadraticAlgebra.norm_eq_zero_iff_eq_zero (z := (⟨a, b⟩ : QuadraticAlgebra F n t))
+
+end TauCeti

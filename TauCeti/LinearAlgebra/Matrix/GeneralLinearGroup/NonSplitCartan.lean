@@ -17,7 +17,7 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 -- irreducible quadratic is separable.
 import TauCeti.FieldTheory.Finite.Card
 -- `TauCeti.sq_add_mul_mul_sub_mul_sq_eq_zero_iff`: the norm form of `F[α]` has no nontrivial zero.
-import TauCeti.Algebra.Field.Basic
+import TauCeti.Algebra.QuadraticAlgebra.Basic
 
 /-!
 # The nonsplit Cartan subgroup of `GL₂` and its normalizer
