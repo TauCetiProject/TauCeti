@@ -138,14 +138,6 @@ private theorem one_le_mul_norm_one_sub (σ : PadicAlgCl p ≃ₐ[ℚ_[p]] Padic
   rw [h_trace, norm_one] at h
   simpa [Set.mem_ofPred_eq, algEquiv_smul_coe, ← coe_one, ← coe_sub] using h
 
-/-- An automorphism fixing a set fixes the field it generates. -/
-private theorem apply_eq_of_mem_adjoin {S : Set (PadicAlgCl p)}
-    {σ : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p} (hσ : ∀ s ∈ S, σ s = s) {w : PadicAlgCl p}
-    (hw : w ∈ adjoin ℚ_[p] S) : σ w = w :=
-  adjoin_induction ℚ_[p] (motive := fun x _ ↦ σ x = x) hσ σ.commutes
-    (fun _ _ _ _ hx hy ↦ by rw [map_add, hx, hy]) (fun _ _ hx ↦ by rw [map_inv₀, hx])
-    (fun _ _ _ _ hx hy ↦ by rw [map_mul, hx, hy]) hw
-
 /-- Every `w ∈ ℚ_p(μ_{p^∞})` is fixed by some `γ ∈ G_{ℚ_p}` with `χ(γ) ^ i ≠ 1`, for `i ≠ 0`:
 if `w ∈ ℚ_p(μ_{p^N})`, take `χ(γ) = 1 + p ^ (N + 1)`, which is not a root of unity. -/
 private theorem exists_apply_eq_and_cyclotomicCharacter_zpow_ne_one {i : ℤ} (hi : i ≠ 0)
@@ -160,7 +152,10 @@ private theorem exists_apply_eq_and_cyclotomicCharacter_zpow_ne_one {i : ℤ} (h
     PadicInt.isUnit_iff.mpr (PadicInt.norm_natCast_eq_one_iff.mpr hcop)
   obtain ⟨γ, hγ⟩ := TauCeti.surjective_localCyclotomicCharacter_ratPadic p hu.unit
   rw [TauCeti.localCyclotomicCharacter_apply] at hγ
-  refine ⟨γ, apply_eq_of_mem_adjoin (fun s (hs : s ^ p ^ N = 1) ↦ ?_) hN, fun h ↦ ?_⟩
+  -- `γ • w = w` is `γ w = w` by `AlgEquiv.smul_def`
+  refine ⟨γ, (forall_mem_adjoin_smul_eq_self_iff ℚ_[p]
+    (M := PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p) γ).2
+    (fun s (hs : s ^ p ^ N = 1) ↦ ?_) w hN, fun h ↦ ?_⟩
   · have h1 : PadicInt.toZModPow N ((1 + p ^ (N + 1) : ℕ) : ℤ_[p]) = 1 := by
       have h0 : ((p ^ (N + 1) : ℕ) : ZMod (p ^ N)) = 0 :=
         (ZMod.natCast_eq_zero_iff _ _).mpr (pow_dvd_pow p N.le_succ)
