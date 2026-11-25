@@ -203,25 +203,14 @@ section Endpoints
 open Fact.Manifold
 open scoped IccZeroAddOne
 
-/-- A tangent vector at a boundary point of `[a, b]` with norm one and outward is the outward
-unit normal: the boundary manifold is zero-dimensional, so orthogonality is automatic. -/
-private theorem eq_outwardUnitNormal_Icc {q : (𝓡∂ (0 + 1)).boundary (Icc a b)}
-    {v : TangentSpace (𝓡∂ (0 + 1)) (q : Icc a b)} (hv : ‖v‖ = 1)
-    (ho : IsOutwardPointing (q : Icc a b) v) : v = outwardUnitNormal q := by
-  refine eq_outwardUnitNormal_iff.mpr ⟨hv, ho, fun w ↦ ?_⟩
-  -- The boundary is modelled on `EuclideanSpace ℝ (Fin 0)`, so its tangent spaces are trivial.
-  have : Subsingleton (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) q) :=
-    inferInstanceAs (Subsingleton (EuclideanSpace ℝ (Fin 0)))
-  have hw : w = 0 := Subsingleton.elim w 0
-  rw [hw, map_zero, inner_zero_right]
-
 /-- The outward unit normal of `[a, b]` at the left endpoint is `-1`, minus the image of
 `1 ∈ ℝ`. -/
 theorem outwardUnitNormal_Icc_bot :
     outwardUnitNormal (⟨⊥, Icc_isBoundaryPoint_bot⟩ : (𝓡∂ (0 + 1)).boundary (Icc a b)) =
       -(1 : TangentSpace (𝓡∂ (0 + 1)) (⊥ : Icc a b)) := by
   have hab : ((⊥ : Icc a b) : ℝ) < b := Fact.out (p := a < b)
-  refine (eq_outwardUnitNormal_Icc (by rw [norm_neg, IccZeroAddOne.norm_one_tangentSpace]) ?_).symm
+  refine (eq_outwardUnitNormal_iff_of_dim_zero.2
+    ⟨by rw [norm_neg, IccZeroAddOne.norm_one_tangentSpace], ?_⟩).symm
   rw [isOutwardPointing_neg_iff_proj Icc_isBoundaryPoint_bot, IccZeroAddOne.proj_one_tangentSpace]
   simp only [hab, ↓reduceIte, zero_lt_one]
 
@@ -231,7 +220,7 @@ theorem outwardUnitNormal_Icc_top :
     outwardUnitNormal (⟨⊤, Icc_isBoundaryPoint_top⟩ : (𝓡∂ (0 + 1)).boundary (Icc a b)) =
       (1 : TangentSpace (𝓡∂ (0 + 1)) (⊤ : Icc a b)) := by
   have hab : ¬((⊤ : Icc a b) : ℝ) < b := lt_irrefl b
-  refine (eq_outwardUnitNormal_Icc (IccZeroAddOne.norm_one_tangentSpace _) ?_).symm
+  refine (eq_outwardUnitNormal_iff_of_dim_zero.2 ⟨IccZeroAddOne.norm_one_tangentSpace _, ?_⟩).symm
   rw [isOutwardPointing_iff_proj Icc_isBoundaryPoint_top, IccZeroAddOne.proj_one_tangentSpace]
   simp only [hab, ↓reduceIte, neg_lt_zero, zero_lt_one]
 
