@@ -382,6 +382,12 @@ theorem map_comp (g : S →⋆ₙ+* T) (f : R →⋆ₙ+* S) :
   induction x using ind with
   | mk _ p hp => simp [Matrix.map_map]
 
+/-- Applying the homomorphisms induced by `f` and then by `g` on `V` is applying the homomorphism
+induced by their composite. -/
+theorem map_map (g : S →⋆ₙ+* T) (f : R →⋆ₙ+* S) (x : ProjectionMonoid R) :
+    map g (map f x) = map (g.comp f) x := by
+  rw [map_comp, AddMonoidHom.comp_apply]
+
 /-- If a star ring homomorphism vanishes, so does the homomorphism it induces on `V`. -/
 theorem map_eq_zero_of_forall_eq_zero {f : R →⋆ₙ+* S} (hf : ∀ r, f r = 0)
     (x : ProjectionMonoid R) : map f x = 0 := by

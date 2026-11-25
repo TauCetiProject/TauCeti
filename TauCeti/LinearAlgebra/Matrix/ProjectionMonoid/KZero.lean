@@ -210,6 +210,12 @@ theorem map_comp (g : S →⋆ₙ+* T) (f : R →⋆ₙ+* S) :
     rw [AddMonoidHom.comp_apply, map_of, map_of, map_of, ProjectionMonoid.map_comp,
       AddMonoidHom.comp_apply]
 
+/-- Applying the homomorphisms induced by `f` and then by `g` on `K₀` is applying the
+homomorphism induced by their composite. -/
+theorem map_map (g : S →⋆ₙ+* T) (f : R →⋆ₙ+* S) (x : ProjectionKZero R) :
+    map g (map f x) = map (g.comp f) x := by
+  rw [map_comp, AddMonoidHom.comp_apply]
+
 /-- If a star ring homomorphism vanishes, so does the homomorphism it induces on `K₀`. -/
 theorem map_eq_zero_of_forall_eq_zero {f : R →⋆ₙ+* S} (hf : ∀ r, f r = 0) : map f = 0 :=
   GrothendieckAddGroup.addHom_ext fun x ↦ by

@@ -80,11 +80,9 @@ theorem unitalProdEquiv_apply_snd (x : ProjectionKZero (Unitization R A)) :
   have h : (NonUnitalStarRingHom.snd A R).comp
       (Unitization.prodStarAlgEquiv R A).toStarRingEquiv =
       NonUnitalStarRingHom.ofClass (Unitization.fstStarAlgHom R A) :=
-    NonUnitalStarRingHom.ext fun y ↦ by
-      rw [NonUnitalStarRingHom.comp_apply, NonUnitalStarRingHom.snd_apply,
-        StarRingEquiv.coe_toNonUnitalStarRingHom, NonUnitalStarRingHom.coe_ofClass,
-        Unitization.fstStarAlgHom_apply]
-      exact congrArg Prod.snd (Unitization.prodStarAlgEquiv_apply R A y)
+    NonUnitalStarRingHom.ext fun y ↦ (NonUnitalStarRingHom.snd_apply _).trans <|
+      (congrArg Prod.snd (Unitization.prodStarAlgEquiv_apply R A y)).trans
+        (Unitization.fstStarAlgHom_apply R A y).symm
   rw [augmentation_def, ← h, ProjectionKZero.map_comp, unitalProdEquiv_apply,
     ProjectionKZero.prodEquiv_apply, AddMonoidHom.comp_apply]
 
@@ -97,10 +95,8 @@ noncomputable def unitalEquiv : UnitizationKZero R A ≃+ ProjectionKZero A wher
     rw [mem_iff, ← unitalProdEquiv_apply_snd, AddEquiv.apply_symm_apply]⟩
   left_inv x := by
     obtain ⟨x, hx⟩ := x
-    refine Subtype.ext ?_
     rw [mem_iff, ← unitalProdEquiv_apply_snd] at hx
-    simp only
-    rw [← hx, Prod.mk.eta, AddEquiv.symm_apply_apply]
+    exact Subtype.ext ((unitalProdEquiv R A).symm_apply_eq.2 (Prod.ext rfl hx.symm))
   right_inv a := by simp
   map_add' x y := by simp
 

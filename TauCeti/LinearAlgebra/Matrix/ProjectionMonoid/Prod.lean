@@ -48,28 +48,26 @@ variable {m : Type*} [Fintype m]
 @[simp]
 theorem map_fst_map_inl (x : ProjectionMonoid R) :
     map (NonUnitalStarRingHom.fst R S) (map (NonUnitalStarRingHom.inl R S) x) = x := by
-  rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.fst_comp_inl, map_id,
-    AddMonoidHom.id_apply]
+  rw [map_map, NonUnitalStarRingHom.fst_comp_inl, map_id, AddMonoidHom.id_apply]
 
 /-- The second projection undoes the second inclusion on `V`. -/
 @[simp]
 theorem map_snd_map_inr (y : ProjectionMonoid S) :
     map (NonUnitalStarRingHom.snd R S) (map (NonUnitalStarRingHom.inr R S) y) = y := by
-  rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.snd_comp_inr, map_id,
-    AddMonoidHom.id_apply]
+  rw [map_map, NonUnitalStarRingHom.snd_comp_inr, map_id, AddMonoidHom.id_apply]
 
 /-- The first projection kills the image of the second inclusion on `V`. -/
 @[simp]
 theorem map_fst_map_inr (y : ProjectionMonoid S) :
     map (NonUnitalStarRingHom.fst R S) (map (NonUnitalStarRingHom.inr R S) y) = 0 := by
-  rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.fst_comp_inr]
+  rw [map_map, NonUnitalStarRingHom.fst_comp_inr]
   exact map_eq_zero_of_forall_eq_zero NonUnitalStarRingHom.zero_apply y
 
 /-- The second projection kills the image of the first inclusion on `V`. -/
 @[simp]
 theorem map_snd_map_inl (x : ProjectionMonoid R) :
     map (NonUnitalStarRingHom.snd R S) (map (NonUnitalStarRingHom.inl R S) x) = 0 := by
-  rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.snd_comp_inl]
+  rw [map_map, NonUnitalStarRingHom.snd_comp_inl]
   exact map_eq_zero_of_forall_eq_zero NonUnitalStarRingHom.zero_apply x
 
 /-- Every class in `V(R × S)` is the sum of the images under the inclusions of its images under
@@ -122,28 +120,26 @@ open ProjectionMonoid
 @[simp]
 theorem map_fst_map_inl (x : ProjectionKZero R) :
     map (NonUnitalStarRingHom.fst R S) (map (NonUnitalStarRingHom.inl R S) x) = x := by
-  rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.fst_comp_inl, map_id,
-    AddMonoidHom.id_apply]
+  rw [map_map, NonUnitalStarRingHom.fst_comp_inl, map_id, AddMonoidHom.id_apply]
 
 /-- The second projection undoes the second inclusion on `K₀`. -/
 @[simp]
 theorem map_snd_map_inr (y : ProjectionKZero S) :
     map (NonUnitalStarRingHom.snd R S) (map (NonUnitalStarRingHom.inr R S) y) = y := by
-  rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.snd_comp_inr, map_id,
-    AddMonoidHom.id_apply]
+  rw [map_map, NonUnitalStarRingHom.snd_comp_inr, map_id, AddMonoidHom.id_apply]
 
 /-- The first projection kills the image of the second inclusion on `K₀`. -/
 @[simp]
 theorem map_fst_map_inr (y : ProjectionKZero S) :
     map (NonUnitalStarRingHom.fst R S) (map (NonUnitalStarRingHom.inr R S) y) = 0 := by
-  rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.fst_comp_inr,
+  rw [map_map, NonUnitalStarRingHom.fst_comp_inr,
     map_eq_zero_of_forall_eq_zero NonUnitalStarRingHom.zero_apply, AddMonoidHom.zero_apply]
 
 /-- The second projection kills the image of the first inclusion on `K₀`. -/
 @[simp]
 theorem map_snd_map_inl (x : ProjectionKZero R) :
     map (NonUnitalStarRingHom.snd R S) (map (NonUnitalStarRingHom.inl R S) x) = 0 := by
-  rw [← AddMonoidHom.comp_apply, ← map_comp, NonUnitalStarRingHom.snd_comp_inl,
+  rw [map_map, NonUnitalStarRingHom.snd_comp_inl,
     map_eq_zero_of_forall_eq_zero NonUnitalStarRingHom.zero_apply, AddMonoidHom.zero_apply]
 
 variable (R S) in
@@ -154,9 +150,8 @@ noncomputable def prodEquiv : ProjectionKZero (R × S) ≃+ ProjectionKZero R ×
     ((map (NonUnitalStarRingHom.fst R S)).prod (map (NonUnitalStarRingHom.snd R S)))
     ((map (NonUnitalStarRingHom.inl R S)).coprod (map (NonUnitalStarRingHom.inr R S)))
     (GrothendieckAddGroup.addHom_ext fun x ↦ by
-      rw [AddMonoidHom.comp_apply, AddMonoidHom.prod_apply, AddMonoidHom.coprod_apply, map_of,
-        map_of, map_of, map_of, ← map_add, map_inl_map_fst_add_map_inr_map_snd,
-        AddMonoidHom.id_apply])
+      simp only [AddMonoidHom.comp_apply, AddMonoidHom.prod_apply, AddMonoidHom.coprod_apply,
+        map_of, ← map_add, map_inl_map_fst_add_map_inr_map_snd, AddMonoidHom.id_apply])
     (AddMonoidHom.ext fun y ↦ by simp)
 
 /-- The isomorphism `K₀(R × S) ≃+ K₀(R) × K₀(S)` is induced by the two projections. -/
