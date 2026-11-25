@@ -20,7 +20,7 @@ is `TauCeti.intervalExpSum f a b`, the finite sum of `TauCeti.expTwoPiI (f n)` o
 and through which integer points near a smooth curve are counted. The endpoints are real
 because those arguments shorten the interval by real amounts, and a half-open sum
 `∑_{X < n ≤ X + Y}` is the case `a = ⌊X⌋ + 1`, `b = X + Y`
-(`TauCeti.intervalExpSum_floor_add_one`).
+(`TauCeti.intervalExpSum_intCast_add_one`).
 
 ## Main results
 
@@ -153,11 +153,12 @@ theorem intervalExpSum_add_adjacent (f : ℝ → ℝ) {c : ℤ} (hac : a ≤ c +
     ← Ico_add_one_right_eq_Icc]
   rw [← sum_union (Ico_disjoint_Ico_consecutive _ _ _), Ico_union_Ico_eq_Ico h₁ h₂]
 
-/-- **Half-open intervals.** `S_f[⌊X⌋ + 1, b]` is the sum of `e(f(n))` over the integers
-`X < n ≤ b`, which are the elements of `Finset.Ioc ⌊X⌋ ⌊b⌋` (`Int.cast_mem_Ioc_iff`). With
-`b = X + Y` this is `∑_{X < n ≤ X + Y} e(f(n))`. -/
-theorem intervalExpSum_floor_add_one (f : ℝ → ℝ) (X b : ℝ) :
-    intervalExpSum f (⌊X⌋ + 1) b = ∑ n ∈ Ioc ⌊X⌋ ⌊b⌋, expTwoPiI (f n) := by
+/-- **Half-open intervals.** For an integer `m`, `S_f[m + 1, b]` is the sum of `e(f(n))` over
+the integers `m < n ≤ b`, which are the elements of `Finset.Ioc m ⌊b⌋`. With `m = ⌊X⌋` these
+are the integers `X < n ≤ b` (`Int.floor_lt`), so for `b = X + Y` this is
+`∑_{X < n ≤ X + Y} e(f(n))`. -/
+theorem intervalExpSum_intCast_add_one (f : ℝ → ℝ) (m : ℤ) (b : ℝ) :
+    intervalExpSum f (m + 1) b = ∑ n ∈ Ioc m ⌊b⌋, expTwoPiI (f n) := by
   rw [intervalExpSum_def, Int.ceil_add_one, Int.ceil_intCast, Icc_add_one_left_eq_Ioc]
 
 /-! ### Trivial bounds -/
@@ -218,7 +219,7 @@ example : intervalExpSum f (⌊(0.5 : ℝ)⌋ + 1) 2.5 = expTwoPiI (f 1) + expTw
   have h₁ : ⌊(0.5 : ℝ)⌋ = 0 := Int.floor_eq_iff.2 (by norm_num)
   have h₂ : ⌊(2.5 : ℝ)⌋ = 2 := Int.floor_eq_iff.2 (by norm_num)
   have hI : Ioc (0 : ℤ) 2 = {1, 2} := by decide
-  rw [intervalExpSum_floor_add_one, h₁, h₂, hI]
+  rw [intervalExpSum_intCast_add_one, h₁, h₂, hI]
   simp
 
 end TauCeti
