@@ -503,24 +503,34 @@ theorem starSchwarzReflection_const_smul {R : Type*} [Star R] [TrivialStar R] [S
   · simp only [starSchwarzReflection_of_im_nonneg hz]
   · simp only [starSchwarzReflection_of_im_neg (not_le.1 hz), star_smul, star_trivial]
 
+/-- **Continuity of a reflection across the real axis.** On a conjugation-invariant set `Ω`, let
+`f` be continuous on `Ω ∩ {0 ≤ im}` and let the continuous map `L` fix the values of `f` at the
+real points of `Ω`. Then the map equal to `f` on the closed upper half-plane and to
+`L (f (conj z))` below it is continuous on `Ω`. -/
+theorem _root_.ContinuousOn.ite_conj {E : Type*} [TopologicalSpace E] {Ω : Set ℂ}
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) {f : ℂ → E} (hf : ContinuousOn f (Ω ∩ {z | 0 ≤ z.im}))
+    {L : E → E} (hL : Continuous L) (hfL : ∀ x : ℝ, (x : ℂ) ∈ Ω → L (f x) = f x) :
+    ContinuousOn (fun z ↦ if 0 ≤ z.im then f z else L (f (conj z))) Ω := by
+  have hlower : ContinuousOn (fun z ↦ L (f (conj z))) (Ω ∩ {z | z.im ≤ 0}) :=
+    hL.comp_continuousOn (hf.comp Complex.continuous_conj.continuousOn
+      fun z hz ↦ ⟨hΩ hz.1, by simpa using hz.2⟩)
+  refine ContinuousOn.if (fun z hz ↦ ?_) ?_ ?_
+  · rw [mem_inter_iff, Complex.frontier_setOfPred_le_im, mem_ofPred_eq] at hz
+    have hzx : z = (z.re : ℂ) := Complex.ext rfl (by simpa using hz.2)
+    rw [Complex.conj_eq_iff_im.2 hz.2, eq_comm, hzx]
+    exact hfL z.re (hzx ▸ hz.1)
+  · rwa [(isClosed_le continuous_const Complex.continuous_im).closure_eq]
+  · simp only [not_le]
+    rwa [Complex.closure_setOfPred_im_lt]
+
 /-- **Continuity of the reflection.** On a conjugation-invariant set, a map continuous up to the
 real axis and real there, in the sense that its values are fixed by `star`, has a continuous
 reflection. -/
 theorem continuousOn_starSchwarzReflection_of_symmetric [TopologicalSpace F] [ContinuousStar F]
     {Ω : Set ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hξ : ContinuousOn ξ (Ω ∩ {z | 0 ≤ z.im}))
     (hreal : ∀ x : ℝ, (x : ℂ) ∈ Ω → star (ξ x) = ξ x) :
-    ContinuousOn (starSchwarzReflection ξ) Ω := by
-  have hlower : ContinuousOn (fun z ↦ star (ξ (conj z))) (Ω ∩ {z | z.im ≤ 0}) :=
-    continuous_star.comp_continuousOn (hξ.comp Complex.continuous_conj.continuousOn
-      fun z hz ↦ ⟨hΩ hz.1, by simpa using hz.2⟩)
-  refine (ContinuousOn.if (fun z hz ↦ ?_) ?_ ?_).congr fun z _ ↦ starSchwarzReflection_def ξ z
-  · rw [mem_inter_iff, Complex.frontier_setOfPred_le_im, mem_ofPred_eq] at hz
-    have hzx : z = (z.re : ℂ) := Complex.ext rfl (by simpa using hz.2)
-    rw [Complex.conj_eq_iff_im.2 hz.2, eq_comm, hzx]
-    exact hreal z.re (hzx ▸ hz.1)
-  · rwa [(isClosed_le continuous_const Complex.continuous_im).closure_eq]
-  · simp only [not_le]
-    rwa [Complex.closure_setOfPred_im_lt]
+    ContinuousOn (starSchwarzReflection ξ) Ω :=
+  (hξ.ite_conj hΩ continuous_star hreal).congr fun z _ ↦ starSchwarzReflection_def ξ z
 
 /--
 If a domain `Ω` is closed under conjugation, `f` is continuous on its closed upper half-plane
