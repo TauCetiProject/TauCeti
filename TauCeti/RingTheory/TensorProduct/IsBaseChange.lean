@@ -37,7 +37,8 @@ induced on a finite product is injective as soon as each factor induces an injec
 For any localization, extension also preserves injectivity of a linear map into a module over
 the localized semiring, without requiring its image to span the target.
 
-The image of a base change map spans its target over the extended scalars.
+The image of a base change map spans its target over the extended scalars, and for an
+`R'`-algebra `A` the tensors `a ⊗ f m` generate `A ⊗[R'] M'` additively.
 
 ## Main results
 
@@ -55,11 +56,20 @@ The image of a base change map spans its target over the extended scalars.
   that is compatible with the base-change maps is bijective.
 * `IsBaseChange.injective_of_tensorProduct_mk_injective`: a base-change map is injective when
   the scalar-unit map `M → S ⊗[R] M` is injective.
+* `IsBaseChange.of_surjective_algebraMap`: along a surjective `algebraMap R S`, every bijective
+  `R`-linear map to an `S`-module is a base-change map.
 * `LinearMap.liftBaseChange_comp_baseChange`: naturality of the induced map `S ⊗[R] M → N`.
 * `LinearMap.liftBaseChange_pi_injective`: injectivity of the induced map on finite products.
 * `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
   map into a module over the localized semiring, without a full-span hypothesis.
 * `IsBaseChange.span_range_eq_top`: the image of a base change map spans its target over `R'`.
+* `IsBaseChange.cancelBaseChange`: for a base change `f : M → M'` along `R → R'` and an
+  `R'`-algebra `A`, the isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M` sending `a ⊗ f m` to `a ⊗ m`.
+* `IsBaseChange.cancelBaseChange_trans_cancelBaseChange`: cancelling two successive base changes
+  is cancelling the composite base change.
+* `IsBaseChange.tensorProduct_induction`: induction on `A ⊗[R'] M'` over the tensors `a ⊗ f m`.
+* `IsBaseChange.restrictScalars_cancelBaseChange`: for a ring `A`, `cancelBaseChange` is Mathlib's
+  `R'`-linear `IsBaseChange.tensorEquiv`.
 -/
 
 public section
@@ -150,6 +160,26 @@ theorem IsBaseChange.injective_of_tensorProduct_mk_injective {f : M →ₗ[R] N}
   apply hf.equiv.injective
   simpa only [TensorProduct.mk_apply, hf.equiv_tmul, one_smul] using hxy
 
+/-- **Base change along a surjection.** If `algebraMap R S` is surjective, every bijective
+`R`-linear map `f : M → N` to an `S`-module exhibits `N` as the base change of `M` to `S`. -/
+theorem IsBaseChange.of_surjective_algebraMap (hS : Function.Surjective (algebraMap R S))
+    {f : M →ₗ[R] N} (hf : Function.Bijective f) : IsBaseChange S f := by
+  let e := LinearEquiv.ofBijective f hf
+  refine IsBaseChange.of_lift_unique _ fun Q _ _ _ _ g ↦ ⟨?_, ?_, ?_⟩
+  · -- `g ∘ f⁻¹` is `S`-linear: every scalar of `S` comes from `R`.
+    refine
+      { toFun := g ∘ e.symm
+        map_add' := fun x y ↦ by simp only [Function.comp_apply, map_add]
+        map_smul' := fun s x ↦ ?_ }
+    obtain ⟨r, rfl⟩ := hS s
+    simp only [Function.comp_apply, RingHom.id_apply, algebraMap_smul, map_smul]
+  · ext m
+    exact congrArg g (e.symm_apply_apply m)
+  · intro g' hg'
+    ext n
+    obtain ⟨m, rfl⟩ := hf.surjective n
+    simpa [e] using LinearMap.congr_fun hg' m
+
 section
 
 variable (S) {M₁ M₂ N₁ N₂ : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid N₁]
@@ -214,5 +244,100 @@ theorem span_range_eq_top {R R' M M' : Type*} [CommSemiring R] [CommSemiring R']
   | tmul a => exact Submodule.subset_span ⟨a, rfl⟩
   | smul r n hn => exact Submodule.smul_mem _ r hn
   | add n₁ n₂ h₁ h₂ => exact Submodule.add_mem _ h₁ h₂
+
+section CancelBaseChange
+
+variable {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R'] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid M'] [Module R' M'] [Module R M'] [IsScalarTower R R' M']
+  {f : M →ₗ[R] M'} (hf : IsBaseChange R' f)
+  (A : Type*) [CommSemiring A] [Algebra R A] [Algebra R' A] [IsScalarTower R R' A]
+
+/-- For a base change `f : M → M'` along `R → R'` and an `R'`-algebra `A`, the `A`-linear
+isomorphism `A ⊗[R'] M' ≃ A ⊗[R] M` sending `a ⊗ f m` to `a ⊗ m`
+(`IsBaseChange.cancelBaseChange_tmul`). For `M' = R' ⊗[R] M` with the canonical base change map
+`f m = 1 ⊗ₜ m` it is Mathlib's `TensorProduct.AlgebraTensorModule.cancelBaseChange`. For a
+ring `A` it is Mathlib's `R'`-linear `IsBaseChange.tensorEquiv`, made `A`-linear
+(`IsBaseChange.restrictScalars_cancelBaseChange`). -/
+noncomputable def cancelBaseChange : A ⊗[R'] M' ≃ₗ[A] A ⊗[R] M :=
+  (TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl A A) hf.equiv.symm).trans
+    (TensorProduct.AlgebraTensorModule.cancelBaseChange R R' A A M)
+
+@[simp]
+theorem cancelBaseChange_tmul (a : A) (m : M) : hf.cancelBaseChange A (a ⊗ₜ f m) = a ⊗ₜ m := by
+  simp [cancelBaseChange]
+
+@[simp]
+theorem cancelBaseChange_symm_tmul (a : A) (m : M) :
+    (hf.cancelBaseChange A).symm (a ⊗ₜ m) = a ⊗ₜ f m :=
+  (LinearEquiv.symm_apply_eq _).2 (hf.cancelBaseChange_tmul A a m).symm
+
+end CancelBaseChange
+
+section CancelBaseChangeTrans
+
+variable {R R' R'' M M' M'' : Type*} [CommSemiring R] [CommSemiring R'] [CommSemiring R'']
+  [Algebra R R'] [Algebra R' R''] [Algebra R R''] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid M'] [Module R' M'] [Module R M'] [IsScalarTower R R' M']
+  [AddCommMonoid M''] [Module R'' M''] [Module R' M''] [Module R M''] [IsScalarTower R' R'' M'']
+  [IsScalarTower R R'' M''] [IsScalarTower R R' M''] {f : M →ₗ[R] M'} {g : M' →ₗ[R'] M''}
+  (hf : IsBaseChange R' f) (hg : IsBaseChange R'' g)
+  (hgf : IsBaseChange R'' (g.restrictScalars R ∘ₗ f))
+  (A : Type*) [CommSemiring A] [Algebra R A] [Algebra R' A] [Algebra R'' A]
+  [IsScalarTower R R' A] [IsScalarTower R' R'' A] [IsScalarTower R R'' A]
+
+/-- **`cancelBaseChange` is transitive.** For base changes `f : M → M'` along `R → R'` and
+`g : M' → M''` along `R' → R''`, cancelling `g` and then `f` is cancelling `g ∘ f`: both send
+`a ⊗ g (f m)` to `a ⊗ m`. -/
+theorem cancelBaseChange_trans_cancelBaseChange :
+    (hg.cancelBaseChange A).trans (hf.cancelBaseChange A) = hgf.cancelBaseChange A := by
+  refine LinearEquiv.symm_bijective.injective (LinearEquiv.ext fun x ↦ ?_)
+  induction x using TensorProduct.inductionOn with
+  | tmul a m => simp [LinearEquiv.trans_symm]
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+
+end CancelBaseChangeTrans
+
+section Induction
+
+variable {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R'] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid M'] [Module R' M'] [Module R M'] [IsScalarTower R R' M']
+  {f : M →ₗ[R] M'} (hf : IsBaseChange R' f)
+  (A : Type*) [CommSemiring A] [Algebra R' A]
+
+include hf in
+/-- **Induction on `A ⊗[R'] M'` for a base change `M'` of `M`.** A property of the elements of
+`A ⊗[R'] M'` which is closed under addition holds as soon as it holds on the tensors `a ⊗ f m`,
+since `M'` is generated over `R'` by the image of `f`. -/
+@[elab_as_elim]
+theorem tensorProduct_induction {motive : A ⊗[R'] M' → Prop}
+    (add : ∀ x y, motive x → motive y → motive (x + y))
+    (tmul : ∀ (a : A) (m : M), motive (a ⊗ₜ f m)) (x : A ⊗[R'] M') : motive x := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => exact add x y hx hy
+  | tmul a m' =>
+    induction m' using hf.inductionOn generalizing a with
+    | tmul m => exact tmul a m
+    | smul s n h => rw [← TensorProduct.smul_tmul]; exact h _
+    | add n₁ n₂ h₁ h₂ => rw [TensorProduct.tmul_add]; exact add _ _ (h₁ a) (h₂ a)
+
+end Induction
+
+section TensorEquiv
+
+variable {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R'] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid M'] [Module R' M'] [Module R M'] [IsScalarTower R R' M']
+  {f : M →ₗ[R] M'} (hf : IsBaseChange R' f)
+  (A : Type*) [CommRing A] [Algebra R A] [Algebra R' A] [IsScalarTower R R' A]
+
+/-- For a ring `A`, `IsBaseChange.cancelBaseChange` restricted to `R'`-linearity is Mathlib's
+`IsBaseChange.tensorEquiv`. -/
+theorem restrictScalars_cancelBaseChange :
+    (hf.cancelBaseChange A).restrictScalars R' = hf.tensorEquiv A := by
+  refine LinearEquiv.ext fun x ↦ ?_
+  induction x using hf.tensorProduct_induction A with
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+  | tmul a m => simp [tensorEquiv, hf.equiv_symm_apply]
+
+end TensorEquiv
 
 end IsBaseChange

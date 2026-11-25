@@ -165,6 +165,17 @@ theorem toTwistingSheaf_eq_smul_chartGenerator (n : ℕ) (r : 𝒜 n)
   apply Localization.r_of_eq
   simp [mul_comm]
 
+/-- On an open inside the chart `D₊(f)` of an element `f` of degree one, the section `f / 1` of
+`𝒪(1)` is the standard basis section. -/
+theorem toTwistingSheaf_eq_chartGenerator_one :
+    toTwistingSheaf 𝒜 Nat.cast_one U ⟨f, hf⟩ = chartGenerator 1 f hf U hU := by
+  refine ext fun x ↦ ?_
+  let := x.val.isPrime
+  rw [toTwistingSheaf_apply_apply, chartGenerator_apply]
+  apply Localization.mk_eq_mk_iff.mpr
+  apply Localization.r_of_eq
+  simp
+
 /-- The forward chart coordinate map is multiplication by `fⁿ` in each localization. -/
 @[simp]
 theorem chartSectionsLinearEquiv_apply_apply (a : Γ(Proj 𝒜, U)) (x : U) :
@@ -189,41 +200,41 @@ theorem res_chartSectionsLinearEquiv {V : (Proj 𝒜).Opens} (i : V ⟶ U)
 /-- The twisting sheaf `𝒪(n)` is trivial on the standard open of a degree-one element,
 for every integer `n`. -/
 def chartIso :
-    SheafOfModules.unit ((Proj 𝒜).ringCatSheaf.over (basicOpen 𝒜 f)) ≅
-      (twistingSheaf 𝒜 n).over (basicOpen 𝒜 f) :=
+    SheafOfModules.unit ((Proj 𝒜).ringCatSheaf.over U) ≅
+      (twistingSheaf 𝒜 n).over U :=
   (SheafOfModules.fullyFaithfulForget _).preimageIso <| PresheafOfModules.isoMk
-    (fun V ↦ (chartSectionsLinearEquiv n f hf V.unop.left V.unop.hom.le).toModuleIso)
+    (fun V ↦ (chartSectionsLinearEquiv n f hf V.unop.left (V.unop.hom.le.trans hU)).toModuleIso)
     (fun _ _ _ ↦ rfl)
 
 /-- On each smaller open the standard sheaf trivialization is multiplication by `fⁿ`. -/
 theorem chartIso_hom_app_apply
-    (V : Over (basicOpen 𝒜 f)) (a : Γ(Proj 𝒜, V.left)) :
-    (chartIso n f hf).hom.val.app (Opposite.op V) a =
-      chartSectionsLinearEquiv n f hf V.left V.hom.le a :=
+    (V : Over U) (a : Γ(Proj 𝒜, V.left)) :
+    (chartIso n f hf U hU).hom.val.app (Opposite.op V) a =
+      chartSectionsLinearEquiv n f hf V.left (V.hom.le.trans hU) a :=
   (rfl)
 
 /-- The inverse standard sheaf trivialization gives the chart coordinate of a section. -/
 theorem chartIso_inv_app_apply
-    (V : Over (basicOpen 𝒜 f)) (s : Γ(twistingSheaf 𝒜 n, V.left)) :
-    (chartIso n f hf).inv.val.app (Opposite.op V) s =
-      (chartSectionsLinearEquiv n f hf V.left V.hom.le).symm s :=
+    (V : Over U) (s : Γ(twistingSheaf 𝒜 n, V.left)) :
+    (chartIso n f hf U hU).inv.val.app (Opposite.op V) s =
+      (chartSectionsLinearEquiv n f hf V.left (V.hom.le.trans hU)).symm s :=
   (rfl)
 
 /-- The standard sheaf trivialization multiplies values by `fⁿ`. -/
 @[simp]
 theorem chartIso_hom_app_apply_apply
-    (V : Over (basicOpen 𝒜 f)) (a : Γ(Proj 𝒜, V.left)) (x : V.left) :
-    ((chartIso n f hf).hom.val.app (Opposite.op V) a).val x =
-      (a.val x).val * (chartGenerator n f hf V.left V.hom.le).val x :=
+    (V : Over U) (a : Γ(Proj 𝒜, V.left)) (x : V.left) :
+    ((chartIso n f hf U hU).hom.val.app (Opposite.op V) a).val x =
+      (a.val x).val * (chartGenerator n f hf V.left (V.hom.le.trans hU)).val x :=
   (rfl)
 
 /-- The inverse standard sheaf trivialization multiplies values by `f⁻ⁿ`. -/
 @[simp]
 theorem chartIso_inv_app_apply_val
-    (V : Over (basicOpen 𝒜 f)) (s : Γ(twistingSheaf 𝒜 n, V.left)) (x : V.left) :
-    (((chartIso n f hf).inv.val.app (Opposite.op V) s).val x).val =
-      s.val x * (chartGenerator (-n) f hf V.left V.hom.le).val x :=
-  chartSectionsLinearEquiv_symm_apply_val n f hf V.left V.hom.le s x
+    (V : Over U) (s : Γ(twistingSheaf 𝒜 n, V.left)) (x : V.left) :
+    (((chartIso n f hf U hU).inv.val.app (Opposite.op V) s).val x).val =
+      s.val x * (chartGenerator (-n) f hf V.left (V.hom.le.trans hU)).val x :=
+  chartSectionsLinearEquiv_symm_apply_val n f hf V.left (V.hom.le.trans hU) s x
 
 end twistingSheaf
 
@@ -234,7 +245,7 @@ theorem isInvertible_twistingSheaf_of_iSup_eq_top {ι : Type u} (f : ι → A)
     TauCeti.SheafOfModules.IsInvertible (R := (Proj 𝒜).ringCatSheaf) (twistingSheaf 𝒜 n) :=
   (TauCeti.AlgebraicGeometry.SheafOfModules.LocalTrivializations.ofIsOpenCover (Proj 𝒜)
     (fun i ↦ basicOpen 𝒜 (f i)) (IsOpenCover.mk hcover)
-    (fun i ↦ twistingSheaf.chartIso n (f i) (hf i))).isInvertible
+    (fun i ↦ twistingSheaf.chartIso n (f i) (hf i) (basicOpen 𝒜 (f i)) le_rfl)).isInvertible
 
 end AlgebraicGeometry.Proj
 

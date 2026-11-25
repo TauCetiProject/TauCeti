@@ -22,8 +22,9 @@ their orbit tori `(s, θ) ↦ (s, γ θ)` behave under the three natural operati
   also has period `m`, and its closed orbit of period `m` is the closed orbit of period `d`
   precomposed with the covering map
   `ℝ / mℤ → ℝ / dℤ` (`AddCircle.coverMap`). That covering map is an orientation-preserving local
-  diffeomorphism of degree `m / d`, so the closed orbit of period `m` is the `m / d`-fold cover of
-  the closed orbit of period `d`; the same holds for the orbit tori.
+  diffeomorphism of degree `m / d` (`AddCircle.degree_coverMap`), so the closed orbit of period `m`
+  is the `m / d`-fold cover of the closed orbit of period `d`; the same holds for the orbit tori
+  (`AddCircle.degree_prodMap_id_coverMap`).
 * **Conjugacies.** A map `g : M → N` intertwining `φ` and `ψ : N ≃ₘ^n⟮J, J⟯ N` induces the map
   `[t, x] ↦ [t, g x]` of mapping tori (`TauCeti.SmoothMappingTorus.map`). It sends the closed orbit
   through `x` to the closed orbit through `g x`, with the same parametrization, and likewise for

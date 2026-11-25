@@ -37,10 +37,10 @@ Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex
 (`Complex.I_smul_smul_I_smul`).
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
-linear (`LinearMap.complexOfMapISmul`), and one that anticommutes with it is conjugate-linear
-(`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). The non-instance
-`RestrictScalars.realModule` normalizes the restricted real module at the additive-group parent
-for use in constructions on real modules.
+linear (`LinearMap.map_smul_of_map_I_smul`, `LinearMap.complexOfMapISmul`), and one that
+anticommutes with it is conjugate-linear (`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). The
+non-instance `RestrictScalars.realModule` normalizes the restricted real module at the
+additive-group parent for use in constructions on real modules.
 
 Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
 conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
@@ -51,7 +51,9 @@ half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). For
 with `J ∘ J = -1`, the map `a + b i ↦ a - b J` from `ℂ` is multiplicative
 (`TauCeti.re_smul_sub_im_smul_apply_mul`). Multiplication by `-I` is a real linear equivalence
 from the skew-adjoint onto the self-adjoint elements, with inverse multiplication by `I`
-(`skewAdjoint.negISMulEquiv`), extending Mathlib's `skewAdjoint.negISMul`.
+(`skewAdjoint.negISMulEquiv`), extending Mathlib's `skewAdjoint.negISMul`. The self-adjoint
+complex numbers are the real ones (`Complex.mem_range_algebraMap_of_isSelfAdjoint`), and `I`, as a
+unit, is skew-adjoint (`Complex.val_mk0_I_mem_skewAdjoint`).
 
 A vector lies in the real span of a complex basis exactly when its coordinates are real
 (`Module.Basis.mem_span_real_range_iff`). In particular, the real span of the standard basis of
@@ -259,6 +261,21 @@ theorem coe_negISMulEquiv_symm_apply (a : selfAdjoint A) :
 
 end skewAdjoint
 
+/-- **The self-adjoint complex numbers are the real ones**: `ℝ` is the fixed ring of complex
+conjugation. Together with `Complex.val_mk0_I_mem_skewAdjoint`, this supplies the hypotheses of
+the quadratic-algebra results of `TauCeti.Algebra.Star.SelfAdjoint.BaseChange` for `ℂ / ℝ`. -/
+theorem Complex.mem_range_algebraMap_of_isSelfAdjoint (c : ℂ) (hc : IsSelfAdjoint c) :
+    c ∈ Set.range (algebraMap ℝ ℂ) :=
+  ⟨c.re, by rw [Complex.coe_algebraMap, ← Complex.conj_eq_iff_re, ← Complex.star_def, hc.star_eq]⟩
+
+/-- **`I` is a skew-adjoint unit of `ℂ`**: the unit `Units.mk0 I I_ne_zero` has value `I`, which is
+skew-adjoint by Mathlib's `Complex.I_mem_skewAdjoint`. This is the skew-adjoint unit `t` of the
+quadratic-algebra results of `TauCeti.Algebra.Star.SelfAdjoint.BaseChange` for `ℂ / ℝ`. -/
+theorem Complex.val_mk0_I_mem_skewAdjoint :
+    ((Units.mk0 Complex.I Complex.I_ne_zero : ℂˣ) : ℂ) ∈ skewAdjoint ℂ := by
+  rw [Units.val_mk0]
+  exact Complex.I_mem_skewAdjoint
+
 section ComplexOfMapISmul
 
 variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V]
@@ -266,16 +283,21 @@ variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarT
 
 namespace LinearMap
 
+/-- A real-linear map between complex modules that commutes with multiplication by `I` is
+complex linear: `u (z • v) = z • u v`. -/
+theorem map_smul_of_map_I_smul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v)
+    (z : ℂ) (v : V) : u (z • v) = z • u v := by
+  -- Split `z • v` into real multiples of `v` and `I • v`.
+  rw [← Complex.re_smul_add_im_smul z v, map_add, map_smul, map_smul, h,
+    Complex.re_smul_add_im_smul]
+
 /-- A real-linear map between complex modules that commutes with multiplication by `I`, as a
 complex-linear map. -/
 def complexOfMapISmul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
     V →ₗ[ℂ] W where
   toFun := u
   map_add' := u.map_add
-  map_smul' c v := by
-    -- Split `c • v` into real multiples of `v` and `I • v`.
-    rw [← Complex.re_smul_add_im_smul c v, map_add, map_smul, map_smul, h, RingHom.id_apply,
-      Complex.re_smul_add_im_smul]
+  map_smul' := u.map_smul_of_map_I_smul h
 
 @[simp]
 theorem coe_complexOfMapISmul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :

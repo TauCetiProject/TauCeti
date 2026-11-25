@@ -34,7 +34,7 @@ locally represented by `Q ⊗ L` is locally isotropic. For `L = K(√d)` with `d
 square-discriminant case makes `Q ⊗ L` isotropic, and quaternary descent
 (`QuadraticForm.anisotropic_baseChange_iff_quaternary`) brings isotropy of `Q ⊗ L` back to `Q`.
 Since an anisotropic form over a number field is automatically regular, the final quaternary
-Hasse–Minkowski isotropy theorems hold without assuming nondegeneracy.
+Hasse–Minkowski isotropy theorem holds without assuming nondegeneracy.
 
 ## Main results
 
@@ -47,10 +47,8 @@ Hasse–Minkowski isotropy theorems hold without assuming nondegeneracy.
   square root of `d` is locally isotropic.
 * `QuadraticForm.not_anisotropic_of_isLocallyIsotropic_quaternary_of_discr_eq_zero`: a locally
   isotropic regular quaternary form of square discriminant is isotropic.
-* `QuadraticForm.not_anisotropic_of_isLocallyIsotropic_quaternary`,
-  `QuadraticForm.not_anisotropic_iff_isLocallyIsotropic_quaternary`, and
-  `QuadraticForm.anisotropic_iff_not_isLocallyIsotropic_quaternary`: a four-dimensional quadratic
-  form over a number field is isotropic if and only if it is locally isotropic.
+* `QuadraticForm.not_anisotropic_of_isLocallyIsotropic_quaternary`: a locally isotropic
+  four-dimensional quadratic form over a number field is isotropic.
 
 ## References
 
@@ -154,22 +152,5 @@ theorem not_anisotropic_of_isLocallyIsotropic_quaternary
   exact not_anisotropic_of_isLocallyIsotropic_quaternary_of_discr_eq_zero
     (Nondegenerate.baseChange hQ) (by simpa using hrank)
     (discr_formClass_baseChange_eq_zero Q hQ hd hs) hloc.baseChange hA
-
-omit [FiniteDimensional K V] in
-/-- **The quaternary Hasse–Minkowski equivalence.** A four-dimensional quadratic form over a number
-field is isotropic if and only if it is isotropic at every finite and every real place. -/
-theorem not_anisotropic_iff_isLocallyIsotropic_quaternary
-    {Q : _root_.QuadraticForm K V} (hrank : Module.finrank K V = 4) :
-    ¬Q.Anisotropic ↔ Q.IsLocallyIsotropic :=
-  ⟨isLocallyIsotropic_of_not_anisotropic Q,
-    not_anisotropic_of_isLocallyIsotropic_quaternary hrank⟩
-
-omit [FiniteDimensional K V] in
-/-- A four-dimensional quadratic form over a number field is anisotropic if and only if it is
-anisotropic at some finite or real place. -/
-theorem anisotropic_iff_not_isLocallyIsotropic_quaternary
-    {Q : _root_.QuadraticForm K V} (hrank : Module.finrank K V = 4) :
-    Q.Anisotropic ↔ ¬Q.IsLocallyIsotropic :=
-  (not_iff_comm.mp (not_anisotropic_iff_isLocallyIsotropic_quaternary hrank)).symm
 
 end QuadraticForm

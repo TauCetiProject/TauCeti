@@ -37,7 +37,8 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
   bounded map of test functions (which does not enlarge supports).
 * `Distribution.mass_eq_zero_iff`: a linear map has mass zero exactly when it vanishes.
 * `Distribution.localMass_add_localMass_le`: for a real-valued linear map, the local masses on
-  disjoint sets add up to at most the local mass on their union.
+  disjoint sets add up to at most the local mass on their union, and
+  `Distribution.localMass_eq_iSup_ofReal_apply` drops the absolute value from its local mass.
 * `Distribution.mass_add_le`, `Distribution.mass_smul`: the triangle inequality and homogeneity.
 * `Distribution.lowerSemicontinuous_mass`: mass is lower semicontinuous for pointwise
   (weak) convergence; `Distribution.mass_le_liminf` is the corresponding `liminf` bound.
@@ -237,6 +238,23 @@ theorem enorm_apply_le_mass_mul (T : 𝓕) (φ : 𝓓^{n}(Ω, F)) :
     ‖T φ‖ₑ ≤ mass T * ‖(φ : E →ᵇ F)‖ₑ := by
   simpa using enorm_apply_le_localMass_mul T (subset_univ (tsupport φ))
 
+/-- **Mass of a precomposition with a sup-bounded map.** If `P` sends every test of sup norm at most
+one to a test of sup norm at most `c`, then `M(T ∘ P) ≤ c M(T)`. The map `P` need not be linear
+and may enlarge supports. -/
+theorem mass_comp_le_of_norm_apply_le {E' G : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {Ω' : Opens E'} {m : ℕ∞} (T : 𝓕)
+    {P : 𝓓^{m}(Ω', G) → 𝓓^{n}(Ω, F)} {c : ℝ} (hc : 0 ≤ c)
+    (hP : ∀ ψ : 𝓓^{m}(Ω', G), (∀ y, ‖ψ y‖ ≤ 1) → ∀ x, ‖P ψ x‖ ≤ c) :
+    mass (T ∘ P) ≤ ENNReal.ofReal c * mass T := by
+  refine mass_le_iff.2 fun ψ hψ => ?_
+  have hb : ‖(P ψ : E →ᵇ F)‖ ≤ c := (BoundedContinuousFunction.norm_le hc).2 (hP ψ hψ)
+  calc ‖T (P ψ)‖ₑ ≤ mass T * ‖(P ψ : E →ᵇ F)‖ₑ := enorm_apply_le_mass_mul T _
+    _ ≤ mass T * ENNReal.ofReal c := by
+        gcongr
+        rw [← ofReal_norm]
+        exact ENNReal.ofReal_le_ofReal hb
+    _ = ENNReal.ofReal c * mass T := mul_comm _ _
+
 /-- A finite mass bound controls each evaluation by the supremum norm of the test. -/
 theorem norm_apply_le_of_mass_le (T : 𝓕) {C : ℝ≥0} (hT : mass T ≤ C)
     (φ : 𝓓^{n}(Ω, F)) : ‖T φ‖ ≤ C * ‖(φ : E →ᵇ F)‖ := by
@@ -288,6 +306,25 @@ theorem localMass_add_localMass_le (T : 𝓕) (h : Disjoint U U') :
           (localMass_le_iff.2 fun φ h₁ h₂ => le_iSup₂_of_le φ ⟨h₁, h₂⟩ le_rfl)
     _ ≤ localMass T (U ∪ U') := ENNReal.biSup_add_biSup_le' ⟨0, by simp, by simp⟩
         ⟨0, by simp, by simp⟩ key
+
+/-- For a real-valued linear map the absolute value in the local mass can be dropped: `-φ` is a
+test with the same support and bound as `φ`, so the local mass on `U` is the supremum of `T φ`
+over the tests `φ` supported in `U` with `‖φ x‖ ≤ 1`. -/
+theorem localMass_eq_iSup_ofReal_apply (T : 𝓕) (U : Set E) :
+    localMass T U = ⨆ (φ : 𝓓^{n}(Ω, F)) (_ : tsupport φ ⊆ U) (_ : ∀ x, ‖φ x‖ ≤ 1),
+      ENNReal.ofReal (T φ) := by
+  refine le_antisymm (localMass_le_iff.2 fun φ hφU hφ => ?_)
+    (iSup₂_le fun φ hφU => iSup_le fun hφ => ?_)
+  · rw [Real.eNorm_eq_ofReal_abs]
+    rcases le_total 0 (T φ) with h | h
+    · rw [abs_of_nonneg h]
+      exact le_iSup₂_of_le φ hφU (le_iSup_of_le hφ le_rfl)
+    · rw [abs_of_nonpos h, ← map_neg]
+      refine le_iSup₂_of_le (-φ) ?_ (le_iSup_of_le (fun x => ?_) le_rfl)
+      · simpa [tsupport_neg] using hφU
+      · simpa using hφ x
+  · exact (ENNReal.ofReal_le_ofReal (le_abs_self _)).trans
+      ((Real.eNorm_eq_ofReal_abs _).symm.trans_le (enorm_le_localMass hφU hφ))
 
 end Real
 
@@ -345,9 +382,8 @@ The testing set `U` need not be open or measurable. -/
 theorem localMass_comp_monoCLM {Ω' : Opens E} (f : 𝓓^{n}(Ω, F) → V) (h : Ω' ≤ Ω) (U : Set E) :
     localMass (f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F))) U =
       localMass f (U ∩ (Ω' : Set E)) := by
-  have hcoe (ψ : 𝓓^{n}(Ω', F)) :
-      ⇑(TestFunction.monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) = ψ := by
-    simp [TestFunction.monoCLM_apply, h]
+  have hcoe (ψ : 𝓓^{n}(Ω', F)) : ⇑(TestFunction.monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) = ψ :=
+    TestFunction.coe_monoCLM_of_le le_rfl h ψ
   refine le_antisymm (localMass_le_iff.2 fun ψ hψU hψ => ?_)
     (localMass_le_iff.2 fun φ hφU hφ => ?_)
   · exact enorm_le_localMass (f := f)
@@ -412,8 +448,8 @@ theorem HasLocallyFiniteMass.comp_monoCLM {Ω' : Opens E} {m : ℕ∞} {f : 𝓓
   intro K hK hKΩ'
   obtain ⟨C, hC, hfC⟩ := hf K hK (hKΩ'.trans h.2)
   refine ⟨C, hC, fun φ hφ => ?_⟩
-  have hcoe : ⇑(TestFunction.monoCLM ℝ φ : 𝓓^{n}(Ω, F)) = φ := by
-    simp [TestFunction.monoCLM_apply, h]
+  have hcoe : ⇑(TestFunction.monoCLM ℝ φ : 𝓓^{n}(Ω, F)) = φ :=
+    TestFunction.coe_monoCLM_of_le h.1 h.2 φ
   simpa [hcoe] using hfC (TestFunction.monoCLM ℝ φ) (by rwa [hcoe])
 
 theorem hasLocallyFiniteMass_zero : HasLocallyFiniteMass (0 : 𝓓^{n}(Ω, F) → V) :=
@@ -563,12 +599,12 @@ end Evaluation
 section Integral
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
-  [μ.IsAddHaarMeasure] {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+  {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
   {G : E → H →L[ℝ] ℝ}
 
-/-- **Mass of an absolutely continuous current.** Against an additive Haar measure, integration
-against a field `G` of continuous linear functionals on a real Hilbert space, locally integrable
-on `Ω`, has mass `∫_Ω ‖G‖`; both sides may be infinite. -/
+/-- **Mass of an absolutely continuous current.** For any measure `μ`, integration against a
+field `G` of continuous linear functionals on a real Hilbert space, locally integrable on `Ω`, has
+mass `∫_Ω ‖G‖`; both sides may be infinite. -/
 theorem mass_integral_apply (hG : LocallyIntegrableOn G Ω μ) :
     mass (fun φ : 𝓓(Ω, H) => ∫ x, G x (φ x) ∂μ) = ∫⁻ x in Ω, ‖G x‖ₑ ∂μ := by
   refine le_antisymm (mass_le_iff.2 fun φ hφ => φ.enorm_integral_apply_le_setLIntegral_enorm hφ G)

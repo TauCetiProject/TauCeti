@@ -214,20 +214,20 @@ variable [CommRing R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable [AddCommGroup V] [Module R V] [Comodule R C V]
 
 /-- **Complete reducibility via equivariant retractions.** A comodule is completely reducible
-exactly when every subcomodule is the image of a comodule endomorphism that fixes it pointwise. -/
+exactly when every subcomodule is the image of a comodule endomorphism that fixes it pointwise,
+that is, when it is the range of a comodule projection. -/
 theorem isCompletelyReducible_iff_forall_exists_hom :
     IsCompletelyReducible R C V ↔ ∀ W : Subcomodule R C V,
-      ∃ P : Hom R C V V, (∀ v, P v ∈ W) ∧ ∀ w ∈ W, P w = w := by
+      ∃ P : Hom R C V V, LinearMap.IsProj W.toSubmodule P.toLinearMap := by
   -- A projection along a complement gives a retraction; conversely, the image of `id - P` is a
   -- subcomodule complement.
   refine ⟨fun hV W ↦ ?_, fun hV ↦ IsCompletelyReducible.of_exists_isCompl fun W ↦ ?_⟩
   · obtain ⟨Q, hQ⟩ := hV.exists_isCompl W
     exact ⟨Subcomodule.projection W Q hQ, Subcomodule.projection_apply_mem hQ,
       fun _ ↦ Subcomodule.projection_apply_of_mem_left hQ⟩
-  · obtain ⟨P, hP_mem, hP_self⟩ := hV W
+  · obtain ⟨P, hP⟩ := hV W
     -- The complement is the image of the endomorphism `id - P`, which is the kernel of `P`.
     refine ⟨Hom.range (Hom.id R C V + (-1 : R) • P), ?_⟩
-    have hP : LinearMap.IsProj W.toSubmodule P.toLinearMap := ⟨hP_mem, hP_self⟩
     have h : (Hom.id R C V + (-1 : R) • P).toLinearMap = LinearMap.id - P.toLinearMap := by
       simp [sub_eq_add_neg]
     rw [Hom.range_toSubmodule, h, ← LinearMap.IsIdempotentElem.ker_eq_range hP.isIdempotentElem]

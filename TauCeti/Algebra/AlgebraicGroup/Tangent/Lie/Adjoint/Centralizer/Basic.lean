@@ -44,6 +44,10 @@ derivations, where closed subgroups have their Lie subalgebras.
   adjoint action fixes `x`.
 * `TauCeti.mem_quotientPointsSubgroup_centralizerHopfIdeal_iff`: a base-field point lies
   in the centralizer exactly when its adjoint Lie automorphism fixes `x`.
+* `TauCeti.mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_endOfPoint` and
+  `TauCeti.mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_basePointsRepresentation`: an
+  algebra-valued point lies in the centralizer exactly when its adjoint action fixes `1 ⊗ x`, and
+  a rational point exactly when its adjoint action fixes `x`.
 * `TauCeti.mem_lieSubalgebra_centralizerHopfIdeal_iff` and
   `TauCeti.lieSubalgebra_centralizerHopfIdeal`: its Lie algebra is the kernel of `ad x`.
 * `TauCeti.centralizerHopfIdeal_eq_bot_iff_mem_center`: for a connected group over an
@@ -130,6 +134,25 @@ theorem mem_quotientPointsSubgroup_centralizerHopfIdeal_iff
     Algebra.ofId_self, Derivation.mapValue_id, LinearMap.id_apply,
     Derivation.cotangentDualLieEquiv_apply]
 
+/-- An algebra-valued point lies in the centralizer of `x` exactly when its adjoint action fixes
+the constant extension `1 ⊗ x`. The value algebra may be nonreduced. -/
+theorem mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_endOfPoint
+    (x : Module.Dual k (Bialgebra.CotangentSpace k H))
+    {A : Type*} [CommRing A] [Algebra k A] (g : WithConv (H →ₐ[k] A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+        (centralizerHopfIdeal H x) (CommAlgCat.of k A) ↔
+      Comodule.endOfPoint (Module.Dual k (Bialgebra.CotangentSpace k H)) g.ofConv (1 ⊗ₜ[k] x) =
+        1 ⊗ₜ[k] x :=
+  Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint x g
+
+/-- A rational point lies in the centralizer of `x` exactly when its adjoint action fixes `x`. -/
+theorem mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_basePointsRepresentation
+    (x : Module.Dual k (Bialgebra.CotangentSpace k H)) (g : WithConv (H →ₐ[k] k)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+        (centralizerHopfIdeal H x) (CommAlgCat.of k k) ↔
+      Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g x = x :=
+  Comodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff x g
+
 /-- An algebra-valued point centralizes `x` precisely when its adjoint action fixes `1 ⊗ x`.
 This criterion retains the equations over nonreduced coefficient algebras. -/
 theorem centralizerHopfIdeal_le_ker_iff_adjointAction
@@ -137,10 +160,10 @@ theorem centralizerHopfIdeal_le_ker_iff_adjointAction
     (A : CommAlgCat.{u} k) (g : WithConv (H →ₐ[k] A)) :
     (centralizerHopfIdeal H x).toIdeal ≤ RingHom.ker g.ofConv ↔
       (Derivation.adjointAction A g).val (1 ⊗ₜ[k] x) = 1 ⊗ₜ[k] x := by
-  rw [← (Derivation.tangentScalarExtensionEquiv (R := k) (A := H) (B := A)).injective.eq_iff,
-    Derivation.tangentScalarExtensionEquiv_adjointAction,
-    Derivation.tangentScalarExtensionEquiv_tmul, one_smul]
-  exact centralizerHopfIdeal_le_ker_iff x g
+  rw [← Derivation.adjointComodule_endOfPoint_eq_adjointAction,
+    ← mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_endOfPoint,
+    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  simp only [IsConcreteLE.le_iff, HopfIdeal.mem_toIdeal, RingHom.mem_ker]
 
 /-- The centralizer of `x` is the whole group exactly when `x` is fixed by the adjoint
 coaction. -/

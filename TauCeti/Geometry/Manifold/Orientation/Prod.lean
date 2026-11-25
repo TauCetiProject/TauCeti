@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+public import TauCeti.Geometry.Manifold.IsManifold.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
@@ -27,6 +28,11 @@ when the product `m * n` of the dimensions is even, and reverses it when `m * n`
 (`TauCeti.Manifold.Orientation.isOrientationPreservingAt_swap_prod`,
 `TauCeti.Manifold.Orientation.isOrientationReversingAt_swap_prod`). The two products are indexed by
 `Fin (m + n)` and `Fin (n + m)`, identified by `TauCeti.Manifold.Orientation.reindex`.
+
+When the factors are modelled on normed spaces `E` and `E'`, the same product charts with values in
+the normed space `E × E'` (`TauCeti.chartedSpaceProd`) make `M × M'` a manifold for the model
+`𝓘(ℝ, E × E')`, which is orientable as soon as the factors are
+(`TauCeti.orientable_chartedSpaceProd`).
 
 A product `Prod.map f g` of maps preserving orientations at `p.1` and at `p.2` preserves the
 product orientations at `p` (`TauCeti.Manifold.Orientation.IsOrientationPreservingAt.prodMap`).
@@ -107,6 +113,31 @@ theorem prod_sign (o : OrientationLift I M (Fin m)) (o' : OrientationLift I' M' 
     (o.prod o').sign α ⟨(x.val, x'.val), by
       simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source, mem_prod] using
         And.intro x.property x'.property⟩ = o.sign α.1 x * o'.sign α.2 x' := (rfl)
+
+/-- On the source of a product chart, the total chart sign of a product lift is the product of the
+total chart signs of its factors. -/
+theorem prod_signAt_of_mem (o : OrientationLift I M (Fin m)) (o' : OrientationLift I' M' (Fin n))
+    {α p : M × M'} (hp₁ : p.1 ∈ (chartAt H α.1).source) (hp₂ : p.2 ∈ (chartAt H' α.2).source) :
+    (o.prod o').signAt α p = o.signAt α.1 p.1 * o'.signAt α.2 p.2 := by
+  rw [signAt_of_mem _ (by
+      simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source, mem_prod] using
+        And.intro hp₁ hp₂), signAt_of_mem _ hp₁, signAt_of_mem _ hp₂]
+  exact prod_sign o o' α ⟨p.1, hp₁⟩ ⟨p.2, hp₂⟩
+
+/-- A product with the lift of a model space all of whose chart signs are `1` has the total chart
+signs of its first factor. -/
+@[simp]
+theorem prod_ofHasGroupoid_signAt (o : OrientationLift I M (Fin m))
+    (model : _root_.Orientation ℝ E' (Fin n)) (hn : Fintype.card (Fin n) = Module.finrank ℝ E')
+    (α p : M × E') :
+    (o.prod (ofHasGroupoid (I := 𝓘(ℝ, E')) (M := E') model hn)).signAt α p =
+      o.signAt α.1 p.1 := by
+  by_cases hp : p.1 ∈ (chartAt H α.1).source
+  · have hp₂ : p.2 ∈ (chartAt E' α.2).source := by simp
+    rw [prod_signAt_of_mem _ _ hp hp₂, signAt_of_mem _ hp₂, ofHasGroupoid_sign, mul_one]
+  · rw [signAt_of_notMem _ hp, signAt_of_notMem]
+    simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source, mem_prod,
+      chartAt_self_eq, OpenPartialHomeomorph.refl_source, mem_univ, and_true] using hp
 
 /-- Replacing the first factor lift by its diagonal flip flips the product lift. -/
 @[simp]
@@ -333,5 +364,23 @@ instance [Orientable I M] [Orientable I' M'] : Orientable (I.prod I') (M × M') 
   constructor
   rw [Module.finrank_prod]
   exact ⟨o.prod o'⟩
+
+section ChartedSpaceProd
+
+attribute [local instance low] chartedSpaceProd
+
+variable {N N' : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) 1 N]
+  [TopologicalSpace N'] [ChartedSpace E' N'] [IsManifold 𝓘(ℝ, E') 1 N']
+
+/-- A product of orientable manifolds modelled on normed spaces `E` and `E'` is orientable for the
+model `𝓘(ℝ, E × E')` of its product charts with values in `E × E'` (`TauCeti.chartedSpaceProd`).
+These are the charts of the product model `𝓘(ℝ, E).prod 𝓘(ℝ, E')`, read in the normed space
+`E × E'` rather than in the type synonym `ModelProd E E'`. -/
+theorem orientable_chartedSpaceProd [Orientable 𝓘(ℝ, E) N] [Orientable 𝓘(ℝ, E') N'] :
+    Orientable 𝓘(ℝ, E × E') (N × N') := by
+  obtain ⟨o⟩ := Orientable.nonempty_orientation (I := 𝓘(ℝ, E).prod 𝓘(ℝ, E')) (M := N × N')
+  exact ⟨⟨o.congrModel modelWithCornersSelf_prod.symm⟩⟩
+
+end ChartedSpaceProd
 
 end TauCeti

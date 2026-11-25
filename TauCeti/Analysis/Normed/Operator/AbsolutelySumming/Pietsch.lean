@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Regular
 import Mathlib.Analysis.LocallyConvex.Separation
+import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import TauCeti.Algebra.Order.Module.Field
 import TauCeti.Analysis.Normed.Module.RCLike.Rpow
@@ -37,6 +38,10 @@ and the Riesz–Markov–Kakutani theorem represents it, after normalization, by
 The measurable structure on `B` is the subtype structure of a Borel structure on the weak dual,
 so `ν` is a Borel measure for the weak-star topology.
 
+Integrating the dominated estimate against the law of a random vector `X` in `E` and exchanging
+the order of integration extends the summing inequality from finite families to distributions:
+`∫ ‖T X‖ᵖ ≤ Cᵖ sup_{‖f‖ ≤ 1} ∫ |f X|ᵖ`.
+
 ## Main results
 
 * `ContinuousLinearMap.summingENorm_le_ofReal_of_norm_le_integral`: a dominating probability
@@ -47,6 +52,8 @@ so `ν` is a Borel measure for the weak-star topology.
   `p`-summing operator is dominated with the constant `πₚ(T)`.
 * `ContinuousLinearMap.summingENorm_le_ofReal_iff_exists_isProbabilityMeasure`: the Pietsch
   domination theorem.
+* `ContinuousLinearMap.integral_norm_apply_rpow_le_of_summingENorm_le`: the integrated form
+  `∫ ‖U X‖ᵖ ≤ πₚ(U)ᵖ sup_{‖f‖ ≤ 1} ∫ |f X|ᵖ` of the summing inequality for a random vector `X`.
 
 ## References
 
@@ -266,5 +273,78 @@ theorem summingENorm_le_ofReal_iff_exists_isProbabilityMeasure
     fun ⟨ν, _, _, hν⟩ ↦ summingENorm_le_ofReal_of_norm_le_integral hp hC ν hν⟩
 
 end RCLike
+
+section Integral
+
+variable {𝕜 E F Ω : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)] [MeasurableSpace Ω] {μ : Measure Ω} [SFinite μ]
+
+/-- Evaluating the functionals of the dual ball along a strongly measurable map is jointly
+measurable: on the separable range of the map, evaluation is continuous in the point and
+measurable in the functional. -/
+private theorem measurable_apply_dualBall [MeasurableSpace (WeakDual 𝕜 E)]
+    [OpensMeasurableSpace (WeakDual 𝕜 E)] {X : Ω → E} (hX : StronglyMeasurable X) :
+    Measurable fun q : Ω × dualBall 𝕜 E ↦ (q.2 : WeakDual 𝕜 E) (X q.1) := by
+  borelize E
+  let S := Set.range X
+  have : SecondCountableTopology S := hX.isSeparable_range.secondCountableTopology
+  have hev : Measurable fun q : S × dualBall 𝕜 E ↦ (q.2 : WeakDual 𝕜 E) (q.1 : E) :=
+    measurable_uncurry_of_continuous_of_measurable
+      (u := fun (x : S) (f : dualBall 𝕜 E) ↦ (f : WeakDual 𝕜 E) (x : E))
+      (fun f ↦ (WeakDual.toStrongDual (f : WeakDual 𝕜 E)).continuous.comp continuous_subtypeVal)
+      (fun x ↦ ((WeakDual.eval_continuous (x : E)).comp continuous_subtypeVal).measurable)
+  exact hev.comp ((hX.measurable.subtype_mk (h := Set.mem_range_self)).prodMap measurable_id)
+
+/-- **Pietsch domination, integrated form.** If `πₚ(U) ≤ C` with `1 ≤ p < ∞`, then for every
+`p`-integrable random vector `X` in `E` whose scalar observables satisfy
+`∫ |f (X ω)|ᵖ dμ ≤ M` for all functionals `‖f‖ ≤ 1`, one has `∫ ‖U (X ω)‖ᵖ dμ ≤ Cᵖ M`. This
+extends the defining inequality of `πₚ` from finite families to arbitrary distributions. -/
+theorem integral_norm_apply_rpow_le_of_summingENorm_le (hp : p ≠ ∞) {U : E →L[𝕜] F} {C : ℝ}
+    (hC : 0 ≤ C) (hU : U.summingENorm p ≤ ENNReal.ofReal C) {X : Ω → E} (hX : MemLp X p μ)
+    {M : ℝ} (hM : ∀ f : StrongDual 𝕜 E, ‖f‖ ≤ 1 → ∫ ω, ‖f (X ω)‖ ^ p.toReal ∂μ ≤ M) :
+    ∫ ω, ‖U (X ω)‖ ^ p.toReal ∂μ ≤ C ^ p.toReal * M := by
+  borelize (WeakDual 𝕜 E)
+  have hq : 0 < p.toReal := (ENNReal.toReal_pos_iff_ne_top p).2 hp
+  obtain ⟨ν, _, -, hUν⟩ := exists_isProbabilityMeasure_of_summingENorm_le_ofReal hp hC hU
+  -- Work with a strongly measurable representative of `X`.
+  set X' := hX.aestronglyMeasurable.mk X
+  have hXX' : X =ᵐ[μ] X' := hX.aestronglyMeasurable.ae_eq_mk
+  have hX'int : Integrable (fun ω ↦ ‖X' ω‖ ^ p.toReal) μ :=
+    (hX.ae_eq hXX').integrable_norm_rpow
+      (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
+  -- The integrand `(ω, f) ↦ ‖f (X' ω)‖ ^ p` is jointly measurable and dominated by `‖X' ω‖ ^ p`.
+  let G : Ω → dualBall 𝕜 E → ℝ := fun ω f ↦ ‖(f : WeakDual 𝕜 E) (X' ω)‖ ^ p.toReal
+  have hGm : Measurable (Function.uncurry G) :=
+    (measurable_apply_dualBall hX.aestronglyMeasurable.stronglyMeasurable_mk).norm.pow_const _
+  have hGle (ω : Ω) (f : dualBall 𝕜 E) : G ω f ≤ ‖X' ω‖ ^ p.toReal :=
+    Real.rpow_le_rpow (norm_nonneg _)
+      ((WeakDual.toStrongDual (f : WeakDual 𝕜 E)).le_of_opNorm_le
+        (mem_closedBall_zero_iff.1 f.property) _ |>.trans_eq (one_mul _)) hq.le
+  have hGint : Integrable (Function.uncurry G) (μ.prod ν) := by
+    refine Integrable.mono' (hX'int.comp_fst ν) hGm.aestronglyMeasurable (ae_of_all _ fun q ↦ ?_)
+    exact (Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)).trans_le (hGle q.1 q.2)
+  calc ∫ ω, ‖U (X ω)‖ ^ p.toReal ∂μ
+      = ∫ ω, ‖U (X' ω)‖ ^ p.toReal ∂μ :=
+        integral_congr_ae (hXX'.mono fun ω h ↦ by simp only [h])
+    _ ≤ ∫ ω, C ^ p.toReal * ∫ f, G ω f ∂ν ∂μ := by
+        refine integral_mono_of_nonneg (ae_of_all _ fun _ ↦ by positivity)
+          (hGint.integral_prod_left.const_mul _) (ae_of_all _ fun ω ↦ ?_)
+        exact (Real.le_mul_rpow_one_div_iff (norm_nonneg _) hC
+          (integral_nonneg fun _ ↦ by positivity) hq).1 (hUν _)
+    _ = C ^ p.toReal * ∫ f, ∫ ω, G ω f ∂μ ∂ν := by
+        rw [integral_const_mul, integral_integral_swap hGint]
+    _ ≤ C ^ p.toReal * ∫ _f, M ∂ν := by
+        refine mul_le_mul_of_nonneg_left (integral_mono hGint.integral_prod_right
+          (integrable_const M) fun f ↦ ?_) (by positivity)
+        calc ∫ ω, G ω f ∂μ
+            = ∫ ω, ‖WeakDual.toStrongDual (f : WeakDual 𝕜 E) (X ω)‖ ^ p.toReal ∂μ :=
+              integral_congr_ae (hXX'.mono fun ω h ↦ by
+                simp only [G, h, WeakDual.toStrongDual_apply])
+          _ ≤ M := hM _ (mem_closedBall_zero_iff.1 f.property)
+    _ = C ^ p.toReal * M := by simp
+
+end Integral
 
 end ContinuousLinearMap
