@@ -134,7 +134,7 @@ theorem finitePresentation_sections_of_locallyOfFinitePresentation
   have : IsOpenImmersion U.property.fromSpec := IsAffineOpen.isOpenImmersion_fromSpec U.property
   have hc : LocallyOfFinitePresentation (U.property.fromSpec ≫ X ↘ Spec (.of R)) :=
     inferInstance
-  rw [HomIsOver.comp_over (f := U.property.fromSpec) (S := Spec (.of R))] at hc
+  rw [HomIsOver.comp_over (f := U.property.fromSpec) (S := Spec (.of R)), specOverSpec_over] at hc
   exact RingHom.finitePresentation_algebraMap.mp
     ((LocallyOfFinitePresentation.SpecMap_iff _).mp hc)
 
