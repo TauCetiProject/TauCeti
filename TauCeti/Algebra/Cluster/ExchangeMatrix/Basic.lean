@@ -197,6 +197,14 @@ theorem symmetrizer_mul_matrix (i j : K) :
 theorem matrix_row_self (k : K) : B.matrix (row k) k = 0 :=
   B.isSkewSymmetrizer.apply_self k
 
+/-- For a square exchange matrix along `Function.Embedding.refl K`, `B.symmetrizer`
+skew-symmetrizes `B.matrix` directly without a `submatrix` wrapper. -/
+theorem matrix_isSkewSymmetrizer (B : ExchangeMatrix (Function.Embedding.refl K)) :
+    B.matrix.IsSkewSymmetrizer B.symmetrizer := by
+  have h : B.matrix.submatrix (Function.Embedding.refl K) id = B.matrix := by ext; simp
+  rw [← h]
+  exact B.isSkewSymmetrizer
+
 /-- Restrict and relabel the rows and columns of an exchange matrix along maps `f` and `g` that
 are compatible with the mutable embeddings.
 

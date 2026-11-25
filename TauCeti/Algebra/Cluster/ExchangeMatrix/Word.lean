@@ -199,6 +199,14 @@ theorem mutationWord_matrix (B : ExchangeMatrix row) (w : List K) :
   exact (List.foldl_hom (fun B : ExchangeMatrix row ↦ B.matrix)
     (fun B k ↦ (B.mutation_matrix k).symm)).symm
 
+/-- Every mutable diagonal entry `(row k, k)` vanishes after any mutation word on an exchange
+matrix. -/
+@[simp]
+theorem matrixMutationWord_row_self (B : ExchangeMatrix row) (w : List K) (k : K) :
+    matrixMutationWord row B.matrix w (row k) k = 0 := by
+  rw [← B.mutationWord_matrix]
+  exact (B.mutationWord w).matrix_row_self k
+
 /-- Every word retains the original positive symmetrizer. -/
 @[simp]
 theorem mutationWord_symmetrizer (B : ExchangeMatrix row) (w : List K) :
