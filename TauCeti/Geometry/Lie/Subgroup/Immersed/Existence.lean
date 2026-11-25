@@ -25,7 +25,7 @@ this subgroup is a connected immersed Lie subgroup of `G` with Lie algebra `S`
 This is the existence half of the correspondence between Lie subalgebras and connected immersed
 Lie subgroups; the uniqueness half is
 `TauCeti.Lie.ImmersedLieSubgroupData.eq_of_range_lieMapToHom_eq`, and the correspondence as an order
-isomorphism is `LieSubalgebra.integralLeafSubgroupOrderIso` in
+isomorphism is `TauCeti.Lie.integralLeafSubgroupOrderIso` in
 `TauCeti.Geometry.Lie.Subgroup.Immersed.Correspondence`.
 
 The left-invariant distribution of `S` is smooth, so the global Frobenius theorem gives the leaf
@@ -243,12 +243,18 @@ private theorem mem_of_forall_lieExp_smul_mem [T2Space G]
       exact ((contMDiff_leafHom S).mdifferentiableAt (by simp)).hasMFDerivAt
     rw [← hfc]
     exact hL.comp 0 (hf.mdifferentiableAt (by simp)).hasMFDerivAt
-  have hv := DFunLike.congr_fun (hderiv.mfderiv.symm.trans hcomp.mfderiv)
-    (show TangentSpace 𝓘(ℝ, ℝ) (0 : ℝ) from (1 : ℝ))
+  -- The unit time vector, as a tangent vector of `ℝ` at `0`; that tangent space is `ℝ` itself.
+  let u : TangentSpace 𝓘(ℝ, ℝ) (0 : ℝ) := (1 : ℝ)
+  have hv := DFunLike.congr_fun (hderiv.mfderiv.symm.trans hcomp.mfderiv) u
+  -- `(A.comp B) u` is `A (B u)` and `smulRight 1 (e X) u` is `1 • e X` by definition; the
+  -- rewriting lemmas for these do not fire through the tangent-space types, so `one_smul` closes
+  -- the definitional unfolding directly.
+  have hv' : mfderiv (𝓡 (finrank ℝ S)) I (leafHom S) 1 (mfderiv 𝓘(ℝ, ℝ) (𝓡 (finrank ℝ S)) f 0 u) =
+      e X :=
+    hv.symm.trans (one_smul ℝ (e X))
   have hmem : e X ∈ (S.map e.toLieHom).toSubmodule := by
     rw [← range_mfderiv_leafHom_one S]
-    exact ⟨mfderiv 𝓘(ℝ, ℝ) (𝓡 (finrank ℝ S)) f 0 (show TangentSpace 𝓘(ℝ, ℝ) (0 : ℝ) from (1 : ℝ)),
-      hv.symm.trans (one_smul ℝ (e X))⟩
+    exact ⟨_, hv'⟩
   obtain ⟨Y, hY, hYX⟩ := hmem
   rw [e.injective hYX] at hY
   exact hY
@@ -322,9 +328,7 @@ theorem le_lieSubalgebraOfSubgroup_integralLeafSubgroup [T2Space G]
     S.integralLeafSubgroupData.range_lieMapToHom_le
 
 /-- **The Lie algebra of the integral leaf subgroup.** The Lie algebra of the integral leaf
-subgroup of `S` is `S`. A one-parameter subgroup lying in the integral leaf subgroup lifts smoothly
-to the leaf with its intrinsic topology, so its generator is tangent to the leaf at the
-identity. -/
+subgroup of `S` is `S`, with no closedness assumption on the subgroup. -/
 @[simp]
 theorem lieSubalgebraOfSubgroup_integralLeafSubgroup [T2Space G]
     (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
