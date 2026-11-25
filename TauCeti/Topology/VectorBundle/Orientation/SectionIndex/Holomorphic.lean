@@ -409,34 +409,6 @@ theorem evalFundamentalClass_eulerClass_eq_sum_analyticOrderNatAt (hZ : {x | s x
     (ho z hz0) (hφ z hz0) (hA z hz0)
 
 include hs in
-/-- **The Euler number of a plane bundle with a section that is holomorphic in oriented coordinates
-at its finitely many zeros is nonnegative.** Under the hypotheses of
-`TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_analyticOrderNatAt`, which
-include that the section has finitely many zeros, the Euler class of `E` evaluated on the
-fundamental class of `M` is a sum of orders of vanishing, so it is nonnegative. -/
-theorem evalFundamentalClass_eulerClass_nonneg_of_analyticAt (hZ : {x | s x = 0}.Finite)
-    (hze : ∀ z, s z = 0 → z ∈ (e z).baseSet)
-    (ho : ∀ z, s z = 0 → ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ (e z).baseSet,
-      (e z).mapOrientation (Fin (1 + 1)) hx (o x) = ω z)
-    (hφ : ∀ z (hz : s z = 0), localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
-        (⟨fun x : (φ z).source ↦ φ z x - φ z z,
-          (φ z).continuousOn.domRestrict.sub continuous_const⟩ : C((φ z).source, ℂ))
-        (S := {⟨z, hzφ z hz⟩}) (T := {0})
-        (by
-          rintro x hx
-          exact Subtype.ext ((φ z).injOn x.property (hzφ z hz) (sub_eq_zero.1 hx))) (1 + 1)
-        (((φ z).open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ z hz⟩
-          (1 + 1)).symm (oM z)).val =
-      ((ω z).localOrientation hF).val)
-    (hA : ∀ z, s z = 0 → AnalyticAt ℂ
-      (fun y ↦ (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2) (φ z z)) :
-    0 ≤ (oM.evalFundamentalClass hF (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id M)
-      (o.eulerClass hF)).down := by
-  rw [o.evalFundamentalClass_eulerClass_eq_sum_analyticOrderNatAt hF oM hs φ e ω hzφ hZ hze ho hφ
-    hA]
-  exact Finset.sum_nonneg fun _ _ ↦ Nat.cast_nonneg _
-
-include hs in
 /-- **The zero count for sections that are locally holomorphic up to a unit.** Let `M` be a
 compact surface with orientation `oM`, and let `s` be a continuous section with finitely many zeros
 of an oriented real plane bundle `E → M` with fibre `ℂ`. Suppose that at each zero `z` there are a
@@ -508,6 +480,33 @@ theorem evalFundamentalClass_eulerClass_nonneg_of_eventually_eq_mul
   (Nat.cast_nonneg _).trans
     (o.ncard_le_evalFundamentalClass_eulerClass_of_eventually_eq_mul hF oM hs φ e ω hzφ hZ hze ho
       hφ hfac)
+
+include hs in
+/-- **The Euler number of a plane bundle with a section that is holomorphic in oriented coordinates
+at its finitely many zeros is nonnegative.** Under the hypotheses of
+`TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_analyticOrderNatAt`, which
+include that the section has finitely many zeros, the Euler class of `E` evaluated on the
+fundamental class of `M` is a sum of orders of vanishing, so it is nonnegative. -/
+theorem evalFundamentalClass_eulerClass_nonneg_of_analyticAt (hZ : {x | s x = 0}.Finite)
+    (hze : ∀ z, s z = 0 → z ∈ (e z).baseSet)
+    (ho : ∀ z, s z = 0 → ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ (e z).baseSet,
+      (e z).mapOrientation (Fin (1 + 1)) hx (o x) = ω z)
+    (hφ : ∀ z (hz : s z = 0), localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : (φ z).source ↦ φ z x - φ z z,
+          (φ z).continuousOn.domRestrict.sub continuous_const⟩ : C((φ z).source, ℂ))
+        (S := {⟨z, hzφ z hz⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext ((φ z).injOn x.property (hzφ z hz) (sub_eq_zero.1 hx))) (1 + 1)
+        (((φ z).open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ z hz⟩
+          (1 + 1)).symm (oM z)).val =
+      ((ω z).localOrientation hF).val)
+    (hA : ∀ z, s z = 0 → AnalyticAt ℂ
+      (fun y ↦ (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2) (φ z z)) :
+    0 ≤ (oM.evalFundamentalClass hF (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id M)
+      (o.eulerClass hF)).down :=
+  o.evalFundamentalClass_eulerClass_nonneg_of_eventually_eq_mul hF oM hs φ e ω hzφ hZ hze ho hφ
+    fun z hz ↦ ⟨1, _, continuousAt_const, one_ne_zero, hA z hz, .of_forall fun _ ↦ (one_mul _).symm⟩
 
 end CompactSpace
 
