@@ -68,13 +68,7 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
   `TauCeti.injOn_update_comp_const_sub_inv`: moving infinity to a real point.
 * `TauCeti.continuousOn_update_div_sub_neg_inv`, `TauCeti.injOn_update_div_sub_neg_inv`: the
   reciprocal `b / (f (-w⁻¹) - c)`, extended by `0` at the origin.
-* `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`,
-  `TauCeti.UpperHalfPlane.pos_real_smul_vadd`,
-  `TauCeti.UpperHalfPlane.periodic_comp_vadd_comp_ofComplex_iff`,
-  `TauCeti.UpperHalfPlane.periodic_comp_pos_real_smul_comp_ofComplex_iff`,
-  `TauCeti.UpperHalfPlane.periodic_comp_pos_real_smul_div_comp_ofComplex_iff`, and
-  `TauCeti.UpperHalfPlane.periodic_comp_pos_real_smul_nat_comp_ofComplex`: periodicity
-  characterization and transport under real translations and positive real/integer scalings.
+* `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 * `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
   `closure_setOfPred_re_lt`.
 * `TauCeti.UpperHalfPlane.isCompact_setOf_re_mem_Icc_im_mem_Icc`: closed rectangles of positive
@@ -410,60 +404,6 @@ lemma periodic_comp_ofComplex_iff {α : Type*} {f : ℍ → α} {c : ℝ} :
         show (⟨w + ↑c, hw'⟩ : ℍ) = c +ᵥ (⟨w, hw⟩ : ℍ) from _root_.UpperHalfPlane.ext
           (by simp [add_comm])]
       exact h _
-
-/-- Positive real scaling distributes over real translation on `ℍ`. -/
-theorem pos_real_smul_vadd (x : {y : ℝ // 0 < y}) (c : ℝ) (τ : ℍ) :
-    x • (c +ᵥ τ) = ((x : ℝ) * c) +ᵥ (x • τ) := by
-  ext
-  simp only [coe_pos_real_smul, coe_vadd, Complex.real_smul, Complex.ofReal_mul]
-  ring
-
-/-- Translating the argument of `f : ℍ → α` by a real number `s` preserves and reflects
-`c`-periodicity of `f ∘ ofComplex`. -/
-theorem periodic_comp_vadd_comp_ofComplex_iff {α : Type*} {f : ℍ → α} {c : ℝ} (s : ℝ) :
-    Function.Periodic ((fun τ : ℍ ↦ f (s +ᵥ τ)) ∘ ofComplex) c ↔
-      Function.Periodic (f ∘ ofComplex) c := by
-  simp only [periodic_comp_ofComplex_iff]
-  constructor
-  · intro h τ
-    simpa [vadd_vadd, add_left_comm] using h ((-s) +ᵥ τ)
-  · intro h τ
-    rw [vadd_vadd, add_comm s c, ← vadd_vadd]
-    exact h (s +ᵥ τ)
-
-/-- Precomposing `f : ℍ → α` with scaling by a positive real `x` is `c`-periodic iff
-`f` is `(x * c)`-periodic. -/
-theorem periodic_comp_pos_real_smul_comp_ofComplex_iff {α : Type*} {f : ℍ → α} {c : ℝ}
-    (x : {y : ℝ // 0 < y}) :
-    Function.Periodic ((fun τ : ℍ ↦ f (x • τ)) ∘ ofComplex) c ↔
-      Function.Periodic (f ∘ ofComplex) (((x : ℝ) * c : ℝ) : ℂ) := by
-  simp only [periodic_comp_ofComplex_iff, pos_real_smul_vadd]
-  constructor
-  · intro h τ
-    let x_inv : {y : ℝ // 0 < y} := ⟨(x : ℝ)⁻¹, inv_pos.mpr x.property⟩
-    have hx : x * x_inv = 1 := Subtype.ext (mul_inv_cancel₀ x.property.ne')
-    have hτ : x • (x_inv • τ) = τ := by rw [← mul_smul, hx, one_smul]
-    simpa [hτ] using h (x_inv • τ)
-  · intro h τ
-    exact h (x • τ)
-
-/-- Precomposing `f : ℍ → α` with scaling by a positive real `x` is `(c / x)`-periodic iff
-`f` is `c`-periodic. -/
-theorem periodic_comp_pos_real_smul_div_comp_ofComplex_iff {α : Type*} {f : ℍ → α} {c : ℝ}
-    (x : {y : ℝ // 0 < y}) :
-    Function.Periodic ((fun τ : ℍ ↦ f (x • τ)) ∘ ofComplex) ((c / (x : ℝ) : ℝ) : ℂ) ↔
-      Function.Periodic (f ∘ ofComplex) c := by
-  rw [periodic_comp_pos_real_smul_comp_ofComplex_iff, mul_div_cancel₀ c x.property.ne']
-
-/-- Precomposing a `c`-periodic function `f : ℍ → α` with scaling by a positive natural number `a`
-preserves `c`-periodicity. -/
-theorem periodic_comp_pos_real_smul_nat_comp_ofComplex {α : Type*} {f : ℍ → α} {c : ℝ}
-    (hf : Function.Periodic (f ∘ ofComplex) c) {a : ℕ} (ha : 0 < a) :
-    Function.Periodic
-      ((fun τ : ℍ ↦ f ((⟨(a : ℝ), Nat.cast_pos.mpr ha⟩ : {y : ℝ // 0 < y}) • τ)) ∘
-        ofComplex) c := by
-  rw [periodic_comp_pos_real_smul_comp_ofComplex_iff]
-  simpa [nsmul_eq_mul] using hf.nat_mul a
 
 /-- `UpperHalfPlane.re`'s closures and preimages commute, the `ℍ` analogue of
 `Complex.closure_preimage_re`. -/

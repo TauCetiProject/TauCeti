@@ -5,16 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.QuadraticDiscriminant
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.Algebra.QuadraticAlgebra.PeriodMatrix
 
 /-!
-# Quadratic points and multipliers of a principal quadratic period lattice
-
-For any `τ ∈ ℍ` satisfying a real quadratic equation `a τ² + b τ + c = 0`, comparing imaginary
-and real parts shows `2 a τ.re + b = 0` and `discrim a b c = -(2 a τ.im)²`, so whenever `a ≠ 0`
-the quadratic has strictly negative discriminant (`discrim a b c < 0`, i.e., `b² < 4 a c`).
+# Multipliers of a principal quadratic period lattice
 
 If `τ ∈ ℍ` satisfies `τ² + Bτ + C = 0` with integral coefficients, the lattice
 `ℤ τ + ℤ` is a subalgebra of `ℂ`. It is exactly the ring of complex scalars preserving that
@@ -29,17 +24,6 @@ The multiplication matrix uses row coordinates in the ordered periods `(τ, 1)`,
 points of a complex torus. Thus multiplication by `t + sτ` sends a row `r` to
 `r * !![t - B*s, -C*s; s, t]`. The construction reuses the native regular representation of
 `QuadraticAlgebra`, reversing its basis `(1, ω)` and transposing to the row convention.
-
-## Main results
-
-* `UpperHalfPlane.two_mul_re_add_eq_zero_of_quadratic`: a real quadratic root `τ ∈ ℍ` satisfies
-  `2 * a * τ.re + b = 0`.
-* `UpperHalfPlane.discrim_eq_neg_sq_of_quadratic`: `discrim a b c = -(2 * a * τ.im) ^ 2`.
-* `UpperHalfPlane.discrim_lt_zero_of_quadratic`: a nontrivial real quadratic equation with a root
-  in `ℍ` has strictly negative discriminant.
-* `UpperHalfPlane.mul_mem_lattice_periodPair_of_quadratic`, `UpperHalfPlane.quadraticOrder`,
-  `UpperHalfPlane.quadraticOrderEquiv`, and `UpperHalfPlane.quadraticOrderEquiv_mul_divisionPoint`:
-  integral quadratic orders carried by `ℤ τ + ℤ`.
 
 ## References
 
@@ -59,40 +43,7 @@ open Complex Matrix
 
 namespace UpperHalfPlane
 
-variable (τ : ℍ)
-
-/-- If `τ ∈ ℍ` satisfies a real quadratic equation `a τ ^ 2 + b τ + c = 0`, then
-`2 * a * τ.re + b = 0`. -/
-theorem two_mul_re_add_eq_zero_of_quadratic {a b c : ℝ}
-    (hτ : (a : ℂ) * (τ : ℂ) ^ 2 + b * τ + c = 0) :
-    2 * a * τ.re + b = 0 := by
-  have him := congrArg Complex.im hτ
-  simp only [sq, Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
-    zero_mul, add_zero, Complex.zero_im, coe_re, coe_im] at him
-  have hmul : τ.im * (2 * a * τ.re + b) = 0 := by linarith
-  exact (mul_eq_zero.mp hmul).resolve_left τ.im_ne_zero
-
-/-- If `τ ∈ ℍ` satisfies a real quadratic equation `a τ ^ 2 + b τ + c = 0`, its discriminant
-equals `-(2 * a * τ.im) ^ 2`. -/
-theorem discrim_eq_neg_sq_of_quadratic {a b c : ℝ}
-    (hτ : (a : ℂ) * (τ : ℂ) ^ 2 + b * τ + c = 0) :
-    discrim a b c = -(2 * a * τ.im) ^ 2 := by
-  have hlin : 2 * a * τ.re + b = 0 := τ.two_mul_re_add_eq_zero_of_quadratic hτ
-  have hre := congrArg Complex.re hτ
-  simp only [sq, Complex.add_re, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im,
-    zero_mul, sub_zero, Complex.zero_re, coe_re, coe_im] at hre
-  rw [discrim]
-  linear_combination -4 * a * hre + (2 * a * τ.re + b) * hlin
-
-/-- If `τ ∈ ℍ` satisfies a nontrivial real quadratic equation `a τ ^ 2 + b τ + c = 0` (`a ≠ 0`),
-its discriminant is strictly negative (`b ^ 2 - 4 * a * c < 0`). -/
-theorem discrim_lt_zero_of_quadratic {a b c : ℝ} (ha : a ≠ 0)
-    (hτ : (a : ℂ) * (τ : ℂ) ^ 2 + b * τ + c = 0) :
-    discrim a b c < 0 := by
-  rw [τ.discrim_eq_neg_sq_of_quadratic hτ, Left.neg_neg_iff]
-  exact sq_pos_of_ne_zero (mul_ne_zero (mul_ne_zero two_ne_zero ha) τ.im_ne_zero)
-
-variable {B C : ℤ}
+variable (τ : ℍ) {B C : ℤ}
 
 /-- The lattice of a monic integral quadratic point is closed under multiplication. -/
 theorem mul_mem_lattice_periodPair_of_quadratic

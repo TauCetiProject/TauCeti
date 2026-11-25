@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.QuadraticForm.Basic
-import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The group `Spinᶜ(Q)`
@@ -64,6 +63,9 @@ Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the l
 * `CliffordAlgebra.finite_spinCKernel`: the diagonal kernel is finite.
 * `CliffordAlgebra.spinCGroup.mk_eq_mk_iff`: `[s, z] = [s', z']` exactly when
   `(s', z') = (s, z)` or `(s', z') = (-s, -z)`.
+* `CliffordAlgebra.spinCGroup.mem_ker_toSpecialOrthogonal_iff`: the kernel of the rotation
+  homomorphism `Spinᶜ(Q) → SO(Q)` is the central circle `{[1, z]}`, and
+  `CliffordAlgebra.spinCGroup.ker_toSpecialOrthogonal` is its subgroup form.
 * `CliffordAlgebra.spinCGroup.mem_ker_toSpecialOrthogonal_prod_det_iff`: the kernel of
   `Spinᶜ(Q) → SO(Q) × U(1)` is `{1, [1, -1]}`.
 * `CliffordAlgebra.spinCGroup.coe_ker_toSpecialOrthogonal_prod_det`: the underlying set of that
@@ -71,14 +73,17 @@ Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the l
 * `CliffordAlgebra.spinCGroup.finite_ker_toSpecialOrthogonal_prod_det`: that kernel is finite.
 * `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_prod_det_surjective`: this map is onto when the
   Spin action is onto `SO(Q)`.
-* `CliffordAlgebra.spinCGroup.circle_hom_ext`: a homomorphism from the circle to `Spinᶜ(Q)` is
-  determined by its composite with `Spinᶜ(Q) → SO(Q) × U(1)`.
+* `CliffordAlgebra.spinCGroup.hom_ext_of_isSquare`: a homomorphism to `Spinᶜ(Q)` from a group in
+  which every element is a square, such as the circle, is determined by its composite with
+  `Spinᶜ(Q) → SO(Q) × U(1)`.
 * `CliffordAlgebra.spinCGroup.det_chargeConj`,
   `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_chargeConj`: charge conjugation inverts the
   determinant character and covers the identity rotation.
 * `CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`,
   `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`: charge conjugation is twisting by the
   inverse determinant, and the conjugate of `x` twisted by `z` is `x` twisted by `(det x)⁻¹ z⁻¹`.
+* `CliffordAlgebra.spinCGroup.chargeConj_eq_self_iff`: the fixed points of charge conjugation are
+  the elements with trivial determinant character.
 * `QuadraticMap.Isometry.spinCGroupMap_injective`: the induced map is injective when the induced
   Spin map is.
 * `QuadraticMap.Isometry.det_spinCGroupMap` and
@@ -310,6 +315,30 @@ theorem toSpecialOrthogonal_ofCircle (z : Circle) :
     toSpecialOrthogonal Q hQ (ofCircle Q hQ z) = 1 := by
   simp [ofCircle_apply]
 
+/-- **The kernel of the rotation homomorphism `Spinᶜ(Q) → SO(Q)` is the central circle**
+`{[1, z]}`, for a finite-dimensional nondegenerate quadratic form. -/
+theorem mem_ker_toSpecialOrthogonal_iff [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
+    (x : spinCGroup Q hQ) :
+    x ∈ (toSpecialOrthogonal Q hQ).ker ↔ ∃ z : Circle, x = ofCircle Q hQ z := by
+  have : Nontrivial M := QuadraticMap.nontrivial_of_ne_zero hQ
+  constructor
+  · intro hx
+    obtain ⟨⟨s, z⟩, rfl⟩ := mk_surjective Q hQ x
+    rw [MonoidHom.mem_ker, toSpecialOrthogonal_mk] at hx
+    rcases (mem_ker_spinToSpecialOrthogonal_iff Q hQn s).mp hx with rfl | rfl
+    · exact ⟨z, (ofCircle_apply Q hQ z).symm⟩
+    · refine ⟨-z, ?_⟩
+      rw [← ofSpin_mul_ofCircle, ofSpin_negOne, ← map_mul, neg_one_mul]
+  · rintro ⟨z, rfl⟩
+    exact toSpecialOrthogonal_ofCircle Q hQ z
+
+/-- The kernel of the rotation homomorphism `Spinᶜ(Q) → SO(Q)` is the range of `ofCircle`, for a
+finite-dimensional nondegenerate quadratic form. -/
+theorem ker_toSpecialOrthogonal [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate) :
+    (toSpecialOrthogonal Q hQ).ker = (ofCircle Q hQ).range :=
+  Subgroup.ext fun x ↦ (mem_ker_toSpecialOrthogonal_iff Q hQ hQn x).trans <|
+    exists_congr fun _ ↦ eq_comm
+
 /-! ### `Spinᶜ(Q)` as a double cover of `SO(Q) × U(1)` -/
 
 /-- **The kernel of `Spinᶜ(Q) → SO(Q) × U(1)`**, `[s, z] ↦ (π(s), z²)`, is `{1, [1, -1]}` for a
@@ -380,20 +409,22 @@ theorem card_fiber_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
     exact Circle.neg_ne_self (1 : Circle)
       ((ofCircle_injective Q hQ) (h.symm.trans hone.symm)))
 
-/-! ### Homomorphisms from the circle -/
+/-! ### Homomorphisms from monoids of squares -/
 
-/-- **A homomorphism from the circle to `Spinᶜ(Q)` is determined by its composite with
-`Spinᶜ(Q) → SO(Q) × U(1)`**, for a finite-dimensional nondegenerate form. Two such homomorphisms
-differ by a homomorphism into the central kernel `{1, [1, -1]}`, and this is trivial because every
-point of the circle is a square while the kernel has exponent two. -/
-theorem circle_hom_ext [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
-    {φ ψ : Circle →* spinCGroup Q hQ}
+/-- **A homomorphism to `Spinᶜ(Q)` from a monoid in which every element is a square is determined
+by its composite with `Spinᶜ(Q) → SO(Q) × U(1)`**, for a finite-dimensional nondegenerate form.
+Two such homomorphisms differ by a homomorphism into the central kernel `{1, [1, -1]}`, and this is
+trivial because every element of the source is a square while the kernel has exponent two. This
+applies to the circle (`Circle.isSquare`) and to the unitary groups
+(`Matrix.UnitaryGroup.isSquare`). -/
+theorem hom_ext_of_isSquare [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate) {G : Type*} [Monoid G]
+    (hG : ∀ g : G, IsSquare g) {φ ψ : G →* spinCGroup Q hQ}
     (h : ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).comp φ =
       ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).comp ψ) :
     φ = ψ := by
   have : Nontrivial M := QuadraticMap.nontrivial_of_ne_zero hQ
   -- The defect `φ y (ψ y)⁻¹` lies in the kernel `{1, [1, -1]}`: it is central and squares to `1`.
-  have hk (y : Circle) :
+  have hk (y : G) :
       φ y * (ψ y)⁻¹ ∈ Subgroup.center (spinCGroup Q hQ) ∧ (φ y * (ψ y)⁻¹) ^ 2 = 1 := by
     have hmem : φ y * (ψ y)⁻¹ ∈ ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker := by
       rw [MonoidHom.mem_ker, map_mul, map_inv, ← MonoidHom.comp_apply, h, MonoidHom.comp_apply,
@@ -403,10 +434,10 @@ theorem circle_hom_ext [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
     · exact ⟨one_mem _, one_pow 2⟩
     · exact ⟨ofCircle_mem_center Q hQ _, by rw [← map_pow]; simp⟩
   ext z
-  obtain ⟨y, rfl⟩ := z.exists_pow_nat_eq two_ne_zero
+  obtain ⟨y, rfl⟩ := hG z
   obtain ⟨hc, hsq⟩ := hk y
   have hcomm : Commute (φ y * (ψ y)⁻¹) (ψ y) := (Subgroup.mem_center_iff.mp hc (ψ y)).symm
-  rw [map_pow, map_pow, ← inv_mul_cancel_right (φ y) (ψ y), hcomm.mul_pow, hsq, one_mul]
+  rw [← sq, map_pow, map_pow, ← inv_mul_cancel_right (φ y) (ψ y), hcomm.mul_pow, hsq, one_mul]
 
 /-! ### Charge conjugation -/
 
@@ -490,6 +521,12 @@ structure of an almost Hermitian four-manifold, `L = K⁻¹` and this is the iso
 theorem chargeConj_mul_ofCircle (x : spinCGroup Q hQ) (z : Circle) :
     chargeConj Q hQ (x * ofCircle Q hQ z) = x * ofCircle Q hQ ((det Q hQ x)⁻¹ * z⁻¹) := by
   rw [map_mul, chargeConj_ofCircle, chargeConj_eq_mul_ofCircle_inv_det, map_mul, mul_assoc]
+
+/-- An element is fixed by charge conjugation exactly when its determinant character is trivial. -/
+theorem chargeConj_eq_self_iff {x : spinCGroup Q hQ} :
+    chargeConj Q hQ x = x ↔ det Q hQ x = 1 := by
+  rw [chargeConj_eq_mul_ofCircle_inv_det]
+  simp [map_eq_one_iff _ (ofCircle_injective Q hQ)]
 
 end spinCGroup
 

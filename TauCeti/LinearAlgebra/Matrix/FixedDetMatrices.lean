@@ -33,6 +33,8 @@ common divisor one, the representatives `FixedDetMatrices.primitiveReps n` are t
   `FixedDetMatrices.reps n` into `FixedDetMatrices.reps n` is `g = 1`; hence
   (`FixedDetMatrices.eq_of_smul_eq_of_mem_reps`) two matrices of `FixedDetMatrices.reps n` in the
   same `SL(2, ℤ)`-orbit are equal.
+* `FixedDetMatrices.pos_val_one_one_of_mem_reps`: a representative `(a b; 0 d)` of positive
+  determinant has `0 < d`.
 * `FixedDetMatrices.repsEquiv`: the representatives are parametrized by positive factor pairs
   `(a, d)` of `|n|` and residues `0 ≤ b < d`.
 * `FixedDetMatrices.ncard_reps`: `FixedDetMatrices.reps n` has `σ₁(|n|)` elements.
@@ -48,6 +50,8 @@ common divisor one, the representatives `FixedDetMatrices.primitiveReps n` are t
 * `FixedDetMatrices.primitiveReps`: the primitive matrices of `FixedDetMatrices.reps n`, and
   `FixedDetMatrices.exists_smul_mem_primitiveReps`: for `n ≠ 0` every primitive matrix of
   determinant `n` can be moved into them by `SL(2, ℤ)`.
+* `FixedDetMatrices.permRep`: the `(ZMod n)ˣ`-action `(a b; 0 d) ↦ (a, u b mod d; 0, d)`
+  permuting `FixedDetMatrices.reps n` and `FixedDetMatrices.primitiveReps n`.
 
 ## References
 
@@ -114,6 +118,11 @@ theorem eq_of_smul_eq_of_mem_reps {A B : FixedDetMatrix (Fin 2) ℤ n} {g : SL(2
 lemma apply_zero_zero_mul_apply_one_one {R : Type*} [CommRing R] {m : R}
     {A : FixedDetMatrix (Fin 2) R m} (h : A.val 1 0 = 0) : A.val 0 0 * A.val 1 1 = m := by
   simpa only [det_fin_two, h, mul_zero, sub_zero] using A.property
+
+/-- A representative `(a b; 0 d)` of positive determinant has `0 < d`. -/
+theorem pos_val_one_one_of_mem_reps (hn : 0 < n) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (hA : A ∈ reps n) : 0 < A.val 1 1 :=
+  pos_of_mul_pos_right ((apply_zero_zero_mul_apply_one_one hA.1).symm ▸ hn) hA.2.1.le
 
 /-- **The upper-triangular representatives, explicitly parametrized.** For `n ≠ 0`, a
 representative `(a b; 0 d)` is recorded by the positive factor pair `(|a|, |d|)` of `|n|`
@@ -315,5 +324,168 @@ theorem exists_smul_mem_primitiveReps (hn : n ≠ 0) {A : FixedDetMatrix (Fin 2)
     (hA : TauCeti.IsPrimitive A.val) : ∃ g : SL(2, ℤ), g • A ∈ primitiveReps n := by
   obtain ⟨g, hg⟩ := exists_smul_mem_reps hn A
   exact ⟨g, mem_primitiveReps.2 ⟨hg, (isPrimitive_smul_iff g A).2 hA⟩⟩
+
+/-! ### Action of `(ZMod n)ˣ` on upper-triangular representatives -/
+
+/-- The permutation of upper-triangular determinant-`n` matrices induced by `u ∈ (ZMod n)ˣ`:
+`(a b; 0 d) ↦ (a, u b mod d; 0, d)`, fixing matrices that are not upper-triangular. -/
+def permRep {n : ℕ} (u : (ZMod n)ˣ) (A : FixedDetMatrix (Fin 2) ℤ n) :
+    FixedDetMatrix (Fin 2) ℤ n :=
+  if h : A.val 1 0 = 0 then
+    ⟨!![A.val 0 0, (((u : ZMod n).val : ℤ) * A.val 0 1) % A.val 1 1; 0, A.val 1 1], by
+      simpa [det_fin_two] using apply_zero_zero_mul_apply_one_one h⟩
+  else A
+
+/-- On an upper-triangular matrix `(a b; 0 d)`, `permRep u` reduces `u b` modulo `d` in the
+upper-right entry and leaves the other entries unchanged. -/
+theorem val_permRep_of_eq_zero {n : ℕ} (u : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (h : A.val 1 0 = 0) :
+    (permRep u A).val =
+      !![A.val 0 0, (((u : ZMod n).val : ℤ) * A.val 0 1) % A.val 1 1; 0, A.val 1 1] := by
+  simp [permRep, h]
+
+/-- `permRep u` fixes any matrix whose lower-left entry is nonzero. -/
+theorem permRep_of_ne_zero {n : ℕ} (u : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (h : A.val 1 0 ≠ 0) : permRep u A = A := by
+  simp [permRep, h]
+
+/-- `permRep u` preserves the `(0, 0)` entry. -/
+@[simp]
+theorem val_permRep_zero_zero {n : ℕ} (u : (ZMod n)ˣ) (A : FixedDetMatrix (Fin 2) ℤ n) :
+    (permRep u A).val 0 0 = A.val 0 0 := by
+  by_cases h : A.val 1 0 = 0 <;> simp [permRep, h]
+
+/-- `permRep u` preserves the `(1, 0)` entry. -/
+@[simp]
+theorem val_permRep_one_zero {n : ℕ} (u : (ZMod n)ˣ) (A : FixedDetMatrix (Fin 2) ℤ n) :
+    (permRep u A).val 1 0 = A.val 1 0 := by
+  by_cases h : A.val 1 0 = 0 <;> simp [permRep, h]
+
+/-- `permRep u` preserves the `(1, 1)` entry. -/
+@[simp]
+theorem val_permRep_one_one {n : ℕ} (u : (ZMod n)ˣ) (A : FixedDetMatrix (Fin 2) ℤ n) :
+    (permRep u A).val 1 1 = A.val 1 1 := by
+  by_cases h : A.val 1 0 = 0 <;> simp [permRep, h]
+
+/-- On an upper-triangular matrix, the `(0, 1)` entry of `permRep u A` is `u b mod d`. -/
+theorem val_permRep_zero_one {n : ℕ} (u : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (h : A.val 1 0 = 0) :
+    (permRep u A).val 0 1 = (((u : ZMod n).val : ℤ) * A.val 0 1) % A.val 1 1 := by
+  simp [permRep, h]
+
+private theorem pos_natCast_of_mem_reps {n : ℕ} {A : FixedDetMatrix (Fin 2) ℤ n}
+    (hA : A ∈ reps (n : ℤ)) : 0 < (n : ℤ) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have h0 := apply_zero_zero_mul_apply_one_one hA.1
+    have hd : A.val 1 1 = 0 := (mul_eq_zero.mp h0).resolve_left hA.2.1.ne'
+    exact absurd hA.2.2.2 (by simp [hd, abs_nonneg])
+  · exact Int.natCast_pos.mpr hn
+
+/-- For `u ∈ (ZMod n)ˣ`, `permRep u` maps `reps n` into `reps n`. -/
+theorem permRep_mem_reps {n : ℕ} (u : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (hA : A ∈ reps (n : ℤ)) : permRep u A ∈ reps (n : ℤ) := by
+  have hd : 0 < A.val 1 1 := pos_val_one_one_of_mem_reps (pos_natCast_of_mem_reps hA) hA
+  rw [reps, Set.mem_ofPred_eq, val_permRep_of_eq_zero u hA.1]
+  refine ⟨rfl, hA.2.1, Int.emod_nonneg _ hd.ne', ?_⟩
+  simpa [abs_of_nonneg (Int.emod_nonneg _ hd.ne'), abs_of_pos hd] using
+    Int.emod_lt_of_pos _ hd
+
+/-- The identity unit `1 ∈ (ZMod n)ˣ` acts trivially on `reps n`. -/
+@[simp]
+theorem permRep_one {n : ℕ} {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ reps (n : ℤ)) :
+    permRep 1 A = A := by
+  have hn : 0 < (n : ℤ) := pos_natCast_of_mem_reps hA
+  have : NeZero n := ⟨by omega⟩
+  have hd : 0 < A.val 1 1 := pos_val_one_one_of_mem_reps hn hA
+  have hb_lt : A.val 0 1 < A.val 1 1 := by
+    simpa [abs_of_nonneg hA.2.2.1, abs_of_pos hd] using hA.2.2.2
+  have hdvd_n : A.val 1 1 ∣ (n : ℤ) :=
+    ⟨A.val 0 0, by rw [mul_comm, apply_zero_zero_mul_apply_one_one hA.1]⟩
+  have h1 : (n : ℤ) ∣ (((1 : ZMod n).val : ℤ) - 1) := by
+    rw [← ZMod.intCast_eq_intCast_iff_dvd_sub]
+    simp
+  obtain ⟨q, hq⟩ := dvd_trans hdvd_n h1
+  have hdvd : A.val 1 1 ∣ ((1 : ZMod n).val : ℤ) * A.val 0 1 - A.val 0 1 := by
+    refine ⟨q * A.val 0 1, ?_⟩
+    calc ((1 : ZMod n).val : ℤ) * A.val 0 1 - A.val 0 1
+        = (((1 : ZMod n).val : ℤ) - 1) * A.val 0 1 := by ring
+      _ = A.val 1 1 * (q * A.val 0 1) := by rw [hq]; ring
+  have hmod : (((1 : ZMod n).val : ℤ) * A.val 0 1) % A.val 1 1 = A.val 0 1 := by
+    rw [(Int.modEq_iff_dvd.mpr hdvd).symm, Int.emod_eq_of_lt hA.2.2.1 hb_lt]
+  apply FixedDetMatrices.ext
+  intro i j
+  fin_cases i <;> fin_cases j
+  · simp
+  · simp only [Fin.zero_eta, Fin.mk_one, val_permRep_zero_one 1 hA.1]
+    exact hmod
+  · simp
+  · simp
+
+/-- Multiplication in `(ZMod n)ˣ` becomes composition of `permRep` on `reps n`. -/
+theorem permRep_mul {n : ℕ} (u v : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (hA : A ∈ reps (n : ℤ)) :
+    permRep (u * v) A = permRep u (permRep v A) := by
+  have : NeZero n := ⟨by have := pos_natCast_of_mem_reps hA; omega⟩
+  have hdvd_n : A.val 1 1 ∣ (n : ℤ) :=
+    ⟨A.val 0 0, by rw [mul_comm, apply_zero_zero_mul_apply_one_one hA.1]⟩
+  set cu : ℤ := ((u : ZMod n).val : ℤ)
+  set cv : ℤ := ((v : ZMod n).val : ℤ)
+  set cuv : ℤ := (((u * v : (ZMod n)ˣ) : ZMod n).val : ℤ)
+  have huv : (n : ℤ) ∣ cu * cv - cuv := by
+    rw [← ZMod.intCast_eq_intCast_iff_dvd_sub]
+    simp [cu, cv, cuv]
+  obtain ⟨q, hq⟩ := dvd_trans hdvd_n huv
+  have hdvd : A.val 1 1 ∣ cu * (cv * A.val 0 1) - cuv * A.val 0 1 := by
+    refine ⟨q * A.val 0 1, ?_⟩
+    calc cu * (cv * A.val 0 1) - cuv * A.val 0 1
+        = (cu * cv - cuv) * A.val 0 1 := by ring
+      _ = A.val 1 1 * (q * A.val 0 1) := by rw [hq]; ring
+  have hmod : (cuv * A.val 0 1) % A.val 1 1 =
+      (cu * ((cv * A.val 0 1) % A.val 1 1)) % A.val 1 1 := by
+    rw [Int.mul_emod cu, Int.emod_emod, ← Int.mul_emod]
+    exact Int.modEq_iff_dvd.mpr hdvd
+  have hv₁₀ : (permRep v A).val 1 0 = 0 := (val_permRep_one_zero v A).trans hA.1
+  apply FixedDetMatrices.ext
+  intro i j
+  fin_cases i <;> fin_cases j
+  · simp
+  · simp only [Fin.zero_eta, Fin.mk_one, val_permRep_zero_one (u * v) hA.1,
+      val_permRep_zero_one u hv₁₀, val_permRep_zero_one v hA.1, val_permRep_one_one]
+    exact hmod
+  · simp
+  · simp
+
+/-- `permRep u⁻¹` is a left inverse to `permRep u` on `reps n`. -/
+@[simp]
+theorem permRep_inv_permRep {n : ℕ} (u : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (hA : A ∈ reps (n : ℤ)) :
+    permRep u⁻¹ (permRep u A) = A := by
+  rw [← permRep_mul u⁻¹ u hA, inv_mul_cancel, permRep_one hA]
+
+private theorem isPrimitive_of_isPrimitive_permRep {n : ℕ} (u : (ZMod n)ˣ)
+    {B : FixedDetMatrix (Fin 2) ℤ n} (hB : B.val 1 0 = 0)
+    (hprim : TauCeti.IsPrimitive (permRep u B).val) :
+    TauCeti.IsPrimitive B.val := by
+  set c : ℤ := ((u : ZMod n).val : ℤ)
+  set q : ℤ := c * B.val 0 1 / B.val 1 1
+  have hmod : c * B.val 0 1 % B.val 1 1 = c * B.val 0 1 - B.val 1 1 * q := by
+    linarith [Int.emod_add_mul_ediv (c * B.val 0 1) (B.val 1 1)]
+  let L : Matrix (Fin 2) (Fin 2) ℤ →ₗ[ℤ] Matrix (Fin 2) (Fin 2) ℤ :=
+    { toFun X := !![X 0 0, c * X 0 1 - q * X 1 1; X 1 0, X 1 1]
+      map_add' _ _ := by ext i j; fin_cases i <;> fin_cases j <;> simp; ring
+      map_smul' _ _ := by ext i j; fin_cases i <;> fin_cases j <;> simp; ring }
+  have hLB : L B.val = (permRep u B).val := by
+    rw [val_permRep_of_eq_zero u hB]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [L, hB, c, hmod, mul_comm]
+  exact (hLB ▸ hprim).of_map
+
+/-- For `u ∈ (ZMod n)ˣ`, `permRep u` preserves `primitiveReps n`. -/
+theorem permRep_mem_primitiveReps {n : ℕ} (u : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (hA : A ∈ primitiveReps (n : ℤ)) : permRep u A ∈ primitiveReps (n : ℤ) := by
+  obtain ⟨hA_rep, hprim⟩ := mem_primitiveReps.mp hA
+  refine mem_primitiveReps.mpr ⟨permRep_mem_reps u hA_rep, ?_⟩
+  exact isPrimitive_of_isPrimitive_permRep u⁻¹ ((val_permRep_one_zero u A).trans hA_rep.1)
+    (by rwa [permRep_inv_permRep u hA_rep])
 
 end FixedDetMatrices

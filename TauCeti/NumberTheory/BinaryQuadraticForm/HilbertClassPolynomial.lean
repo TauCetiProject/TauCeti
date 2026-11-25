@@ -9,10 +9,8 @@ public import Mathlib.FieldTheory.Separable
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.ClassNumber
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Root
-import Mathlib.RingTheory.Polynomial.IsIntegral
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
 import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Reflection
-import TauCeti.NumberTheory.ModularForms.LevelOne.ModularPolynomial
 
 /-!
 # Singular moduli and the Hilbert class polynomial
@@ -36,12 +34,10 @@ The *Hilbert class polynomial* `hilbertClassPolynomial n` is the monic polynomia
 the singular moduli of discriminant `-n`, each with multiplicity one. It is the product of
 `X - j(τ)` over the roots `τ` of the primitive reduced forms of discriminant `-n`, one for each
 proper class. Its degree is the order of the Picard group, which for a fundamental discriminant is
-the class number of the field; its coefficients are real and, because singular moduli satisfy
-nontrivial specialized modular polynomials, are algebraic integers. The theory of complex
-multiplication shows further that its coefficients are rational (hence integers) and that adjoining
-any singular modulus of discriminant `-n` to the quadratic field `K = ℚ(√(-n))` generates the ring
-class field of the order of discriminant `-n` over `K`; neither Galois-theoretic statement is
-proved here.
+the class number of the field, and its coefficients are real. The theory of complex
+multiplication shows that its coefficients are in fact integers and that adjoining any singular
+modulus of discriminant `-n` to the quadratic field `K = ℚ(√(-n))` generates the ring class field
+of the order of discriminant `-n` over `K`; neither statement is proved here.
 
 ## Main definitions
 
@@ -54,11 +50,6 @@ proved here.
 
 * `TauCeti.BinaryQuadraticForm.singularModulus_injective`: distinct proper classes have distinct
   singular moduli.
-* `TauCeti.BinaryQuadraticForm.isIntegral_j_root`,
-  `TauCeti.BinaryQuadraticForm.isIntegral_singularModulus`,
-  `TauCeti.BinaryQuadraticForm.isIntegral_coeff_hilbertClassPolynomial`: the value of `j` at the
-  root of any positive definite form, every singular modulus, and every coefficient of the Hilbert
-  class polynomial are algebraic integers.
 * `TauCeti.BinaryQuadraticForm.star_singularModulus`: the complex conjugate of the singular
   modulus of a class is the singular modulus of the inverse Picard class, and
   `im_singularModulus_eq_zero_iff`: a singular modulus is real exactly when its Picard class has
@@ -276,27 +267,5 @@ theorem map_star_hilbertClassPolynomial :
 @[simp]
 theorem im_coeff_hilbertClassPolynomial (k : ℕ) : ((hilbertClassPolynomial n).coeff k).im = 0 := by
   rw [← Complex.conj_eq_iff_im, ← coeff_map, map_star_hilbertClassPolynomial]
-
-variable {n} in
-/-- **The `j`-invariant at the root of a positive definite integral binary quadratic form is an
-algebraic integer.** Note that the form need not be primitive. -/
-theorem isIntegral_j_root (f : posDef n) : IsIntegral ℤ (j (root f)) :=
-  isIntegral_j_of_quadratic (mem_posDef.1 f.property).2.ne' ((eq_root_iff f (root f)).1 rfl)
-
-variable {n} in
-/-- **Every singular modulus is an algebraic integer.** -/
-theorem isIntegral_singularModulus (q : PosDefProperClass n) :
-    IsIntegral ℤ (singularModulus n q) := by
-  induction q using Quotient.inductionOn with | h f
-  exact isIntegral_j_root ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩
-
-/-- **Every coefficient of the Hilbert class polynomial is an algebraic integer.** -/
-theorem isIntegral_coeff_hilbertClassPolynomial (k : ℕ) :
-    IsIntegral ℤ ((hilbertClassPolynomial n).coeff k) := by
-  rw [hilbertClassPolynomial]
-  refine Polynomial.isIntegral_coeff_prod _ _ (fun _ _ m ↦ ?_) k
-  rw [coeff_sub, coeff_X, coeff_C]
-  exact IsIntegral.sub (by simp [apply_ite (IsIntegral ℤ), isIntegral_one, isIntegral_zero])
-    (by simp [apply_ite (IsIntegral ℤ), isIntegral_j_root, isIntegral_zero])
 
 end TauCeti.BinaryQuadraticForm

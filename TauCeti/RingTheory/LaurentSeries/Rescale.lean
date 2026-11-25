@@ -30,13 +30,13 @@ Rescaling an expanded series `f (X ^ d)` by `a` is expansion of the series resca
 
 * `TauCeti.LaurentSeries.coeff_rescale`: rescaling multiplies coefficients by powers of `a`.
 * `TauCeti.LaurentSeries.rescale_single`: rescaling a monomial.
+* `TauCeti.LaurentSeries.orderTop_rescale` and `TauCeti.LaurentSeries.leadingCoeff_rescale`:
+  rescaling preserves the order and multiplies the leading coefficient by `a` to the power of the
+  order.
 * `TauCeti.LaurentSeries.rescale_coe`: compatibility with rescaling power series.
 * `TauCeti.LaurentSeries.rescale_expand`: compatibility with exponent expansion `X ↦ X ^ d`.
 * `TauCeti.LaurentSeries.rescale_expand_of_pow_eq_one`: rescaling by a `d`-th root of unity
   fixes the image of expansion by `d`.
-* `TauCeti.LaurentSeries.orderTop_rescale`, `TauCeti.LaurentSeries.order_rescale`, and
-  `TauCeti.LaurentSeries.leadingCoeff_rescale`: rescaling preserves the order and multiplies the
-  leading coefficient by `a ^ f.order`.
 * `TauCeti.LaurentSeries.map_rescale` and `TauCeti.LaurentSeries.mapRingHom_rescale`:
   coefficientwise multiplicative maps and ring homomorphisms commute with rescaling.
 -/
@@ -95,6 +95,36 @@ theorem rescale_coe (a : Rˣ) (f : R⟦X⟧) :
   · rw [PowerSeries.coeff_rescale, ← Units.val_pow_eq_pow_val,
       ← zpow_natCast, Int.natAbs_of_nonneg (not_lt.mp hn)]
 
+/-- Rescaling by a unit does not change which coefficients vanish. -/
+@[simp]
+theorem support_rescale (a : Rˣ) (f : R⸨X⸩) : (rescale a f).support = f.support := by
+  ext n
+  simp [Units.mul_right_eq_zero]
+
+/-- Rescaling by a unit preserves the order. -/
+@[simp]
+theorem orderTop_rescale (a : Rˣ) (f : R⸨X⸩) : (rescale a f).orderTop = f.orderTop := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · rw [map_zero]
+  rw [orderTop_of_ne_zero hf,
+    orderTop_of_ne_zero ((map_ne_zero_iff _ (rescale a).injective).mpr hf)]
+  simp only [support_rescale]
+
+/-- Rescaling by a unit preserves the order. -/
+@[simp]
+theorem order_rescale (a : Rˣ) (f : R⸨X⸩) : (rescale a f).order = f.order := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · rw [map_zero]
+  have hf' : rescale a f ≠ 0 := (map_ne_zero_iff _ (rescale a).injective).mpr hf
+  exact WithTop.coe_injective (by
+    rw [order_eq_orderTop_of_ne_zero hf', order_eq_orderTop_of_ne_zero hf, orderTop_rescale])
+
+/-- Rescaling by `a` multiplies the leading coefficient by `a` to the power of the order. -/
+@[simp]
+theorem leadingCoeff_rescale (a : Rˣ) (f : R⸨X⸩) :
+    (rescale a f).leadingCoeff = ↑(a ^ f.order) * f.leadingCoeff := by
+  rw [leadingCoeff_eq, leadingCoeff_eq, order_rescale, coeff_rescale]
+
 /-- Rescaling an expanded series by `a` is expanding the series rescaled by `a ^ d`:
 `f ((a X) ^ d) = (f (a ^ d X)) (X ^ d)`. -/
 theorem rescale_expand (a : Rˣ) (d : ℕ+) (f : R⸨X⸩) :
@@ -121,27 +151,6 @@ theorem valuation_rescale {K : Type*} [Field K] (a : Kˣ) (f : K⸨X⸩) :
   rcases eq_or_ne γ 0 with rfl | hγ
   · simp
   · simp [valuation_le_iff_coeff_lt_log_eq_zero K hγ, zpow_ne_zero]
-
-/-- Rescaling by a unit preserves the order, including at zero. -/
-@[simp]
-theorem orderTop_rescale (a : Rˣ) (f : R⸨X⸩) : (rescale a f).orderTop = f.orderTop := by
-  have h : rescale a f = twistEquiv (zpowersHom Rˣ a) f := by ext; simp
-  rw [h, orderTop_twistEquiv]
-
-/-- Rescaling by a unit preserves the order; the zero series has order zero on both sides. -/
-@[simp]
-theorem order_rescale (a : Rˣ) (f : R⸨X⸩) : (rescale a f).order = f.order := by
-  rcases eq_or_ne f 0 with rfl | hf
-  · simp
-  have hf' : rescale a f ≠ 0 := (map_ne_zero_iff _ (rescale a).injective).mpr hf
-  apply WithTop.coe_injective
-  rw [order_eq_orderTop_of_ne_zero hf', orderTop_rescale, ← order_eq_orderTop_of_ne_zero hf]
-
-/-- Rescaling by `a` multiplies the leading coefficient by `a ^ f.order`. -/
-@[simp]
-theorem leadingCoeff_rescale (a : Rˣ) (f : R⸨X⸩) :
-    (rescale a f).leadingCoeff = ↑(a ^ f.order) * f.leadingCoeff := by
-  rw [leadingCoeff_eq, leadingCoeff_eq, order_rescale, coeff_rescale]
 
 /-- Coefficientwise multiplicative zero-preserving maps commute with rescaling by a unit:
 mapping `f (a X)` along `φ` gives `(f.map φ) (φ a * X)`. -/
