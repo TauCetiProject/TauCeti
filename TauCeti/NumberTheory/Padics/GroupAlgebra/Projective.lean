@@ -18,6 +18,7 @@ import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Jacobson.Basic
+import TauCeti.RingTheory.Jacobson.Finite
 
 /-!
 # Projective modules over finite `p`-adic group algebras

@@ -308,6 +308,22 @@ theorem mem_span_algebraMap_smul_iff (N : Submodule A V) (x : R) {v : V} :
     rw [← algebraMap_smul A]
     exact smul_mem_smul (Ideal.mem_span_singleton_self _) hw
 
+omit [AddCommMonoid V] [Module R V] [Module A V] [IsScalarTower R A V] in
+/-- For an `R`-algebra `A`, possibly noncommutative, and a scalar `x : R`, a vector `v : ι → A` lies
+in `x A • (ι → A)` exactly when each of its coordinates lies in the left ideal `x A`. -/
+theorem mem_span_algebraMap_smul_top_pi_iff {ι : Type*} (x : R) {v : ι → A} :
+    v ∈ Ideal.span {algebraMap R A x} • (⊤ : Submodule A (ι → A)) ↔
+      ∀ i, v i ∈ Ideal.span {algebraMap R A x} := by
+  rw [mem_span_algebraMap_smul_iff]
+  simp only [mem_top, true_and]
+  constructor
+  · rintro ⟨w, rfl⟩ i
+    rw [Pi.smul_apply, Algebra.smul_def, Algebra.commutes]
+    exact Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)
+  · intro hv
+    choose w hw using fun i ↦ Ideal.mem_span_singleton'.mp (hv i)
+    exact ⟨w, funext fun i ↦ by rw [Pi.smul_apply, Algebra.smul_def, Algebra.commutes, hw]⟩
+
 end Submodule
 
 namespace Submodule

@@ -10,9 +10,11 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.Jacobson.Radical
 public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
+import Mathlib.Algebra.Module.TransferInstance
 import Mathlib.RingTheory.Nakayama
 import TauCeti.Algebra.Module.LinearMap.EndQuotient
 import TauCeti.Algebra.Module.Projective.Lift
+import TauCeti.Algebra.Module.Projective.Quotient
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.Algebra.Module.Projective.Semilinear
 import TauCeti.Algebra.Module.Projective.Top
@@ -30,7 +32,7 @@ Let `π : A →+* B` be a surjective ring homomorphism. A **reduction** of an `A
 `B`-module `Y` with a surjection `f : P → Y`, semilinear along `π`, whose kernel is `ker π • P`; in
 other words `Y ≅ P ⧸ ker π • P` with its `B`-module structure. The main case is the reduction
 `O[G] → k[G]` of a group algebra over a complete discrete valuation ring with residue field `k`
-(`TauCeti/RepresentationTheory/Modular/ProjectiveLift.lean`).
+(`TauCeti/RepresentationTheory/GroupAlgebra/ProjectiveLift.lean`).
 
 This file proves that finitely generated projective `A`-modules and their reductions correspond:
 
@@ -41,7 +43,7 @@ This file proves that finitely generated projective `A`-modules and their reduct
 
 When moreover `A` is an algebra over a Noetherian ring `O`, finite as an `O`-module, `O` is
 complete with respect to a principal ideal `(ϖ)` and `ker π = ϖ A`, then `ϖ A` lies in the Jacobson
-radical of `A` (`TauCeti.span_algebraMap_le_jacobson`, from `TauCeti.Ring.algebraMap_mem_jacobson`),
+radical of `A` (`TauCeti.span_algebraMap_le_jacobson` in `TauCeti/RingTheory/Jacobson/Finite.lean`),
 and:
 
 * every finitely generated projective `B`-module is the reduction of a finitely generated
@@ -61,7 +63,6 @@ an idempotent endomorphism of `P` because `End_A(P)` is `ϖ`-adically complete
 
 * `TauCeti.projective_of_reduction`: the reduction of a projective module is projective.
 * `TauCeti.nonempty_linearEquiv_of_reduction`: lifts are unique up to isomorphism.
-* `TauCeti.span_algebraMap_le_jacobson`: `ϖ A` lies in the Jacobson radical of `A`.
 * `TauCeti.isIndecomposableModule_iff_of_reduction`: a finitely generated projective `A`-module is
   indecomposable exactly when its reduction is.
 * `TauCeti.exists_projective_reduction_of_projective`: projective `B`-modules lift.
@@ -81,28 +82,6 @@ section Reduction
 variable {A B : Type*} [Ring A] [Ring B] {π : A →+* B}
   {P : Type*} [AddCommGroup P] [Module A P] {Y : Type*} [AddCommGroup Y] [Module B Y]
 
-/-- A semilinear map into a `B`-module kills `ker π • P`. -/
-private theorem map_eq_zero_of_mem_ker_smul_top {M : Type*} [AddCommGroup M] [Module B M]
-    (h : P →ₛₗ[π] M) {x : P} (hx : x ∈ RingHom.ker π • (⊤ : Submodule A P)) : h x = 0 :=
-  Submodule.smul_induction_on hx (fun r hr n _ ↦ by rw [h.map_smulₛₗ, hr, zero_smul])
-    fun x y hx hy ↦ by rw [map_add, hx, hy, add_zero]
-
-/-- A map semilinear along `π` into a module on which `A` acts through `π`, as an `A`-linear
-map. -/
-private def toLinearMapOfCompHom {M : Type*} [AddCommGroup M] [Module B M] [Module A M]
-    (hM : ∀ (a : A) (m : M), a • m = π a • m) (g : P →ₛₗ[π] M) : P →ₗ[A] M where
-  toFun := g
-  map_add' := g.map_add
-  map_smul' a x := by rw [g.map_smulₛₗ, hM, RingHom.id_apply]
-
-/-- A `B`-linear map between modules on which `A` acts through `π`, as an `A`-linear map. -/
-private def restrictScalarsOfCompHom {M N : Type*} [AddCommGroup M] [Module B M] [Module A M]
-    [AddCommGroup N] [Module B N] [Module A N] (hM : ∀ (a : A) (m : M), a • m = π a • m)
-    (hN : ∀ (a : A) (n : N), a • n = π a • n) (g : M →ₗ[B] N) : M →ₗ[A] N where
-  toFun := g
-  map_add' := g.map_add
-  map_smul' a m := by rw [hM, hN, g.map_smul, RingHom.id_apply]
-
 variable (hπ : Function.Surjective π) {f : P →ₛₗ[π] Y} (hf : Function.Surjective f)
   (hfker : ∀ x, f x = 0 ↔ x ∈ RingHom.ker π • (⊤ : Submodule A P))
 
@@ -111,7 +90,7 @@ include hfker in
 private theorem map_eq_of_map_eq {M : Type*} [AddCommGroup M] [Module B M] (h : P →ₛₗ[π] M)
     {x x' : P} (hxx : f x = f x') : h x = h x' := by
   rw [← sub_eq_zero, ← map_sub]
-  exact map_eq_zero_of_mem_ker_smul_top h ((hfker _).mp (by rw [map_sub, hxx, sub_self]))
+  exact h.map_eq_zero_of_mem_ker_smul_top ((hfker _).mp (by rw [map_sub, hxx, sub_self]))
 
 /-- The descent of a semilinear map `h : P → M` to a `B`-linear map `Y → M` along a reduction
 `f : P → Y`. -/
@@ -129,31 +108,35 @@ private theorem descend_apply {M : Type*} [AddCommGroup M] [Module B M] (h : P �
     descend hπ hf hfker h (f x) = h x :=
   map_eq_of_map_eq hfker h (Function.surjInv_eq hf _)
 
-include hπ hf hfker in
-/-- **The reduction of a projective module is projective.** If `P` is a projective `A`-module and
-`f : P → Y` is a reduction of `P`, then `Y` is a projective `B`-module. -/
-theorem projective_of_reduction [Module.Projective A P] : Module.Projective B Y := by
-  -- `Y` is a retract of the free module `Y →₀ B`: lift `f` along `Y →₀ B → Y` by projectivity.
-  classical
-  let s := Finsupp.linearCombination B (id : Y → Y)
-  have hs : Function.Surjective s := fun y ↦ ⟨Finsupp.single y 1, by simp [s]⟩
-  obtain ⟨u, hu⟩ := Module.projective_lifting_property_semilinear s hs f
-  refine Module.Projective.of_split (descend hπ hf hfker u) s (LinearMap.ext fun y ↦ ?_)
-  obtain ⟨x, rfl⟩ := hf y
-  rw [LinearMap.comp_apply, descend_apply, ← LinearMap.comp_apply, hu, LinearMap.id_apply]
-
 include hf hfker in
 /-- A reduction `f : P → Y` induces a linear equivalence `P ⧸ ker π • P ≃ Y`, when `Y` is regarded
 as an `A`-module through `π`. -/
 private noncomputable def quotientEquiv [Module A Y] (hY : ∀ (a : A) (y : Y), a • y = π a • y) :
     (P ⧸ RingHom.ker π • (⊤ : Submodule A P)) ≃ₗ[A] Y :=
   (Submodule.quotEquivOfEq _ _ (Submodule.ext fun x ↦ (hfker x).symm :
-      RingHom.ker π • ⊤ = LinearMap.ker (toLinearMapOfCompHom hY f))).trans
-    ((toLinearMapOfCompHom hY f).quotKerEquivOfSurjective hf)
+      RingHom.ker π • ⊤ = LinearMap.ker (f.toLinearMapOfCompHom hY))).trans
+    ((f.toLinearMapOfCompHom hY).quotKerEquivOfSurjective hf)
 
 private theorem quotientEquiv_mk [Module A Y] (hY : ∀ (a : A) (y : Y), a • y = π a • y) (x : P) :
     quotientEquiv hf hfker hY (Submodule.Quotient.mk x) = f x :=
   rfl
+
+include hπ hf hfker in
+/-- **The reduction of a projective module is projective.** If `P` is a projective `A`-module and
+`f : P → Y` is a reduction of `P`, then `Y` is a projective `B`-module. This is
+`RingHom.projective_quotient_smul_top` for `I = ker π`, transported along `P ⧸ ker π • P ≃ Y`. -/
+theorem projective_of_reduction [Module.Projective A P] : Module.Projective B Y := by
+  let _ : Module A Y := Module.compHom Y π
+  let e := quotientEquiv hf hfker fun _ _ ↦ rfl
+  -- Give `P ⧸ ker π • P` the `B`-module structure of `Y`.
+  let _ : Module B (P ⧸ RingHom.ker π • (⊤ : Submodule A P)) := e.toAddEquiv.module B
+  have hL (b : B) (q : P ⧸ RingHom.ker π • (⊤ : Submodule A P)) : e (b • q) = b • e q :=
+    (e.toAddEquiv.linearEquiv B).map_smul b q
+  have := π.projective_quotient_smul_top hπ le_rfl fun a q ↦ e.injective <| by
+    rw [hL, e.map_smul]
+    -- `A` acts on `Y` through `π`.
+    rfl
+  exact .of_equiv (e.toAddEquiv.linearEquiv B)
 
 include hf hfker in
 /-- **Projective lifts are unique.** Two finitely generated projective `A`-modules with the same
@@ -190,12 +173,6 @@ private theorem eq_zero_of_isIdempotentElem_of_map_eq_zero [Module.Finite A P]
 variable {O : Type*} [CommRing O] [IsNoetherianRing O] (ϖ : O) [IsAdicComplete (Ideal.span {ϖ}) O]
   [Algebra O A] [Module.Finite O A]
 
-omit [IsNoetherianRing O] in
-/-- The kernel `ϖ A` of the reduction lies in the Jacobson radical of `A`. -/
-theorem span_algebraMap_le_jacobson : Ideal.span {algebraMap O A ϖ} ≤ Ring.jacobson A :=
-  Ideal.span_le.mpr <| Set.singleton_subset_iff.mpr <| Ring.algebraMap_mem_jacobson <|
-    IsAdicComplete.le_jacobson _ (Ideal.mem_span_singleton_self ϖ)
-
 include hf hfker in
 /-- An idempotent endomorphism of a reduction `Y` of a finitely generated projective `A`-module `P`
 is the reduction of an idempotent endomorphism of `P`. -/
@@ -208,7 +185,7 @@ private theorem exists_isIdempotentElem_map_eq [Module.Finite A P] [Module.Proje
   have : Module.Finite O P := .trans A P
   have : IsAdicComplete (Ideal.span {ϖ}) (Module.End A P) := .of_finite _ _
   let _ : Module A Y := Module.compHom Y π
-  let qA := restrictScalarsOfCompHom (A := A) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) q
+  let qA := q.restrictScalarsOfCompHom (R := A) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
   have hqA : IsIdempotentElem qA := LinearMap.ext fun y ↦ LinearMap.congr_fun hq y
   -- Transport `q` along `P ⧸ ϖ P ≃ Y` and lift it to an idempotent of `P`.
   let E := (Submodule.quotEquivOfEq _ _ (by rw [hker])).trans
@@ -220,8 +197,7 @@ private theorem exists_isIdempotentElem_map_eq [Module.Finite A P] [Module.Proje
   have h := congrArg (fun g ↦ E (g (Submodule.Quotient.mk x))) hee
   rw [Ideal.endMapQ_mk, hE] at h
   rw [h]
-  simp [LinearEquiv.conjRingEquiv, LinearEquiv.arrowCongrAddEquiv, hE, qA,
-    restrictScalarsOfCompHom]
+  simp [LinearEquiv.conjRingEquiv_apply_apply, hE, qA]
 
 include hπ hf hfker in
 /-- **Indecomposability is detected by reduction.** A finitely generated projective `A`-module `P`
@@ -241,12 +217,10 @@ theorem isIndecomposableModule_iff_of_reduction [Module.Finite A P] [Module.Proj
     rw [not_nontrivial_iff_subsingleton] at hY
     have htop : (⊤ : Submodule A P) ≤ Ring.jacobson A • ⊤ := fun x _ ↦
       Submodule.smul_mono_left hJ ((hfker x).mp (Subsingleton.elim _ _))
-    obtain ⟨x, x', hxx⟩ := hP
     have h := Submodule.FG.eq_bot_of_le_jacobson_smul Module.Finite.fg_top htop
-    have hx : x ∈ (⊥ : Submodule A P) := h ▸ Submodule.mem_top
-    have hx' : x' ∈ (⊥ : Submodule A P) := h ▸ Submodule.mem_top
-    rw [Submodule.mem_bot] at hx hx'
-    exact hxx (hx.trans hx'.symm)
+    have : Subsingleton P :=
+      (Submodule.subsingleton_iff A).mp (subsingleton_iff_bot_eq_top.mp h.symm)
+    exact not_nontrivial P hP
   · obtain ⟨e, he, hfe⟩ := exists_isIdempotentElem_map_eq hf hfker ϖ hker hq
     refine (hP e he).imp (fun h0 ↦ LinearMap.ext fun y ↦ ?_) fun h1 ↦ LinearMap.ext fun y ↦ ?_
     · obtain ⟨x, rfl⟩ := hf y
@@ -279,24 +253,6 @@ theorem isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top_of_
   rw [isIndecomposableModule_iff_of_reduction hπ hf hfker ϖ hker,
     isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top]
 
-omit [IsNoetherianRing O] [IsAdicComplete (Ideal.span {ϖ}) O] [Module.Finite O A] in
-/-- A vector over `A` is divisible by `ϖ` exactly when each of its coordinates reduces to `0`. -/
-private theorem mem_span_smul_top_pi_iff (hker : RingHom.ker π = Ideal.span {algebraMap O A ϖ})
-    {ι : Type*} {v : ι → A} :
-    v ∈ Ideal.span {algebraMap O A ϖ} • (⊤ : Submodule A (ι → A)) ↔ ∀ i, π (v i) = 0 := by
-  have hϖ : π (algebraMap O A ϖ) = 0 := by
-    rw [← RingHom.mem_ker, hker]
-    exact Ideal.mem_span_singleton_self _
-  rw [Submodule.mem_span_algebraMap_smul_iff]
-  simp only [Submodule.mem_top, true_and]
-  constructor
-  · rintro ⟨w, rfl⟩ i
-    rw [Pi.smul_apply, Algebra.smul_def, map_mul, hϖ, zero_mul]
-  · intro hv
-    have hv' (i : ι) : v i ∈ Ideal.span {algebraMap O A ϖ} := hker ▸ RingHom.mem_ker.mpr (hv i)
-    choose w hw using fun i ↦ Ideal.mem_span_singleton'.mp (hv' i)
-    exact ⟨w, funext fun i ↦ by rw [Pi.smul_apply, Algebra.smul_def, Algebra.commutes, hw]⟩
-
 include hπ in
 /-- **Projective `B`-modules lift.** For a surjection `π : A →+* B` with kernel `ϖ A`, every
 finitely generated projective `B`-module `Y` is the reduction of a finitely generated projective
@@ -324,17 +280,19 @@ theorem exists_projective_reduction_of_projective
     ⟨fun i ↦ Function.surjInv hπ (w i), funext fun i ↦ Function.surjInv_eq hπ (w i)⟩
   have hρker : Ideal.span {algebraMap O A ϖ} • (⊤ : Submodule A (Fin n → A)) = LinearMap.ker ρ := by
     ext v
-    exact (mem_span_smul_top_pi_iff ϖ hker).trans funext_iff.symm
+    rw [Submodule.mem_span_algebraMap_smul_top_pi_iff, ← hker, LinearMap.mem_ker, funext_iff]
+    -- `ρ v i` is `π (v i)` by definition.
+    rfl
   have : IsAdicComplete (Ideal.span {ϖ}) (Module.End A (Fin n → A)) := .of_finite _ _
   let E := (Submodule.quotEquivOfEq _ _ hρker).trans (ρ.quotKerEquivOfSurjective hρ)
   have hY (a : A) (y : Y) : a • y = π a • y := rfl
   have hB (a : A) (w : Fin n → B) : a • w = π a • w := rfl
-  let s' := restrictScalarsOfCompHom hB hY s
-  let t' := restrictScalarsOfCompHom hY hB t
+  let s' := s.restrictScalarsOfCompHom hB hY
+  let t' := t.restrictScalarsOfCompHom hY hB
   obtain ⟨X, hXp, ⟨g⟩⟩ := exists_projective_quotient_smul_top_linearEquiv ϖ
     (E.symm.toLinearMap ∘ₗ t') (s' ∘ₗ E.toLinearMap)
     (LinearMap.ext fun y ↦ by
-      simpa [s', t', restrictScalarsOfCompHom] using LinearMap.congr_fun hst y)
+      simpa [s', t'] using LinearMap.congr_fun hst y)
   have : IsNoetherian A (Fin n → A) := isNoetherian_of_tower O inferInstance
   refine ⟨n, X, inferInstance, hXp,
     { toFun x := g (Submodule.Quotient.mk x), map_add' x y := by simp,

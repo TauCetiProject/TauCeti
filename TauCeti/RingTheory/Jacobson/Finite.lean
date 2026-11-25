@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Jacobson.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
+public import Mathlib.RingTheory.AdicCompletion.Basic
 import Mathlib.RingTheory.Nakayama
 import Mathlib.RingTheory.FiniteType
 
@@ -24,6 +25,8 @@ injective. Hence `1 + y r` is a unit.
 
 * `TauCeti.Ring.algebraMap_mem_jacobson`: the image of an element of the Jacobson radical of `R`
   lies in the Jacobson radical of a module-finite `R`-algebra.
+* `TauCeti.span_algebraMap_le_jacobson`: if `R` is `ϖ`-adically complete then `ϖ A` lies in the
+  Jacobson radical of `A`.
 
 ## References
 
@@ -62,5 +65,14 @@ theorem algebraMap_mem_jacobson {r : R} (hr : r ∈ Ring.jacobson R) :
   exact Algebra.lmul_isUnit_iff.mp ((Module.End.isUnit_iff _).mpr hbij)
 
 end Ring
+
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] [Module.Finite R A]
+
+/-- **`ϖ A` lies in the Jacobson radical** of a module-finite algebra `A` over a ring that is
+`ϖ`-adically complete. -/
+theorem span_algebraMap_le_jacobson (ϖ : R) [IsAdicComplete (Ideal.span {ϖ}) R] :
+    Ideal.span {algebraMap R A ϖ} ≤ Ring.jacobson A :=
+  Ideal.span_le.mpr <| Set.singleton_subset_iff.mpr <| Ring.algebraMap_mem_jacobson <|
+    IsAdicComplete.le_jacobson _ (Ideal.mem_span_singleton_self ϖ)
 
 end TauCeti

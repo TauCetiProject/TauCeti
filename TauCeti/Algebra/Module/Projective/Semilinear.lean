@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
 # Lifting semilinear maps out of a projective module
@@ -26,6 +27,9 @@ homomorphism of possibly noncommutative rings preserves projectivity: an `S`-lin
   along surjective linear maps.
 * `Module.exists_surjective_projective_ker_of_semilinearEquiv`: a presentation with projective
   kernel transports along a semilinear equivalence.
+* `LinearMap.map_eq_zero_of_mem_ker_smul_top`: a map semilinear along `σ` kills `ker σ • P`.
+* `LinearMap.toLinearMapOfCompHom` and `LinearMap.restrictScalarsOfCompHom`: a semilinear map,
+  or a linear map, into modules on which `R` acts through `σ`, as an `R`-linear map.
 -/
 
 public section
@@ -81,3 +85,43 @@ theorem exists_surjective_projective_ker_of_semilinearEquiv {R R' : Type*} [Semi
       (PΦ.ofSubmodules _ _ hker').symm⟩
 
 end Module
+
+namespace LinearMap
+
+variable {R S : Type*} [Ring R] [Ring S] {σ : R →+* S} {P : Type*} [AddCommGroup P] [Module R P]
+  {M N : Type*} [AddCommGroup M] [Module S M] [AddCommGroup N] [Module S N]
+
+/-- A map semilinear along `σ` kills `ker σ • P`. -/
+theorem map_eq_zero_of_mem_ker_smul_top (h : P →ₛₗ[σ] M) {x : P}
+    (hx : x ∈ RingHom.ker σ • (⊤ : Submodule R P)) : h x = 0 :=
+  Submodule.smul_induction_on hx (fun r hr n _ ↦ by rw [h.map_smulₛₗ, hr, zero_smul])
+    fun x y hx hy ↦ by rw [map_add, hx, hy, add_zero]
+
+variable [Module R M] [Module R N]
+
+/-- A map semilinear along `σ` into a module on which `R` acts through `σ`, as an `R`-linear
+map. -/
+@[expose] def toLinearMapOfCompHom (g : P →ₛₗ[σ] M) (hM : ∀ (a : R) (m : M), a • m = σ a • m) :
+    P →ₗ[R] M where
+  toFun := g
+  map_add' := g.map_add
+  map_smul' a x := by rw [g.map_smulₛₗ, hM, RingHom.id_apply]
+
+@[simp]
+theorem coe_toLinearMapOfCompHom (g : P →ₛₗ[σ] M) (hM : ∀ (a : R) (m : M), a • m = σ a • m) :
+    ⇑(g.toLinearMapOfCompHom hM) = g :=
+  rfl
+
+/-- An `S`-linear map between modules on which `R` acts through `σ`, as an `R`-linear map. -/
+@[expose] def restrictScalarsOfCompHom (g : M →ₗ[S] N) (hM : ∀ (a : R) (m : M), a • m = σ a • m)
+    (hN : ∀ (a : R) (n : N), a • n = σ a • n) : M →ₗ[R] N where
+  toFun := g
+  map_add' := g.map_add
+  map_smul' a m := by rw [hM, hN, g.map_smul, RingHom.id_apply]
+
+@[simp]
+theorem coe_restrictScalarsOfCompHom (g : M →ₗ[S] N) (hM : ∀ (a : R) (m : M), a • m = σ a • m)
+    (hN : ∀ (a : R) (n : N), a • n = σ a • n) : ⇑(g.restrictScalarsOfCompHom hM hN) = g :=
+  rfl
+
+end LinearMap

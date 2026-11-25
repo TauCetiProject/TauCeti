@@ -114,6 +114,13 @@ private theorem exists_uniformizer : ∃ ϖ : O, IsAdicComplete (Ideal.span {ϖ}
   refine ⟨ϖ, hϖ.maximalIdeal_eq ▸ inferInstance, MonoidAlgebra.ker_mapRingHom_eq_span_algebraMap ?_⟩
   rw [IsLocalRing.ker_residue, hϖ.maximalIdeal_eq]
 
+omit [IsAdicComplete (IsLocalRing.maximalIdeal O) O] [Finite G] in
+/-- Reduction of coefficients `O[G] → k[G]` is surjective. -/
+private theorem mapRingHom_residue_surjective :
+    Function.Surjective (MonoidAlgebra.mapRingHom G (IsLocalRing.residue O)) := by
+  rw [MonoidAlgebra.coe_mapRingHom]
+  exact MonoidAlgebra.map_surjective _ IsLocalRing.residue_surjective
+
 variable {P : Type*} [AddCommGroup P] [Module (MonoidAlgebra O G) P]
   [Module.Finite (MonoidAlgebra O G) P] [Module.Projective (MonoidAlgebra O G) P]
   {Y : Type*} [AddCommGroup Y] [Module (MonoidAlgebra (IsLocalRing.ResidueField O) G) Y]
@@ -129,9 +136,7 @@ theorem isIndecomposableModule_iff_of_reduction_residue
     IsIndecomposableModule (MonoidAlgebra O G) P ↔
       IsIndecomposableModule (MonoidAlgebra (IsLocalRing.ResidueField O) G) Y := by
   obtain ⟨ϖ, _, hker⟩ := exists_uniformizer (O := O) (G := G)
-  refine isIndecomposableModule_iff_of_reduction ?_ hf hfker ϖ hker
-  rw [MonoidAlgebra.coe_mapRingHom]
-  exact MonoidAlgebra.map_surjective _ IsLocalRing.residue_surjective
+  exact isIndecomposableModule_iff_of_reduction mapRingHom_residue_surjective hf hfker ϖ hker
 
 omit [Module.Finite (MonoidAlgebra O G) P] [Module.Projective (MonoidAlgebra O G) P] in
 /-- **Projective `k[G]`-modules lift to `O[G]`.** For a complete discrete valuation ring `O` with
@@ -148,9 +153,7 @@ theorem exists_projective_reduction_residue_of_projective
           x ∈ RingHom.ker (MonoidAlgebra.mapRingHom G (IsLocalRing.residue O)) •
             (⊤ : Submodule (MonoidAlgebra O G) X) := by
   obtain ⟨ϖ, _, hker⟩ := exists_uniformizer (O := O) (G := G)
-  refine exists_projective_reduction_of_projective ?_ ϖ hker
-  rw [MonoidAlgebra.coe_mapRingHom]
-  exact MonoidAlgebra.map_surjective _ IsLocalRing.residue_surjective
+  exact exists_projective_reduction_of_projective mapRingHom_residue_surjective ϖ hker
 
 end GroupAlgebra
 
