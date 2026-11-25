@@ -8,15 +8,17 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Finiteness.Basic
-public import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
-# Finite generation and projectivity under restriction of scalars
+# Semilinear maps, finite generation and projectivity under restriction of scalars
 
 Restriction of scalars along a ring homomorphism `f : R →+* S` keeps the underlying abelian
 group of a module and only changes which ring acts on it. This file records when the two
-finiteness properties defining `K₀(proj R)` and `G₀(mod R)` survive it.
+finiteness properties defining `K₀(proj R)` and `G₀(mod R)` survive it. It also restricts a
+semilinear map along compatible coefficient maps to a linear map, or a linear equivalence
+when the original map is bijective.
 
 * Along a **surjective** ring homomorphism, finite generation is preserved and reflected: every
   scalar of `S` is the image of a scalar of `R`, so the `S`-span and the `R`-span of a set
@@ -35,8 +37,14 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
 
 ## Main definitions
 
+* `ModuleCat.restrictScalarsLinearMap`: a semilinear map viewed linearly after
+  restriction along compatible coefficient homomorphisms.
+* `ModuleCat.restrictScalarsLinearEquivOfBijective`: a bijective semilinear map viewed as a
+  linear equivalence after restriction along compatible coefficient homomorphisms.
 * `RingHom.restrictScalarsSemilinearMap`: the identity of a module, as a semilinear map from its
   restriction of scalars.
+* `RingEquiv.restrictScalarsSemilinearEquiv`: the identity of a module, as a semilinear
+  equivalence from its restriction of scalars along a ring isomorphism.
 * `RingHom.finiteModulesRestrictScalars`: restriction of scalars along a finite ring
   homomorphism, as a functor between the categories of finitely generated modules.
 * `RingHom.finiteModulesRestrictScalarsCompιIso`: the underlying module of an image under
@@ -60,6 +68,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   scalars along a ring isomorphism.
 * `Function.Exact.smul_mem_range`: if `P → Q → M` is exact with `M` a module with scalars
   restricted along `φ`, then every scalar killed by `φ` multiplies `Q` into the image of `P`.
+* `ModuleCat.preservesColimitsOfShape_restrictScalars`: restriction of scalars preserves colimits
+  of any shape that exist in `AddCommGrpCat`, with independent ring and module universes.
 -/
 
 public section
@@ -146,7 +156,7 @@ theorem projective_restrictScalars_of_projective (f : R →+* S)
   have : IsScalarTower R S M := ⟨fun r s m ↦ mul_smul (f r) s m⟩
   -- Elaborated before being matched against the goal, so that the `R`-module structure of `M`
   -- is the local one carrying the scalar tower; the goal's is defeq but not syntactically equal.
-  have hRM : Module.Projective R M := Module.Projective.trans S M
+  have hRM : Module.Projective R M := Module.Projective.trans R S M
   exact hRM
 
 /-- **Restriction of scalars on finitely generated modules.** A ring homomorphism
@@ -183,19 +193,49 @@ end RingHom
 
 namespace RingEquiv
 
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
+/-- The identity map of an `S`-module `M`, as an `e`-semilinear equivalence from `M` with scalars
+restricted along `e : R ≃+* S` to `M` itself. The underlying additive group of
+`(ModuleCat.restrictScalars (e : R →+* S)).obj M` is `M`, and `map_smul'` is
+`ModuleCat.restrictScalars.smul_def`. -/
+def restrictScalarsSemilinearEquiv (e : R ≃+* S) (M : ModuleCat.{v} S) :
+    (ModuleCat.restrictScalars (e : R →+* S)).obj M ≃ₛₗ[(e : R →+* S)] M where
+  toFun m := m
+  invFun m := m
+  map_add' _ _ := rfl
+  map_smul' r m := ModuleCat.restrictScalars.smul_def (e : R →+* S) r m
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
+@[simp]
+theorem restrictScalarsSemilinearEquiv_toLinearMap (e : R ≃+* S) (M : ModuleCat.{v} S) :
+    (e.restrictScalarsSemilinearEquiv M).toLinearMap =
+      (e : R →+* S).restrictScalarsSemilinearMap M :=
+  (rfl)
+
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
+@[simp]
+theorem restrictScalarsSemilinearEquiv_apply (e : R ≃+* S) (M : ModuleCat.{v} S)
+    (m : (ModuleCat.restrictScalars (e : R →+* S)).obj M) :
+    e.restrictScalarsSemilinearEquiv M m = m :=
+  (rfl)
+
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
+@[simp]
+theorem restrictScalarsSemilinearEquiv_symm_apply (e : R ≃+* S) (M : ModuleCat.{v} S)
+    (m : M) :
+    (e.restrictScalarsSemilinearEquiv M).symm m = m :=
+  (rfl)
+
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
 /-- **Projectivity along a ring isomorphism.** Restricting scalars along a ring isomorphism
 preserves and reflects projectivity: the identity is a semilinear equivalence between the two
 module structures, and projectivity transports along semilinear equivalences. -/
 theorem projective_restrictScalars_iff (e : R ≃+* S) (M : ModuleCat.{v} S) :
-    Module.Projective R ((ModuleCat.restrictScalars e.toRingHom).obj M) ↔
+    Module.Projective R ((ModuleCat.restrictScalars (e : R →+* S)).obj M) ↔
       Module.Projective S M := by
-  have : RingHomInvPair e.toRingHom e.symm.toRingHom := RingHomInvPair.of_ringEquiv e
-  have : RingHomInvPair e.symm.toRingHom e.toRingHom := RingHomInvPair.of_ringEquiv_symm e
-  let φ : (ModuleCat.restrictScalars e.toRingHom).obj M ≃ₛₗ[e.toRingHom] M :=
-    { e.toRingHom.restrictScalarsSemilinearMap M with
-      invFun := fun m ↦ m
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
+  let φ := e.restrictScalarsSemilinearEquiv M
   exact ⟨fun _ ↦ Module.Projective.of_equiv φ, fun _ ↦ Module.Projective.of_equiv φ.symm⟩
 
 end RingEquiv
@@ -217,6 +257,70 @@ theorem smul_mem_range {P Q : Type*} [AddCommGroup P] [Module R P] [AddCommGroup
 end Function.Exact
 
 namespace ModuleCat
+
+section SemilinearMap
+
+variable {R₀ : Type*} {S₁ : Type*} {S₂ : Type*} [Ring R₀] [Ring S₁] [Ring S₂]
+  (f₁ : R₀ →+* S₁) (f₂ : R₀ →+* S₂) {σ : S₁ →+* S₂}
+  {M₁ : ModuleCat.{v} S₁} {M₂ : ModuleCat.{u} S₂}
+  (g : M₁ →ₛₗ[σ] M₂) (hσ : ∀ r, σ (f₁ r) = f₂ r)
+
+/-- A semilinear map becomes linear after restricting both scalar actions along compatible
+ring homomorphisms. Its underlying function is unchanged. -/
+def restrictScalarsLinearMap :
+    (restrictScalars f₁).obj M₁ →ₗ[R₀] (restrictScalars f₂).obj M₂ where
+  toFun := g
+  map_add' := g.map_add
+  map_smul' r x := by
+    rw [restrictScalars.smul_def, RingHom.id_apply, restrictScalars.smul_def']
+    exact (g.map_smulₛₗ (f₁ r) x).trans (by rw [hσ])
+
+/-- Restriction of scalars preserves the chosen map. This remains a named rewrite to preserve
+bundled maps in expressions where their generic laws apply. -/
+theorem restrictScalarsLinearMap_apply (x) :
+    restrictScalarsLinearMap f₁ f₂ g hσ x = g x := (rfl)
+
+/-- A bijective semilinear map becomes a linear equivalence after restricting both scalar
+actions along compatible ring homomorphisms. The source and target retain the native
+`ModuleCat.restrictScalars` carriers; no inverse coefficient homomorphism is needed. -/
+noncomputable def restrictScalarsLinearEquivOfBijective (hg : Function.Bijective g) :
+    (restrictScalars f₁).obj M₁ ≃ₗ[R₀] (restrictScalars f₂).obj M₂ :=
+  LinearEquiv.ofBijective (restrictScalarsLinearMap f₁ f₂ g hσ) hg
+
+/-- The restricted linear equivalence has the original semilinear map as its underlying
+function. This remains a named rewrite so generic equivalence inverse laws still simplify. -/
+theorem restrictScalarsLinearEquivOfBijective_apply (hg : Function.Bijective g) (x) :
+    restrictScalarsLinearEquivOfBijective f₁ f₂ g hσ hg x = g x :=
+  (LinearEquiv.ofBijective_apply (restrictScalarsLinearMap f₁ f₂ g hσ) x).trans
+    (restrictScalarsLinearMap_apply f₁ f₂ g hσ x)
+
+/-- The inverse restricted equivalence cancels the original semilinear map. -/
+@[simp]
+theorem restrictScalarsLinearEquivOfBijective_symm_apply_apply (hg : Function.Bijective g)
+    (x : (restrictScalars f₁).obj M₁) :
+    (restrictScalarsLinearEquivOfBijective f₁ f₂ g hσ hg).symm (g x) = x := by
+  rw [← restrictScalarsLinearEquivOfBijective_apply f₁ f₂ g hσ hg x]
+  exact (restrictScalarsLinearEquivOfBijective f₁ f₂ g hσ hg).symm_apply_apply x
+
+/-- The original semilinear map cancels the inverse restricted equivalence. The native target
+carrier keeps this equation compatible with the semilinear map in importing modules. -/
+@[simp]
+theorem apply_restrictScalarsLinearEquivOfBijective_symm_apply (hg : Function.Bijective g)
+    (y : M₂) :
+    g ((restrictScalarsLinearEquivOfBijective f₁ f₂ g hσ hg).symm y) = y :=
+  (restrictScalarsLinearEquivOfBijective_apply f₁ f₂ g hσ hg _).symm.trans
+    ((restrictScalarsLinearEquivOfBijective f₁ f₂ g hσ hg).apply_symm_apply y)
+
+end SemilinearMap
+
+/-- Restriction of scalars preserves colimits of any shape that exist in `AddCommGrpCat.{v}`,
+with no constraint between the ring universes and the module universe `v`. -/
+instance preservesColimitsOfShape_restrictScalars
+    {J : Type*} [Category* J] [Limits.HasColimitsOfShape J AddCommGrpCat.{v}] (f : R →+* S) :
+    Limits.PreservesColimitsOfShape J (restrictScalars.{v} f) :=
+  ⟨fun {_} ↦ inferInstance⟩
+
+section Algebra
 
 variable {R : Type u₁} {S : Type u₂} [CommRing R] [Ring S] [Algebra R S]
 
@@ -253,6 +357,8 @@ theorem restrictScalarsAlgebraMapIso_inv_apply (M : Type v) [AddCommGroup M] [Mo
     [Module S M] [IsScalarTower R S M] (m : M) :
     (restrictScalarsAlgebraMapIso (R := R) (S := S) M).inv m = m :=
   (rfl)
+
+end Algebra
 
 section OpOp
 

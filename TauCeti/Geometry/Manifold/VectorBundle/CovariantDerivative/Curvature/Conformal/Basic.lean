@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.AddOneForm
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Conformal
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Cotton
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Hessian
@@ -338,7 +338,7 @@ private theorem mvfderiv_schoutenTensor_sub_hessian_add [T2Space M] {φ : M → 
   have hP := (CovariantDerivative.leviCivitaConnection I M).mdifferentiableAt_schoutenTensor_apply
     hXx hWx
   have hH : MDiffAt (fun y ↦ hessian I φ y (X y) (W y)) x := by
-    simp only [hessian_def]
+    simp only [I.hessian_eq_inner_leviCivitaConnection_mgradient]
     exact mdifferentiableAt_inner
       (((CovariantDerivative.leviCivitaConnection I M).contMDiff_apply hX hG).mdifferentiableAt
         (by simp)) hWx
@@ -369,7 +369,8 @@ private theorem mvfderiv_schoutenTensor_sub_hessian_add [T2Space M] {φ : M → 
   simp only [add_apply, sub_apply, smul_apply, smul_eq_mul, zero_apply, hGV, hXW,
     hessian_apply_eq_mvfderiv_sub x hφ2.contMDiffAt V X hXx,
     hessian_apply_eq_mvfderiv_sub x hφ2.contMDiffAt V W hWx]
-  rw [hessian_def, real_inner_comm (mgradient I φ x), real_inner_self_eq_norm_sq]
+  rw [I.hessian_eq_inner_leviCivitaConnection_mgradient, real_inner_comm (mgradient I φ x),
+    real_inner_self_eq_norm_sq]
   ring
 
 end TauCeti.Manifold
@@ -476,16 +477,17 @@ theorem ricciTensor_leviCivitaConnection_rescale
     rw [b.sum_inner_self, Fintype.card_fin, TauCeti.finrank_tangentSpace]
   have hΔ : ∑ i, ⟪b i, CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x (b i)⟫ =
       laplaceBeltrami I φ x := by
-    simp only [laplaceBeltrami_eq_sum_hessian I φ x b, hessian_def, real_inner_comm]
+    simp only [laplaceBeltrami_eq_sum_hessian I φ x b,
+      I.hessian_eq_inner_leviCivitaConnection_mgradient, real_inner_comm]
   have hH₁ : ∑ i, hessian I φ x (b i) v * ⟪b i, u⟫ = hessian I φ x u v := by
-    simpa only [hessian_def, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
-      innerSL_apply_apply] using
+    simpa only [I.hessian_eq_inner_leviCivitaConnection_mgradient, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.flip_apply, innerSL_apply_apply] using
       b.sum_apply_mul_inner (((innerSL ℝ).flip v).comp
         (CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x)) u
   have hH₂ : ∑ i, ⟪b i, v⟫ *
       ⟪b i, CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x u⟫ =
       hessian I φ x u v := by
-    rw [hsum, real_inner_comm, hessian_def]
+    rw [hsum, real_inner_comm, I.hessian_eq_inner_leviCivitaConnection_mgradient]
   have hP₁ : ∑ i, mvfderiv I φ x (b i) * mvfderiv I φ x v * ⟪b i, u⟫ =
       mvfderiv I φ x u * mvfderiv I φ x v := by
     simp only [mul_right_comm _ (mvfderiv I φ x v), ← Finset.sum_mul, b.sum_apply_mul_inner]
@@ -634,7 +636,7 @@ theorem weylTensor_leviCivitaConnection_rescale
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   have hH (a b : TangentSpace I x) : g.inner x
       (CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a) b = hessian I φ x a b :=
-    (hessian_def I φ x a b).symm
+    (I.hessian_eq_inner_leviCivitaConnection_mgradient φ x a b).symm
   have hd (b : TangentSpace I x) : g.inner x (mgradient I φ x) b = mvfderiv I φ x b :=
     inner_mgradient b
   simp only [map_add, map_sub, map_smul, add_apply, sub_apply, smul_apply, smul_eq_mul, hH, hd]
@@ -702,7 +704,8 @@ private theorem cottonTensor_leviCivitaConnection_rescale_of_three_le
   -- normalize the order of the arguments of the symmetric tensors, and compare.
   simp only [CovariantDerivative.weylTensor_apply, CovariantDerivative.riemannCurvatureTensor_apply,
     LinearMap.BilinForm.kulkarniNomizu_apply, innerₗ_apply_apply,
-    conformalConnectionTensor_exp_two_mul_apply, hessian_def] at hR ⊢
+    conformalConnectionTensor_exp_two_mul_apply,
+    I.hessian_eq_inner_leviCivitaConnection_mgradient] at hR ⊢
   simp only [map_add, map_sub, map_smul, smul_eq_mul, inner_add_left, inner_add_right,
     inner_sub_left, inner_sub_right, inner_smul_left, inner_smul_right, LinearMap.add_apply,
     LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.neg_apply, inner_neg_left,
@@ -710,7 +713,9 @@ private theorem cottonTensor_leviCivitaConnection_rescale_of_three_le
   have hH (a b : TangentSpace I x) :
       ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a, b⟫ =
         ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x b, a⟫ := by
-    rw [← hessian_def, ← hessian_def, hessian_symm x (hφ.of_le (by simp)).contMDiffAt]
+    rw [← I.hessian_eq_inner_leviCivitaConnection_mgradient,
+      ← I.hessian_eq_inner_leviCivitaConnection_mgradient,
+      hessian_symm x (hφ.of_le (by simp)).contMDiffAt]
   have hdG (a : TangentSpace I x) :
       mvfderiv I φ x (CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a) =
         ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a, mgradient I φ x⟫ :=

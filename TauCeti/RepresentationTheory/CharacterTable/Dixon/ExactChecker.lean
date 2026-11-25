@@ -33,6 +33,10 @@ same proof serves both the integer-valued stage and the exact cyclotomic stage.
   maps to the complex character-table specification under any star-preserving ring homomorphism.
 * `TauCeti.ClassData.IsExactCharacterTableSpec.sum_characterDegree_eq_sum_degree`: its supplied
   degree vector sums to the character degrees of the group.
+* `TauCeti.ClassData.IsExactCharacterTableSpec.exists_equiv_characterTable`: the rows of the
+  character table, numbered along a certified exact table, with their values and degrees.
+* `TauCeti.ClassData.IsExactCharacterTableSpec.irreducibleCharacters_eq_range`: the irreducible
+  characters are the mapped rows of a certified exact table, read through the class numbering.
 * `TauCeti.ClassData.IsExactCharacterTableSpec.map_central_injective`: central rows remain
   distinct under maps to rings without zero divisors in which the group order is nonzero.
 
@@ -235,12 +239,8 @@ theorem centralCharacterRow_reindexTableOfMap (f : R →+* ℂ)
   rw [d.equivConjClasses_apply]
   have hdeg : (degree i' : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (h.degree_pos i').ne'
   have hconvert := congrArg f (h.degree_mul_central i' j)
-  have htable (k : Fin d.numClasses) :
-      d.reindexTableOfMap f table i (d.classOf k) = f (table i' k) := by
-    rw [← (finCongr d.numClasses_eq_card_conjClasses).apply_symm_apply i,
-      d.reindexTableOfMap_apply_classOf]
-  rw [centralCharacterRow_apply, htable j, ← d.classOf_index (1 : G),
-    htable (d.index 1), h.table_index_one, map_natCast, d.reindexModularRow_classOf,
+  rw [centralCharacterRow_apply, d.reindexTableOfMap_classOf, ← d.classOf_index (1 : G),
+    d.reindexTableOfMap_classOf, h.table_index_one, map_natCast, d.reindexModularRow_classOf,
     ← d.card_classFinset]
   apply (div_eq_iff hdeg).2
   simpa only [map_mul, map_natCast, mul_comm] using hconvert.symm
@@ -257,17 +257,9 @@ private theorem row_orthonormal_reindexTableOfMap (f : R →+* ℂ)
   let j' := (finCongr d.numClasses_eq_card_conjClasses).symm j
   have hsum := congrArg f (h.row_orthogonal i' j')
   have hG : (Fintype.card G : ℂ) ≠ 0 := by exact_mod_cast Fintype.card_pos.ne'
-  have htable_i (k : Fin d.numClasses) :
-      d.reindexTableOfMap f table i (d.classOf k) = f (table i' k) := by
-    rw [← (finCongr d.numClasses_eq_card_conjClasses).apply_symm_apply i,
-      d.reindexTableOfMap_apply_classOf]
-  have htable_j (k : Fin d.numClasses) :
-      d.reindexTableOfMap f table j (d.classOf k) = f (table j' k) := by
-    rw [← (finCongr d.numClasses_eq_card_conjClasses).apply_symm_apply j,
-      d.reindexTableOfMap_apply_classOf]
   simp only [Nat.card_eq_fintype_card]
   rw [← d.equivConjClasses.sum_comp]
-  simp only [d.equivConjClasses_apply, htable_i, htable_j, starRingEnd_apply]
+  simp only [d.equivConjClasses_apply, d.reindexTableOfMap_classOf, starRingEnd_apply]
   have hsum' :
       (∑ k, (Fintype.card (d.classOf k).carrier : ℂ) * f (table i' k) *
           star (f (table j' k))) =
@@ -294,9 +286,8 @@ theorem isCharacterTableSpec (f : R →+* ℂ) (hf : ∀ x, f (conj x) = star (f
   exists_degree i := by
     let i' := (finCongr d.numClasses_eq_card_conjClasses).symm i
     refine ⟨degree i', h.degree_pos i', ?_, ?_⟩
-    · rw [← d.classOf_index (1 : G),
-        ← (finCongr d.numClasses_eq_card_conjClasses).apply_symm_apply i,
-        d.reindexTableOfMap_apply_classOf, h.table_index_one, map_natCast]
+    · rw [← d.classOf_index (1 : G), d.reindexTableOfMap_classOf, h.table_index_one,
+        map_natCast]
     · simpa only [Nat.card_eq_fintype_card] using h.degree_dvd i'
   sum_degree_sq := by
     rw [@Nat.card_eq_fintype_card G, ← h.sum_degree_sq,
@@ -324,6 +315,37 @@ theorem sum_characterDegree_eq_sum_degree (f : R →+* ℂ)
   have key := (h.isCharacterTableSpec f hf).sum_apply_mk_one_eq_sum_characterDegree
   rw [hcol] at key
   exact_mod_cast key.symm
+
+/-- **The rows of a certified exact table are the irreducible characters** of `G`: for a
+star-preserving ring homomorphism `f` to `ℂ`, the irreducible complex characters are exactly the
+functions `g ↦ f (table i (d.index g))`. -/
+theorem irreducibleCharacters_eq_range (f : R →+* ℂ) (hf : ∀ x, f (conj x) = star (f x)) :
+    irreducibleCharacters ℂ G = Set.range fun i g => f (table i (d.index g)) := by
+  rw [(h.isCharacterTableSpec f hf).irreducibleCharacters_eq_range,
+    ← (finCongr d.numClasses_eq_card_conjClasses).surjective.range_comp]
+  simp [Function.comp_def, ClassData.equivConjClasses_symm_apply]
+
+/-- **The rows of the character table, numbered along a certified exact table**: for a
+star-preserving ring homomorphism `f` to `ℂ`, some bijection `τ` from the numbering of `d` to the
+rows of `TauCeti.characterTable` sends each row `j` of `table` to a row of the character table whose
+value at `g` is `f (table j (d.index g))` and whose degree is `degree j`. -/
+theorem exists_equiv_characterTable (f : R →+* ℂ) (hf : ∀ x, f (conj x) = star (f x)) :
+    ∃ τ : Fin d.numClasses ≃ Fin (Nat.card (ConjClasses G)),
+      (∀ j g, characterTable ℂ G (τ j) (ConjClasses.mk g) = f (table j (d.index g))) ∧
+        ∀ j, characterDegree ℂ (τ j) = degree j := by
+  obtain ⟨σ, hσ⟩ := characterTable_unique_rows (h.isCharacterTableSpec f hf)
+  let τ := (finCongr d.numClasses_eq_card_conjClasses).trans σ
+  have hval (j : Fin d.numClasses) (g : G) :
+      characterTable ℂ G (τ j) (ConjClasses.mk g) = f (table j (d.index g)) := by
+    have hj : d.reindexTableOfMap f table (finCongr d.numClasses_eq_card_conjClasses j)
+          (d.classOf (d.index g)) =
+        (characterTable ℂ G).submatrix σ id (finCongr d.numClasses_eq_card_conjClasses j)
+          (d.classOf (d.index g)) := by
+      rw [hσ]
+    rw [d.reindexTableOfMap_apply_classOf, Matrix.submatrix_apply, id_eq, d.classOf_index] at hj
+    rw [hj, Equiv.trans_apply]
+  refine ⟨τ, hval, fun j => Nat.cast_injective (R := ℂ) ?_⟩
+  rw [← characterTable_one, hval, h.table_index_one, map_natCast]
 
 end IsExactCharacterTableSpec
 

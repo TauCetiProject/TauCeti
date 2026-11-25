@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Coordinates
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Christoffel
 public import Mathlib.Topology.Instances.Matrix
 import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -153,6 +153,13 @@ theorem riemannOfJet_def (g : Matrix ι ι ℝ) (dg : ι → ι → ι → ℝ) 
         ∑ m, (christoffelOfJet g dg j k m * christoffelOfJet g dg i m l -
           christoffelOfJet g dg i k m * christoffelOfJet g dg j m l) :=
   (rfl)
+
+/-- The curvature coefficients of a coordinate jet vanish when the two differentiation indices
+agree. -/
+@[simp]
+theorem riemannOfJet_self (g : Matrix ι ι ℝ) (dg : ι → ι → ι → ℝ) (ddg : ι → ι → ι → ι → ℝ)
+    (i k l : ι) : riemannOfJet g dg ddg i i k l = 0 := by
+  simp [riemannOfJet_def]
 
 /-- The **scalar curvature of a coordinate jet** `(g, ∂g, ∂²g)`: the contraction
 `Σⱼₖ g^(jk) Σᵢ Rⁱᵢⱼₖ` of the curvature coefficients `riemannOfJet` against the inverse of the
@@ -485,9 +492,9 @@ theorem scalarCurvature_eq_scalarCurvatureOfJet (hy : y ∈ (extChartAt I x₀).
     -- `T_y M` is `g.toRiemannianMetric` applied to the two vectors, by definition.
     rfl
   rw [scalarCurvature_def, CovariantDerivative.scalarCurvature_apply,
-    TauCeti.bilinFormTrace_eq_sum_inv_gram _ B, hgram, scalarCurvatureOfJet]
+    LinearMap.BilinMap.metricTrace_eq_sum_inv_gram _ B, hgram, scalarCurvatureOfJet]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [CovariantDerivative.ricciTensor_eq_sum _ y B]
+  rw [smul_eq_mul, CovariantDerivative.ricciTensor_eq_sum _ y B]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have : IsManifold I (1 + 1) M := IsManifold.of_le (n := ∞) (by simp)

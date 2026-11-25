@@ -18,8 +18,9 @@ This file shows that compact subsets of such a colimit cannot spread over infini
 and that the final topology is compactly generated as soon as the stages are.
 
 * In the colimit of any diagram of `T1` spaces, a set whose preimage in every stage is finite is
-  closed (`TauCeti.TopCat.isClosed_of_forall_finite_preimage`); since the same holds for all of
-  its subsets, it is discrete (`TauCeti.TopCat.isDiscrete_of_forall_finite_preimage`).
+  closed (`CategoryTheory.Limits.IsColimit.isClosed_of_forall_finite_preimage`), and since the
+  same holds for all of its subsets, it is discrete
+  (`TauCeti.TopCat.isDiscrete_of_forall_finite_preimage`).
 * For a sequence of `T1` spaces along injective maps, every compact subset of the colimit lies in
   the image of one stage (`TauCeti.TopCat.exists_subset_range_ι_of_isCompact`). If the maps from
   the stages to the colimit are embeddings, every continuous map from a compact space into the
@@ -58,17 +59,11 @@ section Colimit
 variable {J : Type w} [Category.{w'} J] {F : J ⥤ TopCat.{u}} {c : Cocone F}
 
 /-- In the colimit of a diagram of `T1` spaces in `TopCat`, a set meeting every stage in
-finitely many points is closed. -/
-theorem isClosed_of_forall_finite_preimage [∀ j, T1Space (F.obj j)] (hc : IsColimit c)
-    {S : Set c.pt} (hS : ∀ j, (c.ι.app j ⁻¹' S).Finite) : IsClosed S :=
-  (TopCat.isClosed_iff_of_isColimit _ hc S).2 fun j ↦ (hS j).isClosed
-
-/-- In the colimit of a diagram of `T1` spaces in `TopCat`, a set meeting every stage in
 finitely many points is discrete. -/
 theorem isDiscrete_of_forall_finite_preimage [∀ j, T1Space (F.obj j)] (hc : IsColimit c)
     {S : Set c.pt} (hS : ∀ j, (c.ι.app j ⁻¹' S).Finite) : IsDiscrete S :=
   isDiscrete_iff_forall_mem_exists_isClosed.2 fun t ht ↦
-    ⟨t, isClosed_of_forall_finite_preimage hc fun j ↦ (hS j).subset (preimage_mono ht),
+    ⟨t, hc.isClosed_of_forall_finite_preimage fun j ↦ (hS j).subset (preimage_mono ht),
       inter_eq_left.2 ht⟩
 
 /-- A colimit of compactly generated spaces in `TopCat` is compactly generated. -/
@@ -90,20 +85,13 @@ theorem exists_subset_range_ι_of_isCompact
     [∀ n, T1Space (F.obj n)] (hc : IsColimit c) {K : Set c.pt} (hK : IsCompact K) :
     ∃ n, K ⊆ range (c.ι.app n) := by
   by_contra! h
-  have hmono {m n : ℕ} (hmn : m ≤ n) : range (c.ι.app m) ⊆ range (c.ι.app n) := by
-    rw [← c.w (homOfLE hmn), TopCat.coe_comp]
-    exact range_comp_subset_range _ _
-  have hcover (p : c.pt) : ∃ n, p ∈ range (c.ι.app n) := by
-    obtain ⟨n, y, rfl⟩ :=
-      Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) p
-    exact ⟨n, y, rfl⟩
   -- For each stage `n`, a point `pt n` of `K` outside stage `n`, and a stage `next n` containing
-  -- it; necessarily `n < next n`.
+  -- it, as the stages cover the colimit; necessarily `n < next n`.
   choose pt hptK hpt using fun n ↦ not_subset.1 (h n)
-  choose next hnext using fun n ↦ hcover (pt n)
+  choose next hnext using fun n ↦ iUnion_eq_univ_iff.1 (iUnion_range_ι_of_isColimit hc) (pt n)
   have hlt (n : ℕ) : n < next n := by
     by_contra! hle
-    exact hpt n (hmono hle (hnext n))
+    exact hpt n (monotone_range_ι c hle (hnext n))
   -- Iterating `next` gives strictly increasing stages `idx k`, and points `x k` outside stage
   -- `idx k` but inside stage `idx (k + 1)`.
   let idx (k : ℕ) : ℕ := next^[k] 0
@@ -112,18 +100,18 @@ theorem exists_subset_range_ι_of_isCompact
   let x (k : ℕ) : c.pt := pt (idx k)
   have hx {k n : ℕ} (hk : x k ∈ range (c.ι.app n)) : idx k < n := by
     by_contra! hle
-    exact hpt _ (hmono hle hk)
+    exact hpt _ (monotone_range_ι c hle hk)
   have hle {j k : ℕ} (hjk : x j = x k) : k ≤ j :=
     Nat.lt_succ_iff.1 <| hidx.lt_iff_lt.1 <| hx <| hjk ▸ hidx_succ j ▸ hnext (idx j)
   have hinj : Function.Injective x := fun j k hjk ↦ le_antisymm (hle hjk.symm) (hle hjk)
   -- Stage `n` meets the points `x k` only for `k < n`, so their set is closed and discrete.
   have hfin (n : ℕ) : (c.ι.app n ⁻¹' range x).Finite := by
     refine (((finite_Iio n).image x).preimage
-      (injective_ι_of_isColimit hF hc n).injOn).subset ?_
+      (injective_ι_of_isColimit (fun _ _ f ↦ hF (leOfHom f)) hc n).injOn).subset ?_
     rintro y ⟨k, hk⟩
     exact ⟨k, (hidx.id_le k).trans_lt (hx ⟨y, hk.symm⟩), hk⟩
   have hcpt : IsCompact (range x) :=
-    hK.of_isClosed_subset (isClosed_of_forall_finite_preimage hc hfin)
+    hK.of_isClosed_subset (hc.isClosed_of_forall_finite_preimage hfin)
       (range_subset_iff.2 fun k ↦ hptK _)
   exact infinite_range_of_injective hinj
     (hcpt.finite (isDiscrete_of_forall_finite_preimage hc hfin))

@@ -157,7 +157,7 @@ variable (K) in
 /-- **Termwise integration of Puiseux series**, `t ^ q ↦ t ^ (q + 1) / (q + 1)`, discarding the
 residue term `t⁻¹`: the restriction of `TauCeti.ratHahnSeriesPrimitive K`. -/
 noncomputable def primitive : puiseuxField K →ₗ[K] puiseuxField K where
-  toFun x := ⟨ratHahnSeriesPrimitive K x, ratHahnSeriesPrimitive_mem_puiseuxField x.2⟩
+  toFun x := ⟨ratHahnSeriesPrimitive K x, ratHahnSeriesPrimitive_mem_puiseuxField x.property⟩
   map_add' x y := Subtype.ext ((ratHahnSeriesPrimitive K).map_add x y)
   map_smul' c x := Subtype.ext <| by
     -- The scalar action of `K` on the Puiseux field is multiplication by the image of `K`, which
@@ -238,12 +238,16 @@ theorem primitive_levelEmbedding (n : ℕ+) (f : K⸨X⸩) :
   by_cases hq : q.den ∣ n
   · obtain ⟨k, rfl⟩ := (Rat.den_dvd_iff_exists_eq_intCast_div n.ne_zero).mp hq
     have hn : (n : ℚ) ≠ 0 := by exact_mod_cast n.ne_zero
+    -- The shifted exponent `k / n - 1`, written as an integer over `n`, so that
+    -- `coeff_ramifiedEmbedding_intCast_div` reads off its coefficient.
     have hk : (k : ℚ) / n - 1 = ((k - n : ℤ) : ℚ) / n := by
       push_cast
       field_simp
-    rw [coeff_ratHahnSeriesPrimitive, hk, coeff_ramifiedEmbedding_intCast_div,
-      coeff_ramifiedEmbedding_intCast_div, coeff_laurentSeriesPrimitive, coeff_single_mul,
-      show k - 1 - ((n : ℤ) - 1) = k - n by ring, Rat.smul_def, inv_div]
+    -- Both sides are rational multiples of the coefficient `f.coeff (k - n)`.
+    simp only [coeff_ratHahnSeriesPrimitive, hk, coeff_ramifiedEmbedding_intCast_div,
+      coeff_laurentSeriesPrimitive, coeff_single_mul, sub_sub_sub_cancel_right, Rat.smul_def,
+      inv_div]
+    -- It remains to compare the scalars `n / k` and `k⁻¹ * n` in `K`.
     push_cast
     ring
   · rw [coeff_ramifiedEmbedding_of_not_den_dvd n _ hq, coeff_ratHahnSeriesPrimitive,

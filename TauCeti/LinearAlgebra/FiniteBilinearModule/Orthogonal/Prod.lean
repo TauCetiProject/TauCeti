@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import TauCeti.LinearAlgebra.Quotient.Prod
 
 /-!
@@ -129,7 +129,7 @@ orthogonal to `H`. -/
 def orthogonalComplementProdFst (H : AddSubgroup A) (K : AddSubgroup B) :
     (A.prod B).orthogonalComplement (H.prod K) →+ A.orthogonalComplement H where
   toFun x := ⟨(x : A.carrier × B.carrier).1,
-    ((A.mem_orthogonalComplement_prod_iff B H K x).mp x.2).1⟩
+    ((A.mem_orthogonalComplement_prod_iff B H K x).mp x.property).1⟩
   map_zero' := rfl
   map_add' _ _ := rfl
 
@@ -138,7 +138,7 @@ orthogonal to `K`. -/
 def orthogonalComplementProdSnd (H : AddSubgroup A) (K : AddSubgroup B) :
     (A.prod B).orthogonalComplement (H.prod K) →+ B.orthogonalComplement K where
   toFun x := ⟨(x : A.carrier × B.carrier).2,
-    ((A.mem_orthogonalComplement_prod_iff B H K x).mp x.2).2⟩
+    ((A.mem_orthogonalComplement_prod_iff B H K x).mp x.property).2⟩
   map_zero' := rfl
   map_add' _ _ := rfl
 
@@ -162,7 +162,7 @@ private def orthogonalComplementProdEquiv (H : AddSubgroup A) (K : AddSubgroup B
       A.orthogonalComplement H × B.orthogonalComplement K where
   toFun x := (orthogonalComplementProdFst H K x, orthogonalComplementProdSnd H K x)
   invFun x := ⟨((x.1 : A), (x.2 : B)),
-    (A.mem_orthogonalComplement_prod_iff B H K _).mpr ⟨x.1.2, x.2.2⟩⟩
+    (A.mem_orthogonalComplement_prod_iff B H K _).mpr ⟨x.1.property, x.2.property⟩⟩
   left_inv _ := Subtype.ext rfl
   right_inv _ := rfl
   map_add' _ _ := rfl

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
-public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Contracted
+public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Contracted.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Over
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.BaseChange
