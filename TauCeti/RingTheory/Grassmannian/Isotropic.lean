@@ -76,6 +76,8 @@ closed subscheme of the Grassmannian scheme (`Module.Grassmannian.schemeIsotropi
   functor.
 * A. Grothendieck, J. Dieudonné, *Éléments de géométrie algébrique I* (Springer, 1971), 9.7, for
   closed conditions on the Grassmannian.
+* E. Artin, *Geometric Algebra* (1957), Chapter III, for the dimension bound on isotropic
+  subspaces and Witt's theorem.
 -/
 
 public section
