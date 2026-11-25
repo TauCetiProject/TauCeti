@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.FiberBundle.Trivial
 public import TauCeti.Topology.VectorBundle.Determinant
 
 /-!
@@ -108,9 +109,6 @@ induced by the global trivialization `Bundle.Trivial.trivialization B F`. -/
 def trivialHomeomorph :
     TotalSpace 𝕜 (DetBundle 𝕜 F (Trivial B F)) ≃ₜ TotalSpace 𝕜 (Trivial B 𝕜) :=
   bundleHomeomorph (trivialEquiv 𝕜 B F) <| by
-    have : MemTrivializationAtlas (Trivial.trivialization B F) :=
-      ⟨by simp only [trivializationAtlas, Trivial.fiberBundle_trivializationAtlas',
-        Set.mem_singleton_iff]⟩
     have hx (x : B) : x ∈ (Trivial.trivialization B F).baseSet := by
       simp only [Trivial.trivialization_baseSet, Set.mem_univ]
     have he : Continuous (trivialization (𝕜 := 𝕜) (Trivial.trivialization B F)) := by
