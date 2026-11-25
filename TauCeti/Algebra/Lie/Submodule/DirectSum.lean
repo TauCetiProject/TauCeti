@@ -403,17 +403,19 @@ theorem ofIsInternal_refl : ofIsInternal h (fun _ ↦ LieEquiv.refl) = LieEquiv.
     fun i x ↦ by simp) x).symm
 
 /-- Assembling automorphisms of the summands is compatible with composition. -/
+@[simp]
 theorem ofIsInternal_trans (φ : ∀ i, I i ≃ₗ⁅R⁆ I i) :
-    ofIsInternal h (fun i ↦ (θ i).trans (φ i)) = (ofIsInternal h θ).trans (ofIsInternal h φ) :=
-  LieEquiv.ext fun x ↦ (LinearMap.congr_fun ((eq_ofIsInternal_iff h _ _).mpr
-    fun i x ↦ by simp [LieEquiv.trans_apply]) x).symm
+    (ofIsInternal h θ).trans (ofIsInternal h φ) = ofIsInternal h (fun i ↦ (θ i).trans (φ i)) :=
+  LieEquiv.ext fun x ↦ LinearMap.congr_fun ((eq_ofIsInternal_iff h _ _).mpr
+    fun i x ↦ by simp [LieEquiv.trans_apply]) x
 
 /-- Assembling automorphisms of the summands is compatible with inversion. -/
-theorem ofIsInternal_symm : ofIsInternal h (fun i ↦ (θ i).symm) = (ofIsInternal h θ).symm := by
+@[simp]
+theorem ofIsInternal_symm : (ofIsInternal h θ).symm = ofIsInternal h (fun i ↦ (θ i).symm) := by
   have hrefl : (ofIsInternal h θ).trans (ofIsInternal h fun i ↦ (θ i).symm) = LieEquiv.refl := by
-    simp only [← ofIsInternal_trans, LieEquiv.self_trans_symm, ofIsInternal_refl]
+    simp only [ofIsInternal_trans, LieEquiv.self_trans_symm, ofIsInternal_refl]
   ext x
-  simpa using DFunLike.congr_fun hrefl ((ofIsInternal h θ).symm x)
+  simpa [-ofIsInternal_trans] using (DFunLike.congr_fun hrefl ((ofIsInternal h θ).symm x)).symm
 
 end OfIsInternal
 

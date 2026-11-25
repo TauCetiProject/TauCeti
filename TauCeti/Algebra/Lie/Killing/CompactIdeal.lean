@@ -18,9 +18,10 @@ For a Lie algebra `L` over an ordered field, the *compact ideal* is the sum of t
 form of `L` is negative definite, and the *noncompact ideal* is the sum of the other simple ideals.
 A semisimple Lie algebra is the direct sum of the two. In a finite-dimensional semisimple Lie
 algebra, a simple ideal lies in the compact ideal exactly when it is a compact Lie algebra, that is,
-its own Killing form is negative definite. Both ideals are carried to each other's counterparts by
-every equivalence of Lie algebras, in particular they are stable under every automorphism, and
-when the Killing form is nondegenerate each is the Killing orthogonal complement of the other.
+its own Killing form is negative definite. An equivalence of Lie algebras carries the compact ideal
+to the compact ideal and the noncompact ideal to the noncompact ideal; in particular both are stable
+under every automorphism. When the Killing form is nondegenerate each is the Killing orthogonal
+complement of the other.
 
 ## Main definitions
 
@@ -128,7 +129,7 @@ when its own Killing form is negative definite. -/
 theorem le_compactIdeal_iff_of_isAtom [FiniteDimensional K L] [IsSemisimple K L]
     {I : LieIdeal K L} (hI : IsAtom I) :
     I ≤ compactIdeal K L ↔ ∀ x : I, x ≠ 0 → killingForm K I x x < 0 := by
-  rw [← forall_killingForm_neg_iff]
+  rw [← LieIdeal.forall_killingForm_neg_iff]
   refine ⟨fun hle ↦ ?_, le_compactIdeal_of_isAtom hI⟩
   by_contra h
   exact hI.1 (eq_bot_iff.mpr ((isCompl_compactIdeal_noncompactIdeal (K := K) (L := L)).disjoint
@@ -141,7 +142,7 @@ theorem le_noncompactIdeal_iff_of_isAtom [FiniteDimensional K L] [IsSemisimple K
     {I : LieIdeal K L} (hI : IsAtom I) :
     I ≤ noncompactIdeal K L ↔ ¬ ∀ x : I, x ≠ 0 → killingForm K I x x < 0 := by
   refine ⟨fun hle h ↦ hI.1 (eq_bot_iff.mpr ?_), fun h ↦ le_noncompactIdeal_of_isAtom hI
-    ((forall_killingForm_neg_iff I).not.mpr h)⟩
+    (I.forall_killingForm_neg_iff.not.mpr h)⟩
   exact (isCompl_compactIdeal_noncompactIdeal (K := K) (L := L)).disjoint
     ((le_compactIdeal_iff_of_isAtom hI).mpr h) hle
 

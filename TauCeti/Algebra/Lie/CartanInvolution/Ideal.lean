@@ -118,7 +118,7 @@ theorem isCartanInvolution_ofIsInternal [FiniteDimensional K L]
   refine isCartanInvolution_iff.mpr ⟨fun x ↦ ?_, fun x hx ↦ ?_⟩
   · have hθθ : (fun i ↦ (θ i).trans (θ i)) = fun _ ↦ LieEquiv.refl :=
       funext fun i ↦ LieEquiv.ext (hθ i).involutive
-    rw [← LieEquiv.trans_apply, ← ofIsInternal_trans, hθθ, ofIsInternal_refl, LieEquiv.refl_apply]
+    rw [← LieEquiv.trans_apply, ofIsInternal_trans, hθθ, ofIsInternal_refl, LieEquiv.refl_apply]
   -- Write `x` as the sum of its components `d i ∈ I i`; the Killing form splits over them.
   set d := (DirectSum.lieModuleEquivOfIsInternal I h).symm x
   have hx' : ∑ i ∈ d.support, (d i : L) = x :=
@@ -139,12 +139,12 @@ end IsCartanInvolutionOfIsInternal
 
 /-! ### The flip of `L × L` -/
 
-/-- The flip of `L × L` is not a Cartan involution for nontrivial `L`: for `x ≠ 0` it sends
-`(x, 0)` into the ideal `0 × L`, which meets `L × 0` trivially and so is Killing orthogonal to it,
-whereas a Cartan involution has `B(v, θ v) < 0` for `v ≠ 0`. -/
+/-- The swap of the factors of `L × L` is not a Cartan involution when `L` is nontrivial. -/
 theorem not_isCartanInvolution_prodComm {K L : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] [LieRing L] [LieAlgebra K L] [Nontrivial L] :
     ¬ (LieEquiv.prodComm (R := K) (L₁ := L) (L₂ := L)).IsCartanInvolution := by
+  -- For `x ≠ 0` the flip sends `(x, 0)` into the ideal `0 × L`, which meets `L × 0` trivially and
+  -- so is Killing orthogonal to it, whereas a Cartan involution has `B(v, θ v) < 0` for `v ≠ 0`.
   intro hθ
   obtain ⟨x, hx⟩ := exists_ne (0 : L)
   have hd : Disjoint (LieHom.snd K L L).ker (LieHom.fst K L L).ker :=

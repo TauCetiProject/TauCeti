@@ -39,7 +39,7 @@ its Killing form is zero, and a zero form is nondegenerate only on the zero modu
   (`LieIdeal.killingForm_sum_sum`).
 * `LieIdeal.killingForm_apply_apply_coe`: on a Lie ideal of a finite free Lie algebra over a
   principal ideal domain, the Killing form of the ambient algebra restricts to that of the ideal.
-* `LieAlgebra.forall_killingForm_neg_iff`: on a Lie ideal of a finite-dimensional Lie algebra over
+* `LieIdeal.forall_killingForm_neg_iff`: on a Lie ideal of a finite-dimensional Lie algebra over
   an ordered field, the Killing form of the ambient algebra is negative definite exactly when the
   ideal's own Killing form is.
 
@@ -122,8 +122,8 @@ theorem killingForm_eq_zero_of_disjoint {I J : LieIdeal R L} (h : Disjoint I J) 
     exact lie_eq_zero_of_disjoint h hx (lie_mem_left R L J y z hy)
   rw [killingForm, traceForm_apply_apply, this, map_zero]
 
-/-- The Killing form is additive over sums of elements of pairwise disjoint Lie ideals: the
-cross terms vanish by `LieIdeal.killingForm_eq_zero_of_disjoint`. -/
+/-- The Killing form is additive over sums of elements of pairwise disjoint Lie ideals: for
+`x i, y i ∈ I i`, `B(∑ x i, ∑ y i) = ∑ B(x i, y i)`. -/
 theorem killingForm_sum_sum {ι : Type*} {I : ι → LieIdeal R L}
     (hI : Pairwise fun i j ↦ Disjoint (I i) (I j))
     (s : Finset ι) {x y : ι → L} (hx : ∀ i, x i ∈ I i) (hy : ∀ i, y i ∈ I i) :
@@ -143,7 +143,7 @@ theorem killingForm_apply_apply_coe [Module.Free R L] [Module.Finite R L] [IsDom
 
 end LieIdeal
 
-namespace LieAlgebra
+namespace LieIdeal
 
 /-- On a Lie ideal of a finite-dimensional Lie algebra over an ordered field, the Killing form of
 `L` is negative definite exactly when the Killing form of the ideal is. -/
@@ -155,4 +155,4 @@ theorem forall_killingForm_neg_iff {K L : Type*} [Field K] [LinearOrder K] [LieR
   exact ⟨fun h x hx ↦ h x x.property (by simpa using hx),
     fun h x hx hx₀ ↦ h ⟨x, hx⟩ (by simpa using hx₀)⟩
 
-end LieAlgebra
+end LieIdeal
