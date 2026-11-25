@@ -111,8 +111,8 @@ noncomputable def mapIso
 @[simp]
 theorem mapIso_hom
     (p : (F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y) :
-    (mapIso η f p).hom = homMap η f p.hom :=
-  (rfl)
+    (mapIso η f p).hom = homMap η f p.hom := by
+  simp [mapIso, homMap_def]
 
 @[simp]
 theorem mapIso_inv
