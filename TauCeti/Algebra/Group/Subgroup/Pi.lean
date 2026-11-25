@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Basic
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
-# Product equivalences for `Subgroup.pi`
+# Product equivalences and orders for `Subgroup.pi`
 
 For a family of subgroups `H : ∀ i, Subgroup (G i)`, Mathlib defines `Subgroup.pi Set.univ H` as
 the subgroup of `∀ i, G i` whose `i`-th coordinate lies in `H i`, and `Equiv.Set.univPi` identifies
 its underlying set with `∀ i, H i`. This file upgrades that equivalence to the group isomorphism
 `Subgroup.piEquiv` (and additive group isomorphism `AddSubgroup.piEquiv`), the dependent-product
-analogue of `Subgroup.prodEquiv`.
+analogue of `Subgroup.prodEquiv`, and deduces over a finite index type that `Subgroup.pi Set.univ H`
+has order `∏ i, #(H i)` (`Subgroup.card_pi`; compare Mathlib's `Subgroup.index_pi` for the index of
+a family of subgroups of a single group).
 
 ## Main definitions and results
 
@@ -22,11 +25,15 @@ analogue of `Subgroup.prodEquiv`.
   `AddSubgroup.pi Set.univ H ≃+ ∀ i, H i`.
 * `Subgroup.coe_piEquiv_apply`, `Subgroup.coe_piEquiv_symm_apply` (and additive forms):
   characteristic `simp` lemmas for evaluating `piEquiv` and its inverse.
+* `Subgroup.card_pi`, `AddSubgroup.card_pi`:
+  `Nat.card (Subgroup.pi Set.univ H) = ∏ i, Nat.card (H i)`.
 -/
 
 public section
 
 namespace Subgroup
+
+section PiEquiv
 
 variable {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
 
@@ -52,5 +59,21 @@ theorem coe_piEquiv_apply (H : ∀ i, Subgroup (G i)) (x : Subgroup.pi Set.univ 
 theorem coe_piEquiv_symm_apply (H : ∀ i, Subgroup (G i)) (x : ∀ i, H i) :
     ((piEquiv H).symm x : ∀ i, G i) = fun i ↦ (x i : G i) :=
   (rfl)
+
+end PiEquiv
+
+section Card
+
+variable {η : Type*} {f : η → Type*} [∀ i, Group (f i)]
+
+/-- The product of a finite family of subgroups has the product of their orders. -/
+@[to_additive /-- The product of a finite family of additive subgroups has the product of their
+orders. -/]
+theorem card_pi [Fintype η] (H : ∀ i, Subgroup (f i)) :
+    Nat.card (Subgroup.pi Set.univ H) = ∏ i, Nat.card (H i) := by
+  rw [← Nat.card_pi]
+  exact Nat.card_congr (piEquiv H).toEquiv
+
+end Card
 
 end Subgroup

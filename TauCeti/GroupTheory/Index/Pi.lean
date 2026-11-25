@@ -34,8 +34,8 @@ finite index. -/
 /-- A product additive subgroup constrained on finitely many coordinates by finite-index additive
 subgroups has finite index. -/]
 instance instFiniteIndexPi (I : Set ι) [Finite I] (H : ∀ i, Subgroup (G i))
-    [∀ i : I, (H i.1).FiniteIndex] : (Subgroup.pi I H).FiniteIndex := by
-  have hpi : Subgroup.pi I H = ⨅ i : I, (H i.1).comap (Pi.evalMonoidHom G i.1) := by
+    [∀ i : I, (H i.val).FiniteIndex] : (Subgroup.pi I H).FiniteIndex := by
+  have hpi : Subgroup.pi I H = ⨅ i : I, (H i.val).comap (Pi.evalMonoidHom G i.val) := by
     ext x
     simp [Subgroup.mem_pi]
   rw [hpi]

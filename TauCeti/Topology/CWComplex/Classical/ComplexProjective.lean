@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Projectivization.Cardinality
 public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Data.Fin.Basic
-public import TauCeti.Topology.ComplexProjectiveSpace.Basic
+public import TauCeti.Topology.ComplexProjectiveSpace.Projectivization
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
+public import TauCeti.Topology.CWComplex.Classical.Product
 
 /-!
 # The CW structure on complex projective space
@@ -46,6 +48,8 @@ of the real coordinates `TauCeti.complexEuclideanRealCoords`.
   (`TauCeti.ComplexProjectiveSpace.finite_cwComplex`) with one cell in each even dimension
   `m ≤ 2n` and none otherwise (`TauCeti.ComplexProjectiveSpace.nat_card_cell_cwComplex`).
 * `TauCeti.ComplexProjectiveSpace.finiteCWType`: `CPⁿ` has finite CW type.
+* `TauCeti.finiteCWType_projectivization_complex`: the projectivization `ℙ ℂ V` of a
+  finite-dimensional complex space has finite CW type.
 
 ## References
 
@@ -215,7 +219,7 @@ nonnegative, read in the sup-norm ball through the radial homeomorphism of the r
 coordinates. -/
 private def cellChart (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ) = m)
     (y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) : Fin m → ℝ :=
-  (complexEuclideanRealCoords hm).unitBallHomeomorph (phase (y.1 i) • truncate i y.1)
+  (complexEuclideanRealCoords hm).unitBallHomeomorph (phase (y.val i) • truncate i y.val)
 
 private theorem cellChart_smul (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ) = m)
     (c : sphere (0 : ℂ) 1) (y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
@@ -231,7 +235,7 @@ private def cellMapInv (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ) = m) :
 private theorem cellMapInv_mk (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ) = m)
     (y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     cellMapInv i hm (mk n y) =
-      (complexEuclideanRealCoords hm).unitBallHomeomorph (phase (y.1 i) • truncate i y.1) :=
+      (complexEuclideanRealCoords hm).unitBallHomeomorph (phase (y.val i) • truncate i y.val) :=
   ComplexProjectiveSpace.lift_mk n _ (cellChart_smul i hm) y
 
 /-- The point of `S²ⁿ⁺¹` over a point `x` of the closed sup-norm ball of `Fin (2i) → ℝ`: the
@@ -241,24 +245,24 @@ private def cellSpherePoint (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ) = m)
   ⟨hemispherePoint n ((complexEuclideanRealCoords hm).unitBallHomeomorph.symm x),
     mem_sphere_zero_iff_norm.2 (norm_hemispherePoint i.is_le
       ((complexEuclideanRealCoords hm).norm_unitBallHomeomorph_symm_le_one_iff.2
-        (mem_closedBall_zero_iff.1 x.2)))⟩
+        (mem_closedBall_zero_iff.1 x.property)))⟩
 
 /-- On the open cell, `hemispherePoint` of the truncated rotated representative recovers the
 rotated unit vector. -/
 private theorem hemispherePoint_phase_smul_truncate {i : Fin (n + 1)}
-    {y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1} (hyi : y.1 i ≠ 0)
-    (hy : ∀ j : Fin (n + 1), i < j → y.1 j = 0) :
-    hemispherePoint n (phase (y.1 i) • truncate i y.1) = phase (y.1 i) • y.1 := by
+    {y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1} (hyi : y.val i ≠ 0)
+    (hy : ∀ j : Fin (n + 1), i < j → y.val j = 0) :
+    hemispherePoint n (phase (y.val i) • truncate i y.val) = phase (y.val i) • y.val := by
   have hnorm := norm_truncate_sq_add_sq hy
   rw [norm_eq_of_mem_sphere y, one_pow] at hnorm
-  have hw : ‖phase (y.1 i) • truncate i y.1‖ = ‖truncate i y.1‖ := by
+  have hw : ‖phase (y.val i) • truncate i y.val‖ = ‖truncate i y.val‖ := by
     rw [norm_smul, norm_phase hyi, one_mul]
   ext j
   rcases lt_trichotomy (j : ℕ) i with h | h | h
   · rw [hemispherePoint_apply_of_lt _ h]
     simp [truncate, Fin.castLE]
   · have hji : j = i := Fin.ext h
-    have hsq : 1 - ‖truncate i y.1‖ ^ 2 = ‖y.1 i‖ ^ 2 := by linarith
+    have hsq : 1 - ‖truncate i y.val‖ ^ 2 = ‖y.val i‖ ^ 2 := by linarith
     rw [hemispherePoint_apply_of_eq _ h, hw, hji, PiLp.smul_apply, smul_eq_mul,
       phase_mul_self hyi, hsq, Real.sqrt_sq (norm_nonneg _)]
   · rw [hemispherePoint_apply_of_gt _ h, PiLp.smul_apply, hy j (Fin.lt_def.2 h), smul_zero]
@@ -290,7 +294,7 @@ def cellMap (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ) = m) :
     simp only [cellMapInv_mk, mem_ball_zero_iff,
       ContinuousLinearEquiv.norm_unitBallHomeomorph_lt_one_iff, norm_smul, norm_phase hyi,
       one_mul]
-    nlinarith [norm_nonneg (truncate i y.1), norm_pos_iff.2 hyi]
+    nlinarith [norm_nonneg (truncate i y.val), norm_pos_iff.2 hyi]
   left_inv' x hx := by
     set v := (complexEuclideanRealCoords hm).unitBallHomeomorph.symm x
     have hv : ‖v‖ < 1 := by simpa [v] using hx
@@ -307,8 +311,8 @@ def cellMap (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ) = m) :
       rw [cellMapInv_mk, mem_closedBall_zero_iff,
         ContinuousLinearEquiv.norm_unitBallHomeomorph_le_one_iff, norm_smul, norm_phase hyi,
         one_mul]
-      nlinarith [norm_nonneg (truncate i y.1), norm_nonneg (y.1 i)]
-    let s : sphere (0 : ℂ) 1 := ⟨phase (y.1 i), mem_sphere_zero_iff_norm.2 (norm_phase hyi)⟩
+      nlinarith [norm_nonneg (truncate i y.val), norm_nonneg (y.val i)]
+    let s : sphere (0 : ℂ) 1 := ⟨phase (y.val i), mem_sphere_zero_iff_norm.2 (norm_phase hyi)⟩
     have key : cellSpherePoint i hm ⟨_, hx⟩ = s • y := Subtype.ext <| by
       simp only [cellSpherePoint, cellMapInv_mk, Homeomorph.symm_apply_apply,
         Sphere.coe_sphere_smul, s]
@@ -346,7 +350,7 @@ positive. -/
 theorem cellMap_symm_mk (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ) = m)
     (y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     (cellMap i hm).symm (mk n y) = (complexEuclideanRealCoords hm).unitBallHomeomorph
-      (((‖y.1 i‖ : ℂ) / y.1 i) • WithLp.toLp 2 fun j => y.1 (Fin.castLE i.is_lt.le j)) :=
+      (((‖y.val i‖ : ℂ) / y.val i) • WithLp.toLp 2 fun j => y.val (Fin.castLE i.is_lt.le j)) :=
   cellMapInv_mk i hm y
 
 /-- The characteristic map of the `2i`-cell maps the open unit ball onto the open `2i`-cell. -/
@@ -359,8 +363,8 @@ theorem continuousOn_cellMap (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ) = m
     ContinuousOn (cellMap i hm) (closedBall 0 1) := by
   rw [continuousOn_iff_continuous_domRestrict]
   have hc : Continuous (cellSpherePoint i hm) := (continuous_hemispherePoint.comp
-    ((Homeomorph.continuous _).comp continuous_subtype_val)).subtype_mk _
-  exact ((continuous_mk n).comp hc).congr fun x => (cellMap_apply i hm x.2).symm
+    ((Homeomorph.continuous _).comp continuous_subtypeVal)).subtype_mk _
+  exact ((continuous_mk n).comp hc).congr fun x => (cellMap_apply i hm x.property).symm
 
 /-- The inverse of the characteristic map of the `2i`-cell is continuous on the open cell. -/
 theorem continuousOn_cellMap_symm (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ) = m) :
@@ -368,12 +372,12 @@ theorem continuousOn_cellMap_symm (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ
   intro p hp
   obtain ⟨y, rfl⟩ := mk_surjective n p
   have hyi := (mk_mem_openCell_iff.1 hp).1
-  have hc : Continuous fun y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 => y.1 i :=
-    (PiLp.continuous_apply _ _ _).comp continuous_subtype_val
+  have hc : Continuous fun y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 => y.val i :=
+    (PiLp.continuous_apply _ _ _).comp continuous_subtypeVal
   refine (continuousAt_lift n (cellChart_smul i hm) ?_).continuousWithinAt
   exact (Homeomorph.continuous _).continuousAt.comp (((continuousAt_phase hyi).comp
-    (f := fun y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 => y.1 i) hc.continuousAt).smul
-    ((continuous_truncate i).comp continuous_subtype_val).continuousAt)
+    (f := fun y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 => y.val i) hc.continuousAt).smul
+    ((continuous_truncate i).comp continuous_subtypeVal).continuousAt)
 
 /-- The characteristic map of the `2i`-cell sends the boundary sphere of the sup-norm ball into
 the open cells `2i'` with `i' < i`. -/
@@ -395,7 +399,8 @@ variable (n) in
 private abbrev Cell (m : ℕ) : Type := {i : Fin (n + 1) // 2 * (i : ℕ) = m}
 
 private theorem pairwiseDisjoint_cellMap :
-    (univ : Set (Σ m, Cell n m)).PairwiseDisjoint (fun c ↦ cellMap c.2.1 c.2.2 '' ball 0 1) := by
+    (univ : Set (Σ m, Cell n m)).PairwiseDisjoint (fun c ↦ cellMap c.2.val c.2.property '' ball 0 1)
+        := by
   rintro ⟨m, i, hi⟩ - ⟨m', i', hi'⟩ - hne
   simp only [Function.onFun, image_cellMap_ball]
   refine disjoint_openCell fun h => hne ?_
@@ -403,12 +408,12 @@ private theorem pairwiseDisjoint_cellMap :
   rfl
 
 private theorem mapsTo_cellMap (m : ℕ) (c : Cell n m) :
-    MapsTo (cellMap c.1 c.2) (sphere 0 1)
-      (⋃ (k < m) (c' : Cell n k), cellMap c'.1 c'.2 '' closedBall 0 1) := by
+    MapsTo (cellMap c.val c.property) (sphere 0 1)
+      (⋃ (k < m) (c' : Cell n k), cellMap c'.val c'.property '' closedBall 0 1) := by
   intro x hx
-  obtain ⟨i', hi', hx'⟩ := exists_lt_cellMap_mem_openCell _ c.2 hx
+  obtain ⟨i', hi', hx'⟩ := exists_lt_cellMap_mem_openCell _ c.property hx
   rw [← image_cellMap_ball i' rfl] at hx'
-  have : 2 * (i' : ℕ) < m := by have := Fin.lt_def.1 hi'; have := c.2; omega
+  have : 2 * (i' : ℕ) < m := by have := Fin.lt_def.1 hi'; have := c.property; omega
   exact mem_iUnion₂.2 ⟨_, this, mem_iUnion.2 ⟨⟨i', rfl⟩, image_mono ball_subset_closedBall hx'⟩⟩
 
 variable (n) in
@@ -417,11 +422,12 @@ Example 0.6): the characteristic map of the `2i`-cell is `cellMap i`, which iden
 `2i`-cell with `CPⁱ ∖ CPⁱ⁻¹` and attaches it along the quotient map `S²ⁱ⁻¹ → CPⁱ⁻¹`. -/
 @[instance_reducible]
 def cwComplex : CWComplex (univ : Set (ComplexProjectiveSpace n)) :=
-  CWComplex.mkFinite _ (Cell n) (fun _ c => cellMap c.1 c.2)
+  CWComplex.mkFinite _ (Cell n) (fun _ c => cellMap c.val c.property)
     (Filter.eventually_atTop.2 ⟨2 * n + 1, fun _ hm =>
-      ⟨fun c => absurd c.2 (by have := c.1.is_lt; omega)⟩⟩)
-    (fun _ => inferInstance) (fun _ _ => rfl) (fun _ c => continuousOn_cellMap c.1 c.2)
-    (fun _ c => continuousOn_cellMap_symm c.1 c.2) pairwiseDisjoint_cellMap mapsTo_cellMap <| by
+      ⟨fun c => absurd c.property (by have := c.val.is_lt; omega)⟩⟩)
+    (fun _ => inferInstance) (fun _ _ => rfl) (fun _ c => continuousOn_cellMap c.val c.property)
+    (fun _ c => continuousOn_cellMap_symm c.val c.property) pairwiseDisjoint_cellMap mapsTo_cellMap
+        <| by
       refine eq_univ_of_forall fun p => ?_
       obtain ⟨y, rfl⟩ := mk_surjective n p
       obtain ⟨i, -, hi⟩ :=
@@ -459,9 +465,9 @@ theorem nat_card_cell_cwComplex (m : ℕ) :
   split_ifs with h
   · obtain ⟨⟨k, rfl⟩, hk⟩ := h
     exact Nat.card_eq_one_iff_exists.2 ⟨⟨⟨k, by omega⟩, by simp; omega⟩,
-      fun c => Subtype.ext (Fin.ext (by have := c.2; simp; omega))⟩
-  · have : IsEmpty (Cell n m) := ⟨fun c => h ⟨⟨c.1, by have := c.2; omega⟩, by
-      have := c.1.is_lt; have := c.2; omega⟩⟩
+      fun c => Subtype.ext (Fin.ext (by have := c.property; simp; omega))⟩
+  · have : IsEmpty (Cell n m) := ⟨fun c => h ⟨⟨c.val, by have := c.property; omega⟩, by
+      have := c.val.is_lt; have := c.property; omega⟩⟩
     exact Nat.card_of_isEmpty
 
 /-- Complex projective space has finite CW type. -/
@@ -471,5 +477,23 @@ instance finiteCWType : FiniteCWType (ComplexProjectiveSpace n) :=
   (Homeomorph.Set.univ _).symm.finiteCWType
 
 end ComplexProjectiveSpace
+
+open scoped LinearAlgebra.Projectivization in
+/-- The projectivization `ℙ ℂ V` of a finite-dimensional Hausdorff complex topological vector space
+has finite CW type. It is empty when `V = 0`, and otherwise homeomorphic to `CPⁿ` for
+`n + 1 = dim V` (`TauCeti.ComplexProjectiveSpace.homeomorphProjectivization`). -/
+instance finiteCWType_projectivization_complex {V : Type*} [AddCommGroup V] [Module ℂ V]
+    [FiniteDimensional ℂ V] [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℂ V]
+    [T2Space V] : FiniteCWType (ℙ ℂ V) := by
+  cases h : Module.finrank ℂ V with
+  | zero =>
+    have := Module.finrank_zero_iff.1 h
+    exact FiniteCWType.of_discreteTopology _
+  | succ n =>
+    -- The factor `PUnit` lifts `CPⁿ` to the universe of `V`.
+    exact ((Homeomorph.prodPUnit (ComplexProjectiveSpace n)).trans
+      ((ComplexProjectiveSpace.homeomorphProjectivization n).trans
+        (ContinuousLinearEquiv.ofFinrankEq (E := Fin (n + 1) → ℂ) (F := V)
+          (by simp [h])).mapProjectivization)).symm.finiteCWType
 
 end TauCeti

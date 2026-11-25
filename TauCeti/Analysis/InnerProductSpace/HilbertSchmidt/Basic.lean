@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Completion
-public import TauCeti.Analysis.InnerProductSpace.Parseval
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
@@ -63,8 +63,17 @@ These are the norm estimates behind the Hilbert–Schmidt class of operators: it
 * `ContinuousLinearMap.norm_le_hilbertSchmidtNorm` and
   `ContinuousLinearMap.hilbertSchmidtNorm_comp_comp_le`: domination of the operator norm and the
   two-sided ideal inequality for the Hilbert–Schmidt norm of a finite-energy operator.
+* `ContinuousLinearMap.hilbertSchmidtNorm_comp_le_left` and
+  `ContinuousLinearMap.hilbertSchmidtNorm_comp_le_right`: the one-sided ideal inequalities
+  `‖A T‖_HS ≤ ‖A‖ ‖T‖_HS` and `‖T B‖_HS ≤ ‖T‖_HS ‖B‖` for a finite-energy operator `T`.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_eq_ofReal_sq_frobenius`: on a finite-dimensional
   source, `E_b(T) = ‖T‖_F²`.
+* `ContinuousLinearMap.hilbertSchmidtEnergy_ne_top`: an operator with a finite-dimensional source
+  has finite energy.
+* `ContinuousLinearMap.hilbertSchmidtNorm_add_le_of_finiteDimensional`,
+  `ContinuousLinearMap.hilbertSchmidtNorm_comp_le_left_of_finiteDimensional` and
+  `ContinuousLinearMap.hilbertSchmidtNorm_comp_le_right_of_finiteDimensional`: the triangle and
+  one-sided ideal inequalities with no finiteness hypothesis, on a finite-dimensional source.
 
 ## References
 
@@ -101,7 +110,7 @@ Hilbert basis `(cⱼ)` of the target gives `E_b(T) = ∑' i, ∑' j, ‖⟪cⱼ,
 theorem hilbertSchmidtEnergy_eq_tsum_tsum (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
     (c : HilbertBasis κ 𝕜 F) :
     T.hilbertSchmidtEnergy b = ∑' i, ∑' j, ‖⟪c j, T (b i)⟫_𝕜‖ₑ ^ 2 := by
-  simp only [hilbertSchmidtEnergy_def, c.tsum_enorm_sq_inner]
+  simp only [hilbertSchmidtEnergy_def, c.tsum_eNorm_inner_sq]
 
 @[simp]
 theorem hilbertSchmidtEnergy_zero (b : HilbertBasis ι 𝕜 E) :
@@ -141,9 +150,9 @@ theorem hilbertSchmidtEnergy_toComplL_comp (T : E →L[𝕜] F) (b : HilbertBasi
       T).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b := by
   simp [hilbertSchmidtEnergy_def]
 
-section Complete
+section AdjointEnergy
 
-variable [CompleteSpace E] [CompleteSpace F] [CompleteSpace G]
+variable [CompleteSpace E] [CompleteSpace F]
 
 /-- **Adjoint energy swap.** For Hilbert bases `(bᵢ)` of the source and `(cⱼ)` of the target, the
 energy of `T†` relative to `c` equals the energy of `T` relative to `b`: both are the double sum
@@ -155,7 +164,8 @@ theorem hilbertSchmidtEnergy_adjoint (T : E →L[𝕜] F) (b : HilbertBasis ι �
     _root_.tsum_comm]
   simp_rw [adjoint_inner_right, ← ofReal_norm, norm_inner_symm]
 
-omit [CompleteSpace E] [CompleteSpace F] in
+end AdjointEnergy
+
 /-- **Basis independence of the Hilbert–Schmidt energy.** Any two Hilbert bases of the source give
 the same energy. The target need not be complete. -/
 theorem hilbertSchmidtEnergy_indep (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
@@ -167,7 +177,6 @@ theorem hilbertSchmidtEnergy_indep (T : E →L[𝕜] F) (b : HilbertBasis ι �
   obtain ⟨w, c, -⟩ := exists_hilbertBasis 𝕜 (UniformSpace.Completion F)
   rw [← hilbertSchmidtEnergy_adjoint _ b c, hilbertSchmidtEnergy_adjoint _ b' c]
 
-omit [CompleteSpace E] [CompleteSpace F] [CompleteSpace G] in
 /-- Composition on the right with a bounded operator scales the energy by at most `‖B‖ₑ²`. The
 two energies may be computed in Hilbert bases of different spaces. -/
 theorem hilbertSchmidtEnergy_comp_le_right (T : F →L[𝕜] G) (B : E →L[𝕜] F)
@@ -182,7 +191,6 @@ theorem hilbertSchmidtEnergy_comp_le_right (T : F →L[𝕜] G) (B : E →L[𝕜
     mul_comm, ← LinearIsometryEquiv.eNorm_map adjoint B]
   exact hilbertSchmidtEnergy_comp_le_left _ _ d
 
-omit [CompleteSpace E] [CompleteSpace F] [CompleteSpace G] in
 /-- **Two-sided ideal inequality for the energy.** `E_b(A T B) ≤ ‖A‖ₑ² E_c(T) ‖B‖ₑ²`, where `b`
 and `c` are Hilbert bases of the sources of `B` and `T`. -/
 theorem hilbertSchmidtEnergy_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B : E →L[𝕜] F)
@@ -192,7 +200,6 @@ theorem hilbertSchmidtEnergy_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜]
   rw [mul_assoc]
   grw [hilbertSchmidtEnergy_comp_le_left A _ b, hilbertSchmidtEnergy_comp_le_right T B b c]
 
-omit [CompleteSpace E] [CompleteSpace F] in
 /-- **Hilbert–Schmidt domination of the operator norm**, in energy form: `‖T‖ₑ² ≤ E_b(T)`. -/
 theorem enorm_sq_le_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     ‖T‖ₑ ^ 2 ≤ T.hilbertSchmidtEnergy b := by
@@ -203,7 +210,7 @@ theorem enorm_sq_le_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : HilbertBasis 
   -- `‖T x‖ₑ² = ∑' j, ‖⟪T† cⱼ, x⟫‖ₑ² ≤ (∑' j, ‖T† cⱼ‖ₑ²) ‖x‖ₑ² = E_c(T†) ‖x‖ₑ²`.
   have key (x : E) : ‖T x‖ₑ ^ 2 ≤ T.hilbertSchmidtEnergy b * ‖x‖ₑ ^ 2 := by
     rw [← hilbertSchmidtEnergy_adjoint T b c, hilbertSchmidtEnergy_def, ← ENNReal.tsum_mul_right,
-      ← c.tsum_enorm_sq_inner]
+      ← c.tsum_eNorm_inner_sq]
     refine _root_.tsum_le_tsum fun j ↦ ?_
     rw [← adjoint_inner_left, ← mul_pow]
     exact pow_le_pow_left₀ zero_le (eNorm_inner_le_eNorm _ _) 2
@@ -214,7 +221,6 @@ theorem enorm_sq_le_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : HilbertBasis 
   rw [← ENNReal.pow_le_pow_left_iff two_ne_zero, mul_pow, hM]
   exact key x
 
-omit [CompleteSpace E] [CompleteSpace F] in
 /-- On a finite-dimensional source, the Hilbert–Schmidt energy is the square of the Frobenius
 seminorm `TauCeti.UnitarilyInvariantSeminorm.frobenius`. -/
 theorem hilbertSchmidtEnergy_eq_ofReal_sq_frobenius [FiniteDimensional 𝕜 E] (T : E →L[𝕜] F)
@@ -228,7 +234,16 @@ theorem hilbertSchmidtEnergy_eq_ofReal_sq_frobenius [FiniteDimensional 𝕜 E] (
     ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ by positivity, tsum_fintype]
   simp [e.coe_toHilbertBasis, ENNReal.ofReal_pow]
 
-omit [CompleteSpace F] in
+/-- An operator with a finite-dimensional source has finite Hilbert–Schmidt energy. -/
+theorem hilbertSchmidtEnergy_ne_top [FiniteDimensional 𝕜 E] (T : E →L[𝕜] F)
+    (b : HilbertBasis ι 𝕜 E) : T.hilbertSchmidtEnergy b ≠ ∞ := by
+  rw [hilbertSchmidtEnergy_eq_ofReal_sq_frobenius]
+  exact ENNReal.ofReal_ne_top
+
+section Norm
+
+variable [CompleteSpace E]
+
 /-- The **Hilbert–Schmidt norm** `‖T‖_HS = √(E_b(T)).toReal` of a bounded operator, computed in a
 Hilbert basis `b` of the source chosen once and for all; by `hilbertSchmidtNorm_eq_sqrt` any Hilbert
 basis gives the same value. It is meaningful for operators of finite energy: an operator of
@@ -236,20 +251,17 @@ infinite energy has Hilbert–Schmidt norm `0`. -/
 noncomputable def hilbertSchmidtNorm (T : E →L[𝕜] F) : ℝ :=
   √(T.hilbertSchmidtEnergy (exists_hilbertBasis 𝕜 E).choose_spec.choose).toReal
 
-omit [CompleteSpace F] in
 /-- The Hilbert–Schmidt norm may be computed in any Hilbert basis of the source. -/
 theorem hilbertSchmidtNorm_eq_sqrt (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     T.hilbertSchmidtNorm = √(T.hilbertSchmidtEnergy b).toReal := by
   rw [hilbertSchmidtNorm, hilbertSchmidtEnergy_indep T _ b]
 
-omit [CompleteSpace F] in
 /-- The Hilbert–Schmidt norm is the real value of the square root `E_b(T)^(1/2)` of the energy,
 computed in any Hilbert basis of the source. -/
 theorem hilbertSchmidtNorm_eq_toReal_rpow (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     T.hilbertSchmidtNorm = (T.hilbertSchmidtEnergy b ^ (1 / 2 : ℝ)).toReal := by
   rw [T.hilbertSchmidtNorm_eq_sqrt b, ← ENNReal.toReal_rpow, Real.sqrt_eq_rpow]
 
-omit [CompleteSpace F] in
 /-- Embedding the target into its completion does not change the Hilbert–Schmidt norm. -/
 @[simp]
 theorem hilbertSchmidtNorm_toComplL_comp (T : E →L[𝕜] F) :
@@ -259,17 +271,27 @@ theorem hilbertSchmidtNorm_toComplL_comp (T : E →L[𝕜] F) :
   rw [hilbertSchmidtNorm_eq_sqrt _ b, hilbertSchmidtNorm_eq_sqrt _ b,
     hilbertSchmidtEnergy_toComplL_comp]
 
-omit [CompleteSpace F] in
 theorem hilbertSchmidtNorm_nonneg (T : E →L[𝕜] F) : 0 ≤ T.hilbertSchmidtNorm :=
   Real.sqrt_nonneg _
 
-omit [CompleteSpace F] in
 /-- The square of the Hilbert–Schmidt norm is the real value of the energy. -/
 theorem sq_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     T.hilbertSchmidtNorm ^ 2 = (T.hilbertSchmidtEnergy b).toReal := by
   rw [T.hilbertSchmidtNorm_eq_sqrt b, Real.sq_sqrt ENNReal.toReal_nonneg]
 
-omit [CompleteSpace F] in
+omit [CompleteSpace E] in
+/-- In a finite orthonormal basis, the squared Hilbert–Schmidt norm is the sum of squared
+output norms. Completeness is supplied by the finite basis. -/
+theorem sq_hilbertSchmidtNorm_eq_sum [Fintype ι] (T : E →L[𝕜] F)
+    (b : OrthonormalBasis ι 𝕜 E) :
+    letI := b.toBasis.finiteDimensional_of_finite
+    letI := FiniteDimensional.completeSpace 𝕜 E
+    T.hilbertSchmidtNorm ^ 2 = ∑ i, ‖T (b i)‖ ^ 2 := by
+  let := b.toBasis.finiteDimensional_of_finite
+  let := FiniteDimensional.completeSpace 𝕜 E
+  rw [T.sq_hilbertSchmidtNorm b.toHilbertBasis, hilbertSchmidtEnergy_def, tsum_fintype]
+  simp [ENNReal.toReal_sum, ENNReal.toReal_pow]
+
 /-- For an operator of finite energy, the square of the Hilbert–Schmidt norm recovers the energy
 without loss. -/
 theorem ofReal_sq_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
@@ -277,19 +299,16 @@ theorem ofReal_sq_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι �
     ENNReal.ofReal (T.hilbertSchmidtNorm ^ 2) = T.hilbertSchmidtEnergy b := by
   rw [T.sq_hilbertSchmidtNorm b, ENNReal.ofReal_toReal h]
 
-omit [CompleteSpace F] in
 @[simp]
 theorem hilbertSchmidtNorm_zero : (0 : E →L[𝕜] F).hilbertSchmidtNorm = 0 := by
   simp [hilbertSchmidtNorm]
 
-omit [CompleteSpace F] in
 /-- **Homogeneity of the Hilbert–Schmidt norm.** `‖c • T‖_HS = ‖c‖ ‖T‖_HS`, for every operator. -/
 @[simp]
 theorem hilbertSchmidtNorm_smul (c : 𝕜) (T : E →L[𝕜] F) :
     (c • T).hilbertSchmidtNorm = ‖c‖ * T.hilbertSchmidtNorm := by
   simp [hilbertSchmidtNorm, ENNReal.toReal_mul, ENNReal.toReal_pow]
 
-omit [CompleteSpace F] in
 /-- **Triangle inequality for the Hilbert–Schmidt norm.** If `S` has finite energy, then
 `‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS`. If `T` has infinite energy, so does `S + T`, whose
 Hilbert–Schmidt norm is then `0` by convention. -/
@@ -307,7 +326,13 @@ theorem hilbertSchmidtNorm_add_le (S T : E →L[𝕜] F) (b : HilbertBasis ι �
     one_pow, one_mul] at h1
   exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hST, hS'⟩) h1
 
-omit [CompleteSpace F] in
+/-- **Triangle inequality for the Hilbert–Schmidt norm** on a finite-dimensional source, where every
+operator has finite energy: `‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS`. -/
+theorem hilbertSchmidtNorm_add_le_of_finiteDimensional [FiniteDimensional 𝕜 E] (S T : E →L[𝕜] F) :
+    (S + T).hilbertSchmidtNorm ≤ S.hilbertSchmidtNorm + T.hilbertSchmidtNorm := by
+  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
+  exact hilbertSchmidtNorm_add_le S T b (S.hilbertSchmidtEnergy_ne_top b)
+
 /-- **Hilbert–Schmidt domination of the operator norm.** An operator of finite energy satisfies
 `‖T‖ ≤ ‖T‖_HS`. -/
 theorem norm_le_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
@@ -315,6 +340,41 @@ theorem norm_le_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι �
   rw [← pow_le_pow_iff_left₀ (norm_nonneg T) T.hilbertSchmidtNorm_nonneg two_ne_zero,
     T.sq_hilbertSchmidtNorm b, ← toReal_eNorm, ← ENNReal.toReal_pow]
   exact ENNReal.toReal_mono h (T.enorm_sq_le_hilbertSchmidtEnergy b)
+
+/-- An energy bound `E_b(S) ≤ r² E_c(T)`, with `T` of finite energy, gives the Hilbert–Schmidt
+norm bound `‖S‖_HS ≤ r ‖T‖_HS`. -/
+private theorem hilbertSchmidtNorm_le_of_hilbertSchmidtEnergy_le [CompleteSpace F]
+    (S : E →L[𝕜] H) (T : F →L[𝕜] G) (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis ι' 𝕜 F)
+    (r : NNReal) (h : T.hilbertSchmidtEnergy c ≠ ∞)
+    (hle : S.hilbertSchmidtEnergy b ≤ (r : ℝ≥0∞) ^ 2 * T.hilbertSchmidtEnergy c) :
+    S.hilbertSchmidtNorm ≤ r * T.hilbertSchmidtNorm := by
+  have hfin : (r : ℝ≥0∞) ^ 2 * T.hilbertSchmidtEnergy c ≠ ∞ := by
+    simp [ENNReal.mul_eq_top, h]
+  rw [← pow_le_pow_iff_left₀ S.hilbertSchmidtNorm_nonneg
+    (by have := T.hilbertSchmidtNorm_nonneg; positivity) two_ne_zero,
+    S.sq_hilbertSchmidtNorm b, mul_pow, T.sq_hilbertSchmidtNorm c]
+  convert ENNReal.toReal_mono hfin hle using 1
+  simp [ENNReal.toReal_mul, ENNReal.toReal_pow]
+
+/-- **Left ideal inequality for the Hilbert–Schmidt norm.** If `T` has finite energy, then
+`‖A T‖_HS ≤ ‖A‖ ‖T‖_HS`. -/
+theorem hilbertSchmidtNorm_comp_le_left (A : F →L[𝕜] G) (T : E →L[𝕜] F)
+    (b : HilbertBasis ι 𝕜 E) (h : T.hilbertSchmidtEnergy b ≠ ∞) :
+    (A ∘L T).hilbertSchmidtNorm ≤ ‖A‖ * T.hilbertSchmidtNorm :=
+  hilbertSchmidtNorm_le_of_hilbertSchmidtEnergy_le _ T b b ‖A‖₊ h
+    (by simpa [eNorm_eq_nnNorm] using hilbertSchmidtEnergy_comp_le_left A T b)
+
+/-- **Left ideal inequality for the Hilbert–Schmidt norm** on a finite-dimensional source, where
+every operator has finite energy: `‖A T‖_HS ≤ ‖A‖ ‖T‖_HS`. -/
+theorem hilbertSchmidtNorm_comp_le_left_of_finiteDimensional [FiniteDimensional 𝕜 E]
+    (A : F →L[𝕜] G) (T : E →L[𝕜] F) :
+    (A ∘L T).hilbertSchmidtNorm ≤ ‖A‖ * T.hilbertSchmidtNorm := by
+  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
+  exact hilbertSchmidtNorm_comp_le_left A T b (T.hilbertSchmidtEnergy_ne_top b)
+
+section CompleteTarget
+
+variable [CompleteSpace F]
 
 /-- **Adjoint invariance of the Hilbert–Schmidt norm.** `‖T†‖_HS = ‖T‖_HS`. -/
 @[simp]
@@ -325,22 +385,38 @@ theorem hilbertSchmidtNorm_adjoint (T : E →L[𝕜] F) :
   rw [hilbertSchmidtNorm_eq_sqrt _ c, hilbertSchmidtNorm_eq_sqrt _ b,
     hilbertSchmidtEnergy_adjoint T b c]
 
-omit [CompleteSpace G] in
 /-- **Two-sided ideal inequality for the Hilbert–Schmidt norm.** If `T` has finite energy, then
 `‖A T B‖_HS ≤ ‖A‖ ‖T‖_HS ‖B‖`. -/
 theorem hilbertSchmidtNorm_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G)
     (B : E →L[𝕜] F) (c : HilbertBasis ι' 𝕜 F) (h : T.hilbertSchmidtEnergy c ≠ ∞) :
     (A ∘L T ∘L B).hilbertSchmidtNorm ≤ ‖A‖ * T.hilbertSchmidtNorm * ‖B‖ := by
   obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
-  have hle := hilbertSchmidtEnergy_comp_comp_le A T B b c
-  have hfin : ‖A‖ₑ ^ 2 * T.hilbertSchmidtEnergy c * ‖B‖ₑ ^ 2 ≠ ∞ := by
-    simp [ENNReal.mul_eq_top, h]
-  rw [← pow_le_pow_iff_left₀ (hilbertSchmidtNorm_nonneg _)
-    (by have := T.hilbertSchmidtNorm_nonneg; positivity) two_ne_zero,
-    sq_hilbertSchmidtNorm _ b, mul_pow, mul_pow, T.sq_hilbertSchmidtNorm c]
-  convert ENNReal.toReal_mono hfin hle using 1
-  simp [ENNReal.toReal_mul, ENNReal.toReal_pow]
+  rw [mul_right_comm]
+  refine hilbertSchmidtNorm_le_of_hilbertSchmidtEnergy_le _ T b c (‖A‖₊ * ‖B‖₊) h ?_
+  rw [ENNReal.coe_mul, mul_pow, mul_right_comm]
+  simpa [eNorm_eq_nnNorm] using hilbertSchmidtEnergy_comp_comp_le A T B b c
 
-end Complete
+/-- **Right ideal inequality for the Hilbert–Schmidt norm.** If `T` has finite energy, then
+`‖T B‖_HS ≤ ‖T‖_HS ‖B‖`. -/
+theorem hilbertSchmidtNorm_comp_le_right (T : F →L[𝕜] G) (B : E →L[𝕜] F)
+    (c : HilbertBasis ι' 𝕜 F) (h : T.hilbertSchmidtEnergy c ≠ ∞) :
+    (T ∘L B).hilbertSchmidtNorm ≤ T.hilbertSchmidtNorm * ‖B‖ := by
+  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
+  rw [mul_comm]
+  refine hilbertSchmidtNorm_le_of_hilbertSchmidtEnergy_le _ T b c ‖B‖₊ h ?_
+  rw [mul_comm]
+  simpa [eNorm_eq_nnNorm] using hilbertSchmidtEnergy_comp_le_right T B b c
+
+/-- **Right ideal inequality for the Hilbert–Schmidt norm** when the source of `T` is
+finite-dimensional, so that `T` has finite energy: `‖T B‖_HS ≤ ‖T‖_HS ‖B‖`. -/
+theorem hilbertSchmidtNorm_comp_le_right_of_finiteDimensional [FiniteDimensional 𝕜 F]
+    (T : F →L[𝕜] G) (B : E →L[𝕜] F) :
+    (T ∘L B).hilbertSchmidtNorm ≤ T.hilbertSchmidtNorm * ‖B‖ := by
+  obtain ⟨_, c, -⟩ := exists_hilbertBasis 𝕜 F
+  exact hilbertSchmidtNorm_comp_le_right T B c (T.hilbertSchmidtEnergy_ne_top c)
+
+end CompleteTarget
+
+end Norm
 
 end ContinuousLinearMap

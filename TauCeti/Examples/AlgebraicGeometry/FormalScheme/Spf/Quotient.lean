@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Quotient
-public import TauCeti.RingTheory.Huber.Padic.Basic
+public import TauCeti.RingTheory.AdicRing.Padic
 
 /-!
 # Quotient thickenings of formal spectra: examples
@@ -105,11 +105,6 @@ end Zero
 section Padic
 
 variable (p : ℕ) [Fact p.Prime]
-
-local instance : IsAdicRing ℤ_[p] :=
-  ⟨IsLocalRing.maximalIdeal ℤ_[p],
-    by rw [PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _,
-    Huber.PadicInt.isAdic_maximalIdeal, inferInstance⟩
 
 -- The maps of all infinitesimal neighbourhoods of `Spf ℤ_p` are surjective on stalks.
 example (n : ℕ) (q : PrimeSpectrum (ℤ_[p] ⧸ IsLocalRing.maximalIdeal ℤ_[p] ^ (n + 1))) :

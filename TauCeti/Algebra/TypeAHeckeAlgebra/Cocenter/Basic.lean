@@ -39,8 +39,8 @@ says that the classes of the elements `ζ_λ`, for `λ` a partition of `n`, span
 `Hₙ` agree as soon as they agree on every `ζ_λ`
 (`TauCeti.InfiniteTypeAHeckeAlgebra.trace_eq_of_cycleBlock_values`). This is the spanning half of
 the theorem that these classes form a basis of the cocenter; their linear independence, over an
-infinite integral domain and for parameters at which the `Q`-integers `[d]_Q`, `d ≤ n`, are nonzero
-and `Q ≠ 1`, is proved in `TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basis`.
+infinite integral domain and for parameters at which the `Q`-integers `[d]_Q`, `d ≤ n`, are
+nonzero, is proved in `TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basis`.
 
 A linear functional `τ` on the infinite type-A Hecke algebra is *block multiplicative* when
 `τ (x * shift a y) = τ x * τ y` for every `x` in the stage of the first `a` strands and every
@@ -617,7 +617,7 @@ theorem span_cycleBlock_sup_commutatorSubmodule (n : ℕ) :
     rw [Submodule.map_sup, Submodule.map_span, ← Set.range_comp]
     exact span_cycleBlock_sup_stageCommutatorSpan n
   refine eq_top_iff.2 fun z _ ↦ ?_
-  have hz : (z : InfiniteTypeAHeckeAlgebra R q) ∈ Subalgebra.toSubmodule (stage R q n) := z.2
+  have hz : (z : InfiniteTypeAHeckeAlgebra R q) ∈ Subalgebra.toSubmodule (stage R q n) := z.property
   rw [← h] at hz
   obtain ⟨w, hw, hwz⟩ := hz
   rwa [← Subtype.val_injective hwz]

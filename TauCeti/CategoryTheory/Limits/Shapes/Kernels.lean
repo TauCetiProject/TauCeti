@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Equalizers
 
 /-!
@@ -21,6 +22,10 @@ assumed: all the relevant cocones and coforks are given.  This is the special ca
 This is how a quotient construction, such as relative chains as the quotient of the chains of a
 space by those of a subspace, inherits a colimit description from the two objects it is formed
 from.
+
+The file also records that the square of a cokernel against a zero object is a pushout
+(`CategoryTheory.IsPushout.of_isColimit_cokernelCofork`), and that so is the square comparing the
+cokernels of `i` and of `i ≫ j` (`CategoryTheory.IsPushout.of_isColimit_cokernelCofork_comp`).
 -/
 
 public section
@@ -47,3 +52,42 @@ def isColimitOfIsColimitCokernelCofork (hπ : ∀ j, IsColimit (CokernelCofork.o
   isColimitOfIsColimitCofork (β := 0) (g := 0) hπ hF hG hf (fun _ ↦ by simp) hp hcok
 
 end TauCeti
+
+namespace CategoryTheory.IsPushout
+
+open Limits
+
+/-- **The square of a cokernel against a zero object is a pushout**: if `g : X₂ ⟶ X₃` is a
+cokernel of `f : X₁ ⟶ X₂` and `Y` is a zero object, the square with `X₁ ⟶ Y ⟶ X₃` is a pushout
+square. -/
+theorem of_isColimit_cokernelCofork {C : Type*} [Category* C] [HasZeroMorphisms C]
+    {X₁ X₂ X₃ Y : C} {f : X₁ ⟶ X₂} {g : X₂ ⟶ X₃} {w : f ≫ g = 0}
+    (hg : IsColimit (CokernelCofork.ofπ g w)) (hY : IsZero Y) :
+    IsPushout f (0 : X₁ ⟶ Y) g (0 : Y ⟶ X₃) :=
+  of_isColimit' ⟨by simp [w]⟩ (PushoutCocone.IsColimit.mk _
+    (fun s ↦ (CokernelCofork.IsColimit.desc' hg s.inl (by simpa using s.condition)).val)
+    (fun _ ↦ (CokernelCofork.IsColimit.desc' hg _ _).property) (fun _ ↦ hY.eq_of_src _ _)
+    (fun _ _ hm _ ↦ Cofork.IsColimit.hom_ext hg
+      (hm.trans (CokernelCofork.IsColimit.desc' hg _ _).property.symm)))
+
+/-- **The cokernel square of a composite.** If `p : Y ⟶ Z` is a cokernel of `i : X ⟶ Y` and
+`c : W ⟶ Q` is a cokernel of `i ≫ j`, then the square formed by `j`, `p`, `c` and a map
+`α : Z ⟶ Q` with `j ≫ c = p ≫ α` (necessarily the map induced between the cokernels) is a
+pushout. -/
+theorem of_isColimit_cokernelCofork_comp {C : Type*} [Category* C] [HasZeroMorphisms C]
+    {X Y Z W Q : C} {i : X ⟶ Y} {p : Y ⟶ Z} {hip : i ≫ p = 0}
+    (hp : IsColimit (CokernelCofork.ofπ p hip)) {j : Y ⟶ W} {c : W ⟶ Q} {hc : (i ≫ j) ≫ c = 0}
+    (hc' : IsColimit (CokernelCofork.ofπ c hc)) {α : Z ⟶ Q} (hα : j ≫ c = p ≫ α) :
+    IsPushout j p c α := by
+  have hdesc : ∀ s : PushoutCocone j p, (i ≫ j) ≫ s.inl = 0 := fun s ↦ by
+    rw [Category.assoc, s.condition, ← Category.assoc, hip, zero_comp]
+  let d : ∀ s : PushoutCocone j p, { l : Q ⟶ s.pt // c ≫ l = s.inl } := fun s ↦
+    CokernelCofork.IsColimit.desc' hc' s.inl (hdesc s)
+  refine of_isColimit' ⟨hα⟩ (PushoutCocone.IsColimit.mk _ (fun s ↦ (d s).val)
+    (fun s ↦ (d s).property) (fun s ↦ ?_) (fun s m hm _ ↦ ?_))
+  · refine Cofork.IsColimit.hom_ext hp ?_
+    simp [← reassoc_of% hα, (d s).property, s.condition]
+  · refine Cofork.IsColimit.hom_ext hc' ?_
+    rw [CokernelCofork.π_ofπ, hm, (d s).property]
+
+end CategoryTheory.IsPushout

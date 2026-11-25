@@ -156,14 +156,14 @@ theorem comp_restrict_mem_repartitionSpace {β : Place k F → F'}
   refine (hbad.biUnion fun P _ ↦ Place.finite_setOf_restrict_eq (k' := k') (F' := F') k F P).subset
     fun P' hP' ↦ Set.mem_iUnion₂.mpr ⟨P'.restrict k F, fun hint ↦ hP' ?_, rfl⟩
   refine P'.mem_integers_iff.mp (P'.mem_integers_of_isIntegral (fun a ↦ ?_) hint)
-  exact (Place.mem_integers_restrict_iff k F P' (a : F)).mp a.2
+  exact (Place.mem_integers_restrict_iff k F P' (a : F)).mp a.property
 
 variable (k k' F F') in
 /-- Pullback of relative repartitions along restriction of places, as a `k`-linear map. -/
 noncomputable def relativeRepartitionPullback :
     ↥(relativeRepartitionSpace k F F') →ₗ[k] ↥(repartitionSpace k' F') where
   toFun β := ⟨fun P' ↦ (β : Place k F → F') (P'.restrict k F),
-    comp_restrict_mem_repartitionSpace β.2⟩
+    comp_restrict_mem_repartitionSpace β.property⟩
   map_add' _ _ := Subtype.ext <| funext fun _ ↦ rfl
   map_smul' _ _ := Subtype.ext <| funext fun _ ↦ rfl
 
@@ -224,7 +224,7 @@ theorem mem_range_relativeRepartitionPullback_iff [Algebra.IsIntegral k k']
       funext P'
       exact h _ _ (hlift _)
     have hβ : β ∈ relativeRepartitionSpace k F F' :=
-      (comp_restrict_mem_repartitionSpace_iff hF').mp (hpull ▸ a.2)
+      (comp_restrict_mem_repartitionSpace_iff hF').mp (hpull ▸ a.property)
     exact ⟨⟨β, hβ⟩, Subtype.ext hpull⟩
 
 /-- **Every repartition of `F'` is fibre-constant modulo `A_{F'}(B')`** (Stichtenoth, proof of
@@ -244,7 +244,7 @@ theorem exists_sub_relativeRepartitionPullback_mem_adeleFiltration
   set T : Set (Place k' F') :=
     {P' | ¬ P'.valuation ((a : Place k' F' → F') P') ≤ WithZero.exp (B'.coeff P')} with hT
   have hTfin : T.Finite := by
-    refine ((mem_repartitionSpace_iff_finite.mp a.2).union B'.support.finite_toSet).subset
+    refine ((mem_repartitionSpace_iff_finite.mp a.property).union B'.support.finite_toSet).subset
       fun P' hP' ↦ ?_
     by_contra hnot
     simp only [Set.mem_union, Set.mem_ofPred_eq, Finset.mem_coe,
@@ -305,7 +305,7 @@ variable (k F F') in
 noncomputable def relativeRepartitionMul (hF : IsFunctionField k F) :
     F →ₐ[k] Module.End k ↥(relativeRepartitionSpace k F F') where
   toFun f :=
-    { toFun β := ⟨f • (β : Place k F → F'), smul_mem_relativeRepartitionSpace hF f β.2⟩
+    { toFun β := ⟨f • (β : Place k F → F'), smul_mem_relativeRepartitionSpace hF f β.property⟩
       map_add' β γ := Subtype.ext (by simp [smul_add])
       map_smul' c β := Subtype.ext (by simp [smul_comm f c]) }
   map_one' := LinearMap.ext fun β ↦ Subtype.ext (by simp)
@@ -360,7 +360,7 @@ theorem trace_comp_mem_repartitionSpace {β : Place k F → F'}
     (hβ : β ∈ relativeRepartitionSpace k F F') :
     (fun P ↦ Algebra.trace F F' (β P)) ∈ repartitionSpace k F :=
   mem_repartitionSpace_iff_integers.mpr <| (mem_relativeRepartitionSpace_iff.mp hβ).mono fun P h ↦
-    P.mem_integers_of_isIntegral (R := P.integers) (fun a ↦ a.2) (Algebra.isIntegral_trace h)
+    P.mem_integers_of_isIntegral (R := P.integers) (fun a ↦ a.property) (Algebra.isIntegral_trace h)
 
 variable (k F F') in
 /-- **The trace of relative repartitions** `Tr_{F'/F}`, taken entrywise (Stichtenoth,
@@ -374,7 +374,7 @@ noncomputable def repartitionTrace (hF : IsFunctionField k F) :
   letI := repartitionSpaceModule hF
   exact
     { toFun β := ⟨fun P ↦ Algebra.trace F F' ((β : Place k F → F') P),
-        trace_comp_mem_repartitionSpace β.2⟩
+        trace_comp_mem_repartitionSpace β.property⟩
       map_add' β γ := Subtype.ext <| funext fun _ ↦ by simp
       map_smul' f β := Subtype.ext <| funext fun P ↦ by
         -- Both scalar actions come from `Module.compHom`; expose their defining multiplication
@@ -382,7 +382,7 @@ noncomputable def repartitionTrace (hF : IsFunctionField k F) :
         change Algebra.trace F F' (f • (β : Place k F → F') P) =
           (((repartitionMul hF f)
             ⟨fun Q ↦ Algebra.trace F F' ((β : Place k F → F') Q),
-              trace_comp_mem_repartitionSpace β.2⟩ : ↥(repartitionSpace k F)) :
+              trace_comp_mem_repartitionSpace β.property⟩ : ↥(repartitionSpace k F)) :
                 Place k F → F) P
         rw [congrFun (coe_repartitionMul_apply hF f _) P, Pi.smul_apply,
           LinearMap.map_smul] }
@@ -409,7 +409,7 @@ theorem repartitionTrace_const (hF : IsFunctionField k F)
 theorem repartitionTrace_smul (hF : IsFunctionField k F) (f : F)
     (β : ↥(relativeRepartitionSpace k F F')) :
     repartitionTrace k F F' hF
-        ⟨f • (β : Place k F → F'), smul_mem_relativeRepartitionSpace hF f β.2⟩ =
+        ⟨f • (β : Place k F → F'), smul_mem_relativeRepartitionSpace hF f β.property⟩ =
       repartitionMul hF f (repartitionTrace k F F' hF β) :=
   by
     let _ := relativeRepartitionSpaceModule (F' := F') hF

@@ -7,11 +7,17 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Comodule.Dual
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Fixed
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Invariants
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.BasePoints
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ComoduleAlgebra
 public import TauCeti.Algebra.Lie.AdjointAction.InvariantZeroLocus
 public import TauCeti.Algebra.Lie.TracePowerPolynomial
+public import TauCeti.Algebra.Lie.Reductive.InvariantZeroLocus
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Polynomial.Degree.Map
 
 /-!
 # The nilpotent cone of an affine group
@@ -23,10 +29,23 @@ representation (`TauCeti.adjointPolynomialComoduleAlgebra`). The invariant funct
 `O(𝔤)^G` (`TauCeti.adjointInvariantPolynomials`) form the coordinate ring of the adjoint
 quotient `χ : 𝔤 → 𝔤 // G`. The **nilpotent cone** is the scheme-theoretic zero fibre `χ⁻¹(0)`:
 its ideal (`TauCeti.nilpotentConeIdeal`) is generated in `O(𝔤)` by the invariant functions
-vanishing at the origin. It is a homogeneous ideal, so the cone is stable under scaling, and it is
-a subcomodule, so the cone is stable under the adjoint action of `G`
+vanishing at the origin, that is, it is the ideal `Subalgebra.symmetricAlgebraHilbertIdeal` of the
+coinvariants of the comodule `𝔤*`. It is a homogeneous ideal, so the cone is stable under scaling,
+and it is a subcomodule, so the cone is stable under the adjoint action of `G`
 (`TauCeti.nilpotentConeSubcomodule`). The quotient ring is the full coordinate ring of the zero
 fibre; no reduction is taken.
+
+Adjoint-invariant polynomials are constant on rational adjoint orbits and, for a finite-type group
+over an algebraically closed field, across the closure order on `TauCeti.Comodule.VectorOrbit k H 𝔤`
+(`TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials`,
+`TauCeti.lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials`), so the nilpotent cone is
+closed under orbit specialization (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk`).
+Similarly, the predicate `TauCeti.Comodule.VectorOrbit.IsNilpotentAd` of nilpotent rational adjoint
+orbits is downward closed in the closure order (`TauCeti.Comodule.VectorOrbit.IsNilpotentAd.of_le`)
+without any characteristic, connectedness, or Killing hypothesis, and the `k`-rational vectors
+`{y : 𝔤 | mk y ≤ O}` whose orbit lies below a nilpotent orbit `O` decompose into `O` together with
+the union of all strictly smaller nilpotent orbits
+(`TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_isNilpotentAd`).
 
 The infinitesimal adjoint action of `x ∈ 𝔤` on `O(𝔤)` is the coadjoint action of `x` by
 derivations (`TauCeti.differential_adjointPolynomialComoduleAlgebra`), so every group invariant is
@@ -41,6 +60,29 @@ the Killing form of `𝔤` is nondegenerate, the Lie-invariant functions of posi
 characteristic zero, and points of the cone are `ad`-nilpotent for every connected group over an
 algebraically closed field of characteristic zero.
 
+When `𝔤` is only reductive, `𝔤 = Z(𝔤) ⊕ ⁅𝔤, 𝔤⁆`, the linear functions vanishing on `⁅𝔤, 𝔤⁆` are
+invariants of degree one, and the cone is cut out inside `⁅𝔤, 𝔤⁆`: its `k`-points are the
+`ad`-nilpotent elements of the derived ideal
+(`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad`). These
+have zero central coordinate (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_add_iff`), whereas
+the `ad`-nilpotent elements of `𝔤` form the larger set `Z(𝔤) × 𝒩(⁅𝔤, 𝔤⁆)`: they are the sums of a
+central element and a point of the cone
+(`TauCeti.isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval`).
+
+The cone is not reduced in general, so the statement about `k`-points does not by itself say
+anything about points with values in a nonreduced ring. For a connected affine group of finite
+type over an algebraically closed field of characteristic zero, the trace-power polynomials
+`x ↦ tr (ρ_M(x) ^ m)` of positive degree of a `d`-dimensional module `M` over `𝔤` lie in the ideal
+of the cone. Over the coordinate ring of the cone, which is a `ℚ`-algebra, Newton's identities
+then make the characteristic polynomial of the matrix `A` of the universal element acting on `M`
+equal to `T ^ d`, and the Cayley–Hamilton theorem gives `A ^ d = 0` there. So every point of the
+cone, with values in any semiring, acts on `M` by a matrix with `d`-th power zero.
+
+The characteristic coefficients of `A` are Lie invariants as well, and all but the leading one
+vanish at the origin, so they lie in the ideal of the cone directly, without Newton's identities.
+Hence at every point of the cone with values in any commutative ring, not only a `ℚ`-algebra, the
+matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
+
 ## Main declarations
 
 * `TauCeti.adjointPolynomialComoduleAlgebra`: the action of `G` on the polynomial functions on `𝔤`,
@@ -52,18 +94,54 @@ algebraically closed field of characteristic zero.
 * `TauCeti.nilpotentConeIdeal`: the ideal of the zero fibre of the adjoint quotient.
 * `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: it is
   stable under scaling and under the adjoint action.
+* `TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials`,
+  `TauCeti.lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials`, and
+  `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk`: invariance of adjoint-invariant
+  polynomials and stability of the nilpotent cone along the adjoint orbit closure order.
+* `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_basePointsRepresentation_iff`: the `k`-points of
+  the nilpotent cone are stable under the adjoint action of rational points.
+* `TauCeti.Comodule.VectorOrbit.IsNilpotentAd`, `TauCeti.Comodule.VectorOrbit.IsNilpotentAd.of_le`,
+  and `TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_isNilpotentAd`: nilpotent
+  rational adjoint orbits, downward closure in the closure order, and decomposition of the
+  `k`-rational vectors `{y : 𝔤 | mk y ≤ O}` whose orbit lies in the closure of a nilpotent orbit
+  `O`.
 * `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff`: its `k`-points are the `ad`-nilpotent
   elements, with the two inclusions `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_isNilpotent`
   and `TauCeti.isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval`. More generally, points of
   the cone act nilpotently on every finite-dimensional module
   (`TauCeti.isNilpotent_toEnd_of_nilpotentConeIdeal_le_ker_lift_eval`).
+* `TauCeti.ι_mem_nilpotentConeIdeal`: for a connected group, the linear functions vanishing on
+  `⁅𝔤, 𝔤⁆` lie in the ideal of the cone, so the cone lies in the derived ideal `⁅𝔤, 𝔤⁆`, and so do
+  its `k`-points (`TauCeti.mem_derivedSeries_of_nilpotentConeIdeal_le_ker_lift_eval`). When `𝔤` is
+  reductive this kills the central coordinates.
+* `TauCeti.nilpotentConeIdeal_le_ker_iff`: for a connected group, a ring homomorphism kills the
+  ideal of the cone exactly when it kills the Lie invariants of positive degree; in particular the
+  `k`-points of the cone are the common zeros of these invariants.
+* `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad`: for a
+  connected group with reductive Lie algebra, the `k`-points of the cone are the `ad`-nilpotent
+  elements of the derived ideal. In the coordinates `𝔤 = Z(𝔤) ⊕ ⁅𝔤, 𝔤⁆` the point `z + y` lies on
+  the cone exactly when `z = 0` and `ad y` is nilpotent
+  (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_add_iff`), while the `ad`-nilpotent elements are
+  the sums of an arbitrary central element and a point of the cone
+  (`TauCeti.isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval`).
+* `Module.Basis.genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal`: for a connected
+  affine group of finite type over an algebraically closed field of characteristic zero, the
+  universal element of the cone acts nilpotently with a uniform bound. In a basis of size `d` of a
+  module `M` over the Lie algebra, the `d`-th power of the generic action matrix vanishes in the
+  coordinate ring of the cone, because the trace-power polynomials of positive degree lie in its
+  ideal (`TauCeti.tracePowerPolynomial_mem_nilpotentConeIdeal`). Consequently every point of the
+  cone, with values in any semiring, acts on `M` by a matrix whose `d`-th power vanishes
+  (`TauCeti.map_genericActionMatrix_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker`).
+* `TauCeti.charpoly_map_genericActionMatrix_eq_X_pow_of_nilpotentConeIdeal_le_ker`: for a
+  connected group, at every point of the cone with values in a commutative ring the generic action
+  matrix of a module of rank `d` over the Lie algebra has characteristic polynomial `X ^ d`.
 
 ## References
 
 * B. Kostant, *Lie group representations on polynomial rings*, Amer. J. Math. 85 (1963),
   327–404.
 * D. H. Collingwood and W. M. McGovern, *Nilpotent Orbits in Semisimple Lie Algebras*, Van
-  Nostrand Reinhold, 1993, §1.3 and §3.2.
+  Nostrand Reinhold, 1993, §1.3, §3.2, and §6.2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 10.
 -/
 
@@ -73,7 +151,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u
+universe u v
 
 attribute [local instance] Derivation.adjointComodule
 
@@ -153,24 +231,24 @@ theorem adjointInvariantPolynomials_le_lieInvariants :
 variable (k H) in
 /-- **The ideal of the nilpotent cone.** The ideal of `O(𝔤)` generated by the invariant polynomial
 functions vanishing at the origin: the ideal of the scheme-theoretic zero fibre of the adjoint
-quotient map `𝔤 → 𝔤 // G`. -/
+quotient map `𝔤 → 𝔤 // G`. It is the ideal `Subalgebra.symmetricAlgebraHilbertIdeal` of the
+coinvariants of the comodule `𝔤*`. -/
 noncomputable def nilpotentConeIdeal : Ideal (SymmetricAlgebra k (Module.Dual k 𝔤)) :=
-  Ideal.span {p | p ∈ adjointInvariantPolynomials k H ∧ SymmetricAlgebra.algebraMapInv p = 0}
+  (adjointInvariantPolynomials k H).symmetricAlgebraHilbertIdeal
 
 /-- An invariant polynomial function vanishing at the origin lies in the ideal of the nilpotent
 cone. -/
 theorem mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials
     {p : SymmetricAlgebra k (Module.Dual k 𝔤)} (hp : p ∈ adjointInvariantPolynomials k H)
     (hp₀ : SymmetricAlgebra.algebraMapInv p = 0) : p ∈ nilpotentConeIdeal k H :=
-  Ideal.subset_span ⟨hp, hp₀⟩
+  Subalgebra.mem_symmetricAlgebraHilbertIdeal_of_mem hp hp₀
 
 /-- **The universal property of the ideal of the nilpotent cone.** An ideal contains it exactly
 when it contains every invariant polynomial function vanishing at the origin. -/
 theorem nilpotentConeIdeal_le_iff {I : Ideal (SymmetricAlgebra k (Module.Dual k 𝔤))} :
     nilpotentConeIdeal k H ≤ I ↔
-      ∀ p ∈ adjointInvariantPolynomials k H, SymmetricAlgebra.algebraMapInv p = 0 → p ∈ I := by
-  rw [nilpotentConeIdeal, Ideal.span_le]
-  exact ⟨fun h p hp hp₀ ↦ h ⟨hp, hp₀⟩, fun h p hp ↦ h p hp.1 hp.2⟩
+      ∀ p ∈ adjointInvariantPolynomials k H, SymmetricAlgebra.algebraMapInv p = 0 → p ∈ I :=
+  Subalgebra.symmetricAlgebraHilbertIdeal_le_iff
 
 /-- The origin lies on the nilpotent cone: its ideal is contained in the augmentation ideal. -/
 theorem nilpotentConeIdeal_le_ker_algebraMapInv :
@@ -183,24 +261,10 @@ theorem nilpotentConeIdeal_le_ker_algebraMapInv :
 components of positive degree of the invariant polynomial functions, which are again invariant. -/
 theorem nilpotentConeIdeal_isHomogeneous :
     (nilpotentConeIdeal k H).IsHomogeneous
-      (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k 𝔤)) := by
-  classical
+      (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k 𝔤)) :=
   let _ : Comodule k H (Module.Dual k 𝔤) := Comodule.dual k H 𝔤
-  let 𝒜 := SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k 𝔤)
-  rw [Ideal.IsHomogeneous.iff_eq]
-  refine le_antisymm (Ideal.toIdeal_homogeneousCore_le _ _)
-    (nilpotentConeIdeal_le_iff.mpr fun p hp hp₀ ↦ ?_)
-  rw [← DirectSum.sum_support_decompose 𝒜 p]
-  refine Ideal.sum_mem _ fun n _ ↦
-    Ideal.mem_homogeneousCore_of_homogeneous_of_mem (𝒜 := 𝒜) ⟨n, SetLike.coe_mem _⟩ ?_
-  refine mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials
-    (ComoduleAlgebra.decompose_mem_coinvariants_symmetricAlgebra hp n) ?_
-  -- The augmentation ideal is the irrelevant ideal, which is homogeneous.
-  have h := (HomogeneousIdeal.irrelevant 𝒜).isHomogeneous n
-    (show p ∈ (HomogeneousIdeal.irrelevant 𝒜).toIdeal by
-      rw [SymmetricAlgebra.toIdeal_irrelevant_eq_ker_algebraMapInv]
-      exact hp₀)
-  rwa [SymmetricAlgebra.toIdeal_irrelevant_eq_ker_algebraMapInv] at h
+  Subalgebra.isHomogeneous_symmetricAlgebraHilbertIdeal fun n _ hp ↦
+    ComoduleAlgebra.decompose_mem_coinvariants_symmetricAlgebra hp n
 
 /-- **The nilpotent cone is stable under the adjoint action.** The coaction carries its ideal into
 the ideal it generates in `O(𝔤) ⊗ H`, since it is generated by invariants. -/
@@ -209,7 +273,7 @@ theorem coact_mem_map_includeLeft_nilpotentConeIdeal {p : SymmetricAlgebra k (Mo
     Comodule.coact (R := k) (C := H) p ∈
       (nilpotentConeIdeal k H).map (Algebra.TensorProduct.includeLeft (R := k) (S := k)
         (A := SymmetricAlgebra k (Module.Dual k 𝔤)) (B := H)) :=
-  ComoduleAlgebra.coact_mem_map_includeLeft_span (fun _ ↦ And.left) hp
+  ComoduleAlgebra.coact_mem_map_includeLeft_symmetricAlgebraHilbertIdeal hp
 
 variable (k H) in
 /-- The ideal of the nilpotent cone, as a subcomodule of the polynomial functions on the Lie
@@ -224,7 +288,8 @@ noncomputable def nilpotentConeSubcomodule :
 @[simp]
 theorem mem_nilpotentConeSubcomodule {p : SymmetricAlgebra k (Module.Dual k 𝔤)} :
     p ∈ nilpotentConeSubcomodule k H ↔ p ∈ nilpotentConeIdeal k H :=
-  ComoduleAlgebra.mem_spanSubcomodule _
+  (ComoduleAlgebra.mem_spanSubcomodule _).trans <| by
+    rw [nilpotentConeIdeal, Subalgebra.symmetricAlgebraHilbertIdeal_def]
 
 /-- **Nilpotent elements lie on the nilpotent cone.** Over a field of characteristic zero, if the
 Killing form of the Lie algebra is nondegenerate, then evaluation at an `ad`-nilpotent element kills
@@ -235,6 +300,48 @@ theorem nilpotentConeIdeal_le_ker_lift_eval_of_isNilpotent [CharZero k]
   nilpotentConeIdeal_le_iff.mpr fun p hp hp₀ ↦
     isNilpotent_ad_iff_forall_lift_eval_eq_zero.mp hx p
       (adjointInvariantPolynomials_le_lieInvariants hp) hp₀
+
+/-- **Adjoint-invariant polynomials are preserved by rational group points.** -/
+theorem lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials
+    (g : WithConv (H →ₐ[k] k)) (x : 𝔤) {p : SymmetricAlgebra k (Module.Dual k 𝔤)}
+    (hp : p ∈ adjointInvariantPolynomials k H) :
+    SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (Comodule.basePointsRepresentation 𝔤 g x)) p =
+      SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x) p := by
+  let _ := Comodule.dual k H 𝔤
+  exact Comodule.lift_eval_basePointsRepresentation_of_mem_coinvariants x g hp
+
+/-- **The nilpotent cone is stable under rational group points.** An element lies on the
+nilpotent cone exactly when its image under the adjoint action of a rational point does. -/
+@[simp]
+theorem nilpotentConeIdeal_le_ker_lift_eval_basePointsRepresentation_iff
+    (g : WithConv (H →ₐ[k] k)) (x : 𝔤) :
+    nilpotentConeIdeal k H ≤ RingHom.ker
+        (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (Comodule.basePointsRepresentation 𝔤 g x))) ↔
+      nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x)) := by
+  simp only [nilpotentConeIdeal_le_iff, RingHom.mem_ker]
+  exact forall₂_congr fun p hp ↦ by
+    rw [lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials g x hp]
+
+/-- **Adjoint-invariant polynomials are constant on adjoint orbit closures.** -/
+theorem lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials [IsAlgClosed k]
+    [Algebra.FiniteType k H] {x y : 𝔤}
+    (h : (Comodule.VectorOrbit.mk y : Comodule.VectorOrbit k H 𝔤) ≤ Comodule.VectorOrbit.mk x)
+    {p : SymmetricAlgebra k (Module.Dual k 𝔤)} (hp : p ∈ adjointInvariantPolynomials k H) :
+    SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 y) p =
+      SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x) p := by
+  let _ := Comodule.dual k H 𝔤
+  exact Comodule.VectorOrbit.lift_eval_eq_of_mk_le_mk_of_mem_coinvariants h hp
+
+/-- **The nilpotent cone is closed under adjoint orbit specialization.** If the adjoint orbit of `y`
+lies below that of `x` in the closure order and `x` lies on the nilpotent cone, so does `y`. -/
+theorem nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk [IsAlgClosed k] [Algebra.FiniteType k H]
+    {x y : 𝔤}
+    (h : (Comodule.VectorOrbit.mk y : Comodule.VectorOrbit k H 𝔤) ≤ Comodule.VectorOrbit.mk x)
+    (hx : nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x))) :
+    nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 y)) :=
+  nilpotentConeIdeal_le_iff.mpr fun p hp hp₀ ↦ by
+    rw [RingHom.mem_ker, lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials h hp]
+    exact nilpotentConeIdeal_le_iff.mp hx p hp hp₀
 
 end Basic
 
@@ -258,6 +365,42 @@ theorem adjointInvariantPolynomials_eq_lieInvariants :
       rw [differential_adjointPolynomialComoduleAlgebra]
       exact SymmetricAlgebra.mem_lieInvariants.mp hp _
 
+/-- **Points of the nilpotent cone are the common zeros of the Lie invariants.** For a connected
+affine group over an algebraically closed field of characteristic zero, a ring homomorphism `f`
+out of the polynomial functions on the Lie algebra kills the ideal of the nilpotent cone exactly
+when it kills every polynomial function that is killed by the coadjoint action and vanishes at the
+origin. For `f` the evaluation at an element `x` of the Lie algebra, this says that `x` lies on the
+cone exactly when it is a common zero of these invariants. -/
+theorem nilpotentConeIdeal_le_ker_iff {S F : Type*} [Semiring S]
+    [FunLike F (SymmetricAlgebra k (Module.Dual k 𝔤)) S]
+    [RingHomClass F (SymmetricAlgebra k (Module.Dual k 𝔤)) S] {f : F} :
+    nilpotentConeIdeal k H ≤ RingHom.ker f ↔
+      ∀ p ∈ SymmetricAlgebra.lieInvariants k 𝔤 (Module.Dual k 𝔤),
+        SymmetricAlgebra.algebraMapInv p = 0 → f p = 0 := by
+  simp only [nilpotentConeIdeal_le_iff, adjointInvariantPolynomials_eq_lieInvariants,
+    RingHom.mem_ker]
+
+/-- **The nilpotent cone lies in the derived ideal.** For a connected affine group over an
+algebraically closed field of characteristic zero, a linear function on the Lie algebra vanishing on
+all brackets, that is on the derived ideal `⁅𝔤, 𝔤⁆`, lies in the ideal of the nilpotent cone. So the
+cone is a closed subscheme of the linear subspace `⁅𝔤, 𝔤⁆`. Only when `𝔤` is reductive does this
+say that the cone has zero central coordinate
+(`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_add_iff`). -/
+theorem ι_mem_nilpotentConeIdeal {φ : Module.Dual k 𝔤} (hφ : ∀ x y : 𝔤, φ ⁅x, y⁆ = 0) :
+    _root_.SymmetricAlgebra.ι k (Module.Dual k 𝔤) φ ∈ nilpotentConeIdeal k H := by
+  refine mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials ?_
+    (SymmetricAlgebra.algebraMapInv_ι φ)
+  rw [adjointInvariantPolynomials_eq_lieInvariants]
+  exact SymmetricAlgebra.ι_mem_lieInvariants_iff_apply_lie_eq_zero.mpr hφ
+
+/-- **Points of the nilpotent cone lie in the derived ideal.** For a connected affine group over an
+algebraically closed field of characteristic zero, if evaluation at an element `x` of the Lie
+algebra kills the ideal of the nilpotent cone, then `x ∈ ⁅𝔤, 𝔤⁆`. -/
+theorem mem_derivedSeries_of_nilpotentConeIdeal_le_ker_lift_eval {x : 𝔤}
+    (hx : nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x))) :
+    x ∈ LieAlgebra.derivedSeries k 𝔤 1 :=
+  mem_derivedSeries_of_forall_lift_eval_eq_zero (nilpotentConeIdeal_le_ker_iff.mp hx)
+
 /-- **Points of the nilpotent cone act nilpotently.** For a connected affine group over an
 algebraically closed field of characteristic zero, if evaluation at an element `x` of the Lie
 algebra kills the ideal of the nilpotent cone, then `x` acts nilpotently on every
@@ -266,8 +409,7 @@ theorem isNilpotent_toEnd_of_nilpotentConeIdeal_le_ker_lift_eval (M : Type*) [Ad
     [Module k M] [FiniteDimensional k M] [LieRingModule 𝔤 M] [LieModule k 𝔤 M] {x : 𝔤}
     (hx : nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x))) :
     IsNilpotent (LieModule.toEnd k 𝔤 M x) :=
-  isNilpotent_toEnd_of_forall_lift_eval_eq_zero M fun p hp hp₀ ↦
-    nilpotentConeIdeal_le_iff.mp hx p (by rwa [adjointInvariantPolynomials_eq_lieInvariants]) hp₀
+  isNilpotent_toEnd_of_forall_lift_eval_eq_zero M (nilpotentConeIdeal_le_ker_iff.mp hx)
 
 /-- **Points of the nilpotent cone are nilpotent.** For a connected affine group over an
 algebraically closed field of characteristic zero, if evaluation at an element `x` of the Lie
@@ -287,6 +429,214 @@ theorem nilpotentConeIdeal_le_ker_lift_eval_iff [LieAlgebra.IsKilling k 𝔤] {x
   ⟨isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval,
     nilpotentConeIdeal_le_ker_lift_eval_of_isNilpotent⟩
 
+/-- **The rational points of the nilpotent cone of a group with reductive Lie algebra.** For a
+connected affine group over an algebraically closed field of characteristic zero whose Lie algebra
+is reductive, an element `x` of the Lie algebra lies on the nilpotent cone, that is evaluation at
+`x` kills its ideal, exactly when `x` lies in the derived ideal `⁅𝔤, 𝔤⁆` and `ad x` is nilpotent.
+
+The invariant linear functions are those vanishing on `⁅𝔤, 𝔤⁆`, so the cone has zero central
+coordinate: unlike the set of `ad`-nilpotent elements, it contains no nonzero central element
+(`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_add_iff`). -/
+theorem nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad
+    [LieAlgebra.HasCentralRadical k 𝔤] {x : 𝔤} :
+    nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x)) ↔
+      x ∈ LieAlgebra.derivedSeries k 𝔤 1 ∧ IsNilpotent (LieAlgebra.ad k 𝔤 x) := by
+  rw [nilpotentConeIdeal_le_ker_iff,
+    mem_derivedSeries_and_isNilpotent_ad_iff_forall_lift_eval_eq_zero]
+
+/-- **The nilpotent cone of a group with reductive Lie algebra has zero central coordinate.** For a
+connected affine group over an algebraically closed field of characteristic zero whose Lie algebra
+`𝔤` is reductive, let `z` be central and `y ∈ ⁅𝔤, 𝔤⁆`. Then `z + y` lies on the nilpotent cone
+exactly when the central coordinate `z` is zero and `ad y` is nilpotent. -/
+theorem nilpotentConeIdeal_le_ker_lift_eval_add_iff [LieAlgebra.HasCentralRadical k 𝔤] {z y : 𝔤}
+    (hz : z ∈ LieAlgebra.center k 𝔤) (hy : y ∈ LieAlgebra.derivedSeries k 𝔤 1) :
+    nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (z + y))) ↔
+      z = 0 ∧ IsNilpotent (LieAlgebra.ad k 𝔤 y) := by
+  rw [nilpotentConeIdeal_le_ker_iff, forall_lift_eval_add_eq_zero_iff hz hy]
+
+/-- **The `ad`-nilpotent elements of a group with reductive Lie algebra.** For a connected affine
+group over an algebraically closed field of characteristic zero whose Lie algebra `𝔤` is reductive,
+`ad x` is nilpotent exactly when `x = z + y` with `z` central and `y` on the nilpotent cone. So the
+`ad`-nilpotent locus `Z(𝔤) × 𝒩(⁅𝔤, 𝔤⁆)` is larger than the cone as soon as `𝔤` has nonzero
+centre. -/
+theorem isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval
+    [LieAlgebra.HasCentralRadical k 𝔤] {x : 𝔤} :
+    IsNilpotent (LieAlgebra.ad k 𝔤 x) ↔
+      ∃ z ∈ LieAlgebra.center k 𝔤, ∃ y : 𝔤,
+        nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 y)) ∧
+          z + y = x := by
+  rw [isNilpotent_ad_iff_exists_mem_center_add]
+  simp only [nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad,
+    and_assoc]
+
+section GenericActionMatrix
+
+/-- For a connected affine group of finite type over an algebraically closed field of
+characteristic zero, the trace-power polynomials `x ↦ tr (ρ_M(x) ^ m)` of positive degree of every
+finite-dimensional module `M` over its Lie algebra lie in the ideal of the nilpotent cone. -/
+theorem tracePowerPolynomial_mem_nilpotentConeIdeal {M : Type*} [AddCommGroup M] [Module k M]
+    [FiniteDimensional k M] [LieRingModule 𝔤 M] [LieModule k 𝔤 M] {m : ℕ} (hm : 0 < m) :
+    tracePowerPolynomial k 𝔤 M m ∈ nilpotentConeIdeal k H := by
+  refine mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials
+    (by rw [adjointInvariantPolynomials_eq_lieInvariants]
+        exact tracePowerPolynomial_mem_lieInvariants m) ?_
+  -- a homogeneous element of positive degree lies in the irrelevant ideal
+  exact SymmetricAlgebra.mem_irrelevant_iff_algebraMapInv_eq_zero.mp <|
+    HomogeneousIdeal.mem_irrelevant_of_mem _ hm
+      (tracePowerPolynomial_mem_homogeneousSubmodule (R := k) (L := 𝔤) (M := M) m)
+
+variable {M : Type*} [AddCommGroup M] [Module k M]
+  [LieRingModule (Module.Dual k (Bialgebra.CotangentSpace k H)) M]
+  [LieModule k (Module.Dual k (Bialgebra.CotangentSpace k H)) M]
+  {κ : Type*} [Fintype κ] [DecidableEq κ]
+
+/-- **The universal element of the nilpotent cone is nilpotent.** For a connected affine group of
+finite type over an algebraically closed field of characteristic zero and a basis `c` of size `d`
+of a module `M` over its Lie algebra, every entry of the `d`-th power of the generic action matrix
+lies in the ideal of the nilpotent cone. That is, `A ^ d = 0` in the coordinate ring of the cone,
+where `A` is the matrix of the universal element of the cone acting on `M`. -/
+theorem _root_.Module.Basis.genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal
+    (c : Module.Basis κ k M) (p q : κ) :
+    (genericActionMatrix k 𝔤 c ^ Fintype.card κ) p q ∈ nilpotentConeIdeal k H := by
+  have := Module.Finite.of_basis c
+  let I := nilpotentConeIdeal k H
+  -- the coordinate ring of the cone is a vector space over a field of characteristic zero
+  have := HasUniqueDiv.of_isTorsionFree k (SymmetricAlgebra k (Module.Dual k 𝔤) ⧸ I)
+  have h := map_genericActionMatrix_pow_card_eq_zero (Ideal.Quotient.mk I) c
+    fun j hj _ ↦ Ideal.Quotient.eq_zero_iff_mem.mpr (tracePowerPolynomial_mem_nilpotentConeIdeal hj)
+  have hpq := congrFun₂ h p q
+  rw [← Matrix.map_pow, Matrix.map_apply, Matrix.zero_apply] at hpq
+  exact Ideal.Quotient.eq_zero_iff_mem.mp hpq
+
+/-- **Points of the nilpotent cone act nilpotently, with a uniform bound.** For a connected affine
+group of finite type over an algebraically closed field of characteristic zero, let
+`φ : O(𝔤) → B` be a point of the nilpotent cone with values in any semiring, possibly nonreduced:
+a ring homomorphism killing the ideal of the cone. Let `A` be the generic action matrix of a module
+`M` over the Lie algebra in a basis of size `d`. Then the matrix `φ A` of the point acting on `M`
+satisfies `(φ A) ^ d = 0`. -/
+theorem map_genericActionMatrix_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker {B F : Type*}
+    [Semiring B] [FunLike F (SymmetricAlgebra k (Module.Dual k 𝔤)) B]
+    [RingHomClass F (SymmetricAlgebra k (Module.Dual k 𝔤)) B] (φ : F)
+    (hφ : nilpotentConeIdeal k H ≤ RingHom.ker φ) (c : Module.Basis κ k M) :
+    (genericActionMatrix k 𝔤 c).map φ ^ Fintype.card κ = 0 := by
+  ext p q
+  rw [← RingHom.coe_coe φ, ← Matrix.map_pow, Matrix.map_apply, Matrix.zero_apply]
+  exact hφ (c.genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal p q)
+
+/-- **The characteristic polynomial of a module on the nilpotent cone.** For a connected affine
+group over an algebraically closed field of characteristic zero, let `M` be a Lie module over its
+Lie algebra with a basis `c` of size `N`. At every point of the nilpotent cone with values in a
+commutative ring, that is after applying any ring homomorphism `f` killing the ideal of the cone,
+the generic action matrix of `M` has characteristic polynomial `X ^ N`: its other characteristic
+coefficients are invariant polynomial functions vanishing at the origin. -/
+theorem charpoly_map_genericActionMatrix_eq_X_pow_of_nilpotentConeIdeal_le_ker {B : Type*}
+    [CommRing B] {f : SymmetricAlgebra k (Module.Dual k 𝔤) →+* B}
+    (hf : nilpotentConeIdeal k H ≤ RingHom.ker f) (c : Module.Basis κ k M) :
+    ((genericActionMatrix k 𝔤 c).map f).charpoly = Polynomial.X ^ Fintype.card κ := by
+  set A := genericActionMatrix k 𝔤 c
+  have hcoeff (i : ℕ) (hi : i < Fintype.card κ) : f (A.charpoly.coeff i) = 0 := by
+    refine hf (mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials ?_
+      (algebraMapInv_charpoly_coeff_genericActionMatrix_of_lt k 𝔤 c hi))
+    rw [adjointInvariantPolynomials_eq_lieInvariants]
+    exact charpoly_coeff_genericActionMatrix_mem_lieInvariants k 𝔤 c i
+  rw [Matrix.charpoly_map, ← Matrix.charpoly_natDegree_eq_dim A]
+  exact (Matrix.charpoly_monic A).map_eq_X_pow_of_map_coeff_eq_zero fun i hi ↦
+    hcoeff i (A.charpoly_natDegree_eq_dim ▸ hi)
+
+end GenericActionMatrix
+
 end Connected
+
+namespace Comodule.VectorOrbit
+
+section Predicate
+
+variable {k : Type u} {H : Type v} [Field k] [CommRing H] [HopfAlgebra k H]
+  [Module.Finite k (Bialgebra.CotangentSpace k H)]
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+/-- A rational adjoint orbit is **nilpotent** when its elements act nilpotently under `ad`. -/
+def IsNilpotentAd (O : VectorOrbit k H 𝔤) : Prop :=
+  O.lift (fun x ↦ IsNilpotent (LieAlgebra.ad k 𝔤 x)) fun g x ↦ by
+    rw [← Derivation.basePointsAdjointLieEquiv_apply]
+    exact propext ((Derivation.basePointsAdjointLieEquiv g).isNilpotent_ad_apply_iff x)
+
+/-- The orbit of `x ∈ 𝔤` is nilpotent precisely when `ad x` is nilpotent. -/
+@[simp]
+theorem isNilpotentAd_mk_iff {x : 𝔤} :
+    (mk x : VectorOrbit k H 𝔤).IsNilpotentAd ↔ IsNilpotent (LieAlgebra.ad k 𝔤 x) := by
+  rw [IsNilpotentAd, lift_mk]
+
+/-- The zero adjoint orbit is nilpotent. -/
+theorem isNilpotentAd_mk_zero : (mk (0 : 𝔤) : VectorOrbit k H 𝔤).IsNilpotentAd := by
+  simp
+
+end Predicate
+
+section Closure
+
+variable {k H : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
+  [Algebra.FiniteType k H]
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+/-- **Nilpotent orbits are downward closed in the closure order.** For any finite-type affine group
+over an algebraically closed field, any rational adjoint orbit in the closure of a nilpotent orbit
+is again nilpotent. -/
+theorem IsNilpotentAd.of_le {O O' : VectorOrbit k H 𝔤} (hle : O' ≤ O)
+    (hO : O.IsNilpotentAd) : O'.IsNilpotentAd := by
+  classical
+  induction O using VectorOrbit.ind with | h x =>
+  induction O' using VectorOrbit.ind with | h y =>
+  rw [isNilpotentAd_mk_iff] at hO ⊢
+  obtain ⟨n, hn⟩ := hO
+  refine ⟨n, ?_⟩
+  let c := Module.Free.chooseBasis k 𝔤
+  have hmat (z : 𝔤) :
+      LinearMap.toMatrix c c (LieAlgebra.ad k 𝔤 z ^ n) =
+        (genericActionMatrix k 𝔤 c ^ n).map (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 z)) := by
+    rw [← LinearMap.toMatrix_pow, ← AlgHom.mapMatrix_apply, map_pow, AlgHom.mapMatrix_apply,
+      map_lift_eval_genericActionMatrix]
+    rfl
+  apply (LinearMap.toMatrix c c).injective
+  rw [map_zero, hmat y]
+  ext p q
+  rw [Matrix.map_apply, Matrix.zero_apply]
+  refine lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentation_eq_zero hle
+    fun g ↦ ?_
+  have hgn : (LieAlgebra.ad k 𝔤 (basePointsRepresentation 𝔤 g x)) ^ n = 0 := by
+    ext z
+    rw [LinearMap.zero_apply, ← Derivation.basePointsAdjointLieEquiv_apply]
+    have hmap := LieHom.map_ad_pow (Derivation.basePointsAdjointLieEquiv g).toLieHom x n
+      ((Derivation.basePointsAdjointLieEquiv g).symm z)
+    rw [LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply] at hmap
+    rw [← hmap, hn, LinearMap.zero_apply, map_zero]
+  have h0 := congrArg (fun M ↦ M p q) (hmat (basePointsRepresentation 𝔤 g x))
+  rw [hgn, map_zero, Matrix.zero_apply, Matrix.map_apply] at h0
+  exact h0.symm
+
+/-- **Decomposition of the `k`-rational vectors below a nilpotent orbit.** The `k`-rational vectors
+`{y : 𝔤 | mk y ≤ O}` whose orbit lies in the closure of a nilpotent orbit `O` decompose into `O`
+together with the union of all strictly smaller nilpotent orbits. -/
+theorem setOf_mk_le_eq_union_biUnion_of_isNilpotentAd {O : VectorOrbit k H 𝔤}
+    (hO : O.IsNilpotentAd) :
+    {y : 𝔤 | (mk y : VectorOrbit k H 𝔤) ≤ O} =
+      {y : 𝔤 | mk y = O} ∪
+        ⋃ O' ∈ {O' : VectorOrbit k H 𝔤 | O'.IsNilpotentAd ∧ O' < O},
+          {y : 𝔤 | mk y = O'} := by
+  ext y
+  simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_iUnion, exists_prop]
+  refine ⟨fun hle ↦ ?_, ?_⟩
+  · rcases eq_or_lt_of_le hle with rfl | hlt
+    · exact Or.inl rfl
+    · exact Or.inr ⟨mk y, ⟨hO.of_le hle, hlt⟩, rfl⟩
+  · rintro (rfl | ⟨_, ⟨-, hlt⟩, rfl⟩)
+    · exact le_rfl
+    · exact hlt.le
+
+end Closure
+
+end Comodule.VectorOrbit
 
 end TauCeti

@@ -149,7 +149,7 @@ theorem isPrincipal_or_isPrincipal_mul_span_two_integralSqrt_sub_one
   rcases eq_or_ne I ⊥ with rfl | hI
   · exact .inl bot_isPrincipal
   have h𝔭sq : 𝔭 ^ 2 = Ideal.span {2} :=
-    span_two_integralSqrt_sub_one_sq_eq_span_two squarefree_neg_five neg_five_emod_four
+    span_two_integralSqrt_sub_one_sq_eq_span_two neg_five_emod_four
   have h𝔭 : 𝔭 ≠ ⊥ := by
     rintro h
     rw [h, sq, Ideal.bot_mul, eq_comm, Ideal.span_singleton_eq_bot] at h𝔭sq

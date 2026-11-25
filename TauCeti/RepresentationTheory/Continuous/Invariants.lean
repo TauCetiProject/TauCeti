@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Continuous.TopRep
+public import Mathlib.CategoryTheory.Adjunction.Basic
 public import TauCeti.RepresentationTheory.Continuous.Subrepresentation
 import Mathlib.Dynamics.FixedPoints.Topology
 
 /-!
-# The invariants of a normal subgroup as a representation of the quotient
+# Invariants of continuous representations
+
+The invariants functor is right adjoint to the trivial-action functor, the topological
+counterpart of Mathlib's `Rep.invariantsAdjunction`.
 
 For a continuous representation `π` of a group `G` on `V` and a normal subgroup `S ≤ G`, the
 invariants of the restricted representation `π|_S` form a `G`-stable submodule of `V`, and the
@@ -36,6 +40,8 @@ homomorphism `G → G ⧸ S` together with the inclusion `Xˢ ↪ X`.
 * `ContRepresentation.toInvariants`: the representation of `G` on the invariants of `π|_S`.
 * `ContRepresentation.quotientToInvariants`: the representation of `G ⧸ S` on the
   invariants of `π|_S`.
+* `TopRep.trivialFunctor`: the trivial-action functor from topological modules.
+* `TopRep.invariantsAdjunction`: the adjunction between trivial actions and invariant vectors.
 * `TopRep.quotientToInvariants`: the same construction in the category `TopRep`.
 * `TopRep.quotientToInvariantsι`: the inclusion of the invariants into the ambient object,
   as a morphism of `G`-objects.
@@ -81,14 +87,14 @@ def continuousLinearEquivInvariants (S : AddSubgroup M) (pi : ContRepresentation
 @[simp]
 theorem continuousLinearEquivInvariants_val (S : AddSubgroup M)
     (pi : ContRepresentation ℤ G M) (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S) (m : S) :
-    (S.continuousLinearEquivInvariants pi h m).1 = m.1 :=
+    (S.continuousLinearEquivInvariants pi h m).val = m.val :=
   (rfl)
 
 @[simp]
 theorem continuousLinearEquivInvariants_symm_val (S : AddSubgroup M)
     (pi : ContRepresentation ℤ G M) (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S)
     (m : pi.invariants) :
-    ((S.continuousLinearEquivInvariants pi h).symm m).1 = m.1 :=
+    ((S.continuousLinearEquivInvariants pi h).symm m).val = m.val :=
   (rfl)
 
 end AddSubgroup
@@ -130,7 +136,7 @@ variable {π S} in
 /-- Membership in the invariants of `π|_S`, in terms of elements of `G` lying in `S`. -/
 theorem mem_invariants_restrict {v : V} :
     v ∈ (π.restrict S.subtype).invariants ↔ ∀ s ∈ S, π s v = v :=
-  ⟨fun hv s hs ↦ hv ⟨s, hs⟩, fun hv s ↦ hv (s : G) s.2⟩
+  ⟨fun hv s hs ↦ hv ⟨s, hs⟩, fun hv s ↦ hv (s : G) s.property⟩
 
 omit [S.Normal] in
 /-- The trivial subgroup fixes everything. -/
@@ -172,7 +178,7 @@ theorem coe_toInvariants_apply (g : G) (v : (π.restrict S.subtype).invariants) 
 `G ⧸ S`. -/
 theorem toInvariants_apply_of_mem {s : G} (hs : s ∈ S) : toInvariants π S s = 1 := by
   ext v
-  simpa using v.2 ⟨s, hs⟩
+  simpa using v.property ⟨s, hs⟩
 
 /-- The representation of `G ⧸ S` on the invariants of `π|_S`, for a normal subgroup `S ≤ G`; the
 continuous counterpart of `Representation.quotientToInvariants`. -/
@@ -199,6 +205,71 @@ end ContRepresentation
 namespace TopRep
 
 open ContRepresentation
+
+noncomputable section
+
+universe u v w
+
+variable (R : Type u) [Ring R] [TopologicalSpace R]
+
+/-- Equip a topological module with the trivial representation. -/
+@[expose, simps obj]
+def trivialFunctor (G : Type v) [Monoid G] : TopModuleCat.{w} R ⥤ TopRep.{w} R G where
+  obj X := of (ContRepresentation.trivial R G X)
+  map f := ofHom ⟨f.hom, fun _ ↦ rfl⟩
+
+/-- The trivial-action functor equips a continuous linear map with trivial equivariance. -/
+@[simp]
+theorem trivialFunctor_map_hom (G : Type v) [Monoid G]
+    {X Y : TopModuleCat.{w} R} (f : X ⟶ Y) :
+    ((trivialFunctor R G).map f).hom = ⟨f.hom, fun _ ↦ rfl⟩ := (rfl)
+
+/-- The trivial-action functor acts on maps by their original continuous linear map. -/
+@[simp↓]
+theorem trivialFunctor_map_hom_apply (G : Type v) [Monoid G]
+    {X Y : TopModuleCat.{w} R} (f : X ⟶ Y) (x : X) :
+    ((trivialFunctor R G).map f).hom x = f.hom x := (rfl)
+
+variable (G : Type v) [Group G]
+
+/-- Taking invariant vectors is right adjoint to equipping a module with the trivial action. -/
+def invariantsAdjunction : trivialFunctor.{u, v, w} R G ⊣ invariantsFunctor R G where
+  unit := { app X := TopModuleCat.ofHom <|
+      (ContinuousLinearMap.id R X).codRestrict _ fun _ _ ↦ rfl }
+  counit := { app X := ofHom ⟨X.ρ.invariants.subtypeL,
+    fun g ↦ by ext x; exact (x.property g).symm⟩ }
+
+/-- The unit includes each vector as an invariant vector for the trivial action. -/
+@[simp↓]
+theorem coe_invariantsAdjunction_unit_app_hom_apply (X : TopModuleCat.{w} R) (x : X) :
+    (((invariantsAdjunction R G).unit.app X).hom x).val = x := (rfl)
+
+/-- The counit includes invariant vectors into their ambient representation. -/
+@[simp↓]
+theorem invariantsAdjunction_counit_app_hom_apply (X : TopRep.{w} R G)
+    (x : X.ρ.invariants) :
+    ((invariantsAdjunction R G).counit.app X).hom x = (x : X) := (rfl)
+
+/-- The invariants adjunction restricts the codomain of an equivariant map to invariant vectors. -/
+@[simp↓]
+theorem coe_invariantsAdjunction_homEquiv_apply_hom_apply
+    {X : TopModuleCat.{w} R} {Y : TopRep.{w} R G}
+    (f : (trivialFunctor R G).obj X ⟶ Y) (x : X) :
+    (((invariantsAdjunction R G).homEquiv X Y f).hom x : Y) = f.hom x := (rfl)
+
+/-- The inverse invariants adjunction includes the invariant vectors into the representation. -/
+@[simp↓]
+theorem invariantsAdjunction_homEquiv_symm_apply_hom_apply
+    {X : TopModuleCat.{w} R} {Y : TopRep.{w} R G}
+    (f : X ⟶ (invariantsFunctor R G).obj Y) (x : X) :
+    (((invariantsAdjunction R G).homEquiv X Y).symm f).hom x = (f.hom x : Y) := (rfl)
+
+/-- The invariants functor preserves limits as a right adjoint. -/
+instance : (invariantsFunctor (k := R) (G := G) :
+    TopRep.{w} R G ⥤ TopModuleCat.{w} R).IsRightAdjoint :=
+  (invariantsAdjunction R G).isRightAdjoint
+
+end
 
 variable {R : Type*} [Ring R] [TopologicalSpace R] {G : Type*} [Group G]
 
@@ -296,13 +367,13 @@ private noncomputable def invariantsToQuotientToInvariants :
     invariants X ⟶ invariants (quotientToInvariants X S) :=
   TopModuleCat.ofHom
     ((X.ρ.invariants.subtypeL.codRestrict (X.ρ.restrict S.subtype).invariants
-        fun v ↦ invariants_le_invariants_restrict X.ρ S.subtype v.2).codRestrict
+        fun v ↦ invariants_le_invariants_restrict X.ρ S.subtype v.property).codRestrict
       (ContRepresentation.quotientToInvariants X.ρ S).invariants fun v g ↦ by
         induction g using QuotientGroup.induction_on with
         | H g =>
           refine Subtype.ext ?_
           rw [coe_quotientToInvariants_mk_apply]
-          exact v.2 g)
+          exact v.property g)
 
 -- The two nested `codRestrict`s above change only the proofs of membership in the nested invariant
 -- submodules, not the underlying vector.

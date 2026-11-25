@@ -123,7 +123,7 @@ private theorem exists_resolutionMap_eq [IsFiltered J] :
     -- each point of which comes from some stage
     have : Finite (Set.range x') := (isCompact_range x'.continuous).finite_of_discrete.to_subtype
     have := Fintype.ofFinite (Set.range x')
-    choose j y hy using fun v : Set.range x' ↦ exists_resolutionMap_eq m v.1
+    choose j y hy using fun v : Set.range x' ↦ exists_resolutionMap_eq m v.val
     -- a common stage for the finitely many values
     classical
     obtain ⟨l, hl⟩ := IsFiltered.sup_objs_exists (Finset.univ.image j)
@@ -154,8 +154,8 @@ private theorem exists_resolutionMap_eq_zero [IsFilteredOrEmpty J] :
     let y' : C(G, (TopRep.resolutionX (X.obj j).obj m).V) := y
     -- the finitely many values of `y'` each vanish at some deeper stage
     have : Finite (Set.range y') := (isCompact_range y'.continuous).finite_of_discrete.to_subtype
-    choose l f hf using fun v : Set.range y' ↦ exists_resolutionMap_eq_zero m v.1 (by
-      obtain ⟨g, hg⟩ := v.2
+    choose l f hf using fun v : Set.range y' ↦ exists_resolutionMap_eq_zero m v.val (by
+      obtain ⟨g, hg⟩ := v.property
       -- the value at `g` of the image of `y'` is the image of `y' g`, by `resolutionMap_succ_apply`
       have h : (resolutionMap (ContinuousMonoidHom.id G) (c.ι.app j).hom m).hom (y' g) = 0 :=
         DFunLike.congr_fun hy g
@@ -175,7 +175,7 @@ private theorem exists_cochainsMap_f_eq [IsFiltered J] (n : ℕ)
     (x : (TopRep.homogeneousCochains c.pt.obj).X n) :
     ∃ (j : J) (y : (TopRep.homogeneousCochains (X.obj j).obj).X n),
       (cochainsMap (ContinuousMonoidHom.id G) (c.ι.app j).hom).f n y = x := by
-  obtain ⟨j, y, hy⟩ := exists_resolutionMap_eq hc (n + 1) x.1
+  obtain ⟨j, y, hy⟩ := exists_resolutionMap_eq hc (n + 1) x.val
   let Y := TopRep.resolutionX (X.obj j).obj (n + 1)
   let := TopRep.distribMulAction Y
   -- the lift `y` has a finite orbit, since `G` is compact and the stabilizers are open
@@ -189,11 +189,11 @@ private theorem exists_cochainsMap_f_eq [IsFiltered J] (n : ℕ)
     (isCompact_range hcont).finite_of_discrete.to_subtype
   -- each difference `g • y - y` vanishes in the colimit, since `x` is invariant
   choose l f hf using fun v : Set.range fun g : G ↦ Y.ρ g y ↦
-    exists_resolutionMap_eq_zero hc (n + 1) (v.1 - y) (by
-      obtain ⟨g, hg⟩ := v.2
+    exists_resolutionMap_eq_zero hc (n + 1) (v.val - y) (by
+      obtain ⟨g, hg⟩ := v.property
       rw [← hg, map_sub, sub_eq_zero]
       exact (TopRep.hom_comm_apply _ g y).trans
-        ((congrArg _ hy).trans ((x.2 g).trans hy.symm)))
+        ((congrArg _ hy).trans ((x.property g).trans hy.symm)))
   -- so at a common deeper stage the image of `y` is invariant
   obtain ⟨l', f', a, ha⟩ := IsFiltered.wideSpan f
   refine ⟨l', ⟨(resolutionMap (ContinuousMonoidHom.id G) (X.map f').hom (n + 1)).hom y,
@@ -210,7 +210,7 @@ private theorem exists_cochainsMap_f_eq_zero [IsFilteredOrEmpty J] (n : ℕ) {j 
     (y : (TopRep.homogeneousCochains (X.obj j).obj).X n)
     (hy : (cochainsMap (ContinuousMonoidHom.id G) (c.ι.app j).hom).f n y = 0) :
     ∃ (l : J) (f : j ⟶ l), (cochainsMap (ContinuousMonoidHom.id G) (X.map f).hom).f n y = 0 := by
-  obtain ⟨l, f, hf⟩ := exists_resolutionMap_eq_zero hc (n + 1) y.1 (congrArg Subtype.val hy)
+  obtain ⟨l, f, hf⟩ := exists_resolutionMap_eq_zero hc (n + 1) y.val (congrArg Subtype.val hy)
   exact ⟨l, f, Subtype.ext hf⟩
 
 end Descent

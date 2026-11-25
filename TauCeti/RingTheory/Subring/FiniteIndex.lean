@@ -72,7 +72,7 @@ theorem natCard_quotient_span_singleton {x : S} (hx : (x : R) ∈ nonZeroDivisor
     ext y
     exact Ideal.mem_span_singleton'.symm
   have hinj : Function.Injective (AddMonoidHom.mulRight (x : R)) := fun a b hab ↦
-    sub_eq_zero.mp (hx.2 _ (by rw [sub_mul, sub_eq_zero]; exact hab))
+    sub_eq_zero.mp (mem_nonZeroDivisors_iff_right.mp hx _ (by rw [sub_mul, sub_eq_zero]; exact hab))
   have hcomp : (AddMonoidHom.mulRight (x : R)).comp S.toAddSubgroup.subtype =
       S.toAddSubgroup.subtype.comp (AddMonoidHom.mulRight x) := by
     ext y
@@ -144,13 +144,13 @@ section RestrictInfinite
 variable {ι : Type*} {R : ι → Type*} [∀ i, Ring (R i)] (S : Subring (∀ i, R i))
 
 /-- Restriction of a subring `S ≤ ∏ i, R i` to the factors `R i` that are infinite. -/
-def restrictInfiniteHom : S →+* ∀ j : {i : ι // Infinite (R i)}, R j.1 :=
-  (RingHom.pi fun j : {i : ι // Infinite (R i)} ↦ Pi.evalRingHom R j.1).comp S.subtype
+def restrictInfiniteHom : S →+* ∀ j : {i : ι // Infinite (R i)}, R j.val :=
+  (RingHom.pi fun j : {i : ι // Infinite (R i)} ↦ Pi.evalRingHom R j.val).comp S.subtype
 
-/-- Evaluating `S.restrictInfiniteHom x` at an infinite factor `j` reads coordinate `j.1`. -/
+/-- Evaluating `S.restrictInfiniteHom x` at an infinite factor `j` reads coordinate `j.val`. -/
 @[simp]
 theorem restrictInfiniteHom_apply (x : S) (j : {i : ι // Infinite (R i)}) :
-    S.restrictInfiniteHom x j = (x : ∀ i, R i) j.1 :=
+    S.restrictInfiniteHom x j = (x : ∀ i, R i) j.val :=
   (rfl)
 
 /-- An element of `S` lies in `ker S.restrictInfiniteHom` iff it vanishes on every infinite factor.
@@ -163,16 +163,16 @@ theorem mem_ker_restrictInfiniteHom {x : S} :
 its elements vanish on every infinite factor and inject into the product of the finite factors. -/
 instance finite_ker_restrictInfiniteHom [Finite ι] :
     Finite (RingHom.ker S.restrictInfiniteHom) := by
-  have (j : {i : ι // ¬ Infinite (R i)}) : Finite (R j.1) :=
-    not_infinite_iff_finite.mp j.2
+  have (j : {i : ι // ¬ Infinite (R i)}) : Finite (R j.val) :=
+    not_infinite_iff_finite.mp j.property
   refine Finite.of_injective
     (fun x : RingHom.ker S.restrictInfiniteHom ↦
-      fun j : {i : ι // ¬ Infinite (R i)} ↦ (x.1 : ∀ i, R i) j.1)
+      fun j : {i : ι // ¬ Infinite (R i)} ↦ (x.val : ∀ i, R i) j.val)
     fun x y hxy ↦ ?_
   ext i
   by_cases hi : Infinite (R i)
-  · exact ((S.mem_ker_restrictInfiniteHom.mp x.2) i hi).trans
-      ((S.mem_ker_restrictInfiniteHom.mp y.2) i hi).symm
+  · exact ((S.mem_ker_restrictInfiniteHom.mp x.property) i hi).trans
+      ((S.mem_ker_restrictInfiniteHom.mp y.property) i hi).symm
   · exact congr_fun hxy ⟨i, hi⟩
 
 /-- If `S` has finite additive index in `∏ i, R i`, its image under `Subring.restrictInfiniteHom`
@@ -180,11 +180,11 @@ has finite additive index in `∏ j : {i // Infinite (R i)}, R j`. -/
 instance finiteIndex_range_restrictInfiniteHom [S.toAddSubgroup.FiniteIndex] :
     S.restrictInfiniteHom.range.toAddSubgroup.FiniteIndex := by
   classical
-  let proj : (∀ i, R i) →+* ∀ j : {i : ι // Infinite (R i)}, R j.1 :=
-    RingHom.pi fun j ↦ Pi.evalRingHom R j.1
+  let proj : (∀ i, R i) →+* ∀ j : {i : ι // Infinite (R i)}, R j.val :=
+    RingHom.pi fun j ↦ Pi.evalRingHom R j.val
   have hsurj : Function.Surjective proj.toAddMonoidHom := fun y ↦
     ⟨fun i ↦ if hi : Infinite (R i) then y ⟨i, hi⟩ else 0,
-      funext fun j ↦ by simp [proj, j.2]⟩
+      funext fun j ↦ by simp [proj, j.property]⟩
   have hrange : S.restrictInfiniteHom.range.toAddSubgroup =
       S.toAddSubgroup.map proj.toAddMonoidHom := by
     ext y

@@ -101,7 +101,7 @@ private theorem unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot_au
         (upperRamificationGroup K M ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩).comap
           (AlgEquiv.restrictScalarsHom (S := F) K) := by
       rw [Subgroup.mem_comap, hτ]
-      exact σ.2
+      exact σ.property
     rw [hbot, Subgroup.mem_bot] at hτmem
     have hσ1 : σ = 1 := Subtype.ext (by rw [← hτ, hτmem, map_one, Subgroup.coe_one])
     exact hp.one_lt.ne' (by rw [← hσ, hσ1, orderOf_one])

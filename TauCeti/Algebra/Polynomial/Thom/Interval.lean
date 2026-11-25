@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.Derivative
+public import Mathlib.FieldTheory.IsRealClosed.Basic
 public import TauCeti.Algebra.Polynomial.Thom.Basic
-public import TauCeti.FieldTheory.RealClosure.IVT
+import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.Algebra.Polynomial.RealClosed.Sign
 import TauCeti.FieldTheory.RealClosure.AbstractRolle
-import Mathlib.Data.Finset.Max
 
-/-! # Thom's lemma: sign conditions on all derivatives are open intervals
+/-! # Thom's lemma: sign conditions on all derivatives are empty, a point, or an open interval
 
 Over a real closed ordered field, fix signs for every formal derivative of a polynomial `p`,
 including `p` itself. The set of points realizing these signs is empty, a single point, or an
@@ -24,11 +23,10 @@ on the derivatives of orders `1, …, natDegree p`, have the same shape
 `Polynomial.ordConnected_preimage_derivativeSign` already shows that these sets are
 order-convex. Over a non-Archimedean real closed field an order-convex set need not have
 endpoints in the field, so the existence of the endpoints is the additional content here: when
-the condition is realized at two points, the realizing set is a whole interval between
-consecutive roots of the nonzero derivatives. Its endpoints are such roots or infinite.
-Endpoints are written in `WithBot R` and `WithTop R`, so that `⊥` and `⊤` stand for the two
-infinities. No assumption on `p` is needed: the zero polynomial realizes only the zero
-condition, on the whole line.
+the condition is realized at two points, the realizing set is a whole open interval, whose
+endpoints the theorems provide. Endpoints are written in `WithBot R` and `WithTop R`, so that
+`⊥` and `⊤` stand for the two infinities. No assumption on `p` is needed: the zero polynomial
+realizes only the zero condition, on the whole line.
 
 ## References
 
@@ -56,9 +54,7 @@ theorem derivativeSign_eq_of_forall_eval_ne_zero (p : R[X]) {a b : R}
   simp only [derivativeSign_def]
   by_cases hk : derivative^[k] p = 0
   · simp [hk]
-  rcases le_total a b with hab | hba
-  · exact sign_eval_const _ hab fun z hz ↦ h z (Icc_subset_uIcc hz) k hk
-  · exact (sign_eval_const _ hba fun z hz ↦ h z (Icc_subset_uIcc' hz) k hk).symm
+  exact sign_eval_eq_of_forall_mem_uIcc _ fun z hz ↦ h z hz k hk
 
 /-- **Thom's lemma.** For any signs `σ k` prescribed for the derivatives of every order of `p`,
 including order zero, the set of points where `p` realizes them is empty, a single point, or an

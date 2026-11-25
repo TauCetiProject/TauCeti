@@ -13,10 +13,14 @@ public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 Let `R` be the ring of integers of `ℚ` in the sense of `IsIntegralClosure R ℤ ℚ`, and let `v` be a
 height-one prime of `R`, corresponding to the rational prime
 `p = Rat.HeightOneSpectrum.primesEquiv v`.
-This file compares the `v`-adic valuation with the `p`-adic valuation `padicValRat p`.
+This file compares the `v`-adic valuation with the `p`-adic valuation `padicValRat p`, and records
+that `ℤ` has infinitely many height-one prime ideals.
 
 ## Main results
 
+* `Infinite (HeightOneSpectrum ℤ)`: `ℤ` has infinitely many height-one prime ideals.
+* `Rat.HeightOneSpectrum.fact_prime_natGenerator`: the rational prime `natGenerator v` of `v` is
+  prime, as an instance.
 * `Rat.HeightOneSpectrum.valuation_eq_one_iff_padicValRat_eq_zero`: a nonzero rational number is
   a unit at `v` exactly when its `p`-adic valuation vanishes.
 -/
@@ -25,7 +29,20 @@ public section
 
 open IsDedekindDomain
 
+namespace TauCeti
+
+/-- `ℤ` has infinitely many height-one prime ideals, in bijection with the rational primes. -/
+instance : Infinite (HeightOneSpectrum ℤ) :=
+  Infinite.of_surjective _ Rat.HeightOneSpectrum.primesEquiv.surjective
+
+end TauCeti
+
 namespace Rat.HeightOneSpectrum
+
+/-- The rational prime of a height-one prime of the ring of integers of `ℚ` is prime. -/
+instance fact_prime_natGenerator {R : Type*} [CommRing R] [Algebra R ℚ] [IsIntegralClosure R ℤ ℚ]
+    (v : HeightOneSpectrum R) : Fact (natGenerator v).Prime :=
+  ⟨prime_natGenerator v⟩
 
 variable {R : Type*} [CommRing R] [Algebra R ℚ] [IsIntegralClosure R ℤ ℚ] [IsDedekindDomain R]
   [IsFractionRing R ℚ]
@@ -34,7 +51,7 @@ variable {R : Type*} [CommRing R] [Algebra R ℚ] [IsIntegralClosure R ℤ ℚ] 
 valuation vanishes, for `p` the rational prime corresponding to `v`. -/
 theorem valuation_eq_one_iff_padicValRat_eq_zero (v : HeightOneSpectrum R) {x : ℚ}
     (hx : x ≠ 0) : v.valuation ℚ x = 1 ↔ padicValRat (primesEquiv v) x = 0 := by
-  have : Fact (primesEquiv v : ℕ).Prime := ⟨(primesEquiv v).2⟩
+  have : Fact (primesEquiv v : ℕ).Prime := ⟨(primesEquiv v).property⟩
   rw [(valuation_equiv_padicValuation v).eq_one_iff_eq_one]
   simp [Rat.padicValuation, hx]
 

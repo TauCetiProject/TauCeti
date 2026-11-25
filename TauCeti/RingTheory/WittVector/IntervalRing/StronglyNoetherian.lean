@@ -257,7 +257,7 @@ private theorem mem_of_forall_toIntervalLocalization_mul_pow_mem {a b : ℕ} (ha
     (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) x
   dsimp only at hx
   subst hx
-  obtain ⟨m, hm⟩ := s.2
+  obtain ⟨m, hm⟩ := s.property
   dsimp only at hm
   -- Write `x = y / (p [ϖ]) ^ m` and expand `y = ∑_{i ≤ m} [yᵢ] pⁱ + p ^ (m + 1) h`. Each term
   -- `[yᵢ] p ^ (i - m) [ϖ] ^ (-m)` is a monomial `e z₀ ^ j`, and the remainder `p h [ϖ] ^ (-m)`
@@ -308,7 +308,7 @@ private theorem mem_image_weightedNhd {a b : ℕ} (ha : a ≠ 0)
         ψ.toAddMonoidHom).comap (Completion.toCompl : B₀ →+ B)
   refine IntervalLocalization.mem_of_forall_toIntervalLocalization_mul_pow_mem p hv hϖ hϖ' hρ₁
     hρ₂ ha hab hz₀ (H := H) x fun e j he ↦ ⟨_, ?_, hψmono e j⟩
-  refine weightedC_mul_weightedX_pow_mem_weightedNhd _ ?_
+  refine (weightedC_mul_weightedX_pow_mem_weightedNhd _).mpr ?_
   rw [weightMul_one_weight]
   have : ‖e‖ < r := lt_of_mul_lt_mul_right ((he.trans_lt hx).trans_eq (mul_comm _ _)) hρa.le
   simpa [IsUltrametricDist.closedBall_openAddSubgroup, Completion.norm_coe] using this.le

@@ -376,7 +376,7 @@ theorem card_quotient_range_mulVecLin_eq_card_quotient_span_det_of_subring_pi
   have hspan_equiv : ((S ⧸ K) ⧸ Ideal.span {Ideal.Quotient.mk K A.det}) ≃+*
       (φ.range ⧸ Ideal.span {A'.det}) :=
     Ideal.quotientEquiv _ _ e (by simp [Ideal.map_span, hA'_det_eq])
-  have (k : {i : κ // Infinite (D i)}) : Infinite (D k.1) := k.2
+  have (k : {i : κ // Infinite (D i)}) : Infinite (D k.val) := k.property
   calc Nat.card ((ι → S) ⧸ LinearMap.range A.mulVecLin)
       = Nat.card ((ι → S ⧸ K) ⧸ LinearMap.range (A.map (Ideal.Quotient.mk K)).mulVecLin) :=
         (card_quotient_range_mulVecLin_map_mk_of_finite K hA).symm

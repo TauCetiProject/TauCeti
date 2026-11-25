@@ -165,7 +165,7 @@ theorem normForm_fst_spinGroupEquivQuaternionUnitaryProd
     QuaternionAlgebra.normForm a 0 b
       (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).1 = 1 :=
   (QuaternionAlgebra.mem_unitary_iff_normForm_eq_one _ _ _ _).mp
-    (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).1.2
+    (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).1.property
 
 /-- The second quaternion attached to a quaternary Spin element has norm one. -/
 @[simp]
@@ -176,7 +176,7 @@ theorem normForm_snd_spinGroupEquivQuaternionUnitaryProd
     QuaternionAlgebra.normForm a 0 b
       (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).2 = 1 :=
   (QuaternionAlgebra.mem_unitary_iff_normForm_eq_one _ _ _ _).mp
-    (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).2.2
+    (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).2.property
 
 /-- Every regular quaternary Spin group with split even-Clifford center is isomorphic to the
 product of two norm-one groups of a quaternion algebra with unit symbols. -/

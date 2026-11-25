@@ -66,7 +66,7 @@ theorem range_eq_subgroupOf_map {g : H →* H} {f : G →* G}
   simp only [MonoidHom.mem_range, mem_subgroupOf, mem_map]
   refine ⟨?_, ?_⟩
   · rintro ⟨x, rfl⟩
-    exact ⟨x, x.2, hval x⟩
+    exact ⟨x, x.property, hval x⟩
   · rintro ⟨z, hz, hzy⟩
     exact ⟨⟨z, hz⟩, Subtype.ext ((hval ⟨z, hz⟩).symm.trans hzy)⟩
 
@@ -81,7 +81,7 @@ theorem index_range_eq_of_comp_subtype [H.FiniteIndex] {g : H →* H} {f : G →
   have hmap : H.map f ≤ H := by
     rintro _ ⟨x, hx, rfl⟩
     have hval : f x = g ⟨x, hx⟩ := DFunLike.congr_fun hgf ⟨x, hx⟩
-    exact hval ▸ (g ⟨x, hx⟩).2
+    exact hval ▸ (g ⟨x, hx⟩).property
   rw [range_eq_subgroupOf_map hgf, ← relIndex, H.relIndex_map_eq_index_range hf hmap]
 
 /-- Under an injective endomorphism `f` restricting to `g` on a finite-index subgroup `H`, `g.range`

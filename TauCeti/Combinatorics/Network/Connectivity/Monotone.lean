@@ -129,7 +129,7 @@ theorem IsArcReachable.withoutHom (h : IsArcReachable Q k s t)
   rw [isArcReachable_def]
   intro B hB
   let ι : (Σ x y, WithoutHom (F : Set (Σ x y, Q x y)) x y) → (Σ x y, Q x y) :=
-    fun a ↦ ⟨a.1, a.2.1, a.2.2.1⟩
+    fun a ↦ ⟨a.1, a.2.1, a.2.2.val⟩
   have hcard : #(F ∪ B.image ι) < k := by
     have hle := (card_union_le F (B.image ι)).trans (Nat.add_le_add_left card_image_le _)
     omega

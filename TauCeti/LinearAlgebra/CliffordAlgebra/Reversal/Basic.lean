@@ -43,7 +43,7 @@ def reverseEven (Q : QuadraticForm R M) : ↥(even Q) →ₗ[R] ↥(even Q) :=
 @[simp] theorem reverse_eq_star_of_mem_even (x : ↥(even Q)) :
     reverse (x : CliffordAlgebra Q) = star (x : CliffordAlgebra Q) := by
   rw [star_def,
-    involute_eq_of_mem_even (by rw [← even_toSubmodule Q]; exact x.2)]
+    involute_eq_of_mem_even (by rw [← even_toSubmodule Q]; exact x.property)]
 
 /-- Reversal restricted to the even subalgebra fixes its unit. -/
 @[simp] theorem reverseEven_map_one : reverseEven Q 1 = 1 := by
@@ -122,7 +122,7 @@ theorem evenEquivOfIsometry_reverseEven {N : Type*} [AddCommGroup N] [Module R N
   simp only [equivOfIsometry_apply]
   rw [reverse_eq_star_of_mem_even x,
     reverse_eq_star_of_mem_even
-      ⟨map e.toIsometry (x : CliffordAlgebra Q), map_mem_even e.toIsometry x.2⟩]
+      ⟨map e.toIsometry (x : CliffordAlgebra Q), map_mem_even e.toIsometry x.property⟩]
   exact map_star e.toIsometry (x : CliffordAlgebra Q)
 
 /-- The even-algebra equivalence associated to negating a form commutes with reversal on the
@@ -284,6 +284,18 @@ theorem reverse_inv_mul_inv {x : (CliffordAlgebra Q)ˣ} {r : Rˣ}
   conv_lhs => rhs; rw [hinv]
   rw [← mul_assoc, ← Algebra.commutes, mul_assoc, ← reverse.map_mul, Units.mul_inv,
     reverse.map_one, mul_one]
+
+/-- Reversal fixes the conjugate of a reversal-fixed element by a unit `x` with
+`reverse x * x = 1`, because reversal then inverts `x`. -/
+theorem reverse_mul_mul_inv_eq_self {x : (CliffordAlgebra Q)ˣ}
+    (hx : reverse (x : CliffordAlgebra Q) * (x : CliffordAlgebra Q) = 1) {y : CliffordAlgebra Q}
+    (hy : reverse y = y) :
+    reverse ((x : CliffordAlgebra Q) * y * (↑x⁻¹ : CliffordAlgebra Q)) =
+      (x : CliffordAlgebra Q) * y * (↑x⁻¹ : CliffordAlgebra Q) := by
+  have hxr := Units.eq_inv_of_mul_eq_one_right hx
+  have hxir : reverse (↑x⁻¹ : CliffordAlgebra Q) = (x : CliffordAlgebra Q) := by
+    rw [← hxr, reverse_reverse]
+  simp only [reverse.map_mul, hy, hxr, hxir, mul_assoc]
 
 section Bivector
 
