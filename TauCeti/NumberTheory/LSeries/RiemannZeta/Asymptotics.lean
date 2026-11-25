@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import TauCeti.Analysis.MellinTransform.Sawtooth
 import TauCeti.Analysis.SpecialFunctions.Pow.AtTop
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerMaclaurin
 
 /-!
@@ -53,14 +52,9 @@ theorem tendsto_sum_Icc_cpow_neg_sub_riemannZeta {s : ℂ} (hs : 0 < s.re) (hs�
     simpa using (Complex.tendsto_natCast_cpow_neg_atTop hs).div_const (2 : ℂ)
   have htail : Tendsto (fun N : ℕ ↦ s * ∫ x in Set.Ioi (N : ℝ),
       (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))) atTop (𝓝 0) := by
-    have hmaj : Tendsto (fun N : ℕ ↦ ‖s‖ * ((N : ℝ) ^ (-s.re) / (2 * s.re))) atTop (𝓝 0) := by
-      simpa using (((tendsto_rpow_neg_atTop hs).comp tendsto_natCast_atTop_atTop).div_const
-        (2 * s.re)).const_mul ‖s‖
-    refine squeeze_zero_norm' ?_ hmaj
-    filter_upwards [eventually_ge_atTop 1] with N hN
-    rw [norm_mul]
-    exact mul_le_mul_of_nonneg_left
-      (norm_integral_sawtooth_mul_cpow_le (Nat.cast_pos.mpr hN) hs) (norm_nonneg s)
+    simpa [Function.comp_def] using
+      ((tendsto_integral_Ioi_sawtooth_mul_cpow_atTop hs).comp
+        tendsto_natCast_atTop_atTop).const_mul s
   have hlim : Tendsto (fun N : ℕ ↦ riemannZeta s + (N : ℂ) ^ (-s) / 2 +
       s * ∫ x in Set.Ioi (N : ℝ),
         (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1)))

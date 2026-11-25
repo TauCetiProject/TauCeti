@@ -7,11 +7,11 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.ZetaValues
-import Mathlib.Analysis.PSeriesComplex
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.MellinTransform.Sawtooth
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.AtTop
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # The continuation of `ζ` by the first-order Euler–Maclaurin formula
@@ -129,15 +129,7 @@ private theorem zetaSawtooth_one_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
     zetaSawtooth 1 s = riemannZeta s := by
   have hs₀ : 0 < s.re := zero_lt_one.trans hs
   have hs₁ : s ≠ 1 := fun h ↦ by simp [h] at hs
-  have hsum : Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.Icc 1 N, (n : ℂ) ^ (-s)) atTop
-      (𝓝 (riemannZeta s)) := by
-    have hS : Summable fun n : ℕ ↦ 1 / ((n : ℂ) + 1) ^ s := by
-      simpa using (summable_nat_add_iff 1).mpr (Complex.summable_one_div_nat_cpow.mpr hs)
-    rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
-    refine (hS.hasSum.tendsto_sum_nat).congr fun N ↦ ?_
-    rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range, Nat.add_sub_cancel]
-    refine Finset.sum_congr rfl fun n _ ↦ ?_
-    rw [cpow_neg, one_div, Nat.cast_add, Nat.cast_one, add_comm]
+  have hsum := tendsto_sum_Icc_cpow_neg_riemannZeta hs
   have hpole : Tendsto (fun N : ℕ ↦ ((N : ℝ) : ℂ) ^ (1 - s) / (s - 1)) atTop (𝓝 0) := by
     have h := (tendsto_natCast_cpow_neg_atTop (y := s - 1) (by simpa using hs)).const_mul (s - 1)⁻¹
     rw [mul_zero] at h
@@ -151,18 +143,9 @@ private theorem zetaSawtooth_one_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
     rw [ofReal_natCast, Int.fract_natCast]
   have htail : Tendsto (fun N : ℕ ↦ s * ∫ x in Set.Ioi (N : ℝ),
       (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))) atTop (𝓝 0) := by
-    rw [tendsto_zero_iff_norm_tendsto_zero]
-    have h := ((tendsto_natCast_cpow_neg_atTop hs₀).const_mul
-      ((‖s‖ / (2 * s.re) : ℝ) : ℂ)).norm
-    rw [mul_zero, norm_zero] at h
-    refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_ h
-    filter_upwards [eventually_gt_atTop 0] with N hN
-    have hN' : (0 : ℝ) < N := Nat.cast_pos.mpr hN
-    rw [norm_mul, norm_mul, norm_natCast_cpow_of_pos hN, norm_real, Real.norm_eq_abs,
-      abs_of_nonneg (by positivity), neg_re]
-    calc _ ≤ ‖s‖ * ((N : ℝ) ^ (-s.re) / (2 * s.re)) :=
-          mul_le_mul_of_nonneg_left (norm_integral_sawtooth_mul_cpow_le hN' hs₀) (norm_nonneg _)
-      _ = ‖s‖ / (2 * s.re) * (N : ℝ) ^ (-s.re) := by ring
+    simpa [Function.comp_def] using
+      ((tendsto_integral_Ioi_sawtooth_mul_cpow_atTop hs₀).comp
+        tendsto_natCast_atTop_atTop).const_mul s
   have hlim : Tendsto (fun N : ℕ ↦ zetaSawtooth N s) atTop (𝓝 (riemannZeta s)) := by
     have h := ((hsum.add hpole).add hboundary).sub htail
     rw [add_zero, add_zero, sub_zero] at h

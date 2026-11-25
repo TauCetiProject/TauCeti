@@ -33,15 +33,17 @@ across `[x, x + c]` shows that forward differences `((x + c : ℝ) : ℂ) ^ z - 
 
 ## Main results
 
+* `Complex.tendsto_ofReal_add_cpow_neg`: `(t + x) ^ (-s) → 0` as `t → +∞` for `x : ℂ` and real
+  `s > 0`.
+* `Complex.tendsto_natCast_cpow_neg_atTop`: `(N : ℂ) ^ (-y) → 0` as `N → ∞` for `0 < re y`.
 * `TauCeti.tendsto_exp_mul_ofReal_atTop_zero`, `TauCeti.not_tendsto_exp_mul_ofReal_atTop`,
   `TauCeti.exists_tendsto_exp_mul_ofReal_atTop_iff`: convergence dichotomy for `t ↦ exp (c * t)`
   as `t → +∞`.
 * `TauCeti.tendsto_ofReal_cpow_atTop_zero`, `TauCeti.not_tendsto_ofReal_cpow_atTop`,
   `TauCeti.exists_tendsto_ofReal_cpow_atTop_iff`: convergence dichotomy for `x ↦ (x : ℂ) ^ s`
   as `x → +∞`.
-* `TauCeti.tendsto_natCast_cpow_atTop_zero`, `TauCeti.not_tendsto_natCast_cpow_atTop`,
-  `TauCeti.exists_tendsto_natCast_cpow_atTop_iff`: convergence dichotomy for `n ↦ (n : ℂ) ^ s`
-  as `n → ∞`.
+* `TauCeti.not_tendsto_natCast_cpow_atTop`, `TauCeti.exists_tendsto_natCast_cpow_atTop_iff`:
+  convergence dichotomy for `n ↦ (n : ℂ) ^ s` as `n → ∞`.
 * `TauCeti.tendsto_ofReal_add_cpow_sub_atTop`, `TauCeti.tendsto_natCast_add_one_cpow_sub_atTop`:
   forward differences of principal powers tend to `0` when `re z < 1`.
 -/
@@ -50,6 +52,34 @@ public section
 
 open Complex Filter
 open scoped Topology Interval
+
+namespace Complex
+
+/-- For any complex `x` and real `s > 0`, `(t + x) ^ (-s)` tends to `0` as the real number `t`
+tends to `∞`. -/
+theorem tendsto_ofReal_add_cpow_neg (x : ℂ) {s : ℝ} (hs : 0 < s) :
+    Tendsto (fun t : ℝ => ((t : ℂ) + x) ^ (-(s : ℂ))) atTop (𝓝 0) := by
+  -- `‖t + x‖ ≥ t - ‖x‖` by the triangle inequality.
+  have hnorm : Tendsto (fun t : ℝ => ‖(t : ℂ) + x‖) atTop atTop := by
+    refine tendsto_atTop_mono' atTop ?_ (tendsto_atTop_add_const_right atTop (-‖x‖) tendsto_id)
+    filter_upwards [eventually_ge_atTop 0] with t ht
+    have h := norm_add_le ((t : ℂ) + x) (-x)
+    rw [add_neg_cancel_right, norm_neg, Complex.norm_real, Real.norm_of_nonneg ht] at h
+    simp only [id]
+    linarith
+  refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
+  simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
+  exact (tendsto_rpow_neg_atTop hs).comp hnorm
+
+/-- For `0 < re y`, `N ^ (-y)` tends to `0` along the natural numbers. -/
+theorem tendsto_natCast_cpow_neg_atTop {y : ℂ} (hy : 0 < y.re) :
+    Tendsto (fun N : ℕ => (N : ℂ) ^ (-y)) atTop (𝓝 0) := by
+  rw [tendsto_zero_iff_norm_tendsto_zero]
+  refine ((tendsto_rpow_neg_atTop hy).comp tendsto_natCast_atTop_atTop).congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with N hN
+  rw [norm_natCast_cpow_of_pos hN, neg_re, Function.comp_apply]
+
+end Complex
 
 namespace TauCeti
 
@@ -133,11 +163,6 @@ theorem exists_tendsto_ofReal_cpow_atTop_iff {s : ℂ} :
     · exact ⟨0, tendsto_ofReal_cpow_atTop_zero hs⟩
     · exact ⟨1, by simp⟩
 
-/-- When `re s < 0`, `(n : ℂ) ^ s` tends to `0` as `n → ∞`. -/
-theorem tendsto_natCast_cpow_atTop_zero {s : ℂ} (hs : s.re < 0) :
-    Tendsto (fun n : ℕ ↦ (n : ℂ) ^ s) atTop (𝓝 0) :=
-  (tendsto_ofReal_cpow_atTop_zero hs).comp tendsto_natCast_atTop_atTop
-
 /-- When `0 ≤ re s` and `s ≠ 0`, `(n : ℂ) ^ s` has no finite limit in `ℂ` as `n → ∞`. -/
 theorem not_tendsto_natCast_cpow_atTop {s L : ℂ} (hre : 0 ≤ s.re) (hs : s ≠ 0) :
     ¬ Tendsto (fun n : ℕ ↦ (n : ℂ) ^ s) atTop (𝓝 L) := by
@@ -171,7 +196,7 @@ theorem exists_tendsto_natCast_cpow_atTop_iff {s : ℂ} :
   · by_contra! h
     exact not_tendsto_natCast_cpow_atTop h.1 h.2 hL
   · rintro (hs | rfl)
-    · exact ⟨0, tendsto_natCast_cpow_atTop_zero hs⟩
+    · exact ⟨0, by simpa using Complex.tendsto_natCast_cpow_neg_atTop (y := -s) (by simpa using hs)⟩
     · exact ⟨1, by simp⟩
 
 /-- When `re z < 1`, the forward difference `((x + c : ℝ) : ℂ) ^ z - (x : ℂ) ^ z` tends to `0` as

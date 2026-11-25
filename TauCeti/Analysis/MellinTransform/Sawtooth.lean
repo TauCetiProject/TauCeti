@@ -25,13 +25,16 @@ function.
 * `TauCeti.isBigO_sawtooth`: the sawtooth viewed in `ℂ` is `O(x ^ 0)` at infinity.
 * `TauCeti.integrableOn_sawtooth_mul_cpow`: the tail integral converges absolutely.
 * `TauCeti.norm_integral_sawtooth_mul_cpow_le`: its bound `a^(-σ)/(2σ)`.
+* `TauCeti.tendsto_integral_Ioi_sawtooth_mul_cpow_atTop`: the tail integral tends to `0` as
+  `a → +∞` for `0 < Re s`.
 * `TauCeti.integral_fract_mul_cpow_eq_integral_sawtooth_add`:
   `∫_a^∞ {x} x^(-s-1) dx = ∫_a^∞ B₁({x}) x^(-s-1) dx + a^(-s)/(2s)`.
 -/
 
 public section
 
-open Complex MeasureTheory
+open Complex Filter MeasureTheory
+open scoped Topology
 
 namespace TauCeti
 
@@ -59,6 +62,15 @@ theorem norm_integral_sawtooth_mul_cpow_le {a : ℝ} (ha : 0 < a) {s : ℂ} (hs 
       a ^ (-s.re) / (2 * s.re) :=
   (norm_integral_mul_cpow_le_of_bound ha (fun x _ ↦ norm_bernoulliFun_one_fract_le x) hs).trans_eq
     (by ring)
+
+/-- For `0 < Re s`, the sawtooth tail integral `∫_a^∞ B₁({x}) x^(-s-1) dx` tends to `0` as
+`a → +∞`. -/
+theorem tendsto_integral_Ioi_sawtooth_mul_cpow_atTop {s : ℂ} (hs : 0 < s.re) :
+    Tendsto (fun a : ℝ ↦ ∫ x in Set.Ioi a,
+      (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))) atTop (𝓝 0) := by
+  refine squeeze_zero_norm' ?_ (by simpa using (tendsto_rpow_neg_atTop hs).div_const (2 * s.re))
+  filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
+  exact norm_integral_sawtooth_mul_cpow_le ha hs
 
 /-- On `(a, ∞)`, `a > 0`, writing the fractional part as `{x} = B₁({x}) + 1/2` splits its tail
 integral: `∫_a^∞ {x} x^(-s-1) dx = ∫_a^∞ B₁({x}) x^(-s-1) dx + a^(-s)/(2s)` for `0 < Re s`. -/

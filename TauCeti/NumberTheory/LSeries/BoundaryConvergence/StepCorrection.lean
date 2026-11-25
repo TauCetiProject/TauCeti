@@ -10,11 +10,11 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import TauCeti.Analysis.LaplaceTransform.Truncated
 import Mathlib.Analysis.Complex.LocallyUniformLimit
-import Mathlib.Analysis.PSeriesComplex
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Complex.HalfPlaneIdentity
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.AtTop
 import TauCeti.MeasureTheory.Integral.Exp.Complex
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # The step correction of a bounded Dirichlet series
@@ -264,21 +264,17 @@ theorem stepCorrection_one_eq_neg_riemannZeta₀ {z : ℂ} (hz : -1 < z.re) :
     (b := 0) (fun w (hw : 0 < w.re) ↦ ?_) hz
   have hw0 : w ≠ 0 := fun h ↦ by simp [h] at hw
   have hw1 : w + 1 ≠ 1 := fun h ↦ hw0 (by linear_combination h)
-  have hS : Summable fun k : ℕ ↦ 1 / ((k : ℂ) + 1) ^ (w + 1) :=
-    ((summable_nat_add_iff 1).mpr
-      (Complex.summable_one_div_nat_cpow (p := w + 1) |>.mpr (by simpa using hw))).congr
-      fun k ↦ by simp
   have htel : Tendsto (fun N : ℕ ↦ (((N : ℂ) + 1) ^ (-w) - 1) / (-w)) atTop (𝓝 w⁻¹) := by
     have hpow : Tendsto (fun N : ℕ ↦ ((N : ℂ) + 1) ^ (-w)) atTop (𝓝 0) := by
       simpa [Function.comp_def] using
         (Complex.tendsto_natCast_cpow_neg_atTop hw).comp (tendsto_add_atTop_nat 1)
     simpa [div_eq_mul_inv] using (hpow.sub_const 1).div_const (-w)
   have hrhs : Tendsto (fun N : ℕ ↦ (((N : ℂ) + 1) ^ (-w) - 1) / (-w) -
-      ∑ k ∈ Finset.range N, 1 / ((k : ℂ) + 1) ^ (w + 1)) atTop
+      ∑ k ∈ Finset.range N, ((k : ℂ) + 1) ^ (-(w + 1))) atTop
         (𝓝 (-riemannZeta₀ (w + 1))) := by
-    have h := htel.sub hS.hasSum.tendsto_sum_nat
-    rw [← zeta_eq_tsum_one_div_nat_add_one_cpow (by simpa using hw),
-      riemannZeta_eq_inv_sub_add hw1, add_sub_cancel_right] at h
+    have h := htel.sub (TauCeti.hasSum_nat_add_one_cpow_neg_riemannZeta (s := w + 1)
+      (by simpa using hw)).tendsto_sum_nat
+    rw [riemannZeta_eq_inv_sub_add hw1, add_sub_cancel_right] at h
     simpa [sub_add_eq_sub_sub] using h
   refine tendsto_nhds_unique (((hasSum_stepCorrection hbound (by linarith)).tendsto_sum_nat).comp
     (tendsto_add_atTop_nat 1)) (hrhs.congr fun N ↦ ?_)
@@ -295,9 +291,8 @@ theorem stepCorrection_one_eq_neg_riemannZeta₀ {z : ℂ} (hz : -1 < z.re) :
     linarith [h0.1]
   have hint := integral_cpow (a := ((k + 1 : ℕ) : ℝ)) (b := (k + 1 : ℕ) + 1) (r := -w - 1)
     (Or.inr ⟨fun h ↦ hw0 (by linear_combination -h), hnot0⟩)
-  have hterm : ((k + 1 : ℕ) : ℂ) ^ (-w - 1) = 1 / ((k : ℂ) + 1) ^ (w + 1) := by
-    have hexp2 : -w - 1 = -(w + 1) := by ring
-    rw [hexp2, Complex.cpow_neg, one_div, Nat.cast_add, Nat.cast_one]
+  have hterm : ((k + 1 : ℕ) : ℂ) ^ (-w - 1) = ((k : ℂ) + 1) ^ (-(w + 1)) := by
+    rw [show -w - 1 = -(w + 1) by ring, Nat.cast_add, Nat.cast_one]
   rw [stepCorrectionTerm_of_ne_zero 1 k.succ_ne_zero, Pi.one_apply, one_mul, hint, hterm]
   have hexp1 : -w - 1 + 1 = -w := by ring
   rw [hexp1, sub_div]

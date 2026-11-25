@@ -68,7 +68,6 @@ can be weakened to data at the real boundary point or to radial Abel limits:
   radial-Abel-converse sharpness.
 * `TauCeti.LSeries.recipZetaEulerLogCoeff`,
   `TauCeti.LSeries.exists_analyticAt_LSeries_recipZetaEulerLogCoeff`,
-  `TauCeti.LSeries.exists_analyticAt_one_LSeries_recipZetaEulerLogCoeff`,
   `TauCeti.LSeries.exists_tendsto_LSeries_recipZetaEulerLogCoeff_nhdsGT_one`,
   `TauCeti.LSeries.not_continuousOn_of_LSeriesHasSum_recipZetaEulerLogCoeff`, and
   `TauCeti.LSeries.not_differentiableOn_of_LSeriesHasSum_recipZetaEulerLogCoeff`: Euler-logarithm
@@ -184,23 +183,12 @@ theorem not_differentiableOn_of_eq_integral_Ici_cexp_mul_I (u : ℝ) {Ω : Set �
 
 /-! ### Bounded Dirichlet boundary sharpness (`n ↦ n ^ (u * I)`) -/
 
-/-- For `1 ≤ n`, the coefficient `(n : ℂ) ^ (u * I)` has norm `1`. -/
-theorem norm_natCast_cpow_mul_I (u : ℝ) {n : ℕ} (hn : 1 ≤ n) :
-    ‖(n : ℂ) ^ ((u : ℂ) * I)‖ = 1 := by
-  have hn_pos : (0 : ℝ) < n := Nat.cast_pos.mpr hn
-  rw [← ofReal_natCast, norm_cpow_eq_rpow_re_of_pos hn_pos]
-  simp
-
 /-- On `1 < re s`, the Dirichlet series of `n ↦ (n : ℂ) ^ (u * I)` sums to
 `riemannZeta (s - u * I)`. -/
 theorem LSeriesHasSum_natCast_cpow_mul_I (u : ℝ) {s : ℂ} (hs : 1 < s.re) :
     LSeriesHasSum (fun n : ℕ ↦ (n : ℂ) ^ ((u : ℂ) * I)) s (riemannZeta (s - (u : ℂ) * I)) := by
-  have hs' : 1 < (s - (u : ℂ) * I).re := by simpa using hs
-  have h1 : LSeriesHasSum (1 : ℕ → ℂ) (s - (u : ℂ) * I) (riemannZeta (s - (u : ℂ) * I)) := by
-    rw [← LSeries_one_eq_riemannZeta hs']
-    exact (LSeriesSummable_one_iff.mpr hs').LSeriesHasSum
   simpa using (LSeriesHasSum_mul_natCast_cpow_iff (1 : ℕ → ℂ) ((u : ℂ) * I) s
-    (riemannZeta (s - (u : ℂ) * I))).mpr h1
+    (riemannZeta (s - (u : ℂ) * I))).mpr (LSeriesHasSum_one (by simpa using hs))
 
 /-- The continuation `w ↦ riemannZeta (w - u * I)` of `LSeries (n ^ (u * I))` is analytic at every
 point `s ≠ 1 + u * I` — in particular at every point of `re s = 1` except `1 + u * I`. -/
@@ -375,8 +363,8 @@ theorem norm_recipZetaEulerLogCoeff_le_one (u : ℝ) (n : ℕ) :
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   rw [recipZetaEulerLogCoeff_eq_neg_eulerLogCoeff_mul_cpow, norm_neg, norm_mul,
-    norm_natCast_cpow_mul_I u (Nat.one_le_iff_ne_zero.mpr hn), mul_one]
-  exact DirichletCharacter.norm_eulerLogCoeff_le_one _ n
+    Complex.norm_natCast_cpow_of_pos (Nat.pos_of_ne_zero hn)]
+  simpa using DirichletCharacter.norm_eulerLogCoeff_le_one _ n
 
 /-- The `L`-series of `recipZetaEulerLogCoeff u` converges absolutely on `1 < re s`. -/
 theorem LSeriesSummable_recipZetaEulerLogCoeff (u : ℝ) {s : ℂ} (hs : 1 < s.re) :
@@ -464,14 +452,6 @@ theorem exists_analyticAt_LSeries_recipZetaEulerLogCoeff {u : ℝ} {s₀ : ℂ} 
     (hgeq.symm ▸ hgnz) (differentiableOn_LSeries_recipZetaEulerLogCoeff u)
     (fun s hs ↦ exp_LSeries_recipZetaEulerLogCoeff_eq_sub_mul u hs)
   exact ⟨L, hLa, hLexp.self_of_nhds.trans hgeq, hLf⟩
-
-/-- **Local analyticity of the shifted reciprocal-zeta Euler logarithm at `s = 1` (`u ≠ 0`).**
-For `u ≠ 0`, `LSeries (recipZetaEulerLogCoeff u)` agrees near `1` in `1 < re s` with a function `L`
-analytic at `1` satisfying `exp (L 1) = (riemannZeta (1 - u * I))⁻¹`. -/
-theorem exists_analyticAt_one_LSeries_recipZetaEulerLogCoeff {u : ℝ} (hu : u ≠ 0) :
-    ∃ L : ℂ → ℂ, AnalyticAt ℂ L 1 ∧ Complex.exp (L 1) = (riemannZeta (1 - (u : ℂ) * I))⁻¹ ∧
-      ∀ᶠ s in 𝓝[{s : ℂ | 1 < s.re}] 1, L s = LSeries (recipZetaEulerLogCoeff u) s :=
-  exists_analyticAt_LSeries_recipZetaEulerLogCoeff one_re (by simp [hu])
 
 /-- **Finite radial Abel limit of the shifted reciprocal-zeta Euler logarithm at `1⁺` (`u ≠ 0`).**
 As `σ → 1⁺`, `LSeries (recipZetaEulerLogCoeff u) σ` converges to a finite limit `w` with
