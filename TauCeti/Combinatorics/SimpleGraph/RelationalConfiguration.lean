@@ -222,6 +222,7 @@ theorem toStructure_toRelationalConfiguration (G : SimpleGraph V) :
     G.toRelationalConfiguration.toStructure = G.structure :=
   toStructure_ofStructure _
 
+@[simp]
 theorem isSimpleGraph_toRelationalConfiguration (G : SimpleGraph V) :
     IsSimpleGraph G.toRelationalConfiguration := by
   classical
