@@ -56,6 +56,8 @@ at `k = 2`, where `log k > 0`.
 ## Main declarations
 
 * `TauCeti.sum_Icc_one_natFloor_eq_zero`: `∑_{1 ≤ k ≤ t} c k = 0` for `t < 1`.
+* `TauCeti.abs_sum_Icc_one_natFloor_le`: the trivial bound `|∑_{1 ≤ k ≤ t} c k| ≤ t` for
+  `t ≥ 0` when `|c k| ≤ 1`.
 * `TauCeti.isBigO_sum_Icc_natFloor_nhdsGT_zero`: the step function is `O(g)` as `t → 0⁺`.
 * `TauCeti.locallyIntegrableOn_sum_Icc_natFloor`: the step function is locally integrable on
   `[0, ∞)`.
@@ -93,6 +95,15 @@ variable {t : ℝ}
 theorem sum_Icc_one_natFloor_eq_zero {M : Type*} [AddCommMonoid M] (c : ℕ → M) (ht : t < 1) :
     ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k = 0 := by
   simp [Nat.floor_eq_zero.mpr ht]
+
+/-- The trivial bound on the partial-sum step function: if `|c k| ≤ 1` for every `k`, then
+`|∑ k ∈ Icc 1 ⌊t⌋₊, c k| ≤ t` for `t ≥ 0`. -/
+theorem abs_sum_Icc_one_natFloor_le {c : ℕ → ℝ} (hc : ∀ k, |c k| ≤ 1) (ht : 0 ≤ t) :
+    |∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k| ≤ t := by
+  calc |∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k| ≤ ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, |c k| :=
+        Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _k ∈ Finset.Icc 1 ⌊t⌋₊, (1 : ℝ) := Finset.sum_le_sum fun k _ ↦ hc k
+    _ ≤ t := by simpa using Nat.floor_le ht
 
 /-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, c k` vanishes near `0`, so it is `O(g)`
 as `t → 0⁺` for every `g`. -/

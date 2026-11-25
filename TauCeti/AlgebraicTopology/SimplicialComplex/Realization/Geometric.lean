@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 public import TauCeti.AlgebraicTopology.SimplicialComplex.VertexScheme
+public import TauCeti.Topology.Triangulable.Basic
 
 /-!
 # Realizations of geometric simplicial complexes
@@ -65,6 +66,8 @@ way.
 * `Geometry.SimplicialComplex.isClosedEmbedding_realizationToAmbient`: for a complex locally
   finite in a Hausdorff space `E` with continuous addition and real scalar multiplication, the
   comparison map is a closed embedding.
+* `Geometry.SimplicialComplex.isTriangulable_space`: under the hypotheses of
+  `realizationHomeomorph`, the underlying space is triangulable.
 
 ## References
 
@@ -82,7 +85,9 @@ open Set Function Topology AbstractSimplicialComplex TauCeti.SetLike
 
 namespace Geometry.SimplicialComplex
 
-variable {E : Type*} [AddCommGroup E] [Module ℝ E] {K : SimplicialComplex ℝ E}
+universe u
+
+variable {E : Type u} [AddCommGroup E] [Module ℝ E] {K : SimplicialComplex ℝ E}
 
 /-! ### The comparison map -/
 
@@ -332,5 +337,26 @@ theorem realizationToAmbient_realizationHomeomorph_symm_apply [T2Space K.space]
     (p : K.space) :
     K.realizationToAmbient ((K.realizationHomeomorph hK).symm p) = (p : E) := by
   rw [← coe_realizationHomeomorph_apply hK, Homeomorph.apply_symm_apply]
+
+/-- The inverse homeomorphism sends each vertex of `K` to the corresponding vertex of the
+realization. -/
+@[simp]
+theorem realizationHomeomorph_symm_apply_vertex [T2Space K.space]
+    (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E))
+    (v : K.vertices) :
+    (K.realizationHomeomorph hK).symm ⟨v, vertices_subset_space v.property⟩ =
+      vertex K.vertexScheme v := by
+  rw [Homeomorph.symm_apply_eq]
+  ext
+  rw [coe_realizationHomeomorph_apply, realizationToAmbient_vertex]
+
+variable (K) in
+/-- For a geometric complex in a space with continuous addition and real scalar multiplication,
+with Hausdorff underlying space, whose closed simplices form a locally finite family in that
+space, the underlying space is triangulable. -/
+theorem isTriangulable_space [T2Space K.space]
+    (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E)) :
+    TauCeti.IsTriangulable.{u} K.space :=
+  (TauCeti.isTriangulable_iff _).2 ⟨K.vertices, K.vertexScheme, ⟨K.realizationHomeomorph hK⟩⟩
 
 end Geometry.SimplicialComplex
