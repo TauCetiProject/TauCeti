@@ -71,6 +71,9 @@ infrastructure independent of the diamond operators.
   membership is equivalent to four entrywise integer divisibilities (valid at `N = 0` as well).
 * `CongruenceSubgroup.instNormalGamma`: Mathlib's `CongruenceSubgroup.Gamma_normal` as an
   instance, so quotients by `Γ(N)` and by its intersections with subgroups are groups.
+* `CongruenceSubgroup.sq_dvd_two_sub_trace_of_mem_Gamma`,
+  `CongruenceSubgroup.sq_sub_two_le_abs_trace_of_mem_Gamma`: the trace of an element of `Γ(N)` is
+  congruent to `2` modulo `N²`, so a trace other than `2` has absolute value at least `N² - 2`.
 * `CongruenceSubgroup.mem_Gamma0_iff_dvd`: `Γ₀(N)` membership read as the integer divisibility
   `(N : ℤ) ∣ A 1 0` rather than as a `ZMod N` congruence, for a proof that wants to name the
   quotient. Valid at every level, `N = 0` included.
@@ -85,8 +88,9 @@ infrastructure independent of the diamond operators.
   right coset of `Γ₁(N)` exactly when their lower rows agree modulo `N`.
 * `CongruenceSubgroup.mem_Gamma1_of_mul_eq`: a matrix of `SL(2, ℤ)` carrying an integral matrix
   that is `!![1, *; 0, *]` modulo `N` to another such matrix lies in `Γ₁(N)`.
-* `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0`: a `Γ₀(N)` matrix has
-  unit upper-left entry modulo `N`.
+* `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0` and
+  `CongruenceSubgroup.isUnit_intCast_apply_one_one_of_mem_Gamma0`: a `Γ₀(N)` matrix has
+  unit diagonal entries modulo `N`.
 * `CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`: modulo its
   level, a `Γ₀(N)` matrix has mutually inverse diagonal entries.
 * `CongruenceSubgroup.intCast_add_natCast_mul_of_mem_Gamma0` and
@@ -391,6 +395,12 @@ theorem isUnit_intCast_apply_zero_zero_of_mem_Gamma0 {N : ℕ} {σ : SL(2, ℤ)}
   rw [h10, mul_zero, sub_zero] at hcast
   exact IsUnit.of_mul_eq_one _ hcast
 
+/-- The lower-right entry of a `Γ₀(N)` matrix is a unit modulo `N`, with inverse the upper-left
+entry (`intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`). -/
+theorem isUnit_intCast_apply_one_one_of_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
+    IsUnit ((γ 1 1 : ℤ) : ZMod N) :=
+  IsUnit.of_mul_eq_one_right _ (intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hγ)
+
 /-- **The first column of a `Γ₀(N)` matrix collapses under a natural-number shear**:
 `a + j c ≡ a` modulo `N` for every `j : ℕ`, because `c ≡ 0`. Stated with the casts already
 distributed, since that — not the cast of the sum — is the `simp` normal form. -/
@@ -678,6 +688,37 @@ theorem dvd_two_sub_trace_of_mem_Gamma1 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N
 theorem dvd_two_sub_trace_of_conj_mem_Gamma1 {γ g : SL(2, ℤ)} (h : γ * g * γ⁻¹ ∈ Gamma1 N) :
     (N : ℤ) ∣ 2 - (g : Matrix (Fin 2) (Fin 2) ℤ).trace := by
   simpa only [Matrix.SpecialLinearGroup.trace_mul_mul_inv] using dvd_two_sub_trace_of_mem_Gamma1 h
+
+/-- **The trace of an element of `Γ(N)` is congruent to `2` modulo `N²`.** Writing
+`γ = 1 + N A` with `A` integral, `det γ = 1` says `N tr A + N² det A = 0`, so
+`tr γ = 2 + N tr A = 2 - N² det A`. -/
+theorem sq_dvd_two_sub_trace_of_mem_Gamma {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma N) :
+    (N : ℤ) ^ 2 ∣ 2 - (γ : Matrix (Fin 2) (Fin 2) ℤ).trace := by
+  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩, ⟨d, hd⟩⟩ := mem_Gamma_iff_dvd.mp hγ
+  have hdet := γ.det_coe
+  rw [Matrix.det_fin_two] at hdet
+  refine ⟨a * d - b * c, ?_⟩
+  rw [Matrix.trace_fin_two]
+  linear_combination (γ 1 1 - 1) * ha - γ 1 0 * hb - (N : ℤ) * b * hc + (N : ℤ) * a * hd - hdet
+
+/-- **A trace other than `2` in `Γ(N)` is at least `N² - 2` in absolute value.** The trace is
+`2 - k N²` for an integer `k` (`sq_dvd_two_sub_trace_of_mem_Gamma`), and `k ≠ 0` unless the trace
+is `2`. In particular every hyperbolic element of `Γ(N)` has `|tr| ≥ N² - 2`. -/
+theorem sq_sub_two_le_abs_trace_of_mem_Gamma {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma N)
+    (htr : (γ : Matrix (Fin 2) (Fin 2) ℤ).trace ≠ 2) :
+    (N : ℤ) ^ 2 - 2 ≤ |(γ : Matrix (Fin 2) (Fin 2) ℤ).trace| := by
+  obtain ⟨k, hk⟩ := sq_dvd_two_sub_trace_of_mem_Gamma hγ
+  have hk₀ : k ≠ 0 := by
+    rintro rfl
+    exact htr (by linarith)
+  have hN : 0 ≤ (N : ℤ) ^ 2 := sq_nonneg _
+  rcases lt_or_gt_of_ne hk₀ with hk' | hk'
+  · -- `k ≤ -1`: the trace is at least `2 + N²`
+    have : (N : ℤ) ^ 2 * 1 ≤ (N : ℤ) ^ 2 * -k := mul_le_mul_of_nonneg_left (by omega) hN
+    exact le_abs.mpr (.inl (by linarith))
+  · -- `k ≥ 1`: the trace is at most `2 - N²`
+    have : (N : ℤ) ^ 2 * 1 ≤ (N : ℤ) ^ 2 * k := mul_le_mul_of_nonneg_left (by omega) hN
+    exact le_abs.mpr (.inr (by linarith))
 
 /-- If a conjugate `γ g γ⁻¹` lies in `Γ(N)`, then `N` divides the lower-left entry of `g`: as
 `Γ(N)` is normal, `g` itself lies in `Γ(N)`. -/

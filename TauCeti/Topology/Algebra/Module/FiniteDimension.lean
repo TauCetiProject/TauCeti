@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Algebra.Star.Module
 public import Mathlib.Topology.Algebra.Star
 public import Mathlib.LinearAlgebra.Multilinear.Basic
@@ -15,6 +17,8 @@ public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
+public import Mathlib.Topology.Algebra.Module.Star
+public import TauCeti.LinearAlgebra.Basis.Semilinear
 -- Private: `Subspace.dual_finrank_eq` is used only inside proofs.
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Multilinear.Basis
@@ -79,7 +83,13 @@ topology given in advance.
 The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of a finite
 basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
 `Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
-`Module.Basis.equivFun_symm_apply`.
+`Module.Basis.equivFun_symm_apply`. Over a field with a continuous star, the conjugation of the
+coordinates `Module.Basis.coordConj` is continuous: `Module.Basis.coordConjL`.
+The matrix of a continuous endomorphism in a finite basis `b` is a continuous linear map
+`ContinuousLinearMap.toMatrixCLM b : (E →L[𝕜] E) →L[𝕜] Matrix ι ι 𝕜`, whose determinant is the
+determinant of the endomorphism (`ContinuousLinearMap.det_toMatrixCLM`). On a finite free module
+over a stably finite semiring, a right inverse of a continuous endomorphism is a left inverse:
+`ContinuousLinearMap.comp_eq_one_comm`, the continuous companion of `LinearMap.comp_eq_id_comm`.
 A composition `S ∘ T` of continuous linear maps expands in the products `b l ∘ a k` of finite
 bases `b` and `a` of the spaces of continuous linear maps containing `S` and `T`, with the products
 of their coordinates as coefficients: `ContinuousLinearMap.comp_eq_sum_coord`.
@@ -164,6 +174,38 @@ theorem dual_finrank_eq : Module.finrank 𝕜 (E →L[𝕜] 𝕜) = Module.finra
   rw [← LinearEquiv.finrank_eq
     (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
   exact Subspace.dual_finrank_eq
+
+/-- The matrix in a basis `b` of a continuous endomorphism of a finite-dimensional space, as a
+continuous linear map. -/
+noncomputable def toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι 𝕜 E) : (E →L[𝕜] E) →L[𝕜] Matrix ι ι 𝕜 :=
+  LinearMap.toContinuousLinearMap
+    ((LinearMap.toMatrix b b).toLinearMap.comp (ContinuousLinearMap.coeLM 𝕜))
+
+/-- `toMatrixCLM b` evaluates to `LinearMap.toMatrix b b`. -/
+@[simp]
+theorem toMatrixCLM_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
+    (f : E →L[𝕜] E) : toMatrixCLM b f = LinearMap.toMatrix b b (f : E →ₗ[𝕜] E) :=
+  (rfl)
+
+/-- The determinant of the matrix of `f` in any basis is the determinant of `f`. -/
+theorem det_toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
+    (f : E →L[𝕜] E) : (toMatrixCLM b f).det = LinearMap.det (f : E →ₗ[𝕜] E) :=
+  LinearMap.det_toMatrix b _
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {R M : Type*} [Semiring R] [IsStablyFiniteRing R] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M] [Module.Free R M] [Module.Finite R M]
+
+/-- On a finite free module over a stably finite semiring, such as a finite-dimensional vector
+space, continuous endomorphisms are inverse to each other on one side if and only if they are
+inverse to each other on the other side. -/
+theorem comp_eq_one_comm {f g : M →L[R] M} : f ∘L g = 1 ↔ g ∘L f = 1 := by
+  simp only [← coe_inj, one_def, coe_id]
+  exact LinearMap.comp_eq_id_comm R M
 
 end ContinuousLinearMap
 
@@ -377,6 +419,28 @@ vector `x` to the linear combination `∑ i, x i • v i`. -/
   v.equivFunL.symm_apply_eq.2 <| funext fun i ↦ by
     rw [equivFunL_apply, ← equivFun_apply, ← v.equivFun_symm_apply, LinearEquiv.apply_symm_apply]
 
+variable [StarRing 𝕜] [ContinuousStar 𝕜]
+
+/-- The conjugation of the coordinates `Module.Basis.coordConj` in a finite basis `v`, as a
+continuous conjugate-linear automorphism. -/
+noncomputable def coordConjL (v : Basis ι 𝕜 E) : E ≃SL[starRingEnd 𝕜] E :=
+  v.equivFunL.trans ((starL 𝕜 : (ι → 𝕜) ≃L⋆[𝕜] (ι → 𝕜)).trans v.equivFunL.symm)
+
+/-- Forgetting continuity in the continuous conjugation of the coordinates recovers the algebraic
+one. -/
+@[simp] theorem coordConjL_toLinearEquiv (v : Basis ι 𝕜 E) :
+    v.coordConjL.toLinearEquiv = v.coordConj :=
+  LinearEquiv.ext fun x ↦ by
+    simp [coordConjL, coordConj_apply]
+
+/-- The continuous conjugation of the coordinates evaluates as the algebraic one. -/
+@[simp] theorem coordConjL_apply (v : Basis ι 𝕜 E) (x : E) : v.coordConjL x = v.coordConj x :=
+  LinearEquiv.congr_fun v.coordConjL_toLinearEquiv x
+
+/-- The continuous conjugation of the coordinates is its own inverse. -/
+@[simp] theorem coordConjL_symm (v : Basis ι 𝕜 E) : v.coordConjL.symm = v.coordConjL :=
+  ContinuousLinearEquiv.ext <| funext fun x ↦ v.coordConjL.injective (by simp)
+
 end Module.Basis
 
 namespace ContinuousLinearMap
@@ -516,6 +580,14 @@ theorem isClosedEmbedding_of_injective {f : E →ᴬ[𝕜] F} (hf : Function.Inj
     (LinearMap.isClosedEmbedding_of_injective hker)
 
 end ContinuousAffineMap
+
+/-- The affine line `t ↦ y + t • e` through `y` in a nonzero direction `e` of a Hausdorff
+topological vector space is a closed embedding of the scalars. -/
+theorem TauCeti.isClosedEmbedding_add_smul_left {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] [Module 𝕜 E]
+    [ContinuousSMul 𝕜 E] [T2Space E] (y : E) {e : E} (he : e ≠ 0) :
+    Topology.IsClosedEmbedding fun t : 𝕜 => y + t • e :=
+  (Homeomorph.addLeft y).isClosedEmbedding.comp (isClosedEmbedding_smul_left he)
 
 /-- **Finite quotients along a dense algebra map.** Let `f : A → B` be a `K`-algebra map with dense
 range into a topological `K`-algebra, and `J` an ideal of `B` with `B ⧸ J` Hausdorff. If

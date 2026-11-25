@@ -73,9 +73,9 @@ equality.
 
 The coefficients of `Q` are ranks of boundary maps. Cut the band at regular values
 `a = s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1) = b` so that each piece `f⁻¹[s j, s (j + 1)]` contains at most one
-critical value; on a compact manifold such values exist
-(`TauCeti.IsMorse.exists_regular_sublevel_partition`). Each piece then has `bᵢ = cᵢ dim V`, and
-summing the defects of subadditivity of `Sₙ` over the triples
+critical value; on a compact manifold such values exist, since a Morse function has finitely many
+critical values (`TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`). Each
+piece then has `bᵢ = cᵢ dim V`, and summing the defects of subadditivity of `Sₙ` over the triples
 `(M_{s (j + 2)}, M_{s (j + 1)}, M_{s 0})` (`Monotone.sum_range_finrank_range_singularHomologyδ_eq`)
 shows that the coefficient of `tⁿ` in `Q` is the sum over `j < N` of the ranks of the connecting
 maps `Hₙ₊₁(M_{s (j + 2)}, M_{s (j + 1)}) ⟶ Hₙ(M_{s (j + 1)}, M_{s 0})`
@@ -127,7 +127,7 @@ maps `Hₙ₊₁(M_{s (j + 2)}, M_{s (j + 1)}) ⟶ Hₙ(M_{s (j + 1)}, M_{s 0})`
   `TauCeti.IsMorse.coeff_eq_sum_range_finrank_range_singularHomologyδ`: on a compact manifold, the
   coefficients of `Q` as sums of ranks of connecting maps along a cut of the values of `f` into
   pieces with at most one critical value each, which exists by
-  `TauCeti.IsMorse.exists_regular_sublevel_partition`.
+  `TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`.
 
 ## References
 
@@ -817,16 +817,6 @@ The band of `-f` between `-b` and `-a` is the band of `f` relative to its upper 
 `dim M - i` of `f`. So the statements for the band pair of `-f` give the Morse inequalities for the
 upper band pair `(f⁻¹[a, b], f⁻¹(b))`, with the critical points counted by their complementary
 index. -/
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- The hypotheses on `f` over `[a, b]` hold for `-f` over `[-b, -a]`. -/
-private theorem IsMorse.neg_band (hf : IsMorse I f) {a b : ℝ}
-    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
-    (hb : IsRegularValue I 𝓘(ℝ) f b) :
-    IsMorse I (-f) ∧ IsCompact ((-f) ⁻¹' Icc (-b) (-a)) ∧ IsRegularValue I 𝓘(ℝ) (-f) (-b) ∧
-      IsRegularValue I 𝓘(ℝ) (-f) (-a) :=
-  ⟨hf.neg, by rwa [preimage_neg_Icc_neg], isRegularValue_neg_iff.2 (by rwa [neg_neg]),
-    isRegularValue_neg_iff.2 (by rwa [neg_neg])⟩
 
 /-- **Finiteness of relative homology for a cobordism relative to its outgoing boundary.** Let `f`
 be a Morse function, and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. Then the relative

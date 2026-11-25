@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Toric.Analytic.Fan.Manifold
 public import TauCeti.Geometry.Toric.Analytic.Fan.ProjectiveSpace.Charts
 public import TauCeti.Geometry.Toric.Analytic.Fan.ProjectiveSpace.Comparison
-public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace
+public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Basic
 
 /-!
 # Toric projective space is biholomorphic to complex projective space

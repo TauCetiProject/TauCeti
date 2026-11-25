@@ -6,21 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.BooleanAlgebra
-import Mathlib.Tactic.Tauto
+public import TauCeti.Order.NestedOrDisjoint
 import TauCeti.Data.Set.Pairwise
 
 /-!
 # Laminar families and crossing bipartitions of finite sets
 
-Two finite sets are nested or disjoint if one contains the other or they do not meet.
 Two bipartitions cross if all four intersections of their sides are nonempty. Choosing the
-side avoiding a fixed root identifies pairwise non-crossing bipartitions with laminar families.
+side avoiding a fixed root identifies pairwise non-crossing bipartitions with laminar families,
+that is, families of finite sets that are pairwise nested or disjoint in the sense of
+`TauCeti.NestedOrDisjoint`.
 
 ## Main declarations
 
-* `Finset.NestedOrDisjoint`: the relation defining laminar families.
 * `Finset.Crosses`: crossing of the bipartitions determined by two finite sets.
 * `Finset.sideAvoiding`: the side of a bipartition avoiding a chosen root.
+* `TauCeti.NestedOrDisjoint.not_crosses`: nested or disjoint sets do not cross.
 * `Finset.nestedOrDisjoint_sideAvoiding_iff`: the root convention for two cuts.
 * `Finset.pairwise_nestedOrDisjoint_image_sideAvoiding`: the root convention for a family.
 
@@ -35,6 +36,8 @@ public section
 
 namespace Finset
 
+open TauCeti
+
 variable {V : Type*}
 
 /-!
@@ -45,68 +48,6 @@ bipartitions, cross when each side of one meets each side of the other. Choosing
 its side avoiding a fixed root vertex turns a pairwise non-crossing family of cuts into a laminar
 family. This lets uncrossing arguments for symmetric set functions work with laminar families.
 -/
-
-section Laminar
-
-/-- Two sets are nested or disjoint when one contains the other or they do not meet. A family
-is laminar when its members are pairwise nested or disjoint. -/
-def NestedOrDisjoint (S T : Finset V) : Prop := S ⊆ T ∨ T ⊆ S ∨ Disjoint S T
-
-/-- Two sets are nested or disjoint exactly when one contains the other or they do not meet. -/
-theorem nestedOrDisjoint_def {S T : Finset V} :
-    NestedOrDisjoint S T ↔ S ⊆ T ∨ T ⊆ S ∨ Disjoint S T := Iff.rfl
-
-/-- A set is nested with every superset. -/
-theorem NestedOrDisjoint.of_subset {S T : Finset V} (h : S ⊆ T) : NestedOrDisjoint S T :=
-  Or.inl h
-
-/-- A set is nested with every subset. -/
-theorem NestedOrDisjoint.of_superset {S T : Finset V} (h : T ⊆ S) : NestedOrDisjoint S T :=
-  Or.inr (Or.inl h)
-
-/-- Disjoint sets are nested or disjoint. -/
-theorem NestedOrDisjoint.of_disjoint {S T : Finset V} (h : Disjoint S T) :
-    NestedOrDisjoint S T :=
-  Or.inr (Or.inr h)
-
-/-- Being nested or disjoint is a symmetric relation. -/
-theorem nestedOrDisjoint_comm {S T : Finset V} :
-    NestedOrDisjoint S T ↔ NestedOrDisjoint T S := by
-  simp only [NestedOrDisjoint, disjoint_comm (a := S)]
-  tauto
-
-/-- Every set is nested with itself. -/
-@[simp] theorem NestedOrDisjoint.refl (S : Finset V) : NestedOrDisjoint S S :=
-  .of_subset subset_rfl
-
-/-- Being nested or disjoint is a reflexive relation. -/
-instance instReflNestedOrDisjoint : Std.Refl (NestedOrDisjoint (V := V)) :=
-  ⟨NestedOrDisjoint.refl⟩
-
-/-- Being nested or disjoint is a symmetric relation. -/
-theorem NestedOrDisjoint.symm {S T : Finset V} (h : NestedOrDisjoint S T) :
-    NestedOrDisjoint T S :=
-  nestedOrDisjoint_comm.mp h
-
-variable [DecidableEq V]
-
-/-- Intersecting two sets preserves being nested with or disjoint from a third set. -/
-theorem NestedOrDisjoint.inter {S T U : Finset V} (hS : NestedOrDisjoint S U)
-    (hT : NestedOrDisjoint T U) : NestedOrDisjoint (S ∩ T) U := by
-  simp only [NestedOrDisjoint, subset_iff, disjoint_left, mem_inter] at *
-  grind
-
-/-- The union of two meeting sets is nested with or disjoint from every set that is nested with
-or disjoint from both of them. Without a common element this fails: `{1}` and `{2}` are nested
-with or disjoint from `{1, 3}`, but `{1, 2}` is not. -/
-theorem NestedOrDisjoint.union {S T U : Finset V} (hST : (S ∩ T).Nonempty)
-    (hS : NestedOrDisjoint S U) (hT : NestedOrDisjoint T U) :
-    NestedOrDisjoint (S ∪ T) U := by
-  obtain ⟨x, hx⟩ := hST
-  simp only [NestedOrDisjoint, subset_iff, disjoint_left, mem_inter, mem_union] at *
-  grind
-
-end Laminar
 
 section Crossing
 
@@ -147,9 +88,9 @@ theorem Crosses.symm {S T : Finset V} (h : Crosses S T) : Crosses T S :=
   rw [crosses_comm, crosses_compl_left, crosses_comm]
 
 /-- Nested or disjoint sets do not cross. -/
-theorem NestedOrDisjoint.not_crosses {S T : Finset V} (h : NestedOrDisjoint S T) :
-    ¬Crosses S T := by
-  simp only [NestedOrDisjoint, Crosses, subset_iff, disjoint_left] at *
+theorem _root_.TauCeti.NestedOrDisjoint.not_crosses {S T : Finset V}
+    (h : NestedOrDisjoint S T) : ¬Crosses S T := by
+  simp only [nestedOrDisjoint_def, Crosses, subset_iff, disjoint_left] at *
   grind
 
 /-- No cut crosses itself. -/
@@ -161,7 +102,7 @@ nested or disjoint: their union cannot cover all vertices. -/
 theorem not_crosses_iff_nestedOrDisjoint {r : V} {S T : Finset V} (hS : r ∉ S) (hT : r ∉ T) :
     ¬Crosses S T ↔ NestedOrDisjoint S T := by
   refine ⟨fun h ↦ ?_, NestedOrDisjoint.not_crosses⟩
-  simp only [NestedOrDisjoint, Crosses, subset_iff, disjoint_left] at *
+  simp only [nestedOrDisjoint_def, Crosses, subset_iff, disjoint_left] at *
   grind
 
 /-- **Uncrossing preserves non-crossing.** The union of two meeting sets crosses no cut that

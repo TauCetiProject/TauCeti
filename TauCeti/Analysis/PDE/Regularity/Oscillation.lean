@@ -645,8 +645,8 @@ everywhere on `B(x₀, r)` the function `u` takes values in an interval of lengt
 
 No bound on `u` is assumed: the oscillation of `u` on `B(x₀, R/2)` is controlled by its `L²`
 norm through De Giorgi's local boundedness theorem
-(`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`), and the
-power law `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift` propagates it to
+(`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg`),
+and the power law `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift` propagates it to
 smaller balls. -/
 theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift [Nonempty ι]
     (σ : ℝ) :
@@ -664,7 +664,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift
         W1p.value u x ∈ Icc m' (m' + C * (r / R) ^ α * (R ^ (-(Fintype.card ι : ℝ) / 2) *
           √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu))) := by
   obtain ⟨D₀, hD₀, hbound⟩ :=
-    exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu)
+    exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg (mu := mu)
       (lam := lam) (Lam := Lam)
   obtain ⟨α, C, hα, hα1, hC, hpow⟩ :=
     exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift (mu := mu) (lam := lam) (Lam := Lam) σ
