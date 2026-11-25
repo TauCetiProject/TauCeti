@@ -17,18 +17,19 @@ basis `e`, writing `toLin e e M` for the operator with matrix `M` in that basis:
 * `diag(3, 1/2)` has minimal stretch `1/2` and operator norm `3`; the minimal stretch is the
   singular value at the last index `1`, while index `0` gives the norm and index `2` gives `0`;
 * the shear `[[1, 1], [0, 1]]` has minimal stretch `(√5 - 1) / 2`, although its columns both have
-  norm at least `1`;
+  norm at least `1`, and operator norm `(√5 + 1) / 2`;
 * the zero map and the orthogonal projection `diag(1, 0)` have minimal stretch `0`, the projection
   with operator norm `1`;
 * in dimension one, `ℓ(a • id) = ‖a • id‖ = |a|`;
-* the perturbation bound for `diag(3, 1/2)` and `diag(3, 3/4)`, and scaling by `-2`.
+* the perturbation bound `|ℓ(A) - ℓ(B)| ≤ ‖A - B‖` is attained, with value `1/4`, for
+  `A = diag(3, 1/2)` and `B = diag(3, 3/4)`; and scaling by `-2`.
 -/
 
 public section
 
-open Module Matrix
+open Module Matrix LinearMap
 
-namespace LinearMap.MinimalStretchChecks
+namespace TauCeti.MinimalStretchChecks
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   (e : OrthonormalBasis (Fin 2) ℝ E)
@@ -53,56 +54,40 @@ example : (toLin e.toBasis e.toBasis (diagonal ![(3 : ℝ), 1 / 2])).singularVal
   rw [singularValues_toLin_diagonal_fin_two e (by norm_num)]
   norm_num
 
-/-- The gram operator of the shear `[[1, 1], [0, 1]]` has trace `3` and determinant `1`. -/
-theorem shear_gram :
-    trace ℝ E (adjoint (toLin e.toBasis e.toBasis !![1, 1; 0, 1]) ∘ₗ
-        toLin e.toBasis e.toBasis !![1, 1; 0, 1]) = 3 ∧
-      (adjoint (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]) ∘ₗ
-        toLin e.toBasis e.toBasis !![1, 1; 0, 1]).det = 1 := by
-  rw [← toLin_conjTranspose e e, ← toLin_mul]
-  refine ⟨?_, ?_⟩
-  · rw [trace_toLin_eq]
-    simp [Matrix.trace, Fin.sum_univ_two, Matrix.mul_apply]
+/-- The shear `[[1, 1], [0, 1]]` has minimal stretch `(√5 - 1) / 2` and operator norm
+`(√5 + 1) / 2`: its Gram operator has trace `3` and determinant `1`, so its squared singular values
+are `(3 ± √5) / 2`. -/
+example : (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]).minimalStretch = (√5 - 1) / 2 ∧
+    ‖toContinuousLinearMap (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1])‖ = (√5 + 1) / 2 := by
+  have hE : finrank ℝ E = 2 := by rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
+  have hgram : adjoint (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]) ∘ₗ
+      toLin e.toBasis e.toBasis !![1, 1; 0, 1] = toLin e.toBasis e.toBasis !![1, 1; 1, 2] := by
+    rw [← toLin_conjTranspose e e, ← toLin_mul]
+    congr 1
+    ext i j
+    fin_cases i <;> fin_cases j <;> norm_num [Matrix.mul_apply, Fin.sum_univ_two]
+  have htr : trace ℝ E (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 1, 2]) = 3 := by
+    rw [trace_toLin_eq]
+    norm_num [Matrix.trace, Fin.sum_univ_two]
+  have hdet : (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 1, 2]).det = 1 := by
+    rw [det_toLin, Matrix.det_fin_two]
     norm_num
-  · rw [det_toLin, Matrix.det_fin_two]
-    simp [Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- The minimal stretch of the shear `[[1, 1], [0, 1]]` is `(√5 - 1) / 2`. -/
-example : (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]).minimalStretch = (√5 - 1) / 2 := by
-  have hE : finrank ℝ E = 2 := by rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
-  have h :=
-    (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]).sq_singularValues_one_of_finrank_eq_two hE
-  obtain ⟨htr, hdet⟩ := shear_gram e
-  rw [htr, hdet] at h
-  rw [minimalStretch_def, hE]
+  have h0 := sq_singularValues_zero_of_finrank_eq_two
+    (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]) hE
+  have h1 := sq_singularValues_one_of_finrank_eq_two
+    (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]) hE
+  rw [hgram, htr, hdet, RCLike.re_to_real, RCLike.re_to_real] at h0 h1
+  norm_num at h0 h1
   have h5 : √5 ^ 2 = 5 := Real.sq_sqrt (by norm_num)
-  have h5' : (1 : ℝ) < √5 := by
-    rw [show (1 : ℝ) = √1 by simp]
-    exact Real.sqrt_lt_sqrt (by norm_num) (by norm_num)
-  refine (pow_left_inj₀ (singularValues_nonneg _ _) (by linarith) two_ne_zero).mp ?_
-  simp only [RCLike.re_to_real] at h
-  rw [show (2 - 1 : ℕ) = 1 from rfl, h, show (3 : ℝ) ^ 2 - 4 * 1 = 5 by norm_num]
-  ring_nf
-  rw [h5]
-  ring
-
-/-- The shear `[[1, 1], [0, 1]]` has operator norm `(√5 + 1) / 2`. -/
-example : ‖toContinuousLinearMap (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1])‖ =
-    (√5 + 1) / 2 := by
-  have hE : finrank ℝ E = 2 := by rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
-  have h :=
-    (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]).sq_singularValues_zero_of_finrank_eq_two hE
-  obtain ⟨htr, hdet⟩ := shear_gram e
-  rw [htr, hdet] at h
-  rw [norm_toContinuousLinearMap_eq_singularValues_zero]
-  have h5 : √5 ^ 2 = 5 := Real.sq_sqrt (by norm_num)
-  have h5' : (0 : ℝ) ≤ √5 := Real.sqrt_nonneg 5
-  refine (pow_left_inj₀ (singularValues_nonneg _ _) (by linarith) two_ne_zero).mp ?_
-  simp only [RCLike.re_to_real] at h
-  rw [h, show (3 : ℝ) ^ 2 - 4 * 1 = 5 by norm_num]
-  ring_nf
-  rw [h5]
-  ring
+  have h5' : (1 : ℝ) ≤ √5 := Real.one_le_sqrt.mpr (by norm_num)
+  simp only [minimalStretch_def, hE, Nat.reduceSub,
+    norm_toContinuousLinearMap_eq_singularValues_zero]
+  refine ⟨(pow_left_inj₀ (singularValues_nonneg _ _) (by linarith) two_ne_zero).mp ?_,
+    (pow_left_inj₀ (singularValues_nonneg _ _) (by positivity) two_ne_zero).mp ?_⟩
+  · rw [h1]
+    linear_combination (-1 / 4 : ℝ) * h5
+  · rw [h0]
+    linear_combination (-1 / 4 : ℝ) * h5
 
 /-- The zero map has minimal stretch `0`. -/
 example : (0 : E →ₗ[ℝ] E).minimalStretch = 0 :=
@@ -116,14 +101,24 @@ example : (toLin e.toBasis e.toBasis (diagonal ![(1 : ℝ), 0])).minimalStretch 
     singularValues_toLin_diagonal_fin_two e (by norm_num)]
   norm_num
 
-/-- Perturbation: `|ℓ(diag(3, 1/2)) - ℓ(diag(3, 3/4))| = 1/4`, which is the norm `1/4` of the
-difference `diag(0, -1/4)`. -/
+/-- Perturbation: the bound `|ℓ(A) - ℓ(B)| ≤ ‖A - B‖` of `lipschitzWith_minimalStretch` is
+attained for `A = diag(3, 1/2)` and `B = diag(3, 3/4)`, both sides being `1/4`. -/
 example : |(toLin e.toBasis e.toBasis (diagonal ![(3 : ℝ), 1 / 2])).minimalStretch -
-      (toLin e.toBasis e.toBasis (diagonal ![(3 : ℝ), 3 / 4])).minimalStretch| = 1 / 4 := by
-  rw [minimalStretch_def, minimalStretch_def, finrank_eq_card_basis e.toBasis,
-    singularValues_toLin_diagonal_fin_two e (by norm_num),
-    singularValues_toLin_diagonal_fin_two e (by norm_num)]
-  norm_num
+      (toLin e.toBasis e.toBasis (diagonal ![(3 : ℝ), 3 / 4])).minimalStretch| = 1 / 4 ∧
+    ‖toContinuousLinearMap (toLin e.toBasis e.toBasis (diagonal ![(3 : ℝ), 1 / 2]) -
+      toLin e.toBasis e.toBasis (diagonal ![(3 : ℝ), 3 / 4]))‖ = 1 / 4 := by
+  refine ⟨?_, ?_⟩
+  · rw [minimalStretch_def, minimalStretch_def, finrank_eq_card_basis e.toBasis,
+      singularValues_toLin_diagonal_fin_two e (by norm_num),
+      singularValues_toLin_diagonal_fin_two e (by norm_num)]
+    norm_num
+  · set d : Fin 2 → ℝ := fun i ↦ ![(3 : ℝ), 1 / 2] i - ![3, 3 / 4] i
+    have hanti : Antitone fun k ↦ ‖d (Equiv.swap (0 : Fin 2) 1 k)‖ := by
+      intro i j
+      fin_cases i <;> fin_cases j <;> norm_num [d]
+    rw [← map_sub, diagonal_sub, norm_toContinuousLinearMap_eq_singularValues_zero]
+    exact (singularValues_toLin_diagonal e d (Equiv.swap (0 : Fin 2) 1) hanti 0).trans
+      (by norm_num [d])
 
 /-- Scaling `diag(3, 1/2)` by `-2` gives minimal stretch `1 = |-2| · 1/2`. -/
 example :
@@ -132,10 +127,16 @@ example :
     singularValues_toLin_diagonal_fin_two e (by norm_num)]
   norm_num
 
-/-- In dimension one, `ℓ(a • id) = |a|`. -/
+/-- In dimension one, `ℓ(a • id) = ‖a • id‖ = |a|`. -/
 example {L : Type*} [NormedAddCommGroup L] [InnerProductSpace ℝ L] [FiniteDimensional ℝ L]
-    (hL : finrank ℝ L = 1) (a : ℝ) : (a • (LinearMap.id : L →ₗ[ℝ] L)).minimalStretch = |a| := by
+    (hL : finrank ℝ L = 1) (a : ℝ) :
+    (a • (LinearMap.id : L →ₗ[ℝ] L)).minimalStretch = |a| ∧
+      ‖toContinuousLinearMap (a • (LinearMap.id : L →ₗ[ℝ] L))‖ = |a| := by
   have : Nontrivial L := Module.nontrivial_of_finrank_eq_succ hL
-  rw [minimalStretch_smul, minimalStretch_id, Real.norm_eq_abs, mul_one]
+  refine ⟨?_, ?_⟩
+  · rw [minimalStretch_smul, minimalStretch_id, Real.norm_eq_abs, mul_one]
+  · have hid : toContinuousLinearMap (LinearMap.id : L →ₗ[ℝ] L) = ContinuousLinearMap.id ℝ L := by
+      ext; rfl
+    rw [map_smul, norm_smul, hid, ContinuousLinearMap.norm_id, Real.norm_eq_abs, mul_one]
 
-end LinearMap.MinimalStretchChecks
+end TauCeti.MinimalStretchChecks
