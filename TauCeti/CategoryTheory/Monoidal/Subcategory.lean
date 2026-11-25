@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Mon
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
 
 /-!
-# Evaluation, coevaluation and precomposition in a closed monoidal full subcategory
+# Monoid objects and internal Homs in a monoidal full subcategory
+
+If `P` is a monoidal property of objects of a monoidal category `C`, a monoid object in the full
+monoidal subcategory of `P` is the same as a monoid object of `C` whose underlying object satisfies
+`P` (`CategoryTheory.ObjectProperty.monFullSubcategoryEquivalence`).
 
 If `P` is a monoidal property of objects of a closed monoidal category `C` that is closed under
 internal Homs, Mathlib makes the full subcategory of `P` closed monoidal
@@ -19,6 +24,8 @@ This file records that its evaluation, coevaluation and precomposition maps are 
 
 ## Main declarations
 
+* `CategoryTheory.ObjectProperty.monFullSubcategoryEquivalence`: monoid objects in the full
+  monoidal subcategory of `P` are monoid objects of `C` whose underlying object satisfies `P`;
 * `CategoryTheory.ObjectProperty.ihom_ev_app_hom` and
   `CategoryTheory.ObjectProperty.ihom_coev_app_hom`: evaluation and coevaluation;
 * `CategoryTheory.ObjectProperty.pre_app_hom`: precomposition with a morphism of the
@@ -30,8 +37,161 @@ public section
 namespace CategoryTheory.ObjectProperty
 
 open MonoidalCategory MonoidalClosed
+open scoped MonObj
 
 universe v u
+
+section Mon
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] (P : ObjectProperty C) [P.IsMonoidal]
+
+/-- Monoid objects in the full monoidal subcategory of `P` are the monoid objects of `C` whose
+underlying object satisfies `P`. Both functors keep the underlying objects, units,
+multiplications and morphisms.
+
+The body is exposed so that the functors reduce on objects in the types of the characteristic
+equations of constructions built from them. -/
+@[expose]
+def monFullSubcategoryEquivalence :
+    Mon P.FullSubcategory ≌ (P.inverseImage (Mon.forget C)).FullSubcategory where
+  functor :=
+    { obj A := by
+        letI : MonObj A.X.obj := {
+          one := η[A.X].hom
+          mul := μ[A.X].hom
+          one_mul := congrArg (fun f ↦ f.hom) (MonObj.one_mul A.X)
+          mul_one := congrArg (fun f ↦ f.hom) (MonObj.mul_one A.X)
+          mul_assoc := congrArg (fun f ↦ f.hom) (MonObj.mul_assoc A.X) }
+        exact ⟨Mon.mk A.X.obj, A.X.property⟩
+      map f := by
+        refine ObjectProperty.homMk (Mon.Hom.mk' f.hom.hom ?_ ?_)
+        · exact congrArg (fun g ↦ g.hom) (IsMonHom.one_hom f.hom)
+        · exact congrArg (fun g ↦ g.hom) (IsMonHom.mul_hom f.hom)
+      map_id A := by
+        apply ObjectProperty.hom_ext
+        apply Mon.Hom.ext
+        exact congrArg (fun f ↦ f.hom) (Mon.id_hom A)
+      map_comp f g := by
+        apply ObjectProperty.hom_ext
+        apply Mon.Hom.ext
+        exact congrArg (fun h ↦ h.hom) (Mon.comp_hom f g) }
+  inverse :=
+    { obj A := by
+        let E : P.FullSubcategory := ⟨A.obj.X, A.property⟩
+        letI : MonObj E := {
+          one := ObjectProperty.homMk η[A.obj.X]
+          mul := ObjectProperty.homMk μ[A.obj.X]
+          one_mul := by
+            apply ObjectProperty.hom_ext
+            exact MonObj.one_mul A.obj.X
+          mul_one := by
+            apply ObjectProperty.hom_ext
+            exact MonObj.mul_one A.obj.X
+          mul_assoc := by
+            apply ObjectProperty.hom_ext
+            exact MonObj.mul_assoc A.obj.X }
+        exact Mon.mk E
+      map f := by
+        refine Mon.Hom.mk' (ObjectProperty.homMk f.hom.hom) ?_ ?_
+        · apply ObjectProperty.hom_ext
+          exact IsMonHom.one_hom f.hom.hom
+        · apply ObjectProperty.hom_ext
+          exact IsMonHom.mul_hom f.hom.hom
+      map_id A := by
+        apply Mon.Hom.ext
+        apply ObjectProperty.hom_ext
+        exact Mon.id_hom A.obj
+      map_comp f g := by
+        apply Mon.Hom.ext
+        apply ObjectProperty.hom_ext
+        exact Mon.comp_hom f.hom g.hom }
+  unitIso := NatIso.ofComponents (fun (A : Mon P.FullSubcategory) ↦ Mon.mkIso (Iso.refl _))
+    fun _ ↦ Mon.Hom.ext (by cat_disch)
+  counitIso := NatIso.ofComponents (fun A ↦ ObjectProperty.isoMk _ (Mon.mkIso (Iso.refl _)))
+    fun _ ↦ ObjectProperty.hom_ext _ (Mon.Hom.ext (by cat_disch))
+  functor_unitIso_comp _ := ObjectProperty.hom_ext _ (Mon.Hom.ext (by simp))
+
+variable {P}
+
+/-- The functor of `monFullSubcategoryEquivalence` keeps the underlying object. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_functor_obj_obj_X (A : Mon P.FullSubcategory) :
+    (P.monFullSubcategoryEquivalence.functor.obj A).obj.X = A.X.obj :=
+  (rfl)
+
+/-- The functor of `monFullSubcategoryEquivalence` keeps the unit. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_functor_obj_obj_one (A : Mon P.FullSubcategory) :
+    η[(P.monFullSubcategoryEquivalence.functor.obj A).obj.X] = η[A.X].hom :=
+  (rfl)
+
+/-- The functor of `monFullSubcategoryEquivalence` keeps the multiplication. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_functor_obj_obj_mul (A : Mon P.FullSubcategory) :
+    μ[(P.monFullSubcategoryEquivalence.functor.obj A).obj.X] = μ[A.X].hom :=
+  (rfl)
+
+/-- The functor of `monFullSubcategoryEquivalence` keeps the underlying morphism. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_functor_map_hom_hom {A B : Mon P.FullSubcategory}
+    (f : A ⟶ B) : (P.monFullSubcategoryEquivalence.functor.map f).hom.hom = f.hom.hom :=
+  (rfl)
+
+/-- The inverse of `monFullSubcategoryEquivalence` keeps the underlying object. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_inverse_obj_X_obj
+    (A : (P.inverseImage (Mon.forget C)).FullSubcategory) :
+    (P.monFullSubcategoryEquivalence.inverse.obj A).X.obj = A.obj.X :=
+  (rfl)
+
+/-- The inverse of `monFullSubcategoryEquivalence` keeps the unit. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_inverse_obj_one_hom
+    (A : (P.inverseImage (Mon.forget C)).FullSubcategory) :
+    η[(P.monFullSubcategoryEquivalence.inverse.obj A).X].hom = η[A.obj.X] :=
+  (rfl)
+
+/-- The inverse of `monFullSubcategoryEquivalence` keeps the multiplication. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_inverse_obj_mul_hom
+    (A : (P.inverseImage (Mon.forget C)).FullSubcategory) :
+    μ[(P.monFullSubcategoryEquivalence.inverse.obj A).X].hom = μ[A.obj.X] :=
+  (rfl)
+
+/-- The inverse of `monFullSubcategoryEquivalence` keeps the underlying morphism. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_inverse_map_hom_hom
+    {A B : (P.inverseImage (Mon.forget C)).FullSubcategory} (f : A ⟶ B) :
+    (P.monFullSubcategoryEquivalence.inverse.map f).hom.hom = f.hom.hom :=
+  (rfl)
+
+/-- The components of the unit of `monFullSubcategoryEquivalence` are identities. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_unitIso_hom_app (A : Mon P.FullSubcategory) :
+    P.monFullSubcategoryEquivalence.unitIso.hom.app A = 𝟙 _ :=
+  Mon.Hom.ext (rfl)
+
+/-- The components of the inverse unit of `monFullSubcategoryEquivalence` are identities. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_unitIso_inv_app (A : Mon P.FullSubcategory) :
+    P.monFullSubcategoryEquivalence.unitIso.inv.app A = 𝟙 _ :=
+  Mon.Hom.ext (rfl)
+
+/-- The components of the counit of `monFullSubcategoryEquivalence` are identities. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_counitIso_hom_app
+    (A : (P.inverseImage (Mon.forget C)).FullSubcategory) :
+    P.monFullSubcategoryEquivalence.counitIso.hom.app A = 𝟙 _ :=
+  ObjectProperty.hom_ext _ (Mon.Hom.ext (rfl))
+
+/-- The components of the inverse counit of `monFullSubcategoryEquivalence` are identities. -/
+@[simp]
+theorem monFullSubcategoryEquivalence_counitIso_inv_app
+    (A : (P.inverseImage (Mon.forget C)).FullSubcategory) :
+    P.monFullSubcategoryEquivalence.counitIso.inv.app A = 𝟙 _ :=
+  ObjectProperty.hom_ext _ (Mon.Hom.ext (rfl))
+
+end Mon
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [MonoidalClosed C]
   (P : ObjectProperty C) [P.IsMonoidal] [P.IsMonoidalClosed]

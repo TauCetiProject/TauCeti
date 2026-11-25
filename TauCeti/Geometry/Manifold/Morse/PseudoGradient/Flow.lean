@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Dynamics.Flow.Stable
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
@@ -51,6 +52,9 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop` and
   `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atBot`: every orbit converges to a critical point
   forward, respectively backward, in time.
+* `TauCeti.IsAdaptedPseudoGradient.exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt`: a point
+  of `W^u(p)` whose orbit passes below a level `c ≤ f p` lies on a trajectory from `p` to a
+  critical point below `c`.
 * `TauCeti.IsAdaptedPseudoGradient.mem_stableSet_of_forall_mem` and
   `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_of_forall_mem`: an orbit trapped in a closed set
   whose only critical point is `x` converges to `x`.
@@ -235,10 +239,11 @@ theorem mem_unstableSet_inter_stableSet_of_isMIntegralCurve {γ : ℝ → M} {p 
 theorem mfderiv_eq_zero_of_forall_eq {z : M}
     (hz : ∀ t, f (hX.flow t z) = f z) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 := by
   by_contra hcrit
-  have hd := hX.hasDerivAt_comp_flow z 0
-  have horbit : (fun s ↦ f (hX.flow s z)) = fun _ ↦ f z := funext hz
-  rw [horbit, Flow.map_zero_apply] at hd
-  exact (hX.mvfderiv_apply_lt_zero z hcrit).ne (hd.unique (hasDerivAt_const _ _))
+  -- `f` is constant along the orbit, so `df(X)` vanishes where the orbit starts.
+  have h := (hX.isMIntegralCurve_flow z).isMIntegralCurveAt 0
+    |>.mfderiv_apply_eq_zero_of_eventuallyEq_const (hX.mdifferentiable _) (.of_forall hz)
+  rw [Flow.map_zero_apply] at h
+  exact (hX.mvfderiv_apply_lt_zero z hcrit).ne h
 
 /-- A point with a nonempty stable set is a critical point of `f`: it is fixed by the flow. -/
 theorem mfderiv_eq_zero_of_mem_stableSet {a y : M} (hy : y ∈ hX.flow.stableSet a) :
@@ -253,25 +258,27 @@ theorem mfderiv_eq_zero_of_mem_unstableSet {a y : M} (hy : y ∈ hX.flow.unstabl
 /-- **Every orbit converges forward in time to a critical point.** -/
 theorem exists_tendsto_atTop (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
     ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atTop (𝓝 x) :=
-  Flow.exists_tendsto_atTop_of_antitone hX.flow hf.contMDiff.continuous hX.antitone_flow
-    hf.finite_setOf_mfderiv_eq_zero (fun _ hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz) y
+  Flow.exists_tendsto_atTop_of_antitone hX.flow hf.contMDiff.continuous y (hX.antitone_flow y)
+    hf.finite_setOf_mfderiv_eq_zero (fun _ _ hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz)
 
 /-- **Every orbit converges backward in time to a critical point.** -/
 theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
-    ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atBot (𝓝 x) := by
-  obtain ⟨x, hx, htend⟩ := Flow.exists_tendsto_atTop_of_antitone hX.flow.reverse
-    hf.contMDiff.continuous.neg
-    (fun y ↦ fun s t hst ↦ by
-      simp only [Flow.reverse_apply, Pi.neg_apply]
-      exact neg_le_neg (hX.antitone_flow y (neg_le_neg hst)))
-    hf.finite_setOf_mfderiv_eq_zero
-    (fun z hz ↦ hX.mfderiv_eq_zero_of_forall_eq fun t ↦ by
-      have := hz (-t)
-      simp only [Flow.reverse_apply, neg_neg, Pi.neg_apply] at this
-      exact neg_inj.1 this) y
-  refine ⟨x, hx, ?_⟩
-  have := htend.comp tendsto_neg_atBot_atTop
-  simpa [comp_def, Flow.reverse_apply] using this
+    ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atBot (𝓝 x) :=
+  Flow.exists_tendsto_atBot_of_antitone hX.flow hf.contMDiff.continuous y (hX.antitone_flow y)
+    hf.finite_setOf_mfderiv_eq_zero (fun _ _ hz ↦ hX.mfderiv_eq_zero_of_forall_eq hz)
+
+/-- A point of `W^u(p)` whose orbit passes below a level `c ≤ f p` lies on a trajectory from `p`
+to a critical point `b ≠ p` below `c`. -/
+theorem exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt (hf : IsMorse 𝓘(ℝ, E) f)
+    {p w : M} (hw : w ∈ hX.flow.unstableSet p) {t c : ℝ} (ht : f (hX.flow t w) < c)
+    (hcp : c ≤ f p) :
+    ∃ b, p ≠ b ∧ w ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet b ∧ f b < c := by
+  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop hf w
+  have hb : w ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hb
+  have hfb : f b ≤ f (hX.flow t w) :=
+    Flow.le_of_mem_stableSet_of_antitone ((Flow.apply_mem_stableSet_iff _ t).2 hb)
+      hX.mdifferentiable.continuous.continuousAt (hX.antitone_flow _)
+  exact ⟨b, by rintro rfl; linarith, ⟨hw, hb⟩, hfb.trans_lt ht⟩
 
 /-- **An orbit trapped near a critical point converges to it.** If the forward orbit of `w` stays
 in a closed set `K` whose only critical point of the Morse function `f` is `x`, then the orbit

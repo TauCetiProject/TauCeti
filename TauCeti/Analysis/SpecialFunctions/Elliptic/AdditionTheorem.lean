@@ -38,6 +38,8 @@ surjectivity of `P` (`PeriodPair.weierstrassPoint_surjective`), it gives the gro
   map, which is surjective by `PeriodPair.weierstrassPoint_surjective`, with
   `PeriodPair.weierstrassPointEquiv_mk` and `PeriodPair.weierstrassPointEquiv_symm_weierstrassPoint`
   for the isomorphism and its inverse on the class of `z`.
+* `PeriodPair.pointHom_ext`: homomorphisms out of `E(ℂ)` are determined by their values on the
+  points `P(z)`.
 
 ## Implementation notes
 
@@ -440,10 +442,44 @@ lemma weierstrassPoint_eq_weierstrassPoint_iff {z w : ℂ} :
   rw [← sub_eq_zero, ← L.weierstrassPointHom_apply, ← L.weierstrassPointHom_apply, ← map_sub,
     L.weierstrassPointHom_apply, L.weierstrassPoint_eq_zero_iff]
 
+/-- Division points depend only on their coordinates modulo `N`: if `m ≡ m'` and `n ≡ n'`
+modulo `N`, then `(m ω₁ + n ω₂) / N` and `(m' ω₁ + n' ω₂) / N` give the same point. At `N = 0`,
+both arguments are `0` by Lean’s division-by-zero convention. -/
+theorem weierstrassPoint_div_eq_of_intCast_eq (N : ℕ) {m n m' n' : ℤ}
+    (hm : (m : ZMod N) = m') (hn : (n : ZMod N) = n') :
+    L.weierstrassPoint ((m * L.ω₁ + n * L.ω₂) / N) =
+      L.weierstrassPoint ((m' * L.ω₁ + n' * L.ω₂) / N) := by
+  rw [weierstrassPoint_eq_weierstrassPoint_iff]
+  have h := L.div_mem_lattice_of_intCast_eq_zero
+    (N := N) (m := m - m') (n := n - n')
+    (by simp only [Int.cast_sub, hm, sub_self]) (by simp only [Int.cast_sub, hn, sub_self])
+  convert h using 1
+  push_cast
+  ring
+
+/-- At positive level, two division points `(m ω₁ + n ω₂) / N` and `(m' ω₁ + n' ω₂) / N` give
+the same point exactly when their coordinates agree modulo `N`. -/
+@[simp]
+theorem weierstrassPoint_div_eq_weierstrassPoint_div_iff {N : ℕ} [NeZero N] {m n m' n' : ℤ} :
+    L.weierstrassPoint ((m * L.ω₁ + n * L.ω₂) / N) =
+        L.weierstrassPoint ((m' * L.ω₁ + n' * L.ω₂) / N) ↔
+      (m : ZMod N) = m' ∧ (n : ZMod N) = n' := by
+  have h : (m * L.ω₁ + n * L.ω₂) / N - (m' * L.ω₁ + n' * L.ω₂) / N =
+      ((m - m' : ℤ) * L.ω₁ + (n - n' : ℤ) * L.ω₂) / N := by
+    push_cast
+    ring
+  rw [weierstrassPoint_eq_weierstrassPoint_iff, h, div_mem_lattice_iff_intCast_eq_zero,
+    Int.cast_sub, Int.cast_sub, sub_eq_zero, sub_eq_zero]
+
 /-- The point map commutes with multiplication by a natural number. -/
 lemma nsmul_weierstrassPoint (n : ℕ) (z : ℂ) :
     n • L.weierstrassPoint z = L.weierstrassPoint (n * z) := by
   rw [← L.weierstrassPointHom_apply, ← map_nsmul, nsmul_eq_mul, L.weierstrassPointHom_apply]
+
+/-- The point map commutes with multiplication by an integer. -/
+lemma zsmul_weierstrassPoint (n : ℤ) (z : ℂ) :
+    n • L.weierstrassPoint z = L.weierstrassPoint (n * z) := by
+  rw [← L.weierstrassPointHom_apply, ← map_zsmul, zsmul_eq_mul, L.weierstrassPointHom_apply]
 
 /-- Away from the period lattice, the Weierstrass function identifies exactly the pairs of
 points that differ by a period or whose sum is a period. -/
@@ -478,5 +514,13 @@ lemma weierstrassPointEquiv_mk (z : ℂ) :
 lemma weierstrassPointEquiv_symm_weierstrassPoint (z : ℂ) :
     L.weierstrassPointEquiv.symm (L.weierstrassPoint z) = QuotientAddGroup.mk z := by
   rw [AddEquiv.symm_apply_eq, weierstrassPointEquiv_mk]
+
+/-- Two homomorphisms out of the points of the Weierstrass curve of `L` agree if they agree on
+every `P(z)`. -/
+lemma pointHom_ext {G : Type*} [AddZero G] {f g : L.weierstrassCurve.toAffine.Point →+ G}
+    (h : ∀ z, f (L.weierstrassPoint z) = g (L.weierstrassPoint z)) : f = g := by
+  ext P
+  obtain ⟨z, rfl⟩ := L.weierstrassPoint_surjective P
+  exact h z
 
 end PeriodPair

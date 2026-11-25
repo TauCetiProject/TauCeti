@@ -68,9 +68,10 @@ dimensions of its kernel and cokernel (`LinearMap.detLineCongr_neg_apply`).
   complex orientation of the determinant line is that of the real determinant line of the complex
   kernel (`LinearMap.detLineEquivOfSurjective`).
 * `LinearMap.detLineRestrictScalarsEquiv_detLineCongrKerCoker`,
-  `LinearMap.IsComplexPositiveDetLine.detLineCongrKerCoker`: transport along real isomorphisms of
-  kernels and cokernels commuting with `I` preserves the complex orientation, also when these do
-  not come from isomorphisms of the domains and codomains.
+  `LinearMap.IsComplexPositiveDetLine.detLineCongrKerCoker`,
+  `LinearMap.IsComplexPositiveDetLine.detLineCongrOfEq_detLineCongrKerCoker`: transport along real
+  isomorphisms of kernels and cokernels commuting with `I` preserves the complex orientation, also
+  when these do not come from isomorphisms of the domains and codomains.
 * `LinearMap.isComplexPositiveDetLine_detLineEndGenerator`: the normalized generator of the
   determinant line of a complex-linear endomorphism (`LinearMap.detLineEndGenerator`) is complex
   positive.
@@ -204,6 +205,13 @@ theorem IsComplexPositiveDetLine.ne_zero [FiniteDimensional ℂ (N ⧸ range f)]
   rintro rfl
   exact IsComplexPositiveTMulDual.ne_zero hz f.detLineRestrictScalarsEquiv.map_zero
 
+/-- A complex positive element of the determinant line of an onto complex-linear map is nonzero:
+the cokernel vanishes. -/
+theorem IsComplexPositiveDetLine.ne_zero_of_surjective (hf : Function.Surjective f)
+    (hz : f.IsComplexPositiveDetLine z) : z ≠ 0 :=
+  have : Subsingleton (N ⧸ range f) := Submodule.Quotient.subsingleton_iff.2 (range_eq_top.2 hf)
+  hz.ne_zero
+
 /-- Two complex positive elements of the determinant line of a complex-linear map differ by a
 positive factor. -/
 theorem IsComplexPositiveDetLine.exists_pos_smul_eq [FiniteDimensional ℂ (N ⧸ range f)]
@@ -315,6 +323,22 @@ theorem IsComplexPositiveDetLine.detLineCongrKerCoker {z : (f.restrictScalars �
   rw [hG₁, hG₂] at key
   rw [isComplexPositiveDetLine_iff, detLineRestrictScalarsEquiv_detLineCongrKerCoker]
   exact key
+
+/-- `LinearMap.IsComplexPositiveDetLine.detLineCongrKerCoker` for real maps `g` and `g'` equal to
+the underlying real maps of `f` and `f'`, with elements of their determinant lines read through
+`LinearMap.detLineCongrOfEq`. -/
+theorem IsComplexPositiveDetLine.detLineCongrOfEq_detLineCongrKerCoker {g : M →ₗ[ℝ] N}
+    {g' : M' →ₗ[ℝ] N'} (hg : g = f.restrictScalars ℝ) (hg' : g' = f'.restrictScalars ℝ)
+    {e₁ : ker g ≃ₗ[ℝ] ker g'} {e₂ : (N ⧸ range g) ≃ₗ[ℝ] N' ⧸ range g'} {y : g.detLine}
+    (hy : f.IsComplexPositiveDetLine (detLineCongrOfEq hg y))
+    (hK : ∀ x y : ker g, (y : M) = I • (x : M) → (e₁ y : M') = I • (e₁ x : M'))
+    (hC : ∀ (y : N) (y' : N'), e₂ (Submodule.Quotient.mk y) = Submodule.Quotient.mk y' →
+      e₂ (Submodule.Quotient.mk (I • y)) = Submodule.Quotient.mk (I • y')) :
+    f'.IsComplexPositiveDetLine
+      (detLineCongrOfEq hg' (LinearMap.detLineCongrKerCoker e₁ e₂ y)) := by
+  subst hg hg'
+  rw [detLineCongrOfEq_rfl, LinearEquiv.refl_apply] at hy ⊢
+  exact hy.detLineCongrKerCoker hK hC
 
 end KerCoker
 

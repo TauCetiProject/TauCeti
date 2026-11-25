@@ -55,7 +55,8 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
 * `TauCeti.forall_mul_eq_mul_iff_exists_units`: two coordinate families generating the unit ideal
   are unit multiples of one another exactly when their `2 × 2` minors vanish.
 * `LinearMap.kerProdEquivOfApplyEqOne`: if a linear functional `f` takes the value `1` at `v`, then
-  `ker f × R ≃ M` by `(x, a) ↦ x + a • v`.
+  `ker f × R ≃ M` by `(x, a) ↦ x + a • v`. Consequently `ker f` is finite when `M` is
+  (`LinearMap.finite_ker_of_apply_eq_one`).
 * `Module.IsUnimodular.notMem_smul_top`: a unimodular element does not lie in `I • M` for a
   proper ideal `I`, since a linear functional maps `I • M` into `I`.
 * `Module.Free.isUnimodular_iff_notMem_smul_top`: over a local ring with maximal ideal `𝔪`, an
@@ -336,6 +337,13 @@ theorem coe_kerProdEquivOfApplyEqOne_symm_apply_fst {f : M →ₗ[R] R} {v : M} 
 theorem kerProdEquivOfApplyEqOne_symm_apply_snd {f : M →ₗ[R] R} {v : M} (hf : f v = 1)
     (m : M) : ((kerProdEquivOfApplyEqOne hf).symm m).2 = f m :=
   (rfl)
+
+/-- If a linear functional `f` on a finite module `M` takes the value `1` at `v`, then `ker f` is
+finite: it is a direct summand of `M` (`LinearMap.kerProdEquivOfApplyEqOne`). -/
+theorem finite_ker_of_apply_eq_one [Module.Finite R M] {f : M →ₗ[R] R} {v : M} (hf : f v = 1) :
+    Module.Finite R (ker f) :=
+  .of_surjective (fst R _ R ∘ₗ (kerProdEquivOfApplyEqOne hf).symm.toLinearMap)
+    (Prod.fst_surjective.comp (kerProdEquivOfApplyEqOne hf).symm.surjective)
 
 end LinearMap
 

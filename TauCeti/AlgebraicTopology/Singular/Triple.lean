@@ -31,8 +31,10 @@ functorial as well, and the connecting morphism is natural for morphisms of trip
 The short exact sequence and its connecting morphism use an abelian coefficient category.  The
 zero composite and the degree-zero epimorphism also hold for preadditive coefficients with
 coproducts and homology.  Exactness at `Hₙ(X, B)` propagates vanishing from `(A, B)` and `(X, A)`
-to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), and when `H_{d+1}(X, A) = 0` it
-propagates projectivity over hereditary coefficient categories
+to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), and when the connecting morphism
+`H_{d+1}(X, A) ⟶ H_d(A, B)` vanishes (for instance when `H_{d+1}(X, A) = 0`) it propagates
+projectivity, provided the cokernel of `H_d(X, B) ⟶ H_d(X, A)` has projective dimension at most
+one, for instance over hereditary coefficient categories
 (`TopTriple.projective_singularHomology_totalPair`). When morphisms into `Hₙ(X, B)` and
 `Hₙ₊₁(X, B)` split `H_*(X, B) ⟶ H_*(X, A)` up to isomorphism, the triple sequence splits as a
 binary biproduct (`TopTriple.isIso_biprod_desc_singularHomology`).
@@ -103,8 +105,9 @@ private noncomputable def outerPairToShortComplexMap :
   comm₂₃ := (T.singularChainComplexπ_comp_totalToOuter R).trans (Category.comp_id _).symm
 
 /-- The morphism of relative singular chain sequences induced by a morphism of triples, used to
-prove the naturality of the connecting morphism. -/
-private noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.{w}} (φ : T ⟶ T')
+prove the naturality of the connecting morphisms in homology and cohomology. -/
+@[simps]
+noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.{w}} (φ : T ⟶ T')
     (R : C) : T.singularChainComplexShortComplex R ⟶ T'.singularChainComplexShortComplex R where
   τ₁ := TopPair.singularChainComplexMap (innerPair.map φ) R
   τ₂ := TopPair.singularChainComplexMap (totalPair.map φ) R
@@ -113,6 +116,24 @@ private noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.
     (TopPair.toSSetPair ⋙ (SSetPair.chainComplexFunctor C).obj R)).naturality φ
   comm₂₃ := (Functor.whiskerRight totalToOuter
     (TopPair.toSSetPair ⋙ (SSetPair.chainComplexFunctor C).obj R)).naturality φ
+
+/-- The identity morphism of triples induces the identity morphism of relative singular chain
+sequences. -/
+@[simp]
+lemma singularChainComplexShortComplexMap_id :
+    singularChainComplexShortComplexMap (𝟙 T) R = 𝟙 _ := by
+  ext : 1 <;> exact (congrArg (TopPair.singularChainComplexMap · R)
+    (CategoryTheory.Functor.map_id _ T)).trans (TopPair.singularChainComplexMap_id _ R)
+
+/-- A composite of morphisms of triples induces the composite of the morphisms of relative
+singular chain sequences. -/
+@[simp, reassoc]
+lemma singularChainComplexShortComplexMap_comp {T T' T'' : TopTriple.{w}} (φ : T ⟶ T')
+    (ψ : T' ⟶ T'') :
+    singularChainComplexShortComplexMap (φ ≫ ψ) R =
+      singularChainComplexShortComplexMap φ R ≫ singularChainComplexShortComplexMap ψ R := by
+  ext : 1 <;> exact (congrArg (TopPair.singularChainComplexMap · R) (Functor.map_comp _ φ ψ)).trans
+    (TopPair.singularChainComplexMap_comp _ R _)
 
 /-- The maps `Hₙ(A, B) ⟶ Hₙ(X, B) ⟶ Hₙ(X, A)` of a triple compose to zero. -/
 @[reassoc (attr := simp)]
@@ -314,18 +335,27 @@ lemma singularHomologyδ_naturality {T T' : TopTriple.{w}} (φ : T ⟶ T') (R : 
     (T.shortExact_singularChainComplexShortComplex R)
     (T'.shortExact_singularChainComplexShortComplex R) n m (by simpa)
 
-/-- **Projectivity of top relative homology glues across a triple** in a hereditary abelian
-category: if `H_{d+1}(X, A)` vanishes and both `H_d(A, B)` and `H_d(X, A)` are projective, then
-`0 ⟶ H_d(A, B) ⟶ H_d(X, B) ⟶ H_d(X, A)` is exact with projective image, so `H_d(X, B)` splits as
-a direct sum of two projectives and is projective. -/
-theorem projective_singularHomology_totalPair [∀ V : A, HasProjectiveDimensionLE V 1]
-    (d : ℕ) (h : IsZero ((outerPair.obj T).singularHomology R (d + 1)))
+/-- **Projectivity of relative homology glues across a triple**: in degree `d`, if the
+connecting morphism `H_{d+1}(X, A) ⟶ H_d(A, B)` vanishes (for instance when `H_{d+1}(X, A) = 0`),
+both `H_d(A, B)` and `H_d(X, A)` are projective, and the cokernel of `H_d(X, B) ⟶ H_d(X, A)` has
+projective dimension at most one (for instance in a hereditary abelian category), then
+`H_d(X, B)` is projective. -/
+theorem projective_singularHomology_totalPair (d : ℕ)
+    [HasProjectiveDimensionLE (cokernel (TopPair.singularHomologyMap (totalToOuter.app T) R d)) 1]
+    (hδ : T.singularHomologyδ R (d + 1) d rfl = 0)
     [Projective ((innerPair.obj T).singularHomology R d)]
     [Projective ((outerPair.obj T).singularHomology R d)] :
     Projective ((totalPair.obj T).singularHomology R d) := by
+  -- The sequence `0 ⟶ H_d(A, B) ⟶ H_d(X, B) ⟶ H_d(X, A)` is exact, so `H_d(A, B)` is the kernel
+  -- of `H_d(X, B) ⟶ H_d(X, A)`, whose image is projective by the cokernel bound; `H_d(X, B)` is
+  -- then an extension of projectives.
   have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R d) :=
-    (T.singularHomology_exact_inner R (d + 1) d rfl).mono_g (h.eq_of_src _ 0)
-  exact (T.singularHomology_exact_total R d).projective_X₂_of_mono_f
+    (T.singularHomology_exact_inner R (d + 1) d rfl).mono_g hδ
+  have : Projective (kernel (TopPair.singularHomologyMap (totalToOuter.app T) R d)) :=
+    Projective.of_iso ((T.singularHomology_exact_total R d).fIsKernel.conePointUniqueUpToIso
+      (limit.isLimit _)) ‹Projective ((innerPair.obj T).singularHomology R d)›
+  exact Quiver.Hom.projective_of_projective_kernel_of_hasProjectiveDimensionLE_one
+    (TopPair.singularHomologyMap (totalToOuter.app T) R d)
 
 /-- **Splitting the homology sequence of a triple.** In a triple `T = (X, A, B)`, if morphisms
 into `Hₙ(X, B)` and `Hₙ₊₁(X, B)` compose with `H_*(X, B) ⟶ H_*(X, A)` to isomorphisms, then
