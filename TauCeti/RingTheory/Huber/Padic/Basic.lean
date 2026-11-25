@@ -26,6 +26,8 @@ topologically nilpotent.
 * `TauCeti.Huber.PadicInt.isAdic_maximalIdeal`: the norm topology of `ℤ_[p]` is the `(p)`-adic
   topology. Mathlib has `IsAdicComplete (maximalIdeal ℤ_[p]) ℤ_[p]` but not this comparison of
   topologies, which is what a pair of definition requires.
+* `PadicInt.continuous_of_isAdic`: consequently a ring homomorphism out of `ℤ_[p]` is continuous
+  for every `J`-adic topology on the target with `p ∈ J`.
 * `TauCeti.Huber.PadicInt.instIsLinearTopology`: consequently `ℤ_[p]` is linearly topologized,
   and `TauCeti.Huber.PadicInt.isTopologicallyNilpotent_iff_dvd`: its topologically nilpotent
   elements are the multiples of `p`.
@@ -83,6 +85,15 @@ theorem isAdic_maximalIdeal : IsAdic (maximalIdeal ℤ_[p]) := by
   rw [coe_maximalIdeal_pow, Set.mem_ofPred_eq] at hx
   refine Metric.mem_ball.mpr (lt_of_le_of_lt ?_ hn)
   simpa [zpow_neg, zpow_natCast, ← inv_pow, dist_eq_norm] using hx
+
+/-- **Ring homomorphisms out of `ℤ_[p]` are continuous for adic topologies containing `p`**: the
+topology of `ℤ_[p]` is the `(p)`-adic one, and `f` maps `(p)` into `J`. -/
+theorem _root_.PadicInt.continuous_of_isAdic {A : Type*} [CommRing A] [TopologicalSpace A]
+    {J : Ideal A} (hJ : IsAdic J) (hp : (p : A) ∈ J) (f : ℤ_[p] →+* A) : Continuous f :=
+  isAdic_maximalIdeal.continuous_of_map_le_radical hJ (IsNoetherian.noetherian _) <| by
+    rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.map_span, Set.image_singleton, map_natCast,
+      Ideal.span_singleton_le_iff_mem]
+    exact Ideal.le_radical hp
 
 /-- The norm topology of `ℤ_[p]` is linear: the ideals `(p ^ n)` are a neighbourhood basis of
 zero. -/

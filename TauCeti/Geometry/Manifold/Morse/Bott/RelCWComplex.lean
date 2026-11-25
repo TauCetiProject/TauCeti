@@ -81,8 +81,8 @@ variable {E M S : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S] {f : M → ℝ} {n : ℕ∞ω}
   {i : SmoothEmbedding J I n S M} {hn : n ≠ 0} {P : Type*} {h : i.IsCriticalSubmanifold f}
-  {g : RiemannianMetric fun s ↦ i.NormalSpace s hn}
-  {Θ : TotalSpace P (fun s ↦ i.NormalSpace s hn) → M} {c ε : ℝ} {r : ℕ}
+  {g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn}
+  {Θ : TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn) → M} {c ε : ℝ} {r : ℕ}
 
 namespace IsCriticalSubmanifold
 
@@ -201,7 +201,7 @@ theorem exists_relCWComplex_sublevel_deformation [T2Space M] [SecondCountableTop
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn)
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn)
     {δ : ℝ} (hδ : 0 < δ) (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ)))
     (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (c - δ) (c + δ) ⊆ range i) :
     ∃ ε, 0 < ε ∧ ε ≤ δ ∧ ∃ (C : Set M) (_ : RelCWComplex C {x | f x ≤ c - ε})

@@ -10,7 +10,8 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.RingTheory.AdicCompletion.Regular
 public import TauCeti.RingTheory.AdicCompletion.Iterated
 public import TauCeti.RingTheory.Regular.Pair
-import Mathlib.Tactic.LinearCombination
+public import TauCeti.RingTheory.Patching.GlueingPair
+import TauCeti.RingTheory.Localization.Away.Basic
 import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
 import TauCeti.Algebra.Module.LocalizedModule.Regular
 import TauCeti.RingTheory.AdicCompletion.Exactness
@@ -34,12 +35,18 @@ pullback. Its supersingular corner `(R̂_v)^_p` is the `(p, v)`-adic completion 
 `(R[1/v₁])^_p`, the supersingular coefficients `R̂_{(p, v₁)}` and their overlap
 `(R̂_{v₁}[1/v₁])^_p`.
 
+For a regular element `r`, the pair `(R → R̂, r)` is a glueing pair (Stacks, Remark 15.92.7), so
+the square is the exact square `TauCeti.GlueingPair.exactSquare` of that pair, and the results on
+the native carriers below are derived from it.
+
 The results use the native `AdicCompletion` and `Localization.Away` carriers. No Noetherian,
 separatedness or completeness hypothesis is imposed on `R`. In particular completion need not
 be faithfully flat: localization retains the part invisible to completion.
 
 ## Main results
 
+* `IsRegular.glueingPair_adicCompletion`: if `f` is a nonzerodivisor, then `R` and its
+  `(f)`-adic completion form a glueing pair.
 * `AdicCompletion.existsUnique_localization_lift`: the localization–completion square of a
   regular element is cartesian.
 * `AdicCompletion.exists_localization_sub_completion`: the difference map onto `R̂[1/r]` is
@@ -56,6 +63,8 @@ be faithfully flat: localization retains the part invisible to completion.
 * Douglas–Francis–Henriques–Hill, *Topological Modular Forms*, Chapter 12, §8, for the
   localization/completion square in the comparison of ordinary and supersingular coefficients.
 * The Stacks Project, Section 15.91, formal glueing.
+* [The Stacks Project, Remark 15.92.7](https://stacks.math.columbia.edu/tag/0BNS), the completion
+  at a nonzerodivisor as a glueing pair.
 -/
 
 public section
@@ -63,6 +72,19 @@ public section
 namespace AdicCompletion
 
 variable {R : Type*} [CommRing R] {r : R}
+
+/-- If `f` is a nonzerodivisor of `R`, then `R` and its `(f)`-adic completion form a glueing pair
+(Stacks, Remark 15.92.7). No noetherian hypothesis is needed: the completion has the same
+quotients by the powers of `f`, and `f` stays a nonzerodivisor in it, so neither ring has
+`f`-power torsion. -/
+theorem _root_.IsRegular.glueingPair_adicCompletion {f : R} (hf : IsRegular f) :
+    TauCeti.GlueingPair (AdicCompletion (Ideal.span {f}) R) f := by
+  refine TauCeti.glueingPair_iff.mpr ⟨fun n ↦ ?_, ?_⟩
+  · convert quotientMap_algebraMap_bijective (Submodule.fg_span_singleton f) n <;>
+      simp [Ideal.span_singleton_pow, Ideal.map_span]
+  · rw [hf.isSMulRegular.torsion'_powers_eq_bot,
+      hf.adicCompletion.isSMulRegular.torsion'_powers_eq_bot, Submodule.bot_coe, Submodule.bot_coe]
+    exact Set.bijOn_singleton.mpr (_root_.map_zero _)
 
 /-- The localization–completion square of a regular element is cartesian: compatible elements
 of `R[1/r]` and the `(r)`-adic completion come from a unique element of `R`. -/
@@ -73,42 +95,13 @@ theorem existsUnique_localization_lift (hr : IsRegular r)
         (algebraMap R (AdicCompletion (Ideal.span {r}) R) r)) b) :
     ∃! x : R, algebraMap R (Localization.Away r) x = a ∧
       algebraMap R (AdicCompletion (Ideal.span {r}) R) x = b := by
-  let I : Ideal R := Ideal.span {r}
-  let C := AdicCompletion I R
-  let D := Localization.Away (algebraMap R C r)
-  let f := Localization.awayMap (algebraMap R C) r
-  have hrC : IsRegular (algebraMap R C r) := hr.adicCompletion
-  have hinjC := IsLocalization.injective D
-    (Submonoid.powers_le.mpr (isRegular_iff_mem_nonZeroDivisors.mp hrC))
-  have hinjR := IsLocalization.injective (Localization.Away r)
-    (Submonoid.powers_le.mpr (isRegular_iff_mem_nonZeroDivisors.mp hr))
-  obtain ⟨n, c, hc⟩ := IsLocalization.Away.surj r a
-  have hcb : algebraMap R C c = algebraMap R C r ^ n * b := by
-    apply hinjC
-    have hf (y : R) : f (algebraMap R (Localization.Away r) y) =
-        algebraMap C D (algebraMap R C y) :=
-      IsLocalization.map_eq (Submonoid.powers r).le_comap_map y
-    have h := congrArg f hc
-    simp only [map_mul, map_pow, hf] at h
-    rw [hab] at h
-    rw [map_mul, map_pow]
-    exact h.symm.trans (mul_comm _ _)
-  -- Divisibility of the completed numerator descends through the residue modulo `r^n`.
-  have hcI : algebraMap R C c ∈ (I ^ n).map (algebraMap R C) := by
-    simp only [I, Ideal.span_singleton_pow, Ideal.map_span, Set.image_singleton,
-      Ideal.mem_span_singleton, map_pow]
-    exact ⟨b, hcb⟩
-  have hcR : c ∈ Ideal.span {r ^ n} := by
-    rw [← Ideal.span_singleton_pow]
-    exact (algebraMap_mem_map_pow_iff n).mp hcI
-  obtain ⟨x, hx⟩ := Ideal.mem_span_singleton.mp hcR
-  have ha : algebraMap R (Localization.Away r) x = a := by
-    apply (IsLocalization.Away.algebraMap_pow_isUnit r n).mul_left_injective
-    simpa only [hx, map_mul, map_pow, mul_comm] using hc.symm
-  have hb : algebraMap R C x = b := by
-    apply (hrC.pow n).left
-    simpa only [hx, map_mul, map_pow] using hcb
-  exact ⟨x, ⟨ha, hb⟩, fun y hy ↦ hinjR (hy.1.trans ha.symm)⟩
+  let := (Localization.awayMap (algebraMap R (AdicCompletion (Ideal.span {r}) R)) r).toAlgebra
+  have := Localization.isScalarTower_awayMap (AdicCompletion (Ideal.span {r}) R) r
+  have h := hr.glueingPair_adicCompletion.exactSquare (Localization.Away r)
+    (Localization.Away (algebraMap R (AdicCompletion (Ideal.span {r}) R) r))
+  obtain ⟨x, hx⟩ := (h.exists_algebraMap_eq_iff b a).mpr hab.symm
+  exact ⟨x, ⟨hx.2, hx.1⟩, fun y hy ↦ h.injective (Prod.ext (hy.2.trans hx.1.symm)
+    (hy.1.trans hx.2.symm))⟩
 
 /-- Every element of the localized completion is a difference of an element from the
 localization and an element from the completion. This is the surjectivity at the right end of
@@ -119,32 +112,12 @@ theorem exists_localization_sub_completion (r : R)
       Localization.awayMap (algebraMap R (AdicCompletion (Ideal.span {r}) R)) r a -
         algebraMap _ (Localization.Away
           (algebraMap R (AdicCompletion (Ideal.span {r}) R) r)) b = z := by
-  let I : Ideal R := Ideal.span {r}
-  let C := AdicCompletion I R
-  let D := Localization.Away (algebraMap R C r)
-  let f := Localization.awayMap (algebraMap R C) r
-  obtain ⟨n, c, hc⟩ := IsLocalization.Away.surj (algebraMap R C r) z
-  obtain ⟨x, hx⟩ := exists_sub_algebraMap_mem_map_pow (Submodule.fg_span_singleton r) n c
-  simp only [Ideal.span_singleton_pow, Ideal.map_span, Set.image_singleton,
-    Ideal.mem_span_singleton, map_pow] at hx
-  obtain ⟨b, hb⟩ := hx
-  let a : Localization.Away r := IsLocalization.mk' (Localization.Away r) x
-    (⟨r ^ n, n, rfl⟩ : Submonoid.powers r)
-  have ha : a * algebraMap R (Localization.Away r) r ^ n =
-      algebraMap R (Localization.Away r) x := by
-    simpa only [map_pow] using IsLocalization.mk'_spec (Localization.Away r) x
-      (⟨r ^ n, n, rfl⟩ : Submonoid.powers r)
-  refine ⟨a, -b, ?_⟩
-  apply (IsLocalization.Away.algebraMap_pow_isUnit (algebraMap R C r) n).mul_left_injective
-  have hf (y : R) : f (algebraMap R (Localization.Away r) y) =
-      algebraMap C D (algebraMap R C y) :=
-    IsLocalization.map_eq (Submonoid.powers r).le_comap_map y
-  have hfa := congrArg f ha
-  simp only [map_mul, map_pow, hf] at hfa
-  have hbD := congrArg (algebraMap C D) hb
-  simp only [map_sub, map_mul, map_pow] at hbD
-  simp only [map_neg, sub_neg_eq_add]
-  linear_combination hfa - hbD - hc
+  let := (Localization.awayMap (algebraMap R (AdicCompletion (Ideal.span {r}) R)) r).toAlgebra
+  have := Localization.isScalarTower_awayMap (AdicCompletion (Ideal.span {r}) R) r
+  obtain ⟨⟨b, a⟩, h⟩ := TauCeti.surjective_sub_of_quotient_surjective (R₂ := Localization.Away r)
+    (fun n y ↦ by simpa [Ideal.span_singleton_pow, Ideal.map_span] using
+      exists_sub_algebraMap_mem_map_pow (Submodule.fg_span_singleton r) n y) (-z)
+  exact ⟨a, b, by rw [← neg_sub, ← neg_neg z]; exact congrArg Neg.neg h⟩
 
 section Completion
 
@@ -187,24 +160,24 @@ theorem existsUnique_map_localization_lift (h : IsWeaklyRegular R [p, v]) (hv : 
   let ψ : C →ₗ[R] D := (IsScalarTower.toAlgHom R C D).toLinearMap
   let f : R →ₗ[R] L × C := (Algebra.linearMap R L).prod (Algebra.linearMap R C)
   let g : L × C →ₗ[R] D := φ.coprod (-ψ)
-  -- The uncompleted sequence `0 → R → R[1/v] × R̂ → R̂[1/v] → 0` is exact.
-  have hcomm (x : R) : Localization.awayMap (algebraMap R C) v (algebraMap R L x) =
-      algebraMap C D (algebraMap R C x) :=
-    IsLocalization.map_eq (Submonoid.powers v).le_comap_map x
+  -- The uncompleted sequence `0 → R → R[1/v] × R̂ → R̂[1/v] → 0` is the exact square of the
+  -- glueing pair `(R → R̂, v)`, with its factors swapped.
+  let := (Localization.awayMap (algebraMap R C) v).toAlgebra
+  have := Localization.isScalarTower_awayMap C v
+  have hsq := hv.glueingPair_adicCompletion.exactSquare L D
+  have hg_apply (y : L × C) : g y = -(algebraMap C D y.2 - algebraMap L D y.1) := by
+    rw [neg_sub, sub_eq_add_neg]
+    rfl
   have hf : Function.Injective f := fun x y hxy ↦
-    (existsUnique_localization_lift hv _ _ (hcomm x)).unique ⟨rfl, rfl⟩
-      ⟨(congrArg Prod.fst hxy).symm, (congrArg Prod.snd hxy).symm⟩
-  have hfg : Function.Exact f g := by
-    intro y
-    constructor
-    · intro hy
-      obtain ⟨x, hx, -⟩ := existsUnique_localization_lift hv y.1 y.2 (sub_eq_zero.1 hy)
-      exact ⟨x, Prod.ext hx.1 hx.2⟩
-    · rintro ⟨x, rfl⟩
-      exact sub_eq_zero.2 (hcomm x)
+    hsq.injective (Prod.ext congr(($hxy).2) congr(($hxy).1))
+  have hfg : Function.Exact f g := fun y ↦ by
+    rw [hg_apply, neg_eq_zero]
+    refine (hsq.exact (y.2, y.1)).trans ?_
+    exact ⟨fun ⟨x, hx⟩ ↦ ⟨x, Prod.ext congr(($hx).2) congr(($hx).1)⟩,
+        fun ⟨x, hx⟩ ↦ ⟨x, Prod.ext congr(($hx).2) congr(($hx).1)⟩⟩
   have hg : Function.Surjective g := fun z ↦ by
-    obtain ⟨a, b, hab⟩ := exists_localization_sub_completion v z
-    exact ⟨(a, b), hab⟩
+    obtain ⟨⟨b, a⟩, hab⟩ := hsq.surjective (-z)
+    exact ⟨(a, b), (hg_apply _).trans (neg_eq_iff_eq_neg.mpr hab)⟩
   -- Since `p` is regular on `R̂[1/v]`, the sequence stays short exact after `p`-adic completion.
   have hD := isSMulRegular_localization_away h
   have hf' := map_span_singleton_injective_of_isSMulRegular hf hfg hD
