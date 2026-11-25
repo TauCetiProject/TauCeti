@@ -7,25 +7,25 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 public import TauCeti.Geometry.Manifold.Instances.Unitary
-public import Mathlib.Algebra.Lie.SkewAdjoint
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # The Lie algebra of the orthogonal group
 
 Let `V` be a finite-dimensional real inner product space. Its orthogonal group
 `O(V) = unitary (V →L[ℝ] V)` is a Lie group (`TauCeti.Geometry.Manifold.Instances.Unitary`), and
-its Lie algebra is `so(V) = skewAdjointLieSubalgebra (innerₗ V)`, the endomorphisms `A` with
-`⟪A x, y⟫ = -⟪x, A y⟫`: the differential at the identity of the inclusion `O(V) → V →L[ℝ] V` is
-a linear isomorphism onto `so(V)`. It is injective because the inclusion is an immersion, and the
-two spaces have the dimension of the skew-adjoint operators, computed through
-`TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint`.
+its Lie algebra is linearly isomorphic to `so(V) = skewAdjointLieSubalgebra (innerₗ V)`, the
+endomorphisms `A` with `⟪A x, y⟫ = -⟪x, A y⟫`: the differential at the identity of the inclusion
+`O(V) → V →L[ℝ] V` is a linear isomorphism onto `so(V)`. It is injective because the inclusion is
+an immersion, and the two spaces have the dimension of the skew-adjoint operators, computed
+through `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint`.
+Only this vector-space identification is constructed here; compatibility with the Lie brackets is
+not proved.
 
 ## Main declarations
 
-* `ContinuousLinearMap.coe_mem_skewAdjointLieSubalgebra_innerₗ_iff`: a continuous endomorphism
-  lies in `so(V)` exactly when it is skew-adjoint, `A† = -A`.
-* `TauCeti.orthogonalLieAlgebraEquiv`: the Lie algebra of `O(V)` is `so(V)`.
+* `TauCeti.orthogonalLieAlgebraEquiv`: the Lie algebra of `O(V)` is linearly isomorphic to
+  `so(V)`.
 -/
 
 public section
@@ -35,23 +35,6 @@ noncomputable section
 open Manifold
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- A continuous endomorphism of a real Hilbert space lies in `so(V)`, the Lie algebra of
-endomorphisms that are skew-adjoint for the inner product, exactly when it is a skew-adjoint
-element of the star algebra `V →L[ℝ] V`, that is `A† = -A`. -/
-theorem ContinuousLinearMap.coe_mem_skewAdjointLieSubalgebra_innerₗ_iff {V : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V] {A : V →L[ℝ] V} :
-    (A : Module.End ℝ V) ∈ skewAdjointLieSubalgebra (innerₗ V) ↔ A ∈ skewAdjoint (V →L[ℝ] V) := by
-  -- Membership in `skewAdjointLieSubalgebra B` is membership in `B.skewAdjointSubmodule`, and
-  -- Mathlib states its characterization only for the submodule.
-  change _ ∈ LinearMap.skewAdjointSubmodule _ ↔ _
-  rw [LinearMap.mem_skewAdjointSubmodule, skewAdjoint.mem_iff,
-    ContinuousLinearMap.star_eq_adjoint, eq_comm, ContinuousLinearMap.eq_adjoint_iff]
-  simp only [neg_apply, inner_neg_left]
-  refine ⟨fun h x y ↦ ?_, fun h x y ↦ ?_⟩
-  · have h' : inner ℝ (A x) y = -inner ℝ x (A y) := by simpa using h x y
-    linarith
-  · simp [← h x y]
 
 namespace TauCeti
 
@@ -111,10 +94,11 @@ private theorem finrank_orthogonalLieAlgebra :
   exact h1.symm.trans h2
 
 variable (V) in
-/-- **The Lie algebra of the orthogonal group is `so(V)`.** For a finite-dimensional real inner
-product space `V`, the differential at the identity of the inclusion of the orthogonal group
-`O(V) = unitary (V →L[ℝ] V)` into `V →L[ℝ] V` is a linear isomorphism from its Lie algebra onto
-the skew-adjoint endomorphisms `so(V) = skewAdjointLieSubalgebra (innerₗ V)`. -/
+/-- **The Lie algebra of the orthogonal group is linearly isomorphic to `so(V)`.** For a
+finite-dimensional real inner product space `V`, the differential at the identity of the inclusion
+of the orthogonal group `O(V) = unitary (V →L[ℝ] V)` into `V →L[ℝ] V` is a linear isomorphism from
+its Lie algebra onto the skew-adjoint endomorphisms `so(V) = skewAdjointLieSubalgebra (innerₗ V)`.
+This is an identification of vector spaces; it is not shown here to preserve the brackets. -/
 def orthogonalLieAlgebraEquiv :
     GroupLieAlgebra (Unitary.model (V →L[ℝ] V)) (unitary (V →L[ℝ] V)) ≃ₗ[ℝ]
       skewAdjointLieSubalgebra (innerₗ V) :=

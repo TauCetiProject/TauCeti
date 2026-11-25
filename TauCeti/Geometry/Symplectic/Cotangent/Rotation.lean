@@ -83,9 +83,8 @@ theorem CotangentBundle.momentMap_unitary_eq_cotangentMomentMap_comp
   ext ξ
   -- `O(V)` acts on `V` through the inclusion `Subtype.val : O(V) → V →L[ℝ] V`.
   rw [CotangentBundle.momentMap_apply_eq_cotangentMomentMap (ρ := Subtype.val) (fun _ _ ↦ rfl)
-    (Unitary.contMDiff_val.mdifferentiableAt (by simp)), LinearMap.comp_apply,
-    LinearMap.comp_apply, LinearEquiv.coe_coe, LieHom.coe_toLinearMap, LieSubalgebra.coe_incl,
-    coe_orthogonalLieAlgebraEquiv_apply, OneMemClass.coe_one]
+    (Unitary.contMDiff_val.mdifferentiableAt (by simp))]
+  simp
 
 end Orthogonal
 
