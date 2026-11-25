@@ -123,7 +123,7 @@ private theorem exists_bijective_baseChange_pi (hM : Module.IsTorsion O⟦X⟧ M
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   obtain ⟨r, a, b, m, F, n, -, hFn, f, hf⟩ := exists_isPseudoIsomorphism_elementary (M := M) hϖ
   -- The elementary module is torsion, so it has no free part.
-  obtain rfl : r = 0 := Fin.isEmpty_iff.mp <| Module.isTorsion_pi_self_iff.mp <|
+  obtain rfl : r = 0 := Fin.isEmpty_iff.mp <| isTorsion_pi_self_iff.mp <|
     (hf.isTorsion_iff.mp hM).of_injective (f := LinearMap.inl _ _ _) LinearMap.inl_injective
   refine ⟨b, F, n, fun j ↦ (hFn j).1, hf.charPoly_eq_prod hϖ (fun j ↦ (hFn j).1)
     (fun j ↦ (hFn j).2.1), (LinearMap.snd _ _ _ ∘ₗ LinearMap.snd _ _ _) ∘ₗ f, ?_⟩
