@@ -371,7 +371,7 @@ whose fibres carry the topology of their norms, so this section uses
 section Pullback
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F E] [VectorBundle ℝ F E]
-  [IsTopologicalGroup H] (s : OrthonormalFrameLift F E n G ρ) (σ : G →* H)
+  (s : OrthonormalFrameLift F E n G ρ) (σ : G →* H)
   (hσ : Continuous σ) (hσρ : ρ'.comp σ = ρ)
   (hρ'n : ∀ h v, ‖WithLp.toLp 2 (ρ' h v)‖ = ‖WithLp.toLp 2 v‖)
   (hρ'c : ∀ v, Continuous fun h ↦ ρ' h v)
@@ -379,6 +379,7 @@ variable [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F E] [VectorBun
 
 attribute [local instance] Pullback.normedFiberBundle Pullback.normedVectorBundle
 
+variable [ContinuousMul H] in
 /-- **The frame of `[p, 1]`** in the pullback of the extension of a lift `s` is the frame of `p`
 in the pullback of `s`. -/
 @[simp]
@@ -389,6 +390,8 @@ theorem toFrame_pullback_extend_inl (g : K) (y : Y) (p : s.P (g y)) :
   rw [(s.extend σ hσ hσρ hρ'n hρ'c).toFrame_pullback_mk g y _
       ((s.toFrame_extend_inl σ hσ hσρ hρ'n hρ'c (g y) p).trans hφ),
     s.toFrame_pullback_mk g y p hφ]
+
+variable [IsTopologicalGroup H]
 
 /-- **Extension commutes with pullback**: for a continuous map `g : Y → X`, the extension along
 `σ` of the pullback of `s` is equivalent to the pullback of the extension of `s`. Over `y`, both
