@@ -83,7 +83,6 @@ namespace TauCeti
 
 universe u v w
 
-open Classical in
 /-- A **PL structure** of dimension `n` on `M`: a triangulation of `M` by a finite combinatorial
 `n`-manifold. It consists of a finite vertex type, an abstract simplicial complex on it in which
 every vertex link is a combinatorial sphere or ball of dimension `n - 1` (void when `n = 0`), and
@@ -97,8 +96,11 @@ structure PLStructure (M : Type u) [TopologicalSpace M] (n : ℕ) where
   [finite_ι : Finite ι]
   /-- The triangulating complex. -/
   K : AbstractSimplicialComplex ι
-  /-- The triangulating complex is a combinatorial `n`-manifold, possibly with boundary. -/
-  isCombinatorialManifold : K.toPreAbstractSimplicialComplex.IsCombinatorialManifold n
+  /-- The triangulating complex is a combinatorial `n`-manifold, possibly with boundary. It is
+  stated with the `Classical.decEq` instance used by `TauCeti.IsCombinatoriallyTriangulable`. -/
+  isCombinatorialManifold :
+    @PreAbstractSimplicialComplex.IsCombinatorialManifold ι (Classical.decEq ι)
+      K.toPreAbstractSimplicialComplex n
   /-- The triangulation homeomorphism. -/
   e : Realization K ≃ₜ M
 
@@ -122,7 +124,7 @@ exposed so that the complex of the structure is the given complex by definition.
     PLStructure (Realization K) n where
   ι := ι
   K := K
-  -- `convert` replaces the `DecidableEq ι` instance of `hK` by the classical one of the field.
+  -- `convert` replaces the caller's `DecidableEq ι` instance in `hK` by `Classical.decEq ι`.
   isCombinatorialManifold := by convert hK
   e := Homeomorph.refl _
 
@@ -185,9 +187,7 @@ theorem eulerChar_eq (s : PLStructure M n) [FiniteCWType M] :
 `n`-manifold. -/
 theorem isCombinatoriallyTriangulable (s : PLStructure M n) :
     IsCombinatoriallyTriangulable.{u} M n :=
-  -- `convert` reconciles the `DecidableEq s.ι` instances of the field and of the
-  -- characterization, both classical but elaborated separately.
-  isCombinatoriallyTriangulable_iff.mpr ⟨s.ι, s.K, by convert s.isCombinatorialManifold, ⟨s.e⟩⟩
+  isCombinatoriallyTriangulable_iff.mpr ⟨s.ι, s.K, s.isCombinatorialManifold, ⟨s.e⟩⟩
 
 /-! ### Piecewise-linear maps -/
 
@@ -303,7 +303,6 @@ theorem nonempty_plStructure_iff {M : Type u} [TopologicalSpace M] {n : ℕ} :
   obtain ⟨ι, K, hK, ⟨e⟩⟩ := isCombinatoriallyTriangulable_iff.mp h
   have : CompactSpace (Realization K) := e.symm.compactSpace
   have : Finite ι := (K.compactSpace_realization_iff_finite).mp inferInstance
-  -- `convert` replaces the classical `DecidableEq ι` instance of `hK` by that of the field.
-  exact ⟨⟨ι, K, by convert hK, e⟩⟩
+  exact ⟨⟨ι, K, hK, e⟩⟩
 
 end TauCeti
