@@ -50,21 +50,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {W : E → ℝ} {ν : E}
 
-/-- A half-space has locally finite perimeter: every compact set lies in a ball centred on the
-boundary hyperplane, where the perimeter is finite. -/
-private theorem exists_totalVariationOn_indicator_setOf_inner_lt_ne_top (hν : ‖ν‖ = 1) (c : ℝ)
-    (K : Set E) (hK : IsCompact K) :
-    ∃ U : Opens E, K ⊆ (U : Set E) ∧
-      totalVariationOn volume U ({x | ⟪x, ν⟫ < c}.indicator 1) ≠ ∞ := by
-  obtain ⟨r, hr, hKr⟩ := hK.isBounded.subset_ball_lt 0 (c • ν)
-  refine ⟨⟨ball (c • ν) r, isOpen_ball⟩, hKr, ?_⟩
-  have hc : ⟪c • ν, ν⟫ = c := by
-    rw [real_inner_smul_left, real_inner_self_eq_norm_sq, hν, one_pow, mul_one]
-  have h := perimeter_ball_setOf_inner_lt hν (c • ν) hr
-  rw [hc] at h
-  rw [← perimeter_def, h]
-  exact ENNReal.mul_ne_top (ENNReal.pow_ne_top ENNReal.ofReal_ne_top) measure_ball_lt_top.ne
-
 /-- **The weighted perimeter of a half-space.** For a `C¹` weight `W`, a unit vector `ν` and an
 open set `Ω`, `P_μ({x | ⟪x, ν⟫ < c}; Ω) = ∫_{Ω ∩ {⟪x, ν⟫ = c}} e^{−W} dHⁿ⁻¹`. -/
 theorem weightedPerimeter_setOf_inner_lt (hW : ContDiff ℝ 1 W) (hν : ‖ν‖ = 1) (c : ℝ)
@@ -77,7 +62,7 @@ theorem weightedPerimeter_setOf_inner_lt (hW : ContDiff ℝ 1 W) (hν : ‖ν‖
   have hu : LocallyIntegrableOn (H.indicator (1 : E → ℝ)) Ω :=
     locallyIntegrableOn_indicator_const hH.nullMeasurableSet 1
   have hfin (K : Set E) (hK : IsCompact K) (_ : K ⊆ Ω) :=
-    exists_totalVariationOn_indicator_setOf_inner_lt_ne_top hν c K hK
+    exists_totalVariationOn_indicator_setOf_inner_lt_ne_top hν c hK
   have hρ : Continuous fun x : E => Real.exp (-W x) := Real.continuous_exp.comp hW.continuous.neg
   rw [weightedPerimeter_def, weightedVariation_eq_lintegral_variationMeasure hW hu hfin,
     lintegral_eq_lintegral_meas_lt _ (.of_forall fun _ => (Real.exp_pos _).le)
