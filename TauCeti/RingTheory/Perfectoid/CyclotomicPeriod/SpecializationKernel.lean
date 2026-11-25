@@ -90,14 +90,12 @@ theorem coeff_zero_mu_ne_zero {ε : PreTilt A p}
   exact hε.ne_one (Fact.out : p.Prime).one_lt (by rw [map_one, map_one])
 
 /-- If `ε♯ = 1`, then Fontaine's map kills every Frobenius iterate of `μ`. -/
-@[simp]
 theorem fontaineTheta_iterate_frobeniusEquiv_mu {ε : PreTilt A p} (hε : ε.untilt = 1)
     (j : ℕ) : fontaineTheta A p (((frobeniusEquiv p (PreTilt A p))^[j]) (mu p ε)) = 0 := by
   rw [iterate_frobeniusEquiv_mu]
   exact fontaineTheta_mu_eq_zero _ (by rw [map_pow, hε, one_pow])
 
 /-- If `ε♯ = 1`, then Fontaine's map sends `φ^(j + 1)(ξ)` to `p`. -/
-@[simp]
 theorem fontaineTheta_iterate_frobeniusEquiv_succ_xi {ε : PreTilt A p} (hε : ε.untilt = 1)
     (j : ℕ) :
     fontaineTheta A p (((frobeniusEquiv p (PreTilt A p))^[j + 1]) (xi p ε)) = p := by

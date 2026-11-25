@@ -15,15 +15,16 @@ import TauCeti.RingTheory.WittVector.Units
 
 Let `A` be a `p`-adically complete ring in which `p` is not a unit, with tilt `A♭`, and let
 `ε ∈ A♭` be such that the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of unity. We show
-that the cyclotomic periods `μ`, `ξ`, `ξ̃ = φ(ξ)` and their finite Frobenius products `ξ_r` and
-`ξ̃_r` are nonzero in `W(A♭)`, and nonzerodivisors when `A` is a domain. For a domain `A` the pairs
-`(p, μ)`, `(p, ξ)` and `(p, ξ̃)` are regular sequences of `W(A♭)`. For the valuation ring `O_C` of
-a complete algebraically closed field, `p` is a nonzerodivisor on `A_inf / (ξ) ≅ O_C`.
+that the cyclotomic periods `μ`, `ξ`, `xiTilde = φ(ξ)` and their finite Frobenius products
+`ξ_r` and `xiTilde_r` are nonzero in `W(A♭)`, and nonzerodivisors when `A` is a domain. For a
+domain `A` the pairs `(p, μ)`, `(p, ξ)` and `(p, xiTilde)` are regular sequences of `W(A♭)`. For
+the valuation ring `O_C` of a complete algebraically closed field, `p` is a nonzerodivisor on
+`A_inf / (ξ) ≅ O_C`.
 
-Everything is read off from zeroth Witt coordinates: the zeroth coordinate of `μ` is `ε - 1 ≠ 0`,
-and the factorizations `μ = ξ_r * φ^(-r)(μ)` and `φ^r(μ) = ξ̃_r * μ` propagate this to the other
-periods. Each of `μ`, `ξ`, `ξ̃` is killed by `θ` or by the shifted map `θ ∘ φ^(-1)`, so it is not
-a unit, and neither is its zeroth coordinate.
+Everything is read off from zeroth Witt coordinates: the zeroth coordinate of `μ` is
+`ε - 1 ≠ 0`, and the factorizations `μ = ξ_r * φ^(-r)(μ)` and `φ^r(μ) = xiTilde_r * μ` propagate
+this to the other periods. Each of `μ`, `ξ`, `xiTilde` is killed by `θ` or by the shifted map
+`θ ∘ φ^(-1)`, so it is not a unit, and neither is its zeroth coordinate.
 
 ## Main results
 
@@ -32,7 +33,7 @@ a unit, and neither is its zeroth coordinate.
 * `PreTilt.mu_mem_nonZeroDivisors`, `PreTilt.xiLevel_mem_nonZeroDivisors`,
   `PreTilt.xiTildeLevel_mem_nonZeroDivisors`: over a domain they are nonzerodivisors.
 * `PreTilt.isRegular_natCast_mu`, `PreTilt.isRegular_natCast_xi`,
-  `PreTilt.isRegular_natCast_xiTilde`: the regular pairs `(p, μ)`, `(p, ξ)`, `(p, ξ̃)`.
+  `PreTilt.isRegular_natCast_xiTilde`: the regular pairs `(p, μ)`, `(p, ξ)`, `(p, xiTilde)`.
 * `PreTilt.mk_natCast_mem_nonZeroDivisors_quotient_span_xi`: `p` is a nonzerodivisor on
   `A_inf / (ξ)` for `O_C`.
 
@@ -79,7 +80,7 @@ theorem xiLevel_ne_zero
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) (r : ℕ) :
     xiLevel p ε r ≠ 0 := fun h ↦ mu_ne_zero hε (by rw [mu_eq_xiLevel_mul p ε r, h, zero_mul])
 
-/-- A primitive root makes every twisted generator `ξ̃_r` nonzero. -/
+/-- A primitive root makes every twisted generator `xiTilde_r` nonzero. -/
 theorem xiTildeLevel_ne_zero
     (hε : IsPrimitiveRoot
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) (r : ℕ) :
@@ -89,7 +90,7 @@ theorem xiTildeLevel_ne_zero
   rw [h, zero_mul, ← iterate_map_zero (frobeniusEquiv p (PreTilt A p)) r] at h0
   exact mu_ne_zero hε ((frobeniusEquiv p (PreTilt A p)).injective.iterate r h0)
 
-/-- A primitive root makes `ξ̃` nonzero. -/
+/-- A primitive root makes `xiTilde` nonzero. -/
 theorem xiTilde_ne_zero
     (hε : IsPrimitiveRoot
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
@@ -118,8 +119,8 @@ theorem xiLevel_mem_nonZeroDivisors
     xiLevel p ε r ∈ (WittVector p (PreTilt A p))⁰ :=
   mem_nonZeroDivisors_of_ne_zero (xiLevel_ne_zero hε r)
 
-/-- Over a domain, every twisted generator `ξ̃_r`, in particular `ξ̃ = ξ̃_1`, is a nonzerodivisor
-of `W(A♭)`. -/
+/-- Over a domain, every twisted generator `xiTilde_r`, in particular `xiTilde = xiTilde_1`, is a
+nonzerodivisor of `W(A♭)`. -/
 theorem xiTildeLevel_mem_nonZeroDivisors
     (hε : IsPrimitiveRoot
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) (r : ℕ) :
@@ -153,7 +154,7 @@ theorem isRegular_natCast_xi
   isRegular_natCast_of_map_eq_zero (fontaineTheta A p) (fontaineTheta_xi_eq_zero ε hε)
     (coeff_zero_xi_ne_zero hε)
 
-/-- **The regular pair `(p, ξ̃)`.** -/
+/-- **The regular pair `(p, xiTilde)`.** -/
 theorem isRegular_natCast_xiTilde
     (hε : IsPrimitiveRoot
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :

@@ -17,28 +17,29 @@ Frobenius of `W(S)`. From the cyclotomic periods `μ = [ε] - 1` and `ξ = ∑ j
 we form the finite Fontaine kernel generators
 
 * `ξ_r = ∏_{j < r} φ^(-j)(ξ)` (`TauCeti.Perfectoid.xiLevel`), and
-* `ξ̃_r = ∏_{j < r} φ^(j + 1)(ξ)` (`TauCeti.Perfectoid.xiTildeLevel`).
+* `xiTilde_r = ∏_{j < r} φ^(j + 1)(ξ)` (`TauCeti.Perfectoid.xiTildeLevel`).
 
-They satisfy `ξ_(r+1) = ξ_r * φ^(-r)(ξ)`, `ξ̃_(r+1) = ξ̃_r * φ^(r+1)(ξ)` and `φ^r(ξ_r) = ξ̃_r`.
+They satisfy `ξ_(r+1) = ξ_r * φ^(-r)(ξ)`, `xiTilde_(r+1) = xiTilde_r * φ^(r+1)(ξ)` and
+`φ^r(ξ_r) = xiTilde_r`.
 Iterating the factorization `μ = ξ * φ^(-1)(μ)` gives `μ = ξ_r * φ^(-r)(μ)` and
-`φ^r(μ) = ξ̃_r * μ`, so that `μ` lies in every ideal `(ξ_r)`, and `ξ` divides `φ^j(ξ_r)` for
-`j < r`. Frobenius acts on `μ` and `ξ̃` by replacing `ε` with `ε ^ p`.
+`φ^r(μ) = xiTilde_r * μ`, so that `μ` lies in every ideal `(ξ_r)`, and `ξ` divides `φ^j(ξ_r)` for
+`j < r`. Frobenius acts on `μ` and `xiTilde` by replacing `ε` with `ε ^ p`.
 
 ## Main definitions
 
 * `TauCeti.Perfectoid.xiLevel`: the finite Fontaine kernel generator `ξ_r`.
-* `TauCeti.Perfectoid.xiTildeLevel`: its Frobenius twist `ξ̃_r = φ^r(ξ_r)`.
+* `TauCeti.Perfectoid.xiTildeLevel`: its Frobenius twist `xiTilde_r = φ^r(ξ_r)`.
 
 ## Main results
 
 * `TauCeti.Perfectoid.xiLevel_succ`, `TauCeti.Perfectoid.xiTildeLevel_succ`: the recursions.
-* `TauCeti.Perfectoid.iterate_frobeniusEquiv_xiLevel`: `φ^r(ξ_r) = ξ̃_r`.
+* `TauCeti.Perfectoid.iterate_frobeniusEquiv_xiLevel`: `φ^r(ξ_r) = xiTilde_r`.
 * `TauCeti.Perfectoid.mu_eq_xiLevel_mul`: `μ = ξ_r * φ^(-r)(μ)`.
-* `TauCeti.Perfectoid.iterate_frobeniusEquiv_mu_eq_xiTildeLevel_mul`: `φ^r(μ) = ξ̃_r * μ`.
+* `TauCeti.Perfectoid.iterate_frobeniusEquiv_mu_eq_xiTildeLevel_mul`: `φ^r(μ) = xiTilde_r * μ`.
 * `TauCeti.Perfectoid.span_mu_le_span_xiLevel`: `(μ) ⊆ (ξ_r)`.
 * `TauCeti.Perfectoid.xi_dvd_iterate_frobeniusEquiv_xiLevel`: `ξ ∣ φ^j(ξ_r)` for `j < r`.
 * `TauCeti.Perfectoid.iterate_frobeniusEquiv_mu`: `φ^j(μ(ε)) = μ(ε ^ p ^ j)`.
-* `TauCeti.Perfectoid.iterate_frobeniusEquiv_xiTilde`: `φ^j(ξ̃(ε)) = ξ̃(ε ^ p ^ j)`.
+* `TauCeti.Perfectoid.iterate_frobeniusEquiv_xiTilde`: `φ^j(xiTilde(ε)) = xiTilde(ε ^ p ^ j)`.
 
 ## References
 
@@ -92,7 +93,7 @@ variable (p : ℕ) [Fact p.Prime] {S : Type*} [CommRing S] [CharP S p] [PerfectR
 noncomputable def xiLevel (ε : S) (r : ℕ) : WittVector p S :=
   ∏ j ∈ Finset.range r, ((frobeniusEquiv p S).symm^[j]) (xi p ε)
 
-/-- The Frobenius twist `ξ̃_r = ∏_{j < r} φ^(j + 1)(ξ)` of the finite Fontaine kernel
+/-- The Frobenius twist `xiTilde_r = ∏_{j < r} φ^(j + 1)(ξ)` of the finite Fontaine kernel
 generator. -/
 noncomputable def xiTildeLevel (ε : S) (r : ℕ) : WittVector p S :=
   ∏ j ∈ Finset.range r, ((frobeniusEquiv p S)^[j + 1]) (xi p ε)
@@ -101,7 +102,7 @@ noncomputable def xiTildeLevel (ε : S) (r : ℕ) : WittVector p S :=
 theorem xiLevel_eq (ε : S) (r : ℕ) :
     xiLevel p ε r = ∏ j ∈ Finset.range r, ((frobeniusEquiv p S).symm^[j]) (xi p ε) := (rfl)
 
-/-- The defining product of `ξ̃_r`. -/
+/-- The defining product of `xiTilde_r`. -/
 theorem xiTildeLevel_eq (ε : S) (r : ℕ) :
     xiTildeLevel p ε r = ∏ j ∈ Finset.range r, ((frobeniusEquiv p S)^[j + 1]) (xi p ε) := (rfl)
 
@@ -116,7 +117,7 @@ theorem xiLevel_succ (ε : S) (r : ℕ) :
     xiLevel p ε (r + 1) = xiLevel p ε r * ((frobeniusEquiv p S).symm^[r]) (xi p ε) :=
   Finset.prod_range_succ _ r
 
-/-- The recursion `ξ̃_(r+1) = ξ̃_r * φ^(r+1)(ξ)`. -/
+/-- The recursion `xiTilde_(r+1) = xiTilde_r * φ^(r+1)(ξ)`. -/
 theorem xiTildeLevel_succ (ε : S) (r : ℕ) :
     xiTildeLevel p ε (r + 1) = xiTildeLevel p ε r * ((frobeniusEquiv p S)^[r + 1]) (xi p ε) :=
   Finset.prod_range_succ _ r
@@ -125,7 +126,7 @@ theorem xiTildeLevel_succ (ε : S) (r : ℕ) :
 @[simp]
 theorem xiLevel_one (ε : S) : xiLevel p ε 1 = xi p ε := by simp [xiLevel]
 
-/-- The first twisted generator is `ξ̃ = φ(ξ)`. -/
+/-- The first twisted generator is `xiTilde = φ(ξ)`. -/
 @[simp]
 theorem xiTildeLevel_one (ε : S) : xiTildeLevel p ε 1 = xiTilde p ε := by
   simp [xiTildeLevel, xiTilde_eq]
@@ -135,7 +136,7 @@ theorem xiLevel_two (ε : S) :
     xiLevel p ε 2 = xi p ε * (frobeniusEquiv p S).symm (xi p ε) := by
   rw [xiLevel_succ, xiLevel_one, Function.iterate_one]
 
-/-- The second twisted generator is `ξ̃ * φ(ξ̃)`: it uses positive Frobenius powers. -/
+/-- The second twisted generator is `xiTilde * φ(xiTilde)`: it uses positive Frobenius powers. -/
 theorem xiTildeLevel_two (ε : S) :
     xiTildeLevel p ε 2 = xiTilde p ε * frobeniusEquiv p S (xiTilde p ε) := by
   rw [xiTildeLevel_succ, xiTildeLevel_one, xiTilde_eq, Function.iterate_succ_apply',
@@ -154,14 +155,14 @@ theorem xi_dvd_iterate_frobeniusEquiv_xiLevel (ε : S) {j r : ℕ} (hj : j < r) 
   rw [hc, iterate_map_mul,
     Function.LeftInverse.iterate (frobeniusEquiv p S).apply_symm_apply j]
 
-/-- The recursion `ξ̃_(r+1) = φ(ξ̃_r) * φ(ξ)`, peeling off the lowest Frobenius power. -/
+/-- The recursion `xiTilde_(r+1) = φ(xiTilde_r) * φ(ξ)`, peeling off the lowest Frobenius power. -/
 theorem xiTildeLevel_succ' (ε : S) (r : ℕ) :
     xiTildeLevel p ε (r + 1) =
       frobeniusEquiv p S (xiTildeLevel p ε r) * frobeniusEquiv p S (xi p ε) := by
   rw [xiTildeLevel, Finset.prod_range_succ', xiTildeLevel, map_prod]
   simp only [Function.iterate_succ_apply', zero_add, Function.iterate_zero, id]
 
-/-- Applying `φ^r` to `ξ_r` gives `ξ̃_r`. -/
+/-- Applying `φ^r` to `ξ_r` gives `xiTilde_r`. -/
 theorem iterate_frobeniusEquiv_xiLevel (ε : S) (r : ℕ) :
     ((frobeniusEquiv p S)^[r]) (xiLevel p ε r) = xiTildeLevel p ε r := by
   induction r with
@@ -182,7 +183,7 @@ theorem mu_eq_xiLevel_mul (ε : S) (r : ℕ) :
       ← mu_eq_xi_mul_frobeniusEquiv_symm]
     exact ih
 
-/-- Applying `φ^r` to the factorization of `μ` gives `φ^r(μ) = ξ̃_r * μ`. -/
+/-- Applying `φ^r` to the factorization of `μ` gives `φ^r(μ) = xiTilde_r * μ`. -/
 theorem iterate_frobeniusEquiv_mu_eq_xiTildeLevel_mul (ε : S) (r : ℕ) :
     ((frobeniusEquiv p S)^[r]) (mu p ε) = xiTildeLevel p ε r * mu p ε := by
   conv_lhs => rw [mu_eq_xiLevel_mul p ε r]
