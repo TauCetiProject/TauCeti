@@ -147,8 +147,12 @@ lemma toModel_toBase : M.toModel.toBase = M.toBase :=
   (rfl)
 
 @[simp]
-lemma toModel_genericι : M.toModel.genericι = M.genericι :=
-  (Model.genericι_ofIsPullback _ _).trans (Category.comp_id _)
+lemma toModel_genericι : M.toModel.genericι = M.genericι := by
+  refine (Model.genericι_ofIsPullback M.toBase M.isPullback_specMap).trans ?_
+  -- The total space of `M.toModel` is `M.total` by definition (`toModel_total`), so the comparison
+  -- morphism is `eqToHom` of a reflexivity proof.
+  change M.genericι ≫ eqToHom (rfl : M.total = M.total) = M.genericι
+  rw [eqToHom_refl, Category.comp_id]
 
 /-- The generic-fibre identification of the model attached to a marked model is the identification
 of the scalar-extension generic fibre with `C`. -/
