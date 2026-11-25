@@ -66,7 +66,8 @@ for the statements here.
   changes the zeroth-order coefficient by a locally `Lᵖ` field, which adds its adjoint to the
   formal adjoint (`TauCeti.crFormalAdjoint_add_zeroth`).
 * Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`),
-  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), changing the exponent
+  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`,
+  `TauCeti.IsSobolevCRCoefficients.mono`), changing the exponent
   (`TauCeti.IsWeakCRSolution.mono_exponent`, `TauCeti.IsWeakCRSolution.of_memLpLoc`) and
   invariance under changes of `J`, `DJ`, `S`, `ξ` and `η` on null subsets of `Ω`
   (`TauCeti.isWeakCRSolution_congr_ae`).
@@ -268,6 +269,13 @@ membership from `DJ`. -/
 theorem IsSobolevCRCoefficients.memLpLoc_deriv_apply
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (e : ℂ) : MemLpLoc p Ω (fun z => DJ z e) :=
   hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) e)
+
+omit [CompleteSpace V] in
+/-- Sobolev coefficients on `Ω` are Sobolev coefficients on every open subset of `Ω`. -/
+theorem IsSobolevCRCoefficients.mono (hc : IsSobolevCRCoefficients p Ω J DJ S) (hΩ : Ω' ≤ Ω) :
+    IsSobolevCRCoefficients p Ω' J DJ S :=
+  ⟨hc.hasWeakFDerivOn.mono hΩ, hc.memLpLoc_coeff.mono_set hΩ, hc.memLpLoc_deriv.mono_set hΩ,
+    hc.memLpLoc_zeroth.mono_set hΩ⟩
 
 omit [CompleteSpace V] in
 /-- Adding a locally `Lᵖ` field to the zeroth-order coefficient preserves Sobolev coefficients. -/
