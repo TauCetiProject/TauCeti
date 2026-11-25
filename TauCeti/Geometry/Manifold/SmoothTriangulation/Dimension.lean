@@ -7,21 +7,21 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Dimension
+public import TauCeti.InformationTheory.Coding.Elementary.Basic
 
 /-!
 # Smooth triangulations have no simplices above the dimension of the manifold
 
 A `Cⁿ` immersion of a closed simplex with vertex set `σ` into a manifold modelled on a
 finite-dimensional real space `E` has, at each point, a derivative that is injective on the
-directions of the simplex, the vectors of `σ → ℝ` with coordinate sum zero. These form a subspace
-of dimension `|σ| - 1`, so `|σ| ≤ dim E + 1` (`TauCeti.IsSimplexImmersion.card_le`). Hence a
-smooth triangulation `κ : |K| ≃ₜ M` of a manifold modelled on `E` has no simplices of dimension
-above `dim E` (`TauCeti.IsSmoothTriangulation.card_le`,
-`TauCeti.IsSmoothTriangulation.dimension_le`).
+directions of the simplex, the vectors of `σ → ℝ` with coordinate sum zero. These form the
+subspace `TauCeti.singleParityCheckCode ℝ σ` of dimension `|σ| - 1`, so `|σ| ≤ dim E + 1`
+(`TauCeti.IsSimplexImmersion.card_le`). Hence a smooth triangulation `κ : |K| ≃ₜ M` of a manifold
+modelled on `E` has no simplices of dimension above `dim E`
+(`TauCeti.IsSmoothTriangulation.card_le`, `TauCeti.IsSmoothTriangulation.dimension_le`).
 
-This is the upper half of the purity statement of §6.1 ("Smooth triangulations of boundaryless
-manifolds") of the QuasiregularMaps roadmap: the triangulating complex of an `n`-manifold has no
-simplices of dimension above `n`.
+This is the upper half of purity: the triangulating complex of an `n`-manifold has no simplices
+of dimension above `n`.
 -/
 
 public section
@@ -35,21 +35,6 @@ variable {ι : Type*}
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : WithTop ℕ∞}
 
-/-- The directions of the simplex on a vertex set `σ`, the vectors of `σ → ℝ` with coordinate sum
-zero, form a subspace of dimension `|σ| - 1` (truncated subtraction: `0` for `σ = ∅`). -/
-theorem finrank_ker_sum_proj {σ : Finset ι} :
-    finrank ℝ (LinearMap.ker (∑ a : σ, LinearMap.proj a : (σ → ℝ) →ₗ[ℝ] ℝ)) = σ.card - 1 := by
-  classical
-  set s : (σ → ℝ) →ₗ[ℝ] ℝ := ∑ a : σ, LinearMap.proj a
-  rcases σ.eq_empty_or_nonempty with rfl | ⟨a₀, ha₀⟩
-  · simp [finrank_zero_of_subsingleton]
-  have hs : LinearMap.range s = ⊤ := by
-    refine LinearMap.range_eq_top.mpr fun r ↦ ⟨Pi.single ⟨a₀, ha₀⟩ r, ?_⟩
-    simp [s, LinearMap.sum_apply]
-  have h := s.finrank_range_add_finrank_ker
-  rw [hs, finrank_top, finrank_self, Module.finrank_fintype_fun_eq_card, Fintype.card_coe] at h
-  omega
-
 /-- A `Cⁿ` immersion of the closed simplex on a vertex set `σ` into a manifold modelled on a
 finite-dimensional space `E` has `|σ| ≤ dim E + 1`: the simplex has dimension at most `dim E`. -/
 theorem IsSimplexImmersion.card_le {σ : Finset ι} {g : StandardSimplex σ → M}
@@ -58,14 +43,12 @@ theorem IsSimplexImmersion.card_le {σ : Finset ι} {g : StandardSimplex σ → 
   · simp
   obtain ⟨F, -, -, hF'⟩ := isSimplexImmersion_iff.mp h
   obtain ⟨F', -, hinj⟩ := hF' (Convexity.StdSimplex.single (⟨a₀, ha₀⟩ : σ))
-  set S := LinearMap.ker (∑ a : σ, LinearMap.proj a : (σ → ℝ) →ₗ[ℝ] ℝ)
-  have hS : Injective ((F' : (σ → ℝ) →ₗ[ℝ] E).domRestrict S) := by
+  have hS : Injective ((F' : (σ → ℝ) →ₗ[ℝ] E).domRestrict (singleParityCheckCode ℝ σ)) := by
     refine (injective_iff_map_eq_zero _).mpr fun v hv ↦ Subtype.ext (hinj v ?_ ?_)
-    · have := v.property
-      simpa [S, LinearMap.sum_apply] using this
+    · exact (mem_singleParityCheckCode ℝ σ).mp v.property
     · simpa using hv
   have := LinearMap.finrank_le_finrank_of_injective hS
-  rw [finrank_ker_sum_proj] at this
+  rw [finrank_singleParityCheckCode, Fintype.card_coe] at this
   omega
 
 /-- Every face of a smooth triangulation of a manifold modelled on a finite-dimensional space `E`
