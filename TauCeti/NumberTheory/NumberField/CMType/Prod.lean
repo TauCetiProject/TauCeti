@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Ring.Prod
+public import TauCeti.Algebra.Algebra.Prod
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Basic
 
 /-!
