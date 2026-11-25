@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic
 public import Mathlib.Algebra.MvPolynomial.Funext
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Checks for hyperbolic polynomials and their Gårding cones
