@@ -27,7 +27,8 @@ and the off-diagonal Gram entries are the exponential or character sums to be es
 ## Main results
 
 * `TauCeti.sum_norm_inner_eq_zero_iff`, `TauCeti.sum_norm_inner_pos_iff`: a Gram row sum
-  vanishes exactly at a zero vector.
+  vanishes exactly at a zero vector (at a vector of zero norm in a seminormed space:
+  `TauCeti.sum_norm_inner_eq_zero_iff_norm_eq_zero`).
 * `TauCeti.norm_sum_smul_sq_le_sum_norm_sq_mul_sum_norm_inner`: the Gram-row bound
   `‖∑ᵢ cᵢ yᵢ‖² ≤ ∑ᵢ |cᵢ|² rᵢ`.
 * `TauCeti.norm_sub_sum_smul_sq_le`: Selberg's projection defect bound
@@ -59,13 +60,24 @@ section Seminormed
 
 variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
+/-- The diagonal Gram entry `‖⟪v, v⟫‖` is the squared norm of `v`. -/
+theorem norm_inner_self_eq_norm_sq (v : E) : ‖⟪v, v⟫_𝕜‖ = ‖v‖ ^ 2 := by
+  rw [← inner_self_re_eq_norm, inner_self_eq_norm_sq]
+
 /-- The squared norm of a vector of a family is at most its Gram row sum. -/
 theorem norm_sq_le_sum_norm_inner (y : ι → E) (i : ι) :
-    ‖y i‖ ^ 2 ≤ ∑ j, ‖⟪y i, y j⟫_𝕜‖ := by
-  calc ‖y i‖ ^ 2 = ‖⟪y i, y i⟫_𝕜‖ := by
-        rw [inner_self_eq_norm_sq_to_K, norm_pow, norm_ofReal, abs_norm]
-    _ ≤ ∑ j, ‖⟪y i, y j⟫_𝕜‖ :=
-        single_le_sum (f := fun j ↦ ‖⟪y i, y j⟫_𝕜‖) (fun _ _ ↦ norm_nonneg _) (mem_univ i)
+    ‖y i‖ ^ 2 ≤ ∑ j, ‖⟪y i, y j⟫_𝕜‖ :=
+  (norm_inner_self_eq_norm_sq (y i)).symm.trans_le <|
+    single_le_sum (f := fun j ↦ ‖⟪y i, y j⟫_𝕜‖) (fun _ _ ↦ norm_nonneg _) (mem_univ i)
+
+/-- A Gram row sum `∑ j, ‖⟪y i, y j⟫‖` vanishes exactly when `y i` has zero norm. In a normed
+space this is `sum_norm_inner_eq_zero_iff`. -/
+theorem sum_norm_inner_eq_zero_iff_norm_eq_zero (y : ι → E) (i : ι) :
+    ∑ j, ‖⟪y i, y j⟫_𝕜‖ = 0 ↔ ‖y i‖ = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ sum_eq_zero fun j _ ↦ by simp [inner_eq_zero_of_left _ h]⟩
+  have := norm_sq_le_sum_norm_inner (𝕜 := 𝕜) y i
+  rw [h] at this
+  exact pow_eq_zero_iff two_ne_zero |>.mp (le_antisymm this (sq_nonneg _))
 
 /-- **The Gram-row bound.** The squared norm of a finite linear combination is at most the
 sum of the squared coefficients weighted by the Gram row sums `∑ j, ‖⟪y i, y j⟫‖`. No
@@ -108,16 +120,18 @@ theorem norm_sub_sum_smul_sq_le (y : ι → E) (x : E) :
   have hcross : re ⟪x, ∑ i, (⟪y i, x⟫_𝕜 / (r i : 𝕜)) • y i⟫_𝕜 = S := by
     rw [inner_sum, map_sum]
     refine sum_congr rfl fun i _ ↦ ?_
-    rw [inner_smul_right, div_mul_eq_mul_div, ← inner_conj_symm (y i) x, RCLike.conj_mul,
-      ← ofReal_pow, div_re_ofReal, ofReal_re]
-  -- The coefficients make each term of the Gram-row bound equal to the corresponding term of `S`.
+    -- Write the `i`-th term as `conj ⟪x, y i⟫ * ⟪x, y i⟫ / rᵢ`, then take real parts.
+    rw [inner_smul_right, div_mul_eq_mul_div, ← inner_conj_symm (y i) x, RCLike.conj_mul]
+    norm_cast
+  -- The coefficients make each term of the Gram-row bound equal to the corresponding term of `S`:
+  -- both sides vanish for a zero row, and otherwise `‖⟪x, y i⟫‖² / rᵢ² * rᵢ = ‖⟪x, y i⟫‖² / rᵢ`.
   have hcoef : ∀ i, ‖⟪y i, x⟫_𝕜 / (r i : 𝕜)‖ ^ 2 * r i = ‖⟪x, y i⟫_𝕜‖ ^ 2 / r i := by
     intro i
     have hr : 0 ≤ r i := sum_nonneg fun _ _ ↦ norm_nonneg _
-    rw [norm_div, norm_ofReal, abs_of_nonneg hr, norm_inner_symm, div_pow]
     rcases hr.eq_or_lt with h | h
-    · rw [← h, mul_zero, div_zero]
-    · field_simp
+    · simp [← h]
+    · simp [norm_inner_symm, abs_of_pos h]
+      field_simp
   have hsq : ‖∑ i, (⟪y i, x⟫_𝕜 / (r i : 𝕜)) • y i‖ ^ 2 ≤ S :=
     (norm_sum_smul_sq_le_sum_norm_sq_mul_sum_norm_inner y _).trans_eq
       (sum_congr rfl fun i _ ↦ hcoef i)
@@ -142,12 +156,8 @@ theorem sum_norm_inner_sq_le_of_row_le (y : ι → E) (x : E) {C : ℝ} (hC : 0 
         refine sum_le_sum fun i _ ↦ ?_
         rcases (sum_nonneg fun j _ ↦ norm_nonneg ⟪y i, y j⟫_𝕜).eq_or_lt with h | h
         · -- A zero row sum forces `‖y i‖ = 0`, hence `⟪x, y i⟫ = 0`.
-          have hy : ‖y i‖ = 0 := by
-            nlinarith [norm_sq_le_sum_norm_inner (𝕜 := 𝕜) y i, norm_nonneg (y i)]
-          have hx : ‖⟪x, y i⟫_𝕜‖ = 0 :=
-            le_antisymm (by simpa [hy] using norm_inner_le_norm (𝕜 := 𝕜) x (y i))
-              (norm_nonneg _)
-          simp [hx]
+          have hy := (sum_norm_inner_eq_zero_iff_norm_eq_zero y i).mp h.symm
+          simp [inner_eq_zero_of_right x hy]
         · rw [mul_div_assoc', le_div_iff₀ h]
           rw [mul_comm C]
           exact mul_le_mul_of_nonneg_left (hrow i) (sq_nonneg _)
@@ -170,8 +180,7 @@ theorem sum_norm_inner_sq_le_of_norm_sq_le_of_sum_erase_le [DecidableEq ι] (y :
     (hO : ∀ i, ∑ j ∈ univ.erase i, ‖⟪y i, y j⟫_𝕜‖ ≤ O) :
     ∑ i, ‖⟪x, y i⟫_𝕜‖ ^ 2 ≤ (D + O) * ‖x‖ ^ 2 := by
   refine sum_norm_inner_sq_le_of_row_le y x hDO fun i ↦ ?_
-  rw [← add_sum_erase _ _ (mem_univ i), inner_self_eq_norm_sq_to_K, norm_pow, norm_ofReal,
-    abs_norm]
+  rw [← add_sum_erase _ _ (mem_univ i), norm_inner_self_eq_norm_sq]
   exact add_le_add (hD i) (hO i)
 
 end Seminormed
@@ -184,11 +193,7 @@ variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 @[simp]
 theorem sum_norm_inner_eq_zero_iff (y : ι → E) (i : ι) :
     ∑ j, ‖⟪y i, y j⟫_𝕜‖ = 0 ↔ y i = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  have := norm_sq_le_sum_norm_inner (𝕜 := 𝕜) y i
-  rw [h] at this
-  exact norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp
-    (le_antisymm this (sq_nonneg _)))
+  rw [sum_norm_inner_eq_zero_iff_norm_eq_zero, norm_eq_zero]
 
 /-- A Gram row sum `∑ j, ‖⟪y i, y j⟫‖` is positive exactly when `y i ≠ 0`, even for a linearly
 dependent family. -/
