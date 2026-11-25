@@ -28,6 +28,12 @@ codimension-two face opposite both: a common point of the two facets comes from 
 both composites of face maps, the two sides of the simplicial identity
 `SimplexCategory.δ_comp_δ`.
 
+The weight vectors of the standard simplex are the vectors with nonnegative coordinates summing to
+one (`StdSimplex.mem_range_toFun_comp_weights_iff`), and include the vertices `Pi.single x 1`. A
+coordinate of a weight vector is less than one when another coordinate is positive, and a point
+with no weight away from `x` is the vertex `x`. A linear map carrying the standard simplex into a
+standard simplex preserves coordinate sums.
+
 The prefix sums `TauCeti.prefixSum N x.weights` of the weights of a point `x` of
 `StdSimplex R (Fin n)` lie between `0` and `1`. Scalar pushforward `StdSimplex.mapRange` along an
 additive homomorphism sending `1` to `1` and nonnegative elements to nonnegative elements applies
@@ -280,6 +286,70 @@ theorem exists_map_succAbove_of_map_succAbove_eq {n : ℕ} {j k : Fin (n + 2)} (
   rw [← h, ← map_comp, ← hcomp, map_comp]
 
 end Semiring
+
+section WeightVectors
+
+variable {R : Type*} [AddCommMonoid R] [One R]
+
+/-- A vector is a weight vector of the standard simplex if and only if its coordinates are
+nonnegative and sum to one. Mathlib's `StdSimplex.range_toFun_comp_weights` states this over
+semirings. -/
+theorem mem_range_toFun_comp_weights_iff [LE R] {X : Type*} [Fintype X] {x : X → R} :
+    x ∈ (Set.range fun t : StdSimplex R X => ⇑t.weights) ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i = 1 := by
+  refine ⟨?_, fun ⟨h0, h1⟩ => ⟨⟨Finsupp.equivFunOnFinite.symm x, h0, ?_⟩, by simp⟩⟩
+  · rintro ⟨t, rfl⟩
+    exact ⟨t.nonneg, by simpa [Finsupp.sum_fintype] using t.total⟩
+  · simpa [Finsupp.sum_fintype] using h1
+
+/-- The vertex `Pi.single x 1` is a weight vector of the standard simplex. -/
+theorem pi_single_mem_range_toFun_comp_weights [Preorder R] [ZeroLEOneClass R] {X : Type*}
+    [DecidableEq X] (x : X) :
+    Pi.single x (1 : R) ∈ Set.range fun t : StdSimplex R X => ⇑t.weights :=
+  ⟨⟨.single x 1, by simp, by simp⟩, Finsupp.single_eq_pi_single x 1⟩
+
+/-- A coordinate of a point of the standard simplex is less than one if some other coordinate
+is positive. -/
+theorem apply_lt_one_of_mem_range_weights [PartialOrder R] [AddLeftStrictMono R] {ι : Type*}
+    {x : ι → R} (hx : x ∈ Set.range fun s : StdSimplex R ι => ⇑s.weights) {i j : ι}
+    (hij : j ≠ i) (hxj : 0 < x j) : x i < 1 := by
+  classical
+  have := addLeftMono_of_addLeftStrictMono R
+  obtain ⟨s, rfl⟩ := hx
+  -- The total weight is the sum over any finite set containing the support, here one that also
+  -- contains `i` and `j`.
+  have hsupp : s.weights.support ⊆ s.weights.support ∪ {i, j} := Finset.subset_union_left
+  have hij' : ({i, j} : Finset ι) ⊆ s.weights.support ∪ {i, j} := Finset.subset_union_right
+  have htotal := s.total
+  rw [s.weights.sum_of_support_subset hsupp _ fun _ _ => rfl] at htotal
+  have hle := Finset.sum_le_sum_of_subset_of_nonneg hij' fun k _ _ => s.nonneg k
+  rw [Finset.sum_pair hij.symm, htotal] at hle
+  exact (lt_add_of_pos_right _ hxj).trans_le hle
+
+end WeightVectors
+
+/-- A point of the standard simplex with no weight away from `x` is the vertex `x`. -/
+theorem eq_single_of_forall_ne_weights_eq_zero {R : Type*} [Semiring R] [PartialOrder R]
+    [IsStrictOrderedRing R] {ι : Type*} {w : StdSimplex R ι} {x : ι}
+    (h : ∀ y ≠ x, w.weights y = 0) : w = single x :=
+  support_weights_eq_singleton.mp <| w.support_weights_nonempty.subset_singleton_iff.mp <|
+    Finset.coe_subset.mp <| (Finset.coe_singleton x).symm ▸ Finsupp.support_subset_iff.mpr h
+
+/-- A linear map carrying the weight vectors of the standard simplex on `α` into those of the
+standard simplex on `β` preserves coordinate sums: it sends every vertex to a vector of coordinate
+sum one. -/
+theorem _root_.LinearMap.sum_apply_eq_of_mapsTo_range_weights {R : Type*} [Semiring R]
+    [Preorder R] [ZeroLEOneClass R] {α β : Type*} [Fintype α] [Fintype β]
+    (L : (α → R) →ₗ[R] (β → R))
+    (hL : Set.MapsTo L (Set.range fun t : StdSimplex R α => ⇑t.weights)
+      (Set.range fun t : StdSimplex R β => ⇑t.weights)) (v : α → R) :
+    ∑ b, L v b = ∑ a, v a := by
+  classical
+  have hvert (a : α) : ∑ b, L (Pi.single a 1) b = 1 :=
+    (mem_range_toFun_comp_weights_iff.1 (hL (pi_single_mem_range_toFun_comp_weights a))).2
+  conv_lhs => rw [pi_eq_sum_univ' v]
+  simp_rw [map_sum, map_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+  rw [Finset.sum_comm]
+  simp_rw [← Finset.mul_sum, hvert, mul_one]
 
 section PrefixSum
 

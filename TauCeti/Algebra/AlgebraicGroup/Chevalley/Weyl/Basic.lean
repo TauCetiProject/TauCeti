@@ -63,10 +63,26 @@ theorem weylSubgroup_def (A : Type v) [CommRing A] :
       Set.range (fun i => D.weylElement (t.simpleIndex ht i) A 1)) :=
   (rfl)
 
+/-- The preimages of the torus points and pinned simple Weyl representatives generate
+`D.weylSubgroup A`. -/
+theorem closure_weylSubgroup_generators (A : Type v) [CommRing A] :
+    Subgroup.closure ((D.weylSubgroup A).subtype ⁻¹'
+      (Set.range (D.torusPoints A) ∪
+        Set.range (fun i => D.weylElement (t.simpleIndex ht i) A 1))) = ⊤ := by
+  rw [D.weylSubgroup_def]
+  exact Subgroup.closure_preimage_eq_top _
+
 /-- Every point of the actual torus belongs to the Weyl subgroup. -/
 theorem torusPoints_mem_weylSubgroup (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
     D.torusPoints A s ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inl ⟨s, rfl⟩)
+
+/-- The actual weight-lattice torus image is contained in the Weyl subgroup over every commutative
+ring. -/
+theorem range_torusPoints_le_weylSubgroup (A : Type v) [CommRing A] :
+    (D.torusPoints A).range ≤ D.weylSubgroup A := by
+  rintro _ ⟨s, rfl⟩
+  exact D.torusPoints_mem_weylSubgroup A s
 
 /-- Each pinned simple Weyl representative belongs to the Weyl subgroup. -/
 theorem weylElement_simpleIndex_one_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) :
@@ -97,15 +113,32 @@ theorem list_prod_map_weylElement_mem_weylSubgroup (A : Type v) [CommRing A]
     (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ D.weylSubgroup A :=
   D.coe_list_prod_simpleWeylLift A l ▸ (l.map (D.simpleWeylLift A)).prod.property
 
+/-- Any subtype element of `D.weylSubgroup A` backed by the pinned simple Weyl representative
+`D.weylElement (t.simpleIndex ht i) A 1` equals `D.simpleWeylLift A i`. -/
+theorem mk_weylElement_eq_simpleWeylLift (A : Type v) [CommRing A] (i : Fin t.rank)
+    {h : D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A} :
+    (⟨D.weylElement (t.simpleIndex ht i) A 1, h⟩ : D.weylSubgroup A) =
+      D.simpleWeylLift A i :=
+  (rfl)
+
+/-- The product of a list of `D.simpleWeylLift A` values in `D.weylSubgroup A` equals the
+subtype element backed by the product of the corresponding pinned simple Weyl representatives. -/
+theorem list_prod_map_simpleWeylLift (A : Type v) [CommRing A] (l : List (Fin t.rank)) :
+    (l.map (D.simpleWeylLift A)).prod =
+      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
+        D.list_prod_map_weylElement_mem_weylSubgroup A l⟩ :=
+  Subtype.ext (D.coe_list_prod_simpleWeylLift A l)
+
 /-- Any homomorphism out of `D.weylSubgroup A` sending each pinned simple Weyl lift to its
-simple reflection sends the product of a word in those lifts to `t.geckWeylWordProd ht l`. -/
+simple reflection sends the product of a word in those lifts to
+`t.simplyConnectedWeylWordProd ht l`. -/
 theorem map_list_prod_simpleWeylLift (A : Type v) [CommRing A]
     (f : D.weylSubgroup A →* (t.simplyConnectedRootDatum ht).weylGroup)
     (hf : ∀ i : Fin t.rank,
       f (D.simpleWeylLift A i) =
         RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i))
     (l : List (Fin t.rank)) :
-    f (l.map (D.simpleWeylLift A)).prod = t.geckWeylWordProd ht l := by
+    f (l.map (D.simpleWeylLift A)).prod = t.simplyConnectedWeylWordProd ht l := by
   rw [map_list_prod, List.map_map, ← t.wordProd_map_simpleSupportEquiv ht l,
     RootPairing.Base.wordProd_def, List.map_map]
   simp only [Function.comp_def, coe_simpleSupportEquivSimplyConnectedBase_apply, hf]
@@ -468,7 +501,7 @@ simple reflections. -/
 theorem weylProjection_surjective (k : Type v) [Field k] :
     Function.Surjective (D.weylProjection k) := by
   intro w
-  obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
+  obtain ⟨l, rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w
   exact ⟨(l.map (D.simpleWeylLift k)).prod,
     D.map_list_prod_simpleWeylLift k (D.weylProjection k) (D.weylProjection_simpleWeylLift k) l⟩
 

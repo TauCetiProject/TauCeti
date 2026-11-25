@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Monoidal
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Dual
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 import Mathlib.CategoryTheory.Monoidal.Transport
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # The symmetric monoidal category of `C^n` finite-rank cores and its Picard group

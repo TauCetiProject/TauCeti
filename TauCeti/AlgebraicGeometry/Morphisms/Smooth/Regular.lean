@@ -10,7 +10,8 @@ public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.Smooth.Regular
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
+import TauCeti.RingTheory.RegularLocalRing.Locus
 import TauCeti.RingTheory.RegularLocalRing.Smooth
 import TauCeti.RingTheory.Smooth.Field
 
@@ -24,8 +25,9 @@ regular ring exactly when the local rings at its points are regular. In particul
 ring of a scheme smooth over a field is regular, and so its local rings at codimension-one points
 are discrete valuation rings.
 
-Over a perfect field `k` the converse holds: a scheme locally of finite type over `k` whose local
-rings are regular is smooth over `k`. Its local rings are then formally smooth over `k`
+Over a perfect field `k` the converse holds: a scheme locally of finite type over `k` is smooth
+over `k` at every point whose local ring is regular, so it is smooth when all its local rings are
+regular. Such a local ring is formally smooth over `k`
 (`TauCeti.formallySmooth_of_isRegularLocalRing`), since every residue field is formally smooth
 over a perfect field. Over an imperfect field a regular scheme need not be smooth: the regular
 curve `y ^ 2 = x ^ p - t` over `𝔽_p(t)`, for an odd prime `p`, is not smooth at its point `y = 0`.
@@ -36,6 +38,8 @@ curve `y ^ 2 = x ^ p - t` over `𝔽_p(t)`, for an odd prime `p`, is not smooth 
   locally Noetherian scheme with regular local rings has regular local rings.
 * `TauCeti.AlgebraicGeometry.isDiscreteValuationRing_stalk_of_smooth`: the local rings of an
   integral scheme smooth over a field at its codimension-one points are discrete valuation rings.
+* `AlgebraicGeometry.Scheme.Hom.mem_smoothLocus_of_isRegularLocalRing_stalk`: a scheme locally of
+  finite type over a perfect field is smooth at every point with regular local ring.
 * `AlgebraicGeometry.Scheme.Hom.smooth_of_isRegularLocalRing_stalk`: a scheme locally of finite
   type over a perfect field with regular local rings is smooth.
 -/
@@ -84,6 +88,26 @@ open TauCeti TauCeti.AlgebraicGeometry
 
 universe u
 
+/-- **Regular points over a perfect field are smooth points.** Let `k` be a perfect field and
+`f : X ⟶ Spec k` locally of finite type. If the local ring of `X` at `x` is regular, then `f` is
+smooth at `x`. -/
+theorem mem_smoothLocus_of_isRegularLocalRing_stalk {k : Type u} [Field k] [PerfectField k]
+    {X : Scheme.{u}} (f : X ⟶ Spec (.of k)) [LocallyOfFiniteType f] {x : X}
+    [IsRegularLocalRing (X.presheaf.stalk x)] : x ∈ f.smoothLocus := by
+  obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top x)
+  rw [f.mem_smoothLocus_iff_isSmoothAt (U := ⟨U, hU⟩) hxU]
+  let φ := (Scheme.ΓSpecIso (.of k)).inv ≫ f.appLE ⊤ U le_top
+  let := φ.hom.toAlgebra
+  have : Algebra.FiniteType k Γ(X, U) := f.finiteType_ΓSpecIso_inv_comp_appLE hU
+  let q := (hU.primeIdealOf ⟨x, hxU⟩).asIdeal
+  -- the local ring of `X` at `x` is the localization of `Γ(X, U)` at `q`
+  let := TopCat.Presheaf.algebra_section_stalk X.presheaf ⟨x, hxU⟩
+  have := hU.isLocalization_stalk ⟨x, hxU⟩
+  have : IsRegularLocalRing (Localization.AtPrime q) := Excellence.mem_regularLocus.mp
+    ((Excellence.mem_regularLocus_iff_of_isLocalization (p := hU.primeIdealOf ⟨x, hxU⟩)
+      (X.presheaf.stalk x)).mpr ‹_›)
+  exact formallySmooth_of_isRegularLocalRing
+
 /-- **A regular scheme locally of finite type over a perfect field is smooth**: if `k` is perfect,
 `f : X ⟶ Spec k` is locally of finite type and every local ring of `X` is regular, then `f` is
 smooth. -/
@@ -91,15 +115,6 @@ theorem smooth_of_isRegularLocalRing_stalk {k : Type u} [Field k] [PerfectField 
     {X : Scheme.{u}} (f : X ⟶ Spec (.of k)) [LocallyOfFiniteType f]
     [∀ x : X, IsRegularLocalRing (X.presheaf.stalk x)] : Smooth f := by
   rw [← Scheme.Hom.smoothLocus_eq_top_iff]
-  refine top_unique fun x _ ↦ ?_
-  obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top x)
-  rw [f.mem_smoothLocus_iff_isSmoothAt (U := ⟨U, hU⟩) hxU]
-  let φ := (Scheme.ΓSpecIso (.of k)).inv ≫ f.appLE ⊤ U le_top
-  let := φ.hom.toAlgebra
-  have : Algebra.FiniteType k Γ(X, U) := f.finiteType_ΓSpecIso_inv_comp_appLE hU
-  have : IsNoetherianRing Γ(X, U) := Algebra.FiniteType.isNoetherianRing k _
-  have : IsRegularRing Γ(X, U) :=
-    (isRegularRing_iff_isRegularLocalRing_stalk hU).mpr fun y _ ↦ inferInstance
-  exact formallySmooth_of_isRegularLocalRing
+  exact top_unique fun _ _ ↦ f.mem_smoothLocus_of_isRegularLocalRing_stalk
 
 end AlgebraicGeometry.Scheme.Hom

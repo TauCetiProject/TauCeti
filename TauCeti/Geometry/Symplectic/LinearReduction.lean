@@ -283,6 +283,16 @@ theorem reducedQuadraticForm_mk (Q : QuadraticForm ℝ V)
     ω.reducedQuadraticForm U Q hQ (Submodule.Quotient.mk u) = Q u :=
   QuadraticMap.lift_mk _ u
 
+/-- The induced quadratic form on the reduced space only depends on the values of `Q` on `U`. -/
+theorem reducedQuadraticForm_congr {Q Q' : QuadraticForm ℝ V}
+    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0)
+    (hQ' : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q' w u = 0)
+    (h : ∀ u ∈ U, Q u = Q' u) :
+    ω.reducedQuadraticForm U Q hQ = ω.reducedQuadraticForm U Q' hQ' := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with
+  | H u => simpa using h u u.property
+
 end QuadraticForm
 
 section Finrank

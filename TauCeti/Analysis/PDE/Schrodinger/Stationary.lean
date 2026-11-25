@@ -201,7 +201,7 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq [Nontri
     exact integral_congr_ae (ae_of_all _ fun z ↦ mul_comm _ _)
   set S := schrodingerToLp hP
   set ι :=
-    (TestFunction.ambientToLp 2 volume : TestFn E →L[ℝ] Lp ℝ 2 (volume : Measure E)).toLinearMap
+    (TestFunction.ambientToLp ℝ 2 volume : TestFn E →L[ℝ] Lp ℝ 2 (volume : Measure E)).toLinearMap
   have hSφ (φ : TestFn E) : S φ =
       (memLp_neg_laplacian_add_mul hP φ.contDiff φ.hasCompactSupport).toLp _ := rfl
   have hιφ (φ : TestFn E) : ι φ =

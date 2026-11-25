@@ -6,263 +6,440 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.AdicCompletion.CompletedGenericField.Basic
+public import TauCeti.RingTheory.AdicCompletion.AlgHom
 
-import TauCeti.RingTheory.AdicCompletion.AlgHom
-import Mathlib.RingTheory.AdicCompletion.RingHom
 import TauCeti.RingTheory.AdicCompletion.Algebra
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
-# Maps of the completed generic field
+# Maps of completed generic fields and Frobenius lifts
 
-A map from an affine lift to its completed generic integers which contracts the maximal ideal
-to the special fibre extends through the generic localization and its completion. If the
-parameter has nonzero image, it extends further to the completed generic field.
+Let `π ∈ A` and `π' ∈ B` generate prime ideals and let `f : A →+* B` be a ring homomorphism with
+`f⁻¹ (π') = (π)`. Then `f` extends to the localizations at these primes and, being local there,
+to their completions: this gives a local homomorphism of completed generic rings
+`completedGenericIntegersMap f hf`, the unique local homomorphism extending `f`. When `f π` stays
+nonzero in the completion of `B`, the map is injective and extends to the completed generic
+fields; when `f π` is associated to `π'`, the extension preserves the normalized valuations. If
+moreover `A ⧸ (π) → B ⧸ (π')` is surjective, then the map of completed generic rings is
+bijective.
+
+The main example is a Frobenius lift. If `φ` is an endomorphism of `A` congruent modulo `π` to
+`a ↦ a ^ q` with `q ≠ 0`, then `φ⁻¹ (π) = (π)` automatically
+(`Ideal.comap_eq_self_of_forall_sub_pow_mem`), and its extension to the completed generic ring
+is again congruent modulo `π` to `x ↦ x ^ q`, so it induces the `q`-power map on the residue field
+`Frac (A ⧸ π)`. If moreover `φ π` is associated to `π`, as for a lift of an isometric Frobenius of
+the coefficients, then `φ` extends to an isometric endomorphism of the completed generic field.
+This applies, for instance, to the affine line `A = W(k)[t]` with `π = p` and the Frobenius lift
+`t ↦ t ^ p` over the Witt-vector Frobenius, whose completed generic field is the generic field of
+the affine line.
+
+## Main definitions and results
+
+* `completedGenericIntegersMap`: the local homomorphism of completed generic rings induced by `f`,
+  with `completedGenericIntegersMap_algebraMap`, its uniqueness
+  `completedGenericIntegersMap_unique`, and the functoriality laws
+  `completedGenericIntegersMap_id` and `completedGenericIntegersMap_comp`.
+* `completedGenericIntegersMap_injective`: injectivity when the image of `f π` is nonzero.
+* `completedGenericIntegersMap_surjective` and `completedGenericIntegersMap_bijective`:
+  surjectivity and bijectivity when `f π` is associated to `π'` and `A ⧸ (π) → B ⧸ (π')` is
+  surjective.
+* `completedGenericFieldMap`: the induced homomorphism of completed generic fields, with its
+  uniqueness `completedGenericFieldMap_unique`, the functoriality laws
+  `completedGenericFieldMap_id` and `completedGenericFieldMap_comp`, and
+  `valuation_completedGenericFieldMap` (it preserves valuations when `f π` is associated to `π'`).
+* `completedGenericIntegersMap_sub_pow_mem` and `residue_completedGenericIntegersMap`: the
+  extension of a `q`-Frobenius lift is a `q`-Frobenius lift.
 
 ## References
 
 * [N. Tsuzuki, *Minimal slope conjecture of F-isocrystals*](https://arxiv.org/abs/1910.03871v3),
   §3.1.
+* [M. D'Addezio, *Parabolicity conjecture of F-isocrystals*](https://arxiv.org/abs/2012.12879v4),
+  §4.2.
 -/
 
 public section
 
 open IsLocalRing
-open scoped WithZero
 
 namespace TauCeti.AdicCompletion
 
-variable {A : Type*} [CommRing A] (π : A) [(Ideal.span {π}).IsPrime]
-  (f : A →+* completedGenericIntegers π)
-  (hf : (maximalIdeal (completedGenericIntegers π)).comap f = Ideal.span {π})
+variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C] {π : A} {π' : B} {π'' : C}
+  [(Ideal.span {π}).IsPrime] [(Ideal.span {π'}).IsPrime] [(Ideal.span {π''}).IsPrime]
 
-/-- A map which contracts the maximal ideal to `(π)` extends to the generic local ring. -/
-noncomputable def genericLocalRingLift :
-    genericLocalRing π →+* completedGenericIntegers π :=
-  IsLocalization.lift (M := (Ideal.span {π}).primeCompl) (S := genericLocalRing π)
-    (g := f) fun s ↦ by
-      rw [← notMem_maximalIdeal]
-      intro hs
-      have hs' : (s : A) ∈ (maximalIdeal (completedGenericIntegers π)).comap f :=
-        Ideal.mem_comap.mpr hs
-      exact s.property (hf.le hs')
+/-- Elements of `A` congruent modulo `π` have the same residue in the generic local ring. -/
+private theorem residue_algebraMap_eq_of_sub_mem {a₁ a₂ : A} (h : a₁ - a₂ ∈ Ideal.span {π}) :
+    residue (genericLocalRing π) (algebraMap A _ a₁) =
+      residue (genericLocalRing π) (algebraMap A _ a₂) := by
+  rw [residue_eq_residue_iff, ← map_sub, ← Localization.AtPrime.map_eq_maximalIdeal]
+  exact Ideal.mem_map_of_mem _ h
 
-/-- The extension to the generic localization agrees with the original map. -/
+/-- An element of `A` outside `(π)` has nonzero residue in the generic local ring. -/
+private theorem residue_algebraMap_ne_zero (s : (Ideal.span {π}).primeCompl) :
+    residue (genericLocalRing π) (algebraMap A _ s) ≠ 0 := fun h ↦
+  (mem_maximalIdeal _).mp ((residue_eq_zero_iff _).mp h) (IsLocalization.map_units _ s)
+
+section Integers
+
+variable (f : A →+* B) (hf : (Ideal.span {π'}).comap f = Ideal.span {π})
+
+private theorem le_comap_maximalIdeal_localAlgHom :
+    maximalIdeal (genericLocalRing π) ≤ (maximalIdeal (genericLocalRing π')).comap
+      (Localization.localAlgHom _ _ f.toIntAlgHom hf.symm) :=
+  -- `localAlgHom _ _ f.toIntAlgHom` is `localRingHom _ _ f` as a map: `f.toIntAlgHom` is `f`
+  -- with the automatic `ℤ`-linearity, so its underlying ring homomorphism unfolds to `f`.
+  (IsLocalRing.maximalIdeal_comap (Localization.localRingHom _ _ f hf.symm)).ge
+
+/-- A ring homomorphism `f : A →+* B` with `f⁻¹ (π') = (π)` induces a homomorphism of completed
+generic rings: it extends `f` to the localizations at `(π)` and `(π')`, then to their completions
+along the maximal ideals. -/
+noncomputable def completedGenericIntegersMap :
+    completedGenericIntegers π →+* completedGenericIntegers π' :=
+  (_root_.AdicCompletion.mapₐ (Localization.localAlgHom _ _ f.toIntAlgHom hf.symm)
+    (le_comap_maximalIdeal_localAlgHom f hf)).toRingHom
+
+/-- The map of completed generic rings extends the map of generic local rings. -/
 @[simp]
-theorem genericLocalRingLift_algebraMap (a : A) :
-    genericLocalRingLift π f hf (algebraMap A (genericLocalRing π) a) = f a :=
-  IsLocalization.lift_eq _ a
+theorem completedGenericIntegersMap_algebraMap_genericLocalRing (x : genericLocalRing π) :
+    completedGenericIntegersMap f hf (algebraMap (genericLocalRing π) _ x) =
+      algebraMap (genericLocalRing π') _ (Localization.localRingHom _ _ f hf.symm x) := by
+  simp only [completedGenericIntegersMap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    _root_.AdicCompletion.algebraMap_apply, _root_.AdicCompletion.mapₐ_of]
+  -- `localAlgHom_apply` gives `localRingHom _ _ f.toIntAlgHom.toRingHom`, and the underlying
+  -- ring homomorphism of `f.toIntAlgHom` unfolds to `f`.
+  exact congrArg _ (Localization.localAlgHom_apply _ _ _ _ x)
 
-private theorem genericLocalRingLift_le_comap :
-    maximalIdeal (genericLocalRing π) ≤
-      (maximalIdeal (completedGenericIntegers π)).comap (genericLocalRingLift π f hf) := by
-  have hmap : (Ideal.span {π}).map (algebraMap A (genericLocalRing π)) ≤
-      (maximalIdeal (completedGenericIntegers π)).comap (genericLocalRingLift π f hf) := by
-    rw [Ideal.map_le_iff_le_comap, Ideal.comap_comap]
-    have heq : (genericLocalRingLift π f hf).comp (algebraMap A (genericLocalRing π)) = f :=
-      RingHom.ext (genericLocalRingLift_algebraMap π f hf)
-    simpa only [heq] using hf.ge
-  exact (Localization.AtPrime.map_eq_maximalIdeal (I := Ideal.span {π})).ge.trans hmap
-
-private noncomputable def genericLocalRingLiftMod (n : ℕ) :
-    completedGenericIntegers π →+*
-      completedGenericIntegers π ⧸ maximalIdeal (completedGenericIntegers π) ^ n :=
-  (Ideal.quotientMap _ (genericLocalRingLift π f hf)
-    ((Ideal.pow_right_mono (genericLocalRingLift_le_comap π f hf) n).trans
-      (Ideal.le_comap_pow _ n))).comp
-    (_root_.AdicCompletion.evalₐ (maximalIdeal (genericLocalRing π)) n).toRingHom
-
-private theorem genericLocalRingLiftMod_compatible {m n : ℕ} (hle : m ≤ n) :
-    (Ideal.Quotient.factorPow (maximalIdeal (completedGenericIntegers π)) hle).comp
-      (genericLocalRingLiftMod π f hf n) = genericLocalRingLiftMod π f hf m := by
-  ext x
-  simp only [genericLocalRingLiftMod, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
-    RingHom.coe_coe, ← _root_.AdicCompletion.factor_evalₐ hle x]
-  obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective
-    (_root_.AdicCompletion.evalₐ (maximalIdeal (genericLocalRing π)) n x)
-  simp [← hy]
-
-/-- The map from the generic local ring extends to its maximal-ideal completion. -/
-noncomputable def completedGenericIntegersLift :
-    completedGenericIntegers π →+* completedGenericIntegers π := by
-  letI := isAdicComplete_maximalIdeal_completedGenericIntegers π
-  exact _root_.IsAdicComplete.liftRingHom (maximalIdeal (completedGenericIntegers π))
-    (genericLocalRingLiftMod π f hf) (genericLocalRingLiftMod_compatible π f hf)
-
-/-- The completed extension agrees with the map on the generic local ring. -/
+/-- The map of completed generic rings extends `f`. -/
 @[simp]
-theorem completedGenericIntegersLift_algebraMap_local (a : genericLocalRing π) :
-    completedGenericIntegersLift π f hf
-      (algebraMap (genericLocalRing π) (completedGenericIntegers π) a) =
-        genericLocalRingLift π f hf a := by
-  have := isAdicComplete_maximalIdeal_completedGenericIntegers π
-  apply congrFun (IsHausdorff.funext' (maximalIdeal (completedGenericIntegers π))
-    (f := fun x ↦ completedGenericIntegersLift π f hf
-      (algebraMap (genericLocalRing π) (completedGenericIntegers π) x))
-    (g := genericLocalRingLift π f hf) ?_) a
-  intro n x
-  simp [completedGenericIntegersLift, genericLocalRingLiftMod,
-    _root_.AdicCompletion.algebraMap_apply]
+theorem completedGenericIntegersMap_algebraMap (a : A) :
+    completedGenericIntegersMap f hf (algebraMap A _ a) = algebraMap B _ (f a) := by
+  rw [IsScalarTower.algebraMap_apply A (genericLocalRing π),
+    completedGenericIntegersMap_algebraMap_genericLocalRing, Localization.localRingHom_to_map,
+    ← IsScalarTower.algebraMap_apply]
 
-/-- The completed extension agrees with the map on the original affine ring. -/
-@[simp]
-theorem completedGenericIntegersLift_algebraMap (a : A) :
-    completedGenericIntegersLift π f hf (algebraMap A (completedGenericIntegers π) a) = f a := by
-  rw [IsScalarTower.algebraMap_apply A (genericLocalRing π) (completedGenericIntegers π),
-    completedGenericIntegersLift_algebraMap_local, genericLocalRingLift_algebraMap]
+/-- The map of completed generic rings is local. -/
+instance : IsLocalHom (completedGenericIntegersMap f hf) := by
+  refine ((local_hom_tfae _).out 4 1).mp ?_
+  rw [maximalIdeal_completedGenericIntegers, Ideal.span_singleton_le_iff_mem, Ideal.mem_comap,
+    completedGenericIntegersMap_algebraMap, maximalIdeal_completedGenericIntegers]
+  have hfπ : f π ∈ Ideal.span {π'} := by
+    rw [← Ideal.mem_comap, hf]
+    exact Ideal.mem_span_singleton_self π
+  obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.mp hfπ
+  rw [← hb, map_mul]
+  exact Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)
 
-/-- The extension preserves the maximal ideal. -/
-instance completedGenericIntegersLift_isLocalHom : IsLocalHom
-    (completedGenericIntegersLift π f hf) := by
-  apply ((local_hom_tfae _).out 4 1).mp
-  intro x hx
-  have hx' : x ∈ Ideal.span {algebraMap A (completedGenericIntegers π) π} :=
-    (maximalIdeal_completedGenericIntegers π).le hx
-  obtain ⟨y, rfl⟩ := Ideal.mem_span_singleton.mp hx'
-  rw [Ideal.mem_comap, map_mul, completedGenericIntegersLift_algebraMap]
-  exact Ideal.mul_mem_right _ _ (hf.ge (Ideal.subset_span (Set.mem_singleton π)))
-
-/-- Two local maps from the integral completion agree if they agree on the affine ring. -/
+/-- Local maps of completed generic rings are determined by their values on the affine ring. -/
 theorem completedGenericIntegers_ringHom_ext
-    (g h : completedGenericIntegers π →+* completedGenericIntegers π)
+    (g h : completedGenericIntegers π →+* completedGenericIntegers π')
     [IsLocalHom g] [IsLocalHom h]
-    (hgh : ∀ a : A, g (algebraMap A (completedGenericIntegers π) a) =
-      h (algebraMap A (completedGenericIntegers π) a)) : g = h := by
-  have := isAdicComplete_maximalIdeal_completedGenericIntegers π
-  have hfg := fg_maximalIdeal_genericLocalRing π
-  have hlocal : g.comp (algebraMap (genericLocalRing π) (completedGenericIntegers π)) =
-      h.comp (algebraMap (genericLocalRing π) (completedGenericIntegers π)) := by
-    apply IsLocalization.ringHom_ext (M := (Ideal.span {π}).primeCompl)
-    apply RingHom.ext
-    intro a
-    simpa only [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply] using hgh a
-  apply DFunLike.coe_injective
-  apply IsHausdorff.funext' (maximalIdeal (completedGenericIntegers π))
-  intro n x
-  obtain ⟨y, hy⟩ := _root_.AdicCompletion.exists_sub_algebraMap_mem_map_pow
-    hfg n x
-  have hxy : x - algebraMap (genericLocalRing π) (completedGenericIntegers π) y ∈
-      maximalIdeal (completedGenericIntegers π) ^ n := by
-    simpa only [Ideal.map_pow, ← _root_.AdicCompletion.maximalIdeal_eq_map_of_fg
-      hfg] using hy
-  have hmaps (k : completedGenericIntegers π →+* completedGenericIntegers π) [IsLocalHom k] :
-      k (x - algebraMap (genericLocalRing π) (completedGenericIntegers π) y) ∈
-        maximalIdeal (completedGenericIntegers π) ^ n := by
-    apply Ideal.pow_right_mono (map_maximalIdeal_le k) n
-    rw [← Ideal.map_pow]
-    exact Ideal.mem_map_of_mem k hxy
-  apply Ideal.Quotient.eq.mpr
-  have heq : g (algebraMap (genericLocalRing π) (completedGenericIntegers π) y) =
-      h (algebraMap (genericLocalRing π) (completedGenericIntegers π) y) :=
-    DFunLike.congr_fun hlocal y
-  simpa only [map_sub, heq, sub_sub_sub_cancel_right] using
-    (maximalIdeal (completedGenericIntegers π) ^ n).sub_mem (hmaps g) (hmaps h)
+    (hgh : ∀ a : A, g (algebraMap A _ a) = h (algebraMap A _ a)) : g = h := by
+  have := isAdicComplete_completedGenericIntegers π'
+  have hle (k : completedGenericIntegers π →+* completedGenericIntegers π') [IsLocalHom k] :
+      (maximalIdeal (genericLocalRing π)).map (algebraMap _ (completedGenericIntegers π)) ≤
+        (Ideal.span {algebraMap B (completedGenericIntegers π') π'}).comap k := by
+    rw [← maximalIdeal_completedGenericIntegers, IsLocalRing.maximalIdeal_comap]
+    exact IsLocalRing.map_maximalIdeal_le _
+  refine _root_.AdicCompletion.ringHom_ext (fg_maximalIdeal_genericLocalRing π) (hle g)
+    (hle h) (IsLocalization.ringHom_ext (Ideal.span {π}).primeCompl (RingHom.ext fun a ↦ ?_))
+  simpa only [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply] using hgh a
 
-/-- The integral extension is uniquely determined by its values on the affine ring among
-local ring homomorphisms. -/
-theorem completedGenericIntegersLift_unique
-    (g : completedGenericIntegers π →+* completedGenericIntegers π) [IsLocalHom g]
-    (hg : ∀ a : A, g (algebraMap A (completedGenericIntegers π) a) = f a) :
-    g = completedGenericIntegersLift π f hf :=
-  completedGenericIntegers_ringHom_ext π g _ fun a ↦ by
-    rw [hg, completedGenericIntegersLift_algebraMap]
+/-- **Uniqueness of the extension.** A local homomorphism of completed generic rings extending `f`
+is `completedGenericIntegersMap f hf`. -/
+theorem completedGenericIntegersMap_unique
+    (g : completedGenericIntegers π →+* completedGenericIntegers π') [IsLocalHom g]
+    (hg : ∀ a, g (algebraMap A _ a) = algebraMap B _ (f a)) :
+    g = completedGenericIntegersMap f hf :=
+  completedGenericIntegers_ringHom_ext g _ fun a ↦ by
+    rw [hg, completedGenericIntegersMap_algebraMap]
 
-variable [IsNoetherianRing A] (hπ : π ∈ nonZeroDivisors A) (hzero : f π ≠ 0)
-
-/-- If the parameter remains nonzero, the map extends to the completed generic field. -/
-noncomputable def completedGenericFieldLift :
-    completedGenericField π hπ →+* completedGenericField π hπ := by
-  letI := isRegularLocalRing_completedGenericIntegers π hπ
-  letI := isLocalizationAway_completedGenericField π hπ
-  apply IsLocalization.Away.lift (algebraMap A (completedGenericIntegers π) π)
-    (g := (algebraMap (completedGenericIntegers π) (completedGenericField π hπ)).comp
-      (completedGenericIntegersLift π f hf))
-  apply isUnit_iff_ne_zero.mpr
-  rw [RingHom.comp_apply, completedGenericIntegersLift_algebraMap,
-    ne_eq, IsFractionRing.to_map_eq_zero_iff]
-  exact hzero
-
-/-- The field extension agrees with the map on the integral completion. -/
+/-- The identity of `A` induces the identity of the completed generic ring. -/
 @[simp]
-theorem completedGenericFieldLift_algebraMap (a : completedGenericIntegers π) :
-    completedGenericFieldLift π f hf hπ hzero
-      (algebraMap (completedGenericIntegers π) (completedGenericField π hπ) a) =
-        algebraMap (completedGenericIntegers π) (completedGenericField π hπ)
-          (completedGenericIntegersLift π f hf a) := by
-  simp [completedGenericFieldLift]
+theorem completedGenericIntegersMap_id :
+    completedGenericIntegersMap (RingHom.id A) (Ideal.comap_id _) =
+      RingHom.id (completedGenericIntegers π) :=
+  (completedGenericIntegersMap_unique _ _ _ fun _ ↦ by rw [RingHom.id_apply, RingHom.id_apply]).symm
 
-/-- The field extension agrees with the original affine map. -/
-@[simp]
-theorem completedGenericFieldLift_algebraMap_affine (a : A) :
-    completedGenericFieldLift π f hf hπ hzero (algebraMap A (completedGenericField π hπ) a) =
-      algebraMap (completedGenericIntegers π) (completedGenericField π hπ) (f a) := by
-  rw [IsScalarTower.algebraMap_apply A (completedGenericIntegers π)
-    (completedGenericField π hπ), completedGenericFieldLift_algebraMap,
-    completedGenericIntegersLift_algebraMap]
+/-- The map of completed generic rings induced by a composite is the composite of the induced
+maps. -/
+theorem completedGenericIntegersMap_comp (g : B →+* C)
+    (hg : (Ideal.span {π''}).comap g = Ideal.span {π'}) :
+    completedGenericIntegersMap (g.comp f) (by rw [← Ideal.comap_comap, hg, hf]) =
+      (completedGenericIntegersMap g hg).comp (completedGenericIntegersMap f hf) :=
+  (completedGenericIntegersMap_unique _ _ _ fun a ↦ by simp).symm
 
-/-- The field extension preserves the normalized valuation when the parameter maps to an
-associate of the original uniformizer. -/
-theorem completedGenericFieldLift_valuation
-    (hassoc : Associated (f π) (algebraMap A (completedGenericIntegers π) π))
-    (x : completedGenericField π hπ) :
-    Valued.v (completedGenericFieldLift π f hf hπ hzero x) = Valued.v x := by
+/-- If `f` induces a surjection `A ⧸ (π) → B ⧸ (π')`, then every element of the completed generic
+ring of `B` is congruent modulo its maximal ideal to the image of an element of the completed
+generic ring of `A`. -/
+private theorem exists_sub_completedGenericIntegersMap_mem
+    (hsurj : Function.Surjective (Ideal.quotientMap (Ideal.span {π'}) f hf.ge))
+    (t : completedGenericIntegers π') :
+    ∃ x, t - completedGenericIntegersMap f hf x ∈ maximalIdeal (completedGenericIntegers π') := by
+  -- `t` is congruent to the image of `b / s` with `b, s ∈ B` and `s ∉ (π')`
+  obtain ⟨y, hy⟩ := exists_sub_algebraMap_mem_maximalIdeal_completedGenericIntegers π' t
+  obtain ⟨b, s, rfl⟩ := IsLocalization.exists_mk'_eq (Ideal.span {π'}).primeCompl y
+  have hlift (b : B) : ∃ a, f a - b ∈ Ideal.span {π'} := by
+    obtain ⟨a, ha⟩ := hsurj (Ideal.Quotient.mk _ b)
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
+    exact ⟨a, Ideal.Quotient.eq.mp (by simpa using ha)⟩
+  -- lift `b` and `s` modulo `π'` to `f a` and `f c`
+  obtain ⟨a, ha⟩ := hlift b
+  obtain ⟨c, hc⟩ := hlift s
+  have hc' : c ∈ (Ideal.span {π}).primeCompl := fun h ↦
+    s.property (by simpa using sub_mem (Ideal.mem_comap.mp (hf.ge h)) hc)
+  refine ⟨algebraMap _ _ (IsLocalization.mk' (genericLocalRing π) a ⟨c, hc'⟩), ?_⟩
+  rw [completedGenericIntegersMap_algebraMap_genericLocalRing, ← sub_add_sub_cancel _
+    (algebraMap _ _ (IsLocalization.mk' (genericLocalRing π') b s)), ← map_sub]
+  refine add_mem hy (map_nonunit _ _ ?_)
+  -- the two fractions have the same residue
+  have hy₁ := congrArg (Localization.localRingHom _ _ f hf.symm)
+    (IsLocalization.mk'_spec (genericLocalRing π) a ⟨c, hc'⟩)
+  rw [map_mul, Localization.localRingHom_to_map, Localization.localRingHom_to_map] at hy₁
+  have hy₂ := IsLocalization.mk'_spec (genericLocalRing π') b s
+  rw [← residue_eq_residue_iff]
+  apply mul_right_cancel₀ (residue_algebraMap_ne_zero s)
+  rw [← map_mul, hy₂, ← residue_algebraMap_eq_of_sub_mem hc, ← map_mul, hy₁,
+    residue_algebraMap_eq_of_sub_mem ha]
+
+omit [(Ideal.span {π}).IsPrime] in
+/-- If `f π * u = π'`, then the images in the completed generic ring of `B` satisfy the same
+relation. -/
+private theorem algebraMap_eq_mul_of_mul_eq {u : Bˣ} (hu : f π * u = π') :
+    algebraMap B (completedGenericIntegers π') π' =
+      algebraMap B _ (f π) * algebraMap B _ u := by
+  rw [← map_mul, hu]
+
+/-- **Surjectivity criterion.** If `f π` is associated to `π'` and `f` induces a surjection
+`A ⧸ (π) → B ⧸ (π')`, then the map of completed generic rings is surjective. -/
+theorem completedGenericIntegersMap_surjective (hfπ : Associated (f π) π')
+    (hsurj : Function.Surjective (Ideal.quotientMap (Ideal.span {π'}) f hf.ge)) :
+    Function.Surjective (completedGenericIntegersMap f hf) := by
+  have := isAdicComplete_completedGenericIntegers π
+  have := isAdicComplete_completedGenericIntegers π'
+  obtain ⟨u, hu⟩ := hfπ
+  have hmap : (Ideal.span {algebraMap A (completedGenericIntegers π) π}).map
+      (completedGenericIntegersMap f hf) = Ideal.span {algebraMap B _ π'} := by
+    rw [Ideal.map_span, Set.image_singleton, completedGenericIntegersMap_algebraMap,
+      algebraMap_eq_mul_of_mul_eq f hu, Ideal.span_singleton_mul_right_unit (u.isUnit.map _)]
+  have : IsHausdorff ((Ideal.span {algebraMap A (completedGenericIntegers π) π}).map
+      (completedGenericIntegersMap f hf)) (completedGenericIntegers π') := hmap ▸ inferInstance
+  refine surjective_of_mk_map_comp_surjective
+    (I := Ideal.span {algebraMap A (completedGenericIntegers π) π}) _ fun t ↦ ?_
+  obtain ⟨t, rfl⟩ := Ideal.Quotient.mk_surjective t
+  obtain ⟨x, hx⟩ := exists_sub_completedGenericIntegersMap_mem f hf hsurj t
+  refine ⟨x, ?_⟩
+  rw [RingHom.comp_apply, Ideal.Quotient.eq, hmap, ← maximalIdeal_completedGenericIntegers,
+    ← neg_mem_iff, neg_sub]
+  exact hx
+
+end Integers
+
+section Field
+
+open scoped WithZero
+
+variable [IsNoetherianRing A] [IsNoetherianRing B] (f : A →+* B)
+  (hf : (Ideal.span {π'}).comap f = Ideal.span {π})
+
+/-- The map of completed generic rings is injective as soon as the image of `f π` in the
+completed generic ring of `B` is nonzero. -/
+theorem completedGenericIntegersMap_injective (hπ : π ∈ nonZeroDivisors A)
+    (hπ' : π' ∈ nonZeroDivisors B)
+    (hfπ : algebraMap B (completedGenericIntegers π') (f π) ≠ 0) :
+    Function.Injective (completedGenericIntegersMap f hf) := by
   let := isRegularLocalRing_completedGenericIntegers π hπ
   let := isDiscreteValuationRing_completedGenericIntegers π hπ
-  have hv := completedGenericField_integers π hπ
-  have hunit (u : (completedGenericIntegers π)ˣ) :
-      Valued.v (algebraMap (completedGenericIntegers π) (completedGenericField π hπ)
-        (completedGenericIntegersLift π f hf u)) = 1 :=
-    hv.one_of_isUnit (u.isUnit.map _)
-  have hparam : Valued.v (algebraMap (completedGenericIntegers π)
-      (completedGenericField π hπ) (f π)) =
-        Valued.v (algebraMap A (completedGenericField π hπ) π) := by
-    obtain ⟨u, hu⟩ := hassoc
-    have hvu := hv.valuation_unit u
-    rw [IsScalarTower.algebraMap_apply A (completedGenericIntegers π)
-      (completedGenericField π hπ), ← hu, map_mul, map_mul, hvu, mul_one]
-  by_cases hx : x = 0
-  · simp [hx]
-  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.exists_units_eq_smul_zpow_of_irreducible
-    (irreducible_completedGenericIntegers π hπ) hx
-  simp only [Units.smul_def, Algebra.smul_def, map_mul, map_zpow₀,
-    completedGenericFieldLift_algebraMap, completedGenericIntegersLift_algebraMap,
-    hunit, hv.valuation_unit, one_mul]
-  rw [← IsScalarTower.algebraMap_apply A (completedGenericIntegers π)
-    (completedGenericField π hπ), hparam]
+  let := isRegularLocalRing_completedGenericIntegers π' hπ'
+  refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ by_contra fun hx0 ↦ ?_
+  -- write `x = u * π ^ n` with `u` a unit
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hx0
+    (irreducible_completedGenericIntegers π hπ)
+  rw [map_mul, map_pow, completedGenericIntegersMap_algebraMap] at hx
+  exact mul_ne_zero ((u.map (completedGenericIntegersMap f hf).toMonoidHom).ne_zero)
+    (pow_ne_zero n hfπ) hx
 
-/-- Among field maps preserving the valuation ring, the extension to the completed generic
-field is uniquely determined by its values on the affine lift. -/
-theorem completedGenericFieldLift_unique
-    (g : completedGenericField π hπ →+* completedGenericField π hπ)
-    (hint : ∀ x, Valued.v x ≤ 1 → Valued.v (g x) ≤ 1)
-    (hg : ∀ a : A, g (algebraMap A (completedGenericField π hπ) a) =
-      algebraMap (completedGenericIntegers π) (completedGenericField π hπ) (f a)) :
-    g = completedGenericFieldLift π f hf hπ hzero := by
-  have hv := completedGenericField_integers π hπ
-  let e := completedGenericIntegersEquivInteger π hπ
-  let g' : completedGenericIntegers π →+* completedGenericIntegers π :=
-    e.symm.toRingHom.comp ((g.comp (algebraMap (completedGenericIntegers π)
-      (completedGenericField π hπ))).codRestrict _ fun x ↦ hint _ (hv.map_le_one x))
-  have heq (x : completedGenericIntegers π) :
-      algebraMap (completedGenericIntegers π) (completedGenericField π hπ) (g' x) =
-        g (algebraMap (completedGenericIntegers π) (completedGenericField π hπ) x) := by
-    rw [← completedGenericIntegersEquivInteger_apply π hπ]
-    exact congrArg Subtype.val (e.apply_symm_apply _)
-  have hbase (a : A) : g' (algebraMap A (completedGenericIntegers π) a) = f a := by
-    apply hv.hom_inj
-    rw [heq, ← IsScalarTower.algebraMap_apply A (completedGenericIntegers π)
-      (completedGenericField π hπ), hg]
-  have : IsLocalHom g' := by
-    apply ((local_hom_tfae _).out 4 1).mp
-    apply (maximalIdeal_completedGenericIntegers π).le.trans
-    rw [Ideal.span_singleton_le_iff_mem]
-    apply Ideal.mem_comap.mpr
-    rw [hbase]
-    exact hf.ge (Ideal.subset_span rfl)
-  have hrestrict : g' = completedGenericIntegersLift π f hf :=
-    completedGenericIntegersLift_unique π f hf g' hbase
-  apply IsLocalization.ringHom_ext (M := nonZeroDivisors (completedGenericIntegers π))
-  apply RingHom.ext
-  intro x
-  simp only [RingHom.comp_apply, completedGenericFieldLift_algebraMap, ← heq, hrestrict]
+omit [(Ideal.span {π}).IsPrime] [IsNoetherianRing A] in
+/-- If `f π` is associated to `π'`, its image in the completed generic ring of `B` is nonzero. -/
+theorem algebraMap_completedGenericIntegers_ne_zero_of_associated (hπ' : π' ∈ nonZeroDivisors B)
+    (hfπ : Associated (f π) π') :
+    algebraMap B (completedGenericIntegers π') (f π) ≠ 0 := by
+  let := isRegularLocalRing_completedGenericIntegers π' hπ'
+  exact (Associated.ne_zero_iff (hfπ.map (algebraMap B _))).mpr
+    (irreducible_completedGenericIntegers π' hπ').ne_zero
+
+/-- **Bijectivity criterion.** If `f π` is associated to `π'` and `f` induces a surjection
+`A ⧸ (π) → B ⧸ (π')`, then the map of completed generic rings is bijective. -/
+theorem completedGenericIntegersMap_bijective (hπ : π ∈ nonZeroDivisors A)
+    (hπ' : π' ∈ nonZeroDivisors B) (hfπ : Associated (f π) π')
+    (hsurj : Function.Surjective (Ideal.quotientMap (Ideal.span {π'}) f hf.ge)) :
+    Function.Bijective (completedGenericIntegersMap f hf) :=
+  ⟨completedGenericIntegersMap_injective f hf hπ hπ'
+      (algebraMap_completedGenericIntegers_ne_zero_of_associated f hπ' hfπ),
+    completedGenericIntegersMap_surjective f hf hfπ hsurj⟩
+
+variable (hπ : π ∈ nonZeroDivisors A) (hπ' : π' ∈ nonZeroDivisors B)
+
+/-- An injective map of completed generic rings induces a homomorphism of completed generic
+fields. -/
+noncomputable def completedGenericFieldMap
+    (hinj : Function.Injective (completedGenericIntegersMap f hf)) :
+    completedGenericField π hπ →+* completedGenericField π' hπ' :=
+  let := isRegularLocalRing_completedGenericIntegers π' hπ'
+  IsFractionRing.map hinj
+
+variable (hinj : Function.Injective (completedGenericIntegersMap f hf))
+
+/-- The map of completed generic fields extends the map of completed generic rings. -/
+@[simp]
+theorem completedGenericFieldMap_algebraMap_completedGenericIntegers
+    (x : completedGenericIntegers π) :
+    completedGenericFieldMap f hf hπ hπ' hinj (algebraMap _ _ x) =
+      algebraMap _ _ (completedGenericIntegersMap f hf x) := by
+  let := isRegularLocalRing_completedGenericIntegers π' hπ'
+  exact IsLocalization.map_eq (S := completedGenericField π hπ) (Q := completedGenericField π' hπ')
+    (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _ hinj) x
+
+/-- The map of completed generic fields extends `f`. -/
+@[simp]
+theorem completedGenericFieldMap_algebraMap (a : A) :
+    completedGenericFieldMap f hf hπ hπ' hinj (algebraMap A _ a) = algebraMap B _ (f a) := by
+  rw [IsScalarTower.algebraMap_apply A (completedGenericIntegers π),
+    completedGenericFieldMap_algebraMap_completedGenericIntegers,
+    completedGenericIntegersMap_algebraMap, ← IsScalarTower.algebraMap_apply]
+
+/-- **Uniqueness of the extension.** A homomorphism of completed generic fields extending the map
+of completed generic rings is `completedGenericFieldMap f hf hπ hπ' hinj`. -/
+theorem completedGenericFieldMap_unique
+    (g : completedGenericField π hπ →+* completedGenericField π' hπ')
+    (hg : ∀ x, g (algebraMap (completedGenericIntegers π) _ x) =
+      algebraMap _ _ (completedGenericIntegersMap f hf x)) :
+    g = completedGenericFieldMap f hf hπ hπ' hinj :=
+  IsLocalization.ringHom_ext (nonZeroDivisors (completedGenericIntegers π)) (RingHom.ext fun x ↦ by
+    rw [RingHom.comp_apply, RingHom.comp_apply, hg,
+      completedGenericFieldMap_algebraMap_completedGenericIntegers])
+
+/-- The identity of `A` induces the identity of the completed generic field. -/
+@[simp]
+theorem completedGenericFieldMap_id
+    (hinj : Function.Injective (completedGenericIntegersMap (RingHom.id A) (Ideal.comap_id _))) :
+    completedGenericFieldMap (RingHom.id A) (Ideal.comap_id _) hπ hπ hinj =
+      RingHom.id (completedGenericField π hπ) :=
+  (completedGenericFieldMap_unique _ _ _ _ _ _ fun x ↦ by
+    rw [completedGenericIntegersMap_id, RingHom.id_apply, RingHom.id_apply]).symm
+
+/-- The map of completed generic fields induced by a composite is the composite of the induced
+maps. -/
+theorem completedGenericFieldMap_comp [IsNoetherianRing C] (hπ'' : π'' ∈ nonZeroDivisors C)
+    (g : B →+* C) (hg : (Ideal.span {π''}).comap g = Ideal.span {π'})
+    (hginj : Function.Injective (completedGenericIntegersMap g hg))
+    (hgfinj : Function.Injective
+      (completedGenericIntegersMap (g.comp f) (by rw [← Ideal.comap_comap, hg, hf]))) :
+    completedGenericFieldMap (g.comp f) _ hπ hπ'' hgfinj =
+      (completedGenericFieldMap g hg hπ' hπ'' hginj).comp
+        (completedGenericFieldMap f hf hπ hπ' hinj) :=
+  (completedGenericFieldMap_unique _ _ _ _ _ _ fun x ↦ by
+    rw [RingHom.comp_apply, completedGenericFieldMap_algebraMap_completedGenericIntegers,
+      completedGenericFieldMap_algebraMap_completedGenericIntegers,
+      completedGenericIntegersMap_comp f hf g hg, RingHom.comp_apply]).symm
+
+/-- A field map that extends an integral map sending the parameter to an associate of the
+target parameter preserves the normalized valuations. -/
+theorem valuation_completedGenericField_hom
+    (g : completedGenericField π hπ →+* completedGenericField π' hπ')
+    (k : completedGenericIntegers π →+* completedGenericIntegers π')
+    (hg : ∀ x, g (algebraMap _ _ x) = algebraMap _ _ (k x))
+    (hk : Associated (k (algebraMap A (completedGenericIntegers π) π))
+      (algebraMap B (completedGenericIntegers π') π'))
+    (x : completedGenericField π hπ) : Valued.v (g x) = Valued.v x := by
+  let := isRegularLocalRing_completedGenericIntegers π hπ
+  let := isDiscreteValuationRing_completedGenericIntegers π hπ
+  let i := algebraMap (completedGenericIntegers π) (completedGenericField π hπ)
+  let i' := algebraMap (completedGenericIntegers π') (completedGenericField π' hπ')
+  have hparam : Valued.v (i' (k (algebraMap A (completedGenericIntegers π) π))) =
+      Valued.v (i (algebraMap A (completedGenericIntegers π) π)) := by
+    obtain ⟨u, hu⟩ := hk
+    have h := valuation_completedGenericField_algebraMap π' hπ'
+    rw [IsScalarTower.algebraMap_apply B (completedGenericIntegers π')] at h
+    change Valued.v (i' (algebraMap B (completedGenericIntegers π') π')) = _ at h
+    rw [← hu, map_mul, map_mul, (completedGenericField_integers π' hπ').valuation_unit,
+      mul_one] at h
+    rw [h]
+    change _ = Valued.v (algebraMap (completedGenericIntegers π) _ (algebraMap A _ π))
+    rw [← IsScalarTower.algebraMap_apply, valuation_completedGenericField_algebraMap]
+  have hval (a : completedGenericIntegers π) : Valued.v (g (i a)) = Valued.v (i a) := by
+    rcases eq_or_ne a 0 with rfl | ha
+    · simp
+    obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ha
+      (irreducible_completedGenericIntegers π hπ)
+    have hga (y : completedGenericIntegers π) : g (i y) = i' (k y) := hg y
+    rw [hga]
+    simp only [i, i'] at hparam
+    simp only [i, i', map_mul, map_pow, (completedGenericField_integers π hπ).valuation_unit,
+      (completedGenericField_integers π' hπ').one_of_isUnit (u.isUnit.map k), one_mul, hparam]
+  obtain ⟨a, b, -, rfl⟩ := IsFractionRing.div_surjective (A := completedGenericIntegers π) x
+  rw [map_div₀, map_div₀, map_div₀, hval, hval]
+
+/-- If `f π` is associated to `π'`, the map of completed generic fields preserves the normalized
+valuations, so it is an isometric embedding for these valuations. -/
+theorem valuation_completedGenericFieldMap (hfπ : Associated (f π) π')
+    (x : completedGenericField π hπ) :
+    Valued.v (completedGenericFieldMap f hf hπ hπ' hinj x) = Valued.v x := by
+  refine valuation_completedGenericField_hom hπ hπ' _ _
+    (completedGenericFieldMap_algebraMap_completedGenericIntegers f hf hπ hπ' hinj) ?_ x
+  rw [completedGenericIntegersMap_algebraMap]
+  exact hfπ.map (algebraMap B (completedGenericIntegers π'))
+
+end Field
+
+section Frobenius
+
+variable {q : ℕ} (φ : A →+* A) (hφ : ∀ a, φ a - a ^ q ∈ Ideal.span {π})
+
+variable (hf : (Ideal.span {π}).comap φ = Ideal.span {π})
+
+include hφ in
+/-- The extension of `φ` to the generic local ring is congruent to `x ↦ x ^ q` modulo the maximal
+ideal. -/
+private theorem localRingHom_sub_pow_mem (x : genericLocalRing π) :
+    Localization.localRingHom _ _ φ hf.symm x - x ^ q ∈ maximalIdeal (genericLocalRing π) := by
+  obtain ⟨a, s, rfl⟩ := IsLocalization.exists_mk'_eq (Ideal.span {π}).primeCompl x
+  have hy := IsLocalization.mk'_spec (genericLocalRing π) a s
+  have hφy := congrArg (Localization.localRingHom _ _ φ hf.symm) hy
+  rw [map_mul, Localization.localRingHom_to_map, Localization.localRingHom_to_map] at hφy
+  -- in the residue field, `φ` acts on `a` and on `s` as the `q`-th power
+  have hres (b : A) : residue (genericLocalRing π) (algebraMap A _ (φ b)) =
+      residue (genericLocalRing π) (algebraMap A _ b) ^ q := by
+    rw [residue_algebraMap_eq_of_sub_mem (hφ b), map_pow, map_pow]
+  rw [← residue_eq_residue_iff]
+  apply mul_right_cancel₀ (pow_ne_zero q (residue_algebraMap_ne_zero s))
+  rw [← hres s, ← map_mul, hφy, hres a, hres s, ← hy, map_mul, mul_pow, map_pow]
+
+include hφ in
+/-- **The extension of a Frobenius lift is a Frobenius lift.** If `φ` is congruent modulo `π` to
+`a ↦ a ^ q`, then its extension to the completed generic ring is congruent modulo `π` to
+`x ↦ x ^ q`. -/
+theorem completedGenericIntegersMap_sub_pow_mem (x : completedGenericIntegers π) :
+    completedGenericIntegersMap φ hf x - x ^ q ∈
+      Ideal.span {algebraMap A (completedGenericIntegers π) π} := by
+  rw [← maximalIdeal_completedGenericIntegers, ← residue_eq_residue_iff]
+  -- reduce to the image of an element of the generic local ring, which has the same residue
+  obtain ⟨y, hy⟩ := exists_sub_algebraMap_mem_maximalIdeal_completedGenericIntegers π x
+  rw [← residue_eq_residue_iff] at hy
+  have hg : residue _ (completedGenericIntegersMap φ hf x) =
+      residue _ (completedGenericIntegersMap φ hf (algebraMap _ _ y)) := by
+    simpa using congrArg (ResidueField.map (completedGenericIntegersMap φ hf)) hy
+  rw [hg, map_pow, hy, completedGenericIntegersMap_algebraMap_genericLocalRing, ← map_pow,
+    ← map_pow, residue_eq_residue_iff, ← map_sub]
+  exact map_nonunit _ _ (localRingHom_sub_pow_mem φ hφ hf y)
+
+include hφ in
+/-- The extension of a `q`-Frobenius lift induces the `q`-power map on the residue field of the
+completed generic ring. -/
+theorem residue_completedGenericIntegersMap (x : completedGenericIntegers π) :
+    residue _ (completedGenericIntegersMap φ hf x) = residue _ x ^ q := by
+  rw [← map_pow, residue_eq_residue_iff, maximalIdeal_completedGenericIntegers]
+  exact completedGenericIntegersMap_sub_pow_mem φ hφ hf x
+
+end Frobenius
 
 end TauCeti.AdicCompletion

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Topology.Algebra.Group.Quotient.Prod
 public import TauCeti.Topology.Algebra.Module.Submodule
+import TauCeti.Topology.Algebra.Group.Quotient.Basic
 import TauCeti.Topology.Algebra.Module.CompactQuotient
 
 /-!
@@ -72,19 +73,13 @@ theorem span_toAddSubgroup'_comap_inl_eq_top [CompactSpace ((Multiplicative V ×
   set Λ := (Γ.comap (MonoidHom.inl (Multiplicative V) K)).toAddSubgroup'
   -- The image `P` of `Γ` in `V` has compact quotient, so it spans `V`.
   set P := (Γ.map (MonoidHom.fst (Multiplicative V) K)).toAddSubgroup'
-  have hrel : ∀ a b : Multiplicative V × K, QuotientGroup.leftRel Γ a b →
-      QuotientAddGroup.leftRel P a.1.toAdd b.1.toAdd := fun a b h ↦ by
-    rw [QuotientGroup.leftRel_apply] at h
-    rw [QuotientAddGroup.leftRel_apply, mem_toAddSubgroup']
-    exact ⟨_, h, by simp⟩
-  have hcont : Continuous (Quotient.map' (fun g : Multiplicative V × K ↦ g.1.toAdd) hrel :
-      (Multiplicative V × K) ⧸ Γ → V ⧸ P) :=
-    (continuous_toAdd.comp continuous_fst).quotient_map' hrel
-  have hsurj : Function.Surjective (Quotient.map' (fun g : Multiplicative V × K ↦ g.1.toAdd) hrel :
-      (Multiplicative V × K) ⧸ Γ → V ⧸ P) := by
-    rintro ⟨v⟩
-    exact ⟨Quotient.mk'' (Multiplicative.ofAdd v, 1), rfl⟩
-  have : CompactSpace (V ⧸ P) := hsurj.compactSpace hcont
+  have : CompactSpace (Multiplicative V ⧸ Γ.map (MonoidHom.fst (Multiplicative V) K)) :=
+    Γ.compactSpace_quotient_map continuous_fst Prod.fst_surjective
+  -- `V ⧸ P` is `Multiplicative V ⧸ Γ.map fst` by definition: `Multiplicative V` carries the
+  -- topology of `V`, and `toAddSubgroup'` keeps the carrier, so both quotients are taken by the
+  -- same relation on the same space.
+  have : CompactSpace (V ⧸ P) :=
+    inferInstanceAs (CompactSpace (Multiplicative V ⧸ Γ.map (MonoidHom.fst (Multiplicative V) K)))
   have hP := AddSubgroup.span_eq_top_of_compactSpace_quotient (𝕜 := ℝ) P
   -- If the image of `Γ` in `K` has `m` elements, then `m • P ⊆ Λ`.
   set m := Nat.card (Γ.map (MonoidHom.snd (Multiplicative V) K))

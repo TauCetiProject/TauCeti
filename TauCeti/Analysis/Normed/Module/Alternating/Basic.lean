@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 
 /-!
-# The derivative of the pullback of an alternating map along a composite
+# Bounded scalar actions and derivatives of pullbacks of alternating maps
+
+A bounded scalar action on the coefficients induces a bounded scalar action on continuous
+alternating maps, by the corresponding operator-norm estimate for multilinear maps.
 
 For `f : F' [⋀^ι]→L[𝕜] G` and `A : F →L[𝕜] F'`, Mathlib's
 `ContinuousAlternatingMap.fderivCompContinuousLinearMap f A` is the derivative of
@@ -27,6 +30,13 @@ appears when a pullback along a flow is differentiated in time.
 public section
 
 namespace ContinuousAlternatingMap
+
+/-- A bounded scalar action on the coefficients induces one on continuous alternating maps. -/
+instance instIsBoundedSMul {𝕜 R E F ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
+    [SeminormedRing R] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [Module R F] [IsBoundedSMul R F]
+    [SMulCommClass 𝕜 R F] : IsBoundedSMul R (E [⋀^ι]→L[𝕜] F) :=
+  .of_norm_smul_le fun c f ↦ f.toContinuousMultilinearMap.opNorm_smul_le c
 
 variable {𝕜 E F F' G ι : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
   [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup F']

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lift
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Word
 
@@ -17,8 +18,12 @@ commutative ring, the quotient of `weylSubgroup` by its actual character-lattice
 canonically isomorphic to the Weyl group of the pinned root datum. The equivalence sends the class
 of every Steinberg Weyl representative `n_γ(s)` to the reflection `s_γ`, and evaluates the
 word-times-torus normal form of any Weyl-subgroup element as the corresponding Weyl-group word
-product. Over a field, the kernel of the native Weyl projection is exactly that torus, and the
-quotient equivalence agrees with the descended Weyl projection.
+product. Its inverse is the Coxeter lift `ChevalleyDatum.weylQuotientLift`
+(`ChevalleyDatum.weylSubgroupQuotientMulEquiv_symm_apply`), which is therefore injective, and the
+equivalence is compatible with scalar extension
+(`ChevalleyDatum.weylSubgroupQuotientMulEquiv_mk_weylSubgroupMap`). Over a field, the kernel of
+the native Weyl projection is exactly that torus, and the quotient equivalence agrees with the
+descended Weyl projection.
 
 The argument reduces to a residue field to construct the homomorphism on `weylSubgroup`, proves
 surjectivity on words in the pinned simple Weyl representatives, and identifies the kernel with the
@@ -80,7 +85,7 @@ private theorem residueHom_weylElement [Nontrivial A] (γ : Fin t.numRoots) (s :
 private theorem residueHom_surjective [Nontrivial A] :
     Function.Surjective (D.residueHom A) := by
   intro w
-  obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
+  obtain ⟨l, rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w
   exact ⟨(l.map (D.simpleWeylLift A)).prod,
     D.map_list_prod_simpleWeylLift A (D.residueHom A) (D.residueHom_simpleWeylLift A) l⟩
 
@@ -95,11 +100,11 @@ private theorem ker_residueHom [Nontrivial A] : (D.residueHom A).ker = H := by
         ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ := by
       apply Subtype.ext
       simpa only [Subgroup.coe_mul, D.coe_list_prod_simpleWeylLift] using hls.symm
-    have hl : t.geckWeylWordProd ht l = 1 := by
+    have hl : t.simplyConnectedWeylWordProd ht l = 1 := by
       simpa only [hg_eq, map_mul,
         D.map_list_prod_simpleWeylLift A (D.residueHom A) (D.residueHom_simpleWeylLift A),
         D.residueHom_torusPoints, mul_one] using hg
-    obtain ⟨r, hr⟩ := D.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one A l hl
+    obtain ⟨r, hr⟩ := D.weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one A l hl
     refine ⟨r * s, ?_⟩
     rw [← hls, ← hr, (D.torusPoints A).map_mul]
   · rintro ⟨s, hs⟩
@@ -141,7 +146,7 @@ theorem weylSubgroupQuotientMulEquiv_mk_list_prod_simpleWeylLift_mul_torusPoints
     D.weylSubgroupQuotientMulEquiv A
         (QuotientGroup.mk ((l.map (D.simpleWeylLift A)).prod *
           ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩)) =
-      t.geckWeylWordProd ht l := by
+      t.simplyConnectedWeylWordProd ht l := by
   rw [D.weylSubgroupQuotientMulEquiv_mk_apply A, map_mul,
     D.map_list_prod_simpleWeylLift A (D.residueHom A) (D.residueHom_simpleWeylLift A) l,
     D.residueHom_torusPoints A s, mul_one]
@@ -155,6 +160,48 @@ theorem weylSubgroupQuotientMulEquiv_symm_ofIdx [Nontrivial A] (γ : Fin t.numRo
       QuotientGroup.mk ⟨D.weylElement γ A 1, D.weylElement_mem_weylSubgroup γ A 1⟩ := by
   rw [MulEquiv.symm_apply_eq, D.weylSubgroupQuotientMulEquiv_mk_weylElement]
 
+/-- The Weyl quotient equivalence is a left inverse of the Coxeter lift `weylQuotientLift`. -/
+@[simp]
+theorem weylSubgroupQuotientMulEquiv_weylQuotientLift [Nontrivial A]
+    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    D.weylSubgroupQuotientMulEquiv A (D.weylQuotientLift A w) = w := by
+  obtain ⟨l, rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w
+  rw [D.weylQuotientLift_simplyConnectedWeylWordProd, ← D.list_prod_map_simpleWeylLift,
+    D.weylSubgroupQuotientMulEquiv_mk_apply A,
+    D.map_list_prod_simpleWeylLift A (D.residueHom A) (D.residueHom_simpleWeylLift A) l]
+
+/-- Over a nontrivial commutative ring, the inverse of the Weyl quotient equivalence is the
+Coxeter lift `weylQuotientLift`. -/
+theorem weylSubgroupQuotientMulEquiv_symm_apply [Nontrivial A]
+    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    (D.weylSubgroupQuotientMulEquiv A).symm w = D.weylQuotientLift A w := by
+  rw [MulEquiv.symm_apply_eq, D.weylSubgroupQuotientMulEquiv_weylQuotientLift]
+
+/-- Over any nontrivial commutative ring `A`, the Coxeter lift `weylQuotientLift` is injective. -/
+theorem weylQuotientLift_injective [Nontrivial A] : Function.Injective (D.weylQuotientLift A) :=
+  Function.LeftInverse.injective (D.weylSubgroupQuotientMulEquiv_weylQuotientLift A)
+
+/-- Scalar extension along a ring homomorphism between nontrivial commutative rings commutes with
+`weylSubgroupQuotientMulEquiv`. -/
+@[simp]
+theorem weylSubgroupQuotientMulEquiv_mk_weylSubgroupMap [Nontrivial A] {B : Type*} [CommRing B]
+    [Nontrivial B] (f : A →+* B) (g : N) :
+    D.weylSubgroupQuotientMulEquiv B (QuotientGroup.mk (D.weylSubgroupMap A f g)) =
+      D.weylSubgroupQuotientMulEquiv A (QuotientGroup.mk g) := by
+  refine DFunLike.congr_fun
+    (MonoidHom.eq_of_eqOn_dense (D.closure_weylSubgroup_generators A) ?_ :
+    (((D.weylSubgroupQuotientMulEquiv B).toMonoidHom.comp
+      (QuotientGroup.mk' (((D.torusPoints B).range).subgroupOf (D.weylSubgroup B)))).comp
+        (D.weylSubgroupMap A f)) =
+      (D.weylSubgroupQuotientMulEquiv A).toMonoidHom.comp (QuotientGroup.mk' H)) g
+  rintro ⟨x, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+  · simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply,
+      D.weylSubgroupMap_torusPoints, D.mk_torusPoints_eq_one, map_one]
+  · simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, QuotientGroup.mk'_apply]
+    rw [D.mk_weylElement_eq_simpleWeylLift, D.weylSubgroupMap_simpleWeylLift,
+      weylSubgroupQuotientMulEquiv_mk_simpleWeylLift,
+      weylSubgroupQuotientMulEquiv_mk_simpleWeylLift]
+
 end
 
 noncomputable section
@@ -164,13 +211,6 @@ variable (K : Type*) [Field K]
 
 local notation "Nₖ" => D.weylSubgroup K
 local notation "Hₖ" => Subgroup.subgroupOf (MonoidHom.range (D.torusPoints K)) Nₖ
-
-private theorem closure_weylSubgroup_generators :
-    Subgroup.closure ((D.weylSubgroup K).subtype ⁻¹'
-      (Set.range (D.torusPoints K) ∪
-        Set.range (fun i => D.weylElement (t.simpleIndex ht i) K 1))) = ⊤ := by
-  rw [D.weylSubgroup_def]
-  exact Subgroup.closure_preimage_eq_top _
 
 private theorem residueHom_eq_weylProjection : D.residueHom K = D.weylProjection K := by
   apply MonoidHom.eq_of_eqOn_dense (D.closure_weylSubgroup_generators K)
@@ -206,6 +246,20 @@ theorem weylSubgroupQuotientMulEquiv_symm_weylProjection (g : Nₖ) :
     (D.weylSubgroupQuotientMulEquiv K).symm (D.weylProjection K g) =
       QuotientGroup.mk g := by
   rw [MulEquiv.symm_apply_eq, D.weylSubgroupQuotientMulEquiv_mk]
+
+/-- On a product of a Weyl word and an actual torus point, `D.weylProjection K` evaluates to the
+Weyl-group element spelled by the word. -/
+theorem weylProjection_list_prod_mul_torusPoints (l : List (Fin t.rank))
+    (s : Fin t.rank → Kˣ) :
+    D.weylProjection K
+      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod * D.torusPoints K s,
+        mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup K l)
+          (D.torusPoints_mem_weylSubgroup K s)⟩ =
+      t.simplyConnectedWeylWordProd ht l := by
+  rw [← D.weylSubgroupQuotientMulEquiv_mk,
+    ← D.weylSubgroupQuotientMulEquiv_mk_list_prod_simpleWeylLift_mul_torusPoints K l s,
+    D.list_prod_map_simpleWeylLift K l]
+  rfl
 
 end
 

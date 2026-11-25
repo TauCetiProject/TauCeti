@@ -60,7 +60,8 @@ then raises its regularity one step at a time up to `H^(k+1)`.
 * `gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq`,
   `integral_inner_exp_mul_smul_gaugeFixedAdjoint_eq`: for `w = exp(c ρ)` the commutator is the
   multiplication of `w y` by the smooth matrix `expWeightCoeff c`, whose entries have bounded
-  derivatives of every order (`exists_norm_iteratedFDeriv_expWeightCoeff_le`).
+  derivatives of every order (`exists_norm_iteratedFDeriv_expWeightCoeff_le`), with one bound
+  for all entries (`exists_forall_norm_iteratedFDeriv_expWeightCoeff_le`).
 * `integral_inner_fun_smul_gaugeFixedOperator_eq`,
   `gaugeFixedAdjointSymbol_fderiv_exp_mul_sqrt_add_norm_sq`,
   `integral_inner_exp_mul_smul_gaugeFixedOperator_eq`: the same for weak solutions of
@@ -197,6 +198,14 @@ theorem exists_norm_iteratedFDeriv_expWeightCoeff_le (c : ℝ) (i j : Fin 4) (k 
     exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half
       (c • symbolDirection i j) le_rfl n
   ⟨M, (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hM).1, hM⟩
+
+/-- The coefficients of the commutator with the weight `exp(c ρ)` have derivatives through order
+`k` bounded by one constant, uniformly in the entry. -/
+theorem exists_forall_norm_iteratedFDeriv_expWeightCoeff_le (c : ℝ) (k : ℕ) :
+    ∃ M ≥ 0, ∀ i j, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (expWeightCoeff c i j) z‖ ≤ M := by
+  choose M hM hMb using fun i j ↦ exists_norm_iteratedFDeriv_expWeightCoeff_le c i j k
+  obtain ⟨N, hN⟩ := Finite.exists_le fun p : Fin 4 × Fin 4 ↦ M p.1 p.2
+  exact ⟨N, (hM 0 0).trans (hN (0, 0)), fun i j n hn z ↦ (hMb i j n hn z).trans (hN (i, j))⟩
 
 /-- The commutator of `L_x` with the weight `w = exp(c ρ)`: `σ(dw) v` is the multiplication of
 `w v` by the matrix `expWeightCoeff c`. -/
