@@ -44,6 +44,14 @@ the exponential it acts as `λ ↦ n λ`.
 * `ContinuousMonoidHom.lieMap_ofLieLinearMap`: the Lie map of `ofLieLinearMap φ hφ` is `φ`.
 * `ContinuousMonoidHom.lieMap_id_pow`, `ContinuousMonoidHom.lieMapKer_id_pow`: the `n`-th power
   map `ContinuousMonoidHom.id G ^ n` differentiates to multiplication by `n`, on `𝔤` and on `Λ`.
+
+## References
+
+* T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
+  Chapter I, § 3 (The Exponential Map).
+* *Complex theory of abelian varieties*, Stanford VIGRE seminar notes (2004), Theorem 1.8 and
+  § 1.2, pp. 2–4, for homomorphisms of complex tori as linear maps carrying lattice into lattice,
+  <https://math.stanford.edu/~conrad/vigregroup/vigre04/abvaran.pdf>.
 -/
 
 public section
