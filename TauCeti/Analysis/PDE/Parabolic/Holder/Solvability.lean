@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.CauchyProblem
+import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 
 /-!
 # The initial-data and terminal-data isomorphisms of parabolic problems
@@ -234,11 +235,6 @@ theorem exists_norm_euclideanInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
   set e := euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩
   set e' := euclideanInitialDataCLE hα₀ hα₁ hT a' b' c' ⟨lam, hlam, ha'⟩
   set δ := ∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖
-  -- The resolvent identity `e⁻¹ - e'⁻¹ = e⁻¹ (e' - e) e'⁻¹`.
-  have hres : e.symm.toContinuousLinearMap - e'.symm.toContinuousLinearMap =
-      e.symm.toContinuousLinearMap ∘L (e'.toContinuousLinearMap - e.toContinuousLinearMap) ∘L
-        e'.symm.toContinuousLinearMap :=
-    ContinuousLinearMap.ext fun d ↦ by simp
   -- The two operators differ only in their forcing component.
   have hdiff : ‖e'.toContinuousLinearMap - e.toContinuousLinearMap‖ ≤ 24 * δ := by
     refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
@@ -256,13 +252,10 @@ theorem exists_norm_euclideanInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
       _ ≤ 24 * δ * ‖u‖ := hP.trans (mul_le_mul_of_nonneg_right (hL.trans hδ) (norm_nonneg u))
   have h₁ := hest T hT hTT₀ a b c ha hak hbk hck
   have h₂ := hest T hT hTT₀ a' b' c' ha' hak' hbk' hck'
-  rw [hres]
-  calc _ ≤ ‖e.symm.toContinuousLinearMap‖ *
-        (‖e'.toContinuousLinearMap - e.toContinuousLinearMap‖ *
-          ‖e'.symm.toContinuousLinearMap‖) :=
-        (ContinuousLinearMap.opNorm_comp_le _ _).trans
-          (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
-    _ ≤ C * (24 * δ * C) := by gcongr
+  -- The resolvent bound and the goal differ in instance arguments on the spaces of operators,
+  -- which `trans` fails to unify, as in `exists_norm_euclideanTerminalDataCLE_symm_sub_le`.
+  convert (e.norm_coe_symm_sub_coe_symm_le e').trans ?_ using 1
+  calc _ ≤ C * (24 * δ) * C := by gcongr
     _ = 24 * C ^ 2 * δ := by ring
 
 /-! ### The terminal-value problem -/

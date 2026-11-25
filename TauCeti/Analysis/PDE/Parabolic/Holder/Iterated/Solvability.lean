@@ -1060,6 +1060,17 @@ private theorem coeffPerturbation_le {k : ℕ} {T : ℝ≥0} {hT : (0 : ℝ) < T
         mul_le_mul_of_nonneg_left (add_le_add (add_le_add hA hB) hC) (by positivity)
     _ = _ := by simp only [N]; ring
 
+/-- Inverses bounded by `C` of two equivalences at distance at most `D` are at distance at most
+`C D C`, by the resolvent bound `ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le`. -/
+private theorem norm_symm_sub_symm_le_of_le {X Y : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] {e e' : X ≃L[ℝ] Y} {C D : ℝ}
+    (he : ‖e.symm.toContinuousLinearMap‖ ≤ C) (he' : ‖e'.symm.toContinuousLinearMap‖ ≤ C)
+    (hD : ‖e'.toContinuousLinearMap - e.toContinuousLinearMap‖ ≤ D) :
+    ‖e.symm.toContinuousLinearMap - e'.symm.toContinuousLinearMap‖ ≤ C * D * C :=
+  (e.norm_coe_symm_sub_coe_symm_le e').trans <| mul_le_mul
+    (mul_le_mul he hD (norm_nonneg _) ((norm_nonneg _).trans he)) he' (norm_nonneg _)
+    (mul_nonneg ((norm_nonneg _).trans he) ((norm_nonneg _).trans hD))
+
 /-- **The Cauchy problem at every order: Lipschitz dependence on the coefficients.** Under the
 bounds of `exists_norm_euclideanInitialDataCLE_symm_le`, the solution operators of two Cauchy
 problems on `ℝⁿ × [0, T]`, `T ≤ T₀`, differ in operator norm by at most
@@ -1086,18 +1097,14 @@ theorem exists_norm_euclideanInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
   set M : ℝ := 1344 * (k + 1) ^ 4 * (k + 2) ^ 2 * 2 ^ k
   refine ⟨C * M * C, by positivity,
     fun T hT hTT₀ a a' b b' c c' ha ha' hak hbk hck hak' hbk' hck' ↦ ?_⟩
-  set e := euclideanInitialDataCLE hα₀ hα₁ a b c ⟨lam, hlam, ha⟩
-  set e' := euclideanInitialDataCLE hα₀ hα₁ a' b' c' ⟨lam, hlam, ha'⟩
   -- The two isomorphisms differ only in their forcing component.
-  have hdiff : ‖e'.toContinuousLinearMap - e.toContinuousLinearMap‖ ≤
+  have hdiff : ‖(euclideanInitialDataCLE hα₀ hα₁ a' b' c' ⟨lam, hlam, ha'⟩).toContinuousLinearMap -
+      (euclideanInitialDataCLE hα₀ hα₁ a b c ⟨lam, hlam, ha⟩).toContinuousLinearMap‖ ≤
       M * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
     rw [norm_sub_rev, coe_euclideanInitialDataCLE, coe_euclideanInitialDataCLE]
     exact (norm_initialDataL_sub_le hα₁.le).trans (coeffPerturbation_le a a' b b' c c')
-  refine (e.norm_coe_symm_sub_coe_symm_le e').trans ?_
-  calc _ ≤ C * (M * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖)) * C :=
-        mul_le_mul (mul_le_mul (hest T hT hTT₀ a b c ha hak hbk hck) hdiff (norm_nonneg _) hC)
-          (hest T hT hTT₀ a' b' c' ha' hak' hbk' hck') (norm_nonneg _) (by positivity)
-    _ = _ := by ring
+  exact (norm_symm_sub_symm_le_of_le (hest T hT hTT₀ a b c ha hak hbk hck)
+    (hest T hT hTT₀ a' b' c' ha' hak' hbk' hck') hdiff).trans_eq (by ring)
 
 /-- **The terminal-value problem at every order: Lipschitz dependence on the coefficients.** Under
 the bounds of `exists_norm_euclideanTerminalDataCLE_symm_le`, the solution operators of two
@@ -1126,19 +1133,15 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
   set M : ℝ := 1344 * (k + 1) ^ 4 * (k + 2) ^ 2 * 2 ^ k
   refine ⟨C * M * C, by positivity,
     fun T hT hTT₀ a a' b b' c c' ha ha' hak hbk hck hak' hbk' hck' ↦ ?_⟩
-  set e := euclideanTerminalDataCLE hα₀ hα₁ a b c ⟨lam, hlam, ha⟩
-  set e' := euclideanTerminalDataCLE hα₀ hα₁ a' b' c' ⟨lam, hlam, ha'⟩
   -- The two isomorphisms differ only in their forcing component.
-  have hdiff : ‖e'.toContinuousLinearMap - e.toContinuousLinearMap‖ ≤
+  have hdiff : ‖(euclideanTerminalDataCLE hα₀ hα₁ a' b' c' ⟨lam, hlam, ha'⟩).toContinuousLinearMap -
+      (euclideanTerminalDataCLE hα₀ hα₁ a b c ⟨lam, hlam, ha⟩).toContinuousLinearMap‖ ≤
       M * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
     rw [norm_sub_rev, coe_euclideanTerminalDataCLE, coe_euclideanTerminalDataCLE]
     exact (norm_terminalDataL_sub_le hα₁.le _ _ _ _ _ _).trans
       (coeffPerturbation_le a a' b b' c c')
-  refine (e.norm_coe_symm_sub_coe_symm_le e').trans ?_
-  calc _ ≤ C * (M * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖)) * C :=
-        mul_le_mul (mul_le_mul (hest T hT hTT₀ a b c ha hak hbk hck) hdiff (norm_nonneg _) hC)
-          (hest T hT hTT₀ a' b' c' ha' hak' hbk' hck') (norm_nonneg _) (by positivity)
-    _ = _ := by ring
+  exact (norm_symm_sub_symm_le_of_le (hest T hT hTT₀ a b c ha hak hbk hck)
+    (hest T hT hTT₀ a' b' c' ha' hak' hbk' hck') hdiff).trans_eq (by ring)
 
 end Estimate
 

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Analysis.Real.Sqrt
 public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 public import TauCeti.Topology.Algebra.Module.Equiv.SMul
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Real.Sqrt
 
 /-!
@@ -31,9 +31,10 @@ at most `1`.
 
 For two continuous linear equivalences `e` and `e'`, the resolvent identity
 `e⁻¹ - e'⁻¹ = e⁻¹ (e' - e) e'⁻¹` bounds the difference of the inverses by `‖e⁻¹‖ ‖e' - e‖ ‖e'⁻¹‖`
-(`ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le`): under uniform bounds on the inverses,
-inversion is Lipschitz, as in the dependence of the solution operator of a linear problem on its
-coefficients.
+(`ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le`, the equivalence form of
+`ContinuousLinearMap.IsInvertible.norm_inverse_sub_inverse_le`): under uniform bounds on the
+inverses, inversion is Lipschitz, as in the dependence of the solution operator of a linear problem
+on its coefficients.
 -/
 
 public section
@@ -164,17 +165,14 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGro
   [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- The inverses of two continuous linear equivalences differ in operator norm by at most
-`‖e⁻¹‖ ‖e' - e‖ ‖e'⁻¹‖`, by the resolvent identity
-`ContinuousLinearMap.IsInvertible.inverse_sub_inverse`. With uniform bounds on the inverses,
-inversion is thus Lipschitz on a family of equivalences. -/
+`‖e⁻¹‖ ‖e' - e‖ ‖e'⁻¹‖`: the equivalence form of
+`ContinuousLinearMap.IsInvertible.norm_inverse_sub_inverse_le`. With uniform bounds on the
+inverses, inversion is thus Lipschitz on a family of equivalences. -/
 theorem norm_coe_symm_sub_coe_symm_le (e e' : E ≃L[𝕜] F) :
     ‖(e.symm : F →L[𝕜] E) - e'.symm‖ ≤
       ‖(e.symm : F →L[𝕜] E)‖ * ‖(e' : E →L[𝕜] F) - (e : E →L[𝕜] F)‖ * ‖(e'.symm : F →L[𝕜] E)‖ := by
-  have h := ContinuousLinearMap.IsInvertible.inverse_sub_inverse
-    (⟨e, rfl⟩ : (e : E →L[𝕜] F).IsInvertible) (⟨e', rfl⟩ : (e' : E →L[𝕜] F).IsInvertible)
-  rw [ContinuousLinearMap.inverse_equiv, ContinuousLinearMap.inverse_equiv] at h
-  rw [h, mul_assoc]
-  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-    (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
+  simpa only [ContinuousLinearMap.inverse_equiv] using
+    ContinuousLinearMap.IsInvertible.norm_inverse_sub_inverse_le
+      (⟨e, rfl⟩ : (e : E →L[𝕜] F).IsInvertible) (⟨e', rfl⟩ : (e' : E →L[𝕜] F).IsInvertible)
 
 end ContinuousLinearEquiv

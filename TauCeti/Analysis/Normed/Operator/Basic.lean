@@ -50,7 +50,10 @@ compositions obeys the three-term estimate
 `ContinuousLinearMap.norm_comp_sub_comp_le` in operator norms). The conjugates `G ∘ K ∘ M` and
 `G' ∘ K' ∘ M'`, with `G` a left inverse of `M` and `G'` a right inverse of `M'`, differ by at most a
 combination of `‖K - K'‖` and `‖M - M'‖` (`ContinuousLinearMap.norm_comp_comp_sub_comp_comp_le`),
-using the triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`. Precomposition by an
+using the triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`, which also bounds
+the difference of two inverses through the resolvent identity,
+`‖f⁻¹ - g⁻¹‖ ≤ ‖f⁻¹‖ ‖g - f‖ ‖g⁻¹‖`
+(`ContinuousLinearMap.IsInvertible.norm_inverse_sub_inverse_le`). Precomposition by an
 operator `T`, as a map between spaces of operators, has norm at most `‖T‖`
 (`ContinuousLinearMap.norm_precomp_le`).
 
@@ -357,6 +360,15 @@ theorem opNorm_comp_comp_le {Z U : Type*} [SeminormedAddCommGroup Z] [NormedSpac
     rw [mul_assoc]
     gcongr
     exact opNorm_comp_le _ _
+
+/-- The inverses of two invertible operators differ in operator norm by at most
+`‖f⁻¹‖ ‖g - f‖ ‖g⁻¹‖`, by the resolvent identity
+`ContinuousLinearMap.IsInvertible.inverse_sub_inverse`. With uniform bounds on the inverses,
+inversion is thus Lipschitz on a family of invertible operators. -/
+theorem IsInvertible.norm_inverse_sub_inverse_le {f g : X →L[𝕜] Y} (hf : f.IsInvertible)
+    (hg : g.IsInvertible) : ‖f.inverse - g.inverse‖ ≤ ‖f.inverse‖ * ‖g - f‖ * ‖g.inverse‖ := by
+  rw [hf.inverse_sub_inverse hg]
+  exact opNorm_comp_comp_le _ _ _
 
 /-- Precomposition by `T` has operator norm at most `‖T‖`. -/
 theorem norm_precomp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
