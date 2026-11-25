@@ -62,6 +62,7 @@ are described through them.
 * `TauCeti.relTrace R Q P`: the relative trace `Tr_Q^P : R[G]^Q → R[G]^P`.
 * `TauCeti.relTraceIdeal R hQP`: its image `R[G]^P_Q`, a two-sided ideal of `R[G]^P`.
 * `TauCeti.conjInvariantsEquiv R g H`: conjugation by `g` as `R[G]^H ≃ₐ R[G]^{gHg⁻¹}`.
+* `TauCeti.conjInvariantsBotEquiv R`: `R[G] ≃ₐ R[G]^1`, each element as a `1`-fixed element.
 
 ## Main results
 
@@ -254,6 +255,25 @@ theorem conjInvariants_bot : conjInvariants R (⊥ : Subgroup G) = ⊤ :=
   eq_top_iff.2 fun x _ => mem_conjInvariants_iff.2 fun h hh => by
     rw [Subgroup.mem_bot.1 hh, map_one, one_apply_eq_self]
 
+variable (R) in
+/-- `R[G]` as the subalgebra `R[G]^1` of elements fixed by the trivial subgroup. -/
+noncomputable def conjInvariantsBotEquiv :
+    MonoidAlgebra R G ≃ₐ[R] conjInvariants R (⊥ : Subgroup G) :=
+  Subalgebra.topEquiv.symm.trans (Subalgebra.equivOfEq _ _ conjInvariants_bot.symm)
+
+/-- The isomorphism `R[G] ≃ R[G]^1` is the identity on underlying elements. -/
+@[simp]
+theorem coe_conjInvariantsBotEquiv (x : MonoidAlgebra R G) :
+    (conjInvariantsBotEquiv R x : MonoidAlgebra R G) = x := by
+  simp [conjInvariantsBotEquiv]
+
+/-- The inverse of `R[G] ≃ R[G]^1` forgets that an element is `1`-fixed. -/
+@[simp]
+theorem conjInvariantsBotEquiv_symm_apply (y : conjInvariants R (⊥ : Subgroup G)) :
+    (conjInvariantsBotEquiv R).symm y = (y : MonoidAlgebra R G) := by
+  obtain ⟨x, rfl⟩ := (conjInvariantsBotEquiv R).surjective y
+  simp
+
 end Semiring
 
 section Ring
@@ -329,6 +349,12 @@ theorem relTrace_apply_of_mem {a : conjInvariants R Q} (ha : (a : MonoidAlgebra 
     conjInvariants R P) : (relTrace R Q P a : MonoidAlgebra R G) = (Q.subgroupOf P).index • a :=
   Representation.relNorm_apply_of_forall_apply_eq _ fun g =>
     mem_conjInvariants_iff.1 ha _ g.property
+
+/-- **The trace from the trivial subgroup.** For finite `P`, `Tr_1^P(a) = ∑_{g ∈ P} g a g⁻¹`. -/
+theorem relTrace_bot_apply [Fintype P] (a : conjInvariants R (⊥ : Subgroup G)) :
+    (relTrace R ⊥ P a : MonoidAlgebra R G) = ∑ g : P, conjRepresentation R G (g : G) a := by
+  refine relTrace_apply_eq_sum_of_bijective id ⟨fun g h hgh => ?_, QuotientGroup.mk_surjective⟩ a
+  rwa [QuotientGroup.eq, Subgroup.bot_subgroupOf, Subgroup.mem_bot, inv_mul_eq_one] at hgh
 
 /-- The coefficient of `Tr_Q^P(a)` at an element of `C_G(P)` is `|P : Q|` times that of `a`. -/
 theorem coeff_relTrace_of_mem_centralizer (a : conjInvariants R Q) {c : G}
