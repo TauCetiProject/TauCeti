@@ -27,17 +27,24 @@ by `‖v‖`.
 ## Main results
 
 * `CliffordAlgebra.map_ι_mul_map_ι`, `CliffordAlgebra.map_ι_apply_map_ι_apply`:
-  `c(v) c(v) = Q v`, as operators and pointwise.
-* `CliffordAlgebra.map_ι_apply_map_ι_apply_comm_of_isOrtho`: `c(a) c(b) = -c(b) c(a)` pointwise
-  for `Q`-orthogonal `a` and `b`.
+  `c(v) c(v) = Q v`, as operators and pointwise, and `CliffordAlgebra.map_ι_mul_map_ι_add_swap`,
+  `CliffordAlgebra.map_ι_apply_map_ι_apply_add_swap`: the polarized relation
+  `c(v) c(w) + c(w) c(v) = polar Q v w`.
+* `CliffordAlgebra.map_ι_mul_map_ι_comm_of_isOrtho`,
+  `CliffordAlgebra.map_ι_apply_map_ι_apply_comm_of_isOrtho`: `c(a) c(b) = -c(b) c(a)` as operators
+  and pointwise for `Q`-orthogonal `a` and `b`.
 * `CliffordAlgebra.map_ι_injective`: `c(v)` is injective when `Q v ≠ 0`.
 * `CliffordAlgebra.map_ι_apply_left_injective`: `v ↦ c(v) ψ` is injective for `ψ ≠ 0` and an
   anisotropic `Q`.
-* `CliffordAlgebra.adjoint_map_eq_map_star`: `(ρ a)* = ρ (star a)` on a Hermitian Clifford
-  module.
-* `CliffordAlgebra.norm_map_ι_apply_sq`: `‖c(v) ψ‖² = -Q v ‖ψ‖²` on a Hermitian Clifford module,
-  and `CliffordAlgebra.norm_map_ι_apply`: `‖c(v) ψ‖ = ‖v‖ ‖ψ‖` when `Q v = -‖v‖²`.
-* `CliffordAlgebra.re_inner_map_ι_apply_map_ι_apply`: its polarization,
+* `CliffordAlgebra.sesqForm_map_eq_map_star`, `CliffordAlgebra.adjoint_map_eq_map_star`:
+  `H (ρ a x) y = H x (ρ (star a) y)` and `(ρ a)* = ρ (star a)` when the generators act
+  skew-adjointly.
+* `CliffordAlgebra.norm_map_ι_apply_sq_of_inner_left_eq_neg`, `CliffordAlgebra.norm_map_ι_apply_sq`:
+  `‖c(v) ψ‖² = -Q v ‖ψ‖²` for skew-Hermitian / skew-adjoint generators, and
+  `CliffordAlgebra.norm_map_ι_apply_of_inner_left_eq_neg`, `CliffordAlgebra.norm_map_ι_apply`:
+  `‖c(v) ψ‖ = ‖v‖ ‖ψ‖` when `Q v = -‖v‖²`.
+* `CliffordAlgebra.re_inner_map_ι_apply_map_ι_apply_of_inner_left_eq_neg`,
+  `CliffordAlgebra.re_inner_map_ι_apply_map_ι_apply`: their polarization,
   `Re ⟪c(v) ψ, c(w) ψ⟫ = -polar Q v w ‖ψ‖² / 2`.
 
 ## References
@@ -94,7 +101,90 @@ theorem map_ι_apply_left_injective (hQ : Q.Anisotropic) {ψ : W} (hψ : ψ ≠ 
   simp only [map_sub, LinearMap.sub_apply, map_zero]
   exact sub_eq_zero.2 h
 
+/-- The polarized Clifford relation in a module: `c(v) c(w) + c(w) c(v) = polar Q v w`. -/
+theorem map_ι_mul_map_ι_add_swap (v w : M) :
+    ρ (ι Q v) * ρ (ι Q w) + ρ (ι Q w) * ρ (ι Q v) =
+      ((QuadraticMap.polar Q v w : ℝ) : ℂ) • 1 := by
+  rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap, AlgHom.commutes,
+    Algebra.algebraMap_eq_smul_one, Complex.coe_smul]
+
+/-- The polarized Clifford relation applied to a vector of the module:
+`c(v) (c(w) ψ) + c(w) (c(v) ψ) = polar Q v w ψ`. -/
+theorem map_ι_apply_map_ι_apply_add_swap (v w : M) (ψ : W) :
+    ρ (ι Q v) (ρ (ι Q w) ψ) + ρ (ι Q w) (ρ (ι Q v) ψ) =
+      ((QuadraticMap.polar Q v w : ℝ) : ℂ) • ψ := by
+  rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← LinearMap.add_apply, map_ι_mul_map_ι_add_swap,
+    LinearMap.smul_apply, one_apply_eq_self]
+
+/-- Orthogonal vectors anticommute in a Clifford module: `c(v) c(w) = -c(w) c(v)`. -/
+theorem map_ι_mul_map_ι_comm_of_isOrtho {v w : M} (h : Q.IsOrtho v w) :
+    ρ (ι Q v) * ρ (ι Q w) = -(ρ (ι Q w) * ρ (ι Q v)) := by
+  rw [← map_mul, ι_mul_ι_comm_of_isOrtho h, map_neg, map_mul]
+
+/-- A sesquilinear form for which the generators act skew-adjointly satisfies
+`H (ρ a x) y = H x (ρ (star a) y)` for every Clifford element `a`. Neither positivity of `H` nor
+finite-dimensionality of `W` is required. -/
+theorem sesqForm_map_eq_map_star (H : W →ₗ⋆[ℂ] W →ₗ[ℂ] ℂ)
+    (hH : ∀ (v : M) (x y : W), H (ρ (ι Q v) x) y = -H x (ρ (ι Q v) y))
+    (a : CliffordAlgebra Q) (x y : W) :
+    H (ρ a x) y = H x (ρ (star a) y) := by
+  induction a using CliffordAlgebra.induction generalizing x y with
+  | algebraMap r =>
+    simp [AlgHom.commutes, Module.algebraMap_end_eq_smul_id, ← Complex.coe_smul]
+  | ι v => simp [hH]
+  | add a b ha hb => simp only [map_add, LinearMap.add_apply, star_add, ha, hb]
+  | mul a b ha hb => simp only [map_mul, mul_apply_eq_comp, star_mul, ha, hb]
+
 end Module
+
+section SeminormedHermitian
+
+variable [SeminormedAddCommGroup W] [InnerProductSpace ℂ W]
+
+section Module
+
+variable [AddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M}
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
+
+/-- On a complex inner product space where real vectors act skew-Hermitianly,
+`‖c(v) ψ‖² = -Q v ‖ψ‖²` (without assuming `W` finite-dimensional or separated). -/
+theorem norm_map_ι_apply_sq_of_inner_left_eq_neg
+    (hρ : ∀ (v : M) (x y : W), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y))
+    (v : M) (ψ : W) : ‖ρ (ι Q v) ψ‖ ^ 2 = -Q v * ‖ψ‖ ^ 2 := by
+  rw [← RCLike.ofReal_inj (K := ℂ), RCLike.ofReal_pow, ← inner_self_eq_norm_sq_to_K,
+    hρ, map_ι_apply_map_ι_apply, inner_smul_right, inner_self_eq_norm_sq_to_K]
+  simp only [RCLike.ofReal_eq_complex_ofReal]
+  push_cast
+  ring
+
+/-- On a complex inner product space where real vectors act skew-Hermitianly, the real part of
+`⟪c(v) ψ, c(w) ψ⟫` is `-polar Q v w ‖ψ‖² / 2`, the polarization of `‖c(v) ψ‖² = -Q v ‖ψ‖²`. -/
+theorem re_inner_map_ι_apply_map_ι_apply_of_inner_left_eq_neg
+    (hρ : ∀ (v : M) (x y : W), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y))
+    (v w : M) (ψ : W) :
+    (inner ℂ (ρ (ι Q v) ψ) (ρ (ι Q w) ψ)).re = -QuadraticMap.polar Q v w / 2 * ‖ψ‖ ^ 2 := by
+  have h := norm_add_sq (𝕜 := ℂ) (ρ (ι Q v) ψ) (ρ (ι Q w) ψ)
+  rw [← LinearMap.add_apply, ← map_add, ← map_add, norm_map_ι_apply_sq_of_inner_left_eq_neg hρ,
+    norm_map_ι_apply_sq_of_inner_left_eq_neg hρ,
+    norm_map_ι_apply_sq_of_inner_left_eq_neg hρ] at h
+  simp only [QuadraticMap.polar, RCLike.re_to_complex] at h ⊢
+  linarith
+
+end Module
+
+variable [SeminormedAddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M}
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
+
+/-- For `Q v = -‖v‖²` and skew-Hermitian generators, Clifford multiplication by `v` scales norms by
+`‖v‖`: `‖c(v) ψ‖ = ‖v‖ ‖ψ‖` (without assuming `W` finite-dimensional or separated). -/
+theorem norm_map_ι_apply_of_inner_left_eq_neg (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (hρ : ∀ (v : M) (x y : W), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y))
+    (v : M) (ψ : W) : ‖ρ (ι Q v) ψ‖ = ‖v‖ * ‖ψ‖ := by
+  refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
+  rw [norm_map_ι_apply_sq_of_inner_left_eq_neg hρ, hQ]
+  ring
+
+end SeminormedHermitian
 
 section Hermitian
 
@@ -105,41 +195,33 @@ section Module
 variable [AddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M}
   {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
 
+private theorem inner_map_ι_left_eq_neg_of_adjoint
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (v : M) (x y : W) :
+    inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y) := by
+  rw [← LinearMap.adjoint_inner_right, hρ, LinearMap.neg_apply, inner_neg_right]
+
 /-- If the generators act skew-adjointly, `c(v)* = -c(v)`, then the adjoint of the action of any
 Clifford element `a` is the action of its Clifford conjugate: `(ρ a)* = ρ (star a)`. -/
 theorem adjoint_map_eq_map_star (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (a : CliffordAlgebra Q) : LinearMap.adjoint (ρ a) = ρ (star a) := by
-  induction a using CliffordAlgebra.induction with
-  | algebraMap r =>
-    rw [star_algebraMap, AlgHom.commutes, Module.algebraMap_end_eq_smul_id,
-      ← Complex.coe_smul, map_smulₛₗ, LinearMap.adjoint_id, Complex.conj_ofReal]
-  | ι v => rw [hρ, star_ι, map_neg]
-  | mul a b ha hb =>
-    rw [map_mul, Module.End.mul_eq_comp, LinearMap.adjoint_comp, ha, hb, star_mul, map_mul,
-      Module.End.mul_eq_comp]
-  | add a b ha hb => rw [map_add, map_add, ha, hb, star_add, map_add]
+  ext y
+  apply ext_inner_left ℂ
+  intro x
+  rw [LinearMap.adjoint_inner_right]
+  exact sesqForm_map_eq_map_star ρ (innerₛₗ ℂ) (inner_map_ι_left_eq_neg_of_adjoint hρ) a x y
 
 /-- On a Hermitian Clifford module, `‖c(v) ψ‖² = -Q v ‖ψ‖²`. -/
 theorem norm_map_ι_apply_sq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (v : M)
-    (ψ : W) : ‖ρ (ι Q v) ψ‖ ^ 2 = -Q v * ‖ψ‖ ^ 2 := by
-  -- `‖c(v) ψ‖² = Re ⟪ψ, c(v)* c(v) ψ⟫ = Re ⟪ψ, -c(v)² ψ⟫ = -Q v ‖ψ‖²`.
-  rw [← RCLike.ofReal_inj (K := ℂ), RCLike.ofReal_pow, ← inner_self_eq_norm_sq_to_K,
-    ← LinearMap.adjoint_inner_left, hρ, LinearMap.neg_apply, map_ι_apply_map_ι_apply,
-    inner_neg_left, inner_smul_left, inner_self_eq_norm_sq_to_K]
-  simp only [RCLike.ofReal_eq_complex_ofReal, Complex.conj_ofReal]
-  push_cast
-  ring
+    (ψ : W) : ‖ρ (ι Q v) ψ‖ ^ 2 = -Q v * ‖ψ‖ ^ 2 :=
+  norm_map_ι_apply_sq_of_inner_left_eq_neg (inner_map_ι_left_eq_neg_of_adjoint hρ) v ψ
 
 /-- On a Hermitian Clifford module, the real part of `⟪c(v) ψ, c(w) ψ⟫` is
 `-polar Q v w ‖ψ‖² / 2`, the polarization of `‖c(v) ψ‖² = -Q v ‖ψ‖²`. -/
 theorem re_inner_map_ι_apply_map_ι_apply (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (v w : M) (ψ : W) :
-    (inner ℂ (ρ (ι Q v) ψ) (ρ (ι Q w) ψ)).re = -QuadraticMap.polar Q v w / 2 * ‖ψ‖ ^ 2 := by
-  have h := norm_add_sq (𝕜 := ℂ) (ρ (ι Q v) ψ) (ρ (ι Q w) ψ)
-  rw [← LinearMap.add_apply, ← map_add, ← map_add, norm_map_ι_apply_sq hρ,
-    norm_map_ι_apply_sq hρ, norm_map_ι_apply_sq hρ] at h
-  simp only [QuadraticMap.polar, RCLike.re_to_complex] at h ⊢
-  linarith
+    (inner ℂ (ρ (ι Q v) ψ) (ρ (ι Q w) ψ)).re = -QuadraticMap.polar Q v w / 2 * ‖ψ‖ ^ 2 :=
+  re_inner_map_ι_apply_map_ι_apply_of_inner_left_eq_neg (inner_map_ι_left_eq_neg_of_adjoint hρ)
+    v w ψ
 
 end Module
 
@@ -150,10 +232,8 @@ variable [SeminormedAddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M}
 multiplication by `v` scales norms by `‖v‖`: `‖c(v) ψ‖ = ‖v‖ ‖ψ‖`. -/
 theorem norm_map_ι_apply (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (v : M) (ψ : W) :
-    ‖ρ (ι Q v) ψ‖ = ‖v‖ * ‖ψ‖ := by
-  refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
-  rw [norm_map_ι_apply_sq hρ, hQ]
-  ring
+    ‖ρ (ι Q v) ψ‖ = ‖v‖ * ‖ψ‖ :=
+  norm_map_ι_apply_of_inner_left_eq_neg hQ (inner_map_ι_left_eq_neg_of_adjoint hρ) v ψ
 
 end Hermitian
 
