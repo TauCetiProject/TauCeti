@@ -104,14 +104,7 @@ attribute [local instance] instSeminormedAddCommGroupW1p instNormedSpaceW1p
 
 variable (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
 
-/-! ### Reduction to the homogeneous Dirichlet datum -/
-
-/-- For `w ∈ H¹_Γ(Ω)`, the function `g + w` has Dirichlet datum `g` on `Γ`. -/
-private theorem add_coe_sub_mem_w1pVanishingOnSubmodule (g : W1p mu Omega 2)
-    (w : W1pVanishingOn mu Omega 2 Γ) :
-    g + (w : W1p mu Omega 2) - g ∈ w1pVanishingOnSubmodule mu Omega 2 Γ := by
-  rw [add_sub_cancel_left, ← ClosedSubmodule.mem_toSubmodule_iff]
-  exact w.property
+/-! ### The structure of the solution set -/
 
 /-- Two functions with the same Dirichlet datum `g` on `Γ` differ by an element of `H¹_Γ(Ω)`. -/
 private theorem sub_mem_w1pVanishingOn_of_sub_mem {g u u₀ : W1p mu Omega 2}
@@ -122,23 +115,12 @@ private theorem sub_mem_w1pVanishingOn_of_sub_mem {g u u₀ : W1p mu Omega 2}
   exact sub_mem ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu)
     ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu₀)
 
-/-- The problem with Dirichlet datum `g` and forcing `ℓ` is the problem for `w = u - g ∈ H¹_Γ(Ω)`
-with homogeneous datum and forcing `ℓ - B(g, ·)`. -/
-private theorem exists_sub_mem_iff_exists_energyFormH1LVanishingOn_eq (g : W1p mu Omega 2)
-    (ℓ : StrongDual ℝ (W1pVanishingOn mu Omega 2 Γ)) :
-    (∃ u : W1p mu Omega 2, u - g ∈ w1pVanishingOnSubmodule mu Omega 2 Γ ∧
-        ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c u v = ℓ v) ↔
-      ∃ w : W1pVanishingOn mu Omega 2 Γ, ∀ v, energyFormH1LVanishingOn hcoeff Γ w v =
-        (ℓ - (energyFormH1L hcoeff g).comp (W1pVanishingOn mu Omega 2 Γ).subtypeL) v := by
-  simp only [energyFormH1LVanishingOn_apply, sub_apply,
-    ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, energyFormH1L_apply]
-  constructor
-  · rintro ⟨u, hu, hu'⟩
-    refine ⟨⟨u - g, hu⟩, fun v => ?_⟩
-    rw [Submodule.coe_mk, energyFormH1_sub_left hcoeff, hu' v]
-  · rintro ⟨w, hw⟩
-    refine ⟨g + w, add_coe_sub_mem_w1pVanishingOnSubmodule g w, fun v => ?_⟩
-    rw [energyFormH1_add_left hcoeff, hw v, add_sub_cancel]
+/-- The kernel of the energy form on `H¹_Γ(Ω)` consists of the weak solutions of the homogeneous
+problem. -/
+private theorem mem_ker_energyFormH1LVanishingOn_iff (w : W1pVanishingOn mu Omega 2 Γ) :
+    w ∈ (energyFormH1LVanishingOn hcoeff Γ).ker ↔
+      ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c (w : W1p mu Omega 2) v = 0 := by
+  simp [LinearMap.mem_ker, ContinuousLinearMap.ext_iff]
 
 open scoped Pointwise in
 /-- **The solution set is a translate of the kernel.** Let `u₀ ∈ H¹(Ω)` solve the mixed problem
@@ -155,23 +137,21 @@ theorem setOf_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_eq_vadd
         ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c u v = ℓ v} =
       u₀ +ᵥ ((energyFormH1LVanishingOn hcoeff Γ).ker.map (W1pVanishingOn mu Omega 2 Γ).subtype :
         Set (W1p mu Omega 2)) := by
-  have hker (w : W1pVanishingOn mu Omega 2 Γ) : w ∈ (energyFormH1LVanishingOn hcoeff Γ).ker ↔
-      ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c (w : W1p mu Omega 2) v = 0 := by
-    simp [LinearMap.mem_ker, ContinuousLinearMap.ext_iff]
   ext u
   simp only [Set.mem_ofPred_eq, Set.mem_vadd_set, SetLike.mem_coe, Submodule.mem_map,
     Submodule.coe_subtype, vadd_eq_add]
   constructor
   · -- `u - u₀ = (u - g) - (u₀ - g)` lies in `H¹_Γ(Ω)` and solves the homogeneous problem.
     rintro ⟨hu, hu'⟩
-    refine ⟨u - u₀, ⟨⟨u - u₀, sub_mem_w1pVanishingOn_of_sub_mem hu hu₀g⟩, (hker _).2 fun v => ?_,
-      rfl⟩, add_sub_cancel u₀ u⟩
+    refine ⟨u - u₀, ⟨⟨u - u₀, sub_mem_w1pVanishingOn_of_sub_mem hu hu₀g⟩,
+      (mem_ker_energyFormH1LVanishingOn_iff hcoeff _).2 fun v => ?_, rfl⟩, add_sub_cancel u₀ u⟩
     rw [Submodule.coe_mk, energyFormH1_sub_left hcoeff, hu' v, hu₀ v, sub_self]
   · rintro ⟨_, ⟨w, hw, rfl⟩, rfl⟩
     refine ⟨?_, fun v => ?_⟩
     · rw [add_sub_right_comm]
       exact add_mem hu₀g ((ClosedSubmodule.mem_toSubmodule_iff _ _).1 w.property)
-    · rw [energyFormH1_add_left hcoeff, (hker w).1 hw v, hu₀ v, add_zero]
+    · rw [energyFormH1_add_left hcoeff, (mem_ker_energyFormH1LVanishingOn_iff hcoeff w).1 hw v,
+        hu₀ v, add_zero]
 
 /-! ### The compatibility condition under Gårding's inequality
 
@@ -260,9 +240,10 @@ theorem exists_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff_of_gar
       ∀ w : W1pVanishingOn mu Omega 2 Γ,
         (∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c (v : W1p mu Omega 2) w = 0) →
         ℓ w = energyFormH1 a b c g w := by
-  rw [exists_sub_mem_iff_exists_energyFormH1LVanishingOn_eq hcoeff,
-    exists_forall_energyFormH1LVanishingOn_eq_iff_of_garding hcoeff hK hC₀ hgarding]
-  simp [sub_eq_zero]
+  rw [
+    exists_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff_exists_w1pVanishingOn hcoeff]
+  simpa [sub_eq_zero] using exists_forall_energyFormH1LVanishingOn_eq_iff_of_garding hcoeff hK hC₀
+    hgarding (ℓ - (energyFormH1L hcoeff g).comp (W1pVanishingOn mu Omega 2 Γ).subtypeL)
 
 /-- **Uniqueness implies existence for the mixed problem with a Dirichlet datum.** Under Gårding's
 inequality on `H¹_Γ(Ω)` and with a compact value map, if the homogeneous mixed problem has only
@@ -273,20 +254,13 @@ theorem existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_of_g
       (∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c (u : W1p mu Omega 2) v = 0) → u = 0)
     (g : W1p mu Omega 2) (ℓ : StrongDual ℝ (W1pVanishingOn mu Omega 2 Γ)) :
     ∃! u : W1p mu Omega 2, u - g ∈ w1pVanishingOnSubmodule mu Omega 2 Γ ∧
-      ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c u v = ℓ v := by
-  have hker' (u : W1pVanishingOn mu Omega 2 Γ)
-      (hu : ∀ v, energyFormH1LVanishingOn hcoeff Γ u v = 0) : u = 0 :=
-    hker u fun v => by rw [← energyFormH1LVanishingOn_apply hcoeff, hu v]
-  -- Existence from the unique solution of the problem with homogeneous datum.
-  obtain ⟨w, hw, -⟩ := existsUnique_forall_energyFormH1LVanishingOn_eq_of_garding hcoeff hK hC₀
-    hgarding hker' (ℓ - (energyFormH1L hcoeff g).comp (W1pVanishingOn mu Omega 2 Γ).subtypeL)
-  obtain ⟨u₀, hu₀g, hu₀⟩ := (exists_sub_mem_iff_exists_energyFormH1LVanishingOn_eq hcoeff g ℓ).2
-    ⟨w, hw⟩
-  refine ⟨u₀, ⟨hu₀g, hu₀⟩, fun u ⟨hug, hu⟩ => ?_⟩
-  -- Uniqueness: two solutions differ by an element of the kernel, which is trivial.
-  have h0 := hker ⟨u - u₀, sub_mem_w1pVanishingOn_of_sub_mem hug hu₀g⟩ fun v => by
-    rw [Submodule.coe_mk, energyFormH1_sub_left hcoeff, hu v, hu₀ v, sub_self]
-  exact sub_eq_zero.1 ((Submodule.mk_eq_zero _ _).1 h0)
+      ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c u v = ℓ v :=
+  (
+existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff_existsUnique_w1pVanishingOn
+    hcoeff g ℓ).2 <| by
+    simpa using existsUnique_forall_energyFormH1LVanishingOn_eq_of_garding hcoeff hK hC₀ hgarding
+      (fun u hu => hker u fun v => by simpa using hu v)
+      (ℓ - (energyFormH1L hcoeff g).comp (W1pVanishingOn mu Omega 2 Γ).subtypeL)
 
 end Garding
 
