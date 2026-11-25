@@ -46,13 +46,16 @@ values on compactly supported functions, and hence by its chart compressions.
 ## Main results
 
 * `TauCeti.IsProperlySupported P`: the operator `P` is properly supported. The identity, sums,
-  scalar multiples, products with smooth functions on either side and local operators
-  (`TauCeti.IsProperlySupported.of_local`) are properly supported.
+  scalar multiples, compositions (`TauCeti.IsProperlySupported.comp`), products with smooth
+  functions on either side and local operators (`TauCeti.IsProperlySupported.of_local`) are
+  properly supported.
 * `TauCeti.classicalPseudodifferentialOperators m`: the properly supported operators all of whose
   chart compressions are quantizations of classical symbols of order `m`, a complex submodule of
   the operators on `C^∞(M, ℂ)`.
 * `TauCeti.classicalPseudodifferentialOperators_le`: an operator of order `m - k`, `k ∈ ℕ`, has
   order `m`.
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_eq_zero`: on a manifold modelled on `ℝ⁰`,
+  every properly supported operator has every order.
 * `TauCeti.id_mem_classicalPseudodifferentialOperators` and
   `TauCeti.mulLeft_mem_classicalPseudodifferentialOperators`: the identity and multiplication by a
   smooth function have order `0`.
@@ -165,6 +168,24 @@ theorem IsProperlySupported.comp_mulLeft (hP : IsProperlySupported P)
     exact tsupport_mul_subset_right.trans hf
   · simp [hy]
 
+/-- **Composition.** The composition of two properly supported operators is properly supported. -/
+theorem IsProperlySupported.comp (hP : IsProperlySupported P) (hQ : IsProperlySupported Q) :
+    IsProperlySupported (P ∘ₗ Q) := by
+  intro K hK
+  have := ChartedSpace.locallyCompactSpace (CoordinateSpace n) M
+  -- `P g` vanishes on `K` when `g` vanishes near `K₁`; `Q f` vanishes on a compact neighbourhood
+  -- `N` of `K₁` when `f` vanishes near `K₂`.
+  obtain ⟨K₁, hK₁, -, hP₂⟩ := hP K hK
+  obtain ⟨N, hN, hK₁N⟩ := exists_compact_superset hK₁
+  obtain ⟨K₂, hK₂, -, hQ₂⟩ := hQ N hN
+  -- Supports: `Q` sends functions supported in `K` into `K₃`, and `P` sends `K₃` into `K₄`.
+  obtain ⟨K₃, hK₃, hQ₁, -⟩ := hQ K hK
+  obtain ⟨K₄, hK₄, hP₁, -⟩ := hP K₃ hK₃
+  refine ⟨K₄ ∪ K₂, hK₄.union hK₂, fun f hf ↦ (hP₁ _ (hQ₁ f hf)).trans subset_union_left,
+    fun f hf x hx ↦ hP₂ _ ?_ x hx⟩
+  filter_upwards [mem_nhdsSet_iff_forall.2 fun y hy ↦ mem_interior_iff_mem_nhds.1 (hK₁N hy)]
+    with y hy using hQ₂ f (hf.filter_mono (nhdsSet_mono subset_union_right)) y hy
+
 /-- A **local** operator, one such that `P f` vanishes at every point near which `f` vanishes, is
 properly supported, with `K' = K`. -/
 theorem IsProperlySupported.of_local
@@ -236,6 +257,27 @@ theorem classicalPseudodifferentialOperators_le {m m' : ℝ} (k : ℕ) (hk : m' 
     let ⟨a, ha⟩ := hP.2 e he φ ψ
     ⟨ClassicalSymbol.inclusion k hk a, fun u x ↦ by
       rw [ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_inclusion, ha]⟩⟩
+
+/-- **Dimension zero.** On a manifold modelled on `ℝ⁰`, every properly supported operator is a
+classical pseudodifferential operator of every order: each chart compression is multiplication by
+a constant, and on `ℝ⁰` a constant symbol is classical of every order. -/
+theorem mem_classicalPseudodifferentialOperators_of_eq_zero (hn : n = 0)
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P) (m : ℝ) : P ∈ classicalPseudodifferentialOperators m := by
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
+  set A := e.complexChartCompression he φ ψ P
+  obtain ⟨b, hb⟩ := Symbol.isSmoothing_iff.1
+    (Symbol.isSmoothing_of_eq_zero hn (Symbol.const (A 1 0 • ContinuousLinearMap.id ℂ ℂ))) m
+  refine ⟨ClassicalSymbol.ofIsSmoothing b (Symbol.isSmoothing_of_eq_zero hn b), fun u x ↦ ?_⟩
+  subst hn
+  -- On `ℝ⁰` the input is the constant `u x`, so the compression multiplies it by `A 1 0`.
+  have hu : ContMDiffMap.ofContDiff u (u.smooth ⊤) = u x • 1 := by
+    ext y
+    simp [Subsingleton.elim y x]
+  rw [ClassicalSymbol.toSymbol_ofIsSmoothing, hb, Symbol.quantizeSchwartzValue_const, hu,
+    map_smul, ContMDiffMap.complex_smul_apply, Subsingleton.elim x 0]
+  simp [mul_comm]
 
 /-! ### Multiplication operators -/
 
