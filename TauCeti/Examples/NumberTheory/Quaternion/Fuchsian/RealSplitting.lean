@@ -34,7 +34,7 @@ def ratOneOne : RealSplitting ℚ 1 1 where
   ramified σ hσ := (hσ (Subsingleton.elim _ _)).elim
   splitting := (QuaternionAlgebra.oneEquivMatrix (1 : ℝˣ)).toRingHom.comp
     (QuaternionAlgebra.map 1 0 1 (Rat.castHom ℝ) (map_one _) (map_zero _) (by simp))
-  splitting_algebraMap x := by
+  splitting_coe x := by
     ext i j
     simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
       AlgEquiv.coe_toRingEquiv]

@@ -92,8 +92,8 @@ theorem det_apply_eq_normForm_of_algEquiv_matrix {c₁ c₂ c₃ : R}
     (e : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R) (q : ℍ[R,c₁,c₂,c₃]) :
     (e q).det = normForm c₁ c₂ c₃ q := by
   have h : (e q).det • (1 : Matrix (Fin 2) (Fin 2) R) = normForm c₁ c₂ c₃ q • 1 := by
-    rw [← Matrix.mul_adjugate, ← map_star_eq_adjugate_of_algEquiv_matrix, ← map_mul, self_mul_star,
-      ← Algebra.algebraMap_eq_smul_one, ← e.commutes, coe_algebraMap]
+    rw [← Matrix.mul_adjugate, ← map_star_eq_adjugate_of_algEquiv_matrix, ← map_mul, self_mul_star]
+    simp [← coe_algebraMap, Algebra.algebraMap_eq_smul_one]
   simpa using congrFun₂ h 0 0
 
 /-- A splitting algebra equivalence restricts to an equivalence from the quaternion norm-one group

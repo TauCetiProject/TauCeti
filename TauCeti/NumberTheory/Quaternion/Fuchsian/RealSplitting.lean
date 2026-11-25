@@ -102,14 +102,14 @@ structure RealSplitting (k : Type*) [Field k] (a b : k) where
   /-- The splitting homomorphism. -/
   splitting : ℍ[k,a,b] →+* Matrix (Fin 2) (Fin 2) ℝ
   /-- The splitting sends each scalar `x` to the scalar matrix `place x`. -/
-  splitting_algebraMap (x : k) :
+  splitting_coe (x : k) :
     splitting (x : ℍ[k,a,b]) = algebraMap ℝ (Matrix (Fin 2) (Fin 2) ℝ) (place x)
 
 namespace RealSplitting
 
 variable {k : Type*} [Field k] {a b : k}
 
-attribute [simp] splitting_algebraMap
+attribute [simp] splitting_coe
 
 /-- A real splitting is determined by its splitting homomorphism, which determines the place
 through the images of the scalars. -/
@@ -118,7 +118,7 @@ theorem ext {S T : RealSplitting k a b} (h : S.splitting = T.splitting) : S = T 
   have hplace : S.place = T.place := by
     ext x
     apply (algebraMap ℝ (Matrix (Fin 2) (Fin 2) ℝ)).injective
-    rw [← S.splitting_algebraMap, ← T.splitting_algebraMap, h]
+    rw [← S.splitting_coe, ← T.splitting_coe, h]
   cases S
   cases T
   simp only [mk.injEq] at hplace h ⊢
@@ -147,11 +147,11 @@ private def realBasis :
   k := S.splitting ⟨0, 0, 0, 1⟩
   i_mul_i := by
     rw [← map_mul, zero_smul, add_zero, ← Algebra.algebraMap_eq_smul_one,
-      ← S.splitting_algebraMap]
+      ← S.splitting_coe]
     congr 1
     ext <;> simp
   j_mul_j := by
-    rw [← map_mul, ← Algebra.algebraMap_eq_smul_one, ← S.splitting_algebraMap]
+    rw [← map_mul, ← Algebra.algebraMap_eq_smul_one, ← S.splitting_coe]
     congr 1
     ext <;> simp
   i_mul_j := by
@@ -172,7 +172,7 @@ private theorem lift_realBasis_map (x : ℍ[k,a,b]) :
       (x.imJ : ℍ[k,a,b]) * ⟨0, 0, 1, 0⟩ + (x.imK : ℍ[k,a,b]) * ⟨0, 0, 0, 1⟩ := by
     ext <;> simp
   conv_rhs => rw [hx]
-  simp only [map_add, map_mul, S.splitting_algebraMap, _root_.QuaternionAlgebra.lift_apply,
+  simp only [map_add, map_mul, S.splitting_coe, _root_.QuaternionAlgebra.lift_apply,
     _root_.QuaternionAlgebra.Basis.liftHom_apply, _root_.QuaternionAlgebra.Basis.lift,
     QuaternionAlgebra.re_map, QuaternionAlgebra.imI_map, QuaternionAlgebra.imJ_map,
     QuaternionAlgebra.imK_map, Algebra.smul_def, realBasis]
@@ -299,8 +299,8 @@ theorem conj_splitting_eq_iff {u v : GL (Fin 2) ℝ} :
       rintro rfl
       exact (u⁻¹ * v).ne_zero (by simpa using hc.symm)
     refine ⟨Units.mk0 c hc0, ?_⟩
-    rw [Units.val_mk0, Algebra.smul_def, Algebra.commutes, hc, Units.val_mul, ← mul_assoc,
-      Units.mul_inv, one_mul]
+    rw [Units.val_mk0, Algebra.smul_def, Algebra.commutes, hc]
+    simp
   · rintro ⟨c, hc⟩ x
     have hinv : ((v⁻¹ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
         ((c⁻¹ : ℝˣ) : ℝ) • ((u⁻¹ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) :=
