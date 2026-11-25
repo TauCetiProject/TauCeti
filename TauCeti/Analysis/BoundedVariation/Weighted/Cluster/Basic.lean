@@ -152,6 +152,11 @@ theorem IsEquivalent.weightedMeasure_cell_eq {Ω Ω' : Cluster W q} (h : Ω.IsEq
 
 /-! ### Permuting and grouping cells -/
 
+/-- A union of cells of a cluster is null-measurable. -/
+theorem nullMeasurableSet_biUnion_cell (Ω : Cluster W q) (t : Finset (Fin q)) :
+    NullMeasurableSet (⋃ i ∈ t, Ω.cell i) volume :=
+  .biUnion (Finset.countable_toSet t) fun i _ => Ω.nullMeasurableSet_cell i
+
 /-- For a `C¹` weight, the weighted perimeter of a union of cells is at most the sum of their
 weighted perimeters. -/
 theorem weightedPerimeter_biUnion_cell_le (hW : ContDiff ℝ 1 W) (Ω : Cluster W q)
@@ -160,6 +165,12 @@ theorem weightedPerimeter_biUnion_cell_le (hW : ContDiff ℝ 1 W) (Ω : Cluster 
   weightedPerimeter_biUnion_le hW t
     (fun i _ => (Ω.nullMeasurableSet_cell i).mono Measure.restrict_le_self)
     fun _ _ _ _ hij => Ω.pairwise_disjoint hij
+
+/-- For a `C¹` weight, a union of cells of a cluster has finite weighted perimeter. -/
+theorem weightedPerimeter_biUnion_cell_lt_top (hW : ContDiff ℝ 1 W) (Ω : Cluster W q)
+    (t : Finset (Fin q)) : weightedPerimeter W ⊤ (⋃ i ∈ t, Ω.cell i) < ⊤ :=
+  (Ω.weightedPerimeter_biUnion_cell_le hW t).trans_lt
+    (ENNReal.sum_lt_top.2 fun i _ => Ω.weightedPerimeter_lt_top i)
 
 /-- The cluster with its cells permuted by `σ`: the `i`-th cell is `Ω_{σ i}`. -/
 def permute (Ω : Cluster W q) (σ : Equiv.Perm (Fin q)) : Cluster W q where
@@ -189,8 +200,7 @@ theorem perimeter_permute (Ω : Cluster W q) (σ : Equiv.Perm (Fin q)) :
 identifying two indices. -/
 def coarsen (hW : ContDiff ℝ 1 W) (Ω : Cluster W q) (f : Fin q → Fin p) : Cluster W p where
   cell k := ⋃ i ∈ Finset.univ.filter (f · = k), Ω.cell i
-  nullMeasurableSet_cell _ :=
-    .biUnion (Finset.countable_toSet _) fun i _ => Ω.nullMeasurableSet_cell i
+  nullMeasurableSet_cell _ := Ω.nullMeasurableSet_biUnion_cell _
   pairwise_disjoint k l hkl := by
     simp only [Finset.mem_filter, Finset.mem_univ, true_and, disjoint_iUnion_left,
       disjoint_iUnion_right]
@@ -203,8 +213,7 @@ def coarsen (hW : ContDiff ℝ 1 W) (Ω : Cluster W q) (f : Fin q → Fin p) : C
       exact ⟨fun ⟨_, i, _, hx⟩ => ⟨i, hx⟩, fun ⟨i, hx⟩ => ⟨f i, i, rfl, hx⟩⟩
     rw [this]
     exact Ω.volume_compl_iUnion
-  weightedPerimeter_lt_top _ := (Ω.weightedPerimeter_biUnion_cell_le hW _).trans_lt
-    (ENNReal.sum_lt_top.2 fun i _ => Ω.weightedPerimeter_lt_top i)
+  weightedPerimeter_lt_top _ := Ω.weightedPerimeter_biUnion_cell_lt_top hW _
 
 /-- The cells of a grouped cluster. -/
 @[simp]
