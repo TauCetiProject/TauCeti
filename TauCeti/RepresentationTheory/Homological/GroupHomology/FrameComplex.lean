@@ -208,7 +208,10 @@ theorem frameComplex_exactAt_zero_iff [Nontrivial k] :
   obtain ⟨y, hy⟩ := frameComplex_exactAt_zero_iff_surjective.1 h (single default 1)
   have : IsEmpty (unimodularFrames R n (Fin 1)) :=
     ⟨fun A ↦ hv ⟨_, mem_unimodularFrames_iff_isUnimodular.1 A.property⟩⟩
-  rw [show y = 0 from MonoidAlgebra.ext (Finsupp.ext fun a ↦ isEmptyElim a), map_zero] at hy
+  -- With no `1`-frames, the free module `k[unimodularFrames R n (Fin 1)]` is zero, so the
+  -- preimage `y` of `single default 1` is `0`, and so is its image.
+  have hy0 : y = 0 := MonoidAlgebra.ext (Finsupp.ext fun a ↦ isEmptyElim a)
+  rw [hy0, map_zero] at hy
   simpa using congrArg (fun z : k[unimodularFrames R n (Fin 0)] ↦ z.coeff default) hy
 
 /-- If `n` is nonempty, the augmented frame complex is exact in degree `0`: the standard basis
