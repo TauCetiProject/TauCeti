@@ -115,10 +115,9 @@ theorem cosetProjection_comp_cosetTransfer (hU : U' ≤ U) :
     (cosetProjection A hU).comp (cosetTransfer A U') =
       U'.relIndex U • IntertwiningMap.id (ofMulAction A G (G ⧸ U)) := by
   ext1
-  rw [IntertwiningMap.comp_apply, cosetTransfer_single_one_eq_cosetSum, cosetSum,
-    ← IntertwiningMap.coe_res (cosetProjection A hU) U.subtype, IntertwiningMap.map_relNorm,
-    IntertwiningMap.coe_res, cosetProjection_single,
-    relNorm_apply_of_forall_apply_eq ((ofMulAction A G (G ⧸ U)).comp U.subtype) fun u ↦
+  simp only [IntertwiningMap.comp_apply, cosetTransfer_single_one_eq_cosetSum, cosetSum,
+    IntertwiningMap.map_relNorm_comp, cosetProjection_single]
+  rw [relNorm_apply_of_forall_apply_eq ((ofMulAction A G (G ⧸ U)).comp U.subtype) fun u ↦
       (mem_stabilizer.1 (le_stabilizer_ofMulAction_single_one A u.property) :)]
   simp [Subgroup.relIndex]
 
@@ -146,9 +145,7 @@ theorem coe_ofMulActionQuotientMapEquiv_comp_cosetTransfer (v : invariants (ρ.c
         (((ρ.ofMulActionQuotientMapEquiv U').symm v).comp (cosetTransfer A U')) : V) =
       relNorm (ρ.comp U.subtype) (U'.subgroupOf U) v := by
   rw [coe_ofMulActionQuotientMapEquiv_apply, IntertwiningMap.comp_apply,
-    cosetTransfer_single_one_eq_cosetSum, cosetSum,
-    ← IntertwiningMap.coe_res ((ρ.ofMulActionQuotientMapEquiv U').symm v) U.subtype,
-    IntertwiningMap.map_relNorm]
+    cosetTransfer_single_one_eq_cosetSum, cosetSum, IntertwiningMap.map_relNorm_comp]
   simp
 
 end CommRing
