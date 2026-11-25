@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Hodge.SelfDuality
 public import TauCeti.LinearAlgebra.BilinearForm.Dual.Form
-import TauCeti.Geometry.Hodge.Substructure
 
 /-!
 # The scaled dual form polarizes the dual Hodge structure
