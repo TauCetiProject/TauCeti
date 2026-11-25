@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Topology.Algebra.Module.Quotient
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Quotient normal spaces of immersions
@@ -20,9 +21,12 @@ complementary subspace. The normal spaces are indexed by the source point, so tw
 immersion through one image point keep separate normal spaces. They are the fibres of the
 quotient normal bundle `f*TN / df(TM)`.
 
-The differential of an immersion of positive smoothness has a continuous left inverse, so its
-range is closed and the normal space is Hausdorff. In finite dimensions it has the expected
-codimension. The quotient map `Manifold.IsImmersion.normalClass` characterizes exactly which
+The differential of an immersion of positive smoothness has a continuous left inverse, so it
+restricts to a continuous linear equivalence onto `Manifold.IsImmersion.tangentRange`
+(`Manifold.IsImmersion.tangentSpaceEquivTangentRange`), its range is closed, and the normal space
+is Hausdorff. In finite dimensions it has the expected codimension
+(`Manifold.IsImmersion.finrank_normalSpace`, `Manifold.IsImmersion.finrank_normalSpace_eq_one`).
+The quotient map `Manifold.IsImmersion.normalClass` characterizes exactly which
 ambient tangent vectors represent zero normal vectors, and linear and continuous linear maps
 vanishing on the tangent range descend to the normal space (`Manifold.IsImmersion.normalLift`,
 `Manifold.IsImmersion.normalLiftL`), uniquely.
@@ -73,6 +77,35 @@ theorem mem_tangentRange_iff (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
     (v : TangentSpace J (f x)) :
     v ∈ hf.tangentRange x hn ↔ ∃ u : TangentSpace I x, mfderiv I J f x u = v :=
   Iff.rfl
+
+/-- At each point `x : M`, the differential `mfderiv I J f x` of a positive-regularity immersion
+restricts to a continuous linear equivalence onto `hf.tangentRange x hn`. Neither
+finite-dimensionality nor completeness of `𝕜` is required. -/
+noncomputable def tangentSpaceEquivTangentRange (hf : IsImmersion I J n f) (x : M)
+    (hn : n ≠ 0) : TangentSpace I x ≃L[𝕜] hf.tangentRange x hn :=
+  let heq := LinearEquiv.ofInjective (mfderiv I J f x).toLinearMap (hf.mfderiv_injective hn x)
+  ContinuousLinearEquiv.mk heq
+    ((mfderiv I J f x).continuous.subtype_mk _)
+    (by
+      obtain ⟨L, hL⟩ := isDiffImmersionAt_iff.mp (hf.isDiffImmersionAt hn x)
+      exact (L.continuous.comp continuous_subtypeVal).congr fun ⟨_, u, rfl⟩ ↦
+        (hL u).trans (heq.symm_apply_apply u).symm)
+
+/-- `hf.tangentSpaceEquivTangentRange x hn` sends `u` to `mfderiv I J f x u` in the ambient
+tangent space. -/
+@[simp]
+theorem coe_tangentSpaceEquivTangentRange_apply (hf : IsImmersion I J n f) (x : M)
+    (hn : n ≠ 0) (u : TangentSpace I x) :
+    (hf.tangentSpaceEquivTangentRange x hn u : TangentSpace J (f x)) = mfderiv I J f x u :=
+  LinearEquiv.ofInjective_apply (mfderiv I J f x).toLinearMap (h := hf.mfderiv_injective hn x) u
+
+/-- The inverse of `hf.tangentSpaceEquivTangentRange x hn` sends `⟨mfderiv I J f x u, _⟩` back
+to `u`. -/
+@[simp]
+theorem tangentSpaceEquivTangentRange_symm_mfderiv (hf : IsImmersion I J n f) (x : M)
+    (hn : n ≠ 0) (u : TangentSpace I x) :
+    (hf.tangentSpaceEquivTangentRange x hn).symm ⟨mfderiv I J f x u, ⟨u, rfl⟩⟩ = u :=
+  (hf.tangentSpaceEquivTangentRange x hn).symm_apply_apply u
 
 /-- The normal space of an immersion at `x`: ambient tangent vectors modulo the image of the
 differential at `x`. -/
@@ -323,6 +356,15 @@ theorem finrank_normalSpace (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
     Module.finrank 𝕜 (hf.NormalSpace x hn) =
       Module.finrank 𝕜 (TangentSpace J (f x)) - Module.finrank 𝕜 (TangentSpace I x) := by
   have h := hf.finrank_normalSpace_add_finrank x hn
+  omega
+
+/-- In codimension one (`finrank 𝕜 E + 1 = finrank 𝕜 F`), every normal fibre has `𝕜`-rank `1`. -/
+theorem finrank_normalSpace_eq_one (hf : IsImmersion I J n f) (hn : n ≠ 0)
+    (hcodim : Module.finrank 𝕜 E + 1 = Module.finrank 𝕜 F) (x : M) :
+    Module.finrank 𝕜 (hf.NormalSpace x hn) = 1 := by
+  have : FiniteDimensional 𝕜 F := Module.finite_of_finrank_eq_succ hcodim.symm
+  have h := hf.finrank_normalSpace x hn
+  rw [TauCeti.finrank_tangentSpace, TauCeti.finrank_tangentSpace] at h
   omega
 
 section Equiv
