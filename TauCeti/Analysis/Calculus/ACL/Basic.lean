@@ -25,7 +25,8 @@ normed space. Openness of `Ω` is assumed only for the `C¹` result.
 * `TauCeti.formalDeriv u x` is the *formal derivative* of `u : ℝⁿ → F` at `x`: the continuous
   linear map `ℝⁿ → F` sending `eᵢ` to the partial derivative `∂ᵢu(x) = lineDeriv ℝ u x eᵢ`, which
   is `0` where that derivative does not exist (`TauCeti.formalDeriv_apply_single`). It is the
-  Fréchet derivative wherever `u` is differentiable (`TauCeti.formalDeriv_eq_fderiv`).
+  Fréchet derivative wherever `u` is differentiable (`TauCeti.formalDeriv_eq_fderiv`), and at `x`
+  it depends only on the germ of `u` at `x` (`Filter.EventuallyEq.formalDeriv_eq`).
 * `TauCeti.coordinateBox a b` is the closed coordinate box `Π_j [a_j, b_j]`, and
   `TauCeti.lineFunction u x i` is the line function `t ↦ u(x + (t - xᵢ) eᵢ)` of `u` through `x` in
   the `i`-th direction. For `x` in a box and `t ∈ [aᵢ, bᵢ]`, the point `x + (t - xᵢ) eᵢ` stays in
@@ -90,6 +91,13 @@ theorem formalDeriv_eq_fderiv {u : EuclideanSpace ℝ (Fin n) → F} {x : Euclid
     (hu : DifferentiableAt ℝ u x) : formalDeriv u x = fderiv ℝ u x :=
   EuclideanSpace.ext_continuousLinearMap_single fun i ↦ by
     rw [formalDeriv_apply_single, hu.lineDeriv_eq_fderiv]
+
+/-- The formal derivative at `x` depends only on the germ of the map at `x`. -/
+theorem _root_.Filter.EventuallyEq.formalDeriv_eq {u v : EuclideanSpace ℝ (Fin n) → F}
+    {x : EuclideanSpace ℝ (Fin n)} (h : u =ᶠ[𝓝 x] v) : formalDeriv u x = formalDeriv v x := by
+  ext w
+  rw [formalDeriv_apply, formalDeriv_apply]
+  simp_rw [h.lineDeriv_eq]
 
 /-- The norm of the formal derivative is at most the sum of the norms of the partial
 derivatives. -/
