@@ -446,6 +446,23 @@ theorem tsupport_complexCutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_tar
     (fun x hx h ↦ by rw [complexCutoffPullback_apply_of_mem he _ _ hx, h, zero_smul])
     fun _ hx ↦ complexCutoffPullback_apply_of_notMem he _ _ hx
 
+/-- If a cutoff `χ` in a chart `e` is `1` near the support of a cutoff `ρ`, then on `M` the
+supports of `ρ` and of `1 - χ`, read through the chart, are disjoint. -/
+theorem disjoint_tsupport_complexCutoffPullback_one_sub {ρ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    (hχ : ∀ᶠ y in 𝓝ˢ (tsupport ρ), χ y = 1) :
+    Disjoint (tsupport (e.complexCutoffPullback he ρ 1))
+      (tsupport ⇑((1 : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) - e.complexCutoffPullback he χ 1)) := by
+  -- `χ = 1` on an open set `N ⊇ supp ρ`, so `1 - χ` vanishes on the open set `e⁻¹(N ∩ target)`.
+  obtain ⟨N, hN, hρN, hNχ⟩ := mem_nhdsSet_iff_exists.1 hχ
+  have hO : IsOpen (e.symm '' (N ∩ e.target)) :=
+    e.symm.isOpen_image_of_subset_source (hN.inter e.open_target) inter_subset_right
+  refine Disjoint.mono_left ((tsupport_complexCutoffPullback_subset he ρ 1).trans
+      (image_mono (subset_inter hρN ρ.tsupport_subset))) (disjoint_compl_right.mono_right ?_)
+  refine closure_minimal (fun q hq hqO ↦ hq ?_) hO.isClosed_compl
+  obtain ⟨y, ⟨hyN, hyt⟩, rfl⟩ := hqO
+  have hχy : χ y = 1 := hNχ hyN
+  simp [complexCutoffPullback_apply_of_mem he _ _ (e.map_target hyt), e.right_inv hyt, hχy]
+
 /-- **Pushing a complex-valued function on the manifold forward to a chart.** For a cutoff `φ`
 with compact support in the target of the chart `e`, the smooth complex-valued function
 `φ · (h ∘ e⁻¹)` on `E`, which vanishes outside the chart target, as a complex-linear map in
