@@ -40,7 +40,9 @@ section CommRing
 
 variable {R : Type*} [CommRing R] (d l : R)
 
-private theorem eval_f_scaledLegendre (x : R) :
+/-- The native Weierstrass cubic of a scaled Legendre equation factors at its three
+labelled roots. -/
+theorem eval_f_scaledLegendre (x : R) :
     (scaledLegendre d l).toAffine.f.eval x = x * (x - d) * (x - d * l) := by
   rw [Affine.eval_f, scaledLegendre_a₂, scaledLegendre_a₄, scaledLegendre_a₆]
   ring

@@ -57,7 +57,32 @@ zero as its `y`-coordinate. -/
 theorem pointOfRoot_eq_some (x : {x : K // W.f.eval x = 0}) :
     W.pointOfRoot x = .some x 0 (W.nonsingular_of_eval_f_eq_zero x.property) := (rfl)
 
+/-- Distinct roots of the Weierstrass cubic give distinct affine points. -/
+theorem pointOfRoot_injective : Function.Injective W.pointOfRoot := by
+  intro x y hxy
+  rw [pointOfRoot_eq_some, pointOfRoot_eq_some, Point.some.injEq] at hxy
+  exact Subtype.ext hxy.1
+
+/-- Two points at roots of the Weierstrass cubic are equal exactly when their roots are equal. -/
+@[simp]
+theorem pointOfRoot_inj {x y : {x : K // W.f.eval x = 0}} :
+    W.pointOfRoot x = W.pointOfRoot y ↔ x = y :=
+  W.pointOfRoot_injective.eq_iff
+
+/-- A point at a root of the Weierstrass cubic is not the origin. -/
+@[simp]
+theorem pointOfRoot_ne_zero (x : {x : K // W.f.eval x = 0}) : W.pointOfRoot x ≠ 0 := by
+  rw [pointOfRoot_eq_some]
+  exact Point.some_ne_zero _
+
 variable [DecidableEq K]
+
+/-- A point at a root of the Weierstrass cubic is killed by two. -/
+@[simp]
+theorem two_nsmul_pointOfRoot_eq_zero (x : {x : K // W.f.eval x = 0}) :
+    (2 : ℕ) • W.pointOfRoot x = 0 := by
+  rw [pointOfRoot_eq_some, two_nsmul]
+  exact Point.add_self_of_Y_eq (by rw [negY_of_isCharNeTwoNF, neg_zero])
 
 /-- In characteristic different from two normal form, the doubling kernel consists of the
 origin and the points `(x, 0)` at the roots of the Weierstrass cubic. -/
@@ -75,32 +100,27 @@ theorem ker_nsmul_two_eq_insert_range :
       obtain rfl := y_eq_zero_of_order_two h2F h hP
       have hx : W.f.eval x = 0 := by
         simpa using (W.equation_iff_eval_f_eq_sq x 0).mp h.1
-      exact Set.mem_insert_of_mem _ ⟨⟨x, hx⟩, rfl⟩
+      exact Set.mem_insert_of_mem _ ⟨⟨x, hx⟩, W.pointOfRoot_eq_some ⟨x, hx⟩⟩
   · intro hP
     rcases Set.mem_insert_iff.mp hP with rfl | ⟨x, rfl⟩
     · exact zero_mem _
-    · simp only [SetLike.mem_coe, AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, two_nsmul]
-      exact Point.add_self_of_Y_eq (by rw [negY_of_isCharNeTwoNF, neg_zero])
+    · simpa only [SetLike.mem_coe, AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply] using
+        W.two_nsmul_pointOfRoot_eq_zero x
 
 /-- The `2`-torsion of `W(K)` has one more element than `f` has roots in `K`. -/
 theorem card_ker_nsmul_two : Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker =
     Nat.card {x : K // W.f.eval x = 0} + 1 := by
   have hfin : Finite {x : K | W.f.eval x = 0} :=
     Set.Finite.to_subtype (Polynomial.finite_setOfPred_isRoot W.f_ne_zero)
-  have hinj : Function.Injective W.pointOfRoot := by
-    intro a b hab
-    rw [pointOfRoot_eq_some, pointOfRoot_eq_some, Point.some.injEq] at hab
-    exact Subtype.ext hab.1
   calc Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker
       = ((nsmulAddMonoidHom (α := W.Point) 2).ker : Set W.Point).ncard := Nat.card_coe_set_eq _
     _ = (insert 0 (Set.range W.pointOfRoot)).ncard :=
         congrArg Set.ncard (ker_nsmul_two_eq_insert_range W)
     _ = (Set.range W.pointOfRoot).ncard + 1 := Set.ncard_insert_of_notMem (by
-      intro ⟨x, hx⟩
-      rw [pointOfRoot_eq_some] at hx
-      exact Point.some_ne_zero _ hx)
+      rintro ⟨x, hx⟩
+      exact W.pointOfRoot_ne_zero x hx)
     _ = Nat.card {x : K // W.f.eval x = 0} + 1 := by
-        rw [← Nat.card_coe_set_eq, Nat.card_range_of_injective hinj]
+        rw [← Nat.card_coe_set_eq, Nat.card_range_of_injective W.pointOfRoot_injective]
 
 end Affine
 
