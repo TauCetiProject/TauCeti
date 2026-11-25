@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Prod
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import TauCeti.Analysis.Calculus.Deriv.LevelCrossing
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
@@ -22,16 +23,20 @@ trajectories are the pairs of trajectories of the factors, run with the same tim
 
 For an arbitrary vector field `V` on a product `M × F` with a normed space `F`, the second component
 of an integral curve is differentiable, with derivative the second component of `V`
-(`IsMIntegralCurve.hasDerivAt_snd`). For `F = ℝ`, if the second component of `V` is positive on a
-level `t = c`, an integral curve whose second component runs from below `c` to above `c` crosses
-that level exactly once (`IsMIntegralCurve.existsUnique_snd_eq`).
+(`IsMIntegralCurve.hasDerivAt_snd`, and `IsMIntegralCurveOn.hasDerivAt_snd` for a curve defined
+near a time). For `F = ℝ`, the second component is strictly increasing when the second component of
+`V` is positive along the curve (`IsMIntegralCurve.strictMono_snd`); if the second component of `V`
+is positive on a level `t = c`, an integral curve whose second component runs from below `c` to
+above `c` crosses that level exactly once (`IsMIntegralCurve.existsUnique_snd_eq`).
 
 ## Main results
 
 * `TauCeti.Manifold.isMIntegralCurveOn_prodVectorField_iff`: integral curves on a set of times.
 * `TauCeti.Manifold.isMIntegralCurve_prodVectorField_iff`: global integral curves.
-* `IsMIntegralCurve.hasDerivAt_snd`: the derivative of the second component of an integral curve
-  in `M × F`.
+* `IsMIntegralCurveOn.hasDerivAt_snd`, `IsMIntegralCurve.hasDerivAt_snd`: the derivative of the
+  second component of an integral curve in `M × F`.
+* `IsMIntegralCurve.strictMono_snd`: the second component of an integral curve in `M × ℝ`
+  increases strictly where the second component of the field is positive.
 * `IsMIntegralCurve.existsUnique_snd_eq`: an integral curve in `M × ℝ` crosses a level exactly once
   when the field points upwards there.
 -/
@@ -61,19 +66,11 @@ theorem isMIntegralCurveOn_prodVectorField_iff {s : Set ℝ} :
       fun t _ ↦ by rw [mfderiv_fst]; exact prodVectorField_fst X Y (γ t)
   · exact h.map_of_mfderiv_eq (f := Prod.snd) (fun _ _ ↦ mdifferentiableAt_snd)
       fun t _ ↦ by rw [mfderiv_snd]; exact prodVectorField_snd X Y (γ t)
-  · have key : ((1 : ℝ →L[ℝ] ℝ).smulRight (X (γ t).1)).prod
-        ((1 : ℝ →L[ℝ] ℝ).smulRight (Y (γ t).2)) =
-          (1 : ℝ →L[ℝ] ℝ).smulRight (prodVectorField X Y (γ t)) := by
-      rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
-        ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
-        ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
-      -- The scalar action on the tangent space of `M × N` is not syntactically that of the
-      -- product of the tangent spaces, so `toSpanSingleton_apply` and `one_smul` need `erw` there.
-      ext <;> simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.toSpanSingleton_apply,
-        one_smul] <;> erw [ContinuousLinearMap.toSpanSingleton_apply, one_smul]
-      · exact (prodVectorField_fst X Y (γ t)).symm
-      · exact (prodVectorField_snd X Y (γ t)).symm
-    exact key ▸ (h₁ t ht).prodMk (h₂ t ht)
+  · refine HasMFDerivWithinAt.prodMk_curve (v := prodVectorField X Y (γ t)) ?_ ?_
+    · rw [prodVectorField_fst]
+      exact h₁ t ht
+    · rw [prodVectorField_snd]
+      exact h₂ t ht
 
 /-- **Integral curves of a product field** are the pairs of integral curves of the two factors. -/
 theorem isMIntegralCurve_prodVectorField_iff :
@@ -81,13 +78,32 @@ theorem isMIntegralCurve_prodVectorField_iff :
       IsMIntegralCurve (fun t ↦ (γ t).1) X ∧ IsMIntegralCurve (fun t ↦ (γ t).2) Y := by
   simp only [isMIntegralCurve_iff_isMIntegralCurveOn, isMIntegralCurveOn_prodVectorField_iff]
 
+/-- **The second component of an integral curve in `M × F`** on a neighbourhood of a time `s` is
+differentiable at `s`, with derivative the second component of the field: for an integral curve `γ`
+of a vector field `V` on `M × F` on a set `S ∈ 𝓝 s`, `(γ s).2` has derivative `(V (γ s)).2` at
+`s`. -/
+theorem _root_.IsMIntegralCurveOn.hasDerivAt_snd
+    {V : Π z : M × E', TangentSpace (I.prod 𝓘(ℝ, E')) z} {γ : ℝ → M × E'} {S : Set ℝ}
+    (hγ : IsMIntegralCurveOn γ V S) {s : ℝ} (hS : S ∈ 𝓝 s) :
+    HasDerivAt (fun s ↦ (γ s).2) (V (γ s) : E × E').2 s :=
+  hasDerivAt_iff_hasFDerivAt.2 <|
+    hasMFDerivAt_iff_hasFDerivAt.1 ((hγ s (mem_of_mem_nhds hS)).hasMFDerivAt hS).snd_curve
+
 /-- **The second component of an integral curve in `M × F`** is differentiable, with derivative the
 second component of the field: for an integral curve `γ` of a vector field `V` on `M × F`,
 `(γ s).2` has derivative `(V (γ s)).2` at `s`. -/
 theorem _root_.IsMIntegralCurve.hasDerivAt_snd {V : Π z : M × E', TangentSpace (I.prod 𝓘(ℝ, E')) z}
     {γ : ℝ → M × E'} (hγ : IsMIntegralCurve γ V) (s : ℝ) :
     HasDerivAt (fun s ↦ (γ s).2) (V (γ s) : E × E').2 s :=
-  hasDerivAt_iff_hasFDerivAt.2 (hasMFDerivAt_iff_hasFDerivAt.1 (hγ s).snd_curve)
+  (hγ.isMIntegralCurveOn univ).hasDerivAt_snd univ_mem
+
+/-- **The second component increases along an integral curve.** If the second component of a
+vector field `V` on `M × ℝ` is positive along an integral curve `γ`, then the second component of
+`γ` is strictly increasing. -/
+theorem _root_.IsMIntegralCurve.strictMono_snd {V : Π z : M × ℝ, TangentSpace (I.prod 𝓘(ℝ)) z}
+    {γ : ℝ → M × ℝ} (hγ : IsMIntegralCurve γ V) (hpos : ∀ s, 0 < (V (γ s) : E × ℝ).2) :
+    StrictMono fun s ↦ (γ s).2 :=
+  strictMono_of_hasDerivAt_pos hγ.hasDerivAt_snd hpos
 
 /-- **An integral curve crosses a level exactly once.** If the second component of the vector
 field `V` on `M × ℝ` is positive on the level `t = c`, then an integral curve of `V` whose second

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.BaseChange
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Coprime
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszColeman.Basic
 public import TauCeti.RingTheory.Huber.BanachModule.ZeroAtInfty
 import TauCeti.Algebra.Polynomial.Reverse
 
@@ -28,10 +27,8 @@ assumed.
   `u.mapCoeffs` on `C₀` (`completedBaseChange_zeroAtInfty`), respects changing realisations
   (`completedBaseChange_trans`), and transports `TauCeti.HasPr`, `IsPrCompact`, Fredholm series,
   Hasse derivatives, good zeros, coprime reverse-polynomial invertibility, operator-norm continuity,
-  and Riesz and Riesz–Coleman projections (`IsRieszProjection.completedBaseChange`,
-  `IsRieszProjection.inverse_completedBaseChange`,
-  `IsRieszColemanProjection.completedBaseChange`,
-  `IsRieszColemanProjection.inverse_completedBaseChange`).
+  and Riesz projections (`IsRieszProjection.completedBaseChange`,
+  `IsRieszProjection.inverse_completedBaseChange`).
 
 ## References
 
@@ -275,7 +272,9 @@ theorem completedBaseChange_mul (u v : M₁ →L[R] M₁) (α : S ⊗̂[R] M₁ 
 @[simp]
 theorem completedBaseChange_pow (u : M₁ →L[R] M₁) (α : S ⊗̂[R] M₁ ≃L[S] N₁) (n : ℕ) :
     (u ^ n).completedBaseChange α α = u.completedBaseChange α α ^ n :=
-  Nat.rec (by simp) (fun _ ih ↦ by rw [pow_succ, pow_succ, completedBaseChange_mul, ih]) n
+  MonoidHom.map_pow
+    ⟨⟨(·.completedBaseChange α α), completedBaseChange_one α⟩, (completedBaseChange_mul · · α)⟩
+    u n
 
 /-- **Endomorphism ring homomorphism.** Along `α : S ⊗̂_R M₁ ≃L[S] N₁`,
 `completedBaseChange · α α` is a unital ring homomorphism `(M₁ →L[R] M₁) →+* (N₁ →L[S] N₁)`. -/
@@ -489,9 +488,7 @@ theorem IsPrCompact.isUnit_aeval_reverse_completedBaseChange
     [IsUltrametricDist R] [CompleteSpace R] [ContinuousConstSMul R M₁] [ContinuousConstSMul S N₁]
     {u : M₁ →L[R] M₁} (hu : u.IsPrCompact) (α : S ⊗̂[R] M₁ ≃L[S] N₁)
     {Q : R[X]} (hQ : IsUnit Q.leadingCoeff)
-    (hcop : IsCoprime
-      (⟨Q, PowerSeries.IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
-        PowerSeries.IsEntire.subring R)
+    (hcop : IsCoprime (PowerSeries.IsEntire.polynomialHom Q)
       ⟨u.charPowerSeries, PowerSeries.IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩) :
     IsUnit (Polynomial.aeval (u.completedBaseChange α α)
       (Polynomial.map (algebraMap R S) Q).reverse) := by
@@ -561,39 +558,6 @@ theorem IsRieszProjection.inverse_completedBaseChange [TauCeti.NormedRing.IsTate
   ((isRieszProjection_def.mp hE).inverse_map (completedBaseChangeRingHom α)
     (isRieszProjection_def.mp (hE.completedBaseChange hS hM α))
     (by simp [completedBaseChangeRingHom_apply])
-    (completedBaseChangeRingHom_apply α _).symm).trans
-    (completedBaseChangeRingHom_apply α _)
-
-/-- **Riesz–Coleman projections under completed-tensor base change.** On a `(Pr)` module `M₁` over
-`R`, `completedBaseChange` transports a Riesz–Coleman projection of `u` for `Q` to one of
-`u.completedBaseChange α α` for `Q.map (algebraMap R S)`, whenever `algebraMap R S` preserves the
-degree of `Q` (in particular, whenever `Q` has invertible leading coefficient). No compactness is
-needed. -/
-theorem IsRieszColemanProjection.completedBaseChange [TauCeti.NormedRing.IsTate S]
-    [IsBoundedSMul R M₁] [IsBoundedSMul S N₁] (hM : HasPr R M₁) (α : S ⊗̂[R] M₁ ≃L[S] N₁)
-    {u E : M₁ →L[R] M₁} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
-    (hdeg : (Q.map (algebraMap R S)).natDegree = Q.natDegree) :
-    IsRieszColemanProjection (u.completedBaseChange α α) (Q.map (algebraMap R S))
-      (E.completedBaseChange α α) :=
-  isRieszColemanProjection_def.mpr <| by
-    simpa only [completedBaseChangeRingHom_apply, aeval_completedBaseChange,
-      Polynomial.reverse_map_of_natDegree_eq _ hdeg] using
-      (isRieszColemanProjection_def.mp hE).map (completedBaseChangeRingHom α)
-        (completedBaseChange_mem_closure_adjoin hS hM α)
-
-/-- Completed-tensor base change commutes with taking the complementary inverse of a Riesz–Coleman
-projection, whenever `algebraMap R S` preserves the degree of `Q`. -/
-theorem IsRieszColemanProjection.inverse_completedBaseChange [TauCeti.NormedRing.IsTate S]
-    [IsBoundedSMul R M₁] [IsBoundedSMul S N₁] (hM : HasPr R M₁) (α : S ⊗̂[R] M₁ ≃L[S] N₁)
-    {u E : M₁ →L[R] M₁} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
-    (hdeg : (Q.map (algebraMap R S)).natDegree = Q.natDegree) :
-    (isRieszColemanProjection_def.mp (hE.completedBaseChange hS hM α hdeg)).inverse =
-      (isRieszColemanProjection_def.mp hE).inverse.completedBaseChange α α :=
-  ((isRieszColemanProjection_def.mp hE).inverse_map (completedBaseChangeRingHom α)
-    (isRieszColemanProjection_def.mp (hE.completedBaseChange hS hM α hdeg))
-    (by
-      simp [completedBaseChangeRingHom_apply, Polynomial.reverse_map_of_natDegree_eq _ hdeg,
-        aeval_completedBaseChange])
     (completedBaseChangeRingHom_apply α _).symm).trans
     (completedBaseChangeRingHom_apply α _)
 

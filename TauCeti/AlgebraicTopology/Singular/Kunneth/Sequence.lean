@@ -15,7 +15,7 @@ import Mathlib.RingTheory.Flat.CategoryTheory
 import TauCeti.Algebra.Category.ModuleCat.End
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
 import TauCeti.CategoryTheory.GradedObject
-import TauCeti.CategoryTheory.Monoidal.Tor
+import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 
 /-!
 # The Künneth short exact sequence for singular homology
@@ -81,6 +81,8 @@ without the splitting the extension would only show that `e²` kills it.
 * `TopCat.singularHomologyKunnethShortComplex` and
   `TopCat.singularHomologyKunnethShortComplex_shortExact`: **the Künneth short exact sequence**.
 * `TopCat.mono_singularHomologyKunneth`: the Künneth map is a monomorphism in every degree.
+* `TopCat.isIso_singularHomologyKunneth_of_flat`: it is an isomorphism in positive degrees when
+  the homology of the first factor is flat.
 * `TopCat.singularHomologyKunnethUnitShortComplex` and
   `TopCat.singularHomologyKunnethUnitShortComplex_shortExact`: its form with coefficients in a
   hereditary commutative ring.
@@ -250,6 +252,22 @@ theorem singularHomologyKunnethShortComplex_shortExact (m : ℕ) :
   ShortComplex.shortExact_of_iso (homologyKunnethShortComplexIso X Y M N m)
     (homologyKunnethShortComplex_shortExact ((toSSet.obj X).chainComplex M)
       ((toSSet.obj Y).chainComplex N) m)
+
+/-- **The Künneth theorem when one factor has flat homology.** If the cycles `Z_q(Y; N)` and the
+quotients `C_q(Y; N) / Z_q(Y; N)` are projective, for instance for any projective `N` over a
+principal ideal domain, and every homology module `Hₚ(X; M)` is flat, then the Künneth map
+`⨁_{p + q = m + 1} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₘ₊₁(X × Y; M ⊗ N)` is an isomorphism: every `Tor₁`
+summand of the Künneth sequence vanishes. No hypothesis is placed on the homology of `Y`. -/
+theorem isIso_singularHomologyKunneth_of_flat
+    [hX : ∀ p, Module.Flat k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)]
+    (m : ℕ) : IsIso (singularHomologyKunneth X Y M N (m + 1)) := by
+  -- `Hₚ(X; M)` is by definition the homology of the singular chain complex `C(X; M)`.
+  have (p : ℕ) : Module.Flat k (((toSSet.obj X).chainComplex M).homology p) := hX p
+  rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
+  -- The instances are passed explicitly, as in `TopCat.mono_singularHomologyKunneth`.
+  exact @IsIso.comp_isIso _ _ _ _ _ _ _ (isIso_homologyKunneth_of_flat_homology
+    ((toSSet.obj X).chainComplex M) ((toSSet.obj Y).chainComplex N) m)
+    ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso (m + 1)).isIso_inv
 
 /-- **The Künneth map is a monomorphism** when the cycles `Z_q(Y; N)` and the quotients
 `C_q(Y; N) / Z_q(Y; N)` are projective, for instance for any projective `N` over a principal ideal

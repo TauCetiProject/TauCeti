@@ -16,6 +16,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Div
 import TauCeti.RingTheory.AdjoinRoot.Basic
+import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.Trunc
 
@@ -681,10 +682,11 @@ theorem IsEntire.mkAdjoinRoot_apply (hp : p.Monic) (F : IsEntire.subring R) :
   (rfl)
 
 /-- On polynomials, reduction modulo `p` is `AdjoinRoot.mk p`. -/
+@[simp high]
 theorem IsEntire.mkAdjoinRoot_coe (hp : p.Monic) (g : Polynomial R) :
-    IsEntire.mkAdjoinRoot hp ⟨g, IsEntire.mem_subring.mpr (isEntire_coe g)⟩ =
-      AdjoinRoot.mk p g := by
-  rw [IsEntire.mkAdjoinRoot_apply, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic]
+    IsEntire.mkAdjoinRoot hp (IsEntire.polynomialHom g) = AdjoinRoot.mk p g := by
+  rw [IsEntire.mkAdjoinRoot_apply, IsEntire.coe_polynomialHom, modByMonic_coe _ hp,
+    AdjoinRoot.mk_modByMonic]
 
 /-- Reduction of entire series modulo `p` is surjective: polynomials already reach every class. -/
 theorem IsEntire.mkAdjoinRoot_surjective (hp : p.Monic) :
@@ -833,22 +835,22 @@ omit [CompleteSpace R] in
 /-- Over an ultrametric norm-one ring, divisibility of a polynomial `P` by a polynomial `Q`
 with invertible leading coefficient in the subring of entire power series is equivalent to ordinary
 polynomial divisibility `Q ∣ P`. -/
+@[simp]
 theorem coe_subring_dvd_iff {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff) :
-    (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R) ∣
-      ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩ ↔ Q ∣ P := by
+    IsEntire.polynomialHom Q ∣ IsEntire.polynomialHom P ↔ Q ∣ P := by
   refine ⟨?_, ?_⟩
   · rintro ⟨⟨G, hG⟩, hPG⟩
-    exact dvd_of_coe_eq_coe_mul_entire hQ (IsEntire.mem_subring.mp hG) (congrArg Subtype.val hPG)
+    exact dvd_of_coe_eq_coe_mul_entire hQ (IsEntire.mem_subring.mp hG) <| by
+      simpa only [Subring.coe_mul, IsEntire.coe_polynomialHom] using congrArg Subtype.val hPG
   · rintro ⟨K, rfl⟩
-    exact ⟨⟨K, IsEntire.mem_subring.mpr (isEntire_coe K)⟩, Subtype.ext (Polynomial.coe_mul Q K)⟩
+    exact ⟨IsEntire.polynomialHom K, map_mul IsEntire.polynomialHom Q K⟩
 
 omit [CompleteSpace R] in
 /-- Over an ultrametric norm-one ring, if `Q` has invertible leading coefficient, `Q` divides `P` in
 the subring of entire power series, `P.natDegree ≤ Q.natDegree`, and `P` and `Q` share a
 left-regular coefficient `P.coeff k = Q.coeff k`, then `P = Q`. -/
 theorem eq_of_coe_dvd_of_natDegree_le {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff)
-    (hdvd : (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R) ∣
-      ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩)
+    (hdvd : IsEntire.polynomialHom Q ∣ IsEntire.polynomialHom P)
     (hdeg : P.natDegree ≤ Q.natDegree) {k : ℕ} (hQk : IsLeftRegular (Q.coeff k))
     (hk : P.coeff k = Q.coeff k) :
     P = Q :=

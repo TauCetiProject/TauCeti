@@ -32,8 +32,8 @@ gives the doubling formula. When `g` fails to be integrable, both sides of each 
   even `g`.
 * `intervalIntegral.integral_zero_neg_of_even` — `∫ t in 0..-R, g t = -∫ t in 0..R, g t` for even
   `g`.
-* `MeasureTheory.integral_eq_zero_of_odd` — `∫ x, g x ∂μ = 0` for odd `g` and a measure `μ`
-  invariant under negation.
+* `MeasureTheory.integral_eq_zero_of_odd` — `∫ x, g x ∂μ = 0` for almost-everywhere odd `g`
+  and a measure `μ` invariant under negation.
 -/
 
 public section
@@ -92,15 +92,15 @@ end intervalIntegral
 
 namespace MeasureTheory
 
-/-- **An odd integrand integrates to zero against a measure invariant under negation.** No
-integrability hypothesis is needed: the substitution `x ↦ -x` preserves the measure, so the
-integral equals its own negative. -/
-theorem integral_eq_zero_of_odd {G E : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableNeg G]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure G} [μ.IsNegInvariant] {g : G → E}
-    (hodd : Function.Odd g) : ∫ x, g x ∂μ = 0 := by
-  have hfun : (fun x ↦ g (-x)) = fun x ↦ -g x := funext hodd
-  have h := integral_neg_eq_self g μ
-  rw [hfun, integral_neg] at h
+/-- **An almost-everywhere odd integrand integrates to zero against a measure invariant under
+negation.** No integrability hypothesis is needed: the substitution `x ↦ -x` preserves the
+measure, so the integral equals its own negative. Pointwise oddness gives the hypothesis via
+`Filter.Eventually.of_forall`. -/
+theorem integral_eq_zero_of_odd {G E : Type*} [MeasurableSpace G] [InvolutiveNeg G]
+    [MeasurableNeg G] [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure G} [μ.IsNegInvariant]
+    {g : G → E} (hodd : ∀ᵐ x ∂μ, g (-x) = -g x) : ∫ x, g x ∂μ = 0 := by
+  have h := (Measure.measurePreserving_neg μ).integral_comp measurableEmbedding_neg g
+  rw [integral_congr_ae hodd, integral_neg] at h
   rw [neg_eq_iff_add_eq_zero, ← two_smul ℝ] at h
   exact (smul_eq_zero.1 h).resolve_left two_ne_zero
 

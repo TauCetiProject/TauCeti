@@ -50,6 +50,17 @@ def dC : SmoothForm I M F k →ₗ[ℂ] SmoothForm I M F (k + 1) :=
 theorem dC_apply (φ : SmoothForm I M F k) :
     J.dC φ = Complex.I • (J.delBar φ - J.del φ) := (rfl)
 
+/-- **`dᶜ` on functions.** For every almost complex structure `J` and every smooth function `f`,
+`dᶜ f(v) = -df(J v)`. -/
+theorem dC_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
+    (J.dC f).val x ![v] = -mvfderiv I (fun y ↦ f.val y 0) x (J x v) := by
+  simp only [dC_apply, SmoothForm.smul_toRoughForm, AddSubgroupClass.coe_sub, Pi.smul_apply,
+    Pi.sub_apply, ContinuousAlternatingMap.coe_smul, ContinuousAlternatingMap.coe_sub,
+    J.del_apply_apply, J.delBar_apply_apply]
+  match_scalars
+  · ring
+  · linear_combination Complex.I_mul_I
+
 section Coefficients
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] {L : F →L[ℝ] G}

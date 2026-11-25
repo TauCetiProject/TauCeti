@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Realization
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.Algebra.Lie.Derivation.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Derivation
+import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Four
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
@@ -28,6 +30,8 @@ infinitesimal elements as quadratic without first choosing exterior-square coord
   the recognition theorem from the three intrinsic conditions.
 * `mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι`:
   the complete characterization.
+* `CliffordAlgebra.mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_finrank_le_four`:
+  in dimension at most four, the commutator condition is automatic.
 * `CliffordAlgebra.mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero`: over the zero
   space only `0` satisfies the three conditions.
 -/
@@ -88,37 +92,9 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
     rw [ι_ιRangeEquiv_symm_apply]
     rfl
   -- Differentiating the polarized Clifford relation makes `f` skew-adjoint.
-  have hf_skew : f ∈ (QuadraticMap.polarBilin Q).skewAdjointSubmodule := by
-    rw [LinearMap.mem_skewAdjointSubmodule]
-    intro u v
-    have hsum :
-        algebraMap K (CliffordAlgebra Q)
-            (QuadraticMap.polar Q (f u) v + QuadraticMap.polar Q u (f v)) = 0 := by
-      have hxu := TauCeti.derivationLieAlgebra.leibniz
-        (TauCeti.innerDerivation K x) (ι Q u) (ι Q v)
-      have hxv := TauCeti.derivationLieAlgebra.leibniz
-        (TauCeti.innerDerivation K x) (ι Q v) (ι Q u)
-      simp only [TauCeti.coe_innerDerivation, LieAlgebra.ad_apply] at hxu hxv
-      rw [map_add, ← ι_mul_ι_add_swap, ← ι_mul_ι_add_swap]
-      calc
-        ι Q (f u) * ι Q v + ι Q v * ι Q (f u) +
-              (ι Q u * ι Q (f v) + ι Q (f v) * ι Q u) =
-            ⁅x, ι Q u * ι Q v + ι Q v * ι Q u⁆ := by
-              rw [lie_add, hxu, hxv, hf_lie, hf_lie]
-              abel
-        _ = ⁅x, algebraMap K (CliffordAlgebra Q) (QuadraticMap.polar Q u v)⁆ := by
-              rw [ι_mul_ι_add_swap]
-        _ = 0 := by
-              rw [Ring.lie_def, Algebra.commutes]
-              exact sub_self _
-    have hpolar :
-        QuadraticMap.polar Q (f u) v + QuadraticMap.polar Q u (f v) = 0 :=
-      (algebraMap K (CliffordAlgebra Q)).injective (by simpa using hsum)
-    -- Unfold skew-adjointness to its bilinear-form equation.
-    change QuadraticMap.polarBilin Q (f u) v =
-      QuadraticMap.polarBilin Q u ((-f) v)
-    simp only [QuadraticMap.polarBilin_apply_apply, LinearMap.neg_apply, map_neg]
-    exact eq_neg_of_add_eq_zero_left hpolar
+  have hf_skew : f ∈ (QuadraticMap.polarBilin Q).skewAdjointSubmodule :=
+    (LinearMap.mem_skewAdjointSubmodule f).2 (isSkewAdjoint_polarBilin_of_derivation
+      (TauCeti.innerDerivation K x) (by simpa using hf_lie))
   -- Compare with the canonical quadratic element realizing the same endomorphism.
   let fs : skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q) := ⟨f, hf_skew⟩
   let q : CliffordAlgebra Q := soEquivQuadratic Q hQ fs
@@ -173,6 +149,25 @@ theorem mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_me
   · rintro ⟨hx_even, hx_reverse, hx_lie⟩
     exact mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_range_ι
       Q hQ hx_even hx_reverse hx_lie
+
+/-- **In dimension at most four, an even Clifford element negated by reversal is quadratic**: its
+commutator with a vector is odd and fixed by reversal, hence a vector. -/
+theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_finrank_le_four
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : Module.finrank K V ≤ 4)
+    {x : CliffordAlgebra Q} (hx_even : x ∈ even Q) (hx_reverse : reverse x = -x) :
+    x ∈ quadraticLieSubalgebra Q := by
+  have hx0 : x ∈ evenOdd Q 0 := by
+    rw [← even_toSubmodule]
+    exact hx_even
+  refine mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_range_ι Q hQ
+    hx_even hx_reverse fun v ↦ ?_
+  refine mem_range_ι_of_mem_evenOdd_one_of_reverse_eq_of_finrank_le_four Q hV ?_ ?_
+  · rw [Ring.lie_def]
+    exact Submodule.sub_mem _
+      (by simpa using SetLike.mul_mem_graded hx0 (ι_mem_evenOdd_one Q v))
+      (by simpa using SetLike.mul_mem_graded (ι_mem_evenOdd_one Q v) hx0)
+  · rw [Ring.lie_def, map_sub, reverse.map_mul, reverse.map_mul, reverse_ι, hx_reverse, mul_neg,
+      neg_mul, sub_neg_eq_add, neg_add_eq_sub]
 
 /-- Over the zero space the intrinsic quadratic conditions force a Clifford element to vanish. -/
 theorem mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero [Subsingleton V]

@@ -49,6 +49,8 @@ positive dimension its kernel is `{1, -1}` and it is a quotient covering map by 
   element.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToEuclideanSpecialOrthogonal_apply_apply`: the Euclidean
   Spin projection acts on coordinates by `CliffordAlgebra.spinVectorAction`.
+* `TauCeti.CliffordAlgebra.coe_symm_realCliffordSpinProjectionZero_apply`: column `j` of the
+  matrix of the compact Spin projection of `g` is the action of `g` on the basis vector `eⱼ`.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToEuclideanSpecialOrthogonal_surjective`: the Euclidean
   Spin projection is surjective in every dimension.
 * `TauCeti.CliffordAlgebra.mem_ker_realCliffordSpinToEuclideanSpecialOrthogonal_iff` and
@@ -147,6 +149,17 @@ theorem realCliffordSpinToEuclideanSpecialOrthogonal_eq_comp (n : ℕ) [NeZero n
         realCliffordSpinProjectionZero n := by
   funext g
   simp [realCliffordSpinToEuclideanSpecialOrthogonal_apply, realCliffordSpinProjectionZero_apply]
+
+/-- The entries of the special orthogonal matrix underlying the compact Spin projection of `g`:
+column `j` is the image of the standard basis vector `eⱼ` under the action of `g`. -/
+theorem coe_symm_realCliffordSpinProjectionZero_apply (n : ℕ) [NeZero n]
+    (g : realCliffordSpinGroupZero n) (i j : Fin n) :
+    ((QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm n).symm
+        (realCliffordSpinProjectionZero n g) : Matrix (Fin n) (Fin n) ℝ) i j =
+      spinVectorAction (realCliffordForm n 0) g (Pi.single j 1) i := by
+  simp [QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe,
+    LinearMap.toMatrix'_apply, realCliffordSpinProjectionZero_apply,
+    realCliffordSpinDoubleCoverZero_rightHom]
 
 /-- The Euclidean Spin projection acts on `EuclideanSpace ℝ (Fin n)` by
 `CliffordAlgebra.spinVectorAction` on coordinates. -/

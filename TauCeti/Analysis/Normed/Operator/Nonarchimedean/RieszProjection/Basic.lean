@@ -68,6 +68,8 @@ nilpotents and need not be Noetherian; over a ring the range need not be free.
 
 * `ContinuousLinearMap.IsRieszProjection.maxGenEigenspace_eq_range`: for `a * μ = 1`, the range
   of a Riesz projection is the maximal generalised eigenspace of `u` at `μ`.
+* `ContinuousLinearMap.IsRieszProjection.map`: transport of Riesz projections along a ring
+  homomorphism.
 * `ContinuousLinearMap.IsRieszProjection.comp_comp_of_retract`: Riesz projections compress along
   continuous linear retracts.
 * `ContinuousLinearMap.IsRowCompact.isRieszProjection_rieszProjection`: at a good zero, the
@@ -144,6 +146,30 @@ theorem maxGenEigenspace_eq_range (hE : IsRieszProjection u a h E) {μ : R} (hμ
 end IsRieszProjection
 
 end Module
+
+section Map
+
+variable {R₁ R₂ : Type*} [NormedCommRing R₁] [TauCeti.NormedRing.IsTate R₁]
+  [NormedCommRing R₂] [TauCeti.NormedRing.IsTate R₂]
+  {M₁ M₂ : Type*} [SeminormedAddCommGroup M₁] [Module R₁ M₁] [IsBoundedSMul R₁ M₁]
+  [SeminormedAddCommGroup M₂] [Module R₂ M₂] [IsBoundedSMul R₂ M₂]
+
+/-- **Transport of Riesz projections along a ring homomorphism.** If `Φ` is a ring homomorphism
+between endomorphism algebras matching `1 - a' • Φ u = Φ (1 - a • u)` and preserving the
+operator-norm closure of polynomials in `u`, then `Φ E` is a Riesz projection of `Φ u` at `a'` of
+order `h`. -/
+theorem IsRieszProjection.map (Φ : (M₁ →L[R₁] M₁) →+* (M₂ →L[R₂] M₂))
+    {u E : M₁ →L[R₁] M₁} {a : R₁} {a' : R₂} {h : ℕ}
+    (hE : IsRieszProjection u a h E)
+    (ha : Φ (1 - a • u) = 1 - a' • Φ u)
+    (hclosure : ∀ {v : M₁ →L[R₁] M₁},
+      v ∈ closure (Algebra.adjoin R₁ {u} : Set (M₁ →L[R₁] M₁)) →
+      Φ v ∈ closure (Algebra.adjoin R₂ {Φ u} : Set (M₂ →L[R₂] M₂))) :
+    IsRieszProjection (Φ u) a' h (Φ E) :=
+  isRieszProjection_def.mpr <| by
+    simpa only [← ha] using (isRieszProjection_def.mp hE).map Φ hclosure
+
+end Map
 
 section Retract
 
