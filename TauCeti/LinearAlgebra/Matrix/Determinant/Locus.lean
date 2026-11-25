@@ -137,7 +137,7 @@ theorem map_mem_detLocus (f : B →+* C) (hA : A ∈ detLocus n π N) :
 
 /-- If `A.det = u * π ^ N` with `u` a unit, then the adjugate of `A` divided by `u` is a right
 inverse of `A` up to `π ^ N`. -/
-theorem mul_smul_adjugate_eq {u : Bˣ} (hu : A.det = u * π ^ N) :
+private theorem mul_smul_adjugate_eq {u : Bˣ} (hu : A.det = u * π ^ N) :
     A * ((↑u⁻¹ : B) • A.adjugate) = π ^ N • 1 := by
   rw [mul_smul_comm, mul_adjugate, hu, smul_smul, Units.inv_mul_cancel_left]
 
