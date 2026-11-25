@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Geometry.Manifold.Complex.ClosedUpperHalfPlane
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.MeasureTheory.Function.Jacobian
-import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -143,6 +143,12 @@ def halfOpen (i : Fin A.n) : Opens ℂ :=
 theorem mem_halfOpen {i : Fin A.n} {z : ℂ} :
     z ∈ A.halfOpen i ↔ closedUpperHalfPlaneModel.symm z ∈ A.image i :=
   Iff.rfl
+
+/-- The interior `A.halfImage i` of the image of chart `i` in `ℂ` is the upper half of the open
+set `A.halfOpen i`. -/
+theorem upperHalf_halfOpen (i : Fin A.n) : (A.halfOpen i).upperHalf = A.halfImage i :=
+  Opens.ext <| Set.ext fun _ ↦ by
+    rw [SetLike.mem_coe, SetLike.mem_coe, Opens.mem_upperHalf, mem_halfImage, mem_halfOpen]
 
 /-- The image of chart `i` in `ℂ` is the trace of the open set `A.halfOpen i` on the closed upper
 half-plane. -/

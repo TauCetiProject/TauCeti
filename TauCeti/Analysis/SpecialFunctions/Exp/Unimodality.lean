@@ -28,6 +28,12 @@ theorem hasDerivAt_mul_exp_one_sub (x : ℝ) :
   convert h.mul ((h.const_sub 1).exp) using 1
   ring
 
+end Real
+
+namespace TauCeti
+
+open Real
+
 /-- The function `x exp (1 - x)` is strictly increasing up to `1`. -/
 theorem strictMonoOn_mul_exp_one_sub : StrictMonoOn (fun x : ℝ ↦ x * exp (1 - x)) (Iic 1) := by
   refine strictMonoOn_of_deriv_pos (convex_Iic _) (by fun_prop) fun x hx ↦ ?_
@@ -42,4 +48,4 @@ theorem strictAntiOn_mul_exp_one_sub : StrictAntiOn (fun x : ℝ ↦ x * exp (1 
   rw [(hasDerivAt_mul_exp_one_sub x).deriv]
   exact mul_neg_of_neg_of_pos (sub_neg.mpr hx) (exp_pos _)
 
-end Real
+end TauCeti

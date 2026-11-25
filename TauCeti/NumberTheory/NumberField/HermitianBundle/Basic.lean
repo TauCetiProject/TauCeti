@@ -541,6 +541,12 @@ theorem fiberEquiv_tmul (σ : K →+* ℂ) (c : Codomain σ) (x : E) :
     IsBaseChange.equiv_tmul]
   simp
 
+/-- A vector `x` with `ι x ≠ 0` has nonzero coordinate `σ (ι x)` in every complex fibre. -/
+theorem fiberEquiv_one_tmul_ne_zero {x : E} (hx : ι x ≠ 0) (σ : K →+* ℂ) :
+    fiberEquiv hι σ (1 ⊗ₜ x) ≠ 0 := by
+  rw [fiberEquiv_tmul, map_one, one_mul]
+  exact (map_ne_zero σ).mpr hx
+
 /-- The hermitian metric `‖x‖_σ = e^{-λ_v} |σ(ι x)|`, where `v` is the place induced by `σ`, on an
 `𝓞 K`-module `E` whose scalar extension to `K` is identified with `K` by `ι`. -/
 def ofIsBaseChange (w : InfinitePlace K → ℝ) : HermitianMetric K E where
