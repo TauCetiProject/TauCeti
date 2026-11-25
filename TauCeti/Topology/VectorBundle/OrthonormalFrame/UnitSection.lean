@@ -106,6 +106,34 @@ instance : SMulMemIff (MulAction.stabilizer (unitary (V →L[ℝ] V)) v₀) (sec
 
 end Action
 
+/-! ### Coordinates of a section in orthonormal frames -/
+
+section Coordinates
+
+variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type*} [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [ContinuousFiberNorm F E] {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [FiniteDimensional ℝ V] {σ : ∀ b, E b}
+
+/-- **A continuous section read in orthonormal frames is continuous.** For a bundle with continuous
+fibre norms and a continuous section `σ`, the vector `p.frame.symm (σ p.proj)` of `V` representing
+`σ` in the frame `p` depends continuously on `p`: its coefficient on each vector `b i` of an
+orthonormal basis of `V` is the inner product of `σ` with the frame applied to `b i`. -/
+theorem continuous_frame_symm_apply (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E)) :
+    Continuous fun p : OrthonormalFrameBundle ℝ F E V ↦ p.frame.symm (σ p.proj) := by
+  let b := stdOrthonormalBasis ℝ V
+  have h (i) : Continuous fun p : OrthonormalFrameBundle ℝ F E V ↦
+      inner ℝ (p.frame (b i)) (σ p.proj) • b i :=
+    ((continuous_totalSpaceMk_frame (b i)).inner_bundle_of_continuousFiberNorm
+      (hσ.comp continuous_proj)).smul continuous_const
+  refine (continuous_finsetSum Finset.univ fun i _ ↦ h i).congr fun p ↦ ?_
+  rw [← b.sum_repr' (p.frame.symm (σ p.proj))]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← LinearIsometryEquiv.inner_map_map p.frame, LinearIsometryEquiv.apply_symm_apply]
+
+end Coordinates
+
 /-! ### Local triviality -/
 
 section Trivialization

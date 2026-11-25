@@ -10,7 +10,6 @@ public import TauCeti.Topology.FiberBundle.Principal.Reduction
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.UnitSection
 public import TauCeti.Topology.VectorBundle.SpinStructure.Basic
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Inclusion
-import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 
 /-!
 # Points of a `Spinᶜ` structure adapted to a unit section
@@ -81,6 +80,7 @@ def sectionPoints : Set (TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P) :=
 variable {s σ}
 
 /-- A point is adapted to `σ` when its frame sends the last coordinate vector to `σ`. -/
+@[simp]
 theorem mem_sectionPoints_iff {p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P} :
     p ∈ s.sectionPoints σ ↔
       (s.toFrame p).frame (WithLp.toLp 2 (Pi.single (Fin.last n) 1)) = σ (s.toFrame p).proj :=
@@ -115,7 +115,7 @@ theorem smul_mem_sectionPoints_iff {p : TotalSpace (realCliffordSpinCGroupZero (
   rw [TotalSpace.smul_mk, mk_mem_sectionPoints_iff, s.toFrame_smul, ← hp, TotalSpace.mk_inj,
     (s.toFrame ⟨x, p⟩).frame.injective.eq_iff, (WithLp.toLp_injective 2).eq_iff,
     mem_realCliffordSpinCLastStabilizer_iff]
-  rfl
+  simp only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype]
 
 /-! ### Local triviality -/
 
@@ -130,22 +130,12 @@ of `σ` at the base point. -/
 private def coords (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P) : Fin (n + 1) → ℝ :=
   WithLp.ofLp ((s.toFrame p).frame.symm (σ (s.toFrame p).proj))
 
-/-- The coordinates of a continuous section in the frames of a `Spinᶜ` structure are continuous:
-the `i`-th one is the inner product of `σ` with the frame applied to the `i`-th basis vector. -/
+/-- The coordinates of a continuous section in the frames of a `Spinᶜ` structure are continuous,
+by `TauCeti.OrthonormalFrameBundle.continuous_frame_symm_apply`. -/
 private theorem continuous_coords (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E)) :
-    Continuous (coords s σ) := by
-  refine continuous_pi fun i ↦ ?_
-  have hproj : Continuous fun p ↦ (s.toFrame p).proj :=
-    OrthonormalFrameBundle.continuous_proj.comp s.continuous_toFrame
-  refine (Continuous.inner_bundle_of_continuousFiberNorm (𝕜 := ℝ)
-    (b := fun p ↦ (s.toFrame p).proj)
-    (v := fun p ↦ (s.toFrame p).frame (EuclideanSpace.single i 1))
-    (w := fun p ↦ σ (s.toFrame p).proj)
-    ((OrthonormalFrameBundle.continuous_totalSpaceMk_frame _).comp s.continuous_toFrame)
-    (hσ.comp hproj)).congr fun p ↦ ?_
-  rw [coords, ← LinearIsometryEquiv.inner_map_map (s.toFrame p).frame.symm,
-    LinearIsometryEquiv.symm_apply_apply, EuclideanSpace.inner_single_left]
-  simp
+    Continuous (coords s σ) :=
+  (PiLp.continuous_ofLp 2 _).comp
+    ((OrthonormalFrameBundle.continuous_frame_symm_apply hσ).comp s.continuous_toFrame)
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F E] [VectorBundle ℝ F E]
   [ContinuousFiberNorm F E] in
@@ -157,8 +147,7 @@ private theorem realCliffordForm_coords (hσ₁ : ∀ y, ‖σ y‖ = 1)
   simp only [one_pow, EuclideanSpace.norm_sq_eq, Real.norm_eq_abs, sq_abs] at h
   rw [realCliffordForm_apply, ← h]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [realCliffordWeight_of_lt (by simpa using i.isLt), one_mul, sq]
-  rfl
+  rw [realCliffordWeight_of_lt (by simpa using i.isLt), one_mul, sq, coords]
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F E] [VectorBundle ℝ F E]
   [ContinuousFiberNorm F E] in

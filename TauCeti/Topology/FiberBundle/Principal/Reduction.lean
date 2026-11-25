@@ -136,6 +136,11 @@ private def reductionTrivialization (p₀ : S) :
   target_eq := rfl
   proj_toFun _ _ := rfl
 
+private theorem reductionTrivialization_apply (p₀ p : S) :
+    reductionTrivialization (H := H) hS hτS hU hτ p₀ p =
+      (p.val.proj, toSubgroup H (division G (τ p.val.proj) p.val.snd)) :=
+  rfl
+
 include hS hU hτ hτS in
 /-- **Local triviality of a reduction of a principal bundle.** A set `S` of points of a principal
 `G`-bundle, carried into itself by exactly the elements of a subgroup `H`, is trivial with fibre `H`
@@ -149,9 +154,9 @@ theorem exists_trivialization_of_continuousOn_section_mem {b : B} (hb : b ∈ U)
     fun g p hgp hp ↦ ?_⟩
   have h₁ := division_mem hS hτS hp p.property
   have h₂ := division_mem (p := op (g : G) • (p : TotalSpace G P)) hS hτS hp hgp
+  rw [reductionTrivialization_apply, reductionTrivialization_apply]
   refine Prod.ext rfl (Subtype.ext ?_)
-  change (toSubgroup H _ : G) = (toSubgroup H _ : G) * g
-  rw [coe_toSubgroup h₂, coe_toSubgroup h₁]
+  rw [Subgroup.coe_mul, coe_toSubgroup h₂, coe_toSubgroup h₁]
   exact division_smul_right _ _ _
 
 end TauCeti.PrincipalBundle
