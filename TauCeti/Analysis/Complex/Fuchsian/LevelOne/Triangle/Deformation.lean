@@ -60,7 +60,8 @@ to the unipotent matrices `T` and `Tᵀ`, while the height `b / sin θ` of the f
 * `TauCeti.TriangleDeformation.det_U`, `TauCeti.TriangleDeformation.trace_U`,
   `TauCeti.TriangleDeformation.trace_S_mul_U`: the determinant and the traces.
 * `TauCeti.TriangleDeformation.slU_pow_eq_neg_one`,
-  `TauCeti.TriangleDeformation.S_mul_slU_pow_three`: `U (π / p) ^ p = -1` and `(S U) ^ 3 = -1`.
+  `TauCeti.TriangleDeformation.S_mul_slU_pow_three_eq_neg_one`: `U (π / p) ^ p = -1` and
+  `(S U) ^ 3 = -1`.
 * `TauCeti.TriangleDeformation.slL_eq`: `L = S U⁻¹ S⁻¹`.
 * `TauCeti.TriangleDeformation.slU_smul_eq_self_iff`,
   `TauCeti.TriangleDeformation.S_mul_slU_smul_eq_self_iff`: the fixed points of `U` and `S U`.
@@ -253,7 +254,7 @@ private theorem trace_S_mul_slU (h : 4 * Real.sin θ ^ 2 ≤ 1) :
   norm_num
 
 /-- **`S U θ` has order `3` up to sign**: `(S U θ) ^ 3 = -1`. -/
-theorem S_mul_slU_pow_three (h : 4 * Real.sin θ ^ 2 ≤ 1) :
+theorem S_mul_slU_pow_three_eq_neg_one (h : 4 * Real.sin θ ^ 2 ≤ 1) :
     ((ModularGroup.S : SL(2, ℝ)) * slU h) ^ 3 = -1 :=
   Subtype.ext (by
     rw [Matrix.SpecialLinearGroup.coe_pow, Matrix.SpecialLinearGroup.coe_neg,
@@ -463,8 +464,8 @@ theorem abs_cuspHeight_pi_div_sub_le {p : ℕ} (hp : 6 ≤ p) :
 /-- The relation `(S U) ^ 3 = 1` in `PSL(2, ℝ)`. -/
 private theorem mk_S_mul_slU_pow_three (h : 4 * Real.sin θ ^ 2 ≤ 1) :
     (((ModularGroup.S : SL(2, ℝ)) * slU h : SL(2, ℝ)) : PSL(2, ℝ)) ^ 3 = 1 := by
-  rw [← QuotientGroup.mk_pow, S_mul_slU_pow_three, Matrix.ProjectiveSpecialLinearGroup.mk_neg,
-    QuotientGroup.mk_one]
+  rw [← QuotientGroup.mk_pow, S_mul_slU_pow_three_eq_neg_one,
+    Matrix.ProjectiveSpecialLinearGroup.mk_neg, QuotientGroup.mk_one]
 
 /-- The relation `(U⁻¹) ^ p = 1` in `PSL(2, ℝ)`. -/
 private theorem mk_slU_inv_pow {p : ℕ} (hp : 2 ≤ p) (h : 4 * Real.sin (π / p) ^ 2 ≤ 1) :
