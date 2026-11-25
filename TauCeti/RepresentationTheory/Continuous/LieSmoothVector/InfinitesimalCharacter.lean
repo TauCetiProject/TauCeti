@@ -13,11 +13,11 @@ public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.Enveloping
 
 Let `π` be a continuous representation of a real Lie group `G` on a real normed space `V`, with
 coefficients in a commutative ring `R` (for instance `R = ℂ`), and let `𝔤 = R ⊗[ℝ] Lie(G)` be the
-base change of the real Lie algebra of left-invariant derivations. The extended derived action
-`ContRepresentation.lieSmoothVectorsBaseChangeDerivedAction I π` makes the smooth vectors
-`lieSmoothVectors I π` a Lie module over `𝔤`
-(`ContRepresentation.instLieModuleTensorProductLieSmoothVectors`), with `⁅x, v⁆ = dπ(x) v`.
-Its representation of `U(𝔤)` is the enveloping action
+base change of the real Lie algebra of left-invariant derivations. By
+`TauCeti/RepresentationTheory/Continuous/LieSmoothVector/Enveloping.lean`, the smooth vectors
+`lieSmoothVectors I π` are a Lie module over `𝔤`
+(`ContRepresentation.instLieModuleTensorProductLieSmoothVectors`), with `⁅x, v⁆ = dπ(x) v`, and
+its representation of `U(𝔤)` is the enveloping action
 `ContRepresentation.lieSmoothVectorsBaseChangeEnvelopingAction I π`
 (`ContRepresentation.representation_lieSmoothVectors`).
 
@@ -30,16 +30,8 @@ the smooth vectors by the scalar `χ z`
 (`ContRepresentation.isGeneralizedCharacterFinite_lieSmoothVectors_iff`). Uniqueness, passage to
 Lie submodules and quotients, duals and the generalized eigenspace come from that file.
 
-## Main definitions
-
-* `ContRepresentation.instLieRingModuleTensorProductLieSmoothVectors`,
-  `ContRepresentation.instLieModuleTensorProductLieSmoothVectors`: the Lie module structure of the
-  smooth vectors over `R ⊗[ℝ] Lie(G)`.
-
 ## Main results
 
-* `ContRepresentation.representation_lieSmoothVectors`: the `U(𝔤)`-representation of this Lie
-  module is `lieSmoothVectorsBaseChangeEnvelopingAction I π`.
 * `ContRepresentation.centralAction_lieSmoothVectors_apply`: the centre acts through it.
 * `ContRepresentation.hasInfinitesimalCharacter_lieSmoothVectors_iff`,
   `ContRepresentation.isGeneralizedCharacterFinite_lieSmoothVectors_iff`: the two predicates in
@@ -72,38 +64,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {R : Type*} [CommRing R] [Module R V] (π : ContRepresentation R G V)
   [Algebra ℝ R] [IsScalarTower ℝ R V] [ContinuousConstSMul R V]
-
-/-- **The smooth vectors are a Lie module over `R ⊗[ℝ] Lie(G)`**, through the extended derived
-action: `⁅x, v⁆ = dπ(x) v`. -/
-instance instLieRingModuleTensorProductLieSmoothVectors :
-    LieRingModule (R ⊗[ℝ] LeftInvariantDerivation I G) (lieSmoothVectors I π) :=
-  LieRingModule.compLieHom _ (lieSmoothVectorsBaseChangeDerivedAction I π)
-
-/-- The bracket of `x ∈ R ⊗[ℝ] Lie(G)` with a smooth vector is the extended derived action. -/
-theorem lie_lieSmoothVectors_def (x : R ⊗[ℝ] LeftInvariantDerivation I G)
-    (v : lieSmoothVectors I π) : ⁅x, v⁆ = lieSmoothVectorsBaseChangeDerivedAction I π x v := by
-  rw [LieRingModule.compLieHom_apply, Module.End.lie_apply]
-
-/-- The bracket of `a ⊗ X` with a smooth vector is `a • dπ(X) v`. -/
-@[simp]
-theorem tmul_lie_lieSmoothVectors (a : R) (X : LeftInvariantDerivation I G)
-    (v : lieSmoothVectors I π) : ⁅a ⊗ₜ[ℝ] X, v⁆ = a • lieSmoothVectorsDerivative I π X v := by
-  rw [lie_lieSmoothVectors_def, lieSmoothVectorsBaseChangeDerivedAction_tmul, LinearMap.smul_apply]
-
-/-- **The `R`-Lie module of smooth vectors** over `R ⊗[ℝ] Lie(G)`. -/
-instance instLieModuleTensorProductLieSmoothVectors :
-    LieModule R (R ⊗[ℝ] LeftInvariantDerivation I G) (lieSmoothVectors I π) :=
-  LieModule.compLieHom _ (lieSmoothVectorsBaseChangeDerivedAction I π)
-
-/-- **The `U(𝔤)`-representation of the Lie module of smooth vectors** is the enveloping action
-`lieSmoothVectorsBaseChangeEnvelopingAction`. -/
-theorem representation_lieSmoothVectors :
-    representation R (R ⊗[ℝ] LeftInvariantDerivation I G) (lieSmoothVectors I π) =
-      lieSmoothVectorsBaseChangeEnvelopingAction I π := by
-  refine _root_.UniversalEnvelopingAlgebra.hom_ext R (LieHom.ext fun x ↦ ?_)
-  rw [LieHom.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply, AlgHom.toLieHom_apply,
-    representation_ι, lieSmoothVectorsBaseChangeEnvelopingAction_ι]
-  exact LinearMap.ext fun v ↦ by rw [LieModule.toEnd_apply_apply, lie_lieSmoothVectors_def]
 
 /-- The centre of `U(𝔤)` acts on smooth vectors through the enveloping action. -/
 theorem centralAction_lieSmoothVectors_apply
