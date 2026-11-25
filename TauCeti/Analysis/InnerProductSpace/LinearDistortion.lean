@@ -44,8 +44,8 @@ both at least `σ₁ / σₙ = ‖A‖ / ℓ(A) ≥ 1`.
 * `Orientation.outerDistortion_eq_ofReal_prod_singularValues`,
   `Orientation.innerDistortion_eq_prod_singularValues`: the singular-value formulas.
 * `Orientation.ofReal_norm_div_minimalStretch_le_outerDistortion`,
-  `Orientation.norm_div_minimalStretch_le_innerDistortion`: both distortions are at least
-  `‖A‖ / ℓ(A)` when `J(A) > 0`.
+  `Orientation.norm_div_minimalStretch_le_innerDistortion`: the outer distortion is always at
+  least `‖A‖ / ℓ(A)`, and so is the inner distortion when `J(A) > 0`.
 * `Orientation.one_le_outerDistortion`, `Orientation.one_le_innerDistortion`: both distortions are
   at least `1` when `J(A) > 0`.
 * `Orientation.outerDistortion_linearIsometry_comp`,
@@ -216,7 +216,7 @@ theorem outerDistortion_eq_ofReal_prod_singularValues {A : V →ₗ[ℝ] W}
     oV.outerDistortion oW A =
       ENNReal.ofReal (A.singularValues 0 ^ n / ∏ i ∈ Finset.range n, A.singularValues i) := by
   rw [oV.outerDistortion_of_pos oW h, A.norm_toContinuousLinearMap_eq_singularValues_zero,
-    oV.orientedJacobian_eq_prod_singularValues_of_pos oW h]
+    oV.orientedJacobian_eq_prod_singularValues_of_nonneg oW h.le]
 
 /-- The inner distortion of a map with `J(A) > 0` is `(σ₁ ⋯ σₙ) / σₙⁿ`. -/
 theorem innerDistortion_eq_prod_singularValues {A : V →ₗ[ℝ] W}
@@ -224,7 +224,7 @@ theorem innerDistortion_eq_prod_singularValues {A : V →ₗ[ℝ] W}
     oV.innerDistortion oW A =
       (∏ i ∈ Finset.range n, A.singularValues i) / A.singularValues (n - 1) ^ n := by
   rw [oV.innerDistortion_of_pos oW h, A.minimalStretch_def,
-    oV.orientedJacobian_eq_prod_singularValues_of_pos oW h, (Fact.out : finrank ℝ V = n)]
+    oV.orientedJacobian_eq_prod_singularValues_of_nonneg oW h.le, (Fact.out : finrank ℝ V = n)]
 
 /-- When `J(A) ≠ 0` in positive dimension, the minimal stretch is positive. -/
 theorem minimalStretch_pos_of_orientedJacobian_ne_zero (hn : 0 < n) {A : V →ₗ[ℝ] W}
@@ -258,11 +258,16 @@ theorem norm_mul_minimalStretch_pow_le_orientedJacobian {A : V →ₗ[ℝ] W}
   have hA := A.norm_mul_minimalStretch_pow_le_normDet
   rwa [(Fact.out : finrank ℝ V = n), ← oV.orientedJacobian_eq_normDet_of_nonneg oW h] at hA
 
-/-- When `J(A) > 0`, the outer distortion is at least `‖A‖ / ℓ(A) = σ₁ / σₙ`. -/
-theorem ofReal_norm_div_minimalStretch_le_outerDistortion {A : V →ₗ[ℝ] W}
-    (h : 0 < oV.orientedJacobian oW A) :
+/-- The outer distortion is at least `‖A‖ / ℓ(A)`, which is `σ₁ / σₙ` when `J(A) > 0`. If
+`J(A) ≤ 0`, the bound is trivial: either `A = 0` and the left side vanishes, or `q_O(A) = ∞`. -/
+theorem ofReal_norm_div_minimalStretch_le_outerDistortion (A : V →ₗ[ℝ] W) :
     ENNReal.ofReal (‖LinearMap.toContinuousLinearMap A‖ / A.minimalStretch) ≤
       oV.outerDistortion oW A := by
+  by_cases h : 0 < oV.orientedJacobian oW A
+  swap
+  · by_cases hA : A = 0
+    · simp [hA]
+    · simp [oV.outerDistortion_of_nonpos oW (not_lt.mp h) hA]
   rcases n.eq_zero_or_pos with rfl | hn
   · have : Subsingleton V := Module.finrank_zero_iff.mp (Fact.out : finrank ℝ V = 0)
     simp

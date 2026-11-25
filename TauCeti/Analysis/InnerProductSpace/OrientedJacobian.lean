@@ -75,8 +75,8 @@ sign needed for degree formulas and pullback of top-degree differential forms.
   invariance under taking the adjoint; `Orientation.orientedJacobian_le_normDet`,
   `Orientation.orientedJacobian_eq_normDet_of_nonneg`,
   `Orientation.normDet_ne_zero_of_orientedJacobian_ne_zero` and
-  `Orientation.orientedJacobian_eq_prod_singularValues_of_pos` compare the oriented Jacobian
-  with `LinearMap.normDet A` and write a positive one as the product of the singular values.
+  `Orientation.orientedJacobian_eq_prod_singularValues_of_nonneg` compare the oriented Jacobian
+  with `LinearMap.normDet A` and write a nonnegative one as the product of the singular values.
 * `Orientation.abs_orientedJacobian_toLinearMap_le`, `Orientation.abs_orientedJacobian_le`,
   `Orientation.norm_apply_eq_of_abs_orientedJacobian_eq_norm_pow`,
   `Orientation.abs_orientedJacobian_toLinearMap_eq_norm_pow_iff`: Hadamard's inequality
@@ -738,12 +738,12 @@ theorem normDet_ne_zero_of_orientedJacobian_ne_zero [FiniteDimensional ℝ V]
     (h : oV.orientedJacobian oW A ≠ 0) : A.normDet ≠ 0 :=
   oV.abs_orientedJacobian oW A ▸ abs_ne_zero.mpr h
 
-/-- When `J(A) > 0`, the oriented Jacobian is the product `σ₁ ⋯ σₙ` of the singular values. -/
-theorem orientedJacobian_eq_prod_singularValues_of_pos [FiniteDimensional ℝ V]
+/-- When `J(A) ≥ 0`, the oriented Jacobian is the product `σ₁ ⋯ σₙ` of the singular values. -/
+theorem orientedJacobian_eq_prod_singularValues_of_nonneg [FiniteDimensional ℝ V]
     [FiniteDimensional ℝ W] (oV : Orientation ℝ V (Fin n)) (oW : Orientation ℝ W (Fin n))
-    {A : V →ₗ[ℝ] W} (h : 0 < oV.orientedJacobian oW A) :
+    {A : V →ₗ[ℝ] W} (h : 0 ≤ oV.orientedJacobian oW A) :
     oV.orientedJacobian oW A = ∏ i ∈ Finset.range n, A.singularValues i := by
-  rw [oV.orientedJacobian_eq_normDet_of_nonneg oW h.le, A.normDet_eq_prod_singularValues,
+  rw [oV.orientedJacobian_eq_normDet_of_nonneg oW h, A.normDet_eq_prod_singularValues,
     (Fact.out : finrank ℝ V = n)]
 
 /-- On any orthonormal basis `b` of `V`, the square of `oV.orientedJacobian oW A` is the Gram
