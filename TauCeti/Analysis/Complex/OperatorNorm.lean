@@ -69,30 +69,35 @@ noncomputable def antilinearOfOneL (V : Type*) [SeminormedAddCommGroup V] [Norme
   StrongDual.smulRightL ℝ ℂ V Complex.reCLM -
     (StrongDual.smulRightL ℝ ℂ V Complex.imCLM).comp (lsmul ℝ ℂ Complex.I)
 
-@[simp]
 theorem antilinearOfOneL_apply {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
     [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] (v : V) :
     antilinearOfOneL V v = Complex.reCLM.smulRight v - Complex.imCLM.smulRight (Complex.I • v) :=
   (rfl)
 
+/-- **The antilinear map with value `v` at `1`** is `w ↦ conj w • v`. -/
+@[simp]
+theorem antilinearOfOneL_apply_apply {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] (v : V) (w : ℂ) :
+    antilinearOfOneL V v w = (starRingEnd ℂ w) • v := by
+  simp only [antilinearOfOneL_apply, sub_apply, ContinuousLinearMap.smulRight_apply,
+    Complex.reCLM_apply, Complex.imCLM_apply, RCLike.real_smul_eq_coe_smul (K := ℂ), smul_smul,
+    ← sub_smul]
+  congr 1
+  apply Complex.ext <;> simp
+
 /-- `antilinearOfOneL V v` has value `v` at `1`. -/
 theorem antilinearOfOneL_apply_apply_one {V : Type*} [SeminormedAddCommGroup V]
     [NormedSpace ℝ V] [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] (v : V) :
     antilinearOfOneL V v 1 = v := by
-  simp [antilinearOfOneL_apply]
+  rw [antilinearOfOneL_apply_apply, map_one, one_smul]
 
-/-- `antilinearOfOneL V v` is complex antilinear: `w ↦ conj w • v` anticommutes with `i`. -/
+/-- `antilinearOfOneL V v` is complex antilinear: `w ↦ conj w • v` anticommutes with `i`, since
+`conj (i w) = -i conj w`. -/
 theorem antilinearOfOneL_apply_I_smul {V : Type*} [SeminormedAddCommGroup V]
     [NormedSpace ℝ V] [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] (v : V) (w : ℂ) :
     antilinearOfOneL V v (Complex.I • w) = -(Complex.I • antilinearOfOneL V v w) := by
-  -- `antilinearOfOneL V v w = conj w • v`, and `conj (i w) = -i conj w`.
-  have key (w : ℂ) : antilinearOfOneL V v w = (starRingEnd ℂ w) • v := by
-    simp only [antilinearOfOneL_apply, sub_apply, ContinuousLinearMap.smulRight_apply,
-      Complex.reCLM_apply, Complex.imCLM_apply, RCLike.real_smul_eq_coe_smul (K := ℂ), smul_smul,
-      ← sub_smul]
-    congr 1
-    apply Complex.ext <;> simp
-  rw [key, key, smul_smul, smul_eq_mul, map_mul, Complex.conj_I, neg_mul, neg_smul]
+  rw [antilinearOfOneL_apply_apply, antilinearOfOneL_apply_apply, smul_smul, smul_eq_mul, map_mul,
+    Complex.conj_I, neg_mul, neg_smul]
 
 /-- A complex antilinear real-linear map out of `ℂ` is the antilinear map with its value at `1`. -/
 theorem antilinearOfOneL_apply_one {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]

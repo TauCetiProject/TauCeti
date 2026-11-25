@@ -23,14 +23,14 @@ off the points read in chart `i` inside `Q`
 The block of every chart `j` of `Λ` is represented by `L^q` coefficients (the duality
 `MeasureTheory.Lp.exists_memLp_forall_dual_pi_apply_eq`). A section vanishing off the points of
 `Q` has chart-`j` data vanishing off the localized image `A.localizedImage i j Q`
-(`TauCeti.SobolevSection.value_eq_zero_of_mem_aeZeroOff`), where they are the transfer of its
+(`TauCeti.SobolevSection.value_eq_zero_ae_of_mem_aeZeroOff`), where they are the transfer of its
 chart-`i` data (`TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`). So `Λ` restricted to such
 sections is a continuous functional of the chart-`i` data over `Q`, again represented by `L^q`
 coefficients.
 
 ## Main results
 
-* `TauCeti.SobolevSection.value_eq_zero_of_mem_aeZeroOff`: the chart data of a section vanishing
+* `TauCeti.SobolevSection.value_eq_zero_ae_of_mem_aeZeroOff`: the chart data of a section vanishing
   off the points of `Q` vanish off the localized images.
 * `TauCeti.SobolevSection.exists_memLp_forall_apply_eq_sum_setIntegral`: the local representation
   of a functional on `Lᵖ` sections.
@@ -65,7 +65,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 omit [IsManifold 𝓘(ℝ, E) ∞ M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
 /-- The chart data of a section vanishing off the points read in chart `i` inside `Q` vanish, in
 every chart `j`, off the localized image. -/
-theorem value_eq_zero_of_mem_aeZeroOff {i : Fin A.n} {Q : Opens E}
+theorem value_eq_zero_ae_of_mem_aeZeroOff {i : Fin A.n} {Q : Opens E}
     (hQi : (Q : Set E) ⊆ A.image i) {w : SobolevSection A μ p 0}
     (hw : w ∈ aeZeroOff A μ p 0 ((A.chart i).symm '' Q))
     (j : Fin A.sectionChartData.n) (c : Fin (finrank ℝ F)) :
@@ -194,7 +194,7 @@ theorem exists_memLp_forall_apply_eq_sum_setIntegral [T2Space M] (hp : 1 < p) (h
     (μ := μ.restrict (Q : Set E)) hp hp_top (EuclideanSpace.basisFun (Fin (finrank ℝ F)) ℝ)
     (ℓ : StrongDual ℝ (Fin (finrank ℝ F) → Lp ℝ p (μ.restrict (Q : Set E))))
   refine ⟨H, hH, fun w hw ↦ ?_⟩
-  rw [hℓ _ w.prop (value_eq_zero_of_mem_aeZeroOff A (fun y hy ↦ hQi (subset_closure hy)) hw),
+  rw [hℓ _ w.prop (value_eq_zero_ae_of_mem_aeZeroOff A (fun y hy ↦ hQi (subset_closure hy)) hw),
     hHℓ]
   simp only [EuclideanSpace.inner_basisFun_real]
   refine Finset.sum_congr rfl fun c _ ↦ integral_congr_ae ?_
