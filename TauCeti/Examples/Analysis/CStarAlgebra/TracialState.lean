@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
-public import TauCeti.Analysis.CStarAlgebra.State.TraceKernel
+public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace
 import Mathlib.Analysis.CStarAlgebra.Classes
 
 /-!
@@ -34,8 +33,9 @@ low-dimensional C⋆-algebras:
      (`rawTrace₂_mul_comm`), yet is not a tracial state because `rawTrace₂ 1 = 2`
      (`not_isTracialState_rawTrace₂`).
    * The normalized matrix trace `CStarMatrix.normalizedTraceMap (Fin 2)` is a faithful tracial
-     state (`isTracialState_normalizedTraceMap_fin2`, `isFaithfulTrace_normalizedTraceMap_fin2`).
-     Its trace kernel is `⊥`, whereas the linear kernel
+     state (`CStarMatrix.isTracialState_normalizedTraceMap`,
+     `CStarMatrix.isFaithfulTrace_normalizedTraceMap`). Its trace kernel is `⊥`
+     (`traceKernel_normalizedTraceMap_fin2`), whereas the linear kernel
      `LinearMap.ker (CStarMatrix.normalizedTraceMap (Fin 2)).toLinearMap` contains `e01` and is not
      closed under multiplication (`ker_normalizedTraceMap_fin2_not_mul_closed`).
    * Pulling `CStarMatrix.normalizedTraceMap (Fin 2)` back along the nonunital corner embedding
@@ -220,27 +220,13 @@ theorem not_isTracialState_rawTrace₂ : ¬ rawTrace₂.IsTracialState := by
   have h1 := h.map_one
   norm_num [rawTrace₂_apply, CStarMatrix.one_apply] at h1
 
-/-- `CStarMatrix.normalizedTraceMap (Fin 2)` is a tracial state on `CStarMatrix (Fin 2) (Fin 2) ℂ`.
--/
-theorem isTracialState_normalizedTraceMap_fin2 :
-    (CStarMatrix.normalizedTraceMap (Fin 2)).IsTracialState :=
-  PositiveContinuousLinearMap.isTracialState_iff.mpr
-    ⟨CStarMatrix.norm_normalizedTraceMap (Fin 2),
-      fun a b => by simpa using CStarMatrix.normalizedTrace_mul_comm a b⟩
-
-/-- `CStarMatrix.normalizedTraceMap (Fin 2)` is faithful on `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
-theorem isFaithfulTrace_normalizedTraceMap_fin2 :
-    (CStarMatrix.normalizedTraceMap (Fin 2)).IsFaithfulTrace :=
-  PositiveContinuousLinearMap.isFaithfulTrace_iff.mpr fun _ hM =>
-    CStarMatrix.normalizedTrace_star_mul_self_eq_zero_iff.mp (by simpa using hM)
-
 /-- The trace kernel of `CStarMatrix.normalizedTraceMap (Fin 2)` is `⊥`. -/
 @[simp]
 theorem traceKernel_normalizedTraceMap_fin2 :
     (CStarMatrix.normalizedTraceMap (Fin 2)).traceKernel
-      isTracialState_normalizedTraceMap_fin2.map_mul_comm = ⊥ :=
+      CStarMatrix.isTracialState_normalizedTraceMap.map_mul_comm = ⊥ :=
   ((CStarMatrix.normalizedTraceMap (Fin 2)).isFaithfulTrace_iff_traceKernel_eq_bot _).mp
-    isFaithfulTrace_normalizedTraceMap_fin2
+    CStarMatrix.isFaithfulTrace_normalizedTraceMap
 
 /-- Unlike `(CStarMatrix.normalizedTraceMap (Fin 2)).traceKernel _ = ⊥`, the linear kernel
 `LinearMap.ker (CStarMatrix.normalizedTraceMap (Fin 2)).toLinearMap` contains the off-diagonal unit
@@ -283,6 +269,6 @@ def scalarHom : ℂ →⋆ₐ[ℂ] CStarMatrix (Fin 2) (Fin 2) ℂ :=
 `scalarHom` yields the unique tracial state on `ℂ`. -/
 theorem isTracialState_comp_scalarHom :
     ((CStarMatrix.normalizedTraceMap (Fin 2)).comp (.ofClass scalarHom)).IsTracialState :=
-  isTracialState_normalizedTraceMap_fin2.comp scalarHom
+  CStarMatrix.isTracialState_normalizedTraceMap.comp scalarHom
 
 end TauCeti.TracialStateExample
