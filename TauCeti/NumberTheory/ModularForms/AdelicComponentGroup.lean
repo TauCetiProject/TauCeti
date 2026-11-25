@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Topology
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # The congruence groups of the `GL₂` components
@@ -42,6 +43,8 @@ number whose principal finite idele lies in `Ô^×` is a unit of `ℤ`, hence eq
 * `TauCeti.AdelicExamples.GL2.componentGroup_eq_ker_det_inf`: for compact `U`,
   `Γ_{g,U} = SL₂(ℚ) ∩ gUg⁻¹`.
 * `TauCeti.AdelicExamples.GL2.componentGroup_mono`: `U' ≤ U` gives `Γ_{g,U'} ≤ Γ_{g,U}`.
+* `TauCeti.AdelicExamples.GL2.relIndex_componentGroup_ne_zero`: for `U'` open and `U` compact,
+  `Γ_{g,U'}` has finite index in `Γ_{g,U}`.
 * `TauCeti.AdelicExamples.GL2.componentGroup_mul_mul`: `Γ_{qgu,U} = qΓ_{g,U}q⁻¹`.
 * `TauCeti.AdelicExamples.GL2.map_Gamma_le_componentGroup`: `Γ(M) ⊆ Γ_{g,U}` when
   `K(M) ⊆ gUg⁻¹`.
@@ -176,6 +179,23 @@ theorem isCongruenceSubgroup_comap_mapGL_componentGroup
     CongruenceSubgroup.IsCongruenceSubgroup
       ((componentGroup U g).comap (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ)) :=
   ⟨M, NeZero.ne M, Subgroup.map_le_iff_le_comap.mp (map_Gamma_le_componentGroup h)⟩
+
+/-- **`Γ_{g,U'}` has finite index in `Γ_{g,U}`** whenever `U'` is an open and `U` a compact
+subgroup of `GL₂(𝔸_f)`; no containment `U' ≤ U` is assumed. -/
+theorem relIndex_componentGroup_ne_zero {U U' : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
+    (hU : IsCompact (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))))
+    (hU' : IsOpen (U' : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))))
+    (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) :
+    (componentGroup U' g).relIndex (componentGroup U g) ≠ 0 := by
+  -- The index is at most that of `gU'g⁻¹` in `gUg⁻¹`, which is that of `U'` in `U`.
+  set φ := GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))
+  set c := (MulAut.conj g).toMonoidHom
+  have hc : (U'.map c).relIndex (U.map c) ≠ 0 := by
+    rw [Subgroup.relIndex_map_map_of_injective _ _ (MulAut.conj g).injective]
+    exact Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact hU' hU
+  -- `Γ_{g,U'} = φ⁻¹(gU'g⁻¹) ⊓ GL₂(ℚ)^+` and likewise for `U`
+  rw [componentGroup, componentGroup, inf_comm (GLPos _ _), inf_comm (GLPos _ _)]
+  exact Subgroup.relIndex_inter_ne_zero (Subgroup.relIndex_comap_ne_zero φ hc) _
 
 end AdelicExamples.GL2
 
