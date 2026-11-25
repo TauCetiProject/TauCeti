@@ -33,6 +33,7 @@ namespace TauCeti.Examples.Idempotented
 variable (A : Type*) [CommRing A]
 
 /-- The inclusion `⊕_n A → ∏_n A`, a homomorphism of nonunital `A`-algebras. -/
+@[expose]
 noncomputable def finsuppToPi : (ℕ →₀ A) →ₙₐ[A] (ℕ → A) where
   toFun f := f
   map_smul' _ _ := Finsupp.coe_smul _ _
@@ -40,11 +41,21 @@ noncomputable def finsuppToPi : (ℕ →₀ A) →ₙₐ[A] (ℕ → A) where
   map_add' := Finsupp.coe_add
   map_mul' := Finsupp.coe_mul
 
+/-- The inclusion `⊕_n A → ∏_n A` is the coercion to functions. -/
+@[simp]
+theorem finsuppToPi_apply (f : ℕ →₀ A) : finsuppToPi A f = f :=
+  rfl
+
 /-- `∏_n A` as a module over the unitization of `⊕_n A`, through the inclusion. -/
 noncomputable abbrev piModule : Module (Unitization A (ℕ →₀ A)) (ℕ → A) :=
   Module.compHom (ℕ → A) (Unitization.lift (finsuppToPi A)).toRingHom
 
 attribute [local instance] piModule
+
+/-- The action of `A ⊕ (⊕_n A)` on `∏_n A`: apply the inclusion, then multiply. -/
+theorem piModule_smul (r : Unitization A (ℕ →₀ A)) (m : ℕ → A) :
+    r • m = Unitization.lift (finsuppToPi A) r * m :=
+  rfl
 
 /-- `⊕_n A` with the componentwise product is idempotented. -/
 example : IsIdempotented (ℕ →₀ A) := inferInstance
@@ -55,10 +66,7 @@ example [Nontrivial A] : ¬IsNondegenerate A (ℕ →₀ A) (ℕ → A) := by
   rw [isNondegenerate_iff]
   push Not
   refine ⟨1, fun e _ he ↦ ?_⟩
-  have h1 : ∀ n, e n = 1 := fun n ↦ by
-    have h := congrFun he n
-    change (Unitization.lift (finsuppToPi A) (e : Unitization A (ℕ →₀ A)) * 1) n = 1 at h
-    simpa [finsuppToPi] using h
+  have h1 : ∀ n, e n = 1 := fun n ↦ by simpa [piModule_smul] using congrFun he n
   exact Set.infinite_univ (e.support.finite_toSet.subset fun n _ ↦ by simp [h1 n])
 
 end TauCeti.Examples.Idempotented

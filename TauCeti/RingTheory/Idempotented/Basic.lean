@@ -10,6 +10,7 @@ public import Mathlib.Data.Finsupp.Pointwise
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.Algebra.Algebra.Unitization
+public import TauCeti.Data.Finsupp.Pointwise
 
 /-!
 # Idempotented algebras and their nondegenerate modules
@@ -141,16 +142,6 @@ instance (ι R : Type*) [MulZeroOneClass R] : IsIdempotented (ι →₀ R) := by
       · exact .inr (Finsupp.notMem_support_iff.1 fun h ↦ hi (Finset.mem_biUnion.2 ⟨x, hx, h⟩))
     refine ⟨Finsupp.ext fun i ↦ ?_, Finsupp.ext fun i ↦ ?_⟩ <;>
       rcases key i with h | h <;> simp [Finsupp.mul_apply, h]
-
-/-- Scalars commute past the pointwise product of finitely supported functions on the left. -/
-instance instIsScalarTowerFinsuppPointwise (ι R : Type*) [Semiring R] :
-    IsScalarTower R (ι →₀ R) (ι →₀ R) :=
-  ⟨fun a f g ↦ Finsupp.ext fun i ↦ by simp [mul_assoc]⟩
-
-/-- Scalars commute past the pointwise product of finitely supported functions on the right. -/
-instance instSMulCommClassFinsuppPointwise (ι R : Type*) [CommSemiring R] :
-    SMulCommClass R (ι →₀ R) (ι →₀ R) :=
-  ⟨fun a f g ↦ Finsupp.ext fun i ↦ by simp [mul_left_comm]⟩
 
 section Module
 
