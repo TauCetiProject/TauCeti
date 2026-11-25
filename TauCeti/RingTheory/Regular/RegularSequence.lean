@@ -116,12 +116,9 @@ theorem TauCeti.isRegular_cons_iff_isRegular_quotient (x : R) (rs : List R) :
     IsRegular R (x :: rs) ↔ IsSMulRegular R x ∧
       IsRegular (R ⧸ Ideal.span {x}) (rs.map (Ideal.Quotient.mk (Ideal.span {x}))) := by
   -- `R ⧸ x R` and `R ⧸ (x)` agree as modules over `R ⧸ (x)`.
-  let e : QuotSMulTop x R ≃ₗ[R] R ⧸ Ideal.span {x} :=
-    (Ideal.quotientEquivAlgOfEq R
-      (by simp [← Submodule.ideal_span_singleton_smul])).toLinearEquiv
   rw [isRegular_cons_iff']
-  exact and_congr_right'
-    ((e.extendScalarsOfSurjective Ideal.Quotient.mk_surjective).isRegular_congr _)
+  exact and_congr_right' (((QuotSMulTop.equivQuotSpanSingleton x).extendScalarsOfSurjective
+    Ideal.Quotient.mk_surjective).isRegular_congr _)
 
 end Cons
 
