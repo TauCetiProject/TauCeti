@@ -45,11 +45,11 @@ variable (A : Type v) [CommRing A]
 actual torus spells the identity Weyl element. In particular, a pinned Weyl-word product
 `(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod` spelling a nonidentity Weyl
 element cannot lie in `D.borelSubgroup A`. This does not identify the projection kernel. -/
-theorem geckWeylWordProd_eq_one_of_mem_borelSubgroup [Nontrivial A]
+theorem simplyConnectedWeylWordProd_eq_one_of_mem_borelSubgroup [Nontrivial A]
     (l : List (Fin t.rank))
     (hl : (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈
       D.borelSubgroup A) :
-    t.geckWeylWordProd ht l = 1 := by
+    t.simplyConnectedWeylWordProd ht l = 1 := by
   classical
   let r := orderedWeightBlockEquiv (t.weightDegree ht) D.weight
   apply (D.isUnit_leading_weight_minors_weylWord_iff l A r).mp

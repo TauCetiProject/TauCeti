@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
+public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.PDE.Vortex.Dilation.Basic
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Complex.Euclidean.Four
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.PDE.SeibergWitten.LogModulusRatio
@@ -73,7 +74,8 @@ connection along the normal factor are exactly the pullbacks of plane vortices o
 The base coordinate `w = ⟪e₀, ·⟫ + i ⟪e₁, ·⟫` (`baseCoord`) is the normal coordinate of the frame
 with its base and normal planes swapped. The derivative along `v` of a function of `(w, z)` is
 the sum of the derivatives of its base and normal slices along `w(v)` and `z(v)`
-(`fderiv_comp_baseCoord_normalCoord_apply`).
+(`fderiv_comp_baseCoord_normalCoord_apply`). The frame coordinates `y ↦ (w(y), z(y))` identify `V`
+isometrically with the `L²` product `ℂ × ℂ` (`baseNormalCoordEquiv`, `baseNormalCoordHomeomorph`).
 
 For a solution `(b, α u₀)` that is not assumed base independent:
 
@@ -161,21 +163,18 @@ end Curvature
 
 section Dirac
 
-variable (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
-  (he : e.toBasis.orientation = o) (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3)
-
-include hQ hkl he h₀ h₂₃ in
 /-- **The Dirac equation on the canonical line is `∂bar_a α = 0`**: for a constant nonzero spinor
-`u₀` with `P_α u₀ = u₀`, the Dirac operator of `α u₀`, `∑ₖ (∇_a α)(eₖ) c(eₖ) u₀`, vanishes at `x`
-if and only if `∂bar_a α` vanishes at `x`. -/
-theorem sum_covariantDeriv_smul_ι_apply_eq_zero_iff
-    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {u₀ : positiveHalfSpinors o ρ}
-    (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) (hu₀' : (u₀ : W) ≠ 0)
-    (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (α : V → ℂ) (x : V) :
+`u₀` with `P_α u₀ = u₀`, any orthonormal basis `e`, and an orthogonal complex structure `J`, the
+Dirac operator of `α u₀`, `∑ₖ (∇_a α)(eₖ) c(eₖ) u₀`, vanishes at `x` if and only if `∂bar_a α`
+vanishes at `x`. -/
+theorem sum_covariantDeriv_smul_ι_apply_eq_zero_iff {κ : Type*} [Fintype κ]
+    {e : OrthonormalBasis κ ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    {u₀ : positiveHalfSpinors o ρ} (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀)
+    (hu₀' : (u₀ : W) ≠ 0) (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (α : V → ℂ) (x : V) :
     ∑ k, covariantDeriv b α x (e k) • ρ (ι Q (e k)) u₀ = 0 ↔ covariantDBar J b α x = 0 := by
   rw [covariantDBar_eq_zero_iff]
-  exact (sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃
-    hρ hu₀ (covariantDeriv b α x : V →ₗ[ℝ] ℂ)).trans (or_iff_right hu₀')
+  exact (sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ hJ
+    hu₀ (covariantDeriv b α x : V →ₗ[ℝ] ℂ)).trans (or_iff_right hu₀')
 
 end Dirac
 
@@ -322,6 +321,57 @@ theorem fderiv_comp_baseCoord_normalCoord_apply {F : Type*} [NormedAddCommGroup 
     hc.hasFDerivAt.comp y ((baseCoord e).prod (normalCoord e)).hasFDerivAt
   rw [h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
     fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hc]
+
+/-- The squared norm of a vector is the sum of the squared norms of its base and normal
+coordinates. -/
+theorem norm_baseCoord_sq_add_norm_normalCoord_sq (y : V) :
+    ‖baseCoord e y‖ ^ 2 + ‖normalCoord e y‖ ^ 2 = ‖y‖ ^ 2 := by
+  rw [← e.sum_sq_inner_right, Fin.sum_univ_four, ← Complex.normSq_eq_norm_sq,
+    ← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.normSq_apply, baseCoord_re,
+    baseCoord_im, normalCoord_re, normalCoord_im]
+  ring
+
+variable (e) in
+/-- The **frame coordinates** `y ↦ (w(y), z(y))`, the base and normal coordinates of the frame
+`e`, as a linear isometric equivalence of `V` with the `L²` product `ℂ × ℂ`: the coordinates of `y`
+in the frame, read as a point of `ℂ²` through `TauCeti.complexProdToEuclideanFour`. -/
+def baseNormalCoordEquiv : V ≃ₗᵢ[ℝ] WithLp 2 (ℂ × ℂ) :=
+  e.repr.trans complexProdToEuclideanFour.symm
+
+@[simp]
+theorem baseNormalCoordEquiv_apply (y : V) :
+    baseNormalCoordEquiv e y = WithLp.toLp 2 (baseCoord e y, normalCoord e y) := by
+  rw [baseNormalCoordEquiv, LinearIsometryEquiv.trans_apply, complexProdToEuclideanFour_symm_apply]
+  congr 2 <;> apply Complex.ext <;> simp [OrthonormalBasis.repr_apply_apply]
+
+/-- The point with base coordinate `w` and normal coordinate `n` is
+`Re w e₀ + Im w e₁ + Re n e₂ + Im n e₃`. -/
+@[simp]
+theorem baseNormalCoordEquiv_symm_apply (w n : ℂ) :
+    (baseNormalCoordEquiv e).symm (WithLp.toLp 2 (w, n)) =
+      w.re • e 0 + w.im • e 1 + n.re • e 2 + n.im • e 3 := by
+  rw [LinearIsometryEquiv.symm_apply_eq, baseNormalCoordEquiv_apply]
+  simp [Complex.re_add_im]
+
+variable (e) in
+/-- The frame coordinates `y ↦ (w(y), z(y))` as a homeomorphism of `V` with `ℂ × ℂ`. -/
+def baseNormalCoordHomeomorph : V ≃ₜ ℂ × ℂ :=
+  (baseNormalCoordEquiv e).toHomeomorph.trans (WithLp.homeomorphProd 2 ℂ ℂ)
+
+@[simp]
+theorem baseNormalCoordHomeomorph_apply (y : V) :
+    baseNormalCoordHomeomorph e y = (baseCoord e y, normalCoord e y) :=
+  -- The composite unfolds definitionally to `WithLp.ofLp ∘ baseNormalCoordEquiv e`.
+  congrArg WithLp.ofLp (baseNormalCoordEquiv_apply y)
+
+/-- The point with base coordinate `w` and normal coordinate `n` is
+`Re w e₀ + Im w e₁ + Re n e₂ + Im n e₃`. -/
+@[simp]
+theorem baseNormalCoordHomeomorph_symm_apply (w n : ℂ) :
+    (baseNormalCoordHomeomorph e).symm (w, n) =
+      w.re • e 0 + w.im • e 1 + n.re • e 2 + n.im • e 3 := by
+  rw [Homeomorph.symm_apply_eq, baseNormalCoordHomeomorph_apply]
+  simp [Complex.re_add_im]
 
 variable (e) in
 /-- The **base-independent connection** `b₁(z) ds + b₂(z) dt` on `V = ℂ_base × ℂ_normal` pulled
@@ -552,7 +602,8 @@ theorem sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff {r : �
       (Vortex.sectionValue x (normalCoord e y) • u₀) =
         Vortex.sectionValue x (normalCoord e y) • u₀ := by
     rw [map_smul, hu₀]
-  rw [sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ hkl he h₀ h₂₃ hρ hu₀ hu₀',
+  rw [sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ
+      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃) hu₀ hu₀',
     covariantDBar_normalConnection_eq_zero_iff h₀ h₂₃ hx,
     add_hodgeStar_eq_sub_quadraticTwoForm_iff hQ hkl hω h₂ hρ hr hαu₀,
     alternatingFormEquiv_symm_neg_extDeriv_normalConnection hx,
@@ -602,7 +653,7 @@ theorem sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff_equati
             ⋀[ℝ]^2 V)) ↔
       Vortex.equation X (normalCoord e (√(2 * r) • y)) = 0 := by
   have hz : √(2 * r) • normalCoord e y = normalCoord e (√(2 * r) • y) := (map_smul _ _ _).symm
-  have hd := Vortex.coupledEquation_dilateField_eq_zero_iff 1 (√(2 * r))
+  have hd := Vortex.coupledEquation_dilateField_apply_eq_zero_iff 1 (√(2 * r))
     (Real.sqrt_pos.2 (by positivity)).ne' X (normalCoord e y)
   rw [mul_one, Real.sq_sqrt (by positivity), Vortex.coupledEquation_one, hz] at hd
   rw [sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff hQ hkl he h₀ h₂₃ hr.le h₂
@@ -673,7 +724,7 @@ theorem sum_extDeriv_apply_eq_of_add_hodgeStar_eq_smul {ι : Type*} [Fintype ι]
     linarith
   -- `∑ᵢ fᵢ ∧ J fᵢ = 2 ω`.
   have hsum := congrArg (⟪F, ·⟫)
-    (AlmostComplexStructure.sum_ιMulti_apply_eq_two_smul_kahlerForm hJ f)
+    (J.sum_ιMulti_apply_eq_two_smul_kahlerForm f)
   simp only [inner_sum, hFv, Finset.sum_neg_distrib, real_inner_smul_right] at hsum
   rw [real_inner_comm, hω] at hsum
   linarith
@@ -742,7 +793,7 @@ theorem norm_eq_one_and_eq_normalConnection_sub_phaseForm {r : ℝ} (hr : 0 ≤ 
   have hflat (y : V) :=
     (sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff hQ hkl he h₀ h₂₃ hr h₂ hρ
       hu₀ hu₀₁ (hx (normalCoord e y))).2 (hsol _)
-  have hdirac := sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ hkl he h₀ h₂₃ hρ hu₀ hu₀'
+  have hdirac := sum_covariantDeriv_smul_ι_apply_eq_zero_iff (e := e) hQ hJ hu₀ hu₀'
   -- Transversal limits along the normal plane `K = span {e₂, e₃}` are limits as `|z| → ∞`.
   set K := Submodule.span ℝ {e 2, e 3}
   have hK : K ≠ ⊥ := fun hK ↦ e.orthonormal.ne_zero 2

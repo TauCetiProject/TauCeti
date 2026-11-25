@@ -123,10 +123,8 @@ theorem inChartAt_toRoughForm [IsManifold 𝓘(ℂ) 1 X] (ω : OneForm X) (x₀ 
   have hd := mdifferentiableAt_symm_of_mem_maximalAtlas (chart_mem_maximalAtlas (I := 𝓘(ℂ)) x₀) hz
   ext v
   -- The real derivative of the chart inverse is its complex derivative, both read in `ℂ`.
-  have hv : mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e.symm z (v 0) = mfderiv 𝓘(ℂ) 𝓘(ℂ) e.symm z (v 0) := by
-    have H := DFunLike.congr_fun (hd.mfderiv_restrictScalars ℝ) (v 0)
-    rw [modelWithCornersSelf_restrictScalars] at H
-    exact H.trans (ContinuousLinearMap.restrictScalarsTangent_apply _ _)
+  have hv : mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) e.symm z (v 0) = mfderiv 𝓘(ℂ) 𝓘(ℂ) e.symm z (v 0) :=
+    hd.mfderiv_modelWithCornersSelf_restrictScalars_apply ℝ (v 0)
   -- The vector `v 0` is `v 0` times the coordinate vector `∂/∂z`; the final `rfl` is Mathlib's
   -- identification of `TangentSpace 𝓘(ℂ) z` with `ℂ` through `NormedSpace.fromTangentSpace z`.
   have h1 : mfderiv 𝓘(ℂ) 𝓘(ℂ) e.symm z (v 0) =

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.BaseChange
+public import TauCeti.RepresentationTheory.BaseChange.Intertwiner
 public import TauCeti.RepresentationTheory.Symmetric.Specht.AbsoluteIrreducibility
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Character
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Completeness
