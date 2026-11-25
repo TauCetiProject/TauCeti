@@ -62,38 +62,19 @@ namespace Valuation
 
 variable {F : Type*} [Field F] (v : Valuation F ℤᵐ⁰)
 
-/-- A function `Fˣ → Fˣ → M` that is multiplicative in each argument, as a biadditive pairing on
-`Additive Fˣ` with values in `Additive M`. -/
-private def bimultiplicativePairing {M : Type*} [CommGroup M] (c : Fˣ → Fˣ → M)
-    (hl : ∀ f₁ f₂ g, c (f₁ * f₂) g = c f₁ g * c f₂ g)
-    (hr : ∀ f g₁ g₂, c f (g₁ * g₂) = c f g₁ * c f g₂) :
-    Additive Fˣ →+ Additive Fˣ →+ Additive M :=
-  AddMonoidHom.mk'
-    (fun f : Additive Fˣ ↦ AddMonoidHom.mk'
-      (fun g : Additive Fˣ ↦ Additive.ofMul (c f.toMul g.toMul)) fun g₁ g₂ ↦ by simp [hr])
-    fun f₁ f₂ ↦ by ext g; simp [hl]
-
-private theorem bimultiplicativePairing_apply {M : Type*} [CommGroup M] (c : Fˣ → Fˣ → M)
-    (hl : ∀ f₁ f₂ g, c (f₁ * f₂) g = c f₁ g * c f₂ g)
-    (hr : ∀ f g₁ g₂, c f (g₁ * g₂) = c f g₁ * c f g₂) (f g : Fˣ) :
-    bimultiplicativePairing c hl hr (Additive.ofMul f) (Additive.ofMul g) =
-      Additive.ofMul (c f g) :=
-  (rfl)
-
 /-- **The tame symbol as a homomorphism out of the Matsumoto group**: the homomorphism
 `{f, g} ↦ ∂_v{f, g}`, induced by the bimultiplicative Steinberg pairing `Valuation.tameSymbol`.
 The target is the unit group of the residue field, written additively. -/
 noncomputable def tameSymbolHom :
     MatsumotoGroup F →+ Additive (IsLocalRing.ResidueField v.valuationSubring)ˣ :=
-  MatsumotoGroup.lift (bimultiplicativePairing v.tameSymbol v.tameSymbol_mul_left
-    v.tameSymbol_mul_right) fun x y h ↦ by
-      rw [bimultiplicativePairing_apply, v.tameSymbol_of_add_eq_one h, ofMul_one]
+  liftOfBimultiplicative v.tameSymbol v.tameSymbol_mul_left v.tameSymbol_mul_right
+    fun _ _ ↦ v.tameSymbol_of_add_eq_one
 
 /-- The tame symbol homomorphism sends the Steinberg symbol `{f, g}` to `∂_v{f, g}`. -/
 @[simp]
 theorem tameSymbolHom_symbol (f g : Fˣ) :
     v.tameSymbolHom (symbol f g) = Additive.ofMul (v.tameSymbol f g) := by
-  rw [tameSymbolHom, lift_symbol, bimultiplicativePairing_apply]
+  rw [tameSymbolHom, liftOfBimultiplicative_symbol]
 
 /-- The tame symbol homomorphism vanishes on the symbol of two units of the valuation ring. -/
 theorem tameSymbolHom_symbol_coe_coe (u w : v.valuationSubring.unitGroup) :
@@ -199,12 +180,10 @@ theorem tameSymbol_unique (c : Fˣ → Fˣ → (IsLocalRing.ResidueField v.valua
     (hut : ∀ u : v.valuationSubring.unitGroup,
       c u t = v.valuationSubring.unitGroupToResidueFieldUnits u)
     (f g : Fˣ) : c f g = v.tameSymbol f g := by
-  have hφ := (v.eq_tameSymbolHom_iff ht (MatsumotoGroup.lift (bimultiplicativePairing c hl hr)
-    fun x y h ↦ by rw [bimultiplicativePairing_apply, hc x y h, ofMul_one])).2
-    ⟨fun u w ↦ by rw [lift_symbol, bimultiplicativePairing_apply, huw, ofMul_one],
-      fun u ↦ by rw [lift_symbol, bimultiplicativePairing_apply, hut]⟩
+  have hφ := (v.eq_tameSymbolHom_iff ht (liftOfBimultiplicative c hl hr hc)).2
+    ⟨fun u w ↦ by rw [liftOfBimultiplicative_symbol, huw, ofMul_one],
+      fun u ↦ by rw [liftOfBimultiplicative_symbol, hut]⟩
   have := DFunLike.congr_fun hφ (symbol f g)
-  rwa [lift_symbol, bimultiplicativePairing_apply, tameSymbolHom_symbol,
-    EmbeddingLike.apply_eq_iff_eq] at this
+  rwa [liftOfBimultiplicative_symbol, tameSymbolHom_symbol, EmbeddingLike.apply_eq_iff_eq] at this
 
 end Valuation

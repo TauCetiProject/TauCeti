@@ -39,6 +39,8 @@ Through Matsumoto's theorem the last statement is Steinberg's computation `K₂(
 * `TauCeti.MatsumotoGroup F`: the quotient of `Fˣ ⊗_ℤ Fˣ` by the Steinberg relations.
 * `TauCeti.MatsumotoGroup.symbol x y`: the Steinberg symbol `{x, y}`, the class of `x ⊗ y`.
 * `TauCeti.MatsumotoGroup.lift`: the homomorphism induced by a biadditive Steinberg pairing.
+* `TauCeti.MatsumotoGroup.liftOfBimultiplicative`: the homomorphism, to a commutative group
+  written additively, induced by a bimultiplicative Steinberg pairing.
 
 ## Main results
 
@@ -228,6 +230,34 @@ theorem lift_symbol {A : Type*} [AddCommGroup A] (c : Additive Fˣ →+ Additive
     (x y : Fˣ) : lift c hc (symbol x y) = c (Additive.ofMul x) (Additive.ofMul y) := by
   rw [lift, ← mk_tmul]
   simp [-mk_tmul]
+
+/-- **The universal property for bimultiplicative pairings.** A pairing `c` on `Fˣ` with values in
+a commutative group `M` that is multiplicative in each argument and satisfies the Steinberg
+relation, `c x y = 1` whenever `x + y = 1`, induces a homomorphism `{x, y} ↦ c x y` from the
+Matsumoto group to `M`, written additively. This is `lift` applied to `c` read as a biadditive
+pairing. -/
+def liftOfBimultiplicative {M : Type*} [CommGroup M] (c : Fˣ → Fˣ → M)
+    (hl : ∀ x₁ x₂ y, c (x₁ * x₂) y = c x₁ y * c x₂ y)
+    (hr : ∀ x y₁ y₂, c x (y₁ * y₂) = c x y₁ * c x y₂)
+    (hc : ∀ x y : Fˣ, (x : F) + y = 1 → c x y = 1) :
+    MatsumotoGroup F →+ Additive M :=
+  lift (AddMonoidHom.mk'
+      (fun x : Additive Fˣ ↦ AddMonoidHom.mk'
+        (fun y : Additive Fˣ ↦ Additive.ofMul (c x.toMul y.toMul)) fun y₁ y₂ ↦ by simp [hr])
+      fun x₁ x₂ ↦ by ext y; simp [hl])
+    fun x y h ↦ by
+      change Additive.ofMul (c x y) = 0
+      rw [hc x y h, ofMul_one]
+
+/-- The homomorphism induced by a bimultiplicative Steinberg pairing `c` sends `{x, y}` to
+`c x y`. -/
+@[simp]
+theorem liftOfBimultiplicative_symbol {M : Type*} [CommGroup M] (c : Fˣ → Fˣ → M)
+    (hl : ∀ x₁ x₂ y, c (x₁ * x₂) y = c x₁ y * c x₂ y)
+    (hr : ∀ x y₁ y₂, c x (y₁ * y₂) = c x y₁ * c x y₂)
+    (hc : ∀ x y : Fˣ, (x : F) + y = 1 → c x y = 1) (x y : Fˣ) :
+    liftOfBimultiplicative c hl hr hc (symbol x y) = Additive.ofMul (c x y) :=
+  lift_symbol _ _ x y
 
 /-- In a finite field of characteristic other than `2`, the symbol `{g, g}` of a generator `g`
 of the unit group vanishes. -/
