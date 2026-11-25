@@ -28,8 +28,9 @@ that solvability is invariant under isomorphism, and the characterization of sol
 direct products via the two surjective projections and the converse product instance, that a
 nontrivial finite solvable group has a normal subgroup of prime index, and that in a perfect group
 a normal subgroup supplemented by a solvable subgroup, or by a subgroup normalizing a solvable
-subgroup whose conjugates generate the group, is the whole group. Finally, a group is solvable
-when every element outside some proper subgroup squares to one.
+subgroup whose conjugates generate the group, is the whole group. A group is solvable when every
+element outside some proper subgroup squares to one. Finally, the image of a homomorphism is
+solvable as soon as the image of a normal subgroup with solvable quotient is.
 
 The identity formulation is useful when a group is represented by an affine scheme: an identity
 between derived words can be checked on a schematically dense family of points, while the
@@ -50,6 +51,8 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
   group is the whole group.
 * `Group.isSolvable_of_forall_notMem_mul_self_eq_one`: a group with a proper subgroup outside
   which every element squares to one is solvable.
+* `MonoidHom.isSolvable_range_of_isSolvable_map`: a homomorphism whose image of a normal subgroup
+  with solvable quotient is solvable has solvable image.
 * `TauCeti.DerivedWordArgs`: the recursively paired arguments of a derived word.
 * `TauCeti.derivedWord`: the balanced iterated commutator word.
 * `TauCeti.map_derivedWord`: derived words commute with group homomorphisms.
@@ -168,6 +171,23 @@ theorem _root_.Group.isSolvable_of_forall_notMem_mul_self_eq_one {G : Type*} [Gr
   have := TauCeti.isMulCommutative_of_conj_eq_inv (hinv x hx)
   exact ⟨inferInstance, Group.isSolvable_of_comm fun a b ↦ (Commute.of_orderOf_dvd_two
     (fun q ↦ orderOf_dvd_of_pow_eq_one ((sq q).trans (hsq q))) a b).eq⟩
+
+/-- If a homomorphism `f` maps a normal subgroup `N` with solvable quotient onto a solvable
+subgroup, then the whole image of `f` is solvable: the image of `N` is normal in the image of `f`,
+with quotient a quotient of `G ⧸ N`. -/
+theorem _root_.MonoidHom.isSolvable_range_of_isSolvable_map {G H : Type*} [Group G] [Group H]
+    (f : G →* H) (N : Subgroup G) [N.Normal] [Group.IsSolvable (G ⧸ N)]
+    [Group.IsSolvable (N.map f)] : Group.IsSolvable f.range := by
+  let M : Subgroup f.range := N.map f.rangeRestrict
+  have : M.Normal := Subgroup.Normal.map ‹_› _ f.rangeRestrict_surjective
+  have hM : M.map f.range.subtype = N.map f := by
+    rw [Subgroup.map_map, MonoidHom.subtype_comp_rangeRestrict]
+  have : Group.IsSolvable M := ((M.equivMapOfInjective _ f.range.subtype_injective).trans
+    (MulEquiv.subgroupCongr hM)).isSolvable_congr.mpr inferInstance
+  have : Group.IsSolvable (f.range ⧸ M) := Group.isSolvable_of_surjective
+    (QuotientGroup.map_surjective_of_surjective (N := N) M f.rangeRestrict
+      (QuotientGroup.mk_surjective.comp f.rangeRestrict_surjective) (Subgroup.le_comap_map _ _))
+  exact Group.isSolvable_of_subgroup_quotient M
 
 universe u v
 

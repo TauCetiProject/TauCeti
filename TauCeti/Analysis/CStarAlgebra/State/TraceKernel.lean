@@ -5,17 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
-public import TauCeti.Algebra.Star.Subalgebra
 public import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Analysis.CStarAlgebra.State.Tracial
 public import TauCeti.Analysis.StarAlgebra.GNS.Basic
 public import TauCeti.RingTheory.TraceFunctional.Radical
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
-import Mathlib.Analysis.InnerProductSpace.StarOrder
+import TauCeti.Algebra.Star.Subalgebra
 
 /-!
 # The trace kernel and faithful quotient descent of a tracial positive functional
@@ -37,9 +33,9 @@ pulls back along injective star homomorphisms and restricts to closed star subal
 every tracial state of a C⋆-algebra without nontrivial closed two-sided ideals is faithful,
 because the trace kernel of a nonzero functional is a proper closed ideal.
 
-Finally, lifting a tracial positive functional along a surjective star homomorphism via
-`PositiveContinuousLinearMap.liftOfSurjective` preserves traciality and tracial states, and
-produces a faithful functional exactly when the homomorphism kills `{a | τ (star a * a) = 0}`.
+Finally, lifting a positive functional along a surjective star homomorphism via
+`PositiveContinuousLinearMap.liftOfSurjective` produces a faithful functional exactly when the
+homomorphism kills `{a | τ (star a * a) = 0}` (`isFaithfulTrace_liftOfSurjective_iff`).
 Specializing to the range restriction of the GNS representation and to the quotient map
 `A →⋆ₙₐ[ℂ] A ⧸ τ.traceKernel hτ` yields the faithful descended traces
 `PositiveContinuousLinearMap.gnsRangeTrace` (on `π_τ(A)`) and
@@ -363,22 +359,6 @@ variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
-/-- Lifting a tracial positive functional along a surjective star homomorphism preserves the
-trace identity. -/
-theorem liftOfSurjective_map_mul_comm (τ : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
-    (hker : ∀ a : A, f a = 0 → τ a = 0) (hτ : ∀ a b : A, τ (a * b) = τ (b * a)) (x y : B) :
-    τ.liftOfSurjective f hf hker (x * y) = τ.liftOfSurjective f hf hker (y * x) := by
-  obtain ⟨a, rfl⟩ := hf x
-  obtain ⟨b, rfl⟩ := hf y
-  rw [← map_mul, ← map_mul, liftOfSurjective_apply, liftOfSurjective_apply, hτ]
-
-/-- `τ.liftOfSurjective f hf hker` is a tracial state if and only if `τ` is a tracial state. -/
-@[simp]
-theorem isTracialState_liftOfSurjective_iff (τ : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
-    (hker : ∀ a : A, f a = 0 → τ a = 0) :
-    (τ.liftOfSurjective f hf hker).IsTracialState ↔ τ.IsTracialState := by
-  rw [← isTracialState_comp_iff_of_surjective f hf, liftOfSurjective_comp_ofClass]
-
 /-- The lifted positive functional `τ.liftOfSurjective f hf hker` is faithful if and only if `f`
 annihilates `{a : A | τ (star a * a) = 0}`. -/
 theorem isFaithfulTrace_liftOfSurjective_iff (τ : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
@@ -404,12 +384,6 @@ end LiftOfSurjective
 section GNSRangeAndQuotient
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- The closed C⋆-subalgebra image `f.gnsNonUnitalStarAlgHom.range` inherits `StarOrderedRing` from
-`f.GNS →L[ℂ] f.GNS`. -/
-instance _root_.PositiveLinearMap.instStarOrderedRingRangeGNSNonUnitalStarAlgHom (f : A →ₚ[ℂ] ℂ) :
-    StarOrderedRing f.gnsNonUnitalStarAlgHom.range :=
-  Subtype.starOrderedRing (𝕜 := ℂ) f.gnsNonUnitalStarAlgHom.range
 
 /-- **The faithful descended trace on the GNS image `π_τ(A)`.** For a tracial positive continuous
 linear functional `τ : A →P[ℂ] ℂ`, `τ.gnsRangeTrace hτ` is the positive continuous linear

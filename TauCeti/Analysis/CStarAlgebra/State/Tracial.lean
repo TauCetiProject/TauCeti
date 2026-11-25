@@ -43,7 +43,9 @@ it with the set of β-KMS states of the trivial dynamics for every `β`.
   subalgebras; without a unit, the pullback or restriction is tracial when it has norm one
   (`IsTracialState.comp_of_norm_eq_one`, `IsTracialState.domRestrict_of_norm_eq_one`), in
   particular along surjections (`IsTracialState.comp_of_surjective`,
-  `isTracialState_comp_iff_of_surjective`).
+  `isTracialState_comp_iff_of_surjective`), and lifting along a surjective star homomorphism via
+  `PositiveContinuousLinearMap.liftOfSurjective` preserves the trace identity and tracial states
+  (`liftOfSurjective_map_mul_comm`, `isTracialState_liftOfSurjective_iff`).
 * `PositiveContinuousLinearMap.isTracialState_iff_of_comm`: on a commutative C⋆-algebra every
   state is tracial, so `T(A) = S(A)` (`TauCeti.tracialStates_eq_stateSpace`).
 * `PositiveContinuousLinearMap.isTracialState_unitization_iff`: the extension `τ⁺¹` of a positive
@@ -195,6 +197,22 @@ theorem isTracialState_comp_iff_of_surjective (f : F) (hf : Function.Surjective 
     (σ.comp (.ofClass f)).IsTracialState ↔ σ.IsTracialState :=
   TauCeti.CStarAction.isKMSState_comp_iff_of_surjective
     (TauCeti.CStarAction.Hom.mk (.ofClass f) fun _ _ => by simp) hf
+
+/-- Lifting a tracial positive functional along a surjective star homomorphism preserves the
+trace identity. -/
+theorem liftOfSurjective_map_mul_comm (τ : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
+    (hker : ∀ a : A, f a = 0 → τ a = 0) (hτ : ∀ a b : A, τ (a * b) = τ (b * a)) (x y : B) :
+    τ.liftOfSurjective f hf hker (x * y) = τ.liftOfSurjective f hf hker (y * x) := by
+  obtain ⟨a, rfl⟩ := hf x
+  obtain ⟨b, rfl⟩ := hf y
+  rw [← map_mul, ← map_mul, liftOfSurjective_apply, liftOfSurjective_apply, hτ]
+
+/-- `τ.liftOfSurjective f hf hker` is a tracial state if and only if `τ` is a tracial state. -/
+@[simp]
+theorem isTracialState_liftOfSurjective_iff (τ : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
+    (hker : ∀ a : A, f a = 0 → τ a = 0) :
+    (τ.liftOfSurjective f hf hker).IsTracialState ↔ τ.IsTracialState := by
+  rw [← isTracialState_comp_iff_of_surjective f hf, liftOfSurjective_comp_ofClass]
 
 end Pullback
 

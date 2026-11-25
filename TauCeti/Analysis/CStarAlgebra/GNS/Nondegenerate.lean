@@ -5,15 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import Mathlib.Analysis.InnerProductSpace.StarOrder
+import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!
 # Nondegeneracy and faithfulness of GNS representations
 
 The GNS representation of every positive functional on a possibly nonunital C⋆-algebra is
 nondegenerate, and its multiplier extension acts on classes `[b]` as `[m.fst b]`
-(`PositiveLinearMap.multiplierExtension_gnsNonUnitalStarAlgHom_toGNS`). Conversely, every element
+(`PositiveLinearMap.multiplierExtension_gnsNonUnitalStarAlgHom_toGNS`). Its closed C⋆-subalgebra
+image `f.gnsNonUnitalStarAlgHom.range` inherits `StarOrderedRing` from `f.GNS →L[ℂ] f.GNS`
+(`PositiveLinearMap.instStarOrderedRingRangeGNSNonUnitalStarAlgHom`), so positive functionals can
+be considered directly on the GNS range. Conversely, every element
 in the kernel of the GNS representation lies in the null space `{a | f (a⋆a) = 0}`
 (`PositiveLinearMap.map_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero`). If the
 functional is faithful, in the sense that `f (a⋆a) = 0` forces `a = 0`, its GNS representation is
@@ -100,6 +107,12 @@ theorem gnsNonUnitalStarAlgHom_injective (f : A →ₚ[ℂ] ℂ)
     simpa [toGNS_apply] using DFunLike.congr_fun ha (f.toGNS (star a))
   have hmul : a * star a = 0 := hclass (by simpa using hzero)
   exact mul_star_self_eq_zero.mp hmul
+
+/-- The closed C⋆-subalgebra image `f.gnsNonUnitalStarAlgHom.range` inherits `StarOrderedRing` from
+`f.GNS →L[ℂ] f.GNS`. -/
+instance instStarOrderedRingRangeGNSNonUnitalStarAlgHom (f : A →ₚ[ℂ] ℂ) :
+    StarOrderedRing f.gnsNonUnitalStarAlgHom.range :=
+  Subtype.starOrderedRing (𝕜 := ℂ) f.gnsNonUnitalStarAlgHom.range
 
 end PositiveLinearMap
 

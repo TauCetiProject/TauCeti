@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace
-import Mathlib.Analysis.CStarAlgebra.Classes
 
 /-!
 # Concrete examples and counterexamples for tracial states and trace kernels
