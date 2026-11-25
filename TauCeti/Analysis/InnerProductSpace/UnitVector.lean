@@ -14,9 +14,15 @@ For a unit vector `ξ` in an inner product space over `ℝ` or `ℂ`, the coeffi
 within `‖x - ξ‖` of `1 = ⟪ξ, ξ⟫`. For instance, a matrix coefficient `g ↦ ⟪ξ, ρ g ξ⟫` of a unitary
 representation is close to `1` wherever `ρ g` moves `ξ` little.
 
+In a real inner product space the coefficient `⟪f, x⟫` against a vector `f` of the closed unit
+ball is at most `‖x‖`, with equality at `f = ‖x‖⁻¹ • x`, so `‖x‖` is the supremum of these
+coefficients.
+
 ## Main results
 
 * `TauCeti.norm_inner_sub_one_le`: `‖⟪ξ, x⟫ - 1‖ ≤ ‖x - ξ‖` for a unit vector `ξ`.
+* `TauCeti.real_inner_inv_norm_smul_self`: `⟪‖x‖⁻¹ • x, x⟫ = ‖x‖`.
+* `TauCeti.norm_eq_iSup_real_inner`: `‖x‖ = ⨆ ‖f‖ ≤ 1, ⟪f, x⟫`.
 -/
 
 public section
@@ -31,5 +37,30 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 theorem norm_inner_sub_one_le {ξ : E} (hξ : ‖ξ‖ = 1) (x : E) : ‖⟪ξ, x⟫_𝕜 - 1‖ ≤ ‖x - ξ‖ := by
   rw [← inner_self_eq_one_of_norm_eq_one hξ, ← inner_sub_right]
   simpa [hξ] using norm_inner_le_norm (𝕜 := 𝕜) ξ (x - ξ)
+
+section Real
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- The coefficient of `x` against its normalization `‖x‖⁻¹ • x` is `‖x‖`; both sides are `0`
+for `x = 0`. -/
+theorem real_inner_inv_norm_smul_self (x : F) : ⟪‖x‖⁻¹ • x, x⟫_ℝ = ‖x‖ := by
+  rw [real_inner_smul_left, real_inner_self_eq_norm_sq, sq, ← mul_assoc, inv_mul_mul_self]
+
+/-- **The norm as a supremum of coefficients.** In a real inner product space, `‖x‖` is the
+supremum of `⟪f, x⟫` over the closed unit ball, attained at `‖x‖⁻¹ • x`. -/
+theorem norm_eq_iSup_real_inner (x : F) : ‖x‖ = ⨆ f : {f : F // ‖f‖ ≤ 1}, ⟪f.val, x⟫_ℝ := by
+  have hle (f : {f : F // ‖f‖ ≤ 1}) : ⟪f.val, x⟫_ℝ ≤ ‖x‖ :=
+    (real_inner_le_norm f.val x).trans (mul_le_of_le_one_left (norm_nonneg x) f.property)
+  have hball : ‖‖x‖⁻¹ • x‖ ≤ 1 := by
+    rw [norm_smul, norm_inv, norm_norm]
+    exact inv_mul_le_one_of_le₀ le_rfl (norm_nonneg x)
+  have : Nonempty {f : F // ‖f‖ ≤ 1} := ⟨⟨_, hball⟩⟩
+  refine le_antisymm ?_ (ciSup_le hle)
+  exact (real_inner_inv_norm_smul_self x).symm.le.trans
+    (le_ciSup (f := fun f : {f : F // ‖f‖ ≤ 1} ↦ ⟪f.val, x⟫_ℝ) ⟨‖x‖, Set.forall_mem_range.2 hle⟩
+      ⟨_, hball⟩)
+
+end Real
 
 end TauCeti
