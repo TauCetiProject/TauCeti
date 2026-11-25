@@ -17,6 +17,7 @@ public import TauCeti.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.Unimodular
 public import TauCeti.RingTheory.LocalRing.Residue
 import Mathlib.Algebra.Module.Shrink
+import TauCeti.Algebra.Module.Projective.Schanuel
 
 /-!
 # Generators of modules over a local ring
@@ -178,7 +179,7 @@ summand of `M`, hence free. -/
 theorem free_ker_of_apply_eq_one [Module.Finite R M] [Module.Projective R M]
     {φ : M →ₗ[R] R} {w : M} (hw : φ w = 1) : Module.Free R (LinearMap.ker φ) :=
   have := LinearMap.finite_ker_of_apply_eq_one hw
-  have := LinearMap.projective_ker_of_apply_eq_one hw
+  have := φ.projective_ker_of_surjective fun r ↦ ⟨r • w, by simp [hw]⟩
   Module.free_of_flat_of_isLocalRing
 
 /-- **The kernel of a linear form taking the value `1` has rank one less.** If `φ : M → R` takes
@@ -253,7 +254,7 @@ private theorem free_of_span_finset_eq_top (n : ℕ) :
     let π : M →ₗ[R] LinearMap.ker φ := LinearMap.fst R _ R ∘ₗ e.symm.toLinearMap
     have hπ : Function.Surjective π := Prod.fst_surjective.comp e.symm.surjective
     have hπp : π p = 0 := Subtype.ext (by simp [π, e, hφ])
-    have := LinearMap.projective_ker_of_apply_eq_one hφ
+    have := φ.projective_ker_of_surjective fun r ↦ ⟨r • p, by simp [hφ]⟩
     have : Module.Free R (LinearMap.ker φ) := by
       refine ih ((s.erase p).image π) (Finset.card_image_le.trans ?_) ?_
       · rw [Finset.card_erase_of_mem hps]

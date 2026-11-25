@@ -55,8 +55,7 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
   are unit multiples of one another exactly when their `2 × 2` minors vanish.
 * `LinearMap.kerProdEquivOfApplyEqOne`: if a linear functional `f` takes the value `1` at `v`, then
   `ker f × R ≃ M` by `(x, a) ↦ x + a • v`. Consequently `ker f` is finite when `M` is
-  (`LinearMap.finite_ker_of_apply_eq_one`) and projective when `M` is
-  (`LinearMap.projective_ker_of_apply_eq_one`).
+  (`LinearMap.finite_ker_of_apply_eq_one`).
 -/
 
 public section
@@ -340,13 +339,5 @@ theorem finite_ker_of_apply_eq_one [Module.Finite R M] {f : M →ₗ[R] R} {v : 
     Module.Finite R (ker f) :=
   .of_surjective (fst R _ R ∘ₗ (kerProdEquivOfApplyEqOne hf).symm.toLinearMap)
     (Prod.fst_surjective.comp (kerProdEquivOfApplyEqOne hf).symm.surjective)
-
-/-- If a linear functional `f` on a projective module `M` takes the value `1` at `v`, then `ker f`
-is projective: the inclusion of `ker f` is split by the projection `m ↦ m - f m • v`
-(`LinearMap.kerProdEquivOfApplyEqOne`). -/
-theorem projective_ker_of_apply_eq_one [Module.Projective R M] {f : M →ₗ[R] R} {v : M}
-    (hf : f v = 1) : Module.Projective R (ker f) :=
-  .of_split (ker f).subtype (fst R _ R ∘ₗ (kerProdEquivOfApplyEqOne hf).symm.toLinearMap)
-    (LinearMap.ext fun x ↦ Subtype.ext (by simp))
 
 end LinearMap
