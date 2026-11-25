@@ -39,8 +39,9 @@ This file proves that finitely generated projective `A`-modules and their reduct
 
 * the reduction of a projective `A`-module is a projective `B`-module
   (`TauCeti.projective_of_reduction`; finiteness is Mathlib's `Module.Finite.of_surjective`);
-* two finitely generated projective `A`-modules with the same reduction are isomorphic when
-  `ker π` lies in the Jacobson radical of `A` (`TauCeti.nonempty_linearEquiv_of_reduction`).
+* two finitely generated (more generally, coatomic) projective `A`-modules with the same
+  reduction are isomorphic when `ker π` lies in the Jacobson radical of `A`
+  (`TauCeti.nonempty_linearEquiv_of_reduction`).
 
 When moreover `A` is an algebra over a Noetherian ring `O`, finite as an `O`-module, `O` is
 complete with respect to a principal ideal `(ϖ)` and `ker π = ϖ A`, then `ϖ A` lies in the Jacobson
@@ -146,12 +147,14 @@ theorem projective_of_reduction [Module.Projective A P] : Module.Projective B Y 
   exact .of_equiv (e.toAddEquiv.linearEquiv B)
 
 include hf hfker in
-/-- **Projective lifts are unique.** Two finitely generated projective `A`-modules with the same
-reduction `Y` are isomorphic, when the kernel of `π` lies in the Jacobson radical of `A`, for
-instance when it is `ϖ A` (`TauCeti.span_algebraMap_le_jacobson`). -/
+/-- **Projective lifts are unique.** Two projective `A`-modules with coatomic submodule lattices
+(for instance finitely generated ones) and the same reduction `Y` are isomorphic, when the kernel
+of `π` lies in the Jacobson radical of `A`, for instance when it is `ϖ A`
+(`TauCeti.span_algebraMap_le_jacobson`). -/
 theorem nonempty_linearEquiv_of_reduction (hJ : RingHom.ker π ≤ Ring.jacobson A)
-    [Module.Finite A P] [Module.Projective A P] {Q : Type*} [AddCommGroup Q] [Module A Q]
-    [Module.Finite A Q] [Module.Projective A Q] {g : Q →ₛₗ[π] Y} (hg : Function.Surjective g)
+    [IsCoatomic (Submodule A P)] [Module.Projective A P] {Q : Type*} [AddCommGroup Q]
+    [Module A Q] [IsCoatomic (Submodule A Q)] [Module.Projective A Q]
+    {g : Q →ₛₗ[π] Y} (hg : Function.Surjective g)
     (hgker : ∀ x, g x = 0 ↔ x ∈ RingHom.ker π • (⊤ : Submodule A Q)) :
     Nonempty (P ≃ₗ[A] Q) := by
   let _ : Module A Y := Module.compHom Y π

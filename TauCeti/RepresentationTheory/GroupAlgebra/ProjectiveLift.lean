@@ -64,14 +64,14 @@ section LocalRing
 variable {O G : Type*} [CommRing O] [IsLocalRing O] [Monoid G] [Finite G]
 
 variable {P : Type*} [AddCommGroup P] [Module (MonoidAlgebra O G) P]
-  [Module.Finite (MonoidAlgebra O G) P] [Module.Projective (MonoidAlgebra O G) P]
+  [IsCoatomic (Submodule (MonoidAlgebra O G) P)] [Module.Projective (MonoidAlgebra O G) P]
   {Y : Type*} [AddCommGroup Y] [Module (MonoidAlgebra (IsLocalRing.ResidueField O) G) Y]
 
 /-- **Lifts to `O[G]` are unique.** For a local ring `O` with residue field `k` and a finite group
-`G`, two finitely generated projective `O[G]`-modules with the same reduction `Y` are
-isomorphic. -/
+`G`, two projective `O[G]`-modules with coatomic submodule lattices (for instance finitely
+generated ones) and the same reduction `Y` are isomorphic. -/
 theorem nonempty_linearEquiv_of_reduction_residue {Q : Type*} [AddCommGroup Q]
-    [Module (MonoidAlgebra O G) Q] [Module.Finite (MonoidAlgebra O G) Q]
+    [Module (MonoidAlgebra O G) Q] [IsCoatomic (Submodule (MonoidAlgebra O G) Q)]
     [Module.Projective (MonoidAlgebra O G) Q]
     {f : P →ₛₗ[MonoidAlgebra.mapRingHom G (IsLocalRing.residue O)] Y} (hf : Function.Surjective f)
     (hfker : ∀ x, f x = 0 ↔ x ∈ RingHom.ker (MonoidAlgebra.mapRingHom G (IsLocalRing.residue O)) •
