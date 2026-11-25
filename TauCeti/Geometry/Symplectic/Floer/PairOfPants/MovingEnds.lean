@@ -42,8 +42,10 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
 * near each input end the datum is that end's datum alone, and far out on the end it is
   `H i(t) dt` (`TauCeti.Floer.puncturedSpherePerturbation_cylindricalEndLift`); its pullback along
   the end chart `z ↦ c i + a i φ₀(z)`, in real coordinates, is `β(s - 1) H i(t) dt`
-  (`TauCeti.Floer.perturbationPullback_realChart_puncturedSpherePerturbation`); far out on the
-  output end it is `Hout(t) dt`
+  (`TauCeti.Floer.perturbationPullback_realChart_puncturedSpherePerturbation`), which is
+  `H i(t) dt` for `s ≥ 2`
+  (`TauCeti.Floer.perturbationPullback_realChart_puncturedSpherePerturbation_of_two_le`); far out
+  on the output end it is `Hout(t) dt`
   (`TauCeti.Floer.puncturedSpherePerturbation_cylindricalEndLift_inf`), and its pullback along the
   positive end chart `φ'_∞` is `H'(t) dt` for `H'(t, x) = -Hout(-t, x)`
   (`TauCeti.Floer.perturbationPullback_positiveEndChart_inf_puncturedSpherePerturbation`);
@@ -383,6 +385,22 @@ theorem perturbationPullback_realChart_puncturedSpherePerturbation
     puncturedSpherePerturbation_cylindricalEndLift_of_pos hsep hout (hH i) (ha i)
       (by simpa using hw)]
   simp
+
+open TauCeti.Complex (realChart) in
+/-- On the part `s ≥ 2` of the input end `i`, the datum of a sphere with moving input ends is
+`H_i(t) dt` in the coordinates of the end lift `z ↦ c i + a i φ₀(z)`. -/
+theorem perturbationPullback_realChart_puncturedSpherePerturbation_of_two_le
+    (hH : ∀ i, Periodic (H i) 1) (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) (i : ι) {ζ : ℝ × ℝ} (hζ : 2 ≤ ζ.1)
+    (v : ℝ × ℝ) :
+    perturbationPullback (realChart fun z ↦ c i + a i * zero.cylindricalEndLift z)
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
+          Complex.I) v ζ = fun x ↦ (Complex.equivRealProdCLM.symm v).im * H i ζ.2 x :=
+  funext fun x ↦ by
+    rw [perturbationPullback_realChart_puncturedSpherePerturbation hH ha hsep hout i
+      (by linarith) v x, smoothTransition.one_of_one_le (by linarith), one_mul]
 
 /-- If the discs `‖w - c i‖ < ‖a i‖ / 2` lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the part
 `s ≥ 2` of the output end, in the positive end chart `φ'_∞`, the datum of a sphere with moving

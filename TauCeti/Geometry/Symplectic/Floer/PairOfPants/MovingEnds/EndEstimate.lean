@@ -25,8 +25,8 @@ pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, with nonzero sc
 
 * **On an input end.** The input end `i` is read in the chart `z ↦ c i + a i φ₀(z)`, in real
   coordinates, where `φ₀` is the end lift of the input end at `0` of the pair of pants. Far out,
-  for `s > 2`, the datum is `H_i(t) dt` there
-  (`TauCeti.Floer.perturbationPullback_realChart_puncturedSpherePerturbation`). If the structures
+  for `s ≥ 2`, the datum is `H_i(t) dt` there, in the namespace `TauCeti.Floer`:
+  `perturbationPullback_realChart_puncturedSpherePerturbation_of_two_le`. If the structures
   are `J_e(t)` far out on the end and `u` solves the Floer equation there, with loops converging
   to a nondegenerate orbit of `H_i`, then the `W^{1,2}` energy beyond `s = 2` in the chart of a
   section supported far out on the end is controlled by `∫ ‖D_u ξ‖²`
@@ -109,23 +109,6 @@ private theorem integrable_norm_floerLinearization_sq_puncturedSpherePerturbatio
   · rintro _ ⟨ζ, hζ, rfl⟩
     exact hu ζ hζ.1
 
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- If the discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint and lie in the disc
-`‖w‖ ≤ 2 exp (2π)`, with nonzero scales, then on the part `s ≥ 2` of the input end `i`, in the
-chart `z ↦ c i + a i φ₀(z)`, the datum of a sphere with moving input ends is `H_i(t) dt`. -/
-private theorem perturbationPullback_realChart_puncturedSpherePerturbation_of_two_le
-    (hH : ∀ i, Periodic (H i) 1) (ha : ∀ i, a i ≠ 0)
-    (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) (i : ι) {ζ : ℝ × ℝ} (hζ : 2 ≤ ζ.1)
-    (v : ℝ × ℝ) :
-    perturbationPullback (realChart fun z ↦ c i + a i * zero.cylindricalEndLift z)
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-          Complex.I) v ζ = fun y ↦ (Complex.equivRealProdCLM.symm v).im * H i ζ.2 y :=
-  funext fun y ↦ by
-    rw [Floer.perturbationPullback_realChart_puncturedSpherePerturbation hH ha hsep hout i
-      (by linarith) v y, Real.smoothTransition.one_of_one_le (by linarith), one_mul]
-
 /-- **The end estimate on an input end of a sphere with moving input ends.** Let the discs
 `‖w - c j‖ < ‖a j‖ / 2` be pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, with nonzero
 scales, and let the Hamiltonians be jointly `C²` of period one. Read the input end `i` in the chart
@@ -186,8 +169,8 @@ theorem
             Complex.I) u ξ z‖ ^ 2 := by
   set ψ := realChart fun z ↦ c i + a i * zero.cylindricalEndLift z with hψ
   have hpb (ζ : ℝ × ℝ) (hζ : 2 < ζ.1) :=
-    perturbationPullback_realChart_puncturedSpherePerturbation_of_two_le (Hout := Hout) hH ha hsep
-      hout i hζ.le
+    Floer.perturbationPullback_realChart_puncturedSpherePerturbation_of_two_le (Hout := Hout) hH ha
+      hsep hout i hζ.le
   -- The chart lies at the distance `‖a i‖ exp (-2πs) / 2` from its center, and avoids the other
   -- centers.
   have hdist (s t : ℝ) :
