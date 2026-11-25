@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.C2HolderBoundary
+public import TauCeti.Analysis.InnerProductSpace.GraphPatch
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Graph patches over hyperplanes are Lipschitz charts
@@ -36,7 +35,9 @@ bounds from derivative bounds, the Sobolev theory) then applies to it.
 * `TauCeti.isLipschitzDomain_of_forall_ball_inter_eq`: a set in an inner product space of
   dimension `n + 1` with a graph patch at every frontier point is a Lipschitz domain modelled on
   `EuclideanSpace ℝ (Fin n)`.
-* `Set.HasC2HolderBoundary.isLipschitzDomain`: in particular, so is a set with `C^{2,α}` boundary.
+* `Set.HasLipschitzGraphBoundary.isLipschitzDomain`: in particular, so is a set with Lipschitz
+  graph boundary, for instance a set with `C^{2,α}` boundary
+  (`Set.HasC2HolderBoundary.hasLipschitzGraphBoundary`).
 -/
 
 public section
@@ -138,22 +139,19 @@ end TauCeti
 namespace Set
 
 open Module
-open scoped NNReal
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
-/-- **A set with `C^{2,α}` boundary is a Lipschitz domain.** In a real inner product space of
-dimension `n + 1`, the boundary patches of a set with `C^{2,α}` boundary are regions above graphs
-of functions with bounded derivative, hence Lipschitz, so the set is a Lipschitz domain modelled on
-`EuclideanSpace ℝ (Fin n)`. -/
-theorem HasC2HolderBoundary.isLipschitzDomain {n : ℕ} (hF : finrank ℝ F = n + 1) {Ω : Set F}
-    {α : ℝ≥0} (h : Ω.HasC2HolderBoundary α) : Ω.IsLipschitzDomain (EuclideanSpace ℝ (Fin n)) :=
+/-- **A set with Lipschitz graph boundary is a Lipschitz domain.** In a real inner product space of
+dimension `n + 1`, a set which near each frontier point is the region above the graph of a
+Lipschitz function over a hyperplane (`Set.HasLipschitzGraphBoundary`) is a Lipschitz domain
+modelled on `EuclideanSpace ℝ (Fin n)`. This applies to a set with `C^{2,α}` boundary through
+`Set.HasC2HolderBoundary.hasLipschitzGraphBoundary`. -/
+theorem HasLipschitzGraphBoundary.isLipschitzDomain {n : ℕ} (hF : finrank ℝ F = n + 1)
+    {Ω : Set F} (h : Ω.HasLipschitzGraphBoundary) :
+    Ω.IsLipschitzDomain (EuclideanSpace ℝ (Fin n)) :=
   TauCeti.isLipschitzDomain_of_forall_ball_inter_eq hF fun x hx => by
-    obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG, -, -, hr, hΩx⟩ := hasC2HolderBoundary_iff.1 h x hx
-    refine ⟨ν, γ, G, r, norm_ne_zero_iff.1 (by rw [hν]; exact one_ne_zero),
-      lipschitzWith_of_nnNorm_fderiv_le (hγ.differentiable (by norm_num)) fun z => ?_,
-      hγν, hr, by rw [inter_comm, hΩx, inter_comm]⟩
-    rw [← NNReal.coe_le_coe, coe_nnNorm]
-    exact hG z
+    obtain ⟨ν, γ, G, r, hν, hγ, hγν, hr, hΩx⟩ := hasLipschitzGraphBoundary_iff.1 h x hx
+    exact ⟨ν, γ, G, r, norm_ne_zero_iff.1 (by rw [hν]; exact one_ne_zero), hγ, hγν, hr, hΩx⟩
 
 end Set
