@@ -11,6 +11,7 @@ public import TauCeti.Geometry.RealAnalytic.Semianalytic.Basic
 import TauCeti.Analysis.Analytic.Submanifold.ZeroDimensional
 import TauCeti.Data.Set.Lattice
 import TauCeti.Geometry.RealAnalytic.Semianalytic.Decomposition
+import TauCeti.Topology.Closure
 
 /-!
 # Dimension of semianalytic sets
@@ -30,11 +31,16 @@ The frontier condition of the local normal decompositions
 (`TauCeti.exists_isAnalyticSubmanifold_partition_subset_or_disjoint`) controls the dimension of
 closures. Near any point, the closure of a semianalytic set `s` is covered by the pieces lying in
 the closure of a piece contained in `s`, and such a piece is either that piece or has strictly
-smaller dimension. Since the dimension of a set is attained near one of its points
+smaller dimension. So on some neighborhood `U` of the point, `closure s ∩ U` has dimension at
+most that of `s ∩ U`, and `(closure s \ s) ∩ U` has strictly smaller dimension when `s` meets
+`U` (`TauCeti.SemianalyticAt.exists_mem_nhds_semialgebraicDim_closure_inter`). Since the
+dimension of a set is attained near one of its points
 (`TauCeti.exists_forall_mem_nhds_semialgebraicDim_inter_eq`), this gives:
 
 * the closure of a semianalytic set has the same dimension as the set
-  (`TauCeti.IsSemianalytic.semialgebraicDim_closure`);
+  (`TauCeti.IsSemianalytic.semialgebraicDim_closure`), generalizing the semialgebraic case
+  `TauCeti.IsSemialgebraic.semialgebraicDim_closure`, which has a direct proof that does not use
+  local normal decompositions;
 * the points of the closure of a nonempty semianalytic set `s` outside `s` form a set of strictly
   smaller dimension (`TauCeti.IsSemianalytic.semialgebraicDim_closure_diff_lt`).
 
@@ -103,33 +109,19 @@ theorem IsAnalyticSubmanifold.semialgebraicDim_eq (hS : IsAnalyticSubmanifold d 
 
 /-! ### Closures of semianalytic sets -/
 
-/-- In a finite partition of an open set `U` into pieces each inside or outside `s`, satisfying the
-first part of the frontier condition, every point of `closure s ∩ U` lies in a piece contained in
-the closure of a piece contained in `s`. -/
-private theorem exists_mem_subset_closure_of_mem_closure_inter {s U : Set (Fin n → ℝ)}
-    {𝒞 : Set (Set (Fin n → ℝ))} (hUo : IsOpen U) (h𝒞fin : 𝒞.Finite) (h𝒞cov : ⋃₀ 𝒞 = U)
-    (hs : ∀ C ∈ 𝒞, C ⊆ s ∨ Disjoint C s)
-    (h𝒞front : ∀ B ∈ 𝒞, ∀ C ∈ 𝒞, (B ∩ closure C).Nonempty → B ⊆ closure C)
-    {y : Fin n → ℝ} (hy : y ∈ closure s ∩ U) :
-    ∃ B ∈ 𝒞, y ∈ B ∧ ∃ C ∈ 𝒞, C ⊆ s ∧ B ⊆ closure C := by
-  obtain ⟨B, hB, hyB⟩ := mem_sUnion.1 (h𝒞cov ▸ hy.2)
-  -- Since `U` is open, `y` lies in the closure of `s ∩ U`, the union of the pieces in `s`.
-  have hyC : y ∈ closure (⋃ C ∈ {C ∈ 𝒞 | C ⊆ s}, C) := by
-    rw [← sUnion_eq_biUnion, sUnion_sep_subset_eq_inter hs, h𝒞cov]
-    exact hUo.inter_closure ⟨hy.2, hy.1⟩ |> closure_mono (inter_comm U s).subset
-  rw [(h𝒞fin.subset (sep_subset _ _)).closure_biUnion] at hyC
-  obtain ⟨C, ⟨hC, hCs⟩, hyC⟩ := mem_iUnion₂.1 hyC
-  exact ⟨B, hB, hyB, C, hC, hCs, h𝒞front B hB C hC ⟨y, hyB, hyC⟩⟩
-
-/-- Near a point at which `s` is semianalytic, the closure of `s` has dimension at most that of
-`s`, and the points of the closure outside `s` have strictly smaller dimension when `s` is
-nonempty. -/
-private theorem SemianalyticAt.exists_semialgebraicDim_closure_inter {x : Fin n → ℝ}
+/-- **Local dimension of the closure.** Near a point at which `s` is semianalytic, on some
+neighborhood `U` the closure of `s` has dimension at most that of `s ∩ U`, and the points of the
+closure outside `s` have strictly smaller dimension when `s` meets `U`. -/
+theorem SemianalyticAt.exists_mem_nhds_semialgebraicDim_closure_inter {x : Fin n → ℝ}
     (hs : SemianalyticAt s x) :
-    ∃ U ∈ 𝓝 x, semialgebraicDim (closure s ∩ U) ≤ semialgebraicDim s ∧
-      (s.Nonempty → semialgebraicDim ((closure s \ s) ∩ U) < semialgebraicDim s) := by
+    ∃ U ∈ 𝓝 x, semialgebraicDim (closure s ∩ U) ≤ semialgebraicDim (s ∩ U) ∧
+      ((s ∩ U).Nonempty → semialgebraicDim ((closure s \ s) ∩ U) < semialgebraicDim (s ∩ U)) := by
   obtain ⟨U, 𝒞, hUo, hxU, -, -, h𝒞fin, -, h𝒞cov, h𝒞cell, h𝒞front, h𝒞dim, -⟩ :=
     exists_isAnalyticSubmanifold_partition_subset_or_disjoint (fun _ : Unit ↦ hs) univ_mem
+  -- A piece inside `s` has dimension at most that of `s ∩ U`.
+  have hsU (C : Set (Fin n → ℝ)) (hC : C ∈ 𝒞) (hCs : C ⊆ s) :
+      semialgebraicDim C ≤ semialgebraicDim (s ∩ U) :=
+    semialgebraicDim_mono (subset_inter hCs (h𝒞cov ▸ subset_sUnion_of_mem hC))
   have hdim (C : Set (Fin n → ℝ)) (hC : C ∈ 𝒞) :
       ∃ d : ℕ, IsAnalyticSubmanifold d C ∧ semialgebraicDim C = d := by
     obtain ⟨d, -, hd⟩ := (h𝒞cell C hC).2.2.1
@@ -142,7 +134,7 @@ private theorem SemianalyticAt.exists_semialgebraicDim_closure_inter {x : Fin n 
     rw [hd, he]
     exact_mod_cast h𝒞dim B hB C hC hBC hne d e hBd hCe
   have hcover (y : Fin n → ℝ) (hy : y ∈ closure s ∩ U) :=
-    exists_mem_subset_closure_of_mem_closure_inter hUo h𝒞fin h𝒞cov
+    exists_mem_subset_closure_of_mem_closure_inter hUo h𝒞fin h𝒞cov.ge
       (fun C hC ↦ (h𝒞cell C hC).2.2.2 ()) h𝒞front hy
   -- The dimension of a set covered by finitely many pieces is bounded by their dimensions.
   have hbound (t : Set (Fin n → ℝ)) (P : Set (Fin n → ℝ) → Prop)
@@ -156,14 +148,14 @@ private theorem SemianalyticAt.exists_semialgebraicDim_closure_inter {x : Fin n 
     · obtain ⟨B, hB, hyB, hBC⟩ := hcover y hy
       exact ⟨B, ⟨hB, hBC⟩, hyB⟩
     · rcases eq_or_ne B C with rfl | hne
-      · exact semialgebraicDim_mono hCs
-      · exact (hlt B hB C hC hBC hne).le.trans (semialgebraicDim_mono hCs)
+      · exact hsU B hC hCs
+      · exact (hlt B hB C hC hBC hne).le.trans (hsU C hC hCs)
   · -- The points outside `s` lie in pieces disjoint from `s`, of smaller dimension.
     let P (B : Set (Fin n → ℝ)) : Prop := ¬B ⊆ s ∧ ∃ C ∈ 𝒞, C ⊆ s ∧ B ⊆ closure C
     have hP (B : Set (Fin n → ℝ)) (hB : B ∈ {B ∈ 𝒞 | P B}) :
-        semialgebraicDim B < semialgebraicDim s := by
+        semialgebraicDim B < semialgebraicDim (s ∩ U) := by
       obtain ⟨hB, hBs, C, hC, hCs, hBC⟩ := hB
-      exact (hlt B hB C hC hBC fun h ↦ hBs (h ▸ hCs)).trans_le (semialgebraicDim_mono hCs)
+      exact (hlt B hB C hC hBC fun h ↦ hBs (h ▸ hCs)).trans_le (hsU C hC hCs)
     refine (hbound _ P fun y hy ↦ ?_).trans_lt ?_
     · obtain ⟨B, hB, hyB, hBC⟩ := hcover y ⟨hy.1.1, hy.2⟩
       exact ⟨B, ⟨hB, fun h ↦ hy.1.2 (h hyB), hBC⟩, hyB⟩
@@ -183,18 +175,20 @@ theorem IsSemianalytic.semialgebraicDim_closure (hs : IsSemianalytic s) :
   rcases (closure s).eq_empty_or_nonempty with h | hne
   · simp [h]
   obtain ⟨x, -, hx⟩ := exists_forall_mem_nhds_semialgebraicDim_inter_eq hne
-  obtain ⟨U, hU, hle, -⟩ := (hs.semianalyticAt x).exists_semialgebraicDim_closure_inter
-  exact hx U hU ▸ hle
+  obtain ⟨U, hU, hle, -⟩ := (hs.semianalyticAt x).exists_mem_nhds_semialgebraicDim_closure_inter
+  exact hx U hU ▸ hle.trans (semialgebraicDim_mono inter_subset_left)
 
-/-- **Dimension drop at the frontier.** For a nonempty semianalytic subset `s` of `ℝ ^ n`, the
+/-- **Dimension drop on `closure s \ s`.** For a nonempty semianalytic subset `s` of `ℝ ^ n`, the
 points of the closure of `s` outside `s` form a set of strictly smaller dimension than `s`. -/
 theorem IsSemianalytic.semialgebraicDim_closure_diff_lt (hs : IsSemianalytic s)
     (hne : s.Nonempty) : semialgebraicDim (closure s \ s) < semialgebraicDim s := by
   rcases (closure s \ s).eq_empty_or_nonempty with h | hne'
   · simpa [h, bot_lt_iff_ne_bot] using hne.ne_empty
-  obtain ⟨x, -, hx⟩ := exists_forall_mem_nhds_semialgebraicDim_inter_eq hne'
-  obtain ⟨U, hU, -, hlt⟩ := (hs.semianalyticAt x).exists_semialgebraicDim_closure_inter
-  exact hx U hU ▸ hlt hne
+  obtain ⟨x, hx, hxU⟩ := exists_forall_mem_nhds_semialgebraicDim_inter_eq hne'
+  obtain ⟨U, hU, -, hlt⟩ := (hs.semianalyticAt x).exists_mem_nhds_semialgebraicDim_closure_inter
+  -- `U` meets `s`, since it is a neighborhood of a point of the closure of `s`.
+  have hsU : (s ∩ U).Nonempty := (mem_closure_iff_nhds.1 hx.1 U hU).mono (inter_comm U s).subset
+  exact hxU U hU ▸ (hlt hsU).trans_le (semialgebraicDim_mono inter_subset_left)
 
 /-- **Zero-dimensional semianalytic sets.** A semianalytic subset of `ℝ ^ n` has dimension at most
 `0`, that is, it is empty or zero-dimensional, if and only if it is closed and discrete. -/
@@ -209,8 +203,8 @@ theorem IsSemianalytic.semialgebraicDim_le_zero_iff (hs : IsSemianalytic s) :
     exists_isAnalyticSubmanifold_partition_subset_or_disjoint (fun _ : Unit ↦ hs.semianalyticAt x)
       univ_mem
   refine ⟨U, hUo.mem_nhds hxU, ?_⟩
-  rw [← compl_eq_univ_sdiff, compl_compl, inter_comm, ← h𝒞cov,
-    ← sUnion_sep_subset_eq_inter fun C hC ↦ (h𝒞cell C hC).2.2.2 ()]
+  suffices (s ∩ ⋃₀ 𝒞).Finite by simpa [h𝒞cov, inter_comm] using this
+  rw [← sUnion_sep_subset_eq_inter fun C hC ↦ (h𝒞cell C hC).2.2.2 ()]
   -- Each piece in `s` is a connected zero-dimensional analytic submanifold, hence a point.
   refine (h𝒞fin.subset (sep_subset _ _)).sUnion fun C ⟨hC, hCs⟩ ↦ ?_
   obtain ⟨hCc, -, ⟨d, -, hCd⟩, -⟩ := h𝒞cell C hC

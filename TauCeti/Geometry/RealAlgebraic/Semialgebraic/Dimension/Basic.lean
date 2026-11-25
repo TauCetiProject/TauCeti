@@ -184,7 +184,7 @@ theorem _root_.IsDiscrete.semialgebraicDim_le_zero (hs : IsDiscrete s) :
     have hopen : IsOpen {f ⟨y, hy⟩} := by
       simpa using hf.isOpenMap {⟨y, hy⟩} (isOpen_discrete _)
     rcases d with _ | d
-    · rfl
+    · simp
     · exact absurd hopen (not_isOpen_singleton _)
 
 /-- A nonempty open subset of `ℝ ^ n` has dimension `n`. -/
