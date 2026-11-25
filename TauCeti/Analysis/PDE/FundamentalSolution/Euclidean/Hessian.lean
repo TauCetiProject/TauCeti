@@ -78,8 +78,7 @@ private theorem iteratedFDeriv_two_newtonianKernel_eq_smul {x : EuclideanSpace �
         fun y : EuclideanSpace ℝ (Fin n) ↦ ‖y‖ ^ (2 - (n : ℝ)) :=
     funext fun y ↦ newtonianKernel_def n y
   rw [hfun]
-  exact iteratedFDeriv_const_smul_apply
-    ((contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx))
+  exact iteratedFDeriv_const_smul_apply (contDiffAt_norm_rpow_of_ne _ hx)
 
 /-- Away from dimension two, the gradient of the Newtonian kernel is not differentiable at the
 pole. -/
