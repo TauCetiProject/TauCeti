@@ -26,7 +26,7 @@ injection `E → Sⁿ` missing `w`.
 
 ## Main results
 
-* `TauCeti.nonempty_homeomorph_compl_singleton_sphere`: the sphere `Sᵐ` minus a point is
+* `TauCeti.nonempty_homeomorph_sphere_compl_singleton`: the sphere `Sᵐ` minus a point is
   homeomorphic to `E`.
 * `TauCeti.exists_two_euclidean_opens_sphere`: `Sᵐ` is covered by two open sets homeomorphic to
   `E`.
@@ -49,7 +49,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 /-- **The sphere minus a point is Euclidean.** Let `F` be a real normed space of dimension `m + 1`
 and `E` one of dimension `m`. The complement of any point `p` of the unit sphere of `F` is
 homeomorphic to `E`; in an inner product space this is stereographic projection from `p`. -/
-theorem nonempty_homeomorph_compl_singleton_sphere (hEF : finrank ℝ F = finrank ℝ E + 1)
+theorem nonempty_homeomorph_sphere_compl_singleton (hEF : finrank ℝ F = finrank ℝ E + 1)
     (p : sphere (0 : F) 1) :
     Nonempty (({p}ᶜ : Set (sphere (0 : F) 1)) ≃ₜ E) := by
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
@@ -78,8 +78,8 @@ theorem exists_two_euclidean_opens_sphere (hEF : finrank ℝ F = finrank ℝ E +
   obtain ⟨p⟩ : Nonempty (sphere (0 : F) 1) :=
     ((NormedSpace.sphere_nonempty (x := (0 : F))).2 zero_le_one).to_subtype
   refine ⟨{p}ᶜ, {-p}ᶜ, isOpen_compl_singleton, isOpen_compl_singleton, ?_,
-    nonempty_homeomorph_compl_singleton_sphere hEF p,
-    nonempty_homeomorph_compl_singleton_sphere hEF (-p)⟩
+    nonempty_homeomorph_sphere_compl_singleton hEF p,
+    nonempty_homeomorph_sphere_compl_singleton hEF (-p)⟩
   rw [← compl_inter, compl_univ_iff, singleton_inter_eq_empty, mem_singleton_iff]
   exact ne_neg_of_mem_unit_sphere ℝ p
 

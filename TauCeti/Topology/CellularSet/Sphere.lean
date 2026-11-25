@@ -36,7 +36,7 @@ is cellular by M. Brown's theorem on inverse sets
 (`TauCeti.isCellularSet_closedBall_inter_preimage`).
 
 Conversely, the sphere `Sᵐ` has such a cover: the complement of any point of `Sᵐ` is homeomorphic
-to `ℝᵐ` (`TauCeti.nonempty_homeomorph_compl_singleton_sphere`), so the complements of two antipodal
+to `ℝᵐ` (`TauCeti.nonempty_homeomorph_sphere_compl_singleton`), so the complements of two antipodal
 points, the poles, cover `Sᵐ` (`TauCeti.exists_two_euclidean_opens_sphere`). Hence for `m > 0` a
 space is homeomorphic to `Sᵐ` exactly when it is compact, Hausdorff and covered by two open sets
 homeomorphic to `ℝᵐ` (`TauCeti.nonempty_homeomorph_sphere_iff_exists_two_euclidean_opens`). The
