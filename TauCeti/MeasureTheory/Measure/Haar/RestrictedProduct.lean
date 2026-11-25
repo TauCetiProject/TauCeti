@@ -80,7 +80,8 @@ groups is unimodular (`RestrictedProduct.modularCharacter_eq_one`).
 * `TauCeti.exists_unique_convergentHaarProduct`, `TauCeti.convergentHaarProduct`,
   `TauCeti.convergentHaarProduct_unique`, `TauCeti.convergentHaarProduct_eq_smul_restrictedHaar`,
   `TauCeti.convergentHaarProduct_box`, `TauCeti.convergentHaarProduct_eq_of_subset`,
-  `TauCeti.convergentHaarProduct_congr_finset`, `TauCeti.convergentHaarProduct_eq_restrictedHaar`,
+  `TauCeti.convergentHaarProduct_congr_finset`, `TauCeti.convergentHaarProduct_eq_smul_of_eq_smul`,
+  `TauCeti.convergentHaarProduct_eq_restrictedHaar`,
   `TauCeti.comap_levelMonoidHom_convergentHaarProduct`,
   `TauCeti.measurePreserving_convergentHaarProduct_levelOpenSubgroupEquiv`,
   `TauCeti.isMulRightInvariant_convergentHaarProduct`,
@@ -979,6 +980,50 @@ theorem convergentHaarProduct_congr_finset (B : ∀ i, K i) [Fact (∀ i, IsOpen
     hconv hconvU).trans
     (convergentHaarProduct_eq_of_subset B Finset.subset_union_right hBcompact' hBcompactU μ
       hconv' hconvU).symm
+
+/-- Rescaling the local Haar measure at one index `j` by `c` rescales `convergentHaarProduct` by
+`c`, whether or not `j` lies in the exceptional set `S`. -/
+@[to_additive convergentAddHaarProduct_eq_smul_of_eq_smul
+/-- Rescaling the local additive Haar measure at one index `j` by `c` rescales
+`convergentAddHaarProduct` by `c`, whether or not `j` lies in the exceptional set `S`. -/]
+theorem convergentHaarProduct_eq_smul_of_eq_smul (B : ∀ i, K i)
+    [Fact (∀ i, IsOpen (B i : Set (G i)))]
+    (S : Finset ι) (hBcompact : ∀ i ∉ S, IsCompact (B i : Set (G i)))
+    (μ μ' : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure] [∀ i, (μ' i).IsHaarMeasure]
+    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.val (B i.val)).toReal - 1|)
+    (hconv' : Summable fun i : {i // i ∉ S} ↦ |(μ' i.val (B i.val)).toReal - 1|)
+    {j : ι} {c : ℝ≥0} (hμ'j : μ' j = c • μ j) (hμ' : ∀ i ≠ j, μ' i = μ i) :
+    convergentHaarProduct B S hBcompact μ' hconv' =
+      c • convergentHaarProduct B S hBcompact μ hconv := by
+  classical
+  have hc : c ≠ 0 := by
+    rintro rfl
+    exact NeZero.ne (μ' j) (by rw [hμ'j, zero_smul])
+  -- Enlarge the exceptional set to contain `j`; the tails outside it then agree.
+  have hBcompact₀ (i : ι) (hi : i ∉ insert j S) : IsCompact (B i : Set (G i)) :=
+    hBcompact i fun h ↦ hi (Finset.mem_insert_of_mem h)
+  have hconv₀ := summable_notMem_of_subset (Finset.subset_insert j S)
+    (fun i ↦ |(μ i (B i)).toReal - 1|) hconv
+  have hconv₀' := summable_notMem_of_subset (Finset.subset_insert j S)
+    (fun i ↦ |(μ' i (B i)).toReal - 1|) hconv'
+  rw [convergentHaarProduct_eq_of_subset B (Finset.subset_insert j S) hBcompact hBcompact₀ μ
+      hconv hconv₀,
+    convergentHaarProduct_eq_of_subset B (Finset.subset_insert j S) hBcompact hBcompact₀ μ'
+      hconv' hconv₀']
+  have : (c • convergentHaarProduct B _ hBcompact₀ μ hconv₀).IsHaarMeasure :=
+    IsHaarMeasure.nnreal_smul _ hc
+  refine (convergentHaarProduct_unique B _ hBcompact₀ μ' hconv₀' fun T hT C _ hCB ↦ ?_).symm
+  have hjT : j ∈ T := hT (Finset.mem_insert_self j S)
+  have htail : (∏' i : {i // i ∉ T}, (μ' i.val (B i.val)).toReal) =
+      ∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal :=
+    tprod_congr fun i ↦ by rw [hμ' i.val fun h ↦ i.property (h ▸ hjT)]
+  have hprod : ∏ i ∈ T, μ' i (C i) = c * ∏ i ∈ T, μ i (C i) := by
+    rw [← Finset.mul_prod_erase T _ hjT, ← Finset.mul_prod_erase T _ hjT, hμ'j,
+      coe_nnreal_smul_apply, mul_assoc]
+    congr 2
+    exact Finset.prod_congr rfl fun i hi ↦ by rw [hμ' i (Finset.ne_of_mem_erase hi)]
+  rw [coe_nnreal_smul_apply, convergentHaarProduct_box B _ hBcompact₀ μ hconv₀ hT hCB, htail,
+    hprod, mul_assoc]
 
 /-- When `μ i (B i) = 1` cofinitely, `convergentHaarProduct` agrees with `restrictedHaar`. -/
 @[to_additive /-- When `μ i (B i) = 1` cofinitely, `convergentAddHaarProduct` agrees with

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.Compact
 import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -50,6 +51,13 @@ cone `Γ'` around `B η₀` and `c > 0` such that `B ζ` is at distance at least
 every `ξ ∈ Γ'` whenever `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`. This is how a cone in which a localized Fourier
 transform decays is transported along the transposed derivative of a change of variables.
 
+Similarly, for a continuous linear map `p` on a proper space and an open cone `Γ` containing the
+nonzero vectors that `p` maps to the ray through `ξ₀ ≠ 0`, the image `p ζ` of every `ζ ∉ Γ` stays at
+distance at least `c (‖ξ‖ + ‖ζ‖)` from every `ξ` in an open cone `Γ'` around `ξ₀`. Then if `F`
+decays rapidly on `Γ` and `g` decays rapidly everywhere, `g (ξ - p ζ) F ζ` decays rapidly in
+`ξ ∈ Γ'` and `ζ` jointly. This is how a cone in which a localized Fourier transform decays is
+transported along the transpose of an injective linear map, such as the inclusion `x ↦ (x, 0)`.
+
 ## Main results
 
 * `IsOpen.exists_cone_exists_smul_mem`: the open cone over an open set containing `ξ`.
@@ -61,6 +69,12 @@ transform decays is transported along the transposed derivative of a change of v
   vectors of `{0} × D` contains a cone `‖ζ.1‖ < c ‖ζ.2‖` around them.
 * `IsOpen.exists_cone_mul_add_le_norm_sub`: for a linear automorphism `B`, an open cone `Γ'`
   around `B η₀` with `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖` for `ξ ∈ Γ'` and `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`.
+* `IsOpen.exists_pos_forall_mul_norm_le_norm_apply_sub_smul`,
+  `IsOpen.exists_cone_mul_add_le_norm_apply_sub`: for an open cone `Γ` containing the nonzero
+  vectors that `p` maps to the ray through `ξ₀`, `p ζ` stays at distance at least `ε ‖ζ‖` from the
+  ray for `ζ ∉ Γ`, and at distance at least `c (‖ξ‖ + ‖ζ‖)` from an open cone `Γ'` around `ξ₀`.
+* `TauCeti.exists_one_add_norm_pow_mul_one_add_norm_pow_mul_norm_mul_le`: the joint rapid decay
+  of `g (ξ - p ζ) F ζ` in `ξ ∈ Γ'` and `ζ`.
 * `TauCeti.mem_of_mem_closure_of_forall_closedBall_subset`: the nonzero points of the closure of
   such a `Γ'` still lie in `Γ`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
@@ -301,6 +315,94 @@ theorem exists_pos_setOf_norm_fst_lt_subset {D : Type*} [NormedAddCommGroup D] [
       rw [inv_mul_le_iff₀ hs, mul_comm]
       exact le_of_lt hζ
   simpa [smul_smul, mul_inv_cancel₀ hs.ne'] using hcone s hs _ hmem
+
+/-- **Distance from a ray outside a cone.** Let `p` be a continuous linear map from a proper real
+normed space `X`, and let `Γ` be an open subset of `X` closed under multiplication by positive
+reals containing every nonzero `ζ` with `p ζ` on the ray `{s • ξ₀ | s ≥ 0}`. Then `p ζ` is at
+distance at least `ε ‖ζ‖` from the ray for every `ζ ∉ Γ`, for some `ε > 0`. -/
+theorem exists_pos_forall_mul_norm_le_norm_apply_sub_smul {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] [ProperSpace X] {Γ : Set X} (hΓ : IsOpen Γ)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ ζ ∈ Γ, t • ζ ∈ Γ) (p : X →L[ℝ] E) {ξ₀ : E}
+    (hray : ∀ ζ : X, ζ ≠ 0 → ∀ s : ℝ, 0 ≤ s → p ζ = s • ξ₀ → ζ ∈ Γ) :
+    ∃ ε > 0, ∀ ζ ∉ Γ, ∀ s : ℝ, 0 ≤ s → ε * ‖ζ‖ ≤ ‖p ζ - s • ξ₀‖ := by
+  -- The unit vectors outside `Γ` form a compact set, which `p` maps away from the closed ray.
+  set R : Set E := (fun s : ℝ ↦ s • ξ₀) '' Ici 0
+  have hR : IsClosed R := isClosedMap_smul_left ξ₀ _ isClosed_Ici
+  have hRne : R.Nonempty := ⟨_, mem_image_of_mem _ (self_mem_Ici (a := (0 : ℝ)))⟩
+  obtain ⟨ε, hε, hεS⟩ :=
+    ((isCompact_sphere (0 : X) 1).inter_right hΓ.isClosed_compl).exists_forall_le'
+    (f := fun ζ ↦ infDist (p ζ) R) ((continuous_infDist_pt R).comp p.continuous).continuousOn
+    (a := 0) fun ζ ⟨hζ, hζΓ⟩ ↦ by
+      refine (infDist_pos_iff_notMem_closure hRne).1 ?_
+      rw [hR.closure_eq]
+      rintro ⟨s, hs, hsζ⟩
+      exact hζΓ (hray ζ (ne_zero_of_mem_unit_sphere ⟨ζ, hζ⟩) s hs hsζ.symm)
+  -- Rescale `ζ` to a unit vector.
+  refine ⟨ε, hε, fun ζ hζ s hs ↦ ?_⟩
+  rcases eq_or_ne ζ 0 with rfl | hζ0
+  · simp
+  have hpos : 0 < ‖ζ‖ := norm_pos_iff.2 hζ0
+  have hu : ‖ζ‖⁻¹ • ζ ∈ sphere (0 : X) 1 ∩ Γᶜ := by
+    refine ⟨by simp [norm_smul, hpos.ne'], fun hmem ↦ hζ ?_⟩
+    simpa [smul_smul, mul_inv_cancel₀ hpos.ne'] using hcone ‖ζ‖ hpos _ hmem
+  have hdist : infDist (p (‖ζ‖⁻¹ • ζ)) R ≤ ‖ζ‖⁻¹ * ‖p ζ - s • ξ₀‖ := by
+    refine (infDist_le_dist_of_mem (mem_image_of_mem (fun s : ℝ ↦ s • ξ₀)
+      (show ‖ζ‖⁻¹ * s ∈ Ici 0 from mul_nonneg (inv_nonneg.2 hpos.le) hs))).trans (le_of_eq ?_)
+    rw [dist_eq_norm, map_smul, ← smul_smul, ← smul_sub, norm_smul,
+      Real.norm_of_nonneg (inv_nonneg.2 hpos.le)]
+  have h := (hεS _ hu).trans hdist
+  rwa [inv_mul_eq_div, le_div_iff₀ hpos] at h
+
+/-- **Separation from a cone around the preimage of a ray.** Let `p` be a continuous linear map
+from a proper real normed space `X`, let `ξ₀ ≠ 0`, and let `Γ` be an open subset of `X` closed
+under multiplication by positive reals containing every nonzero `ζ` with `p ζ` on the ray
+`{s • ξ₀ | s ≥ 0}`. There are an open set `Γ'` closed under multiplication by positive reals with
+`ξ₀ ∈ Γ'` and `c > 0` such that `p ζ` is at distance at least `c (‖ξ‖ + ‖ζ‖)` from every
+`ξ ∈ Γ'` whenever `ζ ∉ Γ`. -/
+theorem exists_cone_mul_add_le_norm_apply_sub {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] [ProperSpace X] {Γ : Set X} (hΓ : IsOpen Γ)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ ζ ∈ Γ, t • ζ ∈ Γ) (p : X →L[ℝ] E) {ξ₀ : E} (hξ₀ : ξ₀ ≠ 0)
+    (hray : ∀ ζ : X, ζ ≠ 0 → ∀ s : ℝ, 0 ≤ s → p ζ = s • ξ₀ → ζ ∈ Γ) :
+    ∃ Γ' : Set E, IsOpen Γ' ∧ ξ₀ ∈ Γ' ∧ (∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ', t • ξ ∈ Γ') ∧
+      ∃ c > 0, ∀ ξ ∈ Γ', ∀ ζ ∉ Γ, c * (‖ξ‖ + ‖ζ‖) ≤ ‖p ζ - ξ‖ := by
+  obtain ⟨ε, hε, hfar⟩ := hΓ.exists_pos_forall_mul_norm_le_norm_apply_sub_smul hcone p hray
+  -- `Γ'` is the cone of the `ξ` close to the ray, relative to `‖ξ‖`.
+  set M := ‖p‖
+  have hM : 0 ≤ M := norm_nonneg _
+  set δ := ε / (2 * (M + 1))
+  have hδ : 0 < δ := by positivity
+  have hδM : (M + 1) * δ = ε / 2 := by
+    simp only [δ]
+    field_simp
+  refine ⟨⋃ s ∈ Ioi (0 : ℝ), {ξ | ‖ξ - s • ξ₀‖ < δ * ‖ξ‖},
+    isOpen_biUnion fun s _ ↦ isOpen_lt (by fun_prop) (by fun_prop),
+    mem_iUnion₂.2 ⟨1, one_pos, by simpa using mul_pos hδ (norm_pos_iff.2 hξ₀)⟩,
+    fun t ht ξ hξ ↦ ?_, ε / (1 + 3 * (ε + M)), by positivity, fun ξ hξ ζ hζ ↦ ?_⟩
+  · obtain ⟨s, hs, hξs⟩ := mem_iUnion₂.1 hξ
+    refine mem_iUnion₂.2 ⟨t * s, mul_pos ht hs, ?_⟩
+    simp only [mem_ofPred_eq] at hξs ⊢
+    rw [← smul_smul, ← smul_sub, norm_smul, norm_smul, Real.norm_of_nonneg ht.le, mul_left_comm]
+    exact mul_lt_mul_of_pos_left hξs ht
+  · obtain ⟨s, hs, hξs⟩ := mem_iUnion₂.1 hξ
+    simp only [mem_ofPred_eq] at hξs
+    have h1 : ‖p ζ - s • ξ₀‖ ≤ ‖p ζ - ξ‖ + ‖ξ - s • ξ₀‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
+    have h2 : ‖ξ‖ ≤ ‖p ζ - ξ‖ + M * ‖ζ‖ := by
+      calc ‖ξ‖ ≤ ‖p ζ - ξ‖ + ‖p ζ‖ := by
+            simpa [norm_sub_rev, add_comm] using norm_le_norm_add_norm_sub' ξ (p ζ)
+        _ ≤ _ := by gcongr; exact p.le_opNorm ζ
+    have hA : ε * ‖ζ‖ ≤ ‖p ζ - ξ‖ + δ * ‖ξ‖ := by linarith [hfar ζ hζ s hs.le]
+    have hC := mul_le_mul_of_nonneg_left h2 hε.le
+    have hD := mul_le_mul_of_nonneg_left hA hM
+    have hMδ : M * (δ * ‖ξ‖) ≤ ε / 2 * ‖ξ‖ := by
+      rw [← mul_assoc, ← hδM]
+      gcongr
+      linarith
+    have hδ2 : δ * ‖ξ‖ ≤ ε / 2 * ‖ξ‖ := by
+      rw [← hδM]
+      gcongr
+      exact le_mul_of_one_le_left hδ.le (by linarith)
+    rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+    linarith
 
 end IsOpen
 
@@ -572,6 +674,65 @@ theorem exists_cone_decay_mul {X A B 𝕜 : Type*} [NormedField 𝕜] [NormedAdd
           ring
       _ ≤ (1 + c) ^ (N + k) * C₀ * C := by gcongr; exact hC _ h₁
 
+/-- **Joint rapid decay of a product separated by a cone.** Let `p : X →L[ℝ] E` and suppose that
+`p ζ` is at distance at least `c (‖ξ‖ + ‖ζ‖)` from every `ξ ∈ Γ'` whenever `ζ ∉ Γ`, as in
+`IsOpen.exists_cone_mul_add_le_norm_apply_sub`. If `F` grows at most polynomially and decays
+rapidly on `Γ`, and `g` decays rapidly, then `g (ξ - p ζ) F ζ` decays rapidly in `ξ ∈ Γ'` and in
+`ζ` jointly: for `ζ ∈ Γ` both factors contribute, and for `ζ ∉ Γ` the argument of `g` is
+comparable to `‖ξ‖ + ‖ζ‖`. -/
+theorem exists_one_add_norm_pow_mul_one_add_norm_pow_mul_norm_mul_le {X 𝕜 : Type*}
+    [NormedSpace ℝ E] [NormedField 𝕜] [NormedAddCommGroup X] [NormedSpace ℝ X] (p : X →L[ℝ] E)
+    {Γ : Set X} {Γ' : Set E} {c : ℝ} (hc : 0 < c)
+    (hsep : ∀ ξ ∈ Γ', ∀ ζ ∉ Γ, c * (‖ξ‖ + ‖ζ‖) ≤ ‖p ζ - ξ‖) {g : E → 𝕜} {F : X → 𝕜}
+    (hg : ∀ N : ℕ, ∃ C, ∀ v, (1 + ‖v‖) ^ N * ‖g v‖ ≤ C)
+    (hF : ∃ (C : ℝ) (k : ℕ), ∀ ζ, ‖F ζ‖ ≤ C * (1 + ‖ζ‖) ^ k)
+    (hFΓ : ∀ N : ℕ, ∃ C, ∀ ζ ∈ Γ, (1 + ‖ζ‖) ^ N * ‖F ζ‖ ≤ C) (N : ℕ) :
+    ∃ C, ∀ ξ ∈ Γ', ∀ ζ, (1 + ‖ξ‖) ^ N * ((1 + ‖ζ‖) ^ N * ‖g (ξ - p ζ) * F ζ‖) ≤ C := by
+  obtain ⟨C₀, k, hC₀⟩ := hF
+  have hC₀' : 0 ≤ C₀ := by simpa using (norm_nonneg _).trans (hC₀ 0)
+  obtain ⟨C₁, hC₁⟩ := hg N
+  obtain ⟨C₂, hC₂⟩ := hFΓ (2 * N)
+  obtain ⟨C₃, hC₃⟩ := hg (2 * N + k)
+  have hC₁' : 0 ≤ C₁ := (by positivity : (0 : ℝ) ≤ (1 + ‖(0 : E)‖) ^ N * ‖g 0‖).trans (hC₁ 0)
+  set M := ‖p‖
+  set A := 1 + c⁻¹
+  refine ⟨max ((1 + M) ^ N * (C₁ * C₂)) (C₀ * A ^ (2 * N + k) * C₃), fun ξ hξ ζ ↦ ?_⟩
+  have hd : 0 ≤ ‖ξ - p ζ‖ := norm_nonneg _
+  rw [norm_mul]
+  by_cases hζ : ζ ∈ Γ
+  · -- `1 + ‖ξ‖ ≤ (1 + M) (1 + ‖ξ - p ζ‖) (1 + ‖ζ‖)`, and `F` decays at `ζ`.
+    have hξ' : ‖ξ‖ ≤ ‖ξ - p ζ‖ + M * ‖ζ‖ :=
+      (norm_le_norm_sub_add ξ (p ζ)).trans (by gcongr; exact p.le_opNorm ζ)
+    have hle : 1 + ‖ξ‖ ≤ (1 + M) * ((1 + ‖ξ - p ζ‖) * (1 + ‖ζ‖)) := by
+      have hM : 0 ≤ M := norm_nonneg _
+      nlinarith [norm_nonneg ζ, mul_nonneg hd (norm_nonneg ζ), mul_nonneg hM hd,
+        mul_nonneg hM (mul_nonneg hd (norm_nonneg ζ))]
+    calc (1 + ‖ξ‖) ^ N * ((1 + ‖ζ‖) ^ N * (‖g (ξ - p ζ)‖ * ‖F ζ‖))
+        ≤ ((1 + M) * ((1 + ‖ξ - p ζ‖) * (1 + ‖ζ‖))) ^ N *
+            ((1 + ‖ζ‖) ^ N * (‖g (ξ - p ζ)‖ * ‖F ζ‖)) := by gcongr
+      _ = (1 + M) ^ N * (((1 + ‖ξ - p ζ‖) ^ N * ‖g (ξ - p ζ)‖) *
+            ((1 + ‖ζ‖) ^ (2 * N) * ‖F ζ‖)) := by rw [mul_pow, mul_pow, two_mul, pow_add]; ring
+      _ ≤ (1 + M) ^ N * (C₁ * C₂) := by gcongr; exacts [hC₁ _, hC₂ ζ hζ]
+      _ ≤ _ := le_max_left _ _
+  · -- Both `1 + ‖ξ‖` and `1 + ‖ζ‖` are at most `A (1 + ‖ξ - p ζ‖)`.
+    have hs := hsep ξ hξ ζ hζ
+    rw [norm_sub_rev] at hs
+    have hsum : ‖ξ‖ + ‖ζ‖ ≤ c⁻¹ * ‖ξ - p ζ‖ := by rwa [le_inv_mul_iff₀ hc]
+    have hcinv : 0 ≤ c⁻¹ := inv_nonneg.2 hc.le
+    have hξ' : 1 + ‖ξ‖ ≤ A * (1 + ‖ξ - p ζ‖) := by
+      nlinarith [norm_nonneg ζ, mul_nonneg hcinv hd]
+    have hζ' : 1 + ‖ζ‖ ≤ A * (1 + ‖ξ - p ζ‖) := by
+      nlinarith [norm_nonneg ξ, mul_nonneg hcinv hd]
+    calc (1 + ‖ξ‖) ^ N * ((1 + ‖ζ‖) ^ N * (‖g (ξ - p ζ)‖ * ‖F ζ‖))
+        ≤ (A * (1 + ‖ξ - p ζ‖)) ^ N * ((A * (1 + ‖ξ - p ζ‖)) ^ N *
+            (‖g (ξ - p ζ)‖ * (C₀ * (A * (1 + ‖ξ - p ζ‖)) ^ k))) := by
+          gcongr
+          exact (hC₀ ζ).trans (by gcongr)
+      _ = C₀ * A ^ (2 * N + k) * ((1 + ‖ξ - p ζ‖) ^ (2 * N + k) * ‖g (ξ - p ζ)‖) := by
+          rw [mul_pow, mul_pow, two_mul, pow_add, pow_add, pow_add, pow_add]; ring
+      _ ≤ C₀ * A ^ (2 * N + k) * C₃ := by gcongr; exact hC₃ _
+      _ ≤ _ := le_max_right _ _
+
 
 /-- **Finitely many open cones cover a closed cone.** Let `V` be a closed subset of a proper real
 normed space closed under multiplication by positive reals. If every unit vector `ξ` of `V` lies
@@ -621,12 +782,13 @@ theorem exists_forall_le_of_diff_singleton_subset_biUnion {X ι : Type*} [Zero X
     _ ≤ |f 0| + ∑ ξ ∈ t, |C ξ| := le_add_of_nonneg_left (abs_nonneg _)
 
 /-- **Finitely many neighbourhoods and cones over a compact set.** Given at each point `x` of a
-compact set `K` a neighbourhood `U x` and an open set `Γ x` containing `ξ` and closed under
-multiplication by positive reals, finitely many of the interiors of the `U x` cover `K`, and the
-intersection of the corresponding sets `Γ x` is again open, contains `ξ` and is closed under
-multiplication by positive reals. -/
-theorem exists_finset_subset_biUnion_interior_and_isOpen_cone [Module ℝ E] {K : Set E} {ξ : E}
-    (hK : IsCompact K) {U Γ : K → Set E} (hU : ∀ x : K, U x ∈ nhds (x : E))
+compact set `K` a neighbourhood `U x` and an open set `Γ x`, in a possibly different space,
+containing `ξ` and closed under multiplication by positive reals, finitely many of the interiors
+of the `U x` cover `K`, and the intersection of the corresponding sets `Γ x` is again open,
+contains `ξ` and is closed under multiplication by positive reals. -/
+theorem exists_finset_subset_biUnion_interior_and_isOpen_cone {X F : Type*}
+    [TopologicalSpace X] [TopologicalSpace F] [SMul ℝ F] {K : Set X} {ξ : F} (hK : IsCompact K)
+    {U : K → Set X} {Γ : K → Set F} (hU : ∀ x : K, U x ∈ nhds (x : X))
     (hΓ : ∀ x, IsOpen (Γ x)) (hξΓ : ∀ x, ξ ∈ Γ x)
     (hcone : ∀ x, ∀ t : ℝ, 0 < t → ∀ η ∈ Γ x, t • η ∈ Γ x) :
     ∃ t : Finset K, K ⊆ ⋃ x ∈ t, interior (U x) ∧ IsOpen (⋂ x ∈ t, Γ x) ∧ ξ ∈ ⋂ x ∈ t, Γ x ∧

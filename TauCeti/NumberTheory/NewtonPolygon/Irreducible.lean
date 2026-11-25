@@ -35,6 +35,8 @@ a prime ideal, for primitive polynomials.
 
 ## Main results
 
+* `Polynomial.newtonSlopes_eq_zero_of_irreducible_of_coeff_zero_eq_zero`: an irreducible
+  polynomial over a field vanishing at zero has no finite slopes.
 * `Polynomial.den_dvd_natDegree_of_dvd`: the denominator of the slope of a pure polynomial with
   nonzero constant coefficient divides the degree of each of its factors.
 * `Polynomial.irreducible_of_forall_mem_newtonSlopes_eq`: a pure polynomial with nonzero constant
@@ -88,6 +90,16 @@ end Ring
 section Field
 
 variable {K : Type*} [Field K] {v : AddValuation K (WithTop ℝ)}
+
+variable (v) in
+/-- An irreducible polynomial over a field vanishing at zero is a scalar multiple of `X`, so it has
+no finite slopes. -/
+theorem newtonSlopes_eq_zero_of_irreducible_of_coeff_zero_eq_zero {f : K[X]}
+    (hf : Irreducible f) (hc : f.coeff 0 = 0) : f.newtonSlopes v = 0 := by
+  obtain ⟨q, rfl⟩ := X_dvd_iff.mpr hc
+  obtain ⟨c, -, rfl⟩ :=
+    Polynomial.isUnit_iff.mp ((hf.isUnit_or_isUnit rfl).resolve_left not_isUnit_X)
+  rw [X_mul_C, C_mul_X_eq_monomial, newtonSlopes_monomial]
 
 /-- **Newton polygon irreducibility criterion.** If the valuation takes integer values on
 nonzero elements, a polynomial `f` with nonzero constant coefficient whose finite slopes all

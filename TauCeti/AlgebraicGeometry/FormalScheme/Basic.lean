@@ -84,6 +84,21 @@ instance : forgetToLocallyRingedSpace.Full :=
 instance : forgetToLocallyRingedSpace.Faithful :=
   fullyFaithfulForgetToLocallyRingedSpace.faithful
 
+/-- An open immersion `f : X ⟶ Y` identifies the local ring of `Y` at `f x` with the local ring of
+`X` at `x`. -/
+noncomputable def stalkRingEquivOfIsOpenImmersion {X Y : FormalScheme} (f : X ⟶ Y)
+    [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] (x : X) :
+    Y.presheaf.stalk (f.hom.base x) ≃+* X.presheaf.stalk x :=
+  have := LocallyRingedSpace.IsOpenImmersion.stalk_iso (forgetToLocallyRingedSpace.map f) x
+  (asIso ((forgetToLocallyRingedSpace.map f).stalkMap x)).commRingCatIsoToRingEquiv
+
+/-- The stalk ring equivalence of an open immersion is the stalk map of `f`. -/
+@[simp]
+theorem stalkRingEquivOfIsOpenImmersion_apply {X Y : FormalScheme} (f : X ⟶ Y)
+    [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] (x : X)
+    (a : Y.presheaf.stalk (f.hom.base x)) :
+    stalkRingEquivOfIsOpenImmersion f x a = (f.hom.stalkMap x).hom a := (rfl)
+
 /-- The formal spectrum with its affine formal atlas.
 The carrier is exposed so the opens and points of `Spf A` apply directly to `ofSpf A`. -/
 @[expose] noncomputable def ofSpf (A : Type u) [CommRing A] [TopologicalSpace A]
