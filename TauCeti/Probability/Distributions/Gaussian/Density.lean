@@ -44,13 +44,6 @@ form into the one of `S⁻¹`.
 * `TauCeti.Probability.multivariateGaussianPDFReal_smul` — a scaling formula for the density
   expression at `c • S`, for every real `c` and every `S`; it is a Lebesgue density of
   `multivariateGaussian m (c • S)` only when `(c • S).PosDef`;
-* `TauCeti.Probability.multivariateGaussianPDFReal_smul_one` and
-  `TauCeti.Probability.multivariateGaussian_smul_one_eq_withDensity` — the isotropic case
-  `N(θ, v I)`, with the density `(2π v)^(-d/2) exp (-‖x - θ‖² / (2v))` for `v > 0`;
-* `TauCeti.Probability.multivariateGaussian_absolutelyContinuous` and
-  `TauCeti.Probability.ae_ne_zero_multivariateGaussian` — at a positive-definite covariance the
-  law is absolutely continuous with respect to Lebesgue measure, hence almost surely nonzero in
-  positive dimension;
 * `TauCeti.Probability.stdGaussian_eq_withDensity` — the standard Gaussian on `EuclideanSpace ℝ ι`
   is Lebesgue
   measure weighted by `(2π)^(-d/2) * exp (-‖x‖² / 2)`;
@@ -71,6 +64,8 @@ form into the one of `S⁻¹`.
 * `TauCeti.Probability.rnDeriv_multivariateGaussian` — the Radon–Nikodym derivative;
 * `TauCeti.Probability.multivariateGaussian_absolutelyContinuous` — absolute continuity with
   respect to Lebesgue measure;
+* `TauCeti.Probability.ae_ne_zero_multivariateGaussian` — hence, in positive dimension, the law is
+  almost surely nonzero;
 * `TauCeti.Probability.mutuallySingular_multivariateGaussian_volume` — singularity at every
   covariance
   parameter that is not positive definite.
@@ -371,46 +366,6 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
   congr 1
   ring
 
-/-- A multivariate Gaussian law with positive-definite covariance is absolutely continuous with
-respect to Lebesgue measure. -/
-theorem multivariateGaussian_absolutelyContinuous (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
-    multivariateGaussian m S ≪ volume := by
-  rw [multivariateGaussian_eq_withDensity hS m]
-  exact withDensity_absolutelyContinuous _ _
-
-/-- In positive dimension, a multivariate Gaussian vector with positive-definite covariance is
-almost surely nonzero. -/
-theorem ae_ne_zero_multivariateGaussian [Nonempty ι] (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
-    ∀ᵐ x ∂multivariateGaussian m S, x ≠ 0 :=
-  multivariateGaussian_absolutelyContinuous hS m (by simp)
-
-/-- Closed form of `multivariateGaussianPDFReal θ (v I)` for `v ≥ 0`:
-`(2π v)^(-d/2) exp (-‖x - θ‖² / (2v))`, where `d` is the dimension. For `v > 0` this is the
-density of `N(θ, v I)` (see `multivariateGaussian_smul_one_eq_withDensity`). At `v = 0` it is
-an identity of real expressions under Lean's conventions `0⁻¹ = 0` and `0 ^ r`; in positive
-dimension it is then not a density of the point mass `N(θ, 0)`, while in dimension `0` the
-expression is `1`, a density of the point mass. -/
-theorem multivariateGaussianPDFReal_smul_one {v : ℝ} (hv : 0 ≤ v) (θ x : EuclideanSpace ℝ ι) :
-    multivariateGaussianPDFReal θ (v • (1 : Matrix ι ι ℝ)) x =
-      (2 * π * v) ^ (-(Fintype.card ι : ℝ) / 2) * exp (-‖x - θ‖ ^ 2 / (2 * v)) := by
-  rw [multivariateGaussianPDFReal_smul, Matrix.det_one, mul_one, ← Real.rpow_natCast_mul hv,
-    mul_rpow (by positivity) hv, inv_one, Matrix.toLpLin_one]
-  simp only [LinearMap.id_apply, real_inner_self_eq_norm_sq]
-  congr 2
-  · ring_nf
-  · ring
-
-/-- The isotropic Gaussian law `N(θ, v I)`, `v > 0`, is Lebesgue measure with the density
-`(2π v)^(-d/2) exp (-‖x - θ‖² / (2v))`. -/
-theorem multivariateGaussian_smul_one_eq_withDensity {v : ℝ} (hv : 0 < v)
-    (θ : EuclideanSpace ℝ ι) :
-    multivariateGaussian θ (v • (1 : Matrix ι ι ℝ)) = volume.withDensity fun x ↦
-      ENNReal.ofReal ((2 * π * v) ^ (-(Fintype.card ι : ℝ) / 2) *
-        exp (-‖x - θ‖ ^ 2 / (2 * v))) := by
-  rw [multivariateGaussian_eq_withDensity (Matrix.PosDef.one.smul hv),
-    multivariateGaussianPDF_def]
-  simp_rw [multivariateGaussianPDFReal_smul_one hv.le]
-
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → EuclideanSpace ℝ ι}
 
 /-- A random vector with a nondegenerate multivariate Gaussian law has a density. -/
@@ -438,6 +393,12 @@ theorem multivariateGaussian_absolutelyContinuous (hS : S.PosDef) (m : Euclidean
     multivariateGaussian m S ≪ volume := by
   rw [multivariateGaussian_eq_withDensity hS]
   exact withDensity_absolutelyContinuous _ _
+
+/-- In positive dimension, a multivariate Gaussian vector with positive-definite covariance is
+almost surely nonzero. -/
+theorem ae_ne_zero_multivariateGaussian [Nonempty ι] (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
+    ∀ᵐ x ∂multivariateGaussian m S, x ≠ 0 :=
+  multivariateGaussian_absolutelyContinuous hS m (by simp)
 
 /-- **Every degenerate multivariate Gaussian law is singular.** A positive-semidefinite but
 singular covariance carries the law on the proper affine subspace `m + range (CFC.sqrt S)`; any
