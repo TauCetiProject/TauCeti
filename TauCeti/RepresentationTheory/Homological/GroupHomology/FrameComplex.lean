@@ -14,7 +14,7 @@ import TauCeti.Algebra.BigOperators.AlternatingSum
 # The augmented complex of unimodular frames
 
 A unimodular `p`-frame of `Rⁿ` is an `n × p` matrix with a left inverse; the frames form the
-sub-`GL n R`-set `TauCeti.unimodularFrames R n p`, and deleting the `i`-th column of a
+sub-`GL n R`-set `TauCeti.unimodularFrames R n (Fin p)`, and deleting the `i`-th column of a
 `(p + 1)`-frame is the equivariant face `TauCeti.frameFace` (see
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UnimodularFrame.Basic`).
 
@@ -45,7 +45,7 @@ Kallen's and Suslin's proofs of homological stability for general linear groups 
 
 ## Main results
 
-* `TauCeti.frameComplex_d_single`: the differential on a frame.
+* `TauCeti.frameDifferential_single`: the differential on a frame.
 * `TauCeti.frameComplex_exactAt_zero_iff`: over a nontrivial ring of coefficients, the complex is
   exact in degree `0` if and only if `Rⁿ` has a unimodular vector; the sufficient direction is
   `TauCeti.frameComplex_exactAt_zero_of_isUnimodular`, over any ring of coefficients.
@@ -74,35 +74,37 @@ variable (k : Type u) [Ring k] (R : Type u) [CommRing R] (n : Type u) [Fintype n
 /-- The face `F_(p+1) → F_p` deleting the `i`-th column, extended linearly to a morphism of
 permutation representations `k[F_(p+1)] ⟶ k[F_p]`. -/
 abbrev frameFaceHom {p : ℕ} (i : Fin (p + 1)) :
-    Rep.ofMulAction k (GL n R) (unimodularFrames R n (p + 1)) ⟶
-      Rep.ofMulAction k (GL n R) (unimodularFrames R n p) :=
+    Rep.ofMulAction k (GL n R) (unimodularFrames R n (Fin (p + 1))) ⟶
+      Rep.ofMulAction k (GL n R) (unimodularFrames R n (Fin p)) :=
   (frameFace R n i).toRepRes (φ := MonoidHom.id _)
 
 /-- The differential `k[F_(p+1)] ⟶ k[F_p]` of the frame complex, the alternating sum of the faces
 `A ↦ ∑ᵢ (-1)ⁱ (A with column i deleted)`. -/
 def frameDifferential (p : ℕ) :
-    Rep.ofMulAction k (GL n R) (unimodularFrames R n (p + 1)) ⟶
-      Rep.ofMulAction k (GL n R) (unimodularFrames R n p) :=
+    Rep.ofMulAction k (GL n R) (unimodularFrames R n (Fin (p + 1))) ⟶
+      Rep.ofMulAction k (GL n R) (unimodularFrames R n (Fin p)) :=
   ∑ i : Fin (p + 1), (-1 : ℤ) ^ (i : ℕ) • frameFaceHom k R n i
 
 variable {k R n}
 
 @[simp]
-theorem frameFaceHom_single {p : ℕ} (i : Fin (p + 1)) (A : unimodularFrames R n (p + 1)) (r : k) :
+theorem frameFaceHom_single {p : ℕ} (i : Fin (p + 1)) (A : unimodularFrames R n (Fin (p + 1)))
+    (r : k) :
     (frameFaceHom k R n i).hom (single A r) = single (frameFace R n i A) r :=
   MulActionHom.toRepRes_hom_single _ _ _
 
 /-- The differential of the frame complex on a frame. -/
 @[simp]
-theorem frameDifferential_single {p : ℕ} (A : unimodularFrames R n (p + 1)) (r : k) :
+theorem frameDifferential_single {p : ℕ} (A : unimodularFrames R n (Fin (p + 1))) (r : k) :
     (frameDifferential k R n p).hom (single A r) =
       ∑ i : Fin (p + 1), (-1 : ℤ) ^ (i : ℕ) • single (frameFace R n i A) r := by
-  rw [frameDifferential, Rep.sum_hom, Representation.IntertwiningMap.sum_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Rep.zsmul_hom, Representation.IntertwiningMap.coe_zsmul, Pi.smul_apply, frameFaceHom_single]
+  simp only [frameDifferential, Rep.sum_hom, Rep.zsmul_hom, Pi.smul_apply,
+    Representation.IntertwiningMap.sum_apply, Representation.IntertwiningMap.coe_zsmul]
+  -- `simp` does not use `frameFaceHom_single` inside these sums, so close them termwise
+  exact Finset.sum_congr rfl fun i _ ↦ congrArg _ (frameFaceHom_single i A r)
 
 /-- The differential out of degree `1` sends every unimodular vector to the empty frame. -/
-theorem frameDifferential_zero_single (A : unimodularFrames R n 1) (r : k) :
+theorem frameDifferential_zero_single (A : unimodularFrames R n (Fin 1)) (r : k) :
     (frameDifferential k R n 0).hom (single A r) = single default r := by
   rw [frameDifferential_single, Fin.sum_univ_one, Fin.val_zero, pow_zero, one_smul,
     Subsingleton.elim (frameFace R n 0 A) default]
@@ -126,12 +128,12 @@ representations of `GL n R`: its term in degree `p` is the permutation represent
 the trivial representation `k`, spanned by the empty frame (`TauCeti.frameComplexXZeroIso`), and
 the differential out of degree `1` is the augmentation. -/
 @[expose] def frameComplex : ChainComplex (Rep k (GL n R)) ℕ :=
-  ChainComplex.of (fun p ↦ Rep.ofMulAction k (GL n R) (unimodularFrames R n p))
+  ChainComplex.of (fun p ↦ Rep.ofMulAction k (GL n R) (unimodularFrames R n (Fin p)))
     (frameDifferential k R n) frameDifferential_comp_frameDifferential
 
 @[simp]
 theorem frameComplex_X (p : ℕ) :
-    (frameComplex k R n).X p = Rep.ofMulAction k (GL n R) (unimodularFrames R n p) :=
+    (frameComplex k R n).X p = Rep.ofMulAction k (GL n R) (unimodularFrames R n (Fin p)) :=
   (rfl)
 
 @[simp]
@@ -141,16 +143,9 @@ theorem frameComplex_d (p : ℕ) :
 
 variable {k R n}
 
-/-- The differential of the frame complex on a frame. -/
-theorem frameComplex_d_single {p : ℕ} (A : unimodularFrames R n (p + 1)) (r : k) :
-    ((frameComplex k R n).d (p + 1) p).hom (single A r) =
-      ∑ i : Fin (p + 1), (-1 : ℤ) ^ (i : ℕ) • single (frameFace R n i A) r := by
-  simp only [frameComplex_d]
-  exact frameDifferential_single A r
-
 /-- The differential out of degree `1` is the augmentation: it sends every unimodular vector to
 the empty frame. -/
-theorem frameComplex_d_one_zero_single (A : unimodularFrames R n 1) (r : k) :
+theorem frameComplex_d_one_zero_single (A : unimodularFrames R n (Fin 1)) (r : k) :
     ((frameComplex k R n).d 1 0).hom (single A r) = single default r := by
   simp only [frameComplex_d]
   exact frameDifferential_zero_single A r
@@ -161,24 +156,24 @@ variable (k R n) in
 def frameComplexXZeroIso : (frameComplex k R n).X 0 ≅ Rep.trivial k (GL n R) k :=
   -- Mathlib's isomorphism asks for a monoid structure on the one-point `GL n R`-set, which only
   -- serves to name its point; the unique `0`-frame borrows the one of `PUnit`
-  letI := (Equiv.ofUnique (unimodularFrames R n 0) PUnit.{u + 1}).mulOneClass
-  Rep.ofMulActionSubsingletonIsoTrivial k (GL n R) (unimodularFrames R n 0)
-
-/-- The identification of the term in degree `0` with `k` reads off the coefficient of the empty
-frame. -/
-@[simp]
-theorem frameComplexXZeroIso_hom_hom_single (A : unimodularFrames R n 0) (r : k) :
-    (frameComplexXZeroIso k R n).hom.hom (single A r) = r := by
-  rw [Subsingleton.elim A default]
-  exact (Rep.mkIso_hom_hom_apply _ (single default r : k[unimodularFrames R n 0])).trans
-    Finsupp.single_eq_same
+  letI := (Equiv.ofUnique (unimodularFrames R n (Fin 0)) PUnit.{u + 1}).mulOneClass
+  Rep.ofMulActionSubsingletonIsoTrivial k (GL n R) (unimodularFrames R n (Fin 0))
 
 /-- The inverse identification of `k` with the term in degree `0` sends a scalar to that multiple
 of the empty frame. -/
 @[simp]
 theorem frameComplexXZeroIso_inv_hom_apply (r : k) :
-    (frameComplexXZeroIso k R n).inv.hom r = single default r := by
-  rfl
+    (frameComplexXZeroIso k R n).inv.hom r = single default r :=
+  -- Mathlib's isomorphism sends `r` to `r` times the point `1` of the monoid structure borrowed
+  -- from `PUnit`, which is the unique `0`-frame
+  congrArg (single · r) (Subsingleton.elim _ _)
+
+/-- The identification of the term in degree `0` with `k` reads off the coefficient of the empty
+frame. -/
+@[simp]
+theorem frameComplexXZeroIso_hom_hom_single (A : unimodularFrames R n (Fin 0)) (r : k) :
+    (frameComplexXZeroIso k R n).hom.hom (single A r) = r := by
+  rw [Subsingleton.elim A default, ← frameComplexXZeroIso_inv_hom_apply, Rep.hom_inv_apply]
 
 /-- Exactness in degree `0` is the surjectivity of the augmentation `k[F_1] ⟶ k`. -/
 private theorem frameComplex_exactAt_zero_iff_surjective :
@@ -197,7 +192,8 @@ augmentation is onto. -/
 theorem frameComplex_exactAt_zero_of_isUnimodular {v : n → R} (hv : Module.IsUnimodular R v) :
     (frameComplex k R n).ExactAt 0 := by
   refine frameComplex_exactAt_zero_iff_surjective.2 fun x ↦
-    ⟨single ⟨Matrix.of fun i _ ↦ v i, mem_unimodularFrames_one_iff.2 hv⟩ (x.coeff default), ?_⟩
+    ⟨single ⟨Matrix.of fun i _ ↦ v i, mem_unimodularFrames_iff_isUnimodular (k := Fin 1) |>.2 hv⟩
+      (x.coeff default), ?_⟩
   rw [frameDifferential_zero_single]
   refine MonoidAlgebra.ext (Finsupp.ext fun a ↦ ?_)
   rw [Subsingleton.elim a default]
@@ -210,10 +206,10 @@ theorem frameComplex_exactAt_zero_iff [Nontrivial k] :
   refine ⟨fun h ↦ ?_, fun ⟨_, hv⟩ ↦ frameComplex_exactAt_zero_of_isUnimodular hv⟩
   by_contra hv
   obtain ⟨y, hy⟩ := frameComplex_exactAt_zero_iff_surjective.1 h (single default 1)
-  have : IsEmpty (unimodularFrames R n 1) :=
-    ⟨fun A ↦ hv ⟨_, mem_unimodularFrames_one_iff.1 A.property⟩⟩
+  have : IsEmpty (unimodularFrames R n (Fin 1)) :=
+    ⟨fun A ↦ hv ⟨_, mem_unimodularFrames_iff_isUnimodular.1 A.property⟩⟩
   rw [show y = 0 from MonoidAlgebra.ext (Finsupp.ext fun a ↦ isEmptyElim a), map_zero] at hy
-  simpa using congrArg (fun z : k[unimodularFrames R n 0] ↦ z.coeff default) hy
+  simpa using congrArg (fun z : k[unimodularFrames R n (Fin 0)] ↦ z.coeff default) hy
 
 /-- If `n` is nonempty, the augmented frame complex is exact in degree `0`: the standard basis
 vectors of `Rⁿ` are unimodular, so the augmentation is onto. -/
