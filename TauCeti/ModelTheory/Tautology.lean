@@ -229,16 +229,19 @@ def freeStructure (r : ∀ ⦃l : ℕ⦄, L.Relations l → (Fin l → L.Term β
 
 variable (r : ∀ ⦃l : ℕ⦄, L.Relations l → (Fin l → L.Term β) → Prop)
 
+@[simp]
 theorem funMap_freeStructure {l : ℕ} (f : L.Functions l) (xs : Fin l → ULift.{w} (L.Term β)) :
     (freeStructure r).funMap f xs = ⟨func f fun i => (xs i).down⟩ :=
   (rfl)
 
+@[simp]
 theorem relMap_freeStructure {l : ℕ} (R : L.Relations l) (xs : Fin l → ULift.{w} (L.Term β)) :
     (freeStructure r).RelMap R xs ↔ r R fun i => (xs i).down :=
   Iff.rfl
 
 /-- In the free structure, a term takes itself as its value when each variable is sent to
 itself. -/
+@[simp]
 theorem realize_freeStructure (t : L.Term β) :
     letI := freeStructure.{u, v, w} r
     t.realize (fun b => ULift.up.{w} (var b)) = ULift.up.{w} t := by
