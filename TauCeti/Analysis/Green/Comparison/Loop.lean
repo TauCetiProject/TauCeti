@@ -65,7 +65,7 @@ variable {M : Type*} [TopologicalSpace M]
   [IsManifold (𝓡∂ (1 + 1)) ∞ M] [T2Space M] [CompactSpace M]
 
 local instance boundaryLoopIsManifold : IsManifold 𝓘(ℝ, E) ∞ ((𝓡∂ (1 + 1)).boundary M) :=
-  isManifold_boundary M (by simp)
+  isManifold_boundary M
 
 local instance boundaryLoopCompactSpace : CompactSpace ((𝓡∂ (1 + 1)).boundary M) :=
   isCompact_iff_compactSpace.mp
@@ -91,7 +91,7 @@ theorem integralTopForm_curl_area_eq_boundary_curveIntegral
         (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation =
           (boundaryOrientation o).orientationAt (q.extend (z 0))) :
     let g := fun x : (𝓡∂ (1 + 1)).boundary M ↦ f x
-    let hg : Continuous g := hf.continuous.comp continuous_subtype_val
+    let hg : Continuous g := hf.continuous.comp continuous_subtypeVal
     IntegrableTopForm (fun x ↦ curl P Q (f x) •
       mpullback (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) f manifoldAreaForm x) ∧
       CurveIntegrable (oneForm P Q) (q.map hg) ∧
@@ -134,7 +134,7 @@ theorem integral_image_curl_eq_boundary_curveIntegral
         (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation =
           (boundaryOrientation o).orientationAt (q.extend (z 0))) :
     let g := fun x : (𝓡∂ (1 + 1)).boundary M ↦ f x
-    let hg : Continuous g := hf.continuous.comp continuous_subtype_val
+    let hg : Continuous g := hf.continuous.comp continuous_subtypeVal
     IntegrableOn (curl P Q) (range f) ∧
       CurveIntegrable (oneForm P Q) (q.map hg) ∧
       (∫ z in range f, curl P Q z) =

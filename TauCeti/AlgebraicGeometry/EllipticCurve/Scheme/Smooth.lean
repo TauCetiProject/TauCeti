@@ -116,7 +116,7 @@ variable (i)
 theorem span_range_mk_pderiv_eq_top [W'.IsElliptic] :
     Ideal.span (Set.range fun j : {j : Fin 3 // j ≠ i} ↦
       Ideal.Quotient.mk (Ideal.span (Set.range (W'.chartRelation i)))
-        (pderiv j.1 W'.polynomial)) = ⊤ := by
+        (pderiv j.val W'.polynomial)) = ⊤ := by
   by_contra h
   obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ h
   have := hm.isPrime
@@ -173,9 +173,9 @@ theorem locally_isStandardSmoothOfRelativeDimension_algebraMap [W'.IsElliptic] :
   refine RingHom.locally_of_exists RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ _
     (W'.span_range_mk_pderiv_eq_top i)
     (fun j ↦ Localization.Away (Ideal.Quotient.mk
-      (Ideal.span (Set.range (W'.chartRelation i))) (pderiv j.1 W'.polynomial))) fun j ↦ ?_
+      (Ideal.span (Set.range (W'.chartRelation i))) (pderiv j.val W'.polynomial))) fun j ↦ ?_
   rw [← IsScalarTower.algebraMap_eq, RingHom.isStandardSmoothOfRelativeDimension_algebraMap]
-  exact W'.isStandardSmoothOfRelativeDimension_localizationAway_pderiv j.2
+  exact W'.isStandardSmoothOfRelativeDimension_localizationAway_pderiv j.property
 
 end WeierstrassCurve.Projective
 

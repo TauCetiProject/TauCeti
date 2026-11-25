@@ -21,7 +21,7 @@ real boundary condition
 
 stated coordinatewise without square roots as `u w i = w ^ k i * conj (u w i)` for `‖w‖ = 1`.
 The boundary loop is the direct sum of the rotating lines of
-`TauCeti.Analysis.Complex.UnitDisc.RotatingLineBoundary`, so, informally, iterating the direct-sum
+`TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Boundary`, so, informally, iterating the direct-sum
 axiom `TauCeti.TotallyRealLoop.maslovIndex_prod` gives its Maslov index as `μ = ∑ i, k i`. This
 file does not define the boundary loop for a general `ι`; the comparison with the Maslov index is
 formalized only in rank two.
@@ -130,9 +130,9 @@ product of the rank one kernels, taking a map to its coordinates. -/
 def unitDiscCauchyRiemannKernelPiEquiv (k : ι → ℤ) :
     unitDiscCauchyRiemannKernelPi k ≃ₗ[ℝ] Π i, unitDiscCauchyRiemannKernel (k i) where
   toFun g i := ⟨fun z => (g : closedBall (0 : ℂ) 1 → ι → ℂ) z i,
-    mem_unitDiscCauchyRiemannKernelPi_iff.mp g.2 i⟩
+    mem_unitDiscCauchyRiemannKernelPi_iff.mp g.property i⟩
   invFun f := ⟨fun z i => (f i : closedBall (0 : ℂ) 1 → ℂ) z,
-    mem_unitDiscCauchyRiemannKernelPi_iff.mpr fun i => (f i).2⟩
+    mem_unitDiscCauchyRiemannKernelPi_iff.mpr fun i => (f i).property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
@@ -215,9 +215,9 @@ kernel to the product of the rank one adjoint kernels, taking a map to its coord
 def unitDiscAdjointKernelPiEquiv (k : ι → ℤ) :
     unitDiscAdjointKernelPi k ≃ₗ[ℝ] Π i, unitDiscAdjointKernel (k i) where
   toFun g i := ⟨fun z => (g : closedBall (0 : ℂ) 1 → ι → ℂ) z i,
-    mem_unitDiscAdjointKernelPi_iff.mp g.2 i⟩
+    mem_unitDiscAdjointKernelPi_iff.mp g.property i⟩
   invFun f := ⟨fun z i => (f i : closedBall (0 : ℂ) 1 → ℂ) z,
-    mem_unitDiscAdjointKernelPi_iff.mpr fun i => (f i).2⟩
+    mem_unitDiscAdjointKernelPi_iff.mpr fun i => (f i).property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Intertwining
+public import Mathlib.RepresentationTheory.Stabilizer
 public import Mathlib.LinearAlgebra.Basis.Defs
 
 /-!
@@ -35,26 +36,52 @@ taking invariants under it.
   subrepresentation containing its image.
 * `Representation.IntertwiningMap.equivOfRange`: an injective intertwining map is an equivalence
   onto a subrepresentation that its image fills.
+* `Representation.IntertwiningMap.prodEquiv`: intertwining maps into a product are pairs of
+  intertwining maps into the factors.
 * `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
   intertwining map of the conjugation representations `Representation.linHom`.
+* `Representation.intertwiningDefectAt`: the intertwining defect `σ g ∘ₗ f - f ∘ₗ ρ g` at `g`,
+  a linear map on `V →ₗ[K] W` that vanishes exactly on the maps intertwining the action of `g`.
 * `Representation.IntertwiningMap.res` and `Representation.Equiv.res`: restriction of an
   intertwining map or an equivalence along a monoid homomorphism `H →* G`.
 * `DistribMulActionHom.toIntertwiningMap`: an equivariant additive map of `G`-modules, as an
   intertwining map of the attached representations over `ℤ`.
 * `Representation.Equiv.tprod`: the tensor product of two equivalences of representations.
+* `Representation.Equiv.prodCongr`: the product of two equivalences of representations.
 * `Representation.Equiv.dual`: the dual of an equivalence of representations.
+* `Representation.IntertwiningMap.dualMap`: the transpose of an intertwining map, as an
+  intertwining map of the dual representations, with its laws `IntertwiningMap.dualMap_id` and
+  `IntertwiningMap.dualMap_comp`.
+* `Representation.dualHomEquiv`: `Hom_G(V, W^*) ≃ Hom_G(W, V^*)` by swapping arguments.
 * `Representation.Equiv.intertwiningMapCongr`: transport of intertwining maps along equivalences
   of the source and of the target.
 * `Representation.Equiv.ofBasisAction`: build an equivalence from matching coordinate actions.
+* `Representation.Equiv.ofClosureEqTop`: build an equivalence from equivariance on generators.
 
 ## Main results
 
+* `Representation.IntertwiningMap.lcomp_comp_toLinearMap`: following an intertwining map into a
+  conjugation representation by `lcomp u` is `compl₂` with `u` on the underlying bilinear maps.
 * `Representation.IntertwiningMap.equivLinearMapAsModule_apply`: the attached module map acts
   by the original intertwining map on the underlying types.
+* `Representation.IntertwiningMap.stabilizer_apply_eq_of_injective`: an injective intertwining
+  map preserves stabilizers exactly, not only up to the inclusion `IntertwiningMap.stabilizer_le`.
 * `Representation.IntertwiningMap.apply_asAlgebraHom`: an intertwining map commutes with the
   action of the monoid algebra, not only with that of the group elements.
 * `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
   the dual representations.
+* `Representation.Equiv.ker_eq`: equivalent representations have the same kernel.
+* `Representation.IntertwiningMap.ker_le_ker_of_surjective`: an element acting trivially in a
+  representation acts trivially in each of its quotients.
+* `Representation.mul_mul_inv_eq_smul_of_mul_eq_smul_mul`: a relation `ρ g * f = c • (f * ρ g)`
+  says that conjugation by `ρ g` scales `f` by `c`.
+* `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
+  generating set of the group.
+* `Representation.exists_unit_smul_of_intertwines`: if the equivariant endomorphisms of a
+  nonzero representation are scalar, two invertible intertwiners out of it to the same target
+  differ by a unit scalar.
+* `AlgHom.isIntertwiningMap_toMonoidHom_comp_iff_of_span_eq_top`: equivariance under a monoid
+  acting through a spanning image in an algebra is equivariance under the whole algebra.
 
 -/
 
@@ -77,6 +104,35 @@ theorem prod_ext {A G V W U : Type*} [Semiring A] [Monoid G]
   -- `LinearMap.inl`, `LinearMap.inr`, and `LinearMap.comp`.
   · exact congrArg IntertwiningMap.toLinearMap hl
   · exact congrArg IntertwiningMap.toLinearMap hr
+
+section prodEquiv
+
+variable {A G V W U : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
+  {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
+
+/-- **Intertwining maps into a product are pairs of intertwining maps**: the representation
+counterpart of `LinearMap.prodEquiv`, sending a pair `(f, g)` to `IntertwiningMap.prod f g`. -/
+noncomputable def prodEquiv :
+    (IntertwiningMap ρ σ × IntertwiningMap ρ τ) ≃ₗ[A] IntertwiningMap ρ (σ.prod τ) where
+  toFun f := f.1.prod f.2
+  invFun f := ((fst A σ τ).comp f, (snd A σ τ).comp f)
+  left_inv f := by simp
+  right_inv f := by ext <;> rfl
+  map_add' f g := by ext <;> rfl
+  map_smul' c f := by ext <;> rfl
+
+@[simp]
+theorem prodEquiv_apply (f : IntertwiningMap ρ σ × IntertwiningMap ρ τ) :
+    prodEquiv f = f.1.prod f.2 :=
+  (rfl)
+
+@[simp]
+theorem prodEquiv_symm_apply (f : IntertwiningMap ρ (σ.prod τ)) :
+    prodEquiv.symm f = ((fst A σ τ).comp f, (snd A σ τ).comp f) :=
+  (rfl)
+
+end prodEquiv
 
 /-- **Evaluation of the `k[G]`-linear map attached to an intertwining map.** The map
 `Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f` is `f` itself on the underlying
@@ -110,21 +166,28 @@ theorem codRestrict_apply_coe (f : IntertwiningMap ρ σ) (P : Subrepresentation
     ((f.codRestrict P hP v : P.toSubmodule) : W) = f v := by
   rfl
 
-end codRestrict
-
-variable {A G V W : Type*} [CommSemiring A] [Monoid G]
-  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
-  {ρ : Representation A G V} {σ : Representation A G W}
-
 /-- **An injective intertwining map is an isomorphism onto its image**, here onto any
 subrepresentation `P` that the image fills. -/
 noncomputable def equivOfRange (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
     {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) :
     ρ.Equiv P.toRepresentation :=
-  (f.codRestrict P fun v => hP.le (LinearMap.mem_range_self _ v)).ofBijective
+  let f' := f.codRestrict P fun v => hP.le (LinearMap.mem_range_self _ v)
+  .mk (LinearEquiv.ofBijective f'.toLinearMap
     ⟨fun _ _ h => hf (by exact congrArg Subtype.val h), fun w => by
-      obtain ⟨v, hv⟩ := hP.ge w.2
-      exact ⟨v, Subtype.ext (by exact hv)⟩⟩
+      obtain ⟨v, hv⟩ := hP.ge w.property
+      exact ⟨v, Subtype.ext (by exact hv)⟩⟩) f'.isIntertwining'
+
+@[simp]
+theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
+    {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) (v : V) :
+    ((f.equivOfRange hf hP v : P.toSubmodule) : W) = f v := by
+  rfl
+
+end codRestrict
+
+variable {A G V W : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- **An intertwining map commutes with the action of the monoid algebra**, not only with that of
 the group elements. -/
@@ -132,12 +195,6 @@ the group elements. -/
 theorem apply_asAlgebraHom (f : IntertwiningMap ρ σ) (r : MonoidAlgebra A G) (v : V) :
     f (ρ.asAlgebraHom r v) = σ.asAlgebraHom r (f v) :=
   (equivLinearMapAsModule ρ σ f).map_smul r (ρ.asModuleEquiv.symm v)
-
-@[simp]
-theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
-    {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) (v : V) :
-    ((f.equivOfRange hf hP v : P.toSubmodule) : W) = f v := by
-  rfl
 
 section lcomp
 
@@ -158,6 +215,14 @@ def lcomp (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) :
 @[simp]
 theorem lcomp_apply (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) (φ : V →ₗ[A] W) :
     u.lcomp σ φ = φ ∘ₗ u.toLinearMap :=
+  (rfl)
+
+/-- Composing an intertwining map `q : ρ₀ → linHom ρ σ` into a conjugation representation with
+precomposition by `u` is `q.compl₂ u` on the underlying bilinear maps. -/
+theorem lcomp_comp_toLinearMap {V₀ : Type*} [AddCommMonoid V₀] [Module A V₀]
+    {ρ₀ : Representation A G V₀} (u : IntertwiningMap ρ' ρ) (σ : Representation A G W)
+    (q : IntertwiningMap ρ₀ (linHom ρ σ)) :
+    ((u.lcomp σ).comp q).toLinearMap = q.toLinearMap.compl₂ u.toLinearMap :=
   (rfl)
 
 end lcomp
@@ -195,9 +260,118 @@ theorem res_comp (ψ : IntertwiningMap σ τ) (φ : IntertwiningMap ρ σ) (f : 
 
 end Restriction
 
+section Stabilizer
+
+variable {A G V W : Type*} [Semiring A] [Group G] [AddCommMonoid V] [AddCommMonoid W]
+  [Module A V] [Module A W] {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- **An injective intertwining map preserves stabilizers.** Mathlib's
+`Representation.IntertwiningMap.stabilizer_le` gives one inclusion for any intertwining map;
+injectivity gives the other, since `σ g (f v) = f v` reads `f (ρ g v) = f v`. -/
+theorem stabilizer_apply_eq_of_injective (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
+    (v : V) : stabilizer σ (f v) = stabilizer ρ v := by
+  ext g
+  rw [mem_stabilizer, mem_stabilizer, ← isIntertwining _ _ f g v, hf.eq_iff]
+
+end Stabilizer
+
+section Kernel
+
+variable {A G V W : Type*} [Semiring A] [Group G] [AddCommMonoid V] [AddCommMonoid W]
+  [Module A V] [Module A W] {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- **A quotient acts trivially wherever the source does.** If `f : ρ → σ` is a surjective
+intertwining map, every element acting trivially in `ρ` acts trivially in `σ`, since
+`σ g (f v) = f (ρ g v) = f v`. -/
+theorem ker_le_ker_of_surjective (f : IntertwiningMap ρ σ) (hf : Function.Surjective f) :
+    ρ.ker ≤ σ.ker := fun g hg ↦ by
+  rw [MonoidHom.mem_ker] at hg ⊢
+  refine LinearMap.ext fun w ↦ ?_
+  obtain ⟨v, rfl⟩ := hf w
+  rw [← isIntertwining _ _ f g v, hg, one_apply_eq_self, one_apply_eq_self]
+
+end Kernel
+
 end Representation.IntertwiningMap
 
+namespace Representation
+
+section IntertwiningDefect
+
+variable {K G V W : Type*} [CommRing K] [Monoid G]
+  [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+
+/-- The **intertwining defect at `g`** of a linear map `f : V →ₗ[K] W`: `σ g ∘ₗ f - f ∘ₗ ρ g`,
+which vanishes exactly when `f` intertwines the actions of `g`. -/
+def intertwiningDefectAt (ρ : Representation K G V) (σ : Representation K G W) (g : G) :
+    (V →ₗ[K] W) →ₗ[K] V →ₗ[K] W :=
+  LinearMap.llcomp K V W W (σ g) - LinearMap.lcomp K W (ρ g)
+
+@[simp]
+theorem intertwiningDefectAt_apply (ρ : Representation K G V) (σ : Representation K G W) (g : G)
+    (f : V →ₗ[K] W) : intertwiningDefectAt ρ σ g f = σ g ∘ₗ f - f ∘ₗ ρ g :=
+  (rfl)
+
+/-- The intertwining defect at `g` vanishes exactly when `f` intertwines the actions of `g`. -/
+theorem intertwiningDefectAt_eq_zero_iff {ρ : Representation K G V} {σ : Representation K G W}
+    {g : G} {f : V →ₗ[K] W} : intertwiningDefectAt ρ σ g f = 0 ↔ f ∘ₗ ρ g = σ g ∘ₗ f := by
+  rw [intertwiningDefectAt_apply, sub_eq_zero, eq_comm]
+
+end IntertwiningDefect
+
+section Conjugation
+
+variable {K G V : Type*} [CommSemiring K] [Group G] [AddCommMonoid V] [Module K V]
+
+/-- If `ρ g * f = c • (f * ρ g)` for an endomorphism `f`, then conjugation by `ρ g` scales `f`
+by `c`: `ρ g * f * ρ g⁻¹ = c • f`. -/
+theorem mul_mul_inv_eq_smul_of_mul_eq_smul_mul {ρ : Representation K G V} {f : Module.End K V}
+    {g : G} {c : K} (h : ρ g * f = c • (f * ρ g)) : ρ g * f * ρ g⁻¹ = c • f := by
+  simp [h, mul_assoc, ← map_mul]
+
+end Conjugation
+
+end Representation
+
 namespace Representation.Equiv
+
+section Product
+
+variable {A G V V' W W' : Type*} [Semiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid V'] [Module A V']
+  [AddCommMonoid W] [Module A W] [AddCommMonoid W'] [Module A W']
+  {ρ : Representation A G V} {ρ' : Representation A G V'}
+  {σ : Representation A G W} {σ' : Representation A G W'}
+
+/-- The product of two equivalences of representations, acting componentwise. -/
+noncomputable def prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') : Equiv (ρ.prod σ) (ρ'.prod σ') :=
+  .mk (e.toLinearEquiv.prodCongr e'.toLinearEquiv) fun g ↦
+    LinearMap.ext fun v ↦ Prod.ext
+      (e.toIntertwiningMap.isIntertwining _ _ g v.1)
+      (e'.toIntertwiningMap.isIntertwining _ _ g v.2)
+
+/-- The linear equivalence underlying a product equivalence is the product of its factors. -/
+@[simp]
+theorem toLinearEquiv_prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') :
+    (e.prodCongr e').toLinearEquiv = e.toLinearEquiv.prodCongr e'.toLinearEquiv := (rfl)
+
+/-- Forgetting equivariance of a product equivalence gives the product linear map. -/
+@[simp]
+theorem toLinearMap_prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') :
+    (e.prodCongr e').toLinearMap = e.toLinearMap.prodMap e'.toLinearMap := (rfl)
+
+/-- A product equivalence acts on the two coordinates separately. -/
+@[simp]
+theorem prodCongr_apply (e : Equiv ρ ρ') (e' : Equiv σ σ') (v : V × W) :
+    e.prodCongr e' v = (e v.1, e' v.2) := (rfl)
+
+/-- Inverting a product equivalence inverts each factor. -/
+@[simp]
+theorem prodCongr_symm (e : Equiv ρ ρ') (e' : Equiv σ σ') :
+    (e.prodCongr e').symm = e.symm.prodCongr e'.symm := by
+  ext v <;> rfl
+
+end Product
 
 section Basis
 
@@ -324,6 +498,25 @@ theorem dual_apply_apply (e : Equiv ρ σ) (f : Module.Dual A V) (w : W) :
 
 end Dual
 
+section Kernel
+
+variable {A G V W : Type*} [Semiring A] [Group G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- Equivalent representations have the same kernel. -/
+theorem ker_eq (e : Equiv ρ σ) : ρ.ker = σ.ker := by
+  ext g
+  have he := IntertwiningMap.isIntertwining ρ σ e.toIntertwiningMap g
+  simp only [coe_toIntertwiningMap] at he
+  simp only [MonoidHom.mem_ker, LinearMap.ext_iff, one_apply_eq_self]
+  refine ⟨fun h w ↦ ?_, fun h v ↦ EquivLike.injective e ?_⟩
+  · obtain ⟨v, rfl⟩ := EquivLike.surjective e w
+    rw [← he, h]
+  · rw [he, h]
+
+end Kernel
+
 section Congr
 
 variable {A G V V' W W' : Type*} [CommSemiring A] [Monoid G]
@@ -370,6 +563,160 @@ theorem IsIntertwiningMap.dualMap {A G V W : Type*} [CommSemiring A] [Group G]
     {σ : Representation A G W} {f : V →ₗ[A] W} (hf : IsIntertwiningMap ρ σ f) :
     IsIntertwiningMap σ.dual ρ.dual f.dualMap :=
   ⟨fun g φ ↦ LinearMap.ext fun v ↦ congrArg φ (hf.isIntertwining g⁻¹ v).symm⟩
+
+section DualMap
+
+variable {A G V W : Type*} [CommSemiring A] [Group G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- The transpose `σ^* → ρ^*`, `φ ↦ φ ∘ f`, of an intertwining map `f : ρ → σ`, bundled as an
+intertwining map of the dual representations. -/
+def IntertwiningMap.dualMap (f : IntertwiningMap ρ σ) : IntertwiningMap σ.dual ρ.dual :=
+  f.toLinearMap.dualMap.intertwiningMap_of_isIntertwiningMap σ.dual ρ.dual
+    (IsIntertwiningMap.dualMap ⟨f.isIntertwining⟩).isIntertwining
+
+@[simp]
+theorem IntertwiningMap.dualMap_apply_apply (f : IntertwiningMap ρ σ) (φ : Module.Dual A W)
+    (v : V) : f.dualMap φ v = φ (f v) :=
+  (rfl)
+
+/-- Transposing the identity intertwining map gives the identity. -/
+@[simp]
+theorem IntertwiningMap.dualMap_id : (IntertwiningMap.id ρ).dualMap = IntertwiningMap.id ρ.dual :=
+  (rfl)
+
+/-- Transposing a composite reverses the order of its factors. -/
+@[simp]
+theorem IntertwiningMap.dualMap_comp {U : Type*} [AddCommMonoid U] [Module A U]
+    {τ : Representation A G U} (f : IntertwiningMap ρ σ) (f' : IntertwiningMap σ τ) :
+    (f'.comp f).dualMap = f.dualMap.comp f'.dualMap :=
+  (rfl)
+
+/-- Swapping the arguments of an intertwining map `V → W^*` gives an intertwining map `W → V^*`:
+`f (ρ g⁻¹ v) w = f v (σ g w)`. -/
+private theorem flip_intertwining (f : IntertwiningMap ρ σ.dual) (g : G) (w : W) :
+    f.toLinearMap.flip (σ g w) = ρ.dual g (f.toLinearMap.flip w) :=
+  LinearMap.ext fun v ↦ by simp [Module.Dual.transpose_apply, f.isIntertwining]
+
+variable (ρ σ) in
+/-- **Intertwining maps into a dual.** `Hom_G(V, W^*) ≃ Hom_G(W, V^*)` by swapping arguments,
+`f ↦ (w ↦ (v ↦ f v w))`: both sides are the `G`-invariant bilinear pairings `V × W → A`. -/
+def dualHomEquiv : IntertwiningMap ρ σ.dual ≃ₗ[A] IntertwiningMap σ ρ.dual where
+  toFun f := f.toLinearMap.flip.intertwiningMap_of_isIntertwiningMap σ ρ.dual
+    (flip_intertwining f)
+  invFun f := f.toLinearMap.flip.intertwiningMap_of_isIntertwiningMap ρ σ.dual
+    (flip_intertwining f)
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem dualHomEquiv_apply_apply (f : IntertwiningMap ρ σ.dual) (w : W) (v : V) :
+    dualHomEquiv ρ σ f w v = f v w :=
+  (rfl)
+
+@[simp]
+theorem dualHomEquiv_symm : (dualHomEquiv ρ σ).symm = dualHomEquiv σ ρ :=
+  (rfl)
+
+end DualMap
+
+/-- **Equivariance may be tested on a generating set**: if `s` generates the group `G`, a linear
+map intertwines `ρ` and `σ` exactly when it commutes with the action of every element of `s`. -/
+theorem isIntertwiningMap_iff_of_closure_eq_top {A G V W : Type*} [Semiring A] [Group G]
+    [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] (ρ : Representation A G V)
+    (σ : Representation A G W) {s : Set G} (hs : Subgroup.closure s = ⊤) (f : V →ₗ[A] W) :
+    IsIntertwiningMap ρ σ f ↔ ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v) := by
+  refine ⟨fun hf g _ v ↦ hf.isIntertwining g v, fun h ↦ ⟨fun g ↦ ?_⟩⟩
+  induction hs.ge (Subgroup.mem_top g) using Subgroup.closure_induction with
+  | mem g hg => exact h g hg
+  | one => simp
+  | mul g g' _ _ hg hg' =>
+    intro v
+    rw [map_mul, mul_apply_eq_comp, hg, hg', map_mul, mul_apply_eq_comp]
+  | inv g _ hg =>
+    intro v
+    calc f (ρ g⁻¹ v) = σ g⁻¹ (σ g (f (ρ g⁻¹ v))) := (σ.inv_self_apply g _).symm
+      _ = σ g⁻¹ (f v) := by rw [← hg, ρ.self_inv_apply]
+
+/-- If the equivariant endomorphisms of a nonzero representation `ρ` are scalar, two invertible
+intertwiners from `ρ` to the same target `σ` differ by a unit scalar. Neither an algebraic closure
+nor finite dimensionality is needed. -/
+theorem exists_unit_smul_of_intertwines {k G V W : Type*} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W] [Nontrivial V]
+    {ρ : Representation k G V} {σ : Representation k G W}
+    (hscalar : ∀ f : Module.End k V, (∀ g, Commute f (ρ g)) →
+      ∃ c : k, f = algebraMap k (Module.End k V) c)
+    (a b : V ≃ₗ[k] W) (ha : ∀ g x, a (ρ g x) = σ g (a x))
+    (hb : ∀ g x, b (ρ g x) = σ g (b x)) :
+    ∃ c : kˣ, ∀ x, a x = (c : k) • b x := by
+  obtain ⟨c, hc⟩ := hscalar ((b.symm : W →ₗ[k] V) ∘ₗ (a : V →ₗ[k] W)) fun g ↦ by
+    refine (commute_iff_eq _ _).2 (LinearMap.ext fun x ↦ ?_)
+    simp only [mul_apply_eq_comp, LinearMap.comp_apply, LinearEquiv.coe_coe, ha]
+    rw [LinearEquiv.symm_apply_eq, hb, LinearEquiv.apply_symm_apply]
+  have hx (x : V) : a x = c • b x := by
+    have := LinearMap.congr_fun hc x
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Module.algebraMap_end_apply] at this
+    rw [← map_smul, ← this, LinearEquiv.apply_symm_apply]
+  have hc₀ : c ≠ 0 := by
+    rintro rfl
+    obtain ⟨x, hx₀⟩ := exists_ne (0 : V)
+    exact hx₀ (a.injective (by simp [hx]))
+  exact ⟨Units.mk0 c hc₀, hx⟩
+
+/-- **Equivariance under a spanning monoid is equivariance under the whole algebra.** If the image
+of `φ : H →* B` spans the `A`-algebra `B`, a linear map intertwines the restrictions along `φ` of
+two algebra actions `F` and `G` exactly when it intertwines `F b` and `G b` for every `b : B`. -/
+theorem _root_.AlgHom.isIntertwiningMap_toMonoidHom_comp_iff_of_span_eq_top {A B H V W : Type*}
+    [CommSemiring A] [Semiring B] [Algebra A B] [Monoid H]
+    [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+    (F : B →ₐ[A] Module.End A V) (G : B →ₐ[A] Module.End A W) (φ : H →* B)
+    (hφ : Submodule.span A (Set.range φ) = ⊤) (f : V →ₗ[A] W) :
+    IsIntertwiningMap ((F : B →* Module.End A V).comp φ) ((G : B →* Module.End A W).comp φ) f ↔
+      ∀ b v, f (F b v) = G b (f v) := by
+  -- The restricted actions act by `F (φ g)` and `G (φ g)`.
+  simp only [isIntertwiningMap_iff, MonoidHom.comp_apply, AlgHom.coe_toMonoidHom]
+  refine ⟨fun hf b v ↦ ?_, fun h g v ↦ h (φ g) v⟩
+  -- Both sides are linear in `b`: `F b` postcomposed with `f`, and `G b` precomposed with `f`.
+  have hext : LinearMap.llcomp A V V W f ∘ₗ F.toLinearMap =
+      LinearMap.lcomp A W f ∘ₗ G.toLinearMap :=
+    LinearMap.ext_on_range hφ fun g ↦ LinearMap.ext fun v ↦ by
+      simpa only [LinearMap.coe_comp, AlgHom.coe_toLinearMap, Function.comp_apply,
+        LinearMap.llcomp_apply, LinearMap.lcomp_apply] using hf g v
+  exact LinearMap.congr_fun (LinearMap.congr_fun hext b) v
+
+namespace Equiv
+
+variable {A G V W : Type*} [Semiring A] [Group G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- A linear equivalence commuting with the action of a generating set is an equivalence of
+representations. -/
+def ofClosureEqTop (f : V ≃ₗ[A] W) {s : Set G} (hs : Subgroup.closure s = ⊤)
+    (h : ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v)) : ρ.Equiv σ :=
+  .mk f fun g => LinearMap.ext
+    (((isIntertwiningMap_iff_of_closure_eq_top ρ σ hs f.toLinearMap).2 h).isIntertwining g)
+
+/-- The equivalence constructed from equivariance on generators acts by the given linear
+equivalence. -/
+@[simp]
+theorem ofClosureEqTop_apply (f : V ≃ₗ[A] W) {s : Set G} (hs : Subgroup.closure s = ⊤)
+    (h : ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v)) (v : V) :
+    ofClosureEqTop f hs h v = f v :=
+  (rfl)
+
+/-- The inverse of the equivalence constructed from equivariance on generators acts by the inverse
+of the given linear equivalence. -/
+@[simp]
+theorem ofClosureEqTop_symm_apply (f : V ≃ₗ[A] W) {s : Set G} (hs : Subgroup.closure s = ⊤)
+    (h : ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v)) (w : W) :
+    (ofClosureEqTop f hs h).symm w = f.symm w :=
+  (rfl)
+
+end Equiv
 
 end Representation
 

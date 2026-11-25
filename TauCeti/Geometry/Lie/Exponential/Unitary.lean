@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import TauCeti.Geometry.Lie.Exponential.OneParameter
+import TauCeti.Topology.Algebra.Star.RealModule
 
 /-!
 # Unitary exponentials and exponential lines
@@ -32,7 +33,7 @@ of the single exponential `exp x` would not be enough: `exp` is not injective, s
 the generator, and it is the whole line that pins `x` down.
 
 The line characterization is the algebra-side input for computing the Lie algebra of the unitary
-group; the geometric statement is in `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
+group; the geometric statement is in `TauCeti/Geometry/Lie/Subgroup/Unitary/Basic.lean`.
 
 ## Main results
 
@@ -73,9 +74,7 @@ elements": the left-hand side is the condition defining the Lie algebra of a sub
 through the exponential, and the right-hand side is `star x = -x`. -/
 theorem forall_exp_smul_mem_unitary_iff_mem_skewAdjoint (x : R) :
     (∀ t : ℝ, exp (t • x) ∈ unitary R) ↔ x ∈ skewAdjoint R := by
-  have hstar (t : ℝ) (y : R) : star (t • y) = t • star y :=
-    map_real_smul (starAddEquiv : R ≃+ R) continuous_star t y
-  have : StarModule ℝ R := ⟨fun t y ↦ by simpa using hstar t y⟩
+  have : StarModule ℝ R := ContinuousStar.starModule_real
   refine ⟨fun h => ?_, fun hx t => exp_mem_unitary_of_mem_skewAdjoint (skewAdjoint.smul_mem t hx)⟩
   rw [skewAdjoint.mem_iff]
   refine eq_of_forall_exp_smul_eq fun t => ?_

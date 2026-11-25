@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
-import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent
+import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent.Basic
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Injective
 
 /-!

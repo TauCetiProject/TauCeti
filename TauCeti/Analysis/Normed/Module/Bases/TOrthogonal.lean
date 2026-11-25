@@ -81,8 +81,14 @@ theorem isTOrthogonalFamily_def {t : ℝ≥0} {e : I → M} :
   Iff.rfl
 
 variable (R) in
-/-- A **`t`-orthogonal basis** of a normed module is a `t`-orthogonal family of nonzero vectors
-whose span is dense. -/
+/-- A **`t`-orthogonal basis** of a seminormed module is a `t`-orthogonal family of nonzero
+vectors whose span is dense.
+
+In a seminormed module that is not `T0Space`, nonzero vectors of seminorm zero can prevent
+`t`-orthogonality from implying linear independence (and the family may repeat such a vector).
+When `M` is normed (`NormedAddCommGroup M`), `0 < t`, and `R` acts without zero divisors
+(`[NoZeroSMulDivisors R M]`), linear independence follows from
+`IsTOrthogonalFamily.linearIndependent`. -/
 structure IsTOrthogonalBasis (t : ℝ≥0) (e : I → M) : Prop where
   /-- A `t`-orthogonal basis is a `t`-orthogonal family. -/
   isTOrthogonalFamily : IsTOrthogonalFamily R t e
@@ -139,6 +145,47 @@ theorem comp (he : IsTOrthogonalFamily R t e) {f : J → I} (hf : Function.Injec
     IsTOrthogonalFamily R t (e ∘ f) := fun s a ↦ by
   simpa [Finset.sum_map, Finset.sup_map, Function.comp_def, hf.extend_apply] using
     he (s.map ⟨f, hf⟩) (Function.extend f a 0)
+
+/-- If scalar multiplication by each fixed element of `R` is continuous
+(`[ContinuousConstSMul R M]`), `e ∘ f` is `t`-orthogonal, and `e` has zero seminorm outside the
+range of `f`, then `e` is `t`-orthogonal. -/
+theorem of_comp_of_norm_eq_zero [ContinuousConstSMul R M] {f : J → I}
+    (he : IsTOrthogonalFamily R t (e ∘ f)) (h0 : ∀ i, i ∉ Set.range f → ‖e i‖ = 0) :
+    IsTOrthogonalFamily R t e := by
+  classical
+  intro s a
+  have hsmul (i : I) (hi : i ∉ Set.range f) : Inseparable (a i • e i) 0 := by
+    simpa only [smul_zero] using
+      (inseparable_zero_iff_norm.2 (h0 i hi)).map (continuous_const_smul (a i))
+  -- Choose a right inverse `g` of `f` on `Set.range f` to pull back the supported indices to `J`.
+  let g : Set.range f → J := Function.surjInv Set.rangeFactorization_surjective
+  have hrinv : Function.RightInverse g (Set.rangeFactorization f) :=
+    Function.rightInverse_surjInv Set.rangeFactorization_surjective
+  have hfg (i : Set.range f) : f (g i) = i := congrArg Subtype.val (hrinv i)
+  have hg : Function.Injective g := hrinv.injective
+  let s' : Finset J := (s.subtype (· ∈ Set.range f)).map ⟨g, hg⟩
+  have hsup : (s.sup fun i ↦ ‖a i • e i‖₊) ≤ s'.sup fun j ↦ ‖a (f j) • (e ∘ f) j‖₊ := by
+    refine Finset.sup_le fun i hi ↦ ?_
+    by_cases h : i ∈ Set.range f
+    · have hmem : g ⟨i, h⟩ ∈ s' := Finset.mem_map_of_mem _ (Finset.mem_subtype.2 hi)
+      simpa only [Function.comp_apply, hfg] using
+        Finset.le_sup (f := fun j ↦ ‖a (f j) • (e ∘ f) j‖₊) hmem
+    · simp [(hsmul i h).nnNorm_eq_nnNorm]
+  have hsum : ‖∑ j ∈ s', a (f j) • (e ∘ f) j‖₊ = ‖∑ i ∈ s, a i • e i‖₊ := by
+    have hsep : Inseparable (∑ i ∈ s with i ∉ Set.range f, a i • e i) 0 :=
+      inseparable_zero_iff_norm.2 <| le_antisymm
+        ((norm_sum_le _ _).trans_eq <| Finset.sum_eq_zero fun i hi ↦
+          inseparable_zero_iff_norm.1 (hsmul i (Finset.mem_filter.1 hi).2))
+        (norm_nonneg _)
+    have hsplit : ∑ i ∈ s, a i • e i =
+        (∑ j ∈ s', a (f j) • (e ∘ f) j) + ∑ i ∈ s with i ∉ Set.range f, a i • e i := by
+      rw [← Finset.sum_filter_add_sum_filter_not s (· ∈ Set.range f),
+        ← Finset.subtype_map (· ∈ Set.range f), Finset.sum_map, Finset.sum_map]
+      simp only [Function.comp_apply, Function.Embedding.coeFn_mk, Function.Embedding.subtype_apply,
+        hfg]
+    rw [hsplit]
+    simpa only [add_zero] using ((Inseparable.refl _).add hsep).symm.nnNorm_eq_nnNorm
+  exact ((mul_le_mul_right hsup t).trans (he s' (a ∘ f))).trans_eq hsum
 
 /-- The image of a `t`-orthogonal family under a linear isometry is `t`-orthogonal. -/
 theorem map [SeminormedAddCommGroup N] [Module R N] (he : IsTOrthogonalFamily R t e)
@@ -224,7 +271,7 @@ theorem IsOrthonormalBasis.isTOrthogonalBasis [NormedRing R] [Nontrivial R]
 /-- If `w` is `r`-orthogonal to a submodule `F` (that is, `r * ‖w‖ ≤ ‖w - z‖` for `z ∈ F`) with
 `r ≤ 1`, then in an ultrametric space `r * max ‖c • w‖ ‖z‖ ≤ ‖c • w + z‖` for every scalar `c` and
 every `z ∈ F`. -/
-theorem mul_max_nnnorm_le_nnnorm_smul_add [NormedField K] [NormedAddCommGroup M]
+theorem mul_max_nnnorm_le_nnnorm_smul_add [NormedField K] [SeminormedAddCommGroup M]
     [NormedSpace K M] [IsUltrametricDist M] {F : Submodule K M} {w : M} {r : ℝ≥0} (hr : r ≤ 1)
     (hw : ∀ z ∈ F, r * ‖w‖₊ ≤ ‖w - z‖₊) (c : K) {z : M} (hz : z ∈ F) :
     r * max ‖c • w‖₊ ‖z‖₊ ≤ ‖c • w + z‖₊ := by
@@ -281,7 +328,7 @@ theorem IsTOrthogonalFamily.finCons [NormedField K] [NormedAddCommGroup M]
 non-increasing sequence `T` of positive constants at most one, then in an ultrametric space
 the vectors `e i` with `i < N` form a `T N`-orthogonal family. -/
 theorem isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub [NormedField K]
-    [NormedAddCommGroup M] [NormedSpace K M] [IsUltrametricDist M] {e : ℕ → M} {T : ℕ → ℝ≥0}
+    [SeminormedAddCommGroup M] [NormedSpace K M] [IsUltrametricDist M] {e : ℕ → M} {T : ℕ → ℝ≥0}
     (hT : Antitone T) (hT' : ∀ n, 0 < T n ∧ T n ≤ 1)
     (he : ∀ N, ∀ z ∈ Submodule.span K (e '' Set.Iio N), T (N + 1) / T N * ‖e N‖₊ ≤ ‖e N - z‖₊)
     (N : ℕ) : IsTOrthogonalFamily K (T N) (fun i : Set.Iio N ↦ e i) := by
@@ -289,7 +336,7 @@ theorem isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub [NormedField K]
   suffices key : ∀ s : Finset ℕ, (∀ i ∈ s, i < N) → ∀ a : ℕ → K,
       T N * s.sup (fun i ↦ ‖a i • e i‖₊) ≤ ‖∑ i ∈ s, a i • e i‖₊ by
     intro s a
-    have hN (i : Set.Iio N) : (i : ℕ) < N := i.2
+    have hN (i : Set.Iio N) : (i : ℕ) < N := i.property
     have h := key (s.map (Function.Embedding.subtype _)) (by simp +contextual)
       fun i ↦ if h : i < N then a ⟨i, h⟩ else 0
     simpa [Finset.sup_map, Finset.sum_map, Function.comp_def, hN] using h

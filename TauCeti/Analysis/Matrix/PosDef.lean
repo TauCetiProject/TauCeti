@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.PosDef
+public import Mathlib.LinearAlgebra.SesquilinearForm.Star
 import Mathlib.Analysis.Matrix.PosDef
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.Topology.Instances.Matrix
@@ -21,7 +22,9 @@ scalar ring acting strictly monotonically on the entries; in particular, the con
 complex matrices is convex over `ℝ`.
 
 Positivity of the real part of `star x ⬝ᵥ M *ᵥ x` on nonzero vectors cuts out an open set
-of real or complex square matrices, Hermitian or not.
+of real or complex square matrices, Hermitian or not. Hence it survives a small multiple of a
+converging perturbation, eventually along any filter. A sesquilinear form has this positivity
+exactly when its Gram matrix in a finite basis does.
 
 The positive-definite cone itself is not open in the space of all square matrices — the
 Hermitian condition cuts out a proper subspace once there are at least two rows. On the
@@ -40,6 +43,10 @@ bound. These inverse-segment arguments are adapted from the
 * `TauCeti.convex_setOfPred_posDef` — the positive-definite matrices form a convex set;
 * `TauCeti.isOpen_setOfPred_re_dotProduct_pos` — positivity of the quadratic form on nonzero
   vectors is an open condition on real or complex square matrices;
+* `TauCeti.exists_pos_eventually_re_add_smul_pos` — this positivity persists, eventually, under
+  a small fixed multiple of a converging perturbation;
+* `LinearMap.forall_re_pos_iff_toMatrix₂` — a sesquilinear form has this positivity exactly when
+  its Gram matrix in a finite basis does;
 * `TauCeti.measurableSet_setOfPred_posDef` — the positive-definite real matrices form a
   measurable set.
 * `Matrix.isOpen_setOfPred_posDef_selfAdjoint` — the positive-definite cone is open in the
@@ -96,6 +103,27 @@ theorem isOpen_setOfPred_re_dotProduct_pos {ι 𝕜 : Type*} [Fintype ι] [RCLik
   exact (mul_pos_iff_of_pos_left (inv_pos.mpr hx0)).mp
     ((mul_pos_iff_of_pos_left (inv_pos.mpr hx0)).mp h)
 
+/-- If `G a → G₀` and `D a → D₀` along a filter, and the quadratic form of `G₀` has positive real
+part on nonzero vectors, then for some `t > 0` the quadratic form of `G a + t • D a` eventually
+has positive real part on nonzero vectors. -/
+theorem exists_pos_eventually_re_add_smul_pos {ι α 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
+    {l : Filter α} {G D : α → Matrix ι ι 𝕜} {G₀ D₀ : Matrix ι ι 𝕜}
+    (hG : Filter.Tendsto G l (𝓝 G₀)) (hD : Filter.Tendsto D l (𝓝 D₀))
+    (hG₀ : ∀ x : ι → 𝕜, x ≠ 0 → 0 < RCLike.re (star x ⬝ᵥ G₀ *ᵥ x)) :
+    ∃ t > (0 : ℝ), ∀ᶠ a in l, ∀ x : ι → 𝕜, x ≠ 0 →
+      0 < RCLike.re (star x ⬝ᵥ G a *ᵥ x) + t * RCLike.re (star x ⬝ᵥ D a *ᵥ x) := by
+  have hφ : Filter.Tendsto (fun z : ℝ × α ↦ G z.2 + z.1 • D z.2) (𝓝 0 ×ˢ l) (𝓝 G₀) := by
+    simpa using (hG.comp Filter.tendsto_snd).add
+      ((Filter.tendsto_fst : Filter.Tendsto (fun z : ℝ × α ↦ z.1) _ (𝓝 0)).smul
+        (hD.comp Filter.tendsto_snd))
+  obtain ⟨T, hT, L, hL, hTL⟩ := Filter.eventually_prod_iff.1
+    (hφ.eventually (isOpen_setOfPred_re_dotProduct_pos.mem_nhds hG₀))
+  obtain ⟨t, hTt, ht⟩ :=
+    ((hT.filter_mono nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Set.Ioi (0 : ℝ)))).exists
+  refine ⟨t, ht, hL.mono fun a ha x hx ↦ ?_⟩
+  simpa only [Matrix.add_mulVec, Matrix.smul_mulVec, dotProduct_add, dotProduct_smul, map_add,
+    RCLike.smul_re] using hTL hTt ha x hx
+
 /-- The positive-definite real matrices form a measurable set. -/
 theorem measurableSet_setOfPred_posDef {ι : Type*} [Finite ι] :
     MeasurableSet {A : Matrix ι ι ℝ | A.PosDef} := by
@@ -119,7 +147,7 @@ theorem isOpen_setOfPred_posDef_selfAdjoint {n 𝕜 : Type*} [Finite n]
   classical
   let : Fintype n := Fintype.ofFinite n
   have hopen := (TauCeti.isOpen_setOfPred_re_dotProduct_pos (ι := n) (𝕜 := 𝕜)).preimage
-    (continuous_subtype_val : Continuous (fun A : selfAdjoint (Matrix n n 𝕜) ↦
+    (continuous_subtypeVal : Continuous (fun A : selfAdjoint (Matrix n n 𝕜) ↦
       (A : Matrix n n 𝕜)))
   convert hopen using 1
   ext A
@@ -131,6 +159,19 @@ theorem isOpen_setOfPred_posDef_selfAdjoint {n 𝕜 : Type*} [Finite n]
       RCLike.pos_iff.mpr ⟨hA x hx, hAH.im_star_dotProduct_mulVec_self x⟩
 
 end Matrix
+
+/-- A sesquilinear form has positive real part on nonzero vectors exactly when the quadratic form
+of its Gram matrix in a finite basis does. -/
+theorem LinearMap.forall_re_pos_iff_toMatrix₂ {𝕜 E n : Type*} [RCLike 𝕜] [AddCommMonoid E]
+    [Module 𝕜 E] [Fintype n] [DecidableEq n] {B : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜}
+    (b : Module.Basis n 𝕜 E) :
+    (∀ v, v ≠ 0 → 0 < RCLike.re (B v v)) ↔
+      ∀ x : n → 𝕜, x ≠ 0 → 0 < RCLike.re (star x ⬝ᵥ LinearMap.toMatrix₂ b b B *ᵥ x) := by
+  refine ⟨fun hB x hx ↦ ?_, fun hB v hv ↦ ?_⟩
+  · rw [star_dotProduct_toMatrix₂_mulVec]
+    exact hB _ (b.equivFun.symm.map_ne_zero_iff.2 hx)
+  · rw [apply_eq_star_dotProduct_toMatrix₂_mulVec b]
+    exact hB _ (by simpa using hv)
 
 /-- Every real convex combination of positive-definite matrices is positive definite. -/
 theorem Matrix.PosDef.one_sub_smul_add_smul {ι R : Type*} [Ring R] [PartialOrder R]
@@ -171,7 +212,7 @@ theorem continuous_inv_segment_pairs {s : Set X} (H : X → Matrix ι ι ℝ)
   exact continuousAt_inv_segment
     (hH.domRestrict.comp (continuous_fst.comp continuous_fst)).continuousAt
     (hH.domRestrict.comp (continuous_snd.comp continuous_fst)).continuousAt
-    (continuous_subtype_val.comp continuous_snd).continuousAt
+    (continuous_subtypeVal.comp continuous_snd).continuousAt
     (hpos z.1.1 z.1.1.property) (hpos z.1.2 z.1.2.property) z.2.property
 
 /-- Inverse segments between all pairs in a compact positive-definite field have a common

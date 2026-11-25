@@ -58,8 +58,8 @@ variable {k : Type u} {A : Type v} [Field k] [Ring A] [Algebra k A]
 detects exactly the maps into its translate that extend across an injective embedding. -/
 theorem auslanderReitenTranslate_exists_extension_iff
     (f : P₁ →ₗ[A] P₀) (j : N →ₗ[A] I) (hj : Function.Injective j)
-    (g : N →ₗ[A] AuslanderReitenTranslate k f) :
-    (∃ h : I →ₗ[A] AuslanderReitenTranslate k f, h.comp j = g) ↔
+    (g : N →ₗ[A] AuslanderReitenTranslate k k f) :
+    (∃ h : I →ₗ[A] AuslanderReitenTranslate k k f, h.comp j = g) ↔
       (nakayamaHomEquiv k A P₁ N).symm ((auslanderReitenTranslateToNakayama f).comp g) ∈
         range (((ker f).subtype.lcomp k N).dualMap) := by
   let r := (ker f).subtype.lcomp k N

@@ -13,6 +13,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 public import TauCeti.RingTheory.Valuation.RamificationGroup
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # The Galois action on the places lying over a place
@@ -239,8 +240,8 @@ end Transport
 /-- Two equal places have the same valuation ring; the isomorphism between the two carriers is
 the identity on representatives. -/
 private def integersEquivOfEq {P Q : Place k F} (h : P = Q) : P.integers ≃+* Q.integers where
-  toFun x := ⟨(x : F), by rw [← h]; exact x.2⟩
-  invFun x := ⟨(x : F), by rw [h]; exact x.2⟩
+  toFun x := ⟨(x : F), by rw [← h]; exact x.property⟩
+  invFun x := ⟨(x : F), by rw [h]; exact x.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl

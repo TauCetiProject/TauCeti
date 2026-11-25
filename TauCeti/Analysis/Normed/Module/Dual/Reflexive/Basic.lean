@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import TauCeti.Analysis.Normed.Module.Dual.Adjoint
+import TauCeti.Analysis.Normed.Module.Annihilator
 
 /-!
 # Reflexivity and the continuous dual
@@ -23,7 +24,14 @@ a proper dense subspace of a Hilbert space can have a reflexive continuous dual.
 
 The converse uses `ContinuousLinearMap.surjective_of_norm_le_norm_comp`, the
 surjectivity criterion for an operator whose adjoint is bounded below. The bidual
-isometry is Mathlib's `NormedSpace.inclusionInDoubleDualLi`.
+isometry is Mathlib's `NormedSpace.inclusionInDoubleDualLi`. Through it, every bounded bilinear
+form on `E* × E` over a reflexive space `E` is `(f, x) ↦ f (T x)` for an operator `T` of no larger
+norm (`TauCeti.exists_apply_eq_and_norm_le_of_surjective_inclusionInDoubleDual`).
+
+Finally, `LinearIsometry.surjective_of_surjective_inclusionInDoubleDual` is the standard
+surjectivity criterion for representing the dual of a reflexive space: a linear isometry from a
+Banach space into the continuous dual of a reflexive space is onto when its functionals separate
+points.
 
 ## References
 
@@ -70,6 +78,36 @@ theorem surjective_inclusionInDoubleDual_of_finiteDimensional :
   have := LinearMap.congr_fun hx (e.symm f)
   rwa [LinearMap.comp_apply, LinearEquiv.coe_coe, e.apply_symm_apply] at this
 
+variable (𝕜 E) in
+/-- Evaluation identifies a finite-dimensional normed space with its continuous double dual, as a
+topological linear isomorphism (`TauCeti.inclusionInDoubleDualEquiv_apply`). -/
+noncomputable def inclusionInDoubleDualEquiv : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E) :=
+  let c : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E := LinearMap.toContinuousLinearMap
+  LinearEquiv.toContinuousLinearEquiv (𝕜 := 𝕜) (E := E) (F := StrongDual 𝕜 (StrongDual 𝕜 E))
+    ((Module.evalEquiv 𝕜 E).trans
+      ((c.arrowCongr (LinearEquiv.refl 𝕜 𝕜)).trans LinearMap.toContinuousLinearMap))
+
+/-- The finite-dimensional double-dual equivalence is `NormedSpace.inclusionInDoubleDual`. -/
+@[simp]
+theorem inclusionInDoubleDualEquiv_apply (x : E) :
+    inclusionInDoubleDualEquiv 𝕜 E x = inclusionInDoubleDual 𝕜 E x := by
+  ext f
+  simp [inclusionInDoubleDualEquiv, dual_def]
+
+/-- The finite-dimensional double-dual equivalence extends `NormedSpace.inclusionInDoubleDual`. -/
+@[simp]
+theorem toContinuousLinearMap_inclusionInDoubleDualEquiv :
+    (inclusionInDoubleDualEquiv 𝕜 E).toContinuousLinearMap = inclusionInDoubleDual 𝕜 E :=
+  ContinuousLinearMap.ext inclusionInDoubleDualEquiv_apply
+
+/-- The inverse of the finite-dimensional double-dual equivalence sends a functional `Φ` on the
+dual to the point at which every functional `f` takes the value `Φ f`. -/
+@[simp]
+theorem apply_inclusionInDoubleDualEquiv_symm (Φ : StrongDual 𝕜 (StrongDual 𝕜 E))
+    (f : StrongDual 𝕜 E) : f ((inclusionInDoubleDualEquiv 𝕜 E).symm Φ) = Φ f := by
+  conv_rhs => rw [← (inclusionInDoubleDualEquiv 𝕜 E).apply_symm_apply Φ]
+  rw [inclusionInDoubleDualEquiv_apply, dual_def]
+
 end FiniteDimensional
 
 section Complete
@@ -84,6 +122,31 @@ theorem completeSpace_of_surjective_inclusionInDoubleDual
     inferInstance
 
 end Complete
+
+section Bilinear
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- On a reflexive space `E`, every bounded bilinear form `B` on `E* × E` has the form
+`(f, x) ↦ f (T x)` for an operator `T` on `E` with `‖T‖ ≤ ‖B‖`: `T x` is the vector whose
+evaluation map is `B (·) x`. -/
+theorem exists_apply_eq_and_norm_le_of_surjective_inclusionInDoubleDual
+    (hE : Surjective (inclusionInDoubleDual 𝕜 E)) (B : StrongDual 𝕜 E →L[𝕜] E →L[𝕜] 𝕜) :
+    ∃ T : E →L[𝕜] E, (∀ f x, f (T x) = B f x) ∧ ‖T‖ ≤ ‖B‖ := by
+  obtain ⟨e, he⟩ : ∃ e : E ≃ₗᵢ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E),
+      ∀ y, e y = inclusionInDoubleDual 𝕜 E y :=
+    ⟨.ofSurjective (inclusionInDoubleDualLi 𝕜) hE, fun y ↦ by simp [inclusionInDoubleDualLi]⟩
+  obtain ⟨T, hT⟩ : ∃ T : E →L[𝕜] E, ∀ x, e (T x) = B.flip x :=
+    ⟨e.symm.toLinearIsometry.toContinuousLinearMap ∘L B.flip, fun x ↦ e.apply_symm_apply _⟩
+  have hTx (f : StrongDual 𝕜 E) (x : E) : f (T x) = B f x := by
+    simpa [he, dual_def] using congr($(hT x) f)
+  refine ⟨T, hTx, T.opNorm_le_bound (norm_nonneg B) fun x ↦ ?_⟩
+  rw [← e.norm_map]
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun f ↦ ?_
+  rw [he, dual_def, hTx]
+  exact (B.le_opNorm₂ f x).trans_eq (mul_right_comm _ _ _)
+
+end Bilinear
 
 section Banach
 
@@ -139,3 +202,30 @@ theorem surjective_inclusionInDoubleDual_iff (e : E ≃L[𝕜] F) :
     Surjective.of_comp_iff _ e.surjective]
 
 end ContinuousLinearEquiv
+
+namespace LinearIsometry
+
+variable {𝕜 X Y : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [CompleteSpace X]
+  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+
+/-- A linear isometry `T` from a Banach space into the continuous dual of a reflexive space `Y` is
+onto when the functionals `T x` separate the points of `Y`: a functional on `Y⋆` annihilating the
+closed range of `T` is evaluation at some `y ∈ Y`, which must vanish. -/
+theorem surjective_of_surjective_inclusionInDoubleDual (T : X →ₗᵢ[𝕜] StrongDual 𝕜 Y)
+    (hY : Surjective (inclusionInDoubleDual 𝕜 Y)) (h : ∀ y, (∀ x, T x y = 0) → y = 0) :
+    Surjective T := by
+  let S := T.toLinearMap.range
+  have hS : IsClosed (S : Set (StrongDual 𝕜 Y)) := T.isometry.isClosedEmbedding.isClosed_range
+  intro Λ
+  suffices Λ ∈ S.topologicalClosure by
+    rw [hS.submodule_topologicalClosure_eq] at this
+    exact this
+  apply (S.mem_topologicalClosure_iff_forall_dual_eq_zero Λ).2
+  intro Ψ hΨ
+  obtain ⟨y, rfl⟩ := hY Ψ
+  have hy : y = 0 := h y fun x ↦ by
+    rw [← dual_def]
+    exact hΨ (T x) (LinearMap.mem_range_self T.toLinearMap x)
+  simp [hy]
+
+end LinearIsometry

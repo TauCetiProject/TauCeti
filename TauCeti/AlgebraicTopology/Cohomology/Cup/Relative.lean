@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Monoidal.KoszulBraiding
 public import TauCeti.AlgebraicTopology.Cohomology.CrossProduct
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Pair
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.RelativeCup
@@ -330,7 +331,7 @@ theorem singularCup_gradedComm (P : TopPair.{w})
   subst hu hμ
   rw [singularCup_def, ← TauCeti.ChainComplex.cup_eq_of_homotopy
       (H := P.rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy u),
-    TauCeti.NatChainComplex.cup_koszulBraidingHom]
+    ChainComplex.cup_tensorBraiding_hom]
 
 end GradedComm
 
@@ -464,8 +465,8 @@ def singularRelativeCupPullback (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (f₁ :
       (TopPair.ofSubset A₂).singularCohomology S k N q →ₗ[k]
         (TopPair.ofSubset Z).singularCohomology T k L n :=
   ((singularRelativeCup k u μ (f₁ ⁻¹' A₁) (f₂ ⁻¹' A₂)
-    ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-    ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) p q n h).compl₁₂
+    ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+    ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtypeVal) p q n h).compl₁₂
     (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₁ (Set.mapsTo_preimage _ _)) p).hom
     (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₂ (Set.mapsTo_preimage _ _)) q).hom
     ).compr₂
@@ -483,8 +484,8 @@ lemma singularRelativeCupPullback_apply (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
       TopPair.singularCohomologyMap
           (TopPair.ofSubsetMap (𝟙 X) (Set.mapsTo_iff_subset_preimage.2 hZ)) n
         (singularRelativeCup k u μ (f₁ ⁻¹' A₁) (f₂ ⁻¹' A₂)
-          ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-          ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) p q n h
+          ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+          ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtypeVal) p q n h
           (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₁ (Set.mapsTo_preimage _ _)) p a)
           (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₂ (Set.mapsTo_preimage _ _)) q
             b)) :=
@@ -525,10 +526,10 @@ lemma singularCohomologyMap_singularRelativeCupPullback (u : T ⟶ R ⊗ S) (μ 
   rw [singularRelativeCupPullback_apply, singularRelativeCupPullback_apply, hf₁, hf₂,
     TopPair.singularCohomologyMap_comp_apply, TopPair.singularCohomologyMap_comp_apply,
     singularRelativeCup_naturality k u μ
-      ((hA₁.preimage (φ ≫ f₁).hom.continuous).preimage continuous_subtype_val)
-      ((hA₂.preimage (φ ≫ f₂).hom.continuous).preimage continuous_subtype_val)
-      ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-      ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) φ hφ₁ hφ₂,
+      ((hA₁.preimage (φ ≫ f₁).hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂.preimage (φ ≫ f₂).hom.continuous).preimage continuous_subtypeVal)
+      ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtypeVal) φ hφ₁ hφ₂,
     ← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply]
   congr 3
   exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _
@@ -561,10 +562,10 @@ lemma singularRelativeCupPullback_singularCohomologyMap (u : T ⟶ R ⊗ S) (μ 
     ← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply, hf₁,
     hf₂, TopPair.singularCohomologyMap_comp_apply, TopPair.singularCohomologyMap_comp_apply,
     singularRelativeCup_naturality k u μ
-      ((hA₁'.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-      ((hA₂'.preimage f₂.hom.continuous).preimage continuous_subtype_val)
-      ((hA₁.preimage (f₁ ≫ g₁).hom.continuous).preimage continuous_subtype_val)
-      ((hA₂.preimage (f₂ ≫ g₂).hom.continuous).preimage continuous_subtype_val) (𝟙 X) hU hV,
+      ((hA₁'.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂'.preimage f₂.hom.continuous).preimage continuous_subtypeVal)
+      ((hA₁.preimage (f₁ ≫ g₁).hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂.preimage (f₂ ≫ g₂).hom.continuous).preimage continuous_subtypeVal) (𝟙 X) hU hV,
     ← TopPair.singularCohomologyMap_comp_apply]
   congr 3
   exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _)
@@ -676,16 +677,14 @@ lemma singularRelativeCross_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B :
         (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f hf) p a)
         (TopPair.singularCohomologyMap (TopPair.ofSubsetMap g hg) q b) =
       TopPair.singularCohomologyMap (TopPair.ofSubsetMap (f ⊗ₘ g)
-          ((TopCat.mapsTo_tensorHom_preimage_fst f g hf).union_union
-            (TopCat.mapsTo_tensorHom_preimage_snd f g hg))) n
+          (TopCat.mapsTo_tensorHom_preimage_union f g hf hg)) n
         (singularRelativeCross k X' Y' hA' hB' μ p q n h a b) := by
   rw [singularRelativeCross_eq_singularRelativeCupPullback,
     singularRelativeCross_eq_singularRelativeCupPullback,
     TopCat.singularRelativeCupPullback_singularCohomologyMap k _ μ (fst X Y) (snd X Y) f g hA' hB'
       hA hB hf hg _ (Set.union_subset_union (fun _ hx ↦ hf hx) fun _ hx ↦ hg hx),
     TopCat.singularCohomologyMap_singularRelativeCupPullback k _ μ (fst X' Y') (snd X' Y') hA' hB'
-      _ (f ⊗ₘ g) _ ((TopCat.mapsTo_tensorHom_preimage_fst f g hf).union_union
-        (TopCat.mapsTo_tensorHom_preimage_snd f g hg))]
+      _ (f ⊗ₘ g) _ (TopCat.mapsTo_tensorHom_preimage_union f g hf hg)]
   exact DFunLike.congr_fun (DFunLike.congr_fun (TopCat.singularRelativeCupPullback_congr k _ μ
     (tensorHom_fst f g).symm (tensorHom_snd f g).symm hA' hB' _ _ p q n h) a) b
 

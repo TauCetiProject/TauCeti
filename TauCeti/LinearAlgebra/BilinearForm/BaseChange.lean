@@ -32,8 +32,10 @@ also preserves it. The theorems
 `LinearMap.BilinForm.nondegenerate_baseChange_iff`, and the computations behind them,
 `LinearMap.BilinForm.toMatrix_baseChange` and `LinearMap.BilinForm.det_toMatrix_baseChange`, say
 that base change acts entrywise on the Gram matrix of a basis and maps its determinant accordingly.
+`IsBaseChange.nondegenerate_bilinForm_iff` transfers the latter to `IsBaseChange.bilinForm`.
 
-When the scalar algebra is free over the original semiring, base change preserves left separation
+When the scalar algebra is free over the original semiring, the left kernel of the base-changed
+form is the base change of the left kernel, so base change preserves left separation
 and nondegeneracy without any finiteness or freeness hypothesis on the module carrying the form.
 In particular, this applies to arbitrary extensions of fields, even in infinite dimension.
 Injective localizations also preserve separation and nondegeneracy without any condition on the
@@ -51,11 +53,19 @@ compared with its real extension.
 * `IsBaseChange.bilinForm_tmul`: extension commutes with tensor products of bilinear forms.
 * `LinearMap.BilinForm.baseChange_rTensor_rTensor`: the canonical base change is natural along
   algebra maps of the scalars.
+* `LinearMap.BilinForm.ker_baseChange`: the left kernel of a bilinear form commutes with a free
+  scalar extension.
 * `LinearMap.SeparatingLeft.baseChange`: a free scalar extension preserves left separation.
 * `LinearMap.BilinForm.Nondegenerate.baseChange`: a free scalar extension preserves
   nondegeneracy, without a finite-dimensionality assumption.
 * `LinearMap.BilinForm.Nondegenerate.baseChange_of_isLocalization`: an injective localization
   preserves nondegeneracy, without a freeness or finiteness assumption on the module.
+* `LinearMap.BilinForm.baseChange_smul`, `LinearMap.BilinForm.baseChange_add`,
+  `LinearMap.BilinForm.baseChange_neg`, `LinearMap.BilinForm.baseChange_sub`: scalar extension
+  commutes with scalar multiplication, addition, negation and subtraction of forms.
+* `LinearMap.BilinForm.IsAlt.baseChange`: scalar extension preserves alternating forms, using
+  `LinearMap.BilinForm.IsAlt.add_flip_eq_zero` (an alternating form is skew-symmetric over a
+  semiring).
 * `LinearMap.BilinForm.liftBaseChange`: lifting a form-preserving map preserves the
   base-changed form, without assuming the map exhibits a base change.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
@@ -74,6 +84,7 @@ compared with its real extension.
   domain is, with no hypothesis on the structure map.
 * `LinearMap.BilinForm.nondegenerate_baseChange_iff`: along an injective structure map between
   integral domains the implication is an equivalence.
+* `IsBaseChange.nondegenerate_bilinForm_iff`: the same equivalence for `IsBaseChange.bilinForm`.
 * `LinearMap.BilinForm.IsometryEquiv.baseChange`: an isometric equivalence of bilinear forms
   base-changes to an isometric equivalence of their base changes.
 * `TauCeti.bilinFormBaseChangeProdIsometry`: base change commutes with products of
@@ -117,26 +128,40 @@ theorem baseChange_rTensor_rTensor {A' : Type*} [CommSemiring A'] [Algebra R A']
     | tmul a' m' => simp [map_mul]
 
 variable (A) in
+/-- **The kernel of a bilinear form commutes with free scalar extension.** The left kernel of the
+base change of `B` to a free `R`-algebra `A` is the base change of the left kernel of `B`, with no
+finiteness assumption on the module carrying the form. In particular this holds for every
+extension of fields, even in infinite dimension. -/
+theorem ker_baseChange [Module.Free R A] (B : LinearMap.BilinForm R M) :
+    LinearMap.ker (B.baseChange A) = (LinearMap.ker B).baseChange A := by
+  classical
+  refine le_antisymm (fun x hx => ?_) (Submodule.baseChange_le_iff_le_comap.2 fun m hm => ?_)
+  · let b := Module.Free.chooseBasis R A
+    let e := TensorProduct.equivFinsuppOfBasisLeft (N := M) b
+    -- Evaluating the extended form and then taking a scalar coordinate is the same as evaluating
+    -- the original form on the corresponding tensor coordinate.
+    have hcoord (z : A ⊗[R] M) (i) (w : M) :
+        B (e z i) w = b.repr (B.baseChange A z (1 ⊗ₜ[R] w)) i := by
+      induction z with
+      | tmul a m => simp [e, mul_comm]
+      | add z z' hz hz' => simp [hz, hz']
+    have hmem (i) : e x i ∈ LinearMap.ker B :=
+      LinearMap.ext fun w => by simpa [LinearMap.mem_ker.1 hx] using hcoord x i w
+    rw [← e.symm_apply_apply x, TensorProduct.equivFinsuppOfBasisLeft_symm_apply]
+    exact Submodule.finsuppSum_mem _ _ _ _ fun i _ =>
+      Submodule.tmul_mem_baseChange_of_mem _ (hmem i)
+  · rw [Submodule.mem_comap, Submodule.restrictScalars_mem, LinearMap.mem_ker]
+    ext y
+    simp [LinearMap.mem_ker.1 hm]
+
+variable (A) in
 /-- A free scalar extension preserves left separation of a bilinear form, with no finiteness
 assumption on the module carrying the form. -/
 theorem _root_.LinearMap.SeparatingLeft.baseChange [Module.Free R A]
     {B : LinearMap.BilinForm R M} (hB : B.SeparatingLeft) :
     (B.baseChange A).SeparatingLeft := by
-  classical
-  let b := Module.Free.chooseBasis R A
-  let e := TensorProduct.equivFinsuppOfBasisLeft (N := M) b
-  intro x hx
-  apply e.injective
-  ext i
-  apply hB
-  intro w
-  -- Evaluating the extended form and then taking a scalar coordinate is the same as evaluating
-  -- the original form on the corresponding tensor coordinate.
-  have hcoord (z : A ⊗[R] M) : B (e z i) w = b.repr (B.baseChange A z (1 ⊗ₜ[R] w)) i := by
-    induction z with
-    | tmul a m => simp [e, mul_comm]
-    | add z z' hz hz' => simp [hz, hz']
-  simpa [hx] using hcoord x
+  rw [LinearMap.separatingLeft_iff_ker_eq_bot] at hB ⊢
+  rw [ker_baseChange, hB, Submodule.baseChange_bot]
 
 variable (A) in
 /-- A free scalar extension preserves right separation of a bilinear form, with no finiteness
@@ -194,6 +219,67 @@ theorem Nondegenerate.baseChange_of_isLocalization (S : Submonoid R)
   ⟨hB.1.baseChange_of_isLocalization A S, hB.2.baseChange_of_isLocalization A S⟩
 
 end Preservation
+
+section Arithmetic
+
+variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid M] [Module R M]
+
+/-- Scalar extension commutes with scalar multiplication of bilinear forms. -/
+@[simp]
+theorem baseChange_smul (r : R) (B : LinearMap.BilinForm R M) :
+    (r • B).baseChange A = algebraMap R A r • B.baseChange A := by
+  ext a x
+  simp [Algebra.smul_def, mul_comm]
+
+/-- Scalar extension commutes with addition of bilinear forms. -/
+@[simp]
+theorem baseChange_add (B B' : LinearMap.BilinForm R M) :
+    (B + B').baseChange A = B.baseChange A + B'.baseChange A := by
+  ext a x
+  simp [add_smul]
+
+/-- An alternating bilinear form is skew-symmetric, `B + B.flip = 0`, over any commutative
+semiring (Mathlib's `LinearMap.IsAlt.neg` needs additive inverses). -/
+theorem IsAlt.add_flip_eq_zero {B : LinearMap.BilinForm R M} (hB : B.IsAlt) : B + B.flip = 0 := by
+  ext x y
+  have := hB (x + y)
+  simp only [map_add, LinearMap.add_apply, hB x, hB y, zero_add, add_zero] at this
+  simpa [add_comm] using this
+
+/-- Scalar extension of an alternating bilinear form is alternating. -/
+theorem IsAlt.baseChange {B : LinearMap.BilinForm R M} (hB : B.IsAlt) :
+    (B.baseChange A).IsAlt := by
+  have hB' := hB.add_flip_eq_zero
+  have hskew : B.baseChange A + (B.baseChange A).flip = 0 := by
+    rw [← baseChange_flip, ← baseChange_add, hB', baseChange_zero]
+  intro x
+  induction x using TensorProduct.inductionOn with
+  | tmul a x => simp [hB x]
+  | add x x' hx hx' =>
+    simp only [map_add, LinearMap.add_apply, hx, hx', zero_add, add_zero]
+    simpa using congr($hskew x' x)
+
+end Arithmetic
+
+section Ring
+
+variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [AddCommMonoid M] [Module R M]
+
+/-- Scalar extension commutes with negation of bilinear forms. -/
+@[simp]
+theorem baseChange_neg (B : LinearMap.BilinForm R M) : (-B).baseChange A = -B.baseChange A := by
+  rw [← neg_one_smul R B, baseChange_smul, map_neg, map_one]
+  exact neg_one_smul A (B.baseChange A)
+
+/-- Scalar extension commutes with subtraction of bilinear forms. -/
+@[simp]
+theorem baseChange_sub (B B' : LinearMap.BilinForm R M) :
+    (B - B').baseChange A = B.baseChange A - B'.baseChange A := by
+  ext x y
+  simp [sub_smul]
+
+end Ring
 
 end LinearMap.BilinForm
 
@@ -459,6 +545,27 @@ end Nondegenerate
 
 end LinearMap.BilinForm
 
+namespace IsBaseChange
+
+section Nondegenerate
+
+variable {R A M N : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [AddCommMonoid N] [Module R N] [Module A N]
+  [IsScalarTower R A N] {f : M →ₗ[R] N}
+
+/-- **Nondegeneracy is preserved and reflected by an injective abstract base change to an integral
+domain.** On a finite free module, `IsBaseChange.bilinForm` is a transport of Mathlib's tensor base
+change, to which `LinearMap.BilinForm.nondegenerate_baseChange_iff` applies. -/
+theorem nondegenerate_bilinForm_iff [Module.Free R M] [Module.Finite R M] [IsDomain A]
+    [FaithfulSMul R A] (h : IsBaseChange A f) (B : LinearMap.BilinForm R M) :
+    (h.bilinForm B).Nondegenerate ↔ B.Nondegenerate := by
+  rw [bilinForm_def, LinearMap.BilinForm.nondegenerate_congr_iff,
+    LinearMap.BilinForm.nondegenerate_baseChange_iff B (Module.Free.chooseBasis R M)]
+
+end Nondegenerate
+
+end IsBaseChange
+
 namespace TauCeti
 
 section IsometryEquiv
@@ -530,6 +637,31 @@ variable {F K V : Type*} [Field F] [LinearOrder F] [IsStrictOrderedRing F]
   [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [Algebra F K] [SMulPosStrictMono F K]
   [AddCommGroup V] [Module F V] [FiniteDimensional F V]
 
+private theorem posDef_toQuadraticMap_baseChange_of_isSymm {B : LinearMap.BilinForm F V}
+    (hB : B.IsSymm) (h : B.toQuadraticMap.PosDef) : (B.baseChange K).toQuadraticMap.PosDef := by
+  let _ : Invertible (2 : F) := invertibleOfNonzero two_ne_zero
+  let _ : Invertible (2 : K) := (Invertible.map (algebraMap F K) 2).copy 2 (map_ofNat _ _).symm
+  -- An orthogonal basis `v` base-changes to an orthogonal basis `w` of `B.baseChange K`, whose
+  -- diagonal values are the images of the positive diagonal values of `B`.
+  obtain ⟨v, hv⟩ := exists_orthogonal_basis (isSymm_iff.mp hB)
+  set w := v.baseChange K
+  have hassoc : QuadraticMap.associated (R := K) (B.baseChange K).toQuadraticMap = B.baseChange K :=
+    QuadraticMap.associated_left_inverse K (IsSymm.baseChange K (isSymm_iff.mp hB)).eq
+  have hw (i j) : B.baseChange K (w i) (w j) = algebraMap F K (B (v i) (v j)) := by
+    simp [w, Basis.baseChange_apply, baseChange_tmul, Algebra.algebraMap_eq_smul_one]
+  have hortho : (QuadraticMap.associated (R := K) (B.baseChange K).toQuadraticMap).IsOrthoᵢ w := by
+    intro i j hij
+    simp only [Function.onFun, hassoc, hw, hv hij, map_zero]
+  have hpos (i) : 0 < (B.baseChange K).toQuadraticMap (w i) := by
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, hw]
+    exact algebraMap_pos K (h _ (v.ne_zero i))
+  have hQ : (B.baseChange K).toQuadraticMap =
+      ((B.baseChange K).toQuadraticMap.basisRepr w).comp w.equivFun.toLinearMap := by
+    ext z
+    simp [QuadraticMap.basisRepr]
+  rw [hQ, QuadraticMap.basisRepr_eq_of_iIsOrtho _ w hortho]
+  exact ((QuadraticMap.posDef_weightedSumSquares_iff _).mpr hpos).comp _ w.equivFun.injective
+
 /-- **Positive definiteness is preserved and reflected by an ordered scalar extension.** For a
 bilinear form on a finite-dimensional space over an ordered field `F`, and a linearly ordered
 commutative ring `K` whose structure map from `F` is strictly monotone, the quadratic map of the
@@ -544,45 +676,18 @@ theorem posDef_toQuadraticMap_baseChange_iff (B : LinearMap.BilinForm F V) :
       intro x y
       simp [add_comm]
     have hbase : (B + B.flip).baseChange K = B.baseChange K + (B.baseChange K).flip := by
-      ext
-      simp [add_smul]
+      rw [baseChange_add, baseChange_flip]
     simpa only [hbase, posDef_toQuadraticMap_add_flip_iff] using this (B + B.flip) hsym
-  have hmap {a : F} : 0 < algebraMap F K a ↔ 0 < a := by
-    simpa using (algebraMap_strictMono (α := F) K).lt_iff_lt (a := 0) (b := a)
   constructor
   · -- Reflection: evaluate on the nonzero vector `1 ⊗ x`.
     intro h x hx
     have h1 : (1 : K) ⊗ₜ[F] x ≠ 0 :=
       fun h0 ↦ hx ((Module.FaithfullyFlat.one_tmul_eq_zero_iff F V x).mp h0)
     have := h _ h1
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, baseChange_tmul, one_mul,
-      ← Algebra.algebraMap_eq_smul_one, hmap] at this
-    rwa [LinearMap.BilinMap.toQuadraticMap_apply]
-  · -- The orthogonal basis `v` base-changes to an orthogonal basis `w` of `B.baseChange K`,
-    -- whose diagonal values are the images of the positive diagonal values of `B`.
-    intro h z hz
-    let _ : Invertible (2 : F) := invertibleOfNonzero two_ne_zero
-    obtain ⟨v, hv⟩ := exists_orthogonal_basis (isSymm_iff.mp hB)
-    set w := v.baseChange K
-    have hw (i j) : B.baseChange K (w i) (w j) = algebraMap F K (B (v i) (v j)) := by
-      simp [w, Basis.baseChange_apply, baseChange_tmul, Algebra.algebraMap_eq_smul_one]
-    have hpos (i) : 0 < algebraMap F K (B (v i) (v i)) := by
-      rw [hmap, ← LinearMap.BilinMap.toQuadraticMap_apply]
-      exact h _ (v.ne_zero i)
-    -- So in the basis `w`, the form is a sum of squares with positive weights.
-    have hz' : B.baseChange K z z =
-        ∑ i, w.repr z i * w.repr z i * algebraMap F K (B (v i) (v i)) := by
-      conv_lhs => rw [← w.sum_repr z]
-      simp only [sum_left, sum_right, smul_left, smul_right, hw]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [Finset.sum_eq_single i (fun j _ hji ↦ by rw [hv hji, map_zero, mul_zero]) (by simp)]
-      ring
-    obtain ⟨i, hi⟩ : ∃ i, w.repr z i ≠ 0 := by
-      by_contra! h0
-      exact hz (w.repr.injective (by ext i; simp [h0]))
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, hz']
-    exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (mul_self_nonneg _) (hpos j).le)
-      ⟨i, Finset.mem_univ _, mul_pos (mul_self_pos.mpr hi) (hpos i)⟩
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, baseChange_tmul, one_mul] at this
+    rw [LinearMap.BilinMap.toQuadraticMap_apply]
+    exact (smul_pos_iff_of_pos_right zero_lt_one).mp this
+  · exact posDef_toQuadraticMap_baseChange_of_isSymm hB
 
 end PosDef
 

@@ -24,11 +24,21 @@ which Mathlib's duality theory for finite abelian groups states its results, wit
   `(M →+ N) ≃ (Multiplicative M →* (Multiplicative N)ˣ)`, with the evaluation lemmas
   `AddMonoidHom.toMultiplicativeUnits_apply_apply` and
   `AddMonoidHom.toMultiplicativeUnits_symm_apply_apply`.
+
+## Main results
+
+* `AddMonoidHom.toMultiplicativeLeftAddEquiv_apply`: applying
+  `AddMonoidHom.toMultiplicativeLeftAddEquiv` evaluates to `Additive.ofMul` of
+  `AddMonoidHom.toMultiplicativeLeft`.
+* `MonoidHom.toAdditive_surjective_iff`: a monoid homomorphism read additively, through
+  `MonoidHom.toAdditive`, is surjective exactly when the homomorphism is.
 -/
 
 public section
 
 namespace AddMonoidHom
+
+section
 
 variable {M N : Type*} [AddZeroClass M] [AddGroup N]
 
@@ -53,4 +63,24 @@ theorem toMultiplicativeUnits_symm_apply_apply (φ : Multiplicative M →* (Mult
       Multiplicative.toAdd (φ (Multiplicative.ofAdd x) : Multiplicative N) :=
   (rfl)
 
+end
+
+/-- Applying `AddMonoidHom.toMultiplicativeLeftAddEquiv` is `AddMonoidHom.toMultiplicativeLeft`
+followed by `Additive.ofMul`. -/
+@[simp]
+theorem toMultiplicativeLeftAddEquiv_apply {M N : Type*} [AddMonoid M] [CommMonoid N]
+    (f : M →+ Additive N) :
+    toMultiplicativeLeftAddEquiv f = Additive.ofMul (toMultiplicativeLeft f) :=
+  (rfl)
+
 end AddMonoidHom
+
+namespace MonoidHom
+
+/-- A monoid homomorphism read additively, through `MonoidHom.toAdditive`, is surjective exactly
+when the homomorphism is. -/
+theorem toAdditive_surjective_iff {α β : Type*} [MulOneClass α] [MulOneClass β] {f : α →* β} :
+    Function.Surjective f.toAdditive ↔ Function.Surjective f := by
+  rw [coe_toAdditive, Equiv.comp_surjective, Equiv.surjective_comp]
+
+end MonoidHom

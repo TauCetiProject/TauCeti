@@ -184,10 +184,11 @@ theorem hessian_eq_neg_mul_inner_of_laplaceBeltrami_eq_neg_mul
     intro i
     apply InnerProductSpace.ext_inner_right_basis b.toBasis
     intro j
-    simpa only [hessian_def, ContinuousLinearMap.coe_coe, OrthonormalBasis.coe_toBasis,
-      smul_apply, ContinuousLinearMap.id_apply, real_inner_smul_left] using hentry i j
-  rw [hessian_def, hmap, smul_apply, ContinuousLinearMap.id_apply,
-    real_inner_smul_left]
+    simpa only [I.hessian_eq_inner_leviCivitaConnection_mgradient, ContinuousLinearMap.coe_coe,
+      OrthonormalBasis.coe_toBasis, smul_apply, ContinuousLinearMap.id_apply,
+      real_inner_smul_left] using hentry i j
+  rw [I.hessian_eq_inner_leviCivitaConnection_mgradient, hmap, smul_apply,
+    ContinuousLinearMap.id_apply, real_inner_smul_left]
 
 /-- In the equality case of the Lichnerowicz estimate, the Ricci lower bound is attained in the
 direction of the gradient: `Ric(grad f, grad f) = (n - 1) k |grad f|²` at every point. -/

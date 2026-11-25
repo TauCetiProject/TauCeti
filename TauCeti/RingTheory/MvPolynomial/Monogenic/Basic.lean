@@ -666,7 +666,7 @@ theorem exists_cliffordDirac_eq_of_surjective {c : σ → Module.End R M} {i₀ 
 theorem coeffTensor_single_monogenicSubmodule_surjective {c : σ → Module.End R M}
     {i₀ i₁ : σ} (hne : i₁ ≠ i₀) (hc : Function.Surjective (c i₀)) (k : ℕ) :
     Function.Surjective
-      (fun u : monogenicSubmodule c k ↦ coeffTensor (Finsupp.single i₁ k) u.1) := fun m ↦ by
+      (fun u : monogenicSubmodule c k ↦ coeffTensor (Finsupp.single i₁ k) u.val) := fun m ↦ by
   rcases k with _ | k
   · exact ⟨⟨1 ⊗ₜ[R] m, (monogenicSubmodule_zero c).symm ▸
       tmul_mem_homogeneousTensorSubmodule (isHomogeneous_one σ R) m⟩, by simp⟩
@@ -701,10 +701,10 @@ theorem finrank_monogenicSubmodule_add_finrank [Module.Finite K M]
         Module.finrank K (homogeneousTensorSubmodule σ K M k) =
       Module.finrank K (homogeneousTensorSubmodule σ K M (k + 1)) := by
   let Dk : homogeneousTensorSubmodule σ K M (k + 1) →ₗ[K] homogeneousTensorSubmodule σ K M k :=
-    { toFun := fun u ↦ ⟨cliffordDirac c u.1,
-        cliffordDirac_mem_homogeneousTensorSubmodule (c := c) u.2⟩
-      map_add' := fun u v ↦ Subtype.ext (map_add (cliffordDirac c) u.1 v.1)
-      map_smul' := fun r u ↦ Subtype.ext (map_smul (cliffordDirac c) r u.1) }
+    { toFun := fun u ↦ ⟨cliffordDirac c u.val,
+        cliffordDirac_mem_homogeneousTensorSubmodule (c := c) u.property⟩
+      map_add' := fun u v ↦ Subtype.ext (map_add (cliffordDirac c) u.val v.val)
+      map_smul' := fun r u ↦ Subtype.ext (map_smul (cliffordDirac c) r u.val) }
   have hsurj : Function.Surjective Dk := fun ⟨v, hv⟩ ↦
     let ⟨u, hu, _, hDu⟩ := exists_cliffordDirac_eq_of_surjective hc hv
     ⟨⟨u, hu⟩, Subtype.ext hDu⟩

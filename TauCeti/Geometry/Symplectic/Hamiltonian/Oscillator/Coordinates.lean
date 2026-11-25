@@ -270,7 +270,7 @@ private theorem eval₂_mpullback_oscillatorCylinderMap (hm : 0 < m) (hν : 0 < 
     (v w : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) (⟨y, hy⟩ : oscillatorActionCylinder)) :
     SmoothBundleForm.eval₂
       (SmoothForm.mpullback (fun z : oscillatorActionCylinder ↦ oscillatorCylinderMap m ν z)
-        ((contMDiffOn_oscillatorCylinderMap).comp_contMDiff contMDiff_subtype_val
+        ((contMDiffOn_oscillatorCylinderMap).comp_contMDiff contMDiff_subtypeVal
           (fun z ↦ z.property)) (stdSymplecticForm (V := ℝ)).constSmooth)
       ⟨y, hy⟩ v w = v.1 * w.2 - w.1 * v.2 := by
   obtain ⟨a, J⟩ := y
@@ -290,9 +290,9 @@ theorem mpullback_oscillatorActionAngleDiffeomorph (hm : 0 < m) (hν : 0 < ν) :
     SmoothForm.mpullback (oscillatorActionAngleDiffeomorph hm hν)
         (oscillatorActionAngleDiffeomorph hm hν).contMDiff
         (SmoothForm.mpullback (Subtype.val : oscillatorPuncturedPlane → ℝ × ℝ)
-          contMDiff_subtype_val (stdSymplecticForm (V := ℝ)).constSmooth) =
+          contMDiff_subtypeVal (stdSymplecticForm (V := ℝ)).constSmooth) =
       SmoothForm.mpullback (Subtype.val : oscillatorActionCylinder → AddCircle (2 * π) × ℝ)
-        contMDiff_subtype_val
+        contMDiff_subtypeVal
         (SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm (2 * π)))
           (SmoothForm.mpullback Prod.snd contMDiff_snd SmoothForm.realLineCoordForm)) := by
   have hcomp : (Subtype.val : oscillatorPuncturedPlane → ℝ × ℝ) ∘
@@ -307,7 +307,7 @@ theorem mpullback_oscillatorActionAngleDiffeomorph (hm : 0 < m) (hν : 0 < ν) :
   rw [eval₂_mpullback_oscillatorCylinderMap hm hν y.property v w]
   symm
   have h := SmoothForm.eval₂_mpullback (Subtype.val : oscillatorActionCylinder →
-    AddCircle (2 * π) × ℝ) contMDiff_subtype_val
+    AddCircle (2 * π) × ℝ) contMDiff_subtypeVal
     (SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm (2 * π)))
       (SmoothForm.mpullback Prod.snd contMDiff_snd SmoothForm.realLineCoordForm)) y v w
   rw [Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe] at h

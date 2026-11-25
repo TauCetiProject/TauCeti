@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Restrict
+public import Mathlib.Topology.Compactness.Lindelof
 
 /-!
 # Gluing measures along a cover
@@ -19,11 +21,15 @@ locally, such as the Riemannian volume, which is given chart by chart.
 
 * `TauCeti.existsUnique_restrict_eq`: compatible measures on a family of measurable
   sets with a countable subcover glue to a unique measure.
+* `TauCeti.measure_image_eq_of_locally_eq`: on a hereditarily Lindelöf space, if a map carries
+  `μ` to `ν` on the measurable subsets of a neighbourhood of each point of a measurable set `s`,
+  then it does so on `s`.
 -/
 
 public section
 
 open Function MeasureTheory MeasureTheory.Measure Set
+open scoped Topology
 
 namespace TauCeti
 
@@ -58,5 +64,36 @@ theorem existsUnique_restrict_eq {s : ι → Set α} {μ : ι → Measure α}
     (disjoint_disjointed _).mono fun _ _ hmn ↦ hmn.mono inter_subset_right inter_subset_right
   rw [restrict_sum _ (hs j), funext hpiece, ← restrict_iUnion hdisj fun n ↦ (hs j).inter (hd n),
     ← inter_iUnion, hdcover, inter_univ]
+
+/-- **Image measures from local pieces.** Let `M` be a hereditarily Lindelöf space in which open
+sets are measurable, `s` a measurable subset of `M` and `Φ : M → Y` a map whose restriction to `s`
+is a measurable embedding. If each point `x` of `s` has a neighbourhood `U x` such that
+`ν (Φ '' u) = μ u` for every measurable `u ⊆ s` contained in `U x`, then `ν (Φ '' s) = μ s`.
+Countably many of the neighbourhoods cover `s`, so the measures `t ↦ ν (Φ '' t)` and `t ↦ μ t` on
+the subtype `s` agree. -/
+theorem measure_image_eq_of_locally_eq {M Y : Type*} [TopologicalSpace M]
+    [HereditarilyLindelofSpace M] [MeasurableSpace M] [OpensMeasurableSpace M] [MeasurableSpace Y]
+    {μ : Measure M} {ν : Measure Y} {Φ : M → Y} {s : Set M} (hs : MeasurableSet s)
+    (he : MeasurableEmbedding (s.domRestrict Φ)) {U : M → Set M} (hU : ∀ x ∈ s, U x ∈ 𝓝 x)
+    (h : ∀ x ∈ s, ∀ u, MeasurableSet u → u ⊆ s → u ⊆ U x → ν (Φ '' u) = μ u) :
+    ν (Φ '' s) = μ s := by
+  have hι : MeasurableEmbedding (Subtype.val : s → M) := .subtypeVal hs
+  obtain ⟨T, hTc, hTs, hcover⟩ := (HereditarilyLindelofSpace.isLindelof s).elim_nhds_subcover
+    (fun x ↦ interior (U x)) fun x hx ↦ interior_mem_nhds.2 (hU x hx)
+  have himage (t : Set s) : s.domRestrict Φ '' t = Φ '' (Subtype.val '' t) := by
+    rw [domRestrict_eq, image_comp]
+  suffices hcomap : ν.comap (s.domRestrict Φ) = μ.comap Subtype.val by
+    calc ν (Φ '' s) = ν.comap (s.domRestrict Φ) univ := by
+          rw [he.comap_apply, image_univ, range_domRestrict]
+      _ = μ s := by rw [hcomap, hι.comap_apply, image_univ, Subtype.range_coe]
+  refine ext_of_biUnion_eq_univ (s := fun x ↦ (Subtype.val : s → M) ⁻¹' interior (U x)) hTc
+    (by rw [← preimage_iUnion₂]; exact eq_univ_of_forall fun y ↦ hcover y.property)
+    fun x hx ↦ ?_
+  ext t ht
+  have htU : MeasurableSet (t ∩ Subtype.val ⁻¹' interior (U x)) :=
+    ht.inter (isOpen_interior.measurableSet.preimage measurable_subtypeVal)
+  rw [restrict_apply ht, restrict_apply ht, he.comap_apply, hι.comap_apply, himage]
+  exact h x (hTs x hx) _ (hι.measurableSet_image' htU) (Subtype.coe_image_subset s _)
+    (by rintro _ ⟨y, hy, rfl⟩; exact interior_subset hy.2)
 
 end TauCeti

@@ -132,7 +132,7 @@ theorem homogeneousTensorSubmodule_inductionOn {k : ℕ}
     (add : ∀ {x y}, motive x → motive y → motive (x + y)) : motive u := by
   obtain ⟨z, rfl⟩ := hu
   induction z using TensorProduct.inductionOn with
-  | tmul p m => exact tmul p.2 m
+  | tmul p m => exact tmul p.property m
   | add x y hx hy => rw [map_add]; exact add hx hy
 
 /-- Lifting a module linear map preserves `homogeneousTensorSubmodule` of degree `k`. -/

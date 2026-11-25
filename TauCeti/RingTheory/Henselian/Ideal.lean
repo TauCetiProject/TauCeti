@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Henselian.Radical
 public import TauCeti.RingTheory.Henselian.Quotient
-import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.Jacobson.Polynomial
 
 /-!
 # Henselian pairs and nested ideals
@@ -45,19 +45,8 @@ theorem henselianRing_of_le (hJI : J ≤ I) [HenselianRing R I] : HenselianRing 
     have hder : IsUnit (f.derivative.eval a₀) := isUnit_of_map_unit _ _ hu
     obtain ⟨a, hfa, haa⟩ := HenselianRing.is_henselian f hf a₀ (hJI ha)
       (hder.map (Quotient.mk I))
-    obtain ⟨c, hc⟩ := f.exists_mul_sq_add_linear_part_eq_eval_add a₀ (a - a₀)
-    have hunit : IsUnit (c * (a - a₀) + f.derivative.eval a₀) := by
-      have := isLocalHom_of_le_jacobson (HenselianRing.jac (I := I))
-      apply isUnit_of_map_unit (Quotient.mk I)
-      simpa [map_add, map_mul, Quotient.eq_zero_iff_mem.2 haa] using
-        hder.map (Quotient.mk I)
-    refine ⟨a, hfa, (J.unit_mul_mem_iff_mem hunit).1 ?_⟩
-    have heq : (c * (a - a₀) + f.derivative.eval a₀) * (a - a₀) = -f.eval a₀ := by
-      have hsum : a₀ + (a - a₀) = a := by ring
-      rw [hsum, hfa.eq_zero] at hc
-      linear_combination hc
-    rw [heq]
-    exact J.neg_mem ha
+    refine ⟨a, hfa, (f.eval_sub_eval_mem_iff_sub_mem (HenselianRing.jac haa) hder).mp ?_⟩
+    simpa [hfa.eq_zero] using J.neg_mem ha
 
 /-- Simple-root lifting can be performed first in `R/J` and then in `R`: henselianity
 along `J` and along `I/J` implies henselianity along `I`. -/
@@ -109,5 +98,11 @@ theorem henselianRing_iff_quotient (hJI : J ≤ I) :
 @[simp]
 theorem henselianRing_radical_iff : HenselianRing R I.radical ↔ HenselianRing R I :=
   ⟨fun _ ↦ henselianRing_of_le le_radical, fun _ ↦ inferInstance⟩
+
+/-- Henselianity depends only on the radical: ideals with the same radical are henselian
+together. -/
+theorem henselianRing_iff_of_radical_eq (h : I.radical = J.radical) :
+    HenselianRing R I ↔ HenselianRing R J := by
+  rw [← henselianRing_radical_iff, h, henselianRing_radical_iff]
 
 end Ideal

@@ -257,7 +257,7 @@ theorem convMul_includeRight_includeLeft :
         toConv (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)) =
       toConv ((Algebra.TensorProduct.comm R H H).toAlgHom.comp
         (_root_.Bialgebra.comulAlgHom R H)) := by
-  simpa using (Bialgebra.toConv_comp_comulAlgHom
+  simpa using (AlgHom.toConv_comp_comulAlgHom
     (Algebra.TensorProduct.comm R H H).toAlgHom).symm
 
 variable (R H) in

@@ -89,8 +89,8 @@ private theorem subtype_lTensor_mem_chiralHomogeneousSubmodule (γ : Module.End 
       chiralHomogeneousSubmodule σ γ ε k := by
   rw [LinearMap.comp_apply, Submodule.coe_subtype, chiralHomogeneousSubmodule, Submodule.mem_inf,
     γ.mem_eigenspace_lTensor_iff]
-  exact ⟨lTensor_mem_homogeneousTensorSubmodule (γ.eigenspace ε).subtype x.2, fun s ↦ by
-    rw [coeffTensor_lTensor]; exact (coeffTensor s x.1).2⟩
+  exact ⟨lTensor_mem_homogeneousTensorSubmodule (γ.eigenspace ε).subtype x.property, fun s ↦ by
+    rw [coeffTensor_lTensor]; exact (coeffTensor s x.val).property⟩
 
 private theorem subtype_lTensor_bijective (γ : Module.End R M) (ε : R) (k : ℕ) :
     Function.Bijective
@@ -99,7 +99,7 @@ private theorem subtype_lTensor_bijective (γ : Module.End R M) (ε : R) (k : �
         (chiralHomogeneousSubmodule σ γ ε k)
         (subtype_lTensor_mem_chiralHomogeneousSubmodule γ ε k)) := by
   refine ⟨fun ⟨x, _⟩ ⟨y, _⟩ h ↦ Subtype.ext (ext_coeffTensor fun s ↦ ?_), fun ⟨u, hu⟩ ↦ ?_⟩
-  · have hs := congrArg (fun z ↦ coeffTensor s z.1) h
+  · have hs := congrArg (fun z ↦ coeffTensor s z.val) h
     simp only [LinearMap.codRestrict_apply, LinearMap.comp_apply, Submodule.coe_subtype,
       coeffTensor_lTensor] at hs
     exact Subtype.ext hs
@@ -122,7 +122,7 @@ noncomputable def chiralHomogeneousEquiv (γ : Module.End R M) (ε : R) (k : ℕ
 @[simp] theorem coe_chiralHomogeneousEquiv_apply (γ : Module.End R M) (ε : R) (k : ℕ)
     (x : homogeneousTensorSubmodule σ R (γ.eigenspace ε) k) :
     (chiralHomogeneousEquiv σ γ ε k x : MvPolynomial σ R ⊗[R] M) =
-      (γ.eigenspace ε).subtype.lTensor (MvPolynomial σ R) x.1 := (rfl)
+      (γ.eigenspace ε).subtype.lTensor (MvPolynomial σ R) x.val := (rfl)
 
 variable (σ) in
 /-- Canonical linear equivalence `γ.eigenspace ε ≃ₗ[R] chiralHomogeneousSubmodule σ γ ε 0`. -/
@@ -369,10 +369,10 @@ theorem finrank_chiralMonogenicSubmodule_add_finrank [Module.Finite K M] {c : σ
   have hbij : Function.Bijective (c i₀) := ⟨LinearMap.injective_iff_surjective.mpr hc, hc⟩
   let Dk : chiralHomogeneousSubmodule σ γ ε (k + 1) →ₗ[K]
       chiralHomogeneousSubmodule σ γ (-ε) k :=
-    { toFun := fun u ↦ ⟨cliffordDirac c u.1,
-        by simpa using cliffordDirac_mem_chiralHomogeneousSubmodule hγ_anti u.2⟩
-      map_add' := fun u v ↦ Subtype.ext (map_add (cliffordDirac c) u.1 v.1)
-      map_smul' := fun r u ↦ Subtype.ext (map_smul (cliffordDirac c) r u.1) }
+    { toFun := fun u ↦ ⟨cliffordDirac c u.val,
+        by simpa using cliffordDirac_mem_chiralHomogeneousSubmodule hγ_anti u.property⟩
+      map_add' := fun u v ↦ Subtype.ext (map_add (cliffordDirac c) u.val v.val)
+      map_smul' := fun r u ↦ Subtype.ext (map_smul (cliffordDirac c) r u.val) }
   have hsurj : Function.Surjective Dk := fun ⟨v, hv⟩ ↦
     let ⟨u, hu, hDu⟩ := exists_cliffordDirac_eq_of_mem_chiralHomogeneousSubmodule hγ_anti hbij hv
     ⟨⟨u, hu⟩, Subtype.ext hDu⟩

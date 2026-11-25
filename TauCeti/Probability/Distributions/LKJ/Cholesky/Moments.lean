@@ -45,7 +45,7 @@ theorem prod_pow_partialCorrelationCholesky_ae_eq_prod_pi_betaMeasure
     (m : Fin p × Fin p → ℕ) (hm : ∀ q, m q ≠ 0 → q.2 ≤ q.1) :
     (fun z ↦ ∏ q, partialCorrelationCholesky z q.1 q.2 ^ m q) =ᵐ[
       Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)]
-      fun z ↦ ∏ ij, z ij ^ m ij.1 *
+      fun z ↦ ∏ ij, z ij ^ m ij.val *
         (1 - z ij ^ 2) ^ partialCorrelationCholeskyMonomialResidualPower m ij := by
   filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
   exact prod_pow_partialCorrelationCholesky_eq_prod (fun ij ↦ (hz ij).le) m hm
@@ -63,7 +63,7 @@ theorem integrable_prod_pow_partialCorrelationCholesky_pi_betaMeasure
       (prod_pow_partialCorrelationCholesky_ae_eq_prod_pi_betaMeasure ha m hm)]
     apply integrable_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
       a (partialCorrelationCholeskyMonomialResidualPower m)
-        (fun ij ↦ m ij.1) ha
+        (fun ij ↦ m ij.val) ha
     intro ij
     exact add_pos_of_pos_of_nonneg (ha ij)
       (partialCorrelationCholeskyMonomialResidualPower_nonneg m ij)
@@ -87,8 +87,8 @@ theorem integral_prod_pow_partialCorrelationCholesky_pi_betaMeasure
     ∫ z, ∏ q, partialCorrelationCholesky z q.1 q.2 ^ m q
       ∂(Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) =
       if ∀ q, m q ≠ 0 → q.2 ≤ q.1 then
-        ∏ ij, if Even (m ij.1) then
-          beta (((m ij.1 : ℝ) + 1) / 2)
+        ∏ ij, if Even (m ij.val) then
+          beta (((m ij.val : ℝ) + 1) / 2)
               (a ij + partialCorrelationCholeskyMonomialResidualPower m ij) /
             beta (1 / 2) (a ij)
         else 0
@@ -98,7 +98,7 @@ theorem integral_prod_pow_partialCorrelationCholesky_pi_betaMeasure
   · rw [ite_eq_left hm, integral_congr_ae
       (prod_pow_partialCorrelationCholesky_ae_eq_prod_pi_betaMeasure ha m hm)]
     apply integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
-      a (partialCorrelationCholeskyMonomialResidualPower m) (fun ij ↦ m ij.1) ha
+      a (partialCorrelationCholeskyMonomialResidualPower m) (fun ij ↦ m ij.val) ha
     intro ij
     exact add_pos_of_pos_of_nonneg (ha ij)
       (partialCorrelationCholeskyMonomialResidualPower_nonneg m ij)
@@ -160,7 +160,7 @@ theorem integral_pow_partialCorrelationCholesky_pi_betaMeasure
         simp [hne]
       simpa [hqik] using hki
     have hcoord (ij : strictLowerTriangle p) :
-        Pi.single (M := fun _ : Fin p × Fin p ↦ ℕ) (i, k) n ij.1 =
+        Pi.single (M := fun _ : Fin p × Fin p ↦ ℕ) (i, k) n ij.val =
           partialCorrelationCholeskyEntryCoordinatePower i k n ij := by
       exact (partialCorrelationCholeskyEntryCoordinatePower_eq_single i k n ij).symm
     have hintegral :
