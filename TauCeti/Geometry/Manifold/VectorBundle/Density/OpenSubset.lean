@@ -116,19 +116,22 @@ private theorem contMDiff_openEquiv_subtypeVal :
     (eventually_openEquiv_apply_trivializationAt_symm_eq (I := I) p.proj)] with q hq
   simpa only [id, TauCeti.Density.trivializationAt_eq, Trivialization.density_apply] using hq q.snd
 
+/-- The ambient density line pulled back to an open subset. -/
+abbrev pullbackAmbientDensity :=
+  (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ (TauCeti.DensityBundle I M)
+
 private theorem contMDiff_openEquiv_pullback :
     ContMDiff (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) ∞
       (fun p : TotalSpace ℝ (TauCeti.DensityBundle I U) ↦
-        TotalSpace.mk' ℝ (E := (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ
-          (TauCeti.DensityBundle I M)) p.proj (openEquiv p.proj p.snd)) :=
+        TotalSpace.mk' ℝ (E := pullbackAmbientDensity (I := I) (U := U)) p.proj
+          (openEquiv p.proj p.snd)) :=
   (Bundle.Pullback.contMDiff_iff _ contMDiff_subtypeVal_continuousMap).2
     ⟨contMDiff_proj _, contMDiff_openEquiv_subtypeVal⟩
 
 /-- The intrinsic density bundle of an open subset is diffeomorphic to the ambient pullback. -/
 def openDiffeomorph :
     TotalSpace ℝ (TauCeti.DensityBundle I U) ≃ₘ^∞⟮I.prod 𝓘(ℝ), I.prod 𝓘(ℝ)⟯
-      TotalSpace ℝ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ
-        (TauCeti.DensityBundle I M)) :=
+      TotalSpace ℝ (pullbackAmbientDensity (I := I) (U := U)) :=
   TauCeti.bundleDiffeomorph openEquiv contMDiff_openEquiv_pullback
 
 /-- The density diffeomorphism acts by the fibre comparison over the same base point. This
@@ -141,8 +144,7 @@ theorem openDiffeomorph_apply (p : TotalSpace ℝ (TauCeti.DensityBundle I U)) :
 /-- The inverse density diffeomorphism acts by the inverse fibre comparison. -/
 @[simp]
 theorem openDiffeomorph_symm_apply
-    (p : TotalSpace ℝ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ
-      (TauCeti.DensityBundle I M))) :
+    (p : TotalSpace ℝ (pullbackAmbientDensity (I := I) (U := U))) :
     (openDiffeomorph (I := I)).symm p = ⟨p.proj, (openEquiv p.proj).symm p.snd⟩ :=
   TauCeti.bundleDiffeomorph_symm_apply _ _ p
 
