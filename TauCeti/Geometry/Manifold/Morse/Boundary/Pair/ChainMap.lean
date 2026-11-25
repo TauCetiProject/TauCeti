@@ -332,20 +332,13 @@ private theorem finite_brokenRecords :
   exact ((h.finite_morseSourceBrokenPairSet h₀ h₁ hf₀ hf₁ p r).image _).union
     ((h.finite_morseTargetBrokenPairSet h₀ h₁ hf₀ hf₁ p r).image _)
 
-/-- Near any of its points `w`, the compactified space contains only `w` and records of points of
-the intersection: it adds finitely many records of broken configurations. -/
-private theorem eventually_eq_or_mem_pairRecords (w : M × M × M) :
-    ∀ᶠ q in 𝓝[closure (hX₀.pairRecord hX₁ c₀ c₁ ''
-        (hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r))] w,
-      q = w ∨ q ∈ hX₀.pairRecord hX₁ c₀ c₁ '' (hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r) := by
-  have hfar : ((hX₀.sourceBrokenRecords hX₁ p r c₀ c₁ ∪ hX₀.targetBrokenRecords hX₁ p r c₀ c₁) \
-      {w})ᶜ ∈ 𝓝 w :=
-    (h.finite_brokenRecords h₀ h₁ hf₀ hf₁ hc₀ hgap₀ hc₁ hgap₁).sdiff.isClosed.isOpen_compl.mem_nhds
-      (by simp)
-  filter_upwards [nhdsWithin_le_nhds hfar, self_mem_nhdsWithin] with q hq hqcl
-  rcases h.closure_pairRecords_subset h₀ h₁ hf₀ hf₁ hind hc₀ hgap₀ hc₁ hgap₁ hqcl with hqP | hqB
-  · exact Or.inr hqP
-  · exact Or.inl (not_not.1 fun hne ↦ hq ⟨hqB, hne⟩)
+/-- The compactified space adds finitely many records to those of the points of the
+intersection. -/
+private theorem finite_closure_diff_pairRecords :
+    (closure (hX₀.pairRecord hX₁ c₀ c₁ '' (hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r)) \
+      hX₀.pairRecord hX₁ c₀ c₁ '' (hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r)).Finite :=
+  (h.finite_brokenRecords h₀ h₁ hf₀ hf₁ hc₀ hgap₀ hc₁ hgap₁).subset fun _ hw ↦
+    (h.closure_pairRecords_subset h₀ h₁ hf₀ hf₁ hind hc₀ hgap₀ hc₁ hgap₁ hw.1).resolve_left hw.2
 
 /-- **The compactified intersection is one-dimensional at unbroken records.** Every record of a
 point of `W^u_{X₀}(p) ∩ W^s_{X₁}(r)` has a neighbourhood in the closure of the records
@@ -360,7 +353,6 @@ private theorem exists_nhds_homeomorph_of_mem_pairRecords {q : M × M × M}
   obtain ⟨x₀, hx₀, rfl⟩ := hqP
   set S := hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r
   set P := hX₀.pairRecord hX₁ c₀ c₁ '' S
-  have hx₀P : hX₀.pairRecord hX₁ c₀ c₁ x₀ ∈ P := mem_image_of_mem _ hx₀
   have hcont : ContinuousOn (hX₀.pairRecord hX₁ c₀ c₁) S :=
     ((hX₀.continuousOn_upperLevelPoint hf₀ hc₀).mono inter_subset_left).prodMk
       (continuousOn_id.prodMk ((hX₁.continuousOn_lowerLevelPoint hf₁ hc₁).mono inter_subset_right))
@@ -380,29 +372,10 @@ private theorem exists_nhds_homeomorph_of_mem_pairRecords {q : M × M × M}
   -- `S` is a manifold modelled on a line `L`.
   obtain ⟨L, hL, C, -, -⟩ := h.exists_unstableSet_inter_stableSet_isManifold hf₀ ⟨x₀, hx₀⟩
   let _ := C
-  have hL1 : Module.finrank ℝ L = Module.finrank ℝ ℝ := by rw [Module.finrank_self]; omega
-  -- The unbroken records sit openly in the compactified space.
-  let ι : P → closure P := fun x ↦ ⟨x.val, subset_closure x.property⟩
-  have hι : IsOpenEmbedding ι := by
-    refine ⟨(IsEmbedding.of_comp_iff IsEmbedding.subtypeVal).1 IsEmbedding.subtypeVal, ?_⟩
-    have hc : IsClosed ((↑) ⁻¹' (closure P \ P) : Set (closure P)) :=
-      ((h.finite_brokenRecords h₀ h₁ hf₀ hf₁ hc₀ hgap₀ hc₁ hgap₁).subset fun w hw ↦
-        ((h.closure_pairRecords_subset h₀ h₁ hf₀ hf₁ hind hc₀ hgap₀ hc₁ hgap₁
-          (mem_of_mem_sdiff hw)).resolve_left (notMem_of_mem_sdiff hw))).isClosed.preimage
-          continuous_subtypeVal
-    convert hc.isOpen_compl using 1
-    ext x
-    simp only [mem_range, mem_compl_iff, mem_preimage, Set.mem_sdiff, Subtype.coe_prop, true_and,
-      not_not]
-    exact ⟨by rintro ⟨y, rfl⟩; exact y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
-  have : Nonempty P := ⟨⟨_, hx₀P⟩⟩
-  let G := ((hι.toOpenPartialHomeomorph ι).symm.trans Φ.toOpenPartialHomeomorph).trans
-    ((chartAt L (Φ ⟨_, hx₀P⟩)).trans
-      (ContinuousLinearEquiv.ofFinrankEq hL1).toHomeomorph.toOpenPartialHomeomorph)
-  refine ⟨G.source, G.open_source.mem_nhds ?_, G.target, G.open_target,
-    ⟨G.toHomeomorphSourceTarget.symm⟩⟩
-  have hιw : ι ⟨_, hx₀P⟩ = ⟨_, hq⟩ := rfl
-  simp [G, ← hιw, hι.toOpenPartialHomeomorph_left_inv]
+  exact exists_nhds_homeomorph_of_isOpen_preimage_val (F := L)
+    (isOpen_preimage_val_of_finite_closure_diff
+      (h.finite_closure_diff_pairRecords h₀ h₁ hf₀ hf₁ hind hc₀ hgap₀ hc₁ hgap₁))
+    (by omega) Φ hq (mem_image_of_mem _ hx₀)
 
 /-- **A configuration broken at the source is an endpoint.** The record of a configuration broken
 at the source lies in the closure of the records of `W^u_{X₀}(p) ∩ W^s_{X₁}(r)`, and has a
@@ -418,7 +391,9 @@ private theorem exists_homeomorph_Ico_of_mem_sourceBrokenRecords {w : M × M × 
           (e ⟨0, left_mem_Ico.2 hδ⟩ : closure (hX₀.pairRecord hX₁ c₀ c₁ ''
             (hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r))) = ⟨w, hb⟩ := by
   have hcont₀ : Continuous f₀ := hX₀.mdifferentiable.continuous
-  have hnear := h.eventually_eq_or_mem_pairRecords h₀ h₁ hf₀ hf₁ hind hc₀ hgap₀ hc₁ hgap₁ w
+  -- Near `w`, the compactified space adds no broken record other than `w`.
+  have hnear := nhdsWithin_closure_le_nhdsWithin_insert
+    (h.finite_closure_diff_pairRecords h₀ h₁ hf₀ hf₁ hind hc₀ hgap₀ hc₁ hgap₁) w self_mem_nhdsWithin
   obtain ⟨a₁, y, w₃⟩ := w
   obtain ⟨a, hpa, har, ha₁, ha₁c, hy, hw₃⟩ := hw
   dsimp only at ha₁ ha₁c hy hw₃

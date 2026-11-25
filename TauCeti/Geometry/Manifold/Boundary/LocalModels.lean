@@ -34,6 +34,12 @@ map on `[0, δ)` stays near its value at `0` on a shorter interval
 (`TauCeti.exists_pos_forall_lt_mem`) and that a continuous map on `[0, δ)` sending the positive
 points into `P` sends `0` into the closure of `P` (`TauCeti.mem_closure_of_forall_ne_zero`).
 
+When the closure of a set `P` adds only finitely many points, `P` is open in its closure
+(`TauCeti.isOpen_preimage_val_of_finite_closure_diff`) and near any point the closure adds only
+that point (`TauCeti.nhdsWithin_closure_le_nhdsWithin_insert`); if `P` is moreover a copy of a
+one-dimensional manifold, its closure is locally homeomorphic to open subsets of `ℝ` at the
+points of `P` (`TauCeti.exists_nhds_homeomorph_of_isOpen_preimage_val`).
+
 The second statement is the signed count of the endpoints of a compact oriented one-manifold,
 which makes the signed counts of broken trajectories cancel in the proof that the integral Morse
 boundary squares to zero, as the first makes them cancel modulo two.
@@ -173,6 +179,51 @@ private theorem exists_path_of_homeomorph_Ico {x : X} {N : Set X} {ε : ℝ} (h�
     have hr'I : r' ∈ Ico 0 ε := Ioo_subset_Ico_self hr'.2
     simp only [comp_apply, hγ r hrI, hγ r' hr'I]
     exact hmono (hVU (mem_preimage.2 hr.1)) (hVU (mem_preimage.2 hr'.1)) (Subtype.mk_lt_mk.2 hrr')
+
+/-- If the closure of `P` adds only finitely many points to `P`, then near any point `w` the
+closure of `P` contains only `w` and points of `P`. -/
+theorem nhdsWithin_closure_le_nhdsWithin_insert [T1Space X] {P : Set X}
+    (hP : (closure P \ P).Finite) (w : X) : 𝓝[closure P] w ≤ 𝓝[insert w P] w := by
+  have hfar : ((closure P \ P) \ {w})ᶜ ∈ 𝓝 w := hP.sdiff.isClosed.isOpen_compl.mem_nhds (by simp)
+  refine nhdsWithin_le_of_mem (mem_nhdsWithin_iff_exists_mem_nhds_inter.2
+    ⟨_, hfar, fun x ⟨hx, hxc⟩ ↦ ?_⟩)
+  by_contra hxP
+  rw [mem_insert_iff, not_or] at hxP
+  exact hx ⟨⟨hxc, hxP.2⟩, hxP.1⟩
+
+/-- If the closure of `P` adds only finitely many points to `P`, then `P` is open in its
+closure. -/
+theorem isOpen_preimage_val_of_finite_closure_diff [T1Space X] {P : Set X}
+    (hP : (closure P \ P).Finite) : IsOpen ((↑) ⁻¹' P : Set (closure P)) := by
+  -- Its complement is the preimage of a finite, hence closed, set.
+  convert (hP.isClosed.preimage continuous_subtypeVal).isOpen_compl using 1
+  ext x
+  simp only [mem_preimage, mem_compl_iff, Set.mem_sdiff, Subtype.coe_prop, true_and, not_not]
+
+/-- **A one-dimensional set open in its closure.** If `P` is open in its closure and homeomorphic
+to a space charted on a one-dimensional space `F`, every point of `P` has a neighbourhood in the
+closure of `P` homeomorphic to an open subset of `ℝ`. -/
+theorem exists_nhds_homeomorph_of_isOpen_preimage_val {P : Set X}
+    (hP : IsOpen ((↑) ⁻¹' P : Set (closure P))) (hF : Module.finrank ℝ F = 1) {S : Type*}
+    [TopologicalSpace S] [ChartedSpace F S] (Φ : P ≃ₜ S) {w : X} (hw : w ∈ closure P)
+    (hwP : w ∈ P) : ∃ N ∈ 𝓝 (⟨w, hw⟩ : closure P), ∃ V : Set ℝ, IsOpen V ∧ Nonempty (V ≃ₜ N) := by
+  have := Module.finite_of_finrank_eq_succ hF
+  have hF1 : Module.finrank ℝ F = Module.finrank ℝ ℝ := by rw [Module.finrank_self, hF]
+  let ι : P → closure P := fun x ↦ ⟨x.val, subset_closure x.property⟩
+  have hι : IsOpenEmbedding ι := by
+    refine ⟨(IsEmbedding.of_comp_iff IsEmbedding.subtypeVal).1 IsEmbedding.subtypeVal, ?_⟩
+    convert hP
+    ext x
+    exact ⟨by rintro ⟨y, rfl⟩; exact y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+  have : Nonempty P := ⟨⟨w, hwP⟩⟩
+  -- Read `P` near `w` in a chart of `S`, and the chart in `ℝ`.
+  let G := ((hι.toOpenPartialHomeomorph ι).symm.trans Φ.toOpenPartialHomeomorph).trans
+    ((chartAt F (Φ ⟨w, hwP⟩)).trans
+      (ContinuousLinearEquiv.ofFinrankEq hF1).toHomeomorph.toOpenPartialHomeomorph)
+  refine ⟨G.source, G.open_source.mem_nhds ?_, G.target, G.open_target,
+    ⟨G.toHomeomorphSourceTarget.symm⟩⟩
+  have hιw : ι ⟨w, hwP⟩ = ⟨w, hw⟩ := rfl
+  simp [G, ← hιw, hι.toOpenPartialHomeomorph_left_inv]
 
 variable [CompactSpace X]
 
