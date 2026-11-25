@@ -41,13 +41,16 @@ L² function with a continuous function is an integral
 More generally, the L² pairing of an L² function with the class of any square-integrable
 function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), also
 in the other order for an L² function given by an almost-everywhere representative
-(`MeasureTheory.L2.toLp_inner_of_ae_eq`).
+(`MeasureTheory.L2.toLp_inner_of_ae_eq`). The zero class pairs to zero with every function
+(`MeasureTheory.Lp.integral_inner_coeFn_zero_left`).
 An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
 almost everywhere on that set (`MeasureTheory.L2.ae_restrict_eq_zero_of_forall_inner_eq_zero`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
 product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
-`TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
+`TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`. A weak equation
+`∫ ⟪y, p⟫ = ∫ ⟪g, η⟫` whose left side differs pointwise from `⟪y, p₀⟫` by `⟪w, η⟫` becomes
+`∫ ⟪y, p₀⟫ = ∫ ⟪g - w, η⟫` (`TauCeti.integral_inner_eq_integral_inner_sub_of_inner_eq_add`).
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
 `integral_inner` with the integrand in the left slot, the pairing `∫ ⟪f, g⟫` is conjugate
 symmetric (`integral_inner_conj_symm`), and the integral of the Hilbert space
@@ -86,6 +89,13 @@ namespace MeasureTheory
 
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- An a.e. strongly measurable function is square integrable if its totalized squared-norm
+integral is nonzero. -/
+theorem AEStronglyMeasurable.memLp_two_of_integral_norm_sq_ne_zero
+    {F : Type*} [NormedAddCommGroup F] {f : α → F} (hf : AEStronglyMeasurable f μ)
+    (h : ∫ x, ‖f x‖ ^ 2 ∂μ ≠ 0) : MemLp f 2 μ :=
+  (memLp_two_iff_integrable_sq_norm hf).2 (Integrable.of_integral_ne_zero h)
 
 /-- The pointwise inner product of two square-integrable functions is integrable. -/
 theorem MemLp.integrable_inner {f g : α → E} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
@@ -294,6 +304,12 @@ theorem L2.toLp_inner_of_ae_eq {g : α → E} (hg : MemLp g 2 μ) {f : Lp E 2 μ
   filter_upwards [hg.coeFn_toLp, hfw] with x hx hx'
   rw [hx, hx']
 
+/-- The pointwise inner product of the zero class of `Lᵖ` with any function integrates to zero. -/
+theorem Lp.integral_inner_coeFn_zero_left {p : ℝ≥0∞} (g : α → E) :
+    ∫ x, ⟪(0 : Lp E p μ) x, g x⟫_𝕜 ∂μ = 0 := by
+  rw [integral_congr_ae ((Lp.coeFn_zero E p μ).mono fun x hx ↦ by
+    rw [hx, Pi.zero_apply, inner_zero_left]), integral_zero]
+
 /-- An L² function orthogonal to every L² function vanishing outside a measurable set `A`
 vanishes almost everywhere on `A`: it is orthogonal to its own restriction to `A`. -/
 theorem L2.ae_restrict_eq_zero_of_forall_inner_eq_zero {A : Set α} (hA : MeasurableSet A)
@@ -388,6 +404,25 @@ theorem integral_sq_sum_of_pairwise_integral_mul_eq_zero
     integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero
       (fun i hi j hj ↦ (hX i hi).integrable_inner (hX j hj))
       (by simpa only [Real.inner_apply] using horth)
+
+/-- **Moving a term of a weak equation to the right-hand side.** If the pairings of `y` with `p`
+and with `p₀` differ pointwise by `⟪w, η⟫`, then `∫ ⟪y, p⟫ = ∫ ⟪g, η⟫` gives
+`∫ ⟪y, p₀⟫ = ∫ ⟪g - w, η⟫`, as soon as `⟪y, p₀⟫`, `⟪g, η⟫` and `⟪w, η⟫` are integrable. In a weak
+formulation `p` and `p₀` are the formal adjoints of two operators applied to a test function `η`,
+and `w` is the difference of the operators applied to the weak solution `y`. -/
+theorem integral_inner_eq_integral_inner_sub_of_inner_eq_add
+    {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {y p p₀ g w η : α → E}
+    (hp : ∀ x, ⟪y x, p x⟫_𝕜 = ⟪y x, p₀ x⟫_𝕜 + ⟪w x, η x⟫_𝕜)
+    (hp₀ : Integrable (fun x ↦ ⟪y x, p₀ x⟫_𝕜) μ) (hg : Integrable (fun x ↦ ⟪g x, η x⟫_𝕜) μ)
+    (hw : Integrable (fun x ↦ ⟪w x, η x⟫_𝕜) μ)
+    (hweak : ∫ x, ⟪y x, p x⟫_𝕜 ∂μ = ∫ x, ⟪g x, η x⟫_𝕜 ∂μ) :
+    ∫ x, ⟪y x, p₀ x⟫_𝕜 ∂μ = ∫ x, ⟪g x - w x, η x⟫_𝕜 ∂μ := by
+  simp_rw [inner_sub_left]
+  rw [integral_sub hg hw, ← hweak]
+  simp_rw [hp]
+  rw [integral_add hp₀ hw]
+  ring
 
 end TauCeti
 

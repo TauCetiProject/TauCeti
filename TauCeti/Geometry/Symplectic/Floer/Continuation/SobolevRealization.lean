@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Continuation.SemiFredholm
-public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
+public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
 
 /-!
 # The linearized Floer operator of a continuation cylinder on `W^{1,2}`
@@ -29,16 +29,25 @@ proves that
 * it has finite-dimensional kernel
   (`TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator_continuationHomotopy`);
 * it has closed range
-  (`TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator_continuationHomotopy`).
+  (`TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator_continuationHomotopy`);
+* in a unitary trivialization, where `V` is a complex inner product space with
+  `ω = Im ⟪·, ·⟫`, it is Fredholm for all families `J₋`, `J₊` of compatible almost complex
+  structures (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_continuationHomotopy`).
 
-These are the cases `R = 1` of the corresponding statements for Floer data cylindrical near the
-ends in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization`, whose input is the semi-Fredholm
-estimate of `TauCeti.Geometry.Symplectic.Floer.Continuation.SemiFredholm`. The semi-Fredholm
-estimate for the formal adjoint `D_u^*` on `C²` covector fields, for Floer data cylindrical near
-the ends such as continuation data, is the `_of_cylindrical` version of
+The first three are the cases `R = 1` of the corresponding statements for Floer data cylindrical
+near the ends in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization`, whose input is the
+semi-Fredholm estimate of `TauCeti.Geometry.Symplectic.Floer.Continuation.SemiFredholm`. The
+semi-Fredholm estimate for the formal adjoint `D_u^*` on `C²` covector fields, for Floer data
+cylindrical near the ends such as continuation data, is the `_of_cylindrical` version of
 `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add`.
-The finiteness of the cokernel, hence the Fredholm property and the index, still needs the Sobolev
-realization of `D_u^*` and the regularity of weak `L²` cokernel elements.
+In a unitary trivialization the Fredholm property follows from a parametrix built from the
+invertible end models, without the adjoint
+(`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical` in
+`TauCeti.Geometry.Symplectic.Floer.Sobolev.Parametrix`), and the deformation of the almost complex
+structures in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm` extends it to every compatible
+`J`; the continuation datum is cylindrical near the ends and compatible wherever `J₋` and `J₊` are
+(`TauCeti.Floer.compatible_continuationAlmostComplex`). The value of the index between different
+orbits remains open.
 
 ## References
 
@@ -173,5 +182,60 @@ theorem isClosed_range_floerSobolevOperator_continuationHomotopy (ω : Symplecti
   ω.isClosed_range_floerSobolevOperator_of_cylindrical
     (isCylindricalNearEnds_continuationHomotopy h₀ hJm hJp hHm hHp u) hu hJu hXm hHm hxm hndm hJm
     hJxm huxm hδm hXp hHp hxp hndp hJp hJxp huxp hδp
+
+section Unitary
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+
+/-- **The linearized Floer operator of a continuation cylinder is Fredholm.** Let `F` be a
+finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, let
+`J₋` and `J₊` be `C¹` families of `ω`-compatible almost complex structures, and let `H₋`, `H₊` be
+one-periodic, jointly `C³` time-dependent Hamiltonians whose suspended vector fields are globally
+Lipschitz, with one-periodic orbits `x₋` of `H₋` and `x₊` of `H₊` whose initial points are
+nondegenerate fixed points of the time-one maps. Let `u` be a `C¹` map whose loops converge
+uniformly to `x₋` at `-∞` and to `x₊` at `+∞`, with slice defects `∂t u - X_{H±_t}(u)` tending
+uniformly to zero at the corresponding end. Then the realization
+`D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator of the continuation
+datum from `H₋` to `H₊` is Fredholm. -/
+theorem isFredholm_floerSobolevOperator_continuationHomotopy (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {J₀ : AlmostComplexStructure F}
+    (h₀ : ω.Compatible J₀) {Jm Jp : ℝ → F → AlmostComplexStructure F}
+    {hJmt : ∀ t x, ω.Tames (Jm t x)} {hJpt : ∀ t x, ω.Tames (Jp t x)}
+    (hJm : ContDiff ℝ 1 fun p : ℝ × F ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJp : ContDiff ℝ 1 fun p : ℝ × F ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJmc : ∀ t x, ω.Compatible (Jm t x)) (hJpc : ∀ t x, ω.Compatible (Jp t x))
+    {Hm Hp : ℝ → F → ℝ} {Km Kp : ℝ≥0}
+    (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm))
+    (hHm : ContDiff ℝ 3 (Function.uncurry Hm)) (hHmper : Function.Periodic Hm 1)
+    (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp))
+    (hHp : ContDiff ℝ 3 (Function.uncurry Hp)) (hHpper : Function.Periodic Hp 1) {xm xp : ℝ → F}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t)
+    (hxmper : Function.Periodic xm 1)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t)
+    (hxpper : Function.Periodic xp 1)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
+    {u : ℝ × ℝ → F} (hu : ContDiff ℝ 1 u)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    (ω.floerSobolevOperator
+      (fun w y ↦ (continuationAlmostComplex h₀ Jm Jp hJmt hJpt w y).toLinearMap
+        |>.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (continuationHomotopy Hm Hp) u).IsFredholm :=
+  ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω
+    (isCylindricalNearEnds_continuationHomotopy h₀ hJm hJp (hHm.of_le (by norm_num))
+      (hHp.of_le (by norm_num)) u)
+    (contDiff_continuationAlmostComplex h₀ hJm hJp) contDiff_const
+    (contDiff_uncurry_continuationHomotopy (hHm.of_le (by norm_num)) (hHp.of_le (by norm_num)))
+    (compatible_continuationAlmostComplex h₀ hJmc hJpc) hu hXm hHm hHmper hxm hxmper hndm huxm
+    hδm hXp hHp hHpper hxp hxpper hndp huxp hδp
+
+end Unitary
 
 end TauCeti.SymplecticForm

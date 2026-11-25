@@ -84,7 +84,7 @@ theorem mem_Lp_top (f : α →ᵇ E) : f.toContinuousMap.toAEEqFun μ ∈ Lp E �
 
 private theorem norm_toAEEqFun_le (f : α →ᵇ E) :
     ‖(⟨f.toContinuousMap.toAEEqFun μ, mem_Lp_top μ f⟩ : Lp E ∞ μ)‖ ≤ ‖f‖ := by
-  refine Lp.norm_top_le_of_ae_bound (norm_nonneg f) ?_
+  refine Lp.norm_le_of_ae_bound_top (norm_nonneg f) ?_
   filter_upwards [f.toContinuousMap.coeFn_toAEEqFun μ] with x hx
   exact hx ▸ f.norm_coe_le_norm x
 

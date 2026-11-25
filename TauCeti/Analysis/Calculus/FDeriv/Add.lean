@@ -18,6 +18,10 @@ uniformly approximable on `K` by functions `𝕜`-differentiable on `Ω`
 For a linear family of functions `P : Λ →ₗ[R] E → F`, moving the parameter from `p` to
 `p + s • q` subtracts `s • P q` from `g - P p` (`LinearMap.sub_map_add_smul`), and so subtracts
 `s • d(P q)_x` from the differential of `g - P p` at `x` (`LinearMap.fderiv_sub_map_add_smul`).
+
+The derivative of a point `u + μ • (u' - u)` of the segment between two differentiable maps is the
+corresponding point of the segment between their derivatives
+(`TauCeti.fderiv_add_smul_sub_apply`).
 -/
 
 public section
@@ -50,6 +54,16 @@ theorem exists_differentiableOn_norm_sum_sub_lt {𝕜 E F ι : Type*}
   refine lt_of_le_of_lt (Finset.sum_le_sum fun i hi => (hbound i hi z hz).le) ?_
   rw [Finset.sum_const, nsmul_eq_mul, mul_div_left_comm]
   exact mul_lt_of_lt_one_right hε ((div_lt_one hpos).mpr (lt_add_one (s.card : ℝ)))
+
+/-- The derivative at `z` of a point `u + μ • (u' - u)` of the segment between two maps
+differentiable at `z`. -/
+theorem fderiv_add_smul_sub_apply {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {u u' : E → F} {z : E} (hu : DifferentiableAt 𝕜 u z) (hu' : DifferentiableAt 𝕜 u' z) (μ : 𝕜)
+    (v : E) :
+    fderiv 𝕜 (u + μ • (u' - u)) z v = fderiv 𝕜 u z v + μ • (fderiv 𝕜 u' z v - fderiv 𝕜 u z v) := by
+  rw [(hu.hasFDerivAt.add ((hu'.hasFDerivAt.sub hu.hasFDerivAt).const_smul μ)).fderiv]
+  simp
 
 end TauCeti
 

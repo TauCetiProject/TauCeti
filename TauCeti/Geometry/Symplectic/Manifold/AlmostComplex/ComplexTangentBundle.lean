@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
 public import TauCeti.Topology.VectorBundle.Complex.Structure
 public import TauCeti.Topology.VectorBundle.Contractible
+import TauCeti.Topology.Algebra.Module.ComplexSmulI
 import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
@@ -26,7 +27,10 @@ bundle (`TauCeti.Bundle.ContinuousComplexStructure.totalSpaceHomeomorph`).
 Along a continuous map `f` from a contractible paracompact R₁ space, for instance a disc, this
 complex vector bundle has a frame: real-linear isomorphisms `G ≃ T_(f y) M`, continuous into the
 tangent bundle, carrying multiplication by `i` to `J`
-(`TauCeti.ContMDiffAlmostComplexStructure.exists_continuous_frame`).
+(`TauCeti.ContMDiffAlmostComplexStructure.exists_continuous_frame`). Conversely, a real-linear
+isomorphism `G ≃ T_b M` carrying multiplication by `i` to `J` is a complex-linear isomorphism onto
+the fibre of this complex vector bundle at `b`
+(`TauCeti.ContMDiffAlmostComplexStructure.complexFrame`).
 
 For a symplectic manifold with a compatible almost complex structure this is the complex vector
 bundle `(TM, J)` whose first Chern class is the first Chern class of `M`; its pairing with spheres
@@ -77,6 +81,36 @@ section Frame
 
 variable [FiniteDimensional ℝ E] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
   [FiniteDimensional ℂ G] {Y : Type*} [TopologicalSpace Y] {f : Y → M}
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℂ G] in
+/-- A real-linear isomorphism `χ : G ≃ T_b M` carrying multiplication by `i` to `J`, as a
+complex-linear isomorphism onto the fibre at `b` of the complex vector bundle `(TM, J)`. -/
+def complexFrame (J : ContMDiffAlmostComplexStructure I n M) {b : M}
+    (χ : G ≃L[ℝ] TangentSpace I b) (hχ : ∀ v, χ (Complex.I • v) = J b (χ v)) :
+    G ≃L[ℂ] J.toContinuousComplexStructure.Fiber b :=
+  (χ.trans (J.toContinuousComplexStructure.fiberEquiv b).symm).complexOfMapISmul fun v ↦
+    (J.toContinuousComplexStructure.fiberEquiv b).injective <| by
+      rw [Bundle.ContinuousComplexStructure.fiberEquiv_I_smul, ContinuousLinearEquiv.trans_apply,
+        ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply,
+        ContinuousLinearEquiv.apply_symm_apply, hχ, toContinuousComplexStructure_apply]
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℂ G] in
+/-- The complex frame `J.complexFrame χ hχ` is `χ`, followed by the identification of `T_b M` with
+the fibre of `(TM, J)` at `b`. -/
+@[simp]
+theorem complexFrame_apply (J : ContMDiffAlmostComplexStructure I n M) {b : M}
+    (χ : G ≃L[ℝ] TangentSpace I b) (hχ : ∀ v, χ (Complex.I • v) = J b (χ v)) (v : G) :
+    J.complexFrame χ hχ v = (J.toContinuousComplexStructure.fiberEquiv b).symm (χ v) :=
+  ContinuousLinearEquiv.complexOfMapISmul_apply _ _ v
+
+/-- The complex frame `J.complexFrame χ hχ` is `χ`, read in the tangent bundle. -/
+theorem totalSpaceHomeomorph_mk_complexFrame (J : ContMDiffAlmostComplexStructure I n M)
+    [Fact (Module.finrank ℝ E = 2 * Module.finrank ℂ G)] {b : M} (χ : G ≃L[ℝ] TangentSpace I b)
+    (hχ : ∀ v, χ (Complex.I • v) = J b (χ v)) (v : G) :
+    J.toContinuousComplexStructure.totalSpaceHomeomorph G
+      (TotalSpace.mk' G b (J.complexFrame χ hχ v)) = (⟨b, χ v⟩ : TangentBundle I M) := by
+  rw [Bundle.ContinuousComplexStructure.totalSpaceHomeomorph_apply, complexFrame_apply,
+    ContinuousLinearEquiv.apply_symm_apply]
 
 open Module in
 /-- **Complex frames along maps from contractible spaces.** For an almost complex structure `J`
