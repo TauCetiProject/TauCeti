@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Adjunction.Restrict
+public import Mathlib.CategoryTheory.Sites.Over
 public import Mathlib.CategoryTheory.Sites.Pullback
 
 /-!
@@ -15,9 +16,10 @@ Let `J ≤ K` be Grothendieck topologies on a category `C`, so that `K` is finer
 `K`-sheaf is a `J`-sheaf, so the identity functor of `C` is continuous from `J` to `K`
 (`TauCeti.CategoryTheory.isContinuous_id_of_le`), and Mathlib's pushforward
 `(𝟭 C).sheafPushforwardContinuous A J K : Sheaf K A ⥤ Sheaf J A` regards a `K`-sheaf as a
-`J`-sheaf. This file shows that this pushforward is fully faithful, and that when
-`K`-sheafification exists its left adjoint is `K`-sheafification of the underlying presheaf,
-`sheafToPresheaf J A ⋙ presheafToSheaf K A`
+`J`-sheaf. The comparison `J ≤ K` passes to the induced topologies on every slice category
+`Over X` (`CategoryTheory.GrothendieckTopology.over_mono`). This file shows that the pushforward
+is fully faithful, and that when `K`-sheafification exists its left adjoint is `K`-sheafification
+of the underlying presheaf, `sheafToPresheaf J A ⋙ presheafToSheaf K A`
 (`TauCeti.CategoryTheory.sheafifyAdjunctionPushforwardId`), so the pushforward is reflective.
 This identifies Mathlib's abstract pullback `(𝟭 C).sheafPullback A J K` with sheafification
 (`TauCeti.CategoryTheory.sheafPullbackIdIso`).
@@ -32,6 +34,7 @@ and this gives the comparison morphism of topoi from étale sheaves to Nisnevich
 
 ## Main declarations
 
+* `CategoryTheory.GrothendieckTopology.over_mono`: for `J ≤ K`, `J.over X ≤ K.over X`.
 * `TauCeti.CategoryTheory.isContinuous_id_of_le`: for `J ≤ K`, the identity is continuous.
 * `TauCeti.CategoryTheory.fullyFaithfulSheafPushforwardContinuousId`: the pushforward of sheaves
   along the identity is fully faithful.
@@ -48,6 +51,17 @@ public section
 universe v u v' u'
 
 open CategoryTheory Limits GrothendieckTopology
+
+namespace CategoryTheory.GrothendieckTopology
+
+variable {C : Type u} [Category.{v} C] {J K : GrothendieckTopology C}
+
+/-- For topologies `J ≤ K` on `C`, the induced topologies on the slice category `Over X` satisfy
+`J.over X ≤ K.over X`. -/
+theorem over_mono (h : J ≤ K) (X : C) : J.over X ≤ K.over X :=
+  fun _ _ hS ↦ h _ hS
+
+end CategoryTheory.GrothendieckTopology
 
 namespace TauCeti.CategoryTheory
 
