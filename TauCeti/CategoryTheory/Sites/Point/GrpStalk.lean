@@ -131,6 +131,7 @@ theorem exists_grpGerm_eq₂ (p q : Φ.GrpStalk P) :
   exact ⟨X, x, a, b, rfl, rfl⟩
 
 /-- Group homomorphisms out of the stalk agree if they agree on germs. -/
+@[ext high]
 theorem grpStalk_hom_ext {M : Type*} [Monoid M] {φ ψ : Φ.GrpStalk P →* M}
     (h : ∀ (X : C) (x : Φ.fiber.obj X) (a : P.obj (op X)),
       φ (Φ.grpGerm P X x a) = ψ (Φ.grpGerm P X x a)) : φ = ψ :=
@@ -167,13 +168,13 @@ theorem coe_grpStalkMap (f : P ⟶ Q) :
 
 /-- The identity of a presheaf of groups induces the identity of its stalk. -/
 @[simp]
-theorem grpStalkMap_id : Φ.grpStalkMap (𝟙 P) = MonoidHom.id _ :=
-  Φ.grpStalk_hom_ext P fun X x a ↦ by simp
+theorem grpStalkMap_id : Φ.grpStalkMap (𝟙 P) = MonoidHom.id _ := by
+  ext; simp
 
 /-- Taking stalks of presheaves of groups is functorial. -/
 @[simp]
 theorem grpStalkMap_comp (f : P ⟶ Q) (g : Q ⟶ R) :
-    Φ.grpStalkMap (f ≫ g) = (Φ.grpStalkMap g).comp (Φ.grpStalkMap f) :=
-  Φ.grpStalk_hom_ext P fun X x a ↦ by simp
+    Φ.grpStalkMap (f ≫ g) = (Φ.grpStalkMap g).comp (Φ.grpStalkMap f) := by
+  ext; simp
 
 end CategoryTheory.GrothendieckTopology.Point
