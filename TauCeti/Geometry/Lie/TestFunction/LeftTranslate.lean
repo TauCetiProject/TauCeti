@@ -35,6 +35,10 @@ is a continuous linear map from the test functions supported in `C` to those sup
 * `TauCeti.LieTestFunction.FixedSupport.leftTranslate`: left translation on fixed-support spaces.
 * `TauCeti.LieTestFunction.continuous_leftTranslate`: left translation is continuous for the LF
   topology.
+
+## References
+
+* J. Getz, *An introduction to automorphic representations*, course notes, §3.3, pp. 17–18.
 -/
 
 public section
