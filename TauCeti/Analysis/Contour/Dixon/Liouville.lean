@@ -6,28 +6,32 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.Dixon.Def
+public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Dixon.FunctionDiff
 import TauCeti.Analysis.Contour.Dixon.H2.Bound
 import TauCeti.Analysis.Contour.Winding.Vanishing
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.Analysis.Complex.Liouville
 
 /-!
 # The Dixon function vanishes (Liouville step)
 
-Dixon's glued function `dixonFunction f U γ a b` is entire (`differentiable_dixonFunction`) and,
-for a closed null-homologous curve, tends to `0` at infinity, so Liouville's theorem forces it to
+For `f` holomorphic on an open set `U` and a closed absolutely continuous curve `γ` in `U` that is
+null-homologous there, Dixon's glued function `dixonFunction f U γ a b` is entire
+(`differentiable_dixonFunction`) and tends to `0` at infinity, so Liouville's theorem forces it to
 vanish identically. The decay comes from the eventual agreement `dixonFunction = dixonH2` far from
 the origin — off `U` by definition, and on `U` because the winding number is eventually `0`, which
-collapses the `h₁`/`h₂` identity — combined with the `L¹` decay of `dixonH2`.
+collapses the `h₁`/`h₂` identity — combined with the decay of `dixonH2` at infinity.
 
 ## Main results
 
 * `TauCeti.Contour.dixonFunction_eq_zero` — `dixonFunction f U γ a b w = 0` for every `w`, for a
-  closed null-homologous curve in `U` with `f` differentiable on the open set `U`.
+  closed null-homologous absolutely continuous curve in `U` with `f` differentiable on the open
+  set `U`.
 
 This pointwise vanishing is the hinge of Dixon's proof of the homology form of Cauchy's theorem
-for null-homologous curves: applying it to `(· - w₀) * f` yields the Cauchy integral formula and
-thence `∮_γ f = 0`.
+for null-homologous curves: applied to `f` it yields Cauchy's integral formula, and applied to
+`(· - w₀) * f` it yields `∮_γ f = 0`.
 
 ## Provenance
 
@@ -45,51 +49,43 @@ open scoped Real Interval Topology
 
 namespace TauCeti.Contour
 
-variable {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {P : Set ℝ}
+variable {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ}
 
-/-- **The Dixon function eventually agrees with `dixonH2` along `cocompact ℂ`.** For a closed curve
-`γ` continuous on `uIcc a b`, differentiable off a countable set, with interval-integrable
-derivative and image in `U`, every `w` far from the origin lies off the curve with winding number
-`0` (`windingNumber_eventually_zero_cocompact`). There `dixonFunction = dixonH2`: off `U` by
-definition, and on `U` because the vanishing winding number collapses the `h₁`/`h₂` identity. -/
+/-- **The Dixon function eventually agrees with `dixonH2` along `cocompact ℂ`.** For a closed
+absolutely continuous curve `γ` with image in `U`, every `w` far from the origin lies off the curve
+with winding number `0`
+(`AbsolutelyContinuousOnInterval.windingNumber_eventually_zero_cocompact`). There
+`dixonFunction = dixonH2`: off `U` by definition, and on `U` because the vanishing winding number
+collapses the `h₁`/`h₂` identity. -/
 private theorem dixonFunction_eventually_eq_dixonH2 (hf : ContinuousOn f U)
-    (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) (hclosed : γ a = γ b)
-    (hP : P.Countable) (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t) :
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
+    (hclosed : γ a = γ b) :
     dixonFunction f U γ a b =ᶠ[cocompact ℂ] dixonH2 f γ a b := by
-  filter_upwards [windingNumber_eventually_zero_cocompact hclosed hP hγ_cont hγ_diff hderiv_int]
-    with w ⟨hoff, hwn⟩
-  exact dixonFunction_eq_dixonH2_of_windingNumber_zero hγ_cont hderiv_int
-    (cauchy_integrand_intervalIntegrable hf hγ_cont hγU hderiv_int hoff) hoff hwn
+  have hderiv_int := hγ.intervalIntegrable_deriv_of_finiteDimensional
+  filter_upwards [hγ.windingNumber_eventually_zero_cocompact hclosed] with w ⟨hw, hwn⟩
+  have hoff : ∀ t ∈ uIcc a b, γ t ≠ w := fun t ht heq ↦ hw ⟨t, ht, heq⟩
+  exact dixonFunction_eq_dixonH2_of_windingNumber_zero hγ.continuousOn hderiv_int
+    (cauchy_integrand_intervalIntegrable hf hγ.continuousOn hγU hderiv_int hoff) hoff hwn
 
 /-- **The Dixon function tends to `0` along `cocompact ℂ`.** It eventually agrees with `dixonH2`,
-which tends to `0` by the `L¹` decay bound: the image of the compact interval `uIcc a b` is bounded
-(`IsCompact.exists_bound_of_continuousOn`), and the weight `f (γ ·) * deriv γ` is
-interval-integrable (continuous `f ∘ γ` times the interval-integrable derivative). -/
+which tends to `0` for every curve continuous on `uIcc a b`
+(`dixonH2_tendsto_zero_of_continuousOn`). -/
 private theorem dixonFunction_tendsto_zero (hf : ContinuousOn f U)
-    (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) (hclosed : γ a = γ b)
-    (hP : P.Countable) (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t) :
-    Tendsto (dixonFunction f U γ a b) (cocompact ℂ) (𝓝 0) := by
-  obtain ⟨R, hR⟩ := isCompact_uIcc.exists_bound_of_continuousOn hγ_cont
-  have hg : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b :=
-    hderiv_int.continuousOn_mul (hf.comp hγ_cont hγU)
-  exact (dixonH2_tendsto_zero_of_integrable (fun t ht ↦ hR t (uIoc_subset_uIcc ht)) hg).congr'
-    (dixonFunction_eventually_eq_dixonH2 hf hγ_cont hγU hderiv_int hclosed hP hγ_diff).symm
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
+    (hclosed : γ a = γ b) :
+    Tendsto (dixonFunction f U γ a b) (cocompact ℂ) (𝓝 0) :=
+  (dixonH2_tendsto_zero_of_continuousOn hγ.continuousOn).congr'
+    (dixonFunction_eventually_eq_dixonH2 hf hγ hγU hclosed).symm
 
-/-- **The Dixon function is identically zero (Liouville).** For a closed curve `γ`, null-homologous
-in an open set `U` (continuous on `uIcc a b`, differentiable off a countable set, with
-interval-integrable derivative and image in `U`) and `f` differentiable on `U`, the entire function
-`dixonFunction f U γ a b` tends to `0` at infinity, so Liouville's theorem forces it to vanish at
-every point. -/
+/-- **The Dixon function is identically zero (Liouville).** For a closed absolutely continuous
+curve `γ` with image in an open set `U`, null-homologous there, and `f` differentiable on `U`, the
+entire function `dixonFunction f U γ a b` tends to `0` at infinity, so Liouville's theorem forces
+it to vanish at every point. -/
 theorem dixonFunction_eq_zero (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
-    (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) (hclosed : γ a = γ b)
-    (hP : P.Countable) (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
-    (h_null : IsNullHomologous γ a b U) (w : ℂ) : dixonFunction f U γ a b w = 0 := by
-  have h_entire :=
-    differentiable_dixonFunction hU hf hγ_cont hγU hderiv_int hP hγ_diff h_null
-  exact h_entire.apply_eq_of_tendsto_cocompact w
-    (dixonFunction_tendsto_zero hf.continuousOn hγ_cont hγU hderiv_int hclosed hP hγ_diff)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
+    (hclosed : γ a = γ b) (h_null : IsNullHomologous γ a b U) (w : ℂ) :
+    dixonFunction f U γ a b w = 0 :=
+  (differentiable_dixonFunction hU hf hγ hγU h_null).apply_eq_of_tendsto_cocompact w
+    (dixonFunction_tendsto_zero hf.continuousOn hγ hγU hclosed)
 
 end TauCeti.Contour
