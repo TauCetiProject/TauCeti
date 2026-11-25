@@ -54,8 +54,6 @@ generated one.
 * `TauCeti.FormalScheme.Spf.Γevaluation_topSectionsIso_inv_eq_zero_iff`,
   `TauCeti.FormalScheme.Spf.basicOpen_topSectionsIso_inv`: vanishing in the residue field and
   the ringed-space basic open of the global section attached to `a ∈ A`.
-* `TauCeti.FormalScheme.Spf.isNoetherianRing_of_iso`: if `Spf A ≅ Spf B` and `A` is noetherian,
-  then so is `B`.
 
 ## References
 
@@ -304,14 +302,6 @@ only if `a ∈ p`. -/
   ext p
   exact (LocallyRingedSpace.Γevaluation_ne_zero_iff_mem_basicOpen (Spf A) p _).symm.trans
     ((Γevaluation_topSectionsIso_inv_eq_zero_iff p a).not.trans mem_basicOpen.symm)
-
-/-- Isomorphic formal spectra have isomorphic rings of global sections, so one ring is noetherian
-if the other is. -/
-theorem isNoetherianRing_of_iso {B : Type u} [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] [IsAdicRing B] [IsNoetherianRing A] (e : Spf A ≅ Spf B) :
-    IsNoetherianRing B :=
-  isNoetherianRing_of_ringEquiv A ((topSectionsIso A).symm ≪≫
-    LocallyRingedSpace.Γ.mapIso e.symm.op ≪≫ topSectionsIso B).commRingCatIsoToRingEquiv
 
 end Spf
 

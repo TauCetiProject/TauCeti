@@ -170,43 +170,6 @@ theorem isAffineOpen_iff (X : FormalScheme) (U : Opens X) :
     exact (LocallyRingedSpace.range_iso_inv_comp e j).trans
       Subtype.range_coe
 
-/-- The sections of `X` over the image `U` of an open immersion `Spf B → X` are `B`. -/
-noncomputable def sectionsIsoOfIsOpenImmersion {X : FormalScheme.{u}} {B : Type u} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B] (f : Spf B ⟶ X.toLocallyRingedSpace)
-    [LocallyRingedSpace.IsOpenImmersion f] {U : Opens X} (hU : Set.range f.base = (U : Set X)) :
-    X.presheaf.obj (Opposite.op U) ≅ CommRingCat.of B :=
-  X.presheaf.mapIso (eqToIso (congrArg Opposite.op (Opens.ext (by
-    rw [IsOpenMap.coe_functor_obj, Opens.coe_top, Set.image_univ, hU])))) ≪≫
-    (asIso (PresheafedSpace.IsOpenImmersion.invApp f.toHom ⊤)).symm ≪≫ Spf.topSectionsIso B
-
-/-- The forward map of `sectionsIsoOfIsOpenImmersion` pulls a section over `U` back along `f` to a
-global section of `Spf B`, which is an element of `B`. -/
-theorem sectionsIsoOfIsOpenImmersion_hom {X : FormalScheme.{u}} {B : Type u} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B] (f : Spf B ⟶ X.toLocallyRingedSpace)
-    [LocallyRingedSpace.IsOpenImmersion f] {U : Opens X} (hU : Set.range f.base = (U : Set X)) :
-    (sectionsIsoOfIsOpenImmersion f hU).hom =
-      f.c.app (Opposite.op U) ≫ (Spf B).presheaf.map (eqToHom (Opens.ext (by
-        rw [Opens.map_coe, Opens.coe_top, ← hU, Set.preimage_range]))).op ≫
-        (Spf.topSectionsIso B).hom := by
-  rw [sectionsIsoOfIsOpenImmersion, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, asIso_inv,
-    PresheafedSpace.IsOpenImmersion.inv_invApp, Functor.mapIso_hom, Category.assoc,
-    f.c.naturality_assoc, TopCat.Presheaf.pushforward_obj_map, ← Functor.map_comp_assoc]
-  -- the two restriction maps of `Spf B` agree, as morphisms of opens are unique
-  rfl
-
-/-- The inverse map of `sectionsIsoOfIsOpenImmersion` sends `b ∈ B`, as a global section of
-`Spf B`, to the section of `X` over `U` that it defines through the open immersion `f`. -/
-theorem sectionsIsoOfIsOpenImmersion_inv {X : FormalScheme.{u}} {B : Type u} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B] (f : Spf B ⟶ X.toLocallyRingedSpace)
-    [LocallyRingedSpace.IsOpenImmersion f] {U : Opens X} (hU : Set.range f.base = (U : Set X)) :
-    (sectionsIsoOfIsOpenImmersion f hU).inv =
-      (Spf.topSectionsIso B).inv ≫ PresheafedSpace.IsOpenImmersion.invApp f.toHom ⊤ ≫
-        X.presheaf.map (eqToHom (Opens.ext (by
-          rw [IsOpenMap.coe_functor_obj, Opens.coe_top, Set.image_univ, hU]) :
-            U = (PresheafedSpace.IsOpenImmersion.opensFunctor f.toHom).obj ⊤)).op := by
-  simp only [sectionsIsoOfIsOpenImmersion, Iso.trans_inv, Iso.symm_inv, asIso_hom,
-    Functor.mapIso_inv, Category.assoc, eqToIso.inv, eqToHom_op]
-
 /-- Every formal spectrum is an affine formal open in itself. -/
 @[simp]
 theorem isAffineOpen_top_ofSpf (A : Type u) [CommRing A] [TopologicalSpace A]
