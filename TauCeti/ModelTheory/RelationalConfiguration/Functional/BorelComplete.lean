@@ -36,13 +36,13 @@ isomorphism on the invariant Borel classes of all countable languages.
   functional class.
 * `TauCeti.FunctionalConfiguration.BorelComplete.of_borelReducible`: Borel completeness passes up
   the Borel reducibility order.
-* `TauCeti.FunctionalConfiguration.borelBireducible_classIso_preimage_rel`: for a relational
-  language, isomorphism on a class `K` of configurations and on the class of functional
-  configurations whose relational part lies in `K` are Borel bireducible.
+* `TauCeti.FunctionalConfiguration.borelComplete_preimage_rel_iff`: for a relational language, the
+  functional configurations whose relational part lies in `K` form a Borel complete class exactly
+  when `K` is Borel complete.
 * `TauCeti.RelationalConfiguration.borelComplete_iff_forall_functional` and
-  `TauCeti.FunctionalConfiguration.borelComplete_iff_forall`: a class is Borel complete exactly
-  when it receives isomorphism on every invariant Borel class of functional configurations of every
-  countable language in `FirstOrder.Language.{0, 0}`.
+  `TauCeti.FunctionalConfiguration.borelComplete_iff_forall_functional`: a class is Borel
+  complete exactly when it receives isomorphism on every invariant Borel class of functional
+  configurations of every countable language in `FirstOrder.Language.{0, 0}`.
 
 ## References
 
@@ -64,67 +64,6 @@ open RelationalConfiguration
 
 namespace FunctionalConfiguration
 
-section Relational
-
-variable {L : Language.{u, v}} [L.IsRelational] {V : Type*}
-
-/-- For a relational language there are no function arguments. -/
-instance isEmpty_arg : IsEmpty (Arg L V) :=
-  inferInstanceAs (IsEmpty (Σ f : (Σ l, L.Functions l), Fin f.1 → V))
-
-/-- For a relational language a functional configuration is determined by its relational part. -/
-theorem rel_injective : Function.Injective (rel : FunctionalConfiguration L V → _) :=
-  fun _ _ h => ext (funext isEmptyElim) h
-
-/-- For a relational language every relational configuration is the relational part of the
-functional configuration with the empty table. -/
-theorem rel_surjective : Function.Surjective (rel : FunctionalConfiguration L V → _) :=
-  fun c => ⟨mk isEmptyElim c, rel_mk _ _⟩
-
-/-- For a relational language two functional configurations are isomorphic exactly when their
-relational parts are. -/
-theorem isoSetoid_iff_isoSetoid_rel {F G : FunctionalConfiguration L V} :
-    isoSetoid L V F G ↔ RelationalConfiguration.isoSetoid L V F.rel G.rel := by
-  rw [isoSetoid_iff_exists_perm_smul_eq, RelationalConfiguration.isoSetoid_iff_exists_perm_smul_eq]
-  refine exists_congr fun σ => ⟨fun h => h ▸ (rel_perm_smul σ F).symm, fun h => ?_⟩
-  exact rel_injective ((rel_perm_smul σ F).trans h)
-
-/-- For a relational language, the functional configurations whose relational part lies in an
-invariant class form an invariant class. -/
-theorem IsomorphismInvariant.preimage_rel {K : Set (RelationalConfiguration L V)}
-    (hK : RelationalConfiguration.IsomorphismInvariant K) :
-    IsomorphismInvariant (rel ⁻¹' K : Set (FunctionalConfiguration L V)) := by
-  rw [isomorphismInvariant_iff]
-  intro F G h hF
-  exact RelationalConfiguration.isomorphismInvariant_iff.1 hK
-    (isoSetoid_iff_isoSetoid_rel.1 h) hF
-
-variable [TopologicalSpace V]
-
-/-- **Relational classes as functional classes.** For a relational language, isomorphism on a
-class `K` of configurations and isomorphism on the class of functional configurations whose
-relational part lies in `K` are Borel bireducible, through the relational part and the empty
-function table. -/
-theorem borelBireducible_classIso_preimage_rel [∀ n, Countable (L.Relations n)] [Countable V]
-    (K : Set (RelationalConfiguration L V)) :
-    (classIso L V (rel ⁻¹' K)).BorelBireducible (RelationalConfiguration.classIso K) := by
-  have hrel : Continuous (rel : FunctionalConfiguration L V → _) := continuous_rel
-  have hmk : Continuous fun c : RelationalConfiguration L V =>
-      (mk isEmptyElim c : FunctionalConfiguration L V) :=
-    continuous_mk continuous_const continuous_id
-  have hmem (c : K) : (mk isEmptyElim c.val : FunctionalConfiguration L V) ∈ rel ⁻¹' K := by
-    simp [rel_mk]
-  refine Setoid.borelBireducible_iff.2 ⟨Setoid.borelReducible_iff.2
-    ⟨fun F => ⟨F.val.rel, F.property⟩, (hrel.measurable.comp measurable_subtypeVal).subtype_mk,
-      fun F G => ?_⟩, Setoid.borelReducible_iff.2
-    ⟨fun c => ⟨mk isEmptyElim c.val, hmem c⟩,
-      (hmk.measurable.comp measurable_subtypeVal).subtype_mk (h := hmem), fun c d => ?_⟩⟩
-  · rw [classIso_apply, RelationalConfiguration.classIso_apply, isoSetoid_iff_isoSetoid_rel]
-  · rw [classIso_apply, RelationalConfiguration.classIso_apply, isoSetoid_iff_isoSetoid_rel,
-      rel_mk, rel_mk]
-
-end Relational
-
 variable {L : Language.{u, v}}
 
 /-- A class `K` of functional configurations on `ℕ` is **Borel complete** when its image under the
@@ -137,6 +76,11 @@ def BorelComplete (K : Set (FunctionalConfiguration L ℕ)) : Prop :=
 theorem borelComplete_iff {K : Set (FunctionalConfiguration L ℕ)} :
     BorelComplete K ↔ RelationalConfiguration.BorelComplete (graphCode '' K) :=
   Iff.rfl
+
+/-- A class containing a Borel complete functional class is Borel complete. -/
+theorem BorelComplete.mono {K₁ K : Set (FunctionalConfiguration L ℕ)} (hK : BorelComplete K₁)
+    (h : K₁ ⊆ K) : BorelComplete K :=
+  RelationalConfiguration.BorelComplete.mono hK (image_mono h)
 
 end FunctionalConfiguration
 
@@ -171,7 +115,7 @@ theorem borelComplete_iff_forall_functional :
   exact (Setoid.borelBireducible_iff.1
     (FunctionalConfiguration.borelBireducible_classIso_preimage_rel K')).2.trans
     (h L' _ (FunctionalConfiguration.continuous_rel.measurable hm)
-      (FunctionalConfiguration.IsomorphismInvariant.preimage_rel hi))
+      (FunctionalConfiguration.isomorphismInvariant_preimage_rel hi))
 
 end RelationalConfiguration
 
@@ -180,12 +124,6 @@ namespace FunctionalConfiguration
 variable {L : Language.{u, v}} [∀ n, Countable (L.Functions n)] [∀ n, Countable (L.Relations n)]
   {K K₂ : Set (FunctionalConfiguration L ℕ)}
 
-/-- Isomorphism on a class of functional configurations and on its graph codes are Borel
-bireducible; on `ℕ`, as used for Borel completeness. -/
-private theorem borelBireducible_graphCode (K : Set (FunctionalConfiguration L ℕ)) :
-    (classIso L ℕ K).BorelBireducible (RelationalConfiguration.classIso (graphCode '' K)) :=
-  borelBireducible_classIso_image_graphCode K
-
 /-- **A Borel complete functional class** receives isomorphism on every isomorphism-invariant Borel
 class of functional configurations, for every countable language in any universes. -/
 theorem BorelComplete.borelReducible (hK : BorelComplete K) {L' : Language.{u', v'}}
@@ -193,29 +131,46 @@ theorem BorelComplete.borelReducible (hK : BorelComplete K) {L' : Language.{u', 
     {K' : Set (FunctionalConfiguration L' ℕ)} (hm : MeasurableSet K')
     (hi : IsomorphismInvariant K') : (classIso L' ℕ K').BorelReducible (classIso L ℕ K) :=
   (RelationalConfiguration.BorelComplete.borelReducible_functional hK hm hi).trans
-    (Setoid.borelBireducible_iff.1 (borelBireducible_graphCode K)).2
+    (Setoid.borelBireducible_iff.1 (borelBireducible_classIso_image_graphCode K)).2
 
 /-- **Transfer.** If isomorphism on a Borel complete functional class is Borel reducible to
 isomorphism on `K₂`, then `K₂` is Borel complete. -/
 theorem BorelComplete.of_borelReducible (hK : BorelComplete K)
     (h : (classIso L ℕ K).BorelReducible (classIso L ℕ K₂)) : BorelComplete K₂ :=
   RelationalConfiguration.BorelComplete.of_borelReducible hK <|
-    (Setoid.borelBireducible_iff.1 (borelBireducible_graphCode K)).2.trans <|
-      h.trans (Setoid.borelBireducible_iff.1 (borelBireducible_graphCode K₂)).1
+    (Setoid.borelBireducible_iff.1 (borelBireducible_classIso_image_graphCode K)).2.trans <|
+      h.trans (Setoid.borelBireducible_iff.1 (borelBireducible_classIso_image_graphCode K₂)).1
+
+/-- Functional classes with Borel bireducible isomorphism relations are Borel complete together. -/
+theorem borelComplete_iff_of_borelBireducible
+    (h : (classIso L ℕ K).BorelBireducible (classIso L ℕ K₂)) :
+    BorelComplete K ↔ BorelComplete K₂ :=
+  ⟨fun hK => hK.of_borelReducible (Setoid.borelBireducible_iff.1 h).1,
+    fun hK => hK.of_borelReducible (Setoid.borelBireducible_iff.1 h).2⟩
 
 /-- A functional class is Borel complete exactly when it receives isomorphism on every
 isomorphism-invariant Borel class of functional configurations of every language in
 `FirstOrder.Language.{0, 0}` with countably many function and relation symbols of each arity. -/
-theorem borelComplete_iff_forall :
+theorem borelComplete_iff_forall_functional :
     BorelComplete K ↔ ∀ (L' : Language.{0, 0}) [∀ n, Countable (L'.Functions n)]
       [∀ n, Countable (L'.Relations n)] (K' : Set (FunctionalConfiguration L' ℕ)),
         MeasurableSet K' → IsomorphismInvariant K' →
           (classIso L' ℕ K').BorelReducible (classIso L ℕ K) := by
   rw [borelComplete_iff, RelationalConfiguration.borelComplete_iff_forall_functional]
-  have h := Setoid.borelBireducible_iff.1 (borelBireducible_graphCode K)
+  have h := Setoid.borelBireducible_iff.1 (borelBireducible_classIso_image_graphCode K)
   exact forall_congr' fun L' => forall_congr' fun _ => forall_congr' fun _ => forall_congr'
     fun K' => forall_congr' fun _ => forall_congr' fun _ => ⟨fun h' => h'.trans h.2,
       fun h' => h'.trans h.1⟩
+
+/-- **Relational classes as functional classes.** For a relational language, the class of
+functional configurations whose relational part lies in `K₀` is Borel complete exactly when `K₀`
+is. -/
+theorem borelComplete_preimage_rel_iff {L₀ : Language.{u, v}} [L₀.IsRelational]
+    [∀ n, Countable (L₀.Relations n)] {K₀ : Set (RelationalConfiguration L₀ ℕ)} :
+    BorelComplete (rel ⁻¹' K₀) ↔ RelationalConfiguration.BorelComplete K₀ :=
+  RelationalConfiguration.borelComplete_iff_of_borelBireducible
+    ((borelBireducible_classIso_image_graphCode _).symm.trans
+      (borelBireducible_classIso_preimage_rel K₀))
 
 end FunctionalConfiguration
 
