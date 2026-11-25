@@ -131,12 +131,12 @@ noncomputable def fixedHomogenization (d : ℕ) :
   toFun f := ⟨fixedHomogenize d (f : MvPolynomial σ R),
     (mem_homogeneousSubmodule d _).mpr (isHomogeneous_fixedHomogenize d _)⟩
   invFun F := ⟨aeval (Option.elim' 1 X) (F : MvPolynomial (Option σ) R), by
-    apply aeval_mem_restrictTotalDegree
-      (fun i ↦ by
-        cases i with
-        | none => simp
-        | some j => exact (isHomogeneous_X R j).totalDegree_le)
-      (homogeneousSubmodule_le_restrictTotalDegree (Option σ) R le_rfl F.property)⟩
+    refine aeval_mem_restrictTotalDegree (F : MvPolynomial (Option σ) R) ?_
+      (homogeneousSubmodule_le_restrictTotalDegree (Option σ) R le_rfl F.property)
+    intro i _
+    cases i with
+    | none => simp
+    | some j => exact (isHomogeneous_X R j).totalDegree_le⟩
   left_inv f := Subtype.ext
     (aeval_fixedHomogenize_one_X ((mem_restrictTotalDegree σ d _).mp f.property))
   right_inv F := Subtype.ext
