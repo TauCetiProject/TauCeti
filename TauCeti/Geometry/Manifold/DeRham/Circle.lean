@@ -443,14 +443,6 @@ theorem mpullback_circleAngularForm_apply_eq_im_mlogDeriv {f : M → Circle} {x 
     Circle.coe_inv_eq_conj, Complex.mul_im, Complex.conj_re, Complex.conj_im]
   ring
 
-/-- Pulling back the angular form along a constant map into `Circle` gives `0`. -/
-@[simp]
-theorem mpullback_const_circleAngularForm (z₀ : Circle) :
-    mpullback I (𝓡 1) (fun _ : M ↦ z₀) circleAngularForm = 0 := by
-  ext x v
-  rw [mpullback_circleAngularForm_apply_eq_im_mlogDeriv mdifferentiableAt_const]
-  simp [mlogDeriv_const]
-
 /-- **Pullback of `dθ` turns products into sums.** If `f, g : M → Circle` are differentiable at `x`,
 then `(f * g)^* dθ = f^* dθ + g^* dθ` at `x`. -/
 @[to_fun mpullback_fun_mul_circleAngularForm_apply]
@@ -496,7 +488,7 @@ theorem mpullback_inv_circleAngularForm_apply {f : M → Circle} {x : M}
     ((contMDiff_inv (𝓡 1) 1).mdifferentiableAt one_ne_zero).comp x hf
   have h := mpullback_mul_circleAngularForm_apply hf hinv
   have h1 : f * f⁻¹ = fun _ ↦ (1 : Circle) := funext fun y ↦ mul_inv_cancel (f y)
-  rw [h1, mpullback_const_circleAngularForm, Pi.zero_apply] at h
+  rw [h1, mpullback_const, Pi.zero_apply] at h
   exact eq_neg_of_add_eq_zero_right h.symm
 
 /-- For a differentiable map `f : M → Circle`, `(f⁻¹)^* dθ = - f^* dθ`. -/
@@ -546,7 +538,7 @@ theorem mpullback_pow_circleAngularForm_apply {f : M → Circle} {x : M}
   induction n with
   | zero =>
     have h1 : (f ^ 0 : M → Circle) = fun _ ↦ (1 : Circle) := funext fun _ ↦ pow_zero _
-    rw [h1, mpullback_const_circleAngularForm]
+    rw [h1, mpullback_const]
     simp
   | succ n ih =>
     have hpow : MDifferentiableAt I (𝓡 1) (f ^ n) x :=
@@ -607,7 +599,7 @@ theorem mpullback_neg_circleAngularForm_apply {f : M → Circle} {x : M}
     mpullback I (𝓡 1) (-f) circleAngularForm x = mpullback I (𝓡 1) f circleAngularForm x := by
   have hneg : -f = (fun _ : M ↦ (-1 : Circle)) * f := funext fun y ↦ (neg_one_mul (f y)).symm
   rw [hneg, mpullback_mul_circleAngularForm_apply mdifferentiableAt_const hf,
-    mpullback_const_circleAngularForm, Pi.zero_apply, zero_add]
+    mpullback_const, Pi.zero_apply, zero_add]
 
 /-- For a differentiable map `f : M → Circle`, `(-f)^* dθ = f^* dθ`. -/
 theorem mpullback_neg_circleAngularForm {f : M → Circle} (hf : MDifferentiable I (𝓡 1) f) :
@@ -625,7 +617,7 @@ end PullbackAngularForm
 @[simp]
 theorem mpullback_mul_left_circleAngularForm (z₀ : Circle) :
     mpullback (𝓡 1) (𝓡 1) (z₀ * ·) circleAngularForm = circleAngularForm := by
-  simpa only [id_eq, mpullback_const_circleAngularForm, zero_add, mpullback_id] using
+  simpa only [id_eq, mpullback_const, zero_add, mpullback_id] using
     mpullback_fun_mul_circleAngularForm (I := 𝓡 1) (mdifferentiable_const (c := z₀))
       mdifferentiable_id
 
@@ -633,7 +625,7 @@ theorem mpullback_mul_left_circleAngularForm (z₀ : Circle) :
 @[simp]
 theorem mpullback_mul_right_circleAngularForm (z₀ : Circle) :
     mpullback (𝓡 1) (𝓡 1) (· * z₀) circleAngularForm = circleAngularForm := by
-  simpa only [id_eq, mpullback_const_circleAngularForm, add_zero, mpullback_id] using
+  simpa only [id_eq, mpullback_const, add_zero, mpullback_id] using
     mpullback_fun_mul_circleAngularForm (I := 𝓡 1) mdifferentiable_id
       (mdifferentiable_const (c := z₀))
 
