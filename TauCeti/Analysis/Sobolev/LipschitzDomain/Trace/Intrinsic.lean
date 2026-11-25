@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.W1p.AddHaar
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
+import TauCeti.Analysis.Normed.Module.DiamFrontier
 import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
+import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -42,7 +44,7 @@ datum on `frontier Ω` is paired with the trace of a test function through `σ`.
 The trace is constructed in the model space `ℝ × E` (`TauCeti.W1p.frontierTrace`, for Lebesgue
 measure and the global Lipschitz-domain predicate `Set.IsLipschitzDomainWith`), and transported.
 A boundary chart of `Ω` is an affine isometry `g : F ≃ᵃⁱ[ℝ] ℝ × E`. It embeds `E` isometrically in
-`F` (`LinearIsometryEquiv.sndLinearIsometry`), which gives `E` the inner product
+`F` (`LinearIsometryEquiv.symmInr`), which gives `E` the inner product
 (`InnerProductSpace.ofLinearIsometry`), finite dimension and Borel structure that the model-space
 theory needs, with `dim E = dim F - 1`. The image `g '' Ω` is a bounded Lipschitz domain of the
 model space, with compact frontier, so it satisfies the global predicate
@@ -51,11 +53,13 @@ model space, with compact frontier, so it satisfies the global predicate
 * precomposition with `g⁻¹` carries `W^{1,p}(Ω)` to `W^{1,p}(g '' Ω)`
   (`TauCeti.W1p.compAffineIsometryEquivL`), preserving and reflecting `W^{1,p}_0`;
 * `g` is an isometry, so it carries Hausdorff measure on `frontier Ω` to Hausdorff measure on
-  `frontier (g '' Ω)` (`IsometryEquiv.measurePreserving_euclideanHausdorffMeasure`), and
+  `frontier (g '' Ω)`
+  (`IsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier`), and
   precomposition with `g` is a linear isometry between the `Lᵖ` spaces of the two frontiers;
 * the change of Haar measure (`TauCeti.W1p.addHaarEquivL`) passes from Lebesgue measure to `μ`.
 
-When the frontier is empty, `Ω` is clopen and bounded, hence empty, since `F` is nontrivial.
+When the frontier is empty, `Ω` is empty, since it is bounded and `F` is nontrivial
+(`Bornology.IsBounded.eq_empty_of_frontier_eq_empty`).
 
 ## Main declarations
 
@@ -94,20 +98,6 @@ section ModelSpace
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-omit [FiniteDimensional ℝ F] in
-/-- An affine isometry `g` with `Ω = g⁻¹ W` carries Hausdorff measure on `frontier Ω` to
-Hausdorff measure on `frontier W`. -/
-private theorem measurePreserving_restrict_frontier {F' : Type*} [NormedAddCommGroup F']
-    [NormedSpace ℝ F'] [MeasurableSpace F'] [BorelSpace F'] (g : F ≃ᵃⁱ[ℝ] F') {W : Opens F'}
-    (hΩW : (Ω : Set F) = g ⁻¹' W) (d : ℕ) :
-    MeasurePreserving g ((μHE[d] : Measure F).restrict (frontier (Ω : Set F)))
-      ((μHE[d] : Measure F').restrict (frontier (W : Set F'))) := by
-  have hfr : frontier (Ω : Set F) = g ⁻¹' frontier (W : Set F') := by
-    rw [hΩW, ← g.coe_toHomeomorph, ← Homeomorph.preimage_frontier]
-  rw [hfr]
-  exact (g.toIsometryEquiv.measurePreserving_euclideanHausdorffMeasure d).restrict_preimage
-    isClosed_frontier.measurableSet
-
 /-- Density of the restrictions of test functions on an open set `Ω ⊆ F` that an affine isometry
 `g` carries onto a bounded Lipschitz domain `W` of the model space, for Lebesgue measure. -/
 private theorem denseRange_restrictL_ofTestFunctionₗ_top_of_image (hp : p ≠ ⊤) {L : ℝ≥0}
@@ -142,7 +132,7 @@ private theorem denseRange_restrictL_ofTestFunctionₗ_top_of_image (hp : p ≠ 
       (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := p) le_top φ)]
     with x h1 h2 h3
   rw [h1, Function.comp_apply, h2, h3]
-  rfl
+  exact congrFun (TestFunction.coe_mk (f := fun x => φ (g x))) x
 
 /-- The trace theorem, with density, for Lebesgue measure on an open set `Ω ⊆ F` that an affine
 isometry `g` carries onto a bounded Lipschitz domain of the model space. -/
@@ -164,7 +154,9 @@ private theorem exists_frontierTrace_of_isLipschitzDomainWith_image (hp : p ≠ 
     g.toHomeomorph.image_eq_preimage_symm _
   have hΩW : (Ω : Set F) = g ⁻¹' W := (g.toHomeomorph.preimage_image _).symm
   have hbW : IsBounded (W : Set (WithLp 2 (ℝ × E))) := g.lipschitzWith.isBounded_image hb
-  have hmp := measurePreserving_restrict_frontier g hΩW (finrank ℝ E)
+  have hmp : MeasurePreserving g ((μHE[finrank ℝ E] : Measure F).restrict (frontier (Ω : Set F)))
+      ((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict (frontier (W : Set _))) :=
+    g.toIsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier hΩW _
   have hmpW : MeasurePreserving g.symm (volume.restrict (W : Set (WithLp 2 (ℝ × E))))
       (volume.restrict (Ω : Set F)) := by
     rw [hWΩ]
@@ -206,14 +198,6 @@ section Intrinsic
 variable [Nontrivial F] {mu : Measure F} [mu.IsAddHaarMeasure]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] [Fact (1 ≤ p)] in
-/-- A bounded Lipschitz domain with empty frontier in a nontrivial space is empty: it is clopen,
-and the whole space is unbounded. -/
-private theorem eq_empty_of_frontier_eq_empty (hb : IsBounded (Ω : Set F))
-    (hfr : frontier (Ω : Set F) = ∅) : (Ω : Set F) = ∅ :=
-  (isClopen_iff.1 (isClopen_iff_frontier_eq_empty.2 hfr)).resolve_right fun h =>
-    NormedSpace.unbounded_univ ℝ F (h ▸ hb)
-
 /-- The trace theorem, with density, for Lebesgue measure. -/
 private theorem exists_frontierTrace_volume (hp : p ≠ ⊤)
     (hΩ : (Ω : Set F).IsLipschitzDomain E) (hb : IsBounded (Ω : Set F)) :
@@ -227,7 +211,7 @@ private theorem exists_frontierTrace_volume (hp : p ≠ ⊤)
         W1p.restrictL (le_top : Ω ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p φ) := by
   rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | ⟨x₀, hx₀⟩
   · -- `Ω` is empty, so `W^{1,p}(Ω)` is zero and the zero operator is the trace.
-    have hΩe := eq_empty_of_frontier_eq_empty hb hfr
+    have hΩe := hb.eq_empty_of_frontier_eq_empty hfr
     have hsub (u v : W1p volume Ω p) : u = v :=
       W1p.ext_value (Lp.ext (by simp [hΩe, Filter.EventuallyEq]))
     refine ⟨0, fun u f _ _ => by simp [hfr, Filter.EventuallyEq], fun u => ?_,
@@ -242,9 +226,8 @@ private theorem exists_frontierTrace_volume (hp : p ≠ ⊤)
   obtain ⟨L, hL⟩ := (hΩ.image g).exists_isLipschitzDomainWith hfr_cpt
   -- Give `E` the inner product, finite dimension and Borel structure of its image in `F`.
   let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E) := g.linearIsometryEquiv
-  let _ : InnerProductSpace ℝ E := .ofLinearIsometry e.sndLinearIsometry
-  have _ : FiniteDimensional ℝ E :=
-    Module.Finite.of_injective e.sndLinearIsometry.toLinearMap e.sndLinearIsometry.injective
+  let _ : InnerProductSpace ℝ E := .ofLinearIsometry e.symmInr
+  have _ : FiniteDimensional ℝ E := e.finiteDimensional_snd
   let _ : MeasurableSpace E := borel E
   have _ : BorelSpace E := ⟨rfl⟩
   have hdim : finrank ℝ E = finrank ℝ F - 1 := by

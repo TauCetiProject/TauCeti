@@ -18,15 +18,18 @@ everything already stated about `E` as a normed space is unchanged.
 
 The typical embedding is the second factor of a Euclidean product: a linear isometry equivalence
 `e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)` restricts to `y ↦ e⁻¹ (0, y)`
-(`LinearIsometryEquiv.sndLinearIsometry`). This is how the tangential model `E` of a boundary chart
-of a domain in an inner product space `F` inherits an inner product, and with it the Euclidean
-structure the model-space theory of Lipschitz domains needs.
+(`LinearIsometryEquiv.symmInr`), and `E` is finite-dimensional when `F` is
+(`LinearIsometryEquiv.finiteDimensional_snd`). This is how the tangential model `E` of a boundary
+chart of a domain in an inner product space `F` inherits an inner product, and with it the
+Euclidean structure the model-space theory of Lipschitz domains needs.
 
 ## Main declarations
 
 * `InnerProductSpace.ofLinearIsometry`: the pulled-back inner product, with
   `InnerProductSpace.inner_ofLinearIsometry`.
-* `LinearIsometryEquiv.sndLinearIsometry`: the second factor of `WithLp 2 (ℝ × E)` inside `F`.
+* `LinearIsometryEquiv.symmInr`: the inclusion of the second factor of `WithLp 2 (ℝ × E)` in `F`.
+* `LinearIsometryEquiv.finiteDimensional_snd`: the second factor `E` is finite-dimensional when `F`
+  is.
 -/
 
 public section
@@ -63,15 +66,22 @@ namespace LinearIsometryEquiv
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F]
 
-/-- The second factor of `WithLp 2 (ℝ × E)` inside `F`: the linear isometry `y ↦ e⁻¹ (0, y)`. -/
-def sndLinearIsometry (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) : E →ₗᵢ[ℝ] F where
+/-- The inclusion of the second factor of `WithLp 2 (ℝ × E)` in `F`: the linear isometry
+`y ↦ e⁻¹ (0, y)`. -/
+def symmInr (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) : E →ₗᵢ[ℝ] F where
   toLinearMap := e.symm.toLinearEquiv.toLinearMap.comp
     ((WithLp.linearEquiv 2 ℝ (ℝ × E)).symm.toLinearMap.comp (LinearMap.inr ℝ ℝ E))
   norm_map' y := by simp
 
 @[simp]
-theorem sndLinearIsometry_apply (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) (y : E) :
-    e.sndLinearIsometry y = e.symm (WithLp.toLp 2 (0, y)) :=
+theorem symmInr_apply (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) (y : E) :
+    e.symmInr y = e.symm (WithLp.toLp 2 (0, y)) :=
   (rfl)
+
+/-- The second factor `E` of `WithLp 2 (ℝ × E)` is finite-dimensional when `F` is, since it
+embeds in `F` by `LinearIsometryEquiv.symmInr`. -/
+theorem finiteDimensional_snd [FiniteDimensional ℝ F] (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) :
+    FiniteDimensional ℝ E :=
+  Module.Finite.of_injective e.symmInr.toLinearMap e.symmInr.injective
 
 end LinearIsometryEquiv

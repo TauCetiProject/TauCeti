@@ -71,7 +71,9 @@ hyperplane itself has infinite `μHE[n - 1]` measure
 inequality holds on the hyperplane (`TauCeti.euclideanHausdorffMeasure_inter_setOf_inner_eq_le`).
 
 Isometries carry restricted Euclidean Hausdorff measure to its restriction on the image
-(`Isometry.map_euclideanHausdorffMeasure_restrict`).
+(`Isometry.map_euclideanHausdorffMeasure_restrict`), and an isometric equivalence carries it
+restricted to the frontier of a preimage to its restriction to the frontier of the set
+(`IsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier`).
 
 ## References
 
@@ -137,6 +139,18 @@ theorem Isometry.map_euclideanHausdorffMeasure_restrict {X Y : Type*} [EMetricSp
   rw [Measure.map_apply hf.continuous.measurable ht,
     Measure.restrict_apply (hf.continuous.measurable ht), Measure.restrict_apply ht,
     ← image_preimage_inter, hf.euclideanHausdorffMeasure_image]
+
+/-- An isometric equivalence `e` with `s = e⁻¹ t` carries Euclidean Hausdorff measure restricted
+to `frontier s` to Euclidean Hausdorff measure restricted to `frontier t`, in every dimension. -/
+theorem IsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier
+    {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X] [EMetricSpace Y]
+    [MeasurableSpace Y] [BorelSpace Y] (e : X ≃ᵢ Y) {s : Set X} {t : Set Y} (hst : s = e ⁻¹' t)
+    (d : ℕ) :
+    MeasurePreserving e ((μHE[d] : Measure X).restrict (frontier s))
+      ((μHE[d] : Measure Y).restrict (frontier t)) := by
+  rw [hst, ← e.coe_toHomeomorph, ← Homeomorph.preimage_frontier]
+  exact (e.measurePreserving_euclideanHausdorffMeasure d).restrict_preimage
+    isClosed_frontier.measurableSet
 
 namespace TauCeti
 

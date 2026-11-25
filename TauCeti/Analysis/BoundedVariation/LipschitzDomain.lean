@@ -115,9 +115,8 @@ theorem BV.isCompactOperator_toL1CLM_of_isLipschitzDomainWith_image {L : ℝ≥0
     (hΩ : (f '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F)) :
     IsCompactOperator (BV.toL1CLM (μ := μ) (Ω := Ω)) := by
   let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E) := f.linearIsometryEquiv
-  let _ : InnerProductSpace ℝ E := .ofLinearIsometry e.sndLinearIsometry
-  have _ : FiniteDimensional ℝ E :=
-    Module.Finite.of_injective e.sndLinearIsometry.toLinearMap e.sndLinearIsometry.injective
+  let _ : InnerProductSpace ℝ E := .ofLinearIsometry e.symmInr
+  have _ : FiniteDimensional ℝ E := e.finiteDimensional_snd
   let _ : MeasurableSpace E := borel E
   have _ : BorelSpace E := ⟨rfl⟩
   have heΩ : (e '' (Ω : Set F)).IsLipschitzDomainWith L := by
