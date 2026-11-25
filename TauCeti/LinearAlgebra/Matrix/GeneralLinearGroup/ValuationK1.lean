@@ -94,8 +94,8 @@ theorem coe_ordFrac (x : AlgebraicK1 K) :
     (ordFrac A x : ℤᵐ⁰) = Ring.ordFrac A (det K x : K) := by
   simp [ordFrac]
 
-/-- Two classes have the same order of vanishing exactly when their determinants have the same
-order. -/
+/-- The order of vanishing of a class equals `z` exactly when the order of its determinant is
+`z`. -/
 theorem ordFrac_eq_iff {x : AlgebraicK1 K} {z : Multiplicative ℤ} :
     ordFrac A x = z ↔ Ring.ordFrac A (det K x : K) = z := by
   rw [← coe_ordFrac, WithZero.coe_inj]
