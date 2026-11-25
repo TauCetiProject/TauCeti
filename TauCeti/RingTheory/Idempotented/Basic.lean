@@ -38,6 +38,8 @@ unit.
 
 * `TauCeti.IsIdempotented.iUnion_corner`: an idempotented ring is the union of its corners `eHe`,
   and these form a directed family (`TauCeti.IsIdempotented.directed_corner`).
+* `TauCeti.IsIdempotented.subsingleton_of_mul_eq_zero`: a nontrivial ring with the zero
+  multiplication is not idempotented.
 * `TauCeti.mem_nondegeneratePart_iff`: over an idempotented `H`, the elements of `H • M` are
   exactly those fixed by some idempotent of `H`.
 * `TauCeti.IsNondegenerate.exists_isIdempotentElem_forall_smul_eq`: finitely many elements of a
@@ -107,6 +109,16 @@ theorem directed_corner :
     · rw [← hxr, mul_assoc, hr]
   exact ⟨⟨f, hf⟩, key e₁ he₁ (hs e₁ (by simp)), key e₂ he₂ (hs e₂ (by simp))⟩
 
+/-- An idempotented structure with zero multiplication is trivial: every `x` equals `e * x = 0`
+for a local unit `e`. In particular a nonzero ring with the zero multiplication is not
+idempotented. -/
+theorem subsingleton_of_mul_eq_zero {H : Type*} [MulZeroClass H] [IsIdempotented H]
+    (h : ∀ x y : H, x * y = 0) : Subsingleton H := by
+  classical
+  refine ⟨fun x y ↦ ?_⟩
+  obtain ⟨e, -, he⟩ := exists_isIdempotentElem {x, y}
+  rw [← (he x (by simp)).1, ← (he y (by simp)).1, h, h]
+
 end IsIdempotented
 
 /-- Finitely supported functions `ι →₀ R`, for `R` with `0` and `1`, are idempotented under
@@ -129,6 +141,16 @@ instance (ι R : Type*) [MulZeroOneClass R] : IsIdempotented (ι →₀ R) := by
       · exact .inr (Finsupp.notMem_support_iff.1 fun h ↦ hi (Finset.mem_biUnion.2 ⟨x, hx, h⟩))
     refine ⟨Finsupp.ext fun i ↦ ?_, Finsupp.ext fun i ↦ ?_⟩ <;>
       rcases key i with h | h <;> simp [Finsupp.mul_apply, h]
+
+/-- Scalars commute past the pointwise product of finitely supported functions on the left. -/
+instance instIsScalarTowerFinsuppPointwise (ι R : Type*) [CommSemiring R] :
+    IsScalarTower R (ι →₀ R) (ι →₀ R) :=
+  ⟨fun a f g ↦ Finsupp.ext fun i ↦ by simp [mul_assoc]⟩
+
+/-- Scalars commute past the pointwise product of finitely supported functions on the right. -/
+instance instSMulCommClassFinsuppPointwise (ι R : Type*) [CommSemiring R] :
+    SMulCommClass R (ι →₀ R) (ι →₀ R) :=
+  ⟨fun a f g ↦ Finsupp.ext fun i ↦ by simp [mul_left_comm]⟩
 
 section Module
 
