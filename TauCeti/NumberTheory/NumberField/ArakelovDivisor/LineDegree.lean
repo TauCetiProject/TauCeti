@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.ArakelovDivisor.HermitianLine
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Line
+public import TauCeti.RingTheory.FractionalIdeal.Projective
 
 /-!
 # The Arakelov degree of the line of an Arakelov divisor
@@ -41,12 +42,6 @@ theorem lineDegree_hermitianMetric (D : ArakelovDivisor K) :
   set s' : (((D.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :
       Submodule (𝓞 K) K) := ⟨s, hs.1⟩
   have hs' : s' ≠ 0 := fun h0 ↦ hs.2 (congrArg Subtype.val h0)
-  -- The carrier is the submodule underlying a unit of `Submodule (𝓞 K) K`, hence invertible.
-  have : Module.Invertible (𝓞 K) (((D.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-      FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K) :=
-    inferInstanceAs (Module.Invertible (𝓞 K)
-      (Units.map (FractionalIdeal.coeSubmoduleHom (𝓞 K)⁰ K).toMonoidHom D.finitePart⁻¹ :
-        Submodule (𝓞 K) K))
   rw [D.hermitianMetric.lineDegree_eq_sectionDegree_of_invertible hs',
     D.sectionDegree_hermitianMetric hs']
 
