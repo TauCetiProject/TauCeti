@@ -33,10 +33,15 @@ The predicate is sensitive to the characteristic: for the cusp `y² = x³` and `
   `HasLocallyFreeQuotientOfDifferentials.restrict`: the predicate passes to open subschemes;
 * `hasLocallyFreeQuotientOfDifferentials_of_smoothOfRelativeDimension`: on a scheme smooth of
   relative dimension `d`, the identity of `Ω_{X/k}` witnesses the predicate;
+* `le_of_hasLocallyFreeQuotientOfDifferentials`: on a nonempty scheme smooth of relative
+  dimension `d`, there is no locally free quotient of rank greater than `d`;
 * `HasLocallyFreeQuotientOfDifferentials.exists_surjective_stalk`: the forward direction of the
   stalk criterion, that at every point `x` there is a surjective `𝒪_{X,x}`-linear map
   `Ω[𝒪_{X,x}⁄k] → 𝒪_{X,x}^d`. The stalk of a locally free quotient `Ω_{X/k} ⟶ E` at `x` is
-  surjective, `E_x` is free of rank `d`, and the stalk of `Ω_{X/k}` is `Ω[𝒪_{X,x}⁄k]`.
+  surjective, `E_x` is free of rank `d`, and the stalk of `Ω_{X/k}` is `Ω[𝒪_{X,x}⁄k]`;
+* `HasLocallyFreeQuotientOfDifferentials.le_finrank_kaehlerDifferential_stalk`: the rank `d` of a
+  locally free quotient is at most the rank of `Ω[𝒪_{X,x}⁄k]` at any point `x` where that module
+  is finitely generated.
 
 ## References
 
@@ -113,10 +118,21 @@ theorem exists_surjective_stalk {X : Scheme.{u}} [X.Over (Spec (.of k))] {d : �
   exact b.equivFun.surjective.comp
     ((q.stalkₗ_surjective_of_epi x).comp (LinearEquiv.surjective _))
 
+/-- If `Ω_{X/k}` admits a locally free quotient of rank `d`, then `d` is at most the rank of the
+Kähler differentials `Ω[𝒪_{X,x}⁄k]` at every point `x` of `X` where they are finitely generated
+over `𝒪_{X,x}`. -/
+theorem le_finrank_kaehlerDifferential_stalk {X : Scheme.{u}} [X.Over (Spec (.of k))] {d : ℕ}
+    (h : HasLocallyFreeQuotientOfDifferentials k X d) (x : X)
+    [Module.Finite (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄k]] :
+    d ≤ Module.finrank (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄k] := by
+  obtain ⟨g, hg⟩ := h.exists_surjective_stalk x
+  simpa using LinearMap.finrank_le_finrank_of_surjective hg
+
 end HasLocallyFreeQuotientOfDifferentials
 
-variable (k) (X : Scheme.{u}) [X.Over (Spec (.of k))] (d : ℕ)
-  [SmoothOfRelativeDimension d (X ↘ Spec (.of k))]
+variable (k) (X : Scheme.{u}) [X.Over (Spec (.of k))]
+
+variable (d : ℕ) [SmoothOfRelativeDimension d (X ↘ Spec (.of k))]
 
 /-- On a scheme smooth of relative dimension `d` over `Spec k`, the identity of `Ω_{X/k}`, which
 is finite locally free of constant rank `d`, is a locally free quotient of rank `d`. -/
@@ -124,6 +140,15 @@ theorem hasLocallyFreeQuotientOfDifferentials_of_smoothOfRelativeDimension :
     HasLocallyFreeQuotientOfDifferentials k X d :=
   ⟨FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials k X d, eqToHom (by simp),
     inferInstance⟩
+
+/-- **No locally free quotient of excess rank on a smooth scheme.** If `X` is nonempty and smooth
+of relative dimension `d` over `Spec k` and `Ω_{X/k}` admits a locally free quotient of rank `e`,
+then `e ≤ d`. -/
+theorem le_of_hasLocallyFreeQuotientOfDifferentials [Nonempty X] {e : ℕ}
+    (h : HasLocallyFreeQuotientOfDifferentials k X e) : e ≤ d := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  have := SmoothOfRelativeDimension.smooth d (X ↘ Spec (.of k))
+  simpa [finrank_kaehlerDifferential_stalk k X d x] using h.le_finrank_kaehlerDifferential_stalk x
 
 end
 
