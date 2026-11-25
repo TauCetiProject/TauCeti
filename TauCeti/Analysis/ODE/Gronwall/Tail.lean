@@ -45,14 +45,12 @@ open scoped Nat Topology
 
 namespace TauCeti
 
-/-- **Grönwall's inequality on a ray.** Let `u ≤ C * P` on `[x, ∞)`, and suppose that for every
-`y ≥ x` and every majorant `b` of `u` on `(y, ∞)` with `g * b` integrable there,
-`u y ≤ P y * (A + ∫ v in Ioi y, g v * b v)`. Then
+/-- **Grönwall's inequality on a ray.** Let `P * g` be integrable on `(x, ∞)` and `u ≤ C * P` on
+`[x, ∞)`, and suppose that for every `y ≥ x` and every majorant `b` of `u` on `(y, ∞)` with
+`g * b` integrable there, `u y ≤ P y * (A + ∫ v in Ioi y, g v * b v)`. Then
 `u x ≤ P x * A * exp (∫ v in Ioi x, P v * g v)`.
 
-Quantifying over the majorants `b` lets `u` be non-measurable. The `k`-th iterate of the
-inequality gives `u y ≤ P y * (A * ∑ j < k, Ψ y ^ j / j! + C * (Ψ y ^ k / k!))` for `Ψ` the
-tail integral of `P * g`. -/
+Quantifying over the majorants `b` lets `u` be non-measurable. -/
 theorem le_mul_exp_integral_Ioi_of_le_mul_add_integral_Ioi {u P g : ℝ → ℝ} {x A C : ℝ}
     (hg : IntegrableOn (fun v ↦ P v * g v) (Ioi x)) (hC : ∀ y ∈ Ici x, u y ≤ C * P y)
     (hu : ∀ y ∈ Ici x, ∀ b : ℝ → ℝ, (∀ v ∈ Ioi y, u v ≤ b v) →
