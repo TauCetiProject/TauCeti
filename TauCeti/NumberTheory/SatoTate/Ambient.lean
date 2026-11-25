@@ -118,6 +118,7 @@ theorem symplecticForm_eq_neg_reindex_J (g : ℕ) :
     simp [J, Matrix.one_apply, -Fin.natAdd_eq_addNat, Fin.ext_iff] at * <;> omega
 
 /-- `Ω_d` is antisymmetric for even `d`. -/
+@[simp]
 theorem transpose_symplecticForm (hd : Even d) :
     (symplecticForm d)ᵀ = -symplecticForm d := by
   obtain ⟨g, rfl⟩ := hd
@@ -131,8 +132,12 @@ theorem symplecticForm_mul_self (hd : Even d) :
   rw [symplecticForm_eq_neg_reindex_J, neg_mul_neg, ← coe_reindexAlgEquiv ℂ ℂ, ← map_mul,
     J_squared, map_neg, map_one]
 
-/-- `Ω_d` has real entries, so entrywise complex conjugation fixes it. -/
-theorem map_star_symplecticForm (d : ℕ) : (symplecticForm d).map star = symplecticForm d := by
+/-- `Ω_d` has entries in `{0, 1, −1}`, so every additive map `ℂ → ℂ` preserving `1` fixes it
+entrywise; in particular complex conjugation `starRingEnd ℂ` does. This is the analogue of
+`Matrix.map_J`. -/
+@[simp]
+theorem map_symplecticForm {F : Type*} [FunLike F ℂ ℂ] [AddMonoidHomClass F ℂ ℂ]
+    [OneHomClass F ℂ ℂ] (f : F) : (symplecticForm d).map f = symplecticForm d := by
   ext i j
   simp only [map_apply, symplecticForm_apply]
   split_ifs <;> simp
@@ -204,6 +209,7 @@ theorem det_eq_one_of_mem_USp (hd : Even d) {x : U d} (hx : x ∈ USp d) :
   exact SymplecticGroup.det_eq_one ((mem_USp_iff_reindex_mem_symplecticGroup x).mp hx)
 
 /-- For even `d`, `USp(d)` is closed under transposition. -/
+@[simp]
 theorem transpose_mem_USp_iff (hd : Even d) {x : U d} :
     UnitaryGroup.transpose x ∈ USp d ↔ x ∈ USp d := by
   obtain ⟨g, rfl⟩ := hd
@@ -211,10 +217,11 @@ theorem transpose_mem_USp_iff (hd : Even d) {x : U d} :
     ← transpose_reindex, SymplecticGroup.transpose_mem_iff]
 
 /-- `USp(d)` is closed under entrywise complex conjugation. -/
+@[simp]
 theorem map_star_mem_USp_iff {x : U d} : UnitaryGroup.map_star x ∈ USp d ↔ x ∈ USp d := by
   have hs : (star : ℂ → ℂ) = starRingEnd ℂ := (funext starRingEnd_apply).symm
-  have hΩ : (symplecticForm d).map (starRingEnd ℂ) = symplecticForm d := by
-    rw [← hs, map_star_symplecticForm]
+  have hΩ : (symplecticForm d).map (starRingEnd ℂ) = symplecticForm d :=
+    map_symplecticForm _
   have hinv (M : Matrix (Fin d) (Fin d) ℂ) : (M.map (starRingEnd ℂ)).map (starRingEnd ℂ) = M := by
     ext
     simp
