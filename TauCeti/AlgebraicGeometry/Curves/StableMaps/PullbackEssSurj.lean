@@ -107,6 +107,9 @@ instance essSurj_pullbackFunctor : (pullbackFunctor (q := q) (n := n) g).EssSurj
 maps: it is full, faithful and essentially surjective. -/
 instance isEquivalence_pullbackFunctor : (pullbackFunctor (q := q) (n := n) g).IsEquivalence where
 
+-- The body is exposed because the statement of `pullbackEquivalence_counitIso_app` only
+-- typechecks after unfolding it: `pullbackInvIso g G` has the type of a counit component
+-- only up to unfolding the functor and inverse of the equivalence.
 /-- Base change along an isomorphism of bases `g : T ⟶ S`, as an equivalence between prestable
 maps to `q : V ⟶ S` and prestable maps to the base-changed target `V ×_S T ⟶ T`. Its inverse
 sends `G` to `pullbackInv g G` and its counit is `pullbackInvIso`. -/

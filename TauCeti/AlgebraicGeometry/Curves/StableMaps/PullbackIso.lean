@@ -104,6 +104,9 @@ def pullbackAutMulEquiv (F : PrestableMap q n) : Aut F ≃* Aut (F.pullback g) :
 @[simp]
 theorem pullbackAutMulEquiv_apply (F : PrestableMap q n) (e : Aut F) :
     F.pullbackAutMulEquiv g e = F.pullbackAut g e :=
+  -- By construction (`Aut.isoEquiv` and `FullyFaithful.isoEquiv` applied to the fully faithful
+  -- `pullbackFunctor g`), the image of `e` has underlying morphism `(pullbackFunctor g).map e.hom`,
+  -- which is the morphism `pullbackAut_apply_asIso_hom` identifies with `pullbackAut F g e`.
   Aut.ext (Iso.ext (pullbackAut_apply_asIso_hom F g e).symm)
 
 @[simp]
