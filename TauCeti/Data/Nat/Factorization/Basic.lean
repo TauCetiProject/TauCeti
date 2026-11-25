@@ -25,7 +25,14 @@ prime-power blocks. For a divisor `n ∣ m`, the `p`-free parts are related by
 a divisor of `p * k` with the same `p`-free part as `k` either divides `k` or is `p * k`, and a
 divisor of `n` that does not divide `n / p` is divisible by the full `p`-part `p ^ v_p(n)` of `n`.
 The product of any set of prime factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to
-the product of all the prime factors of `n` exactly when it is coprime to `n`.
+the product of all the prime factors of `n` exactly when it is coprime to `n`. Monomial products of
+an injective family of primes (or fixed positive powers of their casts in characteristic zero) are
+injective on finitely supported exponent tuples.
+
+Conversely, a nonzero `n` is coprime to `q` once no prime factor of `n` divides `q`. Thus, for a
+set `S`, the nonzero `n` all of whose prime factors lie in `S` (the `S`-factored numbers) are all
+nonzero `n` when `S` contains every prime, only `1` when `S = ∅`, and the `n` coprime to `q` when
+`S = {p | ¬ p ∣ q}`.
 
 For a prime `p` and `n ≠ 0`, `n.factorization p = k` holds precisely when `p ^ k ∣ n` and
 `¬p ^ (k + 1) ∣ n`, giving exact inclusion–exclusion counts on `Finset.Icc 1 N` for one prime
@@ -34,8 +41,6 @@ an `AddCommGroupWithOne`, `Semifield`, or linearly ordered `Field` yields exact 
 identities, the unconditional upper bound `≤ N / p ^ k`, single-prime and two-prime discrepancy
 bounds `< 1` and `< 2` around the asymptotic densities `1 / p ^ k - 1 / p ^ (k + 1)`, and the
 centered pairwise correlation bound `< 3` for distinct primes `p ≠ q` across all `k, l : ℕ`.
-Monomial products of an injective family of primes (or fixed positive powers of their casts in
-characteristic zero) are injective on finitely supported exponent tuples.
 
 ## Provenance
 
@@ -131,6 +136,25 @@ theorem Coprime.exists_mem_primeFactors_not_dvd {n p : ℕ} (hcop : n.Coprime p)
   let ⟨q, hq⟩ := nonempty_primeFactors.2 hn
   ⟨q, hq, hcop.not_dvd_of_mem_primeFactors hq⟩
 
+/-- A nonzero `n` is coprime to `q` exactly when no prime factor of `n` divides `q`: the nonzero
+`n` coprime to `q` are those all of whose prime factors lie in `{p | ¬ p ∣ q}`. -/
+theorem coprime_iff_forall_mem_primeFactors_not_dvd {n q : ℕ} (hn : n ≠ 0) :
+    n.Coprime q ↔ ∀ p ∈ n.primeFactors, ¬ p ∣ q :=
+  ⟨fun h _ hp ↦ h.not_dvd_of_mem_primeFactors hp,
+    fun h ↦ coprime_of_dvd fun p hp hpn ↦ h p (mem_primeFactors.2 ⟨hp, hpn, hn⟩)⟩
+
+/-- If `S` contains every prime, every prime factor of every `n` lies in `S`. -/
+theorem forall_mem_primeFactors_mem_of_setOf_prime_subset {S : Set ℕ}
+    (hS : {p : ℕ | p.Prime} ⊆ S) (n : ℕ) : ∀ p ∈ n.primeFactors, p ∈ S :=
+  fun _ hp ↦ hS (prime_of_mem_primeFactors hp)
+
+/-- A nonzero `n` has all of its prime factors in `∅` exactly when `n = 1`. -/
+theorem forall_mem_primeFactors_mem_empty_iff {n : ℕ} (hn : n ≠ 0) :
+    (∀ p ∈ n.primeFactors, p ∈ (∅ : Set ℕ)) ↔ n = 1 := by
+  simp only [Set.mem_empty_iff_false, imp_false, ← Finset.eq_empty_iff_forall_notMem,
+    primeFactors_eq_empty]
+  omega
+
 /-- For a prime `p` and nonzero `n`, the `p`-adic valuation `n.factorization p` equals `k` if and
 only if `p ^ k ∣ n` and `¬p ^ (k + 1) ∣ n`. -/
 theorem Prime.factorization_eq_iff_pow_dvd_and_not_pow_dvd {p n k : ℕ} (hp : p.Prime)
@@ -174,6 +198,19 @@ theorem card_filter_Icc_factorization_eq_le (N p k : ℕ) :
     rcases eq_or_ne k 0 with rfl | hk
     · simp [hzero]
     · simp [hzero, hk.symm]
+
+/-- Helper for `Nat.card_filter_Icc_factorization_eq_and_eq` and
+`Nat.sum_Icc_ite_factorization_eq_and_eq`: when `2 ≤ p` and `2 ≤ q`, subtracting the two single-step
+refinement counts from `N / (p ^ k * q ^ l)` does not underflow in `ℕ`. -/
+private lemma div_pow_mul_pow_succ_add_le (N : ℕ) {p q : ℕ} (hp : 2 ≤ p) (hq : 2 ≤ q) (k l : ℕ) :
+    N / (p ^ k * q ^ (l + 1)) + N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) := by
+  have hq2 : N / (p ^ k * q ^ (l + 1)) ≤ N / (p ^ k * q ^ l) / 2 := by
+    rw [pow_succ, ← mul_assoc, ← Nat.div_div_eq_div_mul]
+    exact Nat.div_le_div_left hq zero_lt_two
+  have hp2 : N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) / 2 := by
+    rw [pow_succ, mul_right_comm, ← Nat.div_div_eq_div_mul]
+    exact Nat.div_le_div_left hp zero_lt_two
+  omega
 
 /-- For distinct primes `p ≠ q`, the number of `n ∈ [1, N]` with `n.factorization p = k` and
 `n.factorization q = l` is given by inclusion–exclusion over multiples of `p ^ i * q ^ j`
@@ -220,12 +257,7 @@ theorem card_filter_Icc_factorization_eq_and_eq (N : ℕ) {p q : ℕ} (hp : p.Pr
   have h2 := Finset.card_union_add_card_inter (s k (l + 1)) (s (k + 1) l)
   rw [← htarget, hs_card] at h1
   rw [hinter, hs_card, hs_card, hs_card] at h2
-  have hq2 : N / (p ^ k * q ^ (l + 1)) ≤ N / (p ^ k * q ^ l) / 2 := by
-    rw [pow_succ, ← mul_assoc, ← Nat.div_div_eq_div_mul]
-    exact Nat.div_le_div_left hq.two_le (by decide)
-  have hp2 : N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) / 2 := by
-    rw [pow_succ, mul_right_comm, ← Nat.div_div_eq_div_mul]
-    exact Nat.div_le_div_left hp.two_le (by decide)
+  have hle := div_pow_mul_pow_succ_add_le N hp.two_le hq.two_le k l
   omega
 
 /-- Indicator-sum form of `Nat.card_filter_Icc_factorization_eq` in any `AddCommGroupWithOne`. -/
@@ -257,14 +289,7 @@ theorem sum_Icc_ite_factorization_eq_and_eq {α : Type*} [AddCommGroupWithOne α
       ((N / (p ^ k * q ^ l) : ℕ) : α) - ((N / (p ^ k * q ^ (l + 1)) : ℕ) : α) -
         ((N / (p ^ (k + 1) * q ^ l) : ℕ) : α) +
           ((N / (p ^ (k + 1) * q ^ (l + 1)) : ℕ) : α) := by
-  have hq2 : N / (p ^ k * q ^ (l + 1)) ≤ N / (p ^ k * q ^ l) / 2 := by
-    rw [pow_succ, ← mul_assoc, ← Nat.div_div_eq_div_mul]
-    exact Nat.div_le_div_left hq.two_le (by decide)
-  have hp2 : N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) / 2 := by
-    rw [pow_succ, mul_right_comm, ← Nat.div_div_eq_div_mul]
-    exact Nat.div_le_div_left hp.two_le (by decide)
-  have hle : N / (p ^ k * q ^ (l + 1)) + N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) :=
-    (Nat.add_le_add hq2 hp2).trans (by omega)
+  have hle := div_pow_mul_pow_succ_add_le N hp.two_le hq.two_le k l
   rw [Finset.sum_boole, card_filter_Icc_factorization_eq_and_eq N hp hq hpq k l, Nat.cast_add,
     Nat.cast_sub (Nat.le_sub_of_add_le' hle), Nat.cast_sub (Nat.le_of_add_right_le hle)]
 

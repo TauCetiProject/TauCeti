@@ -437,6 +437,14 @@ abbrev IsTransitive.mulAction {p : C(E, B)} {Φ : MooreLiftingFunction p} (hΦ :
   one_smul := Φ.fiberAct_one b
   mul_smul ω ω' f := hΦ.fiberAct_mul b f ω'.unop ω.unop
 
+/-- A Moore loop `ω` acts on the fibre, through a transitive lifting function, by `fiberAct`. -/
+@[simp]
+theorem IsTransitive.op_smul_eq_fiberAct {p : C(E, B)} {Φ : MooreLiftingFunction p}
+    (hΦ : Φ.IsTransitive) (b : B) (f : {e // p e = b}) (ω : MooreLoopSpace B b) :
+    letI := hΦ.mulAction b
+    op ω • f = Φ.fiberAct b f ω :=
+  (rfl)
+
 /-- The action through a transitive lifting function is continuous. -/
 theorem IsTransitive.continuousSMul {p : C(E, B)} {Φ : MooreLiftingFunction p}
     (hΦ : Φ.IsTransitive) (b : B) :

@@ -48,6 +48,8 @@ representation of a group, from the eigenvalues alone, with no invariant inner p
   algebraically closed field.
 * `Representation.isIntegral_char`: **character values are algebraic integers**, over an
   arbitrary field. The bundled `FDRep` form is Mathlib's `FDRep.isIntegral_character`.
+* `Representation.isIntegral_character_of_finite_range`: a representation with finite image has
+  character values integral over every ring below the field.
 * `Representation.char_mem_of_forall_pow_eq_one_mem`: whenever `(ρ g).charpoly` splits,
   a character value at `g` with `g ^ n = 1` lies in every subring containing the `n`-th roots of
   unity.
@@ -141,6 +143,18 @@ theorem isIntegral_char (ρ : Representation k G V) {g : G} {n : ℕ}
     (hn : n ≠ 0) (hg : g ^ n = 1) : IsIntegral ℤ (ρ.character g) := by
   have hf : ρ g ^ n = 1 := by rw [← map_pow, hg, map_one]
   exact Module.End.isIntegral_trace_of_pow_eq_one hn hf
+
+omit [FiniteDimensional k V] in
+/-- **With finite image, every character value is integral** over every ring `R` below `k`. -/
+theorem isIntegral_character_of_finite_range {R : Type*} [CommRing R] [Algebra R k]
+    (ρ : Representation k G V) (h : (Set.range ρ).Finite) (g : G) :
+    IsIntegral R (ρ.character g) := by
+  -- Two distinct powers of `ρ g` agree, by pigeonhole in the finite image.
+  have : Finite (Set.range ρ) := h.to_subtype
+  obtain ⟨a, b, hab, he⟩ := Finite.exists_ne_map_eq_of_infinite
+    fun n : ℕ => (⟨ρ (g ^ n), g ^ n, rfl⟩ : Set.range ρ)
+  exact Module.End.isIntegral_trace_of_pow_eq_pow hab
+    (by simpa [map_pow] using congrArg Subtype.val he)
 
 /-- **Character values lie in every subring containing the relevant roots of unity.** If the
 characteristic polynomial of `ρ g` splits, `g ^ n = 1`, and the subring `A` of `k` contains every

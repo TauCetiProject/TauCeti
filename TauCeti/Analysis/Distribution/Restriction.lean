@@ -22,8 +22,9 @@ property is `Distribution.existsUnique_gluing`.
 * `Distribution.restrictCLM`: the restriction `T|_{Ω'}`, with `Distribution.restrictCLM_apply`.
 * `Distribution.restrictCLM_self`, `Distribution.restrictCLM_restrictCLM`: restriction to `Ω`
   itself is the identity, and restrictions compose.
-* `Distribution.restrictCLM_smulLeftCLM`, `Distribution.mapCLM_restrictCLM`: restriction commutes
-  with multiplication by smooth functions and with continuous linear maps of the values.
+* `Distribution.restrictCLM_smulLeftCLM`, `Distribution.restrictCLM_smulLeftCLMOfContDiffOn`,
+  `Distribution.mapCLM_restrictCLM`: restriction commutes with multiplication by smooth functions,
+  also by functions smooth on `Ω` only, and with continuous linear maps of the values.
 * `Distribution.complexPairing_restrictCLM`: the pairing of `T|_{Ω'}` with a complex test function.
 
 ## References
@@ -78,6 +79,15 @@ theorem restrictCLM_smulLeftCLM {g : E → ℝ} (hg : ContDiff ℝ n g) (T : �
     (restrictCLM (smulLeftCLM hg T) : 𝓓'^{n}(Ω', F)) = smulLeftCLM hg (restrictCLM T) := by
   ext φ
   simp
+
+/-- Restriction to `Ω' ≤ Ω` commutes with multiplication by a function `C^n` on `Ω`. -/
+@[simp]
+theorem restrictCLM_smulLeftCLMOfContDiffOn [FiniteDimensional ℝ E] {g : E → ℝ}
+    (hg : ContDiffOn ℝ n g Ω) (h : Ω' ≤ Ω) (T : 𝓓'^{n}(Ω, F)) :
+    (restrictCLM (smulLeftCLMOfContDiffOn hg T) : 𝓓'^{n}(Ω', F)) =
+      smulLeftCLMOfContDiffOn (hg.mono h) (restrictCLM T) := by
+  ext φ
+  simp [h]
 
 /-- Restriction commutes with applying a continuous linear map to the values. -/
 @[simp]

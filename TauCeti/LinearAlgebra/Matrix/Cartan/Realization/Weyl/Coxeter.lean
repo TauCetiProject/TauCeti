@@ -12,6 +12,7 @@ import TauCeti.GroupTheory.Coxeter.Basic
 import TauCeti.GroupTheory.Coxeter.Dihedral
 import TauCeti.GroupTheory.Coxeter.Geometric.Basic
 import TauCeti.GroupTheory.Coxeter.Length
+import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.CoxeterSystem
 
 /-!
 # The Weyl group of a Kac–Moody realization is a Coxeter group
@@ -25,9 +26,9 @@ The simple reflections satisfy the Coxeter relations of
 `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix A` over any field
 (`TauCeti.CartanRealization.pow_simpleReflection_mul_simpleReflection_eq_one`), so the homomorphism
 `TauCeti.CartanRealization.coxeterHom` from the Coxeter group corestricts to a surjection onto the
-Weyl group. Using Mathlib's Chebyshev formulas for powers of a product of two reflections
-(`Module.reflection_mul_reflection_pow_apply_self`), this file proves Kac's **Lemma 3.11** and
-**Proposition 3.13** over any field of characteristic zero:
+Weyl group. From the sign criterion
+`TauCeti.CartanRealization.coxeterHom_apply_root_mem_posRootCone`, this file proves Kac's
+**Lemma 3.11** and **Proposition 3.13** over any field of characteristic zero:
 
 * `ℓ(w sᵢ) < ℓ(w)` if and only if `-w(αᵢ) ∈ Q₊`, and `ℓ(w sᵢ) = ℓ(w) + 1` if and only if
   `w(αᵢ) ∈ Q₊`;
@@ -66,51 +67,13 @@ Weyl group. Using Mathlib's Chebyshev formulas for powers of a product of two re
 
 public section
 
-open Module Polynomial.Chebyshev
+open Module
 
 namespace TauCeti
 
 namespace CartanRealization
 
-/-! ### The Coxeter group onto the Weyl group and rank-two positivity over an arbitrary field -/
-
-/-- Closed-form Chebyshev evaluation of `((if Even m then 1 else sⱼ) * (sᵢ * sⱼ) ^ (m / 2)) αᵢ`. -/
-private theorem alternating_simpleReflection_apply_root {I K H : Type*} [Field K] [AddCommGroup H]
-    [Module K H] {A : Matrix I I ℤ} (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
-    (hdiag : ∀ i, A i i = 2) (i j : I) (m : ℕ) :
-    let hd := diag_map_intCast (K := K) hdiag
-    let c := A i j * A j i
-    let aZ : ℤ := (S ℤ (m / 2 : ℕ)).eval (c - 2) + (S ℤ (((m / 2 : ℕ) : ℤ) - 1)).eval (c - 2)
-    let bS : ℤ := if Even m then (S ℤ (((m / 2 : ℕ) : ℤ) - 1)).eval (c - 2)
-      else (S ℤ (m / 2 : ℕ)).eval (c - 2)
-    (((if Even m then 1 else R.simpleReflection hd j) *
-        (R.simpleReflection hd i * R.simpleReflection hd j) ^ (m / 2)) (R.root i)) =
-      (aZ : K) • R.root i + ((bS * -A j i : ℤ) : K) • R.root j := by
-  intro hd c aZ bS
-  have hfi : (Dual.eval K H (R.coroot i)) (R.root i) = 2 := by simp [hdiag i]
-  have hfj : (Dual.eval K H (R.coroot j)) (R.root j) = 2 := by simp [hdiag j]
-  have htK : ((c - 2 : ℤ) : K) =
-      (Dual.eval K H (R.coroot i)) (R.root j) *
-        (Dual.eval K H (R.coroot j)) (R.root i) - 2 := by
-    simp [c, R.root_coroot]
-  have hS1 : (S K (m / 2 : ℕ)).eval ((c - 2 : ℤ) : K) =
-      (((S ℤ (m / 2 : ℕ)).eval (c - 2) : ℤ) : K) :=
-    (Polynomial.Chebyshev.algebraMap_eval_S (c - 2) (m / 2 : ℕ)).symm
-  have hS2 : (S K (((m / 2 : ℕ) : ℤ) - 1)).eval ((c - 2 : ℤ) : K) =
-      (((S ℤ (((m / 2 : ℕ) : ℤ) - 1)).eval (c - 2) : ℤ) : K) :=
-    (Polynomial.Chebyshev.algebraMap_eval_S (c - 2) (((m / 2 : ℕ) : ℤ) - 1)).symm
-  have hg : -(Dual.eval K H (R.coroot j) (R.root i)) = ((-A j i : ℤ) : K) := by
-    simp [R.root_coroot]
-  rw [R.simpleReflection_eq_reflection hd i hfi, R.simpleReflection_eq_reflection hd j hfj]
-  by_cases hm_even : Even m
-  · simp only [hm_even, ↓reduceIte, one_mul, bS]
-    rw [Module.reflection_mul_reflection_pow_apply_self hfi hfj (m / 2) ((c - 2 : ℤ) : K) htK,
-      hS1, hS2, hg]
-    simp only [aZ, Int.cast_add, Int.cast_mul, Int.cast_neg]
-  · simp only [hm_even, ↓reduceIte, bS]
-    rw [Module.reflection_mul_reflection_mul_reflection_pow_apply_self hfi hfj (m / 2)
-      ((c - 2 : ℤ) : K) htK, hS1, hS2, hg]
-    simp only [aZ, Int.cast_add, Int.cast_mul, Int.cast_neg]
+/-! ### The Coxeter group onto the Weyl group over an arbitrary field -/
 
 section ArbitraryField
 
@@ -157,103 +120,17 @@ theorem weylCoxeterHom_surjective (hdiag : ∀ i, A i i = 2)
   exact ⟨(coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.wordProd l,
     R.weylCoxeterHom_wordProd hdiag hzero l⟩
 
-/-- In a rank-two standard parabolic subgroup `⟨sᵢ, sⱼ⟩`, an element `v` for which `i` is not a
-right descent sends `αᵢ` to a natural combination `a • αᵢ + b • αⱼ`. -/
-private theorem exists_apply_root_eq_nsmul_of_mem_parabolic_pair
-    (hdiag : ∀ i, A i i = 2) (hoff : ∀ i j, i ≠ j → A i j ≤ 0)
-    (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) {i j : I} (hij : i ≠ j)
-    {v : (coxeterMatrixOfGeneralizedCartanMatrix A).Group}
-    (hv : v ∈ (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.parabolic {i, j})
-    (hdesc : ¬(coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.IsRightDescent v i) :
-    ∃ a b : ℕ,
-      ((R.weylCoxeterHom hdiag hzero v :
-          Dual K H ≃ₗ[K] Dual K H) (R.root i)) = a • R.root i + b • R.root j := by
-  let cs₀ := (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem
-  let m := cs₀.length v
-  let hd := diag_map_intCast (K := K) hdiag
-  let c := A i j * A j i
-  have hnonneg : 0 ≤ c := mul_nonneg_of_nonpos_of_nonpos (hoff i j hij) (hoff j i hij.symm)
-  have hv_eq : cs₀.wordProd (CoxeterSystem.alternatingWord i j m) = v :=
-    cs₀.wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent hv hdesc
-  have hm_lt : c ≤ 3 → m < coxeterOrder c := fun hle ↦ by
-    have hM : coxeterMatrixOfGeneralizedCartanMatrix A i j = coxeterOrder c :=
-      coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four A hij
-        (lt_of_le_of_lt hle (by norm_num))
-    have hne0 : coxeterMatrixOfGeneralizedCartanMatrix A i j ≠ 0 := by
-      rw [Ne, coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_zero_iff A hij hnonneg]
-      omega
-    rw [← hM]
-    exact cs₀.length_lt_of_mem_parabolic_pair_of_not_isRightDescent hne0 hv hdesc
-  let aZ : ℤ := (S ℤ (m / 2 : ℕ)).eval (c - 2) + (S ℤ (((m / 2 : ℕ) : ℤ) - 1)).eval (c - 2)
-  let bS : ℤ := if Even m then (S ℤ (((m / 2 : ℕ) : ℤ) - 1)).eval (c - 2)
-    else (S ℤ (m / 2 : ℕ)).eval (c - 2)
-  have ha : 0 ≤ aZ := chebyshevS_add_sub_one_eval_sub_two_nonneg (c := c) fun hle ↦ by
-    have := hm_lt hle
-    omega
-  have hb : 0 ≤ bS := by
-    dsimp only [bS]
-    split_ifs with he
-    · exact chebyshevS_sub_one_eval_sub_two_nonneg (c := c) fun hle ↦ by
-        have := hm_lt hle
-        omega
-    · exact chebyshevS_eval_sub_two_nonneg (c := c) fun hle ↦ by
-        have := hm_lt hle
-        rw [Nat.even_iff] at he
-        omega
-  have hbZ : 0 ≤ bS * -A j i := mul_nonneg hb (neg_nonneg.mpr (hoff j i hij.symm))
-  have ha_eq : (aZ.toNat : ℤ) = aZ := Int.toNat_of_nonneg ha
-  have hb_eq : ((bS * -A j i).toNat : ℤ) = bS * -A j i := Int.toNat_of_nonneg hbZ
-  have hval : (R.weylCoxeterHom hdiag hzero v : Dual K H ≃ₗ[K] Dual K H) =
-      (if Even m then 1 else R.simpleReflection hd j) *
-        (R.simpleReflection hd i * R.simpleReflection hd j) ^ (m / 2) := by
-    have hprod : ((CoxeterSystem.alternatingWord i j m).map (R.weylSimple hd)).prod =
-        R.weylCoxeterHom hdiag hzero v := by
-      rw [← R.weylCoxeterHom_wordProd hdiag hzero, hv_eq]
-    rw [← (R.prod_map_weylSimple_eq_iff hd _ _).mp hprod,
-      TauCeti.prod_map_alternatingWord (R.simpleReflection hd) i j m]
-  refine ⟨aZ.toNat, (bS * -A j i).toNat, ?_⟩
-  rw [hval, R.alternating_simpleReflection_apply_root hdiag i j m,
-    Int.cast_smul_eq_zsmul K aZ (R.root i), Int.cast_smul_eq_zsmul K (bS * -A j i) (R.root j),
-    ← natCast_zsmul, ← natCast_zsmul, ha_eq, hb_eq]
-
-/-- Key induction of Kac's Lemma 3.11: if `i` is not a right descent of `w` in the presented
-Coxeter group, then `w(αᵢ) ∈ Q₊` (over any field `K`!). -/
+/-- Key step of Kac's Lemma 3.11: if `i` is not a right descent of `w` in the presented Coxeter
+group, then `w(αᵢ) ∈ Q₊` (over any field `K`!). This is the sign criterion
+`TauCeti.CartanRealization.coxeterHom_apply_root_mem_posRootCone`. -/
 private theorem apply_root_mem_posRootCone_of_not_isRightDescent
     (hdiag : ∀ i, A i i = 2) (hoff : ∀ i j, i ≠ j → A i j ≤ 0)
     (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) {w : (coxeterMatrixOfGeneralizedCartanMatrix A).Group}
     {i : I}
     (hwi : ¬(coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.IsRightDescent w i) :
     ((R.weylCoxeterHom hdiag hzero w : Dual K H ≃ₗ[K] Dual K H) (R.root i)) ∈
-      R.posRootCone := by
-  let cs₀ := (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem
-  induction hlen : cs₀.length w using Nat.strong_induction_on generalizing w i with
-  | _ n ih =>
-    rcases eq_or_ne w 1 with rfl | hw1
-    · simpa using R.root_mem_posRootCone i
-    obtain ⟨j, hwj⟩ := cs₀.exists_rightDescent_of_ne_one hw1
-    have hij : i ≠ j := fun h ↦ hwi (h ▸ hwj)
-    obtain ⟨p, ⟨hu, hv, hmul⟩, -⟩ := cs₀.existsUnique_isMinimalCosetRep_mul {i, j} w
-    rcases p with ⟨u, v⟩
-    dsimp only at hu hv hmul; subst hmul
-    have hv1 : v ≠ 1 := fun hv0 ↦ by
-      rw [hv0, mul_one] at hwj
-      exact cs₀.isMinimalCosetRep_iff.mp hu j (by simp) hwj
-    have hv_pos : 0 < cs₀.length v := Nat.pos_of_ne_zero (mt cs₀.length_eq_zero_iff.mp hv1)
-    have hadd := cs₀.length_mul_of_isMinimalCosetRep hu hv
-    have hvi : ¬cs₀.IsRightDescent v i := fun hd ↦ hwi <| by
-      rw [CoxeterSystem.IsRightDescent, mul_assoc,
-        cs₀.length_mul_of_isMinimalCosetRep hu
-          (mul_mem hv (cs₀.simple_mem_parabolic (by simp))), hadd]
-      exact Nat.add_lt_add_left hd _
-    obtain ⟨a, b, hab⟩ :=
-      R.exists_apply_root_eq_nsmul_of_mem_parabolic_pair hdiag hoff hzero hij hv hvi
-    have hu_cone {k : I} (hk : k ∈ ({i, j} : Set I)) :
-        ((R.weylCoxeterHom hdiag hzero u : Dual K H ≃ₗ[K] Dual K H) (R.root k)) ∈
-          R.posRootCone :=
-      ih (cs₀.length u) (by omega) (cs₀.isMinimalCosetRep_iff.mp hu k hk) rfl
-    rw [map_mul, Subgroup.coe_mul, mul_apply_eq_comp, hab, map_add, map_nsmul, map_nsmul]
-    exact add_mem (Submodule.smul_mem _ a (hu_cone (by simp)))
-      (Submodule.smul_mem _ b (hu_cone (by simp)))
+      R.posRootCone :=
+  R.coxeterHom_apply_root_mem_posRootCone (diag_map_intCast hdiag) hzero hoff hwi
 
 end ArbitraryField
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.EquivariantMap
 public import TauCeti.Topology.Category.TopPair
@@ -24,7 +25,10 @@ simplices lying in `A` among themselves, since it preserves the image of the emb
 (`TopPair.isSplitMono_singularChainsRepι_f`). So the relative chains are a retract of the
 chains of `X` in every degree, and when `G` acts freely on `X` they are projective
 representations (`TopPair.projective_singularChainsRep_X`), as the absolute chains are
-(`TauCeti.projective_singularChainsRep_X`).
+(`TauCeti.projective_singularChainsRep_X`). Forgetting the action, the relative chains are the
+relative singular chains of the pair (`TopPair.singularChainsRepForget₂Iso`), compatibly with the
+quotient maps from the chains of the ambient space
+(`TopPair.map_singularChainsRepπ_singularChainsRepForget₂Iso_hom`).
 
 These complexes are the relative form of the geometric resolutions of group homology: for a pair of
 free `G`-spaces covering a pair `(B, A)`, the coinvariants of the relative chains with coefficients
@@ -38,6 +42,8 @@ to `D` (`TopPair.coinvariantsTensorSingularChainsRepIsoTwisted`, in
 * `TopPair.singularChainsRep`: the relative singular chains of a pair of `G`-spaces, as a chain
   complex of representations of `G`.
 * `TopPair.singularChainsRepπ`: the quotient map from the equivariant chains of the ambient space.
+* `TopPair.singularChainsRepForget₂Iso`: forgetting the action, the relative chains of a pair of
+  `G`-spaces are its relative singular chains.
 
 ## Main results
 
@@ -199,5 +205,40 @@ instance projective_singularChainsRep_X [IsCancelSMul G P.fst] (n : ℕ) :
   have : Projective (cokernel ((P.singularChainsRepι k G hP).f n)) :=
     b.retract_right.projective
   exact Projective.of_iso (PreservesCokernel.iso (HomologicalComplex.eval _ _ n) _).symm this
+
+/-- **Forgetting the action of `G`, the relative chains of a pair of `G`-spaces are its relative
+singular chains.** Both are cokernels of the inclusion of the chains of the subspace, which forgets
+to the inclusion of singular chains. -/
+def singularChainsRepForget₂Iso :
+    ((forget₂ (Rep.{u} k G) (ModuleCat.{u} k)).mapHomologicalComplex _).obj
+        (P.singularChainsRep k G hP) ≅ P.singularChainComplex (ModuleCat.of k k) :=
+  IsColimit.coconePointsIsoOfNatIso
+    (CokernelCofork.mapIsColimit _ (P.isColimitCokernelCoforkSingularChainsRep k G hP)
+      ((forget₂ (Rep.{u} k G) (ModuleCat.{u} k)).mapHomologicalComplex _))
+    ((TopPair.toSSetPair.obj P).isColimitCokernelCoforkChainComplex (ModuleCat.of k k))
+    (parallelPair.ext (TauCeti.singularChainsRepForget₂Iso k P.snd G)
+      (TauCeti.singularChainsRepForget₂Iso k P.fst G) (by
+        ext q : 1
+        refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
+        -- the components of the forgetful isomorphisms are identities
+        simp only [parallelPair_obj_zero, parallelPair_obj_one, parallelPair_map_left,
+          HomologicalComplex.comp_f, TauCeti.singularChainsRepForget₂Iso_hom_f, toSSetPair_obj_hom]
+        exact P.singularChainsRepι_f_hom_apply k hP q c)
+      (by simp only [parallelPair_map_right, Limits.zero_comp, Limits.comp_zero]))
+
+/-- Forgetting the action, the quotient map onto the equivariant relative chains is the quotient map
+onto the relative singular chains. -/
+@[reassoc]
+theorem map_singularChainsRepπ_singularChainsRepForget₂Iso_hom :
+    ((forget₂ (Rep.{u} k G) (ModuleCat.{u} k)).mapHomologicalComplex _).map
+        (P.singularChainsRepπ k G hP) ≫ (P.singularChainsRepForget₂Iso k G hP).hom =
+      (TauCeti.singularChainsRepForget₂Iso k P.fst G).hom ≫
+        P.singularChainComplexπ (ModuleCat.of k k) := by
+  rw [singularChainsRepForget₂Iso]
+  exact IsColimit.comp_coconePointsIsoOfNatIso_hom (CokernelCofork.mapIsColimit _
+      (P.isColimitCokernelCoforkSingularChainsRep k G hP)
+        ((forget₂ (Rep.{u} k G) (ModuleCat.{u} k)).mapHomologicalComplex _))
+    ((TopPair.toSSetPair.obj P).isColimitCokernelCoforkChainComplex (ModuleCat.of k k)) _
+    WalkingParallelPair.one
 
 end TopPair

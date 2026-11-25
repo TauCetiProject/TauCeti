@@ -162,8 +162,6 @@ theorem isOpen_integralOrthogonalSubgroup :
 theorem isCompact_integralOrthogonalSubgroup :
     IsCompact (integralOrthogonalSubgroup Q b : Set (orthogonalGroup Q)) := by
   let : FiniteDimensional ℚ_[p] V := Module.Finite.of_basis b
-  let : IsModuleTopology ℚ_[p] (Matrix ι ι ℚ_[p]) :=
-    inferInstanceAs (IsModuleTopology ℚ_[p] (ι → ι → ℚ_[p]))
   let : CompactSpace (Matrix ι ι ℤ_[p]) := inferInstanceAs (CompactSpace (ι → ι → ℤ_[p]))
   let f := (LinearMap.toMatrixAlgEquiv b).symm.toMonoidHom.comp
     (PadicInt.Coe.ringHom.mapMatrix.toMonoidHom)

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Star
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 public import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import Mathlib.Order.UpperLower.Relative
 import TauCeti.MeasureTheory.Integral.Lebesgue.InitialSegment
 
 /-!
@@ -73,18 +74,15 @@ namespace TauCeti
 open MeasureTheory Measure Metric Set
 open scoped ENNReal Real
 
-section Radial
+section Ray
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- A point at radius `r > 0` on the ray in direction `u` has norm `r`. -/
 private lemma norm_smul_of_mem_sphere (u : sphere (0 : E) 1) {r : ℝ} (hr : r ∈ Ioi 0) :
     ‖r • (u : E)‖ = r := by
   rw [norm_smul, norm_eq_of_mem_sphere u, mul_one, Real.norm_of_nonneg (le_of_lt hr)]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- Along the ray in direction `u`, the closed ball `closedBall 0 ρ` is the radii `(0, ρ]`. -/
 private lemma indicator_closedBall_smul (u : sphere (0 : E) 1) {r ρ : ℝ} (hr : r ∈ Ioi 0) :
     (closedBall (0 : E) ρ).indicator 1 (r • (u : E)) = (Iic ρ).indicator (1 : ℝ → ℝ≥0∞) r := by
@@ -92,11 +90,12 @@ private lemma indicator_closedBall_smul (u : sphere (0 : E) 1) {r ρ : ℝ} (hr 
   rw [indicator_apply, indicator_apply, mem_closedBall_zero_iff, norm_smul_of_mem_sphere u hr]
   simp only [mem_Iic, Pi.one_apply]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The comparison along the ray in direction `u`, for a set `A` star-shaped about the origin:
-under the hypotheses of `setLIntegral_indicator_mul_le_setLIntegral_indicator_inter_Iic`, the
-integral of `φ ‖x‖` over the ray's part in `A` is at most the weight of the ray's part in
-`A ∩ closedBall 0 ρ`. -/
+if `φ ≤ 1` at positive radii and the `w`-weighted integral of `φ` over the positive radii is at
+most the `w`-weight of `(0, ρ]`, then the `w`-weighted integral of `φ ‖x‖` over the ray's part in
+`A` is at most the `w`-weight of the ray's part in `A ∩ closedBall 0 ρ`. This is
+`setLIntegral_indicator_le_setLIntegral_indicator_inter` for the radii of the ray in `A` and in
+`closedBall 0 ρ`. -/
 private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ}
     (hφ : ∀ r ∈ Ioi (0 : ℝ), φ r ≤ 1)
     (hmass : ∫⁻ r in Ioi (0 : ℝ), w r * φ r ≤ ∫⁻ r in Ioi (0 : ℝ), (Iic ρ).indicator w r)
@@ -105,29 +104,35 @@ private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ}
       ∫⁻ r in Ioi (0 : ℝ), w r * (A ∩ closedBall 0 ρ).indicator 1 (r • (u : E)) := by
   -- The radii of the ray that meet `A` form an initial segment.
   set R := (fun r : ℝ ↦ r • (u : E)) ⁻¹' A
-  have hR : ∀ ⦃r s⦄, 0 < s → s ≤ r → r ∈ R → s ∈ R := fun r s hs hsr hr ↦ by
+  have hR : IsRelLowerSet (R ∩ Ioi 0) (· ∈ Ioi 0) := fun r ⟨hr, hr₀⟩ ↦ ⟨hr₀, fun s hsr hs ↦ by
+    have hs : 0 < s := mem_Ioi.1 hs
     have := hA₀.smul_mem (mem_preimage.1 hr) (div_nonneg hs.le (hs.trans_le hsr).le)
       (div_le_one_of_le₀ hsr (hs.trans_le hsr).le)
-    rwa [smul_smul, div_mul_cancel₀ _ (hs.trans_le hsr).ne'] at this
+    rw [smul_smul, div_mul_cancel₀ _ (hs.trans_le hsr).ne'] at this
+    exact ⟨mem_preimage.2 this, mem_Ioi.2 hs⟩⟩
   calc ∫⁻ r in Ioi (0 : ℝ), w r * A.indicator (fun x ↦ φ ‖x‖) (r • (u : E))
       = ∫⁻ r in Ioi (0 : ℝ), R.indicator (fun r ↦ w r * φ r) r := by
         refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
-        by_cases hrA : r • (u : E) ∈ A
-        · rw [indicator_of_mem hrA, indicator_of_mem (s := R) (mem_preimage.2 hrA),
-            norm_smul_of_mem_sphere u hr]
-        · rw [indicator_of_notMem hrA, indicator_of_notMem (s := R) (mt mem_preimage.1 hrA),
-            mul_zero]
+        rw [indicator_mul_right]
+        exact congrArg (w r * ·) <|
+          indicator_eq_indicator mem_preimage.symm (congrArg φ (norm_smul_of_mem_sphere u hr))
     _ ≤ ∫⁻ r in Ioi (0 : ℝ), (R ∩ Iic ρ).indicator w r :=
-        setLIntegral_indicator_mul_le_setLIntegral_indicator_inter_Iic hφ hmass hR
+        setLIntegral_indicator_le_setLIntegral_indicator_inter measurableSet_Ioi.nullMeasurableSet
+          (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr ↦ mul_le_of_le_one_right' (hφ r hr))
+          hmass hR ((IsLowerSet.Iic ρ).isRelLowerSet_sep (· ∈ Ioi (0 : ℝ)))
     _ = ∫⁻ r in Ioi (0 : ℝ), w r * (A ∩ closedBall 0 ρ).indicator 1 (r • (u : E)) := by
         refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
-        rw [inter_indicator_one, Pi.mul_apply, indicator_closedBall_smul u hr]
-        by_cases hrA : r ∈ R
-        · rw [indicator_of_mem (s := A) hrA, ← indicator_indicator, indicator_of_mem hrA]
-          by_cases hrρ : r ∈ Iic ρ <;> simp [hrρ]
-        · rw [indicator_of_notMem (s := A) hrA,
-            indicator_of_notMem (s := R ∩ Iic ρ) fun h ↦ hrA h.1]
-          simp
+        rw [inter_indicator_one, Pi.mul_apply, indicator_closedBall_smul u hr,
+          ← indicator_comp_right (fun r : ℝ ↦ r • (u : E)), ← mul_assoc, ← indicator_mul_right,
+          ← inter_indicator_mul]
+        simp [R]
+
+end Ray
+
+section Radial
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
 /-- **The Gauss measure against a ball, for radial densities.** Let `μ` be an additive Haar
 measure on a finite-dimensional real normed space, and `φ : ℝ → ℝ≥0∞` a measurable function

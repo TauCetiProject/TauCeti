@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.Tannery
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.LinearAlgebra.Lagrange
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.HalfSpace
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
@@ -56,6 +57,8 @@ form a convergent product. Tannery's theorem passes the identities to the limit 
   derivatives of the extension are those of the input within the closed upper half-space.
 * `TauCeti.HalfSpaceExtension.exists_contDiff_infty_extension_halfSpace`: every function `C^∞` on
   the closed upper half-space is the restriction of a `C^∞` function.
+* `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_upperHalfSpace`: a function `Cⁿ` on the
+  half-space near a point agrees there, near the point, with a function `Cⁿ` on the whole space.
 
 ## References
 
@@ -662,6 +665,35 @@ theorem exists_contDiff_infty_extension_halfSpace [CompleteSpace F] {f : ℝ × 
     (hf : ContDiffOn ℝ ∞ f (upperHalfSpace E)) :
     ∃ g : ℝ × E → F, ContDiff ℝ ∞ g ∧ EqOn g f (upperHalfSpace E) :=
   ⟨seeleyExtension f, contDiff_seeleyExtension hf, seeleyExtension_eqOn_upperHalfSpace f⟩
+
+open Metric in
+/-- **Local Seeley extension.** A function `Cⁿ` on the part of a neighbourhood `s` of `a` in the
+closed upper half-space agrees, on the half-space near `a`, with a function `Cⁿ` on the whole space:
+cut it off by a bump function supported near `a`, which makes it `Cⁿ` on the whole closed
+half-space, and apply Seeley's extension. -/
+theorem exists_contDiff_eqOn_upperHalfSpace [FiniteDimensional ℝ E] [CompleteSpace F] {n : ℕ∞}
+    {f : ℝ × E → F} {a : ℝ × E} {s : Set (ℝ × E)}
+    (hf : ContDiffOn ℝ n f (s ∩ upperHalfSpace E)) (hs : s ∈ 𝓝 a) :
+    ∃ g : ℝ × E → F, ∃ r > 0, ball a r ⊆ s ∧
+      ContDiff ℝ n g ∧ EqOn g f (ball a r ∩ upperHalfSpace E) := by
+  obtain ⟨R, hR, hRs⟩ := nhds_basis_ball.mem_iff.mp hs
+  let χ : ContDiffBump a := ⟨R / 4, R / 2, by positivity, by linarith⟩
+  have hg : ContDiffOn ℝ n (fun y ↦ χ y • f y) (upperHalfSpace E) := by
+    refine contDiffOn_of_locally_contDiffOn fun y _ ↦ ?_
+    by_cases hy : y ∈ ball a R
+    · refine ⟨ball a R, isOpen_ball, hy, ?_⟩
+      exact χ.contDiff.contDiffOn.smul (hf.mono fun z hz ↦ ⟨hRs hz.2, hz.1⟩)
+    · -- Outside the ball of radius `R` the cut-off function vanishes near `y`.
+      have hy' : y ∉ closedBall a (R / 2) := fun h ↦
+        hy (closedBall_subset_ball (by linarith) h)
+      refine ⟨(closedBall a (R / 2))ᶜ, isClosed_closedBall.isOpen_compl, hy', ?_⟩
+      refine (contDiffOn_const (c := (0 : F))).congr fun z hz ↦ ?_
+      have hz' : R / 2 < dist z a := by simpa [mem_closedBall] using hz.2
+      rw [χ.zero_of_le_dist hz'.le, zero_smul]
+  refine ⟨seeleyExtension fun y ↦ χ y • f y, R / 4, by positivity,
+    (ball_subset_ball (by linarith)).trans hRs, contDiff_seeleyExtension hg, fun y hy ↦ ?_⟩
+  rw [seeleyExtension_eqOn_upperHalfSpace _ hy.2,
+    χ.one_of_mem_closedBall (ball_subset_closedBall hy.1), one_smul]
 
 end TauCeti.HalfSpaceExtension
 

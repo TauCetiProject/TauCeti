@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.CategoryTheory.Exact.ExactStructure
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Binary biproducts of conflations

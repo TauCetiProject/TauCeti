@@ -135,11 +135,11 @@ theorem isLeast_form_self_pi {a : ∀ i, (N i).DiscriminantGroup} {r : ι → �
   · choose x hx hxr using fun i ↦ (h i).1
     refine ⟨(piDualCarrierEquiv N).symm x, ?_, ?_⟩
     · rw [← discriminantGroupPiEquiv_symm_mk, funext hx]
-    · simp only [pi_form, piForm_apply, coe_piDualCarrierEquiv_symm_apply, hxr]
+    · simp only [pi_form, LinearMap.BilinForm.pi_apply, coe_piDualCarrierEquiv_symm_apply, hxr]
   · rintro q ⟨x, hx, rfl⟩
     have hclass := congrArg (discriminantGroupPiEquiv N) hx
     rw [discriminantGroupPiEquiv_mk, LinearEquiv.apply_symm_apply] at hclass
-    rw [pi_form, piForm_apply]
+    rw [pi_form, LinearMap.BilinForm.pi_apply]
     exact Finset.sum_le_sum fun i _ ↦ (h i).2
       ⟨piDualCarrierEquiv N x i, congrFun hclass i, by rw [coe_piDualCarrierEquiv_apply]⟩
 
@@ -160,7 +160,7 @@ theorem form_self_pi_eq_sum_iff {a : ∀ i, (N i).DiscriminantGroup} {r : ι →
   have hcoord : ∀ i ∈ Finset.univ, (N i).form ((x : ∀ i, U i) i) ((x : ∀ i, U i) i) =
       (N i).form (piDualCarrierEquiv N x i) (piDualCarrierEquiv N x i) := fun i _ ↦ by
     rw [coe_piDualCarrierEquiv_apply]
-  rw [pi_form, piForm_apply, Finset.sum_congr rfl hcoord, eq_comm,
+  rw [pi_form, LinearMap.BilinForm.pi_apply, Finset.sum_congr rfl hcoord, eq_comm,
     Finset.sum_eq_sum_iff_of_le hle]
   simp only [Finset.mem_univ, true_imp_iff, eq_comm]
 

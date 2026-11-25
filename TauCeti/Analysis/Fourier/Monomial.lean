@@ -22,23 +22,34 @@ Mathlib's lemmas about `fourier n : C(AddCircle T, ℂ)` mostly record its behav
 `n`. This file records the facts about the dependence on the point that translation-invariant
 Fourier arguments use: the monomial turns a sum of points into a product, differentiating it
 produces the frequency factor `2πin/T` of norm `2π|n|/T`, and consequently it is Lipschitz in a
-real parameter with that constant. Integrating by parts over one period moves this frequency
-factor across a monomial reparametrized by the lift of a degree-one circle map.
+real parameter with that constant and agrees with its tangent line to second order. Integrating
+by parts over one period moves this frequency factor across a monomial reparametrized by the lift
+of a degree-one circle map. Since the monomial has modulus `1`, the geometric kernel
+`(1 - c * e_m)⁻¹` for `‖c‖ < 1` expands as a uniformly convergent geometric series, which
+integrates term by term against an `L¹` function.
 
 ## Main statements
 
 * `TauCeti.norm_fourier_apply`: every Fourier monomial on `AddCircle T` has pointwise modulus `1`.
 * `TauCeti.fourier_pow`, `TauCeti.fourier_one_pow`: `fourier k ^ m = fourier (m * k)` and
   `fourier 1 ^ m = fourier m` in `C(AddCircle T, ℂ)`.
+* `TauCeti.fourier_add_eq_mul`, `TauCeti.star_fourier`: `fourier (m + n) = fourier m * fourier n`
+  and `(fourier n)⋆ = fourier (-n)` in `C(AddCircle T, ℂ)`.
 * `TauCeti.fourier_apply_add`, `TauCeti.fourier_apply_sub`: `fourier n` turns sums and differences
   of points into `fourier n x * fourier n y` and `fourier n x * fourier (-n) y`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
 * `TauCeti.norm_fourier_coe_sub_le`: `‖e_n φ - e_n ψ‖ ≤ ‖2πin/T‖ |φ - ψ|` for real `φ, ψ`.
+* `TauCeti.norm_fourier_coe_sub_sub_le`: the second-order bound
+  `‖e_n φ - e_n ψ - (φ - ψ) (2πin/T) e_n ψ‖ ≤ ‖2πin/T‖² |φ - ψ|²`.
 * `TauCeti.norm_fourier_sub_one_le`: `‖e_n h - 1‖ ≤ ‖2πin/T‖ ‖h‖` on the circle, where `‖h‖` is
   the distance from `h` to `0`.
 * `TauCeti.one_le_norm_fourier_sub_one`: `1 ≤ ‖e_n x - 1‖` for `T / (6 |n|) ≤ x ≤ T / (3 |n|)`.
 * `TauCeti.integral_fourier_mul_deriv_fourier_comp`: for a `C¹` lift `F` with
   `F (x + T) = F x + T`, `∫₀ᵀ e_{-n} (e_m ∘ F)' = (2πin/T) ∫₀ᵀ e_{-n} (e_m ∘ F)`.
+* `TauCeti.continuous_inv_one_sub_mul_fourier`,
+  `TauCeti.hasSum_integral_inv_one_sub_mul_fourier`: for `‖c‖ < 1` the geometric kernel
+  `(1 - c * e_m)⁻¹` is continuous, and integrating an `L¹` function `f` against it gives
+  `∑ n, c ^ n * f̂ (-(n * m))`.
 * `UnitAddTorus.mFourier_apply_add`, `UnitAddTorus.mFourier_apply_sub`,
   `TauCeti.UnitAddTorus.mFourier_coe_apply` and
   `UnitAddTorus.norm_mFourier_apply`: the same pointwise facts for the multivariate
@@ -85,6 +96,17 @@ theorem fourier_one_pow (m : ℕ) :
     fourier (T := T) 1 ^ m = fourier (T := T) (m : ℤ) := by
   simpa using fourier_pow (T := T) 1 m
 
+/-- The Fourier monomials are multiplicative in the index as elements of `C(AddCircle T, ℂ)`. -/
+theorem fourier_add_eq_mul (m n : ℤ) : fourier (T := T) (m + n) = fourier m * fourier n := by
+  ext x
+  rw [fourier_add, ContinuousMap.mul_apply]
+
+/-- The adjoint of the Fourier monomial `fourier n` in `C(AddCircle T, ℂ)` is `fourier (-n)`. -/
+@[simp]
+theorem star_fourier (n : ℤ) : star (fourier (T := T) n) = fourier (-n) := by
+  ext x
+  rw [ContinuousMap.star_apply, Complex.star_def, ← fourier_neg]
+
 /-- Pointwise, the `m`-th power of the fundamental Fourier monomial is the monomial
 of natural frequency `m`. -/
 theorem fourier_one_pow_apply (m : ℕ) (x : AddCircle T) :
@@ -122,6 +144,33 @@ theorem norm_fourier_coe_sub_le (n : ℤ) (φ ψ : ℝ) :
     (fun y _ ↦ by rw [norm_mul, fourier_apply, Circle.norm_coe, mul_one]) (Set.mem_univ ψ)
     (Set.mem_univ φ)
   rwa [Real.norm_eq_abs] at h
+
+/-- The Fourier monomial agrees with its tangent line to second order in a real parameter:
+`‖e_n φ - e_n ψ - (φ - ψ) (2πin/T) e_n ψ‖ ≤ ‖2πin/T‖² |φ - ψ|²`. -/
+theorem norm_fourier_coe_sub_sub_le (n : ℤ) (φ ψ : ℝ) :
+    ‖fourier n (φ : AddCircle T) - fourier n (ψ : AddCircle T) -
+        (φ - ψ) * (2 * π * I * n / T * fourier n (ψ : AddCircle T))‖ ≤
+      ‖(2 * π * I * n / T : ℂ)‖ ^ 2 * |φ - ψ| ^ 2 := by
+  set c : ℂ := 2 * π * I * n / T
+  -- The error `y ↦ e_n y - e_n ψ - (y - ψ) c e_n ψ` vanishes at `ψ`, and its derivative
+  -- `c (e_n y - e_n ψ)` has norm at most `‖c‖² |φ - ψ|` between `ψ` and `φ`.
+  have h := (convex_uIcc ψ φ).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := fun y : ℝ ↦ fourier n (y : AddCircle T) - fourier n (ψ : AddCircle T) -
+      ((y : ℂ) - ψ) * (c * fourier n (ψ : AddCircle T)))
+    (f' := fun y ↦ c * fourier n (y : AddCircle T) - c * fourier n (ψ : AddCircle T))
+    (C := ‖c‖ ^ 2 * |φ - ψ|) (fun y _ ↦ ?_) (fun y hy ↦ ?_) Set.left_mem_uIcc
+    Set.right_mem_uIcc
+  · simpa [Real.norm_eq_abs, sq, mul_assoc] using h
+  · have := ((hasDerivAt_fourier T n y).sub_const (fourier n (ψ : AddCircle T))).sub
+      (((hasDerivAt_id y).ofReal_comp.sub_const (ψ : ℂ)).mul_const
+        (c * fourier n (ψ : AddCircle T)))
+    convert this.hasDerivWithinAt using 1
+    · funext y
+      simp only [Pi.sub_apply, id]
+    · rw [Complex.ofReal_one, one_mul]
+  · rw [← mul_sub, norm_mul, sq, mul_assoc]
+    refine mul_le_mul_of_nonneg_left ((norm_fourier_coe_sub_le n y ψ).trans ?_) (norm_nonneg _)
+    exact mul_le_mul_of_nonneg_left (Set.abs_sub_left_of_mem_uIcc hy) (norm_nonneg _)
 
 /-- The Fourier monomial is Lipschitz on the circle with constant `‖2πin/T‖`, measured from `0`:
 `‖e_n h - 1‖ ≤ ‖2πin/T‖ ‖h‖`, where `‖h‖` is the distance from `h` to `0`. -/
@@ -202,6 +251,50 @@ theorem integral_fourier_mul_deriv_fourier_comp {F F' : ℝ → ℝ}
   rw [hIBP, hend, sub_self, zero_sub, intervalIntegral.integral_const_mul]
   push_cast
   ring
+
+section GeometricKernel
+
+open MeasureTheory AddCircle
+
+/-- For `‖c‖ < 1` the geometric kernel `(1 - c * e_m)⁻¹` is continuous on the circle, since
+`c * e_m` never equals `1`. -/
+theorem continuous_inv_one_sub_mul_fourier {c : ℂ} (hc : ‖c‖ < 1) (m : ℤ) :
+    Continuous fun t : AddCircle T ↦ (1 - c * fourier m t)⁻¹ :=
+  (continuous_const.sub (continuous_const.mul (fourier m).continuous)).inv₀ fun t h ↦
+    hc.ne (by simpa [norm_fourier_apply] using congrArg norm (sub_eq_zero.1 h).symm)
+
+variable [Fact (0 < T)]
+
+/-- Integrating an `L¹` function against the geometric kernel `(1 - c * e_m)⁻¹` for `‖c‖ < 1`
+gives the series `∑ n, c ^ n * f̂ (-(n * m))` of its Fourier coefficients. -/
+theorem hasSum_integral_inv_one_sub_mul_fourier {f : AddCircle T → ℂ}
+    (hf : Integrable f haarAddCircle) {c : ℂ} (hc : ‖c‖ < 1) (m : ℤ) :
+    HasSum (fun n : ℕ ↦ c ^ n * fourierCoeff f (-(n * m)))
+      (∫ t, (1 - c * fourier m t)⁻¹ * f t ∂haarAddCircle) := by
+  have hpow (n : ℕ) (t : AddCircle T) : (fourier m t : ℂ) ^ n = fourier (n * m) t := by
+    rw [← fourier_pow, ContinuousMap.pow_apply]
+  set F : ℕ → AddCircle T → ℂ := fun n t ↦ c ^ n * (fourier (n * m) t * f t) with hF
+  have hF_int (n : ℕ) : Integrable (F n) haarAddCircle :=
+    (hf.bdd_mul (c := 1) (fourier _).continuous.aestronglyMeasurable
+      (ae_of_all _ fun t ↦ (norm_fourier_apply _ t).le)).const_mul _
+  have hF_norm (n : ℕ) : ∫ t, ‖F n t‖ ∂haarAddCircle = ‖c‖ ^ n * ∫ t, ‖f t‖ ∂haarAddCircle := by
+    simp only [hF, norm_mul, norm_pow, norm_fourier_apply, one_mul]
+    exact integral_const_mul _ _
+  have hsum := hasSum_integral_of_summable_integral_norm hF_int (by
+    simp_rw [hF_norm]
+    exact (summable_geometric_of_lt_one (norm_nonneg _) hc).mul_right _)
+  have hcoeff (n : ℕ) : ∫ t, F n t ∂haarAddCircle = c ^ n * fourierCoeff f (-(n * m)) := by
+    rw [integral_const_mul, fourierCoeff, neg_neg]
+    simp only [smul_eq_mul]
+  have hker (t : AddCircle T) : ∑' n, F n t = (1 - c * fourier m t)⁻¹ * f t := by
+    have hg : HasSum (fun n : ℕ ↦ (c * fourier m t) ^ n) (1 - c * fourier m t)⁻¹ :=
+      hasSum_geometric_of_norm_lt_one (by rwa [norm_mul, norm_fourier_apply, mul_one])
+    refine ((hg.mul_right (f t)).congr_fun fun n ↦ ?_).tsum_eq
+    simp only [hF, mul_pow, hpow, mul_assoc]
+  simp_rw [hcoeff, hker] at hsum
+  exact hsum
+
+end GeometricKernel
 
 end TauCeti
 
