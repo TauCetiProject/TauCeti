@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SemidirectProduct
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
@@ -39,12 +38,13 @@ by its points (`TauCeti.HopfIdeal.eq_conjugate_of_forall_mem_iff`).
 
 No hypothesis on the base ring is needed beyond commutativity, and the Hopf ideal `I` need not
 be assumed normal: conjugation by `T(A)` preserves `N(A)` by the linearity hypothesis, and this is
-all the proof uses. In Milne's setting, over an algebraically closed field of characteristic
-zero, an action of an affine group on a vector group by group automorphisms acts on points by
-linear automorphisms (`TauCeti.AdditiveGroup.linearAutOfNaturality`), and a diagonalizable
-subgroup such as a torus meets a smooth unipotent subgroup trivially
+all the proof uses. In characteristic zero, an action of an affine group on a vector group by
+group automorphisms acts on points by linear automorphisms
+(`TauCeti.AdditiveGroup.linearAutOfNaturality`), which supplies the linearity hypothesis. Over an
+algebraically closed field of arbitrary characteristic, a diagonalizable subgroup such as a torus
+meets a smooth unipotent subgroup trivially
 (`TauCeti.FiniteTypeCommHopfAlgCat.sup_eq_augmentation_of_groupLikeSpanned_of_smoothUnipotent`),
-which is the trivial-intersection hypothesis on `T'`.
+which supplies the trivial-intersection hypothesis on `T'`.
 
 ## Main results
 
@@ -133,16 +133,6 @@ private theorem semidirectHom_apply (A : Type u) [CommRing A] [Algebra R A]
     semidirectHom π hlin A x = vectorHom ν A x.left * BialgHom.mapDomain π x.right :=
   rfl
 
-private theorem semidirectHom_inl (A : Type u) [CommRing A] [Algebra R A]
-    (v : Multiplicative (A ⊗[R] V)) :
-    semidirectHom π hlin A (inl v) = vectorHom ν A v :=
-  lift_inl _ _ _ _
-
-private theorem semidirectHom_inr (A : Type u) [CommRing A] [Algebra R A]
-    (t : WithConv (MonoidAlgebra R X →ₐ[R] A)) :
-    semidirectHom π hlin A (inr t) = BialgHom.mapDomain π t :=
-  lift_inr _ _ _ _
-
 /-- The points cut out by a Hopf ideal of `H` over a commutative `R`-algebra `A`. -/
 private noncomputable abbrev pts (K : HopfIdeal R H) (A : Type u) [CommRing A] [Algebra R A] :
     Subgroup (WithConv (H →ₐ[R] A)) :=
@@ -180,11 +170,6 @@ private noncomputable def complement (A : Type u) [CommRing A] [Algebra R A] :
     Subgroup (PointSemidirect (R := R) (X := X) (V := V) A) :=
   (pts J' A).comap (semidirectHom π hlin A)
 
-private theorem mem_complement_iff (A : Type u) [CommRing A] [Algebra R A]
-    (k : PointSemidirect (R := R) (X := X) (V := V) A) :
-    k ∈ complement J' hlin A ↔ semidirectHom π hlin A k ∈ pts J' A :=
-  Iff.rfl
-
 variable (hT' : I ⊔ J' = augmentation R H)
 
 include hT' in
@@ -196,7 +181,8 @@ private theorem eq_of_mem_complement (A : Type u) [CommRing A] [Algebra R A]
   have hright : (k * k'⁻¹).right = 1 := by simp [h]
   have hΦ : semidirectHom π hlin A (k * k'⁻¹) = vectorHom ν A (k * k'⁻¹).left := by
     rw [semidirectHom_apply, hright, map_one, mul_one]
-  have hmem := (mem_complement_iff hlin A _).mp (mul_mem hk (inv_mem hk'))
+  have hmem : semidirectHom π hlin A (k * k'⁻¹) ∈ pts J' A :=
+    Subgroup.mem_comap.mp (mul_mem hk (inv_mem hk'))
   rw [hΦ] at hmem
   have h1 : vectorHom ν A (k * k'⁻¹).left = 1 := by
     refine CommHopfAlgCat.eq_one_of_mem_quotientPointsSubgroup_augmentation
@@ -229,9 +215,8 @@ private theorem exists_mem_complement_right_eq (A : Type u) [CommRing A] [Algebr
   obtain ⟨n, hn, t', ht', hnt⟩ := ht
   obtain ⟨w, rfl⟩ := exists_vectorHom_eq (ν := ν) A hn
   refine ⟨inl w⁻¹ * inr t, ?_, by simp⟩
-  rw [mem_complement_iff, map_mul, map_inv, map_inv, semidirectHom_inl, semidirectHom_inr, ← hnt,
-    inv_mul_cancel_left]
-  exact ht'
+  simp only [complement, Subgroup.mem_comap, map_mul, map_inv, semidirectHom, lift_inl, lift_inr]
+  rwa [← hnt, inv_mul_cancel_left]
 
 include hT' himage in
 private theorem bijective_rightHom_comp_subtype (A : Type u) [CommRing A] [Algebra R A] :
@@ -243,29 +228,11 @@ private theorem bijective_rightHom_comp_subtype (A : Type u) [CommRing A] [Algeb
 
 /-- The splitting of the points semidirect product whose image is the complement: it sends `t`
 to the unique element of the complement with component `t` in `D(A)`. -/
-private noncomputable def complementSplitting (A : Type u) [CommRing A] [Algebra R A] :
+private noncomputable abbrev complementSplitting (A : Type u) [CommRing A] [Algebra R A] :
     (toGroupExtension (Comodule.pointsRepresentation (R := R) (H := MonoidAlgebra R X)
-      (A := A) V).toMulAut).Splitting where
-  toMonoidHom := (complement J' hlin A).subtype.comp
-    (MulEquiv.ofBijective _ (bijective_rightHom_comp_subtype hlin hT' himage A)).symm.toMonoidHom
-  rightInverse_rightHom t :=
-    (MulEquiv.ofBijective _ (bijective_rightHom_comp_subtype hlin hT' himage A)).apply_symm_apply t
-
-private theorem complementSplitting_mem (A : Type u) [CommRing A] [Algebra R A]
-    (t : WithConv (MonoidAlgebra R X →ₐ[R] A)) :
-    complementSplitting hlin hT' himage A t ∈ complement J' hlin A :=
-  Subtype.property _
-
-private theorem complementSplitting_right (A : Type u) [CommRing A] [Algebra R A]
-    (t : WithConv (MonoidAlgebra R X →ₐ[R] A)) :
-    (complementSplitting hlin hT' himage A t).right = t :=
-  (complementSplitting hlin hT' himage A).rightInverse_rightHom t
-
-private theorem eq_complementSplitting (A : Type u) [CommRing A] [Algebra R A]
-    {k : PointSemidirect (R := R) (X := X) (V := V) A} (hk : k ∈ complement J' hlin A) :
-    k = complementSplitting hlin hT' himage A k.right :=
-  eq_of_mem_complement hlin hT' A hk (complementSplitting_mem hlin hT' himage A _)
-    (complementSplitting_right hlin hT' himage A _).symm
+      (A := A) V).toMulAut).Splitting :=
+  GroupExtension.Splitting.ofBijective (complement J' hlin A)
+    (bijective_rightHom_comp_subtype hlin hT' himage A)
 
 variable (hν : ∀ (A B : Type u) [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
   (φ : A →ₐ[R] B) (v : A ⊗[R] V),
@@ -280,12 +247,13 @@ private theorem mapValue_semidirectHom {A B : Type u} [CommRing A] [Algebra R A]
       semidirectHom π hlin B (Comodule.pointSemidirectMap V φ k) := by
   have h := hν A B φ k.left.toAdd
   rw [ofAdd_toAdd] at h
-  rw [semidirectHom_apply, semidirectHom_apply, map_mul, vectorHom_apply, vectorHom_apply, h]
   have hl : (Comodule.pointSemidirectMap V φ k).left =
       Multiplicative.ofAdd (LinearMap.rTensor V φ.toLinearMap k.left.toAdd) :=
     Multiplicative.toAdd.injective (Comodule.toAdd_pointSemidirectMap_left φ k)
-  rw [hl, Comodule.pointSemidirectMap_right, ← MonoidHom.comp_apply (AlgHom.mapValue φ),
-    ← BialgHom.mapValue_mapDomain, MonoidHom.comp_apply]
+  have hr := DFunLike.congr_fun (BialgHom.mapValue_mapDomain π φ) k.right
+  simp only [MonoidHom.comp_apply] at hr
+  simp only [semidirectHom_apply, map_mul, vectorHom_apply, h, hl,
+    Comodule.pointSemidirectMap_right, hr]
 
 include hν in
 /-- The splittings defined by the complements are natural in the value algebra. -/
@@ -293,11 +261,11 @@ private theorem pointSemidirectMap_complementSplitting (A B : Type u) [CommRing 
     [CommRing B] [Algebra R B] (φ : A →ₐ[R] B) (t : WithConv (MonoidAlgebra R X →ₐ[R] A)) :
     Comodule.pointSemidirectMap V φ (complementSplitting hlin hT' himage A t) =
       complementSplitting hlin hT' himage B (AlgHom.mapValue φ t) := by
-  refine eq_of_mem_complement hlin hT' B ?_ (complementSplitting_mem hlin hT' himage B _) ?_
-  · rw [mem_complement_iff, ← mapValue_semidirectHom hlin hν]
+  refine eq_of_mem_complement hlin hT' B ?_ (GroupExtension.Splitting.ofBijective_mem _ _ _) ?_
+  · rw [complement, Subgroup.mem_comap, ← mapValue_semidirectHom hlin hν]
     exact CommHopfAlgCat.mapValue_mem_quotientPointsSubgroup _ _ φ
-      (complementSplitting_mem hlin hT' himage A t)
-  · rw [Comodule.pointSemidirectMap_right, complementSplitting_right, complementSplitting_right]
+      (GroupExtension.Splitting.ofBijective_mem (complement J' hlin A) _ t)
+  · rw [Comodule.pointSemidirectMap_right, right_splitting, right_splitting]
 
 end Complement
 
@@ -353,17 +321,20 @@ theorem exists_eq_conjugate_kerOfSurjective_of_vectorGroup (I J' : HopfIdeal R H
         AlgHom.mapValue (Algebra.ofId R A) (vectorHom ν R (.ofAdd ((1 : R) ⊗ₜ[R] y))) *
           BialgHom.mapDomain π t *
             (AlgHom.mapValue (Algebra.ofId R A) (vectorHom ν R (.ofAdd ((1 : R) ⊗ₜ[R] y))))⁻¹ := by
-    rw [hy A t, map_mul, map_mul, map_inv, semidirectHom_inl, semidirectHom_inr, hg]
+    rw [hy A t]
+    simp only [map_mul, map_inv, semidirectHom, lift_inl, lift_inr]
+    rw [hg]
   refine eq_conjugate_of_forall_mem_iff _ fun A x ↦ ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
   · obtain ⟨k, hk⟩ := exists_semidirectHom_eq (hπ := hπ) hlin A
       ((himage A).ge (Subgroup.mem_sup_right hx))
     have hkmem : k ∈ complement J' hlin A := by
-      rw [mem_complement_iff, hk]
-      exact hx
-    rw [eq_complementSplitting hlin hT' himage A hkmem, hconj, mul_left_inj, mul_right_inj] at hk
+      rwa [complement, Subgroup.mem_comap, hk]
+    rw [← GroupExtension.Splitting.ofBijective_rightHom (S := toGroupExtension _)
+      (bijective_rightHom_comp_subtype hlin hT' himage A) hkmem, hconj, mul_left_inj,
+      mul_right_inj] at hk
     exact (quotientPointsSubgroup_kerOfSurjective_eq_range π hπ _).ge ⟨_, hk⟩
   · obtain ⟨t, rfl⟩ := (quotientPointsSubgroup_kerOfSurjective_eq_range π hπ _).le hx
     rw [← hconj]
-    exact complementSplitting_mem hlin hT' himage A t
+    exact GroupExtension.Splitting.ofBijective_mem (complement J' hlin A) _ t
 
 end TauCeti.HopfIdeal
