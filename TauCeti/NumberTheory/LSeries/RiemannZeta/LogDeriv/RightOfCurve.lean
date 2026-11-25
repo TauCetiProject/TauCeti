@@ -143,13 +143,43 @@ private lemma norm_sum_div_sub_sub_sum_div_sub_le {s s₁ : ℂ} {a η : ℝ} (h
     _ = (2 + η / a) * (∑ z ∈ W, (m z : ℂ) / (s₁ - z)).re := by rw [← Finset.mul_sum, re_sum]
     _ ≤ _ := mul_le_mul_of_nonneg_left (re_le_norm _) (by positivity)
 
-/-- With a zero-free width `c` in the normalization `log (|Im s| + 3)`, every zero `z` of `ζ` with
-`Re z < 1` and `|Im z - t| ≤ 1` has `Re z ≤ 1 - c / (2 log (|t| + 2))`. -/
-private lemma re_le_of_riemannZeta_eq_zero {c : ℝ} (hc : 0 < c)
+/-- With a zero-free width `c` in the normalization `log (|Im s| + 3)` and `β ≤ c / 4`, `ζ` has
+no zero on `1 - β / log (|Im s| + 2) ≤ Re s`. -/
+private lemma riemannZeta_ne_zero_of_one_sub_div_le {c β : ℝ}
     (hzf : ∀ s : ℂ, s ≠ 1 → 1 - c / Real.log (|s.im| + 3) ≤ s.re → riemannZeta s ≠ 0)
-    {t : ℝ} {z : ℂ} (hz1 : z.re < 1) (hzim : |z.im - t| ≤ 1) (hzζ : riemannZeta z = 0) :
+    (hβc : β ≤ c / 4) {s : ℂ} (hs : 1 - β / Real.log (|s.im| + 2) ≤ s.re) :
+    riemannZeta s ≠ 0 := by
+  rcases eq_or_ne s 1 with rfl | hs1
+  · exact riemannZeta_one_ne_zero
+  set L := Real.log (|s.im| + 2)
+  have hL : 0 < L := (Real.log_pos one_lt_two).trans_le (Real.log_two_le_log_add_two (abs_nonneg _))
+  rcases le_or_gt β 0 with hβ | hβ
+  · exact riemannZeta_ne_zero_of_one_le_re (by linarith [div_nonpos_of_nonpos_of_nonneg hβ hL.le])
+  have hlog3 : 0 < Real.log (|s.im| + 3) := Real.log_pos (by linarith [abs_nonneg s.im])
+  have hL3 : Real.log (|s.im| + 3) ≤ 2 * L := by
+    have := Real.log_add_two_le_two_mul_log_add_two (abs_nonneg s.im)
+      (by positivity : 0 ≤ |s.im| + 1) (by linarith)
+    rwa [add_assoc, show (1 : ℝ) + 2 = 3 by norm_num] at this
+  have : β / L ≤ c / Real.log (|s.im| + 3) := by
+    rw [div_le_div_iff₀ hL hlog3]
+    nlinarith
+  exact hzf s hs1 (by linarith)
+
+/-- With a zero-free width `c` in the normalization `log (|Im s| + 3)`, every zero `z` of `ζ` with
+`|Im z - t| ≤ 1` has `Re z ≤ 1 - c / (2 log (|t| + 2))`. -/
+private lemma re_le_of_riemannZeta_eq_zero {c : ℝ}
+    (hzf : ∀ s : ℂ, s ≠ 1 → 1 - c / Real.log (|s.im| + 3) ≤ s.re → riemannZeta s ≠ 0)
+    {t : ℝ} {z : ℂ} (hzim : |z.im - t| ≤ 1) (hzζ : riemannZeta z = 0) :
     z.re ≤ 1 - c / (2 * Real.log (|t| + 2)) := by
-  have hz1' : z ≠ 1 := fun h ↦ by rw [h, one_re] at hz1; exact lt_irrefl _ hz1
+  rcases le_or_gt c 0 with hc | hc
+  · -- there are no zeros on `1 ≤ Re z`, and the width is not positive
+    have hz1 : z.re < 1 := lt_of_not_ge fun h ↦ riemannZeta_ne_zero_of_one_le_re h hzζ
+    have : c / (2 * Real.log (|t| + 2)) ≤ 0 :=
+      div_nonpos_of_nonpos_of_nonneg hc (by
+        have := Real.log_nonneg (by linarith [abs_nonneg t] : (1 : ℝ) ≤ |t| + 2)
+        positivity)
+    linarith
+  have hz1' : z ≠ 1 := by rintro rfl; exact riemannZeta_one_ne_zero hzζ
   have hlt := lt_of_not_ge fun h ↦ hzf z hz1' h hzζ
   have hLz : Real.log (|z.im| + 3) ≤ 2 * Real.log (|t| + 2) := by
     have := Real.log_add_two_le_two_mul_log_add_two (abs_nonneg t)
@@ -163,7 +193,7 @@ private lemma re_le_of_riemannZeta_eq_zero {c : ℝ} (hc : 0 < c)
 /-- **The window comparison.** Let `Cw` be a constant of the window form
 `TauCeti.riemannZeta_logDeriv_window`, `CN` one of the pole bound at `1` and `c` a zero-free
 width. Write `L = log (|Im s| + 2)`. For `0 < β ≤ min (c / 4) (1 / 2)`, every `s ≠ 1` with
-`ζ(s) ≠ 0` and `1 - β / L ≤ Re s < 1 + 1/(2L)` has
+`1 - β / L ≤ Re s < 1 + 1/(2L)` has
 `‖ζ′/ζ(s) + 1/(s - 1)‖ ≤ |Cw| L + (3 + 1/(2β)) ((4 + |Cw|) L + CN)`. -/
 private lemma norm_logDeriv_add_one_div_le_of_re_lt {Cw CN c β : ℝ}
     (hCw : ∀ s : ℂ, -1 ≤ s.re → s.re ≤ 2 → s ≠ 1 → riemannZeta s ≠ 0 →
@@ -172,10 +202,9 @@ private lemma norm_logDeriv_add_one_div_le_of_re_lt {Cw CN c β : ℝ}
             ((analyticOrderAt riemannZeta ρ.val).toNat : ℂ) / (s - ρ.val)‖ ≤
         Cw * Real.log (|s.im| + 2))
     (hNear : ∀ {η : ℝ}, 0 < η → η ≤ 1 → -(logDeriv riemannZeta (1 + η)).re ≤ η⁻¹ + CN)
-    (hc : 0 < c)
     (hzf : ∀ s : ℂ, s ≠ 1 → 1 - c / Real.log (|s.im| + 3) ≤ s.re → riemannZeta s ≠ 0)
     (hβ : 0 < β) (hβc : β ≤ c / 4) (hβ2 : β ≤ 1 / 2) {s : ℂ} (hs1 : s ≠ 1)
-    (hζ : riemannZeta s ≠ 0) (hs : 1 - β / Real.log (|s.im| + 2) ≤ s.re)
+    (hs : 1 - β / Real.log (|s.im| + 2) ≤ s.re)
     (hsη : s.re < 1 + (2 * Real.log (|s.im| + 2))⁻¹) :
     ‖deriv riemannZeta s / riemannZeta s + 1 / (s - 1)‖ ≤
       |Cw| * Real.log (|s.im| + 2) +
@@ -201,10 +230,11 @@ private lemma norm_logDeriv_add_one_div_le_of_re_lt {Cw CN c β : ℝ}
       (him.trans (by norm_num)) hζz
   set W := {z ∈ riemannZetaZerosClosedBall (2 + t * I) 4 |
     0 < z.re ∧ z.re < 1 ∧ |z.im - t| ≤ 1 ∧ riemannZeta z = 0}
-  have hW (z : ℂ) (hz : z ∈ W) : z.re < 1 ∧ |z.im - t| ≤ 1 ∧ riemannZeta z = 0 :=
-    (Finset.mem_filter.mp hz).2.2
+  have hW (z : ℂ) (hz : z ∈ W) : |z.im - t| ≤ 1 ∧ riemannZeta z = 0 :=
+    (Finset.mem_filter.mp hz).2.2.2
   set m : ℂ → ℕ := fun z ↦ (analyticOrderAt riemannZeta z).toNat
-  have hw := hCw s (by linarith) (by linarith) hs1 hζ
+  have hw := hCw s (by linarith) (by linarith) hs1
+    (riemannZeta_ne_zero_of_one_sub_div_le hzf hβc hs)
   have hw₁ := hCw s₁ (by linarith) (by linarith) hs₁1 hζ₁
   rw [← ht, finsum_window_eq_sum_filter hZ fun z ↦ (m z : ℂ) / (s - z)] at hw
   rw [hs₁im, finsum_window_eq_sum_filter hZ fun z ↦ (m z : ℂ) / (s₁ - z)] at hw₁
@@ -221,8 +251,8 @@ private lemma norm_logDeriv_add_one_div_le_of_re_lt {Cw CN c β : ℝ}
   -- every window zero lies on `Re z ≤ 1 - 2β/L`
   have hzero : ∀ z ∈ W, z.re ≤ 1 - 2 * (β / L) := by
     intro z hz
-    obtain ⟨hz1, hzim, hzζ⟩ := hW z hz
-    have := re_le_of_riemannZeta_eq_zero hc hzf hz1 hzim hzζ
+    obtain ⟨hzim, hzζ⟩ := hW z hz
+    have := re_le_of_riemannZeta_eq_zero hzf hzim hzζ
     have : 2 * (β / L) ≤ c / (2 * L) := by
       rw [mul_div_assoc', div_le_div_iff₀ (by linarith) (by linarith)]
       nlinarith
@@ -262,17 +292,7 @@ theorem riemannZeta_deriv_logDeriv_bound :
   have hL2 := Real.log_two_le_log_add_two (abs_nonneg s.im)
   have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
   have hL : 0 < L := hlog2.trans_le hL2
-  have hζ : riemannZeta s ≠ 0 := by
-    have hlog3 : 0 < Real.log (|s.im| + 3) := Real.log_pos (by linarith [abs_nonneg s.im])
-    have hL3 : Real.log (|s.im| + 3) ≤ 2 * L := by
-      have := Real.log_add_two_le_two_mul_log_add_two (abs_nonneg s.im)
-        (by positivity : 0 ≤ |s.im| + 1) (by linarith)
-      rwa [add_assoc, show (1 : ℝ) + 2 = 3 by norm_num] at this
-    have : β / L ≤ c / Real.log (|s.im| + 3) := by
-      rw [div_le_div_iff₀ hL hlog3]
-      nlinarith [min_le_left (c / 4) (1 / 2)]
-    exact hzf s hs1 (by linarith)
-  refine ⟨hζ, ?_, ?_⟩
+  refine ⟨riemannZeta_ne_zero_of_one_sub_div_le hzf (min_le_left _ _) hs, ?_, ?_⟩
   · rw [deriv_riemannZeta_eq_neg_inv_sub_sq_add hs1, one_div, ← inv_pow, neg_add_cancel_comm]
     exact (hCd s hs).trans (by gcongr; exact le_max_left _ _)
   refine le_trans ?_ (mul_le_mul_of_nonneg_right (le_max_right Cd CH) hL.le)
@@ -290,7 +310,7 @@ theorem riemannZeta_deriv_logDeriv_bound :
     have hK : 1 ≤ K := by linarith [show 0 ≤ 1 / (2 * β) by positivity]
     have hX : 0 ≤ (4 + |Cw|) * L + CN := by positivity
     nlinarith [abs_nonneg Cw]
-  · exact norm_logDeriv_add_one_div_le_of_re_lt hCw hNear hc hzf hβ (min_le_left _ _)
-      (min_le_right _ _) hs1 hζ hs hsη
+  · exact norm_logDeriv_add_one_div_le_of_re_lt hCw hNear hzf hβ (min_le_left _ _)
+      (min_le_right _ _) hs1 hs hsη
 
 end TauCeti
