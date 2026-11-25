@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Artinian.Socle
+public import TauCeti.RingTheory.Artinian.Socle.Basic
 public import TauCeti.RingTheory.Support.BaseChange
 public import Mathlib.RingTheory.Support
 public import Mathlib.RingTheory.TensorProduct.Maps
