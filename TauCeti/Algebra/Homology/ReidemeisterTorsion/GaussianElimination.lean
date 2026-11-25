@@ -36,7 +36,9 @@ normalization `τ = a⁻¹` of the torsion.
 The proof changes the bases of `C`: the vectors `x ≠ z⁺` of `Cᵢ₊₁` are replaced by
 `x - (v x / a) z⁺` and `z⁻` by `d z⁺`. In the new bases, of determinants `1` and `a` with respect
 to the old ones, `C` has the matrices of the direct sum of `D` and of the elementary complex
-`F → F` spanned by `z⁺` and `d z⁺`, whose torsion is `1`.
+`F → F` spanned by `z⁺` and `d z⁺`, whose torsion is `1`. This follows the plan of the
+two-periodic cancellation `HomologicalComplex.parityTorsion_eq_of_cancel_one_zero` in
+`ReidemeisterTorsion/Cancellation.lean`.
 
 In Morse and Floer theory, `C` is the complex just before the death of a pair of critical points
 or orbits of adjacent indices joined by a single connecting trajectory of coefficient `a`, and
@@ -53,6 +55,8 @@ or orbits of adjacent indices joined by a single connecting trajectory of coeffi
 
 * J. Milnor, *Whitehead torsion*, Bull. Amer. Math. Soc. 72 (1966), §3.
 * V. Turaev, *Introduction to Combinatorial Torsions*, Birkhäuser 2001, Chapter I.
+* M. Hutchings, *Reidemeister torsion in generalized Morse theory*, Forum Math. 14 (2002),
+  209–244, §3.
 * M. Hutchings, Y.-J. Lee, *Circle-valued Morse theory, Reidemeister torsion, and Seiberg–Witten
   invariants of 3-manifolds*, Topology 38 (1999), 861–888.
 -/
