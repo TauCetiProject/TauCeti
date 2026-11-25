@@ -20,16 +20,16 @@ The code of the empty graph on `ℕ` lies in `graphClass`; a code with `adj(0, 0
 open FirstOrder FirstOrder.Language TauCeti RelationalConfiguration
 
 -- The code of the empty graph is a code of a simple graph.
-example : (⊥ : SimpleGraph ℕ).toRelationalConfiguration ∈ graphClass :=
-  mem_graphClass_iff.2 (SimpleGraph.isSimpleGraph_toRelationalConfiguration _)
+example : (⊥ : SimpleGraph ℕ).toRelationalConfiguration ∈ graphClass := by
+  simp
 
 -- A code with `adj(0, 0)` is not.
 example : adjArrayEquiv.symm (fun p => decide (p = (0, 0))) ∉ graphClass := fun h => by
-  simpa using (isSimpleGraph_iff.1 (mem_graphClass_iff.1 h)).2 0
+  simpa using (isSimpleGraph_iff.1 (mem_graphClass.1 h)).2 0
 
 -- A code with `adj(0, 1)` but not `adj(1, 0)` is not.
 example : adjArrayEquiv.symm (fun p => decide (p = (0, 1))) ∉ graphClass := fun h => by
-  simpa using (isSimpleGraph_iff.1 (mem_graphClass_iff.1 h)).1 0 1
+  simpa using (isSimpleGraph_iff.1 (mem_graphClass.1 h)).1 0 1
 
 -- The codes of the one-edge graphs on `{0, 1}` and on `{5, 7}` are isomorphic.
 example : isoSetoid Language.graph ℕ (SimpleGraph.edge 0 1).toRelationalConfiguration

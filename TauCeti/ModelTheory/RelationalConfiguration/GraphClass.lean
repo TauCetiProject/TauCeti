@@ -40,12 +40,8 @@ when the configurations are isomorphic
 * `TauCeti.RelationalConfiguration.measurableSet_graphClass`,
   `TauCeti.RelationalConfiguration.isomorphismInvariant_graphClass`: `graphClass` is an
   isomorphism-invariant Borel class.
-* `TauCeti.RelationalConfiguration.range_toRelationalConfiguration_eq_graphClass`: it is the range
-  of the coding of simple graphs.
 * `TauCeti.RelationalConfiguration.isoSetoid_toRelationalConfiguration_iff`: codes of simple
   graphs are isomorphic exactly when the graphs are.
-* `TauCeti.RelationalConfiguration.continuous_incidenceGraph_adj`: each adjacency of the incidence
-  graph depends continuously on the configuration.
 * `TauCeti.RelationalConfiguration.borelComplete_graphClass`: countable graphs are Borel complete.
 
 ## References
@@ -56,7 +52,7 @@ when the configurations are isomorphic
 
 public section
 
-open FirstOrder FirstOrder.Language Set
+open FirstOrder FirstOrder.Language
 
 namespace TauCeti.RelationalConfiguration
 
@@ -87,9 +83,16 @@ whose adjacency is symmetric and false on the diagonal. -/
 def graphClass : Set (RelationalConfiguration Language.graph ℕ) :=
   {c | IsSimpleGraph c}
 
-theorem mem_graphClass_iff {c : RelationalConfiguration Language.graph ℕ} :
+/-- Unfolding lemma for `graphClass`. -/
+@[simp]
+theorem mem_graphClass {c : RelationalConfiguration Language.graph ℕ} :
     c ∈ graphClass ↔ IsSimpleGraph c :=
   Iff.rfl
+
+/-- The code of a simple graph on `ℕ` lies in `graphClass`. -/
+theorem toRelationalConfiguration_mem_graphClass (G : SimpleGraph ℕ) :
+    G.toRelationalConfiguration ∈ graphClass :=
+  SimpleGraph.isSimpleGraph_toRelationalConfiguration G
 
 /-- The class of codes of simple graphs is Borel. -/
 theorem measurableSet_graphClass : MeasurableSet graphClass :=
@@ -99,48 +102,8 @@ theorem measurableSet_graphClass : MeasurableSet graphClass :=
 theorem isomorphismInvariant_graphClass : IsomorphismInvariant graphClass := by
   refine isomorphismInvariant_iff.2 fun c d hcd hc => ?_
   obtain ⟨σ, rfl⟩ := isoSetoid_iff_exists_perm_smul_eq.1 hcd
-  rw [mem_graphClass_iff, perm_smul_def]
+  rw [mem_graphClass, perm_smul_def]
   exact IsSimpleGraph.restrict hc _
-
-/-- The codes of simple graphs on `ℕ` are exactly the codes of the members of `graphClass`. -/
-theorem range_toRelationalConfiguration_eq_graphClass :
-    range (SimpleGraph.toRelationalConfiguration : SimpleGraph ℕ → _) = graphClass :=
-  SimpleGraph.range_toRelationalConfiguration
-
-/-! ### Continuity of the incidence graph -/
-
-section Continuity
-
-universe u v w
-
-variable {L : Language.{u, v}} {V : Type w}
-
-open IncidenceVertex Classical in
-/-- **Each adjacency of the incidence graph is continuous** in the configuration: it is constant,
-except between a tuple vertex and the truth vertex of its atom, where it is the value of that
-atom. -/
-theorem continuous_incidenceGraph_adj (v w : IncidenceVertex L V) :
-    Continuous fun c : RelationalConfiguration L V => decide ((incidenceGraph c).Adj v w) := by
-  have key (q r : Atom L V) :
-      Continuous fun c : RelationalConfiguration L V => decide (q = r ∧ c.eval q = true) := by
-    by_cases h : q = r
-    · simpa [h] using continuous_eval r
-    · simpa [h] using continuous_const
-  cases v <;> cases w <;>
-    simp only [incidenceGraph_adj_tuple_position, incidenceGraph_adj_position_tuple,
-      incidenceGraph_adj_position_point, incidenceGraph_adj_point_position,
-      incidenceGraph_adj_tuple_truth, incidenceGraph_adj_truth_tuple,
-      not_incidenceGraph_adj_point_point, not_incidenceGraph_adj_point_tuple,
-      not_incidenceGraph_adj_tuple_point, not_incidenceGraph_adj_point_truth,
-      not_incidenceGraph_adj_truth_point, not_incidenceGraph_adj_tuple_tuple,
-      not_incidenceGraph_adj_position_position, not_incidenceGraph_adj_position_truth,
-      not_incidenceGraph_adj_truth_position, not_incidenceGraph_adj_truth_truth,
-      decide_false] <;>
-    first
-    | exact continuous_const
-    | exact key _ _
-
-end Continuity
 
 /-! ### Borel completeness -/
 
@@ -162,9 +125,6 @@ private theorem isoSetoid_borelReducible_classIso_graphClass :
   let e : W ≃ ℕ := Denumerable.eqv W
   let F : RelationalConfiguration L ℕ → RelationalConfiguration Language.graph ℕ := fun c =>
     (((incidenceGraph c).cliqueTag κ).comap e.symm).toRelationalConfiguration
-  have hcode (c : RelationalConfiguration L ℕ) :
-      Nonempty (((incidenceGraph c).cliqueTag κ).comap e.symm ≃g (incidenceGraph c).cliqueTag κ) :=
-    ⟨⟨e.symm, Iff.rfl⟩⟩
   refine (Setoid.borelBireducible_iff.1 borelBireducible_classIso_univ).2.trans <|
     borelReducible_classIso_of_mapsTo (f := F) ?_ (fun c _ => ?_) fun c _ d _ => ?_
   · refine (Continuous.measurable ?_)
@@ -173,13 +133,10 @@ private theorem isoSetoid_borelReducible_classIso_graphClass :
     | h i j =>
       simp only [F, SimpleGraph.eval_toRelationalConfiguration_adjAtom, SimpleGraph.comap_adj]
       rcases e.symm i with v | p <;> rcases e.symm j with w | p' <;>
-        simp only [SimpleGraph.cliqueTag_adj_inl_inl, SimpleGraph.cliqueTag_adj_inl_inr,
-          SimpleGraph.cliqueTag_adj_inr_inl, SimpleGraph.cliqueTag_adj_inr_inr]
-      · exact continuous_incidenceGraph_adj v w
-      all_goals exact continuous_const
-  · exact SimpleGraph.isSimpleGraph_toRelationalConfiguration _
-  · obtain ⟨hc⟩ := hcode c
-    obtain ⟨hd⟩ := hcode d
+        simp [continuous_incidenceGraph_adj, continuous_const]
+  · exact toRelationalConfiguration_mem_graphClass _
+  · let hc := SimpleGraph.Iso.comap e.symm ((incidenceGraph c).cliqueTag κ)
+    let hd := SimpleGraph.Iso.comap e.symm ((incidenceGraph d).cliqueTag κ)
     rw [isoSetoid_toRelationalConfiguration_iff, isoSetoid_iff_exists_iso_incidenceGraph hι,
       ← SimpleGraph.nonempty_iso_cliqueTag_iff (cliqueFree_incidenceGraph c)
         (cliqueFree_incidenceGraph d)]
