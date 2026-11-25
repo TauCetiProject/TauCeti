@@ -487,6 +487,13 @@ theorem intersectionIndex_pair_swap (σ : OrientedCell h 1) (a b : V) :
     Module.Ray.evalSign_smul]
   split_ifs <;> simp
 
+/-- A stationary segment has zero intersection index. -/
+@[simp]
+theorem intersectionIndex_pair_same (σ : OrientedCell h 1) (a : V) :
+    σ.intersectionIndex ![a, a] = 0 := by
+  have hswap := σ.intersectionIndex_pair_swap a a
+  omega
+
 /-- Reversing the orientation of a cell negates its intersection index. -/
 @[simp]
 theorem intersectionIndex_reverse (σ : OrientedCell h k) (v : Fin (k + 1) → V) :
@@ -544,6 +551,12 @@ theorem intersectionPairing_apply (v : Fin (k + 1) → V) (x : OrientedCell h k 
     intersectionPairing (R := R) v x = x.sum fun σ c => σ.intersectionIndex v • c := by
   rw [intersectionPairing, Finsupp.lsum_apply]
   exact Finsupp.sum_congr fun σ _ => by rw [LinearMap.smul_apply, LinearMap.id_apply]
+
+/-- Pairing a stationary segment with a finite presentation gives zero. -/
+@[simp]
+theorem intersectionPairing_pair_same (a : V) (f : OrientedCell h 1 →₀ E) :
+    intersectionPairing (R := R) ![a, a] f = 0 := by
+  simp [intersectionPairing_apply, Finsupp.sum]
 
 /-- Reversing a segment negates its pairing with a finite wall presentation. -/
 theorem intersectionPairing_pair_swap (a b : V) (f : OrientedCell h 1 →₀ E) :

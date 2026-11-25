@@ -5,33 +5,26 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Geometry.Convex.PolyhedralCochain.Pairing
+public import TauCeti.Geometry.Convex.PolyhedralCochain.Pairing.Basic
+import TauCeti.Analysis.Convex.Segment
 import Mathlib.Analysis.Convex.Between
 
 /-!
 # Subdivision of one-dimensional intersection tests
 
 Splitting a segment at a point outside a wall preserves its intersection
-index and hence its coefficient-valued pairing. The new parameter face must miss the
-wall: otherwise the two closed subsegments would count the same intersection twice.
-The conclusion allows stationary segments missing the wall, real offsets, unbounded
-cells and lineality.
+index and hence its coefficient-valued pairing. An interior cut on a wall can count a
+nonzero intersection twice. Stationary tests have zero index and pairing, and the
+subdivision theorem allows real offsets, unbounded cells and lineality.
 
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `bf3986029ff4d3eb4025d4067489511b0724374e`,
 `Mei/Geometry/Convex/PolyhedralCochain/ParameterSubdivision.lean` (Apache 2.0).
 -/
 
-/-
-The proof uses cell convexity and Mathlib's betweenness transitivity to keep
-intersections on at most one side of the split vertex, `openSegment_subset_union`
-to partition the parameter interval, and `Module.Ray.evalSign_smul`
-for the orientation under positive parameter rescaling.
--/
-
 public section
 
-open TauCeti (OrientedCell isRationalNormalPolyhedron_iff)
+open TauCeti (OrientedCell)
 
 noncomputable section
 
@@ -42,45 +35,19 @@ namespace TauCeti.OrientedCell
 variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
 
-private theorem segment_inter_carrier_nonempty_iff_subsegments (σ : OrientedCell h 1)
-    {x y z : V} {t : ℝ} (ht : t ∈ Ioo (0 : ℝ) 1) (hz : z = AffineMap.lineMap x y t) :
-    (segment ℝ x y ∩ σ.carrier).Nonempty ↔
-      (segment ℝ x z ∩ σ.carrier).Nonempty ∨ (segment ℝ z y ∩ σ.carrier).Nonempty := by
-  have hzseg : z ∈ segment ℝ x y := by
-    rw [hz, segment_eq_image_lineMap]
-    exact ⟨t, ⟨ht.1.le, ht.2.le⟩, rfl⟩
-  have hleft : segment ℝ x z ⊆ segment ℝ x y :=
-    (convex_segment x y).segment_subset (left_mem_segment ℝ x y) hzseg
-  have hright : segment ℝ z y ⊆ segment ℝ x y :=
-    (convex_segment x y).segment_subset hzseg (right_mem_segment ℝ x y)
-  have hcover : segment ℝ x y ⊆ segment ℝ x z ∪ segment ℝ z y := by
-    intro p hp
-    rw [← insert_endpoints_openSegment] at hp
-    rcases hp with rfl | rfl | hp
-    · exact Or.inl (left_mem_segment ℝ _ _)
-    · exact Or.inr (right_mem_segment ℝ _ _)
-    · rcases openSegment_subset_union x y ⟨t, hz.symm⟩ hp with rfl | hp | hp
-      · exact Or.inl (right_mem_segment ℝ _ _)
-      · exact Or.inl (openSegment_subset_segment ℝ _ _ hp)
-      · exact Or.inr (openSegment_subset_segment ℝ _ _ hp)
-  constructor
-  · rintro ⟨p, hp, hpσ⟩
-    rcases hcover hp with hp | hp
-    · exact Or.inl ⟨p, hp, hpσ⟩
-    · exact Or.inr ⟨p, hp, hpσ⟩
-  · rintro (⟨p, hp, hpσ⟩ | ⟨p, hp, hpσ⟩)
-    · exact ⟨p, hleft hp, hpσ⟩
-    · exact ⟨p, hright hp, hpσ⟩
-
-private theorem intersectionIndex_subdivide_of_mem_Ioo (σ : OrientedCell h 1) {x y z : V} {t : ℝ}
-    (ht : t ∈ Ioo (0 : ℝ) 1)
-    (hz : z = AffineMap.lineMap x y t) (hzσ : z ∉ σ.carrier) :
+private theorem intersectionIndex_subdivide_lineMap (σ : OrientedCell h 1) {x y : V} {t : ℝ}
+    (ht : t ∈ Ioo (0 : ℝ) 1) (hmiss : AffineMap.lineMap x y t ∉ σ.carrier) :
     σ.intersectionIndex ![x, y] =
-      σ.intersectionIndex ![x, z] + σ.intersectionIndex ![z, y] := by
+      σ.intersectionIndex ![x, AffineMap.lineMap x y t] +
+        σ.intersectionIndex ![AffineMap.lineMap x y t, y] := by
   classical
+  set z := AffineMap.lineMap x y t with hz
   have hzseg : z ∈ segment ℝ x y := by
-    rw [hz, segment_eq_image_lineMap]
-    exact ⟨t, ⟨ht.1.le, ht.2.le⟩, rfl⟩
+    rw [hz]
+    exact lineMap_mem_segment ℝ x y (mem_Icc_of_Ioo ht)
+  have hpartition : (segment ℝ x y ∩ σ.carrier).Nonempty ↔
+      (segment ℝ x z ∩ σ.carrier).Nonempty ∨ (segment ℝ z y ∩ σ.carrier).Nonempty := by
+    rw [segment_eq_union_of_mem_segment hzseg, union_inter_distrib_right, union_nonempty]
   -- If both sides meet the convex cell, the split vertex lies in the cell too.
   have hexclusive : ¬((segment ℝ x z ∩ σ.carrier).Nonempty ∧
       (segment ℝ z y ∩ σ.carrier).Nonempty) := by
@@ -89,53 +56,42 @@ private theorem intersectionIndex_subdivide_of_mem_Ioo (σ : OrientedCell h 1) {
       (mem_segment_iff_wbtw.mp hzseg).trans_left_right (mem_segment_iff_wbtw.mp hp)
     have hzpq : z ∈ segment ℝ p q :=
       mem_segment_iff_wbtw.mpr (hzp.trans_right_left (mem_segment_iff_wbtw.mp hq))
-    obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp σ.rational
-    have hconv : Convex ℝ σ.carrier := hP ▸ P.convex
-    exact hzσ (hconv.segment_subset hpσ hqσ hzpq)
+    exact hmiss (σ.rational.convex.segment_subset hpσ hqσ hzpq)
   -- Both parameter changes have positive slope, so their orientation signs agree.
   have hsignleft : σ.orientation.evalSign (fun _ : Fin 1 => z - x) =
       σ.orientation.evalSign (fun _ : Fin 1 => y - x) := by
-    rw [hz, AffineMap.lineMap_apply_module', add_sub_cancel_right]
+    have hdiff : z - x = t • (y - x) := by
+      rw [hz]
+      simpa only [vsub_eq_sub] using AffineMap.lineMap_vsub_left x y t
+    rw [hdiff]
     simp only [Module.Ray.evalSign_smul, Fin.prod_univ_one, sign_pos ht.1, one_mul]
   have hsignright : σ.orientation.evalSign (fun _ : Fin 1 => y - z) =
       σ.orientation.evalSign (fun _ : Fin 1 => y - x) := by
     have hdiff : y - z = (1 - t) • (y - x) := by
-      rw [hz, AffineMap.lineMap_apply_module']
-      module
+      rw [hz]
+      simpa only [vsub_eq_sub] using AffineMap.right_vsub_lineMap x y t
     rw [hdiff]
-    simpa only [Fin.prod_univ_one, sign_pos (sub_pos.mpr ht.2), one_mul]
-      using (Module.Ray.evalSign_smul σ.orientation (fun _ : Fin 1 => y - x)
-        (fun _ => 1 - t))
+    simp only [Module.Ray.evalSign_smul, Fin.prod_univ_one, sign_pos (sub_pos.mpr ht.2), one_mul]
   rw [intersectionIndex_pair, intersectionIndex_pair, intersectionIndex_pair,
-    hsignleft, hsignright, σ.segment_inter_carrier_nonempty_iff_subsegments ht hz]
+    hsignleft, hsignright, hpartition]
   by_cases hleft : (segment ℝ x z ∩ σ.carrier).Nonempty
   · have hright : ¬(segment ℝ z y ∩ σ.carrier).Nonempty := fun hr => hexclusive ⟨hleft, hr⟩
     simp [hleft, hright]
   · simp [hleft]
 
-/-- Inserting a vertex on a segment outside the cell adds the two subsegment
-intersection indices. Endpoints and degenerate segments outside the cell are allowed. -/
+/-- Splitting a segment at a point outside the cell gives the original index as the sum
+of the two subsegment indices. The cut may be an endpoint. -/
 theorem intersectionIndex_subdivide (σ : OrientedCell h 1) {x y z : V}
     (hz : z ∈ segment ℝ x y) (hzσ : z ∉ σ.carrier) :
     σ.intersectionIndex ![x, y] =
       σ.intersectionIndex ![x, z] + σ.intersectionIndex ![z, y] := by
   rw [← insert_endpoints_openSegment] at hz
-  rcases hz with hzx | hzy | hz
-  · subst z
-    have hdisj : ¬(segment ℝ x x ∩ σ.carrier).Nonempty := by
-      simpa [segment_same] using hzσ
-    have hzero : σ.intersectionIndex ![x, x] = 0 := by
-      rw [intersectionIndex_pair, ite_eq_right hdisj]
-    rw [hzero, zero_add]
-  · subst z
-    have hdisj : ¬(segment ℝ y y ∩ σ.carrier).Nonempty := by
-      simpa [segment_same] using hzσ
-    have hzero : σ.intersectionIndex ![y, y] = 0 := by
-      rw [intersectionIndex_pair, ite_eq_right hdisj]
-    rw [hzero, add_zero]
+  rcases hz with rfl | rfl | hz
+  · simp
+  · simp
   · rw [openSegment_eq_image_lineMap] at hz
     obtain ⟨t, ht, rfl⟩ := hz
-    exact σ.intersectionIndex_subdivide_of_mem_Ioo ht rfl hzσ
+    exact σ.intersectionIndex_subdivide_lineMap ht hzσ
 
 variable {R E : Type*} [Ring R] [AddCommGroup E] [Module R E]
 
