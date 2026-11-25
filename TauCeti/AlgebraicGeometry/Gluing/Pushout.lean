@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
+public import Mathlib.AlgebraicGeometry.Properties
 public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 
 /-!
@@ -16,6 +17,8 @@ public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 Two schemes glued along a common open have the expected intersections of charts.
 Cartesian morphisms of gluing data induce Cartesian chart squares. A quasi-compact
 overlap preserves quasi-separatedness, and a two-open cover gives a pushout presentation.
+Gluing reduced, irreducible or integral schemes along a nonempty common open gives a reduced,
+irreducible or integral scheme.
 
 Schemes over the two charts of a cartesian square of open immersions `W₁ ← W₁₂ → W₂` over `S`
 glue to a scheme over `S` once their restrictions to `W₁₂` are identified: if `X₁ ⟶ W₁` and
@@ -44,6 +47,42 @@ instance [CompactSpace X] [CompactSpace Y] : CompactSpace ↑(pushout f g) := by
   rw [← range_pushout_inl_union_range_pushout_inr f g]
   exact (isCompact_range (pushout.inl f g).continuous).union
     (isCompact_range (pushout.inr f g).continuous)
+
+section Integral
+
+/-- Gluing two reduced schemes along open immersions gives a reduced scheme: the two charts form
+an open cover of the pushout by reduced schemes. -/
+instance isReduced_pushout [IsReduced X] [IsReduced Y] : IsReduced (pushout f g) := by
+  have : ∀ b, IsReduced ((pushoutOpenCover f g).X b) := fun b ↦ by
+    cases b; exacts [inferInstanceAs (IsReduced X), inferInstanceAs (IsReduced Y)]
+  exact IsReduced.of_openCover _ (pushoutOpenCover f g)
+
+/-- Gluing two irreducible schemes along a nonempty common open gives an irreducible scheme. -/
+instance irreducibleSpace_pushout [IrreducibleSpace X] [IrreducibleSpace Y] [Nonempty U] :
+    IrreducibleSpace ↑(pushout f g) := by
+  obtain ⟨p⟩ := ‹Nonempty U›
+  -- The two charts meet at the image of a point of the common open.
+  have hmeet : ¬ Disjoint (pushout.inl f g).opensRange (pushout.inr f g).opensRange :=
+    fun h ↦ h.le_bot (show pushout.inl f g (f p) ∈ _ ⊓ _ from ⟨⟨_, rfl⟩, g p, by
+      rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, pushout.condition]⟩)
+  -- The chart images form an open cover by pairwise meeting irreducible pieces.
+  have : PreirreducibleSpace ↑(pushout f g) := by
+    refine .of_isOpenCover ?_ (pushoutOpenCover f g).isOpenCover_opensRange fun b ↦ ?_
+    · rintro (_ | _) (_ | _) h
+      exacts [(h rfl).elim, hmeet, fun h ↦ hmeet h.symm, (h rfl).elim]
+    · cases b
+      exacts [Set.rangeFactorization_surjective.preirreducibleSpace
+          (pushout.inl f g).continuous.rangeFactorization,
+        Set.rangeFactorization_surjective.preirreducibleSpace
+          (pushout.inr f g).continuous.rangeFactorization]
+  exact { toNonempty := ⟨pushout.inl f g (f p)⟩ }
+
+/-- Gluing two integral schemes along a nonempty common open gives an integral scheme. -/
+instance isIntegral_pushout [IsIntegral X] [IsIntegral Y] [Nonempty U] :
+    IsIntegral (pushout f g) :=
+  isIntegral_of_irreducibleSpace_of_isReduced _
+
+end Integral
 
 section PointsAndMap
 

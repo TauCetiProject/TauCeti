@@ -31,7 +31,9 @@ Over a normed division ring whose norm is `‖x‖ = b ^ (-v x)`, a first break 
 makes `f` distinguished of degree `j` at the radius `b ^ m`, and makes the order of vanishing its
 lowest dominant degree there. When the weighted coefficients are bounded at some larger radius,
 the converse holds as well: if the order of vanishing `a` satisfies `a < j`, these two active
-indices give a first break at `j` with slope `m`. More generally, any finite face of slope `m`
+indices give a first break at `j` with slope `m`. Since a first break itself makes the weighted
+coefficients bounded at a larger radius, this boundedness can also be made part of the criterion,
+which then needs no hypothesis. More generally, any finite face of slope `m`
 ending at `j` makes `f` restricted at `b ^ m`, so over a complete ultrametric normed field
 Weierstrass preparation at `b ^ m` writes `f` uniquely as a restricted unit times a monic
 polynomial of degree `j`. At a first break that polynomial is pure of slope `m`, and its finite
@@ -49,6 +51,10 @@ slopes are exactly the `j - a` slopes of the first segment.
 * `PowerSeries.isFirstBreak_newtonPolygon_iff_isLowestDominant_and_isDistinguished`: with bounded
   weighted coefficients at a larger radius, a first break at `j` is exactly this pair of active
   indices together with `a < j` for the order of vanishing `a`.
+* `PowerSeries.exists_lt_hasGaussNorm_of_isFirstBreak_newtonPolygon`: a first break of slope `m`
+  makes the weighted coefficients bounded at some radius larger than `b ^ m`.
+* `PowerSeries.isFirstBreak_newtonPolygon_iff_exists_hasGaussNorm_and_isDistinguished`: the
+  same criterion without the boundedness hypothesis, which becomes part of the condition.
 * `PowerSeries.existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFirstBreak`: unique factorisation
   by Weierstrass preparation at a first break.
 * `PowerSeries.forall_mem_newtonSlopes_eq_of_isFirstBreak`: the polynomial factor is pure of
@@ -128,6 +134,14 @@ variable {K : Type*} [NormedDivisionRing K] {f : K⟦X⟧}
 
 include hb hv
 
+/-- A first break of slope `m` makes the weighted coefficient norms bounded at some radius
+strictly larger than `b ^ m`. -/
+theorem exists_lt_hasGaussNorm_of_isFirstBreak_newtonPolygon {m : ℝ} {j : ℕ}
+    (hbr : IsFirstBreak (f.newtonPolygon v) m j) : ∃ τ, m < τ ∧ f.HasGaussNorm norm (b ^ τ) := by
+  obtain ⟨a, -, -, hface⟩ :=
+    (f.isConvexSeq_newtonPolygon v).isFirstBreak_iff_isFiniteFace.mp hbr
+  exact exists_lt_hasGaussNorm_of_isFiniteFace_newtonPolygon f v hb hv hface
+
 /-- A first break makes the series restricted at the radius of its first slope. -/
 theorem isRestricted_of_isFirstBreak_newtonPolygon {m : ℝ} {j : ℕ}
     (hbr : IsFirstBreak (f.newtonPolygon v) m j) : f.IsRestricted (b ^ m) := by
@@ -161,6 +175,27 @@ theorem isFirstBreak_newtonPolygon_iff_isLowestDominant_and_isDistinguished {τ 
         TauCeti.PowerSeries.IsDistinguished (b ^ m) j f := by
   rw [isFirstBreak_newtonPolygon_iff_isFiniteFace ha (v.ne_top_iff.mpr (order_eq_nat.mp ha).1),
     isFiniteFace_newtonPolygon_iff f v hb hv hf hmτ]
+
+/-- **First breaks in Gauss form.** Let `a` be the order of vanishing of `f`. The Newton polygon
+of `f` has its first break at `j` with slope `m` exactly when `a < j`, the weighted coefficients
+are bounded at some radius `b ^ τ` with `m < τ`, and at the radius `b ^ m` the order of vanishing
+is the lowest dominant degree of `f` and `f` is distinguished of degree `j`. Unlike
+`isFirstBreak_newtonPolygon_iff_isLowestDominant_and_isDistinguished`, the boundedness at a
+larger radius is part of the criterion rather than a hypothesis, since a first break implies it
+(`exists_lt_hasGaussNorm_of_isFirstBreak_newtonPolygon`). -/
+theorem isFirstBreak_newtonPolygon_iff_exists_hasGaussNorm_and_isDistinguished {a : ℕ}
+    (ha : f.order = a) {m : ℝ} {j : ℕ} :
+    IsFirstBreak (f.newtonPolygon v) m j ↔ a < j ∧
+      (∃ τ, m < τ ∧ f.HasGaussNorm norm (b ^ τ)) ∧
+      TauCeti.PowerSeries.IsLowestDominant (b ^ m) a f ∧
+        TauCeti.PowerSeries.IsDistinguished (b ^ m) j f := by
+  refine ⟨fun hbr ↦ ?_, fun ⟨haj, ⟨τ, hmτ, hf⟩, hl, hd⟩ ↦
+    (isFirstBreak_newtonPolygon_iff_isLowestDominant_and_isDistinguished v hb hv hf hmτ ha).mpr
+      ⟨haj, hl, hd⟩⟩
+  obtain ⟨τ, hmτ, hf⟩ := exists_lt_hasGaussNorm_of_isFirstBreak_newtonPolygon v hb hv hbr
+  obtain ⟨haj, hl, hd⟩ :=
+    (isFirstBreak_newtonPolygon_iff_isLowestDominant_and_isDistinguished v hb hv hf hmτ ha).mp hbr
+  exact ⟨haj, ⟨τ, hmτ, hf⟩, hl, hd⟩
 
 /-- Every polynomial factor of degree at most the first break, with a restricted unit as
 cofactor at the first-slope radius, is pure of that slope. -/

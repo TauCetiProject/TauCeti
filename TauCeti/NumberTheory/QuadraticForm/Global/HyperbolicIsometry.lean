@@ -80,7 +80,7 @@ theorem equivalent_sumTwoSquaresSubSq_sqAddTwoSqSubTwoSq :
 /-- `⟨1, 2, -2⟩` is nondegenerate. -/
 theorem nondegenerate_sqAddTwoSqSubTwoSq : sqAddTwoSqSubTwoSq.Nondegenerate := by
   rw [sqAddTwoSqSubTwoSq_def]
-  exact nondegenerate_weightedSumSquares fun i =>
+  exact nondegenerate_weightedSumSquares_iff.mpr fun i =>
     isRegular_iff_ne_zero.mpr (by fin_cases i <;> simp)
 
 /-- The system of local invariants of `⟨1, 1, -1⟩`: rank `3`, discriminant the class of `-1`,

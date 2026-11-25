@@ -205,6 +205,12 @@ noncomputable instance
     PreservesLimits (pullback f) :=
   preservesLimits_of_natIso (restrictFunctorIsoPullback f)
 
+/-- Module pullback along an open immersion preserves injective modules, since restriction does. -/
+instance injective_pullback_obj_of_isOpenImmersion {X Y : Scheme.{u}} (f : Y ⟶ X)
+    [IsOpenImmersion f] (I : X.Modules) [Injective I] :
+    Injective ((pullback f).obj I) :=
+  Injective.of_iso ((restrictFunctorIsoPullback f).app I) inferInstance
+
 /-- Restriction along an open immersion sends the free module on `ι` to the free module on `ι`. -/
 noncomputable def restrictFreeIso {X Y : Scheme.{u}} (f : Y ⟶ X) [IsOpenImmersion f]
     (ι : Type u) :

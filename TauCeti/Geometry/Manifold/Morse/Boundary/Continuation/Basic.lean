@@ -35,9 +35,11 @@ its points, the slice stands for the unparametrized trajectories. The coefficien
 agree, and `0` otherwise, and `TauCeti.morseContinuationMap` is its linear extension.
 
 The definitions take no hypothesis on `V`, so that they make sense for every field. They are the
-counts of the continuation map only when the slice is finite, as it is expected to be for admissible
-fields under the transversality condition for continuations; that finiteness theorem is not proved
-here. On an infinite slice the count is a junk value, since `Set.ncard` is `0` on infinite sets.
+counts of the continuation map only when the slice is finite, as it is between critical points of
+equal index for smooth continuation fields between Morse–Smale pseudo-gradients satisfying the
+transversality condition for continuations
+(`TauCeti.IsTransverseContinuation.finite_morseContinuationSlice`). On an infinite slice the count
+is a junk value, since `Set.ncard` is `0` on infinite sets.
 That the continuation map is a chain map, which needs the compactification and gluing of the
 one-dimensional continuation trajectory spaces, is not proved here.
 

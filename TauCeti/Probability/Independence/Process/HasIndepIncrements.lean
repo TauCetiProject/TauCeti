@@ -326,16 +326,18 @@ namespace ProbabilityTheory
 
 variable {T Ω : Type*} [Preorder T] [MeasurableSpace Ω] {P : Measure Ω} {N : T → Ω → ℕ}
 
-/-- Casting a nondecreasing natural-valued process to the integers preserves independent
-increments. Monotonicity is needed because subtraction in the natural numbers is truncated. -/
-theorem HasIndepIncrements.natCast (hN : HasIndepIncrements N P)
-    (hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N t ω)) :
-    HasIndepIncrements (fun t ω ↦ (N t ω : ℤ)) P := by
+/-- Casting a natural-valued process to an additive group with one preserves independent
+increments, provided each pair of ordered times has almost surely ordered values. This order
+condition is needed because subtraction in the natural numbers is truncated; the exceptional null
+set may depend on the pair of times. -/
+theorem HasIndepIncrements.natCast {R : Type*} [MeasurableSpace R] [AddGroupWithOne R]
+    (hN : HasIndepIncrements N P) (hmono : ∀ ⦃s t : T⦄, s ≤ t → ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
+    HasIndepIncrements (fun t ω ↦ (N t ω : R)) P := by
   intro n t ht
-  have h := (hN n t ht).comp (fun _ (x : ℕ) ↦ (x : ℤ)) (fun _ ↦ measurable_of_countable _)
+  have h := (hN n t ht).comp (fun _ (x : ℕ) ↦ (x : R)) (fun _ ↦ measurable_of_countable _)
   refine h.congr fun i ↦ ?_
-  filter_upwards [hmono] with ω hω
-  exact Int.ofNat_sub (hω (ht i.castSucc_le_succ))
+  filter_upwards [hmono (ht i.castSucc_le_succ)] with ω hω
+  exact Nat.cast_sub hω
 
 end ProbabilityTheory
 
@@ -383,7 +385,8 @@ theorem HasIndepIncrements.identDistrib_nat {T Ω Ω' : Type*} [LinearOrder T] [
     filter_upwards [h0X] with ω hω using by simp [hω]
   have h0YZ : ∀ᵐ ω ∂Q, (Y ⊥ ω : ℤ) = 0 := by
     filter_upwards [h0Y] with ω hω using by simp [hω]
-  have hdist := (hX.natCast hmonoX).identDistrib (hY.natCast hmonoY)
+  have hdist := (hX.natCast fun _ _ hst ↦ hmonoX.mono fun _ hω ↦ hω hst).identDistrib
+    (hY.natCast fun _ _ hst ↦ hmonoY.mono fun _ hω ↦ hω hst)
     hmXZ hmYZ h0XZ h0YZ (fun s t hst ↦
       (hlaw s t hst).natCast_sub_of_le
         (hmonoX.mono fun _ hω ↦ hω hst) (hmonoY.mono fun _ hω ↦ hω hst))
@@ -431,7 +434,8 @@ theorem HasIndepIncrements.indepFun_shift_nat (hN : HasIndepIncrements N P)
     filter_upwards [h0] with ω hω using by simp [hω]
   -- The local bottom is zero, so the history theorem's initial-time hypothesis is h0Z.
   have hbotZ : ∀ᵐ ω ∂P, (N (⊥ : T) ω : ℤ) = 0 := h0Z
-  have h := (hN.natCast hmono).indepFun_future_past hmZ hbotZ t
+  have h := (hN.natCast fun _ _ hst ↦ hmono.mono fun _ hω ↦ hω hst).indepFun_future_past
+    hmZ hbotZ t
   have hf : Measurable (fun (z : Ici t → ℤ) (s : T) ↦
       (z ⟨t + s, by simp only [Set.mem_Ici]; exact le_self_add⟩).toNat) := by fun_prop
   have hg : Measurable (fun (z : Iic t → ℤ) (s : Iic t) ↦ (z s).toNat) := by fun_prop
