@@ -74,7 +74,7 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Representation.isTrivial_comp_subtype_iff` and
   `Representation.le_stabilizer_of_isTrivial_comp_subtype`
 * `Representation.mem_invariants_comp_subtype_iff`,
-  `Representation.antitone_invariants_comp_subtype`, `Representation.map_invariants_comp_subtype`:
+  `Representation.invariants_comp_subtype_antitone`, `Representation.map_invariants_comp_subtype`:
   invariants of subgroups, their monotonicity, and their transport under conjugation.
 * `Representation.le_stabilizer_ofMulAction`
 * `Representation.le_stabilizer_dual`
@@ -277,7 +277,7 @@ theorem mem_invariants_comp_subtype_iff {H : Subgroup G} {v : V} :
   simp [mem_invariants, IsConcreteLE.le_iff]
 
 /-- The invariants of the restriction to a subgroup shrink as the subgroup grows. -/
-theorem antitone_invariants_comp_subtype :
+theorem invariants_comp_subtype_antitone :
     Antitone fun H : Subgroup G ↦ invariants (ρ.comp H.subtype) := fun _ _ hHK _ hv ↦
   mem_invariants_comp_subtype_iff.2 (hHK.trans (mem_invariants_comp_subtype_iff.1 hv))
 
