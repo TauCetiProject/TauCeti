@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Functor.FullyFaithful
 public import Mathlib.GroupTheory.FreeAbelianGroup
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
-public import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Biproducts
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 public import TauCeti.CategoryTheory.Preadditive.UnipotentCommutator
 
 /-!
@@ -245,22 +245,6 @@ theorem of_trans_commutatorElement_trans {P : C} {W : D} (e : T.obj P ≅ W) (a 
   rw [commutatorElement_def, h', h', h', h, h]
   abel
 
-/-- Two homomorphisms out of `K₀(T)` that agree on the classes of all triples are equal. -/
-@[ext]
-theorem hom_ext {G : Type*} [AddMonoid G] {f g : RelativeK0 T →+ G}
-    (h : ∀ (P Q : C) (α : T.obj P ≅ T.obj Q), f (of T α) = g (of T α)) : f = g := by
-  refine AddMonoidHom.ext fun x => ?_
-  obtain ⟨y, rfl⟩ := mk_surjective T x
-  induction y using FreeAddCommGroup.induction_on with
-  | zero => rw [map_zero, map_zero, map_zero]
-  | of p => exact h p.1 p.2.1 p.2.2
-  | neg p hp =>
-      -- In a monoid, `f (-a)` and `g (-a)` are both inverses of `f a = g a`.
-      refine left_neg_eq_right_neg (a := f (mk T (FreeAddCommGroup.of p))) ?_ ?_
-      · rw [← map_add, ← map_add, neg_add_cancel, map_zero, map_zero]
-      · rw [hp, ← map_add, ← map_add, add_neg_cancel, map_zero, map_zero]
-  | add a b ha hb => simp only [map_add, ha, hb]
-
 /-- Induction on the classes of triples. -/
 @[elab_as_elim]
 theorem induction_on {motive : RelativeK0 T → Prop} (x : RelativeK0 T) (zero : motive 0)
@@ -281,6 +265,13 @@ theorem closure_range_of :
   eq_top_iff.2 fun x _ => induction_on x (zero_mem _)
     (fun P Q α => AddSubgroup.subset_closure ⟨⟨P, Q, α⟩, rfl⟩) (fun _ _ => add_mem)
     (fun _ => neg_mem)
+
+/-- Two homomorphisms out of `K₀(T)` that agree on the classes of all triples are equal. -/
+@[ext]
+theorem hom_ext {G : Type*} [AddMonoid G] {f g : RelativeK0 T →+ G}
+    (h : ∀ (P Q : C) (α : T.obj P ≅ T.obj Q), f (of T α) = g (of T α)) : f = g :=
+  AddMonoidHom.eq_of_eqOn_dense (closure_range_of T)
+    (by rintro _ ⟨⟨P, Q, α⟩, rfl⟩; exact h P Q α)
 
 end Basic
 

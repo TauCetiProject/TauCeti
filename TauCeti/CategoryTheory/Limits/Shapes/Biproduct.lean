@@ -54,6 +54,16 @@ and compatible with lifts. Unlike the `Functor.mapBiprod` lemmas, these statemen
 preservation hypothesis. Commutative squares into the images under a functor combine into
 squares through lifts into and descents out of binary biproducts
 (`CategoryTheory.Functor.comp_map_biprod_lift` and `CategoryTheory.Functor.biprod_desc_comp_map`).
+For a functor preserving zero morphisms, the comparison maps
+`biprod.lift (F.map biprod.fst) (F.map biprod.snd)` and
+`biprod.desc (F.map biprod.inl) (F.map biprod.inr)`, the simp normal forms of the two components
+of `Functor.mapBiprod`, carry `F` of the inclusions to the inclusions and the projections to `F` of
+the projections (`CategoryTheory.Limits.biprod.map_inl_comp_lift_map`,
+`CategoryTheory.Limits.biprod.desc_map_comp_map_fst` and their siblings); again no preservation
+hypothesis is needed. When `F` preserves the biproduct and its target is preadditive, an
+automorphism of `F(X ⊞ Y)` which fixes `F` of the first inclusion and induces the identity along
+`F` of the second projection becomes, under `F.mapBiprod X Y`, the unipotent automorphism given by
+its off-diagonal block (`CategoryTheory.Functor.mapBiprod_symm_trans_trans_eq_unipotentLower`).
 For a functor out of `Cᵒᵖ`, the comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)`
 through `biprod.opIso` has inverse given by the images of the projections
 (`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`), and it identifies the lift of
@@ -647,7 +657,68 @@ theorem biprod_desc_comp_map {A₂ A₃ A₄ : D} {B₂ B₃ B₄ : C} [HasBinar
   · rw [biprod.inr_desc_assoc, biprod.inr_desc_assoc, Category.assoc, ← F.map_comp,
       biprod.inr_desc, h']
 
+section PreservesZeroMorphisms
+
+variable [F.PreservesZeroMorphisms] (X Y : C) [HasBinaryBiproduct X Y]
+  [HasBinaryBiproduct (F.obj X) (F.obj Y)]
+
+/-- `F` of the first inclusion, followed by the comparison `F(X ⊞ Y) ⟶ F(X) ⊞ F(Y)`, is the first
+inclusion. -/
+@[reassoc (attr := simp)]
+theorem _root_.CategoryTheory.Limits.biprod.map_inl_comp_lift_map :
+    F.map (biprod.inl : X ⟶ X ⊞ Y) ≫ biprod.lift (F.map biprod.fst) (F.map biprod.snd) =
+      biprod.inl := by
+  ext <;> simp [← F.map_comp]
+
+/-- `F` of the second inclusion, followed by the comparison `F(X ⊞ Y) ⟶ F(X) ⊞ F(Y)`, is the second
+inclusion. -/
+@[reassoc (attr := simp)]
+theorem _root_.CategoryTheory.Limits.biprod.map_inr_comp_lift_map :
+    F.map (biprod.inr : Y ⟶ X ⊞ Y) ≫ biprod.lift (F.map biprod.fst) (F.map biprod.snd) =
+      biprod.inr := by
+  ext <;> simp [← F.map_comp]
+
+/-- The comparison `F(X) ⊞ F(Y) ⟶ F(X ⊞ Y)`, followed by `F` of the first projection, is the first
+projection. -/
+@[reassoc (attr := simp)]
+theorem _root_.CategoryTheory.Limits.biprod.desc_map_comp_map_fst :
+    biprod.desc (F.map (biprod.inl : X ⟶ X ⊞ Y)) (F.map biprod.inr) ≫ F.map biprod.fst =
+      biprod.fst := by
+  ext <;> simp [← F.map_comp]
+
+/-- The comparison `F(X) ⊞ F(Y) ⟶ F(X ⊞ Y)`, followed by `F` of the second projection, is the
+second projection. -/
+@[reassoc (attr := simp)]
+theorem _root_.CategoryTheory.Limits.biprod.desc_map_comp_map_snd :
+    biprod.desc (F.map (biprod.inl : X ⟶ X ⊞ Y)) (F.map biprod.inr) ≫ F.map biprod.snd =
+      biprod.snd := by
+  ext <;> simp [← F.map_comp]
+
+end PreservesZeroMorphisms
+
 end Comparison
+
+section Unipotent
+
+variable {C : Type u} {D : Type v} [Category.{w} C] [Category.{w'} D] [HasZeroMorphisms C]
+  [Preadditive D] [HasBinaryBiproducts D] (F : C ⥤ D) [F.PreservesZeroMorphisms] {X Y : C}
+  [HasBinaryBiproduct X Y] [PreservesBinaryBiproduct X Y F]
+
+/-- Under `F(X ⊞ Y) ≅ F(X) ⊞ F(Y)`, an automorphism of `F(X ⊞ Y)` fixing `F` of the first
+inclusion and inducing the identity along `F` of the second projection is the unipotent
+automorphism given by its off-diagonal block `F(Y) ⟶ F(X)`. -/
+theorem mapBiprod_symm_trans_trans_eq_unipotentLower (u : F.obj (X ⊞ Y) ≅ F.obj (X ⊞ Y))
+    (h₁ : F.map biprod.inl ≫ u.hom = F.map biprod.inl)
+    (h₂ : u.hom ≫ F.map biprod.snd = F.map biprod.snd) :
+    (F.mapBiprod X Y).symm ≪≫ u ≪≫ F.mapBiprod X Y =
+      Biprod.unipotentLower (F.map biprod.inr ≫ u.hom ≫ F.map biprod.fst) := by
+  ext
+  · simp [Biprod.ofComponents, reassoc_of% h₁]
+  · simp [Biprod.ofComponents, reassoc_of% h₁]
+  · simp [Biprod.ofComponents]
+  · simp [Biprod.ofComponents, h₂, ← F.map_comp]
+
+end Unipotent
 
 section Op
 
