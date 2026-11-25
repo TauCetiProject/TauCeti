@@ -58,7 +58,7 @@ theorem eventually_norm_sq_curveVelocity_flowOf_eq
   have hdom : ∀ᶠ t : ℝ in 𝓝 0, (t, p) ∈ flowDomain X :=
     ((isOpen_flowDomain hX₁).preimage
       (by fun_prop : Continuous fun t : ℝ ↦ (t, p))).mem_nhds
-        (mem_flowDomain_zero hX₁ p)
+        (mem_flowDomain_zero (hX₁ p))
   filter_upwards [hflow, hdom] with t hn htd
   have hslice := contMDiffAt_flowOf_comp (n := 1) (by norm_num) hX₁
     contMDiffAt_const contMDiffAt_id htd
@@ -96,7 +96,7 @@ theorem inner_leviCivitaConnection_self_eq_zero_of_eventually_norm_mfderiv_flowO
         (by fun_prop : ContDiff ℝ 2 (Prod.snd : ℝ × ℝ → ℝ))).contMDiffAt
       (hγ.comp (f := Prod.fst) (g := γ) (0, 0)
         (contMDiff_iff_contDiff.mpr (by fun_prop)).contMDiffAt)
-      (mem_flowDomain_zero hX₁ (γ 0))
+      (mem_flowDomain_zero (hX₁ (γ 0)))
   let U : ∀ t, TangentSpace I (F 0 t) :=
     fun t ↦ curveVelocity I (fun q ↦ F q t) 0
   -- Regard time as the variation parameter and use the transverse squared-speed formula.
@@ -104,7 +104,7 @@ theorem inner_leviCivitaConnection_self_eq_zero_of_eventually_norm_mfderiv_flowO
     (hF.comp (f := Prod.swap) (0, 0)
       (contMDiff_iff_contDiff.mpr (contDiff_snd.prodMk contDiff_fst)).contMDiffAt)
   have htime (q : ℝ) : curveVelocity I (F q) 0 = X (F q 0) :=
-    curveVelocity_flowOf hX₁ (mem_flowDomain_zero hX₁ (γ q))
+    curveVelocity_flowOf hX₁ (mem_flowDomain_zero (hX₁ (γ q)))
   have hfield : (fun q ↦ X (F q 0)) = (fun q ↦ X (γ q)) :=
     funext fun q ↦ congrArg X (congrFun hF₀ q)
   rw [variationField_def, funext htime, hfield, hF₀] at hd

@@ -740,7 +740,7 @@ include hX
 theorem mem_timeDependentFlowDomain_self (s : ℝ) (x : M) :
     ((s, s), x) ∈ timeDependentFlowDomain X := by
   rw [mem_timeDependentFlowDomain, sub_self]
-  exact mem_flowDomain_zero (contMDiff_timeDependentSuspensionField hX) (s, x)
+  exact mem_flowDomain_zero (contMDiff_timeDependentSuspensionField hX (s, x))
 
 variable [T2Space M]
 

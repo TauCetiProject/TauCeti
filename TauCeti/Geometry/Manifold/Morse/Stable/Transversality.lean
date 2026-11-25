@@ -569,7 +569,7 @@ theorem eventually_eq_zero_of_flow_eq_of_isSliceChart (hX : IsAdaptedPseudoGradi
     exact hℓ
   -- Near `(0, y)` the orbit of a point meets the level of `g` through `y` at a unique time.
   have hv : CMDiff 1 (fun z ↦ (⟨z, X z⟩ : TangentBundle 𝓘(ℝ, E) M)) := hX.contMDiff.of_le (by simp)
-  have hT := mem_flowDomain_zero hv y
+  have hT := mem_flowDomain_zero (hv y)
   have hhit := eventually_eq_flowHittingTime_iff hv hT
     (by rw [flowOf_zero]; exact hgd.of_le (by simp)) (by rw [flowOf_zero]; exact hgv)
   rw [flowOf_zero] at hhit

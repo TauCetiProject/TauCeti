@@ -149,8 +149,9 @@ theorem eventually_flowTransition_zero (hg : ContMDiffAt I 𝓘(ℝ) 1 g p)
   have h0 := flowOf_zero v p
   have hpair : Tendsto (fun z : M ↦ ((0 : ℝ), z)) (𝓝 p) (𝓝 (0, p)) :=
     (continuous_const.prodMk continuous_id).tendsto p
-  filter_upwards [hpair.eventually (eventually_eq_flowHittingTime_iff hv (mem_flowDomain_zero hv p)
-    (by rwa [h0]) (by rwa [h0]))] with z hz hzg
+  filter_upwards
+    [hpair.eventually (eventually_eq_flowHittingTime_iff hv (mem_flowDomain_zero (hv p))
+      (by rwa [h0]) (by rwa [h0]))] with z hz hzg
   have htime : 0 = flowHittingTime v g 0 p z := hz.1 (by rw [flowOf_zero, h0, hzg])
   rw [flowTransition_apply, ← htime, flowOf_zero]
 
@@ -162,7 +163,7 @@ theorem eventually_flowTransition_flowOf (hT : (T, p) ∈ flowDomain v)
     ∀ᶠ s in 𝓝 (0 : ℝ), flowTransition v g T p (flowOf v s p) = flowOf v T p := by
   have hγ : Tendsto (fun s ↦ flowOf v s p) (𝓝 0) (𝓝 p) := by
     simpa only [flowOf_zero v p] using
-      (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv p)).continuousAt.tendsto
+      (mdifferentiableAt_flowOf hv (mem_flowDomain_zero (hv p))).continuousAt.tendsto
   have hsub : Tendsto (fun s : ℝ ↦ T - s) (𝓝 0) (𝓝 T) := by
     simpa only [sub_zero, id_eq] using
       (tendsto_const_nhds (x := T)).sub (tendsto_id (x := 𝓝 (0 : ℝ)))
@@ -170,7 +171,7 @@ theorem eventually_flowTransition_flowOf (hT : (T, p) ∈ flowDomain v)
   have hzero : Tendsto (fun s : ℝ ↦ (s, p)) (𝓝 0) (𝓝 (0, p)) :=
     (continuous_id.prodMk continuous_const).tendsto 0
   filter_upwards [hpair.eventually ((isOpen_flowDomain hv).mem_nhds hT),
-    hzero.eventually ((isOpen_flowDomain hv).mem_nhds (mem_flowDomain_zero hv p)),
+    hzero.eventually ((isOpen_flowDomain hv).mem_nhds (mem_flowDomain_zero (hv p))),
     hpair.eventually (eventually_eq_flowHittingTime_iff hv hT hg hgv)] with s hsT hs hiff
   have hflow : flowOf v (T - s) (flowOf v s p) = flowOf v T p := by
     rw [(flowOf_add hv hs hsT).2, add_sub_cancel]
@@ -247,7 +248,7 @@ through `q` intertwines the return branches `P_p` and `P_q` at time `T₀` of th
 theorem flowTransition_semiconj_eventuallyEq :
     flowTransition v g' T p ∘ flowTransition v g T₀ p =ᶠ[𝓝 p]
       flowTransition v g' T₀ q ∘ flowTransition v g' T p := by
-  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
+  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hP hp
   refine (flowTransition_comp_eventuallyEq hv hP hp hg hgv hT hq hg' hg'v).trans ?_
   rw [add_comm]
   exact (flowTransition_comp_eventuallyEq hv hT hq hg' hg'v hQ hq' hg' hg'v).symm
@@ -278,7 +279,7 @@ theorem flowTransition_comp_iterate_eventuallyEq (k : ℕ) :
       (flowTransition v g' T₀ q)^[k] ∘ flowTransition v g' T p := by
   rcases eq_or_ne k 0 with rfl | hk
   · rfl
-  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
+  obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hP hp
   obtain ⟨hkP, hkp⟩ := flowOf_natCast_mul_of_flowOf_eq hv hP hp k
   have hh := (continuousAt_flowTransition hv hT (by rwa [hq]) (by rwa [hq])).tendsto
   rw [flowTransition_self, hq] at hh

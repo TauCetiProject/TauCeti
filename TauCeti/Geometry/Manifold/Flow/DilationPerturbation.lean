@@ -123,8 +123,6 @@ segment `[s₀, s₁] • u` with `0 < s₀` and `s₁ < σ` is disjoint from th
 points at the times of `[σ, T₀]`. -/
 private theorem disjoint_image_smul_image_flowOf
     (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1 (fun z : E ↦ (⟨z, v z⟩ : TangentBundle 𝓘(ℝ, E) E)))
-    (hP : (T₀, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v)
-    (hp : flowOf (I := 𝓘(ℝ, E)) v T₀ 0 = 0)
     (hmin : ∀ t ∈ Ioo 0 T₀, flowOf (I := 𝓘(ℝ, E)) v t 0 ≠ 0) {σ s₀ s₁ : ℝ}
     (haxis : ∀ t ∈ Icc 0 σ, flowOf (I := 𝓘(ℝ, E)) v t 0 = t • u) (hs₀ : 0 < s₀)
     (hs₁ : s₁ < σ) :
@@ -132,7 +130,7 @@ private theorem disjoint_image_smul_image_flowOf
       ((fun t ↦ flowOf (I := 𝓘(ℝ, E)) v t 0) '' Icc σ T₀) := by
   rw [Set.disjoint_left]
   rintro _ ⟨s, hs, rfl⟩ ⟨t, ht, hst⟩
-  refine flowOf_ne_flowOf_of_lt hv hP hp hmin (hs₀.trans_le hs.1)
+  refine flowOf_ne_flowOf_of_lt hv hmin (hs₀.trans_le hs.1)
     ((hs.2.trans_lt hs₁).trans_le ht.1) ht.2 ?_
   rw [haxis s ⟨hs₀.le.trans hs.1, hs.2.trans hs₁.le⟩]
   exact hst.symm
@@ -144,7 +142,6 @@ of the orbit, the points at the times of `[σ, T₀]`. -/
 private theorem exists_contDiff_cutoff_axis
     (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1 (fun z : E ↦ (⟨z, v z⟩ : TangentBundle 𝓘(ℝ, E) E)))
     (hP : (T₀, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v)
-    (hp : flowOf (I := 𝓘(ℝ, E)) v T₀ 0 = 0)
     (hmin : ∀ t ∈ Ioo 0 T₀, flowOf (I := 𝓘(ℝ, E)) v t 0 ≠ 0) {σ s₀ s₁ r : ℝ}
     (hball : ∀ τ ∈ Icc 0 σ, τ • u ∈ ball (0 : E) r)
     (haxis : ∀ t ∈ Icc 0 σ, flowOf (I := 𝓘(ℝ, E)) v t 0 = t • u) (hσ : 0 ≤ σ) (hs₀ : 0 < s₀)
@@ -160,7 +157,7 @@ private theorem exists_contDiff_cutoff_axis
       (isOpen_ball.inter hR.isClosed.isOpen_compl) <| by
         rintro _ ⟨s, hs, rfl⟩
         exact ⟨hball s ⟨hs₀.le.trans hs.1, hs.2.trans hs₁.le⟩, Set.disjoint_left.1
-          (disjoint_image_smul_image_flowOf hv hP hp hmin haxis hs₀ hs₁) ⟨s, hs, rfl⟩⟩
+          (disjoint_image_smul_image_flowOf hv hmin haxis hs₀ hs₁) ⟨s, hs, rfl⟩⟩
   exact ⟨χ, hχ, hχc, hχU.trans inter_subset_left, fun t ht h ↦ (hχU h).2 ⟨t, ht, rfl⟩,
     fun s hs ↦ hχ1 ⟨s, hs, rfl⟩⟩
 
@@ -290,7 +287,7 @@ theorem exists_contDiff_returnDerivative_add_smul_eq_exp_smul
     hvU (hseg hball hσσ)
   -- The cut-off `χ` is `1` near the segment `[s₀, s₁] • u` carrying the dilation, and supported
   -- away from the rest of the orbit, since the orbit has least period `T₀`.
-  obtain ⟨χ, hχ, hχc, hχB, hχR, hχ1⟩ := exists_contDiff_cutoff_axis hv hP hp hmin hball
+  obtain ⟨χ, hχ, hχc, hχB, hχR, hχ1⟩ := exists_contDiff_cutoff_axis hv hP hmin hball
     (fun t ht ↦ (hv_axis t ht).2) hσ.le hs₀ hs₁
   set W : E → E := fun z ↦ χ z • Z z
   have htsW : tsupport W ⊆ tsupport χ := tsupport_smul_subset_left χ Z
@@ -537,7 +534,7 @@ theorem exists_contMDiff_returnDerivative_add_smul_eq_exp_smul {v : (x : M) → 
         refine ⟨hball s hsσ, ?_⟩
         rintro ⟨t, ht, hts⟩
         rw [← (hv_axis s hsσ).2] at hts
-        exact flowOf_ne_flowOf_of_lt hv1 hP hp hmin (by linarith [hs.1])
+        exact flowOf_ne_flowOf_of_lt hv1 hmin (by linarith [hs.1])
           (by linarith [hs.2, ht.1]) ht.2 hts.symm) hZ hZaxis
   have hW_orbit (t : ℝ) (ht : t ∈ Icc 0 T₀) : W (flowOf v t p) = 0 := by
     rcases le_or_gt t σ with h | h
