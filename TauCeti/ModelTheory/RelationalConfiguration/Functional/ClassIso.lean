@@ -44,6 +44,16 @@ on the image (`TauCeti.FunctionalConfiguration.borelBireducible_classIso_image_g
   invariant class is invariant.
 * `TauCeti.FunctionalConfiguration.borelBireducible_classIso_image_graphCode`: isomorphism on a
   class and on its image are Borel bireducible.
+
+## References
+
+* A. S. Kechris, *Classical Descriptive Set Theory*, Springer, 1995, §16.C (the space of countable
+  structures, with function symbols coded by their graphs), and Theorem 15.1 (Lusin–Souslin).
+* G. Paolini and S. Shelah, *Torsion-free abelian groups are Borel complete*, Ann. of Math. 199
+  (2024), arXiv:2102.12371, Fact 1.1 and Definition 1.6 (the isomorphism relation on a class of
+  structures with universe `ℕ`, and its subspace Borel structure).
+* R. Camerlo and S. Gao, *The completeness of the isomorphism relation for countable Boolean
+  algebras*, Trans. Amer. Math. Soc. 353 (2001), §1.
 -/
 
 public section
@@ -108,13 +118,17 @@ with isomorphism on the class `graphCode '' K` of graph codes. -/
 theorem borelBireducible_classIso_image_graphCode (K : Set (FunctionalConfiguration L V)) :
     (classIso L V K).BorelBireducible (RelationalConfiguration.classIso (graphCode '' K)) := by
   let e := measurableEmbedding_graphCode.equivImage K
+  -- `e` is the graph code corestricted to `graphCode '' K`: this holds by unfolding
+  -- `MeasurableEmbedding.equivImage` to `Equiv.Set.image`, and Mathlib states no lemma for it.
+  have he (F : K) : (e F : RelationalConfiguration L.graphLanguage V) = graphCode F.val := rfl
+  have hiff (F G : K) : classIso L V K F G ↔ RelationalConfiguration.classIso _ (e F) (e G) := by
+    rw [classIso_apply, RelationalConfiguration.classIso_apply, he, he, isoSetoid_graphCode_iff]
   refine Setoid.borelBireducible_iff.2 ⟨Setoid.borelReducible_iff.2
-    ⟨e, e.measurable, fun F G => isoSetoid_graphCode_iff.symm⟩, Setoid.borelReducible_iff.2
+    ⟨e, e.measurable, hiff⟩, Setoid.borelReducible_iff.2
     ⟨e.symm, e.symm.measurable, fun c d => ?_⟩⟩
   obtain ⟨F, rfl⟩ := e.surjective c
   obtain ⟨G, rfl⟩ := e.surjective d
-  simp only [MeasurableEquiv.symm_apply_apply]
-  exact isoSetoid_graphCode_iff
+  rw [e.symm_apply_apply, e.symm_apply_apply, hiff]
 
 end FunctionalConfiguration
 
