@@ -43,7 +43,8 @@ between the two subspaces.
 
 **Invertibility.** On the double cover the operator `D` is invertible, for every infinitesimally
 symplectic loop `S` (`TauCeti.isInvertible_torusModeOperator_antiperiodic`). It commutes with the
-half rotation `R` of every mode, and the twisted maps are the solutions of `R x = -x`. If `D x` is
+half rotation `R` of every mode (`TauCeti.torusModeOperator_rotateMode` for the rotation by
+`T / 2`), and the twisted maps are the solutions of `R x = -x`. If `D x` is
 twisted, then `D (R x) = R (D x) = -D x = D (-x)`, so `R x = -x` by injectivity: the inverse of
 `D` maps twisted targets to twisted maps. Hence the restricted operator is invertible
 (`TauCeti.isInvertible_doublyAntiperiodicTorusOperator`, through
@@ -301,44 +302,6 @@ theorem continuousOn_doublyAntiperiodicTorusOperator {X : Type*} [TopologicalSpa
   exact (Topology.IsInducing.subtypeVal (t := {S : C(AddCircle T, F →L[ℝ] F) |
     ∀ t, S (t + (T / 2 : ℝ)) = S t})).continuousOn_iff.2 hM
 
-/-! ### The half rotation -/
-
-/-- The rotation by half the period of both loops of a mode. -/
-private def halfRotatePair (s : ℝ) :
-    WithLp 2 (CircleSobolev s F × CircleSobolev s F) →L[ℂ]
-      WithLp 2 (CircleSobolev s F × CircleSobolev s F) :=
-  let r : CircleSobolev s F →L[ℂ] CircleSobolev s F :=
-    (rotate ((T / 2 : ℝ) : AddCircle T)).toLinearIsometry.toContinuousLinearMap
-  r.withLpProdMap 2 r
-
-omit hT [FiniteDimensional ℂ F] in
-@[simp]
-private theorem halfRotatePair_apply (s : ℝ)
-    (y : WithLp 2 (CircleSobolev s F × CircleSobolev s F)) :
-    halfRotatePair T s y = WithLp.toLp 2 (rotate ((T / 2 : ℝ) : AddCircle T) y.fst,
-      rotate ((T / 2 : ℝ) : AddCircle T) y.snd) := by
-  simp [halfRotatePair]
-
-omit hT [FiniteDimensional ℂ F] in
-/-- The half rotation of every mode of an element of `TauCeti.torusModeSobolev F ω`. -/
-private def halfRotate {ω : ℕ → ℝ} (x : torusModeSobolev F ω) : torusModeSobolev F ω :=
-  ⟨(lp.ampliation ℕ 2 (halfRotatePair T 1) (x : 𝕏[F]).1,
-      lp.ampliation ℕ 2 (halfRotatePair T 0) (x : 𝕏[F]).2), mem_torusModeSobolev_iff.2 fun k ↦ by
-    rw [lp.ampliation_apply_apply, lp.ampliation_apply_apply,
-      mem_torusModeSobolev_iff.1 x.property k]
-    refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
-      simp [← Complex.coe_smul, map_smul]⟩
-
-/-- For a loop `S` invariant under the rotation by `T / 2`, the orbit-torus operator commutes with
-the half rotation of every mode. -/
-private theorem torusModeOperator_halfRotate {ω : ℕ → ℝ} {S : C(AddCircle T, F →L[ℝ] F)}
-    (hS : ∀ t, S (t + (T / 2 : ℝ)) = S t) (x : torusModeSobolev F ω) (k : ℕ) :
-    torusModeOperator T ω S (halfRotate T x) k =
-      halfRotatePair T 0 (torusModeOperator T ω S x k) := by
-  rw [torusModeOperator_apply_apply_eq, torusModeOperator_apply_apply_eq]
-  refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
-    simp [halfRotate, ← Complex.coe_smul, loopOperator_rotate_of_invariant T hS]
-
 end Operator
 
 section Inner
@@ -359,17 +322,17 @@ private theorem mem_doublyAntiperiodicSobolev_of_mem {ℓ : ℝ} (hℓ : ℓ ≠
     (hx : torusModeOperator T (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) S x ∈ doublyAntiperiodicL2 F) :
     (x : 𝕏[F]) ∈ doublyAntiperiodicSobolev F ℓ := by
   have hT : T ≠ 0 := hT.out.ne'
-  have hrot : halfRotate T x = -x := by
+  have hrot : rotateMode ((T / 2 : ℝ) : AddCircle T) x = -x := by
     refine (isInvertible_torusModeOperator_antiperiodic T hℓ S hS).injective
       (lp.ext (funext fun k ↦ ?_))
-    rw [torusModeOperator_halfRotate T hS', map_neg]
+    rw [torusModeOperator_rotateMode T hS', map_neg]
     refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)
     · simpa using (rotate_half_period_eq_neg_iff hT).2 (hx k).1
     · simpa using (rotate_half_period_eq_neg_iff hT).2 (hx k).2
   refine ⟨x.property, fun k ↦ ?_⟩
   have hk := congrArg
     (fun z : torusModeSobolev F (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) ↦ (z : 𝕏[F]).1 k) hrot
-  simp only [halfRotate, lp.ampliation_apply_apply, halfRotatePair_apply] at hk
+  simp only [rotateMode_fst_apply, rotatePair_apply] at hk
   exact ⟨(rotate_half_period_eq_neg_iff hT).1 (by simpa using congrArg WithLp.fst hk),
     (rotate_half_period_eq_neg_iff hT).1 (by simpa using congrArg WithLp.snd hk)⟩
 

@@ -81,6 +81,8 @@ with the twist along the circle factor it is also treated in
 * `TauCeti.torusModeSobolev F ω`: the Sobolev space `H¹` of maps with the frequencies `ω` along
   `s`, in modes.
 * `TauCeti.torusModeOperator T ω S`: the operator `∂s + J₀ (∂t - S)` on it.
+* `TauCeti.rotateMode θ`: the rotation by `θ` of every mode, with which the operator commutes for
+  a loop invariant under that rotation (`TauCeti.torusModeOperator_rotateMode`).
 
 ## Main results
 
@@ -187,6 +189,52 @@ instance [CompleteSpace F] (ω : ℕ → ℝ) : CompleteSpace (torusModeSobolev 
 
 end Space
 
+/-! ### Rotations of the modes -/
+
+section Rotation
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {T : ℝ}
+
+/-- The rotation `TauCeti.CircleSobolev.rotate θ` of both loops of a mode. -/
+def rotatePair (s : ℝ) (θ : AddCircle T) :
+    WithLp 2 (CircleSobolev s F × CircleSobolev s F) →L[ℂ]
+      WithLp 2 (CircleSobolev s F × CircleSobolev s F) :=
+  let r : CircleSobolev s F →L[ℂ] CircleSobolev s F :=
+    (rotate θ).toLinearIsometry.toContinuousLinearMap
+  r.withLpProdMap 2 r
+
+@[simp]
+theorem rotatePair_apply (s : ℝ) (θ : AddCircle T)
+    (y : WithLp 2 (CircleSobolev s F × CircleSobolev s F)) :
+    rotatePair s θ y = WithLp.toLp 2 (rotate θ y.fst, rotate θ y.snd) := by
+  simp [rotatePair]
+
+/-- The rotation of a mode commutes with the inclusions `H¹(F)² → H⁰(F)²` relating the two
+sequences of `TauCeti.torusModeSobolev`, scaled by a real frequency. -/
+theorem rotatePair_smul_withLpProdMap_inclusion (θ : AddCircle T) (c : ℝ)
+    (y : WithLp 2 (CircleSobolev 1 F × CircleSobolev 1 F)) :
+    rotatePair 0 θ (c • (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one) y) =
+      c • (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one) (rotatePair 1 θ y) := by
+  refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;> simp [← Complex.coe_smul]
+
+/-- The rotation by `θ` of every mode of an element of `TauCeti.torusModeSobolev F ω`: the
+translation `u(s, t) ↦ u(s, t + θ)` in the second factor. -/
+def rotateMode {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω) : torusModeSobolev F ω :=
+  ⟨(lp.ampliation ℕ 2 (rotatePair 1 θ) (x : 𝕏[F]).1,
+      lp.ampliation ℕ 2 (rotatePair 0 θ) (x : 𝕏[F]).2), mem_torusModeSobolev_iff.2 fun k ↦ by
+    rw [lp.ampliation_apply_apply, lp.ampliation_apply_apply,
+      mem_torusModeSobolev_iff.1 x.property k, rotatePair_smul_withLpProdMap_inclusion]⟩
+
+theorem rotateMode_fst_apply {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω) (k : ℕ) :
+    (rotateMode θ x : 𝕏[F]).1 k = rotatePair 1 θ ((x : 𝕏[F]).1 k) :=
+  lp.ampliation_apply_apply _ _ _
+
+theorem rotateMode_snd_apply {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω) (k : ℕ) :
+    (rotateMode θ x : 𝕏[F]).2 k = rotatePair 0 θ ((x : 𝕏[F]).2 k) :=
+  lp.ampliation_apply_apply _ _ _
+
+end Rotation
+
 section Operator
 
 variable (T : ℝ) [hT : Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -274,6 +322,16 @@ theorem continuous_torusModeOperator (ω : ℕ → ℝ) :
       ContinuousLinearMap.norm_withLpProdMap, max_self, NNReal.coe_one, one_mul]
   exact ((((lp.ampliation ℕ 2).continuous.comp hpair).clm_comp continuous_const).add
     continuous_const).clm_comp continuous_const
+
+/-- **Rotation equivariance.** For a loop `S` invariant under the rotation by `θ`, the orbit-torus
+operator commutes with the rotation by `θ` of every mode (`TauCeti.rotateMode`). -/
+theorem torusModeOperator_rotateMode {ω : ℕ → ℝ} {θ : AddCircle T}
+    {S : C(AddCircle T, F →L[ℝ] F)} (hS : ∀ t, S (t + θ) = S t) (x : torusModeSobolev F ω)
+    (k : ℕ) :
+    torusModeOperator T ω S (rotateMode θ x) k = rotatePair 0 θ (torusModeOperator T ω S x k) := by
+  rw [torusModeOperator_apply_apply_eq, torusModeOperator_apply_apply_eq]
+  refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
+    simp [rotateMode, ← Complex.coe_smul, loopOperator_rotate_of_invariant T hS]
 
 end Operator
 

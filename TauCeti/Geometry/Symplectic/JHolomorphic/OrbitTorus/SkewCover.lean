@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Cover
 import Mathlib.Analysis.Normed.Operator.Prod
-import TauCeti.Data.SignType.Basic
-import TauCeti.LinearAlgebra.LinearMap.RegularRestriction
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -31,17 +29,21 @@ the factors, only the number `n` of turns along `γ` matters, not the shear `σ`
 **The spaces.** A map on the cover is a map `u(s, t)` with `u (s + ℓ, t) = u (s, t)` and
 `u (s + σ, t + T) = u (s, t)`. Its `s`-independent mode `a₀(t)`, the average over `s`, is a loop
 of period `T`. Its other modes `cos (ωₖ s) aₖ(t) + sin (ωₖ s) bₖ(t)`, `ωₖ = 2(k + 1)π/ℓ`, satisfy
-`(aₖ, bₖ)(t + T) = R(-ωₖ σ) (aₖ, bₖ)(t)` for the rotation `R(φ)` by the angle `φ` of the pair,
-since translating by `σ` in `s` rotates the mode. If `q σ ∈ ℓ ℤ` for a positive integer `q`, as
-for every cover of `C` (take `q = k`), these loops have period `q T`, and they are the modes of
-`TauCeti.torusModeSobolev F ω` for loops of period `q T` that satisfy
+`(aₖ, bₖ)(t + T) = R(ωₖ σ) (aₖ, bₖ)(t)` for the rotation
+`R(φ) (a, b) = (cos φ a - sin φ b, sin φ a + cos φ b)` of the pair, since translating by `-σ` in
+`s` rotates the mode. If `q σ ∈ ℓ ℤ` for a positive integer `q`, as for every cover of `C` (take
+`q = k`), these loops have period `q T`, and they are the modes of
+`TauCeti.torusModeSobolev F ω` for loops of period `q T` that satisfy (with
+`TauCeti.CircleSobolev.rotate θ a = a(· + θ)`)
 
 `rotate T aₖ = cos (ωₖ σ) aₖ - sin (ωₖ σ) bₖ`,  `rotate T bₖ = sin (ωₖ σ) aₖ + cos (ωₖ σ) bₖ`.
 
 These maps form the closed subspace `TauCeti.skewTorusModeSobolev F ℓ σ θ` of the Sobolev space
 `H¹`, for the rotation `θ = T` of the circle of length `q T`, and the mode sequences in `H⁰(F)²`
 with the same property form `TauCeti.skewTorusModeL2 F ℓ σ θ`. For `σ = 0` and `q = 1` the
-condition is empty, and these are the spaces of `TauCeti.periodicTorusOperator`.
+condition is empty, and these are the spaces of `TauCeti.periodicTorusOperator`. If `q σ ∉ ℓ ℤ`,
+the modes `k` with `q ωₖ σ ∉ 2π ℤ` of an invariant map of period `q T` vanish, so these spaces
+then hold only part of the maps on the cover; the results of this file hold for every `q`.
 
 **The operator.** Read with period `q T`, the loop `S` is invariant under the rotation by `T`, so
 `A ζ = J₀ (ζ' - S ζ)` commutes with it (`TauCeti.CircleSobolev.loopOperator_rotate_of_invariant`),
@@ -52,19 +54,22 @@ period `T`, and this restriction on the others (`TauCeti.skewTorusOperator`).
 
 **Invertibility on the other modes.** On all the modes of frequencies `ωₖ`, `D` is invertible
 (`TauCeti.isInvertible_torusModeOperator_periodic`). It commutes with the rotation `x ↦ θ x` by `T`
-of every mode and with the translation `x ↦ σ x` by `-σ` in `s`, and the invariant maps are the
-solutions of `θ x = σ x`. If `D x` is invariant, then `D (θ x) = θ (D x) = σ (D x) = D (σ x)`, so
-`θ x = σ x` by injectivity: the inverse of `D` maps invariant targets to invariant maps. Hence the
-restriction is invertible (`TauCeti.isInvertible_skewTorusModeOperator`).
+of every mode (`TauCeti.torusModeOperator_rotateMode`) and with the translation `x ↦ σ x` by `-σ`
+in `s`, and the invariant maps are the solutions of `θ x = σ x`. If `D x` is invariant, then
+`D (θ x) = θ (D x) = σ (D x) = D (σ x)`, so `θ x = σ x` by injectivity: the inverse of `D` maps
+invariant targets to invariant maps. Hence the restriction is invertible
+(`TauCeti.isInvertible_skewTorusModeOperator`).
 
-**The comparison.** As for `TauCeti.periodicTorusOperator`, the inclusions of the
-`s`-independent mode identify the kernel and the cokernel of the operator on the cover with those
-of the loop operator `L_S ζ = ζ' - S ζ` of period `T` (`TauCeti.kerSkewTorusOperatorEquiv`,
-`TauCeti.quotientRangeSkewTorusOperatorEquiv`), so its determinant line with that of `1 - Ψ(T)`
-(`TauCeti.detLineSkewTorusOperatorEquiv`). It is Fredholm of index zero, invertible exactly when
-`det (1 - Ψ(T)) ≠ 0` (`TauCeti.isInvertible_skewTorusOperator_iff_det_ne_zero`), and then the
-orientation of its determinant line induced by `1 - Ψ(T)` and the one given by bijectivity differ
-by the sign of `det (1 - Ψ(T))` (`TauCeti.sign_detLineEndEquiv_detLineSkewTorusOperatorEquiv`).
+**The comparison.** The operator on the cover is `(J₀ L_S) ⊕ D'` for the invertible restriction
+`D'`, so the comparison of `TauCeti.kerProdMapLoopOperatorEquiv` and the lemmas beside it applies:
+the inclusions of the `s`-independent mode identify the kernel and the cokernel of the operator on
+the cover with those of the loop operator `L_S ζ = ζ' - S ζ` of period `T`
+(`TauCeti.kerSkewTorusOperatorEquiv`, `TauCeti.quotientRangeSkewTorusOperatorEquiv`), so its
+determinant line with that of `1 - Ψ(T)` (`TauCeti.detLineSkewTorusOperatorEquiv`). It is
+Fredholm of index zero, invertible exactly when `det (1 - Ψ(T)) ≠ 0`
+(`TauCeti.isInvertible_skewTorusOperator_iff_det_ne_zero`), and then the orientation of its
+determinant line induced by `1 - Ψ(T)` and the one given by bijectivity differ by the sign of
+`det (1 - Ψ(T))` (`TauCeti.sign_detLineEndEquiv_detLineSkewTorusOperatorEquiv`).
 For the orbit traversed `n` times, `T = n d` and `Ψ(T) = P ^ n`
 (`TauCeti.dysonSeriesLeft_coverPullback`).
 
@@ -74,8 +79,8 @@ For the orbit traversed `n` times, `T = n d` and `Ψ(T) = P ^ n`
   period `ℓ` in `s` with no `s`-independent part that are invariant under the translation by
   `(σ, θ)`, in `H¹` and in `L²`.
 * `TauCeti.skewTorusModeOperator`: the restriction of `TauCeti.torusModeOperator` to them.
-* `TauCeti.skewTorusOperator T q ℓ σ S`: the operator `∂s + J₀ (∂t - S)` on maps periodic under the
-  lattice spanned by `(ℓ, 0)` and `(σ, T)`.
+* `TauCeti.skewTorusOperator T q ℓ σ S`: the operator `∂s + J₀ (∂t - S)` on the cover with lattice
+  spanned by `(ℓ, 0)` and `(σ, T)`, when `q σ ∈ ℓ ℤ`.
 
 ## Main results
 
@@ -125,35 +130,21 @@ section Translation
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {T : ℝ}
 
-/-- The rotation by `θ` of both loops of a mode. -/
-private def rotatePair (s : ℝ) (θ : AddCircle T) :
-    WithLp 2 (CircleSobolev s F × CircleSobolev s F) →L[ℂ]
-      WithLp 2 (CircleSobolev s F × CircleSobolev s F) :=
-  let r : CircleSobolev s F →L[ℂ] CircleSobolev s F :=
-    (rotate θ).toLinearIsometry.toContinuousLinearMap
-  r.withLpProdMap 2 r
-
-@[simp]
-private theorem rotatePair_apply (s : ℝ) (θ : AddCircle T)
-    (y : WithLp 2 (CircleSobolev s F × CircleSobolev s F)) :
-    rotatePair s θ y = WithLp.toLp 2 (rotate θ y.fst, rotate θ y.snd) := by
-  simp [rotatePair]
-
 /-- The quarter turn `(a, b) ↦ (-b, a)` of a mode. -/
 private def quarterTurn (s : ℝ) :
-    WithLp 2 (CircleSobolev s F × CircleSobolev s F) →L[ℝ]
+    WithLp 2 (CircleSobolev s F × CircleSobolev s F) →L[ℂ]
       WithLp 2 (CircleSobolev s F × CircleSobolev s F) :=
-  (WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm.toContinuousLinearMap ∘L
-    ((-WithLp.sndL 2 ℝ (CircleSobolev s F) (CircleSobolev s F)).prod
-      (WithLp.fstL 2 ℝ (CircleSobolev s F) (CircleSobolev s F)))
+  (WithLp.prodContinuousLinearEquiv 2 ℂ _ _).symm.toContinuousLinearMap ∘L
+    ((-WithLp.sndL 2 ℂ (CircleSobolev s F) (CircleSobolev s F)).prod
+      (WithLp.fstL 2 ℂ (CircleSobolev s F) (CircleSobolev s F)))
 
 /-- The translation by `-σ` in `s` of a mode of frequency `ω`: if `(a, b)` is the mode
 `cos (ω s) a + sin (ω s) b` of `u`, the corresponding mode of `u (s - σ, t)` is
 `(cos (ωσ) a - sin (ωσ) b, sin (ωσ) a + cos (ωσ) b)`. -/
 private def shiftPair (s ω σ : ℝ) :
-    WithLp 2 (CircleSobolev s F × CircleSobolev s F) →L[ℝ]
+    WithLp 2 (CircleSobolev s F × CircleSobolev s F) →L[ℂ]
       WithLp 2 (CircleSobolev s F × CircleSobolev s F) :=
-  Real.cos (ω * σ) • ContinuousLinearMap.id ℝ _ + Real.sin (ω * σ) • quarterTurn s
+  Real.cos (ω * σ) • ContinuousLinearMap.id ℂ _ + Real.sin (ω * σ) • quarterTurn s
 
 @[simp]
 private theorem shiftPair_apply (s ω σ : ℝ)
@@ -173,32 +164,22 @@ private theorem norm_shiftPair_le (s ω σ : ℝ) :
 /-- The translation by `-σ` in `s` of every mode of a sequence of modes with the frequencies
 `ω`. -/
 private def shiftSeq (s : ℝ) (ω : ℕ → ℝ) (σ : ℝ) :
-    ℓ²(ℕ, WithLp 2 (CircleSobolev s F × CircleSobolev s F)) →L[ℝ]
+    ℓ²(ℕ, WithLp 2 (CircleSobolev s F × CircleSobolev s F)) →L[ℂ]
       ℓ²(ℕ, WithLp 2 (CircleSobolev s F × CircleSobolev s F)) :=
   lp.mapCLM 2 (fun k ↦ shiftPair s (ω k) σ) (by positivity) fun k ↦ norm_shiftPair_le s (ω k) σ
 
 private theorem shiftSeq_apply_apply (s : ℝ) (ω : ℕ → ℝ) (σ : ℝ)
     (y : ℓ²(ℕ, WithLp 2 (CircleSobolev s F × CircleSobolev s F))) (k : ℕ) :
-    shiftSeq s ω σ y k = shiftPair s (ω k) σ (y k) :=
-  (rfl)
+    shiftSeq s ω σ y k = shiftPair s (ω k) σ (y k) := by
+  simp [shiftSeq]
 
-/-- The pair of inclusions `H¹(F)² → H⁰(F)²` relating the two sequences of
-`TauCeti.torusModeSobolev`. -/
-private abbrev inclusionPair :
-    WithLp 2 (CircleSobolev 1 F × CircleSobolev 1 F) →L[ℂ]
-      WithLp 2 (CircleSobolev 0 F × CircleSobolev 0 F) :=
-  (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one)
-
-private theorem rotatePair_inclusionPair (θ : AddCircle T) (c : ℝ)
+private theorem shiftPair_smul_withLpProdMap_inclusion (ω σ c : ℝ)
     (y : WithLp 2 (CircleSobolev 1 F × CircleSobolev 1 F)) :
-    rotatePair 0 θ (c • inclusionPair y) = c • inclusionPair (rotatePair 1 θ y) := by
-  refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;> simp [← Complex.coe_smul]
-
-private theorem shiftPair_inclusionPair (ω σ c : ℝ)
-    (y : WithLp 2 (CircleSobolev 1 F × CircleSobolev 1 F)) :
-    shiftPair 0 ω σ (c • inclusionPair y) = c • inclusionPair (shiftPair 1 ω σ y) := by
+    shiftPair 0 ω σ (c • (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one) y) =
+      c • (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one)
+        (shiftPair 1 ω σ y) := by
   refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
-    simp [← Complex.coe_smul, smul_sub, smul_add, smul_smul, mul_comm]
+    simp [← Complex.coe_smul, smul_sub, smul_add, smul_smul]
 
 /-- A mode is invariant under the translation by `(σ, θ)` exactly when rotating it by `θ` agrees
 with translating it by `-σ` in `s`. -/
@@ -210,36 +191,20 @@ private theorem rotatePair_eq_shiftPair_iff (s ω σ : ℝ) (θ : AddCircle T)
   rw [← (WithLp.ofLp_injective 2).eq_iff, rotatePair_apply, shiftPair_apply]
   simp [Prod.ext_iff]
 
-/-- The rotation by `θ` of every mode of an element of `TauCeti.torusModeSobolev F ω`. -/
-private def rotateMode {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω) :
-    torusModeSobolev F ω :=
-  ⟨(lp.ampliation ℕ 2 (rotatePair 1 θ) (x : 𝕏[F]).1,
-      lp.ampliation ℕ 2 (rotatePair 0 θ) (x : 𝕏[F]).2), mem_torusModeSobolev_iff.2 fun k ↦ by
-    rw [lp.ampliation_apply_apply, lp.ampliation_apply_apply,
-      mem_torusModeSobolev_iff.1 x.property k, rotatePair_inclusionPair]⟩
-
-private theorem rotateMode_fst_apply {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω)
-    (k : ℕ) : (rotateMode θ x : 𝕏[F]).1 k = rotatePair 1 θ ((x : 𝕏[F]).1 k) :=
-  lp.ampliation_apply_apply _ _ _
-
-private theorem rotateMode_snd_apply {ω : ℕ → ℝ} (θ : AddCircle T) (x : torusModeSobolev F ω)
-    (k : ℕ) : (rotateMode θ x : 𝕏[F]).2 k = rotatePair 0 θ ((x : 𝕏[F]).2 k) :=
-  lp.ampliation_apply_apply _ _ _
-
 /-- The translation by `-σ` in `s` of every mode of an element of
 `TauCeti.torusModeSobolev F ω`. -/
 private def shiftMode {ω : ℕ → ℝ} (σ : ℝ) (x : torusModeSobolev F ω) : torusModeSobolev F ω :=
   ⟨(shiftSeq 1 ω σ (x : 𝕏[F]).1, shiftSeq 0 ω σ (x : 𝕏[F]).2), mem_torusModeSobolev_iff.2 fun k ↦ by
     rw [shiftSeq_apply_apply, shiftSeq_apply_apply, mem_torusModeSobolev_iff.1 x.property k,
-      shiftPair_inclusionPair]⟩
+      shiftPair_smul_withLpProdMap_inclusion]⟩
 
 private theorem shiftMode_fst_apply {ω : ℕ → ℝ} (σ : ℝ) (x : torusModeSobolev F ω) (k : ℕ) :
     (shiftMode σ x : 𝕏[F]).1 k = shiftPair 1 (ω k) σ ((x : 𝕏[F]).1 k) :=
-  (rfl)
+  shiftSeq_apply_apply _ _ _ _ _
 
 private theorem shiftMode_snd_apply {ω : ℕ → ℝ} (σ : ℝ) (x : torusModeSobolev F ω) (k : ℕ) :
     (shiftMode σ x : 𝕏[F]).2 k = shiftPair 0 (ω k) σ ((x : 𝕏[F]).2 k) :=
-  (rfl)
+  shiftSeq_apply_apply _ _ _ _ _
 
 /-- An element of `TauCeti.torusModeSobolev F ω` is invariant under the translation by `(σ, θ)`,
 its rotation by `θ` agreeing with its translation by `-σ` in `s`, as soon as the modes of its
@@ -251,7 +216,7 @@ private theorem rotateMode_eq_shiftMode {ω : ℕ → ℝ} {σ : ℝ} {θ : AddC
   refine Subtype.ext (Prod.ext (lp.ext (funext fun k ↦ ?_)) (lp.ext (funext fun k ↦ ?_)))
   · rw [rotateMode_fst_apply, shiftMode_fst_apply, hx k]
   · rw [rotateMode_snd_apply, shiftMode_snd_apply, mem_torusModeSobolev_iff.1 x.property k,
-      rotatePair_inclusionPair, shiftPair_inclusionPair, hx k]
+      rotatePair_smul_withLpProdMap_inclusion, shiftPair_smul_withLpProdMap_inclusion, hx k]
 
 end Translation
 
@@ -262,28 +227,50 @@ section Space
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {T : ℝ}
 
 variable (F) in
+/-- The mode sequences in `H^s(F)²`, for the frequencies `ωₖ = 2(k + 1)π/ℓ`, whose modes are
+invariant under the translation by `(σ, θ)`: rotating each by `θ` agrees with translating it by
+`-σ` in `s`. -/
+private def invariantModes (s ℓ σ : ℝ) (θ : AddCircle T) :
+    Submodule ℂ ℓ²(ℕ, WithLp 2 (CircleSobolev s F × CircleSobolev s F)) :=
+  ker ((lp.ampliation ℕ 2 (rotatePair s θ) - shiftSeq s (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) σ :
+    ℓ²(ℕ, WithLp 2 (CircleSobolev s F × CircleSobolev s F)) →L[ℂ]
+      ℓ²(ℕ, WithLp 2 (CircleSobolev s F × CircleSobolev s F))) :
+    ℓ²(ℕ, WithLp 2 (CircleSobolev s F × CircleSobolev s F)) →ₗ[ℂ]
+      ℓ²(ℕ, WithLp 2 (CircleSobolev s F × CircleSobolev s F)))
+
+private theorem mem_invariantModes_iff {s ℓ σ : ℝ} {θ : AddCircle T}
+    {y : ℓ²(ℕ, WithLp 2 (CircleSobolev s F × CircleSobolev s F))} :
+    y ∈ invariantModes F s ℓ σ θ ↔
+      ∀ k : ℕ, rotatePair s θ (y k) = shiftPair s (2 * (k + 1) * π / ℓ) σ (y k) := by
+  simp only [invariantModes, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, sub_eq_zero,
+    FunLike.coe_sub, Pi.sub_apply, lp.ext_iff, funext_iff, lp.ampliation_apply_apply,
+    shiftSeq_apply_apply]
+
+private theorem isClosed_invariantModes (s ℓ σ : ℝ) (θ : AddCircle T) :
+    IsClosed (invariantModes F s ℓ σ θ :
+      Set ℓ²(ℕ, WithLp 2 (CircleSobolev s F × CircleSobolev s F))) := by
+  rw [invariantModes]
+  exact ContinuousLinearMap.isClosed_ker _
+
+variable (F) in
 /-- The Sobolev space `H¹` of maps `u(s, t)` periodic of period `ℓ` in `s`, with no
 `s`-independent part, invariant under the translation `(s, t) ↦ (s + σ, t + θ)`, in modes: the
 elements of `TauCeti.torusModeSobolev F ω`, `ωₖ = 2(k + 1)π/ℓ`, whose modes `(aₖ, bₖ)` satisfy
-`rotate θ aₖ = cos (ωₖ σ) aₖ - sin (ωₖ σ) bₖ` and `rotate θ bₖ = sin (ωₖ σ) aₖ + cos (ωₖ σ) bₖ`:
-the translation by `θ` in `t` of the mode `cos (ωₖ s) aₖ + sin (ωₖ s) bₖ` is its translation by
-`-σ` in `s`. It is a subspace of the ambient space of pairs of mode sequences, contained in
-`TauCeti.torusModeSobolev F ω` (`TauCeti.skewTorusModeSobolev_le_torusModeSobolev`). -/
-def skewTorusModeSobolev (ℓ σ : ℝ) (θ : AddCircle T) : Submodule ℂ 𝕏[F] where
-  carrier := {x | x ∈ torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) ∧ ∀ k : ℕ,
-    rotate θ (x.1 k).fst = Real.cos (2 * (k + 1) * π / ℓ * σ) • (x.1 k).fst -
-        Real.sin (2 * (k + 1) * π / ℓ * σ) • (x.1 k).snd ∧
-      rotate θ (x.1 k).snd = Real.sin (2 * (k + 1) * π / ℓ * σ) • (x.1 k).fst +
-        Real.cos (2 * (k + 1) * π / ℓ * σ) • (x.1 k).snd}
-  add_mem' hx hy := ⟨add_mem hx.1 hy.1, fun k ↦ by
-    simp only [Prod.fst_add, lp.coeFn_add, Pi.add_apply, WithLp.add_fst, WithLp.add_snd, map_add,
-      (hx.2 k).1, (hx.2 k).2, (hy.2 k).1, (hy.2 k).2]
-    constructor <;> module⟩
-  zero_mem' := ⟨zero_mem _, fun _ ↦ by simp⟩
-  smul_mem' c x hx := ⟨Submodule.smul_mem _ c hx.1, fun k ↦ by
-    simp only [Prod.smul_fst, lp.coeFn_smul, Pi.smul_apply, WithLp.smul_fst, WithLp.smul_snd,
-      map_smul, (hx.2 k).1, (hx.2 k).2, smul_sub, smul_add, smul_comm c (Real.cos _),
-      smul_comm c (Real.sin _), and_self]⟩
+`rotate θ aₖ = cos (ωₖ σ) aₖ - sin (ωₖ σ) bₖ` and `rotate θ bₖ = sin (ωₖ σ) aₖ + cos (ωₖ σ) bₖ`
+(`TauCeti.mem_skewTorusModeSobolev_iff`): the translation by `θ` in `t` of the mode
+`cos (ωₖ s) aₖ + sin (ωₖ s) bₖ` is its translation by `-σ` in `s`. It is a subspace of the ambient
+space of pairs of mode sequences, contained in `TauCeti.torusModeSobolev F ω`
+(`TauCeti.skewTorusModeSobolev_le_torusModeSobolev`). -/
+def skewTorusModeSobolev (ℓ σ : ℝ) (θ : AddCircle T) : Submodule ℂ 𝕏[F] :=
+  torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) ⊓
+    (invariantModes F 1 ℓ σ θ).comap (LinearMap.fst ℂ _ _)
+
+private theorem mem_skewTorusModeSobolev_iff_rotatePair {ℓ σ : ℝ} {θ : AddCircle T} {x : 𝕏[F]} :
+    x ∈ skewTorusModeSobolev F ℓ σ θ ↔
+      x ∈ torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) ∧
+        ∀ k : ℕ, rotatePair 1 θ (x.1 k) = shiftPair 1 (2 * (k + 1) * π / ℓ) σ (x.1 k) := by
+  rw [skewTorusModeSobolev, Submodule.mem_inf, Submodule.mem_comap, LinearMap.fst_apply,
+    mem_invariantModes_iff]
 
 theorem mem_skewTorusModeSobolev_iff {ℓ σ : ℝ} {θ : AddCircle T} {x : 𝕏[F]} :
     x ∈ skewTorusModeSobolev F ℓ σ θ ↔
@@ -291,26 +278,20 @@ theorem mem_skewTorusModeSobolev_iff {ℓ σ : ℝ} {θ : AddCircle T} {x : 𝕏
         rotate θ (x.1 k).fst = Real.cos (2 * (k + 1) * π / ℓ * σ) • (x.1 k).fst -
             Real.sin (2 * (k + 1) * π / ℓ * σ) • (x.1 k).snd ∧
           rotate θ (x.1 k).snd = Real.sin (2 * (k + 1) * π / ℓ * σ) • (x.1 k).fst +
-            Real.cos (2 * (k + 1) * π / ℓ * σ) • (x.1 k).snd :=
-  Iff.rfl
+            Real.cos (2 * (k + 1) * π / ℓ * σ) • (x.1 k).snd := by
+  simp only [mem_skewTorusModeSobolev_iff_rotatePair, rotatePair_eq_shiftPair_iff]
 
 theorem skewTorusModeSobolev_le_torusModeSobolev (ℓ σ : ℝ) (θ : AddCircle T) :
     skewTorusModeSobolev F ℓ σ θ ≤ torusModeSobolev F fun k : ℕ ↦ 2 * (k + 1) * π / ℓ :=
-  fun _ hx ↦ hx.1
+  fun _ hx ↦ (mem_skewTorusModeSobolev_iff_rotatePair.1 hx).1
 
 /-- `TauCeti.skewTorusModeSobolev` is closed: it is the intersection of the closed subspace
-`TauCeti.torusModeSobolev F ω` with equalizers of continuous maps. -/
+`TauCeti.torusModeSobolev F ω` with the preimage of a kernel of a continuous map. -/
 theorem isClosed_skewTorusModeSobolev (ℓ σ : ℝ) (θ : AddCircle T) :
     IsClosed (skewTorusModeSobolev F ℓ σ θ : Set 𝕏[F]) := by
-  have : (skewTorusModeSobolev F ℓ σ θ : Set 𝕏[F]) =
-      (torusModeSobolev F fun k : ℕ ↦ 2 * (k + 1) * π / ℓ : Set 𝕏[F]) ∩ ⋂ k : ℕ,
-        {x : 𝕏[F] | rotatePair 1 θ (x.1 k) = shiftPair 1 (2 * (k + 1) * π / ℓ) σ (x.1 k)} := by
-    ext x
-    simp [mem_skewTorusModeSobolev_iff]
-  rw [this]
-  exact (isClosed_torusModeSobolev _).inter <| isClosed_iInter fun k ↦ isClosed_eq
-    ((rotatePair 1 θ).continuous.comp ((lp.evalCLM ℂ _ 2 k).continuous.comp continuous_fst))
-    ((shiftPair 1 _ σ).continuous.comp ((lp.evalCLM ℂ _ 2 k).continuous.comp continuous_fst))
+  rw [skewTorusModeSobolev, Submodule.coe_inf, Submodule.comap_coe, LinearMap.coe_fst]
+  exact (isClosed_torusModeSobolev _).inter
+    ((isClosed_invariantModes 1 ℓ σ θ).preimage continuous_fst)
 
 /-- The Sobolev space `H¹` of maps invariant under a translation is complete. -/
 instance [CompleteSpace F] (ℓ σ : ℝ) (θ : AddCircle T) :
@@ -321,43 +302,28 @@ variable (F) in
 /-- The `L²` space of maps periodic of period `ℓ` in `s`, with no `s`-independent part, invariant
 under the translation `(s, t) ↦ (s + σ, t + θ)`, in modes: the mode sequences in `H⁰(F)²` whose
 modes `(aₖ, bₖ)` satisfy `rotate θ aₖ = cos (ωₖ σ) aₖ - sin (ωₖ σ) bₖ` and
-`rotate θ bₖ = sin (ωₖ σ) aₖ + cos (ωₖ σ) bₖ`, `ωₖ = 2(k + 1)π/ℓ`. It is the target of
-`TauCeti.skewTorusModeOperator`. -/
-def skewTorusModeL2 (ℓ σ : ℝ) (θ : AddCircle T) : Submodule ℂ 𝕐[F] where
-  carrier := {y | ∀ k : ℕ,
-    rotate θ (y k).fst = Real.cos (2 * (k + 1) * π / ℓ * σ) • (y k).fst -
-        Real.sin (2 * (k + 1) * π / ℓ * σ) • (y k).snd ∧
-      rotate θ (y k).snd = Real.sin (2 * (k + 1) * π / ℓ * σ) • (y k).fst +
-        Real.cos (2 * (k + 1) * π / ℓ * σ) • (y k).snd}
-  add_mem' hx hy k := by
-    simp only [lp.coeFn_add, Pi.add_apply, WithLp.add_fst, WithLp.add_snd, map_add, (hx k).1,
-      (hx k).2, (hy k).1, (hy k).2]
-    constructor <;> module
-  zero_mem' _ := by simp
-  smul_mem' c y hy k := by
-    simp only [lp.coeFn_smul, Pi.smul_apply, WithLp.smul_fst, WithLp.smul_snd, map_smul,
-      (hy k).1, (hy k).2, smul_sub, smul_add, smul_comm c (Real.cos _), smul_comm c (Real.sin _),
-      and_self]
+`rotate θ bₖ = sin (ωₖ σ) aₖ + cos (ωₖ σ) bₖ`, `ωₖ = 2(k + 1)π/ℓ`
+(`TauCeti.mem_skewTorusModeL2_iff`). It is the target of `TauCeti.skewTorusModeOperator`. -/
+def skewTorusModeL2 (ℓ σ : ℝ) (θ : AddCircle T) : Submodule ℂ 𝕐[F] :=
+  invariantModes F 0 ℓ σ θ
+
+private theorem mem_skewTorusModeL2_iff_rotatePair {ℓ σ : ℝ} {θ : AddCircle T} {y : 𝕐[F]} :
+    y ∈ skewTorusModeL2 F ℓ σ θ ↔
+      ∀ k : ℕ, rotatePair 0 θ (y k) = shiftPair 0 (2 * (k + 1) * π / ℓ) σ (y k) := by
+  rw [skewTorusModeL2, mem_invariantModes_iff]
 
 theorem mem_skewTorusModeL2_iff {ℓ σ : ℝ} {θ : AddCircle T} {y : 𝕐[F]} :
     y ∈ skewTorusModeL2 F ℓ σ θ ↔ ∀ k : ℕ,
       rotate θ (y k).fst = Real.cos (2 * (k + 1) * π / ℓ * σ) • (y k).fst -
           Real.sin (2 * (k + 1) * π / ℓ * σ) • (y k).snd ∧
         rotate θ (y k).snd = Real.sin (2 * (k + 1) * π / ℓ * σ) • (y k).fst +
-          Real.cos (2 * (k + 1) * π / ℓ * σ) • (y k).snd :=
-  Iff.rfl
+          Real.cos (2 * (k + 1) * π / ℓ * σ) • (y k).snd := by
+  simp only [mem_skewTorusModeL2_iff_rotatePair, rotatePair_eq_shiftPair_iff]
 
-/-- `TauCeti.skewTorusModeL2` is closed, as an intersection of equalizers of continuous maps. -/
+/-- `TauCeti.skewTorusModeL2` is closed, as the kernel of a continuous map. -/
 theorem isClosed_skewTorusModeL2 (ℓ σ : ℝ) (θ : AddCircle T) :
-    IsClosed (skewTorusModeL2 F ℓ σ θ : Set 𝕐[F]) := by
-  have : (skewTorusModeL2 F ℓ σ θ : Set 𝕐[F]) = ⋂ k : ℕ,
-      {y | rotatePair 0 θ (y k) = shiftPair 0 (2 * (k + 1) * π / ℓ) σ (y k)} := by
-    ext y
-    simp [mem_skewTorusModeL2_iff]
-  rw [this]
-  exact isClosed_iInter fun k ↦ isClosed_eq
-    ((rotatePair 0 θ).continuous.comp (lp.evalCLM ℂ _ 2 k).continuous)
-    ((shiftPair 0 _ σ).continuous.comp (lp.evalCLM ℂ _ 2 k).continuous)
+    IsClosed (skewTorusModeL2 F ℓ σ θ : Set 𝕐[F]) :=
+  isClosed_invariantModes 0 ℓ σ θ
 
 /-- The `L²` space of maps invariant under a translation is complete. -/
 instance [CompleteSpace F] (ℓ σ : ℝ) (θ : AddCircle T) : CompleteSpace (skewTorusModeL2 F ℓ σ θ) :=
@@ -375,16 +341,6 @@ variable (T : ℝ) [hT : Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [Norme
 /-- A finite-dimensional complex space is complete, as the Sobolev spaces below need. -/
 local instance instCompleteSpaceSkewCover : CompleteSpace F :=
   FiniteDimensional.completeSpace ℂ F
-
-/-- For a loop `S` invariant under the rotation by `θ`, the orbit-torus operator commutes with
-the rotation by `θ` of every mode. -/
-private theorem torusModeOperator_rotateMode {ω : ℕ → ℝ} {θ : AddCircle T}
-    {S : C(AddCircle T, F →L[ℝ] F)} (hS : ∀ t, S (t + θ) = S t) (x : torusModeSobolev F ω)
-    (k : ℕ) :
-    torusModeOperator T ω S (rotateMode θ x) k = rotatePair 0 θ (torusModeOperator T ω S x k) := by
-  rw [torusModeOperator_apply_apply_eq, torusModeOperator_apply_apply_eq]
-  refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
-    simp [rotateMode, ← Complex.coe_smul, loopOperator_rotate_of_invariant T hS]
 
 /-- The orbit-torus operator commutes with the translation by `-σ` in `s` of every mode. -/
 private theorem torusModeOperator_shiftMode {ω : ℕ → ℝ} (σ : ℝ) (S : C(AddCircle T, F →L[ℝ] F))
@@ -416,10 +372,9 @@ theorem torusModeOperator_mem_skewTorusModeL2 {ℓ σ : ℝ} {θ : AddCircle T}
     {x : torusModeSobolev F fun k : ℕ ↦ 2 * (k + 1) * π / ℓ}
     (hx : (x : 𝕏[F]) ∈ skewTorusModeSobolev F ℓ σ θ) :
     torusModeOperator T (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) S x ∈ skewTorusModeL2 F ℓ σ θ :=
-  fun k ↦ by
-    have h := rotateMode_eq_shiftMode (σ := σ) (θ := θ) (x := x) fun k ↦
-      (rotatePair_eq_shiftPair_iff _ _ _ _ _).2 (hx.2 k)
-    refine (rotatePair_eq_shiftPair_iff _ _ _ _ _).1 ?_
+  mem_skewTorusModeL2_iff_rotatePair.2 fun k ↦ by
+    have h := rotateMode_eq_shiftMode (σ := σ) (θ := θ) (x := x)
+      (mem_skewTorusModeSobolev_iff_rotatePair.1 hx).2
     rw [← torusModeOperator_rotateMode T hS, h, torusModeOperator_shiftMode]
 
 /-- The orbit-torus operator `∂s + A`, `A ζ = J₀ (ζ' - S ζ)`, on maps periodic of period `ℓ` in `s`
@@ -480,24 +435,19 @@ theorem continuous_skewTorusModeOperator (ℓ σ : ℝ) (θ : AddCircle T) :
     ((inclusionTorusModeSobolev T ℓ σ θ).restrictScalars ℝ)).continuous.comp
       ((continuous_torusModeOperator T _).comp continuous_subtypeVal)
 
-omit hT in
-/-- For a loop of complex-linear maps, `L_S` commutes with multiplication by complex scalars. -/
-private theorem loopOperator_smul_of_apply_I_smul {T' : ℝ} [Fact (0 < T')]
-    {S : C(AddCircle T', F →L[ℝ] F)} (hS : ∀ t v, S t (I • v) = I • S t v) (c : ℂ)
-    (a : CircleSobolev 1 F) : loopOperator T' S (c • a) = c • loopOperator T' S a := by
-  rw [← restrictScalars_complexLoopOperator T' hS, ContinuousLinearMap.coe_restrictScalars',
-    map_smul]
-
 variable (q : ℕ) [NeZero q]
 
 /-- **The orbit-torus operator on a skew cover.** The operator `∂s + J₀ (∂t - S)` for a loop `S` of
-period `T`, on maps `u(s, t)` periodic under the lattice spanned by `(ℓ, 0)` and `(σ, T)`, realized
-on the modes along `s` for a positive integer `q` with `q σ ∈ ℓ ℤ`. A map is a pair `(a₀, x)` of
-its `s`-independent mode `a₀ ∈ H¹(F)`, a loop of period `T`, and its other modes `x`, loops of
-period `q T` invariant under the translation by `(σ, T)` (`TauCeti.skewTorusModeSobolev`); the
-operator is `A = J₀ L_S` on the first and `TauCeti.skewTorusModeOperator` for the loop `S` read with
-period `q T` (`AddCircle.coverPullback`) on the second. The covers of the orbit torus along its two
-factors are the case `σ = 0`. -/
+period `T`, on maps `u(s, t)` with the `s`-independent mode a loop of period `T` and the other
+modes loops of period `q T` invariant under the translation by `(σ, T)`. A map is a pair `(a₀, x)`
+of its `s`-independent mode `a₀ ∈ H¹(F)` and its other modes `x` (`TauCeti.skewTorusModeSobolev`);
+the operator is `A = J₀ L_S` on the first and `TauCeti.skewTorusModeOperator` for the loop `S` read
+with period `q T` (`AddCircle.coverPullback`) on the second. When `q σ ∈ ℓ ℤ`, as for every finite
+cover of an orbit torus (take `q = k` for `ℓ = k ℓ₀`), these are all the maps periodic under the
+lattice spanned by `(ℓ, 0)` and `(σ, T)`, and this is the operator on that cover. For other `q`
+the modes `k` with `q ωₖ σ ∉ 2π ℤ` vanish, and this models the cover operator only partially;
+the results below hold for every `q`. The covers of the orbit torus along its two factors are the
+case `σ = 0`. -/
 def skewTorusOperator (ℓ σ : ℝ) (S : C(AddCircle T, F →L[ℝ] F)) :
     CircleSobolev 1 F × skewTorusModeSobolev F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T)) →L[ℝ]
       CircleSobolev 0 F × skewTorusModeL2 F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T)) :=
@@ -521,10 +471,10 @@ theorem skewTorusOperator_apply_smul (ℓ σ : ℝ) {S : C(AddCircle T, F →L[�
     skewTorusOperator T q ℓ σ S (c • x) = c • skewTorusOperator T q ℓ σ S x := by
   refine Prod.ext ?_ ?_
   · simp only [skewTorusOperator_apply, Prod.smul_fst]
-    rw [loopOperator_smul_of_apply_I_smul hS, smul_comm c I]
+    rw [loopOperator_smul T hS, smul_comm c I]
   · simp only [skewTorusOperator_apply, Prod.smul_snd]
     exact skewTorusModeOperator_apply_smul ((q : ℝ) * T) ℓ σ _ _
-      (loopOperator_smul_of_apply_I_smul (S := AddCircle.coverPullback q S) fun _ v ↦ by
+      (loopOperator_smul ((q : ℝ) * T) (S := AddCircle.coverPullback q S) fun _ v ↦ by
         rw [AddCircle.coverPullback_apply]
         exact hS _ v) c x.2
 
@@ -573,8 +523,8 @@ private theorem mem_skewTorusModeSobolev_of_mem {ℓ σ : ℝ} (hℓ : ℓ ≠ 0
     refine (isInvertible_torusModeOperator_periodic T hℓ S hS).injective
       (lp.ext (funext fun k ↦ ?_))
     rw [torusModeOperator_rotateMode T hS', torusModeOperator_shiftMode,
-      (rotatePair_eq_shiftPair_iff _ _ _ _ _).2 (hx k)]
-  refine ⟨x.property, fun k ↦ (rotatePair_eq_shiftPair_iff _ _ _ _ _).1 ?_⟩
+      mem_skewTorusModeL2_iff_rotatePair.1 hx k]
+  refine mem_skewTorusModeSobolev_iff_rotatePair.2 ⟨x.property, fun k ↦ ?_⟩
   simpa only [rotateMode_fst_apply, shiftMode_fst_apply] using
     congrArg (fun z : torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) ↦ (z : 𝕏[F]).1 k) h
 
@@ -605,6 +555,7 @@ variable (T : ℝ) [hT : Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [Inner
 local instance instCompleteSpaceSkewCoverComparison : CompleteSpace F :=
   FiniteDimensional.completeSpace ℂ F
 
+
 /-- The modes of nonzero frequency of the operator on a skew cover form an invertible operator. -/
 private theorem isInvertible_skewTorusModeOperator_coverPullback (hℓ : ℓ ≠ 0)
     (S : C(AddCircle T, F →L[ℝ] F))
@@ -613,69 +564,17 @@ private theorem isInvertible_skewTorusModeOperator_coverPullback (hℓ : ℓ ≠
       (AddCircle.coverPullback_add_coe_period q S)).IsInvertible :=
   isInvertible_skewTorusModeOperator _ hℓ σ _ (im_inner_coverPullback_add_eq_zero q hS) _
 
-/-- The inclusion `a ↦ (a, 0)` of the `s`-independent mode into the domain of
-`TauCeti.skewTorusOperator`. -/
-private abbrev constModeDomain (ℓ : ℝ) :
-    CircleSobolev 1 F →ₗ[ℝ]
-      CircleSobolev 1 F × skewTorusModeSobolev F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T)) :=
-  LinearMap.inl ℝ _ _
-
-/-- The inclusion `w ↦ (J₀ w, 0)` of the `s`-independent mode into the target of
-`TauCeti.skewTorusOperator`. -/
-private abbrev constModeTarget (ℓ : ℝ) :
-    CircleSobolev 0 F →ₗ[ℝ]
-      CircleSobolev 0 F × skewTorusModeL2 F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T)) :=
-  LinearMap.inl ℝ _ _ ∘ₗ (I • LinearMap.id)
-
-/-- The inclusions of the `s`-independent mode intertwine `L_S` with
-`TauCeti.skewTorusOperator`. -/
-private theorem constModeTarget_comp_loopOperator (S : C(AddCircle T, F →L[ℝ] F)) :
-    constModeTarget T q σ ℓ ∘ₗ (loopOperator T S : CircleSobolev 1 F →ₗ[ℝ] CircleSobolev 0 F) =
-      (skewTorusOperator T q ℓ σ S).toLinearMap ∘ₗ constModeDomain T q σ ℓ := by
-  ext a <;> simp
-
-omit hT [FiniteDimensional ℂ F] [NeZero q] in
-private theorem injective_constModeTarget :
-    Function.Injective (constModeTarget (F := F) T q σ ℓ) :=
-  fun _ _ h ↦ smul_right_injective _ I_ne_zero (congrArg Prod.fst h)
-
-/-- An element whose image under `TauCeti.skewTorusOperator` is `s`-independent is itself
-`s`-independent, since the operator is injective on the other modes. -/
-private theorem mem_range_constModeDomain (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
-    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
-    (x : CircleSobolev 1 F × skewTorusModeSobolev F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T)))
-    (hx : (skewTorusOperator T q ℓ σ S).toLinearMap x ∈ range (constModeTarget T q σ ℓ)) :
-    x ∈ range (constModeDomain T q σ ℓ) := by
-  obtain ⟨w, hw⟩ := hx
-  have h2 : skewTorusModeOperator ((q : ℝ) * T) ℓ σ _ (AddCircle.coverPullback q S)
-      (AddCircle.coverPullback_add_coe_period q S) x.2 = 0 := by
-    simpa using (congrArg Prod.snd hw).symm
-  refine ⟨x.1, Prod.ext rfl ?_⟩
-  exact (map_eq_zero_iff _ (isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ S
-    hS).injective).1 h2 |>.symm
-
-/-- The target of `TauCeti.skewTorusOperator` is spanned by its range and the `s`-independent mode,
-since the operator is onto the other modes. -/
-private theorem range_constModeTarget_sup_range (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
-    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
-    range (constModeTarget T q σ ℓ) ⊔ range (skewTorusOperator T q ℓ σ S).toLinearMap = ⊤ := by
-  refine eq_top_iff.2 fun z _ ↦ ?_
-  obtain ⟨b, hb⟩ := (isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ S hS).surjective z.2
-  refine Submodule.mem_sup.2
-    ⟨(z.1, 0), ⟨(-I) • z.1, by simp [smul_smul]⟩, (0, z.2), ⟨(0, b), by simp [hb]⟩, by simp⟩
-
 /-- **The kernel of the orbit-torus operator on a skew cover.** For `ℓ ≠ 0` and an infinitesimally
 symplectic loop `S`, taking the `s`-independent mode is a linear equivalence from the kernel of
 `∂s + A` on a skew cover (`TauCeti.skewTorusOperator`) onto the kernel of `L_S ζ = ζ' - S ζ` on
 loops of period `T` (`TauCeti.coe_kerSkewTorusOperatorEquiv_apply`); the kernel elements are
-`s`-independent. -/
+`s`-independent. It is `TauCeti.kerProdMapLoopOperatorEquiv` for the invertible operator on the
+other modes. -/
 def kerSkewTorusOperatorEquiv (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     ker (skewTorusOperator T q ℓ σ S).toLinearMap ≃ₗ[ℝ]
       ker (loopOperator T S : CircleSobolev 1 F →ₗ[ℝ] CircleSobolev 0 F) :=
-  (LinearMap.kerEquivOfRegular (constModeTarget_comp_loopOperator T q σ S)
-    LinearMap.inl_injective (injective_constModeTarget T q σ)
-    (mem_range_constModeDomain T q σ hℓ S hS)).symm
+  kerProdMapLoopOperatorEquiv T S (isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ S hS)
 
 /-- The kernel elements of `TauCeti.skewTorusOperator` are `s`-independent: the inverse of
 `TauCeti.kerSkewTorusOperatorEquiv` sends `a` to the map `(a, 0)` with no other modes. -/
@@ -685,30 +584,29 @@ theorem kerSkewTorusOperatorEquiv_symm_apply (hℓ : ℓ ≠ 0) (S : C(AddCircle
     (a : ker (loopOperator T S : CircleSobolev 1 F →ₗ[ℝ] CircleSobolev 0 F)) :
     ((kerSkewTorusOperatorEquiv T q σ hℓ S hS).symm a :
       CircleSobolev 1 F × skewTorusModeSobolev F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T))) =
-        ((a : CircleSobolev 1 F), 0) := by
-  simp [kerSkewTorusOperatorEquiv]
+        ((a : CircleSobolev 1 F), 0) :=
+  kerProdMapLoopOperatorEquiv_symm_apply T S _ a
 
 @[simp]
 theorem coe_kerSkewTorusOperatorEquiv_apply (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (x : ker (skewTorusOperator T q ℓ σ S).toLinearMap) :
-    (kerSkewTorusOperatorEquiv T q σ hℓ S hS x : CircleSobolev 1 F) = x.val.1 := by
-  conv_rhs => rw [← (kerSkewTorusOperatorEquiv T q σ hℓ S hS).symm_apply_apply x,
-    kerSkewTorusOperatorEquiv_symm_apply]
+    (kerSkewTorusOperatorEquiv T q σ hℓ S hS x : CircleSobolev 1 F) = x.val.1 :=
+  coe_kerProdMapLoopOperatorEquiv_apply T S _ x
 
 /-- **The cokernel of the orbit-torus operator on a skew cover.** For `ℓ ≠ 0` and an
 infinitesimally symplectic loop `S`, `z ↦ -J₀ z₀` on the `s`-independent mode induces a linear
 equivalence from the cokernel of `∂s + A` on a skew cover (`TauCeti.skewTorusOperator`) onto the
 cokernel of `L_S ζ = ζ' - S ζ` on loops of period `T`
-(`TauCeti.quotientRangeSkewTorusOperatorEquiv_mk`). -/
+(`TauCeti.quotientRangeSkewTorusOperatorEquiv_mk`). It is
+`TauCeti.quotientRangeProdMapLoopOperatorEquiv` for the invertible operator on the other modes. -/
 def quotientRangeSkewTorusOperatorEquiv (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     ((CircleSobolev 0 F × skewTorusModeL2 F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T))) ⧸
         range (skewTorusOperator T q ℓ σ S).toLinearMap) ≃ₗ[ℝ]
       CircleSobolev 0 F ⧸ range (loopOperator T S : CircleSobolev 1 F →ₗ[ℝ] CircleSobolev 0 F) :=
-  (LinearMap.cokerEquivOfRegular (constModeTarget_comp_loopOperator T q σ S)
-    (injective_constModeTarget T q σ) (mem_range_constModeDomain T q σ hℓ S hS)
-    (range_constModeTarget_sup_range T q σ hℓ S hS)).symm
+  quotientRangeProdMapLoopOperatorEquiv T S
+    (isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ S hS)
 
 /-- On the class of `z`, `TauCeti.quotientRangeSkewTorusOperatorEquiv` is the class of `-J₀ z₀`,
 where `z₀` is the `s`-independent mode of `z`. -/
@@ -717,17 +615,8 @@ theorem quotientRangeSkewTorusOperatorEquiv_mk (hℓ : ℓ ≠ 0) (S : C(AddCirc
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (z : CircleSobolev 0 F × skewTorusModeL2 F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T))) :
     quotientRangeSkewTorusOperatorEquiv T q σ hℓ S hS (Submodule.Quotient.mk z) =
-      Submodule.Quotient.mk ((-I) • z.1) := by
-  -- The other modes of `z` lie in the range, since the operator is onto them.
-  obtain ⟨b, hb⟩ := (isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ S hS).surjective z.2
-  have hz : (Submodule.Quotient.mk z :
-      (CircleSobolev 0 F × skewTorusModeL2 F ℓ σ ((T : ℝ) : AddCircle ((q : ℝ) * T))) ⧸
-        range (skewTorusOperator T q ℓ σ S).toLinearMap) =
-      Submodule.Quotient.mk (constModeTarget T q σ ℓ ((-I) • z.1)) := by
-    rw [Submodule.Quotient.eq]
-    exact ⟨(0, b), Prod.ext (by simp [smul_smul]) (by simp [hb])⟩
-  rw [hz]
-  exact LinearMap.cokerEquivOfRegular_symm_mk _ _ _ _ _
+      Submodule.Quotient.mk ((-I) • z.1) :=
+  quotientRangeProdMapLoopOperatorEquiv_mk T S _ z
 
 /-- **The determinant line of the orbit-torus operator on a skew cover.** For `ℓ ≠ 0` and an
 infinitesimally symplectic loop `S`, the isomorphisms of kernels and cokernels with those of
@@ -740,10 +629,19 @@ def detLineSkewTorusOperatorEquiv (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     (skewTorusOperator T q ℓ σ S).toLinearMap.detLine ≃ₗ[ℝ]
       (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F)).detLine :=
-  LinearMap.detLineCongrKerCoker
-    ((kerSkewTorusOperatorEquiv T q σ hℓ S hS).trans (kerLoopOperatorEquiv T S))
-    ((quotientRangeSkewTorusOperatorEquiv T q σ hℓ S hS).trans
-      (quotientRangeLoopOperatorEquiv T S))
+  detLineProdMapLoopOperatorEquiv T S
+    (isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ S hS)
+
+/-- `TauCeti.detLineSkewTorusOperatorEquiv` is the isomorphism of determinant lines induced by the
+isomorphisms of kernels and cokernels with those of `1 - Ψ(T)`. -/
+theorem detLineSkewTorusOperatorEquiv_def (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
+    detLineSkewTorusOperatorEquiv T q σ hℓ S hS =
+      LinearMap.detLineCongrKerCoker
+        ((kerSkewTorusOperatorEquiv T q σ hℓ S hS).trans (kerLoopOperatorEquiv T S))
+        ((quotientRangeSkewTorusOperatorEquiv T q σ hℓ S hS).trans
+          (quotientRangeLoopOperatorEquiv T S)) :=
+  detLineProdMapLoopOperatorEquiv_def T S _
 
 /-- `TauCeti.detLineSkewTorusOperatorEquiv` is the transport along the isomorphisms of kernels and
 cokernels with those of `L_S` (`TauCeti.kerSkewTorusOperatorEquiv`,
@@ -754,67 +652,46 @@ theorem detLineSkewTorusOperatorEquiv_eq_trans (hℓ : ℓ ≠ 0) (S : C(AddCirc
     detLineSkewTorusOperatorEquiv T q σ hℓ S hS =
       (LinearMap.detLineCongrKerCoker (kerSkewTorusOperatorEquiv T q σ hℓ S hS)
         (quotientRangeSkewTorusOperatorEquiv T q σ hℓ S hS)).trans
-        (detLineLoopOperatorEquiv T S) := by
-  rw [detLineLoopOperatorEquiv_def, ← LinearMap.detLineCongrKerCoker_trans]
-  rfl
+        (detLineLoopOperatorEquiv T S) :=
+  detLineProdMapLoopOperatorEquiv_eq_trans T S _
 
 /-- **The orbit-torus operator on a skew cover is Fredholm.** It is the direct sum of the Fredholm
 operator `J₀ L_S` and an invertible operator. -/
 theorem isFredholm_skewTorusOperator (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
-    (skewTorusOperator T q ℓ σ S).IsFredholm := by
-  have hI : I • loopOperator T S = (ContinuousLinearEquiv.smulLeft (R₁ := ℝ)
-      (M₁ := CircleSobolev 0 F) (Units.mk0 I I_ne_zero) : _ →L[ℝ] _) ∘L loopOperator T S := by
-    ext a
-    simp [Units.smul_def]
-  refine ContinuousLinearMap.IsFredholm.prodMap ?_
-    (isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ S hS).isFredholm
-  rw [hI, ContinuousLinearMap.isFredholm_equiv_comp]
-  exact isFredholm_loopOperator T S
+    (skewTorusOperator T q ℓ σ S).IsFredholm :=
+  isFredholm_prodMap_loopOperator T S
+    (isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ S hS)
 
 /-- **The orbit-torus operator on a skew cover has index zero**, as `L_S`, whose kernel and
 cokernel it shares. -/
 @[simp]
 theorem index_skewTorusOperator (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
-    (skewTorusOperator T q ℓ σ S).index = 0 := by
-  rw [ContinuousLinearMap.index_eq_finrank_sub,
-    (kerSkewTorusOperatorEquiv T q σ hℓ S hS).finrank_eq,
-    (quotientRangeSkewTorusOperatorEquiv T q σ hℓ S hS).finrank_eq,
-    ← ContinuousLinearMap.index_eq_finrank_sub, index_loopOperator]
-
-/-- The orbit-torus operator on a skew cover is injective exactly when `L_S` is. -/
-private theorem injective_skewTorusOperator_iff (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
-    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
-    Function.Injective (skewTorusOperator T q ℓ σ S) ↔ Function.Injective (loopOperator T S) := by
-  rw [← ContinuousLinearMap.coe_coe, ← ContinuousLinearMap.coe_coe (loopOperator T S),
-    ← LinearMap.ker_eq_bot, ← LinearMap.ker_eq_bot, ← Submodule.subsingleton_iff_eq_bot,
-    ← Submodule.subsingleton_iff_eq_bot,
-    (kerSkewTorusOperatorEquiv T q σ hℓ S hS).subsingleton_congr]
+    (skewTorusOperator T q ℓ σ S).index = 0 :=
+  index_prodMap_loopOperator T S (isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ S hS)
 
 /-- **The Fredholm alternative on a skew cover.** For `ℓ ≠ 0` and an infinitesimally symplectic
-loop `S` of period `T`, the operator `∂s + A` on maps periodic under the lattice spanned by
-`(ℓ, 0)` and `(σ, T)` is invertible exactly when `det (1 - Ψ(T)) ≠ 0`, where
-`Ψ = TauCeti.dysonSeriesLeft S`, whatever the shear `σ`. -/
+loop `S` of period `T`, the operator `∂s + A` of `TauCeti.skewTorusOperator` is invertible exactly
+when `det (1 - Ψ(T)) ≠ 0`, where `Ψ = TauCeti.dysonSeriesLeft S`, whatever the shear `σ` and the
+integer `q`. When `q σ ∈ ℓ ℤ` it is the operator on maps periodic under the lattice spanned by
+`(ℓ, 0)` and `(σ, T)`. -/
 theorem isInvertible_skewTorusOperator_iff_det_ne_zero (hℓ : ℓ ≠ 0)
     (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     (skewTorusOperator T q ℓ σ S).IsInvertible ↔
-      LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F)) ≠ 0 := by
-  rw [← isInvertible_loopOperator_iff_det_ne_zero]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · exact (isFredholm_loopOperator T S).isInvertible_of_injective_of_index_eq_zero
-      ((injective_skewTorusOperator_iff T q σ hℓ S hS).1 h.injective) (index_loopOperator T S)
-  · exact (isFredholm_skewTorusOperator T q σ hℓ S hS).isInvertible_of_injective_of_index_eq_zero
-      ((injective_skewTorusOperator_iff T q σ hℓ S hS).2 h.injective)
-      (index_skewTorusOperator T q σ hℓ S hS)
+      LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F)) ≠ 0 :=
+  isInvertible_prodMap_loopOperator_iff_det_ne_zero T S
+    (isInvertible_skewTorusModeOperator_coverPullback T q σ hℓ S hS)
 
 /-- **The Fredholm alternative on the covers of an orbit torus.** For `ℓ ≠ 0` and an
 infinitesimally symplectic loop `S` of period `T` with return map `P = Ψ(T)`, the operator
-`∂s + J₀ (∂t - S)` of the loop traversed `n` times, on maps periodic under the lattice spanned by
-`(ℓ, 0)` and `(σ, n T)`, is invertible exactly when `det (1 - P ^ n) ≠ 0`. Every finite cover of
-the orbit torus is of this form, so the normal operator of the orbit torus is nondegenerate on all
-its finite covers exactly when no positive power of `P` has the eigenvalue `1`. -/
+`∂s + J₀ (∂t - S)` of the loop traversed `n` times (`TauCeti.skewTorusOperator` for the period
+`n T`) is invertible exactly when `det (1 - P ^ n) ≠ 0`, whatever `σ` and `q`. When `q σ ∈ ℓ ℤ` it
+is the operator on maps periodic under the lattice spanned by `(ℓ, 0)` and `(σ, n T)`. Every
+finite cover of the orbit torus has such a lattice, with `q = k` for `ℓ = k ℓ₀`, so this model
+operator is invertible on all the finite covers exactly when no positive power of `P` has the
+eigenvalue `1`. -/
 theorem isInvertible_skewTorusOperator_coverPullback_iff_det_ne_zero (n : ℕ) [NeZero n]
     (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
@@ -838,13 +715,8 @@ theorem detLineEndEquiv_detLineSkewTorusOperatorEquiv (hℓ : ℓ ≠ 0)
     LinearMap.detLineEndEquiv (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F))
         (detLineSkewTorusOperatorEquiv T q σ hℓ S hS x) =
       (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F)))⁻¹ *
-        (skewTorusOperator T q ℓ σ S).toLinearMap.detLineEquivOfBijective hD x := by
-  have hinj := (injective_loopOperator_iff T S).1
-    ((injective_skewTorusOperator_iff T q σ hℓ S hS).1 hD.1)
-  have hP := And.intro hinj (LinearMap.injective_iff_surjective.1 hinj)
-  -- The two steps are composed as terms: `rw` times out on the large operator types here.
-  refine (LinearMap.detLineEndEquiv_eq_inv_det_mul _ hP _).trans ?_
-  exact congrArg (_ * ·) (LinearMap.detLineEquivOfBijective_detLineCongrKerCoker hD hP _ _ x)
+        (skewTorusOperator T q ℓ σ S).toLinearMap.detLineEquivOfBijective hD x :=
+  detLineEndEquiv_detLineProdMapLoopOperatorEquiv T S _ hD x
 
 /-- **The orientation sign of a nondegenerate orbit-torus operator on a skew cover.** In the
 situation of `TauCeti.detLineEndEquiv_detLineSkewTorusOperatorEquiv`, the orientation of the
@@ -859,11 +731,8 @@ theorem sign_detLineEndEquiv_detLineSkewTorusOperatorEquiv (hℓ : ℓ ≠ 0)
           (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F))
           (detLineSkewTorusOperatorEquiv T q σ hℓ S hS x)) =
       SignType.sign (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F))) *
-        SignType.sign ((skewTorusOperator T q ℓ σ S).toLinearMap.detLineEquivOfBijective hD x) := by
-  have h (a b : ℝ) : SignType.sign (a⁻¹ * b) = SignType.sign a * SignType.sign b := by
-    rw [sign_mul, TauCeti.sign_inv]
-  exact (congrArg SignType.sign
-    (detLineEndEquiv_detLineSkewTorusOperatorEquiv T q σ hℓ S hS hD x)).trans (h _ _)
+        SignType.sign ((skewTorusOperator T q ℓ σ S).toLinearMap.detLineEquivOfBijective hD x) :=
+  sign_detLineEndEquiv_detLineProdMapLoopOperatorEquiv T S _ hD x
 
 end Comparison
 
