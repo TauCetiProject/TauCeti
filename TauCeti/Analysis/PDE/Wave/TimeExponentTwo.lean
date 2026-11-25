@@ -289,9 +289,9 @@ private theorem two_le_of_le_endpoint (hn : 3 < Module.finrank ℝ E) (hr0 : r �
     2 ≤ r :=
   two_le_of_waveAdmissible (E := E) (q := 2) hr0 (by simpa using hr) (by omega)
 
-/-- Sum frequency-localized mixed-norm estimates with weights `2^{jσ}` at a pair `(2, r)` for a
-strongly continuous family `T(t)` of operators on `L²(E)` over the Littlewood–Paley blocks, by
-`ContDiffBump.exists_eLpNorm_eLpNorm_le_mul_tsum`. At `r = 0` every mixed norm vanishes. -/
+/-- `ContDiffBump.exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le_of_one_le` at a pair `(2, r)`
+for a strongly continuous family `T(t)` of operators on `L²(E)`. At `r = 0` every mixed norm
+vanishes; otherwise `2 ≤ r`. -/
 private theorem exists_eLpNorm_eLpNorm_le_tsum_of_le_endpoint (hn : 3 < Module.finrank ℝ E)
     (hr : 1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤ ((Module.finrank ℝ E : ℝ) - 1) / 2)
     (σ : ℝ) (T : ℝ → Lp ℂ 2 (volume : Measure E) →L[ℂ] Lp ℂ 2 (volume : Measure E))
@@ -308,19 +308,14 @@ private theorem exists_eLpNorm_eLpNorm_le_tsum_of_le_endpoint (hn : 3 < Module.f
             ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ := by
   rcases eq_or_ne r 0 with rfl | hr0
   · exact ⟨0, fun _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
-  obtain ⟨C, hC⟩ := hloc
   have := Module.nontrivial_of_finrank_pos (R := ℝ) (M := E) (by omega)
-  obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum (F := ℂ) (β := ℝ) (ρ := volume) σ
-    (q := 2) one_le_two (one_le_two.trans (two_le_of_le_endpoint hn hr0 hr))
-  refine ⟨K * C, fun m hm f ↦ (hK m hm T (fun x ↦ (hT x).aestronglyMeasurable) C
-    (fun k x ↦ hC k (m k) (hm k) x) f).trans_eq ?_⟩
-  push_cast
-  ring
+  exact φ.exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le_of_one_le one_le_two
+    (one_le_two.trans (two_le_of_le_endpoint hn hr0 hr)) σ T
+    (fun x ↦ (hT x).aestronglyMeasurable) hloc
 
-/-- Sum frequency-localized mixed-norm estimates with weights `2^{jσ}` in square-sum form at a pair
-`(2, r)` with `r < ∞`, for a strongly continuous family `T(t)` of operators on `L²(E)` commuting
-with the Fourier multipliers, by `ContDiffBump.exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow`. At
-`r = 0` every mixed norm vanishes. -/
+/-- `ContDiffBump.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le` at a pair `(2, r)`
+with `r < ∞`, for a strongly continuous family `T(t)` of operators on `L²(E)` commuting with the
+Fourier multipliers. At `r = 0` every mixed norm vanishes; otherwise `2 ≤ r`. -/
 private theorem exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_le_endpoint
     (hn : 3 < Module.finrank ℝ E)
     (hr : 1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤ ((Module.finrank ℝ E : ℝ) - 1) / 2)
@@ -341,14 +336,9 @@ private theorem exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_le_endpoint
             ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) := by
   rcases eq_or_ne r 0 with rfl | hr0
   · exact ⟨0, fun _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
-  obtain ⟨C, hC⟩ := hloc
   have := Module.nontrivial_of_finrank_pos (R := ℝ) (M := E) (by omega)
-  obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow (F := ℂ) (β := ℝ)
-    (ρ := volume) σ le_rfl (two_le_of_le_endpoint hn hr0 hr) hr_top
-  refine ⟨K * C, fun m hm f ↦ (hK m hm T (fun x ↦ (hT x).aestronglyMeasurable)
-    (fun t k x ↦ hcomm t (m k) x) C (fun k x ↦ hC k (m k) (hm k) x) f).trans_eq ?_⟩
-  push_cast
-  ring
+  exact φ.exists_eLpNorm_eLpNorm_le_tsum_sq_rpow_of_littlewoodPaley_le le_rfl
+    (two_le_of_le_endpoint hn hr0 hr) hr_top σ T (fun x ↦ (hT x).aestronglyMeasurable) hcomm hloc
 
 /-- **The Strichartz estimate for the half-wave propagator at the pairs `(2, r)` with data in
 `\dot B^γ_{2,1}`.** Let `E` have dimension `n ≥ 4`, let `ψⱼ` be the Littlewood–Paley cutoffs built
