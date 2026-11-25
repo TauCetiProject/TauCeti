@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.WrappedNormal.Density
 public import TauCeti.Probability.Quantile
+import TauCeti.Probability.Distributions.Gaussian.PDF
 import TauCeti.Probability.Distributions.Gaussian.Periodization
 import TauCeti.MeasureTheory.Measure.AddCircle
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -179,8 +180,7 @@ theorem hasSum_gaussianReal_wrappedNormalAngleMeasure (a : ℝ) (hv : v ≠ 0)
   simp only [Function.comp_apply]
   rw [intervalIntegral.integral_comp_add_right,
     intervalIntegral.integral_of_le (by linarith [hx.1]),
-    measureReal_def, gaussianReal_apply_eq_integral a hv,
-    ENNReal.toReal_ofReal (integral_nonneg (gaussianPDFReal_nonneg _ _))]
+    measureReal_gaussianReal_eq_setIntegral a hv]
 
 /-- The fixed-chart cdf is the sum of Gaussian interval probabilities, with the location
 specified by any real representative. -/

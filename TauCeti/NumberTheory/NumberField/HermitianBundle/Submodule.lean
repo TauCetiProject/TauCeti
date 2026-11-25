@@ -147,7 +147,6 @@ private theorem exists_isOrthogonalFiber [Module.Finite (𝓞 K) E] (σ : K →+
   obtain ⟨v₀, rfl⟩ := baseChange_mkQ_surjective F' σ u
   let : NormedAddCommGroup (Codomain σ ⊗[𝓞 K] E) := (h.toCore σ).toNormedAddCommGroup
   let : InnerProductSpace ℂ (Codomain σ ⊗[𝓞 K] E) := .ofCore (h.toCore σ).toCore
-  have : Module.Finite ℂ (Codomain σ) := Module.Finite.self ℂ
   have : FiniteDimensional ℂ (Codomain σ ⊗[𝓞 K] E) := Module.Finite.trans (Codomain σ) _
   let W := LinearMap.range ((F'.subtype.baseChange (Codomain σ)).restrictScalars ℂ)
   refine ⟨v₀ - W.starProjection v₀, ?_, fun w ↦ ?_⟩
