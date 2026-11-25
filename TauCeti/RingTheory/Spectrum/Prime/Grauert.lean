@@ -13,7 +13,6 @@ import TauCeti.RingTheory.Flat.Extensions
 import TauCeti.RingTheory.Flat.Reduced.Basic
 import TauCeti.RingTheory.Flat.Reduced.ConstantRank
 import TauCeti.RingTheory.Spectrum.Prime.Semicontinuity
-import TauCeti.Topology.Semicontinuity.Basic
 
 /-!
 # Grauert's theorem for complexes of modules
@@ -48,7 +47,8 @@ base change.
 The proof: at each prime the fibre homology dimension plus `dim κ(p) ⊗ M₃` is the sum of the fibre
 dimensions of the two cokernels `M₂ ⧸ range f` and `M₃ ⧸ range g`
 (`LinearMap.finrank_fiber_homology_add_finrank_fiber`). The rank of `M₃` is locally constant, so
-the sum of these two upper semicontinuous functions is locally constant, hence so is each summand.
+the sum of these two upper semicontinuous functions is locally constant, hence so is each summand
+(`LinearMap.isLocallyConstant_finrank_fiber_quotient_range`).
 Over a reduced ring a finite module with locally constant fibre dimension is flat
 (`Module.flat_of_isLocallyConstant_finrank_fiber`), so both cokernels are flat, and the results of
 `TauCeti.LinearAlgebra.TensorProduct.Homology` apply.
@@ -68,31 +68,6 @@ namespace LinearMap
 variable {R M₁ M₂ M₃ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
   [Module R M₂] [AddCommGroup M₃] [Module R M₃] [Module.Finite R M₂] [Module.Finite R M₃]
   [Module.Projective R M₃] {f : M₁ →ₗ[R] M₂} {g : M₂ →ₗ[R] M₃}
-
-/-- If the fibre homology of `M₁ → M₂ → M₃` has locally constant dimension, then so do the fibres
-of both cokernels `M₂ ⧸ range f` and `M₃ ⧸ range g`. -/
-private theorem isLocallyConstant_finrank_fiber_quotient_range (hfg : g ∘ₗ f = 0)
-    (h : IsLocallyConstant fun p : PrimeSpectrum R ↦ finrank p.asIdeal.ResidueField
-      ((ker (g.baseChange p.asIdeal.ResidueField)).map
-        (range (f.baseChange p.asIdeal.ResidueField)).mkQ)) :
-    (IsLocallyConstant fun p : PrimeSpectrum R ↦
-        finrank p.asIdeal.ResidueField (p.asIdeal.Fiber (M₂ ⧸ range f))) ∧
-      IsLocallyConstant fun p : PrimeSpectrum R ↦
-        finrank p.asIdeal.ResidueField (p.asIdeal.Fiber (M₃ ⧸ range g)) := by
-  have := Module.finitePresentation_of_projective R M₃
-  -- The sum of the two cokernel dimensions is the fibre homology dimension plus the locally
-  -- constant rank of `M₃`.
-  have hsum : IsLocallyConstant fun p : PrimeSpectrum R ↦
-      finrank p.asIdeal.ResidueField (p.asIdeal.Fiber (M₂ ⧸ range f)) +
-        finrank p.asIdeal.ResidueField (p.asIdeal.Fiber (M₃ ⧸ range g)) := by
-    convert h.add (isLocallyConstant_rankAtStalk (R := R) (M := M₃)) using 1
-    funext p
-    rw [Pi.add_apply, rankAtStalk_eq, finrank_fiber_homology_add_finrank_fiber f g hfg p]
-  have hu := upperSemicontinuous_finrank_fiber (R := R) (M₂ ⧸ range f)
-  have hv := upperSemicontinuous_finrank_fiber (R := R) (M₃ ⧸ range g)
-  refine ⟨hu.isLocallyConstant_of_isLocallyConstant_add hv hsum,
-    hv.isLocallyConstant_of_isLocallyConstant_add hu ?_⟩
-  simpa only [add_comm] using hsum
 
 variable [IsReduced R]
 
