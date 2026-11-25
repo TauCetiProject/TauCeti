@@ -24,7 +24,6 @@ measure `d^×x = TauCeti.unitsHaar K` with `d^×x(𝒪[K]ˣ) = 1` is `(1 - q⁻�
 
 ## Main declarations
 
-* `TauCeti.measurableEmbedding_units_val`: `Units.val : Gˣ → G` is a measurable embedding.
 * `TauCeti.map_smul_withDensity_inv_normalizedAbsoluteValue`: invariance of `|x|_K⁻¹ μ`.
 * `TauCeti.unitsFormMeasure K μ`: the form measure on `Kˣ`, left-invariant and σ-finite.
 * `TauCeti.unitsFormMeasure_unitFiltration_zero`: its mass on `𝒪[K]ˣ` is `(1 - q⁻¹) μ 𝒪[K]`.
@@ -38,35 +37,17 @@ open scoped NNReal ENNReal Pointwise
 
 namespace TauCeti
 
-/-- The inclusion `Units.val : Gˣ → G` of the units of a group with zero is a measurable
-embedding, for the measurable structure on `Gˣ` pulled back along it: its range is the
-complement of `0`. -/
-theorem measurableEmbedding_units_val {G : Type*} [GroupWithZero G] [MeasurableSpace G]
-    [MeasurableSingletonClass G] : MeasurableEmbedding (Units.val : Gˣ → G) where
-  injective := Units.val_injective
-  measurable := Measurable.of_comap_le le_rfl
-  measurableSet_image' := by
-    rintro _ ⟨t, ht, rfl⟩
-    rw [Set.image_preimage_eq_inter_range]
-    refine ht.inter ?_
-    have : Set.range (Units.val : Gˣ → G) = {0}ᶜ := by
-      ext x
-      exact ⟨by rintro ⟨u, rfl⟩; exact u.ne_zero, fun hx ↦ ⟨Units.mk0 x hx, rfl⟩⟩
-    rw [this]
-    exact (measurableSet_singleton 0).compl
-
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [MeasurableSpace K] [BorelSpace K]
   (μ : Measure K) [μ.IsAddHaarMeasure]
 
-/-- The density `|x|_K⁻¹` of the form measure `|dx/x|_K`. -/
-private noncomputable def formDensity (x : K) : ℝ≥0∞ :=
-  ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹
-
 omit [MeasurableSpace K] [BorelSpace K] in
-private theorem formDensity_smul {c : K} (hc : c ≠ 0) (x : K) :
-    formDensity (c • x) = ((normalizedAbsoluteValue K c : ℝ≥0) : ℝ≥0∞)⁻¹ * formDensity x := by
-  simp only [formDensity, smul_eq_mul, map_mul, NNRat.cast_mul, ENNReal.coe_mul]
+/-- The density `|x|_K⁻¹` of the form measure `|dx/x|_K` scales by `|c|_K⁻¹` under `x ↦ c • x`. -/
+private theorem inv_normalizedAbsoluteValue_smul {c : K} (hc : c ≠ 0) (x : K) :
+    ((normalizedAbsoluteValue K (c • x) : ℝ≥0) : ℝ≥0∞)⁻¹ =
+      ((normalizedAbsoluteValue K c : ℝ≥0) : ℝ≥0∞)⁻¹ *
+        ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ := by
+  simp only [smul_eq_mul, map_mul, NNRat.cast_mul, ENNReal.coe_mul]
   refine ENNReal.mul_inv (Or.inl ?_) (Or.inl ENNReal.coe_ne_top)
   simpa using hc
 
@@ -75,7 +56,6 @@ multiplication by every nonzero scalar. -/
 theorem map_smul_withDensity_inv_normalizedAbsoluteValue {c : K} (hc : c ≠ 0) :
     (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹).map (c • ·) =
       μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ := by
-  change (μ.withDensity formDensity).map (c • ·) = μ.withDensity formDensity
   set a : ℝ≥0∞ := ((normalizedAbsoluteValue K c : ℝ≥0) : ℝ≥0∞)⁻¹
   have ha0 : a ≠ 0 := ENNReal.inv_ne_zero.2 ENNReal.coe_ne_top
   have hatop : a ≠ ⊤ := ENNReal.inv_ne_top.2 (by simpa using hc)
@@ -83,14 +63,15 @@ theorem map_smul_withDensity_inv_normalizedAbsoluteValue {c : K} (hc : c ≠ 0) 
   ext t ht
   rw [map_apply (measurable_const_smul c) ht, withDensity_apply _ ht,
     withDensity_apply _ (measurable_const_smul c ht), ← ENNReal.mul_right_inj ha0 hatop]
-  have h₁ : ∫⁻ x in t, formDensity x ∂(μ.map (c • ·)) = a * ∫⁻ x in t, formDensity x ∂μ := by
+  have h₁ : ∫⁻ x in t, ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ ∂(μ.map (c • ·)) =
+      a * ∫⁻ x in t, ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ ∂μ := by
     rw [map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ hc, restrict_smul,
       lintegral_smul_measure, ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv (by simpa using hc)]
-  have h₂ : ∫⁻ x in t, formDensity x ∂(μ.map (c • ·)) =
-      a * ∫⁻ y in (c • ·) ⁻¹' t, formDensity y ∂μ := by
-    rw [show (fun x : K ↦ c • x) = ⇑(MeasurableEquiv.smul₀ (α := K) c hc) from rfl,
-      he.restrict_map, he.lintegral_map, ← lintegral_const_mul' _ _ hatop]
-    exact lintegral_congr fun y ↦ formDensity_smul hc y
+  have h₂ : ∫⁻ x in t, ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ ∂(μ.map (c • ·)) =
+      a * ∫⁻ y in (c • ·) ⁻¹' t, ((normalizedAbsoluteValue K y : ℝ≥0) : ℝ≥0∞)⁻¹ ∂μ := by
+    rw [← MeasurableEquiv.coe_smul₀ hc, he.restrict_map, he.lintegral_map,
+      ← lintegral_const_mul' _ _ hatop]
+    exact lintegral_congr fun y ↦ inv_normalizedAbsoluteValue_smul hc y
   rw [← h₁, h₂]
 
 variable (K) in
@@ -105,7 +86,7 @@ omit [μ.IsAddHaarMeasure] in
 theorem unitsFormMeasure_apply (s : Set Kˣ) :
     unitsFormMeasure K μ s =
       (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹) (Units.val '' s) :=
-  measurableEmbedding_units_val.comap_apply _ s
+  Units.measurableEmbedding_val₀.comap_apply _ s
 
 instance isMulLeftInvariant_unitsFormMeasure : (unitsFormMeasure K μ).IsMulLeftInvariant := by
   refine ⟨fun u ↦ Measure.ext fun s hs ↦ ?_⟩
@@ -119,7 +100,7 @@ instance isMulLeftInvariant_unitsFormMeasure : (unitsFormMeasure K μ).IsMulLeft
       simp [hwx]
   rw [map_apply (measurable_const_mul u) hs, unitsFormMeasure_apply, unitsFormMeasure_apply,
     himage, ← map_apply (measurable_const_smul _)
-      (measurableEmbedding_units_val.measurableSet_image' hs),
+      (Units.measurableEmbedding_val₀.measurableSet_image' hs),
     map_smul_withDensity_inv_normalizedAbsoluteValue μ u.ne_zero]
 
 instance sigmaFinite_unitsFormMeasure : SigmaFinite (unitsFormMeasure K μ) := by
@@ -133,25 +114,15 @@ instance sigmaFinite_unitsFormMeasure : SigmaFinite (unitsFormMeasure K μ) := b
     refine measure_mono_null (fun x hx ↦ ?_) h0
     by_contra h0
     exact hx (ENNReal.inv_ne_top.2 (by simpa using h0))
-  refine SigmaFinite.of_map _ measurableEmbedding_units_val.measurable.aemeasurable ?_
-  rw [unitsFormMeasure, measurableEmbedding_units_val.map_comap]
+  refine SigmaFinite.of_map _ Units.measurableEmbedding_val₀.measurable.aemeasurable ?_
+  rw [unitsFormMeasure, Units.measurableEmbedding_val₀.map_comap]
   infer_instance
 
 /-- **The form measure of the units of `𝒪[K]`** is `(1 - q⁻¹) μ 𝒪[K]`, where `q` is the
 cardinality of the residue field. -/
 theorem unitsFormMeasure_unitFiltration_zero :
     unitsFormMeasure K μ (unitFiltration K 0) = (1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹) * μ 𝒪[K] := by
-  have himage : Units.val '' (unitFiltration K 0 : Set Kˣ) = {x : K | valuation K x = 1} := by
-    ext x
-    constructor
-    · rintro ⟨u, hu, rfl⟩
-      exact (mem_unitFiltration_zero u).1 hu
-    · intro hx
-      have hx0 : x ≠ 0 := by
-        rintro rfl
-        simp at hx
-      exact ⟨Units.mk0 x hx0, (mem_unitFiltration_zero _).2 hx, rfl⟩
-  rw [unitsFormMeasure_apply, himage,
+  rw [unitsFormMeasure_apply, image_unitFiltration_zero,
     withDensity_inv_normalizedAbsoluteValue_setOf_valuation_eq_one]
 
 /-- **The normalized Haar measure of `Kˣ` is the form measure with its convergence factor.**
@@ -165,9 +136,8 @@ theorem unitsHaar_eq_smul_unitsFormMeasure (hμ : μ 𝒪[K] = 1) :
   have htop : 1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ ⊤ :=
     ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self
   have : SigmaFinite ((1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹)⁻¹ • unitsFormMeasure K μ) := by
-    rw [← ENNReal.coe_toNNReal (ENNReal.inv_ne_top.2 h0)]
-    exact inferInstanceAs
-      (SigmaFinite ((1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹)⁻¹.toNNReal • unitsFormMeasure K μ))
+    rw [← ENNReal.coe_toNNReal (ENNReal.inv_ne_top.2 h0), ← ENNReal.smul_def]
+    infer_instance
   rw [unitsHaar_eq_iff, smul_apply, unitsFormMeasure_unitFiltration_zero, hμ, mul_one,
     smul_eq_mul, ENNReal.inv_mul_cancel h0 htop]
 
