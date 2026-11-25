@@ -183,6 +183,15 @@ noncomputable instance instTopologicalSpace : TopologicalSpace (compactAnnularCo
 theorem norm_eq (f : compactAnnularCoeff R A) :
     ‖f‖ = max (laurentGaussNorm A.inner (f : ℤ → R)) (laurentGaussNorm A.outer (f : ℤ → R)) := (rfl)
 
+/-- The norm of a Laurent monomial, including negative exponents. -/
+@[simp]
+theorem norm_monomial [IsUltrametricDist R] [CompleteSpace R] (n : ℤ) (c : R) :
+    ‖(IsConvolutionRing.monomial n c : compactAnnularCoeff R A)‖ =
+      ‖c‖ * max (A.inner ^ n) (A.outer ^ n) := by
+  simp only [norm_eq, IsConvolutionRing.coe_monomial,
+    laurentGaussNorm_single A.fst.property.le, laurentGaussNorm_single A.snd.property.le,
+    mul_max_of_nonneg _ _ (norm_nonneg _)]
+
 /-- Bounds on the annular norm are exactly uniform bounds on the weighted coefficients. -/
 theorem norm_le_iff {f : compactAnnularCoeff R A} {C : ℝ} :
     ‖f‖ ≤ C ↔ ∀ n, ‖(f : ℤ → R) n‖ * max (A.inner ^ n) (A.outer ^ n) ≤ C := by
@@ -325,15 +334,6 @@ noncomputable instance instNormedRing : NormedRing (compactAnnularCoeff R A) whe
       max_comm (laurentGaussNorm A.inner (g : ℤ → R))]
     exact max_mul_mul_le_max_mul_max _ _ (laurentGaussNorm_nonneg _ _) (laurentGaussNorm_nonneg _ _)
 
-/-- The norm of a Laurent monomial, including negative exponents. -/
-@[simp]
-theorem norm_monomial (n : ℤ) (c : R) :
-    ‖(IsConvolutionRing.monomial n c : compactAnnularCoeff R A)‖ =
-      ‖c‖ * max (A.inner ^ n) (A.outer ^ n) := by
-  simp only [norm_eq, IsConvolutionRing.coe_monomial,
-    laurentGaussNorm_single A.fst.property.le, laurentGaussNorm_single A.snd.property.le,
-    mul_max_of_nonneg _ _ (norm_nonneg _)]
-
 /-- The annular norm preserves the unit norm of the coefficient ring. -/
 instance instNormOneClass [NormOneClass R] : NormOneClass (compactAnnularCoeff R A) where
   norm_one := by
@@ -350,18 +350,18 @@ variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {A B C : Com
 noncomputable instance instNormedCommRing : NormedCommRing (compactAnnularCoeff R A) :=
   { instNormedRing with mul_comm := mul_comm }
 
-/-- Constant Laurent series retain their coefficient norm. -/
-@[simp]
-theorem norm_algebraMap (c : R) : ‖algebraMap R (compactAnnularCoeff R A) c‖ = ‖c‖ := by
-  rw [← IsConvolutionRing.monomial_zero_left, norm_monomial]
-  simp
-
 end compactAnnularCoeff
 
 namespace compactAnnularCoeff
 
 variable [SeminormedCommRing R] [T3Space R] [IsUltrametricDist R] [CompleteSpace R]
   {A B C : CompactAnnulus}
+
+/-- Constant Laurent series retain their coefficient norm. -/
+@[simp]
+theorem norm_algebraMap (c : R) : ‖algebraMap R (compactAnnularCoeff R A) c‖ = ‖c‖ := by
+  rw [← IsConvolutionRing.monomial_zero_left, norm_monomial]
+  simp
 
 /-- Coefficientwise restriction from a compact annulus to a smaller compact annulus. -/
 noncomputable def restrict (h : B ≤ A) : compactAnnularCoeff R A →ₐ[R] compactAnnularCoeff R B :=
