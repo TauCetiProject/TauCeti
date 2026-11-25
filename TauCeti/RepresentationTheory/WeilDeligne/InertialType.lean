@@ -44,8 +44,6 @@ special parameters `Sp(n)` have trivial inertial type.
 * `TauCeti.WeilDeligneParameter.inertialType_baseChange`,
   `TauCeti.WeilDeligneParameter.inertialType_restrict`: compatibility with scalar extension and
   with restriction.
-* `TauCeti.WeilDeligneParameter.ker_le_comap_ker_of_deg`: `ι` maps `ker deg'` into `ker deg` when
-  `deg ∘ ι = f · deg'`.
 * `TauCeti.WeilDeligneParameter.inertialType_unramified`,
   `TauCeti.WeilDeligneParameter.inertialType_special`: unramified parameters and `Sp(n)` have
   trivial inertial type.
@@ -200,15 +198,6 @@ section Restrict
 variable {W' : Type*} [Group W'] [TopologicalSpace W'] {deg' : W' →* Multiplicative ℤ}
   {ι : W' →* W} {f : ℕ}
 
-omit [TopologicalSpace W] [TopologicalSpace W'] in
-/-- A homomorphism `ι : W' →* W` with `deg (ι w) = f · deg' w` maps the kernel of `deg'` into the
-kernel of `deg`. -/
-theorem ker_le_comap_ker_of_deg (hf : ∀ w, (deg (ι w)).toAdd = f * (deg' w).toAdd) :
-    deg'.ker ≤ deg.ker.comap ι :=
-  MonoidHom.ker_le_comap_ker_of_comp_eq (f₁ := powMonoidHom f) <| by
-    ext w
-    simp [hf]
-
 /-- The inertial type of a restriction along `ι` is the inertial type restricted along the induced
 map `ker deg' → ker deg`. -/
 @[simp]
@@ -219,7 +208,9 @@ theorem inertialType_restrict (hι : Continuous ι)
         ((ι.subgroupComap deg.ker).comp (Subgroup.inclusion (ker_le_comap_ker_of_deg hf))) := by
   ext w : 1
   simp only [inertialType_apply, MonoidHom.comp_apply, restrict_r_apply]
-  rfl
+  rw [← Subgroup.coe_inclusion (ker_le_comap_ker_of_deg hf) w]
+  -- `subgroupComap_apply_coe` is stated on `Submonoid.comap`, so `simp` and `rw` cannot use it.
+  exact congrArg D.r (ι.subgroupComap_apply_coe deg.ker _).symm
 
 end Restrict
 
