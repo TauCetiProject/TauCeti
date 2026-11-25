@@ -119,11 +119,11 @@ theorem coe_differenceShortRootWeylElement (hij : i ≠ j) :
   -- the `Ne` proof arguments for `hij.symm` are identified here by proof irrelevance.
   change (a * c) * (b * d) * (a * c) = (a * b * a) * (c * d * c)
   have hac : Commute a c := TauCeti.commute_transvectionUnit _ _
-    (finSumFinEquiv_inl_ne_inr j j) (finSumFinEquiv_inr_ne_inl i i) 1 (-1)
+    (Fin.finSumFinEquiv_inl_ne_inr j j) (Fin.finSumFinEquiv_inr_ne_inl i i) 1 (-1)
   have had : Commute a d := TauCeti.commute_transvectionUnit _ _
-    (finSumFinEquiv_inl_ne_inr j i) (finSumFinEquiv_inr_ne_inl j i) 1 1
+    (Fin.finSumFinEquiv_inl_ne_inr j i) (Fin.finSumFinEquiv_inr_ne_inl j i) 1 1
   have hbc : Commute b c := TauCeti.commute_transvectionUnit _ _
-    (finSumFinEquiv_inl_ne_inr i j) (finSumFinEquiv_inr_ne_inl i j) (-1) (-1)
+    (Fin.finSumFinEquiv_inl_ne_inr i j) (Fin.finSumFinEquiv_inr_ne_inl i j) (-1) (-1)
   calc
     (a * c) * (b * d) * (a * c) = a * (c * b) * d * a * c := by group
     _ = a * (b * c) * d * a * c := by rw [hbc.eq]
@@ -145,8 +145,8 @@ private theorem commute_differenceShortRootWeylElements (hij : i ≠ j) : Commut
     TauCeti.commute_transvectionUnit_transvectionWeylElement
       (differenceShortRoot_second_indices_ne hij)
       (differenceShortRoot_first_indices_ne hij)
-      (finSumFinEquiv_inr_ne_inl i i) (finSumFinEquiv_inl_ne_inr j j)
-      (finSumFinEquiv_inr_ne_inl j i) (finSumFinEquiv_inl_ne_inr j i) 1
+      (Fin.finSumFinEquiv_inr_ne_inl i i) (Fin.finSumFinEquiv_inl_ne_inr j j)
+      (Fin.finSumFinEquiv_inr_ne_inl j i) (Fin.finSumFinEquiv_inl_ne_inr j i) 1
   have hmiddle : Commute
       (TauCeti.transvectionUnit (differenceShortRoot_first_indices_ne hij).symm (-1 : R))
       (TauCeti.transvectionWeylElement (A := R)
@@ -154,8 +154,8 @@ private theorem commute_differenceShortRootWeylElements (hij : i ≠ j) : Commut
     TauCeti.commute_transvectionUnit_transvectionWeylElement
       (differenceShortRoot_second_indices_ne hij)
       (differenceShortRoot_first_indices_ne hij).symm
-      (finSumFinEquiv_inr_ne_inl i j) (finSumFinEquiv_inl_ne_inr i j)
-      (finSumFinEquiv_inr_ne_inl j j) (finSumFinEquiv_inl_ne_inr i i) (-1)
+      (Fin.finSumFinEquiv_inr_ne_inl i j) (Fin.finSumFinEquiv_inl_ne_inr i j)
+      (Fin.finSumFinEquiv_inr_ne_inl j j) (Fin.finSumFinEquiv_inl_ne_inr i i) (-1)
   rw [TauCeti.transvectionWeylElement_def]
   exact (houter.mul_left hmiddle).mul_left houter
 
@@ -211,14 +211,14 @@ theorem differenceShortRootWeylElement_mul_differenceShortRootUnit_mul_inv
     (TauCeti.commute_transvectionUnit_transvectionWeylElement
       (differenceShortRoot_second_indices_ne hij).symm
       (differenceShortRoot_first_indices_ne hij)
-      (finSumFinEquiv_inr_ne_inl j i) (finSumFinEquiv_inl_ne_inr j i)
-      (finSumFinEquiv_inr_ne_inl i i) (finSumFinEquiv_inl_ne_inr j j) c).symm
+      (Fin.finSumFinEquiv_inr_ne_inl j i) (Fin.finSumFinEquiv_inl_ne_inr j i)
+      (Fin.finSumFinEquiv_inr_ne_inl i i) (Fin.finSumFinEquiv_inl_ne_inr j j) c).symm
   have hleft_v : Commute left v :=
     (TauCeti.commute_transvectionUnit_transvectionWeylElement
       (differenceShortRoot_first_indices_ne hij)
       (differenceShortRoot_second_indices_ne hij).symm
-      (finSumFinEquiv_inl_ne_inr j i) (finSumFinEquiv_inr_ne_inl j i)
-      (finSumFinEquiv_inl_ne_inr i i) (finSumFinEquiv_inr_ne_inl j j) c).symm
+      (Fin.finSumFinEquiv_inl_ne_inr j i) (Fin.finSumFinEquiv_inr_ne_inl j i)
+      (Fin.finSumFinEquiv_inl_ne_inr i i) (Fin.finSumFinEquiv_inr_ne_inl j j) c).symm
   calc
     (left * right) * (x * y) * (left * right)⁻¹ =
         left * (right * x * right⁻¹) * (right * y * right⁻¹) * left⁻¹ := by group
@@ -276,8 +276,8 @@ theorem differenceShortRootWeylElement_mul_positiveLongRootTransvectionUnit_mul_
   exact conjugate_crossBlockTransvectionByWeylPair
     (differenceShortRoot_first_indices_ne hij)
     (differenceShortRoot_second_indices_ne hij).symm
-    (finSumFinEquiv_inl_ne_inr j j) (finSumFinEquiv_inl_ne_inr j i)
-    (finSumFinEquiv_inl_ne_inr i i) c
+    (Fin.finSumFinEquiv_inl_ne_inr j j) (Fin.finSumFinEquiv_inl_ne_inr j i)
+    (Fin.finSumFinEquiv_inl_ne_inr i i) c
 
 /-- **A short-root Weyl element transports negative long roots.** Conjugation by the reflection
 representative for `e_i-e_j` sends `x_{-2e_j}(c)` to `x_{-2e_i}(c)`, with no change of parameter. -/
@@ -304,8 +304,8 @@ theorem differenceShortRootWeylElement_mul_negativeLongRootTransvectionUnit_mul_
   exact conjugate_crossBlockTransvectionByWeylPair
     (differenceShortRoot_second_indices_ne hij).symm
     (differenceShortRoot_first_indices_ne hij)
-    (finSumFinEquiv_inr_ne_inl j j) (finSumFinEquiv_inr_ne_inl j i)
-    (finSumFinEquiv_inr_ne_inl i i) c
+    (Fin.finSumFinEquiv_inr_ne_inl j j) (Fin.finSumFinEquiv_inr_ne_inl j i)
+    (Fin.finSumFinEquiv_inr_ne_inl i i) c
 
 /-- Applying a ring homomorphism entrywise to a short-root Weyl element gives the corresponding
 Weyl element over the target ring. -/
@@ -327,22 +327,22 @@ private theorem diagonalCoordinates_comp_swaps (t : Fin m → Rˣ) :
     rw [Function.comp_apply, Function.comp_apply]
     by_cases hai : a = i
     · rw [hai, Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne
-        (finSumFinEquiv_inl_ne_inr j i) (finSumFinEquiv_inl_ne_inr j j)]
+        (Fin.finSumFinEquiv_inl_ne_inr j i) (Fin.finSumFinEquiv_inl_ne_inr j j)]
       simp [finSumFinEquiv_apply_left]
     · by_cases haj : a = j
       · rw [haj, Equiv.swap_apply_right, Equiv.swap_apply_of_ne_of_ne
-          (finSumFinEquiv_inl_ne_inr i i) (finSumFinEquiv_inl_ne_inr i j)]
+          (Fin.finSumFinEquiv_inl_ne_inr i i) (Fin.finSumFinEquiv_inl_ne_inr i j)]
         simp [finSumFinEquiv_apply_left]
       · rw [Equiv.swap_apply_of_ne_of_ne
             (finSumFinEquiv.injective.ne (Sum.inl_injective.ne hai))
             (finSumFinEquiv.injective.ne (Sum.inl_injective.ne haj)),
-          Equiv.swap_apply_of_ne_of_ne (finSumFinEquiv_inl_ne_inr a i)
-            (finSumFinEquiv_inl_ne_inr a j)]
+          Equiv.swap_apply_of_ne_of_ne (Fin.finSumFinEquiv_inl_ne_inr a i)
+            (Fin.finSumFinEquiv_inl_ne_inr a j)]
         simp [finSumFinEquiv_apply_left, Equiv.swap_apply_of_ne_of_ne hai haj]
   · -- On the second block only the second-block swap moves the index.
     rw [Function.comp_apply, Function.comp_apply,
-      Equiv.swap_apply_of_ne_of_ne (finSumFinEquiv_inr_ne_inl a i)
-        (finSumFinEquiv_inr_ne_inl a j)]
+      Equiv.swap_apply_of_ne_of_ne (Fin.finSumFinEquiv_inr_ne_inl a i)
+        (Fin.finSumFinEquiv_inr_ne_inl a j)]
     by_cases hai : a = i
     · rw [hai, Equiv.swap_apply_left]
       simp [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat]
@@ -455,7 +455,7 @@ matrix exchanging the two symplectic coordinates belonging to `i`. -/
 theorem coe_positiveLongRootWeylElement (i : Fin m) :
     ((positiveLongRootWeylElement (R := R) i : GLSymplecticFin m R) :
         GL (Fin (m + m)) R) =
-      TauCeti.transvectionWeylElement (finSumFinEquiv_inl_ne_inr i i) := by
+      TauCeti.transvectionWeylElement (Fin.finSumFinEquiv_inl_ne_inr i i) := by
   rw [positiveLongRootWeylElement, TauCeti.transvectionWeylElement_def]
   simp
 
@@ -465,7 +465,7 @@ matrix for the opposite ordered pair of symplectic coordinates. -/
 theorem coe_negativeLongRootWeylElement (i : Fin m) :
     ((negativeLongRootWeylElement (R := R) i : GLSymplecticFin m R) :
         GL (Fin (m + m)) R) =
-      TauCeti.transvectionWeylElement (finSumFinEquiv_inr_ne_inl i i) := by
+      TauCeti.transvectionWeylElement (Fin.finSumFinEquiv_inr_ne_inl i i) := by
   rw [negativeLongRootWeylElement, TauCeti.transvectionWeylElement_def]
   simp
 
@@ -500,7 +500,7 @@ theorem positiveLongRootWeylElement_mul_positiveLongRootTransvectionUnit_mul_inv
     coe_negativeLongRootTransvectionUnit]
   rw [TauCeti.transvectionWeylElement_inv]
   exact TauCeti.transvectionWeylElement_mul_transvectionUnit_mul_inv_self
-    (finSumFinEquiv_inl_ne_inr i i) c
+    (Fin.finSumFinEquiv_inl_ne_inr i i) c
 
 /-- Conjugation by the long-root Weyl representative exchanges the negative and positive long
 root subgroups and negates the parameter. -/
@@ -517,7 +517,7 @@ theorem positiveLongRootWeylElement_mul_negativeLongRootTransvectionUnit_mul_inv
     coe_positiveLongRootTransvectionUnit]
   rw [TauCeti.transvectionWeylElement_inv]
   exact TauCeti.transvectionWeylElement_mul_transvectionUnit_mul_inv_symm
-    (finSumFinEquiv_inl_ne_inr i i) c
+    (Fin.finSumFinEquiv_inl_ne_inr i i) c
 
 /-- Conjugation by the long-root Weyl representative inverts the corresponding coordinate of
 the paired diagonal torus and fixes every other coordinate. -/
@@ -543,7 +543,7 @@ theorem positiveLongRootWeylElement_mul_diagonal_mul_inv
         (Fin.castAdd_injective m m).ne hai
       have hright : Fin.castAdd m a ≠ i.addNat m := by
         simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-          Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr a i
+          Fin.natAdd_eq_addNat] using Fin.finSumFinEquiv_inl_ne_inr a i
       rw [Equiv.swap_apply_of_ne_of_ne hleft hright]
       simp [Function.update_of_ne hai]
   · simp only [Function.comp_apply, finSumFinEquiv_apply_left,
@@ -553,7 +553,7 @@ theorem positiveLongRootWeylElement_mul_diagonal_mul_inv
       simp
     · have hleft : a.addNat m ≠ Fin.castAdd m i := by
         simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-          Fin.natAdd_eq_addNat] using finSumFinEquiv_inr_ne_inl a i
+          Fin.natAdd_eq_addNat] using Fin.finSumFinEquiv_inr_ne_inl a i
       have hright : a.addNat m ≠ i.addNat m := by
         simpa only [Fin.natAdd_eq_addNat] using (Fin.natAdd_injective m m).ne hai
       rw [Equiv.swap_apply_of_ne_of_ne hleft hright]

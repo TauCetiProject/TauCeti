@@ -126,11 +126,10 @@ theorem exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_smul_eq (hk : 3 ≤ k)
   have hφ := continuousRep_mem_realSobolevFunctions hd F
   -- The phase `F` is `C²` and square integrable.
   have hφ2 : ContDiff ℝ 2 (continuousRep F) := by
-    refine contDiff_of_mem_realSobolevFunctions ?_ hφ (continuous_continuousRep hd F)
-    rw [Complex.finrank_real_complex]
     have hk' : (3 : ℝ) ≤ k := by exact_mod_cast hk
-    push_cast
-    linarith
+    exact contDiff_of_mem_realSobolevFunctions
+      (finrank_real_complex_add_two_mul_lt_two_mul (n := 2) (by push_cast; linarith)) hφ
+      (continuous_continuousRep hd F)
   have hact : ⇑(expGauge hs F • y) = phaseGauge y (continuousRep F) := by
     rw [coe_smul, toSubgroup_expGauge]
     exact gaugeTransform_exp (hφ2.differentiable two_ne_zero) y

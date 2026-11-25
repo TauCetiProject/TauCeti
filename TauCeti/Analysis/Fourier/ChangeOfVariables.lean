@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Group.Integral
@@ -15,7 +14,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Fourier.CharacterAnnihilator
 import TauCeti.MeasureTheory.Function.Lp.Dilation
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # Linear change of variables for the Fourier transform
@@ -31,7 +30,7 @@ and multiplies the moment `∫ ‖y‖ ^ s ‖𝓕⁻ f y‖` of order `s` of th
 Fourier transform by `R ^ (n - n / r)`.
 
 The Jacobian factor comes from the linear change of variables
-`MeasureTheory.Measure.integral_comp_continuousLinearEquiv`. The formulas use the total Bochner
+`MeasureTheory.Measure.integral_comp_linearMap`. The formulas use the total Bochner
 integral, so no integrability hypothesis is necessary. They apply to functions with values in any
 complex normed space, including Schwartz functions by coercion.
 
@@ -50,9 +49,12 @@ complex normed space, including Schwartz functions by coercion.
   inverse Fourier transform.
 * `TauCeti.eLpNorm_fourierInv_comp_inv_smul`: for `R > 0`, replacing `g` by `g (R⁻¹ • ·)`
   multiplies the `Lʳ` norm of the inverse Fourier transform by `R ^ (n - n / r)`.
-* `TauCeti.fourier_comp_sub_const`, `TauCeti.support_fourier_comp_sub_const`: translating a
-  function by `a` multiplies its Fourier transform by the character `𝐞 (-⟪a, ·⟫)`, so the support
-  of the Fourier transform does not change.
+* `TauCeti.fourier_comp_sub_const`, `TauCeti.fourierInv_comp_sub_const`,
+  `TauCeti.support_fourier_comp_sub_const`: translating a function by `a` multiplies its Fourier
+  transform by the character `𝐞 (-⟪a, ·⟫)`, and its inverse Fourier transform by `𝐞 ⟪a, ·⟫`, so
+  the support of the Fourier transform does not change.
+* `TauCeti.integral_norm_fourierInv_comp_sub_const`: translation preserves the `L¹` norm of the
+  inverse Fourier transform.
 * `TauCeti.fourier_fourierChar_smul`: modulation by the character `𝐞 ⟪·, c⟫` translates the
   Fourier transform by `c`.
 * `TauCeti.fourier_smul_const`: the Fourier transform of `f · • v` is `𝓕 f · • v`.
@@ -83,8 +85,10 @@ theorem _root_.ContinuousLinearEquiv.fourier_comp (A : E ≃L[ℝ] E) (f : E →
     simp [ContinuousLinearMap.adjoint_inner_right]
   simp only [Real.fourier_eq, Function.comp_apply]
   simp_rw [← hinner]
-  exact Measure.integral_comp_continuousLinearEquiv volume
-    (fun x : E ↦ 𝐞 (-⟪x, ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) y⟫) • f x) A
+  have h := Measure.integral_comp_linearMap volume
+    (fun x ↦ 𝐞 (-⟪x, ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) y⟫) • f x)
+    A.toLinearEquiv.toLinearMap
+  simpa only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv] using h
 
 /-- The inverse Fourier transform has the same linear change-of-variables law. -/
 theorem _root_.ContinuousLinearEquiv.fourierInv_comp (A : E ≃L[ℝ] E) (f : E → F) (y : E) :
@@ -190,6 +194,19 @@ theorem fourier_comp_sub_const (f : E → F) (a ξ : E) :
   simp only [Function.comp_def, ← sub_eq_add_neg, map_neg, LinearMap.neg_apply,
     innerₗ_apply_apply] at h
   exact h
+
+/-- **Inverse Fourier transform of a translate**: translation becomes modulation,
+`𝓕⁻ (f (· - a)) x = 𝐞 ⟪a, x⟫ • 𝓕⁻ f x`. -/
+theorem fourierInv_comp_sub_const (f : E → F) (a x : E) :
+    𝓕⁻ (fun ξ ↦ f (ξ - a)) x = 𝐞 ⟪a, x⟫ • 𝓕⁻ f x := by
+  rw [Real.fourierInv_eq_fourier_neg, Real.fourierInv_eq_fourier_neg, fourier_comp_sub_const,
+    inner_neg_right, neg_neg]
+
+/-- Translating a function does not change the `L¹` norm of its inverse Fourier transform:
+`∫ ‖𝓕⁻ (f (· - a))‖ = ∫ ‖𝓕⁻ f‖`. -/
+theorem integral_norm_fourierInv_comp_sub_const (f : E → F) (a : E) :
+    ∫ y, ‖𝓕⁻ (fun ξ ↦ f (ξ - a)) y‖ = ∫ y, ‖𝓕⁻ f y‖ := by
+  simp_rw [fourierInv_comp_sub_const, Circle.norm_smul]
 
 /-- **Frequencies of a translate**: translating a function does not change the support of its
 Fourier transform. -/

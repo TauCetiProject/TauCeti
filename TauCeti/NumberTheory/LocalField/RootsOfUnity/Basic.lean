@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 public import TauCeti.RingTheory.RootsOfUnity.PPower
 
 /-!

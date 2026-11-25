@@ -11,13 +11,13 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 /-!
 # Lower bounds for parabolic inequalities with a quadratic reaction term
 
-Let `c ≥ 0`. A function `u` with `∂ₜu ≥ Δu + c u²` satisfies `∂ₜu ≥ c u²` at every spatial
-minimum, because the Laplacian is nonnegative there. This file shows that this weaker condition
-alone forces `u` to stay above every subsolution `φ` of the ODE `φ' = c φ²` that lies below `u`
-on the parabolic boundary of a cylinder `[a, b] × K`. In particular a lower bound `u ≥ ρ` at the
-initial time `a` propagates to the explicit bound `u(t, x) ≥ ρ / (1 - c ρ (t - a))` for as long as
-the barrier has not blown up, that is while `1 - c ρ (t - a) > 0`. For `ρ ≤ 0` this holds for all
-later times.
+Let `c` be a real constant, of either sign. A function `u` with `∂ₜu ≥ Δu + c u²` satisfies
+`∂ₜu ≥ c u²` at every spatial minimum, because the Laplacian is nonnegative there. This file shows
+that this weaker condition alone forces `u` to stay above every subsolution `φ` of the ODE
+`φ' = c φ²` that lies below `u` on the parabolic boundary of a cylinder `[a, b] × K`. In
+particular a lower bound `u ≥ ρ` at the initial time `a` propagates to the explicit bound
+`u(t, x) ≥ ρ / (1 - c ρ (t - a))` for as long as the barrier has not blown up, that is while
+`1 - c ρ (t - a) > 0`. For `c ρ ≤ 0` this holds for all later times.
 
 Only spatial local minima enter the hypotheses, so the results apply to any elliptic operator
 that is nonnegative at a minimum. This includes a Laplacian depending on time through a moving
@@ -26,11 +26,11 @@ metric. The main application is the scalar curvature of a Ricci flow
 `|Ric|² ≥ R² / n`. So `R` is a supersolution with `c = 2 / n`. In dimension three, a lower bound
 `R ≥ -6` at time zero propagates to `R ≥ -6 / (1 + 4t)`.
 
-The proof applies the perturbation argument of the weak parabolic maximum principle,
-`TauCeti.le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary`, to `exp (-2cMt) (φ - u)` after
-shifting the time interval `[a, b]` to `[0, b - a]`, where `M` is the maximum of `φ`. At an
-interior spatial maximum of `φ - u` with `u < φ`, the time derivative of `φ - u` is at most
-`c (φ² - u²) = c (φ - u)(φ + u) ≤ 2cM (φ - u)`, which the exponential weight absorbs.
+The proof applies the comparison with a time-dependent bound,
+`TauCeti.le_of_deriv_sub_deriv_le_mul_of_isLocalMax_le_parabolicBoundary`, to `-u` and `-φ`. Both
+`u` and `φ` are bounded on the compact cylinder, say `|φ + u| ≤ M`. At an interior spatial
+maximum of `φ - u` with `u < φ`, the time derivative of `φ - u` is at most
+`c (φ² - u²) = c (φ + u)(φ - u) ≤ |c| M (φ - u)`, which is the growth that comparison allows.
 
 ## Main results
 
@@ -63,13 +63,13 @@ variable {X : Type*} [TopologicalSpace X] {K : Set X} {a b c : ℝ} {u : ℝ →
 
 /-- **Comparison with an ODE subsolution for a quadratic reaction.**
 
-Let `K` be compact, `c ≥ 0`, and let `φ` be a subsolution `φ' ≤ c φ²` of the ODE `φ' = c φ²` on
+Let `K` be compact, and let `φ` be a subsolution `φ' ≤ c φ²` of the ODE `φ' = c φ²` on
 `[a, b]`. Let `u` be continuous on the closed cylinder `[a, b] × K` and differentiable in time on
 the open cylinder `(a, b) × interior K`. Suppose that `∂ₜu ≥ c u²` at every point of the open
 cylinder at which `x` is a spatial local minimum of `u t` and `u t x < φ t`. If `φ ≤ u` on the
 parabolic boundary, then `φ ≤ u` on all of `[a, b] × K`. -/
 theorem ge_of_mul_sq_le_deriv_of_isLocalMin_ge_parabolicBoundary (hK : IsCompact K)
-    (hc : 0 ≤ c) {φ : ℝ → ℝ} (hφcont : ContinuousOn φ (Icc a b))
+    {φ : ℝ → ℝ} (hφcont : ContinuousOn φ (Icc a b))
     (hφdiff : ∀ ⦃t⦄, t ∈ Ioo a b → DifferentiableAt ℝ φ t)
     (hφ : ∀ ⦃t⦄, t ∈ Ioo a b → deriv φ t ≤ c * φ t ^ 2)
     (hcont : ContinuousOn (Function.uncurry u) (Icc a b ×ˢ K))
@@ -80,65 +80,36 @@ theorem ge_of_mul_sq_le_deriv_of_isLocalMin_ge_parabolicBoundary (hK : IsCompact
     (hinit : ∀ ⦃x⦄, x ∈ K → φ a ≤ u a x)
     (hlat : ∀ ⦃t⦄, t ∈ Icc a b → ∀ ⦃x⦄, x ∈ frontier K → φ t ≤ u t x) :
     ∀ ⦃t⦄, t ∈ Icc a b → ∀ ⦃x⦄, x ∈ K → φ t ≤ u t x := by
-  intro t ht x hx
-  -- With `M = max φ`, the weight `exp (-2cMs)` absorbs the reaction term of `φ - u`.
-  obtain ⟨t₀, -, hφmax⟩ := isCompact_Icc.exists_isMaxOn ⟨t, ht⟩ hφcont
-  set k := 2 * c * φ t₀
-  set w : ℝ → X → ℝ := fun s y ↦ Real.exp (-(k * s)) * (φ s - u s y) with hw_def
-  have hwcont : ContinuousOn (Function.uncurry w) (Icc a b ×ˢ K) :=
-    (by fun_prop : ContinuousOn (fun p : ℝ × X ↦ Real.exp (-(k * p.1))) _).mul
-      ((hφcont.comp continuousOn_fst mapsTo_fst_prod).sub hcont)
-  have hwdiff {s : ℝ} (hs : s ∈ Ioo a b) {y : X} (hy : y ∈ interior K) :
-      HasDerivAt (fun r ↦ w r y) (Real.exp (-(k * s)) * -k * (φ s - u s y) +
-        Real.exp (-(k * s)) * (deriv φ s - deriv (fun r ↦ u r y) s)) s := by
-    convert ((((hasDerivAt_id s).const_mul k).neg).exp).mul
-      ((hφdiff hs).hasDerivAt.sub (hdiff hs hy).hasDerivAt) using 1
-    · ext r
-      simp [hw_def]
-    · simp
-  have hwderiv {s : ℝ} (hs : s ∈ Ioo a b) {y : X} (hy : y ∈ interior K)
-      (hmax : IsLocalMax (w s) y) (hpos : 0 < w s y) : deriv (fun r ↦ w r y) s ≤ 0 := by
-    have hw : 0 < φ s - u s y := pos_of_mul_pos_right hpos (Real.exp_pos _).le
-    have hmin : IsLocalMin (u s) y := hmax.mono fun z hz ↦ by
-      linarith [le_of_mul_le_mul_left hz (Real.exp_pos _)]
-    rw [(hwdiff hs hy).deriv]
-    -- Since `u < φ ≤ M`, `c (φ² - u²) = c (φ - u)(φ + u) ≤ 2cM (φ - u)`.
-    have hφs : φ s ≤ φ t₀ := hφmax (Ioo_subset_Icc_self hs)
-    have hsign : 0 ≤ c * ((φ s - u s y) * (2 * (φ t₀ - φ s) + (φ s - u s y))) :=
-      mul_nonneg hc (mul_nonneg hw.le (by linarith))
-    have hkey : deriv φ s - deriv (fun r ↦ u r y) s - k * (φ s - u s y) ≤ 0 := by
-      nlinarith [hφ hs, hloc hs hy hmin (by linarith)]
-    have := mul_nonpos_of_nonneg_of_nonpos (Real.exp_pos (-(k * s))).le hkey
-    linarith
-  -- Shift `[a, b]` to `[0, b - a]`, where the weak maximum principle applies.
-  have hshift {s : ℝ} (hs : s ∈ Icc 0 (b - a)) : a + s ∈ Icc a b :=
-    ⟨by linarith [hs.1], by linarith [hs.2]⟩
-  have h := le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary
-    (u := fun s y ↦ w (a + s) y) (m := 0) hK
-    (hwcont.comp (f := fun p : ℝ × X ↦ (a + p.1, p.2)) (by fun_prop) fun p hp ↦
-      ⟨hshift hp.1, hp.2⟩)
-    (fun s hs y hy ↦ ((hwdiff ⟨by linarith [hs.1], by linarith [hs.2]⟩ hy).comp_const_add
-      a s).differentiableAt)
-    (fun s hs y hy hmax hpos ↦ by
-      rw [deriv_comp_const_add (fun r ↦ w r y)]
-      exact hwderiv ⟨by linarith [hs.1], by linarith [hs.2]⟩ hy hmax hpos)
-    (fun y hy ↦ mul_nonpos_of_nonneg_of_nonpos (Real.exp_pos _).le
-      (by simpa using sub_nonpos.2 (hinit hy)))
-    (fun s hs y hy ↦ mul_nonpos_of_nonneg_of_nonpos (Real.exp_pos _).le
-      (by linarith [hlat (hshift hs) hy]))
-    (t := t - a) ⟨by linarith [ht.1], by linarith [ht.2]⟩ hx
-  simp only [add_sub_cancel, hw_def] at h
-  nlinarith [Real.exp_pos (-(k * t))]
+  -- With `|φ| ≤ A` and `|u| ≤ B` on the cylinder, `c (φ² - u²) = c (φ + u) (φ - u)` is at most
+  -- `|c| (A + B) (φ - u)` where `u < φ`; compare `-u` with `-φ` at this rate.
+  obtain ⟨A, hA⟩ := isCompact_Icc.exists_bound_of_continuousOn hφcont
+  obtain ⟨B, hB⟩ := (isCompact_Icc.prod hK).exists_bound_of_continuousOn hcont
+  have h := le_of_deriv_sub_deriv_le_mul_of_isLocalMax_le_parabolicBoundary
+    (u := fun s y ↦ -u s y) (φ := fun s ↦ -φ s) (L := |c| * (A + B)) hK hcont.neg hφcont.neg
+    (fun t ht x hx ↦ (hdiff ht hx).neg) (fun t ht ↦ (hφdiff ht).neg)
+    (fun t ht x hx hmax hlt ↦ by
+      have hmin : IsLocalMin (u t) x := hmax.mono fun y hy ↦ neg_le_neg_iff.mp hy
+      have hlt' : u t x < φ t := neg_lt_neg_iff.mp hlt
+      have hsum : |φ t + u t x| ≤ A + B := (abs_add_le _ _).trans (add_le_add
+        (by simpa using hA t (Ioo_subset_Icc_self ht))
+        (by simpa using hB (t, x) ⟨Ioo_subset_Icc_self ht, interior_subset hx⟩))
+      have hcsum : c * (φ t + u t x) ≤ |c| * (A + B) :=
+        (le_abs_self _).trans (by rw [abs_mul]; gcongr)
+      rw [deriv.fun_neg, deriv.fun_neg]
+      nlinarith [hloc ht hx hmin hlt', hφ ht,
+        mul_le_mul_of_nonneg_right hcsum (sub_pos.mpr hlt').le])
+    (fun x hx ↦ neg_le_neg (hinit hx)) (fun t ht x hx ↦ neg_le_neg (hlat ht hx))
+  exact fun t ht x hx ↦ neg_le_neg_iff.mp (h ht hx)
 
 /-- **The explicit lower bound for a quadratic reaction on a cylinder.**
 
-Let `K` be compact, `c ≥ 0`, and let `ρ` satisfy `0 < 1 - c ρ (b - a)`, so that the barrier
+Let `K` be compact, and let `ρ` satisfy `0 < 1 - c ρ (b - a)`, so that the barrier
 `ρ / (1 - c ρ (t - a))` has not blown up by time `b`. Let `u` be continuous on `[a, b] × K` and
 differentiable in time on `(a, b) × interior K`, with `∂ₜu ≥ c u²` at every interior spatial local
 minimum lying below the bound. If `u` satisfies the bound `ρ / (1 - c ρ (t - a))` on the parabolic
 boundary, in particular `ρ ≤ u` at time `a`, then it satisfies it on all of `[a, b] × K`. -/
 theorem div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin_ge_parabolicBoundary
-    (hK : IsCompact K) (hc : 0 ≤ c) {ρ : ℝ} (hb : 0 < 1 - c * ρ * (b - a))
+    (hK : IsCompact K) {ρ : ℝ} (hb : 0 < 1 - c * ρ * (b - a))
     (hcont : ContinuousOn (Function.uncurry u) (Icc a b ×ˢ K))
     (hdiff : ∀ ⦃t⦄, t ∈ Ioo a b → ∀ ⦃x⦄, x ∈ interior K →
       DifferentiableAt ℝ (fun s ↦ u s x) t)
@@ -158,7 +129,7 @@ theorem div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin_ge_parabolicBoundary
     convert (hasDerivAt_const t ρ).div hlin (hden ht).ne' using 1
     field_simp
     ring
-  refine ge_of_mul_sq_le_deriv_of_isLocalMin_ge_parabolicBoundary hK hc
+  refine ge_of_mul_sq_le_deriv_of_isLocalMin_ge_parabolicBoundary hK
     (fun t ht ↦ (hderiv ht).continuousAt.continuousWithinAt)
     (fun t ht ↦ (hderiv (Ioo_subset_Icc_self ht)).differentiableAt)
     (fun t ht ↦ (hderiv (Ioo_subset_Icc_self ht)).deriv.le) hcont hdiff hloc
@@ -166,19 +137,19 @@ theorem div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin_ge_parabolicBoundary
 
 /-- **The explicit lower bound for a quadratic reaction on a compact space.**
 
-On a compact space `X` without lateral boundary, such as a closed manifold, let `c ≥ 0` and let
-`ρ` satisfy `0 < 1 - c ρ (b - a)`. Let `u` be continuous on `[a, b] × X` and differentiable in
-time on `(a, b) × X`, with `∂ₜu ≥ c u²` at every spatial local minimum lying below the bound. If
+On a compact space `X` without lateral boundary, such as a closed manifold, let `ρ` satisfy
+`0 < 1 - c ρ (b - a)`. Let `u` be continuous on `[a, b] × X` and differentiable in time on
+`(a, b) × X`, with `∂ₜu ≥ c u²` at every spatial local minimum lying below the bound. If
 `ρ ≤ u` at time `a`, then `ρ / (1 - c ρ (t - a)) ≤ u` at every time `t ∈ [a, b]`. -/
-theorem div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin [CompactSpace X] (hc : 0 ≤ c)
-    {ρ : ℝ} (hb : 0 < 1 - c * ρ * (b - a))
+theorem div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin [CompactSpace X] {ρ : ℝ}
+    (hb : 0 < 1 - c * ρ * (b - a))
     (hcont : ContinuousOn (Function.uncurry u) (Icc a b ×ˢ univ))
     (hdiff : ∀ ⦃t⦄, t ∈ Ioo a b → ∀ x, DifferentiableAt ℝ (fun s ↦ u s x) t)
     (hloc : ∀ ⦃t⦄, t ∈ Ioo a b → ∀ x, IsLocalMin (u t) x →
       u t x < ρ / (1 - c * ρ * (t - a)) → c * u t x ^ 2 ≤ deriv (fun s ↦ u s x) t)
     (hinit : ∀ x, ρ ≤ u a x) :
     ∀ ⦃t⦄, t ∈ Icc a b → ∀ x, ρ / (1 - c * ρ * (t - a)) ≤ u t x := fun t ht x ↦
-  div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin_ge_parabolicBoundary isCompact_univ hc hb
+  div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin_ge_parabolicBoundary isCompact_univ hb
     hcont (fun s hs y _ ↦ hdiff hs y) (fun s hs y _ ↦ hloc hs y) (fun y _ ↦ hinit y)
     (fun s _ y hy ↦ by simp at hy) ht (mem_univ x)
 

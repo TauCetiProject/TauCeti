@@ -114,32 +114,35 @@ instance : FunLike (BoundedBorelFunction X) X ℂ where
 theorem coe_injective : Function.Injective
     (DFunLike.coe : BoundedBorelFunction X → X → ℂ) := DFunLike.coe_injective
 
-/-- The zero symbol coerces to the zero function. -/
-@[simp] theorem coe_zero : ⇑(0 : BoundedBorelFunction X) = 0 := (rfl)
+/-! Evaluation is pointwise for the algebraic operations, so Mathlib's generic `FunLike`
+lemmas (`FunLike.coe_add`, `add_apply`, `FunLike.coe_sum`, `sum_apply`, ...) apply. -/
 
-/-- The unit symbol coerces to the constant unit function. -/
-@[simp] theorem coe_one : ⇑(1 : BoundedBorelFunction X) = 1 := (rfl)
+/-- Evaluating the zero symbol gives zero. -/
+instance : IsZeroApply (BoundedBorelFunction X) where
 
-/-- Function coercion preserves addition. -/
-@[simp] theorem coe_add (f g : BoundedBorelFunction X) : ⇑(f + g) = ⇑f + ⇑g := (rfl)
+/-- Evaluating the unit symbol gives one. -/
+instance : IsOneApply (BoundedBorelFunction X) where
 
-/-- Function coercion preserves negation. -/
-@[simp] theorem coe_neg (f : BoundedBorelFunction X) : ⇑(-f) = -⇑f := (rfl)
+/-- Evaluation is additive. -/
+instance : IsAddApply (BoundedBorelFunction X) where
 
-/-- Function coercion preserves subtraction. -/
-@[simp] theorem coe_sub (f g : BoundedBorelFunction X) : ⇑(f - g) = ⇑f - ⇑g := (rfl)
+/-- Evaluation commutes with negation. -/
+instance : IsNegApply (BoundedBorelFunction X) where
 
-/-- Function coercion preserves multiplication. -/
-@[simp] theorem coe_mul (f g : BoundedBorelFunction X) : ⇑(f * g) = ⇑f * ⇑g := (rfl)
+/-- Evaluation commutes with subtraction. -/
+instance : IsSubApply (BoundedBorelFunction X) where
 
-/-- Function coercion preserves scalar multiplication. -/
-@[simp] theorem coe_smul (c : ℂ) (f : BoundedBorelFunction X) : ⇑(c • f) = c • ⇑f := (rfl)
+/-- Evaluation is multiplicative. -/
+instance : IsMulApply (BoundedBorelFunction X) where
+
+/-- Evaluation commutes with complex scalar multiplication. -/
+instance : IsSMulApply ℂ (BoundedBorelFunction X) where
+
+/-- Evaluation commutes with natural powers. -/
+instance : IsPowApply ℕ (BoundedBorelFunction X) where
 
 /-- Function coercion preserves the star operation. -/
 @[simp] theorem coe_star (f : BoundedBorelFunction X) : ⇑(star f) = star ⇑f := (rfl)
-
-/-- Function coercion preserves natural powers. -/
-@[simp] theorem coe_pow (f : BoundedBorelFunction X) (n : ℕ) : ⇑(f ^ n) = ⇑f ^ n := (rfl)
 
 /-- Algebra scalars coerce to constant functions. -/
 @[simp] theorem coe_algebraMap (c : ℂ) :
@@ -197,7 +200,7 @@ theorem integrable (f : BoundedBorelFunction X) (μ : MeasureTheory.Measure X)
 theorem integrable_norm_pow (f : BoundedBorelFunction X) (μ : MeasureTheory.Measure X)
     [MeasureTheory.IsFiniteMeasure μ] (k : ℕ) :
     MeasureTheory.Integrable (fun x => ‖f x‖ ^ k) μ := by
-  simpa only [coe_pow, Pi.pow_apply, norm_pow] using ((f ^ k).integrable μ).norm
+  simpa only [FunLike.coe_pow, Pi.pow_apply, norm_pow] using ((f ^ k).integrable μ).norm
 
 /-- Bundle a measurable function with its everywhere bound. -/
 def ofFunction (f : X → ℂ) (hf : Measurable f)
@@ -211,31 +214,6 @@ def ofFunction (f : X → ℂ) (hf : Measurable f)
 /-- Evaluation of an algebra scalar is the constant scalar. -/
 @[simp] theorem algebraMap_apply (c : ℂ) (x : X) :
     algebraMap ℂ (BoundedBorelFunction X) c x = c := (rfl)
-
-/-- Evaluation of zero. -/
-@[simp] theorem zero_apply (x : X) : (0 : BoundedBorelFunction X) x = 0 := (rfl)
-
-/-- Evaluation of one. -/
-@[simp] theorem one_apply (x : X) : (1 : BoundedBorelFunction X) x = 1 := (rfl)
-
-/-- Evaluation of addition. -/
-@[simp] theorem add_apply (f g : BoundedBorelFunction X) (x : X) :
-    (f + g) x = f x + g x := (rfl)
-
-/-- Evaluation of negation. -/
-@[simp] theorem neg_apply (f : BoundedBorelFunction X) (x : X) : (-f) x = -f x := (rfl)
-
-/-- Evaluation of subtraction. -/
-@[simp] theorem sub_apply (f g : BoundedBorelFunction X) (x : X) :
-    (f - g) x = f x - g x := (rfl)
-
-/-- Evaluation of multiplication. -/
-@[simp] theorem mul_apply (f g : BoundedBorelFunction X) (x : X) :
-    (f * g) x = f x * g x := (rfl)
-
-/-- Evaluation of scalar multiplication. -/
-@[simp] theorem smul_apply (c : ℂ) (f : BoundedBorelFunction X) (x : X) :
-    (c • f) x = c * f x := (rfl)
 
 /-- Evaluation of the star operation is complex conjugation. -/
 @[simp] theorem star_apply (f : BoundedBorelFunction X) (x : X) :
@@ -306,7 +284,7 @@ theorem indicator_mul_indicator (s t : Set X) (hs : MeasurableSet s) (ht : Measu
     (f g : BoundedBorelFunction X) :
     indicator s hs f * indicator t ht g = indicator (s ∩ t) (hs.inter ht) (f * g) := by
   ext x
-  simp only [TauCeti.BoundedBorelFunction.mul_apply, indicator_apply]
+  simp only [_root_.mul_apply, indicator_apply]
   exact (Set.inter_indicator_mul _ _ x).symm
 
 /-- Multiplying a symbol on the left by `indicator s hs 1` restricts it to `s`. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
+public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
 public import TauCeti.Combinatorics.PermutationTriple.Examples
 public import TauCeti.GroupTheory.QuotientGroup.MulAut
 public import TauCeti.GroupTheory.TriangleGroup.CosetTriple
@@ -26,7 +26,9 @@ along `modularEquiv` gives Millington's dictionary and subgroup counts for `PSL(
 * **The modular triple (`TauCeti.ModularGroup.modularTriple`).** Its components are the coset
   permutations of `U`, `S`, and `T` (`permS`, `permT`, and `permR` for `S`, `T`, and `R = S T`).
   Via `TauCeti.ModularGroup.modularTriple_eq_cosetTriple`, it is connected with stabilizer `Γ'` at
-  `e 1`, monodromy `PSL(2, ℤ) ⧸ Γ'.normalCore`, and `IsRegular ↔ Γ'.Normal`.
+  `e 1`, monodromy `PSL(2, ℤ) ⧸ Γ'.normalCore`, and `IsRegular ↔ Γ'.Normal`; its representation of
+  `Δ(3, 2, ∞)` is the coset representation through `modularEquiv` (`toPerm_modularTriple`), and
+  renumbering the cosets relabels it (`modularTriple_eq_smul`).
 * **Opposite and mirror conventions.** Passing from right cosets `Γ' g` to left cosets via
   `g Γ' ↦ Γ' g⁻¹` gives `TauCeti.ModularGroup.ofRightCosetPerms`
   (`modularTriple_quotientRightRel_eq_ofRightCosetPerms`,
@@ -153,6 +155,15 @@ theorem isConnected_modularTriple (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) 
   rw [modularTriple_eq_cosetTriple]
   exact TriangleGroup.isConnected_cosetTriple _ _
 
+/-- The representation of `Δ(3, 2, ∞)` attached to `modularTriple Γ' e` is the coset permutation
+representation of `PSL(2, ℤ)` read through `modularEquiv`. -/
+@[simp] theorem toPerm_modularTriple (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    {ha hb hc} :
+    TriangleGroup.toPerm (modularTriple Γ' e) ha hb hc =
+      (e.permutationRepresentation (G := PSL(2, ℤ))).comp
+        (modularEquiv : TriangleGroup 3 2 0 →* PSL(2, ℤ)) := by
+  ext <;> simp
+
 /-- `modularTriple Γ' e` bundled as a `ConnectedTriple n`. -/
 noncomputable def modularConnectedTriple (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     ConnectedTriple n :=
@@ -173,6 +184,16 @@ theorem equivalent_modularTriple (Γ' : Subgroup PSL(2, ℤ)) (e e' : PSL(2, ℤ
     (modularTriple Γ' e).Equivalent (modularTriple Γ' e') := by
   rw [modularTriple_eq_cosetTriple Γ' e, modularTriple_eq_cosetTriple Γ' e']
   exact TriangleGroup.equivalent_cosetTriple _ _ _
+
+/-- Changing the numbering of the cosets of `Γ'` from `e` to `e'` relabels the modular triple by
+the re-indexing permutation `e.symm.trans e'`. -/
+theorem modularTriple_eq_smul (Γ' : Subgroup PSL(2, ℤ)) (e e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    modularTriple Γ' e' = (e.symm.trans e') • modularTriple Γ' e := by
+  rw [modularTriple_eq_cosetTriple Γ' e, modularTriple_eq_cosetTriple Γ' e',
+    TriangleGroup.cosetTriple_eq_smul _ (Equiv.trans _ e)]
+  congr 1
+  ext
+  simp
 
 /-- The connected isomorphism class of the modular triple of a finite-index subgroup
 `Γ' ≤ PSL(2, ℤ)`, independent of the coset numbering. -/
@@ -205,6 +226,13 @@ theorem modularIsoClass_eq_mk (Γ' : Subgroup PSL(2, ℤ)) [Γ'.FiniteIndex]
   rw [← forget_modularConnectedIsoClass, modularConnectedIsoClass_eq_mk Γ' e,
     ConnectedIsoClass.forget_mk, coe_modularConnectedTriple]
 
+/-- The isomorphism class of the modular triple of a finite-index subgroup is connected. -/
+@[simp] theorem isConnected_modularIsoClass (Γ' : Subgroup PSL(2, ℤ)) [Γ'.FiniteIndex] :
+    (modularIsoClass Γ').IsConnected := by
+  have : NeZero Γ'.index := ⟨Subgroup.FiniteIndex.index_ne_zero⟩
+  rw [modularIsoClass_eq_mk Γ' (Γ'.quotientEquivFin rfl), IsoClass.isConnected_mk]
+  exact isConnected_modularTriple Γ' _
+
 /-- On the full modular group `⊤`, the modular triple is the trivial triple `1`. -/
 @[simp] theorem modularTriple_top (e : PSL(2, ℤ) ⧸ (⊤ : Subgroup PSL(2, ℤ)) ≃ Fin 1) :
     modularTriple ⊤ e = 1 :=
@@ -234,8 +262,7 @@ noncomputable def monodromyGroupModularTripleMulEquivQuotientNormalCore
 theorem natCard_monodromyGroup_modularTriple (Γ' : Subgroup PSL(2, ℤ))
     (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     Nat.card (modularTriple Γ' e).monodromyGroup = Γ'.normalCore.index := by
-  rw [Subgroup.index_eq_card]
-  exact Nat.card_congr (monodromyGroupModularTripleMulEquivQuotientNormalCore Γ' e).toEquiv
+  rw [monodromyGroup_modularTriple, Equiv.natCard_range_permutationRepresentation_quotient]
 
 /-- `modularTriple Γ' e` is regular if and only if `Γ'` is normal in `PSL(2, ℤ)`. -/
 @[simp] theorem isRegular_modularTriple_iff (Γ' : Subgroup PSL(2, ℤ))

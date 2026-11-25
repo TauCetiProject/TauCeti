@@ -79,6 +79,12 @@ theorem flagOrder_symm : (flagOrder m).symm = flagOrder m := by
   simp only [flagOrder, Equiv.symm_trans, Equiv.symm_symm, Equiv.sumCongr_symm,
     Equiv.refl_symm, Fin.revPerm_symm, Equiv.trans_assoc]
 
+/-- The self-dual flag-order permutation is an involution. -/
+@[simp]
+theorem flagOrder_flagOrder (i : Fin (m + m)) : flagOrder m (flagOrder m i) = i := by
+  have := (flagOrder m).symm_apply_apply i
+  rwa [flagOrder_symm] at this
+
 /-- The subgroup of symplectic matrices that become upper triangular after reindexing by
 `flagOrder m`. Its paired-block form is recorded in `mem_matrixSubgroup_iff`. -/
 def matrixSubgroup : Subgroup (GLSymplecticFin m A) :=

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -31,7 +32,9 @@ space, a curve whose derivative is a multiple `c • f a` of its value has norm 
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
-(`TauCeti.norm_fderiv_sq_le_two_mul_sum_sq`).
+(`TauCeti.norm_fderiv_sq_le_two_mul_sum_sq`). The squared gradient of a real function on `ℂ` is
+the sum of its squared partial derivatives along `1` and `I`
+(`TauCeti.norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq`).
 
 The function `y ↦ √(a - ‖y‖²)`, whose graph over the ball of radius `√a` is a hemisphere, has
 derivative `-(√(a - ‖x‖²))⁻¹ ⟪x, ·⟫` wherever `a - ‖x‖² ≠ 0`; in particular it is flat at the
@@ -41,7 +44,7 @@ origin. Over the open unit ball the height `√(1 - ‖x‖²)` of the unit hemi
 
 public section
 
-open scoped RealInnerProductSpace Topology
+open scoped Gradient RealInnerProductSpace Topology
 
 namespace TauCeti
 
@@ -146,6 +149,13 @@ theorem norm_fderiv_sq_le_two_mul_sum_sq {ι : Type*} [Fintype ι] (u : ℂ → 
     rw [h.fderiv]
     rfl
   rwa [hcomp, hcomp, ← Finset.sum_add_distrib] at hD
+
+/-- The squared gradient of a function on `ℂ` is the sum of its squared partial derivatives along
+`1` and `I`. -/
+theorem norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq (f : ℂ → ℝ) (z : ℂ) :
+    ‖∇ f z‖ ^ 2 = fderiv ℝ f z 1 ^ 2 + fderiv ℝ f z Complex.I ^ 2 := by
+  rw [← Complex.orthonormalBasisOneI.sum_sq_inner_left]
+  simp [Fin.sum_univ_two, inner_gradient_left]
 
 /-- The hemisphere function `y ↦ √(a - ‖y‖²)` has derivative `-(√(a - ‖x‖²))⁻¹ ⟪x, ·⟫` at every
 point `x` with `a - ‖x‖² ≠ 0`. -/
