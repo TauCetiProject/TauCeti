@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Bordered
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
+import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
@@ -108,18 +109,19 @@ private theorem fderivWithin_add_eq_zero_of_im_pos {F : Type*} [NormedAddCommGro
   set U := O ∩ range closedUpperHalfPlaneModel
   have hU : U = range closedUpperHalfPlaneModel ∩ O := inter_comm _ _
   have hUD : UniqueDiffOn ℝ U := hU ▸ closedUpperHalfPlaneModel.uniqueDiffOn.inter hO
+  have hUH : U = O ∩ {z : ℂ | 0 ≤ z.im} := congrArg (O ∩ ·) range_closedUpperHalfPlaneModel
   have hint : ∀ z ∈ O ∩ {z : ℂ | 0 < z.im}, U ∈ 𝓝 z := fun z hz ↦
-    mem_interior_iff_mem_nhds.1 (inter_setOf_im_pos_subset_interior hO hz)
+    mem_interior_iff_mem_nhds.1
+      (by rw [hUH, interior_inter_setOf_im_nonneg hO]; exact hz)
   -- The derivative within `U` is continuous on `U`, and it is the derivative off the real axis.
   have hdf : ContinuousOn (fderivWithin ℝ f U) U := hf.continuousOn_fderivWithin hUD le_rfl
   have hG : ContinuousOn
       (fun z ↦ fderivWithin ℝ f U z 1 + A z (fderivWithin ℝ f U z Complex.I)) U :=
     (hdf.clm_apply continuousOn_const).add (hA.clm_apply (hdf.clm_apply continuousOn_const))
   have hcl : z₀ ∈ closure (O ∩ {z : ℂ | 0 < z.im}) := by
-    refine hO.inter_closure ⟨hz₀.1, ?_⟩
-    have h0 := hz₀.2
-    rw [range_closedUpperHalfPlaneModel] at h0
-    simpa using h0
+    have h := subset_closure_interior_inter_setOf_im_nonneg hO
+    rw [interior_inter_setOf_im_nonneg hO] at h
+    exact h (hUH ▸ hz₀)
   have hG₀ : fderivWithin ℝ f U z₀ 1 + A z₀ (fderivWithin ℝ f U z₀ Complex.I) = 0 := by
     have hmem := ((hG z₀ hz₀).mono fun z hz ↦ mem_of_mem_nhds (hint z hz)).mem_closure_image hcl
     refine closure_minimal ?_ isClosed_singleton hmem
@@ -254,7 +256,11 @@ private theorem isPseudoholomorphicWithinAt_of_isWeakPseudoholomorphicOnBordered
     (hf.mono interior_subset) (hJ.mono interior_subset) continuousOn_const).1
       (hw.mono interior_subset)
   have hG₀ := fderivWithin_add_eq_zero_of_im_pos hO (hUO ▸ hf) (hUO ▸ hJ) (fun z hz ↦ hpt z
-    (by rw [hUO]; exact inter_setOf_im_pos_subset_interior hO hz)) (hUO ▸ hz₀)
+    (by
+      rw [Opens.coe_interior, hUO, range_closedUpperHalfPlaneModel,
+        interior_inter_setOf_im_nonneg hO]
+      exact hz))
+    (hUO ▸ hz₀)
   exact (isPseudoholomorphicAt_of_fderivWithin_chart J₀
     ((hu.contMDiffAt (hs.mem_nhds hx)).mdifferentiableAt one_ne_zero)
     hG₀).isPseudoholomorphicWithinAt
@@ -291,7 +297,9 @@ private theorem isWeakCauchyRiemannOn_chart_of_isPseudoholomorphicOn
   -- The interior of `U` lies in the open upper half-plane.
   have hzim : 0 < z.im :=
     interior_subset_setOf_im_pos (inter_subset_left.trans φ.extend_target_subset_range) hz
-  have hφs := mdifferentiableAt_extend_symm_of_im_pos hφ hzU.1 hzim
+  have hφs := mdifferentiableAt_extend_symm_of_im_pos one_ne_zero
+    (borderedHolomorphicGroupoid_maximalAtlas_subset (n := 1) (by exact_mod_cast le_top) hφ)
+    hzU.1 hzim
   have hux : MDifferentiableAt closedUpperHalfPlaneModel I u x :=
     (hu.contMDiffAt (hs.mem_nhds hzU.2.1)).mdifferentiableAt one_ne_zero
   have hy : (u ∘ (φ.extend closedUpperHalfPlaneModel).symm) z ∈ ψ'.source := by

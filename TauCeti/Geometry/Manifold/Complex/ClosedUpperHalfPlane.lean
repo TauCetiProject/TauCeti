@@ -148,13 +148,6 @@ theorem interior_subset_setOf_im_pos {t : Set ℂ} (ht : t ⊆ range closedUpper
   have h := interior_mono ht
   rwa [range_closedUpperHalfPlaneModel, Complex.interior_setOfPred_le_im] at h
 
-/-- The points of positive imaginary part of an open set `O ⊆ ℂ` lie in the interior of the part
-of `O` in the closed upper half-plane. -/
-theorem inter_setOf_im_pos_subset_interior {O : Set ℂ} (hO : IsOpen O) :
-    O ∩ {z : ℂ | 0 < z.im} ⊆ interior (O ∩ range closedUpperHalfPlaneModel) :=
-  interior_maximal (fun _ hz ↦ ⟨hz.1, setOf_im_pos_subset_range_closedUpperHalfPlaneModel hz.2⟩)
-    (hO.inter (isOpen_lt continuous_const continuous_im))
-
 /-- The inclusion of the closed upper half-plane into `ℂ` is smooth up to the boundary. -/
 theorem ClosedUpperHalfPlane.contMDiff_coe {n : ℕ∞ω} :
     ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) n ((↑) : ClosedUpperHalfPlane → ℂ) :=

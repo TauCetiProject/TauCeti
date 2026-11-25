@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Basic
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
+import TauCeti.Analysis.Complex.ReImTopology
 
 /-!
 # The almost complex structure of a Riemann surface with boundary
@@ -99,18 +100,19 @@ theorem inTangentCoordinates_ofBorderedHolomorphic {x₀ x : M}
 
 omit [HasGroupoid M borderedHolomorphicGroupoid] in
 open ClosedUpperHalfPlane in
-/-- Off the real axis, the inverse of a bordered holomorphic chart is differentiable. -/
-theorem _root_.TauCeti.ClosedUpperHalfPlane.mdifferentiableAt_extend_symm_of_im_pos
-    {φ : OpenPartialHomeomorph M ClosedUpperHalfPlane}
-    (hφ : φ ∈ borderedHolomorphicGroupoid.maximalAtlas M) {z : ℂ}
+/-- Off the real axis, the inverse of a chart of the `C^n` maximal atlas of a manifold modelled on
+the closed upper half-plane, `n ≠ 0`, is differentiable. -/
+theorem _root_.TauCeti.ClosedUpperHalfPlane.mdifferentiableAt_extend_symm_of_im_pos {n : ℕ∞ω}
+    (hn : n ≠ 0) {φ : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (hφ : φ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel n M) {z : ℂ}
     (hz : z ∈ (φ.extend closedUpperHalfPlaneModel).target) (hzim : 0 < z.im) :
     MDifferentiableAt 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
       (φ.extend closedUpperHalfPlaneModel).symm z := by
-  refine φ.mdifferentiableAt_extend_symm_of_mem_interior one_ne_zero
-    (borderedHolomorphicGroupoid_maximalAtlas_subset (n := 1) (by exact_mod_cast le_top) hφ) ?_
+  refine φ.mdifferentiableAt_extend_symm_of_mem_interior hn hφ ?_
   rw [OpenPartialHomeomorph.extend_target] at hz ⊢
-  exact inter_setOf_im_pos_subset_interior
-    (φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm) ⟨hz.1, hzim⟩
+  rw [range_closedUpperHalfPlaneModel, interior_inter_setOf_im_nonneg
+    (φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm)]
+  exact ⟨hz.1, hzim⟩
 
 open ClosedUpperHalfPlane in
 /-- **Inverse bordered holomorphic charts are holomorphic off the real axis.** For a bordered
@@ -132,7 +134,8 @@ theorem mfderiv_extend_symm_I_mul_of_mem_maximalAtlas
   have hzT : closedUpperHalfPlaneModel.symm z ∈ φ.target := by
     rw [OpenPartialHomeomorph.extend_target] at hz
     exact hz.1
-  have hφs := mdifferentiableAt_extend_symm_of_im_pos hφ hz hzim
+  have hφs := mdifferentiableAt_extend_symm_of_im_pos one_ne_zero
+    (borderedHolomorphicGroupoid_maximalAtlas_subset (n := 1) (by exact_mod_cast le_top) hφ) hz hzim
   -- The chart change `χ ∘ φ⁻¹`, read in `ℂ`, is holomorphic at `z`.
   have he : φ.symm ≫ₕ χ ∈ borderedHolomorphicGroupoid := (hφ χ (chart_mem_atlas _ x)).1
   have hD : IsOpen (closedUpperHalfPlaneModel.symm ⁻¹' (φ.symm ≫ₕ χ).source ∩
