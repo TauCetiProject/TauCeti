@@ -299,6 +299,20 @@ theorem mk_endSwap (d : W.End) :
     (Quotient.mk'' (W.endSwap d) : W.Component) = Quotient.mk'' d :=
   Quotient.sound ⟨⟨W.endSwap, W.toRibbonGraph.rotW_mem_rotationGroup⟩, rfl⟩
 
+/-- A function of the ends invariant under the effective rotation and the end swap descends to
+the components. -/
+private noncomputable def liftComponent {Y : Type*} (f : W.End → Y)
+    (hρ : ∀ d, f (W.rotation d) = f d) (hτ : ∀ d, f (W.endSwap d) = f d) : W.Component → Y :=
+  Quotient.lift f fun _ _ ⟨g, hg⟩ ↦ hg ▸ W.apply_eq_of_mem_rotationGroup hρ hτ g.property _
+
+/-- A map of ends commuting with the effective rotations and the end swaps induces a map of
+components. -/
+private noncomputable def componentMap {X : ClosedWeb.{v}} (g : W.End → X.End)
+    (hρ : ∀ d, g (W.rotation d) = X.rotation (g d)) (hτ : ∀ d, g (W.endSwap d) = X.endSwap (g d)) :
+    W.Component → X.Component :=
+  W.liftComponent (fun d ↦ (Quotient.mk'' (g d) : X.Component))
+    (fun d ↦ by rw [hρ]; exact X.mk_rotation _) (fun d ↦ by rw [hτ]; exact X.mk_endSwap _)
+
 /-! ### Counting vertices, edges and faces -/
 
 /-- The vertices are the cycles of the effective rotation. -/
@@ -489,7 +503,11 @@ noncomputable def reverseRibbonGraphIsoMirror :
   map_whiteEnd _ := rfl
   map_rotB d := by
     rw [toRibbonGraph_rotB, toRibbonGraph_rotB, rotation_reverse, rotation_mirror]
-    exact W.endSwap_involutive (W.rotation⁻¹ (W.endSwap d))
+    -- Both ribbon graphs have the edges `W.End`; `rw [Perm.mul_apply]` fails since the carriers
+    -- differ syntactically, so the product `W.endSwap * W.rotation⁻¹ * W.endSwap` is applied by
+    -- `Perm.mul_apply`, which holds by definition.
+    change W.endSwap (W.endSwap (W.rotation⁻¹ (W.endSwap d))) = W.rotation⁻¹ (W.endSwap d)
+    exact W.endSwap_involutive _
   map_rotW _ := rfl
 
 @[simp] theorem reverseRibbonGraphIsoMirror_edge :
@@ -525,17 +543,9 @@ theorem permCongr_facePerm_sum :
     (sumProdDistrib W.Edge V.Edge Bool).permCongr (W.sum V).facePerm =
       Perm.sumCongr W.facePerm V.facePerm := by
   refine Equiv.ext ?_
-  rintro (⟨e, b⟩ | ⟨e, b⟩)
-  · rw [permCongr_apply, sumProdDistrib_symm_apply_left, Perm.sumCongr_apply, Sum.map_inl,
-      facePerm_apply, endSwap_apply, rotation_sum_apply_inl, sumProdDistrib_apply_left]
-    -- Both sides are now `Sum.inl (rotation (e, !b))`: the left one up to projections of
-    -- explicit pairs and the eta rule for pairs, the right one by `facePerm_apply`.
-    rfl
-  · rw [permCongr_apply, sumProdDistrib_symm_apply_right, Perm.sumCongr_apply, Sum.map_inr,
-      facePerm_apply, endSwap_apply, rotation_sum_apply_inr, sumProdDistrib_apply_right]
-    -- Both sides are now `Sum.inr (rotation (e, !b))`: the left one up to projections of
-    -- explicit pairs and the eta rule for pairs, the right one by `facePerm_apply`.
-    rfl
+  -- `facePerm_apply` is instantiated at `W.sum V`, whose ends `(W.sum V).End` are not reducibly
+  -- the pairs `(W.Edge ⊕ V.Edge) × Bool` that `sumProdDistrib` produces.
+  rintro (⟨e, b⟩ | ⟨e, b⟩) <;> simp [facePerm_apply (W.sum V), facePerm_apply]
 
 @[simp] theorem faceCount_sum : (W.sum V).faceCount = W.faceCount + V.faceCount := by
   rw [faceCount_def, ← orbitCount_permCongr (sumProdDistrib W.Edge V.Edge Bool),
@@ -567,35 +577,15 @@ private theorem splitComponent_endSwap (d : (W.sum V).End) :
   · simp only [splitComponent, endSwap_apply, sumProdDistrib_apply_right]
     exact congrArg Sum.inr (V.mk_endSwap (e, b))
 
-private theorem mk_inl_rotation (d : W.End) :
-    (Quotient.mk'' (Sum.inl (W.rotation d).1, (W.rotation d).2) : (W.sum V).Component) =
-      Quotient.mk'' (Sum.inl d.1, d.2) := by
-  rw [← rotation_sum_apply_inl, mk_rotation]
-
-private theorem mk_inr_rotation (d : V.End) :
-    (Quotient.mk'' (Sum.inr (V.rotation d).1, (V.rotation d).2) : (W.sum V).Component) =
-      Quotient.mk'' (Sum.inr d.1, d.2) := by
-  rw [← rotation_sum_apply_inr, mk_rotation]
-
 /-- The components of a disjoint union are those of its two summands. -/
 noncomputable def sumComponentEquiv : (W.sum V).Component ≃ W.Component ⊕ V.Component where
-  toFun := Quotient.lift (splitComponent W V) fun _ _ ⟨g, hg⟩ ↦ by
-    rw [← hg]
-    exact (W.sum V).apply_eq_of_mem_rotationGroup (splitComponent_rotation W V)
-      (splitComponent_endSwap W V) g.property _
+  toFun := (W.sum V).liftComponent (splitComponent W V) (splitComponent_rotation W V)
+    (splitComponent_endSwap W V)
   invFun := Sum.elim
-    (Quotient.lift (fun d ↦ (Quotient.mk'' (Sum.inl d.1, d.2) : (W.sum V).Component))
-      fun _ _ ⟨g, hg⟩ ↦ by
-        rw [← hg]
-        exact W.apply_eq_of_mem_rotationGroup
-          (f := fun d ↦ (Quotient.mk'' (Sum.inl d.1, d.2) : (W.sum V).Component))
-          (mk_inl_rotation W V) (fun d ↦ (W.sum V).mk_endSwap (Sum.inl d.1, d.2)) g.property _)
-    (Quotient.lift (fun d ↦ (Quotient.mk'' (Sum.inr d.1, d.2) : (W.sum V).Component))
-      fun _ _ ⟨g, hg⟩ ↦ by
-        rw [← hg]
-        exact V.apply_eq_of_mem_rotationGroup
-          (f := fun d ↦ (Quotient.mk'' (Sum.inr d.1, d.2) : (W.sum V).Component))
-          (mk_inr_rotation W V) (fun d ↦ (W.sum V).mk_endSwap (Sum.inr d.1, d.2)) g.property _)
+    (W.componentMap (fun d ↦ (Sum.inl d.1, d.2)) (fun d ↦ (rotation_sum_apply_inl W V d.1 d.2).symm)
+      fun _ ↦ rfl)
+    (V.componentMap (fun d ↦ (Sum.inr d.1, d.2)) (fun d ↦ (rotation_sum_apply_inr W V d.1 d.2).symm)
+      fun _ ↦ rfl)
   left_inv q := by
     induction q using Quotient.inductionOn with
     | h d => rcases d with ⟨e | e, b⟩ <;> rfl
@@ -623,9 +613,8 @@ noncomputable def sumComponentEquiv : (W.sum V).Component ≃ W.Component ⊕ V.
     Fintype.card (W.sum V).Component = Fintype.card W.Component + Fintype.card V.Component := by
   rw [Fintype.card_congr (sumComponentEquiv W V), Fintype.card_sum]
 
-/-- A disjoint union is compatibly planar exactly when both summands are. The converse uses the
-Euler bound separately on each summand, so a deficit of faces in one summand cannot be made up
-by the other. -/
+/-- A disjoint union is compatibly planar exactly when both summands are. Since each summand
+satisfies the Euler bound, a deficit of faces in one summand cannot be offset by the other. -/
 @[simp] theorem isCompatiblyPlanar_sum :
     (W.sum V).IsCompatiblyPlanar ↔ W.IsCompatiblyPlanar ∧ V.IsCompatiblyPlanar := by
   rw [isCompatiblyPlanar_def, isCompatiblyPlanar_def, isCompatiblyPlanar_def, eulerChar_sum,
