@@ -265,7 +265,8 @@ theorem exists_pos_forall_exists_isUnitalMatrixUnitSystem_mem_norm_sub_lt {κ : 
   refine ⟨min δ₀ (1 / 2), by positivity,
     fun {A 𝕜' S} _ _ _ _ _ _ _ _ _ {s} _ {x} hx_mem hx hsupp_x ↦ ?_⟩
   obtain ⟨e, he_mem, he, he_dist⟩ := hδ₀ (𝕜' := 𝕜') hx_mem (hx.mono (min_le_left _ _))
-  refine ⟨e, he_mem, ⟨he, he.isStarProjection_support.eq_one_of_norm_sub_one_lt_one ?_⟩,
+  refine ⟨e, he_mem,
+    ⟨he, he.isStarProjection_support.isIdempotentElem.eq_one_of_norm_sub_one_lt_one ?_⟩,
     fun r i j ↦ (he_dist r i j).trans_le (min_le_left _ _)⟩
   have hsum_le : ‖matrixUnitSupport e - matrixUnitSupport x‖ ≤ (M : ℝ) * ε' := by
     simp only [matrixUnitSupport_def, ← Finset.sum_sub_distrib, M, Nat.cast_sum, Finset.sum_mul]

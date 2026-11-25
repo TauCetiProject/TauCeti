@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.Calculus.Morse.NormSq
-public import TauCeti.Analysis.Complex.LeviForm
+public import TauCeti.Analysis.Complex.LeviForm.Basic
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 

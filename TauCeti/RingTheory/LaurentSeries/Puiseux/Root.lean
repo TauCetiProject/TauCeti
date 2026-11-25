@@ -138,7 +138,7 @@ private theorem coeff_zero_pow_eq_constantCoeff_of_pow_eq_levelEmbedding {m d : 
       PowerSeries.order_zero_of_isUnit hu, ENat.toNat_zero, Nat.cast_zero,
       coeff_ramifiedEmbedding_intCast_div]
     simp [PowerSeries.coeff_coe]
-  rw [← hlhs, IntermediateField.coe_pow, hahnSeries_leadingCoeff_pow, leadingCoeff_eq, hz_ord]
+  rw [← hlhs, IntermediateField.coe_pow, HahnSeries.leadingCoeff_pow, leadingCoeff_eq, hz_ord]
 
 /-- When `(d : K) ≠ 0`, if `y ^ d = levelEmbedding K m f`, then rescaling `y` by
 `levelEmbedding K (m * d) (single (-f.order) 1)` places it in the unramified level `m`. -/

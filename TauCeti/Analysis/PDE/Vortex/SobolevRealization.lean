@@ -98,7 +98,14 @@ finite-dimensional kernel (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`
 `TauCeti.Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator`), they give continuous kernel
 projections and right inverses along that family
 (`TauCeti.Vortex.continuous_orthogonalKerProjection_sobolevGaugeFixedOperator`,
-`TauCeti.Vortex.continuous_orthogonalRightInverse_sobolevGaugeFixedOperator`).
+`TauCeti.Vortex.continuous_orthogonalRightInverse_sobolevGaugeFixedOperator`). Since `a ↦ L_a`
+is affine (`TauCeti.Vortex.contDiff_sobolevGaugeFixedOperator`) and over `ℝ` the projections and
+right inverses are `C^n` in the operator
+(`ContinuousLinearMap.IsFredholm.contDiffAt_orthogonalKerProjection`,
+`ContinuousLinearMap.IsFredholm.contDiffAt_orthogonalRightInverse`), they are `C^n` along a family
+of coefficients `C^n` in `L∞`
+(`TauCeti.Vortex.contDiff_orthogonalKerProjection_sobolevGaugeFixedOperator`,
+`TauCeti.Vortex.contDiff_orthogonalRightInverse_sobolevGaugeFixedOperator`).
 
 ## References
 
@@ -234,6 +241,17 @@ coefficient. -/
 theorem continuous_sobolevGaugeFixedOperator :
     Continuous sobolevGaugeFixedOperator :=
   exists_lipschitzWith_sobolevGaugeFixedOperator.elim fun _ h ↦ h.continuous
+
+/-- The realization is a smooth function of the `L∞` class of the coefficient: it is affine in
+it, the realization at `0` plus the zeroth-order part with coefficient `a`. -/
+theorem contDiff_sobolevGaugeFixedOperator {n : WithTop ℕ∞} :
+    ContDiff ℝ n sobolevGaugeFixedOperator := by
+  set H := gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2
+  have h (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) : sobolevGaugeFixedOperator a =
+      sobolevGaugeFixedOperator 0 + (H a).comp sobolevFieldValues := by
+    simp [sobolevGaugeFixedOperator, H]
+  rw [funext h]
+  exact contDiff_const.add (H.contDiff.clm_comp contDiff_const)
 
 /-- On a variation `y` whose coordinates have the coordinates of a `C¹` field `Y` as
 representatives, the realization at the `L∞` class of a field `x` is the classical gauge-fixed
@@ -387,7 +405,10 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
     refine integral_mono_of_nonneg (ae_of_all _ fun z ↦ by positivity)
       ((hYi.const_mul _).add (hGi.const_mul _)) (ae_of_all _ fun z ↦ ?_)
     have h₁ := sum_norm_gradient_sq_le x Y z
-    have h₂ : ‖x z‖ ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (hM z) 2
+    have h₂ : x z 0 ^ 2 + x z 1 ^ 2 ≤ M ^ 2 := by
+      have := pow_le_pow_left₀ (norm_nonneg _) (hM z) 2
+      rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four] at this
+      nlinarith [sq_nonneg (x z 2), sq_nonneg (x z 3)]
     -- The coordinates of `Y` are the test functions themselves.
     have h₃ (j : Fin 4) : (fun w ↦ Y w j) = φ j := funext fun w ↦ by simp only [Y]
     simp only [h₃] at h₁
@@ -576,5 +597,41 @@ theorem continuous_orthogonalRightInverse_sobolevGaugeFixedOperator :
       (continuous_sobolevGaugeFixedOperator.comp ha).continuousAt
 
 end Family
+
+section SmoothFamily
+
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] {n : WithTop ℕ∞}
+  {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} (ha : ContDiff ℝ n a)
+  (hsurj : ∀ x, Function.Surjective (sobolevGaugeFixedOperator (a x)))
+  (hfin : ∀ x, FiniteDimensional ℝ (sobolevGaugeFixedOperator (a x)).ker)
+include ha hsurj hfin
+
+/-- **Smoothness of the kernel projections along a family of coefficients.** Along a family of
+`L∞` coefficients `a x`, `C^n` in `x`, at which the realization `L_a : H¹ → L²` is onto with a
+finite-dimensional kernel, the projection of `H¹(ℂ)⁴` onto the kernel of `L_a` along its
+`L²`-orthogonal complement is a `C^n` function of `x`, in operator norm. -/
+theorem contDiff_orthogonalKerProjection_sobolevGaugeFixedOperator :
+    ContDiff ℝ n fun x ↦ ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+      (sobolevGaugeFixedOperator (a x)) :=
+  contDiff_iff_contDiffAt.2 fun x ↦
+    have := hfin x
+    ((ContinuousLinearMap.IsFredholm.of_surjective (hsurj x)).contDiffAt_orthogonalKerProjection
+      sobolevFieldValues_injective (hsurj x)).comp (f := fun x ↦ sobolevGaugeFixedOperator (a x))
+      x (contDiff_sobolevGaugeFixedOperator.comp ha).contDiffAt
+
+/-- **Smoothness of the right inverses along a family of coefficients.** Along a family of `L∞`
+coefficients `a x`, `C^n` in `x`, at which the realization `L_a : H¹ → L²` is onto with a
+finite-dimensional kernel, the right inverse of `L_a` with values `L²`-orthogonal to its kernel is
+a `C^n` function of `x`, in operator norm. -/
+theorem contDiff_orthogonalRightInverse_sobolevGaugeFixedOperator :
+    ContDiff ℝ n fun x ↦ ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+      (sobolevGaugeFixedOperator (a x)) :=
+  contDiff_iff_contDiffAt.2 fun x ↦
+    have := hfin x
+    ((ContinuousLinearMap.IsFredholm.of_surjective (hsurj x)).contDiffAt_orthogonalRightInverse
+      sobolevFieldValues_injective (hsurj x)).comp (f := fun x ↦ sobolevGaugeFixedOperator (a x))
+      x (contDiff_sobolevGaugeFixedOperator.comp ha).contDiffAt
+
+end SmoothFamily
 
 end TauCeti.Vortex

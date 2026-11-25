@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.Analysis.Matrix.Compact
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Analysis.Matrix.Polar
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Positive
 public import TauCeti.RepresentationTheory.Compact.UnitaryModel
 public import TauCeti.Topology.Algebra.Group.Subgroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
@@ -53,8 +54,9 @@ averaged form makes every element of `K` an isometry. The matrix of that automor
 
 An arbitrary compact complex matrix subgroup meets the upper triangular matrices with nonnegative
 real diagonal only at the identity. More generally, its only element with nonnegative real
-spectrum is the identity. The triangular intersection is the uniqueness condition in the
-Iwasawa decomposition.
+spectrum is the identity. In particular a compact subgroup `K` meets the positive upper-triangular
+group `A N` trivially. The triangular intersection is the uniqueness condition in the Iwasawa
+decomposition `K A N`.
 
 ## Main results
 
@@ -68,6 +70,8 @@ Iwasawa decomposition.
   of a compact matrix subgroup whose complex spectrum is nonnegative real is the identity.
 * `Matrix.IsUpperTriangular.eq_one_of_mem_isCompact_subgroup_of_diag_nonneg`: a compact matrix
   subgroup meets the upper triangular matrices with nonnegative real diagonal only in the identity.
+* `Matrix.GeneralLinearGroup.inf_posUpperTriangularGroup_eq_bot_of_isCompact`: a compact subgroup
+  `K` of `GL n ℂ` satisfies `K ⊓ A N = ⊥`.
 * `Matrix.GeneralLinearGroup.maximal_isCompact_iff`: the maximal compact subgroups are exactly the
   conjugates of the unitary subgroup.
 * `Matrix.GeneralLinearGroup.eq_inf_unitarySubgroup_of_isCompact_of_le_of_polarUnitary_mem` and
@@ -203,6 +207,16 @@ theorem _root_.Matrix.IsUpperTriangular.eq_one_of_mem_isCompact_subgroup_of_diag
   obtain ⟨i, _, hi⟩ := Finset.prod_eq_zero_iff.mp hz'
   rw [sub_eq_zero.mp hi]
   exact hdiag i
+
+/-- **A compact subgroup of `GL n ℂ` meets the positive upper-triangular group `A N` only in the
+identity.** Here `A N` is the group of upper-triangular matrices with positive real diagonal
+entries. -/
+theorem inf_posUpperTriangularGroup_eq_bot_of_isCompact {n : Type*} [Fintype n] [LinearOrder n]
+    {K : Subgroup (GL n ℂ)} (hK : IsCompact (K : Set (GL n ℂ))) :
+    K ⊓ TauCeti.posUpperTriangularGroup n ℂ = ⊥ := by
+  refine eq_bot_iff.mpr fun g hg ↦ Subgroup.mem_bot.mpr ?_
+  obtain ⟨htri, hpos⟩ := TauCeti.PosUpperTriangularGroup.mem_iff.mp hg.2
+  exact htri.eq_one_of_mem_isCompact_subgroup_of_diag_nonneg hK hg.1 fun i ↦ (hpos i).le
 
 
 /-- **The maximal compact subgroups of `GL ι 𝕜` are the conjugates of the unitary subgroup.** Over

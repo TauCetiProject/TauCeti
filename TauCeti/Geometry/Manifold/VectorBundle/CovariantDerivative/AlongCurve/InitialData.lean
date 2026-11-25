@@ -105,7 +105,7 @@ theorem exists_contMDiffAt_tangentCurve_initialData
       curveVelocity I (fun r ↦ (σ r).proj) t = u ∧
       cov.alongCurve (fun r ↦ (σ r).proj) (fun r ↦ (σ r).snd) t = w := by
   obtain ⟨γ, hγt, hγ, hvel⟩ :=
-    exists_contMDiffAt_curveVelocity_eq (I := I) (n := ∞) (by simp) p hp u t
+    exists_contMDiffAt_curveVelocity_eq (I := I) (n := ∞) p hp u t
   obtain ⟨V, hV, hVt, hDV⟩ := cov.exists_contMDiffWithinAt_alongCurveWithin_eq
     hγ.contMDiffWithinAt (s := Set.univ) uniqueDiffWithinAt_univ v w
   refine ⟨fun r ↦ TotalSpace.mk' E (γ r) (V r), ?_,

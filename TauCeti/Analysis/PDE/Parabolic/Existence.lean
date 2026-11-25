@@ -58,7 +58,7 @@ derivative is `u' = f - A u ∈ L²(a, b; V*)`
 (`TauCeti.gelfandDual_eq_of_forall_setIntegral_eq_add_inner`). For a Gelfand triple this gives
 existence of a weak solution of `u' + A(t) u = f`, `u(a) = u₀`
 (`TauCeti.exists_hasWeakLineDerivOn_gelfandDual`), which the energy estimate in
-`TauCeti.Analysis.PDE.Parabolic.EnergyEstimate` shows to be unique when `β ≥ 0`. Separability
+`TauCeti.Analysis.PDE.Parabolic.EnergyEstimate.Basic` shows to be unique when `β ≥ 0`. Separability
 makes `t ↦ A(t) u(t)` strongly measurable as a function into `V*`
 (`MeasureTheory.MemLp.clm_apply_of_forall_aestronglyMeasurable`, a consequence of Pettis'
 theorem), which a weak derivative in `L²(a, b; V*)` needs.

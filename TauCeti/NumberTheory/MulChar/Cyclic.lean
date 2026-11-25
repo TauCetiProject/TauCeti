@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.MulChar.Lemmas
+import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.RingTheory.IntegralDomain
 
 /-!
 # Generators of the character group of a monoid with cyclic unit group
@@ -38,6 +40,12 @@ complex characters of order `d` exactly for `d ∣ #F - 1`.
   it has order `n`.
 * `MulChar.existsUnique_lt_and_pow_eq`: with values in a domain, every character is `ω ^ m` for
   exactly one `m < n`, for any character `ω` of order `n`.
+* `MulChar.injective_toUnitHom_of_orderOf_eq_card`: with values in a domain, a character of
+  order `#Mˣ` is injective on units.
+* `MulChar.sum_range_pow_apply_eq_ite`: `∑_{m < #Mˣ} (ω ^ m) x` is `#Mˣ` at `x = 1` and `0`
+  elsewhere, for `ω` of order `#Mˣ` with values in a domain. This is the column orthogonality
+  relation written over the powers of a generating character, the form in which the indicator of
+  `x = y` is expanded in the finite hypergeometric sums of Beukers, Cohen and Mellit.
 -/
 
 public section
@@ -118,6 +126,47 @@ theorem existsUnique_lt_and_pow_eq [Finite Mˣ] (ω : MulChar M R) (hω : orderO
   refine ⟨i, ⟨hω ▸ i.isLt, hi'⟩, fun j hj ↦ ?_⟩
   exact congrArg Fin.val (huniq ⟨j, hω ▸ hj.1⟩ (Subtype.ext (by
     simpa only [finEquivZPowers_apply] using hj.2)))
+
+/-- With values in a domain, a character `ω` of order `#Mˣ` is injective on units. The image of
+`ω` on `Mˣ` is cyclic, so its order is its exponent, which `orderOf ω` divides; hence the image has
+`#Mˣ` elements. -/
+theorem injective_toUnitHom_of_orderOf_eq_card [Finite Mˣ] {ω : MulChar M R}
+    (hω : orderOf ω = Nat.card Mˣ) : Function.Injective ω.toUnitHom := by
+  have : Finite ω.toUnitHom.range := .of_surjective _ ω.toUnitHom.rangeRestrict_surjective
+  have hdvd : orderOf ω ∣ Nat.card ω.toUnitHom.range := by
+    rw [← IsCyclic.exponent_eq_card]
+    refine orderOf_dvd_of_pow_eq_one (MulChar.ext fun v ↦ ?_)
+    have h := congrArg (fun w : ω.toUnitHom.range ↦ ((w : Rˣ) : R))
+      (Monoid.pow_exponent_eq_one (⟨ω.toUnitHom v, v, rfl⟩ : ω.toUnitHom.range))
+    simp only [SubgroupClass.coe_pow, Units.val_pow_eq_pow_val, coe_toUnitHom,
+      OneMemClass.coe_one, Units.val_one] at h
+    rw [pow_apply_coe, h, one_apply_coe]
+  exact MonoidHom.rangeRestrict_injective_iff.mp
+    (ω.toUnitHom.rangeRestrict_surjective.bijective_of_nat_card_le <| by
+      rw [← hω]
+      exact Nat.le_of_dvd Nat.card_pos hdvd).1
+
+/-- **Orthogonality over the powers of a generating character.** If `ω` has order `#Mˣ`, then
+`∑_{m < #Mˣ} (ω ^ m) x` is `#Mˣ` when `x = 1` and `0` otherwise. -/
+theorem sum_range_pow_apply_eq_ite [Fintype Mˣ] [DecidableEq M] {ω : MulChar M R}
+    (hω : orderOf ω = Fintype.card Mˣ) (x : M) :
+    ∑ m ∈ Finset.range (Fintype.card Mˣ), (ω ^ m) x =
+      if x = 1 then (Fintype.card Mˣ : R) else 0 := by
+  split_ifs with hx
+  · simp [hx]
+  by_cases hu : IsUnit x
+  swap
+  · simp [map_nonunit _ hu]
+  obtain ⟨u, rfl⟩ := hu
+  simp_rw [pow_apply_coe]
+  have hinj := injective_toUnitHom_of_orderOf_eq_card (hω.trans (Nat.card_eq_fintype_card).symm)
+  have hne : ω u ≠ 1 := fun h ↦ hx <| Units.val_eq_one.mpr <| hinj <| Units.ext <| by
+    rw [coe_toUnitHom, h, map_one, Units.val_one]
+  have hpow : ω u ^ Fintype.card Mˣ = 1 := by
+    rw [← pow_apply_coe, ω.pow_card_eq_one, one_apply_coe]
+  have hgeom := geom_sum_mul (ω u) (Fintype.card Mˣ)
+  rw [hpow, sub_self] at hgeom
+  exact (mul_eq_zero.mp hgeom).resolve_right (sub_ne_zero.mpr hne)
 
 end Domain
 

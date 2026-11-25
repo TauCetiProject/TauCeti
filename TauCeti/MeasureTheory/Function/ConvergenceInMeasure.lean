@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.OuterMeasure.AE
 import TauCeti.Probability.Moments.Chebyshev
 
 /-! # Convergence in measure: bounds, continuous transformations, and algebraic operations
@@ -43,11 +44,21 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   (`TendstoInMeasure.mul`) preserve convergence in measure along an arbitrary filter when the
   limits are almost-everywhere strongly measurable (without measurability assumptions on the
   approximating families).
+* Finite sums preserve convergence in measure (`TendstoInMeasure.finset_sum`), and on finite
+  measure spaces multiplication by a fixed almost-everywhere strongly measurable factor preserves
+  vanishing upper tails of extended nonnegative functions
+  (`MeasureTheory.tendsto_measure_le_enorm_mul`), such as square energies in probability.
 
 ## Main results
 
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
+* `MeasureTheory.exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq`: a sequence converging
+  in mean square has an almost everywhere convergent subsequence.
+* `MeasureTheory.ae_le_of_tendsto_integral_norm_sub_sq`: almost everywhere bounds
+  `φ x (f n x) ≤ c n`, for continuous `φ x`, pass to the limit in mean square.
+* `MeasureTheory.tendsto_measure_of_subset_biUnion_finset`: an event covered by finitely many
+  events of vanishing measure has vanishing measure, along any filter and on varying spaces.
 * `Topology.IsInducing.tendsto_measure_notMem_nhds_iff`: convergence in measure to a constant
   can be checked on a family of metric-valued tests inducing the topology, even when the
   measure spaces vary with the index.
@@ -343,6 +354,31 @@ theorem tendstoInMeasure_of_tendsto_integral_norm_sq {Ω E ι : Type*}
   filter_upwards [hint] with k hk
   exact TauCeti.meas_ge_le_integral_sq_div_sq hk hε
 
+/-- **Convergence in mean square gives an almost everywhere convergent subsequence.** If
+`‖f n - g‖²` is eventually integrable and `∫ ‖f n - g‖² → 0`, then a subsequence of `f n`
+converges to `g` almost everywhere. -/
+theorem exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq {α E : Type*}
+    [MeasurableSpace α] {μ : Measure α} [SeminormedAddCommGroup E] {f : ℕ → α → E} {g : α → E}
+    (hint : ∀ᶠ n in atTop, Integrable (fun x ↦ ‖f n x - g x‖ ^ 2) μ)
+    (h : Tendsto (fun n ↦ ∫ x, ‖f n x - g x‖ ^ 2 ∂μ) atTop (𝓝 0)) :
+    ∃ ns : ℕ → ℕ, StrictMono ns ∧ ∀ᵐ x ∂μ, Tendsto (fun k ↦ f (ns k) x) atTop (𝓝 (g x)) :=
+  (tendstoInMeasure_of_tendsto_integral_norm_sq hint h).exists_seq_tendsto_ae
+
+/-- **Pointwise bounds pass to limits in mean square.** If `‖f n - g‖²` is eventually integrable
+and `∫ ‖f n - g‖² → 0`, each `φ x` is continuous and `φ x (f n x) ≤ c n` almost everywhere with
+`c n → M`, then `φ x (g x) ≤ M` almost everywhere. -/
+theorem ae_le_of_tendsto_integral_norm_sub_sq {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [SeminormedAddCommGroup E] {f : ℕ → α → E} {g : α → E} {φ : α → E → ℝ} {c : ℕ → ℝ} {M : ℝ}
+    (hint : ∀ᶠ n in atTop, Integrable (fun x ↦ ‖f n x - g x‖ ^ 2) μ)
+    (h : Tendsto (fun n ↦ ∫ x, ‖f n x - g x‖ ^ 2 ∂μ) atTop (𝓝 0)) (hφ : ∀ x, Continuous (φ x))
+    (hc : Tendsto c atTop (𝓝 M)) (hle : ∀ n, ∀ᵐ x ∂μ, φ x (f n x) ≤ c n) :
+    ∀ᵐ x ∂μ, φ x (g x) ≤ M := by
+  obtain ⟨ns, hns, hlim⟩ := exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq hint h
+  exact TauCeti.ae_le_of_tendsto_of_tendsto_of_frequently (F₂ := fun k _ ↦ c (ns k))
+    (G₂ := fun _ ↦ M) (hlim.mono fun x hx ↦ ((hφ x).tendsto (g x)).comp hx)
+    (Eventually.of_forall fun _ ↦ hc.comp hns.tendsto_atTop)
+    (Eventually.of_forall fun k ↦ hle (ns k)).frequently
+
 section Algebra
 
 variable {α ι 𝕜 E E₁ E₂ F R : Type*} {m : MeasurableSpace α} {μ : Measure α} {l : Filter ι}
@@ -418,6 +454,20 @@ theorem TendstoInMeasure.const_smul [SMul 𝕜 E] [PseudoEMetricSpace E]
     TendstoInMeasure μ (fun i x ↦ c • f i x) l (fun x ↦ c • g x) :=
   hf.uniformContinuous_comp (uniformContinuous_const_smul c)
 
+/-- Finite sums preserve convergence in measure in any uniform additive commutative group and on
+any measure space. -/
+theorem TendstoInMeasure.finset_sum {κ : Type*} [AddCommGroup E] [PseudoEMetricSpace E]
+    [IsUniformAddGroup E] (s : Finset κ) {f : κ → ι → α → E} {g : κ → α → E}
+    (hf : ∀ j ∈ s, TendstoInMeasure μ (f j) l (g j)) :
+    TendstoInMeasure μ (fun i x ↦ ∑ j ∈ s, f j i x) l (fun x ↦ ∑ j ∈ s, g j x) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using tendstoInMeasure_const (μ := μ) (l := l) fun _ : α ↦ (0 : E)
+  | insert j s hj ih =>
+    simp_rw [Finset.sum_insert hj]
+    exact (hf j (Finset.mem_insert_self j s)).add
+      (ih fun k hk ↦ hf k (Finset.mem_insert_of_mem hk))
+
 /-- On a finite measure space, the measure of `{x | r ≤ dist (g x) y₀}` tends to `0` as
 `r → ∞` for every almost-everywhere strongly measurable function `g`. Both finiteness of `μ`
 and measurability of `g` are essential. -/
@@ -442,6 +492,40 @@ theorem tendsto_measure_dist_ge_atTop [PseudoMetricSpace E] [IsFiniteMeasure μ]
   refine hlim.congr fun r ↦ measure_congr ?_
   filter_upwards [hg.ae_eq_mk] with x hx
   simp [g', hx]
+
+/-- On a finite measure space, let extended nonnegative functions `f i` tend to zero in measure,
+in the sense that their upper tails `{x | ε ≤ f i x}` have measure tending to zero. Then so do
+their products with the extended norm of a fixed almost-everywhere strongly measurable function.
+The values `f i x = ∞` are allowed, as for lower Lebesgue integrals. -/
+theorem tendsto_measure_le_enorm_mul [SeminormedAddGroup E] [IsFiniteMeasure μ] {g : α → E}
+    (hg : AEStronglyMeasurable g μ) {f : ι → α → ℝ≥0∞}
+    (hf : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ f i x}) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ μ {x | ε ≤ ‖g x‖ₑ * f i x}) l (𝓝 0) := by
+  rw [ENNReal.tendsto_nhds_zero]
+  intro η hη
+  have hη2 : 0 < η / 2 := ENNReal.div_pos hη.ne' ENNReal.ofNat_ne_top
+  -- Outside a set of measure at most `η / 2`, the factor is bounded by some `R`.
+  obtain ⟨R, hR⟩ := ((ENNReal.tendsto_nhds_zero.mp (tendsto_measure_dist_ge_atTop hg 0))
+    (η / 2) hη2).exists
+  have hRε : 0 < ε / ENNReal.ofReal R := ENNReal.div_pos hε.ne' ENNReal.ofReal_ne_top
+  filter_upwards [ENNReal.tendsto_nhds_zero.mp (hf _ hRε) (η / 2) hη2] with i hi
+  have hsub : {x | ε ≤ ‖g x‖ₑ * f i x} ⊆
+      {x | R ≤ dist (g x) 0} ∪ {x | ε / ENNReal.ofReal R ≤ f i x} := by
+    intro x hx
+    rw [Set.mem_ofPred_eq] at hx
+    by_cases hgx : R ≤ dist (g x) 0
+    · exact Or.inl hgx
+    · right
+      have hle : ‖g x‖ₑ ≤ ENNReal.ofReal R := by
+        rw [← ofReal_norm, ← dist_zero_right]
+        exact ENNReal.ofReal_le_ofReal (not_le.mp hgx).le
+      exact ENNReal.div_le_of_le_mul' (hx.trans (mul_le_mul_left hle _))
+  calc μ {x | ε ≤ ‖g x‖ₑ * f i x}
+      ≤ μ {x | R ≤ dist (g x) 0} + μ {x | ε / ENNReal.ofReal R ≤ f i x} :=
+        (measure_mono hsub).trans (measure_union_le _ _)
+    _ ≤ η / 2 + η / 2 := add_le_add hR hi
+    _ = η := ENNReal.add_halves η
 
 /-- Deterministic four-tail deviation estimate for a binary map uniformly continuous on a ball:
 outside the two cutoff tails for the limit pair `(g₁, g₂)` and the two proximity tails for
@@ -540,6 +624,19 @@ theorem TendstoInMeasure.mul [Zero R] [Mul R] [PseudoMetricSpace R] [IsBoundedSM
 
 end Algebra
 
+/-- **A finite union bound along a filter.** If each of finitely many events `A j i` has measure
+tending to zero along `l` and every `B i` is covered by them, then `P i (B i)` tends to zero. The
+sample spaces and measures may vary with the index, and no measurability is needed because the
+statement uses outer measures. -/
+theorem tendsto_measure_of_subset_biUnion_finset {ι J : Type*} {Ω : ι → Type*}
+    [∀ i, MeasurableSpace (Ω i)] {P : (i : ι) → Measure (Ω i)} {l : Filter ι} (s : Finset J)
+    {A : J → (i : ι) → Set (Ω i)} {B : (i : ι) → Set (Ω i)}
+    (hA : ∀ j ∈ s, Tendsto (fun i ↦ P i (A j i)) l (𝓝 0)) (hB : ∀ i, B i ⊆ ⋃ j ∈ s, A j i) :
+    Tendsto (fun i ↦ P i (B i)) l (𝓝 0) := by
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa using tendsto_finsetSum s hA) (fun _ ↦ zero_le) fun i ↦ ?_
+  exact (measure_mono (hB i)).trans (measure_biUnion_finset_le s _)
+
 end MeasureTheory
 
 namespace Topology.IsInducing
@@ -570,19 +667,10 @@ theorem tendsto_measure_notMem_nhds_iff {X J E ι : Type*} [TopologicalSpace X]
     rw [nhds_pi, Filter.mem_pi'] at hV
     obtain ⟨s, W, hW, hWV⟩ := hV
     choose δ hδ hδW using fun j ↦ Metric.mem_nhds_iff.1 (hW j)
-    have hlim : Tendsto
-        (fun i ↦ ∑ j ∈ s, P i {ω | δ j ≤ dist (T (Y i ω) j) (T x j)}) l (𝓝 0) := by
-      simpa using tendsto_finsetSum s (fun j _ ↦ h j (δ j) (hδ j))
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-      (fun _ ↦ zero_le) fun i ↦ ?_
-    refine (measure_mono ?_).trans (measure_biUnion_finset_le s _)
-    intro ω hω
+    refine tendsto_measure_of_subset_biUnion_finset s (fun j _ ↦ h j (δ j) (hδ j))
+      fun i ω hω ↦ ?_
     simp only [mem_iUnion, mem_ofPred_eq]
     by_contra! hgood
-    apply hω
-    apply hVU
-    apply hWV
-    intro j hj
-    exact hδW j (hgood j hj)
+    exact hω (hVU (hWV fun j hj ↦ hδW j (hgood j hj)))
 
 end Topology.IsInducing

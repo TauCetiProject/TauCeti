@@ -31,7 +31,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   between normed spaces.
 * `TauCeti.mvfderiv_scalar_comp`: the chain rule `d(φ ∘ g) = φ'(g x) • dg` for scalar `φ`.
 * `ContinuousLinearMap.mvfderiv_comp_apply`: the chain rule when the outer map is continuous
-  linear.
+  linear. For a continuous linear equivalence, `ContinuousLinearEquiv.mvfderiv_comp_apply`
+  requires no differentiability hypothesis.
 * `MDifferentiableAt.mvfderiv_prod_eq_add_apply`: the vector-valued derivative on a product
   is the sum of its partial derivatives.
 * `MDifferentiableAt.mvfderiv_prod_eq_apply_of_snd_eq_zero`,
@@ -43,6 +44,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   sends a tangent vector `v` to `(v, d u v)`.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
+* `TauCeti.fderiv_comp_apply_eq_mfderiv`: the chain rule for a map between normed spaces which
+  factors through a manifold.
 * `HasMFDerivAt.hasDerivAt_comp_graph`: the chain rule `d/du f(u, γ u) = ∂_t f + d(f u)(γ')` along
   a curve in a manifold.
 * `TauCeti.continuous_fderiv_of_contMDiff`: the derivative in the domain variable of a `C¹`
@@ -155,6 +158,16 @@ theorem _root_.Filter.EventuallyEq.mvfderiv_eq {f₁ f : M → F} {x : M} (hf : 
   -- `tangentSpaceCast` identifies two tangent spaces of `F`, both of which are `F` itself.
   rfl
 
+/-- The support of the derivative of a vector-valued function along a vector field lies in the
+support of the function: the manifold version of `tsupport_fderiv_apply_subset`. -/
+theorem tsupport_mvfderiv_apply_subset (f : M → F) (V : ∀ x, TangentSpace I x) :
+    tsupport (fun x ↦ mvfderiv I f x (V x)) ⊆ tsupport f := by
+  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport _)
+  by_contra h
+  have hf : f =ᶠ[𝓝 x] fun _ ↦ 0 := notMem_tsupport_iff_eventuallyEq.1 h
+  rw [Function.mem_support, hf.mvfderiv_eq, mvfderiv_const, zero_apply] at hx
+  exact hx rfl
+
 /-- A map into the model space with the germ of the extended chart at `x` has the identity as
 derivative at `x`, a tangent vector at `x` being read as a vector of the model space. -/
 theorem mvfderiv_apply_of_eventuallyEq_extChartAt {f : M → E} {x : M}
@@ -201,6 +214,20 @@ theorem _root_.ContinuousLinearMap.mvfderiv_comp_apply (L : F →L[𝕜] F') {g 
     (hg : MDiffAt g x) (v : TangentSpace I x) :
     mvfderiv I (L ∘ g) x v = L (mvfderiv I g x v) := by
   rw [mvfderiv_comp_apply_of_differentiableAt L.differentiableAt hg, ContinuousLinearMap.fderiv]
+
+/-- Postcomposing by a continuous linear equivalence commutes with the vector-valued
+manifold derivative, evaluated on a tangent vector. Both derivatives are zero when `g` is
+not differentiable at `x`, since the inverse equivalence preserves differentiability. -/
+theorem _root_.ContinuousLinearEquiv.mvfderiv_comp_apply (L : F ≃L[𝕜] F') (g : M → F) (x : M)
+    (v : TangentSpace I x) : mvfderiv I (L ∘ g) x v = L (mvfderiv I g x v) := by
+  by_cases hg : MDiffAt g x
+  · exact L.toContinuousLinearMap.mvfderiv_comp_apply hg v
+  have hLg : ¬ MDiffAt (L ∘ g) x := fun hLg ↦ hg (by
+    simpa only [Function.comp_def, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.symm_apply_apply] using
+      L.symm.toContinuousLinearMap.mdifferentiableAt.comp x hLg)
+  simp only [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hLg,
+    mfderiv_zero_of_not_mdifferentiableAt hg, ContinuousLinearMap.comp_zero, zero_apply, map_zero]
 
 /-- The derivative of a pair map `z ↦ (f z, g z)` into a product of normed spaces is the pair of
 the derivatives of its components. -/
@@ -325,6 +352,17 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
   simpa only [NormedSpace.fromTangentSpace_symm_apply,
     Function.uncurry_apply_pair, id_eq] using hc
+
+/-- The chain rule for a map between normed spaces which factors through a manifold: the derivative
+of `Φ ∘ f` is the composite of the manifold derivatives of `f` and `Φ`. -/
+theorem fderiv_comp_apply_eq_mfderiv {Φ : M → F'} {f : F → M} {x : F}
+    (hΦ : MDifferentiableAt I 𝓘(𝕜, F') Φ (f x)) (hf : MDifferentiableAt 𝓘(𝕜, F) I f x) (a : F) :
+    fderiv 𝕜 (Φ ∘ f) x a = mfderiv I 𝓘(𝕜, F') Φ (f x) (mfderiv 𝓘(𝕜, F) I f x a) := by
+  have h := mfderiv_comp_apply x hΦ hf a
+  -- `mfderiv_eq_fderiv` reads the tangent spaces of `F` and `F'` as the spaces themselves through
+  -- `NormedSpace.fromTangentSpace`, which is the identity.
+  rw [mfderiv_eq_fderiv] at h
+  exact h
 
 /-- **The chain rule along a curve for a time-dependent family.** If the curve `u` has velocity
 `w` at `t` and `f` is jointly differentiable at `(t, u t)`, then `s ↦ f s (u s)` has derivative

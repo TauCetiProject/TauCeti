@@ -61,6 +61,8 @@ is bounded on `x ≥ 0`.
   `((y ^ m)⁻¹ + y ^ m) exp (-a ((y - 1)² / y)) ≤ 2 max (m! / (a / 4) ^ m) (2 ^ m)` for `0 < a`,
   `0 < y`.
 * `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
+* `TauCeti.exp_neg_sub_mul_le_of_le`: `exp (-(x - σ) t) ≤ exp (-(x - σ) δ)` for `σ ≤ x` and
+  `δ ≤ t`.
 * `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
 -/
 
@@ -366,6 +368,12 @@ theorem exp_neg_mul_mul_le {r δ : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (x : ℝ)
     nlinarith
   calc _ ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) * x := by gcongr
     _ ≤ _ := by rw [mul_assoc, mul_comm]; gcongr
+
+/-- Raising the damping rate from `σ` to `x ≥ σ` multiplies by `e^{-(x-σ)t}`, which is at most
+`e^{-(x-σ)δ}` for `t ≥ δ`. -/
+theorem exp_neg_sub_mul_le_of_le {σ x δ t : ℝ} (hx : σ ≤ x) (ht : δ ≤ t) :
+    exp (-(x - σ) * t) ≤ exp (-(x - σ) * δ) :=
+  exp_le_exp.mpr (mul_le_mul_of_nonpos_left ht (by linarith))
 
 /-- A natural power of a nonnegative real number is at most the exponential of the exponent
 times the base: `x ^ k ≤ exp (k x)` for `0 ≤ x`, since `x ≤ x + 1 ≤ exp x`. -/
