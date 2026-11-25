@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Compact.Character.Banach.IsotypicProjection
+public import TauCeti.RepresentationTheory.Compact.Character.BanachIsotypic.Basic
 public import TauCeti.RepresentationTheory.GFinite
 public import TauCeti.RepresentationTheory.Compact.PeterWeyl
 import TauCeti.RepresentationTheory.AsModule
@@ -108,8 +108,10 @@ theorem mem_banachIsotypicRange_iff [IsAlgClosed k] (σ : ContRepresentation k G
   refine ⟨fun hv ↦ ?_, fun hv ↦ hv ▸ banachIsotypicProjector_apply_mem_banachIsotypicRange
     π hπ σ hσ v⟩
   obtain ⟨w, rfl⟩ := (mem_banachIsotypicRange π hπ σ hσ).1 hv
-  exact congrArg (fun T : ContIntertwiningMap π π ↦ T w)
-    (banachIsotypicProjector_idempotent π hπ σ hσ hirr)
+  simpa only [ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
+    ContIntertwiningMap.toContinuousLinearMap_apply] using DFunLike.congr_fun
+      (congrArg ContIntertwiningMap.toContinuousLinearMap
+        (banachIsotypicProjector_idempotent π hπ σ hσ hirr)) w
 
 /-- The isotypic part `V(σ)` consists of `G`-finite vectors. -/
 theorem banachIsotypicRange_le_gFiniteSubmodule (σ : ContRepresentation k G W)
@@ -144,10 +146,13 @@ theorem iSupIndep_banachIsotypicRange [IsAlgClosed k] {ι : Type*}
       obtain ⟨z, rfl⟩ := (mem_banachIsotypicRange π hπ _ _).1 hz
       rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
         ContIntertwiningMap.toContinuousLinearMap_apply]
-      exact congrArg (fun T : ContIntertwiningMap π π ↦ T z)
-        (banachIsotypicProjector_comp_of_not_equiv π hπ (models i).rep (models i).continuous_rep
-          (models i).isIrreducible (models j).rep (models j).continuous_rep
-          (models j).isIrreducible (hne hji))
+      simpa only [ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
+        ContIntertwiningMap.toContinuousLinearMap_zero, zero_apply,
+        ContIntertwiningMap.toContinuousLinearMap_apply] using DFunLike.congr_fun
+          (congrArg ContIntertwiningMap.toContinuousLinearMap
+            (banachIsotypicProjector_comp_of_not_equiv π hπ (models i).rep
+              (models i).continuous_rep (models i).isIrreducible (models j).rep
+              (models j).continuous_rep (models j).isIrreducible (hne hji))) z
   rw [← (mem_banachIsotypicRange_iff π hπ _ _ (models i).isIrreducible).1 hx]
   exact hle hx'
 
