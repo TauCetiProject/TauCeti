@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Nontangential.Function
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Nontangential.Limit
+public import TauCeti.MeasureTheory.Integral.MaximalFunction.Indicator
 
 /-!
 # Checks for nontangential cones and maximal bounds on the half-plane
@@ -125,50 +126,19 @@ theorem upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_two_add_I_mem
 `B(2, r)` meets `[0, 1]` in a set of length at most `r / 2`, with equality for `r = 2`. -/
 theorem maximalFunction_indicator_Icc_zero_one_two :
     maximalFunction volume ((Set.Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ)) 2 = 1 / 4 := by
-  have havg (r : ℝ) : ⨍⁻ y in Metric.ball (2 : ℝ) r,
-      ‖(Set.Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ) y‖ₑ =
-        volume (Set.Icc (0 : ℝ) 1 ∩ Metric.ball 2 r) / ENNReal.ofReal (2 * r) := by
-    rw [setLAverage_eq, Real.volume_ball]
-    congr 1
-    simp_rw [eNorm_indicator_eq_indicator_eNorm, Pi.one_apply, eNorm_one]
-    rw [lintegral_indicator_const measurableSet_Icc, one_mul,
-      Measure.restrict_apply measurableSet_Icc]
-  refine le_antisymm (maximalFunction_le fun r hr => ?_) ?_
-  · rw [havg, ENNReal.div_le_iff (by simp [hr]) ENNReal.ofReal_ne_top]
-    calc volume (Set.Icc (0 : ℝ) 1 ∩ Metric.ball 2 r)
-        ≤ volume (Set.Icc (max 0 (2 - r)) 1) := measure_mono fun y ⟨⟨hy0, hy1⟩, hyb⟩ => by
-          rw [Real.ball_eq_Ioo] at hyb
-          exact ⟨max_le hy0 hyb.1.le, hy1⟩
-      _ ≤ ENNReal.ofReal (r / 2) := by
-          rw [Real.volume_Icc]
-          refine ENNReal.ofReal_le_ofReal ?_
-          rcases le_total r 2 with h | h
-          · rw [max_eq_right (by linarith)]; linarith
-          · rw [max_eq_left (by linarith)]; linarith
-      _ = 1 / 4 * ENNReal.ofReal (2 * r) := by
-          rw [← ENNReal.ofReal_one, ← ENNReal.ofReal_ofNat 4, ← ENNReal.ofReal_div_of_pos
-            (by norm_num), ← ENNReal.ofReal_mul (by norm_num)]
-          ring_nf
-  · refine le_trans ?_ (setLAverage_le_maximalFunction volume _ 2 two_pos)
-    rw [havg, ENNReal.le_div_iff_mul_le (Or.inl (by norm_num)) (Or.inl ENNReal.ofReal_ne_top)]
-    calc 1 / 4 * ENNReal.ofReal (2 * 2) = volume (Set.Ioo (0 : ℝ) 1) := by
-          rw [Real.volume_Ioo, ← ENNReal.ofReal_ofNat 4, ← ENNReal.ofReal_one,
-            ← ENNReal.ofReal_div_of_pos (by norm_num), ← ENNReal.ofReal_mul (by norm_num)]
-          norm_num
-      _ ≤ volume (Set.Icc (0 : ℝ) 1 ∩ Metric.ball 2 2) :=
-          measure_mono fun y ⟨hy0, hy1⟩ => ⟨⟨hy0.le, hy1.le⟩, by
-          rw [Real.ball_eq_Ioo]; constructor <;> linarith⟩
+  rw [maximalFunction_indicator_Icc_of_right_le zero_le_one one_le_two,
+    ENNReal.ofReal_div_of_pos (by norm_num)]
+  norm_num
 
 /-- **The cone comparison at `x = 2`**: `P[1_{[0, 1]}](2 + i) ≈ 0.102` is at most `3` times the
 maximal function `1 / 4` of `1_{[0, 1]}` at `2`. -/
 theorem ofReal_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_two_add_I_le :
     ENNReal.ofReal (upperHalfPlanePoissonIntegral (volume.restrict (Set.Icc 0 1)) (2 + I)) ≤
       3 * maximalFunction volume ((Set.Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ)) 2 := by
-  rw [maximalFunction_indicator_Icc_zero_one_two]
-  refine (ENNReal.ofReal_le_ofReal
-    upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_two_add_I_mem_Ioo.2.le).trans ?_
-  rw [← ENNReal.ofReal_ofNat 3, ← ENNReal.ofReal_one, ← ENNReal.ofReal_ofNat 4,
-    ← ENNReal.ofReal_div_of_pos (by norm_num), ← ENNReal.ofReal_mul (by norm_num)]
-  exact ENNReal.ofReal_le_ofReal (by norm_num)
+  rw [maximalFunction_indicator_Icc_of_right_le zero_le_one one_le_two, ← ENNReal.ofReal_ofNat 3,
+    ← ENNReal.ofReal_mul (by norm_num)]
+  exact ENNReal.ofReal_le_ofReal
+    (upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_two_add_I_mem_Ioo.2.le.trans
+      (by norm_num))
 
 end TauCeti.Examples.Nontangential
