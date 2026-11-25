@@ -153,6 +153,12 @@ theorem mem_hamiltonianVariations {W : Set ((ℝ × ℝ) × V)} {g : Lp V 2 stri
           ω.floerOperator J Ks Kt u z :=
   Iff.rfl
 
+/-- Hamiltonian variations supported in a smaller set are Hamiltonian variations supported in a
+larger one. -/
+theorem hamiltonianVariations_mono {W W' : Set ((ℝ × ℝ) × V)} (h : W ⊆ W') :
+    ω.hamiltonianVariations J Ks Kt u W ⊆ ω.hamiltonianVariations J Ks Kt u W' :=
+  fun _ ⟨δK, h₁, h₂, h₃, h₄⟩ ↦ ⟨δK, h₁, h₂, h₃.trans h, h₄⟩
+
 end VariationTerm
 
 /-- Integrals over the strip are integrals over the open strip `ℝ × (0, 1)`. -/
