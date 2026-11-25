@@ -125,12 +125,6 @@ theorem not_isPrincipal : ¬ primeAboveTwo.IsPrincipal := by
   rw [eq_span_two_omega_sub_one]
   exact not_isPrincipal_span_two_omega_sub_one
 
-/-- `𝔭` is a proper ideal: `1 ∉ 𝔭`. -/
-theorem one_notMem : (1 : QuadraticAlgebra ℤ (-5) 0) ∉ primeAboveTwo := fun h ↦ by
-  apply not_isPrincipal
-  rw [Ideal.eq_top_of_isUnit_mem _ h isUnit_one]
-  exact ⟨1, Ideal.span_singleton_one.symm⟩
-
 theorem ne_bot : primeAboveTwo ≠ ⊥ :=
   ne_of_mem_of_not_mem' two_mem (by simp)
 
@@ -140,6 +134,10 @@ instance isMaximal : primeAboveTwo.IsMaximal := by
   rw [eq_span_two_omega_sub_one]
   simpa using isMaximal_span_natCast_omega_sub (p := 2) (a := -5) (b := 0) (r := 1)
     (by norm_num)
+
+/-- `𝔭` is a proper ideal: `1 ∉ 𝔭`. -/
+theorem one_notMem : (1 : QuadraticAlgebra ℤ (-5) 0) ∉ primeAboveTwo :=
+  isMaximal.isPrime.one_notMem
 
 /-- `𝔭 (√-5 - 1) ⊆ (2)`. -/
 theorem two_dvd_mul_omega_sub_one {a : QuadraticAlgebra ℤ (-5) 0} (ha : a ∈ primeAboveTwo) :
