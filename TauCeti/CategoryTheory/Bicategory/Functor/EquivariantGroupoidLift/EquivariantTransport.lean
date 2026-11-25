@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Normalized
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import TauCeti.CategoryTheory.Groupoid.SingleObj
 
 /-!
 # Transport of an equivariant lift as a family of equivariant functors
@@ -46,6 +47,10 @@ groupoids in the descent of families of local categories, the prescribed actions
 and `actions (ψ' l)` of two isomorphic reindexings `α : ψ ≅ ψ'` are compared by these
 equivalences along `α.app l`.
 
+Restricting `N.equivariantTransport` along the inclusion `SingleObj (End p) ⥤ Γ` gives
+`N.equivariantEndAction p`: the endomorphism monoid of `p`, and so for a groupoid `Γ` the
+isotropy group of `p`, acts on the categorical action `actions p` by equivariant transport.
+
 ## Main definitions
 
 * `TauCeti.EquivariantGroupoidLift.NormalizedTransport.transportStrongTrans`: transport along an
@@ -53,7 +58,9 @@ equivalences along `α.app l`.
 * `TauCeti.EquivariantGroupoidLift.NormalizedTransport.equivariantTransport`: the pseudofunctor
   from `Γ` to the bicategory of `H`-actions given by transport;
 * `TauCeti.EquivariantGroupoidLift.NormalizedTransport.equivariantTransportEquivalence`: transport
-  along an isomorphism of `Γ` as an equivalence of the prescribed actions.
+  along an isomorphism of `Γ` as an equivalence of the prescribed actions;
+* `TauCeti.EquivariantGroupoidLift.NormalizedTransport.equivariantEndAction`: the action of the
+  endomorphism monoid of `p` on the prescribed action `actions p` by equivariant transport.
 
 ## References
 
@@ -374,6 +381,60 @@ lemma equivariantTransportEquivalence_counit_inv_as_app_toNatTrans_app {p q : Γ
     ((N.equivariantTransportEquivalence g).counit.inv.as.app a).toNatTrans.app X =
       (N.transportId q).inv.app X ≫ (N.transportComp g.inv g.hom (𝟙 q) g.inv_hom_id).inv.app X :=
   (rfl)
+
+/-- The action of the endomorphism monoid `End p` on the prescribed categorical action
+`actions p` by equivariant transport: the restriction of `N.equivariantTransport` along the
+inclusion `Groupoid.singleObjFunctor p : SingleObj (End p) ⥤ Γ`. It sends `g` to the strong
+transformation `N.transportStrongTrans g`, so `End p` acts on `C p` by functors commuting
+coherently with the action of `H`. For a lift `L`, its component functors are those of
+`L.endAction p`. -/
+-- The body is exposed so that its values are definitionally `actions p` and its maps are
+-- `N.transportStrongTrans`, as stated in the lemmas below.
+@[expose] noncomputable def equivariantEndAction (p : Γ) :
+    LocallyDiscrete (SingleObj (End p)) ⥤ᵖ (LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}) :=
+  (Groupoid.singleObjFunctor p).toPseudofunctor.comp N.equivariantTransport
+
+@[simp]
+lemma equivariantEndAction_obj (p : Γ) (b : LocallyDiscrete (SingleObj (End p))) :
+    (N.equivariantEndAction p).obj b = actions p :=
+  rfl
+
+@[simp]
+lemma equivariantEndAction_map (p : Γ) {b b' : LocallyDiscrete (SingleObj (End p))}
+    (g : b ⟶ b') : (N.equivariantEndAction p).map g = N.transportStrongTrans g.as.asHom :=
+  rfl
+
+@[simp]
+lemma equivariantEndAction_mapId_hom_as_app_toNatTrans_app (p : Γ)
+    (b : LocallyDiscrete (SingleObj (End p))) (a : LocallyDiscrete (SingleObj H))
+    (X : fiber actions p) :
+    (((N.equivariantEndAction p).mapId b).hom.as.app a).toNatTrans.app X =
+      (N.transportId p).hom.app X :=
+  Category.id_comp _
+
+@[simp]
+lemma equivariantEndAction_mapId_inv_as_app_toNatTrans_app (p : Γ)
+    (b : LocallyDiscrete (SingleObj (End p))) (a : LocallyDiscrete (SingleObj H))
+    (X : fiber actions p) :
+    (((N.equivariantEndAction p).mapId b).inv.as.app a).toNatTrans.app X =
+      (N.transportId p).inv.app X :=
+  Category.comp_id _
+
+@[simp]
+lemma equivariantEndAction_mapComp_hom_as_app_toNatTrans_app (p : Γ)
+    {b₀ b₁ b₂ : LocallyDiscrete (SingleObj (End p))} (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂)
+    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
+    (((N.equivariantEndAction p).mapComp g h).hom.as.app a).toNatTrans.app X =
+      (N.transportComp g.as.asHom h.as.asHom (g.as ≫ h.as).asHom rfl).inv.app X :=
+  Category.id_comp _
+
+@[simp]
+lemma equivariantEndAction_mapComp_inv_as_app_toNatTrans_app (p : Γ)
+    {b₀ b₁ b₂ : LocallyDiscrete (SingleObj (End p))} (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂)
+    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
+    (((N.equivariantEndAction p).mapComp g h).inv.as.app a).toNatTrans.app X =
+      (N.transportComp g.as.asHom h.as.asHom (g.as ≫ h.as).asHom rfl).hom.app X :=
+  Category.comp_id _
 
 end NormalizedTransport
 

@@ -14,8 +14,9 @@ For functors `F : A ⥤ B` and `G : C ⥤ B`, the categorical pullback `F ⊡ G`
 triples `(a, c, F a ≅ G c)`. The second projection `CategoricalPullback.π₂ F G : F ⊡ G ⥤ C`
 inherits faithfulness, fullness and essential surjectivity from `F`: a morphism of `C` lifts
 through the structural isomorphisms, and an object `c` of `C` lifts by choosing `a` with
-`F a ≅ G c`. In particular, when `F` is an equivalence so is `π₂ F G`. This is the stability of
-equivalences under pullback in the (2,1)-category of categories.
+`F a ≅ G c`. In particular, when `F` is an equivalence so is `π₂ F G`. Symmetrically, the first
+projection `π₁ F G` inherits these properties from `G`. This is the stability of equivalences
+under pullback in the (2,1)-category of categories.
 
 The explicit form `CategoricalPullback.sndEquiv` transports extra structure along an
 equivalence: when `e : A ≌ B` identifies objects of `A` with objects of `B`, the category of
@@ -31,7 +32,12 @@ objects of `A` whose image in `B` is equipped with a lift along `G` is equivalen
   `CategoryTheory.Limits.CategoricalPullback.essSurj_π₂`: the second projection out of `F ⊡ G` is
   faithful, full, or essentially surjective whenever `F` is;
 * `CategoryTheory.Limits.CategoricalPullback.isEquivalence_π₂`: the second projection out of
-  the categorical pullback of an equivalence is an equivalence.
+  the categorical pullback of an equivalence is an equivalence;
+* `CategoryTheory.Limits.CategoricalPullback.faithful_π₁`,
+  `CategoryTheory.Limits.CategoricalPullback.full_π₁`,
+  `CategoryTheory.Limits.CategoricalPullback.essSurj_π₁`,
+  `CategoryTheory.Limits.CategoricalPullback.isEquivalence_π₁`: the same for the first projection
+  out of the categorical pullback along `G`.
 
 ## References
 
@@ -107,5 +113,33 @@ instance essSurj_π₂ [F.EssSurj] : (π₂ F G).EssSurj where
 /-- The second projection out of the categorical pullback of an equivalence is an equivalence:
 an object of `C` lifts uniquely up to unique isomorphism. -/
 instance isEquivalence_π₂ [F.IsEquivalence] : (π₂ F G).IsEquivalence where
+
+/-- The first projection out of the categorical pullback along a faithful functor is faithful:
+the second component of a morphism is determined by the first through the structural
+isomorphisms. -/
+instance faithful_π₁ [G.Faithful] : (π₁ F G).Faithful where
+  map_injective {x y} f g h := by
+    rw [π₁_map, π₁_map] at h
+    ext
+    · exact h
+    · exact G.map_injective (by rw [← cancel_epi x.iso.hom, ← f.w, ← g.w, h])
+
+/-- The first projection out of the categorical pullback along a full functor is full: a
+morphism `g : x.fst ⟶ y.fst` lifts with second component a preimage of `F.map g` conjugated by
+the structural isomorphisms. -/
+instance full_π₁ [G.Full] : (π₁ F G).Full where
+  map_surjective {x y} (g : x.fst ⟶ y.fst) :=
+    ⟨⟨g, G.preimage (x.iso.inv ≫ F.map g ≫ y.iso.hom), by simp⟩, rfl⟩
+
+/-- The first projection out of the categorical pullback along an essentially surjective functor
+is essentially surjective: an object `a` lifts to `(a, c, F a ≅ G c)` for any `c` with
+`G c ≅ F a`. -/
+instance essSurj_π₁ [G.EssSurj] : (π₁ F G).EssSurj where
+  mem_essImage a :=
+    ⟨⟨a, G.objPreimage (F.obj a), (G.objObjPreimageIso (F.obj a)).symm⟩, ⟨Iso.refl _⟩⟩
+
+/-- The first projection out of the categorical pullback along an equivalence is an
+equivalence. -/
+instance isEquivalence_π₁ [G.IsEquivalence] : (π₁ F G).IsEquivalence where
 
 end CategoryTheory.Limits.CategoricalPullback

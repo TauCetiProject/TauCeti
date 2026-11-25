@@ -23,8 +23,9 @@ the `q`-skeleton (`TauCeti.pathFromChainSkeleton`) form a differential graded le
   dimension;
 * it increases with `q`, and below degree `0` it is the chains over the base `D`, which is zero for
   an absolute CW complex;
-* when `B` is the whole complex, every chain lies in some stage, since the end points of a cube of
-  paths form a compact set, which lies in a finite skeleton
+* when the complex contains the path component of `b`, for instance when it is all of `B`, every
+  chain lies in some stage, since the end points of a cube of paths form a compact set, which lies
+  in a finite skeleton
   (`TauCeti.iSup_pathFromChainSkeleton_eq_top`).
 
 Over a map `f : E → B` sending a subset `S` into the `q`-skeleton, the projection of the
@@ -163,16 +164,17 @@ theorem pathFromChainSkeleton_eq_bot_of_neg {C : Set B} [CWComplex C] {q : ℤ} 
     cubicalChainModuleSupportedIn_empty, Submodule.mem_bot] at hx
 
 variable (b H R) in
-/-- **The skeletal filtration is exhaustive**: if `B` is the whole complex, every chain on the
-based path space lies in some stage. The end points of a compact set of paths form a compact
-subset of `B`, which lies in a finite skeleton. -/
-theorem iSup_pathFromChainSkeleton_eq_top (hC : ∀ x, x ∈ C) :
+/-- **The skeletal filtration is exhaustive**: if the complex contains the path component of `b`,
+for instance if it is all of `B`, every chain on the based path space lies in some stage. The end
+points of a compact set of paths form a compact subset of the complex, which lies in a finite
+skeleton. -/
+theorem iSup_pathFromChainSkeleton_eq_top (hC : pathComponent b ⊆ C) :
     ⨆ q, pathFromChainSkeleton b C H R q = ⊤ := by
   have h : ⨆ q, cubicalChainModuleSupportedIn H R
       (preimageSkeleton C (MoorePathFrom.endpoint B b) q) = ⊤ :=
     iSup_cubicalChainModuleSupportedIn_eq_top fun _ hK ↦
       exists_subset_preimageSkeleton_of_isCompact (MoorePathFrom.endpoint B b).continuous
-        (range_subset_iff.2 fun _ ↦ hC _) hK
+        (range_subset_iff.2 fun γ ↦ hC (MoorePathFrom.endpoint_mem_pathComponent γ)) hK
   rw [← Submodule.restrictScalars_eq_top_iff R, Submodule.restrictScalars_iSup]
   simpa only [restrictScalars_pathFromChainSkeleton] using h
 

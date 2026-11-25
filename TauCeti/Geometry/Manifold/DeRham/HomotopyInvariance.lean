@@ -24,7 +24,9 @@ same map on cohomology (`TauCeti.deRhamCohomology.map_prodMk_left_zero_eq_map_pr
 In positive degree this is the cochain-homotopy identity of the homotopy operator: for a closed
 form `φ` on `M × [0, 1]`, `ι₁^* φ - ι₀^* φ = d (h φ)` (`TauCeti.mextDeriv_homotopyOperator`),
 and `h φ` is again smooth. In degree zero a closed form is a locally constant function, which is
-constant along each segment `{x} × [0, 1]`.
+constant along each segment `{x} × [0, 1]`. A constant map pulls forms of positive degree back to
+zero, so a smoothly contractible manifold has no cohomology in positive degrees
+(`TauCeti.subsingleton_deRhamCohomology_of_contraction`).
 
 On a compact manifold compactly supported and ordinary de Rham cohomology agree
 (`TauCeti.compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective`), so smoothly homotopic
@@ -40,6 +42,8 @@ degree a homotopy invariant.
   de Rham cohomology.
 * `TauCeti.deRhamCohomology.equivOfHomotopy`: a smooth homotopy equivalence induces a linear
   equivalence on de Rham cohomology.
+* `TauCeti.subsingleton_deRhamCohomology_of_contraction`: a smoothly contractible manifold has no
+  de Rham cohomology in positive degrees.
 * `TauCeti.compactlySupportedDeRhamCohomology.map_eq_of_homotopy`: smoothly homotopic maps out of
   a compact manifold induce the same map on compactly supported de Rham cohomology.
 
@@ -154,6 +158,17 @@ theorem equivOfHomotopy_symm_apply (k : ℕ) (c : deRhamCohomology I M k) :
 end HomotopyEquivalence
 
 end deRhamCohomology
+
+/-- **De Rham cohomology of a smoothly contractible manifold vanishes in positive degrees.** If
+`F : M × [0, 1] → M` is a smooth homotopy from the identity of `M` to the constant map at `c`,
+then `H^k(M) = 0` for `k ≠ 0`. The manifold `M` may have boundary or corners. -/
+theorem subsingleton_deRhamCohomology_of_contraction {F : M × Icc (0 : ℝ) 1 → M}
+    (hF : ContMDiff (I.prod (𝓡∂ 1)) I ∞ F) {c : M} (hF₀ : ∀ x, F (x, 0) = x)
+    (hF₁ : ∀ x, F (x, 1) = c) {k : ℕ} (hk : k ≠ 0) :
+    Subsingleton (deRhamCohomology I M k) := by
+  have h := deRhamCohomology.map_eq_of_homotopy contMDiff_id contMDiff_const hF hF₀ hF₁ k
+  rw [deRhamCohomology.map_id, deRhamCohomology.map_const_eq_zero hk] at h
+  exact subsingleton_of_forall_eq 0 fun a ↦ by simpa using LinearMap.congr_fun h a
 
 namespace compactlySupportedDeRhamCohomology
 
