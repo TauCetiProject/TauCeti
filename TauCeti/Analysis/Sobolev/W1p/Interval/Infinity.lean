@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Endpoint obstruction to approximation in `W^{1,∞}_0`
@@ -51,17 +50,13 @@ theorem max_abs_gradient_endpoints_le_dist {a b : ℝ} (hab : a < b)
     (isClosed_le continuous_const (continuous_const.dist continuous_id)) ?_ hv
   intro φ
   let w := ofTestFunctionₗ volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤ φ
-  let G := gradient u - gradient w
   have hG : ∀ᵐ t ∂volume.restrict (Ioo a b),
       ‖g t - ∇ (φ : ℝ → ℝ) t‖ ≤ dist u w := by
     have hw : gradient w =ᵐ[volume.restrict (Ioo a b)] ∇ (φ : ℝ → ℝ) := by
       rw [gradient_ofTestFunctionₗ]
       exact gradientTestFunctionLp_apply_ae ⊤ φ
-    filter_upwards [Lp.ae_norm_le_norm_top G, Lp.coeFn_sub (gradient u) (gradient w),
-      hu, hw] with t ht hsub hut hwt
-    have hdist : ‖G‖ ≤ dist u w := by
-      simpa only [G, dist_eq_norm, gradient_sub] using norm_gradient_le (u - w)
-    simpa only [G, hsub, Pi.sub_apply, hut, hwt] using ht.trans hdist
+    filter_upwards [ae_norm_gradient_sub_le_dist u w, hu, hw] with t ht hut hwt
+    simpa only [hut, hwt] using ht
   -- Express the bound as an equality of continuous functions to recover endpoint values.
   have hc : ContinuousOn (fun t ↦ max ‖g t - ∇ (φ : ℝ → ℝ) t‖ (dist u w)) (Icc a b) :=
     (hg.sub (φ.contDiff.continuous_gradient (by simp)).continuousOn).norm.sup

@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Combinatorics.SimpleGraph.Regularity.Uniform
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import TauCeti.Combinatorics.SimpleGraph.Density
 import Mathlib.Data.Rat.BigOperators
+import TauCeti.Algebra.Order.BigOperators.Group.Finset
 import TauCeti.Combinatorics.SimpleGraph.Regularity.Uniform
 import TauCeti.Data.Finset.Basic
 
@@ -34,6 +35,10 @@ diagonal blocks, which `Finpartition.IsUniform` ignores.
 * `TauCeti.PairSkeleton3.IsPairColorRegular.isUniform_colorGraph`: a regular lower skeleton
   gives a uniform vertex partition of the selected graph.
 * `SimpleGraph.toPairColorSystem`: the edge/nonedge coloring of a simple graph.
+* `SimpleGraph.pairColorDensity_toPairColorSystem_true`: the edge color has the edge density
+  between disjoint sets.
+* `SimpleGraph.pairColorDensity_toPairColorSystem_decide`: between disjoint nonempty sets, the
+  two colors have the edge and nonedge densities `SimpleGraph.patternDensity`.
 * `SimpleGraph.IsUniform.isRegularPair_ofGraph`, `TauCeti.PairColorSystem.IsRegularPair.isUniform`:
   uniform and regular pairs of disjoint sets agree up to the strictness of the bound.
 -/
@@ -126,10 +131,8 @@ theorem card_interedges_colorGraph [DecidableEq κ] (s t : Finset V) :
     #((S.colorGraph K hK).interedges s t) =
       ∑ c ∈ K, #{p ∈ s ×ˢ t | S.colorOfPair p.1 p.2 = some c} := by
   classical
-  have hcount := sum_card_fiberwise_eq_card_filter (s ×ˢ t) (K.image some)
-    (fun p ↦ S.colorOfPair p.1 p.2)
-  rw [sum_image (fun _ _ _ _ h ↦ Option.some_injective _ h)] at hcount
-  simpa [SimpleGraph.interedges_def, colorGraph_adj, eq_comm] using hcount.symm
+  simpa [SimpleGraph.interedges_def, colorGraph_adj, eq_comm] using
+    (S.sum_card_colorOfPair_fibers K s t).symm
 
 /-- On disjoint sets, the graph density is the sum of the selected pair-color densities,
 including when either vertex set or the selected palette is empty. -/
@@ -153,11 +156,8 @@ theorem IsRegularPair.abs_edgeDensity_colorGraph_sub_le (h : S.IsRegularPair ε 
   rw [S.edgeDensity_colorGraph K hK (hst.mono hs' ht'), S.edgeDensity_colorGraph K hK hst]
   push_cast
   rw [← sum_sub_distrib]
-  calc
-    _ ≤ ∑ c ∈ K, |(pairColorDensity S c s' t' : ℝ) - pairColorDensity S c s t| :=
-      abs_sum_le_sum_abs _ _
-    _ ≤ ∑ _c ∈ K, ε := sum_le_sum fun c _ ↦ (isRegularPair_iff.1 h) c s' hs' t' ht' hs ht
-    _ = #K * ε := by simp
+  simpa only [nsmul_eq_mul] using
+    abs_sum_le_card_nsmul (s := K) fun c _ ↦ (isRegularPair_iff.1 h) c s' hs' t' ht' hs ht
 
 /-- A regular pair of disjoint sets is uniform for the color graph at any tolerance strictly
 exceeding the accumulated color error `#K * ε`. The empty selection needs only `0 < ε'`. -/
@@ -206,22 +206,6 @@ theorem IsPairColorRegular.isUniform_colorGraph (h : S.IsPairColorRegular ε)
     (hbound : (#K : ℝ) * ε < ε') : S.vertexPart.IsUniform (S.pairColors.colorGraph K hK) ε' :=
   Finpartition.isUniform_of_nonUniforms_eq_empty (h.nonUniforms_colorGraph_eq_empty hbound)
 
-variable [Fintype κ] {F : ℕ → ℝ}
-
-/-- Scheduled lower-skeleton regularity leaves no nonuniform distinct cells for the selected
-graph at a tolerance strictly exceeding the accumulated color error. -/
-theorem LowerSkeletonRegular.nonUniforms_colorGraph_eq_empty (h : S.LowerSkeletonRegular F)
-    (hbound : (#K : ℝ) * F (#S.vertexPart.parts + Fintype.card κ) < ε') :
-    S.vertexPart.nonUniforms (S.pairColors.colorGraph K hK) ε' = ∅ :=
-  (lowerSkeletonRegular_iff.mp h).nonUniforms_colorGraph_eq_empty hbound
-
-/-- Scheduled lower-skeleton regularity gives a uniform partition of the selected graph at a
-tolerance strictly exceeding the accumulated color error. -/
-theorem LowerSkeletonRegular.isUniform_colorGraph (h : S.LowerSkeletonRegular F)
-    (hbound : (#K : ℝ) * F (#S.vertexPart.parts + Fintype.card κ) < ε') :
-    S.vertexPart.IsUniform (S.pairColors.colorGraph K hK) ε' :=
-  Finpartition.isUniform_of_nonUniforms_eq_empty (h.nonUniforms_colorGraph_eq_empty hbound)
-
 end TauCeti.PairSkeleton3
 
 variable {V : Type*} (G : SimpleGraph V) [DecidableRel G.Adj]
@@ -231,14 +215,14 @@ namespace SimpleGraph
 /-- The pair-color system of a simple graph: an ordered distinct pair has color `true` exactly
 when it is an edge. The palette reversal is the identity, since adjacency is symmetric. -/
 def toPairColorSystem : PairColorSystem Bool V where
-  color p := decide (G.Adj p.1.1 p.1.2)
+  color p := decide (G.Adj p.val.1 p.val.2)
   rev := id
   rev_involutive _ := rfl
   color_rev p := by simp [G.adj_comm]
 
 @[simp]
 theorem toPairColorSystem_color (p : {p : V × V // p.1 ≠ p.2}) :
-    G.toPairColorSystem.color p = decide (G.Adj p.1.1 p.1.2) :=
+    G.toPairColorSystem.color p = decide (G.Adj p.val.1 p.val.2) :=
   (rfl)
 
 @[simp]
@@ -285,6 +269,20 @@ theorem pairColorDensity_toPairColorSystem_true (hst : Disjoint s t) :
 theorem pairColorDensity_toPairColorSystem_false [DecidableEq V] (hst : Disjoint s t) :
     pairColorDensity G.toPairColorSystem false s t = Gᶜ.edgeDensity s t := by
   simpa using (G.toPairColorSystem.edgeDensity_colorGraph {false} (by simp) hst).symm
+
+/-- Between disjoint nonempty sets, the color `decide e` has the pattern density of `G`: the edge
+density if `e` holds and the nonedge density otherwise. -/
+theorem pairColorDensity_toPairColorSystem_decide {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜]
+    (e : Prop) [Decidable e] (hs : s.Nonempty) (ht : t.Nonempty) (hst : Disjoint s t) :
+    (pairColorDensity G.toPairColorSystem (decide e) s t : 𝕜) = G.patternDensity e s t := by
+  classical
+  by_cases he : e
+  · rw [decide_eq_true he, G.pairColorDensity_toPairColorSystem_true hst,
+      G.patternDensity_of_pos he]
+  · rw [decide_eq_false he, G.pairColorDensity_toPairColorSystem_false hst,
+      G.patternDensity_of_neg he,
+      eq_sub_of_add_eq' (G.edgeDensity_add_edgeDensity_compl hs ht hst)]
+    norm_cast
 
 end SimpleGraph
 

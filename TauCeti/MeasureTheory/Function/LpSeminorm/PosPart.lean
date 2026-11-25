@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
+import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
@@ -16,9 +17,14 @@ The deviation `f - m` of a real function from a level `m` is the difference of i
 `L^q` seminorm by the sum of theirs. Level-set arguments estimate the two parts separately, for
 instance around a median `m`, where each of them vanishes on a set of at least half the measure.
 
+Scaling a real function by a constant `s ≥ 0` scales its positive part, and hence the `L^q`
+seminorm of the positive part, by `s`. This is how the right-hand side of an equation enters
+after the solution is normalised by a level.
+
 ## Main declarations
 
 * `TauCeti.eLpNorm_sub_const_le_add`: `‖f - m‖_q ≤ ‖(f - m)⁺‖_q + ‖(m - f)⁺‖_q` for `q ≥ 1`.
+* `TauCeti.eLpNorm_posPart_const_mul`: `‖(s f)⁺‖_q = s ‖f⁺‖_q` for `s ≥ 0`.
 -/
 
 public section
@@ -44,5 +50,15 @@ theorem eLpNorm_sub_const_le_add {α : Type*} [MeasurableSpace α] {ν : Measure
     · rw [max_eq_left (by linarith), max_eq_right (by linarith), sub_zero]
   rw [heq]
   exact eLpNorm_sub_le hq
+
+/-- Scaling a real function by `s ≥ 0` scales its positive part, and hence the `L^q` seminorm of
+its positive part, by `s`. -/
+theorem eLpNorm_posPart_const_mul {α : Type*} [MeasurableSpace α] {ν : Measure α} {s : ℝ}
+    (hs : 0 ≤ s) (f : α → ℝ) (q : ℝ≥0∞) :
+    eLpNorm (fun x => (s * f x)⁺) q ν = ENNReal.ofReal s * eLpNorm (fun x => (f x)⁺) q ν := by
+  have h : (fun x => (s * f x)⁺) = s • fun x => (f x)⁺ := by
+    funext x
+    simp only [Pi.smul_apply, smul_eq_mul, posPart_def, mul_max_of_nonneg _ _ hs, mul_zero]
+  rw [h, eLpNorm_const_smul, Real.eNorm_eq_ofReal hs]
 
 end TauCeti

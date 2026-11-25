@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
+public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
 public import TauCeti.Analysis.Normed.Operator.PiTranspose
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Opposite
 public import Mathlib.Topology.VectorBundle.Constructions
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # Duals of finite-rank bundle cores
@@ -25,9 +27,10 @@ fibre maps are the transposes of those of `f`. This gives the contravariant addi
 the identity (`dualDualNatIso`), with identity fibre maps, and `dualFunctor` is an
 anti-equivalence. The dual of a trivial core is the trivial core of the same rank, the
 transposed Whitney-sum inclusions and projections identify the dual of a Whitney sum with the
-Whitney sum of the duals (`dualWhitneySumIso`), and dualizing commutes strictly with pullback
+Whitney sum of the duals (`dualWhitneySumIso`), dualizing commutes strictly with pullback
 along continuous maps of bases (`pullback_dual`, `pullbackMap_dualMap`,
-`dualFunctor_comp_pullbackFunctor`).
+`dualFunctor_comp_pullbackFunctor`), and for any rank-one core `A` the tensor product `A.dual ⊗ A`
+is canonically isomorphic to the monoidal unit (`dualTensorIsoUnit`).
 
 `dualTotalSpaceHomeomorph` identifies the reconstructed total space of `A.dual` with the
 total space of Mathlib's dual bundle of `A`, the bundle of continuous linear maps from the
@@ -46,6 +49,7 @@ For the dual bundle and its transition functions see Milnor–Stasheff, *Charact
 public section
 
 open Bundle CategoryTheory CategoryTheory.Limits VectorBundleCore Opposite
+open scoped MonoidalCategory
 
 namespace TauCeti.FiniteRankBundleCore
 
@@ -101,8 +105,8 @@ variable {A D C : FiniteRankBundleCore 𝕜 B}
 Its chart operators are the transposes of the chart operators of `f`. -/
 noncomputable def dualMap (f : A ⟶ D) : D.dual ⟶ A.dual where
   operator i j :=
-    ⟨fun x => (f.operator j i ⟨x.1, x.2.2, x.2.1⟩).piTranspose,
-      ((f.operator j i).continuous.comp (continuous_subtype_val.subtype_mk _)).piTranspose⟩
+    ⟨fun x => (f.operator j i ⟨x.val, x.property.2, x.property.1⟩).piTranspose,
+      ((f.operator j i).continuous.comp (continuous_subtypeVal.subtype_mk _)).piTranspose⟩
   compatible i i' j j' x hi hi' hj hj' v := by
     have h : (f.operator j i ⟨x, hj, hi⟩).comp (A.core.coordChange j' j x) =
         (D.core.coordChange i' i x).comp (f.operator j' i' ⟨x, hj', hi'⟩) :=
@@ -114,7 +118,8 @@ noncomputable def dualMap (f : A ⟶ D) : D.dual ⟶ A.dual where
 
 theorem operator_dualMap (f : A ⟶ D) (i j : B)
     (x : ↥(D.dual.core.baseSet i ∩ A.dual.core.baseSet j)) :
-    (dualMap f).operator i j x = (f.operator j i ⟨x.1, x.2.2, x.2.1⟩).piTranspose := (rfl)
+    (dualMap f).operator i j x = (f.operator j i ⟨x.val, x.property.2, x.property.1⟩).piTranspose :=
+        (rfl)
 
 /-- On every fibre, the transposed bundle map is the transpose of the original fibre map. -/
 @[simp] theorem fiberMap_dualMap (f : A ⟶ D) (x : B) :
@@ -364,7 +369,7 @@ theorem continuous_dualFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
     Continuous fun p : A.dual.core.TotalSpace =>
       TotalSpace.mk' ((Fin A.rank → 𝕜) →L[𝕜] 𝕜)
         (E := fun x => A.core.Fiber x →L[𝕜] Trivial B 𝕜 x) p.proj
-        (dualFiberEquiv A p.proj p.2) := by
+        (dualFiberEquiv A p.proj p.snd) := by
   refine continuous_iff_continuousAt.2 fun p => ?_
   rw [continuousAt_hom_bundle]
   refine ⟨A.dual.core.continuous_proj.continuousAt, ?_⟩
@@ -378,7 +383,7 @@ theorem continuous_dualFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
     |>.continuousAt.comp hc).congr ?_
   filter_upwards [hU] with q hq
   exact (A.dualFiberEquiv_inCoordinates p.proj q.proj
-    ((A.dual.core.mem_localTriv_source p.proj q).1 hq) q.2).symm
+    ((A.dual.core.mem_localTriv_source p.proj q).1 hq) q.snd).symm
 
 /-- The reconstructed total space of the dual core is the total space of Mathlib's dual bundle
 of `A`, over the identity of the base and by `dualFiberEquiv` on each fibre. -/
@@ -389,12 +394,12 @@ noncomputable def dualTotalSpaceHomeomorph (A : FiniteRankBundleCore 𝕜 B) :
 
 @[simp] theorem dualTotalSpaceHomeomorph_apply (A : FiniteRankBundleCore 𝕜 B)
     (p : A.dual.core.TotalSpace) :
-    dualTotalSpaceHomeomorph A p = ⟨p.proj, dualFiberEquiv A p.proj p.2⟩ :=
+    dualTotalSpaceHomeomorph A p = ⟨p.proj, dualFiberEquiv A p.proj p.snd⟩ :=
   bundleHomeomorph_apply _ _ p
 
 @[simp] theorem dualTotalSpaceHomeomorph_symm_apply (A : FiniteRankBundleCore 𝕜 B)
     (p : TotalSpace ((Fin A.rank → 𝕜) →L[𝕜] 𝕜) (fun x => A.core.Fiber x →L[𝕜] Trivial B 𝕜 x)) :
-    (dualTotalSpaceHomeomorph A).symm p = ⟨p.proj, (dualFiberEquiv A p.proj).symm p.2⟩ :=
+    (dualTotalSpaceHomeomorph A).symm p = ⟨p.proj, (dualFiberEquiv A p.proj).symm p.snd⟩ :=
   bundleHomeomorph_symm_apply _ _ p
 
 /-- Under the identification with functionals, the transposed bundle map is precomposition
@@ -460,5 +465,61 @@ theorem dualFiberEquiv_pullback_apply (A : FiniteRankBundleCore 𝕜 Y) (f : C(X
   rfl
 
 end Pullback
+
+section RankOne
+
+/-- For a rank-one core `A`, the tensor product `A.dual ⊗ A` has identity transitions on all chart
+overlaps. -/
+theorem coordChange_dual_tensor_eq_id (A : FiniteRankBundleCore 𝕜 B) (hA : A.rank = 1)
+    {i j x : B} (hi : x ∈ (A.dual ⊗ A).core.baseSet i) (hj : x ∈ (A.dual ⊗ A).core.baseSet j) :
+    (A.dual ⊗ A).core.coordChange i j x =
+      ContinuousLinearMap.id 𝕜 (Fin (A.dual ⊗ A).rank → 𝕜) := by
+  simp only [baseSet_at, localTriv_baseSet_tensorObj, localTriv_baseSet_dual, Set.mem_inter_iff,
+    and_self] at hi hj
+  let : Unique (Fin A.rank) := ⟨⟨⟨0, by omega⟩⟩, fun k ↦ Fin.ext (by omega)⟩
+  set c := A.core.coordChange i j x (fun _ ↦ 1) default
+  set d := A.core.coordChange j i x (fun _ ↦ 1) default
+  have hT : A.core.coordChange i j x = c • ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
+    (A.core.coordChange i j x).eq_smul_id_of_unique
+  have hS : A.core.coordChange j i x = d • ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
+    (A.core.coordChange j i x).eq_smul_id_of_unique
+  have hdc : d * c = 1 := by
+    have hcomp := congrFun (A.core.coordChange_comp i j i x ⟨⟨hi, hj⟩, hi⟩ (fun _ ↦ 1)) default
+    rw [A.core.coordChange_self i x hi, hT, hS] at hcomp
+    simpa [mul_comm] using hcomp
+  have hS_tr : A.dual.core.coordChange i j x =
+      d • ContinuousLinearMap.id 𝕜 (Fin A.dual.rank → 𝕜) := by
+    rw [coordChange_dual, hS, ← ContinuousLinearMap.piTransposeL_apply, map_smul,
+      ContinuousLinearMap.piTransposeL_apply, ContinuousLinearMap.piTranspose_id]
+    -- `A.dual.rank = A.rank` definitionally (`rank_dual`).
+    rfl
+  rw [coordChange_tensorObj, hS_tr, hT, ContinuousLinearMap.smul_kronecker,
+    ContinuousLinearMap.kronecker_smul, smul_smul, hdc, one_smul,
+    ContinuousLinearMap.id_kronecker_id]
+  -- `(A.dual ⊗ A).rank = A.dual.rank * A.rank` definitionally (`rank_tensorObj`).
+  rfl
+
+/-- Canonical evaluation isomorphism `A.dual ⊗ A ≅ 𝟙_` for a rank-one core `A`. -/
+noncomputable def dualTensorIsoUnit (A : FiniteRankBundleCore 𝕜 B) (hA : A.rank = 1) :
+    A.dual ⊗ A ≅ 𝟙_ (FiniteRankBundleCore 𝕜 B) :=
+  isoTrivialOfCoordChangeEqId (A.dual ⊗ A)
+    (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin 1 ↦ 𝕜) (finCongr (by simp [hA])))
+    fun _ _ _ hi hj ↦ A.coordChange_dual_tensor_eq_id hA hi hj
+
+@[simp] theorem fiberMap_dualTensorIsoUnit_hom (A : FiniteRankBundleCore 𝕜 B) (hA : A.rank = 1)
+    (x : B) :
+    (A.dualTensorIsoUnit hA).hom.fiberMap x =
+      (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin 1 ↦ 𝕜)
+        (finCongr (by simp [hA]))).toContinuousLinearMap :=
+  fiberMap_isoTrivialOfCoordChangeEqId_hom _ _ _ x
+
+@[simp] theorem fiberMap_dualTensorIsoUnit_inv (A : FiniteRankBundleCore 𝕜 B) (hA : A.rank = 1)
+    (x : B) :
+    (A.dualTensorIsoUnit hA).inv.fiberMap x =
+      (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin 1 ↦ 𝕜)
+        (finCongr (by simp [hA]))).symm.toContinuousLinearMap :=
+  fiberMap_isoTrivialOfCoordChangeEqId_inv _ _ _ x
+
+end RankOne
 
 end TauCeti.FiniteRankBundleCore

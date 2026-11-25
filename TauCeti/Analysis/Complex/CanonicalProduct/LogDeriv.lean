@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.CanonicalProduct.Convergence
 public import Mathlib.Analysis.Calculus.LogDerivUniformlyOn
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
-import TauCeti.Order.Filter.AtTopBot.Finset
+import TauCeti.Topology.Algebra.InfiniteSum.UniformOn
 
 /-!
 # Paired logarithmic derivatives of genus-one products
@@ -81,10 +81,10 @@ end Complex
 
 namespace Complex
 
-private theorem logDeriv_weierstrassFactorOne_mul_pow (a z : ℂ) (m : ℕ) :
-    logDeriv (fun w ↦ weierstrassFactorOne (a * w) ^ m) z =
+private theorem logDeriv_weierstrassFactor_one_mul_pow (a z : ℂ) (m : ℕ) :
+    logDeriv (fun w ↦ weierstrassFactor 1 (a * w) ^ m) z =
       (m : ℂ) * (logDerivWeierstrassFactorOneMul a z) := by
-  rw [logDeriv_fun_pow (by fun_prop), logDeriv_weierstrassFactorOne_mul]
+  rw [logDeriv_fun_pow (by fun_prop), logDeriv_weierstrassFactor_one_mul]
 
 variable {ι : Type*} (a : ι → ℂ) (m : ι → ℕ)
   (hm : Summable (fun i ↦ (m i : ℝ) * ‖a i‖ ^ 2))
@@ -99,29 +99,15 @@ theorem summable_norm_natCast_mul_logDerivWeierstrassFactorOneMul (z : ℂ) :
   simpa only [tsum_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     nsmul_eq_mul, norm_mul, norm_natCast] using hs
 
-private theorem tsum_natCast_mul_logDerivWeierstrassFactorOneMul_eq_sigma (z : ℂ) :
-    (∑' i, (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z)) =
-      ∑' p : Σ i, Fin (m i), logDerivWeierstrassFactorOneMul (a p.1) z := by
-  have hs := (summable_norm_logDerivWeierstrassFactorOneMul (fun p : Σ i, Fin (m i) ↦ a p.1)
-    ((TauCeti.summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm) z).of_norm
-  rw [hs.tsum_sigma]
-  simp
-
 /-- The paired rational series with natural multiplicities converges uniformly on compact sets. -/
 theorem hasSumUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul
     {K : Set ℂ} (hK : IsCompact K) :
     HasSumUniformlyOn (fun i z ↦ (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z))
       (fun z ↦ ∑' i, (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z)) K := by
-  have h0 := HasSumUniformlyOn.tendstoUniformlyOn
-    (hasSumUniformlyOn_logDerivWeierstrassFactorOneMul (fun p : Σ i, Fin (m i) ↦ a p.1)
-      ((TauCeti.summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm) hK)
-  rw [hasSumUniformlyOn_iff_tendstoUniformlyOn]
-  intro u hu
-  filter_upwards [(TauCeti.tendsto_finset_sigma_univ_atTop (κ := fun i ↦ Fin (m i))).eventually
-    (h0 u hu)] with s hs z hz
-  have hsz := hs z hz
-  simpa only [← tsum_natCast_mul_logDerivWeierstrassFactorOneMul_eq_sigma a m hm,
-    Finset.sum_sigma, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] using hsz
+  have h := (hasSumUniformlyOn_logDerivWeierstrassFactorOneMul (fun p : Σ i, Fin (m i) ↦ a p.1)
+    ((TauCeti.summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm) hK).sigma_of_finite
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at h
+  exact h.summableUniformlyOn.hasSumUniformlyOn
 
 /-- The weighted paired rational series converges locally uniformly on the plane. -/
 theorem hasSumLocallyUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul :
@@ -133,31 +119,31 @@ theorem hasSumLocallyUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul :
 
 /-- Off the roots, the logarithmic derivative is the absolutely convergent weighted paired
 series. -/
-theorem logDeriv_tprod_weierstrassFactorOne_pow {z : ℂ}
+theorem logDeriv_tprod_weierstrassFactor_one_pow {z : ℂ}
     (hz : ∀ i, m i ≠ 0 → a i * z ≠ 1) :
-    logDeriv (fun w ↦ ∏' i, weierstrassFactorOne (a i * w) ^ m i) z =
+    logDeriv (fun w ↦ ∏' i, weierstrassFactor 1 (a i * w) ^ m i) z =
       ∑' i, (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z) := by
-  have hne : ∀ i, weierstrassFactorOne (a i * z) ^ m i ≠ 0 := by
+  have hne : ∀ i, weierstrassFactor 1 (a i * z) ^ m i ≠ 0 := by
     intro i
     by_cases hmi : m i = 0
     · simp [hmi]
     · apply pow_ne_zero
       intro hzero
-      exact hz i hmi (weierstrassFactorOne_eq_zero_iff.mp hzero)
-  have hp : (∏' i, weierstrassFactorOne (a i * z) ^ m i) ≠ 0 := by
-    rw [ne_eq, tprod_weierstrassFactorOne_pow_eq_zero_iff a m hm]
+      exact hz i hmi ((weierstrassFactor_eq_zero_iff 1).mp hzero)
+  have hp : (∏' i, weierstrassFactor 1 (a i * z) ^ m i) ≠ 0 := by
+    rw [ne_eq, tprod_weierstrassFactor_one_pow_eq_zero_iff a m hm]
     rintro ⟨i, hi, hzero⟩
     exact hz i hi hzero
-  have hs : Summable (fun i ↦ logDeriv (fun w ↦ weierstrassFactorOne (a i * w) ^ m i) z) := by
-    simpa only [logDeriv_weierstrassFactorOne_mul_pow] using
+  have hs : Summable (fun i ↦ logDeriv (fun w ↦ weierstrassFactor 1 (a i * w) ^ m i) z) := by
+    simpa only [logDeriv_weierstrassFactor_one_mul_pow] using
       (summable_norm_natCast_mul_logDerivWeierstrassFactorOneMul a m hm z).of_norm
-  have hd : ∀ i, DifferentiableOn ℂ (fun w ↦ weierstrassFactorOne (a i * w) ^ m i) Set.univ := by
+  have hd : ∀ i, DifferentiableOn ℂ (fun w ↦ weierstrassFactor 1 (a i * w) ^ m i) Set.univ := by
     intro i
     fun_prop
-  have ht := logDeriv_tprod_eq_tsum (f := fun i w ↦ weierstrassFactorOne (a i * w) ^ m i)
+  have ht := logDeriv_tprod_eq_tsum (f := fun i w ↦ weierstrassFactor 1 (a i * w) ^ m i)
     isOpen_univ (Set.mem_univ z) hne hd hs
-    (hasProdLocallyUniformlyOn_weierstrassFactorOne_pow a m hm).multipliableLocallyUniformlyOn hp
-  simpa only [logDeriv_weierstrassFactorOne_mul_pow] using ht
+    (hasProdLocallyUniformlyOn_weierstrassFactor_one_pow a m hm).multipliableLocallyUniformlyOn hp
+  simpa only [logDeriv_weierstrassFactor_one_mul_pow] using ht
 
 end Complex
 

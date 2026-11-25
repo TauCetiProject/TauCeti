@@ -130,6 +130,17 @@ theorem pairColorDensity_singleton_self (S : PairColorSystem κ V) (c : κ) (v :
   classical
   simp [pairColorDensity_def]
 
+/-- The counts of the colors in `K` sum to the number of ordered pairs with a color in `K`.
+Pairs on the diagonal have no color and do not contribute. -/
+theorem PairColorSystem.sum_card_colorOfPair_fibers [DecidableEq κ]
+    (S : PairColorSystem κ V) (K : Finset κ) (s t : Finset V) :
+    ∑ c ∈ K, #{p ∈ s ×ˢ t | S.colorOfPair p.1 p.2 = some c} =
+      #{p ∈ s ×ˢ t | ∃ c ∈ K, S.colorOfPair p.1 p.2 = some c} := by
+  have hcount := sum_card_fiberwise_eq_card_filter (s ×ˢ t) (K.image some)
+    (fun p ↦ S.colorOfPair p.1 p.2)
+  rw [sum_image (fun _ _ _ _ h ↦ Option.some_injective _ h)] at hcount
+  simpa only [mem_image, eq_comm] using hcount
+
 /-- Palette densities sum to one on nonempty distinct-pair support.
 Nonempty cells alone do not suffice, as the coincident-singleton case shows. -/
 theorem sum_pairColorDensity [Fintype κ] [DecidableEq V]
@@ -138,17 +149,13 @@ theorem sum_pairColorDensity [Fintype κ] [DecidableEq V]
     ∑ c, pairColorDensity S c s t = 1 := by
   classical
   have hmem (p : V × V) :
-      S.colorOfPair p.1 p.2 ∈ (univ : Finset κ).image some ↔ p.1 ≠ p.2 := by
-    by_cases hp : p.1 ≠ p.2
+      (∃ c ∈ (univ : Finset κ), S.colorOfPair p.1 p.2 = some c) ↔ p.1 ≠ p.2 := by
+    by_cases hp : p.1 = p.2
     · simp [hp]
-    · have heq := not_ne_iff.mp hp
-      simp [heq]
-  have hcount := sum_card_fiberwise_eq_card_filter (s ×ˢ t)
-    ((univ : Finset κ).image some) (fun p => S.colorOfPair p.1 p.2)
-  rw [sum_image (fun _ _ _ _ h => Option.some_injective _ h)] at hcount
-  simp only [hmem] at hcount
+    · simp [hp]
   simp_rw [pairColorDensity_def]
-  rw [← sum_div, ← Nat.cast_sum, hcount]
+  rw [← sum_div, ← Nat.cast_sum, S.sum_card_colorOfPair_fibers]
+  simp only [hmem]
   exact div_self (Nat.cast_ne_zero.mpr h.card_pos.ne')
 
 /-- Palette densities sum to at most one: to one on nonempty distinct-pair support, and to zero
@@ -194,5 +201,20 @@ theorem pairColorDensity_comap {W : Type*} (S : PairColorSystem κ W) (f : V ↪
     Function.Embedding.coe_prodMap, Function.comp_def, Prod.map_fst, Prod.map_snd,
     PairColorSystem.colorOfPair_comap, ne_eq, f.injective.eq_iff, card_map]
   rfl
+
+/-- Renaming the palette along an equivalence permutes the color densities accordingly. -/
+@[simp]
+theorem pairColorDensity_relabel {κ' : Type*} (S : PairColorSystem κ V) (e : κ ≃ κ') (c : κ')
+    (s t : Finset V) :
+    pairColorDensity (S.relabel e) c s t = pairColorDensity S (e.symm c) s t := by
+  classical
+  have hfilter : {p ∈ s ×ˢ t | (S.relabel e).colorOfPair p.1 p.2 = some c} =
+      {p ∈ s ×ˢ t | S.colorOfPair p.1 p.2 = some (e.symm c)} := by
+    refine filter_congr fun p _ ↦ ?_
+    by_cases hp : p.1 = p.2
+    · simp [hp]
+    · simp only [PairColorSystem.colorOfPair_of_ne _ hp, PairColorSystem.relabel_color,
+        Option.some.injEq, ← e.eq_symm_apply]
+  simp only [pairColorDensity_def, hfilter]
 
 end TauCeti

@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.Analytic.IteratedFDeriv
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Analysis.Analytic.ConvergenceRadius
 import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 
 /-!
-# The leading term of a rescaled Taylor remainder
+# Basic properties of formal power series on balls and at points
 
 If `f` has the power series `∑ₖ pₖ` at `x`, then along the rays `t ↦ x + t • y` the Taylor
 remainder of order `k` is of size `tᵏ`, and after division by `tᵏ` it converges to the term of
@@ -23,6 +27,11 @@ uniformly for `y` in a bounded set
 The homogeneous terms of a power series are thereby recovered as limits of rescaled values of the
 function, which lets properties of `f` that are stable under dilation, translation and uniform
 limits pass to its Taylor terms.
+
+This file also provides radius exhaustion: if `0 < r` and `f` admits a fixed formal multilinear
+series `p` at `x` on every strictly smaller ball of positive radius `r' < r`, then `f` admits `p`
+on the full ball `eball x r` (`TauCeti.hasFPowerSeriesWithinOnBall_of_forall_lt`,
+`TauCeti.hasFPowerSeriesOnBall_of_forall_lt`).
 -/
 
 public section
@@ -80,3 +89,31 @@ theorem tendstoUniformlyOn_inv_pow_smul_sub_partialSum (hp : HasFPowerSeriesAt f
     _ < ε := htε
 
 end HasFPowerSeriesAt
+
+namespace TauCeti
+
+open scoped ENNReal NNReal
+
+/-- If `0 < r` and `f` has power series `p` within `s` at `x` on every ball of positive radius
+`r' < r`, then `f` has power series `p` within `s` at `x` on `eball x r`. -/
+theorem hasFPowerSeriesWithinOnBall_of_forall_lt {s : Set E} {r : ℝ≥0∞} (hr : 0 < r)
+    (h : ∀ r' : ℝ≥0, 0 < r' → (r' : ℝ≥0∞) < r → HasFPowerSeriesWithinOnBall f p s x r') :
+    HasFPowerSeriesWithinOnBall f p s x r where
+  r_le := ENNReal.le_of_forall_pos_nnreal_lt fun r' hr' hlt ↦ (h r' hr' hlt).r_le
+  r_pos := hr
+  hasSum {y} hys hy := by
+    obtain ⟨r', hyr', hr'r⟩ :=
+      ENNReal.lt_iff_exists_nnreal_btwn.1 (mem_eball_zero_iff.1 hy)
+    have hr' : 0 < r' := ENNReal.coe_pos.1 (lt_of_le_of_lt bot_le hyr')
+    exact (h r' hr' hr'r).hasSum hys (mem_eball_zero_iff.2 hyr')
+
+/-- If `0 < r` and `f` has power series `p` at `x` on every ball of positive radius `r' < r`,
+then `f` has power series `p` at `x` on `eball x r`. -/
+theorem hasFPowerSeriesOnBall_of_forall_lt {r : ℝ≥0∞} (hr : 0 < r)
+    (h : ∀ r' : ℝ≥0, 0 < r' → (r' : ℝ≥0∞) < r → HasFPowerSeriesOnBall f p x r') :
+    HasFPowerSeriesOnBall f p x r := by
+  rw [← hasFPowerSeriesWithinOnBall_univ]
+  exact hasFPowerSeriesWithinOnBall_of_forall_lt hr fun r' hr' hlt ↦
+    (h r' hr' hlt).hasFPowerSeriesWithinOnBall
+
+end TauCeti

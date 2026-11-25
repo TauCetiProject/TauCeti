@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.Flow
+public import TauCeti.Combinatorics.Graph.Connectivity.Flow.Basic
 
 /-!
 # Undirected flows on simple graphs
@@ -64,7 +64,7 @@ multigraph realization is at most the pair capacity of every cut separating its 
 Capacities away from graph edges may be nonzero on the diagonal, which never crosses a cut. -/
 theorem val_le_pairCutCapacity
     (f : Flow ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
-      (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t))
+      (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t))
     (hsupport : ∀ p, ¬p.IsDiag → p ∉ G.edgeSet → c p = 0)
     {S : Finset V} (hs : s ∈ S) (ht : t ∉ S) :
     f.val ≤ pairCutCapacity c S := by
@@ -92,22 +92,20 @@ theorem exists_flow_val_eq_pairCutCapacity_mem [Fintype V]
     (hsupport : ∀ p, ¬p.IsDiag → p ∉ G.edgeSet → c p = 0)
     (A : AddSubgroup K) (hcA : ∀ p ∈ G.edgeSet, c p ∈ A) :
     ∃ f : Flow ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
-        (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t),
+        (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t),
       f.toFun.IsAcyclic ∧
       (∀ ⦃x y⦄ (a : (Graph.ofSimpleGraph G).BidirectedHom x y), f.toFun a ∈ A) ∧
       ∃ S : Finset V, s ∈ S ∧ t ∉ S ∧ f.val = pairCutCapacity c S := by
   classical
-  have hst' : G.toOfSimpleGraphVertex s ≠ G.toOfSimpleGraphVertex t := by
+  have hst' : G.ofSimpleGraphVertexEquiv s ≠ G.ofSimpleGraphVertexEquiv t := by
     intro h
     exact hst (by simpa using congrArg Subtype.val h)
-  have hcap : 0 ≤ G.ofSimpleGraphCapacity c := fun e ↦ by
-    rw [G.ofSimpleGraphCapacity_apply]
-    exact hc e.1 (by simpa using e.2)
   have hcapA : ∀ e, G.ofSimpleGraphCapacity c e ∈ A := fun e ↦ by
     rw [G.ofSimpleGraphCapacity_apply]
-    exact hcA e.1 (by simpa using e.2)
+    exact hcA e.val (by simpa using e.property)
   obtain ⟨f, hfacyc, hfA, T, hsT, htT, hval⟩ :=
-    (Graph.ofSimpleGraph G).exists_flow_val_eq_edgeCutCapacity_mem hst' hcap A hcapA
+    (Graph.ofSimpleGraph G).exists_flow_val_eq_edgeCutCapacity_mem hst'
+      (G.ofSimpleGraphCapacity_nonneg hc) A hcapA
   let S : Finset V := T.map ⟨Subtype.val, Subtype.val_injective⟩
   refine ⟨f, hfacyc, hfA, S, ?_, ?_, ?_⟩
   · simpa [S] using
@@ -129,7 +127,7 @@ theorem exists_flow_val_eq_pairCutCapacity [Fintype V]
     (hc : ∀ p ∈ G.edgeSet, 0 ≤ c p)
     (hsupport : ∀ p, ¬p.IsDiag → p ∉ G.edgeSet → c p = 0) :
     ∃ f : Flow ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
-        (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t),
+        (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t),
       f.toFun.IsAcyclic ∧
       ∃ S : Finset V, s ∈ S ∧ t ∉ S ∧ f.val = pairCutCapacity c S := by
   obtain ⟨f, hfacyc, -, hS⟩ :=

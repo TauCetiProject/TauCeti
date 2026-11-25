@@ -31,6 +31,8 @@ for `τ` in the upper half-plane, complementing `Mathlib.Analysis.Complex.UpperH
   the upper half-plane unless `x = 0` and `y ∈ ℤ`.
 * `TauCeti.UpperHalfPlane.exp_two_pi_I_zpow_mul_exp`:
   `qᵏ e^{2π i (x τ + y)} = e^{2π i ((k + x) τ + y)}` for `k ∈ ℤ`.
+* `TauCeti.UpperHalfPlane.expTwoPiIMulHom`: the exponential `x ↦ e^{2π i x}` as a homomorphism
+  from `ℂ` onto the units of `ℂ`, written additively (`surjective_expTwoPiIMulHom`).
 -/
 
 public section
@@ -43,7 +45,7 @@ namespace TauCeti.UpperHalfPlane
 
 /-- `q = e^{2π i τ}` is the square of `e^{π i τ}`. -/
 theorem exp_two_pi_I_eq_exp_pi_I_sq (τ : ℂ) : cexp (2 * π * I * τ) = cexp (π * I * τ) ^ 2 := by
-  rw [← Complex.exp_nat_mul]
+  rw [← Complex.exp_natCast_mul]
   congr 1
   push_cast
   ring
@@ -131,8 +133,30 @@ theorem one_sub_exp_two_pi_I_ne_zero {x y : ℝ} {τ : ℂ} (hτ : 0 < τ.im)
 theorem exp_two_pi_I_zpow_mul_exp (k : ℤ) (x y : ℝ) (τ : ℂ) :
     cexp (2 * π * I * τ) ^ k * cexp (2 * π * I * (x * τ + y)) =
       cexp (2 * π * I * (((k + x : ℝ) : ℂ) * τ + y)) := by
-  rw [← Complex.exp_int_mul, ← Complex.exp_add]
+  rw [← Complex.exp_intCast_mul, ← Complex.exp_add]
   push_cast
   ring_nf
+
+/-- The exponential `x ↦ e^{2π i x}` as a homomorphism from `ℂ` to the units of `ℂ`, written
+additively. -/
+noncomputable def expTwoPiIMulHom : ℂ →+ Additive ℂˣ :=
+  Complex.expMonoidHom.toHomUnits.toAdditiveLeft.comp (AddMonoidHom.mulLeft (2 * π * I))
+
+/-- `TauCeti.UpperHalfPlane.expTwoPiIMulHom` sends `x` to `e^{2π i x}`. -/
+@[simp]
+theorem expTwoPiIMulHom_apply (x : ℂ) :
+    expTwoPiIMulHom x = .ofMul (Units.mk0 (cexp (2 * π * I * x)) (Complex.exp_ne_zero _)) :=
+  Units.ext rfl
+
+/-- Every unit of `ℂ` is `e^{2π i x}` for some `x`, namely `x = log t / (2π i)` (Mathlib's
+`Function.Periodic.invQParam`). -/
+theorem surjective_expTwoPiIMulHom : Function.Surjective expTwoPiIMulHom := by
+  intro t
+  refine ⟨Function.Periodic.invQParam 1 (t.toMul : ℂ), ?_⟩
+  rw [expTwoPiIMulHom_apply, ← ofMul_toMul t]
+  congr 1
+  ext
+  simpa [Function.Periodic.qParam] using
+    Function.Periodic.qParam_right_inv one_ne_zero t.toMul.ne_zero
 
 end TauCeti.UpperHalfPlane

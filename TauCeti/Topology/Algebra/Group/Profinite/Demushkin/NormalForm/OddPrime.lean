@@ -83,7 +83,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_odd (hp : Odd p
       demushkinWordNeTwo_mem_pLowerCentralSeries_one dvd_rfl n _⟩ with hw
   -- `e₁ r ∈ λ_1(F)` has class `(e₁)_* ρ`.
   have hmem : f r ∈ pLowerCentralSeries p (freeProP p (Fin n)) 1 :=
-    f.toMonoidHom.map_pLowerCentralSeries_le f.continuous 1 ⟨r, r.2, rfl⟩
+    f.toMonoidHom.map_pLowerCentralSeries_le f.continuous 1 ⟨r, r.property, rfl⟩
   have hr' : gradedMk p (freeProP p (Fin n)) 1 ⟨f r, hmem⟩ =
       gradedMap p f.toMonoidHom f.continuous 1 ρ := by
     rw [hρ, gradedMap_gradedMk]

@@ -117,7 +117,7 @@ theorem LocallyLifts.isPlotOn [DiffeologicalSpace Q] {n : ℕ} {q : X → Q} {u 
     IsPlotOn u p := by
   refine isPlotOn_of_locally fun z hz ↦ ?_
   obtain ⟨v, hv, hzv, _, lift, hlift, hqlift⟩ := hp z hz
-  exact ⟨v, hv, hzv, (hlift.dSmooth_comp hq).congr hqlift⟩
+  exact ⟨v, hv, hzv, ((hlift.dSmooth_comp hq).congr hqlift).mono inter_subset_right⟩
 
 /-! ### Subductions -/
 

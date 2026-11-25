@@ -27,10 +27,19 @@ For a real function `g` integrable on `(x, ∞)`, with tail integral
 (`MeasureTheory.IntegrableOn.mul_pow_integral_Ioi`) with integral
 `Ψ x ^ (k + 1) / (k + 1)` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`).
 The tail integral of a function nonnegative on `(a, ∞)` is antitone there
-(`MeasureTheory.antitoneOn_integral_Ioi`).
+(`MeasureTheory.antitoneOn_integral_Ioi`). If `f` is continuous from the right at `a` and `f`
+and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
+`∫ x in Ioi a, f' x = -f a`
+(`MeasureTheory.integral_Ioi_of_hasDerivAt_of_integrableOn`).
 
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
-ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`).
+ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For general
+Banach-space-valued integrands, `TauCeti.integral_comp_add_mul_left_Ioi'` records the affine
+change of variables `y = c + b * x` (`0 < b`) on `Ioi a`.
+
+The integrals of a function integrable on a strip `ℝ × T` over the rectangles `[a i, b i] × T`
+converge to its integral over the strip as `a i → -∞` and `b i → ∞`
+(`TauCeti.tendsto_setIntegral_Icc_prod`).
 
 If nonnegative functions `f` and `g` satisfy `∫_{φ i} f ≤ ∫_{φ i} g + e i` along an exhaustion `φ`
 with errors `e i → 0`, and `g` is integrable, then `f` is integrable with `∫ f ≤ ∫ g`
@@ -38,8 +47,10 @@ with errors `e i → 0`, and `g` is integrable, then `f` is integrable with `∫
 `[-n, n] × T` of a strip `ℝ × T` this is
 `TauCeti.integrableOn_univ_prod_and_setIntegral_le_of_setIntegral_Icc_prod_le_add`.
 
-A nonnegative function whose integrals over the preimages of the balls `closedBall x₀ (r i)`
-under a continuous map converge as the radii `r i` tend to infinity has the limit as its integral
+The preimages of the balls `closedBall x₀ (r i)` under a continuous map exhaust the space as the
+radii `r i` tend to infinity (`TauCeti.aecover_preimage_closedBall`), so the integrals of an
+integrable function over them converge to its integral. A nonnegative function whose integrals over
+these preimages converge as the radii `r i` tend to infinity has the limit as its integral
 over the whole space (`TauCeti.lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall`). For
 example, the plane `ℝ × ℝ` is exhausted by the Euclidean discs `{‖w‖ ≤ r}` of `ℂ`.
 
@@ -180,6 +191,17 @@ theorem antitoneOn_integral_Ioi {f : ℝ → ℝ} {a : ℝ} (hf : ∀ v ∈ Ioi 
   setIntegral_mono_set (hint x hx) ((ae_restrict_iff' measurableSet_Ioi).2
     (ae_of_all _ fun v hv ↦ hf v (hx.trans hv))) (Ioi_subset_Ioi hxy).eventuallySubset
 
+/-- **Fundamental theorem of calculus on a half-line, with integrable primitive.** If `f` is
+continuous from the right at `a`, has derivative `f'` on `(a, ∞)`, and both `f` and `f'` are
+integrable on `(a, ∞)`, then `∫ x in Ioi a, f' x = -f a`. -/
+theorem integral_Ioi_of_hasDerivAt_of_integrableOn {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f f' : ℝ → E} {a : ℝ}
+    (hcont : ContinuousWithinAt f (Ici a) a) (hderiv : ∀ x ∈ Ioi a, HasDerivAt f (f' x) x)
+    (f'int : IntegrableOn f' (Ioi a)) (fint : IntegrableOn f (Ioi a)) :
+    ∫ x in Ioi a, f' x = -f a := by
+  rw [integral_Ioi_of_hasDerivAt_of_tendsto hcont hderiv f'int
+    (tendsto_zero_of_hasDerivAt_of_integrableOn_Ioi hderiv f'int fint), zero_sub]
+
 end MeasureTheory
 
 section Ray
@@ -234,6 +256,23 @@ namespace TauCeti
 
 open MeasureTheory
 
+/-- **Integrals over a strip are limits over its truncations.** Let `T` be measurable and `f`
+integrable on the strip `ℝ × T`. If `a i → -∞` and `b i → ∞` along a countably generated filter,
+the integrals of `f` over the rectangles `[a i, b i] × T` converge to its integral over the
+strip. -/
+theorem tendsto_setIntegral_Icc_prod {ι β F : Type*} [MeasurableSpace β] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {μ : Measure (ℝ × β)} {l : Filter ι} [l.IsCountablyGenerated]
+    {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {T : Set β}
+    (hT : MeasurableSet T) {f : ℝ × β → F} (hf : IntegrableOn f (univ ×ˢ T) μ) :
+    Tendsto (fun i ↦ ∫ z in Icc (a i) (b i) ×ˢ T, f z ∂μ) l (𝓝 (∫ z in univ ×ˢ T, f z ∂μ)) := by
+  have hφ : AECover (μ.restrict (univ ×ˢ T)) l fun i ↦ Icc (a i) (b i) ×ˢ T :=
+    aecover_restrict_of_ae_imp (MeasurableSet.univ.prod hT) (ae_of_all _ fun z hz ↦
+      ((ha.eventually_le_atBot z.1).and (hb.eventually_ge_atTop z.1)).mono fun _ h ↦
+        ⟨⟨h.1, h.2⟩, hz.2⟩) fun _ ↦ measurableSet_Icc.prod hT
+  refine (hφ.integral_tendsto_of_countably_generated hf).congr fun i ↦ ?_
+  rw [Measure.restrict_restrict (measurableSet_Icc.prod hT),
+    inter_eq_left.2 (prod_mono (subset_univ _) subset_rfl)]
+
 /-- **Integral bounds over a strip from its truncations.** Let `T ⊆ ℝ` be measurable, and let `f`
 and `g` be nonnegative on the strip `ℝ × T`, with `g` integrable there and `f` integrable on each
 truncation `[-n, n] × T`. If `∫_{[-n, n] × T} f ≤ ∫_{[-n, n] × T} g + e n` with errors `e n → 0`,
@@ -262,6 +301,16 @@ theorem integrableOn_univ_prod_and_setIntegral_le_of_setIntegral_Icc_prod_le_add
     exact hfi n
   · simpa only [hres] using hle n
 
+/-- **The preimages of growing balls exhaust the space.** If the radii `r i` tend to infinity along
+`l`, the preimages of the balls `closedBall x₀ (r i)` under a continuous map `g` form an
+`AECover`: every point eventually lies in them. -/
+theorem aecover_preimage_closedBall {α X ι : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [OpensMeasurableSpace α] [PseudoMetricSpace X] {μ : Measure α} {l : Filter ι} {g : α → X}
+    {x₀ : X} (hg : Continuous g) {r : ι → ℝ} (hr : Tendsto r l atTop) :
+    AECover μ l fun i ↦ g ⁻¹' Metric.closedBall x₀ (r i) :=
+  ⟨ae_of_all _ fun z ↦ hr.eventually_ge_atTop (dist (g z) x₀),
+    fun _ ↦ (Metric.isClosed_closedBall.preimage hg).measurableSet⟩
+
 /-- **Exhausting a space by balls.** If a nonnegative function is integrable on the preimages of
 the balls `closedBall x₀ (r i)` under a continuous map `g`, and its integrals over them converge
 to `c` as the radii `r i` tend to infinity, then its integral over the whole space is `c`. -/
@@ -273,10 +322,18 @@ theorem lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall {α X ι : Type*}
     {c : ℝ} (hc : Tendsto (fun i ↦ ∫ z in g ⁻¹' Metric.closedBall x₀ (r i), f z ∂μ) l (𝓝 c)) :
     ∫⁻ z, ENNReal.ofReal (f z) ∂μ = ENNReal.ofReal c := by
   have hφ : AECover μ l fun i ↦ g ⁻¹' Metric.closedBall x₀ (r i) :=
-    ⟨ae_of_all _ fun z ↦ hr.eventually_ge_atTop (dist (g z) x₀),
-      fun _ ↦ (Metric.isClosed_closedBall.preimage hg).measurableSet⟩
+    aecover_preimage_closedBall hg hr
   rw [← ofReal_integral_eq_lintegral_ofReal
     (hφ.integrable_of_integral_tendsto_of_nonneg_ae c hfi hf hc) hf,
     hφ.integral_eq_of_tendsto_of_nonneg_ae c hf hfi hc]
+
+/-- Affine substitution `y = c + b * x` (`0 < b`) in a Bochner integral over `Ioi a`. -/
+theorem integral_comp_add_mul_left_Ioi' {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (g : ℝ → E) (a c : ℝ) {b : ℝ} (hb : 0 < b) :
+    b • ∫ x in Ioi a, g (c + b * x) = ∫ y in Ioi (c + b * a), g y := by
+  rw [integral_comp_mul_left_Ioi' (fun y ↦ g (c + y)) a hb,
+    ← (measurePreserving_add_left volume c).setIntegral_preimage_emb (measurableEmbedding_addLeft c)
+      g (Ioi (c + b * a)),
+    preimage_const_add_Ioi, add_sub_cancel_left]
 
 end TauCeti

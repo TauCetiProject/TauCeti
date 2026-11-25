@@ -23,6 +23,8 @@ This is what makes the degenerate Gaussian-Gram Wishart laws singular with respe
 * `TauCeti.measurableSet_setOfPred_det_eq_zero` — the singular matrices are measurable.
 * `TauCeti.symmetricLebesgue_setOf_det_eq_zero` — the singular matrices are
   `symmetricLebesgue`-null.
+* `TauCeti.mutuallySingular_symmetricLebesgue_of_ae_det_eq_zero` — a measure carried by the
+  singular matrices is singular with respect to `symmetricLebesgue`.
 -/
 
 public section
@@ -57,7 +59,7 @@ theorem eval_symmetricDetPolynomial (p : ℕ) (x : upperTriangle p → ℝ) :
 /-- The upper-triangular coordinates of the identity matrix reconstruct the identity matrix. -/
 private theorem coe_symmetricCoordinates_symm_one (p : ℕ) :
     ((symmetricCoordinates p).symm
-          (fun ij : upperTriangle p => if ij.1.1 = ij.1.2 then (1 : ℝ) else 0) :
+          (fun ij : upperTriangle p => if ij.val.1 = ij.val.2 then (1 : ℝ) else 0) :
         Matrix (Fin p) (Fin p) ℝ) = 1 := by
   ext i j
   by_cases h : i ≤ j
@@ -70,7 +72,7 @@ one. This nondegeneracy is what lets the zero-locus theorem apply. -/
 theorem symmetricDetPolynomial_ne_zero (p : ℕ) : symmetricDetPolynomial p ≠ 0 := by
   intro h
   have hval := eval_symmetricDetPolynomial p
-    (fun ij : upperTriangle p => if ij.1.1 = ij.1.2 then (1 : ℝ) else 0)
+    (fun ij : upperTriangle p => if ij.val.1 = ij.val.2 then (1 : ℝ) else 0)
   rw [h, map_zero, coe_symmetricCoordinates_symm_one, Matrix.det_one] at hval
   exact zero_ne_one hval
 
@@ -79,7 +81,7 @@ continuous. -/
 theorem measurableSet_setOfPred_det_eq_zero (p : ℕ) :
     MeasurableSet {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).det = 0} :=
-  (isClosed_eq (Continuous.matrix_det continuous_subtype_val) continuous_const).measurableSet
+  (isClosed_eq (Continuous.matrix_det continuous_subtypeVal) continuous_const).measurableSet
 
 /-- The singular symmetric matrices form a `symmetricLebesgue`-null set. -/
 theorem symmetricLebesgue_setOf_det_eq_zero (p : ℕ) :
@@ -96,5 +98,16 @@ theorem symmetricLebesgue_setOf_det_eq_zero (p : ℕ) :
     simp only [Set.mem_preimage, Set.mem_ofPred_eq, eval_symmetricDetPolynomial]
   rw [hpre]
   exact (symmetricDetPolynomial p).volume_setOfPred_eval_eq_zero (symmetricDetPolynomial_ne_zero p)
+
+/-- A measure carried by the singular symmetric matrices has no density: it is singular with
+respect to `symmetricLebesgue`, which does not charge them. -/
+theorem mutuallySingular_symmetricLebesgue_of_ae_det_eq_zero {p : ℕ}
+    {μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))}
+    (h : ∀ᵐ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ∂μ,
+      (A : Matrix (Fin p) (Fin p) ℝ).det = 0) :
+    μ.MutuallySingular (symmetricLebesgue p) :=
+  ⟨{A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+      (A : Matrix (Fin p) (Fin p) ℝ).det = 0}ᶜ, (measurableSet_setOfPred_det_eq_zero p).compl,
+    ae_iff.1 h, by rw [compl_compl, symmetricLebesgue_setOf_det_eq_zero]⟩
 
 end TauCeti

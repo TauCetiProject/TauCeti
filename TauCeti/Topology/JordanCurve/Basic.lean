@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homeomorph.Lemmas
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.LocallyConnected
 import Mathlib.Analysis.Convex.GaugeRescale
 import TauCeti.Topology.Homeomorph.CompactQuotient
@@ -140,7 +140,7 @@ theorem IsJordanCurve.not_subsingleton (h : IsJordanCurve C) : ¬ C.Subsingleton
   obtain ⟨e⟩ := h
   intro hsub
   exact Circle.neg_ne_self 1
-    (e.symm.injective (Subtype.ext (hsub (e.symm (-1)).2 (e.symm 1).2)))
+    (e.symm.injective (Subtype.ext (hsub (e.symm (-1)).property (e.symm 1).property)))
 
 /-- **A Jordan curve is carried to a Jordan curve by a continuous injection.** Only continuity and
 injectivity *on the curve* are needed, the curve supplying the compactness that upgrades them to a
@@ -195,7 +195,7 @@ noncomputable def jordanParam (e : C ≃ₜ Circle) : Circle → X :=
 
 /-- The parametrization `TauCeti.jordanParam` of a Jordan curve by the circle is continuous. -/
 lemma continuous_jordanParam (e : C ≃ₜ Circle) : Continuous (jordanParam e) :=
-  continuous_subtype_val.comp e.symm.continuous
+  continuous_subtypeVal.comp e.symm.continuous
 
 /-- The parametrization `TauCeti.jordanParam` of a Jordan curve by the circle is injective: this is
 the simplicity of the curve. -/
@@ -213,7 +213,7 @@ curve. -/
 lemma range_jordanParam (e : C ≃ₜ Circle) : range (jordanParam e) = C := by
   refine subset_antisymm ?_ fun x hx => ⟨e ⟨x, hx⟩, by simp [jordanParam]⟩
   rintro _ ⟨u, rfl⟩
-  exact (e.symm u).2
+  exact (e.symm u).property
 
 /-- The defining equation of `TauCeti.jordanParam`: the parameter `u` names the point `e.symm u` of
 the curve, read in the ambient space. This is the general application lemma, so a consumer never has
@@ -295,7 +295,7 @@ instance locallyConnectedSpace_sphere (c : ℂ) (r : ℝ) : LocallyConnectedSpac
       have : (0 : ℝ) ≤ r := h ▸ norm_nonneg (z - c)
       linarith
     rw [hempty]
-    exact ⟨fun x => absurd x.2 (notMem_empty _)⟩
+    exact ⟨fun x => absurd x.property (notMem_empty _)⟩
   · have hparam :
         sphere c r = (fun θ : ℝ => c + r * exp (θ * I)) '' Icc (-Real.pi) Real.pi := by
       ext z
