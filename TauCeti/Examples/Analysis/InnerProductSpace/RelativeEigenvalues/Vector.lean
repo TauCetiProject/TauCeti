@@ -54,11 +54,10 @@ theorem isRelEigenvalueVector_one_three :
       fun i j ↦ ?_⟩
   obtain ⟨i, rfl⟩ := e.symm.surjective i
   obtain ⟨j, rfl⟩ := e.symm.surjective j
+  have h2 : (Real.sqrt 2 : ℂ) * Real.sqrt 2 = 2 := by norm_cast; simp
   have hs (c : ℂ) : ((Real.sqrt 2 : ℂ))⁻¹ * c * (Real.sqrt 2 : ℂ)⁻¹ = c / 2 := by
-    rw [mul_comm _ c, mul_assoc, ← mul_inv, ← Complex.ofReal_mul,
-      Real.mul_self_sqrt (by norm_num)]
-    norm_num
-    ring
+    field_simp
+    linear_combination -c * h2
   fin_cases i <;> fin_cases j <;>
     simp [← mul_assoc, Complex.conj_ofReal, hs]
 
@@ -69,7 +68,7 @@ theorem isRelEigenvalueVector_three_one :
   convert h using 1
   ext i
   obtain ⟨i, rfl⟩ := e.symm.surjective i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp
 
 /-- **The sorted eigenvalue vector is `(3, 1)`**: it is the only decreasing eigenvalue vector of
 `diag(2, 3)` relative to `diag(2, 1)`. -/
