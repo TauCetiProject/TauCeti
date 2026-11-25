@@ -216,7 +216,8 @@ theorem eq_of_mul_mul_eq_diagonal_pow (hϖ : Irreducible ϖ) (hα : Monotone α)
       rw [hval] at hfg hle
       have hcast (ε : Fin n → ℕ) : (prefixSum k fun i ↦ ((ε i : ℕ) : ℕ∞)) = prefixSum k ε := by
         simp [prefixSum_def]
-      exact_mod_cast (hcast γ ▸ hcast δ ▸ hle.trans hfg.le)
+      rw [hcast] at hle hfg
+      exact_mod_cast hle.trans hfg.le
     exact le_antisymm (key hα hβ hL hQ hL' hQ' h h') (key hβ hα hL' hQ' hL hQ h' h)
   funext i
   have h₁ := hprefix (i + 1) i.isLt

@@ -139,11 +139,11 @@ theorem comap_conj_smul_range_eq_GL2K0 (hϖ : Irreducible ϖ) (hπ : algebraMap 
       ring
     have hϖ0 : algebraMap R K ϖ ≠ 0 :=
       (map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr hϖ.ne_zero
-    refine ⟨nonsingInvUnit _ hY, congrArg ProjGenLinGroup.mk (Units.ext ?_)⟩
+    refine ⟨GeneralLinearGroup.mk'' _ hY, congrArg ProjGenLinGroup.mk (Units.ext ?_)⟩
     ext i j
     rw [hentry]
     fin_cases i <;> fin_cases j <;>
-      simp [hπk, hc, GeneralLinearGroup.map_apply, nonsingInvUnit, ← mul_assoc] <;>
+      simp [hπk, hc, GeneralLinearGroup.map_apply, GeneralLinearGroup.val_mk'', ← mul_assoc] <;>
       field_simp
 
 omit [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K] in
@@ -228,8 +228,7 @@ theorem eq_of_mem_doubleCoset_mk_diagGL_pow (hϖ : Irreducible ϖ) (hπ : algebr
   obtain ⟨j, v, hv⟩ := IsDiscreteValuationRing.exists_units_eq_smul_zpow_of_irreducible
     (K := K) hϖ u.ne_zero
   have huv : u = Units.map (algebraMap R K : R →* K) v * π ^ j := Units.ext <| by
-    rw [hv, hπ, Units.smul_def, Algebra.smul_def, Units.val_mul, Units.coe_map,
-      MonoidHom.coe_ofClass, Units.val_zpow_eq_zpow_val]
+    simp [hv, ← hπ, Units.smul_def, Algebra.smul_def]
   have hmem : (diagGL fun i ↦ π ^ (![0, (k : ℤ)] i)) ∈
       doubleCoset (diagGL fun i ↦ π ^ (![j, (l : ℤ) + j] i))
         (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).range

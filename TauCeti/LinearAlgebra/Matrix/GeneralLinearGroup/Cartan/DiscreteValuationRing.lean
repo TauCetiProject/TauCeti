@@ -92,11 +92,12 @@ theorem exists_monotone_mem_doubleCoset_diagGL_zpow (hϖ : Irreducible ϖ)
     IsLocalization.exists_matrix_map_eq_smul (Submonoid.powers ϖ) (g : Matrix (Fin n) (Fin n) K)
   rw [← algebraMap_smul K, map_pow] at hA
   obtain ⟨L, Q, s, hL, hQ, hs, hLAQ⟩ := exists_smith_normal_form_of_isDiscreteValuationRing A
-  set L' : GL (Fin n) R := nonsingInvUnit L hL
-  set Q' : GL (Fin n) R := nonsingInvUnit Q hQ
+  set L' : GL (Fin n) R := GeneralLinearGroup.mk'' L hL
+  set Q' : GL (Fin n) R := GeneralLinearGroup.mk'' Q hQ
   have hA' : (↑L'⁻¹ : Matrix (Fin n) (Fin n) R) * diagonal s * (↑Q'⁻¹ : Matrix (Fin n) (Fin n) R) =
       A :=
-    (GeneralLinearGroup.inv_mul_mul_inv_eq_iff_mul_mul_eq L' Q').2 hLAQ
+    (GeneralLinearGroup.inv_mul_mul_inv_eq_iff_mul_mul_eq L' Q').2 <| by
+      rw [GeneralLinearGroup.val_mk'', GeneralLinearGroup.val_mk'', hLAQ]
   -- the diagonal entries are nonzero, since `A` is nonsingular
   have hdetA : A.det ≠ 0 := fun h0 ↦ by
     have hπ0 : algebraMap R K ϖ ≠ 0 := hπ ▸ π.ne_zero
@@ -132,10 +133,9 @@ theorem exists_monotone_mem_doubleCoset_diagGL_zpow (hϖ : Irreducible ϖ)
   -- `g = π^{-m} (π^m g)`, and the scalar `π^{-m}` is central
   have hg : g = GeneralLinearGroup.scalar (Fin n) (π ^ (-(m : ℤ))) *
       (GeneralLinearGroup.scalar (Fin n) (π ^ (m : ℤ)) * g) := by
-    rw [← mul_assoc, ← map_mul, ← _root_.zpow_add, neg_add_cancel, zpow_zero, map_one, one_mul]
-  rw [hg, hmat, diagGL_zpow_add_const, ← mul_assoc _ (GeneralLinearGroup.scalar _ _),
-    ← GeneralLinearGroup.scalar_commute]
-  simp only [mul_assoc]
+    simp [← mul_assoc]
+  rw [hg, hmat, diagGL_zpow_add_const]
+  simp only [mul_assoc, GeneralLinearGroup.scalar_commute]
 
 /-- Two diagonal elements `diag(π^a)` and `diag(π^b)` of `GLₙ(K)` with monotone exponents lie in the
 same `GLₙ(R)` double coset only if `a = b`. -/

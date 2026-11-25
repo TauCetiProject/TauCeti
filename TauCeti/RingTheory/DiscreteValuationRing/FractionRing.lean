@@ -81,7 +81,7 @@ theorem TauCeti.IsDiscreteValuationRing.exists_algebraMap_eq_of_pow_eq_algebraMa
     have hpow : (algebraMap R K ϖ ^ j) ^ n = algebraMap R K ϖ ^ ((n : ℤ) * j) := by
       rw [mul_comm, zpow_mul, zpow_natCast]
     rw [Units.smul_def, Algebra.smul_def, mul_pow, hpow] at h
-    rw [Units.val_mul, map_mul, ← h, inv_pow, map_units_inv, Units.val_pow_eq_pow_val, map_pow]
+    simp [← h, map_units_inv]
     field_simp
   have hnj : (n : ℤ) * j = 0 := hϖ.eq_zero_of_zpow_eq_algebraMap hj
   refine ⟨v, ?_⟩
