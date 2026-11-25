@@ -70,13 +70,11 @@ theorem synthesisMapIsometry_apply (hv : Orthonormal 𝕜 v)
   rw [← LinearIsometry.coe_toLinearMap, synthesisMapIsometry_toLinearMap,
     TauCeti.synthesisMap_apply]
 
-open Classical in
 /-- The coordinate isometry sends the single-coordinate vector supported at `i` with coefficient
 `c` to `c • v i`. -/
 @[simp high]
-theorem synthesisMapIsometry_single (hv : Orthonormal 𝕜 v) (i : ι) (c : 𝕜) :
+theorem synthesisMapIsometry_single [DecidableEq ι] (hv : Orthonormal 𝕜 v) (i : ι) (c : 𝕜) :
     hv.synthesisMapIsometry (EuclideanSpace.single i c) = c • v i := by
-  classical
   rw [synthesisMapIsometry_apply]
   simp
 
