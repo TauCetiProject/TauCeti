@@ -72,14 +72,13 @@ theorem le_norm_sub_of_window_taylor_bound_of_simple_pole {F : ℂ → ℂ} {z w
 
 /-- An at-most-simple pole to the left of its Taylor centre, at distance less than the radius in
 the window bound, cannot have positive real residue. The real-centred coefficient need not be
-real: the bound uses its real part and its norm. -/
+real: only the real part of the reflected coefficient is bounded. -/
 theorem residue_re_nonpos_of_window_taylor_bound {F : ℂ → ℂ}
     {x β r R : ℝ} (hF : DifferentiableOn ℂ F (ball (x : ℂ) r \ {(β : ℂ)}))
     (hβ : β < x) (hd : x - β < min r R) (hp : -1 ≤ meromorphicOrderAt F (β : ℂ))
     (hupper : ∀ η : ℝ, 0 < η → ∃ C : ℝ, ∀ U₀ : ℝ, ∃ U ≥ U₀, ∃ k : ℕ,
       U ≤ (k : ℝ) ∧
-        ‖iteratedDeriv k F x / (k ! : ℂ)‖ + ((-1) ^ k * (iteratedDeriv k F x / (k ! : ℂ))).re ≤
-          C * Real.exp (η * U) / R ^ k) :
+        ((-1) ^ k * (iteratedDeriv k F x / (k ! : ℂ))).re ≤ C * Real.exp (η * U) / R ^ k) :
     (Contour.residue F β).re ≤ 0 := by
   by_contra! hc
   obtain ⟨hdr, hdR⟩ := lt_min_iff.1 hd
@@ -89,10 +88,8 @@ theorem residue_re_nonpos_of_window_taylor_bound {F : ℂ → ℂ}
   have hm := meromorphicAt_of_meromorphicOrderAt_ne_zero hnegative.ne
   obtain ⟨h, hh, heq⟩ := hm.exists_analyticAt_eventuallyEq_inv_smul_residue_add hp
   simp only [smul_eq_mul, inv_mul_eq_div] at heq
-  refine hdR.not_ge (le_of_window_exp_div_pow_bound (half_pos hc) (sub_pos.2 hβ) ?_ hupper)
-  have hlower := Complex.eventually_le_re_neg_one_pow_mul_iteratedDeriv_div_factorial_of_simple_pole
-    hF hh heq hc hβ hdr
-  filter_upwards [hlower] with k hk
-  exact hk.trans (le_add_of_nonneg_left (norm_nonneg _))
+  exact hdR.not_ge (le_of_window_exp_div_pow_bound (half_pos hc) (sub_pos.2 hβ)
+    (Complex.eventually_le_re_neg_one_pow_mul_iteratedDeriv_div_factorial_of_simple_pole
+      hF hh heq hc hβ hdr) hupper)
 
 end DifferentiableOn
