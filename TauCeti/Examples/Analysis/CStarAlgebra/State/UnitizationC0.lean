@@ -65,18 +65,24 @@ noncomputable def faithfulFunctional : C₀(ℕ, ℂ) →P[ℂ] ℂ :=
       rw [ContinuousLinearMap.coe_coe, dualEquiv_weights_star_mul_self]
       exact Complex.zero_le_real.mpr (tsum_nonneg fun n ↦ by positivity)
 
+/- `PositiveContinuousLinearMap.ofClass` and `PositiveLinearMap.mk₀` have no evaluation lemmas,
+so `τ` is identified with the underlying pairing by unfolding them, once, here. -/
+private theorem faithfulFunctional_eq_dualEquiv (f : C₀(ℕ, ℂ)) :
+    faithfulFunctional f = ZeroAtInftyContinuousMap.dualEquiv ℂ ℕ weights f :=
+  rfl
+
 /-- `τ` is the series `Σₙ 2⁻⁽ⁿ⁺¹⁾ f(n)`. -/
 @[simp]
 theorem faithfulFunctional_apply (f : C₀(ℕ, ℂ)) :
-    faithfulFunctional f = ∑' n, (((1 / 2 : ℝ) ^ (n + 1) : ℝ) : ℂ) * f n :=
-  ZeroAtInftyContinuousMap.dualEquiv_apply weights f
+    faithfulFunctional f = ∑' n, (((1 / 2 : ℝ) ^ (n + 1) : ℝ) : ℂ) * f n := by
+  rw [faithfulFunctional_eq_dualEquiv, ZeroAtInftyContinuousMap.dualEquiv_apply]
+  simp [weights]
 
 /-- **`τ` is faithful.** -/
 theorem eq_zero_of_faithfulFunctional_star_mul_self_eq_zero (g : C₀(ℕ, ℂ))
     (h : faithfulFunctional (star g * g) = 0) : g = 0 := by
-  have h' : ∑' n, w n * ‖g n‖ ^ 2 = 0 := by
-    have : faithfulFunctional (star g * g) = _ := dualEquiv_weights_star_mul_self g
-    exact_mod_cast this.symm.trans h
+  rw [faithfulFunctional_eq_dualEquiv, dualEquiv_weights_star_mul_self] at h
+  have h' : ∑' n, w n * ‖g n‖ ^ 2 = 0 := by exact_mod_cast h
   have hz := (hasSum_zero_iff_of_nonneg (fun n ↦ by positivity)).mp
     (h' ▸ (summable_w_mul_sq g).hasSum)
   ext n
