@@ -19,6 +19,7 @@ import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Global `L¹` compactness of BV functions and sets of finite perimeter on bounded Lipschitz domains
@@ -171,8 +172,7 @@ theorem BV.isCompactOperator_toL1CLM_of_isLipschitzDomain
   obtain ⟨g, -, -, -, -, -, -⟩ := isLipschitzDomain_iff_exists_mem_normalCylinder.mp hΩ x₀ hx₀
   have hfr_cpt : IsCompact (frontier (g '' (Ω : Set F))) := by
     rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier]
-    exact (hb.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure).image
-      g.continuous
+    exact hb.isCompact_frontier.image g.continuous
   obtain ⟨L, hL⟩ := (hΩ.image g).exists_isLipschitzDomainWith hfr_cpt
   exact BV.isCompactOperator_toL1CLM_of_isLipschitzDomainWith_image g hL hb
 

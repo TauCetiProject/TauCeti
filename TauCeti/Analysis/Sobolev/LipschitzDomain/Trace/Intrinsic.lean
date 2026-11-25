@@ -13,6 +13,7 @@ import TauCeti.Analysis.Normed.Module.DiamFrontier
 import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # The trace on a bounded Lipschitz domain of a Euclidean space
@@ -221,8 +222,7 @@ private theorem exists_frontierTrace_volume (hp : p ≠ ⊤)
   obtain ⟨g, -, -, -, -, -, -⟩ := isLipschitzDomain_iff_exists_mem_normalCylinder.mp hΩ x₀ hx₀
   have hfr_cpt : IsCompact (frontier (g '' (Ω : Set F))) := by
     rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier]
-    exact (hb.isCompact_closure.of_isClosed_subset isClosed_frontier
-      frontier_subset_closure).image g.continuous
+    exact hb.isCompact_frontier.image g.continuous
   obtain ⟨L, hL⟩ := (hΩ.image g).exists_isLipschitzDomainWith hfr_cpt
   -- Give `E` the inner product, finite dimension and Borel structure of its image in `F`.
   let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E) := g.linearIsometryEquiv
