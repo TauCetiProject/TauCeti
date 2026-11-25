@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Covering.Quotient
 public import Mathlib.Topology.VectorBundle.Basic
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
 
@@ -225,11 +226,6 @@ variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] 
 /-- The identity of `G` acts trivially through a representation `ρ`. -/
 private theorem rep_one_apply (v : F) : (ρ 1 : F →L[𝕜] F) v = v := by
   rw [map_one, Units.val_one, one_apply_eq_self]
-
-/-- Through a representation `ρ`, the action of `g⁻¹` undoes the action of `g`. -/
-private theorem rep_inv_apply_apply (g : G) (v : F) :
-    (ρ g⁻¹ : F →L[𝕜] F) ((ρ g : F →L[𝕜] F) v) = v := by
-  rw [← mul_apply_eq_comp, ← Units.val_mul, ← map_mul, inv_mul_cancel, rep_one_apply]
 
 /-- The vector bundle `E ×_G F` over `X` associated with a representation `ρ` of the deck group
 on `F`. Its chart through `e : E` lives over the domain of the local section of `p` through `e`,
@@ -595,7 +591,7 @@ def _root_.TauCeti.associatedOrbitRel : Setoid (E × F) where
   iseqv.refl _ := ⟨1, one_smul _ _, rep_one_apply ρ _⟩
   iseqv.symm := by
     rintro ⟨z, w⟩ ⟨-, -⟩ ⟨g, rfl, rfl⟩
-    exact ⟨g⁻¹, inv_smul_smul _ _, rep_inv_apply_apply ρ g w⟩
+    exact ⟨g⁻¹, inv_smul_smul _ _, by rw [map_inv, ContinuousLinearMap.units_inv_apply_apply]⟩
   iseqv.trans := by
     rintro ⟨z, w⟩ ⟨-, -⟩ ⟨-, -⟩ ⟨g, rfl, rfl⟩ ⟨g', rfl, rfl⟩
     refine ⟨g' * g, mul_smul _ _ _, ?_⟩

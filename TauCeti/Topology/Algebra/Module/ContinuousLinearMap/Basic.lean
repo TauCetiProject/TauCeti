@@ -41,6 +41,8 @@ then Mathlib's algebraic flip `LinearMap.flip` applies to it.
   exactly when it is nonzero.
 * `ContinuousLinearMap.pi_ext_single_one`: a continuous linear map out of `κ → R`, `κ` finite, is
   determined by its values on the coordinate vectors.
+* `ContinuousLinearMap.units_inv_apply_apply`, `ContinuousLinearMap.units_apply_inv_apply`: a
+  unit continuous linear endomorphism and its inverse undo each other pointwise.
 * `LinearMap.flip_coeLMₛₗ_comp_apply`: evaluation of the algebraic flip of such a family `μ`,
   `((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y`.
 -/
@@ -95,6 +97,18 @@ theorem pi_ext_single_one {R M κ : Type*} [Semiring R] [TopologicalSpace R] [To
     [AddCommMonoid M] [Module R M] [Finite κ] [DecidableEq κ] {f g : (κ → R) →L[R] M}
     (h : ∀ k, f (Pi.single k 1) = g (Pi.single k 1)) : f = g :=
   coe_injective <| LinearMap.pi_ext' fun k ↦ LinearMap.ext_ring <| h k
+
+/-- Applying the inverse of a unit continuous linear endomorphism undoes applying the unit. -/
+@[simp]
+theorem units_inv_apply_apply (u : (M₁ →L[R₁] M₁)ˣ) (x : M₁) :
+    (↑u⁻¹ : M₁ →L[R₁] M₁) ((u : M₁ →L[R₁] M₁) x) = x := by
+  rw [← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
+
+/-- Applying a unit continuous linear endomorphism undoes applying its inverse. -/
+@[simp]
+theorem units_apply_inv_apply (u : (M₁ →L[R₁] M₁)ˣ) (x : M₁) :
+    (u : M₁ →L[R₁] M₁) ((↑u⁻¹ : M₁ →L[R₁] M₁) x) = x := by
+  rw [← mul_apply_eq_comp, Units.mul_inv, one_apply_eq_self]
 
 end ContinuousLinearMap
 
