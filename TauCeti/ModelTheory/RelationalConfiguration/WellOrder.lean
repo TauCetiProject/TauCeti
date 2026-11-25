@@ -119,6 +119,12 @@ theorem codeRel_perm_smul (lt : L.Relations 2) (σ : Equiv.Perm V)
     fin_cases i <;> rfl
   rw [codeRel_iff, codeRel_iff, eval_perm_smul, Atom.map_atom, h]
 
+/-- Each instance `codeRel lt c x y` of the relation of a binary symbol is a measurable condition
+on the configuration `c`. -/
+theorem measurableSet_setOf_codeRel (lt : L.Relations 2) (x y : V) :
+    MeasurableSet {c : RelationalConfiguration L V | codeRel lt c x y} := by
+  simpa only [codeRel_iff] using measurableSet_setOf_eval (atom lt ![x, y]) true
+
 /-! ### The class of coded well-orders -/
 
 /-- The **coded well-orders**: the configurations `c` for which `codeRel lt c` is a strict

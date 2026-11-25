@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Acyclic
+public import TauCeti.MeasureTheory.MeasurableSpace.SimpleGraph
 public import TauCeti.ModelTheory.RelationalConfiguration.OrderClass
 
 /-!
@@ -20,9 +20,8 @@ The language `markedGraphLanguage` has a binary symbol `adj` and a unary symbol 
 class `markedTreeClass` consists of the codes whose relation is symmetric and irreflexive, whose
 graph `markedGraph c` is a tree (Mathlib's `SimpleGraph.IsTree`: connected and acyclic), and
 which mark exactly one vertex. It is isomorphism invariant, and on a countable carrier it is
-Borel: connectedness is a countable intersection of reachability conditions, each a countable
-union over finite paths, and acyclicity says that every edge is a bridge, a reachability
-condition in the graph with that edge deleted.
+Borel, by the measurability of being a tree in a family of graphs with measurable adjacency
+(`TauCeti.measurableSet_setOf_isTree`).
 
 The cover graph of a coded order `c` (`coverGraphCode c`) joins `u` and `v` when one covers the
 other, and marks the least elements. Each of its coordinates is the indicator of a closed set of
@@ -40,8 +39,6 @@ so it sends isomorphic codes to isomorphic codes.
 
 ## Main results
 
-* `TauCeti.measurableSet_setOf_reflTransGen`: reachability along a measurable family of relations
-  on a countable type is measurable.
 * `TauCeti.RelationalConfiguration.isomorphismInvariant_markedTreeClass`,
   `TauCeti.RelationalConfiguration.measurableSet_markedTreeClass`: the class is invariant Borel.
 * `TauCeti.RelationalConfiguration.measurable_coverGraphCode`: the cover-graph map is measurable.
@@ -60,36 +57,6 @@ public section
 open FirstOrder FirstOrder.Language Set
 
 namespace TauCeti
-
-section Reachability
-
-variable {α V : Type*} [MeasurableSpace α] {R : α → V → V → Prop}
-
-/-- Being a chain along a fixed finite list is measurable in a measurable family of relations. -/
-theorem measurableSet_setOf_isChain (hR : ∀ a b, MeasurableSet {x | R x a b}) :
-    ∀ l : List V, MeasurableSet {x | List.IsChain (R x) l}
-  | [] => by simp
-  | [_] => by simp
-  | a :: b :: l => by
-    simp only [List.isChain_cons_cons, ofPred_and]
-    exact (hR a b).inter (measurableSet_setOf_isChain hR (b :: l))
-
-/-- **Reachability is measurable.** For a family of relations on a countable type, each of whose
-instances is a measurable condition, reachability along the relation is measurable: it is a
-countable union over the finite paths. -/
-theorem measurableSet_setOf_reflTransGen [Countable V] (hR : ∀ a b, MeasurableSet {x | R x a b})
-    (u v : V) : MeasurableSet {x | Relation.ReflTransGen (R x) u v} := by
-  have h : {x | Relation.ReflTransGen (R x) u v} = ⋃ l : List V,
-      {x | List.IsChain (R x) (u :: l)} ∩ {_x | (u :: l).getLast (List.cons_ne_nil _ _) = v} := by
-    ext x
-    simp only [mem_ofPred_eq, mem_iUnion, mem_inter_iff]
-    exact ⟨List.exists_isChain_cons_of_relationReflTransGen,
-      fun ⟨l, hl, hv⟩ ↦ List.relationReflTransGen_of_exists_isChain_cons l hl hv⟩
-  rw [h]
-  exact MeasurableSet.iUnion fun l ↦
-    (measurableSet_setOf_isChain hR _).inter (MeasurableSet.const _)
-
-end Reachability
 
 namespace RelationalConfiguration
 
@@ -154,6 +121,17 @@ theorem markedGraph_adj {c : RelationalConfiguration markedGraphLanguage V} {u v
     (markedGraph c).Adj u v ↔ u ≠ v ∧ (codeRel adjSymb c u v ∨ codeRel adjSymb c v u) :=
   SimpleGraph.fromRel_adj _ _ _
 
+/-- When the relation of a code is symmetric and irreflexive, as on `markedTreeClass`, adjacency
+in its graph is the relation itself. -/
+theorem markedGraph_adj_iff_codeRel {c : RelationalConfiguration markedGraphLanguage V}
+    (hsymm : ∀ u v, codeRel adjSymb c u v → codeRel adjSymb c v u)
+    (hirr : ∀ v, ¬ codeRel adjSymb c v v) {u v : V} :
+    (markedGraph c).Adj u v ↔ codeRel adjSymb c u v := by
+  rw [markedGraph_adj]
+  refine ⟨fun ⟨_, h⟩ => h.elim id (hsymm v u), fun h => ⟨?_, .inl h⟩⟩
+  rintro rfl
+  exact hirr u h
+
 /-- Relabelling a code by `σ` relabels its graph: `σ` is an isomorphism from the graph of `c` to
 that of `σ • c`. -/
 def markedGraphIsoPermSmul (σ : Equiv.Perm V) (c : RelationalConfiguration markedGraphLanguage V) :
@@ -194,10 +172,6 @@ theorem isomorphismInvariant_markedTreeClass :
 
 section Measurable
 
-private theorem measurableSet_setOf_codeRel_adjSymb (x y : V) :
-    MeasurableSet {c : RelationalConfiguration markedGraphLanguage V | codeRel adjSymb c x y} := by
-  simpa only [codeRel_iff] using measurableSet_setOf_eval (atom adjSymb ![x, y]) true
-
 private theorem measurableSet_setOf_isMarked (v : V) :
     MeasurableSet {c : RelationalConfiguration markedGraphLanguage V | IsMarked c v} := by
   simpa only [isMarked_iff] using measurableSet_setOf_eval (atom markSymb ![v]) true
@@ -207,45 +181,14 @@ private theorem measurableSet_setOf_markedGraph_adj (x y : V) :
       (markedGraph c).Adj x y} := by
   simp only [markedGraph_adj, ofPred_and, ofPred_or]
   exact (MeasurableSet.const _).inter
-    ((measurableSet_setOf_codeRel_adjSymb x y).union (measurableSet_setOf_codeRel_adjSymb y x))
+    ((measurableSet_setOf_codeRel adjSymb x y).union (measurableSet_setOf_codeRel adjSymb y x))
 
 variable [Countable V]
-
-/-- Being a tree is a Borel condition on the codes: connectedness is reachability between every
-two vertices, and acyclicity says that every edge is a bridge. -/
-private theorem measurableSet_setOf_isTree :
-    MeasurableSet {c : RelationalConfiguration markedGraphLanguage V | (markedGraph c).IsTree} := by
-  have hA := measurableSet_setOf_markedGraph_adj (V := V)
-  have hR (u v : V) : MeasurableSet {c : RelationalConfiguration markedGraphLanguage V |
-      (markedGraph c).Reachable u v} := by
-    simp only [SimpleGraph.reachable_iff_reflTransGen]
-    exact measurableSet_setOf_reflTransGen hA u v
-  have hB (x y : V) : MeasurableSet {c : RelationalConfiguration markedGraphLanguage V |
-      ((markedGraph c).deleteEdges {s(x, y)}).Reachable x y} := by
-    simp only [SimpleGraph.reachable_iff_reflTransGen]
-    refine measurableSet_setOf_reflTransGen (fun a b => ?_) x y
-    simp only [SimpleGraph.deleteEdges_adj, Set.mem_singleton_iff, ofPred_and]
-    exact (hA a b).inter (MeasurableSet.const _)
-  have hT : {c : RelationalConfiguration markedGraphLanguage V | (markedGraph c).IsTree} =
-      {_c | Nonempty V} ∩ (⋂ u, ⋂ v, {c | (markedGraph c).Reachable u v}) ∩
-        ⋂ x, ⋂ y, {c | (markedGraph c).Adj x y}ᶜ ∪
-          {c | ((markedGraph c).deleteEdges {s(x, y)}).Reachable x y}ᶜ := by
-    ext c
-    simp only [mem_ofPred_eq, mem_inter_iff, mem_iInter, mem_union, mem_compl_iff,
-      SimpleGraph.isTree_iff, SimpleGraph.connected_iff,
-      SimpleGraph.isAcyclic_iff_forall_adj_isBridge, SimpleGraph.isBridge_iff,
-      SimpleGraph.Preconnected, imp_iff_not_or]
-    tauto
-  rw [hT]
-  exact ((MeasurableSet.const (Nonempty V)).inter
-    (MeasurableSet.iInter fun u => MeasurableSet.iInter fun v => hR u v)).inter
-      (MeasurableSet.iInter fun x => MeasurableSet.iInter fun y =>
-        (hA x y).compl.union (hB x y).compl)
 
 /-- On a countable carrier the marked trees form a Borel class. -/
 theorem measurableSet_markedTreeClass : MeasurableSet (markedTreeClass (V := V)) := by
   classical
-  have hE := measurableSet_setOf_codeRel_adjSymb (V := V)
+  have hE := measurableSet_setOf_codeRel (V := V) adjSymb
   have hM := measurableSet_setOf_isMarked (V := V)
   have hU : {c : RelationalConfiguration markedGraphLanguage V | ∃! v, IsMarked c v} =
       ⋃ v, {c | IsMarked c v} ∩ ⋂ w, ⋂ (_ : w ≠ v), {c | IsMarked c w}ᶜ := by
@@ -271,20 +214,22 @@ theorem measurableSet_markedTreeClass : MeasurableSet (markedTreeClass (V := V))
   rw [this, hU]
   have hUm := MeasurableSet.iUnion fun v => (hM v).inter
     (MeasurableSet.iInter fun w => MeasurableSet.iInter fun (_ : w ≠ v) => (hM w).compl)
-  exact hSymm.inter (hIrr.inter (measurableSet_setOf_isTree.inter hUm))
+  exact hSymm.inter (hIrr.inter
+    ((measurableSet_setOf_isTree measurableSet_setOf_markedGraph_adj).inter hUm))
 
 end Measurable
 
 /-! ### The cover graph of a coded order -/
 
-/-- In a relation `r` read as a non-strict order, `v` **covers** `u`: `u < v`, and no `w`
-satisfies `u < w < v`, where `a < b` means `r a b` and not `r b a`. -/
-def Covers (r : V → V → Prop) (u v : V) : Prop :=
+/-- In a relation `r` read as a non-strict order, `u` **is covered by** `v` (Mathlib's `CovBy`,
+`u ⋖ v`, for the relation `r`): `u < v`, and no `w` satisfies `u < w < v`, where `a < b` means
+`r a b` and not `r b a`. -/
+def RelCovBy (r : V → V → Prop) (u v : V) : Prop :=
   (r u v ∧ ¬ r v u) ∧ ∀ w, ¬ ((r u w ∧ ¬ r w u) ∧ (r w v ∧ ¬ r v w))
 
-/-- Unfolding lemma for `Covers`. -/
-theorem covers_iff {r : V → V → Prop} {u v : V} :
-    Covers r u v ↔ (r u v ∧ ¬ r v u) ∧ ∀ w, ¬ ((r u w ∧ ¬ r w u) ∧ (r w v ∧ ¬ r v w)) :=
+/-- Unfolding lemma for `RelCovBy`. -/
+theorem relCovBy_iff {r : V → V → Prop} {u v : V} :
+    RelCovBy r u v ↔ (r u v ∧ ¬ r v u) ∧ ∀ w, ¬ ((r u w ∧ ¬ r w u) ∧ (r w v ∧ ¬ r v w)) :=
   Iff.rfl
 
 /-- The marked graph of a relation `r` read as an order: `u` and `v` are related when one
@@ -292,7 +237,7 @@ covers the other, and the least elements, those below every element, are marked.
 @[instance_reducible]
 def coverStructure (r : V → V → Prop) : markedGraphLanguage.Structure V where
   RelMap
-    | .adj => fun x => Covers r (x 0) (x 1) ∨ Covers r (x 1) (x 0)
+    | .adj => fun x => RelCovBy r (x 0) (x 1) ∨ RelCovBy r (x 1) (x 0)
     | .mark => fun x => ∀ w, r (x 0) w
 
 /-- The **cover graph** of a coded order `c`, with its least elements marked: the code of
@@ -305,7 +250,7 @@ noncomputable def coverGraphCode (c : RelationalConfiguration Language.order V) 
 @[simp]
 theorem codeRel_coverGraphCode (c : RelationalConfiguration Language.order V) (u v : V) :
     codeRel adjSymb (coverGraphCode c) u v ↔
-      Covers (codeRel leSymb c) u v ∨ Covers (codeRel leSymb c) v u := by
+      RelCovBy (codeRel leSymb c) u v ∨ RelCovBy (codeRel leSymb c) v u := by
   rw [coverGraphCode, @codeRel_ofStructure _ _ (coverStructure _)]
   rfl
 
@@ -332,24 +277,20 @@ coordinates, and so is each marking coordinate. -/
 theorem measurable_coverGraphCode [Countable V] :
     Measurable (coverGraphCode : RelationalConfiguration Language.order V → _) := by
   classical
-  have hE (x y : V) : MeasurableSet {c : RelationalConfiguration Language.order V |
-      codeRel leSymb c x y} := by
-    simpa only [codeRel_iff] using measurableSet_setOf_eval (atom leSymb ![x, y]) true
+  have hE := measurableSet_setOf_codeRel (L := Language.order) (V := V) leSymb
   have hlt (x y : V) : MeasurableSet {c : RelationalConfiguration Language.order V |
       codeRel leSymb c x y ∧ ¬ codeRel leSymb c y x} :=
     (hE x y).inter (hE y x).compl
   have hC (x y : V) : MeasurableSet {c : RelationalConfiguration Language.order V |
-      Covers (codeRel leSymb c) x y} := by
-    simp only [covers_iff, ofPred_and, ofPred_forall]
+      RelCovBy (codeRel leSymb c) x y} := by
+    simp only [relCovBy_iff, ofPred_and, ofPred_forall]
     exact (hlt x y).inter (MeasurableSet.iInter fun w => ((hlt x w).inter (hlt w y)).compl)
   refine measurable_iff.2 fun a => measurable_to_bool ?_
   rcases atom_cases a with ⟨x, y, rfl⟩ | ⟨x, rfl⟩
-  · have h := (hC x y).union (hC y x)
-    simp only [← codeRel_coverGraphCode, ← ofPred_or, codeRel_iff] at h
-    simpa only [preimage, mem_singleton_iff] using h
-  · have h := MeasurableSet.iInter fun w => hE x w
-    simp only [← ofPred_forall, ← isMarked_coverGraphCode, isMarked_iff] at h
-    simpa only [preimage, mem_singleton_iff] using h
+  · simp only [preimage, mem_singleton_iff, ← codeRel_iff, codeRel_coverGraphCode, ofPred_or]
+    exact (hC x y).union (hC y x)
+  · simp only [preimage, mem_singleton_iff, ← isMarked_iff, isMarked_coverGraphCode, ofPred_forall]
+    exact MeasurableSet.iInter fun w => hE x w
 
 /-- **The cover-graph map commutes with relabelling.** -/
 theorem coverGraphCode_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguration Language.order V) :
@@ -358,7 +299,7 @@ theorem coverGraphCode_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguratio
   rcases atom_cases a with ⟨x, y, rfl⟩ | ⟨x, rfl⟩
   · rw [Bool.eq_iff_iff, ← codeRel_iff, ← codeRel_iff, codeRel_perm_smul, codeRel_coverGraphCode,
       codeRel_coverGraphCode]
-    simp only [covers_iff, codeRel_perm_smul]
+    simp only [relCovBy_iff, codeRel_perm_smul]
     refine or_congr (and_congr Iff.rfl ⟨fun h w => ?_, fun h w => ?_⟩)
       (and_congr Iff.rfl ⟨fun h w => ?_, fun h w => ?_⟩)
     · simpa using h (σ w)
