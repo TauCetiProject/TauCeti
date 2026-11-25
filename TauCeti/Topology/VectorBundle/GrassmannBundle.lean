@@ -34,7 +34,10 @@ trivialize `G_k(E) → B` over `e.baseSet` with fibre the Grassmannian `G(V, k)`
 where `σ_y : V ≃ₗᵢ[ℝ] E y` is the local Gram–Schmidt orthonormal frame `e.orthonormalFrameAt c b`.
 With `V = ℝᴺ`, `N` the rank of `E`, this is, over `U = e.baseSet`, a homeomorphism
 `G_k(U) ≅ U × G(ℝᴺ, k)` commuting with the projections, given by the Gram–Schmidt frame of `e`.
-Consequently, for finite rank, the projection
+The chart and local triviality follow the Stiefel bundle chart
+`Bundle.Trivialization.stiefelBundle` and `TauCeti.StiefelBundle.exists_trivialization` in
+`TauCeti.Topology.VectorBundle.StiefelBundle`, which use the same Gram–Schmidt frame built from
+`e`, `c` and `b`. Consequently, for finite rank, the projection
 `G_k(E) → B` is continuous, open and proper (`TauCeti.grassmannBundle.isOpenMap_proj`,
 `TauCeti.grassmannBundle.isProperMap_proj`). So the part of `G_k(E)` over a compact set of the
 base is compact, `G_k(E)` is weakly locally compact over a weakly locally compact base, and
