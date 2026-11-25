@@ -64,7 +64,7 @@ def orbitRelQuotientTateLevel (n : ℕ) :
       Λ ⧸ (Ideal.span {(p : ℤ)} ^ n • ⊤ : Submodule ℤ Λ) :=
   tateModuleLevelδ p (g := (range f).orbitRelQuotientMkHom.toIntLinearMap)
     (exact_orbitRelQuotientMkHom_range f) hf
-    (range f).surjective_orbitRelQuotientMkHom n
+    (range f).orbitRelQuotientMkHom_surjective n
 
 /-- The level map sends the class of `β` with `pⁿ β = f l` to the class of `l`. -/
 theorem orbitRelQuotientTateLevel_eq {n : ℕ}
@@ -108,7 +108,7 @@ def tateModuleOrbitRelQuotientEquiv (hp : Bijective fun v : E ↦ (p : ℤ) • 
       AdicCompletion (Ideal.span {(p : ℤ)}) Λ :=
   tateModuleδEquiv p (g := (range f).orbitRelQuotientMkHom.toIntLinearMap)
     (exact_orbitRelQuotientMkHom_range f) hf
-    (range f).surjective_orbitRelQuotientMkHom hp
+    (range f).orbitRelQuotientMkHom_surjective hp
 
 /-- The `n`-th component of the image of a Tate-module point is the image of its `n`-th level. -/
 @[simp]
@@ -145,7 +145,7 @@ def tateModuleOrbitRelQuotientEquivTensor (hp : Bijective fun v : E ↦ (p : ℤ
       AdicCompletion (Ideal.span {(p : ℤ)}) ℤ ⊗[ℤ] Λ :=
   tateModuleδEquivTensor p (g := (range f).orbitRelQuotientMkHom.toIntLinearMap)
     (exact_orbitRelQuotientMkHom_range f) hf
-    (range f).surjective_orbitRelQuotientMkHom hp
+    (range f).orbitRelQuotientMkHom_surjective hp
 
 /-- Mathlib's `AdicCompletion.ofTensorProduct` turns the tensor form back into the `p`-adic
 completion form of the equivalence. -/

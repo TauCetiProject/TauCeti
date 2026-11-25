@@ -144,7 +144,7 @@ theorem Submodule.coe_orbitRelQuotientMkHom :
   (rfl)
 
 /-- The orbit projection for translation by `p` is surjective. -/
-theorem Submodule.surjective_orbitRelQuotientMkHom :
+theorem Submodule.orbitRelQuotientMkHom_surjective :
     Function.Surjective p.orbitRelQuotientMkHom :=
   _root_.Quotient.mk_surjective
 
