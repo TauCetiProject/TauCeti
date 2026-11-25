@@ -272,8 +272,9 @@ class map. -/
 @[simp]
 theorem picQuotientRatNumericallyTrivialEquiv_mk (v : ℚ ⊗[ℤ] Additive (LineBundleClass X)) :
     picQuotientRatNumericallyTrivialEquiv k x (Submodule.Quotient.mk v) =
-      picToRatNumericalClasses k x v :=
-  (rfl)
+      picToRatNumericalClasses k x v := by
+  simp [picQuotientRatNumericallyTrivialEquiv, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk]
 
 end Absolute
 
@@ -483,8 +484,9 @@ class map. -/
 @[simp]
 theorem picQuotientRelRatNumericallyTrivialEquiv_mk (v : ℚ ⊗[ℤ] Additive (LineBundleClass X)) :
     picQuotientRelRatNumericallyTrivialEquiv f (Submodule.Quotient.mk v) =
-      picToRelRatNumericalClasses f v :=
-  (rfl)
+      picToRelRatNumericalClasses f v := by
+  simp [picQuotientRelRatNumericallyTrivialEquiv, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk]
 
 end Relative
 
