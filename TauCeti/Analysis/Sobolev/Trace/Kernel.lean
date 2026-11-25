@@ -127,20 +127,14 @@ theorem W1p.restrictL_mem_w1p0Submodule_normalHalfSpace (hp : p ≠ (∞ : ℝ�
     (hw : ∀ᵐ x ∂volume, x ∉ normalHalfSpace (E := E) a → W1p.value w x = 0) :
     W1p.restrictL (le_top : normalHalfSpace (E := E) a ≤ ⊤) w ∈
       w1p0Submodule volume (normalHalfSpace (E := E) a) p := by
-  -- The translates of `w` by `s` in the normal direction depend continuously on `s`.
-  have hg : Continuous fun s : ℝ => WithLp.toLp 2 (-s, (0 : E)) :=
-    (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.continuous.comp
+  -- The translates of `w` by `s` in the normal direction tend to `w` as `s → 0`.
+  have hg : Tendsto (fun s : ℝ => WithLp.toLp 2 (-s, (0 : E))) (𝓝[>] 0) (𝓝 0) := by
+    refine Continuous.tendsto' ?_ 0 0 (by simp) |>.mono_left nhdsWithin_le_nhds
+    exact (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.continuous.comp
       (continuous_neg.prodMk continuous_const)
-  have hcont : Continuous fun s : ℝ => normalTranslate s w :=
-    ((Wkp.continuous_translate hp 1 w).comp hg).congr fun s =>
-      Wkp.translate_one_eq_W1p_translate _ w
-  have h0 : normalTranslate 0 w = w :=
-    (Wkp.translate_one_eq_W1p_translate (WithLp.toLp 2 (-(0 : ℝ), (0 : E))) w).symm.trans <| by
-      rw [neg_zero, Prod.mk_zero_zero, WithLp.toLp_zero]
-      exact Wkp.translate_zero 1 w
-  have htend := ((W1p.restrictL (U := normalHalfSpace a) le_top).continuous.comp hcont).tendsto 0
-    |>.mono_left (nhdsWithin_le_nhds (s := Ioi 0))
-  rw [Function.comp_apply, h0] at htend
+  have htend : Tendsto (fun s => W1p.restrictL (U := normalHalfSpace a) le_top
+      (normalTranslate s w)) (𝓝[>] 0) (𝓝 (W1p.restrictL le_top w)) :=
+    ((W1p.restrictL le_top).continuous.tendsto w).comp (W1p.tendsto_translate hp hg w)
   -- For `s > 0` the translates lie in the closed subspace `W^{1,p}_0(H)`, hence so does the limit.
   exact (w1p0Submodule volume (normalHalfSpace (E := E) a) p).isClosed.mem_of_tendsto htend
     (eventually_nhdsWithin_of_forall fun s hs =>

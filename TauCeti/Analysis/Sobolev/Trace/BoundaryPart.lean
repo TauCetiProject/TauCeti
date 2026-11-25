@@ -148,19 +148,11 @@ private theorem tendsto_restrictL_tangentialTranslate (hp : p ≠ (∞ : ℝ≥0
     (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p) :
     Tendsto (fun τ => W1p.restrictL (U := normalHalfSpace (E := E) a) le_top
       (tangentialTranslate e τ w)) (𝓝 0) (𝓝 (W1p.restrictL le_top w)) := by
-  have hg : Continuous fun τ : ℝ => WithLp.toLp 2 ((0 : ℝ), -(τ • e)) :=
-    (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.continuous.comp
+  have hg : Tendsto (fun τ : ℝ => WithLp.toLp 2 ((0 : ℝ), -(τ • e))) (𝓝 0) (𝓝 0) := by
+    refine Continuous.tendsto' ?_ 0 0 (by simp)
+    exact (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.continuous.comp
       (continuous_const.prodMk (continuous_id.smul continuous_const).neg)
-  have hcont : Continuous fun τ : ℝ => tangentialTranslate e τ w :=
-    ((Wkp.continuous_translate hp 1 w).comp hg).congr fun τ =>
-      Wkp.translate_one_eq_W1p_translate _ w
-  have h0 : tangentialTranslate e 0 w = w := by
-    refine (Wkp.translate_one_eq_W1p_translate _ w).symm.trans ?_
-    rw [zero_smul, neg_zero, Prod.mk_zero_zero, WithLp.toLp_zero]
-    exact Wkp.translate_zero 1 w
-  have h := ((W1p.restrictL (U := normalHalfSpace a) le_top).continuous.comp hcont).tendsto 0
-  rw [Function.comp_apply, h0] at h
-  exact h
+  exact ((W1p.restrictL le_top).continuous.tendsto w).comp (W1p.tendsto_translate hp hg w)
 
 /-- After the tangential translation by `τ e` with `ℓ e = 1`, the trace vanishes on the larger
 region `{ℓ < c + τ}`. -/
@@ -199,16 +191,6 @@ private theorem mem_closure_vanishingNear_of_ae_eq_zero (hp : p ≠ (∞ : ℝ�
     (norm_gradient_eq_norm_fderiv χ x).trans_le (hderivM x)
   set v := W1p.restrictL (U := normalHalfSpace (E := E) a) le_top w
   set χv := W1p.contDiffSMul χ hχ hM (fun x _ => hχM x) (fun x _ => hgradM x) v
-  -- The cutoff part is the restriction of `χ w`.
-  have hχv : χv = W1p.restrictL le_top
-      (W1p.contDiffSMul χ hχ hM (fun x _ => hχM x) (fun x _ => hgradM x) w) := by
-    refine (W1p.restrictL_eq_of_value_ae_eq le_top ?_).symm
-    have h := W1p.value_contDiffSMul_ae (mu := volume) (Omega := ⊤) hχ hM (fun x _ => hχM x)
-      (fun x _ => hgradM x) w
-    simp only [Opens.coe_top, Measure.restrict_univ] at h
-    filter_upwards [ae_restrict_of_ae h, W1p.value_contDiffSMul_ae hχ hM (fun x _ => hχM x)
-      (fun x _ => hgradM x) v, W1p.value_restrictL_ae le_top w] with x h₁ h₂ h₃
-    rw [h₁, h₂, h₃]
   -- The rest has zero trace, since `1 - χ` vanishes where the trace of `v` may not.
   have hrest : v - χv ∈ w1p0Submodule volume (normalHalfSpace (E := E) a) p := by
     rw [W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero hp, map_sub]
@@ -229,11 +211,13 @@ private theorem mem_closure_vanishingNear_of_ae_eq_zero (hp : p ≠ (∞ : ℝ�
       have h : c + τ / 3 ≤ ℓ x.snd :=
         tsupport_linearCutoff_subset L (by positivity : (0 : ℝ) ≤ 3 / τ) (c + τ / 3) hx
       linarith [hxK.2]
+  -- The cutoff part is the restriction of `χ w`.
+  have hχv := restrictL_contDiffSMul_mem_closure_vanishingNear hp hχ hM hχM hgradM hχK w
+  rw [W1p.restrictL_contDiffSMul] at hχv
   have hsub : v = (v - χv) + χv := (sub_add_cancel v χv).symm
   rw [hsub]
   exact (vanishingNear p a c ℓ).topologicalClosure.add_mem
-    (w1p0Submodule_subset_closure_vanishingNear a c ℓ hrest)
-    (hχv ▸ restrictL_contDiffSMul_mem_closure_vanishingNear hp hχ hM hχM hgradM hχK w)
+    (w1p0Submodule_subset_closure_vanishingNear a c ℓ hrest) hχv
 
 /-- Membership in the closure, as a limit of a sequence of generators. -/
 private theorem mem_closure_vanishingNear_iff {a c : ℝ} {ℓ : E →L[ℝ] ℝ}
