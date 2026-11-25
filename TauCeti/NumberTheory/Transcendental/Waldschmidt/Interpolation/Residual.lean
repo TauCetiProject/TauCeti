@@ -35,17 +35,20 @@ obstruction lives among the grid points `s · y`, in a subspace `W' = V' · y + 
 the direction `e₀` of the derivatives; since `c · y = -β₀ e₀`, the grid points of two indices are
 congruent modulo `W'` exactly when the indices are congruent modulo `V'`, so the count transfers.
 
-Throughout, `m = n + 1`, and `c = Fin.snoc (fun k ↦ b k.succ) (-1)` for the coefficient vector
-`b = (β₀, β₁, …, β_{m-1})`, as in `TauCeti.waldschmidtPointMap_snoc`.
+Throughout, `m = n + 1`. The existence and counting statements hold for any vector `c`, nonzero
+for the existence; the grid-point statements take `c = Fin.snoc (fun k ↦ b k.succ) (-1)` for the
+coefficient vector `b = (β₀, β₁, …, β_{m-1})`, as in `TauCeti.waldschmidtPointMap_snoc`.
 
 ## Main results
 
 * `TauCeti.exists_waldschmidtResidualSubspace`: the subspace `V` of smallest dimension `d ≥ 1`
   with `(d + 1) #π_V(S) ≤ (m + 1) T₀^(m-d)` exists.
-* `TauCeti.mul_pow_lt_mul_ncard_image_mkQ_sub_inter`: for such a minimal `V` and every subspace
-  `V' ∋ c` of dimension `d' < d`, `(d + 1) T₀^(d-d') < (d' + 1) #π_{V'}((S - S) ∩ V)`.
-* `TauCeti.mul_pow_lt_mul_ncard_image_mkQ_nsmul`: the same bound for the `k`-fold sums
-  `((S - S) ∩ V)[k]`, `k ≥ 1`, which index the columns of the rank argument for `k = m + 1`.
+* `TauCeti.mul_pow_lt_mul_ncard_image_mkQ_sub_inter_of_waldschmidtResidual`: for such a minimal
+  `V` and every subspace `V' ∋ c` of dimension `d' < d`,
+  `(d + 1) T₀^(d-d') < (d' + 1) #π_{V'}((S - S) ∩ V)`.
+* `TauCeti.mul_pow_lt_mul_ncard_image_mkQ_nsmul_of_waldschmidtResidual`: the same bound for the
+  `k`-fold sums `((S - S) ∩ V)[k]`, `k ≥ 1`, which index the columns of the rank argument for
+  `k = m + 1`.
 * `TauCeti.ncard_image_mkQ_waldschmidtPoint`: for `V' ∋ c`, a set of indices has as many grid
   points modulo `V' · y + K e₀` as classes modulo `V'`.
 * `TauCeti.mul_pow_lt_mul_ncard_image_mkQ_waldschmidtPoint`: for a minimal `V` and every proper
@@ -67,22 +70,22 @@ namespace TauCeti
 
 variable {n : ℕ} {K : Type*} [Field K]
 
-/-- **The residual subspace of the rank argument.** For a set `S ⊆ ℤᵐ` there is a subspace
-`V ⊆ Kᵐ` containing the coefficient vector `c = (β₁, …, β_{m-1}, -1)` of the normalized linear
-form, of dimension `d` with `(d + 1) #π_V(S) ≤ (m + 1) T₀^(m-d)`, where `π_V : Kᵐ → Kᵐ / V` is the
-quotient map, whose dimension is the smallest among all such subspaces. The whole space `Kᵐ`
-satisfies the inequality, and `d ≥ 1` because `c ≠ 0`. -/
-theorem exists_waldschmidtResidualSubspace (b : Fin (n + 1) → K) (S : Set (Fin (n + 1) → ℤ))
-    (T₀ : ℕ) :
-    ∃ V : Submodule K (Fin (n + 1) → K), Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V ∧
+/-- **The residual subspace of the rank argument.** For a set `S ⊆ ℤᵐ` and a nonzero vector
+`c ∈ Kᵐ` (in the application, the coefficient vector `c = (β₁, …, β_{m-1}, -1)` of the normalized
+linear form) there is a subspace `V ⊆ Kᵐ` containing `c`, of dimension `d` with
+`(d + 1) #π_V(S) ≤ (m + 1) T₀^(m-d)`, where `π_V : Kᵐ → Kᵐ / V` is the quotient map, whose
+dimension is the smallest among all such subspaces. The whole space `Kᵐ` satisfies the
+inequality, and `d ≥ 1` because `c ≠ 0`. -/
+theorem exists_waldschmidtResidualSubspace {c : Fin (n + 1) → K} (hc : c ≠ 0)
+    (S : Set (Fin (n + 1) → ℤ)) (T₀ : ℕ) :
+    ∃ V : Submodule K (Fin (n + 1) → K), c ∈ V ∧
       (finrank K V + 1) * ((fun s ↦ V.mkQ fun i ↦ (s i : K)) '' S).ncard ≤
         (n + 2) * T₀ ^ (n + 1 - finrank K V) ∧
-      (∀ V' : Submodule K (Fin (n + 1) → K), Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V' →
+      (∀ V' : Submodule K (Fin (n + 1) → K), c ∈ V' →
         (finrank K V' + 1) * ((fun s ↦ V'.mkQ fun i ↦ (s i : K)) '' S).ncard ≤
           (n + 2) * T₀ ^ (n + 1 - finrank K V') → finrank K V ≤ finrank K V') ∧
       1 ≤ finrank K V := by
   classical
-  set c : Fin (n + 1) → K := Fin.snoc (fun k : Fin n ↦ b k.succ) (-1)
   let p : ℕ → Prop := fun d ↦ ∃ V : Submodule K (Fin (n + 1) → K), c ∈ V ∧
     finrank K V = d ∧
       (d + 1) * ((fun s ↦ V.mkQ fun i ↦ (s i : K)) '' S).ncard ≤ (n + 2) * T₀ ^ (n + 1 - d)
@@ -93,29 +96,28 @@ theorem exists_waldschmidtResidualSubspace (b : Fin (n + 1) → K) (S : Set (Fin
       Set.ncard_le_one_iff_subsingleton.2 Set.subsingleton_of_subsingleton
     simpa using Nat.mul_le_mul_left (n + 2) this
   obtain ⟨V, hcV, hd, hcard⟩ := Nat.find_spec hp
-  refine ⟨V, hcV, hd ▸ hcard, fun V' hcV' hcard' ↦ hd ▸ Nat.find_min' hp ⟨V', hcV', rfl, hcard'⟩,
-    Submodule.one_le_finrank_iff.2 ((Submodule.ne_bot_iff _).2 ⟨c, hcV, fun h ↦ ?_⟩)⟩
-  simpa [c] using congrFun h (Fin.last n)
+  exact ⟨V, hcV, hd ▸ hcard, fun V' hcV' hcard' ↦ hd ▸ Nat.find_min' hp ⟨V', hcV', rfl, hcard'⟩,
+    Submodule.one_le_finrank_iff.2 ((Submodule.ne_bot_iff _).2 ⟨c, hcV, hc⟩)⟩
 
 /-- **Counting on a proper subspace.** Let `V` be a residual subspace of dimension `d` as in
-`TauCeti.exists_waldschmidtResidualSubspace`: `(d + 1) #π_V(S) ≤ (m + 1) T₀^(m-d)`, and no
-subspace containing the coefficient vector `c = (β₁, …, β_{m-1}, -1)` of smaller dimension
-satisfies the corresponding inequality. Then for every subspace `V' ∋ c` of dimension `d' < d`,
+`TauCeti.exists_waldschmidtResidualSubspace` for a vector `c`:
+`(d + 1) #π_V(S) ≤ (m + 1) T₀^(m-d)`, and no subspace containing `c` of smaller dimension satisfies
+the corresponding inequality. Then for every subspace `V' ∋ c` of dimension `d' < d`,
 the differences of elements of `S` lying in `V` fall into many classes modulo `V'`:
 
 `(d + 1) T₀^(d-d') < (d' + 1) #π_{V'}((S - S) ∩ V)`.
 
 This is the lower bound on the grid which the induction on proper subspaces `V' ⊊ V` opposes to
 an obstruction subgroup of codimension `d - d'`. -/
-theorem mul_pow_lt_mul_ncard_image_mkQ_sub_inter (b : Fin (n + 1) → K)
+theorem mul_pow_lt_mul_ncard_image_mkQ_sub_inter_of_waldschmidtResidual (c : Fin (n + 1) → K)
     {S : Set (Fin (n + 1) → ℤ)} (hS : S.Finite) {T₀ : ℕ}
     {V V' : Submodule K (Fin (n + 1) → K)}
     (hV : (finrank K V + 1) * ((fun s ↦ V.mkQ fun i ↦ (s i : K)) '' S).ncard ≤
       (n + 2) * T₀ ^ (n + 1 - finrank K V))
-    (hmin : ∀ V' : Submodule K (Fin (n + 1) → K), Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V' →
+    (hmin : ∀ V' : Submodule K (Fin (n + 1) → K), c ∈ V' →
       (finrank K V' + 1) * ((fun s ↦ V'.mkQ fun i ↦ (s i : K)) '' S).ncard ≤
         (n + 2) * T₀ ^ (n + 1 - finrank K V') → finrank K V ≤ finrank K V')
-    (hcV' : Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V') (hlt : finrank K V' < finrank K V) :
+    (hcV' : c ∈ V') (hlt : finrank K V' < finrank K V) :
     (finrank K V + 1) * T₀ ^ (finrank K V - finrank K V') <
       (finrank K V' + 1) * ((fun s ↦ V'.mkQ fun i ↦ (s i : K)) ''
         ((S - S) ∩ {s | (fun i ↦ (s i : K)) ∈ V})).ncard := by
@@ -151,19 +153,19 @@ theorem mul_pow_lt_mul_ncard_image_mkQ_sub_inter (b : Fin (n + 1) → K)
   nlinarith
 
 /-- **Counting on a proper subspace, for the columns of the rank argument.** The bound of
-`TauCeti.mul_pow_lt_mul_ncard_image_mkQ_sub_inter` holds for the `k`-fold sums
-`((S - S) ∩ V)[k]` with `k ≥ 1`, in particular for the set `((S - S) ∩ V)[m + 1]` indexing the
-columns. (The hypotheses force `S` to be nonempty, so `(S - S) ∩ V` contains `0` and is contained
-in its `k`-fold sums.) -/
-theorem mul_pow_lt_mul_ncard_image_mkQ_nsmul (b : Fin (n + 1) → K)
+`TauCeti.mul_pow_lt_mul_ncard_image_mkQ_sub_inter_of_waldschmidtResidual` holds for the `k`-fold
+sums `((S - S) ∩ V)[k]` with `k ≥ 1`, in particular for the set `((S - S) ∩ V)[m + 1]` indexing
+the columns. (The hypotheses force `S` to be nonempty, so `(S - S) ∩ V` contains `0` and is
+contained in its `k`-fold sums.) -/
+theorem mul_pow_lt_mul_ncard_image_mkQ_nsmul_of_waldschmidtResidual (c : Fin (n + 1) → K)
     {S : Set (Fin (n + 1) → ℤ)} (hS : S.Finite) {T₀ : ℕ}
     {V V' : Submodule K (Fin (n + 1) → K)}
     (hV : (finrank K V + 1) * ((fun s ↦ V.mkQ fun i ↦ (s i : K)) '' S).ncard ≤
       (n + 2) * T₀ ^ (n + 1 - finrank K V))
-    (hmin : ∀ V' : Submodule K (Fin (n + 1) → K), Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V' →
+    (hmin : ∀ V' : Submodule K (Fin (n + 1) → K), c ∈ V' →
       (finrank K V' + 1) * ((fun s ↦ V'.mkQ fun i ↦ (s i : K)) '' S).ncard ≤
         (n + 2) * T₀ ^ (n + 1 - finrank K V') → finrank K V ≤ finrank K V')
-    (hcV' : Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V') (hlt : finrank K V' < finrank K V)
+    (hcV' : c ∈ V') (hlt : finrank K V' < finrank K V)
     {k : ℕ} (hk : k ≠ 0) :
     (finrank K V + 1) * T₀ ^ (finrank K V - finrank K V') <
       (finrank K V' + 1) * ((fun s ↦ V'.mkQ fun i ↦ (s i : K)) ''
@@ -176,7 +178,8 @@ theorem mul_pow_lt_mul_ncard_image_mkQ_nsmul (b : Fin (n + 1) → K)
   have h0 : (0 : Fin (n + 1) → ℤ) ∈ A := ⟨hSne.zero_mem_sub, by
     simp only [Set.mem_ofPred_eq, Pi.zero_apply, Int.cast_zero]
     exact V.zero_mem⟩
-  refine (mul_pow_lt_mul_ncard_image_mkQ_sub_inter b hS hV hmin hcV' hlt).trans_le
+  refine (mul_pow_lt_mul_ncard_image_mkQ_sub_inter_of_waldschmidtResidual c hS hV hmin hcV'
+    hlt).trans_le
     (Nat.mul_le_mul_left _ (Set.ncard_le_ncard (Set.image_mono (Set.subset_nsmul h0 hk))
       ((hA.nsmul k).image _)))
 
@@ -221,6 +224,6 @@ theorem mul_pow_lt_mul_ncard_image_mkQ_waldschmidtPoint (b : Fin (n + 1) → K)
     refine (Submodule.finrank_mono hV'V).lt_of_ne fun h ↦ hW'.ne ?_
     rw [Submodule.eq_of_le_of_finrank_eq hV'V h]
   rw [finrank_map_waldschmidtPointMap_sup b hcV', ncard_image_mkQ_waldschmidtPoint b hcV']
-  exact mul_pow_lt_mul_ncard_image_mkQ_nsmul b hS hV hmin hcV' hlt hk
+  exact mul_pow_lt_mul_ncard_image_mkQ_nsmul_of_waldschmidtResidual _ hS hV hmin hcV' hlt hk
 
 end TauCeti
