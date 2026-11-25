@@ -58,6 +58,8 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
   algebraic operations.
+* `Matrix.GeneralLinearGroup.toCStarMatrixUnits`: invertible matrices over a unital C⋆-algebra
+  `A` as the invertible elements of `CStarMatrix n n A`, an isomorphism of topological groups.
 * `CStarMatrix.isStarProjection_ofMatrix_symm_iff`, `CStarMatrix.isStarProjection_ofMatrix_iff`:
   a C⋆-matrix is a star projection exactly when the underlying matrix is; companions
   `CStarMatrix.isSelfAdjoint_ofMatrix_iff` and `CStarMatrix.ofMatrix_mem_unitary_iff` do the same
@@ -846,3 +848,28 @@ theorem norm_ofMatrix_diagonal_fin_two (a b : A) :
 end DiagonalNorm
 
 end CStarMatrix
+
+namespace Matrix.GeneralLinearGroup
+
+variable {n A : Type*} [Fintype n] [DecidableEq n] [CStarAlgebra A]
+
+/-- Invertible matrices over a unital C⋆-algebra `A` are the invertible elements of the
+C⋆-algebra `CStarMatrix n n A`, as an isomorphism of topological groups. -/
+noncomputable def toCStarMatrixUnits : GL n A ≃ₜ* (CStarMatrix n n A)ˣ :=
+  Units.mapContinuousMulEquiv
+    { CStarMatrix.ofMatrixRingEquiv.toMulEquiv with
+      continuous_toFun := CStarMatrix.ofMatrixL.continuous
+      continuous_invFun := CStarMatrix.ofMatrixL.symm.continuous }
+
+@[simp]
+theorem coe_toCStarMatrixUnits (u : GL n A) :
+    (toCStarMatrixUnits u : CStarMatrix n n A) = CStarMatrix.ofMatrix (u : Matrix n n A) :=
+  (rfl)
+
+@[simp]
+theorem coe_toCStarMatrixUnits_symm (u : (CStarMatrix n n A)ˣ) :
+    (toCStarMatrixUnits.symm u : Matrix n n A) =
+      CStarMatrix.ofMatrix.symm (u : CStarMatrix n n A) :=
+  (rfl)
+
+end Matrix.GeneralLinearGroup
