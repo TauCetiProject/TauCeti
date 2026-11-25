@@ -18,7 +18,10 @@ finite `(n - 1)`-dimensional Hausdorff measure inside an open set `Ω` agrees al
 measure has `μH[n]` measure zero, and `μH[n]` is an additive Haar measure, so the frontier is null
 in `Ω` (`TauCeti.addHaar_frontier_inter_eq_zero_of_hausdorffMeasure_frontier_inter_ne_top`). In
 particular such a set is null-measurable in `Ω`, by Mathlib's `nullMeasurableSet_of_null_frontier`
-for the restricted measure.
+for the restricted measure. The same holds when the frontier only has locally finite `μH[n - 1]`
+measure in `Ω`
+(`TauCeti.ae_eq_interior_of_forall_isCompact_hausdorffMeasure_frontier_inter_ne_top`), since a
+locally null set is null.
 
 In the whole space, and in every finite dimension `n` (in dimension zero every frontier is empty),
 a set whose frontier has finite `μH[n - 1]` measure has a null frontier
@@ -46,14 +49,30 @@ theorem addHaar_frontier_inter_eq_zero_of_hausdorffMeasure_frontier_inter_ne_top
     (hausdorffMeasure_zero_or_top (Nat.cast_lt.2 (Nat.sub_lt (Nat.pos_of_ne_zero hn) one_pos))
       _).resolve_right h
 
+/-- A set whose frontier has locally finite `μH[n - 1]` measure in an open set `Ω`, that is finite
+`μH[n - 1]` measure in every compact subset of `Ω`, agrees almost everywhere in `Ω` with its
+interior, in positive dimension `n`. -/
+theorem ae_eq_interior_of_forall_isCompact_hausdorffMeasure_frontier_inter_ne_top
+    (hn : finrank ℝ E ≠ 0)
+    (h : ∀ K, IsCompact K → K ⊆ Ω → μH[((finrank ℝ E - 1 : ℕ) : ℝ)] (frontier s ∩ K) ≠ ∞) :
+    s =ᵐ[μ.restrict Ω] interior s := by
+  refine (interior_ae_eq_of_null_frontier ?_).symm
+  rw [Measure.restrict_apply' Ω.isOpen.measurableSet]
+  refine measure_null_of_locally_null _ fun x hx => ?_
+  obtain ⟨K, hK, hxK, hKΩ⟩ := exists_compact_subset Ω.isOpen hx.2
+  refine ⟨frontier s ∩ K, mem_nhdsWithin.2 ⟨interior K, isOpen_interior, hxK,
+    fun y hy => ⟨hy.2.1, interior_subset hy.1⟩⟩, ?_⟩
+  exact absolutelyContinuous_isAddHaarMeasure μ _
+    ((hausdorffMeasure_zero_or_top (Nat.cast_lt.2 (Nat.sub_lt (Nat.pos_of_ne_zero hn) one_pos))
+      _).resolve_right (h K hK hKΩ))
+
 /-- A set whose frontier has finite `μH[n - 1]` measure in an open set `Ω` agrees almost
 everywhere in `Ω` with its interior, in positive dimension `n`. -/
 theorem ae_eq_interior_of_hausdorffMeasure_frontier_inter_ne_top (hn : finrank ℝ E ≠ 0)
     (h : μH[((finrank ℝ E - 1 : ℕ) : ℝ)] (frontier s ∩ Ω) ≠ ∞) :
-    s =ᵐ[μ.restrict Ω] interior s := by
-  refine (interior_ae_eq_of_null_frontier ?_).symm
-  rw [Measure.restrict_apply' Ω.isOpen.measurableSet]
-  exact addHaar_frontier_inter_eq_zero_of_hausdorffMeasure_frontier_inter_ne_top μ hn h
+    s =ᵐ[μ.restrict Ω] interior s :=
+  ae_eq_interior_of_forall_isCompact_hausdorffMeasure_frontier_inter_ne_top μ hn fun _ _ hKΩ =>
+    ne_top_of_le_ne_top h (measure_mono (inter_subset_inter_right _ hKΩ))
 
 /-- **A frontier of finite codimension-one measure is null.** In a real normed space of finite
 dimension `n`, a set whose frontier has finite `μH[n - 1]` measure has a frontier that is null for

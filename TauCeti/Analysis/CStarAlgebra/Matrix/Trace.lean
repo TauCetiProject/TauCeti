@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.Matrix.Frobenius
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Analysis.CStarAlgebra.Matrix.Order
 
 /-!
@@ -31,11 +31,14 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
 ## Main declarations
 
 * `CStarMatrix.normalizedTrace`: the normalized trace `tr_k`, with `tr_k(1) = 1` for `k ≠ 0`,
-  `tr_k(xy) = tr_k(yx)` and monotonicity for the C⋆-order.
+  `tr_k(xy) = tr_k(yx)` and monotonicity for the C⋆-order; `CStarMatrix.normalizedTrace_matrixUnit`
+  evaluates it on matrix units.
 * `CStarMatrix.normalizedTraceMap`: `tr_k` as a positive continuous linear functional, of norm
-  at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`.
+  at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`, and
+  invariant under reindexing (`CStarMatrix.normalizedTraceMap_comp_reindexₐ`).
 * `CStarMatrix.normalizedTwoNorm`: the normalized 2-norm `‖x‖₂`.
 * `CStarMatrix.normalizedTwoNorm_eq_inv_sqrt_mul_frobenius_norm`: `‖x‖₂ = k^{-1/2}‖x‖_F`.
+* `CStarMatrix.normalizedTwoNorm_matrixUnit`: `‖e_ij‖₂ = k^{-1/2}`.
 * `CStarMatrix.normalizedTwoNormAddGroupNorm`: `‖·‖₂` as an additive group norm; its complex
   homogeneity is `CStarMatrix.normalizedTwoNorm_smul`.
 * `CStarMatrix.norm_normalizedTrace_star_mul_le`: Cauchy–Schwarz `|tr_k(x⋆y)| ≤ ‖x‖₂‖y‖₂`, and
@@ -143,6 +146,14 @@ theorem normalizedTrace_one [DecidableEq n] [Nonempty n] :
     normalizedTrace (1 : CStarMatrix n n ℂ) = 1 := by
   rw [normalizedTrace_def, ofMatrix_symm_one, Matrix.trace_one]
   exact inv_mul_cancel₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
+
+/-- The normalized trace of the matrix unit `e_ij` is `1/k` if `i = j` and `0` otherwise. -/
+@[simp]
+theorem normalizedTrace_matrixUnit [DecidableEq n] (i j : n) :
+    normalizedTrace (matrixUnit i j) = if i = j then (Fintype.card n : ℂ)⁻¹ else 0 := by
+  split_ifs with h
+  · simp [normalizedTrace_eq_sum, matrixUnit_apply, h]
+  · simp [normalizedTrace_eq_sum, matrixUnit_apply, Ne.symm h]
 
 /-- On matrices with an empty index type the normalized trace vanishes. -/
 @[simp]
@@ -269,6 +280,18 @@ theorem normalizedTrace_star_mul_self_eq_zero_iff {x : CStarMatrix n n ℂ} :
     normalizedTrace (star x * x) = 0 ↔ x = 0 := by
   simp [normalizedTrace_star_mul_self]
 
+/-- The Schwarz defect of the normalized trace at `x` is `tr_k(y⋆y)` for `y = x - tr_k(x)·1`:
+`tr_k(x⋆x) - conj (tr_k x) tr_k(x) = tr_k((x - tr_k(x)·1)⋆(x - tr_k(x)·1))`. -/
+theorem normalizedTrace_star_mul_self_sub [DecidableEq n] (x : CStarMatrix n n ℂ) :
+    normalizedTrace (star x * x) - star (normalizedTrace x) * normalizedTrace x =
+      normalizedTrace (star (x - normalizedTrace x • 1) * (x - normalizedTrace x • 1)) := by
+  cases isEmpty_or_nonempty n
+  · simp
+  simp only [star_sub, star_smul, star_one, sub_mul, mul_sub, smul_mul_assoc, mul_smul_comm,
+    one_mul, mul_one, normalizedTrace_sub, normalizedTrace_smul, normalizedTrace_star,
+    normalizedTrace_one]
+  ring
+
 /-- The triangle inequality for the normalized 2-norm. -/
 theorem normalizedTwoNorm_add_le (x y : CStarMatrix n n ℂ) :
     normalizedTwoNorm (x + y) ≤ normalizedTwoNorm x + normalizedTwoNorm y := by
@@ -344,6 +367,12 @@ theorem normalizedTwoNorm_one [DecidableEq n] [Nonempty n] :
 the index type is nonempty. -/
 theorem normalizedTwoNorm_one_le [DecidableEq n] : normalizedTwoNorm (1 : CStarMatrix n n ℂ) ≤ 1 :=
   by cases isEmpty_or_nonempty n <;> simp
+
+/-- `‖e_ij‖₂ = k^{-1/2}`. -/
+@[simp]
+theorem normalizedTwoNorm_matrixUnit [DecidableEq n] (i j : n) :
+    normalizedTwoNorm (matrixUnit i j) = (√(Fintype.card n))⁻¹ := by
+  simp [normalizedTwoNorm_def, Real.sqrt_inv]
 
 /-- `|tr_k(x)| ≤ ‖x‖₂`, Cauchy–Schwarz against the identity. -/
 theorem norm_normalizedTrace_le_normalizedTwoNorm (x : CStarMatrix n n ℂ) :
@@ -511,6 +540,15 @@ theorem normalizedTrace_reindexₐ (x : CStarMatrix n n ℂ) (e : n ≃ m) :
 theorem normalizedTrace_reindexₐ_symm (x : CStarMatrix n n ℂ) (e : m ≃ n) :
     normalizedTrace ((reindexₐ ℂ ℂ e).symm x) = normalizedTrace x := by
   rw [← reindexₐ_symm, normalizedTrace_reindexₐ]
+
+open scoped CStarAlgebra in
+/-- The normalized trace is invariant under reindexing: its pullback along the reindexing star
+isomorphism of an equivalence `n ≃ m` is the normalized trace on `CStarMatrix n n ℂ`. -/
+@[simp]
+theorem normalizedTraceMap_comp_reindexₐ (e : n ≃ m) :
+    (normalizedTraceMap m).comp (.ofClass (reindexₐ ℂ ℂ e)) = normalizedTraceMap n := by
+  ext x
+  simp
 
 /-- The normalized 2-norm does not depend on the labelling of the index type. -/
 @[simp]

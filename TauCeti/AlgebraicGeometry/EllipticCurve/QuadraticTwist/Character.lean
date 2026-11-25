@@ -43,6 +43,8 @@ The trivial character gives exactly the curves isomorphic to `W` over `K`
 
 * `WeierstrassCurve.isQuadraticTwistBy_smul_iff`: being a twist by `η` is invariant under
   isomorphism over `K`.
+* `WeierstrassCurve.IsQuadraticTwistBy.exists_smul_baseChange_eq`: over `Kᵃˡᵍ` some isomorphism
+  `W ≅ E` has a scaling factor on which the Galois group acts through the twisting character.
 * `WeierstrassCurve.IsQuadraticTwistBy.exists_smul_eq`,
   `WeierstrassCurve.isQuadraticTwistBy_iff_exists_smul_eq`: the twist by `η` may be computed from
   any unit `d` and square root of `d` on which `η` describes the Galois action.
@@ -105,6 +107,41 @@ theorem isQuadraticTwistBy_smul_iff {W E : WeierstrassCurve K}
     W.IsQuadraticTwistBy (C • E) η ↔ W.IsQuadraticTwistBy E η :=
   ⟨fun ⟨d, a, ha, hη, C', hC'⟩ ↦ ⟨d, a, ha, hη, C⁻¹ * C', by rw [mul_smul, hC', inv_smul_smul]⟩,
     fun ⟨d, a, ha, hη, C', hC'⟩ ↦ ⟨d, a, ha, hη, C * C', by rw [mul_smul, hC']⟩⟩
+
+/-- **The Galois action on the isomorphism of a quadratic twist.** If `E` is the twist of `W` by
+`η`, in characteristic other than `2`, there is a change of variables `ρ` over `Kᵃˡᵍ` carrying `W`
+to `E` whose scaling factor `u` is a square root of an element of `K` and is multiplied by `η(g)`
+under every `g ∈ Gal(Kᵃˡᵍ/K)`. -/
+theorem IsQuadraticTwistBy.exists_smul_baseChange_eq {W E : WeierstrassCurve K}
+    {η : Gal(AlgebraicClosure K/K) →ₜ* ℤˣ} (h : W.IsQuadraticTwistBy E η) (h2 : (2 : K) ≠ 0) :
+    ∃ ρ : VariableChange (AlgebraicClosure K),
+      ρ • W.baseChange (AlgebraicClosure K) = E.baseChange (AlgebraicClosure K) ∧
+      (∃ c : K, (ρ.u : AlgebraicClosure K) ^ 2 = algebraMap K (AlgebraicClosure K) c) ∧
+      ∀ g : Gal(AlgebraicClosure K/K),
+        g (ρ.u : AlgebraicClosure K) = (η g : ℤ) • (ρ.u : AlgebraicClosure K) := by
+  obtain ⟨d, a, ha, hg, C, hC⟩ := h
+  have h2Ω : (2 : AlgebraicClosure K) ≠ 0 := by
+    simpa only [map_ofNat] using (map_ne_zero (algebraMap K (AlgebraicClosure K))).mpr h2
+  have ha0 : a ≠ 0 := by
+    rintro rfl
+    exact d.ne_zero (by simpa using ha.symm)
+  have hv : -2 * a ≠ 0 := mul_ne_zero (neg_ne_zero.mpr h2Ω) ha0
+  -- the twist by `(0, -d)` is the split twist by the roots `±a` over `Kᵃˡᵍ`
+  set V := (W.baseChange (AlgebraicClosure K)).quadraticTwistOfVariableChange 1 0
+    (Units.mk0 _ hv) a
+  have hV : V • (W.quadraticTwistOf 0 (-(d : K))).baseChange (AlgebraicClosure K) =
+      W.baseChange (AlgebraicClosure K) := by
+    rw [baseChange_quadraticTwistOf, map_zero, map_neg, ← ha]
+    exact quadraticTwistOfVariableChange_smul_quadraticTwistOf_zero_neg_sq _ (Units.val_mk0 hv)
+  have hu : (((C.baseChange (AlgebraicClosure K) * V⁻¹).u : (AlgebraicClosure K)ˣ) :
+      AlgebraicClosure K) = algebraMap K (AlgebraicClosure K) C.u * (-2 * a)⁻¹ := by
+    simp [V, VariableChange.baseChange]
+  refine ⟨C.baseChange (AlgebraicClosure K) * V⁻¹, ?_, ⟨C.u ^ 2 / (4 * d), ?_⟩, fun g ↦ ?_⟩
+  · rw [mul_smul, ← hV, inv_smul_smul, baseChange_smul_baseChange, hC]
+  · simp only [hu, mul_pow, inv_pow, neg_sq, ha, map_div₀, map_pow, map_mul, map_ofNat]
+    ring
+  · rw [hu]
+    rcases Int.units_eq_one_or (η g) with h₁ | h₁ <;> simp [hg g, h₁, mul_neg, map_ofNat]
 
 /-- **The twist depends only on the character.** In characteristic other than `2`, if `E` is the
 twist of `W` by `η`, then `E` is isomorphic over `K` to the twist by `(0, -d')` for *every* unit

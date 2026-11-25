@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.VectorBundle.Constructions
+public import TauCeti.Topology.FiberBundle.Trivial
 
 /-!
 # Bundle maps continuous in charts
@@ -114,8 +115,6 @@ variable (𝕜 F F' ψ) in
 continuous: `y ↦ A y v` is continuous for every vector `v`. -/
 theorem isContinuousBundleMap_trivial_iff {A : ∀ y, Trivial M F (ψ y) →L[𝕜] Trivial N F' y} :
     IsContinuousBundleMap 𝕜 F F' ψ A ↔ ∀ v : F, Continuous fun y ↦ A y v := by
-  have : MemTrivializationAtlas (Trivial.trivialization M F) := ⟨mem_singleton _⟩
-  have : MemTrivializationAtlas (Trivial.trivialization N F') := ⟨mem_singleton _⟩
   -- In the trivial charts, the chart expression of `A` is `y ↦ A y v` on all of `N`.
   have key (v : F) :
       ContinuousOn (fun y ↦ (Trivial.trivialization N F').continuousLinearMapAt 𝕜 y

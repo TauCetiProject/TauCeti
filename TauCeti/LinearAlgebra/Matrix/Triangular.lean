@@ -62,12 +62,17 @@ Lie-algebra theory.
   entrywise: `M⁻¹ i i * M i i = 1`.
 * `Matrix.inv_apply_diag_of_isUpperTriangular` — where an upper-triangular matrix carries a `1`
   on the diagonal, so does its inverse.
+* `Matrix.inv_apply_diag_mul_of_isLowerTriangular` and
+  `Matrix.inv_apply_diag_of_isLowerTriangular` — the corresponding facts for lower-triangular
+  matrices.
 * `Matrix.IsUpperUnitriangular` — an upper-triangular matrix with diagonal one.
 * `Matrix.IsUpperUnitriangular.ext` — upper-unitriangular matrices are determined by their
   entries strictly above the diagonal.
 * `Matrix.IsUpperUnitriangular.submatrix` — selecting rows and columns by a strictly increasing
   map preserves upper unitriangularity.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
+* `Matrix.IsUpperUnitriangular.diagonal_mul_mul_diagonal` — conjugation by an invertible diagonal
+  matrix preserves upper-unitriangular matrices.
 * `Matrix.IsUpperUnitriangular.mul` and `Matrix.IsUpperUnitriangular.pow` — upper-unitriangular
   matrices are closed under products and natural powers.
 * `Matrix.IsUpperUnitriangular.mul_single_zero_last`,
@@ -201,6 +206,15 @@ theorem IsUpperUnitriangular.map {S F : Type*} [LT m] [Zero R] [One R] [Zero S] 
     (M.map f).IsUpperUnitriangular := by
   refine ⟨hM.1.map f, fun i ↦ ?_⟩
   simp [hM.2 i]
+
+/-- Conjugating an upper-unitriangular matrix by a diagonal matrix with inverse diagonal
+`diagonal d * M * diagonal e`, `d i * e i = 1`, gives an upper-unitriangular matrix. -/
+theorem IsUpperUnitriangular.diagonal_mul_mul_diagonal [Fintype m] [DecidableEq m] [LT m]
+    [NonAssocSemiring R] {M : Matrix m m R} (hM : M.IsUpperUnitriangular) {d e : m → R}
+    (hde : ∀ i, d i * e i = 1) : (diagonal d * M * diagonal e).IsUpperUnitriangular := by
+  refine ⟨fun i j hij ↦ ?_, fun i ↦ ?_⟩
+  · simp [mul_diagonal, diagonal_mul, hM.isUpperTriangular hij]
+  · simp [mul_diagonal, diagonal_mul, hM.apply_diag i, hde i]
 
 section Nilpotence
 
@@ -517,6 +531,20 @@ The hypothesis is needed only at the entry asked about. -/
 theorem inv_apply_diag_of_isUpperTriangular [Invertible M] (hM : M.IsUpperTriangular) {i : n}
     (hdiag : M i i = 1) : M⁻¹ i i = 1 := by
   simpa [hdiag] using inv_apply_diag_mul_of_isUpperTriangular hM i
+
+/-- On the diagonal, the inverse of an invertible lower-triangular matrix inverts entrywise:
+`M⁻¹ i i * M i i = 1`. -/
+theorem inv_apply_diag_mul_of_isLowerTriangular [Invertible M] (hM : M.IsLowerTriangular)
+    (i : n) : M⁻¹ i i * M i i = 1 := by
+  have hinv : M⁻¹.IsLowerTriangular := blockTriangular_inv_of_blockTriangular hM
+  have h := congrFun (congrFun (nonsing_inv_mul M (isUnit_det_of_invertible M)) i) i
+  rwa [mul_apply_diag_of_isLowerTriangular hinv hM i, one_apply_eq] at h
+
+/-- Where an invertible lower-triangular matrix has a `1` on the diagonal, so does its inverse.
+The hypothesis is needed only at the entry asked about. -/
+theorem inv_apply_diag_of_isLowerTriangular [Invertible M] (hM : M.IsLowerTriangular) {i : n}
+    (hdiag : M i i = 1) : M⁻¹ i i = 1 := by
+  simpa [hdiag] using inv_apply_diag_mul_of_isLowerTriangular hM i
 
 /-- A product of upper-unitriangular matrices is upper unitriangular. -/
 theorem IsUpperUnitriangular.mul {T p : Type*} [NonAssocSemiring T] [Fintype p]
