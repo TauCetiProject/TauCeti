@@ -23,6 +23,7 @@ transported to the GNS space. Composed with the embedding into the completion, i
 continuous linear class map `f.toGNS : A →L[ℂ] f.GNS`, `a ↦ [a]`, which has dense range.
 Its norm is at most the square root of the norm of `f`, so for a norm-one functional
 `‖[a]‖ ≤ ‖a‖`. If `A` is separable, this dense continuous image makes `f.GNS` separable.
+The GNS representation acts on classes by left multiplication, `π(a)[b] = [a * b]`.
 
 For a unital algebra, `PositiveLinearMap.gnsVector` is the class of the unit. Its orbit under
 Mathlib's GNS representation is dense and its vector functional recovers the original positive
@@ -99,6 +100,12 @@ theorem toGNS_eq_zero_iff (f : A →ₚ[ℂ] ℂ) (a : A) :
     f.toGNS a = 0 ↔ f (star a * a) = 0 := by
   rw [← f.norm_toGNS_sq, ← Complex.ofReal_pow, Complex.ofReal_eq_zero, sq_eq_zero_iff,
     norm_eq_zero]
+
+/-- The GNS representation acts on classes by left multiplication: `π(a)[b] = [a * b]`. -/
+-- Not a simp lemma: `toGNS_apply` already rewrites the class map to the completion embedding.
+theorem gnsNonUnitalStarAlgHom_apply_toGNS (f : A →ₚ[ℂ] ℂ) (a b : A) :
+    f.gnsNonUnitalStarAlgHom a (f.toGNS b) = f.toGNS (a * b) := by
+  simp
 
 section Unital
 

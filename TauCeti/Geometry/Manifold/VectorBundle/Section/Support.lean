@@ -89,6 +89,11 @@ theorem tsupport_def (s : Cₛ^n⟮I; F, V⟯) : s.tsupport = closure {x | s x �
 theorem isClosed_tsupport (s : Cₛ^n⟮I; F, V⟯) : IsClosed s.tsupport :=
   isClosed_closure
 
+/-- A point where a section is nonzero lies in its closed support. -/
+theorem mem_tsupport_of_ne_zero (s : Cₛ^n⟮I; F, V⟯) {x : M} (hx : s x ≠ 0) :
+    x ∈ s.tsupport :=
+  subset_closure hx
+
 /-- A section vanishes off its closed support. -/
 theorem eq_zero_of_notMem_tsupport (s : Cₛ^n⟮I; F, V⟯) {x : M}
     (hx : x ∉ s.tsupport) : s x = 0 := by

@@ -67,6 +67,9 @@ coroots, so the reflection equation reads `wt (s_i a) j = wt a j - wt a i * CM j
   `raisingMatrix_map_apply_eq_zero_of_weight_sub_ne` and
   `raisingMatrix_mul_raisingMatrix_apply_eq_zero_of_weight_sub_ne_add` are the one-coordinate
   forms over any ring, for a raising matrix and for a product of two.
+* `TauCeti.MinusculeWeightTable.one_add_smul_raisingMatrix_map_injective` and
+  `one_add_smul_loweringMatrix_map_injective`: the matrices `1 + u • Eᵢ` and `1 + u • Fᵢ` are
+  injective in `u` at a node where some weight has coordinate `-1` or `1`.
 * `TauCeti.MinusculeWeightTable.raisingMatrix_map_mulVec_reflection` and
   `loweringMatrix_map_mulVec_reflection`: at the reflection of a weight of coordinate `-1` or `1`,
   the raising or lowering matrix applied to a vector reads off that vector at the weight.
@@ -651,6 +654,35 @@ theorem loweringMatrix_map_col {R : Type*} [AddGroupWithOne R]
       if T.weight a i = 1 then Pi.single (T.reflection i a) 1 else 0 := by
   ext b
   simp [Matrix.col_apply, Pi.single_apply, ite_and, ite_apply]
+
+/-- **Raising root-group matrices are injective in their parameter** at a node where some weight
+has coordinate `-1`: the matrix `1 + u • Eᵢ`, over any ring, has entry `u` at `(sᵢ b, b)` for such
+a weight `b`. -/
+theorem one_add_smul_raisingMatrix_map_injective {R : Type*} [Ring R] (i : B)
+    (h : ∃ b, T.weight b i = -1) :
+    Function.Injective fun u : R ↦ 1 + u • (T.raisingMatrix i).map (Int.cast : ℤ → R) := by
+  obtain ⟨b, hb⟩ := h
+  have hne : T.reflection i b ≠ b := by
+    rw [Ne, reflection_eq_self_iff, hb]
+    decide
+  -- The entry of `1 + u • Eᵢ` at the raising edge `(sᵢ b, b)` is `u`.
+  have hentry (u : R) :
+      (1 + u • (T.raisingMatrix i).map (Int.cast : ℤ → R)) (T.reflection i b) b = u := by
+    rw [Matrix.add_apply, Matrix.one_apply_ne hne, Matrix.smul_apply, Matrix.map_apply,
+      raisingMatrix_apply, ite_eq_left ⟨hb, rfl⟩, Int.cast_one, smul_eq_mul, mul_one, zero_add]
+  intro u v huv
+  rw [← hentry u, ← hentry v]
+  exact congrFun (congrFun huv _) b
+
+/-- **Lowering root-group matrices are injective in their parameter** at a node where some weight
+has coordinate `1`; this is the raising form for the negated table. -/
+theorem one_add_smul_loweringMatrix_map_injective {R : Type*} [Ring R] (i : B)
+    (h : ∃ b, T.weight b i = 1) :
+    Function.Injective fun u : R ↦ 1 + u • (T.loweringMatrix i).map (Int.cast : ℤ → R) := by
+  obtain ⟨b, hb⟩ := h
+  rw [← negWeights_raisingMatrix]
+  exact T.negWeights.one_add_smul_raisingMatrix_map_injective i
+    ⟨b, by rw [negWeights_weight, Pi.neg_apply, hb]⟩
 
 /-- Multiplying a matrix with any rows on the right by a raising matrix, over any not necessarily
 associative ring: the column `b` of `M * Eᵢ` is the column `sᵢ b` of `M` when `wt b i = -1`, and

@@ -66,8 +66,8 @@ pseudouniformiser `ϖ`. -/
 theorem exists_dvd_pow_of_not_isUnit [IsDomain O] [IsLocalRing O] {d : O} (hd : ¬ IsUnit d) :
     ∃ n : ℕ, ϖ ∣ d ^ n := by
   have hd_mem : d ∈ (Ideal.span {ϖ}).radical := by
-    rw [TauCeti.radical_span_singleton_eq_maximalIdeal_of_ringKrullDim_eq_one
-      (ringKrullDim_eq_one (O := O) (ϖ := ϖ))
+    rw [TauCeti.radical_span_singleton_eq_maximalIdeal_of_ringKrullDim_le_one
+      (ringKrullDim_eq_one (O := O) (ϖ := ϖ)).le
       ((mem_maximalIdeal _).mpr (not_isUnit (O := O) (ϖ := ϖ))) (ne_zero (O := O) (ϖ := ϖ))]
     exact (mem_maximalIdeal _).mpr hd
   obtain ⟨n, hn⟩ := hd_mem

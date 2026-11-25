@@ -37,6 +37,8 @@ supplies the positive roots underlying a Borel subgroup and the Bruhat theory of
 * `TauCeti.Symplectic.hasCartanType_diagonalRootDatum`: this base has Cartan type `Cₘ`.
 * `TauCeti.Symplectic.diagonalRootBase_isPos_positiveLong` and its companions: the positive roots
   of this base.
+* `TauCeti.soOddBase`: the dual base of the root datum `TauCeti.soOddRootDatum` of `SO_{2m+1}`,
+  on the same support.
 
 ## References
 
@@ -366,3 +368,42 @@ theorem diagonalRootBase_isPos_difference_iff {i j : Fin m} (hij : i ≠ j) :
     · rw [diagonalRootDatum_root_difference, diagonalRootDatum_root_difference, neg_sub]
 
 end TauCeti.Symplectic
+
+/-! ### The dual base of `SO_{2m+1}` -/
+
+namespace TauCeti
+
+universe u
+
+variable (m : ℕ)
+
+/-- **The base of `SO_{2m+1}`**: the dual of `TauCeti.Symplectic.diagonalRootBase`, with simple
+roots `e_i - e_(i+1)` and `e_(m-1)` and simple coroots `e_i - e_(i+1)` and `2 e_(m-1)`. -/
+noncomputable def soOddBase : (soOddRootDatum.{u} m).Base where
+  support := (Symplectic.diagonalRootBase.{u} m).support
+  linearIndepOn_root := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.linearIndepOn_root
+  linearIndepOn_coroot := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.linearIndepOn_coroot
+  root_mem_or_neg_mem := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.root_mem_or_neg_mem
+  coroot_mem_or_neg_mem := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.coroot_mem_or_neg_mem
+
+/-- The base of `SO_{2m+1}` has the support of `TauCeti.Symplectic.diagonalRootBase`. -/
+theorem soOddBase_support :
+    (soOddBase.{u} m).support = (Symplectic.diagonalRootBase.{u} m).support :=
+  (rfl)
+
+/-- The simple roots of `SO_{2m+1}` are indexed by `TauCeti.Symplectic.diagonalSimpleRootIndex`.
+-/
+@[simp]
+theorem mem_soOddBase_support {m : ℕ} (p : GLSymplecticFin.RootSubgroupIndex m) :
+    p ∈ (soOddBase.{u} m).support ↔ ∃ i, Symplectic.diagonalSimpleRootIndex m i = p := by
+  rw [soOddBase_support, Symplectic.mem_diagonalRootBase_support]
+
+end TauCeti

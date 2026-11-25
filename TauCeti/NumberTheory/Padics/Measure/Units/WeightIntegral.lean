@@ -76,7 +76,8 @@ variable (K : Type*) [NormedField K] [NormedAlgebra ℚ_[p] K] [IsUltrametricDis
 homomorphism for the convolution product of measures. -/
 noncomputable def measureFun : D(ℤ_[p]ˣ, ℤ_[p]) →+* (WeightSpace p K → K) :=
   RingHom.pi fun κ ↦
-    κ.weightTest.extendedCharacterRingHom (padicIntAlgebraMap p K) norm_padicIntAlgebraMap_le_one
+    κ.weightTest.extendedCharacterRingHom (padicIntAlgebraMap p K)
+      (norm_padicIntAlgebraMap_le_one norm_one.le)
 
 variable {K}
 
@@ -84,7 +85,8 @@ variable {K}
 measure. -/
 theorem measureFun_apply (ν : D(ℤ_[p]ˣ, ℤ_[p])) (κ : WeightSpace p K) :
     measureFun K ν κ =
-      extendCoefficients (padicIntAlgebraMap p K) norm_padicIntAlgebraMap_le_one ν κ.weightTest :=
+      extendCoefficients (padicIntAlgebraMap p K) (norm_padicIntAlgebraMap_le_one norm_one.le) ν
+        κ.weightTest :=
   extendedCharacterRingHom_apply _ _ _ ν
 
 /-- The measure function of a Dirac measure is evaluation of the weight. -/
@@ -100,7 +102,8 @@ theorem measureFun_inclusion_pow (ν : D(ℤ_[p]ˣ, ℤ_[p])) (k : ℕ) :
       padicIntAlgebraMap p K (ν (PadicInt.unitsPowCharacter p k)) := by
   rw [← characterIntegralAlgHom_apply]
   exact extendedCharacterRingHom_apply_eq_characterIntegralAlgHom _ _ _
-    continuous_padicIntAlgebraMap _ (fun x ↦ by simp [ContinuousMonoidHom.pow_apply]) ν
+    (continuous_padicIntAlgebraMap (continuous_algebraMap ℚ_[p] K)) _
+    (fun x ↦ by simp [ContinuousMonoidHom.pow_apply]) ν
 
 /-- Dirac measures attain the bound `norm_measureFun_le_one` at every weight. -/
 theorem norm_measureFun_dirac (x : ℤ_[p]ˣ) (κ : WeightSpace p K) :
@@ -125,7 +128,8 @@ variable {K : Type*} [NontriviallyNormedField K] [NormedAlgebra ℚ_[p] K] [IsUl
 /-- The measure function is bounded by the norm of the coefficient extension of the measure. -/
 theorem norm_measureFun_le (ν : D(ℤ_[p]ˣ, ℤ_[p])) (κ : WeightSpace p K) :
     ‖measureFun K ν κ‖ ≤ ‖toCLMEquiv
-      (extendCoefficients (padicIntAlgebraMap p K) norm_padicIntAlgebraMap_le_one ν)‖ := by
+      (extendCoefficients (padicIntAlgebraMap p K) (norm_padicIntAlgebraMap_le_one norm_one.le)
+        ν)‖ := by
   -- The weight takes values of norm one, so its test function has norm at most one.
   have hκ : ‖(κ.weightTest : C(ℤ_[p]ˣ, K))‖ ≤ 1 :=
     (ContinuousMap.norm_le _ zero_le_one).2 fun x ↦ by
@@ -137,7 +141,7 @@ theorem norm_measureFun_le (ν : D(ℤ_[p]ˣ, ℤ_[p])) (κ : WeightSpace p K) :
 theorem norm_measureFun_le_one (ν : D(ℤ_[p]ˣ, ℤ_[p])) (κ : WeightSpace p K) :
     ‖measureFun K ν κ‖ ≤ 1 :=
   (norm_measureFun_le ν κ).trans
-    (norm_toCLMEquiv_extendCoefficients_le _ norm_padicIntAlgebraMap_le_one ν)
+    (norm_toCLMEquiv_extendCoefficients_le _ (norm_padicIntAlgebraMap_le_one norm_one.le) ν)
 
 end Norm
 
