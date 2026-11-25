@@ -47,8 +47,7 @@ Over a finite field with `q` elements, `|C_s| = (q - 1)²` (`TauCeti.natCard_dia
 
 ## Main results
 
-* `TauCeti.mem_diagonalTorus_two_iff`, `TauCeti.GL2SplitCartanNormalizer.mem_iff`: membership in
-  terms of matrix entries.
+* `TauCeti.GL2SplitCartanNormalizer.mem_iff`: membership in terms of matrix entries.
 * `TauCeti.relIndex_diagonalTorus_GL2SplitCartanNormalizer`: `[C_s⁺ : C_s] = 2`.
 * `TauCeti.GL2SplitCartanNormalizer.eq_normalizer`: if `R` has no zero divisors and a unit other
   than `1`, the monomial subgroup is the normalizer of the split Cartan subgroup.
@@ -73,18 +72,7 @@ universe u
 
 section CommRing
 
-variable {R : Type u} [CommRing R]
-
-/-- An invertible `2 × 2` matrix lies in the diagonal torus exactly when both off-diagonal entries
-vanish. -/
-theorem mem_diagonalTorus_two_iff {g : GL (Fin 2) R} :
-    g ∈ diagonalTorus R 2 ↔
-      (g : Matrix (Fin 2) (Fin 2) R) 0 1 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 := by
-  rw [mem_diagonalTorus_iff, Matrix.IsDiag]
-  refine ⟨fun h ↦ ⟨h (by decide), h (by decide)⟩, fun ⟨h₁, h₂⟩ i j hij ↦ ?_⟩
-  fin_cases i <;> fin_cases j <;> simp_all
-
-variable (R)
+variable (R : Type u) [CommRing R]
 
 /-- **The monomial subgroup** `C_s⁺` of `GL₂(R)`: the invertible matrices that are diagonal or
 antidiagonal, which preserve the unordered pair of coordinate lines. It is the normalizer of the

@@ -145,4 +145,13 @@ theorem card_periodMatrixGroup_eq_card_norm_units :
   intro z
   exact isUnit_iff_norm_isUnit.trans (by simp [norm_def, equivProd, sq, mul_assoc])
 
+/-- Over a field in which `X² - b X - a` has no root, the group has `#F ^ 2 - 1` elements: it is
+the unit group of the field `QuadraticAlgebra F a b`. Over `𝔽_q` this is the order `q² - 1` of a
+nonsplit Cartan subgroup of `GL₂(𝔽_q)`. -/
+theorem card_periodMatrixGroup_of_forall_sq_ne {F : Type*} [Field F] {a b : F}
+    (hirr : ∀ r : F, r ^ 2 ≠ a + b * r) :
+    Nat.card (periodMatrixGroup a b) = Nat.card F ^ 2 - 1 := by
+  have : Fact (∀ r : F, r ^ 2 ≠ a + b * r) := ⟨hirr⟩
+  rw [card_periodMatrixGroup, Nat.card_units, Nat.card_congr (equivProd a b), Nat.card_prod, sq]
+
 end QuadraticAlgebra

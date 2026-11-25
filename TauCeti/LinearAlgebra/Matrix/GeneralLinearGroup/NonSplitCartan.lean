@@ -58,9 +58,9 @@ are those of the standard level `C_ns(ℓ)`, and they also make sense over `ℤ 
 
 ## Main results
 
-* `QuadraticAlgebra.card_periodMatrixGroup_of_forall_sq_ne`,
-  `QuadraticAlgebra.index_periodMatrixGroup_of_forall_sq_ne`: `|C_ns| = q² - 1` and
-  `[GL₂(𝔽_q) : C_ns] = q (q - 1)` when `X² - b X - a` has no root in `𝔽_q`.
+* `QuadraticAlgebra.index_periodMatrixGroup_of_forall_sq_ne`: `[GL₂(𝔽_q) : C_ns] = q (q - 1)`
+  when `X² - b X - a` has no root in `𝔽_q`, from
+  `QuadraticAlgebra.card_periodMatrixGroup_of_forall_sq_ne`, `|C_ns| = q² - 1`.
 * `TauCeti.relIndex_periodMatrixGroup_GL2NonSplitCartanNormalizer`: `[C_ns⁺ : C_ns] = 2` when
   `X² - b X - a` is irreducible and separable.
 * `TauCeti.GL2NonSplitCartanNormalizer.natCard`,
@@ -80,13 +80,6 @@ open Matrix
 namespace QuadraticAlgebra
 
 variable {F : Type*} [Field F] {a b : F}
-
-/-- **`|C_ns| = q² - 1`** over a field with `q` elements in which `X² - b X - a` has no root: the
-nonsplit Cartan subgroup is the unit group of the field `QuadraticAlgebra F a b`. -/
-theorem card_periodMatrixGroup_of_forall_sq_ne (hirr : ∀ r : F, r ^ 2 ≠ a + b * r) :
-    Nat.card (periodMatrixGroup a b) = Nat.card F ^ 2 - 1 := by
-  have : Fact (∀ r : F, r ^ 2 ≠ a + b * r) := ⟨hirr⟩
-  rw [card_periodMatrixGroup, Nat.card_units, Nat.card_congr (equivProd a b), Nat.card_prod, sq]
 
 /-- **`[GL₂(𝔽_q) : C_ns] = q (q - 1)`**, the degree of `X_ns(ℓ)` over the `j`-line for `q = ℓ`. -/
 theorem index_periodMatrixGroup_of_forall_sq_ne [Finite F] (hirr : ∀ r : F, r ^ 2 ≠ a + b * r) :
@@ -160,10 +153,8 @@ private theorem conjMatrix_inv : (conjMatrix b)⁻¹ = conjMatrix b :=
 private theorem conjMatrix_mul_mul_mem {h : GL (Fin 2) F} (hh : h ∈ periodMatrixGroup a b) :
     conjMatrix b * h * conjMatrix b ∈ periodMatrixGroup a b := by
   obtain ⟨h₁, h₂⟩ := mem_periodMatrixGroup_iff.mp hh
-  simp only [mem_periodMatrixGroup_iff, Units.val_mul, coe_conjMatrix, Matrix.mul_apply,
-    Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.empty_val', Fin.isValue, one_mul,
-    zero_mul, zero_add, neg_mul]
+  rw [mem_periodMatrixGroup_iff]
+  simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_two]
   constructor
   · linear_combination h₁
   · linear_combination -b * h₁ - h₂
@@ -208,16 +199,17 @@ private theorem conj_omega_eq (hirr : ∀ r : F, r ^ 2 ≠ a + b * r) (ha : a �
   set x := (y : Matrix (Fin 2) (Fin 2) F) 1 1
   set s := (y : Matrix (Fin 2) (Fin 2) F) 1 0
   have hs : b * s = b - 2 * x := by linear_combination htr
-  have hsq : x ^ 2 - b * x = a * (1 - s ^ 2) := by linear_combination -hdet + x * hs
-  have hdisc : (b ^ 2 + 4 * a) * (1 - s ^ 2) = 0 := by
-    linear_combination -4 * hsq - (b * s + b - 2 * x) * hs
-  -- `(y - ω) (y - (b - ω)) = 0` in `F[ω]`, so one of the two factors has norm zero.
+  -- `y` is the matrix of `z = x + s ω ∈ F[ω]`, and `z² - b z - a = P + Q ω` with
+  -- `P = x² + a s² - b x - a` and `Q = 2 x s + b s² - b s`, both zero by the trace and determinant
+  -- of `y`.
+  have hP : x ^ 2 + a * s ^ 2 - b * x - a = 0 := by linear_combination x * hs - hdet
+  have hQ : 2 * x * s + b * s ^ 2 - b * s = 0 := by linear_combination s * hs
+  -- Since `(z - ω) (z - (b - ω)) = z² - b z - a`, the product of the norms of `z - ω` and
+  -- `z - (b - ω)` is the norm `P² + b P Q - a Q²` of `z² - b z - a = 0`, so one of them vanishes.
   have key : (x ^ 2 + b * x * (s - 1) - a * (s - 1) ^ 2) *
       ((x - b) ^ 2 + b * (x - b) * (s + 1) - a * (s + 1) ^ 2) = 0 := by
-    linear_combination
-      (x ^ 2 + b * s * x - a * s ^ 2 + a + (-b * x + 2 * a * s - 2 * a) +
-          (b * x - b ^ 2 - 2 * a * s - 2 * a) - b * (b * s - b + 2 * x) + 8 * a + b ^ 2) * hdet +
-        (-(-b * x + 2 * a * s - 2 * a) * b - 2 * a * b - (b ^ 2 + 4 * a) * x) * hs - a * hdisc
+    linear_combination (x ^ 2 + a * s ^ 2 - b * x - a + b * (2 * x * s + b * s ^ 2 - b * s)) * hP -
+      a * (2 * x * s + b * s ^ 2 - b * s) * hQ
   rcases mul_eq_zero.mp key with h | h
   · obtain ⟨hx, hs'⟩ := (sq_add_mul_mul_sub_mul_sq_eq_zero_iff hirr).mp h
     have hs₁ : s = 1 := sub_eq_zero.mp hs'

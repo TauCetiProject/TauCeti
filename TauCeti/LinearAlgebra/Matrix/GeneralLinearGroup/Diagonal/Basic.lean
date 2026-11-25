@@ -67,6 +67,8 @@ element (`TauCeti.diagGL_const`).
 * `TauCeti.exists_det_eq_one_mul_map_eq_map_mul_diagGL`: a matrix intertwining another matrix with
   a diagonal matrix can be normalized to have determinant one while preserving the equation.
 * `TauCeti.mem_diagonalTorus_iff`: membership in the torus is diagonality of the matrix.
+* `TauCeti.mem_diagonalTorus_two_iff`: for `2 × 2` matrices, membership is the vanishing of
+  the two off-diagonal entries.
 * `TauCeti.mul_diagGL_of_coe_eq_permMatrix`: a permutation matrix moves past a diagonal by
   relabelling its entries.
 * `TauCeti.natCard_diagonalTorus`: the torus has `(q - 1)ⁿ` elements over a division semiring
@@ -207,6 +209,15 @@ theorem mem_diagonalTorus_iff {g : GL (Fin n) k} :
   · rw [diagGL_coe]
     simp only [IsUnit.unit_spec]
     exact hg.diagonal_diag
+
+/-- An invertible `2 × 2` matrix lies in the diagonal torus exactly when both off-diagonal entries
+vanish. -/
+theorem mem_diagonalTorus_two_iff {g : GL (Fin 2) k} :
+    g ∈ diagonalTorus k 2 ↔
+      (g : Matrix (Fin 2) (Fin 2) k) 0 1 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) k) 1 0 = 0 := by
+  rw [mem_diagonalTorus_iff, Matrix.IsDiag]
+  refine ⟨fun h ↦ ⟨h (by decide), h (by decide)⟩, fun ⟨h₁, h₂⟩ i j hij ↦ ?_⟩
+  fin_cases i <;> fin_cases j <;> simp_all
 
 /-- The diagonal torus is the group of coordinatewise units. -/
 noncomputable def diagonalTorusEquiv (k : Type u) [Semiring k] (n : ℕ) :
