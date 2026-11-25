@@ -25,6 +25,9 @@ A *word* is a finite list `u = [a₁, …, a_m]` of letters `a = (A, j)` of the 
 Homogeneously, `T_u (w) = log ((γ_u y)_n / y_n)` for the linear map
 `γ_u = γ_{a_m} ⋯ γ_{a₁}` of the accelerated generators and any `y` in the ordered cone over `w`,
 so `T_u` measures the growth of the last coordinate along the orbit of the semigroup.
+Reading off the last letter of a word from the image of an interior point shows that the
+accelerated generators freely generate their semigroup `Γ'`: distinct words have distinct linear
+maps `γ_u`, so counting words counts the elements of `Γ'`.
 
 The *renewal count* `N (w, r)` is the number of words, the empty word included, whose delay at
 `w` is at most `r`. Since every delay is at least `log (3 / 2)` and a letter with large `A` has a
@@ -51,6 +54,9 @@ asymptotic count of the orbit through the transfer operators `L_s f = ∑_a q_a^
 * `TauCeti.length_mul_log_le_wordDelay`, `TauCeti.fst_add_three_le_two_mul_exp_wordDelay`: on the
   simplex `T_u (w) ≥ |u| log (3 / 2)`, and every letter `(A, j)` of `u` has
   `A + 3 ≤ 2 e^{T_u (w)}`.
+* `TauCeti.eq_of_wordMap_eq_of_wordDelay_eq`, `TauCeti.wordMove_injective`: at an interior point
+  `w` of the simplex a word is determined by `F_u (w)` and `T_u (w)`; hence the accelerated
+  generators freely generate their semigroup.
 * `TauCeti.finite_setOf_wordDelay_le`: only finitely many words have delay at most `r`.
 * `TauCeti.wordCount_mono`, `TauCeti.continuousWithinAt_wordCount_Ici`,
   `TauCeti.measurable_wordCount`, `TauCeti.wordCount_eq_zero_of_neg`, `TauCeti.wordCount_eq_one`:
@@ -62,7 +68,7 @@ asymptotic count of the orbit through the transfer operators `L_s f = ∑_a q_a^
 ## References
 
 * A. Gamburd, M. Magee, R. Ronan, *An asymptotic formula for integer points on Markoff–Hurwitz
-  varieties*, Ann. of Math. 190 (2019), (1.7) and (4.1).
+  varieties*, Ann. of Math. 190 (2019), (1.7), (4.1), and p. 756 with footnote 5 (freeness).
 -/
 
 public section
@@ -242,6 +248,59 @@ theorem wordDelay_simplexChart (u : List (ℕ × Fin d)) {y : Fin (d + 2) → �
     wordDelay u (simplexChart y) = Real.log (wordMove u y (Fin.last _) / y (Fin.last _)) := by
   rw [wordMove_of_mem_orderedCone u hy]
   simp [(pos_last_of_mem_orderedCone hy).ne']
+
+/-! ### Freeness -/
+
+/-- Every word map sends the interior of the simplex into itself. -/
+theorem wordMap_mem_interior_orderedSimplex (u : List (ℕ × Fin d)) {x : Fin d → ℝ}
+    (hx : x ∈ interior (orderedSimplex d)) : wordMap u x ∈ interior (orderedSimplex d) := by
+  induction u generalizing x with
+  | nil => exact hx
+  | cons a _ ih => exact ih (branchMap_mem_interior_orderedSimplex a hx)
+
+/-- At an interior point `w` of the simplex a word `u` is determined by its image point
+`F_u (w)` together with its delay `T_u (w)`. -/
+theorem eq_of_wordMap_eq_of_wordDelay_eq {u v : List (ℕ × Fin d)} {x : Fin d → ℝ}
+    (hx : x ∈ interior (orderedSimplex d)) (hmap : wordMap u x = wordMap v x)
+    (hdelay : wordDelay u x = wordDelay v x) : u = v := by
+  have hpos (w : List (ℕ × Fin d)) (hw : w ≠ []) : 0 < wordDelay w x :=
+    (mul_pos (Nat.cast_pos.mpr (List.length_pos_iff.mpr hw)) (Real.log_pos (by norm_num))).trans_le
+      (length_mul_log_le_wordDelay w (interior_subset hx))
+  induction u using List.reverseRecOn generalizing v with
+  | nil =>
+    rcases eq_or_ne v [] with rfl | hv
+    · rfl
+    · exact absurd hdelay (by simpa using (hpos v hv).ne)
+  | append_singleton u a ih =>
+    rcases List.eq_nil_or_concat' v with rfl | ⟨v, b, rfl⟩
+    · exact absurd hdelay (by simpa using (hpos (u ++ [a]) (by simp)).ne')
+    · simp only [wordMap_append, wordMap_cons, wordMap_nil] at hmap
+      obtain ⟨rfl, hm⟩ := (branchMap_eq_branchMap_iff (wordMap_mem_interior_orderedSimplex u hx)
+        (wordMap_mem_orderedSimplex v (interior_subset hx))).mp hmap
+      simp only [wordDelay_append, wordDelay_cons, wordDelay_nil, add_zero, hm] at hdelay
+      rw [ih hm (add_right_cancel hdelay)]
+
+/-- **Freeness.** The accelerated generators `γ_{n-1}^A γ_j` freely generate the semigroup
+`Γ'`: distinct words have distinct linear maps `γ_u`. -/
+theorem wordMove_injective :
+    Function.Injective (wordMove : List (ℕ × Fin d) → Module.End ℝ (Fin (d + 2) → ℝ)) := by
+  intro u v h
+  obtain ⟨x, hx⟩ := interior_orderedSimplex_nonempty d
+  have hy := simplexLift_mem_orderedCone (interior_subset hx)
+  refine eq_of_wordMap_eq_of_wordDelay_eq hx ?_ ?_
+  · have hu := simplexChart_wordMove u hy
+    have hv := simplexChart_wordMove v hy
+    rw [simplexChart_simplexLift] at hu hv
+    rw [← hu, ← hv, h]
+  · have hu := wordDelay_simplexChart u hy
+    have hv := wordDelay_simplexChart v hy
+    rw [simplexChart_simplexLift] at hu hv
+    rw [hu, hv, h]
+
+/-- **Freeness.** Two words have the same linear map exactly when they are equal. -/
+@[simp]
+theorem wordMove_inj {u v : List (ℕ × Fin d)} : wordMove u = wordMove v ↔ u = v :=
+  wordMove_injective.eq_iff
 
 /-! ### The renewal count -/
 

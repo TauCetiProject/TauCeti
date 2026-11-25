@@ -298,9 +298,8 @@ theorem mpullback_orbitProj_eq_sub_coadjointOrbitForm
     (funext fun x ↦ orbitProj_mk x.1 x.2) η
   have hi := SmoothForm.mpullback_mpullback_of_comp_eq (g' := fun p : G × Z ↦ p.1 • ι p.2)
     hP.contMDiff (contMDiff_liftRightTranslation (I := I) (F := F) hι) he
-    (contMDiff_fst.smul (hι.comp contMDiff_snd)) (funext fun x ↦ by
-      rw [Function.comp_apply, quotientMk_eq_mk_toRightTranslation, liftRightTranslation_mk]
-      rfl) σ
+    (contMDiff_fst.smul (hι.comp contMDiff_snd))
+    (by rw [liftRightTranslation_comp_quotientMk]; rfl) σ
   have hpr := SmoothForm.mpullback_mpullback_of_comp_eq hP.contMDiff
     (contMDiff_proj_rightTranslation (K := (Lie.coadjointRepresentation ℝ I G).stabilizer c)
       (I := I) (IZ := IZ) (F := F)) he

@@ -35,7 +35,7 @@ coefficient in `L∞`. Solving `(∂s + A) u = f` is the weak equation `(ι ∘ 
 weak solution `x ∈ Lᵖ(Ω, D)` of that equation lifts to the graph.
 
 On the whole line with `p = 2`, the autonomous operator of an invertible `ι`-symmetric `A₀`
-(`⟪A₀ x, ι y⟫ = ⟪ι x, A₀ y⟫`) is invertible with inverse of norm at most `C = √(1 + ‖A₀⁻¹‖²)`.
+(`⟪A₀ x, ι y⟫ = ⟪ι x, A₀ y⟫`) is invertible with inverse of norm at most `C = max ‖A₀⁻¹‖ 1`.
 A coefficient within `δ` of `A₀` almost everywhere, with `C δ < 1`, therefore gives an invertible
 operator whose inverse has norm at most `C / (1 - C δ)`
 (`TauCeti.WeakDerivStep.isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le` and
@@ -245,32 +245,32 @@ private theorem nonneg_of_ae_norm_sub_le (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀�
 
 /-- **Invertibility near an invertible symmetric constant.** On `L²(ℝ)`, let `A₀` be invertible
 and `ι`-symmetric, and let `‖A(s) - A₀‖ ≤ δ` for almost every `s`, with
-`√(1 + ‖A₀⁻¹‖²) δ < 1`. Then `∂s + A` is invertible. -/
+`max ‖A₀⁻¹‖ 1 δ < 1`. Then `∂s + A` is invertible. -/
 theorem isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le
     (hSymm : ∀ x y : D, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ) (hA₀ : A₀.IsInvertible)
-    (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀‖ ≤ δ) (hsmall : √(1 + ‖A₀.inverse‖ ^ 2) * δ < 1) :
+    (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀‖ ≤ δ) (hsmall : max ‖A₀.inverse‖ 1 * δ < 1) :
     (nonautonomousDomainTrajectoryOperator (p := 2) ι A).IsInvertible :=
   (isInvertible_domainTrajectoryOperator hSymm hA₀).of_mul_norm_sub_lt
     (norm_inverse_domainTrajectoryOperator_le hSymm hA₀)
     (lt_of_le_of_lt (mul_le_mul_of_nonneg_left
       (norm_nonautonomousDomainTrajectoryOperator_sub_domainTrajectoryOperator_le ι A₀
         (nonneg_of_ae_norm_sub_le hA) hA)
-      (Real.sqrt_nonneg _)) hsmall)
+      (zero_le_one.trans (le_max_right _ _))) hsmall)
 
 /-- **The inverse bound near an invertible symmetric constant.** Under the hypotheses of
 `isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le`, with
-`C = √(1 + ‖A₀⁻¹‖²)`, the inverse of `∂s + A` has norm at most `C / (1 - C δ)`. -/
+`C = max ‖A₀⁻¹‖ 1`, the inverse of `∂s + A` has norm at most `C / (1 - C δ)`. -/
 theorem norm_inverse_nonautonomousDomainTrajectoryOperator_le_of_ae_norm_sub_le
     (hSymm : ∀ x y : D, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ) (hA₀ : A₀.IsInvertible)
-    (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀‖ ≤ δ) (hsmall : √(1 + ‖A₀.inverse‖ ^ 2) * δ < 1) :
+    (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀‖ ≤ δ) (hsmall : max ‖A₀.inverse‖ 1 * δ < 1) :
     ‖(nonautonomousDomainTrajectoryOperator (p := 2) ι A).inverse‖ ≤
-      √(1 + ‖A₀.inverse‖ ^ 2) / (1 - √(1 + ‖A₀.inverse‖ ^ 2) * δ) := by
-  set C := √(1 + ‖A₀.inverse‖ ^ 2)
+      max ‖A₀.inverse‖ 1 / (1 - max ‖A₀.inverse‖ 1 * δ) := by
+  set C := max ‖A₀.inverse‖ 1
   have hdiff := norm_nonautonomousDomainTrajectoryOperator_sub_domainTrajectoryOperator_le
     (p := 2) ι A₀ (nonneg_of_ae_norm_sub_le hA) hA
   have hCδ : C * ‖nonautonomousDomainTrajectoryOperator (p := 2) ι A -
       domainTrajectoryOperator ι A₀‖ ≤ C * δ :=
-    mul_le_mul_of_nonneg_left hdiff (Real.sqrt_nonneg _)
+    mul_le_mul_of_nonneg_left hdiff (zero_le_one.trans (le_max_right _ _))
   refine ((isInvertible_domainTrajectoryOperator hSymm hA₀).norm_inverse_le_of_mul_norm_sub_lt
     (norm_inverse_domainTrajectoryOperator_le hSymm hA₀) (hCδ.trans_lt hsmall)).trans ?_
   gcongr
@@ -279,7 +279,7 @@ theorem norm_inverse_nonautonomousDomainTrajectoryOperator_le_of_ae_norm_sub_le
 `isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le`, `∂s + A` is Fredholm. -/
 theorem isFredholm_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le
     (hSymm : ∀ x y : D, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ) (hA₀ : A₀.IsInvertible)
-    (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀‖ ≤ δ) (hsmall : √(1 + ‖A₀.inverse‖ ^ 2) * δ < 1) :
+    (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀‖ ≤ δ) (hsmall : max ‖A₀.inverse‖ 1 * δ < 1) :
     (nonautonomousDomainTrajectoryOperator (p := 2) ι A).IsFredholm :=
   (isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le hSymm hA₀ hA
     hsmall).isFredholm
@@ -288,7 +288,7 @@ theorem isFredholm_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le
 `isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le`, `∂s + A` has index `0`. -/
 theorem index_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le
     (hSymm : ∀ x y : D, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ) (hA₀ : A₀.IsInvertible)
-    (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀‖ ≤ δ) (hsmall : √(1 + ‖A₀.inverse‖ ^ 2) * δ < 1) :
+    (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀‖ ≤ δ) (hsmall : max ‖A₀.inverse‖ 1 * δ < 1) :
     (nonautonomousDomainTrajectoryOperator (p := 2) ι A).index = 0 :=
   ContinuousLinearMap.index_eq_zero_of_bijective _
     (isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le hSymm hA₀ hA

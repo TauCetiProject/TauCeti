@@ -12,7 +12,9 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 
 A subspace that admits an orthogonal projection is the range of a continuous idempotent and is
 therefore closed. In a complete ambient inner-product space, such a subspace is itself complete.
-Closedness, completeness and existence of an orthogonal projection are equivalent there.
+Closedness, completeness and existence of an orthogonal projection are equivalent there, so
+the intersection of two such subspaces admits an orthogonal projection
+(`Submodule.HasOrthogonalProjection.inf`).
 
 The sum `U ⊔ V` of two orthogonal subspaces admitting orthogonal projections equals
 `(Uᗮ ⊓ Vᗮ)ᗮ` and is therefore closed (`Submodule.IsOrtho.sup_eq_orthogonal_inf_orthogonal`,
@@ -61,6 +63,13 @@ theorem hasOrthogonalProjection_iff_isClosed {U : Submodule 𝕜 E} :
 theorem hasOrthogonalProjection_iff_completeSpace {U : Submodule 𝕜 E} :
     U.HasOrthogonalProjection ↔ CompleteSpace U :=
   ⟨fun _ ↦ U.completeSpace_coe_of_hasOrthogonalProjection, fun _ ↦ .ofCompleteSpace U⟩
+
+/-- In a complete space, the intersection of two subspaces admitting orthogonal projections is
+closed and so admits an orthogonal projection. -/
+instance HasOrthogonalProjection.inf (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection]
+    [V.HasOrthogonalProjection] : (U ⊓ V).HasOrthogonalProjection :=
+  hasOrthogonalProjection_iff_isClosed.mpr
+    (U.isClosed_of_hasOrthogonalProjection.inter V.isClosed_of_hasOrthogonalProjection)
 
 end Submodule
 

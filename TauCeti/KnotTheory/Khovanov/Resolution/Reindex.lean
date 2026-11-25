@@ -30,6 +30,10 @@ On the vertex `S` it acts by the vertex isomorphism with the sign
 orders. It is the identity for the identity identification and is compatible with composition
 and inversion.
 
+When `E` keeps the crossings, the vertex isomorphisms form an isomorphism of the cubes of
+resolutions themselves (`TauCeti.PDCode.ResolutionEquiv.resolutionCubeNatIso`), so that maps of
+cubes can be transported along `E` before totalizing.
+
 This applies to relabelling the half-edges and crossings of a code (`TauCeti.PDCode.relabel`), in
 particular to reordering its crossings, to reading a crossing from another slot
 (`TauCeti.PDCode.rotateCrossing`) and to permuting the labels of its crossing-free circles.
@@ -40,6 +44,9 @@ particular to reordering its crossings, to reading a crossing from another slot
   resolutions, characterized by `ResolutionEquiv.resolutionCubeIso_hom_comp_resolutionCubeι`.
 * `TauCeti.PDCode.ResolutionEquiv.khovanovBracketIso`: the isomorphism of unnormalized Khovanov
   complexes, given in each quantum degree by `ResolutionEquiv.khovanovBracketIso_hom_apply`.
+* `TauCeti.PDCode.ResolutionEquiv.resolutionCubeNatIso`: for an identification keeping the
+  crossings, the isomorphism of cubes of resolutions, characterized by
+  `ResolutionEquiv.resolutionCubeNatIso_hom_app_comp_resolutionCubeι`.
 
 ## Main results
 
@@ -249,6 +256,103 @@ theorem symm_khovanovBracketIso :
   have h := E.trans_khovanovBracketIso hD hD' R E.symm hD
   rw [self_trans_symm, refl_khovanovBracketIso] at h
   exact Iso.ext (Iso.inv_ext' (congrArg Iso.hom h).symm)
+
+end ResolutionEquiv
+
+/-! ### Identifications fixing the crossings -/
+
+namespace ResolutionEquiv
+
+variable {D₁ D₂ : PDCode n} (E : D₁.ResolutionEquiv D₂) (hE : E.crossingEquiv = Equiv.refl _)
+  (hD₁ : D₁.IsPlanar) (hD₂ : D₂.IsPlanar) (R : Type u) [CommRing R] (j : ℤ)
+
+include hE in
+private theorem apply_crossingEquiv_of_eq_refl (s : Fin n → Bool) (i : Fin n) :
+    s (E.crossingEquiv i) = s i := by
+  rw [hE, Equiv.refl_apply]
+
+/-- The map of cubes of resolutions reindexing every circle tensor along `E`, when `E` keeps
+the crossings. -/
+private noncomputable def resolutionCubeHomOfEqRefl :
+    D₁.resolutionCube hD₁ R j ⟶ D₂.resolutionCube hD₂ R j :=
+  resolutionCubeHom hD₁ R j hD₂
+    (fun s ↦ (reindex R (fun _ ↦ R[ε])
+      (E.smoothingEquiv (E.apply_crossingEquiv_of_eq_refl hE s)).resolvedCircleCongr).toLinearMap)
+    (fun s ↦ by simpa using Khovanov.isHomogeneous_reindex (R := R) _)
+    (fun s t c hst hc h h' x ↦ by
+      obtain ⟨slots, hslots⟩ := E.exists_slots c
+      rw [hE, Equiv.refl_apply] at hslots
+      have := SmoothingEquiv.reindex_resolutionEdgeMap
+        (E.smoothingEquiv (E.apply_crossingEquiv_of_eq_refl hE s))
+        (E.smoothingEquiv (E.apply_crossingEquiv_of_eq_refl hE t)) (by simp) (by simp) slots
+        (by simpa using hslots) hst hc hst hc h h' R x
+      rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe]
+      exact this.symm)
+    (add_zero j).symm
+
+@[reassoc]
+private theorem resolutionCubeHomOfEqRefl_app_comp_resolutionCubeι (S : Finset (Fin n)) :
+    (E.resolutionCubeHomOfEqRefl hE hD₁ hD₂ R j).app S ≫ D₂.resolutionCubeι hD₂ R j S =
+      D₁.resolutionCubeι hD₁ R j S ≫ ModuleCat.ofHom (reindex R (fun _ ↦ R[ε])
+        (E.smoothingEquiv (E.apply_crossingEquiv_of_eq_refl hE (cubeState S))).resolvedCircleCongr
+        ).toLinearMap :=
+  resolutionCubeHom_app_comp_resolutionCubeι ..
+
+include hE in
+private theorem symm_crossingEquiv_eq_refl : E.symm.crossingEquiv = Equiv.refl _ := by
+  rw [symm_crossingEquiv, hE, Equiv.refl_symm]
+
+/-- The circle bijections of `E.symm` are the inverses of those of `E`. -/
+private theorem resolvedCircleCongr_symm_smoothingEquiv (s : Fin n → Bool) :
+    (E.symm.smoothingEquiv (E.symm.apply_crossingEquiv_of_eq_refl
+      (E.symm_crossingEquiv_eq_refl hE) s)).resolvedCircleCongr =
+      (E.smoothingEquiv (E.apply_crossingEquiv_of_eq_refl hE s)).resolvedCircleCongr.symm := by
+  rw [← SmoothingEquiv.resolvedCircleCongr_symm, smoothingEquiv_symm]
+
+private theorem resolutionCubeHomOfEqRefl_comp_symm :
+    E.resolutionCubeHomOfEqRefl hE hD₁ hD₂ R j ≫
+      E.symm.resolutionCubeHomOfEqRefl (E.symm_crossingEquiv_eq_refl hE) hD₂ hD₁ R j = 𝟙 _ := by
+  ext S : 2
+  rw [NatTrans.comp_app, NatTrans.id_app, ← cancel_mono (D₁.resolutionCubeι hD₁ R j S),
+    Category.assoc, resolutionCubeHomOfEqRefl_app_comp_resolutionCubeι,
+    resolutionCubeHomOfEqRefl_app_comp_resolutionCubeι_assoc, Category.id_comp,
+    resolvedCircleCongr_symm_smoothingEquiv E hE]
+  ext x
+  simp
+
+/-- **The cubes of resolutions of codes identified with the same crossings.** An identification
+`E` of all smoothings of `D₁` with those of `D₂` which keeps the crossings gives an isomorphism of
+their cubes of resolutions in every quantum degree, reindexing the circle tensor of each vertex
+along the bijection of resolved circles induced by `E`
+(`ResolutionEquiv.resolutionCubeNatIso_hom_app_comp_resolutionCubeι`). -/
+noncomputable def resolutionCubeNatIso : D₁.resolutionCube hD₁ R j ≅ D₂.resolutionCube hD₂ R j where
+  hom := E.resolutionCubeHomOfEqRefl hE hD₁ hD₂ R j
+  inv := E.symm.resolutionCubeHomOfEqRefl (E.symm_crossingEquiv_eq_refl hE) hD₂ hD₁ R j
+  hom_inv_id := E.resolutionCubeHomOfEqRefl_comp_symm hE hD₁ hD₂ R j
+  inv_hom_id := by
+    simpa using E.symm.resolutionCubeHomOfEqRefl_comp_symm (E.symm_crossingEquiv_eq_refl hE) hD₂
+      hD₁ R j
+
+/-- On the vertex `S`, `ResolutionEquiv.resolutionCubeNatIso` reindexes the circle tensor along
+the bijection of resolved circles induced by `E`. -/
+@[reassoc]
+theorem resolutionCubeNatIso_hom_app_comp_resolutionCubeι (S : Finset (Fin n))
+    (h : ∀ i, cubeState S (E.crossingEquiv i) = cubeState S i) :
+    (E.resolutionCubeNatIso hE hD₁ hD₂ R j).hom.app S ≫ D₂.resolutionCubeι hD₂ R j S =
+      D₁.resolutionCubeι hD₁ R j S ≫ ModuleCat.ofHom
+        (reindex R (fun _ ↦ R[ε]) (E.smoothingEquiv h).resolvedCircleCongr).toLinearMap :=
+  E.resolutionCubeHomOfEqRefl_app_comp_resolutionCubeι hE hD₁ hD₂ R j S
+
+/-- On the vertex `S`, the inverse of `ResolutionEquiv.resolutionCubeNatIso` reindexes the circle
+tensor along the inverse of the bijection of resolved circles induced by `E`. -/
+@[reassoc]
+theorem resolutionCubeNatIso_inv_app_comp_resolutionCubeι (S : Finset (Fin n))
+    (h : ∀ i, cubeState S (E.crossingEquiv i) = cubeState S i) :
+    (E.resolutionCubeNatIso hE hD₁ hD₂ R j).inv.app S ≫ D₁.resolutionCubeι hD₁ R j S =
+      D₂.resolutionCubeι hD₂ R j S ≫ ModuleCat.ofHom
+        (reindex R (fun _ ↦ R[ε]) (E.smoothingEquiv h).resolvedCircleCongr.symm).toLinearMap := by
+  rw [resolutionCubeNatIso, resolutionCubeHomOfEqRefl_app_comp_resolutionCubeι,
+    resolvedCircleCongr_symm_smoothingEquiv E hE]
 
 end ResolutionEquiv
 

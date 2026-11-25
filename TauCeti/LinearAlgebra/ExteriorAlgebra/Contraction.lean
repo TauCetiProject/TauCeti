@@ -447,6 +447,16 @@ theorem ι_mul_eq_neg_one_pow_smul_mul {n : ℕ} {x : ExteriorAlgebra R M} (hx :
   rw [ι_mul_eq_involute_mul, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower hx,
     smul_mul_assoc]
 
+/-- An element of an even exterior power commutes with every vector, in the form
+`x * ι m + involute (ι m) * x = 0` required of the degree-one part of a twisted derivation by
+`ExteriorAlgebra.liftTwistedDerivation`. -/
+theorem mul_ι_add_involute_ι_mul_of_mem_exteriorPower {n : ℕ} (hn : Even n)
+    {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) (m : M) :
+    x * ExteriorAlgebra.ι R m +
+      involute (Q := (0 : QuadraticForm R M)) (ExteriorAlgebra.ι R m) * x = 0 := by
+  rw [involute_ι, neg_mul, ι_mul_eq_neg_one_pow_smul_mul hx, hn.neg_one_pow, one_smul,
+    add_neg_cancel]
+
 /-! ### Reversal and the top-degree coefficient of a basis -/
 
 section Basis

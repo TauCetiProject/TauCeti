@@ -60,7 +60,7 @@ scalar `χ_L(d)`.
   its cast along `level L = N`) in `TauCeti.modFormCharSpace`, and uniqueness of its nebentypus.
 * `ZLattice.diamondOp_thetaFormOfLevel`, `ZLattice.diamondOpNat_thetaFormOfLevel`: diamond-operator
   action on `thetaFormOfLevel`.
-* `ZLattice.IsEven.thetaSeries_slash_of_mem_Gamma0_eq_self_iff`,
+* `ZLattice.IsEven.forall_thetaSeries_slash_eq_self_iff_nebentypus_eq_one`,
   `ZLattice.IsEven.thetaSeries_slash_of_mem_Gamma0_of_nebentypus_eq_one`,
   `ZLattice.IsEven.thetaSeries_slash_of_mem_Gamma0_of_isSquare`: `Θ_L` is `Γ₀(level L)`-invariant
   in weight `k` if and only if `χ_L = 1` (in particular when `signedDiscr L` is a square).
@@ -270,7 +270,7 @@ theorem thetaFormOfLevel_mem_modFormCharSpace_one_iff (hL : IsEven L)
 
 /-- The theta series of an even full lattice of rank `2k` is slash-invariant in weight `k` under
 all of `Γ₀(level L)` if and only if its nebentypus is trivial. -/
-theorem IsEven.thetaSeries_slash_of_mem_Gamma0_eq_self_iff (hL : IsEven L)
+theorem IsEven.forall_thetaSeries_slash_eq_self_iff_nebentypus_eq_one (hL : IsEven L)
     (hk : finrank ℝ E = 2 * k) :
     (∀ A ∈ CongruenceSubgroup.Gamma0 (level L),
         thetaSeries L ∣[(k : ℤ)] A = thetaSeries L) ↔
@@ -290,7 +290,7 @@ theorem IsEven.thetaSeries_slash_of_mem_Gamma0_of_nebentypus_eq_one (hL : IsEven
     (hk : finrank ℝ E = 2 * k) (hχ : hL.nebentypus ℂ ⟨k, by omega⟩ = 1) {A : SL(2, ℤ)}
     (hA : A ∈ CongruenceSubgroup.Gamma0 (level L)) :
     thetaSeries L ∣[(k : ℤ)] A = thetaSeries L :=
-  (hL.thetaSeries_slash_of_mem_Gamma0_eq_self_iff hk).mpr hχ A hA
+  (hL.forall_thetaSeries_slash_eq_self_iff_nebentypus_eq_one hk).mpr hχ A hA
 
 /-- When the signed discriminant of an even full lattice of rank `2k` is a square, its theta
 series is invariant in weight `k` under every matrix of `Γ₀(level L)`. -/
