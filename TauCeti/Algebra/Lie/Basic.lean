@@ -28,6 +28,8 @@ This file supplies general constructions for Lie modules that are missing from M
   module.
 * `LieHom.lieIdealComap`: a Lie homomorphism restricted to the preimage of a Lie ideal, as a
   Lie homomorphism into that ideal.
+* `LieIdeal.orderIsoMapComap`: an equivalence of Lie algebras as an order isomorphism of the
+  lattices of Lie ideals.
 
 ## Main results
 
@@ -68,6 +70,8 @@ This file supplies general constructions for Lie modules that are missing from M
   algebra commute on every Lie module.
 * `LieSubalgebra.lie_eq_zero_of_mem` and `LieIdeal.lie_eq_zero_of_mem`: two elements of an
   abelian Lie subalgebra, or of an abelian Lie ideal, have zero bracket in the ambient Lie algebra.
+* `LieIdeal.lie_eq_zero_of_disjoint`: the bracket vanishes between Lie ideals with trivial
+  intersection.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
 * `LieEquiv.map_engel`: a Lie algebra isomorphism carries the Engel subalgebra of `x` onto that
   of its image.
@@ -163,6 +167,37 @@ theorem LieIdeal.lie_eq_zero_of_mem {R L : Type*} [CommRing R] [LieRing L] [LieA
     {I : LieIdeal R L} [IsLieAbelian I] {x y : L} (hx : x ∈ I) (hy : y ∈ I) : ⁅x, y⁆ = 0 :=
   have : IsLieAbelian (I : LieSubalgebra R L) := ‹IsLieAbelian I›
   LieSubalgebra.lie_eq_zero_of_mem (H := (I : LieSubalgebra R L)) hx hy
+
+/-- The bracket of elements of two Lie ideals with trivial intersection vanishes. -/
+theorem LieIdeal.lie_eq_zero_of_disjoint {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {I J : LieIdeal R L} (h : Disjoint I J) {x y : L} (hx : x ∈ I) (hy : y ∈ J) : ⁅x, y⁆ = 0 :=
+  (LieSubmodule.mem_bot _).mp <| h.le_bot <|
+    (LieSubmodule.mem_inf _ _ _).mpr ⟨lie_mem_left R L I x y hx, lie_mem_right R L J x y hy⟩
+
+/-- An equivalence of Lie algebras induces an order isomorphism of the lattices of Lie ideals,
+acting by `LieIdeal.map` with inverse `LieIdeal.comap`. -/
+noncomputable def LieIdeal.orderIsoMapComap {R L L' : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] (e : L ≃ₗ⁅R⁆ L') :
+    LieIdeal R L ≃o LieIdeal R L' where
+  toFun I := I.map e.toLieHom
+  invFun J := J.comap e.toLieHom
+  left_inv I := by ext; simp
+  right_inv J := by ext; simp
+  map_rel_iff' {I J} := by
+    refine ⟨fun h x hx ↦ ?_, fun h ↦ LieIdeal.map_mono h⟩
+    simpa using h (LieIdeal.mem_map (f := e.toLieHom) hx)
+
+@[simp]
+theorem LieIdeal.orderIsoMapComap_apply {R L L' : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] (e : L ≃ₗ⁅R⁆ L') (I : LieIdeal R L) :
+    LieIdeal.orderIsoMapComap e I = I.map e.toLieHom :=
+  (rfl)
+
+@[simp]
+theorem LieIdeal.orderIsoMapComap_symm_apply {R L L' : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] (e : L ≃ₗ⁅R⁆ L') (J : LieIdeal R L') :
+    (LieIdeal.orderIsoMapComap e).symm J = J.comap e.toLieHom :=
+  (rfl)
 
 section EndSubalgebra
 

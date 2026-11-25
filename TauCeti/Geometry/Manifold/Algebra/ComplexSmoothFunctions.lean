@@ -22,7 +22,10 @@ complexifies to a complex-linear map between complex-valued ones
 (`ContMDiffMap.complexifyLinearMap`), and conjugation is a real algebra involution.
 Differentiation commutes with real and imaginary parts at every nonzero differentiability
 order. Precomposition with a smooth map is a complex algebra homomorphism
-(`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data.
+(`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data, and
+precomposition with a diffeomorphism is a complex algebra isomorphism
+(`Diffeomorph.compRightComplexAlgEquiv`), through which operators are transported along
+diffeomorphisms by conjugation.
 
 The constructions use Mathlib's pointwise smooth-function ring, `compLeftRingHom`, and
 its continuous real-linear maps `Complex.reCLM`, `Complex.imCLM`, `Complex.ofRealCLM`
@@ -383,6 +386,15 @@ theorem complexifyLinearMap_ofReal (D : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^n⟮J, 
   ext x
   simp
 
+/-- **The complexification of a local operator is local.** If `D g` vanishes at `x` whenever the
+real-valued function `g` vanishes near `x`, then `complexifyLinearMap D f` vanishes at `x` whenever
+the complex-valued function `f` vanishes near `x`. -/
+theorem complexifyLinearMap_apply_eq_zero {D : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^n⟮I, M; ℝ⟯} {x : M}
+    (hD : ∀ g : C^n⟮I, M; ℝ⟯, (∀ᶠ y in nhds x, g y = 0) → D g x = 0)
+    {f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} (hf : ∀ᶠ y in nhds x, f y = 0) :
+    complexifyLinearMap D f x = 0 := by
+  simp [hD f.re (hf.mono fun y hy ↦ by simp [hy]), hD f.im (hf.mono fun y hy ↦ by simp [hy])]
+
 variable {U V : TopologicalSpace.Opens M}
 
 /-- Real part commutes with restriction to an open subset. -/
@@ -451,3 +463,47 @@ theorem mvfderiv_eq_zero_iff_re_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hn 
         congrArg (fun L ↦ L v) hi
 
 end ContMDiffMap
+
+namespace Diffeomorph
+
+open ContMDiffMap
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+  {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- Precomposition with a `C^n` diffeomorphism `φ : N → M`, as a complex algebra isomorphism from
+the real `C^n` complex-valued functions on `M` to those on `N`, with inverse the precomposition with
+`φ⁻¹`. This is the complex-linear version of `Diffeomorph.compRightAlgEquiv ℝ ℂ φ`. -/
+def compRightComplexAlgEquiv (φ : N ≃ₘ^n⟮J, I⟯ M) :
+    C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ ≃ₐ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯ :=
+  AlgEquiv.ofAlgHom (compRightComplexAlgHom φ.toContMDiffMap)
+    (compRightComplexAlgHom φ.symm.toContMDiffMap)
+    (AlgHom.ext fun _ ↦ ContMDiffMap.ext fun _ ↦ by simp)
+    (AlgHom.ext fun _ ↦ ContMDiffMap.ext fun _ ↦ by simp)
+
+theorem coe_compRightComplexAlgEquiv_apply (φ : N ≃ₘ^n⟮J, I⟯ M) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    ⇑(compRightComplexAlgEquiv φ f) = f ∘ φ := by
+  ext x
+  simp [compRightComplexAlgEquiv]
+
+@[simp]
+theorem compRightComplexAlgEquiv_apply (φ : N ≃ₘ^n⟮J, I⟯ M) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (x : N) : compRightComplexAlgEquiv φ f x = f (φ x) := by
+  simp [compRightComplexAlgEquiv]
+
+theorem compRightComplexAlgEquiv_symm_apply (φ : N ≃ₘ^n⟮J, I⟯ M) (f : C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯)
+    (x : M) : (compRightComplexAlgEquiv φ).symm f x = f (φ.symm x) := by
+  simp [compRightComplexAlgEquiv]
+
+/-- The inverse of precomposition with `φ` is precomposition with `φ⁻¹`. -/
+@[simp]
+theorem compRightComplexAlgEquiv_symm (φ : N ≃ₘ^n⟮J, I⟯ M) :
+    (compRightComplexAlgEquiv φ).symm = compRightComplexAlgEquiv φ.symm :=
+  AlgEquiv.ext fun _ ↦ ContMDiffMap.ext fun _ ↦ by
+    rw [compRightComplexAlgEquiv_symm_apply, compRightComplexAlgEquiv_apply]
+
+end Diffeomorph

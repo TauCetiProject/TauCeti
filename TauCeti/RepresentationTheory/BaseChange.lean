@@ -70,12 +70,16 @@ to torsion modules and do not require the coefficient algebra to be flat.
 ## Main declarations
 
 * `Representation.baseChange`: scalar extension of a representation.
+* `Representation.ker_baseChange`: scalar extension to a faithful algebra keeps the kernel of a
+  representation on a flat module.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
 * `Representation.invariantsBaseChangeMap`: the comparison map `A ⊗_R V^G → (A ⊗_R V)^G`,
   injective for flat `A` (`Representation.invariantsBaseChangeMap_injective`).
 * `Representation.averageMap_baseChange`: the averaging projection commutes with scalar
   extension.
+* `Representation.equivFinsuppOfBasisLeft_apply_fixed_of_baseChange`: the coordinates of a fixed
+  vector of a free scalar extension are fixed.
 * `Representation.exists_common_fixed_vector_of_baseChange`: descent of a nonzero common
   fixed vector.
 * `Representation.character_baseChange`: the character of a base-changed representation is the
@@ -89,6 +93,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.intertwiningMapBaseChangeEquiv`: flat scalar extension of commutative rings
   commutes with intertwiner spaces for finite monoids and finite free source modules.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
+* `Representation.IntertwiningMap.coe_equivLinearMapAsModule_baseChange`: the module map of a
+  base-changed intertwining map `f` is `A ⊗ f`.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
 * `LinearMap.isIntertwiningMap_liftBaseChange_iff`: the `A`-linear extension of an `R`-linear map
   intertwines the base-changed representation exactly when the map intertwines on `V`.
@@ -97,6 +103,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
 * `TauCeti.baseChangeOfMulActionEquiv_one_tmul`: on `1 ⊗ x` the identification
   `A ⊗_R R[G] ≅ A[G]` extends the coefficients of `x` to `A`.
+* `TauCeti.coeff_baseChangeOfMulActionEquiv_one_tmul`: the identification `A ⊗_R R[X] ≅ A[X]`
+  maps `1 ⊗ v` to `v` with its coefficients mapped to `A`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
 * `Representation.baseChangeRestrictScalarsIntEquiv`: a `ZMod n`-representation is its own
   reduction, `ZMod n ⊗_ℤ ρ.restrictScalars ℤ ≅ ρ`.
@@ -152,6 +160,19 @@ theorem ker_le_ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [A
     (ρ : Representation R G V) : ρ.ker ≤ (baseChange A ρ).ker := fun g hg ↦ by
   rw [MonoidHom.mem_ker] at hg ⊢
   simp [baseChange_apply, hg, Module.End.one_eq_id]
+
+/-- Extension of scalars to a faithful algebra does not change the kernel of a representation on a
+flat module, since `v ↦ 1 ⊗ v` is then injective. -/
+@[simp]
+theorem ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [Algebra R A]
+    [FaithfulSMul R A] [Module.Flat R V] (ρ : Representation R G V) :
+    (baseChange A ρ).ker = ρ.ker := by
+  refine le_antisymm (fun g hg ↦ ?_) (ker_le_ker_baseChange A ρ)
+  rw [MonoidHom.mem_ker, baseChange_apply] at hg
+  rw [MonoidHom.mem_ker]
+  ext v
+  exact Module.Flat.tensorProduct_mk_injective R V A
+    (by simpa using LinearMap.congr_fun hg (1 ⊗ₜ v))
 
 end BaseChange
 
@@ -329,6 +350,17 @@ end Average
 variable {R : Type u} {A : Type v} [CommSemiring R] [Semiring A] [Algebra R A]
 variable [Module.Free R A] [AddCommMonoid V] [Module R V]
 
+omit [Module.Free R A] in
+/-- If `w ∈ A ⊗[R] V` is fixed by the scalar extension of `ρ`, then so is each coordinate of `w`
+in a basis of `A`: writing `w = ∑ bᵢ ⊗ vᵢ`, the group acts on the coefficients `vᵢ`. -/
+theorem equivFinsuppOfBasisLeft_apply_fixed_of_baseChange {ι : Type*} [DecidableEq ι]
+    (b : Module.Basis ι R A) (ρ : Representation R G V) {w : A ⊗[R] V}
+    (hfixed : ∀ g, baseChange A ρ g w = w) (i : ι) (g : G) :
+    ρ g (TensorProduct.equivFinsuppOfBasisLeft b w i) =
+      TensorProduct.equivFinsuppOfBasisLeft b w i := by
+  rw [← Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply, ← LinearMap.baseChange_eq_lTensor,
+    ← baseChange_apply, hfixed g]
+
 /-- A nonzero common fixed vector after scalar extension to an algebra free over the base
 semiring descends to a nonzero common fixed vector over the base semiring. Neither commutativity
 nor nontriviality of the coefficient algebra is needed.
@@ -345,11 +377,7 @@ theorem exists_common_fixed_vector_of_baseChange
   have he : e w ≠ 0 := fun h ↦ hw (e.map_eq_zero_iff.mp h)
   obtain ⟨i, hi⟩ := Finsupp.ne_iff.mp he
   simp only [Finsupp.coe_zero, Pi.zero_apply] at hi
-  refine ⟨e w i, hi, fun g ↦ ?_⟩
-  rw [← Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply]
-  have h := hfixed g
-  rw [baseChange_apply, LinearMap.baseChange_eq_lTensor] at h
-  exact congrArg (fun x ↦ e x i) h
+  exact ⟨e w i, hi, equivFinsuppOfBasisLeft_apply_fixed_of_baseChange b ρ hfixed i⟩
 
 end
 
@@ -455,6 +483,18 @@ theorem toLinearMap_baseChange
     (f : IntertwiningMap ρ σ) (A : Type*) [Semiring A] [Algebra R A] :
     (f.baseChange A).toLinearMap = f.toLinearMap.baseChange A :=
   (rfl)
+
+/-- The `A[G]`-linear map attached to a base-changed intertwining map `f` is `A ⊗ f` on the
+underlying types: `Representation.IntertwiningMap.equivLinearMapAsModule` keeps the
+underlying function (`Representation.IntertwiningMap.equivLinearMapAsModule_apply`). -/
+theorem coe_equivLinearMapAsModule_baseChange (f : IntertwiningMap ρ σ) (A : Type*)
+    [CommSemiring A] [Algebra R A] :
+    ⇑(equivLinearMapAsModule _ _ (f.baseChange A)) = f.toLinearMap.lTensor A := by
+  funext x
+  rw [equivLinearMapAsModule_apply, ← LinearMap.baseChange_eq_lTensor]
+  -- `x : asModule` is an element of `A ⊗[R] V`, and `f.baseChange A` is
+  -- `f.toLinearMap.baseChange A` (`Representation.IntertwiningMap.toLinearMap_baseChange`).
+  rfl
 
 /-- **Base change preserves composition**: the base change of `g ∘ f` is the composite of the base
 changes `A ⊗ g ∘ A ⊗ f`. -/
@@ -799,6 +839,22 @@ theorem baseChangeOfMulActionEquiv_one_tmul (x : MonoidAlgebra R G) :
   | zero => simp
   | add x y hx hy => rw [TensorProduct.tmul_add, map_add, hx, hy, map_add]
   | single g r => simp [Algebra.smul_def]
+
+/-- The identification `A ⊗_R R[X] ≅ A[X]` maps `1 ⊗ v` to `v` with its coefficients mapped to
+`A`. -/
+@[simp]
+theorem coeff_baseChangeOfMulActionEquiv_one_tmul (v : MonoidAlgebra R X) (x : X) :
+    (baseChangeOfMulActionEquiv R A G X (1 ⊗ₜ v)).coeff x = algebraMap R A (v.coeff x) := by
+  classical
+  induction v using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add v w hv hw =>
+    simp only [TensorProduct.tmul_add, map_add, MonoidAlgebra.coeff_add, Finsupp.add_apply, hv,
+      hw]
+  | single y r =>
+    rw [baseChangeOfMulActionEquiv_tmul_single, MonoidAlgebra.coeff_single,
+      MonoidAlgebra.coeff_single, Finsupp.single_apply, Finsupp.single_apply]
+    split_ifs <;> simp [Algebra.smul_def]
 
 end PermutationModule
 
