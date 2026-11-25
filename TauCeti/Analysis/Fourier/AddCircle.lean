@@ -17,6 +17,7 @@ public import TauCeti.MeasureTheory.Function.Lp.PiLp
 import Mathlib.Analysis.Convolution
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.MeasureTheory.Integral.Bochner.Star
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.Topology.Circle.AddCircle
 
 /-!
@@ -756,9 +757,7 @@ theorem exists_eq_comp_id_pow_iff (χ : Circle →ₜ* Circle) (n : ℕ) :
     obtain ⟨k, hk, -⟩ := existsUnique_circle_eq_zpow ψ
     exact ⟨k, fun z ↦ by simp [hk, zpow_mul]⟩
   · rintro ⟨k, hk⟩
-    let ψ : Circle →ₜ* Circle := ⟨zpowGroupHom k, continuous_zpow k⟩
-    have hψ (w : Circle) : ψ w = w ^ k := zpowGroupHom_apply k w
-    exact ⟨ψ, ext fun z ↦ by simp [hk, hψ, zpow_mul]⟩
+    exact ⟨ContinuousMonoidHom.id Circle ^ k, ext fun z ↦ by simp [hk, zpow_mul]⟩
 
 end ContinuousMonoidHom
 
