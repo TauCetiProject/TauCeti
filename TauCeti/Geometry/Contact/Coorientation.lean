@@ -34,6 +34,9 @@ which vanishes nowhere is a contact form
 * `TauCeti.IsContactDistribution.exists_isContactForm_kerDistribution_eq_iff_exists_trivialization`:
   a contact structure is the kernel of a global contact form exactly when its annihilator line
   bundle is smoothly trivial.
+* `exists_isContactForm_kerDistribution_eq_iff_nonempty_vectorBundleOrientation`, in the namespace
+  `TauCeti.IsContactDistribution`: a contact structure is the kernel of a global contact form
+  exactly when its annihilator line bundle is orientable.
 
 ## References
 
@@ -117,6 +120,22 @@ theorem exists_isContactForm_kerDistribution_eq_iff_exists_trivialization [Nonem
   have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   simp only [hD.isContactForm_and_kerDistribution_eq_iff]
   exact hD.isContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization
+    hD.finrank_sub_one_add_one
+
+/-- **Coorientability is orientability of the annihilator line.** On a Hausdorff σ-compact
+manifold, a contact structure `D` is the kernel of a global contact form exactly when its
+annihilator line `D⁰`, the dual of the contact line `TM ⧸ D`, is orientable. -/
+theorem exists_isContactForm_kerDistribution_eq_iff_nonempty_vectorBundleOrientation [Nonempty M]
+    (hD : IsContactDistribution I ∞ D) :
+    haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+    letI := hD.isContMDiffDistribution.annihilatorFiberBundle hD.finrank_sub_one_add_one
+    haveI := hD.isContMDiffDistribution.annihilatorVectorBundle hD.finrank_sub_one_add_one
+    (∃ α : SmoothForm I M ℝ 1, α.IsContactForm ∧ α.kerDistribution = D) ↔
+      Nonempty (VectorBundleOrientation (Fin 1 → ℝ)
+        (fun x ↦ CotangentBundle.annihilatorSpace I D x) (Fin 1)) := by
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  simp only [hD.isContactForm_and_kerDistribution_eq_iff]
+  exact hD.isContMDiffDistribution.exists_smoothForm_ker_eq_iff_nonempty_vectorBundleOrientation
     hD.finrank_sub_one_add_one
 
 end IsContactDistribution

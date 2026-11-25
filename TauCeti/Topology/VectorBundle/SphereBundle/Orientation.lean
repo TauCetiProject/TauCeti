@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
+public import TauCeti.Topology.VectorBundle.Orientation.ZeroSectionCompl
 public import TauCeti.Topology.VectorBundle.SphereBundle.LocallyTrivial
 import TauCeti.LinearAlgebra.Orientation.Basis
 
@@ -69,15 +70,10 @@ orientation double cover sending `v` to the orientation of its fibre in which `v
 It lies over the base and carries `-v` to the opposite orientation
 (`TauCeti.sphereBundleOrientation_sphereBundleNeg`). -/
 def sphereBundleOrientation : C(sphereBundle F E, VectorBundleOrientationCover F E (Fin 1)) where
-  toFun v := ⟨(v : TotalSpace F E).proj,
-    (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
-      (v : TotalSpace F E).snd
-      (snd_ne_zero_of_mem_sphereBundle v.property)).orientation⟩
+  toFun v := zeroSectionComplOrientation hF
+    ⟨v, mem_zeroSectionCompl.2 (snd_ne_zero_of_mem_sphereBundle v.property)⟩
   continuous_toFun :=
-    VectorBundleOrientationCover.continuous_mk_basis_orientation
-      ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal) _ fun i ↦ by
-        simp only [FiniteDimensional.basisSingleton_apply]
-        exact continuous_subtypeVal
+    (continuous_zeroSectionComplOrientation hF).comp (continuous_subtypeVal.subtype_mk _)
 
 /-- The orientation map sends a unit vector `v` over `b` to the orientation of `E_b` given by the
 basis `(v)`. -/
@@ -86,18 +82,24 @@ theorem sphereBundleOrientation_apply (v : sphereBundle F E) :
       (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
         (v : TotalSpace F E).snd
         (snd_ne_zero_of_mem_sphereBundle v.property)).orientation⟩ :=
+  zeroSectionComplOrientation_apply hF _
+
+/-- The orientation given by a unit vector is its orientation as a nonzero vector. -/
+theorem sphereBundleOrientation_eq_zeroSectionComplOrientation (v : sphereBundle F E) :
+    sphereBundleOrientation hF v = zeroSectionComplOrientation hF
+      ⟨v, mem_zeroSectionCompl.2 (snd_ne_zero_of_mem_sphereBundle v.property)⟩ :=
   (rfl)
 
 /-- The orientation given by a unit vector lies over the base point of the vector. -/
 @[simp]
 theorem proj_sphereBundleOrientation (v : sphereBundle F E) :
     (sphereBundleOrientation hF v).proj = (v : TotalSpace F E).proj :=
-  (rfl)
+  proj_zeroSectionComplOrientation hF _
 
 /-- The orientation map of the unit sphere bundle lies over the base. -/
 theorem proj_comp_sphereBundleOrientation :
     VectorBundleOrientationCover.proj ∘ ⇑(sphereBundleOrientation hF) = ⇑(sphereBundleProj F E) :=
-  funext fun v ↦ (sphereBundleProj_apply F E v).symm
+  funext fun v ↦ (proj_sphereBundleOrientation hF v).trans (sphereBundleProj_apply F E v).symm
 
 /-- The opposite unit vector gives the opposite orientation. -/
 @[simp]

@@ -8,8 +8,12 @@ module
 public import TauCeti.Geometry.Manifold.Distribution.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
+public import TauCeti.Topology.VectorBundle.Orientation.Basic
+import Mathlib.Topology.VectorBundle.FiniteDimensional
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Nonvanishing
 import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.Topology.VectorBundle.Orientation.Cover
+import TauCeti.Topology.VectorBundle.Orientation.PositiveSection
 
 /-!
 # Coorientations of hyperplane fields and global defining forms
@@ -35,10 +39,15 @@ Consequently `D` is the kernel of a global nowhere-zero smooth one-form exactly 
 line has a continuous nowhere-zero section
 (`TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_continuous`), and exactly when
 the smooth line bundle `D⁰` is trivial: it has a smooth trivialization over all of `M`
-(`TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization`). A choice of
-such a section up to positive multiples is a coorientation of `D`. For a contact structure this is
-the statement that a global contact form exists exactly when the contact structure is
-coorientable; see `TauCeti.Geometry.Contact.Coorientation`.
+(`TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization`), and exactly
+when the line bundle `D⁰` is orientable
+(`TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_nonempty_vectorBundleOrientation`).
+The forward implication, that a global defining form orients `D⁰`, needs no hypothesis on `M`
+(`TauCeti.IsContMDiffDistribution.nonempty_vectorBundleOrientation_of_smoothForm_ker_eq`).
+
+A choice of a continuous nowhere-zero section of `D⁰` up to positive multiples is a coorientation
+of `D`. For a contact structure this is the statement that a global contact form exists exactly
+when the contact structure is coorientable; see `TauCeti.Geometry.Contact.Coorientation`.
 
 ## Main results
 
@@ -51,6 +60,9 @@ coorientable; see `TauCeti.Geometry.Contact.Coorientation`.
 * `TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization`: it is the
   kernel of a global nowhere-zero smooth one-form exactly when its annihilator line bundle is
   smoothly trivial.
+* `TauCeti.IsContMDiffDistribution.exists_smoothForm_ker_eq_iff_nonempty_vectorBundleOrientation`:
+  it is the kernel of a global nowhere-zero smooth one-form exactly when its annihilator line
+  bundle is orientable.
 
 ## References
 
@@ -97,6 +109,44 @@ private theorem ne_zero_and_ker_eq_of_degreeOneEquiv_eq_smul (hD : IsContMDiffDi
   rw [LinearMap.mem_ker, SmoothForm.eval_val, hαc]
   simp [(CotangentBundle.mem_annihilatorSpace_iff.1 hσD) v hv]
 
+/-- A smooth one-form `α` vanishing nowhere with kernel `D` gives the continuous nowhere-zero
+section `x ↦ α_x` of the annihilator line `D⁰`. -/
+private theorem exists_continuous_of_smoothForm_ker_eq {α : SmoothForm I M ℝ 1}
+    (hα : ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x) :
+    ∃ σ : Π x : M, TangentSpace I x →L[ℝ] ℝ,
+      (Continuous fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) x (σ x)) ∧
+      ∀ x, σ x ≠ 0 ∧ σ x ∈ CotangentBundle.annihilatorSpace I D x := by
+  refine ⟨fun x ↦ SmoothForm.degreeOneEquiv α x,
+    (SmoothForm.degreeOneEquiv α).contMDiff.continuous, fun x ↦ ⟨fun h ↦ (hα x).1 ?_, ?_⟩⟩
+  · exact SmoothForm.degreeOneEquiv_coe_eq_zero_iff.1 (congrArg ContinuousLinearMap.toLinearMap h)
+  · refine CotangentBundle.mem_annihilatorSpace_iff.2 fun v hv ↦ ?_
+    simpa [← (hα x).2] using hv
+
+/-- **A global defining form orients the annihilator line.** If a smooth hyperplane field `D` is
+the kernel of a smooth one-form `α` vanishing nowhere, its annihilator line bundle `D⁰`
+(`TauCeti.IsContMDiffDistribution.annihilatorFiberBundle`) is orientable: `x ↦ α_x` is a
+continuous section of `D⁰` vanishing nowhere. -/
+theorem nonempty_vectorBundleOrientation_of_smoothForm_ker_eq [FiniteDimensional ℝ E]
+    (hD : IsContMDiffDistribution I ∞ k D) (hk : k + 1 = finrank ℝ E) {α : SmoothForm I M ℝ 1}
+    (hα : ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x) :
+    haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+    letI := hD.annihilatorFiberBundle hk
+    haveI := hD.annihilatorVectorBundle hk
+    Nonempty (VectorBundleOrientation (Fin 1 → ℝ)
+      (fun x ↦ CotangentBundle.annihilatorSpace I D x) (Fin 1)) :=
+  haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  letI := hD.annihilatorFiberBundle hk
+  haveI := hD.annihilatorVectorBundle hk
+  by
+  obtain ⟨σ, hσ, hσD⟩ := exists_continuous_of_smoothForm_ker_eq hα
+  exact ⟨VectorBundleOrientation.ofContinuousNonvanishingSection
+    (fun x ↦ (VectorBundle.finrank_eq ℝ (Fin 1 → ℝ)
+      (fun x ↦ CotangentBundle.annihilatorSpace I D x) x).trans (finrank_fin_fun ℝ))
+    ((CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff
+      (σ := fun x ↦ ⟨σ x, (hσD x).2⟩)).2 hσ)
+    fun x h ↦ (hσD x).1 (congrArg Subtype.val h)⟩
+
 variable [T2Space M] [SigmaCompactSpace M]
 
 /-- **A coorientation of a hyperplane field is induced by a global smooth one-form.** Let `σ` be a
@@ -142,16 +192,9 @@ theorem exists_smoothForm_ker_eq_iff_exists_continuous (hD : IsContMDiffDistribu
         (Continuous fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
           (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) x (σ x)) ∧
         ∀ x, σ x ≠ 0 ∧ σ x ∈ CotangentBundle.annihilatorSpace I D x := by
-  constructor
-  · rintro ⟨α, hα⟩
-    refine ⟨fun x ↦ SmoothForm.degreeOneEquiv α x,
-      (SmoothForm.degreeOneEquiv α).contMDiff.continuous, fun x ↦ ⟨fun h ↦ (hα x).1 ?_, ?_⟩⟩
-    · exact SmoothForm.degreeOneEquiv_coe_eq_zero_iff.1 (congrArg ContinuousLinearMap.toLinearMap h)
-    · refine CotangentBundle.mem_annihilatorSpace_iff.2 fun v hv ↦ ?_
-      simpa [← (hα x).2] using hv
-  · rintro ⟨σ, hσ, hσD⟩
-    obtain ⟨α, hα⟩ := hD.exists_smoothForm_pos_smul hk hσ (fun x ↦ (hσD x).1) fun x ↦ (hσD x).2
-    exact ⟨α, fun x ↦ (hα x).1⟩
+  refine ⟨fun ⟨α, hα⟩ ↦ exists_continuous_of_smoothForm_ker_eq hα, fun ⟨σ, hσ, hσD⟩ ↦ ?_⟩
+  obtain ⟨α, hα⟩ := hD.exists_smoothForm_pos_smul hk hσ (fun x ↦ (hσD x).1) fun x ↦ (hσD x).2
+  exact ⟨α, fun x ↦ (hα x).1⟩
 
 /-- **A hyperplane field is the kernel of a global one-form exactly when its annihilator line is
 trivial.** A smooth hyperplane field `D` on a Hausdorff σ-compact manifold is the kernel of a smooth
@@ -188,6 +231,32 @@ theorem exists_smoothForm_ker_eq_iff_exists_trivialization [FiniteDimensional �
       (CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff (P := Fin 1 → ℝ)).1
         hσ.continuous,
       fun x ↦ ⟨fun h ↦ hσ₀ x (Subtype.ext h), (σ x).property⟩⟩
+
+/-- **A hyperplane field is the kernel of a global one-form exactly when its annihilator line is
+orientable.** A smooth hyperplane field `D` on a Hausdorff σ-compact manifold is the kernel of a
+smooth one-form vanishing nowhere exactly when its annihilator line bundle `D⁰`
+(`TauCeti.IsContMDiffDistribution.annihilatorFiberBundle`), the dual of the normal line
+`TM ⧸ D`, is orientable. -/
+theorem exists_smoothForm_ker_eq_iff_nonempty_vectorBundleOrientation [FiniteDimensional ℝ E]
+    (hD : IsContMDiffDistribution I ∞ k D) (hk : k + 1 = finrank ℝ E) :
+    haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+    letI := hD.annihilatorFiberBundle hk
+    haveI := hD.annihilatorVectorBundle hk
+    (∃ α : SmoothForm I M ℝ 1, ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x) ↔
+      Nonempty (VectorBundleOrientation (Fin 1 → ℝ)
+        (fun x ↦ CotangentBundle.annihilatorSpace I D x) (Fin 1)) :=
+  haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  letI := hD.annihilatorFiberBundle hk
+  haveI := hD.annihilatorVectorBundle hk
+  by
+  refine ⟨fun ⟨α, hα⟩ ↦ hD.nonempty_vectorBundleOrientation_of_smoothForm_ker_eq hk hα,
+    fun ⟨o⟩ ↦ ?_⟩
+  -- An orientation of `D⁰` gives a continuous nowhere-zero section of `D⁰`, hence of `T*M`.
+  have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
+  obtain ⟨s, hs, hs₀⟩ := o.exists_continuous_section_ne_zero (by simp)
+  exact (hD.exists_smoothForm_ker_eq_iff_exists_continuous hk).2
+    ⟨fun x ↦ s x, (CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff
+      (P := Fin 1 → ℝ)).1 hs, fun x ↦ ⟨fun h ↦ hs₀ x (Subtype.ext h), (s x).property⟩⟩
 
 end IsContMDiffDistribution
 
