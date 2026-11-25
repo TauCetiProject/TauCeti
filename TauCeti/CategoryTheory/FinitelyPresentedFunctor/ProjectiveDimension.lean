@@ -12,7 +12,7 @@ public import TauCeti.CategoryTheory.ObjectProperty.Retract
 /-!
 # Projective objects and projective dimension in `mod C`
 
-Let `C` be a nonempty preadditive category with binary biproducts. The Yoneda embedding
+Let `C` be a preadditive category with finite biproducts. The Yoneda embedding
 `TauCeti.modYoneda` sends `C` to projective objects of the category `mod C` of finitely presented
 functors `Cᵒᵖ ⥤ AddCommGrpCat`, and every object of `mod C` is a quotient of one of them. When `C`
 is idempotent complete, the projective objects of `mod C` are exactly the representable functors,
@@ -52,14 +52,15 @@ namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
-variable [HasBinaryBiproducts C] [Nonempty C]
+variable [HasFiniteBiproducts C]
 
 /-- Representable functors are projective objects of `mod C`. -/
 instance projective_modYoneda_obj (Y : C) : Projective (modYoneda.obj Y) where
   factors {E G} f e _ := by
     have := (isFinitelyPresentedFunctor C).preservesEpimorphisms_ι_of_isNormalMonoCategory
     have : Epi e.hom := inferInstanceAs (Epi ((isFinitelyPresentedFunctor C).ι.map e))
-    obtain ⟨Y', q, hq⟩ := isFinitelyGeneratedFunctor_def.1 E.property.isFinitelyGeneratedFunctor
+    obtain ⟨Y', q, hq⟩ :=
+      (isFinitelyGeneratedFunctor_iff_exists_single _).1 E.property.isFinitelyGeneratedFunctor
     obtain ⟨u, hu⟩ := exists_preadditiveYoneda_map_comp_eq (q ≫ e.hom) f.hom
     exact ⟨ObjectProperty.homMk (preadditiveYoneda.map u ≫ q),
       ObjectProperty.hom_ext _ (by simpa using hu)⟩
@@ -87,11 +88,11 @@ presented by `f : X ⟶ Y` has the projective resolution
 `0 ⟶ (-, ker f) ⟶ (-, X) ⟶ (-, Y) ⟶ F ⟶ 0`. -/
 theorem hasProjectiveDimensionLE_two_of_hasKernels [HasKernels C]
     (F : (isFinitelyPresentedFunctor C).FullSubcategory) : HasProjectiveDimensionLE F 2 := by
-  obtain ⟨X, Y, f, p, hfp, ⟨hc⟩⟩ := isFinitelyPresentedFunctor_iff_exists_isColimit.1 F.property
+  obtain ⟨X, Y, f, p, hfp, hp, hS⟩ := (isFinitelyPresentedFunctor_iff_exists_single _).1 F.property
   have hc' : IsColimit (CokernelCofork.ofπ (f := modYoneda.map f)
       (ObjectProperty.homMk p : modYoneda.obj Y ⟶ F) (ObjectProperty.hom_ext _ hfp)) :=
     isColimitOfReflects (isFinitelyPresentedFunctor C).ι
-      ((CokernelCofork.isColimitMapCoconeEquiv _ _).symm (hc :))
+      ((CokernelCofork.isColimitMapCoconeEquiv _ _).symm (hS.gIsCokernel :))
   have : Projective (kernel (modYoneda.map f)) :=
     Projective.of_iso (PreservesKernel.iso modYoneda f) inferInstance
   have := (hasProjectiveDimensionLT_cokernel_iff_kernel (modYoneda.map f) 0).2 inferInstance
@@ -123,7 +124,7 @@ theorem hasKernels_of_forall_hasProjectiveDimensionLE_two [IsIdempotentComplete 
       ((KernelFork.isLimitMapConeEquiv _ _).symm (hl :))⟩
 
 /-- **Projective dimension at most two.** An idempotent complete preadditive category `C` with
-binary biproducts and weak kernels has kernels exactly when every finitely presented functor
+finite biproducts and weak kernels has kernels exactly when every finitely presented functor
 `Cᵒᵖ ⥤ AddCommGrpCat` has projective dimension at most two in `mod C`. -/
 theorem hasKernels_iff_forall_hasProjectiveDimensionLE_two [IsIdempotentComplete C] :
     HasKernels C ↔
@@ -133,7 +134,8 @@ theorem hasKernels_iff_forall_hasProjectiveDimensionLE_two [IsIdempotentComplete
 
 -- In particular, over an abelian category `D`, every object of `mod D` has projective dimension at
 -- most two.
-example {D : Type u} [Category.{v} D] [Abelian D] [Nonempty D]
+attribute [local instance] Abelian.hasFiniteBiproducts in
+example {D : Type u} [Category.{v} D] [Abelian D]
     (F : (isFinitelyPresentedFunctor D).FullSubcategory) : HasProjectiveDimensionLE F 2 :=
   hasProjectiveDimensionLE_two_of_hasKernels F
 

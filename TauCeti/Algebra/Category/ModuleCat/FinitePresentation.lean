@@ -87,6 +87,13 @@ theorem presented_finiteProjectiveModules :
 instance : (finitePresentationModules R).IsClosedUnderIsomorphisms :=
   presented_finiteProjectiveModules R ▸ inferInstance
 
+/-- The finitely generated projective `R`-modules have finite biproducts, since they contain zero
+and are closed under binary products. -/
+instance : HasFiniteBiproducts (finiteProjectiveModules R).FullSubcategory :=
+  have := hasFiniteProducts_of_has_binary_and_terminal
+    (C := (finiteProjectiveModules R).FullSubcategory)
+  .of_hasFiniteProducts
+
 /-- **The finitely presented modules are `mod (proj R)`.** The functor `M ↦ (-, M)|_{proj R}` is an
 equivalence from the finitely presented `R`-modules to the finitely presented functors on the
 finitely generated projective `R`-modules. -/
