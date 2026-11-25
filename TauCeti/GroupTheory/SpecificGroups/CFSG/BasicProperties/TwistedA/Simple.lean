@@ -40,12 +40,23 @@ namespace TauCeti.TypeALieIndex
 
 private theorem isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA (r : ℕ)
     (q : PrimePower) (hv : (LieTypeIndex.twistedA r q).Valid) :
-    let d := (ofTwistedA r q hv).val
-    let G := (typeAGraphConjugator d.rank
-      (GaloisField d.characteristic (d.fieldExponent * 2))).val.specialIsometryGroup
-      (iterateFrobenius _ d.characteristic d.fieldExponent)
-    commutator G = ⊤ ∧ IsSimpleGroup (G ⧸ Subgroup.center G) := by
-  intro d G; let K := GaloisField d.characteristic (d.fieldExponent * 2)
+    commutator ((typeAGraphConjugator (ofTwistedA r q hv).val.rank
+      (GaloisField (ofTwistedA r q hv).val.characteristic
+        ((ofTwistedA r q hv).val.fieldExponent * 2))).val.specialIsometryGroup
+      (iterateFrobenius _ (ofTwistedA r q hv).val.characteristic
+        (ofTwistedA r q hv).val.fieldExponent)) = ⊤ ∧
+    IsSimpleGroup ((typeAGraphConjugator (ofTwistedA r q hv).val.rank
+      (GaloisField (ofTwistedA r q hv).val.characteristic
+        ((ofTwistedA r q hv).val.fieldExponent * 2))).val.specialIsometryGroup
+      (iterateFrobenius _ (ofTwistedA r q hv).val.characteristic
+        (ofTwistedA r q hv).val.fieldExponent) ⧸
+      Subgroup.center ((typeAGraphConjugator (ofTwistedA r q hv).val.rank
+        (GaloisField (ofTwistedA r q hv).val.characteristic
+          ((ofTwistedA r q hv).val.fieldExponent * 2))).val.specialIsometryGroup
+        (iterateFrobenius _ (ofTwistedA r q hv).val.characteristic
+          (ofTwistedA r q hv).val.fieldExponent))) := by
+  set d := (ofTwistedA r q hv).val
+  let K := GaloisField d.characteristic (d.fieldExponent * 2)
   let σ := iterateFrobenius K d.characteristic d.fieldExponent
   let Q := (typeAGraphConjugator d.rank K).val
   have hr_eq : d.rank = r := by simp [d, ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType]
@@ -112,9 +123,9 @@ theorem isSimpleGroup_group_ofTwistedA (r : ℕ) (q : PrimePower)
     IsSimpleGroup (ofTwistedA r q hv).Group := by
   have : IsSimpleGroup (fixedSubgroup
       ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank) ⧸
-        Subgroup.center _) :=
-    (ofTwistedA r q hv).val.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup _ ▸
-      (isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA r q hv).right
+        Subgroup.center _) := by
+    rw [(ofTwistedA r q hv).val.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup]
+    exact (isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA r q hv).right
   exact (projectiveSpecialUnitaryEquivGroup r q hv).symm.isSimpleGroup
 
 end TauCeti.TypeALieIndex

@@ -213,10 +213,9 @@ theorem exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_ze
   obtain ⟨t₁, ht₁, c₁, hc₁, ht₁U, ht₁x⟩ := hjoin hx hz hux huz hzx
   obtain ⟨t₂, ht₂, c₂, hc₂, ht₂U, ht₂z⟩ := hjoin hz hy huz huy hyz
   refine ⟨⟨t₂, ht₂⟩ * ⟨t₁, ht₁⟩, c₁ * c₂, mul_ne_zero hc₁ hc₂, ?_, ?_⟩
-  · simp only [Subgroup.coe_mul, SpecialLinearGroup.coe_mul]
-    rw [← mulVec_mulVec, ht₁U u (Set.mem_singleton u), ht₂U u (Set.mem_singleton u)]
-  · simp only [Subgroup.coe_mul, SpecialLinearGroup.coe_mul]
-    rw [← mulVec_mulVec, ht₁x, mulVec_smul, ht₂z, smul_smul]
+  · rw [Subgroup.coe_mul, coe_mul_specialIsometryGroup_mulVec,
+      ht₁U u (Set.mem_singleton u), ht₂U u (Set.mem_singleton u)]
+  · rw [Subgroup.coe_mul, coe_mul_specialIsometryGroup_mulVec, ht₁x, mulVec_smul, ht₂z, smul_smul]
 
 /-- **The elementary unitary group is transitive up to scalar on nonzero isotropic vectors.** Let
 `σ` be an involution, let `Q` be an invertible `ε`-Hermitian matrix, and suppose that the trace

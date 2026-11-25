@@ -15,6 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Primitive
 import TauCeti.LinearAlgebra.Span.Basic
+import TauCeti.Logic.Function.Basic
 
 /-!
 # Transvection generation and the Iwasawa structure of a special unitary group
@@ -152,7 +153,7 @@ private theorem exists_hyperbolic_partner_of_totally_isotropic {U : Set (n → K
   have hyU : OrthoSet Q σ U y := fun u hu ↦ by simp [y, mulVec_smul, hy₀U u hu]
   have hxy : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) = 1 := by
     simp [y, mulVec_smul, inv_mul_cancel₀ ((comp_dotProduct_mulVec_ne_zero_comm hσ hQ).mpr hy₀x)]
-  have hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) = ε := by rw [comp_dotProduct_mulVec_swap hσ hQ hε, hxy]; simp
+  have hyx := comp_dotProduct_mulVec_eq_of_eq_one hσ hQ hε hxy
   have htr_zero (a : K) : a + ε * σ a = 0 := by
     have hiso := hW_iso (x + a • y) fun u hu ↦ by simp [mulVec_add, mulVec_smul, hxU u hu, hyU u hu]
     simp only [map_comp_add, TauCeti.map_comp_smul, add_dotProduct, smul_dotProduct, mulVec_add,
@@ -293,9 +294,8 @@ private theorem exists_mem_iSup_compensated_reflection_aux {v : n → K}
       (y := c₀ • e) hσ hQ hu₂ hz (by rw [comp_smul_dotProduct_mulVec_smul, he, mul_zero])
       (by rw [hu₂z]; exact hστ0) (hu₂z.trans hu₂ce.symm)
   let r₂₁ : Q.specialIsometryGroup σ := ⟨s₂, hs₂⟩ * ⟨s₁, hs₁⟩
-  have hmk := Subgroup.coe_mk (Q.specialIsometryGroup σ)
   have hr₂₁e : (r₂₁ : Matrix n n K) *ᵥ e = c₀ • e := by
-    rw [coe_mul_specialIsometryGroup_mulVec, hmk, hmk, hs₁e, hs₂z]
+    simp only [r₂₁, coe_mul_specialIsometryGroup_mulVec, hs₁e, hs₂z]
   obtain ⟨r₃, hr₃, hr₃e, hr₃f, hr₃w⟩ :=
     exists_mem_iSup_siegel_restore_f hσ hQ hdet htr hd hdε he hf hef hgen hc₀ hr₂₁e
   have hmem {u w : n → K} := mk_mem_elementaryUnitaryGroup_of_coe_eq_siegelTransvection
@@ -306,8 +306,8 @@ private theorem exists_mem_iSup_compensated_reflection_aux {v : n → K}
   have hzw : (σ ∘ z) ⬝ᵥ (Q *ᵥ w) = 0 := by
     simp [z, map_comp_add, TauCeti.map_comp_smul, add_dotProduct, smul_dotProduct, hew, hfw, hvw]
   have hw₂₁ : (r₂₁ : Matrix n n K) *ᵥ w = w := by
-    rw [coe_mul_specialIsometryGroup_mulVec, hmk, hmk, hcs₁,
-      siegelTransvection_mulVec_eq_self_of_mulVec_eq (hfe ▸ hε0) (hcs₁ ▸ hs₁e) hfw hew hzw, hcs₂]
+    simp only [r₂₁, coe_mul_specialIsometryGroup_mulVec, hcs₁, hcs₂]
+    rw [siegelTransvection_mulVec_eq_self_of_mulVec_eq (hfe ▸ hε0) (hcs₁ ▸ hs₁e) hfw hew hzw]
     exact siegelTransvection_mulVec_eq_self_of_mulVec_eq (by rw [hu₂z]; exact hστ0) (hcs₂ ▸ hs₂z)
       (by simp [map_comp_add, TauCeti.map_comp_smul, add_dotProduct, smul_dotProduct, hew, hfw])
       hzw (by simp [TauCeti.map_comp_smul, hew])
@@ -571,7 +571,7 @@ then `Q.elementaryUnitaryGroup σ = ⊤`. -/
 theorem elementaryUnitaryGroup_eq_top : Q.elementaryUnitaryGroup σ = ⊤ := by
   obtain ⟨e, f, he₀, -, he, hf, hef, hfe⟩ :=
     exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_nonempty_isotropicPoints hσ hQ hdet htr
-  have : Nonempty n := let ⟨i, _⟩ := Function.ne_iff.mp he₀; ⟨i⟩
+  have := Function.nonempty_of_ne he₀
   have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
   obtain ⟨d, hd, hdε⟩ := hadm; rw [eq_top_iff]; intro g _
   obtain ⟨t₁, ht₁, c, hc, ht₁ge⟩ :=

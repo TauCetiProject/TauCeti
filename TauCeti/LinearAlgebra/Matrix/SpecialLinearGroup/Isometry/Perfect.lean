@@ -14,6 +14,7 @@ import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Nondegenerate
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.IsotropicPoints
+import TauCeti.Logic.Function.Basic
 
 /-!
 # Perfectness of special unitary groups
@@ -65,10 +66,10 @@ private theorem unitaryTransvection_mem_commutator_of_mulVec_eq_smul {g : Q.spec
       linear_combination (c * σ c - 1)⁻¹ * ha)
   let t₀ : Q.specialIsometryGroup σ := ⟨tb, htb⟩; have hct₀ : (t₀ : Matrix n n K) = _ := hctb
   refine ⟨⁅g, t₀⁆, Subgroup.commutator_mem_commutator (by simp) (by simp), ?_⟩
-  rw [commutatorElement_def, Subgroup.coe_mul, SpecialLinearGroup.coe_mul,
-    coe_inv_specialIsometryGroup_eq_unitaryTransvection he hct₀, Subgroup.coe_mul,
-    Subgroup.coe_mul, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul, Subgroup.coe_inv,
-    hct₀, coe_mul_unitaryTransvection_mul_coe_inv g.property, hge, unitaryTransvection_smul,
+  rw [commutatorElement_def, coe_mul_specialIsometryGroup,
+    coe_inv_specialIsometryGroup_eq_unitaryTransvection he hct₀, coe_mul_specialIsometryGroup,
+    coe_mul_specialIsometryGroup, Subgroup.coe_inv, hct₀,
+    coe_mul_unitaryTransvection_mul_coe_inv g.property, hge, unitaryTransvection_smul,
     unitaryTransvection_mul_unitaryTransvection he]
   congr 1; simp only [b]; field_simp; ring
 
@@ -101,9 +102,8 @@ private theorem unitaryTransvection_mem_commutator_of_witt_two {u w : n → K} (
   obtain ⟨g₂, hcs₂', hg₂_inv⟩ := hsiegel hy₀ hey₀
   refine ⟨⁅g₁, g₂⁆, Subgroup.commutator_mem_commutator (by simp) (by simp), ?_⟩
   have hsum : w₁ + y₀ + -w₁ + -y₀ = 0 := by abel
-  rw [commutatorElement_def, Subgroup.coe_mul, SpecialLinearGroup.coe_mul, hg₂_inv,
-    Subgroup.coe_mul, SpecialLinearGroup.coe_mul, hg₁_inv, Subgroup.coe_mul,
-    SpecialLinearGroup.coe_mul, hcs₁', hcs₂',
+  rw [commutatorElement_def, coe_mul_specialIsometryGroup, hg₂_inv, coe_mul_specialIsometryGroup,
+    hg₁_inv, coe_mul_specialIsometryGroup, hcs₁', hcs₂',
     siegelTransvection_mul_siegelTransvection he hey₀ hw₁e,
     siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hew₁])
       (by simp [hw₁e, hy₀e]),
@@ -149,8 +149,8 @@ private theorem exists_mem_specialIsometryGroup_mulVec_eq_smul_of_anisotropic {v
     (by rw [det_mul, hd₁, hd₂, mul_assoc, inv_mul_cancel_left₀ hσc, mul_inv_cancel₀ hc])
   refine ⟨⟨g₀, mem_specialIsometryGroup_iff.mpr (transpose_map_mul_mul_eq_self fun x y ↦ by
       rw [SpecialLinearGroup.coe_mk, ← mulVec_mulVec, ← mulVec_mulVec, hB₁, hB₂])⟩, ?_⟩
-  simpa [g₀, M₂, Subgroup.coe_mk (Q.specialIsometryGroup σ), ← mulVec_mulVec,
-    unitaryTransvection_mulVec, (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hev] using hM₁e
+  simpa [g₀, M₂, ← mulVec_mulVec, unitaryTransvection_mulVec,
+    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hev] using hM₁e
 
 include hσ hQ hdet hε hσε htr he hf hef hfe in
 private theorem unitaryTransvection_mem_commutator_of_card_three_le (hcard : 3 ≤ Fintype.card n)
@@ -207,7 +207,7 @@ theorem commutator_specialIsometryGroup_eq_top (hσ : Function.Involutive σ)
     commutator (Q.specialIsometryGroup σ) = ⊤ := by
   obtain ⟨e, f, he₀, -, he, hf, hef, hfe⟩ :=
     exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_nonempty_isotropicPoints hσ hQ hdet htr
-  have : Nonempty n := let ⟨i, _⟩ := Function.ne_iff.mp he₀; ⟨i⟩
+  have := Function.nonempty_of_ne he₀
   have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
   have hσε := map_eq_self_of_mul_self_eq_one_of_det_ne_zero hσ hQ hdet hε
   have hgen := exists_ne_one_and_apply_eq_self_or_card_le_two_or_exists_notMem_span hσ hperf

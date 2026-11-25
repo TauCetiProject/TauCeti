@@ -98,7 +98,7 @@ theorem mem_center_specialIsometryGroup_of_forall_smul_eq (hσ : Function.Involu
       rw [Units.smul_def, SpecialLinearGroup.smul_def, smul_eq_mulVec] at ha
       exact ⟨a, ha.symm⟩
   refine Subgroup.mem_center_iff.mpr fun k ↦ specialIsometryGroup_ext ?_
-  simp only [Subgroup.coe_mul, SpecialLinearGroup.coe_mul, hc]
+  simp only [coe_mul_specialIsometryGroup, hc]
   exact ((scalar_commute c (fun r ↦ Commute.all c r) _).eq).symm
 
 /-- **Constructing a hyperbolic pair from a nonempty isotropic-point set.** For involutive `σ` and
@@ -129,7 +129,7 @@ theorem nontrivial_specialIsometryGroup (hσ : Function.Involutive σ) (hQ : (Q.
     (comp_rep_dotProduct_mulVec_rep p₀) hdε
   refine ⟨⟨t, ht⟩, 1, fun h ↦ smul_ne_zero
     (mul_ne_zero hd ((comp_dotProduct_mulVec_ne_zero_comm hσ hQ).mp hue)) he₀ ?_⟩
-  simpa [Subgroup.coe_mk (Q.specialIsometryGroup σ), hct, unitaryTransvection_mulVec] using
+  simpa [hct, unitaryTransvection_mulVec] using
     congrArg (fun g : Q.specialIsometryGroup σ ↦ (g : Matrix n n K) *ᵥ u) h
 
 end Matrix

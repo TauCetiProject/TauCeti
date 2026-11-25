@@ -12,6 +12,7 @@ import Mathlib.Tactic.Module
 import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
+import TauCeti.Logic.Function.Basic
 
 /-!
 # Hyperbolic rescalings and Siegel transformations from unitary transvections
@@ -91,7 +92,7 @@ theorem exists_mem_elementaryUnitaryGroup_mulVec_eq_smul_and_inv_smul_and_eq_sel
       ∀ x : n → K, (σ ∘ e) ⬝ᵥ (Q *ᵥ x) = 0 → (σ ∘ f) ⬝ᵥ (Q *ᵥ x) = 0 →
         (h : Matrix n n K) *ᵥ x = x := by
   obtain ⟨d, hd, hdε⟩ := hadm
-  have hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε := by rw [comp_dotProduct_mulVec_swap hσ hQ hε, hef]; simp
+  have hfe := comp_dotProduct_mulVec_eq_of_eq_one hσ hQ hε hef
   have hw {u : K} := exists_mem_elementary_w_hyperbolic (u := u) hσ hQ hε
     (by simpa [hfe, hef] using apply_comp_dotProduct_mulVec hσ hQ f e) hd hdε he hf hef hfe
   obtain ⟨w₁, hw₁, he₁, hf₁, hx₁⟩ := hw ha hσa
@@ -157,8 +158,8 @@ private theorem siegelTransvection_mem_elementary_of_exists_param {c c₀ : K}
   obtain ⟨t₀, ht₀, hct₀⟩ := exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection hσ hQ he
     (a := c - c₀) (by rw [map_sub]; linear_combination hc - hc₀)
   exact specialIsometryGroup_ext (g₁ := ⟨s, hs⟩) (g₂ := t₀ * s₀) (by
-    rw [Subgroup.coe_mk (Q.specialIsometryGroup σ), Subgroup.coe_mul, SpecialLinearGroup.coe_mul,
-      hcs, hct₀, hcs₀, ← siegelTransvection_zero_eq_unitaryTransvection (ε := ε),
+    simp only [coe_mul_specialIsometryGroup, hcs, hct₀, hcs₀]
+    rw [← siegelTransvection_zero_eq_unitaryTransvection (ε := ε),
       siegelTransvection_mul_siegelTransvection he hew₀ (by simp)]; simp) ▸ mul_mem ht₀ hs₀
 
 include hσ hQ hdet hε hσε htr hd hdε he hf hef hew₀ in
@@ -180,15 +181,15 @@ private theorem siegelTransvection_mem_elementary_of_fixed_ne {a : K} (ha0 : a �
   let s₁ : Q.specialIsometryGroup σ := ⟨s', hs'⟩; have hcs₁ : (s₁ : Matrix n n K) = _ := hcs'
   have hconj : (↑(h * s₁ * h⁻¹) : Matrix n n K) =
       Q.siegelTransvection σ ε e (a • w') (c' * a * a) := by
-    rw [Subgroup.coe_mul, Subgroup.coe_mul, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul,
-      Subgroup.coe_inv, hcs₁, coe_mul_siegelTransvection_mul_coe_inv h.property, hhe,
-      hhx w' hew' hfw', siegelTransvection_smul_left hσ, hσa]
+    rw [coe_mul_specialIsometryGroup, coe_mul_specialIsometryGroup, Subgroup.coe_inv, hcs₁,
+      coe_mul_siegelTransvection_mul_coe_inv h.property, hhe, hhx w' hew' hfw',
+      siegelTransvection_smul_left hσ, hσa]
   have hw_sum : a • w' + -w' = w₀ := by
     have hsub : a • w' + -w' = (a - 1) • w' := by module
     rw [hsub, smul_inv_smul₀ (sub_ne_zero.mpr ha1)]
   have hcs₂ : (↑((h * s₁ * h⁻¹) * s₁⁻¹) : Matrix n n K) = Q.siegelTransvection σ ε e w₀
       (c' * a * a + (-c' - ε * ((σ ∘ w') ⬝ᵥ (Q *ᵥ w'))) - ε * ((σ ∘ (a • w')) ⬝ᵥ (Q *ᵥ (-w')))) :=
-    by rw [Subgroup.coe_mul, SpecialLinearGroup.coe_mul, hconj,
+    by rw [coe_mul_specialIsometryGroup, hconj,
       coe_inv_specialIsometryGroup_eq_siegelTransvection he hew' hw'e hcs₁,
       siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hew'])
         (by simp [TauCeti.map_comp_smul, hw'e]), hw_sum]
@@ -251,8 +252,8 @@ private theorem siegelTransvection_mem_elementary_of_witt_two {u w : n → K} (h
   have hx_sum : x₁ + x₂ + x₃ = w₀ := by dsimp [x₁, x₂, x₃]; module
   have hcs₀ : (↑(t₁ * t₂ * t₃) : Matrix n n K) = Q.siegelTransvection σ ε e w₀
       (0 + 0 - ε * ((σ ∘ x₁) ⬝ᵥ (Q *ᵥ x₂)) + 0 - ε * ((σ ∘ (x₁ + x₂)) ⬝ᵥ (Q *ᵥ x₃))) := by
-    rw [Subgroup.coe_mul, Subgroup.coe_mul, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul,
-      hc₁, hc₂, hc₃, siegelTransvection_mul_siegelTransvection he hex₂ hx₁e,
+    rw [coe_mul_specialIsometryGroup, coe_mul_specialIsometryGroup, hc₁, hc₂, hc₃,
+      siegelTransvection_mul_siegelTransvection he hex₂ hx₁e,
       siegelTransvection_mul_siegelTransvection he hex₃
         (by rw [comp_add_dotProduct_mulVec, hx₁e, hx₂e, add_zero]), hx_sum]
   exact siegelTransvection_mem_elementary_of_exists_param hσ hQ hdet he hef hew₀ hc
@@ -279,7 +280,7 @@ theorem mk_mem_elementaryUnitaryGroup_of_coe_eq_siegelTransvection
     (⟨s, hs⟩ : Q.specialIsometryGroup σ) ∈ Q.elementaryUnitaryGroup σ := by
   by_cases hu0 : u = 0
   · rw [specialIsometryGroup_ext (g₁ := ⟨s, hs⟩) (g₂ := 1) (by simp [hu0, hcs])]; exact one_mem _
-  have : Nonempty n := let ⟨i, _⟩ := Function.ne_iff.mp hu0; ⟨i⟩
+  have := Function.nonempty_of_ne hu0
   have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
   have hσε := map_eq_self_of_mul_self_eq_one_of_det_ne_zero hσ hQ hdet hε
   obtain ⟨d, hd, hdε⟩ := hadm; obtain ⟨f, -, hf, huf, hfu⟩ :=
