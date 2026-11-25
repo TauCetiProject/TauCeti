@@ -9,6 +9,7 @@ public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.BrauerProjection
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Principal
 import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.Sylow.Basic
 
 /-!
 # Defect groups of small blocks
@@ -78,17 +79,16 @@ three subgroups of order `2`: `1 + ρ + ρ²` is central of augmentation `1`, so
 the Sylow `2`-subgroups, which have order `2` since `|S₃| = 2 · 3`. -/
 theorem isDefectGroup_blockOneS₃_iff {D : Subgroup S₃} :
     IsDefectGroup (ZMod 2) 2 (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) D ↔ Nat.card D = 2 := by
-  have hcard : 2 ^ (Nat.card S₃).factorization 2 = 2 := by
-    rw [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin,
-      show Nat.factorial 3 = 2 ^ 1 * 3 by rfl, Nat.factorization_mul_apply_of_coprime (by decide),
-      Nat.prime_two.factorization_pow, Finsupp.single_eq_same,
-      Nat.factorization_eq_zero_of_not_dvd (by decide), add_zero, pow_one]
+  have h6 : Nat.card S₃ = 6 := by
+    rw [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]; rfl
+  have hcard (S : Sylow 2 S₃) : Nat.card S = 2 :=
+    S.card_eq_of_dvd_of_not_sq_dvd (by rw [h6]; decide) (by rw [h6]; decide)
   rw [isDefectGroup_iff_sylow_of_augmentation_ne_zero blockOneS₃.property (by
     rw [coe_blockOneS₃, map_add, map_add, map_one, of_apply, of_apply, augmentation_single,
       augmentation_single]
     decide)]
-  refine ⟨fun ⟨S, hS⟩ => hS ▸ S.card_eq_multiplicity.trans hcard,
-    fun hD => ⟨Sylow.ofCard D (hD.trans hcard.symm), rfl⟩⟩
+  refine ⟨fun ⟨S, hS⟩ => hS ▸ hcard S, fun hD => ⟨Sylow.ofCard D (hD.trans
+    ((hcard default).symm.trans (default : Sylow 2 S₃).card_eq_multiplicity)), rfl⟩⟩
 
 /-! ### `𝔽₂[C₃]` -/
 
