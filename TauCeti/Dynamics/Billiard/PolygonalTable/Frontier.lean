@@ -18,8 +18,8 @@ The frontier of a polygonal billiard table is the union of its finitely many sid
 segment in `ℂ`, the image of a Lipschitz curve, so it is Lebesgue-null
 (`LocallyBoundedVariationOn.addHaar_image_eq_zero`). Hence the frontier is a Lebesgue-null set
 (`TauCeti.PolygonalTable.volume_frontier_carrier`), and the table and its interior have the same
-area (`TauCeti.PolygonalTable.volume_interior_carrier`). The positions on the frontier therefore
-carry no mass for the Liouville measure of the table.
+area (`TauCeti.PolygonalTable.volume_interior_carrier`). This is the planar input for showing that
+frontier states are null for a phase-space measure built from Lebesgue measure.
 
 ## References
 
