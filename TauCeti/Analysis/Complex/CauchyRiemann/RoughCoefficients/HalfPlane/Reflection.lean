@@ -21,24 +21,25 @@ conjugation). Let `ξ` be a weak solution up to the real axis of `∂_s ξ + J �
 `Ω ∩ {0 ≤ t}`, in the sense of `TauCeti.IsWeakCRSolutionHalf`, for a boundary subspace `Λ`
 containing the fixed vectors of `R`. This file reflects the solution and the data across `ℝ`:
 
-* `ξ(z̄) = R ξ(z)` and `η(z̄) = R η(z)` (`TauCeti.crReflection`),
-* `J(z̄) = -R J(z) R` (`TauCeti.crReflectionCoeff`), with derivative
-  `DJ(z̄) h = -R DJ(z)(h̄) R` (`TauCeti.crReflectionDeriv`),
-* `S(z̄) = R S(z) R` (`TauCeti.crReflectionZeroth`),
+* `ξ(conj z) = R ξ(z)` and `η(conj z) = R η(z)` (`TauCeti.crReflection`),
+* `J(conj z) = -R J(z) R` (`TauCeti.crReflectionCoeff`), with derivative
+  `DJ(conj z) h = -R DJ(z)(conj h) R` (`TauCeti.crReflectionDeriv`),
+* `S(conj z) = R S(z) R` (`TauCeti.crReflectionZeroth`),
 
 and proves that the reflected solution is a weak solution of the reflected equation on all of
 `Ω` (`TauCeti.IsWeakCRSolutionHalf.isWeakCRSolution_crReflection`). The sign in the reflection of
-`J` is forced by `∂_t (ξ(z̄)) = -(∂_t ξ)(z̄)`. For `J = i` and `R = conj` the reflected coefficient
-is `i` again (`TauCeti.crReflectionCoeff_conj_I`): this is the setting of McDuff–Salamon, where
-`J(s) = i` on `ℝ` makes the reflected coefficient continuous across the axis. The weak identity
-itself needs no condition on `J` along `ℝ`.
+`J` is forced by `∂_t (ξ(conj z)) = -(∂_t ξ)(conj z)`. For `J = i` and `R = conj` the reflected
+coefficient is `i` again (`TauCeti.crReflectionCoeff_conj_I`): this is the setting of
+McDuff–Salamon, where `J(s) = i` on `ℝ` makes the reflected coefficient continuous across the
+axis. The weak identity itself needs no condition on `J` along `ℝ`.
 
 The proof follows the route of the roadmap (PH3.4, step 1). A test function `φ` on `Ω` is
-paired with its reflection `φ^R(z) = R φ(z̄)`; the sum `φ + φ^R` takes values in the fixed space
-of `R` on `ℝ`, so it is admissible for the boundary condition, and the lower half-plane part of
-the doubled pairing is the upper half-plane pairing with `φ^R`, by the measure-preserving
-substitution `z ↦ z̄`. Pointwise, `R (D̃* φ)(z̄) = (D* φ^R)(z)` for the formal adjoints `D*` of
-`TauCeti.crFormalAdjoint`. Integrability on the doubled domain comes from the Hölder condition
+paired with its reflection `φ^R(z) = R φ(conj z)`; the sum `φ + φ^R` takes values in the fixed
+space of `R` on `ℝ`, so it is admissible for the boundary condition, and the lower half-plane
+part of the doubled pairing is the upper half-plane pairing with `φ^R`, by the
+measure-preserving substitution `z ↦ conj z`. Pointwise, `R` applied to the reflected formal
+adjoint of `φ` at `conj z` is the formal adjoint `TauCeti.crFormalAdjoint` of `φ^R` at `z`.
+Integrability on the doubled domain comes from the Hölder condition
 `1/p + 1/q ≤ 1` for coefficients `J, DJ, S ∈ Lᵖ_loc` up to the boundary.
 
 Combined with the interior regularity theorem `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`, this
@@ -87,25 +88,25 @@ theorem sandwichCLM_apply (R M : V →L[ℝ] V) : sandwichCLM R M = R ∘L M ∘
   simp [sandwichCLM]
 
 /-- The **reflection of a field** across the real axis by `R`: `ξ` on the closed upper half-plane
-and `R ξ(z̄)` below it. -/
+and `R ξ(conj z)` below it. -/
 def crReflection (R : V →L[ℝ] V) (ξ : ℂ → V) (z : ℂ) : V :=
   if 0 ≤ z.im then ξ z else R (ξ (conj z))
 
 /-- The **reflection of the leading coefficient** across the real axis by `R`: `J` on the closed
-upper half-plane and `-R J(z̄) R` below it, so that `∂_s + J̃ ∂_t` maps reflected fields to
-reflected fields. -/
+upper half-plane and `-R J(conj z) R` below it, so that `∂_s + J' ∂_t`, for this reflected
+coefficient `J'`, maps reflected fields to reflected fields. -/
 def crReflectionCoeff (R : V →L[ℝ] V) (J : ℂ → V →L[ℝ] V) (z : ℂ) : V →L[ℝ] V :=
   if 0 ≤ z.im then J z else -sandwichCLM R (J (conj z))
 
 /-- The **reflection of the derivative of the leading coefficient**: `DJ` on the closed upper
-half-plane and `h ↦ -R DJ(z̄)(h̄) R` below it, the derivative of
+half-plane and `h ↦ -R DJ(conj z)(conj h) R` below it, the derivative of
 `TauCeti.crReflectionCoeff R J` there when `DJ` is that of `J`. -/
 def crReflectionDeriv (R : V →L[ℝ] V) (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (z : ℂ) :
     ℂ →L[ℝ] V →L[ℝ] V :=
   if 0 ≤ z.im then DJ z else -(sandwichCLM R).comp ((DJ (conj z)).comp (conjCLE : ℂ →L[ℝ] ℂ))
 
 /-- The **reflection of the zeroth-order coefficient**: `S` on the closed upper half-plane and
-`R S(z̄) R` below it. -/
+`R S(conj z) R` below it. -/
 def crReflectionZeroth (R : V →L[ℝ] V) (S : ℂ → V →L[ℝ] V) (z : ℂ) : V →L[ℝ] V :=
   if 0 ≤ z.im then S z else sandwichCLM R (S (conj z))
 
@@ -211,7 +212,7 @@ private theorem integrable_inner_crFormalAdjoint_of_memLpLoc (hJ : MemLpLoc p Ω
     (φ.integrable_inner (hS.locallyIntegrableOn_clm_apply hξ hpq hloc))
 
 /-- An integral over `ℂ` is the integral over the open upper half-plane of the function plus its
-composition with conjugation: the real axis is null and `z ↦ z̄` preserves the measure. -/
+composition with conjugation: the real axis is null and `z ↦ conj z` preserves the measure. -/
 private theorem integral_eq_setIntegral_add_comp_conj {f : ℂ → ℝ} (hf : Integrable f) :
     ∫ z, f z = ∫ z in {z : ℂ | 0 < z.im}, (f z + f (conj z)) := by
   have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
@@ -232,7 +233,7 @@ section Reflection
 variable (hR : ∀ v, R (R v) = v) (hRadj : ∀ v w, ⟪R v, w⟫_ℝ = ⟪v, R w⟫_ℝ)
 include hR hRadj
 
-/-- The test function `z ↦ R φ(z̄)` on a conjugation-invariant open set. -/
+/-- The test function `z ↦ R φ(conj z)` on a conjugation-invariant open set. -/
 private def reflectTest (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, V)) : 𝓓(Ω, V) :=
   TestFunction.postcompCLM R (TestFunction.compConj hΩ φ)
 
@@ -252,8 +253,8 @@ private theorem fderiv_reflectTest (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 
     TestFunction.fderiv_compConj_apply]
 
 /-- **The pointwise reflection identity.** At a point `z` of the open upper half-plane, the
-doubled pairing at `z` and at `z̄` adds up to the pairing of the formal adjoint of
-`φ + R φ(·̄)` with `ξ` at `z`. -/
+doubled pairing at `z` and at `conj z` adds up to the pairing of the formal adjoint of
+`φ + R φ(conj ·)` with `ξ` at `z`. -/
 private theorem inner_crFormalAdjoint_crReflection_add (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (φ : 𝓓(Ω, V)) {z : ℂ} (hz : 0 < z.im) :
     ⟪crFormalAdjoint (crReflectionCoeff R J) (crReflectionDeriv R DJ) (crReflectionZeroth R S)
@@ -296,7 +297,7 @@ theorem IsWeakCRSolutionHalf.isWeakCRSolution_crReflection
   have hint (φ : 𝓓(Ω, V)) := integrable_inner_crFormalAdjoint_of_memLpLoc
     (hJ.crReflectionCoeff R hΩ) (hDJ.crReflectionDeriv R hΩ) (hS.crReflectionZeroth R hΩ) hpq hξ φ
   refine isWeakCRSolution_iff.2 ⟨hξ, hη, fun φ => ⟨hint φ, ?_⟩⟩
-  -- `φ + R φ(·̄)` takes values in the fixed space of `R` on the real axis.
+  -- `φ + R φ(conj ·)` takes values in the fixed space of `R` on the real axis.
   have hψΛ (s : ℝ) : ((φ + reflectTest (R := R) hΩ φ : 𝓓(Ω, V)) : ℂ → V) s ∈ Λ := by
     refine hΛ _ ?_
     simp only [FunLike.coe_add, Pi.add_apply, reflectTest_apply, conj_ofReal, map_add, hR]
@@ -334,7 +335,7 @@ theorem IsWeakCRSolutionHalf.memWkpLoc_one [FiniteDimensional ℝ V]
     (hc.memLpLoc_deriv.congr_mono (fun _ hz => (crReflectionDeriv_of_im_nonneg hz.2).symm) hsub)
     (hc.memLpLoc_zeroth.congr_mono (fun _ hz => (crReflectionZeroth_of_im_nonneg hz.2).symm)
       hsub) hpq.le
-  -- `J̃² = -1` almost everywhere on `Ω`: below the axis `J̃² = R J² R = -R² = -1`.
+  -- The reflected coefficient squares to `-1`: below the axis it squares to `R J² R = -R² = -1`.
   have hJ2' : ∀ᵐ z ∂volume, z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} → J z * J z = -1 :=
     (ae_restrict_iff' (Ω.isOpen.measurableSet.inter
       (measurableSet_le measurable_const measurable_im))).1 hJ2
@@ -373,7 +374,7 @@ theorem crReflectionCoeff_conj_I :
     simp
 
 /-- **Check.** The reflection of the real-boundary solution `ξ = z` by `R = conj` is `z` on the
-whole plane: below the axis, `ξ(z̄)` conjugated is `z`. -/
+whole plane: below the axis, `ξ(conj z)` conjugated is `z`. -/
 theorem crReflection_conj_id : crReflection (conjCLE : ℂ →L[ℝ] ℂ) id = id := by
   funext z
   rcases le_or_gt 0 z.im with hz | hz
