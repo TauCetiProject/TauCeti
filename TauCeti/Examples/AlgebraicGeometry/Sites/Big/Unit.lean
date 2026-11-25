@@ -16,7 +16,10 @@ sheaf is the unit module over the big structure sheaf (`AlgebraicGeometry.Scheme
 so its value on an affine test scheme `Spec R ⟶ S` is `R`, as a module over the value
 `Γ(Spec R, 𝒪) ≅ R` of the big structure sheaf:
 
-* for every `S`-scheme `T`, `(𝒪_S)^a(T) = Γ(T, 𝒪_T)` as `Γ(T, 𝒪_T)`-modules;
+* for every `S`-scheme `T`, `(𝒪_S)^a(T) = Γ(T, 𝒪_T)` as `Γ(T, 𝒪_T)`-modules, and for every
+  affine `S`-scheme `Spec R`, `(𝒪_S)^a(Spec R) = R`, are the library equivalences
+  `AlgebraicGeometry.Scheme.bigSheafUnitObjLinearEquiv` and
+  `AlgebraicGeometry.Scheme.bigSheafUnitObjSpecEquiv`; this file specialises them:
 * for `S = Spec k` and a ring `L` over `k`, `(𝒪_S)^a(Spec L) = L`: the value at `Spec k` over
   itself is `k`, and the value at `Spec k[t]` is `k[t]`;
 * over `Spec ℚ`, `(𝒪_S)^a(Spec ℚ(i)) = ℚ(i)`, here `ℚ(i) = ℚ[X]/(X² + 1)`, a two-dimensional
@@ -35,68 +38,29 @@ namespace TauCeti.AlgebraicGeometry.BigSheafUnitExamples
 
 universe u
 
-variable {S : Scheme.{u}}
-
-/-- **`(𝒪_S)^a(T) = Γ(T, 𝒪_T)`.** The value of the big-site module of the structure sheaf on an
-`S`-scheme `T`, as a module over the value `Γ(T, 𝒪_T)` of the big structure sheaf, through
-`bigSheafUnitIso`. -/
-noncomputable def bigSheafUnitObjLinearEquiv (T : Over S) :
-    (Scheme.Modules.bigSheaf (MonoidalCategoryStruct.tensorUnit S.Modules)).val.obj (op T) ≃ₗ[
-      S.bigRingCatSheaf.obj.obj (op T)] S.bigRingCatSheaf.obj.obj (op T) :=
-  ((SheafOfModules.evaluation _ (op T)).mapIso (Scheme.bigSheafUnitIso S)).toLinearEquiv
-
-/-- On sections, `bigSheafUnitObjLinearEquiv` is the identification `h^* 𝒪_S ≅ 𝒪_T` on global
-sections. -/
-lemma bigSheafUnitObjLinearEquiv_apply (T : Over S)
-    (x : Γ((Scheme.Modules.pullback T.hom).obj (MonoidalCategoryStruct.tensorUnit S.Modules), ⊤)) :
-    bigSheafUnitObjLinearEquiv T x = (Scheme.Modules.pullbackObjUnitIso T.hom).hom.app ⊤ x :=
-  Scheme.bigSheafUnitIso_hom_val_app_apply S T x
-
-/-- The value of the big structure sheaf on an affine test scheme `h : Spec R ⟶ S` is `R`: the ring
-equivalence `Γ(Spec R, 𝒪) ≃+* R` of `Scheme.ΓSpecIso`, on the scalar ring of the big-site modules
-at `Spec R`. -/
-noncomputable def bigRingCatSheafObjSpecRingEquiv (R : CommRingCat.{u}) (h : Spec R ⟶ S) :
-    S.bigRingCatSheaf.obj.obj (op (Over.mk h)) ≃+* R :=
-  (Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv
-
-/-- **`(𝒪_S)^a(Spec R) = R`.** On an affine test scheme `h : Spec R ⟶ S`, the big-site module of
-the structure sheaf has value `R`, semilinearly along `bigRingCatSheafObjSpecRingEquiv`. -/
-noncomputable def bigSheafUnitObjSpecEquiv (R : CommRingCat.{u}) (h : Spec R ⟶ S) :
-    (Scheme.Modules.bigSheaf (MonoidalCategoryStruct.tensorUnit S.Modules)).val.obj
-      (op (Over.mk h)) ≃ₛₗ[RingHomClass.toRingHom (bigRingCatSheafObjSpecRingEquiv R h)] R :=
-  (bigSheafUnitObjLinearEquiv (Over.mk h)).trans
-    (bigRingCatSheafObjSpecRingEquiv R h).toSemilinearEquiv
-
-/-- On sections, `bigSheafUnitObjSpecEquiv` is the identification `h^* 𝒪_S ≅ 𝒪_{Spec R}` on global
-sections, followed by `Γ(Spec R, 𝒪) ≅ R`. -/
-lemma bigSheafUnitObjSpecEquiv_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S)
-    (x : Γ((Scheme.Modules.pullback h).obj (MonoidalCategoryStruct.tensorUnit S.Modules), ⊤)) :
-    bigSheafUnitObjSpecEquiv R h x =
-      (Scheme.ΓSpecIso R).hom ((Scheme.Modules.pullbackObjUnitIso h).hom.app ⊤ x) :=
-  congrArg (Scheme.ΓSpecIso R).hom (bigSheafUnitObjLinearEquiv_apply (Over.mk h) x)
-
 /-- **`F^a(Spec L) = L` for `F = 𝒪_S`, `S = Spec k`.** For a commutative `k`-algebra `L`, the
 big-site module of the structure sheaf of `Spec k` has value `L` on `Spec L ⟶ Spec k`. -/
 noncomputable def bigSheafUnitObjSpecAlgebraEquiv (k L : Type u) [CommRing k] [CommRing L]
     [Algebra k L] :
     (Scheme.Modules.bigSheaf (MonoidalCategoryStruct.tensorUnit (Spec (.of k)).Modules)).val.obj
       (op (Over.mk (Spec.map (CommRingCat.ofHom (algebraMap k L))))) ≃ₛₗ[RingHomClass.toRingHom
-        (bigRingCatSheafObjSpecRingEquiv (.of L) (Spec.map (CommRingCat.ofHom (algebraMap k L))))]
+        (Scheme.bigRingCatSheafObjSpecRingEquiv _ (.of L)
+          (Spec.map (CommRingCat.ofHom (algebraMap k L))))]
       L :=
-  bigSheafUnitObjSpecEquiv (.of L) _
+  Scheme.bigSheafUnitObjSpecEquiv _ (.of L) _
 
 /-- **Evaluation at `Spec k` over itself is `k`.** -/
 noncomputable def bigSheafUnitObjSpecSelfEquiv (k : Type u) [CommRing k] :
     (Scheme.Modules.bigSheaf (MonoidalCategoryStruct.tensorUnit (Spec (.of k)).Modules)).val.obj
       (op (Over.mk (𝟙 (Spec (.of k))))) ≃ₛₗ[RingHomClass.toRingHom
-        (bigRingCatSheafObjSpecRingEquiv (.of k) (𝟙 (Spec (.of k))))] k :=
-  bigSheafUnitObjSpecEquiv (.of k) _
+        (Scheme.bigRingCatSheafObjSpecRingEquiv _ (.of k) (𝟙 (Spec (.of k))))] k :=
+  Scheme.bigSheafUnitObjSpecEquiv _ (.of k) _
 
 /-- **Over `Spec k`, evaluation at `Spec k[t]` is `k[t]`.** -/
 noncomputable def bigSheafUnitObjSpecPolynomialEquiv (k : Type u) [CommRing k] :
     (Scheme.Modules.bigSheaf (MonoidalCategoryStruct.tensorUnit (Spec (.of k)).Modules)).val.obj
       (op (Over.mk (Spec.map (CommRingCat.ofHom (algebraMap k k[X]))))) ≃ₛₗ[RingHomClass.toRingHom
-        (bigRingCatSheafObjSpecRingEquiv (.of k[X])
+        (Scheme.bigRingCatSheafObjSpecRingEquiv _ (.of k[X])
           (Spec.map (CommRingCat.ofHom (algebraMap k k[X]))))]
       k[X] :=
   bigSheafUnitObjSpecAlgebraEquiv k k[X]
@@ -108,7 +72,7 @@ abbrev GaussianRat : Type := AdjoinRoot (X ^ 2 + 1 : ℚ[X])
 noncomputable def bigSheafUnitObjSpecGaussianRatEquiv :
     (Scheme.Modules.bigSheaf (MonoidalCategoryStruct.tensorUnit (Spec (.of ℚ)).Modules)).val.obj
       (op (Over.mk (Spec.map (CommRingCat.ofHom (algebraMap ℚ GaussianRat))))) ≃ₛₗ[
-        RingHomClass.toRingHom (bigRingCatSheafObjSpecRingEquiv (.of GaussianRat)
+        RingHomClass.toRingHom (Scheme.bigRingCatSheafObjSpecRingEquiv _ (.of GaussianRat)
           (Spec.map (CommRingCat.ofHom (algebraMap ℚ GaussianRat))))] GaussianRat :=
   bigSheafUnitObjSpecAlgebraEquiv ℚ GaussianRat
 

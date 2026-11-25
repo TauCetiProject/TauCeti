@@ -122,6 +122,23 @@ noncomputable def bigStructureSheafObjSpecIso (R : CommRingCat.{u}) (h : Spec R 
     (bigStructureSheaf S).obj.obj (op (Over.mk h)) ≅ R :=
   Scheme.ΓSpecIso R
 
+/-- The value of the big structure sheaf on an affine `S`-scheme `Spec R` is the ring `R`, as a
+ring equivalence on the scalar ring `bigRingCatSheaf S` of the modules over the big site. -/
+noncomputable def bigRingCatSheafObjSpecRingEquiv (R : CommRingCat.{u}) (h : Spec R ⟶ S) :
+    (bigRingCatSheaf S).obj.obj (op (Over.mk h)) ≃+* R :=
+  -- By `bigRingCatSheaf_obj` (`rfl`), the scalar ring is the ring of the big structure sheaf.
+  (bigStructureSheafObjSpecIso S R h).commRingCatIsoToRingEquiv
+
+@[simp]
+lemma bigRingCatSheafObjSpecRingEquiv_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S)
+    (a : Γ(Spec R, ⊤)) : bigRingCatSheafObjSpecRingEquiv S R h a = (Scheme.ΓSpecIso R).hom a :=
+  (rfl)
+
+@[simp]
+lemma bigRingCatSheafObjSpecRingEquiv_symm_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S) (r : R) :
+    (bigRingCatSheafObjSpecRingEquiv S R h).symm r = (Scheme.ΓSpecIso R).inv r :=
+  (rfl)
+
 /-- The additive group `𝔾_a : T ↦ Γ(T, O_T)` on the big fpqc site over `S`: the underlying
 sheaf of abelian groups of the big structure sheaf. -/
 @[expose]
