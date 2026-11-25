@@ -388,14 +388,8 @@ private theorem mul_left_eq (p : Nil) :
   funext q
   ext <;> simp [linearPart, xL, yL, zL] <;> ring
 
-/- `Nil` has the charts of `ℝ × ℝ × ℝ` and `toProd` is the identity, so the two results below
-are the corresponding statements about the affine map `r ↦ linearPart p r + toProd p` of
-`ℝ × ℝ × ℝ`. -/
-
-private theorem contMDiff_mul_left {n : ℕ∞ω} (p : Nil) :
-    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (p * ·) := by
-  rw [mul_left_eq]
-  exact ((linearPart p).contDiff.add contDiff_const).contMDiff
+/- `Nil` has the charts of `ℝ × ℝ × ℝ` and `toProd` is the identity, so the result below is the
+corresponding statement about the affine map `r ↦ linearPart p r + toProd p` of `ℝ × ℝ × ℝ`. -/
 
 private theorem hasMFDerivAt_mul_left (p q : Nil) :
     HasMFDerivAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q (linearPart p) := by
@@ -426,7 +420,7 @@ private theorem inner_mfderiv_mul_left (p q : Nil) (v w : TangentSpace 𝓘(ℝ,
 
 /-- Left multiplication by an element of `Nil` is smooth. -/
 instance contMDiffConstSMul : ContMDiffConstSMul 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ Nil Nil :=
-  ⟨fun p ↦ contMDiff_mul_left p⟩
+  ⟨fun _ ↦ contMDiff_mul_left⟩
 
 /-- Left multiplication, as a group homomorphism from `Nil` to its isometry group: the metric
 of `Nil` is left-invariant. -/
