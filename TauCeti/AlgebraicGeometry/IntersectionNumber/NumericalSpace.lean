@@ -211,6 +211,13 @@ theorem picToRatNumericalClasses_surjective :
 def picRatIntersectionNumber : ℚ ⊗[ℤ] Additive (LineBundleClass X) →ₗ[ℚ] ℚ :=
   numericalIntersectionNumberBaseChange x hi hC ℚ ∘ₗ picToRatNumericalClasses k x
 
+/-- The rational intersection number of a class of `Pic(X) ⊗ ℚ` with `C` is the intersection
+number of its image in `N¹(X/k)_ℚ`. -/
+theorem picRatIntersectionNumber_apply (v : ℚ ⊗[ℤ] Additive (LineBundleClass X)) :
+    picRatIntersectionNumber x hi hC v =
+      numericalIntersectionNumberBaseChange x hi hC ℚ (picToRatNumericalClasses k x v) :=
+  (rfl)
+
 /-- The rational intersection number of `q ⊗ a` with `C` is `q · (a · C)`. -/
 @[simp]
 theorem picRatIntersectionNumber_tmul (q : ℚ) (a : Additive (LineBundleClass X)) :
@@ -248,7 +255,7 @@ theorem ker_picToRatNumericalClasses :
   refine ⟨fun hv C _ _ i _ hi hC ↦ ?_, fun hv ↦
     eq_zero_of_forall_numericalIntersectionNumberBaseChange_eq_zero k x _ hv⟩
   rw [LinearMap.mem_ker] at hv
-  simp [picRatIntersectionNumber, hv]
+  rw [picRatIntersectionNumber_apply, hv, map_zero]
 
 variable (k) in
 /-- **`N¹(X/k)_ℚ` is `Pic(X) ⊗ ℚ` modulo numerical equivalence**: the class map induces an
@@ -409,6 +416,13 @@ theorem picToRelRatNumericalClasses_surjective :
 def picRatRelIntersectionNumber : ℚ ⊗[ℤ] Additive (LineBundleClass X) →ₗ[ℚ] ℚ :=
   relNumericalIntersectionNumberBaseChange hi hC ℚ ∘ₗ picToRelRatNumericalClasses f
 
+/-- The rational relative intersection number of a class of `Pic(X) ⊗ ℚ` with `C` is the
+relative intersection number of its image in `N¹(X/S)_ℚ`. -/
+theorem picRatRelIntersectionNumber_apply (v : ℚ ⊗[ℤ] Additive (LineBundleClass X)) :
+    picRatRelIntersectionNumber hi hC v =
+      relNumericalIntersectionNumberBaseChange hi hC ℚ (picToRelRatNumericalClasses f v) :=
+  (rfl)
+
 /-- The rational relative intersection number of `q ⊗ a` with `C` is `q` times the degree on `C`
 of the pullback of `a` to the fibre. -/
 @[simp]
@@ -452,7 +466,7 @@ theorem ker_picToRelRatNumericalClasses :
   refine ⟨fun hv s C _ _ i _ hi hC ↦ ?_, fun hv ↦
     eq_zero_of_forall_relNumericalIntersectionNumberBaseChange_eq_zero f _ hv⟩
   rw [LinearMap.mem_ker] at hv
-  simp [picRatRelIntersectionNumber, hv]
+  rw [picRatRelIntersectionNumber_apply, hv, map_zero]
 
 variable (f) in
 /-- **`N¹(X/S)_ℚ` is `Pic(X) ⊗ ℚ` modulo numerical equivalence**: the class map induces an
