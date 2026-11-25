@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.DeGiorgi
 public import TauCeti.Analysis.BoundedVariation.Weighted.Basic
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.BoundedVariation.Weighted.ReducedBoundary
@@ -78,33 +78,6 @@ theorem integral_weightedDivergence_eq_integral_reducedBoundary (hW : ContDiff �
   rw [key]
   congr 1 with x
   ring
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Cutoffs `g k x = χ(x / (k + 1))` for a smooth bump `χ` equal to `1` near the origin: `C¹`,
-compactly supported, with values in `[-1, 1]`, tending to `1` pointwise, with derivative
-`O(1 / (k + 1))`. -/
-private theorem exists_cutoff_seq : ∃ (g : ℕ → E → ℝ) (B : ℝ), 0 ≤ B ∧
-    (∀ k, ContDiff ℝ 1 (g k)) ∧ (∀ k, HasCompactSupport (g k)) ∧ (∀ k x, |g k x| ≤ 1) ∧
-    (∀ x, Tendsto (g · x) atTop (𝓝 1)) ∧
-    ∀ k x, ‖fderiv ℝ (g k) x‖ ≤ 1 / ((k : ℝ) + 1) * B := by
-  let χ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  have hχ : ContDiff ℝ 1 χ := χ.contDiff
-  obtain ⟨B, hB⟩ : ∃ B, ∀ y, ‖fderiv ℝ χ y‖ ≤ B :=
-    (hχ.continuous_fderiv one_ne_zero).bounded_above_of_compact_support
-      (χ.hasCompactSupport.fderiv (𝕜 := ℝ))
-  have hct : Tendsto (fun k : ℕ => 1 / ((k : ℝ) + 1)) atTop (𝓝 0) :=
-    tendsto_one_div_add_atTop_nhds_zero_nat
-  refine ⟨fun k x => χ ((1 / ((k : ℝ) + 1)) • x), B, (norm_nonneg _).trans (hB 0),
-    fun k => hχ.comp (contDiff_const_smul _),
-    fun k => χ.hasCompactSupport.comp_smul (by positivity),
-    fun k x => abs_le.2 ⟨by linarith [χ.nonneg (x := (1 / ((k : ℝ) + 1)) • x)], χ.le_one⟩,
-    fun x => ?_, fun k x => ?_⟩
-  · have := (χ.continuous.tendsto 0).comp (by simpa using hct.smul_const x)
-    rw [χ.one_of_mem_closedBall (by simpa using χ.rIn_pos.le)] at this
-    simpa only [Function.comp_def, one_div] using this
-  · rw [fderiv_comp_smul (f := ⇑χ), norm_smul, Real.norm_of_nonneg (by positivity)]
-    gcongr
-    exact hB _
 
 /-- The left side of the weighted Gauss–Green formula for the cut-off fields `g k • X` tends to
 the one for `X`, by dominated convergence. -/
@@ -201,10 +174,7 @@ private theorem tendsto_integral_reducedBoundary_cutoff (hW : ContDiff ℝ 1 W)
 `μ = e^{−W} · volume` is finite, in dimension `n ≥ 2`, a Lebesgue-measurable set `s` of finite
 weighted perimeter and a `C¹` vector field `X`, bounded with bounded derivative, with
 `DW X ∈ L¹(μ)`: `∫_s div_μ X dμ = ∫_{∂*s} ⟨X, ν_s⟩ e^{−W} dHⁿ⁻¹`, where `div_μ X = div X − DW X`.
-
-The field `X` need not have compact support: the formula for the compactly supported fields
-`χ(x / (k + 1)) X(x)`, with `χ` a smooth bump equal to `1` near the origin, passes to the limit
-by dominated convergence on both sides. -/
+The field `X` need not have compact support. -/
 theorem integral_weightedDivergence_eq_integral_reducedBoundary_of_bounded
     (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E) (hμ : Integrable fun x => Real.exp (-W x))
     (hs : NullMeasurableSet s) (hP : weightedPerimeter W ⊤ s ≠ ∞) {X : E → E}
@@ -219,10 +189,24 @@ theorem integral_weightedDivergence_eq_integral_reducedBoundary_of_bounded
   have hu := locallyIntegrableOn_indicator_const hs' (1 : ℝ)
   have hfin := exists_totalVariationOn_ne_top_of_weightedVariation_ne_top hW hu
     (weightedPerimeter_def (W := W) ▸ hP)
-  obtain ⟨g, B, hB, hg, hgc, hg1, hgt, hgd⟩ := exists_cutoff_seq (E := E)
+  obtain ⟨B, hB, hcut⟩ := exists_cutoff_fderiv_bound (E := E)
+  choose g g' hg hg01 hg1 hg0 hgd' hgd _ _ using
+    fun k : ℕ => hcut 0 ((k : ℝ) + 1) (by positivity)
+  replace hg (k : ℕ) : ContDiff ℝ 1 (g k) := hg k 1
+  have hgc (k : ℕ) : HasCompactSupport (g k) :=
+    HasCompactSupport.intro (isCompact_closedBall 0 (2 * ((k : ℝ) + 1))) fun x hx =>
+      hg0 k x (by simpa [dist_zero_right] using hx)
+  replace hg01 (k : ℕ) (x : E) : |g k x| ≤ 1 := abs_le.2 ⟨by linarith [(hg01 k x).1], (hg01 k x).2⟩
+  have hgt (x : E) : Tendsto (g · x) atTop (𝓝 1) := by
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [(tendsto_natCast_atTop_atTop (R := ℝ)).eventually_ge_atTop ‖x‖] with k hk
+    exact (hg1 k x (by rw [Metric.mem_closedBall, dist_zero_right]; linarith)).symm
+  replace hgd (k : ℕ) (x : E) : ‖fderiv ℝ (g k) x‖ ≤ 1 / ((k : ℝ) + 1) * B := by
+    rw [(hgd' k x).fderiv, one_div, mul_comm]
+    exact hgd k x
   refine tendsto_nhds_unique ((tendsto_integral_weightedDivergence_cutoff hW hμ hs hX hXC hXC'
-    hWX hB hg hg1 hgt hgd).congr fun k => ?_) (tendsto_integral_reducedBoundary_cutoff hW hn hs'
-    hP hX.continuous hXC (fun k => (hg k).continuous) hg1 hgt)
+    hWX hB hg hg01 hgt hgd).congr fun k => ?_) (tendsto_integral_reducedBoundary_cutoff hW hn hs'
+    hP hX.continuous hXC (fun k => (hg k).continuous) hg01 hgt)
   rw [← integral_weightedDivergence_eq_integral_reducedBoundary hW hn hu hfin
     (X := fun x => g k x • X x) ((hg k).smul hX) ((hgc k).smul_right) (subset_univ _)]
   congr 1 with x
