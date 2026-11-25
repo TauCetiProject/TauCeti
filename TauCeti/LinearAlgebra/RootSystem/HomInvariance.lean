@@ -37,7 +37,7 @@ weight-space vectors.
 * `RootPairing.Hom.isValuedIn`: the target root pairing takes values in any coefficient ring in
   which the source root pairing takes values.
 * `RootPairing.Hom.pairingIn_indexEquiv`: the index bijection preserves pairings valued in a
-  coefficient subring.
+  coefficient ring.
 * `RootPairing.Hom.indexEquiv_reflectionPerm`: it commutes with `RootPairing.reflectionPerm`, and
   therefore with the negation of an index, which is `RootPairing.reflectionPerm i i` by definition
   and is rewritten to that form by the `simp` lemma `RootPairing.indexNeg_neg`.
@@ -86,15 +86,14 @@ theorem isValuedIn (f : P.Hom P₂) (S : Type*) [CommRing S] [Algebra S R]
     exact P.exists_value i j
 
 /-- The index bijection of a homomorphism of root pairings preserves the pairing valued in a
-coefficient subring. -/
+coefficient ring. The map `S → R` need not be injective: `RootPairing.pairingIn` is chosen from
+the pairing in `R` alone, which `f` preserves. -/
 @[simp]
 theorem pairingIn_indexEquiv (f : P.Hom P₂) (S : Type*) [CommRing S] [Algebra S R]
-    [FaithfulSMul S R] [P.IsValuedIn S] (i j : ι) :
+    [P.IsValuedIn S] (i j : ι) :
     letI := f.isValuedIn S
     P₂.pairingIn S (f.indexEquiv i) (f.indexEquiv j) = P.pairingIn S i j := by
-  let := f.isValuedIn S
-  refine FaithfulSMul.algebraMap_injective S R ?_
-  rw [algebraMap_pairingIn, algebraMap_pairingIn, f.pairing]
+  simp only [pairingIn, f.pairing]
 
 /-- The index bijection of a homomorphism of root pairings commutes with root reflections. -/
 @[simp]

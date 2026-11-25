@@ -131,7 +131,7 @@ theorem exists_range_levelNorm_le_of_forall_prime
   have hN₁ : N₁ ≠ ⊤ := by
     have : Finite Q := AddSubgroup.finite_quotient_of_finiteIndex
     -- `N₁ = ⊤` would force `p · Q = Q`, as `N₁` is a preimage under the surjection `mk'`
-    refine fun htop ↦ nsmulAddMonoidHom_range_ne_top_of_not_coprime (G := Q) ?_ <|
+    refine fun htop ↦ mt (nsmulAddMonoidHom_range_eq_top_iff_coprime (G := Q)).1 ?_ <|
       AddSubgroup.comap_injective (QuotientAddGroup.mk'_surjective N') <|
         htop.trans (AddSubgroup.comap_top _).symm
     rw [← AddSubgroup.index_eq_card, heq]

@@ -7,9 +7,12 @@ module
 
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.RingTheory.TensorProduct.Maps
 import Mathlib.Algebra.FiveLemma
+import Mathlib.Algebra.Module.FinitePresentation
 import Mathlib.RingTheory.Flat.Equalizer
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
+import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Injectivity of base-change maps along flat ring maps
@@ -44,12 +47,23 @@ surjective and multiplication on the cokernel of `g` is injective. These are the
 steps in formal gluing
 ([Stacks, Proposition 15.91.16](https://stacks.math.columbia.edu/tag/05ER)).
 
+For a finitely generated `R`-module `M`, the first criterion compares `Hom_R(M, N)` with
+`Hom_R(Rⁿ, N)` along a surjection `Rⁿ → M`, and shows that the comparison map
+`S ⊗[R] Hom_R(M, N) → Hom_S(S ⊗[R] M, S ⊗[R] N)` is injective. Mathlib's
+`Module.FinitePresentation.isBaseChange_map` shows that it is bijective when `M` is finitely
+presented; injectivity needs only finite generation
+([Stacks, Lemma 10.10.2](https://stacks.math.columbia.edu/tag/087R)). Applied to endomorphisms,
+it shows that an algebra acting faithfully on a finitely generated module still acts faithfully
+after flat base change.
+
 ## Main results
 
 * `LinearMap.liftBaseChange_injective_of_isBaseChange`: injectivity of `S ⊗[R] M₁ → N₁`.
 * `LinearMap.injective_liftBaseChange_snd_ker_coprod`: injectivity of the comparison from
   compatible pairs to the second factor.
 * `LinearMap.surjective_liftBaseChange_snd_ker_coprod`: surjectivity of that comparison.
+* `LinearMap.tensorProduct_injective`: for flat `S` and finitely generated `M`, the comparison
+  map `S ⊗[R] Hom_R(M, N) → Hom_S(S ⊗[R] M, S ⊗[R] N)` is injective.
 * `IsBaseChange.of_left_exact_of_lTensor`: the five-lemma criterion for an arbitrary `R`-algebra
   `S`, assuming that tensoring the top row with `S` keeps it left exact.
 * `IsBaseChange.of_left_exact_of_injective`: the variant of `IsBaseChange.of_left_exact` with an
@@ -257,3 +271,33 @@ theorem surjective_liftBaseChange_snd_ker_coprod (f : M →ₗ[R] P) (g : N →�
     LinearMap.snd_apply] using add_sub_cancel (c.liftBaseChange S v) n
 
 end LinearMap
+
+section Hom
+
+variable (R) (M N : Type*) [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- **Flat base change of `Hom` out of a finitely generated module.** For a flat `R`-algebra `S`
+and a finitely generated `R`-module `M`, the comparison map
+`S ⊗[R] Hom_R(M, N) → Hom_S(S ⊗[R] M, S ⊗[R] N)`, `s ⊗ φ ↦ s • φ.baseChange S`, is injective.
+When `M` is finitely presented it is bijective (`Module.FinitePresentation.isBaseChange_map`). -/
+theorem LinearMap.tensorProduct_injective [Module.Flat R S] [Module.Finite R M] :
+    Function.Injective (LinearMap.tensorProduct R S M N) := by
+  obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' R M
+  -- Precomposition with the surjection `g : Rⁿ → M` embeds `Hom_R(M, N)` into `Hom_R(Rⁿ, N)`,
+  -- and the comparison map for the free module `Rⁿ` is bijective.
+  have hc : (LinearMap.baseChangeHom R S (Fin n → R) N).comp (g.lcomp R N) =
+      (((g.baseChange S).lcomp S (S ⊗[R] N)).restrictScalars R).comp
+        (LinearMap.baseChangeHom R S M N) :=
+    LinearMap.ext fun φ ↦ LinearMap.baseChange_comp g φ
+  have he : LinearMap.tensorProduct R S M N =
+      (LinearMap.baseChangeHom R S M N).liftBaseChange S := by
+    ext φ m
+    simp
+  rw [he]
+  -- The targets are named: inferring them from the comparison maps is very slow.
+  exact LinearMap.liftBaseChange_injective_of_isBaseChange S
+    (N₁ := S ⊗[R] M →ₗ[S] S ⊗[R] N) (N₂ := S ⊗[R] (Fin n → R) →ₗ[S] S ⊗[R] N) hc
+    (Module.isBaseChange_map_of_finite_free N S (Fin n))
+    (LinearMap.lcomp_injective_of_surjective g hg)
+
+end Hom

@@ -50,7 +50,7 @@ constructions then depend smoothly on the parameter
 * `TauCeti.SmoothForm.contMDiff_apply_reebVectorField_mpullback_prodMk`: when every slice is
   contact, the Reeb components `(t, y) ↦ β_t(R_(α_t)(y))` of a second family form a smooth
   function; `TauCeti.SmoothForm.contMDiffAt_apply_reebVectorField_mpullback_prodMk` is the version
-  at a point, for slices that are contact for parameters near it.
+  at a point `p`, for slices that are contact at the points near `p`.
 
 ## References
 
@@ -84,7 +84,8 @@ theorem contMDiffOn_reebVectorField_mpullback_prodMk (α : SmoothForm (J.prod I)
         p.2⟩ : TangentBundle I M)) (U ×ˢ Set.univ) := fun p hp ↦
   (contMDiffAt_sectionAlong_reebVectorField (b := Prod.snd)
     (α := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α)
-    (Filter.mem_of_superset ((hU.preimage continuous_fst).mem_nhds hp.1) fun q hq ↦ hc q.1 hq)
+    (Filter.mem_of_superset ((hU.preimage continuous_fst).mem_nhds hp.1) fun q hq ↦
+      isContactForm_iff_forall_isContactFormAt.1 (hc q.1 hq) q.2)
     (contMDiff_mpullback_prodMk α p)
     (contMDiff_mextDeriv_mpullback_prodMk α p)).contMDiffWithinAt
 
@@ -100,13 +101,13 @@ theorem contMDiff_reebVectorField_mpullback_prodMk (α : SmoothForm (J.prod I) (
   exact contMDiffOn_reebVectorField_mpullback_prodMk α isOpen_univ fun t _ ↦ hc t
 
 /-- **Reeb components of a smooth family of one-forms, at a point.** If the slices
-`α_t = ι_t^* α` of a smooth one-form `α` on `N × M` are contact forms for all parameters near
-`p.1`, and `β` is a second smooth one-form on `N × M` with slices `β_t`, then the function
+`α_t = ι_t^* α` of a smooth one-form `α` on `N × M` are contact forms at `y` for all `(t, y)` near
+`p`, and `β` is a second smooth one-form on `N × M` with slices `β_t`, then the function
 `(t, y) ↦ β_t(R_(α_t)(y))` on `N × M` is smooth at `p`. -/
 theorem contMDiffAt_apply_reebVectorField_mpullback_prodMk
     (α β : SmoothForm (J.prod I) (N × M) ℝ 1) {p : N × M}
-    (hc : ∀ᶠ t in 𝓝 p.1,
-      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm) :
+    (hc : ∀ᶠ q in 𝓝 p, IsContactFormAt
+      (mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α).val q.2) :
     ContMDiffAt (J.prod I) 𝓘(ℝ) ∞ (fun q : N × M ↦
       (mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) β).val q.2
         ![(mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
@@ -116,8 +117,7 @@ theorem contMDiffAt_apply_reebVectorField_mpullback_prodMk
     (contMDiff_mpullback_prodMk β p)
   have hR := contMDiffAt_sectionAlong_reebVectorField (b := Prod.snd)
     (α := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α)
-    (continuous_fst.continuousAt.eventually hc) (contMDiff_mpullback_prodMk α p)
-    (contMDiff_mextDeriv_mpullback_prodMk α p)
+    hc (contMDiff_mpullback_prodMk α p) (contMDiff_mextDeriv_mpullback_prodMk α p)
   simpa [degreeOneEquiv_apply_apply_vec] using hβ.clm_bundle_apply_scalar hR
 
 /-- **Reeb components of a smooth family of one-forms.** If every slice `α_t = ι_t^* α` of a
@@ -130,7 +130,8 @@ theorem contMDiff_apply_reebVectorField_mpullback_prodMk
       (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) β).val p.2
         ![(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
           p.2] := fun _ ↦
-  contMDiffAt_apply_reebVectorField_mpullback_prodMk α β (.of_forall hc)
+  contMDiffAt_apply_reebVectorField_mpullback_prodMk α β
+    (.of_forall fun q ↦ isContactForm_iff_forall_isContactFormAt.1 (hc q.1) q.2)
 
 /-- **Contact-Moser vector fields of a smooth family of contact forms.** If the slices
 `α_t = ι_t^* α` of a smooth one-form `α` on `N × M` are contact forms for all `t` in an open set
@@ -148,7 +149,8 @@ theorem contMDiffOn_contactMoserVectorField_mpullback_prodMk
   (contMDiffAt_sectionAlong_contactMoserVectorField (b := Prod.snd)
     (α := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α)
     (β := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) β)
-    (Filter.mem_of_superset ((hU.preimage continuous_fst).mem_nhds hp.1) fun q hq ↦ hc q.1 hq)
+    (Filter.mem_of_superset ((hU.preimage continuous_fst).mem_nhds hp.1) fun q hq ↦
+      isContactForm_iff_forall_isContactFormAt.1 (hc q.1 hq) q.2)
     (contMDiff_mpullback_prodMk α p)
     (contMDiff_mextDeriv_mpullback_prodMk α p) (contMDiff_mpullback_prodMk β p)).contMDiffWithinAt
 
