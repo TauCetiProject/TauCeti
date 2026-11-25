@@ -285,10 +285,11 @@ open Pseudofunctor.StrongTrans
 variable {B : Type u₁} [Bicategory.{w₁, v₁} B] {F G : B ⥤ᵖ Cat.{v, w}}
 
 /-- The component at `a` of an equivalence of pseudofunctors into `Cat`, as an equivalence of
-categories, with unit and counit the components of those of `e`. -/
--- Exposed so that its functor and inverse are definitionally the components of `e.hom` and
--- `e.inv`, as its projection lemmas state.
-@[expose, simps! functor inverse]
+categories. Its counit is the component of `e.counit`; its unit is the adjointification of the
+component of `e.unit` against that counit (`CategoryTheory.Equivalence.mk`). -/
+-- Exposed so that its functor, inverse and counit are definitionally the components of `e.hom`,
+-- `e.inv` and `e.counit`, as its projection lemmas state.
+@[expose, simps! functor inverse counitIso]
 noncomputable def appEquivalence (e : Bicategory.Equivalence F G) (a : B) :
     (F.obj a : Type w) ≌ G.obj a :=
   CategoryTheory.Equivalence.mk (e.hom.app a).toFunctor (e.inv.app a).toFunctor
