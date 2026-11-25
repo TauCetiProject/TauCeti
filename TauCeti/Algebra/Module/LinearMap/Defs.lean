@@ -14,8 +14,11 @@ Forgetting scalar compatibility commutes with composition of semilinear maps
 (`LinearMap.toAddMonoidHom_comp`). Composites of injective or surjective semilinear maps are
 injective or surjective (`LinearMap.injective_comp`, `LinearMap.surjective_comp`); these restate
 `Function.Injective.comp` and `Function.Surjective.comp` for the coercion of `g.comp f`, so that
-they can be passed where a proof about exactly this coercion is expected. Pasting a commutative
-square onto a factorization gives a factorization (`LinearMap.comp_comp_eq_comp_comp_of_comp_eq`).
+they can be passed where a proof about exactly this coercion is expected. Composing with an
+injective map on the left or a surjective map on the right kills no nonzero map
+(`LinearMap.comp_eq_zero_iff_of_injective`, `LinearMap.comp_eq_zero_iff_of_surjective`).
+Pasting a commutative square onto a factorization gives a factorization
+(`LinearMap.comp_comp_eq_comp_comp_of_comp_eq`).
 A homotopy between maps of modules with square-zero differentials transfers the property of
 commuting with the differentials from one map to the other
 (`LinearMap.comp_eq_comp_of_comp_add_comp_eq_add`).
@@ -45,6 +48,19 @@ theorem injective_comp {g : N →ₛₗ[τ] P} {f : M →ₛₗ[σ] N} (hg : Fun
 theorem surjective_comp {g : N →ₛₗ[τ] P} {f : M →ₛₗ[σ] N} (hg : Function.Surjective g)
     (hf : Function.Surjective f) : Function.Surjective (g.comp f : M →ₛₗ[υ] P) :=
   hg.comp hf
+
+/-- Postcomposing with an injective semilinear map sends only the zero map to zero. -/
+theorem comp_eq_zero_iff_of_injective {g : N →ₛₗ[τ] P} (hg : Function.Injective g)
+    (f : M →ₛₗ[σ] N) : (g.comp f : M →ₛₗ[υ] P) = 0 ↔ f = 0 := by
+  refine ⟨fun h ↦ ext fun x ↦ hg ?_, fun h ↦ by simp [h]⟩
+  simpa using LinearMap.congr_fun h x
+
+/-- Precomposing with a surjective semilinear map sends only the zero map to zero. -/
+theorem comp_eq_zero_iff_of_surjective {f : M →ₛₗ[σ] N} (hf : Function.Surjective f)
+    (g : N →ₛₗ[τ] P) : (g.comp f : M →ₛₗ[υ] P) = 0 ↔ g = 0 := by
+  refine ⟨fun h ↦ ext fun y ↦ ?_, fun h ↦ by simp [h]⟩
+  obtain ⟨x, rfl⟩ := hf y
+  simpa using LinearMap.congr_fun h x
 
 section Paste
 

@@ -6,8 +6,10 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.Topology.Algebra.IsOpenUnits
 public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.Maps.Proper.Basic
+import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
 # Borel measurability and proper pushforwards
@@ -31,6 +33,9 @@ is a countable union of images under open embeddings of chart domains. If it is 
 out of its codomain is therefore measurable exactly when its composite with it is, and it has
 a measurable section, given over the target of each of countably many charts by the inverse chart.
 
+In a monoid with zero whose units form an open subspace with continuous inversion (`IsOpenUnits`),
+`Ring.inverse` is Borel measurable, being continuous on the open set of units and zero outside.
+
 ## Main results
 
 * `ContinuousOn.measurableSet_preimage_inter`
@@ -41,6 +46,7 @@ a measurable section, given over the target of each of countably many charts by 
 * `IsLocalHomeomorph.measurableSet_image`
 * `IsLocalHomeomorph.measurable_comp_iff`
 * `IsLocalHomeomorph.exists_measurable_rightInverse`
+* `IsOpenUnits.measurable_ringInverse`
 * `MeasureTheory.Measure.isFiniteMeasureOnCompacts_map_of_isProperMap`
 -/
 
@@ -160,6 +166,19 @@ theorem IsLocalHomeomorph.exists_measurable_rightInverse {α β : Type*} [Topolo
       simp only [Set.piecewise_eq_of_mem _ _ _ hy]
       rw [hfe (c (Nat.find (hmem y)))]
       exact (e _).right_inv hy
+
+/-- In a monoid with zero whose units are open with continuous inversion, `Ring.inverse` is
+Borel measurable. -/
+theorem IsOpenUnits.measurable_ringInverse {R : Type*} [MonoidWithZero R]
+    [TopologicalSpace R] [IsOpenUnits R] [MeasurableSpace R] [BorelSpace R] :
+    Measurable (Ring.inverse : R → R) := by
+  classical
+  have hcont : ContinuousOn (Ring.inverse : R → R) {x : R | IsUnit x} :=
+    fun _ ⟨u, hu⟩ => hu ▸ (IsOpenUnits.continuousAt_ringInverse u).continuousWithinAt
+  have hpiece : ({x : R | IsUnit x}).piecewise (Ring.inverse : R → R) (fun _ ↦ 0) = Ring.inverse :=
+    funext fun x => by by_cases hx : IsUnit x <;> simp [Set.piecewise, hx, Ring.inverse_non_unit]
+  exact hpiece ▸ hcont.measurable_piecewise continuousOn_const
+    IsOpenUnits.isOpenEmbedding_unitsVal.isOpen_range.measurableSet
 
 namespace MeasureTheory.Measure
 
