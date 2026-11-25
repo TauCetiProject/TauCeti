@@ -8,6 +8,7 @@ module
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.BrauerProjection
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup
+import TauCeti.GroupTheory.PGroup
 
 /-!
 # Defect groups of small blocks
@@ -34,18 +35,6 @@ namespace TauCeti.GroupAlgebraDefectGroupExamples
 open _root_.MonoidAlgebra GroupAlgebraBlockExamples Examples
 
 /-! ### `𝔽₂[S₃]` -/
-
-/-- An element `q` of a `2`-subgroup with `q³ = 1` is `1`. -/
-private theorem eq_one_of_isPGroup_of_pow_three_eq_one {G : Type*} [Group G] {Q : Subgroup G}
-    (hQ : IsPGroup 2 Q) {q : G} (hq : q ∈ Q) (h3 : q ^ 3 = 1) : q = 1 := by
-  have h3' : (⟨q, hq⟩ : Q) ^ 3 = 1 := Subtype.ext h3
-  exact congrArg Subtype.val (orderOf_eq_one_iff.1 ((hQ.orderOf_coprime (n := 3) (by norm_num)
-    _).eq_one_of_dvd (orderOf_dvd_of_pow_eq_one h3')))
-
-/-- A nonzero coefficient makes an element of a monoid algebra nonzero. -/
-private theorem ne_zero_of_coeff_ne_zero {k G : Type*} [Semiring k] {x : MonoidAlgebra k G} (g : G)
-    (h : x.coeff g ≠ 0) : x ≠ 0 :=
-  ne_of_apply_ne (·.coeff g) (by simpa using h)
 
 /-- An element of `S₃` commuting with some `q` with `q³ ≠ 1` is not a `3`-cycle. -/
 private theorem not_ne_one_and_cube_eq_one_of_commute :
@@ -78,9 +67,8 @@ theorem isDefectGroup_blockTwoS₃_bot :
     exact ne_zero_of_coeff_ne_zero ρ (by rw [coeff_blockTwoS₃]; decide +kernel)
   · by_contra hne
     obtain ⟨q, hq1⟩ := (Subgroup.ne_bot_iff_exists_ne_one).1 hne
-    have h3 : (q : S₃) * q * q ≠ 1 := fun h3 => hq1 (Subtype.ext
-      (eq_one_of_isPGroup_of_pow_three_eq_one hQ q.property
-        (by simpa [pow_succ, mul_assoc] using h3)))
+    have h3 : (q : S₃) * q * q ≠ 1 := fun h3 => hq1 (IsPGroup.eq_one_of_pow_eq_one_of_coprime hQ
+      (n := 3) (by norm_num) (Subtype.ext (by simpa [pow_succ, mul_assoc] using h3)))
     refine hQe (brauerProjection_eq_zero_iff.2 fun c hc => ?_)
     have hcq : c * q = q * c :=
       (Subgroup.mem_centralizer_iff.1 hc q (SetLike.mem_coe.2 q.property)).symm
@@ -143,8 +131,9 @@ theorem isDefectGroup_one_add_r_add_r_sq_bot :
   refine isDefectGroup_iff.2 ⟨IsPGroup.of_bot, ?_, fun Q hQ _ _ => ?_⟩
   · rw [Ne, brauerProjection_bot_eq_zero_iff]
     exact ne_zero_of_coeff_ne_zero 1 (by rw [coeff_one_add_r_add_r_sq]; exact one_ne_zero)
-  · exact (Subgroup.eq_bot_iff_forall Q).2 fun q hq =>
-      eq_one_of_isPGroup_of_pow_three_eq_one hQ hq (by simpa using pow_card_eq_one (x := q))
+  · exact (Subgroup.eq_bot_iff_forall Q).2 fun q hq => congrArg Subtype.val
+      (IsPGroup.eq_one_of_pow_eq_one_of_coprime hQ (g := ⟨q, hq⟩) (n := 3) (by norm_num)
+        (Subtype.ext (by simpa using pow_card_eq_one (x := q))))
 
 /-! ### The trivial group -/
 

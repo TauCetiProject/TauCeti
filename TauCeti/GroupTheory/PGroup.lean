@@ -43,6 +43,8 @@ that a homomorphism into a pro-`p` group kills their intersection.
   to `p` trivially.
 * `IsPGroup.subsingleton_of_coprime`, `IsPGroup.subsingleton_of_ne`: a group that is a `p`-group
   and a `q`-group for coprime `p`, `q`, in particular for distinct primes, is trivial.
+* `IsPGroup.eq_one_of_pow_eq_one_of_coprime`: in a `p`-group, an element with `g ^ n = 1` for
+  some `n` coprime to `p` is `1`.
 * `IsPGroup.smul_zmod_eq_self`: a `p`-group acts trivially on the additive group `ZMod p`.
 * `MonoidHom.apply_eq_self_of_iterate_pow_eq_self`: an endomorphism of a group of order `p`
   with a `p`-power iterate equal to the identity is the identity.
@@ -135,6 +137,12 @@ theorem _root_.IsPGroup.subsingleton_of_coprime {q : ℕ} (hp : IsPGroup p G) (h
 theorem _root_.IsPGroup.subsingleton_of_ne {q : ℕ} [Fact p.Prime] [Fact q.Prime]
     (hp : IsPGroup p G) (hq : IsPGroup q G) (hpq : p ≠ q) : Subsingleton G :=
   hp.subsingleton_of_coprime hq ((Nat.coprime_primes Fact.out Fact.out).mpr hpq)
+
+/-- In a `p`-group, an element `g` with `g ^ n = 1` for some `n` coprime to `p` is `1`: its order
+is a power of `p` dividing `n`. -/
+theorem _root_.IsPGroup.eq_one_of_pow_eq_one_of_coprime (hG : IsPGroup p G) {n : ℕ}
+    (hn : p.Coprime n) {g : G} (h : g ^ n = 1) : g = 1 :=
+  orderOf_eq_one_iff.1 ((hG.orderOf_coprime hn g).eq_one_of_dvd (orderOf_dvd_of_pow_eq_one h))
 
 /-- A `p`-group acts trivially on the additive group `ZMod p`, for `p` prime. -/
 theorem _root_.IsPGroup.smul_zmod_eq_self [Fact p.Prime] (hG : IsPGroup p G)

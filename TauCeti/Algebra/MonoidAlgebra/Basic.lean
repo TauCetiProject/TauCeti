@@ -62,6 +62,7 @@ none of the further theory built on it.
   scalar multiple `r • single g 1` of the basis element there.
 * `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by the monomial `single u 1` at a
   unit `u` of `M` conjugates the indices of the coefficients.
+* `MonoidAlgebra.ne_zero_of_coeff_ne_zero`: an element with a nonzero coefficient is nonzero.
 * `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
   group, as a convolution.
 
@@ -388,6 +389,11 @@ theorem coeff_single_mul_mul_single_inv {R M : Type*} [Semiring R] [Monoid M]
   rw [coeff_mul_single_eq_coeff_mul (h * u) fun _ _ ↦ Units.mul_inv_eq_iff_eq_mul u,
     coeff_single_mul_eq_mul_coeff (↑u⁻¹ * (h * u)) fun _ _ ↦ (Units.eq_inv_mul_iff_mul_eq u).symm,
     one_mul, mul_one, mul_assoc]
+
+/-- An element of a monoid algebra with a nonzero coefficient is nonzero. -/
+theorem ne_zero_of_coeff_ne_zero {k G : Type*} [Semiring k] {x : MonoidAlgebra k G} (g : G)
+    (h : x.coeff g ≠ 0) : x ≠ 0 :=
+  ne_of_apply_ne (·.coeff g) (by simpa using h)
 
 /-- The coefficients of a product in the group algebra of a finite group, as a convolution. -/
 theorem coeff_mul_eq_sum {k G : Type*} [Semiring k] [Group G] [Fintype G]
