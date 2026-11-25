@@ -32,7 +32,11 @@ limit of interior points (`TauCeti.FiniteBundleAtlas.halfClosedImage_subset_clos
 
 Chart transitions `A.halfTransition i i'` carry interior points to interior points
 (`TauCeti.ClosedUpperHalfPlane.im_pos_iff_of_mem_contDiffGroupoid`), and are differentiable on the
-interiors `A.halfOverlap i i'` of the overlaps for a `C¹` manifold. In chart `i` a section `s` is
+interiors `A.halfOverlap i i'` of the overlaps for a `C¹` manifold. The same holds for transitions
+between the charts of two atlases `A` and `A'`: they keep interior points interior, are
+differentiable there, and pull back null sets, and the readings of a section in the two atlases
+differ by the coordinate changes of the bundle; this is the input to the change of atlas for
+Sobolev sections over bases with boundary. In chart `i` a section `s` is
 read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ` vector bundle it is
 `Cᵏ` up to the real axis (`TauCeti.FiniteBundleAtlas.contDiffOn_halfCoord`).
 
@@ -48,6 +52,13 @@ read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ
 
 ## Main results
 
+* `TauCeti.FiniteBundleAtlas.coe_chart_mem_halfImage`,
+  `TauCeti.FiniteBundleAtlas.differentiableOn_coe_chart_chart_symm`: transitions between the charts
+  of two atlases keep interior points interior and are differentiable there.
+* `TauCeti.FiniteBundleAtlas.ae_restrict_halfImage_chart_symm`: transitions between two atlases
+  pull back null sets.
+* `TauCeti.FiniteBundleAtlas.halfCoord_eq_coordChangeL_halfCoord`: readings of a section in charts
+  of two atlases differ by the coordinate change of the bundle.
 * `TauCeti.FiniteBundleAtlas.halfTransition_mem_halfOverlap`,
   `TauCeti.FiniteBundleAtlas.differentiableOn_halfTransition`: chart transitions keep interior
   points interior and are differentiable there.

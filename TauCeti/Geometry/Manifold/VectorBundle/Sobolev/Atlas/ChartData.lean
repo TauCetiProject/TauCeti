@@ -14,13 +14,17 @@ import Mathlib.Analysis.Normed.Operator.Banach
 Let `C`, `C'` be two section chart data (`TauCeti.SectionChartData`) on the same type `S` of
 sections, for instance those of two finite bundle atlases of a vector bundle, over a base with or
 without boundary. Their Sobolev spaces `C.sobolevSections μ p k` and `C'.sobolevSections μ p k`
-consist of tuples of chartwise Sobolev components of sections. This file shows that, whenever every
-section with `W^{k,p}` components for `C` also has `W^{k,p}` components for `C'`
-(`TauCeti.SectionChartData.TransfersTo C C' μ p k`), sending an element to the element for `C'`
-with the same section is a continuous linear map (`TauCeti.SectionChartData.changeAtlas`). When the
-property holds in both directions the two spaces are isomorphic Banach spaces
-(`TauCeti.SectionChartData.atlasEquiv`), so their norms are equivalent
-(`TauCeti.SectionChartData.exists_norm_changeAtlas_le`).
+consist of tuples of chartwise Sobolev components of sections. Assume that both spaces are complete
+(this is taken as instance arguments here; it holds for `TauCeti.SobolevSection` and for the Sobolev
+sections over bases with boundary of
+`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`, for `C¹` manifolds), and that the
+readings in the charts of `C'` are read off from those of `C` (`TauCeti.SectionChartData.ReadsFrom`,
+explained below). This file shows that, whenever every section with `W^{k,p}` components for
+`C` also has `W^{k,p}` components for `C'` (`TauCeti.SectionChartData.TransfersTo C C' μ p k`),
+sending an element to the element for `C'` with the same section is a continuous linear map
+(`TauCeti.SectionChartData.changeAtlas`). When `ReadsFrom` and the transfer property hold in both
+directions the two spaces are isomorphic Banach spaces (`TauCeti.SectionChartData.atlasEquiv`), so
+their norms are equivalent (`TauCeti.SectionChartData.exists_norm_changeAtlas_le`).
 
 The construction needs that the readings in the charts of `C'` are read off from those of `C`
 (`TauCeti.SectionChartData.ReadsFrom`): almost everywhere on the image of a chart of `C'`, the
@@ -28,7 +32,7 @@ reading of a section is a continuous linear map applied to its reading in some c
 point given by a map carrying null sets to null sets. Then two sections whose readings agree almost
 everywhere in the charts of `C` agree almost everywhere in the charts of `C'`
 (`TauCeti.SectionChartData.ReadsFrom.coord_ae_eq`), so the map is well defined. Continuity follows
-from the closed graph theorem: both spaces are complete, and if `w m → w` and
+from the closed graph theorem, using the assumed completeness: if `w m → w` and
 `changeAtlas w m → v`, then along a subsequence the chart data converge almost everywhere, and the
 readings in `C'` are continuous linear images of those in `C`, so the chart data of `v` are the
 readings in `C'` of the section of `w`.
@@ -360,7 +364,6 @@ theorem atlasEquiv_refl :
       ContinuousLinearEquiv.refl ℝ _ :=
   ContinuousLinearEquiv.ext (funext changeAtlas_refl_apply)
 
-@[simp]
 theorem atlasEquiv_trans {C'' : SectionChartData E F S}
     [CompleteSpace (C''.sobolevSections μ p k)] (hC₁ : C.ReadsFrom C' μ)
     (hC₁' : C'.ReadsFrom C μ) (hC₂ : C'.ReadsFrom C'' μ) (hC₂' : C''.ReadsFrom C' μ)
