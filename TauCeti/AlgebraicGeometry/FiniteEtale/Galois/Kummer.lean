@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Kummer
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Connected
 
 /-!

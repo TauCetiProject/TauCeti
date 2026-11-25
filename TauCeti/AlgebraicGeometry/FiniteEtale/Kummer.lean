@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.AffineFiber
 public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
 
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.RootsOfUnity.PowFiber
 
@@ -302,17 +303,6 @@ theorem kummerCoverDeck_hom_comp_kummerCoverMap {m : ℕ} (hm : IsUnit (m : R)) 
     kummerSpecMap_comp, this]
 
 end Deck
-
-/-- A natural number `n` invertible in `R` stays nonzero in any nontrivial `R`-algebra `A`. -/
-theorem neZero_natCast_of_isUnit (A : Type*) [Semiring A] [Nontrivial A] [Algebra R A] {n : ℕ}
-    (hn : IsUnit (n : R)) : NeZero (n : A) :=
-  ⟨by simpa using (hn.map (algebraMap R A)).ne_zero⟩
-
-/-- A natural number `n` invertible in `R` is nonzero when `R` has a nontrivial algebra `A`. -/
-theorem neZero_of_isUnit_natCast (A : Type*) [Semiring A] [Nontrivial A] [Algebra R A] {n : ℕ}
-    (hn : IsUnit (n : R)) : NeZero n :=
-  haveI := neZero_natCast_of_isUnit A hn
-  .of_neZero_natCast A
 
 section Fiber
 

@@ -33,6 +33,8 @@ differentiation.
 * `IsUnit.natCast_of_dvd`: a divisor of a natural number casting to a unit also casts to a unit.
 * `Subalgebra.natCast_mul_mem_iff`: if `(m : K)` is a unit, a `K`-subalgebra contains `m * t`
   exactly when it contains `t`.
+* `TauCeti.neZero_natCast_of_isUnit`, `TauCeti.neZero_of_isUnit_natCast`: if `(m : K)` is a unit,
+  then `NeZero (m : L)` and `NeZero m` for every nontrivial `K`-algebra `L`.
 * `TauCeti.isUnit_natCast_of_forall_prime_dvd`, `TauCeti.isUnit_natCast_iff_forall_prime_dvd`: a
   nonzero natural number casts to a unit in a semiring if and only if all of its prime divisors do.
 * `TauCeti.isUnit_natCast_of_ne_zero`, `TauCeti.isUnit_natCast_add_of_ne_zero`,
@@ -78,6 +80,19 @@ theorem Subalgebra.natCast_mul_mem_iff {K L : Type*} [CommSemiring K] [Semiring 
   exact Submodule.smul_mem_iff_of_isUnit (Subalgebra.toSubmodule T) hm
 
 namespace TauCeti
+
+/-- A natural number `n` invertible in `R` stays nonzero in any nontrivial `R`-algebra `A`; this is
+the `NeZero` form of `IsUnit.natCast_ne_zero_of_algebra`. -/
+theorem neZero_natCast_of_isUnit {R : Type*} [CommSemiring R] (A : Type*) [Semiring A]
+    [Nontrivial A] [Algebra R A] {n : ℕ} (hn : IsUnit (n : R)) : NeZero (n : A) :=
+  ⟨hn.natCast_ne_zero_of_algebra⟩
+
+/-- A natural number `n` invertible in `R` is nonzero when `R` has a nontrivial algebra `A`. Unlike
+`IsUnit.neZero_natCast`, this does not require `R` itself to be known to be nontrivial. -/
+theorem neZero_of_isUnit_natCast {R : Type*} [CommSemiring R] (A : Type*) [Semiring A]
+    [Nontrivial A] [Algebra R A] {n : ℕ} (hn : IsUnit (n : R)) : NeZero n :=
+  haveI := neZero_natCast_of_isUnit A hn
+  .of_neZero_natCast A
 
 /-- A nonzero natural number casts to a unit in a semiring whenever all of its prime divisors do. -/
 theorem isUnit_natCast_of_forall_prime_dvd {R : Type*} [Semiring R] {n : ℕ} (hn : n ≠ 0)
