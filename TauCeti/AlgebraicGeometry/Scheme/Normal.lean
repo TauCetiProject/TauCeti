@@ -67,10 +67,11 @@ use `IsNormalScheme (Spec R)` for it.
 * `TauCeti.AlgebraicGeometry.not_isIntegral_pullback_of_mul_self_mem_range`: if `A` contains an
   element `a ∉ k` with `a * a ∈ k`, then `Spec A ×_{Spec k} Spec A` is not integral, so the
   conclusion of the previous result cannot be strengthened to integrality.
-* `TauCeti.AlgebraicGeometry.not_isNormalScheme_pullback_of_pow_char_mem_range`: in prime
+* `TauCeti.AlgebraicGeometry.not_isReduced_pullback_of_pow_char_mem_range`: in prime
   characteristic `p`, if `A` contains an element `a ∉ k` with `a ^ p ∈ k`, then
-  `Spec A ×_{Spec k} Spec A` is not reduced, hence not normal; for a field `A` this is the base
-  change of the normal scheme `Spec A` along an inseparable extension.
+  `Spec A ×_{Spec k} Spec A` is not reduced, hence not normal (by `IsNormalScheme.isReduced`); for
+  a field `A` this is the base change of the normal scheme `Spec A` along an inseparable
+  extension.
 
 ## References
 
@@ -310,12 +311,13 @@ open Limits in
 open scoped TensorProduct in
 /-- **Separability cannot be dropped.** If `k` is a field of prime characteristic `p` and the
 `k`-algebra `A` contains an element `a ∉ k` with `a ^ p ∈ k`, then
-`Spec A ×_{Spec k} Spec A = Spec (A ⊗[k] A)` is not reduced, so it is not normal. When `A` is a
-field, `Spec A` is normal and this is its base change along the inseparable extension `A / k`. -/
-theorem not_isNormalScheme_pullback_of_pow_char_mem_range {k A : Type u} [Field k] [CommRing A]
+`Spec A ×_{Spec k} Spec A = Spec (A ⊗[k] A)` is not reduced, so by `IsNormalScheme.isReduced` it
+is not normal. When `A` is a field, `Spec A` is normal and this is its base change along the
+inseparable extension `A / k`. -/
+theorem not_isReduced_pullback_of_pow_char_mem_range {k A : Type u} [Field k] [CommRing A]
     [Algebra k A] (p : ℕ) [Fact p.Prime] [CharP k p] {a : A}
     (ha : a ∉ Set.range (algebraMap k A)) (hap : a ^ p ∈ Set.range (algebraMap k A)) :
-    ¬ IsNormalScheme (pullback (Spec.map (CommRingCat.ofHom (algebraMap k A)))
+    ¬ IsReduced (pullback (Spec.map (CommRingCat.ofHom (algebraMap k A)))
       (Spec.map (CommRingCat.ofHom (algebraMap k A)))) := by
   intro _
   have : IsReduced (Spec (.of (A ⊗[k] A))) := isReduced_of_isOpenImmersion

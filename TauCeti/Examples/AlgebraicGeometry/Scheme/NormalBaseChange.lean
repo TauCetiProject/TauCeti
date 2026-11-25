@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+import Mathlib.Analysis.Complex.IsIntegral
 
 /-!
 # Checks for normality under separably generated base change of the ground field
@@ -28,8 +29,8 @@ The conclusion concerns the local rings and cannot be strengthened, nor the hypo
   `not_isIntegral_pullback_rat_adjoin_I`).
 * For `k` of characteristic `p` and `k'/k` containing an element `a ∉ k` with `a ^ p ∈ k` (such as
   `k(t ^ (1 / p))` over `𝔽_p(t)`), `a ⊗ 1 - 1 ⊗ a` is a nonzero nilpotent of `k' ⊗[k] k'`, so the
-  base change of the normal scheme `Spec k'` along the inseparable `k'/k` is not reduced, hence
-  not normal (`not_isNormalScheme_pullback_of_pow_char_mem_range`): separability cannot be
+  base change of the normal scheme `Spec k'` along the inseparable `k'/k` is not reduced
+  (`not_isReduced_pullback_of_pow_char_mem_range`), hence not normal: separability cannot be
   dropped.
 -/
 
@@ -67,8 +68,7 @@ open IntermediateField
 
 /-- `ℚ(i)` is a finite extension of `ℚ`. -/
 instance instFiniteDimensionalRatAdjoinI : FiniteDimensional ℚ ℚ⟮Complex.I⟯ :=
-  adjoin.finiteDimensional ⟨Polynomial.X ^ 2 + 1, Polynomial.monic_X_pow_add_C 1 two_ne_zero,
-    by simp⟩
+  adjoin.finiteDimensional (Complex.isIntegral_I ℚ)
 
 /-- The generator `i` of `ℚ(i)` is not rational. -/
 theorem gen_rat_adjoin_I_notMem_range_algebraMap :
