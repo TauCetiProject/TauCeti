@@ -25,14 +25,19 @@ measure-preserving map `π : X → Y` intertwining the two systems almost everyw
 * `TauCeti.IsFactorMap.id`, `TauCeti.IsFactorMap.comp` — factor maps contain the identity and
   compose.
 * `TauCeti.IsFactorMap.of_semiconj` — a measure-preserving map that semiconjugates everywhere is a
-  factor map; in particular so is a measure-preserving conjugacy `X ≃ᵐ Y`.
+  factor map.
 * `TauCeti.IsFactorMap.toUnit` — the constant map to a point is a factor map onto the trivial
   system.
 * `TauCeti.IsFactorMap.fst`, `TauCeti.IsFactorMap.snd` — the coordinate projections of a product of
   probability systems are factor maps.
-* `TauCeti.IsFactorMap.measurePreserving` — the target map of a factor of a system preserves the
-  target measure.
-* `TauCeti.IsFactorMap.ergodic` — ergodicity passes to factors.
+* `TauCeti.IsFactorMap.measurePreserving_target` — if `T` preserves `μ` and `S` is measurable,
+  then `S` preserves `ν`.
+* `TauCeti.IsFactorMap.preErgodic`, `TauCeti.IsFactorMap.ergodic` — pre-ergodicity passes to
+  factors, and ergodicity passes to factors whose target map is measurable.
+
+The last two adapt Mathlib's `MeasureTheory.MeasurePreserving.preErgodic_of_preErgodic_semiconj`
+and `MeasureTheory.MeasurePreserving.ergodic_of_ergodic_semiconj` from everywhere to
+almost-everywhere semiconjugacies.
 -/
 
 public section
@@ -50,7 +55,7 @@ is measure-preserving and intertwines the systems almost everywhere, `π ∘ T =
 structure IsFactorMap (π : X → Y) (T : X → X) (S : Y → Y) (μ : Measure X) (ν : Measure Y) :
     Prop where
   /-- A factor map is measure-preserving. -/
-  measurePreserving_map : MeasurePreserving π μ ν
+  measurePreserving : MeasurePreserving π μ ν
   /-- A factor map intertwines the two systems almost everywhere. -/
   comp_ae_eq : π ∘ T =ᵐ[μ] S ∘ π
 
@@ -65,18 +70,13 @@ theorem of_semiconj (hπ : MeasurePreserving π μ ν) (h : Semiconj π T S) :
     IsFactorMap π T S μ ν :=
   ⟨hπ, .of_eq h.comp_eq⟩
 
-/-- A measure-preserving conjugacy `e : X ≃ᵐ Y` with `e ∘ T = S ∘ e` is a factor map. -/
-theorem of_measurableEquiv (e : X ≃ᵐ Y) (he : MeasurePreserving e μ ν) (h : Semiconj e T S) :
-    IsFactorMap e T S μ ν :=
-  of_semiconj he h
-
 /-- Factor maps compose. -/
 theorem comp (hσ : IsFactorMap σ S R ν ρ) (hπ : IsFactorMap π T S μ ν) :
     IsFactorMap (σ ∘ π) T R μ ρ := by
-  refine ⟨hσ.measurePreserving_map.comp hπ.measurePreserving_map, ?_⟩
+  refine ⟨hσ.measurePreserving.comp hπ.measurePreserving, ?_⟩
   have h₁ : σ ∘ (π ∘ T) =ᵐ[μ] σ ∘ (S ∘ π) := hπ.comp_ae_eq.fun_comp σ
   have h₂ : (σ ∘ S) ∘ π =ᵐ[μ] (R ∘ σ) ∘ π :=
-    hπ.measurePreserving_map.quasiMeasurePreserving.ae_eq_comp hσ.comp_ae_eq
+    hπ.measurePreserving.quasiMeasurePreserving.ae_eq_comp hσ.comp_ae_eq
   exact h₁.trans h₂
 
 /-- The constant map to a point is a factor map from a probability system onto the trivial
@@ -97,11 +97,12 @@ theorem snd [IsProbabilityMeasure μ] [SFinite ν] (T : X → X) (S : Y → Y) :
     IsFactorMap Prod.snd (Prod.map T S) S (μ.prod ν) ν :=
   of_semiconj (measurePreserving_snd) fun _ ↦ rfl
 
-/-- The target map of a factor of a measure-preserving system preserves the target measure. -/
-theorem measurePreserving (h : IsFactorMap π T S μ ν) (hT : MeasurePreserving T μ μ)
+/-- If `π` is a factor map from `T` to `S`, `T` preserves `μ` and `S` is measurable, then `S`
+preserves `ν`. -/
+theorem measurePreserving_target (h : IsFactorMap π T S μ ν) (hT : MeasurePreserving T μ μ)
     (hS : Measurable S) : MeasurePreserving S ν ν := by
   refine ⟨hS, ?_⟩
-  have hπ := h.measurePreserving_map
+  have hπ := h.measurePreserving
   calc ν.map S = (μ.map π).map S := by rw [hπ.map_eq]
     _ = μ.map (S ∘ π) := Measure.map_map hS hπ.measurable
     _ = μ.map (π ∘ T) := (Measure.map_congr h.comp_ae_eq).symm
@@ -110,20 +111,15 @@ theorem measurePreserving (h : IsFactorMap π T S μ ν) (hT : MeasurePreserving
 /-- A factor of a pre-ergodic system is pre-ergodic. -/
 theorem preErgodic (h : IsFactorMap π T S μ ν) (hT : PreErgodic T μ) : PreErgodic S ν where
   aeconst_set s hs₀ hs₁ := by
-    have hπ := h.measurePreserving_map
+    have hπ := h.measurePreserving
     rw [← hπ.aeconst_preimage hs₀]
     refine hT.aeconst_set (hs₀.preimage hπ.quasiMeasurePreserving) ?_
-    have hST : S ∘ π =ᵐ[μ] π ∘ T := h.comp_ae_eq.symm
-    have h₁ : T ⁻¹' (π ⁻¹' s) =ᵐ[μ] π ⁻¹' (S ⁻¹' s) := by
-      filter_upwards [hST] with x hx
-      simp only [Set.mem_preimage]
-      rw [← comp_apply (f := π), ← hx, comp_apply]
-    exact h₁.trans (hπ.quasiMeasurePreserving.preimage_ae_eq hs₁)
+    exact (h.comp_ae_eq.preimage s).trans (hπ.quasiMeasurePreserving.preimage_ae_eq hs₁)
 
-/-- Ergodicity passes to factors. -/
+/-- Ergodicity passes to factors whose target map is measurable. -/
 theorem ergodic (h : IsFactorMap π T S μ ν) (hT : Ergodic T μ) (hS : Measurable S) :
     Ergodic S ν :=
-  ⟨h.measurePreserving hT.toMeasurePreserving hS, h.preErgodic hT.toPreErgodic⟩
+  ⟨h.measurePreserving_target hT.toMeasurePreserving hS, h.preErgodic hT.toPreErgodic⟩
 
 end IsFactorMap
 
