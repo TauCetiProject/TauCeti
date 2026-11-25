@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.SelmerData
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 import Mathlib.Algebra.Exact.Basic
 import Mathlib.GroupTheory.Index
@@ -212,6 +212,11 @@ theorem exact_inclusion_localConditionComparison_relax :
     Function.Exact (AddSubgroup.inclusion (𝓕.selmerGroup_le_relax S))
       (𝓕.localConditionComparison (𝓕.relax S) S) :=
   𝓕.exact_inclusion_localConditionComparison (𝓕.relax S) S (fun _ ↦ by simp)
-    (fun _ hi ↦ (𝓕.relax_localCondition_of_notMem S hi).le) (𝓕.localCondition_le_relax S)
+    (fun i hi x hx ↦ by
+      have hx' : x ∈ (𝓕.toSelmerData.relax S).localCondition i := by
+        rwa [← toSelmerData_relax, toSelmerData_localCondition]
+      rw [𝓕.toSelmerData.relax_localCondition_of_notMem hi, toSelmerData_localCondition] at hx'
+      exact hx')
+    fun i ↦ by rw [𝓕.relax_localCondition]; exact le_sup_left
 
 end TauCeti.ContCohomology.SelmerStructure

@@ -82,13 +82,11 @@ omit [DecidableEq K] in
 /-- The kernels defining the isogeny and dual-isogeny Selmer local conditions are orthogonal.
 A class whose image in the point-coefficient cohomology vanishes pairs trivially with every
 such class for the dual isogeny. -/
-theorem kerH1WeilPairing_eq_zero_of_mem_ker
+theorem kerH1WeilPairing_eq_zero_of_mem_localKummerCondition
     {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
     {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
-    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl
-      continuous_of_discreteTopology).ker)
-    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-      continuous_of_discreteTopology).ker) :
+    (ha : a ∈ φ.localKummerCondition)
+    (hb : b ∈ φ.dual.localKummerCondition) :
     φ.kerH1WeilPairing hn a b = 0 := by
   classical
   have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
@@ -123,15 +121,14 @@ theorem kerWeilBrauerPairing_eq_zero_of_mem_range_kummerMap
 omit [DecidableEq K] in
 /-- The Selmer local-condition kernels for an isogeny and its dual pair to zero in `Br K`.
 This applies over every field in which `deg φ` is invertible, including `ℝ` and `ℂ`. -/
-theorem kerWeilBrauerPairing_eq_zero_of_mem_ker
+theorem kerWeilBrauerPairing_eq_zero_of_mem_localKummerCondition
     {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
     {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
-    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl
-      continuous_of_discreteTopology).ker)
-    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-      continuous_of_discreteTopology).ker) :
+    (ha : a ∈ φ.localKummerCondition)
+    (hb : b ∈ φ.dual.localKummerCondition) :
     φ.kerWeilBrauerPairing hn a b = 0 := by
-  simp only [kerWeilBrauerPairing_apply, φ.kerH1WeilPairing_eq_zero_of_mem_ker hn ha hb, map_zero]
+  simp only [kerWeilBrauerPairing_apply,
+    φ.kerH1WeilPairing_eq_zero_of_mem_localKummerCondition hn ha hb, map_zero]
 
 end TauCeti.Isogeny
 

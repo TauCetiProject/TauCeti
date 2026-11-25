@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Edgewise
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 import TauCeti.Analysis.Calculus.Deriv.Slope
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Analysis.Convex.StdSimplex.Faces
 import Mathlib.Algebra.Order.Group.PosPart
 import TauCeti.Analysis.Calculus.FDeriv.Antilipschitz
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
@@ -495,8 +495,7 @@ theorem exists_pos_mul_norm_sub_le_norm_sub (h : IsStarImmersion n f) (hn : 1 �
   -- Read every point in the closed simplex spanned by its carrier.
   have hcarrier (x : Realization K) : f x = G (carrier K x) (x.val : ι → ℝ) := by
     rw [hGf (carrier K x) ⟨x.val, mem_convexHull_carrier K x⟩, comp_apply]
-    exact congrArg f (Subtype.ext
-      (faceInclusion_val K (carrier K x) ⟨x.val, mem_convexHull_carrier K x⟩).symm)
+    exact congrArg f (faceInclusion_mk_val K (carrier K x) x (mem_convexHull_carrier K x)).symm
   refine ⟨c p₀, hc p₀, δ p₁, hδ p₁, fun x y hxy => ?_⟩
   rw [hcarrier x, hcarrier y]
   exact (mul_le_mul_of_nonneg_right (hp₀ (carrier K x, carrier K y)) (norm_nonneg _)).trans

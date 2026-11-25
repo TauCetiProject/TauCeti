@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Reciprocity
+import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.SelmerData
 
 /-!
 # Global reciprocity for isogeny Selmer groups

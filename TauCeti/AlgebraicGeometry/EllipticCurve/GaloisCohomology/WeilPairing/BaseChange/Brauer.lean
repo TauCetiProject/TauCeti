@@ -170,8 +170,8 @@ theorem kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero
       (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0) :
     (φ.baseChange L).kerWeilBrauerPairing hnL (φ.kerRes τ a) (φ.dualKerRes τ b) = 0 := by
   refine ((φ.baseChange L).kerWeilBrauerPairing_eq_zero_iff hnL _ _).2
-    ((φ.baseChange L).kerH1WeilPairing_eq_zero_of_mem_ker hnL ?_ ?_)
-  · rw [AddMonoidHom.mem_ker, ← pointRes_kerCoeffIncl, ha]
-  · rw [AddMonoidHom.mem_ker, ← pointRes_dualKerCoeffIncl, hb]
+    ((φ.baseChange L).kerH1WeilPairing_eq_zero_of_mem_localKummerCondition hnL ?_ ?_)
+  · rw [mem_localKummerCondition_iff, ← pointRes_kerCoeffIncl, ha]
+  · rw [mem_localKummerCondition_iff, ← pointRes_dualKerCoeffIncl, hb]
 
 end TauCeti.Isogeny

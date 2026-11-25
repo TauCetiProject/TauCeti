@@ -64,6 +64,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `f` carries `R` into `R'` and `T` into `T'`.
 * `IsLocalization.Away.of_dvd_of_dvd_pow`: inverting `x` also localizes away from `g` when
   `g ∣ x` and `x` divides a power of `g`.
+* `IsLocalization.Away.map_symm_algebraMap`: a bijective map of arbitrary away-localizations
+  has inverse `b ↦ a/t` whenever `f a = f t * b`.
 * `IsLocalization.Away.injective_iff_isRegular`: the localization map away from `x` is injective
   if and only if `x` is regular.
 * `IsLocalization.Away.map_eq` and `IsLocalization.Away.map_mk'`: the map `A_t → B_{f t}`
@@ -494,6 +496,21 @@ theorem of_dvd_of_dvd_pow {R A : Type*} [CommSemiring R] [CommSemiring A] [Algeb
   have : IsLocalization M B := IsLocalization.of_le (Submonoid.powers g) M le_sup_right hMB
   exact (IsLocalization.isLocalization_iff_of_isLocalization M (Submonoid.powers g) B).mp
     inferInstance
+
+/-- If the induced map on arbitrary away-localizations is bijective, its inverse sends
+`b` to `a/t` whenever `f a = f t * b`. This computes the inverse of the actual localized map,
+without choosing concrete localization carriers or a section of `f`. -/
+theorem map_symm_algebraMap {R S Rₜ Sₜ : Type*}
+    [CommSemiring R] [CommSemiring S] [CommSemiring Rₜ] [CommSemiring Sₜ]
+    [Algebra R Rₜ] [Algebra S Sₜ] (f : R →+* S) (t : R)
+    [IsLocalization.Away t Rₜ] [IsLocalization.Away (f t) Sₜ]
+    (hf : Function.Bijective (IsLocalization.Away.map Rₜ Sₜ f t))
+    {a : R} {b : S} (hab : f a = f t * b) :
+    (RingEquiv.ofBijective (IsLocalization.Away.map Rₜ Sₜ f t) hf).symm
+      (algebraMap S Sₜ b) = IsLocalization.mk' Rₜ a ⟨t, Submonoid.mem_powers t⟩ := by
+  apply (RingEquiv.symm_apply_eq _).mpr
+  rw [RingEquiv.ofBijective_apply, IsLocalization.Away.map, IsLocalization.map_mk', hab]
+  exact (IsLocalization.mk'_mul_cancel_left b ⟨f t, Submonoid.mem_powers (f t)⟩).symm
 
 /-- The localization map away from `x` is injective if and only if `x` is regular. -/
 theorem injective_iff_isRegular {A S : Type*} [CommSemiring A] [CommSemiring S] [Algebra A S]

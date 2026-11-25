@@ -46,11 +46,6 @@ the data here, and none of the statements below use it.
 
 * `TauCeti.ContCohomology.SelmerStructure.mem_selmerGroup_iff`: a class is Selmer exactly when
   every localisation satisfies the local condition.
-* `TauCeti.ContCohomology.SelmerStructure.mem_selmerGroup_relax_iff`: a class is `S`-relaxed
-  Selmer exactly when every localisation outside `S` satisfies the local condition.
-* `TauCeti.ContCohomology.SelmerStructure.selmerGroup_le_relax` and
-  `TauCeti.ContCohomology.SelmerStructure.selmerGroup_relax_mono`: inclusion and monotonicity of
-  relaxed Selmer groups.
 
 ## References
 
@@ -88,7 +83,17 @@ structure SelmerStructure where
 
 namespace SelmerStructure
 
-variable {G M H N} (𝓕 : SelmerStructure G M H N)
+variable {G M H N}
+
+omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- Selmer structures with the same local groups, coefficient maps and local conditions are
+equal. -/
+@[ext]
+theorem ext {𝓕 𝓖 : SelmerStructure G M H N} (h₁ : 𝓕.groupHom = 𝓖.groupHom)
+    (h₂ : 𝓕.coeffHom = 𝓖.coeffHom) (h₃ : 𝓕.localCondition = 𝓖.localCondition) : 𝓕 = 𝓖 := by
+  cases 𝓕; cases 𝓖; cases h₁; cases h₂; cases h₃; rfl
+
+variable (𝓕 : SelmerStructure G M H N)
 
 /-- **The localisation map** `H¹(G, M) → H¹(H i, N i)` of a Selmer structure: pullback along the
 compatible pair `(groupHom i, coeffHom i)`. -/
@@ -175,12 +180,18 @@ variable (S : Set ι)
 /-- **The `S`-relaxed Selmer structure** `𝓕.relax S` (Rubin I.5.2): replaces the local condition
 at indices in `S` with the full group `⊤` and keeps `𝓕.localCondition i` outside `S`. -/
 def relax : SelmerStructure G M H N :=
-  𝓕.withLocalConditions fun i ↦ ⨅ (_ : i ∉ S), 𝓕.localCondition i
+  𝓕.withLocalConditions fun i ↦ 𝓕.localCondition i ⊔ ⨆ _ : i ∈ S, ⊤
 
 omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
 /-- The defining formula for `SelmerStructure.relax`. -/
 theorem relax_def :
-    𝓕.relax S = 𝓕.withLocalConditions fun i ↦ ⨅ (_ : i ∉ S), 𝓕.localCondition i :=
+    𝓕.relax S = 𝓕.withLocalConditions fun i ↦ 𝓕.localCondition i ⊔ ⨆ _ : i ∈ S, ⊤ :=
+  (rfl)
+
+omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- The relaxed local condition at `i` is `𝓕.localCondition i` enlarged to `⊤` when `i ∈ S`. -/
+theorem relax_localCondition (i : ι) :
+    (𝓕.relax S).localCondition i = 𝓕.localCondition i ⊔ ⨆ _ : i ∈ S, ⊤ :=
   (rfl)
 
 omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
@@ -199,79 +210,6 @@ theorem relax_coeffHom : (𝓕.relax S).coeffHom = 𝓕.coeffHom :=
 @[simp]
 theorem relax_localization : (𝓕.relax S).localization = 𝓕.localization :=
   𝓕.withLocalConditions_localization _
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- At an index in `S`, the relaxed local condition is `⊤`. -/
-@[simp]
-theorem relax_localCondition_of_mem {i : ι} (hi : i ∈ S) :
-    (𝓕.relax S).localCondition i = ⊤ := by
-  rw [relax_def, withLocalConditions_localCondition]
-  exact iInf_neg (not_not.mpr hi)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Outside `S`, the relaxed local condition agrees with the original one. -/
-@[simp]
-theorem relax_localCondition_of_notMem {i : ι} (hi : i ∉ S) :
-    (𝓕.relax S).localCondition i = 𝓕.localCondition i := by
-  rw [relax_def, withLocalConditions_localCondition]
-  exact iInf_pos hi
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Every original local condition is contained in the relaxed one. -/
-theorem localCondition_le_relax (i : ι) :
-    𝓕.localCondition i ≤ (𝓕.relax S).localCondition i := by
-  rw [relax_def, withLocalConditions_localCondition]
-  exact le_iInf fun _ ↦ le_rfl
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Replacing the local conditions of a relaxed structure retains only the new system. -/
-@[simp]
-theorem withLocalConditions_relax :
-    (𝓕.relax S).withLocalConditions A = 𝓕.withLocalConditions A :=
-  (rfl)
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Relaxing on `S` and then on `T` is relaxing on `S ∪ T`. -/
-@[simp]
-theorem relax_relax (T : Set ι) : (𝓕.relax S).relax T = 𝓕.relax (S ∪ T) := by
-  rw [relax_def, withLocalConditions_relax, relax_def]
-  congr 1
-  funext i
-  rw [withLocalConditions_localCondition, iInf_and', Set.mem_union, not_or, and_comm]
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Relaxing on the empty set leaves the Selmer structure unchanged. -/
-@[simp]
-theorem relax_empty : 𝓕.relax (∅ : Set ι) = 𝓕 := by
-  simp [relax_def]
-
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- Membership in the `S`-relaxed local condition at `i` holds unconditionally for `i ∈ S` and
-reduces to `𝓕.localCondition i` outside `S`. -/
-@[simp]
-theorem mem_relax_localCondition_iff {i : ι} {x : H1 (H i) (N i)} :
-    x ∈ (𝓕.relax S).localCondition i ↔ i ∉ S → x ∈ 𝓕.localCondition i := by
-  simp only [relax_def, withLocalConditions_localCondition, AddSubgroup.mem_iInf]
-
-/-- Membership in the `S`-relaxed Selmer group is satisfaction of the local conditions outside
-`S`. -/
-theorem mem_selmerGroup_relax_iff {c : H1 G M} :
-    c ∈ (𝓕.relax S).selmerGroup ↔ ∀ i ∉ S, 𝓕.localization i c ∈ 𝓕.localCondition i := by
-  simp only [mem_selmerGroup_iff, relax_localization, mem_relax_localCondition_iff]
-
-/-- The original Selmer group is contained in every `S`-relaxed Selmer group. -/
-theorem selmerGroup_le_relax : 𝓕.selmerGroup ≤ (𝓕.relax S).selmerGroup := by
-  intro c hc
-  rw [mem_selmerGroup_iff] at hc
-  rw [mem_selmerGroup_relax_iff]
-  exact fun i _ ↦ hc i
-
-/-- Enlarging the set of relaxed indices enlarges the relaxed Selmer group. -/
-theorem selmerGroup_relax_mono {T : Set ι} (h : S ⊆ T) :
-    (𝓕.relax S).selmerGroup ≤ (𝓕.relax T).selmerGroup := by
-  intro c hc
-  rw [mem_selmerGroup_relax_iff] at hc ⊢
-  exact fun i hiT ↦ hc i fun hiS ↦ hiT (h hiS)
 
 end LocalConditions
 

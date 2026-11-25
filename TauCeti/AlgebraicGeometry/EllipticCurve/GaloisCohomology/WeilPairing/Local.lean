@@ -31,8 +31,8 @@ pairing (`WeierstrassCurve.localTateWeilPairing_kummerMap_kummerMap_eq_zero`), a
 images and local Selmer kernels of an isogeny and its dual are orthogonal for the second
 (`TauCeti.Isogeny.localTateKerWeilPairing_kummerMap_kummerMap_eq_zero`,
 `TauCeti.Isogeny.localTateKerWeilPairing_eq_zero_of_mem_range_kummerMap`, and
-`TauCeti.Isogeny.localTateKerWeilPairing_eq_zero_of_mem_ker`), which descends to the quotient
-pairing `TauCeti.Isogeny.localTateKerWeilQuotientPairing`.
+`TauCeti.Isogeny.localTateKerWeilPairing_eq_zero_of_mem_localKummerCondition`), which descends to
+the quotient pairing `TauCeti.Isogeny.localTateKerWeilQuotientPairing`.
 
 No assumption that `K` contains the torsion or the roots of unity is required. In mixed
 characteristic, `m` and `n` may be divisible by the residue characteristic.
@@ -217,40 +217,32 @@ theorem localTateKerWeilPairing_eq_zero_of_mem_range_kummerMap [DecidableEq K]
 
 /-- The kernels defining the local Selmer conditions of an isogeny and of its dual are orthogonal
 under local Tate duality, including at places dividing the degree of the isogeny. -/
-theorem localTateKerWeilPairing_eq_zero_of_mem_ker
+theorem localTateKerWeilPairing_eq_zero_of_mem_localKummerCondition
     {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
     {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
-    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl
-      continuous_of_discreteTopology).ker)
-    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-      continuous_of_discreteTopology).ker) :
+    (ha : a ∈ φ.localKummerCondition)
+    (hb : b ∈ φ.dual.localKummerCondition) :
     φ.localTateKerWeilPairing hn a b = 0 := by
-  simp only [localTateKerWeilPairing_apply, φ.kerH1WeilPairing_eq_zero_of_mem_ker hn ha hb,
-    map_zero]
+  simp only [localTateKerWeilPairing_apply,
+    φ.kerH1WeilPairing_eq_zero_of_mem_localKummerCondition hn ha hb, map_zero]
 
 /-- **The local Tate pairing on the local Selmer quotient.** Because the local Selmer kernels of
 `φ` and `φ̂` are orthogonal under `localTateKerWeilPairing`, restricting the second variable to the
 local `φ̂`-Selmer kernel descends the first variable to the quotient by the local `φ`-Selmer
 kernel. -/
 def localTateKerWeilQuotientPairing :
-    (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff ⧸
-      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker) →+
-    (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology).ker →+
-    ZMod φ.degree :=
+    (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff ⧸ φ.localKummerCondition) →+
+    φ.dual.localKummerCondition →+ ZMod φ.degree :=
   QuotientAddGroup.lift _
-    ((φ.localTateKerWeilPairing hn).compl₂
-      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-        continuous_of_discreteTopology).ker.subtype)
+    ((φ.localTateKerWeilPairing hn).compl₂ φ.dual.localKummerCondition.subtype)
     fun _ ha ↦ AddMonoidHom.ext fun b ↦
-      φ.localTateKerWeilPairing_eq_zero_of_mem_ker hn ha b.property
+      φ.localTateKerWeilPairing_eq_zero_of_mem_localKummerCondition hn ha b.property
 
 /-- Evaluating `localTateKerWeilQuotientPairing` on a quotient class computes
 `localTateKerWeilPairing`. -/
 @[simp]
 theorem localTateKerWeilQuotientPairing_mk
-    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
-    (b : (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-      continuous_of_discreteTopology).ker) :
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) (b : φ.dual.localKummerCondition) :
     φ.localTateKerWeilQuotientPairing hn (QuotientAddGroup.mk a) b =
       φ.localTateKerWeilPairing hn a b :=
   (rfl)
