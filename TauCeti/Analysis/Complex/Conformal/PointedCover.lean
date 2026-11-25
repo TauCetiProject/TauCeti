@@ -273,24 +273,24 @@ theorem norm_deriv_toFun_zero_eq (G : PointedCover Ω a) :
 
 /-- For `0 < r`, the affine map `z ↦ c + r * z` is a pointed cover of the disc `ball c r` at its
 centre. -/
-noncomputable def ofBall (c : ℂ) {r : ℝ} (hr : 0 < r) : PointedCover (ball c r) c where
-  toFun z := c + r * z
-  differentiableOn := by fun_prop
-  mapsTo z hz := by
-    simpa [add_comm] using (OpenPartialHomeomorph.unitBallBall c r hr).map_source hz
-  map_zero := by simp
-  isCoveringMap := by
-    let e : UnitDisc ≃ₜ ball c r := (Homeomorph.refl UnitDisc).trans
-      (OpenPartialHomeomorph.unitBallBall c r hr).toHomeomorphSourceTarget
-    convert e.isCoveringMap using 1
-    funext z
-    refine Subtype.ext ?_
-    change c + r * z = OpenPartialHomeomorph.unitBallBall c r hr z
-    simp [add_comm]
-  surjOn w hw := by
-    refine ⟨(OpenPartialHomeomorph.unitBallBall c r hr).symm w,
-      (OpenPartialHomeomorph.unitBallBall c r hr).map_target hw, ?_⟩
-    simpa [add_comm] using (OpenPartialHomeomorph.unitBallBall c r hr).right_inv hw
+noncomputable def ofBall (c : ℂ) {r : ℝ} (hr : 0 < r) : PointedCover (ball c r) c :=
+  -- Mathlib's affine homeomorphism of `ball 0 1` onto `ball c r` is `z ↦ c + r * z`.
+  let f := OpenPartialHomeomorph.unitBallBall c r hr
+  have hf : ∀ z, f z = c + r * z := fun z ↦ by simp [f, add_comm]
+  have hs : f.source = ball 0 1 := OpenPartialHomeomorph.unitBallBall_source c r hr
+  have ht : f.target = ball c r := OpenPartialHomeomorph.unitBallBall_target c r hr
+  { toFun z := c + r * z
+    differentiableOn := by fun_prop
+    mapsTo z hz := by simpa only [hf, ht] using f.map_source (hs ▸ hz)
+    map_zero := by simp
+    isCoveringMap := by
+      convert (UnitDisc.homeomorphBall.trans <| (Homeomorph.setCongr hs.symm).trans <|
+        f.toHomeomorphSourceTarget.trans <| Homeomorph.setCongr ht).isCoveringMap using 1
+      funext z
+      ext
+      simp [hf, Homeomorph.setCongr]
+    surjOn w hw :=
+      ⟨f.symm w, hs ▸ f.map_target (ht ▸ hw), (hf _).symm.trans (f.right_inv (ht ▸ hw))⟩ }
 
 /-- The scalar representative of `PointedCover.ofBall c hr` is `z ↦ c + r * z`. -/
 @[simp]
