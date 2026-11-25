@@ -222,8 +222,6 @@ theorem im_fubiniStudyHermitian_of_re_inner_eq_zero {z v w : E} (hz : ‖z‖ = 
   have hvz : im (⟪v, z⟫_𝕜 * ⟪z, w⟫_𝕜) = 0 := by
     rw [← inner_conj_symm, mul_im, conj_re, conj_im, hv, hw]
     ring
-  rw [fubiniStudyHermitian_apply, hz]
-  simp only [one_pow, mul_one, ofReal_one, one_mul]
-  rw [div_eq_inv_mul, ← ofReal_inv, im_ofReal_mul, map_sub, hvz, sub_zero, inv_mul_eq_div]
+  simp [fubiniStudyHermitian_apply, hz, hvz, div_im, normSq_apply, mul_div_mul_right, pi_ne_zero]
 
 end TauCeti

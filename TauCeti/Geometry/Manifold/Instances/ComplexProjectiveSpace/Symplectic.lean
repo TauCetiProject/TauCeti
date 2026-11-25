@@ -36,9 +36,9 @@ vectors `u, w` of the sphere read in `ℂⁿ⁺¹`
 * **Null directions.** At a point `x` of the sphere the tangent space is the real orthogonal
   complement of `x`, and `Im ⟪v, w⟫_ℂ = ⟪i v, w⟫_ℝ`. So a tangent vector `v` is null for the
   restricted form exactly when `i v` is a real multiple of `x`, that is, when `v` is a real multiple
-  of `i x`. These are exactly the vertical vectors of `mk`
-  (`TauCeti.ComplexProjectiveSpace.ker_mfderiv_mk`), so the descended form is nondegenerate; it is
-  closed because the restricted form is.
+  of `i x` (`TauCeti.ComplexProjectiveSpace.ker_bilinFormAt_mpullback_coe_sphere`). These are
+  exactly the vertical vectors of `mk` (`TauCeti.ComplexProjectiveSpace.ker_mfderiv_mk`), so the
+  descended form is nondegenerate; it is closed because the restricted form is.
 
 **The Fubini–Study Hermitian form.** On a unit vector `x` and representatives real-orthogonal to
 `x`, the imaginary part of the homogeneous Fubini–Study Hermitian form
@@ -61,6 +61,10 @@ real multiple of `a(z)`, which the Hermitian form does not see.
 
 ## Main results
 
+* `TauCeti.ComplexProjectiveSpace.ker_bilinFormAt_mpullback_coe_sphere`: the null directions of
+  the restriction of `Im ⟪·, ·⟫_ℂ` to `S²ⁿ⁺¹` at `x` are the real multiples of `i x`.
+* `TauCeti.ComplexProjectiveSpace.mpullback_smul_mpullback_coe_sphere`: this restriction is
+  invariant under the circle acting by unit scalars.
 * `TauCeti.ComplexProjectiveSpace.mpullback_mk_fubiniStudyForm`: its pullback to the sphere is
   `π⁻¹` times the restriction of `Im ⟪·, ·⟫_ℂ`.
 * `TauCeti.ComplexProjectiveSpace.eq_fubiniStudyForm_iff`: it is the only two-form with this
@@ -118,10 +122,15 @@ private theorem eval₂_sphereForm (x : sphere (0 : EuclideanSpace ℂ (Fin (n +
   rw [SmoothForm.eval₂_mpullback, SymplecticForm.eval₂_constSmooth_mfderiv_eq,
     imInnerSymplecticForm_apply]
 
-/-- **The null directions of the restricted form** at `x` are the tangent vectors carried by the
-inclusion to real multiples of `i x`. -/
-private theorem ker_bilinFormAt_sphereForm (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
-    LinearMap.ker ((sphereForm n).bilinFormAt x) =
+/-- **The null directions of the restriction of `Im ⟪·, ·⟫_ℂ` to the sphere** at `x` are the
+tangent vectors carried by the inclusion to real multiples of `i x`: the characteristic foliation
+of `S²ⁿ⁺¹ ⊂ ℂⁿ⁺¹` is the foliation by the orbits of the circle acting by unit scalars. -/
+theorem ker_bilinFormAt_mpullback_coe_sphere
+    (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
+    LinearMap.ker ((SmoothForm.mpullback
+        ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
+        contMDiff_coe_sphere
+        (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1)))).constSmooth).bilinFormAt x) =
       (ℝ ∙ (I • (x : EuclideanSpace ℂ (Fin (n + 1))))).comap
         (mvfderiv (𝓡 (2 * n + 1))
           ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
@@ -180,11 +189,19 @@ private theorem ker_bilinFormAt_sphereForm (x : sphere (0 : EuclideanSpace ℂ (
       linear_combination (t : ℂ) * Complex.I_sq
     rw [← ht, him, hIt, real_inner_smul_left, horth, mul_zero]
 
-/-- The restricted form is invariant under the circle acting by unit scalars, which acts on
-`ℂⁿ⁺¹` by unitary maps. -/
-private theorem mpullback_smul_sphereForm (c : Circle) :
+/-- **The restriction of `Im ⟪·, ·⟫_ℂ` to the sphere is invariant under the circle** acting by
+unit scalars, which acts on `ℂⁿ⁺¹` by unitary maps. -/
+theorem mpullback_smul_mpullback_coe_sphere (c : Circle) :
     SmoothForm.mpullback (fun z : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦ c • z)
-        (ContMDiffSMul.contMDiff_const_smul (I := 𝓡 1) c) (sphereForm n) = sphereForm n := by
+        (ContMDiffSMul.contMDiff_const_smul (I := 𝓡 1) c)
+        (SmoothForm.mpullback
+          ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
+          (contMDiff_coe_sphere (n := 2 * n + 1))
+          (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1)))).constSmooth) =
+      SmoothForm.mpullback
+        ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
+        contMDiff_coe_sphere
+        (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1)))).constSmooth := by
   -- Multiplication by `c` on `ℂⁿ⁺¹`, as a real linear map.
   let L : EuclideanSpace ℂ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℂ (Fin (n + 1)) :=
     ((c : ℂ) • ContinuousLinearMap.id ℂ (EuclideanSpace ℂ (Fin (n + 1)))).restrictScalars ℝ
@@ -212,9 +229,10 @@ private theorem isBasic_sphereForm :
       (by simp))
     (fun c ↦ funext fun z ↦ mk_circle_smul n c z)
     (fun x y h ↦ .inr ((mk_eq_mk_iff_exists_circle_smul n y x).1 h.symm))
-    (fun x ↦ (ker_mfderiv_mk x).trans_le (ker_bilinFormAt_sphereForm x).ge)
+    (fun x ↦ (ker_mfderiv_mk x).trans_le (ker_bilinFormAt_mpullback_coe_sphere x).ge)
     fun c ↦ by
-      simpa only [SmoothForm.coe_mpullback] using congrArg Subtype.val (mpullback_smul_sphereForm c)
+      simpa only [SmoothForm.coe_mpullback] using
+        congrArg Subtype.val (mpullback_smul_mpullback_coe_sphere c)
 
 /-! ### The Fubini–Study form -/
 
@@ -276,7 +294,7 @@ the real multiples of `i x` at `x`, are exactly the vertical directions of the H
 theorem isSymplectic_fubiniStudyForm : (fubiniStudyForm n).IsSymplectic :=
   (SmoothTwoForm.isSymplectic_descendedForm_iff.2
     ⟨(SymplecticForm.isClosed_constSmooth _).mpullback _ contMDiff_coe_sphere,
-      fun x ↦ (ker_bilinFormAt_sphereForm x).trans (ker_mfderiv_mk x).symm⟩).smul _
+      fun x ↦ (ker_bilinFormAt_mpullback_coe_sphere x).trans (ker_mfderiv_mk x).symm⟩).smul _
     (inv_ne_zero Real.pi_ne_zero)
 
 /-! ### The Fubini–Study form and the Fubini–Study Hermitian form -/

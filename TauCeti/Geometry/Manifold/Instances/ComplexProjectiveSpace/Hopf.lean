@@ -160,39 +160,31 @@ theorem isSubmersion_mk (r : ℕ∞ω) :
 /-! ### The vertical directions of the Hopf projection -/
 
 /-- The circle orbit `t ↦ e^{it} x` through a point `x` of `S²ⁿ⁺¹` has a velocity at `t = 0`
-which the inclusion carries to `i x`, and which the Hopf projection kills, since it is constant
-on the orbit. -/
-private theorem exists_mfderiv_mk_eq_zero_and_mvfderiv_coe_eq
+which the inclusion carries to `i x`. -/
+private theorem mvfderiv_coe_mfderiv_circle_smul
     (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
-    ∃ a : TangentSpace (𝓡 (2 * n + 1)) x,
-      mfderiv (𝓡 (2 * n + 1)) 𝓘(ℝ, Fin n → ℂ) (mk n) x a = 0 ∧
-        mvfderiv (𝓡 (2 * n + 1))
-          ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
-          x a = Complex.I • (x : EuclideanSpace ℂ (Fin (n + 1))) := by
+    mvfderiv (𝓡 (2 * n + 1))
+        ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1))) x
+        (mfderiv 𝓘(ℝ) (𝓡 (2 * n + 1)) (fun t : ℝ ↦ Circle.exp t • x) 0 (1 : ℝ)) =
+      Complex.I • (x : EuclideanSpace ℂ (Fin (n + 1))) := by
   set γ : ℝ → sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 := fun t ↦ Circle.exp t • x
   have hγ : ContMDiff 𝓘(ℝ) (𝓡 (2 * n + 1)) ∞ γ :=
     (contMDiff_smul (I := 𝓡 1)).comp (contMDiff_circleExp.prodMk contMDiff_const)
   have hγ0 : γ 0 = x := by simp [γ]
   have hγd : MDifferentiableAt 𝓘(ℝ) (𝓡 (2 * n + 1)) γ 0 := (hγ 0).mdifferentiableAt (by simp)
-  refine ⟨mfderiv 𝓘(ℝ) (𝓡 (2 * n + 1)) γ 0 (1 : ℝ), ?_, ?_⟩
-  · -- `mk ∘ γ` is constant, so its derivative vanishes.
-    have h := mfderiv_comp_of_eq ((contMDiff_mk 1 x).mdifferentiableAt one_ne_zero) hγd hγ0
-    have hconst : mk n ∘ γ = fun _ ↦ mk n x := funext fun t ↦ mk_circle_smul n _ x
-    rw [hconst, mfderiv_const, hγ0] at h
-    exact (congrArg (fun L ↦ L (1 : ℝ)) h).symm
-  · -- Read in `ℂⁿ⁺¹`, the orbit is `t ↦ e^{it} x`, of velocity `i x` at `0`.
-    have hcomp : ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → _) ∘ γ =
-        fun t : ℝ ↦ ((Circle.exp t : Circle) : ℂ) • (x : EuclideanSpace ℂ (Fin (n + 1))) :=
-      funext fun t ↦ Circle.coe_smul_sphere _ x
-    have h := mvfderiv_comp_apply_of_eq 0
-      ((contMDiff_coe_sphere (m := 1) x).mdifferentiableAt one_ne_zero) hγd hγ0 (1 : ℝ)
-    have hd := ((hasDerivAt_coe_circleExp 0).smul_const
-      (x : EuclideanSpace ℂ (Fin (n + 1)))).hasFDerivAt
-    rw [← h, hcomp]
-    -- The coercion `Circle → ℂ` blocks rewriting, so the derivative is read off by transitivity.
-    refine ((mvfderiv_eq_fderiv_apply _ 0 (1 : ℝ)).trans
-      (congrArg (fun L ↦ L (1 : ℝ)) hd.fderiv)).trans ?_
-    simp
+  -- Read in `ℂⁿ⁺¹`, the orbit is `t ↦ e^{it} x`, of velocity `i x` at `0`.
+  have hcomp : ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → _) ∘ γ =
+      fun t : ℝ ↦ ((Circle.exp t : Circle) : ℂ) • (x : EuclideanSpace ℂ (Fin (n + 1))) :=
+    funext fun t ↦ Circle.coe_smul_sphere _ x
+  have h := mvfderiv_comp_apply_of_eq 0
+    ((contMDiff_coe_sphere (m := 1) x).mdifferentiableAt one_ne_zero) hγd hγ0 (1 : ℝ)
+  have hd := ((hasDerivAt_coe_circleExp 0).smul_const
+    (x : EuclideanSpace ℂ (Fin (n + 1)))).hasFDerivAt
+  rw [← h, hcomp]
+  -- The coercion `Circle → ℂ` blocks rewriting, so the derivative is read off by transitivity.
+  refine ((mvfderiv_eq_fderiv_apply _ 0 (1 : ℝ)).trans
+    (congrArg (fun L ↦ L (1 : ℝ)) hd.fderiv)).trans ?_
+  simp
 
 /-- **The vertical vectors of the Hopf projection.** At a point `x` of `S²ⁿ⁺¹`, a tangent vector
 is killed by the derivative of `mk` exactly when the inclusion carries it to a real multiple of
@@ -204,11 +196,13 @@ theorem ker_mfderiv_mk (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
         (mvfderiv (𝓡 (2 * n + 1))
           ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
           x).toLinearMap := by
-  obtain ⟨a, ha, hax⟩ := exists_mfderiv_mk_eq_zero_and_mvfderiv_coe_eq x
+  set γ : ℝ → sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 := fun t ↦ Circle.exp t • x
+  have hax := mvfderiv_coe_mfderiv_circle_smul x
+  set a : TangentSpace (𝓡 (2 * n + 1)) x := mfderiv 𝓘(ℝ) (𝓡 (2 * n + 1)) γ 0 (1 : ℝ)
   set D := mvfderiv (𝓡 (2 * n + 1))
     ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1))) x
   have hD : Injective D := injective_mvfderiv_subtypeVal_sphere x
-  -- The pulled-back line is the line spanned by `a`.
+  -- The pulled-back line is the line spanned by the velocity `a` of the orbit.
   have hline : (ℝ ∙ (Complex.I • (x : EuclideanSpace ℂ (Fin (n + 1))))).comap D.toLinearMap =
       ℝ ∙ a := by
     ext u
@@ -217,23 +211,28 @@ theorem ker_mfderiv_mk (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     · rw [map_smul, hax, ht]
     · rw [← ht, map_smul, hax]
   rw [hline]
-  -- Both are lines: the kernel has dimension `(2n + 1) - 2n` since `mk` is a submersion.
   have ha0 : a ≠ 0 := by
-    rintro rfl
-    rw [map_zero, eq_comm, smul_eq_zero] at hax
+    intro h0
+    rw [h0, map_zero, eq_comm, smul_eq_zero] at hax
     exact (ne_zero_of_mem_unit_sphere x) (hax.resolve_left Complex.I_ne_zero)
-  have hrank := LinearMap.finrank_range_add_finrank_ker
-    (mfderiv (𝓡 (2 * n + 1)) 𝓘(ℝ, Fin n → ℂ) (mk n) x).toLinearMap
-  rw [LinearMap.range_eq_top.2 (surjective_mfderiv_mk x), finrank_top] at hrank
-  have hdim : Module.finrank ℝ (Fin n → ℂ) = 2 * n := by
-    simp [Module.finrank_pi_fintype, mul_comm]
-  have hdom : Module.finrank ℝ (TangentSpace (𝓡 (2 * n + 1)) x) = 2 * n + 1 :=
-    finrank_euclideanSpace_fin
-  refine (Submodule.eq_of_le_of_finrank_eq ((Submodule.span_singleton_le_iff_mem a _).2 ha)
-    ?_).symm
-  rw [finrank_span_singleton ha0]
-  have : Module.finrank ℝ (TangentSpace 𝓘(ℝ, Fin n → ℂ) (mk n x)) = 2 * n := hdim
-  omega
+  -- The derivative of the orbit is `t ↦ t • a`, which is injective with range `ℝ ∙ a`.
+  have hγ' (t : ℝ) : mfderiv 𝓘(ℝ) (𝓡 (2 * n + 1)) γ 0 t = t • a :=
+    (congrArg (mfderiv 𝓘(ℝ) (𝓡 (2 * n + 1)) γ 0) (mul_one t).symm).trans
+      ((mfderiv 𝓘(ℝ) (𝓡 (2 * n + 1)) γ 0).map_smul t (1 : ℝ))
+  -- `mk` is a submersion constant on the orbit, whose dimension is the difference of dimensions.
+  have h := IsRegularPoint.range_mfderiv_eq_ker_mfderiv (K := 𝓘(ℝ)) (g := γ) (p := 0)
+    (y := mk n x) (.of_forall fun t ↦ mk_circle_smul n _ x)
+    (isRegularPoint_iff.2 (surjective_mfderiv_mk _))
+    (fun (s t : ℝ) hst ↦ by
+      rw [hγ', hγ'] at hst
+      exact smul_left_injective ℝ ha0 hst)
+    (by simp [Module.finrank_pi_fintype]; omega)
+  have hγ0 : γ 0 = x := by simp [γ]
+  rw [hγ0] at h
+  rw [← h]
+  ext u
+  simp only [LinearMap.mem_range, Submodule.mem_span_singleton]
+  exact exists_congr fun t ↦ iff_of_eq (congrArg (· = u) (hγ' t))
 
 /-! ### Comparison with the quotient manifold of the circle action -/
 
