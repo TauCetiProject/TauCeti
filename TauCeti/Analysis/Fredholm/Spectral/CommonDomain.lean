@@ -531,20 +531,10 @@ theorem domainSpectralFlow_one [FiniteDimensional 𝕜 H] {A : ℝ → H →L[�
     (isCompactOperator_id_iff_finiteDimensional (𝕜 := 𝕜)).2 inferInstance
   rw [domainSpectralFlow_eq_spectralFlow_shiftedResolventTransform hι hab hA hsymm hc.ne' hinv]
   -- The transform is `A (1 - A / c)⁻¹`, the image of `A` under `x ↦ x / (1 - x / c)`.
-  have hc𝕜 : (c : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 hc.ne'
-  have hkunit (t : ℝ) (ht : t ∈ Icc a b) : IsUnit (1 + (-c⁻¹) • A t) := by
-    have hk : 1 + (-c⁻¹) • A t = (c : 𝕜)⁻¹ • ((c : 𝕜) • (1 : H →L[𝕜] H) - A t) := by
-      rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) (E := H →L[𝕜] H)]
-      match_scalars <;> field_simp
-    rw [hk, ← ContinuousLinearMap.isInvertible_iff_isUnit,
-      ContinuousLinearMap.isInvertible_smul_iff (inv_ne_zero hc𝕜)]
-    exact hinv t ht
-  have heq : EqOn (fun t ↦ (1 : H →L[𝕜] H).shiftedResolventTransform (A t) c)
-      (fun t ↦ A t * Ring.inverse (1 + (-c⁻¹) • A t)) (Icc a b) := fun t ht ↦ by
-    simpa only [RCLike.real_smul_eq_coe_smul (K := 𝕜) (E := H →L[𝕜] H)] using
-      ContinuousLinearMap.shiftedResolventTransform_one_eq_mul_ringInverse hc.ne' (hinv t ht)
-  rw [spectralFlow_congr heq]
+  rw [spectralFlow_congr fun t ht ↦
+    ContinuousLinearMap.shiftedResolventTransform_one_eq_mul_ringInverse hc.ne' (hinv t ht)]
   exact spectralFlow_mul_ringInverse_one_add_smul hab hA hsa
-    (fun t _ ↦ ContinuousLinearMap.isFredholm_of_finiteDimensional _) hkunit
+    (fun t _ ↦ ContinuousLinearMap.isFredholm_of_finiteDimensional _)
+    fun t ht ↦ ContinuousLinearMap.isUnit_one_add_neg_inv_smul hc.ne' (hinv t ht)
 
 end TauCeti

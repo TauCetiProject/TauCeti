@@ -217,23 +217,36 @@ theorem isUnit_one_add_smul_shiftedResolventTransform (h' : ((c' : 𝕜) • ι 
     isInvertible_smul_iff (RCLike.ofReal_ne_zero.2 (div_ne_zero hc hc'))]
   exact h'.comp h.inverse
 
+section RealScalars
+
+variable [Module ℝ (H →L[𝕜] H)] [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)]
+
+/-- For a shift `c ≠ 0`, `1 - A / c = c⁻¹ (c - A)`. -/
+private theorem one_add_neg_inv_smul_eq {A : H →L[𝕜] H} (hc : c ≠ 0) :
+    1 + (-c⁻¹) • A = (c : 𝕜)⁻¹ • ((c : 𝕜) • (1 : H →L[𝕜] H) - A) := by
+  have hc𝕜 : (c : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 hc
+  rw [RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+  match_scalars <;> field_simp
+
+/-- For a shift `c ≠ 0` with `c - A` invertible, `1 - A / c` is a unit. -/
+theorem isUnit_one_add_neg_inv_smul {A : H →L[𝕜] H} (hc : c ≠ 0)
+    (h : ((c : 𝕜) • (1 : H →L[𝕜] H) - A).IsInvertible) : IsUnit (1 + (-c⁻¹) • A) := by
+  rw [one_add_neg_inv_smul_eq hc, ← isInvertible_iff_isUnit,
+    isInvertible_smul_iff (inv_ne_zero (RCLike.ofReal_ne_zero.2 hc))]
+  exact h
+
 /-- On `D = H` with `ι = 1`, the shifted resolvent transform at a shift `c ≠ 0` with `c - A`
 invertible is `A (1 - A / c)⁻¹`, the image of `A` under `x ↦ x / (1 - x / c)`. -/
 theorem shiftedResolventTransform_one_eq_mul_ringInverse {A : H →L[𝕜] H} (hc : c ≠ 0)
     (h : ((c : 𝕜) • (1 : H →L[𝕜] H) - A).IsInvertible) :
-    (1 : H →L[𝕜] H).shiftedResolventTransform A c =
-      A * Ring.inverse (1 + ((-c⁻¹ : ℝ) : 𝕜) • A) := by
-  have hc𝕜 : (c : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 hc
-  have hk : 1 + ((-c⁻¹ : ℝ) : 𝕜) • A = (c : 𝕜)⁻¹ • ((c : 𝕜) • (1 : H →L[𝕜] H) - A) := by
-    match_scalars <;> field_simp
-  have hunit : IsUnit (1 + ((-c⁻¹ : ℝ) : 𝕜) • A) := by
-    rw [hk, ← isInvertible_iff_isUnit, isInvertible_smul_iff (inv_ne_zero hc𝕜)]
-    exact h
-  refine (Ring.eq_mul_inverse_iff_mul_eq _ _ _ hunit).2 ?_
+    (1 : H →L[𝕜] H).shiftedResolventTransform A c = A * Ring.inverse (1 + (-c⁻¹) • A) := by
+  refine (Ring.eq_mul_inverse_iff_mul_eq _ _ _ (isUnit_one_add_neg_inv_smul hc h)).2 ?_
   ext x
-  rw [hk, mul_apply_eq_comp]
+  rw [one_add_neg_inv_smul_eq hc, mul_apply_eq_comp]
   simp only [smul_apply, sub_apply, map_smul, shiftedResolventTransform_apply_sub h, smul_smul,
-    inv_mul_cancel₀ hc𝕜, one_smul]
+    inv_mul_cancel₀ (RCLike.ofReal_ne_zero (K := 𝕜) |>.2 hc), one_smul]
+
+end RealScalars
 
 end ContinuousLinearMap
 
