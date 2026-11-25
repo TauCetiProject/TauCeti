@@ -50,7 +50,7 @@ it is spelled out here because that equivalence is not exposed, so the composite
 to `Φ.fiber.elementsMk Y.left y`. -/
 @[simps]
 private def overElementsForget : (Φ.over x).fiber.Elements ⥤ Φ.fiber.Elements where
-  obj u := Φ.fiber.elementsMk u.obj.left u.val.1
+  obj u := Φ.fiber.elementsMk u.obj.left u.val.val
   map f := Functor.Elements.homMk f.hom.left (congrArg Subtype.val f.map_val)
 
 /-- The projection from the slice of the cofiltered category `Φ.fiber.Elements` over `(X, x)` is
@@ -64,8 +64,8 @@ private instance initial_overElementsForget : (Φ.overElementsForget x).Initial 
         ⟨IsCofiltered.minToLeft d (Φ.fiber.elementsMk X x)⟩⟩)
     (fun {_ c} s s' ↦
       let t := IsCofiltered.eqHom s s'
-      have hc : Φ.fiber.map c.obj.hom c.val.1 = x :=
-        (FunctorToTypes.mem_fromOverSubfunctor_iff _ _ _).1 c.val.2
+      have hc : Φ.fiber.map c.obj.hom c.val.val = x :=
+        (FunctorToTypes.mem_fromOverSubfunctor_iff _ _ _).1 c.val.property
       ⟨(Φ.over x).fiber.elementsMk (Over.mk (t.hom ≫ c.obj.hom))
           ⟨(IsCofiltered.eq s s').val, (FunctorToTypes.mem_fromOverSubfunctor_iff _ _ _).2
             ((Functor.map_comp_apply Φ.fiber t.hom c.obj.hom _).trans
@@ -88,7 +88,7 @@ germ at `Φ`. -/
 lemma toPresheafFiber_presheafFiberOverIso_hom (P : Cᵒᵖ ⥤ A) (Y : Over X)
     (y : (Φ.over x).fiber.obj Y) :
     (Φ.over x).toPresheafFiber Y y ((Over.forget X).op ⋙ P) ≫
-      (Φ.presheafFiberOverIso x P).hom = Φ.toPresheafFiber Y.left y.1 P :=
+      (Φ.presheafFiberOverIso x P).hom = Φ.toPresheafFiber Y.left y.val P :=
   Functor.Final.ι_colimitIso_hom (Φ.overElementsForget x).op
     ((Functor.Elements.π Φ.fiber).op ⋙ P) (op ((Φ.over x).fiber.elementsMk Y y))
 
@@ -97,7 +97,7 @@ through a point `y` over `x`, is its germ at `Φ.over x`. -/
 @[reassoc (attr := simp)]
 lemma toPresheafFiber_presheafFiberOverIso_inv (P : Cᵒᵖ ⥤ A) (Y : Over X)
     (y : (Φ.over x).fiber.obj Y) :
-    Φ.toPresheafFiber Y.left y.1 P ≫ (Φ.presheafFiberOverIso x P).inv =
+    Φ.toPresheafFiber Y.left y.val P ≫ (Φ.presheafFiberOverIso x P).inv =
       (Φ.over x).toPresheafFiber Y y ((Over.forget X).op ⋙ P) := by
   rw [Iso.comp_inv_eq, toPresheafFiber_presheafFiberOverIso_hom]
 

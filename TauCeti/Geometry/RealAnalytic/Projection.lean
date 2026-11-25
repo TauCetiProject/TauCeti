@@ -78,7 +78,7 @@ theorem exists_analyticOnNhd_projection_delineation
   obtain ⟨D⟩ := nonempty_delineation_of_collinsProjection (fun x : S ↦ φ x)
     (fun q hq ↦ continuousOn_iff_continuous_domRestrict.1
       ((hg _ (Finset.mem_image_of_mem _ hq)).continuousOn.mono hSU))
-    (fun q hq x y ↦ hzero _ (Finset.mem_image_of_mem _ hq) x x.2 y y.2)
+    (fun q hq x y ↦ hzero _ (Finset.mem_image_of_mem _ hq) x x.property y y.property)
   let f : ι → ↥(Finset.univ.image P) := fun i ↦
     ⟨P i, Finset.mem_image_of_mem _ (Finset.mem_univ i)⟩
   have hf : Function.Surjective f := by
@@ -86,7 +86,7 @@ theorem exists_analyticOnNhd_projection_delineation
     obtain ⟨i, _, rfl⟩ := Finset.mem_image.1 hp
     exact ⟨i, rfl⟩
   have hfamily : (fun i (x : S) ↦ (P i).map (φ x)) = fun i (x : S) ↦ F i x :=
-    funext fun i ↦ funext fun x ↦ hP i (hSU x.2)
+    funext fun i ↦ funext fun x ↦ hP i (hSU x.property)
   rw [← hfamily]
   exact ⟨D.reindex f fun i ↦ hf.exists.1 (D.exists_multiplicity_pos i)⟩
 

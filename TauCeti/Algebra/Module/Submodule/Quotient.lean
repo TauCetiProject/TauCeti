@@ -30,6 +30,15 @@ induces when it is injective or surjective.  The submodule-map facts behind thes
 * `LinearMap.quotientEquivRangeQuotientMap`: a linear map whose kernel lies below a submodule
   identifies the quotient by that submodule with the corresponding quotient of its range, and
   `LinearMap.ker_mkQ_comp_rangeRestrict` is the kernel computation behind it.
+* `Module.Basis.mem_span_range_smul_iff`: rescaling the vectors of a basis `b` by scalars `a i`,
+  a vector lies in the span of the `a i • b i` exactly when its `i`-th coordinate is divisible by
+  `a i`.
+* `Module.Basis.quotientSpanSMulEquiv`: the quotient by the span of the rescaled basis vectors
+  `a i • b i` is the product of the quotients of the ring by the principal ideals of the `a i`.
+  Unlike the diagonal-basis results below, the scalars may be zero divisors or zero.
+* `Submodule.eq_span_of_diagonal_basis`: a submodule with a specified diagonal basis is the span
+  of the rescaled ambient basis vectors, so the results below are derived from the rescaled-basis
+  ones.
 * `Submodule.mem_iff_dvd_repr_of_diagonal_basis` and `Submodule.map_equivFun_eq_pi_span`:
   a submodule with a specified diagonal basis consists of the vectors whose ambient coordinates
   are divisible by the diagonal coefficients, so the ambient coordinate isomorphism carries it
@@ -88,23 +97,23 @@ variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 submodules in the interval from `p` to `q`. -/
 private def iciSubmoduleOrderIsoIcc {p q : Submodule R M} (r : Submodule R q)
     (hr : r.map q.subtype = p) : Set.Ici r ≃o Set.Icc p q where
-  toFun N := ⟨(q.mapIic N.1 : Submodule R M), by
-    refine ⟨?_, (q.mapIic N.1).2⟩
+  toFun N := ⟨(q.mapIic N.val : Submodule R M), by
+    refine ⟨?_, (q.mapIic N.val).property⟩
     rw [coe_mapIic_apply, ← hr]
-    exact map_mono N.2⟩
-  invFun N := ⟨q.mapIic.symm ⟨N.1, N.2.2⟩, by
+    exact map_mono N.property⟩
+  invFun N := ⟨q.mapIic.symm ⟨N.val, N.property.2⟩, by
     rw [mapIic_symm_apply]
-    exact (le_comap_map q.subtype r).trans (comap_mono (hr.le.trans N.2.1))⟩
-  left_inv N := Subtype.ext (q.mapIic.symm_apply_apply N.1)
+    exact (le_comap_map q.subtype r).trans (comap_mono (hr.le.trans N.property.1))⟩
+  left_inv N := Subtype.ext (q.mapIic.symm_apply_apply N.val)
   right_inv N := Subtype.ext <| congrArg (fun P : Set.Iic q ↦ (P : Submodule R M))
-    (q.mapIic.apply_symm_apply ⟨N.1, N.2.2⟩)
+    (q.mapIic.apply_symm_apply ⟨N.val, N.property.2⟩)
   map_rel_iff' := Subtype.coe_le_coe.trans q.mapIic.le_iff_le
 
 private theorem coe_iciSubmoduleOrderIsoIcc_symm_apply {p q : Submodule R M}
     (r : Submodule R q) (hr : r.map q.subtype = p) (N : Set.Icc p q) :
-    (((iciSubmoduleOrderIsoIcc r hr).symm N).1 : Submodule R q) =
-      N.1.comap q.subtype :=
-  mapIic_symm_apply q ⟨N.1, N.2.2⟩
+    (((iciSubmoduleOrderIsoIcc r hr).symm N).val : Submodule R q) =
+      N.val.comap q.subtype :=
+  mapIic_symm_apply q ⟨N.val, N.property.2⟩
 
 end Order
 
@@ -123,10 +132,10 @@ when its underlying ambient element belongs to the corresponding interval submod
 theorem mk_mem_iccOrderIsoQuotientOfMapEq_iff {p q : Submodule R M} (r : Submodule R q)
     (hr : r.map q.subtype = p) (N : Set.Icc p q) (x : q) :
     Submodule.Quotient.mk x ∈ iccOrderIsoQuotientOfMapEq r hr N ↔
-      (x : M) ∈ N.1 := by
+      (x : M) ∈ N.val := by
   rw [iccOrderIsoQuotientOfMapEq, OrderIso.trans_apply]
   have hcomap : ((comapMkQRelIso r).symm ((iciSubmoduleOrderIsoIcc r hr).symm N)).comap r.mkQ =
-      (((iciSubmoduleOrderIsoIcc r hr).symm N).1 : Submodule R q) :=
+      (((iciSubmoduleOrderIsoIcc r hr).symm N).val : Submodule R q) :=
     congrArg Subtype.val
       ((comapMkQRelIso r).apply_symm_apply ((iciSubmoduleOrderIsoIcc r hr).symm N))
   rw [← r.mkQ_apply, ← mem_comap, hcomap, coe_iciSubmoduleOrderIsoIcc_symm_apply, mem_comap,
@@ -138,7 +147,7 @@ when its quotient class belongs to `Q`. -/
 theorem mem_iccOrderIsoQuotientOfMapEq_symm_apply_iff {p q : Submodule R M}
     (r : Submodule R q)
     (hr : r.map q.subtype = p) (Q : Submodule R (q ⧸ r)) (x : q) :
-    (x : M) ∈ ((iccOrderIsoQuotientOfMapEq r hr).symm Q).1 ↔
+    (x : M) ∈ ((iccOrderIsoQuotientOfMapEq r hr).symm Q).val ↔
       Submodule.Quotient.mk x ∈ Q := by
   simpa only [OrderIso.apply_symm_apply] using
     (mk_mem_iccOrderIsoQuotientOfMapEq_iff r hr
@@ -272,60 +281,123 @@ end Subquotient
 
 end LinearMap
 
+namespace Module.Basis
+
+section DiagonalQuotient
+
+variable {R M ι : Type*}
+
+section CommSemiring
+
+variable [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- A vector lies in the span of the rescaled basis vectors `a i • b i` exactly when, for every
+`i`, its `i`-th coordinate in `b` is divisible by `a i`. -/
+theorem mem_span_range_smul_iff (b : Basis ι R M) (a : ι → R) {x : M} :
+    x ∈ Submodule.span R (Set.range fun i ↦ a i • b i) ↔ ∀ i, a i ∣ b.repr x i := by
+  constructor
+  · intro hx
+    induction hx using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨i, rfl⟩ := hy
+      intro i'
+      rw [map_smul, b.repr_self, Finsupp.smul_apply]
+      rcases eq_or_ne i i' with rfl | h
+      · simp
+      · simp [Finsupp.single_eq_of_ne' h]
+    | zero => simp
+    | add y z _ _ hy hz => exact fun i ↦ by simpa using dvd_add (hy i) (hz i)
+    | smul c y _ hy => exact fun i ↦ by simpa using (hy i).mul_left c
+  · intro h
+    choose q hq using h
+    rw [← b.linearCombination_repr x, Finsupp.linearCombination_apply]
+    refine Submodule.sum_mem _ fun i _ ↦ ?_
+    dsimp only
+    rw [hq i, mul_comm, mul_smul]
+    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
+/-- The coordinate isomorphism of a basis `b` carries the span of the rescaled basis vectors
+`a i • b i` onto the product of the principal ideals generated by the `a i`. -/
+theorem map_equivFun_span_range_smul [Finite ι] (b : Basis ι R M) (a : ι → R) :
+    Submodule.map (b.equivFun : M →ₗ[R] ι → R) (Submodule.span R (Set.range fun i ↦ a i • b i)) =
+      Submodule.pi Set.univ fun i ↦ Ideal.span ({a i} : Set R) := by
+  let _ := Fintype.ofFinite ι
+  ext x
+  simp only [Submodule.mem_map, Submodule.mem_pi, b.mem_span_range_smul_iff, Set.mem_univ,
+    Ideal.mem_span_singleton, forall_true_left, LinearEquiv.coe_coe, Basis.equivFun_apply]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact hy
+  · refine fun hdvd ↦ ⟨∑ i, x i • b i, fun i ↦ ?_, ?_⟩ <;> rw [b.repr_sum_self]
+    exact hdvd i
+
+end CommSemiring
+
+variable [CommRing R] [AddCommGroup M] [Module R M] [Finite ι]
+
+/-- **The quotient by a rescaled basis.** Reducing the `i`-th coordinate in `b` modulo `a i`
+identifies the quotient of `M` by the span of the vectors `a i • b i` with the product of the
+quotients of the ring by the principal ideals generated by the `a i`. -/
+noncomputable def quotientSpanSMulEquiv (b : Basis ι R M) (a : ι → R) :
+    (M ⧸ Submodule.span R (Set.range fun i ↦ a i • b i)) ≃ₗ[R]
+      ∀ i, R ⧸ Ideal.span ({a i} : Set R) :=
+  letI : Fintype ι := Fintype.ofFinite ι
+  letI : DecidableEq ι := Classical.decEq ι
+  (Submodule.Quotient.equiv _ _ b.equivFun (b.map_equivFun_span_range_smul a)).trans
+    (Submodule.quotientPi fun i ↦ Ideal.span ({a i} : Set R))
+
+/-- The rescaled-basis quotient equivalence sends a representative to the classes of its
+coordinates modulo the corresponding scalars. -/
+@[simp]
+theorem quotientSpanSMulEquiv_mk_apply (b : Basis ι R M) (a : ι → R) (x : M) (i : ι) :
+    b.quotientSpanSMulEquiv a (Submodule.Quotient.mk x) i = Ideal.Quotient.mk _ (b.repr x i) := by
+  simp [quotientSpanSMulEquiv]
+
+end DiagonalQuotient
+
+end Module.Basis
+
 namespace Submodule
 
 section DiagonalQuotient
 
 open Module
 
-variable {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Finite ι]
+variable {R M ι : Type*}
 
-omit [Finite ι] in
+/-- A submodule with a diagonal basis relative to an ambient basis `b`, with diagonal coefficients
+`a i`, is the span of the rescaled basis vectors `a i • b i`. -/
+theorem eq_span_of_diagonal_basis [Semiring R] [AddCommMonoid M] [Module R M] (N : Submodule R M)
+    (b : Basis ι R M) (bN : Basis ι R N) {a : ι → R}
+    (hdiag : ∀ i, (bN i : M) = a i • b i) :
+    N = span R (Set.range fun i ↦ a i • b i) := by
+  conv_lhs => rw [← N.range_subtype, ← map_top, ← bN.span_eq, map_span, ← Set.range_comp]
+  congr
+  exact funext hdiag
+
+section CommSemiring
+
+variable [CommSemiring R] [AddCommMonoid M] [Module R M]
+
 /-- A submodule with a diagonal basis relative to an ambient basis is cut out by divisibility
 of the ambient coordinates. -/
 theorem mem_iff_dvd_repr_of_diagonal_basis (N : Submodule R M)
     (b : Basis ι R M) (bN : Basis ι R N) {a : ι → R}
     (hdiag : ∀ i, (bN i : M) = a i • b i) (x : M) :
     x ∈ N ↔ ∀ i, a i ∣ b.repr x i := by
-  rw [bN.mem_submodule_iff]
-  simp_rw [hdiag]
-  classical
-  have hrepr : ∀ (c : ι →₀ R) (i),
-      b.repr (c.sum fun j r ↦ r • a j • b j) i = a i * c i := by
-    intro c i
-    rw [map_finsuppSum, Finsupp.sum_apply]
-    simp only [map_smul, Basis.repr_self_apply, Finsupp.smul_apply, smul_eq_mul, mul_ite, mul_one,
-      mul_zero]
-    have key : ∀ (j : ι) (r : R), (if j = i then r * a j else 0) = a i * if j = i then r else 0 :=
-      fun j r ↦ by split_ifs with h <;> simp [h, mul_comm]
-    simp only [key, ← Finsupp.mul_sum, Finsupp.sum_ite_self_eq']
-  constructor
-  · rintro ⟨c, rfl⟩ i
-    exact ⟨c i, hrepr c i⟩
-  · intro ha
-    choose c hc using ha
-    refine ⟨Finsupp.indicator (b.repr x).support fun i _ ↦ c i, b.ext_elem fun i ↦ ?_⟩
-    rw [hrepr, Finsupp.indicator_apply]
-    by_cases h : i ∈ (b.repr x).support
-    · simp [h, hc i]
-    · simp [h, Finsupp.notMem_support_iff.mp h]
+  rw [N.eq_span_of_diagonal_basis b bN hdiag, b.mem_span_range_smul_iff]
 
 /-- The coordinate isomorphism of an ambient basis carries a submodule with a diagonal basis onto
 the product of the principal ideals generated by the diagonal coefficients. -/
-theorem map_equivFun_eq_pi_span (N : Submodule R M)
+theorem map_equivFun_eq_pi_span [Finite ι] (N : Submodule R M)
     (b : Basis ι R M) (bN : Basis ι R N) (a : ι → R)
     (hdiag : ∀ i, (bN i : M) = a i • b i) :
     map (b.equivFun : M →ₗ[R] ι → R) N = pi Set.univ fun i ↦ Ideal.span ({a i} : Set R) := by
-  let _ := Fintype.ofFinite ι
-  ext x
-  simp only [mem_map, mem_pi, N.mem_iff_dvd_repr_of_diagonal_basis b bN hdiag,
-    Set.mem_univ, Ideal.mem_span_singleton, forall_true_left, LinearEquiv.coe_coe,
-    Basis.equivFun_apply]
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact hy
-  · refine fun hdvd ↦ ⟨∑ i, x i • b i, fun i ↦ ?_, ?_⟩ <;> rw [b.repr_sum_self]
-    exact hdvd i
+  rw [N.eq_span_of_diagonal_basis b bN hdiag, b.map_equivFun_span_range_smul a]
+
+end CommSemiring
+
+variable [CommRing R] [AddCommGroup M] [Module R M] [Finite ι]
 
 /-- A quotient by a submodule with a specified diagonal basis is a product of quotients of the
 ring by the principal ideals generated by the diagonal coefficients.
@@ -336,10 +408,7 @@ noncomputable def quotientEquivPiSpanOfBasis (N : Submodule R M)
     (b : Basis ι R M) (bN : Basis ι R N) (a : ι → R)
     (hdiag : ∀ i, (bN i : M) = a i • b i) :
     (M ⧸ N) ≃ₗ[R] ∀ i, R ⧸ Ideal.span ({a i} : Set R) :=
-  letI : Fintype ι := Fintype.ofFinite ι
-  letI : DecidableEq ι := Classical.decEq ι
-  (Quotient.equiv N _ b.equivFun (map_equivFun_eq_pi_span N b bN a hdiag)).trans
-    (quotientPi fun i ↦ Ideal.span ({a i} : Set R))
+  (quotEquivOfEq _ _ (N.eq_span_of_diagonal_basis b bN hdiag)).trans (b.quotientSpanSMulEquiv a)
 
 /-- The diagonal quotient equivalence sends a representative to the classes of its coordinates
 modulo the corresponding diagonal coefficients. -/

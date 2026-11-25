@@ -110,7 +110,7 @@ theorem valuation_lt_of_mem_idealImage (P : PairOfDefinition A) {T : Finset A} {
       (P.isTopologicallyNilpotent_of_mem_idealImage one_ne_zero (hw t ht))
   calc v.valuation (t * w t) = v.valuation t * v.valuation (w t) := map_mul _ _ _
     _ ≤ v.valuation s * v.valuation (w t) := mul_le_mul' (hle t ht) le_rfl
-    _ < v.valuation s := mul_lt_of_lt_one_right (zero_lt_iff.mpr hs) h1
+    _ < v.valuation s := mul_lt_of_lt_one_right (pos_iff_ne_zero.mpr hs) h1
 
 variable [IsTopologicalRing A]
 

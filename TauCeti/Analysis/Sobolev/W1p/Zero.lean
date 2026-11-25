@@ -51,6 +51,12 @@ subspace under a suitable geometric hypothesis but not on all of `W^{1,p}(Ω)`.
 * `TauCeti.w1p0Submodule_subset_of_isClosed`: a closed set containing every test-function jet
   contains `W^{1,p}_0(Ω)`, which is how a property is extended from test functions to the whole
   space.
+* `TauCeti.mem_w1p0Submodule_iff_exists_seq_tendsto`: the elements of `W^{1,p}_0(Ω)` are exactly
+  the graph-norm limits of sequences of test-function jets.
+* `TauCeti.W1p.ofExponentLE_mem_w1p0Submodule` and `TauCeti.W1p0.ofExponentLEL`: on a set of
+  finite measure and for `p ≤ q`, lowering the exponent maps `W^{1,q}_0(Ω)` into `W^{1,p}_0(Ω)`,
+  as a continuous linear inclusion whose underlying `W^{1,p}(Ω)` function is
+  `TauCeti.W1p.ofExponentLE` of the original one (`TauCeti.W1p0.coe_ofExponentLEL`).
 * `TauCeti.W1p0.instNormedAddCommGroup` and `TauCeti.W1p0.instInnerProductSpace`: shortcut
   instances for the normed group structure of `W^{1,p}_0(Ω)` and the Hilbert space structure of
   `W^{1,2}_0(Ω)`. They are `local`: a file that needs them registers them.
@@ -187,6 +193,21 @@ theorem w1p0Submodule_subset_of_isClosed {s : Set (W1p mu Omega p)} (hs : IsClos
   rw [coe_w1p0Submodule]
   exact closure_minimal (by rintro _ ⟨phi, rfl⟩; exact h phi) hs
 
+open Filter Topology in
+/-- **Sequential characterization of `W^{1,p}_0(Ω)`**: an element of `W^{1,p}(Ω)` lies in
+`W^{1,p}_0(Ω)` exactly when it is the graph-norm limit of a sequence of test-function jets. -/
+theorem mem_w1p0Submodule_iff_exists_seq_tendsto {u : W1p mu Omega p} :
+    u ∈ w1p0Submodule mu Omega p ↔
+      ∃ phi : ℕ → 𝓓(Omega, ℝ),
+        Tendsto (fun k => W1p.ofTestFunctionₗ mu Omega p (phi k)) atTop (𝓝 u) := by
+  rw [← SetLike.mem_coe, coe_w1p0Submodule, mem_closure_iff_seq_limit]
+  constructor
+  · rintro ⟨w, hw, hlim⟩
+    choose phi hphi using hw
+    exact ⟨phi, by simpa only [hphi] using hlim⟩
+  · rintro ⟨phi, hphi⟩
+    exact ⟨_, fun k => ⟨phi k, rfl⟩, hphi⟩
+
 /-- **The Sobolev space `W^{1,p}_0(Ω)`**, the closure of `C_c^∞(Ω)` in `W^{1,p}(Ω)`. -/
 abbrev W1p0 (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E) (p : ENNReal)
     [Fact (1 ≤ p)] := (w1p0Submodule mu Omega p).toSubmodule
@@ -292,9 +313,67 @@ theorem W1p0.valueL_ne_zero (hOmega : (Omega : Set E).Nonempty) :
 instance : CompleteSpace (W1p0 mu Omega p) :=
   (w1p0Submodule mu Omega p).isClosed.completeSpace_coe
 
+/-! ### Lowering the exponent on a set of finite measure
+
+On a set of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for `p ≤ q` (`TauCeti.W1p.ofExponentLEL`), and
+this inclusion respects the homogeneous Dirichlet condition: a test function's jet in `W^{1,q}(Ω)`
+is sent to its jet in `W^{1,p}(Ω)`, and `W^{1,p}_0(Ω)` is closed, so the closure of the test
+functions in the stronger norm lands in their closure in the weaker one. -/
+
+section Exponent
+
+variable {q : ENNReal} [Fact (1 ≤ q)] [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+
+/-- Lowering the exponent sends the jet of a test function in `W^{1,q}(Ω)` to its jet in
+`W^{1,p}(Ω)`. -/
+@[simp]
+theorem W1p.ofExponentLE_ofTestFunctionₗ (hpq : p ≤ q) (phi : 𝓓(Omega, ℝ)) :
+    W1p.ofExponentLE hpq (W1p.ofTestFunctionₗ mu Omega q phi) =
+      W1p.ofTestFunctionₗ mu Omega p phi := by
+  refine W1p.ext (Lp.ext ?_) (Lp.ext ?_)
+  · rw [W1p.coeFn_value_ofExponentLE]
+    exact (W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := q) phi).trans
+      (W1p.value_ofTestFunctionₗ_ae phi).symm
+  · rw [W1p.coeFn_gradient_ofExponentLE, W1p.gradient_ofTestFunctionₗ,
+      W1p.gradient_ofTestFunctionₗ]
+    filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) q phi,
+      gradientTestFunctionLp_apply_ae (mu := mu) p phi] with x hq hp
+    rw [hq, hp]
+
+/-- On a set of finite measure, lowering the exponent maps `W^{1,q}_0(Ω)` into `W^{1,p}_0(Ω)`. -/
+theorem W1p.ofExponentLE_mem_w1p0Submodule (hpq : p ≤ q) {u : W1p mu Omega q}
+    (hu : u ∈ w1p0Submodule mu Omega q) :
+    W1p.ofExponentLE hpq u ∈ w1p0Submodule mu Omega p := by
+  have hclosed : IsClosed {v : W1p mu Omega q |
+      W1p.ofExponentLEL hpq v ∈ w1p0Submodule mu Omega p} :=
+    (w1p0Submodule mu Omega p).isClosed.preimage (W1p.ofExponentLEL hpq).continuous
+  have h := w1p0Submodule_subset_of_isClosed hclosed (fun phi => by
+    simpa only [Set.mem_ofPred_eq, W1p.ofExponentLEL_apply, W1p.ofExponentLE_ofTestFunctionₗ]
+      using W1p.ofTestFunctionₗ_mem_w1p0Submodule phi) hu
+  rwa [Set.mem_ofPred_eq, W1p.ofExponentLEL_apply] at h
+
+/-- **The inclusion `W^{1,q}_0(Ω) → W^{1,p}_0(Ω)`** for `p ≤ q` on a set of finite measure: the
+restriction of `TauCeti.W1p.ofExponentLEL` to the zero-boundary spaces. -/
+def W1p0.ofExponentLEL (hpq : p ≤ q) : W1p0 mu Omega q →L[ℝ] W1p0 mu Omega p :=
+  ContinuousLinearMap.codRestrict
+    ((W1p.ofExponentLEL hpq).comp (w1p0Submodule mu Omega q).toSubmodule.subtypeL)
+    (w1p0Submodule mu Omega p).toSubmodule
+    fun u => by
+      rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, W1p.ofExponentLEL_apply]
+      exact W1p.ofExponentLE_mem_w1p0Submodule hpq u.property
+
+/-- The underlying `W^{1,p}(Ω)` function of the inclusion is the exponent-lowered function. -/
+@[simp]
+theorem W1p0.coe_ofExponentLEL (hpq : p ≤ q) (u : W1p0 mu Omega q) :
+    (W1p0.ofExponentLEL hpq u : W1p mu Omega p) = W1p.ofExponentLE hpq (u : W1p mu Omega q) := by
+  rw [W1p0.ofExponentLEL, ContinuousLinearMap.coe_codRestrict_apply, ContinuousLinearMap.comp_apply,
+    Submodule.subtypeL_apply, W1p.ofExponentLEL_apply]
+
+end Exponent
+
 /-! ### Shortcut instances for the Hilbert space `W^{1,2}_0(Ω)`
 
-The two instances below are `local`, so they take part in instance search only in a file that
+The instances below are `local`, so they take part in instance search only in a file that
 registers them with `attribute [local instance]`. -/
 
 /-- Shortcut instance for the normed group structure of `W^{1,p}_0(Ω)`, the separated form of
@@ -309,5 +388,15 @@ jet space through the two nested closed subspaces. A file that applies abstract 
 results to `W^{1,2}_0(Ω)` registers it together with `W1p0.instNormedAddCommGroup`. -/
 noncomputable local instance W1p0.instInnerProductSpace :
     InnerProductSpace ℝ (W1p0 mu Omega 2) := inferInstance
+
+/-- Shortcut for the canonical normed group structure on the Sobolev dual. Register this
+locally when operator-norm synthesis would otherwise expand the nested Sobolev subtypes. -/
+noncomputable local instance W1p0.instStrongDualNormedAddCommGroup :
+    NormedAddCommGroup (StrongDual ℝ (W1p0 mu Omega p)) := inferInstance
+
+/-- Shortcut for the canonical real normed space structure on the Sobolev dual. Use together
+with `W1p0.instStrongDualNormedAddCommGroup` in files applying operator-norm lemmas. -/
+noncomputable local instance W1p0.instStrongDualNormedSpace :
+    NormedSpace ℝ (StrongDual ℝ (W1p0 mu Omega p)) := inferInstance
 
 end TauCeti

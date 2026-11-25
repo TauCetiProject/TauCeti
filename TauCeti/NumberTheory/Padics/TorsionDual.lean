@@ -87,7 +87,7 @@ omit [Fact p.Prime] [SMul ℤ_[p] A] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p
 of `f`. -/
 private theorem exists_nsmul_eq (hf : Function.Exact f π) (y : (pPowerTorsion p A M).comap π) :
     ∃ nk : ℕ × P₁, p ^ nk.1 • (y : P₀) = f nk.2 := by
-  obtain ⟨n, hn⟩ := mem_pPowerTorsion_iff.mp (Submodule.mem_comap.mp y.2)
+  obtain ⟨n, hn⟩ := mem_pPowerTorsion_iff.mp (Submodule.mem_comap.mp y.property)
   obtain ⟨k, hk⟩ := (hf _).mp (by rw [map_nsmul, hn])
   exact ⟨(n, k), hk.symm⟩
 
@@ -166,7 +166,7 @@ variable (hf : Function.Exact f π) (hfi : Function.Injective f) (hπ : Function
 omit [Fact p.Prime] [SMul ℤ_[p] A] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀]
   [IsScalarTower ℤ_[p] A P₀] in
 private theorem exists_lift (hπ : Function.Surjective π) (t : pPowerTorsion p A M) :
-    ∃ y : (pPowerTorsion p A M).comap π, ⟨π y, y.2⟩ = t := by
+    ∃ y : (pPowerTorsion p A M).comap π, ⟨π y, y.property⟩ = t := by
   obtain ⟨x, hx⟩ := hπ t
   exact ⟨⟨x, by simp [hx]⟩, Subtype.ext hx⟩
 
@@ -176,10 +176,11 @@ private def torsionDualFun (ψ : Dual ℤ_[p] P₁) (t : pPowerTorsion p A M) :
   Submodule.Quotient.mk (extendDual hf hfi ψ (exists_lift hπ t).choose)
 
 private theorem torsionDualFun_eq (ψ : Dual ℤ_[p] P₁) (y : (pPowerTorsion p A M).comap π) :
-    torsionDualFun hf hfi hπ ψ ⟨π y, y.2⟩ = Submodule.Quotient.mk (extendDual hf hfi ψ y) := by
-  have hy : π (exists_lift hπ ⟨π y, y.2⟩).choose = π y :=
-    congrArg Subtype.val (exists_lift hπ ⟨π y, y.2⟩).choose_spec
-  set y' := (exists_lift hπ ⟨π y, y.2⟩).choose
+    torsionDualFun hf hfi hπ ψ ⟨π y, y.property⟩ = Submodule.Quotient.mk (extendDual hf hfi ψ y)
+        := by
+  have hy : π (exists_lift hπ ⟨π y, y.property⟩).choose = π y :=
+    congrArg Subtype.val (exists_lift hπ ⟨π y, y.property⟩).choose_spec
+  set y' := (exists_lift hπ ⟨π y, y.property⟩).choose
   -- Two lifts differ by an element of the range of `f`, on which the extension is integral.
   obtain ⟨j, hj⟩ := (hf ((y' : P₀) - y)).mp (by rw [map_sub, hy, sub_self])
   have hy' : y' = y + ⟨f j, by simp [hf.apply_apply_eq_zero]⟩ :=
@@ -220,7 +221,8 @@ def torsionDualMap :
       exact congrArg _ (Subtype.ext (by simp)))
 
 private theorem torsionDualMap_eq (ψ : Dual ℤ_[p] P₁) (y : (pPowerTorsion p A M).comap π) :
-    torsionDualMap p hf hfi hπ ψ ⟨π y, y.2⟩ = Submodule.Quotient.mk (extendDual hf hfi ψ y) :=
+    torsionDualMap p hf hfi hπ ψ ⟨π y, y.property⟩ = Submodule.Quotient.mk (extendDual hf hfi ψ y)
+        :=
   torsionDualFun_eq hf hfi hπ ψ y
 
 omit [Fact p.Prime] [SMul ℤ_[p] A] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀]
@@ -241,7 +243,7 @@ theorem torsionDualMap_apply (ψ : Dual ℤ_[p] P₁) (t : pPowerTorsion p A M) 
     torsionDualMap p hf hfi hπ ψ t = Submodule.Quotient.mk ((ψ k : ℚ_[p]) / (p : ℚ_[p]) ^ n) := by
   have hy : x ∈ (pPowerTorsion p A M).comap π := by
     rw [Submodule.mem_comap, hx]
-    exact t.2
+    exact t.property
   obtain rfl : (⟨π x, hy⟩ : pPowerTorsion p A M) = t := Subtype.ext hx
   rw [torsionDualMap_eq hf hfi hπ ψ ⟨x, hy⟩, extendDual_eq hf hfi ψ _ hk]
 
@@ -252,7 +254,7 @@ theorem torsionDualMap_apply_of_extension (ψ : Dual ℤ_[p] P₁) (Φ : P₀ �
     torsionDualMap p hf hfi hπ ψ t = Submodule.Quotient.mk (Φ x) := by
   have hy : x ∈ (pPowerTorsion p A M).comap π := by
     rw [Submodule.mem_comap, hx]
-    exact t.2
+    exact t.property
   obtain ⟨⟨n, k⟩, hk⟩ := exists_nsmul_eq hf ⟨x, hy⟩
   rw [torsionDualMap_apply hf hfi hπ ψ t hx hk, hΦ]
   -- `Φ (f k) / p ^ n = Φ (p ^ n • x) / p ^ n = Φ x`.

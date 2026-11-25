@@ -115,8 +115,9 @@ theorem ofReal_re_add_I_smul_ofReal_im
 theorem ext_ofReal {δ₁ δ₂ : Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
     (h : ∀ u : C^n⟮I, M; ℝ⟯, δ₁ (ContMDiffMap.ofReal u) = δ₂ (ContMDiffMap.ofReal u)) :
     δ₁ = δ₂ := by
-  ext f
-  rw [← ContMDiffMap.ofReal_re_add_I_smul_im f, map_add, map_add, map_smul, map_smul, h, h]
+  have hlin : (δ₁ : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) = δ₂ :=
+    ContMDiffMap.linearMap_ext_ofReal h
+  exact Derivation.ext (LinearMap.ext_iff.mp hlin)
 
 /-- A complex derivation of `C^n(M, ℂ)` is determined by its real and imaginary parts. -/
 theorem ext_re_im {δ₁ δ₂ : Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
@@ -165,14 +166,7 @@ theorem complex_smul_im (z : ℂ) (δ : Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ
 def complexify :
     Derivation ℝ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯ →ₗ[ℝ]
       Derivation ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
-  toFun D := Derivation.mk'
-    { toFun f := ContMDiffMap.ofReal (D f.re) + Complex.I • ContMDiffMap.ofReal (D f.im)
-      map_add' f g := by
-        simp only [map_add, smul_add]
-        abel
-      map_smul' z f := by
-        ext x
-        apply Complex.ext <;> simp <;> ring }
+  toFun D := Derivation.mk' (ContMDiffMap.complexifyLinearMap D.toLinearMap)
     fun f g ↦ by
       ext x
       apply Complex.ext <;> simp [ContMDiffMap.mul_re, ContMDiffMap.mul_im] <;> ring
@@ -188,7 +182,7 @@ def complexify :
 theorem complexify_apply (D : Derivation ℝ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯)
     (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     complexify D f = ContMDiffMap.ofReal (D f.re) + Complex.I • ContMDiffMap.ofReal (D f.im) :=
-  (rfl)
+  ContMDiffMap.complexifyLinearMap_apply D.toLinearMap f
 
 /-- The complexification of `D` extends `D` from real to complex functions. -/
 theorem complexify_apply_ofReal (D : Derivation ℝ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯)

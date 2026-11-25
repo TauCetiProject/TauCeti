@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.SerreFibration.Exact
@@ -13,7 +15,6 @@ import TauCeti.AlgebraicTopology.NotSimplyConnected
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.HigherHomotopy
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
-import TauCeti.Analysis.Complex.Circle
 import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
 /-!
@@ -53,6 +54,8 @@ are based at a unit vector `v` and at its class `[v]`; in the circle the base po
   `π_k(S²ⁿ⁺¹, v) ≃* π_k(CPⁿ, [v])` induced by the projection.
 * `TauCeti.ComplexProjectiveSpace.hopfBoundaryMulEquiv`: for `1 ≤ k < 2n`, the boundary map as an
   isomorphism `π_{k+1}(CPⁿ, [v]) ≃* π_k(S¹, 1)`.
+* `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt`: for `n ≥ 1`, the isomorphism
+  `π₂(CPⁿ, [v]) ≃* ℤ` through the boundary map and the degree of loops in the circle.
 
 ## Main results
 
@@ -304,6 +307,26 @@ theorem hopfBoundaryMulEquiv_apply [DecidableEq N] [Nonempty N] (hN : Nat.card N
     (a : HomotopyGroup (Option N) (ComplexProjectiveSpace n) (mk n v)) :
     hopfBoundaryMulEquiv v hN a = hopfBoundary v N a :=
   (rfl)
+
+/-- For `n ≥ 1`, `π₂(CPⁿ) ≅ ℤ`: the boundary map of the Hopf fibration gives `π₂(CPⁿ) ≅ π₁(S¹)`, and
+`π₁(S¹) ≅ ℤ` by the degree (`Circle.fundamentalGroupMulEquiv`). -/
+def pi2MulEquivInt (hn : n ≠ 0) :
+    HomotopyGroup (Fin 2) (ComplexProjectiveSpace n) (mk n v) ≃* Multiplicative ℤ :=
+  (HomotopyGroup.congrMulEquiv (finSuccEquiv 1)).trans <|
+    (hopfBoundaryMulEquiv v (N := Fin 1) (by simp; omega)).trans <|
+    (HomotopyGroup.homeomorphMulEquivOfEq Circle.homeomorphSphere.symm (by ext; simp)).trans <|
+    HomotopyGroup.pi1MulEquivFundamentalGroup.trans (Circle.fundamentalGroupMulEquiv 1)
+
+/-- The isomorphism `π₂(CPⁿ) ≃* ℤ` evaluated on a class `a`: apply the boundary map of the Hopf
+fibration to land in `π₁(S¹)`, and take the degree of the resulting loop of the circle. -/
+theorem pi2MulEquivInt_apply (hn : n ≠ 0)
+    (a : HomotopyGroup (Fin 2) (ComplexProjectiveSpace n) (mk n v)) :
+    pi2MulEquivInt v hn a =
+      Circle.fundamentalGroupMulEquiv 1 (HomotopyGroup.pi1MulEquivFundamentalGroup
+        (HomotopyGroup.map ⟨Circle.homeomorphSphere.symm, Homeomorph.continuous _⟩
+          (by ext; simp)
+          (hopfBoundary v (Fin 1) (HomotopyGroup.congrEquiv (finSuccEquiv 1) a)))) := by
+  simp [pi2MulEquivInt]
 
 /-- **`π_k(CPⁿ)` vanishes for `3 ≤ k ≤ 2n`**: the boundary identifies it with `π_{k-1}(S¹)`, which
 is trivial. -/

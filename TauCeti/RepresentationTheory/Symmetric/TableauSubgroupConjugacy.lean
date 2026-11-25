@@ -6,16 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.Partitions
+public import TauCeti.Combinatorics.Young.StandardTableau.Reading
 public import TauCeti.RepresentationTheory.Symmetric.RowColumnSubgroup
-public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup
+public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup.Basic
 
 /-!
 # Tableau row groups and Young subgroups
 
 The row group of a tableau depends on its labeling, whereas the Young subgroup attached to its
 shape uses consecutive blocks. This file constructs the permutation sending the consecutive-block
-labeling to a given tableau and proves that it conjugates the corresponding Young subgroup onto
-the tableau's row group.
+labeling to a given tableau, proves that it conjugates the corresponding Young subgroup onto
+the tableau's row group, and records its normalization on the row-superstandard tableau
+`StandardYoungTableau.rowSuperstandard μ` (where the conjugator is `1` and the row group is
+`youngSubgroup (shapePartition μ)` on the nose).
 
 ## References
 
@@ -35,14 +38,14 @@ private noncomputable def rowCellsEquiv (μ : YoungDiagram) :
     rowBlocks μ.rowLens ≃ ↥μ.cells where
   toFun x := ⟨(x.1, x.2), by
     rw [YoungDiagram.mem_cells, YoungDiagram.mem_iff_lt_rowLen, ← YoungDiagram.get_rowLens]
-    exact x.2.2⟩
+    exact x.2.isLt⟩
   invFun c :=
-    ⟨⟨c.1.1, by
+    ⟨⟨c.val.1, by
       rw [YoungDiagram.length_rowLens]
-      exact (_root_.YoungDiagram.mem_iff_lt_colLen.mp c.2).trans_le
-        (μ.colLen_anti 0 c.1.2 c.1.2.zero_le)⟩,
-      ⟨c.1.2, by
-        have hj := _root_.YoungDiagram.mem_iff_lt_rowLen.mp c.2
+      exact (_root_.YoungDiagram.mem_iff_lt_colLen.mp c.property).trans_le
+        (μ.colLen_anti 0 c.val.2 c.val.2.zero_le)⟩,
+      ⟨c.val.2, by
+        have hj := _root_.YoungDiagram.mem_iff_lt_rowLen.mp c.property
         rw [← YoungDiagram.get_rowLens] at hj
         exact hj⟩⟩
   left_inv _ := rfl
@@ -111,7 +114,7 @@ theorem rowYoungConjugator_youngBlocksEquiv {μ : YoungDiagram} (t : YoungTablea
         let y := sortedBlocksEquivRows μ x
         calc
           (x.2 : ℕ) = y.2 := (sortedBlocksEquivRows_snd μ x).symm
-          _ < μ.rowLens.get y.1 := y.2.2
+          _ < μ.rowLens.get y.1 := y.2.isLt
           _ = μ.rowLen y.1 := YoungDiagram.get_rowLens
           _ = μ.rowLen x.1 := congrArg μ.rowLen (sortedBlocksEquivRows_fst μ x)⟩ := by
   simp only [rowYoungConjugator, Equiv.trans_apply, Equiv.symm_apply_apply]
@@ -129,6 +132,16 @@ theorem rowYoungConjugator_relabel {μ : YoungDiagram} (σ : Equiv.Perm (Fin μ.
     rowYoungConjugator (relabel σ t) = σ * rowYoungConjugator t := by
   have h : relabel σ t = t.trans σ := Equiv.ext fun c => relabel_apply σ t c
   simp only [rowYoungConjugator, Equiv.Perm.mul_def, Equiv.trans_assoc, h]
+
+/-- `rowYoungConjugator` determines the tableau: two `μ`-tableaux with the same conjugator are
+equal. -/
+theorem rowYoungConjugator_injective {μ : YoungDiagram} :
+    Function.Injective (rowYoungConjugator (μ := μ)) := by
+  intro t u h
+  obtain ⟨σ, rfl⟩ := exists_relabel_eq t u
+  have hσ : σ = 1 := mul_right_cancel
+    ((rowYoungConjugator_relabel σ t).symm.trans (h.symm.trans (one_mul _).symm))
+  rw [hσ, relabel_one]
 
 /-- Conjugation by `rowYoungConjugator t` carries the Young subgroup of the shape partition
 onto the row group of `t`. -/
@@ -171,6 +184,55 @@ theorem youngSubgroupConjMulEquiv_symm_apply_coe {μ : YoungDiagram} (t : YoungT
       (rowYoungConjugator t)⁻¹ * τ * rowYoungConjugator t := by
   simp [youngSubgroupConjMulEquiv]
   rfl
+
+/-! ### Normalization on the row-superstandard tableau -/
+
+/-- **The row-superstandard tableau has trivial Young conjugator:** reading order agrees on the nose
+with the consecutive-block enumeration of `shapePartition μ`. -/
+@[simp]
+theorem rowYoungConjugator_rowSuperstandard (μ : YoungDiagram) :
+    rowYoungConjugator (StandardYoungTableau.rowSuperstandard μ).toTableau = 1 := by
+  ext k
+  obtain ⟨x, rfl⟩ := (youngBlocksEquiv (shapePartition μ)).surjective k
+  rw [rowYoungConjugator_youngBlocksEquiv, StandardYoungTableau.toTableau_apply,
+    StandardYoungTableau.rowSuperstandard_apply_val, Equiv.Perm.one_apply,
+    YoungDiagram.readingIndex_def, youngBlocksEquiv_apply]
+  congr 1
+  have hpart : ∀ j : Fin ((shapePartition μ).parts.sort (· ≥ ·)).length,
+      ((shapePartition μ).parts.sort (· ≥ ·)).get j = μ.rowLen j.val := fun j => by
+    rw [List.get_eq_getElem, ← List.getD_eq_getElem _ 0 j.isLt, ← YoungDiagram.rowLen_ofPartition,
+      ofPartition_shapePartition]
+  calc
+    ∑ i ∈ Finset.range x.1, μ.rowLen i
+        = ∑ i : Fin x.1, μ.rowLen (i : ℕ) := (Fin.sum_univ_eq_sum_range μ.rowLen x.1).symm
+    _ = ∑ i : Fin x.1,
+          ((shapePartition μ).parts.sort (· ≥ ·)).get (Fin.castLE x.1.isLt.le i) :=
+        Finset.sum_congr rfl fun i _ => (hpart (Fin.castLE x.1.isLt.le i)).symm
+
+/-- Every `μ`-tableau is obtained from the row-superstandard tableau by relabeling with its
+`rowYoungConjugator`. -/
+@[simp]
+theorem relabel_rowYoungConjugator_rowSuperstandard {μ : YoungDiagram} (t : YoungTableau μ) :
+    relabel (rowYoungConjugator t) (StandardYoungTableau.rowSuperstandard μ).toTableau = t :=
+  rowYoungConjugator_injective <| by
+    rw [rowYoungConjugator_relabel, rowYoungConjugator_rowSuperstandard, mul_one]
+
+/-- In the row-superstandard tableau, the row index of each label is its consecutive-block index in
+`shapePartition μ`. -/
+@[simp]
+theorem rowIndex_rowSuperstandard (μ : YoungDiagram) (k : Fin μ.card) :
+    rowIndex (StandardYoungTableau.rowSuperstandard μ).toTableau k =
+      youngBlock (shapePartition μ) k := by
+  have h := rowIndex_rowYoungConjugator (StandardYoungTableau.rowSuperstandard μ).toTableau k
+  rwa [rowYoungConjugator_rowSuperstandard, Equiv.Perm.one_apply] at h
+
+/-- **The row group of the row-superstandard tableau is `youngSubgroup (shapePartition μ)`.** -/
+@[simp]
+theorem rowSubgroup_rowSuperstandard (μ : YoungDiagram) :
+    rowSubgroup (StandardYoungTableau.rowSuperstandard μ).toTableau =
+      youngSubgroup (shapePartition μ) := by
+  ext σ
+  simp [← youngSubgroup_map_conj_eq_rowSubgroup]
 
 end YoungTableau
 

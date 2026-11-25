@@ -64,8 +64,7 @@ variable {n : Type*} [DecidableEq n]
 
 /-- Multiplication by `i` realifies to the standard alternating matrix `J`. -/
 theorem realify_I_smul_one : (Complex.I • (1 : Matrix n n ℂ)).realify = J n ℝ := by
-  ext p q
-  rcases p with i | i <;> rcases q with j | j <;> by_cases h : i = j <;> simp [J, h]
+  simp [realify_smul_one]
 
 variable [Fintype n]
 
@@ -187,13 +186,19 @@ theorem mem_map_realify_unitarySubgroup_iff {M : GL (n ⊕ n) ℝ} :
     simpa using hAM
 
 /-- **`O(2n) ∩ GL(n, ℂ) = U(n)` in `GL (n ⊕ n) ℝ`**: the orthogonal elements of the realified
-general linear group are the realified unitary matrices. -/
-theorem unitarySubgroup_inf_range_realify :
-    unitarySubgroup (GL (n ⊕ n) ℝ) ⊓ (realify n ℂ).range =
-      (unitarySubgroup (GL n ℂ)).map (realify n ℂ) := by
+general linear group are the realified unitary matrices. This holds for every `RCLike 𝕜`. -/
+theorem unitarySubgroup_inf_range_realify {𝕜 : Type*} [RCLike 𝕜] :
+    unitarySubgroup (GL (n ⊕ n) ℝ) ⊓ (realify n 𝕜).range =
+      (unitarySubgroup (GL n 𝕜)).map (realify n 𝕜) := by
+  -- A realified matrix is orthogonal exactly when the original matrix is unitary.
+  have h (A : GL n 𝕜) : realify n 𝕜 A ∈ unitarySubgroup (GL (n ⊕ n) ℝ) ↔
+      A ∈ unitarySubgroup (GL n 𝕜) := by
+    rw [mem_unitarySubgroup_iff_mem_orthogonalGroup, coe_realify, realify_mem_orthogonalGroup_iff]
+    simp [Units.unitary_eq]
   ext M
-  rw [Subgroup.mem_inf, mem_range_realify_iff, mem_map_realify_unitarySubgroup_iff]
-  exact and_comm
+  refine ⟨fun ⟨hM, A, hA⟩ ↦ ⟨A, (h A).1 (hA ▸ hM), hA⟩, ?_⟩
+  rintro ⟨A, hA, rfl⟩
+  exact ⟨(h A).2 hA, A, rfl⟩
 
 end GeneralLinearGroup
 

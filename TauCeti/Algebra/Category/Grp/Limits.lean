@@ -32,26 +32,26 @@ namespace GrpCat
 
 /-- The identity section takes the value `1` at each object. -/
 @[to_additive (attr := simp) /-- The zero section takes the value `0` at each object. -/]
-lemma sections_one_val (j : J) : (1 : (F ⋙ forget GrpCat).sections).1 j = 1 :=
+lemma sections_one_val (j : J) : (1 : (F ⋙ forget GrpCat).sections).val j = 1 :=
   (rfl)
 
 /-- The value of a product of sections is the product of their values. -/
 @[to_additive (attr := simp) /-- The value of a sum of sections is the sum of their values. -/]
 lemma sections_mul_val (s t : (F ⋙ forget GrpCat).sections) (j : J) :
-    (s * t).1 j = s.1 j * t.1 j :=
+    (s * t).val j = s.val j * t.val j :=
   (rfl)
 
 /-- The value of the inverse of a section is the inverse of its value. -/
 @[to_additive (attr := simp)
 /-- The value of the negation of a section is the negation of its value. -/]
-lemma sections_inv_val (s : (F ⋙ forget GrpCat).sections) (j : J) : s⁻¹.1 j = (s.1 j)⁻¹ :=
+lemma sections_inv_val (s : (F ⋙ forget GrpCat).sections) (j : J) : s⁻¹.val j = (s.val j)⁻¹ :=
   (rfl)
 
 /-- The value of a quotient of sections is the quotient of their values. -/
 @[to_additive (attr := simp)
 /-- The value of a difference of sections is the difference of their values. -/]
 lemma sections_div_val (s t : (F ⋙ forget GrpCat).sections) (j : J) :
-    (s / t).1 j = s.1 j / t.1 j :=
+    (s / t).val j = s.val j / t.val j :=
   (rfl)
 
 end GrpCat

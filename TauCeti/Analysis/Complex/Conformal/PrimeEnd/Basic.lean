@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.ChordalDist
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Basic
 public import TauCeti.Topology.Path.Separation
 import TauCeti.Topology.ConnectedComponents
-import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Null chains and prime ends
@@ -471,21 +470,21 @@ theorem mk_eq_mk_iff {hC : IsNullChain U C} {hC' : IsNullChain U C'} :
 
 /-- Every prime end is represented by a null chain. -/
 theorem exists_eq_mk (p : PrimeEnd U) : ∃ (C : ℕ → Set ℂ) (hC : IsNullChain U C), p = mk C hC :=
-  Quotient.inductionOn p fun C => ⟨C.1, C.2, rfl⟩
+  Quotient.inductionOn p fun C => ⟨C.val, C.property, rfl⟩
 
 /-- **Induction on prime ends.** To prove a property of every prime end, it suffices to prove it
 for the prime end of each null chain. -/
 @[elab_as_elim]
 theorem ind {motive : PrimeEnd U → Prop} (h : ∀ (C : ℕ → Set ℂ) (hC : IsNullChain U C),
     motive (mk C hC)) (p : PrimeEnd U) : motive p :=
-  Quotient.ind (fun C => h C.1 C.2) p
+  Quotient.ind (fun C => h C.val C.property) p
 
 /-- Lift a function on null chains that respects equivalence of chains to a function on prime
 ends. -/
 def lift {α : Sort*} (f : ∀ C : ℕ → Set ℂ, IsNullChain U C → α)
     (hf : ∀ (C C' : ℕ → Set ℂ) (hC : IsNullChain U C) (hC' : IsNullChain U C'),
       NullChainEquivalent U C C' → f C hC = f C' hC') : PrimeEnd U → α :=
-  Quotient.lift (fun C => f C.1 C.2) fun C C' h => hf C.1 C'.1 C.2 C'.2 h
+  Quotient.lift (fun C => f C.val C.property) fun C C' h => hf C.val C'.val C.property C'.property h
 
 /-- A lifted function evaluates on the prime end of a null chain as on the chain. -/
 @[simp]

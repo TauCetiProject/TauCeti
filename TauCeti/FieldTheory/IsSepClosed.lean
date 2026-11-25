@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IsSepClosed
 -- Proof-only: the quadratic formula, which solves the equation once the discriminant is a square.
 import Mathlib.Algebra.QuadraticDiscriminant
+import Mathlib.FieldTheory.Finite.Basic
 
 /-!
 # Separably closed fields
@@ -36,6 +37,11 @@ The excluded case is genuinely excluded: over an imperfect separably closed fiel
 characteristic `2`, such as the separable closure of `𝔽₂(t)`, the equation `X² = t` has no
 solution.
 
+## Separable elements and embeddings of separably closed fields
+
+The elements of a field `Ω` over `k` separable over `k` lie in the image of every embedding over
+`k` of a separably closed field (`AlgHom.separableClosure_le_fieldRange`).
+
 ## Separable closures in a tower
 
 A separable closure of `K` is a separable closure of every intermediate extension `L` of the
@@ -60,6 +66,15 @@ its conclusion, so instance search could not find it.
 
 public section
 
+/-- A separably closed field is infinite: over a finite field, the separable polynomial
+`X ^ q - X - 1` would have no root. -/
+instance IsSepClosed.infinite (K : Type*) [Field K] [IsSepClosed K] : Infinite K := by
+  refine Infinite.of_not_fintype fun _ ↦ ?_
+  obtain ⟨root, root_eq⟩ := IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C
+    (1 : K) (-1) (-1) (FiniteField.cast_card_eq_zero K)
+    (Fintype.one_lt_card (α := K)) (by simp)
+  simp [FiniteField.pow_card] at root_eq
+
 /-- A separable element of a domain algebra over a separably closed field belongs to the image
 of the base field. -/
 theorem IsSeparable.mem_bot_of_isSepClosed {K A : Type*} [Field K] [IsSepClosed K]
@@ -81,6 +96,16 @@ theorem IsSepClosed.of_ringEquiv {k K : Type*} [Field k] [Field K] [IsSepClosed 
   splits_of_separable p hp := by
     simpa [Polynomial.map_map] using
       IsSepClosed.splits_domain (f := (e : k →+* K)) _ (hp.map (f := (e.symm : K →+* k)))
+
+/-- **Separable elements come from any separably closed field.** In a field `Ω` over `k`, the
+elements separable over `k` lie in the image of any embedding over `k` of a separably closed
+field: the minimal polynomial of such an element is separable, so it splits in that field. -/
+theorem AlgHom.separableClosure_le_fieldRange {k Ω Kbar : Type*} [Field k] [Field Ω]
+    [Algebra k Ω] [Field Kbar] [Algebra k Kbar] [IsSepClosed Kbar] (ι : Kbar →ₐ[k] Ω) :
+    separableClosure k Ω ≤ ι.fieldRange := fun y hy ↦
+  have hy : IsSeparable k y := mem_separableClosure_iff.mp hy
+  AlgHom.mem_fieldRange.mpr <| (AlgHom.mem_range ι).mp <|
+    hy.isIntegral.mem_range_algHom_of_minpoly_splits (IsSepClosed.splits_codomain _ hy) ι
 
 namespace TauCeti
 
