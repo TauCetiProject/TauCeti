@@ -223,9 +223,8 @@ theorem smoothAverage_smoothAverage_subgroup (H : Subgroup K) [CompactSpace H]
     (hH : TauCeti.HasUnitProOrder A H) (v : V) :
     σ.smoothAverage hK (smoothAverage (σ.comp H.subtype) hH v) = σ.smoothAverage hK v := by
   rw [← sub_eq_zero, ← map_sub, ← LinearMap.mem_ker, ker_smoothAverage]
-  refine Submodule.span_mono ?_ (smoothAverage_apply_sub_mem_ker (σ.comp H.subtype) hH v)
-  rintro _ ⟨⟨h, x⟩, rfl⟩
-  exact ⟨⟨h, x⟩, rfl⟩
+  exact σ.coinvariantsKer_comp_le H.subtype
+    (smoothAverage_apply_sub_mem_ker (σ.comp H.subtype) hH v)
 
 /-- **Nested averages.** For a compact subgroup `H` of invertible pro-order, averaging over `K` and
 then over `H` is averaging over `K`. -/
