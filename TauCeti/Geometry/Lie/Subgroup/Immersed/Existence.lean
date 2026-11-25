@@ -155,6 +155,12 @@ private theorem coe_leafHom (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)
     ⇑(leafHom S) = (integralLeaf S).map :=
   rfl
 
+/-- The parametrization of the leaf inverts the bijection of the leaf with the integral leaf
+subgroup. -/
+private theorem leafHom_leafEquiv_symm (S : LieSubalgebra ℝ (LeftInvariantDerivation I G))
+    (g : S.integralLeafSubgroup (I := I)) : leafHom S ((leafEquiv S).symm g) = g := by
+  simp [leafHom, Equiv.mulEquiv_apply]
+
 private theorem contMDiff_leafHom (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
     ContMDiff (𝓡 (finrank ℝ S)) I ∞ (leafHom S) :=
   (integralLeaf S).isImmersion.contMDiff
@@ -216,15 +222,14 @@ private theorem mem_of_forall_lieExp_smul_mem [T2Space G]
     (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)
   set c : ℝ → G := fun t ↦ lieExp (t • X) with hc_def
   let f : ℝ → (integralLeaf S).carrier := fun t ↦ (leafEquiv S).symm ⟨c t, hX t⟩
-  have hfc : leafHom S ∘ f = c := funext fun t ↦ by
-    simp [f, leafHom, Equiv.mulEquiv_apply]
+  have hfc : leafHom S ∘ f = c := funext fun t ↦ leafHom_leafEquiv_symm S ⟨c t, hX t⟩
   have hc : ContMDiff 𝓘(ℝ, ℝ) I ∞ c := by
     simpa only [oneParameterSubgroup_apply] using contMDiff_oneParameterSubgroup X
   have hf : ContMDiff 𝓘(ℝ, ℝ) (𝓡 (finrank ℝ S)) ∞ f := contMDiff_of_leafHom_comp S (hfc ▸ hc)
   have hf0 : f 0 = 1 := by
     apply injective_integralLeaf S
     rw [← coe_leafHom, map_one, ← comp_apply (f := leafHom S), hfc]
-    simp [c]
+    exact (congrArg lieExp (zero_smul ℝ X)).trans lieExp_zero
   -- The initial velocity of `c` is the tangent vector of `X` at the identity.
   have hderiv : HasMFDerivAt 𝓘(ℝ, ℝ) I c 0 ((1 : ℝ →L[ℝ] ℝ).smulRight (e X)) := by
     have hce : c = fun t : ℝ ↦ mulInvariantExp (I := I) (G := G)
