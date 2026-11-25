@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.AdicCompletion.CompletedGenericField.Basic
 
 import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.AdicCompletion.Algebra
+import TauCeti.RingTheory.Valuation.Integers
 import Mathlib.GroupTheory.ArchimedeanDensely
 
 /-!
@@ -71,7 +72,8 @@ theorem genericLocalRingLift_algebraMap (a : A) :
 
 private theorem genericLocalRingLift_le_comap :
     maximalIdeal (genericLocalRing π) ≤
-      (maximalIdeal (completedGenericIntegers π')).comap (genericLocalRingLift π f hf) := by
+      (maximalIdeal (completedGenericIntegers π')).comap
+        (genericLocalRingLift π f hf).toIntAlgHom := by
   have hmap : (Ideal.span {π}).map (algebraMap A (genericLocalRing π)) ≤
       (maximalIdeal (completedGenericIntegers π')).comap (genericLocalRingLift π f hf) := by
     rw [Ideal.map_le_iff_le_comap, Ideal.comap_comap]
@@ -86,7 +88,7 @@ noncomputable def completedGenericIntegersLift :
   letI : Algebra ℤ (genericLocalRing π) := Ring.toIntAlgebra _
   letI : Algebra ℤ (completedGenericIntegers π') := Ring.toIntAlgebra _
   let e := _root_.AdicCompletion.ofAlgEquiv (maximalIdeal (completedGenericIntegers π'))
-  exact e.symm.toRingEquiv.toRingHom.comp (_root_.AdicCompletion.mapₐ
+  exact e.symm.toAlgHom.toRingHom.comp (_root_.AdicCompletion.mapₐ
     (genericLocalRingLift π f hf).toIntAlgHom (genericLocalRingLift_le_comap π f hf)).toRingHom
 
 /-- The completed extension agrees with the map on the generic local ring. -/
@@ -95,17 +97,14 @@ theorem completedGenericIntegersLift_algebraMap_local (a : genericLocalRing π) 
     completedGenericIntegersLift π f hf
       (algebraMap (genericLocalRing π) (completedGenericIntegers π) a) =
         genericLocalRingLift π f hf a := by
+  -- Match the integer algebra instances used by `RingHom.toIntAlgHom` in the lift.
   let : Algebra ℤ (genericLocalRing π) := Ring.toIntAlgebra _
   let : Algebra ℤ (completedGenericIntegers π') := Ring.toIntAlgebra _
-  let e := _root_.AdicCompletion.ofAlgEquiv (maximalIdeal (completedGenericIntegers π'))
-  let g := (genericLocalRingLift π f hf).toIntAlgHom
-  -- The structural completion map is `AdicCompletion.of`, and the lift composes `mapₐ`
-  -- with the inverse of the target's completion equivalence.
-  change e.symm (_root_.AdicCompletion.mapₐ g (genericLocalRingLift_le_comap π f hf)
-    (_root_.AdicCompletion.of _ _ a)) = _
-  exact (congrArg e.symm (_root_.AdicCompletion.mapₐ_of g
-    (genericLocalRingLift_le_comap π f hf) a)).trans
-    (_root_.AdicCompletion.ofAlgEquiv_symm_of _ _)
+  simp only [completedGenericIntegersLift, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
+    RingHom.coe_coe, AlgEquiv.coe_toAlgHom, _root_.AdicCompletion.algebraMap_apply,
+    Algebra.algebraMap_self_apply]
+  rw [_root_.AdicCompletion.mapₐ_of, _root_.AdicCompletion.ofAlgEquiv_symm_of,
+    RingHom.toIntAlgHom_apply]
 
 /-- The completed extension agrees with the map on the original affine ring. -/
 @[simp]
@@ -232,6 +231,14 @@ theorem completedGenericFieldLift_algebraMap_affine (a : A) :
     (completedGenericField π hπ), completedGenericFieldLift_algebraMap,
     completedGenericIntegersLift_algebraMap]
 
+/-- The field extension maps the source valuation ring into the target valuation ring. -/
+theorem valuation_completedGenericFieldLift_le_one {x : completedGenericField π hπ}
+    (hx : Valued.v x ≤ 1) :
+    Valued.v (completedGenericFieldLift π f hf hπ hπ' hzero x) ≤ 1 := by
+  obtain ⟨a, rfl⟩ := (completedGenericField_integers π hπ).exists_of_le_one hx
+  rw [completedGenericFieldLift_algebraMap]
+  exact (completedGenericField_integers π' hπ').map_le_one _
+
 /-- The field extension preserves the normalized valuations when the parameter maps to an
 associate of the target uniformizer. -/
 theorem valuation_completedGenericFieldLift
@@ -286,25 +293,12 @@ theorem continuous_completedGenericFieldLift :
   exact hw.map_le_one (k b)
 
 variable {π} in
-/-- The integral completion identified with the integer subring of its valued fraction field. -/
-private noncomputable def completedGenericFieldIntegersEquiv :
-    completedGenericIntegers π ≃+*
-      (Valued.v : Valuation (completedGenericField π hπ) ℤᵐ⁰).integer := by
-  have hv := completedGenericField_integers π hπ
-  let j := (algebraMap (completedGenericIntegers π) (completedGenericField π hπ)).codRestrict
-    (Valued.v : Valuation (completedGenericField π hπ) ℤᵐ⁰).integer hv.map_le_one
-  refine RingEquiv.ofBijective j ⟨fun x y h ↦ hv.hom_inj (congrArg Subtype.val h), ?_⟩
-  intro y
-  obtain ⟨x, hx⟩ := hv.exists_of_le_one y.property
-  exact ⟨x, Subtype.ext hx⟩
-
-variable {π} in
 /-- A map preserving the valuation rings restricts to a map of the integral completions. -/
 private noncomputable def completedGenericFieldRestrict
     (g : completedGenericField π hπ →+* completedGenericField π' hπ')
     (hint : ∀ x, Valued.v x ≤ 1 → Valued.v (g x) ≤ 1) :
     completedGenericIntegers π →+* completedGenericIntegers π' :=
-  (completedGenericFieldIntegersEquiv hπ').symm.toRingHom.comp
+  (completedGenericField_integers π' hπ').equivInteger.symm.toRingHom.comp
     ((g.comp (algebraMap (completedGenericIntegers π) (completedGenericField π hπ))).codRestrict
       _ fun x ↦ hint _ ((completedGenericField_integers π hπ).map_le_one x))
 
@@ -318,7 +312,11 @@ private theorem completedGenericFieldRestrict_algebraMap
   let y : (Valued.v : Valuation (completedGenericField π' hπ') ℤᵐ⁰).integer :=
     ⟨g (algebraMap (completedGenericIntegers π) (completedGenericField π hπ) x),
       hint _ ((completedGenericField_integers π hπ).map_le_one x)⟩
-  exact congrArg Subtype.val ((completedGenericFieldIntegersEquiv hπ').apply_symm_apply y)
+  let e := (completedGenericField_integers π' hπ').equivInteger
+  calc
+    _ = (e (e.symm y) : completedGenericField π' hπ') :=
+      ((completedGenericField_integers π' hπ').coe_equivInteger_apply _).symm
+    _ = _ := congrArg Subtype.val (e.apply_symm_apply y)
 
 /-- Among field maps preserving the valuation ring, the extension to the completed generic
 field is uniquely determined by its values on the affine lift. -/
