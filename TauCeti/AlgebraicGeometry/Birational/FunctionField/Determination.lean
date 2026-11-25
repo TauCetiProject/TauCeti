@@ -42,6 +42,8 @@ type. It is dominant because it sends the generic point of `X` into the image of
   `AlgebraicGeometry.Scheme.RationalMap.ofFunctionFieldAlgHom_functionFieldAlgHom`: the
   construction is inverse to the pullback, and
   `AlgebraicGeometry.Scheme.RationalMap.eq_ofFunctionFieldAlgHom_iff` characterizes it.
+* `AlgebraicGeometry.Scheme.RationalMap.ofFunctionFieldAlgHom_id` and
+  `AlgebraicGeometry.Scheme.RationalMap.ofFunctionFieldAlgHom_comp`: functoriality.
 * `AlgebraicGeometry.Scheme.RationalMap.existsUnique_functionFieldAlgHom_eq`: every `k`-algebra
   map of function fields is the pullback along exactly one dominant `k`-rational map.
 -/
@@ -144,6 +146,24 @@ theorem RationalMap.eq_ofFunctionFieldAlgHom_iff (f : X ⤏ Y) [f.IsDominant]
     (h.trans (functionFieldAlgHom_ofFunctionFieldAlgHom k φ).symm)⟩
   subst h
   exact functionFieldAlgHom_ofFunctionFieldAlgHom k φ
+
+/-- The identity of `k(Y)` induces the identity rational map of `Y`. -/
+@[simp]
+theorem RationalMap.ofFunctionFieldAlgHom_id :
+    ofFunctionFieldAlgHom k (AlgHom.id k Y.functionField) = RationalMap.id Y :=
+  ((eq_ofFunctionFieldAlgHom_iff k _ _).mpr (functionFieldAlgHom_id k)).symm
+
+/-- **Functoriality of `RationalMap.ofFunctionFieldAlgHom`**: `k`-algebra maps
+`k(Z) → k(Y) → k(X)` induce the composite `X ⤏ Y ⤏ Z`. -/
+theorem RationalMap.ofFunctionFieldAlgHom_comp {Z : Scheme.{u}} [Z.Over (Spec (.of k))]
+    [IsIntegral Z] [LocallyOfFiniteType (Z ↘ Spec (.of k))]
+    (ψ : Z.functionField →ₐ[k] Y.functionField) :
+    (ofFunctionFieldAlgHom k φ).comp (ofFunctionFieldAlgHom k ψ) =
+      ofFunctionFieldAlgHom k (φ.comp ψ) := by
+  have := isOver_comp (sX := X ↘ Spec (.of k)) (sY := Y ↘ Spec (.of k))
+    (sZ := Z ↘ Spec (.of k)) (ofFunctionFieldAlgHom k φ) inferInstance
+    (ofFunctionFieldAlgHom k ψ) inferInstance
+  exact (eq_ofFunctionFieldAlgHom_iff k _ _).mpr (by simp)
 
 /-- **Determination.** For integral `k`-schemes `X` and `Y` with `Y` locally of finite type over
 `k`, `f ↦ f^*` is a bijection between dominant `k`-rational maps `X ⤏ Y` and `k`-algebra maps
