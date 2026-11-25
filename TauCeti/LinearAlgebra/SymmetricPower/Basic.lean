@@ -156,6 +156,7 @@ theorem congr_refl : congr (ι := ι) (LinearEquiv.refl R M) = LinearEquiv.refl 
   LinearEquiv.toLinearMap_injective map_id
 
 /-- Symmetric powers preserve composition of linear equivalences. -/
+@[simp]
 theorem congr_trans {P : Type*} [AddCommMonoid P] [Module R P] (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) :
     congr (ι := ι) (e.trans f) = (congr e).trans (congr f) :=
   LinearEquiv.toLinearMap_injective (map_comp e.toLinearMap f.toLinearMap)

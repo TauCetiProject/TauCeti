@@ -106,6 +106,13 @@ theorem r_mul_N (D : WeilDeligneParameter E W V deg q) (w : W) :
   calc D.r w * D.N = D.r w * D.N * D.r w⁻¹ * D.r w := by simp [mul_assoc, ← map_mul]
     _ = (q : E) ^ (deg w).toAdd • (D.N * D.r w) := by rw [D.conj_N, smul_mul_assoc]
 
+omit [TopologicalSpace W] in
+/-- The converse of `r_mul_N`: a relation `r(w) N = c • N r(w)` gives the conjugation relation
+`r(w) N r(w)⁻¹ = c • N`. -/
+theorem conj_N_of_mul_eq_smul_mul {r : Representation E W V} {N : Module.End E V} {w : W}
+    {c : E} (h : r w * N = c • (N * r w)) : r w * N * r w⁻¹ = c • N := by
+  simp [h, mul_assoc, ← map_mul]
+
 /-- The conjugation relation evaluated at a vector: `r(w) (N v) = q ^ deg w • N (r(w) v)`. -/
 theorem r_apply_N_apply (D : WeilDeligneParameter E W V deg q) (w : W) (v : V) :
     D.r w (D.N v) = (q : E) ^ (deg w).toAdd • D.N (D.r w v) :=

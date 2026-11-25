@@ -76,15 +76,10 @@ def sym (D : WeilDeligneParameter E W V deg q) (m : ℕ) :
   isOpen_ker := Subgroup.isOpen_mono (D.r.ker_le_ker_symmetricPower m) D.isOpen_ker
   N := SymmetricPower.differential E V m D.N
   isNilpotent_N := SymmetricPower.isNilpotent_differential m D.isNilpotent_N
-  conj_N w := by
-    have h : D.r.symmetricPower m w * SymmetricPower.differential E V m D.N =
-        (q : E) ^ (deg w).toAdd •
-          (SymmetricPower.differential E V m D.N * D.r.symmetricPower m w) := by
-      rw [← smul_mul_assoc, ← map_smul, Representation.symmetricPower_apply,
-        Module.End.mul_eq_comp, Module.End.mul_eq_comp]
-      refine SymmetricPower.map_comp_differential m ?_
-      rw [← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp, D.r_mul_N, smul_mul_assoc]
-    rw [h, smul_mul_assoc, mul_assoc, ← map_mul, mul_inv_cancel, map_one, mul_one]
+  conj_N w := conj_N_of_mul_eq_smul_mul <| by
+    simpa [Module.End.mul_eq_comp, LinearMap.smul_comp] using
+      SymmetricPower.map_comp_differential m (f := D.r w) (Y := (q : E) ^ (deg w).toAdd • D.N)
+        (by simpa [Module.End.mul_eq_comp, LinearMap.smul_comp] using D.r_mul_N w)
 
 variable (D : WeilDeligneParameter E W V deg q) (m : ℕ)
 
