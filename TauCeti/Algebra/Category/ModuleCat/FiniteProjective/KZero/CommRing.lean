@@ -33,10 +33,13 @@ the ring isomorphism `Rᵐᵒᵖ ≃+* R`, restricted to finitely generated proj
 
 ## Main results
 
+* `TauCeti.KZero.splitK0Equiv_of`: the class of a right module `X` goes to the class of `X`
+  regarded as a left module.
 * `TauCeti.KZero.splitK0Equiv_symm_of`: the class of a left module `P` goes to the class of `P`
   regarded as a right module.
 * `TauCeti.KZero.splitK0Equiv_symm_of_finiteProjectiveModulesRegular`: the class of the free left
-  module of rank one goes to the class of the free right module of rank one.
+  module of rank one goes to the class of the free right module of rank one;
+  `TauCeti.KZero.splitK0Equiv_of_finiteProjectiveModulesRegular` is the converse.
 * `TauCeti.KZero.splitK0Equiv_symm_classOf`: the class `[M] - n[R]` of a finitely generated
   projective left module goes to the corresponding class in `KZero R`.
 -/
@@ -70,6 +73,15 @@ theorem finiteProjectiveRightEquivalence_functor_obj_obj
       (ModuleCat.restrictScalars (RingEquiv.toOpposite R).symm.toRingHom).obj P.obj :=
   Equivalence.finiteProjectiveModulesEquivalence_functor_obj_obj _ P
 
+/-- The left module attached to a right module by
+`TauCeti.KZero.finiteProjectiveRightEquivalence` is its restriction of scalars along
+`R ≃+* Rᵐᵒᵖ`. -/
+@[simp]
+theorem finiteProjectiveRightEquivalence_inverse_obj_obj (X : FiniteProjectiveRight R) :
+    ((finiteProjectiveRightEquivalence R).inverse.obj X).obj =
+      (ModuleCat.restrictScalars (RingEquiv.toOpposite R).toRingHom).obj X.obj :=
+  Equivalence.finiteProjectiveModulesEquivalence_inverse_obj_obj _ X
+
 /-- For a commutative ring `R`, `KZero R`, the split `K₀` of finitely generated projective right
 `R`-modules, is the split `K₀` of finitely generated projective left `R`-modules: a left
 `R`-module is a right `R`-module with the same action. -/
@@ -79,16 +91,26 @@ noncomputable def splitK0Equiv :
 
 variable {R}
 
+/-- `TauCeti.KZero.splitK0Equiv` sends the class of a right module `X` to the class of `X`
+regarded as a left module. -/
+@[simp]
+theorem splitK0Equiv_of (X : FiniteProjectiveRight R) :
+    splitK0Equiv R (SplitK0.of.{u} X) =
+      SplitK0.of.{u} ((finiteProjectiveRightEquivalence R).inverse.obj X) :=
+  SplitK0.mapEquiv_symm_of.{u, u} _ X
+
 /-- The inverse of `TauCeti.KZero.splitK0Equiv` sends the class of a left module `P` to the class
 of `P` regarded as a right module. -/
+@[simp]
 theorem splitK0Equiv_symm_of (P : (finiteProjectiveModules R).FullSubcategory) :
     (splitK0Equiv R).symm (SplitK0.of.{u} P) =
       SplitK0.of.{u} ((finiteProjectiveRightEquivalence R).functor.obj P) := by
   rw [splitK0Equiv, AddEquiv.symm_symm, SplitK0.mapEquiv_of]
 
 /-- The class of the free left module of rank one corresponds to the class of the free right
-module of rank one. -/
-@[simp]
+module of rank one. Its priority makes this free-module form win over
+`TauCeti.KZero.splitK0Equiv_symm_of`. -/
+@[simp high]
 theorem splitK0Equiv_symm_of_finiteProjectiveModulesRegular :
     (splitK0Equiv R).symm (SplitK0.of.{u} (finiteProjectiveModulesRegular R)) =
       SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) := by
@@ -96,6 +118,15 @@ theorem splitK0Equiv_symm_of_finiteProjectiveModulesRegular :
   exact SplitK0.of_congr (ObjectProperty.isoMk _
     (eqToIso (finiteProjectiveRightEquivalence_functor_obj_obj R _) ≪≫
       ModuleCat.restrictScalarsIsoOfEquiv (RingEquiv.toOpposite R).symm))
+
+/-- The class of the free right module of rank one corresponds to the class of the free left
+module of rank one. Its priority makes this free-module form win over
+`TauCeti.KZero.splitK0Equiv_of`. -/
+@[simp high]
+theorem splitK0Equiv_of_finiteProjectiveModulesRegular :
+    splitK0Equiv R (SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ)) =
+      SplitK0.of.{u} (finiteProjectiveModulesRegular R) := by
+  rw [← splitK0Equiv_symm_of_finiteProjectiveModulesRegular, AddEquiv.apply_symm_apply]
 
 /-- The inverse of `TauCeti.KZero.splitK0Equiv` sends the class `[M] - n[R]` of a finitely
 generated projective left `R`-module `M` to the class of `M` in `KZero R` minus `n` times the
