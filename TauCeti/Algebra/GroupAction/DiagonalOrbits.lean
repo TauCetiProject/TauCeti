@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Action.Prod
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Diagonal orbits and stabilizer orbits
@@ -105,17 +106,18 @@ variable (G X Y) in
 /-- Swapping the coordinates identifies the diagonal orbits of `X × Y` with those of `Y × X`. -/
 def orbitRelQuotientProdComm :
     MulAction.orbitRel.Quotient G (X × Y) ≃ MulAction.orbitRel.Quotient G (Y × X) :=
-  Quotient.congr (Equiv.prodComm X Y) fun _ _ ↦ swap_mem_orbit_swap_iff.symm
+  MulAction.orbitRelQuotientCongr (MulEquiv.refl G) (Equiv.prodComm X Y) fun g p ↦
+    Prod.smul_swap g p
 
 @[simp]
 theorem orbitRelQuotientProdComm_mk (p : X × Y) :
     orbitRelQuotientProdComm G X Y (Quotient.mk'' p) = Quotient.mk'' p.swap :=
-  (rfl)
+  MulAction.orbitRelQuotientCongr_mk _ _ _ p
 
 @[simp]
 theorem orbitRelQuotientProdComm_symm :
     (orbitRelQuotientProdComm G X Y).symm = orbitRelQuotientProdComm G Y X :=
-  Equiv.ext fun q ↦ Quotient.inductionOn' q fun _ ↦ rfl
+  Equiv.ext fun q ↦ Quotient.inductionOn' q fun _ ↦ by rw [Equiv.symm_apply_eq]; simp
 
 end TauCeti.MulAction
 
