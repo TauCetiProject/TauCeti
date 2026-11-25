@@ -106,6 +106,16 @@ namespace IsCartanInvolution
 
 variable {θ : L ≃ₗ⁅K⁆ L}
 
+omit [IsStrictOrderedRing K] in
+/-- A Cartan involution is its own inverse. -/
+theorem symm_eq (hθ : θ.IsCartanInvolution) : θ.symm = θ :=
+  LieEquiv.ext fun x ↦ θ.symm_apply_eq.mpr (hθ.involutive x).symm
+
+omit [IsStrictOrderedRing K] in
+/-- A Cartan involution is its own inverse, pointwise. -/
+theorem symm_apply (hθ : θ.IsCartanInvolution) (x : L) : θ.symm x = θ x := by
+  rw [hθ.symm_eq]
+
 /-- For a Cartan involution, `B(x, θ x) < 0` for every `x ≠ 0`. -/
 theorem killingForm_apply_apply_neg (hθ : θ.IsCartanInvolution) {x : L} (hx : x ≠ 0) :
     killingForm K L x (θ x) < 0 :=

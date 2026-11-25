@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
-public import Mathlib.Algebra.DirectSum.Module
+public import TauCeti.Algebra.Lie.Submodule.DirectSum
 public import Mathlib.Algebra.Lie.Prod
-public import Mathlib.Algebra.Lie.Semisimple.Basic
-import TauCeti.Algebra.Lie.Killing.Prod
+import TauCeti.Algebra.Lie.Killing.Basic
 
 /-!
 # Cartan involutions and the simple ideals
@@ -24,29 +23,28 @@ of the other simple ideals; both are `θ`-stable, `θ` is the identity on the co
 `-1`-eigenspace `𝔭` of `θ` lies in the noncompact ideal.
 
 Simple ideals are the atoms of the lattice of Lie ideals, as in Mathlib's
-`LieAlgebra.IsSemisimple`.
+`LieAlgebra.IsSemisimple`. The general material used here lives elsewhere: the vanishing of the
+Killing form between ideals with trivial intersection (`LieIdeal.killingForm_eq_zero_of_disjoint`)
+in `TauCeti/Algebra/Lie/Killing/Basic.lean`, and the assembly `LieEquiv.ofIsInternal` of
+automorphisms of the summands of an internal direct sum of Lie ideals, together with
+`LieAlgebra.IsSemisimple.isInternal_atoms`, in `TauCeti/Algebra/Lie/Submodule/DirectSum.lean`.
 
 ## Main definitions
 
-* `LieEquiv.ofIsInternal`: the automorphism of `L` acting by `θ i` on the summand `I i` of an
-  internal direct sum of Lie ideals.
 * `LieAlgebra.compactIdeal`, `LieAlgebra.noncompactIdeal`: the sum of the simple ideals on which
   the Killing form is, respectively is not, negative definite.
 
 ## Main results
 
-* `LieIdeal.killingForm_eq_zero_of_disjoint`: the Killing form vanishes between Lie ideals with
-  trivial intersection.
 * `LieEquiv.IsCartanInvolution.map_eq_of_isAtom`: a Cartan involution preserves every simple
   ideal.
 * `LieEquiv.isCartanInvolution_ofIsInternal`: Cartan involutions of the summands of an internal
   direct sum of ideals assemble into a Cartan involution.
-* `LieAlgebra.IsSemisimple.isInternal_atoms`: a semisimple Lie algebra is the internal direct sum
-  of its simple ideals, so `LieEquiv.ofIsInternal` applies to them.
 * `LieAlgebra.forall_killingForm_neg_iff`: on a Lie ideal, the Killing form of `L` is negative
   definite exactly when the ideal's own Killing form is.
-* `LieAlgebra.le_compactIdeal_iff_of_isAtom`: a simple ideal lies in the compact ideal exactly when
-  it is a compact Lie algebra, that is, its own Killing form is negative definite.
+* `LieAlgebra.le_compactIdeal_iff_of_isAtom`, `LieAlgebra.le_noncompactIdeal_iff_of_isAtom`: a
+  simple ideal lies in the compact ideal exactly when it is a compact Lie algebra, that is, its own
+  Killing form is negative definite, and in the noncompact ideal otherwise.
 * `LieAlgebra.isCompl_compactIdeal_noncompactIdeal`: a semisimple Lie algebra is the direct sum of
   its compact and noncompact ideals.
 * `LieEquiv.IsCartanInvolution.map_compactIdeal`,
@@ -55,7 +53,7 @@ Simple ideals are the atoms of the lattice of Lie ideals, as in Mathlib's
   when a Cartan involution fixes it pointwise.
 * `LieEquiv.IsCartanInvolution.cartanP_le_noncompactIdeal`: `𝔭` lies in the noncompact ideal.
 * `LieEquiv.not_isCartanInvolution_prodComm`: the flip of `L × L` is not a Cartan involution for
-  nontrivial `L`; for `L = 𝔰𝔩₂(ℝ)` its fixed algebra is the diagonal.
+  nontrivial `L`.
 
 ## References
 
@@ -66,26 +64,6 @@ Simple ideals are the atoms of the lattice of Lie ideals, as in Mathlib's
 public section
 
 open LieAlgebra LieModule
-
-namespace LieIdeal
-
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-
-/-- The bracket of elements of two Lie ideals with trivial intersection vanishes. -/
-theorem lie_eq_zero_of_disjoint {I J : LieIdeal R L} (h : Disjoint I J) {x y : L} (hx : x ∈ I)
-    (hy : y ∈ J) : ⁅x, y⁆ = 0 :=
-  (LieSubmodule.mem_bot _).mp <| h.le_bot <|
-    (LieSubmodule.mem_inf _ _ _).mpr ⟨lie_mem_left R L I x y hx, lie_mem_right R L J x y hy⟩
-
-/-- The Killing form vanishes between two Lie ideals with trivial intersection. -/
-theorem killingForm_eq_zero_of_disjoint {I J : LieIdeal R L} (h : Disjoint I J) {x y : L}
-    (hx : x ∈ I) (hy : y ∈ J) : killingForm R L x y = 0 := by
-  have : toEnd R L L x ∘ₗ toEnd R L L y = 0 := by
-    ext z
-    exact lie_eq_zero_of_disjoint h hx (lie_mem_left R L J y z hy)
-  rw [killingForm, traceForm_apply_apply, this, map_zero]
-
-end LieIdeal
 
 namespace LieEquiv
 
@@ -114,7 +92,7 @@ theorem apply_mem_of_isAtom (hθ : θ.IsCartanInvolution) {I : LieIdeal K L} (hI
   have hle : I ≤ I.map θ.toLieHom :=
     inf_eq_left.mp (((hI.le_iff).mp inf_le_left).resolve_left (hθ.inf_map_ne_bot hI.1))
   have := LieIdeal.mem_map_equiv.mp (hle hx)
-  rwa [θ.symm_apply_eq.mpr (hθ.involutive x).symm] at this
+  rwa [hθ.symm_apply] at this
 
 /-- A Cartan involution maps every simple ideal (an atom of the lattice of Lie ideals) onto
 itself. -/
@@ -122,104 +100,14 @@ theorem map_eq_of_isAtom (hθ : θ.IsCartanInvolution) {I : LieIdeal K L} (hI : 
     I.map θ.toLieHom = I := by
   refine le_antisymm (LieIdeal.map_le_iff_le_comap.mpr fun x hx ↦ hθ.apply_mem_of_isAtom hI hx)
     fun x hx ↦ LieIdeal.mem_map_equiv.mpr ?_
-  rw [θ.symm_apply_eq.mpr (hθ.involutive x).symm]
+  rw [hθ.symm_apply]
   exact hθ.apply_mem_of_isAtom hI hx
 
 end IsCartanInvolution
 
 end Preserve
 
-/-! ### Assembling automorphisms of the summands of an internal direct sum -/
-
-section OfIsInternal
-
-variable {R L ι : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [DecidableEq ι]
-  {I : ι → LieIdeal R L} (h : DirectSum.IsInternal fun i ↦ (I i).toSubmodule)
-  (θ : ∀ i, I i ≃ₗ⁅R⁆ I i)
-
-/-- The identification of the external direct sum of the summands of an internal direct sum with
-`L`. -/
-private noncomputable abbrev sumEquiv : (DirectSum ι fun i ↦ I i) ≃ₗ[R] L :=
-  LinearEquiv.ofBijective (DirectSum.coeLinearMap fun i ↦ (I i).toSubmodule) h
-
-/-- The linear automorphism of `L` acting by `θ i` on each summand of an internal direct sum. -/
-private noncomputable def linearOfIsInternal : L ≃ₗ[R] L :=
-  (sumEquiv h).symm ≪≫ₗ
-    DFinsupp.mapRange.linearEquiv (fun i ↦ (θ i).toLinearEquiv) ≪≫ₗ sumEquiv h
-
-private theorem sumEquiv_apply (y : DirectSum ι fun i ↦ I i) :
-    sumEquiv h y = DirectSum.coeLinearMap (fun i ↦ (I i).toSubmodule) y :=
-  rfl
-
-private theorem linearOfIsInternal_apply_of_mem {i : ι} {x : L} (hx : x ∈ I i) :
-    linearOfIsInternal h θ x = θ i ⟨x, hx⟩ := by
-  have hs : (sumEquiv h).symm x = DirectSum.of (fun i ↦ (I i).toSubmodule) i ⟨x, hx⟩ := by
-    rw [LinearEquiv.symm_apply_eq, sumEquiv_apply, DirectSum.coeLinearMap_of]
-  have hm : DFinsupp.mapRange.linearEquiv (fun i ↦ (θ i).toLinearEquiv)
-      (DirectSum.of (fun i ↦ (I i).toSubmodule) i ⟨x, hx⟩) =
-        DirectSum.of (fun i ↦ (I i).toSubmodule) i (θ i ⟨x, hx⟩) := by
-    simp only [DFinsupp.mapRange.linearEquiv_apply, DirectSum.of]
-    exact DFinsupp.mapRange_single
-  rw [linearOfIsInternal, LinearEquiv.trans_apply, LinearEquiv.trans_apply, hs, hm,
-    sumEquiv_apply, DirectSum.coeLinearMap_of]
-
-private theorem linearOfIsInternal_mem {i : ι} {x : L} (hx : x ∈ I i) :
-    linearOfIsInternal h θ x ∈ I i := by
-  rw [linearOfIsInternal_apply_of_mem h θ hx]
-  exact (θ i ⟨x, hx⟩).property
-
-include h in
-private theorem induction {P : L → Prop} (hP : ∀ i, ∀ x ∈ I i, P x) (h0 : P 0)
-    (hadd : ∀ x y, P x → P y → P (x + y)) (x : L) : P x :=
-  Submodule.iSup_induction _ (motive := P) (h.submodule_iSup_eq_top ▸ Submodule.mem_top) hP h0
-    hadd
-
-include h in
-private theorem disjoint {i j : ι} (hij : i ≠ j) : Disjoint (I i) (I j) :=
-  (LieSubmodule.iSupIndep_toSubmodule.mp h.submodule_iSupIndep).pairwiseDisjoint hij
-
-private theorem linearOfIsInternal_map_lie (x y : L) :
-    linearOfIsInternal h θ ⁅x, y⁆ = ⁅linearOfIsInternal h θ x, linearOfIsInternal h θ y⁆ := by
-  induction x using induction h with
-  | h0 => simp
-  | hadd x x' hx hx' => simp only [add_lie, map_add, hx, hx']
-  | hP i x hx =>
-    induction y using induction h with
-    | h0 => simp
-    | hadd y y' hy hy' => simp only [lie_add, map_add, hy, hy']
-    | hP j y hy =>
-      by_cases hij : i = j
-      · subst hij
-        rw [linearOfIsInternal_apply_of_mem h θ (lie_mem_left R L (I i) x y hx),
-          linearOfIsInternal_apply_of_mem h θ hx, linearOfIsInternal_apply_of_mem h θ hy]
-        exact congrArg Subtype.val ((θ i).map_lie ⟨x, hx⟩ ⟨y, hy⟩)
-      · rw [LieIdeal.lie_eq_zero_of_disjoint (disjoint h hij) hx hy,
-          LieIdeal.lie_eq_zero_of_disjoint (disjoint h hij) (linearOfIsInternal_mem h θ hx)
-            (linearOfIsInternal_mem h θ hy), map_zero]
-
-/-- The Lie algebra automorphism of `L` acting by `θ i` on the summand `I i` of an internal direct
-sum of Lie ideals. -/
-noncomputable def ofIsInternal : L ≃ₗ⁅R⁆ L :=
-  { linearOfIsInternal h θ with
-    map_lie' := fun {x y} ↦ linearOfIsInternal_map_lie h θ x y }
-
-/-- `LieEquiv.ofIsInternal` acts by `θ i` on the summand `I i`. -/
-theorem ofIsInternal_apply_of_mem {i : ι} {x : L} (hx : x ∈ I i) :
-    ofIsInternal h θ x = θ i ⟨x, hx⟩ :=
-  linearOfIsInternal_apply_of_mem h θ hx
-
-/-- `LieEquiv.ofIsInternal` is the unique linear map acting by `θ i` on each summand `I i`. -/
-theorem eq_ofIsInternal_iff (f : L →ₗ[R] L) :
-    f = (ofIsInternal h θ : L →ₗ[R] L) ↔ ∀ i (x : I i), f x = θ i x := by
-  refine ⟨fun hf i x ↦ by rw [hf]; exact ofIsInternal_apply_of_mem h θ x.property, fun hf ↦ ?_⟩
-  refine LinearMap.ext fun x ↦ ?_
-  induction x using induction h with
-  | h0 => simp
-  | hadd x x' hx hx' => simp only [map_add, hx, hx']
-  | hP i x hx =>
-    exact (hf i ⟨x, hx⟩).trans (ofIsInternal_apply_of_mem h θ hx).symm
-
-end OfIsInternal
+/-! ### Assembling Cartan involutions of the summands of an internal direct sum -/
 
 section IsCartanInvolutionOfIsInternal
 
@@ -235,20 +123,21 @@ theorem isCartanInvolution_ofIsInternal [FiniteDimensional K L]
     (hθ : ∀ i, (θ i).IsCartanInvolution) : (ofIsInternal h θ).IsCartanInvolution := by
   classical
   set f := ofIsInternal h θ
-  have hf : ∀ i (x : I i), f x = θ i x := fun i x ↦ ofIsInternal_apply_of_mem h θ x.property
   refine isCartanInvolution_iff.mpr ⟨fun x ↦ ?_, fun x hx ↦ ?_⟩
-  · have hff : (f.toLinearMap ∘ₗ f.toLinearMap) = (ofIsInternal h fun i ↦ (θ i).trans (θ i)) :=
-      (eq_ofIsInternal_iff h _ _).mpr fun i x ↦ by simp [hf]
-    have hid : (LinearMap.id : L →ₗ[K] L) = (ofIsInternal h fun i ↦ (θ i).trans (θ i)) :=
-      (eq_ofIsInternal_iff h _ _).mpr fun i x ↦ by simp [(hθ i).involutive x]
-    exact LinearMap.congr_fun (hff.trans hid.symm) x
+  · have hθθ : (fun i ↦ (θ i).trans (θ i)) = fun _ ↦ LieEquiv.refl :=
+      funext fun i ↦ LieEquiv.ext (hθ i).involutive
+    rw [← LieEquiv.trans_apply, ← ofIsInternal_trans, hθθ, ofIsInternal_refl, LieEquiv.refl_apply]
   -- Write `x` as the sum of its components `d i ∈ I i`.
-  set d := (sumEquiv h).symm x
+  set d := (DirectSum.lieModuleEquivOfIsInternal I h).symm x
   have hx' : x = ∑ i ∈ d.support, (d i : L) := by
-    conv_lhs => rw [← (sumEquiv h).apply_symm_apply x]
-    rw [sumEquiv_apply, DirectSum.coeLinearMap_eq_dfinsuppSum, DFinsupp.sum]
-  have hkill : ∀ i (y : I i), killingForm K L y (θ i y) = killingForm K (I i) y (θ i y) :=
-    fun i y ↦ (LinearMap.congr_fun₂ (LieIdeal.killingForm_eq (I := I i)) y (θ i y)).symm
+    conv_lhs => rw [← (DirectSum.lieModuleEquivOfIsInternal I h).apply_symm_apply x]
+    rw [DirectSum.lieModuleEquivOfIsInternal_apply, ← LieModuleHom.coe_toLinearMap,
+      DirectSum.coeLieModuleHom_toLinearMap, DirectSum.coeLinearMap_eq_dfinsuppSum, DFinsupp.sum]
+  -- Components in distinct summands are Killing-orthogonal.
+  have hoff : ∀ i j, j ≠ i → killingForm K L (d i) (f (d j)) = 0 := fun i j hji ↦ by
+    rw [ofIsInternal_apply_coe]
+    exact LieIdeal.killingForm_eq_zero_of_disjoint (h.lieSubmodule_disjoint hji.symm)
+      (d i).property (θ j (d j)).property
   have hsum : killingForm K L x (f x) =
       ∑ i ∈ d.support, killingForm K (I i) (d i) (θ i (d i)) := by
     calc killingForm K L x (f x)
@@ -257,10 +146,8 @@ theorem isCartanInvolution_ofIsInternal [FiniteDimensional K L]
           simp only [map_sum, LinearMap.sum_apply]
           exact Finset.sum_comm
       _ = _ := Finset.sum_congr rfl fun i hi ↦ by
-          rw [Finset.sum_eq_single i (fun j _ hji ↦ ?_) (fun h ↦ absurd hi h), hf, hkill]
-          rw [hf]
-          exact LieIdeal.killingForm_eq_zero_of_disjoint (disjoint h hji.symm) (d i).property
-            (θ j (d j)).property
+          rw [Finset.sum_eq_single i (fun j _ ↦ hoff i j) (fun h ↦ absurd hi h),
+            ofIsInternal_apply_coe, LieIdeal.killingForm_apply_apply_coe]
   rw [hsum]
   refine Finset.sum_neg (fun i hi ↦ (hθ i).killingForm_apply_apply_neg
     (DFinsupp.mem_support_iff.mp hi)) (Finset.nonempty_of_ne_empty fun hd0 ↦ ?_)
@@ -271,8 +158,7 @@ end IsCartanInvolutionOfIsInternal
 /-! ### The flip of `L × L` -/
 
 /-- The flip of `L × L` is not a Cartan involution for nontrivial `L`: it exchanges the ideals
-`L × 0` and `0 × L` instead of preserving them. For `L = 𝔰𝔩₂(ℝ)` it is an involutive
-automorphism whose fixed algebra is the diagonal `𝔰𝔩₂(ℝ)`. -/
+`L × 0` and `0 × L` instead of preserving them. -/
 theorem not_isCartanInvolution_prodComm {K L : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] [LieRing L] [LieAlgebra K L] [Nontrivial L] :
     ¬ (LieEquiv.prodComm (R := K) (L₁ := L) (L₂ := L)).IsCartanInvolution := by
@@ -290,22 +176,6 @@ end LieEquiv
 /-! ### The compact and noncompact ideals -/
 
 namespace LieAlgebra
-
-section Atoms
-
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-
-open Classical in
-/-- A semisimple Lie algebra is the internal direct sum of its simple ideals. -/
-theorem IsSemisimple.isInternal_atoms [IsSemisimple R L] :
-    DirectSum.IsInternal fun I : {I : LieIdeal R L // IsAtom I} ↦ (I : LieIdeal R L).toSubmodule :=
-  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    (LieSubmodule.iSupIndep_toSubmodule.mpr
-      ((sSupIndep_iff _).mp IsSemisimple.sSupIndep_isAtom))
-    (LieSubmodule.iSup_toSubmodule_eq_top.mpr
-      ((sSup_eq_iSup' _).symm.trans IsSemisimple.sSup_atoms_eq_top))
-
-end Atoms
 
 variable (K L : Type*) [Field K] [LinearOrder K] [LieRing L] [LieAlgebra K L]
 
@@ -333,6 +203,30 @@ theorem noncompactIdeal_def : noncompactIdeal K L =
 
 variable {K L}
 
+/-- A simple ideal with negative definite Killing form lies in the compact ideal. -/
+theorem le_compactIdeal_of_isAtom {I : LieIdeal K L} (hI : IsAtom I)
+    (h : ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) : I ≤ compactIdeal K L :=
+  compactIdeal_def K L ▸ le_sSup ⟨hI, h⟩
+
+/-- A simple ideal whose Killing form is not negative definite lies in the noncompact ideal. -/
+theorem le_noncompactIdeal_of_isAtom {I : LieIdeal K L} (hI : IsAtom I)
+    (h : ¬ ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) : I ≤ noncompactIdeal K L :=
+  noncompactIdeal_def K L ▸ le_sSup ⟨hI, h⟩
+
+/-- The compact ideal lies in `J` exactly when every simple ideal with negative definite Killing
+form does. -/
+theorem compactIdeal_le_iff {J : LieIdeal K L} :
+    compactIdeal K L ≤ J ↔
+      ∀ I : LieIdeal K L, IsAtom I → (∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) → I ≤ J := by
+  simp only [compactIdeal_def, sSup_le_iff, Set.mem_ofPred_eq, and_imp]
+
+/-- The noncompact ideal lies in `J` exactly when every simple ideal whose Killing form is not
+negative definite does. -/
+theorem noncompactIdeal_le_iff {J : LieIdeal K L} :
+    noncompactIdeal K L ≤ J ↔
+      ∀ I : LieIdeal K L, IsAtom I → (¬ ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) → I ≤ J := by
+  simp only [noncompactIdeal_def, sSup_le_iff, Set.mem_ofPred_eq, and_imp]
+
 /-- On a Lie ideal of a finite-dimensional Lie algebra, the Killing form of `L` is negative
 definite exactly when the Killing form of the ideal is. For a simple ideal of a semisimple Lie
 algebra, `LieAlgebra.le_compactIdeal_iff_of_isAtom` turns this into membership in the compact
@@ -340,9 +234,7 @@ ideal. -/
 theorem forall_killingForm_neg_iff [FiniteDimensional K L] (I : LieIdeal K L) :
     (∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) ↔
       ∀ x : I, x ≠ 0 → killingForm K I x x < 0 := by
-  have hkill : ∀ x : I, killingForm K I x x = killingForm K L x x := fun x ↦
-    LinearMap.congr_fun₂ (LieIdeal.killingForm_eq (I := I)) x x
-  simp only [hkill]
+  simp only [← LieIdeal.killingForm_apply_apply_coe]
   exact ⟨fun h x hx ↦ h x x.property (by simpa using hx),
     fun h x hx hx₀ ↦ h ⟨x, hx⟩ (by simpa using hx₀)⟩
 
@@ -373,11 +265,21 @@ theorem le_compactIdeal_iff_of_isAtom [FiniteDimensional K L] [IsSemisimple K L]
     {I : LieIdeal K L} (hI : IsAtom I) :
     I ≤ compactIdeal K L ↔ ∀ x : I, x ≠ 0 → killingForm K I x x < 0 := by
   rw [← forall_killingForm_neg_iff]
-  refine ⟨fun hle ↦ ?_, fun h ↦ compactIdeal_def K L ▸ le_sSup ⟨hI, h⟩⟩
+  refine ⟨fun hle ↦ ?_, le_compactIdeal_of_isAtom hI⟩
   by_contra h
-  have hle' : I ≤ noncompactIdeal K L := noncompactIdeal_def K L ▸ le_sSup ⟨hI, h⟩
   exact hI.1 (eq_bot_iff.mpr ((isCompl_compactIdeal_noncompactIdeal (K := K) (L := L)).disjoint
-    hle hle'))
+    hle (le_noncompactIdeal_of_isAtom hI h)))
+
+/-- **A simple ideal lies in the noncompact ideal exactly when it is not a compact Lie algebra**:
+in a finite-dimensional semisimple Lie algebra, an atom `I` satisfies `I ≤ noncompactIdeal K L`
+exactly when its own Killing form is not negative definite. -/
+theorem le_noncompactIdeal_iff_of_isAtom [FiniteDimensional K L] [IsSemisimple K L]
+    {I : LieIdeal K L} (hI : IsAtom I) :
+    I ≤ noncompactIdeal K L ↔ ¬ ∀ x : I, x ≠ 0 → killingForm K I x x < 0 := by
+  refine ⟨fun hle h ↦ hI.1 (eq_bot_iff.mpr ?_), fun h ↦ le_noncompactIdeal_of_isAtom hI
+    ((forall_killingForm_neg_iff I).not.mpr h)⟩
+  exact (isCompl_compactIdeal_noncompactIdeal (K := K) (L := L)).disjoint
+    ((le_compactIdeal_iff_of_isAtom hI).mpr h) hle
 
 end LieAlgebra
 

@@ -34,6 +34,10 @@ its Killing form is zero, and a zero form is nondegenerate only on the zero modu
   Killing form is free and finite over the base ring.
 * `TauCeti.exists_killingForm_lie_ne_zero`: on a nontrivial Killing Lie algebra the Killing form
   does not vanish on all brackets.
+* `LieIdeal.lie_eq_zero_of_disjoint`, `LieIdeal.killingForm_eq_zero_of_disjoint`: the bracket and
+  the Killing form vanish between Lie ideals with trivial intersection.
+* `LieIdeal.killingForm_apply_apply_coe`: on a Lie ideal of a finite free Lie algebra over a
+  principal ideal domain, the Killing form of the ambient algebra restricts to that of the ideal.
 
 ## References
 
@@ -98,3 +102,33 @@ theorem exists_killingForm_lie_ne_zero [Nontrivial L] [IsKilling R L] :
   exact not_subsingleton L (subsingleton_of_isKilling_of_isLieAbelian R L)
 
 end TauCeti
+
+namespace LieIdeal
+
+open LieAlgebra LieModule
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- The bracket of elements of two Lie ideals with trivial intersection vanishes. -/
+theorem lie_eq_zero_of_disjoint {I J : LieIdeal R L} (h : Disjoint I J) {x y : L} (hx : x ∈ I)
+    (hy : y ∈ J) : ⁅x, y⁆ = 0 :=
+  (LieSubmodule.mem_bot _).mp <| h.le_bot <|
+    (LieSubmodule.mem_inf _ _ _).mpr ⟨lie_mem_left R L I x y hx, lie_mem_right R L J x y hy⟩
+
+/-- The Killing form vanishes between two Lie ideals with trivial intersection. -/
+theorem killingForm_eq_zero_of_disjoint {I J : LieIdeal R L} (h : Disjoint I J) {x y : L}
+    (hx : x ∈ I) (hy : y ∈ J) : killingForm R L x y = 0 := by
+  have : toEnd R L L x ∘ₗ toEnd R L L y = 0 := by
+    ext z
+    exact lie_eq_zero_of_disjoint h hx (lie_mem_left R L J y z hy)
+  rw [killingForm, traceForm_apply_apply, this, map_zero]
+
+/-- On a Lie ideal of a finite free Lie algebra over a principal ideal domain, the Killing form of
+the ambient algebra restricts to the Killing form of the ideal: the pointwise form of Mathlib's
+`LieIdeal.killingForm_eq`. -/
+theorem killingForm_apply_apply_coe [Module.Free R L] [Module.Finite R L] [IsDomain R]
+    [IsPrincipalIdealRing R] (I : LieIdeal R L) (x y : I) :
+    killingForm R L x y = killingForm R I x y :=
+  (LinearMap.congr_fun₂ (killingForm_eq (I := I)) x y).symm
+
+end LieIdeal
