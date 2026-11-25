@@ -108,6 +108,38 @@ theorem boundarySecondFundamentalForm_isSymm (q : (𝓡∂ (n + 1)).boundary M) 
   rw [boundarySecondFundamentalForm_apply, boundarySecondFundamentalForm_apply,
     Manifold.hessian_symm _ (contMDiffAt_neg_chartAt_normal (mem_chart_source _ _))]
 
+/-- Let `f` be `C²` at `q ∈ ∂M` and let `W` be a vector field differentiable at `q`, with
+`W(q) = dι w`, such that `df(W)` vanishes at the boundary points near `q`. Then
+`Hess f(dι u, dι w) = -df_q(∇_{dι u} W)`. -/
+private theorem hessian_eq_neg_mvfderiv_of_eventually_mvfderiv_eq_zero {f : M → ℝ}
+    {q : (𝓡∂ (n + 1)).boundary M} (hf : ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) 2 f q)
+    (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)
+    {W : (y : M) → TangentSpace (𝓡∂ (n + 1)) y} (hW : MDiffAt (T% W) (q : M))
+    (hWq : W q = mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w)
+    (hfW : ∀ᶠ p : (𝓡∂ (n + 1)).boundary M in 𝓝 q, mvfderiv (𝓡∂ (n + 1)) f p (W p) = 0) :
+    Manifold.hessian (𝓡∂ (n + 1)) f q
+        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
+        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w) =
+      -mvfderiv (𝓡∂ (n + 1)) f q (CovariantDerivative.leviCivitaConnection (𝓡∂ (n + 1)) M W q
+        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)) := by
+  set V : (y : M) → TangentSpace (𝓡∂ (n + 1)) y :=
+    FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1)))
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
+  have hV : V q = mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u :=
+    FiberBundle.extend_apply_self _ _
+  have hH := Manifold.hessian_apply_eq_mvfderiv_sub (q : M) hf V W hW
+  rw [hV, hWq] at hH
+  -- The function `y ↦ df_y (W y)` vanishes on the boundary near `q`, so its derivative along the
+  -- boundary vanishes at `q`.
+  rw [hH, mvfderiv_mfderiv_apply_eq_zero_of_comp_eventuallyEq_zero (I := 𝓡∂ (n + 1))
+    (h := fun y ↦ mvfderiv (𝓡∂ (n + 1)) f y (W y)) hfW u, zero_sub]
+
 /-- The Hessian formula of `TauCeti.boundarySecondFundamentalForm`, written in a preferred chart
 whose source contains `q`, is `-⟨∇_{dι u} W, ν_out(q)⟩` for every vector field `W` differentiable
 at `q`, tangent to the boundary at the boundary points near `q`, with `W(q) = dι w`. -/
@@ -128,30 +160,19 @@ private theorem inv_norm_mul_hessian_eq_neg_inner_outwardUnitNormal {α : M}
       -⟪CovariantDerivative.leviCivitaConnection (𝓡∂ (n + 1)) M W q
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u), outwardUnitNormal q⟫_ℝ := by
-  set φ : M → ℝ := fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0
-  set ι : (𝓡∂ (n + 1)).boundary M → M := Subtype.val
-  set V : (y : M) → TangentSpace (𝓡∂ (n + 1)) y :=
-    FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1)))
-      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) ι q u)
-  have hφ : ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) 2 φ q := contMDiffAt_neg_chartAt_normal hq
-  have hV : V q = mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) ι q u :=
-    FiberBundle.extend_apply_self _ _
-  have hH := Manifold.hessian_apply_eq_mvfderiv_sub (q : M) hφ V W hW
-  rw [hV, hWq] at hH
-  -- The function `y ↦ dφ_y (W y)` vanishes on the boundary near `q`, so its derivative along the
-  -- boundary vanishes at `q`.
-  have hgι : (fun y ↦ mvfderiv (𝓡∂ (n + 1)) φ y (W y)) ∘ ι =ᶠ[𝓝 q] 0 := by
+  -- The derivative of the normal coordinate vanishes on vectors tangent to the boundary.
+  have hφW : ∀ᶠ p : (𝓡∂ (n + 1)).boundary M in 𝓝 q,
+      mvfderiv (𝓡∂ (n + 1)) (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0) p
+        (W p) = 0 := by
     filter_upwards [hWt, ((chartAt (EuclideanHalfSpace (n + 1)) α).open_source.preimage
       continuous_subtypeVal).mem_nhds hq] with p hp hps
-    simp only [Function.comp_apply, Pi.zero_apply, φ, ι]
     rw [mvfderiv_neg_chartAt_normal_apply hps,
       (mem_boundaryTangentSpace_iff_tangentCoordChange (by rwa [extChartAt_source]) _).mp hp,
       neg_zero]
-  have hzero := mvfderiv_mfderiv_apply_eq_zero_of_comp_eventuallyEq_zero (I := 𝓡∂ (n + 1)) hgι u
-  rw [hH, hzero, outwardUnitNormal_eq_normalize_mgradient
-    (IsManifold.chart_mem_maximalAtlas _) hq, real_inner_comm,
-    Manifold.inner_normalize_mgradient]
-  ring
+  rw [hessian_eq_neg_mvfderiv_of_eventually_mvfderiv_eq_zero
+      (contMDiffAt_neg_chartAt_normal hq) u w hW hWq hφW,
+    outwardUnitNormal_eq_normalize_mgradient (IsManifold.chart_mem_maximalAtlas _) hq,
+    real_inner_comm, Manifold.inner_normalize_mgradient, mul_neg]
 
 /-- **The second fundamental form through the connection.** Let `W` be a vector field on `M`,
 differentiable at `q ∈ ∂M`, tangent to the boundary at the boundary points near `q`, with
@@ -201,31 +222,22 @@ theorem IsBoundaryDefiningFunctionOn.boundarySecondFundamentalForm_apply {ρ : M
           (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
             (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w) /
         ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ := by
-  set ι : (𝓡∂ (n + 1)).boundary M → M := Subtype.val
   obtain ⟨W, hW, hWq, hWt⟩ := exists_mdifferentiableAt_extension_mem_boundaryTangentSpace q w
-  set V : (y : M) → TangentSpace (𝓡∂ (n + 1)) y :=
-    FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1)))
-      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) ι q u)
-  have hV : V q = mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) ι q u :=
-    FiberBundle.extend_apply_self _ _
   have hρq : ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) 2 ρ q :=
     ((hρ.contMDiffOn (q : M) hqU).contMDiffAt (hρ.isOpen.mem_nhds hqU)).of_le
       (by simp)
-  have hH := Manifold.hessian_apply_eq_mvfderiv_sub (q : M) hρq V W hW
-  rw [hV, hWq] at hH
-  -- The function `y ↦ dρ_y (W y)` vanishes on the boundary near `q`, so its derivative along the
-  -- boundary vanishes at `q`.
-  have hgι : (fun y ↦ mvfderiv (𝓡∂ (n + 1)) ρ y (W y)) ∘ ι =ᶠ[𝓝 q] 0 := by
+  -- The derivative of `ρ` vanishes on vectors tangent to the boundary.
+  have hρW : ∀ᶠ p : (𝓡∂ (n + 1)).boundary M in 𝓝 q, mvfderiv (𝓡∂ (n + 1)) ρ p (W p) = 0 := by
     filter_upwards [hWt, (hρ.isOpen.preimage continuous_subtypeVal).mem_nhds hqU] with p hp hpU
     exact (hρ.mvfderiv_eq_zero_iff hpU (W p)).mpr hp
-  have hzero := mvfderiv_mfderiv_apply_eq_zero_of_comp_eventuallyEq_zero (I := 𝓡∂ (n + 1)) hgι u
   have hne : ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ ≠ 0 :=
     by simpa using hρ.mvfderiv_ne_zero (q : M) hqU q.property
-  rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt, hH,
-    hzero, zero_sub, neg_neg, ← Manifold.inner_mgradient,
-    hρ.mgradient_eq_norm_smul_inwardUnitNormal hqU, inner_smul_left, inwardUnitNormal_def,
-    inner_neg_left, real_inner_comm]
-  exact (mul_div_cancel_left₀ _ hne).symm
+  rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
+    hessian_eq_neg_mvfderiv_of_eventually_mvfderiv_eq_zero hρq u w hW hWq hρW,
+    ← Manifold.inner_mgradient, hρ.mgradient_eq_norm_smul_inwardUnitNormal hqU,
+    inwardUnitNormal_def]
+  field_simp
+  simp [real_inner_smul_left, real_inner_comm, mul_comm]
 
 
 /-- **The second fundamental form through an extension of the outward normal.** Let `N` be a
@@ -260,10 +272,9 @@ theorem boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal
     simp only [Function.comp_apply, Pi.zero_apply, hpN]
     exact inner_outwardUnitNormal_of_mem_boundaryTangentSpace hp
   have hzero := mvfderiv_mfderiv_apply_eq_zero_of_comp_eventuallyEq_zero (I := 𝓡∂ (n + 1)) hgι u
-  rw [hV] at hc
+  simp only [hV] at hc
   rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
     ← hWq, ← hNν.self_of_nhds, real_inner_comm (N q)]
-  simp only [hV] at hc
   linarith
 
 end TauCeti
