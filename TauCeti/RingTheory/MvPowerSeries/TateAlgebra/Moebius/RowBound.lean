@@ -74,26 +74,6 @@ namespace TauCeti.MvPowerSeries
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {k : ℕ} {s : Fin k → ℝ} {i : Fin k}
   {g : Matrix (Fin 2) (Fin 2) R}
 
-/-- The denominator `c Xᵢ + d` as a sum of two monomials. -/
-private theorem coe_moebiusDenom_eq :
-    (moebiusDenom i g : _root_.MvPowerSeries (Fin k) R) =
-      monomial (Finsupp.single i 1) (g 1 0) + monomial 0 (g 1 1) := by
-  rw [moebiusDenom_def, Subring.coe_add, coe_smul_isRestrictedSubring,
-    coe_algebraMap_isRestrictedSubring, ← monomial_zero_eq_C_apply]
-  congr 1
-  dsimp only
-  rw [X_def, ← map_smul, smul_eq_mul, mul_one]
-
-/-- The numerator `a Xᵢ + b` as a sum of two monomials. -/
-private theorem coe_moebiusNum_eq :
-    (moebiusNum i g : _root_.MvPowerSeries (Fin k) R) =
-      monomial (Finsupp.single i 1) (g 0 0) + monomial 0 (g 0 1) := by
-  rw [moebiusNum_def, Subring.coe_add, coe_smul_isRestrictedSubring,
-    coe_algebraMap_isRestrictedSubring, ← monomial_zero_eq_C_apply]
-  congr 1
-  dsimp only
-  rw [X_def, ← map_smul, smul_eq_mul, mul_one]
-
 omit [IsUltrametricDist R] in
 /-- The exponent `Xᵢ` has weight `sᵢ`. -/
 private theorem prod_pow_single (i : Fin k) : (Finsupp.single i 1).prod (s · ^ ·) = s i := by
@@ -104,7 +84,7 @@ coefficients bounded by `∏ⱼ sⱼ ^ tⱼ`. -/
 theorem norm_coeff_moebiusDenom_le (hs : ∀ j, 0 ≤ s j) (hc : ‖g 1 0‖ ≤ s i) (hd : ‖g 1 1‖ ≤ 1)
     (t : Fin k →₀ ℕ) :
     ‖coeff t (moebiusDenom i g : _root_.MvPowerSeries (Fin k) R)‖ ≤ t.prod (s · ^ ·) := by
-  rw [coe_moebiusDenom_eq, map_add]
+  rw [coe_moebiusDenom, map_add]
   exact (IsUltrametricDist.norm_add_le_max _ _).trans <| max_le
     (norm_coeff_monomial_le_prod_pow hs (by rwa [prod_pow_single]) t)
     (norm_coeff_monomial_le_prod_pow hs (by simpa using hd) t)
@@ -133,13 +113,10 @@ theorem norm_coeff_ringInverse_moebiusDenom_le (hs : ∀ j, 0 ≤ s j) (hg : g �
       invOfUnit (moebiusDenom i g : _root_.MvPowerSeries (Fin k) R) u := by
     refine left_inv_eq_right_inv ?_ (mul_invOfUnit _ _ ?_)
     · rw [← Subring.coe_mul, Ring.inverse_mul_cancel _ (isUnit_moebiusDenom hg), Subring.coe_one]
-    · rw [← coeff_zero_eq_constantCoeff_apply, coe_moebiusDenom_eq, map_add, coeff_monomial,
-        ite_eq_right (Finsupp.single_ne_zero.mpr one_ne_zero).symm, coeff_monomial, ite_eq_left rfl,
-        zero_add,
-        IsUnit.unit_spec]
+    · rw [constantCoeff_moebiusDenom, IsUnit.unit_spec]
   rw [hinv]
   refine (norm_coeff_invOfUnit_le_mul_prod_pow hs (fun t ht ↦ ?_) t).trans_eq (by rw [hu, one_mul])
-  rw [hu, one_mul, coe_moebiusDenom_eq, map_add]
+  rw [hu, one_mul, coe_moebiusDenom, map_add]
   simp only [coeff_monomial t (0 : Fin k →₀ ℕ), ht, ↓reduceIte, add_zero]
   exact norm_coeff_monomial_le_prod_pow hs (by rwa [prod_pow_single]) t
 
@@ -161,7 +138,7 @@ theorem norm_coeff_moebius_le (hs : ∀ j, 0 ≤ s j) (hg : g ∈ moebiusSubmono
       C (g 0 1 * ↑u⁻¹) * (moebiusDenom i g : _root_.MvPowerSeries (Fin k) R) +
         monomial (Finsupp.single i 1) (g.det * ↑u⁻¹) := by
     ext t
-    rw [map_add, coeff_C_mul, coe_moebiusNum_eq, coe_moebiusDenom_eq, Matrix.det_fin_two]
+    rw [map_add, coeff_C_mul, coe_moebiusNum, coe_moebiusDenom, Matrix.det_fin_two]
     simp only [map_add, coeff_monomial]
     split_ifs with h₁ h₂
     · exact absurd (h₂ ▸ h₁).symm (Finsupp.single_ne_zero.mpr one_ne_zero)
