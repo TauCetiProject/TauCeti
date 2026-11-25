@@ -29,6 +29,11 @@ noncomputable def originIdealSheaf : (Spec (.of (MvPolynomial (Fin 2) k))).Ideal
   Scheme.IdealSheafData.ofIdealTop
     ((Ideal.span {X 0, X 1}).map (Scheme.ΓSpecIso (.of (MvPolynomial (Fin 2) k))).inv.hom)
 
+/-- The ideal sheaf of the origin is associated to the ideal `(x, y)` of global sections. -/
+theorem originIdealSheaf_def : originIdealSheaf k = Scheme.IdealSheafData.ofIdealTop
+    ((Ideal.span {X 0, X 1}).map (Scheme.ΓSpecIso (.of (MvPolynomial (Fin 2) k))).inv.hom) :=
+  (rfl)
+
 /-- The support of the ideal sheaf of the origin is not the whole plane. -/
 theorem support_originIdealSheaf_ne_top : (originIdealSheaf k).support ≠ ⊤ := by
   -- The generic point `(0)` would lie in the support, so `(0)` would contain `x`.
