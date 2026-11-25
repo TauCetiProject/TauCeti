@@ -200,10 +200,8 @@ def twistEquivCanonicalBundle (x : ℙ 𝕜 (Fin 2 → 𝕜)) :
     left_inv c := by
       simp only [LinearMap.toFun_eq_coe, LinearMap.toSpanSingleton_apply]
       rw [smul_smul,
-        CanonicalBundle.trivializationAt_apply_snd_smul_coordForm (mem_chart_source _ x),
-        ContinuousAlternatingMap.smul_apply, Module.Basis.continuousDet_apply,
-        Module.Basis.det_self, smul_eq_mul, mul_one, mul_left_comm, eulerFormSign_mul_self,
-        mul_one]
+        CanonicalBundle.trivializationAt_apply_snd_smul_coordForm (mem_chart_source _ x)]
+      simp [Module.Basis.det_self, mul_left_comm]
     right_inv α := by
       simp only [LinearMap.toFun_eq_coe, LinearMap.toSpanSingleton_apply]
       rw [smul_smul, mul_right_comm, eulerFormSign_mul_self, one_mul]
