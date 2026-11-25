@@ -40,9 +40,7 @@ theorem componentGroup_principalLevel_one :
   · -- Elements of `Γ_{1,K(1)}` have determinant `1` and integral entries.
     refine mem_range_mapGL_of_det_eq_one (det_eq_one_of_mem_componentGroup
       (isCompact_principalLevel ℚ (by simp)) h) ?_
-    have h2 := (mem_componentGroup_iff.mp h).2
-    rwa [inv_one, one_mul, mul_one, Nat.cast_one, Ideal.span_singleton_one,
-      principalLevel_top] at h2
+    simpa [principalLevel_top] using (mem_componentGroup_iff.mp h).2
   · rintro ⟨γ, rfl⟩
     exact mapGL_mem_componentGroup_principalLevel_one_iff.mpr (by simp [Gamma_one_top])
 

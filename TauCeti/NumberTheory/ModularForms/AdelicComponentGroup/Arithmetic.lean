@@ -28,7 +28,9 @@ of finite index, and every element of `SL₂(ℤ)` has determinant `1 > 0`.
 
 ## Main definitions
 
-* `TauCeti.AdelicExamples.GL2.componentGroupReal U g`: the image of `Γ_{g,U}` in `GL₂(ℝ)`.
+* `TauCeti.AdelicExamples.GL2.componentGroupReal U g`: the image of `Γ_{g,U}` in `GL₂(ℝ)`, with
+  membership lemmas `TauCeti.AdelicExamples.GL2.mem_componentGroupReal_iff` and
+  `TauCeti.AdelicExamples.GL2.map_mem_componentGroupReal_iff`.
 
 ## Main results
 
@@ -74,12 +76,27 @@ theorem componentGroupReal_def (U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ �
     componentGroupReal U g = (componentGroup U g).map (GeneralLinearGroup.map (algebraMap ℚ ℝ)) :=
   (rfl)
 
+/-- Membership in the image of `Γ_{g,U}` in `GL₂(ℝ)`. -/
+@[simp]
+theorem mem_componentGroupReal_iff {x : GL (Fin 2) ℝ} :
+    x ∈ componentGroupReal U g ↔
+      ∃ γ ∈ componentGroup U g, GeneralLinearGroup.map (algebraMap ℚ ℝ) γ = x :=
+  Subgroup.mem_map
+
+/-- A rational matrix lies in the image of `Γ_{g,U}` in `GL₂(ℝ)` exactly when it lies in
+`Γ_{g,U}`, since `GL₂(ℚ) → GL₂(ℝ)` is injective. -/
+@[simp 1100]
+theorem map_mem_componentGroupReal_iff {γ : GL (Fin 2) ℚ} :
+    GeneralLinearGroup.map (algebraMap ℚ ℝ) γ ∈ componentGroupReal U g ↔
+      γ ∈ componentGroup U g :=
+  Subgroup.mem_map_iff_mem (GeneralLinearGroup.map_injective (algebraMap ℚ ℝ).injective)
+
 /-- **`Γ_{g,U} ∩ SL₂(ℤ)` has finite index in `SL₂(ℤ)`** for open `U`. -/
 theorem relIndex_componentGroup_range_mapGL_ne_zero
     (hU : IsOpen (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))) :
     (componentGroup U g).relIndex (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ).range ≠ 0 := by
-  set φ := GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))
-  set ψ := φ.comp (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ)
+  set ψ := (GeneralLinearGroup.map (n := Fin 2) (algebraMap ℤ (FiniteAdeleRing ℤ ℚ))).comp
+    (SpecialLinearGroup.toGL (n := Fin 2) (R := ℤ))
   set V := U.map (MulAut.conj g).toMonoidHom
   set O := principalLevel ℚ (⊤ : Ideal ℤ)
   -- `gUg⁻¹` is open, so it has finite index in the compact group `GL₂(Ô)`.
@@ -94,41 +111,28 @@ theorem relIndex_componentGroup_range_mapGL_ne_zero
   -- The diagonal image of `SL₂(ℤ)` lies in `GL₂(Ô)`.
   have h2 : ψ.range ≤ O := by
     rintro _ ⟨γ, rfl⟩
-    have himage : ψ γ = GeneralLinearGroup.map (algebraMap ℤ (FiniteAdeleRing ℤ ℚ)) γ.toGL := by
-      ext i j
-      simp [ψ, φ, SpecialLinearGroup.mapGL_coe_matrix]
-    rw [himage]
     exact map_algebraMap_mem_principalLevel fun _ _ ↦ Submodule.mem_top
   have h3 : (V.comap ψ).index ≠ 0 := by
     rw [Subgroup.index_comap]
     exact mt (Subgroup.relIndex_eq_zero_of_le_right h2) h1
   -- An element of `SL₂(ℤ)` whose diagonal image lies in `gUg⁻¹` lies in `Γ_{g,U}`.
-  have h4 : V.comap ψ ≤ (componentGroup U g).comap (SpecialLinearGroup.mapGL ℚ) := by
-    intro γ hγ
-    rw [Subgroup.mem_comap, mem_componentGroup_iff, SpecialLinearGroup.det_mapGL]
-    refine ⟨zero_lt_one, ?_⟩
-    obtain ⟨u, hu, hu'⟩ := Subgroup.mem_map.mp (Subgroup.mem_comap.mp hγ)
-    have hu'' : g * u * g⁻¹ = φ (SpecialLinearGroup.mapGL ℚ γ) := by
-      simpa [MulAut.conj_apply, ψ] using hu'
-    rw [← hu'']
-    simpa [mul_assoc] using hu
+  have h4 : V.comap ψ ≤ (componentGroup U g).comap (SpecialLinearGroup.mapGL ℚ) :=
+    fun _ hγ ↦ mapGL_mem_componentGroup_iff.mpr hγ
   rw [← Subgroup.index_comap]
   exact fun h ↦ h3 (Nat.eq_zero_of_zero_dvd (h ▸ Subgroup.index_dvd_of_le h4))
 
-/-- **At principal level `N ≠ 0`, the component of `1` has group `Γ(N)`**: an element of
-`SL₂(ℤ)` lies in `Γ_{1,K(N)}` exactly when it lies in the principal congruence subgroup `Γ(N)`. -/
+/-- **At principal level `N ≠ 0`, the elements of `SL₂(ℤ)` in `Γ_{1,K(N)}` are those of
+`Γ(N)`**: an element of `SL₂(ℤ)` lies in `Γ_{1,K(N)}` exactly when it lies in the principal
+congruence subgroup `Γ(N)`. -/
 theorem mapGL_mem_componentGroup_principalLevel_one_iff {N : ℕ} [NeZero N] {γ : SL(2, ℤ)} :
     SpecialLinearGroup.mapGL ℚ γ ∈ componentGroup (principalLevel ℚ (Ideal.span {(N : ℤ)})) 1 ↔
       γ ∈ CongruenceSubgroup.Gamma N := by
   refine ⟨fun h ↦ ?_, fun h ↦ map_Gamma_le_componentGroup (fun x hx ↦ ⟨x, hx, by simp⟩)
     ⟨γ, h, rfl⟩⟩
-  have himage : GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))
-      (SpecialLinearGroup.mapGL ℚ γ) =
-        GeneralLinearGroup.map (algebraMap ℤ (FiniteAdeleRing ℤ ℚ)) γ.toGL := by
-    ext i j
-    simp [SpecialLinearGroup.mapGL_coe_matrix]
-  rw [mem_componentGroup_iff, inv_one, one_mul, mul_one, himage] at h
-  obtain ⟨hg, -, h⟩ := mem_principalLevel_iff.mp h.2
+  replace h : GeneralLinearGroup.map (algebraMap ℤ (FiniteAdeleRing ℤ ℚ)) γ.toGL ∈
+      principalLevel ℚ (Ideal.span {(N : ℤ)}) := by
+    simpa using mapGL_mem_componentGroup_iff.mp h
+  obtain ⟨hg, -, h⟩ := mem_principalLevel_iff.mp h
   have hN : Ideal.span {(N : ℤ)} ≠ ⊥ := by simp [NeZero.ne N]
   have hentry (i j : Fin 2) : (N : ℤ) ∣ γ i j - (1 : Matrix (Fin 2) (Fin 2) ℤ) i j := by
     rw [← Ideal.mem_span_singleton, ← algebraMap_mem_completedIdeal_iff (K := ℚ) hN]
@@ -151,14 +155,8 @@ theorem isArithmetic_componentGroupReal
     (hU : IsCompact (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))))
     (hU' : IsOpen (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))) :
     (componentGroupReal U g).IsArithmetic := by
-  have hrange : (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℝ).range =
-      (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ).range.map
-        (GeneralLinearGroup.map (algebraMap ℚ ℝ)) := by
-    rw [MonoidHom.map_range]
-    congr 1
-    ext γ i j
-    simp
-  rw [Subgroup.isArithmetic_iff, hrange, componentGroupReal,
+  rw [Subgroup.isArithmetic_iff, ← SpecialLinearGroup.map_comp_mapGL_int (algebraMap ℚ ℝ),
+    ← MonoidHom.map_range, componentGroupReal,
     Subgroup.Commensurable.map_injective_iff
       (GeneralLinearGroup.map_injective (algebraMap ℚ ℝ).injective)]
   exact commensurable_componentGroup hU hU'

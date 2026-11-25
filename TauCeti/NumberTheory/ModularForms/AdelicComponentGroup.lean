@@ -43,6 +43,8 @@ number whose principal finite idele lies in `Ô^×` is a unit of `ℤ`, hence eq
   `Γ_{g,U} = SL₂(ℚ) ∩ gUg⁻¹`.
 * `TauCeti.AdelicExamples.GL2.componentGroup_mono`: `U' ≤ U` gives `Γ_{g,U'} ≤ Γ_{g,U}`.
 * `TauCeti.AdelicExamples.GL2.componentGroup_mul_mul`: `Γ_{qgu,U} = qΓ_{g,U}q⁻¹`.
+* `TauCeti.AdelicExamples.GL2.mapGL_mem_componentGroup_iff`: an element of `SL₂(ℤ)` lies in
+  `Γ_{g,U}` exactly when its diagonal image lies in `gUg⁻¹`.
 * `TauCeti.AdelicExamples.GL2.map_Gamma_le_componentGroup`: `Γ(M) ⊆ Γ_{g,U}` when
   `K(M) ⊆ gUg⁻¹`.
 * `TauCeti.AdelicExamples.GL2.isCongruenceSubgroup_comap_mapGL_componentGroup`: then, for
@@ -143,6 +145,22 @@ theorem componentGroup_mul_mul {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ �
     group
   rw [hdet, hconj, Subgroup.mul_mem_cancel_right U hu, Subgroup.mul_mem_cancel_left U (inv_mem hu)]
 
+/-- An element of `SL₂(ℤ)` lies in `Γ_{g,U}` exactly when its diagonal image in `GL₂(𝔸_f)` lies
+in `gUg⁻¹`: its determinant `1` is automatically positive. -/
+theorem mapGL_mem_componentGroup_iff {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
+    {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)} {γ : SL(2, ℤ)} :
+    SpecialLinearGroup.mapGL ℚ γ ∈ componentGroup U g ↔
+      GeneralLinearGroup.map (algebraMap ℤ (FiniteAdeleRing ℤ ℚ)) γ.toGL ∈
+        U.map (MulAut.conj g).toMonoidHom := by
+  have himage : GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))
+      (SpecialLinearGroup.mapGL ℚ γ) =
+        GeneralLinearGroup.map (algebraMap ℤ (FiniteAdeleRing ℤ ℚ)) γ.toGL := by
+    ext i j
+    simp [SpecialLinearGroup.mapGL_coe_matrix]
+  rw [componentGroup, Subgroup.mem_inf, mem_glpos, SpecialLinearGroup.det_mapGL, Units.val_one,
+    Subgroup.mem_comap, himage]
+  exact and_iff_right zero_lt_one
+
 /-- **`Γ(M) ⊆ Γ_{g,U}`.** If the principal level `K(M)` of `GL₂(𝔸_f)` lies in `gUg⁻¹`, then the
 image in `GL₂(ℚ)` of the principal congruence subgroup `Γ(M)` of `SL₂(ℤ)` lies in `Γ_{g,U}`. -/
 theorem map_Gamma_le_componentGroup {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
@@ -155,16 +173,7 @@ theorem map_Gamma_le_componentGroup {U : Subgroup (GL (Fin 2) (FiniteAdeleRing �
       (1 : Matrix (Fin 2) (Fin 2) ℤ) i j ∈ Ideal.span {(M : ℤ)} := by
     obtain ⟨h00, h01, h10, h11⟩ := CongruenceSubgroup.mem_Gamma_iff_dvd.mp hγ
     simp [Fin.forall_fin_two, Ideal.mem_span_singleton, h00, h01, h10, h11]
-  have himage : GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))
-      (SpecialLinearGroup.mapGL ℚ γ) =
-        GeneralLinearGroup.map (algebraMap ℤ (FiniteAdeleRing ℤ ℚ)) γ.toGL := by
-    ext i j
-    simp [SpecialLinearGroup.mapGL_coe_matrix]
-  rw [mem_componentGroup_iff, SpecialLinearGroup.det_mapGL]
-  refine ⟨zero_lt_one, ?_⟩
-  obtain ⟨u, hu, hu'⟩ := Subgroup.mem_map.mp (h (himage ▸ map_algebraMap_mem_principalLevel hmem))
-  rw [← hu']
-  simpa [mul_assoc] using hu
+  exact mapGL_mem_componentGroup_iff.mpr (h (map_algebraMap_mem_principalLevel hmem))
 
 /-- **`Γ_{g,U} ∩ SL₂(ℤ)` is a congruence subgroup of `SL₂(ℤ)`** when the principal level
 `K(M)`, `M ≠ 0`, lies in `gUg⁻¹`: it contains `Γ(M)`. In particular it has finite index in
