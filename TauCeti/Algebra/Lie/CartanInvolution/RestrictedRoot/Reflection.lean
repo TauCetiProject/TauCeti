@@ -129,7 +129,6 @@ theorem exists_lieEquiv_forall_mem_restrictedRootSpace {μ : Dual ℝ 𝔞}
     (hθ.restrictedCoroot_lie_eq_smul_of_mem_restrictedRootSpace h𝔞.le_cartanP μ hz)]
   simp only [LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, mul_comm]
 
-include hθ h𝔞 in
 /-- The reflection `s_λ` is an involution of `𝔞*`: `s_λ (s_λ ν) = ν`. -/
 theorem sub_smul_sub_smul_eq {μ : Dual ℝ 𝔞} (hμ : μ ≠ 0) (ν : Dual ℝ 𝔞) :
     (ν - ν (hθ.restrictedCoroot h𝔞.le_cartanP μ) • μ) -
