@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Hersch.Basic
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.SphereBoost
-public import Mathlib.Analysis.SpecialFunctions.Artanh
-public import Mathlib.Analysis.Normed.Module.Normalize
 
 /-!
 # Smoothness of Hersch's sphere homeomorphism
@@ -39,18 +37,15 @@ theorem sphereBoostDiffeotopy_final_eq_herschHomeomorph {a : E} (ha : ‖a‖ < 
   funext x
   apply Subtype.ext
   rw [coe_sphereBoostDiffeotopy_final_apply, coe_herschHomeomorph,
-    ← herschMap_tanh_smul (NormedSpace.norm_normalize ha0),
-    Real.tanh_artanh ⟨by linarith [norm_nonneg a], ha⟩, NormedSpace.norm_smul_normalize]
+    herschMap_eq_sphereBoost_normalize ha ha0]
 
 /-- Hersch's transformation is analytic, and hence `C^m`, on the unit sphere. -/
 theorem contMDiff_herschHomeomorph {a : E} (ha : ‖a‖ < 1) :
     ContMDiff (𝓡 n) (𝓡 n) m (herschHomeomorph ha) := by
   by_cases ha0 : a = 0
-  · have hid : (herschHomeomorph ha : sphere (0 : E) 1 → sphere (0 : E) 1) = id := by
-      funext x
-      exact Subtype.ext (by simp [ha0])
-    rw [hid]
-    exact contMDiff_id
+  · subst a
+    simpa only [herschHomeomorph_zero, Homeomorph.refl_apply] using
+      (contMDiff_id : ContMDiff (𝓡 n) (𝓡 n) m (id : sphere (0 : E) 1 → _))
   · rw [← sphereBoostDiffeotopy_final_eq_herschHomeomorph (n := n) ha ha0 (m := m)]
     exact (sphereBoostDiffeotopy (n := n) (m := m) (NormedSpace.norm_normalize ha0)
       (Real.artanh ‖a‖)).final.contMDiff
