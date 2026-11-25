@@ -107,8 +107,7 @@ theorem smoothTensorInducedMackeyResolutionPiece_ρ_mem (n : ℤ) (g : V)
     exact Representation.isHomogeneous_wreathTensor _ hρ _
   have he : ((smoothTensorInducedMackeyResolutionModule U V hU r t A).obj.ρ g) z =
       PiTensorProduct.map (fun D ↦ (M D).ρ g) z :=
-    (DiscreteRep.piTensorProduct_ρ_apply M g z).trans
-      (LinearMap.congr_fun (Representation.piTensorProduct_apply _ g) z)
+    DiscreteRep.piTensorProduct_ρ_apply M g z
   have h := (PiTensorProduct.isHomogeneous_map hM).map_mem hz
   rw [Finset.sum_const_zero, add_zero] at h
   exact he.symm ▸ h

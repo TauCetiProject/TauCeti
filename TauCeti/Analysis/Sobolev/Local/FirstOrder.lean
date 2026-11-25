@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.MemLpLoc
+import TauCeti.Analysis.Sobolev.WeakDeriv.AddHaar
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -63,8 +64,8 @@ sharpness checks live in `TauCeti.Analysis.Sobolev.Local.FirstOrder.Examples`.
   `TauCeti.MemLpLoc.memW1pLoc_of_forall_strongDual`).
 * **Haar-measure and linear invariance.** On finite-dimensional real normed spaces, `MemW1pLoc` is
   independent of the choice of additive Haar measure (`TauCeti.memW1pLoc_iff_of_isAddHaarMeasure`),
-  invariant under positive measure rescaling (`TauCeti.memW1pLoc_smul_measure_iff`), and preserved
-  and reflected by every continuous linear equivalence `e : E₁ ≃L[ℝ] E`
+  invariant under finite nonzero measure rescaling (`TauCeti.memW1pLoc_smul_measure_iff`), and
+  preserved and reflected by every continuous linear equivalence `e : E₁ ≃L[ℝ] E`
   (`ContinuousLinearEquiv.memW1pLoc_comp_iff`), regardless of Jacobian determinant or choice of
   equivalent norm (`TauCeti.memW1pLoc_comp_toLp_iff`); the corresponding `MemLpLoc` invariance
   results live in `TauCeti.MeasureTheory.Function.MemLpLoc`.
@@ -322,16 +323,11 @@ theorem _root_.LocallyLipschitzOn.memW1pLoc [FiniteDimensional ℝ E] [BorelSpac
     (hu : LocallyLipschitzOn Ω u) : MemW1pLoc p Ω u μ := by
   have : CompleteSpace F := FiniteDimensional.completeSpace ℝ F
   refine ⟨hu.continuousOn.memLpLoc, fderiv ℝ u, hu.hasWeakFDerivOn_fderiv,
-    memLpLoc_iff.2 fun L hLΩ hL => ?_⟩
-  obtain ⟨δ, hδ, hδΩ⟩ := hL.exists_cthickening_subset_open Ω.isOpen hLΩ
-  obtain ⟨C, hC⟩ := (hu.mono hδΩ).exists_lipschitzOnWith_of_compact hL.cthickening
-  have : IsFiniteMeasure (μ.restrict L) := ⟨by simpa using hL.measure_lt_top⟩
-  refine MemLp.of_bound (measurable_fderiv ℝ u).aestronglyMeasurable C ?_
-  filter_upwards [ae_restrict_mem hL.measurableSet] with x hx
-  have hnhds : cthickening δ L ∈ 𝓝 x :=
-    mem_of_superset (isOpen_thickening.mem_nhds (self_subset_thickening hδ _ hx))
-      (thickening_subset_cthickening _ _)
-  exact norm_fderiv_le_of_lipschitzOn ℝ hnhds hC
+    memLpLoc_of_forall_eventually_norm_le (measurable_fderiv ℝ u).aestronglyMeasurable
+      fun x hx => ?_⟩
+  obtain ⟨K, t, ht, hK⟩ := hu hx
+  rw [nhdsWithin_eq_nhds.2 (Ω.isOpen.mem_nhds hx)] at ht
+  exact ⟨K, (eventually_mem_nhds_iff.2 ht).mono fun _ hy => norm_fderiv_le_of_lipschitzOn ℝ hy hK⟩
 
 /-- A map Lipschitz on `Ω` between finite-dimensional real normed spaces belongs to `MemW1pLoc p Ω`
 for every exponent `p`. -/
@@ -488,13 +484,13 @@ theorem memW1pLoc_iff_of_isAddHaarMeasure {E F : Type*} [NormedAddCommGroup E] [
   simp only [memW1pLoc_iff, memLpLoc_iff_of_isAddHaarMeasure μ ν,
     hasWeakFDerivOn_iff_of_isAddHaarMeasure μ ν]
 
-/-- Rescaling the measure by any positive factor `c : ℝ≥0` (`c ≠ 0`) leaves `MemW1pLoc`
-unchanged. -/
+/-- Multiplying the measure by a finite nonzero constant leaves `MemW1pLoc` unchanged. -/
 theorem memW1pLoc_smul_measure_iff {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [MeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {μ : Measure E} {c : ℝ≥0} (hc : c ≠ 0) {p : ℝ≥0∞} {Ω : Opens E} {u : E → F} :
-    MemW1pLoc p Ω u ((c : ℝ≥0∞) • μ) ↔ MemW1pLoc p Ω u μ := by
-  simp only [memW1pLoc_iff, memLpLoc_smul_measure_iff hc, hasWeakFDerivOn_smul_measure_iff hc]
+    {μ : Measure E} {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ ⊤) {p : ℝ≥0∞} {Ω : Opens E} {u : E → F} :
+    MemW1pLoc p Ω u (c • μ) ↔ MemW1pLoc p Ω u μ := by
+  simp only [memW1pLoc_iff, memLpLoc_smul_measure_iff hc₀ hc,
+    hasWeakFDerivOn_smul_measure_iff hc₀ hc]
 
 /-- **Precomposition with a continuous linear equivalence in `MemW1pLoc`.** Any continuous linear
 equivalence `e : E₁ ≃L[ℝ] E` between finite-dimensional real normed spaces carrying Borel additive

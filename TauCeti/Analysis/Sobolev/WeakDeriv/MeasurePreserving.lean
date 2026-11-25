@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
+import TauCeti.Analysis.Sobolev.WeakDeriv.AddHaar
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.Mollification.Interior
@@ -265,7 +266,7 @@ theorem HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure {U : Open
     (e : E ≃L[ℝ] E') (hUV : MapsTo e U V) :
     HasWeakFDerivOn μ U (u ∘ e) fun x => (D (e x)).comp (e : E →L[ℝ] E') := by
   have : (μ.map e).IsAddHaarMeasure := e.isAddHaarMeasure_map μ
-  exact ((hasWeakFDerivOn_iff_of_isAddHaarMeasure ν (μ.map e)).1 h).comp_continuousLinearEquiv
+  exact (h.of_isAddHaarMeasure (μ.map e)).comp_continuousLinearEquiv
     e ⟨e.continuous.measurable, rfl⟩ hUV
 
 /-- **Two-sided weak chain rule for continuous linear equivalences** between finite-dimensional

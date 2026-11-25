@@ -34,8 +34,9 @@ inner derivations of `CliffordAlgebra.cliffordDerivationRep`,
 
 `⁅x, c⁆ = ⁅q x, c⁆ = q x * c - c * q x`,
 
-which under `CliffordAlgebra.equivExterior` is the exterior extension of the adjoint
-representation. Its submodules include three that are visible directly in the Clifford algebra:
+which under `CliffordAlgebra.equivExterior` is the extension `ExteriorAlgebra.derivationOfEnd` of
+the adjoint representation to `⋀ L` by derivations (`CliffordAlgebra.equivExterior_commutator_lie`).
+Its submodules include three that are visible directly in the Clifford algebra:
 the centre, on which `L` acts trivially; the Clifford generators `ι L`, a copy of the adjoint
 module; and the quadratic elements `q L`, a second copy of the adjoint module. Because the adjoint
 module of a Killing-semisimple Lie algebra has no nonzero invariant vector, the trivial and the
@@ -62,6 +63,11 @@ of one two-dimensional irreducible module.
   the Killing adjoint action.
 * `CliffordAlgebra.commutator_lie_ι` and `CliffordAlgebra.commutator_lie_adjointCliffordHom`: the
   generators and the quadratic elements carry the adjoint action.
+* `CliffordAlgebra.commutator_lie_equivExterior_symm` and
+  `CliffordAlgebra.equivExterior_commutator_lie`: the identification with `⋀ L` is equivariant,
+  for the extension `ExteriorAlgebra.derivationOfEnd` of the adjoint action to `⋀ L` by derivations.
+* `CliffordAlgebra.commutatorEquivExterior`: the same identification, bundled as an isomorphism of
+  Lie modules onto `⋀ L` with the scoped action `ExteriorAlgebra.LieAction.instLieRingModule`.
 * `CliffordAlgebra.commutator_lie_eq_zero_of_mem_center`: central elements are invariant.
 * `CliffordAlgebra.ι_mem_maxTrivSubmodule_commutator_iff`: no nonzero generator is invariant.
 * `CliffordAlgebra.not_isIsotypic_commutator`: for nonzero `L`, the commutator module is not
@@ -146,6 +152,66 @@ algebra homomorphism. -/
 theorem commutator_lie_adjointCliffordHom (x y : L) :
     ⁅x, adjointCliffordHom K L y⁆ = adjointCliffordHom K L ⁅x, y⁆ := by
   rw [commutator_lie_def, LieHom.map_lie]
+
+/-- **The quantization map is equivariant for the commutator module.** The inverse of
+`CliffordAlgebra.equivExterior` carries the derivation `ExteriorAlgebra.derivationOfEnd K L (ad x)`
+of `⋀ L`, the extension of the adjoint action of `x` to the exterior algebra, to the commutator
+action of `x`. -/
+theorem commutator_lie_equivExterior_symm (x : L) (y : ExteriorAlgebra K L) :
+    ⁅x, (equivExterior (killingQuadraticForm K L)).symm y⁆ =
+      (equivExterior (killingQuadraticForm K L)).symm
+        ((ExteriorAlgebra.derivationOfEnd K L (_root_.LieAlgebra.ad K L x) :
+          Module.End K (ExteriorAlgebra K L)) y) := by
+  rw [← toEnd_apply_apply K, commutator_toEnd, cliffordDerivationRep_equivExterior_symm,
+    coe_killingAdjointSO]
+
+/-- **The identification with the exterior algebra is equivariant for the commutator module**:
+`CliffordAlgebra.equivExterior` carries the commutator action of `x` to the derivation
+`ExteriorAlgebra.derivationOfEnd K L (ad x)` of `⋀ L`.
+
+Not a `simp` lemma: `simp` unfolds `CliffordAlgebra.equivExterior` to the underlying
+`CliffordAlgebra.changeFormEquiv`, so the left-hand side is not in simp-normal form. -/
+theorem equivExterior_commutator_lie (x : L) (c : CliffordAlgebra (killingQuadraticForm K L)) :
+    equivExterior (killingQuadraticForm K L) ⁅x, c⁆ =
+      (ExteriorAlgebra.derivationOfEnd K L (_root_.LieAlgebra.ad K L x) :
+          Module.End K (ExteriorAlgebra K L)) (equivExterior (killingQuadraticForm K L) c) := by
+  rw [← toEnd_apply_apply K, commutator_toEnd, equivExterior_cliffordDerivationRep,
+    coe_killingAdjointSO]
+
+section LieModuleEquiv
+
+open scoped ExteriorAlgebra.LieAction
+
+variable (K L)
+
+/-- **The identification with the exterior algebra as an isomorphism of Lie modules**:
+`CliffordAlgebra.equivExterior`, from the commutator module to `⋀ L` with the adjoint action
+extended by derivations (`ExteriorAlgebra.LieAction.instLieRingModule`). Its inverse is the
+quantization map. -/
+noncomputable def commutatorEquivExterior :
+    CliffordAlgebra (killingQuadraticForm K L) ≃ₗ⁅K,L⁆ ExteriorAlgebra K L where
+  __ := equivExterior (killingQuadraticForm K L)
+  map_lie' {x c} := by
+    rw [ExteriorAlgebra.LieAction.lie_def]
+    exact equivExterior_commutator_lie x c
+
+variable {K L}
+
+/-- The underlying map of `CliffordAlgebra.commutatorEquivExterior` is
+`CliffordAlgebra.equivExterior`. -/
+@[simp]
+theorem commutatorEquivExterior_apply (c : CliffordAlgebra (killingQuadraticForm K L)) :
+    commutatorEquivExterior K L c = equivExterior (killingQuadraticForm K L) c := by
+  rfl
+
+/-- The inverse of `CliffordAlgebra.commutatorEquivExterior` is the quantization map
+`(CliffordAlgebra.equivExterior _).symm`. -/
+@[simp]
+theorem commutatorEquivExterior_symm_apply (y : ExteriorAlgebra K L) :
+    (commutatorEquivExterior K L).symm y = (equivExterior (killingQuadraticForm K L)).symm y := by
+  rfl
+
+end LieModuleEquiv
 
 /-- **Central elements are invariant** under the commutator action. -/
 theorem commutator_lie_eq_zero_of_mem_center {c : CliffordAlgebra (killingQuadraticForm K L)}

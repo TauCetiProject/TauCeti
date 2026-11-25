@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PolynomialLaw.Homogeneous
+public import TauCeti.RingTheory.PolynomialLaw.Multiplicative
 public import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
 # Power polynomial laws
 
 The power map on an associative algebra is a homogeneous polynomial law, even when the
-algebra is noncommutative. Its naturality under algebra homomorphisms allows one to apply
-it in a tensor algebra and then project to a tensor power.
+algebra is noncommutative; on a commutative algebra it is also multiplicative. Its naturality
+under algebra homomorphisms allows one to apply it in a tensor algebra and then project to a
+tensor power.
 
 The underlying polynomial laws are Mathlib's construction by Antoine Chambert-Loir and
 María Inés de Frutos-Fernández. See Roby, *Lois polynômes et lois formelles en théorie des
@@ -59,6 +60,12 @@ theorem ground_power (d : ℕ) (x : A) : (power R A d).ground x = x ^ d := by
 /-- The power law has degree `d`, without a commutativity assumption on the algebra. -/
 theorem isHomogeneousOfDegree_power (d : ℕ) : (power R A d).IsHomogeneousOfDegree d :=
   isHomogeneousOfDegree_iff.mpr fun _ _ _ s x ↦ smul_pow s x d
+
+/-- On a commutative algebra, the power law is multiplicative. -/
+theorem isMultiplicative_power (R : Type u) [CommSemiring R] (A : Type*) [CommSemiring A]
+    [Algebra R A] (d : ℕ) : (power R A d).IsMultiplicative where
+  toFun'_one S _ _ := by rw [power_toFun', one_pow]
+  toFun'_mul x y := by simp only [power_toFun', mul_pow]
 
 /-- Power laws commute with algebra homomorphisms, on all scalar extensions. -/
 theorem power_comp_toPolynomialLaw (d : ℕ) (f : A →ₐ[R] B) :

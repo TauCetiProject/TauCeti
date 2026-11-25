@@ -106,6 +106,11 @@ def _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow (M : X.Modules) (n : 
 
 variable {X}
 
+/-- The truncated Euler characteristic as its defining alternating sum. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow_def (M : X.Modules) (n : ℕ) :
+    eulerCharBelow k X M n = ∑ i ∈ Finset.range n, (-1) ^ i * (finrank k (Cohomology M i) : ℤ) :=
+  (rfl)
+
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow_zero (M : X.Modules) :
     eulerCharBelow k X M 0 = 0 :=
