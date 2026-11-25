@@ -58,14 +58,15 @@ theorem tendsto_toWeakSpace_cofinite (hv : Orthonormal 𝕜 v) :
   refine TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.2 fun f ↦ ?_
   let ι : E →L[𝕜] Completion E := Completion.toComplL
   let F : StrongDual 𝕜 (Completion E) := f.extend ι
-  have hF (x : E) : F x = f x :=
+  have hF (x : E) : F (ι x) = f x :=
     f.extend_eq (e := ι) Completion.denseRange_coe (Completion.isUniformInducing_coe E) x
   have hw := hv.comp_linearIsometry (Completion.toComplₗᵢ (𝕜 := 𝕜))
   have h := (hw.tendsto_inner_cofinite ((InnerProductSpace.toDual 𝕜 (Completion E)).symm F)).star
   rw [star_zero] at h
   rw [map_zero]
   refine h.congr fun i ↦ ?_
-  rw [← hF, ← InnerProductSpace.toDual_symm_apply]
+  rw [← hF, Function.comp_apply, Completion.coe_toComplₗᵢ, Completion.coe_toComplL,
+    ← InnerProductSpace.toDual_symm_apply]
   exact inner_conj_symm _ _
 
 /-- **An orthonormal sequence tends weakly to zero.** An orthonormal sequence `eₙ` in an inner
