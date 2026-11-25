@@ -228,8 +228,8 @@ theorem groupSchemeIsoSpecialOrthogonal_hom_comp_eqToHom (hi : i * i = -1) :
     (groupSchemeIsoSpecialOrthogonal l hi).hom ≫ eqToHom (SpecialOrthogonal.groupScheme_def R l) =
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
         (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).inv.op := by
-  rw [groupSchemeIsoSpecialOrthogonal_def, Iso.trans_hom, eqToIso.hom, Category.assoc,
-    eqToHom_trans, eqToHom_refl, Category.comp_id, Functor.mapIso_hom, Iso.symm_hom, Iso.op_inv]
+  simp only [groupSchemeIsoSpecialOrthogonal_def, Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom,
+    Iso.op_inv, eqToIso.hom, Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
 
 /-- **Inside `GL_l`, the isomorphism `SO_l^J ≅ SO_l` is conjugation by the congruence matrix.**
 Followed by the inclusion of `SO_l`, it is the inclusion of `SO_l^J` followed by the automorphism

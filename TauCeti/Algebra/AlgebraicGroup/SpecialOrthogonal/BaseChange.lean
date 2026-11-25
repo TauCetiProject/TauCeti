@@ -255,8 +255,8 @@ theorem groupSchemeBaseChangeIso_hom_comp_eqToHom :
           (CommRingCat.ofHom (algebraMap R K)))).mapGrp.map (eqToHom (groupScheme_def R n)) ≫
         (GeneralLinear.hopfIdealBaseChangeIso R K n (definingHopfIdeal R n)
           (definingHopfIdeal K n) (coordinateHopfAlgebraBaseChangeIso R K n).symm).hom := by
-  rw [groupSchemeBaseChangeIso_def, Iso.trans_hom, Iso.trans_hom, Functor.mapIso_hom, eqToIso.hom,
-    eqToIso.hom, Category.assoc, Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
+  simp only [groupSchemeBaseChangeIso_def, Iso.trans_hom, Functor.mapIso_hom, eqToIso.hom,
+    Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
 
 /-- The inclusion of `SOₙ` into `GLₙ` is the Hopf-ideal inclusion at its defining Hopf ideal,
 after the quotient-spectrum presentation `groupScheme_def`. -/
