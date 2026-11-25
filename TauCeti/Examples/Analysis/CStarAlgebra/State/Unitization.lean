@@ -38,10 +38,9 @@ theorem star_e_mul_e : star e * e = e := by
 
 /-- The unitization extension of any positive functional `τ` of the unital algebra `ℂ` vanishes
 at `e⋆e` for the nonzero `e = 1 - 1_A`: it is not faithful, even when `τ` is. -/
-theorem unitization_map_star_e_mul_e (τ : ℂ →P[ℂ] ℂ) : τ.unitization (star e * e) = 0 := by
-  have h := (ContinuousLinearMap.monotone_iff_opNorm_eq_map_one (f := (τ : ℂ →L[ℂ] ℂ))).mp
-    fun _ _ hab ↦ OrderHomClass.mono τ hab
+theorem unitization_map_star_e_mul_e_eq_zero (τ : ℂ →P[ℂ] ℂ) :
+    τ.unitization (star e * e) = 0 := by
   rw [star_e_mul_e, PositiveContinuousLinearMap.unitization_apply]
-  simp_all [e]
+  simp [e, τ.ofReal_opNorm_eq_map_one]
 
 end TauCeti.UnitizationTraceExample
