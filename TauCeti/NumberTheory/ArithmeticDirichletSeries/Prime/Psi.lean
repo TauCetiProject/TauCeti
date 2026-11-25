@@ -544,8 +544,7 @@ indexing used by Mathlib's `LSeries` partial-summation API. The coefficient at `
 theorem primePsi_eq_sum_Icc (S : Set (HeightOneSpectrum (𝓞 K))) (x : ℝ) :
     primePsi K S x = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, primeVonMangoldtCoeff K S n := by
   rw [primePsi_eq_sum_range, Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (by omega),
-    ArithmeticFunction.map_zero, zero_add]
-  rfl
+    ArithmeticFunction.map_zero, zero_add, Finset.Ico_add_one_right_eq_Icc]
 
 open scoped Classical in
 /-- Over `ℚ`, the coefficient at `p ^ k`, for `p` the rational prime under `v`, is `log p` if

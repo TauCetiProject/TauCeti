@@ -194,7 +194,7 @@ theorem primePsiErrorTransform_simplePole {ρ : ℂ} (h₀ : ρ ≠ 0) {m : ℤ}
 
 /-- Except at `0`, the poles of the prime ideal error transform are exactly the zeros of the
 continued Dedekind zeta function. The pole of `ζ_K` at `1` does not contribute a pole. -/
-theorem primePsiErrorTransform_pole_iff {ρ : ℂ} (h₀ : ρ ≠ 0) :
+theorem meromorphicOrderAt_primePsiErrorTransform_neg_iff {ρ : ℂ} (h₀ : ρ ≠ 0) :
     meromorphicOrderAt (primePsiErrorTransform K) ρ < 0 ↔
       0 < meromorphicOrderAt (dedekindZetaC K) ρ := by
   rcases eq_or_ne ρ 1 with rfl | h₁
