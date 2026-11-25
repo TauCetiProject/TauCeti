@@ -43,11 +43,12 @@ is at most one, and it is nonzero because `κ(p)` is not algebraic over `K`
 All in the namespace `TauCeti`:
 
 * `transcendental_and_finrank_kaehlerDifferential_eq_one_of_formallyUnramified`: a field which
-  contains `K[X]` and is formally unramified over it is transcendental over `K`, with
-  one-dimensional Kähler differentials.
+  is essentially of finite type over `K`, contains `K[X]` and is formally unramified over it is
+  transcendental over `K`, with one-dimensional Kähler differentials.
 * `transcendental_and_finrank_kaehlerDifferential_eq_one_of_isStandardSmoothOfRelativeDimension`:
-  the same for a field formally unramified over a standard smooth algebra `S` of relative
-  dimension one, when the kernel of `S → L` is a minimal prime of `S`.
+  the same for a field essentially of finite type over `K` and formally unramified over a standard
+  smooth `K`-algebra `S` of relative dimension one, when the kernel of `S → L` is a minimal prime
+  of `S`.
 * `transcendental_and_finrank_kaehlerDifferential_residueField_eq_one`: the residue field
   of a minimal prime of a `K`-algebra smooth of relative dimension one is transcendental over `K`,
   with one-dimensional Kähler differentials.

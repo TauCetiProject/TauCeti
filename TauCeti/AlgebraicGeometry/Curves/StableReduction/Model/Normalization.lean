@@ -179,12 +179,8 @@ instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK]
   have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by
     refine M.genericι.isLocalization_app_of_inf_opensRange_eq hU.isCompact hU.isQuasiSeparated ?_
     -- The generic fibre is the basic open of the pullback of `π`.
-    have hrange : M.genericι.opensRange =
-        M.toBase ⁻¹ᵁ (Spec (.of R)).basicOpen ((Scheme.ΓSpecIso (.of R)).inv π) := by
-      ext1
-      rw [Scheme.Hom.coe_opensRange, Scheme.preimage_basicOpen_top,
-        M.range_genericι_eq_basicOpen ((mem_maximalIdeal π).mpr hπ.not_isUnit) hπ.ne_zero]
-    rw [hrange, M.toBase.algebraMap_sections]
+    rw [M.opensRange_genericι_eq_basicOpen ((mem_maximalIdeal π).mpr hπ.not_isUnit) hπ.ne_zero,
+      ← Scheme.preimage_basicOpen_top, M.toBase.algebraMap_sections]
     exact (Scheme.basicOpen_appLE _ _ _ _ _).symm
   have hB := toK.locally_isStandardSmoothOfRelativeDimension_sections 1 (hU.preimage M.genericι)
   have := SmoothOfRelativeDimension.smooth 1 toK
