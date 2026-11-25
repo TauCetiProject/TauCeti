@@ -33,7 +33,7 @@ pinned by `TauCeti.Deck.IsRegular.deckFundamentalGroupEquiv`.
 * `TauCeti.UniversalCover.deckFundamentalGroupEquiv`: the deck group of the universal cover is
   the opposite fundamental group.
 * `TauCeti.UniversalCover.deckFundamentalGroupEquiv_loopDeck`: it sends the deck transformation
-  of a loop class `g` to the opposite of `g⁻¹`.
+  of a loop class `g` to the inverse of the opposite of `g`.
 * `TauCeti.UniversalCover.isMulTorsionFree_deck`: the deck group of the universal cover is
   torsion-free when the fundamental group of the base is.
 * `TauCeti.UniversalCover.deckFundamentalGroupEquiv_symm_mk_apply_basepointLift`: the deck
@@ -141,14 +141,15 @@ lemma deckFundamentalGroupEquiv_symm_op
   simpa only [deck.smul_eq_apply, loopDeck_apply] using monodromy_basepointLift x₀ g
 
 /-- The deck-to-fundamental-group equivalence sends the deck transformation of a loop class `g`
-to the opposite of `g⁻¹`, with the inverse forced by the left-action convention. -/
+to the inverse of the opposite of `g`, with the inverse forced by the left-action convention. -/
 @[simp]
 lemma deckFundamentalGroupEquiv_loopDeck
     [LocallyPathConnectedSpace X] [PathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X]
     (g : FundamentalGroup X x₀) :
-    deckFundamentalGroupEquiv x₀ (loopDeck x₀ g) = MulOpposite.op g⁻¹ :=
-  (MulEquiv.eq_symm_apply _).1 (by rw [deckFundamentalGroupEquiv_symm_op, inv_inv])
+    deckFundamentalGroupEquiv x₀ (loopDeck x₀ g) = (MulOpposite.op g)⁻¹ :=
+  (MulEquiv.eq_symm_apply _).1 (by
+    rw [← MulOpposite.op_inv, deckFundamentalGroupEquiv_symm_op, inv_inv])
 
 /-- If the fundamental group of the base is torsion-free, then no deck transformation of the
 universal cover other than the identity has finite order: the deck group is the opposite of the
