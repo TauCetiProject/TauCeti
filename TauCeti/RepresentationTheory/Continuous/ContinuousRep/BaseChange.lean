@@ -70,6 +70,11 @@ theorem baseChangeProdIso_tmul (ρ : ContinuousRep Γ A M) (σ : ContinuousRep �
     (x : M × N) : baseChangeProdIso B ρ σ (b ⊗ₜ x) = (b ⊗ₜ x.1, b ⊗ₜ x.2) := by
   simp [baseChangeProdIso]
 
+@[simp]
+theorem baseChangeProdIso_symm_tmul (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (b : B)
+    (x : M) (y : N) : (baseChangeProdIso B ρ σ).symm (b ⊗ₜ x, b ⊗ₜ y) = b ⊗ₜ (x, y) := by
+  simp [baseChangeProdIso]
+
 end Semiring
 
 section Twist
@@ -127,6 +132,12 @@ def baseChangeTprodIso (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
 @[simp]
 theorem baseChangeTprodIso_tmul (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (b : B)
     (x : M) (y : N) : baseChangeTprodIso B ρ σ (b ⊗ₜ (x ⊗ₜ y)) = (b ⊗ₜ x) ⊗ₜ (1 ⊗ₜ y) := by
+  simp [baseChangeTprodIso]
+
+@[simp]
+theorem baseChangeTprodIso_symm_tmul (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N)
+    (a b : B) (x : M) (y : N) :
+    (baseChangeTprodIso B ρ σ).symm ((a ⊗ₜ x) ⊗ₜ (b ⊗ₜ y)) = (a * b) ⊗ₜ (x ⊗ₜ y) := by
   simp [baseChangeTprodIso]
 
 end Tensor
