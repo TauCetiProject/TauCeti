@@ -37,7 +37,7 @@ under base change: `Spec K → Spec k` has relative dimension zero for every fie
 Over a valuation ring `R`, a flat morphism `X ⟶ Spec R` locally of finite type has no fibre of
 larger dimension than its generic fibre, so the generic fibre alone controls the relative
 dimension. On an affine open `Spec A` of `X` this is the ring-level inequality
-`dim (κ(p) ⊗[R] A) ≤ dim (Frac R ⊗[R] A)` (`TauCeti.ringKrullDim_fiber_le_ringKrullDim_fiber_bot`).
+`dim (κ(p) ⊗[R] A) ≤ dim (Frac R ⊗[R] A)` (`Ideal.ringKrullDim_fiber_le_ringKrullDim_fiber_bot`).
 
 Relative dimensions add up under composition of morphisms locally of finite type. The input is
 the fibrewise dimension inequality: if `f : X ⟶ Y` is a morphism of locally Noetherian schemes of
@@ -66,10 +66,8 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_of_field`: over a field, the condition bounds
   the Krull dimension of the source, hence the coheight of every point
   (`TauCeti.AlgebraicGeometry.coheight_le_of_relativeDimensionLE_of_field`).
-* `TauCeti.AlgebraicGeometry.topologicalKrullDim_preimage_SpecMap_eq_ringKrullDim_fiber` and
-  `TauCeti.AlgebraicGeometry.relativeDimensionLE_SpecMap_iff`: for `Spec S ⟶ Spec R`, the fibre
-  over `p` has the Krull dimension of the fibre ring `κ(p) ⊗[R] S`, so the condition bounds the
-  Krull dimensions of these fibre rings.
+* `TauCeti.AlgebraicGeometry.relativeDimensionLE_SpecMap_iff`: for `Spec S ⟶ Spec R`, the
+  condition bounds the Krull dimensions of the fibre rings `κ(p) ⊗[R] S`.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_topologicalKrullDim_preimage_genericPoint_le`:
   a flat morphism locally of finite type to the spectrum of a valuation ring has relative
   dimension at most `d` as soon as its generic fibre has dimension at most `d`.
@@ -272,16 +270,6 @@ instance RelativeDimensionLE.pullback_fst (f : X ⟶ Z) (g : Y ⟶ Z) [LocallyOf
     [RelativeDimensionLE d g] : RelativeDimensionLE d (pullback.fst f g) :=
   .of_isPullback (IsPullback.of_hasPullback f g).flip
 
-/-- The set-theoretic fibre over `p` of the morphism `Spec S ⟶ Spec R` induced by an `R`-algebra
-`S` has the Krull dimension of the fibre ring `κ(p) ⊗[R] S`. -/
-theorem topologicalKrullDim_preimage_SpecMap_eq_ringKrullDim_fiber (R S : Type u) [CommRing R]
-    [CommRing S] [Algebra R S] (p : PrimeSpectrum R) :
-    topologicalKrullDim ((Spec.map (CommRingCat.ofHom (algebraMap R S))) ⁻¹' {p}) =
-      ringKrullDim (p.asIdeal.Fiber S) := by
-  rw [← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
-  -- The underlying map of `Spec.map (CommRingCat.ofHom f)` is `PrimeSpectrum.comap f`.
-  exact (PrimeSpectrum.preimageHomeomorphFiber R S p).isHomeomorph.topologicalKrullDim_eq
-
 /-- The morphism `Spec S ⟶ Spec R` induced by an `R`-algebra `S` has relative dimension at most `d`
 if and only if every fibre ring `κ(p) ⊗[R] S` has Krull dimension at most `d`. -/
 theorem relativeDimensionLE_SpecMap_iff (R S : Type u) [CommRing R] [CommRing S] [Algebra R S] :
@@ -321,14 +309,11 @@ theorem relativeDimensionLE_iff_topologicalKrullDim_preimage_genericPoint_le {R 
     refine (topologicalKrullDim_preimage_SpecMap_eq_ringKrullDim_fiber R Γ(X, U) ⊥).symm.trans_le
       (le_trans ?_ h)
     rw [← hφ]
-    have hmaps (y : Spec (.of R)) : Set.MapsTo hU.fromSpec ((hU.fromSpec ≫ f) ⁻¹' {y})
-        (f ⁻¹' {y}) := fun x hx ↦ by simpa using hx
-    exact (hU.fromSpec.isOpenEmbedding.isEmbedding.restrict (hmaps _)).isInducing
-      |>.topologicalKrullDim_le
+    exact topologicalKrullDim_preimage_comp_le hU.fromSpec hU.fromSpec.isEmbedding f _
   rw [← hU.isoSpec_hom_fromSpec, Category.assoc,
     MorphismProperty.cancel_left_of_respectsIso (@RelativeDimensionLE d), hφ]
   exact (relativeDimensionLE_SpecMap_iff R Γ(X, U)).mpr fun p _ ↦
-    (ringKrullDim_fiber_le_ringKrullDim_fiber_bot p).trans hgen
+    (p.ringKrullDim_fiber_le_ringKrullDim_fiber_bot).trans hgen
 
 /-- A morphism `Spec S ⟶ Spec R` of spectra of Noetherian rings of relative dimension at most `d`
 satisfies `dim S ≤ dim R + d`. -/

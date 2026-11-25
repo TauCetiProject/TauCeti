@@ -19,7 +19,7 @@ import TauCeti.RingTheory.KrullDimension.FiniteType
 Let `A` be a finitely generated torsion-free algebra over a valuation ring `R`, for instance a flat
 finitely generated algebra over a discrete valuation ring. Every fibre `κ(p) ⊗[R] A` of
 `Spec A → Spec R` has Krull dimension at most that of the generic fibre `K ⊗[R] A`, where `K` is
-the fraction field of `R` (`TauCeti.ringKrullDim_fiber_le_ringKrullDim_fiber_bot`).
+the fraction field of `R` (`Ideal.ringKrullDim_fiber_le_ringKrullDim_fiber_bot`).
 
 The Krull dimension of a finitely generated algebra over a field is the largest number of its
 elements algebraically independent over the field, and these can be chosen among any generators.
@@ -42,7 +42,7 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti
+namespace Ideal
 
 /-- **Fibre dimensions over a valuation ring.** Let `A` be a finitely generated torsion-free
 algebra over a valuation ring `R`, for instance a flat finitely generated algebra over a discrete
@@ -56,12 +56,12 @@ theorem ringKrullDim_fiber_le_ringKrullDim_fiber_bot {R A : Type*} [CommRing R] 
   · simp [ringKrullDim_eq_bot_of_subsingleton]
   -- By Noether normalization, `dim (κ(p) ⊗[R] A)` is a natural number `n`.
   obtain ⟨n, g, hinj, hint⟩ := exists_integral_inj_algHom_of_fg p.ResidueField (p.Fiber A)
-  have hn := ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hint
+  have hn := TauCeti.ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hint
   rw [Nat.card_fin] at hn
   -- Some `n` elements `1 ⊗ aᵢ` of `κ(p) ⊗[R] A` are algebraically independent over `κ(p)`; then
   -- the `aᵢ` are algebraically independent over `R`, and the `1 ⊗ aᵢ` in the generic fibre over
   -- the fraction field `κ(⊥)` of `R`.
-  obtain ⟨y, hys, hy⟩ := exists_algebraicIndependent_of_le_ringKrullDim p.ResidueField
+  obtain ⟨y, hys, hy⟩ := TauCeti.exists_algebraicIndependent_of_le_ringKrullDim p.ResidueField
     (Algebra.TensorProduct.adjoin_one_tmul_image_eq_top (A := p.ResidueField) (Set.univ : Set A)
       (Algebra.adjoin_univ R A)) hn.ge
   simp only [Set.image_univ, Set.mem_range] at hys
@@ -74,4 +74,4 @@ theorem ringKrullDim_fiber_le_ringKrullDim_fiber_bot {R A : Type*} [CommRing R] 
   simpa using
     (hy'.of_comp_of_valuationRing.one_tmul (⊥ : Ideal R).ResidueField).natCard_le_ringKrullDim
 
-end TauCeti
+end Ideal
