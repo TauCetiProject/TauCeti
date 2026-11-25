@@ -13,6 +13,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 import Mathlib.LinearAlgebra.Complex.Determinant
+import TauCeti.Analysis.Complex.PlanarLinearMap
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
 
@@ -147,9 +148,10 @@ theorem toMatrix_linearMap (μ : ℂ) :
 
 /-- The affine normalizer has the real Jacobian `1 - |μ|²`. -/
 theorem det_linearMap (μ : ℂ) : (linearMap μ).toLinearMap.det = 1 - Complex.normSq μ := by
-  rw [← LinearMap.det_toMatrix Complex.basisOneI, toMatrix_linearMap,
-    Matrix.det_fin_two_of, Complex.normSq_apply]
-  ring
+  have h : linearMap μ = wirtingerPartsCLM 1 μ := by
+    ext z
+    simp [mul_comm]
+  rw [h, det_wirtingerPartsCLM, norm_one, Complex.normSq_eq_norm_sq, one_pow]
 
 /-- The standard area form changes by the actual real Jacobian factor. -/
 theorem area_linearMap (μ z w : ℂ) :
