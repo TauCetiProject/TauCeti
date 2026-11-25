@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.LinearAlgebra.Span.FiniteRange
+public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # `G`-finite vectors of a representation
@@ -80,14 +81,6 @@ def gFiniteSubmodule : Submodule k V :=
 theorem mem_gFiniteSubmodule {v : V} : v ∈ ρ.gFiniteSubmodule ↔ ρ.IsGFinite v :=
   mem_finiteSpanRangeSubmodule.trans (ρ.isGFinite_iff v).symm
 
-/-- The span of the orbit of a vector is invariant under the representation. -/
-theorem apply_mem_span_range_apply (v : V) (g : G) {w : V}
-    (hw : w ∈ Submodule.span k (Set.range fun h : G => ρ h v)) :
-    ρ g w ∈ Submodule.span k (Set.range fun h : G => ρ h v) := by
-  refine (Submodule.map_span_le (ρ g) _ _).2 ?_ (Submodule.mem_map_of_mem hw)
-  rintro _ ⟨h, rfl⟩
-  exact Submodule.subset_span ⟨g * h, by simp⟩
-
 variable {ρ} in
 /-- A vector whose whole orbit lies in a finite-dimensional submodule is `G`-finite. -/
 theorem IsGFinite.of_forall_apply_mem {W : Submodule k V} [FiniteDimensional k W] {v : V}
@@ -98,8 +91,8 @@ theorem IsGFinite.of_forall_apply_mem {W : Submodule k V} [FiniteDimensional k W
 span of its orbit is one. -/
 theorem isGFinite_iff_exists_subrepresentation (v : V) :
     ρ.IsGFinite v ↔ ∃ W : Subrepresentation ρ, FiniteDimensional k W.toSubmodule ∧ v ∈ W := by
-  refine ⟨fun hv => ⟨⟨Submodule.span k (Set.range fun g : G => ρ g v),
-    fun g _ hw => ρ.apply_mem_span_range_apply v g hw⟩, hv, Submodule.subset_span ⟨1, by simp⟩⟩,
+  refine ⟨fun hv => ⟨cyclicSubrepresentation ρ v, by rwa [toSubmodule_cyclicSubrepresentation],
+    mem_cyclicSubrepresentation_self v⟩,
     fun ⟨W, _, hvW⟩ => IsGFinite.of_forall_apply_mem fun g => W.apply_mem_toSubmodule g hvW⟩
 
 variable {ρ σ}
