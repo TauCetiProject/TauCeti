@@ -132,9 +132,16 @@ private theorem abs_natCast_mul_moebiusDivSumIn_sub_card_le (S : Set ℕ) {N : �
   rw [Nat.floor_natCast] at hcount
   rw [hcount, moebiusDivSumIn_def, Nat.floor_natCast, mul_sum, ← sum_sub_distrib]
   refine (abs_sum_le_sum_abs _ _).trans ?_
-  rw [← add_sum_erase _ _ h1, ← Nat.cast_pred (card_pos.2 ⟨1, h1⟩), ← card_erase_of_mem h1,
-    card_eq_sum_ones, Nat.cast_sum, Nat.cast_one]
-  simpa using sum_le_sum fun d (_ : d ∈ _) ↦ hd d
+  rw [← add_sum_erase _ _ h1]
+  -- the term `d = 1` vanishes, since `⌊N / 1⌋ = N`
+  have h1term : |(N : ℝ) * ((μ 1 : ℝ) / (1 : ℕ)) - μ 1 * ⌊(N : ℝ) / (1 : ℕ)⌋₊| = 0 := by simp
+  -- every other term is at most `1`
+  set T := {n ∈ Icc 1 N | ∀ p ∈ n.primeFactors, p ∈ S}
+  have hrest : ∑ d ∈ T.erase 1, |(N : ℝ) * ((μ d : ℝ) / d) - μ d * ⌊(N : ℝ) / d⌋₊| ≤
+      #(T.erase 1) :=
+    (sum_le_sum fun d _ ↦ hd d).trans_eq (by rw [sum_const, nsmul_one])
+  have hcard : (#(T.erase 1) : ℝ) + 1 = #T := by exact_mod_cast card_erase_add_one h1
+  linarith
 
 open Classical in
 /-- `⟨S⟩` and `⟨Sᶜ⟩` meet only in `1`, so at most `N + 1` integers in `[1, N]` are counted by the
