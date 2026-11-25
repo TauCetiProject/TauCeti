@@ -143,7 +143,7 @@ theorem baseChange_injective_of_isComplemented [Semiring A] [Algebra R A] (f : M
     (hf : Function.Injective f) (hc : IsComplemented (range f)) :
     Function.Injective (f.baseChange A) := by
   have hfe : f = (range f).subtype ∘ₗ (LinearEquiv.ofInjective f hf).toLinearMap :=
-    f.subtype_comp_rangeRestrict.symm
+    LinearMap.ext fun x => (LinearEquiv.ofInjective_apply f (h := hf) x).symm
   rw [hfe, baseChange_comp, coe_comp, ← LinearEquiv.coe_baseChange]
   exact ((range f).baseChange_subtype_injective_of_isComplemented hc).comp
     (LinearEquiv.injective _)
