@@ -74,7 +74,7 @@ all cofactors start at spectral parameter `u - 1`. -/
 theorem quantumMinor_succ_column_zero (E : Matrix ι ι A) (u : K) (a b : Fin (n + 1) → ι) :
     E.quantumMinor u a b = ∑ i : Fin (n + 1), (-1 : ℤ) ^ i.val •
       (((if a i = b 0 then algebraMap K A u else 0) + E (a i) (b 0)) *
-        E.quantumMinor (u - 1) (i.removeNth a) ((0 : Fin (n + 1)).removeNth b)) := by
+        E.quantumMinor (u - 1) (i.removeNth a) (Fin.tail b)) := by
   simp only [quantumMinor_eq_columnDet, columnDet_succ_column_zero, of_apply, Fin.val_zero,
     Nat.cast_zero, sub_zero]
   refine Finset.sum_congr rfl fun i _ => ?_
@@ -84,20 +84,18 @@ theorem quantumMinor_succ_column_zero (E : Matrix ι ι A) (u : K) (a b : Fin (n
     simp only [Fin.val_succ, Nat.cast_add, Nat.cast_one]
     ring
   by_cases h : a (i.succAbove x) = b y.succ <;>
-    simp only [submatrix_apply, of_apply, Fin.removeNth, Fin.succAbove_zero, hshift,
+    simp only [submatrix_apply, of_apply, Fin.removeNth, Fin.tail, hshift,
       h, ite_true, ite_false]
 
 /-- Expand a quantum minor in its last column. The selected entry multiplies on the right, and
 all cofactors retain the starting spectral parameter. -/
 theorem quantumMinor_succ_column_last (E : Matrix ι ι A) (u : K) (a b : Fin (n + 1) → ι) :
     E.quantumMinor u a b = ∑ i : Fin (n + 1), (-1 : ℤ) ^ (n - i.val) •
-      (E.quantumMinor u (i.removeNth a) ((Fin.last n).removeNth b) *
+      (E.quantumMinor u (i.removeNth a) (Fin.init b) *
         ((if a i = b (Fin.last n) then algebraMap K A (u - (n : K)) else 0) +
           E (a i) (b (Fin.last n)))) := by
   simp only [quantumMinor_eq_columnDet, columnDet_succ_column_last, of_apply, Fin.val_last]
   refine Finset.sum_congr rfl fun i _ => ?_
   congr 3
-  ext x y
-  simp only [submatrix_apply, of_apply, Fin.removeNth, Fin.succAbove_last_apply, Fin.val_castSucc]
 
 end Matrix
