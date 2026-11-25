@@ -291,26 +291,17 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt (x : X) {σ : ∀ z, L z
   have hker : LinearMap.ker (D : ℂ →ₗ[ℝ] ℂ) = ⊥ := (LinearMap.isUnit_iff_ker_eq_bot _).1
     ((LinearMap.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 hD))
   obtain ⟨K, -, hK⟩ := (D : ℂ →ₗ[ℝ] ℂ).exists_antilipschitzWith hker
-  have hne := hA.eventually_ne (c := 0) ⟨K, hK⟩
-  rw [eventually_nhdsWithin_iff] at hne
-  obtain ⟨V, hVS, hVo, hxV⟩ := mem_nhds_iff.1 hne
-  -- The neighbourhood `U` of `x` on which `x` is the only zero of `σ`.
-  have hU : IsOpen (e.baseSet ∩ (φ.source ∩ φ ⁻¹' V)) :=
-    e.open_baseSet.inter (φ.isOpen_inter_preimage hVo)
-  have hUz : ∀ y ∈ e.baseSet ∩ (φ.source ∩ φ ⁻¹' V), σ y = 0 → y = x := fun y hy hσy ↦
-    by_contra fun hyx ↦ hVS hy.2.2 (fun h ↦ hyx (φ.injOn hy.2.1 (mem_chart_source ℂ x) h)) <| by
-      -- The reading at `φ y` is the coordinate of `σ y = 0`, read at `φ⁻¹ (φ y) = y`.
-      have h0 : ∀ z, z = y → (e ⟨z, σ z⟩).2 = 0 := by
-        rintro z rfl
-        rw [hσy]
-        exact congrArg Prod.snd (e.zeroSection ℝ hy.1)
-      exact h0 _ (φ.left_inv hy.2.1)
-  exact VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _ e φ hU
-    ⟨mem_baseSet_trivializationAt ℂ L x, mem_chart_source ℂ x, hxV⟩ hUz hσx
-    inter_subset_left (fun _ hy ↦ hy.2.1)
-    (fun _ hy ↦ VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _ hy.1)
+  obtain ⟨U, hUo, hxU, hUz, hUe, hUφ, -⟩ :=
+    VectorBundleOrientation.exists_isolating_nhds_of_hasFDerivAt
+      (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
+        (VectorBundleOrientation.complex ℂ L)) Complex.finrank_real_complex e φ
+      (mem_baseSet_trivializationAt ℂ L x) (mem_chart_source ℂ x) hσx hA ⟨K, hK⟩
+  exact VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _ e φ hUo hxU hUz
+    hσx hUe hUφ
+    (fun _ hy ↦ VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _
+      (hUe hy))
     (localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
-      (IsManifold.chart_mem_maximalAtlas (n := 1) x) (mem_chart_source ℂ x))
+      (IsManifold.chart_mem_maximalAtlas (n := 1) x) (hUφ hxU))
     hA hD
 
 /-- **A zero with nonzero complex-linear derivative has local index one.** Let `σ` be a continuous
