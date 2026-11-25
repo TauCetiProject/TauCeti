@@ -52,12 +52,6 @@ instance smooth_planeLine : Smooth (planeLine k ↘ Spec (.of k)) :=
   have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @Smooth)
   IsZariskiLocalAtSource.coprodDesc inferInstance inferInstance
 
-/-- `𝔸²_k ⊔ 𝔸¹_k` is locally of finite presentation over `Spec k`. -/
-instance locallyOfFinitePresentation_planeLine :
-    LocallyOfFinitePresentation (planeLine k ↘ Spec (.of k)) :=
-  have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @LocallyOfFinitePresentation)
-  IsZariskiLocalAtSource.coprodDesc inferInstance inferInstance
-
 -- **Check.** The smooth locus of `𝔸²_k ⊔ 𝔸¹_k` is everything, so it is dense.
 example : (planeLine k ↘ Spec (.of k)).smoothLocus = ⊤ :=
   Scheme.Hom.smoothLocus_eq_top _
