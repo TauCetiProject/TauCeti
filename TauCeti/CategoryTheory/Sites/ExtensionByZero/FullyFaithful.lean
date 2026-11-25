@@ -80,12 +80,29 @@ lemma hasLeftKanExtension_op_of_fullyFaithful [HasInitial A] (F : Cᵒᵖ ⥤ A)
 
 /-- For a fully faithful `G` along which pointwise left Kan extensions exist, evaluating the left
 Kan extension along `G.op` at an object isomorphic to `G.obj c` is evaluation at `c`. -/
-@[expose, simps!]
 noncomputable def lanCompEvaluationIsoOfIso [G.Full] [G.Faithful]
     [∀ F : Cᵒᵖ ⥤ A, G.op.HasPointwiseLeftKanExtension F] {c : C} {d : D} (e : G.obj c ≅ d) :
     G.op.lan ⋙ (evaluation Dᵒᵖ A).obj (op d) ≅ (evaluation Cᵒᵖ A).obj (op c) :=
   isoWhiskerLeft G.op.lan ((evaluation Dᵒᵖ A).mapIso e.op) ≪≫
     isoWhiskerRight (asIso G.op.lanUnit).symm ((evaluation Cᵒᵖ A).obj (op c))
+
+/-- The components of `lanCompEvaluationIsoOfIso` are `e` followed by the inverse of the unit. -/
+@[simp]
+lemma lanCompEvaluationIsoOfIso_hom_app [G.Full] [G.Faithful]
+    [∀ F : Cᵒᵖ ⥤ A, G.op.HasPointwiseLeftKanExtension F] {c : C} {d : D} (e : G.obj c ≅ d)
+    (F : Cᵒᵖ ⥤ A) :
+    (lanCompEvaluationIsoOfIso e).hom.app F =
+      (G.op.lan.obj F).map e.hom.op ≫ CategoryTheory.inv ((G.op.lanUnit.app F).app (op c)) := by
+  simp [lanCompEvaluationIsoOfIso]
+
+/-- The inverse of `lanCompEvaluationIsoOfIso` is the unit followed by `e.inv`. -/
+@[simp]
+lemma lanCompEvaluationIsoOfIso_inv_app [G.Full] [G.Faithful]
+    [∀ F : Cᵒᵖ ⥤ A, G.op.HasPointwiseLeftKanExtension F] {c : C} {d : D} (e : G.obj c ≅ d)
+    (F : Cᵒᵖ ⥤ A) :
+    (lanCompEvaluationIsoOfIso e).inv.app F =
+      (G.op.lanUnit.app F).app (op c) ≫ (G.op.lan.obj F).map e.inv.op := by
+  simp [lanCompEvaluationIsoOfIso]
 
 variable [∀ F : Cᵒᵖ ⥤ A, G.op.HasLeftKanExtension F]
 

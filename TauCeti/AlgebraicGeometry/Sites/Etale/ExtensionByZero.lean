@@ -124,27 +124,24 @@ noncomputable def smallEtaleMapCompFiberIso (s : Spec (.of Ω) ⟶ X) :
           ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ j) (CategoryTheory.Over.w t)))
         left_inv _ := rfl
         right_inv _ := rfl })
-    (fun _ ↦ rfl)
+    -- `(pointSmallEtale s).fiber` is `Etale.forget X ⋙ coyoneda.obj (op (Over.mk s))`, which acts
+    -- on morphisms by postcomposition, so both composites keep the underlying morphism.
+    (fun _ ↦ by ext; rfl)
 
 /-- The isomorphism `smallEtaleMapCompFiberIso` keeps the underlying morphism of a lift. -/
 @[simp]
 lemma smallEtaleMapCompFiberIso_hom_app_left (s : Spec (.of Ω) ⟶ X) (V : X.Etale)
     (t : (pointSmallEtale (s ≫ j)).fiber.obj (j.smallEtaleMap.obj V)) :
-    Over.Hom.left (f := Over.mk s) (g := (Etale.forget X).obj V)
-      (ConcreteCategory.hom (X := (pointSmallEtale (s ≫ j)).fiber.obj (j.smallEtaleMap.obj V))
-        (Y := (pointSmallEtale s).fiber.obj V) ((j.smallEtaleMapCompFiberIso s).hom.app V) t) =
-      t.left :=
+    dsimp% ((j.smallEtaleMapCompFiberIso s).hom.app V t).left = t.left :=
+  -- The components of `smallEtaleMapCompFiberIso` are `Over.homMk t.left _`.
   (rfl)
 
 /-- The inverse of `smallEtaleMapCompFiberIso` keeps the underlying morphism of a lift. -/
 @[simp]
 lemma smallEtaleMapCompFiberIso_inv_app_left (s : Spec (.of Ω) ⟶ X) (V : X.Etale)
     (t : (pointSmallEtale s).fiber.obj V) :
-    Over.Hom.left (f := Over.mk (s ≫ j)) (g := (Etale.forget Y).obj (j.smallEtaleMap.obj V))
-      (ConcreteCategory.hom (X := (pointSmallEtale s).fiber.obj V)
-        (Y := (pointSmallEtale (s ≫ j)).fiber.obj (j.smallEtaleMap.obj V))
-        ((j.smallEtaleMapCompFiberIso s).inv.app V) t) =
-      t.left :=
+    dsimp% ((j.smallEtaleMapCompFiberIso s).inv.app V t).left = t.left :=
+  -- The components of `smallEtaleMapCompFiberIso` are `Over.homMk t.left _`.
   (rfl)
 
 variable (A : Type*) [Category* A] [HasProducts.{u} A] [HasColimitsOfSize.{u, u} A]
