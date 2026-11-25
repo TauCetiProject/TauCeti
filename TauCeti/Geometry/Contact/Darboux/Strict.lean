@@ -327,7 +327,7 @@ private theorem SmoothForm.IsContactForm.exists_strictDarbouxChart_of_slice
   set D := {p : (V × V) × ℝ | (p.2, ι p.1) ∈ flowDomain α.reebVectorField}
   have hD : IsOpen D := isOpen_setOf_mem_flowDomain (hR.of_le (by simp)) continuous_snd
     (hι.continuous.comp continuous_fst)
-  have h0D : ((0 : V × V), (0 : ℝ)) ∈ D := mem_flowDomain_zero (hR.of_le (by simp)) _
+  have h0D : ((0 : V × V), (0 : ℝ)) ∈ D := mem_flowDomain_zero (hR.contMDiffAt.of_le (by simp))
   -- The local Reeb flow out of the slice is a local diffeomorphism at the origin.
   have hnd :
       ((mextDerivₗ 𝓘(ℝ, V × V) 1 (SmoothForm.mpullback ι hι α)).bilinFormAt 0).Nondegenerate := by
