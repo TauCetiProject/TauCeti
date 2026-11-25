@@ -65,9 +65,19 @@ taken by the completed modules `TauCeti.NovikovModule` and the product of class-
   Conley–Zehnder index `TauCeti.Floer.CappedOrbit.conleyZehnderIndex` of the capped orbit. Gluing
   `B` to the disc raises it by the degree `2 c₁(B)`
   (`TauCeti.Floer.CappedOrbit.conleyZehnderIndex_vadd`), as it raises the action by the area of
-  `B`; this is the recapping law of the grading of capped orbits. A capped orbit is determined by
-  its orbit, its action and its index
+  `B`. A capped orbit is determined by its orbit, its action and its index
   (`TauCeti.Floer.CappedOrbit.eq_iff_action_eq_and_conleyZehnderIndex_eq`).
+* **The sign of the index.** The index is Tau Ceti's coordinate-free Conley–Zehnder index
+  (`TauCeti.SymplecticForm.conleyZehnderIndex`), which reads paths in bases in which the
+  symplectic form has the matrix `J`. In the complex coordinates of `ℂⁿ`, where the grading of
+  capped orbits is written `μ = -CZ`, the index has the opposite sign
+  (`TauCeti.SymplecticForm.eventually_conleyZehnderIndex_eq_card_sub_morseIndex`). So with the index
+  of this file the grading `μ` is `+CZ`. It has the normalization of the grading: it is
+  `ind_p(F) - n` on the one-periodic orbits of a small multiple of a Morse function `F`
+  (`exists_pos_forall_conleyZehnderIndex_eq_manifoldMorseIndex_sub` in the namespace
+  `TauCeti.SmoothTwoForm.IsNondegenerate`). It also has its recapping law: gluing `B` raises it
+  by `2 c₁(B)` and the action by the area of `B`
+  (`TauCeti.Floer.CappedOrbit.conleyZehnderIndex_vadd`, `TauCeti.Floer.CappedOrbit.action_vadd`).
 
 ## Main definitions
 
@@ -278,7 +288,9 @@ of `Ham t` for a symplectic form `σ`, when `c` is the first Chern number of `σ
 classes (`hc`): the Conley–Zehnder index (`TauCeti.Floer.SphericalCapClass.conleyZehnderIndex`)
 of the linearized flow along the loop of `x` (`TauCeti.orbitLinearizedFlow`), read in a symplectic
 frame that extends over the discs of the class `q`. It is characterized on the class of a smooth
-cap by `TauCeti.Floer.CappedOrbit.conleyZehnderIndex_mk_homotopyClass`. -/
+cap by `TauCeti.Floer.CappedOrbit.conleyZehnderIndex_mk_homotopyClass`. It is read in bases in
+which `σ` has the matrix `J`, the opposite sign to the index in the complex coordinates of `ℂⁿ`, so
+it is the grading `μ` itself rather than `-μ`. -/
 def conleyZehnderIndex (p : CappedOrbit ω c X) : ℝ :=
   SphericalCapClass.conleyZehnderIndex hσ.isNondegenerate (hc (p.1.val 0))
     (exists_isSmoothBasedCap_orbitLoop hX p.1)
