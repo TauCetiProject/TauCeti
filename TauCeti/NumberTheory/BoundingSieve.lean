@@ -24,6 +24,8 @@ strictly below a real cutoff `D` (including `d = 1` when `1 < D`) and bounds `s.
 
 ## Main definitions and results
 
+* `BoundingSieve.nu_pos_of_mem_primeFactors`, `BoundingSieve.one_sub_nu_pos_of_mem_primeFactors`:
+  positivity of `s.nu p` and `1 - s.nu p` at prime factors `p ∈ s.prodPrimes.primeFactors`.
 * `BoundingSieve.sum_divisors_mul_multSum`: weighted divisibility interchange over `s.support`.
 * `BoundingSieve.mainSum_moebius`, `BoundingSieve.siftedSum_eq_sum_divisors_moebius_mul_multSum`,
   `BoundingSieve.siftedSum_eq_totalMass_mul_prod_add_sum_moebius_mul_rem`: the Legendre identity
@@ -46,6 +48,17 @@ open Finset Nat ArithmeticFunction
 open scoped ArithmeticFunction.Moebius ArithmeticFunction.zeta
 
 namespace BoundingSieve
+
+/-- At every prime factor `p` of `s.prodPrimes`, the local density `s.nu p` is positive. -/
+theorem nu_pos_of_mem_primeFactors (s : BoundingSieve) {p : ℕ}
+    (hp : p ∈ s.prodPrimes.primeFactors) : 0 < s.nu p :=
+  s.nu_pos_of_prime p (Nat.prime_of_mem_primeFactors hp) (Nat.dvd_of_mem_primeFactors hp)
+
+/-- At every prime factor `p` of `s.prodPrimes`, the Euler factor `1 - s.nu p` is positive. -/
+theorem one_sub_nu_pos_of_mem_primeFactors (s : BoundingSieve) {p : ℕ}
+    (hp : p ∈ s.prodPrimes.primeFactors) : 0 < 1 - s.nu p :=
+  sub_pos.mpr (s.nu_lt_one_of_prime p (Nat.prime_of_mem_primeFactors hp)
+    (Nat.dvd_of_mem_primeFactors hp))
 
 /-- Weighted divisibility interchange: summing `c d * s.multSum d` over `d ∣ s.prodPrimes` equals
 summing `s.weights n` times the divisor sum of `c` over `Nat.gcd s.prodPrimes n`. -/

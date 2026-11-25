@@ -105,7 +105,7 @@ private theorem euler_ratio_slice_le (s : BoundingSieve) {κ K z : ℝ} (n : ℕ
     exact h1.trans ((hinv_eq ▸ pow_le_pow_left₀ (by positivity) hexp1 n).trans_eq
       (Real.exp_nat_mul _ n).symm)
   calc ∏ p ∈ S, (1 - s.nu p)⁻¹
-      ≤ K * (Real.log z / Real.log w) ^ κ := (s.hasProductDimension_def κ K).mp hdim w z hw2 hwz
+      ≤ K * (Real.log z / Real.log w) ^ κ := hdim.prod_le hw2 hwz
     _ ≤ K * (Real.exp ((n : ℝ) * (1 / (9 * κ)))) ^ κ :=
         mul_le_mul_of_nonneg_left (rpow_le_rpow (div_nonneg hlz.le hlw.le) hdiv hκ.le) (by linarith)
     _ = K * Real.exp ((n : ℝ) / 9) := by
@@ -118,29 +118,23 @@ private theorem sum_nu_slice_pow_le (s : BoundingSieve) {κ K z : ℝ} {n : ℕ}
     let S := s.prodPrimes.primeFactors.filter (fun p : ℕ ↦ w ≤ (p : ℝ) ∧ (p : ℝ) < z)
     (∑ p ∈ S, s.nu p) ^ n ≤ ((n : ℝ) / 9) ^ n * K ^ 9 := by
   intro β w S
-  have hprod_pos : 0 < ∏ p ∈ S, (1 - s.nu p)⁻¹ := prod_pos fun p hp ↦ by
-    have hp0 := (mem_filter.mp hp).1
-    exact inv_pos.mpr (sub_pos.mpr (s.nu_lt_one_of_dvd_prodPrimes
-      (Nat.dvd_of_mem_primeFactors hp0) (Nat.prime_of_mem_primeFactors hp0).ne_one))
+  have hprod_pos : 0 < ∏ p ∈ S, (1 - s.nu p)⁻¹ :=
+    prod_pos fun _ hp ↦ inv_pos.mpr (s.one_sub_nu_pos_of_mem_primeFactors (mem_filter.mp hp).1)
   have hsum_nu : ∑ p ∈ S, s.nu p ≤ (n : ℝ) / 9 + Real.log K := by
     have hpt : ∀ p ∈ S, s.nu p ≤ Real.log ((1 - s.nu p)⁻¹) := fun p hp ↦ by
-      have hp0 := (mem_filter.mp hp).1
-      have hsub : 0 < 1 - s.nu p := sub_pos.mpr (s.nu_lt_one_of_dvd_prodPrimes
-        (Nat.dvd_of_mem_primeFactors hp0) (Nat.prime_of_mem_primeFactors hp0).ne_one)
+      have hsub := s.one_sub_nu_pos_of_mem_primeFactors (mem_filter.mp hp).1
       have h1exp : 1 - s.nu p ≤ Real.exp (-s.nu p) := by linarith [Real.add_one_le_exp (-s.nu p)]
       have hle := Real.log_le_log hsub h1exp
       rw [Real.log_exp] at hle
       rw [Real.log_inv]; linarith
     have hlog_prod : ∑ p ∈ S, Real.log ((1 - s.nu p)⁻¹) = Real.log (∏ p ∈ S, (1 - s.nu p)⁻¹) := by
-      rw [← Real.log_prod fun p hp ↦ ?_]
-      have hp0 := (mem_filter.mp hp).1
-      exact inv_ne_zero (sub_pos.mpr (s.nu_lt_one_of_dvd_prodPrimes
-        (Nat.dvd_of_mem_primeFactors hp0) (Nat.prime_of_mem_primeFactors hp0).ne_one)).ne'
+      rw [← Real.log_prod fun _ hp ↦
+        inv_ne_zero (s.one_sub_nu_pos_of_mem_primeFactors (mem_filter.mp hp).1).ne']
     have hlog_ub := Real.log_le_log hprod_pos (s.euler_ratio_slice_le n hκ hK hz2 hdim)
     rw [Real.log_mul (by linarith) (Real.exp_pos _).ne', Real.log_exp, add_comm] at hlog_ub
     exact (sum_le_sum hpt).trans (hlog_prod.trans_le hlog_ub)
-  have hsum_nn : 0 ≤ ∑ p ∈ S, s.nu p := sum_nonneg fun p hp ↦
-    (s.nu_pos_of_dvd_prodPrimes (Nat.dvd_of_mem_primeFactors (mem_filter.mp hp).1)).le
+  have hsum_nn : 0 ≤ ∑ p ∈ S, s.nu p :=
+    sum_nonneg fun _ hp ↦ (s.nu_pos_of_mem_primeFactors (mem_filter.mp hp).1).le
   have hn0 : (0 : ℝ) < n := Nat.cast_pos.mpr hn
   have hbase_nn : 0 ≤ 1 + 9 * Real.log K / n :=
     add_nonneg zero_le_one (div_nonneg (mul_nonneg (by norm_num) (Real.log_nonneg hK.le)) hn0.le)
@@ -166,8 +160,8 @@ private theorem slice_term_le (s : BoundingSieve) {κ K z : ℝ} {n : ℕ}
       K ^ 10 * ((Real.exp 1)⁻¹ * (Real.exp (10 / 9) / 9) ^ n) := by
   intro β w S
   by_cases hz2 : 2 < z
-  · have hnu_nn : ∀ p ∈ S, 0 ≤ s.nu p := fun p hp ↦
-      (s.nu_pos_of_dvd_prodPrimes (Nat.dvd_of_mem_primeFactors (mem_filter.mp hp).1)).le
+  · have hnu_nn : ∀ p ∈ S, 0 ≤ s.nu p :=
+      fun _ hp ↦ (s.nu_pos_of_mem_primeFactors (mem_filter.mp hp).1).le
     have hsym : ∑ B ∈ S.powersetCard n, ∏ p ∈ B, s.nu p ≤
         (((n : ℝ) / 9) ^ n * K ^ 9) / n.factorial := by
       rw [le_div_iff₀' (Nat.cast_pos.mpr n.factorial_pos)]
@@ -270,9 +264,8 @@ theorem brun_mainSum_bounds (s : BoundingSieve) (κ K y u : ℝ)
   have hz1 : 1 < z := one_lt_rpow hy (by positivity)
   have hzy : z ≤ y ^ (1 / β) :=
     rpow_le_rpow_of_exponent_le hy.le (one_div_le_one_div_of_le (by linarith) hu)
-  have hV_nn : 0 ≤ V := prod_nonneg fun p hp ↦
-    sub_nonneg.mpr (s.nu_lt_one_of_dvd_prodPrimes
-      (Nat.dvd_of_mem_primeFactors hp) (Nat.prime_of_mem_primeFactors hp).ne_one).le
+  have hV_nn : 0 ≤ V :=
+    prod_nonneg fun _ hp ↦ (s.one_sub_nu_pos_of_mem_primeFactors hp).le
   have htail := s.brun_tail_sum_le hκ hK hy hu hdim
   have hd0 := (s.brun_mainSum_defect_le 0 hy hβ1 hz1 hzy hprimes).trans
     (mul_le_mul_of_nonneg_left htail hV_nn)

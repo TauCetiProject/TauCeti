@@ -13,7 +13,7 @@ public import Mathlib.Data.Nat.Factorial.Basic
 
 From `1 + 1 / k ≤ exp (1 / k)` raised to the `k`-th power one obtains
 `(k + 1) ^ k ≤ k ^ k * exp 1`, hence by induction `exp 1 * (n / exp 1) ^ n ≤ n!` for every `1 ≤ n`
-(with equality at `n = 1`) and `(n / exp 1) ^ n ≤ n!` for every natural `n`.
+(with equality at `n = 1`).
 
 At small `n`, the constant `exp 1` improves on the Stirling lower bound `√(2 π n) * (n / e) ^ n`
 because `√(2 π) < e`.
@@ -22,7 +22,6 @@ because `√(2 π) < e`.
 
 * `Real.exp_one_mul_div_exp_one_pow_le_factorial`: `exp 1 * (n / exp 1) ^ n ≤ n!` for `1 ≤ n`.
 * `Real.div_exp_one_pow_div_factorial_le`: `(n / exp 1) ^ n / n! ≤ (exp 1)⁻¹` for `1 ≤ n`.
-* `Real.div_exp_one_pow_le_factorial`: `(n / exp 1) ^ n ≤ n!` for every `n : ℕ`.
 -/
 
 public section
@@ -73,20 +72,5 @@ theorem div_exp_one_pow_div_factorial_le {n : ℕ} (hn : 1 ≤ n) :
   have hfac : (0 : ℝ) < n.factorial := Nat.cast_pos.mpr (Nat.factorial_pos n)
   rw [div_le_iff₀ hfac, le_inv_mul_iff₀ (exp_pos 1)]
   exact exp_one_mul_div_exp_one_pow_le_factorial hn
-
-/-- For every natural number `n`, `(n / exp 1) ^ n ≤ n!`. -/
-theorem div_exp_one_pow_le_factorial (n : ℕ) :
-    ((n : ℝ) / exp 1) ^ n ≤ n.factorial := by
-  cases n with
-  | zero => simp
-  | succ m =>
-    have h1 : 1 ≤ exp 1 := one_le_exp zero_le_one
-    have h0 : 0 ≤ (((m + 1 : ℕ) : ℝ) / exp 1) ^ (m + 1) := by positivity
-    calc (((m + 1 : ℕ) : ℝ) / exp 1) ^ (m + 1)
-        = 1 * (((m + 1 : ℕ) : ℝ) / exp 1) ^ (m + 1) := (one_mul _).symm
-      _ ≤ exp 1 * (((m + 1 : ℕ) : ℝ) / exp 1) ^ (m + 1) :=
-          mul_le_mul_of_nonneg_right h1 h0
-      _ ≤ (m + 1).factorial :=
-          exp_one_mul_div_exp_one_pow_le_factorial (Nat.succ_pos m)
 
 end Real

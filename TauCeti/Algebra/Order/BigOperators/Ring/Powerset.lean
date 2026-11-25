@@ -21,10 +21,8 @@ a subset of all `n`-tuples from `s`.
 
 ## Main results
 
-* `Finset.factorial_nsmul_sum_powersetCard_prod_le_sum_pow`:
-  `n! • ∑ t ∈ s.powersetCard n, ∏ x ∈ t, f x ≤ (∑ x ∈ s, f x) ^ n` for nonnegative `f` on `s`.
-* `Finset.factorial_mul_sum_powersetCard_prod_le_sum_pow`: the cast-multiplication form
-  `(n! : R) * ∑ t ∈ s.powersetCard n, ∏ x ∈ t, f x ≤ (∑ x ∈ s, f x) ^ n`.
+* `Finset.factorial_mul_sum_powersetCard_prod_le_sum_pow`:
+  `(n! : R) * ∑ t ∈ s.powersetCard n, ∏ x ∈ t, f x ≤ (∑ x ∈ s, f x) ^ n` for nonnegative `f` on `s`.
 -/
 
 public section
@@ -74,13 +72,5 @@ theorem factorial_mul_sum_powersetCard_prod_le_sum_pow {α R : Type*} [CommSemir
             simpa only [Nat.add_sub_cancel, mul_right_comm _ _ (f a)] using h
         _ = (∑ x ∈ insert a s, f x) ^ (m + 1) := by
             rw [sum_insert ha, add_comm]
-
-/-- Scalar-multiplication form of `Finset.factorial_mul_sum_powersetCard_prod_le_sum_pow`. -/
-theorem factorial_nsmul_sum_powersetCard_prod_le_sum_pow {α R : Type*} [CommSemiring R]
-    [PartialOrder R] [IsOrderedRing R] {s : Finset α} {f : α → R}
-    (hf : ∀ x ∈ s, 0 ≤ f x) (n : ℕ) :
-    n.factorial • ∑ t ∈ s.powersetCard n, ∏ x ∈ t, f x ≤ (∑ x ∈ s, f x) ^ n := by
-  rw [nsmul_eq_mul]
-  exact factorial_mul_sum_powersetCard_prod_le_sum_pow hf n
 
 end Finset

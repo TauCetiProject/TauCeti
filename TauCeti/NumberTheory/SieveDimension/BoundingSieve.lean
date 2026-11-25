@@ -19,7 +19,8 @@ shared Euler-product dimension hypothesis usable across combinatorial and Selber
 
 * `BoundingSieve.HasProductDimension`: Euler-product sieve dimension on `s.prodPrimes.primeFactors`
   for `s.nu`.
-* `BoundingSieve.hasProductDimension_def`: explicit quantifier and product formula.
+* `BoundingSieve.hasProductDimension_def`, `BoundingSieve.HasProductDimension.prod_le`: explicit
+  quantifier formula and interval application on `2 ≤ w ≤ z`.
 * `BoundingSieve.hasProductDimension_iff_hasProductSieveDimension`: equivalence with
   `TauCeti.HasProductSieveDimension (s.prodPrimes.primeFactors : Set ℕ) s.nu`.
 * `BoundingSieve.HasProductDimension.mono_const`, `BoundingSieve.HasProductDimension.mono_dim`:
@@ -49,6 +50,14 @@ theorem hasProductDimension_def (s : BoundingSieve) (κ K : ℝ) :
       ∀ w z : ℝ, 2 ≤ w → w ≤ z →
         (∏ p ∈ s.prodPrimes.primeFactors.filter (fun p : ℕ ↦ w ≤ (p : ℝ) ∧ (p : ℝ) < z),
           (1 - s.nu p)⁻¹) ≤ K * (Real.log z / Real.log w) ^ κ := Iff.rfl
+
+/-- Applying `BoundingSieve.HasProductDimension` on `2 ≤ w ≤ z` bounds the Euler-product ratio over
+prime factors of `s.prodPrimes` in `[w, z)` by `K * (log z / log w) ^ κ`. -/
+theorem HasProductDimension.prod_le {s : BoundingSieve} {κ K w z : ℝ}
+    (h : s.HasProductDimension κ K) (hw : 2 ≤ w) (hwz : w ≤ z) :
+    (∏ p ∈ s.prodPrimes.primeFactors.filter (fun p : ℕ ↦ w ≤ (p : ℝ) ∧ (p : ℝ) < z),
+      (1 - s.nu p)⁻¹) ≤ K * (Real.log z / Real.log w) ^ κ :=
+  h w z hw hwz
 
 /-- `BoundingSieve.HasProductDimension` agrees with `TauCeti.HasProductSieveDimension` on the prime
 set `(s.prodPrimes.primeFactors : Set ℕ)` and density `s.nu`. -/

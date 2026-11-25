@@ -22,7 +22,10 @@ the dimension parameter `κ` as well as in `K`.
 
 * `TauCeti.HasProductSieveDimension`: standalone Euler-product sieve dimension predicate on a prime
   set `P : Set ℕ` and density `g : ℕ → ℝ`.
-* `TauCeti.hasProductSieveDimension_def`: explicit quantifier and product formula.
+* `TauCeti.hasProductSieveDimension_def`, `TauCeti.HasProductSieveDimension.prod_le`: explicit
+  quantifier formula and interval application on `2 ≤ w ≤ z`.
+* `TauCeti.hasProductSieveDimension_zero`: zero density has product sieve dimension `κ ≥ 0` with
+  any constant `K ≥ 1`.
 * `TauCeti.HasProductSieveDimension.mono_const`, `TauCeti.HasProductSieveDimension.mono_dim`:
   monotonicity in the multiplicative constant `K` and in the dimension `κ`.
 
@@ -57,6 +60,25 @@ theorem hasProductSieveDimension_def (P : Set ℕ) (g : ℕ → ℝ) (κ K : ℝ
           (∏ p ∈ (Finset.range ⌈z⌉₊).filter (fun p : ℕ ↦ p ∈ P ∧ p.Prime ∧ w ≤ (p : ℝ)),
             (1 - g p)⁻¹) ≤ K * (Real.log z / Real.log w) ^ κ := Iff.rfl
 
+open Classical in
+/-- Applying `HasProductSieveDimension` on an interval `2 ≤ w ≤ z` bounds the prime Euler product
+on `[w, z)` by `K * (log z / log w) ^ κ`. -/
+theorem HasProductSieveDimension.prod_le {P : Set ℕ} {g : ℕ → ℝ} {κ K w z : ℝ}
+    (h : HasProductSieveDimension P g κ K) (hw : 2 ≤ w) (hwz : w ≤ z) :
+    (∏ p ∈ (Finset.range ⌈z⌉₊).filter (fun p : ℕ ↦ p ∈ P ∧ p.Prime ∧ w ≤ (p : ℝ)),
+      (1 - g p)⁻¹) ≤ K * (Real.log z / Real.log w) ^ κ :=
+  h w z hw hwz
+
+/-- Zero density satisfies `HasProductSieveDimension P 0 κ K` whenever `0 ≤ κ` and `1 ≤ K`. -/
+theorem hasProductSieveDimension_zero (P : Set ℕ) {κ K : ℝ} (hκ : 0 ≤ κ) (hK : 1 ≤ K) :
+    HasProductSieveDimension P 0 κ K := by
+  classical
+  intro w z hw hwz
+  have hlw : 0 < Real.log w := Real.log_pos (by linarith)
+  have h1 : 1 ≤ Real.log z / Real.log w :=
+    (one_le_div hlw).mpr (Real.log_le_log (by linarith) hwz)
+  simpa using one_le_mul_of_one_le_of_one_le hK (one_le_rpow h1 hκ)
+
 /-- Monotonicity of `HasProductSieveDimension` in the multiplicative constant `K`. -/
 theorem HasProductSieveDimension.mono_const {P : Set ℕ} {g : ℕ → ℝ} {κ K₁ K₂ : ℝ}
     (h : HasProductSieveDimension P g κ K₁) (hK : K₁ ≤ K₂) :
@@ -65,7 +87,8 @@ theorem HasProductSieveDimension.mono_const {P : Set ℕ} {g : ℕ → ℝ} {κ 
   intro w z hw hwz
   have hlw : 0 < Real.log w := Real.log_pos (by linarith)
   have hlz : 0 ≤ Real.log z := hlw.le.trans (Real.log_le_log (by linarith) hwz)
-  exact (h w z hw hwz).trans (mul_le_mul_of_nonneg_right hK (rpow_nonneg (div_nonneg hlz hlw.le) _))
+  exact (h.prod_le hw hwz).trans
+    (mul_le_mul_of_nonneg_right hK (rpow_nonneg (div_nonneg hlz hlw.le) _))
 
 /-- Monotonicity of `HasProductSieveDimension` in the dimension parameter `κ`. -/
 theorem HasProductSieveDimension.mono_dim {P : Set ℕ} {g : ℕ → ℝ} {κ₁ κ₂ K : ℝ}
@@ -73,7 +96,7 @@ theorem HasProductSieveDimension.mono_dim {P : Set ℕ} {g : ℕ → ℝ} {κ₁
     HasProductSieveDimension P g κ₂ K := by
   classical
   have hK : 0 ≤ K := by
-    have h2 := h 2 2 le_rfl le_rfl
+    have h2 := h.prod_le (w := 2) (z := 2) le_rfl le_rfl
     have hemp : (Finset.range ⌈(2 : ℝ)⌉₊).filter
         (fun p : ℕ ↦ p ∈ P ∧ p.Prime ∧ 2 ≤ (p : ℝ)) = ∅ :=
       filter_eq_empty_iff.mpr fun p hp h' ↦ not_lt_of_ge h'.2.2 (Nat.lt_ceil.mp (mem_range.mp hp))
@@ -83,6 +106,7 @@ theorem HasProductSieveDimension.mono_dim {P : Set ℕ} {g : ℕ → ℝ} {κ₁
   have hlw : 0 < Real.log w := Real.log_pos (by linarith)
   have h1 : 1 ≤ Real.log z / Real.log w :=
     (one_le_div hlw).mpr (Real.log_le_log (by linarith) hwz)
-  exact (h w z hw hwz).trans (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_exponent_le h1 hκ) hK)
+  exact (h.prod_le hw hwz).trans
+    (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_exponent_le h1 hκ) hK)
 
 end TauCeti
