@@ -45,6 +45,8 @@ arithmetic and geometric means on the `σᵢ²`, `J(A) = σ₁ ⋯ σₙ ≤ (�
   `Orientation.hilbertSchmidtDistortion_linearIsometry_comp`,
   `Orientation.hilbertSchmidtDistortion_comp_linearIsometryEquiv`: the invariances of `q_S`
   under positive scaling (`cⁿ > 0`) and orientation-preserving isometries.
+* `Orientation.hilbertSchmidtDistortion_smul_linearIsometry`: a multiple `c • U` with `cⁿ > 0` of
+  a linear isometry `U` of oriented Jacobian `1` has Hilbert–Schmidt distortion `1`.
 
 ## References
 
@@ -244,5 +246,17 @@ theorem hilbertSchmidtDistortion_comp_linearIsometryEquiv (U : X ≃ₗᵢ[ℝ] 
   rw [hilbertSchmidtDistortion_def, hilbertSchmidtDistortion_def,
     oX.orientedJacobian_comp_of_right_eq_one oV oW hU, LinearMap.frobenius_comp_linearIsometryEquiv,
     LinearMap.comp_eq_zero_iff_of_surjective (f := (U : X →ₗ[ℝ] V)) U.surjective]
+
+omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
+/-- A multiple `c • U` with `cⁿ > 0` (any `c > 0`, and any `c ≠ 0` in even dimension) of a linear
+isometry `U` of oriented Jacobian `1` has Hilbert–Schmidt distortion `1`, since
+`1 ≤ q_S ≤ q_O = 1`. -/
+theorem hilbertSchmidtDistortion_smul_linearIsometry {c : ℝ} (hc : 0 < c ^ n) (U : V →ₗᵢ[ℝ] W)
+    (hU : oV.orientedJacobian oW U.toLinearMap = 1) :
+    oV.hilbertSchmidtDistortion oW (c • U.toLinearMap) = 1 := by
+  rw [oV.hilbertSchmidtDistortion_smul oW hc]
+  refine le_antisymm ?_ (oV.one_le_hilbertSchmidtDistortion oW (by rw [hU]; exact one_pos))
+  exact (oV.hilbertSchmidtDistortion_le_outerDistortion oW _).trans_eq
+    (oV.outerDistortion_linearIsometry oW U hU)
 
 end Orientation

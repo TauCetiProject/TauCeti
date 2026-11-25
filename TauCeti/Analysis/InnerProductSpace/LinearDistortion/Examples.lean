@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearDistortion.HilbertSchmidt
+public import TauCeti.Analysis.InnerProductSpace.LinearDistortion
 public import TauCeti.Analysis.InnerProductSpace.SingularValues.Planar
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
@@ -14,18 +14,17 @@ import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 /-!
 # Examples of linear distortion
 
-Two examples of the outer, inner and Hilbert–Schmidt distortions `q_O`, `q_I`, `q_S` of a linear
-map (`Orientation.outerDistortion`, `Orientation.innerDistortion`,
-`Orientation.hilbertSchmidtDistortion`), from the examples of Layer 1 of the QuasiregularMaps
-roadmap:
+The shear example of Layer 1 of the QuasiregularMaps roadmap for the outer and inner distortions
+`q_O`, `q_I` of a linear map (`Orientation.outerDistortion`, `Orientation.innerDistortion`): the
+shear `[[1, 1], [0, 1]]` of an oriented inner product plane has squared singular values
+`(3 ± √5) / 2` (`TauCeti.LinearDistortionExamples.sq_singularValues_shear`), so
+`q_O = q_I = (3 + √5) / 2` (`TauCeti.LinearDistortionExamples.distortion_shear`).
 
-* a positive multiple `c U` of an orientation-preserving isometric isomorphism (for instance a
-  rotation) has `q_O = q_I = q_S = 1`
-  (`TauCeti.LinearDistortionExamples.outerDistortion_smul_linearIsometryEquiv` and its two
-  companions);
-* the shear `[[1, 1], [0, 1]]` of an oriented inner product plane has squared singular values
-  `(3 ± √5) / 2` (`TauCeti.LinearDistortionExamples.sq_singularValues_shear`), so
-  `q_O = q_I = (3 + √5) / 2` (`TauCeti.LinearDistortionExamples.distortion_shear`).
+The isometry example of the same layer, that a positive multiple `c U` of an
+orientation-preserving isometric isomorphism has `q_O = q_I = q_S = 1`, is
+`Orientation.outerDistortion_smul_linearIsometry`,
+`Orientation.innerDistortion_smul_linearIsometryEquiv` and
+`Orientation.hilbertSchmidtDistortion_smul_linearIsometry`.
 -/
 
 public section
@@ -37,44 +36,10 @@ open scoped ENNReal
 
 namespace TauCeti.LinearDistortionExamples
 
-section Isometry
-
-variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
-  {n : ℕ} [Fact (finrank ℝ V = n)] [Fact (finrank ℝ W = n)]
-  (oV : Orientation ℝ V (Fin n)) (oW : Orientation ℝ W (Fin n))
-
-omit [FiniteDimensional ℝ W] in
-/-- A positive multiple `c U` of an orientation-preserving isometric isomorphism has outer
-distortion `1`. -/
-theorem outerDistortion_smul_linearIsometryEquiv {c : ℝ} (hc : 0 < c) (U : V ≃ₗᵢ[ℝ] W)
-    (hU : oV.orientedJacobian oW (U : V →ₗ[ℝ] W) = 1) :
-    oV.outerDistortion oW (c • (U : V →ₗ[ℝ] W)) = 1 := by
-  rw [oV.outerDistortion_smul oW (pow_pos hc n), oV.outerDistortion_linearIsometryEquiv oW U hU]
-
-/-- A positive multiple `c U` of an orientation-preserving isometric isomorphism has inner
-distortion `1`. -/
-theorem innerDistortion_smul_linearIsometryEquiv {c : ℝ} (hc : 0 < c) (U : V ≃ₗᵢ[ℝ] W)
-    (hU : oV.orientedJacobian oW (U : V →ₗ[ℝ] W) = 1) :
-    oV.innerDistortion oW (c • (U : V →ₗ[ℝ] W)) = 1 := by
-  rw [oV.innerDistortion_smul oW (pow_pos hc n), oV.innerDistortion_linearIsometryEquiv oW U hU]
-
-/-- A positive multiple `c U` of an orientation-preserving isometric isomorphism has
-Hilbert–Schmidt distortion `1`, since `1 ≤ q_S ≤ q_O = 1`. -/
-theorem hilbertSchmidtDistortion_smul_linearIsometryEquiv {c : ℝ} (hc : 0 < c)
-    (U : V ≃ₗᵢ[ℝ] W) (hU : oV.orientedJacobian oW (U : V →ₗ[ℝ] W) = 1) :
-    oV.hilbertSchmidtDistortion oW (c • (U : V →ₗ[ℝ] W)) = 1 := by
-  rw [oV.hilbertSchmidtDistortion_smul oW (pow_pos hc n)]
-  refine le_antisymm ?_ (oV.one_le_hilbertSchmidtDistortion oW (by rw [hU]; exact one_pos))
-  exact (oV.hilbertSchmidtDistortion_le_outerDistortion oW _).trans_eq
-    (oV.outerDistortion_linearIsometryEquiv oW U hU)
-
-end Isometry
-
 section Shear
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [Fact (finrank ℝ E = 2)] (e : OrthonormalBasis (Fin 2) ℝ E)
+  (e : OrthonormalBasis (Fin 2) ℝ E)
 
 /-- The shear `[[1, 1], [0, 1]]` in an orthonormal basis of a plane has squared singular values
 `σ₀² = (3 + √5) / 2` and `σ₁² = (3 - √5) / 2`: its Gram operator has trace `3` and
@@ -83,7 +48,7 @@ theorem sq_singularValues_shear :
     (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]).singularValues 0 ^ 2 = (3 + √5) / 2 ∧
       (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]).singularValues 1 ^ 2 = (3 - √5) / 2 := by
   set A := toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]
-  have hE : finrank ℝ E = 2 := Fact.out
+  have hE : finrank ℝ E = 2 := by rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
   have hA0 : A (e 0) = e 0 := by
     rw [← e.coe_toBasis, toLin_self]
     simp [Fin.sum_univ_two]
@@ -105,7 +70,7 @@ theorem sq_singularValues_shear :
 
 /-- **The shear `[[1, 1], [0, 1]]`** of an oriented inner product plane has
 `q_O = q_I = (3 + √5) / 2`. -/
-theorem distortion_shear :
+theorem distortion_shear [Fact (finrank ℝ E = 2)] :
     e.toBasis.orientation.outerDistortion e.toBasis.orientation
         (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]) = ENNReal.ofReal ((3 + √5) / 2) ∧
       e.toBasis.orientation.innerDistortion e.toBasis.orientation
