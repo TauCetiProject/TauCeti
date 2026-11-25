@@ -108,6 +108,13 @@ theorem dimerSubgraph_adj {ω : G.edgeSet → Bool} {u v : V} :
     (G.dimerSubgraph ω).Adj u v ↔ ∃ h : G.Adj u v, ω ⟨s(u, v), h⟩ = true :=
   (Iff.rfl)
 
+/-- The edges of `G.dimerSubgraph ω` are the edges of `G` of value `true` under `ω`. -/
+@[simp]
+theorem mem_edgeSet_dimerSubgraph {ω : G.edgeSet → Bool} {e : Sym2 V} :
+    e ∈ (G.dimerSubgraph ω).edgeSet ↔ ∃ h : e ∈ G.edgeSet, ω ⟨e, h⟩ = true := by
+  induction e using Sym2.ind with
+  | _ u v => exact Iff.rfl
+
 /-- The edges of value `true` at a vertex `v` correspond to the neighbours of `v` in the
 subgraph of edges of value `true`. -/
 private theorem existsUnique_edge_iff_existsUnique_adj (ω : G.edgeSet → Bool) (v : V) :
@@ -150,13 +157,12 @@ theorem dimerSubgraph_edgeIndicator {M : G.Subgraph} (hM : M.IsSpanning) :
     simp only [dimerSubgraph_adj, Subgraph.edgeIndicator_eq_true, Subgraph.mem_edgeSet]
     exact ⟨fun ⟨_, h⟩ => h, fun h => ⟨M.adj_sub h, h⟩⟩
 
+@[simp]
 theorem edgeIndicator_dimerSubgraph (ω : G.edgeSet → Bool) :
     (G.dimerSubgraph ω).edgeIndicator = ω := by
   funext ⟨e, he⟩
-  induction e using Sym2.ind with
-  | _ u v =>
-    rw [Bool.eq_iff_iff, Subgraph.edgeIndicator_eq_true, Subgraph.mem_edgeSet]
-    exact ⟨fun ⟨_, h⟩ => h, fun h => ⟨G.mem_edgeSet.1 he, h⟩⟩
+  rw [Bool.eq_iff_iff, Subgraph.edgeIndicator_eq_true, mem_edgeSet_dimerSubgraph]
+  exact ⟨fun ⟨_, h⟩ => h, fun h => ⟨he, h⟩⟩
 
 /-- Dimer configurations are the indicators of the edge sets of the perfect matchings. -/
 noncomputable def dimerConfigurationEquiv :
