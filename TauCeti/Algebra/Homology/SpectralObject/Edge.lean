@@ -36,11 +36,10 @@ For degeneration, the map from the page `r` onto `X.EInfty q n` is an isomorphis
 differentials at `(p, q)` vanish on the pages `r ≤ r' < r₁`, where `r₁` is a page from which the
 object is known to be the limit object (`isIso_spectralSequencePageXToEInfty_of_d_eq_zero`), for
 instance when their sources and targets vanish on the page `r`
-(`isIso_spectralSequencePageXToEInfty_of_isZero`). If the limit objects vanish between the indices
-`a` and `b`, the pieces `F_a H^n` and `F_b H^n` of the filtration agree: the comparison
-`abutmentFiltrationMapOfLE` between them is an isomorphism
-(`isIso_abutmentFiltrationMapOfLE_of_isZero_EInfty`); in particular, if `F_b H^n` is the whole
-abutment, so is `F_a H^n` (`isIso_abutmentFiltrationι_of_isZero_EInfty`). If `F_q H^n = 0` and
+(`isIso_spectralSequencePageXToEInfty_of_isZero`). The comparison of the pieces `F_a H^n` and
+`F_b H^n` of the filtration when the limit objects vanish between the indices `a` and `b` is in
+`TauCeti.Algebra.Homology.SpectralObject.Abutment`
+(`isIso_abutmentFiltrationMapOfLE_of_isZero_EInfty`). If `F_q H^n = 0` and
 `F_{q+2} H^n` is the whole abutment, the abutment is an extension of `X.EInfty (q + 1) n` by
 `X.EInfty q n` (`EInftyToAbutment_shortExact`).
 
@@ -51,19 +50,15 @@ abutment, so is `F_a H^n` (`isIso_abutmentFiltrationι_of_isZero_EInfty`). If `F
 * `H_map_comp_spectralSequencePageXToEInfty_EInftyIsoCokernel_hom`: the same map, followed by the
   identification of `X.EInfty q n` with the graded piece.
 * `CategoryTheory.Abelian.SpectralObject.EInftyToAbutment`: the edge map into the abutment, with
-  image `F_{q+1} H^n`, computed on the first page by
+  image `F_{q+1} H^n` (`EInftyToAbutment_eq`), computed on the first page by
   `H_map_comp_spectralSequencePageXToEInfty_EInftyToAbutment`.
 * `CategoryTheory.Abelian.SpectralObject.isIso_spectralSequencePageXToEInfty_of_d_eq_zero` and
   `CategoryTheory.Abelian.SpectralObject.isIso_spectralSequencePageXToEInfty_of_isZero`:
   stabilization of a page object when the differentials at it vanish.
-* `CategoryTheory.Abelian.SpectralObject.abutmentFiltrationMapOfLE`,
-  `CategoryTheory.Abelian.SpectralObject.isIso_abutmentFiltrationMapOfLE_of_isZero_EInfty`: the
-  comparison `F_a H^n ⟶ F_b H^n`, an isomorphism when the limit objects between `a` and `b`
-  vanish.
-* `CategoryTheory.Abelian.SpectralObject.isIso_abutmentFiltrationι_of_isZero_EInfty`,
-  `CategoryTheory.Abelian.SpectralObject.isIso_EInftyToAbutment`: exhaustion of the filtration
-  when the limit objects vanish, in which case the edge map is onto the abutment.
-* `CategoryTheory.Abelian.SpectralObject.abutmentToEInfty`,
+* `CategoryTheory.Abelian.SpectralObject.isIso_EInftyToAbutment`: the edge map is onto the
+  abutment when `F_{q+1} H^n` is the whole abutment.
+* `CategoryTheory.Abelian.SpectralObject.abutmentToEInfty`, characterized by
+  `abutmentFiltrationι_abutmentToEInfty`, and
   `CategoryTheory.Abelian.SpectralObject.EInftyToAbutment_shortExact`: the short exact sequence
   of a two-step filtration.
 -/
@@ -191,6 +186,13 @@ lemma H_map_comp_spectralSequencePageXToEInfty_EInftyIsoCokernel_hom (pq : ℤ �
   rw [X.H_map_comp_spectralSequencePageXToEInfty_assoc pq n hn h₀,
     opcyclesToE_EInftyIsoCokernel_hom]
 
+/-- When the piece `F_q H^n` of the filtration of the abutment vanishes, the projection of
+`F_{q+1} H^n` onto the graded piece `F_{q+1} H^n / F_q H^n` is an isomorphism. -/
+lemma isIso_cokernel_π_abutmentFiltrationMap_of_isZero {q n : ℤ}
+    (h : IsZero (X.abutmentFiltration q n)) : IsIso (cokernel.π (X.abutmentFiltrationMap q n)) := by
+  rw [show X.abutmentFiltrationMap q n = 0 from h.eq_of_src _ _]
+  infer_instance
+
 /-- **The edge map into the abutment.** When the piece `F_q H^n` of the filtration of the abutment
 vanishes, the limit object `X.EInfty q n`, the graded piece `F_{q+1} H^n / F_q H^n`, is the piece
 `F_{q+1} H^n`, and this is its embedding into the abutment `H^n(⊥ ≤ ⊤)`, with image
@@ -207,15 +209,21 @@ lemma EInftyToAbutment_def (q n : ℤ) (h : IsZero (X.abutmentFiltration q n)) :
       cokernel.desc _ (X.abutmentFiltrationι (q + 1) n) (h.eq_of_src _ _) :=
   (rfl)
 
+/-- `X.EInftyToAbutment` is the identification `EInftyIsoCokernel` of `X.EInfty q n` with the
+graded piece, followed by the inverse of the projection of `F_{q+1} H^n` onto the graded piece,
+an isomorphism as `F_q H^n` vanishes, and the embedding of `F_{q+1} H^n`. -/
+lemma EInftyToAbutment_eq (q n : ℤ) (h : IsZero (X.abutmentFiltration q n)) :
+    haveI := X.isIso_cokernel_π_abutmentFiltrationMap_of_isZero h
+    X.EInftyToAbutment q n h = (X.EInftyIsoCokernel q n).hom ≫
+      inv (cokernel.π (X.abutmentFiltrationMap q n)) ≫ X.abutmentFiltrationι (q + 1) n := by
+  rw [EInftyToAbutment_def]
+  congr 1
+  rw [IsIso.eq_inv_comp, cokernel.π_desc]
+
 /-- The map `X.EInftyToAbutment` from `X.EInfty q n` to the abutment is a monomorphism. -/
 instance (q n : ℤ) (h : IsZero (X.abutmentFiltration q n)) : Mono (X.EInftyToAbutment q n h) := by
-  have : IsIso (cokernel.π (X.abutmentFiltrationMap q n)) := by
-    rw [show X.abutmentFiltrationMap q n = 0 from h.eq_of_src _ _]
-    infer_instance
-  have e : cokernel.desc _ (X.abutmentFiltrationι (q + 1) n) (h.eq_of_src _ _) =
-      inv (cokernel.π (X.abutmentFiltrationMap q n)) ≫ X.abutmentFiltrationι (q + 1) n := by
-    rw [IsIso.eq_inv_comp, cokernel.π_desc]
-  rw [EInftyToAbutment_def, e]
+  have := X.isIso_cokernel_π_abutmentFiltrationMap_of_isZero h
+  rw [EInftyToAbutment_eq]
   infer_instance
 
 /-- On `F_{q+1} H^n = opZ^n(⊥ ≤ q + 1, q + 1 ≤ ⊤)`, the canonical map `opcyclesToE` followed by
@@ -315,79 +323,12 @@ theorem isIso_spectralSequencePageXToEInfty_of_isZero (r₁ : ℤ) (pq : ℤ × 
         (X.spectralSequence coreE₂Cohomological).page_d_eq_zero_of_le hr
           (Or.inr (hd r' hr' hr'₁).2) r' hr'⟩
 
-/-- The comparison `F_a H^n ⟶ F_b H^n`, for `a ≤ b`, between two pieces of the filtration of the
-abutment. -/
-noncomputable def abutmentFiltrationMapOfLE (a b n : ℤ) (hab : a ≤ b) :
-    X.abutmentFiltration a n ⟶ X.abutmentFiltration b n :=
-  X.opcyclesMap _ _ _ _ (threeδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ a))
-    (homOfLE (WithBotTop.coe_le_coe.2 hab)) (homOfLE (le_top : (b : EInt) ≤ ⊤))
-    (homOfLE bot_le) (homOfLE le_top) (Subsingleton.elim _ _) (Subsingleton.elim _ _)) n
-
-/-- The comparison `X.abutmentFiltrationMapOfLE a b n` is compatible with the embeddings of the
-pieces of the filtration into the abutment. -/
-@[reassoc (attr := simp)]
-lemma abutmentFiltrationMapOfLE_ι (a b n : ℤ) (hab : a ≤ b) :
-    X.abutmentFiltrationMapOfLE a b n hab ≫ X.abutmentFiltrationι b n =
-      X.abutmentFiltrationι a n := by
-  rw [abutmentFiltrationMapOfLE, abutmentFiltrationι_eq, abutmentFiltrationι_eq,
-    X.opcyclesMap_fromOpcycles _ _ _ _ _ _ _ _ _ (𝟙 _) n (by simp [threeδ₂Toδ₁])
-    (by simp [threeδ₂Toδ₁]), CategoryTheory.Functor.map_id, Category.comp_id]
-
-/-- The comparison between the pieces `F_a H^n` and `F_a H^n` is the identity. -/
-@[simp]
-lemma abutmentFiltrationMapOfLE_refl (a n : ℤ) :
-    X.abutmentFiltrationMapOfLE a a n le_rfl = 𝟙 _ := by
-  rw [← cancel_mono (X.abutmentFiltrationι a n), abutmentFiltrationMapOfLE_ι, Category.id_comp]
-
-/-- The comparison `F_a H^n ⟶ F_b H^n` is the inclusion `F_a H^n ⟶ F_{a+1} H^n` followed by the
-comparison `F_{a+1} H^n ⟶ F_b H^n`. -/
-lemma abutmentFiltrationMap_comp_abutmentFiltrationMapOfLE (a b n : ℤ) (hab : a + 1 ≤ b) :
-    X.abutmentFiltrationMap a n ≫ X.abutmentFiltrationMapOfLE (a + 1) b n hab =
-      X.abutmentFiltrationMapOfLE a b n (by omega) := by
-  rw [← cancel_mono (X.abutmentFiltrationι b n), Category.assoc, abutmentFiltrationMapOfLE_ι,
-    abutmentFiltrationMap_ι, abutmentFiltrationMapOfLE_ι]
-
-/-- If the limit objects `X.EInfty s n` vanish for `a ≤ s < b`, the pieces `F_a H^n` and
-`F_b H^n` of the filtration of the abutment agree: the comparison `F_a H^n ⟶ F_b H^n` is an
-isomorphism. -/
-lemma isIso_abutmentFiltrationMapOfLE_of_isZero_EInfty {a b n : ℤ} (hab : a ≤ b)
-    (h : ∀ s : ℤ, a ≤ s → s < b → IsZero (X.EInfty s n)) :
-    IsIso (X.abutmentFiltrationMapOfLE a b n hab) := by
-  obtain ⟨m, hm⟩ : ∃ m : ℕ, b = a + m := ⟨(b - a).toNat, by omega⟩
-  induction m generalizing a with
-  | zero =>
-    obtain rfl : b = a := by omega
-    rw [abutmentFiltrationMapOfLE_refl]
-    infer_instance
-  | succ m ih =>
-    have := ih (a := a + 1) (by omega) (fun s h₁ h₂ ↦ h s (by omega) h₂) (by omega)
-    -- the inclusion `F_a H^n ⟶ F_{a+1} H^n` is a monomorphism with vanishing cokernel
-    have : Epi (X.abutmentFiltrationMap a n) := Preadditive.epi_of_isZero_cokernel _
-      ((h a le_rfl (by omega)).of_iso (X.EInftyIsoCokernel a n).symm)
-    have : IsIso (X.abutmentFiltrationMap a n) := isIso_of_mono_of_epi _
-    rw [← X.abutmentFiltrationMap_comp_abutmentFiltrationMapOfLE a b n (by omega)]
-    infer_instance
-
-/-- If the limit objects `X.EInfty s n` vanish for `a ≤ s < b` and `F_b H^n` is the whole
-abutment, so is `F_a H^n`. -/
-lemma isIso_abutmentFiltrationι_of_isZero_EInfty {a b n : ℤ} (hab : a ≤ b)
-    (hb : IsIso (X.abutmentFiltrationι b n)) (h : ∀ s : ℤ, a ≤ s → s < b → IsZero (X.EInfty s n)) :
-    IsIso (X.abutmentFiltrationι a n) := by
-  have := X.isIso_abutmentFiltrationMapOfLE_of_isZero_EInfty hab h
-  rw [← X.abutmentFiltrationMapOfLE_ι a b n hab]
-  infer_instance
-
 /-- When the piece `F_{q+1} H^n` is the whole abutment, the edge map `X.EInftyToAbutment q n` is an
 isomorphism onto the abutment. -/
 lemma isIso_EInftyToAbutment (q n : ℤ) (h : IsZero (X.abutmentFiltration q n))
     [IsIso (X.abutmentFiltrationι (q + 1) n)] : IsIso (X.EInftyToAbutment q n h) := by
-  have : IsIso (cokernel.π (X.abutmentFiltrationMap q n)) := by
-    rw [show X.abutmentFiltrationMap q n = 0 from h.eq_of_src _ _]
-    infer_instance
-  have e : cokernel.desc _ (X.abutmentFiltrationι (q + 1) n) (h.eq_of_src _ _) =
-      inv (cokernel.π (X.abutmentFiltrationMap q n)) ≫ X.abutmentFiltrationι (q + 1) n := by
-    rw [IsIso.eq_inv_comp, cokernel.π_desc]
-  rw [EInftyToAbutment_def, e]
+  have := X.isIso_cokernel_π_abutmentFiltrationMap_of_isZero h
+  rw [EInftyToAbutment_eq]
   infer_instance
 
 /-- When the piece `F_{q+2} H^n` is the whole abutment, the projection of the abutment onto the
@@ -403,6 +344,22 @@ lemma abutmentToEInfty_def (q n : ℤ) [IsIso (X.abutmentFiltrationι (q + 1 + 1
     X.abutmentToEInfty q n = inv (X.abutmentFiltrationι (q + 1 + 1) n) ≫
       cokernel.π (X.abutmentFiltrationMap (q + 1) n) ≫ (X.EInftyIsoCokernel (q + 1) n).inv :=
   (rfl)
+
+/-- On the piece `F_{q+2} H^n`, the projection `X.abutmentToEInfty q n` is the projection onto
+the graded piece `F_{q+2} H^n / F_{q+1} H^n`, followed by the identification `EInftyIsoCokernel`. -/
+@[reassoc (attr := simp)]
+lemma abutmentFiltrationι_abutmentToEInfty (q n : ℤ)
+    [IsIso (X.abutmentFiltrationι (q + 1 + 1) n)] :
+    X.abutmentFiltrationι (q + 1 + 1) n ≫ X.abutmentToEInfty q n =
+      cokernel.π (X.abutmentFiltrationMap (q + 1) n) ≫ (X.EInftyIsoCokernel (q + 1) n).inv := by
+  rw [abutmentToEInfty_def, IsIso.hom_inv_id_assoc]
+
+/-- The projection `X.abutmentToEInfty q n` of the abutment onto the graded piece is an
+epimorphism. -/
+instance (q n : ℤ) [IsIso (X.abutmentFiltrationι (q + 1 + 1) n)] :
+    Epi (X.abutmentToEInfty q n) := by
+  rw [abutmentToEInfty_def]
+  infer_instance
 
 /-- The edge map `X.EInftyToAbutment q n` followed by `X.abutmentToEInfty q n` vanishes. -/
 @[reassoc (attr := simp)]
@@ -422,9 +379,7 @@ abutment are zero and everything, the abutment is an extension of the graded pie
 theorem EInftyToAbutment_shortExact (q n : ℤ) (h : IsZero (X.abutmentFiltration q n))
     [IsIso (X.abutmentFiltrationι (q + 1 + 1) n)] :
     (ShortComplex.mk _ _ (X.EInftyToAbutment_abutmentToEInfty q n h)).ShortExact := by
-  have : IsIso (cokernel.π (X.abutmentFiltrationMap q n)) := by
-    rw [show X.abutmentFiltrationMap q n = 0 from h.eq_of_src _ _]
-    infer_instance
+  have := X.isIso_cokernel_π_abutmentFiltrationMap_of_isZero h
   let e₁ : X.abutmentFiltration (q + 1) n ≅ X.EInfty q n :=
     asIso (cokernel.π (X.abutmentFiltrationMap q n)) ≪≫ (X.EInftyIsoCokernel q n).symm
   let e₂ : X.abutmentFiltration (q + 1 + 1) n ≅ X.abutment n :=

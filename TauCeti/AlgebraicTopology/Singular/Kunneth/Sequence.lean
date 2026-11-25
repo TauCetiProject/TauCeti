@@ -15,7 +15,7 @@ import Mathlib.RingTheory.Flat.CategoryTheory
 import TauCeti.Algebra.Category.ModuleCat.End
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
 import TauCeti.CategoryTheory.GradedObject
-import TauCeti.CategoryTheory.Monoidal.Tor
+import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 
 /-!
 # The Künneth short exact sequence for singular homology
