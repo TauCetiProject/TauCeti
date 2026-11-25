@@ -81,7 +81,7 @@ of `ι` are. -/
 theorem contMDiff_sub (h : σ.IsMomentMap a μ) (b : Basis κ ℝ 𝔤) {ι : N → Module.Dual ℝ 𝔤}
     (hι : ContMDiff J 𝓘(ℝ, κ → ℝ) ∞ (fun m i ↦ ι m (b i))) :
     ContMDiff (I.prod J) 𝓘(ℝ, κ → ℝ) ∞ (fun p : M × N ↦ fun i ↦ μ p.1 (b i) - ι p.2 (b i)) :=
-  (contMDiff_pi_module_iff.2 fun i ↦ (h.contMDiff (b i)).comp contMDiff_fst).sub
+  ((h.contMDiff_components b).comp contMDiff_fst).sub
     (hι.comp contMDiff_snd)
 
 /-- The derivative of the shifting map `(x, n) ↦ μ(x) - ι(n)`, read in a basis `b` of `𝔤`, is the

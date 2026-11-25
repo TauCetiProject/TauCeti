@@ -44,6 +44,9 @@ the slab, on a compact boundaryless manifold `M` and for `C > 0`.
   exactly one unparametrized continuation trajectory from `(p, 0)` to `(p, 1)` and none from
   `(p, 0)` to `(q, 1)` with `q ≠ p`. These are the counts defining the continuation map, so for a
   constant path they form the identity matrix.
+* **Product fields in general.** The argument for the space component applies to any product field
+  `(X x, Y b)` on `M × N`: under the Morse–Smale condition, the Morse index does not rise along a
+  trajectory of it.
 
 ## Main declarations
 
@@ -58,6 +61,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   end level.
 * `IsMorseSmale.isMIntegralCurve_constantContinuationField_and_tendsto_iff_of_le`: the
   constant-path identity.
+* `IsMorseSmale.manifoldMorseIndex_le_of_isMIntegralCurve_prodVectorField`: the Morse index does
+  not rise along a trajectory of a product field.
 
 ## References
 
@@ -193,6 +198,29 @@ namespace IsMorseSmale
 
 variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
 include h hf
+
+section ProdVectorField
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- **The Morse index does not rise along a trajectory of a product field.** Under the Morse–Smale
+condition, if an integral curve of the product field `(X x, Y b)` on `M × N` runs from `(p, b)` to
+`(q, b')`, then `ind q ≤ ind p`: its space component is a trajectory of `X` from `p` to `q`. -/
+theorem manifoldMorseIndex_le_of_isMIntegralCurve_prodVectorField
+    {Y : (b : N) → TangentSpace J b} {γ : ℝ → M × N}
+    (hγ : IsMIntegralCurve γ (Manifold.prodVectorField X Y)) {b b' : N}
+    (hp : Tendsto γ atBot (𝓝 (p, b))) (hq : Tendsto γ atTop (𝓝 (q, b'))) :
+    manifoldMorseIndex 𝓘(ℝ, E) f q ≤ manifoldMorseIndex 𝓘(ℝ, E) f p := by
+  rcases eq_or_ne p q with rfl | hpq
+  · exact le_rfl
+  obtain ⟨hy, -⟩ := hX.mem_unstableSet_inter_stableSet_of_isMIntegralCurve
+    (Manifold.isMIntegralCurve_prodVectorField_iff.1 hγ).1
+    ((continuous_fst.tendsto _).comp hp) ((continuous_fst.tendsto _).comp hq)
+  exact (h.manifoldMorseIndex_lt hf hpq ⟨_, hy⟩).le
+
+end ProdVectorField
 
 /-- **The constant-path continuation trajectories.** Under the Morse–Smale condition,
 for `C > 0`, a critical point `p` and a point `q` with `ind p ≤ ind q`, an integral curve of

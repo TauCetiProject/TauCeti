@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Field.Rat
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.FreeModule.Basic
+public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.LinearAlgebra.Dual.BaseChange
 
@@ -23,7 +25,8 @@ asserts that every finite injective algebra over a regular ring is split.
 
 This file sets up the predicate and its elementary laws: the evaluation-at-one description,
 composition along towers, restriction along algebra maps, base change, injectivity of the unit
-map and the tensor purity of split algebras. The descent of splittings along faithfully flat
+map, splittings of free algebras, contraction of ideals and the tensor purity of split algebras.
+The descent of splittings along faithfully flat
 maps and their detection at maximal ideals are in
 `TauCeti/RingTheory/SplitAlgebra/Descent.lean`.
 
@@ -42,6 +45,9 @@ maps and their detection at maximal ideals are in
   `T`.
 * `TauCeti.SplitAlgebra.baseChange`: splittings are stable under base change.
 * `TauCeti.SplitAlgebra.algebraMap_injective`: the unit map of a split algebra is injective.
+* `TauCeti.splitAlgebra_of_free`: a nontrivial algebra that is free as a module is split.
+* `TauCeti.SplitAlgebra.comap_map_eq_self`: every ideal `I` of `R` is contracted from a split
+  algebra `S`, i.e. `I S ∩ R = I`.
 * `TauCeti.SplitAlgebra.tmul_one_injective`: a split algebra is tensor-pure, i.e.
   `m ↦ m ⊗ 1 : M → M ⊗[R] S` is injective for every `R`-module `M`.
 * `TauCeti.not_splitAlgebra_int_rat`: the injective flat map `ℤ → ℚ` is not split.
@@ -143,7 +149,33 @@ theorem splitAlgebra_of_projective {K : Type*} [Semifield K] [Algebra K S]
     [Module.Projective K S] [Nontrivial S] : SplitAlgebra K S :=
   Module.Projective.exists_dual_eq_one K one_ne_zero
 
+/-- A nontrivial algebra that is free as a module is split: for a basis `b` and any index `i`,
+the functional `x ↦ b.coord i (b i * x)` takes `1` to `1`. -/
+theorem splitAlgebra_of_free [Module.Free R S] [Nontrivial S] : SplitAlgebra R S := by
+  let b := Module.Free.chooseBasis R S
+  obtain ⟨i⟩ := b.index_nonempty
+  exact ⟨b.coord i ∘ₗ LinearMap.mulLeft R (b i), by simp⟩
+
 end Semiring
+
+section CommSemiring
+
+variable {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+
+/-- Every ideal of `R` is contracted from a split `R`-algebra `S`: `I S ∩ R = I`. Applying a
+splitting `ρ` to `∑ aᵢ sᵢ` with `aᵢ ∈ I` gives `∑ aᵢ ρ(sᵢ) ∈ I`. -/
+theorem SplitAlgebra.comap_map_eq_self (h : SplitAlgebra R S) (I : Ideal R) :
+    (I.map (algebraMap R S)).comap (algebraMap R S) = I := by
+  refine le_antisymm (fun x hx ↦ ?_) Ideal.le_comap_map
+  obtain ⟨ρ, hρ⟩ := h
+  rw [Ideal.mem_comap, ← Submodule.restrictScalars_mem R, ← Ideal.smul_top_eq_map] at hx
+  have hI : ρ (algebraMap R S x) ∈ I :=
+    Submodule.smul_induction_on (p := fun y ↦ ρ y ∈ I) hx
+      (fun a ha s _ ↦ by simpa using I.mul_mem_right _ ha)
+      fun y z hy hz ↦ by simpa using add_mem hy hz
+  simpa [Algebra.algebraMap_eq_smul_one, hρ] using hI
+
+end CommSemiring
 
 section Tower
 
