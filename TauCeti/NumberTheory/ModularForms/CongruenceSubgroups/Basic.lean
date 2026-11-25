@@ -83,8 +83,9 @@ infrastructure independent of the diamond operators.
   right coset of `Γ₁(N)` exactly when their lower rows agree modulo `N`.
 * `CongruenceSubgroup.mem_Gamma1_of_mul_eq`: a matrix of `SL(2, ℤ)` carrying an integral matrix
   that is `!![1, *; 0, *]` modulo `N` to another such matrix lies in `Γ₁(N)`.
-* `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0`: a `Γ₀(N)` matrix has
-  unit upper-left entry modulo `N`.
+* `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0` and
+  `CongruenceSubgroup.isUnit_intCast_apply_one_one_of_mem_Gamma0`: a `Γ₀(N)` matrix has
+  unit diagonal entries modulo `N`.
 * `CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`: modulo its
   level, a `Γ₀(N)` matrix has mutually inverse diagonal entries.
 * `CongruenceSubgroup.intCast_add_natCast_mul_of_mem_Gamma0` and
@@ -382,6 +383,12 @@ theorem isUnit_intCast_apply_zero_zero_of_mem_Gamma0 {N : ℕ} {σ : SL(2, ℤ)}
   push_cast at hcast
   rw [h10, mul_zero, sub_zero] at hcast
   exact IsUnit.of_mul_eq_one _ hcast
+
+/-- The lower-right entry of a `Γ₀(N)` matrix is a unit modulo `N`, with inverse the upper-left
+entry (`intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`). -/
+theorem isUnit_intCast_apply_one_one_of_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
+    IsUnit ((γ 1 1 : ℤ) : ZMod N) :=
+  IsUnit.of_mul_eq_one_right _ (intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hγ)
 
 /-- **The first column of a `Γ₀(N)` matrix collapses under a natural-number shear**:
 `a + j c ≡ a` modulo `N` for every `j : ℕ`, because `c ≡ 0`. Stated with the casts already
