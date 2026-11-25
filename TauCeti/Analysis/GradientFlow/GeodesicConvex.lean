@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Along
+public import TauCeti.Analysis.Convex.Function.Along
 public import TauCeti.Analysis.GradientFlow.RelaxedSlope
 public import TauCeti.Data.EReal.Operations
 public import TauCeti.Topology.MetricSpace.CATZero
-import TauCeti.Analysis.Convex.Function.Uniform
-import TauCeti.Topology.Instances.EReal
 
 /-!
 # Geodesic convexity of energies

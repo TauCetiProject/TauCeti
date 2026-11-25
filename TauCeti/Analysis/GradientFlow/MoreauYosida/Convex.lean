@@ -8,8 +8,7 @@ module
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Existence
 import Mathlib.Analysis.SpecificLimits.Basic
-import TauCeti.Data.EReal.Operations
-import TauCeti.Topology.MetricSpace.LowerBound
+import TauCeti.Topology.MetricSpace.Pseudo.LowerBound
 import TauCeti.Topology.MetricSpace.Pseudo.Cauchy
 
 /-!
@@ -73,7 +72,7 @@ hypothesis on sublevels (`TauCeti.moreauYosidaResolvent_nonempty_of_convexAlong`
 convex energy that is lower semicontinuous and finite at a single point `x₀` is automatically
 coercive at every point for `1 + m τ > 0` (`TauCeti.GeodesicallyConvex.moreauYosida_ne_bot`,
 `TauCeti.GeodesicallyConvex.exists_moreauYosida_ne_bot`), via the abstract coercivity criteria
-`TauCeti.iInf_ne_bot_of_lowerSemicontinuousAt` and
+`TauCeti.iInf_ne_bot_of_eventually_le` and
 `TauCeti.moreauYosida_ne_bot_of_lowerSemicontinuousAt`.
 
 ## Main definitions
@@ -101,10 +100,10 @@ coercive at every point for `1 + m τ > 0` (`TauCeti.GeodesicallyConvex.moreauYo
   `TauCeti.PenalizedConvex.exists_forall_mem_moreauYosidaResolvent`: existence and uniqueness of
   resolvent steps and minimizing movement sequences in complete spaces without compactness of
   sublevels.
-* `TauCeti.iInf_ne_bot_of_lowerSemicontinuousAt` and
+* `TauCeti.iInf_ne_bot_of_eventually_le` and
   `TauCeti.moreauYosida_ne_bot_of_lowerSemicontinuousAt`: coercivity (`⨅ z, Ψ z ≠ ⊥` and
-  `φ_τ(x) ≠ ⊥` for `1 + m τ > 0`) from pointwise lower semicontinuity at a point of finite energy
-  and `κ`-convex interpolation with `κ > 0`.
+  `φ_τ(x) ≠ ⊥` for `1 + m τ > 0`) from a local real lower bound, respectively pointwise lower
+  semicontinuity at a point of finite energy, and `κ`-convex interpolation with `κ > 0`.
 * `TauCeti.GeodesicallyConvex.penalizedConvex`: penalized convexity of `m`-geodesically convex
   energies on CAT(0) spaces.
 * `TauCeti.GeodesicallyConvex.moreauYosida_ne_bot`,
@@ -366,32 +365,48 @@ section Existence
 
 variable {X : Type*} [PseudoMetricSpace X] {m : ℝ} {τ τ₀ : ℝ≥0} {φ : X → EReal} {x x₀ : X}
 
-/-- Midpoint stability for two points with penalized energy near the infimum `M`,
-obtained by comparing the common lower bound with the midpoint interpolation bound. -/
-private lemma mul_dist_sq_le_of_convexAlong (hτ : 0 < τ) {M ε₀ ε₁ : ℝ} {v₀ v₁ : X}
-    {γ : ℝ → X} (hγ0 : γ 0 = v₀) (hγ1 : γ 1 = v₁)
-    (hγ : ConvexAlong (m + (τ : ℝ)⁻¹)
-      (fun z ↦ φ z + ((dist x z ^ 2 / (2 * τ) : ℝ) : EReal)) γ)
-    (hlow : (M : EReal) ≤ φ (γ (1 / 2)) + ((dist x (γ (1 / 2)) ^ 2 / (2 * τ) : ℝ) : EReal))
-    (htop₀ : φ v₀ ≠ ⊤) (hbot₀ : φ v₀ ≠ ⊥) (htop₁ : φ v₁ ≠ ⊤) (hbot₁ : φ v₁ ≠ ⊥)
-    (hv₀ : φ v₀ + (edist x v₀ ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + ε₀ : ℝ) : EReal))
-    (hv₁ : φ v₁ + (edist x v₁ ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + ε₁ : ℝ) : EReal)) :
-    ((m + (τ : ℝ)⁻¹) / 2 * dist v₀ v₁ ^ 2) / 4 ≤ (ε₀ + ε₁) / 2 := by
-  let energy (v : X) : ℝ := (φ v).toReal + dist x v ^ 2 / (2 * τ)
-  have henergy (v : X) (htop : φ v ≠ ⊤) (hbot : φ v ≠ ⊥) :
-      φ v + ((dist x v ^ 2 / (2 * τ) : ℝ) : EReal) = (energy v : EReal) := by
+/-- A sequence with penalized energies below `M + 1 / (n + 1)`, where `M` is the infimum, is
+Cauchy when the penalized energy is positively convex along connecting curves. -/
+private lemma cauchySeq_of_convexAlong {v : ℕ → X} {M : ℝ}
+    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ)
+    (h : ∀ ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
+      ConvexAlong (m + (τ : ℝ)⁻¹) (fun z ↦ φ z + ((dist x z ^ 2 / (2 * τ) : ℝ) : EReal)) γ)
+    (hbot : moreauYosida φ τ x ≠ ⊥) (hM : moreauYosida φ τ x = M)
+    (hv : ∀ n, φ (v n) + (edist x (v n) ^ 2 / (2 * τ) : ℝ≥0∞) <
+      ((M + 1 / (n + 1) : ℝ) : EReal)) : CauchySeq v := by
+  let energy (n : ℕ) : ℝ := (φ (v n)).toReal + dist x (v n) ^ 2 / (2 * τ)
+  have htop (n : ℕ) : φ (v n) ≠ ⊤ := by
+    intro hn
+    have := hv n
+    rw [hn, coe_edist_sq_div_eq_coe_dist_sq_div hτ,
+      EReal.top_add_of_ne_bot (EReal.coe_ne_bot _)] at this
+    exact not_top_lt this
+  have henergy (n : ℕ) :
+      φ (v n) + ((dist x (v n) ^ 2 / (2 * τ) : ℝ) : EReal) = (energy n : EReal) := by
     dsimp only [energy]
-    rw [EReal.coe_add, EReal.coe_toReal htop hbot]
-  have hv₀' : energy v₀ < M + ε₀ := by
-    simpa only [coe_edist_sq_div_eq_coe_dist_sq_div hτ, henergy v₀ htop₀ hbot₀,
-      EReal.coe_lt_coe_iff] using hv₀
-  have hv₁' : energy v₁ < M + ε₁ := by
-    simpa only [coe_edist_sq_div_eq_coe_dist_sq_div hτ, henergy v₁ htop₁ hbot₁,
-      EReal.coe_lt_coe_iff] using hv₁
-  have hgap := hγ.mul_dist_sq_div_four_le_sub
-    (by rw [hγ0, henergy v₀ htop₀ hbot₀]) (by rw [hγ1, henergy v₁ htop₁ hbot₁]) hlow
+    rw [EReal.coe_add, EReal.coe_toReal (htop n)
+      (apply_ne_bot_of_moreauYosida_ne_bot (edist_ne_top x (v n)) hbot)]
+  have hupper (n : ℕ) : energy n < M + 1 / (n + 1) := by
+    simpa only [coe_edist_sq_div_eq_coe_dist_sq_div hτ, henergy n,
+      EReal.coe_lt_coe_iff] using hv n
+  have hlow (y : X) : (M : EReal) ≤ φ y + ((dist x y ^ 2 / (2 * τ) : ℝ) : EReal) := by
+    rw [← coe_edist_sq_div_eq_coe_dist_sq_div hτ, ← hM]
+    exact moreauYosida_le φ τ (edist_ne_top x y)
+  have hκ : 0 < m + (τ : ℝ)⁻¹ := by
+    convert div_pos hmτ (NNReal.coe_pos.2 hτ) using 1
+    field_simp
+    ring
+  refine cauchySeq_of_le_max_sub (g := fun n ↦ 1 / ((n : ℝ) + 1)) (a := 0)
+    (fun ε hε ↦ ?_) tendsto_one_div_add_atTop_nhds_zero_nat
+  refine ⟨(m + (τ : ℝ)⁻¹) / 8 * ε ^ 2, by positivity, fun n k hdist ↦ ?_⟩
+  obtain ⟨γ, hγ0, hγ1, hγ⟩ := h (htop n) (htop k)
+  have hgap := hγ.mul_dist_sq_div_four_le_sub (by rw [hγ0, henergy n]) (by rw [hγ1, henergy k])
+    (hlow (γ (1 / 2)))
   rw [hγ0, hγ1] at hgap
-  linarith
+  have hsq : ε ^ 2 ≤ dist (v n) (v k) ^ 2 := by gcongr
+  have hpenalty := mul_le_mul_of_nonneg_left hsq (by positivity : 0 ≤ (m + (τ : ℝ)⁻¹) / 8)
+  nlinarith [hupper n, hupper k, le_max_left (1 / ((n : ℝ) + 1)) (1 / ((k : ℝ) + 1)),
+    le_max_right (1 / ((n : ℝ) + 1)) (1 / ((k : ℝ) + 1))]
 
 /-- **Existence of a resolvent step from convexity of the penalized energy** (Ambrosio–Gigli–Savaré,
 Theorem 4.1.2). In a complete pseudometric space, if `φ` is lower semicontinuous, `τ > 0` satisfies
@@ -404,13 +419,10 @@ theorem moreauYosidaResolvent_nonempty_of_convexAlong [CompleteSpace X]
       ConvexAlong (m + (τ : ℝ)⁻¹) (fun z ↦ φ z + ((dist x z ^ 2 / (2 * τ) : ℝ) : EReal)) γ)
     (hbot : moreauYosida φ τ x ≠ ⊥) :
     (moreauYosidaResolvent φ τ x).Nonempty := by
-  -- Every minimizing sequence for `z ↦ φ z + d(x, z)² / (2τ)` is Cauchy by strong convexity along
-  -- the connecting curves.
   rcases eq_or_ne (moreauYosida φ τ x) ⊤ with htop | htop
   · exact ⟨x, self_mem_moreauYosidaResolvent_of_eq_top htop⟩
   set M : ℝ := (moreauYosida φ τ x).toReal
   have hM : moreauYosida φ τ x = M := (EReal.coe_toReal htop hbot).symm
-  -- Choose a minimizing sequence `v` with penalized energies below `M + 1 / (n + 1)`.
   have hseq : ∀ n : ℕ, ∃ v : X,
       φ v + (edist x v ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + 1 / (n + 1) : ℝ) : EReal) := fun n ↦ by
     have hlt : moreauYosida φ τ x < ((M + 1 / (n + 1) : ℝ) : EReal) := by
@@ -418,32 +430,7 @@ theorem moreauYosidaResolvent_nonempty_of_convexAlong [CompleteSpace X]
       linarith [Nat.one_div_pos_of_nat (α := ℝ) (n := n)]
     simpa only [moreauYosida_eq_iInf, iInf_lt_iff] using hlt
   choose v hv using hseq
-  have hφ_ne_top : ∀ n, φ (v n) ≠ ⊤ := fun n hvn ↦ by
-    have := hv n
-    rw [hvn, coe_edist_sq_div_eq_coe_dist_sq_div hτ,
-      EReal.top_add_of_ne_bot (EReal.coe_ne_bot _)] at this
-    exact not_top_lt this
-  have hψ_ge : ∀ y : X, (M : EReal) ≤ φ y + ((dist x y ^ 2 / (2 * τ) : ℝ) : EReal) := fun y ↦ by
-    rw [← coe_edist_sq_div_eq_coe_dist_sq_div hτ, ← hM]
-    exact moreauYosida_le φ τ (edist_ne_top x y)
-  have hφ_ne_bot : ∀ n, φ (v n) ≠ ⊥ := fun n ↦
-    apply_ne_bot_of_moreauYosida_ne_bot (edist_ne_top x (v n)) hbot
-  have hκ : 0 < m + (τ : ℝ)⁻¹ := by
-    have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
-    convert div_pos hmτ hτr using 1
-    field_simp
-    ring
-  have hgap (n k : ℕ) :
-      ((m + (τ : ℝ)⁻¹) / 2 * dist (v n) (v k) ^ 2) / 4 ≤
-        (1 / ((n : ℝ) + 1) + 1 / ((k : ℝ) + 1)) / 2 - 0 := by
-    obtain ⟨γ, hγ0, hγ1, hγ⟩ := h (hφ_ne_top n) (hφ_ne_top k)
-    rw [sub_zero]
-    exact mul_dist_sq_le_of_convexAlong hτ hγ0 hγ1 hγ (hψ_ge (γ (1 / 2)))
-      (hφ_ne_top n) (hφ_ne_bot n) (hφ_ne_top k) (hφ_ne_bot k) (hv n) (hv k)
-  have hcauchy : CauchySeq v := cauchySeq_of_le_average_sub
-    (ω := fun r ↦ (m + (τ : ℝ)⁻¹) / 2 * r ^ 2)
-    (fun ε hε ↦ ⟨(m + (τ : ℝ)⁻¹) / 2 * ε ^ 2, by positivity, fun r hr ↦ by gcongr⟩) hgap
-    tendsto_one_div_add_atTop_nhds_zero_nat
+  have hcauchy := cauchySeq_of_convexAlong hτ hmτ h hbot hM hv
   obtain ⟨y, hy⟩ := cauchySeq_tendsto_of_complete hcauchy
   have hliminf := le_liminf_apply_add_edist_sq_div (φ := φ) (τ := τ) (x := x)
     ((((continuous_const.edist continuous_id).tendsto y).comp hy).liminf_eq.ge)
@@ -519,13 +506,18 @@ theorem moreauYosida_ne_bot_of_lowerSemicontinuousAt {x₀ x₁ : X}
     exact iInf_congr fun z ↦ congr_arg (φ z + ·) (coe_edist_sq_div_eq_coe_dist_sq_div hσ x₁ z)
   rw [hΨ_eq]
   have hΨtop : Ψ x₀ ≠ ⊤ := EReal.add_ne_top hx₀top (EReal.coe_ne_top _)
-  have hΨbot : Ψ x₀ ≠ ⊥ := EReal.add_ne_bot_iff.2 ⟨hx₀bot, EReal.coe_ne_bot _⟩
   have hcont : Continuous (fun z : X ↦ ((dist x₁ z ^ 2 / (2 * σ) : ℝ) : EReal)) :=
     EReal.continuous_coe_iff.2 (((continuous_const.dist continuous_id).pow 2).div_const _)
-  refine iInf_ne_bot_of_lowerSemicontinuousAt (x₀ := x₀) (κ := m + (σ : ℝ)⁻¹)
-    (hx₀.add' hcont.continuousAt.lowerSemicontinuousAt
-      (EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _))))
-    hΨtop hΨbot ?_ fun z hz ↦ ?_
+  have hΨlsc : LowerSemicontinuousAt Ψ x₀ :=
+    hx₀.add' hcont.continuousAt.lowerSemicontinuousAt
+      (EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _)))
+  have hΨbot : Ψ x₀ ≠ ⊥ := EReal.add_ne_bot_iff.2 ⟨hx₀bot, EReal.coe_ne_bot _⟩
+  have hlocal : ∀ᶠ y in 𝓝 x₀, (((Ψ x₀).toReal - 1 : ℝ) : EReal) ≤ Ψ y :=
+    (hΨlsc _ ((EReal.coe_lt_coe_iff.2 (sub_one_lt _)).trans_eq
+      (EReal.coe_toReal hΨtop hΨbot))).mono
+      fun _ hy ↦ hy.le
+  refine iInf_ne_bot_of_eventually_le (x₀ := x₀) (κ := m + (σ : ℝ)⁻¹)
+    hlocal hΨtop ?_ fun z hz ↦ ?_
   · have : m + (σ : ℝ)⁻¹ = (1 + m * σ) / σ := by field_simp; ring
     rw [this]
     positivity

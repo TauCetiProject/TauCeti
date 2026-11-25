@@ -20,15 +20,17 @@ sums, nonnegative multiples, suprema and pointwise limits whose endpoint values 
 ## Main results
 
 * `TauCeti.convexAlong_def`: the characteristic inequality for introduction and elimination.
+* `TauCeti.convexAlong_zero`: the zero energy is convex with modulus zero along every curve.
 * `TauCeti.ConvexAlong.mono`: convexity persists when its modulus decreases.
 * `TauCeti.ConvexAlong.apply_ne_top`: the effective domain is convex along a curve of convexity.
 * `TauCeti.ConvexAlong.reverse`: convexity is preserved when the curve is reversed.
 * `TauCeti.ConvexAlong.add`, `TauCeti.ConvexAlong.const_mul`, `TauCeti.ConvexAlong.iSup` and
   `TauCeti.ConvexAlong.of_tendsto`: stability under operations on energies.
-* `TauCeti.ConvexAlong.apply_add_le_of_forall_le`: quadratic growth from a minimum on a curve.
+* `TauCeti.ConvexAlong.apply_add_le_of_forall_le`: a quadratic lower bound at the endpoint
+  from a minimum on a curve.
 * `TauCeti.ConvexAlong.mul_dist_sq_div_four_le_sub`: the midpoint penalty bound.
 
-The growth and midpoint estimates are used for minimizing sequences, as in Ambrosio, Gigli
+The endpoint and midpoint estimates are used for minimizing sequences, as in Ambrosio, Gigli
 and Savaré, *Gradient Flows in Metric Spaces and in the Space of Probability Measures*,
 2nd ed., Section 2.4, Lemma 4.1.1 and Theorem 4.1.2.
 -/
@@ -38,18 +40,6 @@ public section
 open Filter Set Topology
 
 namespace TauCeti
-
-/-- If a quadratic interpolation bound stays above its initial value `a`, its
-endpoint value `b` exceeds `a` by at least the interpolation coefficient `D`. -/
-theorem add_le_of_le_affine_sub {a b D : ℝ}
-    (h : ∀ t ∈ Ioo (0 : ℝ) 1, a ≤ (1 - t) * a + t * b - t * (1 - t) * D) :
-    a + D ≤ b := by
-  have hbound : ∀ t ∈ Ioo (0 : ℝ) 1, a + (1 - t) * D ≤ b := by
-    intro t ht
-    exact le_of_mul_le_mul_left (by linarith [h t ht]) ht.1
-  have hc : Continuous (fun t : ℝ ↦ a + (1 - t) * D) := by fun_prop
-  have hlim := (hc.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
-  simpa using le_of_tendsto hlim (eventually_of_mem (Ioo_mem_nhdsGT zero_lt_one) hbound)
 
 variable {X : Type*} [PseudoMetricSpace X] {m m' : ℝ} {φ ψ : X → EReal} {γ : ℝ → X}
 
@@ -65,6 +55,12 @@ theorem convexAlong_def :
       (t : EReal) * φ (γ 1) - ((m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal) := by
   unfold ConvexAlong
   rfl
+
+/-- The zero energy is convex with modulus zero along every curve. -/
+@[simp]
+theorem convexAlong_zero : ConvexAlong 0 (fun _ ↦ (0 : EReal)) γ := by
+  intro t _
+  simp
 
 /-- Convexity along a curve with a parameter `m` implies it for every smaller parameter. -/
 theorem ConvexAlong.mono (h : ConvexAlong m φ γ) (hm : m' ≤ m) : ConvexAlong m' φ γ :=
@@ -105,13 +101,15 @@ theorem ConvexAlong.add (hφ : ConvexAlong m φ γ) (hψ : ConvexAlong m' ψ γ)
 then `c φ` is `(c m)`-convex along it. -/
 theorem ConvexAlong.const_mul (h : ConvexAlong m φ γ) {c : ℝ} (hc : 0 ≤ c) :
     ConvexAlong (c * m) (fun x ↦ (c : EReal) * φ x) γ := by
+  rcases hc.eq_or_lt with rfl | hc
+  · simpa only [zero_mul, EReal.coe_zero] using (convexAlong_zero (γ := γ))
   intro t ht
-  have hc' : (0 : EReal) ≤ c := EReal.coe_nonneg.2 hc
+  have hc' : (0 : EReal) ≤ c := EReal.coe_nonneg.2 hc.le
   calc (c : EReal) * φ (γ t) ≤ (c : EReal) * (((1 - t : ℝ) : EReal) * φ (γ 0) +
         (t : EReal) * φ (γ 1) - ((m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal)) :=
       mul_le_mul_of_nonneg_left (h t ht) hc'
     _ = _ := by
-      rw [EReal.coe_mul_coe_mul_add_coe_mul_sub _ _ hc]
+      rw [EReal.coe_mul_coe_mul_add_coe_mul_sub _ _ hc.le]
       congr 2
       ring
 
@@ -138,10 +136,9 @@ theorem ConvexAlong.of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {φs : ι 
       (hφ 1 (right_mem_Icc.2 zero_le_one)) h₀ h₁ (sub_nonneg.2 ht.2) ht.1 _)
     (h.mono fun i hi ↦ hi t ht)
 
-/-- **Quadratic growth away from a minimum along a curve of convexity.** If `φ` is `m`-convex
+/-- **Quadratic lower bound at the endpoint of a curve of convexity.** If `φ` is `m`-convex
 along `γ` and its smallest value along `γ` on `[0, 1]` is attained at `γ 0`, then
-`φ (γ 0) + (m / 2) d(γ 0, γ 1)² ≤ φ (γ 1)`. Comparing `φ (γ 0)` with the convexity bound at time
-`t` and letting `t → 0` gives the inequality; `m` may be negative. -/
+`φ (γ 0) + (m / 2) d(γ 0, γ 1)² ≤ φ (γ 1)`. The modulus `m` may be negative. -/
 theorem ConvexAlong.apply_add_le_of_forall_le (h : ConvexAlong m φ γ)
     (hmin : ∀ t ∈ Icc (0 : ℝ) 1, φ (γ 0) ≤ φ (γ t)) :
     φ (γ 0) + ((m / 2 * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal) ≤ φ (γ 1) := by

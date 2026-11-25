@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Strong
-public import TauCeti.Analysis.Convex.Along
 
 import TauCeti.Algebra.Order.Field.Basic
 
@@ -15,8 +14,6 @@ import TauCeti.Algebra.Order.Field.Basic
 
 The affine-segment inequality gives a lower bound in terms of the modulus at
 a constrained minimizer, and controls the midpoint gap above a lower bound.
-For strong convexity the same interpolation inequality yields metric convexity
-along the segment.
 -/
 
 public section
@@ -34,26 +31,7 @@ theorem UniformConvexOn.map_lineMap_le (hf : UniformConvexOn s φ f) (hx : x ∈
   rw [AffineMap.lineMap_apply_module, mul_comm t (1 - t)]
   simpa only [smul_eq_mul] using hf.2 hx hy (sub_nonneg.2 ht.2) ht.1 (sub_add_cancel 1 t)
 
-/-- Strong convexity is uniform convexity with the quadratic modulus. -/
-theorem StrongConvexOn.uniformConvexOn (hf : StrongConvexOn s μ f) :
-    UniformConvexOn s (fun r ↦ μ / 2 * r ^ 2) f := by
-  simpa only [StrongConvexOn] using hf
-
-/-- The real-to-extended-real embedding of a strongly convex function is convex along
-the affine segment between any two points in its domain, with the same modulus. -/
-theorem StrongConvexOn.convexAlong_lineMap (hf : StrongConvexOn s μ f) (hx : x ∈ s) (hy : y ∈ s) :
-    TauCeti.ConvexAlong μ (fun z ↦ (f z : EReal)) (AffineMap.lineMap x y) := by
-  rw [TauCeti.convexAlong_def]
-  intro t ht
-  simp only [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one]
-  have hbound : f (AffineMap.lineMap x y t) ≤
-      (1 - t) * f x + t * f y - μ / 2 * t * (1 - t) * dist x y ^ 2 := by
-    rw [dist_eq_norm]
-    convert hf.uniformConvexOn.map_lineMap_le hx hy ht using 1
-    ring
-  exact_mod_cast hbound
-
-/-- At a constrained minimizer, the objective increases by at least the uniform modulus
+/-- At a constrained minimizer, the objective gap is bounded below by the uniform modulus
 evaluated at the distance to any other feasible point. -/
 theorem UniformConvexOn.add_le_of_isMinOn (hf : UniformConvexOn s φ f) (hx : x ∈ s)
     (hmin : IsMinOn f s x) (hy : y ∈ s) :

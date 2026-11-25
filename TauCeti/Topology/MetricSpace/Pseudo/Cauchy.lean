@@ -11,13 +11,12 @@ import Mathlib.Tactic.Linarith
 /-!
 # A Cauchy criterion from vanishing objective gaps
 
-A metric sequence is Cauchy when its pairwise distance penalty is bounded by average
-objective gaps tending to zero, provided the penalty is bounded away from zero at every
-positive distance from zero.
+A sequence is Cauchy when pairs separated by any fixed positive distance force a positive
+objective gap, while the objective values converge to the reference value.
 
 ## Main results
 
-* `TauCeti.cauchySeq_of_le_average_sub`: the Cauchy criterion for a general distance penalty.
+* `TauCeti.cauchySeq_of_le_max_sub`: the Cauchy criterion for separated pairs.
 -/
 
 public section
@@ -28,17 +27,16 @@ namespace TauCeti
 
 variable {X : Type*} [PseudoMetricSpace X]
 
-/-- A sequence is Cauchy if a distance penalty bounded away from zero off every
-neighborhood of zero is controlled by average objective gaps tending to zero. -/
-theorem cauchySeq_of_le_average_sub {u : ℕ → X} {g : ℕ → ℝ} {a : ℝ} {ω : ℝ → ℝ}
-    (hω : ∀ ε > 0, ∃ c > 0, ∀ r ≥ ε, c ≤ ω r)
-    (hgap : ∀ n k, ω (dist (u n) (u k)) / 4 ≤ (g n + g k) / 2 - a)
+/-- A sequence is Cauchy if, for every positive separation, the maximum of the two objective
+values exceeds their limiting value by a fixed positive amount. -/
+theorem cauchySeq_of_le_max_sub {u : ℕ → X} {g : ℕ → ℝ} {a : ℝ}
+    (hgap : ∀ ε > 0, ∃ c > 0, ∀ n k, ε ≤ dist (u n) (u k) → c ≤ max (g n) (g k) - a)
     (hlim : Tendsto g atTop (𝓝 a)) : CauchySeq u := by
   refine Metric.cauchySeq_iff.2 fun ε hε ↦ ?_
-  obtain ⟨c, hc, hωc⟩ := hω ε hε
-  have hcut : a < a + c / 4 := by linarith
-  obtain ⟨N, hN⟩ := eventually_atTop.1 (hlim.eventually (gt_mem_nhds hcut))
+  obtain ⟨c, hc, hgapc⟩ := hgap ε hε
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (hlim.eventually (gt_mem_nhds (lt_add_of_pos_right a hc)))
   refine ⟨N, fun n hn k hk ↦ lt_of_not_ge fun hd ↦ ?_⟩
-  linarith [hωc _ hd, hgap n k, hN n hn, hN k hk]
+  have hmax : max (g n) (g k) < a + c := max_lt (hN n hn) (hN k hk)
+  linarith [hgapc n k hd]
 
 end TauCeti

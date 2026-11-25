@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Function.Coercivity
+public import Mathlib.Topology.Semicontinuity.Defs
+public import TauCeti.Analysis.Convex.Function.LowerBound
+public import TauCeti.Analysis.Convex.Function.Uniform
 
 import Mathlib.Analysis.Normed.Affine.AddTorsor
-import Mathlib.Topology.MetricSpace.Cauchy
+import TauCeti.Topology.MetricSpace.Pseudo.Cauchy
 import TauCeti.Topology.Order.IsLUB
 import TauCeti.Topology.Semicontinuity.Sequences
 
@@ -40,10 +42,8 @@ theorem UniformConvexOn.cauchySeq_of_tendsto_comp {φ : ℝ → ℝ} (hf : Unifo
     (hφ : ∀ r > 0, 0 < φ r)
     {a : ℝ} (hlower : ∀ z ∈ s, a ≤ f z) {u : ℕ → E} (hu : ∀ n, u n ∈ s)
     (hlim : Tendsto (f ∘ u) atTop (𝓝 a)) : CauchySeq u := by
-  refine Metric.cauchySeq_iff.2 fun ε hε ↦ ?_
-  have hcut : a < a + φ ε / 4 := by linarith [hφ ε hε]
-  obtain ⟨N, hN⟩ := eventually_atTop.1 (hlim.eventually (gt_mem_nhds hcut))
-  simp only [Function.comp_apply] at hN
+  refine TauCeti.cauchySeq_of_le_max_sub (fun ε hε ↦ ?_) hlim
+  refine ⟨φ ε / 4, by positivity [hφ ε hε], fun n k hd ↦ ?_⟩
   have hgap {x y : E} (hx : x ∈ s) (hy : y ∈ s) (hd : ε ≤ dist x y)
       (hxy : f x ≤ f y) : φ ε / 4 ≤ f y - a := by
     have hdpos : 0 < dist x y := hε.trans_le hd
@@ -66,25 +66,29 @@ theorem UniformConvexOn.cauchySeq_of_tendsto_comp {φ : ℝ → ℝ} (hf : Unifo
     have hmid := hf.div_four_le_sub hlower hx hz
     rw [hnorm] at hmid
     linarith
-  refine ⟨N, fun n hn k hk ↦ lt_of_not_ge fun hd ↦ ?_⟩
   rcases le_total (f (u n)) (f (u k)) with hnk | hkn
-  · linarith [hgap (hu n) (hu k) hd hnk, hN k hk]
+  · simpa only [Function.comp_apply, max_eq_right hnk] using hgap (hu n) (hu k) hd hnk
   · have hd' : ε ≤ dist (u k) (u n) := by simpa only [dist_comm] using hd
-    linarith [hgap (hu k) (hu n) hd' hkn, hN n hn]
+    simpa only [Function.comp_apply, max_eq_left hkn] using hgap (hu k) (hu n) hd' hkn
 
-/-- A bounded-below uniformly convex function attains its minimum on a nonempty complete
-domain if it is lower semicontinuous there and its modulus is positive at every
+/-- A bounded-below uniformly convex function attains its minimum uniquely on a nonempty
+complete domain if it is lower semicontinuous there and its modulus is positive at every
 positive radius. -/
-theorem UniformConvexOn.exists_isMinOn_of_bddBelow {φ : ℝ → ℝ} (hf : UniformConvexOn s φ f)
+theorem UniformConvexOn.existsUnique_isMinOn_of_bddBelow {φ : ℝ → ℝ} (hf : UniformConvexOn s φ f)
     (hφ : ∀ r > 0, 0 < φ r)
     (hs : IsComplete s) (hne : s.Nonempty) (hlsc : LowerSemicontinuousOn f s)
-    (hbdd : BddBelow (f '' s)) : ∃ x ∈ s, IsMinOn f s x := by
+    (hbdd : BddBelow (f '' s)) : ∃! x, x ∈ s ∧ IsMinOn f s x := by
   obtain ⟨u, hu, -, hulim⟩ := TauCeti.exists_seq_forall_mem_and_tendsto_sInf hne hbdd
   have hlower : ∀ z ∈ s, sInf (f '' s) ≤ f z := fun z hz ↦ csInf_le hbdd ⟨z, hz, rfl⟩
   have hcauchy := hf.cauchySeq_of_tendsto_comp hφ hlower hu hulim
   obtain ⟨x, hx, hux⟩ := cauchySeq_tendsto_of_isComplete hs hu hcauchy
-  refine ⟨x, hx, hlsc.seqLowerSemicontinuousOn.isMinOn_of_tendsto hx hu hux ?_⟩
-  exact fun v hv c hc ↦ hulim.eventually (gt_mem_nhds ((hlower v hv).trans_lt hc))
+  have hmin : IsMinOn f s x :=
+    hlsc.seqLowerSemicontinuousOn.isMinOn_of_tendsto hx hu hux
+      (fun v hv c hc ↦ hulim.eventually (gt_mem_nhds ((hlower v hv).trans_lt hc)))
+  have hf' : UniformConvexOn s (fun r ↦ φ |r|) f := by
+    simpa only [UniformConvexOn, abs_norm] using hf
+  have hstrict := hf'.strictConvexOn (fun r hr ↦ hφ |r| (abs_pos.mpr hr))
+  exact ⟨x, ⟨hx, hmin⟩, fun y hy ↦ hstrict.eq_of_isMinOn hy.2 hmin hy.1 hx⟩
 
 /-- A lower semicontinuous strongly convex function with positive modulus on a nonempty
 complete set has a unique constrained minimizer. -/
@@ -93,10 +97,11 @@ theorem StrongConvexOn.existsUnique_isMinOn (hf : StrongConvexOn s μ f) (hμ : 
     ∃! x, x ∈ s ∧ IsMinOn f s x := by
   have hbdd : BddBelow (f '' s) := by
     obtain ⟨z, hz⟩ := hne
-    exact hf.bddBelow_image_of_lowerSemicontinuousWithinAt hμ hz (hlsc z hz)
+    have hlow : ∀ᶠ y in 𝓝[s] z, f z - 1 ≤ f y :=
+      ((lowerSemicontinuousWithinAt_iff.mp (hlsc z hz)) (f z - 1) (by linarith)).mono
+        fun _ hy ↦ hy.le
+    exact hf.bddBelow_image_of_eventually_le hμ hz hlow
   have hmod : ∀ r > (0 : ℝ), 0 < μ / 2 * r ^ 2 := by
     intro r hr
     positivity
-  obtain ⟨x, hx, hmin⟩ := hf.uniformConvexOn.exists_isMinOn_of_bddBelow hmod hs hne hlsc hbdd
-  exact ⟨x, ⟨hx, hmin⟩, fun y hy ↦
-    (hf.strictConvexOn hμ).eq_of_isMinOn hy.2 hmin hy.1 hx⟩
+  exact UniformConvexOn.existsUnique_isMinOn_of_bddBelow hf hmod hs hne hlsc hbdd

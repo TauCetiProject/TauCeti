@@ -80,6 +80,10 @@ zero only at `0`.
   determined by the sign of `a`, including the zero-coefficient case.
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
   `a ≤ m`.
+* `TauCeti.add_le_of_le_affine_sub`: an affine quadratic interpolation bound above its initial
+  value forces the corresponding endpoint lower bound.
+* `TauCeti.sub_div_le_mul_sq`: completing the square bounds a linear term minus a constant
+  by a quadratic penalty.
 * `TauCeti.nonpos_of_forall_pos_mul_sq_mul_le`: if `0 < a` and `a * r ^ 2 * t ≤ C` for every
   `r > 0`, then `t ≤ 0`.
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
@@ -177,6 +181,43 @@ theorem le_of_forall_mem_Ioc_mul_le {α : Type*} [Field α] [LinearOrder α]
     linarith
   · have hε := h δ₀ ⟨hδ₀, le_rfl⟩
     nlinarith
+
+/-- If a quadratic interpolation bound stays above its initial value `a`, its
+endpoint value `b` exceeds `a` by at least the interpolation coefficient `D`. -/
+theorem add_le_of_le_affine_sub {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b D : K}
+    (h : ∀ t ∈ Set.Ioo (0 : K) 1, a ≤ (1 - t) * a + t * b - t * (1 - t) * D) :
+    a + D ≤ b := by
+  apply le_of_forall_mem_Ioc_mul_le (C := D) (δ₀ := 1 / 2) (by positivity)
+  intro t ht
+  have hbound : a + (1 - t) * D ≤ b :=
+    le_of_mul_le_mul_left (by linarith [h t ⟨ht.1, by linarith [ht.2]⟩]) ht.1
+  linarith
+
+/-- For `κ > 0` and `t ≤ 1 / 2`, the quadratic penalty bounds the linear term
+`2 B R / δ` up to the constant `4 B² / (κ δ²)`. No sign assumption on `δ`, `B` or `R` is needed,
+and the bound holds for `δ = 0` as well. -/
+theorem sub_div_le_mul_sq {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {κ δ B R t : K} (hκ : 0 < κ) (ht : t ≤ 1 / 2) :
+    2 * B * R / δ - 4 * B ^ 2 / (κ * δ ^ 2) ≤ κ / 2 * (1 - t) * R ^ 2 := by
+  have hquad : κ / 4 * R ^ 2 ≤ κ / 2 * (1 - t) * R ^ 2 := by
+    calc κ / 4 * R ^ 2 = 1 / 4 * (κ * R ^ 2) := by ring
+      _ ≤ (1 - t) / 2 * (κ * R ^ 2) :=
+        mul_le_mul_of_nonneg_right (by linarith [ht]) (by positivity)
+      _ = κ / 2 * (1 - t) * R ^ 2 := by ring
+  by_cases hδ : δ = 0
+  · simpa [hδ] using
+      (show 0 ≤ κ / 4 * R ^ 2 by positivity).trans hquad
+  have hδsq : 0 < δ ^ 2 := sq_pos_of_ne_zero hδ
+  have hsq : 2 * B * R / δ ≤ κ / 4 * R ^ 2 + 4 * B ^ 2 / (κ * δ ^ 2) := by
+    calc 2 * B * R / δ = (2 * (κ * δ * R) * (4 * B)) / (4 * κ * δ ^ 2) := by
+          field_simp
+      _ ≤ ((κ * δ * R) ^ 2 + (4 * B) ^ 2) / (4 * κ * δ ^ 2) :=
+        div_le_div_of_nonneg_right (two_mul_le_add_sq (κ * δ * R) (4 * B))
+          (mul_nonneg (by positivity) hδsq.le)
+      _ = κ / 4 * R ^ 2 + 4 * B ^ 2 / (κ * δ ^ 2) := by
+          field_simp
+  linarith
 
 /-- If `a ≤ m + ε * C` for every positive `ε`, then `a ≤ m`. No sign assumption on `C` is
 needed. -/
