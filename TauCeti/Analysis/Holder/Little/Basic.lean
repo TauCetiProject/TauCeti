@@ -142,6 +142,16 @@ theorem _root_.LipschitzWith.comp_memLittleHolder [PseudoMetricSpace Y] {Z : Typ
     _ = K / (K + 1) * (ε * dist x y ^ (α : ℝ)) := by ring
     _ ≤ ε * dist x y ^ (α : ℝ) := mul_le_of_le_one_left (by positivity) hK
 
+/-- Precomposition with an isometry preserves little Hölder continuity. -/
+theorem MemLittleHolder.comp_isometry [PseudoMetricSpace Y] {W : Type*} [PseudoMetricSpace W]
+    {α : ℝ≥0} {f : X → Y} (hf : MemLittleHolder α f) {e : W → X} (he : Isometry e) :
+    MemLittleHolder α (f ∘ e) := by
+  intro ε hε
+  obtain ⟨δ, hδ, h⟩ := hf ε hε
+  refine ⟨δ, hδ, fun x y hxy ↦ ?_⟩
+  rw [← he.dist_eq] at hxy ⊢
+  exact h (e x) (e y) hxy
+
 /-- Constant functions are little Hölder. -/
 theorem memLittleHolder_const [PseudoMetricSpace Y] {α : ℝ≥0} (c : Y) :
     MemLittleHolder α (fun _ : X ↦ c) :=
