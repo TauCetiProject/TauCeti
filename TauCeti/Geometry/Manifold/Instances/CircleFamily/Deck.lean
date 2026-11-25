@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Instances.CircleFamily
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 import Mathlib.Topology.Instances.ZMultiples
-import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
@@ -225,18 +224,15 @@ private theorem isLocalDiffeomorph_coverRep (n : ℕ∞ω) :
     IsLocalDiffeomorph (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) n coverRep := fun z ↦
   ((prodDiffeomorph n).symm.isLocalDiffeomorph z).comp _ _ (isLocalDiffeomorph_representative n _)
 
-/-- The map from the orbit space to the circle family induced by the representative map. -/
+/-- The map from the orbit space to the circle family induced by the representative map: the
+orbit relation is the kernel of `coverRep` (`orbitRel_iff`), which is surjective. -/
 private def quotientEquiv :
     MulAction.orbitRel.Quotient (Multiplicative ℤ) Cover ≃ CircleFamily :=
-  Equiv.ofBijective (MulAction.orbitRelQuotientLift coverRep fun k z ↦ (orbitRel_iff.1 ⟨k, rfl⟩))
-    ⟨fun x y hxy ↦ by
-      induction x using Quotient.inductionOn
-      induction y using Quotient.inductionOn
-      exact Quotient.sound (orbitRel_iff.2 (by simpa using hxy)),
-    fun y ↦ (coverRep_surjective y).elim fun z hz ↦ ⟨Quotient.mk _ z, by simpa using hz⟩⟩
+  (Quotient.congrRight fun _ _ ↦ orbitRel_iff).trans
+    (Setoid.quotientKerEquivOfSurjective coverRep coverRep_surjective)
 
 private theorem quotientEquiv_mk (z : Cover) : quotientEquiv (Quotient.mk _ z) = coverRep z :=
-  MulAction.orbitRelQuotientLift_mk z
+  rfl
 
 variable (n : ℕ∞ω)
 
