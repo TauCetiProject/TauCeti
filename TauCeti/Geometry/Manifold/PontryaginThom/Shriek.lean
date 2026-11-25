@@ -17,7 +17,8 @@ Let `τ : S × V → M` be a framed tube around `f : S → M` (`TauCeti.IsFramed
 `f(S)`, with `V` a real normed space of dimension `r`, and let `o` generate the local homology
 `H_r(V, V ∖ 0; k)`. The relative cross product with `o` followed by the tube is the Thom
 isomorphism `H_q(S; L) ≃ H_{r+q}(M, M ∖ f(S); k ⊗ L)`, `x ↦ τ_*(o × x)`
-(`TauCeti.IsFramedTube.thomLinearEquiv`). The **shriek map**
+(`TauCeti.IsFramedTube.thomEquiv`, in `TauCeti.Geometry.Manifold.PontryaginThom.FundamentalClass`).
+The **shriek map**
 
 `i_! : H_{r+q}(M; k ⊗ L) → H_q(S; L)`
 
@@ -69,13 +70,9 @@ for `ψ ∈ Hʲ(S; k)` (`TauCeti.absoluteSingularCap_singularHomologyCrossRel_tm
 `TauCeti.AlgebraicTopology.Cohomology.Cap.CrossRel`, where it is proved with the homology Thom
 map and the projection formula `TopPair.map_singularCap_absoluteSingularCap`).
 
-## Main definitions
-
-* `TauCeti.IsFramedTube.thomLinearEquiv`: the Thom isomorphism `x ↦ τ_*(o × x)`.
-* `TauCeti.IsFramedTube.shriek`: the shriek map `i_!` of a framed submanifold.
-
 ## Main results
 
+* `TauCeti.IsFramedTube.isFundamentalClass_shriek`: `i_![M]` is a fundamental class of `S`.
 * `TauCeti.IsFramedTube.singularHomologyπ_singularCap_eq`: if `z ↦ τ_*(o × x)`, then
   `z ⌢ φ ↦ τ_*(o × ((-1)^(r j) x ⌢ f^* φ))`.
 * `TauCeti.IsFramedTube.shriek_singularCap`: `i_!(z ⌢ φ) = (-1)^(r j) i_!(z) ⌢ f^* φ`.
@@ -186,85 +183,6 @@ variable (h : IsFramedTube f τ) (hf : IsClosed (range f)) {r : ℕ} (hr : finra
   (o : (TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularHomology
     (C := ModuleCat.{w} k) (𝟙_ _) r) (ho : Submodule.span k {o} = ⊤)
 
-/-- **The Thom isomorphism of a framed submanifold**, as a linear equivalence
-`H_q(S; L) ≃ H_n(M, M ∖ f(S); k ⊗ L)`, `x ↦ τ_*(o × x)`, for `r + q = n`
-(`TauCeti.IsFramedTube.bijective_singularHomologyMap_tubePairMap_singularHomologyCrossRel`). -/
-def thomLinearEquiv (q n : ℕ) (hn : r + q = n) :
-    ((singularHomologyFunctor (ModuleCat.{w} k) q).obj L).obj (TopCat.of S) ≃ₗ[k]
-      (TopPair.ofSubset (X := TopCat.of M) (range f)ᶜ).singularHomology (C := ModuleCat.{w} k)
-        (𝟙_ (ModuleCat.{w} k) ⊗ L) n :=
-  LinearEquiv.ofBijective
-    ((TopPair.singularHomologyMap h.tubePairMap (𝟙_ (ModuleCat.{w} k) ⊗ L) n).hom ∘ₗ
-      (TopCat.singularHomologyCrossRel (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ
-        (𝟙_ (ModuleCat.{w} k)) L r q n hn).hom ∘ₗ TensorProduct.mk k _ _ o)
-    (h.bijective_singularHomologyMap_tubePairMap_singularHomologyCrossRel L hf hr ho q n hn)
-
-/-- The Thom isomorphism sends `x` to the image under the tube of `o × x`. -/
-@[simp]
-theorem thomLinearEquiv_apply (q n : ℕ) (hn : r + q = n)
-    (x : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj L).obj (TopCat.of S)) :
-    h.thomLinearEquiv L hf hr o ho q n hn x =
-      TopPair.singularHomologyMap h.tubePairMap (𝟙_ (ModuleCat.{w} k) ⊗ L) n
-        (TopCat.singularHomologyCrossRel (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ
-          (𝟙_ (ModuleCat.{w} k)) L r q n hn (o ⊗ₜ x)) :=
-  (rfl)
-
-/-- **The shriek map of a framed submanifold** `i_! : H_n(M; k ⊗ L) → H_q(S; L)`, for
-`r + q = n`: the map to the homology of `M` relative to the complement of the core, followed by
-the inverse of the Thom isomorphism `x ↦ τ_*(o × x)` (`TauCeti.IsFramedTube.thomLinearEquiv`).
-It sends `z` to the unique class `x` with `z ↦ τ_*(o × x)`
-(`TauCeti.IsFramedTube.shriek_eq_iff`).
-
-`TauCeti.TopCat.singularHomologyComplPreimageCoreIso` reads the same relative homology as the
-homology of the core through the local homology of a Serre fibration; that isomorphism is not
-compared with this one. -/
-def shriek (q n : ℕ) (hn : r + q = n) :
-    ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k) ⊗ L)).obj
-        (TopCat.of M) →ₗ[k]
-      ((singularHomologyFunctor (ModuleCat.{w} k) q).obj L).obj (TopCat.of S) :=
-  (h.thomLinearEquiv L hf hr o ho q n hn).symm.toLinearMap ∘ₗ
-    ((TopPair.ofSubset (X := TopCat.of M) (range f)ᶜ).singularHomologyπ
-      (𝟙_ (ModuleCat.{w} k) ⊗ L) n).hom
-
-/-- The shriek map is the inverse of the Thom isomorphism applied to the image of `z` in
-`H_n(M, M ∖ f(S); k ⊗ L)`. -/
-theorem shriek_apply (q n : ℕ) (hn : r + q = n)
-    (z : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k) ⊗ L)).obj
-      (TopCat.of M)) :
-    h.shriek L hf hr o ho q n hn z = (h.thomLinearEquiv L hf hr o ho q n hn).symm
-      ((TopPair.ofSubset (X := TopCat.of M) (range f)ᶜ).singularHomologyπ
-        (𝟙_ (ModuleCat.{w} k) ⊗ L) n z) :=
-  (rfl)
-
-/-- **Characteristic property of the shriek map**: the image of `z` in
-`H_n(M, M ∖ f(S); k ⊗ L)` is the image under the tube of `o × i_!(z)`. -/
-theorem singularHomologyπ_eq_shriek (q n : ℕ) (hn : r + q = n)
-    (z : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k) ⊗ L)).obj
-      (TopCat.of M)) :
-    (TopPair.ofSubset (X := TopCat.of M) (range f)ᶜ).singularHomologyπ
-        (𝟙_ (ModuleCat.{w} k) ⊗ L) n z =
-      TopPair.singularHomologyMap h.tubePairMap (𝟙_ (ModuleCat.{w} k) ⊗ L) n
-        (TopCat.singularHomologyCrossRel (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ
-          (𝟙_ (ModuleCat.{w} k)) L r q n hn (o ⊗ₜ h.shriek L hf hr o ho q n hn z)) :=
-  -- The right side is the Thom isomorphism applied to its inverse applied to the left side.
-  ((h.thomLinearEquiv L hf hr o ho q n hn).apply_symm_apply _).symm
-
-/-- The shriek map sends `z` to `x` exactly when the image of `z` in `H_n(M, M ∖ f(S); k ⊗ L)` is
-the image under the tube of `o × x`. -/
-theorem shriek_eq_iff (q n : ℕ) (hn : r + q = n)
-    (z : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k) ⊗ L)).obj
-      (TopCat.of M))
-    (x : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj L).obj (TopCat.of S)) :
-    h.shriek L hf hr o ho q n hn z = x ↔
-      (TopPair.ofSubset (X := TopCat.of M) (range f)ᶜ).singularHomologyπ
-          (𝟙_ (ModuleCat.{w} k) ⊗ L) n z =
-        TopPair.singularHomologyMap h.tubePairMap (𝟙_ (ModuleCat.{w} k) ⊗ L) n
-          (TopCat.singularHomologyCrossRel (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ
-            (𝟙_ (ModuleCat.{w} k)) L r q n hn (o ⊗ₜ x)) := by
-  rw [h.singularHomologyπ_eq_shriek L hf hr o ho q n hn z]
-  -- Both sides of the right equation are values of the Thom isomorphism, which is injective.
-  exact (h.thomLinearEquiv L hf hr o ho q n hn).injective.eq_iff.symm
-
 /-- **The shriek map of a fundamental class is a fundamental class.** For a `T₁` space `M` and a
 generator `o` of `H_r(V, V ∖ 0; k)` with `r = dim V`, the shriek map sends a fundamental class
 `[M] ∈ H_n(M; k ⊗ L)` to a fundamental class `[S] = i_![M]` of `S`. -/
@@ -364,7 +282,10 @@ theorem shriek_map_thomCollapse (q n : ℕ) (hn : r + q = n)
     exact thomCollapse_apply h.isOpenEmbedding.injective _
   have hπ := ConcreteCategory.congr_hom
     (TopPair.singularHomologyπ_naturality C (𝟙_ (ModuleCat.{w} k) ⊗ L) n) z
-  rw [show TopPair.Hom.fst C = _ from TopPair.ofSubsetMap_fst _ _] at hπ
+  have hC : TopPair.Hom.fst C =
+      TopCat.ofHom ⟨thomCollapse τ, continuous_thomCollapse h.isOpenEmbedding⟩ :=
+    TopPair.ofSubsetMap_fst _ _
+  rw [hC] at hπ
   -- The ambient object of each pair is the space only up to unfolding, so the composites are
   -- applied by unification rather than by `rw`.
   refine (ConcreteCategory.comp_apply _ _ z).symm.trans
