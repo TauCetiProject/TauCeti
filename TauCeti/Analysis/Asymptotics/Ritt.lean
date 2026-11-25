@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
-public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
+public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
