@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.Polygonal
 public import TauCeti.Analysis.Complex.Rectangle
 public import TauCeti.Analysis.Contour.Cycle.Polygon
 

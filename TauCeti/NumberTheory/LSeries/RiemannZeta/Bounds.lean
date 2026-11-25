@@ -13,6 +13,7 @@ import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.MellinTransform.Sawtooth
 import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
 import TauCeti.MeasureTheory.Integral.Bochner.Set
+import TauCeti.NumberTheory.LSeries.Moebius
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerMaclaurin
 
@@ -33,7 +34,10 @@ for all `Re s > 0` (including at `s = 1`, where Mathlib's junk value `(γ - log(
 strictly less than `2`). On the discs `‖z - (3/2 + it)‖ ≤ 1` with `|t| ≥ 2` the bound is at most
 `4 + |t|`: the input that Borel–Carathéodory arguments near the line `Re s = 1` take. On the real
 axis, the fractional-part formula `ζ(σ) = 1 + (σ - 1)⁻¹ - σ ∫_1^∞ {t} t^(-σ-1) dt` and
-`0 ≤ {t} < 1` give `1/(σ - 1) < ζ(σ) < 1 + 1/(σ - 1)` for real `σ > 0`, `σ ≠ 1`.
+`0 ≤ {t} < 1` give `1/(σ - 1) < ζ(σ) < 1 + 1/(σ - 1)` for real `σ > 0`, `σ ≠ 1`. Combined with
+the Möbius-series bound `‖ζ(s)‖⁻¹ ≤ ζ(Re s)/ζ(2 Re s)`
+(`TauCeti.inv_norm_riemannZeta_le_norm_riemannZeta_re_div`) and `ζ(2 Re s) > 1`, the upper bound
+also controls `1/ζ`: `‖ζ(s)‖⁻¹ < 1 + 1/(Re s - 1)` on `Re s > 1`.
 
 ## Main results
 
@@ -52,6 +56,8 @@ axis, the fractional-part formula `ζ(σ) = 1 + (σ - 1)⁻¹ - σ ∫_1^∞ {t}
 * `TauCeti.one_div_sub_one_lt_riemannZeta_re`, `TauCeti.riemannZeta_re_lt_one_add_one_div_sub_one`
   and `TauCeti.norm_riemannZeta_lt_one_add_one_div_sub_one`: `1/(σ - 1) < ζ(σ) < 1 + 1/(σ - 1)`
   for real `σ > 0`, `σ ≠ 1`, and `‖ζ(s)‖ < 1 + 1/(Re s - 1)` on `Re s > 1`.
+* `TauCeti.inv_norm_riemannZeta_lt_one_add_one_div_sub_one`: the Möbius series bound
+  `‖ζ(s)‖⁻¹ < 1 + 1/(Re s - 1)` on `Re s > 1`.
 
 ## References
 
@@ -253,5 +259,18 @@ theorem norm_riemannZeta_lt_one_add_one_div_sub_one {s : ℂ} (hs : 1 < s.re) :
     ‖riemannZeta s‖ < 1 + 1 / (s.re - 1) :=
   (norm_riemannZeta_le hs).trans_lt
     (riemannZeta_re_lt_one_add_one_div_sub_one (zero_lt_one.trans hs) (by linarith : s.re ≠ 1))
+
+/-- On `1 < Re s`, the Möbius series bounds `1/ζ`: `‖ζ(s)‖⁻¹ < 1 + 1/(Re s - 1)`. -/
+theorem inv_norm_riemannZeta_lt_one_add_one_div_sub_one {s : ℂ} (hs : 1 < s.re) :
+    ‖riemannZeta s‖⁻¹ < 1 + 1 / (s.re - 1) := by
+  have h := inv_norm_riemannZeta_le_norm_riemannZeta_re_div hs
+  have h2 : 1 ≤ ‖riemannZeta (2 * s.re)‖ := by
+    have := one_lt_riemannZeta_re (by linarith : 1 < 2 * s.re)
+    push_cast at this
+    exact this.le.trans (re_le_norm _)
+  have hσ := norm_riemannZeta_lt_one_add_one_div_sub_one (s := (s.re : ℂ)) (by simpa using hs)
+  rw [ofReal_re] at hσ
+  rw [norm_div] at h
+  exact h.trans_lt ((div_le_self (norm_nonneg _) h2).trans_lt hσ)
 
 end TauCeti

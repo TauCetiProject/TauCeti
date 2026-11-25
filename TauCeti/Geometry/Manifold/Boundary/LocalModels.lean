@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.OneDimensional
+import TauCeti.Topology.Instances.Real.IcoScale
 import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
@@ -29,6 +30,16 @@ the counts of boundary points of compact one-dimensional manifolds from
 The second statement is the signed count of the endpoints of a compact oriented one-manifold,
 which makes the signed counts of broken trajectories cancel in the proof that the integral Morse
 boundary squares to zero, as the first makes them cancel modulo two.
+
+A half-open local model also transports between two ways of recording the points of a
+compactified space: along maps `ι` and `π` identifying a set `R` near a point `a` with the closure
+of a set `P` near `ι a`, a half-open model of `R` at `a` gives one of the closure of `P` at `ι a`
+(`TauCeti.exists_homeomorph_Ico_closure_of_homeomorph_Ico`), through the lemmas on continuous maps
+on `[0, δ)` of `TauCeti.Topology.Instances.Real.IcoScale`.
+
+When a set `P` is open in its closure and is a copy of a one-dimensional manifold, its closure is
+locally homeomorphic to open subsets of `ℝ` at the points of `P`
+(`TauCeti.exists_nhds_homeomorph_of_isOpen_preimage_val`).
 
 ## References
 
@@ -166,6 +177,31 @@ private theorem exists_path_of_homeomorph_Ico {x : X} {N : Set X} {ε : ℝ} (h�
     simp only [comp_apply, hγ r hrI, hγ r' hr'I]
     exact hmono (hVU (mem_preimage.2 hr.1)) (hVU (mem_preimage.2 hr'.1)) (Subtype.mk_lt_mk.2 hrr')
 
+/-- **A one-dimensional set open in its closure.** If `P` is open in its closure and homeomorphic
+to a space charted on a one-dimensional space `F`, every point of `P` has a neighbourhood in the
+closure of `P` homeomorphic to an open subset of `ℝ`. -/
+theorem exists_nhds_homeomorph_of_isOpen_preimage_val {P : Set X}
+    (hP : IsOpen ((↑) ⁻¹' P : Set (closure P))) (hF : Module.finrank ℝ F = 1) {S : Type*}
+    [TopologicalSpace S] [ChartedSpace F S] (Φ : P ≃ₜ S) {w : X} (hw : w ∈ closure P)
+    (hwP : w ∈ P) : ∃ N ∈ 𝓝 (⟨w, hw⟩ : closure P), ∃ V : Set ℝ, IsOpen V ∧ Nonempty (V ≃ₜ N) := by
+  have := Module.finite_of_finrank_eq_succ hF
+  have hF1 : Module.finrank ℝ F = Module.finrank ℝ ℝ := by rw [Module.finrank_self, hF]
+  let ι : P → closure P := fun x ↦ ⟨x.val, subset_closure x.property⟩
+  have hι : IsOpenEmbedding ι := by
+    refine ⟨(IsEmbedding.of_comp_iff IsEmbedding.subtypeVal).1 IsEmbedding.subtypeVal, ?_⟩
+    convert hP
+    ext x
+    exact ⟨by rintro ⟨y, rfl⟩; exact y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+  have : Nonempty P := ⟨⟨w, hwP⟩⟩
+  -- Read `P` near `w` in a chart of `S`, and the chart in `ℝ`.
+  let G := ((hι.toOpenPartialHomeomorph ι).symm.trans Φ.toOpenPartialHomeomorph).trans
+    ((chartAt F (Φ ⟨w, hwP⟩)).trans
+      (ContinuousLinearEquiv.ofFinrankEq hF1).toHomeomorph.toOpenPartialHomeomorph)
+  refine ⟨G.source, G.open_source.mem_nhds ?_, G.target, G.open_target,
+    ⟨G.toHomeomorphSourceTarget.symm⟩⟩
+  have hιw : ι ⟨w, hwP⟩ = ⟨w, hw⟩ := rfl
+  simp [G, ← hιw, hι.toOpenPartialHomeomorph_left_inv]
+
 variable [CompactSpace X]
 
 /-- **A compact space locally modelled on the half-line has finitely many endpoints.** Let `X` be
@@ -259,6 +295,79 @@ theorem ncard_eq_ncard_of_forall_exists_homeomorph_Ico [T2Space X]
     refine ⟨γ, ε / 2, half_pos hε, hγ0, hγc, hγi, fun s hs c hc hsc ↦ ?_⟩
     obtain ⟨t, ht0, hγt, hcomp⟩ := hγe s hs
     exact hcomp c (he t ht0 c hc (hγt ▸ hsc))
+
+/-- **Transporting a half-open local model into a closure.** Let `P` be a set in a space `Z`, and
+`a` a point of a set `R` in a space `Y` with a neighbourhood `N` in `R` homeomorphic to `[0, δ)`,
+by a homeomorphism sending `0` to `a`. Suppose that maps `ι : Y → Z` and `π : Z → Y`, with `ι`
+continuous on `R` and `π` continuous, identify `R` near `a` with the closure of `P` near
+`b = ι a`:
+
+* `π ∘ ι` is the identity on `R`;
+* `ι` sends the points of `R` near `a`, other than `a`, into `P`;
+* near `b`, every point `q` of the closure of `P` is `ι (π q)` with `π q ∈ R`.
+
+Then `b` lies in the closure of `P`, and has a neighbourhood there homeomorphic to `[0, δ')`, by a
+homeomorphism sending `0` to `b`. This transports the half-open charts of compactified moduli
+spaces between two ways of recording their points. -/
+theorem exists_homeomorph_Ico_closure_of_homeomorph_Ico {Y Z : Type*} [TopologicalSpace Y]
+    [TopologicalSpace Z] {P : Set Z} {R N : Set Y} {a : Y} {b : Z} (π : Z → Y) (ι : Y → Z)
+    (hπ : Continuous π) (hι : ContinuousOn ι R) (hπι : ∀ v ∈ R, π (ι v) = v) (hιa : ι a = b)
+    (hP : ∀ᶠ v in 𝓝[R \ {a}] a, ι v ∈ P)
+    (hcov : ∀ᶠ q in 𝓝[closure P] b, π q ∈ R ∧ ι (π q) = q)
+    {δ : ℝ} (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N) (he : (e ⟨0, left_mem_Ico.2 hδ⟩ : Y) = a)
+    (hNR : N ⊆ R) (hN : N ∈ 𝓝[R] a) :
+    ∃ hb : b ∈ closure P, ∃ N' ∈ 𝓝 (⟨b, hb⟩ : closure P), ∃ (δ' : ℝ) (hδ' : 0 < δ')
+      (e' : Ico (0 : ℝ) δ' ≃ₜ N'), (e' ⟨0, left_mem_Ico.2 hδ'⟩ : closure P) = ⟨b, hb⟩ := by
+  obtain ⟨U, hU, hUP⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hP
+  set g : Ico (0 : ℝ) δ → Y := fun s ↦ e s
+  have hg : Continuous g := continuous_subtypeVal.comp e.continuous
+  have haR : a ∈ R := he ▸ hNR (e _).property
+  have hgR (s : Ico (0 : ℝ) δ) : g s ∈ R := hNR (e s).property
+  -- On a shorter interval `[0, δ')`, the arc stays in `U`, so `ι` sends it into `P` but at `0`.
+  obtain ⟨ε, hε, hεU⟩ := exists_pos_forall_lt_mem hδ hg (he.symm ▸ hU)
+  set δ' := min ε δ
+  have hδ' : 0 < δ' := lt_min hε hδ
+  let incl : Ico (0 : ℝ) δ' → Ico (0 : ℝ) δ := inclusion (Ico_subset_Ico_right (min_le_right _ _))
+  have hP' (s : Ico (0 : ℝ) δ') (hs : (s : ℝ) ≠ 0) : ι (g (incl s)) ∈ P :=
+    hUP ⟨hεU _ (s.property.2.trans_le (min_le_left _ _)), hgR _, fun h ↦
+      hs (congrArg Subtype.val (e.injective (Subtype.ext (h.trans he.symm))))⟩
+  have hG₀ : Continuous fun s ↦ ι (g (incl s)) :=
+    hι.comp_continuous (hg.comp (continuous_inclusion _)) fun _ ↦ hgR _
+  have h0 : ι (g (incl ⟨0, left_mem_Ico.2 hδ'⟩)) = b := (congrArg ι he).trans hιa
+  have hb : b ∈ closure P := h0 ▸ mem_closure_of_forall_ne_zero hδ' hG₀ hP'
+  have hmem (s : Ico (0 : ℝ) δ') : ι (g (incl s)) ∈ closure P := by
+    by_cases hs : (s : ℝ) = 0
+    · rw [show s = ⟨0, left_mem_Ico.2 hδ'⟩ from Subtype.ext hs, h0]
+      exact hb
+    · exact subset_closure (hP' s hs)
+  let G : Ico (0 : ℝ) δ' → closure P := fun s ↦ ⟨ι (g (incl s)), hmem s⟩
+  have hG : IsEmbedding G := by
+    refine IsEmbedding.of_comp (hG₀.subtype_mk _) (hπ.comp continuous_subtypeVal) ?_
+    have : (π ∘ Subtype.val) ∘ G = g ∘ incl := funext fun s ↦ hπι _ (hgR _)
+    rw [this]
+    exact (IsEmbedding.subtypeVal.comp e.isEmbedding).comp (IsEmbedding.inclusion _)
+  -- The image of `[0, δ')` is open in `N`, so it is a neighbourhood of `a` in `R`, and near `b`
+  -- the closure of `P` is its image under `ι`.
+  obtain ⟨O, hO, hOe⟩ := isOpen_induced_iff.1
+    (e.isOpenMap {s | (s : ℝ) < δ'} (isOpen_lt continuous_subtypeVal continuous_const))
+  have haO : a ∈ O := by
+    have : e ⟨0, left_mem_Ico.2 hδ⟩ ∈ e '' {s | (s : ℝ) < δ'} := mem_image_of_mem _ hδ'
+    rw [← hOe, mem_preimage, he] at this
+    exact this
+  have hπt : Filter.Tendsto π (𝓝[closure P] b) (𝓝[R] a) := tendsto_nhdsWithin_iff.2
+    ⟨(hιa ▸ hπι a haR) ▸ (hπ.tendsto b).mono_left nhdsWithin_le_nhds, hcov.mono fun _ hq ↦ hq.1⟩
+  have hrange : range G ∈ 𝓝 (⟨b, hb⟩ : closure P) := by
+    rw [mem_nhds_subtype_iff_nhdsWithin]
+    filter_upwards [hπt (Filter.inter_mem hN (mem_nhdsWithin_of_mem_nhds (hO.mem_nhds haO))), hcov]
+      with q hq hq'
+    have hqO : (⟨π q, hq.1⟩ : N) ∈ Subtype.val ⁻¹' O := mem_preimage.2 hq.2
+    rw [hOe] at hqO
+    obtain ⟨s, hs, hsq⟩ := hqO
+    refine ⟨G ⟨s, s.property.1, hs⟩, mem_range_self _, ?_⟩
+    simp only [G, g, incl]
+    rw [hsq, hq'.2]
+  -- The homeomorphism onto the range is `G` itself, which sends `0` to `ι a = b`.
+  exact ⟨hb, range G, hrange, δ', hδ', hG.toHomeomorph, Subtype.ext h0⟩
 
 end LocalModels
 

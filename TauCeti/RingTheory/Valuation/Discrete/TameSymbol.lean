@@ -24,6 +24,12 @@ relation `∂_v{r, 1 - r} = 1`. Writing `f = t ^ a u` and `g = t ^ b w` with `t`
 `w` units of `𝒪_v`, the tame symbol is `(-1) ^ (a b) res u ^ b res w ^ (-a)`
 (`Valuation.tameSymbol_eq_unitPart`); in particular it does not depend on `t`.
 
+Along a field extension `E / F` with valuations `v` on `F` and `w` on `E` related by
+`ord_w r = e · ord_v r` for `r ∈ F`, the tame symbol of two elements of `F` raises to the `e`-th
+power: `∂_w{f, g} = ∂_v{f, g} ^ e` in `k_wˣ`, through the residue-field embedding `k_v → k_w`
+(`Valuation.tameSymbol_map_algebraMap`). The sign needs no case split on the parity of `e`, since
+`e²` and `e` have the same parity. No finiteness of `E / F` is assumed.
+
 With this convention `∂_v{u, t} = res u` and `∂_v{t, u} = (res u)⁻¹` for a unit `u` of `𝒪_v` and
 `t` of order one. This is the convention of Dokchitser, de Jeu and Zagier; the tame symbol of
 Weibel's *K-book*, Lemma III.6.3, is `∂_v{g, f} = ∂_v{f, g}⁻¹`.
@@ -51,10 +57,13 @@ additive, and all statements below are about the order rather than about a chose
   `∂_v{f, -f} = 1`.
 * `Valuation.tameSymbol_eq_unitPart`: the expression through unit parts relative to any element of
   order one.
+* `Valuation.tameSymbol_map_algebraMap`: the ramification formula `∂_w{f, g} = ∂_v{f, g} ^ e`
+  along a field extension with `ord_w = e · ord_v` on the base field, and
+  `Valuation.tameSymbol_map_algebraMap_of_ord_eq` for the unramified case `e = 1`.
 
 ## References
 
-* C. Weibel, *The K-book*, Lemma III.6.3.
+* C. Weibel, *The K-book*, Lemma III.6.3 and Remark III.6.3.1.
 * T. Dokchitser, R. de Jeu and D. Zagier, *Numerical verification of Beilinson's conjecture for
   K₂ of hyperelliptic curves*, (3.1).
 -/
@@ -326,5 +335,58 @@ theorem tameSymbol_of_add_eq_one {r s : Fˣ} (h : (r : F) + s = 1) : v.tameSymbo
   · exact v.tameSymbol_of_add_eq_one_of_ord_pos h hr
 
 end TameSymbol
+
+section Extension
+
+/-! ### Behaviour under a valued field extension -/
+
+variable {E : Type*} [Field E] [Algebra F E] (w : Valuation E ℤᵐ⁰)
+
+/-- **The tame unit along a field extension.** If `ord_w r = e · ord_v r` for every `r ∈ F`, then
+the tame unit for `w` of the images of `f, g ∈ Fˣ` is the image of the `e`-th power of the tame
+unit for `v`. -/
+theorem tameUnit_map_algebraMap {e : ℤ} (h : ∀ r : F, w.ord (algebraMap F E r) = e * v.ord r)
+    (f g : Fˣ) :
+    w.tameUnit (Units.map (algebraMap F E : F →* E) f) (Units.map (algebraMap F E : F →* E) g) =
+      Units.map (algebraMap F E : F →* E) (v.tameUnit f g) ^ e := by
+  rw [tameUnit_def, tameUnit_def]
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, h, map_mul, map_zpow, Units.map_neg_one,
+    mul_zpow, ← zpow_mul]
+  congr 2
+  · -- The signs agree because `e * e` and `e` have the same parity.
+    rw [show e * v.ord (f : F) * (e * v.ord (g : F)) = v.ord (f : F) * v.ord (g : F) * e +
+        v.ord (f : F) * v.ord (g : F) * (e * (e - 1)) by ring, zpow_add,
+      zpow_mul' (-1) (v.ord (f : F) * v.ord (g : F)) (e * (e - 1)),
+      (Int.even_mul_pred_self e).neg_one_zpow, one_zpow, mul_one]
+  all_goals congr 1; ring
+
+/-- **The ramification formula for the tame symbol** (Weibel, *K-book*, Remark III.6.3.1). Let
+`w` extend `v` along `E / F` with `ord_w r = e · ord_v r` for every `r ∈ F`. Then for
+`f, g ∈ Fˣ` the tame symbol for `w` of their images is the `e`-th power of the image of
+`∂_v{f, g}` under the residue-field embedding `k_v → k_w`. No finiteness of `E / F` is assumed;
+`Valuation.HasExtension.of_ord_algebraMap_eq_mul` provides the extension when `e > 0`. -/
+theorem tameSymbol_map_algebraMap [v.HasExtension w] {e : ℤ}
+    (h : ∀ r : F, w.ord (algebraMap F E r) = e * v.ord r) (f g : Fˣ) :
+    w.tameSymbol (Units.map (algebraMap F E : F →* E) f) (Units.map (algebraMap F E : F →* E) g) =
+      Units.map (algebraMap (IsLocalRing.ResidueField v.valuationSubring)
+        (IsLocalRing.ResidueField w.valuationSubring) : _ →* _) (v.tameSymbol f g) ^ e := by
+  rw [w.tameSymbol_eq_of_tameUnit_eq (⟨_, (HasExtension.map_mem_unitGroup_iff v w).2
+      (v.tameUnit_mem_unitGroup f g)⟩ ^ e) (v.tameUnit_map_algebraMap w h f g), map_zpow,
+    HasExtension.unitGroupToResidueFieldUnits_map v w (v.tameUnit_mem_unitGroup f g),
+    tameSymbol_def]
+
+/-- **The tame symbol along an unramified extension.** If `ord_w r = ord_v r` for every `r ∈ F`,
+then the tame symbol for `w` of the images of `f, g ∈ Fˣ` is the image of `∂_v{f, g}` under the
+residue-field embedding `k_v → k_w`. Applied to each valuation of a finite extension over `v`, all
+unramified, this says that the diagonal embedding of `k_vˣ` carries `∂_v{f, g}` to the family of
+tame symbols over `v`. -/
+theorem tameSymbol_map_algebraMap_of_ord_eq [v.HasExtension w]
+    (h : ∀ r : F, w.ord (algebraMap F E r) = v.ord r) (f g : Fˣ) :
+    w.tameSymbol (Units.map (algebraMap F E : F →* E) f) (Units.map (algebraMap F E : F →* E) g) =
+      Units.map (algebraMap (IsLocalRing.ResidueField v.valuationSubring)
+        (IsLocalRing.ResidueField w.valuationSubring) : _ →* _) (v.tameSymbol f g) := by
+  simpa using v.tameSymbol_map_algebraMap w (e := 1) (by simpa using h) f g
+
+end Extension
 
 end Valuation

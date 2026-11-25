@@ -10,7 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
-public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow.Basic
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.Normed.Module.Alternating.Bilinear

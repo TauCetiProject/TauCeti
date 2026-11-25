@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
+public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Differential graded bimodules
@@ -80,6 +82,55 @@ theorem leibniz_smul_op_smul (hM : IsDGBimodule hA hB ℳ dM)
   rw [smul_comm a (op b) x, hM.leibniz_right (SetLike.GradedSMul.smul_mem ha hx),
     hM.leibniz ha x, smul_add, smul_comm (op b) p.negOnePow (a • dM x)]
   simp only [vadd_eq_add]
+
+/-- The three-term Leibniz rule on homogeneous left scalars and module elements suffices
+to construct a DG bimodule, by taking either the right or the left scalar to be one. -/
+theorem of_leibniz_smul_op_smul (G : InternalGrading R M ℤ)
+    [SetLike.GradedSMul 𝒜 G.piece]
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece G.piece]
+    (hD : LinearMap.IsHomogeneous dM G.piece G.piece 1) (hD₂ : ∀ x, dM (dM x) = 0)
+    (hLeibniz : ∀ {p q : ℤ} {a : A}, a ∈ 𝒜 p → ∀ {x : M}, x ∈ G.piece q → ∀ b : B,
+      dM (a • (op b • x)) =
+        dA a • (op b • x) + p.negOnePow • (a • (op b • dM x)) +
+          (p + q).negOnePow • (a • (op (dB b) • x))) :
+    IsDGBimodule hA hB G.piece dM where
+  isHomogeneous := hD
+  sq_zero := hD₂
+  leibniz := by
+    intro p a ha z
+    let L := Algebra.lsmul (A := A) R R M
+    have h : dM ∘ₗ L a =
+        L (dA a) + negOnePowCast R p • (L a ∘ₗ dM) := by
+      apply G.linearMap_ext
+      intro q x hx
+      simpa only [L, LinearMap.comp_apply, LinearMap.add_apply, LinearMap.smul_apply,
+        Algebra.lsmul_apply, op_one, one_smul, hB.map_one_eq_zero, op_zero, zero_smul,
+        smul_zero, add_zero, negOnePow_smul_eq_negOnePowCast_smul (R := R)] using hLeibniz ha hx 1
+    simpa only [L, LinearMap.comp_apply, LinearMap.add_apply, LinearMap.smul_apply,
+      Algebra.lsmul_apply, negOnePow_smul_eq_negOnePowCast_smul (R := R)]
+      using LinearMap.congr_fun h z
+  leibniz_right := by
+    intro q x hx b
+    simpa only [hA.map_one_eq_zero, zero_smul, smul_zero, Int.negOnePow_zero, zero_add, one_smul]
+      using hLeibniz (SetLike.one_mem_graded 𝒜) hx b
+
+open scoped TensorProduct
+
+/-- When the two factor actions compose to the pure-tensor action, the enveloping
+Leibniz rule gives the two DG bimodule Leibniz rules. -/
+theorem of_leibniz_tmul_smul [Module (A ⊗[R] Bᵐᵒᵖ) M] (G : InternalGrading R M ℤ)
+    [SetLike.GradedSMul 𝒜 G.piece]
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece G.piece]
+    (hsmul : ∀ (a : A) (b : Bᵐᵒᵖ) (x : M), a • (b • x) = (a ⊗ₜ[R] b) • x)
+    (hD : LinearMap.IsHomogeneous dM G.piece G.piece 1) (hD₂ : ∀ x, dM (dM x) = 0)
+    (hLeibniz : ∀ {p q : ℤ} {a : A}, a ∈ 𝒜 p → ∀ {x : M}, x ∈ G.piece q → ∀ b : B,
+      dM ((a ⊗ₜ[R] op b) • x) = (dA a ⊗ₜ[R] op b) • x +
+        negOnePowCast R p • ((a ⊗ₜ[R] op b) • dM x) +
+        negOnePowCast R (p + q) • ((a ⊗ₜ[R] op (dB b)) • x)) :
+    IsDGBimodule hA hB G.piece dM := by
+  apply of_leibniz_smul_op_smul G hD hD₂
+  intro p q a ha x hx b
+  simpa only [hsmul, negOnePow_smul_eq_negOnePowCast_smul (R := R)] using hLeibniz ha hx b
 
 end IsDGBimodule
 

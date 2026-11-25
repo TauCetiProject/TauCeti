@@ -163,17 +163,14 @@ private theorem bijective_transversal :
     · exact ⟨false, congr_arg _ (Subtype.ext h.symm)⟩
     · exact ⟨true, congr_arg _ (Subtype.ext h.symm)⟩
 
-/-- `r`, as an element of `𝔽₂[S₃]` invariant under the trivial subgroup. -/
-noncomputable abbrev rBot : conjInvariants (ZMod 2) (⊥ : Subgroup (Equiv.Perm (Fin 3))) :=
-  ⟨single r 1, by rw [conjInvariants_bot]; trivial⟩
-
 /-- **Check.** Over `𝔽₂`, `Tr_1^P(r) = r + r²`. -/
-example : (relTrace (ZMod 2) ⊥ P rBot : MonoidAlgebra (ZMod 2) (Equiv.Perm (Fin 3))) =
-    x (ZMod 2) := by
+example : (relTrace (ZMod 2) ⊥ P (conjInvariantsBotEquiv (ZMod 2) (single r 1)) :
+    MonoidAlgebra (ZMod 2) (Equiv.Perm (Fin 3))) = x (ZMod 2) := by
   rw [relTrace_apply_eq_sum_of_bijective transversal bijective_transversal]
   simp only [Fintype.univ_bool, Finset.mem_singleton, Bool.true_eq_false, not_false_eq_true,
-    Finset.sum_insert, transversal, conjRepresentation_single, Finset.sum_singleton,
-    OneMemClass.coe_one, one_mul, inv_one, mul_one, show s * r * s⁻¹ = r * r by decide]
+    Finset.sum_insert, transversal, coe_conjInvariantsBotEquiv, conjRepresentation_single,
+    Finset.sum_singleton, OneMemClass.coe_one, one_mul, inv_one, mul_one,
+    show s * r * s⁻¹ = r * r by decide]
   exact add_comm _ _
 
 /-- `r` is not `P`-invariant, whereas `Tr_1^P(r) = r + r²` is (`x_mem_conjInvariants`). -/

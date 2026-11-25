@@ -44,6 +44,8 @@ the real orthonormal basis `b.complexToReal`, whose underlying basis is `b.toBas
   `i, j`).
 * `TauCeti.orthonormal_complexToRealFamily`: the underlying real family `(u₀, i • u₀, …)` of a
   complex-orthonormal family is real-orthonormal for any compatible real inner product.
+* `Orthonormal.complex_iff_forall_real_inner_I_smul_eq_zero`: equivalently, `⟪I • v i, v j⟫_ℝ = 0`
+  for all `i, j`.
 * `Orthonormal.complexToReal`: the family `(v i, I • v i)` of a complex orthonormal family `v` is
   real orthonormal.
 * `OrthonormalBasis.complexToReal_apply`, `OrthonormalBasis.complexToReal_repr_apply`: the vectors
@@ -89,6 +91,13 @@ theorem complex_iff_forall_im_inner_eq_zero {v : ι → E} (hv : Orthonormal ℝ
   by_cases hij : i = j
   · subst hij; exact inner_self_im (𝕜 := ℂ) (v i)
   · exact hp hij
+
+/-- An `ℝ`-orthonormal family `v` is `ℂ`-orthonormal if and only if every `I • v i` is
+`ℝ`-orthogonal to every `v j`: the real frame `(v i, I • v i)` is then orthonormal. -/
+theorem complex_iff_forall_real_inner_I_smul_eq_zero {v : ι → E} (hv : Orthonormal ℝ v) :
+    Orthonormal ℂ v ↔ ∀ i j, ⟪Complex.I • v i, v j⟫_ℝ = 0 := by
+  rw [hv.complex_iff_forall_im_inner_eq_zero]
+  simp [TauCeti.inner_real_eq_re_inner ℂ, inner_smul_left]
 
 end Complex
 

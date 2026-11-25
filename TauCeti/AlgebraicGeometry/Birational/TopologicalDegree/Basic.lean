@@ -60,6 +60,13 @@ theorem RationalMap.topologicalDegree_def (f : X ⤏ Y) [f.IsDominant] :
     f.topologicalDegree = Module.finrank f.functionFieldMap.hom.fieldRange X.functionField := by
   rw [topologicalDegree]
 
+/-- Equal dominant rational maps have equal topological degrees, whatever the `IsDominant`
+instances: rewriting along `f = g` is blocked by the instance argument. -/
+theorem RationalMap.topologicalDegree_congr {f g : X ⤏ Y} [f.IsDominant] [g.IsDominant]
+    (h : f = g) : f.topologicalDegree = g.topologicalDegree := by
+  subst h
+  rfl
+
 /-- The topological degree of the rational map of a dominant morphism `g` is the dimension of
 `K(X)` over the image of the pullback of rational functions along `g`. -/
 theorem Hom.topologicalDegree_toRationalMap (g : X ⟶ Y) [IsDominant g] :
