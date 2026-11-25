@@ -49,15 +49,24 @@ local notation "L2" => lp (fun _ : ℕ ↦ ℝ) 2
 noncomputable def mixed (k : ℕ) : L2 :=
   (if Even k then (1 : ℝ) else 2) • e (k / 2)
 
+/-- `u_{2n} = eₙ`. -/
+@[simp]
+theorem mixed_two_mul (n : ℕ) : mixed (2 * n) = e n := by
+  simp [mixed]
+
+/-- `u_{2n+1} = 2 eₙ`. -/
+@[simp]
+theorem mixed_two_mul_add_one (n : ℕ) : mixed (2 * n + 1) = (2 : ℝ) • e n := by
+  have h : (2 * n + 1) / 2 = n := by omega
+  simp [mixed, h]
+
 /-- `‖u_{2n}‖² = 1`. -/
 theorem norm_sq_mixed_two_mul (n : ℕ) : ‖mixed (2 * n)‖ ^ 2 = 1 := by
-  simp [mixed]
+  simp
 
 /-- `‖u_{2n+1}‖² = 4`. -/
 theorem norm_sq_mixed_two_mul_add_one (n : ℕ) : ‖mixed (2 * n + 1)‖ ^ 2 = 4 := by
-  have h : (2 * n + 1) / 2 = n := by omega
-  simp only [mixed, Nat.not_even_two_mul_add_one, ↓reduceIte, h, norm_smul, norm_e]
-  norm_num
+  norm_num [norm_smul]
 
 /-- The energies `‖uₖ‖²` lie between `1` and `4`. -/
 theorem norm_sq_mixed_mem (k : ℕ) : ‖mixed k‖ ^ 2 ∈ Icc (1 : ℝ) 4 := by
@@ -88,8 +97,9 @@ theorem tendsto_toWeakSpace_mixed :
   · refine isBoundedUnder_of ⟨2, fun k ↦ ?_⟩
     simp only [Function.comp_apply]
     split_ifs <;> norm_num
-  · unfold mixed
-    split_ifs <;> simp [mul_comm]
+  · obtain ⟨n, rfl | rfl⟩ := Nat.even_or_odd' k
+    · simp
+    · simp [show (2 * n + 1) / 2 = n by omega, mul_comm (f (e n))]
 
 /-- Every tail of `(uₖ)` contains a vector of energy `‖uₖ‖² = 4`. -/
 theorem exists_ge_norm_sq_mixed_eq_four (N : ℕ) : ∃ k ≥ N, ‖mixed k‖ ^ 2 = 4 :=
