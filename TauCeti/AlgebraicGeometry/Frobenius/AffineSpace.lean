@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.AffineSpace
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.Frobenius.Etale
 import Mathlib.Algebra.Field.ULift
-import TauCeti.AlgebraicGeometry.Birational.TopologicalDegree.Expand
+import TauCeti.AlgebraicGeometry.AffineSpace.Expand
 import TauCeti.AlgebraicGeometry.Frobenius.Iterate
 import TauCeti.AlgebraicGeometry.Scheme.ToSpecZMod
 import TauCeti.RingTheory.MvPolynomial.Expand
@@ -116,18 +116,16 @@ private theorem exists_isPullback_relativeFrobenius :
 /-- **The relative Frobenius of affine space is flat.** -/
 instance flat_relativeFrobenius : Flat ((𝔸(σ; S) ↘ S).relativeFrobenius p hS) := by
   obtain ⟨a, b, h⟩ := exists_isPullback_relativeFrobenius σ hS
-  refine of_isPullback h ?_
-  rw [Flat.SpecMap_iff, CommRingCat.hom_ofHom]
-  exact TauCeti.MvPolynomial.flat_expand (Fact.out : p.Prime).pos
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  exact of_isPullback h inferInstance
 
 variable [Finite σ]
 
 /-- **The relative Frobenius of affine space in finitely many variables is finite.** -/
 instance isFinite_relativeFrobenius : IsFinite ((𝔸(σ; S) ↘ S).relativeFrobenius p hS) := by
   obtain ⟨a, b, h⟩ := exists_isPullback_relativeFrobenius σ hS
-  refine of_isPullback h ?_
-  rw [IsFinite.SpecMap_iff, CommRingCat.hom_ofHom]
-  exact TauCeti.MvPolynomial.finite_expand (Fact.out : p.Prime).pos
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  exact of_isPullback h inferInstance
 
 /-- The relative Frobenius of affine space in finitely many variables is locally of finite
 presentation. -/
