@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Polynomial.Vieta
 
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Coeff.Basic
+import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.Algebra.Ring.Parity
 import TauCeti.Data.Nat.Choose.Basic
 
@@ -130,12 +131,6 @@ theorem degree_glnHeckePolynomial_le (q : A) (T : Fin (n + 1) → A) :
     (glnHeckePolynomial n q T).degree ≤ n :=
   degree_le_of_natDegree_le (natDegree_glnHeckePolynomial_le q T)
 
-/-- Substituting `c X` for `X` keeps the Hecke polynomial in degree at most `n`. -/
-theorem natDegree_glnHeckePolynomial_comp_C_mul_X_le (q c : A) (T : Fin (n + 1) → A) :
-    ((glnHeckePolynomial n q T).comp (C c * X)).natDegree ≤ n :=
-  natDegree_le_iff_coeff_eq_zero.mpr fun _ hk => by
-    rw [comp_C_mul_X_coeff, coeff_glnHeckePolynomial_of_lt q T hk, zero_mul]
-
 /-- The coefficient of `X^n` in the Hecke polynomial is `T₀`. -/
 @[simp]
 theorem coeff_glnHeckePolynomial_self (q : A) (T : Fin (n + 1) → A) :
@@ -243,7 +238,8 @@ polynomial; for the norm twist `‖det‖^t` one has `c = q^{-t}`. -/
 theorem glnHeckePolynomial_pow_mul_comp (q c : A) (T : Fin (n + 1) → A) :
     (glnHeckePolynomial n q fun i => c ^ (i : ℕ) * T i).comp (C c * X) =
       C (c ^ n) * glnHeckePolynomial n q T := by
-  refine eq_of_natDegree_le_of_coeff_fin_eq (natDegree_glnHeckePolynomial_comp_C_mul_X_le q c _)
+  refine eq_of_natDegree_le_of_coeff_fin_eq
+    ((natDegree_comp_C_mul_X_le c _).trans (natDegree_glnHeckePolynomial_le q _))
     ((natDegree_C_mul_le _ _).trans (natDegree_glnHeckePolynomial_le q T)) fun i => ?_
   rw [comp_C_mul_X_coeff, coeff_C_mul, coeff_glnHeckePolynomial_val,
     coeff_glnHeckePolynomial_val, Fin.val_rev, Nat.add_sub_add_right, ← pow_mul_pow_sub c i.is_le]
@@ -289,7 +285,8 @@ theorem C_mul_glnHeckePolynomial_rev_comp (q : A) (T : Fin (n + 1) → A) :
         (glnHeckePolynomial n q fun i => T i.rev).comp (C (q ^ (n - 1)) * X) =
       C (q ^ (n * (n - 1))) * reflect n (glnHeckePolynomial n q T) := by
   refine eq_of_natDegree_le_of_coeff_fin_eq
-    ((natDegree_C_mul_le _ _).trans (natDegree_glnHeckePolynomial_comp_C_mul_X_le q _ _))
+    ((natDegree_C_mul_le _ _).trans
+      ((natDegree_comp_C_mul_X_le _ _).trans (natDegree_glnHeckePolynomial_le q _)))
     ((natDegree_C_mul_le _ _).trans
       (natDegree_reflect_le.trans (max_le le_rfl (natDegree_glnHeckePolynomial_le q T))))
     fun i => ?_

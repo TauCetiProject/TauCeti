@@ -46,6 +46,8 @@ occurrence while dropping singletons, `shift` translates every occurrence, and
 * `TauCeti.Multisegment.rightTruncate`: right shortening applied to every occurrence.
 * `TauCeti.Multisegment.shift`: integer translation applied to every occurrence.
 * `TauCeti.Multisegment.occurrenceInterval`: finite indexing of occurrences by `Fin m.card`.
+* `TauCeti.Multisegment.StandardIndex`: occurrence–degree labels `(i, a)` with `a` in the
+  `i`-th occurrence.
 
 ## Main results
 
@@ -57,6 +59,7 @@ occurrence while dropping singletons, `shift` translates every occurrence, and
 * `TauCeti.Multisegment.rightTruncate_shift`: right truncation commutes with translation.
 * `TauCeti.Multisegment.card_filter_occurrenceInterval_eq`: occurrence labels recover exact
   interval multiplicities and are invariant under label permutations.
+* `TauCeti.Multisegment.card_standardIndex`: there are `totalLength m` occurrence–degree labels.
 
 ## References
 
@@ -236,6 +239,17 @@ theorem mem_of_shorten_eq_some {s t : IntInterval} (h : s.shorten = some t) (a :
   rw [NonemptyInterval.mem_def, h1, h2]
   omega
 
+/-- A point belongs to a surviving shortening of `[b, e]` exactly when it lies in `[b, e)`.
+Both conditions are false for a singleton. -/
+@[simp]
+theorem exists_shorten_eq_some_and_mem_iff (s : IntInterval) (a : ℤ) :
+    (∃ t, s.shorten = some t ∧ a ∈ t) ↔ s.fst ≤ a ∧ a < s.snd := by
+  cases h : s.shorten with
+  | none =>
+    have he := (shorten_eq_none_iff s).mp h
+    simp [he]
+  | some t => simp [mem_of_shorten_eq_some h]
+
 /-- Right shortening decreases interval length by `1`. -/
 theorem length_of_shorten_eq_some {s t : IntInterval} (h : s.shorten = some t) :
     t.length + 1 = s.length := by
@@ -243,6 +257,15 @@ theorem length_of_shorten_eq_some {s t : IntInterval} (h : s.shorten = some t) :
   have := s.coe_length
   have := t.coe_length
   omega
+
+/-- Counting a deleted singleton as zero, right shortening always decreases length by `1`. -/
+@[simp, grind =]
+theorem getD_map_length_shorten_add_one (s : IntInterval) :
+    (s.shorten.map length).getD 0 + 1 = s.length := by
+  cases h : s.shorten with
+  | none =>
+    simpa using ((length_eq_one_iff s).mpr ((shorten_eq_none_iff s).mp h)).symm
+  | some t => simpa using length_of_shorten_eq_some h
 
 /-- Right shortening commutes with integer translation. -/
 theorem shorten_shift (s : IntInterval) (c : ℤ) :
@@ -567,17 +590,10 @@ theorem totalLength_rightTruncate_add_card (m : Multisegment) :
   | empty => simp
   | cons s m ih =>
     rw [rightTruncate_cons, Multiset.card_cons, totalLength_cons]
-    cases h : s.shorten with
-    | none =>
-      have hs : s.length = 1 :=
-        (IntInterval.length_eq_one_iff s).mpr ((IntInterval.shorten_eq_none_iff s).mp h)
-      dsimp only
-      omega
-    | some t =>
-      have hs : t.length + 1 = s.length := IntInterval.length_of_shorten_eq_some h
-      dsimp only
-      rw [totalLength_cons]
-      omega
+    have hs := s.getD_map_length_shorten_add_one
+    generalize s.shorten = t at hs ⊢
+    cases t <;> simp only [Option.map_none, Option.map_some, Option.getD_none,
+      Option.getD_some, totalLength_cons] at hs ⊢ <;> omega
 
 /-- Right truncation strictly decreases `totalLength` for every nonempty multisegment. -/
 theorem totalLength_rightTruncate_lt {m : Multisegment} (hm : m ≠ 0) :
@@ -711,6 +727,20 @@ theorem card_filter_occurrenceInterval_eq (m : Multisegment) (s : IntInterval) :
     (Finset.univ.filter fun i : Fin m.card => occurrenceInterval m i = s).card = m.count s :=
   card_filter_occurrenceInterval_perm m 1 s
 
+/-- The labels carrying an interval of a finite set `B` are as many as the occurrences of the
+intervals of `B`, counted with multiplicity. -/
+theorem card_filter_occurrenceInterval_mem (m : Multisegment) (B : Finset IntInterval) :
+    (Finset.univ.filter fun i : Fin m.card => occurrenceInterval m i ∈ B).card =
+      ∑ s ∈ B, m.count s := by
+  classical
+  rw [Finset.card_eq_sum_card_fiberwise (f := occurrenceInterval m)
+    (s := Finset.univ.filter fun i => occurrenceInterval m i ∈ B) (t := B)
+    fun i hi => by simpa using hi]
+  refine Finset.sum_congr rfl fun s hs => ?_
+  rw [← card_filter_occurrenceInterval_eq m s, Finset.filter_filter]
+  exact congrArg Finset.card
+    (Finset.filter_congr fun i _ => ⟨And.right, fun h => ⟨h ▸ hs, h⟩⟩)
+
 /-- Summing interval lengths over all occurrence labels equals `totalLength m`. -/
 theorem sum_length_occurrenceInterval (m : Multisegment) :
     ∑ i : Fin m.card, (occurrenceInterval m i).length = totalLength m := by
@@ -727,6 +757,49 @@ theorem card_filter_mem_occurrenceInterval (m : Multisegment) (a : ℤ) :
       Multiset.card_map]
   rw [Finset.card_def, Finset.filter_val]
   exact congrArg Multiset.card (Multiset.filter_congr fun _ _ => Iff.rfl)
+
+/-- The occurrence–degree labels of `m`: an occurrence label `i` together with a degree in the
+interval `m.occurrenceInterval i`. They index the standard basis of the standard graded space
+of `m`. -/
+abbrev StandardIndex (m : Multisegment) : Type :=
+  Σ i : Fin m.card, Set.Icc (occurrenceInterval m i).fst (occurrenceInterval m i).snd
+
+/-- The occurrence–degree label `(i, a)` of a degree `a` in the `i`-th occurrence of `m`. -/
+def StandardIndex.mk {m : Multisegment} (i : Fin m.card) (a : ℤ)
+    (h : a ∈ occurrenceInterval m i) : StandardIndex m :=
+  ⟨i, a, Set.mem_Icc.2 (NonemptyInterval.mem_def.1 h)⟩
+
+/-- The occurrence of the label `(i, a)` is `i`. -/
+@[simp]
+theorem StandardIndex.fst_mk {m : Multisegment} (i : Fin m.card) (a : ℤ)
+    (h : a ∈ occurrenceInterval m i) : (StandardIndex.mk i a h).1 = i :=
+  (rfl)
+
+/-- The degree of the label `(i, a)` is `a`. -/
+@[simp]
+theorem StandardIndex.coe_snd_mk {m : Multisegment} (i : Fin m.card) (a : ℤ)
+    (h : a ∈ occurrenceInterval m i) : ((StandardIndex.mk i a h).2 : ℤ) = a :=
+  (rfl)
+
+/-- The degree of an occurrence–degree label lies in the interval of its occurrence. -/
+theorem StandardIndex.mem_occurrenceInterval {m : Multisegment} (x : StandardIndex m) :
+    (x.2 : ℤ) ∈ occurrenceInterval m x.1 :=
+  NonemptyInterval.mem_def.2 (Set.mem_Icc.1 x.2.property)
+
+/-- An occurrence–degree label is rebuilt from its occurrence and its degree. -/
+@[simp]
+theorem StandardIndex.mk_fst_snd {m : Multisegment} (x : StandardIndex m) :
+    StandardIndex.mk x.1 x.2 x.mem_occurrenceInterval = x :=
+  (rfl)
+
+/-- The number of occurrence–degree labels is the total length of `m`. It takes precedence over
+`Fintype.card_sigma`, which would expand the count into a sum over occurrences. -/
+@[simp high]
+theorem card_standardIndex (m : Multisegment) :
+    Fintype.card (StandardIndex m) = totalLength m := by
+  rw [Fintype.card_sigma, ← sum_length_occurrenceInterval]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    rw [IntInterval.length_eq_card_Icc, ← Fintype.card_Icc]
 
 end Multisegment
 

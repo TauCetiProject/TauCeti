@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 import Mathlib.Analysis.InnerProductSpace.Completion
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Topology.Algebra.LinearMapCompletion
@@ -16,8 +16,8 @@ import Mathlib.Topology.Algebra.LinearMapCompletion
 Mathlib (`Mathlib.Analysis.InnerProductSpace.l2Space`) provides the norm-square Parseval identities
 for a Hilbert basis (`HilbertBasis.hasSum_norm_inner_sq`, `HilbertBasis.tsum_norm_inner_sq`,
 `HilbertBasis.summable_norm_inner_sq`, and `HilbertBasis.tsum_eNorm_inner_sq`). This file supplies
-the functional Parseval identity, a Bessel-type summability statement for functionals, and finite
-coisometric contractions:
+the functional Parseval identity, a Bessel-type summability statement for functionals, finite
+coisometric contractions, and a Cauchy–Schwarz bound for Hilbert basis coordinates:
 
 * For a continuous linear functional `A` on a finite orthonormal basis, the squared values
   `‖A (b i)‖ ^ 2` sum to `‖A‖ ^ 2` (`OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq`).
@@ -28,6 +28,8 @@ coisometric contractions:
 * For a continuous linear functional `φ` on an orthonormal family in a (possibly incomplete,
   seminormed) inner product space, `‖φ (v i)‖ ^ 2` is summable
   (`Orthonormal.summable_norm_apply_sq`).
+* For a Hilbert basis `b`, the products `⟪x, b i⟫ ⟪b i, y⟫` are absolutely summable with sum of
+  norms at most `‖x‖ ‖y‖` (`HilbertBasis.tsum_norm_inner_mul_inner_le`).
 
 ## Main declarations
 
@@ -37,6 +39,8 @@ coisometric contractions:
   linear maps along a map whose adjoint preserves inner products.
 * `OrthonormalBasis.sum_sum_inner_comp_eq_of_inner_eq` — double coisometric Parseval contraction
   of two bilinear maps along a map whose adjoint preserves inner products.
+* `HilbertBasis.summable_norm_inner_mul_inner` and `HilbertBasis.tsum_norm_inner_mul_inner_le` —
+  the products `⟪x, bᵢ⟫ ⟪bᵢ, y⟫` are absolutely summable, with sum of norms at most `‖x‖ ‖y‖`.
 * `Orthonormal.summable_norm_apply_sq` — Bessel's inequality for a functional: the squared values
   of a continuous linear functional on an orthonormal family are summable.
 -/
@@ -50,6 +54,21 @@ variable {ι : Type*} {𝕜 : Type*} {E : Type*} [RCLike 𝕜]
 section Normed
 
 variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- The products `⟪x, bᵢ⟫ ⟪bᵢ, y⟫` of the coordinates of two vectors in a Hilbert basis are
+absolutely summable; `HilbertBasis.hasSum_inner_mul_inner` computes their sum. -/
+theorem _root_.HilbertBasis.summable_norm_inner_mul_inner (b : _root_.HilbertBasis ι 𝕜 E)
+    (x y : E) : Summable fun i ↦ ‖inner 𝕜 x (b i) * inner 𝕜 (b i) y‖ := by
+  simpa only [b.repr_apply_apply, norm_mul, norm_inner_symm x] using
+    lp.summable_mul (p := 2) (q := 2) (by simpa using Real.HolderConjugate.two_two)
+      (b.repr x) (b.repr y)
+
+/-- **Cauchy–Schwarz for Hilbert basis coordinates.** `∑ᵢ ‖⟪x, bᵢ⟫ ⟪bᵢ, y⟫‖ ≤ ‖x‖ ‖y‖`. -/
+theorem _root_.HilbertBasis.tsum_norm_inner_mul_inner_le (b : _root_.HilbertBasis ι 𝕜 E)
+    (x y : E) : ∑' i, ‖inner 𝕜 x (b i) * inner 𝕜 (b i) y‖ ≤ ‖x‖ * ‖y‖ := by
+  simpa only [b.repr_apply_apply, b.repr.norm_map, norm_mul, norm_inner_symm x] using
+    lp.tsum_mul_le_mul_norm' (p := 2) (q := 2) (by simpa using Real.HolderConjugate.two_two)
+      (b.repr x) (b.repr y)
 
 /-- **Parseval's identity for a functional.** The squared values of a continuous linear functional
 on a finite orthonormal basis sum to the square of its operator norm: by the Riesz representation,

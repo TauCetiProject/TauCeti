@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Normed
-public import TauCeti.Analysis.Holder.OpenSet
+public import TauCeti.Analysis.Holder.OpenSet.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Algebra.Order.Ring.MaxOneMul
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
@@ -33,7 +33,9 @@ inclusion hold on unbounded spaces: on `ℝ`, the unbounded function `x` is Lips
 The same holds for the spaces of higher order. On an open set `Ω` of a normed space, the norm of
 `C^{k,α}(Ω)` bounds the supremum of the `k`-th derivative field, so `C^{k,α}(Ω) → C^{k,β}(Ω)` is
 a continuous linear map of norm at most `3`, and of norm at most `max 1 (D^(α - β))` when `Ω` is
-bounded of diameter `D`. Likewise for the bounded `C^{k,α}` maps on the whole space.
+bounded of diameter `D`. Likewise for the bounded `C^{k,α}` maps on the whole space. These also
+include into the space of one order less: for `α ≤ 1` the `k`-th derivative of a bounded
+`C^{k+1,α}` map is bounded with bounded derivative, hence `α`-Hölder.
 
 For `β < α`, compact `X` and a proper codomain `Y` the inclusion `C^{0,α}(X) → C^{0,β}(X)` is a
 compact operator. A bounded set of `C^{0,α}(X, Y)` is uniformly bounded and equicontinuous. Since
@@ -60,6 +62,10 @@ the identity of an infinite-dimensional Banach space is never compact.
   for bounded `Ω`, `TauCeti.CkHolderSpaceOn.norm_inclusionL_le`.
 * `TauCeti.CkHolderSpace.inclusionL`: the inclusion of bounded `C^{k,α}` maps on the whole space
   into bounded `C^{k,β}` maps, of norm at most `3`.
+* `TauCeti.CkHolderSpace.inclusionSuccL`: for `α ≤ 1`, the inclusion of bounded `C^{k+1,α}` maps
+  on the whole space into bounded `C^{k,α}` maps, of norm at most `k + 4`.
+* `TauCeti.CkHolderSpace.exists_coe_eq_of_le`: for `α ≤ 1`, a bounded `C^{k,α}` map is a bounded
+  `C^{j,α}` map for every `j ≤ k`.
 * `TauCeti.HolderSpace.nnHolderNorm_le_interpolate`: the interpolation inequality for the Hölder
   seminorms.
 * `TauCeti.HolderSpace.isCompactOperator_inclusionL`: the inclusion is compact for `β < α` on a
@@ -433,6 +439,69 @@ theorem inclusionL_injective (hβα : β ≤ α) :
 theorem norm_inclusionL_le_three (hβα : β ≤ α) :
     ‖inclusionL (k := k) (E := E) (F := F) hβα‖ ≤ 3 :=
   LinearMap.mkContinuous_norm_le _ zero_le_three _
+
+/-- A bounded `C^{k+1,α}` map read as a bounded `C^{k,α}` map, for `α ≤ 1`; `inclusionSuccL` is
+its bundled form. -/
+private def ofSucc (hα : α ≤ 1) (f : CkHolderSpace (k + 1) α E F) : CkHolderSpace k α E F :=
+  ofContDiff f (f.contDiff.of_le (by exact_mod_cast k.le_succ))
+    (fun _ hi ↦ ⟨‖f‖, f.norm_iteratedFDeriv_apply_le (by omega)⟩)
+    (f.holderWith_iteratedFDeriv_of_le hα k.le_succ).memHolder
+
+private theorem coe_ofSucc (hα : α ≤ 1) (f : CkHolderSpace (k + 1) α E F) : ⇑(ofSucc hα f) = ⇑f :=
+  coe_ofContDiff _ _ _ _
+
+private theorem norm_ofSucc_le (hα : α ≤ 1) (f : CkHolderSpace (k + 1) α E F) :
+    ‖ofSucc hα f‖ ≤ (k + 4) * ‖f‖ := by
+  have h := norm_le_of_norm_iteratedFDeriv_le_of_holderWith (f := ofSucc hα f) (M := ‖f‖)
+    (K := 3 * ‖f‖₊)
+    (fun i hi x ↦ by
+      rw [coe_ofSucc]
+      exact f.norm_iteratedFDeriv_apply_le (by omega) x)
+    (by
+      rw [coe_ofSucc]
+      exact f.holderWith_iteratedFDeriv_of_le hα k.le_succ)
+  simp only [NNReal.coe_mul, NNReal.coe_ofNat, coe_nnNorm] at h
+  linarith
+
+/-- **The order inclusion of bounded Hölder spaces.** For `α ≤ 1`, every bounded `C^{k+1,α}` map
+on `E` is a bounded `C^{k,α}` map: its `k`-th derivative is bounded with bounded derivative, hence
+`α`-Hölder. The inclusion is a continuous linear map of norm at most `k + 4`
+(`TauCeti.CkHolderSpace.norm_inclusionSuccL_le`). -/
+def inclusionSuccL (hα : α ≤ 1) : CkHolderSpace (k + 1) α E F →L[ℝ] CkHolderSpace k α E F :=
+  LinearMap.mkContinuous
+    { toFun := ofSucc hα
+      map_add' f g := ext fun x ↦ by simp [coe_ofSucc]
+      map_smul' c f := ext fun x ↦ by simp [coe_ofSucc] }
+    (k + 4) (norm_ofSucc_le hα)
+
+/-- The order inclusion does not change the underlying function. -/
+@[simp]
+theorem coe_inclusionSuccL (hα : α ≤ 1) (f : CkHolderSpace (k + 1) α E F) :
+    ⇑(inclusionSuccL hα f) = ⇑f :=
+  coe_ofSucc hα f
+
+/-- The order inclusion keeps the derivative fields of order at most `k`. -/
+@[simp]
+theorem iteratedFDeriv_inclusionSuccL (hα : α ≤ 1) (f : CkHolderSpace (k + 1) α E F)
+    (i : Fin (k + 1)) : (inclusionSuccL hα f).iteratedFDeriv i = f.iteratedFDeriv i.castSucc := by
+  ext1 x
+  rw [← iteratedFDeriv_eq, coe_inclusionSuccL]
+  -- `i.castSucc` is `i` as a natural number by definition.
+  exact iteratedFDeriv_eq f i.castSucc x
+
+/-- The order inclusion has norm at most `k + 4`. -/
+theorem norm_inclusionSuccL_le (hα : α ≤ 1) :
+    ‖inclusionSuccL (k := k) (E := E) (F := F) hα‖ ≤ k + 4 :=
+  LinearMap.mkContinuous_norm_le _ (by positivity) _
+
+/-- For `α ≤ 1`, a bounded `C^{k,α}` map is a bounded `C^{j,α}` map for every `j ≤ k`. -/
+theorem exists_coe_eq_of_le (hα : α ≤ 1) {j : ℕ} (h : j ≤ k) (f : CkHolderSpace k α E F) :
+    ∃ g : CkHolderSpace j α E F, ⇑g = ⇑f := by
+  induction k, h using Nat.le_induction with
+  | base => exact ⟨f, rfl⟩
+  | succ k _ ih =>
+    obtain ⟨g, hg⟩ := ih (inclusionSuccL hα f)
+    exact ⟨g, hg.trans (coe_inclusionSuccL hα f)⟩
 
 end CkHolderSpace
 

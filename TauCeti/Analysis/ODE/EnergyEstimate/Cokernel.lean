@@ -55,6 +55,8 @@ to prove that `D_A` is Fredholm when the limits of `A` at `±∞` are hyperbolic
   spectral gap `α` and `|⟪v, A' v⟫| ≤ β ‖v‖²`, `β < α²`, the operator `D_A` is onto.
 * `TauCeti.WeakDerivStep.exists_ae_eq_adjoint`: the pointwise adjoint of an essentially bounded
   family has an `L∞` class.
+* `TauCeti.WeakDerivStep.exists_ae_eq_adjoint_and_neg_ae_eq_neg_adjoint`: such a class `BL`, with
+  `-BL` an `L∞` class of the coefficient `-A†` of `D_{-A†}`.
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_adjoint_of_mem_orthogonal_range_trajectoryOperator`: for
   a continuous family, a path orthogonal to the range of `D_A` is almost everywhere a classical
   solution of the adjoint equation `w' = A† w`.
@@ -306,6 +308,23 @@ theorem ae_eq_adjoint_of_ae_eq
     ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), BL s = ContinuousLinearMap.adjoint (AL s) := by
   filter_upwards [hAL, hBL] with s hs hBs
   rw [hBs, hs]
+
+/-- **An `L∞` class of the coefficient `-A†`.** If `AL` is an `L∞` class of `A`, then some `L∞`
+class `BL` is almost everywhere the pointwise adjoint of `AL`, and `-BL` is an `L∞` class of
+`s ↦ -A(s)†`, the coefficient of the trajectory operator `D_{-A†} = d/ds - A†`. This operator is the
+negative of the formal adjoint `-d/ds + A†` of `D_A`, so the two have the same kernel. These are the
+two facts about `BL` used to identify the cokernel of `D_A` with the kernel of `D_{-A†}`. -/
+theorem exists_ae_eq_adjoint_and_neg_ae_eq_neg_adjoint
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    ∃ BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
+      (∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), BL s = ContinuousLinearMap.adjoint (AL s)) ∧
+        ⇑(-BL) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+          fun s ↦ -ContinuousLinearMap.adjoint (A s) := by
+  obtain ⟨BL, hBL⟩ := exists_ae_eq_adjoint AL hAL
+  refine ⟨BL, ae_eq_adjoint_of_ae_eq hAL hBL, ?_⟩
+  filter_upwards [Lp.coeFn_neg BL, hBL] with s hs hBs
+  rw [hs, Pi.neg_apply, hBs]
 
 /-- **Paths orthogonal to the range are classical solutions of the adjoint equation.** For a
 continuous family `A` with `L∞` class `AL`, every `v ∈ L²(ℝ, E)` orthogonal to the range of
