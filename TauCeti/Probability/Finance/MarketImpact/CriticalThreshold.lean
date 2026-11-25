@@ -161,16 +161,12 @@ theorem tendsto_callThresholdFunction_nhdsGT_zero :
   filter_upwards [self_mem_nhdsWithin] with s hs
   rw [mul_comm s, mul_assoc, mul_inv_cancel₀ (ne_of_gt hs), mul_one]
 
-/-- The call threshold function exceeds `1` on `(0, ∞)`. -/
+/-- The call threshold function exceeds `1` on `(0, ∞)`: this is Mills' ratio bound
+`1 - Φ(s) < φ(s)/s` rearranged. -/
 theorem one_lt_callThresholdFunction (hs : 0 < s) : 1 < callThresholdFunction s := by
-  have hs' : s < s + 1 := lt_add_one s
-  have hlt : callThresholdFunction (s + 1) < callThresholdFunction s :=
-    strictAntiOn_callThresholdFunction hs (by simp only [mem_Ioi]; linarith) hs'
-  refine lt_of_le_of_lt ?_ hlt
-  refine le_of_tendsto tendsto_callThresholdFunction_atTop ?_
-  filter_upwards [eventually_gt_atTop (s + 1)] with u hu
-  exact (strictAntiOn_callThresholdFunction (by simp only [mem_Ioi]; linarith)
-    (by simp only [mem_Ioi]; linarith) hu).le
+  have := one_sub_cdf_gaussianReal_lt_gaussianPDFReal_div hs
+  rw [callThresholdFunction_def]
+  linarith
 
 /-- The call threshold function maps `(0, ∞)` bijectively onto `(1, ∞)`. -/
 theorem bijOn_callThresholdFunction : BijOn callThresholdFunction (Ioi 0) (Ioi 1) := by
