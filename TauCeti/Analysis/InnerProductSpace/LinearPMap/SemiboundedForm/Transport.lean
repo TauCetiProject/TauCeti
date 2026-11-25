@@ -23,10 +23,11 @@ file transports `q` along two operations.
   represented by the restriction has graph `{(u, h) | u ∈ W, ∀ v ∈ W, q u v = ⟪h, v⟫_𝕜}`
   (`TauCeti.SemiboundedForm.mem_graph_operator_restrict_iff`).
 * **Unitary transport.** For a linear isometric equivalence `U : H ≃ₗᵢ[𝕜] H'`, `q.map U` is the
-  form `(u, v) ↦ q (U⁻¹ u) (U⁻¹ v)` on `U D`. It has the same lower bounds, isometric form spaces
-  (`TauCeti.SemiboundedForm.mapFormSpaceEquiv`), is closed exactly when `q` is, and represents the
-  unitary conjugate `U A U⁻¹` of the operator `A` represented by `q`
-  (`TauCeti.SemiboundedForm.operator_map`).
+  form `(u, v) ↦ q (U⁻¹ u) (U⁻¹ v)` on `U D`. It is functorial in `U`
+  (`TauCeti.SemiboundedForm.map_refl`, `TauCeti.SemiboundedForm.map_trans`). It has the same lower
+  bounds, isometric form spaces (`TauCeti.SemiboundedForm.mapFormSpaceEquiv`), is closed exactly
+  when `q` is, and represents the unitary conjugate `U A U⁻¹` of the operator `A` represented by
+  `q` (`TauCeti.SemiboundedForm.operator_map`).
 
 ## Main declarations
 
@@ -255,6 +256,33 @@ theorem map_form_apply (u v : (q.map U).domain) :
 theorem map_form_mapDomainEquiv (u v : q.domain) :
     (q.map U).form (q.mapDomainEquiv U u) (q.mapDomainEquiv U v) = q.form u v := by
   rw [map_form_apply, LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply]
+
+/-- Transport along the identity does nothing. -/
+@[simp]
+theorem map_refl : q.map (LinearIsometryEquiv.refl 𝕜 H) = q :=
+  ext_of_form_eq (by ext; simp) fun u v u' v' hu hv ↦ by
+    rw [map_form_apply]
+    exact congrArg₂ (fun a b ↦ q.form a b)
+      (Subtype.ext (by simp [hu, LinearIsometryEquiv.symm_apply_eq]))
+      (Subtype.ext (by simp [hv, LinearIsometryEquiv.symm_apply_eq]))
+
+variable {H'' : Type*} [NormedAddCommGroup H''] [InnerProductSpace 𝕜 H''] in
+/-- Transport along a composite is transport along each factor in turn. -/
+theorem map_trans (V : H' ≃ₗᵢ[𝕜] H'') : q.map (U.trans V) = (q.map U).map V :=
+  ext_of_form_eq (by ext; simp) fun u v u' v' hu hv ↦ by
+    rw [map_form_apply, map_form_apply, map_form_apply]
+    exact congrArg₂ (fun a b ↦ q.form a b) (Subtype.ext (by simp [hu]))
+      (Subtype.ext (by simp [hv]))
+
+/-- Transporting along `U` and then along `U⁻¹` recovers the original form. -/
+@[simp]
+theorem map_symm_map : (q.map U).map U.symm = q := by
+  rw [← map_trans, LinearIsometryEquiv.self_trans_symm, map_refl]
+
+/-- Transporting along `U⁻¹` and then along `U` recovers the original form. -/
+@[simp]
+theorem map_map_symm (q' : SemiboundedForm 𝕜 H') : (q'.map U.symm).map U = q' := by
+  simpa using q'.map_symm_map U.symm
 
 /-- **Unitary transport keeps the lower bounds.** -/
 @[simp]
