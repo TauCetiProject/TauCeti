@@ -116,10 +116,6 @@ private theorem etaQuotientMultiplier_eq_prod {N : ℕ} (r : ℕ → ℤ) {γ : 
 private noncomputable def symb (N : ℕ) (r : ℕ → ℤ) (k d : ℤ) : ℂ :=
   (kroneckerSym (-1) d : ℂ) ^ k * ∏ δ ∈ N.divisors, (kroneckerSym δ d : ℂ) ^ r δ
 
-private theorem sq_kroneckerSym_cast {a b : ℤ} (h : a.gcd b = 1) :
-    (kroneckerSym a b : ℂ) ^ 2 = 1 := by
-  exact_mod_cast sq_kroneckerSym_eq_one h
-
 /-- The sum over `δ ∣ N` of `r δ` times the even-`c` exponent of `γ_δ = (a, b δ; (N / δ) t, d)`,
 regrouped along the three sums of the congruence conditions. -/
 private theorem sum_mul_evenExp (N : ℕ) (r : ℕ → ℤ) (a b d t : ℤ) :
@@ -152,7 +148,7 @@ private theorem prod_kroneckerSym_div_left {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
   have hcop := γ.isCoprime_row 1
   -- Each factor is `(c / d) ^ r δ (δ / d) ^ r δ`, and the factors `(c / d) ^ r δ` cancel.
   refine (Finset.prod_congr rfl fun δ hδ ↦ ?_).trans (Finset.prod_zpow_mul_eq_prod_of_sq_eq_one _
-    (sq_kroneckerSym_cast (Int.isCoprime_iff_gcd_eq_one.mp hcop)) (hk ▸ even_two_mul k) _)
+    (sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.mp hcop)) (hk ▸ even_two_mul k) _)
   have hc : (N / δ : ℕ) * t * δ = γ 1 0 := by
     linear_combination t * natCast_mul_natCast_div hδ - ht
   have hx : 0 ≤ ((N / δ : ℕ) : ℤ) * t := mul_nonneg (Int.natCast_nonneg _) ht0
@@ -164,7 +160,7 @@ private theorem prod_kroneckerSym_div_left {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
         ite_eq_right (mul_nonneg hx hδ0.le).not_gt, ite_eq_right hx.not_gt,
         ite_eq_right hδ0.not_gt, one_mul]
     · exact kroneckerSym_mul_left_of_ne_neg_one hd _ _
-  rw [← hc, hmul, Int.cast_mul, ← mul_zpow, mul_assoc, ← sq, sq_kroneckerSym_cast
+  rw [← hc, hmul, Int.cast_mul, ← mul_zpow, mul_assoc, ← sq, sq_intCast_kroneckerSym_eq_one
     (Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left (hc ▸ dvd_mul_left _ _))),
     mul_one]
 
@@ -177,14 +173,14 @@ private theorem prod_kroneckerSym_div_right {N : ℕ} {r : ℕ → ℤ} {k : ℤ
   have hcop := (γ.isCoprime_row 1).symm
   -- Each factor is `(d / c) ^ r δ (d / δ) ^ r δ`, and the factors `(d / c) ^ r δ` cancel.
   refine (Finset.prod_congr rfl fun δ hδ ↦ ?_).trans (Finset.prod_zpow_mul_eq_prod_of_sq_eq_one _
-    (sq_kroneckerSym_cast (Int.isCoprime_iff_gcd_eq_one.mp hcop)) (hk ▸ even_two_mul k) _)
+    (sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.mp hcop)) (hk ▸ even_two_mul k) _)
   have hc : (N / δ : ℕ) * t * δ = γ 1 0 := by
     linear_combination t * natCast_mul_natCast_div hδ - ht
   have hm : (0 : ℤ) < (N / δ : ℕ) := by
     exact_mod_cast Nat.div_pos (Nat.divisor_le hδ) (Nat.pos_of_mem_divisors hδ)
   rw [← hc, kroneckerSym_mul_right _ (mul_pos hm ht0).ne'
     (by exact_mod_cast (Nat.pos_of_mem_divisors hδ).ne'), Int.cast_mul, ← mul_zpow, mul_assoc,
-    ← sq, sq_kroneckerSym_cast
+    ← sq, sq_intCast_kroneckerSym_eq_one
       (Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_right (hc ▸ dvd_mul_left _ _))),
     mul_one]
 
@@ -193,7 +189,7 @@ signs `(-1 / d) ^ ((δ - 1) / 2)` multiply to `(-1 / d) ^ k` since `∑_δ δ r 
 private theorem symb_eq_prod_of_odd {N : ℕ} {r : ℕ → ℤ} {k : ℤ} (hNo : Odd N)
     (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) {A : ℤ} (hA : ∑ δ ∈ N.divisors, (δ : ℤ) * r δ = 24 * A)
     (d : ℤ) : symb N r k d = ∏ δ ∈ N.divisors, (kroneckerSym d δ : ℂ) ^ r δ := by
-  have hsq : (kroneckerSym (-1) d : ℂ) ^ 2 = 1 := sq_kroneckerSym_cast (by simp)
+  have hsq : (kroneckerSym (-1) d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one (by simp)
   have hs0 : (kroneckerSym (-1) d : ℂ) ≠ 0 := fun h ↦ by simp [h] at hsq
   have hδo (δ : ℕ) (hδ : δ ∈ N.divisors) : Odd δ :=
     hNo.of_dvd_nat (Nat.dvd_of_mem_divisors hδ)

@@ -310,6 +310,11 @@ theorem kroneckerSym_sq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym (a ^ 2)
 theorem sq_kroneckerSym_eq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym a b ^ 2 = 1 := by
   rw [← kroneckerSym_pow_left, kroneckerSym_sq_one h]
 
+/-- The image of `(a / b)` in any ring squares to `1` when `a` and `b` are coprime. -/
+theorem sq_intCast_kroneckerSym_eq_one {R : Type*} [Ring R] {a b : ℤ} (h : a.gcd b = 1) :
+    ((kroneckerSym a b : ℤ) : R) ^ 2 = 1 := by
+  rw [← Int.cast_pow, sq_kroneckerSym_eq_one h, Int.cast_one]
+
 /-- For a square integer `a` coprime to `b`, `(a / b) = 1`. -/
 theorem kroneckerSym_eq_one_of_isSquare {a b : ℤ} (ha : IsSquare a) (h : a.gcd b = 1) :
     kroneckerSym a b = 1 := by
