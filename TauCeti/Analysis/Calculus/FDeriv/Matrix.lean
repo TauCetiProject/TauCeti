@@ -18,7 +18,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Topology.Algebra.Module.Star
-public import TauCeti.LinearAlgebra.Matrix.Hermitian
+public import TauCeti.LinearAlgebra.Matrix.Hermitian.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Pi

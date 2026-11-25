@@ -43,6 +43,9 @@ representative.
   exponent `p` has infinite `L^q` norm for every `0 < q < ∞`.
 * `MeasureTheory.Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top` — a simple function of `Lᵖ`,
   `0 < p < ∞`, lies in every `Lʳ`.
+* `MeasureTheory.Lp.simpleFunc.memLp_of_ne_top` — the same statement for the function itself.
+* `MeasureTheory.Lp.dense_setOf_memLp` — for `1 ≤ p < ∞`, the functions of `Lᵖ` that also lie in
+  `Lʳ` are dense in `Lᵖ`.
 * `MeasureTheory.Lp.continuousLinearMap_ext_of_memLp` — two continuous semilinear maps out of
   `Lᵖ`, `1 ≤ p < ∞`, that agree on `Lᵖ ∩ Lʳ` are equal.
 -/
@@ -188,15 +191,26 @@ theorem Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top {E : Type*} [NormedAddCommGro
   SimpleFunc.memLp_of_finite_measure_preimage r <|
     SimpleFunc.measure_preimage_lt_top_of_memLp hp0 hp _ (Lp.simpleFunc.memLp f)
 
+/-- A simple function of `Lᵖ`, `0 < p < ∞`, lies in every `Lʳ` as a function. -/
+theorem Lp.simpleFunc.memLp_of_ne_top {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (r : ℝ≥0∞) (f : Lp.simpleFunc E p μ) :
+    MemLp (f : α → E) r μ :=
+  (memLp_toSimpleFunc_of_ne_top hp0 hp r f).ae_eq (toSimpleFunc_eq_toFun f)
+
+/-- For `1 ≤ p < ∞`, the functions of `Lᵖ` that also lie in `Lʳ` are dense in `Lᵖ`: they contain
+the simple functions. -/
+theorem Lp.dense_setOf_memLp {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p ≠ ∞) (r : ℝ≥0∞) : Dense {f : Lp E p μ | MemLp f r μ} :=
+  (Lp.simpleFunc.denseRange hp).mono <| range_subset_iff.2 <|
+    Lp.simpleFunc.memLp_of_ne_top (zero_lt_one.trans_le Fact.out).ne' hp r
+
 /-- Two continuous semilinear maps out of `Lᵖ`, `1 ≤ p < ∞`, that agree on `Lᵖ ∩ Lʳ` are
 equal, because the simple functions of `Lᵖ` lie in `Lʳ` and are dense in `Lᵖ`. -/
 theorem Lp.continuousLinearMap_ext_of_memLp {𝕜 R E G : Type*} [NormedRing 𝕜] [Semiring R]
     {σ : 𝕜 →+* R} [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [AddCommMonoid G]
     [Module R G] [TopologicalSpace G] [T2Space G] {p r : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
     {S S' : Lp E p μ →SL[σ] G} (h : ∀ f : Lp E p μ, MemLp f r μ → S f = S' f) : S = S' :=
-  ContinuousLinearMap.ext <| congrFun <| (Lp.simpleFunc.denseRange hp).equalizer
-    S.continuous S'.continuous <| funext fun g => h g <|
-      (Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top (zero_lt_one.trans_le Fact.out).ne' hp r
-        g).ae_eq (Lp.simpleFunc.toSimpleFunc_eq_toFun g)
+  DFunLike.coe_injective <|
+    S.continuous.ext_on (Lp.dense_setOf_memLp hp r) S'.continuous fun f hf => h f hf
 
 end MeasureTheory

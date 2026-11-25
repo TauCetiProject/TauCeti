@@ -17,6 +17,7 @@ public import TauCeti.Algebra.Lie.Weights.Central
 public import TauCeti.Algebra.Lie.LeviDecomposition.Abelian
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import TauCeti.Algebra.Lie.AdjointAction.Basic
+import TauCeti.Algebra.Lie.Perfect
 import Mathlib.Algebra.Lie.Normalizer
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 
@@ -293,12 +294,8 @@ theorem sup_center_derivedSeries_eq_top :
 /-- Every element of a reductive Lie algebra is a central element plus an element of the derived
 ideal. -/
 theorem exists_mem_center_add_mem_derivedSeries (x : L) :
-    ∃ z ∈ LieAlgebra.center K L, ∃ d ∈ derivedSeries K L 1, z + d = x := by
-  have hx : x ∈ (LieAlgebra.center K L ⊔ derivedSeries K L 1 : LieIdeal K L) := by
-    rw [sup_center_derivedSeries_eq_top K L]
-    exact LieSubmodule.mem_top x
-  rw [← LieSubmodule.mem_toSubmodule, LieSubmodule.sup_toSubmodule] at hx
-  exact Submodule.mem_sup.1 hx
+    ∃ z ∈ LieAlgebra.center K L, ∃ d ∈ derivedSeries K L 1, z + d = x :=
+  exists_mem_center_add_mem_derivedSeries_of_sup_eq_top (sup_center_derivedSeries_eq_top K L) x
 
 variable {K L} in
 /-- **The `ad`-nilpotent elements of a reductive Lie algebra.** In a finite-dimensional reductive
@@ -314,23 +311,12 @@ theorem isNilpotent_ad_iff_exists_mem_center_add {x : L} :
   obtain ⟨z, hz, y, hyD, rfl⟩ := exists_mem_center_add_mem_derivedSeries K L x
   exact ⟨z, hz, y, hyD, (LieAlgebra.isNilpotent_ad_add_iff_of_mem_center_left hz y).mp hx, rfl⟩
 
-/-- **The derived ideal of a reductive Lie algebra is perfect**: `⁅⁅L, L⁆, ⁅L, L⁆⁆ = ⁅L, L⁆`. A
-central element contributes nothing to a bracket, so writing both arguments of a generating bracket
-of `⁅L, L⁆` as a central element plus an element of `⁅L, L⁆` leaves only the brackets of the derived
-ideal with itself. -/
+/-- **The derived ideal of a reductive Lie algebra is perfect**: `⁅⁅L, L⁆, ⁅L, L⁆⁆ = ⁅L, L⁆`. This
+holds in any Lie algebra spanned by its centre and its derived ideal
+(`TauCeti.lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top`). -/
 theorem lie_derivedSeries_derivedSeries_eq_self :
-    ⁅derivedSeries K L 1, derivedSeries K L 1⁆ = derivedSeries K L 1 := by
-  refine le_antisymm (LieSubmodule.lie_le_right _ _) ?_
-  have hDtop : derivedSeries K L 1 = ⁅(⊤ : LieIdeal K L), (⊤ : LieIdeal K L)⁆ := rfl
-  rw [hDtop]
-  refine (LieSubmodule.lie_le_iff _ _ _).2 fun y _ z _ ↦ ?_
-  obtain ⟨zy, hzy, dy, hdy, rfl⟩ := exists_mem_center_add_mem_derivedSeries K L y
-  obtain ⟨zz, hzz, dz, hdz, rfl⟩ := exists_mem_center_add_mem_derivedSeries K L z
-  have hzy0 : ∀ w : L, ⁅zy, w⁆ = 0 := fun w ↦ by
-    rw [← lie_skew, (LieModule.mem_maxTrivSubmodule K L L zy).1 hzy w, neg_zero]
-  have hzz0 : ∀ w : L, ⁅w, zz⁆ = 0 := (LieModule.mem_maxTrivSubmodule K L L zz).1 hzz
-  rw [add_lie, hzy0, lie_add, hzz0, zero_add, zero_add]
-  exact LieSubmodule.lie_mem_lie hdy hdz
+    ⁅derivedSeries K L 1, derivedSeries K L 1⁆ = derivedSeries K L 1 :=
+  lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top (sup_center_derivedSeries_eq_top K L)
 
 end Span
 

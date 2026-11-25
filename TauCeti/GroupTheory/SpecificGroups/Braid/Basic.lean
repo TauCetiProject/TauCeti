@@ -317,6 +317,12 @@ theorem val_transposition_apply (i : Fin (n - 1)) (x : Fin n) :
   rw [transposition_eq_swap, Equiv.swap_apply_def]
   split_ifs <;> simp_all [Fin.ext_iff]
 
+/-- The inverse equivalence of an adjacent transposition is itself. -/
+@[simp]
+theorem symm_transposition (i : Fin (n - 1)) :
+    (transposition i).symm = transposition i := by
+  rw [transposition_eq_swap, Equiv.symm_swap]
+
 /-- An adjacent transposition is an involution. -/
 @[simp]
 theorem transposition_mul_self (i : Fin (n - 1)) :
