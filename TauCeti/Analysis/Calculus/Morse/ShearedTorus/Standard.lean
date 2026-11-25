@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Group.EvenFunction
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import TauCeti.Analysis.Calculus.Morse.ShearedTorus
 import TauCeti.Analysis.ODE.ScalarLinear
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
 
 /-!
 # Standard profiles for the sheared torus
@@ -81,16 +83,6 @@ namespace TauCeti
 
 /-! ### The shear profile -/
 
-/-- On `(π/6, 5π/6)`, `sin θ > 1/2`. -/
-private theorem two_inv_lt_sin {θ : ℝ} (hθ : θ ∈ Ioo (π / 6) (5 * π / 6)) : 2⁻¹ < sin θ := by
-  have hs : 0 < sin ((θ - π / 6) / 2) :=
-    sin_pos_of_pos_of_lt_pi (by linarith [hθ.1]) (by linarith [hθ.2, pi_pos])
-  have hc : 0 < cos ((θ + π / 6) / 2) :=
-    cos_pos_of_mem_Ioo ⟨by linarith [hθ.1, pi_pos], by linarith [hθ.2]⟩
-  have := sin_sub_sin θ (π / 6)
-  rw [sin_pi_div_six] at this
-  nlinarith [mul_pos hs hc]
-
 /-- The bump `θ ↦ expNegInvGlue (sin θ - 1/2)` is continuous. -/
 private theorem continuous_shearBump : Continuous fun θ ↦ expNegInvGlue (sin θ - 2⁻¹) :=
   (expNegInvGlue.contDiff (n := 0)).continuous.comp (continuous_sin.sub continuous_const)
@@ -100,7 +92,7 @@ private theorem integral_shearBump_pos : 0 < ∫ θ in (0 : ℝ)..π, expNegInvG
   calc (0 : ℝ) < ∫ θ in (π / 6)..(5 * π / 6), expNegInvGlue (sin θ - 2⁻¹) :=
         intervalIntegral.intervalIntegral_pos_of_pos_on
           (continuous_shearBump.intervalIntegrable _ _)
-          (fun _ hθ ↦ expNegInvGlue.pos_of_pos (sub_pos.2 (two_inv_lt_sin hθ)))
+          (fun _ hθ ↦ expNegInvGlue.pos_of_pos (sub_pos.2 (two_inv_lt_sin_of_mem_Ioo hθ)))
           (by linarith [pi_pos])
     _ ≤ ∫ θ in (0 : ℝ)..π, expNegInvGlue (sin θ - 2⁻¹) :=
         intervalIntegral.integral_mono_interval (by positivity) (by linarith [pi_pos])
@@ -236,16 +228,6 @@ theorem shearedTorusCoeff_pos (θ : ℝ) : 0 < shearedTorusCoeff θ := by
   unfold coeffCutoff
   nlinarith [mul_nonneg (by linarith : 0 ≤ 1 + cos θ) h0,
     mul_nonneg (by linarith : 0 ≤ 1 - cos θ) (sub_nonneg.2 h1)]
-
-/-- The half-angle identity `cos² (θ/2) = (1 + cos θ) / 2`. -/
-private theorem cos_half_sq (θ : ℝ) : cos (θ / 2) ^ 2 = (1 + cos θ) / 2 := by
-  rw [cos_sq, show 2 * (θ / 2) = θ by ring]
-  ring
-
-/-- The half-angle identity `sin² (θ/2) = (1 - cos θ) / 2`. -/
-private theorem sin_half_sq (θ : ℝ) : sin (θ / 2) ^ 2 = (1 - cos θ) / 2 := by
-  rw [sin_sq, cos_half_sq]
-  ring
 
 /-- Near the maximum circle, where `cos θ ≥ 9/10`, the coefficient is `cos² (θ/2) / 2`. -/
 theorem shearedTorusCoeff_of_le_cos {θ : ℝ} (hθ : 9 / 10 ≤ cos θ) :
