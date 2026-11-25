@@ -424,10 +424,9 @@ theorem add_graphStructure_eq_zero_iff (ν : InhomogeneousTerm j J) (q : P × M)
         ν.graphStructure q ((Manifold.tangentSpaceProdEquiv q).symm (j q.1 a, d)) = 0 ↔
       c + J.tangentEndomorphism q d = (2 : ℝ) • ν.val.tangentHom q a := by
   rw [graphStructure_apply, graphStructureAt_apply, ContinuousLinearEquiv.apply_symm_apply,
-    ← map_add, map_eq_zero_iff _ (Manifold.tangentSpaceProdEquiv q).symm.injective,
-    ν.tangentHom_apply_j, map_neg, J.tangentEndomorphism_apply_apply, neg_neg, j.apply_apply]
-  simp only [Prod.mk_add_mk, add_neg_cancel, Prod.mk_eq_zero, true_and]
-  rw [← sub_eq_zero (b := (2 : ℝ) • _), add_sub_assoc]
+    ← map_add, map_eq_zero_iff _ (Manifold.tangentSpaceProdEquiv q).symm.injective]
+  -- The first components cancel since `j² = -1`; in the second, `J (ν (j a)) = ν a`.
+  simp [ν.tangentHom_apply_j, j.apply_apply, add_sub_assoc', sub_eq_zero]
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ EP] in
 /-- For finite-dimensional models, the `Cⁿ` graph structure of a forcing term is the general

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
+public import TauCeti.Analysis.Sobolev.WeakDeriv.WithLp
 public import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 import TauCeti.LinearAlgebra.Complex.LinearPart
 
@@ -71,8 +72,9 @@ equation `e (1, D 1) + K(z, e (z, u z)) e (i, D i) = 0` for the graph derivative
 is the inhomogeneous equation `D 1 + J(z, u z) (D i) = η(z, u z)`. Then, on `U` and for any
 exponent, `u` is a weak solution of the inhomogeneous equation exactly when its graph
 `z ↦ e (z, u z)` is a weak solution of the homogeneous equation for `K`. The graph has weak
-derivative `e ∘ (id, D)` for each weak derivative `D` of `u`, and conversely `u` is the second
-component of `e⁻¹` applied to the graph. -/
+derivative `e ∘ (id, D)` for each weak derivative `D` of `u`
+(`TauCeti.hasWeakFDerivOn_graph_iff`), and conversely `u` is the second component of `e⁻¹` applied
+to the graph. -/
 theorem isWeakCauchyRiemannOn_graph_iff [CompleteSpace V] {W : Type*} [NormedAddCommGroup W]
     [NormedSpace ℝ W] [CompleteSpace W] (e : (ℂ × V) ≃L[ℝ] W) {K : ℂ → W → W →L[ℝ] W}
     {J : ℂ → V → V →L[ℝ] V} {η : ℂ → V → V}
@@ -82,18 +84,10 @@ theorem isWeakCauchyRiemannOn_graph_iff [CompleteSpace V] {W : Type*} [NormedAdd
       IsWeakCauchyRiemannOn p U J η u := by
   set L := ContinuousLinearMap.snd ℝ ℂ V ∘L e.symm.toContinuousLinearMap
   have hsnd : ∀ z, L (e (z, u z)) = u z := fun z ↦ by simp [L]
-  have hid : HasWeakFDerivOn volume (Opens.interior U) (fun z : ℂ ↦ z)
-      fun _ ↦ ContinuousLinearMap.id ℝ ℂ := by
-    have hD : fderiv ℝ (fun z : ℂ ↦ z) = fun _ ↦ ContinuousLinearMap.id ℝ ℂ :=
-      funext fun _ ↦ fderiv_id
-    have h := hasWeakFDerivOn_of_differentiableOn (μ := volume) (Ω := Opens.interior U)
-      (u := fun z : ℂ ↦ z) (by rw [hD]; exact locallyIntegrableOn_const _)
-      fun z _ ↦ differentiableAt_id
-    rwa [hD] at h
   have hgraph : ∀ {D : ℂ → ℂ →L[ℝ] V}, HasWeakFDerivOn volume (Opens.interior U) u D →
       HasWeakFDerivOn volume (Opens.interior U) (fun z ↦ e (z, u z))
         (fun z ↦ e.toContinuousLinearMap ∘L (ContinuousLinearMap.id ℝ ℂ).prod (D z)) :=
-    fun hD ↦ (hid.prodMk hD).clm_comp e.toContinuousLinearMap
+    fun hD ↦ (hasWeakFDerivOn_graph_iff e).2 hD
   have hmem : ∀ᵐ z ∂volume.restrict (interior U), z ∈ U :=
     (ae_restrict_mem measurableSet_interior).mono fun _ hz ↦ interior_subset hz
   rw [isWeakCauchyRiemannOn_iff, isWeakCauchyRiemannOn_iff]

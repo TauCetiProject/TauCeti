@@ -55,6 +55,50 @@ noncomputable section
 
 namespace TauCeti
 
+section Chart
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless] [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I' ∞ N]
+
+/-- The preferred chart at `y`, read in `E'`, is differentiable at each point `p` of its source,
+its inverse is differentiable at the image of `p`, and the derivative of the inverse undoes the
+derivative of the chart there. -/
+private theorem mfderiv_chartAt_extendTrans (y : N) {p : N} (hp : p ∈ (chartAt H' y).source) :
+    MDifferentiableAt I' 𝓘(ℝ, E') ((chartAt H' y).extendTrans I' (Homeomorph.refl E')) p ∧
+      MDifferentiableAt 𝓘(ℝ, E') I' ((chartAt H' y).extendTrans I' (Homeomorph.refl E')).symm
+        ((chartAt H' y).extendTrans I' (Homeomorph.refl E') p) ∧
+      Function.LeftInverse
+        (mfderiv 𝓘(ℝ, E') I' ((chartAt H' y).extendTrans I' (Homeomorph.refl E')).symm
+          ((chartAt H' y).extendTrans I' (Homeomorph.refl E') p))
+        (mfderiv I' 𝓘(ℝ, E') ((chartAt H' y).extendTrans I' (Homeomorph.refl E')) p) := by
+  have hm := IsManifold.chart_mem_maximalAtlas (I := I') (n := ∞) y
+  have hp' : p ∈ ((chartAt H' y).extendTrans I' (Homeomorph.refl E')).source := by
+    rwa [OpenPartialHomeomorph.extendTrans_source]
+  have h1 := (chartAt H' y).mdifferentiableAt_extendTrans hm (Ψ := .refl E') contDiff_id
+    (by simp) hp
+  have h2 := (chartAt H' y).mdifferentiableAt_extendTrans_symm hm (Ψ := .refl E') contDiff_id
+    (by simp) (OpenPartialHomeomorph.map_source _ hp')
+  exact ⟨h1, h2, OpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply _ hp' h1 h2⟩
+
+/-- On the target of the preferred chart at `y`, read in `E'`, the derivative of the chart undoes
+the derivative of its inverse. -/
+private theorem mfderiv_chartAt_extendTrans_symm (y : N) {w : E'}
+    (hw : w ∈ ((chartAt H' y).extendTrans I' (Homeomorph.refl E')).target) (v : E') :
+    mfderiv I' 𝓘(ℝ, E') ((chartAt H' y).extendTrans I' (Homeomorph.refl E'))
+        (((chartAt H' y).extendTrans I' (Homeomorph.refl E')).symm w)
+        (mfderiv 𝓘(ℝ, E') I' ((chartAt H' y).extendTrans I' (Homeomorph.refl E')).symm w v) =
+      v := by
+  have hm := IsManifold.chart_mem_maximalAtlas (I := I') (n := ∞) y
+  have hy := OpenPartialHomeomorph.map_target _ hw
+  rw [OpenPartialHomeomorph.extendTrans_source] at hy
+  exact OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply _ hw
+    ((mfderiv_chartAt_extendTrans y hy).1)
+    ((chartAt H' y).mdifferentiableAt_extendTrans_symm hm (Ψ := .refl E') contDiff_id (by simp) hw)
+    v
+
+end Chart
+
 variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) ∞ X]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
@@ -104,42 +148,24 @@ private theorem add_tangentEndomorphism_eq_iff (φ : OpenPartialHomeomorph X ℂ
           (D Complex.I) =
         ν.chartTerm φ ((chartAt H y₀).extendTrans I (Homeomorph.refl E)) z w := by
   set ψ := (chartAt H y₀).extendTrans I (Homeomorph.refl E)
-  have hψm : chartAt H y₀ ∈ IsManifold.maximalAtlas I ∞ M := IsManifold.chart_mem_maximalAtlas _
-  have hψ := (chartAt H y₀).mdifferentiableAt_extendTrans hψm (Ψ := .refl E) contDiff_id (by simp)
-    (by simpa only [ψ, OpenPartialHomeomorph.extendTrans_source] using ψ.map_target hw)
-  have hψs := (chartAt H y₀).mdifferentiableAt_extendTrans_symm hψm (Ψ := .refl E) contDiff_id
-    (by simp) hw
+  have hy : ψ.symm w ∈ (chartAt H y₀).source := by
+    simpa only [ψ, OpenPartialHomeomorph.extendTrans_source] using ψ.map_target hw
   -- Push the equation forward along `ψ`, whose derivative at `ψ⁻¹ w` is injective.
-  have hl := ψ.mfderiv_symm_apply_mfderiv_apply (ψ.map_target hw) hψ
-    ((chartAt H y₀).mdifferentiableAt_extendTrans_symm hψm (Ψ := .refl E) contDiff_id (by simp)
-      (ψ.map_source (ψ.map_target hw)))
   have hinj : Function.Injective (mfderiv I 𝓘(ℝ, E) ψ (ψ.symm w)) :=
-    Function.LeftInverse.injective hl
+    (mfderiv_chartAt_extendTrans y₀ hy).2.2.injective
   have hF : J.chartField φ ψ z w (D Complex.I) = mfderiv I 𝓘(ℝ, E) ψ (ψ.symm w)
       (J.tangentEndomorphism (φ.symm z, ψ.symm w) (mfderiv 𝓘(ℝ, E) I ψ.symm w (D Complex.I))) := by
     rw [ContMDiffAlmostComplexStructureFamily.chartField_apply,
       ContMDiffAlmostComplexStructure.chartPushforward_apply,
       ContMDiffAlmostComplexStructureFamily.freeze_apply]
   have hc : mfderiv I 𝓘(ℝ, E) ψ (ψ.symm w) (mfderiv 𝓘(ℝ, E) I ψ.symm w (D 1)) = D 1 :=
-    ψ.mfderiv_apply_mfderiv_symm_apply hw hψ hψs _
+    mfderiv_chartAt_extendTrans_symm y₀ hw _
   rw [← hinj.eq_iff, map_add, map_smul, hc, hF,
     InhomogeneousTerm.chartTerm_apply, mvfderiv_apply_eq_mfderiv_apply]
   -- The two sides differ only in their additions and scalar multiplications: on the left those
   -- of the tangent space `TangentSpace 𝓘(ℝ, E) w`, on the right those of `E`, which are the same
   -- by the definition of `TangentSpace`.
   exact Iff.rfl
-
-omit [I.Boundaryless] in
-/-- The coordinate vector `∂ₜ = dφ⁻¹ i` of a holomorphic chart `φ` is `j ∂ₛ`. -/
-private theorem mfderiv_symm_apply_I (ℓ : ℕ∞) {φ : OpenPartialHomeomorph X ℂ}
-    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ} (hz : z ∈ φ.target) :
-    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z Complex.I =
-      (SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ (φ.symm z)
-        (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z (1 : ℂ)) := by
-  have hI := (mdifferentiableAt_symm_of_mem_maximalAtlas hφ hz).mfderiv_ofComplexManifold_apply
-    (1 : ℂ)
-  rw [SmoothAlmostComplexStructure.ofComplexManifold_apply (M := ℂ), smul_eq_mul, mul_one] at hI
-  rw [hI, SmoothAlmostComplexStructure.toContMDiff_apply]
 
 /-- **Pulling the graph equation back through a product chart.** In the preferred chart `φ` of `X`
 at `x₀` and the product chart `Ψ = φ × ψ` of `X × M` at `(x₀, y₀)`, the vectors `(1, D 1)` and
@@ -172,8 +198,6 @@ private theorem add_chartPushforward_graphStructure_eq_zero_iff_add (x₀ : X) (
   set φ := chartAt ℂ x₀
   have hφm : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X := IsManifold.chart_mem_maximalAtlas _
   have hφm' := IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero hφm
-  have hψm : chartAt H y₀ ∈ IsManifold.maximalAtlas I ∞ M := IsManifold.chart_mem_maximalAtlas _
-  have hΨm := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, ℂ).prod I) (n := ∞) (x₀, y₀)
   have hψw : ψ.symm w ∈ (chartAt H y₀).source := by
     simpa only [ψ, OpenPartialHomeomorph.extendTrans_source] using ψ.map_target hw
   have hq₀ : (φ.symm z, ψ.symm w) ∈ (chartAt (ModelProd ℂ H) (x₀, y₀)).source := by
@@ -184,21 +208,17 @@ private theorem add_chartPushforward_graphStructure_eq_zero_iff_add (x₀ : X) (
   have hΨq₀ : Ψ (φ.symm z, ψ.symm w) = (z, w) := by
     rw [extendTrans_prod_apply]
     exact Prod.ext (φ.right_inv hz) (ψ.right_inv hw)
-  have hΨ := (chartAt _ (x₀, y₀)).mdifferentiableAt_extendTrans hΨm (Ψ := .refl _) contDiff_id
-    (by simp) hq₀
-  have hΨs := (chartAt _ (x₀, y₀)).mdifferentiableAt_extendTrans_symm hΨm (Ψ := .refl _)
-    contDiff_id (by simp) (Ψ.map_source hq₀')
+  obtain ⟨hΨ, hΨs, hl⟩ := mfderiv_chartAt_extendTrans (I' := 𝓘(ℝ, ℂ).prod I) (x₀, y₀) hq₀
   have hφr := φ.mfderiv_apply_mfderiv_symm_apply hz
     (mdifferentiableAt_of_mem_maximalAtlas hφm' (φ.map_target hz))
     (mdifferentiableAt_symm_of_mem_maximalAtlas hφm' hz)
-  have hψr := ψ.mfderiv_apply_mfderiv_symm_apply hw
-    ((chartAt H y₀).mdifferentiableAt_extendTrans hψm (Ψ := .refl E) contDiff_id (by simp) hψw)
-    ((chartAt H y₀).mdifferentiableAt_extendTrans_symm hψm (Ψ := .refl E) contDiff_id (by simp) hw)
+  have hψr := mfderiv_chartAt_extendTrans_symm y₀ hw
   -- The derivative of `Ψ` intertwines the graph structure with its pushforward.
   have hint := ν.graphStructure.mfderiv_comp_toEndomorphism Ψ hq₀' hΨ hΨs
   rw [hΨq₀] at hint
-  have hl := Ψ.mfderiv_symm_apply_mfderiv_apply hq₀' hΨ hΨs
-  refine Iff.trans ?_ (map_eq_zero_iff _ (Function.LeftInverse.injective hl))
+  have hinj : Function.Injective
+      (mfderiv (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ × E) Ψ (φ.symm z, ψ.symm w)) := hl.injective
+  refine Iff.trans ?_ (map_eq_zero_iff _ hinj)
   refine Iff.of_eq (congrArg (· = 0) ?_)
   have hint' : ∀ v, ν.graphStructure.chartPushforward Ψ (z, w)
       (mfderiv (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ × E) Ψ (φ.symm z, ψ.symm w) v) =
@@ -210,7 +230,8 @@ private theorem add_chartPushforward_graphStructure_eq_zero_iff_add (x₀ : X) (
     rw [Manifold.tangentSpaceProdEquiv_symm_apply] <;>
     refine (Prod.ext ?_ (hψr _).symm).trans (mfderiv_extendTrans_prod_apply x₀ y₀ hq₀ _).symm
   · exact (hφr _).symm
-  · exact (hφr _).symm.trans (congrArg _ (mfderiv_symm_apply_I ℓ hφm hz))
+  · exact (hφr _).symm.trans (congrArg _ ((mfderiv_symm_apply_I_of_mem_maximalAtlas hφm hz).trans
+      (SmoothAlmostComplexStructure.toContMDiff_apply _ ℓ _ _).symm))
 
 /-- **The graph equation in product charts.** In the preferred chart `φ` of `X` at `x₀` and the
 product chart `φ × ψ` of `X × M` at `(x₀, y₀)`, Gromov's structure turns the homogeneous equation
