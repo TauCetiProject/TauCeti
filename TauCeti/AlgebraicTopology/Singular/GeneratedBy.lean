@@ -208,8 +208,8 @@ theorem singularChainComplexFunctorGeneratedByIso_hom_app (X : TopCat.{u}) :
     (singularChainComplexFunctorGeneratedByIso G R).hom.app X =
       SSet.chainComplexMap (TopCat.toSSet.map
         ((GeneratedByTopCat.adjCounit (X := G)).app X)) R := by
-  simp [singularChainComplexFunctorGeneratedByIso,
-    AlgebraicTopology.singularChainComplexFunctor, SSet.chainComplexMap]
+  rw [singularChainComplexFunctorGeneratedByIso, Functor.isoWhiskerRight_hom,
+    Functor.whiskerRight_app, TopCat.toSSetGeneratedByIso_hom_app]
 
 /-- The inverse chain comparison is induced by the inverse singular-set comparison. -/
 @[simp]
