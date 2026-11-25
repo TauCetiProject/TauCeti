@@ -7,8 +7,11 @@ module
 
 public import Mathlib.GroupTheory.IsPerfect
 public import TauCeti.Algebra.Colimit.DirectLimit
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
+
+-- Non-public: the permutation-matrix conjugation formula is used only inside the proof of
+-- `AlgebraicK1.mk_reindexGL`.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 
 /-!
 # The stable general linear group and algebraic `K₁`

@@ -11,27 +11,27 @@ public import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.FinCases
 
 /-!
-# The rotation `!![0, -1; 1, 0]` and the big cell of `2 × 2` matrices
+# The Weyl element `!![0, -1; 1, 0]` and the big cell of `2 × 2` matrices
 
-The rotation `!![0, -1; 1, 0]` is invertible over every ring
-(`TauCeti.isUnit_rotation_fin_two`). Over a division ring, every `2 × 2` matrix whose lower left
-entry is nonzero is an upper triangular matrix times the rotation times a unipotent upper triangular
-matrix (`TauCeti.eq_upper_mul_rotation_mul_upper_fin_two`).
+The Weyl element `!![0, -1; 1, 0]` of the Bruhat decomposition of `2 × 2` matrices is invertible
+over every ring (`TauCeti.isUnit_weylElement_fin_two`). Over a division ring, every `2 × 2` matrix
+whose lower left entry is nonzero is an upper triangular matrix times the Weyl element times a
+unipotent upper triangular matrix (`TauCeti.eq_upper_mul_weylElement_mul_upper_fin_two`).
 -/
 
 public section
 
 namespace TauCeti
 
-/-- The rotation `!![0, -1; 1, 0]` is invertible, with inverse `!![0, 1; -1, 0]`. -/
-theorem isUnit_rotation_fin_two (R : Type*) [Ring R] :
+/-- The Weyl element `!![0, -1; 1, 0]` is invertible, with inverse `!![0, 1; -1, 0]`. -/
+theorem isUnit_weylElement_fin_two (R : Type*) [Ring R] :
     IsUnit (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) R) := by
   refine ⟨⟨!![0, -1; 1, 0], !![0, 1; -1, 0], ?_, ?_⟩, rfl⟩ <;>
     ext i j <;> fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply]
 
 /-- Over a division ring, a `2 × 2` matrix with nonzero lower left entry is an upper triangular
-matrix times the rotation `!![0, -1; 1, 0]` times a unipotent upper triangular matrix. -/
-theorem eq_upper_mul_rotation_mul_upper_fin_two {D : Type*} [DivisionRing D]
+matrix times the Weyl element `!![0, -1; 1, 0]` times a unipotent upper triangular matrix. -/
+theorem eq_upper_mul_weylElement_mul_upper_fin_two {D : Type*} [DivisionRing D]
     (M : Matrix (Fin 2) (Fin 2) D) (hc : M 1 0 ≠ 0) :
     M = !![M 0 0 * (M 1 0)⁻¹ * M 1 1 - M 0 1, M 0 0; 0, M 1 0] * !![0, -1; 1, 0] *
       !![1, (M 1 0)⁻¹ * M 1 1; 0, 1] := by

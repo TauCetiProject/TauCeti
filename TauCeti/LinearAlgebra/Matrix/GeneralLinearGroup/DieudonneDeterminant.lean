@@ -9,11 +9,11 @@ public import TauCeti.GroupTheory.Abelianization.WithZero
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability
 
--- Non-public: the factorization through the rotation is used to prove multiplicativity and the
+-- Non-public: the factorization through the Weyl element is used to prove multiplicativity and the
 -- singularity criterion of the `2 × 2` determinant; invertible upper triangular matrices only for
 -- the latter.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
-import TauCeti.LinearAlgebra.Matrix.RotationFinTwo
+import TauCeti.LinearAlgebra.Matrix.WeylElementFinTwo
 
 /-!
 # The Dieudonné determinant and `K₁` of a division ring
@@ -61,9 +61,9 @@ trivial, while the determinant of `(u)` is the class of `u`, trivial for every c
 ## Implementation notes
 
 Multiplicativity of the `2 × 2` formula is checked on left multiplication by upper triangular
-matrices and by the rotation `!![0, -1; 1, 0]`; this suffices because every matrix whose lower
-left entry is nonzero is a product of an upper triangular matrix, the rotation and a unipotent upper
-triangular matrix.
+matrices and by the Weyl element `!![0, -1; 1, 0]`; this suffices because every matrix whose
+lower left entry is nonzero is a product of an upper triangular matrix, the Weyl element and a
+unipotent upper triangular matrix.
 
 ## References
 
@@ -136,7 +136,7 @@ private theorem detTwo_upper_mul (p q r : D) (M : Matrix (Fin 2) (Fin 2) D) :
   simp only [map_mul]
   ac_rfl
 
-/-- The formula is unchanged by left multiplication by the rotation `!![0, -1; 1, 0]`. -/
+/-- The formula is unchanged by left multiplication by the Weyl element `!![0, -1; 1, 0]`. -/
 private theorem detTwo_w_mul (M : Matrix (Fin 2) (Fin 2) D) :
     detTwo (!![0, -1; 1, 0] * M) = detTwo M := by
   have hwM : !![0, -1; 1, 0] * M = !![-M 1 0, -M 1 1; M 0 0, M 0 1] := by
@@ -168,7 +168,7 @@ private theorem detTwo_mul (N M : Matrix (Fin 2) (Fin 2) D) :
   have h : ∀ M, detTwo (N * M) = detTwo !![N 0 0 * (N 1 0)⁻¹ * N 1 1 - N 0 1, N 0 0; 0, N 1 0] *
       detTwo !![1, (N 1 0)⁻¹ * N 1 1; 0, 1] * detTwo M := by
     intro M
-    conv_lhs => rw [eq_upper_mul_rotation_mul_upper_fin_two N hc]
+    conv_lhs => rw [eq_upper_mul_weylElement_mul_upper_fin_two N hc]
     rw [Matrix.mul_assoc, Matrix.mul_assoc, detTwo_upper_mul, detTwo_w_mul, detTwo_upper_mul]
     exact (mul_assoc ..).symm
   have h1 := h 1
@@ -233,9 +233,9 @@ theorem dieudonneDetFinTwo_eq_zero_iff {M : Matrix (Fin 2) (Fin 2) D} :
     rw [Matrix.eta_fin_two M, hc]
     exact hB (.mk0 _ (left_ne_zero_of_mul h0)) (.mk0 _ (right_ne_zero_of_mul h0)) _
   rw [dieudonneDetFinTwo_apply_of_ne_zero hc, map_eq_zero] at h0
-  rw [eq_upper_mul_rotation_mul_upper_fin_two M hc]
+  rw [eq_upper_mul_weylElement_mul_upper_fin_two M hc]
   exact ((hB (.mk0 _ (right_ne_zero_of_mul h0)) (.mk0 _ hc) _).mul
-    (isUnit_rotation_fin_two D)).mul (hB 1 1 _)
+    (isUnit_weylElement_fin_two D)).mul (hB 1 1 _)
 
 end FinTwo
 
