@@ -25,9 +25,9 @@ the determinant line (`TauCeti.SpinStructure.determinantLineSection_ne_zero`), a
 with `ℂ` (`TauCeti.SpinStructure.determinantLineEquiv`).
 
 The construction is natural: an equivalence of Spin structures induces an equivalence of their
-`Spinᶜ` structures (`TauCeti.SpinStructure.Equiv.toSpinC`), and for a continuous map `g : Y → X`
-the `Spinᶜ` structure of the pullback `g^* s` is equivalent to the pullback of `s.toSpinC`
-(`TauCeti.SpinStructure.toSpinCPullbackEquiv`).
+`Spinᶜ` structures (`TauCeti.OrthonormalFrameLift.Equiv.toSpinC`), and for a continuous map
+`g : Y → X` the `Spinᶜ` structure of the pullback `g^* s` is equivalent to the pullback of
+`s.toSpinC` (`TauCeti.SpinStructure.toSpinCPullbackEquiv`).
 
 ## Main definitions
 
@@ -36,8 +36,8 @@ the `Spinᶜ` structure of the pullback `g^* s` is equivalent to the pullback of
   line.
 * `TauCeti.SpinStructure.determinantLineEquiv`: the identification `ℂ ≃ L_x`,
   `c ↦ c • determinantLineSection x`.
-* `TauCeti.SpinStructure.Equiv.toSpinC`: the equivalence `s.toSpinC ≃ t.toSpinC` induced by an
-  equivalence `s ≃ t`.
+* `TauCeti.OrthonormalFrameLift.Equiv.toSpinC`: the equivalence `s.toSpinC ≃ t.toSpinC` induced by
+  an equivalence `s ≃ t` of Spin structures.
 * `TauCeti.SpinStructure.toSpinCPullbackEquiv`: `(g^* s).toSpinC ≃ g^* s.toSpinC`.
 
 ## References
@@ -170,51 +170,46 @@ theorem continuous_determinantLineSection :
   exact (s.continuous_inlSpinC.totalSpaceMk_associatedBundleMk continuous_const).congr
     fun ⟨x, p⟩ ↦ by rw [Function.comp_apply, determinantLineSection_eq s p]
 
+end SpinStructure
+
 /-! ### Naturality -/
 
-/-- The rotations of `Spinᶜ(n)` preserve the Euclidean norm. -/
-private theorem norm_toSpecialOrthogonal_apply
-    (h : spinCGroup (realCliffordForm n 0) hQn) (v : Fin n → ℝ) :
-    ‖WithLp.toLp 2 (((QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)).subtype.comp
-      (spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) hQn)) h v)‖ =
-      ‖WithLp.toLp 2 v‖ :=
-  TauCeti.CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply n
-    (spinCGroup.toSpecialOrthogonal _ _ h) v
+namespace OrthonormalFrameLift
 
-/-- The rotation of a fixed vector by `Spinᶜ(n)` is continuous. -/
-private theorem continuous_toSpecialOrthogonal_apply (v : Fin n → ℝ) :
-    Continuous fun h : spinCGroup (realCliffordForm n 0) hQn ↦
-      ((QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)).subtype.comp
-        (spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) hQn)) h v :=
-  (TauCeti.CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply n v).comp
-    (spinCGroup.continuous_toSpecialOrthogonal_pi _ _)
+open SpinStructure
 
 /-- **Equivalences of Spin structures induce equivalences of their `Spinᶜ` structures**:
 `[p, h] ↦ [φ p, h]` (`TauCeti.OrthonormalFrameLift.Equiv.extend`). -/
 noncomputable def Equiv.toSpinC {s t : SpinStructure F E n} (φ : s.Equiv t) :
     s.toSpinC.Equiv t.toSpinC :=
-  φ.extend _ (spinCGroup.continuous_ofSpin _ hQn) comp_ofSpin norm_toSpecialOrthogonal_apply
-    continuous_toSpecialOrthogonal_apply
+  φ.extend _ (spinCGroup.continuous_ofSpin _ hQn) comp_ofSpin
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
 
 @[simp]
 theorem Equiv.toSpinC_toEquiv_inlSpinC {s t : SpinStructure F E n} (φ : s.Equiv t) (x : X)
-    (p : s.P x) : (Equiv.toSpinC φ).toEquiv x (s.inlSpinC p) = t.inlSpinC (φ.toEquiv x p) :=
-  OrthonormalFrameLift.Equiv.extend_toEquiv_inl _ _ _ _ _ φ x p
+    (p : s.P x) : φ.toSpinC.toEquiv x (s.inlSpinC p) = t.inlSpinC (φ.toEquiv x p) :=
+  φ.extend_toEquiv_inl _ _ _ _ _ x p
 
 @[simp]
 theorem Equiv.toSpinC_refl (s : SpinStructure F E n) :
-    Equiv.toSpinC (OrthonormalFrameLift.Equiv.refl s) = OrthonormalFrameLift.Equiv.refl s.toSpinC :=
-  OrthonormalFrameLift.Equiv.extend_refl _ _ _ _ _ s
+    (Equiv.refl s).toSpinC = Equiv.refl s.toSpinC :=
+  Equiv.extend_refl _ _ _ _ _ s
 
 @[simp]
 theorem Equiv.toSpinC_symm {s t : SpinStructure F E n} (φ : s.Equiv t) :
-    Equiv.toSpinC φ.symm = (Equiv.toSpinC φ).symm :=
-  OrthonormalFrameLift.Equiv.extend_symm _ _ _ _ _ φ
+    φ.symm.toSpinC = φ.toSpinC.symm :=
+  φ.extend_symm _ _ _ _ _
 
 @[simp]
 theorem Equiv.toSpinC_trans {s t u : SpinStructure F E n} (φ : s.Equiv t) (ψ : t.Equiv u) :
-    Equiv.toSpinC (φ.trans ψ) = (Equiv.toSpinC φ).trans (Equiv.toSpinC ψ) :=
-  OrthonormalFrameLift.Equiv.extend_trans _ _ _ _ _ φ ψ
+    (φ.trans ψ).toSpinC = φ.toSpinC.trans ψ.toSpinC :=
+  φ.extend_trans _ _ _ _ _ ψ
+
+end OrthonormalFrameLift
+
+namespace SpinStructure
+
+variable (s : SpinStructure F E n)
 
 section Pullback
 
@@ -229,7 +224,7 @@ attribute [local instance] Bundle.Pullback.normedFiberBundle Bundle.Pullback.nor
 noncomputable def toSpinCPullbackEquiv (g : K) :
     (toSpinC (s.pullback g)).Equiv (s.toSpinC.pullback g) :=
   s.extendPullbackEquiv _ (spinCGroup.continuous_ofSpin _ hQn) comp_ofSpin
-    norm_toSpecialOrthogonal_apply continuous_toSpecialOrthogonal_apply g
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply g
 
 /-- The equivalence `(g^* s).toSpinC ≃ g^* s.toSpinC` sends `[p, 1]` to `[p, 1]`. -/
 theorem toSpinCPullbackEquiv_toEquiv_inlSpinC (g : K) (y : Y) (p : s.P (g y)) :
