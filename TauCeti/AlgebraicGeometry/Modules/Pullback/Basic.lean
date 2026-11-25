@@ -73,7 +73,8 @@ local data on the preimage cover.
 * `AlgebraicGeometry.Scheme.Modules.pullbackObjUnitIso`: the isomorphism `f^* 𝒪_Y ≅ 𝒪_X`, with
   `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp` (with its inverse form
   `pullbackObjUnitIso_inv_comp`), and `pullbackObjUnitIso_congr` comparing it with identity,
-  composition, and equality of scheme morphisms;
+  composition, and equality of scheme morphisms, and `pullbackObjUnitIso_inv_conj_comp` pulling
+  back a function factored through a pulled-back module;
 * `AlgebraicGeometry.Scheme.Modules.pushforwardLaxMonoidal` and
   `AlgebraicGeometry.Scheme.Modules.pullbackOplaxMonoidal`: the lax monoidal structure of
   pushforward and the oplax monoidal structure of pullback, with unit maps computed by
@@ -392,6 +393,26 @@ lemma pullbackObjUnitIso_congr {f g : X ⟶ Y} (hf : f = g) :
   subst g
   simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app,
     Category.id_comp]
+
+/-- Pulling back along `f : X ⟶ Y` a function `a ≫ b` on `Y`, factored through `g^* M`, is the
+composite of the pulled-back factors, after the identifications `f^* 𝒪_Y ≅ 𝒪_X` and
+`f^* g^* M ≅ h^* M` for `h = f ≫ g`. -/
+@[reassoc]
+lemma pullbackObjUnitIso_inv_conj_comp (f : X ⟶ Y) (g : Y ⟶ Z) {h : X ⟶ Z} (w : f ≫ g = h)
+    (M : Z.Modules) (a : 𝟙_ Y.Modules ⟶ (pullback g).obj M)
+    (b : (pullback g).obj M ⟶ 𝟙_ Y.Modules) :
+    (pullbackObjUnitIso f).inv ≫ (pullback f).map (a ≫ b ≫ (pullbackObjUnitIso g).inv) ≫
+        (pullbackComp f g).hom.app _ ≫ (pullbackCongr w).hom.app _ =
+      ((pullbackObjUnitIso f).inv ≫ (pullback f).map a ≫ (pullbackComp f g).hom.app M ≫
+          (pullbackCongr w).hom.app M) ≫
+        ((pullbackCongr w).inv.app M ≫ (pullbackComp f g).inv.app M ≫ (pullback f).map b ≫
+            (pullbackObjUnitIso f).hom) ≫
+          (pullbackObjUnitIso h).inv := by
+  subst w
+  rw [← pullbackObjUnitIso_inv_comp]
+  simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, Iso.refl_inv, NatTrans.id_app,
+    Category.id_comp, Category.comp_id, Functor.map_comp, Category.assoc,
+    Iso.hom_inv_id_app_assoc, Iso.hom_inv_id_assoc]
 
 /-- The unit of `(f ≫ g)^* ⊣ (f ≫ g)_*`, read through `(f ≫ g)^* ≅ f^* g^*`, is the unit of
 `g^* ⊣ g_*` followed by `g_*` of the unit of `f^* ⊣ f_*` and `g_* f_* = (f ≫ g)_*`. -/
