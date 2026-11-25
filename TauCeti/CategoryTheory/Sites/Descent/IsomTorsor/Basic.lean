@@ -22,7 +22,7 @@ one identifies them with `A(U)` (Olsson, Lemma 31.3 and Remark 31.5). The action
 are compatible with pullback along arrows `V ⟶ U`, and the action on morphisms `homAct` is
 compatible with Mathlib's restriction maps `pullHom` of the presheaves of morphisms
 `Pseudofunctor.presheafHom x y`. The torsor structure is built over each object `U` separately; the
-sheaf-level torsor of isomorphisms is not constructed here.
+sheaf-level torsor of isomorphisms is in `TauCeti.CategoryTheory.Sites.Descent.IsomTorsor.Sheaf`.
 
 ## Main declarations
 
@@ -292,6 +292,28 @@ lemma homAct_def (p : x ⟶ y) (a : Multiplicative (A.obj.obj (op U))) :
 lemma homAct_hom (p : x ≅ y) (a : Multiplicative (A.obj.obj (op U))) :
     b.homAct p.hom a = (b.act p a).hom :=
   (rfl)
+
+@[simp]
+lemma homAct_one (p : x ⟶ y) : b.homAct p 1 = p := by
+  simp [homAct]
+
+/-- The action on morphisms is a left action for the composition convention of `Aut`, in which
+`a * c` is `c` followed by `a`. -/
+lemma homAct_mul (p : x ⟶ y) (a c : Multiplicative (A.obj.obj (op U))) :
+    b.homAct p (a * c) = b.homAct (b.homAct p c) a := by
+  simp [homAct]
+
+/-- The action on morphisms commutes with precomposition. -/
+@[simp]
+lemma comp_homAct {w : F.obj (.mk (op U))} (f : w ⟶ x) (p : x ⟶ y)
+    (a : Multiplicative (A.obj.obj (op U))) : f ≫ b.homAct p a = b.homAct (f ≫ p) a := by
+  simp [homAct]
+
+/-- The action on morphisms commutes with postcomposition by an isomorphism. -/
+@[simp]
+lemma homAct_comp_hom (p : x ⟶ y) (e : y ≅ z) (a : Multiplicative (A.obj.obj (op U))) :
+    b.homAct p a ≫ e.hom = b.homAct (p ≫ e.hom) a := by
+  simp [homAct, b.mulEquiv_hom_comp e]
 
 /-- The restriction maps `pullHom` of the presheaves of morphisms carry the action of `a` on a
 morphism `φ` to the action of the restriction of `a` on the restriction of `φ`. -/
