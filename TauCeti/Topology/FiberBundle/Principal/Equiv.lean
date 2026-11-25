@@ -76,7 +76,7 @@ theorem ext {ψ ψ' : Equiv H Q Q'} (h : ∀ x q, ψ.toEquiv x q = ψ'.toEquiv x
 
 variable (H Q) in
 /-- The identity equivalence of a principal bundle. -/
-@[refl]
+@[expose, refl]
 def refl : Equiv H Q Q where
   toEquiv _ := _root_.Equiv.refl _
   continuous_toFun := continuous_id
@@ -84,7 +84,7 @@ def refl : Equiv H Q Q where
   map_smul _ _ _ := rfl
 
 /-- The inverse of an equivalence of principal bundles. -/
-@[symm]
+@[expose, symm]
 def symm (ψ : Equiv H Q Q') : Equiv H Q' Q where
   toEquiv x := (ψ.toEquiv x).symm
   continuous_toFun := ψ.continuous_invFun
@@ -92,7 +92,7 @@ def symm (ψ : Equiv H Q Q') : Equiv H Q' Q where
   map_smul := ψ.map_smul_symm
 
 /-- The composite of two equivalences of principal bundles. -/
-@[trans]
+@[expose, trans]
 def trans (ψ : Equiv H Q Q') (ψ' : Equiv H Q' Q'') : Equiv H Q Q'' where
   toEquiv x := (ψ.toEquiv x).trans (ψ'.toEquiv x)
   continuous_toFun := ψ'.continuous_toFun.comp ψ.continuous_toFun

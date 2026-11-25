@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.FiberBundle.Principal.Basic
+public import TauCeti.Topology.FiberBundle.Principal.Equiv
 public import Mathlib.Topology.FiberBundle.Constructions
 
 /-!
@@ -30,11 +31,17 @@ Fibre products are the first step of the constructions that combine two principa
 twist of a `Spinᶜ` structure by a principal `U(1)`-bundle is the extension of structure group of
 the fibre product along the multiplication `Spinᶜ(n) × U(1) → Spinᶜ(n)`.
 
+Equivalences `φ : P ≃ P'` and `ψ : Q ≃ Q'` of principal bundles (`TauCeti.PrincipalBundle.Equiv`)
+induce an equivalence of fibre products `(p, q) ↦ (φ p, ψ q)`
+(`TauCeti.PrincipalBundle.Equiv.fiberProd`), compatible with identities, inverses and composites.
+
 ## Main definitions
 
 * `TauCeti.PrincipalBundle.FiberProd`: the fibre product of two bundles over the same base.
 * `TauCeti.PrincipalBundle.FiberProd.mk`, `FiberProd.fst`, `FiberProd.snd`: its points and their
   components.
+* `TauCeti.PrincipalBundle.Equiv.fiberProd`: the equivalence of fibre products induced by
+  equivalences of the factors.
 
 ## Main results
 
@@ -230,5 +237,82 @@ theorem division_mk [PrincipalBundle G P] [PrincipalBundle H Q] (p p' : P b) (q 
 end Bundle
 
 end FiberProd
+
+namespace Equiv
+
+variable {G H : Type*} [Group G] [Group H] {P P' P'' Q Q' Q'' : B → Type*}
+  [TopologicalSpace (TotalSpace G P)] [TopologicalSpace (TotalSpace G P')]
+  [TopologicalSpace (TotalSpace G P'')] [TopologicalSpace (TotalSpace H Q)]
+  [TopologicalSpace (TotalSpace H Q')] [TopologicalSpace (TotalSpace H Q'')]
+  [∀ b, MulAction Gᵐᵒᵖ (P b)] [∀ b, MulAction Gᵐᵒᵖ (P' b)] [∀ b, MulAction Gᵐᵒᵖ (P'' b)]
+  [∀ b, MulAction Hᵐᵒᵖ (Q b)] [∀ b, MulAction Hᵐᵒᵖ (Q' b)] [∀ b, MulAction Hᵐᵒᵖ (Q'' b)]
+
+/-- **Equivalences of fibre products**: equivalences `φ : P ≃ P'` of principal `G`-bundles and
+`ψ : Q ≃ Q'` of principal `H`-bundles induce the equivalence `(p, q) ↦ (φ p, ψ q)` of the fibre
+products. -/
+@[expose]
+def fiberProd (φ : Equiv G P P') (ψ : Equiv H Q Q') :
+    Equiv (G × H) (FiberProd P Q) (FiberProd P' Q') where
+  toEquiv b :=
+    { toFun z := FiberProd.mk (φ.toEquiv b z.fst) (ψ.toEquiv b z.snd)
+      invFun z := FiberProd.mk ((φ.toEquiv b).symm z.fst) ((ψ.toEquiv b).symm z.snd)
+      left_inv z := by simp
+      right_inv z := by simp }
+  continuous_toFun :=
+    (φ.continuous_toFun.comp FiberProd.continuous_totalSpaceMk_fst).totalSpaceMk_fiberProdMk
+      (ψ.continuous_toFun.comp FiberProd.continuous_totalSpaceMk_snd)
+  continuous_invFun :=
+    (φ.continuous_invFun.comp FiberProd.continuous_totalSpaceMk_fst).totalSpaceMk_fiberProdMk
+      (ψ.continuous_invFun.comp FiberProd.continuous_totalSpaceMk_snd)
+  map_smul b z g := congrArg₂ FiberProd.mk (φ.map_smul b z.fst g.1) (ψ.map_smul b z.snd g.2)
+
+variable {b : B}
+
+@[simp]
+theorem fiberProd_toEquiv_mk (φ : Equiv G P P') (ψ : Equiv H Q Q') (p : P b) (q : Q b) :
+    (φ.fiberProd ψ).toEquiv b (FiberProd.mk p q) = FiberProd.mk (φ.toEquiv b p) (ψ.toEquiv b q) :=
+  (rfl)
+
+@[simp]
+theorem fiberProd_toEquiv_fst (φ : Equiv G P P') (ψ : Equiv H Q Q') (z : FiberProd P Q b) :
+    ((φ.fiberProd ψ).toEquiv b z).fst = φ.toEquiv b z.fst :=
+  (rfl)
+
+@[simp]
+theorem fiberProd_toEquiv_snd (φ : Equiv G P P') (ψ : Equiv H Q Q') (z : FiberProd P Q b) :
+    ((φ.fiberProd ψ).toEquiv b z).snd = ψ.toEquiv b z.snd :=
+  (rfl)
+
+@[simp]
+theorem fiberProd_toEquiv_symm_fst (φ : Equiv G P P') (ψ : Equiv H Q Q') (z : FiberProd P' Q' b) :
+    (((φ.fiberProd ψ).toEquiv b).symm z).fst = (φ.toEquiv b).symm z.fst :=
+  (rfl)
+
+@[simp]
+theorem fiberProd_toEquiv_symm_snd (φ : Equiv G P P') (ψ : Equiv H Q Q') (z : FiberProd P' Q' b) :
+    (((φ.fiberProd ψ).toEquiv b).symm z).snd = (ψ.toEquiv b).symm z.snd :=
+  (rfl)
+
+/-- The identities of `P` and `Q` induce the identity of the fibre product. -/
+@[simp]
+theorem fiberProd_refl : (refl G P).fiberProd (refl H Q) = refl (G × H) (FiberProd P Q) :=
+  (rfl)
+
+/-- The inverse of the equivalence of fibre products induced by `φ` and `ψ` is induced by the
+inverses of `φ` and `ψ`. -/
+@[simp]
+theorem fiberProd_symm (φ : Equiv G P P') (ψ : Equiv H Q Q') :
+    (φ.fiberProd ψ).symm = φ.symm.fiberProd ψ.symm :=
+  (rfl)
+
+/-- The composite of the equivalences of fibre products induced by `φ, ψ` and by `φ', ψ'` is
+induced by the composites `φ.trans φ'` and `ψ.trans ψ'`. -/
+@[simp]
+theorem fiberProd_trans (φ : Equiv G P P') (φ' : Equiv G P' P'') (ψ : Equiv H Q Q')
+    (ψ' : Equiv H Q' Q'') : (φ.fiberProd ψ).trans (φ'.fiberProd ψ') =
+      (φ.trans φ').fiberProd (ψ.trans ψ') :=
+  (rfl)
+
+end Equiv
 
 end TauCeti.PrincipalBundle

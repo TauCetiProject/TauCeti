@@ -108,21 +108,11 @@ variable {Q' : X → Type w} [TopologicalSpace (TotalSpace H Q')] [∀ x, Topolo
 
 /-- **Equivalences of fibre products**: an equivalence `φ : s ≃ t` of lifts along `ρ` and an
 equivalence `ψ : Q ≃ Q'` of principal `H`-bundles induce an equivalence of the fibre products
-`(p, q) ↦ (φ p, ψ q)`. -/
+`(p, q) ↦ (φ p, ψ q)`: the equivalence of principal bundles
+`TauCeti.PrincipalBundle.Equiv.fiberProd`, which commutes with the frame maps. -/
 noncomputable def Equiv.fiberProd {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
     (ψ : PrincipalBundle.Equiv H Q Q') : (s.fiberProd H Q).Equiv (t.fiberProd H Q') where
-  toEquiv x :=
-    { toFun z := FiberProd.mk (φ.toEquiv x z.fst) (ψ.toEquiv x z.snd)
-      invFun z := FiberProd.mk ((φ.toEquiv x).symm z.fst) ((ψ.toEquiv x).symm z.snd)
-      left_inv z := by simp [FiberProd.mk_fst_snd (P := s.P) (Q := Q) z]
-      right_inv z := by simp [FiberProd.mk_fst_snd (P := t.P) (Q := Q') z] }
-  continuous_toFun :=
-    (φ.continuous_toFun.comp FiberProd.continuous_totalSpaceMk_fst).totalSpaceMk_fiberProdMk
-      (ψ.continuous_toFun.comp FiberProd.continuous_totalSpaceMk_snd)
-  continuous_invFun :=
-    (φ.continuous_invFun.comp FiberProd.continuous_totalSpaceMk_fst).totalSpaceMk_fiberProdMk
-      (ψ.continuous_invFun.comp FiberProd.continuous_totalSpaceMk_snd)
-  map_smul x z g := congrArg₂ FiberProd.mk (φ.map_smul x z.fst g.1) (ψ.map_smul x z.snd g.2)
+  toPrincipalBundleEquiv := φ.toPrincipalBundleEquiv.fiberProd ψ
   toFrame_map x z := φ.toFrame_map x z.fst
 
 @[simp]
