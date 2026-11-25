@@ -47,7 +47,8 @@ The module-level statements are the `Module.Finite` and `Module.Projective` inst
 ## Main results
 
 * `TauCeti.SplitK0.of_extendScalars_obj`: the split `K₀` class of an extended module agrees
-  with the class of any module linearly isomorphic to its balanced extension.
+  with the class of any module linearly isomorphic to its balanced extension; in particular
+  `TauCeti.SplitK0.of_extendScalars_obj_finiteProjectiveModulesRegular`: `[S ⊗_R R] = [S]`.
 * `TauCeti.BalancedExtension.finiteProjectiveModules_le_inverseImage_functor`: extension of
   scalars preserves finitely generated projective modules.
 * `RingHom.full_finiteProjectiveModulesExtendScalars`: extension of scalars along a surjective
@@ -233,7 +234,7 @@ theorem finiteProjectiveModulesExtendScalarsCompIso_inv_app_hom_tmul
         (BalancedExtension.tmul g₂ t (BalancedExtension.tmul f₂ c p)) =
       BalancedExtension.tmul g₁ (t * g₂ c) (BalancedExtension.tmul f₁ 1 p) := by
   -- The argument `t ⊗ (c ⊗ p) = (t * g₂ c * g₁ 1) ⊗ (1 ⊗ p)` is the image of the claimed value
-  -- under the component, and the inverse undoes the component.
+  -- under the component composite, and the inverse composite undoes the component composite.
   have key : BalancedExtension.tmul g₂ t
       (BalancedExtension.tmul f₂ c p : (BalancedExtension.functor f₂).obj P.obj) =
         BalancedExtension.tmul g₂ (t * g₂ c * g₁ 1)
@@ -241,13 +242,17 @@ theorem finiteProjectiveModulesExtendScalarsCompIso_inv_app_hom_tmul
     rw [map_one, mul_one]
     exact (congrArg (BalancedExtension.tmul g₂ t)
       (BalancedExtension.tmul_eq_smul_one_tmul c p)).trans (BalancedExtension.tmul_smul t c _)
+  have hinv : (eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₁ g₁ P).symm ≫
+      ((finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h).hom.app P).hom ≫
+        eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₂ g₂ P)) ≫
+      eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₂ g₂ P).symm ≫
+        ((finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h).inv.app P).hom ≫
+          eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₁ g₁ P) = 𝟙 _ := by
+    simp
   refine (congrArg _ (key.trans (finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_tmul
-    f₁ g₁ f₂ g₂ h P _ 1 p).symm)).trans
-    (ModuleCat.inv_hom_apply
-      (eqToIso (finiteProjectiveModulesExtendScalars_comp_obj_obj f₁ g₁ P).symm ≪≫
-        (finiteProjectiveModules D).ι.mapIso
-          ((finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h).app P) ≪≫
-        eqToIso (finiteProjectiveModulesExtendScalars_comp_obj_obj f₂ g₂ P)) _)
+    f₁ g₁ f₂ g₂ h P _ 1 p).symm)).trans ?_
+  exact (ModuleCat.comp_apply _ _ _).symm.trans
+    ((congrArg (fun φ ↦ ModuleCat.Hom.hom φ _) hinv).trans (ModuleCat.id_apply _ _))
 
 /-- Extension of scalars around the trivial square `g ∘ f = g ∘ f` is the identity. -/
 @[simp]
@@ -337,5 +342,13 @@ theorem of_extendScalars_obj {P : (finiteProjectiveModules R).FullSubcategory}
     SplitK0.of.{u} (f.finiteProjectiveModulesExtendScalars.obj P) = SplitK0.of.{u} Q :=
   SplitK0.of_congr (ObjectProperty.isoMk _
     (eqToIso (f.finiteProjectiveModulesExtendScalars_obj_obj P) ≪≫ θ.toModuleIso))
+
+variable (f) in
+/-- The class of `S ⊗_R R` is the class `[S]` of the free module of rank one. -/
+@[simp]
+theorem of_extendScalars_obj_finiteProjectiveModulesRegular :
+    SplitK0.of.{u} (f.finiteProjectiveModulesExtendScalars.obj (finiteProjectiveModulesRegular R)) =
+      SplitK0.of.{u} (finiteProjectiveModulesRegular S) :=
+  of_extendScalars_obj (BalancedExtension.rid f)
 
 end TauCeti.SplitK0

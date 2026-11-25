@@ -73,6 +73,7 @@ def map (f : R →+* S) : KZero R →+ KZero S :=
   SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars
 
 /-- `K₀(f)` sends the class of `P` to the class of its extension of scalars. -/
+@[simp]
 theorem map_of (f : R →+* S) (P : FiniteProjectiveRight R) :
     map f (SplitK0.of P) =
       SplitK0.of.{u} ((RingHom.op f).finiteProjectiveModulesExtendScalars.obj P) :=
@@ -111,12 +112,13 @@ theorem map_map (f : R →+* S) (g : S →+* T) (x : KZero R) :
     map g (map f x) = map (g.comp f) x := by
   rw [map_comp, AddMonoidHom.comp_apply]
 
+-- Not `@[simp]`: `simp` proves it from `TauCeti.KZero.map_of` and
+-- `TauCeti.SplitK0.of_extendScalars_obj_finiteProjectiveModulesRegular`.
 /-- `K₀(f)` sends the class `[R]` of the free right module of rank one to `[S]`. -/
-@[simp]
 theorem map_of_finiteProjectiveModulesRegular (f : R →+* S) :
     map f (SplitK0.of (finiteProjectiveModulesRegular Rᵐᵒᵖ)) =
       SplitK0.of.{u} (finiteProjectiveModulesRegular Sᵐᵒᵖ) :=
-  map_of_linearEquiv f _ _ (BalancedExtension.rid (RingHom.op f))
+  (map_of f _).trans (SplitK0.of_extendScalars_obj_finiteProjectiveModulesRegular _)
 
 /-- `TauCeti.KZero.map_kZeroEquiv_of_mk` for matrices indexed by `Fin n`, whose images are
 modules in the universe of the rings. -/
@@ -143,6 +145,8 @@ private theorem map_kZeroEquiv_of_mk_fin {n : ℕ} (f : R →+* S) {e : Matrix (
     ((BalancedExtension.rangeVecMulLinearEquiv (RingHom.op f) he').trans
       (LinearEquiv.ofEq _ _ (by rw [hmap])))
 
+-- Not `@[simp]`: the simp normal form of `Algebra.GrothendieckAddGroup.of x` is
+-- `AddLocalization.addMonoidOf ⊤ x`, as for `Algebra.GrothendieckAddGroup.lift_apply_of`.
 /-- **`K₀(f)` on idempotent matrices.** For an idempotent matrix `e` over `R`, `K₀(f)` sends the
 class `[eRⁿ]` of the image of `e` acting on column vectors to the class `[f(e)Sⁿ]` of the image of
 the matrix `f(e)`; in terms of the idempotent monoid, it applies `f` to the entries of `e`. -/
