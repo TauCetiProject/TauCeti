@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.RepresentationTheory.AsModule
 import TauCeti.LinearAlgebra.Charpoly.Dual
 import TauCeti.LinearAlgebra.Charpoly.Inverse
 
@@ -69,11 +70,6 @@ representation. -/
 theorem charpoly_trivial_apply (g : G) : (trivial R G V g).charpoly = (X - 1) ^ finrank R V := by
   nontriviality R
   rw [isTrivial_def, ← Module.End.one_eq_id, LinearMap.charpoly_one]
-
-/-- The `R[G]`-module of a representation on a free `R`-module is free over `R`, being `V` itself
-(`Representation.asModuleEquiv`). This complements Mathlib's instance for `Module.Finite`. -/
-instance (ρ : Representation R G V) : Module.Free R ρ.asModule :=
-  .of_equiv ρ.asModuleEquiv.symm
 
 variable (ρ) in
 /-- The action of `g` on the `R[G]`-module `ρ.asModule` has the characteristic polynomial of
