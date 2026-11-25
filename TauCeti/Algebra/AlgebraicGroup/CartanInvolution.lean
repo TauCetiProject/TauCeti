@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
-public import TauCeti.Topology.Algebra.PointTopology.Basic
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Product
+public import TauCeti.Topology.Algebra.PointTopology.Functoriality
 
 /-!
 # Cartan involutions of real affine algebraic groups
@@ -32,6 +32,14 @@ involution exactly when the real points of `H` are compact (`TauCeti.isCartanInv
 For `GLₙ` the standard example is inverse transpose, whose twisted real form is the unitary group
 (`TauCeti.GeneralLinear.isCartanInvolution_inverseTransposeCoordinateIso`).
 
+For real affine group schemes `G₁ = Spec H₁` and `G₂ = Spec H₂`, the coordinate Hopf algebra of
+`G₁ × G₂` is `H₁ ⊗[ℝ] H₂`, and automorphisms `θ₁`, `θ₂` of the factors give the product
+automorphism `θ₁ × θ₂`, represented by `CommHopfAlgCat.tensorProductCongr θ₁ θ₂`. Its twisted
+real points are the products of the twisted real points of `θ₁` and `θ₂`
+(`TauCeti.twistedRealPoints_tensorProductCongr`), and these always contain the identity point.
+Hence `θ₁ × θ₂` is a Cartan involution exactly when `θ₁` and `θ₂` are
+(`TauCeti.isCartanInvolution_tensorProductCongr_iff`).
+
 ## Main definitions
 
 * `TauCeti.twistedRealPoints`: the complex points `g` of `H` with `g = θ(conj g)`.
@@ -45,6 +53,11 @@ For `GLₙ` the standard example is inverse transpose, whose twisted real form i
   topology on the complex points.
 * `TauCeti.isCartanInvolution_refl_iff`: the identity is a Cartan involution exactly when the real
   points are compact.
+* `TauCeti.one_mem_twistedRealPoints`: the identity point is twisted-real for every automorphism.
+* `TauCeti.twistedRealPoints_tensorProductCongr`: the twisted real points of a product automorphism
+  are the pairs of twisted real points of the factors.
+* `TauCeti.isCartanInvolution_tensorProductCongr_iff`: a product automorphism `θ₁ × θ₂` is a
+  Cartan involution exactly when `θ₁` and `θ₂` are.
 
 ## References
 
@@ -140,5 +153,81 @@ theorem isCartanInvolution_refl_iff :
     simp only [Function.comp_def, AlgHom.coe_comp, Algebra.ofId_apply, Complex.coe_algebraMap]
   rw [hemb.isCompact_iff, ← himage]
   exact ⟨IsCartanInvolution.isCompact, fun h ↦ ⟨by simp, h⟩⟩
+
+section Product
+
+open TensorProduct
+
+/-- **The identity point is twisted-real for every automorphism**: an automorphism `θ` of the
+coordinate Hopf algebra preserves the counit, and the identity point `h ↦ ε(h)` takes real values,
+so it satisfies `1 = θ(conj 1)`. -/
+@[simp high]
+theorem one_mem_twistedRealPoints (θ : H ≅ H) :
+    (1 : WithConv (H →ₐ[ℝ] ℂ)).ofConv ∈ twistedRealPoints θ := by
+  intro h
+  simp [AlgHom.convOne_apply, CoalgHomClass.counit_comp_apply]
+
+/-- The twisted real points of an automorphism are nonempty: they contain the identity point. -/
+theorem twistedRealPoints_nonempty (θ : H ≅ H) : (twistedRealPoints θ).Nonempty :=
+  ⟨_, one_mem_twistedRealPoints θ⟩
+
+variable {H₁ H₂ : CommHopfAlgCat.{v} ℝ}
+
+/-- **Twisted real points of a product.** A complex point of `H₁ ⊗[ℝ] H₂`, that is a complex
+point of the product group, is twisted-real for the product automorphism `θ₁ ⊗ θ₂` exactly when
+its restrictions to the two factors are twisted-real for `θ₁` and for `θ₂`. -/
+@[simp high]
+theorem mem_twistedRealPoints_tensorProductCongr_iff {θ₁ : H₁ ≅ H₁} {θ₂ : H₂ ≅ H₂}
+    {p : H₁ ⊗[ℝ] H₂ →ₐ[ℝ] ℂ} :
+    p ∈ twistedRealPoints (CommHopfAlgCat.tensorProductCongr θ₁ θ₂) ↔
+      p.comp Algebra.TensorProduct.includeLeft ∈ twistedRealPoints θ₁ ∧
+        p.comp Algebra.TensorProduct.includeRight ∈ twistedRealPoints θ₂ := by
+  rw [mem_twistedRealPoints_iff_comp_eq, mem_twistedRealPoints_iff_comp_eq,
+    mem_twistedRealPoints_iff_comp_eq, CommHopfAlgCat.tensorProductCongr_hom_hom,
+    Bialgebra.TensorProduct.map_toAlgHom, Algebra.TensorProduct.ext_iff]
+  -- `Algebra.TensorProduct.ext_iff` splits `p ∘ (θ₁ ⊗ θ₂) = conj ∘ p` along the two inclusions;
+  -- evaluating, both sides compare the same values at `x ⊗ₜ 1` and at `1 ⊗ₜ y`.
+  simp only [AlgHom.ext_iff, AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+    Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply,
+    Algebra.TensorProduct.map_tmul, map_one]
+
+open scoped PointTopology in
+/-- Under the identification of the complex points of `H₁ ⊗[ℝ] H₂` with pairs of complex points
+(`TauCeti.PointTopology.tensorProductHomeomorph`), the twisted real points of `θ₁ ⊗ θ₂` are the
+pairs of twisted real points of `θ₁` and `θ₂`. -/
+theorem twistedRealPoints_tensorProductCongr (θ₁ : H₁ ≅ H₁) (θ₂ : H₂ ≅ H₂) :
+    twistedRealPoints (CommHopfAlgCat.tensorProductCongr θ₁ θ₂) =
+      PointTopology.tensorProductHomeomorph ℝ H₁ H₂ ℂ ⁻¹'
+        (twistedRealPoints θ₁ ×ˢ twistedRealPoints θ₂) := by
+  ext p
+  rw [Set.mem_preimage, Set.mem_prod, PointTopology.tensorProductHomeomorph_apply_fst,
+    PointTopology.tensorProductHomeomorph_apply_snd, mem_twistedRealPoints_tensorProductCongr_iff]
+
+open scoped PointTopology in
+/-- **Cartan involutions of a product**: for real affine group schemes `G₁ = Spec H₁` and
+`G₂ = Spec H₂`, the product automorphism `θ₁ × θ₂` of `G₁ × G₂` is a Cartan involution exactly
+when `θ₁` and `θ₂` are. The twisted real points of `θ₁ × θ₂` are the product of the twisted real
+points of the factors, which is compact exactly when both factors are, since neither factor is
+empty. -/
+@[simp]
+theorem isCartanInvolution_tensorProductCongr_iff {θ₁ : H₁ ≅ H₁} {θ₂ : H₂ ≅ H₂} :
+    IsCartanInvolution (CommHopfAlgCat.tensorProductCongr θ₁ θ₂) ↔
+      IsCartanInvolution θ₁ ∧ IsCartanInvolution θ₂ := by
+  simp only [isCartanInvolution_iff_isCompact, twistedRealPoints_tensorProductCongr,
+    Homeomorph.isCompact_preimage, CommHopfAlgCat.tensorProductCongr_hom_comp_self_eq_id_iff]
+  refine ⟨fun ⟨⟨h₁, h₂⟩, hc⟩ ↦ ⟨⟨h₁, ?_⟩, ⟨h₂, ?_⟩⟩, fun ⟨⟨h₁, hc₁⟩, ⟨h₂, hc₂⟩⟩ ↦
+    ⟨⟨h₁, h₂⟩, hc₁.prod hc₂⟩⟩
+  · simpa only [Set.fst_image_prod _ (twistedRealPoints_nonempty θ₂)] using
+      hc.image continuous_fst
+  · simpa only [Set.snd_image_prod (twistedRealPoints_nonempty θ₁)] using
+      hc.image continuous_snd
+
+/-- The product of two Cartan involutions is a Cartan involution of the product. -/
+theorem IsCartanInvolution.tensorProductCongr {θ₁ : H₁ ≅ H₁} {θ₂ : H₂ ≅ H₂}
+    (h₁ : IsCartanInvolution θ₁) (h₂ : IsCartanInvolution θ₂) :
+    IsCartanInvolution (CommHopfAlgCat.tensorProductCongr θ₁ θ₂) :=
+  isCartanInvolution_tensorProductCongr_iff.2 ⟨h₁, h₂⟩
+
+end Product
 
 end TauCeti

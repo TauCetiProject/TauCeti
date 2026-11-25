@@ -65,7 +65,7 @@ theorem hom_mgradient_riccati_on {f : M → ℝ} {U : Set M} (hU : IsOpen U)
   have hzero (y : M) (hy : y ∈ U) : cov G y (G y) = 0 := by
     apply ext_inner_right ℝ
     intro w
-    simpa only [inner_zero_left, hessian_def] using
+    simpa only [inner_zero_left, I.hessian_eq_inner_leviCivitaConnection_mgradient] using
       hessian_mgradient_eq_zero_of_eventually_norm_sq_eq_const
         ((hf.contMDiffAt (hU.mem_nhds hy)).of_le (by simp))
         (Filter.eventually_of_mem (hU.mem_nhds hy) (fun z hz ↦ hc z hz)) w

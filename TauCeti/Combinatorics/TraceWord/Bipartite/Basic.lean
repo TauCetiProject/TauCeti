@@ -46,7 +46,8 @@ bipartite words.
   `k` reading no position exactly once reads at most `k` positions.
 * `TauCeti.card_image_add_card_image_le_add_one_of_no_singleton_edge`: such a word visits at
   most `k + 1` row and column indices.
-* `TauCeti.bipartiteWord`: the bipartite word as a cyclic word on `α ⊕ β`.
+* `TauCeti.bipartiteWord`: the bipartite word as a cyclic word on `α ⊕ β`, which determines
+  `u` and `v` (`TauCeti.bipartiteWord_inj`).
 * `TauCeti.sym2_bipartiteWord`: its unordered edges are the positions read by its steps.
 * `TauCeti.card_image_bipartiteWord`: it visits `#(image u) + #(image v)` vertices.
 
@@ -106,6 +107,14 @@ theorem bipartiteWord_inl (u : Fin k → α) (v : Fin k → β) (t : Fin k) :
 theorem bipartiteWord_inr (u : Fin k → α) (v : Fin k → β) (t : Fin k) :
     bipartiteWord u v (finSumFinInterleaveEquiv k (.inr t)) = .inr (v t) := by
   simp [bipartiteWord]
+
+/-- A cyclic bipartite word determines its row and column indices. -/
+@[simp]
+theorem bipartiteWord_inj {u u' : Fin k → α} {v v' : Fin k → β} :
+    bipartiteWord u v = bipartiteWord u' v' ↔ u = u' ∧ v = v' := by
+  refine ⟨fun h ↦ ⟨funext fun t ↦ ?_, funext fun t ↦ ?_⟩, by rintro ⟨rfl, rfl⟩; rfl⟩
+  · simpa using congrFun h (finSumFinInterleaveEquiv k (.inl t))
+  · simpa using congrFun h (finSumFinInterleaveEquiv k (.inr t))
 
 /-- The unordered edge of the cyclic bipartite word at the step `a` is the position
 `bipartiteEdge u v a` read by that step, joining a row index to a column index. -/
