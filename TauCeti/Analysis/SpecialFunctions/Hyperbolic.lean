@@ -66,6 +66,8 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Complex.norm_cosh_le` — `‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2` for complex `z`.
 * `Complex.norm_cosh_mul_le` — `‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2` for complex
   `z` and `w`.
+* `Complex.norm_cos_le_exp_abs_im` — `‖cos z‖ ≤ exp |Im z|` for complex `z`, from
+  `Complex.norm_cosh_le` at `z * I`.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 * `Real.cosh_eq_one_add_two_mul_sinh_half_sq` — `cosh x = 1 + 2 * sinh (x / 2) ^ 2`, the
   half-argument formula that turns `cosh` into a square under the substitution
@@ -461,5 +463,17 @@ theorem norm_cosh_mul_le (z w : ℂ) : ‖cosh z * w‖ ≤ (‖exp z * w‖ + �
         gcongr
         exact norm_cosh_le z
     _ = _ := by rw [norm_mul, norm_mul]; ring
+
+/-- The complex cosine grows at most exponentially in the imaginary part:
+`‖cos z‖ ≤ exp |Im z|`. -/
+theorem norm_cos_le_exp_abs_im (z : ℂ) : ‖cos z‖ ≤ Real.exp |z.im| := by
+  rw [← cosh_mul_I]
+  refine (norm_cosh_le _).trans ?_
+  rw [norm_exp, norm_exp]
+  have h₁ : Real.exp (z * I).re ≤ Real.exp |z.im| :=
+    Real.exp_le_exp.mpr (by simpa using neg_le_abs z.im)
+  have h₂ : Real.exp (-(z * I)).re ≤ Real.exp |z.im| :=
+    Real.exp_le_exp.mpr (by simpa using le_abs_self z.im)
+  linarith
 
 end Complex
