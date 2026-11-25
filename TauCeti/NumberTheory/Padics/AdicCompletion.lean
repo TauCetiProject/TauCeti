@@ -31,7 +31,8 @@ a finitely generated abelian group `M` with `ℤ_[p] ⊗ M` (`PadicInt.tensorAdi
 
 * `PadicInt.evalₐ_adicCompletionRingEquiv`: the residue of the image of `x` modulo `p ^ n` is
   `PadicInt.toZModPow n x`.
-* `PadicInt.tensorAdicCompletionEquiv_tmul`: `x ⊗ₜ m` is sent to `x • m`.
+* `PadicInt.tensorAdicCompletionEquiv_tmul`: `x ⊗ₜ m` is sent to
+  `adicCompletionRingEquiv p x • of _ M m`.
 -/
 
 public section
@@ -97,6 +98,9 @@ theorem evalₐ_adicCompletionRingEquiv (n : ℕ) (x : ℤ_[p]) :
       (Int.quotientSpanNatPowEquivZMod p n).symm (toZModPow n x) :=
   evalₐ_toAdicCompletion p n x
 
+/-- The residue `toZModPow n` of the preimage in `ℤ_[p]` of an element `x` of the `p`-adic
+completion of `ℤ` is the image under `ℤ ⧸ (p) ^ n ≃ ZMod (p ^ n)` of its residue modulo
+`(p) ^ n`. -/
 @[simp]
 theorem toZModPow_adicCompletionRingEquiv_symm (n : ℕ)
     (x : AdicCompletion (Ideal.span {(p : ℤ)}) ℤ) :
@@ -113,6 +117,8 @@ noncomputable def tensorAdicCompletionEquiv (M : Type) [AddCommGroup M] [Module.
     (ofTensorProductEquivOfFiniteNoetherian (Ideal.span {(p : ℤ)}) M).toAddEquiv
     |>.toIntLinearEquiv
 
+/-- `tensorAdicCompletionEquiv p M` sends `x ⊗ₜ m` to the image of `x` in the `p`-adic
+completion of `ℤ` acting on the image of `m` in the `p`-adic completion of `M`. -/
 @[simp]
 theorem tensorAdicCompletionEquiv_tmul (M : Type) [AddCommGroup M] [Module.Finite ℤ M]
     (x : ℤ_[p]) (m : M) :
