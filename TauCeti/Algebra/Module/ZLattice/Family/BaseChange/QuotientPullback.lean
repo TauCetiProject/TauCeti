@@ -93,7 +93,7 @@ theorem torusFamilyBaseChangeQuotientFiberHomeomorph_coe (f : C(Y', Y))
     (torusFamilyBaseChangeQuotientFiberHomeomorph P hcont R ρ hequiv b hb hone hmul hbmul hR hbc
         β' hβ' σ f hf y' hy' u :
       MulAction.orbitRel.Quotient Γ' (AddAction.orbitRel.Quotient Λ (Y' × E))) =
-      Quotient.mk _ u.1 := by
+      Quotient.mk _ u.val := by
   let _ := periodAddAction (P ∘ f)
   let _ := torusFamilyBaseChangeAffineMulAction P b hb R ρ hequiv hone hmul hbmul σ f hf
   simp only [torusFamilyAffineQuotientFiberHomeomorph_coe]

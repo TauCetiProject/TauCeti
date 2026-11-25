@@ -8,6 +8,12 @@ module
 public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.NumberTheory.AbelSummation
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.InvLog
+import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 
 /-!
 # Consequences of Abel summation for partial sums
@@ -15,8 +21,9 @@ public import Mathlib.NumberTheory.AbelSummation
 Mathlib's `Mathlib/NumberTheory/AbelSummation.lean` proves the summation-by-parts identity
 `∑_{k ≤ x} f k c k = f x ∑_{k ≤ x} c k - ∫ f' (t) ∑_{k ≤ t} c k dt` and derives convergence
 criteria from it. This file records the elementary properties of the partial-sum step function
-`t ↦ ∑_{1 ≤ k ≤ t} c k` that such arguments need, and draws two further consequences from a growth
-hypothesis on it.
+`t ↦ ∑_{1 ≤ k ≤ t} c k` that such arguments need, and draws three further consequences from growth
+hypotheses on partial sums; the last of them, for the weight `1 / log t`, starts its partial sums
+at `k = 2`, where `log k > 0`.
 
 * **The step function.** It vanishes for `t < 1`, hence is `O(g)` near `0` for every `g`, and it
   is locally integrable on `[0, ∞)`. Together with a bound `O(t ^ r)` at infinity (see
@@ -35,6 +42,16 @@ hypothesis on it.
   `n ^ τ`, for an exponent `τ > -1`, grow like `κ x ^ (τ + 1) / (τ + 1)`. This is the step that
   moves a Tauberian conclusion for the coefficients `a n n ^ (1 - σ)` back to the coefficients
   `a n`.
+* **The weight `1 / log t`.** If the partial sums `∑_{2 ≤ k ≤ t} c k` are `log t + O(1)`, with
+  error at most `C` on `t ≥ 2`, then `∑_{2 ≤ k ≤ x} c k / log k = log log x + B + O(1 / log x)` for
+  a constant `B`, with error at most `2 C / log x` on `x ≥ 2`. This is the partial-summation step
+  from Mertens' first theorem to his second, for the coefficients `log p / p` on the primes as for
+  the von Mangoldt coefficients `Λ(n) / n`. Writing `S(t) = log t + R(t)`, the main part `log t`
+  integrates against `1 / (t log² t)` to `log log x`, the integral of `R(t) / (t log² t)` over
+  `[2, ∞)` converges absolutely and enters `B`, and its tail beyond `x` is at most `C / log x`.
+  This estimate is stated for an arbitrary measurable `S`, so that the same argument serves the
+  partial sums over `ℕ` here and those over the prime ideals of a number field in
+  `TauCeti.NumberTheory.LFunctions.Mertens`.
 
 ## Main declarations
 
@@ -42,11 +59,23 @@ hypothesis on it.
 * `TauCeti.isBigO_sum_Icc_natFloor_nhdsGT_zero`: the step function is `O(g)` as `t → 0⁺`.
 * `TauCeti.locallyIntegrableOn_sum_Icc_natFloor`: the step function is locally integrable on
   `[0, ∞)`.
+* `TauCeti.intervalIntegrable_mul_sum_Icc`: weighted by a function locally integrable on
+  `[1, ∞)`, the step function is interval integrable between any two reals.
 * `TauCeti.summable_div_mul_one_add_log_cube`: if the partial sums `∑_{1 ≤ k ≤ t} u k` of a
   nonnegative sequence are `O(t log t)`, then `∑ u n / (n (1 + log n) ^ 3)` converges.
 * `TauCeti.sum_Icc_rpow_mul_eq`: the exact Abel-summation identity for the weight `t ^ τ`.
 * `TauCeti.tendsto_rpow_inv_mul_sum_Icc_rpow_mul`: if `x⁻¹ ∑_{1 ≤ n ≤ x} c n → κ`, then
   `(x ^ (τ + 1))⁻¹ ∑_{1 ≤ n ≤ x} n ^ τ c n → κ / (τ + 1)` for `τ > -1`.
+* `TauCeti.sum_Icc_div_log_eq`: the exact Abel-summation identity for the weight `1 / log t`.
+* `TauCeti.exists_abs_div_log_add_integral_sub_log_log_sub_le`: if a measurable `S` satisfies
+  `S(t) = log t + O(1)`, then `S(x) / log x + ∫_2^x S(t) / (t log² t) dt` is
+  `log log x + B + O(1 / log x)`.
+* `TauCeti.exists_abs_sum_Icc_div_log_sub_log_log_sub_le`: if `∑_{2 ≤ k ≤ t} c k = log t + O(1)`,
+  then `∑_{2 ≤ k ≤ x} c k / log k = log log x + B + O(1 / log x)`.
+
+## References
+
+* D. Koukoulopoulos, *The Distribution of Prime Numbers*, proof of Theorem 3.4(b), pp. 40–41.
 -/
 
 public section
@@ -79,6 +108,23 @@ theorem isBigO_sum_Icc_natFloor_nhdsGT_zero {E F : Type*} [SeminormedAddCommGrou
 theorem locallyIntegrableOn_sum_Icc_natFloor {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) (m : ℕ) :
     LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Finset.Icc m ⌊t⌋₊, c k) (Ici 0) := by
   simpa using locallyIntegrableOn_mul_sum_Icc c le_rfl (m := m) (locallyIntegrableOn_const 1)
+
+/-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, c k`, weighted by a function locally
+integrable on `[1, ∞)`, is interval integrable between any two reals: it vanishes below `1`. -/
+theorem intervalIntegrable_mul_sum_Icc {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) {f : ℝ → 𝕜}
+    (hf : LocallyIntegrableOn f (Ici 1)) (a b : ℝ) :
+    IntervalIntegrable (fun t ↦ f t * ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k) volume a b := by
+  have key (b : ℝ) :
+      IntervalIntegrable (fun t ↦ f t * ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k) volume 1 b := by
+    rcases le_or_gt 1 b with hb | hb
+    · exact (intervalIntegrable_iff_integrableOn_Icc_of_le hb).mpr <|
+        integrableOn_mul_sum_Icc c zero_le_one
+          (hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc)
+    · refine IntervalIntegrable.symm ((intervalIntegrable_iff_integrableOn_Ioc_of_le hb.le).mpr ?_)
+      exact (integrableOn_Ioc_iff_integrableOn_Ioo).mpr <|
+        integrableOn_zero.congr_fun (fun t ht ↦ by simp [Nat.floor_eq_zero.mpr ht.2])
+          measurableSet_Ioo
+  exact (key a).symm.trans (key b)
 
 /-! ### The comparison weight -/
 
@@ -272,8 +318,7 @@ provided the weight is read from `Icc 1 m`. -/
 private lemma sum_Icc_zero_mul_ite (g c : ℕ → ℝ) (m : ℕ) :
     ∑ k ∈ Finset.Icc 0 m, g k * (if k = 0 then 0 else c k) =
       ∑ n ∈ Finset.Icc 1 m, g n * c n := by
-  rw [Finset.Icc_eq_cons_Ioc (Nat.zero_le _), Finset.sum_cons, ← Finset.Icc_add_one_left_eq_Ioc]
-  simp only [↓reduceIte, mul_zero, zero_add]
+  rw [Finset.sum_Icc_zero_eq_sum_Icc_one (by simp)]
   refine Finset.sum_congr rfl fun n hn ↦ ?_
   have hn0 : n ≠ 0 := by have := (Finset.mem_Icc.mp hn).1; omega
   simp [hn0]
@@ -320,22 +365,8 @@ theorem sum_Icc_rpow_mul_eq (c : ℕ → ℝ) (τ : ℝ) (x : ℝ) :
 theorem intervalIntegrable_sum_Icc_sub_mul (c : ℕ → ℝ) (κ x : ℝ) :
     IntervalIntegrable (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n - κ * t) volume 1 x := by
   have hS_int : IntervalIntegrable (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) volume 1 x := by
-    rcases le_total 1 x with hx | hx
-    · refine (intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_
-      simpa using integrableOn_mul_sum_Icc c (m := 1) zero_le_one
-        (continuous_const (y := (1 : ℝ))).integrableOn_Icc
-    · refine IntervalIntegrable.symm ((intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_)
-      have hA : IntegrableOn (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) (Icc (min x 0) 0) := by
-        refine (integrableOn_zero (μ := volume) (s := Icc (min x 0) 0)).congr_fun
-          (fun t ht ↦ ?_) measurableSet_Icc
-        simp [Nat.floor_eq_zero.mpr (by linarith [ht.2] : t < 1)]
-      have hB : IntegrableOn (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) (Icc 0 1) := by
-        simpa using integrableOn_mul_sum_Icc c (m := 1) le_rfl
-          (continuous_const (y := (1 : ℝ))).integrableOn_Icc
-      refine (hA.union hB).mono_set fun t ht ↦ ?_
-      rcases le_total t 0 with h | h
-      · exact Or.inl ⟨(min_le_left _ _).trans ht.1, h⟩
-      · exact Or.inr ⟨h, ht.2⟩
+    simpa using intervalIntegrable_mul_sum_Icc c (f := fun _ ↦ (1 : ℝ))
+      (locallyIntegrableOn_const 1) 1 x
   exact hS_int.sub ((continuous_const.mul continuous_id).intervalIntegrable 1 x)
 
 /-- The Abel-summation identity `sum_Icc_rpow_mul_eq`, with the partial sums `S t` split as
@@ -401,5 +432,119 @@ theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (h
   refine hlim.congr' ?_
   filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
   exact sum_Icc_rpow_mul_eq_div_add_integral_sub_mul hτ.ne' hx
+
+/-! ### The weight `1 / log t` -/
+
+/-- Restricting a sequence to `k ≥ 2` turns sums over `Icc 0 n` into sums over `Icc 2 n`. -/
+private lemma sum_Icc_zero_ite_two_le (g : ℕ → ℝ) (n : ℕ) :
+    ∑ k ∈ Finset.Icc 0 n, (if 2 ≤ k then g k else 0) = ∑ k ∈ Finset.Icc 2 n, g k := by
+  rw [← Finset.sum_filter]
+  congr 1
+  ext k
+  simp only [Finset.mem_filter, Finset.mem_Icc]
+  omega
+
+/-- The Abel-summation identity `sum_mul_eq_sub_integral_mul₁` for the weight `1 / log t`:
+`∑_{2 ≤ k ≤ x} c k / log k = S(x) / log x + ∫_2^x S(t) / (t log² t) dt`, where
+`S(t) = ∑_{2 ≤ k ≤ t} c k`. For `x < 2` both sides are `0`. -/
+theorem sum_Icc_div_log_eq (c : ℕ → ℝ) (x : ℝ) :
+    ∑ k ∈ Finset.Icc 2 ⌊x⌋₊, c k / Real.log k =
+      (∑ k ∈ Finset.Icc 2 ⌊x⌋₊, c k) / Real.log x +
+        ∫ t in Ioc 2 x, (∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k) * (t⁻¹ / Real.log t ^ 2) := by
+  have hIcc : Icc (2 : ℝ) x ⊆ Ioi 1 := fun t ht ↦ one_lt_two.trans_le ht.1
+  have habel := sum_mul_eq_sub_integral_mul₁ (f := fun t ↦ (Real.log t)⁻¹)
+    (fun k ↦ if 2 ≤ k then c k else 0) (by simp) (by simp) x
+    (fun t ht ↦ Real.differentiableOn_inv_log.differentiableAt (Ioi_mem_nhds (hIcc ht)))
+    (by
+      rw [Real.deriv_inv_log]
+      refine ContinuousOn.integrableOn_Icc ?_
+      simpa only [neg_div] using ((Real.continuousOn_inv_div_log_pow 2).mono hIcc).fun_neg)
+  have hsum (n : ℕ) : ∑ k ∈ Finset.Icc 0 n, (Real.log k)⁻¹ * (if 2 ≤ k then c k else 0) =
+      ∑ k ∈ Finset.Icc 2 n, c k / Real.log k := by
+    simp_rw [mul_ite, mul_zero, sum_Icc_zero_ite_two_le, div_eq_inv_mul]
+  simp only [hsum, sum_Icc_zero_ite_two_le, Real.deriv_inv_log] at habel
+  rw [habel, sub_eq_add_neg, ← integral_neg]
+  congr 1
+  · ring
+  · refine setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ ?_
+    ring
+
+/-- If `S` differs from `log t` by at most `C` for `t ≥ 2`, then the error weighted by
+`1 / (t log² t)` is integrable on `(a, ∞)` for `a ≥ 2`, and its integral there is at most
+`C / log a`. -/
+private lemma integrableOn_Ioi_sub_log_mul {S : ℝ → ℝ} {C a : ℝ} (hS : Measurable S)
+    (h : ∀ t : ℝ, 2 ≤ t → |S t - Real.log t| ≤ C) (ha : 2 ≤ a) :
+    IntegrableOn (fun t ↦ (S t - Real.log t) * (t⁻¹ / Real.log t ^ 2)) (Ioi a) ∧
+      |∫ t in Ioi a, (S t - Real.log t) * (t⁻¹ / Real.log t ^ 2)| ≤ C / Real.log a := by
+  have ha1 : (1 : ℝ) < a := by linarith
+  -- The integrand is dominated by `C / (t log² t)`, which is integrable at infinity.
+  have hle : ∀ᵐ t ∂volume.restrict (Ioi a),
+      ‖(S t - Real.log t) * (t⁻¹ / Real.log t ^ 2)‖ ≤ C * (t⁻¹ / Real.log t ^ 2) := by
+    refine (ae_restrict_mem measurableSet_Ioi).mono fun t (ht : a < t) ↦ ?_
+    have hw : 0 ≤ t⁻¹ / Real.log t ^ 2 := div_nonneg (inv_nonneg.mpr (by linarith)) (sq_nonneg _)
+    rw [norm_mul, Real.norm_eq_abs, Real.norm_of_nonneg hw]
+    exact mul_le_mul_of_nonneg_right (h t (ha.trans ht.le)) hw
+  refine ⟨((integrableOn_inv_div_log_sq_Ioi ha1).const_mul C).mono'
+    ((hS.sub Real.measurable_log).mul
+      (measurable_inv.div (Real.measurable_log.pow_const 2))).aestronglyMeasurable hle, ?_⟩
+  rw [div_eq_mul_inv, ← integral_inv_div_log_sq_Ioi ha1, ← integral_const_mul,
+    ← Real.norm_eq_abs]
+  exact norm_integral_le_of_norm_le ((integrableOn_inv_div_log_sq_Ioi ha1).const_mul C) hle
+
+/-- **The right-hand side of partial summation against `1 / log`.** If a measurable `S` differs
+from `log t` by at most `C` for every `t ≥ 2`, then there is a constant `B` with
+`|S(x) / log x + ∫_2^x S(t) / (t log² t) dt - log log x - B| ≤ 2 C / log x` for every `x ≥ 2`.
+When `S` is the partial-sum function of a sequence `c`, the left-hand expression is
+`∑_{2 ≤ k ≤ x} c k / log k` by Abel summation (`sum_Icc_div_log_eq` over `ℕ`,
+`primeSummatory_div_log_eq_div_log_add_integral` over the prime ideals of a number field). -/
+theorem exists_abs_div_log_add_integral_sub_log_log_sub_le {S : ℝ → ℝ} {C : ℝ}
+    (hS : Measurable S) (h : ∀ t : ℝ, 2 ≤ t → |S t - Real.log t| ≤ C) :
+    ∃ B, ∀ x : ℝ, 2 ≤ x →
+      |S x / Real.log x + (∫ t in Ioc 2 x, S t * (t⁻¹ / Real.log t ^ 2)) -
+        Real.log (Real.log x) - B| ≤ 2 * C / Real.log x := by
+  set R : ℝ → ℝ := fun t ↦ (S t - Real.log t) * (t⁻¹ / Real.log t ^ 2)
+  have hRint {a : ℝ} (ha : 2 ≤ a) := integrableOn_Ioi_sub_log_mul hS h ha
+  refine ⟨1 - Real.log (Real.log 2) + ∫ t in Ioi 2, R t, fun x hx ↦ ?_⟩
+  have hlogx : 0 < Real.log x := Real.log_pos (by linarith)
+  have hIcc : Icc (2 : ℝ) x ⊆ Ioi 1 := fun t ht ↦ one_lt_two.trans_le ht.1
+  -- Split `S t / (t log² t)` as `1 / (t log t)` plus `R t`, and integrate the first part.
+  have hmain : ∫ t in Ioc 2 x, S t * (t⁻¹ / Real.log t ^ 2) =
+      Real.log (Real.log x) - Real.log (Real.log 2) + ∫ t in Ioc 2 x, R t := by
+    have hint₁ : IntegrableOn (fun t : ℝ ↦ t⁻¹ / Real.log t) (Ioc 2 x) := by
+      simpa only [pow_one] using
+        ((Real.continuousOn_inv_div_log_pow 1).mono hIcc).integrableOn_Icc.mono_set
+          Ioc_subset_Icc_self
+    rw [← integral_inv_div_log one_lt_two (by linarith), intervalIntegral.integral_of_le hx,
+      ← integral_add hint₁ ((hRint le_rfl).1.mono_set Ioc_subset_Ioi_self)]
+    refine setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
+    have hlog : Real.log t ≠ 0 := (Real.log_pos (by linarith [ht.1])).ne'
+    field_simp
+    ring
+  -- Split the integral of `R` over `(2, ∞)` at `x`.
+  have hsplit : ∫ t in Ioc 2 x, R t = (∫ t in Ioi 2, R t) - ∫ t in Ioi x, R t := by
+    rw [← Ioc_union_Ioi_eq_Ioi hx, setIntegral_union Ioc_disjoint_Ioi_same
+      measurableSet_Ioi ((hRint le_rfl).1.mono_set Ioc_subset_Ioi_self) (hRint hx).1]
+    ring
+  have hSx : |S x / Real.log x - 1| ≤ C / Real.log x := by
+    rw [← div_self hlogx.ne', ← sub_div, abs_div, abs_of_pos hlogx]
+    exact div_le_div_of_nonneg_right (h x hx) hlogx.le
+  rw [hmain, hsplit]
+  calc _ = |(S x / Real.log x - 1) - ∫ t in Ioi x, R t| := by congr 1; ring
+    _ ≤ |S x / Real.log x - 1| + |∫ t in Ioi x, R t| := abs_sub _ _
+    _ ≤ 2 * C / Real.log x := by rw [mul_div_assoc]; linarith [(hRint hx).2]
+
+/-- **Partial sums weighted by `1 / log`.** If the partial sums `∑_{2 ≤ k ≤ t} c k` differ from
+`log t` by at most `C` for every `t ≥ 2`, then there is a constant `B` with
+`|∑_{2 ≤ k ≤ x} c k / log k - log log x - B| ≤ 2 C / log x` for every `x ≥ 2`. Applied to the
+coefficients `log p / p` on the primes, this turns Mertens' first theorem into his second. -/
+theorem exists_abs_sum_Icc_div_log_sub_log_log_sub_le {c : ℕ → ℝ} {C : ℝ}
+    (h : ∀ t : ℝ, 2 ≤ t → |∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k - Real.log t| ≤ C) :
+    ∃ B, ∀ x : ℝ, 2 ≤ x →
+      |∑ k ∈ Finset.Icc 2 ⌊x⌋₊, c k / Real.log k - Real.log (Real.log x) - B| ≤
+        2 * C / Real.log x := by
+  obtain ⟨B, hB⟩ := exists_abs_div_log_add_integral_sub_log_log_sub_le
+    (S := fun t ↦ ∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k)
+    ((measurable_from_nat (f := fun n ↦ ∑ k ∈ Finset.Icc 2 n, c k)).comp Nat.measurable_floor) h
+  exact ⟨B, fun x hx ↦ by simpa only [← sum_Icc_div_log_eq] using hB x hx⟩
 
 end TauCeti

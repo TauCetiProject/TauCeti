@@ -1,0 +1,273 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors and Robby Sneiderman. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors, Robby Sneiderman
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
+
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Taylor
+import Mathlib.Algebra.BigOperators.Intervals
+
+/-!
+# Complex logarithm bounds and Taylor series
+
+Mathlib's `Complex.hasSum_taylorSeries_neg_log'` expands `-log (1 - z)` as `∑' e, z ^ (e+1)/(e+1)`
+for a single `z` of modulus less than one.  This file first sums that over a family `r : ι → ℂ`: the
+double family indexed by `ι × ℕ` is summable, so the sum may be regrouped fibrewise and the
+prime-power-style sum over pairs equals the sum of local logarithms.
+
+For the summability of the double family both hypotheses are needed.  `∀ i, ‖r i‖ < 1` alone does
+not suffice: the fibre at `i` sums to `‖r i‖ / (1 - ‖r i‖)`, which is dominated by `‖r i‖` only
+when `‖r i‖` is bounded away from `1`, and summability of `r` is what supplies that uniformity.
+The identity for the sum, by contrast, needs only `∀ i, ‖r i‖ < 1`: if `r` is not summable, then
+neither side is summable and both are `0`.  The double-family summability is not proved here: it
+is `TauCeti.summable_mul_norm_pow_succ`, stated for a seminormed additive group and an arbitrary
+real weight, and this file uses it at weight `1`.
+
+For a single `z` of modulus less than one, comparing the Taylor series termwise bounds
+`‖log (1 - z)‖` by `-Real.log (1 - ‖z‖)`, the value of the same function at the real point
+`‖z‖`. The file also gives an explicit truncation error for a single `z`: the `n`-th partial sum
+`∑ j ∈ Icc 1 n, z ^ j / j` differs from `log (1 - z)⁻¹` by at most
+`‖z‖ ^ (n + 1) / ((1 - ‖z‖) (n + 1))`, which restates Mathlib's
+`Complex.norm_log_one_sub_inv_add_logTaylor_neg_le` with the Taylor polynomial written out.  At
+`z = w / p`, for `‖w‖ ≤ 1` and a natural number `p ≥ 2`, this becomes `2 / p ^ (n + 1)`, and the
+factor `1 - w / p` is nonzero.  These are the estimates used to compare an Euler factor
+`(1 - w / p)⁻¹` with the prime-power partial sums of its logarithm.
+
+The estimate `Complex.norm_log_le_of_re_mem_Icc` bounds the principal logarithm uniformly
+in the real part on a positive vertical strip, with logarithmic growth in the imaginary part.
+Its proof adapts Robby Sneiderman’s strip argument from
+[PrimeNumberTheoremAnd](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/83f85e91fccdeecc8248fe6d51c30edfb3a07d15/PrimeNumberTheoremAnd/Mathlib/Analysis/SpecialFunctions/Gamma/DigammaBounds.lean).
+Away from the branch cut, on any vertical line `Re z = x` with `x ≥ 2`, the real part
+`Real.log ‖x + t I‖` of `Complex.log (x + t I)` differs from `Real.log (1 + |t|)` by at most
+`Real.log x`, comparing holomorphic logarithmic strip weights with the real height scale
+`1 + |Im z|`.
+
+Finally, Mathlib's `Complex.hasSum_taylorSeries_log` has a vanishing constant term; dropping it
+re-indexes the Taylor series of `log (1 + z)` from `0`, the form a power series without constant
+term takes.
+
+## Main results
+
+* `Complex.summable_taylorSeries_neg_log`: for a summable `r : ι → ℂ` with every `‖r i‖ < 1`, the
+  family `(i, e) ↦ r i ^ (e + 1) / (e + 1)` is summable over `ι × ℕ`.
+* `Complex.summable_of_summable_neg_log_one_sub`: if every `r i ≠ 1` and `-log (1 - r i)` is
+  summable, then `r` is summable (the converse of Mathlib's `Summable.clog_one_sub`).
+* `Complex.tsum_taylorSeries_neg_log`: for every `r` with `‖r i‖ < 1`, the sum over `ι × ℕ` is
+  `∑' i, -log (1 - r i)` (both sides are `0` when `r` is not summable).
+* `Complex.norm_log_one_sub_le_neg_log_one_sub_norm`: for `‖z‖ < 1`,
+  `‖log (1 - z)‖ ≤ -Real.log (1 - ‖z‖)`.
+* `Complex.norm_log_one_sub_inv_sub_sum_Icc_le`: the truncation error of the same Taylor series
+  for a single `z`, with its `n`-th partial sum `∑ j ∈ Icc 1 n, z ^ j / j`.
+* `Complex.norm_log_one_sub_div_inv_sub_sum_Icc_le`: the same truncation error at `z = w / p`,
+  for `‖w‖ ≤ 1` and a natural number `p ≥ 2`, bounded by `2 / p ^ (n + 1)`.
+* `Complex.one_sub_div_natCast_ne_zero`: for `‖w‖ ≤ 1` and a natural number `p > 1`, the factor
+  `1 - w / p` is nonzero.
+* `Complex.hasSum_taylorSeries_log'`: `log (1 + z) = ∑ₙ (-1) ^ n z ^ (n + 1) / (n + 1)` for
+  `‖z‖ < 1`.
+* `Complex.norm_neg_one_pow_div_add_one`: the coefficients of that series have norm
+  `(n + 1)⁻¹`.
+* `Complex.norm_log_le_of_re_mem_Icc`: an explicit principal-log norm bound on every
+  positive vertical strip, including empty and singleton strips.
+* `Complex.abs_log_norm_ofReal_add_mul_I_sub_le`: for `2 ≤ x` and `t : ℝ`,
+  `|Real.log ‖(x : ℂ) + t * I‖ - Real.log (1 + |t|)| ≤ Real.log x`.
+-/
+
+public section
+
+namespace Complex
+
+/-- **The Taylor family of `-log (1 - rᵢ)` is summable over index and exponent together.**  For a
+summable family `r` of complex numbers, all of modulus less than one, the double family
+`(i, e) ↦ rᵢ ^ (e + 1) / (e + 1)` is absolutely summable, so its sum may be taken fibrewise.
+
+Both hypotheses are needed, and neither is arithmetic: see the module docstring for why
+`∀ i, ‖r i‖ < 1` alone does not suffice. -/
+theorem summable_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (hr : Summable r)
+    (h1 : ∀ i, ‖r i‖ < 1) :
+    Summable fun ie : ι × ℕ ↦ r ie.1 ^ (ie.2 + 1) / ((ie.2 : ℂ) + 1) := by
+  -- The majorant is the weighted geometric bound at weight `1`; summability of `r` supplies its
+  -- eventual bound with `ε = 1 / 2`.
+  have hhalf : ∀ᶠ i in Filter.cofinite, ‖r i‖ ≤ 1 / 2 :=
+    hr.tendsto_cofinite_zero.norm.eventually_le_const (by norm_num)
+  have hbd : ∃ ε > 0, ∀ᶠ i in Filter.cofinite, (1 : ℝ) ≠ 0 → ‖r i‖ ≤ 1 - ε :=
+    ⟨1 / 2, by norm_num, by filter_upwards [hhalf] with i hi _; linarith⟩
+  have hmaj : Summable fun ie : ι × ℕ ↦ ‖r ie.1‖ ^ (ie.2 + 1) := by
+    simpa using TauCeti.summable_mul_norm_pow_succ (w := fun _ ↦ (1 : ℝ)) hbd
+      (by simpa using hr.norm) (fun i _ ↦ h1 i)
+  refine hmaj.of_norm_bounded ?_
+  rintro ⟨i, e⟩
+  rw [norm_div, norm_pow]
+  refine div_le_self (by positivity) ?_
+  have hcast : ((e : ℂ) + 1) = ((e + 1 : ℕ) : ℂ) := by push_cast; ring
+  rw [hcast, Complex.norm_natCast]
+  exact_mod_cast Nat.succ_le_succ (Nat.zero_le e)
+
+
+/-- **Summability of `-log (1 - rᵢ)` forces summability of `r`**, the converse of Mathlib's
+`Summable.clog_one_sub`, for `rᵢ ≠ 1`: once the logarithm is small, `‖rᵢ‖ ≤ 2 ‖log (1 - rᵢ)‖`. -/
+theorem summable_of_summable_neg_log_one_sub {ι : Type*} {r : ι → ℂ} (h1 : ∀ i, r i ≠ 1)
+    (hg : Summable fun i ↦ -Complex.log (1 - r i)) : Summable r := by
+  refine Summable.of_norm_bounded_eventually (hg.norm.mul_left 2) ?_
+  have hlim := tendsto_zero_iff_norm_tendsto_zero.1 hg.tendsto_cofinite_zero
+  filter_upwards [hlim.eventually_le_const one_pos] with i hi
+  have hne : 1 - r i ≠ 0 := sub_ne_zero.2 (h1 i).symm
+  have h2 := Complex.norm_exp_sub_one_le (x := Complex.log (1 - r i)) (by simpa using hi)
+  rw [Complex.exp_log hne, show 1 - r i - 1 = -r i by ring, norm_neg] at h2
+  simpa using h2
+
+/-- **The double sum is the sum of the local logarithms.**  For `r : ι → ℂ` with every
+`‖r i‖ < 1`, summing the Taylor series of `-log (1 - r i)` over `ι × ℕ` gives
+`∑' i, -log (1 - r i)`, the fibrewise regrouping that `summable_taylorSeries_neg_log` licenses.
+If `r` is not summable, neither sum is summable and both are the junk value `0`. -/
+theorem tsum_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (h1 : ∀ i, ‖r i‖ < 1) :
+    ∑' ie : ι × ℕ, r ie.1 ^ (ie.2 + 1) / ((ie.2 : ℂ) + 1) = ∑' i, -Complex.log (1 - r i) := by
+  have hfib : ∀ i, HasSum (fun e : ℕ ↦ r i ^ (e + 1) / ((e : ℂ) + 1))
+      (-Complex.log (1 - r i)) := fun i ↦ hasSum_taylorSeries_neg_log' (h1 i)
+  by_cases hg : Summable fun i ↦ -Complex.log (1 - r i)
+  · -- Summability of the logarithms forces summability of `r`.
+    have hr := summable_of_summable_neg_log_one_sub (fun i h ↦ (h1 i).ne (by simp [h])) hg
+    exact ((summable_taylorSeries_neg_log hr h1).hasSum.prod_fiberwise hfib).tsum_eq.symm
+  · rw [tsum_eq_zero_of_not_summable hg]
+    refine tsum_eq_zero_of_not_summable fun hS ↦ hg ?_
+    exact (hS.hasSum.prod_fiberwise hfib).summable
+
+/-- The Taylor series of `log (1 + z)` without its vanishing constant term:
+`log (1 + z) = ∑ₙ (-1) ^ n z ^ (n + 1) / (n + 1)` for `‖z‖ < 1`. -/
+theorem hasSum_taylorSeries_log' {z : ℂ} (hz : ‖z‖ < 1) :
+    HasSum (fun n : ℕ ↦ (-1) ^ n / (n + 1) * z ^ (n + 1)) (log (1 + z)) := by
+  have h := (hasSum_nat_add_iff' 1).2 (hasSum_taylorSeries_log hz)
+  simp only [Finset.range_one, Finset.sum_singleton, pow_zero, CharP.cast_eq_zero, div_zero,
+    sub_zero] at h
+  convert h using 1
+  ext n
+  push_cast
+  ring
+
+/-- The coefficients of the Taylor series of `log (1 + z)` have norm
+`‖(-1) ^ n / (n + 1)‖ = (n + 1)⁻¹`. -/
+theorem norm_neg_one_pow_div_add_one (n : ℕ) :
+    ‖((-1) ^ n / (n + 1) : ℂ)‖ = ((n : ℝ) + 1)⁻¹ := by
+  rw [norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div, ← Nat.cast_add_one,
+    Complex.norm_natCast, Nat.cast_add_one]
+
+/-- **The principal logarithm `log (1 - z)` is dominated by its value at `‖z‖`.** For `‖z‖ < 1`,
+`‖log (1 - z)‖ ≤ -Real.log (1 - ‖z‖)`: the Taylor series of `-log (1 - z)` is bounded termwise by
+the Taylor series of `-Real.log (1 - ‖z‖)`, which has nonnegative terms. -/
+theorem norm_log_one_sub_le_neg_log_one_sub_norm {z : ℂ} (hz : ‖z‖ < 1) :
+    ‖log (1 - z)‖ ≤ -Real.log (1 - ‖z‖) := by
+  rw [← norm_neg]
+  refine (hasSum_taylorSeries_neg_log' hz).norm_le_of_bounded
+    (Real.hasSum_pow_div_log_of_abs_lt_one (by rwa [abs_norm])) fun j ↦ ?_
+  rw [norm_div, norm_pow, ← Nat.cast_add_one, norm_natCast, Nat.cast_add_one]
+
+/-- **The truncation error of the Taylor series of `log (1 - z)⁻¹`.** For `‖z‖ < 1`, the partial
+sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)` to within
+`‖z‖ ^ (n + 1) / ((1 - ‖z‖) (n + 1))`. This restates Mathlib's
+`Complex.norm_log_one_sub_inv_add_logTaylor_neg_le` with the Taylor polynomial written out. -/
+theorem norm_log_one_sub_inv_sub_sum_Icc_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
+    ‖log (1 - z)⁻¹ - ∑ j ∈ Finset.Icc 1 n, z ^ j / j‖ ≤
+      ‖z‖ ^ (n + 1) * (1 - ‖z‖)⁻¹ / (n + 1) := by
+  have hsum : (∑ j ∈ Finset.Icc 1 n, z ^ j / j) =
+      ∑ k ∈ Finset.range n, z ^ (k + 1) / (k + 1) := by
+    rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range]
+    simp only [Nat.add_sub_cancel, Nat.add_comm 1, Nat.cast_add, Nat.cast_one]
+  rw [hsum, ← neg_logTaylor_succ_neg_eq_sum]
+  simpa only [sub_neg_eq_add] using norm_log_one_sub_inv_add_logTaylor_neg_le n hz
+
+/-- For `2 ≤ p` and `‖w‖ ≤ 1`, the partial sum of the Taylor series of `log (1 - w / p)⁻¹` up to
+degree `K` is within `2 / p ^ (K + 1)` of it. This is the local comparison at a single prime in an
+Euler product with coefficients of modulus at most one. -/
+theorem norm_log_one_sub_div_inv_sub_sum_Icc_le {p : ℕ} (hp : 2 ≤ p) {w : ℂ}
+    (hw : ‖w‖ ≤ 1) (K : ℕ) :
+    ‖log (1 - w / p)⁻¹ - ∑ k ∈ Finset.Icc 1 K, (w / p) ^ k / k‖ ≤
+      2 * ((p : ℝ) ^ (K + 1))⁻¹ := by
+  have hp2 : (2 : ℝ) ≤ p := mod_cast hp
+  have hz : ‖w / p‖ ≤ (p : ℝ)⁻¹ := by
+    rw [norm_div, norm_natCast, div_eq_mul_inv]
+    exact mul_le_of_le_one_left (by positivity) hw
+  have hz1 : ‖w / p‖ ≤ 1 / 2 := hz.trans (by rw [one_div]; gcongr)
+  have hpos : 0 < 1 - ‖w / p‖ := by linarith
+  refine (norm_log_one_sub_inv_sub_sum_Icc_le K (by linarith)).trans ?_
+  have h2 : (1 - ‖w / p‖)⁻¹ ≤ 2 := by
+    rw [inv_le_comm₀ hpos two_pos]
+    linarith
+  calc ‖w / p‖ ^ (K + 1) * (1 - ‖w / p‖)⁻¹ / (K + 1)
+      ≤ ‖w / p‖ ^ (K + 1) * (1 - ‖w / p‖)⁻¹ :=
+        div_le_self (by have := inv_pos.mpr hpos; positivity) (by simp)
+    _ ≤ ((p : ℝ)⁻¹) ^ (K + 1) * 2 := by gcongr
+    _ = 2 * ((p : ℝ) ^ (K + 1))⁻¹ := by rw [inv_pow, mul_comm]
+
+/-- For `1 < p` and `‖w‖ ≤ 1`, the Euler factor `1 - w / p` is nonzero. -/
+theorem one_sub_div_natCast_ne_zero {p : ℕ} (hp : 1 < p) {w : ℂ} (hw : ‖w‖ ≤ 1) :
+    1 - w / p ≠ 0 := by
+  refine sub_ne_zero.mpr fun h ↦ ?_
+  have h1 : ‖w / p‖ = 1 := by rw [← h, norm_one]
+  have h2 : (1 : ℝ) < p := mod_cast hp
+  rw [norm_div, norm_natCast, div_eq_one_iff_eq (by positivity)] at h1
+  linarith
+
+/-- A principal-log estimate uniform in the real part on a positive vertical strip. -/
+theorem norm_log_le_of_re_mem_Icc {a b : ℝ} (ha : 0 < a) {s : ℂ}
+    (hs : s.re ∈ Set.Icc a b) :
+    ‖Complex.log s‖ ≤ |Real.log a| + Real.log (|b| + 1) +
+      Real.log (|s.im| + 2) + Real.pi / 2 := by
+  have hre : 0 < s.re := ha.trans_le hs.1
+  have hnorm : a ≤ ‖s‖ := hs.1.trans (re_le_norm s)
+  have hnorm0 : 0 < ‖s‖ := ha.trans_le hnorm
+  have harg : |s.arg| ≤ Real.pi / 2 := abs_arg_le_pi_div_two_iff.mpr hre.le
+  have hnormhi : ‖s‖ ≤ (|b| + 1) * (|s.im| + 2) := by
+    have h := norm_le_abs_re_add_abs_im s
+    rw [abs_of_pos hre] at h
+    have hb : 0 ≤ |b| := abs_nonneg b
+    have hi : 0 ≤ |s.im| := abs_nonneg s.im
+    have hsb : s.re ≤ |b| := hs.2.trans (le_abs_self b)
+    nlinarith [mul_nonneg hb hi]
+  have hlo : Real.log a ≤ Real.log ‖s‖ := Real.log_le_log ha hnorm
+  have hhi : Real.log ‖s‖ ≤ Real.log (|b| + 1) + Real.log (|s.im| + 2) := by
+    simpa only [Real.log_mul (by positivity : |b| + 1 ≠ 0)
+      (by positivity : |s.im| + 2 ≠ 0)] using Real.log_le_log hnorm0 hnormhi
+  have hlogabs : |Real.log ‖s‖| ≤
+      |Real.log a| + Real.log (|b| + 1) + Real.log (|s.im| + 2) := by
+    refine abs_le.mpr ⟨?_, ?_⟩
+    · have hba := Real.log_nonneg (by linarith [abs_nonneg b] : 1 ≤ |b| + 1)
+      have hi := Real.log_nonneg (by linarith [abs_nonneg s.im] : 1 ≤ |s.im| + 2)
+      linarith [neg_abs_le (Real.log a)]
+    · linarith [abs_nonneg (Real.log a)]
+  have h := norm_le_abs_re_add_abs_im (Complex.log s)
+  rw [Complex.log_re, Complex.log_im] at h
+  linarith
+
+/-- For `x ≥ 2`, the real part `Real.log ‖(x : ℂ) + t * I‖` of `Complex.log (x + t * I)` differs
+from `Real.log (1 + |t|)` by at most `Real.log x`, with equality at `t = 0`. The integer threshold
+`2` is sharp, since the bound fails at `x = t = 1`. -/
+theorem abs_log_norm_ofReal_add_mul_I_sub_le {x : ℝ} (hx : 2 ≤ x) (t : ℝ) :
+    |Real.log ‖(x : ℂ) + t * I‖ - Real.log (1 + |t|)| ≤ Real.log x := by
+  set z : ℂ := (x : ℂ) + t * I
+  have hx0 : 0 < x := by positivity
+  have ht1 : 0 < 1 + |t| := by positivity
+  have hx_le : x ≤ ‖z‖ := by
+    simpa [z, abs_of_pos hx0] using abs_re_le_norm z
+  have ht_le : |t| ≤ ‖z‖ := by simpa [z] using abs_im_le_norm z
+  have hhalf : (1 + |t|) / 2 ≤ ‖z‖ := by
+    rcases le_total |t| 2 with _ | _ <;> linarith
+  have hlo : (1 + |t|) / x ≤ ‖z‖ :=
+    (div_le_div_of_nonneg_left ht1.le two_pos hx).trans hhalf
+  have hhi : ‖z‖ ≤ x * (1 + |t|) := by
+    have hsum : ‖z‖ ≤ x + |t| := by
+      simpa [z, abs_of_pos hx0] using norm_le_abs_re_add_abs_im z
+    nlinarith [abs_nonneg t]
+  have hz0 : 0 < ‖z‖ := (div_pos ht1 hx0).trans_le hlo
+  rw [abs_le]
+  refine ⟨?_, ?_⟩
+  · have h := Real.log_le_log (div_pos ht1 hx0) hlo
+    rw [Real.log_div ht1.ne' hx0.ne'] at h
+    linarith
+  · have h := Real.log_le_log hz0 hhi
+    rw [Real.log_mul hx0.ne' ht1.ne'] at h
+    linarith
+
+end Complex

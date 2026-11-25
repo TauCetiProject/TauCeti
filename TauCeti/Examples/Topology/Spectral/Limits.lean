@@ -91,8 +91,8 @@ example : ∃ (F : ℕᵒᵖ ⥤ TopCat.{0}) (s : Set (F.obj (Opposite.op 0))),
   have : ∀ j, Finite (F.obj j) := fun _ ↦ inferInstanceAs (Finite Prop)
   have hF : ∀ {i j} (f : i ⟶ j), IsSpectralMap (F.map f) := fun f ↦
     ⟨(F.map f).hom.continuous, fun _ _ _ ↦ Set.toFinite _ |>.isCompact⟩
-  have hcoord (x : (limitCone F).pt) (n : ℕ) : x.1 (Opposite.op n) = False := by
-    have hx := x.2 (homOfLE (Nat.le_succ n)).op
+  have hcoord (x : (limitCone F).pt) (n : ℕ) : x.val (Opposite.op n) = False := by
+    have hx := x.property (homOfLE (Nat.le_succ n)).op
     rw [Functor.ofOpSequence_map_homOfLE_succ] at hx
     exact hx.symm
   have hempty : (limitCone F).π.app (Opposite.op 0) ⁻¹' ({True} : Set Prop) = ∅ := by

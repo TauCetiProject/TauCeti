@@ -65,7 +65,7 @@ variable {Z : Type} [TopologicalSpace Z] (β : Y → Z) (hβ : IsQuotientCoverin
 private def sheetMarkingObjIso (n : ℕ) {x : FundamentalGroupoid (TopCat.of Z)} (e : β ⁻¹' {x.as}) :
     (fiberLocalSystem L ℤ n).obj x ≅ ModuleCat.of ℤ (⋀[ℤ]^n Λ) :=
   fiberLocalSystemSingularObjIso L ℤ n x ≪≫ (torusFamilyAffineQuotientHomologyMarking P hcont hinj
-    R ρ hequiv b hb hone hmul hbmul hR hbc β hβ e.1 e.2 n).toModuleIso
+    R ρ hequiv b hb hone hmul hbmul hR hbc β hβ e.val e.property n).toModuleIso
 
 omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 private theorem sheetMarkingObjIso_comp_fiberIso_inv_eq (n : ℕ)
@@ -81,7 +81,8 @@ private theorem sheetMarkingObjIso_comp_fiberIso_inv_eq (n : ℕ)
         ModuleCat.ofHom (ρ.exteriorPower n g) := by
     apply ModuleCat.hom_ext; ext1 v
     exact torusFamilyAffineQuotientHomologyMarking_smul P hcont hinj R ρ hequiv b hb hone hmul
-      hbmul hR hbc β hβ e.1 e.2 g (g • e).2 n ((fiberLocalSystemSingularObjIso L ℤ n x).hom v)
+      hbmul hR hbc β hβ e.val e.property g (g • e).property n
+      ((fiberLocalSystemSingularObjIso L ℤ n x).hom v)
   have hcancel : ModuleCat.ofHom (ρ.exteriorPower n g) ≫
       (ModuleCat.ofHom ((Rep.of (ρ.exteriorPower n)).ρ g⁻¹) ≫
         (hβ.topCat_ofHom.associatedLocalSystemFiberIso ℤ (Rep.of (ρ.exteriorPower n)) e).inv) =
@@ -113,7 +114,7 @@ def torusFamilyAffineQuotientHomologyLocalSystemIso (n : ℕ) :
       (sheetMarkingObjIso P hcont hinj R ρ hequiv b hb hone hmul hbmul hR hbc β hβ L n e).hom := by
     apply ModuleCat.hom_ext; ext1 v
     exact (congrArg (torusFamilyAffineQuotientHomologyMarking P hcont hinj R ρ hequiv b hb hone
-        hmul hbmul hR hbc β hβ e'.1 e'.2 n)
+        hmul hbmul hR hbc β hβ e'.val e'.property n)
       (fiberLocalSystemSingularObjIso_hom_map_mk L ℤ n γ v)).trans
       (torusFamilyAffineQuotientHomologyMarking_transport_monodromy P hcont hinj R ρ hequiv b hb
         hone hmul hbmul hR hbc β hβ L γ e n _)
@@ -145,7 +146,7 @@ variable {x : FundamentalGroupoid (TopCat.of Z)} (e : β ⁻¹' {x.as})
       (hβ.topCat_ofHom.associatedLocalSystemFiberIso ℤ (Rep.of (ρ.exteriorPower n)) e).hom =
       (fiberLocalSystemSingularObjIso L ℤ n x).hom ≫
         (torusFamilyAffineQuotientHomologyMarking P hcont hinj R ρ hequiv b hb hone hmul hbmul
-          hR hbc β hβ e.1 e.2 n).toModuleIso.hom := by
+          hR hbc β hβ e.val e.property n).toModuleIso.hom := by
   dsimp only [torusFamilyAffineQuotientHomologyLocalSystemIso, NatIso.ofComponents_hom_app,
     Iso.trans_hom, Iso.symm_hom]
   rw [sheetMarkingObjIso_comp_fiberIso_inv_eq P hcont hinj R ρ hequiv b hb hone hmul hbmul hR hbc
@@ -158,7 +159,7 @@ variable {x : FundamentalGroupoid (TopCat.of Z)} (e : β ⁻¹' {x.as})
         hR hbc β hβ L n).inv.app x ≫ (fiberLocalSystemSingularObjIso L ℤ n x).hom =
       (hβ.topCat_ofHom.associatedLocalSystemFiberIso ℤ (Rep.of (ρ.exteriorPower n)) e).hom ≫
         (torusFamilyAffineQuotientHomologyMarking P hcont hinj R ρ hequiv b hb hone hmul hbmul
-          hR hbc β hβ e.1 e.2 n).symm.toModuleIso.hom := by
+          hR hbc β hβ e.val e.property n).symm.toModuleIso.hom := by
   rw [← cancel_epi ((torusFamilyAffineQuotientHomologyLocalSystemIso P hcont hinj R ρ hequiv b hb
       hone hmul hbmul hR hbc β hβ L n).hom.app x), Iso.hom_inv_id_app_assoc,
     torusFamilyAffineQuotientHomologyLocalSystemIso_hom_app_comp_fiberIso_hom_assoc]
@@ -171,7 +172,7 @@ variable {x : FundamentalGroupoid (TopCat.of Z)} (e : β ⁻¹' {x.as})
       (hβ.topCat_ofHom.associatedLocalSystemFiberIso ℤ (Rep.of ρ) e).hom =
       (fiberLocalSystemSingularObjIso L ℤ 1 x).hom ≫
         (torusFamilyAffineQuotientMarking P hcont hinj R ρ hequiv b hb hone hmul hbmul hR hbc β hβ
-          e.1 e.2).toModuleIso.hom := by
+          e.val e.property).toModuleIso.hom := by
   dsimp only [torusFamilyAffineQuotientFirstHomologyLocalSystemIso, Iso.trans_hom,
     Functor.mapIso_hom, NatTrans.comp_app, IsQuotientCoveringMap.associatedLocalSystemFunctor_map]
   rw [Category.assoc, hβ.topCat_ofHom.associatedLocalSystemFiberIso_hom_naturality ℤ
@@ -179,7 +180,7 @@ variable {x : FundamentalGroupoid (TopCat.of Z)} (e : β ⁻¹' {x.as})
     torusFamilyAffineQuotientHomologyLocalSystemIso_hom_app_comp_fiberIso_hom_assoc]
   apply ModuleCat.hom_ext; ext1 v
   simpa using oneEquiv_torusFamilyAffineQuotientHomologyMarking P hcont hinj R ρ hequiv b hb hone
-    hmul hbmul hR hbc β hβ e.1 e.2 ((fiberLocalSystemSingularObjIso L ℤ 1 x).hom v)
+    hmul hbmul hR hbc β hβ e.val e.property ((fiberLocalSystemSingularObjIso L ℤ 1 x).hom v)
 
 /-- **Inverse sheet-coordinate characterization in degree one.** -/
 @[reassoc]
@@ -188,7 +189,7 @@ theorem torusFamilyAffineQuotientFirstHomologyLocalSystemIso_inv_app_comp_singul
         hbmul hR hbc β hβ L).inv.app x ≫ (fiberLocalSystemSingularObjIso L ℤ 1 x).hom =
       (hβ.topCat_ofHom.associatedLocalSystemFiberIso ℤ (Rep.of ρ) e).hom ≫
         (torusFamilyAffineQuotientMarking P hcont hinj R ρ hequiv b hb hone hmul hbmul hR hbc β hβ
-          e.1 e.2).symm.toModuleIso.hom := by
+          e.val e.property).symm.toModuleIso.hom := by
   rw [← cancel_epi ((torusFamilyAffineQuotientFirstHomologyLocalSystemIso P hcont hinj R ρ hequiv
       b hb hone hmul hbmul hR hbc β hβ L).hom.app x), Iso.hom_inv_id_app_assoc,
     torusFamilyAffineQuotientFirstHomologyLocalSystemIso_hom_app_comp_fiberIso_hom_assoc]

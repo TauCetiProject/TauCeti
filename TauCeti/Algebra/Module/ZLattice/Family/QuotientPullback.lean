@@ -94,7 +94,7 @@ noncomputable def torusFamilyAffineQuotientPullbackHomeomorph :
     letI := periodAddAction P
     letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     (torusFamilyAffineQuotientPullbackHomeomorph P R ρ hequiv b hb hone hmul hbmul
-      hcont hR hbc β hβ x).1 = (torusFamilyProjection P x, Quotient.mk _ x) := by
+      hcont hR hbc β hβ x).val = (torusFamilyProjection P x, Quotient.mk _ x) := by
   let _ := periodAddAction P
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
@@ -152,7 +152,7 @@ noncomputable def torusFamilyAffineQuotientFiberHomeomorph {z : Z} (y : Y)
     letI := periodAddAction P; letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     (torusFamilyAffineQuotientFiberHomeomorph P R ρ hequiv b hb hone hmul hbmul hcont hR hbc β hβ
       y hy u : MulAction.orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E))) =
-      Quotient.mk _ u.1 := by
+      Quotient.mk _ u.val := by
   let _ := periodAddAction P; let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     hcont hR hbc
@@ -188,13 +188,13 @@ theorem torusFamilyAffineQuotientFiberHomeomorph_symm_mk_of_smul {z : Z} (y : Y)
     ((torusFamilyAffineQuotientFiberHomeomorph P R ρ hequiv b hb hone hmul hbmul hcont hR hbc β hβ
       y hy).symm (torusFamilyAffineQuotientFiberHomeomorph P R ρ hequiv b hb hone hmul hbmul
         hcont hR hbc β hβ (g • y) hgy v) : AddAction.orbitRel.Quotient Λ (Y × E)) =
-      torusFamilyAffineMap R P ρ hequiv b hb g⁻¹ v.1 := by
+      torusFamilyAffineMap R P ρ hequiv b hb g⁻¹ v.val := by
   let _ := periodAddAction P; let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     hcont hR hbc
   exact (MulActionHom.orbitRelQuotientFiberHomeomorph_symm_apply_smul
       ⟨torusFamilyProjection P, by simp⟩ β _ _ _ hβ y hy g hgy v).trans
-    (torusFamilyAffineMulAction_smul R hone hmul P ρ hequiv b hb hbmul g⁻¹ v.1)
+    (torusFamilyAffineMulAction_smul R hone hmul P ρ hequiv b hb hbmul g⁻¹ v.val)
 
 /-- Identifying the `y`-sheet fibre with the `(g • y)`-sheet fibre over `z` acts by `g`. -/
 @[simp] theorem torusFamilyAffineQuotientFiberHomeomorph_smul_symm_apply {z : Z} (y : Y)
@@ -204,13 +204,13 @@ theorem torusFamilyAffineQuotientFiberHomeomorph_symm_mk_of_smul {z : Z} (y : Y)
     ((torusFamilyAffineQuotientFiberHomeomorph P R ρ hequiv b hb hone hmul hbmul hcont hR hbc β hβ
       (g • y) hgy).symm (torusFamilyAffineQuotientFiberHomeomorph P R ρ hequiv b hb hone hmul hbmul
         hcont hR hbc β hβ y hy u) : AddAction.orbitRel.Quotient Λ (Y × E)) =
-      torusFamilyAffineMap R P ρ hequiv b hb g u.1 := by
+      torusFamilyAffineMap R P ρ hequiv b hb g u.val := by
   let _ := periodAddAction P; let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     hcont hR hbc
   exact (MulActionHom.orbitRelQuotientFiberHomeomorph_smul_symm_apply
       ⟨torusFamilyProjection P, by simp⟩ β _ _ _ hβ y hy g hgy u).trans
-    (torusFamilyAffineMulAction_smul R hone hmul P ρ hequiv b hb hbmul g u.1)
+    (torusFamilyAffineMulAction_smul R hone hmul P ρ hequiv b hb hbmul g u.val)
 
 end Topology
 

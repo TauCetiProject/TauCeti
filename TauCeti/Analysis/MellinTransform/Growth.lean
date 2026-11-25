@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.GrowthOrder.Logarithmic
 public import TauCeti.Analysis.MellinTransform.Basic
 public import Mathlib.MeasureTheory.Integral.Gamma
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Growth bounds for Mellin tails with exponential decay
@@ -20,8 +21,9 @@ In particular this bound remains finite at `R = 0`. These estimates provide the 
 ingredient for the split Mellin method of proving order-one growth for completed L-functions.
 On a half-plane `Re s ≤ R` the upper Mellin integral is bounded by the tail at the fixed
 exponent `R`, independently of `Im s`; this gives boundedness on vertical strips.
-A kernel continuous on `[1, ∞)` with an eventual bound `O(exp (-p u))` satisfies the
-exponential bound `C exp (-p u ^ 1)` on all of `(1, ∞)` that these estimates take.
+More generally, for any kernel locally integrable on `[1, ∞)` with stretched-exponential decay
+`f =O[atTop] fun u ↦ exp (-c * u ^ α)`, splitting `(1, ∞)` at an eventual threshold recovers
+integrability, half-plane boundedness, and global `exp (C (1 + ‖s‖) log (2 + ‖s‖))` growth.
 
 ## References
 
@@ -81,6 +83,12 @@ theorem integral_rpow_mul_exp_neg_mul_rpow_div_le_Gamma {R c α : ℝ}
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
+private theorem nonneg_of_norm_le_mul_exp_on_Ioi {F : Type*} [SeminormedAddGroup F]
+    {f : ℝ → F} {T C₀ c α : ℝ}
+    (hbound : ∀ u ∈ Ioi T, ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) : 0 ≤ C₀ :=
+  nonneg_of_mul_nonneg_left
+    ((norm_nonneg _).trans (hbound (T + 1) (lt_add_one T))) (exp_pos _)
+
 private theorem norm_mellinIntegrand_le {f : ℝ → E} {C₀ c α : ℝ}
     {s : ℂ} {u : ℝ} (hu : 1 < u)
     (hbound : ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) :
@@ -117,10 +125,11 @@ theorem integrableOn_cpow_smul_of_norm_le_exp_neg_mul_rpow {f : ℝ → E}
 
 /-- The norm of the upper Mellin integral is bounded by its positive Gamma moment. -/
 theorem norm_integral_cpow_smul_le_mul_Gamma {f : ℝ → E} {C₀ c α : ℝ}
-    (hC₀ : 0 ≤ C₀) (hc : 0 < c) (hα : 0 < α)
+    (hc : 0 < c) (hα : 0 < α)
     (hbound : ∀ u ∈ Ioi 1, ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) (s : ℂ) :
     ‖∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • f u‖ ≤
       C₀ * (c ^ (-(‖s‖ + 1) / α) * Gamma ((‖s‖ + 1) / α) / α) := by
+  have hC₀ := nonneg_of_norm_le_mul_exp_on_Ioi hbound
   calc
     _ ≤ ∫ u in Ioi 1, C₀ * (u ^ ‖s‖ * exp (-c * u ^ α) / u) := by
       apply norm_integral_le_of_norm_le
@@ -151,47 +160,193 @@ theorem norm_integral_cpow_smul_le_of_re_le {f : ℝ → E} {C₀ c α R : ℝ}
       exact div_le_div_of_nonneg_right (rpow_le_rpow_of_exponent_le hu.le hs) hu0.le
     _ = _ := by ring
 
-/-- A function continuous on `[1, ∞)` with an eventual bound `O(exp (-p u))` satisfies
-`‖f u‖ ≤ C exp (-p u ^ 1)` for every `u > 1`, with `C ≥ 0`. -/
-theorem exists_norm_le_mul_exp_neg_mul_rpow_one_of_isBigO {F : Type*} [NormedAddCommGroup F]
-    {f : ℝ → F} {p : ℝ} (hf : ContinuousOn f (Ici 1)) (h : f =O[atTop] fun u ↦ exp (-p * u)) :
-    ∃ C ≥ 0, ∀ u ∈ Ioi 1, ‖f u‖ ≤ C * exp (-p * u ^ (1 : ℝ)) := by
-  obtain ⟨C, hC⟩ := isBigO_principal.mp (h.isBigO_principal_Ici_of_continuousOn hf
-    (by fun_prop) fun u _ ↦ (exp_pos _).ne')
-  refine ⟨max C 0, le_max_right _ _, fun u hu ↦ ?_⟩
-  have hCu := hC u (mem_Ici.mpr hu.le)
-  rw [Real.norm_eq_abs, abs_of_pos (exp_pos _)] at hCu
-  rw [rpow_one]
-  exact hCu.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (exp_pos _).le)
-
 /-- An exponentially decaying kernel gives logarithmic-exponential growth of its upper Mellin
 integral, uniformly over the whole complex plane. -/
 theorem exists_norm_integral_cpow_smul_le_exp_mul_log {f : ℝ → E} {C₀ c α : ℝ}
-    (hC₀ : 0 ≤ C₀) (hc : 0 < c) (hα : 0 < α)
+    (hc : 0 < c) (hα : 0 < α)
     (hbound : ∀ u ∈ Ioi 1, ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) :
     ∃ C > 0, ∀ s : ℂ, ‖∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • f u‖ ≤
       exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) := by
+  have hC₀ := nonneg_of_norm_le_mul_exp_on_Ioi hbound
   obtain ⟨C, hC, hCG⟩ := exists_rpow_mul_Gamma_div_le_exp_mul_log hc hα
   refine ⟨C + 2 * C₀, by positivity, fun s ↦ ?_⟩
   calc
     _ ≤ C₀ * (c ^ (-(‖s‖ + 1) / α) * Gamma ((‖s‖ + 1) / α) / α) :=
-      norm_integral_cpow_smul_le_mul_Gamma hC₀ hc hα hbound s
-    _ ≤ exp C₀ * exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) :=
-      mul_le_mul (by linarith [add_one_le_exp C₀]) (hCG ‖s‖ (norm_nonneg s))
-        (by positivity) (by positivity)
-    _ = exp (C₀ + C * (1 + ‖s‖) * log (2 + ‖s‖)) := (exp_add _ _).symm
-    _ ≤ _ := by
-      apply exp_le_exp.mpr
-      nlinarith [mul_le_mul_of_nonneg_left (one_half_le_one_add_mul_log_two_add (norm_nonneg s))
-        hC₀]
+      norm_integral_cpow_smul_le_mul_Gamma hc hα hbound s
+    _ ≤ C₀ * exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) :=
+      mul_le_mul_of_nonneg_left (hCG ‖s‖ (norm_nonneg s)) hC₀
+    _ ≤ _ := Real.mul_exp_mul_one_add_mul_log_two_add_le hC₀ (norm_nonneg s)
 
 /-- The upper Mellin transform of an exponentially decaying complex kernel has order at most
 one. -/
 theorem orderLE_integral_cpow_mul_of_norm_le_exp_neg_mul_rpow {f : ℝ → ℂ}
-    {C₀ c α : ℝ} (hC₀ : 0 ≤ C₀) (hc : 0 < c) (hα : 0 < α)
+    {C₀ c α : ℝ} (hc : 0 < c) (hα : 0 < α)
     (hbound : ∀ u ∈ Ioi 1, ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) :
     OrderLE (fun s ↦ ∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) * f u) 1 := by
-  obtain ⟨C, _, hC⟩ := exists_norm_integral_cpow_smul_le_exp_mul_log hC₀ hc hα hbound
+  obtain ⟨C, _, hC⟩ := exists_norm_integral_cpow_smul_le_exp_mul_log hc hα hbound
   exact orderLE_one_of_norm_le_exp_mul_log hC
+
+private theorem norm_cpow_smul_indicator_Ioc_le {f : ℝ → E} {M R : ℝ}
+    (hR : 0 ≤ R) {s : ℂ} (hs : s.re ≤ R) (u : ℝ) :
+    ‖(u : ℂ) ^ (s - 1) • (Ioc 1 M).indicator f u‖ ≤ M ^ R * ‖(Ioc 1 M).indicator f u‖ := by
+  by_cases hu : u ∈ Ioc 1 M
+  · have hu0 : 0 < u := zero_lt_one.trans hu.1
+    rw [indicator_of_mem hu, norm_smul, Complex.norm_cpow_eq_rpow_re_of_pos hu0]
+    refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
+    have hexp : (s - 1).re ≤ R := by
+      simp only [Complex.sub_re, Complex.one_re]
+      linarith
+    exact (rpow_le_rpow_of_exponent_le hu.1.le hexp).trans (rpow_le_rpow hu0.le hu.2 hR)
+  · simp [indicator_of_notMem hu]
+
+private theorem norm_integral_cpow_smul_indicator_Ioc_le {f : ℝ → E}
+    (hf : LocallyIntegrableOn f (Ici 1)) (M : ℝ) {R : ℝ} (hR : 0 ≤ R) {s : ℂ} (hs : s.re ≤ R) :
+    ‖∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • (Ioc 1 M).indicator f u‖ ≤
+      M ^ R * ∫ u in Ioi 1, ‖(Ioc 1 M).indicator f u‖ := by
+  rw [← integral_const_mul]
+  have hf₁ : IntegrableOn ((Ioc 1 M).indicator f) (Ioi 1) :=
+    ((hf.integrableOn_Ioc_of_Ici M).integrable_indicator measurableSet_Ioc).integrableOn
+  refine norm_integral_le_of_norm_le (hf₁.norm.const_mul (M ^ R)) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with u _
+  exact norm_cpow_smul_indicator_Ioc_le hR hs u
+
+private theorem integrableOn_cpow_smul_indicator_Ioc {f : ℝ → E}
+    (hf : LocallyIntegrableOn f (Ici 1)) (M : ℝ) (s : ℂ) :
+    IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) • (Ioc 1 M).indicator f u) (Ioi 1) := by
+  have hf₁ : IntegrableOn ((Ioc 1 M).indicator f) (Ioi 1) :=
+    ((hf.integrableOn_Ioc_of_Ici M).integrable_indicator measurableSet_Ioc).integrableOn
+  refine (hf₁.norm.const_mul (M ^ ‖s‖)).mono' ?_ ?_
+  · have hcpow : ContinuousOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1)) (Ioi 1) :=
+      ContinuousOn.cpow_const (by fun_prop) fun u hu ↦
+        Or.inl (by simpa using (zero_lt_one.trans hu))
+    exact (hcpow.aestronglyMeasurable measurableSet_Ioi).smul hf₁.aestronglyMeasurable
+  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u _
+    exact norm_cpow_smul_indicator_Ioc_le (norm_nonneg s) (Complex.re_le_norm s) u
+
+private theorem norm_indicator_Ioi_le_exp_neg_mul_rpow {F : Type*} [SeminormedAddGroup F]
+    {f : ℝ → F} {M C₀ c α : ℝ}
+    (hbound : ∀ u ∈ Ioi M, ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) :
+    ∀ u ∈ Ioi 1, ‖(Ioi M).indicator f u‖ ≤ C₀ * exp (-c * u ^ α) := by
+  have hC₀ := nonneg_of_norm_le_mul_exp_on_Ioi hbound
+  intro u _
+  by_cases hu : u ∈ Ioi M
+  · simpa only [indicator_of_mem hu] using hbound u hu
+  · simp only [indicator_of_notMem hu, norm_zero]
+    positivity
+
+private theorem integrableOn_cpow_smul_indicator_Ioi {f : ℝ → E} {T C₀ c α : ℝ}
+    (hf : LocallyIntegrableOn f (Ici 1)) (hc : 0 < c) (hα : 0 < α)
+    (hbound : ∀ u ∈ Ioi T, ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) (s : ℂ) :
+    IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) • (Ioi (max 1 T)).indicator f u) (Ioi 1) := by
+  have hf₂_meas : AEStronglyMeasurable ((Ioi (max 1 T)).indicator f) (volume.restrict (Ioi 1)) :=
+    ((hf.mono_set Ioi_subset_Ici_self).aestronglyMeasurable).indicator measurableSet_Ioi
+  have hboundM := norm_indicator_Ioi_le_exp_neg_mul_rpow fun u hu ↦
+    hbound u ((le_max_right 1 T).trans_lt hu)
+  exact integrableOn_cpow_smul_of_norm_le_exp_neg_mul_rpow hc hα hf₂_meas hboundM s
+
+private theorem integral_cpow_smul_eq_add_indicator {f : ℝ → E} {T C₀ c α : ℝ}
+    (hf : LocallyIntegrableOn f (Ici 1)) (hc : 0 < c) (hα : 0 < α)
+    (hbound : ∀ u ∈ Ioi T, ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) (s : ℂ) :
+    (∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • f u) =
+      (∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • (Ioc 1 (max 1 T)).indicator f u) +
+        ∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • (Ioi (max 1 T)).indicator f u := by
+  rw [← integral_add (integrableOn_cpow_smul_indicator_Ioc hf (max 1 T) s)
+    (integrableOn_cpow_smul_indicator_Ioi hf hc hα hbound s)]
+  refine setIntegral_congr_fun measurableSet_Ioi fun u hu ↦ ?_
+  rw [← smul_add, ← congr_fun (indicator_union_of_disjoint Ioc_disjoint_Ioi_same f) u,
+    indicator_of_mem (Ioi_subset_Ioc_union_Ioi hu)]
+
+private theorem exists_Ioi_norm_le_exp_neg_mul_rpow {F : Type*} [SeminormedAddGroup F]
+    {f : ℝ → F} {c α : ℝ} (hf_top : f =O[atTop] fun u ↦ exp (-c * u ^ α)) :
+    ∃ T C₀ : ℝ, ∀ u ∈ Ioi T, ‖f u‖ ≤ C₀ * exp (-c * u ^ α) := by
+  obtain ⟨C₀, hC₀⟩ := hf_top.bound
+  obtain ⟨T, hT⟩ := eventually_atTop.mp hC₀
+  refine ⟨T, C₀, fun u hu ↦ ?_⟩
+  simpa [Real.norm_eq_abs, abs_of_pos (exp_pos _)] using hT u hu.le
+
+/-- A kernel locally integrable on `[1, ∞)` with stretched-exponential decay
+`f =O[atTop] fun u ↦ exp (-c * u ^ α)` has an absolutely convergent upper Mellin integral at every
+complex argument. -/
+theorem integrableOn_cpow_smul_of_isBigO_exp_neg_mul_rpow {f : ℝ → E} {c α : ℝ}
+    (hf : LocallyIntegrableOn f (Ici 1)) (hc : 0 < c) (hα : 0 < α)
+    (hf_top : f =O[atTop] fun u ↦ exp (-c * u ^ α)) (s : ℂ) :
+    IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) • f u) (Ioi 1) := by
+  obtain ⟨T, C₀, hbound⟩ := exists_Ioi_norm_le_exp_neg_mul_rpow hf_top
+  refine ((integrableOn_cpow_smul_indicator_Ioc hf (max 1 T) s).add
+    (integrableOn_cpow_smul_indicator_Ioi hf hc hα hbound s)).congr_fun
+    (fun u hu ↦ ?_) measurableSet_Ioi
+  rw [Pi.add_apply, ← smul_add,
+    ← congr_fun (indicator_union_of_disjoint Ioc_disjoint_Ioi_same f) u,
+    indicator_of_mem (Ioi_subset_Ioc_union_Ioi hu)]
+
+/-- On any half-plane `Re s ≤ R`, the upper Mellin integral of a kernel locally integrable on
+`[1, ∞)` with stretched-exponential decay `f =O[atTop] fun u ↦ exp (-c * u ^ α)` is uniformly
+bounded independently of `Im s`. -/
+theorem exists_norm_integral_cpow_smul_le_of_re_le_of_isBigO {f : ℝ → E} {c α : ℝ}
+    (hf : LocallyIntegrableOn f (Ici 1)) (hc : 0 < c) (hα : 0 < α)
+    (hf_top : f =O[atTop] fun u ↦ exp (-c * u ^ α)) (R : ℝ) :
+    ∃ B ≥ 0, ∀ s : ℂ, s.re ≤ R → ‖∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • f u‖ ≤ B := by
+  obtain ⟨T, C₀, hbound⟩ := exists_Ioi_norm_le_exp_neg_mul_rpow hf_top
+  have hC₀ := nonneg_of_norm_le_mul_exp_on_Ioi hbound
+  let M := max 1 T
+  have _ : 0 < M := zero_lt_one.trans_le (le_max_left 1 T)
+  have _ : 0 ≤ ∫ u in Ioi 1, ‖(Ioc 1 M).indicator f u‖ := integral_nonneg fun _ ↦ norm_nonneg _
+  have _ : 0 ≤ ∫ u in Ioi 1, u ^ R * exp (-c * u ^ α) / u :=
+    setIntegral_nonneg measurableSet_Ioi fun u hu ↦ by
+      have hu0 : 0 < u := zero_lt_one.trans hu
+      positivity
+  have hboundM := norm_indicator_Ioi_le_exp_neg_mul_rpow fun u hu ↦
+    hbound u ((le_max_right 1 T).trans_lt hu)
+  refine ⟨M ^ max R 0 * (∫ u in Ioi 1, ‖(Ioc 1 M).indicator f u‖) +
+    C₀ * ∫ u in Ioi 1, u ^ R * exp (-c * u ^ α) / u, by positivity, fun s hs ↦ ?_⟩
+  rw [integral_cpow_smul_eq_add_indicator hf hc hα hbound s]
+  exact (norm_add_le _ _).trans (add_le_add
+    (norm_integral_cpow_smul_indicator_Ioc_le hf M (le_max_right R 0) (hs.trans (le_max_left R 0)))
+    (norm_integral_cpow_smul_le_of_re_le hc hα hboundM hs))
+
+/-- A kernel locally integrable on `[1, ∞)` with stretched-exponential decay
+`f =O[atTop] fun u ↦ exp (-c * u ^ α)` gives global logarithmic-exponential growth of its upper
+Mellin integral. -/
+theorem exists_norm_integral_cpow_smul_le_exp_mul_log_of_isBigO {f : ℝ → E} {c α : ℝ}
+    (hf : LocallyIntegrableOn f (Ici 1)) (hc : 0 < c) (hα : 0 < α)
+    (hf_top : f =O[atTop] fun u ↦ exp (-c * u ^ α)) :
+    ∃ C > 0, ∀ s : ℂ, ‖∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • f u‖ ≤
+      exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) := by
+  obtain ⟨T, C₀, hbound⟩ := exists_Ioi_norm_le_exp_neg_mul_rpow hf_top
+  let M := max 1 T
+  have hM1 : 1 ≤ M := le_max_left 1 T
+  have hM0 : 0 < M := zero_lt_one.trans_le hM1
+  have hlogM : 0 ≤ log M := log_nonneg hM1
+  let I₁ := ∫ u in Ioi 1, ‖(Ioc 1 M).indicator f u‖
+  have hI₁ : 0 ≤ I₁ := integral_nonneg fun _ ↦ norm_nonneg _
+  have hboundM := norm_indicator_Ioi_le_exp_neg_mul_rpow fun u hu ↦
+    hbound u ((le_max_right 1 T).trans_lt hu)
+  obtain ⟨B, hB, hF₂⟩ := exists_norm_integral_cpow_smul_le_exp_mul_log hc hα hboundM
+  let K := B + 2 * log M
+  let D := 1 + I₁
+  have hD : 0 < D := by dsimp [D]; positivity
+  refine ⟨K + 2 * D, by dsimp [K]; positivity, fun s ↦ ?_⟩
+  have hF₁ : ‖∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • (Ioc 1 M).indicator f u‖ ≤
+      I₁ * exp (K * (1 + ‖s‖) * log (2 + ‖s‖)) := by
+    refine (norm_integral_cpow_smul_indicator_Ioc_le hf M (norm_nonneg s)
+      (Complex.re_le_norm s)).trans ?_
+    rw [rpow_def_of_pos hM0, mul_comm]
+    refine mul_le_mul_of_nonneg_left (exp_le_exp.mpr ?_) hI₁
+    have hlog := one_half_le_log_two_add (norm_nonneg s)
+    have hns : ‖s‖ ≤ 2 * ((1 + ‖s‖) * log (2 + ‖s‖)) := by nlinarith [norm_nonneg s]
+    have hW : 0 ≤ (1 + ‖s‖) * log (2 + ‖s‖) :=
+      mul_nonneg (by positivity) (by linarith)
+    dsimp [K]
+    nlinarith [mul_le_mul_of_nonneg_left hns hlogM, mul_nonneg hB.le hW]
+  have hF₂' : ‖∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • (Ioi M).indicator f u‖ ≤
+      exp (K * (1 + ‖s‖) * log (2 + ‖s‖)) :=
+    (hF₂ s).trans (Real.exp_mul_one_add_mul_log_two_add_le_of_le (by dsimp [K]; linarith)
+      (norm_nonneg s))
+  rw [integral_cpow_smul_eq_add_indicator hf hc hα hbound s]
+  calc
+    _ ≤ I₁ * exp (K * (1 + ‖s‖) * log (2 + ‖s‖)) + exp (K * (1 + ‖s‖) * log (2 + ‖s‖)) :=
+      (norm_add_le _ _).trans (add_le_add hF₁ hF₂')
+    _ = D * exp (K * (1 + ‖s‖) * log (2 + ‖s‖)) := by dsimp [D]; ring
+    _ ≤ _ := Real.mul_exp_mul_one_add_mul_log_two_add_le hD.le (norm_nonneg s)
 
 end TauCeti

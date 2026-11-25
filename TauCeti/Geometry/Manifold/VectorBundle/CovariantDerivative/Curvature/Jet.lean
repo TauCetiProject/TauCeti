@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Coordinates
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Christoffel
 public import Mathlib.Topology.Instances.Matrix
 import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -154,6 +154,13 @@ theorem riemannOfJet_def (g : Matrix ι ι ℝ) (dg : ι → ι → ι → ℝ) 
           christoffelOfJet g dg i k m * christoffelOfJet g dg j m l) :=
   (rfl)
 
+/-- The curvature coefficients of a coordinate jet vanish when the two differentiation indices
+agree. -/
+@[simp]
+theorem riemannOfJet_self (g : Matrix ι ι ℝ) (dg : ι → ι → ι → ℝ) (ddg : ι → ι → ι → ι → ℝ)
+    (i k l : ι) : riemannOfJet g dg ddg i i k l = 0 := by
+  simp [riemannOfJet_def]
+
 /-- The **scalar curvature of a coordinate jet** `(g, ∂g, ∂²g)`: the contraction
 `Σⱼₖ g^(jk) Σᵢ Rⁱᵢⱼₖ` of the curvature coefficients `riemannOfJet` against the inverse of the
 Gram matrix `g`. -/
@@ -230,10 +237,9 @@ namespace TauCeti.Manifold
 
 section VectorSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {ι : Type*} [Fintype ι] [DecidableEq ι] {G : E → E →L[ℝ] E →L[ℝ] ℝ} {z : E}
 
-omit [FiniteDimensional ℝ E] in
 /-- In a basis, the Christoffel symbols of the second kind of a field `G` of symmetric
 bilinear forms are the Christoffel symbols of its coordinate jet. If `G z` is degenerate, both
 sides vanish. -/
@@ -257,7 +263,6 @@ theorem repr_christoffelSecondKind_eq_christoffelOfJet (b : Basis ι ℝ E)
       Matrix.nonsing_inv_apply_not_isUnit _ hdet,
       ContinuousLinearMap.inverse_of_not_isInvertible hinv]
 
-omit [FiniteDimensional ℝ E] in
 /-- **The derivatives of the Christoffel symbols in a basis.** For a field `G` of bilinear forms
 that is `C²` at `z`, nondegenerate and symmetric at `z`, the `k`-th coordinate of
 `∂ₘ Γ(b i, b j)` is the derivative `christoffelDerivOfJet` of the Christoffel symbols of the
@@ -314,7 +319,6 @@ theorem repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι
     ← fderiv_clm_apply_const_apply₂ hGd]
   exact Finset.sum_congr rfl fun q _ ↦ mul_comm _ _
 
-omit [FiniteDimensional ℝ E] in
 /-- **The derivatives of the coordinates of the Christoffel symbols.** For a field `G` of
 bilinear forms that is `C²` at `z`, nondegenerate and symmetric at `z`, the derivative
 along `b m` of the `k`-th coordinate of `Γ(b i, b j)` is `christoffelDerivOfJet` of the coordinate
@@ -488,9 +492,9 @@ theorem scalarCurvature_eq_scalarCurvatureOfJet (hy : y ∈ (extChartAt I x₀).
     -- `T_y M` is `g.toRiemannianMetric` applied to the two vectors, by definition.
     rfl
   rw [scalarCurvature_def, CovariantDerivative.scalarCurvature_apply,
-    TauCeti.bilinFormTrace_eq_sum_inv_gram _ B, hgram, scalarCurvatureOfJet]
+    LinearMap.BilinMap.metricTrace_eq_sum_inv_gram _ B, hgram, scalarCurvatureOfJet]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [CovariantDerivative.ricciTensor_eq_sum _ y B]
+  rw [smul_eq_mul, CovariantDerivative.ricciTensor_eq_sum _ y B]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have : IsManifold I (1 + 1) M := IsManifold.of_le (n := ∞) (by simp)

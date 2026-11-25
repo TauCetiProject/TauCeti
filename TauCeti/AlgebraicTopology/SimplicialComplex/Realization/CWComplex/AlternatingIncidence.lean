@@ -80,7 +80,7 @@ vector of the image cell. -/
 theorem cellularChainGroupMap_realization_cellularChainBasis {m : ℕ}
     (f : PreAbstractSimplicialComplex.SimplicialMap
       K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (c : RealizationCell K m) (hf : StrictMonoOn f (↑c.1.1 : Set ι)) :
+    (c : RealizationCell K m) (hf : StrictMonoOn f (↑c.val.val : Set ι)) :
     letI := realizationCWComplex K
     letI := realizationCWComplex L
     cellularChainGroupMap (univ : Set (Realization K)) (univ : Set (Realization L))
@@ -101,7 +101,7 @@ cell in its cellular boundary is that of the `j`-th face of `c` in the cellular 
 theorem cellularIncidence_realization_map_face
     (f : PreAbstractSimplicialComplex.SimplicialMap
       K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (c : RealizationCell K (n + 1)) (hf : StrictMonoOn f (↑c.1.1 : Set ι)) (j : Fin (n + 2)) :
+    (c : RealizationCell K (n + 1)) (hf : StrictMonoOn f (↑c.val.val : Set ι)) (j : Fin (n + 2)) :
     letI := realizationCWComplex L
     letI := realizationCWComplex K
     cellularIncidence (univ : Set (Realization L)) R n
@@ -155,20 +155,22 @@ theorem cellularIncidence_realization_face_eq (c c' : RealizationCell K (n + 1))
         ((realizationCellEquiv K n).symm (c.face j)) ((realizationCellEquiv K (n + 1)).symm c) := by
   -- Compare the two cells in the full simplicial complex, using an increasing vertex map.
   let ι' := PreAbstractSimplicialComplex.SimplicialMap.inclusion
-    (le_top : K.toPreAbstractSimplicialComplex ≤ (⊤ : _root_.AbstractSimplicialComplex ι).1)
+    (le_top : K.toPreAbstractSimplicialComplex ≤ (⊤ : _root_.AbstractSimplicialComplex
+        ι).toPreAbstractSimplicialComplex)
   have hι'v (v : ι) : ι' v = v :=
     PreAbstractSimplicialComplex.SimplicialMap.inclusion_apply _ v
-  have hι' (d : RealizationCell K (n + 1)) : StrictMonoOn ι' (↑d.1.1 : Set ι) :=
+  have hι' (d : RealizationCell K (n + 1)) : StrictMonoOn ι' (↑d.val.val : Set ι) :=
     fun a _ b _ h ↦ by simpa only [hι'v] using h
   -- The vertex map sending the vertices of `c` in order to those of `c'`.
-  let g : PreAbstractSimplicialComplex.SimplicialMap (⊤ : _root_.AbstractSimplicialComplex ι).1
-      (⊤ : _root_.AbstractSimplicialComplex ι).1 :=
+  let g : PreAbstractSimplicialComplex.SimplicialMap (⊤ : _root_.AbstractSimplicialComplex
+      ι).toPreAbstractSimplicialComplex
+      (⊤ : _root_.AbstractSimplicialComplex ι).toPreAbstractSimplicialComplex :=
     ⟨Function.extend c.vertexEmbedding c'.vertexEmbedding id, fun σ hσ ↦
       Finset.image_nonempty.2 hσ⟩
   have hgc (k : Fin (n + 2)) : g (c.vertexEmbedding k) = c'.vertexEmbedding k :=
     c.vertexEmbedding.injective.extend_apply _ _ k
   have hg : StrictMonoOn g
-      (((c.map (L := ⊤) ι' (hι' c).injOn).1.1 : Finset ι) : Set ι) := by
+      (((c.map (L := ⊤) ι' (hι' c).injOn).val.val : Finset ι) : Set ι) := by
     intro a ha b hb hab
     simp only [RealizationCell.map_face,
       TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply, Finset.coe_image,
@@ -208,10 +210,7 @@ theorem isUnit_cellularIncidence_realization_face (c : RealizationCell K (n + 1)
     intro x hx
     rw [Set.mem_ofPred_eq] at hx ⊢
     rw [hx]
-    exact Finset.ssubset_iff_subset_ne.2 ⟨c.face_val_subset j, fun h ↦ by
-      have hcard := congrArg Finset.card h
-      rw [(c.face j).2, c.2] at hcard
-      omega⟩
+    exact c.face_val_ssubset j
   | succ n =>
     exact isUnit_cellularIncidence_realization_of_subset (R := R) c (c.face j)
       (c.face_val_subset j)
@@ -238,13 +237,13 @@ private theorem ite_add_ite_realization_face_one (c : RealizationCell K 1)
   rw [cellFrontier_realizationCellEquiv_symm, Set.mem_ofPred_eq] at hy
   simp only [openCell_realizationCellEquiv_symm, Set.mem_ofPred_eq]
   -- The support of `y` is a nonempty proper subset of the two vertices of `c`.
-  obtain ⟨k, hk⟩ := (c.exists_subset_face_iff_ssubset y.1.support).2 hy
-  have hyk : y.1.support = (c.face k).1.1 :=
+  obtain ⟨k, hk⟩ := (c.exists_subset_face_iff_ssubset y.val.support).2 hy
+  have hyk : y.val.support = (c.face k).val.val :=
     Finset.eq_of_subset_of_card_le hk (by
-      rw [(c.face k).2]
+      rw [(c.face k).property]
       exact Finset.card_pos.2 (K.isRelLowerSet_faces.prop_of_mem (support_mem K y)))
   have hne (a b : Fin 2) (hab : a ≠ b) :
-      c.1.1.erase (c.vertexEmbedding a) ≠ c.1.1.erase (c.vertexEmbedding b) := fun h ↦
+      c.val.val.erase (c.vertexEmbedding a) ≠ c.val.val.erase (c.vertexEmbedding b) := fun h ↦
     hab (c.vertexEmbedding.injective
       ((Finset.erase_inj _ (c.vertexEmbedding_mem a)).1 h))
   fin_cases k
@@ -271,9 +270,9 @@ private theorem cellularIncidence_realization_face_one (c : RealizationCell K 1)
 deleted-vertex face of the cell other than the faces `j` and `j + 1`. -/
 private theorem not_subset_face_face_castSucc (c : RealizationCell K (n + 2)) (j : Fin (n + 2))
     (i : Fin (n + 3)) (hi : i ≠ j.castSucc ∧ i ≠ j.succ) :
-    ¬ ((c.face j.castSucc).face j).1.1 ⊆ (c.face i).1.1 := by
+    ¬ ((c.face j.castSucc).face j).val.val ⊆ (c.face i).val.val := by
   intro h
-  have hmem : c.vertexEmbedding i ∈ ((c.face j.castSucc).face j).1.1 := by
+  have hmem : c.vertexEmbedding i ∈ ((c.face j.castSucc).face j).val.val := by
     rw [RealizationCell.face_val, RealizationCell.face_val,
       congrFun (RealizationCell.vertexEmbedding_face c j.castSucc) j, Function.comp_apply,
       Fin.succAbove_castSucc_self, Finset.mem_erase, Finset.mem_erase]
@@ -364,12 +363,12 @@ private def modelMap (c : RealizationCell K n) :
         (ULift.{u} (Fin (n + 1)))).toPreAbstractSimplicialComplex
       K.toPreAbstractSimplicialComplex where
   toFun k := c.vertexEmbedding k.down
-  map_face' _ hσ := K.isRelLowerSet_faces.mem_of_le c.1.2
+  map_face' _ hσ := K.isRelLowerSet_faces.mem_of_le c.val.property
     (Finset.image_subset_iff.2 fun _ _ ↦ c.vertexEmbedding_mem _) (Finset.image_nonempty.2 hσ)
 
 /-- The vertex map onto a cell is increasing on the model cell. -/
 private theorem strictMonoOn_modelMap (c : RealizationCell K n) :
-    StrictMonoOn (modelMap c) (↑(modelCell.{u} n).1.1 : Set (ULift.{u} (Fin (n + 1)))) :=
+    StrictMonoOn (modelMap c) (↑(modelCell.{u} n).val.val : Set (ULift.{u} (Fin (n + 1)))) :=
   fun _ _ _ _ h ↦ c.strictMono_vertexEmbedding h
 
 /-- The increasing vertex map onto a cell carries the model cell onto that cell. -/

@@ -12,7 +12,7 @@ import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 import TauCeti.FieldTheory.FunctionField.Place.Extension.RatFunc
 -- Proof-only: the involution `y ↦ -y` of `F / k(x)`.
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 
 /-!
 # The rational place of an affine point of `y² = f(x)`

@@ -53,8 +53,6 @@ so Fatou's lemma along an almost everywhere convergent subsequence passes the in
 
 public section
 
-noncomputable section
-
 namespace TauCeti
 
 open MeasureTheory Filter Module Set TopologicalSpace ContinuousLinearMap

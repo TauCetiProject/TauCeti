@@ -62,7 +62,8 @@ closure of `M`.
   `TauCeti.index_range_absoluteGaloisGroupExtend_sup_inertiaSubgroup`: the image of `G_L` in
   `Gal(K^{ur}/K)` has index `f`, and so does `G_L · I_K` in `G_K`.
 * `TauCeti.relIndex_map_absoluteGaloisGroupExtend_inertiaSubgroup`: the image of `I_L` has index
-  `e(L/K)` in `I_K`.
+  `e(L/K)` in `I_K`; in particular it is `I_K` when `e(L/K) = 1`
+  (`TauCeti.map_absoluteGaloisGroupExtend_inertiaSubgroup_of_ramificationIndex_eq_one`).
 
 ## References
 
@@ -392,5 +393,15 @@ theorem relIndex_map_absoluteGaloisGroupExtend_inertiaSubgroup :
     Subgroup.relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal] at h
   rw [map_absoluteGaloisGroupExtend_inertiaSubgroup, Subgroup.inf_relIndex_left]
   exact Nat.eq_of_mul_eq_mul_right inertiaDegree_pos h
+
+/-- **Inertia along an unramified extension.** If `e(L/K) = 1`, the image of the inertia subgroup
+of `L` in `G_K` is the inertia subgroup of `K`: `I_L = I_K`. -/
+theorem map_absoluteGaloisGroupExtend_inertiaSubgroup_of_ramificationIndex_eq_one
+    (he : ramificationIndex K L = 1) :
+    (inertiaSubgroup L).map (absoluteGaloisGroupExtend K L ι) = inertiaSubgroup K := by
+  refine le_antisymm ?_ (Subgroup.relIndex_eq_one.mp
+    ((relIndex_map_absoluteGaloisGroupExtend_inertiaSubgroup ι).trans he))
+  rw [map_absoluteGaloisGroupExtend_inertiaSubgroup]
+  exact inf_le_left
 
 end TauCeti

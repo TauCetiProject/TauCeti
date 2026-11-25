@@ -225,7 +225,7 @@ theorem torusFamilyAffineQuotientBaseChange_fiberLocalSystemMap_comp_iso (n : �
           (fiberLocalSystemSingularObjIso L ℤ n
             ((FundamentalGroupoid.map (TopCat.ofHom fZ).hom).obj x)).hom ≫
           (torusFamilyAffineQuotientHomologyMarking P hcont hinj R ρ hequiv b hb hone hmul hbmul
-            hR hbc β hβ e.1 e.2 n).toModuleIso.hom :=
+            hR hbc β hβ e.val e.property n).toModuleIso.hom :=
       (Category.assoc _ _ _).trans <| congrArg (_ ≫ ·)
         (torusFamilyAffineQuotientHomologyLocalSystemIso_hom_app_comp_fiberIso_hom P hcont hinj R ρ
           hequiv b hb hone hmul hbmul hR hbc β hβ L e n)
@@ -234,10 +234,10 @@ theorem torusFamilyAffineQuotientBaseChange_fiberLocalSystemMap_comp_iso (n : �
             hbmul hR hbc β' hβ' σ f hf y' hy' n).toModuleIso.hom := by
       apply ModuleCat.hom_ext; ext1 v
       exact (congrArg (torusFamilyAffineQuotientHomologyMarking P hcont hinj R ρ hequiv b hb hone
-          hmul hbmul hR hbc β hβ e.1 e.2 n)
+          hmul hbmul hR hbc β hβ e.val e.property n)
         (sq.fiberLocalSystemSingularObjIso_hom_fiberLocalSystemMap_app L' L ℤ n x v)).trans
         (torusFamilyAffineQuotientHomologyMarking_baseChange P hcont hinj R ρ hequiv b hb hone
-          hmul hbmul hR hbc β hβ β' hβ' σ f hf fZ hfZ y' hy' e.2 n _)
+          hmul hbmul hR hbc β hβ β' hβ' σ f hf fZ hfZ y' hy' e.property n _)
     _ = ((torusFamilyBaseChangeQuotientHomologyLocalSystemIso P hcont hinj R ρ hequiv b hb hone
             hmul hbmul hR hbc β' hβ' σ f hf L' n).hom.app x ≫
           (hβ'.topCat_ofHom.associatedLocalSystemMapOver ℤ hβ.topCat_ofHom (TopCat.ofHom f) hf

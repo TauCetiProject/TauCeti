@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.Modules.ScalarQuotient
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
+public import Mathlib.RingTheory.AdicCompletion.Basic
 
 /-!
 # Cohomology of quotients by global functions
@@ -26,7 +27,9 @@ with a scalar-multiplication inverse system in first cohomology. This is the coh
 input to comparison of sections with formal sections. No coherence, Noetherianity, or
 acyclicity assumption is needed. If a power of `f` annihilates the `f`-power torsion in the
 next cohomology group, every member of a compatible family of quotient classes lifts to a
-class on `M`; these lifts are not asserted to be compatible.
+class on `M`. If `Hⁱ(X, M)` is also `(f)`-adically complete, there is a unique class inducing
+the whole family (`existsUnique_cohomologyMapLinear_eq_of_isAdicComplete`). For `i = 0`,
+this is the formal-section comparison with completeness of the section module as input.
 
 ## References
 
@@ -171,5 +174,47 @@ theorem exists_cohomologyMapLinear_eq_of_scalarPowerQuotientTransition_of_pow_sm
   simpa only [hiter] using
     M.exists_cohomologyMapLinear_eq_of_pow_smul_eq_zero f (Nat.le_add_right n k) i
       (x (n + k)) hk'
+
+/-- If `Hⁱ(X, M)` is `(f)`-adically complete and the `f`-power torsion in `Hⁱ⁺¹(X, M)`
+is killed by a uniform power of `f`, every compatible family on `M/fⁿM` comes from a unique
+class on `M`. For `i = 0` this compares sections with formal sections. -/
+theorem existsUnique_cohomologyMapLinear_eq_of_isAdicComplete
+    (i : ℕ) [IsAdicComplete (Ideal.span {f}) (Cohomology M i)]
+    (x : ∀ n, Cohomology (M.scalarPowerQuotient f n) i)
+    (hx : ∀ n, cohomologyMapLinear (M.scalarPowerQuotientTransition f n.le_succ) i
+      (x (n + 1)) = x n)
+    {k : ℕ} (hk : ∀ m (y : Cohomology M (i + 1)), f ^ m • y = 0 → f ^ k • y = 0) :
+    ∃! y : Cohomology M i, ∀ n,
+      cohomologyMapLinear (cokernel.π (M.globalSectionsSmul (f ^ n))) i y = x n := by
+  classical
+  let q (n : ℕ) := cohomologyMapLinear (cokernel.π (M.globalSectionsSmul (f ^ n))) i
+  have hcongr (n : ℕ) (a b : Cohomology M i) :
+      a ≡ b [SMOD ((Ideal.span {f}) ^ n • ⊤ : Submodule Γ(X, ⊤) (Cohomology M i))] ↔
+        q n a = q n b := by
+    rw [SModEq.sub_mem, Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul,
+      Submodule.mem_smul_pointwise_iff_exists]
+    simpa only [Submodule.mem_top, true_and, Set.mem_range, LinearMap.smul_apply,
+      LinearMap.id_apply, map_sub, sub_eq_zero] using
+        (M.exact_smul_cohomologyMapLinear (f ^ n) i (a - b)).symm
+  choose z hz using
+    M.exists_cohomologyMapLinear_eq_of_scalarPowerQuotientTransition_of_pow_smul_eq_zero
+      f i x hx hk
+  have hc : AdicCompletion.IsAdicCauchy (Ideal.span {f}) (Cohomology M i) z := by
+    apply (AdicCompletion.isAdicCauchy_iff _ _ _).mpr
+    intro n
+    apply (hcongr n _ _).mpr
+    have hred : cohomologyMapLinear (M.scalarPowerQuotientTransition f n.le_succ) i
+        (q (n + 1) (z (n + 1))) = q n (z (n + 1)) := by
+      dsimp only [q]
+      rw [← LinearMap.comp_apply, ← cohomologyMapLinear_comp, π_comp_scalarQuotientTransition]
+    rw [hz, hx] at hred
+    exact (hz n).trans hred
+  obtain ⟨y, hy⟩ := IsPrecomplete.prec (inferInstance :
+    IsPrecomplete (Ideal.span {f}) (Cohomology M i)) hc
+  have hy' (n : ℕ) : q n y = x n := ((hcongr n _ _).mp (hy n)).symm.trans (hz n)
+  refine ⟨y, hy', fun w hw ↦ ?_⟩
+  apply (IsHausdorff.eq_iff_smodEq (I := Ideal.span {f})).mpr
+  intro n
+  exact (hcongr n _ _).mpr ((hw n).trans (hy' n).symm)
 
 end AlgebraicGeometry.Scheme.Modules

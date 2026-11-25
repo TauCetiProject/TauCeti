@@ -41,6 +41,10 @@ differences of the remaining columns.
   sum, over the choices of one summand in each row, of the determinants of the resulting matrices.
 * `Matrix.det_submatrix_ne_zero_of_map`: a minor whose image under a ring homomorphism is nonzero
   is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
+* `Matrix.isUnit_det_map_intCast`: an integer matrix with nonzero determinant has unit
+  determinant over every field of characteristic zero.
+* `RingHom.det_map_ne_zero_of_isUnit_det`: the image of a matrix with unit determinant under a ring
+  homomorphism to a nontrivial commutative ring has nonzero determinant.
 -/
 
 public section
@@ -144,6 +148,13 @@ theorem det_submatrix_map_ne_zero_iff {m n R S l : Type*} [Fintype l] [Decidable
     {c : l → n} : ((A.map f).submatrix r c).det ≠ 0 ↔ (A.submatrix r c).det ≠ 0 := by
   rw [← f.map_det_submatrix, map_ne_zero_iff f hf]
 
+/-- An integer matrix with nonzero determinant has unit determinant over every field of
+characteristic zero. -/
+theorem isUnit_det_map_intCast {n K : Type*} [Fintype n] [DecidableEq n] [Field K] [CharZero K]
+    {A : Matrix n n ℤ} (hA : A.det ≠ 0) : IsUnit (A.map ((↑) : ℤ → K)).det := by
+  rw [← Int.cast_det]
+  exact (Int.cast_ne_zero.2 hA).isUnit
+
 /-- **Multilinearity of the determinant in all rows at once.** The determinant of a matrix whose
 `i`-th row is a sum over a finite set `A i` is the sum, over the choices of one summand in each
 row, of the determinants of the resulting matrices. -/
@@ -160,3 +171,15 @@ theorem det_of_sum_rows {ι R : Type*} {κ : ι → Type*} [Fintype ι] [Decidab
   exact key
 
 end Matrix
+
+namespace RingHom
+
+/-- The image of a matrix with unit determinant under a ring homomorphism to a nontrivial
+commutative ring has nonzero determinant. -/
+theorem det_map_ne_zero_of_isUnit_det {ι R K : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    [CommRing K] [Nontrivial K] (f : R →+* K) {A : Matrix ι ι R} (hdet : IsUnit A.det) :
+    (A.map f).det ≠ 0 := by
+  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  exact (hdet.map _).ne_zero
+
+end RingHom

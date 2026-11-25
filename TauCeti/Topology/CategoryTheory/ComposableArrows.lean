@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 public import TauCeti.Topology.CategoryTheory.Nerve
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # The nerve as iterated fiber products of arrows
@@ -17,7 +19,9 @@ its remaining string, with the matching endpoint equation. In degree zero,
 `CategoryTheory.ComposableArrows.zeroHomeomorph` identifies the nerve with the object space.
 Thus the topology defined by recording all composite arrows introduces no extra topology
 beyond that of composable strings. These identifications apply to topological groupoids
-without discarding any isotropy arrows.
+without discarding any isotropy arrows. When source, target, units and composition are continuous
+and `C` is Hausdorff, compactness or local compactness of `Quiver.Total C` passes to every nerve
+level. If target is a local homeomorphism, deleting the first vertex is also a local homeomorphism.
 
 Composition is required to be continuous on the subspace of pairs with matching endpoints.
 No topology on individual hom types and no new category or groupoid carrier is used.
@@ -79,7 +83,8 @@ variable
   (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
   (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
   (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-    (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total C))
+    (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+        C))
 
 include hs hu hc in
 /-- Prepending a continuous family of arrows to a continuous family of strings is continuous,
@@ -137,7 +142,7 @@ def precompHomeomorph (n : ℕ) :
   -- Explicit vertices make the matching endpoint equation definitional, without unfolding
   -- the opaque total-arrow accessor in the dependent inverse construction.
   toFun F := ⟨(⟨F.obj' 0, F.obj' 1, F.map' 0 1⟩, F.δ₀), rfl⟩
-  invFun p := p.1.2.precomp (p.1.1.hom ≫ eqToHom p.2)
+  invFun p := p.val.2.precomp (p.val.1.hom ≫ eqToHom p.property)
   left_inv F := by
     -- The first vertex of the tail and vertex 1 have different native accessor expressions.
     dsimp only
@@ -160,8 +165,8 @@ def precompHomeomorph (n : ℕ) :
     simp_rw [totalArrow_def] at ht
     exact (ht.prodMk (continuous_whiskerLeft (Fin.succFunctor (n + 1)))).subtype_mk _
   continuous_invFun := continuous_precomp hs hu hc
-    (continuous_fst.comp continuous_subtype_val)
-    (continuous_snd.comp continuous_subtype_val) (fun p ↦ p.2)
+    (continuous_fst.comp continuous_subtypeVal)
+    (continuous_snd.comp continuous_subtypeVal) (fun p ↦ p.property)
 
 @[simp]
 theorem precompHomeomorph_apply (n : ℕ) (F : ComposableArrows C (n + 1)) :
@@ -173,7 +178,7 @@ theorem precompHomeomorph_apply (n : ℕ) (F : ComposableArrows C (n + 1)) :
 theorem precompHomeomorph_symm_apply (n : ℕ)
     (p : {p : Quiver.Total C × ComposableArrows C n // p.1.right = p.2.left}) :
     (precompHomeomorph hs hu hc n).symm p =
-      p.1.2.precomp (p.1.1.hom ≫ eqToHom p.2) := (rfl)
+      p.val.2.precomp (p.val.1.hom ≫ eqToHom p.property) := (rfl)
 
 include hs hu hc in
 /-- A family of nonempty strings is continuous exactly when its first arrow and its tail are
@@ -187,5 +192,95 @@ theorem continuous_iff_first_tail {Y : Type*} [TopologicalSpace Y] {n : ℕ}
   rw [← (precompHomeomorph hs hu hc n).comp_continuous_iff]
   simp only [continuous_induced_rng, continuous_prodMk, Function.comp_def,
     precompHomeomorph_apply]
+
+include hs hu hc in
+/-- Deleting the first vertex is a local homeomorphism when target is a local
+homeomorphism: this face map is its base change along the first vertex of the tail. -/
+theorem isLocalHomeomorph_δ₀
+    (ht : IsLocalHomeomorph (Quiver.Total.right : Quiver.Total C → C)) (n : ℕ) :
+    IsLocalHomeomorph (fun F : ComposableArrows C (n + 1) ↦ F.δ₀) := by
+  have hp := ht.pullback_snd (continuous_obj hs (0 : Fin (n + 1)))
+  convert hp.comp (precompHomeomorph hs hu hc n).isLocalHomeomorph using 1
+  funext F
+  exact (congrArg _root_.Prod.snd (precompHomeomorph_apply hs hu hc n F)).symm
+
+include hs hu hc in
+/-- The first arrow and tail give a closed embedding into their product when objects are
+Hausdorff and the structure maps are continuous. -/
+theorem isClosedEmbedding_first_tail [T2Space C]
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) (n : ℕ) :
+    IsClosedEmbedding (fun F : ComposableArrows C (n + 1) ↦
+      (F.totalArrow 0 1 (Fin.zero_le _), F.δ₀)) := by
+  have hclosed : IsClosed {p : Quiver.Total C × ComposableArrows C n |
+      p.1.right = p.2.left} :=
+    isClosed_eq (ht.comp continuous_fst) ((continuous_obj hs 0).comp continuous_snd)
+  simpa only [Function.comp_def, precompHomeomorph_apply] using
+    hclosed.isClosedEmbedding_subtypeVal.comp (precompHomeomorph hs hu hc n).isClosedEmbedding
+
+include hs hu hc in
+/-- A proper support condition on the source and target of arrows passes to the first vertex
+and tail of composable strings. -/
+theorem isCompact_preimage_δ₀_inter [T2Space C]
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) {S : Set C}
+    (hS : ∀ ⦃K : Set C⦄, IsCompact K →
+      IsCompact (Quiver.Total.right ⁻¹' K ∩ Quiver.Total.left ⁻¹' S))
+    {n : ℕ} {K : Set (ComposableArrows C n)} (hK : IsCompact K) :
+    IsCompact ((fun F : ComposableArrows C (n + 1) ↦ F.δ₀) ⁻¹' K ∩
+      (fun F ↦ F.left) ⁻¹' S) := by
+  have hA := hS (hK.image (continuous_obj hs 0))
+  convert (isClosedEmbedding_first_tail hs hu hc ht n).isCompact_preimage (hA.prod hK) using 1
+  ext F
+  simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_prod, totalArrow_left, totalArrow_right,
+    ← δ₀_left]
+  exact ⟨fun h ↦ ⟨⟨Set.mem_image_of_mem _ h.1, h.2⟩, h.1⟩, fun h ↦ ⟨h.2, h.1.2⟩⟩
+
+include hs hu hc in
+/-- The nerve levels are locally compact when the arrow space is locally compact, the object
+space is Hausdorff and source, target, units and composition are continuous. -/
+theorem locallyCompactSpace [T2Space C] [LocallyCompactSpace (Quiver.Total C)]
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) (n : ℕ) :
+    LocallyCompactSpace (ComposableArrows C n) := by
+  induction n with
+  | zero =>
+    let : LocallyCompactSpace C := ⟨fun x U hU ↦ by
+      obtain ⟨K, hK, hKU, hKc⟩ := local_compact_nhds
+        (hs.continuousAt (x := ⟨x, x, 𝟙 x⟩) hU)
+      refine ⟨Quiver.Total.left '' K, Filter.mem_of_superset (hu.continuousAt hK) ?_,
+        Set.image_subset_iff.2 hKU, hKc.image hs⟩
+      exact fun y hy ↦ ⟨⟨y, y, 𝟙 y⟩, hy, rfl⟩⟩
+    exact (zeroHomeomorph hs hu).isClosedEmbedding.locallyCompactSpace
+  | succ n ih =>
+    let := ih
+    exact (isClosedEmbedding_first_tail hs hu hc ht n).locallyCompactSpace
+
+include hs hu hc in
+/-- When source, target, units and composition are continuous, `C` is Hausdorff and
+`Quiver.Total C` is compact, every `ComposableArrows C n` is compact. -/
+theorem compactSpace_of_compactSpace
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C))
+    [T2Space C] [CompactSpace (Quiver.Total C)] (n : ℕ) :
+    CompactSpace (ComposableArrows C n) := by
+  -- `C` is compact as the image of `Quiver.Total C` under source, and each positive level is a
+  -- closed fiber product in a compact product.
+  induction n with
+  | zero =>
+    have hsurj : Function.Surjective (Quiver.Total.left : Quiver.Total C → C) :=
+      fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
+    have : CompactSpace C := hsurj.compactSpace hs
+    exact (zeroHomeomorph hs hu).symm.compactSpace
+  | succ n ih =>
+    let := ih
+    exact isCompact_univ_iff.mp (by
+      simpa only [Set.preimage_univ] using
+        (isClosedEmbedding_first_tail hs hu hc ht n).isCompact_preimage isCompact_univ)
+
+instance instCompactSpace [IsGroupoid C] [TauCeti.IsTopologicalGroupoid C]
+    [T2Space (Quiver.Total C)] [CompactSpace (Quiver.Total C)] (n : ℕ) :
+    CompactSpace (ComposableArrows C n) :=
+  have : T2Space C := (TauCeti.IsTopologicalGroupoid.isEmbedding_unit C).t2Space
+  compactSpace_of_compactSpace
+    TauCeti.IsTopologicalGroupoid.continuous_source TauCeti.IsTopologicalGroupoid.continuous_unit
+    (by simpa only [Quiver.Total.comp_def] using TauCeti.IsTopologicalGroupoid.continuous_comp)
+    TauCeti.IsTopologicalGroupoid.continuous_target n
 
 end CategoryTheory.ComposableArrows

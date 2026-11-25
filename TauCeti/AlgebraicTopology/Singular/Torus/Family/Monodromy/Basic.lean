@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Family.QuotientPullback
 public import TauCeti.AlgebraicTopology.Singular.Torus.Family.LocalSystem
+public import TauCeti.RepresentationTheory.ExteriorPower
 
 /-!
 # Sheet markings and monodromy of a descended family of tori
@@ -195,7 +196,7 @@ theorem torusFamilyAffineQuotientHomologyMarking_smul (hy : β y = z) (g : Γ) (
     (ContinuousMap.ofClass (e (g • y) hgy).symm).comp (ContinuousMap.ofClass (e y hy))
   have hcomp : ContinuousMap.ofClass (e (g • y) hgy).symm =
       φ.comp (ContinuousMap.ofClass (e y hy).symm) := by ext; simp [φ]
-  rw [hcomp, ContinuousMap.singularHomologyMap_comp]
+  rw [hcomp, ContinuousMap.singularHomologyMap_comp, Representation.exteriorPower_apply]
   exact torusFamilyHomologyMarking_singularHomologyMap_affineMap P hcont hinj R ρ hequiv b hb φ
     (torusFamilyAffineQuotientFiberHomeomorph_smul_symm_apply P R ρ hequiv b hb hone hmul hbmul
       hcont hR hbc β hβ y hy g hgy) ((hR g).comp (continuous_const.prodMk continuous_id)) n _
@@ -273,16 +274,16 @@ theorem torusFamilyAffineQuotientHomologyMarking_transport_monodromy {z₀ z₁ 
     (c : torusFamilyAffineQuotientFiberHomology P R ρ hequiv b hb hone hmul hbmul β hβ z₀ n) :
     let e' := hβ.isCoveringMap.monodromy (.mk γ) e
     torusFamilyAffineQuotientHomologyMarking P hcont hinj R ρ hequiv b hb hone hmul hbmul hR hbc
-        β hβ e'.1 e'.2 n (ContinuousMap.singularHomologyMap ℤ n (L.transport γ) c) =
+        β hβ e'.val e'.property n (ContinuousMap.singularHomologyMap ℤ n (L.transport γ) c) =
       torusFamilyAffineQuotientHomologyMarking P hcont hinj R ρ hequiv b hb hone hmul hbmul hR hbc
-        β hβ e.1 e.2 n c :=
-  have h0 : γ.toContinuousMap 0 = β e.1 := γ.source.trans e.2.symm
+        β hβ e.val e.property n c :=
+  have h0 : γ.toContinuousMap 0 = β e.val := γ.source.trans e.property.symm
   torusFamilyAffineQuotientHomologyMarking_transport_of_lift P hcont hinj R ρ hequiv b hb hone hmul
-    hbmul hR hbc β hβ L e.2 (hβ.isCoveringMap.monodromy (.mk γ) e).2 γ
-    ⟨hβ.isCoveringMap.liftPath γ.toContinuousMap e.1 h0,
-      hβ.isCoveringMap.liftPath_zero γ.toContinuousMap e.1 h0,
+    hbmul hR hbc β hβ L e.property (hβ.isCoveringMap.monodromy (.mk γ) e).property γ
+    ⟨hβ.isCoveringMap.liftPath γ.toContinuousMap e.val h0,
+      hβ.isCoveringMap.liftPath_zero γ.toContinuousMap e.val h0,
       (hβ.isCoveringMap.coe_monodromy_mk γ e).symm⟩
-    (congr_fun (hβ.isCoveringMap.liftPath_lifts γ.toContinuousMap e.1 h0)) n c
+    (congr_fun (hβ.isCoveringMap.liftPath_lifts γ.toContinuousMap e.val h0)) n c
 
 /-- **Degree-one compatibility with covering-space monodromy** `hβ.isCoveringMap.monodromy`. -/
 theorem torusFamilyAffineQuotientMarking_transport_monodromy {z₀ z₁ : Z} (γ : Path z₀ z₁)
@@ -290,9 +291,9 @@ theorem torusFamilyAffineQuotientMarking_transport_monodromy {z₀ z₁ : Z} (γ
     (c : torusFamilyAffineQuotientFiberHomology P R ρ hequiv b hb hone hmul hbmul β hβ z₀ 1) :
     let e' := hβ.isCoveringMap.monodromy (.mk γ) e
     torusFamilyAffineQuotientMarking P hcont hinj R ρ hequiv b hb hone hmul hbmul hR hbc β hβ
-        e'.1 e'.2 (ContinuousMap.singularHomologyMap ℤ 1 (L.transport γ) c) =
+        e'.val e'.property (ContinuousMap.singularHomologyMap ℤ 1 (L.transport γ) c) =
       torusFamilyAffineQuotientMarking P hcont hinj R ρ hequiv b hb hone hmul hbmul hR hbc β hβ
-        e.1 e.2 c :=
+        e.val e.property c :=
   congrArg (exteriorPower.oneEquiv ℤ Λ)
     (torusFamilyAffineQuotientHomologyMarking_transport_monodromy P hcont hinj R ρ hequiv b hb hone
       hmul hbmul hR hbc β hβ L γ e 1 c)

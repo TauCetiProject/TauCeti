@@ -39,14 +39,14 @@ on the fundamental group. -/
 def homologyLift (x : X) (φ : FundamentalGroup X x →* Multiplicative H) :
     ((singularChains ℤ).obj (TopCat.of X)).homology 1 →+ H :=
   (MonoidHom.toAdditiveLeft (Group.Abelianization.lift φ)).comp
-    (hurewiczHomologyAddEquiv (X := TopCat.of X) x).symm.toAddMonoidHom
+    (hurewiczHomologyAddEquiv (X := TopCat.of X) x (.refl ℤ)).symm.toAddMonoidHom
 
 /-- The homology lift evaluates the Hurewicz class through the abelianization lift. -/
 @[simp↓]
 theorem homologyLift_hurewiczHomologyAddEquiv (x : X)
     (φ : FundamentalGroup X x →* Multiplicative H)
     (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
-    homologyLift x φ (hurewiczHomologyAddEquiv (X := TopCat.of X) x a) =
+    homologyLift x φ (hurewiczHomologyAddEquiv (X := TopCat.of X) x (.refl ℤ) a) =
       (Group.Abelianization.lift φ a.toMul).toAdd := by
   simp [homologyLift, MonoidHom.coe_toAdditiveLeft]
 
@@ -54,7 +54,7 @@ theorem homologyLift_hurewiczHomologyAddEquiv (x : X)
 @[simp↓]
 theorem homologyLift_H₁AddEquivHomology_loopClass {x : X}
     (φ : FundamentalGroup X x →* Multiplicative H) (γ : Path x x) :
-    homologyLift x φ (H₁AddEquivHomology (TopCat.of X) (loopClass γ)) =
+    homologyLift x φ (H₁AddEquivHomology ℤ (TopCat.of X) (loopClass ℤ γ)) =
       (φ (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))).toAdd := by
   rw [← hurewiczHomologyAddEquiv_ofMul_of_mk, homologyLift_hurewiczHomologyAddEquiv]
   simp
@@ -64,11 +64,11 @@ homology lift. -/
 theorem homologyLift_unique (x : X) (φ : FundamentalGroup X x →* Multiplicative H)
     (ψ : ((singularChains ℤ).obj (TopCat.of X)).homology 1 →+ H)
     (hψ : ∀ g : FundamentalGroup X x,
-      ψ (hurewiczHomologyAddEquiv (X := TopCat.of X) x
+      ψ (hurewiczHomologyAddEquiv (X := TopCat.of X) x (.refl ℤ)
         (Additive.ofMul (Group.Abelianization.of g))) = (φ g).toAdd) :
     ψ = homologyLift x φ := by
   ext a
-  obtain ⟨b, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of X) x).surjective a
+  obtain ⟨b, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of X) x (.refl ℤ)).surjective a
   obtain ⟨g, rfl⟩ := Group.Abelianization.exists_eq_ofMul_of b
   simp [hψ]
 
@@ -77,7 +77,7 @@ theorem homologyLift_surjective (x : X) (φ : FundamentalGroup X x →* Multipli
     (hφ : Function.Surjective φ) : Function.Surjective (homologyLift x φ) := by
   intro h
   obtain ⟨g, hg⟩ := hφ (Multiplicative.ofAdd h)
-  refine ⟨hurewiczHomologyAddEquiv (X := TopCat.of X) x
+  refine ⟨hurewiczHomologyAddEquiv (X := TopCat.of X) x (.refl ℤ)
     (Additive.ofMul (Group.Abelianization.of g)), ?_⟩
   simp [hg]
 
@@ -97,7 +97,7 @@ theorem exact_homologyMap_homologyLift [PathConnectedSpace Y]
   -- The evaluation theorem is stated for raw types. Both rewrites below use `(X := Y)`
   -- to match its `TopCat.of ↑Y` homology carrier with bundled `Y` by definitional equality.
   intro a
-  obtain ⟨b, rfl⟩ := (hurewiczHomologyAddEquiv y).surjective a
+  obtain ⟨b, rfl⟩ := (hurewiczHomologyAddEquiv y (.refl ℤ)).surjective a
   obtain ⟨g, rfl⟩ := Group.Abelianization.exists_eq_ofMul_of b
   constructor
   · intro hg
@@ -106,11 +106,11 @@ theorem exact_homologyMap_homologyLift [PathConnectedSpace Y]
       simpa using hg
     rw [← hRange] at hgker
     obtain ⟨k, hk⟩ := hgker
-    refine ⟨hurewiczHomologyAddEquiv x (Additive.ofMul (Group.Abelianization.of k)), ?_⟩
+    refine ⟨hurewiczHomologyAddEquiv x (.refl ℤ) (Additive.ofMul (Group.Abelianization.of k)), ?_⟩
     rw [homologyMap_hurewiczHomologyAddEquiv_mapOfEq f h]
     simp [hk]
   · rintro ⟨c, hc⟩
-    obtain ⟨d, rfl⟩ := (hurewiczHomologyAddEquiv x).surjective c
+    obtain ⟨d, rfl⟩ := (hurewiczHomologyAddEquiv x (.refl ℤ)).surjective c
     obtain ⟨k, rfl⟩ := Group.Abelianization.exists_eq_ofMul_of d
     rw [← hc, homologyMap_hurewiczHomologyAddEquiv_mapOfEq f h]
     have hk : FundamentalGroup.mapOfEq f.hom h k ∈ φ.ker := by
