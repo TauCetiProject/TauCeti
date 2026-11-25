@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Topology.Algebra.Module.WeakSpace
+import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import Mathlib.Analysis.LocallyConvex.WeakSpace
 
 /-!
 # Spheres of injective linear maps in the weak topology
@@ -18,6 +21,11 @@ so `0` lies in the weak closure of that sphere, the sphere is not weakly closed 
 `j` is not continuous from the weak topology to the norm topology. This is why weak-to-norm
 continuity of compact operators only holds on bounded sets.
 
+In finite dimension none of this happens: the weak topology of a finite-dimensional normed space
+is its norm topology (`TauCeti.toWeakSpaceContinuousLinearEquiv`), so a set is weakly closed
+exactly when it is closed, every sphere `{u | ‖j u‖ = r}` of a linear map into a normed space is
+weakly closed, and every such map is weak-to-norm continuous.
+
 ## Main results
 
 * `TauCeti.zero_mem_closure_toWeakSpace_setOf_norm_eq`: `0` lies in the weak closure of every
@@ -25,6 +33,11 @@ continuity of compact operators only holds on bounded sets.
 * `TauCeti.not_isClosed_toWeakSpace_setOf_norm_eq`: spheres of positive radius are not weakly
   closed.
 * `TauCeti.not_continuous_comp_toWeakSpace_symm`: an injective linear map is not weak-to-norm
+  continuous.
+* `TauCeti.toWeakSpaceContinuousLinearEquiv`: in finite dimension, `toWeakSpace` is a
+  continuous linear equivalence, so the weak and norm topologies agree.
+* `TauCeti.isClosed_toWeakSpace_setOf_norm_eq` and `TauCeti.continuous_comp_toWeakSpace_symm`: in
+  finite dimension, spheres of linear maps are weakly closed and linear maps are weak-to-norm
   continuous.
 
 ## References
@@ -78,5 +91,55 @@ theorem not_continuous_comp_toWeakSpace_symm (hV : ¬ FiniteDimensional 𝕜 V)
   exact isClosed_eq (continuous_norm.comp hcont) continuous_const
 
 end Sphere
+
+section FiniteDimensional
+
+variable {𝕜 V F G : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [FiniteDimensional 𝕜 V]
+
+variable (𝕜 V) in
+/-- In finite dimension, the weak topology is the norm topology: `toWeakSpace` is a continuous
+linear equivalence onto `WeakSpace 𝕜 V`. -/
+noncomputable def toWeakSpaceContinuousLinearEquiv : V ≃L[𝕜] WeakSpace 𝕜 V :=
+  (toWeakSpace 𝕜 V).toContinuousLinearEquiv
+
+/-- The continuous linear equivalence onto the weak space is `toWeakSpace`. -/
+@[simp]
+theorem coe_toWeakSpaceContinuousLinearEquiv :
+    ⇑(toWeakSpaceContinuousLinearEquiv 𝕜 V) = toWeakSpace 𝕜 V := by
+  simp [toWeakSpaceContinuousLinearEquiv]
+
+/-- The inverse of the continuous linear equivalence onto the weak space is that of
+`toWeakSpace`. -/
+@[simp]
+theorem coe_toWeakSpaceContinuousLinearEquiv_symm :
+    ⇑(toWeakSpaceContinuousLinearEquiv 𝕜 V).symm = (toWeakSpace 𝕜 V).symm := by
+  simp [toWeakSpaceContinuousLinearEquiv]
+
+/-- In finite dimension, a set is weakly closed exactly when it is closed. -/
+theorem isClosed_toWeakSpace_image_iff {s : Set V} :
+    IsClosed (toWeakSpace 𝕜 V '' s) ↔ IsClosed s := by
+  rw [← coe_toWeakSpaceContinuousLinearEquiv]
+  exact (toWeakSpaceContinuousLinearEquiv 𝕜 V).toHomeomorph.isClosed_image
+
+variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FunLike G V F] [LinearMapClass G 𝕜 V F]
+  (j : G)
+
+/-- In finite dimension, every linear map into a normed space is continuous from the weak
+topology to the norm topology. -/
+theorem continuous_comp_toWeakSpace_symm :
+    Continuous fun w : WeakSpace 𝕜 V ↦ j ((toWeakSpace 𝕜 V).symm w) :=
+  coe_toWeakSpaceContinuousLinearEquiv_symm (𝕜 := 𝕜) (V := V) ▸
+    (LinearMap.continuous_of_finiteDimensional (LinearMap.ofClass j : V →ₗ[𝕜] F)).comp
+      (toWeakSpaceContinuousLinearEquiv 𝕜 V).symm.continuous
+
+/-- In finite dimension, every sphere `{u | ‖j u‖ = r}` of a linear map into a normed space is
+weakly closed. -/
+theorem isClosed_toWeakSpace_setOf_norm_eq (r : ℝ) :
+    IsClosed (toWeakSpace 𝕜 V '' {u | ‖j u‖ = r}) := by
+  rw [(toWeakSpace 𝕜 V).image_eq_preimage_symm]
+  exact isClosed_eq (continuous_norm.comp (continuous_comp_toWeakSpace_symm j)) continuous_const
+
+end FiniteDimensional
 
 end TauCeti
