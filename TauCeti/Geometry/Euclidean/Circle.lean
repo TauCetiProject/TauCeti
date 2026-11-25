@@ -363,8 +363,8 @@ attribute [local instance] Complex.finrank_real_complex_fact
 of center `c` and radius `R` starting at `c + R` is `circleMap c R (· / R)`. -/
 theorem orientation_circleCurve_one (c : ℂ) (R s : ℝ) :
     Complex.orientation.circleCurve c 1 R s = circleMap c R (s / R) := by
-  rw [Orientation.circleCurve_def, Complex.rightAngleRotation, mul_one, circleMap,
-    Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin, Complex.real_smul,
-    Complex.real_smul, Complex.real_smul, mul_one]
+  simp only [Orientation.circleCurve_def, Complex.rightAngleRotation, circleMap, Complex.exp_mul_I,
+    Complex.real_smul, Complex.ofReal_cos, Complex.ofReal_sin]
+  ring
 
 end Complex
