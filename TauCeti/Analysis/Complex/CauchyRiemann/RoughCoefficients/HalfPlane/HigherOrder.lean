@@ -13,6 +13,7 @@ import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc.Higher
 import TauCeti.Analysis.Sobolev.Local.Reflection.Tangential
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Higher-order regularity up to the real axis for rough Cauchy–Riemann equations
@@ -84,12 +85,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteS
 
 /-! ### Recovery of the normal derivative -/
 
-omit [CompleteSpace V] in
-/-- `J² = -1` as an equation in the ring of operators is `J ∘ J = -id`. -/
-private theorem comp_eq_neg_id_of_mul_self_eq_neg_one {J' : V →L[ℝ] V} (hJ : J' * J' = -1) :
-    J'.comp J' = -ContinuousLinearMap.id ℝ V := by
-  rwa [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] at hJ
-
 /-- **Recovery of the normal derivative.** Let `ξ ∈ W^{k+1,q}_loc(Ω ∩ {0 ≤ t})` have weak
 derivative `Dξ` on the open upper part and solve `∂_s ξ + J ∂_t ξ + S ξ = η` almost everywhere on
 `Ω ∩ {0 ≤ t}`, with `J² = -1` there, `p > 2` and `1 < q ≤ p`. If `J, S ∈ W^{k+1,p}_loc` and
@@ -112,7 +107,8 @@ theorem memWkpLoc_succ_of_ae_cauchyRiemann_halfPlane [FiniteDimensional ℝ V] {
     (hJ.clm_apply_succ_halfPlane hp hq hqp
       ((h1.add (hS.clm_apply_succ_halfPlane hp hq hqp hξ)).sub hη)).congr_ae
       (((ae_cauchyRiemann_iff_ae_apply_I_eq
-        (hJ2.mono fun _ => comp_eq_neg_id_of_mul_self_eq_neg_one)).1 heq).mono fun _ => Eq.symm)
+        (hJ2.mono fun _ => mul_self_eq_neg_one_iff_comp_eq_neg_id.1)).1 heq).mono
+          fun _ => Eq.symm)
   refine memWkpLoc_succ_iff.2 ⟨hξ.memLpLoc, Dξ, hDξ, ?_⟩
   rw [fun_eq_smulRightL_reCLM_add_smulRightL_imCLM Dξ]
   exact (h1.clm_comp _).add (hI.clm_comp _)
@@ -153,10 +149,10 @@ private theorem twistedReflection_partial_one_rhs {DS : ℂ → ℂ →L[ℝ] V 
 be Sobolev coefficients on `Ω` with `1/p + 1/q ≤ 1` and `p, q` finite, and let the twisted
 reflection of `ξ` be a weak solution on `Ω` of the reflected equation with right side the twisted
 reflection of `η`, of class `W^{1,q}_loc(Ω)`. Let `J² = -1` almost everywhere on `Ω ∩ {0 ≤ t}`,
-and let `Dξ`, `DS` and `Dη` be weak derivatives of `ξ`, `S` and `η` on the open upper part, locally
-`L^q`, `Lᵖ` and integrable up to the axis, with `(∂_s J) J ∈ Lᵖ_loc` up to the axis. Then the
-twisted reflection of `∂_s ξ` is a weak solution on `Ω` of the reflected equation with
-zeroth-order coefficient `S + (∂_s J) J` and right side the twisted reflection of
+and let `Dξ`, `DS` and `Dη` be weak derivatives of `ξ`, `S` and `η` on the open upper part, with
+`Dξ` and `Dη` integrable and `DS` locally `Lᵖ` up to the axis, and `(∂_s J) J ∈ Lᵖ_loc` up to
+the axis. Then the twisted reflection of `∂_s ξ` is a weak solution on `Ω` of the reflected
+equation with zeroth-order coefficient `S + (∂_s J) J` and right side the twisted reflection of
 `∂_s η - (∂_s J) J (S ξ - η) - (∂_s S) ξ`. -/
 theorem IsWeakCRSolution.crReflection_partial_one [FiniteDimensional ℝ V] {p q : ℝ≥0∞}
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
@@ -170,7 +166,7 @@ theorem IsWeakCRSolution.crReflection_partial_one [FiniteDimensional ℝ V] {p q
     (hw : MemWkpLoc q Ω 1 (twistedReflection (R : V →L[ℝ] V) ξ))
     {Dξ Dη : ℂ → ℂ →L[ℝ] V} {DS : ℂ → ℂ →L[ℝ] V →L[ℝ] V}
     (hDξ : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) ξ Dξ)
-    (hDξq : MemLpLoc q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) Dξ)
+    (hDξ1 : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) Dξ)
     (hDS : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) S DS)
     (hDSp : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) DS)
     (hDη : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) η Dη)
@@ -190,7 +186,7 @@ theorem IsWeakCRSolution.crReflection_partial_one [FiniteDimensional ℝ V] {p q
   -- The tangential derivatives of the reflected solution, zeroth-order term and right side.
   have hξs := (hDξ.hasWeakLineDerivOn 1).twistedReflection_one hΩ
     (h.memLpLoc.of_twistedReflection.mono_exponent hq1)
-    ((hDξq.clm_comp (apply ℝ V 1)).mono_exponent hq1) (R : V →L[ℝ] V)
+    (hDξ1.clm_comp (apply ℝ V 1)) (R : V →L[ℝ] V)
   have hSs : HasWeakLineDerivOn volume Ω (crReflectionZeroth R S)
       (crReflectionZeroth R fun z => DS z 1) 1 := by
     rw [crReflectionZeroth_def, crReflectionZeroth_def]
@@ -209,7 +205,7 @@ theorem IsWeakCRSolution.crReflection_partial_one [FiniteDimensional ℝ V] {p q
     (.of_forall fun z => (congrFun (crReflectionZeroth_add R S _) z).symm) hsol ?_).1 hT
   -- Eliminate `∂_t` of the reflected solution with the doubled equation.
   filter_upwards [heq, hJJ, ae_restrict_of_ae Complex.ae_im_ne_zero] with z hz hJz hz0
-  rw [(add_apply_add_eq_iff_eq_apply_add_sub (comp_eq_neg_id_of_mul_self_eq_neg_one hJz)).1 hz,
+  rw [(add_apply_add_eq_iff_eq_apply_add_sub (mul_self_eq_neg_one_iff_comp_eq_neg_id.1 hJz)).1 hz,
     crReflectionZeroth_comp_apply hz0,
     ← twistedReflection_partial_one_rhs hz0]
   simp only [map_add, map_sub]
@@ -311,7 +307,7 @@ theorem IsWeakCRSolution.memWkpLoc_succ_of_crReflection [FiniteDimensional ℝ V
     have hM := hDJ1.bilin_of_memWkpLoc_succ_halfPlane (compL ℝ V V V) hp (hq.trans_le hqp)
       le_rfl hJ
     have hT := h.crReflection_partial_one hΩ hc hpq.le ENNReal.coe_ne_top ENNReal.coe_ne_top hJ2
-      hw hDξ hDξk.memLpLoc hDS hDSk.memLpLoc hDη
+      hw hDξ (hDξk.memLpLoc.mono_exponent (by exact_mod_cast hq.le)) hDS hDSk.memLpLoc hDη
       (hDηk.memLpLoc.mono_exponent (by exact_mod_cast hq.le)) hM.memLpLoc
     -- The right side of the tangential step is in `W^{k,q}_loc` up to the axis.
     have hη' := ((hDηk.clm_comp (apply ℝ V 1)).sub
@@ -321,9 +317,9 @@ theorem IsWeakCRSolution.memWkpLoc_succ_of_crReflection [FiniteDimensional ℝ V
       ((hDSk.clm_comp (apply ℝ (V →L[ℝ] V) 1)).bilin_of_memWkpLoc_succ_halfPlane
         (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) hp hq hqp hξ)
     have hc' : IsSobolevCRCoefficients p Ω (crReflectionCoeff R J) (crReflectionDeriv R DJ)
-        (crReflectionZeroth R fun z => S z + (DJ z 1).comp (J z)) :=
-      ⟨hc.hasWeakFDerivOn, hc.memLpLoc_coeff, hc.memLpLoc_deriv,
-        (memLpLoc_crReflectionZeroth_iff hΩ).2 (hS.memLpLoc.add hM.memLpLoc)⟩
+        (crReflectionZeroth R fun z => S z + (DJ z 1).comp (J z)) := by
+      have := hc.add_zeroth ((memLpLoc_crReflectionZeroth_iff (R := R) hΩ).2 hM.memLpLoc)
+      rwa [← Pi.add_def, ← crReflectionZeroth_add] at this
     have h1 := ih hc' hT hJ.of_succ (hS.of_succ.add hM) hη'
     exact memWkpLoc_succ_of_ae_cauchyRiemann_halfPlane hp hq hqp hξ hDξ
       (ae_cauchyRiemann_of_crReflection hc h hpq.le ENNReal.coe_ne_top ENNReal.coe_ne_top
