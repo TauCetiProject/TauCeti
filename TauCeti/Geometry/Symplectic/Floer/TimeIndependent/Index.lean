@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Sobolev
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.Fredholm.Basic
+import TauCeti.Analysis.Fredholm.Criteria
 import TauCeti.Analysis.Fredholm.Prod
 import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 import TauCeti.Analysis.ODE.DysonSeries
@@ -448,24 +448,6 @@ private theorem floerSobolevOperator_eq_comp (hH : ContDiff ℝ 2 H) (hγ : Cont
     (floerSobolevOperator_comp_zeroModeProdEquiv (A := A) hH hγ haγ hA)
   simpa using h
 
-/-- The restriction of the linearized operator to the nonzero modes is an isomorphism, so it is
-Fredholm of index `0`. -/
-private theorem isFredholm_nonzeroModes_and_index_eq_zero (hω : ∀ v w, ω v w = (inner ℂ v w).im)
-    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) :
-    ContinuousLinearMap.IsFredholm (𝕜 := ℝ) (E := nonzeroModeSobolev F) (F := nonzeroModeLp F)
-        (nonzeroModes ω H γ) ∧
-      ContinuousLinearMap.index (𝕜 := ℝ) (E := nonzeroModeSobolev F) (F := nonzeroModeLp F)
-        (nonzeroModes ω H γ) = 0 := by
-  set e := ContinuousLinearEquiv.ofBijective (𝕜 := ℝ) (E := nonzeroModeSobolev F)
-    (F := nonzeroModeLp F) _
-    (LinearMap.ker_eq_bot.2 (bijective_nonzeroModes hω hH hγ ha haγ).1)
-    (LinearMap.range_eq_top.2 (bijective_nonzeroModes hω hH hγ ha haγ).2)
-  have he : (e : _ →L[ℝ] _) = nonzeroModes ω H γ :=
-    ContinuousLinearEquiv.coe_ofBijective _ _ _
-  rw [← he]
-  exact ⟨ContinuousLinearMap.IsInvertible.isFredholm ⟨e, rfl⟩, e.index_eq_zero⟩
-
 /-- **The linearized operator is onto exactly when the Morse operator is.** In a unitary
 trivialization, let `H` be a `C²` autonomous Hamiltonian and `γ` a continuous curve with
 `‖dX_H(γ(s))‖ ≤ a < 2π` for every `s`, and let `A` be the `L∞` class of `s ↦ -i dX_H(γ(s))`. The
@@ -510,7 +492,8 @@ theorem isFredholm_floerSobolevOperator_iff_isFredholm_trajectoryOperator
       (zeroModeProdEquiv F).symm (zeroModeLpProdEquiv F).symm hconj,
     isFredholm_prodMap_iff (K := ℝ) (E₁ := pathSobolev F) (E₂ := nonzeroModeSobolev F)
       (F₁ := pathLp F) (F₂ := nonzeroModeLp F)]
-  exact and_iff_left (isFredholm_nonzeroModes_and_index_eq_zero hω hH hγ ha haγ).1
+  exact and_iff_left (.of_bijective (K := ℝ) (E := nonzeroModeSobolev F) (F := nonzeroModeLp F)
+    (bijective_nonzeroModes hω hH hγ ha haγ))
 
 /-- **The index of the linearized operator is the index of the Morse operator.** Under the
 hypotheses of
@@ -525,14 +508,17 @@ theorem index_floerSobolevOperator_eq_index_trajectoryOperator
     (hM : (WeakDerivStep.trajectoryOperator (p := 2) A).IsFredholm) :
     (𝔻 H γ).index =
       (WeakDerivStep.trajectoryOperator (p := 2) A).index := by
-  obtain ⟨hQ, hQ₀⟩ := isFredholm_nonzeroModes_and_index_eq_zero hω hH hγ ha haγ
+  have hQ := bijective_nonzeroModes hω hH hγ ha haγ
   rw [floerSobolevOperator_eq_comp hH hγ haγ hA,
     index_equiv_comp (𝕜 := ℝ) (E := H1 F) (F := pathLp F × nonzeroModeLp F)
       (G := Lp F 2 stripMeasure),
     index_comp_equiv (𝕜 := ℝ) (E := pathSobolev F × nonzeroModeSobolev F)
       (F := pathLp F × nonzeroModeLp F) (G := H1 F),
     hM.index_prodMap (K := ℝ) (E₁ := pathSobolev F) (E₂ := nonzeroModeSobolev F)
-      (F₁ := pathLp F) (F₂ := nonzeroModeLp F) hQ, hQ₀, add_zero]
+      (F₁ := pathLp F) (F₂ := nonzeroModeLp F)
+      (.of_bijective (K := ℝ) (E := nonzeroModeSobolev F) (F := nonzeroModeLp F) hQ),
+    index_eq_zero_of_bijective (𝕜 := ℝ) (E := nonzeroModeSobolev F) (F := nonzeroModeLp F) _ hQ,
+    add_zero]
 
 end Index
 
