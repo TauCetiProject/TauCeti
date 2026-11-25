@@ -7,8 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The essential boundary of a ball
@@ -23,12 +23,12 @@ contain a ball of radius `ρ / 2` inside `ball x ρ`, so the density of the ball
 The essential boundary only depends on the set up to null sets, so the punctured ball
 `ball c r \ {c}` and, in `EuclideanSpace ℝ (Fin n)`, the union of `ball c r` with the countable set
 of points with rational coordinates, also have essential boundary `sphere c r`, although their
-frontiers are larger. These are examples of Layer 5 of the GeometricMeasureTheory roadmap.
+frontiers are larger: unlike the frontier, the essential boundary ignores null sets.
 -/
 
 public section
 
-open MeasureTheory Metric Set Filter Module
+open MeasureTheory Metric Set Filter Module AffineMap
 open scoped Topology ENNReal
 
 namespace TauCeti
@@ -46,30 +46,55 @@ theorem not_hasDensityAt_zero_of_eventually_exists_ball_subset
     (c := 2 ^ finrank ℝ E * (μ (ball (0 : E) 1))⁻¹)
     (ENNReal.mul_ne_top (by simp) (ENNReal.inv_ne_top.2 hB)) ?_
   filter_upwards [h, self_mem_nhdsWithin] with ρ ⟨y, hy⟩ (hρ : 0 < ρ)
+  -- Halving the radius divides the volume by `2 ^ n`.
+  have h2 : ENNReal.ofReal (ρ ^ finrank ℝ E) =
+      2 ^ finrank ℝ E * ENNReal.ofReal ((ρ / 2) ^ finrank ℝ E) := by
+    rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_pow zero_le_two,
+      ← ENNReal.ofReal_mul (by positivity), ← mul_pow, mul_div_cancel₀ _ two_ne_zero]
   calc ENNReal.ofReal (ρ ^ finrank ℝ E)
       = 2 ^ finrank ℝ E * (μ (ball (0 : E) 1))⁻¹ * μ (ball y (ρ / 2)) := by
-        rw [Measure.addHaar_ball_of_pos μ y (by positivity : 0 < ρ / 2),
-          show ∀ a : ℝ≥0∞, 2 ^ finrank ℝ E * (μ (ball (0 : E) 1))⁻¹ * (a * μ (ball 0 1)) =
-            2 ^ finrank ℝ E * a * ((μ (ball (0 : E) 1))⁻¹ * μ (ball 0 1)) from fun a ↦ by ring,
-          ENNReal.inv_mul_cancel hB hBt, mul_one,
-          show ρ ^ finrank ℝ E = 2 ^ finrank ℝ E * (ρ / 2) ^ finrank ℝ E by
-            rw [← mul_pow]; ring_nf,
-          ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow zero_le_two,
-          ENNReal.ofReal_ofNat]
+        rw [h2, Measure.addHaar_ball_of_pos μ y (by positivity), mul_assoc,
+          mul_left_comm (μ (ball (0 : E) 1))⁻¹, ENNReal.inv_mul_cancel hB hBt, mul_one]
     _ ≤ 2 ^ finrank ℝ E * (μ (ball (0 : E) 1))⁻¹ * μ (t ∩ ball x ρ) := by gcongr
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- Moving a point `x` of `sphere c r` by `a • (c - x)` puts it at distance `|1 - a| r` from
-`c`. -/
-private theorem dist_add_smul_sub_self {c : E} {r : ℝ} (hx : dist x c = r) (a : ℝ) :
-    dist (x + a • (c - x)) c = |1 - a| * r := by
-  have : x + a • (c - x) - c = (1 - a) • (x - c) := by module
-  rw [dist_eq_norm, this, norm_smul, Real.norm_eq_abs, ← dist_eq_norm, hx]
+/-- For `x` on `sphere c r`, the ball of radius `ρ / 2` about the point `x - (ρ / 2r)(c - x)`
+lies outside `ball c r` and inside `ball x ρ`. -/
+private theorem ball_lineMap_neg_subset_compl_ball_inter_ball {c : E} {r ρ : ℝ} (hx : dist x c = r)
+    (hr : 0 < r) (hρ : 0 < ρ) :
+    ball (lineMap x c (-(ρ / 2 / r))) (ρ / 2) ⊆ (ball c r)ᶜ ∩ ball x ρ := by
+  have hyc := dist_lineMap_right x c (-(ρ / 2 / r))
+  have hyx := dist_lineMap_left x c (-(ρ / 2 / r))
+  rw [Real.norm_eq_abs, hx, sub_neg_eq_add, abs_of_pos (by positivity), add_mul, one_mul,
+    div_mul_cancel₀ _ hr.ne'] at hyc
+  rw [Real.norm_eq_abs, hx, abs_neg, abs_of_pos (by positivity), div_mul_cancel₀ _ hr.ne'] at hyx
+  intro z hz
+  rw [mem_ball] at hz
+  simp only [mem_inter_iff, mem_compl_iff, mem_ball, not_lt]
+  constructor
+  · linarith [dist_triangle (lineMap x c (-(ρ / 2 / r))) z c,
+      dist_comm z (lineMap x c (-(ρ / 2 / r)))]
+  · linarith [dist_triangle z (lineMap x c (-(ρ / 2 / r))) x]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-private theorem dist_add_smul_sub_left {c : E} {r : ℝ} (hx : dist x c = r) (a : ℝ) :
-    dist (x + a • (c - x)) x = |a| * r := by
-  rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, ← dist_eq_norm', hx]
+/-- For `x` on `sphere c r` and `ρ < r`, the ball of radius `ρ / 2` about the point
+`x + (ρ / 2r)(c - x)` lies inside both `ball c r` and `ball x ρ`. -/
+private theorem ball_lineMap_subset_ball_inter_ball {c : E} {r ρ : ℝ} (hx : dist x c = r)
+    (hρ : 0 < ρ) (hρr : ρ < r) :
+    ball (lineMap x c (ρ / 2 / r)) (ρ / 2) ⊆ ball c r ∩ ball x ρ := by
+  have hr : 0 < r := hρ.trans hρr
+  have hyc := dist_lineMap_right x c (ρ / 2 / r)
+  have hyx := dist_lineMap_left x c (ρ / 2 / r)
+  have hlt : ρ / 2 / r < 1 := (div_lt_one hr).2 (by linarith)
+  rw [Real.norm_eq_abs, hx, abs_of_pos (by linarith), sub_mul, one_mul,
+    div_mul_cancel₀ _ hr.ne'] at hyc
+  rw [Real.norm_eq_abs, hx, abs_of_pos (by positivity), div_mul_cancel₀ _ hr.ne'] at hyx
+  intro z hz
+  rw [mem_ball] at hz
+  rw [mem_inter_iff, mem_ball, mem_ball]
+  constructor
+  · linarith [dist_triangle z (lineMap x c (ρ / 2 / r)) c]
+  · linarith [dist_triangle z (lineMap x c (ρ / 2 / r)) x]
 
 /-- **The essential boundary of a ball is its sphere.** For `r > 0`, the open ball `ball c r` has
 essential boundary `sphere c r`. -/
@@ -87,29 +112,11 @@ theorem essentialBoundary_ball {c : E} {r : ℝ} (hr : 0 < r) :
     refine not_hasDensityAt_zero_of_eventually_exists_ball_subset ?_
       ((hasDensityAt_compl_zero_iff hnm hball).2 (mem_essentialInterior.1 h1))
     filter_upwards [self_mem_nhdsWithin] with ρ (hρ : 0 < ρ)
-    have hyc := dist_add_smul_sub_self hx (-(ρ / 2 / r))
-    have hyx := dist_add_smul_sub_left hx (-(ρ / 2 / r))
-    have hpos : 0 < ρ / 2 / r := by positivity
-    rw [abs_of_pos (by linarith : (0 : ℝ) < 1 - -(ρ / 2 / r))] at hyc
-    rw [abs_neg, abs_of_pos (by positivity), div_mul_cancel₀ _ hr.ne'] at hyx
-    rw [show (1 - -(ρ / 2 / r)) * r = r + ρ / 2 by field_simp; ring] at hyc
-    refine ⟨x + (-(ρ / 2 / r)) • (c - x), fun z hz ↦ ⟨?_, ?_⟩⟩ <;> rw [mem_ball] at hz
-    · simp only [mem_compl_iff, mem_ball, not_lt]
-      have := dist_triangle (x + (-(ρ / 2 / r)) • (c - x)) z c
-      linarith [dist_comm z (x + (-(ρ / 2 / r)) • (c - x))]
-    · rw [mem_ball]
-      linarith [dist_triangle z (x + (-(ρ / 2 / r)) • (c - x)) x]
+    exact ⟨_, ball_lineMap_neg_subset_compl_ball_inter_ball hx hr hρ⟩
   · -- Inside: the ball of radius `ρ / 2` about `x + (ρ / 2r)(c - x)` lies in `ball c r`.
     refine not_hasDensityAt_zero_of_eventually_exists_ball_subset ?_ (mem_essentialExterior.1 h0)
     filter_upwards [Ioo_mem_nhdsGT hr] with ρ ⟨hρ, hρr⟩
-    have hyc := dist_add_smul_sub_self hx (ρ / 2 / r)
-    have hyx := dist_add_smul_sub_left hx (ρ / 2 / r)
-    have hlt : ρ / 2 / r < 1 := (div_lt_one hr).2 (by linarith)
-    rw [abs_of_pos (by linarith), show (1 - ρ / 2 / r) * r = r - ρ / 2 by field_simp] at hyc
-    rw [abs_of_pos (by positivity), div_mul_cancel₀ _ hr.ne'] at hyx
-    refine ⟨x + (ρ / 2 / r) • (c - x), fun z hz ↦ ⟨?_, ?_⟩⟩ <;> rw [mem_ball] at hz ⊢
-    · linarith [dist_triangle z (x + (ρ / 2 / r) • (c - x)) c]
-    · linarith [dist_triangle z (x + (ρ / 2 / r) • (c - x)) x]
+    exact ⟨_, ball_lineMap_subset_ball_inter_ball hx hρ hρr⟩
 
 /-- The punctured ball `ball c r \ {c}`, `r > 0`, has essential boundary `sphere c r`. -/
 theorem essentialBoundary_ball_sdiff_singleton [Nontrivial E] {c : E} {r : ℝ} (hr : 0 < r) :

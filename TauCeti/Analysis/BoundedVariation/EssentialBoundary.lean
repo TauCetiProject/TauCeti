@@ -29,7 +29,10 @@ proves **Federer's theorem**: in `Ω` the two differ by an `Hⁿ⁻¹`-null set,
 (`TauCeti.euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero`),
 where `Hⁿ⁻¹ = μHE[n - 1]` is the normalized Euclidean Hausdorff measure. Equivalently,
 `∂ᵉs ∩ Ω` and `∂*s` agree `Hⁿ⁻¹`-almost everywhere
-(`TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`).
+(`TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`). Combined with De Giorgi's theorem
+`P(s; Ω) = Hⁿ⁻¹(∂*s)` (`TauCeti.perimeter_eq_euclideanHausdorffMeasure_reducedBoundary`), this
+expresses the perimeter as the measure of the essential boundary, `P(s; Ω) = Hⁿ⁻¹(∂ᵉs ∩ Ω)`
+(`TauCeti.perimeter_eq_euclideanHausdorffMeasure_essentialBoundary_inter`).
 
 ## Proof
 
@@ -59,6 +62,8 @@ is carried by the reduced boundary (`TauCeti.ae_mem_reducedBoundary`).
   **Federer's theorem**, `Hⁿ⁻¹((∂ᵉs ∩ Ω) \ ∂*s) = 0`.
 * `TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`: `∂ᵉs ∩ Ω = ∂*s` up to an `Hⁿ⁻¹`-null
   set.
+* `TauCeti.perimeter_eq_euclideanHausdorffMeasure_essentialBoundary_inter`: the perimeter is the
+  measure of the essential boundary, `P(s; Ω) = Hⁿ⁻¹(∂ᵉs ∩ Ω)`.
 
 ## References
 
