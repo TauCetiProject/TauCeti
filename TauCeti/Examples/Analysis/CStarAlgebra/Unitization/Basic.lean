@@ -9,7 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
 public import Mathlib.Topology.ContinuousMap.ContinuousSqrt
 public import Mathlib.Topology.UnitInterval
-public import TauCeti.Analysis.CStarAlgebra.Unitization
+public import TauCeti.Analysis.CStarAlgebra.Unitization.Basic
 public import TauCeti.Topology.ContinuousMap.Ideals
 
 /-!

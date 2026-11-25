@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.UnitizationTracePairing
+public import TauCeti.Analysis.CStarAlgebra.Unitization.TracePairing
 public import TauCeti.Examples.Analysis.CStarAlgebra.TracePairing
 
 /-!

@@ -231,12 +231,8 @@ variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [AddCommGroup M]
 
 /-- The extension `f⁺ (r, a) = g r + f a` of an additive map `f : A →+ M` to the unitization,
 with value `g` on the scalars. -/
-def traceExtension (g : R →+ M) (f : A →+ M) : Unitization R A →+ M where
-  toFun x := g x.fst + f x.snd
-  map_zero' := by simp
-  map_add' x y := by
-    simp only [fst_add, snd_add, map_add]
-    abel
+def traceExtension (g : R →+ M) (f : A →+ M) : Unitization R A →+ M :=
+  (g.coprod f).comp (addEquiv R A).toAddMonoidHom
 
 @[simp]
 theorem traceExtension_apply (g : R →+ M) (f : A →+ M) (x : Unitization R A) :
