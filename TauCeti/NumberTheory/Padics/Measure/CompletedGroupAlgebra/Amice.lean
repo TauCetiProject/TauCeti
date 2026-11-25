@@ -26,7 +26,7 @@ An integral measure `μ` on `ℤ_p` has two descriptions as a power series. Its 
 
 The comparison is proved for an arbitrary continuous homomorphism `φ : ℤ_p → Γ` into a commutative
 profinite group `Γ`. The element `[φ 1] - 1` of `ℤ_p[[Γ]]` is topologically nilpotent
-(`TauCeti.completedGroupAlgebra.isTopologicallyNilpotent_of_apply_ofAdd_one_sub_one`), so power
+(`TauCeti.completedGroupAlgebra.isTopologicallyNilpotent_of_map`, as `ℤ_p` is pro-`p`), so power
 series over `ℤ_p` can be evaluated at it, and the image of the pushforward of `μ` along `φ` is the
 value of `A_μ` there (`AbstractMeasure.toCompletedGroupAlgebra_map_eq_aeval_amiceTransform`):
 
@@ -149,10 +149,12 @@ theorem toCompletedGroupAlgebra_map_eq_aeval_amiceTransform (φ : Multiplicative
     (μ : D(ℤ_[p], ℤ_[p])) :
     toCompletedGroupAlgebra
         (map ((φ : C(Multiplicative ℤ_[p], Γ)).comp ⟨Multiplicative.ofAdd, continuous_ofAdd⟩) μ) =
-      PowerSeries.aeval (isTopologicallyNilpotent_of_apply_ofAdd_one_sub_one φ)
+      PowerSeries.aeval
+        (isTopologicallyNilpotent_of_map (isProP_multiplicative_padicInt p) φ (.ofAdd 1))
         (amiceTransform μ) := by
   have h := PowerSeries.eval₂_unique (continuous_algebraMap ℤ_[p] _)
-    (isTopologicallyNilpotent_of_apply_ofAdd_one_sub_one φ) (continuous_amiceIntegral φ)
+    (isTopologicallyNilpotent_of_map (isProP_multiplicative_padicInt p) φ (.ofAdd 1))
+    (continuous_amiceIntegral φ)
     fun P ↦ by rw [amiceIntegral_coe, Polynomial.aeval_def]
   rw [PowerSeries.coe_aeval, ← h, amiceIntegral_apply, ← amiceTransformEquiv_apply,
     LinearEquiv.symm_apply_apply]

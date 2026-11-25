@@ -70,13 +70,14 @@ it is invariant under these substitutions.
 
 * `TauCeti.completedGroupAlgebra.isTopologicallyNilpotent_of_forall_pow_eq_one`: `γ - 1` is
   topologically nilpotent in `ℤ_p[[Γ]]` whenever `γ` has `p`-power order modulo every open normal
-  subgroup; the next two results are its special cases.
+  subgroup; the next two results are its special cases, the second a case of the first.
+* `TauCeti.completedGroupAlgebra.isTopologicallyNilpotent_of_map`: `[φ g] - 1` is topologically
+  nilpotent in `ℤ_p[[Γ]]` for every continuous homomorphism `φ : G → Γ` from a pro-`p` group `G`
+  and every `g ∈ G`, with no pro-`p` hypothesis on `Γ`.
 * `TauCeti.completedGroupAlgebra.isTopologicallyNilpotent_of_sub_one`: `γ - 1` is topologically
-  nilpotent in `ℤ_p[[Γ]]` for a pro-`p` group `Γ`; as this is `PowerSeries.HasEval`, the
-  evaluation `PowerSeries.aeval` of power series at `γ - 1` is available.
-* `TauCeti.completedGroupAlgebra.isTopologicallyNilpotent_of_apply_ofAdd_one_sub_one`: `[φ 1] - 1`
-  is topologically nilpotent in `ℤ_p[[Γ]]` for every continuous homomorphism `φ : ℤ_p → Γ`, with
-  no pro-`p` hypothesis on `Γ`.
+  nilpotent in `ℤ_p[[Γ]]` for a pro-`p` group `Γ`, the case `φ = id`; as this is
+  `PowerSeries.HasEval`, the evaluation `PowerSeries.aeval` of power series at `γ - 1` is
+  available.
 * `TauCeti.completedGroupAlgebra.aeval_one_add_X`: the evaluation sends `1 + X` to `γ`.
 * `TauCeti.completedGroupAlgebra.aeval_surjective`: the evaluation is surjective when `γ`
   topologically generates `Γ`.
@@ -127,28 +128,30 @@ theorem isTopologicallyNilpotent_of_forall_pow_eq_one {γ : Γ}
     MonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
   exact PadicInt.tendsto_coeff_single_sub_one_pow hk g
 
-/-- **`γ - 1` is topologically nilpotent** in the completed group algebra `ℤ_p[[Γ]]` of a pro-`p`
-group `Γ`. As `PowerSeries.HasEval` is this predicate, power series over `ℤ_[p]` can be evaluated
-at `γ - 1` by `PowerSeries.aeval` once `ℤ_p[[Γ]]` is a complete linearly topologized commutative
-ring, which it is for `Γ` compact and commutative. -/
-theorem isTopologicallyNilpotent_of_sub_one (hΓ : IsProP p Γ) (γ : Γ) :
-    IsTopologicallyNilpotent (of ℤ_[p] Γ γ - 1) :=
-  isTopologicallyNilpotent_of_forall_pow_eq_one fun U ↦ isProP_iff.mp hΓ U _
-
-/-- **`[φ 1] - 1` is topologically nilpotent** in the completed group algebra `ℤ_p[[Γ]]` of any
-topological group `Γ`, for every continuous homomorphism `φ : ℤ_p → Γ`. No pro-`p` hypothesis on
-`Γ` is needed: the preimage of an open normal subgroup `U` is open in the pro-`p` group `ℤ_p`, so
-`φ 1` has `p`-power order modulo `U`. When `ℤ_p[[Γ]]` is complete and linearly topologized, power
-series over `ℤ_p` can be evaluated at `[φ 1] - 1` by `PowerSeries.aeval`. -/
-theorem isTopologicallyNilpotent_of_apply_ofAdd_one_sub_one (φ : Multiplicative ℤ_[p] →ₜ* Γ) :
-    IsTopologicallyNilpotent (of ℤ_[p] Γ (φ (.ofAdd 1)) - 1) :=
+/-- **`[φ g] - 1` is topologically nilpotent** in the completed group algebra `ℤ_p[[Γ]]` of any
+topological group `Γ`, for every continuous homomorphism `φ : G → Γ` from a pro-`p` group `G` and
+every `g ∈ G`. No pro-`p` hypothesis on `Γ` is needed: the preimage of an open normal subgroup `U`
+is open normal in the pro-`p` group `G`, so `φ g` has `p`-power order modulo `U`. When `ℤ_p[[Γ]]`
+is complete and linearly topologized, power series over `ℤ_p` can be evaluated at `[φ g] - 1` by
+`PowerSeries.aeval`. -/
+theorem isTopologicallyNilpotent_of_map {G : Type*} [Group G] [TopologicalSpace G]
+    (hG : IsProP p G) (φ : G →ₜ* Γ) (g : G) :
+    IsTopologicallyNilpotent (of ℤ_[p] Γ (φ g) - 1) :=
   isTopologicallyNilpotent_of_forall_pow_eq_one fun U ↦ by
-    obtain ⟨k, hk⟩ := isProP_iff.mp (isProP_multiplicative_padicInt p)
-      (U.comap (φ : Multiplicative ℤ_[p] →* Γ) φ.continuous) (QuotientGroup.mk (.ofAdd 1))
+    obtain ⟨k, hk⟩ := isProP_iff.mp hG (U.comap (φ : G →* Γ) φ.continuous) (QuotientGroup.mk g)
     refine ⟨k, ?_⟩
     rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, ← map_pow]
     rwa [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, OpenNormalSubgroup.toSubgroup_comap,
       Subgroup.mem_comap] at hk
+
+/-- **`γ - 1` is topologically nilpotent** in the completed group algebra `ℤ_p[[Γ]]` of a pro-`p`
+group `Γ`: the case `φ = id` of `isTopologicallyNilpotent_of_map`. As `PowerSeries.HasEval` is this
+predicate, power series over `ℤ_[p]` can be evaluated at `γ - 1` by `PowerSeries.aeval` once
+`ℤ_p[[Γ]]` is a complete linearly topologized commutative ring, which it is for `Γ` compact and
+commutative. -/
+theorem isTopologicallyNilpotent_of_sub_one (hΓ : IsProP p Γ) (γ : Γ) :
+    IsTopologicallyNilpotent (of ℤ_[p] Γ γ - 1) :=
+  isTopologicallyNilpotent_of_map hΓ (ContinuousMonoidHom.id Γ) γ
 
 section
 
