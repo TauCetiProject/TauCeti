@@ -1,0 +1,170 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.ModelTheory.RelationalConfiguration.FunctionalCoding
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.ModelTheory.Complexity
+
+/-!
+# First-order formulas on the functional coding space
+
+On the functional coding space of a language `L` over a discrete carrier `V`, the value of a term
+at a fixed valuation is a continuous, so locally constant, function of the configuration: it looks
+up finitely many entries of the function table. Hence an atomic formula, and every quantifier-free
+formula, defines a clopen set. Over a countable discrete carrier, quantifiers are countable unions
+and intersections, so every first-order formula defines a set in the Borel σ-algebra of the coding
+space. The realization set of a sentence is invariant under isomorphism, so the models of a
+countable theory form an isomorphism-invariant Borel class. This is the fourth bullet of
+CountableStructureSpacesPartII §1.3.
+
+Borel sets are stated with Mathlib's `borel` σ-algebra of the coding space.
+
+## Main results
+
+* `TauCeti.FunctionalConfiguration.continuous_realize_term`: term realization is continuous.
+* `TauCeti.FunctionalConfiguration.isClopen_setOf_realize_of_isQF`: quantifier-free formulas
+  define clopen sets.
+* `TauCeti.FunctionalConfiguration.measurableSet_setOf_realize`: every first-order formula
+  defines a Borel set on a countable discrete carrier.
+* `TauCeti.FunctionalConfiguration.realize_sentence_iff_of_isoSetoid`: isomorphic configurations
+  satisfy the same sentences.
+* `TauCeti.FunctionalConfiguration.measurableSet_setOf_model`: the models of a countable theory
+  form a Borel set.
+-/
+
+public section
+
+universe u v w u'
+
+open FirstOrder FirstOrder.Language MeasureTheory
+
+namespace TauCeti.FunctionalConfiguration
+
+variable {L : Language.{u, v}} {V : Type w}
+
+/-! ### Invariance -/
+
+/-- **Isomorphic configurations satisfy the same sentences.** -/
+theorem realize_sentence_iff_of_isoSetoid {F G : FunctionalConfiguration L V}
+    (h : isoSetoid L V F G) (φ : L.Sentence) :
+    @Sentence.Realize L V F.toStructure φ ↔ @Sentence.Realize L V G.toStructure φ := by
+  obtain ⟨e⟩ := isoSetoid_apply.1 h
+  exact @StrongHomClass.realize_sentence L V V F.toStructure G.toStructure
+    (@Language.Equiv L V V F.toStructure G.toStructure) _ _ e φ
+
+/-- Relabelling by a permutation preserves the sentences satisfied. -/
+theorem realize_sentence_perm_smul (σ : Equiv.Perm V) (F : FunctionalConfiguration L V)
+    (φ : L.Sentence) :
+    @Sentence.Realize L V (σ • F).toStructure φ ↔ @Sentence.Realize L V F.toStructure φ :=
+  (realize_sentence_iff_of_isoSetoid
+    (isoSetoid_iff_exists_perm_smul_eq.2 ⟨σ, rfl⟩) φ).symm
+
+/-! ### Terms and quantifier-free formulas -/
+
+variable [TopologicalSpace V] [DiscreteTopology V]
+
+/-- A function of `x` that evaluates a continuous family at a continuous argument with values in a
+discrete space is continuous: near `x` the argument is constant. -/
+private theorem continuous_apply_of_continuous_of_discrete {X D Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace D] [DiscreteTopology D] [TopologicalSpace Y] {h : X → D → Y}
+    (hh : ∀ d, Continuous fun x => h x d) {a : X → D} (ha : Continuous a) :
+    Continuous fun x => h x (a x) := by
+  refine continuous_iff_continuousAt.2 fun x => ?_
+  have hev : ∀ᶠ y in nhds x, a y = a x :=
+    ha.continuousAt.eventually_mem ((isOpen_discrete {a x}).mem_nhds rfl)
+  exact ((hh (a x)).continuousAt).congr (hev.mono fun y hy => by dsimp only; rw [hy])
+
+/-- **Term realization is continuous.** On a discrete carrier, the value of a term at a fixed
+valuation is a continuous, hence locally constant, function of the functional configuration. -/
+theorem continuous_realize_term {β : Type u'} (t : L.Term β) (v : β → V) :
+    Continuous fun F : FunctionalConfiguration L V => @Term.realize L V F.toStructure β v t := by
+  induction t with
+  | var => exact continuous_const
+  | func f ts ih =>
+    simp only [Term.realize_func, toStructure_funMap]
+    exact continuous_apply_of_continuous_of_discrete (h := fun F w => F.table (arg f w))
+      (fun w => (continuous_apply (arg f w)).comp continuous_table) (continuous_pi ih)
+
+/-- **Quantifier-free formulas define clopen sets.** On a discrete carrier, the functional
+configurations realizing a quantifier-free formula at a fixed valuation form a clopen set. -/
+theorem isClopen_setOf_realize_of_isQF {α : Type u'} {n : ℕ} {φ : L.BoundedFormula α n}
+    (hφ : φ.IsQF) (v : α → V) (xs : Fin n → V) :
+    IsClopen {F : FunctionalConfiguration L V | @φ.Realize L V F.toStructure α n v xs} := by
+  induction hφ with
+  | falsum => simpa only [BoundedFormula.Realize, Set.ofPred_false] using isClopen_empty
+  | of_isAtomic hA =>
+    induction hA with
+    | equal t₁ t₂ =>
+      have h : Continuous fun F : FunctionalConfiguration L V =>
+          (@Term.realize L V F.toStructure _ (Sum.elim v xs) t₁,
+            @Term.realize L V F.toStructure _ (Sum.elim v xs) t₂) :=
+        (continuous_realize_term t₁ _).prodMk (continuous_realize_term t₂ _)
+      exact (isClopen_discrete {p : V × V | p.1 = p.2}).preimage h
+    | rel R ts =>
+      have h : Continuous fun F : FunctionalConfiguration L V =>
+          F.rel.eval (RelationalConfiguration.atom R
+            fun i => @Term.realize L V F.toStructure _ (Sum.elim v xs) (ts i)) :=
+        continuous_apply_of_continuous_of_discrete
+          (fun _ => (RelationalConfiguration.continuous_eval _).comp continuous_rel)
+          (continuous_pi fun i => continuous_realize_term (ts i) _)
+      simp only [Relations.boundedFormula, BoundedFormula.Realize, toStructure_relMap]
+      exact (isClopen_discrete {true}).preimage h
+  | imp _ _ ih₁ ih₂ =>
+    simp only [BoundedFormula.realize_imp, imp_iff_not_or, Set.ofPred_or, ← Set.compl_ofPred]
+    exact ih₁.compl.union ih₂
+
+/-! ### Borel sets -/
+
+variable [Countable V]
+
+/-- **First-order formulas define Borel sets.** On a countable discrete carrier, the functional
+configurations realizing a first-order formula at a fixed valuation form a Borel set: atomic
+formulas define clopen sets, and quantifiers over `V` are countable intersections. -/
+theorem measurableSet_setOf_realize {α : Type u'} {n : ℕ} (φ : L.BoundedFormula α n)
+    (v : α → V) (xs : Fin n → V) :
+    MeasurableSet[borel (FunctionalConfiguration L V)]
+      {F : FunctionalConfiguration L V | @φ.Realize L V F.toStructure α n v xs} := by
+  let : MeasurableSpace (FunctionalConfiguration L V) := borel _
+  have : BorelSpace (FunctionalConfiguration L V) := ⟨rfl⟩
+  induction φ with
+  | falsum => simpa only [BoundedFormula.Realize, Set.ofPred_false] using MeasurableSet.empty
+  | equal t₁ t₂ =>
+    exact (isClopen_setOf_realize_of_isQF (BoundedFormula.IsAtomic.equal t₁ t₂).isQF v
+      _).isOpen.measurableSet
+  | rel R ts =>
+    exact (isClopen_setOf_realize_of_isQF (BoundedFormula.IsAtomic.rel R ts).isQF v
+      _).isOpen.measurableSet
+  | imp _ _ ih₁ ih₂ =>
+    simp only [BoundedFormula.realize_imp, imp_iff_not_or, Set.ofPred_or, ← Set.compl_ofPred]
+    exact (ih₁ xs).compl.union (ih₂ xs)
+  | all _ ih =>
+    simp only [BoundedFormula.realize_all, Set.ofPred_forall]
+    exact MeasurableSet.iInter fun x => ih _
+
+/-- The functional configurations satisfying a sentence form a Borel set. -/
+theorem measurableSet_setOf_realize_sentence (φ : L.Sentence) :
+    MeasurableSet[borel (FunctionalConfiguration L V)]
+      {F : FunctionalConfiguration L V | @Sentence.Realize L V F.toStructure φ} :=
+  measurableSet_setOf_realize (φ : L.BoundedFormula Empty 0) default default
+
+/-- **The models of a countable theory form a Borel set** of the functional coding space on a
+countable discrete carrier. It is isomorphism invariant by
+`TauCeti.FunctionalConfiguration.realize_sentence_iff_of_isoSetoid`. -/
+theorem measurableSet_setOf_model {T : L.Theory} (hT : T.Countable) :
+    MeasurableSet[borel (FunctionalConfiguration L V)]
+      {F : FunctionalConfiguration L V | @Theory.Model L V F.toStructure T} := by
+  let : MeasurableSpace (FunctionalConfiguration L V) := borel _
+  have : {F : FunctionalConfiguration L V | @Theory.Model L V F.toStructure T} =
+      ⋂ φ ∈ T, {F | @Sentence.Realize L V F.toStructure φ} := by
+    ext F
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter]
+    exact ⟨fun h φ hφ => @Theory.realize_sentence_of_mem L V F.toStructure T h φ hφ,
+      fun h => @Theory.Model.mk L V F.toStructure T h⟩
+  rw [this]
+  exact MeasurableSet.biInter hT fun φ _ => measurableSet_setOf_realize_sentence φ
+
+end TauCeti.FunctionalConfiguration
