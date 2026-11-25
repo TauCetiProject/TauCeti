@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.LinearAlgebra.Charpoly.Dual
 import TauCeti.LinearAlgebra.Charpoly.Inverse
+import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
 # Characteristic polynomials of representations
@@ -29,6 +30,8 @@ eigenvalues of arithmetic and geometric Frobenius.
 * `Representation.charpoly_prod_apply`: multiplicativity on products.
 * `Representation.charpoly_trivial_apply`: the characteristic polynomial of the trivial
   representation.
+* `Representation.charpoly_apply_eq_subrepresentation_mul_quotient`: multiplicativity on an
+  invariant submodule and its quotient.
 * `Representation.charpoly_apply_inv`, `Representation.aroots_charpoly_apply_inv`: the
   characteristic polynomial and the characteristic roots of `g⁻¹`.
 * `Representation.charpoly_dual_apply`, `Representation.aroots_charpoly_dual_apply`: the
@@ -67,6 +70,16 @@ representation. -/
 theorem charpoly_trivial_apply (g : G) : (trivial R G V g).charpoly = (X - 1) ^ finrank R V := by
   nontriviality R
   rw [isTrivial_def, ← Module.End.one_eq_id, LinearMap.charpoly_one]
+
+/-- **The characteristic polynomial on an invariant submodule and its quotient.** If `U` and
+`V ⧸ U` are free of finite rank, `g` acts on `V` with characteristic polynomial the product of
+those of its actions on `U` and on `V ⧸ U`. No complement of `U` is needed. -/
+theorem charpoly_apply_eq_subrepresentation_mul_quotient (ρ : Representation R G V)
+    (U : Submodule R V) (le_comap : ∀ g, U ≤ U.comap (ρ g)) [Module.Free R U] [Module.Finite R U]
+    [Module.Free R (V ⧸ U)] [Module.Finite R (V ⧸ U)] (g : G) :
+    (ρ g).charpoly =
+      (ρ.subrepresentation U le_comap g).charpoly * (ρ.quotient U le_comap g).charpoly :=
+  LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ U (ρ g) (le_comap g)
 
 end Monoid
 
