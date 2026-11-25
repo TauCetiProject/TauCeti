@@ -436,15 +436,6 @@ theorem forgetFraming_surjective :
   obtain ⟨ρ, rfl⟩ := StrictClass.mk_surjective c
   exact ⟨mk ⟨ρ, fun _ ↦ 1⟩, rfl⟩
 
-/-- With no frames, forgetting the frames identifies framed deformations with strict classes. -/
-theorem forgetFraming_bijective [IsEmpty T] :
-    Function.Bijective (forgetFraming : FramedStrictClass ρbar T A → StrictClass ρbar A) := by
-  refine ⟨fun c c' h ↦ ?_, forgetFraming_surjective⟩
-  obtain ⟨x, rfl⟩ := mk_surjective c
-  obtain ⟨y, rfl⟩ := mk_surjective c'
-  obtain ⟨b, hb⟩ := StrictClass.mk_eq_mk_iff.mp h
-  exact mk_eq_mk_iff.mpr ⟨b, FramedLift.ext hb (funext isEmptyElim)⟩
-
 /-- With no frames, framed deformations are strict classes of lifts: the inverse sends the class
 of a lift `ρ` to the class of `ρ` with the empty framing. -/
 def forgetFramingEquivOfIsEmpty [IsEmpty T] :
