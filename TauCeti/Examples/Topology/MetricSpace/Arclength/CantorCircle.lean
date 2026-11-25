@@ -20,8 +20,8 @@ The curve `γ(t) = exp(2πi φ(t))` (`TauCeti.cantorCircle`) is closed, injectiv
 length `2π` (`TauCeti.eVariationOn_cantorCircle`). Almost everywhere `‖γ'(t)‖ = 2π φ'(t) = π`
 (`TauCeti.ae_norm_deriv_cantorCircle`), so `∫₀¹ ‖γ'‖ = π ≠ 2π`
 (`integral_norm_deriv_cantorCircle`): the length formula `length = ∫ ‖γ'‖` needs absolute
-continuity. The first statement of §1.1 holds for this curve of bounded variation: its metric
-derivative is `π` at almost every time of `[0, 1]` (`ae_metricDerivative_cantorCircle`).
+continuity. For this curve of bounded variation the metric derivative still equals `‖γ'‖`
+almost everywhere: it is `π` at almost every time of `[0, 1]` (`ae_metricDerivative_cantorCircle`).
 -/
 
 @[expose] public section
@@ -38,8 +38,7 @@ theorem integral_norm_deriv_cantorCircle : ∫ t in (0 : ℝ)..1, ‖deriv canto
   simp
 
 /-- **The metric speed is `π`.** The metric derivative of `γ` equals `‖γ'‖ₑ = π` at almost every
-time of `[0, 1]`, by `BoundedVariationOn.ae_metricDerivative_eq_enorm_deriv`. Its integral over
-`[0, 1]` is `π`, not the length `2π`. -/
+time of `[0, 1]`. -/
 theorem ae_metricDerivative_cantorCircle :
     ∀ᵐ t, t ∈ Icc (0 : ℝ) 1 → metricDerivative cantorCircle t = ENNReal.ofReal π := by
   have hγ : BoundedVariationOn cantorCircle (uIcc 0 1) := by
