@@ -47,8 +47,9 @@ example {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) :
     exact (ha.trans_lt hz.1).false
   have hdiff : ∀ a : ℂ, 1 ≤ ‖a‖ → DifferentiableOn ℂ (fun z : ℂ ↦ (a - z)⁻¹) (ball 0 1 \ {0}) :=
     fun a ha ↦ ((differentiableOn_const a).sub differentiableOn_id).inv (hball a ha)
-  refine ⟨fun n ↦ ?_, tendsto_zpow_smul_circleLaurentCoeff_sub (h := fun z ↦ (2 - z)⁻¹) hρ hρ1
-    ((hdiff 1 (by simp)).add (hdiff 2 (by simp))) (hdiff 1 (by simp)) ?_ fun z _ ↦ ?_⟩
+  refine ⟨fun n ↦ ?_, tendsto_zpow_smul_circleLaurentCoeff_sub (h := fun z ↦ (2 - z)⁻¹) le_rfl hρ
+    hρ1 (by rw [closedBall_zero]; exact (hdiff 1 (by simp)).add (hdiff 2 (by simp)))
+    (by rw [closedBall_zero]; exact hdiff 1 (by simp)) ?_ fun z _ ↦ ?_⟩
   · have hsph : ∀ a : ℂ, 1 ≤ ‖a‖ → CircleIntegrable (fun z : ℂ ↦ (a - z)⁻¹) 0 ρ := fun a ha ↦
       ((hdiff a ha).continuousOn.mono (subset_sdiff_singleton (sphere_subset_ball hρ1)
         fun h0 ↦ ne_of_mem_sphere h0 hρ.ne' rfl)).circleIntegrable hρ.le
