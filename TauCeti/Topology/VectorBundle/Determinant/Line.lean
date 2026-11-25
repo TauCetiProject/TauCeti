@@ -158,21 +158,18 @@ section RankZero
 variable {E : B → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]
 
 /-- **The empty exterior product**, a section of the determinant line of a bundle of rank zero:
-over `x` it is the exterior product `1 ∈ ⋀⁰ (E x)` of the empty family of vectors. It is
-continuous (`TauCeti.DetBundle.continuous_rankZeroSection`) and vanishes nowhere
+over `x` it is the exterior product `1 ∈ ⋀⁰ (E x)` of the empty family of vectors, the vector with
+coordinate `1` under `TauCeti.DetBundle.zeroEquiv`. It is continuous
+(`TauCeti.DetBundle.continuous_rankZeroSection`) and vanishes nowhere
 (`TauCeti.DetBundle.rankZeroSection_ne_zero`), so the determinant line of a bundle of rank zero is
 trivial. -/
 def rankZeroSection (hF : finrank 𝕜 F = 0) (x : B) : DetBundle 𝕜 F E x :=
-  (linearEquiv 𝕜 F E x).symm (exteriorPower.ιMulti 𝕜 _ fun i ↦ (Fin.cast hF i).elim0)
+  (zeroEquiv 𝕜 F E hF x).symm 1
 
 /-- The empty exterior product vanishes nowhere: it is `1 ∈ ⋀⁰ (E x) ≃ 𝕜`. -/
 theorem rankZeroSection_ne_zero (hF : finrank 𝕜 F = 0) (x : B) :
-    rankZeroSection (E := E) hF x ≠ 0 := fun h ↦ by
-  have h₁ := congrArg (fun v ↦ exteriorPower.zeroEquiv 𝕜 (E x)
-    (LinearEquiv.ofEq _ _ (congrArg (⋀[𝕜]^· (E x)) hF) (linearEquiv 𝕜 F E x v))) h
-  simp only [rankZeroSection, LinearEquiv.apply_symm_apply, exteriorPower.ofEq_ιMulti hF,
-    exteriorPower.zeroEquiv_ιMulti, map_zero] at h₁
-  exact one_ne_zero h₁
+    rankZeroSection (E := E) hF x ≠ 0 :=
+  (zeroEquiv 𝕜 F E hF x).symm.map_ne_zero_iff.2 one_ne_zero
 
 variable [FiniteDimensional 𝕜 F] [TopologicalSpace B] [TopologicalSpace (TotalSpace F E)]
 
@@ -180,8 +177,18 @@ variable [FiniteDimensional 𝕜 F] [TopologicalSpace B] [TopologicalSpace (Tota
 theorem chartCoord_rankZeroSection (hF : finrank 𝕜 F = 0) (e : Trivialization F (π F E))
     [e.IsLinear 𝕜] {x : B} (hx : x ∈ e.baseSet) : chartCoord e hx (rankZeroSection hF x) = 1 := by
   have : IsEmpty (Fin (finrank 𝕜 F)) := by rw [hF]; infer_instance
-  rw [rankZeroSection, chartCoord_ιMulti, Module.Basis.det_isEmpty,
-    AlternatingMap.constOfIsEmpty_apply, Function.const_apply]
+  have h : rankZeroSection hF x = (linearEquiv 𝕜 F E x).symm
+      (exteriorPower.ιMulti 𝕜 _ fun i ↦ (Fin.cast hF i).elim0) := by
+    -- Both sides are the empty product `1` in the exterior algebra of `E x`.
+    have h₁ := congrArg Subtype.val (exteriorPower.ofEq_ιMulti (R := 𝕜) (M := E x) hF
+      fun i ↦ (Fin.cast hF i).elim0)
+    simp only [LinearEquiv.coe_ofEq_apply, exteriorPower.ιMulti_apply_coe,
+      ExteriorAlgebra.ιMulti_zero_apply] at h₁
+    rw [rankZeroSection, ContinuousLinearEquiv.symm_apply_eq, eq_comm,
+      ← ExteriorAlgebra.algebraMap_inj (M := E x), ← coe_linearEquiv_zeroEquiv,
+      LinearEquiv.apply_symm_apply, map_one, exteriorPower.ιMulti_apply_coe, h₁]
+  rw [h, chartCoord_ιMulti, Module.Basis.det_isEmpty, AlternatingMap.constOfIsEmpty_apply,
+    Function.const_apply]
 
 variable [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle 𝕜 F E]
 
