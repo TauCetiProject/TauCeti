@@ -79,13 +79,14 @@ theorem toMatrix_d_eq_of_cancel_of_invertible {R : Type*} [CommRing R]
   let : Invertible (ci'.repr ((C.d i i').hom (ci 0)) 0) :=
     (inferInstance : Invertible a).copy _ ha
   have hmul : ci'.repr ((C.d i i').hom (ci 0)) 0 * ⅟a = 1 := by rw [ha, mul_invOf_self]
+  have hinv : ⅟(ci'.repr ((C.d i i').hom (ci 0)) 0) = ⅟a := invOf_eq_right_inv hmul
   refine Matrix.ext fun r k ↦ ?_
   obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 (hφ k)
   have hφe : (φ.f i).hom (ei k) = ci k.succ + t • ci 0 := by rw [ht, add_sub_cancel]
   have h := ei'.repr_eq_sub_mul_invOf_mul ci' (φ.f i').hom (Fin.succ_injective _)
     Fin.succ_ne_zero hφ' ((D.d i i').hom (ei k)) r
   have hcomm := (Hom.comm_apply φ i i' (ei k)).symm
-  rw [hcomm, hφe] at h
+  rw [hinv, hcomm, hφe] at h
   simp only [LinearMap.toMatrix_apply, Matrix.of_apply, h, map_add, map_smul,
     Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul]
   linear_combination -t * (ci'.repr ((C.d i i').hom (ci 0)) r.succ) * hmul
