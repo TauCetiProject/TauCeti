@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
-public import Mathlib.LinearAlgebra.Dimension.Constructions
-public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Basic
-public import TauCeti.RepresentationTheory.Irreducible
-public import TauCeti.RepresentationTheory.Subrepresentation
+public import TauCeti.RepresentationTheory.Irreducible.FiniteIndex
 
 /-!
 # Dimensions of the irreducible representations of the archimedean Weil groups
@@ -21,14 +18,16 @@ complex representations of the archimedean Weil groups `W_ℂ = ℂˣ` and `W_�
 
 For `W_ℂ` this is Mathlib's Schur's lemma for a commutative group,
 `Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative`, applied to `ρ` with
-`[ρ.IsIrreducible]`. For `W_ℝ`, a nonzero finite-dimensional representation of the commutative
-group `ℂˣ` has a common eigenvector `v`
-(`TauCeti.exists_unitHom_jointEigenvector_of_pairwise_commute_of_isAlgClosed`), and the span of
-`v` and `j v` is stable under `W_ℝ`: `z (j v) = j (conj z) v` and `j (j v) = (-1) v`. In an
-irreducible representation it is everything.
+`[ρ.IsIrreducible]`. For `W_ℝ` it is the case of the commutative subgroup `ℂˣ` of index two in
+`Representation.IsIrreducible.finrank_le_index`. Concretely, for a common eigenvector `v` of `ℂˣ`
+the span of `v` and `j v` is stable under `W_ℝ`, because `z (j v) = j (conj z) v` and
+`j (j v) = (-1) v`; this explicit spanning pair is what identifies a two-dimensional irreducible
+representation with an induced character.
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.WeilGroupReal.apply_mem_span_pair`: the span of a common eigenvector
+  `v` of `ℂˣ` and of `j v` is stable under `W_ℝ`.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.finrank_le_two_of_isIrreducible`: an irreducible
   finite-dimensional complex representation of `W_ℝ` has dimension at most two.
 
@@ -82,28 +81,13 @@ theorem apply_mem_span_pair (ρ : Representation ℂ WeilGroupReal V) {v : V}
   · rw [map_mul, mul_apply_eq_comp]
     exact hj _ (hz z x hx)
 
-/-- **The irreducible representations of `W_ℝ` have dimension at most two.** A common eigenvector
-`v` of `ℂˣ` and its image `j v` span a subrepresentation, which is everything. -/
+/-- **The irreducible representations of `W_ℝ` have dimension at most two.** This is the bound
+by the index of a commutative subgroup of finite index, for `ℂˣ`, of index two in `W_ℝ`. -/
 theorem finrank_le_two_of_isIrreducible (ρ : Representation ℂ WeilGroupReal V)
     (h : ρ.IsIrreducible) : finrank ℂ V ≤ 2 := by
-  have := h.nontrivial
-  obtain ⟨χ, v, hv0, hv⟩ :=
-    TauCeti.exists_unitHom_jointEigenvector_of_pairwise_commute_of_isAlgClosed
-      (ρ.comp includeComplex) fun g h _ ↦ (Commute.all g h).map _
-  let σ : Subrepresentation ρ :=
-    { toSubmodule := Submodule.span ℂ (Set.range ![v, ρ j v])
-      apply_mem_toSubmodule := fun w _ hx ↦ apply_mem_span_pair ρ (fun z ↦ ⟨χ z, hv z⟩) w hx }
-  have hσ : σ = ⊤ := by
-    refine (h.eq_bot_or_eq_top σ).resolve_left fun hbot ↦ hv0 ?_
-    have hmem : v ∈ σ.toSubmodule := Submodule.subset_span ⟨0, rfl⟩
-    rw [hbot, Subrepresentation.toSubmodule_bot, Submodule.mem_bot] at hmem
-    exact hmem
-  have htop : Submodule.span ℂ (Set.range ![v, ρ j v]) = ⊤ := by
-    simpa [σ] using congrArg Subrepresentation.toSubmodule hσ
-  calc finrank ℂ V = finrank ℂ (⊤ : Submodule ℂ V) := (finrank_top ℂ V).symm
-    _ = finrank ℂ (Submodule.span ℂ (Set.range ![v, ρ j v])) := by rw [htop]
-    _ ≤ Fintype.card (Fin 2) := finrank_range_le_card _
-    _ = 2 := Fintype.card_fin 2
+  have : IsMulCommutative includeComplex.range := includeComplex.range_eq_map ▸ inferInstance
+  have : includeComplex.range.FiniteIndex := ⟨by simp [index_range_includeComplex]⟩
+  simpa [index_range_includeComplex] using h.finrank_le_index includeComplex.range
 
 end WeilGroupReal
 
