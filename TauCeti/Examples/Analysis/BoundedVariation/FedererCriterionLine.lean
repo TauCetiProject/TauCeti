@@ -9,8 +9,6 @@ public import TauCeti.Analysis.BoundedVariation.Real
 public import TauCeti.Analysis.BoundedVariation.Slicing.Criterion
 public import TauCeti.MeasureTheory.Measure.Hausdorff
 
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
-
 /-!
 # Federer's criterion on the line: locally finite but infinite perimeter
 
