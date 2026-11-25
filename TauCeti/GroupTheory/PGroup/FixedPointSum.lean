@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.GroupTheory.PGroup
+public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
 # Sums of invariant functions over a `p`-group set with `p`-torsion values
@@ -19,6 +20,10 @@ over the fixed points `α^P` (`IsPGroup.sum_eq_sum_fixedPoints_of_nsmul_eq_zero`
 not a fixed point has `p`-power size `p^n` with `n ≥ 1`, so it contributes `p^n • f(a) = 0`. The
 case of a semiring `k` of characteristic `p` is `IsPGroup.sum_eq_sum_fixedPoints`. This is the
 weighted form of `IsPGroup.card_modEq_card_fixedPoints`, which is the case `f = 1`.
+
+For a `p`-subgroup `P` of a finite group `G` acting by conjugation, the fixed points are the
+centralizer `C_G(P)`: the sum over `G` of a function invariant under conjugation by `P` is its sum
+over `C_G(P)` (`IsPGroup.sum_eq_sum_centralizer_of_nsmul_eq_zero`).
 
 ## References
 
@@ -89,5 +94,34 @@ theorem sum_eq_sum_fixedPoints {k : Type*} [NonAssocSemiring k] [CharP k p] (hP 
     ∑ a, f a = ∑ a with a ∈ fixedPoints P α, f a :=
   sum_eq_sum_fixedPoints_of_nsmul_eq_zero hP (fun x => by rw [nsmul_eq_mul, CharP.cast_eq_zero,
     zero_mul]) f hf
+
+end IsPGroup
+
+namespace IsPGroup
+
+variable {G M : Type*} [Group G] [Fintype G] [AddCommMonoid M] {p : ℕ} [Fact p.Prime]
+  {P : Subgroup G}
+
+/-- **Sums of conjugation-invariant functions over a group.** If `P` is a `p`-subgroup of a finite
+group `G` and `f : G → M` is invariant under conjugation by `P`, with `p • x = 0` for every
+`x : M`, the sum of `f` over `G` equals its sum over the centralizer `C_G(P)`, the fixed points of
+conjugation by `P`. -/
+theorem sum_eq_sum_centralizer_of_nsmul_eq_zero (hP : IsPGroup p P)
+    [DecidablePred (· ∈ Subgroup.centralizer (P : Set G))] (hp : ∀ x : M, p • x = 0)
+    (f : G → M) (hf : ∀ g ∈ P, ∀ a : G, f (g * a * g⁻¹) = f a) :
+    ∑ a, f a = ∑ a with a ∈ Subgroup.centralizer (P : Set G), f a := by
+  classical
+  let : MulAction P G := MulAction.compHom G (MulAut.conj.comp P.subtype)
+  have hsmul (g : P) (a : G) : g • a = g * a * (g : G)⁻¹ := by
+    rw [MulAction.compHom_smul_def]
+    simp
+  rw [sum_eq_sum_fixedPoints_of_nsmul_eq_zero hP hp f fun g a => by
+    rw [hsmul]
+    exact hf g g.property a]
+  refine Finset.sum_congr (Finset.filter_congr fun a _ => ?_) fun _ _ => rfl
+  simp only [MulAction.mem_fixedPoints, hsmul, Subgroup.mem_centralizer_iff, SetLike.mem_coe]
+  refine ⟨fun h n hn => ?_, fun h n => ?_⟩
+  · simpa [mul_inv_eq_iff_eq_mul] using h ⟨n, hn⟩
+  · rw [h n n.property, mul_inv_cancel_right]
 
 end IsPGroup
