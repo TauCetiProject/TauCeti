@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.SobolevComparison
+public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.Sobolev.Comparison
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.Topology
+import TauCeti.Analysis.LocallyConvex.WithSeminorms
 
 /-!
 # The Sobolev seminorms define the topology of the smooth vectors
@@ -83,26 +84,18 @@ theorem withSeminorms_sobolevSeminormFamily (hX : Submodule.span ℝ (Set.range 
   refine (withSeminorms I π X).congr
     (Seminorm.IsBounded.of_real fun k ↦ ⟨{k}, 1, fun v ↦ ?_⟩)
     (Seminorm.IsBounded.of_real fun k ↦ ?_)
-  · rw [Finset.sup_singleton, one_mul, LinearMap.id_apply, seminormFamily_apply,
-      sobolevSeminormFamily_apply]
-    exact sobolevSeminorm_le_wordSeminorm X k v.toSmooth
+  · simpa using sobolevSeminorm_le_wordSeminorm X k v.toSmooth
   · obtain ⟨C, hC⟩ := exists_wordSeminorm_le_mul_sobolevSeminorm (π := π) X hX k
     refine ⟨{k}, C, fun v ↦ ?_⟩
-    rw [Finset.sup_singleton, LinearMap.id_apply, seminormFamily_apply,
-      sobolevSeminormFamily_apply]
-    exact hC v.toSmooth
+    simpa using hC v.toSmooth
 
 /-- **Convergence in `LieSmoothSpace I π X` is convergence in every Sobolev seminorm**, for a
 spanning family `X`. -/
 theorem tendsto_nhds_iff_sobolevSeminormFamily (hX : Submodule.span ℝ (Set.range X) = ⊤)
     {α : Type*} {l : Filter α} {u : α → LieSmoothSpace I π X} {v : LieSmoothSpace I π X} :
     Tendsto u l (𝓝 v) ↔
-      ∀ k, Tendsto (fun a ↦ sobolevSeminormFamily I π X k (u a - v)) l (𝓝 0) := by
-  rw [(withSeminorms_sobolevSeminormFamily hX).tendsto_nhds]
-  refine ⟨fun h k ↦ Metric.tendsto_nhds.2 fun ε hε ↦ (h k ε hε).mono fun a ha ↦ ?_,
-    fun h k ε hε ↦ (Metric.tendsto_nhds.1 (h k) ε hε).mono fun a ha ↦ ?_⟩
-  · rwa [Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg _ _)]
-  · rwa [Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg _ _)] at ha
+      ∀ k, Tendsto (fun a ↦ sobolevSeminormFamily I π X k (u a - v)) l (𝓝 0) :=
+  (withSeminorms_sobolevSeminormFamily hX).tendsto_nhds_iff_tendsto_zero
 
 end LieSmoothSpace
 
