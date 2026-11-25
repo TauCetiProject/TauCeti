@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Principal
+public import TauCeti.RingTheory.FiniteType.PointSeparation
 public import TauCeti.RingTheory.Idempotents.Primitive.AlgHom
 
 /-!
