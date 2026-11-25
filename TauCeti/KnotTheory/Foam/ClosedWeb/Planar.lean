@@ -513,12 +513,17 @@ noncomputable def reverseRibbonGraphIsoMirror :
 @[simp] theorem reverseRibbonGraphIsoMirror_edge :
     W.reverseRibbonGraphIsoMirror.edge = W.endSwap := (rfl)
 
+/-- Orientation reversal preserves the number of components. -/
+@[simp] theorem card_component_reverse :
+    Fintype.card W.reverse.Component = Fintype.card W.Component :=
+  (Fintype.card_congr W.reverseRibbonGraphIsoMirror.connectedComponentEquiv).trans
+    W.card_component_mirror
+
 /-- Orientation reversal preserves compatible planarity. -/
 @[simp] theorem isCompatiblyPlanar_reverse :
     W.reverse.IsCompatiblyPlanar ↔ W.IsCompatiblyPlanar := by
-  rw [isCompatiblyPlanar_iff_toRibbonGraph, W.reverseRibbonGraphIsoMirror.eulerChar_eq,
-    Fintype.card_congr W.reverseRibbonGraphIsoMirror.connectedComponentEquiv,
-    ← isCompatiblyPlanar_iff_toRibbonGraph, isCompatiblyPlanar_mirror]
+  rw [isCompatiblyPlanar_def, isCompatiblyPlanar_def, eulerChar_def, eulerChar_def,
+    faceCount_reverse, card_component_reverse]
 
 /-! ### Disjoint union -/
 
