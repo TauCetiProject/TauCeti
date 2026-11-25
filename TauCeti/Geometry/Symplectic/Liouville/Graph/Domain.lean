@@ -202,7 +202,8 @@ theorem mvfderiv_liouvilleGraphFunction_apply (hx : x ∉ W)
   -- of `0`.
   have hτ : 0 < Real.log (liouvilleRadialCoordinate Z W x) :=
     Real.log_pos ((h.one_lt_liouvilleRadialCoordinate_iff hZ).2 hx)
-  refine h.mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq hZ hFx ?_
+  refine mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq
+    ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) hFx ?_
   filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 hτ)] with s hs
   exact h.liouvilleGraphFunction_flowOf_of_notMem_interior hZ (fun hi ↦ hx (interior_subset hi))
     (by linarith [mem_Ioi.1 hs])
