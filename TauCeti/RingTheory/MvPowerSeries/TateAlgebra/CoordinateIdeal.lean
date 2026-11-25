@@ -67,6 +67,19 @@ theorem mk_X_dvd_iff {i : σ} (hc : c i ≠ 0) {f : IsRestricted.subring (R := R
   have hgr : IsRestricted c g := IsRestricted.of_X_mul hc (hg ▸ f.property)
   exact ⟨⟨g, hgr⟩, Subtype.ext hg⟩
 
+/-- Coordinate ideals grow with the set of variables. -/
+theorem monotone_map_span_X_image :
+    Monotone fun s : Set σ ↦
+      (Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted (R := R) c) :=
+  fun _ _ h ↦ Ideal.map_mono (Ideal.span_mono (Set.image_mono h))
+
+/-- The variable `Xᵢ` lies in the coordinate ideal of every set of variables containing `i`. -/
+theorem X_mem_map_span_X_image {s : Set σ} {i : σ} (hi : i ∈ s) :
+    (⟨X i, isRestricted_X c i⟩ : IsRestricted.subring (R := R) c) ∈
+      (Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted c) := by
+  rw [← polynomialToRestricted_X]
+  exact Ideal.mem_map_of_mem _ (Ideal.subset_span ⟨i, hi, rfl⟩)
+
 /-- Setting the variables of `s` to zero, as a ring homomorphism from restricted series to
 formal power series. -/
 private noncomputable def evalZeroOn (s : Set σ) :
@@ -87,15 +100,6 @@ private theorem coeff_evalZeroOn_of_exists {s : Set σ} {t : σ →₀ ℕ} (ht 
   have h : ¬∀ j ∈ s, t j = 0 := fun h ↦ htj (h j hj)
   simp only [evalZeroOn, RingHom.comp_apply, coeff_rescale_indicator_compl, eq_false h,
     ↓reduceIte]
-
-/-- Setting variables to zero keeps a restricted series restricted. -/
-private theorem isRestricted_evalZeroOn (s : Set σ) (f : IsRestricted.subring (R := R) c) :
-    IsRestricted c (evalZeroOn s f) :=
-  f.property.of_norm_coeff_le (C := 1) fun t ↦ by
-    by_cases ht : ∃ j ∈ s, t j ≠ 0
-    · rw [coeff_evalZeroOn_of_exists ht, norm_zero, one_mul]
-      exact norm_nonneg _
-    · rw [coeff_evalZeroOn_of_forall (by simpa using ht), one_mul]
 
 /-- If setting the variables of `s` to zero kills a restricted series, then each of its monomials
 involves one of these variables. -/
@@ -148,11 +152,9 @@ theorem mem_map_span_X_image_iff {s : Set σ} (hs : s.Finite) (hc : ∀ i ∈ s,
     simp [this]
   | @insert i s hi _ ih =>
     intro hf
-    have hmono := Ideal.map_mono (f := polynomialToRestricted (R := R) c)
-      (Ideal.span_mono (Set.image_mono (f := (MvPolynomial.X : σ → MvPolynomial σ R))
-        (Set.subset_insert i s)))
     -- Split `f` into its part `g` free of `Xᵢ`, and the rest, which `Xᵢ` divides.
-    set g : IsRestricted.subring (R := R) c := ⟨evalZeroOn {i} f, isRestricted_evalZeroOn {i} f⟩
+    set g : IsRestricted.subring (R := R) c :=
+      ⟨evalZeroOn {i} f, f.property.rescale_indicator_compl {i}⟩
     have hgs : g ∈ (Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted c) := by
       refine ih (fun j hj ↦ hc j (Set.mem_insert_of_mem i hj)) fun t ht ↦ ?_
       by_cases hti : t i = 0
@@ -165,12 +167,9 @@ theorem mem_map_span_X_image_iff {s : Set σ} (hs : s.Finite) (hc : ∀ i ∈ s,
     obtain ⟨q, hq⟩ := (mk_X_dvd_iff (hc i (Set.mem_insert i s)) (f := f - g)).mpr fun t ht ↦ by
       rw [AddSubgroupClass.coe_sub, map_sub, coeff_evalZeroOn_of_forall (by simpa using ht),
         sub_self]
-    have hX : polynomialToRestricted c (MvPolynomial.X i) ∈
-        (Ideal.span (MvPolynomial.X '' insert i s)).map (polynomialToRestricted (R := R) c) :=
-      Ideal.mem_map_of_mem _ (Ideal.subset_span ⟨i, Set.mem_insert i s, rfl⟩)
-    rw [polynomialToRestricted_X] at hX
     rw [← sub_add_cancel f g, hq]
-    exact add_mem (Ideal.mul_mem_right _ _ hX) (hmono hgs)
+    exact add_mem (Ideal.mul_mem_right _ _ (X_mem_map_span_X_image (Set.mem_insert i s)))
+      (monotone_map_span_X_image (Set.subset_insert i s) hgs)
 
 /-- For a finite set of variables with nonzero radii, the coordinate ideal is the kernel of
 setting these variables to zero. -/
@@ -187,25 +186,20 @@ infinite. This is the restricted analogue of `MvPolynomial.span_X_image_isPrime`
 theorem map_span_X_image_isPrime [IsDomain R] {s : Set σ} (hc : ∀ i ∈ s, c i ≠ 0) :
     ((Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted (R := R) c)).IsPrime := by
   classical
-  have : IsDomain (_root_.MvPowerSeries σ R) := NoZeroDivisors.to_isDomain _
   -- Finitely many variables: the ideal is the kernel of a map to a domain.
   have hfin {s' : Set σ} (hs' : s'.Finite) (hs's : s' ⊆ s) :
       ((Ideal.span (MvPolynomial.X '' s')).map (polynomialToRestricted (R := R) c)).IsPrime := by
     rw [map_span_X_image_eq_ker hs' fun i hi ↦ hc i (hs's hi)]
     exact RingHom.ker_isPrime _
-  refine ⟨fun h ↦ (hfin Set.finite_empty (Set.empty_subset s)).ne_top ?_, fun {f g} hfg ↦ ?_⟩
+  refine ⟨fun h ↦ ?_, fun {f g} hfg ↦ ?_⟩
   · -- The coordinate ideal of `s` misses `1`, since setting the variables to zero keeps `1`.
-    rw [Ideal.eq_top_iff_one] at h ⊢
-    have h1 := map_span_X_image_le_ker (R := R) (c := c) s h
-    simp only [RingHom.mem_ker, map_one, one_ne_zero] at h1
+    have h1 := map_span_X_image_le_ker (R := R) (c := c) s ((Ideal.eq_top_iff_one _).mp h)
+    exact one_ne_zero (by rwa [RingHom.mem_ker, map_one] at h1)
   · -- A product in the ideal already lies in the coordinate ideal of finitely many variables.
     rw [Ideal.map_span, Set.image_image] at hfg
     obtain ⟨T, hTs, hT⟩ := Submodule.mem_span_finite_of_mem_span hfg
     obtain ⟨s', hs's, rfl⟩ := Finset.subset_set_image_iff.mp hTs
-    have hle : (Ideal.span (MvPolynomial.X '' (s' : Set σ))).map
-        (polynomialToRestricted (R := R) c) ≤
-          (Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted c) :=
-      Ideal.map_mono (Ideal.span_mono (Set.image_mono hs's))
+    have hle := monotone_map_span_X_image (R := R) (c := c) hs's
     have hfg' : f * g ∈ (Ideal.span (MvPolynomial.X '' (s' : Set σ))).map
         (polynomialToRestricted (R := R) c) := by
       rwa [Ideal.map_span, Set.image_image, ← Finset.coe_image]
@@ -218,16 +212,11 @@ theorem strictMono_map_span_X_image [Nontrivial R] :
     StrictMono fun s : Set σ ↦
       (Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted (R := R) c) := by
   intro s s' hss'
-  refine lt_of_le_of_ne (Ideal.map_mono (Ideal.span_mono (Set.image_mono hss'.subset))) ?_
+  refine lt_of_le_not_ge (monotone_map_span_X_image hss'.subset) fun h ↦ ?_
+  -- A variable `Xᵢ` with `i ∈ s' \ s` would lie in the coordinate ideal of `s`.
   obtain ⟨i, hi', hi⟩ := Set.exists_of_ssubset hss'
-  intro h
-  have h' : (Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted (R := R) c) =
-      (Ideal.span (MvPolynomial.X '' s')).map (polynomialToRestricted c) := h
-  have hX : polynomialToRestricted (R := R) c (MvPolynomial.X i) ∈
-      (Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted c) :=
-    h' ▸ Ideal.mem_map_of_mem _ (Ideal.subset_span ⟨i, hi', rfl⟩)
-  obtain ⟨j, hj, hji⟩ := exists_mem_ne_zero_of_mem_map_span_X_image hX (Finsupp.single i 1)
-    (by simp)
+  obtain ⟨j, hj, hji⟩ := exists_mem_ne_zero_of_mem_map_span_X_image
+    (h (X_mem_map_span_X_image hi')) (Finsupp.single i 1) (by simp)
   rw [Finsupp.single_apply_ne_zero] at hji
   exact hi (hji.1 ▸ hj)
 
