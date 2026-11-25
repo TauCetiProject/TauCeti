@@ -99,7 +99,7 @@ theorem killingForm_cartan_root_eq_zero (hB : B.PosDef)
   have key : killingForm ℤ (ShellLieAlgebra B) ⁅cartan B h, cartan B a⁆ (root B a) =
       killingForm ℤ (ShellLieAlgebra B) (cartan B h) ⁅cartan B a, root B a⁆ :=
     LieModule.traceForm_apply_lie_apply ℤ _ _ _ _ _
-  rw [cartan_lie_cartan, cartan_lie_root, mem_normTwoShell.mp a.2] at key
+  rw [cartan_lie_cartan, cartan_lie_root, mem_normTwoShell.mp a.property] at key
   simp only [map_zero, LinearMap.zero_apply, map_smul, smul_eq_mul] at key
   omega
 
@@ -146,7 +146,7 @@ theorem two_mul_killingForm_root_root_of_add_eq_zero (hB : B.PosDef)
         killingForm ℤ (ShellLieAlgebra B) (cartan B a) (cartan B a) := by
   let _ := lieRing hB hev
   have hp : (a : I → ℤ) ⬝ᵥ B *ᵥ (b : I → ℤ) = -2 := by
-    rw [eq_neg_of_add_eq_zero_right hab, mulVec_neg, dotProduct_neg, mem_normTwoShell.mp a.2]
+    rw [eq_neg_of_add_eq_zero_right hab, mulVec_neg, dotProduct_neg, mem_normTwoShell.mp a.property]
   have key : killingForm ℤ (ShellLieAlgebra B) ⁅root B a, root B b⁆ (cartan B a) =
       killingForm ℤ (ShellLieAlgebra B) (root B a) ⁅root B b, cartan B a⁆ :=
     LieModule.traceForm_apply_lie_apply ℤ _ _ _ _ _
@@ -165,7 +165,7 @@ private theorem four_le_killingForm_cartan_root_self (hB : B.PosDef)
   have : Finite B.normTwoShell := hB.finite_normTwoShell.to_subtype
   have := Fintype.ofFinite B.normTwoShell
   rw [killingForm_cartan_cartan hB hev,
-    ← Finset.add_sum_erase _ _ (Finset.mem_univ a), mem_normTwoShell.mp a.2]
+    ← Finset.add_sum_erase _ _ (Finset.mem_univ a), mem_normTwoShell.mp a.property]
   have := Finset.sum_nonneg fun (b : B.normTwoShell) (_ : b ∈ Finset.univ.erase a) ↦
     mul_self_nonneg ((a : I → ℤ) ⬝ᵥ B *ᵥ (b : I → ℤ))
   omega
@@ -222,9 +222,10 @@ theorem isKilling (hB : B.PosDef) (hev : ∀ i, Even (B i i))
   -- A vector Killing orthogonal to everything has zero coefficient on each root vector `x_a`, by
   -- pairing with `x_(-a)`, and its Cartan part `H_h` then satisfies `κ(H_h, H_h) = 0`.
   have hsum := (cartan_add_sum_root_eq B x).symm
+  rw [Finsupp.sum_fintype _ _ fun a ↦ zero_smul ℤ (root B a)] at hsum
   set h := (equivProd B x).1
   have hroot (a : B.normTwoShell) : (equivProd B x).2 a = 0 := by
-    let a' : B.normTwoShell := ⟨-a, neg_mem_normTwoShell.mpr a.2⟩
+    let a' : B.normTwoShell := ⟨-a, neg_mem_normTwoShell.mpr a.property⟩
     have hne := killingForm_root_root_ne_zero_of_add_eq_zero hB hev (b := a')
       (add_neg_cancel (a : I → ℤ))
     have key := hx' (root B a')

@@ -112,7 +112,7 @@ theorem isVerticalStrip_iff_interlacedBy_transpose :
   rw [isVerticalStrip_iff, interlacedBy_iff]
   constructor
   · intro h i
-    refine ⟨le_rowLen_of_forall_mem fun a ha => ?_, ?_⟩
+    refine ⟨le_rowLen_iff_forall_mem.mpr fun a ha => ?_, ?_⟩
     · -- A cell of `μ` in column `i + 1` sits in a row whose `ν`-part already reaches column `i`.
       rw [rowLen_transpose] at ha
       have hμa := _root_.YoungDiagram.mem_iff_lt_rowLen.mp
@@ -184,7 +184,7 @@ theorem isVerticalStrip_ofRowLensFin (hν : ν.colLen 0 ≤ N) :
     rw [hrow]
     split_ifs <;> omega
   · rw [rowLen_ofRowLensFin_eq_zero_of_le _ hT (Nat.not_lt.mp hi),
-      rowLen_eq_zero_of_colLen_le (hν.trans (Nat.not_lt.mp hi))]
+      rowLen_eq_zero_iff.mpr (hν.trans (Nat.not_lt.mp hi))]
     omega
 
 /-- Lengthening a set of rows by one cell each adds `T.card` cells. -/
@@ -256,7 +256,7 @@ theorem IsVerticalStrip.ofRowLensFin_lengthenedRows :
     rw [hrow]
     exact (h.rowLen_eq_add_ite i).symm
   · rw [rowLen_ofRowLensFin_eq_zero_of_le _ _ (Nat.not_lt.mp hi),
-      rowLen_eq_zero_of_colLen_le (hμ.trans (Nat.not_lt.mp hi))]
+      rowLen_eq_zero_iff.mpr (hμ.trans (Nat.not_lt.mp hi))]
 
 /-- A vertical strip lengthens exactly as many rows as it has cells over the shape below it. -/
 theorem IsVerticalStrip.card_eq_add_card_lengthenedRows :

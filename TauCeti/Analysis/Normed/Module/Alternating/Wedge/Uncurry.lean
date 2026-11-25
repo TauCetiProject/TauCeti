@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
+public import TauCeti.Analysis.Normed.Module.Alternating.Basic
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
@@ -33,7 +35,10 @@ alternatization is absorbed into the outer one
 * `ContinuousAlternatingMap.alternatizeUncurryFin_pairedWedgeCLM_comp_apply`: the identity for
   `v ↦ φ ∧ g v`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply`: alternatizing `v ↦ a v • ψ`
-  for a covector `a` gives the wedge `a ∧ ψ`.
+  for a covector `a` valued in a seminormed real algebra gives the wedge `a ∧ ψ`, paired through
+  the bounded coefficient action compatible with the real module structures.
+* `ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply_eq_wedge`: the same identity
+  for a real-valued form `ψ`, stated with the real wedge.
 -/
 
 public section
@@ -177,15 +182,19 @@ theorem alternatizeUncurryFin_pairedWedgeCLM_comp_apply (μ : F₁ →L[ℝ] F�
   congr 4 <;> funext i <;> congr 2
   exacts [(hcast₁ i).symm, (hcast₂ i).symm]
 
-/-- Alternatizing the linear family `v ↦ a v • ψ` for a covector `a` gives the wedge `a ∧ ψ` of
-`a`, regarded as a one-form, with `ψ`. This identifies the term `dc ∧ ω` in the Leibniz rule
-`TauCeti.extDerivWithin_function_smul` with the paired wedge. The degree `1 + l` is identified with
-`l + 1` by `Fin.cast`. -/
-theorem alternatizeUncurryFin_smulRight_apply (a : E →L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] F₂)
+/-- Alternatizing the linear family `v ↦ a v • ψ` for a covector `a` with values in a seminormed
+algebra `𝕜` over `ℝ` with a bounded action on the coefficients of `ψ` gives the wedge `a ∧ ψ` of
+`a`, regarded as a one-form, with `ψ`, paired by scalar multiplication. For `𝕜 = ℝ` this identifies
+the term `dc ∧ ω` in the Leibniz rule `TauCeti.extDerivWithin_function_smul` with the paired wedge;
+for `𝕜 = ℂ` it covers complex covectors such as the coordinate forms `dz_j` acting on
+complex-valued forms. The degree `1 + l` is identified with `l + 1` by `Fin.cast`. -/
+theorem alternatizeUncurryFin_smulRight_apply {𝕜 : Type*} [SeminormedRing 𝕜] [NormedAlgebra ℝ 𝕜]
+    [Module 𝕜 F₂] [IsBoundedSMul 𝕜 F₂] [IsScalarTower ℝ 𝕜 F₂]
+    (a : E →L[ℝ] 𝕜) (ψ : E [⋀^Fin l]→L[ℝ] F₂)
     (v : Fin (l + 1) → E) :
     alternatizeUncurryFin (a.smulRight ψ) v =
-      pairedWedge (ContinuousLinearMap.lsmul ℝ ℝ) (ContinuousLinearMap.lsmul ℝ ℝ).continuous₂
-        (ofSubsingleton ℝ E ℝ (0 : Fin 1) a) ψ (v ∘ Fin.cast (show 1 + l = l + 1 by omega)) := by
+      pairedWedge (ContinuousLinearMap.lsmul ℝ 𝕜) (ContinuousLinearMap.lsmul ℝ 𝕜).continuous₂
+        (ofSubsingleton ℝ E 𝕜 (0 : Fin 1) a) ψ (v ∘ Fin.cast (show 1 + l = l + 1 by omega)) := by
   -- Both sides are `(l!)⁻¹` times a signed sum over permutations, reindexed along `Fin.cast`.
   rw [pairedWedge_apply, alternatizeUncurryFin_apply_eq_inv_factorial_smul_sum]
   simp only [Nat.factorial_one, Nat.cast_one, one_mul, ContinuousLinearMap.smulRight_apply,
@@ -196,5 +205,18 @@ theorem alternatizeUncurryFin_smulRight_apply (a : E →L[ℝ] ℝ) (ψ : E [⋀
   have h₁ (j : Fin l) : Fin.cast (show 1 + l = l + 1 by omega) (Fin.natAdd 1 j) = j.succ :=
     Fin.ext (by simp)
   simp [h₀, h₁, Perm.sign_permCongr]
+
+/-- Alternatizing the linear family `v ↦ a v • ψ` of real-valued forms, for a covector `a`, gives
+the real wedge `a ∧ ψ` of `a`, regarded as a one-form, with `ψ`. The degree `1 + l` is identified
+with `l + 1` by `Fin.cast`. -/
+theorem alternatizeUncurryFin_smulRight_apply_eq_wedge (a : E →L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ)
+    (v : Fin (l + 1) → E) :
+    alternatizeUncurryFin (a.smulRight ψ) v =
+      wedge (ofSubsingleton ℝ E ℝ (0 : Fin 1) a) ψ
+        (v ∘ Fin.cast (show 1 + l = l + 1 by omega)) := by
+  -- On `ℝ`, scalar multiplication is multiplication, the pairing of the real wedge.
+  have hμ : ContinuousLinearMap.lsmul ℝ ℝ = ContinuousLinearMap.mul ℝ ℝ := by
+    ext; simp
+  rw [alternatizeUncurryFin_smulRight_apply, wedge_def, hμ]
 
 end ContinuousAlternatingMap

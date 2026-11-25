@@ -23,6 +23,8 @@ characterization of dissipative operators in semigroup theory.
 The Hahn--Banach theorem makes every `J(x)` nonempty (`dualitySet_nonempty`), and the norm
 condition can be weakened to an inequality (`mem_dualitySet_iff_norm_le`), which is how members
 are usually produced: rescale a norming functional of norm at most one (`smul_mem_dualitySet`).
+Rescaled members of `J(x)` attain the scaled Fenchel–Young inequality at `x`
+(`exists_le_two_mul_re_apply_sub`).
 
 ## References
 
@@ -85,6 +87,17 @@ variable (𝕜) in
 theorem dualitySet_nonempty (x : E) : (dualitySet 𝕜 x).Nonempty := by
   obtain ⟨g, hg, hgx⟩ := exists_dual_vector'' 𝕜 x
   exact ⟨_, smul_mem_dualitySet hg hgx⟩
+
+/-- The scaled Fenchel–Young inequality `2 re (f x) ≤ ‖f‖ ^ 2 / c + c ‖x‖ ^ 2` is attained at every
+vector: a functional in the duality set of `x`, rescaled by `0 < c`, realizes it. -/
+theorem exists_le_two_mul_re_apply_sub (x : E) {c : ℝ} (hc : 0 < c) :
+    ∃ f : StrongDual 𝕜 E, c * ‖x‖ ^ 2 ≤ 2 * RCLike.re (f x) - ‖f‖ ^ 2 / c := by
+  obtain ⟨J, hJx, hJ⟩ := dualitySet_nonempty 𝕜 x
+  refine ⟨(c : 𝕜) • J, le_of_eq ?_⟩
+  rw [smul_apply, hJx, smul_eq_mul, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re,
+    norm_smul, RCLike.norm_ofReal, abs_of_pos hc, hJ]
+  field_simp
+  ring
 
 /-- The duality set of the zero vector consists of the zero functional alone. -/
 @[simp]

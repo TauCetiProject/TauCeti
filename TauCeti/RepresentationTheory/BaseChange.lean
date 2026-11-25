@@ -50,6 +50,8 @@ For a finite group, the whole invariant submodule also commutes with a flat scal
 Indeed, invariants are the kernel of the finite family of maps `ρ(g) - 1`; flatness preserves that
 kernel, and the finite product comparison identifies the base-changed family with the invariance
 conditions after extending scalars.
+For an arbitrary group the natural comparison map `A ⊗_R V^G → (A ⊗_R V)^G` is still injective
+when `A` is flat over `R`, since it is the scalar extension of the inclusion `V^G → V`.
 
 **Permutation representations are preserved outright.** A `G`-set `X` gives the free module
 `R[X]` with `G` permuting its basis, and extending the scalars along `R → A` gives `A[X]` with the
@@ -70,6 +72,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.baseChange`: scalar extension of a representation.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
+* `Representation.invariantsBaseChangeMap`: the comparison map `A ⊗_R V^G → (A ⊗_R V)^G`,
+  injective for flat `A` (`Representation.invariantsBaseChangeMap_injective`).
 * `Representation.averageMap_baseChange`: the averaging projection commutes with scalar
   extension.
 * `Representation.exists_common_fixed_vector_of_baseChange`: descent of a nonzero common
@@ -141,6 +145,12 @@ theorem baseChange_comp {H : Type*} [Monoid H]
     (ρ : Representation R G V) (φ : H →* G) :
     baseChange A (ρ.comp φ) = (baseChange A ρ).comp φ := by
   simp only [baseChange, MonoidHom.comp_assoc]
+
+/-- Extension of scalars can only enlarge the kernel. -/
+theorem ker_le_ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [Algebra R A]
+    (ρ : Representation R G V) : ρ.ker ≤ (baseChange A ρ).ker := fun g hg ↦ by
+  rw [MonoidHom.mem_ker] at hg ⊢
+  simp [baseChange_apply, hg, Module.End.one_eq_id]
 
 end BaseChange
 
@@ -241,6 +251,54 @@ theorem coe_invariantsBaseChangeEquiv [Finite G]
         coe_invariantsEquivKerInvariantDefect_symm, LinearEquiv.coe_ofEq_apply,
         LinearMap.tensorKerEquiv_apply, LinearMap.tensorKer_tmul,
         coe_invariantsEquivKerInvariantDefect, LinearMap.lTensor_tmul, Submodule.subtype_apply]
+
+omit [Module.Flat R A] in
+/-- The natural comparison map `A ⊗_R V^G → (A ⊗_R V)^G`, the base change of the inclusion of the
+invariants. Applied to the restriction of `ρ` to a subgroup `U`, it is `A ⊗_R V^U → (A ⊗_R V)^U`
+(`Representation.baseChange_comp`). No flatness and no finiteness of `G` is needed to define it. -/
+noncomputable def invariantsBaseChangeMap (ρ : Representation R G V) :
+    A ⊗[R] ρ.invariants →ₗ[A] (baseChange A ρ).invariants :=
+  (AlgebraTensorModule.lTensor A A ρ.invariants.subtype).codRestrict _ fun x ↦ by
+    induction x with
+    | add x y hx hy => rw [map_add]; exact add_mem hx hy
+    | tmul a v =>
+      exact (mem_invariants _ _).2 fun g ↦ by
+        simp [mem_invariants _ _ |>.1 v.property g]
+
+omit [Module.Flat R A] in
+/-- The comparison map is the scalar extension of the inclusion of the invariant submodule. -/
+@[simp]
+theorem coe_invariantsBaseChangeMap (ρ : Representation R G V) (x : A ⊗[R] ρ.invariants) :
+    (ρ.invariantsBaseChangeMap x : A ⊗[R] V) = ρ.invariants.subtype.lTensor A x :=
+  (rfl)
+
+omit [Module.Flat R A] in
+theorem coe_invariantsBaseChangeMap_tmul (ρ : Representation R G V) (a : A) (v : ρ.invariants) :
+    (ρ.invariantsBaseChangeMap (a ⊗ₜ[R] v) : A ⊗[R] V) = a ⊗ₜ[R] (v : V) :=
+  (rfl)
+
+/-- **The comparison map is injective for flat coefficients.** -/
+theorem invariantsBaseChangeMap_injective (ρ : Representation R G V) :
+    Function.Injective (ρ.invariantsBaseChangeMap (A := A)) := by
+  intro x y h
+  have h' := congrArg Subtype.val h
+  rw [coe_invariantsBaseChangeMap, coe_invariantsBaseChangeMap] at h'
+  exact Module.Flat.lTensor_preserves_injective_linearMap (M := A) ρ.invariants.subtype
+    ρ.invariants.injective_subtype h'
+
+/-- For a finite group, the base-change equivalence of invariants is the comparison map. -/
+@[simp]
+theorem toLinearMap_invariantsBaseChangeEquiv [Finite G] (ρ : Representation R G V) :
+    (ρ.invariantsBaseChangeEquiv (A := A)).toLinearMap = ρ.invariantsBaseChangeMap :=
+  LinearMap.ext fun x ↦ Subtype.ext <|
+    (ρ.coe_invariantsBaseChangeEquiv x).trans (ρ.coe_invariantsBaseChangeMap x).symm
+
+/-- **The comparison map is bijective for flat coefficients and a finite group**: it is the map
+underlying `Representation.invariantsBaseChangeEquiv`. -/
+theorem invariantsBaseChangeMap_bijective [Finite G] (ρ : Representation R G V) :
+    Function.Bijective (ρ.invariantsBaseChangeMap (A := A)) := by
+  rw [← toLinearMap_invariantsBaseChangeEquiv]
+  exact (ρ.invariantsBaseChangeEquiv (A := A)).bijective
 
 end Invariants
 
@@ -569,7 +627,7 @@ private def intertwiningMapEquivKerDefect (ρ : Representation K G V)
   toFun f := ⟨f.toLinearMap, mem_ker_intertwiningDefect.mpr f.isIntertwining'⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  invFun f := ⟨f.1, mem_ker_intertwiningDefect.mp f.2⟩
+  invFun f := ⟨f.val, mem_ker_intertwiningDefect.mp f.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -868,8 +926,12 @@ noncomputable def baseChangeFDRep : FDRep k G ⥤ FDRep k' G where
 theorem baseChangeFDRep_obj (V : FDRep k G) :
     (baseChangeFDRep k').obj V = FDRep.of (Representation.baseChange k' V.ρ) := (rfl)
 
+-- Deliberately not a `simp` lemma, for two independent reasons. At default priority it pre-empts
+-- `Functor.map_id`, `Functor.map_comp` and `Functor.map_add`. And even at low priority, rewriting
+-- with it leaves the surrounding implicit object arguments as `(baseChangeFDRep k').obj _`, while
+-- the right-hand side has objects `FDRep.of _`; these agree only above reducible transparency, so
+-- `eq_self` and `baseChangeFDRepHom_hom_hom_hom` no longer match.
 /-- The functor takes an equivariant map to its base change. -/
-@[simp]
 theorem baseChangeFDRep_map {V W : FDRep k G} (φ : V ⟶ W) :
     (baseChangeFDRep k').map φ = baseChangeFDRepHom k' φ := (rfl)
 

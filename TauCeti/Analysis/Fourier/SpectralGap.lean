@@ -143,7 +143,7 @@ private theorem fourierCoeff_first_harmonics (a b : ℂ) (n : ℤ) :
     fourierCoeff (a • fourierLp 2 1 + b • fourierLp 2 (-1) : Lp ℂ 2 (@haarAddCircle T _)) n =
       (if n = 1 then a else 0) + (if n = -1 then b else 0) := by
   classical
-  rw [← fourierBasis_repr, HilbertBasis.repr_apply_apply, coe_fourierBasis]
+  rw [← inner_fourierBasis_left, coe_fourierBasis]
   simp [inner_add_right, inner_smul_right,
     orthonormal_iff_ite.mp (orthonormal_fourier (T := T)), mul_ite]
 

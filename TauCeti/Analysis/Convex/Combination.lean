@@ -206,7 +206,8 @@ theorem exists_lineMap_centroid_mem_convexHull (s : Finset E) {p : E}
     simp only [μ, sub_smul, sum_sub_distrib, ← smul_sum, mul_smul]
     module
   rw [hq]
-  exact (convex_convexHull 𝕜 _).sum_mem (fun i _ => hμ i) hμsum fun i _ => subset_convexHull 𝕜 _ i.2
+  exact (convex_convexHull 𝕜 _).sum_mem (fun i _ => hμ i) hμsum fun i _ => subset_convexHull 𝕜 _
+      i.property
 
 end Finset
 

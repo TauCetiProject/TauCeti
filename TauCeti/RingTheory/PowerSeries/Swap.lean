@@ -40,7 +40,8 @@ as a ring homomorphism. It is an involution.
 * `Polynomial.coeff_swapPowerSeries_mem_degreeLT`: `swapPowerSeries` preserves degree bounds
   coefficientwise.
 * `Polynomial.exists_monic_swapPowerSeries_eq`: the power series with monic constant coefficient
-  and degree-bounded higher coefficients are exactly images of monic polynomials.
+  and degree-bounded higher coefficients are exactly images of monic polynomials; the converse
+  degree bound is `Polynomial.Monic.coeff_swapPowerSeries_mem_degreeLT_of_ne_zero`.
 -/
 
 public section
@@ -211,5 +212,16 @@ theorem exists_monic_swapPowerSeries_eq {g : R[X]} (hg : g.Monic)
     · rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, hF₀, coeff_eq_zero_of_natDegree_lt hi]
     · exact (coeff_eq_zero_of_degree_lt ((mem_degreeLT.mp
         (hF k (Nat.one_le_iff_ne_zero.mpr hk))).trans (by exact_mod_cast hi))).symm
+
+/-- For `k ≠ 0`, the `tᵏ`-coefficient of a monic polynomial `G` over `R⟦t⟧` has degree
+`< G.natDegree`: the leading coefficient `1` of `G` has no higher `t`-coefficients. -/
+theorem Monic.coeff_swapPowerSeries_mem_degreeLT_of_ne_zero {G : R⟦X⟧[X]} (hG : G.Monic) {k : ℕ}
+    (hk : k ≠ 0) : PowerSeries.coeff k (swapPowerSeries G) ∈ degreeLT R G.natDegree := by
+  rw [mem_degreeLT, degree_lt_iff_coeff_zero]
+  intro i hi
+  rw [coeff_coeff_swapPowerSeries]
+  rcases hi.eq_or_lt with rfl | hi
+  · rw [hG.coeff_natDegree, PowerSeries.coeff_one, ite_eq_right hk]
+  · rw [coeff_eq_zero_of_natDegree_lt hi, map_zero]
 
 end Polynomial

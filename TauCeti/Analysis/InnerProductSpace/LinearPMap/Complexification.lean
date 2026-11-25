@@ -193,7 +193,7 @@ theorem mem_adjoint_complexifyL2_domain_iff (T : E →ₗ.[ℝ] F)
   have hj : Continuous j := by
     apply Continuous.subtype_mk
     convert e.symm.continuous.comp
-      (continuous_subtype_val.prodMk (continuous_const (y := (0 : E)))) using 1
+      (continuous_subtypeVal.prodMk (continuous_const (y := (0 : E)))) using 1
     ext x
     apply ofLp_injective 2
     apply Complexification.ext <;> simp [e]
@@ -203,10 +203,10 @@ theorem mem_adjoint_complexifyL2_domain_iff (T : E →ₗ.[ℝ] F)
     ⟨x.val.ofLp.im, ((T.mem_complexifyL2_domain _).1 x.property).2⟩
   have hr : Continuous r := by
     apply Continuous.subtype_mk
-    simpa [e] using (e.continuous.comp continuous_subtype_val).fst
+    simpa [e] using (e.continuous.comp continuous_subtypeVal).fst
   have hi : Continuous i := by
     apply Continuous.subtype_mk
-    simpa [e] using (e.continuous.comp continuous_subtype_val).snd
+    simpa [e] using (e.continuous.comp continuous_subtypeVal).snd
   simp only [mem_adjoint_domain_iff]
   constructor
   · intro h

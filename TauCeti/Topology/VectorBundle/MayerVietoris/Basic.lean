@@ -92,6 +92,8 @@ from the pairs over `U`, `V` and `U ∩ V`; this is used in
   `TauCeti.singularHomology_thomPairOver_biUnion_hom_ext`: morphisms out of `Hᵣ(E|_W, E₀|_W)`
   are determined over the open sets of a cover of `W`, and, over a finite union of trivializing
   open sets, on the fibres.
+* `TauCeti.exists_singularHomology_thomPairOver_union_desc`: morphisms out of `Hₙ` over `U` and
+  over `V` that agree over `U ∩ V` glue over `U ∪ V` when `Hₙ₋₁` over `U ∩ V` vanishes.
 * `TauCeti.singularHomology_thomPair_hom_ext_of_compactSpace`: morphisms out of `Hᵣ(E, E₀)` are
   determined on the fibres over a compact base.
 * `TauCeti.isZero_singularCohomology_thomPairOver_biUnion`: `Hⁿ(E|_W, E₀|_W) = 0` for `n < r`
@@ -155,13 +157,9 @@ theorem singularHomology_thomPairOver_hom_ext {T : C}
   -- Transport `g` and `g'` to the product bundle and compare them there, fibre by fibre.
   rw [← cancel_epi (TopPair.singularHomologyMap φ.inv R (finrank ℝ F))]
   refine singularHomology_prodThomPair_hom_ext fun b ↦ ?_
-  have hφ : prodThomPairFiberMap F b ≫ φ.inv =
-      (e.continuousLinearEquivAt ℝ b (hW b.2)).complZeroPairIso.inv ≫
-        fiberThomPairOverMap F E b.2 := by
-    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
-      e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW b.2]
-  rw [← TopPair.singularHomologyMap_comp_assoc, ← TopPair.singularHomologyMap_comp_assoc, hφ,
-    TopPair.singularHomologyMap_comp_assoc, TopPair.singularHomologyMap_comp_assoc, h b b.2]
+  rw [← TopPair.singularHomologyMap_comp_assoc, ← TopPair.singularHomologyMap_comp_assoc,
+    e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b,
+    TopPair.singularHomologyMap_comp_assoc, TopPair.singularHomologyMap_comp_assoc, h b b.property]
 
 end Bundle.Trivialization
 
@@ -181,7 +179,8 @@ theorem isZero_singularHomology_thomPairOver_empty (n : ℕ) :
   exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
     (TopCat.ofHom (X := π F E ⁻¹' (∅ : Set B))
       (Y := ↥(π F E ⁻¹' (∅ : Set B) ∩ zeroSectionCompl F E))
-      ⟨fun v ↦ v.2.elim, continuous_of_const fun v ↦ v.2.elim⟩) (by ext v; exact v.2.elim) n
+      ⟨fun v ↦ v.property.elim, continuous_of_const fun v ↦ v.property.elim⟩)
+          (by ext v; exact v.property.elim) n
 
 end Empty
 
@@ -195,7 +194,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E :
 open sets `U` and `V` of the base need to be open: the preimages of `U` and `V` are open in the
 total space, hence in any subspace, and their traces on a subspace of nonzero vectors are the traces
 of the preimages themselves. -/
-private theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V) :
+theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V) :
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∪ π F E ⁻¹' V) → TotalSpace F E) ⁻¹' (π F E ⁻¹' U)) ∧
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∪ π F E ⁻¹' V) → TotalSpace F E) ⁻¹' (π F E ⁻¹' V)) ∧
     IsOpen (((↑) : ↥(π F E ⁻¹' U ∩ zeroSectionCompl F E ∪ π F E ⁻¹' V ∩ zeroSectionCompl F E) →
@@ -204,7 +203,7 @@ private theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V
       TotalSpace F E) ⁻¹' (π F E ⁻¹' V ∩ zeroSectionCompl F E)) := by
   have hopen {W : Set B} (hW : IsOpen W) (T : Set (TotalSpace F E)) :
       IsOpen (((↑) : T → TotalSpace F E) ⁻¹' (π F E ⁻¹' W)) :=
-    (hW.preimage (FiberBundle.continuous_proj F E)).preimage continuous_subtype_val
+    (hW.preimage (FiberBundle.continuous_proj F E)).preimage continuous_subtypeVal
   have hopen₀ {W : Set B} (hW : IsOpen W) {T : Set (TotalSpace F E)}
       (hT : T ⊆ zeroSectionCompl F E) :
       IsOpen (((↑) : T → TotalSpace F E) ⁻¹' (π F E ⁻¹' W ∩ zeroSectionCompl F E)) := by
@@ -569,6 +568,32 @@ theorem singularHomology_thomPairOver_union_hom_ext (hU : IsOpen U) (hV : IsOpen
     (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V)) R
       n))).1 (biprod.hom_ext' _ _ ?_ ?_) <;>
     simpa only [biprod.inl_desc_assoc, biprod.inr_desc_assoc]
+
+variable {R} in
+/-- **Morphisms over `U` and over `V` that agree over `U ∩ V` glue to a morphism over `U ∪ V`**
+when `Hₙ₋₁(E|_{U ∩ V}, E₀|_{U ∩ V})` vanishes (or `n = 0`): the second map of the Mayer–Vietoris
+sequence of the Thom pairs over the open sets `U` and `V` is then the cokernel of the first. The
+glued morphism is unique (`TauCeti.singularHomology_thomPairOver_union_hom_ext`). -/
+theorem exists_singularHomology_thomPairOver_union_desc (hU : IsOpen U) (hV : IsOpen V) {n : ℕ}
+    (hUV : ∀ m, m + 1 = n → IsZero ((thomPairOver F E (U ∩ V)).singularHomology R m)) {T : C}
+    (gU : (thomPairOver F E U).singularHomology R n ⟶ T)
+    (gV : (thomPairOver F E V).singularHomology R n ⟶ T)
+    (h : TopPair.singularHomologyMap (thomPairOverMap F E inter_subset_left) R n ≫ gU =
+      TopPair.singularHomologyMap (thomPairOverMap F E inter_subset_right) R n ≫ gV) :
+    ∃ g : (thomPairOver F E (U ∪ V)).singularHomology R n ⟶ T,
+      TopPair.singularHomologyMap (thomPairOverMap F E subset_union_left) R n ≫ g = gU ∧
+        TopPair.singularHomologyMap (thomPairOverMap F E subset_union_right) R n ≫ g = gV := by
+  let S := ShortComplex.mk _ _ (singularHomology_thomPairOver_mayerVietoris_comp_eq_zero
+    (F := F) (E := E) (U := U) (V := V) R n)
+  have hS : S.Exact := singularHomology_thomPairOver_mayerVietoris_exact R hU hV n
+  have : Epi S.g := epi_singularHomology_thomPairOver_union R hU hV hUV
+  -- The pair `(gU, gV)` vanishes on the image of the first map, by the agreement over `U ∩ V`.
+  have hφ : S.f ≫ biprod.desc gU gV = 0 := by
+    simp only [S, biprod.lift_desc, Preadditive.neg_comp, h, add_neg_cancel]
+  have hgΦ := hS.gIsCokernel.fac (CokernelCofork.ofπ _ hφ) WalkingParallelPair.one
+  refine ⟨hS.gIsCokernel.desc (CokernelCofork.ofπ _ hφ), ?_, ?_⟩
+  · simpa [S] using biprod.inl ≫= hgΦ
+  · simpa [S] using biprod.inr ≫= hgΦ
 
 end HomologyGluing
 

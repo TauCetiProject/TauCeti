@@ -150,11 +150,8 @@ theorem exists_mem_range_chartι_comp {ι : Type*} (m : ι → M)
   obtain ⟨x, p, rfl⟩ := chartι_jointly_surjective z
   -- the universal point of the chart at `x`
   let A := ChartAlgebra R x
-  let N : G(k, A ⊗[R] M; A) := (chartHomEquiv R x A (AlgHom.id R A)).1
-  have hN : toSchemeHom N = chartι R x := by
-    -- `Spec.map` of the identity of `A` is the identity of `Spec A`
-    have hid : CommRingCat.ofHom ((AlgHom.id R A : A →ₐ[R] A) : A →+* A) = 𝟙 _ := rfl
-    rw [toSchemeHom_chartHomEquiv, hid, Spec.map_id, Category.id_comp]
+  let N : G(k, A ⊗[R] M; A) := (chartHomEquiv R x A (AlgHom.id R A)).val
+  have hN : toSchemeHom N = chartι R x := toSchemeHom_chartHomEquiv_id x
   -- the chart loci of `N` at the subfamilies of `1 ⊗ₜ m` generate the unit ideal, so one of them is
   -- not contained in `p`
   have hspan : N.toSubmodule ⊔ Submodule.span A (Set.range fun i ↦ (1 : A) ⊗ₜ[R] m i) = ⊤ := by

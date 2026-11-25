@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
+import Mathlib.Geometry.Manifold.Algebra.Monoid
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
 # Smooth maps between finite products of manifolds
@@ -20,7 +23,11 @@ records two smoothness results:
 
 It also records that a family of maps which is a `C^n` map at one index and zero at the others is
 `C^n` at every index (`ContMDiff.piSingle_apply`), as are the uncurried members of such a family of
-two-variable maps (`ContMDiff.uncurry_piSingle_apply`).
+two-variable maps (`ContMDiff.uncurry_piSingle_apply`). Appending a `C^n` component to a `C^n`
+family of maps into normed spaces with `Fin.snoc` gives a `C^n` family (`ContMDiffAt.finSnoc`,
+`ContMDiff.finSnoc`), and taking the dot product of two `C^n` maps into `ι → R` gives a `C^n` map
+into `R` (`ContMDiffWithinAt.dotProduct`, `ContMDiffAt.dotProduct`, `ContMDiffOn.dotProduct`,
+`ContMDiff.dotProduct`).
 
 ## Main results
 
@@ -29,11 +36,77 @@ two-variable maps (`ContMDiff.uncurry_piSingle_apply`).
 * `ContMDiff.piSingle_apply`: the members of `Pi.single i f` are `C^n` when `f` is.
 * `ContMDiff.uncurry_piSingle_apply`: the uncurried members of `Pi.single i f` are `C^n` when
   `uncurry f` is.
+* `ContMDiffAt.finSnoc`, `ContMDiff.finSnoc`: appending a `C^n` component with `Fin.snoc`.
+* `ContMDiffWithinAt.dotProduct`, `ContMDiffAt.dotProduct`, `ContMDiffOn.dotProduct`,
+  `ContMDiff.dotProduct`: the dot product of two `C^n` maps into `ι → R` is `C^n`.
 -/
 
 public section
 
 open Function
+open scoped ContDiff Manifold
+
+section DotProduct
+
+variable {𝕜 E H M R ι : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedRing R] [NormedAlgebra 𝕜 R] [Fintype ι] {n : WithTop ℕ∞} {s : Set M} {x : M}
+  {f g : M → ι → R}
+
+/-- The dot product of two maps into `ι → R` that are `C^n` within `s` at `x` is `C^n` within `s`
+at `x`. -/
+theorem ContMDiffWithinAt.dotProduct (hf : ContMDiffWithinAt I 𝓘(𝕜, ι → R) n f s x)
+    (hg : ContMDiffWithinAt I 𝓘(𝕜, ι → R) n g s x) :
+    ContMDiffWithinAt I 𝓘(𝕜, R) n (fun y ↦ f y ⬝ᵥ g y) s x :=
+  ContMDiffWithinAt.sum fun i _ ↦
+    (contDiff_mul (𝕜 := 𝕜) (𝔸 := R)).comp_contMDiffWithinAt
+      ((contMDiffWithinAt_pi_module_iff.1 hf i).prodMk_space
+        (contMDiffWithinAt_pi_module_iff.1 hg i))
+
+/-- The dot product of two maps into `ι → R` that are `C^n` at `x` is `C^n` at `x`. -/
+nonrec theorem ContMDiffAt.dotProduct (hf : ContMDiffAt I 𝓘(𝕜, ι → R) n f x)
+    (hg : ContMDiffAt I 𝓘(𝕜, ι → R) n g x) :
+    ContMDiffAt I 𝓘(𝕜, R) n (fun y ↦ f y ⬝ᵥ g y) x :=
+  hf.dotProduct hg
+
+/-- The dot product of two maps into `ι → R` that are `C^n` on `s` is `C^n` on `s`. -/
+theorem ContMDiffOn.dotProduct (hf : ContMDiffOn I 𝓘(𝕜, ι → R) n f s)
+    (hg : ContMDiffOn I 𝓘(𝕜, ι → R) n g s) :
+    ContMDiffOn I 𝓘(𝕜, R) n (fun y ↦ f y ⬝ᵥ g y) s :=
+  fun y hy ↦ (hf y hy).dotProduct (hg y hy)
+
+/-- The dot product of two `C^n` maps into `ι → R` is `C^n`. -/
+theorem ContMDiff.dotProduct (hf : ContMDiff I 𝓘(𝕜, ι → R) n f)
+    (hg : ContMDiff I 𝓘(𝕜, ι → R) n g) :
+    ContMDiff I 𝓘(𝕜, R) n (fun y ↦ f y ⬝ᵥ g y) :=
+  fun y ↦ (hf y).dotProduct (hg y)
+
+end DotProduct
+
+section FinSnoc
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  {k : ℕ} {E' : Fin (k + 1) → Type*} [∀ i, NormedAddCommGroup (E' i)] [∀ i, NormedSpace 𝕜 (E' i)]
+  {F : M → ∀ j : Fin k, E' j.castSucc} {g : M → E' (Fin.last k)}
+
+/-- Appending a `C^n` component `g` to a `C^n` family `F` with `Fin.snoc` gives a `C^n` family. -/
+theorem ContMDiffAt.finSnoc {n : WithTop ℕ∞} {x : M}
+    (hF : ContMDiffAt I 𝓘(𝕜, ∀ j : Fin k, E' j.castSucc) n F x)
+    (hg : ContMDiffAt I 𝓘(𝕜, E' (Fin.last k)) n g x) :
+    ContMDiffAt I 𝓘(𝕜, ∀ i, E' i) n (fun y ↦ Fin.snoc (α := E') (F y) (g y)) x := by
+  refine contMDiffAt_pi_module_iff.2 fun i ↦ ?_
+  induction i using Fin.lastCases with
+  | last => simpa using hg
+  | cast j => simpa using contMDiffAt_pi_module_iff.1 hF j
+
+/-- Appending a `C^n` component `g` to a `C^n` family `F` with `Fin.snoc` gives a `C^n` family. -/
+theorem ContMDiff.finSnoc {n : WithTop ℕ∞} (hF : ContMDiff I 𝓘(𝕜, ∀ j : Fin k, E' j.castSucc) n F)
+    (hg : ContMDiff I 𝓘(𝕜, E' (Fin.last k)) n g) :
+    ContMDiff I 𝓘(𝕜, ∀ i, E' i) n (fun y ↦ Fin.snoc (α := E') (F y) (g y)) :=
+  fun x ↦ (hF x).finSnoc (hg x)
+
+end FinSnoc
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι]
   {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]

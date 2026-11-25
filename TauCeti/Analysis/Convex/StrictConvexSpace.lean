@@ -49,7 +49,7 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 convex for every exponent `1 ≤ q`. -/
 theorem convexOn_norm_rpow {q : ℝ} (hq : 1 ≤ q) : ConvexOn ℝ univ fun x : E ↦ ‖x‖ ^ q := by
   refine ⟨convex_univ, fun x _ y _ a b ha hb hab ↦ ?_⟩
-  have hle := (convexOn_norm convex_univ).2 (mem_univ x) (mem_univ y) ha hb hab
+  have hle := convexOn_univ_norm.2 (mem_univ x) (mem_univ y) ha hb hab
   simp only [smul_eq_mul] at hle ⊢
   calc ‖a • x + b • y‖ ^ q ≤ (a * ‖x‖ + b * ‖y‖) ^ q :=
         Real.rpow_le_rpow (norm_nonneg _) hle (zero_le_one.trans hq)
@@ -74,11 +74,9 @@ theorem strictConvexOn_norm_rpow {q : ℝ} (hq : 1 < q) :
     StrictConvexOn ℝ univ fun x : E ↦ ‖x‖ ^ q := by
   refine ⟨convex_univ, fun x _ y _ hxy a b ha hb hab ↦ ?_⟩
   have hq0 : 0 < q := zero_lt_one.trans hq
-  simp only [smul_eq_mul]
   -- The norm of the combination is at most the combination of the norms.
-  have hle : ‖a • x + b • y‖ ≤ a * ‖x‖ + b * ‖y‖ := by
-    refine (norm_add_le _ _).trans_eq ?_
-    rw [norm_smul, norm_smul, Real.norm_of_nonneg ha.le, Real.norm_of_nonneg hb.le]
+  have hle := convexOn_univ_norm.2 (mem_univ x) (mem_univ y) ha.le hb.le hab
+  simp only [smul_eq_mul] at hle ⊢
   rcases ne_or_eq ‖x‖ ‖y‖ with hn | hn
   · -- Points of different norms: strict convexity of `t ↦ t ^ q`.
     calc ‖a • x + b • y‖ ^ q ≤ (a * ‖x‖ + b * ‖y‖) ^ q :=
