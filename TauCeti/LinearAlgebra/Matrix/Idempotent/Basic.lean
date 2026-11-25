@@ -51,24 +51,23 @@ modules exactly when the matrices are equivalent.
 * `Matrix.idempotentEquivalent_submatrix`, `Matrix.idempotentEquivalent_conj`,
   `Matrix.IdempotentEquivalent.fromBlocks`, `Matrix.IdempotentEquivalent.map`: invariance under
   relabelling, conjugation, block sums and ring homomorphisms.
-* `Matrix.idempotentEquivalent_fromBlocks_one_sub`: `f ⊕ (1 - f)` is equivalent to `1`.
+* `Matrix.idempotentEquivalent_zero_iff`,
+  `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_right`,
+  `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left`,
+  `Matrix.idempotentEquivalent_self_iff`, `Matrix.idempotentEquivalent_single_one`,
+  `Matrix.idempotentEquivalent_fromBlocks_one_sub`: zero matrices, zero-block padding,
+  self-equivalence, diagonal matrix units, and `f ⊕ (1 - f) ∼ 1`.
 * `IsIdempotentElem.mem_range_vecMulLinear_iff`: the range of an idempotent matrix consists of its
   fixed row vectors.
 * `IsIdempotentElem.projective_range_vecMulLinear`: this range is a projective module.
 * `IsIdempotentElem.linearMap_apply_eq_vecMul`: a linear map out of this range is right
   multiplication by the matrix of its values on the rows.
-* `Matrix.nonempty_linearEquiv_range_vecMulLinear_iff`: the ranges of two idempotent matrices are
-  isomorphic if and only if the matrices are equivalent idempotents.
+* `Matrix.linearEquivRangeVecMulLinearOfMulEq`,
+  `Matrix.nonempty_linearEquiv_range_vecMulLinear_iff`: the ranges of two idempotent matrices are
+  isomorphic if and only if the matrices are equivalent idempotents, via explicit maps from
+  witnesses `x * y = e` and `y * x = f`.
 * `Module.Finite.exists_linearEquiv_range_vecMulLinear`: a finitely generated projective module is
   isomorphic to the range of an idempotent matrix.
-* `Matrix.rangeVecMulLinearMap`: applying a ring homomorphism `f` to the coordinates maps the
-  range of a matrix `e` to the range of `e.map f`.
-* `Matrix.mem_range_vecMulLinear_fromBlocks_iff`: a row vector lies in the range of a
-  block-diagonal matrix exactly when its two parts lie in the ranges of the blocks.
-* `Matrix.rangeVecMulLinearFromBlocksEquiv`: the range of a block-diagonal matrix is the product of
-  the ranges of its blocks.
-* `Matrix.rangeVecMulLinearTransposeMapOpEquiv`: the image of the column action of `e`, as a right
-  module, is the range of the row action of its transpose over the opposite ring.
 * `Matrix.nonempty_linearEquiv_range_mulVecBilin_iff`: the images of two idempotent matrices acting
   on column vectors are isomorphic right modules if and only if the matrices are equivalent
   idempotents.
@@ -83,6 +82,19 @@ public section
 
 open LinearMap Matrix
 
+section NonUnitalNonAssocSemiring
+
+variable {A B : Type*} [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocSemiring B]
+  {ι : Type*} [Fintype ι] {F : Type*} [FunLike F A B] [NonUnitalRingHomClass F A B]
+
+/-- The entrywise image of an idempotent matrix under a (possibly nonunital) ring homomorphism is
+idempotent. -/
+theorem IsIdempotentElem.matrix_map {e : Matrix ι ι A}
+    (he : IsIdempotentElem e) (f : F) : IsIdempotentElem (e.map f) := by
+  rw [IsIdempotentElem, ← Matrix.map_mul, he.eq]
+
+end NonUnitalNonAssocSemiring
+
 section Idempotent
 
 variable {A : Type*} [Semiring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
@@ -92,11 +104,6 @@ theorem IsIdempotentElem.vecMulLinear {e : Matrix ι ι A} (he : IsIdempotentEle
     IsIdempotentElem e.vecMulLinear := by
   ext v : 1
   simp [mul_apply_eq_comp, Matrix.vecMul_vecMul, he.eq]
-
-/-- The entrywise image of an idempotent matrix under a ring homomorphism is idempotent. -/
-theorem IsIdempotentElem.matrix_map {B : Type*} [Semiring B] {e : Matrix ι ι A}
-    (he : IsIdempotentElem e) (f : A →+* B) : IsIdempotentElem (e.map f) := by
-  rw [IsIdempotentElem, ← Matrix.map_mul, he.eq]
 
 /-- The range of right multiplication by an idempotent matrix is a direct summand of the row
 vectors, hence a projective module. -/
@@ -141,7 +148,9 @@ namespace Matrix
 
 section IdempotentEquivalent
 
-variable {μ : Type*} [Fintype μ]
+section MulAddCommMonoid
+
+variable {A : Type*} [Mul A] [AddCommMonoid A] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- Square matrices `e` and `f`, possibly of different sizes, are *equivalent idempotents* when
 `e = x * y` and `f = y * x` for rectangular matrices `x` and `y` with `e * x = x = x * f` and
@@ -156,6 +165,148 @@ theorem idempotentEquivalent_iff {e : Matrix ι ι A} {f : Matrix κ κ A} :
     IdempotentEquivalent e f ↔ ∃ (x : Matrix ι κ A) (y : Matrix κ ι A), x * y = e ∧ y * x = f ∧
       e * x = x ∧ x * f = x ∧ f * y = y ∧ y * e = y :=
   Iff.rfl
+
+namespace IdempotentEquivalent
+
+variable {e : Matrix ι ι A} {f : Matrix κ κ A}
+
+/-- An idempotent is equivalent to itself, through `x = y = e`. -/
+protected theorem refl (he : IsIdempotentElem e) : IdempotentEquivalent e e :=
+  ⟨e, e, he.eq, he.eq, he.eq, he.eq, he.eq, he.eq⟩
+
+/-- Equivalence of idempotents is symmetric, by exchanging `x` and `y`. -/
+protected theorem symm (h : IdempotentEquivalent e f) : IdempotentEquivalent f e := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  exact ⟨y, x, hyx, hxy, hfy, hye, hex, hxf⟩
+
+/-- **Opposite rings.** Equivalent idempotents stay equivalent after transposing and passing to
+the opposite ring, which turns the column action of `e` into the row action of `eᵀ` over `Aᵐᵒᵖ`.
+-/
+theorem transpose_map_op (h : IdempotentEquivalent e f) :
+    IdempotentEquivalent (eᵀ.map MulOpposite.op) (fᵀ.map MulOpposite.op) := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  refine ⟨yᵀ.map MulOpposite.op, xᵀ.map MulOpposite.op, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    rw [← transpose_mul_map_op] <;> simp only [*]
+
+/-- **Opposite rings.** Equivalent idempotents over `Aᵐᵒᵖ` stay equivalent after transposing and
+passing back to `A`. -/
+theorem transpose_map_unop {e : Matrix ι ι Aᵐᵒᵖ} {f : Matrix κ κ Aᵐᵒᵖ}
+    (h : IdempotentEquivalent e f) :
+    IdempotentEquivalent (eᵀ.map MulOpposite.unop) (fᵀ.map MulOpposite.unop) := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  refine ⟨yᵀ.map MulOpposite.unop, xᵀ.map MulOpposite.unop, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    rw [← transpose_mul_map_unop] <;> simp only [*]
+
+/-- Simultaneous row-and-column submatrix relabelling preserves equivalence of idempotents. -/
+theorem submatrix {ι' κ' : Type*} [Fintype ι'] [Fintype κ'] (h : IdempotentEquivalent e f)
+    (σ : ι' ≃ ι) (τ : κ' ≃ κ) :
+    IdempotentEquivalent (e.submatrix σ σ) (f.submatrix τ τ) := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  refine ⟨x.submatrix σ τ, y.submatrix τ σ, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp only [submatrix_mul_equiv, *]
+
+end IdempotentEquivalent
+
+/-- **Relabelling.** An idempotent matrix is equivalent to its relabelling along any bijection of
+index types. -/
+theorem idempotentEquivalent_submatrix {e : Matrix ι ι A} (he : IsIdempotentElem e) (σ : κ ≃ ι) :
+    IdempotentEquivalent e (e.submatrix σ σ) := by
+  simpa using (IdempotentEquivalent.refl he).submatrix (Equiv.refl ι) σ
+
+/-- The transpose of an idempotent matrix, with entries in the opposite ring, is idempotent. -/
+theorem _root_.IsIdempotentElem.matrix_transpose_map_op {e : Matrix ι ι A}
+    (he : IsIdempotentElem e) : IsIdempotentElem (eᵀ.map MulOpposite.op) := by
+  rw [IsIdempotentElem, ← transpose_mul_map_op, he.eq]
+
+/-- The transpose of an idempotent matrix over the opposite ring, with entries in the ring, is
+idempotent. -/
+theorem _root_.IsIdempotentElem.matrix_transpose_map_unop {e : Matrix ι ι Aᵐᵒᵖ}
+    (he : IsIdempotentElem e) : IsIdempotentElem (eᵀ.map MulOpposite.unop) := by
+  rw [IsIdempotentElem, ← transpose_mul_map_unop, he.eq]
+
+/-- Two square matrices are equivalent idempotents exactly when their transposes, with entries
+in the opposite ring, are. -/
+theorem idempotentEquivalent_transpose_map_op_iff {e : Matrix ι ι A} {f : Matrix κ κ A} :
+    IdempotentEquivalent (eᵀ.map MulOpposite.op) (fᵀ.map MulOpposite.op) ↔
+      IdempotentEquivalent e f :=
+  ⟨fun h ↦ by
+    simpa only [transpose_map_op_transpose_map_unop] using h.transpose_map_unop,
+    IdempotentEquivalent.transpose_map_op⟩
+
+end MulAddCommMonoid
+
+section NonUnitalNonAssocSemiring
+
+variable {A : Type*} [NonUnitalNonAssocSemiring A] {ι κ ι' κ' : Type*}
+  [Fintype ι] [Fintype κ] [Fintype ι'] [Fintype κ']
+
+/-- **Block sums.** Block-diagonal sums of equivalent idempotents are equivalent. -/
+theorem IdempotentEquivalent.fromBlocks {e : Matrix ι ι A} {f : Matrix κ κ A}
+    {e' : Matrix ι' ι' A} {f' : Matrix κ' κ' A} (h : IdempotentEquivalent e f)
+    (h' : IdempotentEquivalent e' f') :
+    IdempotentEquivalent (Matrix.fromBlocks e 0 0 e') (Matrix.fromBlocks f 0 0 f') := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  obtain ⟨x', y', hxy', hyx', hex', hxf', hfy', hye'⟩ := h'
+  refine ⟨Matrix.fromBlocks x 0 0 x', Matrix.fromBlocks y 0 0 y', ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp [fromBlocks_multiply, *]
+
+/-- **Ring homomorphisms.** Applying a (possibly nonunital) ring homomorphism to the entries
+preserves equivalence of idempotents. -/
+theorem IdempotentEquivalent.map {B : Type*} [NonUnitalNonAssocSemiring B] {F : Type*}
+    [FunLike F A B] [NonUnitalRingHomClass F A B] {e : Matrix ι ι A} {f : Matrix κ κ A}
+    (h : IdempotentEquivalent e f) (φ : F) : IdempotentEquivalent (e.map φ) (f.map φ) := by
+  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
+  refine ⟨x.map φ, y.map φ, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp [← Matrix.map_mul, *]
+
+/-- Zero matrices of any two finite sizes are equivalent idempotents. -/
+theorem idempotentEquivalent_zero_zero (m n : Type*) [Fintype m] [Fintype n] :
+    IdempotentEquivalent (0 : Matrix m m A) (0 : Matrix n n A) :=
+  idempotentEquivalent_iff.mpr ⟨0, 0, by simp, by simp, by simp, by simp, by simp, by simp⟩
+
+/-- Only the zero matrix is equivalent to a zero matrix. -/
+@[simp]
+theorem idempotentEquivalent_zero_iff {e : Matrix ι ι A} :
+    IdempotentEquivalent e (0 : Matrix κ κ A) ↔ e = 0 := by
+  refine ⟨?_, fun h ↦ h ▸ idempotentEquivalent_zero_zero ι κ⟩
+  rw [idempotentEquivalent_iff]; rintro ⟨x, y, rfl, -, -, hxf, -, -⟩
+  rw [← hxf, Matrix.mul_zero, Matrix.zero_mul]
+
+/-- A zero matrix is equivalent only to the zero matrix. -/
+@[simp]
+theorem zero_idempotentEquivalent_iff {f : Matrix κ κ A} :
+    IdempotentEquivalent (0 : Matrix ι ι A) f ↔ f = 0 :=
+  ⟨fun h ↦ idempotentEquivalent_zero_iff.1 h.symm, fun h ↦ h ▸ idempotentEquivalent_zero_zero ι κ⟩
+
+/-- Padding an idempotent matrix by a lower-right zero block preserves its equivalence class. -/
+theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_right (n : Type*)
+    [Fintype n] {e : Matrix ι ι A} (he : IsIdempotentElem e) :
+    IdempotentEquivalent (fromBlocks e 0 0 (0 : Matrix n n A)) e := by
+  have hee (i j : ι) : ∑ k, e i k * e k j = e i j := by
+    simpa [Matrix.mul_apply] using congr_fun (congr_fun he.eq i) j
+  refine idempotentEquivalent_iff.mpr ⟨fromRows e 0, fromCols e 0, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · ext (i | i) (j | j) <;> simp [Matrix.mul_apply, hee]
+  · ext i j; simp [Matrix.mul_apply, Fintype.sum_sum_type, hee]
+  · ext (i | i) j <;> simp [Matrix.mul_apply, Fintype.sum_sum_type, hee]
+  · ext (i | i) j <;> simp [Matrix.mul_apply, hee]
+  · ext i (j | j) <;> simp [Matrix.mul_apply, hee]
+  · ext i (j | j) <;> simp [Matrix.mul_apply, Fintype.sum_sum_type, hee]
+
+/-- Padding an idempotent matrix by an upper-left zero block preserves its equivalence class. -/
+theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left (m : Type*)
+    [Fintype m] {e : Matrix ι ι A} (he : IsIdempotentElem e) :
+    IdempotentEquivalent (fromBlocks (0 : Matrix m m A) 0 0 e) e := by
+  have hEq : fromBlocks (0 : Matrix m m A) 0 0 e =
+      (fromBlocks e 0 0 (0 : Matrix m m A)).submatrix (Equiv.sumComm m ι) (Equiv.sumComm m ι) := by
+    ext (_ | _) (_ | _) <;> simp
+  rw [hEq]
+  simpa using (he.idempotentEquivalent_fromBlocks_zero_right m).submatrix
+    (Equiv.sumComm m ι) (Equiv.refl ι)
+
+end NonUnitalNonAssocSemiring
+
+section NonUnitalSemiring
+
+variable {A : Type*} [NonUnitalSemiring A] {ι κ μ : Type*} [Fintype ι] [Fintype κ] [Fintype μ]
 
 namespace IdempotentEquivalent
 
@@ -174,15 +325,6 @@ theorem isIdempotentElem_right (h : IdempotentEquivalent e f) : IsIdempotentElem
   rw [IsIdempotentElem]
   nth_rw 1 [← hyx]
   rw [Matrix.mul_assoc, hxf, hyx]
-
-/-- An idempotent is equivalent to itself, through `x = y = e`. -/
-protected theorem refl (he : IsIdempotentElem e) : IdempotentEquivalent e e :=
-  ⟨e, e, he.eq, he.eq, he.eq, he.eq, he.eq, he.eq⟩
-
-/-- Equivalence of idempotents is symmetric, by exchanging `x` and `y`. -/
-protected theorem symm (h : IdempotentEquivalent e f) : IdempotentEquivalent f e := by
-  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
-  exact ⟨y, x, hyx, hxy, hfy, hye, hex, hxf⟩
 
 /-- Equivalence of idempotents is transitive, through the products `x * x'` and `y' * y`. -/
 protected theorem trans (h : IdempotentEquivalent e f) (h' : IdempotentEquivalent f g) :
@@ -217,15 +359,42 @@ theorem idempotentEquivalent_iff_exists_mul_eq {e : Matrix ι ι A} {f : Matrix 
   · rw [hye, ← Matrix.mul_assoc, hf.eq]
   · rw [Matrix.mul_assoc, he.eq]
 
-/-- **Relabelling.** An idempotent matrix is equivalent to its relabelling along any bijection of
-index types. -/
-theorem idempotentEquivalent_submatrix {e : Matrix ι ι A} (he : IsIdempotentElem e) (σ : κ ≃ ι) :
-    IdempotentEquivalent e (e.submatrix σ σ) := by
-  refine (idempotentEquivalent_iff_exists_mul_eq he ?_).2
-    ⟨e.submatrix _root_.id σ, e.submatrix σ _root_.id, ?_, ?_⟩
-  · rw [IsIdempotentElem, submatrix_mul_equiv, he.eq]
-  · rw [submatrix_mul_equiv, he.eq, submatrix_id_id]
-  · rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, he.eq]
+/-- A square matrix is equivalent to itself if and only if it is idempotent. -/
+@[simp]
+theorem idempotentEquivalent_self_iff {e : Matrix ι ι A} :
+    IdempotentEquivalent e e ↔ IsIdempotentElem e :=
+  ⟨IdempotentEquivalent.isIdempotentElem_left, IdempotentEquivalent.refl⟩
+
+end NonUnitalSemiring
+
+section NonAssocSemiring
+
+variable {A : Type*} [NonAssocSemiring A] {ι κ : Type*}
+
+/-- Any two diagonal matrix units `Eᵢᵢ ∈ Matrix ι ι A` and `Eⱼⱼ ∈ Matrix κ κ A` are equivalent
+idempotents, witnessed by `Eᵢⱼ` and `Eⱼᵢ`. -/
+theorem idempotentEquivalent_single_one [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+    (i : ι) (j : κ) : IdempotentEquivalent (single i i (1 : A)) (single j j (1 : A)) :=
+  idempotentEquivalent_iff.mpr
+    ⟨single i j 1, single j i 1, by simp, by simp, by simp, by simp, by simp, by simp⟩
+
+/-- Any diagonal matrix unit `Eᵢᵢ` is equivalent to the `1 × 1` identity matrix. -/
+theorem idempotentEquivalent_single_one_one [Fintype ι] [DecidableEq ι] (i : ι) :
+    IdempotentEquivalent (single i i (1 : A)) (1 : Matrix (Fin 1) (Fin 1) A) := by
+  have h1 : single (0 : Fin 1) 0 (1 : A) = (1 : Matrix (Fin 1) (Fin 1) A) := by
+    ext a b; simp [Subsingleton.elim a 0, Subsingleton.elim b 0, Matrix.one_apply]
+  exact h1 ▸ idempotentEquivalent_single_one i (0 : Fin 1)
+
+/-- Over a nontrivial nonassociative semiring, `Eᵢᵢ` is not equivalent to a zero matrix. -/
+theorem not_idempotentEquivalent_single_one_zero [Nontrivial A] [Fintype ι] [Fintype κ]
+    [DecidableEq ι] (i : ι) : ¬ IdempotentEquivalent (single i i (1 : A)) (0 : Matrix κ κ A) := by
+  rw [idempotentEquivalent_zero_iff]; intro h; have hii := congrFun (congrFun h i) i; simp at hii
+
+end NonAssocSemiring
+
+section Semiring
+
+variable {A : Type*} [Semiring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- **Conjugation.** An idempotent matrix is equivalent to each of its conjugates. -/
 theorem idempotentEquivalent_conj [DecidableEq ι] {e : Matrix ι ι A} (he : IsIdempotentElem e)
@@ -239,25 +408,6 @@ theorem idempotentEquivalent_conj [DecidableEq ι] {e : Matrix ι ι A} (he : Is
       he.eq]
   · rw [← Matrix.mul_assoc, Matrix.mul_assoc (u : Matrix ι ι A), he.eq]
 
-variable {ι' κ' : Type*} [Fintype ι'] [Fintype κ']
-
-/-- **Block sums.** Block-diagonal sums of equivalent idempotents are equivalent. -/
-theorem IdempotentEquivalent.fromBlocks {e : Matrix ι ι A} {f : Matrix κ κ A}
-    {e' : Matrix ι' ι' A} {f' : Matrix κ' κ' A} (h : IdempotentEquivalent e f)
-    (h' : IdempotentEquivalent e' f') :
-    IdempotentEquivalent (Matrix.fromBlocks e 0 0 e') (Matrix.fromBlocks f 0 0 f') := by
-  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
-  obtain ⟨x', y', hxy', hyx', hex', hxf', hfy', hye'⟩ := h'
-  refine ⟨Matrix.fromBlocks x 0 0 x', Matrix.fromBlocks y 0 0 y', ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp [fromBlocks_multiply, *]
-
-/-- **Ring homomorphisms.** Applying a ring homomorphism to the entries preserves equivalence of
-idempotents. -/
-theorem IdempotentEquivalent.map {B : Type*} [Semiring B] {e : Matrix ι ι A} {f : Matrix κ κ A}
-    (h : IdempotentEquivalent e f) (φ : A →+* B) : IdempotentEquivalent (e.map φ) (f.map φ) := by
-  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
-  refine ⟨x.map φ, y.map φ, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp [← Matrix.map_mul, *]
-
 /-- **Complements.** For an idempotent `f`, the block sum of `f` and its complement `1 - f` is
 equivalent to the identity matrix: the images of `f` and `1 - f` together make up all vectors. -/
 theorem idempotentEquivalent_fromBlocks_one_sub {A : Type*} [Ring A] [DecidableEq κ]
@@ -268,45 +418,11 @@ theorem idempotentEquivalent_fromBlocks_one_sub {A : Type*} [Ring A] [DecidableE
   · rw [fromRows_mul_fromCols, hf.eq, hf.mul_one_sub_self, hf.one_sub_mul_self, hf.one_sub.eq]
   · rw [fromCols_mul_fromRows, hf.eq, hf.one_sub.eq, add_sub_cancel]
 
-/-- **Opposite rings.** Equivalent idempotents stay equivalent after transposing and passing to
-the opposite ring, which turns the column action of `e` into the row action of `eᵀ` over `Aᵐᵒᵖ`.
--/
-theorem IdempotentEquivalent.transpose_map_op {e : Matrix ι ι A} {f : Matrix κ κ A}
-    (h : IdempotentEquivalent e f) :
-    IdempotentEquivalent (eᵀ.map MulOpposite.op) (fᵀ.map MulOpposite.op) := by
-  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
-  refine ⟨yᵀ.map MulOpposite.op, xᵀ.map MulOpposite.op, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    rw [← transpose_mul_map_op] <;> simp only [*]
-
-/-- **Opposite rings.** Equivalent idempotents over `Aᵐᵒᵖ` stay equivalent after transposing and
-passing back to `A`. -/
-theorem IdempotentEquivalent.transpose_map_unop {e : Matrix ι ι Aᵐᵒᵖ} {f : Matrix κ κ Aᵐᵒᵖ}
-    (h : IdempotentEquivalent e f) :
-    IdempotentEquivalent (eᵀ.map MulOpposite.unop) (fᵀ.map MulOpposite.unop) :=
-  -- Over `Aᵐᵒᵖ`, `op` followed by `Aᵐᵒᵖᵐᵒᵖ ≃+* A` is `unop`.
-  h.transpose_map_op.map (RingEquiv.opOp A).symm.toRingHom
-
-/-- The transpose of an idempotent matrix, with entries in the opposite ring, is idempotent. -/
-theorem _root_.IsIdempotentElem.matrix_transpose_map_op {e : Matrix ι ι A}
-    (he : IsIdempotentElem e) : IsIdempotentElem (eᵀ.map MulOpposite.op) :=
-  (IdempotentEquivalent.refl he).transpose_map_op.isIdempotentElem_left
-
-/-- The transpose of an idempotent matrix over the opposite ring, with entries in the ring, is
-idempotent. -/
-theorem _root_.IsIdempotentElem.matrix_transpose_map_unop {e : Matrix ι ι Aᵐᵒᵖ}
-    (he : IsIdempotentElem e) : IsIdempotentElem (eᵀ.map MulOpposite.unop) :=
-  (IdempotentEquivalent.refl he).transpose_map_unop.isIdempotentElem_left
-
-/-- Two square matrices are equivalent idempotents exactly when their transposes, with entries
-in the opposite ring, are. -/
-theorem idempotentEquivalent_transpose_map_op_iff {e : Matrix ι ι A} {f : Matrix κ κ A} :
-    IdempotentEquivalent (eᵀ.map MulOpposite.op) (fᵀ.map MulOpposite.op) ↔
-      IdempotentEquivalent e f :=
-  ⟨fun h ↦ by
-    simpa only [transpose_map_op_transpose_map_unop] using h.transpose_map_unop,
-    IdempotentEquivalent.transpose_map_op⟩
+end Semiring
 
 end IdempotentEquivalent
+
+variable {A : Type*} [Semiring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- The matrix whose rows are the images of the rows of an idempotent matrix `e` under an
 isomorphism of ranges. -/
@@ -325,6 +441,39 @@ private theorem rowImage_mul_rowImage_symm {e : Matrix ι ι A} {f : Matrix κ �
     LinearEquiv.symm_apply_apply] at h
   exact congrFun h.symm j
 
+/-- **Mutually inverse module maps from equivalence witnesses.** When `x * y = e` and `y * x = f`
+for idempotent `e` and `f`, right multiplication by `x` and `y` induces `Aᵐ e ≃ₗ[A] Aⁿ f`. -/
+def linearEquivRangeVecMulLinearOfMulEq
+    {e : Matrix ι ι A} {f : Matrix κ κ A} {x : Matrix ι κ A} {y : Matrix κ ι A}
+    (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
+    range e.vecMulLinear ≃ₗ[A] range f.vecMulLinear where
+  toFun v := ⟨v ᵥ* x, by
+    rw [hf.mem_range_vecMulLinear_iff, vecMul_vecMul, ← hyx, ← Matrix.mul_assoc, hxy,
+      ← vecMul_vecMul, he.mem_range_vecMulLinear_iff.1 v.property]⟩
+  invFun w := ⟨w ᵥ* y, by
+    rw [he.mem_range_vecMulLinear_iff, vecMul_vecMul, ← hxy, ← Matrix.mul_assoc, hyx,
+      ← vecMul_vecMul, hf.mem_range_vecMulLinear_iff.1 w.property]⟩
+  map_add' _ _ := Subtype.ext (add_vecMul _ _ _)
+  map_smul' _ _ := Subtype.ext (smul_vecMul _ _ _)
+  left_inv v := Subtype.ext <| by
+    simp [vecMul_vecMul, hxy, he.mem_range_vecMulLinear_iff.1 v.property]
+  right_inv w := Subtype.ext <| by
+    simp [vecMul_vecMul, hyx, hf.mem_range_vecMulLinear_iff.1 w.property]
+
+@[simp]
+theorem coe_linearEquivRangeVecMulLinearOfMulEq_apply
+    {e : Matrix ι ι A} {f : Matrix κ κ A} {x : Matrix ι κ A} {y : Matrix κ ι A}
+    (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
+    (v : range e.vecMulLinear) :
+    (linearEquivRangeVecMulLinearOfMulEq hxy hyx he hf v : κ → A) = v ᵥ* x := (rfl)
+
+@[simp]
+theorem coe_linearEquivRangeVecMulLinearOfMulEq_symm_apply
+    {e : Matrix ι ι A} {f : Matrix κ κ A} {x : Matrix ι κ A} {y : Matrix κ ι A}
+    (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
+    (w : range f.vecMulLinear) :
+    ((linearEquivRangeVecMulLinearOfMulEq hxy hyx he hf).symm w : ι → A) = w ᵥ* y := (rfl)
+
 /-- **Algebraic equivalence of idempotent matrices.** The ranges of right multiplication by two
 idempotent matrices `e` and `f` are isomorphic left `A`-modules if and only if `e` and `f` are
 equivalent idempotents. -/
@@ -337,113 +486,7 @@ theorem nonempty_linearEquiv_range_vecMulLinear_iff {e : Matrix ι ι A} {f : Ma
     refine ⟨rowImage ψ, rowImage ψ.symm, rowImage_mul_rowImage_symm hf ψ, ?_⟩
     simpa using rowImage_mul_rowImage_symm he ψ.symm
   · rintro ⟨x, y, hxy, hyx⟩
-    -- Right multiplication by `x` and by `y` restrict to mutually inverse maps of the ranges.
-    have hx : ∀ v ∈ range e.vecMulLinear, v ᵥ* x ∈ range f.vecMulLinear := fun v hv ↦ by
-      rw [hf.mem_range_vecMulLinear_iff, vecMul_vecMul, ← hyx, ← Matrix.mul_assoc, hxy,
-        ← vecMul_vecMul, (he.mem_range_vecMulLinear_iff).1 hv]
-    have hy : ∀ w ∈ range f.vecMulLinear, w ᵥ* y ∈ range e.vecMulLinear := fun w hw ↦ by
-      rw [he.mem_range_vecMulLinear_iff, vecMul_vecMul, ← hxy, ← Matrix.mul_assoc, hyx,
-        ← vecMul_vecMul, (hf.mem_range_vecMulLinear_iff).1 hw]
-    exact ⟨{
-      toFun v := ⟨v ᵥ* x, hx v v.property⟩
-      invFun w := ⟨w ᵥ* y, hy w w.property⟩
-      map_add' v v' := Subtype.ext (add_vecMul _ _ _)
-      map_smul' a v := Subtype.ext (smul_vecMul _ _ _)
-      left_inv v := Subtype.ext <| by
-        simp [vecMul_vecMul, hxy, (he.mem_range_vecMulLinear_iff).1 v.property]
-      right_inv w := Subtype.ext <| by
-        simp [vecMul_vecMul, hyx, (hf.mem_range_vecMulLinear_iff).1 w.property] }⟩
-
-variable {ι' κ' : Type*}
-
-/-- The `f`-semilinear map between the ranges of right multiplication of row vectors by a matrix
-`e` and by its entrywise image `e.map f` under a ring homomorphism `f`, applying `f` to every
-coordinate. For an idempotent `e` this is the map `Aⁿ e → Bⁿ f(e)`. -/
-def rangeVecMulLinearMap {B : Type*} [Semiring B] (e : Matrix ι ι' A) (f : A →+* B) :
-    range e.vecMulLinear →ₛₗ[f] range (e.map f).vecMulLinear where
-  toFun v := ⟨f ∘ v, by
-    obtain ⟨u, hu⟩ := v.property
-    exact ⟨f ∘ u, funext fun i ↦ by simp [← hu, RingHom.map_vecMul]⟩⟩
-  map_add' v w := Subtype.ext <| funext fun i ↦ by simp
-  map_smul' r v := Subtype.ext <| funext fun i ↦ by simp
-
-@[simp]
-theorem coe_rangeVecMulLinearMap_apply {B : Type*} [Semiring B] (e : Matrix ι ι' A) (f : A →+* B)
-    (v : range e.vecMulLinear) : (e.rangeVecMulLinearMap f v : ι' → B) = f ∘ v :=
-  (rfl)
-
-/-- A row vector lies in the range of right multiplication by the block-diagonal matrix
-`Matrix.fromBlocks e 0 0 f` exactly when its two parts lie in the ranges of `e` and of `f`. -/
-theorem mem_range_vecMulLinear_fromBlocks_iff {e : Matrix ι ι' A} {f : Matrix κ κ' A}
-    {v : ι' ⊕ κ' → A} :
-    v ∈ range (fromBlocks e 0 0 f).vecMulLinear ↔
-      v ∘ Sum.inl ∈ range e.vecMulLinear ∧ v ∘ Sum.inr ∈ range f.vecMulLinear := by
-  constructor
-  · rintro ⟨u, rfl⟩
-    refine ⟨⟨u ∘ Sum.inl, ?_⟩, ⟨u ∘ Sum.inr, ?_⟩⟩ <;>
-      rw [vecMulLinear_apply, vecMulLinear_apply, ← Sum.elim_comp_inl_inr u, vecMul_fromBlocks] <;>
-      simp
-  · rintro ⟨⟨a, ha⟩, ⟨b, hb⟩⟩
-    refine ⟨Sum.elim a b, ?_⟩
-    rw [← Sum.elim_comp_inl_inr v, ← ha, ← hb]
-    simp [vecMul_fromBlocks]
-
-/-- **Block sums of matrices.** The range of right multiplication by the block-diagonal matrix
-`Matrix.fromBlocks e 0 0 f` is the product of the ranges of `e` and of `f`. -/
-def rangeVecMulLinearFromBlocksEquiv (e : Matrix ι ι' A) (f : Matrix κ κ' A) :
-    range (fromBlocks e 0 0 f).vecMulLinear ≃ₗ[A]
-      range e.vecMulLinear × range f.vecMulLinear where
-  toFun v := (⟨(v : ι' ⊕ κ' → A) ∘ Sum.inl, (mem_range_vecMulLinear_fromBlocks_iff.1 v.property).1⟩,
-    ⟨(v : ι' ⊕ κ' → A) ∘ Sum.inr, (mem_range_vecMulLinear_fromBlocks_iff.1 v.property).2⟩)
-  invFun p := ⟨Sum.elim p.1 p.2, mem_range_vecMulLinear_fromBlocks_iff.2 ⟨p.1.property,
-      p.2.property⟩⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := Subtype.ext (Sum.elim_comp_inl_inr _)
-  right_inv _ := rfl
-
-@[simp]
-theorem coe_rangeVecMulLinearFromBlocksEquiv_apply_fst (e : Matrix ι ι' A) (f : Matrix κ κ' A)
-    (v : range (fromBlocks e 0 0 f).vecMulLinear) :
-    ((rangeVecMulLinearFromBlocksEquiv e f v).1 : ι' → A) = (v : ι' ⊕ κ' → A) ∘ Sum.inl :=
-  (rfl)
-
-@[simp]
-theorem coe_rangeVecMulLinearFromBlocksEquiv_apply_snd (e : Matrix ι ι' A) (f : Matrix κ κ' A)
-    (v : range (fromBlocks e 0 0 f).vecMulLinear) :
-    ((rangeVecMulLinearFromBlocksEquiv e f v).2 : κ' → A) = (v : ι' ⊕ κ' → A) ∘ Sum.inr :=
-  (rfl)
-
-@[simp]
-theorem coe_rangeVecMulLinearFromBlocksEquiv_symm_apply (e : Matrix ι ι' A) (f : Matrix κ κ' A)
-    (p : range e.vecMulLinear × range f.vecMulLinear) :
-    ((rangeVecMulLinearFromBlocksEquiv e f).symm p : ι' ⊕ κ' → A) =
-      Sum.elim (p.1 : ι' → A) (p.2 : κ' → A) :=
-  (rfl)
-
-/-- **Columns as rows over the opposite ring.** For a matrix `e` over `A`, the range of
-`v ↦ e *ᵥ v` on column vectors, a right `A`-module (a left `Aᵐᵒᵖ`-module), is isomorphic, by
-`MulOpposite.unop` on every coordinate, to the range of right multiplication of row vectors over
-`Aᵐᵒᵖ` by the transpose of `e` with entries in `Aᵐᵒᵖ`. -/
-def rangeVecMulLinearTransposeMapOpEquiv (e : Matrix ι' ι A) :
-    range (eᵀ.map MulOpposite.op).vecMulLinear ≃ₗ[Aᵐᵒᵖ] range (mulVecBilin A Aᵐᵒᵖ e) :=
-  -- `unop` on every coordinate, on row vectors indexed by `ι'` and by `ι`.
-  let L' : (ι' → Aᵐᵒᵖ) ≃ₗ[Aᵐᵒᵖ] (ι' → A) :=
-    .piCongrRight fun _ ↦ (MulOpposite.opLinearEquiv Aᵐᵒᵖ).symm
-  let L : (ι → Aᵐᵒᵖ) ≃ₗ[Aᵐᵒᵖ] (ι → A) :=
-    .piCongrRight fun _ ↦ (MulOpposite.opLinearEquiv Aᵐᵒᵖ).symm
-  have hL : L'.toLinearMap ∘ₗ (eᵀ.map MulOpposite.op).vecMulLinear =
-      mulVecBilin A Aᵐᵒᵖ e ∘ₗ L.toLinearMap := by
-    ext v i
-    simp [L, L', vecMul, mulVec, dotProduct]
-  (L'.submoduleMap _).trans <| .ofEq _ _ <| by
-    rw [← range_comp, hL, range_comp_of_range_eq_top _ L.range]
-
-@[simp]
-theorem coe_rangeVecMulLinearTransposeMapOpEquiv_apply (e : Matrix ι' ι A)
-    (v : range (eᵀ.map MulOpposite.op).vecMulLinear) :
-    (rangeVecMulLinearTransposeMapOpEquiv e v : ι' → A) = MulOpposite.unop ∘ v :=
-  (rfl)
+    exact ⟨linearEquivRangeVecMulLinearOfMulEq hxy hyx he hf⟩
 
 /-- **Equivalence of idempotents and right modules.** The images `eAⁿ` and `fAᵐ` of the actions of
 two idempotent matrices on column vectors are isomorphic right `A`-modules (left `Aᵐᵒᵖ`-modules)
