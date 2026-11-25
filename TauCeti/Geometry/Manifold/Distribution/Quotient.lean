@@ -34,6 +34,8 @@ tangent bundle of the quotient of a vector bundle by a subbundle with local fram
 
 ## Main results
 
+* `TauCeti.IsContMDiffDistribution.mem_pretrivializationAtlas_quotientPrebundle_iff`: the
+  pretrivializations of `TM ⧸ D` are those of its `C^n` local frames.
 * `TauCeti.IsContMDiffDistribution.contMDiffVectorBundle_quotientPrebundle`: `TM ⧸ D` is a `C^n`
   vector bundle.
 * `trivializationOfMemPretrivializationAtlas_quotientPrebundle_apply`, in the namespace
@@ -76,6 +78,18 @@ def quotientPrebundle : VectorPrebundle 𝕜 (Fin r → 𝕜) fun x ↦ TangentS
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
   hD.hasLocalContMDiffSubbundleFrames.quotientPrebundle (by simpa using hr)
 
+/-- The pretrivializations of the quotient bundle `TM ⧸ D` are those of the `C^n` local frames of
+`TM ⧸ D` on open sets. -/
+theorem mem_pretrivializationAtlas_quotientPrebundle_iff
+    (e : Pretrivialization (Fin r → 𝕜) (π (Fin r → 𝕜) fun x ↦ TangentSpace I x ⧸ D x)) :
+    e ∈ (hD.quotientPrebundle hr).pretrivializationAtlas ↔
+      ∃ (U : Set M) (hU : IsOpen U) (Y : Fin r → Π x : M, TangentSpace I x)
+        (hY : IsQuotientFrameOn D Y U), (∀ j, CMDiff[U] n (T% (Y j))) ∧
+          hY.pretrivialization hU = e :=
+  have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
+  hD.hasLocalContMDiffSubbundleFrames.mem_pretrivializationAtlas_quotientPrebundle_iff
+    (by simpa using hr) e
+
 /-- **The quotient of the tangent bundle by a `C^n` distribution is a `C^n` vector bundle.** -/
 theorem contMDiffVectorBundle_quotientPrebundle :
     letI := (hD.quotientPrebundle hr).totalSpaceTopology
@@ -96,8 +110,9 @@ theorem trivializationOfMemPretrivializationAtlas_quotientPrebundle_apply
     letI := (hD.quotientPrebundle hr).totalSpaceTopology
     (hD.quotientPrebundle hr).trivializationOfMemPretrivializationAtlas he p =
       (p.proj, (hY.basis hp).equivFun p.snd) :=
-  -- The trivialization built from a pretrivialization has the same underlying function.
-  hY.pretrivialization_apply hU hp
+  have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
+  have hV := hD.hasLocalContMDiffSubbundleFrames
+  hV.trivializationOfMemPretrivializationAtlas_quotientPrebundle_apply (by simpa using hr) he hp
 
 /-- **The quotient map `TM → TM ⧸ D` is `C^n`.** -/
 theorem contMDiff_totalSpace_mkQ :

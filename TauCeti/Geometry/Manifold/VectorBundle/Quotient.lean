@@ -407,7 +407,8 @@ private theorem trivializationAt_quotientPrebundle_apply {x : B}
     letI := (hV.quotientPrebundle hκ).toFiberBundle
     trivializationAt (κ → 𝕜) (fun x ↦ E x ⧸ V x) x p =
       (p.proj, ((hV.frame_spec hκ x).2.2.1.basis hp).equivFun p.snd) :=
-  (hV.frame_spec hκ x).2.2.1.pretrivialization_apply (hV.frame_spec hκ x).1 hp
+  hV.trivializationOfMemPretrivializationAtlas_quotientPrebundle_apply hκ
+    ((hV.quotientPrebundle hκ).pretrivialization_mem_atlas x) hp
 
 /-- **The quotient map `E → E ⧸ V` is `C^n`.** -/
 theorem contMDiff_totalSpace_mkQ :
