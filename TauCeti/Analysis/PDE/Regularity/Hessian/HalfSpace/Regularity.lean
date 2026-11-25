@@ -9,10 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.IntegrabilityGai
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.PDE.Regularity.Hessian.Freezing
-import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.ContinuousCoefficient
 import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.Localization
-import TauCeti.Analysis.Sobolev.W1p.Localization
-import TauCeti.Analysis.Sobolev.Wkp.Extension
 import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 
