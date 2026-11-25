@@ -6,27 +6,36 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackContinuous
+public import Mathlib.Topology.Sheaves.Functors
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
+import Mathlib.Algebra.Category.Grp.FilteredColimits
+import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
+import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 
 /-!
-# Site-level congruence for pullback of sheaves of modules
+# Site-level congruence and additivity for pullback of sheaves of modules
 
 Let `F : C ⥤ D` be a continuous functor between sites and `φ : S ⟶ F_* R` a morphism of sheaves of
 rings. This file constructs the natural isomorphisms `SheafOfModules.pullbackCongr` and
 `SheafOfModules.pullbackCongr₂` between pullback functors along equal ring-sheaf morphisms or
 naturally isomorphic site functors, conjugate to Mathlib's `SheafOfModules.pushforwardCongr` and
-`SheafOfModules.pushforwardCongr₂`.
+`SheafOfModules.pushforwardCongr₂`, shows that `pushforward` between small sites in the same
+universe is a right adjoint, and records that pullback along a morphism of ringed spaces is
+additive.
 
 ## Main declarations
 
 * `SheafOfModules.isRightAdjoint_pushforward`: pushforward of module sheaves between small sites
   in the same universe is a right adjoint;
 * `SheafOfModules.pullbackCongr` and `SheafOfModules.pullbackCongr₂`: natural isomorphisms between
-  pullback functors along equal ring-sheaf morphisms or naturally isomorphic site functors.
+  pullback functors along equal ring-sheaf morphisms or naturally isomorphic site functors;
+* `SheafOfModules.additive_pullback`: pullback of sheaves of modules along a morphism of ringed
+  spaces is additive.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory Limits TopologicalSpace
 
 universe v v₁ v₂ u₁ u₂ u
 
@@ -121,5 +130,21 @@ theorem isRightAdjoint_pushforward {C D : Type u} [SmallCategory C] [SmallCatego
   inferInstance
 
 end SheafOfModules
+
+namespace TauCeti.SheafOfModules
+
+variable {X Y : TopCat.{u}} {𝒪X : Sheaf (Opens.grothendieckTopology X) CommRingCat.{u}}
+  {𝒪Y : Sheaf (Opens.grothendieckTopology Y) CommRingCat.{u}} {f : Y ⟶ X}
+  (φ : ringCatSheaf 𝒪X ⟶
+    ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).obj (ringCatSheaf 𝒪Y))
+  [(_root_.SheafOfModules.pushforward.{u} φ).IsRightAdjoint]
+
+/-- Pullback of sheaves of modules along a morphism of ringed spaces is additive. -/
+instance _root_.SheafOfModules.additive_pullback :
+    (_root_.SheafOfModules.pullback φ).Additive :=
+  have := preservesBinaryBiproducts_of_preservesBinaryCoproducts (_root_.SheafOfModules.pullback φ)
+  Functor.additive_of_preservesBinaryBiproducts _
+
+end TauCeti.SheafOfModules
 
 end

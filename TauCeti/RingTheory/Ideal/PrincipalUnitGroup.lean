@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.Henselian
+public import Mathlib.Topology.Algebra.Constructions
+public import Mathlib.Topology.Algebra.Group.Defs
 import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
@@ -56,6 +58,7 @@ so `1 + I` is an iterated extension of additive groups.
 * `Ideal.unitsMap_quotientMk_surjective_of_ne_top`: over a local ring, reduction of units modulo a
   proper ideal is surjective.
 * `Ideal.principalUnitGroup_pow_antitone`: the subgroups `1 + I ^ n` decrease with `n`.
+* `Ideal.isOpen_principalUnitGroup`: the principal unit group of an open ideal is open.
 
 ## References
 
@@ -118,6 +121,12 @@ theorem principalUnitGroup_ker {S : Type*} [Ring S] (f : R →+* S) :
 theorem principalUnitGroup_pow_antitone (I : Ideal R) :
     Antitone fun n : ℕ ↦ (I ^ n).principalUnitGroup :=
   fun _ _ h ↦ principalUnitGroup_mono (pow_le_pow_right h)
+
+/-- In a ring with continuous subtraction, the principal unit group of an open ideal is open in
+the units, which carry the topology of `Units.embedProduct`. -/
+theorem isOpen_principalUnitGroup [TopologicalSpace R] [ContinuousSub R] {I : Ideal R}
+    (hI : IsOpen (I : Set R)) : IsOpen (I.principalUnitGroup : Set Rˣ) :=
+  (hI.preimage (continuous_id.sub continuous_const)).preimage Units.continuous_val
 
 section CommRing
 
