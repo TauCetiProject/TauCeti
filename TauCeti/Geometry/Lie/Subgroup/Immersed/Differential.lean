@@ -171,9 +171,7 @@ theorem lieMapToHom_mem_lieSubalgebraOfSubgroup (d : ImmersedLieSubgroupData I K
 @[simp]
 theorem toHom_lieExp (d : ImmersedLieSubgroupData I K)
     (X : LeftInvariantDerivation d.I' d.X) :
-    let _ : T2Space d.X := d.I'.t2Space_of_lieGroup ∞
     d.toHom (lieExp X) = lieExp (d.lieMapToHom X) := by
-  let _ : T2Space d.X := d.I'.t2Space_of_lieGroup ∞
   simpa only [toContMDiffMonoidMorphism_apply, lieMap_toContMDiffMonoidMorphism] using
     map_lieExp d.toContMDiffMonoidMorphism X
 

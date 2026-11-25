@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Notation.Indicator
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Combinatorics.SimpleGraph.Copy
 
 /-!
-# Extending edge data by zero along a copy
+# Neighbours along a copy, and extending edge data by zero
 
 Let `f` be a copy of a graph `H` in a graph `G`, that is an injective graph homomorphism, not
 necessarily induced. A family `β x y` of values on the ordered pairs of vertices of `H` extends by
@@ -28,6 +29,10 @@ local relations of the signless preprojective algebra: for finite graphs, extend
 edge-block family of a block-matrix representation of the signless preprojective algebra of `H`
 gives a block-matrix representation of that of `G` (`TauCeti.signlessMatrixRepresentation`).
 
+Along a copy, the neighbours of a vertex map to neighbours of its image, so a weight on `G` that is
+nonnegative at the extra neighbours sums to at least as much over the neighbours of `f x` as over
+the images of those of `x`.
+
 ## Main definitions
 
 * `SimpleGraph.Copy.extendByZero`: the extension by zero of a family on the vertex pairs of `H`
@@ -35,6 +40,9 @@ gives a block-matrix representation of that of `G` (`TauCeti.signlessMatrixRepre
 
 ## Main results
 
+* `SimpleGraph.Copy.map_neighborFinset_subset` and `SimpleGraph.Copy.sum_neighborFinset_comp_le`:
+  neighbours map to neighbours along a copy, and the resulting bound on neighbour sums of a
+  weight that is nonnegative at the extra neighbours.
 * `SimpleGraph.Copy.extendByZero_apply_apply`: along the copy, the extension is the original
   family on edges of `H` and zero elsewhere.
 * `SimpleGraph.Copy.extendByZero_ne_zero_iff`: the extension is nonzero at an ordered pair of
@@ -58,6 +66,30 @@ public section
 namespace SimpleGraph.Copy
 
 variable {V W M : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
+
+section neighborFinset
+
+/-- Along a copy `f`, not necessarily induced, the neighbours of `x` map to neighbours of `f x`. -/
+theorem map_neighborFinset_subset (f : H.Copy G) (x : W) [Fintype (G.neighborSet (f x))]
+    [Fintype (H.neighborSet x)] :
+    (H.neighborFinset x).map f.toEmbedding ⊆ G.neighborFinset (f x) := by
+  intro w hw
+  obtain ⟨y, hy, rfl⟩ := Finset.mem_map.1 hw
+  rw [mem_neighborFinset] at hy ⊢
+  exact f.toHom.map_adj hy
+
+/-- Along a copy `f`, not necessarily induced, a weight on `G` that is nonnegative at the neighbours
+of `f x` outside the image of those of `x` sums to at least as much over the neighbours of `f x` as
+over the images of the neighbours of `x`. -/
+theorem sum_neighborFinset_comp_le [AddCommMonoid M] [Preorder M] [AddLeftMono M]
+    (f : H.Copy G) {a : V → M} {x : W} [Fintype (G.neighborSet (f x))]
+    [Fintype (H.neighborSet x)]
+    (ha0 : ∀ w ∈ G.neighborFinset (f x), w ∉ (H.neighborFinset x).map f.toEmbedding → 0 ≤ a w) :
+    ∑ y ∈ H.neighborFinset x, a (f y) ≤ ∑ w ∈ G.neighborFinset (f x), a w := by
+  have h := Finset.sum_le_sum_of_subset_of_nonneg (f.map_neighborFinset_subset x) ha0
+  rwa [Finset.sum_map] at h
+
+end neighborFinset
 
 section Zero
 
@@ -205,11 +237,8 @@ theorem sum_extendByZero_mul_extendByZero_apply (hmul : (0 : M) * 0 = 0) (x : W)
   have hemb : ⇑f.toEmbedding = f := rfl
   -- Only the images of the neighbours of `x` in `H` contribute, and they contribute the sum of
   -- `H` at `x`.
-  have hsub : (H.neighborFinset x).map f.toEmbedding ⊆ G.neighborFinset (f x) := by
-    rw [← Finset.coe_subset, Finset.coe_map, coe_neighborFinset, coe_neighborFinset, hemb]
-    simpa only [coe_toHom] using f.toHom.image_neighborSet_subset x
   rw [Finset.sum_congr rfl fun w _ => extendByZero_mul_extendByZero f β hmul (f x) w,
-    ← Finset.sum_subset hsub, Finset.sum_map]
+    ← Finset.sum_subset (f.map_neighborFinset_subset x), Finset.sum_map]
   · refine Finset.sum_congr rfl fun y hy => ?_
     rw [hemb]
     exact extendByZero_apply_apply_of_adj f _ ((mem_neighborFinset _ _ _).1 hy)

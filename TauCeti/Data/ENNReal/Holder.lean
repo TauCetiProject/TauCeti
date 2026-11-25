@@ -17,7 +17,7 @@ exponents below by `1` and the conjugate exponent of `p` above by `q`; the conju
 is antitone, finite for `p > 1` and greater than `1` for finite `p`; and the exponent
 conjugate to `p > 2` is less than `2`, as for the supercritical exponents of planar Sobolev and
 Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most `2`. An exponent
-`p > 2` satisfies `1/p + 1/p < 1`.
+`p > 2` satisfies `1/p + 1/p < 1`. In `ℝ≥0`, the only exponent conjugate to `2` is `2`.
 
 ## Main declarations
 
@@ -32,6 +32,7 @@ Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most
   is finite with `1/p' = 1 - 1/p` when `p > 1`, and decreases as `p` increases.
 * `ENNReal.HolderConjugate.lt_two`: the conjugate of an exponent `p > 2` is less than `2`.
 * `ENNReal.HolderConjugate.le_two`: the conjugate of an exponent `p ≥ 2` is at most `2`.
+* `NNReal.HolderConjugate.eq_two`: an exponent in `ℝ≥0` conjugate to `2` is `2`.
 -/
 
 public section
@@ -116,3 +117,14 @@ theorem le_two {p q : ℝ≥0∞} [p.HolderConjugate q] (hp : 2 ≤ p) : q ≤ 2
   exact lt_irrefl _ h
 
 end ENNReal.HolderConjugate
+
+namespace NNReal.HolderConjugate
+
+open scoped NNReal
+
+/-- The only exponent in `ℝ≥0` conjugate to `2` is `2`. -/
+theorem eq_two {p : ℝ≥0} (h : p.HolderConjugate 2) : p = 2 := by
+  have : (2 : ℝ≥0∞).HolderConjugate p := by simpa using h.symm.coe_ennreal
+  exact_mod_cast ENNReal.HolderConjugate.unique (p := 2) (q := p) 2
+
+end NNReal.HolderConjugate
