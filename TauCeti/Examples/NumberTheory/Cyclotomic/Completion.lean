@@ -79,9 +79,10 @@ example (v : HeightOneSpectrum (𝓞 (complexField 3)))
     rintro _ rfl
     exact ⟨AdjoinRoot.root P, AdjoinRoot.lift_root hρ⟩
   have hcard : Nat.card (AdjoinRoot P) = 4 := by
-    rw [Nat.card_congr (AdjoinRoot.powerBasis hP0).basis.equivFun.toEquiv, Nat.card_fun,
-      Nat.card_zmod, Nat.card_eq_fintype_card, Fintype.card_fin, AdjoinRoot.powerBasis_dim, hP]
-    rfl
+    have := (AdjoinRoot.powerBasis hP0).finite
+    rw [Module.natCard_eq_pow_finrank (K := ZMod 2), (AdjoinRoot.powerBasis hP0).finrank,
+      AdjoinRoot.powerBasis_dim, hP, Nat.card_zmod]
+    norm_num
   have : Finite (AdjoinRoot P) := Nat.finite_of_card_ne_zero (by omega)
   have := Nat.card_le_card_of_surjective _ hsurj
   omega
