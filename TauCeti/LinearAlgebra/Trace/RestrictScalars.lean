@@ -27,6 +27,8 @@ first. This is the module version of the transitivity of the algebra trace
 * `LinearMap.trace_restrictScalars`: `tr_R(f) = Tr_{A/R}(tr_A(f))`.
 * `TauCeti.Algebra.trace_trace_of_free`: `Tr_{A/R}(Tr_{B/A}(b)) = Tr_{B/R}(b)` in any tower of free
   extensions, without finiteness hypotheses.
+* `TauCeti.Algebra.trace_algebraMap_tower`: `Tr_{B/R}(x) = [B : A] • Tr_{A/R}(x)` for `x : A` in
+  any tower of free extensions, without finiteness hypotheses.
 -/
 
 public section
@@ -95,5 +97,17 @@ theorem trace_trace_of_free {R A B : Type*} [CommRing R] [CommRing A] [CommRing 
       LinearMap.restrictScalars R (_root_.Algebra.lmul A B b) = _root_.Algebra.lmul R B b := rfl
   rw [_root_.Algebra.trace_apply (R := R) (S := B), ← hlmul, LinearMap.trace_restrictScalars,
     _root_.Algebra.trace_apply (R := A) (S := B)]
+
+/-- **The trace of a scalar from the middle of a tower.** For `x` in `A`, where `A` is free over
+`R` and `B` is free over `A`, the trace from `B` to `R` of the image of `x` is `finrank A B` times
+the trace from `A` to `R` of `x`. No finiteness or nontriviality assumptions are needed. -/
+theorem trace_algebraMap_tower {R A B : Type*} [CommRing R] [CommRing A] [CommRing B]
+    [Algebra R A] [Module.Free R A] [Algebra A B] [Module.Free A B] [Algebra R B]
+    [IsScalarTower R A B] (x : A) :
+    _root_.Algebra.trace R B (algebraMap A B x) =
+      Module.finrank A B • _root_.Algebra.trace R A x := by
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · simp [Subsingleton.elim x 0]
+  · rw [← trace_trace_of_free (A := A), _root_.Algebra.trace_algebraMap, map_nsmul]
 
 end TauCeti.Algebra

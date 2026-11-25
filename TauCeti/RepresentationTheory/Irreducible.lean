@@ -51,6 +51,8 @@ an algebra are those of the whole algebra.
 
 * `Representation.IsIrreducible.nontrivial`: an irreducible representation has a nonzero
   carrier.
+* `Representation.IsIrreducible.of_comp`: a representation whose pullback along a monoid
+  homomorphism is irreducible is irreducible.
 * `Representation.IsIrreducible.finrank_pos`: a finite-dimensional irreducible
   representation has positive dimension.
 * `Representation.IsIrreducible.natCast_finrank_ne_zero`: in characteristic zero that
@@ -115,6 +117,20 @@ theorem IsIrreducible.nontrivial {ρ : Representation k G V}
   have _ : ρ.IsIrreducible := h
   have _ := IsSimpleModule.nontrivial k[G] ρ.asModule
   ρ.asModuleEquiv.symm.toEquiv.nontrivial
+
+/-- A representation whose pullback along a monoid homomorphism `f : H →* G` is irreducible is
+irreducible: every subrepresentation of `ρ` is one of `ρ.comp f`. -/
+theorem IsIrreducible.of_comp {H : Type*} [Monoid H] {ρ : Representation k G V} (f : H →* G)
+    [hρ : Representation.IsIrreducible (ρ.comp f)] : ρ.IsIrreducible := by
+  have := hρ.nontrivial
+  refine ⟨fun S => ?_⟩
+  refine (eq_bot_or_eq_top (S.res f)).imp (fun h => ?_) fun h => ?_
+  · apply Subrepresentation.toSubmodule_injective
+    simpa only [Subrepresentation.toSubmodule_res, Subrepresentation.toSubmodule_bot] using
+      congrArg Subrepresentation.toSubmodule h
+  · apply Subrepresentation.toSubmodule_injective
+    simpa only [Subrepresentation.toSubmodule_res, Subrepresentation.toSubmodule_top] using
+      congrArg Subrepresentation.toSubmodule h
 
 /-- **A finite-dimensional irreducible representation has positive dimension.** This is what makes
 the degree of an irreducible character positive, and, cast into the base field by
@@ -461,23 +477,18 @@ theorem map_one_of_forall_apply_eq_smul [Nontrivial V] (ρ : Representation k G 
   exact smul_left_injective k hv (by simp [← hc])
 
 /-- **Two equivariant isomorphisms out of an irreducible representation differ by a unit
-scalar.**  If `a b : V ≃ₗ[k] W` both carry the action `ρ` to the same `σ`, then `b⁻¹ ∘ a` is an
-equivariant automorphism of `V`, hence a nonzero scalar by Schur's lemma
-(`Representation.IsIrreducible.exists_forall_apply_eq_smul`). -/
+scalar.**  If `a b : V ≃ₗ[k] W` both carry the action `ρ` to the same `σ`, they differ by a unit
+scalar (`Representation.exists_unit_smul_of_intertwines`), since every equivariant endomorphism of
+`V` is a scalar by Schur's lemma (`Representation.IsIrreducible.exists_forall_apply_eq_smul`). -/
 theorem IsIrreducible.exists_unit_smul_of_intertwines [IsAlgClosed k] [FiniteDimensional k V]
     {W : Type*} [AddCommGroup W] [Module k W] {ρ : Representation k G V} [hρ : ρ.IsIrreducible]
     {σ : Representation k G W} (a b : V ≃ₗ[k] W)
     (ha : ∀ g v, a (ρ g v) = σ g (a v)) (hb : ∀ g v, b (ρ g v) = σ g (b v)) :
     ∃ c : kˣ, ∀ v, a v = (c : k) • b v := by
   have : Nontrivial V := hρ.nontrivial
-  obtain ⟨c, hc⟩ := exists_forall_apply_eq_smul (ρ := ρ) (a.trans b.symm).toLinearMap
-    fun g v ↦ b.injective (by simp [ha, hb])
-  have hne : c ≠ 0 := by
-    rintro rfl
-    obtain ⟨v, hv⟩ := exists_ne (0 : V)
-    exact hv ((a.trans b.symm).injective (by simpa using hc v))
-  refine ⟨Units.mk0 c hne, fun v ↦ ?_⟩
-  simpa using congrArg b (hc v)
+  refine Representation.exists_unit_smul_of_intertwines (fun f hf ↦ ?_) a b ha hb
+  obtain ⟨c, hc⟩ := exists_forall_apply_eq_smul (ρ := ρ) f fun g v ↦ LinearMap.congr_fun (hf g) v
+  exact ⟨c, LinearMap.ext fun v ↦ by simp [hc]⟩
 
 /-- **Every nonzero finite-dimensional representation contains an irreducible subrepresentation.**
 Finite-dimensionality alone suffices; no semisimplicity is assumed.  This produces a single
