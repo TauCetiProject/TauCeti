@@ -8,8 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.AntipodalPairs.ModTwo
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
-public import TauCeti.LinearAlgebra.IntegralLattice.Quadratic
-public import TauCeti.LinearAlgebra.QuadraticForm.ModTwo
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.ModTwo
 
 /-!
 # Norms in the classes modulo two of `U ⊕ N`
@@ -170,31 +169,18 @@ theorem mk_mem_normClassesModTwo_neg_two_hyperbolicPlane_orthogonalSum_iff (hN :
           (Submodule.Quotient.mk x) = 1 := by
   have hcast : ((-2 : ℤ) : ℚ) = -2 := by norm_num
   have h2 : (-2 : ℤ) ≡ 2 [ZMOD 4] := by decide
-  -- `Q₂ [x] = 1` says that `B(x, x) / 2` is odd, that is, `B(x, x) ≡ 2 [ZMOD 4]`.
-  have hQ : ((hyperbolicPlane.orthogonalSum N).quadraticForm
-      ((isEven_orthogonalSum_iff _ _).mpr ⟨isEven_hyperbolicPlane, hN⟩)).reduceModTwo
-        (Submodule.Quotient.mk x) = 1 ↔
-      (hyperbolicPlane.orthogonalSum N).integralNorm x ≡ 2 [ZMOD 4] := by
-    obtain ⟨q, hq⟩ := ((hyperbolicPlane.orthogonalSum N).even_integralNorm_iff x).mpr
-      (((isEven_orthogonalSum_iff _ _).mpr ⟨isEven_hyperbolicPlane, hN⟩).exists_norm_eq_two_mul x)
-    rw [QuadraticForm.reduceModTwo_mk, quadraticForm_apply, hq, ← two_mul,
-      Int.mul_ediv_cancel_left _ two_ne_zero, ZMod.intCast_eq_one_iff_odd, Int.odd_iff,
-      Int.ModEq, show (4 : ℤ) = 2 * 2 by norm_num, Int.mul_emod_mul_of_pos _ _ two_pos]
-    omega
-  rw [hQ]
   constructor
   · intro h
     rw [← hcast] at h
-    exact (modEq_integralNorm_of_mk_mem_normClassesModTwo _ h).symm.trans h2
+    exact (reduceModTwo_quadraticForm_mk_eq_one_iff _ x).mpr
+      ((modEq_integralNorm_of_mk_mem_normClassesModTwo _ h).symm.trans h2)
   · intro h
     have hx : (Submodule.Quotient.mk x :
-        QuotSMulTop (2 : ℤ) (hyperbolicPlane.orthogonalSum N)) ≠ 0 := by
-      intro h0
-      have h0' := integralNorm_modEq_of_mk_eq _ (h0.trans (Submodule.Quotient.mk_zero _).symm)
-      rw [QuadraticMap.map_zero] at h0'
-      exact absurd (h.symm.trans h0') (by decide)
+        QuotSMulTop (2 : ℤ) (hyperbolicPlane.orthogonalSum N)) ≠ 0 := fun h0 ↦ by
+      rw [h0, QuadraticMap.map_zero] at h
+      exact zero_ne_one h
     rw [← hcast]
     exact (mk_mem_normClassesModTwo_hyperbolicPlane_orthogonalSum_iff hN hNu hx (-2)).mpr
-      (h2.trans h.symm)
+      (h2.trans ((reduceModTwo_quadraticForm_mk_eq_one_iff _ x).mp h).symm)
 
 end TauCeti.IntegralLattice
