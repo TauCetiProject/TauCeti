@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.ODE.ScalarLinear
+import TauCeti.Analysis.SpecialFunctions.Log.SubMulLog
 import TauCeti.Topology.Order.Monotone.Convergence
 
 /-!
@@ -38,9 +39,11 @@ escape it is the unique `s ∈ (0, γ / β)` with
 
 * `TauCeti.sir_fst_eq_exp`, `TauCeti.sir_snd_eq_exp`: the explicit forms
   `S t = exp (-β ∫₀ᵗ I) S 0` and `I t = exp (∫₀ᵗ (β S - γ)) I 0`; consequently each of `S` and
-  `I` keeps the sign of its initial value (`TauCeti.sir_fst_pos`, `TauCeti.sir_snd_pos`,
+  `I` stays positive (resp. nonnegative) if it starts positive (resp. nonnegative)
+  (`TauCeti.sir_fst_pos`, `TauCeti.sir_snd_pos`, `TauCeti.sir_fst_nonneg`,
   `TauCeti.sir_snd_nonneg`).
-* `TauCeti.sir_conserved`: `I + S - (γ / β) log S` is constant along a solution with `S(0) > 0`.
+* `TauCeti.sir_conserved`: `I + S - (γ / β) log S` is constant along a solution with `β ≠ 0` and
+  `S(0) > 0`.
 * `TauCeti.sir_fst_strictAntiOn`, `TauCeti.sir_add_antitoneOn`: `S` is strictly decreasing and
   `S + I` is nonincreasing.
 * `TauCeti.sir_finalSize`: the final size relation.
@@ -116,14 +119,20 @@ theorem sir_snd_pos (hz : IsIntegralCurveOn z (fun _ ↦ sirField β γ) (Ici 0)
   rw [sir_snd_eq_exp hz ht]
   positivity
 
+/-- The number of susceptibles stays nonnegative along a solution that starts with `S(0) ≥ 0`. -/
+theorem sir_fst_nonneg (hz : IsIntegralCurveOn z (fun _ ↦ sirField β γ) (Ici 0))
+    (hS : 0 ≤ (z 0).1) (ht : 0 ≤ t) : 0 ≤ (z t).1 := by
+  rw [sir_fst_eq_exp hz ht]
+  positivity
+
 /-- The number of infectives stays nonnegative along a solution that starts with `I(0) ≥ 0`. -/
 theorem sir_snd_nonneg (hz : IsIntegralCurveOn z (fun _ ↦ sirField β γ) (Ici 0))
     (hI : 0 ≤ (z 0).2) (ht : 0 ≤ t) : 0 ≤ (z t).2 := by
   rw [sir_snd_eq_exp hz ht]
   positivity
 
-/-- **The conserved quantity of the SIR model.** Along a solution on `[0, ∞)` with `S(0) > 0`, the
-quantity `I + S - (γ / β) log S` keeps its initial value. -/
+/-- **The conserved quantity of the SIR model.** Along a solution on `[0, ∞)` with `β ≠ 0` and
+`S(0) > 0`, the quantity `I + S - (γ / β) log S` keeps its initial value. -/
 theorem sir_conserved (hβ : β ≠ 0) (hz : IsIntegralCurveOn z (fun _ ↦ sirField β γ) (Ici 0))
     (hS : 0 < (z 0).1) (ht : 0 ≤ t) :
     (z t).2 + (z t).1 - γ / β * Real.log (z t).1 =
@@ -161,34 +170,6 @@ theorem sir_add_antitoneOn (hγ : 0 ≤ γ) (hz : IsIntegralCurveOn z (fun _ ↦
     fun u hu ↦ ?_
   have := mul_nonneg hγ (sir_snd_nonneg hz hI (interior_subset (s := Ici (0 : ℝ)) hu))
   linarith
-
-/-- The tangent line inequality for the convex function `x ↦ x - ρ log x` at `a`. -/
-private theorem sub_mul_one_sub_div_le {ρ a b : ℝ} (hρ : 0 ≤ ρ) (ha : 0 < a) (hb : 0 < b) :
-    (b - a) * (1 - ρ / a) ≤ (b - ρ * Real.log b) - (a - ρ * Real.log a) := by
-  have hlog := Real.log_le_sub_one_of_pos (div_pos hb ha)
-  rw [Real.log_div hb.ne' ha.ne'] at hlog
-  have key : ρ * (Real.log b - Real.log a) ≤ ρ * (b / a - 1) := mul_le_mul_of_nonneg_left hlog hρ
-  have hexp : (b - a) * (1 - ρ / a) = b - a - ρ * (b / a - 1) := by
-    field_simp
-  rw [hexp]
-  linarith
-
-/-- The function `x ↦ x - ρ log x` is injective on `(0, ρ)`. -/
-private theorem eq_of_sub_mul_log_eq {ρ s s' : ℝ} (hs : s ∈ Ioo 0 ρ) (hs' : s' ∈ Ioo 0 ρ)
-    (h : s - ρ * Real.log s = s' - ρ * Real.log s') : s = s' := by
-  have hρ : 0 ≤ ρ := hs.1.le.trans hs.2.le
-  -- For `x < y` in `(0, ρ)`, the tangent line at `y` puts the value at `x` strictly above the
-  -- value at `y`.
-  have key {x y : ℝ} (hx : x ∈ Ioo 0 ρ) (hy : y ∈ Ioo 0 ρ) (hxy : x < y) :
-      y - ρ * Real.log y < x - ρ * Real.log x := by
-    have hneg : 1 - ρ / y < 0 := by
-      rw [sub_neg, one_lt_div hy.1]
-      exact hy.2
-    linarith [sub_mul_one_sub_div_le hρ hy.1 hx.1, mul_pos_of_neg_of_neg (sub_neg.2 hxy) hneg]
-  rcases lt_trichotomy s s' with hlt | heq | hgt
-  · linarith [key hs hs' hlt]
-  · exact heq
-  · linarith [key hs' hs hgt]
 
 /-- Along a solution of the SIR model with `β, γ > 0`, `S(0) > 0` and `I(0) > 0`, the number of
 susceptibles converges to a positive limit, at most `S(0)`. -/
@@ -293,11 +274,12 @@ theorem sir_finalSize (hβ : 0 < β) (hγ : 0 < γ)
   -- Since `I(0) > 0`, the value at `s` exceeds the value at `S(0) ≥ s`, which forces `s < γ / β`.
   have hsρ : s < γ / β := by
     by_contra! h
-    have := sub_mul_one_sub_div_le hρ.le hs0 hS
+    have := Real.sub_mul_one_sub_div_le_sub_mul_log_sub_sub_mul_log hρ.le hs0 hS
     have : 0 ≤ ((z 0).1 - s) * (1 - γ / β / s) :=
       mul_nonneg (sub_nonneg.2 hsS) (sub_nonneg.2 ((div_le_one hs0).2 h))
     linarith
   exact ⟨s, ⟨hs0, hsρ⟩, heq,
-    fun s' hs' h ↦ eq_of_sub_mul_log_eq hs' ⟨hs0, hsρ⟩ (h.trans heq.symm), hSlim, hIlim⟩
+    fun s' hs' h ↦ ((Real.strictAntiOn_sub_mul_log _).injOn.mono Ioo_subset_Ioc_self) hs'
+      ⟨hs0, hsρ⟩ (h.trans heq.symm), hSlim, hIlim⟩
 
 end TauCeti
