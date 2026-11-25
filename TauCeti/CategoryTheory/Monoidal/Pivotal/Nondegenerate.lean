@@ -12,16 +12,20 @@ public import TauCeti.CategoryTheory.Semisimple.Basic
 /-!
 # Nondegeneracy of categorical traces
 
-In a finite semisimple pivotal category with simple unit, the left and right dimensions of
-a split simple object are nonzero. Indeed, its coevaluation splits, and Frobenius reciprocity
-and Schur's lemma make every retraction a scalar multiple of its pivotal evaluation.
+Let `C` be a finite semisimple pivotal category, linear over a commutative semiring `R`. The left
+and right dimensions of a nonzero object `X` with scalar endomorphisms over `R` (the structure map
+`algebraMap R (End X)` is surjective) are nonzero. Indeed, the coevaluation of `X` is nonzero, so
+it splits on some simple summand of the unit, and Frobenius reciprocity makes every retraction
+there a scalar multiple of the pivotal evaluation.
 
-Consequently the trace pairings on morphism spaces are nondegenerate: every nonzero morphism
-`f : X ⟶ Y` has a partner `g : Y ⟶ X` with nonzero trace of `f ≫ g`. This is the cancellation
-principle needed to deduce identities of morphisms from identities of categorical traces.
-No braiding, finiteness of the set of simple classes, or characteristic-zero assumption is
-needed. The coefficient field is algebraically closed and the simple endomorphism spaces
-are finite-dimensional; finite-dimensionality of arbitrary morphism spaces is not assumed.
+Consequently, when every simple object has scalar endomorphisms, the trace pairings on morphism
+spaces are nondegenerate: every nonzero morphism `f : X ⟶ Y` has a partner `g : Y ⟶ X` with
+nonzero trace of `f ≫ g`. This is the cancellation principle needed to deduce identities of
+morphisms from identities of categorical traces.
+
+No braiding, simple unit, finiteness of the set of simple classes, or characteristic assumption is
+needed. Over an algebraically closed field, a simple object with finite-dimensional endomorphisms
+has scalar endomorphisms by Schur's lemma (`TauCeti.bijective_algebraMap_end_of_simple`).
 
 ## References
 
@@ -36,104 +40,82 @@ universe v u
 
 namespace TauCeti
 
-variable (k : Type*) [Field k] [IsAlgClosed k]
+variable {R : Type*} [CommSemiring R]
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RigidCategory C]
-  [PivotalCategory C] [Abelian C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
-  [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
+  [PivotalCategory C] [Abelian C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
+  [IsFiniteSemisimpleCategory C]
 
-include k in
-/-- The right dimension of a split simple object in a finite semisimple pivotal category with
-simple tensor unit is nonzero. -/
-theorem rightDim_ne_zero_of_simple (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
-    rightDim X ≠ 0 := by
-  have : IsSplitMono (η_ X Xᘁ) :=
-    isSplitMono_of_nonzero_from_simple (coevaluation_ne_zero (Simple.not_isZero X))
+/-- In a finite semisimple pivotal category, the right dimension of a nonzero object with scalar
+endomorphisms is nonzero. -/
+theorem rightDim_ne_zero_of_surjective {X : C} (hX : ¬IsZero X)
+    (hR : Function.Surjective (algebraMap R (End X))) : rightDim X ≠ 0 := by
   let := pivotalExactPairing X
-  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_right k
-    (retraction (η_ X Xᘁ))
-  have h : c • rightDim X = 𝟙 (𝟙_ C) := by
-    rw [← rightTrace_id, rightTrace_def, id_whiskerRight, Category.id_comp,
-      ← Linear.comp_smul, ← hc]
-    exact IsSplitMono.id _
-  intro hz
-  rw [hz, smul_zero] at h
-  exact CategoryTheory.id_ne_zero (𝟙_ C) h.symm
+  have := comp_evaluation_ne_zero_of_surjective_right (X := Xᘁ) hR
+    (coevaluation_ne_zero (Y := Xᘁ) hX)
+  rwa [← rightTrace_id, rightTrace_def, id_whiskerRight, Category.id_comp]
 
-include k in
-/-- The left dimension of a split simple object in a finite semisimple pivotal category with
-simple tensor unit is nonzero. -/
-theorem leftDim_ne_zero_of_simple (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
-    leftDim X ≠ 0 := by
+/-- In a finite semisimple pivotal category, the left dimension of a nonzero object with scalar
+endomorphisms is nonzero. -/
+theorem leftDim_ne_zero_of_surjective {X : C} (hX : ¬IsZero X)
+    (hR : Function.Surjective (algebraMap R (End X))) : leftDim X ≠ 0 := by
+  -- The dual of `X` is nonzero, since the coevaluation `𝟙_ C ⟶ X ⊗ Xᘁ` is.
+  have hX' : ¬IsZero Xᘁ := fun h ↦ coevaluation_ne_zero (Y := Xᘁ) hX <| by
+    simpa using η_ X Xᘁ ≫= congrArg (X ◁ ·) (h.eq_of_src (𝟙 _) 0)
   let := pivotalExactPairing X
-  have : IsSplitMono (η_ Xᘁ X) :=
-    isSplitMono_of_nonzero_from_simple (coevaluation_ne_zero (Simple.not_isZero Xᘁ))
-  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_left k
-    (retraction (η_ Xᘁ X))
-  have h : c • leftDim X = 𝟙 (𝟙_ C) := by
-    rw [← leftTrace_id, leftTrace_def, whiskerLeft_id, Category.id_comp,
-      ← Linear.comp_smul, ← hc]
-    exact IsSplitMono.id _
-  intro hz
-  rw [hz, smul_zero] at h
-  exact CategoryTheory.id_ne_zero (𝟙_ C) h.symm
+  have := comp_evaluation_ne_zero_of_surjective_left (Y := Xᘁ) hR
+    (coevaluation_ne_zero (Y := X) hX')
+  rwa [← leftTrace_id, leftTrace_def, whiskerLeft_id, Category.id_comp]
 
 section Pairing
 
-variable [hfin : ∀ (X : C) [Simple X], FiniteDimensional k (X ⟶ X)]
+variable (hR : ∀ (S : C) [Simple S], Function.Surjective (algebraMap R (End S)))
+include hR
 
-include hfin
-
-include k in
-/-- Every nonzero morphism has a partner with which its composite has nonzero right trace. -/
+/-- If every simple object has scalar endomorphisms, every nonzero morphism has a partner with
+which its composite has nonzero right trace. -/
 theorem exists_rightTrace_comp_ne_zero {X Y : C} {f : X ⟶ Y} (hf : f ≠ 0) :
     ∃ g : Y ⟶ X, rightTrace (f ≫ g) ≠ 0 := by
-  obtain ⟨ι, _, S, hS, hB, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
-  -- A nonzero component of `f` has simple source, so it admits a retraction.
-  obtain ⟨i, hi⟩ : ∃ i, biproduct.ι S i ≫ e.inv ≫ f ≠ 0 := by
-    by_contra! h
-    exact hf <| (cancel_epi e.inv).1 <| biproduct.hom_ext' _ _ fun i ↦ by simpa using h i
-  let a : S i ⟶ X := biproduct.ι S i ≫ e.inv
-  have : IsSplitMono (a ≫ f) :=
-    isSplitMono_of_nonzero_from_simple (by simpa only [a, Category.assoc] using hi)
+  -- Some morphism `a` from a simple object makes `a ≫ f` admit a retraction.
+  obtain ⟨S, _, a, -, _⟩ := exists_simple_isSplitMono_comp_of_ne_zero hf
   refine ⟨retraction (a ≫ f) ≫ a, ?_⟩
-  -- Cyclicity moves the simple summand around the loop, leaving its nonzero dimension.
+  -- Cyclicity moves the simple object around the loop, leaving its nonzero dimension.
   rw [← Category.assoc, rightTrace_comm, ← Category.assoc, IsSplitMono.id, rightTrace_id]
-  exact rightDim_ne_zero_of_simple k (S i)
+  exact rightDim_ne_zero_of_surjective (Simple.not_isZero S) (hR S)
 
-include k in
-/-- Every nonzero morphism has a partner with which its composite has nonzero left trace. -/
+/-- If every simple object has scalar endomorphisms, every nonzero morphism has a partner with
+which its composite has nonzero left trace. -/
 theorem exists_leftTrace_comp_ne_zero {X Y : C} {f : X ⟶ Y} (hf : f ≠ 0) :
     ∃ g : Y ⟶ X, leftTrace (f ≫ g) ≠ 0 := by
   -- Taking mates interchanges left and right traces and reverses composition.
   have hf' : fᘁ ≠ 0 := by
     intro h
     exact hf (rightAdjointMate_injective (h.trans rightAdjointMate_zero.symm))
-  obtain ⟨g, hg⟩ := exists_rightTrace_comp_ne_zero k (hfin := hfin) hf'
+  obtain ⟨g, hg⟩ := exists_rightTrace_comp_ne_zero hR hf'
   refine ⟨ᘁg, ?_⟩
   rw [← rightTrace_rightAdjointMate, comp_rightAdjointMate,
     rightAdjointMate_leftAdjointMate, rightTrace_comm]
   exact hg
 
-include k in
-/-- The right trace pairing detects zero morphisms. -/
+/-- If every simple object has scalar endomorphisms, the right trace pairing detects zero
+morphisms. -/
 theorem forall_rightTrace_comp_eq_zero_iff {X Y : C} (f : X ⟶ Y) :
     (∀ g : Y ⟶ X, rightTrace (f ≫ g) = 0) ↔ f = 0 := by
   constructor
   · intro h
     by_contra hf
-    obtain ⟨g, hg⟩ := exists_rightTrace_comp_ne_zero k (hfin := hfin) hf
+    obtain ⟨g, hg⟩ := exists_rightTrace_comp_ne_zero hR hf
     exact hg (h g)
   · rintro rfl g
     simp
 
-include k in
-/-- The left trace pairing detects zero morphisms. -/
+/-- If every simple object has scalar endomorphisms, the left trace pairing detects zero
+morphisms. -/
 theorem forall_leftTrace_comp_eq_zero_iff {X Y : C} (f : X ⟶ Y) :
     (∀ g : Y ⟶ X, leftTrace (f ≫ g) = 0) ↔ f = 0 := by
   constructor
   · intro h
     by_contra hf
-    obtain ⟨g, hg⟩ := exists_leftTrace_comp_ne_zero k (hfin := hfin) hf
+    obtain ⟨g, hg⟩ := exists_leftTrace_comp_ne_zero hR hf
     exact hg (h g)
   · rintro rfl g
     simp

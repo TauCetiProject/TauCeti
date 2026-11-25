@@ -126,7 +126,7 @@ theorem determinant_eq_neg_one_pow_sigNeg_mul_discriminant :
   obtain ⟨v, hv⟩ := LinearMap.BilinForm.exists_orthogonal_basis
     (LinearMap.BilinForm.isSymm_iff.mp L.isSymm)
   let e := (Module.Free.chooseBasis ℤ L).reindex (L.rationalBasis.indexEquiv v)
-  let b := e.extendOfIsLattice ℚ
+  let b := e.extendOfIsFullLattice ℚ
   set d : Fin (Module.finrank ℚ V) → ℚ := fun i ↦ L.form (v i) (v i)
   have hd : ∀ i, d i ≠ 0 := hv.not_isOrtho_basis_self_of_separatingLeft hnd.1
   have hdiag : LinearMap.BilinForm.toMatrix v L.form = Matrix.diagonal d := by
@@ -334,9 +334,9 @@ theorem IsIndefinite.exists_carrier_pos_and_neg (hL : L.IsIndefinite) :
     ∃ x y : L, 0 < L.form x x ∧ L.form y y < 0 := by
   obtain ⟨⟨p, hp⟩, ⟨q, hq⟩⟩ := L.isIndefinite_iff_exists_pos_and_exists_neg.mp hL
   obtain ⟨s, hs, hsp⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
-    Submodule.IsLattice.span_eq_top p
+    Submodule.IsFullLattice.span_eq_top p
   obtain ⟨t, ht, htq⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
-    Submodule.IsLattice.span_eq_top q
+    Submodule.IsFullLattice.span_eq_top q
   have hscale (r : ℤ) (z : V) : L.form (r • z) (r • z) = (r : ℚ) ^ 2 * L.form z z := by
     simp only [← Int.cast_smul_eq_zsmul ℚ, map_smul, LinearMap.smul_apply, smul_eq_mul]
     ring

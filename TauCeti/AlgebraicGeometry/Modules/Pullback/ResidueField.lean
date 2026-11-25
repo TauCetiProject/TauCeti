@@ -118,7 +118,7 @@ are `Γ(X, U)`-modules. -/
 variable {U : X.Opens} (y : U)
 
 private local instance algebraSectionResidueField : Algebra Γ(X, U) (X.residueField y) :=
-  (X.evaluation U y y.2).hom.toAlgebra
+  (X.evaluation U y y.property).hom.toAlgebra
 
 private local instance moduleSectionFibre :
     Module Γ(X, U) Γ((pullback (X.fromSpecResidueField y)).obj M, ⊤) :=
@@ -133,28 +133,28 @@ private local instance algebraSectionPreimage :
   ((X.fromSpecResidueField y).app U).hom.toAlgebra
 
 private lemma isAffineOpen_preimage : IsAffineOpen (X.fromSpecResidueField y ⁻¹ᵁ U) := by
-  rw [fromSpecResidueField_preimage_eq_top (y : X) y.2]
+  rw [fromSpecResidueField_preimage_eq_top (y : X) y.property]
   exact isAffineOpen_top _
 
 /-- Restriction from `⊤` to `ι⁻¹ U = ⊤` is an isomorphism. -/
 private instance isIso_homOfLE_preimage :
     IsIso (homOfLE le_top : X.fromSpecResidueField y ⁻¹ᵁ U ⟶ ⊤) :=
-  homOfLE_isIso_of_eq _ (fromSpecResidueField_preimage_eq_top (y : X) y.2)
+  homOfLE_isIso_of_eq _ (fromSpecResidueField_preimage_eq_top (y : X) y.property)
 
 /-- `κ(y) ≅ Γ(Spec κ(y), ι⁻¹ U)` as `Γ(X, U)`-modules: the inverse of
 `Scheme.residueFieldSectionsIso`, which is restriction from `⊤` to `ι⁻¹ U = ⊤`. -/
 private def residueFieldEquivPreimage :
     X.residueField y ≃ₗ[Γ(X, U)] Γ(Spec (X.residueField y), X.fromSpecResidueField y ⁻¹ᵁ U) :=
   LinearEquiv.ofBijective
-    { toFun := (X.residueFieldSectionsIso (y : X) y.2).inv
+    { toFun := (X.residueFieldSectionsIso (y : X) y.property).inv
       map_add' := by simp
       map_smul' r c := by
         -- `ι` acts on `r` as the global function given by its value at `y`.
         have h := (Iso.eq_comp_inv _).2
-          (fromSpecResidueField_app_residueFieldSectionsIso_hom (y : X) y.2)
+          (fromSpecResidueField_app_residueFieldSectionsIso_hom (y : X) y.property)
         rw [Algebra.smul_def, Algebra.smul_def, RingHom.id_apply, map_mul]
         exact congrArg (· * _) (ConcreteCategory.congr_hom h r).symm }
-    (ConcreteCategory.bijective_of_isIso (X.residueFieldSectionsIso (y : X) y.2).inv)
+    (ConcreteCategory.bijective_of_isIso (X.residueFieldSectionsIso (y : X) y.property).inv)
 
 private lemma residueFieldEquivPreimage_apply (c : X.residueField y) :
     residueFieldEquivPreimage y c = (Spec (X.residueField y)).presheaf.map (homOfLE le_top).op
@@ -176,7 +176,7 @@ tensor factor. -/
 private lemma map_liftBaseChange_eq [M.IsQuasicoherent] (hU : IsAffineOpen U)
     (f : Γ(M, U) →ₗ[Γ(X, U)] Γ((pullback (X.fromSpecResidueField y)).obj M, ⊤))
     (hf : ∀ m, f m = Scheme.Hom.pullbackSectionsLE (X.fromSpecResidueField y) M U ⊤
-      (top_le_preimage (y : X) y.2) m)
+      (top_le_preimage (y : X) y.property) m)
     (t : X.residueField y ⊗[Γ(X, U)] Γ(M, U)) :
     ((pullback (X.fromSpecResidueField y)).obj M).presheaf.map (homOfLE le_top).op
         (f.liftBaseChange (X.residueField y) t) =
@@ -203,7 +203,7 @@ private lemma bijective_liftBaseChange_pullbackSectionsLE [M.IsQuasicoherent]
     (hU : IsAffineOpen U)
     (f : Γ(M, U) →ₗ[Γ(X, U)] Γ((pullback (X.fromSpecResidueField y)).obj M, ⊤))
     (hf : ∀ m, f m = Scheme.Hom.pullbackSectionsLE (X.fromSpecResidueField y) M U ⊤
-      (top_le_preimage (y : X) y.2) m) :
+      (top_le_preimage (y : X) y.property) m) :
     Function.Bijective (f.liftBaseChange (X.residueField y)) := by
   -- Restriction from `⊤` to `ι⁻¹ U = ⊤` is bijective.
   have hρ : Function.Bijective (((pullback (X.fromSpecResidueField y)).obj M).presheaf.map
@@ -219,7 +219,7 @@ private lemma bijective_fibreMap_of_isAffineOpen [M.IsQuasicoherent] (hU : IsAff
     Function.Bijective (fibreMap (y : X) M) := by
   -- Evaluation `Γ(X, U) → κ(y)` is the germ `Γ(X, U) → 𝒪_{X,y}` followed by the residue map.
   have : IsScalarTower Γ(X, U) (X.presheaf.stalk y) (X.residueField y) :=
-    .of_algebraMap_eq' (congrArg CommRingCat.Hom.hom (X.germ_residue (U := U) y y.2)).symm
+    .of_algebraMap_eq' (congrArg CommRingCat.Hom.hom (X.germ_residue (U := U) y y.property)).symm
   have : IsScalarTower Γ(X, U) (X.presheaf.stalk y)
       Γ((pullback (X.fromSpecResidueField y)).obj M, ⊤) :=
     IsScalarTower.to₁₂₄ _ _ (X.residueField y) _
@@ -230,7 +230,7 @@ private lemma bijective_fibreMap_of_isAffineOpen [M.IsQuasicoherent] (hU : IsAff
     refine IsBaseChange.of_equiv (LinearEquiv.ofBijective (f.liftBaseChange _)
       (bijective_liftBaseChange_pullbackSectionsLE M y hU f fun m ↦ by
         rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply, germₗ_apply]
-        exact fibreStalkMap_germ _ M y.2 m)) fun m ↦ ?_
+        exact fibreStalkMap_germ _ M y.property m)) fun m ↦ ?_
     rw [LinearEquiv.ofBijective_apply, LinearMap.liftBaseChange_tmul, one_smul]
   exact (IsBaseChange.of_comp (M.isBaseChange_germₗ y hU) hc).liftBaseChange_bijective
 

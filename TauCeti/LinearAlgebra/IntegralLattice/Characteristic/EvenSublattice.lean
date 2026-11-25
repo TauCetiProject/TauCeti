@@ -59,11 +59,11 @@ theorem two_smul_mem_evenSubmodule (x : L) : (2 : ℤ) • x ∈ L.evenSubmodule
   simp [show (2 : ZMod 2) = 0 by decide]
 
 /-- The embedded even-norm submodule is full: it contains the full sublattice `2L`. -/
-instance instIsLatticeEvenSubmodule :
-    (L.evenSubmodule.map L.carrier.subtype).IsLattice ℚ := by
-  refine Submodule.IsLattice.of_le_of_isLattice_of_fg ℚ
+instance instIsFullLatticeEvenSubmodule :
+    (L.evenSubmodule.map L.carrier.subtype).IsFullLattice ℚ := by
+  refine Submodule.IsFullLattice.of_le_of_fg ℚ
     (M := Units.mk0 (2 : ℚ) (by norm_num) • L.carrier) ?_
-    (Submodule.FG.of_le Submodule.IsLattice.fg (L.carrier.map_subtype_le _))
+    (Submodule.FG.of_le (Submodule.IsLattice.fg ℚ L.carrier) (L.carrier.map_subtype_le _))
   intro x hx
   obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
   have h := L.two_smul_mem_evenSubmodule ⟨y, hy⟩
@@ -155,7 +155,7 @@ theorem normParity_surjective_of_not_isEven (hL : ¬ L.IsEven) :
   obtain ⟨w, hw⟩ := hn
   have hw' : L.normParity w = 1 := by
     rw [normParity_apply, ZMod.intCast_eq_one_iff_odd]
-    exact Int.not_even_iff_odd.mp hw
+    exact hw
   intro z
   fin_cases z
   · exact ⟨0, map_zero _⟩

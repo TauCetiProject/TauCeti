@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Basic
 import TauCeti.LinearAlgebra.RootSystem.E8Coordinates
 
@@ -80,7 +80,7 @@ private def IsDoubledE8 (x : Fin 8 → ℤ) : Prop :=
 
 /-- The vectors `(2 : ℤ) • y` where `y` is a norm-two vector of type `D₈`. -/
 private noncomputable def e8DoubledEvenMinimalVector (k : Fin 112) : Fin 8 → ℤ :=
-  (2 : ℤ) • (typeDRootEquiv 8 (by omega) k).1
+  (2 : ℤ) • (typeDRootEquiv 8 (by omega) k).val
 
 /-- The index type for odd minimal vectors: a choice of signs with an even number of minus signs. -/
 private abbrev E8DoubledOddIndex : Type :=
@@ -88,7 +88,7 @@ private abbrev E8DoubledOddIndex : Type :=
 
 /-- The vectors with all coordinates `±1` and an even number of minus signs. -/
 private def e8DoubledOddMinimalVector (s : E8DoubledOddIndex) : Fin 8 → ℤ :=
-  fun j ↦ if s.1 j then 1 else -1
+  fun j ↦ if s.val j then 1 else -1
 
 /-- The 240 minimal vectors in the doubled Euclidean model: the 112 even minimal vectors and the 128
 odd minimal vectors. -/

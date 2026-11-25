@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import TauCeti.Algebra.Homology.Bifunctor.Basic
+public import TauCeti.Algebra.Homology.Bifunctor.Single
 public import TauCeti.Algebra.Homology.Bifunctor.Support
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.Algebra.Homology.ShortComplex.Splitting
@@ -27,6 +28,26 @@ the degreewise splitting through an isomorphism of short complexes. Only the cho
 left complex and its two single-row endpoints need totalizations. Row comparisons and
 short-complex constructions require a preadditive target; degreewise splittings also
 require binary biproducts. Abelian hypotheses enter only the short-exactness theorem.
+
+## Main definitions
+
+* `TauCeti.TwoTermSupport`: a cochain complex supported in two distinct degrees, with the high
+  term as a subcomplex and the low term as its quotient.
+* `TauCeti.TwoTermSupport.shortComplex`: the high inclusion and low projection as a short complex.
+* `CategoryTheory.Functor.mapBifunctorSingleRowNatIso`: totalization against a single supported
+  row is a shifted row functor.
+* `CategoryTheory.Functor.mapTwoTermSupport`: the totalized support short complex.
+* `CategoryTheory.Functor.mapTwoTermSupportDegreewiseSplitting`: its canonical degreewise
+  splitting, given binary biproducts.
+* `CategoryTheory.Functor.mapTwoTermSupportReframed`: the same short complex with its two
+  endpoint functors replaced along specified isomorphisms.
+
+## Main results
+
+* `CategoryTheory.Functor.mapTwoTermSupport_shortExact`: the totalized support short complex is
+  short exact in the functor category.
+* `CategoryTheory.Functor.mapTwoTermSupportReframed_shortExact`: the same for the reframed
+  short complex.
 
 ## Attribution
 
@@ -51,13 +72,17 @@ namespace TauCeti
 variable (C₁ : Type*) [Category* C₁] [HasZeroMorphisms C₁]
 
 /-- A cochain complex with two distinct supported rows, its chosen endpoint identifications,
-and vanishing differentials required for the high inclusion and low projection. -/
+and vanishing differentials required for the high inclusion and low projection.
+
+The names low and high refer to the roles of the two terms, not to their degrees: the high term
+is the subcomplex and the low term is the quotient. Only `a ≠ b` is required, so `b < a` is
+allowed. -/
 structure TwoTermSupport where
   /-- The supported cochain complex. -/
   K : CochainComplex C₁ ℤ
-  /-- The degree of the low term. -/
+  /-- The degree of the low term, the quotient end. It need not be smaller than `b`. -/
   a : ℤ
-  /-- The degree of the high term. -/
+  /-- The degree of the high term, the subcomplex end. It need not be larger than `a`. -/
   b : ℤ
   /-- The chosen low-term object. -/
   A : C₁
@@ -213,17 +238,13 @@ private theorem singleX_inv_d (A : C₁) (a : ℤ)
       -- Expose the same successor relation in the hypothesis for integer arithmetic.
       change j + 1 = j' at hjj'
       omega
-    have hd₁ : mapBifunctor.d₁ ((single C₁ c a).obj A) N (F) c a (j +
-      -a) j' = 0 := by
-      rw [mapBifunctor.d₁_eq' _ _ _ _ (by simp : (c).Rel a (a + 1))]
-      simp
     -- Cochain totalization has vertical sign (-1)^a; a shift by -a has the same sign.
     have hε : ComplexShape.ε₂ c c c (a, j + -a) = a.negOnePow := rfl
     have hd₂ := mapBifunctor.d₂_eq ((single C₁ c a).obj A) N
       (F) c a hqq' j' (add_neg_cancel_comm_assoc a j')
     rw [singleX_inv, singleX_inv]
     simp only [Category.assoc, mapBifunctor.d_eq, Preadditive.comp_add,
-      mapBifunctor.ι_D₁, mapBifunctor.ι_D₂, hd₁, comp_zero, zero_add,
+      mapBifunctor.ι_D₁, mapBifunctor.ι_D₂, single_mapBifunctor_d₁, comp_zero, zero_add,
       hd₂, hε,
       CochainComplex.shiftFunctor_obj_d', Functor.mapHomologicalComplex_obj_d,
       Int.negOnePow_neg, Linear.comp_units_smul, Linear.units_smul_comp]
@@ -434,6 +455,30 @@ private theorem supportι_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
   simp only [TwoTermSupport.ι, mkHomFromSingle_f, Functor.map_comp, NatTrans.comp_app,
     Category.assoc, Iso.map_inv_hom_id_app_assoc]
 
+omit [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c s.b).obj s.B) N F c]
+  [HasBinaryBiproducts D] in
+private theorem ι_mapBifunctorMap_π_low (N : CochainComplex C₂ ℤ) (j : ℤ) :
+    ιMapBifunctor s.K N F c s.a (j + -s.a) j (add_neg_cancel_comm_assoc s.a j) ≫
+        (mapBifunctorMap s.π (𝟙 N) F c).f j =
+      ((F).map s.low.hom).app (N.X (j + -s.a)) ≫
+        (F.singleX s.A s.a N (j + -s.a) j (add_neg_cancel_comm_assoc s.a j)).inv := by
+  have hm := ι_mapBifunctorMap s.π (𝟙 N) F c s.a (j + -s.a) j
+    (add_neg_cancel_comm_assoc s.a j)
+  simp only [HomologicalComplex.id_f] at hm
+  rw [((F).obj (((single C₁ c s.a).obj s.A).X s.a)).map_id, id_comp] at hm
+  rw [hm, singleX_inv]
+  simp only [TwoTermSupport.π_f, Functor.map_comp, NatTrans.comp_app, Category.assoc]
+
+omit [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c s.b).obj s.B) N F c]
+  [HasBinaryBiproducts D] in
+private theorem ι_mapBifunctorMap_π_high (N : CochainComplex C₂ ℤ) (j : ℤ) :
+    ιMapBifunctor s.K N F c s.b (j + -s.b) j (add_neg_cancel_comm_assoc s.b j) ≫
+        (mapBifunctorMap s.π (𝟙 N) F c).f j = 0 := by
+  have hπ : (TwoTermSupport.π s).f s.b = 0 :=
+    (isZero_single_obj_X c s.a s.A s.b s.ne.symm).eq_of_tgt _ _
+  rw [ι_mapBifunctorMap s.π (𝟙 N) F c s.b (j + -s.b) j (add_neg_cancel_comm_assoc s.b j)]
+  simp only [hπ, Functor.map_zero, NatTrans.app_zero, zero_comp]
+
 private theorem supportπ_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
     (((F.mapTwoTermSupport s).g.app N).f j) ≫
         (F.singleX s.A s.a N (j + -s.a) j
@@ -449,32 +494,21 @@ private theorem supportπ_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
   apply (cancel_mono (F.singleX s.A s.a N (j + -s.a) j
     (add_neg_cancel_comm_assoc s.a j)).inv).1
   simp only [Category.assoc, Iso.hom_inv_id, comp_id]
-  rw [singleX_inv]
   apply mapBifunctor.hom_ext (K₁ := s.K) (K₂ := N) (F := F) («c» := c)
   intro p q hpq
   by_cases hp₀ : p = s.a
   · subst p
     obtain rfl : q = j + -s.a := by
       simpa only [sub_eq_add_neg] using (eq_sub_of_add_eq' hpq)
-    have hm := ι_mapBifunctorMap (TwoTermSupport.π s) (𝟙 N) (F)
-      c s.a (j + -s.a) j hpq
-    simp only [HomologicalComplex.id_f] at hm
-    rw [((F).obj (((single C₁ c s.a).obj s.A).X s.a)).map_id, id_comp] at hm
-    rw [hm, reassoc_of% (F.twoSummandX_ι_low s N j)]
-    simp only [TwoTermSupport.π, mkHomToSingle_f, Functor.map_comp, NatTrans.comp_app,
-      Category.assoc,
+    rw [F.ι_mapBifunctorMap_π_low s N j, reassoc_of% (F.twoSummandX_ι_low s N j),
       biprod.inr_snd_assoc]
   · by_cases hp₁ : p = s.b
     · subst p
       obtain rfl : q = j + -s.b := by
         simpa only [sub_eq_add_neg] using (eq_sub_of_add_eq' hpq)
-      have hπ : (TwoTermSupport.π s).f s.b = 0 :=
-        (isZero_single_obj_X c s.a s.A s.b s.ne.symm).eq_of_tgt _ _
-      have hm := ι_mapBifunctorMap (TwoTermSupport.π s) (𝟙 N) (F)
-        c s.b (j + -s.b) j hpq
-      rw [hm, reassoc_of% (F.twoSummandX_ι_high s N j)]
-      simp only [hπ, Functor.map_zero, NatTrans.app_zero, zero_comp,
-        biprod.inl_snd_assoc, comp_zero]
+      rw [F.ι_mapBifunctorMap_π_high s N j, reassoc_of% (F.twoSummandX_ι_high s N j),
+        biprod.inl_snd_assoc]
+      simp only [zero_comp, comp_zero]
     · have hzero := ((F).flip.obj (N.X q)).map_isZero
         (s.support p hp₀ hp₁)
       exact hzero.eq_of_src _ _
@@ -587,18 +621,9 @@ theorem mapTwoTermSupportReframed_f {E₁ E₃ : CochainComplex C₂ ℤ ⥤ Coc
         eqToHom (F.mapTwoTermSupportReframed_X₂ s u₁ u₃) =
       eqToHom (F.mapTwoTermSupportReframed_X₁ s u₁ u₃) ≫
         u₁.inv ≫ F.mapBifunctorLeftMap c c s.ι := by
-  calc
-    _ = u₁.inv ≫ (eqToIso (F.mapTwoTermSupport_X₁ s)).inv ≫
-        ((F.mapTwoTermSupport s).f ≫ eqToHom (F.mapTwoTermSupport_X₂ s)) :=
-      (Category.assoc _ _ _).trans (Category.assoc _ _ _)
-    _ = u₁.inv ≫ (eqToIso (F.mapTwoTermSupport_X₁ s)).inv ≫
-        (eqToHom (F.mapTwoTermSupport_X₁ s) ≫ F.mapBifunctorLeftMap c c s.ι) :=
-      congrArg (fun f ↦ u₁.inv ≫ (eqToIso (F.mapTwoTermSupport_X₁ s)).inv ≫ f)
-        (F.mapTwoTermSupport_f s)
-    _ = u₁.inv ≫ F.mapBifunctorLeftMap c c s.ι :=
-      congrArg (fun f ↦ u₁.inv ≫ f)
-        (Iso.inv_hom_id_assoc (eqToIso (F.mapTwoTermSupport_X₁ s)) _)
-    _ = _ := (Category.id_comp _).symm
+  simp only [mapTwoTermSupportReframed, Iso.trans_inv, eqToIso.inv, Iso.trans_hom, eqToIso.hom,
+    Category.assoc, ↓mapTwoTermSupport_f, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  exact (Category.id_comp _).symm
 
 /-- The reframed projection is the low-row totalization followed by its endpoint change. -/
 @[reassoc (attr := simp↓), simp↓]
@@ -609,12 +634,9 @@ theorem mapTwoTermSupportReframed_g {E₁ E₃ : CochainComplex C₂ ℤ ⥤ Coc
         eqToHom (F.mapTwoTermSupportReframed_X₃ s u₁ u₃) =
       eqToHom (F.mapTwoTermSupportReframed_X₂ s u₁ u₃) ≫
         F.mapBifunctorLeftMap c c s.π ≫ u₃.hom := by
-  calc
-    _ = ((F.mapTwoTermSupport s).g ≫ eqToHom (F.mapTwoTermSupport_X₃ s)) ≫ u₃.hom :=
-      (Category.comp_id _).trans (Category.assoc _ _ _).symm
-    _ = (eqToHom (F.mapTwoTermSupport_X₂ s) ≫ F.mapBifunctorLeftMap c c s.π) ≫
-        u₃.hom := congrArg (fun f ↦ f ≫ u₃.hom) (F.mapTwoTermSupport_g s)
-    _ = _ := Category.assoc _ _ _
+  simp only [mapTwoTermSupportReframed, Iso.trans_inv, eqToIso.inv, Iso.trans_hom, eqToIso.hom,
+    ↓mapTwoTermSupport_g_assoc, eqToHom_naturality, eqToHom_refl, mapTwoTermSupport_X₂,
+    eqToHom_naturality_assoc, Category.id_comp]
 
 section Biproducts
 

@@ -38,6 +38,9 @@ complexified Spin group.
 
 * `CliffordAlgebra.spinGroupBaseChange` extends a Spin element's scalars.
 * `CliffordAlgebra.spinGroupBaseChange_injective` proves injectivity for faithful flat extensions.
+* `TauCeti.span_range_spinGroupBaseChange_eq_even`: if a Spin group spans its even Clifford
+  algebra, then its image under extension of scalars spans the even Clifford algebra of the
+  extended form.
 * `CliffordAlgebra.spinVectorAction_baseChange_tmul` computes the extended action on pure tensors.
 * `CliffordAlgebra.spinToSpecialOrthogonal_baseChange` gives the commuting square with extension
   of special orthogonal automorphisms.
@@ -78,7 +81,7 @@ def spinGroupBaseChange (Q : QuadraticForm R M) :
     spinGroup Q →* spinGroup (Q.baseChange A) where
   toFun x := ⟨ofBaseChangeAux A Q x, by
     rw [spinGroup.mem_iff, pinGroup.mem_iff]
-    refine ⟨⟨?_, ?_⟩, ofBaseChangeAux_mem_even (A := A) Q x.2.2⟩
+    refine ⟨⟨?_, ?_⟩, ofBaseChangeAux_mem_even (A := A) Q x.property.2⟩
     · -- `spinGroup.toUnits` leaves the Clifford value untouched, so extending the scalars of
       -- `x`'s underlying Lipschitz unit produces a Lipschitz unit with value
       -- `ofBaseChangeAux A Q x`.
@@ -86,15 +89,15 @@ def spinGroupBaseChange (Q : QuadraticForm R M) :
           ((y : (CliffordAlgebra (Q.baseChange A))ˣ) : CliffordAlgebra (Q.baseChange A)) =
             ofBaseChangeAux A Q (x : CliffordAlgebra Q) :=
         ⟨lipschitzGroupBaseChange (A := A) Q
-            ⟨spinGroup.toUnits x, spinGroup.units_mem_lipschitzGroup x.2⟩,
+            ⟨spinGroup.toUnits x, spinGroup.units_mem_lipschitzGroup x.property⟩,
           coe_lipschitzGroupBaseChange_apply (A := A) Q _⟩
       rw [← hy]
-      exact lipschitzGroup.coe_mem_iff_mem.mpr y.2
+      exact lipschitzGroup.coe_mem_iff_mem.mpr y.property
     · rw [Unitary.mem_iff]
       constructor
-      · rw [← ofBaseChangeAux_star, ← map_mul, spinGroup.star_mul_self_of_mem x.2,
+      · rw [← ofBaseChangeAux_star, ← map_mul, spinGroup.star_mul_self_of_mem x.property,
           map_one]
-      · rw [← ofBaseChangeAux_star, ← map_mul, spinGroup.mul_star_self_of_mem x.2,
+      · rw [← ofBaseChangeAux_star, ← map_mul, spinGroup.mul_star_self_of_mem x.property,
           map_one]⟩
   map_one' := Subtype.ext (map_one (ofBaseChangeAux A Q))
   map_mul' x y := Subtype.ext
@@ -115,6 +118,34 @@ theorem spinGroupBaseChange_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
     Function.Injective (spinGroupBaseChange (A := A) Q) := fun x y hxy ↦
   Subtype.ext <| ofBaseChangeAux_injective Q <| by
     simpa only [coe_spinGroupBaseChange_apply] using congrArg Subtype.val hxy
+
+/-- **The image of the Spin group under extension of scalars spans the even Clifford algebra of
+the scalar extension** as soon as the Spin group of `Q` spans the even Clifford algebra of `Q`.
+Over `ℂ`, this says that the complexified Clifford values of a real Spin group with this
+spanning property have complex-linear span the whole complex even Clifford algebra. -/
+theorem _root_.TauCeti.span_range_spinGroupBaseChange_eq_even {Q : QuadraticForm R M}
+    (hspan : Submodule.span R (spinGroup Q : Set (CliffordAlgebra Q)) = (even Q).toSubmodule) :
+    Submodule.span A (Set.range fun g : spinGroup Q ↦
+        (spinGroupBaseChange (A := A) Q g : CliffordAlgebra (Q.baseChange A))) =
+      (even (Q.baseChange A)).toSubmodule := by
+  have hrange : (Set.range fun g : spinGroup Q ↦
+      (spinGroupBaseChange (A := A) Q g : CliffordAlgebra (Q.baseChange A))) =
+      ofBaseChangeAux A Q '' (spinGroup Q : Set (CliffordAlgebra Q)) := by
+    simp only [coe_spinGroupBaseChange_apply]
+    exact (Set.image_eq_range (ofBaseChangeAux A Q) (spinGroup Q : Set (CliffordAlgebra Q))).symm
+  calc
+    _ = Submodule.span A (Submodule.span R
+          ((ofBaseChangeAux A Q).toLinearMap '' (spinGroup Q : Set (CliffordAlgebra Q))) :
+            Set (CliffordAlgebra (Q.baseChange A))) := by
+      -- the `A`-span of the image is the `A`-span of its `R`-span
+      rw [hrange, Submodule.span_span_of_tower, AlgHom.coe_toLinearMap]
+    _ = Submodule.span A (ofBaseChangeAux A Q '' evenOdd Q 0) := by
+      -- the `R`-span of the image is the image of the `R`-span, the even part of `Cℓ(M, Q)`
+      rw [Submodule.span_image, hspan, even_toSubmodule, Submodule.map_coe,
+        AlgHom.coe_toLinearMap]
+    _ = _ := by
+      -- scalar extension preserves the even part
+      rw [TauCeti.span_ofBaseChangeAux_image_evenOdd, even_toSubmodule]
 
 /-- On a pure tensor, the action of a scalar-extended Spin element is the extension of the
 original action. -/
@@ -156,7 +187,7 @@ section Field
 
 variable {K : Type u} {L : Type v} {V : Type w}
 variable [Field K] [Field L] [Algebra K L]
-variable [AddCommGroup V] [Module K V] [FiniteDimensional K V] [Invertible (2 : K)]
+variable [AddCommGroup V] [Module K V] [Invertible (2 : K)]
 variable {Q : QuadraticForm K V} {u w : V}
 
 /-- Extension of scalars carries the canonical Spin lift of `E_{u,w}` to the canonical lift of
@@ -231,8 +262,8 @@ coefficient algebras restricts `CliffordAlgebra.baseChangeCongr σ Q` to an isom
 Spin groups of `Q_A` and `Q_B`. For complex conjugation of `ℂ` over `ℝ` this is coefficientwise
 conjugation of the Spin group of a complexified real quadratic form. -/
 def spinGroupBaseChangeCongr : spinGroup (Q.baseChange A) ≃* spinGroup (Q.baseChange B) where
-  toFun x := ⟨baseChangeCongr σ Q x, baseChangeCongr_mem_spinGroup σ Q x.2⟩
-  invFun x := ⟨baseChangeCongr σ.symm Q x, baseChangeCongr_mem_spinGroup σ.symm Q x.2⟩
+  toFun x := ⟨baseChangeCongr σ Q x, baseChangeCongr_mem_spinGroup σ Q x.property⟩
+  invFun x := ⟨baseChangeCongr σ.symm Q x, baseChangeCongr_mem_spinGroup σ.symm Q x.property⟩
   left_inv x := Subtype.ext <| by simp [← baseChangeCongr_symm]
   right_inv x := Subtype.ext <| by simp [← baseChangeCongr_symm]
   map_mul' x y := Subtype.ext (map_mul (baseChangeCongr σ Q) (x : CliffordAlgebra _) y)
@@ -262,7 +293,7 @@ def evenUnitaryGroupBaseChange (Q : QuadraticForm R M) :
     evenUnitaryGroup Q →* evenUnitaryGroup (Q.baseChange A) :=
   ((Units.map (ofBaseChangeAux A Q : CliffordAlgebra Q →* CliffordAlgebra (Q.baseChange A))).comp
       (evenUnitaryGroup Q).subtype).codRestrict _ fun x ↦ by
-    have hx := (evenUnitaryGroup.mem_iff Q).mp x.2
+    have hx := (evenUnitaryGroup.mem_iff Q).mp x.property
     rw [evenUnitaryGroup.mem_iff, MonoidHom.comp_apply, Units.coe_map, Unitary.mem_iff]
     refine ⟨ofBaseChangeAux_mem_even Q hx.1, ?_, ?_⟩ <;>
       rw [MonoidHom.coe_ofClass, ← ofBaseChangeAux_star, ← map_mul] <;>
@@ -355,7 +386,7 @@ theorem spinToOrthogonal_baseChange [Invertible (2 : A)] (Q : QuadraticForm R M)
 open _root_.QuadraticMap
 
 variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V] [Invertible (2 : K)]
+  [AddCommGroup V] [Module K V] [Invertible (2 : K)]
 
 /-- Extending scalars along a field extension carries the canonical Spin root-subgroup
 homomorphism to that of the extended quotient parameters, preserving its additive composition
@@ -369,7 +400,7 @@ theorem spinGroupBaseChange_comp_transvectionLiftHom [Invertible (2 : L)]
   apply AddMonoidHom.ext
   intro q
   induction q using Submodule.Quotient.induction_on with | H w =>
-    have huw : polar Q u (w : V) = 0 := LinearMap.mem_ker.mp w.2
+    have huw : polar Q u (w : V) = 0 := LinearMap.mem_ker.mp w.property
     apply Additive.toMul.injective
     simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply,
       LinearMap.toAddMonoidHom_coe, transvectionParameterBaseChange_mk, toMul_ofMul]

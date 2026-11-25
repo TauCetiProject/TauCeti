@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Giada Franz, Otis Chodosh
 -/
 module
 
@@ -10,15 +10,19 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
+import TauCeti.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -26,6 +30,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -34,15 +39,30 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 This file introduces the pointwise Riemannian divergence as the trace of the Levi–Civita
 covariant derivative, the scalar Hessian obtained by pairing that derivative of the gradient,
 and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  The orthonormal-basis
-trace formula makes the relationship between the Laplacian and the Hessian explicit. The operator
-laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
-real function `h`, with its special case `Δ (log f) = Δ f / f - |grad f|² / f²`. On a
-finite-dimensional normed space whose metric is a field of bilinear forms `g`, the Hessian in
-linear coordinates is `D²f(u, v) - Df(Γ(u, v))` with `Γ` the Christoffel symbols of `g`. On a
-finite-dimensional inner-product space, the operator agrees with Mathlib's
-flat Laplacian. The Hessian conventions follow Lee, *Introduction to Riemannian Manifolds*,
-Chapter 3.
+trace formula makes the relationship between the Laplacian and the Hessian explicit, and
+`ModelWithCorners.laplaceBeltrami_eq_metricTrace_hessianForm` identifies the Laplacian with the
+metric trace of the Hessian as a continuous bilinear form `ModelWithCorners.hessianForm`, which is
+symmetric at points of `C²` regularity, homogeneous where the gradient is differentiable at the
+point, and additive when in addition both functions are differentiable near the point. The
+linearity laws of the Laplacian are the metric traces of those of the Hessian form, under the same
+hypotheses. The operator laws include the Leibniz rule and the chain rule
+`Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a real function `h`, with its special case
+`Δ (log f) = Δ f / f - |grad f|² / f²`. On a finite-dimensional normed space whose metric is a
+field of bilinear forms `g`, the Hessian in linear coordinates is `D²f(u, v) - Df(Γ(u, v))` with
+`Γ` the Christoffel symbols of `g`. On a finite-dimensional inner-product space, the operator
+agrees with Mathlib's flat Laplacian. The Hessian conventions follow Lee, *Introduction to
+Riemannian Manifolds*, Chapter 3.
 
+The Laplace–Beltrami locality lemmas are adapted from Giada Franz's locality helper.
+The operator depends only on the germ of the function: locally equal functions have equal
+Hessian forms (`ModelWithCorners.hessianForm_congr_of_eventuallyEq`), hence equal Laplacians,
+when the gradient is differentiable at the point, and the Laplacian vanishes off the function's
+topological support without any regularity assumption.
+
+The pointwise Hessian linearity lemmas are adapted from Otis Chodosh's formalization in
+`riccardobrasca/ColdingMinicozziTheory`,
+`ForTauCeti/Geometry/Manifold/Riemannian/Hessian/Contact.lean`,
+revision `d540eafdb38a37ee49e7298d601131ceaa207ced`.
 -/
 
 noncomputable section
@@ -136,27 +156,102 @@ theorem contMDiff_divergence {n m k : ℕ∞ω}
   refine (ht.congr (fun y hy ↦ (hEq y hy).symm)).contMDiffAt
     (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt E (TangentSpace I) x))
 
+/-- The divergence of a smooth vector field on a smooth Riemannian manifold with smooth metric is
+smooth. -/
+theorem _root_.ContMDiffSection.contMDiff_divergence {I : ModelWithCorners ℝ E H} {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
+    ContMDiff I 𝓘(ℝ) ∞ (divergence I fun x ↦ X x) :=
+  TauCeti.Manifold.contMDiff_divergence (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp)
+    (by simpa using X.contMDiff)
+
+/-- The scalar Hessian of `f` at `x` as a continuous bilinear form on the tangent space,
+`(v, w) ↦ ⟪∇_v grad f, w⟫`: the metric lowering of the Levi–Civita covariant derivative of the
+gradient. Its values are `TauCeti.Manifold.hessian` (`ModelWithCorners.hessianForm_apply`). -/
+noncomputable def _root_.ModelWithCorners.hessianForm (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (f : M → ℝ) (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
+  (innerSL ℝ).comp (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x)
+
+/-- The Hessian form is the metric lowering `innerSL ℝ ∘L ∇ grad f` of the Levi–Civita covariant
+derivative of the gradient. -/
+theorem _root_.ModelWithCorners.hessianForm_def (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (f : M → ℝ) (x : M) :
+    I.hessianForm f x =
+      (innerSL ℝ).comp (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x) := by
+  rw [ModelWithCorners.hessianForm]
+
 /-- The scalar Hessian of `f`, pairing the covariant derivative of its gradient with a second
-tangent vector. -/
+tangent vector: the values of `ModelWithCorners.hessianForm`. -/
 noncomputable def hessian (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v w : TangentSpace I x) : ℝ :=
-  inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w
+  I.hessianForm f x v w
 
-theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
+/-- The scalar Hessian of `f` is `⟪∇_v grad f, w⟫` for the Levi–Civita connection. -/
+theorem _root_.ModelWithCorners.hessian_eq_inner_leviCivitaConnection_mgradient
+    (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v w : TangentSpace I x) :
     hessian I f x v w =
       inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
+  rw [hessian, I.hessianForm_def, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
+
+/-- Evaluating the Hessian form at two tangent vectors gives `TauCeti.Manifold.hessian`. -/
+@[simp]
+theorem _root_.ModelWithCorners.hessianForm_apply (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (f : M → ℝ) (x : M) (v w : TangentSpace I x) :
+    I.hessianForm f x v w = hessian I f x v w := by
   rw [hessian]
+
+section HessianGradient
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [RiemannianBundle (TangentSpace I : M → Type _)]
+  [IsContMDiffRiemannianBundle I 1 E (TangentSpace I : M → Type _)] {f : M → ℝ}
+
+/-- Vanishing of the Hessian in one tangent direction makes the covariant derivative of the
+gradient vanish in that direction. -/
+theorem leviCivitaConnection_mgradient_eq_zero_of_hessian_eq_zero
+    (x : M) (v : TangentSpace I x) (hzero : ∀ w, hessian I f x v w = 0) :
+    CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v = 0 := by
+  apply ext_inner_right ℝ
+  intro w
+  simpa only [I.hessian_eq_inner_leviCivitaConnection_mgradient, inner_zero_left] using hzero w
+
+end HessianGradient
 
 section HessianSymmetry
 
 variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A pure-trace Hessian identifies the covariant derivative of the gradient pointwise. -/
+theorem leviCivitaConnection_mgradient_of_hessian_eq_mul_inner [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} {x : M} {a : ℝ}
+    (h : ∀ u v : TangentSpace I x, hessian I f x u v = a * inner ℝ u v)
+    (u : TangentSpace I x) :
+    CovariantDerivative.leviCivitaConnection I M (mgradient I f) x u = a • u := by
+  apply ext_inner_right ℝ
+  intro v
+  rw [← I.hessian_eq_inner_leviCivitaConnection_mgradient, h, real_inner_smul_left]
 
 /-- The Hessian applied to a vector field and a differentiable vector field is the directional
 derivative of the directional derivative of `f`, minus the derivative in the covariant derivative
@@ -195,7 +290,7 @@ theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
     simpa only [Function.comp_apply] using hinner
   have hgrad := inner_mgradient (I := I) (f := f) (x := x)
     ((CovariantDerivative.leviCivitaConnection I M W) x (V x))
-  rw [hessian_def]
+  rw [I.hessian_eq_inner_leviCivitaConnection_mgradient]
   linarith
 
 /-- The Hessian of a twice continuously differentiable function is symmetric for the
@@ -285,6 +380,19 @@ theorem laplaceBeltrami_def (I : ModelWithCorners ℝ E H) {M : Type*} [Topologi
     laplaceBeltrami I f x = divergence I (mgradient I f) x := by
   rw [laplaceBeltrami]
 
+/-- The Laplace–Beltrami operator is the metric trace of the Hessian form. -/
+theorem _root_.ModelWithCorners.laplaceBeltrami_eq_metricTrace_hessianForm
+    (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] (f : M → ℝ) (x : M) :
+    laplaceBeltrami I f x =
+      LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (I.hessianForm f x)) := by
+  -- The Hessian form is the metric lowering of the covariant derivative of the gradient.
+  rw [laplaceBeltrami_def, divergence_def, I.hessianForm_def,
+    ContinuousLinearMap.toLinearMap₁₂_comp, ContinuousLinearMap.toLinearMap₁₂_innerSL, ← innerₗ,
+    ← LinearMap.BilinForm.trace_bilinFormToEnd, LinearMap.bilinFormToEnd_innerₗ_comp]
+
 /-- For a Laplace–Beltrami eigenfunction, the derivative of its Laplacian along its
 gradient is minus the eigenvalue times the squared gradient norm. -/
 theorem mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul
@@ -352,6 +460,17 @@ variable (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
 @[simp]
 theorem divergence_zero (x : M) : divergence I 0 x = 0 := by
   simp [divergence]
+
+/-- Locally equal vector fields have equal divergence at a point where one is differentiable. -/
+theorem divergence_congr_of_eventuallyEq {X Y : (x : M) → TangentSpace I x} {x : M}
+    (hX : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) x)
+    (h : ∀ᶠ y in nhds x, X y = Y y) : divergence I X x = divergence I Y x := by
+  have hT : (fun y ↦ (⟨y, Y y⟩ : TangentBundle I M)) =ᶠ[nhds x]
+      fun y ↦ (⟨y, X y⟩ : TangentBundle I M) :=
+    h.mono fun y hy ↦ congrArg (TotalSpace.mk' E y) hy.symm
+  rw [divergence_def, divergence_def,
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.congr_of_eventuallyEq
+      hX (hX.congr_of_eventuallyEq hT) Filter.univ_mem h]
 
 /-- Divergence is additive at a point where both vector fields are differentiable. -/
 theorem divergence_add (X Y : (x : M) → TangentSpace I x) (x : M)
@@ -444,7 +563,7 @@ protected theorem _root_.HasCompactSupport.laplaceBeltrami {f : M → ℝ}
 @[simp]
 theorem hessian_const (c : ℝ) (x : M) (v w : TangentSpace I x) :
     hessian I (fun _ : M ↦ c) x v w = 0 := by
-  simp [hessian]
+  simp [I.hessian_eq_inner_leviCivitaConnection_mgradient]
 
 /-- The Hessian of the zero function is zero. -/
 @[simp]
@@ -452,29 +571,136 @@ theorem hessian_zero (x : M) (v w : TangentSpace I x) :
     hessian I (0 : M → ℝ) x v w = 0 :=
   hessian_const I 0 x v w
 
+/-- The Hessian form is additive at `x` when both functions are differentiable near `x` and
+their gradients are differentiable at `x`. -/
+theorem _root_.ModelWithCorners.hessianForm_add_of_mdifferentiableAt_mgradient {f g : M → ℝ}
+    {x : M} (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
+    I.hessianForm (f + g) x = I.hessianForm f x + I.hessianForm g x := by
+  have hev := mgradient_add_eventuallyEq hf hg
+  have hsum := mdifferentiableAt_add_section hf' hg'
+  have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
+  rw [I.hessianForm_def, I.hessianForm_def, I.hessianForm_def,
+    hcov.congr_of_eventuallyEq
+      (hsum.congr_of_eventuallyEq (hev.mono fun y hy ↦ congrArg (TotalSpace.mk' E y) hy))
+      hsum Filter.univ_mem hev,
+    hcov.add hf' hg', ContinuousLinearMap.comp_add]
+
+/-- The Hessian is additive at `x` when both functions are differentiable near `x` and their
+gradients are differentiable at `x`. -/
+theorem _root_.ModelWithCorners.hessian_add_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
+    (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x)
+    (v w : TangentSpace I x) :
+    hessian I (f + g) x v w = hessian I f x v w + hessian I g x v w := by
+  rw [← I.hessianForm_apply, I.hessianForm_add_of_mdifferentiableAt_mgradient hf hg hf' hg',
+    add_apply, add_apply, I.hessianForm_apply, I.hessianForm_apply]
+
+/-- The Hessian form commutes with constant scalar multiplication at a point where the gradient
+is differentiable. -/
+theorem _root_.ModelWithCorners.hessianForm_smul_of_mdifferentiableAt_mgradient (c : ℝ)
+    {f : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x) :
+    I.hessianForm (c • f) x = c • I.hessianForm f x := by
+  rw [I.hessianForm_def, I.hessianForm_def, mgradient_smul,
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c hf,
+    ContinuousLinearMap.comp_smul]
+
+/-- The Hessian commutes with constant scalar multiplication at a point where the gradient is
+differentiable. -/
+theorem _root_.ModelWithCorners.hessian_smul_of_mdifferentiableAt_mgradient (c : ℝ) {f : M → ℝ}
+    {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (v w : TangentSpace I x) :
+    hessian I (c • f) x v w = c * hessian I f x v w := by
+  rw [← I.hessianForm_apply, I.hessianForm_smul_of_mdifferentiableAt_mgradient c hf, smul_apply,
+    smul_apply, I.hessianForm_apply, smul_eq_mul]
+
+/-- Negating a function negates its Hessian form at a point where its gradient is
+differentiable. -/
+theorem _root_.ModelWithCorners.hessianForm_neg_of_mdifferentiableAt_mgradient {f : M → ℝ}
+    {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x) :
+    I.hessianForm (-f) x = -I.hessianForm f x := by
+  rw [← neg_one_smul ℝ f, I.hessianForm_smul_of_mdifferentiableAt_mgradient (-1) hf,
+    neg_one_smul ℝ (I.hessianForm f x)]
+
+/-- Negating a function negates its Hessian at a point where its gradient is differentiable. -/
+theorem _root_.ModelWithCorners.hessian_neg_of_mdifferentiableAt_mgradient {f : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (v w : TangentSpace I x) :
+    hessian I (-f) x v w = -hessian I f x v w := by
+  rw [← I.hessianForm_apply, I.hessianForm_neg_of_mdifferentiableAt_mgradient hf, neg_apply,
+    neg_apply, I.hessianForm_apply]
+
+/-- The Hessian form respects subtraction at `x` when both functions are differentiable near `x`
+and their gradients are differentiable at `x`. -/
+theorem _root_.ModelWithCorners.hessianForm_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ}
+    {x : M} (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
+    I.hessianForm (f - g) x = I.hessianForm f x - I.hessianForm g x := by
+  have hg'' : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I (-g) y⟩ : TangentBundle I M)) x := by
+    simpa only [mgradient_neg, Pi.neg_apply] using mdifferentiableAt_neg_section hg'
+  -- Instance search for `AddGroup` on the continuous bilinear forms on `T_x M` times out; supply it
+  -- from their `AddCommGroup` instance.
+  let _ : AddCommGroup (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) := inferInstance
+  rw [sub_eq_add_neg f g, I.hessianForm_add_of_mdifferentiableAt_mgradient hf
+    (hg.mono fun _ hy ↦ hy.neg) hf' hg'', I.hessianForm_neg_of_mdifferentiableAt_mgradient hg',
+    ← sub_eq_add_neg]
+
+/-- The Hessian respects subtraction at `x` when both functions are differentiable near `x` and
+their gradients are differentiable at `x`. -/
+theorem _root_.ModelWithCorners.hessian_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
+    (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x)
+    (v w : TangentSpace I x) :
+    hessian I (f - g) x v w = hessian I f x v w - hessian I g x v w := by
+  rw [← I.hessianForm_apply, I.hessianForm_sub_of_mdifferentiableAt_mgradient hf hg hf' hg',
+    sub_apply, sub_apply, I.hessianForm_apply, I.hessianForm_apply]
+
+/-- The Hessian form of a function that is `C²` at `x` is symmetric. -/
+@[simp]
+theorem _root_.ModelWithCorners.flip_hessianForm {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) : (I.hessianForm f x).flip = I.hessianForm f x :=
+  ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
+    rw [ContinuousLinearMap.flip_apply, I.hessianForm_apply, I.hessianForm_apply,
+      hessian_symm x hf]
+
+/-- The Hessian form of a constant function is zero. -/
+@[simp]
+theorem _root_.ModelWithCorners.hessianForm_const (c : ℝ) (x : M) :
+    I.hessianForm (fun _ : M ↦ c) x = 0 :=
+  ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
+    rw [I.hessianForm_apply, hessian_const, zero_apply, zero_apply]
+
+/-- The Hessian form of the zero function is zero. -/
+@[simp]
+theorem _root_.ModelWithCorners.hessianForm_zero (x : M) : I.hessianForm (0 : M → ℝ) x = 0 :=
+  I.hessianForm_const 0 x
+
 /-- The Hessian is additive on twice continuously differentiable functions. -/
 theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) (v w : TangentSpace I x) :
-    hessian I (f + g) x v w = hessian I f x v w + hessian I g x v w := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [hessian, mgradient_add (hf.mdifferentiable (by simp))
-    (hg.mdifferentiable (by simp)),
-    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.add
-      (mdifferentiable_mgradient (I := I) hf x)
-      (mdifferentiable_mgradient (I := I) hg x),
-    add_apply, inner_add_left]
+    hessian I (f + g) x v w = hessian I f x v w + hessian I g x v w :=
+  I.hessian_add_of_mdifferentiableAt_mgradient
+    (.of_forall fun y ↦ (hf y).mdifferentiableAt two_ne_zero)
+    (.of_forall fun y ↦ (hg y).mdifferentiableAt two_ne_zero)
+    (mdifferentiableAt_mgradient (hf x)) (mdifferentiableAt_mgradient (hg x)) v w
 
 /-- The Hessian commutes with multiplication of a `C²` function by a real constant. -/
 theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (x : M) (v w : TangentSpace I x) :
-    hessian I (c • f) x v w = c * hessian I f x v w := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [hessian, mgradient_smul,
-    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c
-      (mdifferentiable_mgradient (I := I) hf x),
-    smul_apply, real_inner_smul_left]
+    hessian I (c • f) x v w = c * hessian I f x v w :=
+  I.hessian_smul_of_mdifferentiableAt_mgradient c (mdifferentiableAt_mgradient (hf x)) v w
 
 /-- The Laplace–Beltrami operator vanishes on constants. -/
 @[simp]
@@ -487,30 +713,66 @@ theorem laplaceBeltrami_const (c : ℝ) (x : M) :
 theorem laplaceBeltrami_zero (x : M) : laplaceBeltrami I (0 : M → ℝ) x = 0 :=
   laplaceBeltrami_const I 0 x
 
+/-- **Locality of the Hessian form.** Locally equal functions have equal Hessian forms at a point
+where the gradient of one function is differentiable. -/
+theorem _root_.ModelWithCorners.hessianForm_congr_of_eventuallyEq {f g : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (h : f =ᶠ[nhds x] g) : I.hessianForm f x = I.hessianForm g x := by
+  have hev : ∀ᶠ y in nhds x, mgradient I f y = mgradient I g y := by
+    filter_upwards [h.eventuallyEq_nhds] with y hy
+    rw [mgradient_def, mgradient_def, hy.mvfderiv_eq]
+  have hT : (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) =ᶠ[nhds x]
+      fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M) :=
+    hev.mono fun y hy ↦ congrArg (TotalSpace.mk' E y) hy.symm
+  rw [I.hessianForm_def, I.hessianForm_def,
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.congr_of_eventuallyEq
+      hf (hf.congr_of_eventuallyEq hT) Filter.univ_mem hev]
+
+/-- Locally equal functions have equal Laplace–Beltrami operators at a point where the gradient
+of one function is differentiable: the metric trace of
+`ModelWithCorners.hessianForm_congr_of_eventuallyEq`. -/
+theorem laplaceBeltrami_congr_of_eventuallyEq_of_mdifferentiableAt_mgradient
+    {f g : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (h : f =ᶠ[nhds x] g) : laplaceBeltrami I f x = laplaceBeltrami I g x := by
+  rw [I.laplaceBeltrami_eq_metricTrace_hessianForm, I.laplaceBeltrami_eq_metricTrace_hessianForm,
+    I.hessianForm_congr_of_eventuallyEq hf h]
+
+/-- Two functions which agree near a point have the same Laplace–Beltrami operator there if
+one is `C²` at the point. -/
+theorem laplaceBeltrami_congr_of_eventuallyEq {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (h : f =ᶠ[nhds x] g) :
+    laplaceBeltrami I f x = laplaceBeltrami I g x :=
+  laplaceBeltrami_congr_of_eventuallyEq_of_mdifferentiableAt_mgradient I
+    (mdifferentiableAt_mgradient hf) h
+
+/-- The Laplace–Beltrami operator vanishes off the topological support of a function. -/
+theorem laplaceBeltrami_eq_zero_of_notMem_tsupport {f : M → ℝ} {x : M}
+    (hx : x ∉ tsupport f) : laplaceBeltrami I f x = 0 := by
+  rw [← laplaceBeltrami_congr_of_eventuallyEq I contMDiffAt_zero
+    (notMem_tsupport_iff_eventuallyEq.1 hx).symm, laplaceBeltrami_zero]
+
+/-- The Laplace–Beltrami operator is additive at `x` when both functions are differentiable near
+`x` and their gradients are differentiable at `x`. -/
+theorem _root_.ModelWithCorners.laplaceBeltrami_add_of_mdifferentiableAt_mgradient {f g : M → ℝ}
+    {x : M}
+    (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
+    laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x := by
+  simp only [I.laplaceBeltrami_eq_metricTrace_hessianForm,
+    I.hessianForm_add_of_mdifferentiableAt_mgradient hf hg hf' hg', map_add]
+
 /-- The Laplace–Beltrami operator is additive at a point where both functions are `C²`. -/
 theorem laplaceBeltrami_add_of_contMDiffAt {f g : M → ℝ} {x : M}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
-    laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  have hgrad {u : M → ℝ} (hu : ContMDiffAt I 𝓘(ℝ) 2 u x) :
-      MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I u y⟩ : TangentBundle I M)) x :=
-    (contMDiffAt_mgradient (I := I) (n := 1)
-      (by simpa only [one_add_one_eq_two] using hu)).mdifferentiableAt (by simp)
-  -- Both functions are differentiable near `x`, so the gradient is additive there.
-  have hev : ∀ᶠ y in nhds x, mgradient I (f + g) y = (mgradient I f + mgradient I g) y := by
-    filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf,
-      (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hg] with y hfy hgy
-    apply ext_inner_right ℝ
-    intro v
-    rw [Pi.add_apply, inner_add_left, inner_mgradient, inner_mgradient, inner_mgradient,
-      mvfderiv_add (hfy.mdifferentiableAt (by simp)) (hgy.mdifferentiableAt (by simp))]
-    rfl
-  have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
-  rw [laplaceBeltrami_def, divergence_def, hcov.congr_of_eventuallyEq (hgrad (hf.add hg))
-    (mdifferentiableAt_add_section (hgrad hf) (hgrad hg)) Filter.univ_mem hev,
-    ← divergence_def, divergence_add I _ _ x (hgrad hf) (hgrad hg), laplaceBeltrami_def,
-    laplaceBeltrami_def]
+    laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x :=
+  I.laplaceBeltrami_add_of_mdifferentiableAt_mgradient (hf.eventually_mdifferentiableAt two_ne_zero)
+    (hg.eventually_mdifferentiableAt two_ne_zero) (mdifferentiableAt_mgradient hf)
+    (mdifferentiableAt_mgradient hg)
 
 /-- The Laplace–Beltrami operator is additive on `C²` functions. -/
 theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
@@ -558,32 +820,66 @@ theorem laplaceBeltrami_mul {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
   ring
 
 /-- The Laplace–Beltrami operator commutes with real scalar multiplication at a point where the
+gradient is differentiable. -/
+theorem _root_.ModelWithCorners.laplaceBeltrami_smul_of_mdifferentiableAt_mgradient (c : ℝ)
+    {f : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x) :
+    laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
+  simp only [I.laplaceBeltrami_eq_metricTrace_hessianForm,
+    I.hessianForm_smul_of_mdifferentiableAt_mgradient c hf, map_smul, smul_eq_mul]
+
+/-- The Laplace–Beltrami operator commutes with real scalar multiplication at a point where the
 function is `C²`. -/
 theorem laplaceBeltrami_smul_of_contMDiffAt (c : ℝ) {f : M → ℝ} {x : M}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
-    laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [laplaceBeltrami, mgradient_smul]
-  exact divergence_smul I c _ x ((contMDiffAt_mgradient (I := I) (n := 1)
-    (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
+    laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x :=
+  I.laplaceBeltrami_smul_of_mdifferentiableAt_mgradient c (mdifferentiableAt_mgradient hf)
 
 /-- The Laplace–Beltrami operator commutes with real scalar multiplication on `C²` functions. -/
 theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
     laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x :=
   laplaceBeltrami_smul_of_contMDiffAt I c (hf x)
 
+/-- Negating a function negates its Laplace–Beltrami operator at a point where its gradient is
+differentiable. -/
+theorem _root_.ModelWithCorners.laplaceBeltrami_neg_of_mdifferentiableAt_mgradient {f : M → ℝ}
+    {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x) :
+    laplaceBeltrami I (-f) x = -laplaceBeltrami I f x := by
+  -- Instance search for `AddGroup` on the continuous bilinear forms on `T_x M` times out; supply it
+  -- from their `AddCommGroup` instance.
+  let _ : AddCommGroup (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) := inferInstance
+  simp only [I.laplaceBeltrami_eq_metricTrace_hessianForm,
+    I.hessianForm_neg_of_mdifferentiableAt_mgradient hf, map_neg]
+
 /-- The Laplace–Beltrami operator commutes with negation on `C²` functions. -/
 theorem laplaceBeltrami_neg {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
-    laplaceBeltrami I (-f) x = -laplaceBeltrami I f x := by
-  rw [← neg_one_smul ℝ f, laplaceBeltrami_smul I _ hf, neg_one_mul]
+    laplaceBeltrami I (-f) x = -laplaceBeltrami I f x :=
+  I.laplaceBeltrami_neg_of_mdifferentiableAt_mgradient (mdifferentiableAt_mgradient (hf x))
+
+/-- The Laplace–Beltrami operator respects subtraction at `x` when both functions are
+differentiable near `x` and their gradients are differentiable at `x`. -/
+theorem _root_.ModelWithCorners.laplaceBeltrami_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ}
+    {x : M}
+    (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
+    laplaceBeltrami I (f - g) x = laplaceBeltrami I f x - laplaceBeltrami I g x := by
+  -- Instance search for `AddGroup` on the continuous bilinear forms on `T_x M` times out; supply it
+  -- from their `AddCommGroup` instance.
+  let _ : AddCommGroup (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) := inferInstance
+  simp only [I.laplaceBeltrami_eq_metricTrace_hessianForm,
+    I.hessianForm_sub_of_mdifferentiableAt_mgradient hf hg hf' hg', map_sub]
 
 /-- The Laplace–Beltrami operator is additive with respect to subtraction of `C²` functions. -/
 theorem laplaceBeltrami_sub {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
-    laplaceBeltrami I (f - g) x = laplaceBeltrami I f x - laplaceBeltrami I g x := by
-  rw [sub_eq_add_neg, laplaceBeltrami_add I hf (g := -g) hg.neg, laplaceBeltrami_neg I hg,
-    sub_eq_add_neg]
+    laplaceBeltrami I (f - g) x = laplaceBeltrami I f x - laplaceBeltrami I g x :=
+  I.laplaceBeltrami_sub_of_mdifferentiableAt_mgradient
+    ((hf x).eventually_mdifferentiableAt two_ne_zero)
+    ((hg x).eventually_mdifferentiableAt two_ne_zero) (mdifferentiableAt_mgradient (hf x))
+    (mdifferentiableAt_mgradient (hg x))
 
 /-- **Chain rule for the Laplace--Beltrami operator.** If `h` is `C²` on an open set of real
 numbers containing all values of a `C²` function `f`, then
@@ -642,7 +938,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v₁ v₂ w : TangentSpace I x) :
     hessian I f x (v₁ + v₂) w = hessian I f x v₁ w + hessian I f x v₂ w := by
-  simp only [hessian, map_add, inner_add_left]
+  simp only [hessian, map_add, add_apply]
 
 @[simp] theorem hessian_smul_left (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -650,7 +946,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (r : ℝ) (v w : TangentSpace I x) :
     hessian I f x (r • v) w = r * hessian I f x v w := by
-  simp only [hessian, map_smul, real_inner_smul_left]
+  simp only [hessian, map_smul, smul_apply, smul_eq_mul]
 
 @[simp] theorem hessian_zero_left (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -658,7 +954,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (w : TangentSpace I x) :
     hessian I f x 0 w = 0 := by
-  simp only [hessian, map_zero, inner_zero_left]
+  simp only [hessian, map_zero, zero_apply]
 
 @[simp] theorem hessian_add_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -666,7 +962,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v w₁ w₂ : TangentSpace I x) :
     hessian I f x v (w₁ + w₂) = hessian I f x v w₁ + hessian I f x v w₂ := by
-  simp only [hessian, inner_add_right]
+  simp only [hessian, map_add]
 
 @[simp] theorem hessian_smul_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -674,7 +970,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (r : ℝ) (v w : TangentSpace I x) :
     hessian I f x v (r • w) = r * hessian I f x v w := by
-  simp only [hessian, real_inner_smul_right]
+  simp only [hessian, map_smul, smul_eq_mul]
 
 @[simp] theorem hessian_zero_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -682,7 +978,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v : TangentSpace I x) :
     hessian I f x v 0 = 0 := by
-  simp only [hessian, inner_zero_right]
+  simp only [hessian, map_zero]
 
 /-- The Laplace–Beltrami operator is the trace of the scalar Hessian in every orthonormal basis. -/
 theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
@@ -692,9 +988,8 @@ theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*
     {ι : Type*} [Fintype ι] (f : M → ℝ) (x : M)
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     laplaceBeltrami I f x = ∑ i, hessian I f x (b i) (b i) := by
-  rw [laplaceBeltrami, divergence, LinearMap.trace_eq_sum_inner _ b]
-  simp only [hessian, real_inner_comm]
-  rfl
+  rw [I.laplaceBeltrami_eq_metricTrace_hessianForm, LinearMap.BilinMap.metricTrace_eq_sum _ b]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, I.hessianForm_apply]
 
 /-- The squared trace of the Hessian is at most the dimension times its squared norm,
 expressed in any orthonormal basis. This includes dimension zero. -/
@@ -829,7 +1124,7 @@ theorem hessian_eq_iteratedFDeriv_model_space
     hessian (modelWithCornersSelf ℝ F) f x v w =
       iteratedFDeriv ℝ 2 f x
         ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w] := by
-  rw [hessian]
+  rw [ModelWithCorners.hessian_eq_inner_leviCivitaConnection_mgradient]
   have hm : mgradient (modelWithCornersSelf ℝ F) f = ∇ f :=
     funext fun y ↦ mgradient_eq_gradient f y
   have hmgrad : DifferentiableAt ℝ (mgradient (modelWithCornersSelf ℝ F) f) x := by

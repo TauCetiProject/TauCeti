@@ -433,7 +433,7 @@ noncomputable def contraction :
     refine Submodule.linearMap_qext _ (LinearMap.ext fun z ↦ ?_)
     simp only [LinearMap.comp_apply, Submodule.mkQ_apply, LinearMap.comp_zero,
       LinearMap.zero_apply, aInfinityAlgebra_differential]
-    rw [← (aInfinityAlgebra R).cohomologyClass_eq_mk z.2, inclusion_cohomologyClass,
+    rw [← (aInfinityAlgebra R).cohomologyClass_eq_mk z.property, inclusion_cohomologyClass,
       ← LinearMap.comp_apply, differential_comp_cycleProjection, LinearMap.zero_apply]
   proj_comp_dM := by
     refine LinearMap.ext fun x ↦ ?_
@@ -444,10 +444,10 @@ noncomputable def contraction :
   proj_comp_incl := by
     refine Submodule.linearMap_qext _ (LinearMap.ext fun z ↦ ?_)
     simp only [LinearMap.comp_apply, Submodule.mkQ_apply, LinearMap.id_comp]
-    rw [← (aInfinityAlgebra R).cohomologyClass_eq_mk z.2, inclusion_cohomologyClass,
+    rw [← (aInfinityAlgebra R).cohomologyClass_eq_mk z.property, inclusion_cohomologyClass,
       projection_of_mem_cycles R (cycleProjection_mem_cycles R _),
       AInfinityAlgebra.cohomologyClass_eq_iff]
-    exact cycleProjection_sub_mem_boundaries R z.2
+    exact cycleProjection_sub_mem_boundaries R z.property
   dM_comp_homotopy_add_homotopy_comp_dM := by
     refine LinearMap.ext fun x ↦ ?_
     rw [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply, projection_apply,
@@ -458,7 +458,7 @@ noncomputable def contraction :
     refine Submodule.linearMap_qext _ (LinearMap.ext fun z ↦ ?_)
     simp only [LinearMap.comp_apply, Submodule.mkQ_apply, LinearMap.zero_comp,
       LinearMap.zero_apply]
-    rw [← (aInfinityAlgebra R).cohomologyClass_eq_mk z.2, inclusion_cohomologyClass,
+    rw [← (aInfinityAlgebra R).cohomologyClass_eq_mk z.property, inclusion_cohomologyClass,
       ← LinearMap.comp_apply, homotopy_comp_cycleProjection, LinearMap.zero_apply]
   proj_comp_homotopy := by
     refine LinearMap.ext fun x ↦ ?_

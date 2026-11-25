@@ -53,14 +53,14 @@ noncomputable def product : GradedModuleCat.{v} 𝒜 := by
 /-- The product grading is checked in every component. -/
 @[simp]
 theorem mem_product_piece_iff (p : ℤ) (x : product M) :
-    x ∈ (product M).grading.piece p ↔ ∀ j, x.1 j ∈ (M j).grading.piece p :=
+    x ∈ (product M).grading.piece p ↔ ∀ j, x.val j ∈ (M j).grading.piece p :=
   InternalGrading.mem_product_piece_iff _ _ _
 
 -- Type the subtype comparison at the bundled product carrier, so projection rewrites do not
 -- have to infer its dependent module presentation from a raw submodule element.
 private theorem product_subtype_apply (x : product M) :
     (Submodule.subtype
-      (InternalGrading.productScalarSubmodule (fun j ↦ (M j).grading) 𝒜)) x = x.1 :=
+      (InternalGrading.productScalarSubmodule (fun j ↦ (M j).grading) 𝒜)) x = x.val :=
   Submodule.subtype_apply x
 
 /-- The graded projection to one factor. -/
@@ -76,7 +76,7 @@ noncomputable def productπ (j : J) : product M ⟶ M j :=
 
 /-- The projection is the corresponding coordinate of the family. -/
 @[simp]
-theorem productπ_apply (j : J) (x : product M) : (productπ M j).hom x = x.1 j := by
+theorem productπ_apply (j : J) (x : product M) : (productπ M j).hom x = x.val j := by
   dsimp only [productπ, hom_ofHom]
   rw [LinearMap.comp_apply, LinearMap.proj_apply]
   exact congrFun (product_subtype_apply M x) j
@@ -100,7 +100,7 @@ noncomputable def productLift {N : GradedModuleCat.{v} 𝒜} (f : ∀ j, N ⟶ M
 /-- The lift has the prescribed components. -/
 @[simp]
 theorem productLift_apply {N : GradedModuleCat.{v} 𝒜} (f : ∀ j, N ⟶ M j)
-    (x : N) (j : J) : ((productLift M f).hom x).1 j = (f j).hom x := by
+    (x : N) (j : J) : ((productLift M f).hom x).val j = (f j).hom x := by
   dsimp only [productLift, hom_ofHom]
   apply InternalGrading.productLift_apply
 
@@ -138,6 +138,6 @@ noncomputable instance hasProductDegreewise (X : J → GradedModuleCat.{v} 𝒜)
   HasLimit.mk { cone := degreewiseProductFan X, isLimit := degreewiseProductFanIsLimit X }
 
 instance : HasProducts.{v} (GradedModuleCat.{v} 𝒜) :=
-  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
+  .mk fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
 
 end TauCeti.GradedModuleCat

@@ -15,9 +15,10 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 For `0 < p < ∞` the `Lᵖ` seminorm of an a.e. strongly measurable `v` is the `p`-th root of
 `∫⁻ ‖v x‖ₑ ^ p ∂μ` (a function that is not a.e. strongly measurable has seminorm `∞`), so a
-bound `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` between those integrals implies the bound
-`‖v‖_p ≤ c * ‖w‖_p` between the seminorms. This file records that implication, which is the
-direction an estimate proved by integration produces.
+bound `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` between those integrals, with a real factor `c ≥ 0`,
+implies the bound `‖v‖_p ≤ c * ‖w‖_p` between the seminorms; this also holds at `p = 0`, but not at
+`p = ∞`. This file records that implication, which is the direction an estimate proved by
+integration produces.
 
 The two functions are allowed to take values in different spaces, and those spaces need carry
 nothing beyond an extended norm, since that is all `eLpNorm` reads. In particular the statement
@@ -28,13 +29,16 @@ covers comparing a function with its derivative.
 * `TauCeti.eLpNorm_rpow_eq_lintegral`: for an a.e. measurable `ℝ≥0∞`-valued function, the `p`-th
   power of the `Lᵖ` seminorm is the integral `∫⁻ f ^ p`; `TauCeti.eLpNorm_eq_lintegral_rpow` is
   the same identity solved for the seminorm.
+* `TauCeti.eLpNorm_two_sq_eq_lintegral`: the square of the `L²` seminorm is the integral of the
+  squared extended norm.
 * `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto`: the `ℝ≥0∞`-valued Fatou lemma for the `Lᵖ` seminorm,
   along any countably generated filter at arbitrary `p : ℝ≥0∞`.
 * `TauCeti.ae_lt_top_of_eLpNorm_ne_top`: at any nonzero exponent, an `ℝ≥0∞`-valued function with
   finite `Lᵖ` seminorm is finite almost everywhere.
-* `TauCeti.eLpNorm_le_eLpNorm_of_lintegral_rpow_le`: for an a.e. strongly measurable `v`, from
-  `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` conclude `‖v‖_p ≤ c * ‖w‖_p`; no measurability of `w` is
-  needed.
+* `TauCeti.eLpNorm_le_eLpNorm_of_lintegral_rpow_le`: for an a.e. strongly measurable `v`, a real
+  factor `c ≥ 0` and a finite exponent `p` (`0` included), from
+  `∫⁻ ‖v‖ₑ ^ p ∂μ ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p ∂ν` conclude `‖v‖_{p,μ} ≤ c * ‖w‖_{p,ν}`, for measures `μ`
+  and `ν` on possibly different spaces; no measurability of `w` is needed.
 * `TauCeti.rpow_lintegral_le_measure_univ_rpow_mul`: Hölder's extended-valued integral inequality
   `(∫⁻ u) ^ r ≤ μ univ ^ (r - 1) * ∫⁻ u ^ r` for `u : α → ℝ≥0∞`.  On a finite measure space it
   expresses the nesting `L^r ⊆ L¹`; for a general `μ` it is only the inequality.
@@ -46,7 +50,7 @@ namespace TauCeti
 
 open Filter
 open MeasureTheory
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 /-- For a finite nonzero exponent, the `p`-th power of the `Lᵖ` seminorm of an a.e. measurable
 `ℝ≥0∞`-valued function is the integral of the `p`-th power of that function. This is
@@ -68,6 +72,14 @@ theorem eLpNorm_eq_lintegral_rpow {α : Type*} [MeasurableSpace α]
     eLpNorm f p μ = (∫⁻ a, f a ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hf.aestronglyMeasurable]
   simp only [eNorm_eq_self]
+
+/-- The square of the `L²` seminorm of an a.e. strongly measurable function is the integral of
+its squared extended norm. -/
+theorem eLpNorm_two_sq_eq_lintegral {α ε : Type*} [MeasurableSpace α] [TopologicalSpace ε]
+    [ENorm ε] {f : α → ε} {μ : Measure α} (hf : AEStronglyMeasurable f μ) :
+    eLpNorm f 2 μ ^ 2 = ∫⁻ a, ‖f a‖ₑ ^ 2 ∂μ := by
+  simpa only [NNReal.coe_ofNat, ENNReal.rpow_two, ENNReal.coe_ofNat] using
+    eLpNorm_nnreal_pow_eq_lintegral (p := (2 : ℝ≥0)) two_ne_zero hf
 
 /-- **Fatou's lemma for the `Lᵖ` seminorm of `ℝ≥0∞`-valued functions**, at every exponent
 `p : ℝ≥0∞` (including `0` and `∞`) and along any countably generated filter: an almost everywhere
@@ -130,12 +142,15 @@ function with its derivative; only a topology and an extended norm on each is ne
 
 Only the function on the left has to be a.e. strongly measurable: without that its `Lᵖ` seminorm
 is `∞` by definition, whatever the integral bound says, while a non-measurable `w` only makes the
-right-hand side larger. The exponent `0` is allowed, where the left-hand side vanishes. The two
-integrals may be taken against different measures `μ` and `ν`, as when an estimate is transported
-by a change of variables. -/
-theorem eLpNorm_le_eLpNorm_of_lintegral_rpow_le {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
+right-hand side larger. The factor `c` is a nonnegative real number, and the exponent must be
+finite: `0` is allowed, where the left-hand side vanishes, but `∞` is not, since there
+`p.toReal = 0` and the hypothesis carries no information. The two integrals may be taken against
+different measures `μ` and `ν`, even on different spaces, as when an estimate is transported by a
+change of variables. -/
+theorem eLpNorm_le_eLpNorm_of_lintegral_rpow_le {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] {μ : Measure α} {ν : Measure β}
     {G H : Type*} [ENorm G] [TopologicalSpace G] [ENorm H] [TopologicalSpace H]
-    {v : α → G} {w : α → H} {c : ℝ}
+    {v : α → G} {w : β → H} {c : ℝ}
     (hc : 0 ≤ c) {p : ℝ≥0∞} (hp : p ≠ ∞) (hv : AEStronglyMeasurable v μ)
     (h : ∫⁻ x, ‖v x‖ₑ ^ p.toReal ∂μ ≤
       ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) :
