@@ -329,6 +329,9 @@ theorem conjugateLinearEquiv_pullback (f : B' → B) (y : B')
   rw [LinearMap.comp_apply
     (f := (pullbackEquiv (𝕜 := ℂ) (F := F) (E := E) f y).toLinearEquiv.conjugate.toLinearMap),
     LinearEquiv.coe_coe, LinearEquiv.conjugate_apply] at hv
+  -- `hv` is evaluated at `linearEquiv … v`; since `DetBundle.linearEquiv` is the identity
+  -- (`LinearEquiv.refl`), `(linearEquiv …).symm (linearEquiv … v)` and the remaining `∘ₗ`
+  -- application on the left reduce to the stated terms by definition.
   exact hv
 
 /-- Conjugation of native determinant fibres commutes with canonical determinant pullback,

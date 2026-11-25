@@ -34,7 +34,7 @@ theorem nonrealScalar_on_infiniteModule (a : Fin 2 → (ℕ → ℂ)) :
   simp only [map_smul, exteriorPower.conjugateEquiv_ιMulti, ofConj_smul,
     ofConj_toConj, Complex.conj_I, Function.comp_def]
 
-/-- The degree-zero comparison preserves the exterior unit, which does not vanish. -/
+/-- The degree-zero comparison sends the exterior unit to a nonzero vector. -/
 theorem zerothExteriorUnit_ne_zero : exteriorPower.conjugateEquiv 0
     (exteriorPower.ιMulti ℂ 0 (fun i : Fin 0 => (Fin.elim0 i : Conjugate (Fin 0 → ℂ)))) ≠
       0 := by
