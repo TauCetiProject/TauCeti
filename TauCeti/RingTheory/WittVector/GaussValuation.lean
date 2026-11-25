@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.WittVector.Domain
 public import Mathlib.Topology.Instances.NNReal.Lemmas
 public import TauCeti.RingTheory.Valuation.Integers
 public import TauCeti.RingTheory.Valuation.Continuous.Adic
-public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
+public import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 
 /-!
 # Gauss valuations on Witt vectors

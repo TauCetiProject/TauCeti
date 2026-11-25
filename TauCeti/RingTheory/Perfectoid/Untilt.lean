@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Jacobson.Associated
 public import TauCeti.RingTheory.Perfection
 
 /-!
-# Approximation, divisibility, and quotients along the untilt map
+# Approximation and divisibility along the untilt map
 
 Let `p` be a prime and `A` a `(p)`-adically complete commutative ring in which `p` is not a unit,
 so Mathlib's tilt `PreTilt A p` and multiplicative untilt map `PreTilt.untilt : PreTilt A p →* A`
@@ -27,14 +27,9 @@ therefore admits compatible `p`-power roots in `A`.
 When `ϖ : PreTilt A p` has a nonzerodivisor untilt `ϖ.untilt ∈ A⁰`, `ϖ` is a nonzerodivisor of
 `PreTilt A p`. If moreover `ϖ.untilt ^ p ∣ p` and relative Frobenius
 `A ⧸ (ϖ.untilt) → A ⧸ (ϖ.untilt ^ p)` is injective, divisibility by `ϖ` in `PreTilt A p` is
-detected after untilting (`ϖ ∣ f ↔ ϖ.untilt ∣ f.untilt`), and when `A` is `(ϖ.untilt)`-adically
-complete with bijective relative Frobenius, reducing the zeroth coordinate induces a ring
-isomorphism `PreTilt A p ⧸ (ϖ) ≃+* A ⧸ (ϖ.untilt)`.
-
-## Main definitions
-
-* `PreTilt.quotientSpanEquiv`: `PreTilt A p ⧸ (ϖ) ≃+* A ⧸ (ϖ.untilt)` when `A` is complete for the
-  nonzerodivisor `ϖ.untilt` with `ϖ.untilt ^ p ∣ p` and bijective relative Frobenius.
+detected after untilting (`ϖ ∣ f ↔ ϖ.untilt ∣ f.untilt`). For integral perfectoid rings the
+same holds without the nonzerodivisor hypothesis, and the sharp map induces
+`PreTilt A p ⧸ (ϖ) ≃+* A ⧸ (ϖ.untilt)` (`TauCeti.RingTheory.Perfectoid.Integral.Tilt`).
 
 ## Main results
 
@@ -44,8 +39,12 @@ isomorphism `PreTilt A p ⧸ (ϖ) ≃+* A ⧸ (ϖ.untilt)`.
 * `PreTilt.coeff_eq_mk_untilt_iterate`, `PreTilt.untilt_iterate_frobeniusEquiv_symm_succ_pow`:
   the `n`-th `ModP A p` coordinate of `x : PreTilt A p` is the reduction modulo `p` of
   `untilt ((frobeniusEquiv.symm^[n]) x)`, whose `p`-th powers step along the root tower.
+* `PreTilt.untilt_eq_one_of_geom_sum_eq_zero`: if `ζ = (ε ^ (1 / p))♯` satisfies
+  `∑_{j < p} ζ ^ j = 0`, then `ε♯ = 1`.
 * `PreTilt.mem_nonZeroDivisors_of_untilt`: `ϖ` is a nonzerodivisor of `PreTilt A p` whenever
   `ϖ.untilt` is a nonzerodivisor of `A`.
+* `PreTilt.untilt_eq_zero_iff`, `PreTilt.untilt_ne_zero_iff`, `PreTilt.instIsDomain`: for reduced
+  `A`, `x.untilt = 0` if and only if `x = 0`, so `PreTilt A p` is a domain when `A` is.
 * `PreTilt.exists_mul_natCast_dvd_sub_untilt`, `PreTilt.exists_associated_untilt`: every element of
   `A` is congruent modulo `π p` to an untilt, and `π` is associated to an untilt.
 * `PreTilt.dvd_iff_untilt_dvd`: `ϖ ∣ f` in `PreTilt A p` iff `ϖ.untilt ∣ f.untilt` in `A`.
@@ -82,6 +81,13 @@ theorem untilt_iterate_frobeniusEquiv_symm_succ_pow (x : PreTilt A p) (n : ℕ) 
     untilt (((frobeniusEquiv (PreTilt A p) p).symm^[n + 1]) x) ^ p =
       untilt (((frobeniusEquiv (PreTilt A p) p).symm^[n]) x) := by
   rw [← map_pow, Function.iterate_succ_apply', frobeniusEquiv_symm_pow_p]
+
+/-- If `ζ = (ε ^ (1 / p))♯` satisfies `∑_{j < p} ζ ^ j = 0`, then `ε♯ = ζ ^ p = 1`. -/
+theorem untilt_eq_one_of_geom_sum_eq_zero {ε : PreTilt A p}
+    (hε : ∑ j ∈ Finset.range p, ((frobeniusEquiv (PreTilt A p) p).symm ε).untilt ^ j = 0) :
+    ε.untilt = 1 := by
+  rw [← sub_eq_zero, ← untilt_iterate_frobeniusEquiv_symm_pow ε 1, pow_one,
+    Function.iterate_one, ← mul_geom_sum, hε, mul_zero]
 
 /-- `PreTilt.untilt` on `equivPerfection.symm x` is `Perfection.teichmuller₀` on `x`. -/
 @[simp]
@@ -121,6 +127,27 @@ theorem mem_nonZeroDivisors_of_untilt {ϖ : PreTilt A p} (hreg : ϖ.untilt ∈ A
   have hx_n : untilt ((ψ^[n]) x) = 0 :=
     (mul_left_mem_nonZeroDivisors_eq_zero_iff hreg_n).mp hmul
   rw [map_zero, coeff_eq_mk_untilt_iterate, hx_n, map_zero]
+
+/-- **The sharp map detects zero on the tilt of a reduced ring.** If `A` is reduced, then
+`x♯ = 0` only for `x = 0`. -/
+@[simp]
+theorem untilt_eq_zero_iff [IsReduced A] {x : PreTilt A p} : x.untilt = 0 ↔ x = 0 := by
+  refine ⟨fun h ↦ ext fun n ↦ ?_, fun h ↦ h ▸ untilt_zero⟩
+  have hn : untilt (((frobeniusEquiv (PreTilt A p) p).symm^[n]) x) = 0 :=
+    IsReduced.eq_zero _ ⟨p ^ n, by rw [untilt_iterate_frobeniusEquiv_symm_pow, h]⟩
+  rw [coeff_eq_mk_untilt_iterate, hn, map_zero, map_zero]
+
+/-- For reduced `A`, `x♯ ≠ 0` if and only if `x ≠ 0`. -/
+theorem untilt_ne_zero_iff [IsReduced A] {x : PreTilt A p} : x.untilt ≠ 0 ↔ x ≠ 0 :=
+  untilt_eq_zero_iff.not
+
+/-- **The tilt of a `p`-adically complete domain is a domain.** -/
+instance instIsDomain [IsDomain A] : IsDomain (PreTilt A p) :=
+  have : Nontrivial (PreTilt A p) := CharP.nontrivial_of_char_ne_one hp.out.ne_one
+  have : NoZeroDivisors (PreTilt A p) := ⟨fun {x y} hxy ↦ by
+    have h0 : x.untilt * y.untilt = 0 := by rw [← map_mul, hxy, untilt_zero]
+    simpa only [untilt_eq_zero_iff] using mul_eq_zero.mp h0⟩
+  NoZeroDivisors.to_isDomain _
 
 /-- **Approximation modulo `π p` by untilts** (Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge
 theory*, Lemma 3.9). In a `π`-adically complete ring `A` with `π ^ p ∣ p` in which every element is
@@ -216,39 +243,6 @@ theorem dvd_iff_untilt_dvd {ϖ : PreTilt A p} {hdvd : ϖ.untilt ^ p ∣ (p : A)}
   refine ⟨g, ext fun n ↦ ?_⟩
   rw [map_mul, coeff_eq_mk_untilt_iterate n f, coeff_eq_mk_untilt_iterate n ϖ, hg, ← map_mul]
   exact congrArg (Ideal.Quotient.mk (span {(p : A)})) (hq n)
-
-/-- **The small quotient `PreTilt A p ⧸ (ϖ) ≃+* A ⧸ (ϖ.untilt)`.** When `A` is complete for a
-nonzerodivisor `ϖ.untilt` with `ϖ.untilt ^ p ∣ p` and relative Frobenius
-`A ⧸ (ϖ.untilt) → A ⧸ (ϖ.untilt ^ p)` is bijective, reducing the zeroth coordinate modulo
-`ϖ.untilt` induces a ring isomorphism `PreTilt A p ⧸ (ϖ) ≃+* A ⧸ (ϖ.untilt)`. -/
-noncomputable def quotientSpanEquiv {ϖ : PreTilt A p} {hdvd : ϖ.untilt ^ p ∣ (p : A)}
-    [IsAdicComplete (span {ϖ.untilt}) A] (hreg : ϖ.untilt ∈ A⁰)
-    (hbij : Function.Bijective (TauCeti.frobeniusModPow p hdvd)) :
-    PreTilt A p ⧸ span {ϖ} ≃+* A ⧸ span {ϖ.untilt} := by
-  have hle : span {(p : A)} ≤ span {ϖ.untilt} :=
-    span_le.mpr <| Set.singleton_subset_iff.mpr <|
-      mem_span_singleton.mpr ((dvd_pow_self _ hp.out.ne_zero).trans hdvd)
-  set ψ : PreTilt A p →+* A ⧸ span {ϖ.untilt} := (Ideal.Quotient.factor hle).comp (coeff 0)
-  have hψ (f : PreTilt A p) : ψ f = Ideal.Quotient.mk (span {ϖ.untilt}) f.untilt := by
-    simp [ψ, ← mk_untilt_eq_coeff_zero]
-  have hker : RingHom.ker ψ = span {ϖ} := by
-    ext f
-    rw [RingHom.mem_ker, hψ, Ideal.Quotient.eq_zero_iff_mem, mem_span_singleton,
-      mem_span_singleton, dvd_iff_untilt_dvd hreg hbij.1]
-  have hs_modP : Function.Surjective (frobenius (ModP A p) p) :=
-    TauCeti.surjective_frobenius_modP_of_frobeniusModPow_surjective hbij.2
-  have hsurj : Function.Surjective ψ :=
-    (Ideal.Quotient.factor_surjective hle).comp (Perfection.coeff_surjective hs_modP 0)
-  exact (Ideal.quotEquivOfEq hker.symm).trans (RingHom.quotientKerEquivOfSurjective hsurj)
-
-/-- `PreTilt.quotientSpanEquiv` sends the class of `f` to the class of `f.untilt`. -/
-@[simp]
-theorem quotientSpanEquiv_mk {ϖ : PreTilt A p} {hdvd : ϖ.untilt ^ p ∣ (p : A)}
-    [IsAdicComplete (span {ϖ.untilt}) A] (hreg : ϖ.untilt ∈ A⁰)
-    (hbij : Function.Bijective (TauCeti.frobeniusModPow p hdvd)) (f : PreTilt A p) :
-    quotientSpanEquiv hreg hbij (Ideal.Quotient.mk (span {ϖ}) f) =
-      Ideal.Quotient.mk (span {ϖ.untilt}) f.untilt := by
-  simp [quotientSpanEquiv, ← mk_untilt_eq_coeff_zero]
 
 end PreTilt
 
