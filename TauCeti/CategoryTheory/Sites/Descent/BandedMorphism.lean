@@ -28,7 +28,10 @@ on that pair when the fibre of `G` over `U` is a groupoid
 band identifications (`BandedMorphism.autEquiv`).
 
 Composition of band-preserving transformations is
-`CategoryTheory.Pseudofunctor.BandPreserving.comp`.
+`CategoryTheory.Pseudofunctor.BandPreserving.comp`. For the identity transformation the anchored
+inverse is the identity (`BandedMorphism.preimageIso_id`), and for a composite `η ≫ θ` it is the
+anchored inverse of `η` after that of `θ` at the image anchor (`BandedMorphism.preimageIso_comp`);
+the same holds for the bijections on isomorphisms and the equivalences on automorphisms.
 
 ## Main declarations
 
@@ -42,6 +45,8 @@ In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
 * `hom_surjective_of_anchor`: fullness on a pair with an anchor.
 * `autEquiv`, `autEquiv_apply`: the multiplicative equivalence `Aut x ≃* Aut (η_U x)`, equal to
   `η_U.mapAut`.
+* `preimageIso_id`, `preimageIso_comp`, `isomEquiv_id`, `isomEquiv_comp`, `autEquiv_id`,
+  `autEquiv_comp`: the identity transformation and composites.
 
 ## References
 
@@ -194,5 +199,64 @@ theorem autEquiv_apply (x : F.obj (.mk (op U))) (g : Aut x) :
     autEquiv bF bG η x g = (η.app (.mk (op U))).toFunctor.mapAut x g := by
   obtain ⟨a, rfl⟩ := (bF.mulEquiv U x).surjective g
   rw [autEquiv_mulEquiv, BandPreserving.mapAut_mulEquiv (bG := bG) (η := η)]
+
+end CategoryTheory.Pseudofunctor.BandedMorphism
+
+namespace CategoryTheory.Pseudofunctor.BandedMorphism
+
+/-! ### The identity transformation and composites -/
+
+open scoped Pseudofunctor.StrongTrans
+
+variable {C : Type u} [Category.{v} C] {F G H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
+  {J : GrothendieckTopology C} {A : Sheaf J AddCommGrpCat.{w}} (bF : F.AbelianBanding J A)
+  (bG : G.AbelianBanding J A) (bH : H.AbelianBanding J A) {U : C} {x y : F.obj (.mk (op U))}
+
+/-- For the identity transformation, the anchored bijection on isomorphisms is the identity. -/
+@[simp]
+theorem isomEquiv_id (p : x ≅ y) : isomEquiv bF bF (StrongTrans.id F) p = Equiv.refl (x ≅ y) :=
+  Equiv.ext fun _ ↦ rfl
+
+/-- For the identity transformation, the anchored inverse of `q` is `q`, for every anchor. -/
+@[simp]
+theorem preimageIso_id (p q : x ≅ y) : preimageIso bF bF (StrongTrans.id F) p q = q :=
+  preimageIso_map bF bF (StrongTrans.id F) p q
+
+/-- For the identity transformation, the equivalence on automorphisms is the identity. -/
+@[simp]
+theorem autEquiv_id (x : F.obj (.mk (op U))) :
+    autEquiv bF bF (StrongTrans.id F) x = MulEquiv.refl (Aut x) :=
+  MulEquiv.ext fun g ↦ (bF.mulEquiv U x).apply_symm_apply g
+
+/-- **Composites, on isomorphisms.** The anchored bijection of `η ≫ θ` at `p` is that of `η` at
+`p` followed by that of `θ` at `η_U p`. -/
+theorem isomEquiv_comp (η : F ⟶ G) (θ : G ⟶ H) [BandPreserving bF bG η] [BandPreserving bG bH θ]
+    (p : x ≅ y) :
+    haveI : BandPreserving bF bH (η ≫ θ) := BandPreserving.comp bG η θ
+    isomEquiv bF bH (η ≫ θ) p =
+      (isomEquiv bF bG η p).trans (isomEquiv bG bH θ ((η.app (.mk (op U))).toFunctor.mapIso p)) :=
+  Equiv.ext fun _ ↦ rfl
+
+/-- **Composites, anchored inverse.** The anchored inverse of `η ≫ θ` at `p` is the anchored
+inverse of `η` at `p` applied to the anchored inverse of `θ` at `η_U p`. -/
+theorem preimageIso_comp (η : F ⟶ G) (θ : G ⟶ H) [BandPreserving bF bG η]
+    [BandPreserving bG bH θ] (p : x ≅ y)
+    (q : ((η ≫ θ).app (.mk (op U))).toFunctor.obj x ≅ ((η ≫ θ).app (.mk (op U))).toFunctor.obj y) :
+    haveI : BandPreserving bF bH (η ≫ θ) := BandPreserving.comp bG η θ
+    preimageIso bF bH (η ≫ θ) p q =
+      preimageIso bF bG η p
+        (preimageIso bG bH θ ((η.app (.mk (op U))).toFunctor.mapIso p) q) := by
+  have : BandPreserving bF bH (η ≫ θ) := BandPreserving.comp bG η θ
+  rw [← isomEquiv_symm_apply, isomEquiv_comp bF bG bH η θ p]
+  rfl
+
+/-- **Composites, on automorphisms.** The equivalence on automorphisms of `η ≫ θ` is that of `η`
+followed by that of `θ`. -/
+theorem autEquiv_comp (η : F ⟶ G) (θ : G ⟶ H) (x : F.obj (.mk (op U))) :
+    autEquiv bF bH (η ≫ θ) x =
+      (autEquiv bF bG η x).trans (autEquiv bG bH θ ((η.app (.mk (op U))).toFunctor.obj x)) :=
+  MulEquiv.ext fun _ ↦
+    congrArg (bH.mulEquiv U _)
+      ((bG.mulEquiv U ((η.app (.mk (op U))).toFunctor.obj x)).symm_apply_apply _).symm
 
 end CategoryTheory.Pseudofunctor.BandedMorphism
