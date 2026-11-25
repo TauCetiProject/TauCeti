@@ -6,6 +6,7 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
+import Mathlib.Algebra.Order.Ring.Abs
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 
 /-!
@@ -41,7 +42,8 @@ Summing `μ²` over the divisors of `n ≠ 0` counts its squarefree divisors, gi
 (`ArithmeticFunction.sum_divisors_moebius_sq`); this is the convolution identity `μ² * ζ = 2 ^ ω`
 behind the Dirichlet series `ζ(s)² / ζ(2s)` of `2 ^ ω`. Over an interval `L < m ≤ M` the same
 squares sum to at most `M - L` (`ArithmeticFunction.sum_Ioc_moebius_sq_le`), the Möbius coefficient
-energy of bilinear estimates.
+energy of bilinear estimates. Since `|μ(n)| ≤ 1`, multiplying by `μ(n)` never increases an
+absolute value (`ArithmeticFunction.abs_moebius_mul_le`).
 
 ## Main results
 
@@ -63,6 +65,7 @@ energy of bilinear estimates.
   divisors of a fixed nonzero integer `N`.
 * `ArithmeticFunction.sum_divisors_moebius_sq`: `∑_{d ∣ n} μ(d)² = 2 ^ ω(n)` for `n ≠ 0`.
 * `ArithmeticFunction.sum_Ioc_moebius_sq_le`: `∑_{L<m≤M} μ(m)² ≤ M - L`.
+* `ArithmeticFunction.abs_moebius_mul_le`: `|μ(n) a| ≤ |a|` in a linearly ordered ring.
 * `ArithmeticFunction.IsMultiplicative.moebius_sq_mul_nonneg`: `μ(n)² f(n) ≥ 0` for a
   multiplicative `f` with nonnegative prime values.
 
@@ -294,6 +297,15 @@ theorem sum_Ioc_moebius_sq_le [Ring R] [PartialOrder R] [IsOrderedRing R] (L M :
   refine sum_le_card_nsmul _ _ _ fun m _ ↦ ?_
   rw [← Int.cast_pow, moebius_sq]
   split_ifs <;> simp
+
+/-! ### Absolute values -/
+
+/-- Multiplying by a value of the Möbius function does not increase the absolute value:
+`|μ(n) a| ≤ |a|`, as `|μ(n)| ≤ 1`. -/
+theorem abs_moebius_mul_le [Ring R] [LinearOrder R] [IsStrictOrderedRing R] (n : ℕ) (a : R) :
+    |(μ n : R) * a| ≤ |a| := by
+  rw [abs_mul]
+  exact mul_le_of_le_one_left (abs_nonneg a) (mod_cast abs_moebius_le_one)
 
 /-! ### Nonnegativity on squarefree integers -/
 

@@ -13,6 +13,7 @@ import Mathlib.NumberTheory.ArithmeticFunction.VonMangoldt
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.SpecialFunctions.Log.Factorial
+import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 import TauCeti.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.Chebyshev.Asymptotics
 
@@ -66,14 +67,10 @@ variable {x : ℝ}
 
 /-! ### The Mertens function -/
 
-private theorem abs_moebius_mul_le (n : ℕ) (t : ℝ) : |(μ n : ℝ) * t| ≤ |t| := by
-  rw [abs_mul]
-  exact mul_le_of_le_one_left (abs_nonneg t) (mod_cast ArithmeticFunction.abs_moebius_le_one)
-
 /-- `|μ(n) (x / n - ⌊x / n⌋)| ≤ 1` for `x ≥ 0`, as the fractional part lies in `[0, 1)`. -/
 private theorem abs_moebius_mul_sub_natFloor_le (hx : 0 ≤ x) (n : ℕ) :
     |(μ n : ℝ) * (x / n - ⌊x / n⌋₊)| ≤ 1 := by
-  refine (abs_moebius_mul_le n _).trans (abs_le.mpr ⟨?_, ?_⟩)
+  refine (ArithmeticFunction.abs_moebius_mul_le n _).trans (abs_le.mpr ⟨?_, ?_⟩)
   · linarith [Nat.floor_le (div_nonneg hx n.cast_nonneg)]
   · linarith [Nat.lt_floor_add_one (x / n)]
 
@@ -145,7 +142,8 @@ theorem abs_moebiusSum_mul_log_le {ε C : ℝ} (hC : ∀ y, 0 ≤ y → |ψ y - 
   have h1 : |∑ k ∈ S, (μ k : ℝ) * Real.log (x / k)| ≤ x := by
     refine (abs_sum_le_sum_abs _ _).trans
       ((sum_le_sum fun k hkS ↦ ?_).trans (Real.sum_log_div_le hx0))
-    refine (abs_moebius_mul_le k _).trans_eq (abs_of_nonneg (Real.log_nonneg ?_))
+    refine (ArithmeticFunction.abs_moebius_mul_le k _).trans_eq
+      (abs_of_nonneg (Real.log_nonneg ?_))
     exact (one_le_div (hk k hkS).1).mpr (hk k hkS).2
   have h2 := abs_sum_moebius_mul_div_le hx1
   have hharm : ∑ k ∈ S, (k : ℝ)⁻¹ ≤ 1 + Real.log x := by
@@ -155,7 +153,7 @@ theorem abs_moebiusSum_mul_log_le {ε C : ℝ} (hC : ∀ y, 0 ≤ y → |ψ y - 
     refine (abs_sum_le_sum_abs _ _).trans ?_
     calc ∑ k ∈ S, |(μ k : ℝ) * (ψ (x / k) - x / k)|
         ≤ ∑ k ∈ S, (ε * x * (k : ℝ)⁻¹ + C) := sum_le_sum fun k hkS ↦
-          (abs_moebius_mul_le k _).trans <|
+          (ArithmeticFunction.abs_moebius_mul_le k _).trans <|
             (hC _ (div_nonneg hx0 (hk k hkS).1.le)).trans_eq (by ring)
       _ = ε * x * ∑ k ∈ S, (k : ℝ)⁻¹ + C * ⌊x⌋₊ := by
         rw [sum_add_distrib, ← mul_sum, sum_const, Nat.card_Icc, add_tsub_cancel_right,

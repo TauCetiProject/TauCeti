@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.SelbergSieve
+import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 
 /-!
 # The Legendre identity and lower sieve coefficients
@@ -99,8 +100,7 @@ theorem abs_siftedSum_sub_totalMass_mul_prod_le_sum_abs_rem (s : BoundingSieve) 
       ∑ d ∈ s.prodPrimes.divisors, |s.rem d| := by
   rw [siftedSum_eq_totalMass_mul_prod_add_sum_moebius_mul_rem, add_sub_cancel_left]
   refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun d _ ↦ ?_)
-  rw [abs_mul]
-  exact mul_le_of_le_one_left (abs_nonneg _) (mod_cast abs_moebius_le_one)
+  exact abs_moebius_mul_le d _
 
 /-- Lower sieve coefficients bound the sifted sum below: if `∑_{d ∣ r} c(d) ≤ 1_{r = 1}` for
 every divisor `r` of the sifting product, then `∑_{d ∣ P} c(d) A_d ≤ S`. -/
