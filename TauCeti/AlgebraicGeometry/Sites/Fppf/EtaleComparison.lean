@@ -105,11 +105,11 @@ noncomputable abbrev epsilonFppfEtaleAdjunction :
     epsilonFppfEtalePullback X A ⊣ epsilonFppfEtalePushforward X A :=
   sheafifyAdjunctionPushforwardId (etaleTopology.over X) (fppfTopology.over X) A
 
-/-- For an fppf sheaf `F`, the fppf sheafification of its underlying étale sheaf is `F` again: the
-counit of `epsilonFppfEtaleAdjunction` is an isomorphism. -/
-instance isIso_epsilonFppfEtaleAdjunction_counit :
-    IsIso (epsilonFppfEtaleAdjunction X A).counit :=
-  (epsilonFppfEtaleAdjunction X A).counit_isIso_of_R_fully_faithful
+/- For an fppf sheaf `F`, the fppf sheafification of its underlying étale sheaf is `F` again: the
+counit of `epsilonFppfEtaleAdjunction` is an isomorphism, by Mathlib's instance
+`CategoryTheory.Adjunction.counit_isIso_of_R_fully_faithful`. -/
+example : IsIso (epsilonFppfEtaleAdjunction X A).counit :=
+  inferInstance
 
 /- The inverse image of `ε` is exact when `A` has finite limits and fppf sheafification preserves
 them. -/
