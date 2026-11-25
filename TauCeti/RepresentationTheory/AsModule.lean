@@ -35,8 +35,6 @@ representation with projective group-algebra module is a retract of Mathlib's fr
   map attached to a `k[G]`-linear map.
 * `Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff`: an intertwining map
   is surjective exactly when its attached `k[G]`-linear map is.
-* `Subrepresentation.mem_iSup_asSubmodule_iff`: membership in a supremum of subrepresentations is
-  the same in the lattice of `k[G]`-submodules of `ρ.asModule` and of `k`-submodules of `V`.
 * `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
   scalars preserves the dimension of the representation.
 * `FDRep.finrank_end_eq_finrank_moduleEnd`: the categorical endomorphism space has
@@ -162,31 +160,6 @@ theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_surjective_
       _root_.Representation.asModuleEquiv_symm_apply,
       _root_.Representation.IntertwiningMap.equivLinearMapAsModule_apply]
   rw [h, EquivLike.comp_surjective, EquivLike.surjective_comp]
-
-/-- **Membership in a supremum of subrepresentations.** A vector of `ρ`, read in `ρ.asModule`,
-lies in the supremum of the `k[G]`-submodules `(σ i).asSubmodule` exactly when it lies in the
-supremum of the underlying `k`-submodules `(σ i).toSubmodule`. -/
-theorem _root_.Subrepresentation.mem_iSup_asSubmodule_iff {ι : Sort*}
-    {σ : ι → Subrepresentation ρ} {v : V} :
-    ρ.asModuleEquiv.symm v ∈ ⨆ i, (σ i).asSubmodule ↔ v ∈ ⨆ i, (σ i).toSubmodule := by
-  refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩
-  · rw [← ρ.asModuleEquiv.apply_symm_apply v]
-    refine Submodule.iSup_induction _
-      (motive := fun x ↦ ρ.asModuleEquiv x ∈ ⨆ i, (σ i).toSubmodule) hv
-      (fun i x hx ↦ Submodule.mem_iSup_of_mem i ?_) (by rw [map_zero]; exact zero_mem _)
-      (fun x y hx hy ↦ ?_)
-    · rw [_root_.Representation.asModuleEquiv_apply]
-      exact _root_.Subrepresentation.mem_asSubmodule_iff.mp hx
-    · rw [map_add]
-      exact add_mem hx hy
-  · refine Submodule.iSup_induction _
-      (motive := fun v ↦ ρ.asModuleEquiv.symm v ∈ ⨆ i, (σ i).asSubmodule) hv
-      (fun i x hx ↦ Submodule.mem_iSup_of_mem i ?_) (by rw [map_zero]; exact zero_mem _)
-      (fun x y hx hy ↦ ?_)
-    · simp only [_root_.Representation.asModuleEquiv_symm_apply]
-      exact (_root_.Subrepresentation.mem_asSubmodule_iff (v := x)).mpr hx
-    rw [map_add]
-    exact add_mem hx hy
 
 /-- **A `k[G]`-linear isomorphism of the attached modules is an equivalence of representations.**
 The underlying intertwining map is the one attached by

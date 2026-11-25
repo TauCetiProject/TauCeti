@@ -24,8 +24,9 @@ coerces to it, when an intertwining map is zero and when it is surjective in ter
 subrepresentation its range is,
 the inclusion of a subrepresentation as an intertwining map, that the group-algebra action on a
 subrepresentation coerces to the original action, the canonical equivalence between the module of
-the restricted representation and the corresponding submodule, and that a subrepresentation is
-minimal exactly when the `A[G]`-submodule it carries is simple.
+the restricted representation and the corresponding submodule, that membership in a supremum of
+subrepresentations is the same in the lattices of `A[G]`-submodules and of `A`-submodules, and
+that a subrepresentation is minimal exactly when the `A[G]`-submodule it carries is simple.
 
 They are stated at the typeclasses `Subrepresentation` itself asks for, so they apply wherever
 the abstraction does. The `⊥` and `⊤` lemmas let proofs about extreme subrepresentations avoid
@@ -111,6 +112,7 @@ algebra keeps the invariant submodules too
 * `Subrepresentation.coe_toRepresentation_asAlgebraHom_apply`
 * `Subrepresentation.asModuleEquivAsSubmodule`
 * `Subrepresentation.intertwiningMapEquivLinearMapAsSubmodule`
+* `Subrepresentation.mem_iSup_asSubmodule_iff`
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
 * `Subrepresentation.equivProdOfIsCompl`
 * `Subrepresentation.isIntertwiningMap_projectionOnto`
@@ -404,6 +406,30 @@ theorem intertwiningMapEquivLinearMapAsSubmodule_apply (σ : Subrepresentation �
       Representation.IntertwiningMap.equivLinearMapAsModule _ τ f
         (σ.asModuleEquivAsSubmodule.symm x) :=
   (rfl)
+
+/-- **Membership in a supremum of subrepresentations.** A vector of `ρ`, read in `ρ.asModule`,
+lies in the supremum of the `A[G]`-submodules `(σ i).asSubmodule` exactly when it lies in the
+supremum of the underlying `A`-submodules `(σ i).toSubmodule`. -/
+theorem mem_iSup_asSubmodule_iff {ι : Sort*} {σ : ι → Subrepresentation ρ} {v : W} :
+    ρ.asModuleEquiv.symm v ∈ ⨆ i, (σ i).asSubmodule ↔ v ∈ ⨆ i, (σ i).toSubmodule := by
+  -- `ρ.asModuleEquiv` is the identity of the type synonym `ρ.asModule`, so `mem_asSubmodule_iff`
+  -- reads membership of `x` and of its image under either direction of `ρ.asModuleEquiv`.
+  refine ⟨fun hv ↦ ?_, fun hv ↦ ?_⟩
+  · rw [← ρ.asModuleEquiv.apply_symm_apply v]
+    refine Submodule.iSup_induction _
+      (motive := fun x ↦ ρ.asModuleEquiv x ∈ ⨆ i, (σ i).toSubmodule) hv
+      (fun i x hx ↦ Submodule.mem_iSup_of_mem i ?_) (by rw [map_zero]; exact zero_mem _)
+      (fun x y hx hy ↦ ?_)
+    · exact (mem_asSubmodule_iff (v := ρ.asModuleEquiv x)).mp hx
+    · rw [map_add]
+      exact add_mem hx hy
+  · refine Submodule.iSup_induction _
+      (motive := fun v ↦ ρ.asModuleEquiv.symm v ∈ ⨆ i, (σ i).asSubmodule) hv
+      (fun i x hx ↦ Submodule.mem_iSup_of_mem i ?_) (by rw [map_zero]; exact zero_mem _)
+      (fun x y hx hy ↦ ?_)
+    · exact (mem_asSubmodule_iff (v := x)).mpr hx
+    rw [map_add]
+    exact add_mem hx hy
 
 end AsSubmoduleEquiv
 

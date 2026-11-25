@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Semisimple
-public import TauCeti.RepresentationTheory.AsModule
+public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Subrepresentations of a semisimple representation
