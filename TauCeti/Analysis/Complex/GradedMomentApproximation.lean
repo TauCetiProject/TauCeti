@@ -42,7 +42,7 @@ nothing to cancel against.
 
 ## References
 
-* Jeroen van den Bogaart, Bas Edixhoven, *Algebraic stacks whose number of points over finite
+* Theo van den Bogaart, Bas Edixhoven, *Algebraic stacks whose number of points over finite
   fields is a polynomial*, in: Number fields and function fields, Progr. Math. 239 (2005),
   Lemma 4.1 and its proof, pp. 6–7, for `s ≤ r ≤ 2 s`.
 * Jonas Bergström, Carel Faber, Sam Payne, *Polynomial point counts and odd cohomology vanishing

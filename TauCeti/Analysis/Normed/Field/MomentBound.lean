@@ -61,7 +61,7 @@ positive multiplicity carries a nonzero total weight in the unweighted case.
   Appendix C, the finite-spectrum lemma on p. 81.
 * Mircea Mustata, *Zeta functions in algebraic geometry*, §3.3, the root bound from estimates for
   all powers.
-* Jeroen van den Bogaart, Bas Edixhoven, *Algebraic stacks whose number of points over finite
+* Theo van den Bogaart, Bas Edixhoven, *Algebraic stacks whose number of points over finite
   fields is a polynomial*, in: Number fields and function fields, Progr. Math. 239 (2005),
   Lemma 4.1 and its proof, pp. 6–7, the strict bound from little-o moments.
 -/
