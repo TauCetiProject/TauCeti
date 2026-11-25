@@ -56,6 +56,8 @@ eigenfunction.
 
 ## Main declarations
 
+* `isCoercive_innerSL`: the inner product of `V` is coercive, so that the results below apply to
+  the variational problem `⟪u, v⟫_V = κ ⟪J u, J v⟫`.
 * `IsCoercive.formSolutionMap`: the Lax--Milgram solution map `H →L[ℝ] V` of the forcing
   `v ↦ ⟪h, J v⟫`, characterized by `IsCoercive.apply_formSolutionMap`; for symmetric `B` it is
   the global minimizer of the quadratic energy
@@ -98,6 +100,13 @@ noncomputable section
 
 open Module.End UniformSpace
 open scoped InnerProductSpace
+
+/-- The inner product of a real inner product space is a coercive bilinear form, with constant
+`1`. With `B = innerSL ℝ` on `V`, the variational problem `B u v = κ ⟪J u, J v⟫` is the eigenvalue
+problem of the form `⟪u, v⟫_V - ⟪J u, J v⟫_H` with eigenvalue `κ - 1`. -/
+theorem isCoercive_innerSL {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] :
+    IsCoercive (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ) :=
+  ⟨1, one_pos, fun u ↦ by rw [one_mul, innerSL_apply_apply, real_inner_self_eq_norm_mul_norm]⟩
 
 namespace IsCoercive
 
