@@ -94,12 +94,14 @@ theorem W1p.exists_eLpNorm_value_sub_setAverage_le_of_isCompactOperator
       eLpNorm (fun x ↦ W1p.value u x - ⨍ y in S, W1p.value u y ∂mu) p (mu.restrict Omega) ≤
         ENNReal.ofReal C * ‖W1p.gradient u‖ₑ := by
   have : IsFiniteMeasure (mu.restrict (Omega : Set E)) := isFiniteMeasure_restrict.2 hfin
+  have hSfin : mu.restrict (Omega : Set E) S < ∞ := measure_lt_top _ S
   have hSreal : mu.real S ≠ 0 :=
     (ENNReal.toReal_pos hS0 (ne_top_of_le_ne_top hfin (measure_mono hS))).ne'
   -- The integral over `S`, as a continuous linear functional on `W^{1,p}(Ω)`.
-  let ℓ : W1p mu Omega p →L[ℝ] ℝ := W1p.setIntegralL S (measure_lt_top _ S)
-  have hℓ (u : W1p mu Omega p) : ℓ u = ∫ y in S, W1p.value u y ∂mu :=
-    W1p.setIntegralL_apply_of_subset _ hS u
+  let ℓ : W1p mu Omega p →L[ℝ] ℝ := (setIntegralLp (𝕜 := ℝ) S hSfin).comp W1p.valueL
+  have hℓ (u : W1p mu Omega p) : ℓ u = ∫ y in S, W1p.value u y ∂mu := by
+    rw [ContinuousLinearMap.comp_apply, setIntegralLp_apply, W1p.valueL_apply,
+      Measure.restrict_restrict_of_subset hS]
   -- Its kernel meets the constants, the kernel of the gradient, only in `0`.
   have hdisj : Disjoint (W1p.gradientL (mu := mu) (Omega := Omega) (p := p)).ker ℓ.ker := by
     rw [Submodule.disjoint_def]
@@ -115,8 +117,9 @@ theorem W1p.exists_eLpNorm_value_sub_setAverage_le_of_isCompactOperator
   set a := ⨍ y in S, W1p.value u y ∂mu with ha
   set w : W1p mu Omega p := u - W1p.const a with hw
   have hw0 : ℓ w = 0 := by
-    have hconst : ℓ (W1p.const a) = mu.real S * a :=
-      W1p.setIntegralL_const_of_subset _ hS a
+    have hconst : ℓ (W1p.const a) = mu.real S * a := by
+      rw [hℓ, ← smul_eq_mul, ← setIntegral_const]
+      exact integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hS (W1p.value_const_ae a))
     rw [hw, map_sub, hconst, hℓ, ha, setAverage_eq, smul_eq_mul, mul_inv_cancel_left₀ hSreal,
       sub_self]
   have hvw : W1p.value w = W1p.value u - Lp.const p (mu.restrict (Omega : Set E)) a := by
