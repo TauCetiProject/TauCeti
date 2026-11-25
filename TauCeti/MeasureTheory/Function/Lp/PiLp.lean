@@ -49,9 +49,9 @@ private theorem norm_toLp_eval_eq (f : Lp (PiLp p E) p μ) :
       hx ▸ Subsingleton.elim _ _
     simp [hf0, Subsingleton.elim (WithLp.toLp p g) 0]
   rcases eq_or_ne p ∞ with rfl | hp
-  · refine le_antisymm ?_ (Lp.norm_top_le_of_ae_bound (norm_nonneg (WithLp.toLp ∞ g)) ?_)
+  · refine le_antisymm ?_ (Lp.norm_le_of_ae_bound_top (norm_nonneg (WithLp.toLp ∞ g)) ?_)
     · rw [PiLp.norm_eq_ciSup]
-      refine ciSup_le fun i ↦ Lp.norm_top_le_of_ae_bound (norm_nonneg f) ?_
+      refine ciSup_le fun i ↦ Lp.norm_le_of_ae_bound_top (norm_nonneg f) ?_
       filter_upwards [hg i, Lp.ae_norm_le_norm_top f] with x hgi hfx
       exact hgi ▸ (PiLp.norm_apply_le (f x) i).trans hfx
     · filter_upwards [ae_all_iff.mpr fun i ↦ (hg i).and (Lp.ae_norm_le_norm_top (g i))] with x hx

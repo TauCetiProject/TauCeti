@@ -300,6 +300,12 @@ theorem rank_firstJetMatrix_eq_finrank_range [Finite ι] [Finite σ] :
     toLin_firstJetMatrix, LinearMap.range_comp]
   exact (LinearEquiv.curry R R ι (Option σ)).symm.finrank_map_eq _
 
+private theorem card_degree_le [Fintype σ] (d : ℕ) [Fintype {s : σ →₀ ℕ // s.degree ≤ d}] :
+    Fintype.card {s : σ →₀ ℕ // s.degree ≤ d} = (Fintype.card σ + d).choose d := by
+  rw [← Nat.card_eq_fintype_card, Finsupp.card_degree_le_eq_choose, Nat.add_comm]
+  have h := Nat.choose_symm (Nat.le_add_left d (Fintype.card σ))
+  rwa [Nat.add_sub_cancel_right] at h
+
 /-- The rank of `firstJetMatrix P d` is bounded above by both the number of admissible monomials
 `(card σ + d).choose d` and the number of jet conditions `card ι * (card σ + 1)`. -/
 theorem rank_firstJetMatrix_le [StrongRankCondition R] [Fintype ι] [Fintype σ] :
@@ -308,7 +314,7 @@ theorem rank_firstJetMatrix_le [StrongRankCondition R] [Fintype ι] [Fintype σ]
   classical
   have _ : Fintype {s : σ →₀ ℕ // s.degree ≤ d} := Finsupp.fintypeDegreeLe d
   refine le_min ?_ ?_
-  · exact (Matrix.rank_le_card_width _).trans_eq (Finsupp.card_degree_le d)
+  · exact (Matrix.rank_le_card_width _).trans_eq (card_degree_le d)
   · exact (Matrix.rank_le_card_height _).trans_eq (by rw [Fintype.card_prod, Fintype.card_option])
 
 /-- Reindexing the point family along an equivalence preserves the rank of `firstJetMatrix`. -/
@@ -393,7 +399,7 @@ theorem WellPoised.card_mul_le_choose [RankCondition R] [Fintype ι] [Fintype σ
     rw [Matrix.coe_mulVecLin]
     exact (firstJetMap_surjective_iff_mulVec_surjective (P := P) (d := d)).mp h
   have hle := card_le_of_surjective R (firstJetMatrix P d).mulVecLin hsurj
-  simpa only [Fintype.card_prod, Fintype.card_option, Finsupp.card_degree_le] using hle
+  simpa only [Fintype.card_prod, Fintype.card_option, card_degree_le] using hle
 
 end CommSemiring
 
@@ -457,29 +463,28 @@ end CommRing
 
 section Univariate
 
+private noncomputable def finTwoEquivOption (σ : Type*) [Unique σ] : Fin 2 ≃ Option σ :=
+  (_root_.finSuccEquiv 1).trans (Equiv.optionCongr (Equiv.ofUnique (Fin 1) σ))
+
 private noncomputable def firstJetRowsEquivFinTwo (ι σ R : Type*) [CommSemiring R] [Unique σ] :
     (ι → Option σ → R) ≃ₗ[R] (ι → Fin 2 → R) :=
-  LinearEquiv.piCongrRight fun _ ↦
-    LinearEquiv.funCongrLeft R R
-      ((_root_.finSuccEquiv 1).trans (Equiv.optionCongr (Equiv.ofUnique (Fin 1) σ)))
+  LinearEquiv.piCongrRight fun _ ↦ LinearEquiv.funCongrLeft R R (finTwoEquivOption σ)
 
 @[simp]
 private theorem firstJetRowsEquivFinTwo_apply {ι σ R : Type*} [CommSemiring R] [Unique σ]
     (v : ι → Option σ → R) (i : ι) (k : Fin 2) :
-    firstJetRowsEquivFinTwo ι σ R v i k =
-      v i (((_root_.finSuccEquiv 1).trans (Equiv.optionCongr (Equiv.ofUnique (Fin 1) σ))) k) := by
+    firstJetRowsEquivFinTwo ι σ R v i k = v i (finTwoEquivOption σ k) := by
   rw [firstJetRowsEquivFinTwo, LinearEquiv.piCongrRight_apply, LinearEquiv.funCongrLeft_apply,
     LinearMap.funLeft_apply]
 
 private theorem firstJetMap_unique_eq_hasseJet {σ ι R : Type*} [CommSemiring R] [Unique σ]
     (P : ι → σ → R) (d : ℕ) (f : restrictTotalDegree σ R d) (i : ι) (k : Fin 2) :
-    firstJetMap P d f i
-        (((_root_.finSuccEquiv 1).trans (Equiv.optionCongr (Equiv.ofUnique (Fin 1) σ))) k) =
+    firstJetMap P d f i (finTwoEquivOption σ k) =
       Polynomial.hasseJet (fun i ↦ P i default) (fun _ ↦ 2) (uniqueAlgEquiv R σ f.val) i k := by
   cases k using Fin.cases with
-  | zero => simp [-uniqueAlgEquiv_apply, eval_uniqueAlgEquiv]
+  | zero => simp [finTwoEquivOption, -uniqueAlgEquiv_apply, eval_uniqueAlgEquiv]
   | succ j =>
-    rw [Equiv.trans_apply, _root_.finSuccEquiv_succ]
+    rw [finTwoEquivOption, Equiv.trans_apply, _root_.finSuccEquiv_succ]
     simp [-uniqueAlgEquiv_apply, ← uniqueAlgEquiv_pderiv (default : σ), eval_uniqueAlgEquiv,
       Fin.eq_zero j]
 
@@ -501,28 +506,22 @@ theorem firstJetMap_injective_of_unique [CommRing R] [Unique σ] [Fintype ι] {P
     (hP : Pairwise fun i j ↦ IsUnit (P i default - P j default)) {d : ℕ}
     (hd : d + 1 ≤ 2 * Fintype.card ι) :
     Function.Injective (firstJetMap P d) := by
-  let e : ℕ := 2 * Fintype.card ι - 1
-  have hde : d ≤ e := by omega
-  have heq : ∑ _ : ι, 2 = e + 1 := by
-    simp only [Finset.sum_const, Finset.card_univ, smul_eq_mul]
-    omega
-  have hinj : Function.Injective
-      (((firstJetRowsEquivFinTwo ι σ R).toLinearMap ∘ₗ firstJetMap P e) ∘ₗ
-        ((restrictTotalDegreeEquivDegreeLT σ R e).symm.toLinearMap ∘ₗ
-          Submodule.inclusion (Polynomial.degreeLT_mono heq.le))) := by
-    rw [firstJetRowsEquivFinTwo_comp_firstJetMap_comp_inclusion P heq.le]
-    exact (Polynomial.hermiteJet_bijective_of_pairwise_isUnit_sub hP (fun _ ↦ 2)).injective
-  have hbij : Function.Bijective
-      ((restrictTotalDegreeEquivDegreeLT σ R e).symm.toLinearMap ∘ₗ
-        Submodule.inclusion (Polynomial.degreeLT_mono heq.le)) := by
-    refine (restrictTotalDegreeEquivDegreeLT σ R e).symm.bijective.comp
-      ⟨Submodule.inclusion_injective _, fun ⟨f, hf⟩ ↦ ?_⟩
-    exact ⟨⟨f, by simpa [heq] using hf⟩, rfl⟩
-  have hinj_e : Function.Injective (firstJetMap P e) :=
-    Function.Injective.of_comp (f := firstJetRowsEquivFinTwo ι σ R)
-      ((Function.Injective.of_comp_iff' _ hbij).1 hinj)
-  rw [← firstJetMap_comp_inclusion P hde]
-  exact hinj_e.comp (Submodule.inclusion_injective _)
+  rw [injective_iff_map_eq_zero]
+  intro f hf
+  have hsum : d + 1 ≤ ∑ _ : ι, 2 := by simpa [mul_comm] using hd
+  let q : Polynomial.degreeLT R (∑ _ : ι, 2) :=
+    Submodule.inclusion (Polynomial.degreeLT_mono hsum) (restrictTotalDegreeEquivDegreeLT σ R d f)
+  have hq : Polynomial.hermiteJet (fun i ↦ P i default) (fun _ ↦ 2) q = 0 := by
+    ext i k
+    rw [Polynomial.hermiteJet_apply, Submodule.coe_inclusion,
+      coe_restrictTotalDegreeEquivDegreeLT_apply,
+      ← firstJetMap_unique_eq_hasseJet P d f i k, hf]
+    rfl
+  have hq0 := (Polynomial.hermiteJet_bijective_of_pairwise_isUnit_sub hP (fun _ ↦ 2)).injective
+    (hq.trans (map_zero _).symm)
+  have hf0 : uniqueAlgEquiv R σ f.val = 0 := by
+    simpa [q] using congrArg Subtype.val hq0
+  exact Subtype.ext ((uniqueAlgEquiv R σ).injective (hf0.trans (map_zero _).symm))
 
 /-- **Univariate Hermite surjectivity** for double points over a commutative ring: when the node
 differences are units and `2 * card ι ≤ d + 1`, `P` is well poised in degree `d`. -/

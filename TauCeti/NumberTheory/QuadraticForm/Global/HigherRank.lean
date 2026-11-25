@@ -55,6 +55,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 variable [FiniteDimensional K X] [FiniteDimensional K Y]
 
+omit [FiniteDimensional K Y] in
 /-- Let `U` be a regular quadratic form on a nonzero space and `W` a regular quadratic form of rank
 at least three over a number field, such that `U ⊥ W` is isotropic at every finite and real place.
 If every form `⟨c⟩ ⊥ W` with `c ≠ 0` that is isotropic at every finite and real place is isotropic

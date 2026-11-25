@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
+public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.NumberTheory.LocalField.MaximalPrime
 -- Proof-only: the index of `n E(F_u)` over the completion of a Dedekind domain.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.NSmul
@@ -15,6 +16,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
 import TauCeti.Algebra.Module.Torsion.Int
 import TauCeti.GroupTheory.Index.NSmul
+-- Proof-only: `#(𝒪[ℚ_p] ⧸ n 𝒪[ℚ_p]) = p ^ v_p(n)`.
+import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 
 /-!
 # The index of `n E(K)` over a nonarchimedean local field
@@ -39,10 +42,21 @@ that identification (`WeierstrassCurve.Affine.Point.mapAlongAddEquiv`). This put
 factors of Cassels' comparison of the Selmer groups of an isogeny and of its dual in the setting of
 local Tate duality, which is stated over nonarchimedean local fields.
 
+Over `ℚ_p` the last factor is `p ^ v_p(n)`, so the ratio `#(E(ℚ_p) ⧸ 2 E(ℚ_p)) / #E(ℚ_p)[2]` is
+`1` for odd `p` and `2` for `p = 2`. These are the local factors at the finite places in the
+computation of the average size of the `2`-Selmer group of elliptic curves over `ℚ`.
+
 ## Main results
 
 * `WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy_mul_of_localField`: the index of
   `n E(K)` is `#E(K)[n] · #(𝒪[K] ⧸ n 𝒪[K])`.
+* `WeierstrassCurve.finiteIndex_range_nsmul_of_localField`: `n E(K)` has finite index.
+* `WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy_mul_pow_multiplicity`: over `ℚ_p`, the
+  index of `n E(ℚ_p)` is `#E(ℚ_p)[n] · p ^ v_p(n)`.
+* `WeierstrassCurve.index_range_nsmul_two_eq_natCard_torsionBy` and
+  `WeierstrassCurve.index_range_nsmul_two_eq_natCard_torsionBy_mul_two`: the local two-descent
+  index, `#(E(ℚ_p) ⧸ 2 E(ℚ_p)) = #E(ℚ_p)[2]` for odd `p` and
+  `#(E(ℚ_2) ⧸ 2 E(ℚ_2)) = #E(ℚ_2)[2] · 2`.
 * `index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual_mul_of_localField`, in the
   namespace `TauCeti.Isogeny.Hom`: the cokernel/kernel ratios of `f` and `f̂` multiply to
   `#(𝒪[K] ⧸ deg f · 𝒪[K])`.
@@ -52,6 +66,8 @@ local Tate duality, which is stated over nonarchimedean local fields.
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VII.6 and X.4.
 * J. W. S. Cassels, *Arithmetic on curves of genus 1. VIII. On conjectures of Birch and
   Swinnerton-Dyer*, J. Reine Angew. Math. 217 (1965), 180–199.
+* M. Bhargava and A. Shankar, *Binary quartic forms having bounded invariants, and the
+  boundedness of the average rank of elliptic curves*, Ann. of Math. 181 (2015), Lemma 3.20.
 -/
 
 public section
@@ -91,6 +107,54 @@ theorem index_range_nsmul_eq_natCard_torsionBy_mul_of_localField (hn : (n : K) �
     ← TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy, eqv.card_ker_nsmulAddMonoidHom]
   refine congrArg _ (Nat.card_congr (Ideal.quotientEquiv _ _ e ?_).toEquiv).symm
   rw [Ideal.map_span, Set.image_singleton, map_natCast]
+
+/-- **`n E(K)` has finite index in `E(K)`** for an elliptic curve `E` over a nonarchimedean local
+field `K` and a natural number `n` nonzero in `K`. -/
+theorem finiteIndex_range_nsmul_of_localField (hn : (n : K) ≠ 0) :
+    (nsmulAddMonoidHom (α := W.toAffine.Point) n).range.FiniteIndex := by
+  have : Finite (AddSubgroup.torsionBy W.toAffine.Point (n : ℤ)) :=
+    W.finite_torsionBy (by exact_mod_cast fun h ↦ hn (by simp [h]))
+  refine ⟨?_⟩
+  rw [W.index_range_nsmul_eq_natCard_torsionBy_mul_of_localField hn,
+    TauCeti.natCard_quotient_span_natCast K n hn]
+  exact mul_ne_zero Nat.card_pos.ne' (pow_ne_zero _ Nat.card_pos.ne')
+
+section Padic
+
+variable {p : ℕ} [Fact p.Prime] [DecidableEq ℚ_[p]] (W : WeierstrassCurve ℚ_[p]) [W.IsElliptic]
+  {n : ℕ}
+
+/-- **The local Kummer index over `ℚ_p`**: for an elliptic curve `E` over `ℚ_p` and a natural
+number `n ≠ 0`,
+
+`#(E(ℚ_p) ⧸ n E(ℚ_p)) = #E(ℚ_p)[n] · p ^ v_p(n)`, with `v_p(n) = multiplicity p n`,
+
+the last factor being the inverse of the `p`-adic absolute value of `n`. -/
+theorem index_range_nsmul_eq_natCard_torsionBy_mul_pow_multiplicity (hn : n ≠ 0) :
+    (nsmulAddMonoidHom (α := W.toAffine.Point) n).range.index =
+      Nat.card (Submodule.torsionBy ℤ W.toAffine.Point n) * p ^ multiplicity p n := by
+  rw [W.index_range_nsmul_eq_natCard_torsionBy_mul_of_localField (Nat.cast_ne_zero.mpr hn),
+    TauCeti.natCard_quotient_span_natCast_eq_pow_finrank_mul_padicValNat ℚ_[p] p n hn,
+    Module.finrank_self, one_mul, Nat.padicValNat_def]
+
+/-- **The local two-descent index at an odd prime**: for an elliptic curve `E` over `ℚ_p` with
+`p` odd, `#(E(ℚ_p) ⧸ 2 E(ℚ_p)) = #E(ℚ_p)[2]`. -/
+theorem index_range_nsmul_two_eq_natCard_torsionBy (hp : p ≠ 2) :
+    (nsmulAddMonoidHom (α := W.toAffine.Point) 2).range.index =
+      Nat.card (Submodule.torsionBy ℤ W.toAffine.Point 2) := by
+  rw [W.index_range_nsmul_eq_natCard_torsionBy_mul_pow_multiplicity two_ne_zero,
+    multiplicity_primes hp, pow_zero, mul_one, Nat.cast_ofNat]
+
+end Padic
+
+/-- **The local two-descent index at `2`**: for an elliptic curve `E` over `ℚ_2`,
+`#(E(ℚ_2) ⧸ 2 E(ℚ_2)) = #E(ℚ_2)[2] · 2`. -/
+theorem index_range_nsmul_two_eq_natCard_torsionBy_mul_two [DecidableEq ℚ_[2]]
+    (W : WeierstrassCurve ℚ_[2]) [W.IsElliptic] :
+    (nsmulAddMonoidHom (α := W.toAffine.Point) 2).range.index =
+      Nat.card (Submodule.torsionBy ℤ W.toAffine.Point 2) * 2 := by
+  rw [W.index_range_nsmul_eq_natCard_torsionBy_mul_pow_multiplicity two_ne_zero,
+    Nat.Prime.multiplicity_self, pow_one, Nat.cast_ofNat]
 
 end WeierstrassCurve
 

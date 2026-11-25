@@ -10,10 +10,12 @@ public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
 public import Mathlib.Data.Set.Card
+public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Data.Finsupp.Order
-import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
+import Mathlib.Data.Nat.Choose.Sum
 
 /-!
 # Weights of finitely supported functions
@@ -39,9 +41,7 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
-* `Finsupp.degree_optionElim`, `Finsupp.degree_eq_apply_none_add_degree_some`: extending by `y` at
-  `none` adds `y` to the degree, and the degree on `Option σ` splits into the `none` value and
-  the restriction's degree.
+* `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
 * `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
 * `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
   splits off the factor `c none ^ n` from the weighted product `∏ c i ^ (f.optionElim n) i`, and
@@ -68,18 +68,16 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   `i`-th coordinate vector.
 * `Finsupp.finite_degree_eq`, `Finsupp.finite_degree_le`: in finitely many variables there are
   finitely many exponent vectors of each degree, and of degree at most `n`.
-* `Finsupp.fintypeDegreeEq`, `Finsupp.fintypeDegreeLe`: for a fintype of variables with decidable
-  equality, the exponent vectors of degree `n` and of degree at most `n` form fintypes, enumerated
-  by `Finset.finsuppAntidiag`.
+* `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
+  vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
 * `Finsupp.ncard_setOf_degree_eq`: in `d` variables there are `d.multichoose n` exponent vectors
   of degree `n`.
-* `Finsupp.degreeLeEquivOptionDegreeEq`: adjoining the slack exponent `n - s.degree` at `none`
-  identifies exponent vectors of degree at most `n` on `σ` with those of degree `n` on `Option σ`.
-* `Finsupp.card_degree_eq`, `Finsupp.card_degree_le`: the exponent vectors of degree `n` have
-  cardinality `(card σ).multichoose n`, and those of degree at most `n` have cardinality
-  `(card σ + n).choose n`.
+* `Finsupp.card_degree_le_eq_choose`: there are `(m + d choose d)` exponent vectors of degree at
+  most `m` in `d` variables.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
+* `Finsupp.single_mod_add_single_div`: for `μ 0 < B`, division with remainder by `B` recovers `μ`
+  from `μ 0 + B * μ 1`.
 * `Finsupp.injOn_weight_pow`: uniqueness of base-`B` digits; the weight `i ↦ B ^ i` on `Fin m`,
   `d ↦ ∑ i, d i * B ^ i`, is injective on the exponent vectors with entries `< B`.
 * `Finsupp.finite_weightedStrip`: the weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` is
@@ -116,13 +114,6 @@ theorem degree_optionElim {σ R : Type*} [AddCommMonoid R] (f : σ →₀ R) (y 
   have h (g : Option σ →₀ R) : g.degree = g.sum fun _ e ↦ e := degree_apply g
   rw [h, sum_option_index _ _ (fun _ ↦ rfl) fun _ _ _ ↦ rfl, optionElim_apply_none,
     some_optionElim, degree_apply, Finsupp.sum]
-
-/-- The degree of a finitely supported function on `Option σ` splits into its value at `none` and
-the degree of its restriction to `σ`. -/
-theorem degree_eq_apply_none_add_degree_some {σ R : Type*} [AddCommMonoid R]
-    (t : Option σ →₀ R) :
-    t.degree = t none + t.some.degree := by
-  conv_lhs => rw [← optionElim_some t, degree_optionElim]
 
 /-- The weighted product of `f.optionElim n` splits off the factor `c none ^ n`. This is the
 form of Mathlib's `Finsupp.prod_option_index` used to separate one variable from the monomial
@@ -310,34 +301,6 @@ theorem ncard_setOf_degree_eq {σ : Type*} [Fintype σ] (n : ℕ) :
     simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
   rw [h, Set.ncard_coe_finset, Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
 
-/-- Adjoining the slack exponent `n - s.degree` at `none` identifies the exponent vectors on `σ`
-of degree at most `n` with the exponent vectors on `Option σ` of degree `n`. -/
-noncomputable def degreeLeEquivOptionDegreeEq {σ : Type*} (n : ℕ) :
-    {s : σ →₀ ℕ // s.degree ≤ n} ≃ {s : Option σ →₀ ℕ // s.degree = n} where
-  toFun s := ⟨s.val.optionElim (n - s.val.degree),
-    by rw [degree_optionElim, Nat.sub_add_cancel s.property]⟩
-  invFun t := ⟨t.val.some, by
-    have := degree_eq_apply_none_add_degree_some t.val
-    have := t.property
-    omega⟩
-  left_inv s := Subtype.ext (some_optionElim _ _)
-  right_inv t := by
-    apply Subtype.ext
-    have := degree_eq_apply_none_add_degree_some t.val
-    have := t.property
-    have hnone : n - t.val.some.degree = t.val none := by omega
-    simp [hnone]
-
-@[simp]
-theorem coe_degreeLeEquivOptionDegreeEq {σ : Type*} (n : ℕ)
-    (s : {s : σ →₀ ℕ // s.degree ≤ n}) :
-    (degreeLeEquivOptionDegreeEq n s).val = s.val.optionElim (n - s.val.degree) := (rfl)
-
-@[simp]
-theorem coe_degreeLeEquivOptionDegreeEq_symm {σ : Type*} (n : ℕ)
-    (t : {s : Option σ →₀ ℕ // s.degree = n}) :
-    ((degreeLeEquivOptionDegreeEq n).symm t).val = t.val.some := (rfl)
-
 /-- For a fintype of variables with decidable equality, the exponent vectors of degree at most `n`
 form a fintype, enumerated degree by degree by `Finset.finsuppAntidiag`. -/
 instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
@@ -346,19 +309,21 @@ instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     ((Finset.range (n + 1)).biUnion fun m ↦ (Finset.univ : Finset σ).finsuppAntidiag m)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
 
-/-- The number of exponent vectors on `σ` of degree `n` is `(card σ).multichoose n`. -/
-theorem card_degree_eq {σ : Type*} [Fintype σ] (n : ℕ) [Fintype {s : σ →₀ ℕ // s.degree = n}] :
-    Fintype.card {s : σ →₀ ℕ // s.degree = n} = (Fintype.card σ).multichoose n := by
-  rw [← Nat.card_eq_fintype_card, ← Set.ncard_ofPred, ncard_setOf_degree_eq]
-
-/-- The number of exponent vectors on `σ` of degree at most `n` is `(card σ + n).choose n`. -/
-theorem card_degree_le {σ : Type*} [Fintype σ] (n : ℕ) [Fintype {s : σ →₀ ℕ // s.degree ≤ n}] :
-    Fintype.card {s : σ →₀ ℕ // s.degree ≤ n} = (Fintype.card σ + n).choose n := by
+/-- There are `(m + d choose d)` exponent vectors of degree at most `m` in `d = card σ`
+variables. -/
+theorem card_degree_le_eq_choose (σ : Type*) [Fintype σ] (m : ℕ) :
+    Nat.card {s : σ →₀ ℕ // s.degree ≤ m} = (m + Fintype.card σ).choose (Fintype.card σ) := by
   classical
-  rw [Fintype.card_congr (degreeLeEquivOptionDegreeEq n), card_degree_eq, Fintype.card_option,
-    Nat.multichoose_eq]
-  congr 1
-  omega
+  have hset : {s : σ →₀ ℕ | s.degree ≤ m} =
+      ↑((Finset.range (m + 1)).biUnion ((Finset.univ : Finset σ).finsuppAntidiag ·)) := by
+    ext s
+    simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
+  rw [← Set.coe_ofPred, Nat.card_coe_set_eq, hset, Set.ncard_coe_finset, Finset.card_biUnion]
+  · simp [Finset.card_finsuppAntidiag_nat_eq_multichoose, Nat.sum_range_multichoose]
+  · intro k _ l _ hkl
+    refine Finset.disjoint_left.2 fun s hk hl ↦ hkl ?_
+    rw [Finset.mem_finsuppAntidiag] at hk hl
+    exact hk.1.symm.trans hl.1
 
 end Finsupp
 
@@ -383,6 +348,14 @@ theorem injOn_weight_vecCons_one (B : ℕ) :
     simpa [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ, Nat.div_eq_of_lt hν] using
       congrArg (· / B) h
   exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨h0, h1⟩)
+
+/-- Division with remainder by `B` recovers an exponent `μ` with `μ 0 < B` from its weight
+`μ 0 + B * μ 1`: the remainder is `μ 0` and the quotient is `μ 1`. -/
+theorem single_mod_add_single_div {B : ℕ} {μ : Fin 2 →₀ ℕ} (hμ : μ 0 < B) :
+    single 0 ((μ 0 + B * μ 1) % B) + single 1 ((μ 0 + B * μ 1) / B) = μ := by
+  refine Finsupp.ext (Fin.forall_fin_two.mpr ⟨?_, ?_⟩)
+  · simp [Nat.mod_eq_of_lt hμ]
+  · simp [Nat.add_mul_div_left _ _ ((Nat.zero_le _).trans_lt hμ), Nat.div_eq_of_lt hμ]
 
 /-- **Uniqueness of base-`B` digits.** The base-`B` weight `d ↦ ∑ i, d i * B ^ i` of exponent
 vectors in `m` variables is injective on the vectors all of whose entries are `< B`. For `B ≤ 1`
