@@ -18,9 +18,7 @@ entry, if any, is at most the new one.
 
 ## Consecutive entries of a strictly increasing list
 
-The entries of the differences of consecutive entries, closed up by an extra entry `b`, are
-described by `List.getElem_zipWith_sub_tail_append_singleton`. In a strictly increasing list the
-next entry is the least entry above the current one
+In a strictly increasing list the next entry is the least entry above the current one
 (`List.SortedLT.isLeast_inter_Ioi_getElem_succ`) and the last entry is the greatest
 (`List.SortedLT.isGreatest_getElem_of_not_succ_lt`).
 -/
@@ -39,18 +37,6 @@ theorem sortedLE_append_singleton {l : List α} {a : α} :
   cases l.getLast? <;> simp
 
 section Entries
-
-/-- The entry at `i` of the differences of consecutive entries of `l`, closed up by `b`, is the
-difference from `l[i]` to the next entry of `l`, or to `b` at the last index. -/
-theorem getElem_zipWith_sub_tail_append_singleton {G : Type*} [Sub G] {b : G} {l : List G}
-    {i : ℕ} (hi : i < (zipWith (· - ·) (l.tail ++ [b]) l).length) :
-    (zipWith (· - ·) (l.tail ++ [b]) l)[i] =
-      (if h : i + 1 < l.length then l[i + 1] else b) - l[i]'(by simp at hi; omega) := by
-  rw [getElem_zipWith]
-  split_ifs with h
-  · rw [getElem_append_left (by simp; omega), getElem_tail]
-  · rw [getElem_append_right (by simp; omega)]
-    simp
 
 variable {α : Type*} [LinearOrder α] {l : List α}
 
