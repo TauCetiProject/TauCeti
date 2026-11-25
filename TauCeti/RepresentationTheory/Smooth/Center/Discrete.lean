@@ -37,22 +37,6 @@ namespace SmoothCenter
 variable {A : Type u} [CommRing A] {G : Type v} [Group G] [TopologicalSpace G]
   [DiscreteTopology G]
 
-/-- For a vector `v` of a representation `V` of a discrete group, the intertwining map
-`A[G] → V`, `x ↦ x • v`, from the regular representation: Mathlib's `Rep.leftRegularHom`. -/
-noncomputable def orbitHom (V : SmoothRep.{max u v} A G) (v : V.obj) :
-    SmoothRep.of (ofMulAction A G G) ⟶ V :=
-  ObjectProperty.homMk (Rep.leftRegularHom V.obj v)
-
-@[simp] lemma orbitHom_hom_hom_apply (V : SmoothRep.{max u v} A G) (v : V.obj)
-    (x : MonoidAlgebra A G) :
-    (orbitHom V v).hom.hom x = V.obj.ρ.asAlgebraHom x v := by
-  induction x using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add x y hx hy => rw [map_add, hx, hy, map_add, LinearMap.add_apply]
-  | single g r =>
-    rw [asAlgebraHom_single, LinearMap.smul_apply]
-    exact Rep.leftRegularHom_hom_single g v r
-
 /-- The value at `1` of an element `z` of the smooth centre on the regular representation. -/
 private noncomputable def toCenterFun (z : SmoothCenter.{max u v} A G) : MonoidAlgebra A G :=
   (z.app (SmoothRep.of (ofMulAction A G G))).hom.hom 1
@@ -61,10 +45,11 @@ private noncomputable def toCenterFun (z : SmoothCenter.{max u v} A G) : MonoidA
 private lemma app_apply_eq_asAlgebraHom_toCenterFun (z : SmoothCenter.{max u v} A G)
     (V : SmoothRep.{max u v} A G) (v : V.obj) :
     (z.app V).hom.hom v = V.obj.ρ.asAlgebraHom (toCenterFun z) v := by
-  have := congr($(z.naturality (orbitHom V v)).hom.hom 1)
+  have := congr($(z.naturality (SmoothRep.orbitHom V v)).hom.hom 1)
   simp only [ObjectProperty.FullSubcategory.comp_hom, Rep.hom_comp, IntertwiningMap.comp_apply]
     at this
-  rw [orbitHom_hom_hom_apply, orbitHom_hom_hom_apply, map_one, one_apply_eq_self] at this
+  rw [SmoothRep.orbitHom_hom_hom_apply, SmoothRep.orbitHom_hom_hom_apply, map_one,
+    one_apply_eq_self] at this
   exact this
 
 /-- The value `z(1)` on the regular representation is central in `A[G]`: `z` commutes with right
