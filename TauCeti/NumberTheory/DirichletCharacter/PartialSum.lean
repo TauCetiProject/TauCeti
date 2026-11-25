@@ -9,8 +9,8 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 import Mathlib.Data.Nat.Periodic
+import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.Nat.Interval
-import TauCeti.Data.Nat.Prime.Basic
 import TauCeti.Data.ZMod.FinEquiv
 
 /-!

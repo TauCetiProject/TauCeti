@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Explicit.MultiplicativeFunctions.Moebius.Basic
-import TauCeti.Data.Nat.Prime.Basic
+import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.NumberTheory.AbelSummation
 
 /-!
@@ -33,12 +33,14 @@ are the coprime sums `M_q`, `m_q` and `ℓ_q` of explicit bounds for the Möbius
   `ℓ_S`.
 * `TauCeti.moebiusSumIn_natFloor`, `TauCeti.moebiusDivSumIn_natFloor`: `M_S` and `m_S` are
   constant on each `[N, N + 1)`.
+* `TauCeti.moebiusSumIn_one` and its analogues: `M_S(1) = m_S(1) = 1` and `ℓ_S(1) = 0`.
 * `TauCeti.moebiusSumIn_of_setOf_prime_subset` and its analogues: if `S` contains every prime, the
   restricted sums are `M`, `m` and `ℓ`.
 * `TauCeti.moebiusSumIn_empty` and its analogues: `M_∅(x) = m_∅(x) = 1` and `ℓ_∅(x) = log x` for
   `x ≥ 1`.
 * `TauCeti.moebiusSumIn_setOf_not_dvd` and its analogues: for `S_q = {p | ¬ p ∣ q}` the restricted
   sums run over the `n` coprime to `q`.
+* `TauCeti.moebiusSumIn_setOf_not_dvd_one` and its analogues: `M_1 = M`, `m_1 = m` and `ℓ_1 = ℓ`.
 
 ## References
 
@@ -124,13 +126,28 @@ theorem moebiusDivSumIn_natFloor (S : Set ℕ) (x : ℝ) :
     moebiusDivSumIn S ⌊x⌋₊ = moebiusDivSumIn S x := by
   simp [moebiusDivSumIn]
 
+/-- `M_S(1) = 1`: only `n = 1` contributes, and it lies in `⟨S⟩` for every `S`. -/
+@[simp]
+theorem moebiusSumIn_one (S : Set ℕ) : moebiusSumIn S 1 = 1 := by
+  simp [moebiusSumIn, filter_singleton]
+
+/-- `m_S(1) = 1`: only `n = 1` contributes, and it lies in `⟨S⟩` for every `S`. -/
+@[simp]
+theorem moebiusDivSumIn_one (S : Set ℕ) : moebiusDivSumIn S 1 = 1 := by
+  simp [moebiusDivSumIn, filter_singleton]
+
+/-- `ℓ_S(1) = 0`: only `n = 1` contributes, with weight `log 1 = 0`. -/
+@[simp]
+theorem moebiusLogSumIn_one (S : Set ℕ) : moebiusLogSumIn S 1 = 0 := by
+  simp [moebiusLogSumIn, filter_singleton]
+
 /-! ### Sets containing every prime -/
 
-/-- If `S` contains every prime, the restriction to `⟨S⟩` is vacuous on `n ≥ 1`. -/
+/-- If `S` contains every prime, the restriction to `⟨S⟩` is vacuous. -/
 private theorem filter_primeFactors_mem_eq_self (hS : {p : ℕ | p.Prime} ⊆ S) (N : ℕ)
     {_ : DecidablePred fun n : ℕ ↦ ∀ p ∈ n.primeFactors, p ∈ S} :
     (Icc 1 N).filter (fun n ↦ ∀ p ∈ n.primeFactors, p ∈ S) = Icc 1 N :=
-  filter_true_of_mem fun _ _ _ hp ↦ hS (Nat.prime_of_mem_primeFactors hp)
+  filter_true_of_mem fun n _ ↦ Nat.forall_mem_primeFactors_mem_of_setOf_prime_subset hS n
 
 /-- If `S` contains every prime, `M_S = M`. -/
 theorem moebiusSumIn_of_setOf_prime_subset (hS : {p : ℕ | p.Prime} ⊆ S) (x : ℝ) :
@@ -154,9 +171,12 @@ private theorem filter_primeFactors_mem_empty {N : ℕ} (hN : 1 ≤ N)
     {_ : DecidablePred fun n : ℕ ↦ ∀ p ∈ n.primeFactors, p ∈ (∅ : Set ℕ)} :
     (Icc 1 N).filter (fun n ↦ ∀ p ∈ n.primeFactors, p ∈ (∅ : Set ℕ)) = {1} := by
   ext n
-  simp only [mem_filter, mem_Icc, Set.mem_empty_iff_false, imp_false, mem_singleton]
-  rw [← Finset.eq_empty_iff_forall_notMem, Nat.primeFactors_eq_empty]
-  omega
+  rw [mem_filter, mem_Icc, mem_singleton]
+  constructor
+  · exact fun ⟨⟨h1, _⟩, h⟩ ↦
+      (Nat.forall_mem_primeFactors_mem_empty_iff (Nat.one_le_iff_ne_zero.1 h1)).1 h
+  · rintro rfl
+    exact ⟨⟨le_rfl, hN⟩, (Nat.forall_mem_primeFactors_mem_empty_iff one_ne_zero).2 rfl⟩
 
 /-- `M_∅(x) = 1` for `x ≥ 1`: only `n = 1` contributes. -/
 theorem moebiusSumIn_empty (hx : 1 ≤ x) : moebiusSumIn ∅ x = 1 := by
@@ -198,5 +218,19 @@ theorem moebiusLogSumIn_setOf_not_dvd (q : ℕ) (x : ℝ) :
     moebiusLogSumIn {p | ¬ p ∣ q} x =
       ∑ n ∈ Icc 1 ⌊x⌋₊ with n.Coprime q, (μ n : ℝ) * Real.log (x / n) / n := by
   rw [moebiusLogSumIn, filter_primeFactors_mem_setOf_not_dvd]
+
+/-- `M_1 = M`: every `n` is coprime to `1`. -/
+theorem moebiusSumIn_setOf_not_dvd_one (x : ℝ) : moebiusSumIn {p | ¬ p ∣ 1} x = moebiusSum x :=
+  moebiusSumIn_of_setOf_prime_subset (fun _ hp ↦ Nat.Prime.not_dvd_one hp) x
+
+/-- `m_1 = m`: every `n` is coprime to `1`. -/
+theorem moebiusDivSumIn_setOf_not_dvd_one (x : ℝ) :
+    moebiusDivSumIn {p | ¬ p ∣ 1} x = moebiusDivSum x :=
+  moebiusDivSumIn_of_setOf_prime_subset (fun _ hp ↦ Nat.Prime.not_dvd_one hp) x
+
+/-- `ℓ_1 = ℓ`: every `n` is coprime to `1`. -/
+theorem moebiusLogSumIn_setOf_not_dvd_one (x : ℝ) :
+    moebiusLogSumIn {p | ¬ p ∣ 1} x = moebiusLogSum x :=
+  moebiusLogSumIn_of_setOf_prime_subset (fun _ hp ↦ Nat.Prime.not_dvd_one hp) x
 
 end TauCeti
