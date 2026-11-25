@@ -72,8 +72,6 @@ theorem exists_injective_pi_of_faithfulSMul :
   have h' : φ γ = φ γ' := LinearMap.ext_on_range hs fun i ↦ by simpa [φ] using congrFun h i
   exact FaithfulSMul.eq_of_smul_eq_smul fun m ↦ LinearMap.congr_fun h' m
 
-variable [Small.{v} Γ]
-
 variable (A M) in
 include A in
 /-- **A finitely generated projective-injective module lies in the additive closure.** Let `Γ` act
@@ -85,6 +83,8 @@ theorem exists_comp_eq_id_pi_of_projective_of_injective (P : Type v) [AddCommGro
     [Module Γ P] [Module.Finite Γ P] [Module.Projective Γ P] [Module.Injective Γ P] :
     ∃ (n : ℕ) (s : P →ₗ[Γ] (Fin n → M)) (r : (Fin n → M) →ₗ[Γ] P), r ∘ₗ s = .id := by
   obtain ⟨k, f, hf⟩ := exists_injective_pi_of_faithfulSMul A Γ M
+  -- `Γ` embeds into `Mᵏ`, so it is small in the universe of `M`.
+  have : Small.{v} Γ := small_of_injective hf
   obtain ⟨n, π, σ, -, -, hπσ⟩ := Module.Finite.exists_comp_eq_id_of_projective Γ P
   -- `P` embeds into `Γⁿ`, hence into `(Mᵏ)ⁿ ≅ Mⁿᵏ`.
   let c : (Fin n → Fin k → M) ≃ₗ[Γ] (Fin (n * k) → M) :=

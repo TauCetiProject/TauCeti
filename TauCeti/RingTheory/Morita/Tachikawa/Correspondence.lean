@@ -372,7 +372,7 @@ private theorem finite_projective_injective_restrictScalars {Γ Γ' : Type u} [R
 finitely generated `A`-module `W`, and let `σ : Γ ≃ Γ'` be a ring isomorphism. Then every finitely
 generated projective and injective `Γ`-module `P` is a retract of a finite power of `W`, viewed as a
 `Γ`-module through `σ`. -/
-theorem exists_comp_eq_id_pi_restrictScalars {A : Type*} [Ring A] {Γ Γ' : Type u} [Ring Γ]
+theorem exists_comp_eq_id_pi_restrictScalars {A : Type*} [Ring A] {Γ Γ' : Type*} [Ring Γ]
     [Ring Γ'] (σ : Γ ≃+* Γ') (W : Type u) [AddCommGroup W] [Module A W] [Module Γ' W]
     [SMulCommClass Γ' A W] [FaithfulSMul Γ' W] [Module.Finite A W] (P : Type u) [AddCommGroup P]
     [Module Γ P] [Module.Finite Γ P] [Module.Projective Γ P] [Module.Injective Γ P] :
