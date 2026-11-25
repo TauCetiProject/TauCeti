@@ -258,15 +258,6 @@ theorem groupSchemeBaseChangeIso_hom_comp_eqToHom :
   simp only [groupSchemeBaseChangeIso_def, Iso.trans_hom, Functor.mapIso_hom, eqToIso.hom,
     Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
 
-/-- The inclusion of `SOₙ` into `GLₙ` is the Hopf-ideal inclusion at its defining Hopf ideal,
-after the quotient-spectrum presentation `groupScheme_def`. -/
-theorem inclusion_eq_eqToHom_comp_hopfIdealInclusion :
-    inclusion R n =
-      eqToHom (groupScheme_def R n) ≫
-        GeneralLinear.hopfIdealInclusion R n (definingHopfIdeal R n) := by
-  rw [inclusion_eq_eqToHom_comp_hopfSpec_map, GeneralLinear.hopfIdealInclusion_def,
-    CommHopfAlgCat.quotientSpecι_def, coordinateMap_def]
-
 /-- **Base change of `SOₙ` is compatible with the inclusions.** Along the base-change
 isomorphisms, the base change of the inclusion of `SOₙ` into `GLₙ` over `R` is the inclusion over
 `K`. -/

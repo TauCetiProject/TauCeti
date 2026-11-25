@@ -50,7 +50,7 @@ variable (K : Type max u v) [CommRing K] [Algebra R K] [Invertible (2 : K)]
 /-- **The congruence matrix is natural in the base ring.** -/
 theorem map_congrUnit (hi : i * i = -1) :
     GeneralLinearGroup.map (algebraMap R K) (congrUnit l hi) =
-      congrUnit l (map_mul_self_eq_neg_one (algebraMap R K) hi) := by
+      congrUnit l (mul_self_map_of_mul_self_eq_neg_one (algebraMap R K) hi) := by
   have h2 : algebraMap R K ⅟2 = ⅟2 :=
     (invOf_eq_right_inv (by rw [← map_ofNat (algebraMap R K) 2, ← map_mul, mul_invOf_self,
       map_one])).symm
@@ -69,7 +69,7 @@ theorem baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp (hi : i
         (SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso R K l).hom =
       (coordinateHopfAlgebraBaseChangeIso R l K).hom ≫
         (coordinateHopfAlgebraIsoSpecialOrthogonal l
-          (map_mul_self_eq_neg_one (algebraMap R K) hi)).hom := by
+          (mul_self_map_of_mul_self_eq_neg_one (algebraMap R K) hi)).hom := by
   rw [coordinateHopfAlgebraIsoSpecialOrthogonal_def, coordinateHopfAlgebraIsoSpecialOrthogonal_def]
   have h₁ := baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom R l K
   have h₂ :=
@@ -100,7 +100,8 @@ theorem map_groupSchemeIsoSpecialOrthogonal_hom_comp_groupSchemeBaseChangeIso_ho
           (groupSchemeIsoSpecialOrthogonal l hi).hom ≫
         (SpecialOrthogonal.groupSchemeBaseChangeIso R K l).hom =
       (groupSchemeBaseChangeIso R l K).hom ≫
-        (groupSchemeIsoSpecialOrthogonal l (map_mul_self_eq_neg_one (algebraMap R K) hi)).hom := by
+        (groupSchemeIsoSpecialOrthogonal l
+          (mul_self_map_of_mul_self_eq_neg_one (algebraMap R K) hi)).hom := by
   have hS := baseChangeMap_coordinateHopfAlgebraIsoSpecialOrthogonal_hom_comp l K hi
   rw [← cancel_mono (eqToHom (SpecialOrthogonal.groupScheme_def K l)), Category.assoc,
     Category.assoc, SpecialOrthogonal.groupSchemeBaseChangeIso_hom_comp_eqToHom,
@@ -109,7 +110,8 @@ theorem map_groupSchemeIsoSpecialOrthogonal_hom_comp_groupSchemeBaseChangeIso_ho
     GeneralLinear.hopfIdealBaseChangeIso_def, GeneralLinear.hopfIdealBaseChangeIso_def]
   refine AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality
     (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).inv
-    (coordinateHopfAlgebraIsoSpecialOrthogonal l (map_mul_self_eq_neg_one (algebraMap R K) hi)).inv
+    (coordinateHopfAlgebraIsoSpecialOrthogonal l
+      (mul_self_map_of_mul_self_eq_neg_one (algebraMap R K) hi)).inv
     (coordinateHopfAlgebraBaseChangeIso R l K)
     (SpecialOrthogonal.coordinateHopfAlgebraBaseChangeIso R K l) ?_
   rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_hom] at hS
