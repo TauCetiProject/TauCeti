@@ -39,10 +39,11 @@ topological additive group, the convex join of any two compact sets is compact
 given point `y`, the union of the segments from `y` to `y` and to the points of `K`
 (`TopologicalSpace.Compacts.starHull`). For an inducing map `j : U → E` whose range is star-convex
 about `y ∈ range j`, the preimages of these star hulls are cofinal among the compact subsets of `U`
-(`Topology.IsInducing.exists_compacts_le_starConvex_image`). Over a linearly ordered field, the
-convex hull of a finite union of sets with compact convex hulls is compact
-(`TauCeti.isCompact_convexHull_union`, `Finset.isCompact_convexHull_biUnion`), although the convex
-hull of a single compact set need not be in infinite dimension.
+(`Topology.IsInducing.exists_compacts_le_starConvex_image`). Over a linearly ordered field with
+compact closed intervals (`CompactIccSpace`), in a topological vector space, the convex hull of a
+finite union of sets with compact convex hulls is compact (`TauCeti.isCompact_convexHull_union`,
+`Finset.isCompact_convexHull_biUnion`), although the convex hull of a single compact set need not
+be in infinite dimension.
 -/
 
 public section
