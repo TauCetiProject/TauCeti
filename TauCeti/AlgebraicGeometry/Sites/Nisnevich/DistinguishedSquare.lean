@@ -96,7 +96,7 @@ abbrev arrows : ∀ b : Bool, (Bool.rec Q.V Q.U b : AlgebraicGeometry.Scheme.{u}
 
 /-- A point of `X` lies in the reduced closed complement of an open `U` if and only if it lies
 outside `U`. -/
-private lemma mem_range_subschemeι_vanishingIdeal_compl_iff (U : X.Opens) (x : X) :
+lemma mem_range_subschemeι_vanishingIdeal_compl_iff (U : X.Opens) (x : X) :
     x ∈ Set.range
       (AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal U.compl).subschemeι ↔ x ∉ U := by
   rw [AlgebraicGeometry.Scheme.IdealSheafData.range_subschemeι,
