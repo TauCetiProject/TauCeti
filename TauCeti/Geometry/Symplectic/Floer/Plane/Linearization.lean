@@ -400,12 +400,11 @@ private theorem contDiffAt_of_comp_realChart_cylindricalEndLift_eq (p : PSSPlane
     ContDiffAt ℝ n (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap)
       (z, y) := by
   -- `J_e` has period one, as the end lift has.
+  have hJe1 : Periodic Je 1 :=
+    periodic_of_forall_comp_eq (realChart_cylindricalEndLift_add_one p (p.endSign * (r + 1)))
+      fun t ↦ hJeq _ (by simp [← mul_assoc])
   have hper : Periodic (fun t y ↦ (Je t y).toLinearMap.toContinuousLinearMap) 1 := fun t ↦ by
-    have h₁ := hJeq (p.endSign * (r + 1), t + 1) (by simp [← mul_assoc])
-    have h₂ := hJeq (p.endSign * (r + 1), t) (by simp [← mul_assoc])
-    rw [realChart_cylindricalEndLift_add_one] at h₁
-    have h : Je (t + 1) = Je t := h₁.symm.trans h₂
-    simp only [h]
+    simp only [hJe1 t]
   have h := p.contMDiffAt_comp_im_endCoord hper
     (contMDiff_prod_modelWithCornersSelf_iff.2 hJe.contMDiff)
     (norm_pos_iff.1 ((Real.exp_pos _).trans hz)) y
