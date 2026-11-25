@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.Field.ZMod
-public import Mathlib.Algebra.Polynomial.Div
+public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.RingTheory.SimpleRing.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Big.StructureSheaf
@@ -30,7 +30,7 @@ affine test schemes `Spec R ⟶ S` are `R`, `R`, `Rˣ` and the `n`-th roots of u
 
 public section
 
-open AlgebraicGeometry CategoryTheory Opposite
+open AlgebraicGeometry CategoryTheory Opposite Polynomial
 
 namespace TauCeti.AlgebraicGeometry.BigSiteExamples
 
@@ -82,37 +82,22 @@ theorem nontrivial_muObjSpec_of_pow_eq_zero (p : ℕ) [Fact p.Prime] (R : CommRi
   have := congrArg (fun ζ : Additive (rootsOfUnity p R) ↦ ((ζ.toMul : Rˣ) : R)) he
   simpa using this
 
-/-- The ideal `(X^p)` of `𝔽_p[X]`. -/
-noncomputable abbrev truncatedIdeal (p : ℕ) : Ideal (Polynomial (ZMod p)) :=
-  Ideal.span {Polynomial.X ^ p}
-
-/-- The class `ε` of `X` in `𝔽_p[ε]/(ε^p)`. -/
-noncomputable abbrev truncatedEps (p : ℕ) : Polynomial (ZMod p) ⧸ truncatedIdeal p :=
-  Ideal.Quotient.mk _ Polynomial.X
-
-lemma truncatedEps_pow (p : ℕ) : truncatedEps p ^ p = 0 :=
-  (map_pow (Ideal.Quotient.mk _) _ _).symm.trans
-    (Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.subset_span rfl))
-
-lemma truncatedEps_ne_zero (p : ℕ) (hp : 1 < p) : truncatedEps p ≠ 0 := fun h ↦ by
-  have h' := Ideal.Quotient.eq_zero_iff_mem.1 h
-  rw [Ideal.mem_span_singleton, Polynomial.X_pow_dvd_iff] at h'
-  have : Fact (1 < p) := ⟨hp⟩
-  exact one_ne_zero (Polynomial.coeff_X_one.symm.trans (h' 1 hp))
-
 /-- **`μ_p` is not zero over `𝔽_p`.** The value of `μ_p` on `Spec 𝔽_p[ε]/(ε^p)`, over any base, is
 nontrivial: `1 + ε` is a `p`-th root of unity different from `1`. So `μ_p` is not the zero sheaf
 over `𝔽_p`, although it vanishes on reduced test schemes
-(`subsingleton_mu_obj_of_isReduced`). -/
+(`subsingleton_mu_obj_of_isReduced`). Here `𝔽_p[ε]/(ε^p)` is the truncated polynomial algebra
+`AdjoinRoot (X ^ p)`, with `ε` its root. -/
 theorem nontrivial_muObjSpec_truncated (p : ℕ) [Fact p.Prime] {S : Scheme.{0}}
-    (h : Spec (.of (Polynomial (ZMod p) ⧸ truncatedIdeal p)) ⟶ S) :
+    (h : Spec (.of (AdjoinRoot ((X : (ZMod p)[X]) ^ p))) ⟶ S) :
     Nontrivial ((Scheme.mu S p).obj.obj (op (Over.mk h))) := by
   have hp := (Fact.out : p.Prime).one_lt
-  have : Nontrivial (Polynomial (ZMod p) ⧸ truncatedIdeal p) :=
-    ⟨⟨_, 0, truncatedEps_ne_zero p hp⟩⟩
-  have : CharP (Polynomial (ZMod p) ⧸ truncatedIdeal p) p :=
+  have hε : AdjoinRoot.root ((X : (ZMod p)[X]) ^ p) ≠ 0 :=
+    AdjoinRoot.mk_ne_zero_of_natDegree_lt (monic_X_pow p) X_ne_zero (by simpa using hp)
+  have : Nontrivial (AdjoinRoot ((X : (ZMod p)[X]) ^ p)) := ⟨⟨_, 0, hε⟩⟩
+  have : CharP (AdjoinRoot ((X : (ZMod p)[X]) ^ p)) p :=
     charP_of_injective_algebraMap (algebraMap (ZMod p) _).injective p
-  exact nontrivial_muObjSpec_of_pow_eq_zero p (.of _) (truncatedEps_pow p)
-    (truncatedEps_ne_zero p hp) h
+  have hεp : AdjoinRoot.root ((X : (ZMod p)[X]) ^ p) ^ p = 0 := by
+    rw [← AdjoinRoot.mk_X, ← map_pow, AdjoinRoot.mk_self]
+  exact nontrivial_muObjSpec_of_pow_eq_zero p (.of (AdjoinRoot ((X : (ZMod p)[X]) ^ p))) hεp hε h
 
 end TauCeti.AlgebraicGeometry.BigSiteExamples

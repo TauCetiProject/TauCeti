@@ -155,6 +155,10 @@ noncomputable def gaObjSpecEquiv (R : CommRingCat.{u}) (h : Spec R ⟶ S) :
 lemma gaObjSpecEquiv_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S) (a : Γ(Spec R, ⊤)) :
     gaObjSpecEquiv S R h a = (Scheme.ΓSpecIso R).hom a := (rfl)
 
+@[simp]
+lemma gaObjSpecEquiv_symm_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S) (r : R) :
+    (gaObjSpecEquiv S R h).symm r = (Scheme.ΓSpecIso R).inv r := (rfl)
+
 /-- The multiplicative group `𝔾_m : T ↦ Γ(T, O_T)ˣ` on the big fpqc site over `S`, written
 additively so that it is a sheaf of abelian groups. -/
 @[expose]
@@ -192,6 +196,12 @@ lemma coe_gmObjSpecEquiv_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S)
     ((gmObjSpecEquiv S R h u).toMul : R) = (Scheme.ΓSpecIso R).hom (u.toMul : Γ(Spec R, ⊤)) :=
   (rfl)
 
+@[simp]
+lemma coe_gmObjSpecEquiv_symm_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S) (u : Additive Rˣ) :
+    (Additive.toMul (α := Γ(Spec R, ⊤)ˣ) ((gmObjSpecEquiv S R h).symm u) :
+      Γ(Spec R, ⊤)) = (Scheme.ΓSpecIso R).inv (u.toMul : R) :=
+  (rfl)
+
 /-- The `n`-th power map `𝔾_m ⟶ 𝔾_m`, `t ↦ tⁿ`. In the additive notation of `Gm` it is
 multiplication by `n`. -/
 noncomputable def powHom (n : ℕ) : Gm S ⟶ Gm S where
@@ -205,6 +215,13 @@ noncomputable def powHom (n : ℕ) : Gm S ⟶ Gm S where
 @[simp]
 lemma powHom_app_apply (n : ℕ) (T : Over S) (u : Additive Γ(T.left, ⊤)ˣ) :
     (powHom S n).hom.app (op T) u = Additive.ofMul (u.toMul ^ n) := (rfl)
+
+/-- On an affine test scheme `Spec R`, the `n`-th power map of `𝔾_m` is `u ↦ uⁿ` on `Rˣ`,
+which is multiplication by `n` in additive notation. -/
+lemma gmObjSpecEquiv_powHom_app (n : ℕ) (R : CommRingCat.{u}) (h : Spec R ⟶ S)
+    (u : (Gm S).obj.obj (op (Over.mk h))) :
+    gmObjSpecEquiv S R h ((powHom S n).hom.app _ u) = n • gmObjSpecEquiv S R h u :=
+  map_nsmul (gmObjSpecEquiv S R h) n u
 
 /-- The presheaf `T ↦ μ_n(Γ(T, O_T))` underlying `mu S n`. -/
 @[expose]
@@ -279,6 +296,14 @@ lemma coe_muObjSpecEquiv_apply (n : ℕ) (R : CommRingCat.{u}) (h : Spec R ⟶ S
       (Scheme.ΓSpecIso R).hom ((ζ.toMul : Γ(Spec R, ⊤)ˣ) : Γ(Spec R, ⊤)) :=
   (rfl)
 
+@[simp]
+lemma coe_muObjSpecEquiv_symm_apply (n : ℕ) (R : CommRingCat.{u}) (h : Spec R ⟶ S)
+    (ζ : Additive (rootsOfUnity n R)) :
+    ((Additive.toMul (α := rootsOfUnity n Γ(Spec R, ⊤)) ((muObjSpecEquiv S n R h).symm ζ) :
+      Γ(Spec R, ⊤)ˣ) : Γ(Spec R, ⊤)) =
+      (Scheme.ΓSpecIso R).inv ((ζ.toMul : Rˣ) : R) :=
+  (rfl)
+
 /-- The inclusion `μ_n ⟶ 𝔾_m`. -/
 noncomputable def muToGm (n : ℕ) : mu S n ⟶ Gm S where
   hom := muPresheafι S n
@@ -286,6 +311,14 @@ noncomputable def muToGm (n : ℕ) : mu S n ⟶ Gm S where
 @[simp]
 lemma muToGm_app_apply (n : ℕ) (T : Over S) (u : Additive (rootsOfUnity n Γ(T.left, ⊤))) :
     (muToGm S n).hom.app (op T) u = Additive.ofMul (u.toMul : Γ(T.left, ⊤)ˣ) := (rfl)
+
+/-- On an affine test scheme `Spec R`, the inclusion `μ_n ⟶ 𝔾_m` is the inclusion of the
+`n`-th roots of unity of `R` into `Rˣ`. -/
+lemma gmObjSpecEquiv_muToGm_app (n : ℕ) (R : CommRingCat.{u}) (h : Spec R ⟶ S)
+    (ζ : (mu S n).obj.obj (op (Over.mk h))) :
+    gmObjSpecEquiv S R h ((muToGm S n).hom.app _ ζ) =
+      Additive.ofMul ((muObjSpecEquiv S n R h ζ).toMul : Rˣ) :=
+  (rfl)
 
 @[reassoc (attr := simp)]
 lemma muToGm_comp_powHom (n : ℕ) : muToGm S n ≫ powHom S n = 0 := by
