@@ -154,20 +154,20 @@ lemma autStabilizer_inv (a : LineBundleClass X) : f.autStabilizer a⁻¹ = f.aut
   rw [autStabilizer_eq_comap, autStabilizer_eq_comap, MulAction.stabilizer_inv]
 
 /-- An automorphism stabilizing two line-bundle classes stabilizes their product. -/
-lemma autStabilizer_inf_le_mul (a b : LineBundleClass X) :
+lemma autStabilizer_inf_autStabilizer_le_autStabilizer_mul (a b : LineBundleClass X) :
     f.autStabilizer a ⊓ f.autStabilizer b ≤ f.autStabilizer (a * b) := by
   simp only [autStabilizer_eq_comap, ← Subgroup.comap_inf]
-  exact Subgroup.comap_mono (MulAction.stabilizer_inf_le_mul a b)
+  exact Subgroup.comap_mono (MulAction.stabilizer_inf_stabilizer_le_stabilizer_mul a b)
 
 /-- An automorphism stabilizing a line-bundle class stabilizes all of its integer powers. -/
-lemma autStabilizer_le_zpow (a : LineBundleClass X) (n : ℤ) :
+lemma le_autStabilizer_zpow (a : LineBundleClass X) (n : ℤ) :
     f.autStabilizer a ≤ f.autStabilizer (a ^ n) :=
-  Subgroup.comap_mono (MulAction.stabilizer_le_zpow a n)
+  Subgroup.comap_mono (MulAction.le_stabilizer_zpow a n)
 
 /-- An automorphism stabilizing a line-bundle class stabilizes all of its natural powers. -/
-lemma autStabilizer_le_pow (a : LineBundleClass X) (n : ℕ) :
+lemma le_autStabilizer_pow (a : LineBundleClass X) (n : ℕ) :
     f.autStabilizer a ≤ f.autStabilizer (a ^ n) :=
-  Subgroup.comap_mono (MulAction.stabilizer_le_pow a n)
+  Subgroup.comap_mono (MulAction.le_stabilizer_pow a n)
 
 /-- In a torsion-free Picard group, a line-bundle class and its nonzero integer powers have the
 same stabilizer: if `(g^* a) ^ n = a ^ n` then `g^* a = a`. -/
