@@ -76,16 +76,14 @@ theorem hasLocallyFreeQuotientOfDifferentials_iff (X : Scheme.{u}) [X.Over (Spec
         Epi q :=
   Iff.rfl
 
-/-- On the empty scheme `Ω_{X/k}` admits a locally free quotient of every rank `d`: the free sheaf
-of rank `d` has constant rank `d` vacuously, and every morphism of sheaves on the empty scheme is
-an epimorphism. -/
+/-- On the empty scheme, `Ω_{X/k}` admits a locally free quotient of every rank `d`. -/
 theorem hasLocallyFreeQuotientOfDifferentials_of_isEmpty (X : Scheme.{u}) [X.Over (Spec (.of k))]
     [IsEmpty X] (d : ℕ) : HasLocallyFreeQuotientOfDifferentials k X d :=
   ⟨FiniteLocallyFreeSheaf.FixedRank.free X d, 0,
     Scheme.Modules.Hom.epi_of_forall_exists_surjective_smul _ fun x ↦ isEmptyElim x⟩
 
-/-- On every scheme `Ω_{X/k}` admits a locally free quotient of rank `0`: the zero morphism onto
-the free sheaf on an empty type, which is a zero object. -/
+/-- On every scheme, `Ω_{X/k}` admits a locally free quotient of rank `0`, namely the zero
+quotient. -/
 theorem hasLocallyFreeQuotientOfDifferentials_zero (X : Scheme.{u}) [X.Over (Spec (.of k))] :
     HasLocallyFreeQuotientOfDifferentials k X 0 :=
   have h : Limits.IsZero (FiniteLocallyFreeSheaf.FixedRank.free X 0).obj.obj := by
