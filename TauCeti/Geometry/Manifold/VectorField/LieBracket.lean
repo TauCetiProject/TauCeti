@@ -76,6 +76,10 @@ section
 
 variable [IsManifold I (minSmoothness 𝕜 2) M]
 
+/-- `minSmoothness 𝕜 2` gives `C¹` atlas smoothness. -/
+local instance : IsManifold I 1 M :=
+  IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
+
 namespace VectorField
 
 /-- On a normed space, the manifold Lie bracket of two vector fields is their Lie bracket as maps
@@ -254,8 +258,6 @@ theorem eq_mlieBracket_of_mvfderiv_extChartAt {V W : ∀ y : M, TangentSpace I y
         mvfderiv I (fun y ↦ mvfderiv I (extChartAt I x) y (V y)) x (W x)) :
     v = mlieBracket I V W x := by
   rw [← mvfderiv_mlieBracket contMDiffAt_extChartAt le_rfl hV hW] at hv
-  have : IsManifold I 1 M :=
-    .of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
   obtain ⟨e, he⟩ := isInvertible_mfderiv_extChartAt (I := I) (mem_extChartAt_source x)
   have hinj : Function.Injective (mvfderiv I (extChartAt I x) x) := by
     rw [mvfderiv, ContinuousLinearMap.coe_comp, ← he]
@@ -321,8 +323,6 @@ theorem mlieBracket_trivializationAt_symm_eq
       -mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (Set.range I) z
         (fderivWithin 𝕜 (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (Set.range I))
           (Set.range I) z u) := by
-  let _ : IsManifold I 1 M :=
-    IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
   let _ : IsManifold I 2 M := IsManifold.of_le (le_minSmoothness (𝕜 := 𝕜))
   set σ : (q : M) → TangentSpace I q := fun q ↦ (trivializationAt E (TangentSpace I) x₀).symm q u
   have hy_src : (extChartAt I x₀).symm z ∈ (extChartAt I x₀).source :=

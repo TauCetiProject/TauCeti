@@ -234,10 +234,10 @@ end Isotopy
 
 variable [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I 2 M]
 
-section MaximalFlow
-
 /-- The flow lemmas are applied at smoothness `1`, read in `ℕ∞`. -/
 local instance : IsManifold I ((1 : ℕ∞) : WithTop ℕ∞) M := IsManifold.of_le (n := 2) (by norm_num)
+
+section MaximalFlow
 
 variable {Z : (x : M) → TangentSpace I x}
   (hZ : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, Z y⟩ : TangentBundle I M)))
@@ -249,7 +249,8 @@ theorem hasDerivAt_flowOf_zero {s : ℝ → S} {β : S} (y : M)
     (hid : ∀ {ψ : ℝ → M → M},
       (∀ᶠ x in 𝓝 y, ψ 0 x = x) →
       ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 1 (fun p : ℝ × M ↦ ψ p.1 p.2) (0, y) →
-      ContMDiffAt I I.tangent 1 (fun x ↦ (⟨x, Z x⟩ : TangentBundle I M)) y →
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) I.tangent 1
+        (fun p : ℝ × M ↦ (⟨p.2, Z p.2⟩ : TangentBundle I M)) (0, y) →
       (∀ᶠ p in 𝓝 (0, y), HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u p.2) p.1
         ((1 : ℝ →L[ℝ] ℝ).smulRight (Z (ψ p.1 p.2)))) →
       HasDerivAt (fun r ↦ A.eval (A.pull (ψ r) (s r)) y) (A.eval β y) 0) :
@@ -257,7 +258,7 @@ theorem hasDerivAt_flowOf_zero {s : ℝ → S} {β : S} (y : M)
   have hD := isOpen_flowDomain hZ
   refine hid (Eventually.of_forall (flowOf_zero Z))
     ((contMDiffOn_flowOf (n := 1) le_rfl hZ).contMDiffAt
-      (hD.mem_nhds (mem_flowDomain_zero hZ y))) (hZ y) ?_
+      (hD.mem_nhds (mem_flowDomain_zero hZ y))) (hZ.comp contMDiff_snd).contMDiffAt ?_
   filter_upwards [hD.mem_nhds (mem_flowDomain_zero hZ y)] with p hp
   exact (isMIntegralCurveAt_flowOf hZ hp).hasMFDerivAt
 
@@ -335,28 +336,30 @@ section TimeDependentFlow
 
 variable {X : ℝ → (x : M) → TangentSpace I x}
   (hc : IsCompleteVectorField (timeDependentSuspensionField X))
-  (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+  (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
     (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
 include hX
 
 /-- **Pullback derivative at the base time of a time-dependent flow.** Reduces the derivative of
-`u ↦ ((timeDependentFlowOf X t u)^* s_u)_y` at `u = t` to the identity-case derivative theorem
-along `X t`. No completeness is needed. -/
+`u ↦ ((timeDependentFlowOf X t u)^* s_u)_y` at `u = t` to the `C¹` identity-case derivative theorem
+along `X`. No completeness is needed. -/
 theorem hasDerivAt_timeDependentFlowOf_self {s : ℝ → S} {β : S} (t : ℝ) (y : M)
     (hid : ∀ {ψ : ℝ → M → M},
       (∀ᶠ x in 𝓝 y, ψ t x = x) →
-      ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y) →
-      (∀ᶠ x in 𝓝 y, HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u x) t
-        ((1 : ℝ →L[ℝ] ℝ).smulRight (X t (ψ t x)))) →
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 1 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y) →
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) I.tangent 1
+        (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)) (t, y) →
+      (∀ᶠ p in 𝓝 (t, y), HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u p.2) p.1
+        ((1 : ℝ →L[ℝ] ℝ).smulRight (X p.1 (ψ p.1 p.2)))) →
       HasDerivAt (fun u ↦ A.eval (A.pull (ψ u) (s u)) y) (A.eval β y) t) :
     HasDerivAt (fun u ↦ A.eval (A.pull (timeDependentFlowOf X t u) (s u)) y)
       (A.eval β y) t := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
-  exact hid (Eventually.of_forall (timeDependentFlowOf_self X t))
-    (contMDiffAt_uncurry_timeDependentFlowOf (n := 2) one_le_two hX
-      (mem_timeDependentFlowDomain_self hX₁ t y))
-    (Eventually.of_forall fun x ↦
-      hasMFDerivAt_timeDependentFlowOf hX₁ (mem_timeDependentFlowDomain_self hX₁ t x))
+  have hy := mem_timeDependentFlowDomain_self hX t y
+  refine hid (Eventually.of_forall (timeDependentFlowOf_self X t))
+    (contMDiffAt_uncurry_timeDependentFlowOf (n := 1) le_rfl hX hy) (hX (t, y)) ?_
+  filter_upwards [(by fun_prop : Continuous fun p : ℝ × M ↦ ((t, p.1), p.2)).continuousAt
+    |>.eventually_mem ((isOpen_timeDependentFlowDomain hX).mem_nhds hy)] with p hp
+  exact hasMFDerivAt_timeDependentFlowOf hX hp
 
 /-- **Moving the pullback derivative along a maximal time-dependent flow from the base time.**
 Uses the local two-time composition law `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}` on `timeDependentFlowDomain X`
@@ -369,23 +372,22 @@ theorem hasDerivAt_timeDependentFlowOf_of_mem {b : ℝ → S} {β : S} {s t : �
       (A.eval β (timeDependentFlowOf X s t x)) t) :
     HasDerivAt (fun u ↦ A.eval (A.pull (timeDependentFlowOf X s u) (b u)) x)
       (A.eval (A.pull (timeDependentFlowOf X s t) β) x) t := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
-  have hD := isOpen_timeDependentFlowDomain hX₁
+  have hD := isOpen_timeDependentFlowDomain hX
   have hφ : MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
-    mdifferentiableAt_timeDependentFlowOf hX₁ h
+    mdifferentiableAt_timeDependentFlowOf hX h
   have hev : ∀ᶠ p in 𝓝 (t, x), ((s, t), p.2) ∈ timeDependentFlowDomain X ∧
       ((t, p.1), timeDependentFlowOf X s t p.2) ∈ timeDependentFlowDomain X :=
     ((continuous_const.prodMk continuous_snd).continuousAt.eventually_mem (hD.mem_nhds h)).and
       (((continuous_const.prodMk continuous_fst).continuousAt.prodMk
         (hφ.continuousAt.comp continuousAt_snd)).eventually_mem
-          (hD.mem_nhds (mem_timeDependentFlowDomain_self hX₁ t _)))
+          (hD.mem_nhds (mem_timeDependentFlowDomain_self hX t _)))
   rw [nhds_prod_eq] at hev
   refine A.hasDerivAt_of_eq_comp (χ := timeDependentFlowOf X t) ?_ hφ ?_ hself
   · filter_upwards [hev.curry] with u hu
     filter_upwards [hu] with y hy
-    exact (timeDependentFlowOf_trans_of_mem hX₁ hy.1 hy.2).2.symm
+    exact (timeDependentFlowOf_trans_of_mem hX hy.1 hy.2).2.symm
   · filter_upwards [hev.curry] with u hu
-    exact mdifferentiableAt_timeDependentFlowOf hX₁ hu.self_of_nhds.2
+    exact mdifferentiableAt_timeDependentFlowOf hX hu.self_of_nhds.2
 
 include hc
 

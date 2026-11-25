@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.Order.Compact
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # The Ingham exponent of a zero-free width
@@ -38,7 +39,13 @@ nonnegative on `[3, ∞)` and `x ≥ 1`, where the infimum is bounded below by `
   `log 3 ≤ ω_η(x) ≤ η(t) log x + log t` for every `t ≥ 3`, in particular for `t = 3`.
 * `TauCeti.le_inghamExponent_of_mul_log_rpow_le`: if `η(t) ≥ a₀ (log t)^{-A}` then
   `ω_η(x) ≥ a₀^{1/(1+A)} (log x)^{1/(1+A)}`.
+* `TauCeti.exists_log_pow_mul_exp_neg_inghamExponent_le`: if `η(t) ≥ a₀ (log t)^{-A}` with
+  `a₀ > 0`, then for every `c > 0` and `n` the product `(log x)^n exp(-c ω_η(x))` is bounded in
+  `x ≥ 1`.
 * `TauCeti.inghamExponent_mono`: the exponent is monotone in the width `η`.
+* `TauCeti.mul_inghamExponent_le`: if `κ η ≤ η'` with `0 ≤ κ ≤ 1`, then `κ ω_η ≤ ω_η'`.
+* `TauCeti.exists_rpow_eq_and_inghamExponent_le`: for continuous nonincreasing `η` and large `x`
+  there is a height `T ≥ 3` with `x^{η(T + 3)} = T` and `ω_η(x) ≤ 2 log T + log 2`.
 
 ## References
 
@@ -46,6 +53,10 @@ nonnegative on `[3, ∞)` and `x ≥ 1`, where the infimum is bounded below by `
 * D. J. Platt, T. S. Trudgian, *The error term in the prime number theorem*, Math. Comp. 90
   (2021), §1.
 * H. L. Montgomery, R. C. Vaughan, *Multiplicative Number Theory I*, Chapter 6.
+* The choice of height in `TauCeti.exists_rpow_eq_and_inghamExponent_le` follows the lemma
+  `GenStrengthPNT` in the formalization
+  [PrimeNumberTheoremAnd, revision df0ccba](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd/blob/df0ccba486bb86e273ecab565b6ab222c37f8320/PrimeNumberTheoremAnd/MediumPNT.lean),
+  file `PrimeNumberTheoremAnd/MediumPNT.lean`.
 -/
 
 public section
@@ -130,6 +141,19 @@ theorem inghamExponent_mono {η' : ℝ → ℝ} (hη : ∀ t, 3 ≤ t → 0 ≤ 
     gcongr
     exact hle t t.property
 
+/-- **Scaling the width.** If `0 ≤ κ ≤ 1` and `κ η ≤ η'` on `[3, ∞)`, with `η ≥ 0` there, then
+`κ ω_η(x) ≤ ω_η'(x)` for `x ≥ 1`. -/
+theorem mul_inghamExponent_le {η' : ℝ → ℝ} {κ : ℝ} (hκ0 : 0 ≤ κ) (hκ1 : κ ≤ 1)
+    (hη : ∀ t, 3 ≤ t → 0 ≤ η t) (hle : ∀ t, 3 ≤ t → κ * η t ≤ η' t) (hx : 1 ≤ x) :
+    κ * inghamExponent η x ≤ inghamExponent η' x :=
+  le_inghamExponent fun t ht ↦ calc
+    κ * inghamExponent η x ≤ κ * (η t * Real.log x + Real.log t) :=
+      mul_le_mul_of_nonneg_left (inghamExponent_le hη hx ht) hκ0
+    _ = κ * η t * Real.log x + κ * Real.log t := by ring
+    _ ≤ η' t * Real.log x + Real.log t :=
+      add_le_add (mul_le_mul_of_nonneg_right (hle t ht) (Real.log_nonneg hx))
+        (mul_le_of_le_one_left (Real.log_nonneg (by linarith)) hκ1)
+
 /-- **Lower bound from a lower bound on the width.** If `η(t) ≥ a₀ (log t)^{-A}` on `[3, ∞)`
 with `a₀ ≥ 0` and `A ≥ 0`, then `ω_η(x) ≥ a₀^{1/(1+A)} (log x)^{1/(1+A)}` for `x ≥ 1`. For
 `η(t) = c₀ / log t` this gives `ω_η(x) ≥ √(c₀ log x)`, half the exact value `2 √(c₀ log x)` that
@@ -157,5 +181,90 @@ theorem le_inghamExponent_of_mul_log_rpow_le {a₀ A : ℝ} (ha₀ : 0 ≤ a₀)
   have : M ^ (-A) ≤ Real.log t ^ (-A) :=
     Real.rpow_le_rpow_of_nonpos hu huM.le (neg_nonpos.2 hA)
   nlinarith [mul_le_mul_of_nonneg_left this (by positivity : 0 ≤ a₀ * Real.log x)]
+
+/-- **Powers of `log x` are absorbed by `exp(-c ω_η(x))`.** If `η(t) ≥ a₀ (log t)^{-A}` on
+`[3, ∞)` with `a₀ > 0`, then for every `c > 0` and `n : ℕ` the product `(log x)^n exp(-c ω_η(x))`
+is bounded on `x ≥ 1`: the exponent `ω_η(x)` is at least a positive multiple of
+`(log x)^{1/(1+A)}` when `A ≥ 0`, and of `log x` when `A < 0`. -/
+theorem exists_log_pow_mul_exp_neg_inghamExponent_le {a₀ A c : ℝ} (ha₀ : 0 < a₀) (hc : 0 < c)
+    (hη : ∀ t, 3 ≤ t → a₀ * Real.log t ^ (-A) ≤ η t) (n : ℕ) :
+    ∃ D, ∀ x, 1 ≤ x → Real.log x ^ n * Real.exp (-c * inghamExponent η x) ≤ D := by
+  -- for `A < 0` the width is at least the constant `a₀ (log 3)^{-A}`, the case `A = 0`
+  wlog hA : 0 ≤ A generalizing a₀ A
+  · refine this (a₀ := a₀ * Real.log 3 ^ (-A)) (A := 0) (by positivity) (fun t ht ↦ ?_) le_rfl
+    rw [neg_zero, Real.rpow_zero, mul_one]
+    exact (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (by positivity)
+      (Real.log_le_log (by norm_num) ht) (by linarith)) ha₀.le).trans (hη t ht)
+  set b := c * a₀ ^ (1 / (1 + A))
+  have hb : 0 < b := by positivity
+  obtain ⟨M, -, hM⟩ := exists_rpow_mul_exp_neg_mul_le (σ := (1 + A) * n) (by positivity) hb
+  refine ⟨M, fun x hx ↦ ?_⟩
+  have hL := Real.log_nonneg hx
+  set y := Real.log x ^ (1 / (1 + A))
+  -- `(log x)^n = y^{(1+A) n}`, and `exp(-c ω_η(x)) ≤ exp(-b y)`
+  have hLy : Real.log x ^ n = y ^ ((1 + A) * n) := by
+    have he : 1 / (1 + A) * ((1 + A) * n) = n := by field_simp
+    rw [← Real.rpow_mul hL, he, Real.rpow_natCast]
+  have hexp : Real.exp (-c * inghamExponent η x) ≤ Real.exp (-(b * y)) := by
+    have := le_inghamExponent_of_mul_log_rpow_le ha₀.le hA hη hx
+    rw [Real.exp_le_exp, neg_mul, neg_le_neg_iff, mul_assoc]
+    exact mul_le_mul_of_nonneg_left this hc.le
+  calc Real.log x ^ n * Real.exp (-c * inghamExponent η x)
+      ≤ y ^ ((1 + A) * n) * Real.exp (-(b * y)) := by
+        rw [hLy]
+        gcongr
+    _ ≤ M := hM y (by positivity)
+
+
+/-- **A height balancing the width against the truncation.** Let `η` be continuous and
+nonincreasing on `[3, ∞)`, and let `x ≥ 1` satisfy `log 3 ≤ η(6) log x`. Then there is a height
+`T ≥ 3` with `x^{η(T + 3)} = T` and `ω_η(x) ≤ 2 log T + log 2`. Moving a contour to the line
+`Re s = 1 - η(T + 3)` then saves the factor `x^{-η(T + 3)} = 1/T`, which is at most
+`√2 exp(-ω_η(x)/2)`. -/
+theorem exists_rpow_eq_and_inghamExponent_le (hηc : ContinuousOn η (Ici 3))
+    (hηa : AntitoneOn η (Ici 3)) (hx : 1 ≤ x) (h6 : Real.log 3 ≤ η 6 * Real.log x) :
+    ∃ T, 3 ≤ T ∧ x ^ η (T + 3) = T ∧ inghamExponent η x ≤ 2 * Real.log T + Real.log 2 := by
+  have hL : 0 ≤ Real.log x := Real.log_nonneg hx
+  set f : ℝ → ℝ := fun t ↦ η (t + 3) * Real.log x - Real.log t
+  set T₁ := Real.exp (η 6 * Real.log x)
+  have hT₁ : 3 ≤ T₁ := by
+    rw [← Real.exp_log (by norm_num : (0 : ℝ) < 3)]
+    exact Real.exp_le_exp.2 h6
+  have hfc : ContinuousOn f (Icc 3 T₁) :=
+    ((hηc.comp (continuousOn_id.add continuousOn_const) fun t ht ↦
+        mem_Ici.2 (by linarith [ht.1] : 3 ≤ t + 3)).mul continuousOn_const).sub
+      (Real.continuousOn_log.mono fun t ht ↦ (by linarith [ht.1] : (0 : ℝ) < t).ne')
+  have hf₁ : f T₁ ≤ 0 := by
+    have : η (T₁ + 3) ≤ η 6 :=
+      hηa (mem_Ici.2 (by norm_num)) (mem_Ici.2 (by linarith)) (by linarith)
+    have hfT₁ : f T₁ = (η (T₁ + 3) - η 6) * Real.log x := by
+      simp only [f, T₁, Real.log_exp]
+      ring
+    rw [hfT₁]
+    exact mul_nonpos_of_nonpos_of_nonneg (by linarith) hL
+  have hf₃ : 0 ≤ f 3 := by
+    simp only [f, show (3 : ℝ) + 3 = 6 by norm_num]
+    linarith
+  obtain ⟨T, hT, hfT⟩ := intermediate_value_Icc' hT₁ hfc ⟨hf₁, hf₃⟩
+  have hlog : Real.log T = η (T + 3) * Real.log x := by
+    simp only [f] at hfT
+    linarith
+  have hT0 : 0 < T := by linarith [hT.1]
+  refine ⟨T, hT.1, ?_, ?_⟩
+  · rw [Real.rpow_def_of_pos (by linarith), mul_comm, ← hlog, Real.exp_log hT0]
+  by_cases hb : BddBelow (range fun t : Ici (3 : ℝ) ↦ η t * Real.log x + Real.log t)
+  · calc inghamExponent η x ≤ η (T + 3) * Real.log x + Real.log (T + 3) :=
+          ciInf_le hb (⟨T + 3, mem_Ici.2 (by linarith)⟩ : Ici (3 : ℝ))
+      _ ≤ Real.log T + Real.log (2 * T) := by
+          rw [← hlog]
+          exact add_le_add le_rfl (Real.log_le_log (by linarith) (by linarith [hT.1]))
+      _ = 2 * Real.log T + Real.log 2 := by
+          rw [Real.log_mul two_ne_zero hT0.ne']
+          ring
+  -- an unbounded infimum takes the junk value `0`
+  rw [inghamExponent, Real.iInf_of_not_bddBelow hb]
+  have := Real.log_nonneg (by linarith [hT.1] : (1 : ℝ) ≤ T)
+  have := Real.log_nonneg (by norm_num : (1 : ℝ) ≤ 2)
+  linarith
 
 end TauCeti

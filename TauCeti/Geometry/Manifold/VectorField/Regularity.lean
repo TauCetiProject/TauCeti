@@ -88,6 +88,7 @@ manifold differential of a function to tangent vectors whose base point varies.
   of the field.
 * `TauCeti.eventually_hasDerivAt_extChartAt_family`,
   `TauCeti.eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod`,
+  `TauCeti.hasDerivAt_extChartAt_family_of_eq_id_of_eventually_nhds_prod`,
   `TauCeti.hasDerivAt_fderiv_extChartAt_family_of_eq_id`, and
   `TauCeti.hasDerivAt_fderiv_extChartAt_family_of_eq_id_of_eventually_nhds_prod`: read in the chart
   at `y`, a family of maps which is the identity near `y` at time `t` moves with the coordinate
@@ -800,17 +801,19 @@ theorem eventually_hasDerivAt_extChartAt_family [I.Boundaryless] {ψ : 𝕜 → 
   rw [hzid, (extChartAt I y).right_inv hz]
 
 /-- Read in the chart at `y`, a family fixing `y` at time `t`, continuous at `(t, y)` and moving
-the points near `y` with the velocity of `V` at every time near `t`, moves the points near the
-chart centre at every time near `t` with the coordinate velocity of `V`, the pullback of `V` to the
-chart, evaluated at their current position. -/
+the points near `y` at every time `u` near `t` with the velocity of a field `V u`, which may
+depend on the time, moves the points near the chart centre at every time `u` near `t` with the
+coordinate velocity of `V u`, the pullback of `V u` to the chart, evaluated at their current
+position. -/
 theorem eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod {ψ : 𝕜 → M → M}
-    {V : (x : M) → TangentSpace I x} {t : 𝕜} {y : M} (hy : ψ t y = y)
+    {V : 𝕜 → (x : M) → TangentSpace I x} {t : 𝕜} {y : M} (hy : ψ t y = y)
     (hψ : ContinuousAt (fun p : 𝕜 × M ↦ ψ p.1 p.2) (t, y))
     (hvel : ∀ᶠ p in 𝓝 (t, y),
-      HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun u ↦ ψ u p.2) p.1 ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V (ψ p.1 p.2)))) :
+      HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun u ↦ ψ u p.2) p.1
+        ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V p.1 (ψ p.1 p.2)))) :
     ∀ᶠ p in 𝓝 (t, extChartAt I y y), HasDerivAt
       (fun u ↦ extChartAt I y (ψ u ((extChartAt I y).symm p.2)))
-      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I y).symm V (range I)
+      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I y).symm (V p.1) (range I)
         (extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2)))) p.1 := by
   -- The inverse chart in the second factor carries `(t, extChartAt I y y)` to `(t, y)`.
   have hc : ContinuousAt (fun p : 𝕜 × E ↦ (p.1, (extChartAt I y).symm p.2))
@@ -826,7 +829,22 @@ theorem eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod {ψ : �
       exact extChartAt_source_mem_nhds y)
   filter_upwards [hc.eventually (hpt ▸ hvel), hsrc] with p hpv hps
   exact (hpv.hasDerivAt_extChartAt_comp hps).congr_deriv
-    (VectorField.mpullbackWithin_extChartAt_symm_apply V hps).symm
+    (VectorField.mpullbackWithin_extChartAt_symm_apply (V p.1) hps).symm
+
+/-- Read in the chart at `y`, a family fixing `y` at time `t`, continuous at `(t, y)` and moving
+points near `y` at every time `u` near `t` with the velocity of `V u` moves the chart centre at
+time `t` with the coordinate velocity of `V t` at `extChartAt I y y`. -/
+theorem hasDerivAt_extChartAt_family_of_eq_id_of_eventually_nhds_prod {ψ : 𝕜 → M → M}
+    {V : 𝕜 → (x : M) → TangentSpace I x} {t : 𝕜} {y : M} (hy : ψ t y = y)
+    (hψ : ContinuousAt (fun p : 𝕜 × M ↦ ψ p.1 p.2) (t, y))
+    (hvel : ∀ᶠ p in 𝓝 (t, y),
+      HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun u ↦ ψ u p.2) p.1
+        ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V p.1 (ψ p.1 p.2)))) :
+    HasDerivAt (fun u ↦ extChartAt I y (ψ u ((extChartAt I y).symm (extChartAt I y y))))
+      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I y).symm (V t) (range I)
+        (extChartAt I y y)) t :=
+  ((eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod hy hψ hvel).self_of_nhds
+    ).congr_deriv (by rw [extChartAt_to_inv, hy])
 
 /-- **Chart variational equation at the identity.** If a jointly `C^{minSmoothness 𝕜 2}` family
 `ψ : 𝕜 → M → M` equals the identity near `y` at `t` and moves points near `y` with velocity `V` at
@@ -849,47 +867,50 @@ theorem hasDerivAt_fderiv_extChartAt_family_of_eq_id [I.Boundaryless]
       (eventually_hasDerivAt_extChartAt_family hid hvel)
 
 /-- **Chart variational equation at the identity for a `C¹` family.** If a jointly `C¹` family
-`ψ : ℝ → M → M` equals the identity near `y` at time `t` and moves points near `y` at all times
-near `t` with the velocity of a vector field `V` that is `C¹` at `y`, then the spatial Fréchet
-derivative of its chart representation at `extChartAt I y y` has time derivative equal to the
-Fréchet derivative of the chart representation of `V`. -/
+`ψ : ℝ → M → M` equals the identity near `y` at time `t` and moves points near `y` at all times `u`
+near `t` with the velocity of a vector field `V u` that is jointly `C¹` at `(t, y)`, then the
+spatial Fréchet derivative of its chart representation at `extChartAt I y y` has time derivative
+equal to the Fréchet derivative of the chart representation of `V t`. -/
 theorem hasDerivAt_fderiv_extChartAt_family_of_eq_id_of_eventually_nhds_prod
     {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
     [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-    {ψ : ℝ → M → M} {V : (x : M) → TangentSpace I x} {t : ℝ} (y : M)
+    {ψ : ℝ → M → M} {V : ℝ → (x : M) → TangentSpace I x} {t : ℝ} (y : M)
     (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
     (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 1 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y))
-    (hV : ContMDiffAt I I.tangent 1 (fun x ↦ (⟨x, V x⟩ : TangentBundle I M)) y)
+    (hV : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, V p.1 p.2⟩ : TangentBundle I M)) (t, y))
     (hvel : ∀ᶠ p in 𝓝 (t, y),
-      HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u p.2) p.1 ((1 : ℝ →L[ℝ] ℝ).smulRight (V (ψ p.1 p.2)))) :
+      HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u p.2) p.1
+        ((1 : ℝ →L[ℝ] ℝ).smulRight (V p.1 (ψ p.1 p.2)))) :
     HasDerivAt
       (fun u ↦ fderiv ℝ (fun z ↦ extChartAt I y (ψ u ((extChartAt I y).symm z)))
         (extChartAt I y y))
-      (fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I))
+      (fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm (V t) (range I))
         (extChartAt I y y)) t := by
   let _ : IsManifold I 1 M := IsManifold.of_le one_le_two
   set G : ℝ × E → E := fun p ↦ extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2))
-  set W := VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I)
+  set W : ℝ × E → E := fun p ↦
+    VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm (V p.1) (range I) p.2
   have hGsmooth : ContDiffAt ℝ 1 G (t, extChartAt I y y) :=
     Manifold.contDiffAt_extChartAt_family hid.self_of_nhds hsmooth
   have hGt_nhds : (fun z ↦ G (t, z)) =ᶠ[𝓝 (extChartAt I y y)] id :=
     Manifold.eventuallyEq_extChartAt_family_of_eq_id hid
   have hGt : G (t, extChartAt I y y) = extChartAt I y y := hGt_nhds.self_of_nhds
-  have hWsmooth : ContDiffAt ℝ 1 W (extChartAt I y y) := by
-    have h := (hV.contMDiffWithinAt (s := univ)).contDiffWithinAt_mpullbackWithin_extChartAt_symm
-    have hs : (extChartAt I y).symm ⁻¹' univ ∩ range I = univ := by
-      rw [preimage_univ, univ_inter, I.range_eq_univ]
-    rw [hs] at h
-    exact h
-  have hWt : ContDiffAt ℝ 1 W (G (t, extChartAt I y y)) := by rw [hGt]; exact hWsmooth
+  have hWsmooth : ContDiffAt ℝ 1 W (t, extChartAt I y y) := by
+    rw [← extChartAt_to_inv (I := I) y] at hV
+    exact hV.contDiffAt_uncurry_mpullbackWithin_extChartAt_symm (n := 2) (by norm_num)
+      (mem_extChartAt_target y)
+  have hWt : ContDiffAt ℝ 1 W (t, G (t, extChartAt I y y)) := by rw [hGt]; exact hWsmooth
+  have hg : ContDiffAt ℝ 1 (fun p ↦ W (p.1, G p)) (t, extChartAt I y y) :=
+    (hWt.comp (t, extChartAt I y y) (contDiffAt_fst.prodMk hGsmooth) :)
   have hvel' := eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod hid.self_of_nhds
     hsmooth.continuousAt hvel
-  have hWG : (fun z ↦ W (G (t, z)) : E → E) =ᶠ[𝓝 (extChartAt I y y)] (W : E → E) :=
-    hGt_nhds.mono fun _ hz ↦ congrArg (W : E → E) hz
+  have hWG : (fun z ↦ W (t, G (t, z))) =ᶠ[𝓝 (extChartAt I y y)] fun z ↦ W (t, z) :=
+    hGt_nhds.mono fun _ hz ↦ congrArg (fun z ↦ W (t, z)) hz
   exact (hasDerivAt_fderiv_slice_of_contDiffAt_velocity
-    ((hGsmooth.differentiableAt one_ne_zero).comp _ (by fun_prop))
-    (hWt.comp (t, extChartAt I y y) hGsmooth) hvel').congr_deriv hWG.fderiv_eq
+    ((hGsmooth.differentiableAt one_ne_zero).comp _ (by fun_prop)) hg hvel').congr_deriv
+    hWG.fderiv_eq
 
 end ChartVelocity
 

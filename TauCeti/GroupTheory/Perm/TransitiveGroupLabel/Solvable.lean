@@ -38,7 +38,7 @@ subgroup of degree at most five.
 * `TauCeti.isSolvable_referenceSubgroup_iff`: the solvability column of the table of transitive
   groups of degree at most five.
 * `TauCeti.TransitiveGroupLabel.isSolvable_iff_ne_five_or_lt_three`: a permutation group with a
-  label is solvable unless its label is `5T4` or `5T5`.
+  label of degree at most five is solvable unless its label is `5T4` or `5T5`.
 * `TauCeti.isSolvable_iff_exists_le_map_conj_referenceSubgroup_five_two`: a transitive subgroup
   of `S₅` is solvable exactly when it is contained in a conjugate of `5T3`.
 -/
@@ -137,28 +137,26 @@ theorem isSolvable_referenceSubgroup_five_iff (j : TransitiveGroupIndex 5) :
       not_isSolvable_referenceSubgroup_five_four, Nat.reduceLT]
 
 /-- **The solvability column of the table of transitive groups of degree at most five.** A
-reference subgroup is solvable unless its label is `5T4` or `5T5`, the alternating and symmetric
-groups on five points. -/
+reference subgroup of degree at most five is solvable unless its label is `5T4` or `5T5`, the
+alternating and symmetric groups on five points. The degree bound is needed: the reference
+subgroup of `6T16` is the full symmetric group on six points, which is not solvable. -/
 @[simp]
-theorem isSolvable_referenceSubgroup_iff {n : ℕ} (j : TransitiveGroupIndex n) :
+theorem isSolvable_referenceSubgroup_iff {n : ℕ} (hn : n ≤ 5) (j : TransitiveGroupIndex n) :
     Group.IsSolvable (referenceSubgroup n j) ↔ n ≠ 5 ∨ (j : ℕ) < 3 := by
-  rcases lt_trichotomy n 5 with hn | rfl | hn
+  rcases hn.lt_or_eq with hn | rfl
   · -- The whole symmetric group on at most four points is solvable.
     have : Group.IsSolvable (Perm (Fin n)) :=
       Perm.isSolvable ((Nat.card_fin n).trans_le (by omega))
     exact iff_of_true inferInstance (Or.inl hn.ne)
   · rw [isSolvable_referenceSubgroup_five_iff]
     simp
-  · have hj := j.isLt
-    have h0 := numTransitiveGroups_eq_zero_of_five_lt hn
-    omega
 
-/-- A permutation group with a transitive-group label is solvable unless its label is `5T4` or
-`5T5`. -/
-theorem TransitiveGroupLabel.isSolvable_iff_ne_five_or_lt_three {n : ℕ}
+/-- A permutation group with a transitive-group label of degree at most five is solvable unless
+its label is `5T4` or `5T5`. -/
+theorem TransitiveGroupLabel.isSolvable_iff_ne_five_or_lt_three {n : ℕ} (hn : n ≤ 5)
     {j : TransitiveGroupIndex n} {G : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
     Group.IsSolvable G ↔ n ≠ 5 ∨ (j : ℕ) < 3 := by
-  rw [h.isSolvable_iff, isSolvable_referenceSubgroup_iff]
+  rw [h.isSolvable_iff, isSolvable_referenceSubgroup_iff hn]
 
 /-- **Solvable transitive subgroups of `S₅`.** A transitive subgroup of the symmetric group on
 five points is solvable if and only if it is contained in a conjugate of the Frobenius reference

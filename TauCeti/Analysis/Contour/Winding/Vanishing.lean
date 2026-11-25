@@ -13,15 +13,14 @@ import TauCeti.Analysis.Contour.Curve.IntegralBound
 /-!
 # The winding number vanishes far from a bounded closed curve
 
-For a closed curve `γ` continuous on the compact interval `Set.uIcc a b` (so its image is bounded),
-differentiable off a countable set, with interval-integrable derivative, the generalized winding
-number `fun w ↦ windingNumber γ a b w` vanishes for every `w` sufficiently far from the origin:
-`windingNumber_eventually_zero_cocompact` states this as an eventual property along the cocompact
-filter, together with the fact that such `w` lie off the curve. The same holds for every closed
-absolutely continuous curve
-(`AbsolutelyContinuousOnInterval.windingNumber_eventually_zero_cocompact`), and that form is the
-input to the Liouville step of Dixon's proof of the homology form of Cauchy's theorem:
-the Dixon function agrees with `dixonH2` wherever the winding number is zero.
+For a closed absolutely continuous curve `γ` on the compact interval `Set.uIcc a b` (so its image
+is bounded), the generalized winding number `fun w ↦ windingNumber γ a b w` vanishes for every `w`
+sufficiently far from the origin:
+`AbsolutelyContinuousOnInterval.windingNumber_eventually_zero_cocompact` states this as an eventual
+property along the cocompact filter, together with the fact that such `w` lie off the curve. It
+covers piecewise-`C¹` curves and curves differentiable off a countable set with integrable
+derivative, and it is the input to the Liouville step of Dixon's proof of the homology form of
+Cauchy's theorem: the Dixon function agrees with `dixonH2` wherever the winding number is zero.
 
 ## Main results
 
@@ -29,8 +28,6 @@ the Dixon function agrees with `dixonH2` wherever the winding number is zero.
   a continuous curve with interval-integrable derivative and integer winding numbers off its trace.
 * `AbsolutelyContinuousOnInterval.windingNumber_eventually_zero_cocompact` — far-field vanishing
   for a closed absolutely continuous curve.
-* `TauCeti.Contour.windingNumber_eventually_zero_cocompact` — off the curve, the winding number is
-  eventually `0` along `cocompact ℂ`.
 
 ## Provenance
 
@@ -127,23 +124,5 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eventually_zero_coco
   hγ.continuousOn.windingNumber_eventually_zero_cocompact_of_integer
     hγ.intervalIntegrable_deriv_of_finiteDimensional
     (fun _ hz ↦ hγ.exists_int_windingNumber hclosed hz)
-
-/-- **The winding number is eventually zero far from a bounded closed curve.** For a closed curve
-`γ` (`γ a = γ b`) continuous on `Set.uIcc a b`, differentiable off a countable set `P`, with
-interval-integrable derivative, every point `w` far enough from the origin lies off the curve and
-has winding number `0`; equivalently, `fun w ↦ (γ avoids w) ∧ windingNumber γ a b w = 0` holds
-eventually along `cocompact ℂ`. The bounded image (continuity on the compact interval) and the
-integer-valuedness of the winding number for a closed curve force the small far-field value to be
-exactly `0`. -/
-theorem windingNumber_eventually_zero_cocompact {γ : ℝ → ℂ} {a b : ℝ} {P : Set ℝ}
-    (hclosed : γ a = γ b) (hP : P.Countable) (hγ_cont : ContinuousOn γ (uIcc a b))
-    (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
-    ∀ᶠ w in Filter.cocompact ℂ,
-      (∀ t ∈ uIcc a b, γ t ≠ w) ∧ windingNumber γ a b w = 0 := by
-  simpa only [mem_image, not_exists, not_and] using
-    (hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
-      (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv_int).windingNumber_eventually_zero_cocompact
-      hclosed
 
 end TauCeti.Contour

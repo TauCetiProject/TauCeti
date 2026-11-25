@@ -474,6 +474,10 @@ private theorem mvfderiv_apply_trivializationAt_symm_eq [IsManifold I 2 M]
 
 variable [CompleteSpace E] [IsManifold I (minSmoothness 𝕜 2) M]
 
+/-- `minSmoothness 𝕜 2` gives `C¹` atlas smoothness. -/
+local instance : IsManifold I 1 M :=
+  IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
+
 private theorem trivializationAt_mlieDerivBilin_eq
     (x₀ : M) {z : E} (hz : z ∈ (extChartAt I x₀).target)
     (hV : MDifferentiableAt I I.tangent (T% V) ((extChartAt I x₀).symm z))
@@ -485,8 +489,6 @@ private theorem trivializationAt_mlieDerivBilin_eq
       lieDerivBilinWithin (E := E)
         (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (range I))
         (inChartAtBilin I x₀ b) (range I) z := by
-  let _ : IsManifold I 1 M :=
-    IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
   let _ : IsManifold I 2 M := IsManifold.of_le (le_minSmoothness (𝕜 := 𝕜))
   have hy_chart : (extChartAt I x₀).symm z ∈ (chartAt H x₀).source := by
     simpa only [extChartAt_source] using (extChartAt I x₀).map_target hz
@@ -521,8 +523,6 @@ private theorem contDiffWithinAt_lieDerivBilinWithin_inChartAtBilin {x₀ : M}
         (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (range I))
         (inChartAtBilin I x₀ b) (range I))
       (range I) (extChartAt I x₀ x₀) := by
-  let _ : IsManifold I 1 M :=
-    IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
   let _ : IsManifold I (m + 1 + 1) M :=
     IsManifold.of_le (n := k) (by simpa only [add_assoc, one_add_one_eq_two] using hk)
   let _ : IsManifold I (m + 1) M := IsManifold.of_le (n := m + 1 + 1) le_self_add
@@ -552,8 +552,6 @@ theorem contMDiffAt_mlieDerivBilin {x₀ : M}
       (fun y ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] G) y (b y)) x₀) :
     ContMDiffAt I (I.prod 𝓘(𝕜, E →L[𝕜] E →L[𝕜] G)) m
       (fun y ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] G) y (mlieDerivBilin I V b y)) x₀ := by
-  let _ : IsManifold I 1 M :=
-    IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
   -- Step 1: Flat `C^m` regularity of the chart Lie derivative within `range I`.
   have hflat_r := contDiffWithinAt_lieDerivBilinWithin_inChartAtBilin hk hmn hV hb
   -- Step 2: Obtain neighbourhood differentiability of `V` and `b` around `x₀`.
@@ -595,8 +593,6 @@ def lieDerivBilinearSection (hk : m + 2 ≤ k) (hmn : m + 1 ≤ n)
     {V : (x : M) → TangentSpace I x} (hV : ContMDiff I I.tangent n (T% V)) :
     BilinearSection I E (TangentSpace I : M → Type _) G n →ₗ[𝕜]
       BilinearSection I E (TangentSpace I : M → Type _) G m :=
-  let _ : IsManifold I 1 M :=
-    IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
   { toFun b := ⟨mlieDerivBilin I V b, contMDiff_mlieDerivBilin hk hmn hV b.contMDiff⟩
     map_add' b₁ b₂ := by
       ext x v w

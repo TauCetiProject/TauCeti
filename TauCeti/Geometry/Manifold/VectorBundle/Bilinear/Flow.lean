@@ -205,33 +205,29 @@ theorem hasDerivAt_mpullbackBilin_family_of_eq_id [IsManifold I 2 M] [I.Boundary
       (by simpa only [minSmoothness_of_isRCLikeNormedField] using hsmooth) hvel) hb hb'
 
 /-- **Pullback variation at the identity for a `C¹` family:** along a jointly `C¹` family `ψ` with
-`ψ t = id` near `y` moving near `(t, y)` with the velocity of a `C¹` field `V`,
-`d/du|_{u = t} (ψ_u^* b_u)_y = (b' + L_V b_t)_y`. -/
+`ψ t = id` near `y` moving near `(t, y)` with the velocity of a jointly `C¹` field `X u`,
+`d/du|_{u = t} (ψ_u^* b_u)_y = (b' + L_{X_t} b_t)_y`. -/
 theorem hasDerivAt_mpullbackBilin_family_of_eq_id_of_eventually_nhds_prod
-    [CompleteSpace E] [IsManifold I 2 M] [I.Boundaryless] (y : M) (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
+    [CompleteSpace E] [IsManifold I 2 M] [I.Boundaryless] {X : ℝ → (x : M) → TangentSpace I x}
+    (y : M) (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
     (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 1 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y))
-    (hV : ContMDiffAt I I.tangent 1 (fun x ↦ (⟨x, V x⟩ : TangentBundle I M)) y)
+    (hX : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)) (t, y))
     (hvel : ∀ᶠ p in 𝓝 (t, y),
-      HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u p.2) p.1 ((1 : ℝ →L[ℝ] ℝ).smulRight (V (ψ p.1 p.2))))
+      HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u p.2) p.1
+        ((1 : ℝ →L[ℝ] ℝ).smulRight (X p.1 (ψ p.1 p.2))))
     (hb : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
       (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G)
         (E := fun z : M ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] G) q.2 (b q.1 q.2))
       (t, y))
     (hb' : HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun u ↦ b u y) (b' y) t) :
     HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun u ↦ mpullbackBilin I I (ψ u) (b u) y)
-      ((b' + mlieDerivBilin I V (b t)) y) t := by
+      ((b' + mlieDerivBilin I (X t) (b t)) y) t := by
   let _ : IsManifold I 1 M := IsManifold.of_le one_le_two
-  set G : ℝ × E → E := fun p ↦ extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2))
-  have hGt : G (t, extChartAt I y y) = extChartAt I y y :=
-    (Manifold.eventuallyEq_extChartAt_family_of_eq_id hid).self_of_nhds
-  have h : HasDerivAt (fun u ↦ G (u, extChartAt I y y))
-      (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I)
-        (G (t, extChartAt I y y))) t :=
-    (eventually_hasDerivAt_extChartAt_family_of_eventually_nhds_prod hid.self_of_nhds
-      hsmooth.continuousAt hvel).self_of_nhds
-  rw [hGt] at h
-  exact hasDerivAt_mpullbackBilin_family_of_eq_id_of_hasDerivAt_fderiv y hid hsmooth h
-    (hasDerivAt_fderiv_extChartAt_family_of_eq_id_of_eventually_nhds_prod y hid hsmooth hV hvel)
+  exact hasDerivAt_mpullbackBilin_family_of_eq_id_of_hasDerivAt_fderiv (V := X t) y hid hsmooth
+    (hasDerivAt_extChartAt_family_of_eq_id_of_eventually_nhds_prod hid.self_of_nhds
+      hsmooth.continuousAt hvel)
+    (hasDerivAt_fderiv_extChartAt_family_of_eq_id_of_eventually_nhds_prod y hid hsmooth hX hvel)
     hb hb'
 
 /-- **Stationary pullback variation at the identity:** along a jointly `C²` family `ψ` with
@@ -388,8 +384,8 @@ theorem hasDerivAt_mpullbackBilin_family_flowOf_zero (y : M)
       ((b' + mlieDerivBilin I Z (b 0)) y) 0 :=
   (PullbackAction.bilinear I M G).hasDerivAt_flowOf_zero hZ y
     (fun hid hsmooth hZy hvel ↦
-      hasDerivAt_mpullbackBilin_family_of_eq_id_of_eventually_nhds_prod y hid hsmooth hZy hvel hb
-        hb')
+      hasDerivAt_mpullbackBilin_family_of_eq_id_of_eventually_nhds_prod (X := fun _ ↦ Z) y hid
+        hsmooth hZy hvel hb hb')
 
 /-- **Flow characterization of the Lie derivative at time zero:**
 `d/ds|_{s = 0} ((flowOf Z s)^* b)_y = (L_Z b)_y`. -/
@@ -453,9 +449,12 @@ end MaximalFlow
 
 section TimeDependentFlow
 
+/-- The flow lemmas are applied at smoothness `1`, read in `ℕ∞`. -/
+local instance : IsManifold I ((1 : ℕ∞) : WithTop ℕ∞) M := IsManifold.of_le (n := 2) (by norm_num)
+
 variable {X : ℝ → (x : M) → TangentSpace I x}
   (hc : IsCompleteVectorField (timeDependentSuspensionField X))
-  (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+  (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
     (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
 include hX
 
@@ -475,7 +474,9 @@ theorem hasDerivAt_mpullbackBilin_family_timeDependentFlowOf_self (t : ℝ) (y :
       (fun u ↦ mpullbackBilin I I (timeDependentFlowOf X t u) (b u) y)
       ((b' + mlieDerivBilin I (X t) (b t)) y) t :=
   (PullbackAction.bilinear I M G).hasDerivAt_timeDependentFlowOf_self hX t y
-    (fun hid hsmooth hvel ↦ hasDerivAt_mpullbackBilin_family_of_eq_id y hid hsmooth hvel hb hb')
+    (fun hid hsmooth hXty hvel ↦
+      hasDerivAt_mpullbackBilin_family_of_eq_id_of_eventually_nhds_prod (X := X) y hid hsmooth hXty
+        hvel hb hb')
 
 /-- **Time-dependent pullback variation along a maximal time-dependent flow:** wherever
 `((s, t), x) ∈ timeDependentFlowDomain X`,

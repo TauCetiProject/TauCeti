@@ -17,6 +17,7 @@ public import TauCeti.Algebra.BigOperators.Finset.Fiber
 public import TauCeti.Analysis.Normed.Lp.PiLp
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
@@ -42,9 +43,16 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
+* `EuclideanSpace.ext_continuousLinearMap_single`: continuous linear maps on Euclidean space are
+  determined by their values on the standard basis vectors.
+* `EuclideanSpace.add_sub_smul_single_apply`: the point `x + (t - xᵢ) eᵢ` is `x` with its `i`-th
+  coordinate replaced by `t`; the map `t ↦ x + (t - xᵢ) eᵢ` is `1`-Lipschitz
+  (`EuclideanSpace.lipschitzWith_add_sub_smul_single`).
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.isBigO_apply_div_norm`: a real Euclidean coordinate divided by the norm,
+  `x j / ‖x‖`, is `O(1)` along any filter.
 * `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
@@ -127,11 +135,45 @@ theorem posDef_iff_of_forall_eq_sum_mul_sq {ι : Type*} [Fintype ι]
   refine ⟨fun h x hx ↦ ?_, fun h ↦ h.comp _ (WithLp.linearEquiv 2 ℝ (ι → ℝ)).injective⟩
   simpa using h (WithLp.toLp 2 x) (by simpa using hx)
 
+/-- Two continuous linear maps on `EuclideanSpace 𝕜 ι` agreeing on the standard basis vectors
+`EuclideanSpace.single i 1` are equal. -/
+theorem ext_continuousLinearMap_single {𝕜 ι E : Type*} [RCLike 𝕜] [Finite ι] [DecidableEq ι]
+    [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E] {L L' : EuclideanSpace 𝕜 ι →L[𝕜] E}
+    (h : ∀ i, L (EuclideanSpace.single i 1) = L' (EuclideanSpace.single i 1)) : L = L' := by
+  have := Fintype.ofFinite ι
+  exact ContinuousLinearMap.coe_injective <| (EuclideanSpace.basisFun ι 𝕜).toBasis.ext fun i ↦ by
+    simpa using h i
+
+/-- The coordinates of the point `x + (t - xᵢ) eᵢ`: the `i`-th one is `t`, the others are
+those of `x`. -/
+theorem add_sub_smul_single_apply {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq ι]
+    (x : EuclideanSpace 𝕜 ι) (i j : ι) (t : 𝕜) :
+    (x + (t - x i) • EuclideanSpace.single i (1 : 𝕜)) j = if j = i then t else x j := by
+  by_cases h : j = i
+  · subst h; simp
+  · simp [h]
+
+/-- The map `t ↦ x + (t - xᵢ) eᵢ`, replacing the `i`-th coordinate of `x` with `t`, is an
+isometry, so `1`-Lipschitz. -/
+theorem lipschitzWith_add_sub_smul_single {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
+    (x : EuclideanSpace 𝕜 ι) (i : ι) :
+    LipschitzWith 1 fun t : 𝕜 ↦ x + (t - x i) • EuclideanSpace.single i (1 : 𝕜) :=
+  LipschitzWith.of_dist_le_mul fun s t ↦ by
+    simp [dist_eq_norm, ← sub_smul, norm_smul]
+
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
 theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
   Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
+
+/-- **A Euclidean coordinate divided by the norm is bounded:** `x j / ‖x‖ = O(1)` on
+`EuclideanSpace ℝ ι`, along any filter. -/
+theorem isBigO_apply_div_norm (l : Filter (EuclideanSpace ℝ ι)) (j : ι) :
+    (fun x : EuclideanSpace ℝ ι ↦ x j / ‖x‖) =O[l] fun _ ↦ (1 : ℝ) :=
+  ((Asymptotics.isBigO_inv_norm_smul_apply _ (fun _ ↦ EuclideanSpace.proj j) id).trans
+    (Asymptotics.isBigO_const_const _ one_ne_zero _)).congr_left fun x ↦ by
+      simp [div_eq_inv_mul]
 
 /-- A real vector lies on the unit sphere of Euclidean space exactly when the dot product of its
 coordinates with themselves is `1`. -/

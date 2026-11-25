@@ -37,12 +37,29 @@ in this file.
 
 The induction uses that `f^[k]` is `C¹` along the orbit (`TauCeti.contDiffAt_iterate`).
 
+Local perturbations are compositions `f ∘ ψ` with a map `ψ` that is the identity outside a compact
+set `S`. If `f` is `C¹` at the points of `S` and `ψ` is `C¹`-close enough to the identity on `S`,
+then `f ∘ ψ` is `C¹`-close to `f` at every point, not only on `S`
+(`IsCompact.exists_pos_forall_norm_comp_sub_le`).
+
+Perturbations are often built as compositions `g ∘ ψ` with maps `ψ` close to the identity in `C¹`
+(`TauCeti.IsNearId`). Such maps compose with an explicit bound (`TauCeti.IsNearId.comp`), and a
+`C¹`-open condition on `g` holds for `g ∘ ψ` once `ψ` is close enough to the identity
+(`TauCeti.eventually_forall_isNearId_comp`).
+
 ## Main results
 
 * `IsCompact.exists_pos_forall_differentiableAt_comp_and_norm_sub_le`: composition of `C¹`-close
   maps.
 * `IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`: iterates of `C¹`-close
   maps.
+* `TauCeti.IsNearId`: closeness to the identity in `C¹`, with its composition law
+  `TauCeti.IsNearId.comp`.
+* `TauCeti.eventually_forall_isNearId_comp`: `C¹`-open conditions on `g` hold for `g ∘ ψ` with `ψ`
+  close enough to the identity.
+* `IsCompact.eventually_forall_norm_iterate_sub_le`: iterates of maps `C¹`-close everywhere.
+* `IsCompact.exists_pos_forall_norm_comp_sub_le`: composition with a compactly supported
+  `C¹`-small perturbation of the identity.
 
 ## References
 
@@ -171,3 +188,131 @@ theorem IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le {K 
     exact h₁ g^[k] g (fun x hx ↦ (hk x hx).1) (fun x hx ↦ (hk x hx).2.1)
       (fun x hx ↦ (hk x hx).2.2) hg (fun y hy ↦ (hg₀ y hy).trans (min_le_left _ _))
       (fun y hy ↦ (hg₁ y hy).trans (min_le_left _ _)) x hx
+
+/-- **Iterates of maps `C¹`-close everywhere.** Let `K` be compact and let `f` be `C¹`. For every
+`ε > 0` and all small enough `δ > 0`, every differentiable map `g` that is `δ`-close to `f` in
+value and derivative at every point has its iterate `g^[k]` `ε`-close to `f^[k]` on `K`. This is
+the global form of `IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`, stated
+as an eventual property so that several such conditions on `δ` can be combined. -/
+theorem IsCompact.eventually_forall_norm_iterate_sub_le {K : Set E} (hK : IsCompact K) {f : E → E}
+    (hf : ContDiff 𝕜 1 f) (k : ℕ) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ g : E → E, Differentiable 𝕜 g → (∀ y, ‖g y - f y‖ ≤ δ) →
+      (∀ y, ‖fderiv 𝕜 g y - fderiv 𝕜 f y‖ ≤ δ) → ∀ x ∈ K, ‖g^[k] x - f^[k] x‖ ≤ ε := by
+  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le
+    (k := k) (fun _ _ _ _ ↦ hf.contDiffAt) hε univ_mem
+  filter_upwards [Ioo_mem_nhdsGT hδ] with δ' hδ' g hg h₀ h₁ x hx
+  exact (h g (fun y _ ↦ hg y) (fun y _ ↦ (h₀ y).trans hδ'.2.le)
+    (fun y _ ↦ (h₁ y).trans hδ'.2.le) x hx).2.1
+
+/-- **Compactly supported `C¹`-small perturbations of the identity.** Let `S` be compact and let
+`f` be `C¹` at the points of `S`. For every `ε > 0` there is `δ > 0` with the following property.
+If `ψ` is the identity outside `S`, differentiable at the points of `S` and `δ`-close to the
+identity there in value and derivative, then `f ∘ ψ` is `ε`-close to `f` in value and derivative
+at every point. -/
+theorem IsCompact.exists_pos_forall_norm_comp_sub_le {S : Set E} (hS : IsCompact S) {f : E → F}
+    (hf : ∀ x ∈ S, ContDiffAt 𝕜 1 f x) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ ψ : E → E, (∀ x ∉ S, ψ x = x) → (∀ x ∈ S, DifferentiableAt 𝕜 ψ x) →
+      (∀ x ∈ S, ‖ψ x - x‖ ≤ δ) → (∀ x ∈ S, ‖fderiv 𝕜 ψ x - ContinuousLinearMap.id 𝕜 E‖ ≤ δ) →
+      ∀ x, ‖f (ψ x) - f x‖ ≤ ε ∧ ‖fderiv 𝕜 (f ∘ ψ) x - fderiv 𝕜 f x‖ ≤ ε := by
+  -- `f` is `C¹` near `S`, so on this neighbourhood it is its own `0`-close perturbation.
+  have hU : {y | ContDiffAt 𝕜 1 f y} ∈ 𝓝ˢ (id '' S) := by
+    rw [image_id, mem_nhdsSet_iff_forall]
+    exact fun x hx ↦ (hf x hx).eventually (by simp)
+  obtain ⟨δ, hδ, h⟩ := hS.exists_pos_forall_differentiableAt_comp_and_norm_sub_le
+    (fun x _ ↦ differentiableAt_id) (continuousOn_const.congr fun _ _ ↦ fderiv_id)
+    (fun y hy ↦ (hf y (by simpa using hy)).differentiableAt one_ne_zero)
+    (fun y hy ↦ (hf y (by simpa using hy)).continuousAt_fderiv one_ne_zero) hε hU
+  refine ⟨δ, hδ, fun ψ hψS hψ hψ₀ hψ₁ x ↦ ?_⟩
+  by_cases hx : x ∈ S
+  · obtain ⟨-, h₀, h₁⟩ := h ψ f hψ (by simpa using hψ₀) (by simpa [fderiv_id] using hψ₁)
+      (fun y hy ↦ hy.differentiableAt one_ne_zero) (by simp [hδ.le]) (by simp [hδ.le]) x hx
+    exact ⟨by simpa using h₀, by simpa using h₁⟩
+  · -- Outside `S`, `ψ` is the identity near `x`.
+    have hev : f ∘ ψ =ᶠ[𝓝 x] f := by
+      filter_upwards [hS.isClosed.isOpen_compl.mem_nhds hx] with y hy
+      simp [hψS y hy]
+    rw [hψS x hx, hev.fderiv_eq]
+    simp [hε.le]
+
+namespace TauCeti
+
+/-! ### Maps close to the identity in `C¹` -/
+
+/-- A self-map `ψ` is `η`-close to the identity in `C¹`: it is differentiable, moves no point by
+more than `η`, and its derivative is within `η` of the identity everywhere. -/
+structure IsNearId (𝕜 : Type*) [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] (η : ℝ) (ψ : E → E) : Prop where
+  /-- A map close to the identity in `C¹` is differentiable. -/
+  differentiable : Differentiable 𝕜 ψ
+  /-- A map `η`-close to the identity in `C¹` moves no point by more than `η`. -/
+  norm_sub_le (w : E) : ‖ψ w - w‖ ≤ η
+  /-- The derivative of a map `η`-close to the identity in `C¹` is within `η` of the identity. -/
+  norm_fderiv_sub_id_le (w : E) : ‖fderiv 𝕜 ψ w - ContinuousLinearMap.id 𝕜 E‖ ≤ η
+
+/-- The identity is `η`-close to itself in `C¹` for every `η ≥ 0`. -/
+theorem isNearId_id {η : ℝ} (hη : 0 ≤ η) : IsNearId 𝕜 η (id : E → E) :=
+  ⟨differentiable_id, by simpa using hη, by simpa [fderiv_id] using hη⟩
+
+/-- The bound of a map close to the identity in `C¹` is nonnegative. -/
+theorem IsNearId.nonneg {η : ℝ} {ψ : E → E} (h : IsNearId 𝕜 η ψ) : 0 ≤ η :=
+  (norm_nonneg _).trans (h.norm_sub_le 0)
+
+/-- Closeness to the identity in `C¹` is monotone in the bound. -/
+theorem IsNearId.mono {η η' : ℝ} {ψ : E → E} (h : IsNearId 𝕜 η ψ) (hη : η ≤ η') :
+    IsNearId 𝕜 η' ψ :=
+  ⟨h.differentiable, fun w ↦ (h.norm_sub_le w).trans hη,
+    fun w ↦ (h.norm_fderiv_sub_id_le w).trans hη⟩
+
+/-- The composition of a map `a`-close to the identity in `C¹` with one `b`-close to it is
+`(a + b + a * b)`-close to it. -/
+theorem IsNearId.comp {a b : ℝ} {Ψ ψ : E → E} (hΨ : IsNearId 𝕜 a Ψ) (hψ : IsNearId 𝕜 b ψ) :
+    IsNearId 𝕜 (a + b + a * b) (Ψ ∘ ψ) := by
+  have ha : 0 ≤ a := hΨ.nonneg
+  have hb : 0 ≤ b := hψ.nonneg
+  obtain ⟨hΨd, hΨ₀, hΨ₁⟩ := hΨ
+  obtain ⟨hψd, hψ₀, hψ₁⟩ := hψ
+  refine ⟨hΨd.comp hψd, fun w ↦ ?_, fun w ↦ ?_⟩
+  · calc ‖Ψ (ψ w) - w‖ ≤ ‖Ψ (ψ w) - ψ w‖ + ‖ψ w - w‖ := norm_sub_le_norm_sub_add_norm_sub ..
+      _ ≤ a + b := add_le_add (hΨ₀ _) (hψ₀ w)
+      _ ≤ a + b + a * b := le_add_of_nonneg_right (mul_nonneg ha hb)
+  · -- `DΨ ∘ Dψ - 1 = (DΨ - 1) ∘ Dψ + (Dψ - 1)`, and `‖Dψ‖ ≤ 1 + b`.
+    set A := fderiv 𝕜 Ψ (ψ w)
+    set B := fderiv 𝕜 ψ w
+    have hB : ‖B‖ ≤ 1 + b := by
+      calc ‖B‖ = ‖(B - ContinuousLinearMap.id 𝕜 E) + ContinuousLinearMap.id 𝕜 E‖ := by
+            rw [sub_add_cancel]
+        _ ≤ ‖B - ContinuousLinearMap.id 𝕜 E‖ + ‖ContinuousLinearMap.id 𝕜 E‖ := norm_add_le _ _
+        _ ≤ b + 1 := add_le_add (hψ₁ w) ContinuousLinearMap.norm_id_le
+        _ = 1 + b := add_comm _ _
+    rw [fderiv_comp w (hΨd _) (hψd w)]
+    calc ‖A.comp B - ContinuousLinearMap.id 𝕜 E‖
+        = ‖(A - ContinuousLinearMap.id 𝕜 E).comp B + (B - ContinuousLinearMap.id 𝕜 E)‖ := by
+          congr 1
+          ext v
+          simp
+      _ ≤ ‖A - ContinuousLinearMap.id 𝕜 E‖ * ‖B‖ + ‖B - ContinuousLinearMap.id 𝕜 E‖ :=
+          (norm_add_le _ _).trans (add_le_add_left (ContinuousLinearMap.opNorm_comp_le _ _) _)
+      _ ≤ a * (1 + b) + b := by gcongr; exacts [hΨ₁ _, hψ₁ w]
+      _ = a + b + a * b := by ring
+
+/-- A conclusion about the maps `C¹`-close to a `C¹` map `g` on a compact set `U` holds for the
+compositions `g ∘ ψ` with every `ψ` close enough to the identity in `C¹`. -/
+theorem eventually_forall_isNearId_comp {g : E → E} (hg : ContDiff 𝕜 1 g) {U : Set E}
+    (hU : IsCompact U) {Q : (E → E) → Prop}
+    (h : ∃ δ > 0, ∀ g' : E → E, (∀ y ∈ U, DifferentiableAt 𝕜 g' y) →
+      (∀ y ∈ U, ‖g' y - g y‖ ≤ δ) → (∀ y ∈ U, ‖fderiv 𝕜 g' y - fderiv 𝕜 g y‖ ≤ δ) → Q g') :
+    ∀ᶠ η in 𝓝[>] (0 : ℝ), ∀ ψ, IsNearId 𝕜 η ψ → Q (g ∘ ψ) := by
+  obtain ⟨δ, hδ, hQ⟩ := h
+  obtain ⟨η₀, hη₀, hcomp⟩ := hU.exists_pos_forall_differentiableAt_comp_and_norm_sub_le
+    (f₁ := id) (f₂ := g) (fun x _ ↦ differentiableAt_id)
+    ((continuousOn_const (c := ContinuousLinearMap.id 𝕜 E)).congr fun _ _ ↦ fderiv_id)
+    (fun y _ ↦ hg.differentiable one_ne_zero y)
+    (fun y _ ↦ (hg.continuous_fderiv one_ne_zero).continuousAt) hδ univ_mem
+  filter_upwards [Ioo_mem_nhdsGT hη₀] with η hη ψ ⟨hψd, hψ₀, hψ₁⟩
+  have H := hcomp ψ g (fun x _ ↦ hψd x) (fun x _ ↦ (hψ₀ x).trans hη.2.le)
+    (fun x _ ↦ by rw [fderiv_id]; exact (hψ₁ x).trans hη.2.le)
+    (fun y _ ↦ hg.differentiable one_ne_zero y) (fun y _ ↦ by simp [hη₀.le])
+    (fun y _ ↦ by simp [hη₀.le])
+  exact hQ _ (fun y hy ↦ (H y hy).1) (fun y hy ↦ (H y hy).2.1) fun y hy ↦ (H y hy).2.2
+
+end TauCeti

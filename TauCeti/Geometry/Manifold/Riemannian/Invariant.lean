@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Section
 public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.RepresentationTheory.Compact.Haar
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 /-!
