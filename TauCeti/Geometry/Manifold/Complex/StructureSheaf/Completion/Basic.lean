@@ -10,7 +10,10 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.MaximalIdeal
 public import Mathlib.RingTheory.MvPowerSeries.Inverse
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import TauCeti.RingTheory.AdicCompletion.MvPowerSeries
+import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Noetherian
+import TauCeti.RingTheory.AdicCompletion.Flat.Basic
 import TauCeti.Data.Finsupp.Interval
 import TauCeti.RingTheory.MvPowerSeries.Ideal
 
@@ -52,6 +55,9 @@ algebraic comparison `TauCeti.adicCompletionEquivMvPowerSeries`.
   `ℂ⟦z_i⟧`, extending the Taylor series
   (`TauCeti.holomorphicStructureSheaf.adicCompletionEquiv_of`) and inducing it modulo every power
   of `𝔪` (`TauCeti.holomorphicStructureSheaf.mk_adicCompletionEquiv`).
+* `TauCeti.holomorphicStructureSheaf.taylorSeries_faithfullyFlat`: Taylor expansion is faithfully
+  flat; it extends the maximal ideal onto the formal variable ideal
+  (`TauCeti.holomorphicStructureSheaf.map_taylorSeries_maximalIdeal`).
 
 ## References
 
@@ -285,5 +291,26 @@ theorem mk_adicCompletionEquiv (n : ℕ)
     (mk_maximalIdeal_comp_constGerm_surjective x) n y
   rw [← hs, Ideal.quotientMap_mk, Ideal.Quotient.eq] at h ⊢
   rwa [maximalIdeal_eq_span_range_X]
+
+local notation "A" => TopCat.Presheaf.stalk (C := CommRingCat)
+  (TopCat.Sheaf.presheaf (holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ))) x
+local notation "S" => MvPowerSeries ι ℂ
+local notation "𝔪" => IsLocalRing.maximalIdeal A
+local notation "𝔫" => IsLocalRing.maximalIdeal S
+
+/-- Taylor expansion of holomorphic germs is faithfully flat. -/
+theorem taylorSeries_faithfullyFlat : (taylorSeries x).FaithfullyFlat := by
+  let := (taylorSeries x).toAlgebra
+  let e : AdicCompletion 𝔪 A ≃ₐ[A] S :=
+    AlgEquiv.ofRingEquiv (f := adicCompletionEquiv x) (adicCompletionEquiv_of x)
+  exact Module.FaithfullyFlat.of_linearEquiv A (AdicCompletion 𝔪 A) e.symm.toLinearEquiv
+
+/-- The maximal ideal of the holomorphic stalk extends to the variable ideal of the
+formal power series ring. -/
+theorem map_taylorSeries_maximalIdeal : (𝔪).map (taylorSeries x) = 𝔫 := by
+  rw [← span_range_holomorphicLinearCoordinateGerm_basisFun x, Ideal.map_span,
+    ← Set.range_comp, maximalIdeal_eq_span_range_X]
+  congr 1
+  exact congrArg Set.range (funext (taylorSeries_holomorphicLinearCoordinateGerm_basisFun x))
 
 end TauCeti.holomorphicStructureSheaf
