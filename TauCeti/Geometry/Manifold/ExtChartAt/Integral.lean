@@ -82,7 +82,7 @@ theorem piece_covers : s ⊆ ⋃ i, c.piece i := by
 theorem pairwise_disjoint : Pairwise (fun i j ↦ Disjoint (c.piece i) (c.piece j)) :=
   disjoint_disjointed c.domain
 
-variable [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [OpensMeasurableSpace E]
 
 theorem isChartMeasurable_piece (i : Fin c.n) : IsChartMeasurable I (c.piece i) :=
   IsChartMeasurable.disjointed (fun j ↦ (c.isOpen_domain j).isChartMeasurable) i

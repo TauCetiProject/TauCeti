@@ -375,7 +375,7 @@ theorem IntegrableDensity.add {μ ν : RoughDensity I M m} (hμ : IntegrableDens
   let : BorelSpace E := ⟨rfl⟩
   rw [integrableDensity_iff] at hμ hν ⊢
   refine ⟨(hμ.1.union hν.1).of_isClosed_subset (isClosed_tsupport _)
-    (RoughDensity.tsupport_add_subset μ ν), hμ.2.1, fun b α ↦ ?_⟩
+    (tsupport_add (α := Density E m) μ ν), hμ.2.1, fun b α ↦ ?_⟩
   rw [RoughDensity.inChartAt_add]
   exact (hμ.2.2 b α).add (hν.2.2 b α)
 
@@ -385,7 +385,8 @@ theorem IntegrableDensity.smul {μ : RoughDensity I M m} (hμ : IntegrableDensit
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   rw [integrableDensity_iff] at hμ ⊢
-  refine ⟨hμ.1.of_isClosed_subset (isClosed_tsupport _) (RoughDensity.tsupport_smul_subset c μ),
+  refine ⟨hμ.1.of_isClosed_subset (isClosed_tsupport _)
+    (tsupport_smul_subset_right (α := Density E m) (fun _ ↦ c) μ),
     hμ.2.1, fun b α ↦ ?_⟩
   rw [RoughDensity.inChartAt_smul]
   exact (hμ.2.2 b α).smul c
@@ -557,7 +558,7 @@ theorem integralDensity_add [IsManifold I 1 M] {μ ν : RoughDensity I M m}
     exists_finite_precompact_chart_cover (I := I) (hμ.isCompact.union hν.isCompact)
   have hu (i : Fin n) : IsChartMeasurable I (u i) := (hp i).1.isChartMeasurable
   rw [integralDensity_eq_sum_disjointed_chart_integrals (hμ.add hν) b α u hu (fun i ↦ (hp i).2.1)
-      fun x hx ↦ hc (RoughDensity.tsupport_add_subset μ ν (subset_closure hx)),
+      fun x hx ↦ hc (tsupport_add (α := Density E m) μ ν (subset_closure hx)),
     integralDensity_eq_sum_disjointed_chart_integrals hμ b α u hu (fun i ↦ (hp i).2.1)
       fun x hx ↦ hc (Or.inl (subset_closure hx)),
     integralDensity_eq_sum_disjointed_chart_integrals hν b α u hu (fun i ↦ (hp i).2.1)
@@ -596,9 +597,10 @@ theorem integralDensity_smul (c : ℝ) (μ : RoughDensity I M m) :
       (mt (integrableDensity_smul_iff hc0 μ).mp hμ), mul_zero]
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
+  have hsupp : tsupport (α := Density E m) (c • μ) = tsupport (α := Density E m) μ :=
+    congrArg closure (Function.support_const_smul_of_ne_zero (M := Density E m) c μ hc0)
   rw [integralDensity, dite_eq_left (hμ.smul c), integralDensity, dite_eq_left hμ,
-    chosenCoverSum_congr _ _ _ hμ.isCompact (RoughDensity.tsupport_smul hc0 μ),
-    chosenCoverSum_smul]
+    chosenCoverSum_congr _ _ _ hμ.isCompact hsupp, chosenCoverSum_smul]
 
 /-- The integral of the negative of a density is the negative of its integral. -/
 @[simp]
