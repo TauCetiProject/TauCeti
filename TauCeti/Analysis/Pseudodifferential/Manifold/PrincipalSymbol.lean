@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -67,6 +68,9 @@ depends on the cutoffs only through their values at the point.
   complexification of a differential operator `D` of order at most `m` is `i ^ m` times its
   geometric principal symbol (`TauCeti.smoothPrincipalSymbol`) at nonzero covectors, the
   angular-frequency convention `σ(∂ⱼ) = i ξⱼ`.
+* `TauCeti.classicalPrincipalSymbol_conj`: naturality under diffeomorphisms. Transporting `P`
+  along a diffeomorphism `Φ : N → M` pulls its principal symbol back by the cotangent map,
+  `σ_m(Φ^* P)(y, η ∘ dΦ_y) = σ_m(P)(Φ y, η)`.
 
 ## References
 
@@ -678,5 +682,81 @@ theorem classicalPrincipalSymbol_complexifyLinearMap {m : ℕ}
   rw [h₁, hηξ, hχ] at h₂
   have h := congrArg (fun L : ℂ →L[ℂ] ℂ ↦ L 1) h₂
   simpa [hχ] using h
+
+/-! ### Invariance under diffeomorphisms -/
+
+section Diffeomorph
+
+variable {N : Type*} [TopologicalSpace N] [ChartedSpace (CoordinateSpace n) N] [T2Space N]
+  [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ N]
+
+/-- **Naturality of the principal symbol under diffeomorphisms.** Transport an operator `P` on `M`
+to `N` along a diffeomorphism `Φ : N → M`, by conjugation `f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` with the
+pullback. Its principal symbol of order `m` at `y` on the pullback `η ∘ dΦ_y` of a covector `η` at
+`Φ y` is the principal symbol of `P` at `Φ y` on `η`:
+
+`σ_m(Φ^* P)(y, η ∘ dΦ_y) = σ_m(P)(Φ y, η)`.
+
+So the principal symbol transforms as a function on the cotangent bundle. When `P` is not a
+classical pseudodifferential operator of order `m`, neither is its transport, and both sides
+are `0`. -/
+theorem classicalPrincipalSymbol_conj
+    (Φ : N ≃ₘ⟮𝓘(ℝ, CoordinateSpace n), 𝓘(ℝ, CoordinateSpace n)⟯ M)
+    (P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (y : N)
+    (η : TangentSpace 𝓘(ℝ, CoordinateSpace n) (Φ y) →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (Φ.compRightComplexAlgEquiv.toLinearEquiv.conj P) y
+        (η.comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) Φ y)) =
+      classicalPrincipalSymbol m P (Φ y) η := by
+  by_cases hP : P ∈ classicalPseudodifferentialOperators m
+  swap
+  · rw [classicalPrincipalSymbol_of_notMem hP, classicalPrincipalSymbol_of_notMem
+      ((conj_mem_classicalPseudodifferentialOperators_iff Φ).not.2 hP)]
+  have hQ := conj_mem_classicalPseudodifferentialOperators Φ hP
+  -- The preferred chart `e` at `y`, its cutoff `χ`, and the chart `e' = e ∘ Φ⁻¹` of `M` at `Φ y`.
+  set e := chartAt (CoordinateSpace n) y
+  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ N :=
+    IsManifold.chart_mem_maximalAtlas y
+  have hy : y ∈ e.source := mem_chart_source _ y
+  set e' := Φ.symm.toHomeomorph.transOpenPartialHomeomorph e
+  have he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
+    Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl he
+  have hy' : Φ y ∈ e'.source := by simpa [e'] using hy
+  have he'y : e' (Φ y) = e y := by simp [e']
+  set χ := (exists_cutoff_chartAt (n := n) y).choose
+  have hχ : χ (e y) = 1 := (exists_cutoff_chartAt (n := n) y).choose_spec.self_of_nhds
+  -- The chart symbol of the transport of `P` in `e` is also the chart symbol of `P` in `e'`.
+  have ha := isChartSymbol_chartSymbol hQ he χ χ
+  have ha' : IsChartSymbol P he' χ χ (chartSymbol hQ he χ χ) := fun u x ↦ (ha u x).trans
+    (DFunLike.congr_fun (LinearMap.congr_fun (e.complexChartCompression_conj he Φ χ χ P) _) x)
+  -- The chart frequency `ζ` of `η ∘ dΦ_y` in `e` is also the chart frequency of `η` in `e'`.
+  set ζ := (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
+    ((η.comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) Φ y)).comp
+      (mvfderiv 𝓘(ℝ, CoordinateSpace n) e y).inverse)
+  have hζ := innerSL_toDual_symm_comp_inverse_mvfderiv
+    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy
+    (η.comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) Φ y))
+  -- `d(e')_{Φ y} = de_y ∘ dΦ⁻¹_{Φ y}`, compared on vectors since the tangent spaces at
+  -- `Φ⁻¹ (Φ y)` and at `y` agree only up to `Φ.symm_apply_apply`.
+  have hζ' : (innerSL ℝ ζ).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e' (Φ y)) = η := by
+    ext v
+    rw [ContinuousLinearMap.comp_apply, show ⇑e' = e ∘ Φ.symm by simp [e'],
+      mvfderiv_comp_apply_of_eq _ (mdifferentiableAt_of_mem_maximalAtlas
+        (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy)
+        ((Φ.symm.mdifferentiable (by simp)) _) (Φ.symm_apply_apply y)]
+    exact (DFunLike.congr_fun hζ _).trans
+      (congrArg η (Φ.mfderiv_apply_mfderiv_symm_apply (by simp) y v))
+  -- Read the principal symbol of this chart symbol at `(e y, ζ)` in both charts.
+  have h₁ := coefficient_principal_eq_classicalPrincipalSymbol hQ he χ χ ha hy ζ
+  have h₂ := coefficient_principal_eq_classicalPrincipalSymbol hP he' χ χ ha' hy' ζ
+  -- In `h₂` the cutoff `χ` is read as a test function on the target of `e'`.
+  have hχ' : DFunLike.coe (F := 𝓓(⟨e'.target, e'.open_target⟩, ℝ)) χ (e' (Φ y)) = 1 := by
+    rw [he'y]
+    exact hχ
+  rw [hχ', he'y, h₁, hζ, hζ', hχ] at h₂
+  have h := congrArg (fun L : ℂ →L[ℂ] ℂ ↦ L 1) h₂
+  simpa using h
+
+end Diffeomorph
 
 end TauCeti

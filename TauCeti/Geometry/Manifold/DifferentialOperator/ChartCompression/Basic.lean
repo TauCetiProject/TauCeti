@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
+public import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
@@ -51,6 +52,9 @@ with no continuity assumed) and computes their principal symbols:
   `x` of the chart target, the principal symbol of the compression at a covector `η` is
   `φ(x) ψ(x) σ(D)(e⁻¹ x)(η ∘ de)`: the principal symbol transforms as a function on the cotangent
   bundle, multiplied by the cutoffs.
+* `OpenPartialHomeomorph.complexChartCompression_conj`: for a diffeomorphism `Φ : M → N`, the chart
+  compression in a chart `e` of `M` of the transport `f ↦ (D (f ∘ Φ⁻¹)) ∘ Φ` of an operator `D` on
+  `N` is the chart compression of `D` in the chart `e ∘ Φ⁻¹` of `N`, by the same cutoffs.
 
 ## Main definitions
 
@@ -513,6 +517,44 @@ theorem complexChartCompression_complexifyLinearMap (φ ψ : 𝓓(⟨e.target, e
       ContMDiffMap.complexifyLinearMap (e.chartCompression he φ ψ D) := by
   ext f y
   apply Complex.ext <;> simp
+
+section Diffeomorph
+
+variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) ∞ N] [T2Space N]
+
+/-- **Chart compressions under a diffeomorphism.** Transport an operator `D` on the complex-valued
+smooth functions on `N` to `M` along a diffeomorphism `Φ : M → N`, by conjugation with the pullback
+`f ↦ f ∘ Φ`. Its chart compression in a chart `e` of `M` is the chart compression of `D`, by the
+same cutoffs, in the chart `e ∘ Φ⁻¹` of `N`, which has the same target as `e`. -/
+theorem complexChartCompression_conj (Φ : M ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ N)
+    (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (D : C^∞⟮𝓘(ℝ, E), N; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexChartCompression he φ ψ (Φ.compRightComplexAlgEquiv.toLinearEquiv.conj D) =
+      (Φ.symm.toHomeomorph.transOpenPartialHomeomorph e).complexChartCompression
+        (Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl he) φ ψ D := by
+  have he' := Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl he
+  -- Pulling back through `e` and then along `Φ⁻¹` is pulling back through `e ∘ Φ⁻¹`. The cutoff
+  -- `ψ` lives on `e.target`, which is the target of `e ∘ Φ⁻¹` only up to unfolding, so the two
+  -- pullbacks are compared by explicit terms rather than by rewriting.
+  have hpull (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
+      Φ.compRightComplexAlgEquiv.symm (e.complexCutoffPullback he ψ f) =
+        (Φ.symm.toHomeomorph.transOpenPartialHomeomorph e).complexCutoffPullback he' ψ f := by
+    ext z
+    by_cases hz : Φ.symm z ∈ e.source
+    · exact ((Φ.compRightComplexAlgEquiv_symm_apply _ z).trans
+        (complexCutoffPullback_apply_of_mem he ψ f hz)).trans
+          (complexCutoffPullback_apply_of_mem he' ψ f hz).symm
+    · exact ((Φ.compRightComplexAlgEquiv_symm_apply _ z).trans
+        (complexCutoffPullback_apply_of_notMem he ψ f hz)).trans
+          (complexCutoffPullback_apply_of_notMem he' ψ f hz).symm
+  ext f y
+  refine (complexChartCompression_apply he φ ψ _ f y).trans
+    (Eq.trans ?_ (complexChartCompression_apply he' φ ψ D f y).symm)
+  rw [LinearEquiv.conj_apply_apply, AlgEquiv.toLinearEquiv_apply,
+    Diffeomorph.compRightComplexAlgEquiv_apply]
+  exact congrArg₂ (fun g z ↦ φ y • D g z) (hpull f) (by simp)
+
+end Diffeomorph
 
 end Complex
 
