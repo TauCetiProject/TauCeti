@@ -202,6 +202,7 @@ theorem coeff_add_two_rankOneOperator (F G : R⟦X⟧) (κ μ : R) (A : R⟦X⟧
         (κ * coeff 1 F + coeff 1 G) * coeff (s + 1) A +
         κ * ∑ j ∈ range (s + 1), coeff (s + 2 - j) F * coeff j A +
         ∑ j ∈ range (s + 1), coeff (s + 2 - j) G * coeff j A := by
+    -- expose the index as a successor `(s + 1) + 1`, the form `coeff_succ_mul_eq_add_sum` matches
     rw [show s + 2 = s + 1 + 1 from rfl]
     simp only [add_mul, mul_assoc, map_add, coeff_C_mul]
     rw [coeff_succ_mul_eq_add_sum, coeff_succ_mul_eq_add_sum, sum_range_succ _ (s + 1),
@@ -356,7 +357,10 @@ end Coefficients
 `w'' + f(z) w' + g(z) w = 0` at an irregular singularity of rank one at infinity, written in the
 logarithmic coordinate `z = exp ζ`: `exp(κ e^ζ + μ ζ) ∑_{s<N} aₛ e^{-sζ}`. In this coordinate the
 power `z^μ = exp(μ ζ)` needs no choice of branch, and the function is entire. The coefficients `a`
-are arbitrary; they are those of a formal solution for `a = TauCeti.rankOneCoeff F G κ μ`. -/
+are arbitrary. Taking `a = TauCeti.rankOneCoeff F G κ μ` gives the coefficients of a formal
+solution under the hypotheses of `TauCeti.rankOneOperator_mk_rankOneCoeff`: `κ` is a simple root
+of the characteristic equation `κ² + f₀ κ + g₀ = 0` (that is, `f₀ + 2κ ≠ 0`) and `μ` is given by
+DLMF 2.7.10. -/
 noncomputable def rankOneFormalSolutionTrunc (κ μ : ℂ) (a : ℕ → ℂ) (N : ℕ) (ζ : ℂ) : ℂ :=
   cexp (κ * cexp ζ + μ * ζ) * ∑ s ∈ range N, a s * cexp (-(s * ζ))
 
@@ -393,6 +397,12 @@ private lemma rankOneFormalSolutionTrunc_eq_expEval (κ μ : ℂ) (a : ℕ → �
   refine sum_congr rfl fun s _ ↦ ?_
   rw [coeff_mk, ← Complex.exp_natCast_mul, mul_neg]
 
+/-- Raising `μ` by one multiplies `exp(κ e^ζ + μ ζ)` by `e^ζ`. -/
+private lemma cexp_add_one_mul (κ μ ζ : ℂ) :
+    cexp (κ * cexp ζ + (μ + 1) * ζ) = cexp (κ * cexp ζ + μ * ζ) * cexp ζ := by
+  rw [← Complex.exp_add]
+  ring_nf
+
 /-- The first derivative of `exp(κ e^ζ + μ ζ) p(e^{-ζ})`: `d/dζ` acts on `p(e^{-ζ})` as `-θ`,
 with `θ = X d/dX`. -/
 private lemma hasDerivAt_expEval (κ μ : ℂ) (p : Polynomial ℂ) (ζ : ℂ) :
@@ -411,9 +421,7 @@ private lemma deriv_expEval (κ μ : ℂ) (p : Polynomial ℂ) :
     deriv (expEval κ μ p) = fun ζ ↦ κ * expEval κ (μ + 1) p ζ + μ * expEval κ μ p ζ -
       expEval κ μ (Polynomial.X * Polynomial.derivative p) ζ := by
   funext ζ
-  rw [(hasDerivAt_expEval κ μ p ζ).deriv, expEval, expEval, expEval,
-    show κ * cexp ζ + (μ + 1) * ζ = κ * cexp ζ + μ * ζ + ζ by ring,
-    Complex.exp_add (κ * cexp ζ + μ * ζ) ζ]
+  rw [(hasDerivAt_expEval κ μ p ζ).deriv, expEval, expEval, expEval, cexp_add_one_mul]
   ring
 
 /-- The second derivative of `exp(κ e^ζ + μ ζ) p(e^{-ζ})`. -/
@@ -427,8 +435,7 @@ private lemma hasDerivAt_deriv_expEval (κ μ : ℂ) (p : Polynomial ℂ) (ζ : 
   refine ((((hasDerivAt_expEval κ (μ + 1) p ζ).const_mul κ).add
     ((hasDerivAt_expEval κ μ p ζ).const_mul μ)).sub
       (hasDerivAt_expEval κ μ _ ζ)).congr_deriv ?_
-  rw [show κ * cexp ζ + (μ + 1) * ζ = κ * cexp ζ + μ * ζ + ζ by ring,
-    Complex.exp_add (κ * cexp ζ + μ * ζ) ζ]
+  rw [cexp_add_one_mul]
   ring
 
 /-- The derivative of the truncated formal solution: `d/dζ` multiplies the term
