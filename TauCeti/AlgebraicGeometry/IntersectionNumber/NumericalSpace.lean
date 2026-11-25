@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.NumericalClassGroup
+import TauCeti.LinearAlgebra.Dual.BaseChange
 
 /-!
 # The rational and real numerical spaces `N¹(X/k)_ℚ` and `N¹(X/k)_ℝ`
@@ -34,11 +35,16 @@ and the `ℝ`-linear form on `N¹(X/k)_ℝ`, compatible with the inclusion `N¹(
   their relative versions: the maps `Num ⟶ N¹_ℚ ⟶ N¹_ℝ`;
 * `LineBundleClass.numericalIntersectionNumberBaseChange`: the `A`-linear extension of the
   intersection number with a curve to `A ⊗ Num(X/k)`, for any commutative ring `A`.
+* `LineBundleClass.relNumericalIntersectionNumberBaseChange`: the `A`-linear extension to
+  `A ⊗ Num(X/S)` of the relative degree pairing `LineBundleClass.relNumericalIntersectionNumberHom`
+  with an integral curve in a fibre of `f`, compatible with changes of coefficients.
 
 ## Main results
 
 * `LineBundleClass.toRatNumericalClasses_injective`,
   `LineBundleClass.ratToRealNumericalClasses_injective` and their relative versions.
+* `LineBundleClass.eq_zero_of_forall_relNumericalIntersectionNumberBaseChange_eq_zero`: the degree
+  pairing of `N¹(X/S)_ℚ` with curves in fibres is nondegenerate.
 
 ## References
 
@@ -127,10 +133,8 @@ theorem numericalIntersectionNumberBaseChange_rTensor {A B : Type*} [CommRing A]
     [Algebra A B] (v : A ⊗[ℤ] Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x)) :
     numericalIntersectionNumberBaseChange x hi hC B
         (((Algebra.linearMap A B).restrictScalars ℤ).rTensor _ v) =
-      algebraMap A B (numericalIntersectionNumberBaseChange x hi hC A v) := by
-  induction v using TensorProduct.inductionOn with
-  | tmul a α => simp
-  | add v w hv hw => simp only [map_add, hv, hw]
+      algebraMap A B (numericalIntersectionNumberBaseChange x hi hC A v) :=
+  Module.Dual.baseChange_rTensor _ v
 
 /-- The real intersection number of the image of a rational numerical class is its rational
 intersection number. -/
@@ -191,6 +195,69 @@ theorem ratToRealRelNumericalClasses_injective :
     Function.Injective (ratToRealRelNumericalClasses f) := by
   rw [ratToRealRelNumericalClasses, AlgebraTensorModule.coe_rTensor]
   exact Module.Flat.rTensor_preserves_injective_linearMap _ (algebraMap ℚ ℝ).injective
+
+variable {f} {s : S} {C : Scheme.{u}} [IsIntegral C] [C.Over (Spec (.of (S.residueField s)))]
+  {i : C ⟶ f.fiber s} [IsClosedImmersion i]
+  (hi : C ↘ Spec (.of (S.residueField s)) = i ≫ f.fiberToSpecResidueField s)
+  (hC : topologicalKrullDim C = 1)
+
+/-- The relative intersection number `A ⊗ Num(X/S) ⟶ A` with an integral curve in a fibre, for a
+commutative ring `A`: for `A = ℚ` and `A = ℝ` the degree pairing of `N¹(X/S)_ℚ` and `N¹(X/S)_ℝ`
+with curves in fibres. -/
+def relNumericalIntersectionNumberBaseChange (A : Type*) [CommRing A] :
+    A ⊗[ℤ] Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f) →ₗ[A] A :=
+  Module.Dual.baseChange A (relNumericalIntersectionNumberHom hi hC).toIntLinearMap
+
+/-- The base-changed relative intersection number of `a ⊗ α` is `a · (α · C)`. -/
+@[simp]
+theorem relNumericalIntersectionNumberBaseChange_tmul {A : Type*} [CommRing A] (a : A)
+    (α : Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f)) :
+    relNumericalIntersectionNumberBaseChange hi hC A (a ⊗ₜ α) =
+      a * relNumericalIntersectionNumberHom hi hC α := by
+  simp [relNumericalIntersectionNumberBaseChange, zsmul_eq_mul, mul_comm]
+
+/-- The base-changed relative intersection number is compatible with a change of coefficients
+`A ⟶ B`. -/
+@[simp]
+theorem relNumericalIntersectionNumberBaseChange_rTensor {A B : Type*} [CommRing A] [CommRing B]
+    [Algebra A B] (v : A ⊗[ℤ] Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f)) :
+    relNumericalIntersectionNumberBaseChange hi hC B
+        (((Algebra.linearMap A B).restrictScalars ℤ).rTensor _ v) =
+      algebraMap A B (relNumericalIntersectionNumberBaseChange hi hC A v) :=
+  Module.Dual.baseChange_rTensor _ v
+
+/-- The real relative intersection number of the image of a rational relative numerical class is
+its rational relative intersection number. -/
+@[simp]
+theorem relNumericalIntersectionNumberBaseChange_ratToRealRelNumericalClasses
+    (v : RelRatNumericalClasses f) :
+    relNumericalIntersectionNumberBaseChange hi hC ℝ (ratToRealRelNumericalClasses f v) =
+      relNumericalIntersectionNumberBaseChange hi hC ℚ v := by
+  rw [ratToRealRelNumericalClasses, AlgebraTensorModule.coe_rTensor,
+    relNumericalIntersectionNumberBaseChange_rTensor, eq_ratCast]
+
+variable (f) in
+/-- **The degree pairing of `N¹(X/S)_ℚ` with curves in fibres is nondegenerate**: a rational
+numerical class with zero degree on every integral curve in every fibre of `f` is zero. -/
+theorem eq_zero_of_forall_relNumericalIntersectionNumberBaseChange_eq_zero
+    (v : RelRatNumericalClasses f)
+    (h : ∀ (s : S) (C : Scheme.{u}) [IsIntegral C] [C.Over (Spec (.of (S.residueField s)))]
+      (i : C ⟶ f.fiber s) [IsClosedImmersion i]
+      (hi : C ↘ Spec (.of (S.residueField s)) = i ≫ f.fiberToSpecResidueField s)
+      (hC : topologicalKrullDim C = 1), relNumericalIntersectionNumberBaseChange hi hC ℚ v = 0) :
+    v = 0 := by
+  refine TauCeti.Module.Dual.eq_zero_of_forall_baseChange_eq_zero
+    (Φ := {φ | ∃ (s : S) (C : Scheme.{u}) (_ : IsIntegral C)
+      (_ : C.Over (Spec (.of (S.residueField s)))) (i : C ⟶ f.fiber s) (_ : IsClosedImmersion i)
+      (hi : C ↘ Spec (.of (S.residueField s)) = i ≫ f.fiberToSpecResidueField s)
+      (hC : topologicalKrullDim C = 1),
+        φ = (relNumericalIntersectionNumberHom hi hC).toIntLinearMap})
+    (fun α hα ↦ Additive.toMul.injective ?_) ?_
+  · refine numericalFiberRestriction_injective f (funext fun s ↦ ?_)
+    refine eq_of_forall_numericalIntersectionNumber_eq _ _ fun C _ _ i _ hi hC ↦ ?_
+    simpa using hα _ ⟨s, C, _, _, i, _, hi, hC, rfl⟩
+  · rintro φ ⟨s, C, _, _, i, _, hi, hC, rfl⟩
+    exact h s C i hi hC
 
 end Relative
 
