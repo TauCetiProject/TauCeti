@@ -38,11 +38,18 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   (`TauCeti.Floer.almostComplexInChartAt_eq_inChart`), which is `Cⁿ` on the chart target; for a
   family of smooth structures `J z`, such as a domain-independent one, it is
   `SmoothAlmostComplexStructure.inChart` of `J z`
-  (`TauCeti.Floer.almostComplexInChartAt_almostComplexStructureAt`).
+  (`TauCeti.Floer.almostComplexInChartAt_almostComplexStructureAt`). A family over a normed space
+  of parameters whose section of the tangent endomorphism bundle is only jointly `Cⁿ` over a set
+  `U` of parameters, as are the structures of families of punctured domains, is `Cⁿ` in the chart
+  over `U` (`TauCeti.Floer.contDiffOn_almostComplexInChartAt`, and
+  `TauCeti.Floer.contDiffOn_almostComplexInChartAt_almostComplexStructureAt` for families of
+  smooth structures).
 * For a nondegenerate `ω` and Hamiltonians `K(z)` which are jointly `C^(n+1)` in `z` and the
   target point, the Hamiltonian vector field in the chart is `C^n` on the chart target
   (`TauCeti.SmoothTwoForm.IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt`): it is
   the coordinate expression of the `C^n` section `(z, x) ↦ X_{K(z)}(x)` of the tangent bundle.
+  Here `z` ranges over any normed space, such as the domain `ℝ × ℝ` or a space of parameters times
+  it.
 * Both readings take a parameter of any type. For a family over a further parameter `p`, the
   uncurried family read in the chart at `((p, z), y)` is the member at `p` read in the chart at
   `(z, y)` (`TauCeti.Floer.almostComplexInChartAt_uncurry`,
@@ -244,6 +251,70 @@ theorem almostComplexInChartAt_almostComplexStructureAt (J : P → SmoothAlmostC
   rw [LinearMap.coe_toContinuousLinearMap']
   exact (J p.1).almostComplexStructureAt_apply _ v
 
+/-- **A jointly regular family of structures is regular in a chart.** Let `J_q(x)` be structures
+on the tangent spaces of `M`, depending on a point `q` of a normed space `Q`, such as the domain
+`ℝ × ℝ` of the Floer equation or a space of parameters times it, and let the section
+`(q, x) ↦ J_q(x)` of the tangent endomorphism bundle be jointly `Cⁿ` at every point of `U × M` for
+a set `U ⊆ Q`. Then the family read in the chart at `α` is `Cⁿ` on `U × (extChartAt I α).target`.
+Unlike `ContMDiffAlmostComplexStructureFamily.contDiffOn_inChart`, the family need only be regular
+over `U`, as are the structures of families of punctured domains. -/
+theorem contDiffOn_almostComplexInChartAt {Q : Type*} [NormedAddCommGroup Q] [NormedSpace ℝ Q]
+    {U : Set Q} {J : Q → (x : M) → AlmostComplexStructure (TangentSpace I x)} {n : ℕ∞}
+    (hJ : ∀ q ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, Q).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun p : Q × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) p.2
+        (J p.1 p.2).toLinearMap.toContinuousLinearMap) (q, x))
+    (α : M) :
+    ContDiffOn ℝ n (almostComplexInChartAt I α J) (U ×ˢ (extChartAt I α).target) := by
+  set T := trivializationAt (E →L[ℝ] E)
+    (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) α
+  set φ := extChartAt I α
+  -- The map `(q, y) ↦ (q, φ⁻¹ y)` into `Q × M`.
+  set ψ : Q × E → Q × M := fun p ↦ (p.1, φ.symm p.2)
+  rintro ⟨q, y⟩ ⟨hq, hy⟩
+  have hbase {w : E} (hw : w ∈ φ.target) : φ.symm w ∈ T.baseSet := by
+    simpa [T, φ] using TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw
+  -- The coordinates of the section in the trivialization at `α` are `Cⁿ` at `(q, φ⁻¹ y)`.
+  have hcoord : ContMDiffAt (𝓘(ℝ, Q).prod I) 𝓘(ℝ, E →L[ℝ] E) n
+      (fun p : Q × M ↦ (T ⟨p.2, (J p.1 p.2).toLinearMap.toContinuousLinearMap⟩).2)
+      (q, φ.symm y) :=
+    ((Bundle.Trivialization.contMDiffAt_iff (e := T) (by exact hbase hy)).1
+      (hJ q hq (φ.symm y))).2
+  have hψ : ContMDiffWithinAt 𝓘(ℝ, Q × E) (𝓘(ℝ, Q).prod I) n ψ (U ×ˢ φ.target) (q, y) :=
+    (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
+      (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (q, y)
+        (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))
+  -- In the trivialization at `α`, the section is the family in tangent coordinates.
+  have hT (w : E) (p : Q) :
+      (T ⟨φ.symm w, (J p (φ.symm w)).toLinearMap.toContinuousLinearMap⟩).2 =
+        almostComplexInChartAt I α J (p, w) := by
+    rw [almostComplexInChartAt, hom_trivializationAt_apply]
+  have h := contMDiffWithinAt_iff_contDiffWithinAt.1 (hcoord.comp_contMDiffWithinAt (q, y) hψ)
+  exact h.congr (fun ⟨p, w⟩ _ ↦ (hT w p).symm) (hT y q).symm
+
+/-- **A jointly regular family of smooth structures is regular in a chart.** For smooth almost
+complex structures `J q` depending on a point `q` of a normed space `Q`, whose endomorphism
+sections form a section `(q, x) ↦ J q x` of the tangent endomorphism bundle which is jointly `Cⁿ`
+at every point of `U × M` for a set `U ⊆ Q`, the family read in the chart at `α` is `Cⁿ` on
+`U × (extChartAt I α).target`. This is `TauCeti.Floer.contDiffOn_almostComplexInChartAt` for the
+pointwise structures of `J`. -/
+theorem contDiffOn_almostComplexInChartAt_almostComplexStructureAt {Q : Type*}
+    [NormedAddCommGroup Q] [NormedSpace ℝ Q] {U : Set Q} {J : Q → SmoothAlmostComplexStructure I M}
+    {n : ℕ∞}
+    (hJ : ∀ q ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, Q).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun p : Q × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) p.2
+        ((J p.1).toEndomorphism p.2)) (q, x))
+    (α : M) :
+    ContDiffOn ℝ n (almostComplexInChartAt I α fun q ↦ (J q).almostComplexStructureAt)
+      (U ×ˢ (extChartAt I α).target) :=
+  contDiffOn_almostComplexInChartAt (J := fun q ↦ (J q).almostComplexStructureAt)
+    (fun q hq x ↦ (hJ q hq x).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun p ↦ congrArg (TotalSpace.mk' _ p.2)
+        (ContinuousLinearMap.ext fun v ↦ by
+          rw [LinearMap.coe_toContinuousLinearMap']
+          exact (J p.1).almostComplexStructureAt_apply p.2 v))) α
+
 end Floer
 
 namespace SmoothTwoForm
@@ -339,19 +410,20 @@ theorem contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const {Q R : Type*}
     fun _ _ ↦ ω.hamiltonianVectorFieldInChartAt_uncurry α _ _ _ _
 
 /-- **The Hamiltonian vector field in a chart is smooth.** For a nondegenerate two-form `ω` and a
-family of Hamiltonians `K(z)` which is jointly `C^(n+1)` at every point of `U × M`, for an open set
-`U` of the domain, the Hamiltonian vector field of `K` read in the chart at `α` is `C^n` on
-`U × (extChartAt I α).target`. With `n = 2` this is the regularity of the data assumed by the
-compactness theorems for Floer solutions in a manifold. -/
+family of Hamiltonians `K(z)`, depending on a point `z` of a normed space `Q` such as the domain
+`ℝ × ℝ` of the Floer equation or a space of parameters times it, which is jointly `C^(n+1)` at
+every point of `U × M` for a set `U ⊆ Q`, the Hamiltonian vector field of `K` read in the chart at
+`α` is `C^n` on `U × (extChartAt I α).target`. With `n = 2` this is the regularity of the data
+assumed by the compactness theorems for Floer solutions in a manifold. -/
 theorem IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt (hω : ω.IsNondegenerate)
-    {U : Set (ℝ × ℝ)} {K : ℝ × ℝ → M → ℝ} {n : ℕ∞}
-    (hK : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (n + 1) (Function.uncurry K) (z, x))
+    {Q : Type*} [NormedAddCommGroup Q] [NormedSpace ℝ Q] {U : Set Q} {K : Q → M → ℝ} {n : ℕ∞}
+    (hK : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, Q).prod I) 𝓘(ℝ) (n + 1) (Function.uncurry K) (z, x))
     (α : M) :
     ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α K) (U ×ˢ (extChartAt I α).target) := by
   set T := trivializationAt E (TangentSpace I) α
   set φ := extChartAt I α
-  -- The map `(z, y) ↦ (z, φ⁻¹ y)` into `(ℝ × ℝ) × M`.
-  set ψ : (ℝ × ℝ) × E → (ℝ × ℝ) × M := fun p ↦ (p.1, φ.symm p.2)
+  -- The map `(z, y) ↦ (z, φ⁻¹ y)` into `Q × M`.
+  set ψ : Q × E → Q × M := fun p ↦ (p.1, φ.symm p.2)
   rintro ⟨z, y⟩ ⟨hz, hy⟩
   have hbase {w : E} (hw : w ∈ φ.target) : φ.symm w ∈ T.baseSet := by
     simpa [T, φ] using (extChartAt I α).map_target hw
@@ -361,8 +433,7 @@ theorem IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt (hω : ω.IsN
     (hK z hz (φ.symm y))
   have hcoord := ((Bundle.Trivialization.contMDiffAt_iff (e := T)
     (by simpa [T] using hbase hy)).1 hX).2
-  have hψ : ContMDiffWithinAt 𝓘(ℝ, (ℝ × ℝ) × E) (𝓘(ℝ, ℝ × ℝ).prod I) n ψ
-      (U ×ˢ φ.target) (z, y) :=
+  have hψ : ContMDiffWithinAt 𝓘(ℝ, Q × E) (𝓘(ℝ, Q).prod I) n ψ (U ×ˢ φ.target) (z, y) :=
     (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
       (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (z, y)
         (contDiff_snd.contMDiff _).contMDiffWithinAt fun _ hp ↦ hp.2))

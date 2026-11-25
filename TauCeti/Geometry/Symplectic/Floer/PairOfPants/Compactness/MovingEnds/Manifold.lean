@@ -59,8 +59,9 @@ In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
   two broken products, for a plumbing factor `0 < f` with `3 f ≤ 1`, along which the separation
   and nonvanishing hypotheses hold automatically.
 
-The regularity of the limit, the bubbles at the points of `Z`, breaking along the ends, and
-covering `M` by several charts are not treated here.
+The regularity of the limit, the bubbles at the points of `Z` and breaking along the ends are not
+treated here. Solutions in a closed manifold with arbitrary images, covered by several charts, are
+treated in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.MovingEnds.Closed`.
 
 ## References
 
