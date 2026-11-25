@@ -233,6 +233,27 @@ theorem exists_form_apply_eq_ite [RingHomSurjective σ] {ι : Type*} [DecidableE
 
 variable [RingHomInvPair σ σ]
 
+omit [RingHomInvPair σ σ] in
+/-- If `x` and `y` are linearly independent and agree on `s ∌ j`, some `u` is orthogonal to the
+`y i`, `i ∈ s`, but to neither `x j` nor `y j`: among the vectors `a`, `b` dual to `x j` and to
+`y j`, and `a + b`, one serves. -/
+private theorem exists_form_eq_zero_and_ne_zero [RingHomSurjective σ] {ι : Type*} {x y : ι → V}
+    (hx : LinearIndependent K x) (hy : LinearIndependent K y) {s : Finset ι} {j : ι}
+    (hj : j ∉ s) (hs : ∀ i ∈ s, x i = y i) :
+    ∃ u, (∀ i ∈ s, H.form u (y i) = 0) ∧ H.form u (y j) ≠ 0 ∧ H.form u (x j) ≠ 0 := by
+  classical
+  obtain ⟨a, ha⟩ := H.exists_form_apply_eq_ite hx j
+  obtain ⟨b, hb⟩ := H.exists_form_apply_eq_ite hy j
+  have hsj (i) (hi : i ∈ s) : i ≠ j := fun h ↦ hj (h ▸ hi)
+  have has (i) (hi : i ∈ s) : H.form a (y i) = 0 := by rw [← hs i hi, ha]; simp [hsj i hi]
+  have hbs (i) (hi : i ∈ s) : H.form b (y i) = 0 := by simp [hb, hsj i hi]
+  by_cases haj : H.form a (y j) ≠ 0
+  · exact ⟨a, has, haj, by simp [ha]⟩
+  by_cases hbj : H.form b (x j) ≠ 0
+  · exact ⟨b, hbs, by simp [hb], hbj⟩
+  push Not at haj hbj
+  exact ⟨a + b, fun i hi ↦ by simp [has i hi, hbs i hi], by simp [haj, hb], by simp [hbj, ha]⟩
+
 /-- One step of Witt's theorem: if `x` and `y` are linearly independent with the same Gram
 matrix and agree on `s`, a product of quasi-reflections fixing the `y i`, `i ∈ s`, sends `x j` to
 `y j`. It takes one quasi-reflection, or two when `h (y j) (y j - x j) = 0`. -/
@@ -253,21 +274,8 @@ private theorem exists_mem_quasiReflectionSubgroup_step (hσ : ∃ z, σ z ≠ z
   · exact reflect (x j) (hxy j j) hxs hne
   push Not at hne
   -- Otherwise first apply a quasi-reflection along some `u` orthogonal to the `y i`, `i ∈ s`, but
-  -- to neither `x j` nor `y j`. Among the vectors `a`, `b` dual to `x j` and `y j`, and `a + b`,
-  -- one serves.
-  obtain ⟨a, ha⟩ := H.exists_form_apply_eq_ite hx j
-  obtain ⟨b, hb⟩ := H.exists_form_apply_eq_ite hy j
-  have hsj (i) (hi : i ∈ s) : i ≠ j := fun h ↦ hj (h ▸ hi)
-  obtain ⟨u, hus, huy, hux⟩ : ∃ u, (∀ i ∈ s, H.form u (y i) = 0) ∧ H.form u (y j) ≠ 0 ∧
-      H.form u (x j) ≠ 0 := by
-    have has (i) (hi : i ∈ s) : H.form a (y i) = 0 := by rw [← hs i hi, ha]; simp [hsj i hi]
-    have hbs (i) (hi : i ∈ s) : H.form b (y i) = 0 := by simp [hb, hsj i hi]
-    by_cases haj : H.form a (y j) ≠ 0
-    · exact ⟨a, has, haj, by simp [ha]⟩
-    by_cases hbj : H.form b (x j) ≠ 0
-    · exact ⟨b, hbs, by simp [hb], hbj⟩
-    push Not at haj hbj
-    exact ⟨a + b, fun i hi ↦ by simp [has i hi, hbs i hi], by simp [haj, hb], by simp [hbj, ha]⟩
+  -- to neither `x j` nor `y j`.
+  obtain ⟨u, hus, huy, hux⟩ := H.exists_form_eq_zero_and_ne_zero hx hy hj hs
   obtain ⟨t, ht⟩ := exists_units_add_smul_eq hσ (H.apply_form_self u)
   have hρ := LinearMap.mem_isometryGroup_iff.1 (H.quasiReflection_mem_isometryGroup u t ht)
   have hρy (i) (hi : i ∈ s) : H.quasiReflection u t ht (y i) = y i :=

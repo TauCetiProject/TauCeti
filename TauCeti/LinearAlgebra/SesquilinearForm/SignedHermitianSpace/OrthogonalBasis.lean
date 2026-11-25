@@ -25,7 +25,7 @@ zero as soon as some `z` has `σ z ≠ z` (`LinearMap.eq_zero_of_forall_apply_se
 characteristic two this replaces polarization, which is not available. For the trivial
 involution the alternating form `x₁ y₂ - x₂ y₁` on `K²` is a nondegenerate skew-symmetric form in
 which every vector is isotropic, so it has no orthogonal basis. No hypothesis on the
-characteristic is needed: over `𝔽₄/𝔽₂` the form `x̄₁ y₁ + x̄₂ y₂` has the orthogonal basis
+characteristic is needed: over `𝔽₄/𝔽₂` the form `σ x₁ * y₁ + σ x₂ * y₂` has the orthogonal basis
 `e₁, e₂`, while its isotropic vector `(1, 1)` belongs to no orthogonal basis.
 
 ## Main statements
@@ -123,7 +123,7 @@ variable (H : SignedHermitianSpace K V σ ε)
 
 /-- The value `h x x` of an `ε`-hermitian form satisfies `σ (h x x) = ε h x x`: it is fixed by the
 involution for a hermitian form and negated by it for a skew-hermitian one. -/
-theorem apply_form_self [RingHomInvPair σ σ] (x : V) : σ (H.form x x) = ε • H.form x x := by
+theorem apply_form_self (x : V) : σ (H.form x x) = ε • H.form x x := by
   conv_rhs => rw [H.form_swap x x]
   rw [smul_smul, Int.units_mul_self, one_smul]
 
