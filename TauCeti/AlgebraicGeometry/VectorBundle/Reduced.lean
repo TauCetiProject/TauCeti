@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Stalk
 import Mathlib.AlgebraicGeometry.Properties
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Stalk
 import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Basic
+import TauCeti.Algebra.Module.Projective.Vanishing
 
 /-!
 # Sections of finite locally free sheaves on reduced schemes
@@ -28,28 +29,11 @@ summand of a free module, so a section vanishes as soon as each of its coordinat
 coordinate `a` has a nonempty basic open `D(a)`, because `X` is reduced; `D(a)` meets the dense
 subset at a point `y`, where the section is killed by an element outside the prime of `y`, which
 is impossible as `a` is a unit at `y` (`Module.Projective.eq_zero_of_forall_ne_zero`).
-
-This is the argument by which two locally free quotients of the same rank of the differentials
-of a reduced scheme with dense smooth locus have the same kernel (NashBlowups §0.7).
 -/
 
 public section
 
 open CategoryTheory AlgebraicGeometry Opposite TopologicalSpace
-
-/-- An element `s` of a projective `A`-module vanishes if for every nonzero `a : A` there is a
-prime `p` with `a ∉ p` such that `s` is killed by some element outside `p`, that is, `s` vanishes
-in the localization at `p`. -/
-theorem Module.Projective.eq_zero_of_forall_ne_zero {A P : Type*} [CommRing A] [AddCommGroup P]
-    [Module A P] [Module.Projective A P] {s : P}
-    (h : ∀ a : A, a ≠ 0 → ∃ p : Ideal A, p.IsPrime ∧ a ∉ p ∧ ∃ u ∉ p, u • s = 0) : s = 0 := by
-  obtain ⟨f, hf⟩ := Module.projective_def'.mp ‹_›
-  suffices hs : f s = 0 by simpa [hs] using (LinearMap.congr_fun hf s).symm
-  ext i
-  by_contra hi
-  obtain ⟨p, hp, hap, u, hu, hus⟩ := h _ hi
-  have hui : u * f s i = 0 := by simpa using congr(f $hus i)
-  exact (hp.mem_or_mem (hui ▸ p.zero_mem)).elim hu hap
 
 namespace TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf
 
@@ -68,10 +52,8 @@ theorem eq_zero_of_germ_eq_zero (hD : Dense D) {V : X.Opens} (s : Γ(E.obj, V))
   refine ⟨W, hWV, hxW, ?_⟩
   rw [map_zero]
   refine Module.Projective.eq_zero_of_forall_ne_zero (A := Γ(X, W)) fun a ha ↦ ?_
-  have hne : (X.basicOpen a : Set X).Nonempty := by
-    by_contra hc
-    exact ha ((basicOpen_eq_bot_iff a).mp
-      (Opens.ext ((Set.not_nonempty_iff_eq_empty.mp hc).trans Opens.coe_bot.symm)))
+  have hne : (X.basicOpen a : Set X).Nonempty :=
+    (Opens.ne_bot_iff_nonempty _).mp ((basicOpen_eq_bot_iff a).not.mpr ha)
   obtain ⟨y, hya, hyD⟩ := hD.inter_open_nonempty _ (X.basicOpen a).isOpen hne
   have hyW : y ∈ W := X.basicOpen_le a hya
   have := E.obj.isLocalizedModule_germₗ ⟨y, hyW⟩ hW
@@ -96,17 +78,15 @@ variable {E}
 /-- **Comparison of quotients.** On a reduced scheme, let `q₁ : M ⟶ N` be an epimorphism of
 `𝒪_X`-modules that is injective on the stalks at the points of a dense subset, and
 `q₂ : M ⟶ E` a morphism into a finite locally free sheaf. Then `q₂` factors uniquely through
-`q₁`: the kernel of `q₁` vanishes on the stalks at the dense subset, so its image under `q₂`
-vanishes. -/
+`q₁`. -/
 theorem existsUnique_comp_eq (hD : Dense D) {M N : X.Modules} (q₁ : M ⟶ N) [Epi q₁]
     (hq₁ : ∀ x ∈ D, Function.Injective (q₁.stalkₗ x)) (q₂ : M ⟶ E.obj) :
     ∃! e : N ⟶ E.obj, q₁ ≫ e = q₂ := by
+  -- The kernel of `q₁` vanishes on the stalks at the dense subset, so its image under `q₂` does.
   have h : Limits.kernel.ι q₁ ≫ q₂ = 0 := by
     refine E.hom_eq_zero_of_stalkₗ_eq_zero hD _ fun x hx ↦ ?_
     have hz : (Limits.kernel.ι q₁ ≫ q₁).stalkₗ x = 0 := by
-      ext m
-      obtain ⟨U, hxU, m, rfl⟩ := (Limits.kernel q₁).presheaf.exists_germ_eq m
-      simp [Limits.kernel.condition]
+      rw [Limits.kernel.condition, Scheme.Modules.Hom.stalkₗ_zero]
     rw [Scheme.Modules.Hom.stalkₗ_comp] at hz ⊢
     ext m
     have hm : (Limits.kernel.ι q₁).stalkₗ x m = 0 :=
