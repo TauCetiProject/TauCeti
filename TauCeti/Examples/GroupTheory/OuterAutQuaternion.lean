@@ -18,7 +18,7 @@ The orders of `TauCeti.OuterAut` and `TauCeti.ContinuousOut` for the quaternion 
 `Q₈ = QuaternionGroup 2`: `MulAut Q₈` has order `24`, the centre has order `2`, so the inner
 automorphisms, a quotient of `Q₈` by its centre, form a group of order `4`, and `OuterAut Q₈` has
 order `6`; with the discrete topology `ContinuousOut Q₈` has order `6` too. Moreover
-`MulAut Q₈ ≃* S₄` (`mulAutMulEquivPerm`), by the action on the four body diagonals of the cube
+`MulAut Q₈ ≅ S₄` (`nonempty_mulEquiv_perm`), by the action on the four body diagonals of the cube
 whose six faces are the elements of order `4`.
 
 An automorphism `φ` of `Q₈` is determined by the pair `(φ(a 1), φ(xa 0))`, since
@@ -152,8 +152,7 @@ private theorem diagonalMap_mul (φ ψ : MulAut Q₈) (d : Fin 4) :
     exact image_vertex_mem_vertices ⟨_, isGenPair_mulAut ψ⟩ d
   have h := diagonal_image_vertex_diagonal ⟨_, isGenPair_mulAut φ⟩ _ hψ
   rw [← coe_eq_ofGens φ] at h
-  rw [diagonalMap, diagonalMap, diagonalMap, ← h, Finset.image_image]
-  rfl
+  rw [diagonalMap, diagonalMap, diagonalMap, ← h, Finset.image_image, MulAut.coe_mul]
 
 private theorem diagonalMap_one (d : Fin 4) : diagonalMap 1 d = d := by
   simp [diagonalMap, diagonal_vertex]
@@ -192,12 +191,11 @@ private theorem toPerm_injective : Function.Injective toPerm := by
   | a i => simp [ofGens, a_one_pow]
   | xa i => simp [ofGens, a_one_pow, xa_mul_a]
 
-/-- **`MulAut Q₈ ≅ S₄`**: the automorphism group of the quaternion group acts faithfully on the
-four body diagonals of the cube whose faces are the six elements of order `4`, and both groups have
-order `24`. -/
-noncomputable def mulAutMulEquivPerm : MulAut Q₈ ≃* Equiv.Perm (Fin 4) :=
-  MulEquiv.ofBijective toPerm <| (Function.Injective.bijective_of_nat_card_le toPerm_injective
-    (by rw [card_mulAut, Nat.card_perm, Nat.card_eq_fintype_card, Fintype.card_fin]; rfl))
+/-- **`MulAut Q₈ ≅ S₄`**: the automorphism group of the quaternion group is isomorphic to the
+symmetric group on four letters. -/
+theorem nonempty_mulEquiv_perm : Nonempty (MulAut Q₈ ≃* Equiv.Perm (Fin 4)) :=
+  ⟨MulEquiv.ofBijective toPerm <| toPerm_injective.bijective_of_nat_card_le
+    (by rw [card_mulAut, Nat.card_perm, Nat.card_fin]; decide)⟩
 
 /-- The centre of `Q₈` has order `2`. -/
 theorem card_center : Nat.card (Subgroup.center Q₈) = 2 := by
