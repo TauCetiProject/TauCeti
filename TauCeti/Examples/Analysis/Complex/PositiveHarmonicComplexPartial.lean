@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Complex.Harmonic.ComplexPartial
+import TauCeti.Analysis.Complex.RealDeriv
 
 /-!
 # Complex partials in the Checks for positive harmonic functions on the half-plane

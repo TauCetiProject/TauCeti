@@ -59,7 +59,8 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
   Schwarz integrals of a measure on `ℝ`, which vanish off the real axis for a measure that is not
   Poisson-finite (`TauCeti.upperHalfPlanePoissonIntegral_of_not_isPoissonFinite`,
   `TauCeti.upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite`).
-* `TauCeti.upperHalfPlanePoissonIntegral_dirac`: `P[δₐ](z) = P(z, a)`, and its case
+* `TauCeti.upperHalfPlanePoissonIntegral_dirac`: `P[δₐ](z) = P(z, a)`, which is
+  `Im (-1 / (π (z - a)))` (`TauCeti.upperHalfPlanePoissonIntegral_dirac_eq_im`), with the case
   `TauCeti.upperHalfPlanePoissonIntegral_dirac_zero_eq_im`: `P[δ₀](z) = Im (-1 / (π z))`.
 * `TauCeti.upperHalfPlanePoissonLIntegral`: the extended Poisson integral in `[0, ∞]`, infinite on
   `ℂ₊` exactly for measures that are not Poisson-finite
@@ -393,15 +394,21 @@ theorem upperHalfPlanePoissonIntegral_dirac (a : ℝ) (z : ℂ) :
     upperHalfPlanePoissonIntegral (Measure.dirac a) z = upperHalfPlanePoissonKernel z a := by
   rw [upperHalfPlanePoissonIntegral_def, integral_dirac]
 
-/-- The Poisson integral of the Dirac mass at `0` is `Im (-1 / (π z))`. -/
-theorem upperHalfPlanePoissonIntegral_dirac_zero_eq_im :
-    upperHalfPlanePoissonIntegral (Measure.dirac 0) = fun z => (-((π : ℂ) * z)⁻¹).im := by
+/-- The Poisson integral of the Dirac mass at `a` is `Im (-1 / (π (z - a)))`. -/
+theorem upperHalfPlanePoissonIntegral_dirac_eq_im (a : ℝ) :
+    upperHalfPlanePoissonIntegral (Measure.dirac a) =
+      fun z => (-((π : ℂ) * (z - a))⁻¹).im := by
   ext z
-  rw [upperHalfPlanePoissonIntegral_dirac, upperHalfPlanePoissonKernel_eq]
-  rcases eq_or_ne (normSq z) 0 with h | h
+  rw [upperHalfPlanePoissonIntegral_dirac, upperHalfPlanePoissonKernel_eq, ← normSq_neg, neg_sub]
+  rcases eq_or_ne (normSq (z - a)) 0 with h | h
   · simp [inv_im, h]
   · simp [inv_im]
     field_simp
+
+/-- The Poisson integral of the Dirac mass at `0` is `Im (-1 / (π z))`. -/
+theorem upperHalfPlanePoissonIntegral_dirac_zero_eq_im :
+    upperHalfPlanePoissonIntegral (Measure.dirac 0) = fun z => (-((π : ℂ) * z)⁻¹).im := by
+  simpa using upperHalfPlanePoissonIntegral_dirac_eq_im 0
 
 /-- The **extended Poisson integral** `P[ν](z) = ∫⁻ P(z, x) dν(x) ∈ [0, ∞]` of a measure `ν` on
 `ℝ`. On the upper half-plane it is finite exactly for Poisson-finite `ν`
