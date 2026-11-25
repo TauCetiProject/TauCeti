@@ -9,6 +9,7 @@ public import TauCeti.Examples.Probability.Gibbs.Specification
 public import TauCeti.Probability.Gibbs.Extreme
 public import TauCeti.MeasureTheory.Group.ErgodicExtreme
 public import TauCeti.Algebra.Group.TypeTags.Countable
+import TauCeti.Probability.Process.Tail.ProperAction
 
 /-!
 # Checks for the face property of invariant Gibbs measures
@@ -22,8 +23,8 @@ probability measure on `X₀` is invariant and Gibbs: `𝒢_inv(γ) = 𝔓_inv(X
 and `oneBar` are ergodic, hence extreme in `𝒢_inv(γ)`; their midpoint gives the invariant event
 `{oneBar}` measure `1/2`, so it is not ergodic and not extreme.
 
-The translations of `ℤ` move every finite set off every finite set (`exists_forall_smul_notMem`),
-the hypothesis of the face property.
+The hypothesis of the face property, that the translations of `ℤ` move every finite set off every
+finite set, is `TauCeti.Probability.exists_forall_smul_notMem_self`.
 -/
 
 open MeasureTheory Set TauCeti.MeasureTheory
@@ -34,15 +35,6 @@ public noncomputable section
 namespace TauCeti.Examples.GibbsExtreme
 
 open TauCeti TauCeti.Examples.GibbsSpecification
-
-/-- The translations of `ℤ` move every finite set off every finite set. -/
-theorem exists_forall_smul_notMem (F Λ : Finset (Multiplicative ℤ)) :
-    ∃ g : Multiplicative ℤ, ∀ i ∈ F, g • i ∉ Λ := by
-  classical
-  obtain ⟨g, hg⟩ := Infinite.exists_notMem_finset ((F ×ˢ Λ).image fun p => p.2 * p.1⁻¹)
-  refine ⟨g, fun i hi hgi => hg (Finset.mem_image.2 ⟨(i, g • i), Finset.mem_product.2 ⟨hi, hgi⟩,
-    ?_⟩)⟩
-  simp [smul_eq_mul]
 
 /-- The shift fixes every point of `X₀`. -/
 theorem smul_X₀ (g : Multiplicative ℤ) (ω : X₀) : g • ω = ω :=
@@ -58,11 +50,8 @@ instance smulInvariantMeasure_X₀ (μ : Measure X₀) :
 theorem gibbsInvariant_idSpec :
     idSpec.gibbsInvariant = invariantMeasuresOfMeasureUnivEq (Multiplicative ℤ) X₀ 1 := by
   ext μ
-  refine ⟨fun h => (Specification.mem_gibbsInvariant_iff.1 h).1, fun h =>
-    Specification.mem_gibbsInvariant_iff.2 ⟨h, ?_⟩⟩
-  refine Specification.isGibbs_iff.2 fun Λ => ?_
-  have hk : ⇑(idSpec.kernel Λ) = Measure.dirac := funext (idSpec_kernel_apply Λ)
-  rw [hk, Measure.bind_dirac]
+  exact ⟨fun h => (Specification.mem_gibbsInvariant_iff.1 h).1, fun h =>
+    Specification.mem_gibbsInvariant_iff.2 ⟨h, isGibbs_idSpec μ⟩⟩
 
 /-- The constant configuration `zeroBar`. -/
 def zeroBar : X₀ := ⟨fun _ => false, (mem_X₀_iff _).2 fun _ _ => rfl⟩
@@ -88,8 +77,8 @@ theorem dirac_mem_extremePoints_gibbsInvariant (ω : X₀) :
   have hmem : Measure.dirac ω ∈ idSpec.gibbsInvariant := by
     rw [gibbsInvariant_idSpec]
     exact mem_invariantMeasuresOfMeasureUnivEq_iff.2 ⟨inferInstance, by simp⟩
-  exact (idSpec.mem_extremePoints_gibbsInvariant_iff_ergodicSMul exists_forall_smul_notMem
-    hmem).2 (ergodicSMul_dirac ω)
+  exact (idSpec.mem_extremePoints_gibbsInvariant_iff_ergodicSMul
+    Probability.exists_forall_smul_notMem_self hmem).2 (ergodicSMul_dirac ω)
 
 /-- The midpoint of the Dirac masses at `zeroBar` and `oneBar`. -/
 def diracMidpoint : Measure X₀ :=
@@ -99,11 +88,14 @@ def diracMidpoint : Measure X₀ :=
 theorem diracMidpoint_singleton_oneBar : diracMidpoint {oneBar} = 2⁻¹ := by
   simp [diracMidpoint, zeroBar_ne_oneBar]
 
+/-- The midpoint is a probability measure. -/
+theorem diracMidpoint_univ : diracMidpoint univ = 1 := by
+  simp [diracMidpoint, ENNReal.inv_two_add_inv_two]
+
 /-- The midpoint is an invariant Gibbs measure. -/
 theorem diracMidpoint_mem_gibbsInvariant : diracMidpoint ∈ idSpec.gibbsInvariant := by
   rw [gibbsInvariant_idSpec]
-  refine mem_invariantMeasuresOfMeasureUnivEq_iff.2 ⟨inferInstance, ?_⟩
-  simp [diracMidpoint, ENNReal.inv_two_add_inv_two]
+  exact mem_invariantMeasuresOfMeasureUnivEq_iff.2 ⟨inferInstance, diracMidpoint_univ⟩
 
 /-- **The midpoint is not ergodic**: the invariant event `{oneBar}` has measure `1/2`. -/
 theorem not_ergodicSMul_diracMidpoint : ¬ ErgodicSMul (Multiplicative ℤ) X₀ diracMidpoint := by
@@ -115,16 +107,13 @@ theorem not_ergodicSMul_diracMidpoint : ¬ ErgodicSMul (Multiplicative ℤ) X₀
     rw [diracMidpoint_singleton_oneBar, measure_empty] at this
     exact absurd this (by simp)
   · have := measure_congr h1
-    rw [diracMidpoint_singleton_oneBar] at this
-    have huniv : diracMidpoint univ = 1 := by
-      simp [diracMidpoint, ENNReal.inv_two_add_inv_two]
-    rw [huniv] at this
+    rw [diracMidpoint_singleton_oneBar, diracMidpoint_univ] at this
     exact absurd this (by norm_num)
 
 /-- The midpoint is not extreme among the invariant Gibbs measures. -/
 theorem diracMidpoint_notMem_extremePoints_gibbsInvariant :
     diracMidpoint ∉ extremePoints ℝ≥0∞ idSpec.gibbsInvariant := fun h =>
   not_ergodicSMul_diracMidpoint ((idSpec.mem_extremePoints_gibbsInvariant_iff_ergodicSMul
-    exists_forall_smul_notMem diracMidpoint_mem_gibbsInvariant).1 h)
+    Probability.exists_forall_smul_notMem_self diracMidpoint_mem_gibbsInvariant).1 h)
 
 end TauCeti.Examples.GibbsExtreme
