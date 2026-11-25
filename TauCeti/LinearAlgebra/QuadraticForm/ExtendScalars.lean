@@ -286,8 +286,9 @@ theorem extendScalarsOfBasis_tmul (Q : QuadraticForm R V) (b : Module.Basis ι R
     LinearMap.baseChange_tmul, extendScalars_piScalarRight_tmul, LinearEquiv.symm_apply_apply]
 
 /-- **Independence of the basis.** The scalar extension of a quadratic form on a free module
-through a basis does not depend on the basis: it is the unique quadratic form on `A ⊗[R] V` with
-`a ⊗ v ↦ a² Q(v)`. -/
+through a basis does not depend on the basis: both extensions send `a ⊗ v` to `a² Q(v)`
+(`extendScalarsOfBasis_tmul`), and quadratic forms on `A ⊗[R] V` agreeing on pure tensors are
+equal (Mathlib's `baseChange_ext`). -/
 theorem extendScalarsOfBasis_eq (Q : QuadraticForm R V) (b : Module.Basis ι R V)
     (b' : Module.Basis κ R V) : Q.extendScalarsOfBasis b A = Q.extendScalarsOfBasis b' A :=
   _root_.baseChange_ext fun v ↦ by rw [extendScalarsOfBasis_tmul, extendScalarsOfBasis_tmul]
