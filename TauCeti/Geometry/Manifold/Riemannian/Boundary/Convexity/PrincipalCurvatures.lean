@@ -47,18 +47,12 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
     (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
 
-/-- **The second fundamental form in principal coordinates**: `II_q(u, u) = ∑ᵢ κᵢ uᵢ²`, where
-`uᵢ` are the coordinates of `u` in the basis of principal directions. -/
-theorem boundarySecondFundamentalForm_self_eq_sum (q : (𝓡∂ (n + 1)).boundary M)
-    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
-    boundarySecondFundamentalForm q u u =
-      ∑ i, boundaryPrincipalCurvatures q i * (boundaryPrincipalBasis q).repr u i ^ 2 := by
-  conv_lhs => rw [← (boundaryPrincipalBasis q).sum_repr u]
-  simp only [coe_boundaryPrincipalBasis, map_sum, map_smul, LinearMap.coe_sum,
-    LinearMap.coe_smul, Finset.sum_apply, Pi.smul_apply,
-    boundarySecondFundamentalForm_boundaryPrincipalDirection, smul_eq_mul, mul_ite, mul_zero,
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
-  exact Finset.sum_congr rfl fun i _ ↦ by ring
+/-- A nonzero tangent vector of the boundary has a nonzero coordinate in the basis of principal
+directions. -/
+private theorem exists_boundaryPrincipalBasis_repr_ne_zero {q : (𝓡∂ (n + 1)).boundary M}
+    {u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q} (hu : u ≠ 0) :
+    ∃ i, (boundaryPrincipalBasis q).repr u i ≠ 0 :=
+  DFunLike.ne_iff.1 ((boundaryPrincipalBasis q).repr.map_ne_zero_iff.2 hu)
 
 /-- **Strict convexity through the principal curvatures**: the boundary is strictly convex at
 `q` iff every principal curvature at `q` is positive. -/
@@ -68,8 +62,7 @@ theorem isStrictlyConvexAt_iff_forall_boundaryPrincipalCurvatures_pos
   refine ⟨fun h i ↦ ?_, fun h ↦ isStrictlyConvexAt_iff.2 fun u hu ↦ ?_⟩
   · have := isStrictlyConvexAt_iff.1 h _ (boundaryPrincipalDirection_ne_zero q i)
     simpa using this
-  · obtain ⟨i, hi⟩ : ∃ i, (boundaryPrincipalBasis q).repr u i ≠ 0 :=
-      DFunLike.ne_iff.1 ((boundaryPrincipalBasis q).repr.map_ne_zero_iff.2 hu)
+  · obtain ⟨i, hi⟩ := exists_boundaryPrincipalBasis_repr_ne_zero hu
     rw [boundarySecondFundamentalForm_self_eq_sum]
     exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (h j).le (sq_nonneg _))
       ⟨i, Finset.mem_univ i, mul_pos (h i) (by positivity)⟩
@@ -92,14 +85,10 @@ theorem isStrictlyConcaveAt_iff_forall_boundaryPrincipalCurvatures_neg
   refine ⟨fun h i ↦ ?_, fun h ↦ isStrictlyConcaveAt_iff.2 fun u hu ↦ ?_⟩
   · have := isStrictlyConcaveAt_iff.1 h _ (boundaryPrincipalDirection_ne_zero q i)
     simpa using this
-  · obtain ⟨i, hi⟩ : ∃ i, (boundaryPrincipalBasis q).repr u i ≠ 0 :=
-      DFunLike.ne_iff.1 ((boundaryPrincipalBasis q).repr.map_ne_zero_iff.2 hu)
-    rw [boundarySecondFundamentalForm_self_eq_sum, ← neg_pos, ← Finset.sum_neg_distrib]
-    refine Finset.sum_pos' (fun j _ ↦ ?_) ⟨i, Finset.mem_univ i, ?_⟩
-    · rw [← neg_mul]
-      exact mul_nonneg (neg_nonneg.2 (h j).le) (sq_nonneg _)
-    · rw [← neg_mul]
-      exact mul_pos (neg_pos.2 (h i)) (by positivity)
+  · obtain ⟨i, hi⟩ := exists_boundaryPrincipalBasis_repr_ne_zero hu
+    rw [boundarySecondFundamentalForm_self_eq_sum]
+    exact Finset.sum_neg' (fun j _ ↦ mul_nonpos_of_nonpos_of_nonneg (h j).le (sq_nonneg _))
+      ⟨i, Finset.mem_univ i, mul_neg_of_neg_of_pos (h i) (by positivity)⟩
 
 /-- **Strict convexity gives positive mean curvature**: for `n ≥ 1`, if the boundary is strictly
 convex at `q`, then `H(q) > 0`. -/
