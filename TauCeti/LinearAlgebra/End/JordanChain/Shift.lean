@@ -209,6 +209,7 @@ for `j ≥ 1`, and `(finShift R n v) 0 = 0`. -/
 noncomputable def finShift (n : ℕ) : Module.End R (Fin n → R) :=
   LinearMap.pi fun j ↦ if _ : (j : ℕ) = 0 then 0 else LinearMap.proj ⟨j - 1, by omega⟩
 
+@[simp]
 theorem finShift_apply {n : ℕ} (v : Fin n → R) (j : Fin n) :
     finShift R n v j = if _ : (j : ℕ) = 0 then 0 else v ⟨j - 1, by omega⟩ := by
   by_cases h : (j : ℕ) = 0 <;> simp [finShift, h]

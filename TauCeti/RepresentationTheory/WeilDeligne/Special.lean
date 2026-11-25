@@ -76,6 +76,11 @@ theorem coe_omega_inv_apply (hq : (q : E) ≠ 0) (w : W) :
     ((omega deg hq)⁻¹ w : E) = (q : E) ^ (-(deg w).toAdd) := by
   rw [MonoidHom.inv_apply, Units.val_inv_eq_inv_val, coe_omega_apply, zpow_neg]
 
+/-- For a continuous degree map, the character `ω` has open kernel. -/
+theorem isOpen_ker_omega (hdeg : Continuous deg) (hq : (q : E) ≠ 0) :
+    IsOpen ((omega deg hq).ker : Set W) :=
+  isOpen_ker_comp_deg hdeg _
+
 /-- For a continuous degree map, the character `ω⁻¹` has open kernel. -/
 theorem isOpen_ker_omega_inv (hdeg : Continuous deg) (hq : (q : E) ≠ 0) :
     IsOpen ((omega deg hq)⁻¹.ker : Set W) := by
@@ -102,6 +107,14 @@ theorem specialWeight_apply (n : ℕ) (hq : (q : E) ≠ 0) (w : W) (i : Fin n) :
     specialWeight deg n hq w i = (q : E) ^ ((deg w).toAdd * i) := by
   rw [specialWeight_apply_eq_omega_pow, coe_omega_apply, zpow_mul, zpow_natCast]
 
+omit [TopologicalSpace W] in
+/-- Multiplication by the weights acts coordinatewise; this is the Weil action of `Sp(n)`. -/
+private theorem lmul_comp_specialWeight_apply (n : ℕ) (hq : (q : E) ≠ 0) (w : W) (v : Fin n → E)
+    (i : Fin n) :
+    (Algebra.lmul E (Fin n → E)).toMonoidHom.comp (specialWeight deg n hq) w v i =
+      specialWeight deg n hq w i * v i := by
+  simp
+
 /-! ### The special parameter -/
 
 variable (q) in
@@ -117,19 +130,21 @@ def special (n : ℕ) (hdeg : Continuous deg) (hq : (q : E) ≠ 0) :
   isNilpotent_N := isNilpotent_finShift n
   conj_N w := by
     refine LinearMap.ext fun v ↦ funext fun j ↦ ?_
-    simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_toMonoidHom,
-      MonoidHom.coe_comp, MonoidHom.coe_ofClass, Algebra.coe_lmul_eq_mul, Function.comp_apply,
-      mul_apply_eq_comp, LinearMap.mul_apply_apply, LinearMap.smul_apply, Pi.mul_apply,
-      Pi.smul_apply, finShift_apply, smul_eq_mul]
+    simp only [mul_apply_eq_comp, LinearMap.smul_apply, Pi.smul_apply, smul_eq_mul,
+      lmul_comp_specialWeight_apply, finShift_apply, specialWeight_apply, map_inv, toAdd_inv]
     split_ifs with h
     · simp
-    · rw [specialWeight_apply, specialWeight_apply, ← mul_assoc,
-        ← zpow_add₀ (by exact_mod_cast hq), map_inv, toAdd_inv]
+    · rw [← mul_assoc, ← zpow_add₀ hq]
       congr 2
-      push_cast [Nat.cast_sub (show 1 ≤ (j : ℕ) by omega)]
+      push_cast [Nat.cast_sub (Nat.one_le_iff_ne_zero.mpr h)]
       ring
 
 variable (hdeg : Continuous deg) (hq : (q : E) ≠ 0)
+
+/-- The Weil action of `Sp(n)` is multiplication by the weights. -/
+theorem special_r (n : ℕ) (w : W) :
+    (special q n hdeg hq).r w = Algebra.lmul E (Fin n → E) (specialWeight deg n hq w) :=
+  (rfl)
 
 @[simp]
 theorem special_r_apply (n : ℕ) (w : W) (v : Fin n → E) (i : Fin n) :
@@ -161,7 +176,9 @@ theorem special_N_single_of_add_one_eq (n : ℕ) (i : Fin n) (hi : (i : ℕ) + 1
 
 /-- `Sp(n)` is Frobenius semisimple: every `r(w)` is diagonal. -/
 theorem isFrobeniusSemisimple_special (n : ℕ) : (special q n hdeg hq).IsFrobeniusSemisimple :=
-  (isFrobeniusSemisimple_def _).mpr fun w _ ↦ isSemisimple_lmul (specialWeight deg n hq w)
+  (isFrobeniusSemisimple_def _).mpr fun w _ ↦ by
+    rw [special_r]
+    exact isSemisimple_lmul _
 
 /-- For `n ≥ 2` the monodromy of `Sp(n)` is nonzero. -/
 theorem special_N_ne_zero {n : ℕ} (hn : 2 ≤ n) : (special q n hdeg hq).N ≠ 0 := by
@@ -181,28 +198,15 @@ private def dualSpecialTwoMap : Module.Dual E (Fin 2 → E) →ₗ[E] (Fin 2 →
 private theorem dualSpecialTwoMap_apply (f : Module.Dual E (Fin 2 → E)) :
     dualSpecialTwoMap f = ![-f (Pi.single 1 1), f (Pi.single 0 1)] := by
   funext i
-  fin_cases i <;> rfl
-
-/-- `dualSpecialTwoMap` intertwines `r^∨ = r(w⁻¹)ᵗ` with the twist of `r` by `ω⁻¹`. -/
-private theorem dualSpecialTwoMap_dual_apply (w : W) (f : Module.Dual E (Fin 2 → E)) :
-    dualSpecialTwoMap ((special q 2 hdeg hq).r.dual w f) =
-      ((omega deg hq)⁻¹ w : E) • (special q 2 hdeg hq).r w (dualSpecialTwoMap f) := by
-  funext i
-  fin_cases i
-  · simp [dualSpecialTwoMap_apply, Module.Dual.transpose_apply, special_r_single]
-  · simp only [dualSpecialTwoMap_apply, Representation.dual_apply, Module.Dual.transpose_apply,
-      LinearMap.comp_apply, special_r_single, map_smul, smul_eq_mul, Pi.smul_apply, special_r_apply,
-      coe_omega_inv_apply]
-    rw [← mul_assoc, ← zpow_add₀ (by exact_mod_cast hq)]
-    simp
+  fin_cases i <;> simp [dualSpecialTwoMap]
 
 /-- `dualSpecialTwoMap` intertwines the dual monodromy `-Nᵗ` with the shift. -/
 private theorem dualSpecialTwoMap_neg_dualMap_finShift (f : Module.Dual E (Fin 2 → E)) :
     dualSpecialTwoMap (-(finShift E 2).dualMap f) = finShift E 2 (dualSpecialTwoMap f) := by
   funext i
   fin_cases i
-  · simp [dualSpecialTwoMap_apply, finShift_apply, finShift_single_of_add_one_eq (1 : Fin 2) rfl]
-  · simp [dualSpecialTwoMap_apply, finShift_apply, finShift_single (0 : Fin 2) (by simp)]
+  · simp [dualSpecialTwoMap_apply, finShift_single_of_add_one_eq (1 : Fin 2) rfl]
+  · simp [dualSpecialTwoMap_apply, finShift_single (0 : Fin 2) (by simp)]
 
 private theorem surjective_dualSpecialTwoMap :
     Function.Surjective (dualSpecialTwoMap (E := E)) := fun v ↦
@@ -215,6 +219,17 @@ private theorem bijective_dualSpecialTwoMap : Function.Bijective (dualSpecialTwo
 
 variable [SeparatelyContinuousMul W]
 
+/-- `dualSpecialTwoMap` intertwines `r^∨ = r(w⁻¹)ᵗ` with the twist of `r` by `ω⁻¹`. -/
+private theorem dualSpecialTwoMap_dual_r_apply (w : W) (f : Module.Dual E (Fin 2 → E)) :
+    dualSpecialTwoMap ((special q 2 hdeg hq).dual.r w f) =
+      ((special q 2 hdeg hq).twist _ (isOpen_ker_omega_inv hdeg hq)).r w
+        (dualSpecialTwoMap f) := by
+  rw [dual_r, twist_r, Representation.charTwist_apply_apply]
+  funext i
+  fin_cases i <;>
+    simp [dualSpecialTwoMap_apply, Module.Dual.transpose_apply, special_r_single, ← mul_assoc,
+      inv_mul_cancel₀ (zpow_ne_zero _ hq)]
+
 /-- **The dual of `Sp(2)`** is its twist by `ω⁻¹`: `Sp(2)^∨ ≅ Sp(2) ⊗ ω⁻¹`, through
 `e₀^* ↦ e₁` and `e₁^* ↦ -e₀` (Deligne 1973, proof of §8.4.3, p. 569). -/
 def dualSpecialTwoIso :
@@ -222,8 +237,8 @@ def dualSpecialTwoIso :
   Iso.ofBijective
     { toLinearMap := dualSpecialTwoMap
       isIntertwining' w := LinearMap.ext fun f ↦ by
-        simpa [dual_r, twist_r, Representation.charTwist_apply_apply] using
-          dualSpecialTwoMap_dual_apply hdeg hq w f
+        rw [LinearMap.comp_apply, LinearMap.comp_apply]
+        exact dualSpecialTwoMap_dual_r_apply hdeg hq w f
       comp_N := LinearMap.ext fun f ↦ by
         simpa using dualSpecialTwoMap_neg_dualMap_finShift f }
     bijective_dualSpecialTwoMap
