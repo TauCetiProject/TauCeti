@@ -37,12 +37,10 @@ finite-dimensional space, by the planar change of variables of every order
 * `TauCeti.MemWkpLoc.comp_symm_trans_of_mem_maximalAtlas_of_le`: changes of chart in the maximal
   `Cⁿ` atlas preserve the local classes on open sets of every order `k ≤ n`, provided `k ≤ 1` or
   `1 ≤ p`.
-* `TauCeti.exists_extension_bordered_transition`: a change of bordered holomorphic chart, read in
-  the extended charts, is the restriction to the closed upper half-plane of a holomorphic chart
-  change of `ℂ`, its Schwarz reflection.
 * `TauCeti.memWkpLoc_comp_bordered_transition`: on a Riemann surface with boundary, changes of
   bordered holomorphic chart preserve the local classes of order at most one on subsets of the
-  closed upper half-plane, through the Schwarz reflection of the transition map.
+  closed upper half-plane, through the Schwarz reflection of the transition map
+  (`TauCeti.exists_extension_bordered_transition`).
 * `TauCeti.MemWkpLoc.comp_bordered_transition`: for `1 ≤ p ≤ ∞`, they preserve the local classes
   of every order of maps into a finite-dimensional space on the half-discs over open sets.
 -/
@@ -109,37 +107,6 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ClosedUpperHalfPlane X]
 
 /-! ### Change of bordered holomorphic chart -/
 
-/-- **The Schwarz reflection of a change of bordered holomorphic chart.** For two bordered
-holomorphic charts `φ` and `φ'`, there is a holomorphic chart change `Φ` of `ℂ` that is defined on
-the part of the extended target of `φ'` over the source of `φ` and agrees with the transition map
-`φ ∘ φ'⁻¹`, read in the extended charts, on the closed upper half-plane. It is the Schwarz
-reflection `TauCeti.ClosedUpperHalfPlane.schwarzDouble` of `φ'⁻¹ ≫ φ`. -/
-theorem exists_extension_bordered_transition {φ φ' : OpenPartialHomeomorph X ClosedUpperHalfPlane}
-    (hφ : φ ∈ borderedHolomorphicGroupoid.maximalAtlas X)
-    (hφ' : φ' ∈ borderedHolomorphicGroupoid.maximalAtlas X) :
-    ∃ Φ : OpenPartialHomeomorph ℂ ℂ, Φ ∈ contDiffGroupoid (⊤ : WithTop ℕ∞) 𝓘(ℂ) ∧
-      (φ'.extend closedUpperHalfPlaneModel).target ∩
-          (φ'.extend closedUpperHalfPlaneModel).symm ⁻¹' φ.source ⊆ Φ.source ∧
-      ∀ z : ℂ, 0 ≤ z.im → Φ z =
-        (φ.extend closedUpperHalfPlaneModel ∘ (φ'.extend closedUpperHalfPlaneModel).symm) z := by
-  set e := φ'.symm ≫ₕ φ
-  have he : e ∈ borderedHolomorphicGroupoid :=
-    StructureGroupoid.compatible_of_mem_maximalAtlas hφ' hφ
-  have hre : PreservesRealAxis e := preservesRealAxis_of_mem_borderedHolomorphicGroupoid he
-  refine ⟨schwarzDouble e hre, schwarzDouble_mem_contDiffGroupoid hre he, fun z hz ↦ ?_,
-    fun z hz ↦ ?_⟩
-  · have hupper : 0 ≤ z.im := by simpa using φ'.extend_target_subset_range hz.1
-    obtain ⟨hzt, hzφ⟩ := hz
-    rw [OpenPartialHomeomorph.extend_target] at hzt
-    simp only [mem_preimage, OpenPartialHomeomorph.extend_coe_symm, Function.comp_apply] at hzφ
-    simp only [e, schwarzDouble_source, mem_preimage, OpenPartialHomeomorph.trans_source,
-      OpenPartialHomeomorph.symm_source, mem_inter_iff,
-      ← closedUpperHalfPlaneModel_symm_eq_fold hupper]
-    exact ⟨hzt.1, hzφ⟩
-  · -- On the closed upper half-plane the reflection is the transition map.
-    rw [schwarzDouble_apply_of_im_nonneg hre hz]
-    simp [e, closedUpperHalfPlaneModel_symm_eq_fold hz]
-
 /-- **Change of bordered holomorphic chart.** Precomposition with the transition map
 `φ ∘ φ'⁻¹` between two bordered holomorphic charts preserves the planar classes of order at most
 one on subsets of the overlap. The transition map is read through its Schwarz
@@ -204,11 +171,11 @@ theorem MemWkpLoc.comp_bordered_transition [Fact (1 ≤ p)]
   · exact memWkpLoc_comp_bordered_transition hφ hφ' zero_le_one hg hW hmaps
   obtain ⟨Φ, hΦω, hsub, hagree⟩ := exists_extension_bordered_transition hφ hφ'
   -- The extension is holomorphic in both directions, hence real `Cᵏ`.
-  rw [contDiffGroupoid, mem_groupoid_of_pregroupoid] at hΦω
-  simp only [contDiffPregroupoid, modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm,
-    Function.id_comp, Function.comp_id, preimage_id_eq, id_eq, range_id, inter_univ] at hΦω
-  have hΦ : ContDiffOn ℝ k Φ Φ.source := (hΦω.1.restrict_scalars ℝ).of_le le_top
-  have hΦ' : ContDiffOn ℝ k Φ.symm Φ.target := (hΦω.2.restrict_scalars ℝ).of_le le_top
+  have hΦ : ContDiffOn ℝ k Φ Φ.source :=
+    ((contMDiffOn_of_mem_contDiffGroupoid hΦω).contDiffOn.restrict_scalars ℝ).of_le le_top
+  have hΦ' : ContDiffOn ℝ k Φ.symm Φ.target :=
+    ((contMDiffOn_of_mem_contDiffGroupoid
+      ((contDiffGroupoid _ _).symm hΦω)).contDiffOn.restrict_scalars ℝ).of_le le_top
   have hk0 : (k : WithTop ℕ∞) ≠ 0 := by exact_mod_cast hk.ne'
   -- Both coordinate domains are half-discs over open sets.
   obtain ⟨Ω, hΩ, hV⟩ := φ.exists_isOpen_extend_target_inter_preimage hT
