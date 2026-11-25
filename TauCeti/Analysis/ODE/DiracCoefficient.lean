@@ -24,6 +24,10 @@ the coefficient at `z = 0`, which multiplies the norm of every vector by `|q(t)|
 integrable on `[a, b]` the propagator of the Dirac coefficient is an entire function of `z`
 (`TauCeti.differentiable_propagator_diracCoeff`).
 
+Since `Ω* = -Ω` and `Q_q(t)` is Hermitian, the coefficients at two spectral parameters satisfy
+`P_λ(t)* Ω + Ω P_z(t) = z - conj λ` (`TauCeti.conjTranspose_diracCoeff_mul_add_mul_diracCoeff`),
+the algebraic input of the Christoffel–Darboux identity.
+
 ## References
 
 * A. Poltoratski, *Pointwise convergence of the non-linear Fourier transform*, Ann. of Math. **200**
@@ -32,7 +36,7 @@ integrable on `[a, b]` the propagator of the Dirac coefficient is an entire func
 
 public section
 
-open MeasureTheory Set Matrix
+open MeasureTheory Set Matrix ComplexConjugate
 
 namespace TauCeti
 
@@ -67,6 +71,16 @@ theorem diracCoeff_def (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
 @[simp] theorem diracCoeff_apply_one_one (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
     diracCoeff q z t 1 1 = -((q t).re : ℂ) :=
   (rfl)
+
+/-- The algebraic identity behind the Christoffel–Darboux formula: for the coefficient
+`P_w(s) = -Ω(w - Q_q(s))`, `P_λ(s)* Ω + Ω P_z(s) = z - conj λ`. -/
+theorem conjTranspose_diracCoeff_mul_add_mul_diracCoeff (q : ℝ → ℂ) (lam z : ℂ) (s : ℝ) :
+    (diracCoeff q lam s)ᴴ * !![0, 1; -1, 0] + !![0, 1; -1, 0] * diracCoeff q z s =
+      (z - conj lam) • 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [diracCoeff_def, Matrix.mul_apply, Fin.sum_univ_two, Matrix.conjTranspose_apply]
+  ring
 
 /-- The Dirac coefficient is `-z Ω` plus its value `Ω Q_q(t)` at `z = 0`. -/
 theorem diracCoeff_eq_smul_add (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :

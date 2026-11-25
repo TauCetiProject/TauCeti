@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -19,7 +20,9 @@ Locally Lipschitz maps preserve the absolute continuity of metric-valued curves 
 and isometries moreover reflect it.
 In particular, a map that is continuously differentiable near every point of the compact trace of
 an absolutely continuous curve preserves absolute continuity: this gives the principal logarithm
-of a curve in the slit plane and the quotient of two curves with nonvanishing denominator.
+of a curve in the slit plane, the product of two curves in a normed algebra and the quotient of two
+curves with nonvanishing denominator. The star of a curve in a normed star group is absolutely
+continuous because `star` is an isometry.
 -/
 
 public section
@@ -74,6 +77,22 @@ protected theorem clog {σ : ℝ → ℂ} {a b : ℝ} (hσ : AbsolutelyContinuou
     AbsolutelyContinuousOnInterval (fun t ↦ Complex.log (σ t)) a b :=
   hσ.comp_of_contDiffAt fun _ ⟨t, ht, hσt⟩ ↦
     (Complex.contDiffAt_log (hσt ▸ h t ht)).restrict_scalars ℝ
+
+/-- The star of an absolutely continuous curve in a normed star group is absolutely continuous. -/
+protected theorem star {E : Type*} [SeminormedAddCommGroup E] [StarAddMonoid E]
+    [NormedStarGroup E] {f : ℝ → E} {a b : ℝ} (hf : AbsolutelyContinuousOnInterval f a b) :
+    AbsolutelyContinuousOnInterval (fun t ↦ star (f t)) a b :=
+  star_isometry.absolutelyContinuousOnInterval_comp_iff.2 hf
+
+/-- The product of two absolutely continuous curves in a normed algebra is absolutely continuous.
+This generalizes `AbsolutelyContinuousOnInterval.mul` from real functions to normed `ℝ`-algebras,
+which need not be commutative or have a multiplicative norm. -/
+@[to_fun]
+theorem mul' {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] {f g : ℝ → A} {a b : ℝ}
+    (hf : AbsolutelyContinuousOnInterval f a b) (hg : AbsolutelyContinuousOnInterval g a b) :
+    AbsolutelyContinuousOnInterval (f * g) a b :=
+  (hf.prodMk hg).comp_of_contDiffAt (φ := fun p : A × A ↦ p.1 * p.2) fun _ _ ↦
+    contDiff_mul.contDiffAt
 
 /-- The inverse of an absolutely continuous curve valued in a normed field is absolutely
 continuous when it does not vanish on the interval. -/
