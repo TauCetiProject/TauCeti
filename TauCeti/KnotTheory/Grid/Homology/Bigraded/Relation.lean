@@ -136,7 +136,7 @@ theorem BigradedUnblockedHomologyIsomorphic.of_semilinearMap
     hG.BigradedUnblockedHomologyIsomorphic hG' R := by
   let _ := hG.unblockedHomologyModule R
   let _ := hG'.unblockedHomologyModule R
-  refine ⟨LinearEquiv.ofBijective (hG.unblockedHomologyLinearMapOfSemilinear hG' R hσ f)
+  refine ⟨LinearEquiv.ofBijective (hG.unblockedHomologyLinearMapOfSemilinear R hG' hσ f)
     (by rwa [coe_unblockedHomologyLinearMapOfSemilinear]),
     LinearMap.isHomogeneous_def.mpr fun g y hy ↦ ?_⟩
   rw [OddComponentGridDiagram.bigradedUnblockedHomologyGrading_piece] at hy

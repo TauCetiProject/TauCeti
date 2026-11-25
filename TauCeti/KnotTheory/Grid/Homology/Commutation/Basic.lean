@@ -235,7 +235,7 @@ noncomputable def unblockedHomologyCommutationLinearMap :
     letI := (hG.swapColumns C.column (finRotate n C.column)).unblockedHomologyModule R
     G.unblockedHomology R →ₗ[Polynomial R]
       (G.swapColumns C.column (finRotate n C.column)).unblockedHomology R :=
-  hG.unblockedHomologyLinearMapOfSemilinear (hG.swapColumns C.column (finRotate n C.column)) R
+  hG.unblockedHomologyLinearMapOfSemilinear R (hG.swapColumns C.column (finRotate n C.column))
     (fun p => by simp [aeval_rename, Function.comp_def]) (G.unblockedHomologyCommutationMap R C)
 
 /-- The `R[U]`-linear map acts by the specified semilinear commutation map. -/

@@ -22,14 +22,14 @@ have isomorphic `GH⁻` as bigraded `K[U]`-modules
 (`GridDiagram.IsKnot.BigradedUnblockedHomologyIsomorphic`, in `Homology/Bigraded/Relation.lean`)
 when some `K[U]`-linear equivalence between their homologies preserves the bigrading.
 
-Each elementary move has a specified comparison map on `GH⁻` that preserves both gradings: the
-cyclic permutations, the diagonal reflection
-(`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_transpose`, in `Homology/Transpose.lean`),
-the pentagon map of a column commutation, and the
-comparisons of the south-west and the north-east corner `X`-stabilizations. Since every
-stabilization type reduces to these two corners up to cyclic permutations and commutations
-(`GridDiagram.IsStabilization.exists_commutationMovesTo`), knot grids connected by grid moves
-have isomorphic `GH⁻` as bigraded `K[U]`-modules
+The cyclic permutations, the column commutations (through the pentagon map) and the south-west
+and north-east corner `X`-stabilizations have specified comparison maps on `GH⁻` that preserve
+both gradings. Row commutations reduce to column commutations through the diagonal reflection,
+which is not a grid move but also preserves the bigrading
+(`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_transpose`, in
+`Homology/Transpose.lean`). Since every stabilization type reduces to these two corners up to
+cyclic permutations and commutations (`GridDiagram.IsStabilization.exists_commutationMovesTo`),
+knot grids connected by grid moves have isomorphic `GH⁻` as bigraded `K[U]`-modules
 (`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_of_movesTo`), over every commutative ring
 `K` of characteristic two. It concerns the isomorphism class of the bigraded module: the maps
 attached to different move sequences are not compared.
