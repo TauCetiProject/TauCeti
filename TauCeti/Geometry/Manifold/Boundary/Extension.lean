@@ -21,7 +21,7 @@ public section
 open Set
 open scoped ContDiff ENat Manifold
 
-namespace TauCeti
+namespace ContMDiff
 
 variable {n : ℕ} {k : ℕ∞} {V M : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) ∞ M]
@@ -29,12 +29,12 @@ variable {n : ℕ} {k : ℕ∞} {V M : Type*} [NormedAddCommGroup V] [NormedSpac
 
 /-- Every vector-valued `C^k` function on the boundary of a smooth manifold is the
 restriction of a global `C^k` function. -/
-theorem exists_contMDiff_extension_boundary {f : (𝓡∂ (n + 1)).boundary M → V}
+theorem exists_extension_boundary {f : (𝓡∂ (n + 1)).boundary M → V}
     (hf : ContMDiff (𝓡 n) 𝓘(ℝ, V) k f) :
     ∃ F : M → V, ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ, V) k F ∧ F ∘ Subtype.val = f := by
-  have hi := isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k) M
+  have hi := TauCeti.isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k) M
   refine hi.exists_contMDiff_extension_of_isClosed_range ?_ hf
   rw [Subtype.range_coe]
   exact (𝓡∂ (n + 1)).isClosed_boundary (M := M) one_ne_zero
 
-end TauCeti
+end ContMDiff
