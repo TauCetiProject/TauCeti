@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.CategoryTheory.Limits.HasExactLimitsOfShape
 public import Mathlib.CategoryTheory.Limits.Shapes.Countable
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
+public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
 
 import TauCeti.Algebra.Homology.DerivedCategory.KProjective
@@ -16,7 +17,6 @@ import TauCeti.Algebra.Homology.Homotopy
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Contraction
 import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
-import TauCeti.Geometry.Manifold.SmoothSingular.Diffeomorph
 import TauCeti.Geometry.Manifold.SmoothSingular.Homotopy
 import TauCeti.Geometry.Manifold.SmoothSingular.MayerVietoris
 import TauCeti.Geometry.Manifold.Topology
@@ -70,7 +70,8 @@ to a chosen chain homotopy (`TauCeti.smoothSingularChainHomotopyEquivInvNaturali
   `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι`: the smoothing quasi-isomorphism on
   open subsets of `M` and on `M`.
 * `TauCeti.smoothSingularHomologyIso`: the induced natural isomorphism between smooth singular
-  homology and singular homology.
+  homology and singular homology. It sends the class of the smooth `0`-simplex at a point to the
+  class of that point (`TauCeti.ιHomology₀_smoothSingularHomologyIso_hom`).
 * `TauCeti.smoothSingularChainHomotopyEquiv`,
   `TauCeti.homologyMap_smoothSingularChainHomotopyEquiv_inv`, and
   `TauCeti.smoothSingularChainHomotopyEquivInvNaturality`: the smoothing chain homotopy equivalence
@@ -142,9 +143,9 @@ private lemma quasiIso_iff_of_opens_subset {S U : Opens M} (hU : (U : Set M) ⊆
     rw [← ContMDiff.subtypeVal_comp_iff]
     exact (contMDiff_subtypeVal (I := I) (U := S)).comp
       (contMDiff_subtypeVal (I := I) (U := V))
-  exact ⟨quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R hf hg
+  exact ⟨quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy R hf hg contMDiff_snd
       (fun _ ↦ rfl) (fun _ ↦ rfl),
-    quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R hg hf
+    quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy R hg hf contMDiff_snd
       (fun _ ↦ rfl) (fun _ ↦ rfl)⟩
 
 omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M]
@@ -243,8 +244,8 @@ instance quasiIso_chainComplexMap_smoothSingularSubcomplex_ι (R : C) :
   have hf : ContMDiff I I ∞ f := by
     rw [← ContMDiff.subtypeVal_comp_iff]
     exact contMDiff_id (I := I)
-  exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff_inv R
-    hf (contMDiff_subtypeVal (I := I) (U := ⊤))
+  exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy R
+    hf (contMDiff_subtypeVal (I := I) (U := ⊤)) contMDiff_snd
     (fun _ ↦ rfl) (fun _ ↦ rfl)
     (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_opens R ⊤)
 
@@ -303,6 +304,16 @@ theorem smoothSingularHomologyIso_inv_naturality {f : M → N}
         (smoothSingularHomologyIso J N R n).inv := by
   rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv,
     smoothSingularHomologyIso_hom_naturality R hf]
+
+/-- The smoothing isomorphism sends the class in `H₀^∞(M; R)` of the smooth `0`-simplex at `x` to
+the class in `H₀(M; R)` of the point `x`. -/
+@[reassoc]
+theorem ιHomology₀_smoothSingularHomologyIso_hom (x : M) :
+    SSet.ιHomology₀ R ((SmoothSimplex.equiv₀ I M).symm x) ≫
+        (smoothSingularHomologyIso I M R 0).hom =
+      singularHomology₀Section R (X := TopCat.of M) x := by
+  rw [smoothSingularHomologyIso_hom, SSet.ιHomology₀_homologyMap, singularHomology₀Section_def]
+  exact congrArg (SSet.ιHomology₀ R) (SmoothSimplex.coe_equiv₀_symm x)
 
 section Projective
 

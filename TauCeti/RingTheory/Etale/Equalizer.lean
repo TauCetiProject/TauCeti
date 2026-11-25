@@ -11,7 +11,9 @@ public import Mathlib.RingTheory.Flat.Equalizer
 public import Mathlib.RingTheory.TotallySplit
 public import Mathlib.RingTheory.TensorProduct.Pi
 
+import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
+import Mathlib.RingTheory.Finiteness.Small
 import Mathlib.RingTheory.Localization.Away.Lemmas
 import TauCeti.Algebra.Algebra.Pi
 import TauCeti.Algebra.Algebra.Subalgebra.Equalizer
@@ -26,9 +28,9 @@ import TauCeti.RingTheory.TensorProduct.Pi
 
 The equalizer of two algebra maps `f g : A →ₐ[R] B` between finite étale `R`-algebras is a finite
 étale `R`-algebra (`AlgHom.etale_equalizer`, `AlgHom.finite_equalizer`). In particular, the
-invariants of a finite étale algebra under a finite monoid acting by algebra endomorphisms form a
-finite étale algebra (`TauCeti.FixedPoints.etale_subalgebra`,
-`TauCeti.FixedPoints.finite_subalgebra`).
+invariants of a finite étale algebra under a monoid acting through a finitely generated (for
+example, finite) monoid of algebra endomorphisms form a finite étale algebra
+(`TauCeti.FixedPoints.etale_subalgebra`, `TauCeti.FixedPoints.finite_subalgebra`).
 Geometrically, the affine coequalizer of two morphisms of finite étale `Spec R`-schemes, and the
 invariant quotient of a finite étale `Spec R`-scheme by a finite group, are again finite étale.
 The invariant quotients supply the quotients by finite groups that the axioms of a Galois category
@@ -39,7 +41,8 @@ require of finite étale covers.
 * `AlgHom.etale_equalizer`, `AlgHom.finite_equalizer`: equalizers of finite étale algebras are
   finite étale.
 * `TauCeti.FixedPoints.etale_subalgebra`, `TauCeti.FixedPoints.finite_subalgebra`: invariants of
-  a finite étale algebra under a finite monoid are finite étale.
+  a finite étale algebra under a monoid acting through a finitely generated monoid of
+  endomorphisms are finite étale.
 
 ## Implementation notes
 
@@ -60,8 +63,10 @@ The proof reduces to split algebras in three steps.
   local for such a decomposition (`TauCeti.Algebra.Etale.of_completeOrthogonalIdempotents`,
   `CompleteOrthogonalIdempotents.module_finite_iff`).
 
-The main results take `R`, `A` and `B` in one universe, as
-`Algebra.IsFiniteSplit.exists_tensorProduct_of_etale` does.
+`Algebra.IsFiniteSplit.exists_tensorProduct_of_etale` takes `R`, `A` and `B` in one universe. A
+finite algebra is small over its base (`Module.Finite.small`), so in general `A` and `B` are
+replaced by isomorphic copies in the universe of `R`, and the equalizer is transported back
+(`AlgEquiv.equalizerCongr`).
 
 ## References
 
@@ -73,7 +78,7 @@ public section
 
 open TensorProduct
 
-universe u
+universe u v w
 
 namespace AlgHom
 
@@ -230,12 +235,13 @@ private theorem etale_and_finite_equalizer_of_rankAtStalk_eq {R A B : Type u} [C
   exact ⟨.of_etale_tensorProduct_of_faithfullyFlat T₂,
     .of_finite_tensorProduct_of_faithfullyFlat T₂⟩
 
-/-- The equalizer of two algebra maps between finite étale algebras is finite étale. The ranks of
-the two algebras are locally constant, so the choice products of the idempotents cutting out their
-fibres decompose the base into components over which both ranks are constant. -/
-private theorem etale_and_finite_equalizer {R A B : Type u} [CommRing R] [CommRing A] [CommRing B]
-    [Algebra R A] [Algebra R B] [Algebra.Etale R A] [Module.Finite R A] [Algebra.Etale R B]
-    [Module.Finite R B] (f g : A →ₐ[R] B) :
+/-- The equalizer of two algebra maps between finite étale algebras in the universe of the base is
+finite étale. The ranks of the two algebras are locally constant, so the choice products of the
+idempotents cutting out their fibres decompose the base into components over which both ranks are
+constant. -/
+private theorem etale_and_finite_equalizer_aux {R A B : Type u} [CommRing R] [CommRing A]
+    [CommRing B] [Algebra R A] [Algebra R B] [Algebra.Etale R A] [Module.Finite R A]
+    [Algebra.Etale R B] [Module.Finite R B] (f g : A →ₐ[R] B) :
     Algebra.Etale R (equalizer f g) ∧ Module.Finite R (equalizer f g) := by
   classical
   have : Module.FinitePresentation R A := .of_finite_of_finitePresentation R A
@@ -285,10 +291,29 @@ private theorem etale_and_finite_equalizer {R A B : Type u} [CommRing R] [CommRi
     hconst _ εB hNB hεB' fun q q' k ↦ (hσ q (.inr k)).trans (hσ q' (.inr k)).symm
   exact etale_and_finite_equalizer_of_rankAtStalk_eq hm hn _ _
 
+/-- The equalizer of two algebra maps between finite étale algebras is finite étale. The finite
+algebras `A` and `B` have isomorphic copies in the universe of `R` (`Module.Finite.small`), where
+`etale_and_finite_equalizer_aux` applies. -/
+private theorem etale_and_finite_equalizer {R : Type u} {A : Type v} {B : Type w} [CommRing R]
+    [CommRing A] [CommRing B] [Algebra R A] [Algebra R B] [Algebra.Etale R A] [Module.Finite R A]
+    [Algebra.Etale R B] [Module.Finite R B] (f g : A →ₐ[R] B) :
+    Algebra.Etale R (equalizer f g) ∧ Module.Finite R (equalizer f g) := by
+  have : Small.{u} A := Module.Finite.small R A
+  have : Small.{u} B := Module.Finite.small R B
+  let eA := (Shrink.algEquiv R A).symm
+  let eB := (Shrink.algEquiv R B).symm
+  have : Algebra.Etale R (Shrink.{u} A) := .of_equiv eA
+  have : Algebra.Etale R (Shrink.{u} B) := .of_equiv eB
+  let e := eA.equalizerCongr eB f g
+  obtain ⟨h₁, h₂⟩ := etale_and_finite_equalizer_aux
+    (eB.toAlgHom.comp (f.comp eA.symm.toAlgHom)) (eB.toAlgHom.comp (g.comp eA.symm.toAlgHom))
+  exact ⟨.of_equiv e.symm, .equiv e.symm.toLinearEquiv⟩
+
 section
 
-variable {R A B : Type u} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
-  [Algebra.Etale R A] [Module.Finite R A] [Algebra.Etale R B] [Module.Finite R B]
+variable {R : Type u} {A : Type v} {B : Type w} [CommRing R] [CommRing A] [CommRing B]
+  [Algebra R A] [Algebra R B] [Algebra.Etale R A] [Module.Finite R A] [Algebra.Etale R B]
+  [Module.Finite R B]
 
 /-- **The equalizer of two algebra maps between finite étale algebras is étale.** -/
 instance etale_equalizer (f g : A →ₐ[R] B) : Algebra.Etale R (equalizer f g) :=
@@ -304,23 +329,35 @@ end AlgHom
 
 namespace TauCeti.FixedPoints
 
-variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] (G : Type*) [Monoid G]
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [Algebra R S] (G : Type*) [Monoid G]
   [MulSemiringAction G S] [SMulCommClass G R S]
 
-variable [Algebra.Etale R S] [Module.Finite R S] [Finite G]
+variable [Algebra.Etale R S] [Module.Finite R S]
+  [IsMulFG (MonoidHom.mrange (MulAction.toEndHom (M := G) (α := S)))]
 
-/-- **The invariants of a finite étale algebra under a finite monoid of algebra endomorphisms form
-an étale algebra.** -/
-instance etale_subalgebra : Algebra.Etale R (FixedPoints.subalgebra R S G) := by
-  obtain ⟨n, ⟨σ⟩⟩ := Finite.exists_equiv_fin G
-  rw [subalgebra_eq_equalizer G σ.symm.surjective]
-  infer_instance
+/-- The invariants of a finite étale algebra under a monoid acting through a finitely generated
+monoid of algebra endomorphisms form a finite étale algebra. -/
+private theorem etale_and_finite_subalgebra :
+    Algebra.Etale R (FixedPoints.subalgebra R S G) ∧
+      Module.Finite R (FixedPoints.subalgebra R S G) := by
+  -- The invariants are the equalizer of the diagonal map `S → (t → S)` and the action of lifts to
+  -- `G` of a finite generating set `t` of the image of the action, which is finite étale.
+  obtain ⟨t, ht⟩ :=
+    Monoid.exists_of_isMulFG (M := MonoidHom.mrange (MulAction.toEndHom (M := G) (α := S)))
+  obtain ⟨σ, hσ⟩ := (Set.range_subset_range_iff_exists_comp (f := (Subtype.val : t → _))
+      (g := (MulAction.toEndHom (M := G) (α := S)).mrangeRestrict)).mp fun _ _ ↦
+    (MulAction.toEndHom (M := G) (α := S)).mrangeRestrict_surjective _
+  rw [subalgebra_eq_equalizer G (σ := σ) (by rw [← hσ, Subtype.range_coe_subtype]; exact ht)]
+  exact ⟨inferInstance, inferInstance⟩
 
-/-- The invariants of a finite étale algebra under a finite monoid of algebra endomorphisms form a
-finite module. -/
-instance finite_subalgebra : Module.Finite R (FixedPoints.subalgebra R S G) := by
-  obtain ⟨n, ⟨σ⟩⟩ := Finite.exists_equiv_fin G
-  rw [subalgebra_eq_equalizer G σ.symm.surjective]
-  infer_instance
+/-- **The invariants of a finite étale algebra under a monoid acting through a finitely generated
+monoid of algebra endomorphisms form an étale algebra.** -/
+instance etale_subalgebra : Algebra.Etale R (FixedPoints.subalgebra R S G) :=
+  (etale_and_finite_subalgebra G).1
+
+/-- The invariants of a finite étale algebra under a monoid acting through a finitely generated
+monoid of algebra endomorphisms form a finite module. -/
+instance finite_subalgebra : Module.Finite R (FixedPoints.subalgebra R S G) :=
+  (etale_and_finite_subalgebra G).2
 
 end TauCeti.FixedPoints

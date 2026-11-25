@@ -38,6 +38,11 @@ The excluded case is genuinely excluded: over an imperfect separably closed fiel
 characteristic `2`, such as the separable closure of `𝔽₂(t)`, the equation `X² = t` has no
 solution.
 
+## Separable elements and embeddings of separably closed fields
+
+The elements of a field `Ω` over `k` separable over `k` lie in the image of every embedding over
+`k` of a separably closed field (`AlgHom.separableClosure_le_fieldRange`).
+
 ## Separable closures in a tower
 
 A separable closure of `K` is a separable closure of every intermediate extension `L` of the
@@ -103,6 +108,16 @@ theorem IsSepClosed.isAlgClosed_iff_perfectField (K Ω : Type*) [Field K] [Field
   refine ⟨fun _ ↦ perfectField_of_isSeparable_of_perfectField_top K Ω, fun _ ↦ ?_⟩
   have : IsSepClosure K Ω := ⟨inferInstance, inferInstance⟩
   exact IsAlgClosure.isAlgClosed K
+
+/-- **Separable elements come from any separably closed field.** In a field `Ω` over `k`, the
+elements separable over `k` lie in the image of any embedding over `k` of a separably closed
+field: the minimal polynomial of such an element is separable, so it splits in that field. -/
+theorem AlgHom.separableClosure_le_fieldRange {k Ω Kbar : Type*} [Field k] [Field Ω]
+    [Algebra k Ω] [Field Kbar] [Algebra k Kbar] [IsSepClosed Kbar] (ι : Kbar →ₐ[k] Ω) :
+    separableClosure k Ω ≤ ι.fieldRange := fun y hy ↦
+  have hy : IsSeparable k y := mem_separableClosure_iff.mp hy
+  AlgHom.mem_fieldRange.mpr <| (AlgHom.mem_range ι).mp <|
+    hy.isIntegral.mem_range_algHom_of_minpoly_splits (IsSepClosed.splits_codomain _ hy) ι
 
 namespace TauCeti
 

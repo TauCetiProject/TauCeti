@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.Calculus.ContDiff.UniformOn
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
@@ -59,6 +60,11 @@ operator into `C^n` dependence of its fixed points on parameters.
   `C^n` at `f₀`.
   `BoundedContinuousFunction.contDiffAt_comp_of_uniformContDiffOn` is the case of
   `BoundedContinuousFunction.comp`.
+* `BoundedContinuousFunction.exists_contDiffAt_forall_apply_eq`: for `G` of class `C^n`, a
+  superposition operator near a function whose values stay inside a compact set is `C^n` there.
+* `BoundedContinuousFunction.exists_contDiff_apply_eq`: for `G` smooth on a product of proper
+  spaces and `ρ` continuous with values in a ball, `c ↦ (t ↦ G (c, ρ t))` is a smooth family of
+  bounded continuous functions.
 
 ## References
 
@@ -79,17 +85,19 @@ variable {α 𝕜 X Y : Type*} [TopologicalSpace α] [NontriviallyNormedField �
   {Φ : α →ᵇ (X →L[𝕜] Y)}
 
 open scoped Classical in
-/-- The family of derivatives `t ↦ G' (f t)` along a function `f` with values in `s`, as a bounded
-continuous function when `G'` is continuous on `s` and bounded by `C` there, and `0` otherwise. -/
-private noncomputable def derivFamily {C : ℝ} (hG' : ContinuousOn G' s) (hC : ∀ x ∈ s, ‖G' x‖ ≤ C)
-    (f : α →ᵇ X) : α →ᵇ (X →L[𝕜] Y) :=
+/-- The superposition `t ↦ H (f t)` along a function `f` with values in `s`, as a bounded
+continuous function when `H` is continuous on `s` and bounded by `C` there, and `0` otherwise. It
+is used for the family of derivatives `t ↦ G' (f t)`. -/
+private noncomputable def derivFamily {Z : Type*} [NormedAddCommGroup Z] {H : X → Z} {C : ℝ}
+    (hH : ContinuousOn H s) (hC : ∀ x ∈ s, ‖H x‖ ≤ C) (f : α →ᵇ X) : α →ᵇ Z :=
   if hf : ∀ t, f t ∈ s then
-    ofNormedAddCommGroup (fun t ↦ G' (f t)) (hG'.comp_continuous f.continuous hf) C
+    ofNormedAddCommGroup (fun t ↦ H (f t)) (hH.comp_continuous f.continuous hf) C
       fun t ↦ hC _ (hf t)
   else 0
 
-private theorem derivFamily_apply {C : ℝ} (hG' : ContinuousOn G' s) (hC : ∀ x ∈ s, ‖G' x‖ ≤ C)
-    {f : α →ᵇ X} (hf : ∀ t, f t ∈ s) (t : α) : derivFamily hG' hC f t = G' (f t) := by
+private theorem derivFamily_apply {Z : Type*} [NormedAddCommGroup Z] {H : X → Z} {C : ℝ}
+    (hH : ContinuousOn H s) (hC : ∀ x ∈ s, ‖H x‖ ≤ C) {f : α →ᵇ X} (hf : ∀ t, f t ∈ s) (t : α) :
+    derivFamily hH hC f t = H (f t) := by
   simp [derivFamily, hf]
 
 /-- Along a function `f` with values in `s`, the derivatives `t ↦ G' (f t)` form a bounded
@@ -289,5 +297,90 @@ theorem contDiff_comp (hG : LipschitzWith C G) (hGs : ∀ x, HasFDerivAt G (G' x
       ball_subset_ball' <| by rw [dist_zero_right]; linarith [norm_coe_le_norm f₀ t]
 
 end Local
+
+end BoundedContinuousFunction
+
+namespace BoundedContinuousFunction
+
+section Family
+
+open scoped ContDiff
+
+variable {α 𝕜 : Type*} [TopologicalSpace α] [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+
+/-- **Superposition by a `C^n` map near a function with values in a compact set.** If `G` is `C^n`
+and the values of `f₀` stay a distance `δ > 0` inside a compact set `K`, then an operator on the
+bounded continuous functions that is the superposition `f ↦ G ∘ f` on the ball of radius `δ` about
+`f₀` is `C^n` at `f₀`. -/
+theorem exists_contDiffAt_forall_apply_eq {X Y : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {G : X → Y} {n : ℕ} (hG : ContDiff 𝕜 n G)
+    {K : Set X} (hK : IsCompact K) {f₀ : α →ᵇ X} {δ : ℝ} (hδ : 0 < δ)
+    (hf₀ : ∀ t, ball (f₀ t) δ ⊆ K) :
+    ∃ Θ : (α →ᵇ X) → α →ᵇ Y, ContDiffAt 𝕜 n Θ f₀ ∧ ∀ f ∈ ball f₀ δ, ∀ t, Θ f t = G (f t) := by
+  obtain ⟨D, hD⟩ := hK.exists_bound_of_continuousOn hG.continuous.continuousOn
+  have hΘ : ∀ f ∈ ball f₀ δ, ∀ t, derivFamily hG.continuous.continuousOn hD f t = G (f t) :=
+    fun f hf ↦ derivFamily_apply _ _ fun t ↦
+      hf₀ t ((BoundedContinuousFunction.dist_coe_le_dist t).trans_lt (mem_ball.1 hf))
+  exact ⟨_, contDiffAt_of_forall_apply_eq
+    (ContDiffOn.uniformContDiffOn isOpen_univ (subset_univ _) hK hG.contDiffOn) hδ hf₀ hΘ, hΘ⟩
+
+variable {X Y Z : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X] [ProperSpace X]
+  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [ProperSpace Y] [NormedAddCommGroup Z]
+  [NormedSpace 𝕜 Z]
+
+/-- **Smooth families of bounded continuous functions.** Let `G : X × Y → Z` be smooth, for proper
+spaces `X` and `Y`, and let `ρ : α → Y` be continuous with values in the closed ball of radius `R`.
+Then `c ↦ (t ↦ G (c, ρ t))` is a smooth family of bounded continuous functions for the sup norm. -/
+theorem exists_contDiff_apply_eq {G : X × Y → Z} (hG : ContDiff 𝕜 ∞ G) {ρ : α → Y}
+    (hρ : Continuous ρ) {R : ℝ} (hρR : ∀ t, ‖ρ t‖ ≤ R) :
+    ∃ Ψ : X → α →ᵇ Z, ContDiff 𝕜 ∞ Ψ ∧ ∀ c t, Ψ c t = G (c, ρ t) := by
+  -- Each member of the family is bounded by the bound of `G` on `{c} × closedBall 0 R`.
+  have hb (c : X) : ∃ C, ∀ t, ‖G (c, ρ t)‖ ≤ C := by
+    obtain ⟨C, hC⟩ := (isCompact_closedBall (0 : Y) R).exists_bound_of_continuousOn
+      (hG.continuous.comp (continuous_const.prodMk continuous_id)).continuousOn
+    exact ⟨C, fun t ↦ hC _ (mem_closedBall_zero_iff.2 (hρR t))⟩
+  choose C hC using hb
+  refine ⟨fun c ↦ .ofNormedAddCommGroup _ (hG.continuous.comp (continuous_const.prodMk hρ)) (C c)
+    (hC c), ?_, fun _ _ ↦ rfl⟩
+  -- Near each `c₀` the family is a superposition operator applied to the affine family
+  -- `c ↦ (t ↦ (c, ρ t))`.
+  refine contDiff_infty.2 fun n ↦ contDiff_iff_contDiffAt.2 fun c₀ ↦ ?_
+  -- The superposition by `G` near `t ↦ (c₀, ρ t)`, whose values stay inside a compact set.
+  set f₀ : α →ᵇ X × Y := .ofNormedAddCommGroup (fun t ↦ (c₀, ρ t))
+    (continuous_const.prodMk hρ) (max ‖c₀‖ R) fun t ↦ by
+      rw [Prod.norm_def]
+      exact max_le_max le_rfl (hρR t)
+  have hf₀ (t : α) : ball (f₀ t) (1 / 2) ⊆ closedBall c₀ 1 ×ˢ closedBall 0 (R + 1) := fun p hp ↦ by
+    rw [mem_ball, Prod.dist_eq, max_lt_iff] at hp
+    refine ⟨mem_closedBall.2 (hp.1.le.trans (by norm_num)), mem_closedBall_zero_iff.2 ?_⟩
+    have h := norm_le_norm_add_norm_sub' p.2 (ρ t)
+    rw [← dist_eq_norm] at h
+    simp only [f₀, BoundedContinuousFunction.coe_ofNormedAddCommGroup] at hp
+    linarith [hp.2, hρR t]
+  obtain ⟨Θ, hΘc, hΘ⟩ := exists_contDiffAt_forall_apply_eq (hG.of_le (by exact_mod_cast le_top))
+    ((isCompact_closedBall _ _).prod (isCompact_closedBall _ _)) (by norm_num) hf₀
+  -- The affine family `c ↦ (t ↦ (c, ρ t))`.
+  set L : X →L[𝕜] α →ᵇ X × Y := LinearMap.mkContinuous
+    { toFun := fun c ↦ BoundedContinuousFunction.const α ((c, 0) : X × Y)
+      map_add' := fun _ _ ↦ by ext <;> simp
+      map_smul' := fun _ _ ↦ by ext <;> simp } 1 fun c ↦
+        (norm_const_le _).trans (by simp [Prod.norm_def])
+  set ι : X → α →ᵇ X × Y := fun c ↦ f₀ + L (c - c₀)
+  have hι : ContDiff 𝕜 ∞ ι := contDiff_const.add (L.contDiff.comp (contDiff_id.sub contDiff_const))
+  have hι₀ : ι c₀ = f₀ := by simp [ι]
+  refine ((hι₀ ▸ hΘc).comp c₀
+    (hι.contDiffAt.of_le (by exact_mod_cast le_top))).congr_of_eventuallyEq ?_
+  filter_upwards [ball_mem_nhds c₀ (by norm_num : (0 : ℝ) < 1 / 2)] with c hc
+  have hιc : ι c ∈ ball f₀ (1 / 2) := by
+    rw [mem_ball, dist_eq_norm]
+    simp only [ι, add_sub_cancel_left]
+    calc ‖L (c - c₀)‖ ≤ 1 * ‖c - c₀‖ := L.le_of_opNorm_le (LinearMap.mkContinuous_norm_le _
+          zero_le_one _) _
+      _ < 1 / 2 := by rw [one_mul, ← dist_eq_norm]; exact mem_ball.1 hc
+  ext t
+  rw [Function.comp_apply, hΘ _ hιc t]
+  simp [ι, L, f₀]
+
+end Family
 
 end BoundedContinuousFunction

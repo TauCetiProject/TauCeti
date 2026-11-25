@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Inseparable
 public import Mathlib.Topology.NhdsWithin
 
 /-!
@@ -46,6 +47,10 @@ into it.
   contained in the closure of `L` are dense in that set.
 * `TauCeti.subset_closure_range_subtypeVal_inter_of_subset`: if the points of `L` lying in `s`
   are dense in `s`, those lying in an open subset of `s` are dense in it.
+* `Dense.mem_of_nonempty_interior_closure_singleton`: a dense set stable under generization
+  contains every point whose closure has nonempty interior.
+* `Dense.frequently_mem_nhdsWithin`: a dense set occurs frequently in `𝓝[t] x` for any open set
+  `t` whose filter `𝓝[t] x` is nontrivial.
 -/
 
 public section
@@ -124,3 +129,21 @@ theorem subset_closure_range_subtypeVal_inter_of_subset {L s t : Set X} (ht : Is
     closure_mono (range_subset_iff.2 fun d ↦ d.property.1) (h (hts hx))
 
 end TauCeti
+
+/-- A dense set stable under generization contains every point whose closure has nonempty
+interior. -/
+theorem Dense.mem_of_nonempty_interior_closure_singleton
+    {X : Type*} [TopologicalSpace X] {s : Set X} (hd : Dense s)
+    (hs : StableUnderGeneralization s) {x : X} (hx : (interior (closure {x})).Nonempty) :
+    x ∈ s := by
+  obtain ⟨y, hys, hy⟩ := hd.exists_mem_open isOpen_interior hx
+  exact hs (specializes_iff_mem_closure.mpr (interior_subset hy)) hys
+
+/-- A dense set `D` occurs frequently in `𝓝[t] x` whenever `t` is open and `𝓝[t] x` is
+nontrivial. -/
+theorem Dense.frequently_mem_nhdsWithin {X : Type*} [TopologicalSpace X] {D t : Set X}
+    (hD : Dense D) (ht : IsOpen t) {x : X} [h : (𝓝[t] x).NeBot] :
+    ∃ᶠ y in 𝓝[t] x, y ∈ D := by
+  rw [Filter.frequently_mem_iff_neBot, ← nhdsWithin_inter', ← mem_closure_iff_nhdsWithin_neBot]
+  exact closure_minimal (hD.open_subset_closure_inter ht) isClosed_closure
+    (mem_closure_iff_nhdsWithin_neBot.mpr h)

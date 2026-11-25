@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Galois
 -- Exposed via `@[expose]` on `CommAlgCat.FiniteEtale.ofSeparableFieldExt`.
 public import TauCeti.RingTheory.Etale.Field
 -- Proof-only: affine `Spec` lemmas and cardinality of `Ω`-points of a finite étale algebra.
-import TauCeti.AlgebraicGeometry.Scheme.SpecOver
+import TauCeti.AlgebraicGeometry.Scheme.SpecAlgHom
 import TauCeti.RingTheory.Etale.Splitting
 
 /-!
@@ -158,7 +158,7 @@ theorem toSheafOfOverIdStalkEquivFiber_ofOverGaloisStalkAction (R : Type u) [Com
   let F := (FiniteEtaleScheme.toSheaf (Spec (.of R))).obj X
   let s₀ := of (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))
   let φ₀ : s₀ ⟶ s₀ := homOfRingHom σ.toAlgHom.toRingHom
-    (TauCeti.AlgebraicGeometry.SpecMap_ofHom_comp_algebraMap σ.toAlgHom)
+    (by rw [AlgHom.toRingHom_eq_coe]; exact Spec.map_algHom_comp_map_algebraMap σ.toAlgHom)
   have hcomm : (ofOverIdIso R Ω).inv ≫ homOfAlgHom (𝟙 (Spec (.of R))) σ.toAlgHom =
       φ₀ ≫ (ofOverIdIso R Ω).inv := by
     ext : 1

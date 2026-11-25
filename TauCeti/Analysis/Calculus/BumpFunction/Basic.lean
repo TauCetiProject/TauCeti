@@ -36,6 +36,7 @@ gives the bump function `ξ ↦ φ (c⁻¹ • ξ)`.
   with a `C¹` function of bounded derivative.
 * `ContDiffBump.apply_inv_smul_eq_zero_of_le_norm`, `ContDiffBump.ofReal_apply_inv_smul_eq_zero`:
   the rescaled bump `φ (R⁻¹ ·)`, `R > 0`, vanishes off the ball of radius `R φ.rOut`.
+* `ContDiffBump.apply_center`: a bump function is `1` at its centre.
 * `ContDiffBump.dilate`: the dilation of a bump function centred at `0` by a factor `c > 0`, with
   `ContDiffBump.dilate_apply`: its value at `ξ` is `φ (c⁻¹ • ξ)`.
 -/
@@ -101,6 +102,11 @@ end TauCeti
 namespace ContDiffBump
 
 variable {E : Type*} [NormedAddCommGroup E]
+
+/-- A bump function is `1` at its centre. -/
+theorem apply_center [NormedSpace ℝ E] [HasContDiffBump E] {c : E} (φ : ContDiffBump c) :
+    φ c = 1 :=
+  φ.one_of_mem_closedBall (mem_closedBall_self φ.rIn_pos.le)
 
 /-- The **dilation** of a bump function centred at `0` by a factor `c > 0`: the bump function with
 radii `c * φ.rIn` and `c * φ.rOut`, whose value at `ξ` is `φ (c⁻¹ • ξ)`

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Basic
+import TauCeti.AlgebraicGeometry.Scheme.SpecAlgHom
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.CategoryTheory.Aut.Basic
 
@@ -66,7 +67,7 @@ variable {Ω₁ Ω₂ Ω₃ : Type u} [Field Ω₁] [IsSepClosed Ω₁] [Algebra
 `ofOver a Ω₁` to `ofOver a Ω₂` in `GeometricPoint S`. -/
 noncomputable def homOfAlgHom (σ : Ω₂ →ₐ[R] Ω₁) : ofOver a Ω₁ ⟶ ofOver a Ω₂ :=
   homOfRingHom σ.toRingHom <| by
-    rw [← Category.assoc, TauCeti.AlgebraicGeometry.SpecMap_ofHom_comp_algebraMap]
+    rw [AlgHom.toRingHom_eq_coe, Spec.map_algHom_comp_map_algebraMap_assoc]
 
 /-- The underlying scheme morphism of `homOfAlgHom a σ` is `Spec.map (CommRingCat.ofHom σ)`. -/
 @[simp]
@@ -101,8 +102,8 @@ theorem homOfAlgHom_comp (σ : Ω₂ →ₐ[R] Ω₁) (τ : Ω₃ →ₐ[R] Ω�
 `ofOver a Ω₁` to `ofOver a Ω₂` in `GeometricPoint S`. -/
 noncomputable def isoOfAlgEquiv (σ : Ω₂ ≃ₐ[R] Ω₁) : ofOver a Ω₁ ≅ ofOver a Ω₂ :=
   isoOfRingEquiv σ.toRingEquiv <| by
-    rw [← Category.assoc, AlgEquiv.toRingEquiv_toRingHom, ← AlgEquiv.toAlgHom_toRingHom,
-      ← AlgHom.toRingHom_eq_coe, TauCeti.AlgebraicGeometry.SpecMap_ofHom_comp_algebraMap]
+    rw [← Category.assoc, AlgEquiv.toRingEquiv_toRingHom,
+      Spec.map_algHom_comp_map_algebraMap]
 
 /-- The forward morphism of `isoOfAlgEquiv a σ` is `homOfAlgHom a σ`. -/
 @[simp]

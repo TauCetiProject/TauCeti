@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Conj
 public import Mathlib.CategoryTheory.Endomorphism
 public import Mathlib.CategoryTheory.Types.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -21,6 +22,8 @@ This file contains general bookkeeping lemmas for automorphisms of objects in a 
 * `CategoryTheory.Aut.functor_mul_asIso_hom_app_apply`,
   `CategoryTheory.Aut.functor_one_asIso_hom_app_apply`: evaluation of automorphism multiplication
   and identity on a `Type`-valued functor.
+* `CategoryTheory.Iso.conjAut_symm_apply`: the inverse of conjugation by `α` is conjugation by
+  `α.symm`.
 * `CategoryTheory.Iso.natCard_aut_eq`: isomorphic objects have automorphism groups of the same
   cardinality.
 * `CategoryTheory.Functor.FullyFaithful.natCard_aut_obj`: a fully faithful functor preserves the
@@ -63,6 +66,14 @@ namespace CategoryTheory
 universe v₁ v₂ u₁ u₂
 
 variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+
+/-- The inverse of conjugation by `α` on automorphism groups is conjugation by `α.symm`. -/
+@[simp]
+lemma Iso.conjAut_symm_apply {X Y : C} (α : X ≅ Y) (f : Aut Y) :
+    α.conjAut.symm f = α.symm.conjAut f := by
+  rw [MulEquiv.symm_apply_eq]
+  ext1
+  simp [Iso.conjAut_apply]
 
 /-- Isomorphic objects have automorphism groups of the same cardinality: an isomorphism `x ≅ y`
 conjugates `Aut x` onto `Aut y`. -/
