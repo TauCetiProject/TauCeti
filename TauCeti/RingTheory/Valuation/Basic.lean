@@ -31,9 +31,7 @@ theorem map_add_pow_le_max (x y : R) (n : ℕ) : v (x + y) ^ n ≤ max (v x ^ n)
 
 /-- Every natural number has value at most `1`. -/
 theorem map_natCast_le_one (n : ℕ) : v (n : R) ≤ 1 := by
-  induction n with
-  | zero => simp
-  | succ n ih => exact (Nat.cast_succ (R := R) n ▸ v.map_add _ _).trans (max_le ih v.map_one.le)
+  simpa using v.map_sum_le (s := Finset.range n) (f := fun _ ↦ 1) fun _ _ ↦ v.map_one.le
 
 end Valuation
 
