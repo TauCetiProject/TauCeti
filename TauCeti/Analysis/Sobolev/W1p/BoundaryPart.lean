@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Multiplication
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Calculus.ContDiff.Indicator
+import TauCeti.Analysis.Sobolev.W1p.Density
 
 /-!
 # Sobolev functions vanishing on a part of the boundary
@@ -46,6 +47,9 @@ bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`.
 * `TauCeti.w1pVanishingOnSubmodule_frontier`: at `Γ = frontier Ω` it is `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule`: it is stable under multiplication by
   smooth functions bounded with their gradients.
+* `TauCeti.W1p.restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule`: for `p < ∞`, a whole-space
+  Sobolev function multiplied by a smooth cutoff whose support misses `closure Γ` restricts to an
+  element of `W^{1,p}_Γ(Ω)`.
 
 ## References
 
@@ -241,5 +245,34 @@ theorem W1p.contDiffSMul_mem_w1pVanishingOnSubmodule {psi : E → ℝ} {M : ℝ}
   simp only [mem_preimage, SetLike.mem_coe, W1p.contDiffSMulL_apply, hΦ]
   exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
     (hΦφ ▸ hφ.mono_left (tsupport_mul_subset_right (f := psi) (g := φ)))
+
+/-- **Cutting off away from `closure Γ` lands in `W^{1,p}_Γ(Ω)`.** For `p < ∞`, let `ψ` be smooth,
+bounded together with its gradient, with topological support disjoint from `closure Γ`. Then for
+every `w ∈ W^{1,p}` of the whole space, the restriction to `Ω` of `ψ w` lies in `W^{1,p}_Γ(Ω)`:
+test functions are dense in `W^{1,p}` of the whole space, and `ψ` times a test function is a
+generator. This is the analogue for `W^{1,p}_Γ(Ω)` of
+`TauCeti.W1p.restrictL_contDiffSMul_mem_w1p0Submodule`, where `tsupport ψ ⊆ Ω`. -/
+theorem W1p.restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule (hp : p ≠ (∞ : ℝ≥0∞))
+    {psi : E → ℝ}
+    (hpsi : ContDiff ℝ ∞ psi) {M : ℝ} (hM : 0 ≤ M)
+    (hpsiM : ∀ x ∈ (⊤ : Opens E), |psi x| ≤ M) (hgradM : ∀ x ∈ (⊤ : Opens E), ‖∇ psi x‖ ≤ M)
+    (hts : Disjoint (tsupport psi) (closure Γ)) (w : W1p mu ⊤ p) :
+    W1p.restrictL le_top (W1p.contDiffSMul psi hpsi hM hpsiM hgradM w) ∈
+      w1pVanishingOnSubmodule mu Omega p Γ := by
+  -- The functions with this property form a closed set containing every test function.
+  have hclosed : IsClosed {v : W1p mu ⊤ p | W1p.restrictL le_top
+      (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM v) ∈ w1pVanishingOnSubmodule mu Omega p Γ} :=
+    (w1pVanishingOnSubmodule mu Omega p Γ).isClosed.preimage
+      ((W1p.restrictL le_top).comp (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM)).continuous
+  refine (W1p.denseRange_ofTestFunctionₗ_top (mu := mu) hp).induction_on (p := fun v =>
+    W1p.restrictL le_top (W1p.contDiffSMul psi hpsi hM hpsiM hgradM v) ∈
+      w1pVanishingOnSubmodule mu Omega p Γ) w
+    (by simpa only [W1p.contDiffSMulL_apply] using hclosed) fun phi => ?_
+  -- The product of `ψ` with a test function is a test function supported away from `closure Γ`.
+  let Phi : 𝓓((⊤ : Opens E), ℝ) := ⟨psi * (phi : E → ℝ), hpsi.mul phi.contDiff,
+    phi.hasCompactSupport.mul_left, by simp⟩
+  rw [W1p.contDiffSMul_ofTestFunctionₗ hpsi hM hpsiM hgradM phi Phi TestFunction.coe_mk]
+  exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
+    (hts.mono_left (tsupport_mul_subset_left (f := psi) (g := phi)))
 
 end TauCeti

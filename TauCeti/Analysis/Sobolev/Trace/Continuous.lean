@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Trace.Multiplication
 public import TauCeti.Analysis.Sobolev.Trace.Epigraph.Basic
+public import TauCeti.Analysis.Sobolev.W1p.Translation
 import TauCeti.Analysis.Sobolev.W1p.Mollification
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -39,6 +40,10 @@ of the closed regions.
 
 Together with density of functions smooth up to the boundary, this identification is what
 makes traces taken in overlapping boundary charts agree.
+
+The same identification on test functions shows that the flat trace commutes with translations
+parallel to the hyperplane: the trace of `x ↦ u (x + (0, h))` is `y ↦ Tr u (y + h)`
+(`TauCeti.W1p.hyperplaneTrace_translate_ae`).
 
 ## References
 
@@ -152,6 +157,53 @@ theorem W1p.hyperplaneTrace_apply_ae_of_continuous (hp : p ≠ ∞) (a : ℝ)
   filter_upwards [ae_all_iff.2 key] with y hy
   obtain ⟨n, hn⟩ := exists_nat_gt ‖WithLp.toLp 2 (a, y)‖
   exact hy n hn
+
+/-! ### Tangential translations -/
+
+/-- **The flat trace commutes with translations parallel to the hyperplane.** For a whole-space
+`w ∈ W^{1,p}(ℝ × E)` and `h ∈ E`, the trace on `{a} × E` of the translate `x ↦ w (x + (0, h))` is
+`y ↦ Tr w (y + h)` almost everywhere. -/
+theorem W1p.hyperplaneTrace_translate_ae (hp : p ≠ ∞) (a : ℝ) (h : E)
+    (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p) :
+    ∀ᵐ y ∂(volume : Measure E),
+      W1p.hyperplaneTrace hp a
+          (W1p.translate (V := ⊤) (h := WithLp.toLp 2 ((0 : ℝ), h)) (fun _ _ => by simp) w) y =
+        W1p.hyperplaneTrace hp a w (y + h) := by
+  have hmp : MeasurePreserving (· + h) (volume : Measure E) volume :=
+    measurePreserving_add_right _ h
+  -- Translation by `h` as a bounded operator on `Lᵖ(E)`.
+  let S : Lp ℝ p (volume : Measure E) →L[ℝ] Lp ℝ p (volume : Measure E) :=
+    (Lp.compMeasurePreservingₗᵢ ℝ (· + h) hmp).toContinuousLinearMap
+  have hS (f : Lp ℝ p (volume : Measure E)) : S f =ᵐ[volume] fun y => f (y + h) :=
+    Lp.coeFn_compMeasurePreserving f hmp
+  have key : W1p.hyperplaneTrace hp a
+      (W1p.translate (V := ⊤) (h := WithLp.toLp 2 ((0 : ℝ), h)) (fun _ _ => by simp) w) =
+        S (W1p.hyperplaneTrace hp a w) := by
+    refine (W1p.denseRange_ofTestFunctionₗ_top
+      (mu := (volume : Measure (WithLp 2 (ℝ × E)))) hp).induction_on w
+      (isClosed_eq ((W1p.hyperplaneTrace hp a).continuous.comp (W1p.continuous_translate _))
+        (S.continuous.comp (W1p.hyperplaneTrace hp a).continuous)) fun φ => ?_
+    -- The translate of a test function is represented by the translated test function.
+    have hv : W1p.value (W1p.translate (V := ⊤) (h := WithLp.toLp 2 ((0 : ℝ), h))
+        (fun _ _ => by simp) (W1p.ofTestFunctionₗ volume ⊤ p φ)) =ᵐ[volume]
+          fun x => φ (x + WithLp.toLp 2 ((0 : ℝ), h)) := by
+      have h1 := W1p.value_translate_ae (V := ⊤) (h := WithLp.toLp 2 ((0 : ℝ), h))
+        (fun _ _ => by simp) (W1p.ofTestFunctionₗ volume ⊤ p φ)
+      have h2 := testFunctionLp_apply_ae (mu := (volume : Measure (WithLp 2 (ℝ × E)))) p φ
+      simp only [Opens.coe_top, Measure.restrict_univ] at h1 h2
+      filter_upwards [h1, (measurePreserving_add_right volume
+        (WithLp.toLp 2 ((0 : ℝ), h))).quasiMeasurePreserving.ae h2] with x hx1 hx2
+      rw [hx1, W1p.value_ofTestFunctionₗ, hx2]
+    apply Lp.ext
+    filter_upwards [W1p.hyperplaneTrace_apply_ae_of_continuous hp a
+        (f := fun x => φ (x + WithLp.toLp 2 ((0 : ℝ), h)))
+        (φ.continuous.comp (continuous_id.add continuous_const)) hv, hS (W1p.hyperplaneTrace hp a
+          (W1p.ofTestFunctionₗ volume ⊤ p φ)),
+      hmp.quasiMeasurePreserving.ae (W1p.hyperplaneTrace_ofTestFunction_apply_ae hp a φ)]
+      with y h1 h2 h3
+    rw [h1, h2, h3, ← WithLp.toLp_add, Prod.mk_add_mk, add_zero]
+  filter_upwards [hS (W1p.hyperplaneTrace hp a w)] with y hy
+  rw [key, hy]
 
 /-! ### The half-space trace -/
 
