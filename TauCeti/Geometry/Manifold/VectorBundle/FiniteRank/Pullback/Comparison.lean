@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Basic
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
@@ -37,8 +38,9 @@ bundle smooth.
   operators are real `C^n` when the transitions of `C` are and `f` is `C^n` on the supports of `χ`.
 * `TauCeti.FiniteRankBundleCore.fiberMap_pullbackChartAverage_of_eq`: it is the identity at the
   fixed points of `f` where `χ` sums to one, and
-  `TauCeti.FiniteRankBundleCore.exists_isOpen_isInvertible_fiberMap_pullbackChartAverage`: it is
-  invertible on an open neighbourhood of those fixed points.
+  `TauCeti.FiniteRankBundleCore.exists_isOpen_isInvertible_fiberMap_pullbackChartAverage`: if `f`
+  fixes every point of the set `s` on which `χ` sums to one, it is invertible on an open
+  neighbourhood of `s`.
 * `TauCeti.FiniteRankBundleCore.exists_pullbackComparison`: a `C^n` comparison `C.pullback f ⟶ C`
   which is the identity over `A` and invertible on an open neighbourhood of `A`.
 -/
@@ -81,14 +83,6 @@ private theorem mem_baseSet_apply_of_eq {a : M} (ha : f a = a) : f a ∈ C.core.
 
 variable {C f χ}
 
-omit [NormedAlgebra ℝ 𝕜] in
-/-- On the support of a term of a partition of unity subordinate to the charts and their preimages
-under `f`, both the point and its image under `f` lie in the chart. -/
-private theorem mem_baseSet_of_mem_finsupport
-    (hχ : χ.IsSubordinate fun k ↦ C.core.baseSet k ∩ f ⁻¹' C.core.baseSet k) {x k : M}
-    (hk : k ∈ χ.finsupport x) : x ∈ C.core.baseSet k ∧ f x ∈ C.core.baseSet k :=
-  hχ k (subset_tsupport _ ((χ.mem_finsupport x).1 hk))
-
 /-- The chart averages intertwine the transitions of `C` at `f x` with those at `x`. -/
 theorem coordChange_comp_chartAverage
     (hχ : χ.IsSubordinate fun k ↦ C.core.baseSet k ∩ f ⁻¹' C.core.baseSet k) {i i' j j' x : M}
@@ -99,7 +93,7 @@ theorem coordChange_comp_chartAverage
   rw [chartAverage_eq_sum, chartAverage_eq_sum, ContinuousLinearMap.comp_finsetSum,
     ContinuousLinearMap.finsetSum_comp]
   refine Finset.sum_congr rfl fun k hk ↦ ?_
-  obtain ⟨hxk, hfxk⟩ := mem_baseSet_of_mem_finsupport hχ hk
+  obtain ⟨hxk, hfxk⟩ := hχ.mem_of_mem_finsupport hk
   rw [ContinuousLinearMap.comp_smul, ContinuousLinearMap.smul_comp,
     ← ContinuousLinearMap.comp_assoc, C.core.coordChange_linear_comp k j j' x ⟨⟨hxk, hj⟩, hj'⟩,
     ContinuousLinearMap.comp_assoc,
@@ -111,12 +105,8 @@ theorem chartAverage_of_eq
     (hfx : f x = x) (hxs : x ∈ s) (hi : x ∈ C.core.baseSet i) (hj : x ∈ C.core.baseSet j) :
     chartAverage C f χ i j x = C.core.coordChange i j x := by
   rw [chartAverage_eq_sum, hfx]
-  calc ∑ k ∈ χ.finsupport x, χ k x • (C.core.coordChange k j x).comp (C.core.coordChange i k x)
-      = ∑ k ∈ χ.finsupport x, χ k x • C.core.coordChange i j x := by
-        refine Finset.sum_congr rfl fun k hk ↦ ?_
-        have hxk := (mem_baseSet_of_mem_finsupport hχ hk).1
-        rw [C.core.coordChange_linear_comp i k j x ⟨⟨hi, hxk⟩, hj⟩]
-    _ = C.core.coordChange i j x := by rw [← Finset.sum_smul, χ.sum_finsupport x hxs, one_smul]
+  exact χ.sum_finsupport_smul_eq_of_forall_eq hxs fun k hk ↦
+    C.core.coordChange_linear_comp i k j x ⟨⟨hi, (hχ.mem_of_mem_finsupport hk).1⟩, hj⟩
 
 /-- The chart averages are real `C^n` near every point of the chart `j` whose image under `f` lies
 in the chart `i`, when the transitions of `C` are real `C^n` and `f` is `C^n` on the supports of
@@ -159,18 +149,35 @@ theorem continuousOn_chartAverage (i j : M) :
     (fun _ _ _ ↦ (contMDiff_zero_iff.2 f.continuous).contMDiffAt) hx.1 hx.2).continuousAt
     |>.continuousWithinAt
 
+include hχ in
+/-- On the overlap of the chart `i` of the pullback and the chart `j` of `C`, the chart average from
+the chart `f i` is continuous. -/
+theorem continuous_chartAverage_pullback (i j : M) :
+    Continuous fun x : ↥((C.pullback f).core.baseSet i ∩ C.core.baseSet j) ↦
+      chartAverage C f χ (f i) j x.val :=
+  continuousOn_iff_continuous_domRestrict.1 <| (continuousOn_chartAverage C f χ hχ (f i) j).mono
+    fun _ (hx : _ ∈ (C.pullback f).core.baseSet i ∩ C.core.baseSet j) ↦
+      ⟨mem_baseSet_pullback.1 hx.1, hx.2⟩
+
 /-- The comparison of `C.pullback f` with `C` obtained by averaging the chart identities over a
 partition of unity `χ` subordinate to the charts and their preimages under `f`. Its operator from
 the chart `i` of the pullback to the chart `j` of `C` is the chart average from the chart `f i`. -/
 noncomputable def pullbackChartAverage : C.pullback f ⟶ C where
   operator i j := ⟨fun x ↦ chartAverage C f χ (f i) j x.val,
-    (continuousOn_iff_continuous_domRestrict.1 (continuousOn_chartAverage C f χ hχ (f i) j))⟩
-  compatible i i' _ _ _ hi hi' hj hj' v :=
-    congrArg (fun T ↦ T v)
-      (coordChange_comp_chartAverage hχ (i := f i) (i' := f i') hi hi' hj hj')
+    continuous_chartAverage_pullback C f χ hχ i j⟩
+  compatible _ _ _ _ _ hi hi' hj hj' v :=
+    congrArg (fun T ↦ T v) (coordChange_comp_chartAverage hχ (mem_baseSet_pullback.1 hi)
+      (mem_baseSet_pullback.1 hi') hj hj')
 
-/-- The operator of the comparison from the chart `i` of the pullback to the chart `j` of `C`. -/
-theorem operator_pullbackChartAverage (i j : M)
+/-- The operator of the comparison from the chart `i` of the pullback to the chart `j` of `C` is the
+chart average from the chart `f i`. -/
+@[simp] theorem operator_pullbackChartAverage (i j : M) :
+    (pullbackChartAverage C f χ hχ).operator i j =
+      ⟨fun x ↦ chartAverage C f χ (f i) j x.val, continuous_chartAverage_pullback C f χ hχ i j⟩ :=
+  (rfl)
+
+/-- Pointwise form of `operator_pullbackChartAverage`. -/
+theorem operator_pullbackChartAverage_apply (i j : M)
     (x : ↥((C.pullback f).core.baseSet i ∩ C.core.baseSet j)) :
     (pullbackChartAverage C f χ hχ).operator i j x = chartAverage C f χ (f i) j x.val := (rfl)
 
@@ -193,25 +200,30 @@ theorem contMDiffOn_inChartCoordinates_pullbackChartAverage {n : ℕ∞}
       (fun x ↦ (C.pullback f).core.inChartCoordinates C.core i j x
         ((pullbackChartAverage C f χ hχ).fiberMap x))
       ((C.pullback f).core.baseSet i ∩ C.core.baseSet j) := fun _ hx ↦
-  ((contMDiffAt_chartAverage hχ hg hf hx.1 hx.2).congr_of_eventuallyEq
+  ((contMDiffAt_chartAverage hχ hg hf (mem_baseSet_pullback.1 hx.1) hx.2).congr_of_eventuallyEq
     (Filter.eventually_of_mem (((C.pullback f).core.isOpen_baseSet i).inter
       (C.core.isOpen_baseSet j) |>.mem_nhds hx) fun _ hy ↦
         inChartCoordinates_pullbackChartAverage C f χ hχ hy)).contMDiffWithinAt
+
+/-- The fibre map of the comparison at `x` is the chart average from the chart `f x` at `f x` to the
+chart `x` at `x`. -/
+@[simp] theorem fiberMap_pullbackChartAverage (x : M) :
+    (pullbackChartAverage C f χ hχ).fiberMap x = chartAverage C f χ (f x) x x := by
+  rw [← operator_self, operator_pullbackChartAverage_apply]
 
 /-- At a fixed point of `f` where the partition of unity sums to one, the comparison is the
 identity: the fibre of the pullback there is the fibre of `C`. -/
 theorem fiberMap_pullbackChartAverage_of_eq {x : M} (hfx : f x = x) (hxs : x ∈ s) :
     (pullbackChartAverage C f χ hχ).fiberMap x = ContinuousLinearMap.id 𝕜 (Fin C.rank → 𝕜) := by
-  rw [← operator_self, operator_pullbackChartAverage]
   have hx : x ∈ C.core.baseSet (f x) := by
     rw [hfx]
     exact C.mem_baseSet_self x
-  exact (chartAverage_of_eq hχ hfx hxs hx (C.mem_baseSet_self x)).trans
-    (by rw [hfx, coordChange_self])
+  rw [fiberMap_pullbackChartAverage, chartAverage_of_eq hχ hfx hxs hx (C.mem_baseSet_self x), hfx,
+    coordChange_self]
 
 include hχ in
-/-- The comparison is invertible on an open neighbourhood of the fixed points of `f` in `s`: there
-it is the identity, and in a chart at such a point it is a continuous family of operators. -/
+/-- If `f` fixes every point of `s`, the comparison is invertible on an open neighbourhood of
+`s`. -/
 theorem exists_isOpen_isInvertible_fiberMap_pullbackChartAverage [CompleteSpace 𝕜]
     (hfs : ∀ a ∈ s, f a = a) :
     ∃ V, IsOpen V ∧ s ⊆ V ∧ ∀ x ∈ V, ((pullbackChartAverage C f χ hχ).fiberMap x).IsInvertible := by
@@ -227,12 +239,9 @@ theorem exists_isOpen_isInvertible_fiberMap_pullbackChartAverage [CompleteSpace 
     exact ⟨ContinuousLinearEquiv.refl 𝕜 _, rfl⟩
   · obtain ⟨a, ha, ⟨hfxa, hxa⟩, hinv⟩ := mem_iUnion₂.1 hx
     -- At a fixed point `a` the chart `a` of the pullback is the chart `f a = a` of `C`.
-    have hxa' : x ∈ (C.pullback f).core.baseSet a := by
-      change f x ∈ C.core.baseSet (f a)
-      rwa [hfs a ha]
+    have hxa' : x ∈ (C.pullback f).core.baseSet a := mem_baseSet_pullback.2 (by rwa [hfs a ha])
     refine ((pullbackChartAverage C f χ hχ).operator_isInvertible_iff hxa' hxa).1 ?_
-    change (chartAverage C f χ (f a) a x).IsInvertible
-    rwa [hfs a ha]
+    rwa [operator_pullbackChartAverage_apply, hfs a ha]
 
 end Morphism
 
