@@ -26,12 +26,12 @@ Two consequences follow. A biholomorphism of a bounded connected neighbourhood `
 circular (stable under multiplication by complex numbers of modulus one) and which fixes `0` is the
 restriction of its derivative at `0`: it commutes with the rotations, by the uniqueness theorem, and
 a holomorphic map commuting with the rotations has no homogeneous terms of degree other than one.
-For the open ball, a linear map sending the ball onto itself preserves the norm
-(`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`), so a biholomorphism of a ball fixing its
-centre `0` is the restriction of a linear isometry. On the unit ball of `EuclideanSpace ℂ (Fin n)`
-these are the unitary maps. Together with a group of biholomorphisms acting transitively on the
-ball, such as the fractional linear maps of `U(1, n)`, this describes every biholomorphism of the
-ball.
+For the open ball, a continuous linear map sending `ball 0 r` into itself has operator norm at most
+one (`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`), so two mutually inverse such maps are
+isometries, and a biholomorphism of a ball fixing its centre `0` is the restriction of a linear
+isometric equivalence. On the unit ball of `EuclideanSpace ℂ (Fin n)` these are the unitary maps.
+Combined with a group of biholomorphisms acting transitively on the ball, such as the fractional
+linear maps of `U(1, n)`, this is the step towards describing every biholomorphism of the ball.
 
 ## Main results
 
@@ -76,19 +76,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedAddComm
 
 namespace TauCeti.CartanUniqueness
 
-/-- If `g y = c • P y + O(‖y‖ ^ (k + 1))` for a homogeneous polynomial `P` of degree `k`, then
-`g y = O(‖y‖ ^ k)`. -/
-private lemma isBigO_of_isBigO_sub_smul {k : ℕ}
-    (q : ContinuousMultilinearMap ℂ (fun _ : Fin k => E) E) {g : E → E} {c : ℂ}
-    (hg : (fun y => g y - c • q fun _ => y) =O[𝓝 0] fun y => ‖y‖ ^ (k + 1)) :
-    g =O[𝓝 0] fun y => ‖y‖ ^ k := by
-  have : g = fun y => (g y - c • q fun _ => y) + c • q fun _ => y := by
-    ext y
-    abel
-  rw [this]
-  exact (hg.trans (isLittleO_norm_pow_norm_pow (lt_add_one k)).isBigO).add
-    ((q.isBigO_apply_const _).const_smul_left _)
-
 /-- If `f (p + y) = p + y + P y + O(‖y‖ ^ (k + 1))` with `P` homogeneous of degree `k ≥ 2` and
 `f p = p`, then `f^[j] (p + y) = p + y + j • P y + O(‖y‖ ^ (k + 1))`. -/
 private lemma isBigO_iterate_sub {f : E → E} {p : E} {k : ℕ} (hk : 2 ≤ k)
@@ -103,7 +90,7 @@ private lemma isBigO_iterate_sub {f : E → E} {p : E} {k : ℕ} (hk : 2 ≤ k)
     -- `w y` is the displacement of the `j`-th iterate, `f^[j] (p + y) = p + w y`.
     set w : E → E := fun y => f^[j] (p + y) - p with hw_def
     have hwy : (fun y => w y - y) =O[𝓝 0] fun y => ‖y‖ ^ k := by
-      simpa only [hw_def, sub_sub] using isBigO_of_isBigO_sub_smul q ih
+      simpa only [hw_def, sub_sub] using q.isBigO_of_isBigO_sub_smul_apply_const ih
     have hw1 : w =O[𝓝 0] fun y => ‖y‖ := by
       have : w = fun y => (w y - y) + y := by
         ext y
@@ -150,7 +137,7 @@ private lemma norm_iterate_sub_le {f : E → E} {U : Set E} {p : E} {k : ℕ} (h
   -- `f^[j] - id` vanishes to order `k` at `p`, by `isBigO_iterate_sub`.
   have hlo : (fun z => (f^[j] z - z) - (f^[j] p - p)) =o[𝓝 p] fun z => ‖z - p‖ ^ (k - 1) := by
     have h0 : (fun y => f^[j] (p + y) - (p + y)) =o[𝓝 0] fun y => ‖y‖ ^ (k - 1) :=
-      (isBigO_of_isBigO_sub_smul q (isBigO_iterate_sub hk q hf j)).trans_isLittleO
+      (q.isBigO_of_isBigO_sub_smul_apply_const (isBigO_iterate_sub hk q hf j)).trans_isLittleO
         (isLittleO_norm_pow_norm_pow (by omega))
     have := h0.comp_tendsto (tendsto_sub_nhds_zero_iff.2 (tendsto_id (x := 𝓝 p)))
     simpa [Function.iterate_fixed hfp, Function.comp_def] using this
@@ -281,8 +268,10 @@ theorem AnalyticAt.eventuallyEq_fderiv_of_map_smul {f : E → F} (hf : AnalyticA
         rw [this, Complex.exp_pi_mul_I]
         ring
       have h2 := hrot a ha (m + 2) y
-      rw [hpow, neg_smul, neg_eq_iff_add_eq_zero, ← two_smul ℂ, smul_smul, smul_eq_zero] at h2
-      exact h2.resolve_left (mul_ne_zero two_ne_zero (by simp [a]))
+      rw [hpow] at h2
+      have h2' : (2 * a) • (q (m + 2) fun _ => y) = 0 := by
+        linear_combination (norm := module) -h2
+      exact (smul_eq_zero.1 h2').resolve_left (mul_ne_zero two_ne_zero (by simp [a]))
   filter_upwards [hq.eventually_hasSum] with y hy
   rw [zero_add] at hy
   refine hy.unique ?_

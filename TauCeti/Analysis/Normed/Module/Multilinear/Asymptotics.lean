@@ -21,6 +21,8 @@ A continuous multilinear map `q` in `k` variables defines the homogeneous polyno
 * `ContinuousMultilinearMap.isBigO_apply_const`: `q (y, …, y) = O(‖y‖ ^ k)` along any filter.
 * `ContinuousMultilinearMap.isBigO_apply_const_sub`: for `k ≥ 2` and `w y = y + O(‖y‖ ^ k)` near
   `0`, `q (w y, …, w y) - q (y, …, y) = O(‖y‖ ^ (k + 1))`.
+* `ContinuousMultilinearMap.isBigO_of_isBigO_sub_smul_apply_const`: if
+  `g y = c • q (y, …, y) + O(‖y‖ ^ (k + 1))` near `0`, then `g y = O(‖y‖ ^ k)`.
 -/
 
 public section
@@ -63,5 +65,18 @@ theorem isBigO_apply_const_sub (hk : 2 ≤ k)
     · rw [h]
     · exact (isLittleO_norm_pow_norm_pow h).isBigO
   exact h1.trans (h2.trans h3)
+
+/-- If `g y = c • P y + O(‖y‖ ^ (k + 1))` near `0` for a homogeneous polynomial `P` of degree `k`,
+then `g y = O(‖y‖ ^ k)`. -/
+theorem isBigO_of_isBigO_sub_smul_apply_const
+    (q : ContinuousMultilinearMap 𝕜 (fun _ : Fin k => E) F) {g : E → F} {c : 𝕜}
+    (hg : (fun y => g y - c • q fun _ => y) =O[𝓝 0] fun y => ‖y‖ ^ (k + 1)) :
+    g =O[𝓝 0] fun y => ‖y‖ ^ k := by
+  have : g = fun y => (g y - c • q fun _ => y) + c • q fun _ => y := by
+    ext y
+    abel
+  rw [this]
+  exact (hg.trans (isLittleO_norm_pow_norm_pow (lt_add_one k)).isBigO).add
+    ((q.isBigO_apply_const _).const_smul_left _)
 
 end ContinuousMultilinearMap

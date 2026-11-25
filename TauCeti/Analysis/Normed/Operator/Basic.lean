@@ -611,14 +611,14 @@ theorem opNorm_le_one_of_mapsTo_ball {L : E →L[𝕜] F} {r : ℝ} (hr : 0 < r)
   refine L.opNorm_le_bound zero_le_one fun x => le_of_forall_pos_lt_add fun ε hε => ?_
   set c : ℝ := r / (‖x‖ + ε)
   have hc : 0 < c := by positivity
-  have hnorm (y : F) : ‖(c : 𝕜) • y‖ = c * ‖y‖ := by
-    rw [norm_smul, RCLike.norm_ofReal, abs_of_pos hc]
   have hcr : c * (‖x‖ + ε) = r := div_mul_cancel₀ r (by positivity)
   have hx : (c : 𝕜) • x ∈ Metric.ball (0 : E) r := by
-    rw [mem_ball_zero_iff, norm_smul, RCLike.norm_ofReal, abs_of_pos hc, ← hcr]
-    exact mul_lt_mul_of_pos_left (lt_add_of_pos_right _ hε) hc
+    rw [mem_ball_zero_iff, ← hcr]
+    simpa [norm_smul, abs_of_pos hc] using
+      mul_lt_mul_of_pos_left (lt_add_of_pos_right ‖x‖ hε) hc
   have hLx := hL hx
-  rw [mem_ball_zero_iff, map_smul, hnorm, ← hcr] at hLx
+  rw [mem_ball_zero_iff, map_smul, ← hcr] at hLx
+  simp [norm_smul, abs_of_pos hc] at hLx
   simpa using lt_of_mul_lt_mul_left hLx hc.le
 
 end MapsToBall
