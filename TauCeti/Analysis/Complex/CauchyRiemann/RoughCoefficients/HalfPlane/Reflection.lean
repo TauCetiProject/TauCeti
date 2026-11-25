@@ -325,12 +325,15 @@ private theorem inner_crFormalAdjoint_crReflection_add (hΩ : MapsTo (starRingEn
   -- Evaluate every reflection: the goal becomes a linear identity between inner products of
   -- `φ`, its derivatives at `z` and `conj z`, their images under `R`, and `ξ z`, `J z (ξ z)`,
   -- `DJ z I (ξ z)`, `S z (ξ z)`, in which `R` sits on either side of `⟪·, ·⟫`.
-  simp [twistedReflection_of_im_pos hz, twistedReflection_of_im_neg hz',
-    crReflectionCoeff_of_im_pos hz, crReflectionDeriv_of_im_pos hz,
-    crReflectionZeroth_of_im_pos hz, crReflectionCoeff_apply_of_im_neg hz',
-    crReflectionDeriv_apply_of_im_neg hz',
-    crReflectionZeroth_apply_of_im_neg hz', reflectTest_apply,
-    R.symm_apply_eq.2 (hR _).symm, inner_add_left]
+  simp only [twistedReflection_of_im_pos hz, crReflectionCoeff_of_im_pos hz,
+    crReflectionDeriv_of_im_pos hz, crReflectionZeroth_of_im_pos hz,
+    twistedReflection_of_im_neg hz', RingHomCompTriple.comp_apply, RingHom.id_apply,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    crReflectionCoeff_apply_of_im_neg hz', LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv,
+    R.symm_apply_eq.2 (hR _).symm, inner_neg_right, sub_neg_eq_add,
+    crReflectionDeriv_apply_of_im_neg hz', conj_I, map_neg, neg_apply, neg_neg,
+    crReflectionZeroth_apply_of_im_neg hz', map_one, inner_add_left, neg_add_rev, inner_neg_left,
+    add_apply, reflectTest_apply]
   -- Move every `R` to the left slot (`R` is self-adjoint); then both sides agree term by term.
   simp only [← LinearIsometryEquiv.inner_map_left_eq_of_involutive hR, hR _]
   ring
