@@ -56,11 +56,6 @@ open TauCeti.AlgebraicGeometry (WeilDivisor)
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   [CompactSpace X] [T2Space X] [ConnectedSpace X]
 
-/-- The map on first Čech cohomology induced by a morphism of divisor sheaves. -/
-private abbrev cohomologyOneMap {D E : WeilDivisor X} (φ : divisorSheaf D ⟶ divisorSheaf E) :
-    divisorCechCohomology D 1 →ₗ[ℂ] divisorCechCohomology E 1 :=
-  ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).map φ.hom).hom
-
 omit [ConnectedSpace X] in
 /-- At a divisor `E ≥ D` where `h¹` is least, every inclusion `H¹(𝒪_E) → H¹(𝒪_{E'})` is
 injective. -/
@@ -80,35 +75,29 @@ private theorem exists_le_forall_injective (D : WeilDivisor X) :
 omit [T2Space X] in
 /-- Multiplication by a meromorphic function which kills a class `v` of `H¹(𝒪_E)` and is not `0`
 forces `v = 0` when all inclusions out of `E` are injective on `H¹`. -/
-private theorem eq_zero_of_divisorSheafMeromorphicMul {E E₁ : WeilDivisor X}
+private theorem eq_zero_of_divisorCechCohomologyMeromorphicMul {E E₁ : WeilDivisor X}
     (hE : ∀ ⦃E' : WeilDivisor X⦄ (h : E ≤ E'),
       Function.Injective (divisorCechCohomologyMapOfLE h 1))
     {g : MeromorphicFunction X} (hg0 : g ≠ 0)
     (hg : ∀ x, ((E x - E₁ x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g)
     {v : divisorCechCohomology E 1}
-    (hv : cohomologyOneMap (divisorSheafMeromorphicMul g hg) v = 0) : v = 0 := by
-  let u : Additive (MeromorphicFunction X)ˣ := Additive.ofMul (Units.mk0 g hg0)
-  -- The unit `u` has underlying function `g` (`Units.val_mk0`).
-  have hu (x : X) : MeromorphicFunction.order x g =
-      ((MeromorphicFunction.orderSystem X).principalDivisor u x : WithTop ℤ) :=
-    (MeromorphicFunction.coe_coeff_principalDivisor_orderSystem u x).symm
-  let E₂ := E₁ + (MeromorphicFunction.orderSystem X).principalDivisor u
+    (hv : divisorCechCohomologyMeromorphicMul g hg 1 v = 0) : v = 0 := by
+  -- Multiplying further by `g⁻¹` into `𝒪_{E₁ + (g)}` gives the inclusion of `𝒪_E`.
+  let E₂ := E₁ + (MeromorphicFunction.orderSystem X).principalDivisor
+    (Additive.ofMul (Units.mk0 g hg0))
   have hEE₂ : E ≤ E₂ := fun x ↦ by
-    have := hu x ▸ hg x
+    have := MeromorphicFunction.order_eq_principalDivisor_mk0 hg0 x ▸ hg x
     simp only [E₂, Finsupp.add_apply]
     norm_cast at this
     omega
   have hginv (x : X) : ((E₁ x - E₂ x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g⁻¹ := by
-    rw [(MeromorphicFunction.order x).map_inv, hu]
+    rw [(MeromorphicFunction.order x).map_inv,
+      MeromorphicFunction.order_eq_principalDivisor_mk0 hg0]
     simp [E₂, sub_add_cancel_left]
-  have hcomp : divisorSheafMeromorphicMul g hg ≫ divisorSheafMeromorphicMul g⁻¹ hginv =
-      divisorSheafMapOfLE hEE₂ := by
-    rw [divisorSheafMeromorphicMul_comp, ← divisorSheafMeromorphicMul_one hEE₂]
-    congr 1
-    exact mul_inv_cancel₀ hg0
   apply hE hEE₂
-  rw [map_zero, divisorCechCohomologyMapOfLE_def, ← hcomp, ObjectProperty.FullSubcategory.comp_hom,
-    Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply, hv, map_zero]
+  have hcomp := divisorCechCohomologyMeromorphicMul_comp g g⁻¹ hg hginv 1
+  simp only [mul_inv_cancel₀ hg0, divisorCechCohomologyMeromorphicMul_one hEE₂] at hcomp
+  rw [map_zero, ← hcomp, LinearMap.comp_apply, hv, map_zero]
 
 /-- At a divisor `E` from which all inclusions are injective on `H¹`, the group `H¹(𝒪_E)`
 vanishes. -/
@@ -120,42 +109,30 @@ private theorem subsingleton_of_forall_injective {E : WeilDivisor X}
   rw [not_subsingleton_iff_nontrivial] at hnt
   obtain ⟨f, hf⟩ := exists_meromorphicFunction_notMem_range_algebraMap X
   have hf0 : f ≠ 0 := fun h ↦ hf ⟨0, by rw [h, map_zero]⟩
-  -- The unit `u` has underlying function `f` (`Units.val_mk0`).
-  let u : Additive (MeromorphicFunction X)ˣ := Additive.ofMul (Units.mk0 f hf0)
-  let E₁ := E ⊔ (E - (MeromorphicFunction.orderSystem X).principalDivisor u)
-  have hEE₁ : E ≤ E₁ := le_sup_left
-  have hfo (x : X) : ((E x - E₁ x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x f := by
-    have hu : MeromorphicFunction.order x f =
-        ((MeromorphicFunction.orderSystem X).principalDivisor u x : WithTop ℤ) :=
-      (MeromorphicFunction.coe_coeff_principalDivisor_orderSystem u x).symm
-    have : E x - (MeromorphicFunction.orderSystem X).principalDivisor u x ≤ E₁ x :=
-      (le_sup_right : _ ≤ E₁) x
-    rw [hu]
+  set F := (MeromorphicFunction.orderSystem X).principalDivisor (Additive.ofMul (Units.mk0 f hf0))
+    with hF
+  have hEE₁ : E ≤ E ⊔ (E - F) := le_sup_left
+  have hfo (x : X) : ((E x - (E ⊔ (E - F)) x : ℤ) : WithTop ℤ) ≤
+      MeromorphicFunction.order x f := by
+    have : E x - F x ≤ (E ⊔ (E - F)) x := (le_sup_right : E - F ≤ _) x
+    rw [MeromorphicFunction.order_eq_principalDivisor_mk0 hf0, ← hF]
     exact_mod_cast (by omega)
   -- Multiplication by `f`, read on `H¹(𝒪_E)` through the isomorphism `H¹(𝒪_E) ≅ H¹(𝒪_{E₁})`.
   let e := LinearEquiv.ofBijective (divisorCechCohomologyMapOfLE hEE₁ 1)
     ⟨hE hEE₁, divisorCechCohomologyMapOfLE_one_surjective hEE₁⟩
-  let M := cohomologyOneMap (divisorSheafMeromorphicMul f hfo)
-  obtain ⟨c, hc⟩ := Module.End.exists_eigenvalue (e.symm.toLinearMap ∘ₗ M)
+  obtain ⟨c, hc⟩ := Module.End.exists_eigenvalue
+    (e.symm.toLinearMap ∘ₗ divisorCechCohomologyMeromorphicMul f hfo 1)
   obtain ⟨v, hv⟩ := hc.exists_hasEigenvector
-  have hMv : M v = c • divisorCechCohomologyMapOfLE hEE₁ 1 v := by
-    have h := hv.apply_eq_smul
-    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_eq, map_smul] at h
-    exact h
+  have hMv := hv.apply_eq_smul
+  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_eq, map_smul] at hMv
   -- Multiplication by `f - c` kills the eigenvector.
-  have hc' := sub_le_order_algebraMap hEE₁ c
-  refine hv.2 (eq_zero_of_divisorSheafMeromorphicMul hE (sub_ne_zero.2 fun h ↦ hf ⟨c, h.symm⟩)
-    (fun x ↦ (le_min (hfo x) (hc' x)).trans ((MeromorphicFunction.order x).map_sub _ _)) ?_)
-  -- `sheafToPresheaf` is additive, and its action on morphisms is `Sheaf.hom` (`ι_map`).
-  have hsub : (divisorSheafMeromorphicMul f hfo -
-      divisorSheafMeromorphicMul (algebraMap ℂ (MeromorphicFunction X) c) hc').hom =
-      (divisorSheafMeromorphicMul f hfo).hom -
-        (divisorSheafMeromorphicMul (algebraMap ℂ (MeromorphicFunction X) c) hc').hom :=
-    (sheafToPresheaf _ _).map_sub
-  rw [divisorSheafMeromorphicMul_sub f _ hfo hc', cohomologyOneMap, hsub, Functor.map_sub,
-    ModuleCat.hom_sub, LinearMap.sub_apply, divisorSheafMeromorphicMul_algebraMap_hom hEE₁ c,
-    Functor.map_smul, ModuleCat.hom_smul, LinearMap.smul_apply, sub_eq_zero,
-    ← divisorCechCohomologyMapOfLE_def]
+  have hcb := sub_le_order_algebraMap hEE₁ c
+  refine hv.2 (eq_zero_of_divisorCechCohomologyMeromorphicMul hE
+    (sub_ne_zero.2 fun h ↦ hf ⟨c, h.symm⟩)
+    (fun x ↦ (le_min (hfo x) (hcb x)).trans ((MeromorphicFunction.order x).map_sub _ _)) ?_)
+  rw [divisorCechCohomologyMeromorphicMul_sub f _ hfo hcb,
+    divisorCechCohomologyMeromorphicMul_algebraMap, LinearMap.sub_apply, LinearMap.smul_apply,
+    sub_eq_zero]
   exact hMv
 
 /-- **`H¹(X, 𝒪_E)` vanishes for large `E`.** On a compact connected Hausdorff Riemann surface,
