@@ -220,10 +220,8 @@ theorem hasFDerivAt_spectralFunction (hM : ∀ x, (M x).IsHermitian)
       (0 : E →L[ℝ] ℝ) x₀ := by
     refine HasFDerivAt.of_isLittleO ?_
     have hlin (μ : Fin (Fintype.card n) → ℝ) : fderiv ℝ f μ₀ μ = ∑ j, y j * μ j := by
-      conv_lhs => rw [← univ_sum_single μ]
-      refine (map_sum _ _ _).trans (sum_congr rfl fun j _ ↦ ?_)
-      rw [show (Pi.single j (μ j) : Fin (Fintype.card n) → ℝ) = μ j • Pi.single j 1 by
-        ext k; simp [Pi.single_apply], map_smul, smul_eq_mul, mul_comm]
+      conv_lhs => rw [pi_eq_sum_univ' μ, map_sum]
+      exact sum_congr rfl fun j _ ↦ by rw [map_smul, smul_eq_mul, mul_comm]
     have htend : Tendsto (fun x ↦ (hM x).eigenvalues₀) (𝓝 x₀) (𝓝 μ₀) :=
       tendsto_pi_nhds.2 fun i ↦
         continuousAt_eigenvalues₀ hM (fun a b ↦ (hMd a b).continuousAt) i
@@ -296,10 +294,8 @@ theorem differentiableAt_spectralFunction_iff
     have hΦA : Φ A.property.isHermitian.eigenvalues₀ = A := by
       refine Subtype.ext ?_
       conv_rhs => rw [A.property.isHermitian.spectral_theorem]
-      have he (k : ι) : A.property.isHermitian.eigenvalues₀ (e.symm k) =
-          A.property.isHermitian.eigenvalues k := by
-        rw [← A.property.isHermitian.eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]
-      simp [Φ, U, Unitary.conjStarAlgAut_apply, he, Function.comp_def]
+      simp [Φ, U, e, Unitary.conjStarAlgAut_apply,
+        A.property.isHermitian.eigenvalues₀_equivOfCardEq_symm, Function.comp_def]
     have hc := (hΦA ▸ h).comp _ (LinearMap.toContinuousLinearMap Φ).differentiableAt
     simpa [Function.comp_def, hΦ] using hc
   · obtain ⟨u, hu⟩ := A.property.isHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul

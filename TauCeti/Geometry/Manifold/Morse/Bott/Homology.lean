@@ -187,19 +187,19 @@ theorem SmoothEmbedding.exists_isIso_singularHomologyMap_iUnion_negativeDiscBund
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {c : ℝ} (hc : ∀ j s, f (i j s) = c)
     (hd : Pairwise (Disjoint on fun j ↦ range (i j)))
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
-    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn) :
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∃ Θ : ∀ j, PartialDiffeomorph ((J j).prod 𝓘(ℝ, P j)) I
-        (TotalSpace (P j) fun s ↦ (i j).NormalSpace s hn) M ∞,
-      (∀ j s, zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s ∈ (Θ j).source) ∧
-      (∀ j s, Θ j (zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s) = i j s) ∧
+        (TotalSpace (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn) M ∞,
+      (∀ j s, zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s ∈ (Θ j).source) ∧
+      (∀ j s, Θ j (zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s) = i j s) ∧
       (∀ j, ∀ x ∈ (Θ j).source, f (Θ j x) = c + 2⁻¹ * (h j).normalHessian hn x.proj x.snd x.snd) ∧
       ∃ ε₀ > 0, ∀ ε (hε : 0 < ε), ε < ε₀ → IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
         criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ j, range (i j) →
@@ -215,9 +215,9 @@ theorem SmoothEmbedding.exists_isIso_singularHomologyMap_iUnion_negativeDiscBund
               ).singularHomologyMap (TopPair.ofInclusionMap (Y := TopCat.of M) _
                 (sublevel_mono f (a := c - ε) (b := c + ε) (by linarith))
                 (ContinuousMap.inclusion hA) fun _ hx ↦ hx) R n) := by
-  let : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
     exists_sublevel_union_iUnion_negativeDiscBundle_deformation hn h hfs hc hd hdim g
@@ -267,19 +267,19 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_iUnion_negati
     (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ ⋃ j, range (i j))
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
-    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn) :
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∃ Θ : ∀ j, PartialDiffeomorph ((J j).prod 𝓘(ℝ, P j)) I
-        (TotalSpace (P j) fun s ↦ (i j).NormalSpace s hn) M ∞,
-      (∀ j s, zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s ∈ (Θ j).source) ∧
-      (∀ j s, Θ j (zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s) = i j s) ∧
+        (TotalSpace (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn) M ∞,
+      (∀ j s, zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s ∈ (Θ j).source) ∧
+      (∀ j s, Θ j (zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s) = i j s) ∧
       (∀ j, ∀ x ∈ (Θ j).source, f (Θ j x) = c + 2⁻¹ * (h j).normalHessian hn x.proj x.snd x.snd) ∧
       ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀,
         (∀ j, (h j).negativeDiscBundle hn (P j) (g j).toRiemannianMetric ε ⊆ (Θ j).source) ∧
@@ -289,9 +289,9 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_iUnion_negati
               {y | f y ≤ c - ε} ⊆ {y | f y ≤ c - ε} ∪
                 ⋃ j, Θ j '' (h j).negativeDiscBundle hn (P j) (g j).toRiemannianMetric ε)
               ).singularHomology R n) := by
-  let : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
     exists_isIso_singularHomologyMap_iUnion_negativeDiscBundle hn h hfs hc hd hdim g
@@ -331,21 +331,21 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_iUnion_nega
     (h : IsMorseBottFamily i f) {a b c : ℝ} (hac : a < c) (hcb : c < b)
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
-    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn) :
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∃ Θ : ∀ j : {j // ∀ s, f (i j s) = c}, PartialDiffeomorph ((J j).prod 𝓘(ℝ, P j)) I
-        (TotalSpace (P j) fun s ↦ (i j).NormalSpace s hn) M ∞,
+        (TotalSpace (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn) M ∞,
       (∀ (j : {j // ∀ s, f (i j s) = c}) s,
-        zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s ∈ (Θ j).source) ∧
+        zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s ∈ (Θ j).source) ∧
       (∀ (j : {j // ∀ s, f (i j s) = c}) s,
-        Θ j (zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s) = i j s) ∧
+        Θ j (zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s) = i j s) ∧
       (∀ j : {j // ∀ s, f (i j s) = c}, ∀ x ∈ (Θ j).source, f (Θ j x) =
         c + 2⁻¹ * (h.isNondegenerateCriticalSubmanifold j).normalHessian hn x.proj x.snd x.snd) ∧
       ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀,
@@ -380,26 +380,26 @@ private theorem exists_pos_pairwise_disjoint_image_negativeDiscBundle [T2Space M
     [∀ j, CompactSpace (S j)] (h : ∀ j, (i j).IsNondegenerateCriticalSubmanifold f)
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hd : Pairwise (Disjoint on fun j ↦ range (i j)))
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
-    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
-    (Θ : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
+    (Θ : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
       ∀ j, PartialDiffeomorph ((J j).prod 𝓘(ℝ, P j)) I
-        (TotalSpace (P j) fun s ↦ (i j).NormalSpace s hn) M ∞)
-    (hΘz : ∀ j s, zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s ∈ (Θ j).source)
-    (hΘi : ∀ j s, Θ j (zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s) = i j s) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+        (TotalSpace (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn) M ∞)
+    (hΘz : ∀ j s, zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s ∈ (Θ j).source)
+    (hΘi : ∀ j s, Θ j (zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s) = i j s) :
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∃ δ > 0, ∀ ε ≤ δ, Pairwise (Disjoint on fun j ↦
       Θ j '' (h j).negativeDiscBundle hn (P j) (g j).toRiemannianMetric ε) := by
-  let : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   have (j : ι) : T2Space (S j) := (i j).isEmbedding.t2Space
   -- A small negative disc bundle is carried into any given neighbourhood of the submanifold.
@@ -452,19 +452,19 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_negativ
     (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ ⋃ j, range (i j))
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
-    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn) :
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∃ Θ : ∀ j, PartialDiffeomorph ((J j).prod 𝓘(ℝ, P j)) I
-        (TotalSpace (P j) fun s ↦ (i j).NormalSpace s hn) M ∞,
-      (∀ j s, zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s ∈ (Θ j).source) ∧
-      (∀ j s, Θ j (zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s) = i j s) ∧
+        (TotalSpace (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn) M ∞,
+      (∀ j s, zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s ∈ (Θ j).source) ∧
+      (∀ j s, Θ j (zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s) = i j s) ∧
       (∀ j, ∀ x ∈ (Θ j).source, f (Θ j x) = c + 2⁻¹ * (h j).normalHessian hn x.proj x.snd x.snd) ∧
       ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀,
         (∀ j, (h j).negativeDiscBundle hn (P j) (g j).toRiemannianMetric ε ⊆ (Θ j).source) ∧
@@ -476,9 +476,9 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_negativ
               {y | f y ≤ c - ε} ⊆ {y | f y ≤ c - ε} ∪
                 Θ j '' (h j).negativeDiscBundle hn (P j) (g j).toRiemannianMetric ε)
               ).singularHomology R n) := by
-  let : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   have (j : ι) : T2Space (S j) := (i j).isEmbedding.t2Space
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
@@ -519,21 +519,21 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_negat
     (h : IsMorseBottFamily i f) {a b c : ℝ} (hac : a < c) (hcb : c < b)
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
-    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn) :
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∃ Θ : ∀ j : {j // ∀ s, f (i j s) = c}, PartialDiffeomorph ((J j).prod 𝓘(ℝ, P j)) I
-        (TotalSpace (P j) fun s ↦ (i j).NormalSpace s hn) M ∞,
+        (TotalSpace (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn) M ∞,
       (∀ (j : {j // ∀ s, f (i j s) = c}) s,
-        zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s ∈ (Θ j).source) ∧
+        zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s ∈ (Θ j).source) ∧
       (∀ (j : {j // ∀ s, f (i j s) = c}) s,
-        Θ j (zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s) = i j s) ∧
+        Θ j (zeroSection (P j) (fun s ↦ (i j).isImmersion.NormalSpace s hn) s) = i j s) ∧
       (∀ j : {j // ∀ s, f (i j s) = c}, ∀ x ∈ (Θ j).source, f (Θ j x) =
         c + 2⁻¹ * (h.isNondegenerateCriticalSubmanifold j).normalHessian hn x.proj x.snd x.snd) ∧
       ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀,
@@ -604,12 +604,13 @@ theorem exists_isIso_singularHomologyMap_negativeDiscBundle [T2Space M]
     (hc : ∀ s, f (i s) = c) (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I (TotalSpace P fun s ↦ i.NormalSpace s hn) M ∞,
-      (∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ Θ.source) ∧
-      (∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) ∧
+    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I
+        (TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) M ∞,
+      (∀ s, zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s ∈ Θ.source) ∧
+      (∀ s, Θ (zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s) = i s) ∧
       (∀ x ∈ Θ.source, f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) ∧
       ∃ ε₀ > 0, ∀ ε (hε : 0 < ε), ε < ε₀ → IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
         criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ range i →
@@ -666,12 +667,13 @@ theorem nonempty_singularHomology_sublevelPair_iso_negativeDiscBundle [T2Space M
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I (TotalSpace P fun s ↦ i.NormalSpace s hn) M ∞,
-      (∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ Θ.source) ∧
-      (∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) ∧
+    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I
+        (TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) M ∞,
+      (∀ s, zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s ∈ Θ.source) ∧
+      (∀ s, Θ (zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s) = i s) ∧
       (∀ x ∈ Θ.source, f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) ∧
       ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀,
         h.negativeDiscBundle hn P g.toRiemannianMetric ε ⊆ Θ.source ∧

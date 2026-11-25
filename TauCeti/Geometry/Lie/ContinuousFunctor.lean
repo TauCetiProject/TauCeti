@@ -24,6 +24,8 @@ the smooth Lie functor.
 * `ContinuousMonoidHom.lieMap_injective` gives faithfulness on preconnected sources.
 * `ContinuousMonoidHom.isLocalDiffeomorph_iff_lieMap_bijective` characterizes smooth local
   diffeomorphisms via bijectivity of `lieMap`.
+* `ContinuousMonoidHom.lieMap_apply_eq_of_lieExp`: a real-linear map `φ` with
+  `exp ∘ φ = f ∘ exp` is the Lie map of `f`.
 * `ContinuousMulEquiv.lieEquiv` is the Lie-algebra equivalence induced by a continuous
   multiplicative equivalence.
 -/
@@ -172,6 +174,18 @@ theorem leftInverse_lieMap (f : G →ₜ* G') (g : G' →ₜ* G)
       (lieMap (I := I') (I' := I) g) (lieMap (I := I) (I' := I') f) := by
   intro X
   rw [← lieMap_comp_apply (I := I) (I' := I') (I'' := I) f g X, h, lieMap_id, one_apply_eq_self]
+
+/-- **The Lie map is determined by the exponential.** A real-linear map `φ : 𝔤 → 𝔤'` with
+`exp(φ X) = f(exp X)` for every `X` is the Lie map of `f`. -/
+theorem lieMap_apply_eq_of_lieExp [T2Space G] [BoundarylessManifold I G] [T2Space G']
+    [BoundarylessManifold I' G'] (f : G →ₜ* G')
+    (φ : LeftInvariantDerivation I G →ₗ[ℝ] LeftInvariantDerivation I' G')
+    (h : ∀ X, _root_.lieExp (φ X) = f (_root_.lieExp X)) (X : LeftInvariantDerivation I G) :
+    lieMap (I := I) (I' := I') f X = φ X := by
+  apply oneParameterSubgroup_injective (I := I') (G := G')
+  ext t
+  rw [← ofAdd_toAdd t, oneParameterSubgroup_apply, oneParameterSubgroup_apply, ← map_smul,
+    ← map_lieExp, ← map_smul, h]
 
 end ContinuousMonoidHom
 
