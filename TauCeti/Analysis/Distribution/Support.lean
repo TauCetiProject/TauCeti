@@ -32,10 +32,13 @@ domain of `T`: when no such cutoff exists, for instance when the support of `T` 
 subset of `Ω`, `augmentation T c` is the junk value zero. On an infinite-dimensional space every
 test function is zero, so every augmentation is zero. The augmentation of an additive map is
 additive in `c`, and that of a linear map is homogeneous in `c`. The augmentation is homogeneous in
-the map, and on maps whose supports are compact subsets of `Ω` it is also additive in the map. When
-`E` is finite-dimensional it sends a finite sum of point evaluations `φ ↦ ∑ x ∈ s, ℓ x (φ x)`, with
-`s ⊆ Ω`, to `∑ x ∈ s, ℓ x c`. It vanishes on the boundary `T ∘ d` of a current, because the
-exterior derivative of a cutoff equal to one vanishes near the support.
+the map, and on maps whose supports are compact subsets of `Ω` it is also additive in the map,
+over finite sums too. When `E` is finite-dimensional it sends a finite sum of point evaluations
+`φ ↦ ∑ x ∈ s, ℓ x (φ x)`, with `s ⊆ Ω`, to `∑ x ∈ s, ℓ x c`. In particular the augmentation of
+a finite combination `ω ↦ ∑ x ∈ s, a x * ω x ![]` of degree-zero point masses at a `0`-form `c`
+is `(∑ x ∈ s, a x) * c ![]`, the sum of the coefficients at the unit `0`-form. It vanishes on the
+boundary `T ∘ d` of a current, because the exterior derivative of a cutoff equal to one vanishes
+near the support.
 
 ## Main declarations
 
@@ -73,9 +76,13 @@ exterior derivative of a cutoff equal to one vanishes near the support.
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_eq_zero_of_not_finiteDimensional`: on an infinite-dimensional `E`
   every augmentation is zero.
+* `Distribution.dsupport_sum_subset`, `Distribution.augmentation_sum`: a finite sum of maps is
+  supported in the union of their supports, and the augmentation is additive over finite sums of
+  additive maps whose supports are compact subsets of `Ω`.
 * `Distribution.dsupport_sum_apply_apply_subset`, `Distribution.augmentation_sum_apply_apply`: a
   finite sum `φ ↦ ∑ x ∈ s, ℓ x (φ x)` of point evaluations is supported in `s`, and for `s ⊆ Ω`
-  its augmentation at `c` is `∑ x ∈ s, ℓ x c`.
+  its augmentation at `c` is `∑ x ∈ s, ℓ x c`; `Distribution.augmentation_sum_mul_apply_finZero`
+  is the case of a finite combination of degree-zero point masses.
 * `Distribution.augmentation_comp_extDerivCLM`,
   `Distribution.not_exists_comp_extDerivCLM_eq_of_augmentation_ne_zero`,
   `Distribution.not_exists_comp_extDerivCLM_eq_comp_evalCLM`: the augmentation of a boundary is
@@ -164,16 +171,6 @@ theorem dsupport_apply_apply_subset [AddZeroClass V] {x : E} (ℓ : F →+ V) :
   rw [mem_compl_iff, notMem_dsupport_iff]
   refine ⟨{x}ᶜ, fun φ hφ ↦ ?_, isOpen_compl_singleton, hy⟩
   simp [image_eq_zero_of_notMem_tsupport fun h ↦ hφ h rfl]
-
-/-- The support of a finite sum of point evaluations `φ ↦ ∑ x ∈ s, ℓ x (φ x)`, each followed by an
-additive map, lies in the finite set `s`. -/
-theorem dsupport_sum_apply_apply_subset [AddCommMonoid V] (s : Finset E) (ℓ : E → F →+ V) :
-    dsupport (fun φ : 𝓓^{n}(Ω, F) ↦ ∑ x ∈ s, ℓ x (φ x)) ⊆ s := by
-  refine compl_subset_compl.1 fun y hy ↦ ?_
-  rw [mem_compl_iff, notMem_dsupport_iff]
-  refine ⟨(s : Set E)ᶜ, fun φ hφ ↦ Finset.sum_eq_zero fun x hx ↦ ?_,
-    s.finite_toSet.isClosed.isOpen_compl, hy⟩
-  simp [image_eq_zero_of_notMem_tsupport fun h ↦ hφ h hx]
 
 /-- The distributional support of a point evaluation `φ ↦ ℓ (φ x)` followed by an additive map is
 compact. -/
@@ -294,6 +291,33 @@ theorem dsupport_add_subset (f g : 𝓓^{n}(Ω, F) → V) :
   simp [hs φ (hφ.trans inter_subset_left), ht φ (hφ.trans inter_subset_right)]
 
 end Add
+
+section Sum
+
+variable [AddCommMonoid V]
+
+/-- The support of a finite sum of maps on test functions lies in the union of their supports. -/
+theorem dsupport_sum_subset {ι : Type*} (s : Finset ι) (f : ι → 𝓓^{n}(Ω, F) → V) :
+    dsupport (∑ i ∈ s, f i) ⊆ ⋃ i ∈ s, dsupport (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [dsupport_zero]
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.set_biUnion_insert]
+    exact (dsupport_add_subset _ _).trans (union_subset_union_right _ ih)
+
+/-- The support of a finite sum of point evaluations `φ ↦ ∑ x ∈ s, ℓ x (φ x)`, each followed by an
+additive map, lies in the finite set `s`. -/
+theorem dsupport_sum_apply_apply_subset (s : Finset E) (ℓ : E → F →+ V) :
+    dsupport (fun φ : 𝓓^{n}(Ω, F) ↦ ∑ x ∈ s, ℓ x (φ x)) ⊆ s := by
+  have h : (fun φ : 𝓓^{n}(Ω, F) ↦ ∑ x ∈ s, ℓ x (φ x)) = ∑ x ∈ s, fun φ ↦ ℓ x (φ x) := by
+    ext φ
+    simp
+  rw [h]
+  exact (dsupport_sum_subset s _).trans
+    (iUnion₂_subset fun x hx ↦ (dsupport_apply_apply_subset (ℓ x)).trans (by simpa using hx))
+
+end Sum
 
 section Germ
 
@@ -555,7 +579,39 @@ theorem augmentation_add (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsuppo
     subset_union_left)), augmentation_eq S (hχ.filter_mono (nhdsSet_mono subset_union_right))]
   simp [A]
 
+/-- The augmentation is additive over finite sums of additive maps whose supports are compact
+subsets of `Ω`. -/
+theorem augmentation_sum {ι : Type*} {s : Finset ι} (T : ι → 𝓕)
+    (hT : ∀ i ∈ s, IsCompact (dsupport (T i))) (hTΩ : ∀ i ∈ s, dsupport (T i) ⊆ Ω) (c : F) :
+    augmentation (∑ i ∈ s, ⇑(T i)) c = ∑ i ∈ s, augmentation (T i) c := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [augmentation_eq_zero_of_not_finiteDimensional hE]
+  obtain ⟨χ, hχ, -⟩ :=
+    TestFunction.exists_eventually_eq_one (n := n) (s.isCompact_biUnion hT) (iUnion₂_subset hTΩ)
+  let A : 𝓓^{n}(Ω, F) →+ V := ∑ i ∈ s, (T i : 𝓓^{n}(Ω, F) →+ V)
+  have hA : ⇑A = ∑ i ∈ s, ⇑(T i) := by
+    ext φ
+    simp [A]
+  rw [← hA, augmentation_eq A (hχ.filter_mono (nhdsSet_mono (hA ▸ dsupport_sum_subset s _)))]
+  rw [hA, Finset.sum_apply]
+  exact Finset.sum_congr rfl fun i hi ↦ (augmentation_eq (T i)
+    (hχ.filter_mono (nhdsSet_mono (subset_biUnion_of_mem (u := fun i ↦ dsupport (T i)) hi))) c).symm
+
 variable [FiniteDimensional ℝ E]
+
+/-- **The augmentation of a point evaluation.** For `x ∈ Ω` and an additive map `ℓ`, the
+evaluation `φ ↦ ℓ (φ x)` has augmentation `ℓ c` at `c`. For the degree-zero point current and the
+unit `0`-form it is one. -/
+theorem augmentation_apply_apply {x : E} (hx : x ∈ Ω) (ℓ : F →+ V) (c : F) :
+    augmentation (fun φ : 𝓓^{n}(Ω, F) ↦ ℓ (φ x)) c = ℓ c := by
+  let A : 𝓓^{n}(Ω, F) →+ V :=
+    { toFun φ := ℓ (φ x), map_zero' := by simp, map_add' φ ψ := by simp }
+  have hA : dsupport A ⊆ {x} := dsupport_apply_apply_subset ℓ
+  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := n) isCompact_singleton
+    (singleton_subset_iff.2 hx)
+  have hχx : χ x = 1 := hχ.self_of_nhdsSet x rfl
+  exact (augmentation_eq A (hχ.filter_mono (nhdsSet_mono hA)) c).trans (by simp [A, hχx])
 
 /-- **The augmentation of a finite sum of point evaluations.** For a finite set `s ⊆ Ω` and
 additive maps `ℓ x`, the map `φ ↦ ∑ x ∈ s, ℓ x (φ x)` has augmentation `∑ x ∈ s, ℓ x c` at `c`.
@@ -563,20 +619,15 @@ For a finite sum of weighted degree-zero point currents and the unit `0`-form it
 weights. -/
 theorem augmentation_sum_apply_apply {s : Finset E} (hs : (s : Set E) ⊆ Ω) (ℓ : E → F →+ V)
     (c : F) : augmentation (fun φ : 𝓓^{n}(Ω, F) ↦ ∑ x ∈ s, ℓ x (φ x)) c = ∑ x ∈ s, ℓ x c := by
-  let A : 𝓓^{n}(Ω, F) →+ V :=
-    { toFun φ := ∑ x ∈ s, ℓ x (φ x), map_zero' := by simp,
-      map_add' φ ψ := by simp [Finset.sum_add_distrib] }
-  have hA : dsupport A ⊆ s := dsupport_sum_apply_apply_subset s ℓ
-  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := n) s.finite_toSet.isCompact hs
-  refine (augmentation_eq A (hχ.filter_mono (nhdsSet_mono hA)) c).trans ?_
-  exact Finset.sum_congr rfl fun x hx ↦ by simp [hχ.self_of_nhdsSet x hx]
-
-/-- **The augmentation of a point evaluation.** For `x ∈ Ω` and an additive map `ℓ`, the
-evaluation `φ ↦ ℓ (φ x)` has augmentation `ℓ c` at `c`. For the degree-zero point current and the
-unit `0`-form it is one. -/
-theorem augmentation_apply_apply {x : E} (hx : x ∈ Ω) (ℓ : F →+ V) (c : F) :
-    augmentation (fun φ : 𝓓^{n}(Ω, F) ↦ ℓ (φ x)) c = ℓ c := by
-  simpa using augmentation_sum_apply_apply (n := n) (s := {x}) (by simpa using hx) (fun _ ↦ ℓ) c
+  let A : E → 𝓓^{n}(Ω, F) →+ V := fun x ↦
+    (ℓ x).comp ((Pi.evalAddMonoidHom (fun _ ↦ F) x).comp (FunLike.coeAddMonoidHom _ _ _))
+  have hA (x : E) : ⇑(A x) = fun φ : 𝓓^{n}(Ω, F) ↦ ℓ x (φ x) := rfl
+  have h : (fun φ : 𝓓^{n}(Ω, F) ↦ ∑ x ∈ s, ℓ x (φ x)) = ∑ x ∈ s, ⇑(A x) := by
+    ext φ
+    simp [hA]
+  rw [h, augmentation_sum A (fun x _ ↦ hA x ▸ isCompact_dsupport_apply_apply x (ℓ x))
+    fun x hx ↦ hA x ▸ (dsupport_apply_apply_subset (ℓ x)).trans (singleton_subset_iff.2 (hs hx))]
+  exact Finset.sum_congr rfl fun x hx ↦ hA x ▸ augmentation_apply_apply (hs hx) (ℓ x) c
 
 /-- For `x ∈ Ω` and a continuous linear map `ℓ`, the point evaluation `φ ↦ ℓ (φ x)` has
 augmentation `ℓ c` at `c`. -/
@@ -599,6 +650,17 @@ theorem augmentation_delta {x : E} (hx : x ∈ Ω) (c : ℝ) :
   have h : ⇑(delta x : 𝓓'^{n}(Ω, ℝ)) = fun φ ↦ AddMonoidHom.id ℝ (φ x) :=
     funext fun φ ↦ delta_apply x φ
   rw [h, augmentation_apply_apply hx, AddMonoidHom.id_apply]
+
+/-- **The augmentation of a finite combination of degree-zero point masses.** For a finite set
+`s ⊆ Ω`, the `0`-current `ω ↦ ∑ x ∈ s, a x * ω x ![]` has augmentation `(∑ x ∈ s, a x) * c ![]`
+at a `0`-form `c`. At the unit `0`-form it is the sum of the coefficients. -/
+theorem augmentation_sum_mul_apply_finZero {s : Finset E} (hs : (s : Set E) ⊆ Ω) (a : E → ℝ)
+    (c : E [⋀^Fin 0]→L[ℝ] ℝ) :
+    augmentation (fun ω : 𝓓^{n}(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) ↦ ∑ x ∈ s, a x * ω x ![]) c =
+      (∑ x ∈ s, a x) * c ![] := by
+  simpa [Finset.sum_mul] using augmentation_sum_apply_apply hs
+    (fun x ↦ ((a x • ContinuousAlternatingMap.apply ℝ E ℝ ![] :
+      (E [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] ℝ) : (E [⋀^Fin 0]→L[ℝ] ℝ) →+ ℝ)) c
 
 end AugmentationMonoid
 

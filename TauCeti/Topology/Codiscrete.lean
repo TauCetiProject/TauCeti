@@ -34,7 +34,9 @@ for sets `s ∈ Filter.codiscreteWithin U` and their complement specializations
   `Filter.codiscreteWithin U` (or on `U \ s` for `sᶜ ∈ Filter.codiscreteWithin U`) agree on all of
   `U`.
 * `IsCompact.finite_inter_of_compl_mem_codiscreteWithin`: any compact subset `K ⊆ U` meets `s` in a
-  finite set whenever `sᶜ ∈ Filter.codiscreteWithin U`.
+  finite set whenever `sᶜ ∈ Filter.codiscreteWithin U`. For an open `U` in a locally compact `T₁`
+  space this characterizes `sᶜ ∈ Filter.codiscreteWithin U`
+  (`IsOpen.compl_mem_codiscreteWithin_iff_forall_finite_inter`).
 * `TauCeti.compl_mem_codiscreteWithin_of_subset_compl_derivedSet`,
   `TauCeti.subset_compl_derivedSet_of_compl_mem_codiscreteWithin`, and
   `TauCeti.compl_mem_codiscreteWithin_iff_subset_compl_derivedSet`: for `E ⊆ U`,
@@ -161,6 +163,17 @@ theorem IsCompact.finite_inter_of_compl_mem_codiscreteWithin (hK : IsCompact K) 
     (hs : sᶜ ∈ codiscreteWithin U) : (K ∩ s).Finite := by
   simpa only [sdiff_compl] using
     hK.finite_sdiff_of_mem_codiscreteWithin (codiscreteWithin_mono hKU hs)
+
+/-- In a locally compact `T₁` space, `sᶜ ∈ Filter.codiscreteWithin U` for an open set `U` exactly
+when every compact subset `K ⊆ U` meets `s` in a finite set. -/
+theorem IsOpen.compl_mem_codiscreteWithin_iff_forall_finite_inter [T1Space X]
+    [LocallyCompactSpace X] (hU : IsOpen U) :
+    sᶜ ∈ codiscreteWithin U ↔ ∀ K, IsCompact K → K ⊆ U → (K ∩ s).Finite := by
+  refine ⟨fun hs K hK hKU ↦ hK.finite_inter_of_compl_mem_codiscreteWithin hKU hs, fun hs ↦ ?_⟩
+  refine codiscreteWithin_iff_locallyFiniteComplementWithin.2 fun z hz ↦ ?_
+  obtain ⟨K, hK, hzK, hKU⟩ := exists_compact_subset hU hz
+  exact ⟨K, mem_interior_iff_mem_nhds.1 hzK,
+    (hs K hK hKU).subset fun y hy ↦ ⟨hy.1, not_not.1 hy.2.2⟩⟩
 
 /-- The complement of `E` is codiscrete within any set avoiding `derivedSet E`. -/
 theorem TauCeti.compl_mem_codiscreteWithin_of_subset_compl_derivedSet {E : Set X}

@@ -27,8 +27,8 @@ form is also used to construct measurable tangent projections in `Rectifiable.Ta
 The measure-theoretic counterpart, used for approximate tangent planes of rectifiable sets, is the
 cone-density condition `TauCeti.DensityZeroOutsideCones`: the part of a set `S` outside every cone
 about the affine subspace `x + P` has `k`-dimensional density zero at `x`. It passes to subsets,
-depends only on the set near `x`, and holds trivially for the whole space `P = ⊤` and, for every
-`P`, at isolated points of `S`.
+depends only on the set near `x`, and holds whenever `S` lies in `x + P` near `x`: in particular
+for the whole space `P = ⊤` and, for every `P`, at isolated points of `S`.
 
 ## References
 
@@ -119,19 +119,6 @@ theorem densityZeroOutsideCones_iff {S : Set V} {x : V} {P : Submodule ℝ V} :
         volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) :=
   Iff.rfl
 
-/-- Every set satisfies the cone-density condition for the whole space: no point lies outside a
-cone about it. -/
-theorem densityZeroOutsideCones_top (S : Set V) (x : V) :
-    DensityZeroOutsideCones k S x ⊤ := fun ε hε ↦ by
-  refine tendsto_const_nhds.congr fun r ↦ ?_
-  have hempty : {z ∈ S ∩ closedBall x r |
-      ε * dist z x < infDist (z - x) ((⊤ : Submodule ℝ V) : Set V)} = ∅ := by
-    ext z
-    simp only [Submodule.top_coe, infDist_zero_of_mem (mem_univ _), mem_sep_iff,
-      mem_empty_iff_false, iff_false, not_and, not_lt]
-    exact fun _ ↦ mul_nonneg hε.le dist_nonneg
-  rw [hempty, measure_empty, ENNReal.zero_div]
-
 /-- The cone-density condition passes to subsets. -/
 theorem DensityZeroOutsideCones.mono {S T : Set V} {x : V} {P : Submodule ℝ V}
     (h : DensityZeroOutsideCones k T x P) (hST : S ⊆ T) : DensityZeroOutsideCones k S x P :=
@@ -151,18 +138,25 @@ theorem densityZeroOutsideCones_inter_iff {S B : Set V} {x : V} {P : Submodule �
   intro _ hz
   exact and_iff_left (hB (closedBall_subset_closedBall hr.le hz))
 
-/-- At an isolated point `x` of `S`, the cone-density condition holds for every subspace: near `x`
-the only point of `S` is `x` itself, which lies in every cone about `x + P`. -/
-theorem densityZeroOutsideCones_of_inter_closedBall_subset {S : Set V} {x : V} {δ : ℝ}
-    (hδ : 0 < δ) (hS : S ∩ closedBall x δ ⊆ {x}) (P : Submodule ℝ V) :
+/-- If `S` lies in the affine subspace `x + P` near `x`, then the cone-density condition holds at
+`x` for `P`: near `x` no point of `S` lies outside a cone about `x + P`. This covers isolated
+points of `S`, for every `P`. -/
+theorem densityZeroOutsideCones_of_forall_sub_mem {S : Set V} {x : V} {P : Submodule ℝ V}
+    {δ : ℝ} (hδ : 0 < δ) (hS : ∀ z ∈ S ∩ closedBall x δ, z - x ∈ P) :
     DensityZeroOutsideCones k S x P := by
-  refine (densityZeroOutsideCones_inter_iff hδ subset_rfl).1 fun ε _ ↦
+  refine (densityZeroOutsideCones_inter_iff hδ subset_rfl).1 fun ε hε ↦
     tendsto_const_nhds.congr fun r ↦ ?_
   have hempty : {z ∈ S ∩ closedBall x δ ∩ closedBall x r |
       ε * dist z x < infDist (z - x) (P : Set V)} = ∅ := by
-    refine eq_empty_of_forall_notMem fun z hz ↦ ?_
-    obtain rfl : z = x := hS hz.1.1
-    simp [infDist_zero_of_mem P.zero_mem] at hz
+    refine eq_empty_of_forall_notMem fun z ⟨hzS, hz⟩ ↦ ?_
+    rw [infDist_zero_of_mem (hS z hzS.1)] at hz
+    exact (mul_nonneg hε.le dist_nonneg).not_gt hz
   rw [hempty, measure_empty, ENNReal.zero_div]
+
+/-- Every set satisfies the cone-density condition for the whole space: no point lies outside a
+cone about it. -/
+theorem densityZeroOutsideCones_top (S : Set V) (x : V) :
+    DensityZeroOutsideCones k S x ⊤ :=
+  densityZeroOutsideCones_of_forall_sub_mem one_pos fun _ _ ↦ Submodule.mem_top
 
 end TauCeti
