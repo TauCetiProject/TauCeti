@@ -236,15 +236,16 @@ theorem not_integrable_norm_fluxField_mul_indicator_compl_closedBall [Nontrivial
   intro hint
   -- The integrand is the norm power `‖x‖ ^ (1 - n)` restricted to `(closedBall 0 1)ᶜ`, which is
   -- not integrable there since `1 - n ≥ -n`.
-  have hd : 1 ≤ finrank ℝ E := finrank_pos
+  have hpow (x : E) : (‖x‖ ^ (finrank ℝ E - 1))⁻¹ = ‖x‖ ^ ((1 : ℝ) - finrank ℝ E) := by
+    rw [← neg_sub, Real.rpow_neg (norm_nonneg _), ← Real.rpow_natCast, Nat.cast_sub finrank_pos,
+      Nat.cast_one]
   have hf : (fun x => ‖fluxField θ x‖ * (closedBall (0 : E) 1)ᶜ.indicator 1 x) =
       (closedBall (0 : E) 1)ᶜ.indicator fun x => ‖x‖ ^ ((1 : ℝ) - finrank ℝ E) := by
     funext x
     by_cases hx : x ∈ (closedBall (0 : E) 1)ᶜ
-    · rw [Set.indicator_of_mem hx, Set.indicator_of_mem hx, Pi.one_apply, mul_one,
-        norm_fluxField_of_rOut_le (hθ.trans (by simpa using hx : 1 < ‖x‖).le), ← neg_sub,
-        Real.rpow_neg (norm_nonneg _), ← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one]
-    · rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem hx, mul_zero]
+    · simp [Set.indicator_of_mem hx, hpow,
+        norm_fluxField_of_rOut_le (hθ.trans (by simpa using hx : 1 < ‖x‖).le)]
+    · simp [Set.indicator_of_notMem hx]
   rw [hf, integrable_indicator_iff isClosed_closedBall.measurableSet.compl] at hint
   linarith [(integrableOn_norm_rpow_compl_closedBall_iff one_pos).1 hint]
 
