@@ -32,8 +32,8 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
   along the `p`-th root of the scalars.
 * `TauCeti.isRadical_iff_frobeniusEquiv_symm_mem`: an ideal is radical exactly when it contains
   the `p`-th roots of its elements.
-* `TauCeti.frobeniusEquiv_symm_sub_one_pow`: in characteristic `p`, `x ^ (1 / p) - 1` is a
-  `p`-th root of `x - 1`.
+* `TauCeti.frobeniusEquiv_symm_sub_one_pow`: in exponential characteristic `p`, `x ^ (1 / p) - 1`
+  is a `p`-th root of `x - 1`.
 * `Ideal.IsRadical.sup`, `Ideal.IsRadical.map`, `Ideal.IsRadical.map_inf`: sums of radical ideals
   are radical, and extension along a homomorphism of perfect rings preserves radical ideals and
   their intersections. The first fails for general rings: in `ℚ[x, y]` the sum of the radical
@@ -115,6 +115,12 @@ theorem frobeniusEquiv_symm_smul {A : Type*} [CommSemiring A] [ExpChar A p] [Per
       (frobeniusEquiv A p).symm a • (frobeniusEquiv R p).symm x := by
   rw [Algebra.smul_def, Algebra.smul_def, map_mul, RingHom.map_frobeniusEquiv_symm]
 
+/-- In a perfect ring of exponential characteristic `p`, `x ^ (1 / p) - 1` is a `p`-th root of
+`x - 1`. -/
+theorem frobeniusEquiv_symm_sub_one_pow {A : Type*} [CommRing A] [ExpChar A p] [PerfectRing A p]
+    (x : A) : ((frobeniusEquiv A p).symm x - 1) ^ p = x - 1 := by
+  rw [sub_pow_expChar_of_commute _ (Commute.one_right _), one_pow, frobeniusEquiv_symm_pow_p]
+
 variable (p) [Fact p.Prime]
 
 /-- In a perfect ring of prime characteristic `p`, an ideal is radical exactly when it contains
@@ -125,11 +131,6 @@ theorem isRadical_iff_frobeniusEquiv_symm_mem {I : Ideal R} :
   refine ⟨fun h x hx ↦ h _ ?_, fun h x hx ↦ ?_⟩
   · rwa [← frobenius_def, frobenius_apply_frobeniusEquiv_symm]
   · simpa using h _ hx
-
-/-- In a perfect ring of characteristic `p`, `x ^ (1 / p) - 1` is a `p`-th root of `x - 1`. -/
-theorem frobeniusEquiv_symm_sub_one_pow {A : Type*} [CommRing A] [CharP A p] [PerfectRing A p]
-    (x : A) : ((frobeniusEquiv A p).symm x - 1) ^ p = x - 1 := by
-  rw [sub_pow_char, one_pow, frobeniusEquiv_symm_pow_p]
 
 end TauCeti
 
