@@ -18,7 +18,9 @@ import TauCeti.Data.EReal.Operations
 Along a nontrivial filter, a large deviation principle at a given inverse speed determines its rate
 function: in a regular space two lower semicontinuous rate functions for the same family of
 measures at the same inverse speed coincide. For measures that eventually have total mass `1`,
-along a nontrivial filter, a good rate function vanishes somewhere.
+along a nontrivial filter, the rate function has infimum `0`, and a good rate function vanishes
+somewhere. On a set whose interior and closure carry the same infimum of the rate function, the
+two bounds of the principle meet, so the normalized logarithms of its measures converge.
 
 If the infimum of the rate function over a closed set `F` exceeds a real number `c`, the measure
 of `F` is eventually at most `exp (-c / ε i)`. If that infimum is positive and the inverse speed
@@ -37,8 +39,12 @@ on a thickening of `F`, as produced by exponentially equivalent families, pass t
 
 * `TauCeti.Probability.HasLDP.unique`: in a regular space, along a nontrivial filter, the rate
   function at a fixed inverse speed is unique.
+* `TauCeti.Probability.HasLDP.iInf_eq_zero`: for measures that eventually have total mass `1`,
+  along a nontrivial filter, the rate function has infimum `0`.
 * `TauCeti.Probability.HasLDP.exists_eq_zero`: for measures that eventually have total mass `1`,
   along a nontrivial filter, a good rate function has a zero.
+* `TauCeti.Probability.HasLDP.tendsto_log_measure`: on a set whose interior and closure carry the
+  same infimum of the rate function, `ε i * log (μ i s)` converges to `-inf_s I`.
 * `TauCeti.Probability.HasLDP.eventually_measure_le_of_lt_biInf`: if a real `c` is below the
   infimum of the rate function over a closed set `F`, then `μ i F` is eventually at most
   `exp (-c / ε i)`.
@@ -58,7 +64,7 @@ on a thickening of `F`, as produced by exponentially equivalent families, pass t
 ## References
 
 * A. Dembo, O. Zeitouni, *Large Deviations Techniques and Applications*, 2nd ed., Springer
-  (1998), §1.2, Lemma 4.1.4 and Lemma 4.1.6.
+  (1998), §1.2 (including (1.2.5)–(1.2.6)), Lemma 4.1.4 and Lemma 4.1.6.
 -/
 
 public section
@@ -104,10 +110,10 @@ theorem HasLDP.unique [RegularSpace X] [l.NeBot] (hI : HasLDP l ε μ I) (hJ : H
     I = J :=
   funext fun x => le_antisymm (hJ.le_of_hasLDP hI x) (hI.le_of_hasLDP hJ x)
 
-/-- For measures that eventually have total mass `1` along a nontrivial filter, a good rate
-function of a large deviation principle has a zero. -/
-theorem HasLDP.exists_eq_zero [l.NeBot] (h : HasLDP l ε μ I) (hI : IsGoodRateFunction I)
-    (hμ : ∀ᶠ i in l, μ i univ = 1) : ∃ x, I x = 0 := by
+/-- **Normalization of the rate function.** For measures that eventually have total mass `1`
+along a nontrivial filter, the rate function of a large deviation principle has infimum `0`. -/
+theorem HasLDP.iInf_eq_zero [l.NeBot] (h : HasLDP l ε μ I) (hμ : ∀ᶠ i in l, μ i univ = 1) :
+    ⨅ x, I x = 0 := by
   -- The whole space has rate `0`.
   have hlim : limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i univ)) l = 0 := by
     refine (limsup_congr ?_).trans (limsup_const (0 : EReal))
@@ -115,10 +121,34 @@ theorem HasLDP.exists_eq_zero [l.NeBot] (h : HasLDP l ε μ I) (hI : IsGoodRateF
     simp [hi]
   have hinf : ((⨅ x ∈ (univ : Set X), I x : ℝ≥0∞) : EReal) ≤ 0 := by
     simpa [hlim] using h.upper_bound univ isClosed_univ
-  have hzero : ⨅ x ∈ (univ : Set X), I x = 0 := by
-    exact_mod_cast le_antisymm hinf (EReal.coe_ennreal_nonneg _)
+  simpa using le_antisymm hinf (EReal.coe_ennreal_nonneg _)
+
+/-- For measures that eventually have total mass `1` along a nontrivial filter, a good rate
+function of a large deviation principle has a zero. -/
+theorem HasLDP.exists_eq_zero [l.NeBot] (h : HasLDP l ε μ I) (hI : IsGoodRateFunction I)
+    (hμ : ∀ᶠ i in l, μ i univ = 1) : ∃ x, I x = 0 := by
+  have hzero : ⨅ x ∈ (univ : Set X), I x = 0 := by simpa using h.iInf_eq_zero hμ
   obtain ⟨x, -, hx⟩ := hI.exists_eq_biInf isClosed_univ (hzero ▸ ENNReal.zero_ne_top)
   exact ⟨x, hx.trans hzero⟩
+
+/-- **The limit on continuity sets.** If the infima of the rate function over the interior and
+over the closure of a set `s` agree, then `ε i * log (μ i s)` tends to `-inf_s I`. The set `s`
+need not be measurable: `μ i s` is then its outer measure. -/
+theorem HasLDP.tendsto_log_measure (h : HasLDP l ε μ I) {s : Set X}
+    (hs : ⨅ x ∈ interior s, I x = ⨅ x ∈ closure s, I x) :
+    Tendsto (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i s)) l
+      (𝓝 (-((⨅ x ∈ s, I x : ℝ≥0∞) : EReal))) := by
+  -- The infimum over `s` lies between the infima over the closure and over the interior.
+  have hint : ⨅ x ∈ interior s, I x = ⨅ x ∈ s, I x :=
+    le_antisymm (hs.trans_le (biInf_mono subset_closure)) (biInf_mono interior_subset)
+  have hcl : ⨅ x ∈ closure s, I x = ⨅ x ∈ s, I x := hs.symm.trans hint
+  refine tendsto_of_le_liminf_of_limsup_le ?_ ?_
+  · rw [← hint]
+    exact (h.lower_bound _ isOpen_interior).trans
+      (ENNReal.liminf_coe_mul_log_mono (.of_forall fun i => measure_mono interior_subset))
+  · rw [← hcl]
+    exact (ENNReal.limsup_coe_mul_log_mono
+      (.of_forall fun i => measure_mono subset_closure)).trans (h.upper_bound _ isClosed_closure)
 
 /-- **Exponential decay on a closed set.** If a real number `c` is below the infimum of the rate
 function over a closed set `F`, the measure of `F` is eventually at most `exp (-c / ε i)`. The
