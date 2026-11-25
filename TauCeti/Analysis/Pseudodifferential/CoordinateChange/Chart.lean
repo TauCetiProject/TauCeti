@@ -90,7 +90,8 @@ variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace �
 the image of the support of `ψ`. -/
 private theorem support_subset_image_support
     {κ : OpenPartialHomeomorph (CoordinateSpace n) (CoordinateSpace n)}
-    {ψ : CoordinateSpace n → ℝ} {u v : CoordinateSpace n → V}
+    {ψ : CoordinateSpace n → ℝ} {M : Type*} [Zero M] [SMulWithZero ℝ M]
+    {u v : CoordinateSpace n → M}
     (hv : ∀ y ∈ κ.source, v (κ y) = ψ y • u y) (hv0 : ∀ z ∉ κ.target, v z = 0) :
     Function.support v ⊆ κ '' Function.support ψ := fun z hz ↦ by
   have hzt : z ∈ κ.target := by_contra fun h ↦ hz (hv0 z h)
@@ -102,8 +103,8 @@ image of the support of `ψ`. -/
 private theorem hasCompactSupport_and_tsupport_subset_image
     {κ : OpenPartialHomeomorph (CoordinateSpace n) (CoordinateSpace n)}
     {ψ : CoordinateSpace n → ℝ} (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ κ.source)
-    {u v : CoordinateSpace n → V} (hv : ∀ y ∈ κ.source, v (κ y) = ψ y • u y)
-    (hv0 : ∀ z ∉ κ.target, v z = 0) :
+    {M : Type*} [Zero M] [SMulWithZero ℝ M] {u v : CoordinateSpace n → M}
+    (hv : ∀ y ∈ κ.source, v (κ y) = ψ y • u y) (hv0 : ∀ z ∉ κ.target, v z = 0) :
     HasCompactSupport v ∧ tsupport v ⊆ κ '' tsupport ψ := by
   have hK : IsCompact (κ '' tsupport ψ) :=
     hψc.isCompact.image_of_continuousOn (κ.continuousOn.mono hψs)
@@ -174,6 +175,34 @@ private theorem exists_sum_eq
     simp only [σ, smul_eq_mul, κ.left_inv hy, hθψ y hψy]
     ring_nf
   · simp [hw, hv0 z hz]
+
+/-- **Transporting a cut-off Schwartz function.** For a cutoff `ψ` with compact support in the
+source of a partial diffeomorphism `κ` and a Schwartz function `u`, the function equal to
+`(ψ u) ∘ κ⁻¹` on the target of `κ` and to `0` off it is a Schwartz function. These are the inputs
+`v` of the changes of coordinates below. -/
+theorem exists_schwartzMap_apply_eq_smul
+    {κ : OpenPartialHomeomorph (CoordinateSpace n) (CoordinateSpace n)}
+    (hκ' : ContDiffOn ℝ ∞ κ.symm κ.target) {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ κ.source) (u : 𝓢(CoordinateSpace n, V)) :
+    ∃ v : 𝓢(CoordinateSpace n, V), (∀ y ∈ κ.source, v (κ y) = ψ y • u y) ∧
+      ∀ z ∉ κ.target, v z = 0 := by
+  -- The cutoff `ψ` transported to the target of `κ`, extended by `0`, has compact support there.
+  set ψ' : CoordinateSpace n → ℝ := κ.target.indicator (ψ ∘ κ.symm)
+  have hψ'κ : ∀ y ∈ κ.source, ψ' (κ y) = ψ y := fun y hy ↦ by
+    simp [ψ', indicator_of_mem (κ.map_source hy), κ.left_inv hy]
+  have hψ'0 : ∀ z ∉ κ.target, ψ' z = 0 := fun z hz ↦ indicator_of_notMem hz _
+  obtain ⟨hc, hsK⟩ := hasCompactSupport_and_tsupport_subset_image hψc hψs
+    (u := fun _ ↦ (1 : ℝ)) (v := ψ') (fun y hy ↦ by simp [hψ'κ y hy]) hψ'0
+  have hst : tsupport ψ' ⊆ κ.target :=
+    hsK.trans (image_subset_iff.2 fun y hy ↦ κ.map_source (hψs hy))
+  have hψ'd : ContDiffOn ℝ ∞ ψ' κ.target :=
+    (hψ.comp_contDiffOn hκ').congr fun z hz ↦ indicator_of_mem hz _
+  have hv : ContDiff ℝ ∞ fun z ↦ ψ' z • u (κ.symm z) :=
+    ((u.smooth ⊤).comp_contDiffOn hκ').contDiff_smul_of_tsupport_subset κ.open_target hψ'd hst
+  refine ⟨(hc.smul_right (f' := fun z ↦ u (κ.symm z))).toSchwartzMap hv, fun y hy ↦ ?_,
+    fun z hz ↦ ?_⟩
+  · simp [hψ'κ y hy, κ.left_inv hy]
+  · simp [hψ'0 z hz]
 
 variable [CompleteSpace V] [CompleteSpace W]
 

@@ -52,6 +52,8 @@ directions, boundary defining functions and the second fundamental form are read
   `TauCeti.inner_outwardUnitNormal_mfderiv_subtypeVal`: its three defining laws.
 * `TauCeti.eq_outwardUnitNormal_iff`: the three laws characterize it.
 * `TauCeti.orthogonalNormalSpace_subtypeVal_boundary_eq_span`: it spans the normal space.
+* `TauCeti.mgradient_neg_chartAt_normal_ne_zero`: at a boundary point, minus the normal coordinate
+  of a preferred chart has nonzero gradient.
 * `TauCeti.outwardUnitNormal_eq_normalize_mgradient`: its formula in any chart of the `C¹` maximal
   atlas.
 * `TauCeti.contMDiff_outwardUnitNormal`: it is a `C^k` map `∂M → TM` for a `C^k` metric.
@@ -139,7 +141,7 @@ private theorem eq_of_isOutwardUnitNormal {q : (𝓡∂ (n + 1)).boundary M}
 /-! ### The unit gradient of the normal coordinate of a preferred chart -/
 
 /-- At a boundary point, minus the normal coordinate of a preferred chart has nonzero gradient. -/
-private theorem mgradient_neg_chartAt_normal_ne_zero {α q : M}
+theorem mgradient_neg_chartAt_normal_ne_zero {α q : M}
     (hqb : q ∈ (𝓡∂ (n + 1)).boundary M)
     (hq : q ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source) :
     Manifold.mgradient (𝓡∂ (n + 1))
@@ -330,14 +332,9 @@ theorem RiemannianIsometry.mfderiv_outwardUnitNormal
       (isOutwardPointing_outwardUnitNormal q)
   · have hw := mfderiv_subtypeVal_mem_boundaryTangentSpace
       (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M') w
-    have hw' : mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-        (Subtype.val : (𝓡∂ (n + 1)).boundary M' → M') ⟨Φ q, Φ.apply_mem_boundary q.property⟩ w ∈
-        (boundaryTangentSpace q).map (mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q).toLinearMap := by
-      have hmap := map_mfderiv_boundaryTangentSpace (by simp) Φ.toDiffeomorph q
-      simp only [RiemannianIsometry.coe_toDiffeomorph] at hmap
-      rw [hmap]
-      exact hw
-    obtain ⟨u, hu, hu'⟩ := hw'
+    have hmap := map_mfderiv_boundaryTangentSpace (by simp) Φ.toDiffeomorph q
+    simp only [RiemannianIsometry.coe_toDiffeomorph] at hmap
+    obtain ⟨u, hu, hu'⟩ := hmap.ge hw
     rw [← hu']
     simp only [ContinuousLinearMap.coe_coe]
     rw [Φ.inner_mfderiv, inner_outwardUnitNormal_of_mem_boundaryTangentSpace hu]
