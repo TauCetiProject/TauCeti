@@ -241,6 +241,17 @@ theorem coe_supportedAddSingletonEquiv (hs : s = (P : Set M) + {m}) (g : AddMono
   erw [LinearEquiv.ofBijective_apply]
   rw [LinearMap.toSpanSingleton_apply, coe_smul_supportedModule, coe_basisSupported]
 
+/-- Changing coefficients commutes with the monomial frame of a translated submonoid. -/
+@[simp]
+theorem supportedMap_supportedAddSingletonEquiv {S : Type*} [Semiring S] (φ : R →+* S)
+    (hs : s = (P : Set M) + {m}) (g : AddMonoidAlgebra R P) :
+    supportedMap s φ (P.supportedAddSingletonEquiv hs g) =
+      P.supportedAddSingletonEquiv hs (mapRingHom P φ g) := by
+  apply Subtype.ext
+  simp only [coe_supportedMap, coe_supportedAddSingletonEquiv, ← coe_mapRingHom, map_mul,
+    mapRingHom_single, map_one]
+  rw [← RingHom.comp_apply, mapRingHom_comp_mapDomainRingHom, RingHom.comp_apply]
+
 /-- The inverse frame recovers the submonoid-algebra coordinate by multiplying by the
 inverse monomial in the ambient algebra. -/
 @[simp]

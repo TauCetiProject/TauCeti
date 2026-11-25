@@ -290,6 +290,16 @@ theorem coe_coneDivisorSectionsCartierEquiv
       mapDomainRingHom R (dualSemigroup Phi.lattice sigma.val).subtype g * single m 1 :=
   AddSubmonoid.coe_supportedAddSingletonEquiv _ _ g
 
+/-- Changing coefficients commutes with the Cartier frame on a chart. -/
+@[simp]
+theorem supportedMap_coneDivisorSectionsCartierEquiv {S : Type*} [Semiring S] (φ : R →+* S)
+    {sigma : Phi.cones} {a : Phi.Ray → ℤ} {m : N →+ ℤ}
+    (hm : ∀ rho : Phi.Ray, rho.toCone ≤ sigma → m rho.primitiveGenerator = -a rho)
+    (g : AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val)) :
+    supportedMap _ φ (coneDivisorSectionsCartierEquiv hm g) =
+      coneDivisorSectionsCartierEquiv hm (mapRingHom _ φ g) :=
+  AddSubmonoid.supportedMap_supportedAddSingletonEquiv _ φ _ g
+
 /-- The inverse Cartier frame recovers the chart coordinate by multiplying by the inverse
 monomial in the character algebra. -/
 @[simp]
