@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.TensorPower.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
+public import TauCeti.LinearAlgebra.PiTensorProduct.Map
 
 /-!
 # Basic operations on tensor powers
@@ -16,8 +17,8 @@ file records the inverse operation: `TensorPower.splitAt` cuts a tensor power of
 its first `k` factors, landing in `⨂[R]^k M ⊗[R] ⨂[R]^(n - k) M`, together with its value on pure
 tensors, the fact that it is injective, and the unit and associativity laws of the inverse of
 `TensorPower.mulEquiv`. It also identifies the first tensor power with the underlying module (and
-hence `⨂[R]^n M ⊗[R] M` with `⨂[R]^(n + 1) M`), and shows that `TensorPower.mulEquiv` is natural
-with respect to tensor-power maps.
+hence `⨂[R]^n M ⊗[R] M` with `⨂[R]^(n + 1) M`), describes tensor-power maps in degrees `0` and
+`1`, and shows that `TensorPower.mulEquiv` is natural with respect to tensor-power maps.
 
 ## Main definitions
 
@@ -29,6 +30,9 @@ with respect to tensor-power maps.
 
 * `TauCeti.TensorPower.mulEquiv_comp_map`: `TensorPower.mulEquiv` intertwines tensor-power maps
   with the tensor-power map of the appended family.
+* `TensorPower.algebraMap₀_symm_map`, `TensorPower.oneEquiv_map`: a tensor-power map along
+  `σ : R →+* S` is `σ` in degree `0` and its unique factor in degree `1`, under the
+  identifications of `⨂[R]^0 M` with `R` and of `⨂[R]^1 M` with `M`.
 * `TensorPower.lid_map_algebraMap₀_symm`, `TensorPower.rid_map_algebraMap₀_symm`: an empty
   block on either side is absorbed by the scalar identification of `⨂[R]^0 M`.
 * `TensorPower.mulEquiv_symm_assoc`: cutting a tensor power into three blocks does not depend on
@@ -158,6 +162,26 @@ theorem splitAt_tprod (n k : ℕ) (hk : k ≤ n) (x : Fin n → M) :
   refine Fin.addCases (fun j ↦ ?_) (fun j ↦ ?_) i <;>
     simp only [Function.comp_apply, Fin.append_left, Fin.append_right] <;>
     exact congrArg x (Fin.ext (by simp))
+
+/-- Under the scalar identifications `TensorPower.algebraMap₀`, every tensor-power map in degree
+`0` along `σ : R →+* S` is `σ`; for linear maps it is the identity of `R`. -/
+@[simp]
+theorem algebraMap₀_symm_map {S : Type*} [CommSemiring S] {σ : R →+* S} {N : Type*}
+    [AddCommMonoid N] [Module S N] (f : Fin 0 → M →ₛₗ[σ] N) (x : TensorPower R 0 M) :
+    algebraMap₀.symm (PiTensorProduct.map f x) = σ (algebraMap₀.symm x) := by
+  simp [algebraMap₀]
+
+variable {R M} in
+/-- Under the length-one identifications `TauCeti.TensorPower.oneEquiv`, a tensor-power map in
+degree `1` is its unique factor. -/
+@[simp]
+theorem oneEquiv_map {S : Type*} [CommSemiring S] {σ : R →+* S} {P : Type*} [AddCommMonoid P]
+    [Module S P] (f : Fin 1 → M →ₛₗ[σ] P) (x : TensorPower R 1 M) :
+    TauCeti.TensorPower.oneEquiv S P (PiTensorProduct.map f x) =
+      f 0 (TauCeti.TensorPower.oneEquiv R M x) := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r v => simp [Fin.fin_one_eq_zero]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- Identifying the empty left tensor block with scalars agrees with concatenation. -/
 theorem lid_map_algebraMap₀_symm (n : ℕ) (z : TensorPower R 0 M ⊗[R] TensorPower R n M) :

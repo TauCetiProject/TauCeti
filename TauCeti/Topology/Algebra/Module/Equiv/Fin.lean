@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.LinearAlgebra.Pi
+public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Splitting and regrouping finite coordinates
@@ -218,12 +219,11 @@ namespace ContinuousLinearEquiv
 variable {𝕜 M : Type*} [Semiring 𝕜] [AddCommMonoid M] [Module 𝕜 M] [TopologicalSpace M]
   {a b : ℕ}
 
-/-- Reindexing coordinates along an equality of lengths reads each coordinate at the cast index. -/
-@[simp]
+/-- Reindexing coordinates along an equality of lengths reads each coordinate at the cast index.
+Not `@[simp]`: `simp` proves it from `ContinuousLinearEquiv.piCongrLeft_const_apply`. -/
 theorem piCongrLeft_finCongr_apply (h : a = b) (x : Fin a → M) (i : Fin b) :
-    piCongrLeft 𝕜 (fun _ : Fin b ↦ M) (finCongr h) x i = x (Fin.cast h.symm i) := by
-  subst h
-  rfl
+    piCongrLeft 𝕜 (fun _ : Fin b ↦ M) (finCongr h) x i = x (Fin.cast h.symm i) :=
+  piCongrLeft_const_apply 𝕜 M (finCongr h) x i
 
 /-- The inverse of reindexing coordinates along `h` is reindexing along `h.symm`. -/
 @[simp]

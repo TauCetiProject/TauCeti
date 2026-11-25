@@ -7,9 +7,12 @@ module
 
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Noetherian
+import TauCeti.RingTheory.Noetherian.ULift
 public import TauCeti.Topology.NoetherianSpace.ConnectedComponents
+import Mathlib.AlgebraicGeometry.Properties
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.Topology.Irreducible
+import TauCeti.Topology.Sober
 
 /-!
 # Noetherianity under finite-type morphisms and fibres
@@ -27,6 +30,10 @@ hypothesis on `f`: over affine opens `Spec B ⟶ Spec R` it is `Spec (κ(p) ⊗[
 The underlying space of a locally Noetherian scheme is locally connected, since it is covered by
 the Noetherian spaces of its affine opens. In particular its connected components are open. For
 the same reason every irreducible component of a locally Noetherian scheme has nonempty interior.
+Hence a dense open of a locally Noetherian scheme contains the generic point of every irreducible
+component (`AlgebraicGeometry.Scheme.Opens.genericPoints_subset_of_dense`) and meets every
+irreducible component in a dense subset
+(`AlgebraicGeometry.Scheme.Opens.closure_inter_eq_of_dense`).
 -/
 
 public section
@@ -39,8 +46,6 @@ universe u
 
 /-- The terminal scheme is locally Noetherian since it is the spectrum of the integers. -/
 instance isLocallyNoetherian_terminal : IsLocallyNoetherian (Limits.terminal Scheme.{u}) := by
-  have : IsNoetherianRing (ULift.{u} ℤ) :=
-    isNoetherianRing_of_ringEquiv ℤ ULift.ringEquiv.symm
   let t : Spec (.of (ULift.{u} ℤ)) ⟶ Limits.terminal Scheme.{u} := Limits.terminal.from _
   have : IsIso t := Limits.isIso_of_isTerminal specULiftZIsTerminal Limits.terminalIsTerminal t
   exact isLocallyNoetherian_of_isOpenImmersion (inv t)
@@ -97,6 +102,28 @@ universe u
 instance isLocallyNoetherian_of_locallyOfFiniteType_terminal (X : Scheme.{u})
     [LocallyOfFiniteType (terminal.from X)] : IsLocallyNoetherian X :=
   LocallyOfFiniteType.isLocallyNoetherian (terminal.from X)
+
+/-- In a locally Noetherian scheme, a dense open contains the generic point of every irreducible
+component. -/
+theorem Opens.genericPoints_subset_of_dense {X : Scheme.{u}} [IsLocallyNoetherian X]
+    (U : X.Opens) (hU : Dense (U : Set X)) : genericPoints X ⊆ U :=
+  hU.genericPoints_subset_of_nonempty_interior
+    (fun _ hx ↦ TauCeti.AlgebraicGeometry.nonempty_interior_of_mem_irreducibleComponents
+      (TauCeti.bijOn_closure_singleton_genericPoints.mapsTo hx))
+    U.isOpen.stableUnderGeneralization
+
+/-- In a locally Noetherian scheme, a dense open `U` meets every irreducible component `C` in a
+dense subset of `C`. -/
+theorem Opens.closure_inter_eq_of_dense {X : Scheme.{u}} [IsLocallyNoetherian X]
+    (U : X.Opens) (hU : Dense (U : Set X)) {C : Set X} (hC : C ∈ irreducibleComponents X) :
+    closure ((U : Set X) ∩ C) = C := by
+  let C' : irreducibleComponents X := ⟨C, hC⟩
+  let η := genericPoints.ofComponent C'
+  have hηU : (η : X) ∈ U := U.genericPoints_subset_of_dense hU η.property
+  refine subset_antisymm ((closure_mono Set.inter_subset_right).trans
+    (isClosed_of_mem_irreducibleComponents C hC).closure_subset) ?_
+  exact Set.inter_comm C U ▸ subset_closure_inter_of_isPreirreducible_of_isOpen hC.1.2 U.isOpen
+    ⟨η, (genericPoints.isGenericPoint_ofComponent C').mem, hηU⟩
 
 end AlgebraicGeometry.Scheme
 

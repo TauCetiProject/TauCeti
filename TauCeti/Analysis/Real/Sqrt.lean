@@ -15,7 +15,8 @@ import Mathlib.Tactic.LinearCombination
 For `0 ≤ a`, multiplying by `(√a)⁻¹` and squaring divides the square by `a`:
 `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a`. This is the change of variables `x ↦ (√a)⁻¹ * x` that turns the
 kernel `1 + x ^ 2 / a` into `1 + y ^ 2`. A square factor comes out of a square root as its
-absolute value: `√(x ^ 2 * y) = |x| * √y`. Doubling the argument does not decrease the square
+absolute value: `√(x ^ 2 * y) = |x| * √y`, so a nonnegative factor `y` comes out against the
+quotient by it: `√(x * y) = y * √(x / y)`. Doubling the argument does not decrease the square
 root, with no sign hypothesis since `√x = 0` for `x ≤ 0`. Powers of `(√a)⁻¹` absorb integer
 powers of `a`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for `a > 0` and `2p ≤ n`, the
 normalisation that leaves a factor `(√N)⁻¹ ^ (n - 2p)` in a central limit theorem.
@@ -34,7 +35,8 @@ A real number `x` of the same sign as `c` is rescaled to `c` by the positive squ
 
 For nonnegative `a` and `b`, the geometric mean is at most the arithmetic mean,
 `√(ab) ≤ (a + b) / 2`, as `NNReal.sqrt_mul_le_half_add` states in `ℝ≥0`, and the square of
-`√a - √b` expands to `a + b - 2√(ab)`.
+`√a - √b` expands to `a + b - 2√(ab)`. An eventually nonnegative function tends to `0` along a
+filter exactly when its square root does.
 
 The square root is subadditive and `1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, and two displacement
 estimates compare the square-root and inverse-square-root functions with the identity near `1`.
@@ -42,19 +44,22 @@ These bounds control scalar spectral factors of positive operators close to the 
 rest on the factorisation `|√x - √y| (√x + √y) = |x - y|` for nonnegative `x` and `y`.
 
 The modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, and
-`|t / √(t² + p)| ≤ 1` for `p ≥ 0`. For `d ≠ 0` and `0 ≤ c`, a square factor cancels against its
-absolute value, `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`, as in changes of variables. For `p > 0` the
-substitution `t ↦ t + √(t² + p)` is positive and maps `ℝ` onto `(0, ∞)`, and for `c > 0` the map
-`y ↦ y (√(y² + c) − y)` is strictly increasing on `[0, ∞)`. For `a ≥ 0`, `{x | x² ≤ a}` is the
-interval `[-√a, √a]`, and for every `a`, `{x | a ≤ x²}` is a union of two rays. Finally, `c √u`
-tends to `0` as `u → 0` (and through positive values as `u → 0⁺` when `c > 0`), and
-`α / (β y + √(y² + c)) → 0` as `y → +∞` for `β ≠ -1`.
+`|t / √(t² + p)| ≤ 1` for `p ≥ 0`. The map `y ↦ y / √(1 - y²)` inverts `t ↦ t / √(1 + t²)`, and
+`y ↦ √(1 - y²) / y` recovers `|t|` from `1 / √(1 + t²)`. For `d ≠ 0` and `0 ≤ c`, a square
+factor cancels against its absolute value, `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`, as in changes of
+variables. For `p > 0` the substitution `t ↦ t + √(t² + p)` is positive and maps `ℝ` onto
+`(0, ∞)`, and for `c > 0` the map `y ↦ y (√(y² + c) − y)` is strictly increasing on `[0, ∞)`. For
+`a ≥ 0`, `{x | x² ≤ a}` is the interval `[-√a, √a]`, and for every `a`, `{x | a ≤ x²}` is a union
+of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive values as `u → 0⁺` when
+`c > 0`), `α / (β y + √(y² + c)) → 0` as `y → +∞` for `β ≠ -1`, and the forward difference
+`√x (√(x + 1) - √x)` tends to `1/2` as `x → ∞`.
 
 ## Main results
 
 * `Real.inv_sqrt_mul_sq`: `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a` for `0 ≤ a`.
 * `Real.sqrt_sq_mul`, `Real.sqrt_mul_sq`: `√(x ^ 2 * y) = |x| * √y` and
   `√(x * y ^ 2) = √x * |y|`.
+* `Real.sqrt_mul_eq_mul_sqrt_div`: `√(x * y) = y * √(x / y)` for `0 ≤ y`.
 * `Real.sqrt_le_sqrt_two_mul`: `√x ≤ √(2 * x)`.
 * `Real.inv_sqrt_pow_mul_pow`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for `0 < a` and `2p ≤ n`.
 * `Real.one_sub_sq_two_mul_sqrt_div_one_add`: the complementary square of `2√k / (1 + k)`.
@@ -77,6 +82,10 @@ tends to `0` as `u → 0` (and through positive values as `u → 0⁺` when `c >
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
 * `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
 * `Real.abs_div_sqrt_sq_add_le_one`: for `p ≥ 0` and every real `t`, `|t / √(t² + p)| ≤ 1`.
+* `Real.mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq`: `y ↦ y / √(1 - y²)` inverts
+  `t ↦ t / √(1 + t²)`.
+* `Real.sqrt_one_sub_sq_div_inv_sqrt_one_add_sq`: `y ↦ √(1 - y²) / y` recovers `|t|` from
+  `1 / √(1 + t²)`.
 * `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
 * `Real.sqrt_one_add_sq_sub_one_le_sq_div_two`: for every real `t`, `√(1 + t²) - 1 ≤ t² / 2`.
 * `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`: for all reals `a` and `b`,
@@ -97,9 +106,12 @@ tends to `0` as `u → 0` (and through positive values as `u → 0⁺` when `c >
   `c √u → 0⁺` as `u → 0⁺`.
 * `Real.tendsto_div_mul_add_sqrt_sq_add_atTop`: for `β ≠ -1`,
   `α / (β y + √(y² + c)) → 0` as `y → +∞`.
+* `Real.tendsto_sqrt_mul_sqrt_add_one_sub_sqrt`: `√x (√(x + 1) - √x) → 1/2` as `x → ∞`.
 * `Real.sq_sqrt_sub_sqrt`: `(√a - √b)² = a + b - 2√(ab)` for `0 ≤ a` and `0 ≤ b`.
 * `Real.sqrt_bounds_of_abs_sub_le`: `√y / r ≤ √x ≤ r √y` when `|x - y| ≤ (1 - r⁻²) y`
   and `1 ≤ r`.
+* `Real.tendsto_sqrt_nhds_zero_iff`: an eventually nonnegative function tends to `0` exactly when
+  its square root does.
 * `TauCeti.tendsto_sqrt_natCast_add_one_atTop`: `√(n + 1) → ∞` along the natural numbers, the
   divergence of the normalization of an `(n + 1) × (n + 1)` random matrix.
 
@@ -174,6 +186,16 @@ theorem sqrt_sq_mul (x y : ℝ) : √(x ^ 2 * y) = |x| * √y := by
 `√(x * y ^ 2) = √x * |y|`. -/
 theorem sqrt_mul_sq (x y : ℝ) : √(x * y ^ 2) = √x * |y| := by
   rw [sqrt_mul' _ (sq_nonneg _), sqrt_sq_eq_abs]
+
+/-- A nonnegative factor comes out of a square root against the quotient by it:
+`√(x * y) = y * √(x / y)` for `0 ≤ y`. Both sides vanish at `y = 0`. -/
+theorem sqrt_mul_eq_mul_sqrt_div (x : ℝ) {y : ℝ} (hy : 0 ≤ y) : √(x * y) = y * √(x / y) := by
+  rcases hy.eq_or_lt with rfl | hy
+  · simp
+  -- The factor `y` is the square root of `y ^ 2` in `x * y = y ^ 2 * (x / y)`.
+  have h : x * y = y ^ 2 * (x / y) := by
+    rw [sq, mul_assoc, mul_div_cancel₀ x hy.ne', mul_comm]
+  rw [h, sqrt_sq_mul, abs_of_pos hy]
 
 /-- Doubling the argument does not decrease the square root. There is no sign hypothesis: both
 sides vanish when `x ≤ 0`. -/
@@ -340,6 +362,26 @@ theorem abs_div_sqrt_sq_add_le_one {p : ℝ} (hp : 0 ≤ p) (t : ℝ) :
   rw [abs_div, abs_of_nonneg (sqrt_nonneg _)]
   exact div_le_one_of_le₀ (abs_le_sqrt (le_add_of_nonneg_right hp)) (sqrt_nonneg _)
 
+/-- The map `y ↦ y / √(1 - y²)` inverts `t ↦ t / √(1 + t²)` on every real `t`. -/
+theorem mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq (t : ℝ) :
+    t * (√(1 + t ^ 2))⁻¹ / √(1 - (t * (√(1 + t ^ 2))⁻¹) ^ 2) = t := by
+  have hs : 0 < (√(1 + t ^ 2))⁻¹ := inv_pos.2 (sqrt_pos.2 (by positivity))
+  have h : 1 - (t * (√(1 + t ^ 2))⁻¹) ^ 2 = (√(1 + t ^ 2))⁻¹ ^ 2 := by
+    rw [mul_pow, inv_pow, sq_sqrt (by positivity)]
+    field_simp
+    ring
+  rw [h, sqrt_sq hs.le, mul_div_assoc, div_self hs.ne', mul_one]
+
+/-- The map `y ↦ √(1 - y²) / y` recovers `|t|` from `1 / √(1 + t²)`, for every real `t`. -/
+theorem sqrt_one_sub_sq_div_inv_sqrt_one_add_sq (t : ℝ) :
+    √(1 - ((√(1 + t ^ 2))⁻¹) ^ 2) / (√(1 + t ^ 2))⁻¹ = |t| := by
+  have hs : 0 < (√(1 + t ^ 2))⁻¹ := inv_pos.2 (sqrt_pos.2 (by positivity))
+  have h : 1 - ((√(1 + t ^ 2))⁻¹) ^ 2 = (|t| * (√(1 + t ^ 2))⁻¹) ^ 2 := by
+    rw [mul_pow, inv_pow, sq_sqrt (by positivity), sq_abs]
+    field_simp
+    ring
+  rw [h, sqrt_sq (by positivity), mul_div_assoc, div_self hs.ne', mul_one]
+
 /-- The modular `√(1 + t²) - 1` grows at most linearly: `√(1 + t²) - 1 ≤ |t|`. -/
 theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| := by
   rw [sub_le_iff_le_add']
@@ -492,6 +534,24 @@ theorem tendsto_div_mul_add_sqrt_sq_add_atTop (α : ℝ) {β : ℝ} (hβ : β �
     rw [show y ^ 2 + c = y ^ 2 * (1 + c / y ^ 2) by field_simp, sqrt_sq_mul, abs_of_pos hy]
   simp only [Pi.div_apply, hs, div_div]
   ring
+
+/-- The forward difference of the square root is asymptotic to its derivative:
+`√x (√(x + 1) - √x) → 1/2` as `x → ∞`. -/
+theorem tendsto_sqrt_mul_sqrt_add_one_sub_sqrt :
+    Tendsto (fun x : ℝ => √x * (√(x + 1) - √x)) atTop (𝓝 (1 / 2)) := by
+  have hlim : Tendsto (fun x : ℝ => (√(1 + x⁻¹) + 1)⁻¹) atTop (𝓝 (1 / 2)) := by
+    have h := ((tendsto_inv_atTop_zero.const_add 1).sqrt.add_const 1).inv₀ (by norm_num)
+    norm_num at h
+    simpa [one_div] using h
+  refine hlim.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  have ha : 0 < √x := sqrt_pos.2 hx
+  have hq : √(1 + x⁻¹) = √(x + 1) / √x := by
+    rw [← sqrt_div (by linarith) x]
+    congr 1
+    field_simp
+  rw [hq, div_add_one ha.ne', inv_div, eq_comm, eq_div_iff (by positivity)]
+  linear_combination √x * (sq_sqrt (show 0 ≤ x + 1 by linarith) - sq_sqrt hx.le)
 
 end Limits
 
@@ -714,6 +774,15 @@ theorem exists_forall_sqrt_le_quadratic_add_cubic (d L₀ Q₀ C₀ : ℝ) (hd :
         nlinarith [mul_le_mul_of_nonneg_left hr2 hQ, mul_le_mul_of_nonneg_left hr3 hB]
   exact (Real.sqrt_le_sqrt hyz).trans
     (sqrt_expansion_bound hd hdc hr hr1 ha' hq' hδ he)
+
+open Filter Topology in
+/-- An eventually nonnegative real function tends to `0` exactly when its square root does. -/
+theorem tendsto_sqrt_nhds_zero_iff {α : Type*} {l : Filter α} {f : α → ℝ}
+    (hf : ∀ᶠ x in l, 0 ≤ f x) :
+    Tendsto (fun x ↦ √(f x)) l (𝓝 0) ↔ Tendsto f l (𝓝 0) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simpa using h.sqrt⟩
+  refine (by simpa using h.pow 2 : Tendsto (fun x ↦ √(f x) ^ 2) l (𝓝 0)).congr' ?_
+  filter_upwards [hf] with x hx using sq_sqrt hx
 
 end Real
 
