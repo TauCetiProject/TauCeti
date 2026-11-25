@@ -18,9 +18,9 @@ Among the monic integer polynomials `x^n + a₁ x^(n-1) + ⋯ + aₙ` with `|a�
 a rational root number at most `3^n (n + 2) X^(D-n+1) log X` for every `X ≥ 2`, where
 `D = n(n+1)/2` is the total weight of the box
 (`TauCeti.ncard_monicWeightedBox_rat_root_le`). The box itself has about `2^n X^D`
-elements, so a rational root saves a factor `X^(n-1)`, up to the logarithm. Polynomials with a
-rational root are reducible, and this bound controls part of the reducible locus that is
-discarded when monic polynomials are sieved by their discriminants.
+elements, so a rational root saves a factor `X^(n-1)`, up to the logarithm. In degree at least
+`2`, polynomials with a rational root are reducible, and this bound controls part of the
+reducible locus that is discarded when monic polynomials are sieved by their discriminants.
 
 By the rational root theorem a rational root is an integer `r` dividing the constant term
 `aₙ`. If `aₙ = 0`, the polynomial is `x` times a polynomial of the degree `n - 1` box. Otherwise
