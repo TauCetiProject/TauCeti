@@ -175,9 +175,8 @@ theorem index_complexifyL2 (T : X →L[ℝ] Y) : T.complexifyL2.index = T.index 
         (WithLp.linearEquiv 2 ℂ (Complexification X) :
           WithLp 2 (Complexification X) →ₗ[ℂ] Complexification X) := by
     ext z
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-      WithLp.coe_linearEquiv, WithLp.coe_symm_linearEquiv, ContinuousLinearMap.coe_coe]
-    exact WithLp.ofLp_injective 2 (ofLp_complexifyL2_apply T z)
+    exact WithLp.ofLp_injective 2 <| by
+      simp [ofLp_complexifyL2_apply, complexify_apply, LinearMap.complexify_apply]
   rw [← index_complexify, index_def, index_def, h, LinearMap.index_comp_equiv,
     LinearMap.index_equiv_comp]
 
