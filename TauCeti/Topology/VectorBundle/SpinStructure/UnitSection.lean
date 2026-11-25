@@ -140,11 +140,10 @@ omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F E] [VectorBundle 
 private theorem realCliffordForm_coords (hσ₁ : ∀ y, ‖σ y‖ = 1)
     (p : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P) :
     realCliffordForm (n + 1) 0 (coords s σ p) = 1 := by
-  have h := congrArg (· ^ 2) (((s.toFrame p).frame.symm.norm_map _).trans (hσ₁ _))
-  simp only [one_pow, EuclideanSpace.norm_sq_eq, Real.norm_eq_abs, sq_abs] at h
-  rw [realCliffordForm_apply, ← h]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [realCliffordWeight_of_lt (by simpa using i.isLt), one_mul, sq, coords]
+  have h := realCliffordForm_zero_euclideanSpaceEquiv_eq_norm_sq
+    ((s.toFrame p).frame.symm (σ (s.toFrame p).proj))
+  rw [PiLp.coe_continuousLinearEquiv, LinearIsometryEquiv.norm_map, hσ₁, one_pow] at h
+  rw [coords, h]
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F E] [VectorBundle ℝ F E]
   [ContinuousFiberNorm F E] in
