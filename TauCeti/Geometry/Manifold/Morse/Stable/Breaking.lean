@@ -419,12 +419,13 @@ the levels `max (f (u n)) c`, for `f a < c < f p`, converge to `w`, then `w` lie
 from `p` to `a`, on the level `c`: the orbits of the `u n` break at `a`, and their level points
 follow the first component. -/
 theorem mem_of_tendsto_upperLevelPoint_of_mem_unstableSet {hX : IsAdaptedPseudoGradient f X}
-    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p a y w : M} (hpa : p ≠ a)
+    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p a y w : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f a + 1)
     (hy : y ∈ hX.flow.unstableSet a) {c : ℝ} (hac : f a < c) (hcp : c < f p) {u : ℕ → M}
     (hu : ∀ n, u n ∈ hX.flow.unstableSet p) (hlim : Tendsto u atTop (𝓝 y))
     (hw : Tendsto (fun n ↦ hX.upperLevelPoint c (u n)) atTop (𝓝 w)) :
     w ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet a ∧ f w = c := by
+  have hpa : p ≠ a := by rintro rfl; omega
   have hcont : Continuous f := hX.mdifferentiable.continuous
   -- Flowing backward, the `u n` accumulate at a point `z ≠ a` of `W^s(a)`.
   obtain ⟨z, hz, hza, n, t, hn, -, hzlim⟩ :=
@@ -472,7 +473,7 @@ the levels `min (f (u n)) c`, for `f r < c < f b`, converge to `w`, then `w` lie
 from `b` to `r`, on the level `c`: the orbits of the `u n` break at `b`, and their level points
 follow the last component. -/
 theorem mem_of_tendsto_lowerLevelPoint_of_mem_stableSet {hX : IsAdaptedPseudoGradient f X}
-    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {b r y w : M} (hbr : b ≠ r)
+    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {b r y w : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f b = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
     (hy : y ∈ hX.flow.stableSet b) {c : ℝ} (hrc : f r < c) (hcb : c < f b) {u : ℕ → M}
     (hu : ∀ n, u n ∈ hX.flow.stableSet r) (hlim : Tendsto u atTop (𝓝 y))
@@ -484,7 +485,7 @@ theorem mem_of_tendsto_lowerLevelPoint_of_mem_stableSet {hX : IsAdaptedPseudoGra
     (hX.mfderiv_eq_zero_of_mem_stableSet hy)
   have hr := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
     (hX.mfderiv_eq_zero_of_mem_stableSet (hu 0))
-  have hrev := (h.neg hf).mem_of_tendsto_upperLevelPoint_of_mem_unstableSet hf.neg hbr.symm
+  have hrev := (h.neg hf).mem_of_tendsto_upperLevelPoint_of_mem_unstableSet hf.neg
     (hb.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hr hind)
     (by rwa [← hX.stableSet_eq_unstableSet_neg hf]) (neg_lt_neg hcb) (neg_lt_neg hrc)
     (fun n ↦ by rw [← hX.stableSet_eq_unstableSet_neg hf]; exact hu n) hlim

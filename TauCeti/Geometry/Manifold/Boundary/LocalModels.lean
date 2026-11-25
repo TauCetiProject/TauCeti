@@ -29,10 +29,10 @@ the counts of boundary points of compact one-dimensional manifolds from
 A half-open local model also transports between two ways of recording the points of a
 compactified space: along maps `ι` and `π` identifying a set `R` near a point `a` with the closure
 of a set `P` near `ι a`, a half-open model of `R` at `a` gives one of the closure of `P` at `ι a`
-(`TauCeti.exists_homeomorph_Ico_closure_of_homeomorph_Ico`). Its two steps are that a half-open
-arc stays near its endpoint on a shorter interval (`TauCeti.exists_pos_forall_lt_mem`) and that a
-continuous map on `[0, δ)` sending the positive points into `P` sends `0` into the closure of `P`
-(`TauCeti.mem_closure_of_forall_ne_zero`).
+(`TauCeti.exists_homeomorph_Ico_closure_of_homeomorph_Ico`). Its two steps are that a continuous
+map on `[0, δ)` stays near its value at `0` on a shorter interval
+(`TauCeti.exists_pos_forall_lt_mem`) and that a continuous map on `[0, δ)` sending the positive
+points into `P` sends `0` into the closure of `P` (`TauCeti.mem_closure_of_forall_ne_zero`).
 
 The second statement is the signed count of the endpoints of a compact oriented one-manifold,
 which makes the signed counts of broken trajectories cancel in the proof that the integral Morse
@@ -268,12 +268,13 @@ theorem ncard_eq_ncard_of_forall_exists_homeomorph_Ico [T2Space X]
     obtain ⟨t, ht0, hγt, hcomp⟩ := hγe s hs
     exact hcomp c (he t ht0 c hc (hγt ▸ hsc))
 
-/-- A half-open arc stays in any neighbourhood of its endpoint on a shorter interval `[0, ε)`. -/
-theorem exists_pos_forall_lt_mem {Y : Type*} [TopologicalSpace Y] {N U : Set Y} {δ : ℝ}
-    (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N) (hU : U ∈ 𝓝 (e ⟨0, left_mem_Ico.2 hδ⟩ : Y)) :
-    ∃ ε > 0, ∀ s : Ico (0 : ℝ) δ, (s : ℝ) < ε → (e s : Y) ∈ U := by
-  obtain ⟨V, hV, hVU⟩ := (mem_nhds_subtype _ _ _).1
-    ((continuous_subtypeVal.comp e.continuous).continuousAt.preimage_mem_nhds hU)
+/-- A continuous map on `[0, δ)` stays in any neighbourhood of its value at `0` on a shorter
+interval `[0, ε)`. -/
+theorem exists_pos_forall_lt_mem {Y : Type*} [TopologicalSpace Y] {U : Set Y} {δ : ℝ}
+    (hδ : 0 < δ) {g : Ico (0 : ℝ) δ → Y} (hg : Continuous g)
+    (hU : U ∈ 𝓝 (g ⟨0, left_mem_Ico.2 hδ⟩)) :
+    ∃ ε > 0, ∀ s : Ico (0 : ℝ) δ, (s : ℝ) < ε → g s ∈ U := by
+  obtain ⟨V, hV, hVU⟩ := (mem_nhds_subtype _ _ _).1 (hg.continuousAt.preimage_mem_nhds hU)
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hV
   refine ⟨ε, hε, fun s hs ↦ @hVU s (hball ?_)⟩
   rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_nonneg s.property.1]
@@ -322,7 +323,7 @@ theorem exists_homeomorph_Ico_closure_of_homeomorph_Ico {Y Z : Type*} [Topologic
   have haR : a ∈ R := he ▸ hNR (e _).property
   have hgR (s : Ico (0 : ℝ) δ) : g s ∈ R := hNR (e s).property
   -- On a shorter interval `[0, δ')`, the arc stays in `U`, so `ι` sends it into `P` but at `0`.
-  obtain ⟨ε, hε, hεU⟩ := exists_pos_forall_lt_mem hδ e (he.symm ▸ hU)
+  obtain ⟨ε, hε, hεU⟩ := exists_pos_forall_lt_mem hδ hg (he.symm ▸ hU)
   set δ' := min ε δ
   have hδ' : 0 < δ' := lt_min hε hδ
   let incl : Ico (0 : ℝ) δ' → Ico (0 : ℝ) δ := inclusion (Ico_subset_Ico_right (min_le_right _ _))

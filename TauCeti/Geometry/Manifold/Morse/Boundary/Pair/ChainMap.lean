@@ -307,18 +307,18 @@ private theorem closure_pairRecords_subset :
   · exact Or.inl ⟨y, hy, Prod.ext (hup hy.1).symm (Prod.ext rfl (hlow hy.2).symm)⟩
   · -- Breaking at the source, at a critical point `a` below the level `c₀`.
     obtain ⟨a, ⟨har, z, hz⟩, hya⟩ := mem_iUnion₂.1 hy
-    obtain ⟨hpa, hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀
+    obtain ⟨-, hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀
       (mem_criticalPoints_iff_mfderiv_eq_zero.2 (hX₀.mfderiv_eq_zero_of_mem_unstableSet hya.1))
       (by omega) hz
-    obtain ⟨hq₁, hq₁c⟩ := h₀.mem_of_tendsto_upperLevelPoint_of_mem_unstableSet hf₀ hpa
+    obtain ⟨hq₁, hq₁c⟩ := h₀.mem_of_tendsto_upperLevelPoint_of_mem_unstableSet hf₀
       (by omega) hya.1 hac hc₀ (fun n ↦ (hxS n).1) hx h₁q
     exact Or.inr (Or.inl ⟨a, by omega, har, hq₁, hq₁c, hya, hlow hya.2⟩)
   · -- Breaking at the target, at a critical point `b` above the level `c₁`.
     obtain ⟨b, ⟨hbp, z, hz⟩, hyb⟩ := mem_iUnion₂.1 hy
-    obtain ⟨hbr, hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁
+    obtain ⟨-, hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁
       (mem_criticalPoints_iff_mfderiv_eq_zero.2 (hX₁.mfderiv_eq_zero_of_mem_stableSet hyb.2))
       (by omega) hz
-    obtain ⟨hq₃, hq₃c⟩ := h₁.mem_of_tendsto_lowerLevelPoint_of_mem_stableSet hf₁ hbr
+    obtain ⟨hq₃, hq₃c⟩ := h₁.mem_of_tendsto_lowerLevelPoint_of_mem_stableSet hf₁
       (by omega) hyb.2 hc₁ hcb (fun n ↦ (hxS n).2) hx h₃q
     exact Or.inr (Or.inr ⟨b, by omega, by omega, hyb, hup hyb.1, hq₃, hq₃c⟩)
 
