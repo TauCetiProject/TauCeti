@@ -172,14 +172,6 @@ section Pullback
 
 variable {Y : AlgebraicGeometry.Scheme.{u}} (g : Y ⟶ X)
 
-/-- A morphism `g : Y ⟶ X` maps the points of `Y` outside the image of the base change
-`U ×_X Y ⟶ Y` of `j` to points of `X` outside the image of `j`. -/
-private lemma apply_notMem_range_j {y : Y} (hy : y ∉ Set.range (Limits.pullback.snd Q.j g)) :
-    g y ∉ Set.range Q.j := by
-  rintro ⟨u, hu⟩
-  obtain ⟨w, -, hw⟩ := AlgebraicGeometry.Scheme.Pullback.exists_preimage_pullback u y hu
-  exact hy ⟨w, hw⟩
-
 /-- **Base change of an elementary distinguished square** along `g : Y ⟶ X`: the open immersion
 `U ×_X Y ⟶ Y` and the étale morphism `V ×_X Y ⟶ Y`. Over the reduced closed complement `Z'` of
 `U ×_X Y`, the base change of `p` is the base change of the isomorphism `p⁻¹(Z) ⟶ Z` along the
@@ -197,8 +189,10 @@ noncomputable def pullback : ElementaryDistinguishedSquare Y where
       (Limits.pullback.snd Q.j g).opensRange.compl
     have hrange : Set.range (I'.subschemeι ≫ g) ⊆ (Q.j.opensRange.compl : Set X) := by
       rintro _ ⟨z, rfl⟩
-      have hz := (mem_range_subschemeι_vanishingIdeal_compl_iff _ _).1 ⟨z, rfl⟩
-      simpa using Q.apply_notMem_range_j g (by simpa using hz)
+      have hz : I'.subschemeι z ∉ Set.range (Limits.pullback.snd Q.j g) := by
+        simpa using (mem_range_subschemeι_vanishingIdeal_compl_iff _ _).1 ⟨z, rfl⟩
+      rw [AlgebraicGeometry.Scheme.Pullback.range_snd] at hz
+      simpa using hz
     have hker : I.subschemeι.ker ≤ (I'.subschemeι ≫ g).ker := by
       rw [AlgebraicGeometry.Scheme.IdealSheafData.ker_subschemeι]
       exact AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset _ hrange
