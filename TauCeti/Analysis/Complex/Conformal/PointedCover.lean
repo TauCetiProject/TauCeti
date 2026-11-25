@@ -9,10 +9,14 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Topology.Homotopy.Lifting
 import Mathlib.Analysis.Calculus.Deriv.CompMul
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
+import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Rotation
+import TauCeti.Analysis.Complex.UnitDisc.Basic
 import TauCeti.Analysis.Convex.SimplyConnected
+import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Topology.Covering.Homeomorph
 
 /-!
 # Pointed holomorphic universal covers by the unit disc
@@ -24,28 +28,35 @@ theory of these covers, which holds for every `Ω` admitting one; the existence 
 of a hyperbolic plane domain is the uniformization theorem and is not proved here.
 
 The cover is stored as a scalar function `ℂ → ℂ`, so that `deriv` and the other one-variable
-tools apply to it directly; its values off the unit disc play no role, and every statement below
-compares covers and lifts on the disc only.
+tools apply to it directly; its values off the unit disc play no role. Covers are compared on the
+unit disc, and lifts through a cover on their source set `U`, aside from the formula
+`PointedCover.ofBall_toFun`.
 
 ## Main declarations
 
 * `TauCeti.PointedCover Ω a`: a based holomorphic covering map of `Ω` by the unit disc.
+* `TauCeti.PointedCover.coverMap`: the cover as a covering map `Complex.UnitDisc → Ω`.
 * `TauCeti.PointedCover.deriv_ne_zero`: a pointed cover has nonvanishing derivative on the disc.
-* `TauCeti.PointedCover.exists_lift`: a holomorphic map of a simply connected open set into `Ω`
-  lifts through a pointed cover to a holomorphic map into the disc, with any prescribed lift of
-  one value.
-* `TauCeti.PointedCover.eqOn_of_comp_eqOn`: such lifts are unique.
-* `TauCeti.PointedCover.existsUnique_rotation`: two pointed covers of `Ω` at `a` differ by a
-  unique rotation of the source disc.
+* `TauCeti.PointedCover.exists_differentiableOn_lift`: a holomorphic map of a simply connected
+  open set `U` into `Ω` lifts through a pointed cover to a holomorphic map of `U` into the disc,
+  with any prescribed lift of one value; `PointedCover.exists_differentiableOn_lift_ball` is the
+  based lift of a holomorphic disc map.
+* `TauCeti.PointedCover.eqOn_of_comp_eqOn`: two continuous lifts of the same map on a
+  preconnected set `U` that agree at one point agree on `U`.
+* `TauCeti.PointedCover.rotate`: precomposing a pointed cover with a rotation of the disc gives a
+  pointed cover.
+* `TauCeti.PointedCover.existsUnique_eqOn_comp_const_mul`: two pointed covers of `Ω` at `a`
+  differ by a unique rotation of the source disc.
 * `TauCeti.PointedCover.norm_deriv_toFun_zero_eq`: consequently all pointed covers of `Ω` at `a`
   have the same derivative norm at the origin, so this norm is an invariant of `(Ω, a)`.
-* `TauCeti.PointedCover.ofBall`: the affine map `z ↦ c + r * z` is a pointed cover of the disc
-  `ball c r` at `c`.
+* `TauCeti.PointedCover.ofBall`: for `0 < r`, the affine map `z ↦ c + r * z` is a pointed cover
+  of the disc `ball c r` at `c`.
 
 ## References
 
-* F. Calegari, V. Dimitrov, Y. Tang, *The linear independence of 1, ζ(2), and L(2, χ₋₃)*,
-  §5.1 (the normalization of the universal cover after Lemma 5.1.2).
+* F. Calegari, V. Dimitrov, Y. Tang, *The unbounded denominators conjecture*, J. Amer. Math.
+  Soc. 38 (2025), 627–702, §5.1, p. 668 (the normalization of the universal cover after
+  Lemma 5.1.2).
 * A. Hatcher, *Algebraic Topology*, Propositions 1.33 and 1.34 (lifting of maps through
   covering spaces).
 -/
@@ -80,15 +91,33 @@ namespace PointedCover
 
 variable {Ω : Set ℂ} {a : ℂ} (F : PointedCover Ω a)
 
-/-- A continuous map of `U` into the unit disc, as a bundled map into `Complex.UnitDisc`. -/
-private def toUnitDisc {U : Set ℂ} {l : ℂ → ℂ} (hl : ContinuousOn l U)
-    (hm : MapsTo l U (ball 0 1)) : C(U, UnitDisc) :=
-  ⟨fun z ↦ UnitDisc.mk (l z) (mem_ball_zero_iff.1 (hm z.2)),
-    UnitDisc.isEmbedding_coe.continuous_iff.2 (continuousOn_iff_continuous_domRestrict.1 hl)⟩
+attribute [simp] map_zero
 
-/-- A pointed cover has nonvanishing derivative at every point of the unit disc: a covering map
-is locally injective, and a locally injective holomorphic map has nonzero derivative. -/
+/-- The base point of a pointed cover lies in `Ω`. -/
+theorem base_mem (F : PointedCover Ω a) : a ∈ Ω :=
+  F.map_zero ▸ F.mapsTo (mem_ball_self one_pos)
+
+/-- A pointed cover as a map from `Complex.UnitDisc` to the subtype `Ω`. -/
+def coverMap (z : UnitDisc) : Ω :=
+  ⟨F.toFun z, F.mapsTo (mem_ball_zero_iff.2 z.norm_lt_one)⟩
+
+@[simp]
+theorem coe_coverMap (z : UnitDisc) : (F.coverMap z : ℂ) = F.toFun z :=
+  (rfl)
+
+/-- The map `Complex.UnitDisc → Ω` of a pointed cover is a covering map. -/
+theorem isCoveringMap_coverMap : IsCoveringMap F.coverMap :=
+  F.isCoveringMap
+
+/-- The map `Complex.UnitDisc → Ω` of a pointed cover is surjective. -/
+theorem surjective_coverMap : Function.Surjective F.coverMap := fun w ↦ by
+  obtain ⟨z, hz, hzw⟩ := F.surjOn w.property
+  exact ⟨UnitDisc.mk z (mem_ball_zero_iff.1 hz), Subtype.ext hzw⟩
+
+/-- A pointed cover has nonvanishing derivative at every point of the unit disc. -/
 theorem deriv_ne_zero {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) : deriv F.toFun z ≠ 0 := by
+  -- A covering map is locally injective, and a locally injective holomorphic map has nonzero
+  -- derivative.
   obtain ⟨V, hVo, hzV, hinj⟩ := F.isCoveringMap.isLocalHomeomorph.isLocallyInjective
     (UnitDisc.mk z (mem_ball_zero_iff.1 hz))
   obtain ⟨W, hWo, rfl⟩ := UnitDisc.isEmbedding_coe.isInducing.isOpen_iff.1 hVo
@@ -103,98 +132,116 @@ theorem deriv_ne_zero {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) : deriv F.toFun z 
 /-- **Uniqueness of lifts.** Two continuous maps of a preconnected set `U` into the unit disc
 whose composites with a pointed cover agree on `U`, and which agree at one point of `U`, agree on
 all of `U`. -/
-theorem eqOn_of_comp_eqOn {U : Set ℂ} (hU : IsPreconnected U) {l₁ l₂ : ℂ → ℂ}
-    (h₁ : ContinuousOn l₁ U) (h₂ : ContinuousOn l₂ U)
+theorem eqOn_of_comp_eqOn {X : Type*} [TopologicalSpace X] {U : Set X} (hU : IsPreconnected U)
+    {l₁ l₂ : X → ℂ} (h₁ : ContinuousOn l₁ U) (h₂ : ContinuousOn l₂ U)
     (hm₁ : MapsTo l₁ U (ball 0 1)) (hm₂ : MapsTo l₂ U (ball 0 1))
-    (he : EqOn (F.toFun ∘ l₁) (F.toFun ∘ l₂) U) {z₀ : ℂ} (hz₀ : z₀ ∈ U)
+    (he : EqOn (F.toFun ∘ l₁) (F.toFun ∘ l₂) U) {z₀ : X} (hz₀ : z₀ ∈ U)
     (h₀ : l₁ z₀ = l₂ z₀) : EqOn l₁ l₂ U := by
   have := isPreconnected_iff_preconnectedSpace.1 hU
-  have := F.isCoveringMap.eq_of_comp_eq (toUnitDisc h₁ hm₁).continuous
-    (toUnitDisc h₂ hm₂).continuous (funext fun z ↦ Subtype.ext (he z.2)) ⟨z₀, hz₀⟩
-    (UnitDisc.coe_injective h₀)
+  have hc : ∀ {l : X → ℂ}, ContinuousOn l U → ∀ hm : MapsTo l U (ball 0 1),
+      Continuous fun z : U ↦ UnitDisc.mk (l z) (mem_ball_zero_iff.1 (hm z.property)) := fun hl _ ↦
+    UnitDisc.isEmbedding_coe.continuous_iff.2 (continuousOn_iff_continuous_domRestrict.1 hl)
+  have := F.isCoveringMap.eq_of_comp_eq (hc h₁ hm₁) (hc h₂ hm₂)
+    (funext fun z ↦ Subtype.ext (he z.property)) ⟨z₀, hz₀⟩ (UnitDisc.coe_injective h₀)
   exact fun z hz ↦ congrArg (fun g : U → UnitDisc ↦ (g ⟨z, hz⟩ : ℂ)) this
 
 /-- **Continuous lifting.** A continuous map `f` of a simply connected open set `U` into `Ω`
 lifts through a pointed cover of `Ω` to a continuous map of `U` into the unit disc, taking a
 prescribed value `w₀` over `f z₀` at `z₀`. -/
-theorem exists_continuousOn_lift {U : Set ℂ} (hUo : IsOpen U) (hU : IsSimplyConnected U)
-    {f : ℂ → ℂ} (hf : ContinuousOn f U) (hfU : MapsTo f U Ω) {z₀ w₀ : ℂ} (hz₀ : z₀ ∈ U)
-    (hw₀ : w₀ ∈ ball (0 : ℂ) 1) (hfz₀ : F.toFun w₀ = f z₀) :
-    ∃ l : ℂ → ℂ, ContinuousOn l U ∧ MapsTo l U (ball 0 1) ∧ l z₀ = w₀ ∧
+theorem exists_continuousOn_lift {X : Type*} [TopologicalSpace X] [LocallyPathConnectedSpace X]
+    {U : Set X} (hUo : IsOpen U) (hU : IsSimplyConnected U) {f : X → ℂ} (hf : ContinuousOn f U)
+    (hfU : MapsTo f U Ω) {z₀ : X} {w₀ : ℂ} (hz₀ : z₀ ∈ U) (hw₀ : w₀ ∈ ball (0 : ℂ) 1)
+    (hfz₀ : F.toFun w₀ = f z₀) :
+    ∃ l : X → ℂ, ContinuousOn l U ∧ MapsTo l U (ball 0 1) ∧ l z₀ = w₀ ∧
       EqOn (F.toFun ∘ l) f U := by
   classical
   have := hU.simplyConnectedSpace
   have := hUo.locallyPathConnectedSpace
   let fU : C(U, Ω) :=
-    ⟨fun z ↦ ⟨f z, hfU z.2⟩, (continuousOn_iff_continuous_domRestrict.1 hf).subtype_mk _⟩
+    ⟨fun z ↦ ⟨f z, hfU z.property⟩, (continuousOn_iff_continuous_domRestrict.1 hf).subtype_mk _⟩
   obtain ⟨L, ⟨hL₀, hL⟩, -⟩ := F.isCoveringMap.existsUnique_continuousMap_lifts fU ⟨z₀, hz₀⟩
     (UnitDisc.mk w₀ (mem_ball_zero_iff.1 hw₀)) (Subtype.ext hfz₀)
-  let l : ℂ → ℂ := fun z ↦ if hz : z ∈ U then (L ⟨z, hz⟩ : ℂ) else w₀
+  let l : X → ℂ := fun z ↦ if hz : z ∈ U then (L ⟨z, hz⟩ : ℂ) else w₀
   have hlL : ∀ z (hz : z ∈ U), l z = L ⟨z, hz⟩ := fun z hz ↦ by simp [l, hz]
   refine ⟨l, ?_, fun z hz ↦ ?_, ?_, fun z hz ↦ ?_⟩
   · rw [continuousOn_iff_continuous_domRestrict]
     convert UnitDisc.continuous_coe.comp L.continuous using 1
-    exact funext fun z ↦ hlL z z.2
+    exact funext fun z ↦ hlL z z.property
   · rw [hlL z hz, mem_ball_zero_iff]
     exact (L _).norm_lt_one
   · rw [hlL z₀ hz₀, hL₀, UnitDisc.coe_mk]
   · rw [Function.comp_apply, hlL z hz]
     exact congrArg Subtype.val (congrFun hL ⟨z, hz⟩)
 
-/-- **Holomorphy of lifts.** A continuous lift into the unit disc of a holomorphic map on an open
-set, through a pointed cover, is holomorphic: near each point it is a holomorphic local inverse of
-the cover composed with the map. -/
-theorem differentiableOn_of_comp {U : Set ℂ} (hUo : IsOpen U) {f l : ℂ → ℂ}
+/-- **Holomorphy of lifts.** A continuous lift into the unit disc, through a pointed cover, of a
+holomorphic map on a set `U` is holomorphic on `U`. -/
+theorem differentiableOn_of_comp_eqOn {U : Set ℂ} {f l : ℂ → ℂ}
     (hf : DifferentiableOn ℂ f U) (hl : ContinuousOn l U) (hm : MapsTo l U (ball 0 1))
     (he : EqOn (F.toFun ∘ l) f U) : DifferentiableOn ℂ l U := by
   intro z hz
-  have hw := hm hz
-  have hs := (F.differentiableOn.analyticAt (isOpen_ball.mem_nhds hw)).hasStrictDerivAt
-  have hd := F.deriv_ne_zero hw
-  -- A holomorphic local inverse `g` of the cover near `l z`.
-  obtain ⟨g, hg, hgF⟩ : ∃ g : ℂ → ℂ, DifferentiableAt ℂ g (F.toFun (l z)) ∧
-      ∀ᶠ y in 𝓝 (l z), g (F.toFun y) = y :=
-    ⟨_, (hs.to_localInverse hd).hasDerivAt.differentiableAt, hs.eventually_left_inverse hd⟩
-  rw [← Function.comp_apply (f := F.toFun), he hz] at hg
-  have hev : l =ᶠ[𝓝 z] g ∘ f := by
-    filter_upwards [(hl.continuousAt (hUo.mem_nhds hz)).eventually hgF, hUo.mem_nhds hz]
-      with y hy hyU
-    rw [Function.comp_apply, ← he hyU]
-    exact hy.symm
-  exact ((hg.comp z (hf.differentiableAt (hUo.mem_nhds hz))).congr_of_eventuallyEq
-    hev).differentiableWithinAt
+  have hd := F.deriv_ne_zero (hm hz)
+  have hF := (F.differentiableOn.differentiableAt
+    (isOpen_ball.mem_nhds (hm hz))).hasDerivAt.hasFDerivAt.hasFDerivWithinAt (s := univ)
+  refine (hF.of_comp_of_leftInverse (s := U) ?_ (hf z hz).hasFDerivWithinAt
+    (eventuallyEq_nhdsWithin_of_eqOn he)
+    (f'symm := .toSpanSingleton ℂ (deriv F.toFun (l z))⁻¹) (fun _ ↦ by simp [hd])
+    hz).differentiableWithinAt
+  simpa only [nhdsWithin_univ] using (hl z hz).tendsto
 
 /-- **Holomorphic lifting.** A holomorphic map `f` of a simply connected open set `U` into `Ω`
 lifts through a pointed cover of `Ω` to a holomorphic map of `U` into the unit disc, taking a
-prescribed value `w₀` over `f z₀` at `z₀`. For `U` the unit disc and `f 0 = a`, the choice
-`z₀ = w₀ = 0` gives the based lift; it is unique by `PointedCover.eqOn_of_comp_eqOn`. -/
-theorem exists_lift {U : Set ℂ} (hUo : IsOpen U) (hU : IsSimplyConnected U) {f : ℂ → ℂ}
-    (hf : DifferentiableOn ℂ f U) (hfU : MapsTo f U Ω) {z₀ w₀ : ℂ} (hz₀ : z₀ ∈ U)
+prescribed value `w₀` over `f z₀` at `z₀`. On a preconnected `U` this lift is unique on `U`, by
+`PointedCover.eqOn_of_comp_eqOn`. -/
+theorem exists_differentiableOn_lift {U : Set ℂ} (hUo : IsOpen U) (hU : IsSimplyConnected U)
+    {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f U) (hfU : MapsTo f U Ω) {z₀ w₀ : ℂ} (hz₀ : z₀ ∈ U)
     (hw₀ : w₀ ∈ ball (0 : ℂ) 1) (hfz₀ : F.toFun w₀ = f z₀) :
     ∃ l : ℂ → ℂ, DifferentiableOn ℂ l U ∧ MapsTo l U (ball 0 1) ∧ l z₀ = w₀ ∧
       EqOn (F.toFun ∘ l) f U := by
   obtain ⟨l, hl, hm, hl₀, he⟩ :=
     F.exists_continuousOn_lift hUo hU hf.continuousOn hfU hz₀ hw₀ hfz₀
-  exact ⟨l, F.differentiableOn_of_comp hUo hf hl hm he, hm, hl₀, he⟩
+  exact ⟨l, F.differentiableOn_of_comp_eqOn hf hl hm he, hm, hl₀, he⟩
 
-/-- Multiplication by a unimodular constant maps the unit disc to itself. -/
-private theorem mapsTo_const_mul_ball {ζ : ℂ} (hζ : ‖ζ‖ = 1) :
-    MapsTo (fun z ↦ ζ * z) (ball (0 : ℂ) 1) (ball 0 1) := fun z hz ↦ by
-  simpa [norm_mul, hζ] using hz
+/-- **Based holomorphic lifting.** A holomorphic map `f` of the unit disc into `Ω` with
+`f 0 = a` lifts through a pointed cover of `Ω` at `a` to a holomorphic self-map of the unit disc
+fixing `0`. This lift is unique on the unit disc, by `PointedCover.eqOn_of_comp_eqOn`. -/
+theorem exists_differentiableOn_lift_ball {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f (ball 0 1))
+    (hfΩ : MapsTo f (ball 0 1) Ω) (hf₀ : f 0 = a) :
+    ∃ l : ℂ → ℂ, DifferentiableOn ℂ l (ball 0 1) ∧ MapsTo l (ball 0 1) (ball 0 1) ∧ l 0 = 0 ∧
+      EqOn (F.toFun ∘ l) f (ball 0 1) :=
+  have h₀ : (0 : ℂ) ∈ ball (0 : ℂ) 1 := mem_ball_self one_pos
+  F.exists_differentiableOn_lift isOpen_ball ((convex_ball 0 1).isSimplyConnected ⟨0, h₀⟩) hf
+    hfΩ h₀ h₀ (F.map_zero.trans hf₀.symm)
+
+/-- Precomposing a pointed cover with the rotation `z ↦ u * z` of the unit disc, for `u` on the
+unit circle, gives a pointed cover. -/
+def rotate (u : Circle) : PointedCover Ω a where
+  toFun z := F.toFun (u * z)
+  differentiableOn := F.differentiableOn.comp (by fun_prop)
+    (mapsTo_smul_ball_zero_of_norm_le_one (Circle.norm_coe u).le 1)
+  mapsTo := F.mapsTo.comp (mapsTo_smul_ball_zero_of_norm_le_one (Circle.norm_coe u).le 1)
+  map_zero := by simp
+  isCoveringMap := F.isCoveringMap.comp_homeomorph (Homeomorph.smul u)
+  surjOn w hw := by
+    obtain ⟨z, hz, rfl⟩ := F.surjOn hw
+    refine ⟨u⁻¹ * z, mapsTo_smul_ball_zero_of_norm_le_one (Circle.norm_coe u⁻¹).le 1 hz, ?_⟩
+    simp
+
+@[simp]
+theorem rotate_toFun (u : Circle) : (F.rotate u).toFun = fun z ↦ F.toFun (u * z) :=
+  (rfl)
 
 /-- **Uniqueness of pointed covers.** Two pointed covers `F` and `G` of `Ω` at `a` differ by a
 unique rotation of the source disc: there is exactly one `ζ` with `‖ζ‖ = 1` and
 `G z = F (ζ * z)` on the unit disc. -/
-theorem existsUnique_rotation (G : PointedCover Ω a) :
+theorem existsUnique_eqOn_comp_const_mul (G : PointedCover Ω a) :
     ∃! ζ : ℂ, ‖ζ‖ = 1 ∧ EqOn G.toFun (fun z ↦ F.toFun (ζ * z)) (ball 0 1) := by
   have h₀ : (0 : ℂ) ∈ ball (0 : ℂ) 1 := mem_ball_self one_pos
-  have hB : IsSimplyConnected (ball (0 : ℂ) 1) := (convex_ball 0 1).isSimplyConnected ⟨0, h₀⟩
   have hBp : IsPreconnected (ball (0 : ℂ) 1) := (convex_ball 0 1).isPreconnected
   -- Lift `G` through `F` and `F` through `G`, both based at the origin.
-  obtain ⟨l, hl, hlm, hl₀, hFl⟩ := F.exists_lift isOpen_ball hB G.differentiableOn G.mapsTo h₀
-    h₀ (F.map_zero.trans G.map_zero.symm)
-  obtain ⟨m, hm, hmm, hm₀, hGm⟩ := G.exists_lift isOpen_ball hB F.differentiableOn F.mapsTo h₀
-    h₀ (G.map_zero.trans F.map_zero.symm)
+  obtain ⟨l, hl, hlm, hl₀, hFl⟩ :=
+    F.exists_differentiableOn_lift_ball G.differentiableOn G.mapsTo G.map_zero
+  obtain ⟨m, hm, hmm, hm₀, hGm⟩ :=
+    G.exists_differentiableOn_lift_ball F.differentiableOn F.mapsTo F.map_zero
   -- `m ∘ l` lifts `G` through itself and fixes the origin, so it is the identity.
   have hml : ∀ z ∈ ball (0 : ℂ) 1, m (l z) = z :=
     G.eqOn_of_comp_eqOn hBp (hm.continuousOn.comp hl.continuousOn hlm) continuousOn_id
@@ -207,62 +254,42 @@ theorem existsUnique_rotation (G : PointedCover Ω a) :
   refine ⟨c, ⟨hc, hGc⟩, ?_⟩
   -- Two rotations lifting `G` through `F` agree on the disc, hence have equal factors.
   rintro ζ ⟨hζ, hGζ⟩
-  have hζc := F.eqOn_of_comp_eqOn hBp (by fun_prop) (by fun_prop) (mapsTo_const_mul_ball hζ)
-    (mapsTo_const_mul_ball hc)
+  have hζc := F.eqOn_of_comp_eqOn hBp (by fun_prop) (by fun_prop)
+    (mapsTo_smul_ball_zero_of_norm_le_one hζ.le 1) (mapsTo_smul_ball_zero_of_norm_le_one hc.le 1)
     (fun z hz ↦ (hGζ hz).symm.trans (hGc hz)) h₀ (by simp)
     (show (2⁻¹ : ℂ) ∈ ball (0 : ℂ) 1 by norm_num [mem_ball_zero_iff])
   simpa using hζc
 
-/-- All pointed covers of `Ω` at `a` have the same derivative norm at the origin: they differ
-by a rotation of the source disc. -/
+/-- All pointed covers of `Ω` at `a` have the same derivative norm at the origin. -/
 theorem norm_deriv_toFun_zero_eq (G : PointedCover Ω a) :
     ‖deriv G.toFun 0‖ = ‖deriv F.toFun 0‖ := by
-  obtain ⟨ζ, ⟨hζ, hG⟩, -⟩ := F.existsUnique_rotation G
+  -- The two covers differ by a rotation of the source disc.
+  obtain ⟨ζ, ⟨hζ, hG⟩, -⟩ := F.existsUnique_eqOn_comp_const_mul G
   have hev : G.toFun =ᶠ[𝓝 0] fun z ↦ F.toFun (ζ * z) :=
     Filter.eventuallyEq_of_mem (isOpen_ball.mem_nhds (mem_ball_self one_pos)) hG
   rw [hev.deriv_eq, deriv_comp_mul_left]
   simp [hζ]
 
-/-- The affine map `z ↦ c + r * z` sends the unit disc into `ball c r`. -/
-private theorem add_mul_mem_ball (c : ℂ) {r : ℝ} (hr : 0 < r) {z : ℂ} (hz : ‖z‖ < 1) :
-    c + r * z ∈ ball c r := by
-  rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_mul, Complex.norm_real,
-    Real.norm_of_nonneg hr.le]
-  exact mul_lt_of_lt_one_right hr hz
-
-/-- The inverse affine map `w ↦ (w - c) / r` sends `ball c r` into the unit disc. -/
-private theorem norm_sub_div_lt_one {c w : ℂ} {r : ℝ} (hr : 0 < r) (hw : w ∈ ball c r) :
-    ‖(w - c) / r‖ < 1 := by
-  rw [norm_div, Complex.norm_real, Real.norm_of_nonneg hr.le, div_lt_one hr, ← dist_eq_norm]
-  exact hw
-
-/-- The affine map `z ↦ c + r * z` is a pointed cover of the disc `ball c r` at its centre. -/
+/-- For `0 < r`, the affine map `z ↦ c + r * z` is a pointed cover of the disc `ball c r` at its
+centre. -/
 noncomputable def ofBall (c : ℂ) {r : ℝ} (hr : 0 < r) : PointedCover (ball c r) c where
   toFun z := c + r * z
   differentiableOn := by fun_prop
-  mapsTo _ hz := add_mul_mem_ball c hr (mem_ball_zero_iff.1 hz)
+  mapsTo z hz := by
+    simpa [add_comm] using (OpenPartialHomeomorph.unitBallBall c r hr).map_source hz
   map_zero := by simp
   isCoveringMap := by
-    let e : UnitDisc ≃ₜ ball c r :=
-      { toFun z := ⟨c + r * z, add_mul_mem_ball c hr z.norm_lt_one⟩
-        invFun w := UnitDisc.mk ((w - c) / r) (norm_sub_div_lt_one hr w.2)
-        left_inv z := UnitDisc.coe_injective (by
-          simp [Complex.ofReal_ne_zero.2 hr.ne'])
-        right_inv w := Subtype.ext (by
-          simp [mul_div_cancel₀ _ (Complex.ofReal_ne_zero.2 hr.ne')])
-        continuous_toFun := by fun_prop
-        continuous_invFun := by
-          refine UnitDisc.isEmbedding_coe.continuous_iff.2 ?_
-          simp only [Function.comp_def, UnitDisc.coe_mk]
-          fun_prop }
-    have : T2Space UnitDisc := UnitDisc.isEmbedding_coe.t2Space
-    have := e.isClosedMap.isCoveringMapOn_of_isLocalHomeomorphOn
-      (s := univ) (fun x _ ↦ (subsingleton_singleton.preimage e.injective).finite)
-      e.isLocalHomeomorph.isLocalHomeomorphOn
-    exact isCoveringMap_iff_isCoveringMapOn_univ.2 this
+    let e : UnitDisc ≃ₜ ball c r := (Homeomorph.refl UnitDisc).trans
+      (OpenPartialHomeomorph.unitBallBall c r hr).toHomeomorphSourceTarget
+    convert e.isCoveringMap using 1
+    funext z
+    refine Subtype.ext ?_
+    change c + r * z = OpenPartialHomeomorph.unitBallBall c r hr z
+    simp [add_comm]
   surjOn w hw := by
-    refine ⟨(w - c) / r, mem_ball_zero_iff.2 (norm_sub_div_lt_one hr hw), ?_⟩
-    simp [mul_div_cancel₀ _ (Complex.ofReal_ne_zero.2 hr.ne')]
+    refine ⟨(OpenPartialHomeomorph.unitBallBall c r hr).symm w,
+      (OpenPartialHomeomorph.unitBallBall c r hr).map_target hw, ?_⟩
+    simpa [add_comm] using (OpenPartialHomeomorph.unitBallBall c r hr).right_inv hw
 
 /-- The scalar representative of `PointedCover.ofBall c hr` is `z ↦ c + r * z`. -/
 @[simp]
