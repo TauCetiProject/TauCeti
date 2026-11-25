@@ -27,10 +27,10 @@ tracial state `τ = tr₂` of `I`:
 The traciality of `τ` is what makes the extension tracial: for `I = A = M₂` the state
 `ω(x) = x₁₁`, the vector state of the first basis vector, is its own extension, and the step
 `ω((ea)(be)) = ω((be)(ea))` with `e = 1`, `a = e₁₂`, `b = e₂₁` would read `1 = 0`
-(`vectorState_mul_ne`).
+(`vectorFunctional_single_mul_ne`).
 -/
 
-@[expose] public section
+public section
 
 open Filter Topology PositiveContinuousLinearMap CStarMatrix
 open scoped ComplexOrder
@@ -52,12 +52,8 @@ theorem mem_I_iff (a : A) : a ∈ I ↔ a.2 = 0 :=
   TwoSidedIdeal.mem_ker _
 
 /-- `I = M₂ ⊕ 0` is closed. -/
-instance isClosed_I : IsClosed (I : Set A) := by
-  have : (I : Set A) = Prod.snd ⁻¹' {0} := by
-    ext a
-    exact mem_I_iff a
-  rw [this]
-  exact isClosed_singleton.preimage continuous_snd
+instance isClosed_I : IsClosed (I : Set A) :=
+  TwoSidedIdeal.isClosed_ker continuous_snd
 
 /-- The tracial state `γ(x, λ) = tr₂(x)` of `A`. -/
 noncomputable def traceFst : A →P[ℂ] ℂ :=
@@ -81,8 +77,9 @@ theorem traceFst_apply_coe (c : I) : traceFst c = trace c := by
 
 /-- `γ(x, λ) = tr₂(x)` is a tracial state of `A`. -/
 theorem isTracialState_traceFst : traceFst.IsTracialState :=
-  isTracialState_iff_map_one.mpr
-    ⟨by simp [normalizedTrace_one], fun a b ↦ by simp [normalizedTrace_mul_comm]⟩
+  IsTracialState.comp_of_surjective
+    (isTracialState_iff.mpr ⟨norm_normalizedTraceMap (Fin 2), normalizedTraceMap_mul_comm⟩)
+    (NonUnitalStarAlgHom.fst ℂ M₂ ℂ) Prod.fst_surjective
 
 /-- **`γ` vanishes at `(0, 1)`.** -/
 theorem traceFst_zero_one : traceFst ((0, 1) : A) = 0 := by
@@ -112,24 +109,22 @@ theorem trace_unit : trace unit = 1 := by
 
 /-- `‖e‖ = 1`. -/
 theorem norm_unit : ‖unit‖ = 1 := by
-  change ‖((1 : M₂), (0 : ℂ))‖ = 1
-  simp [Prod.norm_def]
+  rw [AddSubgroupClass.coe_norm]
+  simp [unit, Prod.norm_def]
 
 /-- **`τ = tr₂` is a tracial state of `I`.** -/
 theorem isTracialState_trace : IsTracialState (A := I) trace := by
-  refine isTracialState_iff.mpr ⟨le_antisymm ?_ ?_, fun a b ↦ ?_⟩
+  refine isTracialState_traceFst.comp_of_norm_eq_one I.starAlgHom (le_antisymm ?_ ?_)
   · refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun c ↦ ?_
     calc ‖trace c‖ = ‖traceFst (c : A)‖ := by rw [traceFst_apply_coe]
       _ ≤ 1 * ‖(c : A)‖ := by
         simpa [isTracialState_traceFst.norm_eq_one] using
           (traceFst : A →L[ℂ] ℂ).le_opNorm (c : A)
-      _ = 1 * ‖c‖ := rfl
+      _ = 1 * ‖c‖ := by rw [AddSubgroupClass.coe_norm]
   · have h := (trace : I →L[ℂ] ℂ).le_opNorm unit
     rw [norm_unit, mul_one] at h
-    have h1 : (trace : I →L[ℂ] ℂ) unit = 1 := trace_unit
+    have h1 : (trace : I →L[ℂ] ℂ) unit = 1 := by simpa using trace_unit
     rwa [h1, norm_one] at h
-  · simp only [← traceFst_apply_coe]
-    exact isTracialState_traceFst.map_mul_comm _ _
 
 /-- **Uniqueness of the extension.** Every positive functional of norm at most one on `A` that
 restricts to `τ` on `I` is `γ(x, λ) = tr₂(x)`. -/
@@ -141,7 +136,7 @@ theorem eq_traceFst_of_apply_coe_eq {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →
 
 /-- The tracial extension of `τ` given by
 `PositiveContinuousLinearMap.IsTracialState.existsUnique_isTracialState_apply_coe_eq` is `γ`. -/
-theorem existsUnique_isTracialState_eq_traceFst :
+theorem existsUnique_isTracialState_apply_coe_eq :
     ∃! γ : A →P[ℂ] ℂ, γ.IsTracialState ∧ ∀ c : I, γ c = trace c :=
   ⟨traceFst, ⟨isTracialState_traceFst, traceFst_apply_coe⟩, fun _ hγ ↦
     eq_traceFst_of_apply_coe_eq hγ.1.norm_eq_one.le hγ.2⟩
@@ -152,8 +147,7 @@ theorem isIncreasingApproximateUnit_pure_unit : (pure unit : Filter I).IsIncreas
   tendsto_mul_left c := by simpa [mul_unit] using tendsto_pure_nhds (c * ·) unit
   tendsto_mul_right c := by simpa [unit_mul] using tendsto_pure_nhds (· * c) unit
   eventually_nonneg := by
-    refine Filter.eventually_pure.mpr ?_
-    change (0 : A) ≤ ((1 : M₂), (0 : ℂ))
+    refine Filter.eventually_pure.mpr (Subtype.coe_le_coe.mp ?_)
     exact Prod.mk_le_mk.mpr ⟨zero_le_one, le_rfl⟩
   eventually_norm := Filter.eventually_pure.mpr norm_unit.le
 
@@ -179,7 +173,7 @@ abbrev e₂₁ : M₂ := CStarMatrix.ofMatrix (Matrix.single 1 0 1)
 
 /-- **Traciality of `τ` cannot be dropped.** The vector state `ω(x) = x₁₁` of `M₂` takes the value
 `1` at `e₁₂ e₂₁` and `0` at `e₂₁ e₁₂`. -/
-theorem vectorState_mul_ne :
+theorem vectorFunctional_single_mul_ne :
     vectorFunctional (Pi.single 0 1) (e₁₂ * e₂₁) ≠ vectorFunctional (Pi.single 0 1) (e₂₁ * e₁₂) :=
   by
   rw [vectorFunctional_single, vectorFunctional_single]
