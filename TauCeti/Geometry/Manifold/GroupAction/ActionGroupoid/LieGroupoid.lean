@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid
+public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid.Basic
 public import TauCeti.Geometry.Manifold.Groupoid.Basic
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
@@ -14,10 +14,13 @@ import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 Let a countable discrete group `G` act by smooth maps on a Hausdorff second-countable real smooth
 manifold `X`. With the étale smooth structure of
-`TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid`, whose object and arrow charts are both
-modelled on the model of `X`, Mathlib's native action category `CategoryTheory.ActionCategory G X`
-is a Lie groupoid (`TauCeti.ActionGroupoid.isLieGroupoid`). Every label is retained, including
-labels acting trivially on `X`.
+`TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid.Basic`, whose object and arrow charts are
+both modelled on the model of `X`, Mathlib's native action category
+`CategoryTheory.ActionCategory G X` is a Lie groupoid
+(`TauCeti.ActionGroupoid.isLieGroupoid_of_discreteTopology`). Every label is retained, including
+labels acting trivially on `X`. This differs from the scoped instance
+`TauCeti.ActionGroupoid.isLieGroupoid` of `GroupAction/ActionGroupoid/Lie.lean`, whose arrows are
+modelled on the product of the group and base models.
 
 The source map is a local diffeomorphism, hence a submersion. Composition is smooth on the
 transverse fibre product of target and source because composing smooth families of composable
@@ -53,7 +56,7 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless] [ContMDiffConstSMul I ∞ G 
 
 /-- The action groupoid of a countable discrete group acting by smooth maps on a Hausdorff
 second-countable smooth manifold is a Lie groupoid, with arrows modelled on the model of `X`. -/
-instance isLieGroupoid : IsLieGroupoid I I (ActionCategory G X) where
+instance isLieGroupoid_of_discreteTopology : IsLieGroupoid I I (ActionCategory G X) where
   isSubmersion_source := isSubmersion_source I G X
   contMDiff_unit := contMDiff_unit I ∞ G X
   contMDiff_inverse := contMDiff_inverse I ∞ G X
