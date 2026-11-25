@@ -162,6 +162,14 @@ theorem chartQuantization_eq_zero (a : Symbol n ℂ ℂ m) (φ ψ : 𝓓(⟨e.ta
 
 /-! ### Reading a chart quantization in another chart -/
 
+omit [ChartedSpace (CoordinateSpace n) M] [T2Space M] in
+/-- A point lies in the source of the transition map `e ∘ e'⁻¹` iff it lies in the target of `e'`
+and `e'⁻¹` sends it into the source of `e`. -/
+private theorem mem_symm_trans_source_iff {e' : OpenPartialHomeomorph M (CoordinateSpace n)}
+    {x : CoordinateSpace n} :
+    x ∈ (e'.symm.trans e).source ↔ x ∈ e'.target ∧ e'.symm x ∈ e.source := by
+  rw [trans_source, symm_source, mem_inter_iff, mem_preimage]
+
 include he in
 /-- The cutoff `φ' · (φ ∘ e ∘ e'⁻¹)` for two charts: it is smooth with compact support in the source
 of the transition map `κ = e ∘ e'⁻¹`, where it is `φ'(x) φ(κ x)`. -/
@@ -175,8 +183,7 @@ private theorem exists_transitionCutoff {e' : OpenPartialHomeomorph M (Coordinat
   refine ⟨h, contMDiff_iff_contDiff.1 h.contMDiff,
     e'.hasCompactSupport_cutoffPushforward he' φ' _,
     e.tsupport_cutoffPushforward_cutoffPullback_subset he he' φ' φ 1, fun x hx ↦ ?_⟩
-  rw [trans_source, symm_source] at hx
-  simp [h, cutoffPullback_apply_of_mem he _ _ hx.2]
+  simp [h, cutoffPullback_apply_of_mem he _ _ (mem_symm_trans_source_iff.1 hx).2]
 
 /-- **A chart quantization read in another chart.** Let `a` be a classical symbol of order `m`,
 `φ`, `ψ` cutoffs in the target of the chart `e`, and `φ'`, `ψ'` cutoffs in the target of another
@@ -222,13 +229,10 @@ theorem exists_quantizeSchwartzValue_eq_complexChartCompression_chartQuantizatio
   set v := e.schwartzCutoffPushforward he ψ g
   have hv : ∀ y ∈ κ.source, v (κ y) = Ψ y • u y := by
     intro y hy
-    have hy' := hy
-    rw [hκ, trans_source, symm_source] at hy'
+    have hy' := mem_symm_trans_source_iff.1 hy
     -- `κ y = e (e'⁻¹ y)`, sent back to `e'⁻¹ y` by `e⁻¹` and on to `y` by `e'`.
-    rw [hΨv y hy, schwartzCutoffPushforward_apply, hκ, coe_trans, Function.comp_apply,
-      e.left_inv hy'.2, complexCutoffPullback_apply_of_mem he' _ _ (e'.map_target hy'.1),
-      e'.right_inv hy'.1]
-    simp only [ContMDiffMap.coe_ofContDiff, Complex.real_smul, Complex.ofReal_mul]
+    simp [v, g, hΨv y hy, hκ, e.left_inv hy'.2,
+      complexCutoffPullback_apply_of_mem he' _ _ (e'.map_target hy'.1), e'.right_inv hy'.1]
     ring
   have hv0 : ∀ z ∉ κ.target, v z = 0 := by
     intro z hz
@@ -239,15 +243,12 @@ theorem exists_quantizeSchwartzValue_eq_complexChartCompression_chartQuantizatio
     · rw [complexCutoffPullback_apply_of_notMem he' _ _ hz, smul_zero]
   rw [← hop u v hv hv0 x, complexChartCompression_apply]
   by_cases hx : x ∈ κ.source
-  · have hx' := hx
-    rw [hκ, trans_source, symm_source] at hx'
+  · have hx' := mem_symm_trans_source_iff.1 hx
     rw [chartQuantization_apply_of_mem he _ _ _ _ hx'.2, hΦv x hx, smul_smul, hκ, coe_trans,
       Function.comp_apply]
   · rw [hΦ0 x hx, zero_smul]
     by_cases hx' : x ∈ e'.target
-    · have hxs : e'.symm x ∉ e.source := fun h ↦ hx <| by
-        rw [hκ, trans_source, symm_source]
-        exact ⟨hx', h⟩
+    · have hxs : e'.symm x ∉ e.source := fun h ↦ hx (mem_symm_trans_source_iff.2 ⟨hx', h⟩)
       rw [chartQuantization_apply_of_notMem he _ _ _ _ hxs, smul_zero]
     · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx' (φ'.tsupport_subset h), zero_smul]
 

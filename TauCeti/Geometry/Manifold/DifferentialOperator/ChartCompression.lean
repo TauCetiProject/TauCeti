@@ -160,12 +160,15 @@ supported in the support of a cutoff `ψ` in the chart target, is supported in t
 of the support of `ψ`. -/
 private theorem tsupport_indicator_comp_subset {F : Type*} [NormedAddCommGroup F]
     (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {w : E → F} (hw : tsupport w ⊆ tsupport ψ) :
-    tsupport (e.source.indicator (w ∘ e)) ⊆ e.symm '' tsupport ψ :=
-  -- The extended chart `e.extend 𝓘(ℝ, E)` is `e` by definition.
-  (e.tsupport_indicator_comp_extend_subset (I := 𝓘(ℝ, E))
+    tsupport (e.source.indicator (w ∘ e)) ⊆ e.symm '' tsupport ψ := by
+  have := e.tsupport_indicator_comp_extend_subset (I := 𝓘(ℝ, E))
     (ψ.hasCompactSupport.mono' ((subset_tsupport _).trans hw))
     (by rw [extend_target', modelWithCornersSelf_coe, image_id]
-        exact hw.trans ψ.tsupport_subset)).trans (image_mono hw)
+        exact hw.trans ψ.tsupport_subset)
+  -- The extended chart `e.extend 𝓘(ℝ, E)` is `e`, and its inverse is `e.symm`.
+  simp only [extend_coe, extend_coe_symm, modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm,
+    Function.comp_id, Function.id_comp] at this
+  exact this.trans (image_mono hw)
 
 /-- The pullback `(ψ f) ∘ e` is supported in the chart preimage of the support of `ψ`, a compact
 subset of the chart source. -/
