@@ -46,9 +46,9 @@ The estimate is local, and is assembled from two local estimates by compactness 
   boundary (`TauCeti.PDE.exists_holderOnWith_gradient_of_graph`) gives a representative of `∇u`
   that is `β`-Hölder and bounded on `closure Ω` near the point.
 * **Gluing.** Two of these local representatives are continuous on `closure Ω` where their balls
-  overlap and agree almost everywhere on `Ω` there, so they agree on `closure Ω` there. They glue
-  to one function on `closure Ω`, bounded by the local bounds on a finite subcover, and Hölder
-  on `closure Ω` by a Lebesgue number argument
+  overlap and agree almost everywhere on `Ω` there, so they agree on `closure Ω` there
+  (`IsOpen.eqOn_diag_of_forall_ae_eq`). They glue to one function on `closure Ω`, bounded by the
+  local bounds on a finite subcover, and Hölder on `closure Ω` by a Lebesgue number argument
   (`IsCompact.exists_holderOnWith_of_forall_holderOnWith_ball_inter`).
 
 The radii and constants of the local estimates depend only on the point, the boundary chart
@@ -230,36 +230,6 @@ private theorem exists_hasLocalGradientEstimate_of_graph {E : Type*} [NormedAddC
   exact ⟨g, hvu.trans hg, hgh.mono_const (Real.toNNReal_le_toNNReal hQ),
     fun y hy => (hgb y hy).trans hQ⟩
 
-/-- **Gluing the local representatives.** If for each `x ∈ closure Ω` the function `g x` agrees
-with `w` almost everywhere on `Ω ∩ B(x, ρ x)` and is Hölder on `closure Ω ∩ B(x, ρ x)`, then the
-function `y ↦ g y y` agrees with `g x` on `closure Ω ∩ B(x, ρ x)`: two such representatives are
-continuous on `closure Ω` where their balls meet and agree almost everywhere on `Ω` there. -/
-private theorem eqOn_diag_of_forall_ae_eq {β : ℝ≥0} (hβ : 0 < β)
-    {ρ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hρ : ∀ x ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 < ρ x)
-    {w : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    {g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1))}
-    (hae : ∀ x ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      w =ᵐ[volume.restrict ((Ω : Set _) ∩ ball x (ρ x))] g x)
-    {K : EuclideanSpace ℝ (Fin (n + 1)) → ℝ≥0}
-    (hhol : ∀ x ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      HolderOnWith (K x) β (g x) (closure (Ω : Set _) ∩ ball x (ρ x))) :
-    ∀ x ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      EqOn (fun y => g y y) (g x) (closure (Ω : Set _) ∩ ball x (ρ x)) := by
-  intro x hx y hy
-  -- Both representatives live on `closure Ω ∩ V`, where `V` is the intersection of the balls.
-  have hsub : ∀ z ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      ∀ {V : Set (EuclideanSpace ℝ (Fin (n + 1)))}, V ⊆ ball z (ρ z) →
-        ContinuousOn (g z) (closure (Ω : Set _) ∩ V) ∧
-          w =ᵐ[volume.restrict ((Ω : Set _) ∩ V)] g z := fun z hz V hV =>
-    ⟨((hhol z hz).continuousOn hβ).mono (inter_subset_inter_right _ hV),
-      ae_restrict_of_ae_restrict_of_subset (inter_subset_inter_right _ hV) (hae z hz)⟩
-  obtain ⟨hcy, hay⟩ := hsub y hy.1 (V := ball x (ρ x) ∩ ball y (ρ y)) inter_subset_right
-  obtain ⟨hcx, hax⟩ := hsub x hx (V := ball x (ρ x) ∩ ball y (ρ y)) inter_subset_left
-  exact IsOpen.eqOn_closure_inter_of_ae_eq Ω.isOpen (isOpen_ball.inter isOpen_ball) hcy hcx
-    (hay.symm.trans hax) ⟨hy.1, hy.2, mem_ball_self (hρ y hy.1)⟩
-
 /-- **The local estimate at every point of the closure**: at interior points by
 `exists_hasLocalGradientEstimate_of_mem`, and at boundary points, through their `C^{1,α}` charts,
 by `exists_hasLocalGradientEstimate_of_graph`. -/
@@ -350,7 +320,8 @@ theorem exists_holderOnWith_gradient_closure_of_forall_graph {E : Type*} [Normed
   set Q := KG + (eLpNorm f q (volume.restrict Ω)).toReal + ‖u‖
   have hQ : 0 ≤ Q := by positivity
   choose! g hgae hghol hgsup using fun x hx => hloc x hx hell haK hKa hGK hf hu
-  have hFeq := eqOn_diag_of_forall_ae_eq hβ hρ hgae hghol
+  have hFeq := Ω.isOpen.eqOn_diag_of_forall_ae_eq hρ hgae fun x hx =>
+    (hghol x hx).continuousOn hβ
   -- The glued function is bounded on `closure Ω` by the bounds on the finite subcover.
   have hFb : ∀ y ∈ s, ‖g y y‖ ≤ Cmax * Q := by
     intro y hy
