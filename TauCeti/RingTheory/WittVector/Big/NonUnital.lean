@@ -83,6 +83,10 @@ private theorem mem_augmentationKernel (y : BigWittVector S (Unitization ℤ R))
 noncomputable def toBigWitt : NonUnitalBigWittVector S R →ₙ+* BigWittVector S (Unitization ℤ R) :=
   NonUnitalSubringClass.subtype _
 
+/-- The kernel inclusion sends a vector to its underlying ambient Witt vector. -/
+theorem toBigWitt_apply (x : NonUnitalBigWittVector S R) : toBigWitt x = x.val :=
+  (rfl)
+
 /-- The kernel inclusion is injective. -/
 theorem toBigWitt_injective :
     Function.Injective
@@ -456,6 +460,12 @@ noncomputable def unitalEquiv : NonUnitalBigWittVector S C ≃+* BigWittVector S
     · simp [BigWittVector.coeff_eq_zero_of_notMem _ n hn]
   map_mul' := map_mul toUnital
   map_add' := map_add toUnital
+
+/-- The comparison with unital Witt vectors is induced by the unitization counit. -/
+theorem unitalEquiv_apply (x : NonUnitalBigWittVector S C) :
+    unitalEquiv x = BigWittVector.map (R := Unitization ℤ C) (R' := C)
+      (Unitization.lift (NonUnitalAlgHom.id ℤ C)).toRingHom (toBigWitt x) :=
+  (rfl)
 
 /-- The comparison with unital Witt vectors preserves coordinates. -/
 @[simp]
