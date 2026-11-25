@@ -108,9 +108,8 @@ derivative of a `C^r` function. -/
 theorem exists_mextDeriv_eq_of_simplyConnectedSpace [SimplyConnectedSpace M] {r : ℕ∞}
     (hr : 1 ≤ r) {φ : RoughForm I M F 1} (hφ : IsSmoothForm I r φ) (hclosed : mextDeriv φ = 0) :
     ∃ ψ : RoughForm I M F 0, IsSmoothForm I r ψ ∧ mextDeriv ψ = φ := by
-  obtain ⟨f, hf⟩ := exists_isPrimitiveOn_univ_of_simplyConnectedSpace fun x ↦
-    let ⟨g, _, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x
-    ⟨g, U, hxU, hgU⟩
+  obtain ⟨f, hf⟩ := exists_isPrimitiveOn_univ_of_simplyConnectedSpace
+    (forall_exists_isPrimitiveOn hr hφ hclosed)
   -- Near each point, the global primitive differs by a constant from a local `C^r` primitive.
   refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const (f := f) fun x ↦ ?_
   obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x

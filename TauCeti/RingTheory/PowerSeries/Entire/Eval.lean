@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Ring.InfiniteSum
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
 public import TauCeti.RingTheory.PowerSeries.EvalAt
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Evaluation of entire power series
@@ -114,9 +115,8 @@ theorem IsEntire.hasSum_evalAt [CompleteSpace A] (hf : f.IsEntire) (b : A) :
 /-- The truncations of an entire series `f`, evaluated at any `b` in a complete seminormed algebra,
 converge to `f(b)`. -/
 theorem IsEntire.tendsto_aeval_trunc [CompleteSpace A] (hf : f.IsEntire) (b : A) :
-    Tendsto (fun n ↦ Polynomial.aeval b (trunc n f)) atTop (𝓝 (f.evalAt b)) := by
-  simpa [Polynomial.aeval_def, eval₂_trunc_eq_sum_range, Algebra.smul_def] using
-    (hf.hasSum_evalAt b).tendsto_sum_nat
+    Tendsto (fun n ↦ Polynomial.aeval b (trunc n f)) atTop (𝓝 (f.evalAt b)) :=
+  (hf.hasSum_evalAt b).tendsto_sum_nat.congr fun n ↦ (aeval_trunc n f b).symm
 
 /-- Evaluation of entire series commutes with continuous algebra homomorphisms:
 `ψ (f(b)) = f(ψ b)`. -/

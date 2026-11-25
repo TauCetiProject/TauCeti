@@ -42,9 +42,8 @@ generating-set Følner and amenability characterizations:
 * `TauCeti.hasFoelnerSets_iff_sum_lt_of_closure_eq_top`,
   `TauCeti.hasFoelnerSets_iff_card_insert_one_smul_lt_of_closure_eq_top`: boundary-sum and
   Cayley-ball expansion criteria for a finite generating set `S : Finset G`.
-* `TauCeti.HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card_of_closure_eq_top`,
-  `TauCeti.Amenable.of_tendsto_card_smul_symmDiff_div_card_of_closure_eq_top`: Følner-net generator
-  criteria for `HasFoelnerSets` and topological `Amenable`.
+* `TauCeti.Amenable.of_tendsto_card_smul_symmDiff_div_card_of_closure_eq_top`: Følner-net generator
+  criterion for topological `Amenable`.
 * `TauCeti.hasFoelnerSets_iff_exists_seq_of_closure_eq_top`,
   `TauCeti.amenable_iff_exists_seq_of_closure_eq_top`: countable Følner-sequence generator
   characterizations.
@@ -147,23 +146,6 @@ theorem hasFoelnerSets_iff_card_insert_one_smul_lt_of_closure_eq_top [DecidableE
     linarith
 
 /-! ### Net and sequence generator criteria -/
-
-/-- Along a nontrivial filter, vanishing of `#((g • F i) ∆ F i) / #(F i)` on a generating set `S`
-for an eventually nonempty family `F` gives `HasFoelnerSets G`. -/
-@[to_additive HasAddFoelnerSets.of_tendsto_card_vadd_symmDiff_div_card_of_closure_eq_top
-/-- Along a nontrivial filter, vanishing of `#((g +ᵥ F i) ∆ F i) / #(F i)` on a generating set `S`
-for an eventually nonempty family `F` gives `HasAddFoelnerSets G`. -/]
-theorem HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card_of_closure_eq_top [DecidableEq G]
-    {S : Set G} (hS : Subgroup.closure S = ⊤) {ι : Type*} {l : Filter ι} [l.NeBot]
-    {F : ι → Finset G} (hne : ∀ᶠ i in l, (F i).Nonempty)
-    (hF : ∀ g ∈ S, Tendsto (fun i ↦ (#((g • F i) ∆ F i) : ℝ) / #(F i)) l (𝓝 0)) :
-    HasFoelnerSets G := by
-  rw [hasFoelnerSets_iff_of_closure_eq_top hS]
-  intro K hKS ε hε
-  have hev : ∀ᶠ i in l, ∀ g ∈ K, (#((g • F i) ∆ F i) : ℝ) / #(F i) < ε :=
-    (eventually_all_finset K).2 fun g hg ↦ (hF g (hKS hg)).eventually (gt_mem_nhds hε)
-  obtain ⟨i, hni, hi⟩ := (hne.and hev).exists
-  exact ⟨F i, hni, fun g hg ↦ (div_lt_iff₀ (by exact_mod_cast hni.card_pos)).1 (hi g hg)⟩
 
 /-- Along a nontrivial filter, vanishing of `#((g • F i) ∆ F i) / #(F i)` on a generating set `S`
 for an eventually nonempty family `F` makes `G` amenable for every group topology. -/

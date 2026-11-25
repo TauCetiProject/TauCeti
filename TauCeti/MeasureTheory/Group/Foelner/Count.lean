@@ -8,8 +8,8 @@ module
 public import Mathlib.Data.Set.Card
 public import Mathlib.MeasureTheory.Measure.Count
 public import TauCeti.MeasureTheory.Group.Foelner.Basic
+public import TauCeti.MeasureTheory.Measure.Count.Action
 import TauCeti.Data.ENNReal.NatCastDiv
-import TauCeti.MeasureTheory.Measure.Count.Action
 import TauCeti.MeasureTheory.Measure.Count.Basic
 
 /-!
@@ -24,9 +24,9 @@ and `maxFoelner` for `Measure.count` with `Set.ncard` ratios and finite-test cri
 
 ## Main results
 
-* `MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard`: for a finite nonempty
-  `F : Set X`, the counting-measure Følner ratio is below `ENNReal.ofReal ε` iff
-  `(((m • F) ∆ F).ncard : ℝ) < ε * F.ncard`.
+* `MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard`,
+  `MeasureTheory.Measure.forall_exists_count_smul_symmDiff_div_lt_iff`: for finite nonempty
+  `F : Set X`, counting-measure Følner tests agree with real `Set.ncard` tests.
 * `MeasureTheory.Measure.ncard_smul_symmDiff_div_ncard_le_count_div_count`,
   `IsFoelner.tendsto_ncard_smul_symmDiff_div_ncard`: real `Set.ncard` ratios of a counting-measure
   Følner family are bounded by counting-measure ratios and tend to zero.
@@ -61,6 +61,39 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard
   have hsd : ((m • F) ∆ F).Finite := (hfin.smul_set).symmDiff hfin
   rw [Measure.count_apply_eq_ncard hsd, Measure.count_apply_eq_ncard hfin]
   exact ENNReal.natCast_div_natCast_lt_ofReal_iff ((Set.ncard_pos hfin).2 hne)
+
+/-- Passing the counting-measure Følner test on `K` for all nonzero tolerances `ε : ℝ≥0∞` is
+equivalent to passing the real `Set.ncard` test on `K` for all `ε > 0`. -/
+@[to_additive forall_exists_count_vadd_symmDiff_div_lt_iff
+/-- Passing the counting-measure additive Følner test on `K` for all nonzero tolerances
+`ε : ℝ≥0∞` is equivalent to passing the real `Set.ncard` test on `K` for all `ε > 0`. -/]
+theorem MeasureTheory.Measure.forall_exists_count_smul_symmDiff_div_lt_iff
+    [MeasurableSingletonClass X] {M : Type*} [SMul M X] (K : Finset M) :
+    (∀ ε : ℝ≥0∞, ε ≠ 0 →
+        ∃ F : Set X, MeasurableSet F ∧ Measure.count F ≠ 0 ∧ Measure.count F ≠ ∞ ∧
+          ∀ m ∈ K, Measure.count ((m • F) ∆ F) / Measure.count F < ε) ↔
+      ∀ ε : ℝ, 0 < ε →
+        ∃ F : Set X, F.Finite ∧ F.Nonempty ∧
+          ∀ m ∈ K, (((m • F) ∆ F).ncard : ℝ) < ε * F.ncard := by
+  constructor
+  · intro h ε hε
+    obtain ⟨F, hFm, h0, htop, hFK⟩ := h (ENNReal.ofReal ε) (ENNReal.ofReal_pos.2 hε).ne'
+    have hfin : F.Finite := (Measure.count_apply_lt_top' hFm).1 (lt_top_iff_ne_top.2 htop)
+    have hne : F.Nonempty := by
+      simpa [← Set.ne_empty_iff_nonempty] using mt Measure.count_eq_zero_iff.2 h0
+    exact ⟨F, hfin, hne, fun m hm ↦
+      (Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard hfin hne m).1 (hFK m hm)⟩
+  · intro h ε hε
+    obtain ⟨δ, hδ0, hδε⟩ : ∃ δ : ℝ, 0 < δ ∧ ENNReal.ofReal δ ≤ ε := by
+      rcases eq_or_ne ε ∞ with rfl | htop
+      · exact ⟨1, zero_lt_one, le_top⟩
+      · exact ⟨ε.toReal, ENNReal.toReal_pos hε htop, (ENNReal.ofReal_toReal htop).le⟩
+    obtain ⟨F, hfin, hne, hFK⟩ := h δ hδ0
+    refine ⟨F, hfin.measurableSet, ?_, ?_, fun m hm ↦ ?_⟩
+    · simpa [← Set.ne_empty_iff_nonempty] using hne
+    · exact (Measure.count_apply_lt_top.2 hfin).ne
+    · exact ((Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard hfin hne m).2
+        (hFK m hm)).trans_le hδε
 
 /-- The counting-measure Følner ratio of a finite measurable set bounds its `Set.ncard` ratio from
 above, without requiring `[MeasurableSingletonClass X]` or `[DecidableEq X]`. -/
@@ -111,28 +144,8 @@ theorem maxFoelner_count_neBot_iff_of_closure_eq_top [MeasurableSingletonClass X
       ∀ K : Finset G, (K : Set G) ⊆ S → ∀ ε : ℝ, 0 < ε →
         ∃ F : Set X, F.Finite ∧ F.Nonempty ∧
           ∀ g ∈ K, (((g • F) ∆ F).ncard : ℝ) < ε * F.ncard := by
-  have := Measure.smulInvariantMeasure_count (G := G) (X := X)
   rw [maxFoelner_neBot_iff_of_closure_eq_top hS]
-  constructor
-  · intro h K hKS ε hε
-    obtain ⟨F, hFm, h0, htop, hFK⟩ := h K hKS (ENNReal.ofReal ε)
-      (ENNReal.ofReal_pos.2 hε).ne'
-    have hfin : F.Finite := (Measure.count_apply_lt_top' hFm).1 (lt_top_iff_ne_top.2 htop)
-    have hne : F.Nonempty := by
-      simpa [← Set.ne_empty_iff_nonempty] using mt Measure.count_eq_zero_iff.2 h0
-    exact ⟨F, hfin, hne, fun g hg ↦
-      (Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard hfin hne g).1 (hFK g hg)⟩
-  · intro h K hKS ε hε
-    obtain ⟨δ, hδ0, hδε⟩ : ∃ δ : ℝ, 0 < δ ∧ ENNReal.ofReal δ ≤ ε := by
-      rcases eq_or_ne ε ∞ with rfl | htop
-      · exact ⟨1, zero_lt_one, le_top⟩
-      · exact ⟨ε.toReal, ENNReal.toReal_pos hε htop, (ENNReal.ofReal_toReal htop).le⟩
-    obtain ⟨F, hfin, hne, hFK⟩ := h K hKS δ hδ0
-    refine ⟨F, hfin.measurableSet, ?_, ?_, fun g hg ↦ ?_⟩
-    · simpa [← Set.ne_empty_iff_nonempty] using hne
-    · exact (Measure.count_apply_lt_top.2 hfin).ne
-    · exact ((Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard hfin hne g).2
-        (hFK g hg)).trans_le hδε
+  exact forall₂_congr fun K _ ↦ Measure.forall_exists_count_smul_symmDiff_div_lt_iff K
 
 /-- Finite-`Set` characterization of `(maxFoelner G Measure.count).NeBot` on any space with
 measurable singletons. -/

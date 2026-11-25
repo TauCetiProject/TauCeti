@@ -46,6 +46,8 @@ additive counterparts `IsAddFoelner` and `maxAddFoelner`):
   criterion for `IsFoelner`.
 * `TauCeti.maxFoelner_eq_of_closure_eq_top`: `maxFoelner G μ` is determined by a generating set of
   `G`.
+* `TauCeti.exists_isFoelner_atTop_of_closure_eq_top`: finite tests on subsets of a generating set
+  `S` yield a Følner family indexed by `Finset S × ℕ` along `atTop`.
 * `TauCeti.maxFoelner_neBot_iff_of_closure_eq_top`, `TauCeti.maxFoelner_neBot_iff`: finite-test
   characterizations of `(maxFoelner G μ).NeBot`.
 
@@ -326,6 +328,53 @@ theorem maxFoelner_eq_of_closure_eq_top [SMulInvariantMeasure G X μ] {S : Set G
     (Filter.Eventually.mono hmem fun _ h ↦ h.2.2) fun g hg ↦ ?_)
   exact tendsto_comap.mono_left (inf_le_right.trans <| iInf₂_le g hg)
 
+/-- From finite translation-boundary tests on subsets of `S`, construct a family indexed by
+`Finset S × ℕ` of measurable sets of finite nonzero measure tending along `atTop` to the
+`S`-restricted Følner filter. -/
+@[to_additive exists_tendsto_addFoelnerFilter_atTop]
+private theorem exists_tendsto_foelnerFilter_atTop {S : Set G}
+    (h : ∀ K : Finset G, (K : Set G) ⊆ S → ∀ ε : ℝ≥0∞, ε ≠ 0 →
+      ∃ s : Set X, MeasurableSet s ∧ μ s ≠ 0 ∧ μ s ≠ ∞ ∧
+        ∀ g ∈ K, μ ((g • s) ∆ s) / μ s < ε) :
+    ∃ F : Finset S × ℕ → Set X,
+      (∀ i, MeasurableSet (F i) ∧ μ (F i) ≠ 0 ∧ μ (F i) ≠ ∞) ∧
+        Tendsto F atTop (𝓟 {s : Set X | MeasurableSet s ∧ μ s ≠ 0 ∧ μ s ≠ ∞} ⊓
+          ⨅ g ∈ S, comap (fun s ↦ μ ((g • s) ∆ s) / μ s) (𝓝 0)) := by
+  classical
+  choose F hmeas hne0 hnetop hlt using fun i : Finset S × ℕ ↦
+    h (i.1.image Subtype.val) (by simp) ((i.2 + 1 : ℕ) : ℝ≥0∞)⁻¹ (by simp)
+  refine ⟨F, fun i ↦ ⟨hmeas i, hne0 i, hnetop i⟩, tendsto_inf.2
+    ⟨tendsto_principal.2 (.of_forall fun i ↦ ⟨hmeas i, hne0 i, hnetop i⟩),
+      tendsto_iInf.2 fun g ↦ tendsto_iInf.2 fun hg ↦ tendsto_comap_iff.2 ?_⟩⟩
+  have hsnd : Tendsto (fun i : Finset S × ℕ ↦ i.2 + 1) atTop atTop :=
+    tendsto_atTop_atTop_of_monotone
+      (fun _ _ hij ↦ Nat.add_le_add_right (Prod.le_def.1 hij).2 1)
+      fun n ↦ ⟨(∅, n), Nat.le_add_right n 1⟩
+  have hbound : Tendsto (fun i : Finset S × ℕ ↦ ((i.2 + 1 : ℕ) : ℝ≥0∞)⁻¹) atTop (𝓝 0) :=
+    ENNReal.tendsto_inv_nat_nhds_zero.comp hsnd
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound
+    (.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [eventually_ge_atTop ({⟨g, hg⟩}, 0)] with i hi
+  exact (hlt i g <| Finset.mem_image.2
+    ⟨⟨g, hg⟩, (Prod.le_def.1 hi).1 (Finset.mem_singleton_self _), rfl⟩).le
+
+/-- When `μ` is `G`-invariant and `S` generates `G`, passing all finite translation-boundary tests
+on subsets of `S` yields a Følner family indexed by `Finset S × ℕ` along `atTop`. -/
+@[to_additive exists_isAddFoelner_atTop_of_closure_eq_top
+/-- When `μ` is `G`-invariant and `S` generates `G`, passing all finite additive
+translation-boundary tests on subsets of `S` yields an additive Følner family indexed by
+`Finset S × ℕ` along `atTop`. -/]
+theorem exists_isFoelner_atTop_of_closure_eq_top [SMulInvariantMeasure G X μ] {S : Set G}
+    (hS : Subgroup.closure S = ⊤)
+    (h : ∀ K : Finset G, (K : Set G) ⊆ S → ∀ ε : ℝ≥0∞, ε ≠ 0 →
+      ∃ s : Set X, MeasurableSet s ∧ μ s ≠ 0 ∧ μ s ≠ ∞ ∧
+        ∀ g ∈ K, μ ((g • s) ∆ s) / μ s < ε) :
+    ∃ F : Finset S × ℕ → Set X,
+      (∀ i, MeasurableSet (F i) ∧ μ (F i) ≠ 0 ∧ μ (F i) ≠ ∞) ∧ IsFoelner G μ atTop F := by
+  obtain ⟨F, hF, htend⟩ := exists_tendsto_foelnerFilter_atTop h
+  refine ⟨F, hF, ?_⟩
+  rwa [isFoelner_iff_tendsto, maxFoelner_eq_of_closure_eq_top hS]
+
 /-- Finite-test characterization of nontriviality of the Følner filter restricted to a subset `S`,
 without assuming measure invariance. -/
 @[to_additive addFoelnerFilter_neBot_iff]
@@ -350,23 +399,7 @@ private theorem foelnerFilter_neBot_iff {S : Set G} :
     exact ⟨s, hm, h0, htop, hsK⟩
   · intro h
     classical
-    choose F hmeas hne0 hnetop hlt using fun i : Finset S × ℕ ↦
-      h (i.1.image Subtype.val) (by simp) ((i.2 + 1 : ℕ) : ℝ≥0∞)⁻¹ (by simp)
-    have htend : Tendsto F atTop r := by
-      refine tendsto_inf.2 ⟨tendsto_principal.2 (.of_forall fun i ↦
-        ⟨hmeas i, hne0 i, hnetop i⟩), tendsto_iInf.2 fun g ↦ tendsto_iInf.2 fun hg ↦
-        tendsto_comap_iff.2 ?_⟩
-      have hsnd : Tendsto (fun i : Finset S × ℕ ↦ i.2 + 1) atTop atTop :=
-        tendsto_atTop_atTop_of_monotone
-          (fun _ _ hij ↦ Nat.add_le_add_right (Prod.le_def.1 hij).2 1)
-          fun n ↦ ⟨(∅, n), Nat.le_add_right n 1⟩
-      have hbound : Tendsto (fun i : Finset S × ℕ ↦ ((i.2 + 1 : ℕ) : ℝ≥0∞)⁻¹) atTop (𝓝 0) :=
-        ENNReal.tendsto_inv_nat_nhds_zero.comp hsnd
-      refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound
-        (.of_forall fun _ ↦ zero_le) ?_
-      filter_upwards [eventually_ge_atTop ({⟨g, hg⟩}, 0)] with i hi
-      exact (hlt i g <| Finset.mem_image.2
-        ⟨⟨g, hg⟩, (Prod.le_def.1 hi).1 (Finset.mem_singleton_self _), rfl⟩).le
+    obtain ⟨_, _, htend⟩ := exists_tendsto_foelnerFilter_atTop h
     exact htend.neBot
 
 /-- When `μ` is `G`-invariant and `S` generates `G`, `maxFoelner G μ` is nontrivial if and only if

@@ -29,7 +29,6 @@ This lets Følner conditions be tested on generators only.
 
 ## Main results
 
-* `Finset.card_smul_finset_sdiff_eq`: `#(g • F \ F) = #(F \ g • F)`.
 * `Finset.card_smul_finset_symmDiff`: `#((g • F) ∆ F) = 2 * #(g • F \ F)`.
 * `Finset.card_smul_finset_symmDiff_smul_finset`: `#((g • s) ∆ (g • t)) = #(s ∆ t)`.
 * `Finset.card_mul_smul_finset_symmDiff_le`:
@@ -59,13 +58,6 @@ namespace Finset
 section LeftCancel
 
 variable {G X : Type*} [SMul G X] [IsLeftCancelSMul G X] [DecidableEq X]
-
-/-- An injective action moves as many points of `F` outside `F` as it leaves uncovered in `F`. -/
-@[to_additive
-/-- An injective additive action moves as many points of `F` outside `F` as it leaves uncovered
-in `F`. -/]
-theorem card_smul_finset_sdiff_eq (g : G) (F : Finset X) : #(g • F \ F) = #(F \ g • F) :=
-  card_sdiff_comm (card_smul_finset g F)
 
 /-- A translate `g • F` of a finite set has as many points outside `F` as `F` has outside `g • F`,
 so its symmetric difference with `F` has twice as many points as `g • F \ F`. -/

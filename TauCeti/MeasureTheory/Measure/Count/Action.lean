@@ -34,7 +34,7 @@ variable {G X : Type*} [Group G] [MulAction G X] [MeasurableSpace X]
 @[to_additive
 /-- Counting measure on a space with measurable singletons is invariant under any additive group
 action. -/]
-theorem smulInvariantMeasure_count [MeasurableSingletonClass X] :
+instance smulInvariantMeasure_count [MeasurableSingletonClass X] :
     SMulInvariantMeasure G X count :=
   ⟨fun g s _ ↦ by
     rw [preimage_smul]
