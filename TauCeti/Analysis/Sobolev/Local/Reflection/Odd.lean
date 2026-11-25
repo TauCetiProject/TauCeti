@@ -81,6 +81,27 @@ private theorem hasFDerivAt_axisCutoff (n : ℕ) (z : ℂ) :
   rw [smul_smul] at h2
   exact h2
 
+/-- Multiplying an integrable function on the upper half-plane by the cutoffs `axisCutoff n`
+does not change its integral in the limit. -/
+private theorem tendsto_setIntegral_axisCutoff_smul {f : ℂ → F}
+    (hf : IntegrableOn f {z : ℂ | 0 < z.im}) :
+    Tendsto (fun n : ℕ => ∫ z in {z : ℂ | 0 < z.im}, axisCutoff n z • f z) atTop
+      (𝓝 (∫ z in {z : ℂ | 0 < z.im}, f z)) := by
+  refine tendsto_integral_of_dominated_convergence (fun z => ‖f z‖)
+    (fun n => (contDiff_axisCutoff n).continuous.aestronglyMeasurable.smul
+      hf.aestronglyMeasurable) hf.norm (fun n => Eventually.of_forall fun z => ?_)
+    ((ae_restrict_iff' (measurableSet_lt measurable_const measurable_im)).2
+      (Eventually.of_forall fun z hz => ?_))
+  · rw [norm_smul]
+    refine mul_le_of_le_one_left (norm_nonneg _) ?_
+    rw [axisCutoff, Real.norm_of_nonneg (Real.smoothTransition.nonneg _)]
+    exact Real.smoothTransition.le_one _
+  · have h : Tendsto (fun n : ℕ => ((n : ℝ) + 1) * z.im - 1) atTop atTop :=
+      tendsto_atTop_add_const_right _ _
+        ((tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).atTop_mul_const hz)
+    exact tendsto_const_nhds.congr' <| (h.eventually_ge_atTop 1).mono fun n hn => by
+      simp [axisCutoff, Real.smoothTransition.one_of_one_le hn]
+
 /-- The volume of a rectangle `[-ρ, ρ] × [0, δ]` is `2ρδ`. -/
 private theorem volume_real_reProdIm_Icc {ρ δ : ℝ} (hρ : 0 ≤ ρ) (hδ : 0 ≤ δ) :
     volume.real (Icc (-ρ) ρ ×ℂ Icc 0 δ) = 2 * ρ * δ := by
@@ -115,6 +136,26 @@ private theorem exists_forall_norm_lt_of_im_lt {Ω : Opens ℂ} {g : ℂ → F}
   have h := hgδ z ⟨self_subset_cthickening T hzT, hz0⟩ _ hz'
     (by rw [dist_comm, hdist]; linarith [min_le_left δ r])
   rwa [hg0 _ (hrΩ hz'.1), dist_zero_right] at h
+
+/-- An integrand over the upper half-plane that vanishes off the strip `T ∩ {0 < im ≤ w}`, for
+`T` in the disc of radius `ρ`, and is bounded by `c` on it, has integral at most `c · 2ρw`. -/
+private theorem norm_setIntegral_le_of_strip {f : ℂ → F} {T : Set ℂ} {ρ w c : ℝ}
+    (hρ : 0 ≤ ρ) (hw : 0 ≤ w) (hc : 0 ≤ c) (hTρ : T ⊆ closedBall 0 ρ)
+    (hoff : ∀ z ∈ {z : ℂ | 0 < z.im} \ ({z : ℂ | 0 < z.im} ∩ (T ∩ {z | z.im ≤ w})), f z = 0)
+    (hon : ∀ z ∈ {z : ℂ | 0 < z.im} ∩ (T ∩ {z | z.im ≤ w}), ‖f z‖ ≤ c) :
+    ‖∫ z in {z : ℂ | 0 < z.im}, f z‖ ≤ c * (2 * ρ * w) := by
+  rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
+    (measurableSet_lt measurable_const measurable_im) inter_subset_left hoff]
+  have hSR : {z : ℂ | 0 < z.im} ∩ (T ∩ {z | z.im ≤ w}) ⊆ Icc (-ρ) ρ ×ℂ Icc 0 w := fun z hz =>
+    ⟨abs_le.1 ((abs_re_le_norm z).trans (mem_closedBall_zero_iff.1 (hTρ hz.2.1))),
+      le_of_lt hz.1, hz.2.2⟩
+  have hRfin : volume (Icc (-ρ) ρ ×ℂ Icc 0 w) < ⊤ :=
+    (isCompact_Icc.reProdIm isCompact_Icc).measure_lt_top
+  calc _ ≤ c * volume.real ({z : ℂ | 0 < z.im} ∩ (T ∩ {z | z.im ≤ w})) :=
+        norm_setIntegral_le_of_norm_le_const ((measure_mono hSR).trans_lt hRfin) hon
+    _ ≤ c * (2 * ρ * w) := by
+        rw [← volume_real_reProdIm_Icc hρ hw]
+        exact mul_le_mul_of_nonneg_left (measureReal_mono hSR hRfin.ne) hc
 
 /-- **The boundary layer vanishes in the limit.** For `g` continuous on `Ω ∩ {0 ≤ im}` and zero
 on `Ω ∩ ℝ`, and `χ` continuous with compact support meeting `{0 ≤ im}` inside `Ω`, the integral of
@@ -175,22 +216,10 @@ private theorem tendsto_setIntegral_boundaryLayer {Ω : Opens ℂ} {g : ℂ → 
     all_goals first
       | exact hMz.trans (le_max_left _ _)
       | exact hBz.trans (le_max_left _ _)
-  rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
-    (measurableSet_lt measurable_const measurable_im) inter_subset_left hoff]
-  have hSR : S ⊆ Icc (-ρ') ρ' ×ℂ Icc 0 w := fun z hz => by
-    have hzρ := mem_closedBall_zero_iff.1 (hρ hz.2.1)
-    refine ⟨abs_le.1 ((abs_re_le_norm z).trans (hzρ.trans (le_max_left _ _))), ?_, hz.2.2⟩
-    exact le_of_lt hz.1
-  have hRfin : volume (Icc (-ρ') ρ' ×ℂ Icc 0 w) < ⊤ :=
-    ((isCompact_Icc.reProdIm isCompact_Icc)).measure_lt_top
-  have hvol : volume.real S ≤ 2 * ρ' * w := by
-    rw [← volume_real_reProdIm_Icc (le_max_right _ _) (by positivity)]
-    exact measureReal_mono hSR hRfin.ne
-  calc ‖∫ z in S, f z‖
-        ≤ (max M 0 * (max B 0 * (((n : ℝ) + 1) * |a|)) * (ε / (K + 1))) * volume.real S :=
-        norm_setIntegral_le_of_norm_le_const ((measure_mono hSR).trans_lt hRfin) hon
-    _ ≤ (max M 0 * (max B 0 * (((n : ℝ) + 1) * |a|)) * (ε / (K + 1))) * (2 * ρ' * w) :=
-        mul_le_mul_of_nonneg_left hvol (by positivity)
+  calc ‖∫ z in {z : ℂ | 0 < z.im}, f z‖
+        ≤ (max M 0 * (max B 0 * (((n : ℝ) + 1) * |a|)) * (ε / (K + 1))) * (2 * ρ' * w) :=
+        norm_setIntegral_le_of_strip (le_max_right _ _) (by positivity) (by positivity)
+          (hρ.trans (closedBall_subset_closedBall (le_max_left _ _))) hoff hon
     _ = K * (ε / (K + 1)) := by
         simp only [K, w]
         field_simp
@@ -216,7 +245,6 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_continuousOn {Ω : 
     ∫ z in {z : ℂ | 0 < z.im}, fderiv ℝ χ z v • g z =
       -∫ z in {z : ℂ | 0 < z.im}, χ z • g' z := by
   set H := {z : ℂ | 0 < z.im}
-  have hHm : MeasurableSet H := measurableSet_lt measurable_const measurable_im
   have hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g := hgc.memLpLoc
   have hint {h : ℂ → F} (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h) {f : ℂ → ℝ}
       (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) : IntegrableOn (fun z => f z • h z) H :=
@@ -250,23 +278,8 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_continuousOn {Ω : 
       (hint (f := D n) hg (hχ.continuous.mul ((hdst.comp ((continuous_const.mul continuous_im).sub
         continuous_const)).mul continuous_const)) tsupport_mul_subset_left)] at h
   -- Pass to the limit `n → ∞`.
-  have hlim {f : ℂ → F} (hf : IntegrableOn f H) :
-      Tendsto (fun n : ℕ => ∫ z in H, axisCutoff n z • f z) atTop (𝓝 (∫ z in H, f z)) := by
-    refine tendsto_integral_of_dominated_convergence (fun z => ‖f z‖)
-      (fun n => (contDiff_axisCutoff n).continuous.aestronglyMeasurable.smul
-        hf.aestronglyMeasurable) hf.norm (fun n => Eventually.of_forall fun z => ?_)
-      ((ae_restrict_iff' hHm).2 (Eventually.of_forall fun z hz => ?_))
-    · rw [norm_smul]
-      refine mul_le_of_le_one_left (norm_nonneg _) ?_
-      rw [axisCutoff, Real.norm_of_nonneg (Real.smoothTransition.nonneg _)]
-      exact Real.smoothTransition.le_one _
-    · have h : Tendsto (fun n : ℕ => ((n : ℝ) + 1) * z.im - 1) atTop atTop :=
-        tendsto_atTop_add_const_right _ _
-          ((tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).atTop_mul_const hz)
-      exact tendsto_const_nhds.congr' <| (h.eventually_ge_atTop 1).mono fun n hn => by
-        simp [axisCutoff, Real.smoothTransition.one_of_one_le hn]
-  have h1 := hlim (hint hg hdχ (tsupport_fderiv_apply_subset ℝ v))
-  have h3 := hlim (hint hg' hχ.continuous subset_rfl)
+  have h1 := tendsto_setIntegral_axisCutoff_smul (hint hg hdχ (tsupport_fderiv_apply_subset ℝ v))
+  have h3 := tendsto_setIntegral_axisCutoff_smul (hint hg' hχ.continuous subset_rfl)
   simp only [smul_smul] at h1 h3
   have h2 := tendsto_setIntegral_boundaryLayer hgc hg0 hχ.continuous hχc hχΩ v.im
   have h := h1.add h2
