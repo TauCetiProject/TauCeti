@@ -483,7 +483,7 @@ theorem GX.ext_hom {M F : Type*} [Monoid M] [FunLike F (GX G X) M]
 theorem evalGHom_inl_inr_of :
     evalGHom (inl : G →* GX G X) (fun x => inr (FreeGroup.of x)) =
       GHom.id (inl : G →* GX G X) :=
-  GX.gHom_ext _ fun x => by simp
+  GHom.toMonoidHom_injective eval_inl_inr_of
 
 variable {ι v}
 
@@ -552,7 +552,7 @@ evaluation at the values of the words at `v`. -/
 @[simp]
 theorem evalGHom_comp_evalGHom {Y : Type*} (w : Y → GX G X) (v : X → H) :
     (evalGHom ι v).comp (evalGHom inl w) = evalGHom ι fun y => eval ι v (w y) :=
-  GX.gHom_ext _ fun y => by simp
+  GHom.toMonoidHom_injective (eval_comp_eval w v)
 
 /-- Composition of word maps is substitution of the defining words. -/
 theorem wordMap_wordMap {Y Z : Type*} (w : Y → GX G X) (u : Z → GX G Y) (v : X → H) :

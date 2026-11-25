@@ -429,7 +429,7 @@ the words `μ` by the extension of this substitution by the identity on the piec
 back-substitution at `β'` exactly when `μ` back-substitutes `P'` into `P` at the values of the
 words `l` at `β'`. In the proof of Kharlampovich–Myasnikov, Theorem 9 (Case 1), the composed words
 are words in `X^φ`, which are then read as words in `X`. -/
-@[simp]
+@[simp↓]
 theorem isBackSubst_mapParam_iff {X' : Type*} {l : X → GX (FreeGroup A) X'}
     {β' : X' → FreeGroup A} :
     IsBackSubst (P'.mapParam l) (P.mapParam l) β' (fun m => sumExtend M' (evalGHom inl l) (μ m)) ↔
