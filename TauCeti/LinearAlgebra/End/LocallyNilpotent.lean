@@ -49,7 +49,7 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
   locally nilpotent.
 * `Module.End.bijective_of_sub_mem_filtration`: an endomorphism which is the identity up to a
   map lowering an exhaustive filtration starting at `⊥` is bijective.
-* `TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
+* `LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
   when `f` is locally nilpotent of degree zero.
 * `Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt`: an endomorphism of `ι →₀ R`
   that strictly lowers a well-founded weight on the basis is locally nilpotent.
@@ -158,11 +158,11 @@ variable {S N : Type*} [Ring S] [AddCommGroup N] [Module S N]
 
 /-- If `f` is locally nilpotent and homogeneous of degree zero for a grading by submodules, then so
 is the inverse of `1 + f`: on a homogeneous vector it is a finite geometric series in `-f`. -/
-theorem TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add {ι : Type*} [AddMonoid ι]
+theorem LinearMap.IsHomogeneous.ringInverse_one_add {ι : Type*} [AddMonoid ι]
     {𝒜 : ι → Submodule S N} {f : Module.End S N}
-    (hf : TauCeti.LinearMap.IsHomogeneous f 𝒜 𝒜 0) (hnil : ∀ x, ∃ n, (f ^ n) x = 0) :
-    TauCeti.LinearMap.IsHomogeneous (Ring.inverse (1 + f)) 𝒜 𝒜 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+    (hf : LinearMap.IsHomogeneous f 𝒜 𝒜 0) (hnil : ∀ x, ∃ n, (f ^ n) x = 0) :
+    LinearMap.IsHomogeneous (Ring.inverse (1 + f)) 𝒜 𝒜 0 := by
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   obtain ⟨n, hn⟩ := hnil x
   have hpow : ∀ i : ℕ, ((-f) ^ i) x ∈ 𝒜 p := by
@@ -370,9 +370,8 @@ theorem exists_pow_apply_eq_zero_of_injective {f : Module.End R M} {f' : Module.
     (hf' : ∀ y : N, ∃ d : ℕ, (f' ^ d) y = 0) (x : M) :
     ∃ d : ℕ, (f ^ d) x = 0 := by
   obtain ⟨d, hd⟩ := hf' (g x)
-  have hpow := LinearMap.congr_fun (comp_pow_of_comp hg d) x
-  simp only [LinearMap.comp_apply] at hpow
-  exact ⟨d, hinj (by rw [hpow, hd, map_zero])⟩
+  have hpow := Module.End.pow_apply_of_comp_eq hg d x
+  exact ⟨d, hinj (by rw [← hpow, hd, map_zero])⟩
 
 /-- Local nilpotence passes to quotients: an endomorphism intertwined by a surjective linear map
 from a locally nilpotent endomorphism is locally nilpotent. -/
@@ -382,9 +381,8 @@ theorem exists_pow_apply_eq_zero_of_surjective {f : Module.End R M} {f' : Module
     ∃ d : ℕ, (f' ^ d) y = 0 := by
   obtain ⟨x, rfl⟩ := hsurj y
   obtain ⟨d, hd⟩ := hf x
-  have hpow := LinearMap.congr_fun (comp_pow_of_comp hg d) x
-  simp only [LinearMap.comp_apply] at hpow
-  exact ⟨d, by rw [← hpow, hd, map_zero]⟩
+  have hpow := Module.End.pow_apply_of_comp_eq hg d x
+  exact ⟨d, by rw [hpow, hd, map_zero]⟩
 
 /-- Local nilpotence passes to products: an endomorphism of `M × N` intertwined by the two
 projections with locally nilpotent endomorphisms on `M` and `N` is locally nilpotent. -/
@@ -397,12 +395,12 @@ theorem exists_pow_apply_eq_zero_prod {eM : Module.End R M} {eN : Module.End R N
     ∃ k : ℕ, (eMN ^ k) x = 0 := by
   obtain ⟨k₁, hk₁⟩ := hM x.1
   obtain ⟨k₂, hk₂⟩ := hN x.2
-  have h1 := LinearMap.congr_fun (comp_pow_of_comp hfst (max k₁ k₂)) x
-  have h2 := LinearMap.congr_fun (comp_pow_of_comp hsnd (max k₁ k₂)) x
-  simp only [LinearMap.comp_apply, LinearMap.fst_apply, LinearMap.snd_apply] at h1 h2
+  have h1 := Module.End.pow_apply_of_comp_eq hfst (max k₁ k₂) x
+  have h2 := Module.End.pow_apply_of_comp_eq hsnd (max k₁ k₂) x
+  simp only [LinearMap.fst_apply, LinearMap.snd_apply] at h1 h2
   exact ⟨max k₁ k₂, Prod.ext
-    (h1.trans (Module.End.pow_map_zero_of_le (le_max_left k₁ k₂) hk₁))
-    (h2.trans (Module.End.pow_map_zero_of_le (le_max_right k₁ k₂) hk₂))⟩
+    (h1.symm.trans (Module.End.pow_map_zero_of_le (le_max_left k₁ k₂) hk₁))
+    (h2.symm.trans (Module.End.pow_map_zero_of_le (le_max_right k₁ k₂) hk₂))⟩
 
 open DirectSum in
 /-- Local nilpotence passes to direct sums: an endomorphism of `⨁ j, P j` intertwined with
@@ -416,9 +414,8 @@ theorem exists_pow_apply_eq_zero_directSum {κ : Type*} [DecidableEq κ] {P : κ
   refine DirectSum.induction_on v ⟨0, map_zero _⟩ (fun j m ↦ ?_)
     fun x y ⟨kx, hkx⟩ ⟨ky, hky⟩ ↦ ?_
   · obtain ⟨k, hk⟩ := hP j m
-    have hpow := LinearMap.congr_fun (comp_pow_of_comp (hmap j).symm k) m
-    simp only [LinearMap.comp_apply] at hpow
-    exact ⟨k, by rw [← DirectSum.lof_eq_of R, ← hpow, hk, map_zero]⟩
+    have hpow := Module.End.pow_apply_of_comp_eq (hmap j).symm k m
+    exact ⟨k, by rw [← DirectSum.lof_eq_of R, hpow, hk, map_zero]⟩
   · refine ⟨max kx ky, ?_⟩
     rw [map_add, Module.End.pow_map_zero_of_le (le_max_left kx ky) hkx,
       Module.End.pow_map_zero_of_le (le_max_right kx ky) hky, add_zero]

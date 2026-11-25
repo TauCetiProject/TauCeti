@@ -89,7 +89,11 @@ private theorem mul_apply_sub_mem {x y : WithConv (H →ₐ[k] R)}
     LinearMap.convOne_apply] at hval
   have hDh : D h = x.ofConv h - algebraMap k R (counit h) := by simp [hD_def]
   have hD'h : D' h = y.ofConv h - algebraMap k R (counit h) := by simp [hD'_def]
-  convert LinearMap.convMul_apply_mem_mul hD hD' h using 1
+  -- The convolution bound lands in the product of `I` with itself as `k`-submodules.
+  have hmem := LinearMap.convMul_apply_mem_mul (M := I.restrictScalars k)
+    (N := I.restrictScalars k) hD hD' h
+  rw [← Ideal.restrictScalars_mul, Submodule.restrictScalars_mem] at hmem
+  convert hmem using 1
   rw [hval, hDh, hD'h]
   ring
 

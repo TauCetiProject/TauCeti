@@ -195,7 +195,7 @@ private theorem exists_int_sum_norm_mvCoeff_mul_pow_le {ι Λ : Type*} [Fintype 
   have hu (α : B) : ∑ l, ‖u l α‖ ≤ Real.exp U := by
     refine (sum_le_sum fun l _ ↦ ?_).trans hMU
     simpa only [u, norm_mul, norm_pow, Complex.norm_real, Real.norm_of_nonneg hr] using
-      (hφ l).norm_mvCoeff_mul_pow_le (hM l) α.val hr hrR
+      (hφ l).norm_mvCoeff_mul_pow_le (hM l) α.val hr hrR.le
   obtain ⟨ξ, hξ0, hξN, hξu⟩ :=
     ThueSiegel.exists_ne_zero_int_vec_norm_le_of_exp_le u hN hu (by simpa using hcard)
   refine ⟨ξ, hξ0, hξN, ?_⟩

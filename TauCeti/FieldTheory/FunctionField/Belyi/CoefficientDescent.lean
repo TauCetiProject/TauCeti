@@ -11,9 +11,14 @@ public import TauCeti.FieldTheory.FunctionField.Belyi.FieldOfModuli
 public import TauCeti.FieldTheory.RatFunc.Galois
 public import TauCeti.FieldTheory.Minpoly.Lifts
 public import TauCeti.FieldTheory.Galois.FiniteIndex
+public import TauCeti.FieldTheory.FunctionField.Belyi.Model
+import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
+import TauCeti.FieldTheory.FunctionField.Place.Degree
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 
 /-!
-# Descent of the equation of a pointed Belyi pair
+# Descent of a pointed Belyi pair to its pointed fixed field
 
 At a rational unbranched place of degree one, the generator of a Belyi pair normalized by its
 Laurent expansion is fixed by every semilinear automorphism fixing that place. Its minimal
@@ -21,14 +26,30 @@ polynomial therefore has coefficients in the rational function field over the fi
 the pointed stabilizer. This works even when the original constant field is transcendental over
 that fixed field, notably for subgroups of the automorphism group of `ℂ`.
 
-We identify this coefficient field, bound its degree over the field of moduli, and produce a
-primitive element whose minimal polynomial descends to it. This is descent of an equation;
-unramifiedness and exactness of constants for a descended Belyi pair are not asserted here.
+We identify this coefficient field `K`, bound its degree over the field of moduli, and produce a
+primitive element `z` whose minimal polynomial descends to it. The subfield `K(t, z)` of the
+function field then has the same degree over `K(t)` as the function field over `k(t)`, so
+degree-preserving descent across constant extensions
+(`TauCeti.IsAlgebraicBelyiPair.of_finrank_eq`) makes it an algebraic Belyi pair over `K`, with
+exact constant field `K`, and a model of the original pair. Over an algebraically closed field
+every Belyi pair has such a place, so every isomorphism class is defined over a finite extension
+of its field of moduli. This is the descent of a Belyi pair over `ℂ` to a finite extension of its
+relative field of moduli, without any descent datum.
+
+## Main results
+
+* `TauCeti.AlgebraicBelyiPair.exists_generator_finrank_adjoin_eq`: a primitive element whose
+  equation descends to the pointed fixed field, with the original degree.
+* `TauCeti.AlgebraicBelyiPair.nonempty_model_pointedFieldOfModuli`: the pair has a model over the
+  pointed fixed field.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.exists_relfinrank_fieldOfModuli_le_degree_and_isDefinedOver`:
+  over an algebraically closed field, every class is defined over a finite extension of its field
+  of moduli, of degree at most the degree of the class.
 
 ## References
 
 * B. Köck, *Belyi's theorem revisited*, Beiträge zur Algebra und Geometrie 45 (2004), 253–265,
-  proof of (2.2) Theorem.
+  (2.2) Theorem and its proof.
 -/
 
 public section
@@ -136,6 +157,8 @@ theorem minpoly_mem_lifts_of_normalized
 
 end Normalized
 
+section Equation
+
 include hq₀ hq₁ hPa hP
 
 variable [Algebra (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k)]
@@ -179,5 +202,73 @@ theorem exists_generator_finrank_adjoin_eq
   refine ⟨z, hgen, hz', minpoly.map_algebraMap hz' hlift, ?_⟩
   rw [IntermediateField.finrank_adjoin_simple_eq_of_minpoly_mem_lifts hlift, hgen,
     IntermediateField.finrank_top']
+
+end Equation
+
+section Model
+
+include hq₀ hq₁ hPa hP
+
+/-- **A pointed Belyi pair is defined over its pointed fixed field.** Let `P` be a place of degree
+one of an algebraic Belyi pair `X = (F, t)` over `k`, lying over the place `t = q` for a rational
+`q ≠ 0, 1`. Then `X` has a model over the fixed field of the pointed stabilizer of `P`, even when
+`k` is transcendental over this fixed field, as for `k = ℂ`. -/
+theorem nonempty_model_pointedFieldOfModuli : Nonempty (Model (X.pointedFieldOfModuli P) X) := by
+  set K := X.pointedFieldOfModuli P
+  let : Algebra (RatFunc K) (RatFunc k) := (ratFuncMapRingHom K k).toAlgebra
+  let : Algebra (RatFunc K) X :=
+    ((algebraMap (RatFunc k) X).comp (algebraMap (RatFunc K) (RatFunc k))).toAlgebra
+  have : IsScalarTower (RatFunc K) (RatFunc k) X := .of_algebraMap_eq fun _ ↦ rfl
+  obtain ⟨z, hgen, hint, -, hfin⟩ := exists_generator_finrank_adjoin_eq hq₀ hq₁ hPa hP
+    (fun c ↦ ratFuncMapRingHom_C K k c) (ratFuncMapRingHom_X K k)
+  -- The model is the subfield `K(t, z)` of `F`.
+  let E : IntermediateField (RatFunc K) X := (RatFunc K)⟮z⟯
+  let : Algebra K E := ((algebraMap (RatFunc K) E).comp (algebraMap K (RatFunc K))).toAlgebra
+  have : IsScalarTower K (RatFunc K) E := .of_algebraMap_eq fun _ ↦ rfl
+  have : FiniteDimensional (RatFunc K) E := IntermediateField.adjoin.finiteDimensional hint
+  have hK (c : K) : algebraMap E X (algebraMap K E c) = algebraMap k X (algebraMap K k c) := by
+    simp [RingHom.algebraMap_toAlgebra, RatFunc.algebraMap_eq_C,
+      IsScalarTower.algebraMap_apply k (RatFunc k) X]
+  have : IsScalarTower K E X := .of_algebraMap_eq fun c ↦ (hK c).symm
+  have hX : algebraMap E X (algebraMap (RatFunc K) E RatFunc.X) =
+      algebraMap (RatFunc k) X RatFunc.X := by
+    simp [RingHom.algebraMap_toAlgebra]
+  -- `K(t, z)` generates `F` over `k`, since `z` generates `F` over `k(t)`.
+  have hcomp : constantCompositum E k X = ⊤ :=
+    constantCompositum_adjoin_simple_ratFunc_eq_top (ratFuncMapRingHom_X K k) hgen
+  have hadj : IntermediateField.adjoin k (Set.range (algebraMap E X)) = ⊤ := by
+    simpa only [Set.image_univ] using
+      adjoin_image_eq_top_of_constantCompositum_eq_top (adjoin_univ K E) hcomp
+  let Y : AlgebraicBelyiPair K :=
+    { carrier := E
+      isAlgebraicBelyiPair := X.isAlgebraicBelyiPair.of_finrank_eq hcomp hX hfin }
+  exact ⟨⟨Y, algebraMap E X, hK, hX, hadj⟩⟩
+
+end Model
+
+namespace IsoClass
+
+/-- **Köck's descent theorem.** Over an algebraically closed field `k` of characteristic zero, such
+as `ℂ`, every isomorphism class of algebraic Belyi pairs is defined over a finite extension of its
+field of moduli inside `k`, of degree at most the degree of the pair. -/
+theorem exists_relfinrank_fieldOfModuli_le_degree_and_isDefinedOver [IsAlgClosed k]
+    (c : IsoClass k) :
+    ∃ K : IntermediateField ℚ k, c.fieldOfModuli ≤ K ∧ 0 < c.fieldOfModuli.relfinrank K ∧
+      c.fieldOfModuli.relfinrank K ≤ c.degree ∧ c.IsDefinedOver K := by
+  induction c using ind with
+  | h X =>
+    have hF : IsFunctionField k X := (IsFunctionField.ratFunc k).finite_extension
+    have h₀ : ((2 : ℚ) : k) ≠ 0 := by norm_num
+    have h₁ : ((2 : ℚ) : k) ≠ 1 := by norm_num
+    obtain ⟨P, hPa⟩ := Place.restrict_surjective_of_finiteDimensional
+      (IsFunctionField.ratFunc k) hF
+      (Place.adicOfIrreducible (irreducible_X_sub_C ((2 : ℚ) : k)))
+    exact ⟨X.pointedFieldOfModuli P, X.fieldOfModuli_le_pointedFieldOfModuli P,
+      X.relfinrank_pointedFieldOfModuli_pos hPa,
+      (X.relfinrank_pointedFieldOfModuli_le hPa).trans_eq (degree_mk X).symm,
+      isDefinedOver_mk_iff.mpr (nonempty_model_pointedFieldOfModuli h₀ h₁ hPa
+        (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF))⟩
+
+end IsoClass
 
 end TauCeti.AlgebraicBelyiPair
