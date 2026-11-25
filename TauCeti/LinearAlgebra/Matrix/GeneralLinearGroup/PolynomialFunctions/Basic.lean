@@ -232,8 +232,10 @@ theorem comp_inv_mem_rationalFunctions {f : GL (Fin n) k → k} (hf : f ∈ rati
     (det_mem_polynomialFunctions (k := k) (n := n))) m
   convert mul_mem hdet (eval_inv_mem_rationalFunctions P) using 1
   funext g
-  rw [Pi.mul_apply, Pi.pow_apply, ← hP g⁻¹, ← mul_assoc, ← mul_pow, ← det_mul, ← Units.val_mul,
-    mul_inv_cancel, Units.val_one, det_one, one_pow, one_mul]
+  have hdet1 : (g : Matrix (Fin n) (Fin n) k).det * (↑g⁻¹ : Matrix (Fin n) (Fin n) k).det = 1 := by
+    rw [← det_mul, ← Units.val_mul]
+    simp
+  rw [Pi.mul_apply, Pi.pow_apply, ← hP g⁻¹, ← mul_assoc, ← mul_pow, hdet1, one_pow, one_mul]
 
 end CommRing
 

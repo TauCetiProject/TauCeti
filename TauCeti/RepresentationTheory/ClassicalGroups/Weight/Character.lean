@@ -71,6 +71,22 @@ theorem character_diagGL_eq_sum_finrank_weightSpace
       (finite_setOf_weightSpace_ne_bot hchar ρ) hmaps]
   simp only [hrestrict, map_smul, LinearMap.trace_id, smul_eq_mul, mul_comm]
 
+/-- The torus character is the sum, over all weights, of the weight characters with their
+multiplicities, provided the integer weight spaces span the representation and weight characters
+separate weights. -/
+theorem character_diagGL_eq_finsum_finrank_weightSpace
+    (ρ : Representation K (Matrix.GeneralLinearGroup (Fin n) K) W)
+    (hchar : Function.Injective (weightChar K (κ := Fin n)))
+    (hρ : ⨆ l : Fin n → ℤ, weightSpace ρ l = ⊤) (t : Fin n → Kˣ) :
+    ρ.character (diagGL t) =
+      ∑ᶠ l : Fin n → ℤ, (Module.finrank K (weightSpace ρ l) : K) * weightCharHom K l t := by
+  rw [character_diagGL_eq_sum_finrank_weightSpace ρ hchar hρ t, eq_comm]
+  refine finsum_eq_sum_of_support_subset _ fun l hl ↦ ?_
+  rw [Set.Finite.coe_toFinset, Set.mem_ofPred_eq]
+  rintro hbot
+  apply hl
+  simp only [Submodule.finrank_eq_zero.mpr hbot, Nat.cast_zero, zero_mul]
+
 /-- If a torus character is represented by a polynomial, the coefficient of each monomial
 is the dimension of its integer weight space, cast into the coefficient field.
 In characteristic zero this recovers the dimension as a natural number. -/

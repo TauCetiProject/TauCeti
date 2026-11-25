@@ -27,9 +27,6 @@ contragredient at `t` is that of `V_(a,b)` at `t⁻¹`, whose weights are the ne
 
 ## Main results
 
-* `Representation.character_diagGL_eq_finsum_finrank_weightSpace`: the torus character as a
-  `finsum` over all weights.
-* `TauCeti.isRationalRep_gl2CoefficientRep`: `V_(a,b)` is a rational representation of `GL₂(ℂ)`.
 * `TauCeti.nonempty_equiv_dual_gl2CoefficientRep`: the contragredient of `V_(a,b)` is equivalent
   to `V_(-b,-a)`.
 -/
@@ -40,38 +37,7 @@ noncomputable section
 
 open Module
 
-namespace Representation
-
-open TauCeti
-
-variable {K : Type*} [Field K] {n : ℕ} {W : Type*} [AddCommGroup W] [Module K W]
-  [Module.Finite K W]
-
-/-- The torus character is the sum, over all weights, of the weight characters with their
-multiplicities, provided the integer weight spaces span the representation and weight characters
-separate weights. -/
-theorem character_diagGL_eq_finsum_finrank_weightSpace
-    (ρ : Representation K (Matrix.GeneralLinearGroup (Fin n) K) W)
-    (hchar : Function.Injective (weightChar K (κ := Fin n)))
-    (hρ : ⨆ l : Fin n → ℤ, weightSpace ρ l = ⊤) (t : Fin n → Kˣ) :
-    ρ.character (diagGL t) =
-      ∑ᶠ l : Fin n → ℤ, (finrank K (weightSpace ρ l) : K) * weightCharHom K l t := by
-  rw [character_diagGL_eq_sum_finrank_weightSpace ρ hchar hρ t, eq_comm]
-  refine finsum_eq_sum_of_support_subset _ fun l hl ↦ ?_
-  rw [Set.Finite.coe_toFinset, Set.mem_ofPred_eq]
-  rintro hbot
-  apply hl
-  simp only [Submodule.finrank_eq_zero.mpr hbot, Nat.cast_zero, zero_mul]
-
-end Representation
-
 namespace TauCeti
-
-/-- **`V_(a,b)` is a rational representation of `GL₂(ℂ)`**: it is the tensor product of a
-symmetric power of the standard representation, which is polynomial, and a power of the
-determinant. -/
-theorem isRationalRep_gl2CoefficientRep (a b : ℤ) : IsRationalRep (gl2CoefficientRep ℂ a b) :=
-  (isPolynomialRep_symPowerRep 2 _).isRationalRep.tprod (isRationalRep_detPowerRep b)
 
 /-- **The contragredient of `V_(a,b)` is `V_(-b,-a)`.** For integers `a ≥ b`, the contragredient
 of the algebraic coefficient `V_(a,b)` of `GL₂(ℂ)` is equivalent to `V_(-b,-a)`: both are rational
