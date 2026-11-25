@@ -11,6 +11,8 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Kummer
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
 import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Connected
+import TauCeti.RingTheory.RootsOfUnity.Basic
+import TauCeti.RingTheory.RootsOfUnity.PowFiber
 
 /-!
 # Kummer monodromy over an affine base
@@ -39,7 +41,7 @@ the hypotheses hold for every nonzero `m` prime to `p`, the characters assemble 
 homomorphism to the prime-to-`p` Tate module of `Ω`
 (`TauCeti.FiniteEtaleScheme.kummerMonodromy`):
 
-`π₁(Spec R, x) →ₜ* lim_{(m, p) = 1} μ_m(Ω) = ℤ̂^{(p')}(1)`.
+`π₁(Spec R, x) →ₜ* lim_{m ≠ 0, (m, p) = 1} μ_m(Ω) = ℤ̂^{(p')}(1)`.
 
 When the Kummer covers are connected, so is the base `Spec R`, and `π₁` acts transitively on their
 fibres, so the Kummer characters and the Tate character are surjective. For `R = K[T, T⁻¹]`,
@@ -202,14 +204,13 @@ theorem kummerMonodromyLevel_pow_div {n m : ℕ} (hn : IsUnit (n : R)) (hm : IsU
     (kummerMonodromyLevel t Ω m hm hdeck_m σ : Ωˣ) ^ (m / n) =
       kummerMonodromyLevel t Ω n hn hdeck_n σ := by
   obtain ⟨y⟩ := nonempty_fiber_kummerCover t (Ω := Ω) hm
-  refine (Subtype.ext_iff.mp ((kummerMonodromyLevel_eq_iff t Ω (ζ := ⟨_, ?_⟩)
+  rw [← coe_rootsOfUnityPowOfDvd_apply h]
+  refine congrArg Subtype.val ((kummerMonodromyLevel_eq_iff t Ω
     ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).map
-      (kummerCoverMap t hn hm h) y)).mpr ?_)).symm
-  · rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel h]
-    exact (mem_rootsOfUnity m _).mp (kummerMonodromyLevel t Ω m hm hdeck_m σ).property
-  · rw [mulAction_naturality]
-    simp only [kummerCoverFiberEquiv_map_kummerCoverMap,
-      kummerCoverFiberEquiv_smul t Ω m hm hdeck_m, mul_pow, Units.val_pow_eq_pow_val]
+      (kummerCoverMap t hn hm h) y)).mpr ?_).symm
+  rw [mulAction_naturality]
+  simp only [kummerCoverFiberEquiv_map_kummerCoverMap, kummerCoverFiberEquiv_smul t Ω m hm hdeck_m,
+    coe_rootsOfUnityPowOfDvd_apply, mul_pow, Units.val_pow_eq_pow_val]
 
 /-- **Surjectivity of the Kummer character.** Under the hypotheses defining the Kummer character
 (`n` invertible in `R` and every `n`-th root of unity of `Ω` coming from `R`), if moreover the
@@ -227,7 +228,8 @@ theorem kummerMonodromyLevel_surjective (n : ℕ) (hn : IsUnit (n : R))
   obtain ⟨y⟩ := nonempty_fiber_kummerCover t (Ω := Ω) hn
   set e := kummerCoverFiberEquiv t Ω n hn
   have hζ : (((ζ : Ωˣ) : Ω) * e y) ^ n = algebraMap R Ω t := by
-    rw [mul_pow, (mem_rootsOfUnity' n _).mp ζ.property, one_mul, (e y).property]
+    simpa only [rootsOfUnity.smul_eq_mul] using
+      (rootsOfUnity.smul_pow ζ (e y : Ω)).trans (e y).property
   obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq (Aut (fiber (Spec.map
     (CommRingCat.ofHom (algebraMap R Ω))))) y (e.symm ⟨_, hζ⟩)
   exact ⟨σ, (kummerMonodromyLevel_eq_iff t Ω y).mpr (by rw [hσ, e.apply_symm_apply])⟩
@@ -236,7 +238,7 @@ theorem kummerMonodromyLevel_surjective (n : ℕ) (hn : IsUnit (n : R))
 `R` (`hunit`) and that every `m`-th root of unity of `Ω` comes from an `m`-th root of unity of `R`
 (`hdeck`), so that the Kummer character of the unit `t` of every such order `m` is defined. These
 characters are compatible along the power maps, so they define a continuous homomorphism from
-`π₁(Spec R, x)` to the Tate module `lim_{(m, p) = 1} μ_m(Ω)`. -/
+`π₁(Spec R, x)` to the Tate module `lim_{m ≠ 0, (m, p) = 1} μ_m(Ω)`. -/
 noncomputable def kummerMonodromy (p : ℕ)
     (hunit : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, IsUnit ((m : ℕ) : R))
     (hdeck : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p},

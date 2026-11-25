@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
 
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.AlgebraicGeometry.FiniteEtale.Conservative
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.RootsOfUnity.PowFiber
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
@@ -369,13 +370,11 @@ theorem kummerCoverFiberEquiv_map_kummerCoverDeck (ζ : rootsOfUnity n R)
   rw [AlgHom.comp_apply, kummerAlgebraDeck_hom_hom_hom]
   simp [-AdjoinRoot.algebraMap_eq]
 
-/-- The geometric fibre of a Kummer cover is nonempty: the separably closed field `Ω` contains an
-`n`-th root of the image of `t`, since `n` is invertible in `Ω`. -/
+/-- The geometric fibre of a Kummer cover is nonempty, since the Kummer cover is surjective. -/
 theorem nonempty_fiber_kummerCover :
     Nonempty ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :=
-  haveI : NeZero (n : Ω) := ⟨hn.natCast_ne_zero_of_algebra⟩
-  have ⟨ω, hω⟩ := IsSepClosed.exists_pow_nat_eq (algebraMap R Ω t) n
-  ⟨(kummerCoverFiberEquiv t Ω n hn).symm ⟨ω, hω⟩⟩
+  (nonempty_fiber_obj_iff_range_subset_range _ _).mpr
+    ((kummerCover t n hn).obj.hom.surjective.range_eq ▸ Set.subset_univ _)
 
 /-- The `n`-th roots of `t` in `Ω` attached to points of the geometric fibre are nonzero. -/
 @[simp]
@@ -407,7 +406,8 @@ theorem exists_fiber_map_kummerCoverDeck_eq
 variable (Ω n)
 
 /-- Over a separably closed field `Ω`, the geometric fibre of the degree-`n` Kummer cover has
-cardinality `n`: the nonzero element `algebraMap R Ω t` has exactly `n` distinct `n`-th roots. -/
+cardinality `n`: since `n` is invertible in `R`, hence in `Ω`, the nonzero element
+`algebraMap R Ω t` has exactly `n` distinct `n`-th roots. -/
 theorem card_kummerCoverFiber :
     Nat.card ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj
       (kummerCover t n hn)) = n := by
