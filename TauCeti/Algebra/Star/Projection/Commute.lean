@@ -15,8 +15,7 @@ as soon as `p * q * p = q * p * q`: the commutator `x = p * q - q * p` then sati
 `star x * x = 0`. This is the degenerate case `τ = 0` of the relation
 `p * q * p - τ • p = q * p * q - τ • q` between projections.
 
-In a semigroup, an element `s` commuting with an idempotent `p` gives the element `s * p` of the
-corner `p * R * p`. If moreover `s` is self-adjoint and `p` is a star projection, then
+In a star semigroup, if a self-adjoint `s` commutes with a star projection `p`, then
 `star (s * p) * (s * p) = s * s * p`. In a C⋆-algebra this is how the square root of a positive
 element of the corner of `p` produces a factorization `a = star g * g` with `g` in the corner.
 -/
@@ -26,11 +25,6 @@ public section
 section Semigroup
 
 variable {R : Type*} [Semigroup R] {p s : R}
-
-/-- If `s` commutes with an idempotent `p`, then `s * p` lies in the corner `p * R * p`. -/
-theorem IsIdempotentElem.mul_mul_mul_of_commute (hp : IsIdempotentElem p) (hsp : Commute s p) :
-    p * (s * p) * p = s * p := by
-  simp only [mul_assoc, hsp.symm.left_comm, hp.eq]
 
 /-- If a self-adjoint `s` commutes with a star projection `p`, then
 `star (s * p) * (s * p) = s * s * p`. -/

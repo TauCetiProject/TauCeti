@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Category.Idempotent
 public import TauCeti.CategoryTheory.Dagger.Karoubi
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
+import TauCeti.Algebra.Group.Idempotent
 import TauCeti.Algebra.Star.Projection.Commute
 
 /-!
