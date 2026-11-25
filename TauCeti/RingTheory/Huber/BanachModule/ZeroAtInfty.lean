@@ -674,6 +674,7 @@ private theorem c0CompletedForward_inverse [DiscreteTopology I] [DecidableEq I]
     ext j
     by_cases hij : j = i <;> simp [c0CompletedForwardCLM_coe, c0AlgForward_tmul_apply, hij]
   simp only [hsingle] at hy
+  rw [c0CompletedInverseCLM_apply]
   exact hy.unique (hasSum_single y)
 
 private theorem c0CompletedInverse_forward [DiscreteTopology I] [DecidableEq I]
@@ -694,7 +695,9 @@ private theorem c0CompletedInverse_forward [DiscreteTopology I] [DecidableEq I]
       rw [c0CompletedForwardCLM_coe, c0AlgForward_tmul_apply]
       congr 1
       rw [mul_comm, ← Algebra.smul_def, TensorProduct.smul_tmul, smul_single_one]
-    simpa [c0CompletedInverseCLM, hterm] using (hasSum_c0Coord_tmul I s x).tsum_eq
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+      c0CompletedInverseCLM_apply, hterm]
+    exact (hasSum_c0Coord_tmul I s x).tsum_eq
   | add u v hu hv => rw [Completion.coe_add, map_add, map_add, hu, hv]
 
 end ProductHelpers
