@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Dominance
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
+public import TauCeti.LinearAlgebra.RootSystem.RootSpanProj
+import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
 # Bases, automorphisms and chambers of a restriction of scalars
@@ -30,10 +32,9 @@ to one with the same property, and it has the same root orbits and orbit sums. I
 dominance on the `K`-span of the roots is that of `P`, and for `K = L` over an ordered field so is
 the dominant chamber.
 
-In a balanced root pairing the span of the roots is complementary to the common kernel of the
-coroot functionals, and the projection `RootPairing.rootSpanProj` onto it along that kernel
-preserves every coroot value and commutes with equivalences of root pairings. It moves a weight of
-`P` into the restriction without changing its dominance, which reduces statements about dominant
+The projection `RootPairing.rootSpanProj` onto the span of the roots along the common kernel of the
+coroot functionals commutes with restricted equivalences of root pairings. It moves a weight of `P`
+into the restriction without changing its dominance, which reduces statements about dominant
 weights of an arbitrary root pairing to statements about root systems.
 
 ## Main definitions
@@ -42,8 +43,6 @@ weights of an arbitrary root pairing to statements about root systems.
   a base of `P`.
 * `RootPairing.Equiv.restrictScalars'`: the equivalence of restrictions of scalars induced by an
   equivalence of root pairings.
-* `RootPairing.rootSpanProj`: the projection onto the span of the roots along the common kernel of
-  the coroot functionals.
 
 ## Main results
 
@@ -61,10 +60,9 @@ weights of an arbitrary root pairing to statements about root systems.
   agrees with that of `P`.
 * `RootPairing.mem_dominantChamber_restrictScalars'_iff`: for `K = L`, dominance on the span of the
   roots agrees with that of `P`.
-* `RootPairing.isCompl_rootSpan_iInf_ker_coroot'`, `RootPairing.coroot'_rootSpanProj`,
-  `RootPairing.Equiv.weightMap_restrictScalars'_rootSpanProj`,
-  `RootPairing.rootSpanProj_mem_dominantChamber_iff`: the splitting off of the central part, and
-  the projection onto the span of the roots preserving coroot values, equivariance and dominance.
+* `RootPairing.Equiv.weightMap_restrictScalars'_rootSpanProj`,
+  `RootPairing.rootSpanProj_mem_dominantChamber_iff`: the projection onto the span of the roots is
+  equivariant and preserves dominance.
 -/
 
 public section
@@ -119,30 +117,19 @@ theorem pairingIn_restrictScalars' (S : Type*) [CommRing S] [Algebra S K] [Algeb
 
 variable {P K}
 
-/-- A vector of a submodule is a sum of vectors of a family in the submodule indexed by `s`
-exactly when it is a sum of the same vectors of the ambient module. -/
-private theorem mem_closure_image_iff_coe {V : Type*} [AddCommGroup V] [Module K V]
-    {p : Submodule K V} (v : ι → p) {s : Set ι} {x : p} :
-    x ∈ AddSubmonoid.closure (v '' s) ↔ (x : V) ∈ AddSubmonoid.closure (((↑) ∘ v) '' s) := by
-  let f := p.subtype.toAddMonoidHom
-  have himage : f '' (v '' s) = ((↑) ∘ v) '' s := by
-    simp [f, Set.image_image]
-  rw [← himage, ← AddMonoidHom.map_mclosure f]
-  exact (AddSubmonoid.mem_map_iff_mem (f := f) Subtype.val_injective).symm
-
 /-- A vector of the `K`-span of the roots is a sum of roots of `P.restrictScalars' K` indexed by `s`
 exactly when it is a sum of the corresponding roots of `P`. -/
 theorem mem_closure_root_restrictScalars'_iff {s : Set ι} {x : span K (range P.root)} :
     x ∈ AddSubmonoid.closure ((P.restrictScalars' K).root '' s) ↔
       (x : M) ∈ AddSubmonoid.closure (P.root '' s) :=
-  mem_closure_image_iff_coe _
+  AddSubmonoid.mem_closure_image_iff_coe (P.restrictScalars_coe_root K)
 
 /-- A vector of the `K`-span of the coroots is a sum of coroots of `P.restrictScalars' K` indexed by
 `s` exactly when it is a sum of the corresponding coroots of `P`. -/
 theorem mem_closure_coroot_restrictScalars'_iff {s : Set ι} {y : span K (range P.coroot)} :
     y ∈ AddSubmonoid.closure ((P.restrictScalars' K).coroot '' s) ↔
       (y : N) ∈ AddSubmonoid.closure (P.coroot '' s) :=
-  mem_closure_image_iff_coe _
+  AddSubmonoid.mem_closure_image_iff_coe (P.restrictScalars_coe_coroot K)
 
 /-! ### The restricted base -/
 
@@ -316,50 +303,6 @@ theorem coe_orbitSum_restrictScalars' :
 end OrbitSum
 
 /-! ### The projection onto the span of the roots -/
-
-section RootSpan
-
-variable {R : Type*} [CommRing R] [Module R M] [Module R N] {P : RootPairing ι R M N} [P.IsBalanced]
-
-variable (P) in
-/-- In a balanced root pairing, the span of the roots is complementary to the common kernel of the
-coroot functionals, the central part of the weight space. -/
-theorem isCompl_rootSpan_iInf_ker_coroot' :
-    IsCompl (P.rootSpan R) (⨅ i, LinearMap.ker (P.coroot' i)) := by
-  rw [← P.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot']
-  exact IsBalanced.isPerfectCompl.isCompl_left
-
-variable (P) in
-/-- The **projection onto the span of the roots** along the common kernel of the coroot
-functionals. -/
-noncomputable def rootSpanProj : M →ₗ[R] P.rootSpan R :=
-  (P.rootSpan R).projectionOnto _ P.isCompl_rootSpan_iInf_ker_coroot'
-
-/-- The projection onto the span of the roots fixes the vectors of that span. -/
-theorem rootSpanProj_apply_of_mem {x : M} (hx : x ∈ P.rootSpan R) :
-    P.rootSpanProj x = ⟨x, hx⟩ :=
-  Submodule.projectionOnto_apply_of_mem_left _ hx
-
-/-- The kernel of the projection onto the span of the roots is the common kernel of the coroot
-functionals. -/
-@[simp]
-theorem ker_rootSpanProj :
-    LinearMap.ker P.rootSpanProj = ⨅ i, LinearMap.ker (P.coroot' i) :=
-  Submodule.ker_projectionOnto _
-
-/-- A vector and its projection onto the span of the roots differ by a vector on which every
-coroot functional vanishes. -/
-theorem sub_rootSpanProj_mem (x : M) :
-    x - P.rootSpanProj x ∈ ⨅ i, LinearMap.ker (P.coroot' i) :=
-  Submodule.sub_projection_mem _ x
-
-/-- **The projection onto the span of the roots preserves every coroot value.** -/
-theorem coroot'_rootSpanProj (i : ι) (x : M) : P.coroot' i (P.rootSpanProj x) = P.coroot' i x := by
-  have h := Submodule.mem_iInf _ |>.mp (P.sub_rootSpanProj_mem x) i
-  rw [LinearMap.mem_ker, map_sub, sub_eq_zero] at h
-  exact h.symm
-
-end RootSpan
 
 section RootSpanRestriction
 
