@@ -39,7 +39,8 @@ on the basis of rational subsets, and so on all opens
 (`TauCeti.ValuationSpectrum.isSheaf_rational_comp_of_isSheafFor_ofArrows`,
 `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isSheaf_rational`).
 
-No noetherian or finiteness hypothesis is needed: unlike the Tate case, no completion occurs.
+No noetherian or finiteness hypothesis is needed: unlike the Tate case, completing the
+localisation `A_s` does not change it.
 
 ## Main definitions
 
@@ -48,6 +49,8 @@ No noetherian or finiteness hypothesis is needed: unlike the Tate case, no compl
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.coe_presentationLimitRingEquivOfDiscreteTopology_apply`: read in the
+  completion `A⟨T/s⟩`, this identification is the projection of the presentation limit.
 * `TauCeti.ValuationSpectrum.presentationLimitRingEquivOfDiscreteTopology_presentationLimitMap`:
   under these identifications, restriction between rational subsets is the localisation map.
 * `TauCeti.ValuationSpectrum.discreteTopology_presentationLimit_spaBasicOpen`: the sections over
@@ -90,16 +93,40 @@ noncomputable def presentationLimitRingEquivOfDiscreteTopology (T : Finset A) (s
   letI := locUniformSpace P T s _ p.hasDenominatorPower
   letI := isUniformAddGroup_locUniformSpace P T s _ p.hasDenominatorPower
   letI := isTopologicalRing_locUniformSpace P T s _ p.hasDenominatorPower
-  let iso := presentationLimitRationalIso Aplus
-    (fun _ _ ↦ isPowerBounded_iff.mpr (isBounded_of_discreteTopology _)) p (isOpen_discrete _)
+  have hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a := fun a _ ↦
+    isPowerBounded_of_discreteTopology a
+  let iso := presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)
   let f : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) →+* Localization.Away s :=
     (completionLocEquivOfDiscreteTopology P T s _ p.hasDenominatorPower).symm.toRingHom.comp
       ((eqToHom (completionLocObj_obj P T s _ p.hasDenominatorPower)).val.comp iso.hom.hom.val)
   RingEquiv.ofBijective f <|
     (completionLocEquivOfDiscreteTopology P T s _ p.hasDenominatorPower).symm.bijective.comp
-      (bijective_presentationLimitRationalIso_hom Aplus
-        (fun _ _ ↦ isPowerBounded_iff.mpr (isBounded_of_discreteTopology _)) p
-        (isOpen_discrete _))
+      (bijective_presentationLimitRationalIso_hom Aplus hAplus p (isOpen_discrete _))
+
+/-- **The image of a section in `A_s` is its projection to `A⟨T/s⟩`.** Read in the completion
+`A⟨T/s⟩` of `A_s`, `presentationLimitRingEquivOfDiscreteTopology` is the projection of the
+presentation limit onto the completed localisation (`presentationLimitRationalIso`). -/
+theorem coe_presentationLimitRingEquivOfDiscreteTopology_apply (T : Finset A) (s : A)
+    (x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)) :
+    letI := locUniformSpace P T s _ (hasDenominatorPower_of_discreteTopology P T s
+      (Localization.Away s))
+    letI := isUniformAddGroup_locUniformSpace P T s _ (hasDenominatorPower_of_discreteTopology P T s
+      (Localization.Away s))
+    letI := isTopologicalRing_locUniformSpace P T s _ (hasDenominatorPower_of_discreteTopology P T s
+      (Localization.Away s))
+    (presentationLimitRingEquivOfDiscreteTopology P Aplus T s x :
+        UniformSpace.Completion (Localization.Away s)) =
+      (eqToHom (completionLocObj_obj P T s _
+        (hasDenominatorPower_of_discreteTopology P T s (Localization.Away s)))).val
+        ((presentationLimitRationalIso Aplus (fun a _ ↦ isPowerBounded_of_discreteTopology a)
+          ⟨T, s, hasDenominatorPower_of_discreteTopology P T s _⟩ (isOpen_discrete _)).hom.hom.val
+            x) := by
+  let p : Presentation P := ⟨T, s, hasDenominatorPower_of_discreteTopology P T s _⟩
+  let _ := locUniformSpace P T s _ p.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P T s _ p.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P T s _ p.hasDenominatorPower
+  rw [← completionLocEquivOfDiscreteTopology_apply P T s _ p.hasDenominatorPower]
+  exact RingEquiv.apply_symm_apply _ _
 
 /-- **Over a discrete ring, restriction is the localisation map.** If `R(T'/s') ⊆ R(T/s)`, then
 `s` is a unit of `A_{s'}`, and under `presentationLimitRingEquivOfDiscreteTopology` restriction of
@@ -113,12 +140,11 @@ theorem presentationLimitRingEquivOfDiscreteTopology_presentationLimitMap {T T' 
       IsLocalization.Away.lift s (isUnit_algebraMap_of_rationalSubset_subset _
         (fun _ _ ↦ isOpen_discrete _) (spaBasicOpen_le_spaBasicOpen_iff.mp h))
         (presentationLimitRingEquivOfDiscreteTopology P Aplus T s x) := by
-  have hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a :=
-    fun _ _ ↦ isPowerBounded_iff.mpr (isBounded_of_discreteTopology _)
-  simp only [presentationLimitRingEquivOfDiscreteTopology, RingEquiv.ofBijective_apply,
-    RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
-  set p : Presentation P := ⟨T, s, hasDenominatorPower_of_discreteTopology P T s _⟩
-  set q : Presentation P := ⟨T', s', hasDenominatorPower_of_discreteTopology P T' s' _⟩
+  have hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a := fun a _ ↦
+    isPowerBounded_of_discreteTopology a
+  have hsub := spaBasicOpen_le_spaBasicOpen_iff.mp h
+  let p : Presentation P := ⟨T, s, hasDenominatorPower_of_discreteTopology P T s _⟩
+  let q : Presentation P := ⟨T', s', hasDenominatorPower_of_discreteTopology P T' s' _⟩
   let _ := locUniformSpace P T s _ p.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P T s _ p.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P T s _ p.hasDenominatorPower
@@ -129,36 +155,38 @@ theorem presentationLimitRingEquivOfDiscreteTopology_presentationLimitMap {T T' 
   have H := presentationLimitRationalIso_inv_comp_map_comp_hom Aplus hAplus p q
     (isOpen_discrete _) (isOpen_discrete _) h
   rw [Iso.inv_comp_eq] at H
+  -- Read through the transports, the comparison morphism is the comparison ring homomorphism.
   have Hx : (presentationLimitRationalIso Aplus hAplus q (isOpen_discrete _)).hom.hom.val
       ((presentationLimitMap h).hom.val x) =
-      (homOfRationalSubsetSubset Aplus hAplus (spaBasicOpen_le_spaBasicOpen_iff.mp h)).hom.val
+      (homOfRationalSubsetSubset Aplus hAplus hsub).hom.val
         ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.val x) :=
     congrArg (fun f ↦ f.hom.val x) H
-  rw [Hx]
-  -- Read through the transports, the comparison morphism is the comparison ring homomorphism.
   have hY := congrArg (fun f ↦ f.hom ((presentationLimitRationalIso Aplus hAplus p
       (isOpen_discrete _)).hom.hom.val x))
     (map_homOfRationalSubsetSubset_comp_completionLocObjCommRingCatIso_hom (p := p) (q := q)
-      hAplus (spaBasicOpen_le_spaBasicOpen_iff.mp h))
+      hAplus hsub)
   simp only [Presentation.completionLocObjCommRingCatIso_hom] at hY
+  -- `hY` composes the transports in their forgotten form `forget₂.map (eqToHom _)`, whose target
+  -- is `CommRingCat.of A⟨T'/s'⟩` only after unfolding `forget₂`, so `CommRingCat.hom_comp` does
+  -- not rewrite it (the term is not type-correct at reducible transparency). Since `forget₂`
+  -- sends a morphism `f` to `CommRingCat.ofHom f.val`, the ascription below reads `hY`
+  -- elementwise on the underlying ring homomorphisms.
   have hY' : (eqToHom (completionLocObj_obj P T' s' _ q.hasDenominatorPower)).val
-      ((homOfRationalSubsetSubset (p := p) (q := q) Aplus hAplus
-        (spaBasicOpen_le_spaBasicOpen_iff.mp h)).hom.val
+      ((homOfRationalSubsetSubset (p := p) (q := q) Aplus hAplus hsub).hom.val
           ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.val x)) =
       ringHomOfRationalSubsetSubset P Aplus hAplus T s _ p.hasDenominatorPower T' s' _
-        q.hasDenominatorPower (spaBasicOpen_le_spaBasicOpen_iff.mp h)
+        q.hasDenominatorPower hsub
         ((eqToHom (completionLocObj_obj P T s _ p.hasDenominatorPower)).val
           ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.val x)) :=
     hY
-  rw [hY']
-  -- Over a discrete ring the comparison ring homomorphism is the localisation map.
-  obtain ⟨w, hw⟩ := (completionLocEquivOfDiscreteTopology P T s _ p.hasDenominatorPower).surjective
-    ((eqToHom (completionLocObj_obj P T s _ p.hasDenominatorPower)).val
-      ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.val x))
-  rw [← hw, RingEquiv.symm_apply_apply, completionLocEquivOfDiscreteTopology_apply]
-  exact (congrArg _ (ringHomOfRationalSubsetSubset_coe_of_discreteTopology P Aplus hAplus T s _
-    p.hasDenominatorPower T' s' _ q.hasDenominatorPower (spaBasicOpen_le_spaBasicOpen_iff.mp h)
-      w)).trans (completionLocEquivOfDiscreteTopology_symm_coe P T' s' _ q.hasDenominatorPower _)
+  -- Compare both sides in `A⟨T'/s'⟩`, into which `A_{s'}` embeds; over a discrete ring the
+  -- comparison ring homomorphism restricts to the localisation map.
+  apply (completionLocEquivOfDiscreteTopology P T' s' _ q.hasDenominatorPower).injective
+  rw [completionLocEquivOfDiscreteTopology_apply, completionLocEquivOfDiscreteTopology_apply,
+    coe_presentationLimitRingEquivOfDiscreteTopology_apply P Aplus T' s', Hx, hY',
+    ← ringHomOfRationalSubsetSubset_coe_of_discreteTopology P Aplus hAplus T s _
+      p.hasDenominatorPower T' s' _ q.hasDenominatorPower hsub,
+    coe_presentationLimitRingEquivOfDiscreteTopology_apply P Aplus T s x]
 
 /-- **Over a discrete ring, the sections over `R(T/s)` form a discrete ring.** They are
 homeomorphic to `A⟨T/s⟩`, which is discrete
@@ -170,8 +198,8 @@ theorem discreteTopology_presentationLimit_spaBasicOpen (T : Finset A) (s : A) :
   have _ := isUniformAddGroup_locUniformSpace P T s _ p.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P T s _ p.hasDenominatorPower
   have _ := discreteTopology_completion_locUniformSpace P T s _ p.hasDenominatorPower
-  have hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a :=
-    fun _ _ ↦ isPowerBounded_iff.mpr (isBounded_of_discreteTopology _)
+  have hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a := fun a _ ↦
+    isPowerBounded_of_discreteTopology a
   let iso := presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)
   let e := eqToHom (completionLocObj_obj P T s _ p.hasDenominatorPower)
   exact DiscreteTopology.of_continuous_injective (e.property.comp iso.hom.hom.property)
