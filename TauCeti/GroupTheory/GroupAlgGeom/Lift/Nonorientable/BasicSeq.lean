@@ -37,7 +37,8 @@ with any of them gives a solution of the mixed form. They act on the solutions o
 after conjugation by a change of coordinates: an elementary `G`-automorphism `f` of `G[X]` carries
 the left side of the mixed form to the left side of `S`
 (`TauCeti.GroupAlgGeom.Quadratic.Standard.exists_mem_elementaryAut_apply_mixedWord`), so the
-conjugates `f γ f⁻¹` fix the left side of `S`.
+conjugates `f γ f⁻¹` fix the left side of `S` (`conj_apply_toWord_of_mem_mixedBasicSeq`,
+`conj_phi_mixedBasicSeq_toWord`), and the coefficients when `f` fixes them.
 
 ## Main definitions
 
@@ -52,12 +53,18 @@ conjugates `f γ f⁻¹` fix the left side of `S`.
 * `TauCeti.GroupAlgGeom.Lift.apply_basicMixedWord_of_mem_basicMixedWordSeq`: its automorphisms
   fix `S₁`.
 * `TauCeti.GroupAlgGeom.Lift.apply_inr_of_of_mem_basicMixedWordSeq_of_ne`: they fix the variables
-  that do not occur in `S₁`.
+  outside the families `x`, `y`, `z` and `u`.
+* `TauCeti.GroupAlgGeom.Lift.phi_basicMixedWordSeq_basicMixedWord`,
+  `TauCeti.GroupAlgGeom.Lift.phi_basicMixedWordSeq_symm_basicMixedWord`: the products `φ_{j,p}` of
+  the basic sequence of `S₁` and their inverses fix `S₁`.
 * `TauCeti.GroupAlgGeom.Lift.apply_mixedWord_of_mem_mixedBasicSeq`,
   `TauCeti.GroupAlgGeom.Lift.phi_mixedBasicSeq_mixedWord`,
   `TauCeti.GroupAlgGeom.Lift.phi_mixedBasicSeq_symm_mixedWord`: the basic sequence of a
   non-orientable equation, the products `φ_{j,p}` and their inverses fix the left side of its mixed
   form.
+* `TauCeti.GroupAlgGeom.Lift.conj_phi_mixedBasicSeq_toWord`: conjugated by an automorphism `f`
+  carrying the left side of the mixed form to that of `S`, the products `φ_{j,p}` fix the left side
+  of `S`.
 * `TauCeti.GroupAlgGeom.Lift.length_mixedBasicSeq`: `K = m + 2N - 2` for genus `N`, that is
   `m + 4n + 2` for `2n + 2` squares and `m + 4n` for `2n + 1` squares.
 
@@ -103,6 +110,9 @@ two squares; for three or more squares only the first two get automorphisms of t
 noncomputable def basicMixedWordSeq : List (MulAut (GX G X)) :=
   basicWordSeq (Sum.elim_injective.1 inj).1 c ++ linkSqSeq inj c ++ sqSeq inj
 
+/-- The basic sequence of `S₁` written out in order: the orientable basic sequence of `S₀`, then
+the optional linking automorphism, then the optional automorphisms of the first two squares. The
+order matters for the products `φ_{j,p}`. -/
 theorem basicMixedWordSeq_def :
     basicMixedWordSeq inj c =
       basicWordSeq (Sum.elim_injective.1 inj).1 c ++
@@ -223,6 +233,30 @@ theorem apply_inr_of_of_mem_basicMixedWordSeq_of_ne (hγ : γ ∈ basicMixedWord
   · exact basicSqMul_inr_of_of_ne inj k k' (hv (.inr k)).symm (hv (.inr k')).symm
   · exact basicSqConj_inr_of_of_ne inj k k' (hv (.inr k)).symm (hv (.inr k')).symm
 
+/-- The products `φ_{j,p}` of the basic sequence of `S₁` fix `S₁`. -/
+@[simp]
+theorem phi_basicMixedWordSeq_basicMixedWord (p : List ℕ) :
+    phi (basicMixedWordSeq inj c) p (basicMixedWord x y z u c) = basicMixedWord x y z u c :=
+  phi_apply_of_forall_mem (fun _ hγ ↦ apply_basicMixedWord_of_mem_basicMixedWordSeq hγ) p
+
+/-- The products `φ_{j,p}` of the basic sequence of `S₁` fix the coefficients. -/
+@[simp]
+theorem phi_basicMixedWordSeq_inl (p : List ℕ) (g : G) :
+    phi (basicMixedWordSeq inj c) p (inl g) = inl g :=
+  phi_apply_of_forall_mem (fun _ hγ ↦ apply_inl_of_mem_basicMixedWordSeq hγ g) p
+
+/-- The inverses of the products `φ_{j,p}` of the basic sequence of `S₁` fix `S₁`. -/
+@[simp]
+theorem phi_basicMixedWordSeq_symm_basicMixedWord (p : List ℕ) :
+    (phi (basicMixedWordSeq inj c) p).symm (basicMixedWord x y z u c) = basicMixedWord x y z u c :=
+  phi_symm_apply_of_forall_mem (fun _ hγ ↦ apply_basicMixedWord_of_mem_basicMixedWordSeq hγ) p
+
+/-- The inverses of the products `φ_{j,p}` of the basic sequence of `S₁` fix the coefficients. -/
+@[simp]
+theorem phi_basicMixedWordSeq_symm_inl (p : List ℕ) (g : G) :
+    (phi (basicMixedWordSeq inj c) p).symm (inl g) = inl g :=
+  phi_symm_apply_of_forall_mem (fun _ hγ ↦ apply_inl_of_mem_basicMixedWordSeq hγ g) p
+
 end Seq
 
 /-! ### Non-orientable standard quadratic equations -/
@@ -247,35 +281,50 @@ noncomputable def mixedBasicSeq : (S : Standard G X) → ¬S.IsOrientable → Li
 
 variable {N : ℕ} {x : Fin N → X} {z : Fin m → X} {c : Fin m → G} {d : G}
 
+/-- The basic sequence of `x₀² ⋯ x²_{N-1} = 1` is that of the word `S₁` of its mixed variables,
+without coefficients. -/
 theorem mixedBasicSeq_nonorientable (hN : 0 < N) (inj : x.Injective) :
     mixedBasicSeq (nonorientable (G := G) N hN x inj) (not_isOrientable_nonorientable hN inj) =
       basicMixedWordSeq (injective_sumElim_mixed (inj.sumElim_of_isEmpty Fin.elim0))
         Fin.elim0 := (rfl)
 
+/-- The basic sequence of `x₀² ⋯ x²_{N-1} ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` is that of the word `S₁` of its
+mixed variables and its conjugated coefficients `cⱼ`. -/
 theorem mixedBasicSeq_nonorientableCoeff (hN : 0 < N) (inj : (Sum.elim x z).Injective)
     (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
     mixedBasicSeq (nonorientableCoeff N m hN x z inj c hc d hd)
         (not_isOrientable_nonorientableCoeff hN inj hc hd) =
       basicMixedWordSeq (injective_sumElim_mixed inj) c := (rfl)
 
+open scoped commutatorElement in
+/-- The word `S₁` of the mixed variables of `x` and of `z`, `c` is the product of its conjugated
+coefficients, its commutators and its squares, written as in `mixedAtoms`. -/
+private theorem basicMixedWord_mixed_eq_prod (x : Fin N → X) (z : Fin m → X) (c : Fin m → G) :
+    basicMixedWord (mixedFst x) (mixedSnd x) z (mixedSq x) c =
+      (List.ofFn (fun j => (inr (FreeGroup.of (z j)) : GX G X)⁻¹ * inl (c j) *
+          inr (FreeGroup.of (z j))) ++
+        (List.ofFn (fun i => ⁅(inr (FreeGroup.of (mixedFst x i)) : GX G X)⁻¹,
+            (inr (FreeGroup.of (mixedSnd x i)))⁻¹⁆) ++
+          List.ofFn fun k => (inr (FreeGroup.of (mixedSq x k)) : GX G X) ^ 2)).prod := by
+  simp only [basicMixedWord_def, basicWord_def, List.prod_append, mul_assoc,
+    funext (coeffAtom_def z c), funext (commAtom_def (G := G) (mixedFst x) (mixedSnd x)),
+    funext (sqAtom_def (G := G) (mixedSq x))]
+
 /-- The product of the mixed atoms of `x₀² ⋯ x²_{N-1} = 1` is the word `S₁` of its mixed
 variables. -/
-theorem basicMixedWord_eq_prod_mixedAtoms_nonorientable (hN : 0 < N) (inj : x.Injective) :
+private theorem basicMixedWord_eq_prod_mixedAtoms_nonorientable (hN : 0 < N) (inj : x.Injective) :
     basicMixedWord (mixedFst x) (mixedSnd x) Fin.elim0 (mixedSq x) (Fin.elim0 : Fin 0 → G) =
       ((nonorientable N hN x inj).mixedAtoms (not_isOrientable_nonorientable hN inj)).prod := by
-  simp [basicMixedWord_def, basicWord_def, funext (commAtom_def (G := G) (mixedFst x) (mixedSnd x)),
-    funext (sqAtom_def (G := G) (mixedSq x))]
+  simp [basicMixedWord_mixed_eq_prod]
 
 /-- The product of the mixed atoms of `x₀² ⋯ x²_{N-1} ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` is the word `S₁` of its
 mixed variables and coefficients. -/
-theorem basicMixedWord_eq_prod_mixedAtoms_nonorientableCoeff (hN : 0 < N)
+private theorem basicMixedWord_eq_prod_mixedAtoms_nonorientableCoeff (hN : 0 < N)
     (inj : (Sum.elim x z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
     basicMixedWord (mixedFst x) (mixedSnd x) z (mixedSq x) c =
       ((nonorientableCoeff N m hN x z inj c hc d hd).mixedAtoms
         (not_isOrientable_nonorientableCoeff hN inj hc hd)).prod := by
-  simp [basicMixedWord_def, basicWord_def, funext (coeffAtom_def z c),
-    funext (commAtom_def (G := G) (mixedFst x) (mixedSnd x)),
-    funext (sqAtom_def (G := G) (mixedSq x)), mul_assoc]
+  rw [basicMixedWord_mixed_eq_prod, mixedAtoms_nonorientableCoeff]
 
 variable {S : Standard G X} (ho : ¬S.IsOrientable) {γ : MulAut (GX G X)}
 
@@ -340,6 +389,40 @@ the coefficients. -/
 theorem phi_mixedBasicSeq_symm_inl (p : List ℕ) (g : G) :
     (phi (mixedBasicSeq S ho) p).symm (inl g) = inl g :=
   phi_symm_apply_of_forall_mem (fun _ hγ ↦ apply_inl_of_mem_mixedBasicSeq ho hγ g) p
+
+variable {f : MulAut (GX G X)}
+
+/-- **Transport to the standard form.** If `f` carries the left side of the mixed form of a
+non-orientable standard quadratic equation `S = 1` to the left side of `S` (for example the
+elementary automorphism of `Quadratic.Standard.exists_mem_elementaryAut_apply_mixedWord`), then
+`f γ f⁻¹` fixes the left side of `S` for every automorphism `γ` of the basic sequence. -/
+theorem conj_apply_toWord_of_mem_mixedBasicSeq (hf : f (S.mixedWord ho) = S.toWord)
+    (hγ : γ ∈ mixedBasicSeq S ho) : (f * γ * f⁻¹) S.toWord = S.toWord := by
+  rw [← hf, MulAut.mul_apply, MulAut.mul_apply, MulAut.inv_apply_self,
+    apply_mixedWord_of_mem_mixedBasicSeq ho hγ]
+
+/-- If `f` fixes the coefficients, then so does `f γ f⁻¹` for every automorphism `γ` of the basic
+sequence of a non-orientable standard quadratic equation. -/
+theorem conj_apply_inl_of_mem_mixedBasicSeq (hf : ∀ g, f (inl g) = inl g)
+    (hγ : γ ∈ mixedBasicSeq S ho) (g : G) : (f * γ * f⁻¹) (inl g) = inl g := by
+  conv_lhs => rw [← hf g]
+  rw [MulAut.mul_apply, MulAut.mul_apply, MulAut.inv_apply_self,
+    apply_inl_of_mem_mixedBasicSeq ho hγ, hf]
+
+/-- **Transport to the standard form.** If `f` carries the left side of the mixed form of a
+non-orientable standard quadratic equation `S = 1` to the left side of `S`, then the conjugates
+`f φ_{j,p} f⁻¹` of the products `φ_{j,p}` fix the left side of `S`. -/
+theorem conj_phi_mixedBasicSeq_toWord (hf : f (S.mixedWord ho) = S.toWord) (p : List ℕ) :
+    (f * phi (mixedBasicSeq S ho) p * f⁻¹) S.toWord = S.toWord := by
+  rw [← hf, MulAut.mul_apply, MulAut.mul_apply, MulAut.inv_apply_self,
+    phi_mixedBasicSeq_mixedWord]
+
+/-- If `f` fixes the coefficients, then so do the conjugates `f φ_{j,p} f⁻¹` of the products
+`φ_{j,p}` of the basic sequence of a non-orientable standard quadratic equation. -/
+theorem conj_phi_mixedBasicSeq_inl (hf : ∀ g, f (inl g) = inl g) (p : List ℕ) (g : G) :
+    (f * phi (mixedBasicSeq S ho) p * f⁻¹) (inl g) = inl g := by
+  conv_lhs => rw [← hf g]
+  rw [MulAut.mul_apply, MulAut.mul_apply, MulAut.inv_apply_self, phi_mixedBasicSeq_inl, hf]
 
 /-- The basic sequence of the word `S₁` of the mixed variables of genus `N`, with `m` conjugated
 coefficients, has `m + 2N - 2` terms. -/
