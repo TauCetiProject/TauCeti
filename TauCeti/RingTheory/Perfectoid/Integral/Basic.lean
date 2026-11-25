@@ -196,7 +196,7 @@ theorem perfectRing [CharP A p] [IsIntegralPerfectoid p A] : PerfectRing A p := 
   let e := RingEquiv.ofBijective _ ⟨hinj, hsurj⟩
   have : IsReduced A := isReduced_of_injective
     ((e.symm : ModP A p →+* PreTilt A p).comp (Ideal.Quotient.mk _))
-    (e.symm.injective.comp ModP.mk_injective)
+    (e.symm.injective.comp ModP.mk_bijective.1)
   refine PerfectRing.ofSurjective A p fun x ↦ ?_
   obtain ⟨y, hy⟩ := exists_natCast_dvd_sub_pow (p := p) x
   rw [CharP.cast_eq_zero, zero_dvd_iff, sub_eq_zero] at hy

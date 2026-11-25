@@ -36,7 +36,7 @@ terms is, since the inverses of its terms are again compatible.
   `φ` at the `p ^ n`-th roots of `x`.
 * `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
   element vanishes as soon as one of its coordinates does.
-* `ModP.mk_injective`: in characteristic `p`, reduction `O → O ⧸ p` is injective.
+* `ModP.mk_bijective`: in characteristic `p`, reduction `O → O ⧸ p` is bijective.
 * `ModP.isReduced`: in characteristic `p`, `O ⧸ p` is reduced when `O` is.
 * `PreTilt.ext`, `PreTilt.coeff_equivPerfection`, `PreTilt.coeff_equivPerfection_symm`: coordinate
   extensionality and coordinate formulas for `PreTilt.equivPerfection`.
@@ -148,18 +148,16 @@ namespace ModP
 
 variable {O : Type*} [CommRing O] {p : ℕ} [CharP O p]
 
-/-- **In characteristic `p`, reduction modulo `p` is injective**, since `p = 0` and so
+/-- **In characteristic `p`, reduction modulo `p` is bijective**, since `p = 0` and so
 `O ⧸ p = O ⧸ ⊥`. -/
-theorem mk_injective : Function.Injective (Ideal.Quotient.mk (Ideal.span {(p : O)})) :=
-  (injective_iff_map_eq_zero _).mpr fun _ h ↦ by
-    rwa [Ideal.Quotient.eq_zero_iff_mem, (by simp : Ideal.span {(p : O)} = ⊥),
-      Ideal.mem_bot] at h
+theorem mk_bijective : Function.Bijective (Ideal.Quotient.mk (Ideal.span {(p : O)})) :=
+  (Ideal.Quotient.mk_bijective_iff_eq_bot _).mpr (by simp)
 
 /-- **In characteristic `p`, `O ⧸ p` is reduced when `O` is**, since reduction modulo `p` is an
 isomorphism `O ≃+* O ⧸ p`. -/
 instance isReduced [IsReduced O] : IsReduced (ModP O p) :=
   isReduced_of_injective
-    (RingEquiv.ofBijective _ ⟨mk_injective, Ideal.Quotient.mk_surjective⟩).symm
+    (RingEquiv.ofBijective _ mk_bijective).symm
     (RingEquiv.injective _)
 
 end ModP

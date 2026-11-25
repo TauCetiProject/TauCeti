@@ -89,7 +89,7 @@ theorem fontaineTheta_eq_zero_iff_preTilt_coeff_coeff_zero_eq_zero
     (x : WittVector p (PreTilt A p)) :
     fontaineTheta A p x = 0 ↔ PreTilt.coeff 0 (x.coeff 0) = 0 := by
   -- `p = 0` in `A`, so reduction modulo `p` is injective
-  rw [← mk_fontaineTheta, _root_.map_eq_zero_iff _ ModP.mk_injective]
+  rw [← mk_fontaineTheta, _root_.map_eq_zero_iff _ ModP.mk_bijective.1]
 
 /-- **Fontaine's map in characteristic `p`.** For a ring `A` of characteristic `p` whose zeroth
 tilt coordinate `A♭ → A ⧸ p` is injective, `θ : W(A♭) → A` vanishes exactly on the Witt vectors
