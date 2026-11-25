@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
-import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Analysis.Calculus.LocalExtr.Polynomial
 import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.RingTheory.Polynomial.Vieta
@@ -17,15 +16,14 @@ import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 
 /-!
-# Newton's inequalities for a multiset of real numbers
+# The equality case of Newton's inequalities
 
 For a multiset `s` of real numbers with `n` elements write `S_k = e_k(s) / binom(n, k)` for its
-normalized elementary symmetric functions, where `e_k(s)` is `Multiset.esymm s k`.
+normalized elementary symmetric functions, where `e_k(s)` is `Multiset.esymm s k`. Newton's
+inequalities `S_k S_{k+2} ≤ S_{k+1}²` are `Multiset.esymm_div_choose_mul_esymm_div_choose_le_sq`.
 
 ## Main results
 
-* `Multiset.esymm_div_choose_mul_esymm_div_choose_le_sq`: **Newton's inequalities**
-  `S_k S_{k+2} ≤ S_{k+1}²` for every `k`.
 * `Multiset.eq_of_esymm_div_choose_mul_esymm_div_choose_eq_sq`: if `e_{k+2}(s) ≠ 0` and
   `S_k S_{k+2} = S_{k+1}²`, then all elements of `s` are equal.
 * `Multiset.exists_esymm_div_choose_eq_of_card_eq_succ`: if `n ≥ 1`, there is a multiset `r` of
@@ -33,11 +31,12 @@ normalized elementary symmetric functions, where `e_k(s)` is `Multiset.esymm s k
 
 ## Implementation notes
 
-The last result is Rolle's theorem (`Polynomial.card_roots_le_derivative`): its proof takes for
-`r` the roots of the derivative of `∏_{a ∈ s} (X - a)`. It lowers `n` to `k + 2` in Newton's
-inequality. Replacing `s` by the inverses of its elements reverses the
-sequence `S_0, …, S_{k+2}` up to the factor `S_{k+2}`, which reduces the inequality to
-`S_0 S_2 ≤ S_1²`, the inequality between the arithmetic and the quadratic mean.
+The second result is Rolle's theorem (`Polynomial.card_roots_le_derivative`): its proof takes for
+`r` the roots of the derivative of `∏_{a ∈ s} (X - a)`. Iterating it lowers `n` to `k + 2` in the
+equality case. Replacing `s` by the inverses of its elements then reverses the
+sequence `S_0, …, S_{k+2}` up to the factor `S_{k+2}`, which reduces the equality case to that of
+`S_0 S_2 ≤ S_1²`, the equality case of the inequality between the arithmetic and the quadratic
+mean.
 
 ## References
 
@@ -141,16 +140,6 @@ private theorem mNorm_two_eq (s : Multiset ℝ) (hs : 2 ≤ card s) :
 private theorem mNorm_one_eq (s : Multiset ℝ) : mNorm s 1 = s.sum / card s := by
   rw [mNorm, Multiset.esymm_one, Nat.choose_one_right]
 
-/-- Newton's inequality at `k = 0`: `S₀ S₂ ≤ S₁²`, the inequality between the arithmetic and the
-quadratic mean. -/
-private theorem mNorm_two_le (s : Multiset ℝ) : mNorm s 2 ≤ mNorm s 1 ^ 2 := by
-  rcases lt_or_ge (card s) 2 with hs | hs
-  · rw [mNorm_of_card_lt hs]
-    positivity
-  have hn : (2 : ℝ) ≤ card s := by exact_mod_cast hs
-  rw [mNorm_two_eq s hs, mNorm_one_eq, div_pow, div_le_div_iff₀ (by nlinarith) (by positivity)]
-  nlinarith [Multiset.sq_sum_le_card_mul_sum_sq s, sq_nonneg s.sum]
-
 private theorem eq_of_mNorm_two_eq (s : Multiset ℝ) (hs : 2 ≤ card s)
     (h : mNorm s 2 = mNorm s 1 ^ 2) : ∀ x ∈ s, ∀ y ∈ s, x = y := by
   have hn : (2 : ℝ) ≤ card s := by exact_mod_cast hs
@@ -186,21 +175,6 @@ private theorem exists_mNorm_eq_of_le (s : Multiset ℝ) {m : ℕ} (hm : m ≤ c
     obtain ⟨t, ht, hrt⟩ := ih r (by omega) hr
     exact ⟨t, ht, fun j hj ↦ (hsr j (by omega)).trans (hrt j hj)⟩
 
-/-- **Newton's inequality** for a multiset, `S_k S_{k+2} ≤ S_{k+1}²`. -/
-private theorem mNorm_mul_le_sq (s : Multiset ℝ) (k : ℕ) :
-    mNorm s k * mNorm s (k + 2) ≤ mNorm s (k + 1) ^ 2 := by
-  rcases lt_or_ge (card s) (k + 2) with hlt | hge
-  · rw [mNorm_of_card_lt hlt, mul_zero]
-    positivity
-  obtain ⟨r, hr, hsr⟩ := exists_mNorm_eq_of_le s hge
-  rw [hsr k (by omega), hsr (k + 1) (by omega), hsr (k + 2) le_rfl]
-  by_cases h0 : (0 : ℝ) ∈ r
-  · rw [← hr, mNorm_card, Multiset.prod_eq_zero h0, mul_zero]
-    positivity
-  obtain ⟨h0', h1, h2⟩ := mNorm_eq_mul_prod_of_card_eq hr h0
-  rw [h0', h1, h2]
-  nlinarith [mNorm_two_le (r.map (·⁻¹)), sq_nonneg r.prod]
-
 /-- The equality case of Newton's inequality for a multiset with `S_{k+2} ≠ 0`. -/
 private theorem eq_of_mNorm_mul_eq_sq (s : Multiset ℝ) (k : ℕ) (hne : mNorm s (k + 2) ≠ 0)
     (heq : mNorm s k * mNorm s (k + 2) = mNorm s (k + 1) ^ 2) :
@@ -228,13 +202,6 @@ private theorem eq_of_mNorm_mul_eq_sq (s : Multiset ℝ) (k : ℕ) (hne : mNorm 
   rw [← hrep, ← hsr 1 (by omega)] at h1
   rw [← hrep, ← hsr 2 (by omega)] at h2
   exact eq_of_mNorm_two_eq s (by omega) (by rw [h1, h2])
-
-/-- **Newton's inequalities** for a multiset `s` of real numbers: with
-`S_k = e_k(s) / binom(card s, k)`, `S_k S_{k+2} ≤ S_{k+1}²` for every `k`. -/
-theorem esymm_div_choose_mul_esymm_div_choose_le_sq (s : Multiset ℝ) (k : ℕ) :
-    s.esymm k / (card s).choose k * (s.esymm (k + 2) / (card s).choose (k + 2)) ≤
-      (s.esymm (k + 1) / (card s).choose (k + 1)) ^ 2 :=
-  mNorm_mul_le_sq s k
 
 /-- The equality case of Newton's inequalities: if `e_{k+2}(s) ≠ 0` and `S_k S_{k+2} = S_{k+1}²`
 for `S_k = e_k(s) / binom(card s, k)`, then all elements of `s` are equal. -/

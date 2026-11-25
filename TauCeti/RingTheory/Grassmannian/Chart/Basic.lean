@@ -479,6 +479,27 @@ theorem homEquiv_symm_apply_universalLinearMap
     (homEquiv R x).symm ψ (universalLinearMap R x m j) = ψ.val m j := by
   rw [← homEquiv_apply_apply, Equiv.apply_symm_apply]
 
+/-- An `R`-algebra map into `ChartAlgebra R x` whose range contains every coordinate of the
+universal point is surjective. -/
+theorem surjective_of_forall_mem_range {B : Type*} [Semiring B] [Algebra R B]
+    {f : B →ₐ[R] ChartAlgebra R x} (h : ∀ m j, universalLinearMap R x m j ∈ f.range) :
+    Function.Surjective f := by
+  -- The universal point factors through the range `S`, and the induced map `C_x → S` is a
+  -- section of the inclusion of `S`, by `hom_ext`.
+  set S := f.range
+  let ψ : {ψ : M →ₗ[R] Fin k → S // ∀ i, ψ (x i) = Pi.single i 1} :=
+    ⟨{ toFun m j := ⟨universalLinearMap R x m j, h m j⟩
+       map_add' m m' := funext fun j ↦ Subtype.ext (by simp)
+       map_smul' r m := funext fun j ↦ Subtype.ext (by simp) },
+      fun i ↦ funext fun j ↦ Subtype.ext (by
+        simp only [LinearMap.coe_mk, AddHom.coe_mk, universalLinearMap_apply_self, Pi.single_apply]
+        split_ifs <;> rfl)⟩
+  have hsec : S.val.comp ((homEquiv R x).symm ψ) = AlgHom.id R _ :=
+    hom_ext R x fun m j ↦ by simp [ψ]
+  intro c
+  have hc : S.val ((homEquiv R x).symm ψ c) = c := DFunLike.congr_fun hsec c
+  exact (hc ▸ ((homEquiv R x).symm ψ c).property : c ∈ S)
+
 end ChartAlgebra
 
 /-- The `R`-algebra maps `ChartAlgebra R x → A` are the points of the chart at `x` over `A`: the

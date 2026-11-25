@@ -26,8 +26,8 @@ difference of the commuting endomorphisms `LinearMap.mulLeft R a` and `LinearMap
 `n`-fold iterated commutator is their binomial expansion: a sum of the products
 `a ^ m * b * (-a) ^ (n - m)`, with the sign absorbed into `(-a) ^ (n - m)` rather than carried as a
 separate `(-1) ^ k`.  Alongside it, `ad_eq_zero_iff_mem_center` records that the adjoint action of
-`a` vanishes exactly when `a` is central, so shifting `a` by a scalar does not change `ad R A a`;
-in particular a scalar plus a nilpotent element has nilpotent adjoint action.
+`a` vanishes exactly when `a` is central, so shifting `a` by a central element does not change
+`ad R A a`; in particular a central element plus a nilpotent element has nilpotent adjoint action.
 
 Over an algebra of exponential characteristic `p` the expansion collapses at `n = p ^ e`, which is
 the subject of `TauCeti.Algebra.Lie.AdjointAction.Frobenius`.
@@ -45,8 +45,8 @@ For an ideal, adjoint nilpotence also passes back to the ambient Lie algebra
 * `TauCeti.LieAlgebra.ad_pow_eq_sum` and `TauCeti.LieAlgebra.ad_pow_apply`: the
   iterated-commutator expansion of `ad R A a ^ n`, at operator level and evaluated.
 * `TauCeti.LieAlgebra.ad_eq_zero_iff_mem_center`: `ad R A a` vanishes exactly on the centre.
-* `TauCeti.LieAlgebra.isNilpotent_ad_of_isNilpotent_sub_algebraMap`: a scalar plus a nilpotent
-  element has nilpotent adjoint action.
+* `IsNilpotent.ad_of_sub_of_mem_center`: a central element plus a nilpotent element has nilpotent
+  adjoint action.
 * `LieSubalgebra.isSemisimple_ad_of_isSemisimple_ad`: an element of a Lie subalgebra that is
   ad-semisimple in the ambient Lie algebra is ad-semisimple in the subalgebra.
 * `LieIdeal.isNilpotent_ad_iff`: an element of an ideal is ad-nilpotent in the ideal exactly when
@@ -65,11 +65,11 @@ For an ideal, adjoint nilpotence also passes back to the ambient Lie algebra
 
 public section
 
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 namespace TauCeti.LieAlgebra
 
 open Finset
-
-attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 
@@ -110,13 +110,12 @@ theorem ad_eq_zero_iff_mem_center (a : A) :
   refine forall_congr' fun b ↦ ?_
   rw [LieAlgebra.ad_apply, Ring.lie_def, LinearMap.zero_apply, sub_eq_zero, eq_comm]
 
-/-- Shifting by a scalar does not change the adjoint action, so a scalar plus a nilpotent element
-of an associative algebra has nilpotent adjoint action. -/
-theorem isNilpotent_ad_of_isNilpotent_sub_algebraMap {a : A} {c : R}
-    (h : IsNilpotent (a - algebraMap R A c)) : IsNilpotent (LieAlgebra.ad R A a) := by
-  have hc : LieAlgebra.ad R A (algebraMap R A c) = 0 :=
-    (ad_eq_zero_iff_mem_center _).mpr (Subalgebra.algebraMap_mem _ c)
-  simpa [hc] using LieAlgebra.ad_nilpotent_of_nilpotent (R := R) h
+/-- Shifting by a central element does not change the adjoint action, so a central element plus a
+nilpotent element of an associative algebra has nilpotent adjoint action. -/
+theorem _root_.IsNilpotent.ad_of_sub_of_mem_center {a z : A} (h : IsNilpotent (a - z))
+    (hz : z ∈ Subalgebra.center R A) : IsNilpotent (LieAlgebra.ad R A a) := by
+  have hz' : LieAlgebra.ad R A z = 0 := (ad_eq_zero_iff_mem_center z).mpr hz
+  simpa [hz'] using LieAlgebra.ad_nilpotent_of_nilpotent (R := R) h
 
 end TauCeti.LieAlgebra
 
@@ -163,11 +162,7 @@ namespace TauCeti.LieAlgebra
 
 open _root_.LieAlgebra
 
-section Center
-
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-
-attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- The adjoint action of `z` vanishes exactly when `z` is central. -/
 theorem ad_eq_zero_iff {z : L} : ad R L z = 0 ↔ z ∈ center R L := by
@@ -193,21 +188,15 @@ theorem isNilpotent_ad_add_iff_of_mem_center_right (y : L) {z : L} (hz : z ∈ c
     IsNilpotent (ad R L (y + z)) ↔ IsNilpotent (ad R L y) := by
   rw [ad_add_of_mem_center_right y hz]
 
-end Center
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
 /-- Elements whose bracket vanishes have commuting adjoint actions. -/
-theorem commute_ad_of_lie_eq_zero {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-    {x y : L} (h : ⁅x, y⁆ = 0) : Commute (ad R L x) (ad R L y) := by
+theorem commute_ad_of_lie_eq_zero {x y : L} (h : ⁅x, y⁆ = 0) :
+    Commute (ad R L x) (ad R L y) := by
   rw [commute_iff_lie_eq, ← LieHom.map_lie, h, map_zero]
 
 /-- In a center-free Lie algebra, an element whose adjoint is polynomial in `ad x` commutes
 with every element commuting with `x`. -/
-theorem lie_eq_zero_of_ad_mem_adjoin {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-    [LieModule.IsFaithful R L L] {x y z : L}
-    (hz : ad R L z ∈ Algebra.adjoin R {ad R L x}) (hxy : ⁅x, y⁆ = 0) :
-    ⁅z, y⁆ = 0 := by
+theorem lie_eq_zero_of_ad_mem_adjoin [LieModule.IsFaithful R L L] {x y z : L}
+    (hz : ad R L z ∈ Algebra.adjoin R {ad R L x}) (hxy : ⁅x, y⁆ = 0) : ⁅z, y⁆ = 0 := by
   have hzy := Algebra.commute_of_mem_adjoin_singleton_of_commute hz
     (commute_ad_of_lie_eq_zero hxy).symm
   apply (LieModule.toEnd_eq_iff R L L).mp

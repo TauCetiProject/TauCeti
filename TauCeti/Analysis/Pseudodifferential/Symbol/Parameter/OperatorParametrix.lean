@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Parametrix
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Sobolev
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.TruncatedParametrix
+import TauCeti.Algebra.BigOperators.NatAntidiagonal
 
 /-!
 # The right parametrix of a differential operator with parameter
@@ -53,10 +53,8 @@ formal composition equations `∑_{j + k = L} sharpTerm a bⱼ k = δ_{L,0}`
 
 ## Main declarations
 
-* `TauCeti.ParameterSymbol.toSymbol_sharpTerm`: at a spectral parameter, the parameter-dependent
-  composition terms are the composition terms of the ordinary symbols.
-* `TauCeti.ParameterSymbol.rightParametrix`, `TauCeti.ParameterSymbol.rightParametrixRemainder`:
-  the sum of the first `N` terms of the formal right parametrix, and its remainder of order `-N`.
+* `TauCeti.ParameterSymbol.rightParametrixRemainder`: the remainder of order `-N` of the truncated
+  right parametrix `TauCeti.ParameterSymbol.rightParametrix`.
 * `TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_rightParametrix`: the symbol identity
   `∑_{k < d} sharpTerm a Bₙ k = 1 + rₙ`.
 * `TauCeti.ParameterSymbol.smul_quantizeSchwartzValue_rightParametrix_eq_add`: the operator
@@ -80,53 +78,14 @@ namespace TauCeti
 
 namespace ParameterSymbol
 
-variable {n : ℕ} {Λ : Opens ℂ} {m m' : ℝ}
+variable {n : ℕ} {Λ : Opens ℂ} {m : ℝ}
 
 section Parametrix
 
-variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U]
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W] [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
 
-/-- At every spectral parameter, the composition terms of parameter-dependent symbols are the
-composition terms `TauCeti.Symbol.sharpTerm` of their symbols at that parameter. Outside `Λ`
-both sides vanish. -/
-@[simp]
-theorem toSymbol_sharpTerm (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m)
-    (k : ℕ) (z : ℂ) :
-    (b.sharpTerm a k).toSymbol z = (b.toSymbol z).sharpTerm (a.toSymbol z) k := by
-  ext1
-  funext ⟨x, ξ⟩
-  by_cases hz : z ∈ Λ
-  · rw [coefficient_toSymbol, coefficient_sharpTerm b a k x ξ hz, Symbol.coefficient_sharpTerm]
-    simp [mixedDeriv_def]
-  · simp [Symbol.coefficient_sharpTerm, toSymbol_of_notMem _ hz, mixedDeriv_def, ← Pi.zero_def]
-
-/-! ### The truncated right parametrix and its remainder -/
-
-variable [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
-
-variable (a) in
-/-- The sum `∑_{j < N} bⱼ` of the first `N` terms of the formal right parametrix of a symbol `a`
-of order `m` elliptic with parameter, a parameter-dependent symbol of order `-m`. -/
-noncomputable def rightParametrix (ha : a.IsElliptic) (N : ℕ) : ParameterSymbol n Λ W V (-m) :=
-  ∑ j ∈ range N, inclusion (sub_le_self _ (Nat.cast_nonneg j)) (a.rightInverseTerms ha j)
-
-@[simp]
-theorem coefficient_rightParametrix (ha : a.IsElliptic) (N : ℕ) :
-    (a.rightParametrix ha N).coefficient =
-      ∑ j ∈ range N, (a.rightInverseTerms ha j).coefficient := by
-  simp [rightParametrix, coefficient_sum]
-
-/-- The orders of the summands of the remainder: `sharpTerm a bⱼ (N - j + i)` has order
-`-(j + (N - j + i)) ≤ -N`. -/
-private theorem rightParametrixRemainder_order_le (N j i : ℕ) :
-    m + (-m - (j : ℝ)) - ((N - j + i : ℕ) : ℝ) ≤ -(N : ℝ) := by
-  rcases le_or_gt j N with h | h
-  · rw [Nat.cast_add, Nat.cast_sub h]
-    linarith [Nat.cast_nonneg (α := ℝ) i]
-  · rw [Nat.sub_eq_zero_of_le h.le, zero_add]
-    have hj : (N : ℝ) < j := by exact_mod_cast h
-    linarith [Nat.cast_nonneg (α := ℝ) i]
+/-! ### The remainder of the truncated right parametrix -/
 
 variable (a) in
 /-- The remainder of the truncated right parametrix of a symbol `a` elliptic with parameter and
@@ -136,7 +95,7 @@ polynomial of degree less than `d` in the frequency: the sum of the composition 
 (`TauCeti.ParameterSymbol.sum_coefficient_sharpTerm_rightParametrix`). -/
 noncomputable def rightParametrixRemainder (ha : a.IsElliptic) (d N : ℕ) :
     ParameterSymbol n Λ W W (-N) :=
-  ∑ j ∈ range N, ∑ i ∈ range d, inclusion (rightParametrixRemainder_order_le N j i)
+  ∑ j ∈ range N, ∑ i ∈ range d, inclusion (sharpTerm_inverseTerms_order_le N j i)
     (a.sharpTerm (a.rightInverseTerms ha j) (N - j + i))
 
 @[simp]
@@ -144,23 +103,6 @@ theorem coefficient_rightParametrixRemainder (ha : a.IsElliptic) (d N : ℕ) :
     (a.rightParametrixRemainder ha d N).coefficient = ∑ j ∈ range N, ∑ i ∈ range d,
       (a.sharpTerm (a.rightInverseTerms ha j) (N - j + i)).coefficient := by
   simp [rightParametrixRemainder, coefficient_sum]
-
-/-- The composition terms of `a` with the truncated parametrix are the sums of those with its
-terms. -/
-private theorem coefficient_sharpTerm_rightParametrix (ha : a.IsElliptic) (N k : ℕ)
-    (x ξ : CoordinateSpace n) (z : ℂ) :
-    (a.sharpTerm (a.rightParametrix ha N) k).coefficient ((x, ξ), z) =
-      ∑ j ∈ range N, (a.sharpTerm (a.rightInverseTerms ha j) k).coefficient ((x, ξ), z) := by
-  have h := Symbol.coefficient_sharpTerm_eq_sum_right (range N) (fun _ => 1)
-    (fun j => (a.rightInverseTerms ha j).toSymbol z) (b₀ := (a.rightParametrix ha N).toSymbol z)
-    (funext fun q => by simp [coefficient_rightParametrix]) (a.toSymbol z) k
-  calc (a.sharpTerm (a.rightParametrix ha N) k).coefficient ((x, ξ), z)
-      = ((a.toSymbol z).sharpTerm ((a.rightParametrix ha N).toSymbol z) k).coefficient (x, ξ) := by
-        rw [← toSymbol_sharpTerm _ _ _ z, coefficient_toSymbol]
-    _ = _ := by
-        rw [h, Finset.sum_apply]
-        refine Finset.sum_congr rfl fun j _ => ?_
-        rw [Pi.smul_apply, one_smul, ← toSymbol_sharpTerm _ _ _ z, coefficient_toSymbol]
 
 /-- **The truncated right parametrix.** Let `a` be elliptic with parameter and polynomial of
 degree less than `d` in the frequency, and `N ≥ 1`. Then the composition terms of `a` with the sum
@@ -173,7 +115,7 @@ theorem sum_coefficient_sharpTerm_rightParametrix (ha : a.IsElliptic) {d N : ℕ
     ∑ k ∈ range d, (a.sharpTerm (a.rightParametrix ha N) k).coefficient ((x, ξ), z) =
       ContinuousLinearMap.id ℂ W + (a.rightParametrixRemainder ha d N).coefficient ((x, ξ), z) := by
   set T : ℕ → ℕ → W →L[ℂ] W := fun j k =>
-    (a.sharpTerm (a.rightInverseTerms ha j) k).coefficient ((x, ξ), z) with hT
+    (a.sharpTerm (a.rightInverseTerms ha j) k).coefficient ((x, ξ), z)
   have hT0 (j : ℕ) {k : ℕ} (hk : d ≤ k) : T j k = 0 :=
     coefficient_sharpTerm_eq_zero_of_coordinateDeriv_eq_zero hd _ hk x ξ hz
   -- For each `j`, split the terms `k < d` at `k = N - j`; the terms beyond `d` vanish.
@@ -182,10 +124,9 @@ theorem sum_coefficient_sharpTerm_rightParametrix (ha : a.IsElliptic) {d N : ℕ
     rw [← Finset.sum_range_add, add_comm, Finset.sum_range_add,
       Finset.sum_eq_zero (s := range (N - j)) fun i _ => hT0 j (Nat.le_add_right d i), add_zero]
   -- The terms with `j + k < N` add up to the identity by the formal composition equations.
-  have hdiag : ∑ j ∈ range N, ∑ k ∈ range (N - j), T j k = ContinuousLinearMap.id ℂ W := by
-    rw [← Finset.sum_range_diag_flip]
-    simp_rw [hT, sum_coefficient_sharpTerm_rightInverseTerms ha _ x ξ hz]
-    simp [Nat.pos_of_ne_zero hN]
+  have hdiag : ∑ j ∈ range N, ∑ k ∈ range (N - j), T j k = ContinuousLinearMap.id ℂ W :=
+    Nat.sum_range_sum_range_sub_eq
+      (fun L => sum_coefficient_sharpTerm_rightInverseTerms ha L x ξ hz) hN
   simp_rw [coefficient_sharpTerm_rightParametrix ha N _ x ξ z]
   rw [Finset.sum_comm, coefficient_rightParametrixRemainder]
   simp only [Finset.sum_apply]

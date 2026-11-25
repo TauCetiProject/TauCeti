@@ -10,6 +10,7 @@ public import Mathlib.Probability.Moments.Basic
 
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Probability.Moments.SubGaussian
+import TauCeti.Analysis.Bochner.CharFun.Basic
 import TauCeti.Probability.Moments.Basic
 
 /-!
@@ -229,16 +230,8 @@ the real part of its characteristic function. -/
 theorem integral_cos_gaussianReal (μ : ℝ) (v : ℝ≥0) (t : ℝ) :
     ∫ y, Real.cos (t * y) ∂gaussianReal μ v =
       Real.exp (-(v * t ^ 2) / 2) * Real.cos (t * μ) := by
-  have hint : Integrable (fun y : ℝ => Complex.exp (t * y * Complex.I)) (gaussianReal μ v) :=
-    .of_bound (by fun_prop) 1 (.of_forall fun y => by simp [Complex.norm_exp])
-  calc
-    _ = (∫ y, Complex.exp (t * y * Complex.I) ∂gaussianReal μ v).re := by
-      rw [← RCLike.re_to_complex, ← integral_re hint]
-      congr with y
-      simp [Complex.exp_re]
-    _ = _ := by
-      rw [← charFun_apply_real, charFun_gaussianReal, Complex.exp_re]
-      simp [← Complex.ofReal_pow, neg_div]
+  rw [TauCeti.integral_cos_mul_eq_re_charFun, charFun_gaussianReal, Complex.exp_re]
+  simp [← Complex.ofReal_pow, neg_div]
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 

@@ -5,30 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import Mathlib.Topology.Algebra.MvPolynomial
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import TauCeti.Analysis.Convex.Sequence.DiscreteConcave
+import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.MeanInequalities.Newton
-import TauCeti.Analysis.MvPolynomial.Deriv
-import TauCeti.Analysis.MvPolynomial.Jacobian
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
+import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonMaclaurin
 
 /-!
-# Elementary symmetric functions and the Newton–Maclaurin inequalities
+# The Newton–Maclaurin inequalities on the cones `Γ_k`
 
 For `λ ∈ ℝⁿ` write `σ_k(λ)` for the elementary symmetric polynomial `MvPolynomial.esymm` evaluated
-at `λ`, `σ_{k;i}(λ) = σ_k(λ)|_{λ_i = 0}` (written `eval (update λ i 0) (esymm ι R k)`), and
-`S_k = σ_k / binom(n, k)` for the normalized function `TauCeti.normalizedEsymm`. The cone
-`Γ_k = {λ | σ_1(λ) > 0, …, σ_k(λ) > 0}` is `TauCeti.hessianCone n k`.
+at `λ` and `S_k = σ_k / binom(n, k)` for the normalized function `TauCeti.normalizedEsymm`. The
+cone `Γ_k = {λ | σ_1(λ) > 0, …, σ_k(λ) > 0}` is `TauCeti.hessianCone n k`.
 
 ## Main results
 
-* `TauCeti.fderiv_eval_esymm_succ_apply_single`: `∂σ_{k+1}/∂λ_i = σ_{k;i}`, from the expansion
-  `σ_{k+1} = λ_i σ_{k;i} + σ_{k+1;i}` (`TauCeti.eval_esymm_succ`, with the other algebraic
-  identities for `σ_{k;i}` in `TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary`).
 * `TauCeti.normalizedEsymm_mul_normalizedEsymm_le_sq`: **Newton's inequalities**
   `S_k S_{k+2} ≤ S_{k+1}²` for every `λ ∈ ℝⁿ`, and
   `TauCeti.eq_of_normalizedEsymm_mul_normalizedEsymm_eq_sq`: equality with `S_{k+2} ≠ 0` (for
@@ -41,55 +36,26 @@ at `λ`, `σ_{k;i}(λ) = σ_k(λ)|_{λ_i = 0}` (written `eval (update λ i 0) (e
 
 ## Implementation notes
 
-Newton's inequalities and their equality case are the multiset versions
-`Multiset.esymm_div_choose_mul_esymm_div_choose_le_sq` and
-`Multiset.eq_of_esymm_div_choose_mul_esymm_div_choose_eq_sq` of
-`TauCeti.Analysis.MeanInequalities.Newton`, applied to the multiset of entries of `λ`; they are
-proved by Rolle's theorem (`Polynomial.card_roots_le_derivative`). The generalized
-Newton–Maclaurin inequality follows from the concavity of `j ↦ log S_j` on `[0, r]`.
+Newton's inequalities, their equality case and Maclaurin's inequalities on the orthant are the
+multiset versions `Multiset.esymm_div_choose_mul_esymm_div_choose_le_sq`,
+`Multiset.eq_of_esymm_div_choose_mul_esymm_div_choose_eq_sq` and
+`Multiset.esymm_div_choose_rpow_le_rpow_of_nonneg`, applied to the multiset of entries of `λ`. The
+generalized Newton–Maclaurin inequality follows from the concavity of `j ↦ log S_j` on `[0, r]`.
 
 ## References
 
 * J. Spruck, *Geometric aspects of the theory of fully nonlinear elliptic equations*, Global
-  theory of minimal surfaces, Clay Math. Proc. 2 (2005), Lemma 2.6, Proposition 2.7,
-  Corollary 2.8 and Lemma 2.10.
+  theory of minimal surfaces, Clay Math. Proc. 2 (2005), Proposition 2.7, Corollary 2.8 and
+  Lemma 2.10.
 * S. Dinew and S. Kołodziej, *A priori estimates for complex Hessian equations*, Anal. PDE 7
   (2014), §1.
 -/
 
 public section
 
-open Finset MvPolynomial Function
+open Finset MvPolynomial
 
 namespace TauCeti
-
-section Derivative
-
-variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [DecidableEq ι]
-
-/-- The partial derivative `∂σ_{k+1}/∂λ_i = σ_{k;i}`, where `σ_{k;i}(λ) = σ_k(λ)|_{λ_i = 0}`. -/
-theorem fderiv_eval_esymm_succ_apply_single (μ : ι → 𝕜) (i : ι) (k : ℕ) :
-    fderiv 𝕜 (fun ν ↦ eval ν (esymm ι 𝕜 (k + 1))) μ (Pi.single i 1) =
-      eval (update μ i 0) (esymm ι 𝕜 k) := by
-  rw [fderiv_eval_apply_single]
-  have h := hasDerivAt_eval_update (esymm ι 𝕜 (k + 1)) μ i (μ i)
-  rw [update_eq_self] at h
-  refine h.unique ?_
-  have hline : (fun w ↦ eval (update μ i w) (esymm ι 𝕜 (k + 1))) =
-      fun w ↦ w * eval (update μ i 0) (esymm ι 𝕜 k) + eval (update μ i 0) (esymm ι 𝕜 (k + 1)) := by
-    funext w
-    rw [eval_esymm_succ _ i, update_self, update_idem]
-  rw [hline]
-  simpa using ((hasDerivAt_id (μ i)).mul_const (eval (update μ i 0) (esymm ι 𝕜 k))).add_const
-    (eval (update μ i 0) (esymm ι 𝕜 (k + 1)))
-
-omit [DecidableEq ι] in
-/-- `σ_0 = 1` has derivative `0`. -/
-theorem fderiv_eval_esymm_zero (μ : ι → 𝕜) :
-    fderiv 𝕜 (fun ν ↦ eval ν (esymm ι 𝕜 0)) μ = 0 := by
-  simp
-
-end Derivative
 
 section Normalized
 
@@ -116,11 +82,20 @@ theorem normalizedEsymm_of_card_lt {k : ℕ} (h : Fintype.card ι < k) (μ : ι 
     normalizedEsymm k μ = 0 := by
   rw [normalizedEsymm, Nat.choose_eq_zero_of_lt h, Nat.cast_zero, div_zero]
 
+private theorem eval_esymm_eq_esymm_map (μ : ι → ℝ) (k : ℕ) :
+    eval μ (esymm ι ℝ k) = (univ.val.map μ).esymm k :=
+  aeval_esymm_eq_multiset_esymm ι ℝ k μ
+
 private theorem normalizedEsymm_eq_esymm_div_choose (k : ℕ) (μ : ι → ℝ) :
     normalizedEsymm k μ =
       (univ.val.map μ).esymm k / (Multiset.card (univ.val.map μ)).choose k := by
   rw [normalizedEsymm, eval_esymm_eq_esymm_map, Multiset.card_map, Finset.card_val,
     Finset.card_univ]
+
+private theorem forall_mem_map_univ_val {μ : ι → ℝ} (hμ : ∀ i, 0 ≤ μ i) :
+    ∀ a ∈ univ.val.map μ, 0 ≤ a := fun a ha ↦ by
+  obtain ⟨i, -, rfl⟩ := Multiset.mem_map.mp ha
+  exact hμ i
 
 /-- `S_k` is continuous. -/
 @[fun_prop]
@@ -130,9 +105,8 @@ theorem continuous_normalizedEsymm (k : ℕ) : Continuous (normalizedEsymm (ι :
 /-- `S_k(λ) ≥ 0` when every entry of `λ` is nonnegative. -/
 theorem normalizedEsymm_nonneg {μ : ι → ℝ} (hμ : ∀ i, 0 ≤ μ i) (k : ℕ) :
     0 ≤ normalizedEsymm k μ := by
-  rw [normalizedEsymm, eval_esymm_eq_esymm_map, Finset.esymm_map_val]
-  exact div_nonneg (Finset.sum_nonneg fun A _ ↦ Finset.prod_nonneg fun i _ ↦ hμ i)
-    (Nat.cast_nonneg _)
+  rw [normalizedEsymm_eq_esymm_div_choose]
+  exact div_nonneg (Multiset.esymm_nonneg (forall_mem_map_univ_val hμ) k) (Nat.cast_nonneg _)
 
 /-- **Newton's inequality** `S_k S_{k+2} ≤ S_{k+1}²`, for every `λ ∈ ℝⁿ` and every `k`. -/
 theorem normalizedEsymm_mul_normalizedEsymm_le_sq (μ : ι → ℝ) (k : ℕ) :
@@ -153,6 +127,14 @@ theorem eq_of_normalizedEsymm_mul_normalizedEsymm_eq_sq {μ : ι → ℝ} {k : �
   exact Multiset.eq_of_esymm_div_choose_mul_esymm_div_choose_eq_sq (div_ne_zero_iff.mp hne).1 h
     _ (Multiset.mem_map_of_mem _ (Finset.mem_univ_val i)) _
     (Multiset.mem_map_of_mem _ (Finset.mem_univ_val j))
+
+/-- **Maclaurin's inequality** `S_l^{1/l} ≤ S_k^{1/k}` for `1 ≤ k ≤ l` and `λ` with nonnegative
+entries. -/
+theorem normalizedEsymm_rpow_le_of_nonneg {k l : ℕ} {μ : ι → ℝ} (hμ : ∀ i, 0 ≤ μ i)
+    (hk : 1 ≤ k) (hkl : k ≤ l) :
+    normalizedEsymm l μ ^ (1 / (l : ℝ)) ≤ normalizedEsymm k μ ^ (1 / (k : ℝ)) := by
+  simpa only [normalizedEsymm_eq_esymm_div_choose] using
+    Multiset.esymm_div_choose_rpow_le_rpow_of_nonneg _ hk hkl (forall_mem_map_univ_val hμ)
 
 end Normalized
 
@@ -181,11 +163,9 @@ theorem normalizedEsymm_pos_of_mem_hessianCone {n k j : ℕ} {μ : Fin n → ℝ
   rcases Nat.eq_zero_or_pos j with rfl | hj0
   · simp
   have hσ := hμ j (Finset.mem_Icc.mpr ⟨hj0, hj⟩)
-  have hjn : j ≤ n := by
-    by_contra h
-    rw [eval_esymm_eq_esymm_map, Multiset.esymm_of_card_lt (by simpa using h)] at hσ
-    exact lt_irrefl _ hσ
-  exact div_pos hσ (by exact_mod_cast Nat.choose_pos (by simpa using hjn))
+  rw [eval_esymm_eq_esymm_map] at hσ
+  rw [normalizedEsymm_eq_esymm_div_choose]
+  exact Multiset.esymm_div_choose_pos _ hσ
 
 /-- The **generalized Newton–Maclaurin inequality**: for `0 ≤ s < r`, `0 ≤ l < k ≤ r` with `l ≤ s`
 and `λ ∈ Γ_r`, `(S_r / S_s)^{1/(r - s)} ≤ (S_k / S_l)^{1/(k - l)}`. -/
@@ -242,17 +222,6 @@ theorem mem_closure_hessianCone_of_nonneg {n k : ℕ} {μ : Fin n → ℝ} (hμ 
     simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
   refine mem_closure_of_tendsto ht (eventually_nhdsWithin_of_forall fun ε hε ↦ ?_)
   exact mem_hessianCone_of_pos (fun i ↦ by simpa using add_pos_of_nonneg_of_pos (hμ i) hε) hk
-
-/-- **Maclaurin's inequality** `S_l^{1/l} ≤ S_k^{1/k}` for `1 ≤ k ≤ l` and `λ` with nonnegative
-entries. -/
-theorem normalizedEsymm_rpow_le_of_nonneg {n k l : ℕ} {μ : Fin n → ℝ} (hμ : ∀ i, 0 ≤ μ i)
-    (hk : 1 ≤ k) (hkl : k ≤ l) :
-    normalizedEsymm l μ ^ (1 / (l : ℝ)) ≤ normalizedEsymm k μ ^ (1 / (k : ℝ)) := by
-  rcases le_or_gt l n with hln | hln
-  · exact normalizedEsymm_rpow_le_of_mem_closure (mem_closure_hessianCone_of_nonneg hμ hln) hk hkl
-  have hl : (0 : ℝ) < l := by exact_mod_cast hk.trans hkl
-  rw [normalizedEsymm_of_card_lt (by simpa using hln), Real.zero_rpow (by positivity)]
-  exact Real.rpow_nonneg (normalizedEsymm_nonneg hμ k) _
 
 end Cone
 

@@ -58,6 +58,8 @@ Adjoining the elements one at a time and substituting variables
 
 * `TauCeti.Dagger.washnitzerAlgebra.lift`: the homomorphism `K⟨X⟩† → C` sending `Xᵢ` to `xᵢ`, for
   a dagger algebra `C` and elements with `|xᵢ|sup ≤ 1`.
+* `TauCeti.Dagger.washnitzerAlgebra.rename`: the homomorphism `K⟨X⟩† → K⟨Y⟩†` renaming the
+  variables along an arbitrary map of finite index types.
 
 ## Main results
 
@@ -405,6 +407,29 @@ theorem lift_unique [IsDaggerAlgebra K C] {σ : Type*} [Finite σ] {x : σ → C
 theorem lift_apply_X_eq [IsDaggerAlgebra K C] {σ : Type*} [Finite σ] (φ : W σ →ₐ[K] C) :
     lift (fun i ↦ φ (X σ K i)) (supSeminorm_apply_X_le_one φ) = φ :=
   (lift_unique φ fun _ ↦ rfl).symm
+
+/-- **Renaming the variables.** The homomorphism `K⟨X⟩† → K⟨Y⟩†` sending each variable `Xᵢ` to
+`Y_{f i}`, for an arbitrary map `f` of finite index types. -/
+noncomputable def rename {σ τ : Type*} [Finite σ] [Finite τ] (f : σ → τ) : W σ →ₐ[K] W τ :=
+  lift (fun i ↦ X τ K (f i)) fun i ↦ supSeminorm_apply_X_le_one (AlgHom.id K (W τ)) (f i)
+
+@[simp]
+theorem rename_X {σ τ : Type*} [Finite σ] [Finite τ] (f : σ → τ) (i : σ) :
+    rename f (X σ K i) = X τ K (f i) :=
+  lift_X _ _ i
+
+@[simp]
+theorem rename_id {σ : Type*} [Finite σ] : rename (K := K) (id : σ → σ) = AlgHom.id K (W σ) :=
+  algHom_ext fun i ↦ by simp
+
+theorem rename_comp {σ τ υ : Type*} [Finite σ] [Finite τ] [Finite υ] (g : τ → υ) (f : σ → τ) :
+    (rename (K := K) g).comp (rename f) = rename (g ∘ f) :=
+  algHom_ext fun i ↦ by simp
+
+/-- Renaming along an equivalence is `TauCeti.Dagger.washnitzerAlgebra.renameAlgEquiv`. -/
+theorem rename_equiv {σ τ : Type*} [Finite σ] [Finite τ] (e : σ ≃ τ) :
+    rename (K := K) e = (renameAlgEquiv e).toAlgHom :=
+  algHom_ext fun i ↦ by simp
 
 end Lift
 

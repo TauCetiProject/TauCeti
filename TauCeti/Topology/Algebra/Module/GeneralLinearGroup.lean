@@ -106,6 +106,20 @@ theorem coe_generalLinearContinuousMulEquiv :
       LinearMap.GeneralLinearGroup K V ≃* V ≃ₗ[K] V) =
       LinearMap.GeneralLinearGroup.generalLinearEquiv K V := (rfl)
 
+/-- The automorphism attached to an invertible endomorphism has that endomorphism as its underlying
+linear map. -/
+@[simp]
+theorem coe_generalLinearContinuousMulEquiv_apply (u : LinearMap.GeneralLinearGroup K V) :
+    ((generalLinearContinuousMulEquiv u : V ≃ₗ[K] V) : Module.End K V) = u :=
+  (rfl)
+
+/-- The invertible endomorphism attached to an automorphism is its underlying linear map. -/
+@[simp]
+theorem coe_generalLinearContinuousMulEquiv_symm_apply (g : V ≃ₗ[K] V) :
+    ((generalLinearContinuousMulEquiv.symm g : LinearMap.GeneralLinearGroup K V) :
+      Module.End K V) = g :=
+  (rfl)
+
 /-- A family of linear automorphisms is continuous exactly when its forward and inverse
 endomorphisms are both continuous. -/
 theorem continuous_linearEquiv_iff {X : Type*} [TopologicalSpace X]
