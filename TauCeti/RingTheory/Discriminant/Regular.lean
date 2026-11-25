@@ -7,10 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.RingTheory.Discriminant
-public import Mathlib.RingTheory.Localization.Module
-public import TauCeti.LinearAlgebra.Matrix.Nonsingular.Basic
-public import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 public import TauCeti.RingTheory.Semisimple.Trace.Form
+public import TauCeti.RingTheory.Trace.Regular.AlgHom
 
 /-!
 # The regular discriminant of a possibly noncommutative algebra
@@ -26,7 +24,7 @@ The regular discriminant of a `ℤ`-basis of an order `O` in a finite-dimensiona
 over `ℚ` is the invariant in Masser and Wüstholz's class-index bound: every full `O`-stable lattice
 in `Dᵉ` contains a copy of `Oᵉ` whose index is bounded in terms of `|disc O|`. This file
 establishes what that bound uses about it. The discriminant does not depend on the choice of
-`ℤ`-basis; passing to a subring of finite index `I` multiplies it by `I ^ 2`; it is the image of
+`ℤ`-basis; passing to a subring of finite index `I` multiplies it by `I ^ 2`; its image in `ℚ` is
 the regular discriminant over `ℚ` of the same family, the trace being taken on the whole rational
 algebra; and it is nonzero when that rational algebra is semisimple, for instance a division
 algebra. Semisimplicity cannot be dropped: in `ℤ[ε] = ℤ[X] / (X²)` with basis `1, ε` the regular
@@ -44,8 +42,8 @@ trace form has Gram matrix `diag(2, 0)`, so the discriminant vanishes. Its sign 
 * `Algebra.regularDiscr_of_matrix_vecMul`: replacing `b` by the combinations `b ᵥ* P` multiplies
   the regular discriminant by `det P ^ 2`.
 * `Algebra.regularDiscr_eq_regularDiscr`: two `ℤ`-bases have the same regular discriminant.
-* `Algebra.regularTraceForm_algHom_apply`: an injective algebra map between finite free algebras of
-  the same rank preserves the regular trace form, although it need not be surjective.
+* `Algebra.regularDiscr_eq_det_toMatrix_comp_sq_mul`: along an injective algebra map `f`, the
+  regular discriminant of a basis `b'` is `det (b.toMatrix (f ∘ b')) ^ 2` times that of `b`.
 * `Subring.regularDiscr_eq_relIndex_sq_mul`: if `O' ≤ O` are subrings with `ℤ`-bases of the same
   size, the regular discriminant of `O'` is `[O : O'] ^ 2` times that of `O`.
 * `Algebra.algebraMap_regularDiscr`: if `S` is a finite free `R`-algebra embedded in an algebra `E`
@@ -102,6 +100,7 @@ theorem regularDiscr_eq_discr {S : Type*} [CommRing S] [Algebra R S] (b : ι →
 variable {R}
 
 /-- Reindexing a family does not change its regular discriminant. -/
+@[simp]
 theorem regularDiscr_reindex {ι' : Type*} [Fintype ι'] [DecidableEq ι'] (b : ι → S)
     (e : ι ≃ ι') : regularDiscr R (b ∘ e.symm) = regularDiscr R b := by
   rw [regularDiscr_def, regularDiscr_def, ← det_reindex_self e]
@@ -141,49 +140,21 @@ section AlgHom
 
 variable {S' : Type*} [Ring S'] [Algebra R S']
 
-omit [Fintype ι] [DecidableEq ι] in
-/-- The regular trace form is preserved by an injective algebra map between algebras with bases of
-the same finite size. -/
-private theorem regularTraceForm_algHom_apply_of_basis [Finite ι] (f : S' →ₐ[R] S)
-    (hf : Function.Injective f) (b' : Basis ι R S') (b : Basis ι R S) (x y : S') :
-    regularTraceForm R S (f x) (f y) = regularTraceForm R S' x y := by
-  classical
-  have := Fintype.ofFinite ι
-  have hP : b.toMatrix (f ∘ b') = LinearMap.toMatrix b' b f.toLinearMap := by
-    ext i j
-    rw [Basis.toMatrix_apply, LinearMap.toMatrix_apply, Function.comp_apply,
-      AlgHom.toLinearMap_apply]
-  have hdet := b.det_mem_nonZeroDivisors
-    (b'.linearIndependent.map' f.toLinearMap (LinearMap.ker_eq_bot.2 hf))
-  rw [Basis.det_apply, AlgHom.coe_toLinearMap, hP] at hdet
-  rw [regularTraceForm_apply, regularTraceForm_apply, ← map_mul,
-    LinearMap.trace_eq_matrix_trace R b, LinearMap.trace_eq_matrix_trace R b']
-  refine Matrix.trace_eq_of_mul_eq_mul hdet ?_
-  rw [← LinearMap.toMatrix_comp, ← LinearMap.toMatrix_comp]
-  congr 1
-  ext z
-  simp [mul_assoc]
-
-omit [Fintype ι] [DecidableEq ι] in
-/-- **An injective algebra map between finite free algebras of the same rank preserves the regular
-trace form**, although its image may be a proper sublattice: for `x` in `S'`, left multiplication
-by `f x` on `S` and by `x` on `S'` have the same trace. -/
-theorem regularTraceForm_algHom_apply [Module.Free R S] [Module.Finite R S] [Module.Free R S']
-    [Module.Finite R S'] (f : S' →ₐ[R] S) (hf : Function.Injective f)
-    (hrank : finrank R S' = finrank R S) (x y : S') :
-    regularTraceForm R S (f x) (f y) = regularTraceForm R S' x y := by
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · exact Subsingleton.elim _ _
-  exact regularTraceForm_algHom_apply_of_basis f hf (finBasisOfFinrankEq R S' hrank)
-    (finBasis R S) x y
-
 /-- The regular discriminant of a basis `b'` of `S'` is `det (b.toMatrix (f ∘ b')) ^ 2` times that
 of a basis `b` of `S`, for an injective algebra map `f : S' → S`. -/
 theorem regularDiscr_eq_det_toMatrix_comp_sq_mul (f : S' →ₐ[R] S) (hf : Function.Injective f)
     (b' : Basis ι R S') (b : Basis ι R S) :
     regularDiscr R b' = (b.toMatrix (f ∘ b')).det ^ 2 * regularDiscr R b := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact Subsingleton.elim _ _
+  have := Free.of_basis b
+  have := Free.of_basis b'
+  have := Module.Finite.of_basis b
+  have := Module.Finite.of_basis b'
+  have hrank : finrank R S' = finrank R S := by
+    rw [finrank_eq_card_basis b', finrank_eq_card_basis b]
   rw [← regularDiscr_eq_det_toMatrix_sq_mul, regularDiscr_def, regularDiscr_def]
-  simp only [Function.comp_apply, regularTraceForm_algHom_apply_of_basis f hf b' b]
+  simp [regularTraceForm_algHom_apply f hf hrank]
 
 end AlgHom
 
@@ -193,52 +164,7 @@ section FractionRing
 
 variable {R K S E : Type*} [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
   [Ring S] [Algebra R S] [Ring E] [Algebra K E] [Algebra R E] [IsScalarTower R K E]
-  {ι : Type*}
-
-/-- The `K`-basis of `E` formed by the image of an `R`-basis of `S` under an injective algebra map
-whose image spans `E`. -/
-private noncomputable def basisOfSpan (f : S →ₐ[R] E) (hf : Function.Injective f)
-    (hspan : span K (Set.range f) = ⊤) (b : Basis ι R S) : Basis ι K E :=
-  .mk ((LinearIndependent.iff_fractionRing R K).1 (b.linearIndependent.map'
-    f.toLinearMap (LinearMap.ker_eq_bot.2 hf))) <| by
-      rw [top_le_iff, ← hspan, Set.range_comp, ← span_span_of_tower R, ← Submodule.map_span,
-        b.span_eq, Submodule.map_top, LinearMap.coe_range, AlgHom.coe_toLinearMap]
-
-private theorem basisOfSpan_apply (f : S →ₐ[R] E) (hf : Function.Injective f)
-    (hspan : span K (Set.range f) = ⊤) (b : Basis ι R S) (i : ι) :
-    basisOfSpan f hf hspan b i = f (b i) := by
-  simp [basisOfSpan]
-
-private theorem basisOfSpan_repr_apply [Finite ι] (f : S →ₐ[R] E) (hf : Function.Injective f)
-    (hspan : span K (Set.range f) = ⊤) (b : Basis ι R S) (s : S) (i : ι) :
-    (basisOfSpan f hf hspan b).repr (f s) i = algebraMap R K (b.repr s i) := by
-  have := Fintype.ofFinite ι
-  have hs : f s = ∑ j, algebraMap R K (b.repr s j) • basisOfSpan f hf hspan b j := by
-    calc f s = f (∑ j, b.repr s j • b j) := by rw [b.sum_repr]
-      _ = _ := by simp only [map_sum, map_smul, basisOfSpan_apply, algebraMap_smul]
-  rw [hs, Basis.repr_sum_self]
-
-/-- **The regular trace of an order is the rational regular trace.** Let `S` be a finite free
-`R`-algebra and `f : S → E` an injective algebra map into an algebra `E` over the fraction field `K`
-of `R`, whose image spans `E` over `K`. Then the regular trace form of `S` over `R` maps to that of
-`E` over `K`. -/
-theorem algebraMap_regularTraceForm [Module.Free R S] [Module.Finite R S] (f : S →ₐ[R] E)
-    (hf : Function.Injective f) (hspan : span K (Set.range f) = ⊤) (x y : S) :
-    algebraMap R K (regularTraceForm R S x y) = regularTraceForm K E (f x) (f y) := by
-  classical
-  let b := Free.chooseBasis R S
-  let bK := basisOfSpan f hf hspan b
-  have hmat : LinearMap.toMatrix bK bK (lmul K E (f (x * y))) =
-      (LinearMap.toMatrix b b (lmul R S (x * y))).map (algebraMap R K) := by
-    ext i j
-    rw [LinearMap.toMatrix_apply, Matrix.map_apply, LinearMap.toMatrix_apply,
-      basisOfSpan_apply, coe_lmul_eq_mul, coe_lmul_eq_mul, LinearMap.mul_apply',
-      LinearMap.mul_apply', ← map_mul, basisOfSpan_repr_apply]
-  rw [regularTraceForm_apply, regularTraceForm_apply, ← map_mul,
-    LinearMap.trace_eq_matrix_trace R b, LinearMap.trace_eq_matrix_trace K bK, hmat,
-    AddMonoidHom.map_trace]
-
-variable [Fintype ι] [DecidableEq ι]
+  {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- In the situation of `Algebra.algebraMap_regularTraceForm`, the regular discriminant over `R` of
 a family in `S` maps to the regular discriminant over `K` of its image in `E`. -/
@@ -248,8 +174,7 @@ theorem algebraMap_regularDiscr [Module.Free R S] [Module.Finite R S] (f : S →
   rw [regularDiscr_def, regularDiscr_def, RingHom.map_det]
   congr 1
   ext i j
-  rw [RingHom.mapMatrix_apply, Matrix.map_apply, of_apply, of_apply,
-    algebraMap_regularTraceForm f hf hspan, Function.comp_apply, Function.comp_apply]
+  simp [-regularTraceForm_apply, algebraMap_regularTraceForm f hf hspan]
 
 /-- **The regular discriminant of an order in a semisimple algebra is nonzero.** Let `S` be an
 `R`-algebra with a finite basis `b`, embedded by an injective algebra map `f` in an algebra `E` over
@@ -261,10 +186,12 @@ theorem regularDiscr_ne_zero [CharZero K] [IsSemisimpleRing E] (f : S →ₐ[R] 
     regularDiscr R b ≠ 0 := by
   have := Module.Free.of_basis b
   have := Module.Finite.of_basis b
-  let bK := basisOfSpan f hf hspan b
+  have hf' : Function.Injective f.toLinearMap := by simpa using hf
+  have hspan' : span K (Set.range f.toLinearMap) = ⊤ := by simpa using hspan
+  let bK := b.ofFractionRingOfSpan f.toLinearMap hf' hspan'
   have := Module.Finite.of_basis bK
   have hK : regularDiscr K (f ∘ b) ≠ 0 := by
-    have hb : f ∘ b = bK := funext fun i => (basisOfSpan_apply f hf hspan b i).symm
+    have hb : f ∘ b = bK := funext fun i => by simp [bK]
     rw [hb, regularDiscr_eq_det_toMatrix_regularTraceForm,
       ← LinearMap.BilinForm.nondegenerate_iff_det_ne_zero]
     exact TauCeti.nondegenerate_regularTraceForm
@@ -288,10 +215,10 @@ theorem regularDiscr_eq_relIndex_sq_mul {O' O : Subring D} (h : O' ≤ O) (b' : 
       (O'.toAddSubgroup.relIndex O.toAddSubgroup : ℤ) ^ 2 * Algebra.regularDiscr ℤ b := by
   let f : O' →ₐ[ℤ] O := (Subring.inclusion h).toIntAlgHom
   have hidx : O'.toAddSubgroup.relIndex O.toAddSubgroup = (b.toMatrix (f ∘ b')).det.natAbs := by
+    -- `b'` and `b` are passed as bases of the `ℤ`-submodules `O'.toAddSubgroup.toIntSubmodule`
+    -- and `O.toAddSubgroup.toIntSubmodule`, which are `O'` and `O` up to definitional unfolding
     rw [AddSubgroup.relIndex_eq_natAbs_det _ _ h b' b]
-    -- `Basis.det` is the determinant of `Basis.toMatrix`, and `O` and `O'` are their own
-    -- `ℤ`-submodules `O.toAddSubgroup.toIntSubmodule` up to definitional unfolding
-    rfl
+    exact congrArg Int.natAbs (b.det_apply (f ∘ b'))
   rw [Algebra.regularDiscr_eq_det_toMatrix_comp_sq_mul f (Subring.inclusion_injective h) b' b,
     hidx, Int.natCast_natAbs, sq_abs]
 
