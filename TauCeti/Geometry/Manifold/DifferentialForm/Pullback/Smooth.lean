@@ -498,6 +498,15 @@ theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : Smo
     (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ).val x = σ.val x :=
   TauCeti.mpullback_subtype_val_apply σ.val x
 
+/-- Pulling a smooth form back along a map `f` restricted to an open subset `U` evaluates tangent
+vectors at `x ∈ U` through the differential of `f` itself. -/
+theorem mpullback_comp_subtypeVal_apply {U : TopologicalSpace.Opens M} {f : M → M'}
+    (hf : ContMDiff I I' ∞ (f ∘ (Subtype.val : U → M))) (φ : SmoothForm I' M' F k) (x : U)
+    (v : Fin k → TangentSpace I x) :
+    (mpullback _ hf φ).val x v = φ.val (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
+  rw [mpullback_apply]
+  exact congrArg (φ.val (f x)) (funext fun i ↦ Manifold.mfderiv_comp_subtype_val_apply (v i))
+
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}
     (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I ∞ g) (hfg : Function.RightInverse g f) :
