@@ -125,7 +125,7 @@ variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [Invertible (2 : K)] {Q : QuadraticForm K V}
 
 /-- **Over a field of characteristic not two the Clifford group is the Lipschitz group**, for a
-nondegenerate form taking a unit value. -/
+nondegenerate form on a finite-dimensional space taking a unit value. -/
 theorem gpinGroup_eq_lipschitzGroup (hQ : Q.Nondegenerate) (hv : ∃ v, IsUnit (Q v)) :
     gpinGroup Q = lipschitzGroup Q :=
   le_antisymm
@@ -134,7 +134,7 @@ theorem gpinGroup_eq_lipschitzGroup (hQ : Q.Nondegenerate) (hv : ∃ v, IsUnit (
     (lipschitzGroup_le_gpinGroup Q)
 
 /-- **Over a field of characteristic not two the general spin group is the even part of the
-Lipschitz group**, for a nondegenerate form taking a unit value. -/
+Lipschitz group**, for a nondegenerate form on a finite-dimensional space taking a unit value. -/
 theorem gspinGroup_eq_lipschitzGroup_inf_evenUnits (hQ : Q.Nondegenerate)
     (hv : ∃ v, IsUnit (Q v)) :
     gspinGroup Q = lipschitzGroup Q ⊓ evenUnits Q := by
@@ -142,7 +142,7 @@ theorem gspinGroup_eq_lipschitzGroup_inf_evenUnits (hQ : Q.Nondegenerate)
     inf_eq_right.mpr (evenUnits_le_locallyHomogeneousUnits Q)]
 
 /-- **Over a field of characteristic not two the norm-one spin group is Mathlib's `spinGroup`**,
-for a nondegenerate form taking a unit value. -/
+for a nondegenerate form on a finite-dimensional space taking a unit value. -/
 theorem mem_normOneSpinGroup_iff_mem_spinGroup (hQ : Q.Nondegenerate) (hv : ∃ v, IsUnit (Q v))
     {x : (CliffordAlgebra Q)ˣ} :
     x ∈ normOneSpinGroup Q ↔ (x : CliffordAlgebra Q) ∈ spinGroup Q := by
