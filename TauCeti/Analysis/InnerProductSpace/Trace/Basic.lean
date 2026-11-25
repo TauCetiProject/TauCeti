@@ -30,9 +30,10 @@ covariant tensor, making it independent of any choice of basis.
 
 ## Main statements
 
-* `InnerProductSpace.canonicalCovariantTensor_eq_sum_dualBasis`: in an arbitrary basis `b`, the
-  canonical covariant tensor is `∑ᵢ bᵢ ⊗ b'ᵢ`, where `b'` is the dual basis of `b` for the inner
-  product.
+* `InnerProductSpace.canonicalCovariantTensor_eq_sum_dualBasis` and
+  `InnerProductSpace.canonicalCovariantTensor_eq_sum_inv_gram`: in an arbitrary basis `b`, the
+  canonical covariant tensor is `∑ᵢ bᵢ ⊗ b'ᵢ` (where `b'` is the metric dual basis) and
+  `∑ᵢ ∑ⱼ (G⁻¹)ᵢⱼ • (bᵢ ⊗ bⱼ)` (where `G` is the Gram matrix of `b`).
 * `LinearMap.BilinMap.metricTrace_eq_sum`: in an orthonormal basis, the metric trace is the sum of
   the diagonal values.
 * `LinearMap.BilinMap.metricTrace_eq_sum_dualBasis`: in an arbitrary basis, the metric trace pairs
@@ -80,6 +81,16 @@ theorem InnerProductSpace.canonicalCovariantTensor_eq_sum_dualBasis (W : Type*)
   rw [canonicalCovariantTensor_eq_sum W v]
   simpa [hv] using (TensorProduct.mk ℝ W W).sum_apply_dualBasis_eq TauCeti.nondegenerate_inner
     v.toBasis b
+
+/-- **The canonical covariant tensor via the inverse Gram matrix**: in an arbitrary basis `b`,
+`canonicalCovariantTensor W = ∑ᵢ ∑ⱼ (G⁻¹)ᵢⱼ • (bᵢ ⊗ bⱼ)` with `Gᵢⱼ = ⟪bᵢ, bⱼ⟫`. -/
+theorem InnerProductSpace.canonicalCovariantTensor_eq_sum_inv_gram (W : Type*)
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] {ι : Type*}
+    [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℝ W) :
+    canonicalCovariantTensor W =
+      ∑ i, ∑ j, (Matrix.gram ℝ b)⁻¹ i j • (b i ⊗ₜ[ℝ] b j) := by
+  simp only [canonicalCovariantTensor_eq_sum_dualBasis W b, b.dualBasis_innerₗ_eq_sum,
+    TensorProduct.tmul_sum, TensorProduct.tmul_smul]
 
 namespace LinearMap.BilinMap
 

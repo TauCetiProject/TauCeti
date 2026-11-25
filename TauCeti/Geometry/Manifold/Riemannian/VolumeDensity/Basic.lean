@@ -80,6 +80,15 @@ theorem contMDiffOn_chartVolumeDensity {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (f := fun y : M ↦ (chartGramMatrix (I := I) α y).det)
     (contMDiffOn_chartGramMatrix_det α x hx)
 
+/-- The chart volume density at `α` is `C^n` at every point of `(chartAt H α).source`. -/
+theorem contMDiffAt_chartVolumeDensity {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
+    (α : M) {x : M} (hx : x ∈ (chartAt H α).source) :
+    ContMDiffAt I 𝓘(ℝ) n (chartVolumeDensity (I := I) α) x :=
+  (contMDiffOn_chartVolumeDensity α).contMDiffAt
+    ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds
+      (by simpa only [TangentBundle.trivializationAt_baseSet] using hx))
+
 /-- Changing from the frame at `β` to the frame at `α` multiplies the volume density by
 the absolute determinant of the frame-coordinate matrix. The absolute value makes
 the rule valid for orientation-reversing transitions as well. -/

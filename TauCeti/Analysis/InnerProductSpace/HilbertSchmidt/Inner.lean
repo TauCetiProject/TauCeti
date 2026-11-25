@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Basic
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 
@@ -38,8 +39,27 @@ the diagonal it is the square of the Frobenius seminorm
 * `ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_frobenius` and
   `ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm`: `⟪A, A⟫_HS = ‖A‖_F²`
   and `⟪A, A⟫_HS = ‖A‖_HS²`.
-* `ContinuousLinearMap.hilbertSchmidtInner_self_nonneg` and
-  `ContinuousLinearMap.hilbertSchmidtInner_self_eq_zero_iff`: positive definiteness.
+* `ContinuousLinearMap.hilbertSchmidtInner_self_nonneg`,
+  `ContinuousLinearMap.hilbertSchmidtInner_self_eq_zero_iff` and
+  `ContinuousLinearMap.hilbertSchmidtNorm_eq_zero`: positive definiteness.
+* `ContinuousLinearMap.abs_hilbertSchmidtInner_le`: the Cauchy–Schwarz inequality
+  `|⟪A, B⟫_HS| ≤ ‖A‖_HS ‖B‖_HS`.
+* `ContinuousLinearMap.hilbertSchmidtInner_comp_linearIsometryEquiv`,
+  `ContinuousLinearMap.hilbertSchmidtInner_linearIsometry_comp` and
+  `ContinuousLinearMap.hilbertSchmidtInner_adjoint_comp`: isometric invariance and adjoint
+  compatibility.
+* `ContinuousLinearMap.hilbertSchmidtInner_rankOne_left` and
+  `ContinuousLinearMap.hilbertSchmidtInner_rankOne_right`: pairing against rank-one operators.
+* `ContinuousLinearMap.hilbertSchmidtInner_eq_trace_adjoint_comp` and
+  `ContinuousLinearMap.hilbertSchmidtInner_eq_sum_inv_gram`: operator-trace and inverse-Gram
+  formulas.
+
+## References
+
+* M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*, revised
+  edition, Academic Press, 1980, Section VI.6.
+* J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 2
+  (fiber inner products on bundle homomorphisms).
 -/
 
 public section
@@ -48,8 +68,10 @@ open scoped InnerProductSpace
 
 namespace ContinuousLinearMap
 
-variable {W V : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+variable {W W' V G : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+  [NormedAddCommGroup W'] [InnerProductSpace ℝ W'] [FiniteDimensional ℝ W']
   [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [NormedAddCommGroup G] [InnerProductSpace ℝ G]
 
 /-- The **Hilbert–Schmidt inner product** `⟪A, B⟫_HS = ∑ᵢ ⟪A eᵢ, B eᵢ⟫` of two linear maps out of
 a finite-dimensional real inner product space, for any orthonormal basis `eᵢ` of the source
@@ -189,5 +211,95 @@ theorem hilbertSchmidtInner_self_eq_zero_iff (A : W →L[ℝ] V) :
   refine ⟨fun h ↦ ext fun v ↦ ?_, fun h i ↦ by simp [h]⟩
   rw [← b.sum_repr' v]
   simp [h]
+
+/-- **Definiteness of the Hilbert–Schmidt norm** on a finite-dimensional source. -/
+@[simp]
+theorem hilbertSchmidtNorm_eq_zero {A : W →L[ℝ] V} :
+    A.hilbertSchmidtNorm = 0 ↔ A = 0 := by
+  rw [← sq_eq_zero_iff, ← hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm,
+    hilbertSchmidtInner_self_eq_zero_iff]
+
+/-- **Cauchy–Schwarz inequality for the Hilbert–Schmidt inner product.** -/
+theorem abs_hilbertSchmidtInner_le (A B : W →L[ℝ] V) :
+    |A.hilbertSchmidtInner B| ≤ A.hilbertSchmidtNorm * B.hilbertSchmidtNorm := by
+  let Φ : LinearMap.BilinForm ℝ (W →L[ℝ] V) :=
+    LinearMap.mk₂ ℝ (hilbertSchmidtInner (W := W) (V := V)) hilbertSchmidtInner_add_left
+      (fun c S T ↦ by simpa only [smul_eq_mul] using hilbertSchmidtInner_smul_left c S T)
+      hilbertSchmidtInner_add_right
+      (fun c S T ↦ by simpa only [smul_eq_mul] using hilbertSchmidtInner_smul_right c S T)
+  have hsq : (A.hilbertSchmidtInner B) ^ 2 ≤
+      (A.hilbertSchmidtNorm * B.hilbertSchmidtNorm) ^ 2 := by
+    simpa only [Φ, LinearMap.mk₂_apply, hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm,
+      mul_pow] using
+      Φ.apply_sq_le_of_symm hilbertSchmidtInner_self_nonneg ⟨hilbertSchmidtInner_comm⟩ A B
+  exact abs_le.2 (abs_le_of_sq_le_sq' hsq
+    (mul_nonneg A.hilbertSchmidtNorm_nonneg B.hilbertSchmidtNorm_nonneg))
+
+/-- Precomposing both arguments with a linear isometric equivalence preserves the Hilbert–Schmidt
+inner product. -/
+@[simp]
+theorem hilbertSchmidtInner_comp_linearIsometryEquiv (A B : W →L[ℝ] V) (U : W' ≃ₗᵢ[ℝ] W) :
+    (A ∘L U.toContinuousLinearMap).hilbertSchmidtInner (B ∘L U.toContinuousLinearMap) =
+      A.hilbertSchmidtInner B := by
+  let e' := stdOrthonormalBasis ℝ W'
+  rw [hilbertSchmidtInner_eq_sum _ _ e', hilbertSchmidtInner_eq_sum A B (e'.map U)]
+  simp [OrthonormalBasis.map_apply]
+
+/-- Postcomposing both arguments with a linear isometric map preserves the Hilbert–Schmidt inner
+product. -/
+@[simp]
+theorem hilbertSchmidtInner_linearIsometry_comp (U : V →ₗᵢ[ℝ] G) (A B : W →L[ℝ] V) :
+    (U.toContinuousLinearMap ∘L A).hilbertSchmidtInner (U.toContinuousLinearMap ∘L B) =
+      A.hilbertSchmidtInner B := by
+  let e := stdOrthonormalBasis ℝ W
+  simp [hilbertSchmidtInner_eq_sum _ _ e, U.inner_map_map]
+
+/-- Left composition with the operator adjoint moves to the right in `hilbertSchmidtInner`. -/
+theorem hilbertSchmidtInner_adjoint_comp [CompleteSpace V] [CompleteSpace G]
+    (C : V →L[ℝ] G) (A : W →L[ℝ] G) (B : W →L[ℝ] V) :
+    (C.adjoint ∘L A).hilbertSchmidtInner B = A.hilbertSchmidtInner (C ∘L B) := by
+  let e := stdOrthonormalBasis ℝ W
+  simp only [hilbertSchmidtInner_eq_sum _ _ e, comp_apply, adjoint_inner_left]
+
+/-- Pairing a rank-one operator `v ↦ ⟪x, v⟫ • y` on the left against `B` evaluates `⟪y, B x⟫_ℝ`. -/
+@[simp]
+theorem hilbertSchmidtInner_rankOne_left (y : V) (x : W) (B : W →L[ℝ] V) :
+    (InnerProductSpace.rankOne ℝ y x).hilbertSchmidtInner B = ⟪y, B x⟫_ℝ := by
+  let e := stdOrthonormalBasis ℝ W
+  rw [hilbertSchmidtInner_eq_sum _ _ e]
+  calc ∑ i, ⟪InnerProductSpace.rankOne ℝ y x (e i), B (e i)⟫_ℝ
+      = ∑ i, ⟪y, ⟪e i, x⟫_ℝ • B (e i)⟫_ℝ := by
+        refine Finset.sum_congr rfl fun i _ ↦ ?_
+        rw [InnerProductSpace.rankOne_apply, real_inner_smul_left, real_inner_smul_right,
+          real_inner_comm x]
+    _ = ⟪y, B (∑ i, ⟪e i, x⟫_ℝ • e i)⟫_ℝ := by
+        rw [← inner_sum]
+        simp_rw [← map_smul, ← map_sum]
+    _ = ⟪y, B x⟫_ℝ := by rw [e.sum_repr']
+
+/-- Pairing `A` against a rank-one operator `v ↦ ⟪x, v⟫ • y` on the right evaluates `⟪A x, y⟫_ℝ`. -/
+@[simp]
+theorem hilbertSchmidtInner_rankOne_right (A : W →L[ℝ] V) (y : V) (x : W) :
+    A.hilbertSchmidtInner (InnerProductSpace.rankOne ℝ y x) = ⟪A x, y⟫_ℝ := by
+  rw [hilbertSchmidtInner_comm, hilbertSchmidtInner_rankOne_left, real_inner_comm]
+
+/-- When `V` is also finite-dimensional, the Hilbert–Schmidt inner product is the operator trace
+`tr (A† B)`. -/
+theorem hilbertSchmidtInner_eq_trace_adjoint_comp [FiniteDimensional ℝ V] (A B : W →L[ℝ] V) :
+    A.hilbertSchmidtInner B = LinearMap.trace ℝ W (A.toLinearMap.adjoint ∘ₗ B.toLinearMap) := by
+  let e := stdOrthonormalBasis ℝ W
+  rw [hilbertSchmidtInner_eq_sum A B e, LinearMap.trace_eq_sum_inner _ e]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [LinearMap.comp_apply, LinearMap.adjoint_inner_right]
+  simp only [coe_coe]
+
+/-- In an arbitrary basis `b` of `W`, the Hilbert–Schmidt inner product contracts the Gram
+pairings `⟪A (b i), B (b j)⟫_ℝ` against the inverse Gram matrix `(Matrix.gram ℝ b)⁻¹`. -/
+theorem hilbertSchmidtInner_eq_sum_inv_gram {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A B : W →L[ℝ] V) (b : Module.Basis ι ℝ W) :
+    A.hilbertSchmidtInner B =
+      ∑ i, ∑ j, (Matrix.gram ℝ b)⁻¹ i j * ⟪A (b i), B (b j)⟫_ℝ := by
+  rw [hilbertSchmidtInner_def, LinearMap.BilinMap.metricTrace_eq_sum_inv_gram _ b]
+  simp only [LinearMap.compl₁₂_apply, innerₗ_apply_apply, coe_coe, smul_eq_mul]
 
 end ContinuousLinearMap

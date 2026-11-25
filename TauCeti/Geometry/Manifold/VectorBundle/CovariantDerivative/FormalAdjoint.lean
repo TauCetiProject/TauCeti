@@ -7,34 +7,47 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.HilbertSchmidt
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Divergence
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
-# The formal adjoint of a connection
+# The formal adjoint of a connection and local coordinate formulas
 
 Let `∇` be a connection on a vector bundle `V` over a Riemannian manifold `M`, and `∇ᵀ` a
 connection on the tangent bundle. The connection is an operator `∇ : Γ(V) → Γ(T*M ⊗ V)` from
 sections of `V` to `V`-valued one-forms, here sections `α` of the bundle `Hom(TM, V)`. Its
-**formal adjoint** is the negative metric trace of the covariant derivative of a one-form,
+**formal adjoint** (or covariant codifferential) is the negative metric trace of the covariant
+derivative of a one-form,
 
 `∇*α = -tr_g ∇α = -∑ᵢ (∇_{eᵢ} α)(eᵢ)`,
 
 for any orthonormal basis `eᵢ` of the tangent space, where `∇α` is the covariant derivative of
 `α` for the connection induced by `∇ᵀ` and `∇` on `Hom(TM, V)` (`CovariantDerivative.hom`).
 
-This file proves that `∇*` is the formal adjoint of `∇` and that the rough Laplacian factors
-through it:
+This file proves that `∇*` is the formal adjoint of `∇`, establishes local inverse-Gram and
+volume-density divergence formulas for `∇*` and `∇*∇`, and shows that the rough Laplacian factors
+through `∇*`:
 
 * the rough Laplacian is the composite `∇*∇ σ = ∇*(∇σ)`, since the covariant derivative of the
   one-form `∇σ` is the second covariant derivative `∇²σ`;
+* in a chart frame `eᵢ` with dual frame `eᵢ♯` and volume density `ρ = √det g`,
+  `∇*α = -∑ᵢ ∑ⱼ gⁱʲ (∇_{eᵢ} α)(eⱼ)` and, for the Levi-Civita connection on `TM`,
+  `ρ (∇*α) = -∑ₖ ∇_{eₖ} (ρ • α(eₖ♯))` and `ρ (∇*∇ σ) = -∑ₖ ∇_{eₖ} (ρ • ∇_{eₖ♯} σ)` via the
+  coordinate Piola identity;
+* on any `C²` Riemannian manifold, the vector field `X` metric-dual to `w ↦ ⟪τ, α(w)⟫` satisfies
+  the pointwise divergence identity `div X = ⟪α, ∇τ⟫ - ⟪∇*α, τ⟫`
+  (`CovariantDerivative.IsMetricCompatible.divergence_rieszDual_innerSL_comp`);
 * for a metric connection `∇` and the Levi-Civita connection `∇ᵀ` on a manifold without boundary,
   **integration by parts** holds for the Riemannian volume `dV`:
 
@@ -47,29 +60,36 @@ through it:
 For `α = ∇σ` the integration by parts is the energy identity `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪∇σ, ∇τ⟫ dV`
 of the rough Laplacian, in `RoughLaplacian/Energy.lean`.
 
-The integration by parts comes from the divergence theorem. The vector field `X` metric-dual to
-the one-form `w ↦ ⟪α(w), τ⟫` has divergence `div X = ⟪α, ∇τ⟫ - ⟪∇*α, τ⟫`: at a point, with a
-smooth vector field `W`, metric compatibility of the two connections gives
-`⟪∇_u X, W⟫ = ⟪(∇_u α)(W), τ⟫ + ⟪α(W), ∇_u τ⟫`, and tracing over an orthonormal basis gives the
-divergence.
-
 ## Main definitions and results
 
 * `CovariantDerivative.formalAdjoint`: the formal adjoint `∇*α` of a `V`-valued one-form at a
   point.
 * `CovariantDerivative.formalAdjoint_def`: it is the negative metric trace of `∇α`.
 * `CovariantDerivative.formalAdjoint_eq_sum`: its value in an orthonormal basis.
+* `CovariantDerivative.formalAdjoint_congr_of_eventuallyEq`,
+  `CovariantDerivative.formalAdjoint_eq_zero_of_notMem_closure` and
+  `CovariantDerivative.roughLaplacian_eq_zero_of_notMem_closure`: germ locality and support bounds.
 * `CovariantDerivative.formalAdjoint_smul`: the Leibniz rule `∇*(f α) = f ∇*α - α(grad f)`.
+* `CovariantDerivative.formalAdjoint_eq_neg_sum_chartDualFrame`,
+  `CovariantDerivative.formalAdjoint_eq_neg_sum_chartInvGramMatrix`, and
+  `CovariantDerivative.roughLaplacian_eq_neg_sum_chartInvGramMatrix`: local dual-frame and `gⁱʲ`
+  trace formulas.
+* `CovariantDerivative.chartVolumeDensity_smul_formalAdjoint` and
+  `CovariantDerivative.chartVolumeDensity_smul_roughLaplacian`: local divergence-form expressions
+  weighted by `ρ = √det g`.
+* `CovariantDerivative.roughLaplacian_eq_formalAdjoint`: `∇*∇ σ = ∇*(∇σ)` for a smooth section.
 * `CovariantDerivative.contMDiff_formalAdjoint`: the formal adjoint of a smooth one-form is
   smooth.
-* `CovariantDerivative.roughLaplacian_eq_formalAdjoint`: `∇*∇ σ = ∇*(∇σ)` for a smooth section.
+* `CovariantDerivative.IsMetricCompatible.divergence_rieszDual_innerSL_comp`: pointwise divergence
+  identity on `C²` Riemannian manifolds.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_formalAdjoint` and
   `CovariantDerivative.IsMetricCompatible.integral_inner_formalAdjoint_of_isCompact_left`:
-  **integration by parts**, `∫ ⟪∇*α, τ⟫ dV = ∫ ⟪α, ∇τ⟫ dV`, when `τ`, respectively `α`, has
-  compact support.
+  **integration by parts**, `∫ ⟪∇*α, τ⟫ dV = ∫ ⟪α, ∇τ⟫ dV`, when `τ` or `α` has compact support.
 
 ## References
 
+* N. Berline, E. Getzler, M. Vergne, *Heat Kernels and Dirac Operators*, Springer, 1992, §2.1
+  (Propositions 2.4–2.5, formal adjoint of a connection and generalized Laplacians).
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press (1989),
   Chapter II, §8 (the connection Laplacian `∇*∇` as the composite of `∇` and its adjoint).
 * P. Gilkey, *The spectral geometry of operators of Dirac and Laplace type*, §2 (the rough
@@ -188,6 +208,31 @@ theorem formalAdjoint_sub {β : Π x : M, TangentSpace I x →L[ℝ] V x} {x : M
     simpa using (mdifferentiableAt_const (c := (-1 : ℝ))).smul_section hβ
   rw [sub_eq_add_neg, formalAdjoint_add cov covT hα hβ', formalAdjoint_neg, sub_eq_add_neg]
 
+/-- **Locality of the formal adjoint.** One-forms with the same germ at `x` have the same formal
+adjoint at `x`. -/
+theorem formalAdjoint_congr_of_eventuallyEq {β : Π y : M, TangentSpace I y →L[ℝ] V y} {x : M}
+    (h : ∀ᶠ y in 𝓝 x, α y = β y) :
+    cov.formalAdjoint covT α x = cov.formalAdjoint covT β x := by
+  have htot : (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y
+      (α y)) =ᶠ[𝓝 x]
+      fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (β y) :=
+    h.mono fun y hy ↦ congrArg (TotalSpace.mk' (E →L[ℝ] F) y) hy
+  by_cases hα : MDiffAt
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (α y)) x
+  · have hβ := htot.mdifferentiableAt_iff.mp hα
+    rw [formalAdjoint_def, formalAdjoint_def,
+      (covT.hom cov).isCovariantDerivativeOnUniv.congr_of_eventuallyEq hα hβ Filter.univ_mem h]
+  · have hβ : ¬MDiffAt (fun y ↦
+        TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (β y)) x :=
+      fun h₂ ↦ hα (htot.mdifferentiableAt_iff.mpr h₂)
+    simp [formalAdjoint_eq_zero_of_not_mdifferentiableAt cov covT hα,
+      formalAdjoint_eq_zero_of_not_mdifferentiableAt cov covT hβ]
+
+/-- The formal adjoint vanishes outside the closed support of `α`. -/
+theorem formalAdjoint_eq_zero_of_notMem_closure {x : M} (hx : x ∉ closure {y | α y ≠ 0}) :
+    cov.formalAdjoint covT α x = 0 := by
+  simp [formalAdjoint_def, (covT.hom cov).apply_eq_zero_of_notMem_closure hx]
+
 /-- **Leibniz rule for the formal adjoint.** For a function `f` and a one-form `α` differentiable
 at `x`, `∇*(f α) = f ∇*α - α(grad f)`. -/
 theorem formalAdjoint_smul {f : M → ℝ} {x : M} (hf : MDiffAt f x)
@@ -203,6 +248,66 @@ theorem formalAdjoint_smul {f : M → ℝ} {x : M} (hf : MDiffAt f x)
     TauCeti.Manifold.toLinearMap_mvfderiv_eq_innerₗ_mgradient, map_add, map_smul,
     LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe, neg_add,
     smul_neg, sub_eq_add_neg]
+
+/-! ### Local chart-frame formulas -/
+
+/-- On the domain of the chart at `α₀`, `∇*α = -∑ᵢ (∇_{eᵢ} α)(eᵢ♯)` in terms of the chart-local
+frame `eᵢ` and its metric dual frame `eᵢ♯ = chartDualFrame α₀ i`. -/
+theorem formalAdjoint_eq_neg_sum_chartDualFrame (α₀ : M) {x : M}
+    (hx : x ∈ (chartAt H α₀).source) (α : Π y : M, TangentSpace I y →L[ℝ] V y) :
+    cov.formalAdjoint covT α x =
+      -∑ i, covT.hom cov α x
+        (chartLocalFrame (I := I) α₀ i x) (chartDualFrame (I := I) α₀ i x) := by
+  simp only [formalAdjoint_def, metricTrace_eq_sum_chartDualFrame α₀ hx,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
+
+/-- **Local inverse-Gram formula for the formal adjoint.** On the domain of the chart at `α₀`,
+`∇*α = -∑ᵢ ∑ⱼ gⁱʲ (∇_{eᵢ} α)(eⱼ)` in the chart-local frame `eᵢ`. -/
+theorem formalAdjoint_eq_neg_sum_chartInvGramMatrix (α₀ : M) {x : M}
+    (hx : x ∈ (chartAt H α₀).source) (α : Π y : M, TangentSpace I y →L[ℝ] V y) :
+    cov.formalAdjoint covT α x =
+      -∑ i, ∑ j, chartInvGramMatrix (I := I) α₀ x i j •
+        covT.hom cov α x (chartLocalFrame (I := I) α₀ i x) (chartLocalFrame (I := I) α₀ j x) := by
+  simp only [formalAdjoint_def, metricTrace_eq_sum_chartInvGramMatrix α₀ hx,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
+
+/-- **Local volume-density divergence formula for the formal adjoint.** On the domain of the chart
+at `α₀`, with `ρ = chartVolumeDensity α₀`, chart frame `eₖ = chartLocalFrame α₀ k`, and dual frame
+`eₖ♯ = chartDualFrame α₀ k`, `ρ (∇*α) = -∑ₖ ∇_{eₖ} (ρ • α(eₖ♯))` for the Levi-Civita connection
+on `TM`. -/
+theorem chartVolumeDensity_smul_formalAdjoint
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (α₀ : M) {y : M} (hy : y ∈ (chartAt H α₀).source)
+    (hα : MDiffAt
+      (fun z ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun w ↦ TangentSpace I w →L[ℝ] V w) z (α z)) y) :
+    TauCeti.chartVolumeDensity (I := I) α₀ y •
+        cov.formalAdjoint (leviCivitaConnection I M) α y =
+      -∑ k, cov (fun z ↦ TauCeti.chartVolumeDensity (I := I) α₀ z •
+          α z (chartDualFrame (I := I) α₀ k z)) y (chartLocalFrame (I := I) α₀ k y) := by
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  have hy' : y ∈ (trivializationAt E (TangentSpace I) α₀).baseSet := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hy
+  have hρ : MDiffAt (TauCeti.chartVolumeDensity (I := I) α₀) y :=
+    (TauCeti.contMDiffAt_chartVolumeDensity (I := I) (n := 1) α₀ hy).mdifferentiableAt one_ne_zero
+  have hρD (k) : MDiffAt (T% (fun z ↦ TauCeti.chartVolumeDensity (I := I) α₀ z •
+      chartDualFrame (I := I) α₀ k z)) y :=
+    hρ.smul_section (mdifferentiableAt_chartDualFrame α₀ hy' k)
+  have hterm (k) :
+      TauCeti.chartVolumeDensity (I := I) α₀ y •
+          (leviCivitaConnection I M).hom cov α y
+            (chartLocalFrame (I := I) α₀ k y) (chartDualFrame (I := I) α₀ k y) =
+        cov (fun z ↦ TauCeti.chartVolumeDensity (I := I) α₀ z •
+            α z (chartDualFrame (I := I) α₀ k z)) y (chartLocalFrame (I := I) α₀ k y) -
+          α y (leviCivitaConnection I M
+            (fun z ↦ TauCeti.chartVolumeDensity (I := I) α₀ z • chartDualFrame (I := I) α₀ k z) y
+            (chartLocalFrame (I := I) α₀ k y)) := by
+    simpa only [map_smul] using
+      hom_apply (leviCivitaConnection I M) cov hα (hρD k) (chartLocalFrame (I := I) α₀ k y)
+  rw [formalAdjoint_eq_neg_sum_chartDualFrame cov (leviCivitaConnection I M) α₀ hy, smul_neg,
+    Finset.smul_sum]
+  simp only [hterm, Finset.sum_sub_distrib, ← map_sum,
+    TauCeti.sum_leviCivitaConnection_chartVolumeDensity_smul_chartDualFrame (I := I) α₀ hy,
+    map_zero, sub_zero]
 
 end Definition
 
@@ -229,6 +334,42 @@ theorem roughLaplacian_eq_formalAdjoint (hσ : CMDiff ∞ (T% σ)) :
   funext x
   rw [roughLaplacian_def, formalAdjoint_def,
     secondCovariantDerivative_eq_toLinearMap₁₂_hom cov covT hσ x]
+
+/-- The rough Laplacian vanishes outside the closed support of `σ`. -/
+theorem roughLaplacian_eq_zero_of_notMem_closure {x : M} (hx : x ∉ closure {y | σ y ≠ 0}) :
+    cov.roughLaplacian covT σ x = 0 := by
+  by_cases hσ : CMDiff ∞ (T% σ)
+  · rw [congrFun (roughLaplacian_eq_formalAdjoint cov covT hσ) x]
+    have hsub : {z | cov σ z ≠ 0} ⊆ closure {z | σ z ≠ 0} := fun y hy ↦
+      by_contra fun hy' ↦ hy (cov.apply_eq_zero_of_notMem_closure hy')
+    exact formalAdjoint_eq_zero_of_notMem_closure cov covT
+      fun hx' ↦ hx (closure_minimal hsub isClosed_closure hx')
+  · exact roughLaplacian_of_not_contMDiff cov covT hσ x
+
+/-- **Local inverse-Gram formula for the rough Laplacian.** On the domain of the chart at `α₀`,
+`∇*∇ σ = -∑ᵢ ∑ⱼ gⁱʲ ∇²σ(eᵢ, eⱼ)` in the chart-local frame `eᵢ`. -/
+theorem roughLaplacian_eq_neg_sum_chartInvGramMatrix
+    (α₀ : M) {x : M} (hx : x ∈ (chartAt H α₀).source) (σ : Π y : M, V y) :
+    cov.roughLaplacian covT σ x =
+      -∑ i, ∑ j, chartInvGramMatrix (I := I) α₀ x i j •
+        cov.secondCovariantDerivative covT σ x
+          (chartLocalFrame (I := I) α₀ i x) (chartLocalFrame (I := I) α₀ j x) := by
+  rw [roughLaplacian_def, metricTrace_eq_sum_chartInvGramMatrix α₀ hx]
+
+/-- **Local volume-density divergence formula for the rough Laplacian.** On the domain of the chart
+at `α₀`, with `ρ = chartVolumeDensity α₀`, chart frame `eₖ = chartLocalFrame α₀ k`, and dual frame
+`eₖ♯ = chartDualFrame α₀ k`, `ρ (∇*∇ σ) = -∑ₖ ∇_{eₖ} (ρ • ∇_{eₖ♯} σ)` for every smooth section
+`σ`. -/
+theorem chartVolumeDensity_smul_roughLaplacian
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (α₀ : M) {y : M} (hy : y ∈ (chartAt H α₀).source) (hσ : CMDiff ∞ (T% σ)) :
+    TauCeti.chartVolumeDensity (I := I) α₀ y •
+        cov.roughLaplacian (leviCivitaConnection I M) σ y =
+      -∑ k, cov (fun z ↦ TauCeti.chartVolumeDensity (I := I) α₀ z •
+          cov σ z (chartDualFrame (I := I) α₀ k z)) y (chartLocalFrame (I := I) α₀ k y) := by
+  have hcovσ := cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ)
+  rw [congrFun (roughLaplacian_eq_formalAdjoint cov (leviCivitaConnection I M) hσ) y,
+    chartVolumeDensity_smul_formalAdjoint cov α₀ hy (hcovσ.mdifferentiableAt (by simp))]
 
 end RoughLaplacian
 
@@ -280,6 +421,70 @@ theorem contMDiff_formalAdjoint
 
 end Regularity
 
+/-! ### Pointwise divergence identity -/
+
+section PointwiseDivergence
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I]
+  [IsContMDiffRiemannianBundle I 1 F V]
+  {cov : _root_.CovariantDerivative I F V}
+
+/-- **Pointwise divergence identity for the formal adjoint of a connection.** For a
+metric-compatible connection `∇` on `V`, a section `α` of `Hom(TM, V)` and a section `τ` of `V`
+differentiable at `x`, the divergence of the vector field dual to `v ↦ ⟪τ, α v⟫` equals
+`⟪α, ∇τ⟫ - ⟪∇*α, τ⟫`. No orientation, boundarylessness, Hausdorffness, or compactness is needed. -/
+theorem IsMetricCompatible.divergence_rieszDual_innerSL_comp (hcov : cov.IsMetricCompatible)
+    {α : Π y : M, TangentSpace I y →L[ℝ] V y} {τ : Π y : M, V y} {x : M}
+    (hα : MDiffAt
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (α y)) x)
+    (hτ : MDiffAt (T% τ) x) :
+    TauCeti.Manifold.divergence I
+        (fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (α y))) x =
+      (α x).hilbertSchmidtInner (cov τ x) -
+        ⟪cov.formalAdjoint (leviCivitaConnection I M) α x, τ x⟫ := by
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  let X : Π y : M, TangentSpace I y :=
+    fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (α y))
+  have hX : MDiffAt (T% X) x := hα.rieszDual_innerSL_comp hτ
+  have hLC := (isLeviCivitaConnection_leviCivitaConnection (I := I) (M := M)).isMetricCompatible
+  -- Each diagonal term of the divergence is `⟪α(eᵢ), ∇_{eᵢ} τ⟫ + ⟪(∇_{eᵢ} α)(eᵢ), τ⟫`.
+  have hterm (i : Fin (Module.finrank ℝ (TangentSpace I x))) :
+      ⟪leviCivitaConnection I M X x (b i), b i⟫ =
+        ⟪α x (b i), cov τ x (b i)⟫ +
+          ⟪(leviCivitaConnection I M).hom cov α x (b i) (b i), τ x⟫ := by
+    let Y : Π y : M, TangentSpace I y := extend E (b i)
+    have hY : MDiffAt (T% Y) x := mdifferentiableAt_extend I E (b i)
+    have hLCi := hLC.mvfderiv_inner_eq Y hX hY
+    have hVi := hcov.mvfderiv_inner_eq Y hτ (hα.clm_bundle_apply hY)
+    have hfun : (fun y ↦ ⟪X y, Y y⟫) = fun y ↦ ⟪τ y, α y (Y y)⟫ :=
+      funext fun y ↦ inner_rieszDual ((innerSL ℝ (τ y)).comp (α y)) (Y y)
+    have hYX : ⟪X x, leviCivitaConnection I M Y x (b i)⟫ =
+        ⟪τ x, α x (leviCivitaConnection I M Y x (b i))⟫ :=
+      inner_rieszDual ((innerSL ℝ (τ x)).comp (α x)) _
+    have hhom := hom_apply (leviCivitaConnection I M) cov hα hY (b i)
+    dsimp only at hLCi hVi
+    simp only [Y, extend_apply_self] at hLCi hVi hhom
+    rw [hfun] at hLCi
+    rw [hVi, hYX] at hLCi
+    simp only [Y] at hLCi
+    rw [real_inner_comm _ (α x (b i)), real_inner_comm (τ x), hhom, inner_sub_right]
+    linarith
+  rw [TauCeti.Manifold.divergence_eq_sum_inner I X x b]
+  simp_rw [hterm]
+  rw [Finset.sum_add_distrib, ← ContinuousLinearMap.hilbertSchmidtInner_eq_sum (α x) (cov τ x) b,
+    formalAdjoint_eq_sum cov (leviCivitaConnection I M) α x b, inner_neg_left, sum_inner,
+    sub_neg_eq_add]
+
+end PointwiseDivergence
+
 /-! ### Integration by parts -/
 
 section Pairing
@@ -297,68 +502,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {cov : _root_.CovariantDerivative I F V} [ContMDiffCovariantDerivative cov ∞]
   {α : Π x : M, TangentSpace I x →L[ℝ] V x} {τ : Π x : M, V x}
 
-/-- The vector field metric-dual to the one-form `w ↦ ⟪α(w), τ⟫`. -/
-private def pairingField (α : Π x : M, TangentSpace I x →L[ℝ] V x) (τ : Π x : M, V x) (y : M) :
-    TangentSpace I y :=
-  rieszDual y ((innerSL ℝ (τ y)).comp (α y))
-
-omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-private theorem inner_pairingField (y : M) (w : TangentSpace I y) :
-    ⟪pairingField α τ y, w⟫ = ⟪α y w, τ y⟫ := by
-  rw [pairingField, inner_rieszDual]
-  simp [real_inner_comm]
-
-omit [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] in
-private theorem contMDiff_pairingField
-    (hα : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (α x)))
-    (hτ : CMDiff ∞ (T% τ)) :
-    ContMDiff I I.tangent ∞ (T% (pairingField α τ)) := by
-  intro x
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  refine contMDiffAt_rieszDual (n := ∞) x (mem_chart_source H x) fun j ↦ ?_
-  have hframe : CMDiffAt ∞ (T% (chartLocalFrame (I := I) x j)) x :=
-    contMDiffAt_chartLocalFrame (I := I) (n := ∞) x j
-  simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm] using
-    (ContMDiffAt.clm_bundle_apply (hα x) hframe).inner_bundle (hτ x)
-
-omit [ContMDiffCovariantDerivative cov ∞] in
-/-- The divergence of the vector field dual to `⟪α, τ⟫` is `⟪α, ∇τ⟫ - ⟪∇*α, τ⟫`. -/
-private theorem divergence_pairingField (hcov : cov.IsMetricCompatible)
-    (hα : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (α x)))
-    (hτ : CMDiff ∞ (T% τ)) (x : M) :
-    TauCeti.Manifold.divergence I (pairingField α τ) x =
-      (α x).hilbertSchmidtInner (cov τ x) -
-        ⟪cov.formalAdjoint (leviCivitaConnection I M) α x, τ x⟫ := by
-  set covT := leviCivitaConnection I M
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  have hXd : MDiffAt (T% (pairingField α τ)) x :=
-    (contMDiff_pairingField hα hτ).mdifferentiableAt (by simp)
-  have hαd := hα.mdifferentiableAt (x := x) (by simp)
-  have hτd : MDiffAt (T% τ) x := hτ.mdifferentiable (by simp) x
-  -- Each diagonal term of the divergence is `⟪(∇_{eᵢ} α)(eᵢ), τ⟫ + ⟪α(eᵢ), ∇_{eᵢ} τ⟫`.
-  have hterm (i) : ⟪leviCivitaConnection I M (pairingField α τ) x (b i), b i⟫ =
-      ⟪covT.hom cov α x (b i) (b i), τ x⟫ + ⟪α x (b i), cov τ x (b i)⟫ := by
-    obtain ⟨W, hW, hWx⟩ := exists_contMDiff_section_eq I E ∞ (b i)
-    have hWd : MDiffAt (T% W) x := hW.mdifferentiable (by simp) x
-    have hαWd : MDiffAt (T% (fun y ↦ α y (W y))) x := hαd.clm_bundle_apply hWd
-    have hLC := (isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
-      (FiberBundle.extend E (b i)) hXd hWd
-    have hV := hcov.mvfderiv_inner_eq (FiberBundle.extend E (b i)) hαWd hτd
-    have hfun : (fun y ↦ ⟪pairingField α τ y, W y⟫) = fun y ↦ ⟪α y (W y), τ y⟫ :=
-      funext fun y ↦ inner_pairingField y (W y)
-    have hS := hom_apply covT cov hαd hWd (b i)
-    simp only [FiberBundle.extend_apply_self] at hLC hV
-    rw [hfun, hV, inner_pairingField] at hLC
-    rw [hWx] at hLC hS
-    rw [hS, inner_sub_left]
-    linarith
-  rw [TauCeti.Manifold.divergence_eq_sum_inner I _ x b,
-    ContinuousLinearMap.hilbertSchmidtInner_eq_sum _ _ b, formalAdjoint_eq_sum cov covT α x b]
-  simp only [hterm, Finset.sum_add_distrib, inner_neg_left, sum_inner]
-  ring
-
 namespace IsMetricCompatible
 
 variable [I.Boundaryless] [SigmaCompactSpace M] [MeasurableSpace M] [BorelSpace M]
@@ -373,25 +516,31 @@ private theorem integral_inner_formalAdjoint_of_subset (hcov : cov.IsMetricCompa
     (hα : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (α x)))
     (hτ : CMDiff ∞ (T% τ)) {K : Set M} (hK : IsCompact K) (hKc : IsClosed K)
-    (hX : ∀ y ∉ K, pairingField α τ y = 0)
+    (hX : ∀ y ∉ K, rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (α y)) = 0)
     (hB : ∀ y ∉ K, (α y).hilbertSchmidtInner (cov τ y) = 0) :
     ∫ x, ⟪cov.formalAdjoint (leviCivitaConnection I M) α x, τ x⟫ ∂riemannianVolume I M =
       ∫ x, (α x).hilbertSchmidtInner (cov τ x) ∂riemannianVolume I M := by
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hXc : HasCompactSupport (β := E) (pairingField α τ) := .intro' hK hKc hX
+  have hXc : HasCompactSupport (β := E)
+      (fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (α y))) :=
+    .intro' hK hKc hX
   have hBc : HasCompactSupport fun x ↦ (α x).hilbertSchmidtInner (cov τ x) := .intro' hK hKc hB
-  have hX1 : ContMDiff I I.tangent 1 (T% (pairingField α τ)) :=
-    (contMDiff_pairingField hα hτ).of_le (by simp)
+  have hX1 : ContMDiff I I.tangent 1
+      (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (α y))) :=
+    (hα.rieszDual_innerSL_comp hτ).of_le (by simp)
   have hBi : Integrable (fun x ↦ (α x).hilbertSchmidtInner (cov τ x)) (riemannianVolume I M) :=
-    (hα.hilbertSchmidtInner_bundle (cov.contMDiff_covariantDerivative hτ)).continuous
+    (hα.hilbertSchmidtInner_bundle
+      (cov.contMDiff_covariantDerivative (by simpa using hτ))).continuous
       |>.integrable_of_hasCompactSupport hBc
   have hdiv := TauCeti.Manifold.integral_divergence_eq_zero hX1 hXc
-  simp_rw [divergence_pairingField hcov hα hτ] at hdiv
+  simp_rw [fun x ↦ hcov.divergence_rieszDual_innerSL_comp (x := x)
+    (hα.mdifferentiableAt (by simp)) (hτ.mdifferentiableAt (by simp))] at hdiv
   rw [integral_sub hBi] at hdiv
   · linarith
   · refine (hBi.sub (TauCeti.Manifold.integrable_divergence hX1 hXc)).congr
       (Filter.Eventually.of_forall fun x ↦ ?_)
-    simp only [Pi.sub_apply, divergence_pairingField hcov hα hτ]
+    simp only [Pi.sub_apply, hcov.divergence_rieszDual_innerSL_comp
+      (hα.mdifferentiableAt (by simp)) (hτ.mdifferentiableAt (by simp))]
     ring
 
 /-- **Integration by parts for the formal adjoint of a connection.** For a metric connection `∇`
@@ -407,7 +556,7 @@ theorem integral_inner_formalAdjoint (hcov : cov.IsMetricCompatible)
       ∫ x, (α x).hilbertSchmidtInner (cov τ x) ∂riemannianVolume I M := by
   refine integral_inner_formalAdjoint_of_subset hcov hα hτ hτc isClosed_closure
     (fun y hy ↦ ?_) (fun y hy ↦ ?_)
-  · simp [pairingField, Bundle.apply_eq_zero_of_notMem_closure hy, LinearIsometryEquiv.map_zero]
+  · simp [Bundle.apply_eq_zero_of_notMem_closure hy, LinearIsometryEquiv.map_zero]
   · simp [cov.apply_eq_zero_of_notMem_closure hy]
 
 /-- **Integration by parts for the formal adjoint of a connection**, when the one-form has
@@ -422,7 +571,7 @@ theorem integral_inner_formalAdjoint_of_isCompact_left (hcov : cov.IsMetricCompa
     Bundle.apply_eq_zero_of_notMem_closure hy
   refine integral_inner_formalAdjoint_of_subset hcov hα hτ hαc isClosed_closure
     (fun y hy ↦ ?_) (fun y hy ↦ ?_)
-  · simp [pairingField, hαy hy, LinearIsometryEquiv.map_zero]
+  · simp [hαy hy, LinearIsometryEquiv.map_zero]
   · simp [hαy hy]
 
 end IsMetricCompatible
@@ -430,3 +579,5 @@ end IsMetricCompatible
 end Pairing
 
 end CovariantDerivative
+
+end

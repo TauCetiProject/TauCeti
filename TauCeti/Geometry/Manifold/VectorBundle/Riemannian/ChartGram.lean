@@ -47,7 +47,8 @@ API replace them.
   the basis of the model space.
 * `Riemannian.Tensor.mvfderiv_chartLocalFrame`: on a boundaryless manifold, differentiating along
   the frame is taking coordinate partial derivatives in the chart.
-* `Riemannian.Tensor.contMDiffAt_chartLocalFrame` and
+* `Riemannian.Tensor.contMDiffAt_chartLocalFrame_of_mem_chart_source`,
+  `Riemannian.Tensor.contMDiffAt_chartLocalFrame`, and
   `Riemannian.Tensor.mdifferentiableAt_chartLocalFrame`: smoothness and differentiability of the
   frame.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
@@ -69,8 +70,10 @@ API replace them.
   `Riemannian.Tensor.eventually_metricTrace_eq_sum_chartDualFrame`: equivalently, it is
   `∑ᵢ B(Fᵢ, Dᵢ)`, the chart-local frame paired with its metric-dual frame, pointwise on the
   chart domain and locally near any point of it.
-* `Riemannian.Tensor.inner_chartDualFrame` and
-  `Riemannian.Tensor.sum_inner_chartDualFrame_smul`: duality and vector expansion in the frames.
+* `Riemannian.Tensor.inner_chartDualFrame`,
+  `Riemannian.Tensor.inner_chartDualFrame_eq_localFrameCoeff`, and
+  `Riemannian.Tensor.sum_inner_chartDualFrame_smul`: duality, coordinate extraction, and vector
+  expansion in the frames.
 * `Riemannian.Tensor.contMDiffAt_chartDualFrame` and
   `Riemannian.Tensor.mdifferentiableAt_chartDualFrame`: regularity and differentiability of the
   metric-dual frame.
@@ -182,13 +185,21 @@ theorem contMDiffOn_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
   exact (trivializationAt E (TangentSpace I) α).contMDiffOn_localFrame_baseSet
     (n := n) (Module.finBasis ℝ E) i
 
+/-- Each member of `chartLocalFrame α` is `C^n` at every point of `(chartAt H α).source`. -/
+theorem contMDiffAt_chartLocalFrame_of_mem_chart_source {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    (α : M) {x : M} (hx : x ∈ (chartAt H α).source) (i : Fin (Module.finrank ℝ E)) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E)) n
+      (fun y ↦ TotalSpace.mk' E y (chartLocalFrame (I := I) α i y)) x :=
+  (contMDiffOn_chartLocalFrame α i).contMDiffAt
+    ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds
+      (by simpa only [TangentBundle.trivializationAt_baseSet] using hx))
+
 /-- Each member of `chartLocalFrame α` is `C^n` at the base point `α`. -/
 theorem contMDiffAt_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (α : M) (i : Fin (Module.finrank ℝ E)) :
     ContMDiffAt I (I.prod 𝓘(ℝ, E)) n
       (fun x ↦ TotalSpace.mk' E x (chartLocalFrame (I := I) α i x)) α :=
-  (contMDiffOn_chartLocalFrame α i).contMDiffAt
-    ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds (by simp))
+  contMDiffAt_chartLocalFrame_of_mem_chart_source α (mem_chart_source H α) i
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
@@ -426,6 +437,21 @@ theorem inner_chartDualFrame (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
   have h := congrFun (congrFun (chartInvGramMatrix_mul_chartGramMatrix (I := I) α hy) i) j
   simp only [Matrix.mul_apply, chartGramMatrix_apply, Matrix.one_apply] at h
   simp only [chartDualFrame_apply, sum_inner, real_inner_smul_left, h]
+
+/-- On the chart domain, pairing with the `k`-th metric-dual chart vector extracts the `k`-th
+coordinate in the chart-local frame. -/
+theorem inner_chartDualFrame_eq_localFrameCoeff [IsManifold I 2 M]
+    (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
+    (k : Fin (Module.finrank ℝ E)) (w : TangentSpace I y) :
+    inner ℝ (chartDualFrame (I := I) α k y) w =
+      (trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y w := by
+  have hy' : y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hy
+  conv_lhs =>
+    rw [(trivializationAt E (TangentSpace I) α).eq_sum_localFrameCoeff_smul
+      (I := I) (b := Module.finBasis ℝ E) (s := fun _ ↦ w) hy']
+  simp only [← chartLocalFrame_def, inner_sum, real_inner_smul_right, inner_chartDualFrame α hy,
+    mul_ite, mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
 
 /-- On the chart domain, every tangent vector expands in the chart-local frame with the dual
 frame giving its coefficients, and in the dual frame with the chart-local frame giving its
