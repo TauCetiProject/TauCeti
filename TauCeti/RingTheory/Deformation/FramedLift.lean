@@ -437,15 +437,32 @@ theorem forgetFraming_bijective [IsEmpty T] :
   obtain ⟨b, hb⟩ := StrictClass.mk_eq_mk_iff.mp h
   exact mk_eq_mk_iff.mpr ⟨b, FramedLift.ext hb (funext isEmptyElim)⟩
 
-/-- With no frames, framed deformations are strict classes of lifts. -/
-noncomputable def forgetFramingEquivOfIsEmpty [IsEmpty T] :
-    FramedStrictClass ρbar T A ≃ StrictClass ρbar A :=
-  Equiv.ofBijective _ forgetFraming_bijective
+/-- With no frames, framed deformations are strict classes of lifts: the inverse sends the class
+of a lift `ρ` to the class of `ρ` with the empty framing. -/
+def forgetFramingEquivOfIsEmpty [IsEmpty T] :
+    FramedStrictClass ρbar T A ≃ StrictClass ρbar A where
+  toFun := forgetFraming
+  invFun := StrictClass.lift (fun ρ ↦ mk ⟨ρ, isEmptyElim⟩) fun b ρ ↦
+    .trans (congrArg mk (FramedLift.ext rfl (funext isEmptyElim) :
+      (⟨b • ρ, isEmptyElim⟩ : FramedLift ρbar T A) = b • ⟨ρ, isEmptyElim⟩)) (mk_smul b _)
+  left_inv c := by
+    obtain ⟨x, rfl⟩ := mk_surjective c
+    rw [forgetFraming_mk, StrictClass.lift_mk]
+    exact congrArg mk (FramedLift.ext rfl (funext isEmptyElim))
+  right_inv c := by
+    obtain ⟨ρ, rfl⟩ := StrictClass.mk_surjective c
+    rw [StrictClass.lift_mk, forgetFraming_mk]
 
 @[simp]
 theorem forgetFramingEquivOfIsEmpty_apply [IsEmpty T] (c : FramedStrictClass ρbar T A) :
     forgetFramingEquivOfIsEmpty c = forgetFraming c :=
   (rfl)
+
+@[simp]
+theorem forgetFramingEquivOfIsEmpty_symm_mk [IsEmpty T] (ρ : Lift ρbar A) :
+    (forgetFramingEquivOfIsEmpty.symm (StrictClass.mk ρ) : FramedStrictClass ρbar T A) =
+      mk ⟨ρ, isEmptyElim⟩ :=
+  StrictClass.lift_mk _ _ ρ
 
 end ForgetFraming
 
