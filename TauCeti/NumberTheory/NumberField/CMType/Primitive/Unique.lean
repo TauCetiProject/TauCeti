@@ -136,7 +136,7 @@ theorem exists_induced_restrict_inf_eq {Φ : CMType E} {F F' : IntermediateField
   have hφ := ComplexEmbedding.lift_comp_algebraMap E φ
   have hψ := ComplexEmbedding.lift_comp_algebraMap E ψ
   have key := hΨ (ComplexEmbedding.lift E φ) (ComplexEmbedding.lift E ψ) fun x ↦ by
-    have hx : ((x : E) : E) ∈ F := x.property.1
+    have hx : (x : E) ∈ F := (IntermediateField.mem_inf.mp x.property).1
     have := h ⟨⟨x, hx⟩, (IntermediateField.mem_restrict _ _).mpr x.property⟩
     rw [← hφ, ← hψ] at this
     exact this
@@ -153,7 +153,7 @@ theorem le_of_isPrimitive_of_exists_induced_eq {Φ : CMType E} {F F' : Intermedi
   intro x hx
   have : (⟨x, hx⟩ : F) ∈ IntermediateField.restrict (inf_le_left : F ⊓ F' ≤ F) :=
     htop ▸ IntermediateField.mem_top
-  exact ((IntermediateField.mem_restrict _ _).mp this).2
+  exact (IntermediateField.mem_inf.mp ((IntermediateField.mem_restrict _ _).mp this)).2
 
 /-- **Uniqueness of the primitive pair.** A CM type on a number field is induced from a primitive
 CM type on exactly one subfield. The primitive type on that subfield is unique as well, by
