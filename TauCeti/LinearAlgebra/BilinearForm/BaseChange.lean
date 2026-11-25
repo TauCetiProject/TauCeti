@@ -60,8 +60,9 @@ compared with its real extension.
   nondegeneracy, without a finite-dimensionality assumption.
 * `LinearMap.BilinForm.Nondegenerate.baseChange_of_isLocalization`: an injective localization
   preserves nondegeneracy, without a freeness or finiteness assumption on the module.
-* `LinearMap.BilinForm.baseChange_smul`, `LinearMap.BilinForm.baseChange_neg`: scalar extension
-  commutes with scalar multiplication and negation of forms.
+* `LinearMap.BilinForm.baseChange_smul`, `LinearMap.BilinForm.baseChange_add`,
+  `LinearMap.BilinForm.baseChange_neg`, `LinearMap.BilinForm.baseChange_sub`: scalar extension
+  commutes with scalar multiplication, addition, negation and subtraction of forms.
 * `LinearMap.BilinForm.IsAlt.baseChange`: scalar extension preserves alternating forms, using
   `LinearMap.BilinForm.IsAlt.add_flip_eq_zero` (an alternating form is skew-symmetric over a
   semiring).
@@ -263,13 +264,20 @@ end Arithmetic
 
 section Ring
 
-variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [AddCommGroup M] [Module R M]
+variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [AddCommMonoid M] [Module R M]
 
 /-- Scalar extension commutes with negation of bilinear forms. -/
 @[simp]
 theorem baseChange_neg (B : LinearMap.BilinForm R M) : (-B).baseChange A = -B.baseChange A := by
   rw [← neg_one_smul R B, baseChange_smul, map_neg, map_one]
   exact neg_one_smul A (B.baseChange A)
+
+/-- Scalar extension commutes with subtraction of bilinear forms. -/
+@[simp]
+theorem baseChange_sub (B B' : LinearMap.BilinForm R M) :
+    (B - B').baseChange A = B.baseChange A - B'.baseChange A := by
+  ext x y
+  simp [sub_smul]
 
 end Ring
 

@@ -219,6 +219,11 @@ abbrev chartFrame [IsManifold I 1 M] (x : M) :=
   trivializationAt E (TangentSpace I : TauCeti.chartSource (H := H) x → Type _)
     (⟨x, mem_chart_source H x⟩ : TauCeti.chartSource (H := H) x)
 
+/-- Every point of an intrinsic chart source lies in the base set of its tangent frame. -/
+theorem mem_chartFrame_baseSet [IsManifold I 1 M] (x : M) (y : TauCeti.chartSource (H := H) x) :
+    y ∈ (chartFrame (I := I) x).baseSet :=
+  (trivializationAt_chartSource_baseSet (I := I) x).symm ▸ Set.mem_univ _
+
 /-- The second component of the chart of a tangent bundle at `q`, read at any point `p`: it is the
 tangent coordinate change from the chart at the base point of `p` to the chart at the base point
 of `q`, applied to the fibre component of `p`.  Together with `TangentBundle.coe_chartAt_fst`
