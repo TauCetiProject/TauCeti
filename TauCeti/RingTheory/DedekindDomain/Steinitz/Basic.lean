@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.ExteriorPower.Ideal
 public import TauCeti.RingTheory.DedekindDomain.ModuleDecomposition
-import Mathlib.LinearAlgebra.Dimension.Localization
+import TauCeti.LinearAlgebra.Dimension.Pi
 import TauCeti.RingTheory.FractionalIdeal.Projective
 
 /-!
@@ -63,6 +63,11 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
 namespace Ideal
 
+/-- A finite product of nonzero ideals of a domain is nonzero. -/
+private theorem prod_ne_bot {ι : Type*} {s : Finset ι} {J : ι → Ideal R}
+    (h : ∀ i ∈ s, J i ≠ ⊥) : ∏ i ∈ s, J i ≠ ⊥ := by
+  simpa only [← Submodule.zero_eq_bot] using Finset.prod_ne_zero_iff.mpr h
+
 /-- **The product identity for integral ideals.** For nonzero ideals `I` and `J` of a Dedekind
 domain, `I × J ≃ R × IJ`. -/
 theorem nonempty_prod_linearEquiv_prod_mul {I J : Ideal R} (hI : I ≠ ⊥) (hJ : J ≠ ⊥) :
@@ -90,9 +95,7 @@ theorem nonempty_pi_linearEquiv_pi_prod_prod :
   | r + 1, J, hJ => by
     obtain ⟨e⟩ := nonempty_pi_linearEquiv_pi_prod_prod (fun i : Fin (r + 1) ↦ J i.succ)
       fun i ↦ hJ i.succ
-    have hK : (∏ i : Fin (r + 1), J i.succ : Ideal R) ≠ ⊥ := by
-      simpa only [← Submodule.zero_eq_bot] using
-        Finset.prod_ne_zero_iff.mpr fun (i : Fin (r + 1)) _ ↦ hJ i.succ
+    have hK : (∏ i : Fin (r + 1), J i.succ : Ideal R) ≠ ⊥ := prod_ne_bot fun i _ ↦ hJ i.succ
     obtain ⟨f⟩ := nonempty_prod_linearEquiv_prod_mul (hJ 0) hK
     have h : J 0 * ∏ i : Fin (r + 1), J i.succ = ∏ i, J i := (Fin.prod_univ_succ J).symm
     -- `J₀ × (Rʳ × K) ≃ Rʳ × (J₀ × K) ≃ Rʳ × (R × J₀ K) ≃ Rʳ⁺¹ × J₀ K`.
@@ -115,15 +118,12 @@ a finitely generated projective module, is isomorphic to `Rʳ × I` for a nonzer
 theorem exists_linearEquiv_pi_prod_ideal {r : ℕ} (hr : finrank R M = r + 1) :
     ∃ I : Ideal R, I ≠ ⊥ ∧ Nonempty (M ≃ₗ[R] (Fin r → R) × I) := by
   obtain ⟨J, hJ, ⟨e⟩⟩ := exists_linearEquiv_pi_ideal R (FractionRing R) M
-  -- The number of ideal factors is the rank of `M` after extension to the fraction field.
-  have hrank : finrank (FractionRing R) (FractionRing R ⊗[R] M) = finrank R M :=
-    (IsLocalization.finrank_eq (FractionRing R) R⁰ le_rfl).trans
-      (IsLocalizedModule.finrank_eq R⁰ (TensorProduct.mk R (FractionRing R) M 1) le_rfl)
-  generalize hn : finrank (FractionRing R) (FractionRing R ⊗[R] M) = n at J hJ e
-  obtain rfl : n = r + 1 := by rw [← hn, hrank, hr]
+  -- The number of ideal factors is the rank of `M`.
+  have hrank := (finrank_eq_card_of_linearEquiv_pi hJ e).symm.trans hr
+  generalize finrank (FractionRing R) (FractionRing R ⊗[R] M) = n at J hJ e hrank
+  obtain rfl : n = r + 1 := by rwa [Fintype.card_fin] at hrank
   obtain ⟨f⟩ := Ideal.nonempty_pi_linearEquiv_pi_prod_prod J hJ
-  refine ⟨∏ i, J i, ?_, ⟨e ≪≫ₗ f⟩⟩
-  simpa only [← Submodule.zero_eq_bot] using Finset.prod_ne_zero_iff.mpr fun i _ ↦ hJ i
+  exact ⟨∏ i, J i, Ideal.prod_ne_bot fun i _ ↦ hJ i, ⟨e ≪≫ₗ f⟩⟩
 
 /-- **Steinitz decomposition by the determinant.** A finite flat module `M` of rank `r + 1` over a
 Dedekind domain, that is a finitely generated projective module, is isomorphic to

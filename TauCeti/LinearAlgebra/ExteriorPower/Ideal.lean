@@ -66,8 +66,9 @@ private def consSubtype : (Fin r → R) × I →ₗ[R] Fin (r + 1) → R :=
     (I.subtype.prodMap LinearMap.id) ∘ₗ (LinearEquiv.prodComm R (Fin r → R) I).toLinearMap
 
 private theorem consSubtype_apply (x : (Fin r → R) × I) :
-    consSubtype I r x = Fin.cons (x.2 : R) x.1 :=
-  (rfl)
+    consSubtype I r x = Fin.cons (x.2 : R) x.1 := by
+  ext i
+  simp [consSubtype, Fin.consLinearEquiv_apply, Equiv.toFun_as_coe]
 
 /-- The linear form on `⋀ʳ⁺¹ (Rʳ × I)` sending `v₀ ∧ ⋯ ∧ vᵣ` to the determinant of the rows
 `consSubtype (vₖ)`. -/
