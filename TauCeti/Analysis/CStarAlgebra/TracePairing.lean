@@ -14,7 +14,8 @@ public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
 Let `τ` be a positive tracial functional on a C⋆-algebra `A`. Its unnormalized matrix trace
 `τ_m(p) = ∑ i, τ (p i i)` takes the same value on Murray–von Neumann equivalent matrix projections
 of any sizes: if `vᴴ v = p` and `v vᴴ = q`, both traces are `∑ i k, τ (star (v k i) * v k i)`, by
-the trace property of `τ` (`TauCeti.PositiveTracialFunctional.sum_map_conjTranspose_mul_self`).
+the trace property of `τ`
+(`PositiveTracialFunctional.sum_map_conjTranspose_mul_self_eq_sum_map_mul_conjTranspose_self`).
 It is additive under block sum and nonnegative, so it induces an additive pairing
 `τ_* : K₀(A) →+ ℝ` on the projection `K₀`-group (`TauCeti.PositiveTracialFunctional.kZeroPairing`).
 The pairing is positive on classes of projections and natural: for a star homomorphism
@@ -56,7 +57,7 @@ variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRi
 
 /-- **Trace property for rectangular matrices.** For `v : Matrix n m A`, the unnormalized matrix
 traces of `vᴴ v` and `v vᴴ` agree. -/
-theorem sum_map_conjTranspose_mul_self (v : Matrix n m A) :
+theorem sum_map_conjTranspose_mul_self_eq_sum_map_mul_conjTranspose_self (v : Matrix n m A) :
     ∑ i, τ ((vᴴ * v) i i) = ∑ k, τ ((v * vᴴ) k k) := by
   simp only [Matrix.mul_apply, conjTranspose_apply, map_sum]
   rw [Finset.sum_comm]
@@ -66,19 +67,11 @@ theorem sum_map_conjTranspose_mul_self (v : Matrix n m A) :
 theorem sum_map_eq_of_isMurrayVonNeumannEquivalent {p : Matrix m m A} {q : Matrix n n A}
     (h : IsMurrayVonNeumannEquivalent p q) : ∑ i, τ (p i i) = ∑ k, τ (q k k) := by
   obtain ⟨-, -, v, rfl, rfl⟩ := h
-  exact τ.sum_map_conjTranspose_mul_self v
-
-/-- The diagonal entries of a matrix projection over a C⋆-algebra are positive. -/
-theorem _root_.IsStarProjection.matrix_apply_self_nonneg {p : Matrix m m A}
-    (hp : IsStarProjection p) (i : m) : 0 ≤ p i i := by
-  have h : pᴴ * p = p := by
-    rw [← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
-  rw [← h, Matrix.mul_apply]
-  exact Finset.sum_nonneg fun k _ ↦ by simp
+  exact τ.sum_map_conjTranspose_mul_self_eq_sum_map_mul_conjTranspose_self v
 
 /-- The unnormalized matrix trace of a matrix projection is a nonnegative real number. -/
 theorem sum_map_nonneg {p : Matrix m m A} (hp : IsStarProjection p) : 0 ≤ ∑ i, τ (p i i) :=
-  Finset.sum_nonneg fun i _ ↦ τ.toPositiveLinearMap.map_nonneg (hp.matrix_apply_self_nonneg i)
+  Finset.sum_nonneg fun i _ ↦ τ.toPositiveLinearMap.map_nonneg (hp.diag_nonneg i)
 
 /-- The unnormalized matrix trace of a block sum is the sum of the traces. -/
 private theorem sum_map_fromBlocks (p : Matrix m m A) (q : Matrix n n A) :
@@ -134,7 +127,8 @@ theorem kZeroPairing_of_mk_nonneg {p : Matrix m m A} (hp : IsStarProjection p) :
 
 /-- **Naturality.** For a star homomorphism `φ : A → B` and a positive tracial functional `τ` on
 `B`, the pairing of `τ ∘ φ` is the pairing of `τ` composed with `φ_* : K₀(A) → K₀(B)`. -/
-theorem kZeroPairing_comp (τ : PositiveTracialFunctional B) (φ : A →⋆ₙₐ[ℂ] B) :
+theorem kZeroPairing_comp {F : Type*} [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B]
+    [StarHomClass F A B] (τ : PositiveTracialFunctional B) (φ : F) :
     (τ.comp φ).kZeroPairing =
       τ.kZeroPairing.comp (ProjectionKZero.map (NonUnitalStarRingHom.ofClass φ)) := by
   refine GrothendieckAddGroup.addHom_ext fun x ↦ ?_
