@@ -49,6 +49,7 @@ theorem isNear_le_iff [LinearOrder α] {p q : α} : IsNear (· ≤ ·) p q ↔ (
   simp only [isNear_iff, ← mem_uIcc, ofPred_mem_eq]
 
 /-- A relation isomorphism `r ≃r r'` preserves nearness. -/
+@[simp]
 theorem isNear_map {r : α → α → Prop} {r' : β → β → Prop} (f : r ≃r r') (p q : α) :
     IsNear r' (f p) (f q) ↔ IsNear r p q := by
   have h : {z | r' (f p) z ∧ r' z (f q) ∨ r' (f q) z ∧ r' z (f p)} =
