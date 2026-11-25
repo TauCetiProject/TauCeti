@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Boundary.Model
 public import TauCeti.Analysis.Convex.Cone.StrictInward
 public import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
+import TauCeti.Analysis.Complex.ReImTopology
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The closed upper half-plane as a model with corners
@@ -42,6 +44,12 @@ The explicit constructor `ClosedUpperHalfPlane.euclideanHalfSpaceChartedSpace` t
 bordered atlas to the native real half-space model. Its preferred chart law fixes the chosen
 structure for boundary constructions. The strict inward cone at the real axis has positive
 imaginary component; the native boundary parametrization has range `Complex.imCLM.ker`.
+
+The inclusion of the closed upper half-plane into `ℂ` is smooth
+(`ClosedUpperHalfPlane.contMDiff_coe`), the interior in `ℂ` of a subset of the closed upper
+half-plane has positive imaginary part (`interior_subset_setOf_im_pos`), and off the real axis the
+inverse of a chart of a `C^n` maximal atlas, `n ≠ 0`, is differentiable
+(`ClosedUpperHalfPlane.mdifferentiableAt_extend_symm_of_im_pos`).
 
 -/
 
@@ -139,6 +147,33 @@ theorem range_closedUpperHalfPlaneModel :
     funext closedUpperHalfPlaneModel_apply
   rw [h]
   exact Subtype.range_coe_subtype
+
+/-- The interior in `ℂ` of a subset of the closed upper half-plane consists of points of positive
+imaginary part. -/
+theorem interior_subset_setOf_im_pos {t : Set ℂ} (ht : t ⊆ range closedUpperHalfPlaneModel) :
+    interior t ⊆ {z : ℂ | 0 < z.im} := by
+  have h := interior_mono ht
+  rwa [range_closedUpperHalfPlaneModel, Complex.interior_setOfPred_le_im] at h
+
+/-- Off the real axis, the inverse of a chart of the `C^n` maximal atlas of a manifold modelled on
+the closed upper half-plane, `n ≠ 0`, is differentiable. -/
+theorem ClosedUpperHalfPlane.mdifferentiableAt_extend_symm_of_im_pos {M : Type*}
+    [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] {n : ℕ∞ω} (hn : n ≠ 0)
+    {φ : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (hφ : φ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel n M) {z : ℂ}
+    (hz : z ∈ (φ.extend closedUpperHalfPlaneModel).target) (hzim : 0 < z.im) :
+    MDifferentiableAt 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
+      (φ.extend closedUpperHalfPlaneModel).symm z := by
+  refine φ.mdifferentiableAt_extend_symm_of_mem_interior hn hφ ?_
+  rw [OpenPartialHomeomorph.extend_target] at hz ⊢
+  rw [range_closedUpperHalfPlaneModel, interior_inter_setOf_im_nonneg
+    (φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm)]
+  exact ⟨hz.1, hzim⟩
+
+/-- The inclusion of the closed upper half-plane into `ℂ` is smooth up to the boundary. -/
+theorem ClosedUpperHalfPlane.contMDiff_coe {n : ℕ∞ω} :
+    ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) n ((↑) : ClosedUpperHalfPlane → ℂ) :=
+  funext closedUpperHalfPlaneModel_apply ▸ closedUpperHalfPlaneModel.contMDiff
 
 /-- The part of the extended target of a chart into the closed upper half-plane lying over an
 open set is relatively open in the closed upper half-plane: it is `Ω ∩ {z | 0 ≤ z.im}` for an

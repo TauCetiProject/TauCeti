@@ -74,6 +74,9 @@ set of absolutely continuous paths, which the action functional of a dynamic pla
   derivative.
 * `BoundedVariationOn.ae_metricDerivative_le_enorm_deriv_variationOnFromTo`: for a curve of bounded
   variation, the metric derivative is almost everywhere at most the derivative of the variation.
+* `BoundedVariationOn.ae_metricDerivative_eq_enorm_deriv`: in a finite-dimensional real normed
+  space, the metric derivative of a curve of bounded variation is almost everywhere the norm of its
+  derivative.
 * `TauCeti.ae_metricDerivative_le`: minimality of the metric derivative among the integrable
   densities bounding the distances along a curve.
 * `AbsolutelyContinuousOnInterval.ae_tendsto_metricDerivative`,
@@ -246,6 +249,22 @@ theorem _root_.BoundedVariationOn.ae_metricDerivative_le_enorm_deriv_variationOn
     exact hV htab hs hts
 
 end BoundedVariation
+
+section FiniteDimensional
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {γ : ℝ → F} {a b : ℝ}
+
+/-- **The metric speed of a curve of bounded variation.** In a finite-dimensional real normed
+space, the metric derivative of a curve of bounded variation on `[a, b]` is the norm of its
+derivative at almost every time of `[a, b]`. -/
+theorem _root_.BoundedVariationOn.ae_metricDerivative_eq_enorm_deriv
+    (hγ : BoundedVariationOn γ (uIcc a b)) :
+    ∀ᵐ t, t ∈ uIcc a b → metricDerivative γ t = ‖deriv γ t‖ₑ := by
+  filter_upwards [hγ.ae_differentiableAt_of_mem_uIcc] with t ht hmem
+  exact (ht hmem).hasDerivAt.metricDerivative_eq
+
+end FiniteDimensional
 
 section AbsolutelyContinuous
 

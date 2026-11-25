@@ -489,7 +489,8 @@ theorem splitK0Equiv_of_mk {ι : Type*} [Fintype ι] {e : Matrix ι ι A} (he : 
   let θ' : Y.obj ≃ₗ[Aᵐᵒᵖᵐᵒᵖ] range ((eᵀ.map op).mulVecBilin Aᵐᵒᵖ Aᵐᵒᵖᵐᵒᵖ) :=
     ((eY.trans θ).trans eOp).trans (rangeVecMulLinearTransposeMapOpEquiv (eᵀ.map op))
   rw [splitK0Equiv, AddEquiv.trans_apply, AddEquiv.trans_apply, GrothendieckAddGroup.congr_of,
-    opEquiv_mk, kZeroEquiv_of_mk he.matrix_transpose_map_op Y θ', SplitK0.mapEquiv_of]
+    opEquiv_mk,
+    kZeroEquiv_of_mk he.matrix_transpose_map_op Y θ', SplitK0.mapEquiv_of]
   exact SplitK0.of_congr (E.counitIso.app X)
 
 /-- The class of an idempotent matrix `e` goes to the class of any module `X` isomorphic to the
