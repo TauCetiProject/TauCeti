@@ -44,6 +44,10 @@ This is the Grassmannian `G(E, k)` that carries the varifolds of a Euclidean spa
 
 * `Euclidean.grassmannian 𝕜 E k`: the orthogonal projections of `E` with range of rank `k`.
 * `Euclidean.grassmannian.submoduleEquiv`: the bijection with the `k`-dimensional subspaces.
+* `Euclidean.grassmannian.spanLine`: the line `𝕜 ∙ v` through a nonzero vector, as a point of
+  `G(E, 1)`; it depends continuously on `v` (`Euclidean.grassmannian.tendsto_spanLine`), because
+  the projection onto `𝕜 ∙ v` is `TauCeti.rankOneDivNormSq 𝕜 v v`
+  (`Submodule.starProjection_singleton_eq_rankOneDivNormSq`).
 * `Euclidean.grassmannian.finiteGrassmannianHomeomorph`: the homeomorphism from
   `TauCeti.finiteGrassmannian 𝕜 k N` induced by a linear isometry
   `E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)`.
@@ -161,6 +165,37 @@ theorem eq_starProjection_range {P : E →L[𝕜] E}
     (hP : P ∈ grassmannian 𝕜 E k) :
     ∃ (_ : P.range.HasOrthogonalProjection), P = P.range.starProjection :=
   isStarProjection_iff_eq_starProjection_range.1 hP.1
+
+/-- The line `𝕜 ∙ v` through a nonzero vector `v`, as a point of `G(E, 1)`. -/
+noncomputable def spanLine {v : E} (hv : v ≠ 0) : grassmannian 𝕜 E 1 :=
+  ⟨(𝕜 ∙ v).starProjection, starProjection_mem (finrank_span_singleton hv)⟩
+
+/-- `spanLine` is the orthogonal projection onto the line `𝕜 ∙ v`. -/
+@[simp]
+theorem coe_spanLine {v : E} (hv : v ≠ 0) :
+    (spanLine (𝕜 := 𝕜) hv : E →L[𝕜] E) = (𝕜 ∙ v).starProjection :=
+  (rfl)
+
+/-- Two lines through nonzero vectors are the same point of `G(E, 1)` exactly when they are the
+same subspace. -/
+theorem spanLine_inj {v w : E} (hv : v ≠ 0) (hw : w ≠ 0) :
+    spanLine (𝕜 := 𝕜) hv = spanLine hw ↔ (𝕜 ∙ v) = (𝕜 ∙ w) := by
+  rw [← Subtype.coe_inj, coe_spanLine, coe_spanLine, Submodule.starProjection_inj]
+
+open Filter Topology in
+/-- The line `𝕜 ∙ v` depends continuously on the nonzero vector `v`. -/
+theorem tendsto_spanLine {α : Type*} {l : Filter α} {u : α → E} {u₀ : E} (hu : ∀ j, u j ≠ 0)
+    (hu₀ : u₀ ≠ 0) (h : Tendsto u l (𝓝 u₀)) :
+    Tendsto (fun j => spanLine (𝕜 := 𝕜) (hu j)) l (𝓝 (spanLine hu₀)) := by
+  refine tendsto_subtype_rng.2 ?_
+  simp only [coe_spanLine, Submodule.starProjection_singleton_eq_rankOneDivNormSq,
+    TauCeti.rankOneDivNormSq_def]
+  have hc : Continuous fun v : E => InnerProductSpace.rankOne 𝕜 v v := by
+    simp only [InnerProductSpace.rankOne_def]
+    exact isBoundedBilinearMap_smulRight.continuous.comp
+      ((innerSL 𝕜).continuous.prodMk continuous_id)
+  have hn : Continuous fun v : E => (‖v‖ : 𝕜) ^ 2 := by fun_prop
+  exact (((hn.tendsto u₀).comp h).inv₀ (by simpa using hu₀)).smul ((hc.tendsto u₀).comp h)
 
 section FiniteGrassmannian
 
