@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical.EulerCharacteristic
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical.Existence
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Cohomology
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Pairing
-public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Twist
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.MittagLeffler
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 
@@ -29,7 +30,7 @@ A nonzero `ω` pairs nontrivially with a principal part supported at a single po
 from `H⁰(X, Ω_{-D})` to the dual of that image is injective
 (`TauCeti.RiemannSurface.serreDualityMap_injective`). This is the injectivity of the Serre duality
 map (Forster, Theorem 17.6), proved without the surjectivity of the connecting map (Forster,
-Theorem 17.3), which is not available here. It gives `h⁰(Ω_{-D}) ≤ h¹(𝒪_D)` whenever `H¹(X, 𝒪_D)`
+Theorem 17.3). It gives `h⁰(Ω_{-D}) ≤ h¹(𝒪_D)` whenever `H¹(X, 𝒪_D)`
 is finite-dimensional.
 
 With Riemann–Roch for divisor sheaves this has two consequences when `H¹(X, 𝒪)` is
@@ -41,12 +42,13 @@ finite-dimensional:
   analytic genus (`TauCeti.RiemannSurface.genus_le_analyticGenus`).
 
 Equality in both, which is the remaining content of Serre duality, needs the surjectivity of the
-duality map.
+connecting map (Forster, Theorem 17.3), so that the pairing is defined on all of `H¹(X, 𝒪_D)`, and
+the surjectivity of the duality map (Forster, Theorem 17.9).
 
 ## Main results
 
-* `TauCeti.RiemannSurface.serreDualityPairing`, `serreDualityPairing_rangeRestrict`: the descended
-  pairing and its value on the class of a distribution.
+* `TauCeti.RiemannSurface.serreDualityPairing`: the descended pairing, with its value on the class
+  of a distribution `serreDualityPairing_of_mittagLefflerConnecting_eq`.
 * `TauCeti.RiemannSurface.serreDualityMap_injective`: injectivity of the Serre duality map.
 * `TauCeti.RiemannSurface.finrank_differentialSections_neg_le`: `h⁰(Ω_{-D}) ≤ h¹(𝒪_D)`.
 * `TauCeti.RiemannSurface.finrank_holomorphicOneForms_le_analyticGenus`: `h⁰(Ω) ≤ g_an`.
@@ -113,14 +115,22 @@ def serreDualityPairing :
     rw [map_smul, (LinearMap.mem_range.1 ξ.property).choose_spec,
       (LinearMap.mem_range.1 (c • ξ).property).choose_spec, Submodule.coe_smul]
 
+/-- The Serre duality pairing of a class `ξ` is the residue pairing of any distribution `μ`
+whose class is `ξ`. It is not a `simp` lemma, since `μ` does not occur on the left. -/
+theorem serreDualityPairing_of_mittagLefflerConnecting_eq {μ : PrincipalParts D}
+    {ξ : LinearMap.range (mittagLefflerConnecting D)} (h : mittagLefflerConnecting D μ = ξ)
+    (ω : differentialSections (-D) ⊤) :
+    serreDualityPairing D ξ ω = PrincipalParts.residuePairing D μ ω :=
+  congrArg (· ω) (residuePairing_eq_of_mittagLefflerConnecting_eq D
+    ((LinearMap.mem_range.1 ξ.property).choose_spec.trans h.symm))
+
 /-- The Serre duality pairing of the class of a distribution `μ` is the residue pairing of `μ`. -/
 @[simp]
 theorem serreDualityPairing_rangeRestrict (μ : PrincipalParts D)
     (ω : differentialSections (-D) ⊤) :
     serreDualityPairing D ((mittagLefflerConnecting D).rangeRestrict μ) ω =
       PrincipalParts.residuePairing D μ ω :=
-  congrArg (· ω) (residuePairing_eq_of_mittagLefflerConnecting_eq D
-    (LinearMap.mem_range.1 ((mittagLefflerConnecting D).rangeRestrict μ).property).choose_spec)
+  serreDualityPairing_of_mittagLefflerConnecting_eq D rfl ω
 
 variable {D} in
 /-- **A nonzero section of `Ω_{-D}` pairs nontrivially with some cohomology class**: with the class
@@ -161,18 +171,6 @@ theorem finrank_differentialSections_neg_le [FiniteDimensional ℂ (divisorCechC
 
 end Duality
 
-omit [T2Space X] [ConnectedSpace X] in
-/-- On a compact Riemann surface, the sections of `Ω_D` have the dimension of the global sections
-of `𝒪_(D + K)` for every canonical divisor `K`. -/
-theorem IsCanonicalDivisor.finrank_differentialSections_eq {K : WeilDivisor X}
-    (hK : IsCanonicalDivisor K) (D : WeilDivisor X) :
-    Module.finrank ℂ (differentialSections D ⊤) =
-      Module.finrank ℂ ((divisorSheaf (D + K)).obj.obj (op ⊤)) := by
-  obtain ⟨ω, hω, hω₀, rfl⟩ := hK.exists_divisor_eq
-  exact (differentialSheafSectionsEquiv D ⊤).finrank_eq.symm.trans
-    (((sheafToPresheaf _ _).mapIso (differentialSheafIsoDivisorSheafAdd ω hω hω₀ D)).app
-      (op ⊤)).toLinearEquiv.finrank_eq
-
 section AnalyticGenus
 
 variable [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
@@ -203,11 +201,9 @@ theorem IsCanonicalDivisor.degree_le_two_mul_analyticGenus_sub_two {K : WeilDivi
 surface with finite-dimensional `H¹(X, 𝒪)`, `genus X ≤ g_an`, from `deg K = -χ(X)` and
 `deg K ≤ 2 g_an - 2` for a canonical divisor `K`. -/
 theorem genus_le_analyticGenus : genus X ≤ analyticGenus X := by
-  obtain ⟨F, -⟩ := exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one (X := X)
-  obtain ⟨K, hK, hdeg⟩ :=
-    F.exists_isCanonicalDivisor_degree_eq_neg_two_mul_degree_add_ramificationDegree
+  obtain ⟨K, hK⟩ := exists_isCanonicalDivisor (X := X)
   have hle := hK.degree_le_two_mul_analyticGenus_sub_two
-  rw [hdeg, F.neg_two_mul_degree_add_ramificationDegree_eq_neg_eulerChar] at hle
+  rw [hK.degree_eq_neg_eulerChar_of_finiteDimensional] at hle
   rw [genus_def]
   omega
 
