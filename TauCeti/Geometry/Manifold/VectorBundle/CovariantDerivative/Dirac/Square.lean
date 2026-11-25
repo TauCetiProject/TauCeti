@@ -47,7 +47,9 @@ The identity rests on two properties of the product, assumed here at a single po
 
 Under these, Clifford multiplication by `T` anticommutes with the Dirac operator up to a
 derivative along `T`: `D (c(T) τ) = -c(T) D τ - 2 ∇_T τ`
-(`CovariantDerivative.diracOperator_clifford_eq`). Expanding `D (D σ)` then gives
+(`CovariantDerivative.diracOperator_clifford_eq`), and it anticommutes with the transverse Dirac
+operator, `B_T (c(T) τ) = -c(T) B_T τ` (`CovariantDerivative.transverseDiracOperator_clifford_eq`).
+Expanding `D (D σ)` then gives
 
 `D² σ = -∇_T ∇_T σ + B_T (B_T σ) + c(T) (∇_T (B_T σ) - B_T (∇_T σ))`
 
@@ -75,6 +77,8 @@ square of the Dirac operator is the displayed product formula
   companions: linearity and the Leibniz rule
   `B_T (f σ) = f B_T σ + c(grad f) σ - df(T) c(T) σ`.
 * `CovariantDerivative.diracOperator_clifford_eq`: `D (c(T) τ) = -c(T) D τ - 2 ∇_T τ`.
+* `CovariantDerivative.transverseDiracOperator_clifford_eq`: `B_T (c(T) τ) = -c(T) B_T τ` for a
+  unit vector `T`.
 * `CovariantDerivative.diracOperator_diracOperator_eq`:
   `D² σ = -∇_T ∇_T σ + B_T² σ + c(T) (∇_T (B_T σ) - B_T (∇_T σ))`.
 * `CovariantDerivative.covariantDerivative_transverseDiracOperator_sub_eq_sum`: the commutator
@@ -140,6 +144,12 @@ theorem diracOperator_eq_add_transverseDiracOperator (σ : Π y : M, V y) (x : M
 theorem transverseDiracOperator_zero [VectorBundle ℝ F V] (x : M) :
     cov.transverseDiracOperator c T (0 : Π y : M, V y) x = 0 := by
   simp [transverseDiracOperator_def]
+
+/-- The transverse Dirac operator of a section whose covariant derivative vanishes at `x`
+vanishes at `x`. -/
+theorem transverseDiracOperator_eq_zero_of_eq_zero (x : M) (hσ : cov σ x = 0) :
+    cov.transverseDiracOperator c T σ x = 0 := by
+  simp [transverseDiracOperator_def, cov.diracOperator_eq_zero_of_eq_zero c x hσ, hσ]
 
 /-- The transverse Dirac operator is additive on sections differentiable at the point. -/
 theorem transverseDiracOperator_add {x : M} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
@@ -212,6 +222,31 @@ theorem diracOperator_clifford_eq {x : M}
   simp only [ContinuousLinearMap.comp_apply, hterm, Finset.sum_sub_distrib,
     Finset.sum_neg_distrib, ← map_sum, ← Finset.smul_sum, b.sum_repr']
 
+omit [FiniteDimensional ℝ E] in
+/-- Under the Clifford relation with `T`, Clifford multiplication by a unit vector `T x` squares
+to `-1`. -/
+private theorem clifford_clifford_self_eq_neg {x : M} (hTx : ‖T x‖ = 1)
+    (hc : ∀ u w, c x u (c x (T x) w) + c x (T x) (c x u w) = -(2 * ⟪u, T x⟫) • w) (w : V x) :
+    c x (T x) (c x (T x) w) = -w := by
+  have h := hc (T x) w
+  rw [real_inner_self_eq_norm_sq, hTx] at h
+  linear_combination (norm := module) (2⁻¹ : ℝ) • h
+
+/-- **Clifford multiplication by a unit vector anticommutes with the transverse Dirac
+operator.** Suppose that at `x` the vector `T x` has unit length, Clifford multiplication
+satisfies the Clifford relation `c(u) c(T) + c(T) c(u) = -2 ⟪u, T⟫` with `T`, and `c(T)` is
+parallel on the section `τ`, `∇ (c(T) τ) = c(T) ∇ τ`. Then `B_T (c(T) τ) = -c(T) B_T τ` at
+`x`. -/
+theorem transverseDiracOperator_clifford_eq {x : M} (hTx : ‖T x‖ = 1)
+    (hc : ∀ u w, c x u (c x (T x) w) + c x (T x) (c x u w) = -(2 * ⟪u, T x⟫) • w)
+    (hT : cov (fun y ↦ c y (T y) (τ y)) x = c x (T x) ∘L cov τ x) :
+    cov.transverseDiracOperator c T (fun y ↦ c y (T y) (τ y)) x =
+      -c x (T x) (cov.transverseDiracOperator c T τ x) := by
+  have hsq := clifford_clifford_self_eq_neg c T hTx hc
+  rw [transverseDiracOperator_def, cov.diracOperator_clifford_eq c T hc hT, hT,
+    ContinuousLinearMap.comp_apply, hsq, transverseDiracOperator_def, map_sub, hsq]
+  module
+
 /-- **The square of the Dirac operator split along a unit vector field.** Suppose that at `x`
 the vector `T x` has unit length, Clifford multiplication satisfies the Clifford relation
 `c(u) c(T) + c(T) c(u) = -2 ⟪u, T⟫` with `T`, and `c(T)` is parallel on the section `∇_T σ`.
@@ -229,11 +264,7 @@ theorem diracOperator_diracOperator_eq {x : M} (hTx : ‖T x‖ = 1)
         cov.transverseDiracOperator c T (cov.transverseDiracOperator c T σ) x +
           c x (T x) (cov (cov.transverseDiracOperator c T σ) x (T x) -
             cov.transverseDiracOperator c T (fun y ↦ cov σ y (T y)) x) := by
-  -- Clifford multiplication by the unit vector `T x` squares to `-1`.
-  have hsq (w : V x) : c x (T x) (c x (T x) w) = -w := by
-    have h := hc (T x) w
-    rw [real_inner_self_eq_norm_sq, hTx] at h
-    linear_combination (norm := module) (2⁻¹ : ℝ) • h
+  have hsq := clifford_clifford_self_eq_neg c T hTx hc
   have hD : cov.diracOperator c σ =
       (fun y ↦ c y (T y) (cov σ y (T y))) + cov.transverseDiracOperator c T σ :=
     funext fun y ↦ cov.diracOperator_eq_add_transverseDiracOperator c T σ y
