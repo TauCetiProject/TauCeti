@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.Ideal.Quotient.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
-import Mathlib.GroupTheory.OrderOfElement
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Index
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
@@ -54,13 +54,12 @@ lies in `Eˢ(A, I)` as soon as both matrices are congruent to `1` modulo `I`.
 * `Ideal.serreElementarySubgroup_mono`, `Ideal.serreElementarySubgroup_bot`,
   `Ideal.map_serreElementarySubgroup_le`: monotonicity, the zero level, and transport along ring
   homomorphisms.
+* `Ideal.closure_transvections_le_serreElementarySubgroup`: `Eˢ(A, I)` contains every
+  transvection with parameter in `I`, hence the subgroup they generate.
 * `Ideal.serreElementarySubgroup_top_of_field`, `Ideal.serreElementarySubgroup_top_int`: over a
   field and over `ℤ` the unit level is all of `SL₂`.
 * `Ideal.mul_inv_mem_serreElementarySubgroup_of_row_zero_eq`: two matrices of `Γ₂(I)` with the
   same first row are congruent modulo `Eˢ(A, I)`.
-* `Subgroup.exists_normalClosure_transvection_span_le`: a finite-index subgroup of `SL_ι(A)`
-  contains the normal closure of the transvections `e_ij(t)`, `t ∈ m A`, for some integer
-  `m ≠ 0`.
 * `Subgroup.exists_serreElementarySubgroup_le`: in characteristic zero, every finite-index
   subgroup of `SL₂(A)` contains `Eˢ(A, I)` for some nonzero ideal `I`.
 
@@ -75,28 +74,6 @@ public section
 open Matrix (SpecialLinearGroup TransvectionStruct)
 open Matrix.SpecialLinearGroup
 
-namespace Subgroup
-
-variable {ι A : Type*} [Fintype ι] [DecidableEq ι] [CommRing A]
-
-/-- A finite-index subgroup of `SL_ι(A)` contains, for some integer `m ≠ 0`, the normal closure
-of the transvections `e_ij(t)` with `t` in the ideal `m A`. -/
-theorem exists_normalClosure_transvection_span_le (H : Subgroup (SpecialLinearGroup ι A))
-    [H.FiniteIndex] {i j : ι} (hij : i ≠ j) :
-    ∃ m : ℕ, m ≠ 0 ∧
-      normalClosure (transvection hij '' (Ideal.span {(m : A)} : Set A)) ≤ H := by
-  -- the transvection parameters lying in the normal core form a finite-index subgroup of `A`
-  set K := H.normalCore.comap (transvectionHom hij)
-  refine ⟨K.index, FiniteIndex.index_ne_zero, (normalClosure_le_normal ?_).trans H.normalCore_le⟩
-  rintro _ ⟨t, ht, rfl⟩
-  obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.1 ht
-  have hpow := K.pow_index_mem (Multiplicative.ofAdd a)
-  rw [mem_comap, map_pow, transvectionHom_apply, transvection_pow, toAdd_ofAdd,
-    nsmul_eq_mul, mul_comm] at hpow
-  exact hpow
-
-end Subgroup
-
 namespace Ideal
 
 variable {A : Type*} [CommRing A] (I : Ideal A)
@@ -105,6 +82,13 @@ variable {A : Type*} [CommRing A] (I : Ideal A)
 upper transvections `[[1, t], [0, 1]]` with `t ∈ I`. -/
 def serreElementarySubgroup : Subgroup (SpecialLinearGroup (Fin 2) A) :=
   Subgroup.normalClosure (transvection (zero_ne_one : (0 : Fin 2) ≠ 1) '' I)
+
+/-- Serre's relative elementary subgroup is the normal closure in `SL₂(A)` of the upper
+transvections with parameter in `I`. -/
+theorem serreElementarySubgroup_def :
+    I.serreElementarySubgroup =
+      Subgroup.normalClosure (transvection (zero_ne_one : (0 : Fin 2) ≠ 1) '' I) :=
+  (rfl)
 
 /-- Serre's relative elementary subgroup is normal in `SL₂(A)`. -/
 instance normal_serreElementarySubgroup : I.serreElementarySubgroup.Normal :=
@@ -211,19 +195,31 @@ theorem mul_inv_mem_serreElementarySubgroup_of_row_zero_eq
     ← transvection_coeff_zero (one_ne_zero : (1 : Fin 2) ≠ 0)] at hmem
   exact Ideal.Quotient.eq_zero_iff_mem.1 (transvection_injective _ hmem)
 
+variable (I) in
+/-- Serre's relative elementary subgroup at level `I` contains the subgroup of `SL₂(A)` generated
+by the transvections with parameter in `I`. -/
+theorem closure_transvections_le_serreElementarySubgroup :
+    Subgroup.closure {g | ∃ t : TransvectionStruct (Fin 2) A, t.c ∈ I ∧ t.toSpecialLinearGroup = g}
+      ≤ I.serreElementarySubgroup := by
+  rw [Subgroup.closure_le]
+  rintro _ ⟨t, ht, rfl⟩
+  exact t.toSpecialLinearGroup_mem_serreElementarySubgroup ht
+
 /-- Over a field, Serre's relative elementary subgroup at the unit level is all of `SL₂`. -/
+@[simp]
 theorem serreElementarySubgroup_top_of_field (K : Type*) [Field K] :
     (⊤ : Ideal K).serreElementarySubgroup = ⊤ := by
-  rw [eq_top_iff, ← closure_range_toSpecialLinearGroup_eq_top_of_field, Subgroup.closure_le]
-  rintro _ ⟨t, rfl⟩
-  exact t.toSpecialLinearGroup_mem_serreElementarySubgroup Submodule.mem_top
+  refine eq_top_iff.2 (le_trans ?_ (closure_transvections_le_serreElementarySubgroup ⊤))
+  rw [← closure_range_toSpecialLinearGroup_eq_top_of_field]
+  exact Subgroup.closure_mono fun _ ⟨t, ht⟩ ↦ ⟨t, Submodule.mem_top, ht⟩
 
 /-- Over `ℤ`, Serre's relative elementary subgroup at the unit level is all of `SL₂(ℤ)`. -/
+@[simp]
 theorem serreElementarySubgroup_top_int :
     (⊤ : Ideal ℤ).serreElementarySubgroup = ⊤ := by
-  rw [eq_top_iff, ← closure_range_toSpecialLinearGroup_eq_top, Subgroup.closure_le]
-  rintro _ ⟨t, rfl⟩
-  exact t.toSpecialLinearGroup_mem_serreElementarySubgroup Submodule.mem_top
+  refine eq_top_iff.2 (le_trans ?_ (closure_transvections_le_serreElementarySubgroup ⊤))
+  rw [← closure_range_toSpecialLinearGroup_eq_top]
+  exact Subgroup.closure_mono fun _ ⟨t, ht⟩ ↦ ⟨t, Submodule.mem_top, ht⟩
 
 end Ideal
 
