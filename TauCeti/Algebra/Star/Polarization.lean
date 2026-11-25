@@ -16,17 +16,27 @@ In a complex star algebra, the "sesquilinear" product `(u, c) ↦ star u * x * c
 its values on the diagonal: `4 • (star u * x * c)` is the sum over `k` of
 `Iᵏ • (star (c + Iᵏ • u) * x * (c + Iᵏ • u))`. This lets a statement about all products
 `star b * x * b` be upgraded to one about all products `b * x * c`. On the diagonal, a complex
-scalar comes out of `star (c • x) * (c • x)` as `‖c‖ ^ 2`.
+scalar comes out of `star (c • x) * (c • x)` as `‖c‖ ^ 2`, and in any star ring the products
+`star x * x` satisfy the parallelogram identity.
 
 ## Main results
 
 * `TauCeti.star_mul_mul_polarization`: the polarization identity for `star u * x * c`.
 * `TauCeti.star_smul_mul_smul`: `star (c • x) * (c • x) = ‖c‖ ^ 2 • (star x * x)`.
+* `TauCeti.star_add_mul_add_add_star_sub_mul_sub`: the parallelogram identity
+  `star (x + y) * (x + y) + star (x - y) * (x - y) = 2 • (star x * x + star y * y)`.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- The parallelogram identity for the products `star x * x` in a star ring. -/
+theorem star_add_mul_add_add_star_sub_mul_sub {R : Type*} [NonUnitalNonAssocRing R] [StarRing R]
+    (x y : R) :
+    star (x + y) * (x + y) + star (x - y) * (x - y) = 2 • (star x * x + star y * y) := by
+  simp only [star_add, star_sub, add_mul, sub_mul, mul_add, mul_sub]
+  abel
 
 variable {A : Type*} [NonUnitalNonAssocRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
   [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]

@@ -16,7 +16,7 @@ import TauCeti.Algebra.Star.Polarization
 A **trace** on a C⋆-algebra `B` is a map `τ : B → ℝ≥0∞`, of which only the values on the
 positive cone `B₊` matter, that is additive and positively homogeneous on `B₊` (with `0 · ∞ = 0`)
 and satisfies `τ(x⋆x) = τ(xx⋆)` for every `x ∈ B` (Dixmier 1963, Définition 2, p. 224). This is
-`TauCeti.IsTrace`. A trace is faithful (`TauCeti.IsFaithfulTrace`) if a positive element of trace
+`TauCeti.IsTrace`. A trace is faithful (`TauCeti.IsFaithful`) if a positive element of trace
 zero is zero.
 
 The **finite part** `𝔪_τ⁺ = {x ∈ B₊ : τ(x) < ∞}` (`TauCeti.finitePart`) is a hereditary
@@ -36,7 +36,7 @@ functional (`TauCeti.PositiveTracialFunctional`) defines a trace
 ## Main definitions
 
 * `TauCeti.IsTrace`: traces `B → ℝ≥0∞`.
-* `TauCeti.IsFaithfulTrace`: faithful traces.
+* `TauCeti.IsFaithful`: faithful traces.
 * `TauCeti.finitePart`: the finite part `𝔪_τ⁺`.
 * `TauCeti.sqIntegrable`: the square-integrable elements `𝔫_τ`.
 * `TauCeti.IsTrace.sqIntegrableIdeal`: `𝔫_τ` as a two-sided ideal.
@@ -52,7 +52,7 @@ functional (`TauCeti.PositiveTracialFunctional`) defines a trace
   `TauCeti.IsTrace.mul_mem_sqIntegrable_left`, `TauCeti.IsTrace.mul_mem_sqIntegrable_right`:
   `𝔫_τ` is a self-adjoint complex subspace and a two-sided ideal; these are collected in
   `TauCeti.IsTrace.sqIntegrable_ideal`.
-* `TauCeti.IsTrace.comp`, `TauCeti.IsFaithfulTrace.comp`: pullback along star homomorphisms.
+* `TauCeti.IsTrace.comp`, `TauCeti.IsFaithful.comp`: pullback along star homomorphisms.
 * `TauCeti.PositiveTracialFunctional.isTrace_toTrace`,
   `TauCeti.PositiveTracialFunctional.toTrace_lt_top`: a positive tracial functional is a trace
   that is finite everywhere.
@@ -85,17 +85,17 @@ structure IsTrace (τ : B → ℝ≥0∞) : Prop where
 variable {τ : B → ℝ≥0∞}
 
 /-- A trace is **faithful** if a positive element of trace zero is zero. -/
-def IsFaithfulTrace (τ : B → ℝ≥0∞) : Prop :=
+def IsFaithful (τ : B → ℝ≥0∞) : Prop :=
   ∀ ⦃x : B⦄, 0 ≤ x → τ x = 0 → x = 0
 
 omit [StarOrderedRing B] in
-/-- Unfolds `IsFaithfulTrace`. -/
-theorem isFaithfulTrace_iff : IsFaithfulTrace τ ↔ ∀ ⦃x : B⦄, 0 ≤ x → τ x = 0 → x = 0 :=
+/-- Unfolds `IsFaithful`. -/
+theorem isFaithful_iff : IsFaithful τ ↔ ∀ ⦃x : B⦄, 0 ≤ x → τ x = 0 → x = 0 :=
   Iff.rfl
 
 omit [StarOrderedRing B] in
 /-- A positive element of trace zero under a faithful trace is zero. -/
-theorem IsFaithfulTrace.eq_zero (hτ : IsFaithfulTrace τ) {x : B} (hx : 0 ≤ x) (h0 : τ x = 0) :
+theorem IsFaithful.eq_zero (hτ : IsFaithful τ) {x : B} (hx : 0 ≤ x) (h0 : τ x = 0) :
     x = 0 :=
   hτ hx h0
 
@@ -168,13 +168,9 @@ theorem map_star_add_mul_add_le (hτ : IsTrace τ) (x y : B) :
   rw [two_mul]
   have hz : 0 ≤ star x * x + star y * y := add_nonneg (star_mul_self_nonneg x)
     (star_mul_self_nonneg y)
-  have hpar : star (x + y) * (x + y) + star (x - y) * (x - y) =
-      (star x * x + star y * y) + (star x * x + star y * y) := by
-    simp only [star_add, star_sub, add_mul, sub_mul, mul_add, mul_sub]
-    abel
   rw [← hτ.map_add_of_nonneg (star_mul_self_nonneg x) (star_mul_self_nonneg y),
-    ← hτ.map_add_of_nonneg hz hz, ← hpar, hτ.map_add_of_nonneg (star_mul_self_nonneg _)
-    (star_mul_self_nonneg _)]
+    ← hτ.map_add_of_nonneg hz hz, ← two_smul ℕ, ← star_add_mul_add_add_star_sub_mul_sub,
+    hτ.map_add_of_nonneg (star_mul_self_nonneg _) (star_mul_self_nonneg _)]
   exact le_self_add
 
 /-- Left multiplication: `τ((ax)⋆(ax)) ≤ ‖a⋆a‖ τ(x⋆x)`. -/
@@ -302,8 +298,8 @@ protected theorem IsTrace.comp (hτ : IsTrace τ) (φ : F) : IsTrace (τ ∘ φ)
     simp only [Function.comp_apply, map_mul, map_star, hτ.map_star_mul_self]
 
 /-- The pullback of a faithful trace along an injective star homomorphism is faithful. -/
-theorem IsFaithfulTrace.comp (hτ : IsFaithfulTrace τ) {φ : F} (hφ : Function.Injective φ) :
-    IsFaithfulTrace (τ ∘ φ) := fun x hx h0 ↦
+theorem IsFaithful.comp (hτ : IsFaithful τ) {φ : F} (hφ : Function.Injective φ) :
+    IsFaithful (τ ∘ φ) := fun x hx h0 ↦
   hφ <| by simpa using hτ (map_nonneg φ hx) h0
 
 /-! ### Bounded traces -/
