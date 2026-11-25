@@ -342,6 +342,11 @@ theorem φ_of_fIter_eq_some (h : c.fIter i n x = some y) : c.φ i y + n = c.φ i
   rw [← dual_eIter] at h
   simpa using c.dual.ε_of_eIter_eq_some h
 
+/-- At most `ε i x` raising steps can be taken from `x`. -/
+theorem le_ε_of_eIter_eq_some (h : c.eIter i n x = some y) : n ≤ c.ε i x := by
+  have := c.ε_of_eIter_eq_some h
+  omega
+
 /-- At most `φ i x` lowering steps can be taken from `x`. -/
 theorem le_φ_of_fIter_eq_some (h : c.fIter i n x = some y) : n ≤ c.φ i x := by
   have := c.φ_of_fIter_eq_some h
@@ -371,6 +376,13 @@ theorem wt_of_fIter_eq_some (h : c.fIter i n x = some y) : c.wt y = c.wt x - n �
 /-- Lowering `n` times lengthens the raising string by `n`. -/
 theorem ε_of_fIter_eq_some (h : c.fIter i n x = some y) : c.ε i y = c.ε i x + n :=
   (c.ε_of_eIter_eq_some (c.fIter_eq_some_iff.mp h)).symm
+
+/-- Distinct numbers of lowering steps from the same element give distinct results. -/
+theorem eq_of_fIter_eq_some_of_fIter_eq_some {m : ℕ} (hn : c.fIter i n x = some y)
+    (hm : c.fIter i m x = some y) : n = m := by
+  have h₁ := c.ε_of_fIter_eq_some hn
+  have h₂ := c.ε_of_fIter_eq_some hm
+  omega
 
 /-- Raising `n` times lengthens the lowering string by `n`. -/
 theorem φ_of_eIter_eq_some (h : c.eIter i n x = some y) : c.φ i y = c.φ i x + n :=

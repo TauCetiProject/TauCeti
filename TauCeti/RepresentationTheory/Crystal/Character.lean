@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Crystal.StringReflection
+public import TauCeti.RepresentationTheory.Crystal.String.Reflection
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Demazure.Basic
 
 /-!
@@ -13,15 +13,17 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.Demazure.Basic
 
 The formal character counts elements of each weight in the integral group algebra of the
 actual weight lattice. Reversal of simple-root strings identifies reflected weight fibres,
-so the character is Weyl-invariant for a finite reduced root datum, and each Demazure operator
-`Dᵢ` fixes it over any root datum. This uses no classification of normal crystals and does not
-identify the character with that of a highest-weight module.
+so the character is Weyl-invariant for a finite reduced root datum, and each simple-root
+Demazure operator `Dᵢ` (`RootPairing.demazureOperator`) fixes it over any root datum. This uses
+no classification of normal crystals and does not identify the character with that of a
+highest-weight module.
 
 The character `∑_{x ∈ s} e^{wt x}` of a finite set of crystal elements
 (`TauCeti.NormalCrystal.character`) extends the formal character to subsets of a possibly
 infinite crystal.
 
-Strict crystal isomorphisms preserve this character, providing the interface for comparing
+Strict crystal isomorphisms preserve the formal character and the characters of finite subsets,
+providing the interface for comparing
 finite combinatorial models with one another.
 
 ## References
@@ -58,6 +60,23 @@ theorem character_union [DecidableEq B] {s t : Finset B} (h : Disjoint s t) :
     c.character (s ∪ t) = c.character s + c.character t :=
   Finset.sum_union h
 
+/-- The coefficient of the character of `s` at a weight is the number of elements of `s` of that
+weight. -/
+@[simp]
+theorem coeff_character (s : Finset B) (μ : X) :
+    (c.character s).coeff μ = (Nat.card {x : B // x ∈ s ∧ c.wt x = μ} : ℤ) := by
+  classical
+  rw [← Nat.card_congr (Equiv.subtypeEquivRight fun x ↦ Finset.mem_filter (s := s)
+    (p := (c.wt · = μ))), Nat.card_eq_finsetCard]
+  simp [character_def, AddMonoidAlgebra.coeff_sum, Finsupp.single_apply, Finset.sum_boole]
+
+/-- A strict crystal isomorphism carries the character of a finite subset to the character of its
+image. -/
+theorem StrictIso.character_map {c : NormalCrystal P b B} {d : NormalCrystal P b B'}
+    (ψ : StrictIso c d) (s : Finset B) :
+    d.character (s.map ψ.toEquiv.toEmbedding) = c.character s := by
+  simp [character_def, ψ.wt_apply]
+
 variable [Fintype B]
 
 /-- The formal character of a finite crystal, counting every element with its weight,
@@ -88,7 +107,8 @@ theorem coeff_formalCharacter_reflection (i : b.support) (μ : X) :
     c.formalCharacter.coeff (P.reflection i μ) = c.formalCharacter.coeff μ := by
   simp only [coeff_formalCharacter, c.card_weightFiber_reflection i μ]
 
-/-- **`Dᵢ` fixes the character of a finite normal crystal**, over any root datum. -/
+/-- **The simple-root Demazure operator `Dᵢ` fixes the formal character of a finite normal
+crystal**, over any root datum. -/
 @[simp]
 theorem demazureOperator_formalCharacter (i : b.support) :
     P.demazureOperator i c.formalCharacter = c.formalCharacter :=

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Crystal.Character
-public import TauCeti.RepresentationTheory.Crystal.String
+public import TauCeti.RepresentationTheory.Crystal.String.Basic
 
 /-!
 # Demazure operators on subsets of a normal crystal
@@ -20,7 +20,7 @@ module, and in Littelmann's path model.
 
 This file proves the combinatorial step relating these sets to the integral Demazure operators
 `Dᵢ` of `RootPairing.demazureOperator`. Say that `s` has the **string property** for `i`
-(`TauCeti.NormalCrystal.IsStringCompatible`) if every `i`-string meets `s` in nothing, in its
+(`TauCeti.NormalCrystal.HasStringProperty`) if every `i`-string meets `s` in nothing, in its
 head alone, or in the whole string. Then
 
 `char (𝔇ᵢ s) = Dᵢ (char s)`,
@@ -45,13 +45,13 @@ not follow from the normal-crystal axioms, and it is a hypothesis here.
 ## Main definitions
 
 * `TauCeti.NormalCrystal.demazureFinset`: Kashiwara's Demazure operator `𝔇ᵢ` on finite subsets.
-* `TauCeti.NormalCrystal.IsStringCompatible`: Kashiwara's string property of a subset.
+* `TauCeti.NormalCrystal.HasStringProperty`: Kashiwara's string property of a subset.
 
 ## Main results
 
 * `TauCeti.NormalCrystal.character_string`: the character of an `i`-string is `Dᵢ` applied to the
   weight of its head.
-* `TauCeti.NormalCrystal.isStringCompatible_iff`: the string property says that each `i`-string
+* `TauCeti.NormalCrystal.hasStringProperty_iff`: the string property says that each `i`-string
   meets the set in nothing, its head, or the whole string.
 * `TauCeti.NormalCrystal.character_demazureFinset`: **`char (𝔇ᵢ s) = Dᵢ (char s)` for a set `s`
   with the string property**.
@@ -129,6 +129,9 @@ noncomputable def demazureFinset (s : Finset B) : Finset B :=
 
 variable {i} {s t : Finset B} {y : B}
 
+theorem demazureFinset_def (s : Finset B) : c.demazureFinset i s = s.biUnion (c.lowerString i) :=
+  (rfl)
+
 @[simp]
 theorem mem_demazureFinset : y ∈ c.demazureFinset i s ↔ ∃ x ∈ s, ∃ n, c.fIter i n x = some y := by
   simp [demazureFinset]
@@ -147,22 +150,49 @@ theorem demazureFinset_empty : c.demazureFinset i ∅ = ∅ := by
 theorem demazureFinset_singleton (x : B) : c.demazureFinset i {x} = c.lowerString i x := by
   simp [demazureFinset]
 
+theorem demazureFinset_union (s t : Finset B) :
+    c.demazureFinset i (s ∪ t) = c.demazureFinset i s ∪ c.demazureFinset i t :=
+  Finset.union_biUnion
+
+/-- `𝔇ᵢ` is idempotent: lowerings of lowerings are lowerings. -/
+@[simp]
+theorem demazureFinset_demazureFinset (s : Finset B) :
+    c.demazureFinset i (c.demazureFinset i s) = c.demazureFinset i s := by
+  refine Finset.Subset.antisymm (fun y hy ↦ ?_) (c.subset_demazureFinset _)
+  obtain ⟨z, hz, m, hm⟩ := c.mem_demazureFinset.mp hy
+  obtain ⟨x, hx, n, hn⟩ := c.mem_demazureFinset.mp hz
+  exact c.mem_demazureFinset.mpr ⟨x, hx, n + m, by rw [c.fIter_add, hn, Option.bind_some, hm]⟩
+
+@[simp]
+theorem demazureFinset_univ [Fintype B] : c.demazureFinset i Finset.univ = Finset.univ :=
+  Finset.eq_univ_of_forall fun x ↦ c.subset_demazureFinset _ (Finset.mem_univ x)
+
 end Demazure
 
 section StringProperty
 
 /-- **Kashiwara's string property** of a set `s` of crystal elements for the simple root `i`: every
 element of `s` other than the head of its `i`-string has its whole `i`-string in `s`. Equivalently
-(`TauCeti.NormalCrystal.isStringCompatible_iff`), every `i`-string meets `s` in nothing, in its head
+(`TauCeti.NormalCrystal.hasStringProperty_iff`), every `i`-string meets `s` in nothing, in its head
 alone, or in the whole string. -/
-def IsStringCompatible (s : Set B) : Prop :=
+def HasStringProperty (s : Set B) : Prop :=
   ∀ x ∈ s, c.ε i x ≠ 0 → ∀ y, c.stringHead i y = c.stringHead i x → y ∈ s
 
-variable {c i} {s : Set B} {x : B}
+variable {c i} {s : Set B} {x y : B}
+
+theorem hasStringProperty_def : c.HasStringProperty i s ↔
+    ∀ x ∈ s, c.ε i x ≠ 0 → ∀ y, c.stringHead i y = c.stringHead i x → y ∈ s :=
+  Iff.rfl
+
+/-- A set with the string property contains the whole `i`-string through each of its elements
+that is not a head. -/
+theorem HasStringProperty.mem_of_stringHead_eq (hs : c.HasStringProperty i s) (hx : x ∈ s)
+    (hε : c.ε i x ≠ 0) (hy : c.stringHead i y = c.stringHead i x) : y ∈ s :=
+  hs x hx hε y hy
 
 /-- A set with the string property contains the head of the string through each of its
 elements. -/
-theorem IsStringCompatible.stringHead_mem (hs : c.IsStringCompatible i s) (hx : x ∈ s) :
+theorem HasStringProperty.stringHead_mem (hs : c.HasStringProperty i s) (hx : x ∈ s) :
     c.stringHead i x ∈ s := by
   by_cases h : c.ε i x = 0
   · rwa [c.stringHead_of_ε_eq_zero h]
@@ -170,8 +200,8 @@ theorem IsStringCompatible.stringHead_mem (hs : c.IsStringCompatible i s) (hx : 
 
 /-- **The string property, stringwise**: `s` has the string property for `i` exactly when every
 `i`-string meets `s` in nothing, in its head alone, or in the whole string. -/
-theorem isStringCompatible_iff :
-    c.IsStringCompatible i s ↔ ∀ x : B,
+theorem hasStringProperty_iff :
+    c.HasStringProperty i s ↔ ∀ x : B,
       s ∩ c.string i x = ∅ ∨ s ∩ c.string i x = {c.stringHead i x} ∨
         s ∩ c.string i x = c.string i x := by
   simp only [Set.ext_iff, Set.mem_inter_iff, Finset.mem_coe, mem_string, Set.mem_singleton_iff,
@@ -197,17 +227,22 @@ theorem isStringCompatible_iff :
     · exact ((h y).mpr hy).1
 
 /-- A singleton consisting of an element without raisings has the string property. -/
-theorem isStringCompatible_singleton (h : c.ε i x = 0) : c.IsStringCompatible i {x} := by
+theorem hasStringProperty_singleton (h : c.ε i x = 0) : c.HasStringProperty i {x} := by
   rintro y rfl hy
   exact absurd h hy
 
 /-- A set containing the whole `i`-string through each of its elements has the string property
 for `i`. -/
-theorem isStringCompatible_of_forall_stringHead_eq (hs : ∀ x ∈ s, ∀ y,
-    c.stringHead i y = c.stringHead i x → y ∈ s) : c.IsStringCompatible i s :=
+theorem hasStringProperty_of_forall_stringHead_eq (hs : ∀ x ∈ s, ∀ y,
+    c.stringHead i y = c.stringHead i x → y ∈ s) : c.HasStringProperty i s :=
   fun x hx _ ↦ hs x hx
 
-theorem isStringCompatible_univ : c.IsStringCompatible i Set.univ :=
+@[simp]
+theorem hasStringProperty_empty : c.HasStringProperty i ∅ :=
+  fun _ hx ↦ hx.elim
+
+@[simp]
+theorem hasStringProperty_univ : c.HasStringProperty i Set.univ :=
   fun _ _ _ _ _ ↦ Set.mem_univ _
 
 variable [DecidableEq B] {t : Finset B}
@@ -225,9 +260,9 @@ theorem mem_demazureFinset_iff_of_forall_stringHead_mem
 
 /-- If `t` contains the head of the string through each of its elements, then `𝔇ᵢ t` consists of
 whole `i`-strings, so it has the string property for `i`. -/
-theorem isStringCompatible_demazureFinset (ht : ∀ x ∈ t, c.stringHead i x ∈ t) :
-    c.IsStringCompatible i (c.demazureFinset i t) := by
-  refine isStringCompatible_of_forall_stringHead_eq fun x hx y hyx ↦ ?_
+theorem hasStringProperty_demazureFinset (ht : ∀ x ∈ t, c.stringHead i x ∈ t) :
+    c.HasStringProperty i (c.demazureFinset i t) := by
+  refine hasStringProperty_of_forall_stringHead_eq fun x hx y hyx ↦ ?_
   obtain ⟨z, hz, hxz⟩ := (c.mem_demazureFinset_iff_of_forall_stringHead_mem ht).mp hx
   exact (c.mem_demazureFinset_iff_of_forall_stringHead_mem ht).mpr ⟨z, hz, hyx.trans hxz⟩
 
@@ -242,13 +277,13 @@ private theorem filter_demazureFinset_stringHead_eq (ht : ∀ x ∈ t, c.stringH
 
 /-- A set with the string property meets the `i`-string of a head `h ∈ t` in `{h}` or in the
 whole string. -/
-private theorem filter_stringHead_eq (ht : c.IsStringCompatible i (t : Set B)) {h : B}
+private theorem filter_stringHead_eq (ht : c.HasStringProperty i (t : Set B)) {h : B}
     (hh : h ∈ t) (hε : c.ε i h = 0) :
     t.filter (c.stringHead i · = h) = {h} ∨ t.filter (c.stringHead i · = h) = c.string i h := by
   have hF : (t.filter (c.stringHead i · = h) : Set B) = (t : Set B) ∩ c.string i h := by
     ext y
     simp [c.stringHead_of_ε_eq_zero hε]
-  rcases isStringCompatible_iff.mp ht h with H | H | H
+  rcases hasStringProperty_iff.mp ht h with H | H | H
   · exact absurd (H ▸ Set.mem_inter hh (c.self_mem_string h)) (Set.notMem_empty h)
   · rw [c.stringHead_of_ε_eq_zero hε, ← hF, ← Finset.coe_singleton] at H
     exact .inl (Finset.coe_injective H)
@@ -256,7 +291,7 @@ private theorem filter_stringHead_eq (ht : c.IsStringCompatible i (t : Set B)) {
 
 /-- **The Demazure operator on characters**: for a finite set `t` with the string property for
 `i`, the character of `𝔇ᵢ t` is `Dᵢ` applied to the character of `t`. -/
-theorem character_demazureFinset (ht : c.IsStringCompatible i (t : Set B)) :
+theorem character_demazureFinset (ht : c.HasStringProperty i (t : Set B)) :
     c.character (c.demazureFinset i t) = P.demazureOperator i (c.character t) := by
   have hhead : ∀ x ∈ t, c.stringHead i x ∈ t := fun x hx ↦ ht.stringHead_mem hx
   -- Split both characters along the heads of the strings meeting `t`.
@@ -282,7 +317,7 @@ composite `D_{j₁} ∘ ⋯ ∘ D_{jᵣ}`, provided every intermediate set `𝔇
 string property for `j_k`. -/
 theorem character_foldr_demazureFinset (t : Finset B) (w : List b.support)
     (hw : ∀ u j v, w = u ++ j :: v →
-      c.IsStringCompatible j ↑(v.foldr (fun k u ↦ c.demazureFinset k u) t)) :
+      c.HasStringProperty j ↑(v.foldr (fun k u ↦ c.demazureFinset k u) t)) :
     c.character (w.foldr (fun k u ↦ c.demazureFinset k u) t) =
       (w.map fun k : b.support ↦ P.demazureOperator k).prod (c.character t) := by
   induction w with

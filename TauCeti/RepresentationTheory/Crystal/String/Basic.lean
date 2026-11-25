@@ -86,6 +86,7 @@ theorem coroot'_wt_stringHead (x : B) :
   rw [c.ε_stringHead, Nat.cast_zero, sub_zero] at h
   simpa [RootPairing.coroot'] using h.symm
 
+@[simp]
 theorem stringHead_eq_self_iff : c.stringHead i x = x ↔ c.ε i x = 0 := by
   refine ⟨fun h ↦ h ▸ c.ε_stringHead x, fun h ↦ ?_⟩
   simpa [h] using (c.eIter_ε_eq_some_stringHead (i := i) x).symm
@@ -128,13 +129,6 @@ theorem exists_fIter_eq_some_iff_stringHead_eq (h : c.ε i x = 0) :
   refine ⟨fun ⟨n, hn⟩ ↦ (c.stringHead_of_fIter_eq_some hn).trans (c.stringHead_of_ε_eq_zero h),
     fun hy ↦ ⟨c.ε i y, hy ▸ c.fIter_ε_stringHead y⟩⟩
 
-/-- Distinct numbers of lowering steps from the same element give distinct results. -/
-theorem eq_of_fIter_eq_some_of_fIter_eq_some {m : ℕ} (hn : c.fIter i n x = some y)
-    (hm : c.fIter i m x = some y) : n = m := by
-  have h₁ := c.ε_of_fIter_eq_some hn
-  have h₂ := c.ε_of_fIter_eq_some hm
-  omega
-
 end Head
 
 /-! ### Strings -/
@@ -153,6 +147,10 @@ noncomputable def string (x : B) : Finset B :=
 variable {i} {x y : B}
 
 theorem string_def (x : B) : c.string i x = c.lowerString i (c.stringHead i x) := (rfl)
+
+@[simp]
+theorem string_stringHead (x : B) : c.string i (c.stringHead i x) = c.string i x := by
+  rw [string_def, string_def, stringHead_stringHead]
 
 @[simp]
 theorem mem_lowerString : y ∈ c.lowerString i x ↔ ∃ n, c.fIter i n x = some y := by
