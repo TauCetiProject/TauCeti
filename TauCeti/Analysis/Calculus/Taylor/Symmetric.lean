@@ -135,6 +135,11 @@ theorem abs_sub_sub_deriv_sub_half_deriv_mul_sq_le {H h h' : ℝ → ℝ} {s : S
       ring
     exact heq ▸ hconv
   -- 2. Define the second-order Taylor remainder `Λ(t)` along `φ` and differentiate it on `[0, 1]`.
+  have hsq_mul (C t : ℝ) : HasDerivAt (fun u : ℝ ↦ u ^ 2 / 2 * C) (t * C) t := by
+    have hsq : HasDerivAt (fun u : ℝ ↦ u ^ 2 / 2) t t := by
+      simpa only [Pi.pow_apply, id_eq] using
+        (((hasDerivAt_id t).pow 2).div_const (2 : ℝ)).congr_deriv (by simp only [id_eq]; ring)
+    exact (hsq.mul_const C).congr_deriv (by ring)
   let Λ : ℝ → ℝ := fun t ↦
     H (φ t) - H x - t * (h x * (y - x)) - t ^ 2 / 2 * (h' x * (y - x) ^ 2)
   have hΛ : ∀ t ∈ Icc (0 : ℝ) 1, HasDerivWithinAt Λ
@@ -148,12 +153,8 @@ theorem abs_sub_sub_deriv_sub_half_deriv_mul_sq_le {H h h' : ℝ → ℝ} {s : S
     have ht1 : HasDerivWithinAt (fun u ↦ u * (h x * (y - x))) (h x * (y - x)) (Icc 0 1) t := by
       simpa only [id_eq, one_mul] using (hasDerivWithinAt_id t (Icc 0 1)).mul_const (h x * (y - x))
     have ht2 : HasDerivWithinAt (fun u ↦ u ^ 2 / 2 * (h' x * (y - x) ^ 2))
-        (t * (h' x * (y - x) ^ 2)) (Icc 0 1) t := by
-      have hsq : HasDerivWithinAt (fun u : ℝ ↦ u ^ 2 / 2) t (Icc 0 1) t := by
-        simpa only [Pi.pow_apply, id_eq] using
-          (((hasDerivWithinAt_id t (Icc 0 1)).pow 2).div_const (2 : ℝ)).congr_deriv
-            (by simp only [id_eq]; ring)
-      exact (hsq.mul_const (h' x * (y - x) ^ 2)).congr_deriv (by ring)
+        (t * (h' x * (y - x) ^ 2)) (Icc 0 1) t :=
+      (hsq_mul (h' x * (y - x) ^ 2) t).hasDerivWithinAt
     have hraw : HasDerivWithinAt
         (((fun u ↦ H (φ u) - H x) - fun u ↦ u * (h x * (y - x))) -
           fun u ↦ u ^ 2 / 2 * (h' x * (y - x) ^ 2))
@@ -162,12 +163,7 @@ theorem abs_sub_sub_deriv_sub_half_deriv_mul_sq_le {H h h' : ℝ → ℝ} {s : S
     simpa only [Λ, Pi.sub_def] using hraw
   -- 3. Compare the right derivative of `Λ` against the barrier `B(t) = t² / 2 * M (y - x)²`.
   let B : ℝ → ℝ := fun t ↦ t ^ 2 / 2 * (M * (y - x) ^ 2)
-  have hB : ∀ t, HasDerivAt B (t * (M * (y - x) ^ 2)) t := by
-    intro t
-    have hsq : HasDerivAt (fun u : ℝ ↦ u ^ 2 / 2) t t := by
-      simpa only [Pi.pow_apply, id_eq] using
-        (((hasDerivAt_id t).pow 2).div_const (2 : ℝ)).congr_deriv (by simp only [id_eq]; ring)
-    exact (hsq.mul_const (M * (y - x) ^ 2)).congr_deriv (by ring)
+  have hB : ∀ t, HasDerivAt B (t * (M * (y - x) ^ 2)) t := hsq_mul (M * (y - x) ^ 2)
   have hright : ∀ t ∈ Ico (0 : ℝ) 1, HasDerivWithinAt Λ
       ((h (φ t) - h x - h' x * (φ t - x)) * (y - x)) (Ici t) t := by
     intro t ht

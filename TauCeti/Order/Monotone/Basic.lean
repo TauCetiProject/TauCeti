@@ -31,7 +31,8 @@ containing no other crossing time without changing the order of the crossings.
 
 The consecutive intervals `[f i, f (i + 1)]`, `i < n`, of a grid `f` monotone through its last
 point `f n` follow one another: of two distinct ones, one ends before the other starts
-(`MonotoneOn.pairwise_succ_le_or_succ_le`).
+(`MonotoneOn.pairwise_succ_le_or_succ_le`). For a monotone `ℤ`-indexed sequence, a point strictly
+inside one of these intervals lies in no other (`Monotone.mem_Icc_iff_eq_of_mem_Ioo`).
 
 Interleaving two sequences `a` and `c` as `TauCeti.interleave a c`, namely
 `a 0, c 0, a 1, c 1, …, a n`, produces a monotone sequence on `Iic (2 * n)` whenever
@@ -49,6 +50,8 @@ strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAnti
   above its values before `a` and below its values after `a`, is strictly monotone on `s`.
 * `MonotoneOn.pairwise_succ_le_or_succ_le`: distinct consecutive intervals of a monotone grid
   overlap at most at an endpoint.
+* `Monotone.mem_Icc_iff_eq_of_mem_Ioo`: a point strictly inside the interval `(a k, a (k + 1))`
+  of a monotone `ℤ`-indexed sequence lies in `[a q, a (q + 1)]` exactly when `q = k`.
 * `MonotoneOn.comp_fin_val`, `MonotoneOn.comp_fin_val_Iic`: restrict a function monotone on `Iio n`
   or `Iic n` along `Fin.val` to obtain a `Monotone` function on `Fin n` or `Fin (n + 1)`.
 * `TauCeti.monotoneOn_interleave_Iic`: `TauCeti.interleave a c` is monotone on `Iic (2 * n)` when
@@ -103,6 +106,17 @@ theorem MonotoneOn.pairwise_succ_le_or_succ_le {α : Type*} [Preorder α] {f : �
       (Nat.succ_le_of_lt h))
   · exact Or.inr (hf (mem_Iic.mpr (Nat.succ_le_of_lt hj)) (mem_Iic.mpr (le_of_lt hi))
       (Nat.succ_le_of_lt h))
+
+/-- A point strictly inside the interval `(a k, a (k + 1))` of a monotone `ℤ`-indexed sequence `a`
+lies in the closed interval `[a q, a (q + 1)]` exactly when `q = k`. -/
+theorem Monotone.mem_Icc_iff_eq_of_mem_Ioo {α : Type*} [Preorder α] {a : ℤ → α}
+    (ha : Monotone a) {x : α} {k : ℤ} (hx : x ∈ Ioo (a k) (a (k + 1))) {q : ℤ} :
+    x ∈ Icc (a q) (a (q + 1)) ↔ q = k := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ ⟨hx.1.le, hx.2.le⟩⟩
+  by_contra hne
+  rcases lt_or_gt_of_ne hne with hlt | hlt
+  · exact (h.2.trans_lt ((ha (by omega)).trans_lt hx.1)).false
+  · exact ((hx.2.trans_le (ha (by omega))).trans_le h.1).false
 
 /-- Restricting a function monotone on `Iio n` along `Fin.val : Fin n → ℕ` yields a monotone
 function on `Fin n`. -/

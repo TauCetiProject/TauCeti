@@ -49,7 +49,8 @@ evaluated at intermediate clock values `a_i ≤ c_i ≤ a_{i+1}`, the deviation
 the symmetric Stratonovich value has exact expectation `1 / 2 * ∑ ((c_i - a_i) - (a_{i+1} - c_i))`
 and variance `1 / 2 * ∑ ((c_i - a_i)² + (a_{i+1} - c_i)²)`
 (`IsPreBrownianReal.integral_sum_comp_midpoint_mul_sub_sub_half_sq`,
-`IsPreBrownianReal.variance_sum_comp_midpoint_mul_sub_sub_half_sq`), so under
+`IsPreBrownianReal.variance_sum_comp_midpoint_mul_sub_sub_half_sq`,
+`IsPreBrownianReal.variance_sum_comp_midpoint_mul_sub_sub_half_sq_le`), so under
 vanishing clock mesh and asymptotic clock asymmetry `β` the intermediate-sample sum converges in
 probability to `(B(A_1)² - B(A_0)²) / 2 + β`
 (`IsPreBrownianReal.tendstoInMeasure_sum_comp_midpoint_mul_sub`).
@@ -341,6 +342,33 @@ theorem variance_sum_comp_midpoint_mul_sub_sub_half_sq (hB : IsPreBrownianReal B
   rw [Fin.sum_univ_eq_sum_range (fun m ↦ 1 / 2 * ((u (m + 1) : ℝ) - u m) ^ 2) (2 * n),
     ← mul_sum, TauCeti.sum_range_two_mul_interleave a c (fun _ x y ↦ ((y : ℝ) - x) ^ 2)]
 
+/-- When every clock step `a (i + 1) - a i` is at most `δ`, the variance of the deviation
+`(∑ B(c_i)(B(a_{i+1}) - B(a_i))) - (B(a_n)² - B(a_0)²) / 2` on an interleaved deterministic clock
+`a_0 ≤ c_0 ≤ a_1 ≤ … ≤ a_n` is at most `1 / 2 * (a n - a 0) * δ`. -/
+theorem variance_sum_comp_midpoint_mul_sub_sub_half_sq_le (hB : IsPreBrownianReal B P)
+    {n : ℕ} {a c : ℕ → ℝ≥0} {δ : ℝ} (hac : ∀ i < n, a i ≤ c i ∧ c i ≤ a (i + 1))
+    (hmesh : ∀ i < n, (a (i + 1) : ℝ) - a i ≤ δ) :
+    Var[fun ω ↦ (∑ i ∈ range n, B (c i) ω * (B (a (i + 1)) ω - B (a i) ω)) -
+        (B (a n) ω ^ 2 - B (a 0) ω ^ 2) / 2; P] ≤
+      1 / 2 * ((a n : ℝ) - a 0) * δ := by
+  rw [hB.variance_sum_comp_midpoint_mul_sub_sub_half_sq hac]
+  have hsum : ∑ i ∈ range n, (((c i : ℝ) - a i) ^ 2 + ((a (i + 1) : ℝ) - c i) ^ 2) ≤
+      ∑ i ∈ range n, ((a (i + 1) : ℝ) - a i) * δ := by
+    refine sum_le_sum fun i hi ↦ ?_
+    have hi' := mem_range.1 hi
+    obtain ⟨h₁, h₂⟩ := hac i hi'
+    have hu0 : 0 ≤ (c i : ℝ) - a i := sub_nonneg.2 (NNReal.coe_le_coe.2 h₁)
+    have hv0 : 0 ≤ (a (i + 1) : ℝ) - c i := sub_nonneg.2 (NNReal.coe_le_coe.2 h₂)
+    have hsq1 : ((c i : ℝ) - a i) ^ 2 + ((a (i + 1) : ℝ) - c i) ^ 2 ≤
+        ((a (i + 1) : ℝ) - a i) ^ 2 := by nlinarith
+    have hsq2 : ((a (i + 1) : ℝ) - a i) ^ 2 ≤ ((a (i + 1) : ℝ) - a i) * δ := by
+      rw [sq]
+      exact mul_le_mul_of_nonneg_left (hmesh i hi') (by linarith)
+    exact hsq1.trans hsq2
+  have htel : ∑ i ∈ range n, ((a (i + 1) : ℝ) - a i) * δ = ((a n : ℝ) - a 0) * δ := by
+    rw [← sum_mul, sum_range_sub (fun i ↦ (a i : ℝ)) n]
+  linarith
+
 /-- **Biased-clock temporal-midpoint limit.** Along deterministic clock partitions
 `A₀ = a n 0 ≤ c n 0 ≤ a n 1 ≤ … ≤ a n (k n) = A₁` whose clock mesh `(a n (i + 1) - a n i)` tends
 to zero and whose net half-step clock asymmetry
@@ -383,25 +411,9 @@ theorem tendstoInMeasure_sum_comp_midpoint_mul_sub (hB : IsPreBrownianReal B P)
       ∫ ω, (D n ω - μ n) ^ 2 ∂P ≤ 1 / 2 * ((A₁ : ℝ) - A₀) * δ n := by
     have hmean : ∫ ω, D n ω ∂P = μ n :=
       hB.integral_sum_comp_midpoint_mul_sub_sub_half_sq (hac n)
-    rw [← hmean, ← variance_eq_integral (hD_lp n).aemeasurable,
-      hB.variance_sum_comp_midpoint_mul_sub_sub_half_sq (hac n)]
-    have hsum : ∑ i ∈ range (k n), (((c n i : ℝ) - a n i) ^ 2 + ((a n (i + 1) : ℝ) - c n i) ^ 2) ≤
-        ∑ i ∈ range (k n), ((a n (i + 1) : ℝ) - a n i) * δ n := by
-      refine sum_le_sum fun i hi ↦ ?_
-      have hi' := mem_range.1 hi
-      obtain ⟨h₁, h₂⟩ := hac n i hi'
-      have hu0 : 0 ≤ (c n i : ℝ) - a n i := sub_nonneg.2 (NNReal.coe_le_coe.2 h₁)
-      have hv0 : 0 ≤ (a n (i + 1) : ℝ) - c n i := sub_nonneg.2 (NNReal.coe_le_coe.2 h₂)
-      have hsq1 : ((c n i : ℝ) - a n i) ^ 2 + ((a n (i + 1) : ℝ) - c n i) ^ 2 ≤
-          ((a n (i + 1) : ℝ) - a n i) ^ 2 := by nlinarith
-      have hsq2 : ((a n (i + 1) : ℝ) - a n i) ^ 2 ≤ ((a n (i + 1) : ℝ) - a n i) * δ n := by
-        rw [sq]
-        exact mul_le_mul_of_nonneg_left (hmesh n i hi') (by linarith)
-      exact hsq1.trans hsq2
-    have htel : ∑ i ∈ range (k n), ((a n (i + 1) : ℝ) - a n i) * δ n =
-        ((A₁ : ℝ) - A₀) * δ n := by
-      rw [← sum_mul, sum_range_sub (fun i ↦ (a n i : ℝ)) (k n), ha₁ n, ha₀ n]
-    linarith
+    rw [← hmean, ← variance_eq_integral (hD_lp n).aemeasurable]
+    simpa only [D, ha₁ n, ha₀ n] using
+      hB.variance_sum_comp_midpoint_mul_sub_sub_half_sq_le (hac n) (hmesh n)
   -- 3. Combine `D n - μ n → 0` (in `L²`, hence in measure) with `μ n → β` to get `D n → β`.
   have hD_sub : TendstoInMeasure P (fun n ω ↦ D n ω - μ n) l (fun _ ↦ 0) := by
     refine tendstoInMeasure_of_tendsto_integral_norm_sq
@@ -465,12 +477,10 @@ private theorem tendstoInMeasure_refined_sq_sum (hB : IsPreBrownianReal B P)
     fun n ↦ ae_of_all _ fun ω ↦
       TauCeti.sum_range_two_mul_interleave (π n) _ (fun _ x y ↦ (B y ω - B x ω) ^ 2) (k n)
 
-/-- For any continuous function `g`, the alternating half-step Brownian quadratic sums
-`∑ g(B_{t_i}) ((B_{(t_i + t_{i+1}) / 2} - B_{t_i})² - (B_{t_{i+1}} - B_{(t_i + t_{i+1}) / 2})²)`
-converge to zero in probability along vanishing-mesh deterministic partitions of `[a, b]`, with no
-growth or moment bound on `g`. -/
-theorem tendstoInMeasure_sum_mul_midpoint_sq_sub_sq (hB : IsBrownianReal B P)
-    {g : ℝ → ℝ} (hg : Continuous g)
+/-- For a Borel-measurable function `g` with `|g y| ≤ C`, the alternating half-step Brownian
+quadratic sums converge to zero in probability along vanishing-mesh partitions of `[a, b]`. -/
+private theorem tendstoInMeasure_sum_mul_midpoint_sq_sub_sq_of_le (hB : IsPreBrownianReal B P)
+    {g : ℝ → ℝ} {C : ℝ} (hg : Measurable g) (hbound : ∀ y, |g y| ≤ C)
     {a b : ℝ≥0} {k : ℕ → ℕ} {π : ℕ → ℕ → ℝ≥0}
     (hmono : ∀ n, MonotoneOn (π n) (Set.Iic (k n)))
     (ha : ∀ n, π n 0 = a) (hb : ∀ n, π n (k n) = b)
@@ -481,50 +491,40 @@ theorem tendstoInMeasure_sum_mul_midpoint_sq_sub_sq (hB : IsBrownianReal B P)
         (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2))
       atTop (fun _ ↦ 0) := by
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
-  -- 1. Truncate `g` at level `M : ℕ` so the truncated sums converge to `0` in `L²`.
-  let trunc (M : ℕ) (y : ℝ) : ℝ := max (-(M : ℝ)) (min (M : ℝ) (g y))
-  have htrunc_cont (M : ℕ) : Continuous (trunc M) :=
-    continuous_const.max (continuous_const.min hg)
-  have htrunc_meas (M : ℕ) : Measurable (trunc M) := (htrunc_cont M).measurable
-  have htrunc_le (M : ℕ) (y : ℝ) : |trunc M y| ≤ M :=
-    abs_le.2 ⟨le_max_left _ _, max_le (by linarith [Nat.cast_nonneg (α := ℝ) M]) (min_le_left _ _)⟩
-  have htrunc_eq (M : ℕ) {y : ℝ} (hy : |g y| ≤ M) : trunc M y = g y := by
-    obtain ⟨h₁, h₂⟩ := abs_le.1 hy
-    simp only [trunc, min_eq_right h₂, max_eq_right h₁]
-  let S_trunc (M n : ℕ) (ω : Ω) : ℝ := ∑ i ∈ range (k n), trunc M (B (π n i) ω) *
-    ((B ((π n i + π n (i + 1)) / 2) ω - B (π n i) ω) ^ 2 -
-      (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2)
-  have hS_trunc (M : ℕ) : TendstoInMeasure P (S_trunc M) atTop (fun _ ↦ 0) := by
-    apply tendstoInMeasure_of_tendsto_integral_norm_sq
-    · refine Eventually.of_forall fun n ↦ ?_
-      have hlp : MemLp (S_trunc M n) 2 P := by
-        refine memLp_finsetSum (range (k n)) fun i _ ↦ ?_
-        have hd : MemLp (fun ω ↦
-            (B ((π n i + π n (i + 1)) / 2) ω - B (π n i) ω) ^ 2 -
-              (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2) 2 P :=
-          (hB.toIsPreBrownianReal.memLp_sq_sub _ _).sub
-            (hB.toIsPreBrownianReal.memLp_sq_sub _ _)
-        have htm : AEStronglyMeasurable
-            (fun ω ↦ trunc M (B (π n i) ω) *
-              ((B ((π n i + π n (i + 1)) / 2) ω - B (π n i) ω) ^ 2 -
-                (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2)) P := by
-          have : Continuous (trunc M) := htrunc_cont M
-          have := (hB.aemeasurable (π n i)).aestronglyMeasurable
-          have := (hB.aemeasurable ((π n i + π n (i + 1)) / 2)).aestronglyMeasurable
-          have := (hB.aemeasurable (π n (i + 1))).aestronglyMeasurable
-          fun_prop
-        exact hd.of_le_mul (c := (M : ℝ)) htm (ae_of_all _ fun ω ↦ by
-          rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_mul]
-          exact mul_le_mul_of_nonneg_right (htrunc_le M _) (abs_nonneg _))
-      simpa only [sub_zero] using hlp.norm.integrable_sq
-    · simp only [sub_zero, Real.norm_eq_abs, sq_abs]
-      refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-        (by simpa only [mul_zero] using hδ.const_mul ((M : ℝ) ^ 2 * ((b : ℝ) - a)))
-        (fun _ ↦ integral_nonneg fun _ ↦ sq_nonneg _) fun n ↦ ?_
-      simpa only [S_trunc, hb n, ha n] using
-        hB.toIsPreBrownianReal.integral_sq_sum_comp_mul_midpoint_sq_sub_sq_le (hmono n)
-          (fun _ _ ↦ htrunc_meas M) (fun _ _ y ↦ htrunc_le M y) (hmesh n)
-  -- 2. Show the exceptional events `F M = {|g(B)| > M at some grid point}` shrink to measure `0`.
+  apply tendstoInMeasure_of_tendsto_integral_norm_sq
+  · refine Eventually.of_forall fun n ↦ ?_
+    have hlp : MemLp (fun ω ↦ ∑ i ∈ range (k n), g (B (π n i) ω) *
+        ((B ((π n i + π n (i + 1)) / 2) ω - B (π n i) ω) ^ 2 -
+          (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2)) 2 P := by
+      refine memLp_finsetSum (range (k n)) fun i _ ↦ ?_
+      have hd : MemLp (fun ω ↦
+          (B ((π n i + π n (i + 1)) / 2) ω - B (π n i) ω) ^ 2 -
+            (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2) 2 P :=
+        (hB.memLp_sq_sub _ _).sub (hB.memLp_sq_sub _ _)
+      have hgm : AEStronglyMeasurable (fun ω ↦ g (B (π n i) ω)) P :=
+        hg.aestronglyMeasurable.comp_aemeasurable (hB.aemeasurable (π n i))
+      exact hd.of_le_mul (c := C) (hgm.mul hd.aestronglyMeasurable) (ae_of_all _ fun ω ↦ by
+        rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_mul]
+        exact mul_le_mul_of_nonneg_right (hbound _) (abs_nonneg _))
+    simpa only [sub_zero] using hlp.norm.integrable_sq
+  · simp only [sub_zero, Real.norm_eq_abs, sq_abs]
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (by simpa only [mul_zero] using hδ.const_mul (C ^ 2 * ((b : ℝ) - a)))
+      (fun _ ↦ integral_nonneg fun _ ↦ sq_nonneg _) fun n ↦ ?_
+    simpa only [hb n, ha n] using
+      hB.integral_sq_sum_comp_mul_midpoint_sq_sub_sq_le (hmono n)
+        (fun _ _ ↦ hg) (fun _ _ y ↦ hbound y) (hmesh n)
+
+/-- Because Brownian sample paths are almost surely continuous on `[a, b]`, the grid-exceedance
+events `⋃ (n : ℕ) (i : Fin (k n)), {ω | M < |g (B (π n i) ω)|}` have infimum measure zero for any
+continuous `g`. -/
+private theorem iInf_measure_iUnion_lt_abs_eq_zero (hB : IsBrownianReal B P)
+    {g : ℝ → ℝ} (hg : Continuous g)
+    {a b : ℝ≥0} {k : ℕ → ℕ} {π : ℕ → ℕ → ℝ≥0}
+    (hmono : ∀ n, MonotoneOn (π n) (Set.Iic (k n)))
+    (ha : ∀ n, π n 0 = a) (hb : ∀ n, π n (k n) = b) :
+    (⨅ M : ℕ, P (⋃ (n : ℕ) (i : Fin (k n)), {ω | (M : ℝ) < |g (B (π n i) ω)|})) = 0 := by
+  have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
   let F (M : ℕ) : Set Ω := ⋃ (n : ℕ) (i : Fin (k n)), {ω | (M : ℝ) < |g (B (π n i) ω)|}
   have hF_meas (M : ℕ) : NullMeasurableSet (F M) P :=
     NullMeasurableSet.iUnion fun n ↦ NullMeasurableSet.iUnion fun i ↦
@@ -545,15 +545,44 @@ theorem tendstoInMeasure_sum_mul_midpoint_sq_sub_sq (hB : IsBrownianReal B P)
     obtain ⟨n, i, hgt⟩ := hM
     have hmem_i : π n i ∈ Icc a b := grid_mem_Icc (hmono n) (ha n) (hb n) i.isLt.le
     exact hgt.not_ge ((hC ⟨π n i, hmem_i, rfl⟩).trans hMC)
-  have hF_inf : ⨅ M : ℕ, P (F M) = 0 := by
-    rw [← hF_anti.measure_iInter hF_meas ⟨0, measure_ne_top P _⟩]
-    exact measure_mono_null hF_inter (ae_iff.1 hB.cont)
-  -- 3. Localize off `F M`, where the original sum agrees pointwise with `S_trunc M`.
-  refine TauCeti.tendstoInMeasure_of_iInf_measure_eq_zero hF_inf hS_trunc fun M ↦
-    Eventually.of_forall fun n ↦ ae_of_all _ fun ω hω ↦ ?_
-  have heq : S_trunc M n ω = ∑ i ∈ range (k n), g (B (π n i) ω) *
+  change (⨅ M : ℕ, P (F M)) = 0
+  rw [← hF_anti.measure_iInter hF_meas ⟨0, measure_ne_top P _⟩]
+  exact measure_mono_null hF_inter (ae_iff.1 hB.cont)
+
+/-- For any continuous function `g`, the alternating half-step Brownian quadratic sums
+`∑ g(B_{t_i}) ((B_{(t_i + t_{i+1}) / 2} - B_{t_i})² - (B_{t_{i+1}} - B_{(t_i + t_{i+1}) / 2})²)`
+converge to zero in probability along vanishing-mesh deterministic partitions of `[a, b]`, with no
+growth or moment bound on `g`. -/
+theorem tendstoInMeasure_sum_mul_midpoint_sq_sub_sq (hB : IsBrownianReal B P)
+    {g : ℝ → ℝ} (hg : Continuous g)
+    {a b : ℝ≥0} {k : ℕ → ℕ} {π : ℕ → ℕ → ℝ≥0}
+    (hmono : ∀ n, MonotoneOn (π n) (Set.Iic (k n)))
+    (ha : ∀ n, π n 0 = a) (hb : ∀ n, π n (k n) = b)
+    {δ : ℕ → ℝ} (hmesh : ∀ n, ∀ i < k n, (π n (i + 1) : ℝ) - π n i ≤ δ n)
+    (hδ : Tendsto δ atTop (𝓝 0)) :
+    TendstoInMeasure P (fun n ω ↦ ∑ i ∈ range (k n), g (B (π n i) ω) *
       ((B ((π n i + π n (i + 1)) / 2) ω - B (π n i) ω) ^ 2 -
-        (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2) := by
+        (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2))
+      atTop (fun _ ↦ 0) := by
+  let trunc (M : ℕ) (y : ℝ) : ℝ := max (-(M : ℝ)) (min (M : ℝ) (g y))
+  have htrunc_meas (M : ℕ) : Measurable (trunc M) :=
+    (continuous_const.max (continuous_const.min hg)).measurable
+  have htrunc_le (M : ℕ) (y : ℝ) : |trunc M y| ≤ M :=
+    abs_le.2 ⟨le_max_left _ _, max_le (by linarith [Nat.cast_nonneg (α := ℝ) M]) (min_le_left _ _)⟩
+  have htrunc_eq (M : ℕ) {y : ℝ} (hy : |g y| ≤ M) : trunc M y = g y := by
+    obtain ⟨h₁, h₂⟩ := abs_le.1 hy
+    simp only [trunc, min_eq_right h₂, max_eq_right h₁]
+  refine TauCeti.tendstoInMeasure_of_iInf_measure_eq_zero
+    (iInf_measure_iUnion_lt_abs_eq_zero hB hg hmono ha hb)
+    (fun M ↦ tendstoInMeasure_sum_mul_midpoint_sq_sub_sq_of_le hB.toIsPreBrownianReal
+      (htrunc_meas M) (htrunc_le M) hmono ha hb hmesh hδ)
+    fun M ↦ Eventually.of_forall fun n ↦ ae_of_all _ fun ω hω ↦ ?_
+  have heq : (∑ i ∈ range (k n), trunc M (B (π n i) ω) *
+      ((B ((π n i + π n (i + 1)) / 2) ω - B (π n i) ω) ^ 2 -
+        (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2)) =
+      ∑ i ∈ range (k n), g (B (π n i) ω) *
+        ((B ((π n i + π n (i + 1)) / 2) ω - B (π n i) ω) ^ 2 -
+          (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2) := by
     refine sum_congr rfl fun i hi ↦ ?_
     have hle : |g (B (π n i) ω)| ≤ M := by
       by_contra hlt
