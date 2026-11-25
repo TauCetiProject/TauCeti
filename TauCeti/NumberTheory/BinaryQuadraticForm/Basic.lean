@@ -82,6 +82,8 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
   (`TauCeti.BinaryQuadraticForm.map_mem_stabilizer_map`).
 * `TauCeti.BinaryQuadraticForm.T_zpow_smul`, `TauCeti.BinaryQuadraticForm.T_smul` and
   `TauCeti.BinaryQuadraticForm.S_smul`: the action of `T ^ k`, `T` and `S` on coefficients.
+* `TauCeti.BinaryQuadraticForm.eval_add_mul_add_mul_of_sq_eq_zero`: the first-order coordinate
+  change, which adds `ε * disc(f) * (x u + y v)` to `f(x, y)` when `ε ^ 2 = 0`.
 * `TauCeti.BinaryQuadraticForm.isUnit_det_of_quadratic_identity`: a coordinate change
   producing a unit discriminant has unit determinant over any commutative ring.
 * `TauCeti.BinaryQuadraticForm.mem_formsOfDiscrim`: membership in `formsOfDiscrim D`.
@@ -100,6 +102,8 @@ is also exposed to transport the module structure.
 * D. A. Buell, *Binary Quadratic Forms: Classical Theory and Modern Computations*, Springer, 1989.
 * A. Popa and D. Zagier, *An elementary proof of the Eichler–Selberg trace formula*,
   J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327.
+* F. F. Knudsen, *A closer look at the stacks of stable pointed curves*, arXiv:1106.1588v2
+  (2012), Lemma 2.6 (the first-order coordinate change).
 -/
 
 public section
@@ -395,6 +399,20 @@ protected def discrim (f : BinaryQuadraticForm R) : R :=
 /-- The discriminant of a form is Mathlib's `discrim` of its coefficients. -/
 theorem discrim_def (f : BinaryQuadraticForm R) : f.discrim = discrim f.a f.b f.c :=
   rfl
+
+/-- The first-order coordinate change of a binary quadratic form: when `ε ^ 2 = 0`, moving the
+coordinates by `ε * (-2 * c * u + b * v)` and `ε * (b * u - 2 * a * v)` adds
+`ε * (disc(f) * (x * u + y * v))` to `f(x, y)`. No division by `2` is involved. When the
+discriminant is a unit, every first-order perturbation `ε * (α * x + β * y)` linear in `(x, y)` is
+thus absorbed by a coordinate change (Knudsen, arXiv:1106.1588v2, Lemma 2.6). -/
+theorem eval_add_mul_add_mul_of_sq_eq_zero (f : BinaryQuadraticForm R) {ε : R} (hε : ε ^ 2 = 0)
+    (x y u v : R) :
+    f.eval (x + ε * (-2 * f.c * u + f.b * v)) (y + ε * (f.b * u - 2 * f.a * v)) =
+      f.eval x y + ε * (f.discrim * (x * u + y * v)) := by
+  rw [eval_def, eval_def, discrim_def, discrim]
+  linear_combination (f.a * (-2 * f.c * u + f.b * v) ^ 2 +
+    f.b * (-2 * f.c * u + f.b * v) * (f.b * u - 2 * f.a * v) +
+    f.c * (f.b * u - 2 * f.a * v) ^ 2) * hε
 
 /-- The discriminant of an integral binary form is zero or one modulo four. -/
 theorem discrim_emod_four_eq_zero_or_one (f : BinaryQuadraticForm ℤ) :
