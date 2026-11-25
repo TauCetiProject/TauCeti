@@ -298,7 +298,8 @@ theorem addHaar_setOf_normalizedAbsoluteValue_eq (a : K) :
     exact ⟨fun h ↦ ⟨h.le, not_lt.2 h.ge⟩, fun h ↦ h.1.antisymm (not_lt.1 h.2)⟩
   have hmeas :=
     measurableSet_setOf_normalizedAbsoluteValue_lt (K := K) (normalizedAbsoluteValue K a)
-  have hfin : μ 𝒪[K] ≠ ∞ := (integerPositiveCompacts K).isCompact.measure_ne_top
+  have hfin : μ 𝒪[K] ≠ ∞ :=
+    (IsNonarchimedeanLocalField.isCompact_closedBall K 1).measure_ne_top
   have hq : (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ ∞ :=
     ENNReal.inv_ne_top.2 natCard_residueField_pos.ne'
   rw [h, measure_sdiff (Set.ofPred_subset_ofPred.2 fun _ hx ↦ hx.le) hmeas.nullMeasurableSet
