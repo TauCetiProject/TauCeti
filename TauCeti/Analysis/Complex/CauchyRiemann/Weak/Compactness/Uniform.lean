@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Bound.Higher
 import TauCeti.Analysis.Sobolev.Local.Compactness.ContDiff
 import TauCeti.Analysis.Sobolev.Local.Wkp.Norm
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Data.ENNReal.Holder
 
 /-!
@@ -174,6 +175,28 @@ private theorem exists_eLpNormWkp_graph_le [CompleteSpace V] {p : ℝ≥0∞} (h
     ((eLpNormWkp_clm_comp_le_of_norm_le_one _ (ContinuousLinearMap.norm_inr_le_one ℝ ℂ V)).trans
       (hR n))))
 
+/-- **The frozen coefficients along a family of graphs.** For `W₁` with compact closure in `W`,
+`B` and `X`, one constant `C` bounds `‖g (z, u z)‖_{W^{m+1,p}(W₁)}` for every `g : ℂ × V → G` of
+class `C^{m+1}` whose derivatives of orders at most `m + 1` are bounded by `B` on a set `L`, and
+every `u` continuous on `W` whose graph over `W` lies in `L` and has `W^{m+1,p}(W)` size at most
+`X - 1`. This is `TauCeti.exists_eLpNormWkp_succ_comp_le_of_norm_le` along graphs. -/
+private theorem exists_eLpNormWkp_comp_graph_le {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [FiniteDimensional ℝ G] {p : ℝ≥0} (hp : 2 < p) (m : ℕ) {W : Opens ℂ}
+    {W₁ : Set ℂ} (hW₁c : IsCompact (closure W₁)) (hW₁W : closure W₁ ⊆ W) (L : Set (ℂ × V))
+    (B : ℝ) (X : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ (g : ℂ × V → G) (u : ℂ → V), ContDiff ℝ (m + 1) g → ContinuousOn u W →
+      (∀ z ∈ W, (z, u z) ∈ L) → (∀ i ≤ m + 1, ∀ x ∈ L, ‖iteratedFDeriv ℝ i g x‖ ≤ B) →
+      1 + eLpNormWkp p W (m + 1) (fun z => ((z, u z) : ℂ × V)) ≤ X →
+      eLpNormWkp p W₁ (m + 1) (fun z => g (z, u z)) ≤ C := by
+  obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_comp_le_of_norm_le (F := ℂ × V) (G := G) (Ω := W) hp
+    m B.toNNReal hW₁c hW₁W
+  refine ⟨C * X ^ (m + 1), fun g u hg hu hL hgB hX => (hC g univ _ isOpen_univ hg.contDiffOn
+    (continuousOn_id.prodMk hu) (mapsTo_univ _ _) fun z hz i hi =>
+      (hgB i hi _ (hL z hz)).trans (Real.le_coe_toNNReal B)).trans ?_⟩
+  push_cast
+  gcongr
+  exact hX
+
 /-- The step of the uniform estimates: bounds for the `u n` in `W^{m+1,p}` on every set with
 compact closure in `Ω` give bounds in `W^{m+2,p}`, for data of class `C^{m+1}` whose derivatives
 of orders at most `m + 1` are bounded on compact sets uniformly in `n`. -/
@@ -181,9 +204,10 @@ private theorem exists_eLpNormWkp_add_two_le {p : ℝ≥0} (hp : 2 < p) {m : ℕ
     {J : ℕ → ℂ → V → V →L[ℝ] V} {η : ℕ → ℂ → V → V} {u : ℕ → ℂ → V}
     (hJ : ∀ n, ContDiff ℝ (m + 1) (fun x : ℂ × V => J n x.1 x.2))
     (hη : ∀ n, ContDiff ℝ (m + 1) (fun x : ℂ × V => η n x.1 x.2))
-    (hB : ∀ L : Set (ℂ × V), IsCompact L → ∃ B : ℝ, ∀ n, ∀ i ≤ m + 1, ∀ x ∈ L,
-      ‖iteratedFDeriv ℝ i (fun x : ℂ × V => J n x.1 x.2) x‖ ≤ B ∧
-        ‖iteratedFDeriv ℝ i (fun x : ℂ × V => η n x.1 x.2) x‖ ≤ B)
+    (hBJ : ∀ L : Set (ℂ × V), IsCompact L → ∃ B : ℝ, ∀ n, ∀ i ≤ m + 1, ∀ x ∈ L,
+      ‖iteratedFDeriv ℝ i (fun x : ℂ × V => J n x.1 x.2) x‖ ≤ B)
+    (hBη : ∀ L : Set (ℂ × V), IsCompact L → ∃ B : ℝ, ∀ n, ∀ i ≤ m + 1, ∀ x ∈ L,
+      ‖iteratedFDeriv ℝ i (fun x : ℂ × V => η n x.1 x.2) x‖ ≤ B)
     (hJ2 : ∀ n, ∀ᵐ z ∂volume.restrict Ω, J n z (u n z) * J n z (u n z) = -1)
     (hu : ∀ n, IsWeakCauchyRiemannOn p Ω (J n) (η n) (u n))
     (hK : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ K' : Set V, IsCompact K' ∧ ∀ n, MapsTo (u n) K K')
@@ -198,36 +222,27 @@ private theorem exists_eLpNormWkp_add_two_le {p : ℝ≥0} (hp : 2 < p) {m : ℕ
   have hWle : (W : Set ℂ) ⊆ Ω := subset_closure.trans hWΩ
   obtain ⟨R, hR⟩ := ih W hWc hWΩ
   obtain ⟨K', hK', hK'u⟩ := hK _ hWΩ hWc
-  obtain ⟨B, hB⟩ := hB _ (hWc.prod hK')
+  obtain ⟨BJ, hBJ⟩ := hBJ _ (hWc.prod hK')
+  obtain ⟨Bη, hBη⟩ := hBη _ (hWc.prod hK')
   -- The graphs `z ↦ (z, u n z)` are bounded in `W^{m+1,p}(W)` and take values in
-  -- `closure W ×ˢ K'`, where the derivatives of the data are bounded by `B`.
+  -- `closure W ×ˢ K'`, where the derivatives of the data are bounded.
   obtain ⟨X, hX⟩ := exists_eLpNormWkp_graph_le (by exact_mod_cast (one_lt_two.trans hp).le)
     (m + 1) hWc hR
-  have hgc (n : ℕ) : ContinuousOn (fun z => ((z, u n z) : ℂ × V)) W :=
-    continuousOn_id.prodMk ((hu n).continuousOn.mono hWle)
   have hgB (n : ℕ) (z : ℂ) (hz : z ∈ W) : (z, u n z) ∈ closure (W : Set ℂ) ×ˢ K' :=
     ⟨subset_closure hz, hK'u n (subset_closure hz)⟩
-  obtain ⟨CJ, hCJ⟩ := exists_eLpNormWkp_succ_comp_le_of_norm_le (F := ℂ × V) (G := V →L[ℝ] V)
-    (Ω := W) hp m B.toNNReal hW₁c hW₁W
-  obtain ⟨Cη, hCη⟩ := exists_eLpNormWkp_succ_comp_le_of_norm_le (F := ℂ × V) (G := V)
-    (Ω := W) hp m B.toNNReal hW₁c hW₁W
-  set M : ℝ≥0 := (CJ + Cη) * X ^ (m + 1)
+  obtain ⟨CJ, hCJ⟩ := exists_eLpNormWkp_comp_graph_le (V := V) (G := V →L[ℝ] V) hp m hW₁c hW₁W _
+    BJ X
+  obtain ⟨Cη, hCη⟩ := exists_eLpNormWkp_comp_graph_le (V := V) (G := V) hp m hW₁c hW₁W _ Bη X
+  set M : ℝ≥0 := CJ + Cη
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_le_of_isWeakCauchyRiemannOn (V := V) hp (m + 1) hUc
     hUW₁ M
   refine ⟨C * (M + R), fun n => ?_⟩
   -- The frozen coefficients are bounded in `W^{m+1,p}(W₁)` by `M`.
+  have huW := (hu n).continuousOn.mono hWle
   have hA : eLpNormWkp p W₁ (m + 1) (fun z => J n z (u n z)) ≤ M :=
-    (hCJ _ univ _ isOpen_univ (hJ n).contDiffOn (hgc n) (mapsTo_univ _ _) fun z hz i hi =>
-      (hB n i hi _ (hgB n z hz)).1.trans (Real.le_coe_toNNReal B)).trans (by
-        simp only [M, ENNReal.coe_mul, ENNReal.coe_add, ENNReal.coe_pow]
-        gcongr
-        exacts [le_self_add, hX n])
+    (hCJ _ _ (hJ n) huW (hgB n) (hBJ n) (hX n)).trans (by simp [M])
   have hf : eLpNormWkp p W₁ (m + 1) (fun z => η n z (u n z)) ≤ M :=
-    (hCη _ univ _ isOpen_univ (hη n).contDiffOn (hgc n) (mapsTo_univ _ _) fun z hz i hi =>
-      (hB n i hi _ (hgB n z hz)).2.trans (Real.le_coe_toNNReal B)).trans (by
-        simp only [M, ENNReal.coe_mul, ENNReal.coe_add, ENNReal.coe_pow]
-        gcongr
-        exacts [le_add_self, hX n])
+    (hCη _ _ (hη n) huW (hgB n) (hBη n) (hX n)).trans (by simp [M])
   have hsol : IsWeakCauchyRiemannOn p W₁ (fun z _ => J n z (u n z)) (fun z _ => η n z (u n z))
       (u n) := (isWeakCauchyRiemannOn_congr_ae (J' := fun z _ => J n z (u n z))
         (η' := fun z _ => η n z (u n z)) (.of_forall fun _ => rfl)
@@ -280,9 +295,10 @@ theorem exists_eLpNormWkp_le_of_isWeakCauchyRiemannOn {p : ℝ≥0∞} (hp : 2 <
     {ℓ : ℕ} {J : ℕ → ℂ → V → V →L[ℝ] V} {η : ℕ → ℂ → V → V} {u : ℕ → ℂ → V}
     (hJ : ∀ n, ContDiff ℝ ℓ (fun x : ℂ × V => J n x.1 x.2))
     (hη : ∀ n, ContDiff ℝ ℓ (fun x : ℂ × V => η n x.1 x.2))
-    (hB : ∀ L : Set (ℂ × V), IsCompact L → ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ L,
-      ‖iteratedFDeriv ℝ i (fun x : ℂ × V => J n x.1 x.2) x‖ ≤ B ∧
-        ‖iteratedFDeriv ℝ i (fun x : ℂ × V => η n x.1 x.2) x‖ ≤ B)
+    (hBJ : ∀ L : Set (ℂ × V), IsCompact L → ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ L,
+      ‖iteratedFDeriv ℝ i (fun x : ℂ × V => J n x.1 x.2) x‖ ≤ B)
+    (hBη : ∀ L : Set (ℂ × V), IsCompact L → ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ L,
+      ‖iteratedFDeriv ℝ i (fun x : ℂ × V => η n x.1 x.2) x‖ ≤ B)
     (hJ2 : ∀ n, ∀ᵐ z ∂volume.restrict Ω, J n z (u n z) * J n z (u n z) = -1)
     (hu : ∀ n, IsWeakCauchyRiemannOn p Ω (J n) (η n) (u n))
     (hK : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ K' : Set V, IsCompact K' ∧ ∀ n, MapsTo (u n) K K')
@@ -303,7 +319,8 @@ theorem exists_eLpNormWkp_le_of_isWeakCauchyRiemannOn {p : ℝ≥0∞} (hp : 2 <
     intro U hUc hUΩ
     exact exists_eLpNormWkp_add_two_le hp2 (fun n => by exact_mod_cast (hJ n).of_le hmℓ)
       (fun n => by exact_mod_cast (hη n).of_le hmℓ)
-      (fun L hL => (hB L hL).imp fun B hB n i hi => hB n i (by omega)) hJ2 hu hK
+      (fun L hL => (hBJ L hL).imp fun B hB n i hi => hB n i (by omega))
+      (fun L hL => (hBη L hL).imp fun B hB n i hi => hB n i (by omega)) hJ2 hu hK
       (ih (by omega)) hUc hUΩ
 
 /-! ### Compactness -/
@@ -322,6 +339,18 @@ private theorem exists_forall_wkp_repr_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {k :
     (eLpNormWkp_clm_comp_le c).trans (by gcongr; exact hR n)
   obtain ⟨y, hy, hyn⟩ := exists_wkp_norm_le_eLpNormWkp (ne_top_of_le_ne_top hcR hcn)
   exact ⟨y, (ENNReal.ofReal_le_iff_le_toReal hcR).1 (hyn.trans hcn), by simpa [c] using hy⟩
+
+omit [FiniteDimensional ℝ V] in
+/-- If the derivatives of order `0` of continuous maps `g n` converge locally uniformly to those
+of `g₀`, then `g₀` is continuous and `g (φ n) → g₀` locally uniformly along every `φ → ∞`. -/
+private theorem continuous_and_tendstoLocallyUniformly_comp {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {g : ℕ → ℂ × V → G} {g₀ : ℂ × V → G} (hg : ∀ n, Continuous (g n))
+    (h : TendstoLocallyUniformly (fun n => iteratedFDeriv ℝ 0 (g n)) (iteratedFDeriv ℝ 0 g₀)
+      atTop) {φ : ℕ → ℕ} (hφ : Tendsto φ atTop atTop) :
+    Continuous g₀ ∧ TendstoLocallyUniformly (fun n => g (φ n)) g₀ atTop := by
+  have h0 := tendstoLocallyUniformlyOn_univ.1 (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1
+    (tendstoLocallyUniformlyOn_univ.2 h))
+  exact ⟨h0.continuous (.of_forall hg), h0.comp_tendsto hφ⟩
 
 /-- **Passage to the limit in the equation.** If `C¹` solutions `u n` of the equations for
 `(J n, η n)` converge pointwise on `Ω` with their derivatives to a `C¹` map `v`, and the frozen
@@ -373,9 +402,10 @@ private theorem exists_subseq_tendstoLocallyUniformlyOn_iteratedFDeriv {p : ℝ�
     (hp' : p ≠ ⊤) {ℓ : ℕ} {J : ℕ → ℂ → V → V →L[ℝ] V} {η : ℕ → ℂ → V → V} {u : ℕ → ℂ → V}
     (hJ : ∀ n, ContDiff ℝ ℓ (fun x : ℂ × V => J n x.1 x.2))
     (hη : ∀ n, ContDiff ℝ ℓ (fun x : ℂ × V => η n x.1 x.2))
-    (hB : ∀ L : Set (ℂ × V), IsCompact L → ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ L,
-      ‖iteratedFDeriv ℝ i (fun x : ℂ × V => J n x.1 x.2) x‖ ≤ B ∧
-        ‖iteratedFDeriv ℝ i (fun x : ℂ × V => η n x.1 x.2) x‖ ≤ B)
+    (hBJ : ∀ L : Set (ℂ × V), IsCompact L → ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ L,
+      ‖iteratedFDeriv ℝ i (fun x : ℂ × V => J n x.1 x.2) x‖ ≤ B)
+    (hBη : ∀ L : Set (ℂ × V), IsCompact L → ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ L,
+      ‖iteratedFDeriv ℝ i (fun x : ℂ × V => η n x.1 x.2) x‖ ≤ B)
     (hJ2 : ∀ n, ∀ᵐ z ∂volume.restrict Ω, J n z (u n z) * J n z (u n z) = -1)
     (hu : ∀ n, IsWeakCauchyRiemannOn p Ω (J n) (η n) (u n))
     (hK : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ K' : Set V, IsCompact K' ∧ ∀ n, MapsTo (u n) K K')
@@ -387,7 +417,7 @@ private theorem exists_subseq_tendstoLocallyUniformlyOn_iteratedFDeriv {p : ℝ�
   have : Fact (1 ≤ p) := ⟨one_le_two.trans hp.le⟩
   obtain ⟨φ, hφ, v, -, hv, hconv⟩ :=
     (Module.finBasis ℝ V).exists_subseq_memWkpLoc_tendstoLocallyUniformlyOn_iteratedFDeriv hp
-      fun W hWc hWΩ i => (exists_eLpNormWkp_le_of_isWeakCauchyRiemannOn hp hp' hJ hη hB hJ2 hu
+      fun W hWc hWΩ i => (exists_eLpNormWkp_le_of_isWeakCauchyRiemannOn hp hp' hJ hη hBJ hBη hJ2 hu
         hK hd hWc hWΩ).elim fun _ hR => exists_forall_wkp_repr_le _ i hR
   exact ⟨φ, v, hφ, hv, hconv u (fun n => (hu n).continuousOn) fun n => .rfl⟩
 
@@ -425,15 +455,10 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : �
   have hq' : min p 3 ≠ ⊤ := ((min_le_right _ _).trans_lt (by norm_num)).ne
   -- The data are bounded in `C^ℓ` on compact sets, so the uniform estimates apply; read in the
   -- coordinates of a basis, they are bounds in the spaces `Wkp`.
-  have hB (L : Set (ℂ × V)) (hL : IsCompact L) : ∃ B : ℝ, ∀ n, ∀ i ≤ ℓ, ∀ x ∈ L,
-      ‖iteratedFDeriv ℝ i (fun x : ℂ × V => J n x.1 x.2) x‖ ≤ B ∧
-        ‖iteratedFDeriv ℝ i (fun x : ℂ × V => η n x.1 x.2) x‖ ≤ B := by
-    obtain ⟨B₁, hB₁⟩ := exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly hJ hJt hL
-    obtain ⟨B₂, hB₂⟩ := exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly hη hηt hL
-    exact ⟨max B₁ B₂, fun n i hi x hx =>
-      ⟨(hB₁ n i hi x hx).trans (le_max_left _ _), (hB₂ n i hi x hx).trans (le_max_right _ _)⟩⟩
   obtain ⟨φ, v, hφ, hv, hconv⟩ := exists_subseq_tendstoLocallyUniformlyOn_iteratedFDeriv hq hq'
-    hJ hη hB hJ2 (fun n => (hu n).mono_exponent (min_le_left _ _)) hK fun W hWc hWΩ =>
+    hJ hη (fun _ => exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly hJ hJt)
+    (fun _ => exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly hη hηt) hJ2
+    (fun n => (hu n).mono_exponent (min_le_left _ _)) hK fun W hWc hWΩ =>
       (hd W hWc hWΩ).elim fun _ hc => exists_eLpNorm_le_of_le_exponent (zero_lt_two.trans hq) hq'
         (min_le_left _ _) ((measure_mono subset_closure).trans_lt hWc.measure_lt_top).ne hc
   refine ⟨φ, v, hφ, hv, ?_, hconv⟩
@@ -444,23 +469,14 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : �
       (fun _ _ => mem_univ _) (hJ2 n) (hu n)).of_le (by exact_mod_cast hℓ1)
   have hgraph (n : ℕ) : ContinuousOn (fun z => ((z, u n z) : ℂ × V)) Ω :=
     continuousOn_id.prodMk (hu n).continuousOn
-  have hval (z : ℂ) (hz : z ∈ Ω) : Tendsto (fun n => u (φ n) z) atTop (𝓝 (v z)) := by
-    simpa [Function.comp_def] using ((continuous_eval_const (Fin.elim0 : Fin 0 → ℂ)).tendsto _).comp
-      ((hconv 0 (Nat.zero_le ℓ)).tendsto_at hz)
+  have hval (z : ℂ) (hz : z ∈ Ω) : Tendsto (fun n => u (φ n) z) atTop (𝓝 (v z)) :=
+    (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 (hconv 0 (Nat.zero_le ℓ))).tendsto_at hz
   have hvg : ContinuousOn (fun z => ((z, v z) : ℂ × V)) Ω := continuousOn_id.prodMk hv.continuousOn
   -- The data converge locally uniformly along the subsequence, to continuous limits.
-  have hJ0 := tendstoLocallyUniformlyOn_univ.1 (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1
-    (tendstoLocallyUniformlyOn_univ.2 (hJt 0 (Nat.zero_le ℓ))))
-  have hη0 := tendstoLocallyUniformlyOn_univ.1 (tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1
-    (tendstoLocallyUniformlyOn_univ.2 (hηt 0 (Nat.zero_le ℓ))))
-  have hJc := hJ0.continuous (.of_forall fun n => (hJ n).continuous)
-  have hηc := hη0.continuous (.of_forall fun n => (hη n).continuous)
-  have hφJ : TendstoLocallyUniformly (fun n (x : ℂ × V) => J (φ n) x.1 x.2)
-      (fun x : ℂ × V => J₀ x.1 x.2) atTop := fun s hs y =>
-    (hJ0 s hs y).imp fun t ht => ⟨ht.1, hφ.tendsto_atTop.eventually ht.2⟩
-  have hφη : TendstoLocallyUniformly (fun n (x : ℂ × V) => η (φ n) x.1 x.2)
-      (fun x : ℂ × V => η₀ x.1 x.2) atTop := fun s hs y =>
-    (hη0 s hs y).imp fun t ht => ⟨ht.1, hφ.tendsto_atTop.eventually ht.2⟩
+  obtain ⟨hJc, hφJ⟩ := continuous_and_tendstoLocallyUniformly_comp (fun n => (hJ n).continuous)
+    (hJt 0 (Nat.zero_le ℓ)) hφ.tendsto_atTop
+  obtain ⟨hηc, hφη⟩ := continuous_and_tendstoLocallyUniformly_comp (fun n => (hη n).continuous)
+    (hηt 0 (Nat.zero_le ℓ)) hφ.tendsto_atTop
   refine isWeakCauchyRiemannOn_of_tendsto (fun n => hun (φ n))
     (fun n => (hJ (φ n)).continuous.comp_continuousOn (hgraph (φ n)))
     (fun n => (hη (φ n)).continuous.comp_continuousOn (hgraph (φ n))) (fun n => hu (φ n))
