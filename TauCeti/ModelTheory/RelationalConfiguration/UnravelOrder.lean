@@ -34,8 +34,6 @@ half of the reduction of isomorphism of graph codes to isomorphism of coded line
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.continuous_unravelColor`: the colour of a node depends
-  continuously on the code (it reads finitely many coordinates).
 * `TauCeti.RelationalConfiguration.continuous_unravelOrderCode`: the map is continuous.
 * `TauCeti.RelationalConfiguration.unravelOrderCode_mem_linearOrderClass`: its values are coded
   linear orders.
@@ -52,7 +50,7 @@ half of the reduction of isomorphism of graph codes to isomorphism of coded line
 
 public section
 
-open FirstOrder FirstOrder.Language Set Filter Topology
+open FirstOrder FirstOrder.Language Set
 
 namespace TauCeti.RelationalConfiguration
 
@@ -67,13 +65,32 @@ def blockKey (n i : ℕ) : Lex (Bool × ℕ) :=
 theorem blockKey_injective (n : ℕ) : Function.Injective (blockKey n) := fun i j h => by
   simpa [blockKey] using congrArg (fun p => (ofLex p).2) h
 
+/-- In a block of colour `n`, `i` comes before `j` exactly when `i ≥ n + 2` and `j < n + 2`, or
+`i` and `j` are on the same side of `n + 2` and `i ≤ j`. -/
+@[simp]
+theorem blockKey_le_blockKey_iff {n i j : ℕ} :
+    blockKey n i ≤ blockKey n j ↔ n + 2 ≤ i ∧ j < n + 2 ∨ (i < n + 2 ↔ j < n + 2) ∧ i ≤ j := by
+  rw [blockKey, blockKey, Prod.Lex.toLex_le_toLex]
+  rcases lt_or_ge i (n + 2) with hi | hi <;> rcases lt_or_ge j (n + 2) with hj | hj <;>
+    simp [hi, hj, hi.not_gt, hj.not_gt]
+
+/-- In a block of colour `n`, `i` comes strictly before `j` exactly when `i ≥ n + 2` and
+`j < n + 2`, or `i` and `j` are on the same side of `n + 2` and `i < j`. -/
+@[simp]
+theorem blockKey_lt_blockKey_iff {n i j : ℕ} :
+    blockKey n i < blockKey n j ↔ n + 2 ≤ i ∧ j < n + 2 ∨ (i < n + 2 ↔ j < n + 2) ∧ i < j := by
+  rw [blockKey, blockKey, Prod.Lex.toLex_lt_toLex]
+  rcases lt_or_ge i (n + 2) with hi | hi <;> rcases lt_or_ge j (n + 2) with hj | hj <;>
+    simp [hi, hj, hi.not_gt, hj.not_gt]
+
 /-- The position of a point `(x, i)` of `List ℚ × ℕ` for the colouring `χ`: first `x`, then the
 position of `i` in the block of colour `χ x`. -/
-def unravelOrderKey (χ : List ℚ → ℕ) (p : List ℚ × ℕ) : Lex (List ℚ × Lex (Bool × ℕ)) :=
+private def unravelOrderKey (χ : List ℚ → ℕ) (p : List ℚ × ℕ) : Lex (List ℚ × Lex (Bool × ℕ)) :=
   toLex (p.1, blockKey (χ p.1) p.2)
 
 /-- Distinct points have distinct positions. -/
-theorem unravelOrderKey_injective (χ : List ℚ → ℕ) : Function.Injective (unravelOrderKey χ) := by
+private theorem unravelOrderKey_injective (χ : List ℚ → ℕ) :
+    Function.Injective (unravelOrderKey χ) := by
   rintro ⟨x, i⟩ ⟨y, j⟩ h
   simp only [unravelOrderKey, toLex_inj, Prod.mk.injEq] at h
   obtain ⟨rfl, h⟩ := h
@@ -142,21 +159,6 @@ theorem unravelOrderCode_mem_linearOrderClass (c : RelationalConfiguration Langu
     (unravelOrderRel (unravelColor c))).isLinearOrder
 
 /-! ### Continuity -/
-
-/-- **The colour of a node depends continuously on the code**: it reads the finitely many
-coordinates `c.eval (adjAtom a_i a_j)` of the vertex tuple `a` of the node. -/
-theorem continuous_unravelColor (x : List ℚ) :
-    Continuous fun c : RelationalConfiguration Language.graph ℕ => unravelColor c x := by
-  refine continuous_iff_continuousAt.2 fun c => ?_
-  have hev (a : Atom Language.graph ℕ) : ∀ᶠ d in 𝓝 c, d.eval a = c.eval a :=
-    (continuous_eval a).continuousAt ((isOpen_discrete {c.eval a}).mem_nhds rfl)
-  have h : ∀ᶠ d in 𝓝 c, ∀ i : Fin x.length, ∀ j : Fin x.length,
-      d.eval (adjAtom (unravelVertex x i) (unravelVertex x j)) =
-        c.eval (adjAtom (unravelVertex x i) (unravelVertex x j)) :=
-    eventually_all.2 fun i => eventually_all.2 fun j => hev _
-  refine (continuousAt_const (y := unravelColor c x)).congr (h.mono fun d hd => ?_)
-  refine unravelColor_eq_iff.2 ⟨rfl, fun i hi j hj => ?_⟩
-  exact Prod.ext (by simp) (by simpa using (hd ⟨i, hi⟩ ⟨j, hj⟩).symm)
 
 /-- **`unravelOrderCode` is continuous**: each coordinate compares two points of `List ℚ × ℕ`,
 which depends on the code at most through the colour of their common block. -/
