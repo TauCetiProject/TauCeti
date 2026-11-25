@@ -400,10 +400,8 @@ theorem exists_isTheta_pow_of_isWeakLinearCauchyRiemannOn (hp : 2 < p)
     ∃ m : ℕ, 0 < m ∧ ξ =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ m := by
   obtain ⟨n, e, he⟩ := exists_continuousLinearEquiv_hasSimilarityFactorizationAt hp hJ hJc hJ2
     hC hξ (hne.imp fun _ h ↦ h.1)
-  obtain ⟨m, hm, hθ, -⟩ := exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt Ω.isOpen hΩc
-    (e.continuous.comp_continuousOn hξ.continuousOn) (fun z hz _ ↦ he z hz)
-    (by simpa using hne) hz₀ (by simp [hξ₀])
-  exact ⟨m, hm, IsTheta.trans ⟨e.isBigO_comp_rev _ _, e.isBigO_comp _ _⟩ hθ⟩
+  exact exists_isTheta_pow_of_continuousLinearEquiv_of_hasSimilarityFactorizationAt e Ω.isOpen hΩc
+    (e.continuous.comp_continuousOn hξ.continuousOn) (fun z hz _ ↦ he z hz) hne hz₀ hξ₀
 
 end RealTarget
 
