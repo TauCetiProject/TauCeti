@@ -25,12 +25,11 @@ already computed.
 
 * `FirstOrder.Language.BoundedFormula.subst_falsum`, `subst_equal`, `subst_rel`, `subst_imp` and
   `subst_all`: substitution on each constructor.
+* `FirstOrder.Language.BoundedFormula.subst_not`, `subst_bot`, `subst_top`, `subst_inf`,
+  `subst_sup` and `subst_ex`: substitution on Mathlib's defined connectives.
 * `FirstOrder.Language.BoundedFormula.subst_subst`: two substitutions compose to one.
-* `FirstOrder.Language.BoundedFormula.relabelAux_inl`: `relabelAux` on a free variable.
-* `FirstOrder.Language.Term.relabel_subst_eq_subst_relabel`,
-  `FirstOrder.Language.BoundedFormula.relabel_subst_eq_subst_relabel`: substitution commutes with
-  relabelling when the two agree on each variable, for terms under bound positions and for
-  formulas.
+* `FirstOrder.Language.BoundedFormula.relabel_subst_eq_subst_relabel`: substitution commutes with
+  relabelling when the two agree on each variable.
 * `FirstOrder.Language.BoundedFormula.toFormula_subst`: opening the bound positions of a
   substituted formula is substituting in the opened formula.
 * `FirstOrder.Language.BoundedFormula.freeVarFinset_subst`: the free variables after a
@@ -47,7 +46,7 @@ namespace FirstOrder.Language.BoundedFormula
 
 variable {L : Language} {α β γ : Type*} {n : ℕ}
 
-/-! ### Constructor equations -/
+/-! ### Constructor and connective equations -/
 
 @[simp]
 theorem subst_falsum (f : α → L.Term β) : (falsum : L.BoundedFormula α n).subst f = falsum :=
@@ -77,6 +76,34 @@ theorem subst_all (φ : L.BoundedFormula α (n + 1)) (f : α → L.Term β) :
     φ.all.subst f = (φ.subst f).all :=
   (rfl)
 
+@[simp]
+theorem subst_not (φ : L.BoundedFormula α n) (f : α → L.Term β) :
+    φ.not.subst f = (φ.subst f).not :=
+  (rfl)
+
+@[simp]
+theorem subst_bot (f : α → L.Term β) : (⊥ : L.BoundedFormula α n).subst f = ⊥ :=
+  (rfl)
+
+@[simp]
+theorem subst_top (f : α → L.Term β) : (⊤ : L.BoundedFormula α n).subst f = ⊤ :=
+  (rfl)
+
+@[simp]
+theorem subst_inf (φ ψ : L.BoundedFormula α n) (f : α → L.Term β) :
+    (φ ⊓ ψ).subst f = φ.subst f ⊓ ψ.subst f :=
+  (rfl)
+
+@[simp]
+theorem subst_sup (φ ψ : L.BoundedFormula α n) (f : α → L.Term β) :
+    (φ ⊔ ψ).subst f = φ.subst f ⊔ ψ.subst f :=
+  (rfl)
+
+@[simp]
+theorem subst_ex (φ : L.BoundedFormula α (n + 1)) (f : α → L.Term β) :
+    φ.ex.subst f = (φ.subst f).ex :=
+  (rfl)
+
 /-! ### Composition laws -/
 
 /-- Two successive substitutions of terms for the free variables are one substitution, by the
@@ -98,52 +125,6 @@ theorem subst_subst (φ : L.BoundedFormula α n) (f : α → L.Term β) (g : β 
     rcases x with a | i <;> simp [Function.comp_def]
   | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
   | all φ ih => simp [ih]
-
-/-- `BoundedFormula.relabelAux` sends a free variable `x` where `g` sends it, with the old bound
-positions placed after the new ones. -/
-@[simp]
-theorem relabelAux_inl {δ ε : Type*} {m : ℕ} (g : δ → ε ⊕ Fin m) (k : ℕ) (x : δ) :
-    relabelAux g k (Sum.inl x) = Sum.map id (Fin.castAdd k) (g x) := by
-  rcases hx : g x with y | j <;> simp [relabelAux, hx]
-
-end FirstOrder.Language.BoundedFormula
-
-namespace FirstOrder.Language.Term
-
-variable {L : Language} {γ : Type*}
-
-/-- The term step of `BoundedFormula.relabel_subst_eq_subst_relabel`: in a term under `k` bound
-positions, substituting `F` for the free variables and then relabelling along
-`BoundedFormula.relabelAux g k` is relabelling along `BoundedFormula.relabelAux g' k` and then
-substituting `F'`, provided the two agree on each variable. -/
-theorem relabel_subst_eq_subst_relabel {δ ε γ' : Type*} {m : ℕ} (F : γ → L.Term δ)
-    (g : δ → ε ⊕ Fin m) (g' : γ → γ' ⊕ Fin m) (F' : γ' → L.Term ε)
-    (h : ∀ c, (F c).relabel g =
-      Sum.elim (fun c' => (F' c').relabel Sum.inl) (fun j => var (Sum.inr j)) (g' c))
-    {k : ℕ} (t : L.Term (γ ⊕ Fin k)) :
-    (t.subst (Sum.elim (relabel Sum.inl ∘ F) (var ∘ Sum.inr))).relabel
-        (BoundedFormula.relabelAux g k) =
-      (t.relabel (BoundedFormula.relabelAux g' k)).subst
-        (Sum.elim (relabel Sum.inl ∘ F') (var ∘ Sum.inr)) := by
-  rw [relabel_subst, subst_relabel]
-  congr 1
-  funext x
-  rcases x with c | i
-  · have hg : BoundedFormula.relabelAux g k ∘ Sum.inl = Sum.map id (Fin.castAdd k) ∘ g :=
-      funext (BoundedFormula.relabelAux_inl g k)
-    rw [Function.comp_apply, Sum.elim_inl, Function.comp_apply, relabel_relabel, hg,
-      ← relabel_relabel, h c, BoundedFormula.relabelAux_inl]
-    rcases g' c with c' | j
-    · rw [Sum.elim_inl, Sum.map_inl, Sum.elim_inl, Function.comp_apply, relabel_relabel]
-      rfl
-    · rfl
-  · simp [BoundedFormula.relabelAux]
-
-end FirstOrder.Language.Term
-
-namespace FirstOrder.Language.BoundedFormula
-
-variable {L : Language} {α β γ : Type*} {n : ℕ}
 
 /-- Substitution commutes with relabelling: substituting `F` and then relabelling along `g` is
 relabelling along `g'` and then substituting `F'`, provided the two agree on each variable. A

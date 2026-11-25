@@ -127,6 +127,7 @@ theorem inst_not (φ : L.BoundedFormula α k) (ts : Fin k → L.Term α) :
 
 /-- Substituting terms for the free variables of an instance gives the instance of the
 substituted formula at the substituted terms. -/
+@[simp]
 theorem subst_inst (φ : L.BoundedFormula α k) (ts : Fin k → L.Term α) (f : α → L.Term β) :
     (φ.inst ts).subst f = (φ.subst f).inst fun i => (ts i).subst f := by
   simp only [inst_def, toFormula_subst, subst_subst]
