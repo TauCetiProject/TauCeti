@@ -54,12 +54,11 @@ object at `(p, q)` with coefficients in `K` is `∐ H_{n - r j}(S j; K)` over th
 `c` with `r j ≤ n` (`nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_of_isThomClass`,
 in the namespace `TauCeti.IsMorseBottFamily`). An oriented bundle has a Thom class over every `K`
 (`TauCeti.VectorBundleOrientation.exists_isThomClass`), so for oriented negative normal bundles
-this computes the first page over `ℤ`, as in Cohen, Iga and Norbury, Theorem 15.6. Over a
-commutative ring `K` in which `2` is invertible, such as `ℚ`, and with no orientation of the
-negative normal bundles, the twisted Thom isomorphism does so: the object at `(p, q)` is the
-coproduct of the groups `H_{n - r j}(S j; o(ν⁻ j) ⊗ K)` over the pieces on the level `c` of index
-`r j ≤ n`, with coefficients in the orientation local systems `o(ν⁻ j)` of their negative normal
-bundles
+this computes the first page over `ℤ`, as in Cohen, Iga and Norbury, Theorem 15.6. Over every
+commutative ring `K`, `ℤ` included, and with no orientation of the negative normal bundles, the
+twisted Thom isomorphism does so: the object at `(p, q)` is the coproduct of the groups
+`H_{n - r j}(S j; o(ν⁻ j) ⊗ K)` over the pieces on the level `c` of index `r j ≤ n`, with
+coefficients in the orientation local systems `o(ν⁻ j)` of their negative normal bundles
 (`nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology`, in the namespace
 `TauCeti.IsMorseBottFamily`).
 
@@ -117,10 +116,9 @@ In the namespace `TauCeti.IsMorseBottFamily`:
   normal bundles have Thom classes over a commutative ring `K`, the first page with coefficients in
   `K` is the coproduct of the homologies `H_{n - r j}(S j; K)` of the pieces on the level `c`.
 * `nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology`: at such a band,
-  with coefficients in a commutative ring in which `2` is invertible, the first page is the
-  coproduct over the critical submanifolds on the level `c` of index at most `n` of their
-  homologies in degree `n - r j` with coefficients in the orientation local systems of their
-  negative normal bundles.
+  with coefficients in any commutative ring, the first page is the coproduct over the critical
+  submanifolds on the level `c` of index at most `n` of their homologies in degree `n - r j` with
+  coefficients in the orientation local systems of their negative normal bundles.
 * `finrank_filteredSpaceSpectralSequence_page_two_X`: in characteristic two, the dimension of the
   first page at a critical band is the sum of the shifted Betti numbers of the pieces in the band.
 * `filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_eq_zero_or_eq_zero`: degeneration when
@@ -593,13 +591,13 @@ normal bundle of `i j`. Suppose that the negative normal spaces relative to `g j
 local frames of size `r j`, so that they form the negative normal bundle `ν⁻ j` of rank `r j`, the
 index of the piece. Let `a : ℤ → ℝ` be monotone, let `a q < c < a (q + 1)` be such that every
 critical point of `f` with value in `[a q, a (q + 1)]` lies on the level `c`, and let `K` be a
-commutative ring in which `2` is invertible.
+commutative ring, `ℤ` included.
 
 Then on the first page of the spectral sequence of the filtration `q ↦ {f ≤ a q}` with
 coefficients in `K`, the object at `(p, q)` with `p + q = -n` is the coproduct, over the pieces on
 the level `c` of index `r j ≤ n`, of the homologies `H_{n - r j}(S j; o(ν⁻ j) ⊗ K)` with
-coefficients in the orientation local systems `o(ν⁻ j)`. No orientation of the bundles `ν⁻ j` is
-assumed. -/
+coefficients in the orientation local systems `o(ν⁻ j)`. No orientation of the bundles `ν⁻ j` and
+no condition on `2` in `K` are assumed. -/
 theorem nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology
     [T2Space M] [SecondCountableTopology M] [CompactSpace M] [∀ j, (J j).Boundaryless]
     (h : IsMorseBottFamily i f) {a : ℤ → ℝ} (ha : Monotone a) {q : ℤ} {c : ℝ}
@@ -618,7 +616,7 @@ theorem nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomol
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
-    (K : Type) [CommRing K] [Invertible (2 : K)] (pq : ℤ × ℤ) (hq : pq.2 = q) (n : ℕ)
+    (K : Type) [CommRing K] (pq : ℤ × ℤ) (hq : pq.2 = q) (n : ℕ)
     (hpq : pq.1 + pq.2 = -n) :
     letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
