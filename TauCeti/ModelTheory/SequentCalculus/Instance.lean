@@ -125,6 +125,20 @@ theorem inst_not (φ : L.BoundedFormula α k) (ts : Fin k → L.Term α) :
     φ.not.inst ts = (φ.inst ts).not :=
   (rfl)
 
+@[simp]
+theorem inst_top (ts : Fin k → L.Term α) : (⊤ : L.BoundedFormula α k).inst ts = ⊤ :=
+  (rfl)
+
+@[simp]
+theorem inst_inf (φ ψ : L.BoundedFormula α k) (ts : Fin k → L.Term α) :
+    (φ ⊓ ψ).inst ts = φ.inst ts ⊓ ψ.inst ts :=
+  (rfl)
+
+@[simp]
+theorem inst_sup (φ ψ : L.BoundedFormula α k) (ts : Fin k → L.Term α) :
+    (φ ⊔ ψ).inst ts = φ.inst ts ⊔ ψ.inst ts :=
+  (rfl)
+
 /-- Substituting terms for the free variables of an instance gives the instance of the
 substituted formula at the substituted terms. -/
 @[simp]
