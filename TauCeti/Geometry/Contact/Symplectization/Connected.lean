@@ -145,14 +145,14 @@ theorem connectedComponent_eq_preimage_range_symplectizationToAnnihilator [Preco
     letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
     connectedComponent (⟨α.symplectizationToAnnihilator hαξ p, hξ.mem_annihilatorPunctured.2
         (SmoothForm.symplectizationToAnnihilator_snd_ne_zero hαξ
-          (hξ.apply_ne_zero_of_kerDistribution_eq hαξ) p)⟩ :
+          (fun x ↦ hξ.apply_ne_zero_of_kerDistribution_eq (congrFun hαξ x)) p)⟩ :
           hξ.annihilatorPunctured) =
       Subtype.val ⁻¹' range (α.symplectizationToAnnihilator hαξ) := by
   let := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
   let := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
   let := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle hξ.finrank_sub_one_add_one
   have hαξ' : (-α).kerDistribution = ξ := SmoothForm.kerDistribution_neg.trans hαξ
-  have hα₀ := hξ.apply_ne_zero_of_kerDistribution_eq hαξ
+  have hα₀ (x : M) : α.val x ≠ 0 := hξ.apply_ne_zero_of_kerDistribution_eq (congrFun hαξ x)
   set A : Set hξ.annihilatorPunctured :=
     Subtype.val ⁻¹' range (α.symplectizationToAnnihilator hαξ)
   -- In `ξ⁰ ∖ 0`, the complement of the image of `κ_α` is the image of `κ_(-α)`.

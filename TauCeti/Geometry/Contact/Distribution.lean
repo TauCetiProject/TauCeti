@@ -246,6 +246,15 @@ theorem isContactDistribution_iff_forall_exists_isContactFormAt [IsManifold I (n
     exact ((RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
       (hV.mem_nhds hxV) hαd hαD).1 hα).2
 
+/-- **A one-form defining a contact structure at a point does not vanish there.** If the kernel of
+a smooth one-form `α` at `x` is the fibre `D x` of the contact structure `D`, then `α_x ≠ 0`, since
+`D x` is a proper subspace of `T_x M`. -/
+theorem IsContactDistribution.apply_ne_zero_of_kerDistribution_eq
+    (hD : IsContactDistribution I n D) {α : SmoothForm I M ℝ 1} {x : M}
+    (hαD : α.kerDistribution x = D x) : α.val x ≠ 0 := by
+  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD]
+  exact hD.ne_top x
+
 /-- **A smooth one-form defining a contact structure near a point is a contact form there.** If
 the kernel of a smooth one-form `α` is the `C^n` contact structure `D` near `x`, with `1 ≤ n`, then
 `α` is a contact form at `x`. -/
@@ -256,18 +265,7 @@ theorem IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq
   refine (RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
     (hV.mem_nhds hxV) (α.mdifferentiableAt x)
     (hαD.mono fun y hy ↦ (SmoothForm.kerDistribution_eq_ker α y).symm.trans hy)).2
-    ⟨?_, hD.bijective_distributionLeviForm x⟩
-  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD.self_of_nhds]
-  exact hD.ne_top x
-
-/-- **A one-form defining a contact structure vanishes nowhere.** If the kernel of a smooth one-form
-`α` is the contact structure `D`, then `α_x ≠ 0` at every point `x`, since `D x` is a proper
-subspace of `T_x M`. -/
-theorem IsContactDistribution.apply_ne_zero_of_kerDistribution_eq
-    (hD : IsContactDistribution I n D) {α : SmoothForm I M ℝ 1} (hαD : α.kerDistribution = D)
-    (x : M) : α.val x ≠ 0 := by
-  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD]
-  exact hD.ne_top x
+    ⟨hD.apply_ne_zero_of_kerDistribution_eq hαD.self_of_nhds, hD.bijective_distributionLeviForm x⟩
 
 /-! ### Kernels of contact forms -/
 

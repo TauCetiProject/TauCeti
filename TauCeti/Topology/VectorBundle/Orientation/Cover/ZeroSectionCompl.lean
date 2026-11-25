@@ -82,7 +82,7 @@ namespace VectorBundleOrientationCover
 
 variable (F E) in
 /-- Each fibre of a vector bundle whose model fibre is a line is a line. -/
-theorem finrank_fiber_eq_one (hF : finrank ℝ F = 1) (b : B) : finrank ℝ (E b) = 1 :=
+private theorem finrank_fiber_eq_one (hF : finrank ℝ F = 1) (b : B) : finrank ℝ (E b) = 1 :=
   (VectorBundle.finrank_eq ℝ F E b).trans hF
 
 variable (F E) in
@@ -100,7 +100,7 @@ variable (hF : finrank ℝ F = 1)
 @[simp]
 theorem ofZeroSectionCompl_mk {b : B} {v : E b} (hv : v ≠ 0) :
     ofZeroSectionCompl F E hF ⟨⟨b, v⟩, mem_zeroSectionCompl.2 hv⟩ =
-      ⟨b, (FiniteDimensional.basisSingleton (Fin 1) (finrank_fiber_eq_one F E hF b) v
+      ⟨b, (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E b).trans hF) v
         hv).orientation⟩ :=
   (rfl)
 
