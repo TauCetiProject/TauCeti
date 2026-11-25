@@ -13,7 +13,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 import Mathlib.LinearAlgebra.Complex.Determinant
-import TauCeti.Analysis.Complex.PlanarLinearMap
+import TauCeti.Analysis.Complex.Wirtinger.LinearDistortion
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
 
@@ -73,6 +73,11 @@ def linearMap (μ : ℂ) : ℂ →L[ℝ] ℂ :=
 
 @[simp]
 theorem linearMap_apply (μ z : ℂ) : linearMap μ z = z + μ * conj z := (rfl)
+
+/-- The affine normalizer is the real-linear map with Wirtinger parts `1` and `μ`. -/
+theorem linearMap_eq_wirtingerPartsCLM (μ : ℂ) : linearMap μ = wirtingerPartsCLM 1 μ := by
+  ext z
+  simp [mul_comm]
 
 @[simp]
 theorem linearMap_zero : linearMap 0 = ContinuousLinearMap.id ℝ ℂ := by
@@ -148,10 +153,8 @@ theorem toMatrix_linearMap (μ : ℂ) :
 
 /-- The affine normalizer has the real Jacobian `1 - |μ|²`. -/
 theorem det_linearMap (μ : ℂ) : (linearMap μ).toLinearMap.det = 1 - Complex.normSq μ := by
-  have h : linearMap μ = wirtingerPartsCLM 1 μ := by
-    ext z
-    simp [mul_comm]
-  rw [h, det_wirtingerPartsCLM, norm_one, Complex.normSq_eq_norm_sq, one_pow]
+  rw [linearMap_eq_wirtingerPartsCLM, det_wirtingerPartsCLM, norm_one, Complex.normSq_eq_norm_sq,
+    one_pow]
 
 /-- The standard area form changes by the actual real Jacobian factor. -/
 theorem area_linearMap (μ z w : ℂ) :
