@@ -23,7 +23,7 @@ the nontangential maximal function of Poisson integrals, in the namespace
 * `h = 0`: the nontangential maximal function of `P[h]` vanishes
   (`nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_zero`);
 * `h ≡ 1`, in `L¹(Π)` but not in `L¹`: `P[h] ≡ 1` on the upper half-plane and `M_1 P[h] ≡ 1`
-  (`upperHalfPlanePoissonIntegralFun_one`,
+  (`TauCeti.upperHalfPlanePoissonIntegralFun_const`,
   `nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_one`);
 * the vertical approach `x + it`, `t → 0⁺`, is nontangential, and the nontangential filter for a
   positive aperture is nontrivial (`nontangentialFilter_one_neBot`).
@@ -76,24 +76,17 @@ theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_zero (α :
   simpa [maximalFunction_zero] using
     nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le α k 0 x
 
-/-- For `h ≡ 1`, `P[h] ≡ 1` on the upper half-plane. -/
-theorem upperHalfPlanePoissonIntegralFun_one {z : ℂ} (hz : 0 < z.im) :
-    upperHalfPlanePoissonIntegralFun (fun _ => 1) z = 1 := by
-  rw [upperHalfPlanePoissonIntegralFun_def]
-  simp_rw [Complex.real_smul, mul_one]
-  rw [integral_complex_ofReal, integral_upperHalfPlanePoissonKernel hz, ofReal_one]
-
 /-- For `h ≡ 1`, `M_1 P[h] ≡ 1`. -/
 theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_one (x : ℝ) :
     nontangentialMaximalFunction 1 1 (upperHalfPlanePoissonIntegralFun fun _ => 1) x = 1 := by
   refine le_antisymm (nontangentialMaximalFunction_le_iff.2 fun z hz => ?_) ?_
-  · rw [upperHalfPlanePoissonIntegralFun_one (mem_nontangentialCone.1 hz).1, eNorm_one]
+  · rw [upperHalfPlanePoissonIntegralFun_const 1 (mem_nontangentialCone.1 hz).1, eNorm_one]
   · have hz : (x : ℂ) + ((1 / 2 : ℝ) : ℂ) * I ∈ nontangentialCone 1 1 x := by
       rw [mem_nontangentialCone]
       norm_num
     calc (1 : ℝ≥0∞) = ‖upperHalfPlanePoissonIntegralFun (fun _ => 1)
           ((x : ℂ) + ((1 / 2 : ℝ) : ℂ) * I)‖ₑ := by
-          rw [upperHalfPlanePoissonIntegralFun_one (mem_nontangentialCone.1 hz).1, eNorm_one]
+          rw [upperHalfPlanePoissonIntegralFun_const 1 (mem_nontangentialCone.1 hz).1, eNorm_one]
       _ ≤ _ := le_nontangentialMaximalFunction hz
 
 /-- The nontangential filter of aperture one at `x` is nontrivial. -/

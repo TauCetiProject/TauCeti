@@ -63,7 +63,7 @@ theorem enorm_upperHalfPlanePoissonIntegralFun_le (h : ℝ → ℂ) {z : ℂ} (h
     have hmeas : AEStronglyMeasurable h := by
       refine (((measurable_upperHalfPlanePoissonKernel z).inv.aestronglyMeasurable).smul
         hint.aestronglyMeasurable).congr (.of_forall fun s => ?_)
-      change (upperHalfPlanePoissonKernel z s)⁻¹ • (upperHalfPlanePoissonKernel z s • h s) = h s
+      simp only [Pi.smul_apply', Pi.inv_apply]
       rw [smul_smul, inv_mul_cancel₀ (upperHalfPlanePoissonKernel_pos hz s).ne', one_smul]
     rw [upperHalfPlanePoissonIntegralFun_def, upperHalfPlanePoissonLIntegral_def,
       lintegral_withDensity_eq_lintegral_mul₀ hmeas.eNorm
