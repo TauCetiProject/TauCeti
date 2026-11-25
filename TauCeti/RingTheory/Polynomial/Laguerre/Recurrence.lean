@@ -142,6 +142,14 @@ theorem laguerre_succ_succ (α : R) (n : ℕ) :
     map_natCast, map_one, map_ofNat] at h₁ h₂ ⊢
   linear_combination h₁ + X * h₃ - h₂
 
+end Polynomial
+
+namespace TauCeti
+
+open Polynomial
+
+variable {R : Type*} [CommRing R] [Algebra ℚ R]
+
 /-- The raising relation: `X (Lₙ^{(α+1)})' = (n + 1) Lₙ₊₁^{(α)} - (α + 1 - X) Lₙ^{(α+1)}`. It
 expresses `Lₙ₊₁^{(α)}` through `Lₙ^{(α+1)}` and its derivative, and is the inductive step of the
 Rodrigues formula. It follows from DLMF 18.9.13, 18.9.14 and 18.9.23. -/
@@ -157,4 +165,4 @@ theorem X_mul_derivative_laguerre_add_one (α : R) (n : ℕ) :
     simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, map_add, map_natCast, map_one] at h₁ h₂ ⊢
     linear_combination -h₁ - h₂ - (C α + m + 2) * h₃
 
-end Polynomial
+end TauCeti
