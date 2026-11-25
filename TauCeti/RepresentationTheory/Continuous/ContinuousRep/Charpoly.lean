@@ -36,10 +36,10 @@ topology, every coefficient `g ↦ (ρ g).charpoly.coeff k` is continuous
 is continuous (`TauCeti.ContinuousRep.continuous_toMatrix`), and each characteristic coefficient is
 a universal polynomial in the matrix entries (`Matrix.continuous_charpoly_coeff`). Consequently, if
 the characteristic polynomials of two continuous representations agree after mapping into a common
-Hausdorff ring on a dense subset of `Γ`, then the mapped characteristic polynomials agree everywhere
-on `Γ` (`TauCeti.ContinuousRep.charpoly_map_eq_of_dense`); over a single Hausdorff coefficient ring,
-agreement on a dense subset implies equality of the characteristic polynomials everywhere on `Γ`
-(`TauCeti.ContinuousRep.charpoly_eq_of_dense`).
+Hausdorff semiring on a dense subset of `Γ`, then the mapped characteristic polynomials agree
+everywhere on `Γ` (`TauCeti.ContinuousRep.charpoly_map_eq_of_dense`); over a single Hausdorff
+coefficient ring, agreement on a dense subset implies equality of the characteristic polynomials
+everywhere on `Γ` (`TauCeti.ContinuousRep.charpoly_eq_of_dense`).
 
 ## Main results
 
@@ -208,13 +208,13 @@ theorem continuous_charpoly_coeff {A M : Type*} [CommRing A] [TopologicalSpace A
 /-- **Density propagation for characteristic polynomials across coefficient rings.** Let `ρ₁` and
 `ρ₂` be continuous representations on finite free modules with their module topologies over
 topological commutative rings `A₁` and `A₂`, and let `f₁ : A₁ →+* B`, `f₂ : A₂ →+* B` be continuous
-homomorphisms into a Hausdorff commutative ring `B`. If
+homomorphisms into a Hausdorff semiring `B`. If
 `((ρ₁ g).charpoly).map f₁ = ((ρ₂ g).charpoly).map f₂` for all `g` in a dense subset `s ⊆ Γ`, then
 equality holds for all `g : Γ`. -/
 theorem charpoly_map_eq_of_dense {A₁ A₂ B M₁ M₂ : Type*}
     [CommRing A₁] [TopologicalSpace A₁] [IsTopologicalRing A₁]
     [CommRing A₂] [TopologicalSpace A₂] [IsTopologicalRing A₂]
-    [CommRing B] [TopologicalSpace B] [T2Space B]
+    [Semiring B] [TopologicalSpace B] [T2Space B]
     [AddCommGroup M₁] [Module A₁ M₁] [Module.Free A₁ M₁] [Module.Finite A₁ M₁]
     [TopologicalSpace M₁] [IsModuleTopology A₁ M₁]
     [AddCommGroup M₂] [Module A₂ M₂] [Module.Free A₂ M₂] [Module.Finite A₂ M₂]

@@ -203,7 +203,9 @@ instance [Subsingleton V] : IsSmooth ρ :=
   ⟨fun v ↦ by rw [stabilizer_eq_top_of_subsingleton ρ v]; exact isOpen_univ⟩
 
 /-- When `V` carries the discrete topology and right translations on `G` are continuous, a
-representation `ρ` is jointly continuous on `G × V` if and only if it is smooth. -/
+representation `ρ` is jointly continuous on `G × V` if and only if it is smooth.
+
+Adapted from `continuousSMul_iff_stabilizer_isOpen` in `Mathlib.Topology.Algebra.MulAction`. -/
 theorem continuous_iff_isSmooth [ContinuousConstSMul Gᵐᵒᵖ G]
     [TopologicalSpace V] [DiscreteTopology V] (ρ : Representation A G V) :
     Continuous (fun p : G × V => ρ p.1 p.2) ↔ ρ.IsSmooth := by

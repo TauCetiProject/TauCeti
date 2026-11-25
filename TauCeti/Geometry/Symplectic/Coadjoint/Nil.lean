@@ -30,15 +30,20 @@ Heisenberg Lie algebra of strictly upper triangular `3 × 3` matrices
 `p` (`TauCeti.Nil.lieAlgebraEquiv_adjointRepresentation`). The orbit computations of
 `TauCeti.Algebra.Lie.Heisenberg.Orbit` then transfer to the Lie group `Nil`.
 
-Write `Z = ∂_z` for the central generator and `r = ν Z` for a functional `ν ∈ 𝔫*`; `r` is constant
-on coadjoint orbits.
+Write `X = ∂_x`, `Y = ∂_y`, `Z = ∂_z` for the coordinate generators and
+`(p, q, r) = (ν X, ν Y, ν Z)` for a functional `ν ∈ 𝔫*`. The coadjoint action of `g = (x, y, z)` is
+`Ad*_g (p, q, r) = (p + r y, q - r x, r)`
+(`TauCeti.Nil.coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergX`,
+`TauCeti.Nil.coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergY`); in particular `r` is
+constant on coadjoint orbits.
 
 * The adjoint orbit of `(a, b, c)` is the affine line `{(a, b, c') | c' ∈ ℝ}` when
   `(a, b) ≠ (0, 0)` (`TauCeti.Nil.range_adjointRepresentation_apply_of_ne_zero`) and a point
   otherwise. The nontrivial adjoint orbits are odd-dimensional.
 * The coadjoint orbit of `ν` is the plane `{μ | μ Z = r}` when `r ≠ 0`
   (`TauCeti.Nil.range_coadjointRepresentation_apply_of_ne_zero`) and the point `{ν}` when `r = 0`
-  (`TauCeti.Nil.range_coadjointRepresentation_apply_of_eq_zero`). For `r ≠ 0` the coadjoint
+  (`TauCeti.Nil.range_coadjointRepresentation_apply_of_eq_zero`), fixed by all of `Nil`
+  (`TauCeti.Nil.stabilizer_coadjointRepresentation_of_eq_zero`). For `r ≠ 0` the coadjoint
   stabilizer is the centre of `Nil` (`TauCeti.Nil.stabilizer_coadjointRepresentation_of_ne_zero`),
   and the orbit manifold `Nil ⧸ Nil_ν` is two-dimensional
   (`TauCeti.Nil.finrank_quotientModelSpace_stabilizer_coadjointRepresentation_of_ne_zero`).
@@ -210,6 +215,24 @@ theorem tangentSpaceCastModel_lieAlgebraEquiv_symm (A : heisenberg ℝ) :
         (A : Matrix (Fin 3) (Fin 3) ℝ) 0 2) :=
   ContinuousLinearEquiv.apply_symm_apply _ _
 
+@[simp]
+theorem lieAlgebraEquiv_apply_zero_one (v : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    (lieAlgebraEquiv v : Matrix (Fin 3) (Fin 3) ℝ) 0 1 =
+      (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).1 := by
+  simp [lieAlgebraEquiv_apply]
+
+@[simp]
+theorem lieAlgebraEquiv_apply_one_two (v : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    (lieAlgebraEquiv v : Matrix (Fin 3) (Fin 3) ℝ) 1 2 =
+      (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).2.1 := by
+  simp [lieAlgebraEquiv_apply]
+
+@[simp]
+theorem lieAlgebraEquiv_apply_zero_two (v : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
+    (lieAlgebraEquiv v : Matrix (Fin 3) (Fin 3) ℝ) 0 2 =
+      (tangentSpaceCastModel 𝓘(ℝ, R3) (1 : Nil) v).2.2 := by
+  simp [lieAlgebraEquiv_apply]
+
 /-- **Every bracket in the Lie algebra of Nil is central**: `⁅(a, b, c), (a', b', c')⁆` is
 `a b' - b a'` times the central generator `Z = lieAlgebraEquiv.symm (heisenbergZ ℝ)`. -/
 theorem lie_eq_smul_lieAlgebraEquiv_symm_heisenbergZ (ξ ξ' : GroupLieAlgebra 𝓘(ℝ, R3) Nil) :
@@ -327,6 +350,28 @@ theorem coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergZ (p : Nil)
     rw [← comp_lieAlgebraEquiv_symm_comp ν, coadjointRepresentation_comp_lieAlgebraEquiv]
   simp
 
+/-- The first coordinate `p = ν X` of a functional transforms under the coadjoint action of Nil as
+`p ↦ p + r y`, where `r = ν Z`. -/
+theorem coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergX (p : Nil)
+    (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil)) :
+    Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil p ν (lieAlgebraEquiv.symm (heisenbergX ℝ)) =
+      ν (lieAlgebraEquiv.symm (heisenbergX ℝ)) +
+        p.y * ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) := by
+  conv_lhs =>
+    rw [← comp_lieAlgebraEquiv_symm_comp ν, coadjointRepresentation_comp_lieAlgebraEquiv]
+  simp [HeisenbergGroup.coadjointRepresentation_apply_heisenbergX]
+
+/-- The second coordinate `q = ν Y` of a functional transforms under the coadjoint action of Nil
+as `q ↦ q - r x`, where `r = ν Z`. -/
+theorem coadjointRepresentation_apply_lieAlgebraEquiv_symm_heisenbergY (p : Nil)
+    (ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil)) :
+    Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil p ν (lieAlgebraEquiv.symm (heisenbergY ℝ)) =
+      ν (lieAlgebraEquiv.symm (heisenbergY ℝ)) -
+        p.x * ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) := by
+  conv_lhs =>
+    rw [← comp_lieAlgebraEquiv_symm_comp ν, coadjointRepresentation_comp_lieAlgebraEquiv]
+  simp [HeisenbergGroup.coadjointRepresentation_apply_heisenbergY]
+
 /-- **The coadjoint orbit of Nil through a functional `ν` with `ν Z ≠ 0` is the plane
 `{μ | μ Z = ν Z}`**, where `Z = ∂_z` is the central generator. -/
 theorem range_coadjointRepresentation_apply_of_ne_zero
@@ -369,6 +414,15 @@ theorem stabilizer_coadjointRepresentation_of_ne_zero
     HeisenbergGroup.stabilizer_coadjointRepresentation_of_mem_nonZeroDivisors
       (mem_nonZeroDivisors_of_ne_zero (by simpa using hν)), HeisenbergGroup.mem_zAxis_iff]
   simp
+
+/-- **A functional vanishing on the central generator is fixed by all of Nil.** -/
+theorem stabilizer_coadjointRepresentation_of_eq_zero
+    {ν : Dual ℝ (GroupLieAlgebra 𝓘(ℝ, R3) Nil)}
+    (hν : ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)) = 0) :
+    (Lie.coadjointRepresentation ℝ 𝓘(ℝ, R3) Nil).stabilizer ν = ⊤ := by
+  refine eq_top_iff.mpr fun g _ ↦ Representation.mem_stabilizer.mpr ?_
+  have h := range_coadjointRepresentation_apply_of_eq_zero hν
+  exact Set.mem_singleton_iff.mp (h ▸ Set.mem_range_self g)
 
 /-- **The coadjoint orbits of Nil through functionals with `ν Z ≠ 0` are two-dimensional**: the
 model space of the orbit manifold `Nil ⧸ Nil_ν` has dimension `2`. -/
