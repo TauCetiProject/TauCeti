@@ -41,7 +41,8 @@ Hilbert C⋆-module.
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
 the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)`, the
-diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_n(ℂ)`.
+diagonal embedding `b ↦ diag(b, …, b)`, the matrix units `eᵢⱼ` of `M_n(ℂ)` and the corner
+embeddings into block-diagonal matrices.
 
 ## Main declarations
 
@@ -82,6 +83,9 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
   in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le` and
   `CStarMatrix.norm_map_toSpanSingleton_le`: `‖[xᵢⱼ • a]‖ ≤ ‖x‖ ‖a‖` for a scalar matrix `x`.
+* `CStarMatrix.blockDiagonalSingle`: the corner embedding of `M_{n i}(B)` as the `i`-th diagonal
+  block of `M_{Σ i, n i}(B)`, with `CStarMatrix.sum_blockDiagonalSingle`: a block-diagonal matrix
+  is the sum of its corner embeddings.
 * `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
   `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
@@ -452,6 +456,96 @@ lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module 
     (M : CStarMatrix m n A) : (ofMatrixₗ (R := R)).symm M = ofMatrix.symm M := (rfl)
 
 end Algebraic
+
+section BlockDiagonal
+
+variable {ι : Type*} [DecidableEq ι] {n : ι → Type*} [∀ i, Fintype (n i)]
+
+section NonUnital
+
+variable {R B : Type*} [Monoid R] [NonUnitalNonAssocSemiring B] [StarAddMonoid B]
+  [DistribMulAction R B]
+
+variable (R B) in
+/-- The corner embedding `x ↦ diag(0, …, x, …, 0)` of `CStarMatrix (n i) (n i) B` as the `i`-th
+diagonal block of `CStarMatrix (Σ i, n i) (Σ i, n i) B`, as a non-unital star algebra
+homomorphism. -/
+def blockDiagonalSingle [Fintype ι] (i : ι) :
+    CStarMatrix (n i) (n i) B →⋆ₙₐ[R] CStarMatrix (Σ i, n i) (Σ i, n i) B where
+  toFun x := ofMatrix (Matrix.blockDiagonal' (Pi.single i (ofMatrix.symm x)))
+  map_smul' c x := ofMatrix.symm.injective <| by
+    simp [Pi.single_smul, Matrix.blockDiagonal'_smul]
+  map_zero' := ofMatrix.symm.injective <| by simp
+  map_add' x y := ofMatrix.symm.injective <| by simp [Pi.single_add, Matrix.blockDiagonal'_add]
+  map_mul' x y := ofMatrix.symm.injective <| by
+    simp only [Equiv.symm_apply_apply, ofMatrix_symm_mul, ← Matrix.blockDiagonal'_mul]
+    exact congrArg _ (Pi.single_mul i _ _)
+  map_star' x := ofMatrix.symm.injective <| by
+    simp only [Equiv.symm_apply_apply, ofMatrix_symm_star, Matrix.blockDiagonal'_conjTranspose]
+    congr 1
+    ext j : 1
+    by_cases h : j = i
+    · subst h; simp
+    · simp [h]
+
+/-- The corner embedding places `x` as the block `i` of a block-diagonal matrix. -/
+theorem blockDiagonalSingle_apply [Fintype ι] (i : ι) (x : CStarMatrix (n i) (n i) B) :
+    blockDiagonalSingle R B i x =
+      ofMatrix (Matrix.blockDiagonal' (Pi.single i (ofMatrix.symm x))) :=
+  (rfl)
+
+/-- The block `i` of the corner embedding at `i` is `x`. -/
+@[simp]
+theorem blockDiagonalSingle_apply_same [Fintype ι] (i : ι) (x : CStarMatrix (n i) (n i) B)
+    (j k : n i) : blockDiagonalSingle R B i x ⟨i, j⟩ ⟨i, k⟩ = x j k := by
+  simp [blockDiagonalSingle_apply, ofMatrix_apply, Matrix.blockDiagonal'_apply_eq]
+
+/-- The corner embedding at `i` vanishes on the diagonal blocks `j ≠ i`. -/
+@[simp]
+theorem blockDiagonalSingle_apply_diag_of_ne [Fintype ι] {i j : ι} (h : j ≠ i)
+    (x : CStarMatrix (n i) (n i) B) (p q : n j) :
+    blockDiagonalSingle R B i x ⟨j, p⟩ ⟨j, q⟩ = 0 := by
+  simp [blockDiagonalSingle_apply, ofMatrix_apply, Matrix.blockDiagonal'_apply_eq, h]
+
+/-- The corner embedding vanishes off the diagonal blocks. -/
+theorem blockDiagonalSingle_apply_ne [Fintype ι] (i : ι) (x : CStarMatrix (n i) (n i) B)
+    {j j' : ι} (p : n j) (q : n j') (h : j ≠ j') :
+    blockDiagonalSingle R B i x ⟨j, p⟩ ⟨j', q⟩ = 0 := by
+  rw [blockDiagonalSingle_apply, ofMatrix_apply, Matrix.blockDiagonal'_apply_ne _ p q h]
+
+/-- Corner embeddings at distinct blocks are orthogonal. -/
+theorem blockDiagonalSingle_mul_of_ne [Fintype ι] {i j : ι} (h : i ≠ j)
+    (x : CStarMatrix (n i) (n i) B) (y : CStarMatrix (n j) (n j) B) :
+    blockDiagonalSingle R B i x * blockDiagonalSingle R B j y = 0 := by
+  apply ofMatrix.symm.injective
+  rw [blockDiagonalSingle_apply, blockDiagonalSingle_apply, ofMatrix_symm_mul, ofMatrix_symm_zero,
+    Equiv.symm_apply_apply, Equiv.symm_apply_apply, ← Matrix.blockDiagonal'_mul,
+    ← Matrix.blockDiagonal'_zero]
+  congr 1
+  funext k
+  by_cases hk : k = i
+  · subst hk; simp [h]
+  · simp [hk]
+
+/-- A block-diagonal matrix is the sum of its corner embeddings. -/
+theorem sum_blockDiagonalSingle [Fintype ι] (x : ∀ i, CStarMatrix (n i) (n i) B) :
+    ∑ i, blockDiagonalSingle R B i (x i) =
+      ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i)) := by
+  rw [← Finset.univ_sum_single fun i => ofMatrix.symm (x i)]
+  -- `ofMatrix` is the identity equivalence, so this is additivity of `Matrix.blockDiagonal'`.
+  exact (map_sum (Matrix.blockDiagonal'AddMonoidHom n n B) _ _).symm
+
+end NonUnital
+
+/-- The identity matrix is the sum of the corner embeddings of the identity matrices. -/
+theorem sum_blockDiagonalSingle_one [Fintype ι] [∀ i, DecidableEq (n i)] (R : Type*)
+    {B : Type*} [Monoid R] [NonAssocSemiring B] [StarAddMonoid B] [DistribMulAction R B] :
+    ∑ i, blockDiagonalSingle R B i (1 : CStarMatrix (n i) (n i) B) = 1 := by
+  apply ofMatrix.symm.injective
+  simp only [sum_blockDiagonalSingle, Equiv.symm_apply_apply, ofMatrix_symm_one]
+  rw [← Pi.one_def, Matrix.blockDiagonal'_one]
+
+end BlockDiagonal
 
 /-- Square matrices over a simple ring form a simple ring: their two-sided ideals are the matrices
 over the two-sided ideals of the coefficient ring. -/
