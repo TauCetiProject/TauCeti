@@ -133,14 +133,10 @@ theorem holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset {k : ℕ} {s 
     HolderWith ((2 : ℝ≥0) ^ k * N * (H + 6 * M + 2 * M * δ ^ (-(α : ℝ)))) α
       (iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) := by
   have hts : tsupport χ ⊆ s := (self_subset_thickening (by exact_mod_cast hδ) _).trans hχs
-  -- The product vanishes near every point outside the support of the cutoff.
-  have hzero : ∀ x ∉ tsupport χ, iteratedFDeriv ℝ k (fun x ↦ χ x • f x) x = 0 := by
-    intro x hx
-    have h0 : (fun y ↦ χ y • f y) =ᶠ[𝓝 x] 0 := by
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hx] with y hy
-      simp [hy]
-    rw [(h0.iteratedFDeriv (𝕜 := ℝ) k).self_of_nhds]
-    simp
+  -- The derivative of the product vanishes outside the support of the cutoff.
+  have hzero : ∀ x ∉ tsupport χ, iteratedFDeriv ℝ k (fun x ↦ χ x • f x) x = 0 := fun x hx ↦
+    Function.notMem_support.1 fun h ↦
+      hx (tsupport_smul_subset_left _ _ (support_iteratedFDeriv_subset k h))
   -- On a ball of radius `δ` centred in the support, the Leibniz rule gives a Hölder bound.
   have hball : ∀ x ∈ tsupport χ, HolderOnWith ((2 : ℝ≥0) ^ k * N * (H + 6 * M)) α
       (iteratedFDeriv ℝ k (fun x ↦ χ x • f x)) (ball x δ) := fun x hx ↦ by
