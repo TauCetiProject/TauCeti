@@ -37,10 +37,8 @@ because every summand is repeated equally often and the normalizing factor compe
 This defines an `O`-valued measure on `ℤ_p` with `μ(1_{p^n ℤ_p}) = p^{-n}`. For `j = id` into the
 usual `ℚ_p`, no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integral `1`.
 
-The dense-extension construction and its norm proof follow the formal pattern of
-`TauCeti.ofUnitCoordinates` and `TauCeti.ofUnitCoordinates_norm_le` in
-`TauCeti/NumberTheory/Padics/Measure/UnitCoordinates.lean`. The extension uses
-`LinearMap.extendOfBound`, built on Mathlib’s `ContinuousLinearMap.extend`.
+The extension applies `LinearMap.extendOfBound`, built on Mathlib’s `ContinuousLinearMap.extend`,
+to the integral on locally constant functions.
 
 ## Main definitions
 
