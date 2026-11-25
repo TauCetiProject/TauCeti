@@ -40,7 +40,10 @@ noncomputable def bigPresheafOpensAddEquiv (V : S.Opens) :
     (AddEquiv.ofBijective ((sectionsLinearEquiv ((pullbackComp V.ι (𝟙 S)).app F ≪≫
         (pullbackCongr (Category.comp_id V.ι)).app F) ⊤).toAddMonoidHom.comp
           (V.ι.pullbackSectionsLE ((pullback (𝟙 S)).obj F) V ⊤ (by simp)).toAddMonoidHom)
-      ((LinearEquiv.bijective _).comp (bijective_pullbackSectionsLE_ι _ V ⊤ rfl)))
+      (by
+        refine (congrArg Function.Bijective (funext fun s ↦ ?_)).mpr
+          (bijective_bigSectionsRestrictLE_ι F (𝟙 S) V (Category.comp_id V.ι))
+        exact (sectionsLinearEquiv_apply _ ⊤ _).trans (bigSectionsRestrictLE_apply ..).symm))
 
 lemma bigPresheafOpensAddEquiv_apply (V : S.Opens) (s : Γ(F, V)) :
     F.bigPresheafOpensAddEquiv V s = bigSectionsRestrictLE F V.ι (Category.comp_id V.ι) V ⊤
@@ -55,10 +58,8 @@ lemma bigPresheaf_map_bigPresheafOpensAddEquiv {V W : S.Opens} (hWV : W ≤ V) (
     F.bigPresheaf.map (Over.homMk (S.homOfLE hWV) (by simp) :
         Over.mk W.ι ⟶ Over.mk V.ι).op (F.bigPresheafOpensAddEquiv V s) =
       F.bigPresheafOpensAddEquiv W (F.presheaf.map (homOfLE hWV).op s) := by
-  rw [bigPresheafOpensAddEquiv_apply, bigPresheafOpensAddEquiv_apply, bigPresheaf_map_apply,
-    bigSectionsRestrict_eq_bigSectionsRestrictLE, bigSectionsRestrictLE_comp]
-  refine (bigSectionsRestrictLE_congr F (b' := W.ι) (by simp) _ _ _ _ _).trans ?_
-  refine .trans ?_ (congrArg _ (Hom.naturality_apply _ (homOfLE hWV) s).symm)
-  exact (bigSectionsRestrictLE_map F W.ι _ (homOfLE hWV) ⊤ _ _).symm
+  rw [bigPresheafOpensAddEquiv_apply, bigPresheafOpensAddEquiv_apply, bigPresheaf_map_apply]
+  exact (bigSectionsRestrict_homMk_homOfLE F (Over.mk (𝟙 S)) hWV (Category.comp_id V.ι)
+    (Category.comp_id W.ι) _).trans (congrArg _ (Hom.naturality_apply _ (homOfLE hWV) s).symm)
 
 end AlgebraicGeometry.Scheme.Modules
