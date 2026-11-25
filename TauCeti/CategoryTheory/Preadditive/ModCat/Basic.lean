@@ -45,7 +45,8 @@ presented functors are additive, so `mod C` is a full subcategory of `ModCat C`.
   `TauCeti.additiveFunctor_isClosedUnderColimitsOfShape`: additive functors are closed under the
   limits and colimits of the target, together with instances for zero, kernels, cokernels and
   finite products.
-* `Abelian (ModCat C)` and `HasColimitsOfShape J (ModCat C)`.
+* `Abelian (ModCat C)` and `HasColimitsOfShape J (ModCat C)`, found by instance inference from
+  the closure instances and Mathlib's full-subcategory instances.
 * `Projective ((ModCat.yoneda C).obj X)`: representable modules are projective.
 * `Linear R (ModCat D)` for an `R`-linear preadditive category `D`.
 
@@ -122,40 +123,21 @@ variable (C : Type u) [Category.{v} C] [Preadditive C]
 `Cᵒᵖ ⥤+ AddCommGrpCat.{w}`. Covariant additive functors on `C` are the objects of `ModCat Cᵒᵖ`. -/
 abbrev ModCat := Cᵒᵖ ⥤+ AddCommGrpCat.{w}
 
-/-- `Mod C` is abelian, as a full subcategory of `Cᵒᵖ ⥤ AddCommGrpCat` containing zero and closed
-under kernels, cokernels and finite products. -/
-noncomputable instance : Abelian (ModCat.{w} C) := inferInstance
+/-- `Mod C` is abelian: instance inference finds this from the closure instances above. -/
+noncomputable example : Abelian (ModCat.{w} C) := inferInstance
 
-/-- `Mod C` has every shape of colimit that `AddCommGrpCat.{w}` has, computed pointwise. -/
-instance (priority := high) {J : Type*} [Category J] [HasColimitsOfShape J AddCommGrpCat.{w}] :
+/-- `Mod C` has every shape of colimit that `AddCommGrpCat.{w}` has, again by inference. -/
+example {J : Type*} [Category J] [HasColimitsOfShape J AddCommGrpCat.{w}] :
     HasColimitsOfShape J (ModCat.{w} C) :=
-  hasColimitsOfShape_of_closedUnderColimits _ _
+  inferInstance
 
 namespace ModCat
 
-/-- The Yoneda embedding `X ↦ Hom(-, X)` of `C` into `Mod C`. -/
-def yoneda : C ⥤ ModCat.{v} C :=
-  ObjectProperty.lift _ preadditiveYoneda fun X ↦
-    (inferInstance : (preadditiveYoneda.obj X).Additive)
-
-/-- The underlying functor of `(ModCat.yoneda C).obj X` is `Hom(-, X)`. -/
-@[simp]
-theorem yoneda_obj_obj (X : C) : ((yoneda C).obj X).obj = preadditiveYoneda.obj X :=
-  rfl
-
-/-- The underlying natural transformation of `(ModCat.yoneda C).map f` is `Hom(-, f)`. -/
-@[simp]
-theorem yoneda_map_hom {X Y : C} (f : X ⟶ Y) : ((yoneda C).map f).hom = preadditiveYoneda.map f :=
-  rfl
-
-/-- `ModCat.yoneda C` followed by the forgetful functor `Mod C ⥤ (Cᵒᵖ ⥤ AddCommGrpCat)` is
-`preadditiveYoneda`. -/
-def yonedaCompιIso : yoneda C ⋙ (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι ≅ preadditiveYoneda :=
-  Iso.refl _
-
-instance : (yoneda C).Full := Functor.Full.of_comp_faithful_iso (yonedaCompιIso C)
-
-instance : (yoneda C).Faithful := Functor.Faithful.of_comp_iso (yonedaCompιIso C)
+/-- The Yoneda embedding `X ↦ Hom(-, X)` of `C` into `Mod C`: the lift of `preadditiveYoneda`
+through the full subcategory of additive functors. It is fully faithful by the `ObjectProperty.lift`
+instances, and `ObjectProperty.liftCompιIso` recovers `preadditiveYoneda`. -/
+abbrev yoneda : C ⥤ ModCat.{v} C :=
+  ObjectProperty.lift _ preadditiveYoneda fun _ ↦ (additiveFunctor_iff _).2 inferInstance
 
 /-- **Representable modules are projective.** A morphism `Hom(-, X) ⟶ G` is an element of
 `G(X)` by Yoneda, and it lifts along an epimorphism `F ⟶ G`, which is surjective at `X`. -/
@@ -263,24 +245,11 @@ theorem isFinitelyPresentedFunctor_le_additiveFunctor :
 
 namespace ModCat
 
-/-- The inclusion `mod C ⥤ Mod C` of finitely presented functors into all modules. -/
+/-- The inclusion `mod C ⥤ Mod C` of finitely presented functors into all modules. It is fully
+faithful by `ObjectProperty.fullyFaithfulιOfLE`, and `ObjectProperty.liftCompιOfLEIso` identifies
+`modYoneda ⋙ ofFinitelyPresented C` with `ModCat.yoneda C`. -/
 abbrev ofFinitelyPresented : (isFinitelyPresentedFunctor C).FullSubcategory ⥤ ModCat.{v} C :=
   ObjectProperty.ιOfLE (isFinitelyPresentedFunctor_le_additiveFunctor C)
-
-/-- The inclusion `mod C ⥤ Mod C` is fully faithful. -/
-def fullyFaithfulOfFinitelyPresented : (ofFinitelyPresented C).FullyFaithful :=
-  ObjectProperty.fullyFaithfulιOfLE _
-
-/-- The inclusion `mod C ⥤ Mod C` is compatible with the inclusions of both into
-`Cᵒᵖ ⥤ AddCommGrpCat`. -/
-def ofFinitelyPresentedCompιIso :
-    ofFinitelyPresented C ⋙ (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι ≅
-      (isFinitelyPresentedFunctor C).ι :=
-  Iso.refl _
-
-/-- The Yoneda embedding into `mod C` followed by `mod C ⥤ Mod C` is `ModCat.yoneda C`. -/
-def modYonedaCompOfFinitelyPresentedIso : modYoneda ⋙ ofFinitelyPresented C ≅ yoneda C :=
-  Iso.refl _
 
 end ModCat
 
