@@ -59,6 +59,8 @@ finitely many vectors.
 * `TauCeti.ContinuousRep.quotient`: descent to the quotient by an invariant submodule with the
   quotient topology.
 * `TauCeti.ContinuousRep.prod`: the componentwise action on a product.
+* `TauCeti.ContinuousRep.ofDistribMulAction`: the representation given by a jointly continuous
+  distributive action commuting with the scalars.
 * `TauCeti.ContinuousRep.Hom`: equivariant continuous linear maps, with `id` and `comp`;
   `TauCeti.ContinuousRep.Hom.ofIntertwiningMap` builds one from an intertwining map.
 * `TauCeti.ContinuousRep.Iso`: equivariant continuous linear equivalences, with `refl`, `symm`
@@ -277,6 +279,20 @@ theorem quotient_apply_mk [ContinuousAdd V] (ρ : ContinuousRep Γ R V)
 end Subquotient
 
 section Constructions
+
+/-- **The continuous representation of a jointly continuous action**: a distributive action of
+`Γ` on `M` commuting with the scalars `A` and continuous as a map `Γ × M → M` is a continuous
+representation, with underlying representation `Representation.ofDistribMulAction`. -/
+def ofDistribMulAction (Γ A M : Type*) [Monoid Γ] [TopologicalSpace Γ] [Semiring A]
+    [AddCommMonoid M] [Module A M] [TopologicalSpace M] [DistribMulAction Γ M]
+    [SMulCommClass Γ A M] [ContinuousSMul Γ M] : ContinuousRep Γ A M where
+  toRepresentation := Representation.ofDistribMulAction A Γ M
+  continuous_action := continuous_smul
+
+@[simp]
+theorem ofDistribMulAction_apply [DistribMulAction Γ M] [SMulCommClass Γ A M]
+    [ContinuousSMul Γ M] (g : Γ) (x : M) : ofDistribMulAction Γ A M g x = g • x :=
+  (rfl)
 
 /-- **The product of two continuous representations**: `Γ` acts componentwise on `M × N`, with
 the product topology. -/

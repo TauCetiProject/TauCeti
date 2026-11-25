@@ -152,6 +152,25 @@ theorem form_tmul_tmul (σ : K →+* ℂ) (c d : Codomain σ) (x y : E) :
   rw [Codomain.tmul_eq_smul σ c, Codomain.tmul_eq_smul σ d, LinearMap.map_smulₛₗ₂, map_smul,
     smul_eq_mul, smul_eq_mul, mul_assoc]
 
+/-- Integers of `K` come out of the form on vectors of `E` through `σ`: conjugate-linearly on the
+left and linearly on the right. -/
+theorem form_tmul_smul_tmul_smul (σ : K →+* ℂ) (a b : 𝓞 K) (x y : E) :
+    h.form σ (1 ⊗ₜ (a • x)) (1 ⊗ₜ (b • y)) = conj (σ a) * σ b * h.form σ (1 ⊗ₜ x) (1 ⊗ₜ y) := by
+  rw [Codomain.tmul_smul, Codomain.tmul_smul, LinearMap.map_smulₛₗ₂, map_smul, smul_eq_mul,
+    smul_eq_mul, mul_assoc]
+
+/-- Two hermitian metrics are equal when their forms agree on vectors of `E`, since these span
+every complex fibre. -/
+theorem ext_tmul {h' : HermitianMetric K E}
+    (hh : ∀ σ (x y : E), h.form σ (1 ⊗ₜ x) (1 ⊗ₜ y) = h'.form σ (1 ⊗ₜ x) (1 ⊗ₜ y)) : h = h' := by
+  ext σ u v
+  induction u using TensorProduct.inductionOn with
+  | add u₁ u₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
+  | tmul c x =>
+    induction v using TensorProduct.inductionOn with
+    | add v₁ v₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+    | tmul d y => rw [h.form_tmul_tmul, h'.form_tmul_tmul, hh]
+
 /-- The normed group structure on the complex fibre at `σ` given by the core `h.toCore σ`, whose
 norm is `HermitianMetric.norm`; used locally to read off the norm axioms. -/
 private abbrev normedAddCommGroup (σ : K →+* ℂ) : NormedAddCommGroup (Codomain σ ⊗[𝓞 K] E) :=
