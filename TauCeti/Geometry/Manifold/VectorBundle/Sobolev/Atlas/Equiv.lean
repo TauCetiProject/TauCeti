@@ -27,7 +27,7 @@ are isomorphic Banach spaces (`TauCeti.SobolevSection.atlasEquiv`), so their nor
 The construction is the change of chart data `TauCeti.SectionChartData.changeAtlas` of
 `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.ChartData`, which also serves bases with
 boundary. What it needs here is that the chart data of `A'` are read off from those of `A`
-(`TauCeti.FiniteBundleAtlas.readsFrom_sectionChartData`): on the part of the image of a chart of
+(`TauCeti.FiniteBundleAtlas.sectionChartData_determines`): on the part of the image of a chart of
 `A'` lying over the domain of a chart of `A`, the reading of a section is the coordinate change of
 the bundle applied to its reading in the chart of `A`, at the chart transition, which carries null
 sets to null sets (`TauCeti.FiniteBundleAtlas.ae_restrict_image_chart_symm`).
@@ -96,8 +96,8 @@ omit [FiniteDimensional ℝ F] in
 the image of chart `i'` of `A'` lying over the domain of chart `i` of `A`, the reading in chart
 `i'` is the coordinate change of the bundle applied to the reading in chart `i` at the chart
 transition, which carries null sets to null sets. -/
-theorem FiniteBundleAtlas.readsFrom_sectionChartData [IsManifold 𝓘(ℝ, E) 1 M] :
-    A.sectionChartData.ReadsFrom A'.sectionChartData μ :=
+theorem FiniteBundleAtlas.sectionChartData_determines [IsManifold 𝓘(ℝ, E) 1 M] :
+    A.sectionChartData.Determines A'.sectionChartData μ :=
   .intro (fun i i' ↦ {y | (A'.chart i').symm y ∈ A.dom i})
     (fun i i' y ↦ A.chart i ((A'.chart i').symm y))
     (fun i i' y ↦ (A.triv i).coordChangeL ℝ (A'.triv i') ((A'.chart i').symm y))
@@ -152,7 +152,7 @@ data are the readings of the same section (`TauCeti.SobolevSection.chartValueL_c
 It is `TauCeti.SectionChartData.changeAtlas` for the chart data of the two atlases. -/
 def changeAtlas (h : TransfersTo A A' μ p k) :
     SobolevSection A μ p k →L[ℝ] SobolevSection A' μ p k :=
-  SectionChartData.changeAtlas (A.readsFrom_sectionChartData A' μ) h
+  SectionChartData.changeAtlas (A.sectionChartData_determines A' μ) h
 
 /-- The chart data of `changeAtlas h w` are the readings in the charts of `A'` of any section whose
 readings in the charts of `A` are the chart data of `w`. -/
@@ -201,7 +201,7 @@ theorem changeAtlas_comp {A'' : FiniteBundleAtlas E M F V} (h : TransfersTo A A'
 charts of `A'` have the same readings almost everywhere in the charts of `A`. -/
 theorem changeAtlas_injective (h : TransfersTo A A' μ p k) :
     Function.Injective (changeAtlas h) :=
-  SectionChartData.changeAtlas_injective _ (A'.readsFrom_sectionChartData A μ) h
+  SectionChartData.changeAtlas_injective _ (A'.sectionChartData_determines A μ) h
 
 /-- The change of atlas commutes with forgetting the highest derivative. -/
 theorem lowerOrderL_changeAtlas (h : TransfersTo A A' μ p (k + 1)) (h₀ : TransfersTo A A' μ p k)
@@ -226,8 +226,8 @@ corresponding to the element with the same section. In particular their norms ar
 It is `TauCeti.SectionChartData.atlasEquiv` for the chart data of the two atlases. -/
 def atlasEquiv (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k) :
     SobolevSection A μ p k ≃L[ℝ] SobolevSection A' μ p k :=
-  SectionChartData.atlasEquiv (A.readsFrom_sectionChartData A' μ)
-    (A'.readsFrom_sectionChartData A μ) h h'
+  SectionChartData.atlasEquiv (A.sectionChartData_determines A' μ)
+    (A'.sectionChartData_determines A μ) h h'
 
 @[simp]
 theorem toContinuousLinearMap_atlasEquiv (h : TransfersTo A A' μ p k)
@@ -269,7 +269,7 @@ atlas with the same section. -/
 theorem exists_norm_changeAtlas_le (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k) :
     ∃ C : ℝ, 0 < C ∧ ∀ w : SobolevSection A μ p k,
       ‖changeAtlas h w‖ ≤ C * ‖w‖ ∧ ‖w‖ ≤ C * ‖changeAtlas h w‖ :=
-  SectionChartData.exists_norm_changeAtlas_le _ (A'.readsFrom_sectionChartData A μ) h h'
+  SectionChartData.exists_norm_changeAtlas_le _ (A'.sectionChartData_determines A μ) h h'
 
 end SobolevSection
 

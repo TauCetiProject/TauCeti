@@ -28,7 +28,7 @@ The construction is the change of chart data `TauCeti.SectionChartData.changeAtl
 `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.ChartData`; the boundaryless
 `TauCeti.SobolevSection.changeAtlas` of `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.Equiv`
 is another instance of it. What it needs here is that the chart data of `A'` are read off
-from those of `A` (`TauCeti.FiniteBundleAtlas.readsFrom_halfSectionChartData`): on the part of the
+from those of `A` (`TauCeti.FiniteBundleAtlas.halfSectionChartData_determines`): on the part of the
 interior of the image of a chart of `A'` lying over the domain of a chart of `A`, the reading of a
 section is the coordinate change of the bundle applied to its reading in the chart of `A`
 (`TauCeti.FiniteBundleAtlas.halfCoord_eq_coordChangeL_halfCoord`), at the chart transition, which
@@ -45,7 +45,7 @@ keeps interior points interior and carries null sets to null sets
 
 ## Main results
 
-* `TauCeti.FiniteBundleAtlas.readsFrom_halfSectionChartData`: the chart data of one atlas are
+* `TauCeti.FiniteBundleAtlas.halfSectionChartData_determines`: the chart data of one atlas are
   read off from those of any other.
 * `TauCeti.BorderedSobolevSection.chartValueL_changeAtlas_ae`: the chart data of
   `changeAtlas h w` are the readings in `A'` of any section of `w`.
@@ -81,9 +81,9 @@ omit [FiniteDimensional ℝ F] in
 any other: on the part of the interior of the image of chart `i'` of `A'` lying over the domain of
 chart `i` of `A`, the reading in chart `i'` is the coordinate change of the bundle applied to the
 reading in chart `i` at the chart transition, which carries null sets to null sets. -/
-theorem FiniteBundleAtlas.readsFrom_halfSectionChartData
+theorem FiniteBundleAtlas.halfSectionChartData_determines
     [IsManifold closedUpperHalfPlaneModel 1 M] :
-    A.halfSectionChartData.ReadsFrom A'.halfSectionChartData volume :=
+    A.halfSectionChartData.Determines A'.halfSectionChartData volume :=
   .intro (fun i i' ↦ {y | (A'.chart i').symm (closedUpperHalfPlaneModel.symm y) ∈ A.dom i})
     (fun i i' y ↦ A.chart i ((A'.chart i').symm (closedUpperHalfPlaneModel.symm y)))
     (fun i i' y ↦ (A.triv i).coordChangeL ℝ (A'.triv i')
@@ -139,7 +139,7 @@ data are the readings of the same section
 It is `TauCeti.SectionChartData.changeAtlas` for the chart data of the two atlases. -/
 def changeAtlas (h : TransfersTo A A' p k) :
     BorderedSobolevSection A p k →L[ℝ] BorderedSobolevSection A' p k :=
-  SectionChartData.changeAtlas (A.readsFrom_halfSectionChartData A') h
+  SectionChartData.changeAtlas (A.halfSectionChartData_determines A') h
 
 /-- The chart data of `changeAtlas h w` are the readings in the charts of `A'` of any section whose
 readings in the charts of `A` are the chart data of `w`. -/
@@ -189,7 +189,7 @@ theorem changeAtlas_comp {A'' : FiniteBundleAtlas ClosedUpperHalfPlane M F V}
 charts of `A'` have the same readings almost everywhere in the charts of `A`. -/
 theorem changeAtlas_injective (h : TransfersTo A A' p k) :
     Function.Injective (changeAtlas h) :=
-  SectionChartData.changeAtlas_injective _ (A'.readsFrom_halfSectionChartData A) h
+  SectionChartData.changeAtlas_injective _ (A'.halfSectionChartData_determines A) h
 
 /-- The change of atlas commutes with forgetting the highest derivative. -/
 theorem lowerOrderL_changeAtlas (h : TransfersTo A A' p (k + 1)) (h₀ : TransfersTo A A' p k)
@@ -214,8 +214,8 @@ corresponding to the element with the same section. In particular their norms ar
 It is `TauCeti.SectionChartData.atlasEquiv` for the chart data of the two atlases. -/
 def atlasEquiv (h : TransfersTo A A' p k) (h' : TransfersTo A' A p k) :
     BorderedSobolevSection A p k ≃L[ℝ] BorderedSobolevSection A' p k :=
-  SectionChartData.atlasEquiv (A.readsFrom_halfSectionChartData A')
-    (A'.readsFrom_halfSectionChartData A) h h'
+  SectionChartData.atlasEquiv (A.halfSectionChartData_determines A')
+    (A'.halfSectionChartData_determines A) h h'
 
 @[simp]
 theorem toContinuousLinearMap_atlasEquiv (h : TransfersTo A A' p k)
@@ -258,7 +258,7 @@ atlas with the same section. -/
 theorem exists_norm_changeAtlas_le (h : TransfersTo A A' p k) (h' : TransfersTo A' A p k) :
     ∃ C : ℝ, 0 < C ∧ ∀ w : BorderedSobolevSection A p k,
       ‖changeAtlas h w‖ ≤ C * ‖w‖ ∧ ‖w‖ ≤ C * ‖changeAtlas h w‖ :=
-  SectionChartData.exists_norm_changeAtlas_le _ (A'.readsFrom_halfSectionChartData A) h h'
+  SectionChartData.exists_norm_changeAtlas_le _ (A'.halfSectionChartData_determines A) h h'
 
 end BorderedSobolevSection
 
