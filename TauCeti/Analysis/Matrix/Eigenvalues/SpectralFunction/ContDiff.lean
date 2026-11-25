@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction
+public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
@@ -100,8 +100,8 @@ private theorem abs_fderiv_spectralFunction_sub_le
     rw [h₁]
     exact (sum_smul_by_parts_prefixSum_extend y q).symm
   have hq (j : Fin (Fintype.card ι)) : |q j| ≤ ‖H‖ :=
-    (RCLike.abs_re_le_norm _).trans <| (norm_star_dotProduct_mulVec_le _ _).trans_eq <| by
-      rw [WithLp.toLp_ofLp, u.orthonormal.1 j, one_pow, mul_one, Submodule.norm_coe]
+    (RCLike.abs_re_le_norm _).trans <| (norm_star_dotProduct_mulVec_le _ _ _).trans_eq <| by
+      rw [WithLp.toLp_ofLp, u.orthonormal.1 j, one_mul, mul_one, Submodule.norm_coe]
   rw [hgB, show fderiv ℝ (fun B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ↦
       f B.property.isHermitian.eigenvalues₀) B H - ∑ j, y j * q j =
       ∑ j, (fderiv ℝ f B.property.isHermitian.eigenvalues₀ (Pi.single j 1) * q j - y j * q j) by

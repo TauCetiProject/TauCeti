@@ -34,7 +34,7 @@ and the inner product together.
 * `Matrix.frobenius_inner_def` — the inner product is the sum of the entrywise inner products.
 * `Matrix.frobenius_inner_smul_left` — the inner product is conjugate-linear in its first argument
   for the entrywise scalar action on matrices.
-* `Matrix.norm_star_dotProduct_mulVec_le` — the quadratic form `v* H v` is at most `‖H‖ ‖v‖²`.
+* `Matrix.norm_star_dotProduct_mulVec_le` — the bilinear form `v* H w` is at most `‖v‖ ‖H‖ ‖w‖`.
 * `Matrix.frobenius_inner_eq_sum_conj_mul`, `Matrix.frobenius_real_inner_eq_sum_mul` — over `𝕜`
   itself, the inner product is `∑ i, ∑ j, conj (A i j) * B i j`, and over `ℝ` it is
   `∑ i, ∑ j, A i j * B i j`.
@@ -141,12 +141,12 @@ theorem frobenius_norm_sq_eq_sum_norm_sq [SeminormedAddCommGroup E] (A : Matrix 
   simp only [frobenius_norm_def, ← Real.sqrt_eq_rpow, Real.rpow_two]
   exact Real.sq_sqrt (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
 
-/-- **The quadratic form is bounded by the Frobenius norm**: `|v* H v| ≤ ‖H‖ ‖v‖²`, for the
-Euclidean norm of `v`. -/
-theorem norm_star_dotProduct_mulVec_le (H : Matrix n n 𝕜) (v : n → 𝕜) :
-    ‖star v ⬝ᵥ (H *ᵥ v)‖ ≤ ‖H‖ * ‖WithLp.toLp 2 v‖ ^ 2 := by
-  -- The quadratic form is the single entry of the product of a row, `H` and a column.
-  have h : star v ⬝ᵥ (H *ᵥ v) = (replicateRow Unit (star v) * H * replicateCol Unit v) () () := by
+/-- **The bilinear form of a matrix is bounded by its Frobenius norm**:
+`|v* H w| ≤ ‖v‖ ‖H‖ ‖w‖`, for the Euclidean norms of `v` and `w`. -/
+theorem norm_star_dotProduct_mulVec_le (H : Matrix m n 𝕜) (v : m → 𝕜) (w : n → 𝕜) :
+    ‖star v ⬝ᵥ (H *ᵥ w)‖ ≤ ‖WithLp.toLp 2 v‖ * ‖H‖ * ‖WithLp.toLp 2 w‖ := by
+  -- The bilinear form is the single entry of the product of a row, `H` and a column.
+  have h : star v ⬝ᵥ (H *ᵥ w) = (replicateRow Unit (star v) * H * replicateCol Unit w) () () := by
     simp only [dotProduct, Pi.star_apply, RCLike.star_def, mulVec, Finset.mul_sum,
       Matrix.mul_apply, replicateRow_apply, replicateCol_apply, Finset.sum_mul, mul_assoc]
     rw [Finset.sum_comm]
@@ -154,12 +154,12 @@ theorem norm_star_dotProduct_mulVec_le (H : Matrix n n 𝕜) (v : n → 𝕜) :
     rw [frobenius_norm_replicateRow, EuclideanSpace.norm_eq, EuclideanSpace.norm_eq]
     simp only [Pi.star_apply, norm_star]
   rw [h]
-  calc _ ≤ ‖replicateRow Unit (star v) * H * replicateCol Unit v‖ :=
+  calc _ ≤ ‖replicateRow Unit (star v) * H * replicateCol Unit w‖ :=
         norm_apply_le_frobenius_norm _ _ _
-    _ ≤ ‖replicateRow Unit (star v)‖ * ‖H‖ * ‖replicateCol Unit v‖ :=
+    _ ≤ ‖replicateRow Unit (star v)‖ * ‖H‖ * ‖replicateCol Unit w‖ :=
         (frobenius_norm_mul _ _).trans
           (mul_le_mul_of_nonneg_right (frobenius_norm_mul _ _) (norm_nonneg _))
-    _ = ‖H‖ * ‖WithLp.toLp 2 v‖ ^ 2 := by rw [hr, frobenius_norm_replicateCol]; ring
+    _ = ‖WithLp.toLp 2 v‖ * ‖H‖ * ‖WithLp.toLp 2 w‖ := by rw [hr, frobenius_norm_replicateCol]
 
 /-- The Frobenius inner product of matrices over `𝕜` is `∑ i, ∑ j, conj (A i j) * B i j`. -/
 theorem frobenius_inner_eq_sum_conj_mul (A B : Matrix m n 𝕜) :

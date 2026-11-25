@@ -217,7 +217,7 @@ theorem eventually_forall_mem_subdifferential_norm_sub_le
   -- On a ball of radius `r` about `x`, `f` is finite and its real representative is within
   -- `ε / 3 ‖z - x‖` of its first-order expansion. A subgradient `y'` at a point of the ball of
   -- radius `r / 3` is then within `ε` of `y`, by
-  -- `ContinuousLinearMap.apply_sub_apply_le_of_forall_add_le` in the direction `y' - y`.
+  -- `TauCeti.apply_sub_apply_le_of_forall_add_le` in the direction `y' - y`.
   obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.1
     (hdom.and ((hasGradientAt_iff_isLittleO.1 hd).def (show 0 < ε / 3 by positivity)))
   have hexp : ∀ z ∈ Metric.ball x r,
@@ -228,7 +228,7 @@ theorem eventually_forall_mem_subdifferential_norm_sub_le
     fun z hz => by
       simpa only [innerSL_apply_apply, innerₗ_apply_apply, real_inner_comm] using
         toReal_add_le_toReal_of_mem_subdifferential (innerₗ E) hy' (hball z hz).1
-  have h := ContinuousLinearMap.apply_sub_apply_le_of_forall_add_le hr hexp hx' hsub (y' - y)
+  have h := apply_sub_apply_le_of_forall_add_le hr hexp hx' hsub (y' - y)
   rw [innerSL_apply_apply, innerSL_apply_apply, ← inner_sub_left,
     real_inner_self_eq_norm_sq] at h
   nlinarith [norm_nonneg (y' - y)]

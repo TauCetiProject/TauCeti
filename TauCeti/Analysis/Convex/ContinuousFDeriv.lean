@@ -25,7 +25,7 @@ about `x`, the step `t • h` of length `r / 3` gives `(L' - L) h ≤ 3 η ‖h�
 
 ## Main results
 
-* `ContinuousLinearMap.apply_sub_apply_le_of_forall_add_le`: a subgradient at a point near a
+* `TauCeti.apply_sub_apply_le_of_forall_add_le`: a subgradient at a point near a
   point of differentiability is close to the derivative there.
 * `ConvexOn.continuousAt_fderiv`, `ConvexOn.continuousOn_fderiv`: continuity of the derivative of
   a differentiable convex function.
@@ -39,11 +39,13 @@ open scoped Topology
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {g : E → ℝ} {L L' : E →L[ℝ] ℝ}
   {x x' : E} {r η : ℝ}
 
+namespace TauCeti
+
 /-- **Subgradients near a point of differentiability.** Suppose `g` is within `η ‖z - x‖` of
 `g x + L (z - x)` for every `z` in the ball of radius `r` about `x`, and `L'` is a subgradient of
 `g` at a point `x'` within `r / 3` of `x`, on that ball. Then `(L' - L) h ≤ 3 η ‖h‖` for every
 `h`. No convexity of `g` is used. -/
-theorem ContinuousLinearMap.apply_sub_apply_le_of_forall_add_le (hr : 0 < r)
+theorem apply_sub_apply_le_of_forall_add_le (hr : 0 < r)
     (hexp : ∀ z ∈ ball x r, |g z - g x - L (z - x)| ≤ η * ‖z - x‖)
     (hx' : x' ∈ ball x (r / 3)) (hsub : ∀ z ∈ ball x r, g x' + L' (z - x') ≤ g z) (h : E) :
     L' h - L h ≤ 3 * η * ‖h‖ := by
@@ -89,6 +91,8 @@ theorem ContinuousLinearMap.apply_sub_apply_le_of_forall_add_le (hr : 0 < r)
   calc L' h - L h ≤ η * r / t := this
     _ = 3 * η * ‖h‖ := by simp only [t]; field_simp
 
+end TauCeti
+
 /-- **Differentiable convex functions are continuously differentiable at a point.** If `g` is
 convex on a neighbourhood `s` of `x` and differentiable at every point near `x`, then its derivative
 is continuous at `x`. -/
@@ -110,8 +114,8 @@ theorem ConvexOn.continuousAt_fderiv {s : Set E} (hg : ConvexOn ℝ s g) (hs : s
       (hball x' hx'r).1.2.hasFDerivAt.hasFDerivWithinAt
   have hbound : ‖fderiv ℝ g x' - fderiv ℝ g x‖ ≤ 3 * η := by
     refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun h ↦ ?_
-    have h₁ := ContinuousLinearMap.apply_sub_apply_le_of_forall_add_le hr hexp hx' hsub h
-    have h₂ := ContinuousLinearMap.apply_sub_apply_le_of_forall_add_le hr hexp hx' hsub (-h)
+    have h₁ := TauCeti.apply_sub_apply_le_of_forall_add_le hr hexp hx' hsub h
+    have h₂ := TauCeti.apply_sub_apply_le_of_forall_add_le hr hexp hx' hsub (-h)
     simp only [map_neg, norm_neg] at h₂
     rw [sub_apply, Real.norm_eq_abs, abs_le]
     constructor <;> linarith

@@ -276,7 +276,7 @@ matrix `U`. The entries of `μ` are transported to the index type `ι` along the
 `Matrix.IsHermitian.eigenvalues`. For a unitary `U` the sorted eigenvalues of `U diag(μ) U*` are a
 rearrangement of `μ` (`Matrix.eigenvalues₀_conjDiagonalSelfAdjoint`), so a symmetric function `f`
 equals its spectral function composed with this map. -/
-@[expose] def conjDiagonalSelfAdjoint (U : Matrix ι ι 𝕜) :
+def conjDiagonalSelfAdjoint (U : Matrix ι ι 𝕜) :
     (Fin (Fintype.card ι) → ℝ) →ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) where
   toFun μ := ⟨U * diagonal (fun k ↦
       (μ ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜)) * star U,
@@ -293,10 +293,11 @@ equals its spectral function composed with this map. -/
         funext fun k ↦ by simp [RCLike.real_smul_eq_coe_mul]]
 
 /-- The matrix `U diag(μ) U*` underlying `Matrix.conjDiagonalSelfAdjoint U μ`. -/
+@[simp]
 theorem coe_conjDiagonalSelfAdjoint_apply (U : Matrix ι ι 𝕜) (μ : Fin (Fintype.card ι) → ℝ) :
     (conjDiagonalSelfAdjoint U μ : Matrix ι ι 𝕜) = U * diagonal (fun k ↦
       (μ ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜)) * star U :=
-  rfl
+  (rfl)
 
 /-- **The sorted eigenvalues of `U diag(μ) U*`** for a unitary `U` are the entries of `μ`, sorted
 decreasingly by `Tuple.sortDesc`. -/
@@ -332,8 +333,7 @@ theorem differentiableAt_spectralFunction_iff
           ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) =
           A.property.isHermitian.eigenvalues k := by
         rw [← A.property.isHermitian.eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]
-      simp [Φ, U, coe_conjDiagonalSelfAdjoint_apply, Unitary.conjStarAlgAut_apply, he,
-        Function.comp_def]
+      simp [Φ, U, Unitary.conjStarAlgAut_apply, he, Function.comp_def]
     have hc := (hΦA ▸ h).comp _ (LinearMap.toContinuousLinearMap Φ).differentiableAt
     simpa [Function.comp_def, hΦ] using hc
   · obtain ⟨u, hu⟩ := A.property.isHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul

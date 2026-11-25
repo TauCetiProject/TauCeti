@@ -15,7 +15,6 @@ import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Algebra.Order.Group.Finite
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
 import TauCeti.Analysis.Convex.ContinuousFDeriv
-import TauCeti.Analysis.Convex.SpectralFunction
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Matrix.Eigenvalues.Smooth
 import TauCeti.Analysis.Matrix.EntrywiseOpNorm
