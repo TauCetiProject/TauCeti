@@ -25,12 +25,15 @@ is essential; no finite-generation hypothesis is required when a lower bound is 
 
 The positive-degree action `A₊ M` is itself a homogeneous submodule, stable under degree-zero
 scalars: its degree-`p` components are sums of products `a • y` with `a` of positive degree `i`
-and `y` of degree `p - i`.
+and `y` of degree `p - i`. Over a nonnegatively graded scalar semiring, every finitely generated
+graded `A`-module is automatically bounded below (`exists_piece_eq_bot_of_lt_of_moduleFinite`),
+giving the generating-degree criterion
+`isGeneratedInDegree_iff_piece_le_positive_smul_top_of_moduleFinite` without an explicit bound.
 
 ## References
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of graded rings*, Section 2.3, for graded modules.
-* A. Beilinson, V. Ginzburg and W. Soergel, "Koszul duality patterns in representation theory",
+* A. Beilinson, V. Ginzburg and W. Soergel, *Koszul duality patterns in representation theory*,
   Section 1.2, for detection of linearity via the generating degrees of minimal resolutions.
 -/
 
@@ -41,6 +44,44 @@ namespace TauCeti.InternalGrading
 open _root_.DirectSum
 
 universe uk uA uM
+
+section Semiring
+
+variable {k : Type uk} [Semiring k] {A : Type uA} [Semiring A] [Module k A]
+  {M : Type uM} [AddCommMonoid M] [Module k M] [Module A M]
+  (𝒜 : ℤ → Submodule k A) [DirectSum.Decomposition 𝒜]
+  {G : InternalGrading k M ℤ} [SetLike.GradedSMul 𝒜 G.piece]
+
+/-- Over a nonnegatively graded scalar semiring, an internally graded module finitely generated
+over `A` has grading bounded below: all homogeneous pieces strictly below some degree vanish. -/
+theorem exists_piece_eq_bot_of_lt_of_moduleFinite [Module.Finite A M]
+    (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) :
+    ∃ b : ℤ, ∀ p < b, G.piece p = ⊥ := by
+  classical
+  have hspan : Submodule.span A {x : M | ∃ d, x ∈ G.piece d} = ⊤ :=
+    G.span_setOf_exists_mem_piece_eq_top A
+  obtain ⟨s, hs, hfg⟩ := (Submodule.fg_span_iff_fg_span_finset_subset _).mp
+    (hspan.symm ▸ Module.Finite.fg_top)
+  choose d hd using fun x : s ↦ hs x.property
+  obtain ⟨b, hb⟩ := (Set.finite_range d).bddBelow
+  refine ⟨b, fun p hp ↦ (Submodule.eq_bot_iff _).mpr fun y hy ↦ ?_⟩
+  have hmem : y ∈ Submodule.span A (s : Set M) := by
+    rw [← hfg, hspan]
+    exact Submodule.mem_top
+  obtain ⟨n, c, g, rfl⟩ := Submodule.mem_span_set'.mp hmem
+  rw [← decompose_of_mem_same G.piece hy, decompose_sum,
+    DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  have hgi : (g i : M) ∈ G.piece (d (g i)) := hd (g i)
+  have h := _root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece hgi
+    (a := c i) (i := p - d (g i))
+  rw [sub_add_cancel] at h
+  have hbi : b ≤ d (g i) := hb ⟨g i, rfl⟩
+  have h0 : (decompose 𝒜 (c i) (p - d (g i)) : A) = 0 :=
+    (Submodule.eq_bot_iff _).mp (h𝒜 _ (by omega)) _ (decompose 𝒜 (c i) _).property
+  rw [h, h0, zero_smul]
+
+end Semiring
 
 variable {k : Type uk} [CommSemiring k] {A : Type uA} [Semiring A] [Algebra k A]
   {M : Type uM} [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
@@ -186,9 +227,9 @@ theorem smul_mem_positive_smul_top [SetLike.GradedMul 𝒜] {a : A} (ha : a ∈ 
     exact Submodule.smul_mem_smul (hmul b hb) Submodule.mem_top
   · simpa only [smul_add] using Submodule.add_mem _ hx hy
 
-variable [GradedAlgebra 𝒜]
+variable [DirectSum.Decomposition 𝒜]
 
-/-- A bounded-below module over a nonnegatively graded algebra is generated in degree `d`
+/-- A bounded-below module over a nonnegatively graded scalar semiring is generated in degree `d`
 exactly when its homogeneous pieces outside degree `d` lie in `A₊ M`. Equivalently, its quotient
 by the positive-degree action is concentrated in degree `d`. -/
 theorem isGeneratedInDegree_iff_piece_le_positive_smul_top (h𝒜 : ∀ i < 0, 𝒜 i = ⊥)
@@ -224,5 +265,15 @@ theorem isGeneratedInDegree_iff_piece_le_positive_smul_top_of_finite [Module.Fin
   by_contra hne
   have := hb hne
   omega
+
+/-- The generating-degree criterion for a module finitely generated over `A` when `𝒜` is
+nonnegatively graded. -/
+theorem isGeneratedInDegree_iff_piece_le_positive_smul_top_of_moduleFinite [Module.Finite A M]
+    (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) (d : ℤ) :
+    G.IsGeneratedInDegree A d ↔
+      ∀ p, p ≠ d → G.piece p ≤
+        (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
+  obtain ⟨b, hb⟩ := exists_piece_eq_bot_of_lt_of_moduleFinite 𝒜 h𝒜 (G := G)
+  exact isGeneratedInDegree_iff_piece_le_positive_smul_top 𝒜 h𝒜 b hb d
 
 end TauCeti.InternalGrading
