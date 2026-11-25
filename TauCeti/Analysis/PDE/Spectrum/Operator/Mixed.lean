@@ -87,7 +87,9 @@ it has compact resolvent and spectrum its mixed eigenvalues, all nonnegative.
   `TauCeti.PDE.mem_resolventSet_mixedOperator_laplacian_of_neg`,
   `TauCeti.PDE.hasCompactResolvent_mixedOperator_laplacian`,
   `TauCeti.PDE.mem_spectrum_mixedOperator_laplacian_iff`,
-  `TauCeti.PDE.spectrum_mixedOperator_laplacian` and
+  `TauCeti.PDE.spectrum_mixedOperator_laplacian`,
+  `TauCeti.PDE.mem_graph_mixedOperator_laplacian_iff`,
+  `TauCeti.PDE.mem_domain_mixedOperator_laplacian_iff` and
   `TauCeti.PDE.value_mem_domain_mixedOperator_laplacian`: the mixed Laplacian `-Δ_Γ`.
 
 ## References
@@ -581,6 +583,33 @@ section Laplacian
 
 variable [DecidableEq ι]
 
+/-- **The graph of the mixed Laplacian `-Δ_Γ`** consists of the pairs `(u, f)` for which
+`u ∈ H¹_Γ(Ω)` is a weak solution of `-Δ u = f`: `∫_Ω ∇u · ∇v = ∫_Ω f v` for every
+`v ∈ H¹_Γ(Ω)`. -/
+theorem mem_graph_mixedOperator_laplacian_iff (hΓ : Disjoint Γ Omega)
+    {x : Lp ℝ 2 (mu.restrict Omega) × Lp ℝ 2 (mu.restrict Omega)} :
+    x ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) Γ).graph ↔
+      ∃ u : W1pVanishingOn mu Omega 2 Γ,
+        W1p.value (u : W1p mu Omega 2) = x.1 ∧
+          ∀ v : W1pVanishingOn mu Omega 2 Γ,
+            ⟪W1p.gradient (u : W1p mu Omega 2), W1p.gradient (v : W1p mu Omega 2)⟫_ℝ =
+              ⟪x.2, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+  simp only [mem_graph_mixedOperator_iff _ hΓ, energyFormH1_one_zero_zero_eq_inner]
+
+/-- **The domain of the mixed Laplacian `-Δ_Γ`**: the values of the `u ∈ H¹_Γ(Ω)` that weakly
+solve `-Δ u = g`, `∫_Ω ∇u · ∇v = ∫_Ω g v` for every `v ∈ H¹_Γ(Ω)`, for some `g ∈ L²(Ω)`. -/
+theorem mem_domain_mixedOperator_laplacian_iff (hΓ : Disjoint Γ Omega)
+    {f : Lp ℝ 2 (mu.restrict Omega)} :
+    f ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) Γ).domain ↔
+      ∃ u : W1pVanishingOn mu Omega 2 Γ,
+        W1p.value (u : W1p mu Omega 2) = f ∧ ∃ g : Lp ℝ 2 (mu.restrict Omega),
+          ∀ v : W1pVanishingOn mu Omega 2 Γ,
+            ⟪W1p.gradient (u : W1p mu Omega 2), W1p.gradient (v : W1p mu Omega 2)⟫_ℝ =
+              ⟪g, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+  simp only [mem_domain_mixedOperator_iff _ hΓ, energyFormH1_one_zero_zero_eq_inner]
+
 /-- The value of a weak solution `u ∈ H¹_Γ(Ω)` of `-Δ u = g`, `∫_Ω ∇u · ∇v = ∫_Ω g v` for every
 `v ∈ H¹_Γ(Ω)`, lies in the domain of the mixed Laplacian `-Δ_Γ`. -/
 theorem value_mem_domain_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
@@ -591,7 +620,7 @@ theorem value_mem_domain_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
     W1p.value (u : W1p mu Omega 2) ∈
       (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
       (1 : Matrix ι ι ℝ)) Γ).domain :=
-  value_mem_domain_mixedOperator _ hΓ fun v ↦ by rw [energyFormH1_one_zero_zero_eq_inner, hu]
+  (mem_domain_mixedOperator_laplacian_iff hΓ).2 ⟨u, rfl, g, hu⟩
 
 /-- **The mixed Laplacian `-Δ_Γ` is self-adjoint.** -/
 theorem isSelfAdjoint_mixedOperator_laplacian (hΓ : Disjoint Γ Omega) :
