@@ -13,10 +13,10 @@ public import TauCeti.RepresentationTheory.CharacterTable.Glauberman.CanonicalEx
 /-!
 # Checks for Glauberman's canonical extension
 
-These examples check `TauCeti.IsCanonicalExtension` in three small cases.
+These examples check `TauCeti.IsCanonicalExtension` in two small cases. The general trivial-action
+case, where the canonical extension of `χ` is `x ↦ χ x.left`, is
+`TauCeti.isCanonicalExtension_one_left`.
 
-* Trivial action: `Γ ⋊[1] S` is `Γ × S`, and the canonical extension of `χ` is `χ × 1_S`,
-  `x ↦ χ x.left`.
 * `S₃ = C₃ ⋊ C₂`, as the affine group `TauCeti.AffineGroup (ZMod 3)`, with `C₂ = (ZMod 3)ˣ` acting
   on `C₃` by negation: the sign character also extends the trivial character of `C₃`, but the
   canonical extension of `1` is `1`, and the sign is not canonical.
@@ -32,22 +32,7 @@ namespace TauCeti.Examples.RepresentationTheory.CanonicalExtension
 
 open scoped IntermediateField
 
-variable {k : Type*} [Field k]
-
-/-- **Trivial action**: for the trivial action, `Γ ⋊[1] S ≅ Γ × S`, and the canonical extension of
-an irreducible character `χ` of `Γ` is `χ × 1_S`, read through the first coordinate. -/
-theorem isCanonicalExtension_one_left {Γ S : Type*} [Group Γ] [Group S] {χ : Γ → k}
-    (hχ : χ ∈ irreducibleCharacters k Γ) :
-    IsCanonicalExtension (1 : S →* MulAut Γ) χ fun x => χ x.left := by
-  obtain ⟨n, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.1 hχ
-  let π : Γ ⋊[(1 : S →* MulAut Γ)] S →* Γ := (MonoidHom.fst Γ S).comp mulEquivProd.toMonoidHom
-  have hπ : Function.Surjective π := fun g => ⟨inl g, rfl⟩
-  refine isCanonicalExtension_iff.2
-    ⟨π.comp_mem_irreducibleCharacters hπ hχ, rfl, n, ρ.comp π, rfl, fun s => ?_⟩
-  have hπs : π (inr s) = 1 := by simp [π]
-  rw [MonoidHom.comp_apply, hπs, map_one, map_one]
-
-variable [IsAlgClosed k] [CharZero k]
+variable {k : Type*} [Field k] [IsAlgClosed k] [CharZero k]
 
 /-- **`S₃ = C₃ ⋊ C₂`**, as the affine group `TauCeti.AffineGroup (ZMod 3)`, in which the unit `-1`
 acts on `C₃` by negation: the sign character, `1` or `-1` according to whether the linear part
