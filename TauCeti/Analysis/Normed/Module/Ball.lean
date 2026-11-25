@@ -85,6 +85,9 @@ The balls of radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are
 For `ρ ≤ ‖ξ‖ / 2`, the points of the dilate `t • ball ξ ρ` with `t > 0` have norms strictly between
 `t ‖ξ‖ / 2` and `3 t ‖ξ‖ / 2` (`TauCeti.norm_bounds_of_mem_smul_ball`), so the dilates
 `c ^ k • ball ξ ρ` with `c ≥ 3` are pairwise disjoint (`TauCeti.pairwise_disjoint_pow_smul_ball`).
+
+Along any nonzero-norm direction, a sufficiently large positive ray parameter pushes any base point
+outside any closed ball (`TauCeti.exists_pos_add_smul_notMem_closedBall`).
 -/
 
 public section
@@ -507,6 +510,26 @@ theorem pairwise_disjoint_ball_add_natCast_smul (x v : E) :
   nlinarith [norm_nonneg v]
 
 end Disjoint
+
+section Escape
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Along any vector `v` of nonzero norm, a sufficiently large positive ray parameter pushes `z`
+outside the closed ball `Metric.closedBall x R`. -/
+theorem exists_pos_add_smul_notMem_closedBall (z x : E) {v : E} (hv : ‖v‖ ≠ 0) (R : ℝ) :
+    ∃ T : ℝ, 0 < T ∧ z + T • v ∈ (Metric.closedBall x R)ᶜ := by
+  let T : ℝ := (max R 0 + ‖z - x‖ + 1) / ‖v‖
+  have hT_pos : 0 < T := div_pos (by positivity) ((norm_nonneg v).lt_of_ne' hv)
+  refine ⟨T, hT_pos, ?_⟩
+  rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_eq_norm, not_le]
+  have hnorm : T * ‖v‖ = max R 0 + ‖z - x‖ + 1 := div_mul_cancel₀ _ hv
+  have htri := norm_le_norm_add_norm_sub' (T • v) (x - z)
+  have hsub : T • v - (x - z) = z + T • v - x := by abel
+  rw [hsub, norm_smul, Real.norm_of_nonneg hT_pos.le, hnorm, norm_sub_rev x z] at htri
+  linarith [le_max_left R 0]
+
+end Escape
 
 section Midpoint
 

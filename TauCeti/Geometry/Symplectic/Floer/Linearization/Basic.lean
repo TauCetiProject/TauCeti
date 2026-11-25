@@ -75,6 +75,26 @@ Hamiltonian perturbations.
 
 public section
 
+namespace TauCeti
+
+/-- **The arithmetic of a Leibniz bound.** If `|r| ≤ 1`, `‖b‖ ≤ M y` and `‖c‖ ≤ M (B y)`, then
+`‖r a + b + c‖² ≤ 2 ‖a‖² + 2 (M (1 + B))² y²`. This is the estimate shared by the linearized Floer
+operator and its formal adjoint on a field multiplied by a cutoff, where `r a` is the cut-off
+operator term and `b`, `c` are the terms differentiating the cutoff. -/
+theorem norm_smul_add_add_sq_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    {r M B y : ℝ} {a b c : E} (hr : |r| ≤ 1) (hb : ‖b‖ ≤ M * y) (hc : ‖c‖ ≤ M * (B * y)) :
+    ‖r • a + b + c‖ ^ 2 ≤ 2 * ‖a‖ ^ 2 + 2 * (M * (1 + B)) ^ 2 * y ^ 2 := by
+  have ha : ‖r • a‖ ≤ ‖a‖ := by
+    rw [norm_smul, Real.norm_eq_abs]
+    exact mul_le_of_le_one_left (norm_nonneg _) hr
+  have hsum : ‖r • a + b + c‖ ≤ ‖a‖ + M * (1 + B) * y := by
+    refine norm_add₃_le.trans ?_
+    linarith
+  calc _ ≤ (‖a‖ + M * (1 + B) * y) ^ 2 := by gcongr
+    _ ≤ _ := by nlinarith [sq_nonneg (‖a‖ - M * (1 + B) * y)]
+
+end TauCeti
+
 namespace TauCeti.SymplecticForm
 
 open ContinuousLinearMap
@@ -338,6 +358,14 @@ noncomputable def floerLinearizationCoeff (ω : SymplecticForm V)
     fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z) -
     (J z (u z)).comp (fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z))
 
+/-- The zeroth-order part of the linearized operator at `z` depends on the Floer data `J`, `Ks`,
+`Kt` only through their values at `z`, as functions of the target point. -/
+theorem floerLinearizationCoeff_congr_data (ω : SymplecticForm V)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V)
+    {z : ℝ × ℝ} (hJ : J z = J' z) (hKs : Ks z = Ks' z) (hKt : Kt z = Kt' z) :
+    ω.floerLinearizationCoeff J Ks Kt u z = ω.floerLinearizationCoeff J' Ks' Kt' u z := by
+  rw [floerLinearizationCoeff, floerLinearizationCoeff, hJ, hKs, hKt]
+
 /-- The zeroth-order part of the linearized Floer operator, evaluated on a vector. -/
 theorem floerLinearizationCoeff_apply (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) (v : V) :
@@ -403,23 +431,8 @@ theorem norm_floerLinearization_fun_smul_sq_le (ω : SymplecticForm V)
     gcongr
     · exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [stdComplexLineImag, hM])
     · exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
-  have h₀ : ‖f z • ω.floerLinearization J Ks Kt u ξ z‖ ≤ ‖ω.floerLinearization J Ks Kt u ξ z‖ := by
-    rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_left (norm_nonneg _) hf₁
-  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf hξ, add_assoc]
-  have h := norm_add_le (f z • ω.floerLinearization J Ks Kt u ξ z)
-    (fderiv ℝ f z stdComplexLineReal • ξ z + fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
-  have h' := norm_add_le (fderiv ℝ f z stdComplexLineReal • ξ z)
-    (fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
-  have hsum : ‖f z • ω.floerLinearization J Ks Kt u ξ z + (fderiv ℝ f z stdComplexLineReal • ξ z +
-      fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))‖ ≤
-      ‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖ := by
-    nlinarith
-  calc _ ≤ (‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖) ^ 2 := by
-        gcongr
-    _ ≤ _ := by
-        nlinarith [sq_nonneg (‖ω.floerLinearization J Ks Kt u ξ z‖ - M * (1 + B) * ‖ξ z‖),
-          mul_pow (M * (1 + B)) ‖ξ z‖ 2]
+  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf hξ]
+  exact norm_smul_add_add_sq_le hf₁ h₁ h₂
 
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
 `z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`
