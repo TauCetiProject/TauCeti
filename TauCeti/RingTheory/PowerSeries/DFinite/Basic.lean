@@ -342,10 +342,16 @@ theorem isDFinite_zero : IsDFinite k (0 : K⟦X⟧) := by
 theorem isDFinite_one : IsDFinite k (1 : K⟦X⟧) := by
   simpa using isDFinite_algebraMap (k := k) (K := K) 1
 
+/-- The exponential series satisfies the differential equation `f' - f = 0`, with coefficients
+`![-1, 1]` in `k[X]`. -/
+theorem sum_smul_iterate_derivative_exp [Algebra ℚ K] :
+    ∑ i, (![-1, 1] : Fin 2 → k[X]) i • (d⁄dX)^[i] (exp K) = 0 := by
+  simp [Fin.sum_univ_two, derivative_exp]
+
 /-- The exponential series is D-finite over every field `k`: it satisfies `f' - f = 0`. -/
 @[simp]
 theorem isDFinite_exp [Algebra ℚ K] : IsDFinite k (exp K) :=
-  ⟨1, ![-1, 1], by simp, by simp [Fin.sum_univ_two, derivative_exp]⟩
+  ⟨1, ![-1, 1], by simp, sum_smul_iterate_derivative_exp⟩
 
 /-! ### Polynomial recurrences for the coefficients -/
 

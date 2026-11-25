@@ -39,6 +39,8 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
   skew-adjoint matrices.
 * `LieAlgebra.Orthogonal.mul_mul_transpose_mem_so`: the orthogonal Lie algebra is stable under
   `A ↦ M A Mᵀ`, in particular under conjugation by orthogonal matrices.
+* `LieAlgebra.Orthogonal.conjTranspose_mem_so`: the orthogonal Lie algebra is closed under
+  conjugate transpose over a star ring.
 * `LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal`: the Gram matrix of the indefinite form is
   invertible.
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mul_indefiniteDiagonal`,
@@ -92,6 +94,14 @@ theorem mul_mul_transpose_mem_so {n R : Type*} [Fintype n] [DecidableEq n] [Comm
     (M : Matrix n n R) {A : Matrix n n R} (hA : A ∈ so n R) : M * A * Mᵀ ∈ so n R := by
   rw [mem_so] at hA ⊢
   simp [Matrix.transpose_mul, hA, Matrix.mul_assoc]
+
+open Matrix in
+/-- **Conjugate transpose preserves the orthogonal Lie algebra** of skew-symmetric matrices, over
+any commutative star ring. -/
+theorem conjTranspose_mem_so {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [StarRing R]
+    {X : Matrix n n R} (hX : X ∈ so n R) : Xᴴ ∈ so n R := by
+  rw [mem_so] at hX ⊢
+  rw [← conjTranspose_transpose_eq_transpose_conjTranspose, hX, conjTranspose_neg]
 
 variable {p q R : Type*} [DecidableEq p] [DecidableEq q] [Fintype p] [Fintype q] [CommRing R]
 
