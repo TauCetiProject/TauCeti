@@ -96,8 +96,9 @@ variable [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [T
 bicollared map with closed image separates the two sides of the bicollar. -/
 private theorem exists_locallyConstant_apply_ne (hH : Subsingleton (deRhamCohomology I M 1))
     (h : IsBicollar f b) (hclosed : IsClosed (range f)) (a : N) :
-    ∃ g : LocallyConstant ((range f)ᶜ : Set M) ℝ, ∀ (hp : b (a, 1) ∈ (range f)ᶜ)
-      (hm : b (a, -1) ∈ (range f)ᶜ), g ⟨b (a, 1), hp⟩ ≠ g ⟨b (a, -1), hm⟩ := by
+    ∃ g : LocallyConstant ((range f)ᶜ : Set M) ℝ,
+      g ⟨b (a, 1), h.apply_mem_compl_range a one_ne_zero⟩ ≠
+        g ⟨b (a, -1), h.apply_mem_compl_range a (neg_ne_zero.2 one_ne_zero)⟩ := by
   let A : Opens M := ⟨(range f)ᶜ, hclosed.isOpen_compl⟩
   let B : Opens M := ⟨range b, h.isOpenEmbedding.isOpen_range⟩
   have hH' : Subsingleton (deRhamCohomology I (A ⊔ B : Opens M) 1) :=
@@ -127,7 +128,7 @@ private theorem exists_locallyConstant_apply_ne (hH : Subsingleton (deRhamCohomo
       (⟨b (a, t), mem_range_self _⟩ : B))
       ((h.isOpenEmbedding.continuous.comp (continuous_const.prodMk continuous_id)).subtype_mk _))
       ⟨1, rfl⟩ ⟨-1, rfl⟩
-  exact ⟨g, fun _ _ ↦ by intro hne; linarith⟩
+  exact ⟨g, fun hne ↦ by linarith⟩
 
 /-- **The two sides of a bicollared hypersurface lie in different components.** If `f : N → M`
 has closed image and a bicollar `b`, and the first de Rham cohomology of `M` vanishes, then for
@@ -141,7 +142,7 @@ theorem disjoint_connectedComponentIn_compl_range_of_subsingleton_deRhamCohomolo
   have hp : b (a, 1) ∈ (range f)ᶜ := h.apply_mem_compl_range a one_ne_zero
   have hm : b (a, -1) ∈ (range f)ᶜ := h.apply_mem_compl_range a (neg_ne_zero.2 one_ne_zero)
   obtain ⟨g, hg⟩ := exists_locallyConstant_apply_ne hH h hclosed a
-  refine disjoint_left.2 fun z hz₁ hz₂ ↦ hg hp hm ?_
+  refine disjoint_left.2 fun z hz₁ hz₂ ↦ hg ?_
   -- `b (a, -1)` would lie in the component of `b (a, 1)`, on which `g` is constant.
   have hm' : b (a, -1) ∈ connectedComponentIn (range f)ᶜ (b (a, 1)) := by
     rw [connectedComponentIn_eq hz₁, ← connectedComponentIn_eq hz₂]
