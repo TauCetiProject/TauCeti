@@ -76,7 +76,7 @@ attached only to doubles along the complement of `TauCeti.borderedInterior M`.
 * `TauCeti.SchottkyDouble.doubleChart_swap` and
   `TauCeti.SchottkyDouble.writtenInExtChartAt_swap_eventuallyEq_conj`: the swap reads as
   `z ↦ conj z` in every doubled chart, so it is real smooth (`contMDiff_swap`), and a real
-  diffeomorphism (`swapDiffeomorph`).
+  diffeomorphism (`swapDiffeomorph`), its own inverse (`swapDiffeomorph_symm`).
 * `TauCeti.SchottkyDouble.contMDiffAt_fold_inl` and `TauCeti.SchottkyDouble.contMDiffAt_fold_inr`:
   the fold of the double onto `M` is real smooth at both copies of every interior point.
   `TauCeti.SchottkyDouble.contMDiffOn_fold_range_inl`: read within the whole first copy, boundary
@@ -455,6 +455,16 @@ theorem coe_swapDiffeomorph (n : ℕ∞ω) :
     ⇑(swapDiffeomorph (M := M) n) = DoubleAlong.swap (borderedInterior M : Set M)ᶜ := by
   rw [swapDiffeomorph]
   rfl
+
+/-- `swapDiffeomorph` is its own inverse. -/
+@[simp]
+theorem swapDiffeomorph_symm (n : ℕ∞ω) :
+    (swapDiffeomorph (M := M) n).symm = swapDiffeomorph n := by
+  ext z
+  have h := (swapDiffeomorph (M := M) n).apply_symm_apply z
+  rw [coe_swapDiffeomorph] at h ⊢
+  conv_rhs => rw [← h]
+  rw [DoubleAlong.swap_swap]
 
 /-- **The differential of the sheet swap is conjugation**, in the doubled charts at a point and at
 its image, which coincide. -/
