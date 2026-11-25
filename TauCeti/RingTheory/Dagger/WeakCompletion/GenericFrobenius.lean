@@ -321,8 +321,8 @@ theorem valuation_completedGenericFieldFrobenius_le_one {x : E} (hx : Valued.v x
 
 /-- The generic Frobenius extends the coefficient-field endomorphism induced by its action
 on the coefficient ring. -/
-theorem completedGenericFieldFrobenius_scalarHom {K : Type*} [CommRing K] [Algebra O K]
-    [IsLocalization.Away ϖ K] (σ₀ : O →+* O) (σ : K →+* K)
+theorem completedGenericFieldFrobenius_completedGenericFieldScalarHom {K : Type*} [CommRing K]
+    [Algebra O K] [IsLocalization.Away ϖ K] (σ₀ : O →+* O) (σ : K →+* K)
     (hσ₀ : ∀ a : O, σ (algebraMap O K a) = algebraMap O K (σ₀ a))
     (hφ₀ : ∀ a : O, φ (algebraMap O W a) = algebraMap O W (σ₀ a))
     (x : K) :
