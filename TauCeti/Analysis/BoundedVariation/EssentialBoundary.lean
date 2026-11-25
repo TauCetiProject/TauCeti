@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
-public import TauCeti.MeasureTheory.Covering.EssentialBoundary
+public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
 import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
 import TauCeti.Geometry.Euclidean.Volume.Measure
