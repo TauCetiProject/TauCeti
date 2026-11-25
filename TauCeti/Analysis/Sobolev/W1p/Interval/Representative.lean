@@ -180,12 +180,10 @@ theorem intervalRepresentativeL_injective (hab : a < b) :
 theorem intervalRepresentativeL_const (hab : a < b) (c : ℝ) :
     intervalRepresentativeL (p := p) hab (const c) = ContinuousMap.const (Icc a b) c := by
   apply (intervalRepresentativeL_eq_iff hab _ _).2
-  rw [value_const]
-  have h := Lp.coeFn_const p
-    (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) c
+  have h := value_const_ae (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (p := p) c
   simp only [Opens.coe_mk] at h ⊢
   filter_upwards [h] with t ht
-  simpa only [ContinuousMap.const_apply, Function.const_apply] using ht
+  simpa only [ContinuousMap.const_apply] using ht
 
 /-- An explicit bound for the supremum norm of the interval representative. At `p = ∞`,
 `1 / p.toReal` is interpreted as zero. -/
