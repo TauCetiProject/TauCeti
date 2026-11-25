@@ -129,6 +129,16 @@ theorem restrictFormSpaceIsometry_toFormSpace (u : (q.restrict W hW).domain) :
   simp only [restrictFormSpaceIsometry, LinearMap.coe_isometryOfInner, LinearMap.coe_comp,
     Function.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
 
+/-- The isometry of form spaces does not change the underlying vector of the form domain. -/
+@[simp]
+theorem toFormSpace_symm_restrictFormSpaceIsometry
+    (x : (q.restrict W hW).FormSpace α (hα.restrict hW)) :
+    (q.toFormSpace hα).symm (q.restrictFormSpaceIsometry hW hα x) =
+      q.restrictInclusion W hW (((q.restrict W hW).toFormSpace (hα.restrict hW)).symm x) := by
+  obtain ⟨u, rfl⟩ := ((q.restrict W hW).toFormSpace (hα.restrict hW)).surjective x
+  rw [restrictFormSpaceIsometry_toFormSpace, LinearEquiv.symm_apply_apply,
+    LinearEquiv.symm_apply_apply]
+
 /-- The isometry of form spaces commutes with the inclusions into `H`. -/
 theorem inclusion_restrictFormSpaceIsometry (x : (q.restrict W hW).FormSpace α (hα.restrict hW)) :
     q.inclusion hα (q.restrictFormSpaceIsometry hW hα x) =
@@ -232,9 +242,8 @@ theorem coe_mapDomainEquiv (u : q.domain) : (q.mapDomainEquiv U u : H') = U u :=
 /-- The underlying vector of `(q.mapDomainEquiv U).symm u` is `U⁻¹ u`. -/
 @[simp]
 theorem coe_mapDomainEquiv_symm (u : (q.map U).domain) :
-    ((q.mapDomainEquiv U).symm u : H) = U.symm u := by
-  obtain ⟨u, rfl⟩ := (q.mapDomainEquiv U).surjective u
-  simp
+    ((q.mapDomainEquiv U).symm u : H) = U.symm u :=
+  U.toLinearEquiv.submoduleMap_symm_apply q.domain u
 
 /-- `q.map U` is `(u, v) ↦ q (U⁻¹ u) (U⁻¹ v)`. -/
 theorem map_form_apply (u v : (q.map U).domain) :
@@ -278,6 +287,24 @@ theorem mapFormSpaceEquiv_toFormSpace (u : q.domain) :
     q.mapFormSpaceEquiv U hα (q.toFormSpace hα u) =
       (q.map U).toFormSpace ((q.isAdmissibleShift_map_iff U).mpr hα) (q.mapDomainEquiv U u) := by
   simp [mapFormSpaceEquiv]
+
+/-- The inverse of the isometry of form spaces sends the class of `u` to the class of `U⁻¹ u`. -/
+@[simp]
+theorem mapFormSpaceEquiv_symm_toFormSpace (u : (q.map U).domain) :
+    (q.mapFormSpaceEquiv U hα).symm
+        ((q.map U).toFormSpace ((q.isAdmissibleShift_map_iff U).mpr hα) u) =
+      q.toFormSpace hα ((q.mapDomainEquiv U).symm u) := by
+  rw [LinearIsometryEquiv.symm_apply_eq, mapFormSpaceEquiv_toFormSpace,
+    LinearEquiv.apply_symm_apply]
+
+/-- The isometry of form spaces sends the underlying vector `u` of the form domain to `U u`. -/
+@[simp]
+theorem toFormSpace_symm_mapFormSpaceEquiv (x : q.FormSpace α hα) :
+    ((q.map U).toFormSpace ((q.isAdmissibleShift_map_iff U).mpr hα)).symm
+        (q.mapFormSpaceEquiv U hα x) =
+      q.mapDomainEquiv U ((q.toFormSpace hα).symm x) := by
+  obtain ⟨u, rfl⟩ := (q.toFormSpace hα).surjective x
+  rw [mapFormSpaceEquiv_toFormSpace, LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply]
 
 /-- The isometry of form spaces commutes with the inclusions into `H` and `H'`. -/
 theorem inclusion_mapFormSpaceEquiv (x : q.FormSpace α hα) :
