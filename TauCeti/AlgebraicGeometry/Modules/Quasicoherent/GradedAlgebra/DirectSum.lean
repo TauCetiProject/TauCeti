@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Functor
 public import TauCeti.CategoryTheory.GradedObject.Total
+public import TauCeti.CategoryTheory.Limits.Shapes.Products
 public import TauCeti.CategoryTheory.Monoidal.Mon
 public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
@@ -296,17 +297,8 @@ theorem one_ιTotal_comp {B : CommMon X.Modules} (A : GradedQuasicoherentAlgebra
 /-- If every homogeneous component of positive degree vanishes, the inclusion of the degree-zero
 component into the direct sum `⨁ₙ Aₙ` is an isomorphism. -/
 theorem isIso_ιTotal_zero (A : GradedQuasicoherentAlgebra X)
-    (h : ∀ n, n ≠ 0 → IsZero (A.obj.X n)) : IsIso (ιTotal A 0) := by
-  let f : ∀ n, A.obj.X n ⟶ A.obj.X 0 := fun n ↦
-    if hn : n = 0 then eqToHom (by rw [hn]) else (h n hn).to_ _
-  let p : (toQuasicoherentAlgebra.obj A).obj.X ⟶ A.obj.X 0 :=
-    Cofan.IsColimit.desc (isColimitιTotal A) f
-  have hp : ιTotal A 0 ≫ p = 𝟙 _ := (Cofan.IsColimit.fac _ f 0).trans (by simp [f])
-  refine ⟨p, hp, toQuasicoherentAlgebra_hom_ext fun n ↦ ?_⟩
-  by_cases hn : n = 0
-  · subst hn
-    rw [reassoc_of% hp, Category.comp_id]
-  · exact (h n hn).eq_of_src _ _
+    (h : ∀ n, n ≠ 0 → IsZero (A.obj.X n)) : IsIso (ιTotal A 0) :=
+  Cofan.IsColimit.isIso_inj_of_isInitial (isColimitιTotal A) 0 fun n hn ↦ (h n hn).isInitial
 
 /-- **A graded algebra concentrated in degree zero has trivial direct sum.** If the unit
 `𝒪_X ⟶ A₀` is an isomorphism and every homogeneous component of positive degree vanishes, the
