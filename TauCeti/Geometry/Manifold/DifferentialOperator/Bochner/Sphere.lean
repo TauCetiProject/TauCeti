@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Bochner.Weighted
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Circle
+import TauCeti.Analysis.Complex.Inner
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Laplacian
 
 /-!
@@ -103,12 +104,6 @@ section Circle
 
 attribute [local instance] finrank_real_complex_fact'
 
-/-- The imaginary part is the height function `⟪i, ·⟫` on the circle. -/
-private theorem im_eq_inner_I :
-    (fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ).im) = fun z : sphere (0 : ℂ) 1 ↦ ⟪Complex.I, (z : ℂ)⟫ := by
-  funext z
-  simp [Complex.inner]
-
 /-- **The weighted Laplacian of the circle.** For the weight `φ = sin x`, the imaginary part, the
 weighted Laplacian is `Δ_φ = ∂ₓ² + cos x ∂ₓ`, where `ψ = cos x` is the real part. So
 `-Δ_φ = (-∂ₓ - cos x) ∘ ∂ₓ` is the product of `∂ₓ` with its formal transpose for the density
@@ -127,8 +122,8 @@ theorem neg_smoothWeightedLaplacian_eq_comp_circleRotationField
   simp only [LinearMap.neg_apply, ContMDiffMap.coe_neg, Pi.neg_apply, smoothWeightedLaplacian_apply,
     LinearMap.comp_apply, LinearMap.sub_apply, ContMDiffMap.coe_sub, Pi.sub_apply,
     LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply, Derivation.coeFn_coe]
-  rw [laplaceBeltrami_eq_circleRotationField, hφ, mgradient_im_eq_re_smul_circleRotationField,
-    map_smul, smul_eq_mul, hψ,
+  rw [laplaceBeltrami_eq_vectorFieldDerivation_circleRotationField, hφ,
+    mgradient_im_eq_re_smul_circleRotationField, map_smul, smul_eq_mul, hψ,
     ← ContMDiffSection.vectorFieldDerivation_apply_apply circleRotationField f]
   ring
 
@@ -173,7 +168,8 @@ theorem not_isMetricCompatible_trivialAddInner_of_coe_eq_im
           (leviCivitaConnection (𝓡 1) (sphere (0 : ℂ) 1)) f z + V z * f z) :
     ¬(trivialAddInner (Y : Π z : sphere (0 : ℂ) 1, TangentSpace (𝓡 1) z)).IsMetricCompatible :=
   (isMetricCompatible_trivialAddInner_iff_eq_zero_of_coe_eq_inner one_ne_zero Complex.I
-    (hφ.trans im_eq_inner_I) Y V h).not.2 Complex.I_ne_zero
+    (hφ.trans (funext fun _ ↦ (Complex.real_inner_I_left _).symm)) Y V h).not.2
+    Complex.I_ne_zero
 
 end Circle
 

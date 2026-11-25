@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
+import TauCeti.Analysis.Complex.Inner
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Laplacian
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Parallelizable
 
@@ -24,10 +25,13 @@ functions `⟪a, ·⟫` into height functions, `∂ₓ ⟪a, ·⟫ = ⟪-i a, ·
 real parts are `sin x` and `cos x`, and this is `∂ₓ sin = cos` and `∂ₓ cos = -sin`
 (`TauCeti.mvfderiv_im_circleRotationField`, `TauCeti.mvfderiv_re_circleRotationField`).
 
-Comparing `Δ ⟪a, ·⟫ = -⟪a, ·⟫` (`TauCeti.laplaceBeltrami_inner_coe_sphere`) with
-`div ((∂ₓ ⟪a, ·⟫) ∂ₓ) = ⟪-i a, ·⟫ div ∂ₓ - ⟪a, ·⟫` shows that `∂ₓ` is divergence free
-(`TauCeti.divergence_circleRotationField`), and then the Laplace–Beltrami operator of the circle is
-`Δ = ∂ₓ²` (`TauCeti.laplaceBeltrami_eq_circleRotationField`).
+Since `grad g = (∂ₓ g) ∂ₓ`, the Laplace–Beltrami operator is
+`Δ g = ∂ₓ (∂ₓ g) + (∂ₓ g) div ∂ₓ`
+(`TauCeti.laplaceBeltrami_eq_mvfderiv_circleRotationField_add`). Comparing this for
+`g = ⟪a, ·⟫` with `Δ ⟪a, ·⟫ = -⟪a, ·⟫` (`TauCeti.laplaceBeltrami_inner_coe_sphere`) shows that
+`∂ₓ` is divergence free (`TauCeti.divergence_circleRotationField`), and then the Laplace–Beltrami
+operator of the circle is `Δ = ∂ₓ²`
+(`TauCeti.laplaceBeltrami_eq_vectorFieldDerivation_circleRotationField`).
 
 ## Main definitions
 
@@ -41,8 +45,11 @@ Comparing `Δ ⟪a, ·⟫ = -⟪a, ·⟫` (`TauCeti.laplaceBeltrami_inner_coe_sp
 * `TauCeti.mvfderiv_inner_coe_circleRotationField`: `∂ₓ ⟪a, ·⟫ = ⟪-i a, ·⟫`, and in particular
   `∂ₓ Im = Re` and `∂ₓ Re = -Im` (`TauCeti.mvfderiv_im_circleRotationField`,
   `TauCeti.mvfderiv_re_circleRotationField`).
+* `TauCeti.laplaceBeltrami_eq_mvfderiv_circleRotationField_add`:
+  `Δ g = ∂ₓ (∂ₓ g) + (∂ₓ g) div ∂ₓ`.
 * `TauCeti.divergence_circleRotationField`: the rotation field is divergence free.
-* `TauCeti.laplaceBeltrami_eq_circleRotationField`: `Δ = ∂ₓ²` on the circle.
+* `TauCeti.laplaceBeltrami_eq_vectorFieldDerivation_circleRotationField`: `Δ = ∂ₓ²` on the
+  circle.
 
 ## References
 
@@ -106,7 +113,8 @@ theorem mvfderiv_im_circleRotationField (z : sphere (0 : ℂ) 1) :
     mvfderiv (𝓡 1) (fun q : sphere (0 : ℂ) 1 ↦ (q : ℂ).im) z (circleRotationField z) =
       (z : ℂ).re := by
   have h := mvfderiv_inner_coe_circleRotationField Complex.I z
-  simpa [Complex.inner] using h
+  rw [neg_mul, Complex.I_mul_I, neg_neg, Complex.real_inner_one_left] at h
+  simpa only [Complex.real_inner_I_left] using h
 
 /-- The derivative of the real part along the rotation field is minus the imaginary part:
 `∂ₓ cos x = -sin x` in the angle `z = e^(ix)`. -/
@@ -114,7 +122,8 @@ theorem mvfderiv_re_circleRotationField (z : sphere (0 : ℂ) 1) :
     mvfderiv (𝓡 1) (fun q : sphere (0 : ℂ) 1 ↦ (q : ℂ).re) z (circleRotationField z) =
       -(z : ℂ).im := by
   have h := mvfderiv_inner_coe_circleRotationField 1 z
-  simpa [Complex.inner] using h
+  rw [mul_one, inner_neg_left, Complex.real_inner_I_left] at h
+  simpa only [Complex.real_inner_one_left] using h
 
 /-- The tangent spaces of the circle are lines spanned by the rotation field:
 `v = ⟪∂ₓ, v⟫ ∂ₓ`. -/
@@ -139,59 +148,62 @@ theorem mgradient_im_eq_re_smul_circleRotationField (z : sphere (0 : ℂ) 1) :
       (z : ℂ).re • circleRotationField z := by
   rw [mgradient_eq_smul_circleRotationField, mvfderiv_im_circleRotationField]
 
-/-- The rotation field of the circle is divergence free. -/
-theorem divergence_circleRotationField (z : sphere (0 : ℂ) 1) :
-    divergence (𝓡 1) (circleRotationField : Π y : sphere (0 : ℂ) 1, TangentSpace (𝓡 1) y) z =
-      0 := by
-  -- Compare `Δ⟪a, ·⟫ = -⟪a, ·⟫` with `div (grad ⟪a, ·⟫) = div ((∂ₓ⟪a, ·⟫) ∂ₓ)` for `a = i z`.
+/-- On the circle the Laplace–Beltrami operator is computed from the rotation field:
+`Δ g = ∂ₓ (∂ₓ g) + (∂ₓ g) div ∂ₓ` wherever `∂ₓ g` is differentiable. -/
+theorem laplaceBeltrami_eq_mvfderiv_circleRotationField_add (g : sphere (0 : ℂ) 1 → ℝ)
+    (z : sphere (0 : ℂ) 1)
+    (hg : MDifferentiableAt (𝓡 1) 𝓘(ℝ)
+      (fun y ↦ mvfderiv (𝓡 1) g y (circleRotationField y)) z) :
+    laplaceBeltrami (𝓡 1) g z =
+      mvfderiv (𝓡 1) (fun y ↦ mvfderiv (𝓡 1) g y (circleRotationField y)) z
+          (circleRotationField z) +
+        mvfderiv (𝓡 1) g z (circleRotationField z) *
+          divergence (𝓡 1) (circleRotationField : Π y : sphere (0 : ℂ) 1, TangentSpace (𝓡 1) y)
+            z := by
   have hX : MDifferentiableAt (𝓡 1) (𝓡 1).tangent
       (fun y ↦ (⟨y, circleRotationField y⟩ : TangentBundle (𝓡 1) (sphere (0 : ℂ) 1))) z :=
     circleRotationField.contMDiff.mdifferentiableAt (by simp)
+  have hgrad : mgradient (𝓡 1) g = (fun y ↦ mvfderiv (𝓡 1) g y (circleRotationField y)) •
+      (circleRotationField : Π y : sphere (0 : ℂ) 1, TangentSpace (𝓡 1) y) :=
+    funext fun y ↦ by rw [mgradient_eq_smul_circleRotationField, Pi.smul_apply']
+  rw [laplaceBeltrami_def, hgrad, divergence_smul_function (𝓡 1) _ _ z hg hX, add_comm]
+
+/-- The rotation field of the circle is divergence free. -/
+@[simp]
+theorem divergence_circleRotationField (z : sphere (0 : ℂ) 1) :
+    divergence (𝓡 1) (circleRotationField : Π y : sphere (0 : ℂ) 1, TangentSpace (𝓡 1) y) z =
+      0 := by
+  -- Compare `Δ⟪a, ·⟫ = -⟪a, ·⟫` with `∂ₓ (∂ₓ ⟪a, ·⟫) + (∂ₓ ⟪a, ·⟫) div ∂ₓ` for `a = i z`.
   have ha : -Complex.I * (Complex.I * z) = z := by
     rw [← mul_assoc, neg_mul, Complex.I_mul_I, neg_neg, one_mul]
   have h0 : ⟪Complex.I * (z : ℂ), (z : ℂ)⟫ = 0 := by
     rw [real_inner_comm, ← mvfderiv_coe_circleRotationField]
     exact inner_coe_mvfderiv_subtypeVal_sphere z _
+  have hd : (fun y ↦ mvfderiv (𝓡 1) (fun q : sphere (0 : ℂ) 1 ↦ ⟪Complex.I * z, (q : ℂ)⟫) y
+      (circleRotationField y)) = fun q : sphere (0 : ℂ) 1 ↦ ⟪(z : ℂ), (q : ℂ)⟫ :=
+    funext fun y ↦ by rw [mvfderiv_inner_coe_circleRotationField, ha]
   have hg : MDifferentiableAt (𝓡 1) 𝓘(ℝ) (fun q : sphere (0 : ℂ) 1 ↦ ⟪(z : ℂ), (q : ℂ)⟫) z :=
     ((innerSL ℝ (z : ℂ)).contMDiff.comp contMDiff_coe_sphere).mdifferentiableAt one_ne_zero
-  have hgrad : mgradient (𝓡 1) (fun q : sphere (0 : ℂ) 1 ↦ ⟪Complex.I * z, (q : ℂ)⟫) =
-      (fun q : sphere (0 : ℂ) 1 ↦ ⟪(z : ℂ), (q : ℂ)⟫) •
-        (circleRotationField : Π y : sphere (0 : ℂ) 1, TangentSpace (𝓡 1) y) := by
-    funext y
-    rw [mgradient_eq_smul_circleRotationField, mvfderiv_inner_coe_circleRotationField, ha,
-      Pi.smul_apply']
-  have hd := divergence_smul_function (𝓡 1) _
-    (circleRotationField : Π y : sphere (0 : ℂ) 1, TangentSpace (𝓡 1) y) z hg hX
-  rw [mvfderiv_inner_coe_circleRotationField, real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere z,
-    neg_mul, inner_neg_left, h0] at hd
-  have h := (laplaceBeltrami_def (𝓡 1) (fun q : sphere (0 : ℂ) 1 ↦ ⟪Complex.I * z, (q : ℂ)⟫)
-    z).trans ((congrArg (fun Y ↦ divergence (𝓡 1) Y z) hgrad).trans hd)
-  rw [laplaceBeltrami_inner_coe_sphere, h0] at h
+  have h := laplaceBeltrami_eq_mvfderiv_circleRotationField_add
+    (fun q : sphere (0 : ℂ) 1 ↦ ⟪Complex.I * z, (q : ℂ)⟫) z (hd ▸ hg)
+  rw [hd, laplaceBeltrami_inner_coe_sphere, mvfderiv_inner_coe_circleRotationField,
+    mvfderiv_inner_coe_circleRotationField, ha, real_inner_self_eq_norm_sq,
+    norm_eq_of_mem_sphere z, neg_mul Complex.I, inner_neg_left, h0] at h
   linear_combination -h
 
 /-- On the circle the Laplace–Beltrami operator is the square of the rotation field:
 `Δ f = ∂ₓ² f`. -/
-theorem laplaceBeltrami_eq_circleRotationField (f : C^∞⟮𝓡 1, sphere (0 : ℂ) 1; ℝ⟯)
-    (z : sphere (0 : ℂ) 1) :
+theorem laplaceBeltrami_eq_vectorFieldDerivation_circleRotationField
+    (f : C^∞⟮𝓡 1, sphere (0 : ℂ) 1; ℝ⟯) (z : sphere (0 : ℂ) 1) :
     laplaceBeltrami (𝓡 1) f z =
       vectorFieldDerivation circleRotationField
         (vectorFieldDerivation circleRotationField f) z := by
-  have hX : MDifferentiableAt (𝓡 1) (𝓡 1).tangent
-      (fun y ↦ (⟨y, circleRotationField y⟩ : TangentBundle (𝓡 1) (sphere (0 : ℂ) 1))) z :=
-    circleRotationField.contMDiff.mdifferentiableAt (by simp)
-  have hgrad : mgradient (𝓡 1) f = ⇑(vectorFieldDerivation circleRotationField f) •
-      (circleRotationField : Π y : sphere (0 : ℂ) 1, TangentSpace (𝓡 1) y) :=
-    funext fun y ↦ by
-      rw [mgradient_eq_smul_circleRotationField,
-        ← ContMDiffSection.vectorFieldDerivation_apply_apply,
-        Pi.smul_apply']
-  have hd := divergence_smul_function (𝓡 1)
-    (vectorFieldDerivation circleRotationField f : sphere (0 : ℂ) 1 → ℝ)
-    (circleRotationField : Π y : sphere (0 : ℂ) 1, TangentSpace (𝓡 1) y) z
-    ((vectorFieldDerivation circleRotationField f).contMDiff.mdifferentiableAt (by simp)) hX
-  rw [divergence_circleRotationField, mul_zero, zero_add,
-    ← ContMDiffSection.vectorFieldDerivation_apply_apply] at hd
-  exact (laplaceBeltrami_def (𝓡 1) f z).trans
-    ((congrArg (fun Y ↦ divergence (𝓡 1) Y z) hgrad).trans hd)
+  have hd : ⇑(vectorFieldDerivation circleRotationField f) =
+      fun y ↦ mvfderiv (𝓡 1) f y (circleRotationField y) :=
+    funext (ContMDiffSection.vectorFieldDerivation_apply_apply circleRotationField f)
+  rw [laplaceBeltrami_eq_mvfderiv_circleRotationField_add f z
+      (hd ▸ (vectorFieldDerivation circleRotationField f).contMDiff.mdifferentiableAt (by simp)),
+    divergence_circleRotationField, mul_zero, add_zero,
+    ContMDiffSection.vectorFieldDerivation_apply_apply, hd]
 
 end TauCeti

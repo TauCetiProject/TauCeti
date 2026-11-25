@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
@@ -153,13 +154,10 @@ theorem forall_mvfderiv_inner_coe_sphere_eq_zero_iff (hn : n ≠ 0) (a : E) :
   refine ⟨fun hd ↦ ?_, fun ha x ↦ ?_⟩
   · by_contra ha
     -- A unit vector `x` orthogonal to `a` exists since `dim E ≥ 2`.
-    have hne : (ℝ ∙ a)ᗮ ≠ ⊥ := fun hb ↦ hn <| by
-      rw [← Submodule.finrank_orthogonal_span_singleton (𝕜 := ℝ) (n := n) ha, hb, finrank_bot]
-    obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
-    let x : sphere (0 : E) 1 := ⟨‖w‖⁻¹ • w, by simp [norm_smul, hw0]⟩
-    have hax : inner ℝ a (x : E) = 0 := by
-      rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hw
-      simp [x, real_inner_smul_right, hw]
+    obtain ⟨e, he, horth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
+      ({a} : Finset E) (by simp [Fact.out (p := finrank ℝ E = n + 1)]; omega)
+    let x : sphere (0 : E) 1 := ⟨e, by simpa using he⟩
+    have hax : inner ℝ a (x : E) = 0 := horth a (by simp)
     have hx := norm_mgradient_inner_coe_sphere_sq (n := n) a x
     rw [Manifold.mgradient_eq_zero_iff.2 (hd x), norm_zero, hax] at hx
     exact ha (by simpa using hx.symm)
