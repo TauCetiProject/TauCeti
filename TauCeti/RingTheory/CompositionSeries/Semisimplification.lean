@@ -68,18 +68,6 @@ abbrev seriesSemisimplification (s : CompositionSeries (Submodule R M)) : Type v
 
 variable [IsNoetherian R M] [IsArtinian R M]
 
-/-- The multiplicity of a simple module `S` in the factor of `s` at `i` is `1` if the factor is a
-copy of `S` and `0` otherwise. -/
-theorem jordanHolderMultiplicity_subquotient (s : CompositionSeries (Submodule R M))
-    (i : Fin s.length) (S : Type w) [AddCommGroup S] [Module R S]
-    [Decidable (IsCompositionFactorAt s i S)] :
-    jordanHolderMultiplicity R (↥(s i.succ) ⧸ Submodule.comap (s i.succ).subtype (s i.castSucc))
-      S = if IsCompositionFactorAt s i S then 1 else 0 := by
-  split_ifs with h <;> rw [isCompositionFactorAt_iff] at h
-  · exact jordanHolderMultiplicity_eq_one_of_isSimpleModule_of_linearEquiv S h.some
-  · exact jordanHolderMultiplicity_eq_zero_of_isEmpty_linearEquiv_of_isSimpleModule S
-      (not_nonempty_iff.1 h)
-
 /-- **The factors of a composition series carry the multiplicities of the module**: the product
 of the factors of a composition series of `M` from `⊥` to `⊤` contains every module as often
 as `M` does. -/
@@ -88,11 +76,10 @@ theorem jordanHolderMultiplicity_seriesSemisimplification
     (S : Type w) [AddCommGroup S] [Module R S] :
     jordanHolderMultiplicity R (seriesSemisimplification s) S =
       jordanHolderMultiplicity R M S := by
-  classical
-  rw [jordanHolderMultiplicity_pi,
-    ← compositionMultiplicity_eq_jordanHolderMultiplicity s hbot htop,
-    compositionMultiplicity_eq_sum_ite]
-  exact Finset.sum_congr rfl fun i _ ↦ jordanHolderMultiplicity_subquotient s i S
+  rw [jordanHolderMultiplicity_pi_eq_natCard,
+    ← compositionMultiplicity_eq_jordanHolderMultiplicity s hbot htop, compositionMultiplicity_def]
+  exact Nat.card_congr <| Equiv.subtypeEquivRight fun _ ↦
+    (Nonempty.congr LinearEquiv.symm LinearEquiv.symm).trans isCompositionFactorAt_iff.symm
 
 variable (R M) in
 /-- **The semisimplification `M^ss`** of a module of finite length: the product of the factors of a
