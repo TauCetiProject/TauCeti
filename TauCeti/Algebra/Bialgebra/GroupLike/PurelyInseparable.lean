@@ -130,17 +130,8 @@ of a commutative bialgebra. -/
 theorem span_groupLike_eq_top_of_isPurelyInseparable
     (hspan : Submodule.span L
       (Set.range (_root_.GroupLike.val (R := L) (A := L ⊗[k] A))) = ⊤) :
-    Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := A))) = ⊤ := by
-  let p := Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := A)))
-  have hp : p.baseChange L = ⊤ := by
-    apply top_unique
-    rw [← hspan]
-    apply Submodule.span_le.mpr
-    rintro _ ⟨g, rfl⟩
-    obtain ⟨h, rfl⟩ := (groupLikeBaseChange_bijective_of_isPurelyInseparable hspan).surjective g
-    rw [val_groupLikeBaseChange]
-    exact p.tmul_mem_baseChange_of_mem 1 (Submodule.subset_span ⟨h, rfl⟩)
-  apply Submodule.baseChange_injective (A := L)
-  simpa only [Submodule.baseChange_top] using hp
+    Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := A))) = ⊤ :=
+  span_groupLike_eq_top_of_surjective
+    (groupLikeBaseChange_bijective_of_isPurelyInseparable hspan).surjective hspan
 
 end TauCeti

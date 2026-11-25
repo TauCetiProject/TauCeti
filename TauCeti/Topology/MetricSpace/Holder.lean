@@ -129,6 +129,9 @@ positive exponent, is equicontinuous on that set
 * `IsCompact.exists_holderOnWith_thickening_and_norm_le`: a function which is Hölder on a ball
   around each point of a compact set `K` is Hölder with one constant, and bounded, on a thickening
   of `K`.
+* `IsCompact.exists_holderOnWith_of_forall_holderOnWith_ball_inter`: Hölder bounds on the
+  parts in a compact set `s` of balls around its points, proportional to a bound of the function,
+  give a Hölder bound on `s` with a constant depending only on the balls and the weights.
 * `le_mul_edist_rpow_iff`: between distinct points, a bound by a multiple of `edist x y ^ r` is a
   bound on the difference quotient.
 * `eHolderNorm_le_iff`: `eHolderNorm r f ≤ C` if and only if the Hölder inequality holds with the
@@ -644,6 +647,40 @@ theorem IsCompact.exists_holderOnWith_thickening_and_norm_le {X Y : Type*} [Pseu
     exact_mod_cast Finset.single_le_sum (fun _ _ => zero_le) hzt
   · push_cast
     linarith [dist_le_norm_add_norm (f y) (f y'), hM y hy, hM y' hy']
+
+/-- **Hölder bounds on the pieces of a cover of a compact set, uniformly.** Let `s` be compact and
+assign to each `x ∈ s` a radius `ρ x > 0` and a weight `c x`. Then there is a constant `A` such
+that every function `f` which is bounded by `B` on `s` and `α`-Hölder with constant `c x * B` on
+`ball x (ρ x) ∩ s` for each `x ∈ s` is `α`-Hölder on `s` with constant `A * B`. The constant
+`A` depends only on `s`, `ρ`, `c` and `α`, not on `f` or `B`, so the bound is uniform over a family
+of functions with proportional local bounds, as in a priori estimates. -/
+theorem IsCompact.exists_holderOnWith_of_forall_holderOnWith_ball_inter {X Y : Type*}
+    [PseudoMetricSpace X] [SeminormedAddCommGroup Y] {s : Set X} (hs : IsCompact s) {α : ℝ≥0}
+    {ρ : X → ℝ} (hρ : ∀ x ∈ s, 0 < ρ x) (c : X → ℝ≥0) :
+    ∃ A : ℝ≥0, ∀ {f : X → Y} {B : ℝ≥0}, (∀ x ∈ s, ‖f x‖ ≤ B) →
+      (∀ x ∈ s, HolderOnWith (c x * B) α f (Metric.ball x (ρ x) ∩ s)) →
+      HolderOnWith (A * B) α f s := by
+  obtain ⟨t, hts, hcover⟩ := hs.elim_nhds_subcover (fun x => Metric.ball x (ρ x)) fun x hx =>
+    Metric.ball_mem_nhds x (hρ x hx)
+  -- A Lebesgue number `δ` of the finite cover by the balls `B(z, ρ z)`, `z ∈ t`.
+  obtain ⟨δ, hδ, hδs⟩ := lebesgue_number_lemma_of_metric hs
+    (c := fun z : t => Metric.ball (z : X) (ρ z)) (fun _ => Metric.isOpen_ball) fun y hy => by
+      obtain ⟨z, hzt, hyz⟩ := mem_iUnion₂.1 (hcover hy)
+      exact mem_iUnion.2 ⟨⟨z, hzt⟩, hyz⟩
+  set δ' : ℝ≥0 := ⟨δ, hδ.le⟩
+  refine ⟨∑ z ∈ t, c z + 2 * δ' ^ (-(α : ℝ)), fun {f B} hB hf => ?_⟩
+  -- Points of `s` at distance less than `δ` lie in one ball of the cover, and points at larger
+  -- distance are handled by the bound `‖f‖ ≤ B`.
+  refine (HolderOnWith.of_dist_lt_of_dist_le (K := (∑ z ∈ t, c z) * B) (D := 2 * B) (δ := δ')
+    (by exact_mod_cast hδ) (fun x hx y hy hxy => ?_) fun x hx y hy => ?_).mono_const
+    (le_of_eq (by ring))
+  · obtain ⟨⟨z, hzt⟩, hz⟩ := hδs x hx
+    have hyz := hz (Metric.mem_ball.2 (by rw [dist_comm]; exact hxy))
+    refine ((hf z (hts z hzt)).dist_le ⟨hz (Metric.mem_ball_self hδ), hx⟩ ⟨hyz, hy⟩).trans ?_
+    gcongr
+    exact_mod_cast Finset.single_le_sum (fun _ _ => zero_le) hzt
+  · push_cast
+    linarith [dist_le_norm_add_norm (f x) (f y), hB x hx, hB y hy]
 
 namespace TauCeti
 

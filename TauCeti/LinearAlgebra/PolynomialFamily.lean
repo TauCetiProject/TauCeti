@@ -54,6 +54,8 @@ functions is expanded along a one-parameter subgroup and its terms then identifi
   identically vanishing power sum `∑ m < d, c ^ m • u m` are zero.
 * `TauCeti.eq_of_forall_sum_range_pow_smul_eq`: two power sums of length `d` agreeing at every
   point have the same coefficients below `d`.
+* `TauCeti.mem_of_forall_sum_range_pow_smul_mem`: over a field, a subspace containing the values
+  of a power sum of length `d` at `d` distinct points contains its coefficients.
 * `Module.Basis.exists_forall_eq_sum_pow_smul_of_toMatrix_eq_eval`: a family of linear maps
   with polynomial matrix entries is a finite power sum of fixed linear maps.
 -/
@@ -116,6 +118,20 @@ theorem eq_of_forall_sum_range_pow_smul_eq {d : ℕ} {u v : ℕ → M}
   rw [← smul_right_inj hV, det_vandermonde_smul_eq_sum_adjugate_smul x u ⟨m, hm⟩,
     det_vandermonde_smul_eq_sum_adjugate_smul x v ⟨m, hm⟩]
   simp only [h]
+
+/-- **The coefficients of a power sum lie in every subspace containing enough of its values.**
+Over a field `K`, if the values `∑ k < d, x i ^ k • u k` of a power sum at `d` distinct points
+`x i` lie in a subspace `W`, then so does every coefficient `u m` with `m < d`. Unlike
+`TauCeti.eq_zero_of_forall_sum_range_pow_smul_eq_zero`, only `d` values are used, so this applies
+over a finite field with at least `d` elements. -/
+theorem mem_of_forall_sum_range_pow_smul_mem {K : Type u} [Field K] {M : Type v}
+    [AddCommGroup M] [Module K M] (W : Submodule K M) {d : ℕ} {x : Fin d → K}
+    (hx : Function.Injective x) {u : ℕ → M}
+    (h : ∀ i, ∑ k ∈ Finset.range d, x i ^ k • u k ∈ W) {m : ℕ} (hm : m < d) : u m ∈ W := by
+  -- Cramer's rule writes `det V • u m` as a combination of the values, and `det V ≠ 0`.
+  have hV : (Matrix.vandermonde x).det ≠ 0 := Matrix.det_vandermonde_ne_zero_iff.mpr hx
+  rw [← W.smul_mem_iff hV, det_vandermonde_smul_eq_sum_adjugate_smul x u ⟨m, hm⟩]
+  exact W.sum_mem fun i _ ↦ W.smul_mem _ (h i)
 
 end Coefficients
 
