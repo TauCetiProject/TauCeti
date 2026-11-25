@@ -26,9 +26,13 @@ missing data, this says that the observed-data posterior is the complete-data po
 over the posterior predictive distribution of the missing data, the identity behind multiple
 imputation.
 
+Under a probability measure, conditioning on a constant random variable gives the law of `Z`.
+
 ## Main statements
 
 * `ProbabilityTheory.condDistrib_ae_eq_comp` — the identity above.
+* `ProbabilityTheory.condDistrib_apply_const_of_isProbabilityMeasure` — the conditional
+  distribution given a constant is the law.
 -/
 
 public section
@@ -63,5 +67,16 @@ theorem condDistrib_ae_eq_comp {μ : Measure Ω} [IsFiniteMeasure μ] {Z : Ω �
   have hZX := hjoint.snd
   rw [Kernel.snd_compProd_eq_comp_id_prod] at hZX
   exact condDistrib_ae_eq_of_measure_eq_compProd hX hZ hZX.map_eq
+
+/-- Under a probability measure, the conditional distribution of `Z` given a constant random
+variable is the law of `Z`. -/
+theorem condDistrib_apply_const_of_isProbabilityMeasure {μ : Measure Ω} [IsProbabilityMeasure μ]
+    [MeasurableSingletonClass β] {Z : Ω → δ} (hZ : Measurable Z) (b : β) :
+    condDistrib Z (fun _ ↦ b) μ b = μ.map Z := by
+  ext s hs
+  rw [condDistrib_apply_of_ne_zero measurable_const hZ b (by simp [Measure.map_const]),
+    Measure.map_apply (measurable_const.prodMk hZ) ((measurableSet_singleton b).prod hs),
+    Measure.map_apply hZ hs]
+  simp [Measure.map_const, Set.mk_preimage_prod]
 
 end ProbabilityTheory

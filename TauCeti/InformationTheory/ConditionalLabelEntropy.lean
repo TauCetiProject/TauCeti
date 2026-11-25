@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Kernel.CondDistrib
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import TauCeti.Probability.Kernel.CondDistrib
 
 /-!
 # Conditional entropy of standard-Borel labels
@@ -123,17 +124,6 @@ zero: given `a x`, the atom `{a x}` is sure. -/
 theorem conditionalLabelEntropy_self {a : X → Y} (ha : AEMeasurable a μ) :
     conditionalLabelEntropy μ a a = 0 :=
   conditionalLabelEntropy_comp_self (f := id) ha measurable_id
-
-/-- Under a probability measure, the conditional distribution of `a` given a constant label is
-the law of `a`. -/
-theorem condDistrib_apply_const_of_isProbabilityMeasure [IsProbabilityMeasure μ]
-    [MeasurableSingletonClass Z] {a : X → Y} (ha : Measurable a) (z : Z) :
-    condDistrib a (fun _ ↦ z) μ z = μ.map a := by
-  ext s hs
-  rw [condDistrib_apply_of_ne_zero measurable_const ha z (by simp [Measure.map_const]),
-    Measure.map_apply (measurable_const.prodMk ha) ((measurableSet_singleton z).prod hs),
-    Measure.map_apply ha hs]
-  simp [Measure.map_const, Set.mk_preimage_prod]
 
 /-- **Conditioning on a constant.** Under a probability measure, conditioning a measurable label
 on a constant label integrates the information of its atoms under `μ`. -/
