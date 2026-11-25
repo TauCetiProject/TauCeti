@@ -122,6 +122,9 @@ private noncomputable def logAbs : ℝˣ →* Multiplicative ℂ where
     rw [Units.val_mul, abs_mul, Real.log_mul (abs_ne_zero.mpr s.ne_zero)
       (abs_ne_zero.mpr t.ne_zero), Complex.ofReal_add, ofAdd_add]
 
+private theorem logAbs_apply (t : ℝˣ) : logAbs t = .ofAdd (Real.log |(t : ℝ)| : ℂ) :=
+  (rfl)
+
 /-- **The parameter `w ↦ [[1, log |norm w|], [0, 1]]` of `W_ℝ`**: every `w` acts by a unipotent
 matrix, with both eigenvalues `1`, and the parameter is continuous
 (`TauCeti.ClassFieldTheory.WeilGroupReal.continuous_logNormUnipotent`) but not bounded
@@ -129,11 +132,16 @@ matrix, with both eigenvalues `1`, and the parameter is continuous
 noncomputable def logNormUnipotent : WeilGroupReal →* GL (Fin 2) ℂ :=
   GeneralLinearGroup.upperRightHom.toMonoidHom.comp (logAbs.comp norm)
 
+/-- `logNormUnipotent w` is Mathlib's unipotent matrix `upperRightHom (log |norm w|)`. -/
+theorem logNormUnipotent_apply (w : WeilGroupReal) :
+    logNormUnipotent w = GeneralLinearGroup.upperRightHom (Real.log |(norm w : ℝ)| : ℂ) := by
+  simp [logNormUnipotent, logAbs_apply]
+
 @[simp]
 theorem coe_logNormUnipotent (w : WeilGroupReal) :
     (logNormUnipotent w : Matrix (Fin 2) (Fin 2) ℂ) =
-      !![1, (Real.log |(norm w : ℝ)| : ℂ); 0, 1] :=
-  (rfl)
+      !![1, (Real.log |(norm w : ℝ)| : ℂ); 0, 1] := by
+  simp [logNormUnipotent_apply, GeneralLinearGroup.upperRightHom_apply]
 
 /-- The `(0, 1)` entry of `logNormUnipotent w` is `log |norm w|`. -/
 theorem logNormUnipotent_apply_zero_one (w : WeilGroupReal) :
@@ -142,8 +150,9 @@ theorem logNormUnipotent_apply_zero_one (w : WeilGroupReal) :
 
 /-- The parameter `w ↦ [[1, log |norm w|], [0, 1]]` is continuous. -/
 @[fun_prop]
-theorem continuous_logNormUnipotent : Continuous logNormUnipotent :=
-  GeneralLinearGroup.continuous_upperRightHom.comp <| Complex.continuous_ofReal.comp <|
+theorem continuous_logNormUnipotent : Continuous logNormUnipotent := by
+  rw [show ⇑logNormUnipotent = _ from funext logNormUnipotent_apply]
+  exact GeneralLinearGroup.continuous_upperRightHom.comp <| Complex.continuous_ofReal.comp <|
     (Units.continuous_val.comp continuous_norm).abs.log fun w ↦ abs_ne_zero.mpr (norm w).ne_zero
 
 /-- **A unipotent parameter need not be bounded.** The parameter
