@@ -108,7 +108,7 @@ theorem exists_pos_forall_surjective_restrictedLift (φ : A →ₐ[K] B) {b : Fi
     Huber.exists_subring_ball_subset_forall_norm_le K hT
   have hbB₀ (i : Fin k) : b i ∈ B₀ := hT₀ (by simp)
   have hφN : 0 ≤ ‖φL‖ * N := mul_nonneg (norm_nonneg _) hN0
-  have hR0 : (0 : ℝ) < R.nnNorm := hR
+  have hR0 : (0 : ℝ) < R.nnNorm := NNReal.coe_pos.mpr hR
   refine ⟨min r ((R.nnNorm : ℝ)⁻¹ / (‖φL‖ * N + 1)), lt_min hr (by positivity),
     fun y hy hyb ↦ ?_⟩
   set δ := min r ((R.nnNorm : ℝ)⁻¹ / (‖φL‖ * N + 1))

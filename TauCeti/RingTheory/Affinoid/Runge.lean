@@ -152,22 +152,11 @@ theorem isRungeImmersion_iff_exists_surjective_restrictedLift {φ : A →ₐ[K] 
         fun i ↦ by simp [← hπι]
     exact ⟨k, f, hf, hcomp ▸ hπ.comp (hι.surjective_restrictedLift hA hfι)⟩
   · -- Factor `φ` through the Weierstrass fraction algebra `A⟨f⟩`, whose quotient map is
-    -- `A⟨X⟩ → A⟨f⟩` (the indexing type `Fin (k + 0)` is `Fin k`).
+    -- `A⟨X⟩ → A⟨f⟩`.
     let π := LaurentFraction.lift (g := (![] : Fin 0 → A)) hA hB φ hf (b := ![])
       (fun j ↦ j.elim0) fun j ↦ j.elim0
-    have hX (i : Fin k) : Ideal.Quotient.mk (laurentFractionIdeal f (![] : Fin 0 → A))
-        ⟨X i, isRestricted_X _ i⟩ = algebraMap A _ (f i) :=
-      LaurentFraction.mk_X_castAdd i
-    have hcomp : hA.restrictedLift hB φ hf =
-        π.comp (Ideal.Quotient.mkₐ K (laurentFractionIdeal f (![] : Fin 0 → A))) :=
-      hA.algHom_ext_isRestricted_subring hB
-        (fun a ↦ by
-          rw [IsAffinoidAlgebra.restrictedLift_algebraMap, AlgHom.comp_apply,
-            Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.mk_algebraMap]
-          exact (LaurentFraction.lift_algebraMap hA hB φ hf _ _ a).symm)
-        fun i ↦ by
-          rw [IsAffinoidAlgebra.restrictedLift_X, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, hX]
-          exact (LaurentFraction.lift_algebraMap hA hB φ hf _ _ (f i)).symm
+    have hcomp := LaurentFraction.restrictedLift_eq_comp_mkₐ hA hB hf π
+      (LaurentFraction.lift_algebraMap hA hB φ hf _ _)
     refine ⟨k, f, _, _, _, _, π, LaurentFraction.isAffinoidSubdomainMap hA, fun b ↦ ?_,
       AlgHom.ext fun a ↦ LaurentFraction.lift_algebraMap hA hB φ hf _ _ a⟩
     obtain ⟨t, rfl⟩ := hsurj b

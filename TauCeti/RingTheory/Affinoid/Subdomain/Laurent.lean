@@ -61,6 +61,8 @@ power-bounded inverse (`TauCeti.IsAffinoidAlgebra.isUnit_and_isPowerBounded_inve
   inequalities represents the concatenated Laurent domain via the composite structure map.
 * `TauCeti.LaurentFraction.maximalSpectrumComap_mem_laurentDomain`: the map
   `Sp A⟨f, g⁻¹⟩ → Sp A` takes values in `L(f, g⁻¹)`.
+* `TauCeti.LaurentFraction.restrictedLift_eq_comp_mkₐ`: the extension `A⟨X⟩ → B` of a map
+  `A → B` factors through the quotient map onto the Weierstrass fraction algebra `A⟨f⟩`.
 * `TauCeti.IsAffinoidSubdomainMap.surjective_restrictedLift`: the coordinate ring of the
   Weierstrass domain `{|fᵢ| ≤ 1}` is generated over `A` by the images of the `fᵢ`.
 
@@ -241,6 +243,35 @@ end Iterate
 
 end LaurentFraction
 
+namespace LaurentFraction
+
+variable {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A]
+  [CompleteSpace A] {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B]
+  [CompleteSpace B] {k : ℕ} {f : Fin k → A}
+
+/-- **The extension `A⟨X⟩ → B` factors through the Weierstrass fraction algebra.** Let `A` and `B`
+be affinoid algebras with complete ultrametric algebra norms, and let `φ : A → B` send each `fᵢ`
+to a power-bounded element. For every `K`-algebra map `π : A⟨f⟩ → B` extending `φ`, the extension
+`A⟨X₁, …, Xₖ⟩ → B` of `φ` sending `Xᵢ` to `φ fᵢ` is the quotient map
+`A⟨X⟩ → A⟨f⟩ = A⟨X⟩ ⧸ (Xᵢ - fᵢ)` followed by `π`. -/
+theorem restrictedLift_eq_comp_mkₐ (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)
+    {φ : A →ₐ[K] B} (hf : ∀ i, Huber.IsPowerBounded (φ (f i)))
+    (π : LaurentFraction f (![] : Fin 0 → A) →ₐ[K] B) (hπ : ∀ a, π (algebraMap A _ a) = φ a) :
+    hA.restrictedLift hB φ hf =
+      π.comp (Ideal.Quotient.mkₐ K (laurentFractionIdeal f (![] : Fin 0 → A))) := by
+  -- The indexing type `Fin (k + 0)` of the variables of `A⟨f⟩` is `Fin k`.
+  have hX (i : Fin k) : Ideal.Quotient.mk (laurentFractionIdeal f (![] : Fin 0 → A))
+      ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_X _ i⟩ = algebraMap A _ (f i) :=
+    mk_X_castAdd i
+  refine hA.algHom_ext_isRestricted_subring hB (fun a ↦ ?_) fun i ↦ ?_
+  · rw [IsAffinoidAlgebra.restrictedLift_algebraMap, AlgHom.comp_apply,
+      Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.mk_algebraMap]
+    exact (hπ a).symm
+  · rw [IsAffinoidAlgebra.restrictedLift_X, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, hX]
+    exact (hπ (f i)).symm
+
+end LaurentFraction
+
 namespace IsAffinoidSubdomainMap
 
 variable {A : Type u} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A]
@@ -257,21 +288,8 @@ theorem surjective_restrictedLift (hA : IsAffinoidAlgebra K A)
     (hf : ∀ i, Huber.IsPowerBounded (ι (f i))) :
     Function.Surjective (hA.restrictedLift h.isAffinoidAlgebra ι hf) := by
   let e := (LaurentFraction.isAffinoidSubdomainMap (g := (![] : Fin 0 → A)) hA).algEquiv h
-  -- The indexing type `Fin (k + 0)` of the variables of `A⟨f⟩` is `Fin k`.
-  have hX (i : Fin k) : Ideal.Quotient.mk (laurentFractionIdeal f (![] : Fin 0 → A))
-      ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_X _ i⟩ = algebraMap A _ (f i) :=
-    LaurentFraction.mk_X_castAdd i
-  have hcomp : hA.restrictedLift h.isAffinoidAlgebra ι hf =
-      e.toAlgHom.comp (Ideal.Quotient.mkₐ K (laurentFractionIdeal f (![] : Fin 0 → A))) :=
-    hA.algHom_ext_isRestricted_subring h.isAffinoidAlgebra
-      (fun a ↦ by
-        rw [IsAffinoidAlgebra.restrictedLift_algebraMap, AlgHom.comp_apply,
-          Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.mk_algebraMap]
-        exact (algEquiv_apply _ h a).symm)
-      fun i ↦ by
-        rw [IsAffinoidAlgebra.restrictedLift_X, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, hX]
-        exact (algEquiv_apply _ h (f i)).symm
-  rw [hcomp]
+  rw [LaurentFraction.restrictedLift_eq_comp_mkₐ hA h.isAffinoidAlgebra hf e.toAlgHom
+    (algEquiv_apply _ h)]
   exact e.surjective.comp Ideal.Quotient.mk_surjective
 
 end IsAffinoidSubdomainMap
