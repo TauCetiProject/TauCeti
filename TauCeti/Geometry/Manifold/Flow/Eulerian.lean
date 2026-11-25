@@ -19,9 +19,12 @@ time-dependent vector field
 `X_t = (∂_t φ_t) ∘ φ_t⁻¹`, that is, `X_t(y) = ∂_u|_{u = t} φ_u(φ_t⁻¹ y)`
 
 (`TauCeti.eulerianField`). It is the time-dependent vector field generating the family: every curve
-`u ↦ φ_u x` has velocity `X_u (φ_u x)` (`TauCeti.hasMFDerivAt_eulerianField`), and the field is
-jointly `C^m` when the family is `C^(m+1)` and its inverses are `C^m`
-(`TauCeti.contMDiff_eulerianField`). Consequently the suspension of `X` is complete
+`u ↦ φ_u x` has velocity `X_u (φ_u x)` (`TauCeti.hasMFDerivAt_eulerianField`). For a family
+indexed by a normed space of parameters, the field along a curve of parameters is the differential
+of the uncurried family in the parameter direction
+(`TauCeti.eulerianField_apply_eq_mfderiv_apply_mk_zero`). The field is jointly `C^m` when the
+family is `C^(m+1)` and its inverses are `C^m` (`TauCeti.contMDiff_eulerianField`). Consequently
+the suspension of `X` is complete
 (`TauCeti.isCompleteVectorField_timeDependentSuspensionField_eulerianField`), and on a Hausdorff
 boundaryless manifold, where integral curves of a `C¹` field are unique, the time-dependent flow of
 `X` from time `s` to time `t` is `φ_t ∘ φ_s⁻¹` (`TauCeti.timeDependentFlowOf_eulerianField`). This
@@ -96,6 +99,19 @@ theorem hasMFDerivAt_eulerianField {x : M}
       ((1 : ℝ →L[ℝ] ℝ).smulRight (eulerianField I φ t (φ t x))) := by
   rw [eulerianField_apply_apply]
   exact hasMFDerivAt_curveVelocity h
+
+/-- **The Eulerian field of a family along a curve of parameters.** For a family `Φ` of bijections
+indexed by a normed space `P` and a curve `g` of parameters with velocity `w` at `t`, the Eulerian
+field of `s ↦ Φ (g s)` at `Φ_(g t) y` is the differential of `(q, x) ↦ Φ_q x` at `(g t, y)`
+applied to `(w, 0)`. -/
+theorem eulerianField_apply_eq_mfderiv_apply_mk_zero {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {Φ : P → M ≃ M} {g : ℝ → P} {w : P} {y : M}
+    (hΦ : MDifferentiableAt (𝓘(ℝ, P).prod I) I (fun z : P × M ↦ Φ z.1 z.2) (g t, y))
+    (hg : HasDerivAt g w t) :
+    eulerianField I (fun s ↦ Φ (g s)) t (Φ (g t) y) =
+      mfderiv (𝓘(ℝ, P).prod I) I (fun z : P × M ↦ Φ z.1 z.2) (g t, y) (w, 0) := by
+  rw [eulerianField_apply_apply]
+  exact hΦ.curveVelocity_eq_mfderiv_uncurry_apply_mk_zero (f := fun q x ↦ Φ q x) hg
 
 /-- A constant family has zero Eulerian velocity. -/
 @[simp]
@@ -177,9 +193,8 @@ theorem contMDiff_eulerianField [IsManifold I 1 M] {m n : ℕ∞ω} (hmn : m + 1
   -- the derivative of `(u, x) ↦ φ_u x` applied to `(1, 0)`; `change` exposes this unfolding.
   change eulerianField I φ p.1 p.2 =
     mfderiv (𝓘(ℝ, ℝ).prod I) I (fun q : ℝ × M ↦ φ q.1 q.2) (p.1, (φ p.1).symm p.2) (1, 0)
-  refine Eq.trans ?_ (mfderiv_prod_eq_add_apply hdiff).symm
-  rw [eulerianField_def, curveVelocity_apply]
-  exact (add_zero _).symm.trans (congrArg₂ (· + ·) rfl (map_zero _).symm)
+  have h := eulerianField_apply_eq_mfderiv_apply_mk_zero (g := fun s ↦ s) hdiff (hasDerivAt_id' p.1)
+  rwa [Equiv.apply_symm_apply] at h
 
 /-! ### The time-dependent flow of the Eulerian field -/
 
@@ -210,11 +225,8 @@ theorem timeDependentFlowOf_eulerianField [T2Space M] [IsManifold I 1 M]
       (fun p : ℝ × M ↦ (⟨p.2, eulerianField I φ p.1 p.2⟩ : TangentBundle I M)))
     (s t : ℝ) (x : M) :
     timeDependentFlowOf (eulerianField I φ) s t x = φ t ((φ s).symm x) := by
-  have h := timeDependentFlowOf_eq_of_hasMFDerivAt hX (s := s) (t := t)
-    (γ := fun u ↦ φ u ((φ s).symm x)) (a := min s t - 1) (b := max s t + 1)
-    (fun u _ ↦ hasMFDerivAt_eulerianField (hφ _ u))
-    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  have h := timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX
+    (γ := fun u ↦ φ u ((φ s).symm x)) (fun u ↦ hasMFDerivAt_eulerianField (hφ _ u)) s t
   simpa using h
 
 end Flow

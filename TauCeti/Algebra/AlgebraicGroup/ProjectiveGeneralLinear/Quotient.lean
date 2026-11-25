@@ -27,7 +27,7 @@ as group objects in fppf sheaves, the quotient projection becoming the conjugati
 
 The conjugation homomorphism is not surjective on points: an automorphism of `Mₙ(A)` need not be
 inner. It is, however, inner Zariski-locally on `Spec A`
-(`AlgEquiv.exists_span_eq_top_forall_map_eq_innerAut`), so every point of `PGLₙ` lifts to `GLₙ`
+(`AlgHom.exists_span_eq_top_forall_map_eq_innerAut`), so every point of `PGLₙ` lifts to `GLₙ`
 after the faithfully flat, finitely presented extension `A → ∏ A[1/c]` given by a finite Zariski
 cover. This is the hypothesis of the fppf first isomorphism theorem
 `TauCeti.CommHopfAlgCat.isIso_kernelFppfQuotientHom_of_exists_lift`. Over a field the kernel is
@@ -75,7 +75,7 @@ theorem exists_span_eq_top_forall_mapPoints_mem_range (A : CommAlgCat.{u} R)
           (CommAlgCat.ofHom (IsScalarTower.toAlgHom R A (Localization.Away c))) q ∈
         Set.range ((CommHopfAlgCat.Hom.mapPointsFunctor (conjugationMap n R)).app
           (CommAlgCat.of R (Localization.Away c))) := by
-  obtain ⟨s, hs, h⟩ := (pointsMulEquiv n R A q).exists_span_eq_top_forall_map_eq_innerAut
+  obtain ⟨s, hs, h⟩ := (pointsMulEquiv n R A q).toAlgHom.exists_span_eq_top_forall_map_eq_innerAut
   refine ⟨s, hs, fun c hc => ?_⟩
   let ψ := CommAlgCat.ofHom (IsScalarTower.toAlgHom R A (Localization.Away c))
   obtain ⟨g, hg⟩ := h c hc (algebraMap A (Localization.Away c))
@@ -106,7 +106,7 @@ theorem exists_lift_conjugationMap (A : CommAlgCat.{u} R)
     ext
     simp [φ, S]
   refine ⟨CommAlgCat.of R (∀ c, S c), CommAlgCat.ofHom φ,
-    AlgHom.pi fun c => (g c c.2).ofConv, ?_, ?_, ?_⟩
+    AlgHom.pi fun c => (g c c.property).ofConv, ?_, ?_, ?_⟩
   · rw [CommAlgCat.hom_ofHom, hφ]
     refine RingHom.FaithfullyFlat.pi_algebraMap_localizationAway _ ?_
     rwa [Subtype.range_coe_subtype, Finset.setOfPred_mem]
@@ -115,9 +115,9 @@ theorem exists_lift_conjugationMap (A : CommAlgCat.{u} R)
     rw [CommAlgCat.hom_ofHom, hφ]
     exact RingHom.finitePresentation_algebraMap.2 inferInstance
   · ext x c
-    have := DFunLike.congr_fun (congrArg ofConv (hg c c.2)) x
+    have := DFunLike.congr_fun (congrArg ofConv (hg c c.property)) x
     rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply (conjugationMap n R)
-      (CommAlgCat.of R (S c)) (g c c.2) x, HopfAlgebra.mapPoints_apply] at this
+      (CommAlgCat.of R (S c)) (g c c.property) x, HopfAlgebra.mapPoints_apply] at this
     simpa [φ, S] using this
 
 /-- **`GLₙ → PGLₙ` is an fppf quotient map**: over any commutative ring, the comparison from the

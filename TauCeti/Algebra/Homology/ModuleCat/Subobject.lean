@@ -14,6 +14,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+import TauCeti.Algebra.Homology.ModuleCat.Cokernel
 
 import TauCeti.Algebra.Homology.HomologicalComplex.Subobject
 
@@ -105,15 +106,12 @@ theorem exists_sub_d_mem_range_arrow_f_hom_of_isZero_homology_cokernel {T : Subo
     (((cokernel φ).exactAt_iff_isZero_homology j).2 hH)
   rw [ShortComplex.moduleCat_exact_iff] at hQ
   obtain ⟨w, hw⟩ := hQ ((cokernel.π φ).f j z) hc
-  obtain ⟨w, rfl⟩ := (ModuleCat.epi_iff_surjective ((cokernel.π φ).f i)).1 inferInstance w
-  have hS :=
-    (HomologicalComplex.exact_iff_degreewise_exact _).1 (ShortComplex.exact_cokernel φ) j
-  rw [ShortComplex.moduleCat_exact_iff] at hS
-  obtain ⟨u, hu⟩ := hS (z - ((T : HomologicalComplex (ModuleCat R) c).d i j).hom w) (by
+  obtain ⟨w, rfl⟩ := HomologicalComplex.cokernel_π_f_surjective φ i w
+  obtain ⟨u, hu⟩ := (HomologicalComplex.cokernel_π_f_apply_eq_zero_iff φ j
+    (z - ((T : HomologicalComplex (ModuleCat R) c).d i j).hom w)).1 (by
     dsimp at hw ⊢
     rw [map_sub, ← HomologicalComplex.Hom.comm_apply (cokernel.π φ), hw, sub_self])
   refine ⟨(T.arrow.f i).hom w, ⟨w, rfl⟩, u, ?_⟩
-  dsimp at hu
   rw [← Subobject.ofLE_arrow h, HomologicalComplex.comp_f, ModuleCat.comp_apply, hu, map_sub,
     ← HomologicalComplex.Hom.comm_apply T.arrow]
 

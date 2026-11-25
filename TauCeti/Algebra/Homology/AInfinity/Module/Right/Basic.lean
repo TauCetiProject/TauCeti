@@ -121,25 +121,19 @@ the output of its bar differential.  On the summand `sM ⊗ (sA)^⊗n`, this is 
 arity-`n + 1` module operation. -/
 noncomputable def taylor (MM : AInfinityRightModule AA M) :
     (M ⊗[R] TensorWords R A) →ₗ[R] M :=
-  (TensorProduct.rid R M).toLinearMap ∘ₗ
-    (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ MM.barDifferential
+  Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ MM.barDifferential
 
 /-- The Taylor map is the counit component of the module bar differential. -/
 theorem taylor_def (MM : AInfinityRightModule AA M) :
-    MM.taylor =
-      (TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ
-          MM.barDifferential :=
+    MM.taylor = Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ MM.barDifferential :=
   (rfl)
 
-/-- Evaluating the Taylor map means applying the bar differential, then the coalgebra counit, and
-finally the right unitor. -/
+/-- Evaluating the Taylor map means applying the bar differential and then the counit projection
+`Comodule.cofreeCounit`. -/
 @[simp]
 theorem taylor_apply (MM : AInfinityRightModule AA M)
     (x : M ⊗[R] TensorWords R A) :
-    MM.taylor x = (TensorProduct.rid R M)
-      ((Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M
-        (MM.barDifferential x)) :=
+    MM.taylor x = Comodule.cofreeCounit R (TensorWords R A) M (MM.barDifferential x) :=
   (rfl)
 
 /-- The Taylor map has degree one from the total suspended bar-comodule grading to the suspended
@@ -163,8 +157,7 @@ suspended form of all right-module Stasheff identities. -/
 @[simp]
 theorem taylor_comp_barDifferential (MM : AInfinityRightModule AA M) :
     MM.taylor ∘ₗ MM.barDifferential = 0 := by
-  rw [taylor_def, LinearMap.comp_assoc, LinearMap.comp_assoc,
-    MM.barDifferential_sq, LinearMap.comp_zero, LinearMap.comp_zero]
+  rw [taylor_def, LinearMap.comp_assoc, MM.barDifferential_sq, LinearMap.comp_zero]
 
 /-- A degree-one coderivation over the algebra bar differential squares to zero if and only if
 its Taylor component after one further application vanishes. -/
@@ -174,9 +167,8 @@ theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M ℤ)
     (hcod : Comodule.IsGradedCoderivationOver (barGrading AA G) 1
       AA.coaugmentedBarDifferential D) :
     D ∘ₗ D = 0 ↔
-      ((TensorProduct.rid R M).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ D) ∘ₗ D = 0 := by
-  rw [← LinearMap.comp_assoc]
+      (Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ D) ∘ₗ D = 0 := by
+  rw [LinearMap.comp_assoc]
   exact hcod.square_eq_zero_iff_counit (barGrading AA G)
     AA.coaugmentedBarDifferential D hD AA.coaugmentedBarDifferential_sq
 
@@ -187,8 +179,7 @@ noncomputable def ofBarDifferential (G : InternalGrading R M ℤ)
     (hD : LinearMap.IsHomogeneous D (barGrading AA G).piece (barGrading AA G).piece 1)
     (hcod : Comodule.IsGradedCoderivationOver (barGrading AA G) 1
       AA.coaugmentedBarDifferential D)
-    (hsq : ((TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ D) ∘ₗ D = 0) :
+    (hsq : (Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ D) ∘ₗ D = 0) :
     AInfinityRightModule AA M where
   grading := G
   barDifferential := D
@@ -202,8 +193,7 @@ theorem ofBarDifferential_grading (G : InternalGrading R M ℤ)
     (hD : LinearMap.IsHomogeneous D (barGrading AA G).piece (barGrading AA G).piece 1)
     (hcod : Comodule.IsGradedCoderivationOver (barGrading AA G) 1
       AA.coaugmentedBarDifferential D)
-    (hsq : ((TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ D) ∘ₗ D = 0) :
+    (hsq : (Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ D) ∘ₗ D = 0) :
     (ofBarDifferential G D hD hcod hsq).grading = G :=
   (rfl)
 
@@ -213,8 +203,7 @@ theorem ofBarDifferential_barDifferential (G : InternalGrading R M ℤ)
     (hD : LinearMap.IsHomogeneous D (barGrading AA G).piece (barGrading AA G).piece 1)
     (hcod : Comodule.IsGradedCoderivationOver (barGrading AA G) 1
       AA.coaugmentedBarDifferential D)
-    (hsq : ((TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ D) ∘ₗ D = 0) :
+    (hsq : (Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ D) ∘ₗ D = 0) :
     (ofBarDifferential G D hD hcod hsq).barDifferential = D :=
   (rfl)
 
@@ -224,11 +213,9 @@ theorem ofBarDifferential_taylor (G : InternalGrading R M ℤ)
     (hD : LinearMap.IsHomogeneous D (barGrading AA G).piece (barGrading AA G).piece 1)
     (hcod : Comodule.IsGradedCoderivationOver (barGrading AA G) 1
       AA.coaugmentedBarDifferential D)
-    (hsq : ((TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ D) ∘ₗ D = 0) :
+    (hsq : (Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ D) ∘ₗ D = 0) :
     (ofBarDifferential G D hD hcod hsq).taylor =
-      (TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ D :=
+      Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ D :=
   (rfl)
 
 /-- Right `A∞` modules on a fixed carrier are determined by their grading and Taylor map.  In

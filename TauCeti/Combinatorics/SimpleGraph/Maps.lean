@@ -5,38 +5,43 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Hom
+public import Mathlib.Algebra.Order.Group.End
 public import Mathlib.Combinatorics.SimpleGraph.Maps
 
 /-!
 # Pulling simple graphs back and pushing them forward
 
 Pulling a simple graph back along a map `f : V → W` forgets everything outside the window
-`Set.range f`, and pushing the result forward again recovers exactly what the window sees: the
-intersection of the graph with the complete graph supported on that window. Since pushing forward
-along an embedding is injective, for an embedding prescribing a pullback is therefore the same as
-prescribing that intersection — a condition on an induced subgraph turned into a condition on
-edges.
+`Set.range f`, and pushing the result forward again recovers the intersection of the graph with
+the complete graph supported on that window (`SimpleGraph.map_comap_eq_inf`). Since pushing
+forward along an embedding is injective, for an embedding prescribing a pullback is therefore the
+same as prescribing that intersection — a condition on an induced subgraph turned into a condition
+on edges.
 
 The window of a graph on `ℕ` spanned by the first `n` labels is the pullback along `Fin.val`; it
 is how a graph on an infinite label set is read as a finite sample. A graph is also recorded by
-its Boolean adjacency array.
+its Boolean adjacency array. The automorphism group `G ≃g G` acts on the edges of `G` by
+`SimpleGraph.Iso.mapEdgeSet`.
 
 ## Main definitions
 
 * `SimpleGraph.restrictFin` — the initial `n`-label window of a graph on `ℕ`;
-* `SimpleGraph.adjArray` — the Boolean adjacency array of a graph.
+* `SimpleGraph.adjArray` — the Boolean adjacency array of a graph;
+* `SimpleGraph.Iso.instMulActionEdgeSet` — the action of `G ≃g G` on `G.edgeSet`, with
+  `SimpleGraph.Iso.smul_eq_mapEdgeSet` evaluating it.
 
 ## Main results
 
-* `SimpleGraph.map_comap_eq_inf_map_top` — pushing a pullback forward cuts the graph down to the
-  window;
-* `SimpleGraph.comap_eq_iff_inf_map_top` — prescribing a pullback is prescribing that
-  intersection;
+* `SimpleGraph.comap_eq_iff_inf_map_top` — prescribing a pullback along an embedding is
+  prescribing the intersection with the window;
 * `SimpleGraph.map_sup` — pushing forward along any map commutes with joins;
 * `SimpleGraph.restrictFin_adj` — two labels are joined in a window exactly when they are joined
   in the graph;
 * `SimpleGraph.comap_restrictFin_castLE` — a window of a longer window is the shorter window;
-* `SimpleGraph.adjArray_injective` — a graph is determined by its adjacency array.
+* `SimpleGraph.adjArray_injective` — a graph is determined by its adjacency array;
+* `SimpleGraph.Embedding.isoInduceRange_apply` — evaluating `isoInduceRange` at a vertex gives the
+  corresponding range subtype vertex.
 -/
 
 public section
@@ -45,18 +50,11 @@ namespace SimpleGraph
 
 variable {V W : Type*}
 
-/-- Pushing a pullback forward again cuts the graph down to the window seen by the map. -/
-@[simp]
-theorem map_comap_eq_inf_map_top (f : V → W) (G : SimpleGraph W) :
-    (G.comap f).map f = G ⊓ (⊤ : SimpleGraph V).map f := by
-  ext
-  grind [comap_adj, inf_adj, top_adj]
-
 /-- A pullback along an embedding is prescribed exactly by prescribing the intersection of the
 graph with the window seen by the embedding. -/
 theorem comap_eq_iff_inf_map_top (f : V ↪ W) (G : SimpleGraph W) (H : SimpleGraph V) :
     G.comap ⇑f = H ↔ G ⊓ (⊤ : SimpleGraph V).map ⇑f = H.map ⇑f := by
-  rw [← (map_injective f).eq_iff, map_comap_eq_inf_map_top]
+  rw [← (map_injective f).eq_iff, G.map_comap_eq_inf f]
 
 /-- Pushing a graph forward along any map commutes with joins: an edge of the image of `G ⊔ H`
 is the image of an edge of `G` or of an edge of `H`. -/
@@ -123,5 +121,63 @@ theorem adjArray_injective :
     Function.Injective (adjArray : SimpleGraph V → V × V → Bool) := fun G G' h => by
   ext i j
   simpa only [adjArray_apply, decide_eq_decide] using congrFun h (i, j)
+
+namespace Embedding
+
+/-- Evaluating `SimpleGraph.Embedding.isoInduceRange` at a vertex `v` gives the range subtype
+vertex `⟨f v, ⟨v, rfl⟩⟩`. -/
+@[simp]
+theorem isoInduceRange_apply {G : SimpleGraph V} {H : SimpleGraph W} (f : G ↪g H) (v : V) :
+    f.isoInduceRange v = ⟨f v, ⟨v, rfl⟩⟩ :=
+  Equiv.ofInjective_apply f f.injective v
+
+end Embedding
+
+namespace Iso
+
+/-- The underlying unordered pair of the image of an edge under a graph isomorphism. -/
+theorem coe_mapEdgeSet {G : SimpleGraph V} {G' : SimpleGraph W} (φ : G ≃g G') (e : G.edgeSet) :
+    ((φ.mapEdgeSet e : G'.edgeSet) : Sym2 W) = Sym2.map φ e :=
+  (rfl)
+
+/-- The underlying unordered pair of the image of an edge under the inverse of a graph
+isomorphism. -/
+theorem coe_mapEdgeSet_symm {G : SimpleGraph V} {G' : SimpleGraph W} (φ : G ≃g G')
+    (e : G'.edgeSet) : ((φ.mapEdgeSet.symm e : G.edgeSet) : Sym2 V) = Sym2.map φ.symm e :=
+  (rfl)
+
+variable {G : SimpleGraph V}
+
+/-- An automorphism of `G` moves its edges by `SimpleGraph.Iso.mapEdgeSet`. -/
+instance instSMulEdgeSet : SMul (G ≃g G) G.edgeSet :=
+  ⟨fun φ e => φ.mapEdgeSet e⟩
+
+/-- An automorphism acts on an edge by `SimpleGraph.Iso.mapEdgeSet`. -/
+@[simp]
+theorem smul_eq_mapEdgeSet (φ : G ≃g G) (e : G.edgeSet) : φ • e = φ.mapEdgeSet e :=
+  (rfl)
+
+/-- The underlying unordered pair of the image of an edge under an automorphism. -/
+theorem coe_smul_edgeSet (φ : G ≃g G) (e : G.edgeSet) :
+    ((φ • e : G.edgeSet) : Sym2 V) = Sym2.map φ e :=
+  (rfl)
+
+/-- The automorphism group of `G` acts on its edges by `SimpleGraph.Iso.mapEdgeSet`. -/
+instance instMulActionEdgeSet : MulAction (G ≃g G) G.edgeSet where
+  one_smul e := Subtype.ext <| by simp only [coe_smul_edgeSet, RelIso.coe_one, Sym2.map_id, id]
+  mul_smul φ ψ e := Subtype.ext <| by simp only [coe_smul_edgeSet, RelIso.coe_mul, Sym2.map_map]
+
+/-- The action of the automorphism group on the edges is through graph automorphisms. -/
+theorem exists_smul_eq_mapEdgeSet (φ : G ≃g G) : ∃ ψ : G ≃g G, ∀ e, φ • e = ψ.mapEdgeSet e :=
+  ⟨φ, fun _ => rfl⟩
+
+/-- A homomorphism `τ : Γ →* (G ≃g G)` makes `Γ` act on the edges of `G` through graph
+automorphisms, by `MulAction.compHom`. -/
+theorem exists_compHom_smul_eq_mapEdgeSet {Γ : Type*} [Monoid Γ] (τ : Γ →* (G ≃g G)) :
+    letI := MulAction.compHom G.edgeSet τ
+    ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e :=
+  fun g => ⟨τ g, fun _ => rfl⟩
+
+end Iso
 
 end SimpleGraph

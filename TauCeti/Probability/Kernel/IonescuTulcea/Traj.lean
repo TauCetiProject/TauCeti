@@ -41,6 +41,17 @@ instance trajMeasure.instIsFiniteMeasure [IsFiniteMeasure μ₀] :
   rw [trajMeasure]
   infer_instance
 
+/-- The time-zero marginal of a trajectory measure is its initial law. -/
+@[simp]
+theorem trajMeasure_map_eval_zero : (trajMeasure μ₀ κ).map (fun x ↦ x 0) = μ₀ := by
+  let e : ((i : Iic 0) → X i) ≃ᵐ X 0 := MeasurableEquiv.piUnique _
+  have heval : (fun x : (k : ℕ) → X k ↦ x 0) = e ∘ frestrictLe 0 := (rfl)
+  have hprefix : (trajMeasure μ₀ κ).map (frestrictLe 0) = μ₀.map e.symm := by
+    rw [trajMeasure, Measure.map_comp _ _ (measurable_frestrictLe 0),
+      traj_map_frestrictLe, partialTraj_self, Measure.id_comp]
+  rw [heval, ← Measure.map_map e.measurable (measurable_frestrictLe 0), hprefix]
+  simp
+
 /-- For an s-finite initial law, the joint law of the prefix through time `n` and the next
 coordinate is the composition-product of the prefix law and the transition kernel at `n`. -/
 theorem map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite [SFinite μ₀] (n : ℕ) :

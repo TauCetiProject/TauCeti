@@ -8,6 +8,11 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding
 public import TauCeti.Algebra.Bialgebra.Equiv
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.GroupLike
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.EssentialImage
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
+import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.ClosedSubgroup
+import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
 # Homomorphisms from diagonalizable groups to unipotent groups are trivial
@@ -45,6 +50,12 @@ In the `TauCeti.geometricallyUnipotentPointsCommHopfAlgProperty` namespace:
 * `algebraMap_bijective_of_groupLikeSetSpan_eq_top_of_surjective` and
   `counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective`: a diagonalizable closed subgroup of a
   reduced unipotent group is trivial.
+
+In the `TauCeti.FiniteTypeCommHopfAlgCat` namespace:
+
+* `sup_eq_augmentation_of_groupLikeSpanned_of_smoothUnipotent`: a diagonalizable closed subgroup
+  meets a smooth unipotent closed subgroup trivially, in the Hopf-ideal form
+  `I ⊔ U = augmentation`.
 
 ## References
 
@@ -140,3 +151,44 @@ theorem counitBialgEquivOfGroupLikeSetSpanEqTopOfSurjective_symm_apply [IsAlgClo
 end geometricallyUnipotentPointsCommHopfAlgProperty
 
 end TauCeti
+
+namespace TauCeti.FiniteTypeCommHopfAlgCat
+
+open CategoryTheory
+
+variable {k : Type u} [Field k] [IsAlgClosed k] (G : FiniteTypeCommHopfAlgCat.{u, u} k)
+
+/-- **A diagonalizable closed subgroup meets a smooth unipotent closed subgroup trivially**,
+over an algebraically closed field and scheme-theoretically. If the Hopf ideal `I` cuts out a closed
+subgroup whose coordinate algebra is spanned by its group-like elements and `U` cuts out a smooth
+unipotent closed subgroup, then `I` and `U` together generate the augmentation ideal. -/
+theorem sup_eq_augmentation_of_groupLikeSpanned_of_smoothUnipotent {I U : HopfIdeal k G}
+    (hI : DiagonalizableGroup.groupLikeSpannedProperty k (quotient G I))
+    (hU : smoothUnipotentCommHopfAlgProperty k (quotient G U)) :
+    I ⊔ U = HopfIdeal.augmentation k G := by
+  have hU' := (smoothUnipotentCommHopfAlgProperty_iff k (quotient G U)).mp hU
+  have hgeom : geometricallyUnipotentPointsCommHopfAlgProperty k
+      (CommHopfAlgCat.quotient G.obj U) :=
+    (geometricallyUnipotentPointsCommHopfAlgProperty_iff k _).mpr hU'.2
+  let _ : Algebra.Smooth k (CommHopfAlgCat.quotient G.obj U) := hU'.1
+  let _ : IsReduced (CommHopfAlgCat.quotient G.obj U) := isReduced_of_smooth k _
+  -- The intersection is a closed subgroup of the diagonalizable subgroup (its coordinate algebra
+  -- is a Hopf quotient), hence diagonalizable.
+  have hK : Subcoalgebra.groupLikeSetSpan (R := k)
+      (C := CommHopfAlgCat.quotient G.obj (I ⊔ U)) Set.univ = ⊤ :=
+    (DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mp <|
+      DiagonalizableGroup.groupLikeSpannedProperty.of_surjective k _ _
+        (quotientMapOfLe G (le_sup_left : I ≤ I ⊔ U)) (quotientMapOfLe_surjective G le_sup_left) hI
+  -- It is also a closed subgroup of the reduced unipotent group `U`, hence trivial.
+  have htriv := hgeom.bialgHom_eq_unit_comp_counit_of_groupLikeSetSpan_eq_top hK
+    (toBialgHom (quotientMapOfLe G (le_sup_right : U ≤ I ⊔ U)))
+  refine le_antisymm (HopfIdeal.le_augmentation k G _) fun x hx ↦ ?_
+  -- The class of `x` modulo `I ⊔ U` is its image under the trivial morphism out of `O(U)`.
+  rw [← mkQuotient_eq_zero_iff, ← mkQuotient_comp_quotientMapOfLe G (le_sup_right : U ≤ I ⊔ U),
+    toBialgHom_comp, BialgHom.comp_apply, htriv]
+  -- That morphism is the counit followed by the unit.
+  rw [BialgHom.comp_apply, Bialgebra.counitBialgHom_apply]
+  -- The counit of the class of `x` is the counit of `x`, which is zero on the augmentation ideal.
+  rw [CoalgHomClass.counit_comp_apply, (HopfIdeal.mem_augmentation k G).mp hx, map_zero]
+
+end TauCeti.FiniteTypeCommHopfAlgCat
