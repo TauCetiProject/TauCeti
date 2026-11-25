@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Fourier.Torus.Multiplier
 public import TauCeti.Analysis.Fourier.Torus.SchwartzMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # The periodic Littlewood–Paley decomposition of the torus
@@ -255,7 +256,6 @@ theorem hasSum_norm_sq_littlewoodPaleyBlock (f : L²(UnitAddTorus d)) :
   obtain ⟨L, hL⟩ := φ.exists_sum_sq_inhomogeneousLittlewoodPaley_le
   set b : ℕ → (d → ℤ) → ℝ := fun j n ↦
     φ.inhomogeneousLittlewoodPaley j (latticePoint n) ^ 2 * ‖mFourierCoeff f n‖ ^ 2
-  have hb0 : 0 ≤ Function.uncurry b := fun _ ↦ mul_nonneg (sq_nonneg _) (sq_nonneg _)
   have hparseval := hasSum_norm_sq_mFourierCoeff f
   -- Parseval's identity for each block.
   have hrow : ∀ j, HasSum (b j) (‖littlewoodPaleyBlock φ j f‖ ^ 2) := fun j ↦ by
@@ -272,14 +272,12 @@ theorem hasSum_norm_sq_littlewoodPaleyBlock (f : L²(UnitAddTorus d)) :
             (summable_sum fun j _ ↦ (hrow j).summable) (hparseval.summable.mul_left _)
           simp only [b, ← Finset.sum_mul]
           exact mul_le_mul_of_nonneg_right (hL s _) (sq_nonneg _)
-  have hprod : Summable (Function.uncurry b) :=
-    (summable_prod_of_nonneg hb0).2 ⟨fun j ↦ (hrow j).summable,
-      hcol.congr fun j ↦ (hrow j).tsum_eq.symm⟩
-  have hswap := Summable.tsum_comm' hprod (fun j ↦ (hrow j).summable) fun n ↦
-    hprod.prod_symm.prod_factor n
-  convert hcol.hasSum using 1
-  simp_rw [← tsum_mul_right]
-  exact hswap.trans (tsum_congr fun j ↦ (hrow j).tsum_eq)
+  -- Exchange the sums over the blocks and over the frequencies.
+  have hswap := (hasSum_rows_iff_hasSum_cols_of_nonneg
+    (fun _ _ ↦ mul_nonneg (sq_nonneg _) (sq_nonneg _)) hrow fun n ↦
+      (φ.summable_inhomogeneousLittlewoodPaley_sq _).hasSum.mul_right _).1 hcol.hasSum
+  rw [hswap.tsum_eq]
+  exact hcol.hasSum
 
 /-- The frequency series `∑ₙ (∑ⱼ ψⱼ(n)²) ‖f̂(n)‖²` of the `L²` square function converges: its
 weight is bounded uniformly in `n`. -/

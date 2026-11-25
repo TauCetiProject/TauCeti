@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus.Basic
 import TauCeti.Analysis.Fourier.Torus.Multiplier
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # The periodic Besov space `B^s_{2,2}(𝕋ᵈ)` is the Sobolev space `H^s(𝕋ᵈ)`
@@ -93,45 +94,35 @@ theorem hasSum_rpow_mul_norm_littlewoodPaleyBlockLp_sq_iff (c : (d → ℤ) → 
     HasSum (fun j : ℕ ↦ (2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ 2 j c‖) ^ 2) x ↔
       HasSum (fun n ↦ (∑' j : ℕ,
         (2 ^ (s * j) * φ.inhomogeneousLittlewoodPaley j (latticePoint n)) ^ 2) * ‖c n‖ ^ 2) x := by
-  set a : ℕ → (d → ℤ) → ℝ := fun j n ↦
-    (2 ^ (s * j) * φ.inhomogeneousLittlewoodPaley j (latticePoint n)) ^ 2 * ‖c n‖ ^ 2
-  have ha : 0 ≤ Function.uncurry a := fun _ ↦ mul_nonneg (sq_nonneg _) (sq_nonneg _)
-  -- The sum of each row is a weighted block norm, by Parseval's identity.
-  have hrow : ∀ j, HasSum (a j) ((2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ 2 j c‖) ^ 2) :=
-    fun j ↦ by
-      convert (hasSum_norm_sq_littlewoodPaleyBlockLp (φ := φ) j c).mul_left
-        (((2 : ℝ) ^ (s * j)) ^ 2) using 1
-      · funext n
-        simp only [a]
-        ring
-      · ring
-  -- The sum of each column is a weighted coefficient.
-  have hcol : ∀ n, HasSum (fun j ↦ a j n) ((∑' j : ℕ,
-      (2 ^ (s * j) * φ.inhomogeneousLittlewoodPaley j (latticePoint n)) ^ 2) * ‖c n‖ ^ 2) :=
+  refine hasSum_rows_iff_hasSum_cols_of_nonneg
+    (a := fun (j : ℕ) n ↦
+      (2 ^ (s * j) * φ.inhomogeneousLittlewoodPaley j (latticePoint n)) ^ 2 * ‖c n‖ ^ 2)
+    (fun _ _ ↦ by positivity) (fun j ↦ ?_)
     fun n ↦ (φ.summable_two_rpow_mul_inhomogeneousLittlewoodPaley_sq s _).hasSum.mul_right _
-  have hrows : Summable (Function.uncurry a) ↔
-      Summable fun j : ℕ ↦ (2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ 2 j c‖) ^ 2 := by
-    rw [summable_prod_of_nonneg ha]
-    simp only [Function.uncurry_apply_pair, fun j ↦ (hrow j).tsum_eq]
-    exact and_iff_right fun j ↦ (hrow j).summable
-  have hcols : Summable (Function.uncurry a) ↔ Summable fun n ↦ (∑' j : ℕ,
-      (2 ^ (s * j) * φ.inhomogeneousLittlewoodPaley j (latticePoint n)) ^ 2) * ‖c n‖ ^ 2 := by
-    rw [← (Equiv.prodComm _ _).summable_iff,
-      summable_prod_of_nonneg (f := Function.uncurry a ∘ Equiv.prodComm _ _) fun _ ↦ ha _]
-    simp only [Function.comp_apply, Equiv.prodComm_apply, Prod.swap_prod_mk,
-      Function.uncurry_apply_pair, fun n ↦ (hcol n).tsum_eq]
-    exact and_iff_right fun n ↦ (hcol n).summable
-  constructor
-  · intro h
-    have hprod := hrows.2 h.summable
-    rw [(hcols.1 hprod).hasSum_iff, ← h.tsum_eq]
-    simp_rw [← fun n ↦ (hcol n).tsum_eq, ← fun j ↦ (hrow j).tsum_eq]
-    exact hprod.tsum_comm' (fun j ↦ (hrow j).summable) fun n ↦ (hcol n).summable
-  · intro h
-    have hprod := hcols.2 h.summable
-    rw [(hrows.1 hprod).hasSum_iff, ← h.tsum_eq]
-    simp_rw [← fun n ↦ (hcol n).tsum_eq, ← fun j ↦ (hrow j).tsum_eq]
-    exact (hprod.tsum_comm' (fun j ↦ (hrow j).summable) fun n ↦ (hcol n).summable).symm
+  -- The sum of each row is a weighted block norm, by Parseval's identity.
+  convert (hasSum_norm_sq_littlewoodPaleyBlockLp (φ := φ) j c).mul_left
+    (((2 : ℝ) ^ (s * j)) ^ 2) using 1
+  · funext n
+    ring
+  · ring
+
+/-- On each frequency, the Sobolev weight `(1 + ‖n‖²)^s` and the dyadic weight
+`∑ⱼ (2^{js} ψⱼ(n))²`, multiplied by `‖z‖²`, are comparable with constants independent of `n`
+and `z`. -/
+private theorem exists_one_add_norm_sq_rpow_mul_le_and_le :
+    ∃ C, 0 ≤ C ∧ ∀ (n : d → ℤ) (z : ℂ),
+      (1 + ‖latticePoint n‖ ^ 2) ^ s * ‖z‖ ^ 2 ≤ C * ((∑' j : ℕ,
+        (2 ^ (s * j) * φ.inhomogeneousLittlewoodPaley j (latticePoint n)) ^ 2) * ‖z‖ ^ 2) ∧
+      (∑' j : ℕ, (2 ^ (s * j) * φ.inhomogeneousLittlewoodPaley j (latticePoint n)) ^ 2) *
+        ‖z‖ ^ 2 ≤ C * ((1 + ‖latticePoint n‖ ^ 2) ^ s * ‖z‖ ^ 2) := by
+  obtain ⟨C₁, hC₁, h₁⟩ := φ.exists_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le s
+  obtain ⟨C₂, -, h₂⟩ :=
+    φ.exists_one_add_norm_sq_rpow_le_mul_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq s
+  refine ⟨max C₁ C₂, le_max_of_le_left hC₁, fun n z ↦ ⟨?_, ?_⟩⟩ <;> rw [← mul_assoc]
+  · exact mul_le_mul_of_nonneg_right ((h₂ _).trans (mul_le_mul_of_nonneg_right
+      (le_max_right _ _) (tsum_nonneg fun _ ↦ sq_nonneg _))) (sq_nonneg _)
+  · exact mul_le_mul_of_nonneg_right ((h₁ _).trans (mul_le_mul_of_nonneg_right
+      (le_max_left _ _) (by positivity))) (sq_nonneg _)
 
 /-- **`B^s_{2,2}(𝕋ᵈ) = H^s(𝕋ᵈ)`.** A formal Fourier series `c` lies in the periodic Besov space
 `B^s_{2,2}(𝕋ᵈ)` if and only if `∑ₙ (1 + ‖n‖²)^s ‖c(n)‖² < ∞`, that is, if and only if it lies in
@@ -139,21 +130,15 @@ the periodic Sobolev space `H^s(𝕋ᵈ)`. -/
 theorem memBesov_two_two_iff {c : (d → ℤ) → ℂ} :
     MemBesov φ s 2 2 c ↔
       Summable fun n ↦ (1 + ‖latticePoint n‖ ^ 2) ^ s * ‖c n‖ ^ 2 := by
-  obtain ⟨C₁, -, h₁⟩ := φ.exists_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le s
-  obtain ⟨C₂, -, h₂⟩ :=
-    φ.exists_one_add_norm_sq_rpow_le_mul_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq s
+  obtain ⟨C, -, h⟩ := exists_one_add_norm_sq_rpow_mul_le_and_le (φ := φ) (s := s)
   rw [memBesov_def, memℓp_gen_iff (by simp)]
   simp only [ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs, sq_abs]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have hw := ((hasSum_rpow_mul_norm_littlewoodPaleyBlockLp_sq_iff c _).1 h.hasSum).summable
-    refine (hw.mul_left C₂).of_nonneg_of_le (fun _ ↦ by positivity) fun n ↦ ?_
-    rw [← mul_assoc]
-    exact mul_le_mul_of_nonneg_right (h₂ _) (sq_nonneg _)
+  refine ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩
+  · have hw := ((hasSum_rpow_mul_norm_littlewoodPaleyBlockLp_sq_iff c _).1 h'.hasSum).summable
+    exact (hw.mul_left C).of_nonneg_of_le (fun _ ↦ by positivity) fun n ↦ (h n (c n)).1
   · have hw : Summable fun n ↦ (∑' j : ℕ,
         (2 ^ (s * j) * φ.inhomogeneousLittlewoodPaley j (latticePoint n)) ^ 2) * ‖c n‖ ^ 2 :=
-      (h.mul_left C₁).of_nonneg_of_le (fun _ ↦ by positivity) fun n ↦ by
-        rw [← mul_assoc]
-        exact mul_le_mul_of_nonneg_right (h₁ _) (sq_nonneg _)
+      (h'.mul_left C).of_nonneg_of_le (fun _ ↦ by positivity) fun n ↦ (h n (c n)).2
     exact ((hasSum_rpow_mul_norm_littlewoodPaleyBlockLp_sq_iff c _).2 hw.hasSum).summable
 
 namespace BesovSpace
@@ -187,10 +172,9 @@ private theorem memℓp_two_iff_memBesov_inv_sobolevWeight_mul {g : (d → ℤ) 
     Memℓp g 2 ↔ MemBesov φ s 2 2 fun n ↦ ((sobolevWeight s n)⁻¹ : ℂ) * g n := by
   rw [memBesov_two_two_iff, memℓp_gen_iff (by simp)]
   refine summable_congr fun n ↦ ?_
-  have h := sobolevWeight_pos s n
-  rw [norm_mul, mul_pow, norm_inv, Complex.norm_real, Real.norm_of_nonneg h.le, inv_pow,
-    ← sobolevWeight_sq, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul]
-  norm_num
+  have h := (sobolevWeight_pos s n).ne'
+  simp [mul_pow, ← sobolevWeight_sq]
+  field_simp
 
 /-- `c ∈ H^s(𝕋ᵈ)` exactly when the weighted coefficients `(1 + ‖n‖²)^{s/2} c(n)` lie in
 `ℓ²(ℤᵈ)`. -/
@@ -221,6 +205,9 @@ private def sobolevEquivₗ : BesovSpace φ s 2 2 ≃ₗ[ℂ] lp (fun _ : d → 
 private theorem sobolevEquivₗ_apply (u : BesovSpace φ s 2 2) (n : d → ℤ) :
     sobolevEquivₗ φ s u n = (sobolevWeight s n : ℂ) * u.coeff n := (rfl)
 
+private theorem sobolevEquivₗ_symm_coeff (g : lp (fun _ : d → ℤ ↦ ℂ) 2) (n : d → ℤ) :
+    ((sobolevEquivₗ φ s).symm g).coeff n = ((sobolevWeight s n)⁻¹ : ℂ) * g n := (rfl)
+
 /-- The squared `ℓ²` norm of the weighted coefficients `(1 + ‖n‖²)^{s/2} c(n)` is the squared
 `H^s(𝕋ᵈ)` norm `∑ₙ (1 + ‖n‖²)^s ‖c(n)‖²`. -/
 private theorem hasSum_norm_sq_of_apply_eq {g : lp (fun _ : d → ℤ ↦ ℂ) 2} {c : (d → ℤ) → ℂ}
@@ -236,22 +223,27 @@ private theorem hasSum_norm_sq_of_apply_eq {g : lp (fun _ : d → ℤ ↦ ℂ) 2
 private theorem exists_norm_sq_le_and_le :
     ∃ C, 0 ≤ C ∧ ∀ u : BesovSpace φ s 2 2,
       ‖sobolevEquivₗ φ s u‖ ^ 2 ≤ C * ‖u‖ ^ 2 ∧ ‖u‖ ^ 2 ≤ C * ‖sobolevEquivₗ φ s u‖ ^ 2 := by
-  obtain ⟨C₁, hC₁, h₁⟩ := φ.exists_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le s
-  obtain ⟨C₂, -, h₂⟩ :=
-    φ.exists_one_add_norm_sq_rpow_le_mul_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq s
-  refine ⟨max C₁ C₂, le_max_of_le_left hC₁, fun u ↦ ⟨?_, ?_⟩⟩
+  obtain ⟨C, hC, h⟩ := exists_one_add_norm_sq_rpow_mul_le_and_le (φ := φ) (s := s)
+  refine ⟨C, hC, fun u ↦ ⟨?_, ?_⟩⟩
   all_goals
     have hH := hasSum_norm_sq_of_apply_eq (sobolevEquivₗ_apply u)
     have hB := hasSum_norm_sq u
     rw [← hH.tsum_eq, ← hB.tsum_eq, ← tsum_mul_left]
-  · refine hH.summable.tsum_le_tsum (fun n ↦ ?_) (hB.summable.mul_left _)
-    rw [← mul_assoc]
-    exact mul_le_mul_of_nonneg_right ((h₂ _).trans (mul_le_mul_of_nonneg_right
-      (le_max_right _ _) (tsum_nonneg fun _ ↦ sq_nonneg _))) (sq_nonneg _)
-  · refine hB.summable.tsum_le_tsum (fun n ↦ ?_) (hH.summable.mul_left _)
-    rw [← mul_assoc]
-    exact mul_le_mul_of_nonneg_right ((h₁ _).trans (mul_le_mul_of_nonneg_right
-      (le_max_left _ _) (by positivity))) (sq_nonneg _)
+  · exact hH.summable.tsum_le_tsum (fun n ↦ (h n _).1) (hB.summable.mul_left _)
+  · exact hB.summable.tsum_le_tsum (fun n ↦ (h n _).2) (hH.summable.mul_left _)
+
+/-- The bounds of `sobolevEquivₗ φ s` in both directions: there is `C` with
+`‖sobolevEquivₗ φ s u‖ ≤ C ‖u‖` and `‖u‖ ≤ C ‖sobolevEquivₗ φ s u‖`. -/
+private theorem exists_norm_le_and_le :
+    ∃ C, ∀ u : BesovSpace φ s 2 2,
+      ‖sobolevEquivₗ φ s u‖ ≤ C * ‖u‖ ∧ ‖u‖ ≤ C * ‖sobolevEquivₗ φ s u‖ := by
+  obtain ⟨C, hC, h⟩ := exists_norm_sq_le_and_le (φ := φ) (s := s)
+  -- From `‖x‖² ≤ C ‖y‖²` to `‖x‖ ≤ √C ‖y‖`.
+  have hsqrt : ∀ {x y : ℝ}, 0 ≤ x → 0 ≤ y → x ^ 2 ≤ C * y ^ 2 → x ≤ √C * y := fun hx hy hxy ↦
+    ((Real.le_sqrt hx (mul_nonneg hC (sq_nonneg _))).2 hxy).trans_eq
+      (by rw [Real.sqrt_mul hC, Real.sqrt_sq hy])
+  exact ⟨√C, fun u ↦ ⟨hsqrt (norm_nonneg _) (norm_nonneg _) (h u).1,
+    hsqrt (norm_nonneg _) (norm_nonneg _) (h u).2⟩⟩
 
 variable (φ s) in
 /-- **`B^s_{2,2}(𝕋ᵈ) = H^s(𝕋ᵈ)` with equivalent norms.** Multiplying the Fourier coefficients by
@@ -259,27 +251,27 @@ variable (φ s) in
 `B^s_{2,2}(𝕋ᵈ)` onto `ℓ²(ℤᵈ)`; the norm it transports is the `H^s(𝕋ᵈ)` norm
 `(∑ₙ (1 + ‖n‖²)^s ‖c(n)‖²)^{1/2}` (`TauCeti.UnitAddTorus.BesovSpace.hasSum_norm_sobolevEquiv_sq`).
 -/
-def sobolevEquiv : BesovSpace φ s 2 2 ≃L[ℂ] lp (fun _ : d → ℤ ↦ ℂ) 2 := by
-  obtain ⟨hC, h⟩ := (exists_norm_sq_le_and_le (φ := φ) (s := s)).choose_spec
-  set C := (exists_norm_sq_le_and_le (φ := φ) (s := s)).choose
-  -- From `‖x‖² ≤ C ‖y‖²` to `‖x‖ ≤ √C ‖y‖`.
-  have hsqrt : ∀ {x y : ℝ}, 0 ≤ x → 0 ≤ y → x ^ 2 ≤ C * y ^ 2 → x ≤ √C * y := fun hx hy hxy ↦
-    ((Real.le_sqrt hx (mul_nonneg hC (sq_nonneg _))).2 hxy).trans_eq
-      (by rw [Real.sqrt_mul hC, Real.sqrt_sq hy])
-  refine (sobolevEquivₗ φ s).toContinuousLinearEquivOfBounds √C √C
-    (fun u ↦ hsqrt (norm_nonneg _) (norm_nonneg _) (h u).1) fun g ↦ ?_
-  have hg := (h ((sobolevEquivₗ φ s).symm g)).2
-  rw [LinearEquiv.apply_symm_apply] at hg
-  exact hsqrt (norm_nonneg _) (norm_nonneg _) hg
+def sobolevEquiv : BesovSpace φ s 2 2 ≃L[ℂ] lp (fun _ : d → ℤ ↦ ℂ) 2 :=
+  (sobolevEquivₗ φ s).toContinuousLinearEquivOfBounds exists_norm_le_and_le.choose
+    exists_norm_le_and_le.choose (fun u ↦ (exists_norm_le_and_le.choose_spec u).1) fun g ↦ by
+      simpa using (exists_norm_le_and_le.choose_spec ((sobolevEquivₗ φ s).symm g)).2
+
+-- `LinearEquiv.toContinuousLinearEquivOfBounds` keeps the underlying linear equivalence.
+private theorem toLinearEquiv_sobolevEquiv :
+    (sobolevEquiv φ s).toLinearEquiv = sobolevEquivₗ φ s := rfl
 
 @[simp]
 theorem sobolevEquiv_apply (u : BesovSpace φ s 2 2) (n : d → ℤ) :
-    sobolevEquiv φ s u n = ((1 + ‖latticePoint n‖ ^ 2) ^ (s / 2) : ℝ) * u.coeff n := (rfl)
+    sobolevEquiv φ s u n = ((1 + ‖latticePoint n‖ ^ 2) ^ (s / 2) : ℝ) * u.coeff n := by
+  rw [← ContinuousLinearEquiv.coe_toLinearEquiv, toLinearEquiv_sobolevEquiv,
+    sobolevEquivₗ_apply, sobolevWeight]
 
 @[simp]
 theorem coeff_sobolevEquiv_symm_apply (g : lp (fun _ : d → ℤ ↦ ℂ) 2) (n : d → ℤ) :
     ((sobolevEquiv φ s).symm g).coeff n =
-      ((((1 + ‖latticePoint n‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))⁻¹ * g n := (rfl)
+      ((((1 + ‖latticePoint n‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))⁻¹ * g n := by
+  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv, toLinearEquiv_sobolevEquiv,
+    sobolevEquivₗ_symm_coeff, sobolevWeight]
 
 /-- **The `H^s(𝕋ᵈ)` norm.** The squared norm of the weighted coefficients `sobolevEquiv φ s u` is
 `∑ₙ (1 + ‖n‖²)^s ‖u(n)‖²`. -/

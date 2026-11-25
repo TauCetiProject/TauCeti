@@ -1045,7 +1045,7 @@ private theorem exists_two_rpow_sq_le_and_le (s : ℝ) :
 `(2^{js})²` are comparable: there is `C ≥ 0`, depending only on `φ` and `s`, with
 `(2^{js} ψⱼ ξ)² ≤ C (1 + ‖ξ‖ ^ 2) ^ s ψⱼ ξ ²` and `(1 + ‖ξ‖ ^ 2) ^ s ψⱼ ξ ² ≤ C (2^{js} ψⱼ ξ)²` for
 every `j` and `ξ`. -/
-theorem exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le (s : ℝ) :
+theorem exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le_and_le (s : ℝ) :
     ∃ C, 0 ≤ C ∧ ∀ (j : ℕ) (ξ : E),
       ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 ≤
           C * ((1 + ‖ξ‖ ^ 2) ^ s * φ.inhomogeneousLittlewoodPaley j ξ ^ 2) ∧
@@ -1062,7 +1062,7 @@ theorem exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le (s : ℝ) :
 /-- At every `ξ` the weighted squares `(2^{js} ψⱼ ξ)²` of the pieces are summable over `j`. -/
 theorem summable_two_rpow_mul_inhomogeneousLittlewoodPaley_sq (s : ℝ) (ξ : E) :
     Summable fun j : ℕ ↦ ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 := by
-  obtain ⟨C, -, h⟩ := φ.exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le s
+  obtain ⟨C, -, h⟩ := φ.exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le_and_le s
   exact (((φ.summable_inhomogeneousLittlewoodPaley_sq ξ).mul_left ((1 + ‖ξ‖ ^ 2) ^ s)).mul_left
     C).of_nonneg_of_le (fun _ ↦ sq_nonneg _) fun j ↦ (h j ξ).1
 
@@ -1072,7 +1072,7 @@ theorem exists_tsum_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le (s : ℝ) :
     ∃ C, 0 ≤ C ∧ ∀ ξ : E,
       ∑' j : ℕ, ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 ≤
         C * (1 + ‖ξ‖ ^ 2) ^ s := by
-  obtain ⟨C, hC, h⟩ := φ.exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le s
+  obtain ⟨C, hC, h⟩ := φ.exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le_and_le s
   obtain ⟨L, hL⟩ := φ.exists_tsum_inhomogeneousLittlewoodPaley_sq_le
   refine ⟨C * L, by positivity, fun ξ ↦ ?_⟩
   have hs := φ.summable_inhomogeneousLittlewoodPaley_sq ξ
@@ -1094,7 +1094,7 @@ theorem exists_one_add_norm_sq_rpow_le_mul_tsum_two_rpow_mul_inhomogeneousLittle
     ∃ C, 0 ≤ C ∧ ∀ ξ : E,
       (1 + ‖ξ‖ ^ 2) ^ s ≤
         C * ∑' j : ℕ, ((2 : ℝ) ^ (s * j) * φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 := by
-  obtain ⟨C, hC, h⟩ := φ.exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le s
+  obtain ⟨C, hC, h⟩ := φ.exists_two_rpow_mul_inhomogeneousLittlewoodPaley_sq_le_and_le s
   obtain ⟨L, -, hL⟩ := φ.exists_one_le_mul_sum_sq_inhomogeneousLittlewoodPaley
   refine ⟨L * C, by positivity, fun ξ ↦ ?_⟩
   obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (‖ξ‖ / φ.rIn) (one_lt_two (α := ℝ))
