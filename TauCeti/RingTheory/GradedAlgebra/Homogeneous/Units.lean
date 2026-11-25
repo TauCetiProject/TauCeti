@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
-public import TauCeti.Data.ZMod.QuotientGroup
+public import TauCeti.Data.ZMod.Quotient.Group
 public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
