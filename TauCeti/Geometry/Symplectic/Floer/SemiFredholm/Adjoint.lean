@@ -15,7 +15,6 @@ import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.CauchyRiemann
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.Topology.Compactness.Normed
-import TauCeti.Topology.Constructions.SumProd
 
 /-!
 # The semi-Fredholm estimate of the formal adjoint of the linearized Floer operator
@@ -84,15 +83,12 @@ In the namespace `TauCeti.SymplecticForm`:
   the reflection, it is the `L²` estimate of
   `TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure`. It is the estimate on the
   compact part of a punctured domain, such as the pair of pants.
-* `exists_integral_mul_norm_floerLinearizationAdjoint_smul_sq_le`: the cost of a cutoff `β` with
-  values in `[0, 1]`, for a continuous weight `w ≥ 0`:
-  `∫ w ‖D_u^* (β η)‖² ≤ 2 ∫ w ‖D_u^* η‖² + C ∫_K ‖η‖²`, with `K` a compact set off which `dβ`
-  vanishes. It is the weighted adjoint counterpart of
-  `exists_integral_norm_floerLinearization_smul_sq_le`.
 * `exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizationAdjoint_add_of_lt`:
-  the estimate `∫_{‖w‖ ≤ a} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ w ‖D_u^* η‖² + ∫_{‖w‖ ≤ b} ‖η‖²)`
+  the estimate `∫_{‖z‖ ≤ a} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ w ‖D_u^* η‖² + ∫_{‖z‖ ≤ b} ‖η‖²)`
   on a disc, for covector fields of compact support, when `J` is compatible along `u` and the
-  weight is positive on the larger disc `‖w‖ ≤ b`. It is the adjoint counterpart of
+  continuous weight `w ≥ 0` is positive on the larger disc `‖z‖ ≤ b`. A cutoff between the discs
+  costs an `L²` norm of `η` (`exists_integral_mul_norm_floerLinearizationAdjoint_smul_sq_le`).
+  It is the adjoint counterpart of
   `exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt`, and the estimate on
   the compact core of a plane with one cylindrical end, such as a PSS plane.
 
@@ -1088,112 +1084,11 @@ theorem exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLineari
         exact (hest hζ hζK).trans (mul_le_mul_of_nonneg_left hPI hC₀)
     _ = _ := by ring
 
-/-! ### Cutoffs and the estimate on a disc -/
+/-! ### The estimate on a disc -/
 
 section Disc
 
 open Floer
-
-/-- For a continuous weight `w` and a `C¹` covector field `η` of compact support, the `w`-weighted
-square norm of `D_u^* η` is integrable. -/
-theorem integrable_mul_norm_floerLinearizationAdjoint_sq_of_continuous
-    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z, ContDiffAt ℝ 1 (uncurry J) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    {w : ℝ × ℝ → ℝ} (hwc : Continuous w) {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 1 η)
-    (hηc : HasCompactSupport η) :
-    Integrable fun z ↦ w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 :=
-  (hwc.mul ((continuous_floerLinearizationAdjoint (ω := ω) hJ hKs hKt hu hη).norm.pow
-    2)).integrable_of_hasCompactSupport (hηc.mono' fun z hz ↦ by
-      by_contra hz'
-      simp [floerLinearizationAdjoint_of_notMem_tsupport hz'] at hz)
-
-/-- **The cost of a cutoff for the formal adjoint.** Let `w ≥ 0` be a continuous weight and `β` a
-`C¹` function with values in `[0, 1]` whose derivative vanishes off a compact set `K`. Then
-multiplying a `C¹` covector field `η` of compact support by `β` gives a field whose formal adjoint
-has `w`-weighted squared `L²` norm at most twice that of `D_u^* η` plus a multiple of the squared
-`L²` norm of `η` over `K`:
-`∫ w ‖D_u^* (β η)‖² ≤ 2 ∫ w ‖D_u^* η‖² + C ∫_K ‖η‖²`. -/
-theorem exists_integral_mul_norm_floerLinearizationAdjoint_smul_sq_le (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z, ContDiffAt ℝ 1 (uncurry J) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z) (hwc : Continuous w) {β : ℝ × ℝ → ℝ}
-    (hβ : ContDiff ℝ 1 β) (hβ1 : ∀ z, β z ∈ Icc 0 1) {K : Set (ℝ × ℝ)} (hK : IsCompact K)
-    (hβK : ∀ z ∉ K, fderiv ℝ β z = 0) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 1 η → HasCompactSupport η →
-      ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u (fun z ↦ β z • η z) z‖ ^ 2 ≤
-        2 * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
-          C * ∫ z in K, ‖η z‖ ^ 2 := by
-  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (continuous_comp_prodMk_of_continuousAt
-    (fun z ↦ (hJ z).continuousAt) hu.continuous).continuousOn
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hβ.continuous_fderiv one_ne_zero).continuousOn
-  obtain ⟨Λ, hΛ⟩ := hK.exists_bound_of_continuousOn hwc.continuousOn
-  set c := max M 0 * (1 + max B 0)
-  refine ⟨2 * c ^ 2 * max Λ 0, by positivity, fun η hη hηc ↦ ?_⟩
-  have hD := integrable_mul_norm_floerLinearizationAdjoint_sq_of_continuous ω hJ hKs hKt hu hwc
-    hη hηc
-  have hind : Integrable (K.indicator fun z ↦ ‖η z‖ ^ 2) :=
-    (integrable_indicator_iff hK.measurableSet).2
-      ((hη.continuous.norm.pow 2).continuousOn.integrableOn_compact hK)
-  -- The cutoff error is at most `c ‖η‖` on `K`, where the weight is at most `Λ`, and vanishes off
-  -- `K`.
-  have hpt (z : ℝ × ℝ) :
-      w z * ‖ω.floerLinearizationAdjoint J Ks Kt u (fun z ↦ β z • η z) z‖ ^ 2 ≤
-        2 * (w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
-          2 * c ^ 2 * max Λ 0 * K.indicator (fun z ↦ ‖η z‖ ^ 2) z := by
-    have hβd := hβ.differentiable one_ne_zero z
-    have hηd := hη.differentiable one_ne_zero z
-    have hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z :=
-      ((hJ z).differentiableAt one_ne_zero).comp (f := fun w ↦ (w, u w)) z
-        (differentiableAt_id.prodMk ((hu.differentiable one_ne_zero) z))
-    have hβz : |β z| ≤ 1 := abs_le.2 ⟨by linarith [(hβ1 z).1], (hβ1 z).2⟩
-    have hwz := hw z
-    by_cases hz : z ∈ K
-    · rw [indicator_of_mem hz]
-      have h := norm_floerLinearizationAdjoint_fun_smul_sq_le (ω := ω) (Ks := Ks) (Kt := Kt)
-        (M := max M 0) (B := max B 0) hβd hηd hJu hβz ((hM z hz).trans (le_max_left _ _))
-        ((hB z hz).trans (le_max_left _ _))
-      have hwΛ : w z ≤ max Λ 0 := (Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left _ _))
-      nlinarith [mul_le_mul_of_nonneg_left h hwz, mul_le_mul_of_nonneg_right hwΛ
-        (mul_nonneg (sq_nonneg c) (sq_nonneg ‖η z‖))]
-    · rw [indicator_of_notMem hz, mul_zero, add_zero]
-      have h := norm_floerLinearizationAdjoint_fun_smul_sq_le (ω := ω) (Ks := Ks) (Kt := Kt)
-        hβd hηd hJu hβz (M := 0) (by simp [hβK z hz]) le_rfl
-      simp only [zero_mul, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero,
-        add_zero] at h
-      nlinarith [mul_le_mul_of_nonneg_left h hwz]
-  calc _ ≤ ∫ z, (2 * (w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
-        2 * c ^ 2 * max Λ 0 * K.indicator (fun z ↦ ‖η z‖ ^ 2) z) :=
-        integral_mono (integrable_mul_norm_floerLinearizationAdjoint_sq_of_continuous ω hJ hKs hKt
-          hu hwc (hβ.smul hη) (hηc.mono (support_smul_subset_right β η)))
-          ((hD.const_mul 2).add (hind.const_mul _)) hpt
-    _ = _ := by
-        rw [integral_add (hD.const_mul 2) (hind.const_mul _), integral_const_mul,
-          integral_const_mul, integral_indicator hK.measurableSet]
-
-omit [FiniteDimensional ℝ V] in
-/-- **Comparing with a cut-off field on a disc.** If `β = 1` near every point of the disc
-`‖w‖ ≤ a` and `a ≤ b`, then the `W^{1,2}` energy of `ξ` on that disc is at most the energy of
-`β ξ` on the disc `‖w‖ ≤ b`. -/
-private theorem setIntegral_sobolevDensity_le_of_eventuallyEq_one {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {ξ : ℝ × ℝ → F} {β : ℝ × ℝ → ℝ} {a b : ℝ}
-    (hab : a ≤ b) (hβ1 : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ a → β =ᶠ[𝓝 z] 1)
-    (hβξ : ContDiff ℝ 1 fun z ↦ β z • ξ z) :
-    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, sobolevDensity ξ z ≤
-      ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b},
-        sobolevDensity (fun z ↦ β z • ξ z) z := by
-  refine le_of_eq_of_le (setIntegral_congr_fun (measurableSet_le
-    Complex.equivRealProdCLM.symm.continuous.norm.measurable measurable_const) fun z hz ↦ ?_)
-    (setIntegral_mono_set ((continuous_sobolevDensity hβξ).continuousOn.integrableOn_compact
-      (isCompact_setOf_norm_equivRealProdCLM_symm_le b))
-      (ae_of_all _ fun z ↦ sobolevDensity_nonneg _ z)
-      (ae_of_all _ fun z (hz : _ ≤ a) ↦ (show _ ≤ b from hz.trans hab)))
-  -- Near the disc `‖w‖ ≤ a` the cut-off field agrees with `ξ`.
-  refine (sobolevDensity_congr_of_eventuallyEq ((hβ1 z hz).mono fun z' h ↦ ?_)).symm
-  simp [show β z' = 1 from h]
 
 /-- **The estimate of the adjoint on a compact set, with a weight.** If `D_u^*` satisfies the `L²`
 estimate `hcore` on covector fields supported in a compact set `K`, and the weight `w ≥ 0` satisfies
@@ -1217,8 +1112,9 @@ private theorem setIntegral_sobolevDensity_le_mul_integral_mul_add (ω : Symplec
         ∫ z in K, ‖θ z‖ ^ 2) := by
   have hDc := continuous_floerLinearizationAdjoint (ω := ω) (Ks := Ks) (Kt := Kt) hJ hKs hKt hu
     (hθ.of_le one_le_two)
-  have hW := integrable_mul_norm_floerLinearizationAdjoint_sq_of_continuous ω hJ hKs hKt hu hwc
-    (hθ.of_le one_le_two) hθc
+  have hW := ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_univ (fun z _ ↦ hJ z)
+    (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt) hwc.continuousOn
+    (hθ.of_le one_le_two) subset_rfl hθc (subset_univ _)
   have hD : IntegrableOn (fun z ↦ ‖ω.floerLinearizationAdjoint J Ks Kt u θ z‖ ^ 2) K :=
     (hDc.norm.pow 2).continuousOn.integrableOn_compact hK
   have hθ₂ : IntegrableOn (fun z ↦ ‖θ z‖ ^ 2) K :=
@@ -1241,11 +1137,11 @@ private theorem setIntegral_sobolevDensity_le_mul_integral_mul_add (ω : Symplec
     _ ≤ _ := by gcongr
 
 /-- **The estimate of the formal adjoint on a disc.** Let `a < b`, let `J(z, u z)` be
-`ω`-compatible for every `z` in the disc `‖w‖ ≤ b`, with `J` `C¹` and `K_s`, `K_t` `C²` at the
+`ω`-compatible for every `z` in the disc `‖z‖ ≤ b`, with `J` `C¹` and `K_s`, `K_t` `C²` at the
 points `(z, u z)`, and `u` `C¹`, and let `w ≥ 0` be a continuous weight, positive on that disc.
 Then there is a constant `C ≥ 0` such that every `C²` covector field `η` of compact support
 satisfies
-`∫_{‖w‖ ≤ a} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ w ‖D_u^* η‖² + ∫_{‖w‖ ≤ b} ‖η‖²)`, the discs read in
+`∫_{‖z‖ ≤ a} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ w ‖D_u^* η‖² + ∫_{‖z‖ ≤ b} ‖η‖²)`, the discs read in
 real coordinates. A cutoff between the two discs reduces this to the estimate on compactly
 supported fields,
 `exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add`. -/
@@ -1262,11 +1158,11 @@ theorem exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizat
     ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
       ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, sobolevDensity η z ≤
         C * ((∫ z, w z * ‖ω.floerLinearizationAdjoint
-            (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
+            (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b}, ‖η z‖ ^ 2) := by
   set K := {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ b}
   have hK : IsCompact K := isCompact_setOf_norm_equivRealProdCLM_symm_le b
-  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
+  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap
   obtain ⟨C₀, hC₀, hcore⟩ :=
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK
       (fun z _ ↦ hJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt) hc
@@ -1278,7 +1174,7 @@ theorem exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizat
     rw [← inv_mul_cancel₀ (hwb z hz).ne']
     exact mul_le_mul_of_nonneg_right
       ((Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left _ _))) (hwb z hz).le
-  -- A cutoff `β` equal to `1` near `‖w‖ ≤ a` and vanishing near `‖w‖ ≥ b`.
+  -- A cutoff `β` equal to `1` near `‖z‖ ≤ a` and vanishing near `‖z‖ ≥ b`.
   obtain ⟨β, hβ, hβ01, hβ1, hβ0, hβK⟩ :=
     (isCompact_setOf_norm_equivRealProdCLM_symm_le a).exists_contDiff_cutoff_sublevel
       Complex.equivRealProdCLM.symm.continuous.norm hab
@@ -1305,7 +1201,10 @@ theorem exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizat
   have h : Λ' * (2 * X + C₁ * Y) + Y ≤ (Λ' * (2 + C₁) + 1) * (X + Y) := by
     nlinarith [mul_nonneg (mul_nonneg (le_max_right Λ 0) hC₁) hX, mul_nonneg (le_max_right Λ 0) hY]
   calc _ ≤ ∫ z in K, sobolevDensity η₀ z :=
-        setIntegral_sobolevDensity_le_of_eventuallyEq_one hab.le hβ1 (hη₀.of_le one_le_two)
+        setIntegral_sobolevDensity_le_of_eventuallyEq_one
+          (measurableSet_le Complex.equivRealProdCLM.symm.continuous.norm.measurable
+            measurable_const) hK (fun z (hz : _ ≤ a) ↦ (show _ ≤ b from hz.trans hab.le)) hβ1
+          (hη₀.of_le one_le_two)
     _ ≤ C₀ * (Λ' * (∫ z, w z * ‖ω.floerLinearizationAdjoint J' Ks Kt u η₀ z‖ ^ 2) +
           ∫ z in K, ‖η₀ z‖ ^ 2) :=
         setIntegral_sobolevDensity_le_mul_integral_mul_add ω (J := J') hJ hKs hKt hu hw hwc hK

@@ -22,13 +22,13 @@ coordinates of the end lift `φ(s, t) = exp (2π ε (s + i t))`
 finiteness of the cokernel of the linearized operator of a PSS plane, the second half of its
 Fredholm property, starts from the semi-Fredholm estimate of `D_u^*`:
 
-`‖η'‖²_{W^{1,2}(ε s > R)} + ‖η‖²_{W^{1,2}(‖w‖ ≤ e^{2πR})}`
-`  ≤ C (∫ (1 + ‖w‖²) ‖D_u^* η‖² + ‖η‖²_{L²(‖w‖ ≤ e^{2π(R+1)})})`
+`‖η'‖²_{W^{1,2}(ε s > R)} + ‖η‖²_{W^{1,2}(‖z‖ ≤ e^{2πR})}`
+`  ≤ C (∫ (1 + ‖z‖²) ‖D_u^* η‖² + ‖η‖²_{L²(‖z‖ ≤ e^{2π(R+1)})})`
 
 for `C²` covector fields `η` of compact support, where `η' = η (φ ·) ∘ (a + b J)` is `η` read in
-end coordinates as a `(0, 1)`-form (`TauCeti.Floer.covectorPullback`). The weight `1 + ‖w‖²` is
+end coordinates as a `(0, 1)`-form (`TauCeti.Floer.covectorPullback`). The weight `1 + ‖z‖²` is
 the inverse of the weight `TauCeti.Floer.PSSPlane.cylindricalWeight` of the Sobolev space of the
-plane: on the end, `‖w‖²` is up to `4π²` the Jacobian of the end lift, and the adjoint of the end
+plane: on the end, `‖z‖²` is up to `4π²` the Jacobian of the end lift, and the adjoint of the end
 data on `η'` is the Jacobian times `D_u^* η`.
 
 * `exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_end` is the patching argument:
@@ -43,9 +43,9 @@ data on `η'` is the Jacobian times `D_u^* η`.
   (`exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizationAdjoint_add_of_lt`).
 * `exists_forall_le_mul_integral_floerLinearizationAdjoint_add_positive` is the semi-Fredholm
   estimate of `D_u^*` along a map on the positive PSS plane whose end converges to a nondegenerate
-  orbit, with the weight `ρ⁻¹ = 1 + ‖w‖²` for the cylindrical weight `ρ`. The end estimate is
+  orbit, with the weight `ρ⁻¹ = 1 + ‖z‖²` for the cylindrical weight `ρ`. The end estimate is
   `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_positive`,
-  with the weight `‖w‖² ≤ ρ⁻¹`.
+  with the weight `‖z‖² ≤ ρ⁻¹`.
 
 This is the plane counterpart of the semi-Fredholm estimate of the formal adjoint on the pair of
 pants,
@@ -111,29 +111,9 @@ private theorem integrableOn_sobolevDensity_covectorPullback_cylindricalEndLift 
       covectorPullback_eq_zero_of_apply_eq_zero φ J u h
   rw [sobolevDensity_congr_of_eventuallyEq hev, sobolevDensity_zero]
 
-/-- **A cutoff onto the end.** For every `R` there is a `C²` function `β` with values in `[0, 1]`
-which vanishes near the disc `‖w‖ ≤ exp (2π R)`, is `1` near every point with
-`‖w‖ ≥ exp (2π (R + 1))`, and whose derivative vanishes off the disc `‖w‖ ≤ exp (2π (R + 1))`. -/
-private theorem exists_endCutoff (R : ℝ) :
-    ∃ β : ℝ × ℝ → ℝ, ContDiff ℝ 2 β ∧ (∀ z, β z ∈ Icc 0 1) ∧
-      (∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * R) → β =ᶠ[𝓝 z] 0) ∧
-      (∀ z, Real.exp (2 * π * (R + 1)) ≤ ‖Complex.equivRealProdCLM.symm z‖ → β =ᶠ[𝓝 z] 1) ∧
-      ∀ z ∉ {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (R + 1))},
-        fderiv ℝ β z = 0 := by
-  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK⟩ :=
-    (isCompact_setOf_norm_equivRealProdCLM_symm_le _).exists_contDiff_cutoff_sublevel
-      Complex.equivRealProdCLM.symm.continuous.norm
-      (Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos]) :
-        Real.exp (2 * π * R) < Real.exp (2 * π * (R + 1)))
-  refine ⟨fun z ↦ 1 - ψ z, (contDiff_const.sub hψ).of_le (by simp),
-    fun z ↦ ⟨by simp [(hψ01 z).2], by simp [(hψ01 z).1]⟩,
-    fun z hz ↦ (hψ1 z hz).mono fun z' h ↦ by simp [show ψ z' = 1 from h],
-    fun z hz ↦ (hψ0 z hz).mono fun z' h ↦ by simp [show ψ z' = 0 from h], fun z hz ↦ ?_⟩
-  rw [fderiv_const_sub, hψK z (not_le.1 hz), neg_zero]
-
 omit [FiniteDimensional ℝ V] in
 /-- **The end piece agrees with its cut-off.** If `β = 1` near every point with
-`‖w‖ ≥ exp (2π (R + 1))`, then on the part `ε s > R + 1` of the end the pulled-back form of `η` has
+`‖z‖ ≥ exp (2π (R + 1))`, then on the part `ε s > R + 1` of the end the pulled-back form of `η` has
 the energy density of the pulled-back form of `β η`. -/
 private theorem setIntegral_sobolevDensity_covectorPullback_eq_smul (p : PSSPlane)
     {J : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {β : ℝ × ℝ → ℝ}
@@ -156,9 +136,9 @@ private theorem setIntegral_sobolevDensity_covectorPullback_eq_smul (p : PSSPlan
   rw [covectorPullback_fun_smul, show β (φ ζ') = 1 from h, one_smul]
 
 /-- **The estimate of the adjoint on the end.** Under an estimate of `D_u^*` with a weight `w` on
-covector fields supported in the part `‖w‖ > exp (2π Re)` of the end, `D_u^*` controls the
+covector fields supported in the part `‖z‖ > exp (2π Re)` of the end, `D_u^*` controls the
 `W^{1,2}` norm of every covector field of compact support on the part `ε s > Re + 1` of the end,
-read in end coordinates, up to an `L²` norm on the disc `‖w‖ ≤ exp (2π (Re + 1))`. -/
+read in end coordinates, up to an `L²` norm on the disc `‖z‖ ≤ exp (2π (Re + 1))`. -/
 private theorem exists_setIntegral_sobolevDensity_covectorPullback_le_of_end
     (ω : SymplecticForm V) (p : PSSPlane) {J : ℝ × ℝ → V → AlmostComplexStructure V}
     {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
@@ -173,22 +153,29 @@ private theorem exists_setIntegral_sobolevDensity_covectorPullback_le_of_end
           (realChart p.cylindricalEndLift)
           (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
         Ce * ∫ z, w z * ‖ω.floerLinearizationAdjoint
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) :
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
       ∫ ζ in {s : ℝ | Re + 1 < p.endSign * s} ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
           (realChart p.cylindricalEndLift)
           (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
         C * ((∫ z, w z * ‖ω.floerLinearizationAdjoint
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (Re + 1))},
             ‖η z‖ ^ 2) := by
-  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
-  obtain ⟨β, hβ, hβ01, hβ0, hβ1, hβK⟩ := exists_endCutoff Re
+  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap
+  -- A cutoff `β` vanishing near `‖z‖ ≤ exp (2π Re)` and equal to `1` near
+  -- `‖z‖ ≥ exp (2π (Re + 1))`.
+  obtain ⟨β, hβ, hβ01, hβ0, hβ1, hβK⟩ :=
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le _).exists_contDiff_cutoff_superlevel
+      Complex.equivRealProdCLM.symm.continuous.norm
+      (Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos]) :
+        Real.exp (2 * π * Re) < Real.exp (2 * π * (Re + 1)))
+  replace hβ : ContDiff ℝ 2 β := hβ.of_le (by simp)
   obtain ⟨C₁, -, herr⟩ := ω.exists_integral_mul_norm_floerLinearizationAdjoint_smul_sq_le
     (J := J') hJ hKs hKt hu hw hwc (hβ.of_le one_le_two) hβ01
-    (isCompact_setOf_norm_equivRealProdCLM_symm_le _) hβK
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le _) fun z hz ↦ hβK z (not_le.1 hz)
   refine ⟨max Ce 0 * max 2 C₁, by positivity, fun η hη hηc ↦ ?_⟩
-  -- The cut-off field `β η` is supported in the part `‖w‖ > exp (2π Re)` of the end.
+  -- The cut-off field `β η` is supported in the part `‖z‖ > exp (2π Re)` of the end.
   set η₁ : ℝ × ℝ → V →L[ℝ] ℝ := fun z ↦ β z • η z
   have hη₁ : ContDiff ℝ 2 η₁ := hβ.smul hη
   have hη₁c : HasCompactSupport η₁ := hηc.mono (support_smul_subset_right β η)
@@ -224,15 +211,15 @@ private theorem exists_setIntegral_sobolevDensity_covectorPullback_le_of_end
 plane.** Let `J` be `C¹` and `K_s`, `K_t` `C²` at the points `(z, u z)`, and `u` `C¹`, and let
 `w ≥ 0` be a continuous weight. Suppose that the formal adjoint `D_u^*` controls the `W^{1,2}` norm
 on the end: there are `Ce` and `Re` such that every `C²` covector field `η` of compact support in
-the part `‖w‖ > exp (2π Re)` of the plane satisfies
+the part `‖z‖ > exp (2π Re)` of the plane satisfies
 `∫ (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) ≤ Ce ∫ w ‖D_u^* η‖²`, the left integral over `ℝ × [0, 1]` in the
 cylinder coordinates of the end lift `φ`, where `η' = η (φ ·) ∘ (a + b J)` is `η` read in end
 coordinates (`TauCeti.Floer.covectorPullback`). If moreover `J(z)` is compatible along `u` and `w`
-is positive on the disc `‖w‖ ≤ exp (2π (Re + 2))`, then there are `C ≥ 0` and `R` such that every
+is positive on the disc `‖z‖ ≤ exp (2π (Re + 2))`, then there are `C ≥ 0` and `R` such that every
 `C²` covector field `η` of compact support satisfies
 
-`∫_{ε s > R} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) + ∫_{‖w‖ ≤ e^{2πR}} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²)`
-`  ≤ C (∫ w ‖D_u^* η‖² + ∫_{‖w‖ ≤ e^{2π (R + 1)}} ‖η‖²)`,
+`∫_{ε s > R} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) + ∫_{‖z‖ ≤ e^{2πR}} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²)`
+`  ≤ C (∫ w ‖D_u^* η‖² + ∫_{‖z‖ ≤ e^{2π (R + 1)}} ‖η‖²)`,
 
 the first integral over `{s | ε s > R} × [0, 1]` in end coordinates and the other integrals over
 the plane. This is the adjoint counterpart of
@@ -251,7 +238,7 @@ theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_end (ω :
           (realChart p.cylindricalEndLift)
           (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
         Ce * ∫ z, w z * ‖ω.floerLinearizationAdjoint
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2)
     (hw₀ : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (Re + 2)) → 0 < w z)
     (hc : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (Re + 2)) →
       ω.Compatible (J z (u z))) :
@@ -262,7 +249,7 @@ theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_end (ω :
         ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * R)},
           sobolevDensity η z ≤
         C * ((∫ z, w z * ‖ω.floerLinearizationAdjoint
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (R + 1))},
             ‖η z‖ ^ 2) := by
   obtain ⟨C₁, hC₁, hend⟩ :=
@@ -284,7 +271,7 @@ theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_end (ω :
       (ae_of_all _ fun z (hz : _ ≤ _) ↦ (show _ ≤ _ from
         hz.trans (Real.exp_le_exp.2 (by nlinarith [Real.pi_pos]))))
   have hX : 0 ≤ ∫ z, w z * ‖ω.floerLinearizationAdjoint
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 :=
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 :=
     integral_nonneg fun z ↦ by have := hw z; positivity
   have hY : 0 ≤ ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (Re + 1 + 1))},
       ‖η z‖ ^ 2 := setIntegral_nonneg_of_ae_restrict (ae_of_all _ fun _ ↦ by positivity)
@@ -293,7 +280,7 @@ theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_end (ω :
 
 /-- **The semi-Fredholm estimate of the formal adjoint on the positive PSS plane.** Let `u` be a
 `C¹` map on the positive PSS plane along which `J` is `C¹` and compatible, and which is `C²` on a
-part `‖w‖ > exp (2π r)` of the end and solves there the Floer equation for the perturbation of a
+part `‖z‖ > exp (2π r)` of the end and solves there the Floer equation for the perturbation of a
 jointly `C²` period-one Hamiltonian `H` with globally Lipschitz suspended vector field. Suppose
 that, with `φ(s, t) = exp (2π (s + i t))` the end lift, the loops `t ↦ u(φ(s, t))` converge
 uniformly as `s → ∞` to an orbit `x` of `H` starting at a nondegenerate fixed point of the
@@ -301,13 +288,13 @@ time-one map, while the slice defect `∂t (u ∘ φ) - X_{H_t}(u ∘ φ)` tends
 that from `s > r` on, `J(φ(s, t)) = J_e(t)` for a `C²` family `J_e` compatible along `x`. Then there
 are `C ≥ 0` and `R` such that every `C²` covector field `η` of compact support satisfies
 
-`∫_{s > R} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) + ∫_{‖w‖ ≤ e^{2πR}} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²)`
-`  ≤ C (∫ ρ⁻¹ ‖D_u^* η‖² + ∫_{‖w‖ ≤ e^{2π (R + 1)}} ‖η‖²)`
+`∫_{s > R} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) + ∫_{‖z‖ ≤ e^{2πR}} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²)`
+`  ≤ C (∫ ρ⁻¹ ‖D_u^* η‖² + ∫_{‖z‖ ≤ e^{2π (R + 1)}} ‖η‖²)`
 
 for the formal adjoint `D_u^*` of the linearized Floer operator of the perturbation of the plane,
 where `η' = η (φ ·) ∘ (a + b J)` is `η` read in end coordinates (`TauCeti.Floer.covectorPullback`),
 the first integral is over `(R, ∞) × [0, 1]` in end coordinates and the other integrals over the
-plane, and `ρ⁻¹ = 1 + ‖w‖²` is the inverse of the cylindrical weight
+plane, and `ρ⁻¹ = 1 + ‖z‖²` is the inverse of the cylindrical weight
 `TauCeti.Floer.PSSPlane.cylindricalWeight`. This is the counterpart, for the operator whose kernel
 is the cokernel of `D_u`, of the semi-Fredholm estimate of `D_u` on a finite-energy PSS plane,
 `exists_forall_le_mul_integral_floerLinearization_add_of_finite_energy`. -/
@@ -343,7 +330,7 @@ theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_positive
         ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * R)},
           sobolevDensity η z ≤
         C * ((∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u η z‖ ^ 2) +
@@ -354,7 +341,7 @@ theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_positive
     (x := (z, u z))
   have hKt := fun z : ℝ × ℝ ↦
     (contDiff_uncurry_perturbation (p := positive) hH hHs₂ Complex.I).contDiffAt (x := (z, u z))
-  -- The inverse of the cylindrical weight is `1 + ‖w‖²`, continuous and at least `‖w‖²`.
+  -- The inverse of the cylindrical weight is `1 + ‖z‖²`, continuous and at least `‖z‖²`.
   have hρ (z : ℝ × ℝ) :
       (cylindricalWeight z)⁻¹ = 1 + ‖Complex.equivRealProdCLM.symm z‖ ^ 2 := by
     rw [cylindricalWeight_apply, inv_inv]
@@ -367,22 +354,23 @@ theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_positive
   obtain ⟨Ce, Re, he⟩ :=
     ω.exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_positive
       hH hHs hX hx hnd hJe hJex hJeq hu₂ (fun z _ ↦ hc z) hF hux hδ
-  -- The end estimate with the weight `‖w‖²` gives the end estimate with the weight `ρ⁻¹`.
+  -- The end estimate with the weight `‖z‖²` gives the end estimate with the weight `ρ⁻¹`.
   have he' : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
       tsupport η ⊆ {z | Real.exp (2 * π * Re) < ‖Complex.equivRealProdCLM.symm z‖} →
       ∫ ζ in univ ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
           (realChart positive.cylindricalEndLift)
           (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
         max Ce 0 * ∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u η z‖ ^ 2 := by
     intro η hη hηc hηR
     have hint {w : ℝ × ℝ → ℝ} (hwc : Continuous w) :=
-      integrable_mul_norm_floerLinearizationAdjoint_sq_of_continuous ω
-        (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu hwc
-        (hη.of_le one_le_two) hηc
+      ω.integrable_mul_norm_floerLinearizationAdjoint_sq
+        (J := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) isOpen_univ (fun z _ ↦ hJ z)
+        (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt) hwc.continuousOn
+        (hη.of_le one_le_two) subset_rfl hηc (subset_univ _)
     have hle := integral_mono
       (hint (w := fun z ↦ ‖Complex.equivRealProdCLM.symm z‖ ^ 2) (by fun_prop))
       (hint hρc) fun z ↦ mul_le_mul_of_nonneg_right
