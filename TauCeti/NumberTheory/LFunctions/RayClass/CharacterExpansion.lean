@@ -111,6 +111,15 @@ theorem rayClassCharacterPsi_def (χ : RayClassCharacter 𝔪) (x : ℝ) :
       idealSummatory K χ.toUnitaryIdealWeight.toIdealArithmeticFunction.vonMangoldtTransform x :=
   (rfl)
 
+/-- Prime-power summatory presentation of `rayClassCharacterPsi`. -/
+theorem rayClassCharacterPsi_eq_primePowerSummatory (χ : RayClassCharacter 𝔪) (x : ℝ) :
+    rayClassCharacterPsi χ x = primePowerSummatory K
+      (fun A ↦ χ.toUnitaryIdealWeight.toIdealArithmeticFunction.vonMangoldtTransform
+        (A : (Ideal (𝓞 K))⁰)) x :=
+  idealSummatory_eq_primePowerSummatory K
+    χ.toUnitaryIdealWeight.toIdealArithmeticFunction.vonMangoldtTransform _ (fun _ ↦ rfl)
+    (fun _ hI ↦ IdealArithmeticFunction.vonMangoldtTransform_eq_zero_of_not_isPrimePow _ hI) x
+
 /-- **Class expansion of `rayClassCharacterPsi`.** For every ray class character `χ` of `𝔪`,
 `ψ(x, χ) = ∑_c χ(c) ψ(x; 𝔪, c)`. -/
 theorem sum_mul_rayClassPsi [Fintype (RayClassGroup 𝔪)] (χ : RayClassCharacter 𝔪) (x : ℝ) :
@@ -188,10 +197,6 @@ private theorem norm_vonMangoldtTransform_sub_induced_idealPrimePower (h : 𝔪 
         primePowerBase B ∈ (𝔫.support : Set (HeightOneSpectrum (𝓞 K))) \ 𝔪.support}.indicator
         primePowerWeight A := by
   classical
-  have hcop_iff : ∀ 𝔬 : Modulus K,
-      Ideal.IsPrimeTo (A : Ideal (𝓞 K)) 𝔬.support ↔ primePowerBase A ∉ 𝔬.support := fun 𝔬 ↦ by
-    rw [← primePowerBase_pow_primePowerExponent A]
-    exact (Ideal.isPrimeTo_pow_iff (primePowerExponent_pos A).ne').trans Ideal.isPrimeTo_asIdeal_iff
   rw [IdealArithmeticFunction.vonMangoldtTransform_apply,
     IdealArithmeticFunction.vonMangoldtTransform_apply, vonMangoldt_eq_primePowerWeight, ← sub_mul,
     UnitaryIdealWeight.toIdealArithmeticFunction_apply,
@@ -199,10 +204,10 @@ private theorem norm_vonMangoldtTransform_sub_induced_idealPrimePower (h : 𝔪 
     RayClassCharacter.toUnitaryIdealWeight_induced, UnitaryIdealWeight.val_restrictAway,
     RayClassCharacter.val_toUnitaryIdealWeight, MultiplicativeIdealWeight.restrictAway_apply]
   by_cases hAn : primePowerBase A ∈ 𝔫.support
-  · rw [ite_eq_right (mt (hcop_iff 𝔫).mp (not_not.mpr hAn)), sub_zero]
+  · rw [ite_eq_right (mt isPrimeTo_idealPrimePower_iff.mp (not_not.mpr hAn)), sub_zero]
     by_cases hAm : primePowerBase A ∈ 𝔪.support
     · have hnot : ¬ Ideal.IsPrimeTo (A : Ideal (𝓞 K)) 𝔪.support :=
-        mt (hcop_iff 𝔪).mp (not_not.mpr hAm)
+        mt isPrimeTo_idealPrimePower_iff.mp (not_not.mpr hAm)
       have hmem : A ∉ {B : IdealPrimePower K |
           primePowerBase B ∈ (𝔫.support : Set (HeightOneSpectrum (𝓞 K))) \ 𝔪.support} :=
         fun h ↦ h.2 hAm
@@ -219,7 +224,7 @@ private theorem norm_vonMangoldtTransform_sub_induced_idealPrimePower (h : 𝔪 
   · have hmem : A ∉ {B : IdealPrimePower K |
         primePowerBase B ∈ (𝔫.support : Set (HeightOneSpectrum (𝓞 K))) \ 𝔪.support} :=
       fun h ↦ hAn h.1
-    rw [ite_eq_left ((hcop_iff 𝔫).mpr hAn), sub_self, zero_mul, norm_zero,
+    rw [ite_eq_left (isPrimeTo_idealPrimePower_iff.mpr hAn), sub_self, zero_mul, norm_zero,
       Set.indicator_of_notMem hmem]
 
 /-- **Bad-prime domination under induction.** For `h : 𝔪 ∣ 𝔫`, the difference between
@@ -229,23 +234,8 @@ theorem norm_rayClassCharacterPsi_sub_induced_le_primePsi (h : 𝔪 ∣ 𝔫) (�
     (x : ℝ) :
     ‖rayClassCharacterPsi χ x - rayClassCharacterPsi (χ.induced h) x‖ ≤
       primePsi K ((𝔫.support : Set (HeightOneSpectrum (𝓞 K))) \ 𝔪.support) x := by
-  classical
-  have h1 := idealSummatory_eq_primePowerSummatory K
-    χ.toUnitaryIdealWeight.toIdealArithmeticFunction.vonMangoldtTransform
-    (fun A ↦ χ.toUnitaryIdealWeight.toIdealArithmeticFunction.vonMangoldtTransform
-      (A : (Ideal (𝓞 K))⁰)) (fun _ ↦ rfl)
-    (fun I hI ↦ by
-      rw [IdealArithmeticFunction.vonMangoldtTransform_apply,
-        IdealArithmeticFunction.vonMangoldt_eq_zero_of_not_isPrimePow hI, mul_zero]) x
-  have h2 := idealSummatory_eq_primePowerSummatory K
-    (χ.induced h).toUnitaryIdealWeight.toIdealArithmeticFunction.vonMangoldtTransform
-    (fun A ↦ (χ.induced h).toUnitaryIdealWeight.toIdealArithmeticFunction.vonMangoldtTransform
-      (A : (Ideal (𝓞 K))⁰)) (fun _ ↦ rfl)
-    (fun I hI ↦ by
-      rw [IdealArithmeticFunction.vonMangoldtTransform_apply,
-        IdealArithmeticFunction.vonMangoldt_eq_zero_of_not_isPrimePow hI, mul_zero]) x
-  rw [rayClassCharacterPsi_def, rayClassCharacterPsi_def, h1, h2, primePsi_apply,
-    primePowerSummatory_apply, primePowerSummatory_apply, ← Finset.sum_sub_distrib]
+  rw [rayClassCharacterPsi_eq_primePowerSummatory, rayClassCharacterPsi_eq_primePowerSummatory,
+    primePsi_apply, primePowerSummatory_apply, primePowerSummatory_apply, ← Finset.sum_sub_distrib]
   exact (norm_sum_le _ _).trans
     (Finset.sum_le_sum fun A _ ↦ norm_vonMangoldtTransform_sub_induced_idealPrimePower h χ A)
 

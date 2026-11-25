@@ -546,28 +546,14 @@ by the Bochner convention `MeasureTheory.integral_undef`. -/
 theorem logIntegral_of_le_one {x : ℝ} (hx : x ≤ 1) : logIntegral x = 0 := by
   rw [logIntegral_def]
   refine intervalIntegral.integral_undef ?_
-  refine not_intervalIntegrable_of_sub_inv_isBigO_punctured (c := 1) ?_ (by linarith)
-    (by rw [uIcc_of_ge (by linarith)]; exact ⟨hx, one_lt_two.le⟩)
-  refine IsBigO.of_bound 2 ?_
-  filter_upwards [mem_nhdsWithin_iff_exists_mem_nhds_inter.mpr
-    ⟨Ioo (1 / 2 : ℝ) 2, Ioo_mem_nhds (by norm_num) (by norm_num), Subset.rfl⟩] with t ⟨ht, hne⟩
-  have ht0 : 0 < t := by linarith [ht.1]
-  have hlog_ne : Real.log t ≠ 0 := Real.log_ne_zero_of_pos_of_ne_one ht0 hne
-  have hle : |Real.log t| ≤ 2 * |t - 1| := by
-    rcases lt_or_gt_of_ne hne with hlt | hgt
-    · have hlog_inv : Real.log t⁻¹ ≤ t⁻¹ - 1 := Real.log_le_sub_one_of_pos (inv_pos.mpr ht0)
-      rw [Real.log_inv] at hlog_inv
-      rw [abs_of_neg (Real.log_neg ht0 hlt), abs_of_neg (sub_neg.mpr hlt)]
-      have : t⁻¹ - 1 = (1 - t) / t := by field_simp
-      rw [this, le_div_iff₀ ht0] at hlog_inv
-      nlinarith [ht.1]
-    · rw [abs_of_pos (Real.log_pos hgt), abs_of_pos (sub_pos.mpr hgt)]
-      linarith [Real.log_le_sub_one_of_pos ht0]
-  have hp1 : 0 < |Real.log t| := abs_pos.mpr hlog_ne
-  have hp2 : 0 < |t - 1| := abs_pos.mpr (sub_ne_zero.mpr hne)
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_inv, abs_inv, inv_eq_one_div, inv_eq_one_div,
-    mul_one_div, div_le_div_iff₀ hp2 hp1]
-  linarith
+  have hlog : Real.log =O[𝓝[≠] 1] (· - 1) := by
+    simpa only [Real.log_one, sub_zero] using
+      (Real.hasDerivAt_log one_ne_zero).isBigO_sub.mono nhdsWithin_le_nhds
+  refine not_intervalIntegrable_of_sub_inv_isBigO_punctured (c := 1) (hlog.inv_rev ?_)
+    (by linarith) (by rw [uIcc_of_ge (by linarith)]; exact ⟨hx, one_lt_two.le⟩)
+  filter_upwards [nhdsWithin_le_nhds (Ioi_mem_nhds zero_lt_one), self_mem_nhdsWithin]
+    with t ht hne h0
+  exact absurd h0 (Real.log_ne_zero_of_pos_of_ne_one ht hne)
 
 /-- Chain-rule derivative of `x ↦ Li (x ^ β)` on `(1, ∞)` for `β > 0`. -/
 theorem hasDerivAt_logIntegral_rpow {β x : ℝ} (hβ : 0 < β) (hx : 1 < x) :
@@ -584,19 +570,25 @@ theorem hasDerivAt_logIntegral_rpow {β x : ℝ} (hβ : 0 < β) (hx : 1 < x) :
   have hlog : Real.log x ≠ 0 := (Real.log_pos hx).ne'
   field_simp
 
+/-- The integrand `t ^ p / log t` is continuous on `(1, ∞)`. -/
+theorem continuousOn_rpow_div_log (p : ℝ) :
+    ContinuousOn (fun t : ℝ ↦ t ^ p / Real.log t) (Ioi 1) := fun t ht ↦
+  ContinuousAt.continuousWithinAt <|
+    (Real.continuousAt_rpow_const t p (Or.inl (zero_lt_one.trans ht).ne')).div
+      (Real.continuousAt_log (zero_lt_one.trans ht).ne') (Real.log_pos ht).ne'
+
+/-- The integrand `t ^ p / log t` is interval integrable on any interval to the right of `1`. -/
+theorem intervalIntegrable_rpow_div_log (p : ℝ) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
+    IntervalIntegrable (fun t : ℝ ↦ t ^ p / Real.log t) volume a b :=
+  ((continuousOn_rpow_div_log p).mono (ordConnected_Ioi.uIcc_subset ha hb)).intervalIntegrable
+
 /-- **Power substitution in the logarithmic integral.** For `β > 0` and `a, b > 1`,
 `∫ t in a..b, t ^ (β - 1) / log t = Li (b ^ β) - Li (a ^ β)` via `u = t ^ β`. -/
 theorem integral_rpow_sub_one_div_log {β a b : ℝ} (hβ : 0 < β) (ha : 1 < a) (hb : 1 < b) :
-    (∫ t in a..b, t ^ (β - 1) / Real.log t) = logIntegral (b ^ β) - logIntegral (a ^ β) := by
-  have h1 : ∀ t ∈ uIcc a b, 1 < t := fun t ht ↦ by
-    rcases mem_uIcc.mp ht with h | h <;> linarith [h.1]
-  refine intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (fun t ht ↦ hasDerivAt_logIntegral_rpow hβ (h1 t ht)) ?_
-  refine ContinuousOn.intervalIntegrable fun t ht ↦ ?_
-  have ht1 := h1 t ht
-  exact ContinuousAt.continuousWithinAt <|
-    (Real.continuousAt_rpow_const t (β - 1) (Or.inl (zero_lt_one.trans ht1).ne')).div
-      (Real.continuousAt_log (zero_lt_one.trans ht1).ne') (Real.log_pos ht1).ne'
+    (∫ t in a..b, t ^ (β - 1) / Real.log t) = logIntegral (b ^ β) - logIntegral (a ^ β) :=
+  intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (fun _ ht ↦ hasDerivAt_logIntegral_rpow hβ (ordConnected_Ioi.uIcc_subset ha hb ht))
+    (intervalIntegrable_rpow_div_log (β - 1) ha hb)
 
 /-- **Abel-summation identity for a power secondary term.** Integrating the derivative of
 `t ↦ t ^ β / (β log t)` on `[2, x]` matches the boundary and integral terms that Abel summation
@@ -604,26 +596,18 @@ produces from `t ^ β / β` with `Li (x ^ β) - Li (2 ^ β)` up to the base-poin
 theorem rpow_div_mul_log_add_integral_eq_logIntegral_rpow {β x : ℝ} (hβ : 0 < β) (hx : 1 < x) :
     x ^ β / (β * Real.log x) + (∫ t in (2 : ℝ)..x, (t ^ β / β) / (t * Real.log t ^ 2)) =
       logIntegral (x ^ β) - logIntegral (2 ^ β) + 2 ^ β / (β * Real.log 2) := by
-  have h1 : ∀ t ∈ uIcc (2 : ℝ) x, 1 < t := fun t ht ↦ by
-    rcases mem_uIcc.mp ht with h | h <;> linarith [h.1]
   have hd : ∀ t ∈ uIcc (2 : ℝ) x, HasDerivAt (fun u : ℝ ↦ u ^ β / (β * Real.log u))
       (t ^ (β - 1) / Real.log t - (t ^ β / β) / (t * Real.log t ^ 2)) t := fun t ht ↦ by
-    have ht1 := h1 t ht
+    have ht1 : 1 < t := ordConnected_Ioi.uIcc_subset one_lt_two hx ht
     have ht0 : 0 < t := zero_lt_one.trans ht1
-    have hlog : Real.log t ≠ 0 := (Real.log_pos ht1).ne'
-    have hβ0 : β ≠ 0 := hβ.ne'
     have hq := (Real.hasDerivAt_rpow_const (p := β) (Or.inl ht0.ne')).div
-      ((Real.hasDerivAt_log ht0.ne').const_mul β) (mul_ne_zero hβ0 hlog)
+      ((Real.hasDerivAt_log ht0.ne').const_mul β) (mul_ne_zero hβ.ne' (Real.log_pos ht1).ne')
     exact hq.congr_deriv (by field_simp)
-  have hi1 : IntervalIntegrable (fun t : ℝ ↦ t ^ (β - 1) / Real.log t) volume 2 x := by
-    refine ContinuousOn.intervalIntegrable fun t ht ↦ ContinuousAt.continuousWithinAt ?_
-    have ht1 := h1 t ht
-    exact (Real.continuousAt_rpow_const t (β - 1) (Or.inl (zero_lt_one.trans ht1).ne')).div
-      (Real.continuousAt_log (zero_lt_one.trans ht1).ne') (Real.log_pos ht1).ne'
+  have hi1 := intervalIntegrable_rpow_div_log (β - 1) one_lt_two hx
   have hi2 : IntervalIntegrable (fun t : ℝ ↦ (t ^ β / β) / (t * Real.log t ^ 2)) volume 2 x :=
-    intervalIntegrable_div_mul_log_sq one_lt_two hx <|
-      ContinuousOn.intervalIntegrable fun t ht ↦ ContinuousAt.continuousWithinAt <|
-        (Real.continuousAt_rpow_const t β (Or.inl (zero_lt_one.trans (h1 t ht)).ne')).div_const β
+    intervalIntegrable_div_mul_log_sq one_lt_two hx <| ContinuousOn.intervalIntegrable fun t ht ↦
+      have ht0 : t ≠ 0 := (zero_lt_one.trans (ordConnected_Ioi.uIcc_subset one_lt_two hx ht)).ne'
+      ContinuousAt.continuousWithinAt <| (Real.continuousAt_rpow_const t β (Or.inl ht0)).div_const β
   have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt hd (hi1.sub hi2)
   rw [intervalIntegral.integral_sub hi1 hi2, integral_rpow_sub_one_div_log hβ one_lt_two hx] at hFTC
   linarith

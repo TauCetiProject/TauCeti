@@ -63,6 +63,18 @@ indicator `rayClassCoeff 𝔪 c`. At exponent one the condition reduces to `idea
 
 public section
 
+namespace TauCeti.GlobalNumberFields
+
+open scoped NumberField
+
+/-- A prime-power ideal is coprime to `𝔪` iff its prime base lies outside `𝔪.support`. -/
+theorem Modulus.isCoprimeTo_idealPrimePower_iff {K : Type*} [Field K] [NumberField K]
+    {𝔪 : Modulus K} {A : IdealPrimePower K} :
+    𝔪.IsCoprimeTo (A : Ideal (𝓞 K)) ↔ primePowerBase A ∉ 𝔪.support :=
+  (Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm).trans isPrimeTo_idealPrimePower_iff
+
+end TauCeti.GlobalNumberFields
+
 namespace TauCeti.LFunctions
 
 open Asymptotics Filter NumberField TauCeti.GlobalNumberFields
@@ -95,11 +107,6 @@ theorem mem_rayClassPrimeSet_iff_of_isCoprimeTo {𝔪 : Modulus K} {c : RayClass
       idealClass 𝔪 ⟨𝔭.asIdeal, Modulus.mem_integralIdealsPrimeTo.mpr h𝔭⟩ = c :=
   ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨h𝔭, h⟩⟩
 
-/-- A height-one prime is coprime to `𝔪` iff it does not lie in `𝔪.support`. -/
-theorem isCoprimeTo_asIdeal_iff {𝔪 : Modulus K} {𝔭 : HeightOneSpectrum (𝓞 K)} :
-    𝔪.IsCoprimeTo 𝔭.asIdeal ↔ 𝔭 ∉ 𝔪.support :=
-  (Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm).trans Ideal.isPrimeTo_asIdeal_iff
-
 /-- The prime-power ideals of `𝓞 K` coprime to the finite part of `𝔪` whose ray class is `c`. -/
 def rayClassPrimePowerSet (𝔪 : Modulus K) (c : RayClassGroup 𝔪) : Set (IdealPrimePower K) :=
   {A | ∃ hA : 𝔪.IsCoprimeTo (A : Ideal (𝓞 K)),
@@ -114,14 +121,6 @@ theorem mem_rayClassPrimePowerSet_iff {𝔪 : Modulus K} {c : RayClassGroup 𝔪
         idealClass 𝔪 ⟨(A : Ideal (𝓞 K)), Modulus.mem_integralIdealsPrimeTo.mpr hA⟩ = c :=
   Iff.rfl
 
-/-- A prime-power ideal is coprime to `𝔪` iff its prime base is coprime to `𝔪`, i.e., outside
-`𝔪.support`. -/
-theorem isCoprimeTo_idealPrimePower_iff {𝔪 : Modulus K} {A : IdealPrimePower K} :
-    𝔪.IsCoprimeTo (A : Ideal (𝓞 K)) ↔ primePowerBase A ∉ 𝔪.support := by
-  rw [← primePowerBase_pow_primePowerExponent A]
-  exact (Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm).trans
-    ((Ideal.isPrimeTo_pow_iff (primePowerExponent_pos A).ne').trans Ideal.isPrimeTo_asIdeal_iff)
-
 /-- A prime power `A = 𝔭 ^ m` with `𝔭` coprime to `𝔪` belongs to `rayClassPrimePowerSet 𝔪 c` iff
 `(idealClass 𝔪 𝔭) ^ m = c`. -/
 theorem mem_rayClassPrimePowerSet_iff_idealClass_pow_eq {𝔪 : Modulus K} {c : RayClassGroup 𝔪}
@@ -130,7 +129,7 @@ theorem mem_rayClassPrimePowerSet_iff_idealClass_pow_eq {𝔪 : Modulus K} {c : 
       idealClass 𝔪 ⟨(primePowerBase A).asIdeal, Modulus.mem_integralIdealsPrimeTo.mpr h𝔭⟩ ^
         primePowerExponent A = c := by
   have hA : 𝔪.IsCoprimeTo (A : Ideal (𝓞 K)) :=
-    isCoprimeTo_idealPrimePower_iff.mpr (isCoprimeTo_asIdeal_iff.mp h𝔭)
+    𝔪.isCoprimeTo_idealPrimePower_iff.mpr (𝔪.isCoprimeTo_asIdeal_iff.mp h𝔭)
   have hpow : (⟨(primePowerBase A).asIdeal, Modulus.mem_integralIdealsPrimeTo.mpr h𝔭⟩ :
       integralIdealsPrimeTo 𝔪) ^ primePowerExponent A =
         ⟨(A : Ideal (𝓞 K)), Modulus.mem_integralIdealsPrimeTo.mpr hA⟩ :=
@@ -280,9 +279,7 @@ theorem idealSummatory_vonMangoldtTransform_rayClassCoeff (𝔪 : Modulus K) (c 
   rw [idealSummatory_eq_primePowerSummatory K (rayClassCoeff 𝔪 c).vonMangoldtTransform
     (fun A ↦ (((rayClassPrimePowerSet 𝔪 c).indicator (primePowerWeight (K := K)) A : ℝ) : ℂ))
     (vonMangoldtTransform_rayClassCoeff_idealPrimePower 𝔪 c)
-    (fun I hI ↦ by
-      rw [IdealArithmeticFunction.vonMangoldtTransform_apply,
-        IdealArithmeticFunction.vonMangoldt_eq_zero_of_not_isPrimePow hI, mul_zero]),
+    (fun _ hI ↦ (rayClassCoeff 𝔪 c).vonMangoldtTransform_eq_zero_of_not_isPrimePow hI),
     rayClassPsi_apply, primePowerSummatory_apply, Complex.ofReal_sum]
 
 /-- Real-part form of `idealSummatory_vonMangoldtTransform_rayClassCoeff`. -/
@@ -315,8 +312,7 @@ private theorem vonMangoldtTransform_rayClassCoeff_im_and_re_nonneg (𝔪 : Modu
     rw [← hA, vonMangoldtTransform_rayClassCoeff_idealPrimePower, Complex.ofReal_im,
       Complex.ofReal_re]
     exact ⟨rfl, Set.indicator_nonneg (fun _ _ ↦ primePowerWeight_nonneg _) A⟩
-  · simp [IdealArithmeticFunction.vonMangoldtTransform_apply,
-      IdealArithmeticFunction.vonMangoldt_eq_zero_of_not_isPrimePow hI]
+  · simp [(rayClassCoeff 𝔪 c).vonMangoldtTransform_eq_zero_of_not_isPrimePow hI]
 
 /-- Cast to `ℂ`, `rayClassVonMangoldtCoeff 𝔪 c` is the norm regrouping of
 `(rayClassCoeff 𝔪 c).vonMangoldtTransform`. -/
@@ -344,8 +340,7 @@ theorem rayClassVonMangoldtCoeff_eq_zero_of_not_isPrimePow (𝔪 : Modulus K) (c
   have hnot : ¬ IsPrimePow (I : Ideal (𝓞 K)) := fun h ↦ by
     rw [← (mem_normFiber K).mp hI] at hn
     exact hn (isPrimePow_absNorm ⟨I, h⟩)
-  simp [IdealArithmeticFunction.vonMangoldtTransform_apply,
-    IdealArithmeticFunction.vonMangoldt_eq_zero_of_not_isPrimePow hnot]
+  simp [(rayClassCoeff 𝔪 c).vonMangoldtTransform_eq_zero_of_not_isPrimePow hnot]
 
 /-- `rayClassPsi` is the inclusive partial sum of `rayClassVonMangoldtCoeff`. -/
 theorem rayClassPsi_eq_sum_Icc (𝔪 : Modulus K) (c : RayClassGroup 𝔪) (x : ℝ) :
@@ -430,9 +425,9 @@ theorem sum_indicator_rayClassPrimePowerSet (𝔪 : Modulus K) [Fintype (RayClas
   by_cases hA : primePowerBase A ∈ 𝔪.support
   · rw [Set.indicator_of_notMem (by simpa using hA)]
     exact Finset.sum_eq_zero fun c _ ↦ Set.indicator_of_notMem
-      (fun h ↦ isCoprimeTo_idealPrimePower_iff.mp (mem_rayClassPrimePowerSet_iff.mp h).1 hA) _
+      (fun h ↦ 𝔪.isCoprimeTo_idealPrimePower_iff.mp (mem_rayClassPrimePowerSet_iff.mp h).1 hA) _
   · rw [Set.indicator_of_mem (by simpa using hA)]
-    have hcop : 𝔪.IsCoprimeTo (A : Ideal (𝓞 K)) := isCoprimeTo_idealPrimePower_iff.mpr hA
+    have hcop : 𝔪.IsCoprimeTo (A : Ideal (𝓞 K)) := 𝔪.isCoprimeTo_idealPrimePower_iff.mpr hA
     set c₀ := idealClass 𝔪 ⟨(A : Ideal (𝓞 K)), Modulus.mem_integralIdealsPrimeTo.mpr hcop⟩
     rw [Finset.sum_eq_single c₀
       (fun c _ hc ↦ Set.indicator_of_notMem
@@ -496,9 +491,9 @@ theorem sum_natCast_rayClassPrimeCount_add_primeCount_support (𝔪 : Modulus K)
   refine Finset.sum_congr rfl fun 𝔭 _ ↦ ?_
   by_cases h𝔭 : 𝔭 ∈ 𝔪.support
   · have hnot : ∀ c : RayClassGroup 𝔪, 𝔭 ∉ rayClassPrimeSet 𝔪 c :=
-      fun _ h ↦ isCoprimeTo_asIdeal_iff.mp (mem_rayClassPrimeSet_iff.mp h).1 h𝔭
+      fun _ h ↦ 𝔪.isCoprimeTo_asIdeal_iff.mp (mem_rayClassPrimeSet_iff.mp h).1 h𝔭
     simp [h𝔭, hnot]
-  · have hcop : 𝔪.IsCoprimeTo 𝔭.asIdeal := isCoprimeTo_asIdeal_iff.mpr h𝔭
+  · have hcop : 𝔪.IsCoprimeTo 𝔭.asIdeal := 𝔪.isCoprimeTo_asIdeal_iff.mpr h𝔭
     set c₀ := idealClass 𝔪 ⟨𝔭.asIdeal, Modulus.mem_integralIdealsPrimeTo.mpr hcop⟩
     rw [Finset.sum_eq_single c₀
       (fun c _ hc ↦ Set.indicator_of_notMem (fun h ↦ hc (mem_rayClassPrimeSet_iff.mp h).2.symm) _)
@@ -560,8 +555,8 @@ theorem sum_rayClassPsi_classMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (h'
   · rfl
   · symm
     refine Set.indicator_of_notMem (fun hAm ↦ hA ?_) _
-    exact isCoprimeTo_idealPrimePower_iff.mpr fun hv ↦
-      isCoprimeTo_idealPrimePower_iff.mp (mem_rayClassPrimePowerSet_iff.mp hAm).1 (h' hv)
+    exact 𝔫.isCoprimeTo_idealPrimePower_iff.mpr fun hv ↦
+      𝔪.isCoprimeTo_idealPrimePower_iff.mp (mem_rayClassPrimePowerSet_iff.mp hAm).1 (h' hv)
 
 /-- **General change of modulus for `rayClassPsi`.** For any `h : 𝔪 ∣ 𝔫`, `rayClassPsi 𝔪 c x`
 exceeds the fibre sum `∑_{classMap h c' = c} rayClassPsi 𝔫 c' x` only on prime powers based at
@@ -592,8 +587,8 @@ theorem rayClassPsi_sub_sum_rayClassPsi_classMap_isBigO_log {𝔪 𝔫 : Modulus
         · rw [sub_zero]
           by_cases hAm : A ∈ rayClassPrimePowerSet 𝔪 c
           · have hmem : primePowerBase A ∈ S :=
-              ⟨not_not.mp (mt isCoprimeTo_idealPrimePower_iff.mpr hA),
-                isCoprimeTo_idealPrimePower_iff.mp (mem_rayClassPrimePowerSet_iff.mp hAm).1⟩
+              ⟨not_not.mp (mt 𝔫.isCoprimeTo_idealPrimePower_iff.mpr hA),
+                𝔪.isCoprimeTo_idealPrimePower_iff.mp (mem_rayClassPrimePowerSet_iff.mp hAm).1⟩
             rw [Set.indicator_of_mem hAm,
               Set.indicator_of_mem (s := {B : IdealPrimePower K | primePowerBase B ∈ S}) hmem]
           · rw [Set.indicator_of_notMem hAm]
