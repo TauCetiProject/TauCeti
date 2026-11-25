@@ -1,6 +1,6 @@
 name: pr-build
 # retry-ci-status, fleet-recovery, review and pr-status match this name and these titles.
-run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || (github.event_name == 'pull_request_target' || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') && format('pr-build pr={0} head={1}', github.event.pull_request.number || github.event.client_payload.pr, github.event.pull_request.head.sha || github.event.client_payload.head_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
+run-name: ${{ github.event_name == 'repository_dispatch' && (github.event.action == 'tauceti-bors-staging' || github.event.action == 'tauceti-bors-attested') && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || (github.event_name == 'pull_request_target' || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') && format('pr-build pr={0} head={1}', github.event.pull_request.number || github.event.client_payload.pr, github.event.pull_request.head.sha || github.event.client_payload.head_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
 
 # The build is TauCetiTools' pr-build.yml at main; this file keeps what GitHub reads from the
 # repository where the event happens: triggers, the GITHUB_TOKEN ceiling, and secrets. See the
@@ -21,7 +21,9 @@ on:
   # default-branch workflow definition, not a candidate's .github/ files. A human
   # approval also requests ordinary PR CI; that dispatch carries no authority.
   repository_dispatch:
-    types: [tauceti-bors-staging, tauceti-bors-pr-approved]
+    # `tauceti-bors-attested`: the queue lands a batch its trusted repair worker already verified, without
+    # rebuilding it (decision 200); the callee confirms the attestation with the queue first.
+    types: [tauceti-bors-staging, tauceti-bors-attested, tauceti-bors-pr-approved]
   workflow_dispatch:
     inputs:
       pr: { description: "PR number to build", required: true, type: string }

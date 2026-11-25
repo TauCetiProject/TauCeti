@@ -35,7 +35,8 @@ abbrev PlaneModel := Fin 2 → ℝ
 
 /-- The genuine quotient normal fibre in dimension zero has just its zero vector. -/
 theorem zero_normal_eq_zero
-    (q : (SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)).NormalSpace 0
+    (q : (SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel))
+        (M := ZeroModel)).isImmersion.NormalSpace 0
       (WithTop.coe_ne_zero.2 ENat.top_ne_zero)) : q = 0 := by
   apply (SmoothEmbedding.diagonalNormalEquiv (I := 𝓘(ℝ, ZeroModel)) 0).injective
   apply (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ZeroModel)).injective
@@ -44,7 +45,7 @@ theorem zero_normal_eq_zero
 -- The zero-dimensional quotient fibre has an actual H₀ local generator, obtained through the
 -- native point-chart construction, with no assumed normal identification.
 example : Nonempty (LocalOrientation
-    ((SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)).NormalSpace 0
+    ((SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)).isImmersion.NormalSpace 0
       (WithTop.coe_ne_zero.2 ENat.top_ne_zero)) 0 0) := by
   let f := (SmoothEmbedding.diagonalNormalEquiv (I := 𝓘(ℝ, ZeroModel)) (0 : ZeroModel)).trans
     (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ZeroModel))
@@ -53,7 +54,7 @@ example : Nonempty (LocalOrientation
 
 /-- The actual quotient normal fibre in dimension one is nontrivial. -/
 theorem real_normal_nontrivial :
-    Nontrivial ((SmoothEmbedding.diagonal (I := 𝓘(ℝ, ℝ)) (M := ℝ)).NormalSpace 0
+    Nontrivial ((SmoothEmbedding.diagonal (I := 𝓘(ℝ, ℝ)) (M := ℝ)).isImmersion.NormalSpace 0
       (WithTop.coe_ne_zero.2 ENat.top_ne_zero)) := by
   have : Nontrivial (TangentSpace 𝓘(ℝ, ℝ) (0 : ℝ)) :=
     (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ℝ)).surjective.nontrivial
@@ -61,7 +62,7 @@ theorem real_normal_nontrivial :
 
 /-- The actual quotient normal fibre of the complex line has complex dimension one. -/
 theorem complex_normal_finrank :
-    finrank ℂ ((SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ)) (M := ℂ)).NormalSpace 0
+    finrank ℂ ((SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ)) (M := ℂ)).isImmersion.NormalSpace 0
       (WithTop.coe_ne_zero.2 ENat.top_ne_zero)) = 1 :=
   ((SmoothEmbedding.diagonalNormalEquiv (I := 𝓘(ℂ, ℂ)) (0 : ℂ)).trans
     (NormedSpace.fromTangentSpace (𝕜 := ℂ) (0 : ℂ))).toLinearEquiv.finrank_eq.trans
@@ -70,7 +71,7 @@ theorem complex_normal_finrank :
 -- The same native quotient and smooth bundle comparison are complex linear over ℂ.
 example (v w : TangentSpace 𝓘(ℂ, ℂ) (0 : ℂ)) :
     (SmoothEmbedding.diagonalNormalEquiv (I := 𝓘(ℂ, ℂ)) 0).symm (w - v) =
-      (SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ))).normalClass 0
+      (SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ))).isImmersion.normalClass 0
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
         ((TauCeti.Manifold.tangentSpaceProdEquiv (I := 𝓘(ℂ, ℂ)) (J := 𝓘(ℂ, ℂ)) (0, 0)).symm
           (v, w)) := by
@@ -87,7 +88,7 @@ example :
       (SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ)) (M := ℂ)) (P := ℂ)
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero) (by simp [Module.finrank_prod])
     Nonempty (TotalSpace ℂ
-      ((SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ)) (M := ℂ)).NormalSpace ·
+      ((SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ)) (M := ℂ)).isImmersion.NormalSpace ·
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero))
       ≃ₘ^∞⟮(𝓘(ℂ, ℂ)).prod 𝓘(ℂ, ℂ), (𝓘(ℂ, ℂ)).prod 𝓘(ℂ, ℂ)⟯ TangentBundle 𝓘(ℂ, ℂ) ℂ) :=
   ⟨SmoothEmbedding.diagonalNormalBundleDiffeomorph (I := 𝓘(ℂ, ℂ))⟩
@@ -102,7 +103,7 @@ example :
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
       (by simp [Module.finrank_prod])
     Nonempty (TotalSpace ℝ
-      ((SmoothEmbedding.diagonal (I := 𝓘(ℝ, ℝ)) (M := ℝ ⊕ ℝ)).NormalSpace ·
+      ((SmoothEmbedding.diagonal (I := 𝓘(ℝ, ℝ)) (M := ℝ ⊕ ℝ)).isImmersion.NormalSpace ·
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero))
       ≃ₘ^∞⟮(𝓘(ℝ, ℝ)).prod 𝓘(ℝ, ℝ), (𝓘(ℝ, ℝ)).prod 𝓘(ℝ, ℝ)⟯
         TangentBundle 𝓘(ℝ, ℝ) (ℝ ⊕ ℝ)) :=
@@ -118,7 +119,7 @@ example :
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
       (by simp [Module.finrank_prod])
     Nonempty (TotalSpace ZeroModel
-      ((SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)).NormalSpace ·
+      ((SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)).isImmersion.NormalSpace ·
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero))
       ≃ₘ^∞⟮(𝓘(ℝ, ZeroModel)).prod 𝓘(ℝ, ZeroModel),
         (𝓘(ℝ, ZeroModel)).prod 𝓘(ℝ, ZeroModel)⟯ TangentBundle 𝓘(ℝ, ZeroModel) ZeroModel) :=

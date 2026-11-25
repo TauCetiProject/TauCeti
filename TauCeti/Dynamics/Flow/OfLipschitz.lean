@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.Flow
 public import TauCeti.Analysis.ODE.InitialCondition
 import Mathlib.Analysis.ODE.ExistUnique
+import TauCeti.Analysis.ODE.Gronwall.TwoSided
 
 /-!
 # The flow of a globally Lipschitz vector field
@@ -44,6 +45,10 @@ the initial condition, and the joint continuity required by `Flow` is
   segment from `x` to `x + t • c`, the time-`t` map translates `x` by `t • c`.
 * `TauCeti.lipschitzWith_flowOfLipschitz`, `TauCeti.norm_fderiv_flowOfLipschitz_le`: the time-`t`
   map is `exp (K |t|)`-Lipschitz, and its `fderiv` has norm at most `exp (K |t|)`.
+* `TauCeti.lipschitzWith_flowOfLipschitz_sub_id`, `TauCeti.norm_fderiv_flowOfLipschitz_sub_id_le`:
+  the displacement `x ↦ φₜ x - x` is `(exp (K |t|) - 1)`-Lipschitz, so the time-`t` map is within
+  `exp (K |t|) - 1` of the identity in derivative. This is Grönwall's inequality for the difference
+  of two orbits and their initial points.
 * `TauCeti.flowOfLipschitz_eq_add_integral`: orbits satisfy the integral equation.
 
 ## References
@@ -226,6 +231,46 @@ theorem norm_fderiv_flowOfLipschitz_le (hv : LipschitzWith K v) (x : E) (t : ℝ
     ‖fderiv ℝ (flowOfLipschitz v hv t) x‖ ≤ Real.exp (K * |t|) := by
   simpa [Real.coe_toNNReal _ (Real.exp_pos _).le] using
     norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_flowOfLipschitz hv t) (x₀ := x)
+
+/-- **The time-`t` map of the flow is close to the identity.** For a `K`-Lipschitz vector field,
+the displacement `x ↦ φₜ x - x` of the time-`t` map is `(exp (K |t|) - 1)`-Lipschitz. In
+particular it tends to a constant map in the Lipschitz sense as `K |t| → 0`. -/
+theorem lipschitzWith_flowOfLipschitz_sub_id (hv : LipschitzWith K v) (t : ℝ) :
+    LipschitzWith (Real.exp (K * |t|) - 1).toNNReal (fun x ↦ flowOfLipschitz v hv t x - x) := by
+  refine LipschitzWith.of_dist_le_mul fun a b ↦ ?_
+  rw [Real.coe_toNNReal _ (sub_nonneg.2 (Real.one_le_exp (by positivity))), dist_eq_norm,
+    dist_eq_norm, mul_comm]
+  -- The difference `f s` of the two displacements has derivative `v (φₛ a) - v (φₛ b)`, bounded by
+  -- `K ‖f s‖ + K ‖a - b‖` since `φₛ a - φₛ b = f s + (a - b)`; then apply Grönwall from time `0`.
+  set f : ℝ → E := fun s ↦ (flowOfLipschitz v hv s a - a) - (flowOfLipschitz v hv s b - b)
+  have hbound (s : ℝ) : ‖v (flowOfLipschitz v hv s a) - v (flowOfLipschitz v hv s b)‖ ≤
+      K * ‖f s‖ + K * ‖a - b‖ := by
+    rw [← dist_eq_norm, ← mul_add]
+    refine (hv.dist_le_mul _ _).trans (mul_le_mul_of_nonneg_left ?_ K.coe_nonneg)
+    rw [dist_eq_norm]
+    exact (congrArg norm (by simp [f]; abel)).trans_le (norm_add_le (f s) (a - b))
+  have h := norm_le_gronwallBound_of_norm_derivWithin_le (f := f) (t₀ := 0) (δ := 0)
+    (a := min 0 t) (b := max 0 t) ⟨min_le_left _ _, le_max_left _ _⟩
+    (fun s _ ↦ (((hasDerivAt_flowOfLipschitz hv a s).sub_const a).fun_sub
+      ((hasDerivAt_flowOfLipschitz hv b s).sub_const b)).hasDerivWithinAt)
+    (by simp [f]) (fun s _ ↦ hbound s) t ⟨min_le_right _ _, le_max_right _ _⟩
+  refine (h.trans_eq (by rw [sub_zero])).trans_eq ?_
+  by_cases hK : (K : ℝ) = 0
+  · simp [hK, gronwallBound_K0]
+  · simp only [gronwallBound_of_K_ne_0 hK, zero_mul, zero_add, mul_div_cancel_left₀ _ hK]
+
+/-- **The derivative of the time-`t` map is close to the identity.** For a `K`-Lipschitz vector
+field, wherever the time-`t` map of the flow is differentiable (everywhere for a `C¹` field), its
+derivative differs from the identity by at most `exp (K |t|) - 1` in operator norm. -/
+theorem norm_fderiv_flowOfLipschitz_sub_id_le (hv : LipschitzWith K v) {x : E} {t : ℝ}
+    (hx : DifferentiableAt ℝ (flowOfLipschitz v hv t) x) :
+    ‖fderiv ℝ (flowOfLipschitz v hv t) x - ContinuousLinearMap.id ℝ E‖ ≤
+      Real.exp (K * |t|) - 1 := by
+  have h := norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_flowOfLipschitz_sub_id hv t) (x₀ := x)
+  have hd : HasFDerivAt (fun y ↦ flowOfLipschitz v hv t y - y)
+      (fderiv ℝ (flowOfLipschitz v hv t) x - ContinuousLinearMap.id ℝ E) x :=
+    hx.hasFDerivAt.sub (hasFDerivAt_id x)
+  rwa [hd.fderiv, Real.coe_toNNReal _ (sub_nonneg.2 (Real.one_le_exp (by positivity)))] at h
 
 /-- **The integral equation of the flow**: `φₜ y = y + ∫₀ᵗ v (φ_τ y) dτ`. -/
 theorem flowOfLipschitz_eq_add_integral (hv : LipschitzWith K v) (y : E) (t : ℝ) :
