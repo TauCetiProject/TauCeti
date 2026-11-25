@@ -206,6 +206,12 @@ theorem crReflectionDeriv_zero : crReflectionDeriv R (0 : ℂ → ℂ →L[ℝ] 
 theorem crReflectionZeroth_zero : crReflectionZeroth R (0 : ℂ → W →L[ℝ] W) = 0 :=
   twistedReflection_zero_right _
 
+/-- The reflection of a sum of zeroth-order coefficients is the sum of their reflections. -/
+theorem crReflectionZeroth_add (R : W ≃L[ℝ] W) (S M : ℂ → W →L[ℝ] W) :
+    crReflectionZeroth R (S + M) = crReflectionZeroth R S + crReflectionZeroth R M := by
+  simp only [crReflectionZeroth_def]
+  exact twistedReflection_add _ S M
+
 end Coefficients
 
 /-! ### Local `Lᵖ` bounds on the doubled domain -/
