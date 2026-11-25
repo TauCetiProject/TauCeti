@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Compactification
 public import TauCeti.Geometry.Manifold.Morse.Gluing.Transverse
-import TauCeti.Geometry.Manifold.Boundary.LocalModels
+import TauCeti.Topology.Closure
 
 /-!
 # Broken index-two trajectories are limits of unbroken ones

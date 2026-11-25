@@ -10,6 +10,7 @@ import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Geometry.Manifold.Boundary.LocalModels
 import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 import TauCeti.Geometry.Manifold.Morse.Stable.SequentialCompactness
+import TauCeti.Topology.Closure
 
 /-!
 # The compactified space of index-two trajectories

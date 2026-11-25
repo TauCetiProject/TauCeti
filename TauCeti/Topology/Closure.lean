@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Inseparable
 public import Mathlib.Topology.NhdsWithin
+public import Mathlib.Topology.Separation.Basic
 
 /-!
 # Closures and neighbourhoods
@@ -26,6 +27,9 @@ A set containing a punctured neighbourhood of a non-isolated point `x` has `x` i
 
 Membership in a closed set passes to limits, so pointwise limits of maps into a closed set map
 into it.
+
+In a T1 space, when the closure of a set `P` adds only finitely many points, `P` is open in its
+closure, and near any point the closure adds only that point.
 
 ## Main declarations
 
@@ -47,6 +51,10 @@ into it.
   contained in the closure of `L` are dense in that set.
 * `TauCeti.subset_closure_range_subtypeVal_inter_of_subset`: if the points of `L` lying in `s`
   are dense in `s`, those lying in an open subset of `s` are dense in it.
+* `TauCeti.nhdsWithin_closure_le_nhdsWithin_insert`: if the closure of `P` adds finitely many
+  points, then near any point `w` it contains only `w` and points of `P`.
+* `TauCeti.isOpen_preimage_val_of_finite_closure_diff`: if the closure of `P` adds finitely many
+  points, then `P` is open in its closure.
 * `Dense.mem_of_nonempty_interior_closure_singleton`: a dense set stable under generization
   contains every point whose closure has nonempty interior.
 -/
@@ -125,6 +133,26 @@ theorem subset_closure_range_subtypeVal_inter_of_subset {L s t : Set X} (ht : Is
     t ⊆ closure (range (Subtype.val : ↥(L ∩ t) → X)) :=
   subset_closure_range_subtypeVal_inter ht fun _ hx ↦
     closure_mono (range_subset_iff.2 fun d ↦ d.property.1) (h (hts hx))
+
+/-- If the closure of `P` adds only finitely many points to `P`, then near any point `w` the
+closure of `P` contains only `w` and points of `P`. -/
+theorem nhdsWithin_closure_le_nhdsWithin_insert [T1Space X] {P : Set X}
+    (hP : (closure P \ P).Finite) (w : X) : 𝓝[closure P] w ≤ 𝓝[insert w P] w := by
+  have hfar : ((closure P \ P) \ {w})ᶜ ∈ 𝓝 w := hP.sdiff.isClosed.isOpen_compl.mem_nhds (by simp)
+  refine nhdsWithin_le_of_mem (mem_nhdsWithin_iff_exists_mem_nhds_inter.2
+    ⟨_, hfar, fun x ⟨hx, hxc⟩ ↦ ?_⟩)
+  by_contra hxP
+  rw [mem_insert_iff, not_or] at hxP
+  exact hx ⟨⟨hxc, hxP.2⟩, hxP.1⟩
+
+/-- If the closure of `P` adds only finitely many points to `P`, then `P` is open in its
+closure. -/
+theorem isOpen_preimage_val_of_finite_closure_diff [T1Space X] {P : Set X}
+    (hP : (closure P \ P).Finite) : IsOpen ((↑) ⁻¹' P : Set (closure P)) := by
+  -- Its complement is the preimage of a finite, hence closed, set.
+  convert (hP.isClosed.preimage continuous_subtypeVal).isOpen_compl using 1
+  ext x
+  simp only [mem_preimage, mem_compl_iff, Set.mem_sdiff, Subtype.coe_prop, true_and, not_not]
 
 end TauCeti
 

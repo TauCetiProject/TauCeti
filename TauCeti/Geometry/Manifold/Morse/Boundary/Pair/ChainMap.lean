@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.Pair.Commutation
 import TauCeti.Geometry.Manifold.Boundary.LocalModels
 import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Dynamics.Flow.Lyapunov
+import TauCeti.Topology.Closure
 
 /-!
 # The mod-two pair map is a chain map
