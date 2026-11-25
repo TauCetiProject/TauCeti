@@ -215,6 +215,6 @@ theorem frameComplex_exactAt_zero_iff [Nontrivial k] :
 vectors of `Rⁿ` are unimodular, so the augmentation is onto. -/
 theorem frameComplex_exactAt_zero [Nonempty n] : (frameComplex k R n).ExactAt 0 :=
   frameComplex_exactAt_zero_of_isUnimodular (v := Pi.single (Classical.arbitrary n) 1)
-    (Module.isUnimodular_of_apply_eq_one (f := LinearMap.proj (Classical.arbitrary n)) (by simp))
+    (IsUnit.isUnimodular_pi (i := Classical.arbitrary n) (by simp))
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.LinearAlgebra.Unimodular
+import TauCeti.LinearAlgebra.Matrix.Submatrix
 
 /-!
 # Unimodular frames and their faces
@@ -71,8 +72,7 @@ theorem mem_unimodularFrames_iff {A : Matrix n k R} :
 matrix, is a unimodular frame. -/
 theorem submatrix_one_mem_unimodularFrames {f : k → n} (hf : Function.Injective f) :
     (1 : Matrix n n R).submatrix id f ∈ unimodularFrames R n k :=
-  ⟨(1 : Matrix n n R).submatrix f id, by
-    rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, Matrix.one_mul, submatrix_one _ hf]⟩
+  ⟨(1 : Matrix n n R).submatrix f id, submatrix_one_mul_submatrix_one ⟨f, hf⟩⟩
 
 /-- A frame with a single column is a unimodular vector: an `n × 1` matrix has a left inverse if
 and only if its entries generate the unit ideal, which `TauCeti.Module.isUnimodular_pi_iff`
