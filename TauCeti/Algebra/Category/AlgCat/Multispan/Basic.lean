@@ -141,6 +141,33 @@ def asSemimoduleIndexIso :
       simp only [Iso.refl_hom, Functor.comp_map, multispan_map_snd]
       rfl)
 
+-- The two object families agree definitionally at each constructor.
+-- WalkingMultispan.functorExt uses the supplied reflexive isomorphism at that component.
+
+/-- The forward comparison is the identity at a face. -/
+@[simp]
+theorem asSemimoduleIndexIso_hom_app_left (a : J.L) :
+    I.asSemimoduleIndexIso.hom.app (.left a) = 𝟙 (SemimoduleCat.of R (I.left a)) :=
+  (rfl)
+
+/-- The forward comparison is the identity at a chamber. -/
+@[simp]
+theorem asSemimoduleIndexIso_hom_app_right (b : J.R) :
+    I.asSemimoduleIndexIso.hom.app (.right b) = 𝟙 (SemimoduleCat.of R (I.right b)) :=
+  (rfl)
+
+/-- The inverse comparison is the identity at a face. -/
+@[simp]
+theorem asSemimoduleIndexIso_inv_app_left (a : J.L) :
+    I.asSemimoduleIndexIso.inv.app (.left a) = 𝟙 (SemimoduleCat.of R (I.left a)) :=
+  (rfl)
+
+/-- The inverse comparison is the identity at a chamber. -/
+@[simp]
+theorem asSemimoduleIndexIso_inv_app_right (b : J.R) :
+    I.asSemimoduleIndexIso.inv.app (.right b) = 𝟙 (SemimoduleCat.of R (I.right b)) :=
+  (rfl)
+
 /-- The algebra sections and the sections of the underlying semimodule diagram
 are linearly equivalent via their unchanged components. -/
 def multispanSectionsLinearEquiv : AlgCat.sectionsSubalgebra I.multispan ≃ₗ[R]
@@ -160,8 +187,9 @@ theorem multispanSectionsLinearEquiv_apply_left
     (s : AlgCat.sectionsSubalgebra I.multispan) (a : J.L) :
     (I.multispanSectionsLinearEquiv s).val (.left a) = s.val (.left a) := by
   rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_apply,
-    SemimoduleCat.sectionsLinearEquivOfIso_apply, AlgCat.sectionsLinearEquiv_apply]
-  rfl
+    SemimoduleCat.sectionsLinearEquivOfIso_apply, AlgCat.sectionsLinearEquiv_apply,
+    asSemimoduleIndexIso_hom_app_left]
+  exact SemimoduleCat.id_apply (SemimoduleCat.of R (I.left a)) (s.val (.left a))
 
 /-- The comparison of sections preserves a chamber component. -/
 @[simp]
@@ -169,8 +197,9 @@ theorem multispanSectionsLinearEquiv_apply_right
     (s : AlgCat.sectionsSubalgebra I.multispan) (b : J.R) :
     (I.multispanSectionsLinearEquiv s).val (.right b) = s.val (.right b) := by
   rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_apply,
-    SemimoduleCat.sectionsLinearEquivOfIso_apply, AlgCat.sectionsLinearEquiv_apply]
-  rfl
+    SemimoduleCat.sectionsLinearEquivOfIso_apply, AlgCat.sectionsLinearEquiv_apply,
+    asSemimoduleIndexIso_hom_app_right]
+  exact SemimoduleCat.id_apply (SemimoduleCat.of R (I.right b)) (s.val (.right b))
 
 /-- The inverse comparison of sections preserves a face component. -/
 @[simp]
@@ -178,8 +207,9 @@ theorem multispanSectionsLinearEquiv_symm_apply_left
     (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) (a : J.L) :
     (I.multispanSectionsLinearEquiv.symm s).val (.left a) = s.val (.left a) := by
   rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
-    AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply]
-  rfl
+    AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply,
+    asSemimoduleIndexIso_inv_app_left]
+  exact SemimoduleCat.id_apply (SemimoduleCat.of R (I.left a)) (s.val (.left a))
 
 /-- The inverse comparison of sections preserves a chamber component. -/
 @[simp]
@@ -187,8 +217,9 @@ theorem multispanSectionsLinearEquiv_symm_apply_right
     (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) (b : J.R) :
     (I.multispanSectionsLinearEquiv.symm s).val (.right b) = s.val (.right b) := by
   rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
-    AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply]
-  rfl
+    AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply,
+    asSemimoduleIndexIso_inv_app_right]
+  exact SemimoduleCat.id_apply (SemimoduleCat.of R (I.right b)) (s.val (.right b))
 
 /-- A chamber family is compatible over the algebras exactly when it is compatible over
 their underlying semimodules. -/
