@@ -493,7 +493,7 @@ theorem invariantDifferential_formalGroup_mul_formalInvariantDifferentialDenom :
   have h := (formalGroup Universal.curve).invariantDifferential_mul_subst_pderiv
   rw [subst_pderiv_formalGroup_universal] at h
   have := congrArg (PowerSeries.map W.specialize) h
-  rw [map_mul, map_one, FormalGroup.map_invariantDifferential, ← map_formalGroup,
+  rw [map_mul, map_one, FormalGroup.map_invariantDifferential, map_specialize_formalGroup,
     ← map_formalInvariantDifferentialDenom] at this
   simpa using this
 

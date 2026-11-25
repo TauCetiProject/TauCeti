@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
@@ -75,7 +79,8 @@ integrable on `s`, as does applying a field of operators continuous on such a co
 function integrable on `s`; in a Hausdorff space this applies to `s` compact itself.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
-it lies in every `Lᵖ` on each measurable subset of that compact set.
+it lies in every `Lᵖ` on each measurable subset of that compact set. On a compact space, an
+integrable function therefore stays integrable after multiplication by a continuous function.
 In particular, the squared norm of a continuous compactly supported function is integrable, and so
 is the product of a continuous function whose compact support lies in a set `U` with a
 function continuous on `U`, as are the coordinatewise pairing `∑ₖ gₖ fₖ` and the weighted squared
@@ -144,6 +149,10 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   compact set is integrable, without a separation assumption on the domain.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
   compactly supported function is integrable.
+* `Continuous.integrable_sq_of_hasCompactSupport` and
+  `ContDiff.integrable_deriv_sq_of_hasCompactSupport`: the square of a continuous compactly
+  supported real function, and of the derivative of a `C¹` compactly supported function on `ℝ`,
+  is integrable.
 * `Continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport`: the same after multiplying by
   the square of a continuous real weight.
 * `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in
@@ -589,6 +598,19 @@ theorem Continuous.integrable_norm_sq_of_hasCompactSupport {F : Type*}
   apply Continuous.integrable_of_hasCompactSupport (by fun_prop)
   exact hcf.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
 
+/-- The square of a continuous compactly supported real function is integrable for any measure
+finite on compact sets. -/
+theorem Continuous.integrable_sq_of_hasCompactSupport {f : X → ℝ} (hf : Continuous f)
+    (hcf : HasCompactSupport f) : Integrable (fun x ↦ f x ^ 2) μ := by
+  simpa using hf.integrable_norm_sq_of_hasCompactSupport (μ := μ) hcf
+
+/-- The square of the derivative of a `C¹` compactly supported function on `ℝ` is integrable for
+any measure finite on compact sets. -/
+theorem ContDiff.integrable_deriv_sq_of_hasCompactSupport {μ : Measure ℝ}
+    [IsFiniteMeasureOnCompacts μ] {φ : ℝ → ℝ} {n : WithTop ℕ∞} (hφ : ContDiff ℝ n φ)
+    (hφc : HasCompactSupport φ) (hn : 1 ≤ n) : Integrable (fun s ↦ deriv φ s ^ 2) μ :=
+  (hφ.continuous_deriv hn).integrable_sq_of_hasCompactSupport hφc.deriv
+
 /-- A continuous real weight squared, times the squared norm of a continuous compactly supported
 function, is integrable for any measure finite on compact sets. The weight need not be compactly
 supported. -/
@@ -597,6 +619,16 @@ theorem Continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport {F : Type*}
     (hcg : HasCompactSupport g) : Integrable (fun x ↦ f x ^ 2 * ‖g x‖ ^ 2) μ :=
   ((hf.pow 2).mul (hg.norm.pow 2)).integrable_of_hasCompactSupport
     (hcg.mono fun x hx hzero ↦ hx (by simp [hzero]))
+
+omit [IsFiniteMeasureOnCompacts μ] in
+/-- On a compact space, an integrable function stays integrable after multiplication on the left
+by a continuous function, which is bounded. This is the whole-space `Integrable` form of Mathlib's
+`MeasureTheory.IntegrableOn.continuousOn_mul_of_subset`. -/
+theorem MeasureTheory.Integrable.continuous_mul_of_compactSpace [CompactSpace X] {R : Type*}
+    [NormedRing R] [SecondCountableTopologyEither X R] {g f : X → R} (hg : Continuous g)
+    (hf : Integrable f μ) : Integrable (fun x ↦ g x * f x) μ :=
+  integrableOn_univ.1 (hf.integrableOn.continuousOn_mul_of_subset hg.continuousOn isCompact_univ
+    MeasurableSet.univ subset_rfl)
 
 /-- The product of a continuous compactly supported function `f`, whose support lies in a set
 `U`, with a function `g` continuous on `U` is integrable, for any measure finite on compact sets.
