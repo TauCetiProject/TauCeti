@@ -47,6 +47,18 @@ theorem herschMap_smul_self (hu : ‖u‖ = 1) (hρ0 : -1 < ρ) (hρ1 : ρ ≤ 1
   · simpa only [one_smul] using herschMap_of_norm_eq_one hu
       (x := u) (by rw [real_inner_self_eq_norm_sq, hu]; norm_num)
 
+/-- In a one-dimensional ambient space, every Hersch homeomorphism fixes the whole unit sphere. -/
+theorem herschHomeomorph_eq_id_of_finrank_eq_one (hE : Module.finrank ℝ E = 1)
+    {a : E} (ha : ‖a‖ < 1) : (herschHomeomorph ha : sphere (0 : E) 1 → sphere (0 : E) 1) = id := by
+  funext x
+  apply Subtype.ext
+  rw [coe_herschHomeomorph, id_eq]
+  have hx : ‖(x : E)‖ = 1 := mem_sphere_zero_iff_norm.mp x.property
+  have hx₀ : (x : E) ≠ 0 := norm_ne_zero_iff.mp (by simp [hx])
+  obtain ⟨s, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' (x : E) hx₀).mp hE a
+  have hs : |s| < 1 := by simpa only [norm_smul, hx, mul_one, Real.norm_eq_abs] using ha
+  exact herschMap_smul_self hx (abs_lt.mp hs).1 (abs_lt.mp hs).2.le
+
 /-- `T_(ρu)` fixes `-u`, for `ρ < 1`. -/
 theorem herschMap_smul_neg_self (hu : ‖u‖ = 1) (hρ0 : -1 ≤ ρ) (hρ1 : ρ < 1) :
     herschMap (ρ • u) (-u) = -u := by
