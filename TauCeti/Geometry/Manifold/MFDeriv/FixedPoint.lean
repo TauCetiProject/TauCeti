@@ -112,7 +112,7 @@ eigenvalues of `D` below `-1`.
 ## Main results
 
 * `Diffeomorph.mfderiv_comp_mfderiv_of_semiconj`: a diffeomorphism conjugating `f` to `g`
-  intertwines their differentials at a fixed point.
+  intertwines their differentials.
 * `Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj`: nondegeneracy is invariant under
   conjugation by a diffeomorphism.
 * `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: on a manifold modelled on a
@@ -226,26 +226,21 @@ theorem congr_of_eventuallyEq {g : M → M} (h : IsNondegenerateFixedPt I f x) (
 
 end IsNondegenerateFixedPt
 
-/-- If a diffeomorphism `Φ` intertwines `f` and `g`, `Φ ∘ f = g ∘ Φ`, and `x` is a fixed point of
-`f`, then the differential of `Φ` at `x` intertwines the differentials:
-`dg_{Φ x} ∘ dΦ_x = dΦ_x ∘ df_x`.
+/-- If a diffeomorphism `Φ` intertwines `f` and `g`, `Φ ∘ f = g ∘ Φ`, then the differential of `Φ`
+intertwines the differentials: `dg_{Φ x} ∘ dΦ_x = dΦ_{f x} ∘ df_x` at every point `x`.
 The differentials are stated as maps between the model spaces `E` and `F`, the tangent spaces of
-`M` and `N` at every point, so that `f x = x` can be substituted without transport. -/
+`M` and `N` at every point, so that at a fixed point `f x = x` can be substituted without
+transport. -/
 theorem _root_.Diffeomorph.mfderiv_comp_mfderiv_of_semiconj {F H' N : Type*}
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'}
     [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω} (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {g : N → N}
-    (h : Semiconj Φ f g) (hx : IsFixedPt f x) :
+    (h : Semiconj Φ f g) (x : M) :
     ((mfderiv J J g (Φ x)).comp (mfderiv I J Φ x) : E →L[𝕜] F) =
-      (mfderiv I J Φ x).comp (mfderiv I I f x) := by
-  have hcomp : (Φ : M → N) ∘ f = g ∘ Φ := funext h
-  -- Differentiating `Φ ∘ f = g ∘ Φ` at `x` gives `dg ∘ dΦ = dΦ_{f x} ∘ df`.
-  have hder : ((mfderiv J J g (Φ x)).comp (mfderiv I J Φ x) : E →L[𝕜] F) =
       (mfderiv I J Φ (f x)).comp (mfderiv I I f x) := by
-    refine (Φ.mfderiv_comp_diffeomorph hn g x).symm.trans ?_
-    rw [← hcomp]
-    exact Φ.mfderiv_diffeomorph_comp hn f x
-  have hΦ : (mfderiv I J Φ (f x) : E →L[𝕜] F) = mfderiv I J Φ x := by rw [hx.eq]
-  rwa [hΦ] at hder
+  have hcomp : (Φ : M → N) ∘ f = g ∘ Φ := funext h
+  refine (Φ.mfderiv_comp_diffeomorph hn g x).symm.trans ?_
+  rw [← hcomp]
+  exact Φ.mfderiv_diffeomorph_comp hn f x
 
 /-- **Nondegeneracy is invariant under conjugation by a diffeomorphism.** If a diffeomorphism `Φ`
 intertwines `f` and `g`, `Φ ∘ f = g ∘ Φ`, then `Φ x` is a nondegenerate fixed point of `g` exactly
@@ -269,8 +264,11 @@ theorem _root_.Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj {F H' N : Type
   have hinj : Injective (mfderiv I J Φ x : E → F) := fun a b hab ↦ by rw [← hl a, hab, hl b]
   -- At a fixed point of `f`, `dg (dΦ w) = dΦ (df w)` for every `w`.
   have hfg (hfx : f x = x) (w : E) :
-      (mfderiv J J g (Φ x) (mfderiv I J Φ x w) : F) = mfderiv I J Φ x (mfderiv I I f x w) :=
-    congrArg (fun A : E →L[𝕜] F ↦ A w) (Φ.mfderiv_comp_mfderiv_of_semiconj hn h hfx)
+      (mfderiv J J g (Φ x) (mfderiv I J Φ x w) : F) = mfderiv I J Φ x (mfderiv I I f x w) := by
+    have hΦ : (mfderiv I J Φ (f x) : E →L[𝕜] F) = mfderiv I J Φ x := by rw [hfx]
+    have hder := Φ.mfderiv_comp_mfderiv_of_semiconj hn h x
+    rw [hΦ] at hder
+    exact congrArg (fun A : E →L[𝕜] F ↦ A w) hder
   constructor
   · rintro ⟨hgx, hgd, hg⟩
     have hfx : f x = x := (hfix.1 hgx).eq
@@ -855,7 +853,10 @@ theorem _root_.Diffeomorph.fixedPointDet_eq_of_semiconj {F H' N : Type*}
   have hA : fixedPointDet I f x = LinearMap.det (LinearMap.id - (A : E →ₗ[𝕜] E)) := rfl
   have hB : fixedPointDet J g (Φ x) = LinearMap.det (LinearMap.id - (B : F →ₗ[𝕜] F)) := rfl
   -- Differentiating `Φ ∘ f = g ∘ Φ` at the fixed point `x` gives `B ∘ T = T ∘ A`.
-  have hder : B.comp T = T.comp A := Φ.mfderiv_comp_mfderiv_of_semiconj hn h hx
+  have hder : B.comp T = T.comp A := by
+    have hΦ : (mfderiv I J Φ (f x) : E →L[𝕜] F) = T := by rw [hx.eq]
+    have hsemi := Φ.mfderiv_comp_mfderiv_of_semiconj hn h x
+    rwa [hΦ] at hsemi
   -- The differential `T` of `Φ` is a linear equivalence `e`.
   let e : E ≃ₗ[𝕜] F := (Φ.mfderivToContinuousLinearEquiv hn x).toLinearEquiv
   have he (w : E) : e w = T w :=
