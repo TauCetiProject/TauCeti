@@ -56,8 +56,11 @@ across a slab of width `1 / (n + 1)` because the normal components agree on the 
 * `Convex.perimeter_inter_le`: `P(s ∩ C) ≤ P(s)` for `C` convex and `μ s < ∞`.
 * `Convex.perimeter_le_of_subset`: `P(K) ≤ P(L)` for `K` convex and `K ⊆ L`, `μ L < ∞`.
 * `Convex.perimeter_lt_top`: a bounded convex set has finite perimeter.
-* `Convex.perimeter_lt_top_of_isBounded`: every convex set has finite perimeter in every bounded
-  open set.
+* `Convex.perimeter_lt_top_of_isBounded_opens`: every convex set has finite perimeter in every
+  bounded open set.
+* `Convex.exists_opens_totalVariationOn_indicator_ne_top`: every bounded set lies in an open set in
+  which a given convex set has finite perimeter, the local finiteness hypothesis of the structure
+  theorems for sets of finite perimeter.
 
 ## References
 
@@ -419,10 +422,10 @@ theorem _root_.Convex.perimeter_lt_top [BorelSpace E] [μ.IsAddHaarMeasure] {K :
   exact ENNReal.mul_lt_top (ENNReal.mul_lt_top (by simp) ENNReal.ofReal_lt_top)
     measure_ball_lt_top
 
-/-- **Convex sets have locally finite perimeter.** Every convex set, bounded or not, has finite
-perimeter in every bounded open set `Ω`, since there it agrees with its intersection with a ball
-containing `Ω`, which is a bounded convex set. -/
-theorem _root_.Convex.perimeter_lt_top_of_isBounded [BorelSpace E] [μ.IsAddHaarMeasure]
+/-- Every convex set, bounded or not, has finite perimeter in every bounded open set `Ω`, since
+there it agrees with its intersection with a ball containing `Ω`, which is a bounded convex
+set. -/
+theorem _root_.Convex.perimeter_lt_top_of_isBounded_opens [BorelSpace E] [μ.IsAddHaarMeasure]
     {K : Set E} (hK : Convex ℝ K) (hΩ : Bornology.IsBounded (Ω : Set E)) : perimeter μ Ω K < ∞ := by
   obtain ⟨r, hΩr⟩ := hΩ.subset_ball 0
   calc perimeter μ Ω K ≤ perimeter μ ⟨ball 0 r, isOpen_ball⟩ K := perimeter_mono hΩr
@@ -431,5 +434,15 @@ theorem _root_.Convex.perimeter_lt_top_of_isBounded [BorelSpace E] [μ.IsAddHaar
     _ ≤ perimeter μ ⊤ (K ∩ ball 0 r) := perimeter_mono le_top
     _ < ∞ :=
       (hK.inter (convex_ball 0 r)).perimeter_lt_top (isBounded_ball.subset inter_subset_right)
+
+/-- **Convex sets have locally finite perimeter.** Every bounded set `C` lies in an open set `U` in
+which a convex set `K` has finite perimeter, `totalVariationOn μ U (K.indicator 1) ≠ ∞`. -/
+theorem _root_.Convex.exists_opens_totalVariationOn_indicator_ne_top [BorelSpace E]
+    [μ.IsAddHaarMeasure] {K C : Set E} (hK : Convex ℝ K) (hC : Bornology.IsBounded C) :
+    ∃ U : Opens E, C ⊆ (U : Set E) ∧ totalVariationOn μ U (K.indicator 1) ≠ ∞ := by
+  obtain ⟨r, hr⟩ := hC.subset_ball 0
+  refine ⟨⟨ball 0 r, isOpen_ball⟩, hr, ?_⟩
+  rw [← perimeter_def]
+  exact (hK.perimeter_lt_top_of_isBounded_opens (Ω := ⟨ball 0 r, isOpen_ball⟩) isBounded_ball).ne
 
 end TauCeti

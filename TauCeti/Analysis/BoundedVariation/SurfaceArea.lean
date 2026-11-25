@@ -41,8 +41,8 @@ derivative `2 Hⁿ⁻¹(K)` when its affine span has dimension `n - 1`
 (`TauCeti.hasDerivWithinAt_volume_real_add_smul_closedBall_of_finrank_add_one_eq`).
 
 The proof combines three facts. Convex sets have locally finite perimeter
-(`Convex.perimeter_lt_top_of_isBounded`), so De Giorgi's theorem gives `P(K; Ω) = Hⁿ⁻¹(∂*K)`
-for the reduced boundary `∂*K` of `K` in `Ω`
+(`Convex.exists_opens_totalVariationOn_indicator_ne_top`), so De Giorgi's theorem gives
+`P(K; Ω) = Hⁿ⁻¹(∂*K)` for the reduced boundary `∂*K` of `K` in `Ω`
 (`TauCeti.perimeter_eq_euclideanHausdorffMeasure_reducedBoundary`), and Federer's theorem says that
 `∂*K` and the part in `Ω` of the essential boundary `∂ᵉK` agree up to an `Hⁿ⁻¹`-null set
 (`TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`). Finally, `K` has neither density zero
@@ -87,13 +87,9 @@ theorem perimeter_eq_euclideanHausdorffMeasure_frontier_inter (hn : 2 ≤ finran
   have hu : LocallyIntegrableOn (K.indicator (1 : E → ℝ)) Ω volume :=
     locallyIntegrableOn_indicator_const
       ((hK.nullMeasurableSet volume).mono Measure.restrict_le_self) 1
-  -- Convex sets have locally finite perimeter.
   have hfin (C : Set E) (hC : IsCompact C) (_ : C ⊆ Ω) :
-      ∃ U : Opens E, C ⊆ (U : Set E) ∧ totalVariationOn volume U (K.indicator 1) ≠ ∞ := by
-    obtain ⟨r, hr⟩ := hC.isBounded.subset_ball 0
-    refine ⟨⟨ball 0 r, isOpen_ball⟩, hr, ?_⟩
-    rw [← perimeter_def]
-    exact (hK.perimeter_lt_top_of_isBounded (Ω := ⟨ball 0 r, isOpen_ball⟩) isBounded_ball).ne
+      ∃ U : Opens E, C ⊆ (U : Set E) ∧ totalVariationOn volume U (K.indicator 1) ≠ ∞ :=
+    hK.exists_opens_totalVariationOn_indicator_ne_top hC.isBounded
   rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn hu hfin,
     ← measure_congr (essentialBoundary_inter_ae_eq_reducedBoundary hn hu hfin),
     hK.essentialBoundary_eq_frontier hKi]

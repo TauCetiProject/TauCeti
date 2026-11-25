@@ -25,7 +25,12 @@ for `0 < t ≤ 1` (`TauCeti.closedBall_add_smul_sub_subset_interior_of_forall_st
 set `K` has its closed `δ`-thickening inside `ball z (r / 2)` and `t * (dist x z + r / 2) ≤ δ`,
 that translated closed ball either lies in `interior s` or is disjoint from `K`
 (`TauCeti.closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex`). For a
-convex set containing `ball x r`, this yields `Convex.ball_add_smul_sub_subset`.
+convex set containing `ball x r`, this yields `Convex.ball_add_smul_sub_subset`. For a convex set
+`s` containing `ball z ρ` and a point `x ∈ closure s`, the homothety with centre `x` and ratio
+`r / (‖z - x‖ + ρ)` sends `ball z ρ` into `interior s ∩ ball x r`
+(`Convex.ball_add_smul_sub_subset_interior_inter_ball`), and when `x` is not interior the
+homothety with the opposite ratio sends it into `sᶜ ∩ ball x r`
+(`Convex.ball_sub_smul_sub_subset_compl_inter_ball`).
 
 In a nontrivial real seminormed space a punctured ball `ball c r \ {c}`, `r > 0`, is not convex
 (`TauCeti.not_convex_ball_sdiff_singleton`), so it is neither an open nor a closed ball
@@ -160,6 +165,56 @@ theorem Convex.ball_add_smul_sub_subset {E : Type*} [SeminormedAddCommGroup E] [
     (ht₀ : 0 ≤ t) (ht : t ≤ 1) : Metric.ball (x + t • (y - x)) ((1 - t) * r) ⊆ s :=
   (TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
     (fun _ hz => hs.starConvex (hball hz)) (subset_closure hy) ht₀ ht).trans interior_subset
+
+/-- Let `s` be a convex set containing `ball z ρ`, `ρ > 0`, and let `x ∈ closure s`. For
+`0 ≤ r ≤ ‖z - x‖ + ρ`, the image of `ball z ρ` under the homothety with centre `x` and ratio
+`r / (‖z - x‖ + ρ)` is a ball in `interior s ∩ ball x r`. -/
+theorem Convex.ball_add_smul_sub_subset_interior_inter_ball {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] {s : Set E} (hs : Convex ℝ s) {x z : E}
+    {ρ r : ℝ} (hz : Metric.ball z ρ ⊆ s) (hρ : 0 < ρ) (hx : x ∈ closure s) (hr : 0 ≤ r)
+    (hrR : r ≤ ‖z - x‖ + ρ) :
+    Metric.ball (x + (r / (‖z - x‖ + ρ)) • (z - x)) (r / (‖z - x‖ + ρ) * ρ) ⊆
+      interior s ∩ Metric.ball x r := by
+  have hR : 0 < ‖z - x‖ + ρ := by positivity
+  have hl : 0 ≤ r / (‖z - x‖ + ρ) := by positivity
+  have hl1 : r / (‖z - x‖ + ρ) ≤ 1 := (div_le_one hR).2 hrR
+  refine Set.subset_inter ?_ (Metric.ball_subset_ball' (le_of_eq ?_))
+  · convert TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
+      (fun w hw => hs.starConvex (hz hw)) hx (t := 1 - r / (‖z - x‖ + ρ)) (by linarith)
+      (by linarith) using 2
+    · module
+    · ring
+  · rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hl]
+    field_simp
+    ring
+
+/-- Let `s` be a convex set containing `ball z ρ`, `ρ > 0`, and let `x ∈ closure s` not be an
+interior point. For `0 ≤ r ≤ ‖z - x‖ + ρ`, the image of `ball z ρ` under the homothety with centre
+`x` and ratio `-r / (‖z - x‖ + ρ)` is a ball in `sᶜ ∩ ball x r`: the midpoint of a point of `s` and
+an interior point is interior. -/
+theorem Convex.ball_sub_smul_sub_subset_compl_inter_ball {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] {s : Set E} (hs : Convex ℝ s) {x z : E}
+    {ρ r : ℝ} (hz : Metric.ball z ρ ⊆ s) (hρ : 0 < ρ) (hx : x ∈ closure s)
+    (hxs : x ∉ interior s) (hr : 0 ≤ r) (hrR : r ≤ ‖z - x‖ + ρ) :
+    Metric.ball (x - (r / (‖z - x‖ + ρ)) • (z - x)) (r / (‖z - x‖ + ρ) * ρ) ⊆
+      sᶜ ∩ Metric.ball x r := by
+  intro y hy
+  -- The reflection `2 • x - y` of `y` through `x` lies in the homothetic ball inside `s`.
+  have hy' : (2 : ℝ) • x - y ∈
+      Metric.ball (x + (r / (‖z - x‖ + ρ)) • (z - x)) (r / (‖z - x‖ + ρ) * ρ) := by
+    rw [mem_ball_iff_norm] at hy ⊢
+    rw [← norm_neg]
+    convert hy using 2
+    module
+  obtain ⟨hyi, hyr⟩ := hs.ball_add_smul_sub_subset_interior_inter_ball hz hρ hx hr hrR hy'
+  refine ⟨fun hys => hxs ?_, ?_⟩
+  · convert hs.add_smul_sub_mem_interior' (subset_closure hys) hyi
+      (t := 1 / 2) ⟨by norm_num, by norm_num⟩ using 1
+    module
+  · rw [mem_ball_iff_norm] at hyr ⊢
+    rw [← norm_neg]
+    convert hyr using 2
+    module
 
 namespace TauCeti
 
