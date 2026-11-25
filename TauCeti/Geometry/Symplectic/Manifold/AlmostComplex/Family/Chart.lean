@@ -418,22 +418,22 @@ theorem chartField_chartAt (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(�
       (OpenPartialHomeomorph.refl E) hv ?_ ?_ differentiableAt_id differentiableAt_id]
   · ext w
     simp
-  · exact Filter.EventuallyEq.of_eq (by
-      rw [OpenPartialHomeomorph.coe_extendTrans_refl]
-      rfl)
   · refine Filter.EventuallyEq.of_eq ?_
-    have h := congrArg (fun e : PartialEquiv M E ↦ ⇑e.symm)
-      ((chartAt H y).toPartialEquiv_extendTrans_refl I)
-    exact h
+    rw [OpenPartialHomeomorph.coe_extendTrans_refl]
+    funext w
+    simp [extChartAt]
+  · refine Filter.EventuallyEq.of_eq ?_
+    rw [OpenPartialHomeomorph.coe_symm_extendTrans_refl]
+    funext w
+    simp [extChartAt]
 
 /-- In the preferred charts, a domain-dependent structure read through `chartField` is jointly
 `Cⁿ` on the product of the chart targets. -/
-theorem contDiffOn_chartField_chartAt [IsManifold 𝓘(ℝ, ℂ) ∞ Y]
+theorem contDiffOn_chartField_chartAt [IsManifold 𝓘(ℝ, ℂ) n Y]
     (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) Y n) (x : Y) (y : M) :
     ContDiffOn ℝ n (fun q : ℂ × E ↦
         J.chartField (chartAt ℂ x) ((chartAt H y).extendTrans I (Homeomorph.refl E)) q.1 q.2)
       ((chartAt ℂ x).target ×ˢ (extChartAt I y).target) := by
-  have : IsManifold 𝓘(ℝ, ℂ) n Y := .of_le (n := ∞) (by exact_mod_cast le_top)
   have h := J.contDiffOn_inChart (x, y)
   rw [extChartAt_prod_target] at h
   refine (h.congr fun q hq ↦ J.chartField_chartAt x y q.1 hq.2).mono fun q hq ↦ ⟨?_, hq.2⟩

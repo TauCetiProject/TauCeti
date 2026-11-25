@@ -16,7 +16,6 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Symplectic.Finrank
-import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
 # Inhomogeneous terms in charts
@@ -54,7 +53,7 @@ So the equation tested on `∂ₛ` alone loses no information.
   the preferred charts and on a boundaryless target, the term read in charts is jointly `Cⁿ` on
   the product of the chart targets. It is twice the term read in the tangent trivializations,
   applied to `1` (`TauCeti.InhomogeneousTerm.chartTerm_chartAt`), and that reading is `Cⁿ` on
-  the product of the chart sources (`TauCeti.InhomogeneousTerm.contMDiffOn_inCoordinates`).
+  the product of the chart sources (`TauCeti.DomainDependentHomSection.contMDiffOn_inCoordinates`).
 * `TauCeti.InhomogeneousTerm.tangentHom_eq_zero_iff_apply_eq_zero`: over a two-dimensional domain,
   an inhomogeneous term vanishes at a point exactly when it vanishes on one nonzero tangent vector
   there; `TauCeti.InhomogeneousTerm.tangentHom_eq_zero_iff_apply_one_eq_zero` is the case of the
@@ -394,31 +393,6 @@ variable [I.Boundaryless] {Y : Type*} [TopologicalSpace Y] [ChartedSpace ℂ Y]
   [IsManifold 𝓘(ℝ, ℂ) ∞ Y] {jY : ContMDiffAlmostComplexStructure 𝓘(ℝ, ℂ) n Y}
   {JY : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) Y n}
 
-omit [I.Boundaryless] in
-/-- An inhomogeneous term read in the tangent trivializations at `x` and `y` is `Cⁿ` on the
-product of the chart sources. -/
-theorem contMDiffOn_inCoordinates (ν : InhomogeneousTerm jY JY) (x : Y) (y : M) :
-    ContMDiffOn (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] E) n
-      (fun q : Y × M ↦ ContinuousLinearMap.inCoordinates ℂ (TangentSpace 𝓘(ℝ, ℂ)) E
-        (TangentSpace I) x q.1 y q.2 (ν.val q))
-      ((chartAt ℂ x).source ×ˢ (chartAt H y).source) := by
-  let eh := trivializationAt (ℂ →L[ℝ] E) (fun q : Y × M ↦
-    horizontalTangentBundle I M 𝓘(ℝ, ℂ) Y q →L[ℝ] verticalTangentBundle I M 𝓘(ℝ, ℂ) Y q) (x, y)
-  have h := (eh.contMDiffOn_iff (IM := 𝓘(ℝ, ℂ).prod I) (n := n)
-    (f := fun q ↦ Bundle.TotalSpace.mk' (ℂ →L[ℝ] E) (E := fun q : Y × M ↦
-      horizontalTangentBundle I M 𝓘(ℝ, ℂ) Y q →L[ℝ] verticalTangentBundle I M 𝓘(ℝ, ℂ) Y q)
-        q (ν.val q))
-    (s := (chartAt ℂ x).source ×ˢ (chartAt H y).source) fun q hq ↦ eh.mem_source.2 ?_).1
-      ν.val.contMDiff.contMDiffOn
-  · refine h.2.congr fun q hq ↦ ?_
-    exact (ContinuousLinearMap.inCoordinates_pullback_of_mem
-      (ContMDiffMap.fst : C^∞⟮𝓘(ℝ, ℂ).prod I, Y × M; 𝓘(ℝ, ℂ), Y⟯)
-      (ContMDiffMap.snd : C^∞⟮𝓘(ℝ, ℂ).prod I, Y × M; I, M⟯) (x, y) q (ν.val q)
-      (by rw [TangentBundle.trivializationAt_baseSet]; exact hq.1)
-      (by rw [TangentBundle.trivializationAt_baseSet]; exact hq.2)).symm
-  · simp only [eh, hom_trivializationAt_baseSet]
-    exact hq
-
 /-- In the preferred charts, an inhomogeneous term read through `chartTerm` is twice its reading
 in the tangent trivializations at `x` and `y`, applied to `1`. -/
 theorem chartTerm_chartAt (ν : InhomogeneousTerm jY JY) (x : Y) (y : M) {z : ℂ}
@@ -433,8 +407,8 @@ theorem chartTerm_chartAt (ν : InhomogeneousTerm jY JY) (x : Y) (y : M) {z : �
     exact (extChartAt I y).map_target hv
   have hψ : ⇑((chartAt H y).extendTrans I (Homeomorph.refl E)) = extChartAt I y :=
     (chartAt H y).coe_extendTrans_refl I
-  have hψs : ((chartAt H y).extendTrans I (Homeomorph.refl E)).symm v = (extChartAt I y).symm v :=
-    by simp [OpenPartialHomeomorph.extendTrans_symm_apply]
+  have hψs : ⇑((chartAt H y).extendTrans I (Homeomorph.refl E)).symm = (extChartAt I y).symm :=
+    (chartAt H y).coe_symm_extendTrans_refl I
   simp only [chartTerm_apply, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
   rw [TangentBundle.continuousLinearMapAt_trivializationAt hy,
     TangentBundle.symmL_trivializationAt hx, hψ, hψs]
@@ -444,6 +418,10 @@ theorem chartTerm_chartAt (ν : InhomogeneousTerm jY JY) (x : Y) (y : M) {z : �
     simp only [mfld_simps, Set.range_id, mfderivWithin_univ]
     rw [(chartAt ℂ x).right_inv hz]
   rw [h1, DomainDependentHomSection.tangentHom_apply]
+  -- `mvfderiv` is `mfderiv` followed by the identification of `TangentSpace 𝓘(ℝ, E) _` with `E`,
+  -- and the composite evaluates by `comp_apply`; the identification is the identity, so both
+  -- sides agree by definition. Rewriting with `mvfderiv_apply_eq_mfderiv_apply` or `comp_apply`
+  -- fails here, since `1 : ℂ` is read as a tangent vector only up to that identification.
   rfl
 
 /-- In the preferred charts, an inhomogeneous term read through `chartTerm` is jointly `Cⁿ` on
@@ -456,7 +434,7 @@ theorem contDiffOn_chartTerm_chartAt (ν : InhomogeneousTerm jY JY) (x : Y) (y :
       (extChartAt (𝓘(ℝ, ℂ).prod I) (x, y)).target ((chartAt ℂ x).source ×ˢ (chartAt H y).source) :=
     fun q hq ↦ by
       simpa [extChartAt_source] using (extChartAt (𝓘(ℝ, ℂ).prod I) (x, y)).map_target hq
-  have h := contMDiffOn_iff_contDiffOn.1 ((ν.contMDiffOn_inCoordinates x y).comp
+  have h := contMDiffOn_iff_contDiffOn.1 ((ν.val.contMDiffOn_inCoordinates x y).comp
     (contMDiffOn_extChartAt_symm (x, y)) hmaps)
   rw [extChartAt_prod_target] at h
   refine (((h.clm_apply (contDiffOn_const (c := (1 : ℂ)))).const_smul (2 : ℝ)).congr
