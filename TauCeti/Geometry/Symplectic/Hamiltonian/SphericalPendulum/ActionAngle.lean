@@ -48,8 +48,6 @@ restriction on the radius `r` is needed beyond `γ ⊆ U`.
 
 ## Main results
 
-* `TauCeti.mem_sphericalPendulumTurningPointDomain_of_mem_sphericalPendulumRegularValues`: a regular
-  value off the axis lies strictly above the curve of relative equilibria.
 * `TauCeti.mem_hamiltonianFlowStabilizer_sphericalPendulum_iff_mem_periodLattice`: the period
   lattices of the fibration over `U`, in the coordinates of the plane, are the stabilizers of the
   flow action.
@@ -72,21 +70,6 @@ open Function Set Real TopologicalSpace
 open scoped Manifold ContDiff
 
 namespace TauCeti
-
-/-- **Regular values off the axis lie above the relative equilibria.** A regular value `(h, j)` in
-the image of the energy–momentum map of the spherical pendulum with `j ≠ 0` lies strictly above
-the curve of relative equilibria: `h` exceeds the minimum of the effective potential `V_j`. -/
-theorem mem_sphericalPendulumTurningPointDomain_of_mem_sphericalPendulumRegularValues
-    {c : Fin 2 → ℝ} (hc : c ∈ sphericalPendulumRegularValues) (hc₁ : c 1 ≠ 0) :
-    (c 0, c 1) ∈ sphericalPendulumTurningPointDomain := by
-  obtain ⟨himg, -, -, hleast⟩ := mem_sphericalPendulumRegularValues_iff_mem_image_and_ne.1 hc
-  obtain ⟨z₀, hz₀, hmin⟩ := (existsUnique_isMinOn_sphericalPendulumEffectivePotential hc₁).exists
-  have hle := (mk_mem_image_sphericalPendulumEnergyMomentum_iff_of_isMinOn hc₁ hz₀ hmin _).1 himg
-  -- If `h` were the minimum value `V_j(z₀)`, it would be the least value of `V_j`.
-  refine mem_sphericalPendulumTurningPointDomain_iff.2
-    ⟨hc₁, z₀, hz₀, hle.lt_of_ne fun heq ↦ hleast ⟨hc₁, ⟨z₀, hz₀, heq⟩, ?_⟩⟩
-  rintro _ ⟨z, hz, rfl⟩
-  exact heq ▸ hmin hz
 
 variable {U : Opens (Fin 2 → ℝ)}
 
@@ -135,28 +118,6 @@ theorem mem_hamiltonianFlowStabilizer_sphericalPendulum_iff_mem_periodLattice
       (h.isCompleteVectorField_hamiltonianVectorField_comp_apply (hκ.of_le (by simp))) y) v).symm
 
 variable {r : ℝ}
-
-/-- The differential of a `C¹` map on an open set `U` of the plane depends continuously on the
-point of a circle `t ↦ (1 + r cos t, r sin t)` running in `U`. -/
-private theorem continuous_mfderiv_circle {ι : Type*} [Fintype ι]
-    (hγU : ∀ t, ![1 + r * cos t, r * sin t] ∈ U) {a : U → ι → ℝ}
-    (ha : ContMDiff 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, ι → ℝ) 1 a) :
-    Continuous (Y := (Fin 2 → ℝ) →L[ℝ] ι → ℝ) fun t ↦
-      mfderiv 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, ι → ℝ) a ⟨_, hγU t⟩ := by
-  -- Extend `a` from `U` to the plane, where its differential is a Fréchet derivative.
-  let ã : (Fin 2 → ℝ) → ι → ℝ := extend Subtype.val a 0
-  have hãa : (fun b : U ↦ ã b) = a := funext (Subtype.val_injective.extend_apply a 0)
-  have hda (b : U) : (mfderiv 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, ι → ℝ) a b : (Fin 2 → ℝ) →L[ℝ] ι → ℝ) =
-      fderiv ℝ ã b := by
-    refine ContinuousLinearMap.ext fun w ↦ ?_
-    rw [← hãa]
-    exact (Manifold.mfderiv_comp_subtype_val_apply (f := ã) w).trans
-      (DFunLike.congr_fun mfderiv_eq_fderiv w)
-  simp only [hda]
-  refine continuous_iff_continuousAt.2 fun t ↦ ContinuousAt.comp
-    (f := fun t : ℝ ↦ ![1 + r * cos t, r * sin t]) ?_ (by fun_prop)
-  exact (contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1 (hãa ▸ ha ⟨_, hγU t⟩))
-    ).continuousAt_fderiv (by simp)
 
 /-- A circle of regular values about `(1, 0)` runs above the curve of relative equilibria off the
 axis `j = 0`. -/
@@ -222,13 +183,15 @@ private theorem not_forall_periodLattice_eq_closure_of_pos (hr : 0 < r)
   have hsmem (j : ι) (t : ℝ) := mem_hamiltonianFlowStabilizer_of_smul_comp_mem_periodLattice hU
     (y t) (D := D (γ t)) (by rw [hb, hΛ]; exact AddSubgroup.subset_closure ⟨j, rfl⟩)
   have hs (j : ι) : Continuous (s j) := continuous_pi fun i ↦ continuous_const.mul
-    ((continuous_apply j).comp ((continuous_mfderiv_circle hγU ha).clm_apply continuous_const))
+    ((continuous_apply j).comp
+      (((Manifold.continuous_mfderiv_of_contMDiff_opens ha one_ne_zero).comp
+        (continuous_induced_rng.2 (by fun_prop) : Continuous γ)).clm_apply continuous_const))
   have hper (j : ι) : s j (2 * π) = s j 0 := by
     simp only [s, show γ (2 * π) = γ 0 from Subtype.ext (by simp [γ])]
   -- By the monodromy, these sections have zero energy component off the axis.
   have hπ : π / 2 ∈ Icc 0 (2 * π) := ⟨by positivity, by linarith [pi_pos]⟩
   have hsin : sin (π / 2) ≠ 0 := by simp
-  have hzero (j : ι) : p • D (γ (π / 2)) (Pi.single 0 1) j = 0 :=
+  have hzero (j : ι) : p * D (γ (π / 2)) (Pi.single 0 1) j = 0 :=
     apply_zero_eq_zero_of_mem_hamiltonianFlowStabilizer_sphericalPendulum hr hγT
       (fun t _ _ ↦ hx t) (hs j).continuousOn (fun t _ _ ↦ hsmem j t) (hper j) hπ hsin
   -- But they span the period `(T, -Θ)` at `γ(π / 2)`, whose energy component is `T > 0`.
@@ -244,7 +207,7 @@ private theorem not_forall_periodLattice_eq_closure_of_pos (hr : 0 < r)
   obtain ⟨m, hm⟩ := AddSubgroup.mem_closure_range_iff_of_fintype.1 hu
   have h₀ := DFunLike.congr_fun hm (Pi.single 0 1)
   simp only [sum_apply, smul_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.proj_apply, hzero, smul_zero, Finset.sum_const_zero] at h₀
+    ContinuousLinearMap.proj_apply, smul_eq_mul, hzero, smul_zero, Finset.sum_const_zero] at h₀
   exact (sphericalPendulumPeriod_pos_of_mem (hγT _ hsin)).ne'
     (by simpa [dotProductEquiv, u] using h₀)
 

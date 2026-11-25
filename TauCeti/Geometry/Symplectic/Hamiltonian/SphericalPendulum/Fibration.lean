@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Regular
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.Integrable
+public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.TurningPoint
 import Mathlib.Topology.LocalAtTarget
 import TauCeti.Geometry.Manifold.RegularValue.Factorization
 import TauCeti.Topology.Connected.Basic
@@ -25,8 +26,10 @@ equilibria
 This file collects the regular values of `F` lying in its image into an open subset `B` of the
 plane (`TauCeti.sphericalPendulumRegularValues`): these are the values of `F` other than the
 values `(-1, 0)` and `(1, 0)` of the equilibria and the values of the relative equilibria
-(`TauCeti.mem_sphericalPendulumRegularValues_iff_mem_image_and_ne`). The energy–momentum map is
-proper and its fibres are connected, so over `B`, that is on the open set
+(`TauCeti.mem_sphericalPendulumRegularValues_iff_mem_image_and_ne`); off the axis `j = 0` they lie
+strictly above the curve of relative equilibria
+(`TauCeti.mem_sphericalPendulumTurningPointDomain_of_mem_sphericalPendulumRegularValues`). The
+energy–momentum map is proper and its fibres are connected, so over `B`, that is on the open set
 `TauCeti.sphericalPendulumRegularPart` of states over `B`, it is a regular Lagrangian torus
 fibration (`TauCeti.isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec`), an instance of
 `TauCeti.SmoothTwoForm.IsIntegrableSystem.isLagrangianTorusFibration_restrictPreimage`. So its
@@ -46,6 +49,8 @@ such a loop is the Hamiltonian monodromy of the spherical pendulum.
 * `TauCeti.sphericalPendulumRegularValues`: the open set of regular values in the image of `F`.
 * `TauCeti.sphericalPendulumRegularPart`: the open set of states over it.
 * `TauCeti.mem_sphericalPendulumRegularValues_iff_mem_image_and_ne`: its explicit description.
+* `TauCeti.mem_sphericalPendulumTurningPointDomain_of_mem_sphericalPendulumRegularValues`: a regular
+  value off the axis lies strictly above the curve of relative equilibria.
 * `TauCeti.eventually_mem_sphericalPendulumRegularValues_nhdsNE`: it contains a punctured
   neighbourhood of the focus–focus value `(1, 0)`.
 * `TauCeti.isLagrangianTorusFibration_sphericalPendulumEnergyMomentumVec`: over it, `F` is a regular
@@ -102,6 +107,21 @@ theorem mem_sphericalPendulumRegularValues_iff_mem_image_and_ne {c : Fin 2 → �
     exact ⟨x, x.property, (sphericalPendulumEnergyMomentumVec_eq_iff x c).1 hx⟩
   · rintro ⟨y, hy, hyc⟩
     exact ⟨⟨y, hy⟩, (sphericalPendulumEnergyMomentumVec_eq_iff ⟨y, hy⟩ c).2 hyc⟩
+
+/-- **Regular values off the axis lie above the relative equilibria.** A regular value `(h, j)` in
+the image of the energy–momentum map of the spherical pendulum with `j ≠ 0` lies strictly above
+the curve of relative equilibria: `h` exceeds the minimum of the effective potential `V_j`. -/
+theorem mem_sphericalPendulumTurningPointDomain_of_mem_sphericalPendulumRegularValues
+    {c : Fin 2 → ℝ} (hc : c ∈ sphericalPendulumRegularValues) (hc₁ : c 1 ≠ 0) :
+    (c 0, c 1) ∈ sphericalPendulumTurningPointDomain := by
+  obtain ⟨himg, -, -, hleast⟩ := mem_sphericalPendulumRegularValues_iff_mem_image_and_ne.1 hc
+  obtain ⟨z₀, hz₀, hmin⟩ := (existsUnique_isMinOn_sphericalPendulumEffectivePotential hc₁).exists
+  have hle := (mk_mem_image_sphericalPendulumEnergyMomentum_iff_of_isMinOn hc₁ hz₀ hmin _).1 himg
+  -- If `h` were the minimum value `V_j(z₀)`, it would be the least value of `V_j`.
+  refine mem_sphericalPendulumTurningPointDomain_iff.2
+    ⟨hc₁, z₀, hz₀, hle.lt_of_ne fun heq ↦ hleast ⟨hc₁, ⟨z₀, hz₀, heq⟩, ?_⟩⟩
+  rintro _ ⟨z, hz, rfl⟩
+  exact heq ▸ hmin hz
 
 /-- **The regular values surround the focus–focus value.** Every vector of the plane close to
 `(1, 0)`, other than `(1, 0)` itself, is a regular value in the image of the energy–momentum map of
