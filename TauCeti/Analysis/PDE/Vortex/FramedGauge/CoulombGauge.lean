@@ -167,6 +167,15 @@ private def cosSubOne (F : realSubmodule ℂ (natCast_add_two_add_one_nonneg j))
     realSubmodule ℂ (natCast_add_two_add_one_nonneg j) :=
   realPartCLM ℂ _ (expIRemainder F)
 
+/-- `expIRemainder` is the smooth map `F ↦ exp (i F) - 1` minus the continuous linear map
+`F ↦ i F`. -/
+private theorem expIRemainder_eq_sub :
+    (expIRemainder : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) =
+      fun F ↦ subOne (expGauge (one_lt_natCast_add_two_add_one j) F) -
+        (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL) F := by
+  funext F
+  rw [expIRemainder, smul_apply, Submodule.subtypeL_apply]
+
 private theorem expIRemainder_zero :
     expIRemainder (0 : realSubmodule ℂ (natCast_add_two_add_one_nonneg j)) = 0 := by
   rw [expIRemainder, AddChar.map_zero_eq_one, subOne_one, ZeroMemClass.coe_zero, smul_zero,
@@ -233,12 +242,8 @@ private theorem hasStrictFDerivAt_expIRemainder_zero :
     hasFDerivAt_subOne_expGauge_zero (by simp)
   have hL := (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL
     ).hasStrictFDerivAt (x := 0)
-  have hfun : (expIRemainder : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) =
-      fun F ↦ subOne (expGauge hs F) -
-        (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL) F := by
-    funext F
-    rw [expIRemainder, smul_apply, Submodule.subtypeL_apply]
-  rw [hfun, ← sub_self (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL)]
+  rw [expIRemainder_eq_sub,
+    ← sub_self (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL)]
   exact h.sub hL
 
 /-- **`sin f - f` vanishes to second order at `0`**: its strict derivative at `0` is `0`. -/
@@ -518,11 +523,9 @@ private theorem hasStrictFDerivAt_coulombMap (x : SobolevFieldSpace f m ((j + 2 
 /-- The remainder `exp (i F) - 1 - i F` is a smooth function of the real phase `F`. -/
 private theorem contDiff_expIRemainder :
     ContDiff ℝ ∞ (expIRemainder : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) := by
-  have h := (contDiff_subOne_expGauge (hs := one_lt_natCast_add_two_add_one j)).sub
+  rw [expIRemainder_eq_sub]
+  exact (contDiff_subOne_expGauge (hs := one_lt_natCast_add_two_add_one j)).sub
     (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL).contDiff
-  convert h using 1
-  ext1 F
-  rw [expIRemainder, smul_apply, Submodule.subtypeL_apply]
 
 private theorem contDiff_sinSubSelf :
     ContDiff ℝ ∞ (sinSubSelf : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) :=
