@@ -153,22 +153,10 @@ theorem pushforward_apply_val_eq_zero_of_notMem_range (a : NovikovModule R F) {s
 @[simp]
 theorem pushforward_single [DecidableEq S] [DecidableEq S'] (s : S) (r : R) :
     pushforward ρ π hπ (single s r) = single (π s) (ρ r) := by
+  rw [pushforward, LinearMap.comp_apply, mapRange_single]
   refine Subtype.ext (funext fun s' => ?_)
-  rw [pushforward_apply_val_eq_sum hπ ρ _ (if π s = s' then {s} else ∅)]
-  · split_ifs with h
-    · subst h
-      simp
-    · simp [Pi.single_apply, Ne.symm h]
-  · rintro t ⟨ht, rfl⟩
-    have : t = s := by
-      by_contra hts
-      exact ht (by simp [hts])
-    subst this
-    simp
-  · intro t ht
-    split_ifs at ht with h
-    · rw [Finset.mem_singleton.1 ht, h]
-    · simp at ht
+  rw [kernelMap_single_apply_val, single_val]
+  by_cases h : π s = s' <;> simp [h, Set.indicator]
 
 /-- The pushforward extends the pushforward `Finsupp.mapDomain π ∘ Finsupp.mapRange ρ` of finite
 combinations. -/
