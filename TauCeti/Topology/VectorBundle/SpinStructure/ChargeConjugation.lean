@@ -199,11 +199,11 @@ theorem chargeConjChargeConjEquiv_toEquiv_mk (s : SpinCStructure F V n) (x : X) 
   simp only [chargeConjChargeConjEquiv, OrthonormalFrameLift.Equiv.trans_toEquiv,
     OrthonormalFrameLift.Equiv.symm_toEquiv]
   -- `[[p, h], k] = [[p, 1], χ(h) k]` is the image of `[p, χ(h) k]` under `extendCompEquiv`.
-  refine (Equiv.trans_apply _ _ _).trans <| (congrArg _ <| (Equiv.symm_apply_eq _).2 <|
-    ((OrthonormalFrameLift.extendCompEquiv_toEquiv_mk _ _ _ _ _ _ _ _ _ _ _ x p _).trans <|
-      (Extend.mk_smul _ _ _ h k).symm.trans <|
-        congrArg (Extend.mk χ hχ · k) (Extend.smul_inl χ hχ p h)).symm).trans ?_
-  exact OrthonormalFrameLift.extendEquivOfEquivariant_toEquiv_mk _ _ _ _ _ _ _ _ _ _ _ x p _
+  have hcomp := (Equiv.symm_apply_eq _).2 ((s.extendCompEquiv_toEquiv_mk χ hχ
+    rotation_comp_chargeConj hπn hπc χ hχ rotation_comp_chargeConj hπn hπc x p (χ h * k)).trans
+      (Extend.mk_mk χ hχ χ hχ p h k).symm).symm
+  exact (Equiv.trans_apply _ _ _).trans <| (congrArg _ hcomp).trans <|
+    OrthonormalFrameLift.extendEquivOfEquivariant_toEquiv_mk (x := x) (p := p) ..
 
 end SpinCStructure
 
@@ -254,6 +254,7 @@ private theorem determinantLineChargeConjEquiv_mk_eq_conj (s : SpinCStructure F 
     PrincipalBundle.smul_division]
 
 /-- **The comparison of determinant lines in a frame**: `[[p, h], w] ↦ [p, conj (det h w)]`. -/
+@[simp]
 theorem determinantLineChargeConjEquiv_mk (s : SpinCStructure F V n) {x : X} (p : s.P x)
     (h : SpinC) (w : DeterminantModel n) :
     s.determinantLineChargeConjEquiv x
