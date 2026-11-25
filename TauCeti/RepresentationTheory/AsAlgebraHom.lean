@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.RepresentationTheory.Intertwining
 
@@ -58,6 +59,8 @@ the group algebra to the vanishing of the norm map.
   monoid the action of `x` is `∑ g, x g • ρ g`.
 * `Representation.asAlgebraHom_directSum`: the monoid algebra acts on a direct sum summand by
   summand.
+* `Representation.asAlgebraHom_trivial`: an element of the monoid algebra acts on the trivial
+  representation as multiplication by its augmentation.
 * `Representation.Equiv.conjAlgEquiv_asAlgebraHom`: an equivalence of representations conjugates
   the action of the monoid algebra.
 * `Representation.asAlgebraHom_quotient_mk`: the action on a quotient representation is induced
@@ -181,6 +184,14 @@ theorem Equiv.conjAlgEquiv_asAlgebraHom {W : Type*} [AddCommMonoid W] [Module k 
     LinearEquiv.symm_apply_apply]
   rw [Representation.Equiv.toLinearEquiv_apply]
   exact e.toIntertwiningMap.apply_asAlgebraHom x v
+
+/-- An element `x ∈ k[G]` acts on the trivial representation as multiplication by its
+augmentation. -/
+@[simp]
+theorem asAlgebraHom_trivial (x : MonoidAlgebra k G) :
+    (trivial k G V).asAlgebraHom x = MonoidAlgebra.augmentation k G x • 1 := by
+  have h : trivial k G V = 1 := MonoidHom.ext fun g ↦ LinearMap.ext (trivial_apply k g)
+  rw [asAlgebraHom_def, h, MonoidAlgebra.lift_one_apply, Algebra.algebraMap_eq_smul_one]
 
 end Representation
 

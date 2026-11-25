@@ -35,6 +35,7 @@ Darboux basis this is the classical normalization of the symplectic volume form 
 
 ## Main results
 
+* `ContinuousAlternatingMap.wedgePow_one_apply`: the first power of a form is the form itself.
 * `ContinuousAlternatingMap.wedgePow_compContinuousLinearMap`: wedge powers commute with
   pullback along continuous linear maps.
 * `ContinuousAlternatingMap.wedgePow_smul`: `(c φ) ^ m = c ^ m φ ^ m`.
@@ -84,6 +85,14 @@ theorem wedgePow_succ (φ : E [⋀^Fin k]→L[ℝ] ℝ) (m : ℕ) :
     wedgePow φ (m + 1) = pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
       (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (wedgePow φ m) φ := (rfl)
 
+/-- The first wedge power of a form `φ` of degree `k` evaluates as `φ` itself, once the input
+family is reindexed along `k * 1 = k`. -/
+@[simp]
+theorem wedgePow_one_apply (φ : E [⋀^Fin k]→L[ℝ] ℝ) (v : Fin (k * 1) → E) :
+    wedgePow φ 1 v = φ (v ∘ Fin.cast (Nat.mul_one k).symm) := by
+  rw [wedgePow_succ, pairedWedge_apply_zero_left, wedgePow_zero_apply,
+    ContinuousLinearMap.mul_apply', one_mul]
+
 /-- Wedge powers commute with pullback along continuous linear maps. -/
 @[simp]
 theorem wedgePow_compContinuousLinearMap {E' : Type*} [AddCommGroup E'] [Module ℝ E']
@@ -126,11 +135,7 @@ theorem wedgePow_succ_apply_vecCons (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) 
       curryLeftTopological_pairedWedge (k := 2 * m + 1) (l := 1),
       pairedWedge_apply_of_left_eq_smul_cast _ _ (Nat.add_comm 1 (2 * m)) ((m : ℝ) + 1)
         (fun w ↦ by rw [curryLeftTopological_apply_apply, ih, smul_eq_mul]),
-      pairedWedge_assoc (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (fun a b c ↦ by simp [mul_assoc]),
+      pairedWedge_mul_assoc,
       pairedWedge_comm _ (fun a b ↦ mul_comm a b) (wedgePow ω (m + 1))]
     have h₁ : (-1 : ℝ) ^ (2 * m + 1 + 1) = 1 := Even.neg_one_pow ⟨m + 1, by ring⟩
     have h₂ : (-1 : ℝ) ^ (2 * (m + 1) * 1) = 1 := Even.neg_one_pow ⟨m + 1, by ring⟩

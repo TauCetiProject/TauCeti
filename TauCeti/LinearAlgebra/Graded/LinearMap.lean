@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.Algebra.Module.Submodule.LinearMap
+public import Mathlib.Algebra.Module.Submodule.Range
 
 /-!
 # Homogeneous linear maps
@@ -39,6 +41,8 @@ The multilinear counterpart, and the degree calculus for substitution, are in
 * `LinearMap.IsHomogeneous.comp`: degrees add under composition of linear maps.
 * `LinearMap.IsHomogeneous.pow`: the `k`-th power of an endomorphism of degree `q` has degree
   `k • q`.
+* `LinearMap.IsHomogeneous.iSup_range_inf_eq`: the range of a homogeneous map out of a module
+  spanned by its pieces is spanned by its intersections with the target pieces.
 * `LinearMap.IsHomogeneous.restrict_zero`, `LinearMap.IsHomogeneous.restrict_id`, and
   `LinearMap.IsHomogeneous.restrict_comp`: functoriality of `IsHomogeneous.restrict`.
 
@@ -58,6 +62,15 @@ section Semiring
 variable {R : Type uR} {ι : Type uι} {M : Type uM} {N : Type uN} {σM : Type*} {σN : Type*}
   [Semiring R] [AddCommMonoid M] [AddCommMonoid N]
   [Module R M] [Module R N] [SetLike σM M] [SetLike σN N]
+
+/-- If a linear map detects membership in each piece, a graded scalar action on the
+target also respects the source pieces. -/
+theorem gradedSMul_of_mem_iff {κ S : Type*} [SetLike S R] [VAdd κ ι]
+    (f : M →ₗ[R] N) (𝒜 : κ → S) (G : ι → σM) (H : ι → σN) [SetLike.GradedSMul 𝒜 H]
+    (hmem : ∀ {q x}, x ∈ G q ↔ f x ∈ H q) : SetLike.GradedSMul 𝒜 G where
+  smul_mem {p q} {a x} ha hx := by
+    rw [hmem, map_smul]
+    exact SetLike.GradedSMul.smul_mem ha (hmem.mp hx)
 
 section Add
 
@@ -94,6 +107,17 @@ theorem IsHomogeneous.add [AddMemClass σN N] {f g : M →ₗ[R] N} {𝒜 : ι �
     IsHomogeneous (f + g) 𝒜 ℬ q := by
   intro p x hx
   simpa using add_mem (hf hx) (hg hx)
+
+/-- The range of a homogeneous linear map out of a module spanned by its graded pieces is spanned
+by its intersections with the target pieces. -/
+theorem IsHomogeneous.iSup_range_inf_eq {f : M →ₗ[R] N} {ℳ : ι → Submodule R M}
+    {𝒩 : ι → Submodule R N} {q : ι} (hf : IsHomogeneous f ℳ 𝒩 q) (hℳ : ⨆ p, ℳ p = ⊤) :
+    ⨆ p, range f ⊓ 𝒩 p = range f := by
+  refine le_antisymm (iSup_le fun _ ↦ inf_le_left) ?_
+  calc range f = (⨆ p, ℳ p).map f := by rw [hℳ, range_eq_map]
+    _ = ⨆ p, (ℳ p).map f := Submodule.map_iSup f ℳ
+    _ ≤ ⨆ p, range f ⊓ 𝒩 p := iSup_le fun p ↦ le_iSup_of_le (p + q) <|
+        le_inf map_le_range (Submodule.map_le_iff_le_comap.2 fun _ hx ↦ hf hx)
 
 end Add
 

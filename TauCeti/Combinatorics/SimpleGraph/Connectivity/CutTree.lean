@@ -98,10 +98,11 @@ theorem exists_edge_simpleGraph_edgeConnectivity_eq_weight [Nontrivial V]
     ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
       G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
   obtain ⟨u, v, huv, hmin, hvalue⟩ := hT.exists_edge_iInf_pairMinimumValue_eq_weight
+    (Nat.castOrderEmbedding : ℕ ↪o ℕ∞).toOrderHom
   refine ⟨u, v, huv, hmin, ?_⟩
   rw [G.edgeConnectivity_eq_iInf_edgeReachability]
   simp_rw [G.edgeReachability_eq_iInf_pairMinimumValue_unitCutCapacity]
-  exact hvalue
+  simpa only [OrderEmbedding.toOrderHom_coe, Nat.castOrderEmbedding_apply] using hvalue
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 

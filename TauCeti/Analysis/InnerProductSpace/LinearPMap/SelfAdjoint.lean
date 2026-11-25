@@ -45,6 +45,9 @@ linear maps used by the semigroup development.
 * `LinearPMap.IsFormalAdjoint.norm_smul_sub_sq`: the square-sum identity for a shift, and the
   graph-norm lower bounds `abs_im_mul_norm_le_norm_smul_sub` (equivalently the resolvent bound
   `norm_le_inv_abs_im_mul_norm_smul_sub`) and `norm_apply_le_mul_norm_smul_sub`.
+* `LinearPMap.IsFormalAdjoint.two_mul_re_inner_sub_le`: the variational inequality of a
+  symmetric map bounded below by `t`, with the quadratic form of the real shift `A - t` computed
+  by `LinearPMap.re_inner_apply_sub_smul_self`.
 * `LinearPMap.IsFormalAdjoint.eq_zero_of_apply_eq_smul`: a formally self-adjoint map has no
   eigenvector for a nonreal eigenvalue,
   `LinearPMap.IsFormalAdjoint.inner_apply_eq_mul_inner`: pairing an eigenvector `v` for `c` with
@@ -219,6 +222,33 @@ theorem IsFormalAdjoint.re_inner_smul_apply_self {A : E →ₗ.[𝕜] E} (hA : A
     RCLike.re (inner 𝕜 (c • A x) (x : E)) = RCLike.re c * RCLike.re (inner 𝕜 (x : E) (A x)) := by
   rw [inner_smul_left, hA x x, ← inner_smul_left]
   exact hA.re_inner_smul_self_apply c x
+
+/-- The real quadratic form of a real shift: `re ⟪A x - t • x, x⟫ = re ⟪A x, x⟫ - t ‖x‖ ^ 2`. -/
+theorem re_inner_apply_sub_smul_self (A : E →ₗ.[𝕜] E) (t : ℝ) (x : A.domain) :
+    RCLike.re (inner 𝕜 (A x - (t : 𝕜) • (x : E)) (x : E)) =
+      RCLike.re (inner 𝕜 (A x) (x : E)) - t * ‖(x : E)‖ ^ 2 := by
+  simp [inner_sub_left, inner_smul_left]
+
+/-- **The variational inequality of a semibounded symmetric operator.** If `A` is symmetric with
+`t ‖x‖ ^ 2 ≤ re ⟪A x, x⟫` on its domain, then for `y, u` in the domain,
+`2 re ⟪(A - t) y, u⟫ - re ⟪(A - t) u, u⟫ ≤ re ⟪(A - t) y, y⟫`: the quadratic form of `A - t` is
+nonnegative at `y - u`. -/
+theorem IsFormalAdjoint.two_mul_re_inner_sub_le {A : E →ₗ.[𝕜] E} (hA : A.IsFormalAdjoint A)
+    {t : ℝ} (ht : ∀ x : A.domain, t * ‖(x : E)‖ ^ 2 ≤ RCLike.re (inner 𝕜 (A x) (x : E)))
+    (y u : A.domain) :
+    2 * RCLike.re (inner 𝕜 (A y - (t : 𝕜) • (y : E)) (u : E)) -
+        RCLike.re (inner 𝕜 (A u - (t : 𝕜) • (u : E)) (u : E)) ≤
+      RCLike.re (inner 𝕜 (A y - (t : 𝕜) • (y : E)) (y : E)) := by
+  have hz := ht (y - u)
+  have hsym : RCLike.re (inner 𝕜 (A u) (y : E)) = RCLike.re (inner 𝕜 (A y) (u : E)) := by
+    rw [hA u y, ← inner_conj_symm, RCLike.conj_re]
+  have hyu : RCLike.re (inner 𝕜 (u : E) (y : E)) = RCLike.re (inner 𝕜 (y : E) (u : E)) := by
+    rw [← inner_conj_symm, RCLike.conj_re]
+  rw [re_inner_apply_sub_smul_self, re_inner_apply_sub_smul_self]
+  rw [LinearPMap.map_sub, Submodule.coe_sub, @norm_sub_sq 𝕜] at hz
+  simp only [inner_sub_left, inner_sub_right, inner_smul_left, RCLike.conj_ofReal, _root_.map_sub,
+    RCLike.re_ofReal_mul] at hz ⊢
+  linarith
 
 /-- **Square-sum identity for shifts.** For a formally self-adjoint partial linear map and a scalar
 `c`, `‖c • x - A x‖² = (im c)² ‖x‖² + ‖re c • x - A x‖²`. -/

@@ -55,6 +55,9 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
   exponential map is injective on a normal domain.
 * `TauCeti.Manifold.IsNormalDomain.contDiffOn_norm_angular_riemannianExp`: the length of the
   differential of the exponential map along a fixed vector is smooth on a normal domain.
+* `TauCeti.Manifold.IsNormalDomain.opens`: a normal domain as an open subset of `T_p M`, on which
+  the exponential map is smooth with invertible differential
+  (`TauCeti.Manifold.IsNormalDomain.isInvertible_mfderiv_riemannianExp_comp_val`).
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_riemannianExp` and
   `TauCeti.Manifold.riemannianExp_riemannianLog`: the two inverse identities.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_eq_of_subset`: the logarithm does not depend on
@@ -173,6 +176,64 @@ theorem mem_geodesicInterval (h : IsNormalDomain I M p U) (hv : v ∈ U)
   ordConnected_geodesicInterval.out
     (zero_mem_geodesicInterval_of_mem (mem_expDomain_iff.1 (h.subset_expDomain hv)))
     (mem_expDomain_iff.1 (h.subset_expDomain hv)) ⟨ht₀, ht₁⟩
+
+/-- A normal domain, as an open subset of the tangent space. -/
+def opens (h : IsNormalDomain I M p U) : TopologicalSpace.Opens (TangentSpace I p) :=
+  ⟨U, h.isOpen⟩
+
+@[simp]
+theorem coe_opens (h : IsNormalDomain I M p U) : (h.opens : Set (TangentSpace I p)) = U :=
+  (rfl)
+
+@[simp]
+theorem mem_opens (h : IsNormalDomain I M p U) : v ∈ h.opens ↔ v ∈ U :=
+  Iff.rfl
+
+/-- The origin belongs to a normal domain, seen as an open subset of the tangent space. -/
+theorem zero_mem_opens (h : IsNormalDomain I M p U) : (0 : TangentSpace I p) ∈ h.opens :=
+  h.mem_opens.2 h.zero_mem
+
+/-- A normal domain, seen as an open subset of the tangent space, is star-shaped about the
+origin. -/
+theorem starConvex_opens (h : IsNormalDomain I M p U) :
+    StarConvex ℝ (0 : TangentSpace I p) (h.opens : Set (TangentSpace I p)) := by
+  rw [coe_opens]
+  exact h.starConvex
+
+/-- The exponential map is smooth on a normal domain. -/
+theorem contMDiff_riemannianExp_comp_val (h : IsNormalDomain I M p U) {n : ℕ∞ω}
+    (hn : n ≤ ∞ + 1) :
+    ContMDiff 𝓘(ℝ, TangentSpace I p) I n
+      (riemannianExp I M p ∘ (Subtype.val : h.opens → TangentSpace I p)) := by
+  intro v
+  have h' : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
+      (v : TangentSpace I p) :=
+    h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.property⟩
+  exact (h'.contMDiffAt.of_le (by simpa using hn)).comp v contMDiff_subtypeVal.contMDiffAt
+
+/-- On a normal domain, the differential of the exponential map read on the open subset is the
+differential of the exponential map, after identifying the tangent spaces of the open subset and
+of `T_p M`. -/
+theorem mfderiv_riemannianExp_comp_val (h : IsNormalDomain I M p U) (v : h.opens) :
+    mfderiv 𝓘(ℝ, TangentSpace I p) I
+        (riemannianExp I M p ∘ (Subtype.val : h.opens → TangentSpace I p)) v =
+      (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v).comp
+        (tangentSpaceOpenEquiv (I := 𝓘(ℝ, TangentSpace I p)) v).toContinuousLinearMap := by
+  have h' : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
+      (v : TangentSpace I p) :=
+    h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.property⟩
+  rw [mfderiv_comp v (h'.contMDiffAt.mdifferentiableAt (by simp))
+    (contMDiff_subtypeVal.contMDiffAt.mdifferentiableAt one_ne_zero),
+    mfderiv_subtype_val (I := 𝓘(ℝ, TangentSpace I p)) v]
+
+/-- The exponential map has invertible differential on a normal domain. -/
+theorem isInvertible_mfderiv_riemannianExp_comp_val (h : IsNormalDomain I M p U)
+    (v : h.opens) :
+    (mfderiv 𝓘(ℝ, TangentSpace I p) I
+      (riemannianExp I M p ∘ (Subtype.val : h.opens → TangentSpace I p)) v).IsInvertible := by
+  rw [h.mfderiv_riemannianExp_comp_val v]
+  exact ((h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.property⟩).isInvertible_mfderiv (by simp)).comp
+    ContinuousLinearMap.isInvertible_equiv
 
 variable [I.Boundaryless] [T2Space M]
 

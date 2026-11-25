@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.Cylinder
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Sobolev.Morrey.Basic
-import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
@@ -33,10 +32,10 @@ assumed: if the right-hand side is finite, the bound holds anyway. Applied to di
 same constant bounds `‖ξ z - η z‖` by the `Lᵖ` norm of `jet (ξ - η)`, so sections whose jets
 converge in `Lᵖ` converge uniformly.
 
-The proof applies the Morrey potential estimate on the unit ball `B` about `z`
-(`TauCeti.enorm_sub_setAverage_le_of_starConvex_of_finrank_lt`), which bounds `ξ z` minus the
-mean of `ξ` over `B` by the `Lᵖ(B)` norm of the derivative of `ξ`. The mean itself is bounded by
-the `Lᵖ(B)` norm of `ξ` (Hölder's inequality, `TauCeti.enorm_setAverage_le`). In the sup norm
+The proof applies Morrey's supremum bound on the unit ball `B` about `z`
+(`TauCeti.exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv`), which bounds `ξ z` by the `Lᵖ(B)`
+norms of `ξ` and of its derivative, with a constant independent of `z` since all unit balls have
+the same measure. In the sup norm
 of `ℝ × ℝ` the ball `B` is a square of side two, which lies in two consecutive strips
 `ℝ × [τ, τ + 1]`. For a function of period one in `t` the integral over each of them equals the
 integral over `ℝ × [0, 1]` (`TauCeti.setLIntegral_univ_prod_Icc_add_eq_of_periodic`), so the
@@ -123,27 +122,11 @@ theorem exists_enorm_le_mul_eLpNorm_jet [CompleteSpace V] {p : ℝ≥0} (hp : 2 
   have hn : finrank ℝ (ℝ × ℝ) = 2 := by simp
   have hp' : (finrank ℝ (ℝ × ℝ) : ℝ≥0) < p := by rw [hn]; exact_mod_cast hp
   have hp1 : 1 ≤ p := le_of_lt (lt_of_le_of_lt (by norm_num) hp)
-  set m := volume (ball (0 : ℝ × ℝ) 1)
-  have hm (z : ℝ × ℝ) : volume (ball z 1) = m := Measure.addHaar_ball_center volume z 1
-  have hm0 : m ≠ 0 := (measure_ball_pos volume 0 one_pos).ne'
-  have hmtop : m ≠ ∞ := measure_ball_lt_top.ne
-  -- The Morrey potential estimate on the unit ball about `z`, with a constant independent of `z`
+  -- Morrey's supremum bound on the unit ball about `z`, with a constant independent of `z`
   -- since all unit balls have the same measure.
-  obtain ⟨c₀, hmor, hc₀⟩ : ∃ c₀ : ℝ≥0∞, (∀ {ξ : ℝ × ℝ → V}, ContDiff ℝ 1 ξ → ∀ z,
-      ‖ξ z - ⨍ y in ball z 1, ξ y‖ₑ ≤ c₀ * eLpNorm (fderiv ℝ ξ) p (volume.restrict (ball z 1))) ∧
-      c₀ ≠ ∞ :=
-    ⟨_, fun {ξ} hξ z ↦ (enorm_sub_setAverage_le_of_starConvex_of_finrank_lt (μ := volume)
-      (u := ξ) (S := ball z 1) isOpen_ball hξ.contDiffOn
-      ((convex_ball z 1).starConvex (mem_ball_self one_pos)) ball_subset_closedBall Subset.rfl
-      (by rw [hm]; exact hm0) hp').trans_eq (by rw [hm]), by finiteness⟩
-  -- Hölder's inequality for the mean over the unit ball about `z`.
-  obtain ⟨c₁, hmean, hc₁⟩ : ∃ c₁ : ℝ≥0∞, (∀ (ξ : ℝ × ℝ → V) z,
-      ‖⨍ y in ball z 1, ξ y‖ₑ ≤ c₁ * eLpNorm ξ p (volume.restrict (ball z 1))) ∧ c₁ ≠ ∞ :=
-    ⟨_, fun ξ z ↦ (TauCeti.enorm_setAverage_le (mu := volume) (s := ball z 1) (f := ξ) (p := p)
-      (by exact_mod_cast hp1)).trans_eq (by rw [hm, ENNReal.coe_toReal]),
-      ENNReal.rpow_ne_top_of_ne_zero hm0 hmtop⟩
-  refine ⟨((2 * c₀ + c₁) * 2).toNNReal, fun {ξ} hξ hper z ↦ ?_⟩
-  rw [ENNReal.coe_toNNReal (by finiteness)]
+  obtain ⟨C, hC⟩ := exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv (μ := volume) (F := V) hp1 hp'
+    1 (measure_ball_pos volume (0 : ℝ × ℝ) one_pos).ne'
+  refine ⟨6 * C, fun {ξ} hξ hper z ↦ ?_⟩
   -- The jet on the unit ball is controlled by the jet on the strip.
   have hball := eLpNorm_restrict_ball_le_two_mul_of_periodic (continuous_jet hξ).stronglyMeasurable
     (jet_add_one_of_periodic hper) hp1 z
@@ -153,15 +136,13 @@ theorem exists_enorm_le_mul_eLpNorm_jet [CompleteSpace V] {p : ℝ≥0} (hp : 2 
   have hval := eLpNorm_le_eLpNorm_jet (μ := volume.restrict (ball z 1))
     hξ.continuous.aestronglyMeasurable p
   set N := eLpNorm (jet ξ) p (volume.restrict (ball z 1))
-  calc ‖ξ z‖ₑ = ‖(ξ z - ⨍ y in ball z 1, ξ y) + ⨍ y in ball z 1, ξ y‖ₑ := by
-        rw [sub_add_cancel]
-    _ ≤ ‖ξ z - ⨍ y in ball z 1, ξ y‖ₑ + ‖⨍ y in ball z 1, ξ y‖ₑ := eNorm_add_le _ _
-    _ ≤ c₀ * (2 * N) + c₁ * N := by
-        gcongr
-        · exact (hmor hξ z).trans (by gcongr)
-        · exact (hmean ξ z).trans (by gcongr)
-    _ = (2 * c₀ + c₁) * N := by ring
-    _ ≤ (2 * c₀ + c₁) * (2 * eLpNorm (jet ξ) p stripMeasure) := by gcongr
-    _ = (2 * c₀ + c₁) * 2 * eLpNorm (jet ξ) p stripMeasure := by ring
+  calc ‖ξ z‖ₑ ≤ C * (eLpNorm ξ p (volume.restrict (ball z 1)) +
+        eLpNorm (fderiv ℝ ξ) p (volume.restrict (ball z 1))) :=
+        hC _ ξ z isOpen_ball ((convex_ball z 1).starConvex (mem_ball_self one_pos))
+          hξ.contDiffOn (by rw [inter_self, Measure.addHaar_ball_center volume z])
+    _ ≤ C * (N + 2 * N) := by gcongr
+    _ = 3 * C * N := by ring
+    _ ≤ 3 * C * (2 * eLpNorm (jet ξ) p stripMeasure) := by gcongr
+    _ = ↑(6 * C) * eLpNorm (jet ξ) p stripMeasure := by push_cast; ring
 
 end TauCeti.CylinderSobolev

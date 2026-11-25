@@ -181,15 +181,15 @@ theorem exists_finset_littlewoodPaleyBlock_eq_sum (j : ℕ) :
       littlewoodPaleyBlock φ j f =
         ∑ n ∈ s, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) * mFourierCoeff f n) •
           mFourierLp 2 n := by
-  set s := (finite_setOf_norm_latticePoint_lt (ι := d) (2 ^ j * φ.rOut)).toFinset
+  set s := (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ j * φ.rOut)).toFinset
   refine ⟨s, fun f ↦ ?_⟩
   have h : HasSum (fun n ↦
       (φ.inhomogeneousLittlewoodPaley j (latticePoint n) * mFourierCoeff f n) • mFourierLp 2 n)
       (∑ n ∈ s, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) * mFourierCoeff f n) •
         mFourierLp 2 n) :=
     hasSum_sum_of_ne_finset_zero fun n hn ↦ by
-      simp only [s, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_lt] at hn
-      simp [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hn]
+      simp only [s, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_le] at hn
+      simp [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hn.le]
   rw [littlewoodPaleyBlock_eq_fourierMultiplier]
   exact (hasSum_fourierMultiplier _ f).unique (by simpa using h)
 

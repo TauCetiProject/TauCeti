@@ -43,7 +43,9 @@ normalized Hilbert–Schmidt norm `k⁻¹ ‖T(a)‖²_HS` of `T(a)`
   `d(φ, ab)^{1/2} ≤ ‖b‖ d(φ, a)^{1/2} + ‖a‖ d(φ, b)^{1/2}` and the Lipschitz bound
   `|d(φ, a)^{1/2} - d(φ, b)^{1/2}| ≤ ‖a - b‖`.
 
-Finally `d₂(φ, a) ≤ ‖φ(a⋆a) - φ(a⋆)φ(a)‖₂`, and star homomorphisms have zero defects.
+Finally `d₂(φ, a) ≤ ‖φ(a⋆a) - φ(a⋆)φ(a)‖₂`, star homomorphisms have zero defects, and both
+defects are homogeneous of degree two, `d(φ, c • a) = |c|² d(φ, a)`
+(`CompletelyPositiveMap.normDefect_smul`, `CompletelyPositiveMap.twoNormDefect_smul`).
 
 ## References
 
@@ -97,6 +99,11 @@ theorem twoNormDefect_le_normDefect (φ : A →CP CStarMatrix n n ℂ) (a : A) :
     φ.twoNormDefect a ≤ φ.normDefect a :=
   (Complex.re_le_norm _).trans (norm_normalizedTrace_le_norm _)
 
+/-- `d_∞(φ, a) = ‖φ(a⋆a) - φ(a⋆)φ(a)‖`, as `φ` preserves the star. -/
+theorem normDefect_eq_norm_map_star (φ : A →CP CStarMatrix n n ℂ) (a : A) :
+    φ.normDefect a = ‖φ (star a * a) - φ (star a) * φ a‖ := by
+  rw [normDefect_def, φ.map_star]
+
 /-- `d₂(φ, a) ≤ ‖φ(a⋆a) - φ(a⋆)φ(a)‖₂`, as `|tr_k(x)| ≤ ‖x‖₂`. -/
 theorem twoNormDefect_le_normalizedTwoNorm (φ : A →CP CStarMatrix n n ℂ) (a : A) :
     φ.twoNormDefect a ≤ normalizedTwoNorm (φ (star a * a) - φ (star a) * φ a) := by
@@ -114,6 +121,28 @@ theorem normDefect_toCompletelyPositiveLinearMap (ρ : A →⋆ₙₐ[ℂ] CStar
 theorem twoNormDefect_toCompletelyPositiveLinearMap (ρ : A →⋆ₙₐ[ℂ] CStarMatrix n n ℂ) (a : A) :
     (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap ρ).twoNormDefect a = 0 := by
   simp [twoNormDefect_def, map_star ρ]
+
+section Homogeneity
+
+variable (φ : A →CP CStarMatrix n n ℂ)
+
+private theorem map_star_smul_mul_smul_sub (c : ℂ) (a : A) :
+    φ (star (c • a) * (c • a)) - star (φ (c • a)) * φ (c • a) =
+      ((‖c‖ ^ 2 : ℝ) : ℂ) • (φ (star a * a) - star (φ a) * φ a) := by
+  simp [smul_mul_smul_comm, smul_sub, Complex.conj_mul']
+
+/-- The norm defect is homogeneous of degree two: `d_∞(φ, c • a) = |c|² d_∞(φ, a)`. -/
+theorem normDefect_smul (c : ℂ) (a : A) : φ.normDefect (c • a) = ‖c‖ ^ 2 * φ.normDefect a := by
+  rw [normDefect_def, map_star_smul_mul_smul_sub, norm_smul]
+  simp [normDefect_def]
+
+/-- The 2-norm defect is homogeneous of degree two: `d₂(φ, c • a) = |c|² d₂(φ, a)`. -/
+theorem twoNormDefect_smul (c : ℂ) (a : A) :
+    φ.twoNormDefect (c • a) = ‖c‖ ^ 2 * φ.twoNormDefect a := by
+  rw [twoNormDefect_def, map_star_smul_mul_smul_sub, normalizedTrace_smul, Complex.re_ofReal_mul,
+    twoNormDefect_def]
+
+end Homogeneity
 
 section Dilation
 

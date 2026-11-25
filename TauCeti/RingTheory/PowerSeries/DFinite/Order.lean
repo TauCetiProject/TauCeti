@@ -177,7 +177,6 @@ theorem dfiniteOrder_one [Nontrivial K] : dfiniteOrder k (1 : K⟦X⟧) = 1 := b
 theorem dfiniteOrder_exp [Nontrivial K] [Algebra ℚ K] : dfiniteOrder k (exp K) = 1 := by
   apply Nat.le_antisymm _
     ((isDFinite_exp (k := k) (K := K)).dfiniteOrder_pos (isUnit_exp K).ne_zero)
-  exact dfiniteOrder_le (p := ![-1, 1]) (by simp) (by
-    simp [Fin.sum_univ_two, derivative_exp])
+  exact dfiniteOrder_le (p := ![-1, 1]) (by simp) sum_smul_iterate_derivative_exp
 
 end PowerSeries

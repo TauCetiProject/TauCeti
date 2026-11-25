@@ -26,6 +26,9 @@ equivalent to convergence along `𝓝[(D ∪ C) ∩ (a, ∞)] a`.
   by a value above `a` at `T` or at a point of `(D ∪ C) ∩ (-∞, T]`.
 * `TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt`: in a second countable space,
   one countable set of times `≤ T` serves for every function right-continuous before `T`.
+* `TopologicalSpace.exists_countable_subset_Iic_biSup_eq`: in a second countable space, the
+  supremum over `(-∞, T]` of any function into a complete linear order with closed lower rays that
+  is right-continuous before `T` equals its supremum over that countable set.
 * `Dense.tendsto_nhdsGT_iff`: for `g` eventually right-continuous along `𝓝[>] a` into a regular
   space, convergence to `c` along `𝓝[>] a` is equivalent to convergence along
   `𝓝[(D ∪ C) ∩ Ioi a] a`.
@@ -41,8 +44,11 @@ public section
 
 open Set
 
-variable {ι α : Type*} [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι]
-  [LinearOrder α] [TopologicalSpace α] [ClosedIicTopology α]
+variable {ι : Type*} [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι]
+
+section LinearOrder
+
+variable {α : Type*} [LinearOrder α] [TopologicalSpace α] [ClosedIicTopology α]
 
 /-- If `g` is right-continuous at every time before `T` and `a < g t` for some `t ≤ T`, then
 `a < g s` for some `s` in `{T} ∪ ((D ∪ C) ∩ (-∞, T])`, for any dense set `D`, where `C` is the
@@ -75,6 +81,28 @@ theorem TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt [SecondCounta
     ((hDc.union countable_setOfPred_covBy_right).mono inter_subset_left).insert T,
     insert_subset_iff.2 ⟨le_rfl, inter_subset_right⟩,
     fun _ hg _ htT _ ha ↦ hD.exists_mem_insert_inter_Iic_lt hg htT ha⟩
+
+end LinearOrder
+
+section CompleteLinearOrder
+
+variable {α : Type*} [CompleteLinearOrder α] [TopologicalSpace α] [ClosedIicTopology α]
+
+/-- In a second countable space, every `T` has a countable set `S` of points `≤ T` such that
+for every function `g` into a complete linear order with closed lower rays that is right-continuous
+at every point before `T`, its supremum over `(-∞, T]` equals its supremum over `S`. -/
+theorem TopologicalSpace.exists_countable_subset_Iic_biSup_eq [SecondCountableTopology ι]
+    (T : ι) :
+    ∃ S : Set ι, S.Countable ∧ S ⊆ Iic T ∧ ∀ ⦃g : ι → α⦄,
+      (∀ t < T, ContinuousWithinAt g (Ioi t) t) → (⨆ s ∈ S, g s) = ⨆ t ≤ T, g t := by
+  obtain ⟨S, hSc, hST, hS⟩ := exists_countable_subset_Iic_exists_mem_lt (α := α) T
+  refine ⟨S, hSc, hST, fun g hg => le_antisymm ?_ ?_⟩
+  · exact iSup₂_le fun s hs => le_iSup₂_of_le s (hST hs) le_rfl
+  · refine iSup₂_le fun t ht => le_of_forall_lt fun a ha => ?_
+    obtain ⟨s, hs, has⟩ := hS hg ht ha
+    exact has.trans_le (le_iSup₂ (f := fun s _ => g s) s hs)
+
+end CompleteLinearOrder
 
 section RegularSpace
 

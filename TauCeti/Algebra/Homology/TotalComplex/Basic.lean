@@ -58,6 +58,8 @@ compares the homology sequences of these short exact sequences.
   symmetry.
 * `HomologicalComplex₂.quasiIso_total_map_of_rows`: a map of bicomplexes which is a
   quasi-isomorphism on every row induces a quasi-isomorphism of total complexes.
+* `HomologicalComplex₂.exactAt_total_of_rows`: rows exact along the diagonal `p + q = n` make the
+  total complex exact in degree `n`.
 * `HomologicalComplex₂.quasiIso_totalAugmentation_of_rows`: exact augmented rows make the
   augmentation of the total complex a quasi-isomorphism, and so does any augmentation through
   which such an augmentation factors by a quasi-isomorphism
@@ -638,6 +640,30 @@ theorem quasiIso_total_map_of_rows
   intro m
   rw [quasiIsoAt_iff_isIso_homologyMap]
   exact (total_map_aux (m + 1) φ hφ).1 m (Nat.lt_succ_self m)
+
+/-- **Rows exact along a diagonal give a total complex exact in that degree.** If the row `q` of a
+first-quadrant bicomplex `K`, the complex `⋯ ⟶ (K.X 1).X q ⟶ (K.X 0).X q`, is exact in degree `p`
+whenever `p + q = n`, then the total complex of `K` is exact in degree `n`. In the spectral
+sequence of the row filtration, the first page then vanishes on the diagonal of total degree `n`,
+and so does the abutment. -/
+theorem exactAt_total_of_rows
+    (K : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ)) (n : ℕ)
+    (hK : ∀ p q, p + q = n → (((eval C _ q).mapHomologicalComplex _).obj K).ExactAt p) :
+    (K.total (ComplexShape.down ℕ)).ExactAt n := by
+  induction n generalizing K with
+  | zero =>
+    -- In degree `0` the total complex is row `0`, the rows `≥ 1` starting in degree `1`.
+    refine exactAt_iff_isZero_homology _ _ |>.2 <|
+      ((rowZeroShortComplex_shortExact K).homology_exact₂ 0).isZero_X₂
+        ((hK 0 0 rfl).isZero_homology.eq_of_src _ _) ?_
+    exact (extend_exactAt _ _ 0 fun _ ↦ by simp).isZero_homology.eq_of_tgt _ _
+  | succ m ih =>
+    -- The rows of `rowsSucc K` are the rows `≥ 1` of `K`, placed one degree lower.
+    have h := ih (rowsSucc K) fun p q h ↦ hK p (q + 1) (by omega)
+    refine exactAt_iff_isZero_homology _ _ |>.2 <|
+      ((rowZeroShortComplex_shortExact K).homology_exact₂ (m + 1)).isZero_X₂
+        ((hK (m + 1) 0 rfl).isZero_homology.eq_of_src _ _) ?_
+    exact ((extend_exactAt_iff _ _ (embeddingDownNatAdd_f 1 m)).2 h).isZero_homology.eq_of_tgt _ _
 
 variable {E : ChainComplex C ℕ}
 

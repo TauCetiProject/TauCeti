@@ -10,6 +10,7 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.Terminal
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HasExt
 public import Mathlib.Topology.Sheaves.Abelian
+public import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
 # Cohomology of sheaves of modules on a scheme
@@ -118,7 +119,6 @@ abbrev cohomologyOnRes (n : ℕ) {U V : Opens X} (h : U ≤ V) :
   (CategoryTheory.Sheaf.cohomologyPresheaf.{u}
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n).map (homOfLE h).op
 
-@[simp]
 lemma cohomologyOnRes_refl (n : ℕ) (U : Opens X) :
     cohomologyOnRes M n (le_refl U) = 𝟙 _ := by
   dsimp only [cohomologyOnRes]
@@ -189,6 +189,17 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMap_cohomologyOnRes {N
       cohomologyOnRes N n h (Scheme.Modules.cohomologyOnMap f n V x) :=
   ConcreteCategory.congr_hom (((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f)).naturality (homOfLE h).op) x
+
+variable {M} in
+/-- The maps on cohomology induced by a morphism of sheaves commute with restriction, as an equality
+of morphisms. -/
+@[reassoc]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnRes_comp_cohomologyOnMap
+    {N : X.Modules} (f : M ⟶ N) (n : ℕ) {U V : Opens X} (h : U ≤ V) :
+    cohomologyOnRes M n h ≫ Scheme.Modules.cohomologyOnMap f n U =
+      Scheme.Modules.cohomologyOnMap f n V ≫ cohomologyOnRes N n h :=
+  ((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
+    ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f)).naturality (homOfLE h).op
 
 variable (X) in
 /-- The cohomology `Hⁿ(U, -)` of an open subset `U`, as a functor from sheaves of modules to
