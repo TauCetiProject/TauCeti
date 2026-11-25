@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.Block
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.LinearAlgebra.Matrix.Determinant.Pencil
 
 /-!
 # The reversed characteristic polynomial `det (1 - X A)` of a square matrix
@@ -36,6 +37,9 @@ the dimension.
   `det (1 - t A)`; at `X = 1` this is `Matrix.eval_one_charpolyRev`.
 * `Matrix.charpolyRev_map`, `Matrix.charpolyRev_transpose`, `Matrix.charpolyRev_reindex`:
   functoriality in the coefficient ring and invariance under transposition and relabelling.
+* `Matrix.charpolyRev_smul`: `det (1 - X (c A))` is `det (1 - X A)` evaluated at `c X`.
+* `Matrix.aeval_charpolyRev_eq_zero_of_mul_eq_one`: if `B A = 1`, then `B` is a root of
+  `det (1 - X A)`.
 * `Matrix.charpolyRev_eq_charpolyRev_iff`: for matrices of the same size, `det (1 - X A)`
   determines the characteristic polynomial and conversely.
 * `Matrix.charpolyRev_fromBlocks_zero₂₁`, `Matrix.BlockTriangular.charpolyRev`: multiplicativity on
@@ -50,6 +54,7 @@ the dimension.
   resolvent*, whose coefficients are these polynomials in `A`.
 * `Module.Basis.reverse_charpoly_of_apply`: for an endomorphism diagonal in a finite basis with
   eigenvalues `aᵢ`, the reverse of its characteristic polynomial is `∏ᵢ (1 - aᵢ X)`.
+* `LinearMap.reverse_charpoly_smul_id`: `det (1 - X (c • id)) = (1 - c X) ^ rank`.
 * `Matrix.charpolyRev_mul_comm`: `det (1 - X A B) = det (1 - X B A)` for rectangular matrices `A`
   and `B` of transposed shapes. Unlike `Matrix.charpoly_mul_comm'`, no power of `X` corrects for
   the different sizes of `A B` and `B A`.
@@ -111,10 +116,7 @@ theorem coeff_charpolyRev_card (A : Matrix ι ι R) :
 /-- Evaluating `det (1 - X A)` at `X = t` gives `det (1 - t A)`. -/
 theorem eval_charpolyRev_eq_det_one_sub_smul (A : Matrix ι ι R) (t : R) :
     A.charpolyRev.eval t = (1 - t • A).det := by
-  rw [charpolyRev, ← coe_evalRingHom, RingHom.map_det]
-  congr 1
-  ext i j
-  by_cases h : i = j <;> simp [h, Matrix.smul_apply, smul_eq_mul, mul_comm t]
+  simpa [charpolyRev, Matrix.map_neg, sub_eq_neg_add] using eval_det_X_add_C (-A) 1 t
 
 /-- Evaluating `det (1 - X A)` at `X = 1` gives `det (1 - A)`. -/
 @[simp]
@@ -158,6 +160,36 @@ theorem charpolyRev_map (A : Matrix ι ι R) (f : R →+* S) :
   congr 1
   ext i j
   by_cases h : i = j <;> simp [h]
+
+/-- Scaling `A` by `c` rescales the variable of `det (1 - X A)`: `det (1 - X (c A))` is
+`det (1 - X A)` evaluated at `c X`. -/
+theorem charpolyRev_smul (c : R) (A : Matrix ι ι R) :
+    (c • A).charpolyRev = A.charpolyRev.comp (C c * X) := by
+  rw [charpolyRev, charpolyRev, ← coe_compRingHom_apply, RingHom.map_det]
+  congr 1
+  refine Matrix.ext fun i j ↦ ?_
+  by_cases h : i = j <;> simp [h] <;> ring
+
+/-- **Cayley–Hamilton for the inverse.** If `B A = 1`, then `B` is a root of `det (1 - X A)`.
+Indeed `det (1 - X A)` is a unit multiple of the characteristic polynomial of `B = A⁻¹`. -/
+theorem aeval_charpolyRev_eq_zero_of_mul_eq_one {A B : Matrix ι ι R} (h : B * A = 1) :
+    aeval B A.charpolyRev = 0 := by
+  have hA : IsUnit A := ⟨⟨A, B, mul_eq_one_comm.1 h, h⟩, rfl⟩
+  have hdet := Ring.mul_inverse_cancel _ ((isUnit_iff_isUnit_det A).1 hA)
+  have hsq : ((-1 : R) ^ Fintype.card ι) * (-1) ^ Fintype.card ι = 1 := by
+    rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+  have hu : C ((-1) ^ Fintype.card ι * A.det) * ((-1) ^ Fintype.card ι * C (Ring.inverse A.det))
+      = (1 : R[X]) := by
+    have h' : (-1) ^ Fintype.card ι * A.det * ((-1) ^ Fintype.card ι * Ring.inverse A.det) = 1 := by
+      linear_combination (-1 : R) ^ Fintype.card ι * (-1) ^ Fintype.card ι * hdet + hsq
+    calc _ = C ((-1) ^ Fintype.card ι * A.det * ((-1) ^ Fintype.card ι * Ring.inverse A.det)) := by
+          simp only [map_mul, map_pow, map_neg, map_one]
+      _ = 1 := by rw [h', C_1]
+  -- `A.charpolyRev` is the unit `C ((-1) ^ n * det A)` times the characteristic polynomial of `B`
+  have hrev : A.charpolyRev = C ((-1) ^ Fintype.card ι * A.det) * B.charpoly := by
+    rw [← inv_eq_left_inv h, charpoly_inv A hA]
+    linear_combination (-A.charpolyRev) * hu
+  rw [hrev, map_mul, aeval_self_charpoly, mul_zero]
 
 /-- `det (1 - X A)` is unchanged by transposition. -/
 @[simp]
@@ -316,3 +348,18 @@ theorem reverse_charpoly_of_apply (b : Basis κ R M) (f : M →ₗ[R] M) (a : κ
     (b.toMatrix_eq_diagonal_iff b f a).2 hf, Matrix.charpolyRev_diagonal]
 
 end Module.Basis
+
+namespace LinearMap
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M]
+  [Module.Finite R M]
+
+/-- The polynomial `det (1 - X f)` of the scalar endomorphism `f = c • id` of a finite free module
+is `(1 - c X) ^ rank`. -/
+theorem reverse_charpoly_smul_id (c : R) :
+    (c • LinearMap.id : Module.End R M).charpoly.reverse = (1 - C c * X) ^ Module.finrank R M := by
+  nontriviality R
+  rw [(Module.Free.chooseBasis R M).reverse_charpoly_of_apply _ (fun _ ↦ c) (by simp),
+    Finset.prod_const, Finset.card_univ, Module.finrank_eq_card_chooseBasisIndex]
+
+end LinearMap

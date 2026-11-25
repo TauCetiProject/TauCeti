@@ -21,6 +21,8 @@ the **orbit map** `g ↦ g • x` is itself proper (`ProperSMul.isProperMap_smul
 * every orbit, the range of the orbit map, is closed (`ProperSMul.isClosed_orbit`);
 * where the stabilizer is trivial, the orbit map is injective, hence a closed embedding of `G`
   onto the orbit (`ProperSMul.isClosedEmbedding_smul_const`);
+* more generally, the orbit map descends to a closed embedding `[g] ↦ g • x` of the coset space
+  `G ⧸ G_x` onto the orbit (`ProperSMul.isClosedEmbedding_ofQuotientStabilizer`);
 * the elements moving a small neighbourhood `W` of `x` to meet itself shrink into any
   neighbourhood of the stabilizer, and every such set is a neighbourhood of the stabilizer
   (`ProperSMul.mem_nhdsSet_stabilizer_iff`). This uses that `(g, y) ↦ (g • y, y)` is closed.
@@ -82,6 +84,27 @@ theorem isClosedEmbedding_smul_const {x : X} (hx : MulAction.stabilizer G x = �
     simp only [MulAction.mem_stabilizer_iff, mul_smul, hgh, inv_smul_smul]
   rw [hx, Subgroup.mem_bot, inv_mul_eq_one] at hmem
   exact hmem.symm
+
+/-- **Orbit maps of proper actions are proper on `G ⧸ G_x`.** For a proper action, the map
+`[g] ↦ g • x` (`MulAction.ofQuotientStabilizer G x`) out of the coset space `G ⧸ G_x` is proper: its
+composite with the projection `G → G ⧸ G_x` is the proper orbit map `g ↦ g • x`. -/
+@[to_additive /-- **Orbit maps of proper actions are proper on `G ⧸ G_x`.** For a proper additive
+action, the map `[g] ↦ g +ᵥ x` out of the coset space `G ⧸ G_x` is proper. -/]
+theorem isProperMap_ofQuotientStabilizer (x : X) :
+    IsProperMap (MulAction.ofQuotientStabilizer G x) :=
+  isProperMap_of_comp_of_surj QuotientGroup.continuous_mk
+    (continuous_quot_lift _ (isProperMap_smul_const x).continuous) (isProperMap_smul_const x)
+    QuotientGroup.mk_surjective
+
+/-- **Orbits of proper actions are homeomorphic to `G ⧸ G_x`.** For a proper action, the map
+`[g] ↦ g • x` is a closed embedding of the coset space `G ⧸ G_x` onto the orbit of `x`. -/
+@[to_additive /-- **Orbits of proper actions are homeomorphic to `G ⧸ G_x`.** For a proper
+additive action, the map `[g] ↦ g +ᵥ x` is a closed embedding of the coset space `G ⧸ G_x` onto the
+orbit of `x`. -/]
+theorem isClosedEmbedding_ofQuotientStabilizer (x : X) :
+    IsClosedEmbedding (MulAction.ofQuotientStabilizer G x) :=
+  .of_continuous_injective_isClosedMap (isProperMap_ofQuotientStabilizer x).continuous
+    (MulAction.injective_ofQuotientStabilizer G x) (isProperMap_ofQuotientStabilizer x).isClosedMap
 
 /-- **Elements moving a small neighbourhood to meet itself lie near the stabilizer.** For a
 proper action, a set `V ⊆ G` is a neighbourhood of the stabilizer of `x` iff it contains every

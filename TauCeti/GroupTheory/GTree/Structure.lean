@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GTree.QuotientGraphOfGroups
-public import TauCeti.GroupTheory.GraphOfGroups.BassSerreTree
+public import TauCeti.GroupTheory.GraphOfGroups.BassSerre.Tree
 
 /-!
 # A tree with a group action is the Bass–Serre tree of its quotient graph of groups

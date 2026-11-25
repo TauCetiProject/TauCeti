@@ -20,8 +20,14 @@ monoid, and they are independent.
 
 Unlike the group ring, the Novikov ring is in general *not* the direct sum of its homogeneous
 pieces: a series whose support meets infinitely many fibres is not a finite sum of homogeneous
-series. The homogeneous pieces span exactly the finitely supported series as soon as the period
-`N` is bounded above on every fibre of `f`, for instance when `f` is injective. In that case the
+series. The homogeneous pieces span exactly the series whose support meets finitely many fibres,
+so the Novikov series are their internal direct sum exactly when every support does. Over a
+nontrivial ring and for an additive degree `δ`, this happens exactly when the period vanishes or
+`δ` takes finitely many values. For a degree with values in a torsion-free cancellative monoid,
+such as twice the first Chern class on the second homology of a symplectic manifold with its area
+period, it happens exactly when the period or the degree vanishes. The homogeneous pieces span
+exactly the finitely supported series as soon as the period `N` is bounded above on every fibre of
+`f`, for instance when `f` is injective. In that case the
 graded ring spanned by homogeneous series is the group ring `R[H]`, and the Novikov ring is its
 period completion. This is the situation of the coefficient ring of capped Hamiltonian Floer
 theory on a spherically monotone symplectic manifold, graded by twice the first Chern number.
@@ -35,6 +41,10 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
   function `f`.
 * `TauCeti.NovikovSeries.gradeProj R N f i`: the homogeneous component of degree `i` of a
   series.
+* `TauCeti.NovikovSeries.gradeByCoeff N 𝒱 δ D`: for coefficients in a module `V` graded by `𝒱`
+  and a degree `δ` on the exponents, the series of degree `D`, those whose coefficient at `A` has
+  degree `D - δ A`. For `R` itself concentrated in degree `0` these are the pieces `gradeBy`
+  (`TauCeti.NovikovSeries.gradeByCoeff_ite_eq_gradeBy`).
 
 ## Main results
 
@@ -53,10 +63,12 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
   series exactly when its support meets finitely many degrees.
 * `TauCeti.NovikovSeries.isInternal_gradeBy_iff`: the Novikov ring is the internal direct sum of
   its homogeneous pieces exactly when every series meets finitely many degrees.
+* `TauCeti.NovikovSeries.isInternal_gradeBy_iff_eq_zero_or_finite_range`: for an additive degree
+  `δ` over a nontrivial ring, this happens exactly when the period vanishes or `δ` has finite range.
 * `TauCeti.NovikovSeries.isInternal_gradeBy_iff_eq_zero_or_eq_zero`: for an additive degree with
-  values in a torsion-free group and nontrivial coefficients, this happens exactly when the period
-  or the degree vanishes. Otherwise some class `C` has positive period and nonzero degree, and the
-  geometric series `∑ₙ e^(n C)` meets the infinitely many degrees `n δ(C)`.
+  values in a torsion-free cancellative monoid and nontrivial coefficients, this happens exactly
+  when the period or the degree vanishes, since a nonzero degree `δ` takes the infinitely many
+  values `n δ(C)` for a class `C` with `δ(C) ≠ 0`.
 
 ## References
 
@@ -344,47 +356,100 @@ instance gradeBy.gradedMonoid [AddMonoid H] {N : H →+ ℝ} [AddMonoid ι] (f :
     obtain ⟨u, hu, v, hv, rfl⟩ := support_mul_subset a b hh
     rw [mem_preimage, mem_singleton_iff, map_add, (ha hu : f u = i), (hb hv : f v = j)]
 
+section Internal
+
+variable [AddGroup H] {N : H →+ ℝ}
+
+/-- Over a nontrivial ring, if the period is nonzero and the additive degree `δ` takes infinitely
+many values, some Novikov series has nonzero coefficients in infinitely many degrees. -/
+theorem exists_infinite_image_support [Nontrivial R] [AddMonoid ι] (hN : N ≠ 0) {δ : H →+ ι}
+    (hδ : (range δ).Infinite) : ∃ a : NovikovSeries R H N, (δ '' a.support).Infinite := by
+  -- Choose exponents `u n` whose degrees are pairwise distinct and whose periods grow by at least
+  -- one at each step.
+  obtain ⟨u, hu⟩ := seq_of_forall_finite_exists
+    (P := fun c t => δ c ∉ δ '' t ∧ ∀ x ∈ t, N x + 1 ≤ N c) fun t ht => by
+      obtain ⟨K, hK⟩ := (ht.image fun x => N x + 1).bddAbove
+      obtain ⟨_, ⟨c, hc, rfl⟩, hct⟩ :=
+        ((AddMonoidHom.infinite_image_setOf_le hN hδ K).sdiff (ht.image δ)).nonempty
+      exact ⟨c, hct, fun x hx => (hK (mem_image_of_mem _ hx)).trans hc⟩
+  have hinj : Injective (δ ∘ u) := by
+    intro m n hmn
+    by_contra hne
+    rcases Nat.lt_or_gt_of_ne hne with hlt | hlt
+    · exact (hu n).1 ⟨u m, mem_image_of_mem u hlt, hmn⟩
+    · exact (hu m).1 ⟨u n, mem_image_of_mem u hlt, hmn.symm⟩
+  have hgrow : ∀ n : ℕ, N (u 0) + n ≤ N (u n) := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have := (hu (n + 1)).2 (u n) (mem_image_of_mem u (Nat.lt_succ_self n))
+      push_cast
+      linarith
+  -- The series with coefficient `1` at every `u n` meets every degree `δ (u n)`.
+  let a : NovikovSeries R H N :=
+    { coeff := (range u).indicator 1
+      finite_lt C := by
+        refine ((Finset.range ⌈C - N (u 0)⌉₊).finite_toSet.image u).subset ?_
+        rintro h ⟨hh, hhC⟩
+        obtain ⟨n, rfl⟩ := mem_of_indicator_ne_zero hh
+        refine ⟨n, Finset.mem_coe.2 (Finset.mem_range.2 (Nat.lt_ceil.2 ?_)), rfl⟩
+        linarith [hgrow n] }
+  refine ⟨a, ?_⟩
+  have hsupp : a.support = range u := by
+    ext h
+    simp [a, mem_support]
+  rw [hsupp, ← range_comp]
+  exact infinite_range_of_injective hinj
+
+/-- Over a nontrivial ring, every Novikov series meets only finitely many degrees of an additive
+degree `δ` exactly when the period vanishes, so that every series is finitely supported, or `δ`
+takes only finitely many values. -/
+theorem forall_finite_image_support_iff_eq_zero_or_finite_range [Nontrivial R] [AddMonoid ι]
+    (δ : H →+ ι) :
+    (∀ a : NovikovSeries R H N, (δ '' a.support).Finite) ↔ N = 0 ∨ (range δ).Finite := by
+  refine ⟨fun h => ?_, fun h a => ?_⟩
+  · by_contra! hc
+    obtain ⟨a, ha⟩ := exists_infinite_image_support (R := R) hc.1 hc.2
+    exact ha (h a)
+  · rcases h with hN | hδ
+    · obtain ⟨x, rfl⟩ := (ofFinsupp_surjective_iff (R := R)).2 hN a
+      rw [support_ofFinsupp]
+      exact x.support.finite_toSet.image _
+    · exact hδ.subset (image_subset_range _ _)
+
+/-- Over a nontrivial ring, the Novikov series are the internal direct sum of their homogeneous
+pieces for an additive degree `δ` exactly when the period vanishes, so that every series is
+finitely supported, or `δ` takes only finitely many values. -/
+theorem isInternal_gradeBy_iff_eq_zero_or_finite_range [Nontrivial R] [AddMonoid ι]
+    [DecidableEq ι] (δ : H →+ ι) :
+    DirectSum.IsInternal (gradeBy R N δ) ↔ N = 0 ∨ (range δ).Finite := by
+  rw [isInternal_gradeBy_iff, forall_finite_image_support_iff_eq_zero_or_finite_range]
+
+end Internal
+
 section Additive
 
-variable [Nontrivial R] [AddGroup H] {N : H →+ ℝ} [AddGroup ι] (δ : H →+ ι)
+variable [Nontrivial R] [AddGroup H] {N : H →+ ℝ} [AddCancelMonoid ι] (δ : H →+ ι)
 
-/-- For an additive degree with values in a torsion-free group, every Novikov series meets only
-finitely many degrees exactly when the period or the degree vanishes. -/
+/-- For an additive degree with values in a torsion-free cancellative monoid, every Novikov series
+meets only finitely many degrees exactly when the period or the degree vanishes. -/
 theorem forall_finite_image_support_iff [IsAddTorsionFree ι] :
     (∀ a : NovikovSeries R H N, (δ '' a.support).Finite) ↔ N = 0 ∨ δ = 0 := by
-  refine ⟨fun h => ?_, fun h a => ?_⟩
-  · by_contra hNδ
-    push Not at hNδ
-    -- Some exponent has nonzero period and nonzero degree: if `δ A ≠ 0` and `N B ≠ 0`, take `A`
-    -- unless `N A = 0`, then `B` unless `δ B = 0`, and otherwise `A + B`.
-    have hC : ∃ C, N C ≠ 0 ∧ δ C ≠ 0 := by
-      obtain ⟨A, hA⟩ := DFunLike.ne_iff.1 hNδ.2
-      obtain ⟨B, hB⟩ := DFunLike.ne_iff.1 hNδ.1
-      rw [AddMonoidHom.zero_apply] at hA hB
-      by_cases hNA : N A = 0
-      · by_cases hδB : δ B = 0
-        · exact ⟨A + B, by simpa [hNA] using hB, by simpa [hδB] using hA⟩
-        · exact ⟨B, hB, hδB⟩
-      · exact ⟨A, hNA, hA⟩
-    -- Replacing it by its negative if necessary, its period is positive. The geometric series
-    -- `∑ₙ e^(n C)` then meets the infinitely many degrees `n δ(C)`.
-    obtain ⟨C, hNC, hδC⟩ : ∃ C, 0 < N C ∧ δ C ≠ 0 := by
-      obtain ⟨C, hNC, hδC⟩ := hC
-      rcases hNC.lt_or_gt with hlt | hlt
-      · exact ⟨-C, by simpa using hlt, by simpa using hδC⟩
-      · exact ⟨C, hlt, hδC⟩
-    refine infinite_range_of_injective (IsAddTorsionFree.nsmul_left_injective hδC) ?_
-    have himage : δ '' (geometric N hNC (1 : R)).support = range fun n : ℕ => n • δ C := by
-      rw [support_geometric hNC one_ne_zero, ← range_comp]
-      exact congrArg range (funext fun n => map_nsmul δ n C)
-    exact himage ▸ h _
-  · rcases h with rfl | rfl
-    · exact (finite_support_of_bddAbove_image ⟨0, by simp [upperBounds]⟩).image _
-    · exact (finite_singleton 0).subset (by simp)
+  rw [forall_finite_image_support_iff_eq_zero_or_finite_range]
+  refine or_congr_right ⟨fun hδ => AddMonoidHom.ext fun C => ?_, fun hδ => ?_⟩
+  · -- A class `C` of nonzero degree has the infinitely many distinct multiples `n δ(C)` as degrees.
+    by_contra hC
+    rw [AddMonoidHom.zero_apply] at hC
+    refine (infinite_range_of_injective (IsAddTorsionFree.nsmul_left_injective hC)).mono ?_ hδ
+    rintro _ ⟨n, rfl⟩
+    exact ⟨n • C, map_nsmul δ n C⟩
+  · subst hδ
+    exact (finite_singleton 0).subset (by simp [subset_def])
 
 /-- **Criterion for an internally graded Novikov ring.** For an additive degree with values in a
-torsion-free group and nontrivial coefficients, the Novikov series form the internal direct sum of
-their homogeneous pieces exactly when the period or the degree vanishes. -/
+torsion-free cancellative monoid and nontrivial coefficients, the Novikov series form the internal
+direct sum of their homogeneous pieces exactly when the period or the degree vanishes. -/
 theorem isInternal_gradeBy_iff_eq_zero_or_eq_zero [IsAddTorsionFree ι] [DecidableEq ι] :
     DirectSum.IsInternal (gradeBy R N δ) ↔ N = 0 ∨ δ = 0 := by
   rw [isInternal_gradeBy_iff, forall_finite_image_support_iff]
@@ -400,6 +465,44 @@ theorem ofAddMonoidAlgebra_mem_gradeBy_iff [CommSemiring R] [AddMonoid H] {N : H
       x ∈ AddMonoidAlgebra.gradeBy R f i := by
   simp only [mem_gradeBy_iff, AddMonoidAlgebra.mem_gradeBy_iff, subset_def, mem_support,
     coeff_ofAddMonoidAlgebra, Finset.mem_coe, Finsupp.mem_support_iff]
+
+section GradeByCoeff
+
+variable {Γ : Type*} [AddGroup Γ] [AddZeroClass H] {N : H →+ ℝ} [Semiring R] {V : Type*}
+  [AddCommMonoid V] [Module R V]
+
+variable (N) in
+/-- The Novikov series of degree `D` with coefficients in a graded module: for a grading `𝒱` of
+`V` and a degree `δ A` of the exponents, those `v` with `v_A ∈ 𝒱 (D - δ A)` for every `A`. For
+`V = R` concentrated in degree `0` these are the series supported on `δ⁻¹ {D}`
+(`TauCeti.NovikovSeries.gradeByCoeff_ite_eq_gradeBy`). -/
+def gradeByCoeff (𝒱 : Γ → Submodule R V) (δ : H → Γ) (D : Γ) :
+    Submodule R (NovikovSeries V H N) where
+  carrier := {v | ∀ A, v.coeff A ∈ 𝒱 (D - δ A)}
+  zero_mem' A := by simp
+  add_mem' hv hw A := by simpa using add_mem (hv A) (hw A)
+  smul_mem' c v hv A := by simpa using Submodule.smul_mem _ c (hv A)
+
+/-- A series has degree `D` exactly when each coefficient `v_A` has degree `D - δ A`. -/
+@[simp]
+theorem mem_gradeByCoeff {𝒱 : Γ → Submodule R V} {δ : H → Γ} {D : Γ}
+    {v : NovikovSeries V H N} : v ∈ gradeByCoeff N 𝒱 δ D ↔ ∀ A, v.coeff A ∈ 𝒱 (D - δ A) :=
+  Iff.rfl
+
+/-- For `R` itself concentrated in degree `0`, the series of degree `D` are those supported on
+the exponents of degree `D`, the pieces `TauCeti.NovikovSeries.gradeBy` of the Novikov ring. -/
+theorem gradeByCoeff_ite_eq_gradeBy [DecidableEq Γ] (δ : H → Γ) (D : Γ) :
+    gradeByCoeff N (fun k => if k = 0 then ⊤ else ⊥ : Γ → Submodule R R) δ D =
+      gradeBy R N δ D := by
+  ext v
+  simp only [mem_gradeByCoeff, mem_gradeBy_iff, Set.subset_def, mem_support, Set.mem_preimage,
+    Set.mem_singleton_iff, sub_eq_zero]
+  refine forall_congr' fun A => ?_
+  by_cases hA : D = δ A
+  · simp [hA]
+  · simp [hA, Ne.symm hA]
+
+end GradeByCoeff
 
 end NovikovSeries
 

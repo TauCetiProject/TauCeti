@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Order.SupClosed
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
 import Mathlib.LinearAlgebra.DirectSum.Finsupp
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 
 /-!
 # Finite subcomodules
@@ -42,6 +43,9 @@ No flatness or noetherian hypothesis is needed.
   the finite subcomodules have supremum `⊤`.
 * `TauCeti.Subcomodule.exists_finite_le_of_mem`: every element of a subcomodule belongs to a
   finite subcomodule contained in it.
+* `TauCeti.Subcomodule.exists_finite_subcomodule_subset_range`: for a projective coefficient
+  coalgebra, finitely many elements of a scalar extension `A ⊗[R] M` lie in the scalar extension
+  of one finite subcomodule.
 * `TauCeti.Subcomodule.finite_of_isAtom`: for a projective coefficient coalgebra, simple
   subcomodules are finite.
 * `TauCeti.Subcomodule.instIsAtomic`: over a field every nonzero subcomodule contains a simple
@@ -64,7 +68,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u v w
+universe u v w x
 
 namespace Subcomodule
 
@@ -292,6 +296,22 @@ theorem finite_of_isAtom [Module.Projective R C] {S : Subcomodule R C M} (hS : I
   obtain ⟨F, hFS, hF, hvF⟩ := exists_finite_le_of_mem hvS
   rw [← (hS.le_iff.mp hFS).resolve_left (ne_bot_iff.mpr ⟨v, hvF, hv0⟩)]
   exact hF
+
+/-- Over a projective coalgebra, finitely many elements of a scalar extension `A ⊗[R] M` lie in
+the scalar extension of one finite subcomodule. -/
+theorem exists_finite_subcomodule_subset_range [Module.Projective R C]
+    {A : Type x} [CommSemiring A] [Algebra R A] (s : Set (A ⊗[R] M)) (hs : s.Finite) :
+    ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧
+      s ⊆ LinearMap.range ((Subcomodule.subtype N).toLinearMap.baseChange A) := by
+  obtain ⟨P, hP, hsP⟩ := TensorProduct.exists_finite_submodule_right_of_setFinite s hs
+  obtain ⟨N, hN, hPN⟩ := exists_finite_subcomodule_of_fg (R := R) (C := C) P
+    (Module.Finite.iff_fg.mp hP)
+  refine ⟨N, hN, hsP.trans ?_⟩
+  rintro _ ⟨z, rfl⟩
+  obtain ⟨w, hw⟩ := Submodule.baseChange_mono (A := A) hPN
+    ⟨z, congrFun (LinearMap.baseChange_eq_lTensor (A := A) P.subtype) z⟩
+  rw [Subcomodule.subtype_toLinearMap]
+  exact ⟨w, hw⟩
 
 end General
 

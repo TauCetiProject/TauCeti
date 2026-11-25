@@ -148,7 +148,7 @@ theorem notMem_fundPoints_conjOverCommute {α : Type u} {a b : α} (hab : a ≠ 
     rw [conjOverCommute_def, mem_V_cons]
     exact ⟨hp, eval_mem_V_of_mk_mem_V hp hs⟩
   obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.1
-    (FreeGroup.mem_zpowers_of_of_commute (mem_V_conjOverCommute.1 h).2)
+    (FreeGroup.commute_of_iff.mp (mem_V_conjOverCommute.1 h).2.symm)
   rw [Sum.elim_inl] at hj
   -- The signed number `β` of occurrences of `b` takes the same value at `(a, 1)` and `(1, a)`.
   let β : FreeGroup α →* Multiplicative ℤ := FreeGroup.lift fun c ↦ if c = b then .ofAdd 1 else 1

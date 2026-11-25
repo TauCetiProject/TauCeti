@@ -172,7 +172,7 @@ private noncomputable def restrictLinearEquivPi {k : Type u} {G : Type v} [Field
   let M := _root_.Representation.asModule (ρ.comp N.subtype)
   have : IsSemisimpleModule k[N] M :=
     (_root_.Representation.isSemisimpleRepresentation_iff_isSemisimpleModule_asModule _).mp
-      (Representation.isSemisimpleRepresentation_comp_subtype ρ)
+      (Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible ρ)
   have : IsNoetherian k[N] M := isNoetherian_of_tower k inferInstance
   let _ : Fintype (isotypicComponents k[N] M) := Fintype.ofFinite _
   -- `M` is the internal direct sum of its finitely many isotypic components, which

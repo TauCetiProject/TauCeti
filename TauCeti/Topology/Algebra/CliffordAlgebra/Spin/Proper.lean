@@ -53,6 +53,8 @@ form an unbounded family. This direction holds over any nontrivially normed fiel
   exactly when the form is anisotropic.
 * `CliffordAlgebra.isCompact_spinGroup_iff_posDef_or_negDef`: over `ℝ`, the Spin group of a
   nondegenerate form is compact exactly when the form is positive or negative definite.
+* `CliffordAlgebra.compactSpace_spinGroup_of_posDef_or_negDef`: over `ℝ`, the Spin group of a
+  positive- or negative-definite form is a compact space.
 
 ## References
 
@@ -201,5 +203,14 @@ theorem isCompact_spinGroup_iff_posDef_or_negDef {W : Type*} [AddCommGroup W] [M
   let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
   exact (isCompact_spinGroup_iff Q hQ).trans
     (_root_.QuadraticForm.anisotropic_iff_posDef_or_negDef Q)
+
+/-- The Spin group of a positive- or negative-definite form on a finite-dimensional real vector
+space is a compact space. -/
+theorem compactSpace_spinGroup_of_posDef_or_negDef {W : Type*} [AddCommGroup W] [Module ℝ W]
+    [FiniteDimensional ℝ W] (Q : QuadraticForm ℝ W) (hdef : Q.PosDef ∨ (-Q).PosDef) :
+    CompactSpace (spinGroup Q) := by
+  have hQn : Q.Nondegenerate :=
+    ((_root_.QuadraticForm.anisotropic_iff_posDef_or_negDef Q).mpr hdef).nondegenerate
+  exact isCompact_iff_compactSpace.mp ((isCompact_spinGroup_iff_posDef_or_negDef Q hQn).mpr hdef)
 
 end CliffordAlgebra

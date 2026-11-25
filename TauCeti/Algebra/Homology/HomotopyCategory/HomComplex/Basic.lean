@@ -21,6 +21,9 @@ and records how the components of a cochain absorb the identifications `K.X p �
 `HomologicalComplex.XIsoOfEq` on the source side, complementing Mathlib's
 `CochainComplex.HomComplex.Cochain.v_comp_XIsoOfEq_hom` on the target side.
 
+The indexing type `CochainComplex.HomComplex.Triplet n` is countable, since its second
+coordinate is determined by its first.
+
 These are general facts about Mathlib's Hom complex, independent of any particular use.
 
 ## Main results
@@ -46,6 +49,14 @@ public section
 open CategoryTheory CochainComplex CochainComplex.HomComplex
 
 universe v u
+
+/-- The pairs `(p, q)` with `p + n = q` form a countable type: `q` is determined by `p`. -/
+instance CochainComplex.HomComplex.Triplet.instCountable (n : ℤ) : Countable (Triplet n) :=
+  Function.Injective.countable (f := Triplet.p) fun T T' h ↦ by
+    obtain ⟨p, q, rfl⟩ := T
+    obtain ⟨p', q', rfl⟩ := T'
+    obtain rfl : p = p' := h
+    rfl
 
 namespace TauCeti
 

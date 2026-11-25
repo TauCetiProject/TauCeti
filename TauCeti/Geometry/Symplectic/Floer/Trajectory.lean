@@ -47,7 +47,9 @@ pants, this lower bound on the energy of each nonstationary cylinder bounds the 
 cylinders that can break off at an end by the total energy divided by `δ`. For a nonstationary
 trajectory with a Lipschitz bound, the energy is finite without being assumed, since the actions of
 its loops are bounded, and its ends have actions `a₀ < a₁`
-(`TauCeti.SymplecticForm.exists_lt_tendsto_hamiltonianAction_of_floer`).
+(`TauCeti.SymplecticForm.exists_lt_tendsto_hamiltonianAction_of_floer`). Every value strictly
+between the limiting actions at the two ends is the action of one of the loops
+(`TauCeti.SymplecticForm.exists_hamiltonianAction_slice_eq_of_tendsto`).
 
 ## Main results
 
@@ -60,6 +62,8 @@ its loops are bounded, and its ends have actions `a₀ < a₁`
 * `TauCeti.SymplecticForm.exists_lt_tendsto_hamiltonianAction_of_floer`: the ends of a
   nonstationary Lipschitz Floer trajectory in such a set have actions `a₀ < a₁`, without an
   energy bound.
+* `TauCeti.SymplecticForm.exists_hamiltonianAction_slice_eq_of_tendsto`: every value between the
+  limiting actions at the two ends is the action of a loop.
 
 ## References
 
@@ -249,5 +253,18 @@ theorem exists_lt_tendsto_hamiltonianAction_of_floer (hH : ContDiff ℝ 1 (uncur
   rw [ENNReal.ofReal_le_ofReal_iff'] at hle
   refine ⟨_, mem_image_of_mem _ hx₀, _, mem_image_of_mem _ hx₁, ?_, hbot, htop⟩
   rcases hle with hle | hle <;> linarith
+
+/-- **Every action between the two ends is attained.** For a continuous Hamiltonian `H` and a `C¹`
+map `u` whose loop actions `A_H(u(s, ·))` tend to `a₀` as `s → -∞` and to `a₁` as `s → ∞`, every
+value `b ∈ (a₀, a₁)` is the action `A_H(u(σ, ·))` of some loop. -/
+theorem exists_hamiltonianAction_slice_eq_of_tendsto (hH : Continuous (uncurry H))
+    (hu : ContDiff ℝ 1 u) {a₀ a₁ b : ℝ}
+    (hbot : Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atBot (𝓝 a₀))
+    (htop : Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atTop (𝓝 a₁))
+    (hb : b ∈ Ioo a₀ a₁) :
+    ∃ σ, ω.hamiltonianAction H (fun t ↦ u (σ, t)) = b :=
+  mem_range_of_exists_le_of_exists_ge (ω.continuous_hamiltonianAction_slice hH hu)
+    ((hbot.eventually (gt_mem_nhds hb.1)).exists.imp fun _ h ↦ h.le)
+    ((htop.eventually (lt_mem_nhds hb.2)).exists.imp fun _ h ↦ h.le)
 
 end TauCeti.SymplecticForm

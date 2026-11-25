@@ -9,7 +9,11 @@ public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Linear
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Pi
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.Deriv.Star
 import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Matrix.Normed
@@ -17,9 +21,10 @@ import TauCeti.Analysis.Matrix.Normed
 /-!
 # Differentiation of matrix curves
 
-The trace commutes with differentiation, and the inverse has derivative `-A⁻¹ * A' * A⁻¹`
-at an invertible matrix. These rules apply to finite matrix curves over a nontrivially normed
-field. Matrices carry the operator norm, and no completeness assumption is needed.
+The transpose and the trace commute with differentiation (`HasDerivAt.matrix_transpose`,
+`HasDerivAt.matrix_trace`), and the inverse has derivative `-A⁻¹ * A' * A⁻¹` at an invertible
+matrix (`HasDerivAt.matrix_inv`). These rules apply to finite matrix curves over a nontrivially
+normed field. Matrices carry the operator norm, and no completeness assumption is needed.
 
 Along a curve whose entries are differentiable, the determinant satisfies Jacobi's formula
 `(det A)' = trace (adjugate A * A')` (`Matrix.hasDerivWithinAt_det_of_entries_adjugate`), which
@@ -28,6 +33,13 @@ becomes `(det A)' = det A * trace (A⁻¹ * A')` wherever `A` is invertible
 derivatives of scalar functions, so no norm on matrices appears in the statements. The curve
 parameter may range over a subfield `𝕜` of the entry field `𝕜'`, as for a real curve of complex
 matrices.
+
+Vector curves obey the product rules `(x ⬝ᵥ y)' = x' ⬝ᵥ y + x ⬝ᵥ y'` (`HasDerivAt.dotProduct`)
+and `(A *ᵥ y)' = A' *ᵥ y + A *ᵥ y'` (`Matrix.hasDerivAt_mulVec_of_entries`), with the matrix
+again differentiated entrywise. Their entries may lie in any normed algebra over the parameter
+field, not necessarily commutative. Combining them differentiates the real quadratic form
+`Re ⟪w, C w⟫` along real curves over `RCLike 𝕜`
+(`Matrix.hasDerivAt_re_star_dotProduct_mulVec_of_entries`).
 -/
 
 public section
@@ -47,6 +59,17 @@ theorem HasDerivAt.matrix_trace {𝕜 ι : Type*} [NontriviallyNormedField 𝕜]
   exact (h.congr_deriv (htr f')).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun s ↦ (htr (f s)).symm)
 
+open scoped Matrix in
+/-- The derivative of the transpose of a matrix curve is the transpose of its derivative. -/
+theorem HasDerivAt.matrix_transpose {𝕜 m n : Type*} [NontriviallyNormedField 𝕜] [Finite m]
+    [Finite n] {f : 𝕜 → Matrix m n 𝕜} {f' : Matrix m n 𝕜} {t : 𝕜} (hf : HasDerivAt f f' t) :
+    HasDerivAt (fun s ↦ (f s)ᵀ) f'ᵀ t := by
+  have := Fintype.ofFinite m
+  have := Fintype.ofFinite n
+  let T : Matrix m n 𝕜 →L[𝕜] Matrix n m 𝕜 :=
+    ⟨(Matrix.transposeLinearEquiv m n 𝕜 𝕜).toLinearMap, continuous_id.matrix_transpose⟩
+  exact T.hasFDerivAt.comp_hasDerivAt t hf
+
 /-- The derivative of the inverse of a matrix curve at an invertible matrix is
 `-(A⁻¹ * A' * A⁻¹)`. No scalar completeness assumption is needed. -/
 theorem HasDerivAt.matrix_inv {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
@@ -56,7 +79,39 @@ theorem HasDerivAt.matrix_inv {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [
   simpa only [Function.comp_def, neg_apply, ContinuousLinearMap.mulLeftRight_apply] using!
     (Matrix.hasFDerivAt_inv hdet).comp_hasDerivAt a hA
 
+/-- **Product rule for the dot product** of two vector curves. -/
+theorem HasDerivAt.dotProduct {𝕜 𝔸 ι : Type*} [NontriviallyNormedField 𝕜] [NormedRing 𝔸]
+    [NormedAlgebra 𝕜 𝔸] [Fintype ι] {x y : 𝕜 → ι → 𝔸} {x' y' : ι → 𝔸} {t : 𝕜}
+    (hx : HasDerivAt x x' t) (hy : HasDerivAt y y' t) :
+    HasDerivAt (fun τ ↦ x τ ⬝ᵥ y τ) (x' ⬝ᵥ y t + x t ⬝ᵥ y') t := by
+  unfold _root_.dotProduct
+  rw [← Finset.sum_add_distrib]
+  exact HasDerivAt.fun_sum fun i _ ↦ (hasDerivAt_pi.1 hx i).mul (hasDerivAt_pi.1 hy i)
+
 namespace Matrix
+
+/-- **Product rule for `mulVec`.** If every entry of a matrix curve `A` has derivative given by
+the corresponding entry of `A'` at `t`, and the vector curve `y` has derivative `y'` there, then
+`A *ᵥ y` has derivative `A' *ᵥ y t + A t *ᵥ y'` at `t`. -/
+theorem hasDerivAt_mulVec_of_entries {𝕜 𝔸 ι κ : Type*} [NontriviallyNormedField 𝕜]
+    [NormedRing 𝔸] [NormedAlgebra 𝕜 𝔸] [Fintype ι] {A : 𝕜 → Matrix κ ι 𝔸}
+    {A' : Matrix κ ι 𝔸} {y : 𝕜 → ι → 𝔸} {y' : ι → 𝔸} {t : 𝕜}
+    (hA : ∀ i j, HasDerivAt (fun τ ↦ A τ i j) (A' i j) t) (hy : HasDerivAt y y' t) :
+    HasDerivAt (fun τ ↦ A τ *ᵥ y τ) (A' *ᵥ y t + A t *ᵥ y') t :=
+  hasDerivAt_pi.2 fun i ↦ by
+    simpa only [mulVec, Pi.add_apply] using (hasDerivAt_pi.2 fun j ↦ hA i j).dotProduct hy
+
+/-- The derivative of the real quadratic form `t ↦ Re ⟪w t, C t w t⟫` along a real curve `w` of
+vectors and an entrywise differentiable real curve `C` of matrices over `RCLike 𝕜`. -/
+theorem hasDerivAt_re_star_dotProduct_mulVec_of_entries {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι]
+    {w : ℝ → ι → 𝕜} {w' : ι → 𝕜} {C : ℝ → Matrix ι ι 𝕜} {C' : Matrix ι ι 𝕜} {t : ℝ}
+    (hw : HasDerivAt w w' t) (hC : ∀ a b, HasDerivAt (fun s ↦ C s a b) (C' a b) t) :
+    HasDerivAt (fun s ↦ RCLike.re (star (w s) ⬝ᵥ (C s *ᵥ w s)))
+      (RCLike.re (star w' ⬝ᵥ (C t *ᵥ w t)) + RCLike.re (star (w t) ⬝ᵥ (C' *ᵥ w t)) +
+        RCLike.re (star (w t) ⬝ᵥ (C t *ᵥ w'))) t := by
+  have h := RCLike.reCLM.hasFDerivAt.comp_hasDerivAt t
+    (hw.star.dotProduct (hasDerivAt_mulVec_of_entries hC hw))
+  simpa only [Function.comp_def, RCLike.reCLM_apply, dotProduct_add, map_add, add_assoc] using h
 
 variable {𝕜 𝕜' ι : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
   [NormedAlgebra 𝕜 𝕜'] [Fintype ι] [DecidableEq ι]

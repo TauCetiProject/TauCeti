@@ -6,281 +6,341 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Chow.ClosedImmersion
-public import TauCeti.AlgebraicGeometry.Scheme.Coproduct
+public import TauCeti.AlgebraicGeometry.Limits.Coproduct
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 import TauCeti.Topology.LocallyFinite.Sigma
 import TauCeti.Topology.LocallyFinsupp.Comap
 
 /-!
-# Chow groups of disjoint unions
+# Cycles and Chow groups of a coproduct of schemes
 
-For any small family of locally Noetherian schemes, restriction to the summands identifies
-cycles, rational equivalence and Chow groups of the coproduct with their componentwise versions.
-An integral closed subscheme lies in a single summand, and families of principal divisors on the
-summands assemble to a locally finite family on the coproduct. This uses the locally finite
-formulation of rational equivalence in Stacks Project, Remark 42.19.6.
-For a finite index type the product of Chow groups is also a direct sum, via
-`DirectSum.addEquivProd`.
+Let `X : I → Scheme` be a family of schemes indexed by a type in the universe of the schemes. Each
+summand `X i` is open and closed in `∐ X`, so the closure of a point of `X i` is the same in `X i`
+and in `∐ X`. Hence a `k`-cycle on `∐ X` is the same thing as a family of `k`-cycles on the `X i`,
+possibly with infinitely many nonzero members:
+
+* `Chow.cyclesSigmaEquiv X k : Z_k(∐ X) ≃+ ∏ i, Z_k(X i)` restricts a cycle to every summand
+  (`Chow.cyclesSigmaEquiv_apply`); its inverse places the cycle `γ i` on the summand `X i`
+  (`Chow.cyclesSigmaEquiv_symm_apply`).
+
+An integral closed subscheme of `∐ X` is irreducible, so it lies in a single summand. Therefore a
+locally finite family of integral closed subschemes with rational functions on `∐ X` splits into
+such families on the summands, and conversely such families on the summands glue to one on `∐ X`.
+For locally Noetherian `X i` this gives:
+
+* `Chow.mem_ratEquiv_sigma_iff`: a `k`-cycle on `∐ X` is rationally equivalent to zero exactly
+  when its restriction to every `X i` is;
+* `Chow.ChowGroup.sigmaEquiv X k : CH_k(∐ X) ≃+ ∏ i, CH_k(X i)`, the Chow group of a coproduct is
+  the product of the Chow groups of the summands, sending the class of a cycle to the classes of
+  its restrictions (`Chow.ChowGroup.sigmaEquiv_cycleClass`).
+
+Under either equivalence, pushforward along `Sigma.ι X i` inserts a cycle or Chow class in its
+`i`-th coordinate (`Chow.cyclesSigmaEquiv_cyclesPushforward_sigmaι`,
+`Chow.ChowGroup.sigmaEquiv_pushforward_sigmaι`).
+
+The product is a genuine product, not a direct sum: for infinitely many summands a cycle on `∐ X`
+can be nonzero on every one of them, as locally finite cycles need not have finite support. For a
+finite index type it also identifies with the direct sum via `DirectSum.addEquivProd`.
+
+## References
+
+* [Stacks Project, Definition 42.19.1](https://stacks.math.columbia.edu/tag/02RW), where rational
+  equivalence is defined through locally finite families of integral closed subschemes.
+* W. Fulton, *Intersection Theory*, §1.3.
 -/
 
 public section
 
-open AlgebraicGeometry CategoryTheory Limits Order Set Topology TopologicalSpace
+open AlgebraicGeometry Order CategoryTheory Limits Topology
 
 universe u
 
 namespace TauCeti.AlgebraicGeometry.Chow
 
-variable {ι : Type u} (X : ι → Scheme.{u}) (k : ℤ)
+variable {I : Type u} (X : I → Scheme.{u}) (k : ℤ)
 
-private theorem locallyFinite_support_cyclesPushforward (β : ∀ i, cyclesOfDimension (X i) k) :
-    LocallyFinite fun i ↦
-      (cyclesPushforward (Sigma.ι X i) (β i) : AlgebraicCycle (∐ X) ℤ).support := by
-  intro z
-  obtain ⟨⟨i, x⟩, rfl⟩ := (sigmaMk X).surjective z
-  rw [sigmaMk_mk]
-  refine ⟨range (Sigma.ι X i),
-    (Sigma.ι X i).isOpenEmbedding.isOpen_range.mem_nhds (mem_range_self x),
-    (finite_singleton i).subset ?_⟩
-  rintro j ⟨_, hy, y, rfl⟩
-  obtain ⟨w, hw⟩ := (mem_range_cyclesPushforward_iff (i := Sigma.ι X j)).mp ⟨β j, rfl⟩ hy
-  exact congrArg Sigma.fst ((sigmaι_eq_iff X j i w y).1 hw)
+section Cycles
 
-private noncomputable def assembleCycles (β : ∀ i, cyclesOfDimension (X i) k) :
-    cyclesOfDimension (∐ X) k :=
-  ⟨Function.locallyFinsupp.locallyFiniteSum
-    (fun i ↦ (cyclesPushforward (Sigma.ι X i) (β i) : AlgebraicCycle (∐ X) ℤ))
-    (locallyFinite_support_cyclesPushforward X k β), mem_cyclesOfDimension_iff.mpr (by
-    intro z hz
-    rw [Function.mem_support, Function.locallyFinsupp.locallyFiniteSum_apply,
-      ← finsum_mem_univ] at hz
-    obtain ⟨i, _, hi⟩ := exists_ne_zero_of_finsum_mem_ne_zero hz
-    exact mem_cyclesOfDimension_iff.mp (cyclesPushforward (Sigma.ι X i) (β i)).property hi)⟩
+/-- The restrictions of a `k`-cycle on `∐ X` to the summands, an additive map. The coprojections
+are closed immersions, so they preserve the dimension of points. -/
+private noncomputable def cyclesSigmaRestrict :
+    cyclesOfDimension (∐ X) k →+ ((i : I) → cyclesOfDimension (X i) k) :=
+  AddMonoidHom.mk'
+    (fun α i ↦ ⟨Function.locallyFinsupp.comap (Sigma.ι X i) (Sigma.ι X i).continuous
+        (Sigma.ι X i).isClosedEmbedding.injective (α : AlgebraicCycle (∐ X) ℤ), by
+      rw [mem_cyclesOfDimension_iff, Function.locallyFinsupp.support_comap]
+      intro y hy
+      simpa only [mem_pointsOfDimension, Scheme.Hom.height_apply_eq_height] using
+        mem_cyclesOfDimension_iff.mp α.property hy⟩)
+    fun _ _ ↦ funext fun _ ↦ Subtype.ext (Function.locallyFinsupp.comap_add _ _ _ _ _)
 
-private theorem assembleCycles_apply (β : ∀ i, cyclesOfDimension (X i) k) (i : ι) (x : X i) :
-    (assembleCycles X k β : AlgebraicCycle (∐ X) ℤ) (Sigma.ι X i x) =
-      (β i : AlgebraicCycle (X i) ℤ) x := by
-  simp only [assembleCycles, Function.locallyFinsupp.locallyFiniteSum_apply]
-  refine (finsum_eq_single _ i fun j hj ↦ ?_).trans (cyclesPushforward_apply (β i) x)
-  exact cyclesPushforward_apply_of_notMem_range _ fun ⟨y, hy⟩ ↦ hj <|
-    congrArg Sigma.fst ((sigmaι_eq_iff X j i y x).1 hy)
+private lemma cyclesSigmaRestrict_apply (α : cyclesOfDimension (∐ X) k) (i : I) (x : X i) :
+    (cyclesSigmaRestrict X k α i : AlgebraicCycle (X i) ℤ) x =
+      (α : AlgebraicCycle (∐ X) ℤ) (Sigma.ι X i x) :=
+  Function.locallyFinsupp.comap_apply _ _ _ _ _
 
-/-- Restrict a cycle on a coproduct to its summands, preserving absolute dimension because the
-inclusions are closed immersions. -/
-noncomputable def cyclesCoproductEquiv : cyclesOfDimension (∐ X) k ≃+
-    (∀ i, cyclesOfDimension (X i) k) := by
-  let r (i : ι) (α : cyclesOfDimension (∐ X) k) : AlgebraicCycle (X i) ℤ :=
-    Function.locallyFinsupp.comap (Sigma.ι X i) (Sigma.ι X i).continuous
-      (Sigma.ι X i).isClosedEmbedding.injective (α : AlgebraicCycle (∐ X) ℤ)
-  have hr (i : ι) (α : cyclesOfDimension (∐ X) k) (x : X i) :
-      r i α x = (α : AlgebraicCycle (∐ X) ℤ) (Sigma.ι X i x) :=
-    Function.locallyFinsupp.comap_apply _ _ _ (α : AlgebraicCycle (∐ X) ℤ) x
-  refine
-    { toFun := fun α i ↦ ⟨r i α, mem_cyclesOfDimension_iff.mpr fun x hx ↦ by
-        rw [mem_pointsOfDimension, ← Scheme.Hom.height_apply_eq_height (Sigma.ι X i)]
-        apply mem_pointsOfDimension.mp
-        exact mem_cyclesOfDimension_iff.mp α.property
-          (by simpa only [r, Function.locallyFinsupp.support_comap, mem_preimage] using hx)⟩
-      invFun := assembleCycles X k
-      left_inv := ?_
-      right_inv := ?_
-      map_add' := fun α β ↦ funext fun i ↦ Subtype.ext <|
-        Function.locallyFinsupp.comap_add _ _ _ (α : AlgebraicCycle (∐ X) ℤ) β }
-  · intro α
-    apply Subtype.ext
-    ext z
-    obtain ⟨⟨i, x⟩, rfl⟩ := (sigmaMk X).surjective z
-    rw [sigmaMk_mk, assembleCycles_apply, hr]
-  · intro β
-    funext i
-    apply Subtype.ext
-    ext x
-    rw [hr, assembleCycles_apply]
+private lemma cyclesSigmaRestrict_injective : Function.Injective (cyclesSigmaRestrict X k) := by
+  intro α β h
+  refine Subtype.ext (Function.locallyFinsuppWithin.ext fun x ↦ ?_)
+  obtain ⟨i, y, rfl⟩ := sigmaι_jointly_surjective X x
+  rw [← cyclesSigmaRestrict_apply, ← cyclesSigmaRestrict_apply, h]
 
-/-- The coefficient of the restricted cycle at `x` is its coefficient at the image of `x`. -/
+private lemma cyclesSigmaRestrict_surjective : Function.Surjective (cyclesSigmaRestrict X k) := by
+  intro γ
+  -- The sum of the pushforwards of the `γ i` along the coprojections, a locally finite sum since
+  -- the summands form a locally finite family.
+  have hc : LocallyFinite fun i ↦
+      (cyclesPushforward (Sigma.ι X i) (γ i) : AlgebraicCycle (∐ X) ℤ).support :=
+    (locallyFinite_range_sigmaι X).subset fun i ↦ by
+      rw [coe_cyclesPushforward]
+      exact AlgebraicCycle.support_map_subset_range _ _ _ _
+  let α := Function.locallyFinsupp.locallyFiniteSum _ hc
+  -- At a point of the summand `X i`, only the `i`-th pushforward contributes.
+  have hα (i : I) (x : X i) : α (Sigma.ι X i x) = (γ i : AlgebraicCycle (X i) ℤ) x := by
+    rw [Function.locallyFinsupp.locallyFiniteSum_apply,
+      finsum_eq_single _ i fun j hj ↦ cyclesPushforward_apply_of_notMem_range _
+        fun hx ↦ hj ((sigmaι_apply_mem_range_sigmaι_iff x).mp hx).symm]
+    exact cyclesPushforward_apply _ x
+  have hmem : α ∈ cyclesOfDimension (∐ X) k := by
+    rw [mem_cyclesOfDimension_iff]
+    intro x hx
+    obtain ⟨i, y, rfl⟩ := sigmaι_jointly_surjective X x
+    rw [Function.mem_support, hα] at hx
+    simpa only [mem_pointsOfDimension, Scheme.Hom.height_apply_eq_height] using
+      mem_cyclesOfDimension_iff.mp (γ i).property hx
+  exact ⟨⟨α, hmem⟩, funext fun i ↦ Subtype.ext (Function.locallyFinsuppWithin.ext fun x ↦
+    (cyclesSigmaRestrict_apply X k _ i x).trans (hα i x))⟩
+
+/-- The `k`-cycles on a coproduct of schemes are the families of `k`-cycles on the summands: a
+cycle on `∐ X` corresponds to its restrictions to the summands `X i`. -/
+noncomputable def cyclesSigmaEquiv :
+    cyclesOfDimension (∐ X) k ≃+ ((i : I) → cyclesOfDimension (X i) k) :=
+  AddEquiv.ofBijective (cyclesSigmaRestrict X k)
+    ⟨cyclesSigmaRestrict_injective X k, cyclesSigmaRestrict_surjective X k⟩
+
+variable {X k}
+
+/-- The restriction of a cycle on `∐ X` to `X i` has, at a point of `X i`, the coefficient of the
+cycle at the image of the point. -/
 @[simp]
-theorem cyclesCoproductEquiv_apply (α : cyclesOfDimension (∐ X) k) (i : ι) (x : X i) :
-    (cyclesCoproductEquiv X k α i : AlgebraicCycle (X i) ℤ) x =
-      (α : AlgebraicCycle (∐ X) ℤ) (Sigma.ι X i x) := by
-  unfold cyclesCoproductEquiv
-  exact Function.locallyFinsupp.comap_apply _ _ _ (α : AlgebraicCycle (∐ X) ℤ) x
+lemma cyclesSigmaEquiv_apply (α : cyclesOfDimension (∐ X) k) (i : I) (x : X i) :
+    (cyclesSigmaEquiv X k α i : AlgebraicCycle (X i) ℤ) x =
+      (α : AlgebraicCycle (∐ X) ℤ) (Sigma.ι X i x) :=
+  cyclesSigmaRestrict_apply X k α i x
 
-/-- Assembling the summand cycles recovers each of their coefficients along its inclusion. -/
+/-- The cycle on `∐ X` with restrictions `γ` has, at the image of a point of `X i`, the
+coefficient of `γ i` at that point. -/
 @[simp]
-theorem cyclesCoproductEquiv_symm_apply (β : ∀ i, cyclesOfDimension (X i) k) (i : ι) (x : X i) :
-    ((cyclesCoproductEquiv X k).symm β : AlgebraicCycle (∐ X) ℤ) (Sigma.ι X i x) =
-      (β i : AlgebraicCycle (X i) ℤ) x := by
-  rw [← cyclesCoproductEquiv_apply, AddEquiv.apply_symm_apply]
+lemma cyclesSigmaEquiv_symm_apply (γ : (i : I) → cyclesOfDimension (X i) k) (i : I) (x : X i) :
+    ((cyclesSigmaEquiv X k).symm γ : AlgebraicCycle (∐ X) ℤ) (Sigma.ι X i x) =
+      (γ i : AlgebraicCycle (X i) ℤ) x := by
+  rw [← cyclesSigmaEquiv_apply, AddEquiv.apply_symm_apply]
+
+/-- Under the coproduct equivalence for cycles, pushforward along a coprojection inserts a cycle
+in the corresponding coordinate. -/
+@[simp]
+lemma cyclesSigmaEquiv_cyclesPushforward_sigmaι [DecidableEq I] (i : I)
+    (α : cyclesOfDimension (X i) k) :
+    cyclesSigmaEquiv X k (cyclesPushforward (Sigma.ι X i) α) = Pi.single i α := by
+  funext j
+  rcases eq_or_ne j i with rfl | h
+  · rw [Pi.single_eq_same]
+    exact Subtype.ext (Function.locallyFinsuppWithin.ext fun x ↦ by
+      rw [cyclesSigmaEquiv_apply, cyclesPushforward_apply])
+  · rw [Pi.single_eq_of_ne h]
+    exact Subtype.ext (Function.locallyFinsuppWithin.ext fun x ↦ by
+      rw [cyclesSigmaEquiv_apply]
+      exact cyclesPushforward_apply_of_notMem_range α
+        (fun hx ↦ h ((sigmaι_apply_mem_range_sigmaι_iff x).mp hx)))
+
+end Cycles
+
+section RatEquiv
 
 namespace RatEquivFamily
 
 variable {X k}
 
-/-- An integral support meets an open-and-closed summand exactly when its generic point lies
-there; then the entire support lies in the summand. -/
-private theorem range_subset_of_genericPoint_mem (F : RatEquivFamily (∐ X) k) (j : F.ι) (i : ι)
-    (hj : F.i j (genericPoint (F.W j)) ∈ range (Sigma.ι X i)) :
-    range (F.i j) ⊆ range (Sigma.ι X i) := by
-  rintro _ ⟨x, rfl⟩
-  exact ((genericPoint_specializes x).map (F.i j).continuous).mem_closed
-    (Sigma.ι X i).isClosedEmbedding.isClosed_range hj
-
-/-- Retain precisely the integral supports in summand `i`, leaving their rational functions
-unchanged. -/
-private noncomputable abbrev summand (F : RatEquivFamily (∐ X) k) (i : ι) :
+/-- The members of a family on `∐ X` lying in the summand `X i`, as a family on `X i`. -/
+private noncomputable def restrictSigma (F : RatEquivFamily (∐ X) k) (i : I) :
     RatEquivFamily (X i) k where
-  ι := {j : F.ι // F.i j (genericPoint (F.W j)) ∈ range (Sigma.ι X i)}
-  W j := F.W j
-  i j := IsOpenImmersion.lift (Sigma.ι X i) (F.i j)
-    (F.range_subset_of_genericPoint_mem j i j.property)
+  ι := {j : F.ι // Set.range (F.i j) ⊆ Set.range (Sigma.ι X i)}
+  W j := F.W j.val
+  i j := IsOpenImmersion.lift (Sigma.ι X i) (F.i j.val) j.property
   isClosedImmersion j := by
-    have h := F.range_subset_of_genericPoint_mem j i j.property
-    have : IsClosedImmersion (IsOpenImmersion.lift (Sigma.ι X i) (F.i j) h ≫ Sigma.ι X i) :=
-      (IsOpenImmersion.lift_fac _ _ h).symm ▸ F.isClosedImmersion j
-    exact IsClosedImmersion.of_comp_isClosedImmersion _ (Sigma.ι X i)
-  isIntegral j := F.isIntegral j
-  genericPoint_mem j := F.genericPoint_mem j
-  r j := F.r j
+    have : IsClosedImmersion
+        (IsOpenImmersion.lift (Sigma.ι X i) (F.i j.val) j.property ≫ Sigma.ι X i) := by
+      rw [IsOpenImmersion.lift_fac]
+      infer_instance
+    exact .of_comp_isClosedImmersion _ (Sigma.ι X i)
+  genericPoint_mem j := F.genericPoint_mem j.val
+  r j := F.r j.val
   locallyFinite := by
-    refine ((F.locallyFinite.comp_injective Subtype.coe_injective).preimage_continuous
-      (Sigma.ι X i).continuous).subset fun j _ ⟨x, hx⟩ ↦ ?_
-    refine ⟨x, ?_⟩
-    rw [← hx, ← Scheme.Hom.comp_apply, IsOpenImmersion.lift_fac]
+    refine ((F.locallyFinite.comp_injective Subtype.val_injective).preimage_continuous
+      (Sigma.ι X i).continuous).subset fun j ↦ ?_
+    rintro _ ⟨w, rfl⟩
+    exact ⟨w, by rw [← Scheme.Hom.comp_apply, IsOpenImmersion.lift_fac]⟩
 
-private theorem summand_comp (F : RatEquivFamily (∐ X) k) (i : ι) (j : (F.summand i).ι) :
-    (F.summand i).i j ≫ Sigma.ι X i = F.i j.val :=
-  IsOpenImmersion.lift_fac _ _ _
+private lemma sigmaι_apply_restrictSigma_i (F : RatEquivFamily (∐ X) k) (i : I)
+    (j : (F.restrictSigma i).ι) (w : (F.restrictSigma i).W j) :
+    Sigma.ι X i ((F.restrictSigma i).i j w) = F.i j.val w := by
+  rw [← Scheme.Hom.comp_apply]
+  exact congr($(IsOpenImmersion.lift_fac (Sigma.ι X i) (F.i j.val) j.property) w)
 
 variable [∀ i, IsLocallyNoetherian (X i)]
 
-private theorem cycle_summand_apply (F : RatEquivFamily (∐ X) k) (i : ι) (x : X i) :
-    (F.summand i).cycle x = F.cycle (Sigma.ι X i x) := by
-  have hcomp (j : (F.summand i).ι) :
-      (F.summand i).component j x = F.component j.val (Sigma.ι X i x) := by
-    by_cases hx : x ∈ range ((F.summand i).i j)
-    · obtain ⟨w, rfl⟩ := hx
-      rw [← Scheme.Hom.comp_apply, F.summand_comp, component_apply, component_apply]
-    · rw [component_apply_eq_zero_of_notMem_range _ _ hx, eq_comm]
-      apply component_apply_eq_zero_of_notMem_range
-      rintro ⟨w, hw⟩
-      apply hx
-      refine ⟨w, (Sigma.ι X i).isClosedEmbedding.injective ?_⟩
-      rwa [← Scheme.Hom.comp_apply, F.summand_comp]
-  rw [cycle_apply, cycle_apply]
-  refine (finsum_congr hcomp).trans ?_
-  let s : Set F.ι := {j | F.i j (genericPoint (F.W j)) ∈ range (Sigma.ι X i)}
-  refine (finsum_set_coe_eq_finsum_mem (f := fun j ↦ F.component j (Sigma.ι X i x)) s).trans ?_
-  refine (finsum_mem_inter_support_eq' _ s univ fun j hj ↦ ⟨fun _ ↦ mem_univ _, fun _ ↦ ?_⟩).trans
-    (finsum_mem_univ _)
-  obtain ⟨w, hw⟩ := F.support_component_subset j hj
-  exact ((genericPoint_specializes w).map (F.i j).continuous).mem_open
-    (Sigma.ι X i).isOpenEmbedding.isOpen_range (hw ▸ mem_range_self x)
+private lemma component_restrictSigma_apply (F : RatEquivFamily (∐ X) k) (i : I)
+    (j : (F.restrictSigma i).ι) (x : X i) :
+    (F.restrictSigma i).component j x = F.component j.val (Sigma.ι X i x) := by
+  by_cases hx : x ∈ Set.range ((F.restrictSigma i).i j)
+  · obtain ⟨w, rfl⟩ := hx
+    rw [(F.restrictSigma i).component_apply j w, sigmaι_apply_restrictSigma_i,
+      F.component_apply j.val w]
+    -- `F.restrictSigma i` keeps the subschemes and rational functions of `F`, by definition.
+    rfl
+  · rw [(F.restrictSigma i).component_apply_eq_zero_of_notMem_range j hx,
+      F.component_apply_eq_zero_of_notMem_range j.val]
+    rintro ⟨w, hw⟩
+    exact hx ⟨w, (Sigma.ι X i).isOpenEmbedding.injective
+      ((sigmaι_apply_restrictSigma_i F i j w).trans hw)⟩
 
-/-- Assemble the families on all summands without imposing a global finiteness condition. -/
-private noncomputable abbrev assemble (F : ∀ i, RatEquivFamily (X i) k) :
+/-- Restricting a family on `∐ X` to the summand `X i` restricts its cycle. -/
+private lemma cycle_restrictSigma_apply (F : RatEquivFamily (∐ X) k) (i : I) (x : X i) :
+    (F.restrictSigma i).cycle x = F.cycle (Sigma.ι X i x) := by
+  -- Members of `F` lying in another summand vanish at the point `Sigma.ι X i x`.
+  have hsupp : (Function.support fun j ↦ F.component j (Sigma.ι X i x)) ⊆
+      Set.range (Subtype.val : (F.restrictSigma i).ι → F.ι) := by
+    intro j hj
+    obtain ⟨i', hi'⟩ := exists_range_subset_range_sigmaι X (F.i j)
+    obtain rfl : i = i' := by
+      by_contra hii'
+      exact hj (F.component_apply_eq_zero_of_notMem_range j fun hx ↦
+        hii' ((sigmaι_apply_mem_range_sigmaι_iff x).mp (hi' hx)))
+    exact ⟨⟨j, hi'⟩, rfl⟩
+  rw [cycle_apply, cycle_apply, ← Set.indicator_eq_self.mpr hsupp, ← finsum_mem_def,
+    finsum_mem_range Subtype.val_injective]
+  exact finsum_congr fun j ↦ component_restrictSigma_apply F i j x
+
+omit [∀ i, IsLocallyNoetherian (X i)] in
+/-- Families on the summands `X i`, glued to a family on `∐ X`. -/
+private noncomputable def sigma (F : (i : I) → RatEquivFamily (X i) k) :
     RatEquivFamily (∐ X) k where
-  ι := Σ i, (F i).ι
-  W j := (F j.1).W j.2
-  i j := (F j.1).i j.2 ≫ Sigma.ι X j.1
-  isIntegral j := (F j.1).isIntegral j.2
-  genericPoint_mem j := (F j.1).genericPoint_mem j.2
-  r j := (F j.1).r j.2
+  ι := (i : I) × (F i).ι
+  W p := (F p.fst).W p.snd
+  i p := (F p.fst).i p.snd ≫ Sigma.ι X p.fst
+  genericPoint_mem p := (F p.fst).genericPoint_mem p.snd
+  r p := (F p.fst).r p.snd
   locallyFinite := by
-    have h := (LocallyFinite.sigmaMk_image (fun i ↦ (F i).locallyFinite)).preimage_continuous
-      (sigmaMk X).symm.continuous
-    refine h.subset fun j z ⟨w, hw⟩ ↦ ?_
-    refine ⟨(F j.1).i j.2 w, mem_range_self _, (sigmaMk X).injective ?_⟩
-    simpa only [sigmaMk_mk, Homeomorph.apply_symm_apply, ← Scheme.Hom.comp_apply] using hw
+    refine ((LocallyFinite.sigmaMk_image fun i ↦ (F i).locallyFinite).preimage_continuous
+      (sigmaMk X).symm.continuous).subset ?_
+    rintro ⟨i, j⟩ _ ⟨w, rfl⟩
+    refine ⟨(F i).i j w, ⟨w, rfl⟩, ?_⟩
+    apply (sigmaMk X).injective
+    rw [Homeomorph.apply_symm_apply, sigmaMk_mk, Scheme.Hom.comp_apply]
 
-private theorem cycle_assemble_apply (F : ∀ i, RatEquivFamily (X i) k) (i : ι) (x : X i) :
-    (assemble F).cycle (Sigma.ι X i x) = (F i).cycle x := by
-  rw [cycle_apply, cycle_apply]
-  refine (finsum_mem_univ _).symm.trans ((finsum_mem_inter_support_eq' _ univ
-    (range (Sigma.mk i)) fun j hj ↦ ⟨fun _ ↦ ?_, fun _ ↦ mem_univ _⟩).trans ?_)
-  · obtain ⟨w, hw⟩ := (assemble F).support_component_subset j hj
-    rcases j with ⟨j, a⟩
-    obtain rfl : j = i := congrArg Sigma.fst ((sigmaι_eq_iff X j i ((F j).i a w) x).mp
-      (by simpa only [Scheme.Hom.comp_apply] using hw))
-    exact mem_range_self a
-  · rw [finsum_mem_range sigma_mk_injective]
-    refine finsum_congr fun j ↦ ?_
-    by_cases hx : x ∈ range ((F i).i j)
-    · obtain ⟨w, rfl⟩ := hx
-      exact ((assemble F).component_apply ⟨i, j⟩ w).trans ((F i).component_apply j w).symm
-    · rw [(F i).component_apply_eq_zero_of_notMem_range _ hx]
-      exact (assemble F).component_apply_eq_zero_of_notMem_range ⟨i, j⟩ fun ⟨w, hw⟩ ↦
-        hx ⟨w, (Sigma.ι X i).isClosedEmbedding.injective hw⟩
+/-- The cycle of the glued family has, at a point of `X i`, the coefficient of the cycle of `F i`.
+-/
+private lemma cycle_sigma_apply (F : (i : I) → RatEquivFamily (X i) k) (i : I) (x : X i) :
+    (sigma F).cycle (Sigma.ι X i x) = (F i).cycle x := by
+  -- Members glued from another summand vanish at the point `Sigma.ι X i x`.
+  have hsupp : (Function.support fun p ↦ (sigma F).component p (Sigma.ι X i x)) ⊆
+      Set.range (Sigma.mk i) := by
+    rintro ⟨i', j⟩ hj
+    obtain rfl : i = i' := by
+      by_contra hii'
+      refine hj ((sigma F).component_apply_eq_zero_of_notMem_range _ ?_)
+      -- The `⟨i', j⟩`-th member is embedded through the summand `X i'`, by definition of `sigma`.
+      exact fun ⟨w, hw⟩ ↦ hii' ((sigmaι_apply_mem_range_sigmaι_iff x).mp ⟨_, hw⟩)
+    exact ⟨j, rfl⟩
+  -- The members glued from `X i` are those of the pushforward of `F i` along the coprojection:
+  -- both are `(F i).i j ≫ Sigma.ι X i` with the rational function `(F i).r j`, by definition.
+  have hcomp (j : (F i).ι) :
+      (sigma F).component ⟨i, j⟩ = ((F i).pushforward (Sigma.ι X i)).component j :=
+    (component_def _ _).trans (component_def ((F i).pushforward (Sigma.ι X i)) j).symm
+  rw [cycle_apply, ← Set.indicator_eq_self.mpr hsupp, ← finsum_mem_def]
+  refine (finsum_mem_range (f := fun p : (sigma F).ι ↦ (sigma F).component p (Sigma.ι X i x))
+    sigma_mk_injective).trans ?_
+  refine (finsum_congr fun j ↦ congr($(hcomp j) (Sigma.ι X i x))).trans ?_
+  refine (((F i).pushforward (Sigma.ι X i)).cycle_apply _).symm.trans ?_
+  rw [cycle_pushforward, AlgebraicCycle.map_height_apply_of_isClosedImmersion]
 
 end RatEquivFamily
 
-variable [∀ i, IsLocallyNoetherian (X i)]
+variable {X k} [∀ i, IsLocallyNoetherian (X i)]
 
-/-- A cycle on a coproduct is rationally equivalent to zero if and only if each restriction is. -/
-theorem mem_ratEquiv_coproduct_iff (α : cyclesOfDimension (∐ X) k) :
-    α ∈ RatEquiv (∐ X) k ↔ ∀ i, cyclesCoproductEquiv X k α i ∈ RatEquiv (X i) k := by
-  simp only [mem_ratEquiv_iff]
-  constructor
-  · rintro ⟨F, hF⟩ i
-    refine ⟨F.summand i, Function.locallyFinsuppWithin.ext fun x ↦ ?_⟩
-    rw [F.cycle_summand_apply, hF, cyclesCoproductEquiv_apply]
-  · intro h
-    choose F hF using h
-    refine ⟨RatEquivFamily.assemble F, Function.locallyFinsuppWithin.ext fun z ↦ ?_⟩
-    obtain ⟨⟨i, x⟩, rfl⟩ := (sigmaMk X).surjective z
-    rw [sigmaMk_mk, RatEquivFamily.cycle_assemble_apply, hF, cyclesCoproductEquiv_apply]
+/-- A `k`-cycle on a coproduct of locally Noetherian schemes is rationally equivalent to zero
+exactly when its restriction to every summand is. -/
+theorem mem_ratEquiv_sigma_iff {α : cyclesOfDimension (∐ X) k} :
+    α ∈ RatEquiv (∐ X) k ↔ ∀ i, cyclesSigmaEquiv X k α i ∈ RatEquiv (X i) k := by
+  refine ⟨fun hα i ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨F, hF⟩ := mem_ratEquiv_iff.mp hα
+    refine mem_ratEquiv_iff.mpr
+      ⟨F.restrictSigma i, Function.locallyFinsuppWithin.ext fun x ↦ ?_⟩
+    rw [RatEquivFamily.cycle_restrictSigma_apply, hF, cyclesSigmaEquiv_apply]
+  · choose F hF using fun i ↦ mem_ratEquiv_iff.mp (h i)
+    refine mem_ratEquiv_iff.mpr
+      ⟨RatEquivFamily.sigma F, Function.locallyFinsuppWithin.ext fun x ↦ ?_⟩
+    obtain ⟨i, y, rfl⟩ := sigmaι_jointly_surjective X x
+    rw [RatEquivFamily.cycle_sigma_apply, hF, cyclesSigmaEquiv_apply]
 
 namespace ChowGroup
 
-/-- Restriction gives an additive equivalence from the Chow group of a coproduct to the product
-of the Chow groups of its summands. -/
-noncomputable def coproductEquiv : ChowGroup (∐ X) k ≃+ (∀ i, ChowGroup (X i) k) := by
-  let f := AddMonoidHom.pi fun i ↦ cycleClass.comp
-    ((Pi.evalAddMonoidHom (fun i ↦ cyclesOfDimension (X i) k) i).comp
-      (cyclesCoproductEquiv X k).toAddMonoidHom)
-  let r := lift f fun α hα ↦ by
-    rw [AddMonoidHom.mem_ker]
-    funext i
-    exact cycleClass_eq_zero_iff.mpr ((mem_ratEquiv_coproduct_iff X k α).mp hα i)
-  have hr (α : cyclesOfDimension (∐ X) k) (i : ι) :
-      r (cycleClass α) i = cycleClass (cyclesCoproductEquiv X k α i) :=
-    congrFun (lift_cycleClass _ _ α) i
-  refine AddEquiv.ofBijective r ⟨?_, ?_⟩
-  · apply (injective_iff_map_eq_zero r).mpr
-    intro a ha
-    obtain ⟨α, rfl⟩ := cycleClass_surjective a
-    apply cycleClass_eq_zero_iff.mpr ((mem_ratEquiv_coproduct_iff X k α).2 fun i ↦ ?_)
-    exact cycleClass_eq_zero_iff.mp ((hr α i).symm.trans (congrFun ha i))
-  · intro b
-    choose β hβ using fun i ↦ cycleClass_surjective (b i)
-    refine ⟨cycleClass ((cyclesCoproductEquiv X k).symm β), funext fun i ↦ ?_⟩
-    rw [hr, AddEquiv.apply_symm_apply, hβ]
+variable (X k)
 
-/-- Restriction on Chow groups sends a cycle class to the classes of the restricted cycles. -/
-@[simp]
-theorem coproductEquiv_cycleClass (α : cyclesOfDimension (∐ X) k) (i : ι) :
-    coproductEquiv X k (cycleClass α) i = cycleClass (cyclesCoproductEquiv X k α i) :=
-  congrFun (lift_cycleClass _ _ α) i
+/-- The classes of the restrictions to the summands, defined on the Chow group of `∐ X`. -/
+private noncomputable def sigmaHom : ChowGroup (∐ X) k →+ ((i : I) → ChowGroup (X i) k) :=
+  lift (AddMonoidHom.pi fun i ↦ cycleClass.comp
+      ((Pi.evalAddMonoidHom _ i).comp (cyclesSigmaEquiv X k).toAddMonoidHom))
+    fun _ hα ↦ funext fun i ↦ cycleClass_eq_zero_iff.mpr (mem_ratEquiv_sigma_iff.mp hα i)
 
-/-- Under the coproduct equivalence, pushforward from a summand is insertion in its coordinate. -/
+private lemma sigmaHom_cycleClass (α : cyclesOfDimension (∐ X) k) :
+    sigmaHom X k (cycleClass α) = fun i ↦ cycleClass (cyclesSigmaEquiv X k α i) :=
+  lift_cycleClass _ _ α
+
+private lemma sigmaHom_bijective : Function.Bijective (sigmaHom X k) := by
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun a ha ↦ ?_, fun c ↦ ?_⟩
+  · obtain ⟨α, rfl⟩ := cycleClass_surjective a
+    rw [sigmaHom_cycleClass] at ha
+    exact cycleClass_eq_zero_iff.mpr
+      (mem_ratEquiv_sigma_iff.mpr fun i ↦ cycleClass_eq_zero_iff.mp (congr_fun ha i))
+  · choose γ hγ using fun i ↦ cycleClass_surjective (c i)
+    refine ⟨cycleClass ((cyclesSigmaEquiv X k).symm γ), ?_⟩
+    rw [sigmaHom_cycleClass, AddEquiv.apply_symm_apply]
+    exact funext hγ
+
+/-- The Chow group of a coproduct of locally Noetherian schemes is the product of the Chow groups
+of the summands: the class of a cycle goes to the classes of its restrictions to the summands. -/
+noncomputable def sigmaEquiv : ChowGroup (∐ X) k ≃+ ((i : I) → ChowGroup (X i) k) :=
+  AddEquiv.ofBijective (sigmaHom X k) (sigmaHom_bijective X k)
+
+variable {X k}
+
+/-- The identification of the Chow group of `∐ X` with the product sends the class of a cycle to
+the classes of its restrictions to the summands. -/
 @[simp]
-theorem coproductEquiv_pushforward_sigmaι [DecidableEq ι] (i : ι) (a : ChowGroup (X i) k) :
-    coproductEquiv X k (pushforward (Sigma.ι X i) a) = Pi.single i a := by
+lemma sigmaEquiv_cycleClass (α : cyclesOfDimension (∐ X) k) :
+    sigmaEquiv X k (cycleClass α) = fun i ↦ cycleClass (cyclesSigmaEquiv X k α i) :=
+  sigmaHom_cycleClass X k α
+
+/-- The inverse identification sends a family of classes of cycles `γ i` on the summands to the
+class of the cycle on `∐ X` with restrictions `γ`. -/
+@[simp]
+lemma sigmaEquiv_symm_cycleClass (γ : (i : I) → cyclesOfDimension (X i) k) :
+    (sigmaEquiv X k).symm (fun i ↦ cycleClass (γ i)) =
+      cycleClass ((cyclesSigmaEquiv X k).symm γ) := by
+  rw [AddEquiv.symm_apply_eq, sigmaEquiv_cycleClass, AddEquiv.apply_symm_apply]
+
+/-- Under the coproduct equivalence for Chow groups, pushforward along a coprojection inserts a
+class in the corresponding coordinate. -/
+@[simp]
+lemma sigmaEquiv_pushforward_sigmaι [DecidableEq I] (i : I) (a : ChowGroup (X i) k) :
+    sigmaEquiv X k (pushforward (Sigma.ι X i) a) = Pi.single i a := by
   obtain ⟨α, rfl⟩ := cycleClass_surjective a
-  funext j
-  rw [pushforward_cycleClass, coproductEquiv_cycleClass]
-  by_cases h : i = j
-  · subst j
-    rw [Pi.single_eq_same]
-    congr 1
-    apply Subtype.ext (Function.locallyFinsuppWithin.ext fun x ↦ ?_)
-    rw [cyclesCoproductEquiv_apply, cyclesPushforward_apply]
-  · rw [Pi.single_eq_of_ne (Ne.symm h)]
-    have hz : cyclesCoproductEquiv X k (cyclesPushforward (Sigma.ι X i) α) j = 0 := by
-      apply Subtype.ext (Function.locallyFinsuppWithin.ext fun x ↦ ?_)
-      rw [cyclesCoproductEquiv_apply]
-      exact cyclesPushforward_apply_of_notMem_range α fun ⟨y, hy⟩ ↦
-        h (congrArg Sigma.fst ((sigmaι_eq_iff X i j y x).mp hy))
-    rw [hz, map_zero]
+  rw [pushforward_cycleClass, sigmaEquiv_cycleClass, cyclesSigmaEquiv_cyclesPushforward_sigmaι]
+  exact (Pi.single_op (fun _ ↦ cycleClass) (fun _ ↦ map_zero _) i α).symm
 
 end ChowGroup
+
+end RatEquiv
+
 end TauCeti.AlgebraicGeometry.Chow

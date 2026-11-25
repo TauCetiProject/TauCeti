@@ -9,11 +9,12 @@ public import Mathlib.Algebra.Colimit.DirectLimit
 public import Mathlib.Data.Set.Finite.Lattice
 
 /-!
-# Directed colimits of monoids and algebras
+# Directed colimits of monoids, rings and algebras
 
 Basic API for Mathlib's generic `DirectLimit G f` of a directed system of monoids or groups `G i`
-with monoid homomorphisms as transition maps, and of a directed system of `A`-algebras with
-`A`-algebra transition maps.
+with monoid homomorphisms as transition maps, of a directed system of rings with ring
+homomorphisms as transition maps, and of a directed system of `A`-algebras with `A`-algebra
+transition maps.
 
 Mathlib equips `DirectLimit G f` with its monoid and group structures and bundles the canonical
 maps from the components as linear maps and ring homomorphisms. Here they are bundled as monoid
@@ -37,7 +38,11 @@ many elements at a time pass to direct limits.
   in the image of a single component.
 * `TauCeti.DirectLimit.Algebra.of_comp_f`: the canonical maps into a direct limit of algebras are
   compatible with the transition maps. This is the algebra version of
-  `Ring.DirectLimit.of_comp_f` in `TauCeti/Algebra/Colimit/Ring.lean`.
+  `TauCeti.Ring.DirectLimit.of_comp_f` in `TauCeti/Algebra/Colimit/Ring/Basic.lean`.
+* `TauCeti.DirectLimit.Ring.of_comp_f`: the same compatibility for Mathlib's generic direct limit
+  of rings, with canonical maps `DirectLimit.Ring.of`.
+* `TauCeti.DirectedSystem.ringHom_self`, `TauCeti.DirectedSystem.ringHom_comp`: the axioms of a
+  directed system of ring homomorphisms, stated as equalities of ring homomorphisms.
 -/
 
 public section
@@ -127,5 +132,32 @@ theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of B f j).comp (f i j hij) = of 
   AlgHom.ext fun _ ↦ of_f _ _
 
 end DirectLimit.Algebra
+
+section Ring
+
+variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, NonAssocSemiring (G i)]
+  {f : ∀ i j, i ≤ j → G i →+* G j} [DirectedSystem G (f · · ·)]
+
+variable (f) in
+/-- The transition map of a directed system of ring homomorphisms from a stage to itself is the
+identity. -/
+theorem DirectedSystem.ringHom_self (i : ι) : f i i le_rfl = RingHom.id (G i) :=
+  RingHom.ext fun x ↦ _root_.DirectedSystem.map_self' f x
+
+/-- The transition maps of a directed system of ring homomorphisms compose. -/
+theorem DirectedSystem.ringHom_comp {i j k : ι} (hij : i ≤ j) (hjk : j ≤ k) :
+    (f j k hjk).comp (f i j hij) = f i k (hij.trans hjk) :=
+  RingHom.ext fun x ↦ _root_.DirectedSystem.map_map' f hij hjk x
+
+variable [IsDirectedOrder ι] [Nonempty ι]
+
+open _root_.DirectLimit.Ring in
+/-- The canonical maps into a direct limit of rings are compatible with the transition maps. -/
+@[simp]
+theorem DirectLimit.Ring.of_comp_f {i j : ι} (hij : i ≤ j) :
+    (of G f j).comp (f i j hij) = of G f i :=
+  RingHom.ext fun _ ↦ of_f _ _
+
+end Ring
 
 end TauCeti
