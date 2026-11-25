@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import TauCeti.Analysis.Complex.Wirtinger.HolderSpace
+public import TauCeti.Analysis.Complex.Wirtinger.Holder.Space
 public import TauCeti.Analysis.Holder.OpenSet.Closure
 import TauCeti.Analysis.Complex.UnitDisc.RiemannHilbert
-import TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Holder
-import TauCeti.Analysis.Holder.Jet.Bounds
-import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Holder.Basic
 
 /-!
 # The augmented disc problem with rotating-line boundary values is a Banach isomorphism
@@ -45,8 +43,8 @@ the perturbation of this normalized problem by small lower-order terms needs.
   (`TauCeti.isClosed_rotatingLineHolderSubspace`).
 * `TauCeti.rotatingLineHolderAugmentedL k α`: the augmented operator
   `u ↦ (∂u/∂(conj z), u 0, ∂ₛu(0))` on `X_k`.
-* `TauCeti.injective_rotatingLineHolderAugmentedL`: it is one-to-one for `k = 3`.
-* `TauCeti.surjective_rotatingLineHolderAugmentedL`: it is onto for `k ≥ 3` and `0 < α < 1`.
+* `TauCeti.rotatingLineHolderAugmentedL_injective`: it is one-to-one for `k = 3`.
+* `TauCeti.rotatingLineHolderAugmentedL_surjective`: it is onto for `k ≥ 3` and `0 < α < 1`.
 * `TauCeti.rotatingLineHolderAugmentedEquiv`: for `k = 3` and `0 < α < 1`, the augmented operator
   as an isomorphism of Banach spaces `X_3 ≃L[ℝ] C^α(D, ℂ) × ℂ × ℂ`.
 
@@ -71,9 +69,19 @@ private theorem convex_unitDisc : Convex ℝ ((⟨ball 0 1, isOpen_ball⟩ : Ope
   convex_ball 0 1
 
 /-- The closure of the open unit disc is the closed unit disc. -/
+private theorem closure_unitDisc :
+    closure ((⟨ball 0 1, isOpen_ball⟩ : Opens ℂ) : Set ℂ) = closedBall 0 1 := by
+  rw [Opens.coe_mk, closure_ball 0 one_ne_zero]
+
+/-- The points of the closed unit disc lie in the closure of the open unit disc. -/
 private theorem mem_closure_unitDisc {w : ℂ} (hw : w ∈ closedBall (0 : ℂ) 1) :
     w ∈ closure ((⟨ball 0 1, isOpen_ball⟩ : Opens ℂ) : Set ℂ) := by
-  rwa [Opens.coe_mk, closure_ball 0 one_ne_zero]
+  rwa [closure_unitDisc]
+
+/-- The points of the unit circle lie in the closure of the open unit disc. -/
+private theorem mem_closure_unitDisc_of_mem_sphere {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) :
+    w ∈ closure ((⟨ball 0 1, isOpen_ball⟩ : Opens ℂ) : Set ℂ) :=
+  mem_closure_unitDisc (sphere_subset_closedBall hw)
 
 /-- The centre of the unit disc, as a point of the open disc. -/
 private def unitDiscCentre : (⟨ball (0 : ℂ) 1, isOpen_ball⟩ : Opens ℂ) :=
@@ -87,16 +95,13 @@ def rotatingLineHolderSubspace (k : ℤ) (α : ℝ≥0) :
   carrier := {u | ∀ w ∈ sphere (0 : ℂ) 1, u.closureExtend w = w ^ k * conj (u.closureExtend w)}
   add_mem' {u v} hu hv w hw := by
     rw [CkHolderSpaceOn.closureExtend_add u v convex_unitDisc
-      (mem_closure_unitDisc (sphere_subset_closedBall hw)), map_add]
+      (mem_closure_unitDisc_of_mem_sphere hw), map_add]
     linear_combination hu w hw + hv w hw
   zero_mem' w hw := by
-    have h := (0 : CkHolderSpaceOn 1 α ⟨ball (0 : ℂ) 1, isOpen_ball⟩ ℂ).norm_closureExtend_le
-      convex_unitDisc (mem_closure_unitDisc (sphere_subset_closedBall hw))
-    rw [norm_zero, norm_le_zero_iff] at h
-    simp [h]
+    simp [CkHolderSpaceOn.closureExtend_zero (mem_closure_unitDisc_of_mem_sphere hw)]
   smul_mem' c u hu w hw := by
     rw [CkHolderSpaceOn.closureExtend_smul c u convex_unitDisc
-      (mem_closure_unitDisc (sphere_subset_closedBall hw)), Complex.real_smul, map_mul,
+      (mem_closure_unitDisc_of_mem_sphere hw), Complex.real_smul, map_mul,
       Complex.conj_ofReal]
     linear_combination (c : ℂ) * hu w hw
 
@@ -116,9 +121,9 @@ theorem isClosed_rotatingLineHolderSubspace (k : ℤ) (α : ℝ≥0) :
       Set (CkHolderSpaceOn 1 α ⟨ball (0 : ℂ) 1, isOpen_ball⟩ ℂ)) =
       ⋂ (w : ℂ) (hw : w ∈ sphere (0 : ℂ) 1),
         {u | CkHolderSpaceOn.closureExtendL convex_unitDisc
-            (mem_closure_unitDisc (sphere_subset_closedBall hw)) u =
+            (mem_closure_unitDisc_of_mem_sphere hw) u =
           w ^ k * conj (CkHolderSpaceOn.closureExtendL convex_unitDisc
-            (mem_closure_unitDisc (sphere_subset_closedBall hw)) u)} := by
+            (mem_closure_unitDisc_of_mem_sphere hw) u)} := by
     ext u
     simp [mem_rotatingLineHolderSubspace_iff]
   rw [hset]
@@ -139,11 +144,7 @@ private def fderivCentreApplyOneL :
 private theorem fderivCentreApplyOneL_apply
     (u : CkHolderSpaceOn 1 α ⟨ball (0 : ℂ) 1, isOpen_ball⟩ ℂ) :
     fderivCentreApplyOneL u = fderiv ℝ u.extend 0 1 := by
-  rw [fderivCentreApplyOneL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, HolderSpace.evalCLM_apply,
-    CkHolderSpaceOn.iteratedFDerivHolderL_apply, CkHolderSpaceOn.coe_iteratedFDerivHolder,
-    ← u.iteratedFDeriv_extend]
-  simp [unitDiscCentre]
+  simp [fderivCentreApplyOneL, ← u.iteratedFDeriv_extend, unitDiscCentre]
 
 /-- The augmented Cauchy–Riemann operator `u ↦ (∂u/∂(conj z), u 0, ∂ₛu(0))` on the elements of
 `C^{1,α}(D, ℂ)` with boundary values on the rotating lines `e^{ikθ/2} ℝ`, to
@@ -168,7 +169,7 @@ theorem rotatingLineHolderAugmentedL_apply (k : ℤ) (u : rotatingLineHolderSubs
 /-- **Uniqueness for the augmented problem.** For Maslov index three, an element of
 `C^{1,α}(D, ℂ)` with boundary values on the lines `e^{3iθ/2} ℝ` is determined by
 `∂u/∂(conj z)`, its centre value and its first jet `∂ₛu(0)`. -/
-theorem injective_rotatingLineHolderAugmentedL :
+theorem rotatingLineHolderAugmentedL_injective :
     Function.Injective (rotatingLineHolderAugmentedL 3 α) := by
   refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
   set v : CkHolderSpaceOn 1 α ⟨ball (0 : ℂ) 1, isOpen_ball⟩ ℂ := u.val with hv
@@ -176,85 +177,40 @@ theorem injective_rotatingLineHolderAugmentedL :
   obtain ⟨hbar, h₀, h₁⟩ : conjWirtingerDerivHolderL v = 0 ∧ v ⟨0, mem_ball_self one_pos⟩ = 0 ∧
       fderiv ℝ v.extend 0 1 = 0 := by
     simpa only [Prod.mk_eq_zero] using hu
-  have hcl : closure ((⟨ball (0 : ℂ) 1, isOpen_ball⟩ : Opens ℂ) : Set ℂ) = closedBall 0 1 := by
-    rw [Opens.coe_mk, closure_ball 0 one_ne_zero]
   have hfd (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) : fderiv ℝ v.closureExtend z = fderiv ℝ v.extend z :=
     (v.closureExtend_eventuallyEq_extend ⟨z, hz⟩).fderiv_eq
   have hdiff : DifferentiableOn ℝ v.extend (ball 0 1) :=
     v.contDiffOn_extend.differentiableOn (by simp)
   have key := eqOn_of_conjWirtingerDeriv_eq_of_eq_zpow_mul_conj_of_eq_of_fderiv_eq
-    (u₁ := v.closureExtend) (u₂ := 0) (hcl ▸ v.continuousOn_closureExtend convex_unitDisc)
+    (u₁ := v.closureExtend) (u₂ := 0)
+    (closure_unitDisc ▸ v.continuousOn_closureExtend convex_unitDisc)
     continuousOn_const (hdiff.congr fun z hz ↦ by
       rw [v.closureExtend_apply ⟨z, hz⟩, v.extend_apply ⟨z, hz⟩])
     (differentiableOn_const 0) (fun z hz ↦ ?_) u.property (by simp)
-    (by rw [v.closureExtend_apply ⟨0, mem_ball_self one_pos⟩, h₀]; rfl)
+    (by simp [v.closureExtend_apply ⟨0, mem_ball_self one_pos⟩, h₀])
     (by rw [hfd 0 (mem_ball_self one_pos), h₁]; simp)
   · refine Subtype.ext (CkHolderSpaceOn.ext fun x ↦ ?_)
     have hx := key (ball_subset_closedBall x.property)
     rw [v.closureExtend_apply x] at hx
-    rw [← hv, hx, Submodule.coe_zero, CkHolderSpaceOn.coe_zero]
-    rfl
+    simp [← hv, hx]
   · rw [conjWirtingerDeriv_apply, conjWirtingerDeriv_apply, hfd z hz, ← conjWirtingerDeriv_apply,
       ← conjWirtingerDerivHolderL_apply_extend v ⟨z, hz⟩, hbar]
     simp
 
-/-- A Hölder function on the open unit disc extends to a function Hölder on the closed disc, with
-the same constant, agreeing with it on the open disc. -/
-private theorem exists_holderOnWith_closedBall_of_holderSpace (hα : 0 < α)
-    (g : HolderSpace α (⟨ball (0 : ℂ) 1, isOpen_ball⟩ : Opens ℂ) ℂ) :
-    ∃ G : ℂ → ℂ, (∀ x : (⟨ball (0 : ℂ) 1, isOpen_ball⟩ : Opens ℂ), G x = g x) ∧
-      HolderOnWith ‖g‖₊ α G (closedBall 0 1) := by
-  set G₀ : ℂ → ℂ := Function.extend Subtype.val g 0
-  have hG₀ (x : (⟨ball (0 : ℂ) 1, isOpen_ball⟩ : Opens ℂ)) : G₀ x = g x :=
-    Subtype.val_injective.extend_apply _ _ x
-  obtain ⟨G, hGG₀, hG⟩ :=
-    (g.holderOnWith_of_apply_eq fun x ↦ (hG₀ x).symm).exists_eqOn_holderOnWith_closure hα
-  refine ⟨G, fun x ↦ (hGG₀ x.property).trans (hG₀ x), ?_⟩
-  exact hG.mono fun w hw ↦ mem_closure_unitDisc hw
-
-/-- A function on the plane that is `C¹` on the open unit disc, and which together with its
-derivative extends to a function Hölder on the closed disc, defines an element of `C^{1,α}` on
-the open disc. -/
-private theorem exists_ckHolderSpaceOn_one (hα : 0 < α) {u : ℂ → ℂ} {K : ℝ≥0}
-    (huH : HolderOnWith K α u (closedBall 0 1)) (hud : DifferentiableOn ℝ u (ball 0 1))
-    {u' : ℂ → ℂ →L[ℝ] ℂ} {K' : ℝ≥0} (hu'H : HolderOnWith K' α u' (closedBall 0 1))
-    (hu' : ∀ z ∈ ball (0 : ℂ) 1, fderiv ℝ u z = u' z) :
-    ∃ U : CkHolderSpaceOn 1 α ⟨ball (0 : ℂ) 1, isOpen_ball⟩ ℂ, ∀ x, U x = u x := by
-  have hfH : HolderOnWith K' α (fderiv ℝ u) (ball 0 1) :=
-    (hu'H.mono ball_subset_closedBall).congr fun z hz ↦ (hu' z hz).symm
-  have hcd : ContDiffOn ℝ ((1 : ℕ) : WithTop ℕ∞) u (ball 0 1) := by
-    rw [show ((1 : ℕ) : WithTop ℕ∞) = 0 + 1 by norm_num,
-      contDiffOn_succ_iff_fderiv_of_isOpen isOpen_ball]
-    exact ⟨hud, by simp, contDiffOn_zero.2 (hfH.continuousOn hα)⟩
-  obtain ⟨C, hC⟩ := (isCompact_closedBall (0 : ℂ) 1).exists_bound_of_continuousOn
-    (huH.continuousOn hα)
-  obtain ⟨C', hC'⟩ := (isCompact_closedBall (0 : ℂ) 1).exists_bound_of_continuousOn
-    (hu'H.continuousOn hα)
-  refine ⟨CkHolderSpaceOn.ofContDiffOn u hcd (fun i hi ↦ ?_) ⟨K', ?_⟩,
-    CkHolderSpaceOn.ofContDiffOn_apply _ _ _ _⟩
-  · interval_cases i
-    · exact ⟨C, fun x ↦ by
-        rw [norm_iteratedFDeriv_zero]
-        exact hC x (ball_subset_closedBall x.property)⟩
-    · exact ⟨C', fun x ↦ by
-        rw [norm_iteratedFDeriv_one, hu' x x.property]
-        exact hC' x (ball_subset_closedBall x.property)⟩
-  · have h : HolderOnWith K' α (iteratedFDeriv ℝ 1 u) (ball 0 1) := by
-      rw [holderOnWith_iteratedFDeriv_succ_iff, holderOnWith_iteratedFDeriv_zero_iff]
-      exact hfH
-    exact h.holderWith
-
 /-- **Existence for the augmented problem.** For `k ≥ 3` and `0 < α < 1`, every `C^α` forcing on
 the open unit disc, centre value and first jet are attained by an element of `C^{1,α}(D, ℂ)` with
 boundary values on the rotating lines `e^{ikθ/2} ℝ`. -/
-theorem surjective_rotatingLineHolderAugmentedL {k : ℤ} (hk : 3 ≤ k) (hα0 : 0 < α)
+theorem rotatingLineHolderAugmentedL_surjective {k : ℤ} (hk : 3 ≤ k) (hα0 : 0 < α)
     (hα1 : α < 1) : Function.Surjective (rotatingLineHolderAugmentedL k α) := by
   rintro ⟨g, a, b⟩
-  obtain ⟨G, hGg, hG⟩ := exists_holderOnWith_closedBall_of_holderSpace hα0 g
+  obtain ⟨G, hGg, hG⟩ := g.exists_holderOnWith_closure hα0
+  rw [closure_unitDisc] at hG
   obtain ⟨u, ⟨K, huH⟩, hud, ⟨u', K', hu'H, hu'⟩, hbar, hbd, hu0, hu1⟩ :=
     exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_and_eq_and_fderiv_eq_of_holderOnWith hk
       hα0 hα1 hG a b
-  obtain ⟨U, hU⟩ := exists_ckHolderSpaceOn_one hα0 huH hud hu'H hu'
+  obtain ⟨U, hU⟩ := exists_ckHolderSpaceOn_one_of_isCompact_closure
+    (closure_unitDisc ▸ isCompact_closedBall 0 1) (closure_unitDisc ▸ huH.continuousOn hα0) hud
+    (closure_unitDisc ▸ hu'H.continuousOn hα0) (hu'H.mono ball_subset_closedBall) hu'
   have hcl (w : ℂ) (hw : w ∈ closedBall (0 : ℂ) 1) : U.closureExtend w = u w :=
     U.closureExtend_eq_of_continuousWithinAt (fun x ↦ (hU x).symm) (mem_closure_unitDisc hw)
       ((huH.continuousOn hα0 w hw).mono ball_subset_closedBall)
@@ -279,8 +235,8 @@ def rotatingLineHolderAugmentedEquiv (hα0 : 0 < α) (hα1 : α < 1) :
     rotatingLineHolderSubspace 3 α ≃L[ℝ]
       HolderSpace α (⟨ball (0 : ℂ) 1, isOpen_ball⟩ : Opens ℂ) ℂ × ℂ × ℂ :=
   ContinuousLinearEquiv.ofBijective (rotatingLineHolderAugmentedL 3 α)
-    (LinearMap.ker_eq_bot.2 injective_rotatingLineHolderAugmentedL)
-    (LinearMap.range_eq_top.2 (surjective_rotatingLineHolderAugmentedL le_rfl hα0 hα1))
+    (LinearMap.ker_eq_bot.2 rotatingLineHolderAugmentedL_injective)
+    (LinearMap.range_eq_top.2 (rotatingLineHolderAugmentedL_surjective le_rfl hα0 hα1))
 
 @[simp]
 theorem coe_rotatingLineHolderAugmentedEquiv (hα0 : 0 < α) (hα1 : α < 1) :

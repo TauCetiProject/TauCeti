@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Holder.OpenSet.Basic
 public import Mathlib.Topology.ExtendFrom
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Tactic.IntervalCases
+import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -26,10 +28,15 @@ norm at most one (`TauCeti.CkHolderSpaceOn.closureExtendL`). Some condition on `
 slit annulus in the plane the angle function is in `C^{1,α}` but jumps across the slit, so it has
 no limit at the points of the slit.
 
+Conversely, a function that is differentiable on an open `Ω` with compact closure, whose value and
+derivative extend continuously to the closure and whose derivative is `α`-Hölder on `Ω`, defines
+an element of `C^{1,α}(Ω)` (`TauCeti.exists_ckHolderSpaceOn_one_of_isCompact_closure`).
+
 ## Main declarations
 
 * `TauCeti.CkHolderSpaceOn.closureExtend`: the extension of an element to the closure of `Ω`.
-* `TauCeti.CkHolderSpaceOn.closureExtend_apply`: it agrees with the element on `Ω`.
+* `TauCeti.CkHolderSpaceOn.closureExtend_apply`: it agrees with the element on `Ω`;
+  `TauCeti.CkHolderSpaceOn.closureExtend_zero`: the zero element extends by zero.
 * `TauCeti.CkHolderSpaceOn.tendsto_closureExtend`: at a point of the closure it is the limit of
   the element along `Ω`; `TauCeti.CkHolderSpaceOn.closureExtend_eq_of_continuousWithinAt`
   identifies it with any continuous representative.
@@ -37,6 +44,9 @@ no limit at the points of the slit.
   constant the norm of the element.
 * `TauCeti.CkHolderSpaceOn.closureExtendL`: the value at a point of the closure, as a continuous
   linear map of norm at most one (`TauCeti.CkHolderSpaceOn.norm_closureExtendL_le_one`).
+* `TauCeti.exists_ckHolderSpaceOn_one_of_isCompact_closure`: an element of `C^{1,α}(Ω)` from a
+  function differentiable on `Ω` whose value and derivative are continuous on the compact closure,
+  with derivative `α`-Hölder on `Ω`.
 -/
 
 public noncomputable section
@@ -49,9 +59,12 @@ namespace TauCeti.CkHolderSpaceOn
 variable {k : ℕ} {α : ℝ≥0} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The extension of an element of `C^{k+1,α}(Ω)` to the closure of `Ω`: its value at a point is
-the limit of the element along `Ω` there (`TauCeti.CkHolderSpaceOn.tendsto_closureExtend`). It
-agrees with the element on `Ω`; outside the closure of `Ω` its values carry no meaning. -/
+/-- The extension of an element of `C^{k+1,α}(Ω)` to the closure of `Ω`, Mathlib's
+`extendFrom Ω`. It agrees with the element on `Ω` (`TauCeti.CkHolderSpaceOn.closureExtend_apply`).
+When `Ω` is convex and `F` complete, its value at a point of the closure is the limit of the
+element along `Ω` there (`TauCeti.CkHolderSpaceOn.tendsto_closureExtend`); in general no such limit
+need exist, and its values at the remaining points of the closure, as outside the closure, carry no
+meaning. -/
 def closureExtend (f : CkHolderSpaceOn (k + 1) α Ω F) : E → F :=
   extendFrom (Ω : Set E) f.extend
 
@@ -82,6 +95,14 @@ theorem closureExtend_eq_of_continuousWithinAt (f : CkHolderSpaceOn (k + 1) α �
   filter_upwards [self_mem_nhdsWithin] with y hy
   rw [hg ⟨y, hy⟩, f.extend_apply ⟨y, hy⟩]
 
+/-- The extension of the zero element of `C^{k+1,α}(Ω)` vanishes on the closure of `Ω`. -/
+@[simp]
+theorem closureExtend_zero {x : E} (hx : x ∈ closure (Ω : Set E)) :
+    (0 : CkHolderSpaceOn (k + 1) α Ω F).closureExtend x = 0 := by
+  refine extendFrom_eq hx (tendsto_const_nhds.congr' ?_)
+  filter_upwards [self_mem_nhdsWithin] with y hy
+  rw [extend_apply _ ⟨y, hy⟩, coe_zero, Pi.zero_apply]
+
 /-- On a convex set `Ω`, the extension by zero of an element of `C^{k+1,α}(Ω)` is Lipschitz on
 `Ω`, with constant the norm of the element, which bounds its derivative. -/
 theorem lipschitzOnWith_extend (f : CkHolderSpaceOn (k + 1) α Ω F) (hΩ : Convex ℝ (Ω : Set E)) :
@@ -98,24 +119,16 @@ variable [CompleteSpace F]
 of the element along `Ω` at every point of the closure. -/
 theorem tendsto_closureExtend (f : CkHolderSpaceOn (k + 1) α Ω F) (hΩ : Convex ℝ (Ω : Set E))
     {x : E} (hx : x ∈ closure (Ω : Set E)) :
-    Tendsto f.extend (𝓝[Ω] x) (𝓝 (f.closureExtend x)) := by
-  have := mem_closure_iff_nhdsWithin_neBot.1 hx
-  refine tendsto_extendFrom (CompleteSpace.complete ?_)
-  exact (cauchy_nhds.mono nhdsWithin_le_nhds).map_of_le
-    (f.lipschitzOnWith_extend hΩ).uniformContinuousOn inf_le_right
+    Tendsto f.extend (𝓝[Ω] x) (𝓝 (f.closureExtend x)) :=
+  (holderOnWith_one.2 (f.lipschitzOnWith_extend hΩ)).tendsto_extendFrom one_pos hx
 
 /-- On a convex set `Ω`, the extension of an element of `C^{k+1,α}(Ω)` to the closure is Lipschitz
 on the closure, with constant the norm of the element. -/
 theorem lipschitzOnWith_closureExtend (f : CkHolderSpaceOn (k + 1) α Ω F)
     (hΩ : Convex ℝ (Ω : Set E)) :
-    LipschitzOnWith ‖f‖₊ f.closureExtend (closure (Ω : Set E)) := by
-  have heq : EqOn f.closureExtend f.extend Ω := fun x hx ↦ by
-    rw [f.closureExtend_apply ⟨x, hx⟩, f.extend_apply ⟨x, hx⟩]
-  rw [← holderOnWith_one]
-  exact (HolderOnWith.congr (holderOnWith_one.2 (f.lipschitzOnWith_extend hΩ))
-    heq.symm).of_subset_closure
-    subset_rfl fun x hx ↦ ((f.tendsto_closureExtend hΩ hx).congr' <|
-      eventually_nhdsWithin_of_forall fun y hy ↦ (heq hy).symm)
+    LipschitzOnWith ‖f‖₊ f.closureExtend (closure (Ω : Set E)) :=
+  holderOnWith_one.1
+    ((holderOnWith_one.2 (f.lipschitzOnWith_extend hΩ)).holderOnWith_extendFrom_closure one_pos)
 
 /-- The extension of an element of `C^{k+1,α}(Ω)` to the closure of a convex `Ω` is continuous on
 the closure. -/
@@ -174,3 +187,38 @@ theorem norm_closureExtendL_le_one (hΩ : Convex ℝ (Ω : Set E)) {x : E}
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 end TauCeti.CkHolderSpaceOn
+
+namespace TauCeti
+
+variable {α : ℝ≥0} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A function `u` that is differentiable on an open set `Ω` with compact closure, with `u` and a
+field `u'` continuous on the closure, where `u'` is the derivative of `u` on `Ω` and is `α`-Hölder
+on `Ω`, agrees on `Ω` with an element of `C^{1,α}(Ω)`. -/
+theorem exists_ckHolderSpaceOn_one_of_isCompact_closure (hΩ : IsCompact (closure (Ω : Set E)))
+    {u : E → F} (hu : ContinuousOn u (closure (Ω : Set E))) (hud : DifferentiableOn ℝ u Ω)
+    {u' : E → E →L[ℝ] F} {K : ℝ≥0} (hu'c : ContinuousOn u' (closure (Ω : Set E)))
+    (hu'H : HolderOnWith K α u' Ω) (hu' : ∀ z ∈ (Ω : Set E), fderiv ℝ u z = u' z) :
+    ∃ U : CkHolderSpaceOn 1 α Ω F, ∀ x, U x = u x := by
+  have hcd : ContDiffOn ℝ ((1 : ℕ) : WithTop ℕ∞) u Ω := by
+    rw [show ((1 : ℕ) : WithTop ℕ∞) = 0 + 1 by norm_num,
+      contDiffOn_succ_iff_fderiv_of_isOpen Ω.isOpen]
+    exact ⟨hud, by simp, contDiffOn_zero.2 ((hu'c.mono subset_closure).congr hu')⟩
+  obtain ⟨C, hC⟩ := hΩ.exists_bound_of_continuousOn hu
+  obtain ⟨C', hC'⟩ := hΩ.exists_bound_of_continuousOn hu'c
+  refine ⟨CkHolderSpaceOn.ofContDiffOn u hcd (fun i hi ↦ ?_) ⟨K, ?_⟩,
+    CkHolderSpaceOn.ofContDiffOn_apply _ _ _ _⟩
+  · interval_cases i
+    · exact ⟨C, fun x ↦ by
+        rw [norm_iteratedFDeriv_zero]
+        exact hC x (subset_closure x.property)⟩
+    · exact ⟨C', fun x ↦ by
+        rw [norm_iteratedFDeriv_one, hu' x x.property]
+        exact hC' x (subset_closure x.property)⟩
+  · have h : HolderOnWith K α (iteratedFDeriv ℝ 1 u) Ω := by
+      rw [holderOnWith_iteratedFDeriv_succ_iff, holderOnWith_iteratedFDeriv_zero_iff]
+      exact hu'H.congr fun z hz ↦ (hu' z hz).symm
+    exact h.holderWith
+
+end TauCeti

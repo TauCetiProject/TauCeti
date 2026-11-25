@@ -60,10 +60,8 @@ direction `1`, of any function on the plane agreeing with `u` on `Ω`. -/
 theorem conjWirtingerDerivHolderL_apply (u : CkHolderSpaceOn 1 α Ω W) {g : ℂ → W}
     (hg : ∀ x : Ω, g x = u x) (z : Ω) :
     conjWirtingerDerivHolderL u z = conjWirtingerDeriv g z 1 := by
-  rw [conjWirtingerDerivHolderL, ContinuousLinearMap.comp_apply, HolderSpace.compLeftL_apply,
-    CkHolderSpaceOn.iteratedFDerivHolderL_apply, CkHolderSpaceOn.coe_iteratedFDerivHolder]
-  rw [← conjWirtingerOfFin1L_iteratedFDeriv]
-  exact congrArg conjWirtingerOfFin1L (u.iteratedFDeriv_eq hg (Fin.last 1) z).symm
+  simpa [conjWirtingerDerivHolderL, conjWirtingerOfFin1L_iteratedFDeriv] using
+    congrArg conjWirtingerOfFin1L (u.iteratedFDeriv_eq hg (Fin.last 1) z).symm
 
 /-- The value of `∂u/∂(conj z)` at a point of `Ω` is the conjugate Wirtinger derivative of the
 extension by zero of `u`. -/
