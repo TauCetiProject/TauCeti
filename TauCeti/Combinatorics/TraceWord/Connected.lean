@@ -141,17 +141,10 @@ private theorem two_le_card_nonloop_sum_cyclic_edge_fiber {k₁ k₂ : ℕ}
     let stepEdge := Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
       (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j)))
     let NL : Finset (Fin k₁ ⊕ Fin k₂) := {t | ¬ (stepEdge t).IsDiag}
-    ∀ e ∈ NL.image stepEdge, 2 ≤ #{t ∈ NL | stepEdge t = e} := by
-  intro stepEdge NL e he
-  obtain ⟨t, ht, rfl⟩ := mem_image.mp he
-  have ht_nd : ¬ (stepEdge t).IsDiag := (mem_filter.mp ht).2
-  have ht_ne : Sum.elim w₁ w₂ t ≠
-      Sum.elim (fun i ↦ w₁ (finRotate k₁ i)) (fun j ↦ w₂ (finRotate k₂ j)) t := by
-    cases t <;> simpa [stepEdge] using ht_nd
-  obtain ⟨t', ht'ne, ht'eq⟩ := h t ht_ne
-  exact one_lt_card.mpr ⟨t, mem_filter.mpr ⟨ht, rfl⟩,
-    t', mem_filter.mpr ⟨mem_filter.mpr ⟨mem_univ _, by dsimp [stepEdge]; rwa [ht'eq]⟩, ht'eq⟩,
-    ht'ne.symm⟩
+    ∀ e ∈ NL.image stepEdge, 2 ≤ #{t ∈ NL | stepEdge t = e} :=
+  two_le_card_filter_eq_of_no_singleton_fiber_on _ fun t ht ↦
+    let ⟨t', ht'ne, ht'eq⟩ := h t (by cases t <;> simpa using (mem_filter.mp ht).2)
+    ⟨t', ht'ne, mem_filter.mpr ⟨mem_univ _, ht'eq.symm ▸ (mem_filter.mp ht).2⟩, ht'eq⟩
 
 private theorem card_nonloop_sum_steps_add_two_le_of_isDiag {k₁ k₂ : ℕ}
     {w₁ : Fin k₁ → α} {w₂ : Fin k₂ → α} {i₀ : Fin k₁} {j₀ : Fin k₂}
@@ -222,13 +215,9 @@ theorem card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_nonloop_e
     have hpos₁ : 1 ≤ #{i | s(w₁ i, w₁ (finRotate k₁ i)) = e₀} := card_pos.mpr ⟨i₀, by simp [e₀]⟩
     have hpos₂ : 1 ≤ #{j | s(w₂ j, w₂ (finRotate k₂ j)) = e₀} :=
       card_pos.mpr ⟨j₀, by simp [e₀, hij₀]⟩
-    have he₀_NL : ({t ∈ NL | stepEdge t = e₀} : Finset _) =
-        ({t : Fin k₁ ⊕ Fin k₂ | stepEdge t = e₀} : Finset _) := by
-      ext t; simp only [mem_filter, mem_univ, true_and, NL]
-      exact ⟨And.right, fun h ↦ ⟨h ▸ he₀_diag, h⟩⟩
     have hsplit : #{t ∈ NL | stepEdge t = e₀} =
         #{i | s(w₁ i, w₁ (finRotate k₁ i)) = e₀} + #{j | s(w₂ j, w₂ (finRotate k₂ j)) = e₀} := by
-      rw [he₀_NL]
+      rw [filter_filter, filter_congr fun _ _ ↦ and_iff_right_of_imp (· ▸ he₀_diag)]
       simp only [card_filter, Fintype.sum_sum_type, stepEdge, Sum.elim_inl, Sum.elim_inr]
       congr 1
     have htotal : #NL = #{t ∈ NL | stepEdge t = e₀} +

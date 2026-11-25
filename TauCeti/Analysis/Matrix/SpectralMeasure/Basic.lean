@@ -79,9 +79,8 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   matrix is concentrated on the nonnegative reals;
 * `Matrix.eigenvalueMeasure_toMeasure_of_isNilpotent` — a nilpotent matrix has eigenvalue measure
   `δ₀`;
-* `Matrix.integrable_spectralMeasure`, `Matrix.integral_pow_spectralMeasure`,
-  `Matrix.ofReal_integral_pow_spectralMeasure` — every normed-group function is integrable against
-  the spectral measure, and the `k`-th moment is the normalized trace of `A ^ k`;
+* `Matrix.integral_pow_spectralMeasure`, `Matrix.ofReal_integral_pow_spectralMeasure` — the `k`-th
+  moment of the spectral measure is the normalized trace of `A ^ k`;
 * `Matrix.resolventTransform_spectralMeasure` — the resolvent transform of the spectral measure is
   the normalized trace of the resolvent `(A - z • 1)⁻¹`;
 * `Matrix.spectralMeasure_toMeasure_of_charpoly_eq_X_pow_mul`,
@@ -248,14 +247,6 @@ theorem PosSemidef.ae_mem_Ici_spectralMeasure {A : Matrix n n 𝕜} (hA : A.PosS
     simp [not_lt.mpr (hA.eigenvalues_nonneg i)]
   rw [hsum]
   simp
-
-/-- Every function into a normed group is integrable against the spectral measure of a Hermitian
-matrix. -/
-theorem integrable_spectralMeasure {E : Type*} [NormedAddCommGroup E]
-    (A : Matrix n n 𝕜) (hA : A.IsHermitian) (f : ℝ → E) :
-    Integrable f (A.spectralMeasure hA : Measure ℝ) := by
-  rw [spectralMeasure_def]
-  exact integrable_empiricalMeasureOfFintype_of_measurableSingletonClass f
 
 /-- Integrating against the spectral measure is averaging over the eigenvalues. -/
 theorem integral_spectralMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

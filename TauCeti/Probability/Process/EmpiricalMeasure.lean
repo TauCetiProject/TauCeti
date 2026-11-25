@@ -26,8 +26,7 @@ matches the shape used in limit theorems.
 There is one construction, not three: the probability measures are *defined* from the finite
 measure, and the sequence form as a specialization, so they can never drift apart.
 
-The API covers evaluation, integrability, integration, pushforward, continuity, measurability and
-finite support.
+The API covers evaluation, integration, pushforward, continuity, measurability and finite support.
 Values are counted with multiplicity: the empirical measure depends only on the multiset of values,
 so it is invariant under reindexing. The empirical measure of a concatenation is the average of the
 empirical measures of its pieces weighted by their sizes. On a commutative additive group with
@@ -186,30 +185,21 @@ theorem integral_empiricalFiniteMeasure [NormedAddCommGroup E] [NormedSpace ℝ 
     have : Nonempty κ := ⟨i⟩
     exact (integrable_dirac' hf (by simp)).smul_measure (by simp)
 
-/-- When singletons are measurable, every function into a normed group is integrable against an
-empirical finite measure. -/
-theorem integrable_empiricalFiniteMeasure_of_measurableSingletonClass [MeasurableSingletonClass α]
-    [NormedAddCommGroup E] {x : κ → α} (f : α → E) :
-    Integrable f (empiricalFiniteMeasure x : Measure α) := by
-  rw [empiricalFiniteMeasure_toMeasure, integrable_finsetSum_measure]
-  intro i _
-  have : Nonempty κ := ⟨i⟩
-  exact (integrable_dirac (by simp)).smul_measure (by simp)
-
 /-- When singletons are measurable, integrating any function against an empirical finite measure
 is averaging over the family; no measurability of the integrand is needed. -/
 theorem integral_empiricalFiniteMeasure_of_measurableSingletonClass [MeasurableSingletonClass α]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {x : κ → α} (f : α → E) :
     ∫ y, f y ∂(empiricalFiniteMeasure x : Measure α) =
       ((Fintype.card κ : ℕ) : ℝ)⁻¹ • ∑ i, f (x i) := by
-  have h := integrable_finsetSum_measure.mp
-    (integrable_empiricalFiniteMeasure_of_measurableSingletonClass (x := x) f)
-  rw [empiricalFiniteMeasure_toMeasure, integral_finsetSum_measure h]
-  simp_rw [integral_smul_measure, integral_dirac]
-  rw [← Finset.smul_sum]
-  congr 1
-  rw [ENNReal.toReal_inv]
-  norm_cast
+  rw [empiricalFiniteMeasure_toMeasure, integral_finsetSum_measure]
+  · simp_rw [integral_smul_measure, integral_dirac]
+    rw [← Finset.smul_sum]
+    congr 1
+    rw [ENNReal.toReal_inv]
+    norm_cast
+  · intro i _
+    have : Nonempty κ := ⟨i⟩
+    exact (integrable_dirac (by simp)).smul_measure (by simp)
 
 /-- The Lebesgue integral against an empirical finite measure is the average over the family. -/
 theorem lintegral_empiricalFiniteMeasure {x : κ → α} {f : α → ℝ≥0∞} (hf : Measurable f) :
@@ -373,15 +363,6 @@ theorem empiricalMeasureOfFintype_eq_map_uniformOn [MeasurableSpace κ] [Measura
   congr 1
   norm_cast
   simp
-
-/-- When singletons are measurable, every function into a normed group is integrable against a
-finite empirical population. -/
-theorem integrable_empiricalMeasureOfFintype_of_measurableSingletonClass
-    [MeasurableSingletonClass α] [NormedAddCommGroup E] {x : κ → α} (f : α → E) :
-    Integrable f (empiricalMeasureOfFintype x : Measure α) := by
-  rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
-    toFiniteMeasure_empiricalMeasureOfFintype]
-  exact integrable_empiricalFiniteMeasure_of_measurableSingletonClass f
 
 /-- Integrating against a finite empirical population is averaging over its values. -/
 theorem integral_empiricalMeasureOfFintype [NormedAddCommGroup E] [NormedSpace ℝ E]

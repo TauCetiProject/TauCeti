@@ -189,21 +189,15 @@ theorem two_mul_card_cyclic_edges_le_of_no_singleton_edge {k : ℕ} (w : Fin k �
 
 private theorem two_le_card_nonloop_cyclic_edge_fiber {k : ℕ} (w : Fin k → α)
     (h : ∀ i, w i ≠ w (finRotate k i) →
-      ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i)))
-    (e : Sym2 α)
-    (he : e ∈ ({i | w i ≠ w (finRotate k i)} : Finset (Fin k)).image
-      fun i => s(w i, w (finRotate k i))) :
-    2 ≤ #({i ∈ ({i | w i ≠ w (finRotate k i)} : Finset (Fin k)) |
-      s(w i, w (finRotate k i)) = e}) := by
-  obtain ⟨i, hi, rfl⟩ := mem_image.mp he
-  have hne := (mem_filter.mp hi).2
-  obtain ⟨j, hji, hj⟩ := h i hne
-  have hjne : w j ≠ w (finRotate k j) := fun hloop => by
-    rcases Sym2.eq_iff.mp hj with ⟨h1, h2⟩ | ⟨h1, h2⟩
-    · exact hne (h1.symm.trans (hloop.trans h2))
-    · exact hne (h2.symm.trans (hloop.symm.trans h1))
-  exact one_lt_card.mpr ⟨i, mem_filter.mpr ⟨hi, rfl⟩,
-    j, mem_filter.mpr ⟨mem_filter.mpr ⟨mem_univ j, hjne⟩, hj⟩, hji.symm⟩
+      ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i))) :
+    ∀ e ∈ ({i | w i ≠ w (finRotate k i)} : Finset (Fin k)).image
+        (fun i => s(w i, w (finRotate k i))),
+      2 ≤ #({i ∈ ({i | w i ≠ w (finRotate k i)} : Finset (Fin k)) |
+        s(w i, w (finRotate k i)) = e}) :=
+  two_le_card_filter_eq_of_no_singleton_fiber_on _ fun i hi =>
+    let ⟨j, hji, hj⟩ := h i (mem_filter.mp hi).2
+    ⟨j, hji, mem_filter.mpr ⟨mem_univ j, fun hloop =>
+      (mem_filter.mp hi).2 (Sym2.mk_isDiag_iff.mp (hj ▸ Sym2.mk_isDiag_iff.mpr hloop))⟩, hj⟩
 
 /-- A cyclic word of length `k` with no singleton nonloop edge visits at most `k / 2 + 1`
 vertices, even when loop edges occur once. -/
