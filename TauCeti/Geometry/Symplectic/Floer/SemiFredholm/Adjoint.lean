@@ -1155,7 +1155,7 @@ theorem
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add
       hK hJ hKs hKt hu hc
   -- A cutoff `β` equal to `1` near `‖w‖ ≤ a` and vanishing near `‖w‖ ≥ b`.
-  obtain ⟨β, hβ, hβ01, hβ1, hβ0, -⟩ :=
+  obtain ⟨β, hβ, hβ01, hβ1, -, -, hβb⟩ :=
     (isCompact_setOf_norm_equivRealProdCLM_symm_le a).exists_contDiff_cutoff_sublevel
       Complex.equivRealProdCLM.symm.continuous.norm hab
   have hβ2 : ContDiff ℝ 2 β := hβ.of_le (by simp)
@@ -1166,10 +1166,8 @@ theorem
   refine ⟨C₀ * (2 * (max M 0 * (1 + max B 0)) ^ 2 + 2), by positivity, fun η hη ↦ ?_⟩
   set η₀ : ℝ × ℝ → V →L[ℝ] ℝ := fun w ↦ β w • η w
   have hη₀ : ContDiff ℝ 2 η₀ := hβ2.smul hη
-  have hη₀K : tsupport η₀ ⊆ K := fun z hz ↦ by
-    rw [mem_ofPred_eq]
-    exact (not_le.1 fun h ↦ notMem_tsupport_iff_eventuallyEq.2 (hβ0 z h)
-      (tsupport_smul_subset_left _ _ hz)).le
+  have hη₀K : tsupport η₀ ⊆ K :=
+    (tsupport_smul_subset_left _ _).trans fun z hz ↦ (show _ < b from hβb hz).le
   have hI {g : ℝ × ℝ → ℝ} (hg : ContinuousOn g K) : IntegrableOn g K := hg.integrableOn_compact hK
   have hDc {θ : ℝ × ℝ → V →L[ℝ] ℝ} (hθ : ContDiff ℝ 2 θ) :
       ContinuousOn (ω.floerLinearizationAdjoint J' Ks Kt u θ) K := fun z hz ↦

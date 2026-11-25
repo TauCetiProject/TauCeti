@@ -26,7 +26,9 @@ metric is `|dw|² / (4π² |w|²)`, so this file fixes the conformal weight
 
 `ρ(w) = (1 + |w|²)⁻¹` (`TauCeti.Floer.PSSPlane.cylindricalWeight`),
 
-a conformal weight on the whole plane (`TauCeti.Floer.PSSPlane.isWeight_cylindricalWeight`). The
+a conformal weight on the whole plane (`TauCeti.Floer.PSSPlane.isWeight_cylindricalWeight`), whose
+inverse `ρ⁻¹ = 1 + |w|²` (`TauCeti.Floer.PSSPlane.inv_cylindricalWeight`) is continuous
+(`TauCeti.Floer.PSSPlane.continuous_inv_cylindricalWeight`). The
 Sobolev space `TauCeti.ConformalSobolev.H1 V univ ρ` of `TauCeti.Analysis.Sobolev.Conformal` is
 then the completion of the compactly supported sections in the norm
 `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)`, which is the `W^{1,2}` norm of the plane on every disc and agrees
@@ -115,6 +117,21 @@ theorem isWeight_cylindricalWeight : ConformalSobolev.IsWeight univ cylindricalW
   pos z _ := by
     rw [cylindricalWeight_apply]
     positivity
+
+/-- The cylindrical weight is continuous. -/
+theorem continuous_cylindricalWeight : Continuous cylindricalWeight :=
+  continuousOn_univ.1 isWeight_cylindricalWeight.continuousOn
+
+/-- The inverse of the cylindrical weight at `w` is `1 + |w|²`. -/
+@[simp]
+theorem inv_cylindricalWeight (z : ℝ × ℝ) :
+    (cylindricalWeight z)⁻¹ = 1 + ‖Complex.equivRealProdCLM.symm z‖ ^ 2 := by
+  rw [cylindricalWeight_apply, inv_inv]
+
+/-- The inverse `ρ⁻¹ = 1 + |w|²` of the cylindrical weight is continuous. -/
+theorem continuous_inv_cylindricalWeight : Continuous fun z ↦ (cylindricalWeight z)⁻¹ := by
+  simp only [inv_cylindricalWeight]
+  fun_prop
 
 /-- The inverse square root of the cylindrical weight at `w` is at most `1 + |w|`. -/
 theorem inv_sqrt_cylindricalWeight_le (z : ℝ × ℝ) :
@@ -214,8 +231,7 @@ theorem integral_cylindricalWeight_mul_add_le (p : PSSPlane) {ξ : ℝ × ℝ �
   set DR := {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * R)}
   have hDR : IsCompact DR := isCompact_setOf_norm_equivRealProdCLM_symm_le _
   have := hξ.continuous_fderiv one_ne_zero
-  have hρc : Continuous cylindricalWeight :=
-    continuousOn_univ.1 isWeight_cylindricalWeight.continuousOn
+  have hρc := continuous_cylindricalWeight
   have hGc : Continuous fun z ↦ cylindricalWeight z * ‖ξ z‖ ^ 2 + ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
       ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 := by fun_prop
   -- The weighted density vanishes off the support of `ξ`.

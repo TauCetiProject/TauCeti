@@ -323,7 +323,7 @@ theorem exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt
       (fun z _ ↦ hu.contDiffAt) hc
   set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
   -- A cutoff `β` equal to `1` near `‖w‖ ≤ a` and vanishing near `‖w‖ ≥ b`.
-  obtain ⟨β, hβ, hβ01, hβ1, hβ0, hβK⟩ :=
+  obtain ⟨β, hβ, hβ01, hβ1, -, hβK, hβb⟩ :=
     (isCompact_setOf_norm_equivRealProdCLM_symm_le a).exists_contDiff_cutoff_sublevel
       Complex.equivRealProdCLM.symm.continuous.norm hab
   obtain ⟨C₁, hC₁, herr⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le (J := J') hJ hKs
@@ -331,10 +331,8 @@ theorem exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt
   refine ⟨C₀ * (C₁ + 3) + 1, by positivity, fun ξ hξ hξc ↦ ?_⟩
   set ξ₀ : ℝ × ℝ → V := fun w ↦ β w • ξ w
   have hξ₀ : ContDiff ℝ 2 ξ₀ := (hβ.of_le (by simp)).smul hξ
-  have hξ₀K : tsupport ξ₀ ⊆ K := fun z hz ↦ by
-    rw [mem_ofPred_eq]
-    exact (not_le.1 fun h ↦ notMem_tsupport_iff_eventuallyEq.2 (hβ0 z h)
-      (tsupport_smul_subset_left _ _ hz)).le
+  have hξ₀K : tsupport ξ₀ ⊆ K :=
+    (tsupport_smul_subset_left _ _).trans fun z hz ↦ (show _ < b from hβb hz).le
   -- The cutoff does not increase the `L²` norm on `K`.
   have hξ₀ξ : ∫ z in K, ‖ξ₀ z‖ ^ 2 ≤ ∫ z in K, ‖ξ z‖ ^ 2 :=
     setIntegral_mono_on ((hξ₀.continuous.norm.pow 2).continuousOn.integrableOn_compact hK)
