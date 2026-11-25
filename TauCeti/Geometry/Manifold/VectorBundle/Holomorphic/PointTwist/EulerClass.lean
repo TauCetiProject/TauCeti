@@ -59,6 +59,8 @@ in `TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Sphere`).
   simple zero.
 * `TauCeti.evalFundamentalClass_complexEulerClass_eq_add_one_of_setOf_eq_insert`: adding a zero of
   index one raises the Euler number by one.
+* `TauCeti.sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt`: the local index at a zero is the
+  sign of the Jacobian of its chart reading.
 * `TauCeti.sectionIndex_eq_one_of_hasFDerivAt_smulRight`: a zero whose chart reading has the
   derivative of multiplication by a nonzero complex number has local index `1`.
 * `TauCeti.sectionIndex_pointTwistMul_of_ne` and `TauCeti.sectionIndex_pointTwistMul_self`: the
@@ -268,6 +270,32 @@ private theorem hasFDerivAt_pointTwistMul_chartAt (x : X) {s : ∀ z, L z}
   exact hasFDerivAt_sub_smul_comp_chartAt_symm ((eL.continuousOn_snd_apply_mk hs).continuousAt
     (eL.open_baseSet.mem_nhds (mem_baseSet_trivializationAt ℂ L x))) hfeq
 
+/-- **The local index at a zero is the sign of the Jacobian of its chart reading.** Let `σ` be a
+continuous section of a complex line bundle `L` with fibre `ℂ` over a Riemann surface `X`,
+vanishing at `x` and nowhere else on an open neighbourhood `U` of `x` inside the source of the
+chart `φ` of `X` at `x` and the base set of the chart of `L` at `x`. If the reading of `σ` in these
+charts has, at `φ x`, a real derivative `D` with `det D ≠ 0`, then the local index of `σ` at `x`,
+for the canonical orientations of `L` and `X`, is the sign of `det D`. -/
+theorem sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt (x : X) {σ : ∀ z, L z}
+    (hσ : Continuous fun z ↦ TotalSpace.mk' ℂ z (σ z)) {U : Set X} (hU : IsOpen U)
+    (hxU : x ∈ U) (hUz : ∀ y ∈ U, σ y = 0 → y = x) (hσx : σ x = 0)
+    (hUe : U ⊆ (trivializationAt ℂ L x).baseSet) (hUφ : U ⊆ (chartAt ℂ x).source)
+    {D : ℂ →L[ℝ] ℂ}
+    (hA : HasFDerivAt (fun w ↦ (trivializationAt ℂ L x (TotalSpace.mk' ℂ ((chartAt ℂ x).symm w)
+        (σ ((chartAt ℂ x).symm w)))).2) D (chartAt ℂ x x))
+    (hD : D.det ≠ 0) :
+    (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
+        (VectorBundleOrientation.complex ℂ L)).sectionIndex
+        Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x =
+      SignType.sign D.det :=
+  VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _
+    (trivializationAt ℂ L x) (chartAt ℂ x) hU hxU hUz hσx hUe hUφ
+    (fun _ hy ↦ VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _
+      (hUe hy))
+    (localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
+      (IsManifold.chart_mem_maximalAtlas (n := 1) x) (hUφ hxU))
+    hA hD
+
 /-- **A zero with nonzero complex-linear derivative has local index one.** Let `σ` be a continuous
 section of a complex line bundle `L` with fibre `ℂ` over a Riemann surface `X`, vanishing at `x`
 and nowhere else on an open neighbourhood `U` of `x` inside the source of the chart `φ` of `X` at
@@ -285,17 +313,11 @@ theorem sectionIndex_eq_one_of_hasFDerivAt_smulRight (x : X) {σ : ∀ z, L z}
     (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
         (VectorBundleOrientation.complex ℂ L)).sectionIndex
         Complex.finrank_real_complex (complexHomologicalOrientation X) hσ x = 1 := by
-  set φ := chartAt ℂ x
   -- Over `ℝ`, multiplication by `c` has determinant `|c|²`.
   have hdet : ((ContinuousLinearMap.id ℝ ℂ).smulRight c).det = Complex.normSq c := by
     simp [ContinuousLinearMap.det, LinearMap.det_complex, Complex.normSq_apply]
-  rw [VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt _ _ _ _
-    (trivializationAt ℂ L x) φ hU hxU hUz hσx hUe hUφ
-    (fun y hy ↦ VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _
-      (hUe hy))
-    (localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas
-      (IsManifold.chart_mem_maximalAtlas (n := 1) x) (hUφ hxU))
-    hA (hdet.trans_ne (Complex.normSq_pos.2 hc).ne'), hdet, sign_pos (Complex.normSq_pos.2 hc),
+  rw [sectionIndex_eq_sign_det_of_hasFDerivAt_chartAt x hσ hU hxU hUz hσx hUe hUφ hA
+    (hdet.trans_ne (Complex.normSq_pos.2 hc).ne'), hdet, sign_pos (Complex.normSq_pos.2 hc),
     SignType.coe_one]
 
 omit [∀ z, Module ℝ (L z)] [∀ z, IsScalarTower ℝ ℂ (L z)] in
