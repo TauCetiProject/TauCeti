@@ -137,9 +137,7 @@ theorem T_one_mul_mem_range_toLaurent_iff {f : R[T;T⁻¹]} :
     have hf : f = toLaurent q.divX + C (q.coeff 0) * T (-1) := by
       rw [← toLaurent_mul_T_neg_one, hq, T_mul_mul_T_neg]
     have hcoeff : f.coeff (-1) = q.coeff 0 := by
-      have h0 := TauCeti.exists_toLaurent_eq_iff.mp ⟨q.divX, rfl⟩ (-1) (by norm_num)
-      rw [hf, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, h0, coeff_C_mul_T, ite_eq_left rfl,
-        zero_add]
+      simp [hf, coeff_C_mul_T, Finsupp.mapDomain_of_notMem_range]
     exact ⟨q.divX, by rw [hcoeff, ← hf]⟩
   · rintro ⟨p, hp⟩
     refine ⟨X * p + Polynomial.C (f.coeff (-1)), ?_⟩
