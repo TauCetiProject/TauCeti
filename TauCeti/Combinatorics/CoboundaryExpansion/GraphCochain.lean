@@ -116,16 +116,19 @@ theorem cost_ofLt_ite_adj (G : SimpleGraph V) [DecidableRel G.Adj] (ℓ : GroupN
 
 /-- The trivial gauge costs `ℓ t * #G.edgeFinset` against the cochain of `G`, so this bounds its
 gauge distance. -/
-theorem gaugeDist_ofLt_ite_adj_le (G : SimpleGraph V) [DecidableRel G.Adj] (ℓ : GroupNorm K)
-    (ht : t * t = 1) :
+theorem gaugeDist_ofLt_ite_adj_le (G : SimpleGraph V) [DecidableRel G.Adj] (ℓ : GroupNorm K) :
     (Cochain.ofLt (complete V) fun u v => if G.Adj u v then t else 1).gaugeDist ℓ ≤
       ℓ t * #G.edgeFinset := by
-  have h := G.cost_ofLt_ite_adj ℓ ht ∅
-  have h0 : ((⊤ : SimpleGraph V).between ∅ ∅ᶜ).edgeFinset = ∅ :=
-    edgeFinset_eq_empty.mpr (by ext; simp [between_adj])
-  simp only [Set.mem_empty_iff_false, ite_false, h0] at h
-  simp only [← bot_eq_empty, symmDiff_bot] at h
-  exact h ▸ Cochain.gaugeDist_le_cost _ _ _
+  refine (Cochain.gaugeDist_le_cost _ _ 1).trans_eq ?_
+  rw [Cochain.cost_complete, card_eq_sum_sum_ite_lt_of_forall_mk_notMem _ (by simp), sum_filter,
+    Fintype.sum_prod_type]
+  push_cast
+  simp only [mul_sum]
+  refine sum_congr rfl fun u _ => sum_congr rfl fun v _ => ?_
+  by_cases huv : u < v
+  · rw [Cochain.ofLt_apply_of_lt _ ((adj_complete u v).mpr huv.ne) huv]
+    by_cases ha : G.Adj u v <;> simp [huv, ha]
+  · simp [huv]
 
 section Perm
 
