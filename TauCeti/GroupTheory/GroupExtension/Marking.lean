@@ -21,8 +21,9 @@ homomorphism `p : E →* G` chooses, for each `x ∈ c`, a lift `s x ∈ E` of `
 conjugation: if `e ∈ E` lies over `g` and `y = g x g⁻¹`, then `s y = e (s x) e⁻¹`. A *`c`-marked
 central extension* of `G` is a central extension `p` (`MonoidHom.IsCentralExtension`) together
 with a `c`-marking, and a morphism of marked central extensions is a homomorphism over `G` that
-carries one marking to the other; it need not identify the kernels. Equivalently, a marking is a
-conjugation-invariant subset of `E` that `p` maps bijectively onto `c`.
+carries one marking to the other; it need not identify the kernels. When `c` is
+conjugation-invariant, a marking is equivalently a conjugation-invariant subset of `E` that `p`
+maps bijectively onto `c` (`MonoidHom.Marking.equivSet`).
 
 The *universal marked extension* `U(G, c)` is the group presented by generators `[x]`, `x ∈ c`,
 and the relations `[x][y][x]⁻¹ = [x y x⁻¹]`. No relation `[x] ^ (orderOf x) = 1` is imposed, and
@@ -61,6 +62,8 @@ with large class multiplicities; the degree records the class multiplicities of 
   quandle on `c`.
 * `TauCeti.ReducedSchur.marking`: the marking `x ↦ [x]` of the projection.
 * `MonoidHom.Marking.lift`: the homomorphism `U(G, c) →* E` determined by a marking.
+* `MonoidHom.Marking.liftEquiv`: `MonoidHom.Marking.lift` as an isomorphism, when the marked lifts
+  generate `E` and `E` maps back to `U(G, c)` compatibly with the markings.
 * `TauCeti.ReducedSchur.classSet c`, `TauCeti.ReducedSchur.degree c`: the classes `D` meeting `c`
   and the class degree `U(G, c) →* ℤ^D`.
 * `TauCeti.ReducedSchur.degreeToAbelianization c`: the map `ℤ^D → G^{ab}`.
@@ -69,6 +72,8 @@ with large class multiplicities; the degree records the class multiplicities of 
 
 * `MonoidHom.Marking.existsUnique_comp_eq_and_forall_apply_of`: `U(G, c)` is initial among
   `c`-marked extensions.
+* `MonoidHom.Marking.bijective_lift_of_existsUnique`: a marking that is itself initial among
+  `c`-marked extensions is isomorphic to `U(G, c)` through its marking.
 * `TauCeti.ReducedSchur.of_eq_mul_of_mul_inv`: conjugating a generator by any `w ∈ U(G, c)`
   gives the generator of the conjugate by the projection of `w`.
 * `TauCeti.ReducedSchur.isCentralExtension_projection`: the projection is a central extension when
@@ -355,9 +360,11 @@ noncomputable def equivEnvelGroup (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ 
     universalMarked c ≃* @Rack.EnvelGroup c (Quandle.conjOn c hc).toRack :=
   letI := Quandle.conjOn c hc
   let F : ShelfHom c (Quandle.Conj (universalMarked c)) :=
-    ⟨PresentedGroup.of, fun {x y} ↦ of_eq_of_mul_of_mul_inv (Quandle.coe_conjOn_act x y)⟩
+    ⟨PresentedGroup.of, fun {x y} ↦ by
+      rw [_root_.Quandle.conj_act_eq_conj]
+      exact of_eq_of_mul_of_mul_inv (Quandle.coe_conjOn_act x y)⟩
   let φ : universalMarked c →* Rack.EnvelGroup c := lift (Rack.toEnvelGroup c) fun x y z h ↦ by
-    rw [show z = Shelf.act x y from Subtype.ext h]
+    rw [show z = Shelf.act x y from Subtype.ext (h.trans (Quandle.coe_conjOn_act x y).symm)]
     exact (Rack.toEnvelGroup c).map_act
   have hφ (x : c) : φ (PresentedGroup.of x) = Rack.toEnvelGroup c x := lift_of _ _ x
   -- `Rack.toEnvelGroup.map F` sends the image of `x` in the enveloping group to `[x]`: this is
@@ -433,6 +440,66 @@ theorem lift_marking (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) :
 theorem lift_inclusion : (inclusion c).lift = projection c := by
   ext x
   simp
+
+/-- **Recognising `U(G, c)`.** If the marked lifts of `s` generate `E` and some homomorphism
+`g : E →* U(G, c)` sends each `s x` to `[x]`, then `s.lift` is an isomorphism `U(G, c) ≃* E`, with
+inverse `g`. It is the only homomorphism `U(G, c) →* E` sending each `[x]` to `s x`
+(`MonoidHom.Marking.eq_lift_iff`). When `s` is itself initial among `c`-marked extensions,
+`s.lift` is bijective (`MonoidHom.Marking.bijective_lift_of_existsUnique`), so any two universal
+marked extensions are uniquely isomorphic through their markings. -/
+def liftEquiv (s : p.Marking c) (hs : closure (Set.range s) = ⊤) (g : E →* universalMarked c)
+    (hg : ∀ x, g (s x) = PresentedGroup.of x) : universalMarked c ≃* E :=
+  MonoidHom.toMulEquiv s.lift g (PresentedGroup.ext fun x ↦ by simp [hg])
+    (s.hom_ext hs fun x ↦ by simp [hg])
+
+@[simp]
+theorem coe_liftEquiv (s : p.Marking c) (hs : closure (Set.range s) = ⊤)
+    (g : E →* universalMarked c) (hg : ∀ x, g (s x) = PresentedGroup.of x) :
+    ⇑(s.liftEquiv hs g hg) = s.lift :=
+  (rfl)
+
+@[simp]
+theorem coe_liftEquiv_symm (s : p.Marking c) (hs : closure (Set.range s) = ⊤)
+    (g : E →* universalMarked c) (hg : ∀ x, g (s x) = PresentedGroup.of x) :
+    ⇑(s.liftEquiv hs g hg).symm = g :=
+  (rfl)
+
+theorem liftEquiv_of (s : p.Marking c) (hs : closure (Set.range s) = ⊤)
+    (g : E →* universalMarked c) (hg : ∀ x, g (s x) = PresentedGroup.of x) (x : c) :
+    s.liftEquiv hs g hg (PresentedGroup.of x) = s x := by
+  simp
+
+theorem liftEquiv_symm_apply (s : p.Marking c) (hs : closure (Set.range s) = ⊤)
+    (g : E →* universalMarked c) (hg : ∀ x, g (s x) = PresentedGroup.of x) (x : c) :
+    (s.liftEquiv hs g hg).symm (s x) = PresentedGroup.of x := by
+  simp [hg]
+
+end MonoidHom.Marking
+
+namespace MonoidHom.Marking
+
+open TauCeti.ReducedSchur
+
+universe u
+
+variable {E G : Type u} [Group E] [Group G] {p : E →* G} {c : Set G}
+
+/-- **Uniqueness of the universal marked extension.** For a conjugation-invariant `c`, if a
+`c`-marking `s` of `p : E →* G` is itself initial among `c`-marked extensions, that is every
+`c`-marking `t` of any `q : F →* G` is the image of `s` under exactly one homomorphism `E →* F`
+over `G`, then `s.lift : U(G, c) →* E` is bijective. The groups `F` range over the universe of
+`E` and `G`, which contains `U(G, c)`. -/
+theorem bijective_lift_of_existsUnique (hc : ∀ g x, x ∈ c → g * x * g⁻¹ ∈ c) (s : p.Marking c)
+    (h : ∀ (F : Type u) [Group F] (q : F →* G) (t : q.Marking c),
+      ∃! f : E →* F, q.comp f = p ∧ ∀ x, f (s x) = t x) :
+    Function.Bijective s.lift := by
+  obtain ⟨g, ⟨hgp, hg⟩, -⟩ := h _ (projection c) (marking hc)
+  have hgs : g.comp s.lift = MonoidHom.id _ := PresentedGroup.ext fun x ↦ by simp [hg]
+  have hsg : s.lift.comp g = MonoidHom.id E :=
+    (h E p s).unique ⟨by rw [← MonoidHom.comp_assoc, comp_lift, hgp], fun x ↦ by simp [hg]⟩
+      ⟨rfl, fun _ ↦ rfl⟩
+  exact Function.bijective_iff_has_inverse.2
+    ⟨g, fun u ↦ DFunLike.congr_fun hgs u, fun e ↦ DFunLike.congr_fun hsg e⟩
 
 end MonoidHom.Marking
 
