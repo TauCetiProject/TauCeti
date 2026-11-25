@@ -7,6 +7,7 @@ module
 
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+public import TauCeti.RingTheory.DedekindDomain.Countable
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 import TauCeti.Topology.Algebra.RestrictedProduct.SecondCountable
 
@@ -18,7 +19,9 @@ adic completion is a nonarchimedean local field, and its integer ring is compact
 result then follows from the local-compactness theorem for restricted products.  If the Dedekind
 domain moreover has countably many places, for example if it is countable
 (`IsDedekindDomain.HeightOneSpectrum.countable`), the finite adele ring is second countable, since
-each completion is a second-countable local field; Mathlib then makes it σ-compact.
+each completion is a second-countable local field; Mathlib then makes it σ-compact. This module
+re-exports `IsDedekindDomain.HeightOneSpectrum.countable`, so for a countable Dedekind domain both
+instances are found by instance search.
 
 The finite-residue-field hypothesis is stated directly, rather than specialized to rings of
 integers, so this applies to every Dedekind domain for which the same local compactness argument is
