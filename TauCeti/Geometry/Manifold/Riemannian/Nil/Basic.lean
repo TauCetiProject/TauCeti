@@ -24,8 +24,10 @@ such as the circle bundles of nonzero Euler number over the torus.
 `Nil` is also the real Heisenberg group `TauCeti.HeisenbergGroup ℝ` of unipotent upper triangular
 `3 × 3` matrices, whose product in the coordinates of the strictly upper triangle is
 `(a, b, c) * (x, y, z) = (a + x, b + y, c + z + a y)`; the coordinates give a group isomorphism
-`Nil.toHeisenberg`. The one-forms `dx`, `dy` and `dz - x dy` are left-invariant, so the metric is
-left-invariant and left multiplication by any element is a Riemannian isometry. This gives an
+`Nil.toHeisenberg`. Multiplication and inversion are polynomial in the coordinates, so `Nil` is a
+real-analytic Lie group, and its centre is the `z`-axis `{(0, 0, z)}`. The one-forms `dx`, `dy`
+and `dz - x dy` are left-invariant, so the metric is left-invariant and left multiplication by any
+element is a Riemannian isometry. This gives an
 injective group homomorphism from `Nil` into its isometry group, and already its image acts
 transitively, so `Nil` is a homogeneous Riemannian manifold.
 
@@ -59,6 +61,7 @@ Section 4): every isometry is of this form by `TauCeti.Nil.semidirectProductToIs
 
 ## Main results
 
+* `TauCeti.Nil.mem_center_iff`: the centre of `Nil` is its `z`-axis.
 * `TauCeti.Nil.inner_def`: the inner product of two tangent vectors at a point with first
   coordinate `x` is `v₁ w₁ + v₂ w₂ + (v₃ - x v₂) (w₃ - x w₂)`.
 * `TauCeti.Nil.toIsom_injective`: distinct elements of `Nil` give distinct isometries.
@@ -392,14 +395,8 @@ private theorem mul_left_eq (p : Nil) :
   funext q
   ext <;> simp [linearPart, xL, yL, zL] <;> ring
 
-/- `Nil` has the charts of `ℝ × ℝ × ℝ` and `toProd` is the identity, so the two results below
-are the corresponding statements about the affine map `r ↦ linearPart p r + toProd p` of
-`ℝ × ℝ × ℝ`. -/
-
-private theorem contMDiff_mul_left {n : ℕ∞ω} (p : Nil) :
-    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (p * ·) := by
-  rw [mul_left_eq]
-  exact ((linearPart p).contDiff.add contDiff_const).contMDiff
+/- `Nil` has the charts of `ℝ × ℝ × ℝ` and `toProd` is the identity, so the result below is the
+corresponding statement about the affine map `r ↦ linearPart p r + toProd p` of `ℝ × ℝ × ℝ`. -/
 
 private theorem hasMFDerivAt_mul_left (p q : Nil) :
     HasMFDerivAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q (linearPart p) := by
@@ -430,7 +427,7 @@ private theorem inner_mfderiv_mul_left (p q : Nil) (v w : TangentSpace 𝓘(ℝ,
 
 /-- Left multiplication by an element of `Nil` is smooth. -/
 instance contMDiffConstSMul : ContMDiffConstSMul 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ Nil Nil :=
-  ⟨fun p ↦ contMDiff_mul_left p⟩
+  ⟨fun _ ↦ contMDiff_mul_left⟩
 
 /-- Left multiplication, as a group homomorphism from `Nil` to its isometry group: the metric
 of `Nil` is left-invariant. -/
