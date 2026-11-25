@@ -317,14 +317,11 @@ theorem eq_halfSpaceDirichletResolventL (hp : 1 < p) (hp_top : p ≠ ⊤) {a : �
     u = halfSpaceDirichletResolventL hp hp_top a f := by
   set w := halfSpaceDirichletResolventL hp hp_top a f
   refine sub_eq_zero.1 (eq_zero_of_value_sub_trace_ae_eq_zero_of_normalHalfSpace ?_ ?_)
-  · rw [← firstOrderL_apply, map_sub, firstOrderL_apply, firstOrderL_apply,
-      ← ClosedSubmodule.mem_toSubmodule_iff]
+  · rw [firstOrder_sub, ← ClosedSubmodule.mem_toSubmodule_iff]
     exact Submodule.sub_mem _ hu
       (firstOrder_halfSpaceDirichletResolventL_mem_w1p0Submodule hp hp_top a f)
-  · have hD : iteratedGradient 1 (u - w) = iteratedGradient 1 u - iteratedGradient 1 w := by
-      rw [← iteratedGradientL_apply, map_sub, iteratedGradientL_apply, iteratedGradientL_apply]
-    filter_upwards [Lp.coeFn_sub (value 2 u) (value 2 w), hD ▸ Lp.coeFn_sub
-      (iteratedGradient 1 u) (iteratedGradient 1 w), heq,
+  · filter_upwards [Lp.coeFn_sub (value 2 u) (value 2 w), iteratedGradient_sub 1 u w ▸
+      Lp.coeFn_sub (iteratedGradient 1 u) (iteratedGradient 1 w), heq,
       value_sub_trace_halfSpaceDirichletResolventL_ae_eq hp hp_top a f] with x h₁ h₂ h₃ h₄
     rw [value_sub, h₁, h₂, Pi.sub_apply, Pi.sub_apply, ContinuousLinearMap.toLinearMap_sub, map_sub,
       Pi.zero_apply]
