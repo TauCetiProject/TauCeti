@@ -31,8 +31,8 @@ to its moments does not identify a weak limit.
 
 ## Main results
 
-* `TauCeti.tendsto_integral_eval_of_tendsto_integral_pow` — convergence of all moments gives
-  convergence of the integral of every real polynomial.
+* `TauCeti.abs_integral_eval_sub_le` — a polynomial within `δ` of a bounded continuous function
+  almost everywhere has integral within `δ` of that of the function, against a probability measure.
 * `MeasureTheory.FiniteMeasure.integrable_pow_two_mul_of_tendsto` and
   `MeasureTheory.FiniteMeasure.tendsto_integral_pow_of_tendsto` — along a weakly convergent
   family of finite measures with eventually finite and bounded moments of an even order `2k`, the
@@ -57,6 +57,11 @@ to its moments does not identify a weak limit.
 
 ## Implementation notes
 
+The convergence `∫ p dμᵢ → ∫ p dμ` of the integral of a polynomial `p`, given the convergence of
+the moments in its support and their integrability against `μ` and, eventually, against `μᵢ`, is
+`TauCeti.tendsto_integral_eval_of_tendsto_integral_pow`
+(`TauCeti.MeasureTheory.Function.PolynomialMemLp`).
+
 The proof runs through Prokhorov's theorem. Convergent second moments are eventually bounded,
 so the family restricted to an eventual set of indices is tight, and every cluster point `ν` is
 its limit along some finer ultrafilter. A bound on the moment of order `2k` makes the moments of
@@ -75,31 +80,9 @@ versions use the neighbourhood form and a finite union bound
 public section
 
 open MeasureTheory Filter Polynomial Set Finset
-open scoped Topology ENNReal
+open scoped Topology ENNReal BoundedContinuousFunction
 
 namespace TauCeti
-
-variable {ι : Type*} {l : Filter ι}
-
-/-- If every monomial is eventually integrable against `μᵢ`, then eventually all the monomials up
-to the degree of a given polynomial are. -/
-private theorem eventually_forall_le_natDegree_integrable {μs : ι → Measure ℝ}
-    (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i)) (p : ℝ[X]) :
-    ∀ᶠ i in l, ∀ k ≤ p.natDegree, Integrable (fun x : ℝ => x ^ k) (μs i) :=
-  (eventually_all_finite (Set.finite_Iic p.natDegree)).2 fun n _ => hμs n
-
-/-- If every moment `∫ xⁿ dμᵢ` converges to `∫ xⁿ dμ`, then so does the integral of every real
-polynomial. The moments must be genuine: each monomial is assumed integrable against `μ` and,
-eventually, against `μᵢ`. -/
-theorem tendsto_integral_eval_of_tendsto_integral_pow {μs : ι → Measure ℝ} {μ : Measure ℝ}
-    (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i))
-    (hμ : ∀ n, Integrable (fun x : ℝ => x ^ n) μ)
-    (h : ∀ n, Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (∫ x, x ^ n ∂μ))) (p : ℝ[X]) :
-    Tendsto (fun i => ∫ x, p.eval x ∂μs i) l (𝓝 (∫ x, p.eval x ∂μ)) := by
-  rw [integral_eval_eq_sum_range fun n _ => hμ n]
-  refine (tendsto_finsetSum _ fun n _ => (h n).const_mul (p.coeff n)).congr' ?_
-  filter_upwards [eventually_forall_le_natDegree_integrable hμs p] with i hi
-  exact (integral_eval_eq_sum_range hi).symm
 
 /-- A finite moment of order `2k` that is at most `C` bounds the lower integral of `x²ᵏ` by
 `ofReal C`. -/
@@ -108,6 +91,19 @@ private theorem lintegral_ofReal_pow_two_mul_le {ρ : Measure ℝ} {k : ℕ} {C 
     ∫⁻ x, ENNReal.ofReal (x ^ (2 * k)) ∂ρ ≤ ENNReal.ofReal C := by
   rw [← ofReal_integral_eq_lintegral_ofReal h (ae_of_all _ fun x ↦ (even_two_mul k).pow_nonneg x)]
   exact ENNReal.ofReal_le_ofReal hC
+
+/-- If `|p - f| ≤ δ` almost everywhere for a probability measure `μ`, then
+`|∫ p dμ - ∫ f dμ| ≤ δ`. -/
+theorem abs_integral_eval_sub_le {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    {f : ℝ →ᵇ ℝ} {p : ℝ[X]} {δ : ℝ} (hp : ∀ᵐ x ∂μ, |p.eval x - f x| ≤ δ) :
+    |∫ x, p.eval x ∂μ - ∫ x, f x ∂μ| ≤ δ := by
+  have hb : ∀ᵐ x ∂μ, ‖p.eval x - f x‖ ≤ δ := hp.mono fun x hx => (Real.norm_eq_abs _).trans_le hx
+  have hpf : Integrable (fun x => p.eval x - f x) μ :=
+    .of_bound (p.continuous.sub f.continuous).aestronglyMeasurable δ hb
+  rw [← integral_sub ((hpf.add (f.integrable μ)).congr (.of_forall fun x => sub_add_cancel _ _))
+    (f.integrable μ)]
+  have := norm_integral_le_of_norm_le_const hb
+  rwa [Real.norm_eq_abs, probReal_univ, mul_one] at this
 
 end TauCeti
 

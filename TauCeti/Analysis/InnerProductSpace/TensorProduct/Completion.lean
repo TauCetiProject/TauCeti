@@ -1040,6 +1040,8 @@ theorem tensorCompletionFiber_apply (b : HilbertBasis ι 𝕜 F) (i : ι) (x : E
 variable [CompleteSpace E] [CompleteSpace E']
 
 variable (E) in
+/-- For a Hilbert basis `b` of `F`, the fiberwise embeddings `x ↦ ↑(x ⊗ₜ b i)` exhibit
+`Completion (E ⊗[𝕜] F)` as the Hilbert sum of `ι`-indexed copies of `E`. -/
 theorem isHilbertSum_tensorCompletionFiber (b : HilbertBasis ι 𝕜 F) :
     IsHilbertSum 𝕜 (fun _ : ι ↦ E) (b.tensorCompletionFiber E) := by
   refine IsHilbertSum.mk (fun _ _ hij _ _ ↦ by simp [b.orthonormal.2 hij]) ?_

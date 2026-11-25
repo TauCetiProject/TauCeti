@@ -45,8 +45,11 @@ along a map `g` evaluate to the corresponding entry at `g j` (`j ∈ s`) when `g
 (`lp.sum_single_apply_of_injOn_of_mem`) and vanish at coordinates not equal to any `g i` (`i ∈ s`)
 (`lp.sum_single_apply_eq_zero_of_forall_ne`). Subtracting a finite sum of coordinate vectors
 zeroes out those coordinates (`lp.sub_sum_single_apply`) and does not increase the `ℓᵖ` norm, for
-any `p` (`lp.norm_sub_sum_single_le`). In `ℓ²`, the squared norm of a finite sum of
-single-coordinate vectors is the sum of the squared norms of its coordinates
+any `p` (`lp.norm_sub_sum_single_le`); in `ℓ∞`, a family vanishing at infinity is the sum of
+its coordinate vectors (`lp.hasSum_single_of_tendsto_cofinite`). Coordinate vectors commute with
+`star` (`lp.single_star`) and, in `ℓ∞`, with multiplication (`lp.single_mul`). In `ℓ²`, the
+squared norm of a finite sum of single-coordinate vectors is the sum of the squared norms of its
+coordinates
 (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
 operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
 many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`,
@@ -360,6 +363,38 @@ theorem norm_sub_sum_single_le [DecidableEq ι] (v : lp E p) (s : Finset ι) :
   · refine lp.norm_mono hp fun j ↦ ?_
     rw [sub_sum_single_apply]
     split_ifs <;> simp
+
+/-- A bounded family whose coordinate norms tend to `0` along the cofinite filter is the sum in
+`lp E ∞` of its coordinates, each placed at its index. -/
+theorem hasSum_single_of_tendsto_cofinite [DecidableEq ι] {a : lp E ∞}
+    (ha : Tendsto (fun i ↦ ‖a i‖) cofinite (𝓝 0)) :
+    HasSum (fun i ↦ lp.single ∞ i (a i)) a := by
+  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
+  have hfin := ha.eventually (gt_mem_nhds (half_pos hε))
+  refine ⟨(eventually_cofinite.1 hfin).toFinset, fun s hs ↦ ?_⟩
+  rw [dist_comm, dist_eq_norm]
+  refine (lp.norm_le_of_forall_le (half_pos hε).le fun j ↦ ?_).trans_lt (half_lt_self hε)
+  rw [sub_sum_single_apply]
+  split_ifs with hj
+  · simpa using (half_pos hε).le
+  · have hj' : ‖a j‖ < ε / 2 := by
+      by_contra h
+      exact hj (hs (by simpa using h))
+    exact hj'.le
+
+variable (p) in
+/-- The family supported at `i` with value `star a` is the adjoint of the one with value `a`. -/
+@[simp]
+theorem single_star [DecidableEq ι] [∀ i, StarAddMonoid (E i)] [∀ i, NormedStarGroup (E i)]
+    (i : ι) (a : E i) : lp.single p i (star a) = star (lp.single p i a) :=
+  lp.ext <| funext fun j ↦ by simp [Pi.single_star]
+
+/-- The family supported at `i` with value `a * b` is the product of those with values `a` and
+`b`. -/
+@[simp]
+theorem single_mul [DecidableEq ι] {A : ι → Type*} [∀ i, NonUnitalNormedRing (A i)] (i : ι)
+    (a b : A i) : lp.single ∞ i (a * b) = lp.single ∞ i a * lp.single ∞ i b :=
+  lp.ext <| by simp [lp.coeFn_single, Pi.single_mul]
 
 section Operator
 
