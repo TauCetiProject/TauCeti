@@ -18,6 +18,10 @@ homomorphisms into `BigWittVector S R`. The nonunital version is `NonUnitalBigWi
 The homomorphism formulation follows the p-typical analogue `WittVector.liftEquiv` in
 `Mathlib.RingTheory.WittVector.Truncated`. Both versions share the coordinate assembly: the
 coordinate of index `n` is read from the finite stage `TruncationSet.divisors n`.
+
+## References
+
+* L. Hesselholt, *The big de Rham–Witt complex*, Acta Math. 214 (2015), §1.
 -/
 
 public section

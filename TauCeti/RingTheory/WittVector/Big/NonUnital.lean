@@ -119,7 +119,8 @@ noncomputable def mk (x : S → R) : NonUnitalBigWittVector S R := by
   classical
   refine ⟨BigWittVector.mk' (fun n ↦ if h : n ∈ S then
     (Unitization.inr (x ⟨n, h⟩) : Unitization ℤ R) else 0), ?_⟩
-  apply NonUnitalSubring.mem_bot.mpr
+  rw [NonUnitalSubring.mem_comap, NonUnitalSubring.mem_bot]
+  -- Forgetting the unit preserves the augmentation map's underlying function.
   change BigWittVector.map (R := Unitization ℤ R) (R' := ℤ)
     (Unitization.fstHom ℤ R).toRingHom _ = 0
   apply BigWittVector.ext
@@ -139,21 +140,18 @@ theorem coeff_mk (x : S → R) (n : S) : coeff (mk x) n = x n := by
 
 @[simp]
 theorem coeff_zero (n : S) : coeff (0 : NonUnitalBigWittVector S R) n = 0 := by
-  change ((0 : BigWittVector S (Unitization ℤ R)).coeff n).snd = 0
-  rw [BigWittVector.coeff_zero (R := Unitization ℤ R)]
-  rfl
+  rw [coeff, map_zero, BigWittVector.coeff_zero (R := Unitization ℤ R), Unitization.snd_zero]
 
 /-- Nonunital Witt vectors are determined by their coordinates. -/
 @[ext]
 theorem ext {x y : NonUnitalBigWittVector S R} (h : ∀ n, coeff x n = coeff y n) : x = y := by
-  apply Subtype.ext
+  apply toBigWitt_injective
   apply BigWittVector.ext
   intro n
   by_cases hn : n ∈ S
-  · change (toBigWitt x).coeff n = (toBigWitt y).coeff n
-    rw [coeff_toBigWitt x ⟨n, hn⟩, coeff_toBigWitt y ⟨n, hn⟩, h ⟨n, hn⟩]
-  · exact (x.val.coeff_eq_zero_of_notMem n hn).trans
-      (y.val.coeff_eq_zero_of_notMem n hn).symm
+  · rw [coeff_toBigWitt x ⟨n, hn⟩, coeff_toBigWitt y ⟨n, hn⟩, h ⟨n, hn⟩]
+  · exact ((toBigWitt x).coeff_eq_zero_of_notMem n hn).trans
+      ((toBigWitt y).coeff_eq_zero_of_notMem n hn).symm
 
 /-- Reconstructing a vector from its coordinates recovers the original vector. -/
 @[simp]
@@ -482,9 +480,9 @@ theorem unitalEquiv_map {D : Type*} [CommRing D] (f : C →+* D) (x : NonUnitalB
   apply unitalEquiv.symm.injective
   apply ext
   intro n
-  simp
-  -- Forgetting the unit leaves the underlying coefficient function unchanged.
-  rfl
+  rw [RingEquiv.symm_apply_apply, coeff_unitalEquiv_symm, BigWittVector.coeff_map,
+    coeff_unitalEquiv]
+  exact coeff_map f.toNonUnitalRingHom x n
 
 /-- The comparison with unital Witt vectors commutes with restriction. -/
 @[simp]
