@@ -26,18 +26,14 @@ namespace TauCeti.Examples.GaussianLine
 
 open TauCeti TauCeti.Real
 
-/-- `(0, 1) ∪ (1, 2)` agrees with `(0, 2)` almost everywhere. -/
-theorem Ioo_union_Ioo_ae_eq : (Ioo (0 : ℝ) 1 ∪ Ioo 1 2 : Set ℝ) =ᵐ[volume] Ioo 0 2 := by
-  rw [Ioo_union_Ioo_eq_Ioo_sdiff_singleton zero_le_one one_le_two]
-  exact sdiff_null_ae_eq_self (measure_singleton 1)
-
 /-- The essential boundary of `(0, 1) ∪ (1, 2)` is `{0, 2}`. -/
 theorem essentialBoundary_Ioo_union_Ioo :
     essentialBoundary volume (Ioo (0 : ℝ) 1 ∪ Ioo 1 2) = {0, 2} := by
   have hball : ball (1 : ℝ) 1 = Ioo 0 2 := by
     rw [Real.ball_eq_Ioo]
     norm_num
-  rw [essentialBoundary_congr_ae Ioo_union_Ioo_ae_eq, ← hball, essentialBoundary_ball one_ne_zero]
+  rw [Ioo_union_Ioo_eq_Ioo_sdiff_singleton zero_le_one one_le_two, ← hball,
+    essentialBoundary_ball_sdiff_singleton one_ne_zero]
   ext x
   simp only [mem_sphere, Real.dist_eq, mem_insert_iff, mem_singleton_iff]
   constructor
