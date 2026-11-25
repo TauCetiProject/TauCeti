@@ -18,13 +18,17 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 Let `Ω ⊆ ℂ` be open, let `1 < p` and `k p > 2`, and let `F` and `G` be finite-dimensional. If
 `u ∈ W^{k,p}_loc(Ω, F)` is continuous on `Ω` and `g : F → G` is `Cᵏ` on an open set `W`
-containing `u '' Ω`, then `g ∘ u ∈ W^{k,p}_loc(Ω, G)`. For `p > 2` this is
-`TauCeti.MemWkpLoc.contDiffOn_comp_succ`; the point here is the range `p ≤ 2`, for instance
-`k = 2` and `p = 4/3`. By Morrey's embedding for `kp > 2`
+containing `u '' Ω`, then `g ∘ u ∈ W^{k,p}_loc(Ω, G)`. The range `p > 2` is
+`TauCeti.MemWkpLoc.contDiffOn_comp_succ`, which is derived from this theorem; the new range is
+`p ≤ 2`, for instance `k = 2` and `p = 4/3`. By Morrey's embedding for `kp > 2`
 (`TauCeti.MemWkpLoc.exists_continuousOn_ae_eq_of_two_lt_mul`) every member of `W^{k,p}_loc` has a
-continuous representative, so continuity is no restriction. At `k = 1` the hypothesis `kp > 2`
-is necessary: for `p = 4/3` the function `u = |z|^{-2/5}` is in `W^{1,4/3}` near `0` while `u²`
-is not.
+continuous representative. For globally `Cᵏ` maps `g`
+(`TauCeti.MemWkpLoc.contDiff_comp_of_two_lt_mul`) continuity is therefore no restriction; in
+general the continuous representative must also map `Ω` into `W`.
+
+Without continuity, `kp > 2` cannot be dropped at `k = 1`: for `p = 4/3` the function
+`u = |z|^{-2/5}` is in `W^{1,4/3}` near `0` while `u²` is not. For continuous `u` at `k = 1`,
+`TauCeti.MemWkpLoc.contDiffOn_comp` covers every `p`.
 
 ## Proof
 
@@ -86,16 +90,6 @@ private theorem exists_bilin_comp_precompL {G V H : Type*} [NormedAddCommGroup G
     (B.precompL ℂ).flip).flip).comp (ContinuousLinearMap.compL ℝ ℂ F G).flip,
     fun _ _ _ => rfl⟩
 
-/-- Products of a continuous map with a locally `Lᵖ` map are locally `Lᵖ`. -/
-private theorem memLpLoc_bilin_of_continuousOn {G V H : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup H]
-    [NormedSpace ℝ H] (B : G →L[ℝ] V →L[ℝ] H) {p : ℝ≥0∞} {f : ℂ → G} {v : ℂ → V}
-    (hf : ContinuousOn f Ω) (hv : MemLpLoc p Ω v) :
-    MemLpLoc p Ω (fun z => B (f z) (v z)) :=
-  memLpLoc_iff.2 fun K hKΩ hK => B.memLp_of_bilin (p : ℝ≥0∞)
-    ((hf.mono hKΩ).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
-    (memLpLoc_iff.1 hv K hKΩ hK)
-
 /-- The general statement behind `TauCeti.MemWkpLoc.contDiffOn_comp_of_two_lt_mul`: for
 `u ∈ W^{k,p}_loc` continuous with `1 < p` and `kp > 2`, a map `g` that is `Cᵐ` on `W ⊇ u '' Ω`
 with `m ≤ k`, and `v ∈ W^{b,p}_loc` with `m ≤ b` and `(b + k - m) p > 2`, the product
@@ -112,8 +106,8 @@ private theorem MemWkpLoc.bilin_comp_of_two_lt_mul {p : ℝ≥0} (hp : 1 < p) {k
     MemWkpLoc p Ω m (fun z => B (g (u z)) (v z)) := by
   induction m generalizing G V H g v b with
   | zero =>
-    exact memWkpLoc_zero_iff.2
-      (memLpLoc_bilin_of_continuousOn B (hg.continuousOn.comp huc huW) hv.memLpLoc)
+    simpa using memWkpLoc_zero_iff.2
+      ((hv.memLpLoc.clm_comp B.flip).clm_apply_continuousOn (hg.continuousOn.comp huc huW))
   | succ m ih =>
     obtain ⟨b, rfl⟩ : ∃ b', b = b' + 1 := ⟨b - 1, by omega⟩
     obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
@@ -134,9 +128,7 @@ private theorem MemWkpLoc.bilin_comp_of_two_lt_mul {p : ℝ≥0} (hp : 1 < p) {k
     -- The weak Leibniz rule for `B(g ∘ u, v)`, with `g ∘ u` bounded and in `W^{1,r}_loc`.
     have hD := hDu.contDiffOn_comp huc hW (hg.of_le (by simp)) huW
     have hDf : MemLpLoc r Ω (fun z => (fderiv ℝ g (u z)).comp (Du z)) :=
-      memLpLoc_iff.2 fun K hKΩ hK =>
-        (memLpLoc_iff.1 hDur.memLpLoc K hKΩ hK).clm_comp_of_continuousOn (hDgc.mono hKΩ) hK
-          hK.measurableSet subset_rfl
+      hDur.memLpLoc.continuousOn_clm_comp hDgc
     have hLeib := hD.bilin_of_memLpLoc B hr hp hpr hgc.memLpLoc hDf hDv hv.memLpLoc
       hDvb.memLpLoc
     -- The first term is `Φ(Du, v)` evaluated at `Dg(u)`.
@@ -149,12 +141,13 @@ private theorem MemWkpLoc.bilin_comp_of_two_lt_mul {p : ℝ≥0} (hp : 1 < p) {k
       have hDg : ContDiffOn ℝ m (fderiv ℝ g) W := hg.fderiv_of_isOpen hW (by push_cast; rfl)
       refine (ih (by omega) (ContinuousLinearMap.apply ℝ (ℂ →L[ℝ] H)) hDg hΦ le_rfl
         (by rwa [Nat.add_sub_cancel_left])).congr fun z _ => ?_
-      exact (hΦdef _ _ _).symm
+      simp only [ContinuousLinearMap.apply_apply, hΦdef]
     have h₂ : MemWkpLoc p Ω m (fun z => B.precompR ℂ (g (u z)) (Dv z)) :=
       ih (by omega) (B.precompR ℂ) (hg.of_le (by simp)) hDvb (by omega)
         (by rwa [show b + (k + 1) - m = b + 1 + (k + 1) - (m + 1) by omega])
     exact memWkpLoc_succ_iff_of_isOpen.2
-      ⟨memLpLoc_bilin_of_continuousOn B hgc hv.memLpLoc, _, hLeib, h₁.add h₂⟩
+      ⟨by simpa using (hv.memLpLoc.clm_comp B.flip).clm_apply_continuousOn hgc, _, hLeib,
+        h₁.add h₂⟩
 
 variable {G : Type uG} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
 
@@ -167,19 +160,17 @@ theorem MemWkpLoc.contDiffOn_comp_of_two_lt_mul {p : ℝ≥0} (hp : 1 < p) {k : 
     (huc : ContinuousOn u Ω) (hW : IsOpen W) (hg : ContDiffOn ℝ k g W) (huW : MapsTo u Ω W) :
     MemWkpLoc p Ω k (fun z => g (u z)) := by
   -- Move the values to `ULift G`, in a universe at least that of `F`, and multiply by the
-  -- constant `1`.
+  -- constant `c⁻¹ 1` of `ULift ℝ`.
   let e : G ≃L[ℝ] ULift.{uF} G := (LinearIsometryEquiv.ulift ℝ G).symm.toContinuousLinearEquiv
-  let c : ULift.{max uF uG} ℝ ≃L[ℝ] ℝ :=
-    (LinearIsometryEquiv.ulift ℝ ℝ).toContinuousLinearEquiv
+  let c : ULift.{max uF uG} ℝ ≃L[ℝ] ℝ := ContinuousLinearEquiv.ulift
   let B : ULift.{uF} G →L[ℝ] ULift.{max uF uG} ℝ →L[ℝ] ULift.{uF} G :=
     ((ContinuousLinearMap.compL ℝ _ ℝ _).flip (c : ULift.{max uF uG} ℝ →L[ℝ] ℝ)).comp
       (ContinuousLinearMap.lsmul ℝ ℝ).flip
-  have hone : MemWkpLoc p Ω k (fun _ : ℂ => (ULift.up 1 : ULift.{max uF uG} ℝ)) :=
-    contDiff_const.memWkpLoc
+  have hone : MemWkpLoc p Ω k (fun _ : ℂ => c.symm 1) := contDiff_const.memWkpLoc
   have h := MemWkpLoc.bilin_comp_of_two_lt_mul hp hkp hu huc hW huW k le_rfl B
     (e.contDiff.comp_contDiffOn hg) hone le_rfl (by rwa [Nat.add_sub_cancel])
   refine e.comp_memWkpLoc_iff.1 (h.congr fun z _ => ?_)
-  exact (one_smul ℝ _).symm
+  simp [B]
 
 /-- **Composition of continuous local Sobolev maps with globally `Cᵏ` maps for `kp > 2`.** Let
 `1 < p` and `k p > 2`. If `u` is continuous on `Ω` and belongs to `W^{k,p}_loc(Ω)`, and `g` is
