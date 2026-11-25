@@ -12,13 +12,15 @@ public import TauCeti.CategoryTheory.ObjectProperty.Retract
 /-!
 # Projective objects and projective dimension in `mod C`
 
-Let `C` be a preadditive category with finite biproducts. The Yoneda embedding
-`TauCeti.modYoneda` sends `C` to projective objects of the category `mod C` of finitely presented
-functors `Cᵒᵖ ⥤ AddCommGrpCat`, and every object of `mod C` is a quotient of one of them. When `C`
-is idempotent complete, the projective objects of `mod C` are exactly the representable functors,
-so the homological algebra of `mod C` can be read off from `C`.
+Let `C` be a preadditive category. The Yoneda embedding `TauCeti.modYoneda` sends `C` to
+projective objects of the category `mod C` of finitely presented functors `Cᵒᵖ ⥤ AddCommGrpCat`,
+and every object of `mod C` is a quotient of a finite sum of them, which is again projective; so
+`mod C` has enough projectives. When `C` has finite biproducts, every object of `mod C` is a
+quotient of a single representable functor, and when `C` is moreover idempotent complete, the
+projective objects of `mod C` are exactly the representable functors, so the homological algebra
+of `mod C` can be read off from `C`.
 
-When `C` also has weak kernels, `mod C` is abelian, and the main result
+When `C` has finite biproducts and weak kernels, `mod C` is abelian, and the main result
 (`TauCeti.hasKernels_iff_forall_hasProjectiveDimensionLE_two`) states that, for idempotent complete
 `C`, every object of `mod C` has projective dimension at most two exactly when `C` has kernels.
 A functor `F` presented by `f : X ⟶ Y` sits in an exact sequence
@@ -29,7 +31,8 @@ finitely presented functor on an abelian category has projective dimension at mo
 
 ## Main declarations
 
-* `TauCeti.projective_modYoneda_obj`: representable functors are projective in `mod C`.
+* `TauCeti.projective_modYoneda_obj`: representable functors are projective in `mod C`, which has
+  enough projectives.
 * `TauCeti.projective_iff_mem_essImage_modYoneda`: for idempotent complete `C`, the projective
   objects of `mod C` are the representable functors.
 * `TauCeti.hasProjectiveDimensionLE_two_of_hasKernels`: if `C` has kernels, then every object of
@@ -52,24 +55,47 @@ namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
-variable [HasFiniteBiproducts C]
+/-- An object of `mod C` whose underlying functor is a finite sum of representable functors is
+projective: a morphism out of it to the target of an epimorphism `E ⟶ G` lifts summand by
+summand, since `E` is additive. -/
+private theorem projective_of_obj_eq_sigma
+    (P : (isFinitelyPresentedFunctor C).FullSubcategory) {n : ℕ} (Y : Fin n → C)
+    (hP : P.obj = ∐ fun i ↦ preadditiveYoneda.obj (Y i)) : Projective P where
+  factors {E G} f e _ := by
+    have := (isFinitelyPresentedFunctor C).preservesEpimorphisms_ι_of_isNormalMonoCategory
+    have : Epi e.hom := inferInstanceAs (Epi ((isFinitelyPresentedFunctor C).ι.map e))
+    have := E.property.additive
+    obtain ⟨P, hP'⟩ := P
+    subst hP
+    choose s hs using fun i ↦ exists_comp_eq_preadditiveYoneda_obj_of_epi e.hom
+      (Sigma.ι (fun i ↦ preadditiveYoneda.obj (Y i)) i ≫ f.hom)
+    exact ⟨ObjectProperty.homMk (Sigma.desc s),
+      ObjectProperty.hom_ext _ (Sigma.hom_ext _ _ fun i ↦ by simp [hs])⟩
 
 /-- Representable functors are projective objects of `mod C`. -/
 instance projective_modYoneda_obj (Y : C) : Projective (modYoneda.obj Y) where
   factors {E G} f e _ := by
     have := (isFinitelyPresentedFunctor C).preservesEpimorphisms_ι_of_isNormalMonoCategory
     have : Epi e.hom := inferInstanceAs (Epi ((isFinitelyPresentedFunctor C).ι.map e))
-    obtain ⟨Y', q, hq⟩ :=
-      (isFinitelyGeneratedFunctor_iff_exists_single _).1 E.property.isFinitelyGeneratedFunctor
-    obtain ⟨u, hu⟩ := exists_preadditiveYoneda_map_comp_eq (q ≫ e.hom) f.hom
-    exact ⟨ObjectProperty.homMk (preadditiveYoneda.map u ≫ q),
-      ObjectProperty.hom_ext _ (by simpa using hu)⟩
+    have := E.property.additive
+    obtain ⟨s, hs⟩ := exists_comp_eq_preadditiveYoneda_obj_of_epi e.hom f.hom
+    exact ⟨ObjectProperty.homMk s, ObjectProperty.hom_ext _ hs⟩
 
-/-- `mod C` has enough projectives, given by representable functors. -/
+/-- `mod C` has enough projectives: every object is a quotient of a finite sum of representable
+functors. -/
 instance : EnoughProjectives (isFinitelyPresentedFunctor C).FullSubcategory where
   presentation F := by
-    obtain ⟨Y, p, hp⟩ := exists_epi_modYoneda_obj F
-    exact ⟨{ p := modYoneda.obj Y, f := p }⟩
+    obtain ⟨n, Y, p, hp⟩ :=
+      isFinitelyGeneratedFunctor_def.1 F.property.isFinitelyGeneratedFunctor
+    let P : (isFinitelyPresentedFunctor C).FullSubcategory :=
+      ⟨_, (isFinitelyPresentedFunctor C).prop_coproduct fun i ↦
+        isFinitelyPresentedFunctor_preadditiveYoneda_obj (Y i)⟩
+    have : Projective P := projective_of_obj_eq_sigma P Y rfl
+    have : Epi (ObjectProperty.homMk p : P ⟶ F) :=
+      (isFinitelyPresentedFunctor C).ι.epi_of_epi_map hp
+    exact ⟨{ p := P, f := ObjectProperty.homMk p }⟩
+
+variable [HasFiniteBiproducts C]
 
 /-- For idempotent complete `C`, the projective objects of `mod C` are the representable functors.
 -/

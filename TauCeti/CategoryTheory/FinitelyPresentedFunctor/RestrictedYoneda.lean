@@ -7,8 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
-public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
+public import TauCeti.CategoryTheory.Preadditive.Projective.FiniteProducts
 public import TauCeti.CategoryTheory.Preadditive.RestrictedYoneda
 
 /-!
@@ -178,18 +178,6 @@ end ObjectProperty
 end CategoryTheory
 
 namespace TauCeti
-
-open ZeroObject in
-/-- The projective objects of an abelian category are closed under finite products, which are
-biproducts. -/
-instance isClosedUnderFiniteProducts_isProjective {C : Type u} [Category.{v} C] [Abelian C] :
-    (isProjective C).IsClosedUnderFiniteProducts :=
-  have : (isProjective C).IsClosedUnderIsomorphisms := ⟨fun e h ↦ Projective.of_iso e h⟩
-  have : (isProjective C).ContainsZero := ⟨⟨0, isZero_zero C, Projective.zero_projective⟩⟩
-  have : (isProjective C).IsClosedUnderBinaryProducts :=
-    ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _
-      fun X Y (_ : Projective X) (_ : Projective Y) ↦ (inferInstance : Projective (X ⊞ Y))
-  .mk'
 
 variable (C : Type u) [Category.{v} C] [Abelian C] [EnoughProjectives C]
 

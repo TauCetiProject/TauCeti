@@ -13,6 +13,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
+public import TauCeti.CategoryTheory.Preadditive.AdditiveFunctor
 public import TauCeti.CategoryTheory.Preadditive.Yoneda
 
 /-!
@@ -84,6 +85,7 @@ postcomposition with such a `u`.
 
 * M. Auslander, *Coherent functors*, Proceedings of the Conference on Categorical Algebra
   (La Jolla, 1965), Springer, 1966, 189-231.
+* B. Mitchell, *Rings with several objects*, Adv. Math. 8 (1972), 1–161, §§3 and 11.
 -/
 
 public section
@@ -161,41 +163,11 @@ theorem IsFinitelyGeneratedFunctor.of_epi (hF : IsFinitelyGeneratedFunctor F) (q
 
 /-! ### Additivity -/
 
-/-- A quotient of an additive functor `Cᵒᵖ ⥤ AddCommGrpCat` is additive. -/
-private theorem additive_of_epi {F G : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Additive] (q : F ⟶ G) [Epi q] :
-    G.Additive := by
-  refine ⟨fun {Z W a b} ↦ ?_⟩
-  ext x
-  obtain ⟨y, rfl⟩ := (AddCommGrpCat.epi_iff_surjective (q.app Z)).1 inferInstance x
-  simp only [AddCommGrpCat.hom_add_apply, ← NatTrans.naturality_apply, Functor.map_add, map_add]
-
-omit [Preadditive C] in
-/-- A biproduct of functors acts on a morphism `a` as the sum, over the summands, of the
-projection, the action of the summand on `a`, and the inclusion. -/
-private theorem biproduct_map_eq {J : Type} [Fintype J] (P : J → Cᵒᵖ ⥤ AddCommGrpCat.{v})
-    [HasBiproduct P] {Z W : Cᵒᵖ} (a : Z ⟶ W) :
-    (⨁ P).map a = ∑ j, (biproduct.π P j).app Z ≫ (P j).map a ≫ (biproduct.ι P j).app W := by
-  calc (⨁ P).map a = (𝟙 (⨁ P) : ⨁ P ⟶ ⨁ P).app Z ≫ (⨁ P).map a := by simp
-    _ = _ := by
-      rw [← biproduct.total, NatTrans.app_sum, Preadditive.sum_comp]
-      refine Finset.sum_congr rfl fun j _ ↦ ?_
-      rw [NatTrans.comp_app, Category.assoc, (biproduct.ι P j).naturality]
-
-/-- A finite coproduct of additive functors `Cᵒᵖ ⥤ AddCommGrpCat` is additive. -/
-instance additive_sigma {J : Type} [Finite J] (P : J → Cᵒᵖ ⥤ AddCommGrpCat.{v})
-    [∀ j, (P j).Additive] : (∐ P).Additive :=
-  have := Fintype.ofFinite J
-  have : HasFiniteBiproducts (Cᵒᵖ ⥤ AddCommGrpCat.{v}) := .of_hasFiniteProducts
-  have : (⨁ P).Additive := ⟨fun {Z W a b} ↦ by
-    simp only [biproduct_map_eq, Functor.map_add, Preadditive.add_comp, Preadditive.comp_add,
-      Finset.sum_add_distrib]⟩
-  Functor.additive_of_iso (biproduct.isoCoproduct P)
-
 /-- A finitely generated functor is additive: it is a quotient of an additive finite sum of
 representable functors. -/
 theorem IsFinitelyGeneratedFunctor.additive (hF : IsFinitelyGeneratedFunctor F) : F.Additive := by
   obtain ⟨n, Y, p, hp⟩ := hF
-  exact additive_of_epi p
+  exact Functor.additive_of_epi p
 
 /-- A finitely presented functor is additive. -/
 theorem IsFinitelyPresentedFunctor.additive (hF : IsFinitelyPresentedFunctor F) : F.Additive :=
