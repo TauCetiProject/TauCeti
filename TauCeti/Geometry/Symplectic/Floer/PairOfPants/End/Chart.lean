@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Shift
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Function.Floor
 
@@ -1068,6 +1069,48 @@ theorem abs_snd_fderiv_positiveEndChart_le (q : Puncture) (ζ : ℝ × ℝ) :
   refine abs_le_of_sq_le_sq ?_ (positiveEndChartScale_pos q ζ).le
   rw [sq_positiveEndChartScale_eq_sq_add_sq]
   exact le_add_of_nonneg_left (sq_nonneg _)
+
+/-- The point `±(ζ + (L, 0))` of `ℂ` is the point `±ζ` translated by `±L`. -/
+private theorem equivRealProdCLM_symm_endSign_smul_add_fst (q : Puncture) (ζ : ℝ × ℝ) (L : ℝ) :
+    Complex.equivRealProdCLM.symm (q.endSign • (ζ + (L, 0))) =
+      Complex.equivRealProdCLM.symm (q.endSign • ζ) + ↑(q.endSign * L) := by
+  apply Complex.ext <;> simp
+
+/-- Translating the positive end chart of `q` by `L` along the end multiplies its derivative by
+`e^{-2π (±L)}`, with the sign `±` of the end. -/
+theorem fderiv_positiveEndChart_add_fst (q : Puncture) (ζ : ℝ × ℝ) (L : ℝ) :
+    fderiv ℝ (positiveEndChart q) (ζ + (L, 0)) =
+      Real.exp (-(2 * π * (q.endSign * L))) • fderiv ℝ (positiveEndChart q) ζ := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  rw [smul_apply, fderiv_positiveEndChart_apply,
+    fderiv_positiveEndChart_apply, fderiv_endChart_apply, fderiv_endChart_apply,
+    equivRealProdCLM_symm_endSign_smul_add_fst, q.deriv_cylindricalEndLift_add_endSign_mul,
+    mul_assoc, ← Complex.real_smul, map_smul, smul_comm]
+
+/-- Translating the positive end chart of `q` by `L` along the end multiplies its conformal scale
+by `e^{-2π (±L)}`, with the sign `±` of the end. -/
+theorem positiveEndChartScale_add_fst (q : Puncture) (ζ : ℝ × ℝ) (L : ℝ) :
+    positiveEndChartScale q (ζ + (L, 0)) =
+      Real.exp (-(2 * π * (q.endSign * L))) * positiveEndChartScale q ζ := by
+  rw [positiveEndChartScale_apply, positiveEndChartScale_apply, positiveEndChart_apply,
+    positiveEndChart_apply, endChart_apply, endChart_apply,
+    ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.symm_apply_apply,
+    equivRealProdCLM_symm_endSign_smul_add_fst, q.cylindricalEndLift_add_endSign_mul,
+    q.endShift_apply, add_sub_cancel_left, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos (Real.exp_pos _)]
+  ring
+
+/-- **The rotation of the positive end chart depends only on the angular coordinate.** The
+derivative of `φ'_q` at `ζ`, divided by the conformal scale, is a rotation that does not change
+when `ζ` moves along the end. -/
+theorem positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq (q : Puncture)
+    {ζ ζ' : ℝ × ℝ} (h : ζ.2 = ζ'.2) :
+    (positiveEndChartScale q ζ)⁻¹ • fderiv ℝ (positiveEndChart q) ζ =
+      (positiveEndChartScale q ζ')⁻¹ • fderiv ℝ (positiveEndChart q) ζ' := by
+  have hζ' : ζ' = ζ + (ζ'.1 - ζ.1, 0) := Prod.ext (by simp) (by simp [h])
+  rw [hζ', fderiv_positiveEndChart_add_fst, positiveEndChartScale_add_fst, smul_smul]
+  congr 1
+  field_simp
 
 /-- The positive end chart sends the part `s > 0` of the end into `S`. -/
 theorem positiveEndChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}

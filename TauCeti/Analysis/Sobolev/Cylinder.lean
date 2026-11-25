@@ -405,19 +405,33 @@ section Operator
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- Multiplication by a continuous family `Φ_t` of invertible maps depending on `t` alone, the
-operator `f ↦ (z ↦ Φ_{z.2} (f z))`, maps `Lᵖ` of the strip onto `Lᵖ`: multiplication by the
-inverses `Φ_t⁻¹` is a right inverse. -/
-theorem surjective_operatorMultiplication_comp_snd [CompleteSpace V] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+operator `f ↦ (z ↦ Φ_{z.2} (f z))`, is invertible on `Lᵖ` of the strip: multiplication by the
+inverses `Φ_t⁻¹` inverts it. -/
+theorem isInvertible_operatorMultiplication_comp_snd [CompleteSpace V] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     {Φ : ℝ → V →L[ℝ] W} (hΦ : Continuous Φ) (hΦi : ∀ t, (Φ t).IsInvertible) :
-    Function.Surjective (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _)) := by
+    (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _)).IsInvertible := by
   have hΦinv := ((contDiff_zero (𝕜 := ℝ).2 hΦ).clm_inverse hΦi).continuous
   set A := (memLp_top_comp_snd hΦ).toLp _
   set B := (memLp_top_comp_snd hΦinv).toLp _
-  refine fun g ↦ ⟨Lp.operatorMultiplication p B g, Lp.ext ?_⟩
-  filter_upwards [Lp.operatorMultiplication_ae A (Lp.operatorMultiplication p B g),
-    Lp.operatorMultiplication_ae B g, (memLp_top_comp_snd hΦ).coeFn_toLp,
-    (memLp_top_comp_snd hΦinv).coeFn_toLp] with z h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₃, h₄, (hΦi z.2).self_apply_inverse]
+  refine .of_inverse (g := Lp.operatorMultiplication p B) (ContinuousLinearMap.ext fun g ↦ ?_)
+    (ContinuousLinearMap.ext fun f ↦ ?_) <;> refine Lp.ext ?_
+  · filter_upwards [Lp.operatorMultiplication_ae A (Lp.operatorMultiplication p B g),
+      Lp.operatorMultiplication_ae B g, (memLp_top_comp_snd hΦ).coeFn_toLp,
+      (memLp_top_comp_snd hΦinv).coeFn_toLp] with z h₁ h₂ h₃ h₄
+    rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, h₄, (hΦi z.2).self_apply_inverse,
+      ContinuousLinearMap.id_apply]
+  · filter_upwards [Lp.operatorMultiplication_ae B (Lp.operatorMultiplication p A f),
+      Lp.operatorMultiplication_ae A f, (memLp_top_comp_snd hΦ).coeFn_toLp,
+      (memLp_top_comp_snd hΦinv).coeFn_toLp] with z h₁ h₂ h₃ h₄
+    rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, h₄, (hΦi z.2).inverse_apply_self,
+      ContinuousLinearMap.id_apply]
+
+/-- Multiplication by a continuous family `Φ_t` of invertible maps depending on `t` alone, the
+operator `f ↦ (z ↦ Φ_{z.2} (f z))`, maps `Lᵖ` of the strip onto `Lᵖ`. -/
+theorem surjective_operatorMultiplication_comp_snd [CompleteSpace V] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {Φ : ℝ → V →L[ℝ] W} (hΦ : Continuous Φ) (hΦi : ∀ t, (Φ t).IsInvertible) :
+    Function.Surjective (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _)) :=
+  (isInvertible_operatorMultiplication_comp_snd hΦ hΦi).surjective
 
 /-- The **semi-Fredholm estimate** with constants `C` and `T` for the first-order operator
 `D ξ = M (ξ, ∂s ξ, ∂t ξ)` on the cylinder: for every `C²` section `ξ` of period one in `t` that
