@@ -284,11 +284,23 @@ private theorem map_permutationGL_of_ih {n : Type*} [Fintype n] [DecidableEq n]
   induction σ using Equiv.Perm.swap_induction_on with
   | one => simp
   | swap_mul τ i j hij ih =>
-    rw [map_mul, ← diagGL_mul_transvectionWeylElement_eq_permutationGL_swap hij,
-      map_mul Equiv.Perm.sign, Equiv.Perm.sign_swap hij, map_mul (Units.map _),
-      Group.Abelianization.of.map_mul]
-    simp [ih, hf_diag, transvectionWeylElement_def, hf_transv,
-      Pi.mulSingle_apply, apply_ite Group.Abelianization.of]
+    have hweyl :
+        f (permutationGL (k := D) (Equiv.swap i j)) = Group.Abelianization.of (-1 : Dˣ) := by
+      have h := congrArg f (transvectionWeylElement_eq_diagGL_mul_permutationGL (A := D) hij)
+      have h1 : f (transvectionWeylElement (A := D) hij) = 1 := by
+        simp [transvectionWeylElement_def, hf_transv]
+      have h2 : f (diagGL (Pi.mulSingle j (-1 : Dˣ))) = Group.Abelianization.of (-1 : Dˣ) := by
+        simp [hf_diag, Pi.mulSingle_apply, apply_ite Group.Abelianization.of]
+      rw [h1, map_mul, h2] at h
+      have hsq : Group.Abelianization.of (-1 : Dˣ) * Group.Abelianization.of (-1 : Dˣ) = 1 := by
+        rw [← map_mul, neg_mul_neg, one_mul, map_one]
+      calc f (permutationGL (k := D) (Equiv.swap i j))
+          = (Group.Abelianization.of (-1 : Dˣ) * Group.Abelianization.of (-1 : Dˣ)) *
+              f (permutationGL (k := D) (Equiv.swap i j)) := by rw [hsq, one_mul]
+        _ = Group.Abelianization.of (-1 : Dˣ) := by rw [mul_assoc, ← h, mul_one]
+    rw [map_mul, map_mul, hweyl, ih, map_mul Equiv.Perm.sign, Equiv.Perm.sign_swap hij,
+      map_mul (Units.map _), Group.Abelianization.of.map_mul]
+    simp
 
 private theorem prod_abelianization_mulSingle {ι : Type*} [Fintype ι] [DecidableEq ι]
     {G : Type*} [Group G] (i : ι) (u : G) :

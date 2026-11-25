@@ -43,7 +43,9 @@ range, so the value is a `dite` rather than a plain application.
 ## Main results
 
 * `Equiv.Perm.eq_one_or_swap_fin_two` and `Equiv.Perm.univ_fin_two`: every permutation of
-  `Fin 2` is the identity or the transposition, and these form the set of all permutations.
+  `Fin 2` is the identity or the transposition, and these form the set of all permutations;
+  so a function of a pair that is invariant under the swap is invariant under every permutation
+  (`Equiv.Perm.apply_comp_fin_two`).
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
 * `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
@@ -57,6 +59,9 @@ range, so the value is a `dite` rather than a plain application.
   `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Fin.coe_finRotate_eq_ite`: the value of `finRotate n` on any `Fin n`, with wrap-around
   determined by whether the index plus one equals `n`.
+* `Fin.finRotate_ofNat`: reading natural times modulo `k`, `finRotate k` moves to the next time;
+  `Fin.image_range_ofNat_eq_image_univ`: at least `k` consecutive times visit every entry of a
+  tuple of length `k`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
@@ -440,6 +445,27 @@ theorem coe_finRotate_eq_ite {n : ℕ} (i : Fin n) :
   | succ m =>
     rw [coe_finRotate]
     simp [Fin.ext_iff]
+
+/-- Reading the times `i : ℕ` modulo `k`, the cyclic successor `finRotate k` of the index at time
+`i` is the index at time `i + 1`. -/
+theorem finRotate_ofNat {k : ℕ} [NeZero k] (i : ℕ) :
+    finRotate k (Fin.ofNat k i) = Fin.ofNat k (i + 1) := by
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by have := NeZero.ne k; omega⟩
+  simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
+
+/-- Reading a tuple of length `k` along at least `k` consecutive times modulo `k` visits exactly
+the entries of the tuple. -/
+theorem image_range_ofNat_eq_image_univ {α : Type*} [DecidableEq α] {k m : ℕ} [NeZero k]
+    (w : Fin k → α) (hkm : k ≤ m) :
+    (Finset.range m).image (fun i => w (Fin.ofNat k i)) = Finset.univ.image w := by
+  ext x
+  constructor
+  · rintro hx
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
+    exact Finset.mem_image.mpr ⟨_, Finset.mem_univ _, rfl⟩
+  · rintro hx
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
+    exact Finset.mem_image.mpr ⟨i.val, Finset.mem_range.mpr (by omega), by simp⟩
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/
@@ -1152,6 +1178,20 @@ theorem univ_fin_two :
   classical
   ext e
   simpa using e.eq_one_or_swap_fin_two
+
+/-- A function of a pair that is unchanged by swapping the two entries is unchanged by every
+permutation of the entries. -/
+theorem apply_comp_fin_two {α β : Type*} (σ : Equiv.Perm (Fin 2)) {f : (Fin 2 → α) → β}
+    (hf : ∀ a b, f ![a, b] = f ![b, a]) (μ : Fin 2 → α) : f (μ ∘ σ) = f μ := by
+  rcases σ.eq_one_or_swap_fin_two with rfl | rfl
+  · rfl
+  · have hswap : μ ∘ Equiv.swap 0 1 = ![μ 1, μ 0] := by
+      ext i
+      fin_cases i <;> simp
+    have hμ : μ = ![μ 0, μ 1] := by
+      ext i
+      fin_cases i <;> simp
+    rw [hswap, ← hf, ← hμ]
 
 end Equiv.Perm
 

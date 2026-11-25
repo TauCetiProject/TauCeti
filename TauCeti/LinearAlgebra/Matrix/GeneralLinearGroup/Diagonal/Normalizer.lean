@@ -35,6 +35,8 @@ Weyl group of the corresponding coordinate root datum with the same permutation 
 * `Equiv.reindexGL_diagGL`: reindexing an invertible diagonal matrix relabels its diagonal entries.
 * `TauCeti.map_permutationGL`: a ring homomorphism maps permutation matrices to permutation
   matrices.
+* `TauCeti.det_permutationGL`: the determinant of a permutation matrix is the sign of the
+  permutation.
 * `TauCeti.diagGL_mul_permutationGL`: moving a permutation matrix past a diagonal one relabels
   the diagonal entries.
 * `TauCeti.exists_eq_diagGL_mul_permutationGL_of_forall_ne`: an invertible matrix whose
@@ -173,6 +175,15 @@ theorem map_permutationGL {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S
     Matrix.GeneralLinearGroup.map f (permutationGL (k := R) σ) = permutationGL (k := S) σ := by
   ext i j
   simp [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, apply_ite f]
+
+/-- The determinant of the permutation matrix of `σ` is the sign of `σ`. -/
+@[simp]
+theorem det_permutationGL {R : Type*} [CommRing R] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (σ : Equiv.Perm ι) :
+    Matrix.GeneralLinearGroup.det (permutationGL (k := R) σ) =
+      Units.map (Int.castRingHom R) (Equiv.Perm.sign σ) := by
+  ext
+  simp [permutationGL_coe, Matrix.det_permutation]
 
 /-- Conjugating a diagonal matrix by a monomial matrix `diagGL d * permutationGL σ` relabels its
 diagonal entries along `σ`: the diagonal factor commutes with the diagonal matrix. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finsupp.Fin
 public import Mathlib.Data.Finsupp.Lex
 public import Mathlib.Order.Fin.Tuple
+import TauCeti.Order.Fin.Tuple
 
 /-!
 # `Finsupp.cons`, `Finsupp.snoc` and their lexicographic comparison
@@ -87,9 +88,9 @@ theorem snoc_zero_zero : snoc (0 : Fin n →₀ M) 0 = 0 := by
   ext i
   cases i using Fin.lastCases <;> simp
 
-theorem snoc_injective2 : Function.Injective2 (snoc (n := n) (M := M)) := by
-  intro s s' y y' h
-  exact ⟨by simpa using congrArg init h, by simpa using DFunLike.congr_fun h (Fin.last n)⟩
+theorem snoc_injective2 : Function.Injective2 (snoc (n := n) (M := M)) := fun _ _ _ _ h ↦
+  (Fin.snoc_injective2 (α := fun _ ↦ M)
+    (by simpa only [coe_snoc] using congrArg DFunLike.coe h)).imp_left (DFunLike.coe_injective ·)
 
 @[simp]
 theorem snoc_inj {s s' : Fin n →₀ M} {y y' : M} : snoc s y = snoc s' y' ↔ s = s' ∧ y = y' :=
@@ -104,25 +105,8 @@ theorem eq_snoc_iff {t : Fin (n + 1) →₀ M} {s : Fin n →₀ M} {y : M} :
 compares the last entries when the initial parts are equal. -/
 theorem toLex_snoc_lt_toLex_snoc_iff [LT M] {x y : M} {s t : Fin n →₀ M} :
     toLex (snoc s x) < toLex (snoc t y) ↔ toLex s < toLex t ∨ s = t ∧ x < y := by
-  simp only [Lex.lt_iff, ofLex_toLex, coe_snoc]
-  constructor
-  · rintro ⟨i, hlt, hi⟩
-    cases i using Fin.lastCases with
-    | last =>
-      refine .inr ⟨ext fun j ↦ ?_, by simpa using hi⟩
-      simpa using hlt j.castSucc (Fin.castSucc_lt_last j)
-    | cast i =>
-      refine .inl ⟨i, fun j hj ↦ ?_, by simpa using hi⟩
-      simpa using hlt j.castSucc (Fin.castSucc_lt_castSucc_iff.2 hj)
-  · rintro (⟨i, hlt, hi⟩ | ⟨rfl, h⟩)
-    · refine ⟨i.castSucc, fun j hj ↦ ?_, by simpa using hi⟩
-      cases j using Fin.lastCases with
-      | last => exact absurd hj (Fin.castSucc_lt_last i).not_gt
-      | cast j => simpa using hlt j (Fin.castSucc_lt_castSucc_iff.1 hj)
-    · refine ⟨Fin.last n, fun j hj ↦ ?_, by simpa using h⟩
-      cases j using Fin.lastCases with
-      | last => exact absurd hj (lt_irrefl _)
-      | cast j => simp
+  simp only [Lex.lt_iff, ofLex_toLex, coe_snoc, ← DFunLike.coe_injective.eq_iff]
+  exact Fin.pi_lex_lt_snoc_snoc (α := fun _ ↦ M) (s := fun {_} ↦ (· < ·))
 
 end Snoc
 

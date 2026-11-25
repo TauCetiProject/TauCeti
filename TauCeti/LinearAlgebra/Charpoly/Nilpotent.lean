@@ -42,13 +42,46 @@ On a finite projective module, nilpotence of `f` alone makes `det (1 - X f)` a u
 (`LinearMap.isUnit_projectiveCharpolyRev_of_isNilpotent`), hence equal to `1` over a reduced ring
 (`LinearMap.projectiveCharpolyRev_eq_one_of_isNilpotent`), without assuming the module free.
 Thus, over a reduced ring, a nilpotent summand contributes nothing to a Fredholm determinant.
+
+Conversely, over any commutative ring, the Cayley–Hamilton theorem turns a characteristic
+polynomial `(X - μ) ^ n` into the explicit bound `(f - μ • 1) ^ n = 0`
+(`LinearMap.sub_smul_pow_eq_zero_of_charpoly_eq`), and a matrix with characteristic polynomial
+`X ^ n` satisfies `A ^ n = 0` (`Matrix.pow_eq_zero_of_charpoly_eq_X_pow`). No reducedness is
+needed in this direction.
 -/
 
 public section
 
+open Polynomial
+
+namespace Matrix
+
+/-- **Cayley–Hamilton bound for a nilpotent matrix.** Over any commutative ring, a square matrix
+with characteristic polynomial `X ^ n` satisfies `A ^ n = 0`. -/
+theorem pow_eq_zero_of_charpoly_eq_X_pow {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    {A : Matrix ι ι R} {n : ℕ} (h : A.charpoly = X ^ n) : A ^ n = 0 := by
+  simpa [h] using A.aeval_self_charpoly
+
+end Matrix
+
 namespace LinearMap
 
-open Polynomial Module
+open Module
+
+section Free
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M]
+  [Module.Finite R M]
+
+/-- **Cayley–Hamilton bound for a scalar plus a nilpotent endomorphism.** Over any commutative
+ring, an endomorphism `f` of a finite free module with characteristic polynomial `(X - μ) ^ n`
+satisfies `(f - μ • 1) ^ n = 0`. This converse of
+`LinearMap.charpoly_eq_pow_of_isNilpotent_sub_smul` needs no reducedness. -/
+theorem sub_smul_pow_eq_zero_of_charpoly_eq {f : Module.End R M} {μ : R} {n : ℕ}
+    (h : f.charpoly = (X - C μ) ^ n) : (f - μ • 1) ^ n = 0 := by
+  simpa [h, Algebra.algebraMap_eq_smul_one] using f.aeval_self_charpoly
+
+end Free
 
 section Reduced
 
