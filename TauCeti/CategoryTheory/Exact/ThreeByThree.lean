@@ -178,9 +178,7 @@ private theorem exists_threeByThree_cokernel {D : ShortComplex (ShortComplex C)}
   have : Epi c := hpairQ.epi_g
   have hc : (D.f.τ₁ ≫ D.X₂.f) ≫ c = 0 := by rw [D.f.comm₁₂]; exact hc'
   have hQ : E.Conflation (ShortComplex.mk (D.f.τ₁ ≫ D.X₂.f) c hc) :=
-    E.conflation_of_iso (S := ShortComplex.mk (D.X₁.f ≫ D.f.τ₂) c hc')
-      (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp [D.f.comm₁₂])
-        (by simp)) hQ'
+    E.conflation_mk_of_eq hQ' D.f.comm₁₂.symm rfl
   obtain ⟨α₂, β₂, hαβ₂, hII, hα₂, hβ₂⟩ := E.exists_conflation_of_conflation_comp hX₁ h₂ hQ'
   have hz : (D.X₁.f ≫ D.f.τ₂) ≫ D.X₂.g = 0 := by
     rw [← D.f.comm₁₂, Category.assoc, D.X₂.zero, comp_zero]
@@ -212,12 +210,9 @@ theorem conflation_X₃_of_conflation_X₁ {D : ShortComplex (ShortComplex C)}
   -- gives the bottom row.
   have h₃' : E.Conflation (ShortComplex.mk (α₂ ≫ β₁) D.g.τ₃
       (by rw [e₁]; exact (D.map ShortComplex.π₃).zero)) :=
-    E.conflation_of_iso (S := D.map ShortComplex.π₃)
-      (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp [e₁]) (by simp)) h₃
+    E.conflation_mk_of_eq h₃ e₁.symm rfl
   obtain ⟨q, hq₀, hT, hq⟩ := E.exists_conflation_comp_of_conflation hI hII h₃'
-  refine E.conflation_of_iso ?_ hT
-  exact ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp [e₂])
-    (by simp [← cancel_epi β₂, hq, e₃])
+  exact E.conflation_mk_of_eq hT e₂ (by rw [← cancel_epi β₂, hq, e₃])
 
 /-- **The `3 × 3` lemma, bottom to top.** In a `3 × 3` diagram whose three columns and middle
 row are conflations, if the bottom row is a conflation then so is the top row. -/
@@ -289,8 +284,7 @@ theorem conflation_X₂_of_conflation_X₁_of_conflation_X₃ {D : ShortComplex 
   have hα₁' : α₁ = baseChangeι D.X₃ sq.flip :=
     sq.flip.hom_ext (by rw [baseChangeι_fst, e₂]) (by rw [baseChangeι_snd, e₄])
   subst hα₁'
-  refine E.conflation_of_iso ?_ (E.conflation_of_conflation_comp h₁ hQ hB hα₁.symm)
-  exact ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp) (by simp [hβ₁])
+  exact E.conflation_mk_of_eq (E.conflation_of_conflation_comp h₁ hQ hB hα₁.symm) rfl hβ₁
 
 end ExactStructure
 
