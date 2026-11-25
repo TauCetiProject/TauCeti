@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Nonsqueezing.ProductCurve
+public import TauCeti.Analysis.Complex.RiemannSurface.MappingDegree
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Prod
+public import TauCeti.Geometry.Symplectic.Manifold.Torus.SphericalArea
+import TauCeti.Algebra.Order.Ring.IntMul
 
 /-!
 # Pseudoholomorphic spheres in `S² × S²` for the product structure
@@ -23,8 +27,9 @@ and `τ`, the degree formula applied to each component gives
 `∫_C u^*(pr₁^*σ + pr₂^*τ) = deg(pr₁ ∘ u) ∫_S σ + deg(pr₂ ∘ u) ∫_N τ`
 (`TauCeti.integralTopForm_mpullback_prod_eq_degree_mul_add_degree_mul`). On `S² × S²` the area of
 `u` is therefore `deg(pr₁ ∘ u) a + deg(pr₂ ∘ u) b`
-(`TauCeti.integralTopForm_mpullback_prod_fubiniStudyForm`). In the equal-area case `a = b` every
-area is an integer multiple of `a`, so a positive area is at least `a`
+(`TauCeti.integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_degree_mul_add_degree_mul`). In
+the equal-area case `a = b` every area is an integer multiple of `a`, so a positive area is at
+least `a`
 (`TauCeti.le_integralTopForm_mpullback_prod_smul_fubiniStudyForm`): the ruling classes have the
 minimum positive area. This is the area gap which prevents the spheres of the ruling classes
 from bubbling.
@@ -34,9 +39,9 @@ components, so both degrees are nonnegative, and each vanishes exactly when its 
 constant. Hence:
 
 * for `a, b ≥ 0`, a nonconstant `J₀`-holomorphic sphere has area at least `min a b`
-  (`TauCeti.min_le_integralTopForm_mpullback_prod_fubiniStudyForm`), and for `a, b > 0` it has
-  area zero exactly when it is constant
-  (`TauCeti.integralTopForm_mpullback_prod_fubiniStudyForm_eq_zero_iff`);
+  (`TauCeti.min_le_integralTopForm_mpullback_prod_smul_fubiniStudyForm`), and for `a, b > 0` it
+  has area zero exactly when it is constant
+  (`TauCeti.integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_zero_iff`);
 * the `J₀`-holomorphic spheres with component degrees `(1, 0)`, the class `A`, are exactly the
   maps `z ↦ (g • z, w)` for a Möbius transformation `g` and a point `w`
   (`TauCeti.degree_fst_comp_eq_one_and_degree_snd_comp_eq_zero_iff`), and those of class `B` are
@@ -45,12 +50,17 @@ constant. Hence:
 * for equal areas `a = b ≠ 0`, the `J₀`-holomorphic spheres of area `a` are exactly the spheres
   of these two forms (`TauCeti.integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_iff`).
 
-**Leaves.** The image of `z ↦ (g • z, w)` is the horizontal leaf `S² × {w}`
-(`TauCeti.range_smul_prodMk_const`), and that of `z ↦ (w, g • z)` the vertical leaf `{w} × S²`
-(`TauCeti.range_const_prodMk_smul`); both hold for any group action. So two spheres of one ruling
+The maps `z ↦ (g • z, w)` and `z ↦ (w, g • z)` are themselves smooth and pseudoholomorphic
+(`TauCeti.contMDiff_smul_prodMk_const`, `TauCeti.isPseudoholomorphic_smul_prodMk_const`,
+`TauCeti.contMDiff_const_prodMk_smul`, `TauCeti.isPseudoholomorphic_const_prodMk_smul`, stated for
+any target `M` in place of the other factor).
+
+**Leaves.** Since a Möbius transformation is surjective (`MulAction.surjective`), the image of
+`z ↦ (g • z, w)` is the horizontal leaf `S² × {w}` and that of `z ↦ (w, g • z)` the vertical leaf
+`{w} × S²` (`Set.range_prodMk_const`, `Set.range_const_prodMk`). So two spheres of one ruling
 class have equal or disjoint images, every point of `S² × S²` lies on the image of a sphere of
 each class, and a sphere of class `A` meets a sphere of class `B` in exactly one point
-(`TauCeti.range_smul_prodMk_const_inter_range_const_prodMk_smul`). These are the two rulings of
+(`Set.range_prodMk_const_inter_range_const_prodMk`). These are the two rulings of
 `S² × S²` for `J₀`, the standard seeds from which Gromov's argument continues the rulings to an
 arbitrary tame almost complex structure.
 
@@ -125,7 +135,8 @@ variable {E H C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 boundaryless surface to `S² × S²`, the area for the split form
 `pr₁^*(a • ω_FS) + pr₂^*(b • ω_FS)` is `deg(pr₁ ∘ u) a + deg(pr₂ ∘ u) b`, for the canonical
 orientation of the Riemann sphere. -/
-theorem integralTopForm_mpullback_prod_fubiniStudyForm (a b : ℝ) :
+theorem integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_degree_mul_add_degree_mul
+    (a b : ℝ) :
     integralTopForm o (SmoothForm.mpullback u hu
         ((a • OnePoint.fubiniStudyForm).prod (b • OnePoint.fubiniStudyForm))).val =
       degree o ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
@@ -147,7 +158,8 @@ compact oriented boundaryless surface to `S² × S²` with the split form
 theorem exists_integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_intCast_mul (a : ℝ) :
     ∃ m : ℤ, integralTopForm o (SmoothForm.mpullback u hu
         ((a • OnePoint.fubiniStudyForm).prod (a • OnePoint.fubiniStudyForm))).val = m * a := by
-  rw [integralTopForm_mpullback_prod_fubiniStudyForm o hu a a, ← add_mul, ← Int.cast_add]
+  rw [integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_degree_mul_add_degree_mul o hu a a,
+    ← add_mul, ← Int.cast_add]
   exact ⟨_, rfl⟩
 
 /-- **The minimum positive area of equal-area `S² × S²`.** For a smooth map `u` from a compact
@@ -159,13 +171,10 @@ theorem le_integralTopForm_mpullback_prod_smul_fubiniStudyForm {a : ℝ}
         ((a • OnePoint.fubiniStudyForm).prod (a • OnePoint.fubiniStudyForm))).val) :
     a ≤ integralTopForm o (SmoothForm.mpullback u hu
         ((a • OnePoint.fubiniStudyForm).prod (a • OnePoint.fubiniStudyForm))).val := by
-  obtain ⟨m, hm⟩ := exists_integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_intCast_mul o hu a
+  obtain ⟨m, hm⟩ :=
+    exists_integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_intCast_mul o hu a
   rw [hm] at hpos ⊢
-  rcases le_or_gt a 0 with ha | ha
-  · exact ha.trans hpos.le
-  · have hm0 : (0 : ℤ) < m := by exact_mod_cast pos_of_mul_pos_left hpos ha.le
-    have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast (show (1 : ℤ) ≤ m by omega)
-    exact le_mul_of_one_le_left ha.le hm1
+  exact le_intCast_mul_of_pos hpos
 
 end Area
 
@@ -245,7 +254,7 @@ theorem degree_fst_comp_eq_zero_and_degree_snd_comp_eq_one_iff :
 include hu in
 /-- The area of a pseudoholomorphic sphere in `S² × S²` is `m a + n b` for the nonnegative
 component degrees `m` and `n`, which both vanish exactly when the sphere is constant. -/
-private theorem exists_integralTopForm_mpullback_prod_fubiniStudyForm_eq (a b : ℝ) :
+private theorem exists_integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq (a b : ℝ) :
     ∃ m n : ℤ, 0 ≤ m ∧ 0 ≤ n ∧ ((m = 0 ∧ n = 0) ↔ ∀ z z', u z = u z') ∧
       integralTopForm ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
           (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
@@ -254,7 +263,7 @@ private theorem exists_integralTopForm_mpullback_prod_fubiniStudyForm_eq (a b : 
         m * a + n * b := by
   refine ⟨_, _, (mdifferentiable_fst_comp hhol).degree_reindex_complexManifoldOrientation_nonneg,
     (mdifferentiable_snd_comp hhol).degree_reindex_complexManifoldOrientation_nonneg, ?_,
-    integralTopForm_mpullback_prod_fubiniStudyForm _ hu a b⟩
+    integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_degree_mul_add_degree_mul _ hu a b⟩
   rw [(mdifferentiable_fst_comp hhol).degree_reindex_complexManifoldOrientation_eq_zero_iff,
     (mdifferentiable_snd_comp hhol).degree_reindex_complexManifoldOrientation_eq_zero_iff]
   exact ⟨fun h z z' ↦ Prod.ext (h.1 z z') (h.2 z z'),
@@ -265,14 +274,14 @@ include hu in
 `a, b ≥ 0`, a nonconstant smooth map `u : S² → S² × S²`, pseudoholomorphic for the product of the
 complex structures of the two factors, has area at least `min a b` for the split form
 `pr₁^*(a • ω_FS) + pr₂^*(b • ω_FS)`. -/
-theorem min_le_integralTopForm_mpullback_prod_fubiniStudyForm {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b)
-    (hne : ∃ z z', u z ≠ u z') :
+theorem min_le_integralTopForm_mpullback_prod_smul_fubiniStudyForm {a b : ℝ} (ha : 0 ≤ a)
+    (hb : 0 ≤ b) (hne : ∃ z z', u z ≠ u z') :
     min a b ≤ integralTopForm ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
         (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
       (SmoothForm.mpullback u hu
         ((a • OnePoint.fubiniStudyForm).prod (b • OnePoint.fubiniStudyForm))).val := by
   obtain ⟨m, n, hm, hn, hzero, harea⟩ :=
-    exists_integralTopForm_mpullback_prod_fubiniStudyForm_eq hu hhol a b
+    exists_integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq hu hhol a b
   have hmn : 1 ≤ m ∨ 1 ≤ n := by
     by_contra h
     obtain ⟨z, z', hzz'⟩ := hne
@@ -291,7 +300,7 @@ include hu in
 `u : S² → S² × S²`, pseudoholomorphic for the product of the complex structures of the two
 factors, has area zero for the split form `pr₁^*(a • ω_FS) + pr₂^*(b • ω_FS)` exactly when it is
 constant. -/
-theorem integralTopForm_mpullback_prod_fubiniStudyForm_eq_zero_iff {a b : ℝ} (ha : 0 < a)
+theorem integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_zero_iff {a b : ℝ} (ha : 0 < a)
     (hb : 0 < b) :
     integralTopForm ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
         (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
@@ -299,7 +308,7 @@ theorem integralTopForm_mpullback_prod_fubiniStudyForm_eq_zero_iff {a b : ℝ} (
         ((a • OnePoint.fubiniStudyForm).prod (b • OnePoint.fubiniStudyForm))).val = 0 ↔
       ∀ z z', u z = u z' := by
   obtain ⟨m, n, hm, hn, hzero, harea⟩ :=
-    exists_integralTopForm_mpullback_prod_fubiniStudyForm_eq hu hhol a b
+    exists_integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq hu hhol a b
   rw [harea, ← hzero]
   have hm' : (0 : ℝ) ≤ m := by exact_mod_cast hm
   have hn' : (0 : ℝ) ≤ n := by exact_mod_cast hn
@@ -327,64 +336,42 @@ theorem integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_iff {a : ℝ} (ha
         ∃ (w : OnePoint ℂ) (g : GL (Fin 2) ℂ), u = fun z ↦ (w, g • z) := by
   rw [← degree_fst_comp_eq_one_and_degree_snd_comp_eq_zero_iff hhol,
     ← degree_fst_comp_eq_zero_and_degree_snd_comp_eq_one_iff hhol,
-    integralTopForm_mpullback_prod_fubiniStudyForm _ hu a a, ← add_mul, mul_eq_right₀ ha]
+    integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_degree_mul_add_degree_mul _ hu a a,
+    ← add_mul, mul_eq_right₀ ha]
   have hm := (mdifferentiable_fst_comp hhol).degree_reindex_complexManifoldOrientation_nonneg
   have hn := (mdifferentiable_snd_comp hhol).degree_reindex_complexManifoldOrientation_nonneg
   constructor
   · intro h
-    have h' : degree ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
-          (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
-        ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
-          (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
-        (Prod.fst ∘ u) +
-      degree ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
-          (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
-        ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
-          (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
-        (Prod.snd ∘ u) = 1 := by exact_mod_cast h
+    norm_cast at h
     omega
   · rintro (⟨h₁, h₂⟩ | ⟨h₁, h₂⟩) <;> simp [h₁, h₂]
 
 end Holomorphic
 
-/-! ### The two rulings -/
-
-section Ruling
-
-variable {G X M : Type*} [Group G] [MulAction G X]
-
-/-- The image of the sphere `z ↦ (g • z, w)` of class `A` is the horizontal leaf `S² × {w}`. More
-generally, for a group `G` acting on `X`, the image of `x ↦ (g • x, w)` is `X × {w}`. -/
-@[simp]
-theorem range_smul_prodMk_const (g : G) (w : M) :
-    range (fun x : X ↦ (g • x, w)) = univ ×ˢ {w} := by
-  ext ⟨x, y⟩
-  simp only [mem_range, Prod.mk.injEq, mem_prod, mem_univ, mem_singleton_iff, true_and]
-  exact ⟨fun ⟨_, _, h⟩ ↦ h.symm, fun h ↦ ⟨g⁻¹ • x, smul_inv_smul g x, h.symm⟩⟩
-
-/-- The image of the sphere `z ↦ (w, g • z)` of class `B` is the vertical leaf `{w} × S²`. More
-generally, for a group `G` acting on `X`, the image of `x ↦ (w, g • x)` is `{w} × X`. -/
-@[simp]
-theorem range_const_prodMk_smul (w : M) (g : G) :
-    range (fun x : X ↦ (w, g • x)) = {w} ×ˢ univ := by
-  ext ⟨x, y⟩
-  simp only [mem_range, Prod.mk.injEq, mem_prod, mem_univ, mem_singleton_iff, and_true]
-  exact ⟨fun ⟨_, h, _⟩ ↦ h.symm, fun h ↦ ⟨g⁻¹ • y, h.symm, smul_inv_smul g y⟩⟩
-
-/-- **A sphere of class `A` meets a sphere of class `B` in exactly one point.** The images of
-`z ↦ (g • z, w)` and `z ↦ (w', h • z)` meet exactly in `(w', w)`; this holds for any group acting
-on `X` in place of the Möbius group acting on the Riemann sphere. -/
-theorem range_smul_prodMk_const_inter_range_const_prodMk_smul (g h : G) (w w' : X) :
-    range (fun x : X ↦ (g • x, w)) ∩ range (fun x : X ↦ (w', h • x)) = {(w', w)} := by
-  rw [range_smul_prodMk_const, range_const_prodMk_smul, prod_inter_prod, univ_inter,
-    inter_univ, singleton_prod_singleton]
-
-end Ruling
-
 section Smooth
 
 variable {F H' M : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ F H'} [TopologicalSpace M] [ChartedSpace H' M]
+
+/-- The maps `z ↦ (g • z, t)` from the Riemann sphere to `S² × M` are smooth. -/
+theorem contMDiff_smul_prodMk_const (g : GL (Fin 2) ℂ) (t : M) :
+    ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod I') ∞ (fun z : OnePoint ℂ ↦ (g • z, t)) :=
+  -- The Möbius action is holomorphic, hence smooth for the underlying real structure.
+  haveI := ContMDiffConstSMul.restrictScalars ℝ
+    (inferInstance : ContMDiffConstSMul 𝓘(ℂ) ∞ (GL (Fin 2) ℂ) (OnePoint ℂ))
+  (contMDiff_const_smul g).prodMk contMDiff_const
+
+/-- The maps `z ↦ (g • z, t)` from the Riemann sphere to `S² × M` are pseudoholomorphic for the
+product of the complex structure of the sphere and any almost complex structure `L` on `M`. -/
+theorem isPseudoholomorphic_smul_prodMk_const [FiniteDimensional ℝ F] [IsManifold I' ∞ M]
+    (L : SmoothAlmostComplexStructure I' M) (g : GL (Fin 2) ℂ) (t : M) :
+    IsPseudoholomorphic (SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ))
+      ((SmoothAlmostComplexStructure.ofComplexManifold ℂ (OnePoint ℂ)).prod L)
+      (fun z : OnePoint ℂ ↦ (g • z, t)) :=
+  SmoothAlmostComplexStructure.isPseudoholomorphic_prod_iff.2
+    ⟨isPseudoholomorphic_ofComplexManifold_iff.2
+      ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ∞) g).mdifferentiable (by simp)),
+      isPseudoholomorphic_const _ _ t⟩
 
 /-- The maps `z ↦ (w, g • z)` from the Riemann sphere to `M × S²` are smooth. -/
 theorem contMDiff_const_prodMk_smul (w : M) (g : GL (Fin 2) ℂ) :

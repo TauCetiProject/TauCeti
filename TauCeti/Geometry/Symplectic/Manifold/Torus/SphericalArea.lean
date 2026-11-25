@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 public import TauCeti.Geometry.Manifold.Degree.Global
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.Torus.Basic
+import TauCeti.Algebra.Order.Ring.IntMul
 import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Spherical
 import TauCeti.AlgebraicTopology.UniversalCover.Torus.HigherHomotopy
 import TauCeti.Geometry.Manifold.DeRham.SimplyConnected
@@ -191,11 +192,7 @@ theorem integralTopForm_le_integralTopForm_mpullback_prod_torusSymplecticForm
   obtain ⟨m, hm⟩ :=
     exists_integralTopForm_mpullback_prod_torusSymplecticForm_eq_intCast_mul o o' hσ hu
   rw [hm] at hpos ⊢
-  rcases le_or_gt (integralTopForm o' σ.val) 0 with ha | ha
-  · exact ha.trans hpos.le
-  · have hm0 : (0 : ℤ) < m := by exact_mod_cast pos_of_mul_pos_left hpos ha.le
-    have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast (show (1 : ℤ) ≤ m by omega)
-    exact le_mul_of_one_le_left ha.le hm1
+  exact le_intCast_mul_of_pos hpos
 
 end TauCeti
 
