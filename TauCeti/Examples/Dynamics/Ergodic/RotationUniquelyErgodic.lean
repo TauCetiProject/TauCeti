@@ -28,7 +28,8 @@ namespace TauCeti.RotationUniquelyErgodicExamples
 /-- An irrational rotation of the circle is uniquely ergodic. -/
 theorem uniquelyErgodic_irrational {a : ℝ} (ha : Irrational a) :
     UniquelyErgodic ((a : UnitAddCircle) + · : UnitAddCircle → UnitAddCircle) :=
-  uniquelyErgodic_add_left (AddCircle.denseRange_zsmul_coe_iff.mpr (by simpa using ha))
+  uniquelyErgodic_add_left_of_denseRange_zsmul <|
+    AddCircle.denseRange_zsmul_coe_iff.mpr (by simpa using ha)
 
 /-- For an irrational rotation, every invariant probability is `volume`. -/
 example {a : ℝ} (ha : Irrational a) (ν : ProbabilityMeasure UnitAddCircle)

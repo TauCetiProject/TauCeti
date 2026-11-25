@@ -22,8 +22,9 @@ the rotation has exactly one invariant probability.
 
 ## Main results
 
-* `TauCeti.uniquelyErgodic_mul_left`, `TauCeti.uniquelyErgodic_add_left`: a rotation of a compact
-  metrizable group with dense powers (or multiples) is uniquely ergodic.
+* `TauCeti.uniquelyErgodic_mul_left_of_denseRange_zpow`,
+  `TauCeti.uniquelyErgodic_add_left_of_denseRange_zsmul`: a rotation of a compact metrizable group
+  with dense powers (or multiples) is uniquely ergodic.
 
 ## References
 
@@ -47,7 +48,7 @@ integer powers are dense is uniquely ergodic: it has exactly one invariant proba
 @[to_additive /-- **Unique ergodicity of rotations.** A rotation `x ↦ a + x` of a compact
 metrizable additive group whose integer multiples are dense is uniquely ergodic: it has exactly
 one invariant probability. -/]
-theorem uniquelyErgodic_mul_left [CompactSpace G] [MetrizableSpace G] {a : G}
+theorem uniquelyErgodic_mul_left_of_denseRange_zpow [CompactSpace G] [MetrizableSpace G] {a : G}
     (ha : DenseRange (fun n : ℤ ↦ a ^ n)) : UniquelyErgodic (a * · : G → G) := by
   have : SecondCountableTopology G := by
     let := metrizableSpaceMetric G
