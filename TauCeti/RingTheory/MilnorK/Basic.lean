@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Congruence.Basic
 public import Mathlib.RingTheory.Congruence.Hom
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Ring.Parity
 
 /-!
 # Milnor K-theory
@@ -454,12 +455,6 @@ theorem map_mem_degree {S : Type*} [CommRing S] (f : R →+* S) {n : ℕ} {x : M
 
 section Involute
 
-/-- A sign `(-1) ^ N` moves to the front past any element; this is the sign bookkeeping used by
-the grade involution and by graded commutativity. -/
-theorem mul_neg_one_pow_mul (z : MilnorK R) (N : ℕ) (w : MilnorK R) :
-    z * ((-1) ^ N * w) = (-1) ^ N * (z * w) :=
-  ((Commute.neg_one_left z).pow_left N).symm.left_comm w
-
 /-- The **grade involution** of the Milnor K-ring: the ring endomorphism sending each degree-one
 class `{a}` to `-{a}`. It acts on `K_nᴹ(R)` as multiplication by `(-1) ^ n`
 (`TauCeti.MilnorK.involute_of_mem_degree`) and is its own inverse. -/
@@ -484,7 +479,7 @@ theorem involute_symbol (l : List Rˣ) : involute (symbol l) = (-1) ^ l.length *
   | nil => simp
   | cons a l ih =>
     simp only [symbol_cons, map_mul, ih, involute_ofUnit, List.length_cons, pow_succ', neg_mul,
-      one_mul, mul_neg_one_pow_mul]
+      one_mul, mul_neg_one_pow_mul, mul_neg]
 
 /-- The grade involution is multiplication by `(-1) ^ n` on `K_nᴹ(R)`. -/
 theorem involute_of_mem_degree {n : ℕ} {x : MilnorK R} (hx : x ∈ degree R n) :

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.RingTheory.MilnorK.Basic
+import TauCeti.Algebra.Ring.Parity
 
 /-!
 # Serre's algebra `L(k)` over the Milnor K-ring
@@ -584,10 +585,6 @@ private theorem neg_one_pow_mul_mul_ofUnit_neg_one (N : ℕ) (z w : MilnorK k) :
   · rw [h, one_mul]
   · rw [h, neg_one_mul, ← mul_neg, ← mul_neg, neg_ofUnit_neg_one]
 
-private theorem neg_one_pow_mul_neg_one_pow_mul (p q : ℕ) (z : MilnorK k) :
-    (-1) ^ p * ((-1) ^ q * z) = (-1) ^ (p + q) * z := by
-  rw [← mul_assoc, ← pow_add]
-
 /-- **Graded commutativity** of Serre's algebra: for `x ∈ L(k)_m` and `y ∈ L(k)_n`,
 `x y = (-1) ^ (m n) y x`. -/
 theorem mul_comm_of_mem_degree {m n : ℕ} {x y : SerreAlgebra k} (hx : x ∈ degree k m)
@@ -624,7 +621,8 @@ theorem mul_comm_of_mem_degree {m n : ℕ} {x y : SerreAlgebra k} (hx : x ∈ de
       simp only [mul_assoc, mul_add (R := MilnorK k), mul_neg_one_pow_mul x.snd,
         mul_neg_one_pow_mul y.snd]
       rw [← mul_assoc y.snd x.snd, hdb]
-      simp only [mul_assoc, neg_one_pow_mul_neg_one_pow_mul, neg_one_pow_mul_mul_ofUnit_neg_one]
+      simp only [mul_assoc, neg_one_pow_mul_mul_ofUnit_neg_one]
+      simp only [← mul_assoc, ← pow_add]
       rw [show (i + 1) * (j + 1) + (i + 1) = (i + 1) * j + 2 * (i + 1) by ring,
         show (i + 1) * (j + 1) + (j + 1) * i = (j + 1) + 2 * (i * (j + 1)) by ring,
         pow_add _ ((i + 1) * j), pow_add _ (j + 1), (even_two_mul _).neg_one_pow,
