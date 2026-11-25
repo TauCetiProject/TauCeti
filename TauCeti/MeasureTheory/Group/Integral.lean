@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Group.Measure
@@ -21,13 +23,19 @@ Integrating against an inverse measure is equivalent to precomposing the integra
 inversion. This transports integrals between left and right Haar measures.
 
 For a measure invariant under addition, an integral over a ball can be translated to a ball
-about the origin. Only measurability of translations is needed; the measure need not be an
-additive Haar measure, and the function need not be integrable. If the measure is also invariant
-under negation, the centre of a ball is its barycentre.
+about the origin, and the integral of a translate of a function over a ball is the integral of
+the function over the translated ball. Only measurability of translations is needed; the measure
+need not be an additive Haar measure, and the function need not be integrable. If the measure is
+also invariant under negation, the centre of a ball is its barycentre.
 
 For a right-invariant `s`-finite measure `μ`, integrating `z ↦ f (x * g z)` or `z ↦ f (x / g z)`
 against an `s`-finite measure `ν` (or over a set `s`) and then `x` against `μ` factors out
 `ν univ` (or `ν s`) times `∫⁻ x, f x ∂μ` by Tonelli's theorem and right-translation invariance.
+
+For a group `G` acting jointly measurably on `X` and preserving an `s`-finite measure `μ`, and a
+finite measure `ν` on `G`, the translates `(x, g) ↦ F (g • x)` of an integrable `F` are integrable
+for `μ.prod ν`, and `∫ (∫ F (g • x) dν(g)) dμ(x) = ν(G) • ∫ F dμ` by Fubini's theorem and
+invariance.
 
 For a translation-invariant measure, the row and column integrals of a convolution kernel
 `k (ξ - ζ)` with integrable `k ≥ 0` all equal `∫ k`; these are the bounds that Schur's test asks
@@ -47,6 +55,8 @@ need to be measurable.
   onto an a.e. strongly measurable, essentially bounded function inside an integral.
 * `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`: translating a ball integral to the
   origin.
+* `TauCeti.setIntegral_ball_comp_add_right`: the integral of a translate over a ball is the
+  integral over the translated ball.
 * `TauCeti.setIntegral_ball_sub_eq_zero`, `TauCeti.setAverage_ball_id`: for a measure invariant
   under translation and negation, the centre of a ball is its barycentre.
 * `TauCeti.lintegral_lintegral_mul_right`, `TauCeti.lintegral_lintegral_add_right`,
@@ -54,6 +64,9 @@ need to be measurable.
   `TauCeti.lintegral_setLIntegral_mul_right`, `TauCeti.lintegral_setLIntegral_add_right`,
   `TauCeti.lintegral_setLIntegral_div_right`, `TauCeti.lintegral_setLIntegral_sub_right`:
   factoring out the parameter measure when integrating right-translated lower Lebesgue integrals.
+* `TauCeti.integrable_smul_prod`, `TauCeti.integral_integral_smul_eq` and their additive versions
+  `TauCeti.integrable_vadd_prod`, `TauCeti.integral_integral_vadd_eq`: Fubini's theorem for the
+  translates of an integrable function under a measure-preserving action.
 * `TauCeti.lintegral_ofReal_sub_left_eq_ofReal_integral`,
   `TauCeti.lintegral_ofReal_sub_right_eq_ofReal_integral`: the row and column integrals of a
   convolution kernel.
@@ -78,6 +91,17 @@ theorem integral_inv_measure {G E : Type*} [MeasurableSpace G] [InvolutiveInv G]
   rw [Measure.inv_def]
   exact integral_map_equiv (MeasurableEquiv.inv G) f
 
+/-- For a measure invariant under right addition, integrating the translate `y ↦ f (y + a)` over
+`ball x₀ R` is integrating `f` over the translated ball `ball (x₀ + a) R`. No integrability
+hypothesis is needed. -/
+theorem setIntegral_ball_comp_add_right
+    {E F : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E] [MeasurableAdd E]
+    {μ : Measure E} [μ.IsAddRightInvariant] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : E → F) (x₀ a : E) (R : ℝ) :
+    ∫ y in ball x₀ R, f (y + a) ∂μ = ∫ y in ball (x₀ + a) R, f y ∂μ := by
+  simpa using ((measurePreserving_add_right μ a).setIntegral_preimage_emb
+    (MeasurableEquiv.addRight a).measurableEmbedding f (ball (x₀ + a) R))
+
 /-- For a measure invariant under right addition, the integral over `ball x₀ R` is the integral
 over `ball 0 R` of the translate `y ↦ f (y + x₀)`. No integrability hypothesis is needed. -/
 theorem setIntegral_ball_eq_setIntegral_ball_zero_add
@@ -85,8 +109,7 @@ theorem setIntegral_ball_eq_setIntegral_ball_zero_add
     {μ : Measure E} [μ.IsAddRightInvariant] [NormedAddCommGroup F] [NormedSpace ℝ F]
     (f : E → F) (x₀ : E) (R : ℝ) :
     ∫ x in ball x₀ R, f x ∂μ = ∫ y in ball (0 : E) R, f (y + x₀) ∂μ := by
-  simpa using ((measurePreserving_add_right μ x₀).setIntegral_preimage_emb
-    (MeasurableEquiv.addRight x₀).measurableEmbedding f (ball x₀ R)).symm
+  simpa using (setIntegral_ball_comp_add_right f 0 x₀ R).symm
 
 /-- For a measure invariant under right addition and under negation, such as an additive Haar
 measure on a finite-dimensional real normed space, the integral of `x - x₀` over `ball x₀ R`
@@ -175,6 +198,42 @@ theorem lintegral_setLIntegral_div_right [MeasurableInv G] (hf : AEMeasurable f 
   rw [lintegral_lintegral_div_right hf hg, Measure.restrict_apply_univ]
 
 end LIntegral
+
+section ActionFubini
+
+variable {G X E : Type*} [MeasurableSpace G] [MeasurableSpace X] [Group G] [MulAction G X]
+  [MeasurableSMul₂ G X] {μ : Measure X} [SFinite μ] [SMulInvariantMeasure G X μ]
+  {ν : Measure G} [IsFiniteMeasure ν] [NormedAddCommGroup E] {F : X → E}
+
+/-- For an integrable `F` and a finite measure `ν` on `G`, the translates `(x, g) ↦ F (g • x)` are
+integrable for `μ.prod ν`. -/
+@[to_additive integrable_vadd_prod
+/-- For an integrable `F` and a finite measure `ν` on `G`, the translates `(x, g) ↦ F (g +ᵥ x)` are
+integrable for `μ.prod ν`. -/]
+theorem integrable_smul_prod (hF : Integrable F μ) :
+    Integrable (fun p : X × G => F (p.2 • p.1)) (μ.prod ν) := by
+  have hqmp : QuasiMeasurePreserving (fun p : X × G => p.2 • p.1) (μ.prod ν) μ :=
+    .prod_of_left (measurable_snd.smul measurable_fst).aemeasurable
+      (.of_forall fun g => (measurePreserving_smul g μ).quasiMeasurePreserving)
+  refine (integrable_prod_iff' (hF.1.comp_quasiMeasurePreserving hqmp)).2
+    ⟨ae_of_all _ fun g => (measurePreserving_smul g μ).integrable_comp_of_integrable hF, ?_⟩
+  exact (integrable_const (∫ x, ‖F x‖ ∂μ)).congr
+    (ae_of_all _ fun g => (integral_smul_eq_self (μ := μ) (fun x => ‖F x‖)).symm)
+
+/-- For an integrable `F` and a finite measure `ν` on `G`,
+`∫ (∫ F (g • x) dν(g)) dμ(x) = ν(G) • ∫ F dμ`. -/
+@[to_additive
+/-- For an integrable `F` and a finite measure `ν` on `G`,
+`∫ (∫ F (g +ᵥ x) dν(g)) dμ(x) = ν(G) • ∫ F dμ`. -/]
+theorem integral_integral_smul_eq [NormedSpace ℝ E] (hF : Integrable F μ) :
+    ∫ x, (∫ g, F (g • x) ∂ν) ∂μ = ν.real univ • ∫ x, F x ∂μ := by
+  rw [integral_integral_swap (integrable_smul_prod hF)]
+  simp only [integral_smul_eq_self]
+  by_cases hE : CompleteSpace E
+  · exact integral_const _
+  · simp [integral_of_not_completeSpace hE]
+
+end ActionFubini
 
 section ConvolutionKernel
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
 public import TauCeti.CategoryTheory.Monoidal.Rigid.SquaredNorm
 public import TauCeti.CategoryTheory.Preadditive.Schur
+public import TauCeti.CategoryTheory.Semisimple.Rigid
 
 /-!
 # Invertibility of bidual traces and squared norms in finite semisimple categories
@@ -29,6 +30,14 @@ Over an algebraically closed field `k`, Schur's lemma supplies surjectivity of
 invertibility and nonvanishing of both bidual trace factors and of `squaredNorm a` without assuming
 a pivotal structure or characteristic zero.
 
+In a finite semisimple rigid category over `k` with simple finite-dimensional unit, every
+isomorphism `X ≅ Xᘁᘁ` of a simple object is a nonzero multiple of a given one, and
+`doubleDualTrace a.invᘁ` scales inversely to `a`, so there is a unique isomorphism with
+`doubleDualTrace a.invᘁ = 𝟙 (𝟙_ C)`: `TauCeti.normalizedDoubleDualIso`. Transporting the pairing of
+`Xᘁ` with `Xᘁᘁ` along it yields `TauCeti.normalizedExactPairing`, whose evaluation closed up with
+the coevaluation of `X` is the squared norm; these normalized evaluations are the weights of the
+counit of the left adjunction for induction into the Drinfeld centre.
+
 ## Main declarations
 
 * `TauCeti.doubleDualTrace_ne_zero_of_surjective` and
@@ -47,7 +56,12 @@ a pivotal structure or characteristic zero.
   `TauCeti.isIso_doubleDualTrace_rightAdjointMate`,
   `TauCeti.isUnit_endOf_doubleDualTrace_rightAdjointMate`, `TauCeti.isIso_squaredNorm`, and
   `TauCeti.squaredNorm_ne_zero`: the specializations to split simple objects over an algebraically
-  closed field.
+  closed field;
+* `TauCeti.normalizedDoubleDualIso` and `TauCeti.normalizedExactPairing`: for a simple object `X`,
+  the isomorphism `a : X ≅ Xᘁᘁ` normalized by `doubleDualTrace a.invᘁ = 𝟙 (𝟙_ C)`, unique by
+  `TauCeti.eq_normalizedDoubleDualIso`, and the pairing of `Xᘁ` and `X` transported along it
+  (`TauCeti.normalizedExactPairing_evaluation` and `TauCeti.normalizedExactPairing_coevaluation`),
+  whose two closed loops are `𝟙 (𝟙_ C)` and the squared norm of `X`.
 
 ## References
 
@@ -64,12 +78,12 @@ universe w v u
 
 namespace TauCeti
 
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
   [Abelian C] [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C]
 
 section CommSemiring
 
-variable {R : Type w} [CommSemiring R] [Linear R C] [MonoidalLinear R C]
+variable [RightRigidCategory C] {R : Type w} [CommSemiring R] [Linear R C] [MonoidalLinear R C]
 
 /-- In a finite semisimple right rigid abelian category, if `X` is nonzero and
 `algebraMap R (End X)` is surjective, then `doubleDualTrace b` is nonzero for any isomorphism
@@ -157,7 +171,8 @@ end CommSemiring
 
 section Field
 
-variable (k : Type w) [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C]
+variable [RightRigidCategory C] (k : Type w) [Field k] [IsAlgClosed k] [Linear k C]
+  [MonoidalLinear k C]
 variable {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
 
 include k in
@@ -235,5 +250,106 @@ theorem squaredNorm_ne_zero (a : X ≅ (Xᘁ : C)ᘁ) : squaredNorm a ≠ 0 :=
 end SimpleUnit
 
 end Field
+
+section Normalized
+
+variable (k : Type w) [Field k] [IsAlgClosed k]
+variable [Linear k C] [MonoidalLinear k C] [RigidCategory C]
+  [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
+
+include k in
+private theorem exists_iso_doubleDualTrace_rightAdjointMate_inv_eq_id (X : C) [Simple X]
+    [FiniteDimensional k (X ⟶ X)] :
+    ∃ a : X ≅ (Xᘁ : C)ᘁ, doubleDualTrace (a.invᘁ) = 𝟙 (𝟙_ C) := by
+  obtain ⟨a⟩ := nonempty_iso_rightDual_rightDual X
+  have hiso := isIso_doubleDualTrace_rightAdjointMate k a.inv
+  obtain ⟨γ, hγ⟩ := endomorphism_simple_eq_smul_id k (doubleDualTrace (a.invᘁ))
+  have hγ0 : γ ≠ 0 := by
+    rintro rfl
+    rw [zero_smul] at hγ
+    exact (isIso_iff_ne_zero _).mp hiso hγ.symm
+  -- Rescale `a` so that the trace of the mate of its inverse becomes one.
+  refine ⟨{ hom := γ • a.hom
+            inv := γ⁻¹ • a.inv
+            hom_inv_id := by simp [smul_smul, hγ0]
+            inv_hom_id := by simp [smul_smul, hγ0] }, ?_⟩
+  simp [rightAdjointMate_smul, ← hγ, smul_smul, hγ0]
+
+/-- The **normalized isomorphism** `X ≅ Xᘁᘁ` of a simple object `X`: the trace
+`doubleDualTrace a.invᘁ` of the right adjoint mate of its inverse is `𝟙 (𝟙_ C)`
+(`TauCeti.doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv`). Any isomorphism
+`X ≅ Xᘁᘁ` is a scalar multiple of it, and rescaling it changes this trace, so the normalization
+pins it down. -/
+noncomputable def normalizedDoubleDualIso (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    X ≅ (Xᘁ : C)ᘁ :=
+  (exists_iso_doubleDualTrace_rightAdjointMate_inv_eq_id k X).choose
+
+/-- The trace of the right adjoint mate of the inverse of the normalized isomorphism `X ≅ Xᘁᘁ` is
+the identity of the unit. -/
+@[simp]
+theorem doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv (X : C) [Simple X]
+    [FiniteDimensional k (X ⟶ X)] :
+    doubleDualTrace ((normalizedDoubleDualIso k X).invᘁ) = 𝟙 (𝟙_ C) :=
+  (exists_iso_doubleDualTrace_rightAdjointMate_inv_eq_id k X).choose_spec
+
+/-- **Uniqueness of the normalized isomorphism**: an isomorphism `a : X ≅ Xᘁᘁ` of a simple object
+with `doubleDualTrace a.invᘁ = 𝟙 (𝟙_ C)` is `TauCeti.normalizedDoubleDualIso k X`. -/
+theorem eq_normalizedDoubleDualIso {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
+    (a : X ≅ (Xᘁ : C)ᘁ) (ha : doubleDualTrace (a.invᘁ) = 𝟙 (𝟙_ C)) :
+    a = normalizedDoubleDualIso k X := by
+  obtain ⟨s, hs⟩ := endomorphism_simple_eq_smul_id k ((normalizedDoubleDualIso k X).hom ≫ a.inv)
+  have hinv : a.inv = s • (normalizedDoubleDualIso k X).inv := by
+    rw [← Category.id_comp a.inv, ← (normalizedDoubleDualIso k X).inv_hom_id, Category.assoc, ← hs,
+      Linear.comp_smul, Category.comp_id]
+  rw [hinv, rightAdjointMate_smul, doubleDualTrace_smul,
+    doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv] at ha
+  rw [smul_left_injective k (id_ne_zero (𝟙_ C)) (ha.trans (one_smul k _).symm), one_smul] at hinv
+  exact Iso.ext ((Iso.inv_eq_inv _ _).mp hinv)
+
+/-- The **normalized exact pairing** of `Xᘁ` and a simple object `X`: the pairing of `Xᘁ` with its
+right dual `Xᘁᘁ`, transported along `TauCeti.normalizedDoubleDualIso k X`. Closing up its
+coevaluation with the evaluation of `X` gives `𝟙 (𝟙_ C)`
+(`TauCeti.normalizedExactPairing_coevaluation_comp_evaluation`). -/
+@[instance_reducible]
+noncomputable def normalizedExactPairing (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    ExactPairing Xᘁ X :=
+  exactPairingCongrRight (normalizedDoubleDualIso k X)
+
+/-- The evaluation `X ⊗ Xᘁ ⟶ 𝟙_ C` of `TauCeti.normalizedExactPairing k X`. -/
+@[reassoc]
+theorem normalizedExactPairing_evaluation (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    @ExactPairing.evaluation C _ _ Xᘁ X (normalizedExactPairing k X) =
+      (normalizedDoubleDualIso k X).hom ▷ Xᘁ ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) :=
+  exactPairingCongrRight_evaluation _
+
+/-- The coevaluation `𝟙_ C ⟶ Xᘁ ⊗ X` of `TauCeti.normalizedExactPairing k X`. -/
+@[reassoc]
+theorem normalizedExactPairing_coevaluation (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    @ExactPairing.coevaluation C _ _ Xᘁ X (normalizedExactPairing k X) =
+      η_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) ≫ Xᘁ ◁ (normalizedDoubleDualIso k X).inv :=
+  exactPairingCongrRight_coevaluation _
+
+/-- Closing up the coevaluation of `TauCeti.normalizedExactPairing k X` with the evaluation of
+`X` gives the identity of the unit. -/
+@[simp]
+theorem normalizedExactPairing_coevaluation_comp_evaluation (X : C) [Simple X]
+    [FiniteDimensional k (X ⟶ X)] :
+    @ExactPairing.coevaluation C _ _ Xᘁ X (normalizedExactPairing k X) ≫ ε_ X Xᘁ = 𝟙 (𝟙_ C) := by
+  rw [normalizedExactPairing_coevaluation, Category.assoc,
+    ← doubleDualTrace_rightAdjointMate,
+    doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv]
+
+/-- Closing up the coevaluation of `X` with the evaluation of `TauCeti.normalizedExactPairing k X`
+gives the squared norm of `X`. -/
+@[simp]
+theorem coevaluation_comp_normalizedExactPairing_evaluation (X : C) [Simple X]
+    [FiniteDimensional k (X ⟶ X)] :
+    η_ X Xᘁ ≫ @ExactPairing.evaluation C _ _ Xᘁ X (normalizedExactPairing k X) =
+      squaredNorm (normalizedDoubleDualIso k X) := by
+  rw [normalizedExactPairing_evaluation, squaredNorm_def,
+    doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv, Category.comp_id,
+    doubleDualTrace_def]
+
+end Normalized
 
 end TauCeti

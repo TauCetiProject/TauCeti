@@ -56,6 +56,11 @@ theorem ker_toPSL_eq_ker_toSO3 :
   ext g
   rw [mem_ker_toPSL_iff, MonoidHom.mem_ker, toSO3_eq_one_iff]
 
+/-- Two elements of `SU(2)` have the same Möbius transformation exactly when they have the same
+rotation, since both maps have kernel `{1, -1}`. -/
+theorem toPSL_eq_toPSL_iff {U V : SU2} : toPSL U = toPSL V ↔ toSO3 U = toSO3 V := by
+  rw [MonoidHom.eq_iff, ker_toPSL_eq_ker_toSO3, MonoidHom.eq_iff]
+
 /-- **`PSU(2) ≅ SO(3)`**: the projective special unitary group, the image of `SU(2)` in
 `PSL(2, ℂ)`, is isomorphic as a topological group to the rotation group `SO(3)`, through the
 double cover `SU(2) → SO(3)`. -/

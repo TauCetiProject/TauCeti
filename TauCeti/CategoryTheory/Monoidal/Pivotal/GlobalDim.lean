@@ -104,9 +104,9 @@ theorem globalDim_pivotalCategory_eq_of_surjective (R : Type w) [CommSemiring R]
     (hS : ∀ S : SimpleClasses C, Function.Surjective (algebraMap R (End S.repr)))
     (P Q : PivotalCategory C) :
     @globalDim C _ _ _ _ _ P = @globalDim C _ _ _ _ _ Q := by
-  rw [@globalDim_eq_sum_leftDim_comp_rightDim C _ _ _ _ _ P,
-    @globalDim_eq_sum_leftDim_comp_rightDim C _ _ _ _ _ Q]
-  exact Finset.sum_congr rfl fun S _ ↦ leftDim_comp_rightDim_eq_of_surjective P Q (hS S)
+  rw [@globalDim_eq_normGlobalDim_pivotalIsoApp C _ _ _ _ _ P,
+    @globalDim_eq_normGlobalDim_pivotalIsoApp C _ _ _ _ _ Q]
+  exact normGlobalDim_congr_of_surjective C R hS _ _
 
 section Field
 

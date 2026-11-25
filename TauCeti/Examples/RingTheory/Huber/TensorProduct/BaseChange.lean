@@ -85,9 +85,6 @@ section Projection
 /-- The first projection supplies the noninjective scalar extension in these checks. -/
 local instance projectionAlgebra : Algebra (ℤ × ℤ) ℤ := (RingHom.fst ℤ ℤ).toAlgebra
 
-local instance : IsAdicHom (algebraMap ℤ ℤ) := by
-  simpa using (IsAdicHom.id (A := ℤ))
-
 local instance : IsAdicHom (algebraMap ℤ (ℤ × ℤ)) :=
   IsAdicHom.of_discrete_iff.mpr inferInstance
 
