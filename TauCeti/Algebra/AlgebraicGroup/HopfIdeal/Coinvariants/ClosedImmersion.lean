@@ -21,7 +21,8 @@ ideal `J`. This file proves that if `G` and `T` are geometrically reduced and th
 
 Coordinate rings reverse arrows: `O(G ⧸ N)` is the Hopf subalgebra of right coinvariants, and
 the composite is the coordinate map `coinvariantsι ≫ mkQuotient G J`. The main case is
-`N = R_u(G)`, taking `I` to be `isNormal_unipotentRadicalDefiningIdeal G`.
+`N = R_u(G)`, taking `I := unipotentRadicalDefiningIdeal G` and
+`hI := isNormal_unipotentRadicalDefiningIdeal G`.
 
 ## Main declarations
 
@@ -62,9 +63,8 @@ theorem coinvariantsι_comp_mkQuotient_surjective
     Function.Surjective
       (CommHopfAlgCat.coinvariantsι hI ≫
         CommHopfAlgCat.mkQuotient G.obj J).hom := by
-  let hR := hI
-  let _ := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
-  have : Algebra.FiniteType k (CommHopfAlgCat.coinvariants hR) := hR.finiteType_coinvariants
+  let _ := hI.isHopfSubalgebra_coinvariants.hopfAlgebra
+  have : Algebra.FiniteType k (CommHopfAlgCat.coinvariants hI) := hI.finiteType_coinvariants
   exact CommHopfAlgCat.surjective_of_kernelHopfIdeal_eq_augmentation _ hker
 
 /-- **A smooth connected subgroup meeting a normal subgroup `N` trivially, of Lie dimension at
@@ -95,14 +95,13 @@ theorem isIso_coinvariantsι_comp_mkQuotient [Algebra.Smooth k G]
   have hG_red := geometricallyReducedCommHopfAlgProperty_of_smooth k G.obj
     ((smoothCommHopfAlgProperty_iff _).mpr inferInstance)
   have : Algebra.IsGeometricallyReduced k G := hG_red.isGeometricallyReduced
-  let hR := hI
-  let _ := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
-  have : Algebra.FiniteType k (CommHopfAlgCat.coinvariants hR) := hR.finiteType_coinvariants
+  let _ := hI.isHopfSubalgebra_coinvariants.hopfAlgebra
+  have : Algebra.FiniteType k (CommHopfAlgCat.coinvariants hI) := hI.finiteType_coinvariants
   -- `O(G ⧸ N)` is a Hopf subalgebra of `O(G)`, so it inherits geometric reducedness
   -- (hence smoothness) and geometric connectedness from `G`.
-  have hinj : Function.Injective (CommHopfAlgCat.coinvariantsι hR).hom.toAlgHom :=
-    CommHopfAlgCat.hopfSubalgebraι_injective hR.isHopfSubalgebra_coinvariants
-  have hQ_smooth : smoothCommHopfAlgProperty k (CommHopfAlgCat.coinvariants hR) :=
+  have hinj : Function.Injective (CommHopfAlgCat.coinvariantsι hI).hom.toAlgHom :=
+    CommHopfAlgCat.hopfSubalgebraι_injective hI.isHopfSubalgebra_coinvariants
+  have hQ_smooth : smoothCommHopfAlgProperty k (CommHopfAlgCat.coinvariants hI) :=
     smoothCommHopfAlgProperty_of_geometricallyReduced k _
       (geometricallyReducedCommHopfAlgProperty.of_injective _ hinj hG_red)
   exact CommHopfAlgCat.isIso_of_kernelHopfIdeal_eq_augmentation_of_finrank_le _
