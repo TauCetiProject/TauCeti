@@ -199,8 +199,9 @@ theorem exists_mem_maximalRealSubfield_algebraMap_div_eq_pow (a : Kˣ) (hn : n �
   replace hβ : β ∈ (X ^ n - C ((a : K) / complexConj K a)).rootSet L :=
     (monic_X_pow_sub_C _ hn).mem_rootSet.2 (by rwa [eval_map_algebraMap] at hβ)
   rw [mem_rootSet_X_pow_sub_C hn, map_div₀, ← complexConj_algebraMap K L] at hβ
-  exact (exists_mem_maximalRealSubfield_div_eq_pow_iff (x := Units.map (algebraMap K L) a)).2
-    ⟨β, hβ⟩
+  have key := (exists_mem_maximalRealSubfield_div_eq_pow_iff (x := Units.map (algebraMap K L) a)).2
+    ⟨β, by rwa [Units.coe_map, MonoidHom.coe_ofClass]⟩
+  simpa only [Units.coe_map, MonoidHom.coe_ofClass] using key
 
 end SplittingField
 
