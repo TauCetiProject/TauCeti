@@ -168,7 +168,7 @@ private theorem cutoffIci_le_one (T t : Ici a) : cutoffIci T t ≤ 1 :=
   max_le zero_le_one (min_le_left _ _)
 
 private theorem cutoffIci_eq_one_of_le {T t : Ici a} (ht : t ≤ T) : cutoffIci T t = 1 := by
-  have h1 : 1 ≤ (T : ℝ) + 1 - (t : ℝ) := by linarith [show (t : ℝ) ≤ (T : ℝ) from ht]
+  have h1 : 1 ≤ (T : ℝ) + 1 - (t : ℝ) := by linarith [Subtype.coe_le_coe.mpr ht]
   simp [cutoffIci, min_eq_left h1]
 
 private theorem cutoffIci_eq_zero_of_add_one_le {T t : Ici a} (ht : (T : ℝ) + 1 ≤ (t : ℝ)) :
@@ -198,11 +198,14 @@ theorem norm_mk_tendstoZeroIdeal_Ici_eq_limsup {R : Type*} [NonUnitalSeminormedR
           rw [norm_neg, norm_smul, Real.norm_of_nonneg (cutoffIci_nonneg T t)]
           exact (mul_le_of_le_one_left (norm_nonneg _) (cutoffIci_le_one T t)).trans
             (f.norm_coe_le_norm t)
+    have hg_apply (t : Ici a) : g t = -(cutoffIci T t • f t) :=
+      congrFun (coe_ofNormedAddCommGroup _ _ _ _) t
     have hg_mem : g ∈ tendstoZeroIdeal R atTop := by
       rw [mem_tendstoZeroIdeal_iff]
       refine tendsto_const_nhds.congr' (eventually_atTop.mpr ⟨⟨(T : ℝ) + 1, ?_⟩, fun t ht ↦ ?_⟩)
-      · exact mem_Ici.mpr (by linarith [show a ≤ (T : ℝ) from T.2])
-      · simp [g, cutoffIci_eq_zero_of_add_one_le ht]
+      · exact mem_Ici.mpr (by linarith [mem_Ici.mp T.2])
+      · rw [hg_apply, cutoffIci_eq_zero_of_add_one_le (Subtype.coe_le_coe.mpr ht),
+          zero_smul, neg_zero]
     have hmk : TwoSidedIdeal.Quotient.mk (tendstoZeroIdeal R atTop) f =
         TwoSidedIdeal.Quotient.mk (tendstoZeroIdeal R atTop) (f + g) := by
       rw [map_add, TwoSidedIdeal.Quotient.eq_zero_iff_mem.mpr hg_mem, add_zero]
@@ -210,8 +213,7 @@ theorem norm_mk_tendstoZeroIdeal_Ici_eq_limsup {R : Type*} [NonUnitalSeminormedR
     refine (TwoSidedIdeal.Quotient.norm_mk_le _ (f + g)).trans
       ((BoundedContinuousFunction.norm_le (by linarith)).mpr fun t ↦ ?_)
     have hval : (f + g) t = (1 - cutoffIci T t) • f t := by
-      change f t + -(cutoffIci T t • f t) = (1 - cutoffIci T t) • f t
-      rw [sub_smul, one_smul, sub_eq_add_neg]
+      rw [add_apply, hg_apply, sub_smul, one_smul, sub_eq_add_neg]
     rw [hval, norm_smul, Real.norm_of_nonneg (sub_nonneg.mpr (cutoffIci_le_one T t))]
     rcases le_total t T with htT | hTt
     · rw [cutoffIci_eq_one_of_le htT, sub_self, zero_mul]; linarith

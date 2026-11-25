@@ -45,8 +45,6 @@ sphere, and extends radially by `s(y) = ‖y‖ • σ(‖y‖⁻¹ • y)` (`s(
 * `ContinuousLinearMap.exists_continuous_nonlinearRightInverse_of_surjective`: the `[RCLike 𝕜]`
   form (covering `ℝ` and `ℂ`), producing a continuous positively `ℝ`-homogeneous
   `q.NonlinearRightInverse`.
-* `ContinuousLinearMap.toNonlinearRightInverse`: packages a continuous linear right inverse of a
-  split surjection as a continuous, positively homogeneous `NonlinearRightInverse`.
 
 ## References
 
@@ -58,33 +56,10 @@ sphere, and extends radially by `s(y) = ‖y‖ • σ(‖y‖⁻¹ • y)` (`s(
 
 public section
 
-open Filter Function Metric Set Topology
+open Function Metric Set Topology
 open scoped NNReal
 
 namespace ContinuousLinearMap
-
-section SplitSurjection
-
-variable {𝕜₁ 𝕜₂ : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
-  {σ : 𝕜₁ →+* 𝕜₂} {σ' : 𝕜₂ →+* 𝕜₁} [RingHomIsometric σ']
-  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜₁ E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
-
-/-- A continuous semilinear right inverse `r` of `q` (for a split surjection) defines a
-`NonlinearRightInverse` whose underlying map is `r` itself, hence continuous and linear. -/
-noncomputable def toNonlinearRightInverse (q : E →SL[σ] F) (r : F →SL[σ'] E)
-    (hqr : RightInverse r q) : q.NonlinearRightInverse :=
-  { toFun := r, nnNorm := ‖r‖₊, bound' := r.le_opNorm, right_inv' := hqr }
-
-@[simp]
-theorem coe_toNonlinearRightInverse (q : E →SL[σ] F) (r : F →SL[σ'] E) (hqr : RightInverse r q) :
-    ⇑(q.toNonlinearRightInverse r hqr) = r := (rfl)
-
-@[simp]
-theorem toNonlinearRightInverse_nnNorm (q : E →SL[σ] F) (r : F →SL[σ'] E)
-    (hqr : RightInverse r q) : (q.toNonlinearRightInverse r hqr).nnNorm = ‖r‖₊ := (rfl)
-
-end SplitSurjection
 
 section RealBanach
 

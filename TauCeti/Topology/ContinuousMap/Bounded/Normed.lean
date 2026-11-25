@@ -50,6 +50,11 @@ bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`.
 natural-number division; dilations compose multiplicatively and commute with the pointwise
 operations. They are the operators under which Dixmier's generalized limits are invariant, see
 `TauCeti.Analysis.Normed.Order.GeneralizedLimit`.
+
+`BoundedContinuousFunction.eventually_forall_compact_norm_lt_add` and
+`BoundedContinuousFunction.eventually_forall_compact_norm_lt` upgrade pointwise eventual norm
+estimates along a filter `l` to compact-uniform eventual norm estimates for a family
+`F : X → (α →ᵇ E)` continuous in the sup norm on a compact set `K ⊆ X`.
 -/
 
 public section
@@ -285,5 +290,70 @@ theorem neg_dilate {β : Type*} [SeminormedAddCommGroup β] (f : ℕ →ᵇ β) 
     (-f).dilate k = -f.dilate k := by
   ext n
   simp
+
+section CompactUniform
+
+open Filter Set Topology
+
+/-- Finite-subcover upgrade from pointwise eventual bounds along `l : Filter α` to a
+compact-uniform eventual bound for a family `F : X → (α →ᵇ E)` continuous on a compact set `K`. -/
+theorem eventually_forall_compact_norm_lt_add
+    {α X E : Type*} [TopologicalSpace α] [TopologicalSpace X] [SeminormedAddCommGroup E]
+    {l : Filter α} {F : X → (α →ᵇ E)} {g : X → ℝ} {K : Set X}
+    (hK : IsCompact K) (hF : ContinuousOn F K) (hg : ContinuousOn g K)
+    (hlim : ∀ x ∈ K, ∀ {δ : ℝ}, 0 < δ → ∀ᶠ t in l, ‖F x t‖ < g x + δ)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ t in l, ∀ x ∈ K, ‖F x t‖ < g x + ε := by
+  have hε3 : 0 < ε / 3 := by linarith
+  have hnhds : ∀ x : K, ∃ U : Set X, IsOpen U ∧ (x : X) ∈ U ∧
+      ∀ y ∈ K, y ∈ U → ‖F y - F x‖ < ε / 3 ∧ g x < g y + ε / 3 := by
+    intro ⟨x, hxK⟩
+    have hFx : ∀ᶠ y in 𝓝[K] x, dist (F y) (F x) < ε / 3 :=
+      (hF x hxK).eventually (ball_mem_nhds (F x) hε3)
+    have hgx : ∀ᶠ y in 𝓝[K] x, dist (g y) (g x) < ε / 3 :=
+      (hg x hxK).eventually (ball_mem_nhds (g x) hε3)
+    obtain ⟨U, hU_nhds, hU_sub⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.mp (hFx.and hgx)
+    obtain ⟨V, hV_sub, hV_open, hxV⟩ := mem_nhds_iff.mp hU_nhds
+    refine ⟨V, hV_open, hxV, fun y hyK hyV ↦ ?_⟩
+    obtain ⟨hdF, hdg⟩ := hU_sub ⟨hV_sub hyV, hyK⟩
+    rw [dist_eq_norm] at hdF
+    rw [Real.dist_eq] at hdg
+    exact ⟨hdF, by linarith [(abs_lt.mp hdg).1]⟩
+  choose U hU_open hxU hU_est using hnhds
+  obtain ⟨s, hs_cover⟩ :=
+    hK.elim_finite_subcover (fun i : K ↦ U i) (fun i ↦ hU_open i) fun x hx ↦
+      mem_iUnion.mpr ⟨⟨x, hx⟩, hxU ⟨x, hx⟩⟩
+  have hev_all : ∀ᶠ t in l, ∀ i ∈ s, ‖F i t‖ < g i + ε / 3 :=
+    (eventually_all_finset s).mpr fun i _ ↦ hlim i.1 i.2 hε3
+  filter_upwards [hev_all] with t ht x hxK
+  obtain ⟨i, his, hxi⟩ := mem_iUnion₂.mp (hs_cover hxK)
+  obtain ⟨hFi, hgi⟩ := hU_est i x hxK hxi
+  have hti := ht i his
+  have hdiff_t : ‖F x t - F i t‖ ≤ ‖F x - F i‖ :=
+    (F x - F i).norm_coe_le_norm t
+  have htri : ‖F x t‖ ≤ ‖F x - F i‖ + ‖F i t‖ :=
+    calc
+      ‖F x t‖ = ‖(F x t - F i t) + F i t‖ := by rw [sub_add_cancel]
+      _ ≤ ‖F x t - F i t‖ + ‖F i t‖ := norm_add_le _ _
+      _ ≤ ‖F x - F i‖ + ‖F i t‖ := add_le_add_left hdiff_t _
+  linarith
+
+/-- Finite-subcover upgrade from pointwise convergence to `0` along `l : Filter α` to a
+compact-uniform eventual norm bound for a family `F : X → (α →ᵇ E)` continuous on a compact set
+`K`. -/
+theorem eventually_forall_compact_norm_lt
+    {α X E : Type*} [TopologicalSpace α] [TopologicalSpace X] [SeminormedAddCommGroup E]
+    {l : Filter α} {F : X → (α →ᵇ E)} {K : Set X}
+    (hK : IsCompact K) (hF : ContinuousOn F K)
+    (hlim : ∀ x ∈ K, Tendsto (fun t ↦ F x t) l (𝓝 0))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ t in l, ∀ x ∈ K, ‖F x t‖ < ε := by
+  have h := eventually_forall_compact_norm_lt_add (g := fun _ ↦ 0) hK hF continuousOn_const
+    (fun x hx {δ} hδ ↦ by
+      simpa only [zero_add] using
+        (tendsto_order.mp (tendsto_zero_iff_norm_tendsto_zero.mp (hlim x hx))).2 δ hδ) hε
+  simpa only [zero_add] using h
+
+end CompactUniform
 
 end BoundedContinuousFunction
