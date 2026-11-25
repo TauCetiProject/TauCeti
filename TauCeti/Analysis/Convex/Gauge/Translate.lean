@@ -7,16 +7,17 @@ module
 
 public import Mathlib.Analysis.Convex.Gauge
 public import TauCeti.Analysis.LocallyConvex.Bounded
+public import TauCeti.Topology.Algebra.Group.Neighborhood
 
 /-!
 # The gauge centred at a point
 
 The gauge of a set `s` centred at a point `p` is the gauge of the translate
 `(p + ·) ⁻¹' s = {v | p + v ∈ s}`, evaluated at `x - p`. This file transports the basic
-properties of Mathlib's gauge, which is centred at `0`, to an arbitrary centre `p`:
+properties of Mathlib's gauge, which is centred at `0`, to an arbitrary centre `p`, using the
+translation lemmas `TauCeti.preimage_add_mem_nhds_zero` and `TauCeti.frontier_preimage_add` from
+`TauCeti.Topology.Algebra.Group.Neighborhood`:
 
-* `TauCeti.preimage_add_mem_nhds_zero`, `TauCeti.frontier_preimage_add`: translating a
-  neighbourhood of `p` and a frontier by `p`;
 * `TauCeti.gauge_preimage_add_sub_pos_iff`: for a bounded neighbourhood of `p` the gauge centred
   at `p` is positive exactly off `p`, using `Bornology.IsVonNBounded.preimage_add` from
   `TauCeti.Analysis.LocallyConvex.Bounded`;
@@ -34,22 +35,6 @@ open Set Metric Topology Bornology
 open scoped NNReal
 
 namespace TauCeti
-
-section TopologicalAddGroup
-
-variable {E : Type*} [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] {s : Set E}
-  {p : E}
-
-/-- The translate of a neighbourhood of `p` by `p` is a neighbourhood of `0`. -/
-theorem preimage_add_mem_nhds_zero (hp : s ∈ 𝓝 p) : (p + ·) ⁻¹' s ∈ 𝓝 (0 : E) :=
-  (continuous_const_add p).continuousAt.preimage_mem_nhds (by simpa using hp)
-
-/-- The frontier of the translate of `s` by `p` is the translate of the frontier of `s`. -/
-theorem frontier_preimage_add (s : Set E) (p : E) :
-    frontier ((p + ·) ⁻¹' s) = (p + ·) ⁻¹' frontier s :=
-  ((Homeomorph.addLeft p).preimage_frontier s).symm
-
-end TopologicalAddGroup
 
 section TopologicalVectorSpace
 
