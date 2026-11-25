@@ -49,21 +49,6 @@ open scoped Pointwise
 
 namespace TauCeti.TwistedMonoidAlgebra
 
-section Semiring
-
-variable {k G : Type*} [CommSemiring k] [Monoid G] {α : G → G → kˣ} [IsFactorSet α]
-
-/-- The support of a product lies in the pointwise product of the supports. -/
-theorem support_repr_mul_subset [DecidableEq G] (f g : twistedMonoidAlgebra k G α) :
-    ((basis k G α).repr (f * g)).support ⊆
-      ((basis k G α).repr f).support * ((basis k G α).repr g).support := by
-  rw [repr_mul]
-  refine Finsupp.support_sum.trans <| biUnion_subset.2 fun a ha ↦ ?_
-  refine Finsupp.support_sum.trans <| biUnion_subset.2 fun b hb ↦ ?_
-  exact Finsupp.support_single_subset.trans (singleton_subset_iff.2 (mul_mem_mul ha hb))
-
-end Semiring
-
 section Ring
 
 variable {k G : Type*} [CommRing k] [Monoid G] {α : G → G → kˣ} [IsFactorSet α]

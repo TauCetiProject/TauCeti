@@ -98,7 +98,8 @@ public section
 
 namespace TauCeti
 
-open Module
+open Module Finset
+open scoped Pointwise
 
 /-- A **normalized factor set** on a monoid `G` with values in the units of a commutative semiring
 `k`: a function `α : G → G → kˣ` satisfying the multiplicative `2`-cocycle identity and normalized
@@ -408,6 +409,15 @@ theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
     rw [← (basis k G α).linearCombination_repr f, ← (basis k G α).linearCombination_repr g]
   simp only [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_mul_sum, smul_mul_smul_comm,
     map_sum, map_smul, basis_apply, of_mul_of, repr_of, Finsupp.smul_single, smul_eq_mul, mul_one]
+
+/-- The support of a product lies in the pointwise product of the supports. -/
+theorem support_repr_mul_subset [DecidableEq G] (f g : twistedMonoidAlgebra k G α) :
+    ((basis k G α).repr (f * g)).support ⊆
+      ((basis k G α).repr f).support * ((basis k G α).repr g).support := by
+  rw [repr_mul]
+  refine Finsupp.support_sum.trans <| biUnion_subset.2 fun a ha ↦ ?_
+  refine Finsupp.support_sum.trans <| biUnion_subset.2 fun b hb ↦ ?_
+  exact Finsupp.support_single_subset.trans (singleton_subset_iff.2 (mul_mem_mul ha hb))
 
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]
