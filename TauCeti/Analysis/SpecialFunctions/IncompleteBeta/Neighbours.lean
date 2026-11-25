@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Kernel
-import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.MeasureTheory.Integral.CurveIntegral.Segment
 
 /-!
 # The incomplete beta kernel at vertical neighbours
@@ -40,7 +38,7 @@ kernel is explicit.
 public section
 
 open Complex Set
-open scoped Real ComplexConjugate Pointwise
+open scoped Real ComplexConjugate
 
 namespace TauCeti
 
@@ -50,19 +48,13 @@ primitive `log (-z) - log (1 - z)` off `[0, ∞)`, a region star-convex about th
 the defining path crosses the real axis. -/
 theorem incompleteBetaKernel_add_snd_one {ξ : ℂ} (hξ : -ξ ∈ slitPlane) (v : ℤ × ℤ) :
     incompleteBetaKernel ξ v (v + (0, 1)) = ((arg (-ξ) - arg (1 - ξ)) / π : ℝ) := by
-  set S : Set ℂ := -slitPlane
-  have hstar : StarConvex ℝ (-1 : ℂ) S := by
-    simpa using (starConvex_ofReal_slitPlane (x := 1) one_pos).neg
-  have hmemS {z : ℂ} : z ∈ S ↔ -z ∈ slitPlane := Set.mem_neg
-  have h1S {z : ℂ} (hz : z ∈ S) : 1 - z ∈ slitPlane := by
-    simpa [sub_eq_add_neg] using ofReal_add_mem_slitPlane (hmemS.1 hz) zero_le_one
-  have hξS : ξ ∈ S := hmemS.2 hξ
-  have hξS' : conj ξ ∈ S := hmemS.2 (by rw [← map_neg]; exact conj_mem_slitPlane.2 hξ)
-  have h0 {z : ℂ} (hz : z ∈ S) : z ≠ 0 := fun h => slitPlane_ne_zero (hmemS.1 hz) (by simp [h])
-  have h1 {z : ℂ} (hz : z ∈ S) : 1 - z ≠ 0 := slitPlane_ne_zero (h1S hz)
-  have hint := curveIntegral_segment_add_segment_toSpanSingleton_eq_sub
+  have h1S {z : ℂ} (hz : -z ∈ slitPlane) : 1 - z ∈ slitPlane := by
+    simpa [sub_eq_add_neg] using ofReal_add_mem_slitPlane hz zero_le_one
+  have h0 {z : ℂ} (hz : -z ∈ slitPlane) : z ≠ 0 := fun h => slitPlane_ne_zero hz (by simp [h])
+  have h1 {z : ℂ} (hz : -z ∈ slitPlane) : 1 - z ≠ 0 := slitPlane_ne_zero (h1S hz)
+  have hint := curveIntegral_conj_neg_one_add_eq_sub
     (F := fun z => log (-z) - log (1 - z)) (f := fun z => (1 - z) ^ (-1 : ℤ) * z ^ (-1 : ℤ))
-    hstar hξS' hξS (fun z hz => ?_) ?_
+    hξ (fun z hz => ?_) ?_
   · simp only [incompleteBetaKernel_def, Prod.fst_add, Prod.snd_add, add_zero, sub_add_cancel_left,
       sub_self, zero_sub]
     have hc : (if v.2 + 1 ≤ v.2 then (1 / 2 : ℂ) else -1) = -1 := by simp
@@ -71,11 +63,11 @@ theorem incompleteBetaKernel_add_snd_one {ξ : ℂ} (hξ : -ξ ∈ slitPlane) (v
       rw [← map_neg, log_conj _ (mem_slitPlane_iff_arg.1 hξ).1]
     have e₂ : log (1 - conj ξ) = conj (log (1 - ξ)) := by
       rw [show (1 : ℂ) - conj ξ = conj (1 - ξ) by simp,
-        log_conj _ (mem_slitPlane_iff_arg.1 (h1S hξS)).1]
+        log_conj _ (mem_slitPlane_iff_arg.1 (h1S hξ)).1]
     rw [e₁, e₂, sub_sub_sub_comm, sub_conj, sub_conj, log_im, log_im]
     push_cast
     field_simp
-  · convert ((hasDerivAt_neg z).clog (hmemS.1 hz)).sub
+  · convert ((hasDerivAt_neg z).clog hz).sub
       (((hasDerivAt_id' z).const_sub 1).clog (h1S hz)) using 1
     have := h0 hz
     have := h1 hz
