@@ -45,15 +45,19 @@ equal exponents kills it. The corollary of [IFT], §2.5, which claims all such t
 stated.
 
 If the twists map the radical of a system `S` into itself and `v` is a solution of `S`, the
-twisted points `φ_{L,p} v` are solutions (`wordMap_phi_mem_V`), so for a nondegenerate tower over a
-CSA group with the big powers property every word of the radical of `S` vanishes at the top point
-(`eval_twistTower_eq_one_of_mem_Rad`): the top point is a point of the coordinate group `G_{R(S)}`,
-which maps to the tower (`twistTowerGHom`), and the retraction with exponents `p` composed with this
-map is evaluation at `φ_{L,p} v` (`towerRetraction_twistTowerGHom`). This holds for the basic tower
-of `J` rounds of the basic sequence over a solution `β` of a standard orientable quadratic equation
-(`TauCeti.GroupAlgGeom.Lift.basicTower`, `eval_basicTower_eq_one_of_mem_Rad`), whose twists fix the
-equation; for `J = 2` the map is the homomorphism `λ_β : G_{R(S)} → G(U, T)` of [IFT], §7.2,
-Proposition 4, and no regularity of the equation is needed.
+twisted points `φ_{L,p} v` are solutions (`TauCeti.GroupAlgGeom.Lift.wordMap_phi_mem_V`), so for a
+nondegenerate tower over a CSA group with the big powers property every word of the radical of `S`
+vanishes at the top point (`eval_twistTower_eq_one_of_mem_Rad`): the top point is a point of the
+coordinate group `G_{R(S)}`, which maps to the tower (`twistTowerGHom`), and the retraction with
+exponents `p` composed with this map is evaluation at `φ_{L,p} v`
+(`towerRetraction_twistTowerGHom`). This holds for the basic tower of `J` rounds of the basic
+sequence over a solution `β` of a standard orientable quadratic equation
+(`TauCeti.GroupAlgGeom.Lift.basicTower`, `mapsTo_twistHom_Rad_of_mem_replicate_basicSeqData`,
+`eval_basicTower_eq_one_of_mem_Rad`), whose twists fix the equation, and there the retraction
+composed with the map is evaluation at the point `φ_{j,p} β`
+(`TauCeti.GroupAlgGeom.Lift.twistPoint`, `towerRetraction_twistTowerGHom_replicate_basicSeqData`);
+for `J = 2` the map is the homomorphism `λ_β : G_{R(S)} → G(U, T)` of [IFT], §7.2, Proposition 4,
+and no regularity of the equation is needed.
 
 ## Main definitions
 
@@ -69,10 +73,6 @@ Proposition 4, and no regularity of the equation is needed.
   exponent tuples dominating a bound function.
 * `TauCeti.GroupAlgGeom.Lift.eval_twistTower_eq_one_iff`: the kernel of the top point, tested on
   the tuples of `L` natural numbers.
-* `TauCeti.GroupAlgGeom.Lift.eval_wordMap_phi`: evaluating at the point `φ_{L,p} v` is
-  evaluating at `v` after applying `φ_{L,p}`.
-* `TauCeti.GroupAlgGeom.Lift.wordMap_phi_mem_V`: the points `φ_{L,p} v` of a solution `v` of a
-  system whose radical the twists preserve are solutions.
 * `TauCeti.GroupAlgGeom.Lift.eval_twistTower_eq_one_of_mem_Rad`,
   `TauCeti.GroupAlgGeom.Lift.eval_basicTower_eq_one_of_mem_Rad`: over a CSA group with the big
   powers property, the top point of a nondegenerate tower over a solution of a system whose radical
@@ -80,6 +80,9 @@ Proposition 4, and no regularity of the equation is needed.
   radical.
 * `TauCeti.GroupAlgGeom.Lift.towerRetraction_twistTowerGHom`: the retraction with exponents `p`
   composed with `twistTowerGHom` is evaluation at `φ_{L,p} v`.
+* `TauCeti.GroupAlgGeom.Lift.towerRetraction_twistTowerGHom_replicate_basicSeqData`: for the
+  basic tower, the retraction with exponents `p` composed with `twistTowerGHom` is evaluation at
+  the point `φ_{j,p} β` ([IFT], p. 104: `λ_β ξ_p = φ_{2K,p} β`).
 
 ## References
 
@@ -176,41 +179,6 @@ theorem eval_twistTower_eq_one_iff {P : TowerStage.{u, v, w} G X} (hBP : Group.I
 
 /-! ### Points of coordinate groups -/
 
-/-- If the substitutions of the twist data of `l` map a set of words into itself, so do the
-automorphisms `φ_{L,p}`. -/
-private theorem mapsTo_phi_map_toMulAut {l : List (TwistData G X)} {s : Set (GX G X)}
-    (hs : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) s s) (p : List ℕ) :
-    Set.MapsTo ⇑(phi (l.map TwistData.toMulAut) p) s s :=
-  mapsTo_phi (List.forall_mem_map.2 fun d hd x hx => by
-    rw [TwistData.toMulAut_apply]
-    exact hs d hd hx) p
-
-/-- The automorphisms `φ_{L,p}` fix the coefficients. -/
-private theorem phi_map_toMulAut_inl (l : List (TwistData G X)) (p : List ℕ) (g : G) :
-    phi (l.map TwistData.toMulAut) p (inl g) = inl g :=
-  phi_apply_of_forall_mem (List.forall_mem_map.2 fun d _ => by simp [twistHom_inl]) p
-
-/-- Evaluating at the point `φ_{L,p} v`, whose coordinates are the values at `v` of the words
-`φ_{L,p}(x)`, is evaluating at `v` after applying `φ_{L,p}`. -/
-theorem eval_wordMap_phi {H : Type*} [Group H] (ι : G →* H) (l : List (TwistData G X))
-    (p : List ℕ) (v : X → H) (w : GX G X) :
-    eval ι (wordMap ι (fun x => phi (l.map TwistData.toMulAut) p (inr (.of x))) v) w =
-      eval ι v (phi (l.map TwistData.toMulAut) p w) := by
-  have h := DFunLike.congr_fun
-    (eval_wordMap (ι := ι) (.ofMulEquiv _ (phi_map_toMulAut_inl l p)) v) w
-  simpa only [GHom.coe_ofMulEquiv, MonoidHom.comp_apply, GHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass] using h
-
-/-- If the substitutions of the twist data of `l` map the radical of a system `S` into itself, the
-points `φ_{L,p} v` obtained from a solution `v` of `S` are solutions of `S`. -/
-theorem wordMap_phi_mem_V {H : Type*} [Group H] {ι : G →* H} {l : List (TwistData G X)}
-    {S : Set (GX G X)} (hS : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) (Rad ι S) (Rad ι S))
-    {v : X → H} (hv : v ∈ V ι S) (p : List ℕ) :
-    wordMap ι (fun x => phi (l.map TwistData.toMulAut) p (inr (.of x))) v ∈ V ι S :=
-  mem_V.2 fun s hs => by
-    rw [eval_wordMap_phi]
-    exact mem_Rad.1 (mapsTo_phi_map_toMulAut hS p (subset_Rad S hs)) v hv
-
 /-- Let `P` be a solution of a system `S` in a CSA group with the big powers property, `l` a list
 of twist data whose substitutions map the radical of `S` into itself, and suppose that the tower
 over `P` along `l` is nondegenerate. Then every word of the radical of `S` vanishes at the point of
@@ -246,6 +214,27 @@ theorem twistTowerGHom_mk {P : TowerStage.{u, v, w} G X} (hBP : Group.IsBP P.car
       eval (twistTower l P).coeff (twistTower l P).point w :=
   CoordGroup.evalGHomOfMemVRad_mk _ w
 
+/-- `twistTowerGHom` sends each coordinate of the generic point to that of the point of the
+tower. -/
+@[simp]
+theorem twistTowerGHom_genericPoint {P : TowerStage.{u, v, w} G X} (hBP : Group.IsBP P.carrier)
+    (hCSA : Group.IsCSA P.carrier) {l : List (TwistData G X)} (hl : P.IsNondegenerate l)
+    {S : Set (GX G X)} (hS : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) (Rad P.coeff S) (Rad P.coeff S))
+    (hv : P.point ∈ V P.coeff S) (x : X) :
+    twistTowerGHom hBP hCSA hl hS hv (CoordGroup.genericPoint P.coeff S x) =
+      (twistTower l P).point x :=
+  CoordGroup.evalGHomOfMemVRad_genericPoint _ x
+
+/-- Composing the generic point with `twistTowerGHom` gives the point of the tower. -/
+@[simp]
+theorem twistTowerGHom_comp_genericPoint {P : TowerStage.{u, v, w} G X}
+    (hBP : Group.IsBP P.carrier) (hCSA : Group.IsCSA P.carrier) {l : List (TwistData G X)}
+    (hl : P.IsNondegenerate l) {S : Set (GX G X)}
+    (hS : ∀ d ∈ l, Set.MapsTo (twistHom d.A d.e) (Rad P.coeff S) (Rad P.coeff S))
+    (hv : P.point ∈ V P.coeff S) :
+    twistTowerGHom hBP hCSA hl hS hv ∘ CoordGroup.genericPoint P.coeff S = (twistTower l P).point :=
+  CoordGroup.evalGHomOfMemVRad_comp_genericPoint _
+
 /-- The retraction of the tower with exponents `p`, a tuple no longer than `l`, composed with
 `twistTowerGHom`, is evaluation at the solution `φ_{L,p} v` of `S`. -/
 theorem towerRetraction_twistTowerGHom {P : TowerStage.{u, v, w} G X}
@@ -259,6 +248,17 @@ theorem towerRetraction_twistTowerGHom {P : TowerStage.{u, v, w} G X}
   obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
   rw [twistTowerGHom_mk, eval_towerRetraction l P hp, CoordGroup.evalGHom_mk, eval_wordMap_phi]
 
+/-- The substitution of each twist datum of `J` rounds of the basic sequence of a standard
+orientable quadratic equation `S = 1` maps the radical of `S` into itself: the hypothesis of
+`twistTowerGHom` for the basic tower. -/
+theorem mapsTo_twistHom_Rad_of_mem_replicate_basicSeqData {H : Type*} [Group H] (ι : G →* H)
+    {S : Quadratic.Standard G X} (hS : S.IsOrientable) {J : ℕ} {d : TwistData G X}
+    (hd : d ∈ (List.replicate J (basicSeqData S hS)).flatten) :
+    Set.MapsTo (twistHom d.A d.e) (Rad ι {S.toWord}) (Rad ι {S.toWord}) := by
+  obtain ⟨_, hl, hdl⟩ := List.mem_flatten.1 hd
+  obtain rfl := List.eq_of_mem_replicate hl
+  exact mapsTo_twistHom_Rad_of_mem_basicSeqData ι hS hdl
+
 /-- The point of a nondegenerate basic tower of `J` rounds over a solution `β` of a standard
 orientable quadratic equation `S = 1` over a CSA group with the big powers property is a point of
 the coordinate group: every word of the radical of `S` vanishes at it. For `J = 2` this says that
@@ -271,14 +271,33 @@ theorem eval_basicTower_eq_one_of_mem_Rad (hBP : Group.IsBP G) (hCSA : Group.IsC
     (hw : w ∈ Rad (.id G) {S.toWord}) :
     eval (basicTower S hS β J).coeff (basicTower S hS β J).point w = 1 := by
   rw [basicTower_def]
-  refine eval_twistTower_eq_one_of_mem_Rad (P := ⟨G, .id G, β⟩) hBP hCSA hnd
-    (fun d hd u hu => ?_) hβ hw
-  obtain ⟨_, hl, hdl⟩ := List.mem_flatten.1 hd
-  obtain rfl := List.eq_of_mem_replicate hl
-  -- The twist fixes the coefficients and the equation, so it maps the radical into itself.
-  simpa using Rad_preimage_le_comap (.id G)
-    (.ofMulEquiv d.toMulAut fun g => (d.toMulAut_apply _).trans (twistHom_inl d.A d.e g))
-    {S.toWord} (Rad_monotone (.id G) (fun s hs => by
-      simp [Set.mem_singleton_iff.1 hs, twistHom_toWord_of_mem_basicSeqData hS hdl]) hu)
+  exact eval_twistTower_eq_one_of_mem_Rad (P := ⟨G, .id G, β⟩) hBP hCSA hnd
+    (fun _ => mapsTo_twistHom_Rad_of_mem_replicate_basicSeqData (.id G) hS) hβ hw
+
+/-- For a nondegenerate basic tower of `J` rounds over a solution `β` of a standard orientable
+quadratic equation `S = 1` over a CSA group with the big powers property, the retraction with
+exponents `p`, a tuple no longer than the tower, composed with the map `twistTowerGHom` from the
+coordinate group (for `J = 2`, `λ_β`), is evaluation at the solution `φ_{j,p} β` of `S`
+([IFT], p. 104: `λ_β ξ_p = φ_{2K,p} β`). -/
+theorem towerRetraction_twistTowerGHom_replicate_basicSeqData (hBP : Group.IsBP G)
+    (hCSA : Group.IsCSA G) {S : Quadratic.Standard G X} (hS : S.IsOrientable) {β : X → G}
+    (hβ : β ∈ V (.id G) {S.toWord}) {J : ℕ}
+    (hnd : (⟨G, .id G, β⟩ : TowerStage.{u, v, u} G X).IsNondegenerate
+      (List.replicate J (basicSeqData S hS)).flatten) {p : List ℕ}
+    (hp : p.length ≤ (List.replicate J (basicSeqData S hS)).flatten.length)
+    (q : CoordGroup (.id G) {S.toWord}) :
+    towerRetraction (List.replicate J (basicSeqData S hS)).flatten ⟨G, .id G, β⟩ p
+        (twistTowerGHom hBP hCSA hnd
+          (fun _ => mapsTo_twistHom_Rad_of_mem_replicate_basicSeqData (.id G) hS) hβ q) =
+      CoordGroup.evalGHom _ (twistPoint_mem_V hS hβ p) q := by
+  obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
+  rw [towerRetraction_twistTowerGHom _ _ _ _ _ hp, CoordGroup.evalGHom_mk, CoordGroup.evalGHom_mk,
+    eval_wordMap_phi, eval_twistPoint, List.map_flatten, List.map_replicate,
+    map_toMulAut_basicSeqData]
+  obtain rfl | hJ := eq_or_ne J 0
+  · -- The tower of no rounds has no steps, so the only exponent tuple is empty.
+    obtain rfl : p = [] := List.eq_nil_of_length_eq_zero (by simpa using hp)
+    simp [phi_nil]
+  · rw [phi_flatten_replicate _ hJ]
 
 end TauCeti.GroupAlgGeom.Lift

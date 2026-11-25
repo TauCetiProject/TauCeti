@@ -145,14 +145,10 @@ theorem twisted_point (P : TowerStage.{u, v, w} G X) (d : TwistData G X) (k : �
 applying the `k`-th power of the twist. -/
 theorem eval_twisted (P : TowerStage.{u, v, w} G X) (d : TwistData G X) (k : ℤ) (w : GX G X) :
     eval (P.twisted d k).coeff (P.twisted d k).point w =
-      eval P.coeff P.point ((d.toMulAut ^ k) w) := by
-  have h := DFunLike.congr_fun (eval_wordMap (ι := P.coeff)
-    (.ofMulEquiv (d.toMulAut ^ k) fun g => by simp) P.point) w
-  simp only [GHom.coe_ofMulEquiv, MonoidHom.comp_apply, GHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass] at h
-  -- The point of the twisted stage is, by definition, the word map of the twist; the two sides
-  -- differ only in the (definitionally equal) types of the stages, which `simpa` does not unfold.
-  exact h
+      eval P.coeff P.point ((d.toMulAut ^ k) w) :=
+  -- The point of the twisted stage is, by definition, the word map of the twist
+  -- (`TowerStage.twisted_point`).
+  eval_wordMap_mulEquiv (d.toMulAut ^ k) (fun g => by simp) P.point w
 
 /-- The retraction `t ↦ u ^ k` of the lift along a twist datum, `u = A(v)`, sends the lifted point
 to the point twisted `k` times, for every integer `k` ([IFT], §7.2: in the extension of the

@@ -112,14 +112,19 @@ theorem map_coeff (f : P.Hom Q) (g : G) : f (P.coeff g) = Q.coeff g :=
   f.map_coeff' g
 
 @[simp]
+theorem coe_comp_point (f : P.Hom Q) : ⇑f ∘ P.point = Q.point :=
+  f.comp_point
+
+@[simp]
 theorem map_point (f : P.Hom Q) (x : X) : f (P.point x) = Q.point x :=
-  congrFun f.comp_point x
+  congrFun f.coe_comp_point x
 
 /-- A morphism of stages carries the value of a word at the first point to its value at the
 second. -/
 @[simp]
-theorem map_eval (f : P.Hom Q) (w : GX G X) : f (eval P.coeff P.point w) = eval Q.coeff Q.point w :=
-  (GroupAlgGeom.map_eval f.toGHom w).trans (by rw [← f.comp_point]; rfl)
+theorem map_eval (f : P.Hom Q) (w : GX G X) :
+    f (eval P.coeff P.point w) = eval Q.coeff Q.point w := by
+  rw [← coe_toGHom, GroupAlgGeom.map_eval, coe_toGHom, coe_comp_point]
 
 variable (P) in
 /-- The identity morphism of a stage. -/
@@ -268,6 +273,7 @@ theorem tower_towerInclusion (f : P.Hom Q) (l : List (TwistData G X)) (x : P.car
     exact (ih (f.lift d) _).trans (congrArg _ (lift_of f d x))
 
 /-- The lift of a morphism of stages commutes with the retractions `t ↦ u ^ k` of the lifts. -/
+@[simp]
 theorem retraction_lift (f : P.Hom Q) (d : TwistData G X) (k : ℤ) (x : (P.lift d).carrier) :
     CentralizerExt.retraction (fun _ => k) (f.lift d x) =
       f (CentralizerExt.retraction (fun _ => k) x) := by
@@ -286,6 +292,7 @@ theorem retraction_lift (f : P.Hom Q) (d : TwistData G X) (k : ℤ) (x : (P.lift
 
 /-- The homomorphisms of towers induced by a morphism of stages commute with the retractions of
 the towers onto their bases. -/
+@[simp]
 theorem towerRetraction_tower (f : P.Hom Q) (l : List (TwistData G X)) (p : List ℕ)
     (x : (twistTower l P).carrier) :
     towerRetraction l Q p (f.tower l x) = f (towerRetraction l P p x) := by
