@@ -5,27 +5,35 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.LoopGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.LoopGroup.CoordinateAction.Loop
+public import TauCeti.Algebra.Category.Grp.SemidirectProduct
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Functor
 import TauCeti.Algebra.AlgebraicGroup.Trivial
 
 /-!
 # Loop groups extended by coordinate changes
 
-Let `G` be the affine group over a commutative ring `k` with coordinate Hopf algebra `H`. The
-group `Aut(O)(R) = TauCeti.FormalCoordinate R` of formal coordinate changes acts on the loops
-`LG(R) = G(R⸨t⸩)` and on the arcs `L⁺G(R) = G(R⟦t⟧)` by `ρ_φ (g) = σ_(φ⁻¹) ∘ g`, through group
-automorphisms. The semidirect products for these actions, Mathlib's `SemidirectProduct` along
-`MulDistribMulAction.toMulAut`, have the multiplication
+Let `H` be a Hopf algebra over a commutative ring `k`. The group
+`Aut(O)(R) = TauCeti.FormalCoordinate R` of formal coordinate changes acts on the convolution
+groups `WithConv (H →ₐ[k] R⸨t⸩)` and `WithConv (H →ₐ[k] R⟦t⟧)` by `ρ_φ (g) = σ_(φ⁻¹) ∘ g`,
+through group automorphisms. When `H` is commutative these are the loop group `LG(R) = G(R⸨t⸩)`
+and the positive loop group `L⁺G(R) = G(R⟦t⟧)` of `G = Spec H`. The semidirect products for these
+actions, Mathlib's `SemidirectProduct` along `MulDistribMulAction.toMulAut`, have the
+multiplication
 
   `(g, φ) (h, ψ) = (g ρ_φ (h), φ ∘ ψ)`.
 
 Since the actions are natural in `R`, the semidirect products `LG ⋊ Aut(O)` and
-`L⁺G ⋊ Aut(O)` are group functors on all commutative `k`-algebras, nonreduced ones included, and
-since the inclusion `L⁺G → LG` is equivariant it extends to an injective natural homomorphism
-`L⁺G ⋊ Aut(O) → LG ⋊ Aut(O)`. The loop groups embed as the normal factors `(g, 1)`, and the
-projections to the coordinate change are natural along the group functor
-`TauCeti.FormalCoordinate.groupFunctor k` of `Aut(O)`.
+`L⁺G ⋊ Aut(O)` are group functors on all commutative `k`-algebras, nonreduced ones included,
+built by `TauCeti.GrpCat.semidirectProductFunctor` from the group functors
+`TauCeti.HopfAlgebra.loopGroup`, `TauCeti.HopfAlgebra.positiveLoopGroup` and
+`TauCeti.FormalCoordinate.groupFunctor`. Since the inclusion `L⁺G → LG` is equivariant it extends,
+by `TauCeti.GrpCat.semidirectProductMap`, to an injective natural homomorphism
+`L⁺G ⋊ Aut(O) → LG ⋊ Aut(O)`. The loop groups embed as the normal factors `(g, 1)`. The
+projections to `Aut(O)` and their sections `φ ↦ (1, φ)` are the natural transformations
+`TauCeti.GrpCat.semidirectProductRightHom` and `TauCeti.GrpCat.semidirectProductInr`, for `Aut(O)`
+lifted to the universe of the semidirect products.
 
 ## Main definitions
 
@@ -64,45 +72,40 @@ namespace TauCeti.HopfAlgebra
 
 variable (k : Type u) [CommRing k] (H : Type v) [Semiring H] [_root_.HopfAlgebra k H]
 
-/-- The group functor `LG ⋊ Aut(O) : R ↦ G(R⸨t⸩) ⋊ FormalCoordinate R` on commutative
-`k`-algebras, the semidirect product of the loop group by the coordinate changes acting through
-`ρ_φ (g) = σ_(φ⁻¹) ∘ g`. A morphism `f : R ⟶ S` acts on both factors through the coefficients. -/
-@[expose] noncomputable def loopSemidirectProduct : CommAlgCat.{w} k ⥤ GrpCat.{max v w} where
-  obj R := GrpCat.of
-    (WithConv (H →ₐ[k] R⸨X⸩) ⋊[MulDistribMulAction.toMulAut _ _] FormalCoordinate R)
-  map {R S} f := GrpCat.ofHom <| SemidirectProduct.map
-    (AlgHom.mapValue (HahnSeries.mapAlgHom f.hom)) (FormalCoordinate.map (f.hom : R →+* S))
-    fun φ ↦ MonoidHom.ext fun g ↦ LaurentSeries.mapValue_mapAlgHom_smul f.hom φ g
-  map_id R := GrpCat.ext fun x ↦ SemidirectProduct.ext (by simp) (by simp)
-  map_comp f g := GrpCat.ext fun x ↦ SemidirectProduct.ext
-    (by simp [HahnSeries.mapAlgHom_comp, AlgHom.mapValue_comp])
-    (FormalCoordinate.ext <| by simp [AlgHom.comp_toRingHom, PowerSeries.map_comp])
+/-- The group functor `LG ⋊ Aut(O) : R ↦ WithConv (H →ₐ[k] R⸨t⸩) ⋊ FormalCoordinate R` on
+commutative `k`-algebras, the semidirect product of the loop group by the coordinate changes acting
+through `ρ_φ (g) = σ_(φ⁻¹) ∘ g`; for a commutative `H` the first factor is the loop group
+`G(R⸨t⸩)` of `G = Spec H`. A morphism `f : R ⟶ S` acts on both factors through the
+coefficients. -/
+@[expose] noncomputable def loopSemidirectProduct : CommAlgCat.{w} k ⥤ GrpCat.{max v w} :=
+  GrpCat.semidirectProductFunctor (loopGroup k H) (FormalCoordinate.groupFunctor k)
+    (fun R ↦ MulDistribMulAction.toMulAut (FormalCoordinate R) (WithConv (H →ₐ[k] R⸨X⸩)))
+    fun _ _ f φ g ↦ by
+      rw [loopGroup_map_apply, loopGroup_map_apply, FormalCoordinate.groupFunctor_map_apply]
+      exact LaurentSeries.mapValue_mapAlgHom_smul f.hom φ g
 
-/-- The group functor `L⁺G ⋊ Aut(O) : R ↦ G(R⟦t⟧) ⋊ FormalCoordinate R` on commutative
-`k`-algebras, the semidirect product of the positive loop group by the coordinate changes acting
-through `ρ_φ (g) = σ_(φ⁻¹) ∘ g`. -/
+/-- The group functor `L⁺G ⋊ Aut(O) : R ↦ WithConv (H →ₐ[k] R⟦t⟧) ⋊ FormalCoordinate R` on
+commutative `k`-algebras, the semidirect product of the positive loop group by the coordinate
+changes acting through `ρ_φ (g) = σ_(φ⁻¹) ∘ g`; for a commutative `H` the first factor is the
+positive loop group `G(R⟦t⟧)` of `G = Spec H`. -/
 @[expose] noncomputable def positiveLoopSemidirectProduct :
-    CommAlgCat.{w} k ⥤ GrpCat.{max v w} where
-  obj R := GrpCat.of
-    (WithConv (H →ₐ[k] R⟦X⟧) ⋊[MulDistribMulAction.toMulAut _ _] FormalCoordinate R)
-  map {R S} f := GrpCat.ofHom <| SemidirectProduct.map
-    (AlgHom.mapValue (PowerSeries.mapAlgHom f.hom)) (FormalCoordinate.map (f.hom : R →+* S))
-    fun φ ↦ MonoidHom.ext fun g ↦ FormalCoordinate.mapValue_mapAlgHom_smul f.hom φ g
-  map_id R := GrpCat.ext fun x ↦ SemidirectProduct.ext
-    (ofConv_injective <| AlgHom.ext fun h ↦ PowerSeries.ext fun n ↦ by
-      simp [PowerSeries.mapAlgHom_apply]) (by simp)
-  map_comp f g := GrpCat.ext fun x ↦ SemidirectProduct.ext
-    (ofConv_injective <| AlgHom.ext fun h ↦ PowerSeries.ext fun n ↦ by
-      simp [PowerSeries.mapAlgHom_apply])
-    (FormalCoordinate.ext <| by simp [AlgHom.comp_toRingHom, PowerSeries.map_comp])
+    CommAlgCat.{w} k ⥤ GrpCat.{max v w} :=
+  GrpCat.semidirectProductFunctor (positiveLoopGroup k H) (FormalCoordinate.groupFunctor k)
+    (fun R ↦ MulDistribMulAction.toMulAut (FormalCoordinate R) (WithConv (H →ₐ[k] R⟦X⟧)))
+    fun _ _ f φ g ↦ by
+      rw [positiveLoopGroup_map_apply, positiveLoopGroup_map_apply,
+        FormalCoordinate.groupFunctor_map_apply]
+      exact FormalCoordinate.mapValue_mapAlgHom_smul f.hom φ g
 
-/-- The group `(LG ⋊ Aut(O))(R)` is the semidirect product `G(R⸨t⸩) ⋊ FormalCoordinate R`. -/
+/-- The group `(LG ⋊ Aut(O))(R)` is the semidirect product
+`WithConv (H →ₐ[k] R⸨t⸩) ⋊ FormalCoordinate R`. -/
 lemma loopSemidirectProduct_obj (R : CommAlgCat.{w} k) :
     (loopSemidirectProduct k H).obj R = GrpCat.of
       (WithConv (H →ₐ[k] R⸨X⸩) ⋊[MulDistribMulAction.toMulAut _ _] FormalCoordinate R) :=
   (rfl)
 
-/-- The group `(L⁺G ⋊ Aut(O))(R)` is the semidirect product `G(R⟦t⟧) ⋊ FormalCoordinate R`. -/
+/-- The group `(L⁺G ⋊ Aut(O))(R)` is the semidirect product
+`WithConv (H →ₐ[k] R⟦t⟧) ⋊ FormalCoordinate R`. -/
 lemma positiveLoopSemidirectProduct_obj (R : CommAlgCat.{w} k) :
     (positiveLoopSemidirectProduct k H).obj R = GrpCat.of
       (WithConv (H →ₐ[k] R⟦X⟧) ⋊[MulDistribMulAction.toMulAut _ _] FormalCoordinate R) :=
@@ -112,6 +115,7 @@ variable {k H}
 
 /-- A morphism `f : R ⟶ S` acts on `LG ⋊ Aut(O)` by applying `f` to the coefficients of both
 factors. -/
+@[simp]
 lemma loopSemidirectProduct_map_apply {R S : CommAlgCat.{w} k} (f : R ⟶ S)
     (x : WithConv (H →ₐ[k] R⸨X⸩) ⋊[MulDistribMulAction.toMulAut _ _] FormalCoordinate R) :
     (loopSemidirectProduct k H).map f x =
@@ -121,6 +125,7 @@ lemma loopSemidirectProduct_map_apply {R S : CommAlgCat.{w} k} (f : R ⟶ S)
 
 /-- A morphism `f : R ⟶ S` acts on `L⁺G ⋊ Aut(O)` by applying `f` to the coefficients of both
 factors. -/
+@[simp]
 lemma positiveLoopSemidirectProduct_map_apply {R S : CommAlgCat.{w} k} (f : R ⟶ S)
     (x : WithConv (H →ₐ[k] R⟦X⟧) ⋊[MulDistribMulAction.toMulAut _ _] FormalCoordinate R) :
     (positiveLoopSemidirectProduct k H).map f x =
@@ -132,15 +137,17 @@ lemma positiveLoopSemidirectProduct_map_apply {R S : CommAlgCat.{w} k} (f : R �
 lemma rightHom_loopSemidirectProduct_map {R S : CommAlgCat.{w} k} (f : R ⟶ S)
     (x : WithConv (H →ₐ[k] R⸨X⸩) ⋊[MulDistribMulAction.toMulAut _ _] FormalCoordinate R) :
     SemidirectProduct.rightHom ((loopSemidirectProduct k H).map f x) =
-      (FormalCoordinate.groupFunctor k).map f (SemidirectProduct.rightHom x) :=
-  (rfl)
+      (FormalCoordinate.groupFunctor k).map f (SemidirectProduct.rightHom x) := by
+  rw [loopSemidirectProduct_map_apply, FormalCoordinate.groupFunctor_map_apply]
+  rfl
 
 /-- The projection `L⁺G ⋊ Aut(O) → Aut(O)` to the coordinate change is natural in `R`. -/
 lemma rightHom_positiveLoopSemidirectProduct_map {R S : CommAlgCat.{w} k} (f : R ⟶ S)
     (x : WithConv (H →ₐ[k] R⟦X⟧) ⋊[MulDistribMulAction.toMulAut _ _] FormalCoordinate R) :
     SemidirectProduct.rightHom ((positiveLoopSemidirectProduct k H).map f x) =
-      (FormalCoordinate.groupFunctor k).map f (SemidirectProduct.rightHom x) :=
-  (rfl)
+      (FormalCoordinate.groupFunctor k).map f (SemidirectProduct.rightHom x) := by
+  rw [positiveLoopSemidirectProduct_map_apply, FormalCoordinate.groupFunctor_map_apply]
+  rfl
 
 variable (k H)
 
@@ -148,51 +155,47 @@ variable (k H)
 factor and the identity on the coordinate changes. It is a homomorphism because the inclusion of
 arcs into loops is equivariant. -/
 noncomputable def positiveLoopSemidirectProductToLoop :
-    positiveLoopSemidirectProduct.{u, v, w} k H ⟶ loopSemidirectProduct k H where
-  app R := GrpCat.ofHom <| SemidirectProduct.map
-    (AlgHom.mapValue (HahnSeries.ofPowerSeriesAlg ℤ k)) (MonoidHom.id _) fun φ ↦
-      MonoidHom.ext fun g ↦ LaurentSeries.mapValue_ofPowerSeriesAlg_smul φ g
-  naturality R S f := GrpCat.ext fun x ↦ SemidirectProduct.ext (by
-    -- the inclusion `R⟦X⟧ → R⸨X⸩` is natural in `R`
-    have key := congr(AlgHom.mapValue (H := H) ($((CommAlgCat.ofPowerSeries k).naturality f)).hom)
-    simp only [CommAlgCat.hom_comp, CommAlgCat.ofPowerSeries_app_hom, AlgHom.mapValue_comp] at key
-    exact DFunLike.congr_fun key x.left) rfl
+    positiveLoopSemidirectProduct.{u, v, w} k H ⟶ loopSemidirectProduct k H :=
+  GrpCat.semidirectProductMap (positiveLoopToLoop k H) (𝟙 _) fun R φ g ↦ by
+    rw [positiveLoopToLoop_app_apply, positiveLoopToLoop_app_apply]
+    exact LaurentSeries.mapValue_ofPowerSeriesAlg_smul φ g
 
 variable {k H}
 
 /-- The inclusion `L⁺G ⋊ Aut(O) → LG ⋊ Aut(O)` includes the arc and keeps the coordinate
 change. -/
+@[simp]
 lemma positiveLoopSemidirectProductToLoop_app_apply (R : CommAlgCat.{w} k)
     (x : WithConv (H →ₐ[k] R⟦X⟧) ⋊[MulDistribMulAction.toMulAut _ _] FormalCoordinate R) :
     (positiveLoopSemidirectProductToLoop k H).app R x =
       ⟨AlgHom.mapValue (HahnSeries.ofPowerSeriesAlg ℤ k) x.left, x.right⟩ :=
-  (rfl)
+  SemidirectProduct.ext (positiveLoopToLoop_app_apply k H R x.left) rfl
 
 /-- An element of `L⁺G ⋊ Aut(O)` is determined by its image in `LG ⋊ Aut(O)`. -/
 theorem positiveLoopSemidirectProductToLoop_app_injective (R : CommAlgCat.{w} k) :
-    Function.Injective ((positiveLoopSemidirectProductToLoop k H).app R) := by
-  intro x y hxy
-  have hl : AlgHom.mapValue (HahnSeries.ofPowerSeriesAlg ℤ k) x.left =
-      AlgHom.mapValue (HahnSeries.ofPowerSeriesAlg ℤ k) y.left :=
-    congrArg SemidirectProduct.left hxy
-  refine SemidirectProduct.ext (AlgHom.mapValue_injective ?_ hl)
-    (congrArg SemidirectProduct.right hxy :)
-  rw [HahnSeries.coe_ofPowerSeriesAlg]
-  exact HahnSeries.ofPowerSeries_injective
+    Function.Injective ((positiveLoopSemidirectProductToLoop k H).app R) :=
+  GrpCat.semidirectProductMap_app_injective _ _ _ R (positiveLoopToLoop_app_injective k H R)
+    fun _ _ ↦ id
 
 variable (k H)
 
 /-- The natural inclusion `g ↦ (g, 1)` of the loop group `LG` into `LG ⋊ Aut(O)`. -/
 noncomputable def loopToSemidirectProduct :
     loopGroup.{u, v, w} k H ⟶ loopSemidirectProduct k H where
-  app _ := GrpCat.ofHom SemidirectProduct.inl
-  naturality _ _ _ := GrpCat.ext fun _ ↦ SemidirectProduct.ext rfl (map_one _).symm
+  app R := (GrpCat.ofHom (SemidirectProduct.inl : WithConv (H →ₐ[k] R⸨X⸩) →*
+    WithConv (H →ₐ[k] R⸨X⸩) ⋊[MulDistribMulAction.toMulAut _ _] FormalCoordinate R) :)
+  naturality _ _ f := GrpCat.ext fun g ↦ by
+    refine ((loopSemidirectProduct_map_apply f (.inl g)).trans ?_).symm
+    exact SemidirectProduct.ext (loopGroup_map_apply k H f g).symm (map_one _)
 
 /-- The natural inclusion `g ↦ (g, 1)` of the positive loop group `L⁺G` into `L⁺G ⋊ Aut(O)`. -/
 noncomputable def positiveLoopToSemidirectProduct :
     positiveLoopGroup.{u, v, w} k H ⟶ positiveLoopSemidirectProduct k H where
-  app _ := GrpCat.ofHom SemidirectProduct.inl
-  naturality _ _ _ := GrpCat.ext fun _ ↦ SemidirectProduct.ext rfl (map_one _).symm
+  app R := (GrpCat.ofHom (SemidirectProduct.inl : WithConv (H →ₐ[k] R⟦X⟧) →*
+    WithConv (H →ₐ[k] R⟦X⟧) ⋊[MulDistribMulAction.toMulAut _ _] FormalCoordinate R) :)
+  naturality _ _ f := GrpCat.ext fun g ↦ by
+    refine ((positiveLoopSemidirectProduct_map_apply f (.inl g)).trans ?_).symm
+    exact SemidirectProduct.ext (positiveLoopGroup_map_apply k H f g).symm (map_one _)
 
 variable {k H}
 
@@ -213,8 +216,15 @@ lemma positiveLoopToSemidirectProduct_app_apply (R : CommAlgCat.{w} k)
 theorem positiveLoopToSemidirectProduct_comp_positiveLoopSemidirectProductToLoop :
     positiveLoopToSemidirectProduct.{u, v, w} k H ≫ positiveLoopSemidirectProductToLoop k H =
       positiveLoopToLoop k H ≫ loopToSemidirectProduct k H := by
-  refine NatTrans.ext <| funext fun R ↦ GrpCat.ext fun x ↦ SemidirectProduct.ext ?_ rfl
-  exact (HopfAlgebra.positiveLoopToLoop_app_apply k H R x).symm
+  refine NatTrans.ext <| funext fun R ↦ GrpCat.ext fun x ↦ ?_
+  exact (positiveLoopSemidirectProductToLoop_app_apply R (.inl x)).trans
+    (SemidirectProduct.ext (positiveLoopToLoop_app_apply k H R x).symm rfl)
+
+/-- The coordinate changes split off `LG ⋊ Aut(O)` naturally: the natural sections
+`φ ↦ (1, φ)` of the natural projections to `Aut(O)` compose to the identity. -/
+example : (GrpCat.semidirectProductInr _ _ _ _ : _ ⟶ loopSemidirectProduct.{u, v, w} k H) ≫
+    GrpCat.semidirectProductRightHom _ _ _ _ = 𝟙 _ :=
+  GrpCat.semidirectProductInr_comp_rightHom _ _ _ _
 
 /-- For the trivial group, `LG ⋊ Aut(O)` is the group of coordinate changes: the projection to
 the second factor is an isomorphism. -/

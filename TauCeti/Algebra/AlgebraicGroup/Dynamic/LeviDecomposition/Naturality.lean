@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Functor
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Basic
+public import TauCeti.Algebra.Category.Grp.SemidirectProduct
 
 /-!
 # Naturality of the dynamic Levi decomposition
@@ -170,39 +171,32 @@ theorem mapParabolic_leviDecompositionMulEquiv_apply
       leviDecompositionMulEquiv B l (leviSemidirectMap l φ g) := by
   simp
 
-private theorem leviSemidirectMap_id (A : CommAlgCat.{w} R) :
-    leviSemidirectMap l (𝟙 A) = MonoidHom.id _ := by
-  ext g <;> simp [leviSemidirectMap]
-
-private theorem leviSemidirectMap_comp {A B C : CommAlgCat.{w} R}
-    (φ : A ⟶ B) (ψ : B ⟶ C) :
-    leviSemidirectMap l (φ ≫ ψ) =
-      (leviSemidirectMap l ψ).comp (leviSemidirectMap l φ) := by
-  ext g <;> simp [leviSemidirectMap]
-
 /-- The semidirect product `U(l)(A) ⋊ Z(l)(A)` in the dynamic Levi decomposition, functorial in
-the commutative value algebra `A`. -/
+the commutative value algebra `A`: the semidirect product of the unipotent and Levi functors. -/
 -- The object carrier must unfold when constructing the natural decomposition isomorphism.
 @[expose] noncomputable def leviSemidirectFunctor :
-    Functor (CommAlgCat.{w} R) GrpCat.{max v w} where
-  obj A := GrpCat.of ((unipotent A l) ⋊[leviConjugation A l] (levi A l))
-  map φ := GrpCat.ofHom (leviSemidirectMap l φ)
-  map_id A := by rw [leviSemidirectMap_id]; rfl
-  map_comp φ ψ := by rw [leviSemidirectMap_comp]; rfl
+    Functor (CommAlgCat.{w} R) GrpCat.{max v w} :=
+  GrpCat.semidirectProductFunctor (unipotentFunctor l) (leviFunctor l)
+    (fun A ↦ leviConjugation A l) fun _ _ φ z g ↦ by
+      rw [unipotentFunctor_map, leviFunctor_map]
+      exact mapUnipotent_leviConjugation l φ z g
 
 /-- The dynamic Levi semidirect-product functor maps a homomorphism by extension on its unipotent
 and Levi coordinates. -/
 @[simp]
 theorem leviSemidirectFunctor_map {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (leviSemidirectFunctor l).map φ = GrpCat.ofHom (leviSemidirectMap l φ) :=
-  rfl
+  GrpCat.ext fun g ↦ (GrpCat.semidirectProductFunctor_map_apply (unipotentFunctor l)
+    (leviFunctor l) (fun A ↦ leviConjugation A l) _ φ g).trans <| by
+    rw [unipotentFunctor_map, leviFunctor_map]
+    exact (leviSemidirectMap_apply l φ g).symm
 
 /-- **The functorial dynamic Levi decomposition.** The semidirect product of the dynamic
 unipotent and Levi subgroup functors is naturally isomorphic to the dynamic parabolic functor. -/
 noncomputable def leviDecompositionNatIso :
     leviSemidirectFunctor l ≅ parabolicFunctor l :=
   NatIso.ofComponents (fun A ↦ (leviDecompositionMulEquiv A l).toGrpIso) fun {A B} φ ↦ by
-    rw [parabolicFunctor_map]
+    rw [parabolicFunctor_map, leviSemidirectFunctor_map]
     apply GrpCat.hom_ext
     apply MonoidHom.ext
     intro g

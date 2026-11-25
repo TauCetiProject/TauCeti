@@ -5,38 +5,34 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.LoopGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.LoopGroup.CoordinateAction.Basic
-public import TauCeti.Algebra.AlgebraicGroup.LoopGroup.PoleBounded.Basic
 public import TauCeti.RingTheory.LaurentSeries.Substitution.Coordinate
 import TauCeti.Algebra.AlgebraicGroup.Trivial
-import TauCeti.RingTheory.LaurentSeries.Substitution.Lattice
 
 /-!
 # The action of formal coordinate changes on loops
 
-Let `H` be a bialgebra over a commutative semiring `k` and `R` a commutative `k`-algebra. The
-loops of `G = Spec H` over `R` are the points `G(R⸨X⸩) = WithConv (H →ₐ[k] R⸨X⸩)`, the loop group
-`LG(R)` when `H` is a Hopf algebra; here `R⸨X⸩` carries its coefficientwise `k`-algebra structure,
-as in `TauCeti.HopfAlgebra.loopGroup`. A formal coordinate `φ ∈ TauCeti.FormalCoordinate R` gives
-the substitution automorphism `σ_φ : f ↦ f (φ)` of `R⸨X⸩`
-(`TauCeti.LaurentSeries.substAlgEquiv`), and these compose contravariantly. As for arcs
-(`TauCeti.FormalCoordinate.instMulDistribMulActionWithConv`), substituting the inverse coordinate
-turns this right action into a left one,
+Let `H` be an algebra over a commutative semiring `k` and `R` a commutative `k`-algebra, and give
+`R⸨X⸩` its coefficientwise `k`-algebra structure, as in `TauCeti.HopfAlgebra.loopGroup`. A formal
+coordinate `φ ∈ TauCeti.FormalCoordinate R` gives the substitution automorphism `σ_φ : f ↦ f (φ)`
+of `R⸨X⸩` (`TauCeti.LaurentSeries.substAlgEquiv`), and these compose contravariantly. As for arcs
+(`TauCeti.FormalCoordinate.instMulActionWithConv`), substituting the inverse coordinate turns this
+right action into a left one on the convolution points `WithConv (H →ₐ[k] R⸨X⸩)`,
 
-  `ρ_φ (g) = σ_(φ⁻¹) ∘ g`,
+  `ρ_φ (g) = σ_(φ⁻¹) ∘ g`.
 
-a `MulDistribMulAction` of `FormalCoordinate R` on `G(R⸨X⸩)`. Mathlib's
-`MulDistribMulAction.toMulAut` then makes each `ρ_φ` a group automorphism of the loop group, and
-the semidirect product `G(R⸨X⸩) ⋊ FormalCoordinate R` has the multiplication
-`(g, φ) (h, ψ) = (g ρ_φ (h), φ ∘ ψ)`.
+When `H` is a bialgebra, the convolution points form a monoid and `ρ` is a `MulDistribMulAction`;
+for a Hopf algebra Mathlib's `MulDistribMulAction.toMulAut` then makes each `ρ_φ` a group
+automorphism, and the semidirect product `WithConv (H →ₐ[k] R⸨X⸩) ⋊ FormalCoordinate R` has the
+multiplication `(g, φ) (h, ψ) = (g ρ_φ (h), φ ∘ ψ)`. When `H` is a commutative Hopf algebra, the
+convolution points are the loops `G(R⸨X⸩)` of `G = Spec H`, the loop group `LG(R)`.
 
 The action is natural in the coefficient algebra `R`, along `HahnSeries.mapAlgHom f` on loops and
 `TauCeti.FormalCoordinate.map f` on coordinates, and in the bialgebra `H`, along pre-composition
 with bialgebra maps. The inclusion `R⟦X⟧ → R⸨X⸩` carries the action on arcs to the action on
-loops, so `ρ_φ` maps the positive loops `L⁺G(R)` onto themselves. Substitution preserves every
-lattice `X^(-N) R⟦X⟧`, so `ρ_φ` maps each piece `LG_(≤N)(R)` of pole-bounded loops onto itself,
-and it fixes the constant loops, the images of `G(R)`.
+loops, so `ρ_φ` maps the positive loops `L⁺G(R)` onto themselves, and `ρ_φ` fixes the constant
+loops, the images of `G(R)`. The pieces of pole-bounded loops are preserved as well, in
+`TauCeti.Algebra.AlgebraicGroup.LoopGroup.PoleBounded.CoordinateAction`.
 
 For the additive group `ρ_φ` is `f ↦ f (φ⁻¹)` on `𝔾ₐ(R⸨X⸩) = R⸨X⸩`. For the multiplicative group
 it is the same substitution on units, and the homothety `φ = a X` sends the loop `X ^ n` to
@@ -44,16 +40,15 @@ it is the same substitution on units, and the homothety `φ = a X` sends the loo
 
 ## Main declarations
 
-* `TauCeti.LaurentSeries.instMulDistribMulActionWithConv`: the action `φ • g = σ_(φ⁻¹) ∘ g` of
-  formal coordinates on loops, with `TauCeti.LaurentSeries.smul_def` and
-  `TauCeti.LaurentSeries.ofConv_smul_apply`.
+* `TauCeti.LaurentSeries.instMulActionWithConv`: the action `φ • g = σ_(φ⁻¹) ∘ g` of formal
+  coordinates on convolution points, with `TauCeti.LaurentSeries.ofConv_smul_apply`.
+* `TauCeti.LaurentSeries.instMulDistribMulActionWithConv`: for a bialgebra the action is by
+  monoid automorphisms, with `TauCeti.LaurentSeries.smul_def`.
 * `TauCeti.LaurentSeries.mapValue_mapAlgHom_smul`: naturality in the coefficient algebra.
 * `TauCeti.LaurentSeries.mapDomain_smul`: naturality in the bialgebra.
 * `TauCeti.LaurentSeries.mapValue_ofPowerSeriesAlg_smul`: the inclusion of arcs into loops is
-  equivariant, and `TauCeti.LaurentSeries.smul_range_mapValue_ofPowerSeriesAlg`: the action maps
+  equivariant, and `TauCeti.LaurentSeries.smul_mrange_mapValue_ofPowerSeriesAlg`: the action maps
   the positive loops onto themselves.
-* `TauCeti.LaurentSeries.smul_poleBoundedLoops`: the action maps each piece of pole-bounded loops
-  onto itself.
 * `TauCeti.LaurentSeries.smul_toConv_toAlgHom_comp`: constant loops are fixed.
 * `TauCeti.LaurentSeries.toAdd_gaPointsMulEquiv_smul` and
   `TauCeti.LaurentSeries.pointsMulEquiv_smul`: the action for `𝔾ₐ` and `𝔾ₘ`;
@@ -80,37 +75,60 @@ namespace TauCeti.LaurentSeries
 
 variable {k H R : Type*} [CommSemiring k] [CommRing R] [Algebra k R]
 
+section Algebra
+
+variable [Semiring H] [Algebra k H]
+
+/-- A formal coordinate `φ` acts on the convolution points `WithConv (H →ₐ[k] R⸨X⸩)` by
+post-composition with the substitution automorphism `σ_(φ⁻¹) : f ↦ f (φ⁻¹)` of the coefficients. -/
+noncomputable instance instSMulWithConv :
+    SMul (FormalCoordinate R) (WithConv (H →ₐ[k] R⸨X⸩)) where
+  smul φ g := toConv ((substAlgEquivRestrictScalars k φ⁻¹).toAlgHom.comp g.ofConv)
+
+/-- The point `φ • g` takes the value `g (h) (φ⁻¹)` at `h`. -/
+@[simp]
+theorem ofConv_smul_apply (φ : FormalCoordinate R) (g : WithConv (H →ₐ[k] R⸨X⸩)) (h : H) :
+    (φ • g).ofConv h = substAlgEquiv φ⁻¹ (g.ofConv h) :=
+  substAlgEquivRestrictScalars_apply k φ⁻¹ (g.ofConv h)
+
+/-- Formal coordinates act on the convolution points `WithConv (H →ₐ[k] R⸨X⸩)` on the left:
+`ρ_φ (g) = σ_(φ⁻¹) ∘ g` satisfies `ρ_(φ ∘ ψ) = ρ_φ ∘ ρ_ψ` because substitution reverses
+composition. -/
+noncomputable instance instMulActionWithConv :
+    MulAction (FormalCoordinate R) (WithConv (H →ₐ[k] R⸨X⸩)) where
+  one_smul g := ofConv_injective <| AlgHom.ext fun h ↦ by simp
+  mul_smul φ ψ g := ofConv_injective <| AlgHom.ext fun h ↦ by
+    simp only [ofConv_smul_apply, mul_inv_rev, substAlgEquiv_mul, AlgEquiv.mul_apply]
+
+/-- Coordinate changes fix the constant points, the composites `H →ₐ[k] R →ₐ[k] R⸨X⸩` of points
+`x : H →ₐ[k] R` with the inclusion of constant series. -/
+@[simp]
+theorem smul_toConv_toAlgHom_comp (φ : FormalCoordinate R) (x : H →ₐ[k] R) :
+    φ • toConv ((IsScalarTower.toAlgHom k R R⸨X⸩).comp x) =
+      toConv ((IsScalarTower.toAlgHom k R R⸨X⸩).comp x) := by
+  refine ofConv_injective <| AlgHom.ext fun h ↦ ?_
+  simp only [ofConv_smul_apply, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
+    algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply, C_apply,
+    substAlgEquiv_single_zero]
+
+end Algebra
+
 section Bialgebra
 
 variable [Semiring H] [Bialgebra k H]
 
-/-- A formal coordinate `φ` acts on the loops `G(R⸨X⸩)` by post-composition with the substitution
-automorphism `σ_(φ⁻¹) : f ↦ f (φ⁻¹)` of the coefficients. -/
-noncomputable instance instSMulWithConv :
-    SMul (FormalCoordinate R) (WithConv (H →ₐ[k] R⸨X⸩)) where
-  smul φ g := AlgHom.mapValue (substAlgEquivRestrictScalars k φ⁻¹).toAlgHom g
-
 /-- The action of `φ` on loops is `AlgHom.mapValue` of the substitution automorphism of `φ⁻¹`. -/
 theorem smul_def (φ : FormalCoordinate R) (g : WithConv (H →ₐ[k] R⸨X⸩)) :
     φ • g = AlgHom.mapValue (substAlgEquivRestrictScalars k φ⁻¹).toAlgHom g :=
-  (rfl)
+  (AlgHom.mapValue_apply _ g).symm
 
-/-- The loop `φ • g` takes the value `g (h) (φ⁻¹)` at `h`. -/
-@[simp]
-theorem ofConv_smul_apply (φ : FormalCoordinate R) (g : WithConv (H →ₐ[k] R⸨X⸩)) (h : H) :
-    (φ • g).ofConv h = substAlgEquiv φ⁻¹ (g.ofConv h) := by
-  simp [smul_def]
-
-/-- Formal coordinates act on the loops `G(R⸨X⸩)` on the left by monoid automorphisms:
-`ρ_φ (g) = σ_(φ⁻¹) ∘ g` satisfies `ρ_(φ ∘ ψ) = ρ_φ ∘ ρ_ψ` because substitution reverses
-composition. -/
+/-- For a bialgebra `H`, formal coordinates act on the convolution monoid
+`WithConv (H →ₐ[k] R⸨X⸩)` by monoid automorphisms, since each `ρ_φ` is `AlgHom.mapValue` of an
+algebra automorphism. -/
 noncomputable instance instMulDistribMulActionWithConv :
     MulDistribMulAction (FormalCoordinate R) (WithConv (H →ₐ[k] R⸨X⸩)) where
-  one_smul g := ofConv_injective <| AlgHom.ext fun h ↦ by simp
-  mul_smul φ ψ g := ofConv_injective <| AlgHom.ext fun h ↦ by
-    simp only [ofConv_smul_apply, mul_inv_rev, substAlgEquiv_mul, AlgEquiv.mul_apply]
-  smul_mul φ g g' := map_mul (AlgHom.mapValue _) g g'
-  smul_one φ := map_one (AlgHom.mapValue _)
+  smul_mul φ g g' := by simp only [smul_def, map_mul]
+  smul_one φ := by simp only [smul_def, map_one]
 
 /-- The action on loops is natural in the coefficient algebra: changing coefficients along
 `f : R →ₐ[k] S` carries `φ • g` to `map f φ • g'`, where `g'` is the base-changed loop. -/
@@ -143,7 +161,7 @@ theorem mapValue_ofPowerSeriesAlg_smul (φ : FormalCoordinate R) (g : WithConv (
   simp [FormalCoordinate.substAlgEquiv_apply]
 
 /-- A loop is the image of an arc exactly when its image under a coordinate change is. -/
-theorem smul_mem_range_mapValue_ofPowerSeriesAlg_iff (φ : FormalCoordinate R)
+theorem smul_mem_mrange_mapValue_ofPowerSeriesAlg_iff (φ : FormalCoordinate R)
     {g : WithConv (H →ₐ[k] R⸨X⸩)} :
     φ • g ∈ MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R))) ↔
       g ∈ MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R))) := by
@@ -157,48 +175,17 @@ theorem smul_mem_range_mapValue_ofPowerSeriesAlg_iff (φ : FormalCoordinate R)
 /-- Each coordinate change maps the positive loops `L⁺G(R)`, the image of the arcs `G(R⟦X⟧)` in
 the loops `G(R⸨X⸩)`, onto themselves. -/
 @[simp]
-theorem smul_range_mapValue_ofPowerSeriesAlg (φ : FormalCoordinate R) :
+theorem smul_mrange_mapValue_ofPowerSeriesAlg (φ : FormalCoordinate R) :
     φ • MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R))) =
       MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R))) := by
   ext g
-  rw [Submonoid.mem_smul_pointwise_iff_exists]
-  refine ⟨?_, fun hg ↦ ⟨φ⁻¹ • g, (smul_mem_range_mapValue_ofPowerSeriesAlg_iff φ⁻¹).2 hg,
-    smul_inv_smul φ g⟩⟩
-  rintro ⟨g', hg', rfl⟩
-  exact (smul_mem_range_mapValue_ofPowerSeriesAlg_iff φ).2 hg'
-
-/-- Coordinate changes fix the constant loops, the images `R → R⸨X⸩ ∘ x` of the points
-`x ∈ G(R)` under the inclusion of constant series. -/
-@[simp]
-theorem smul_toConv_toAlgHom_comp (φ : FormalCoordinate R) (x : H →ₐ[k] R) :
-    φ • toConv ((IsScalarTower.toAlgHom k R R⸨X⸩).comp x) =
-      toConv ((IsScalarTower.toAlgHom k R R⸨X⸩).comp x) := by
-  refine ofConv_injective <| AlgHom.ext fun h ↦ ?_
-  simp only [ofConv_smul_apply, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
-    algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply, C_apply,
-    substAlgEquiv_single_zero]
+  rw [Submonoid.mem_pointwise_smul_iff_inv_smul_mem, smul_mem_mrange_mapValue_ofPowerSeriesAlg_iff]
 
 end Bialgebra
 
 section HopfAlgebra
 
-variable [Semiring H] [HopfAlgebra k H] {ι : Type*} (x : ι → H)
-
-/-- A loop is pole-bounded of level `N` for a family `x` exactly when its image under a coordinate
-change is. -/
-@[simp]
-theorem smul_mem_poleBoundedLoops_iff {N : ℕ} (φ : FormalCoordinate R)
-    {g : WithConv (H →ₐ[k] R⸨X⸩)} :
-    φ • g ∈ HopfAlgebra.poleBoundedLoops k x R N ↔ g ∈ HopfAlgebra.poleBoundedLoops k x R N := by
-  simp only [HopfAlgebra.mem_poleBoundedLoops_iff_antipode, ofConv_smul_apply,
-    substAlgEquiv_mem_lattice_iff]
-
-/-- Each coordinate change maps every piece `LG_(≤N)(R)` of pole-bounded loops onto itself. -/
-@[simp]
-theorem smul_poleBoundedLoops (N : ℕ) (φ : FormalCoordinate R) :
-    φ • HopfAlgebra.poleBoundedLoops k x R N = HopfAlgebra.poleBoundedLoops k x R N := by
-  ext g
-  rw [Set.mem_smul_set_iff_inv_smul_mem, smul_mem_poleBoundedLoops_iff]
+variable [Semiring H] [HopfAlgebra k H]
 
 /-- In the semidirect product of the loops by the coordinate changes, built from the action by
 `MulDistribMulAction.toMulAut`, multiplication is `(g, φ) (h, ψ) = (g ρ_φ (h), φ ∘ ψ)`. -/
@@ -238,8 +225,10 @@ theorem pointsMulEquiv_homothety_smul_symm_unitX_zpow (a : Rˣ) (n : ℤ) :
         (FormalCoordinate.homothety a •
           (MultiplicativeGroup.pointsMulEquiv (R := k) (A := R⸨X⸩)).symm (unitX ^ n)) : R⸨X⸩) =
       single n ↑(a ^ (-n)) := by
-  rw [pointsMulEquiv_smul, MulEquiv.apply_symm_apply, val_unitX_zpow, ← map_inv,
-    substAlgEquiv_homothety, rescale_single, inv_zpow', mul_one]
+  rw [pointsMulEquiv_smul, ← map_inv FormalCoordinate.homothety a, substAlgEquiv_homothety]
+  -- the monomial `X ^ n` is `single n 1`, and `rescale a⁻¹` scales it by `a ^ (-n)`
+  simp only [MulEquiv.apply_symm_apply, val_unitX_zpow, rescale_single]
+  simp
 
 /-- The homothety `X ↦ a X` fixes the loop `X ^ n` of the multiplicative group exactly when
 `a ^ n = 1`. -/
@@ -249,8 +238,8 @@ theorem homothety_smul_symm_unitX_zpow_eq_iff (a : Rˣ) (n : ℤ) :
       (MultiplicativeGroup.pointsMulEquiv (R := k) (A := R⸨X⸩)).symm (unitX ^ n) ↔
       a ^ n = 1 := by
   rw [← (MultiplicativeGroup.pointsMulEquiv (R := k) (A := R⸨X⸩)).injective.eq_iff,
-    ← Units.val_inj, pointsMulEquiv_homothety_smul_symm_unitX_zpow, MulEquiv.apply_symm_apply,
-    val_unitX_zpow, (single_injective n).eq_iff, Units.val_eq_one, zpow_neg, inv_eq_one]
+    ← Units.val_inj, pointsMulEquiv_homothety_smul_symm_unitX_zpow]
+  simp [(single_injective n).eq_iff]
 
 end Examples
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
-public import Mathlib.Algebra.Category.Grp.Basic
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 
 /-!
@@ -47,8 +46,9 @@ noncomputable abbrev groupFunctor : CommAlgCat.{w} k ⥤ GrpCat.{w} where
   obj R := GrpCat.of (FormalCoordinate R)
   map f := GrpCat.ofHom (map (f.hom : _ →+* _))
   map_id R := GrpCat.ext fun φ ↦ by simp
-  map_comp f g := GrpCat.ext fun φ ↦ FormalCoordinate.ext <| by
-    simp [AlgHom.comp_toRingHom, PowerSeries.map_comp]
+  map_comp f g := GrpCat.ext fun φ ↦ by
+    rw [CommAlgCat.hom_comp, AlgHom.comp_toRingHom]
+    exact map_comp _ _ φ
 
 /-- The group `Aut(O)(R)` is the group of formal coordinates over `R`. -/
 lemma groupFunctor_obj (R : CommAlgCat.{w} k) :
