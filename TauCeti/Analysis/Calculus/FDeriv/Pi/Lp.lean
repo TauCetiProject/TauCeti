@@ -10,13 +10,16 @@ public import TauCeti.Analysis.Calculus.Gradient
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Derivatives of coordinates on finite `L^p` products
 
 The derivative of a coordinate of a function into a finite `L^p` product is the corresponding
 coordinate of its derivative (`DifferentiableAt.fderiv_piLp_apply`); likewise for curves
-(`HasDerivWithinAt.piLp_apply`).
+(`HasDerivWithinAt.piLp_apply`). Conversely, precomposing a differentiable function on one
+coordinate with `PiLp.proj` preserves the operator norm of its Fréchet derivative
+(`PiLp.norm_fderiv_comp_proj`).
 
 Freezing all but one coordinate of a scalar function on `PiLp 2 E` gives a function on
 that factor. At a differentiability point, its derivative norm equals the norm of the
@@ -64,22 +67,6 @@ section Proj
 variable {𝕜 ι F : Type*} {E : ι → Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
   {p : ENNReal} [Fact (1 ≤ p)]
 
-/-- Precomposing a continuous linear map on coordinate `i` with `PiLp.proj p E i` preserves its
-operator norm. -/
-@[simp]
-theorem opNorm_comp_proj [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {i : ι} (L : E i →L[𝕜] F) :
-    ‖L.comp (PiLp.proj p E i : PiLp p E →L[𝕜] E i)‖ = ‖L‖ := by
-  classical
-  let q := (PiLp.proj p E i : PiLp p E →L[𝕜] E i)
-  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg L) fun y ↦ ?_)
-    (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg (L.comp q)) fun y ↦ ?_)
-  · simpa only [ContinuousLinearMap.comp_apply, q, PiLp.proj_apply] using
-      (L.le_opNorm (y i)).trans (mul_le_mul_of_nonneg_left (PiLp.norm_apply_le y i) (norm_nonneg _))
-  · simpa only [ContinuousLinearMap.comp_apply, q, PiLp.proj_apply,
-      PiLp.ofLp_single, Pi.single_eq_same, PiLp.norm_single] using
-      (L.comp q).le_opNorm (PiLp.single p i y)
-
 /-- Precomposing a differentiable function on coordinate `i` with `PiLp.proj p E i` preserves the
 operator norm of its Fréchet derivative. -/
 theorem norm_fderiv_comp_proj [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
@@ -88,9 +75,9 @@ theorem norm_fderiv_comp_proj [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSp
     ‖fderiv 𝕜 (fun y : PiLp p E ↦ f ((PiLp.proj p E i : PiLp p E →L[𝕜] E i) y)) x‖ =
       ‖fderiv 𝕜 f (x i)‖ := by
   let q := (PiLp.proj p E i : PiLp p E →L[𝕜] E i)
-  rw [show fderiv 𝕜 (fun y : PiLp p E ↦ f (q y)) x = (fderiv 𝕜 f (x i)).comp q by
-    simpa only [Function.comp_def] using (hf.hasFDerivAt.comp x q.hasFDerivAt).fderiv,
-    opNorm_comp_proj]
+  have hfd : fderiv 𝕜 (fun y : PiLp p E ↦ f (q y)) x = (fderiv 𝕜 f (x i)).comp q := by
+    simpa only [Function.comp_def] using (hf.hasFDerivAt.comp x q.hasFDerivAt).fderiv
+  rw [hfd, opNorm_comp_proj]
 
 end Proj
 

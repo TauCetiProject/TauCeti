@@ -66,7 +66,7 @@ private theorem exists_measurable_nonneg_ae_eq {α : Type*} {mα : MeasurableSpa
     simpa [g', hmk] using max_eq_right hx0
   exact ⟨g', measurable_const.max hg.aestronglyMeasurable.stronglyMeasurable_mk.measurable,
     fun _ ↦ le_max_left 0 _, h_ae, hg.congr h_ae.symm,
-    hglog.congr (h_ae.symm.mono fun _ hx ↦ by dsimp; rw [hx])⟩
+    hglog.congr (h_ae.symm.mono fun _ hx ↦ by simp only [hx])⟩
 
 section BinaryProduct
 
@@ -103,7 +103,7 @@ theorem integrable_mul_log_integral_prod_right {g : α × β → ℝ}
     (measurePreserving_swap.integrable_comp_of_integrable hglog)
 
 /-- Under `μ.prod ν`, the slice entropy `x ↦ entropy ν (fun y ↦ g (x, y))` is `μ`-integrable. -/
-theorem integrable_entropy_prod_right {g : α × β → ℝ}
+theorem integrable_entropy_prod_left {g : α × β → ℝ}
     (hg0 : 0 ≤ᵐ[μ.prod ν] g) (hg : Integrable g (μ.prod ν))
     (hglog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
     Integrable (fun x ↦ entropy ν (fun y ↦ g (x, y))) μ := by
@@ -111,7 +111,7 @@ theorem integrable_entropy_prod_right {g : α × β → ℝ}
   exact hglog.integral_prod_left.sub (integrable_mul_log_integral_prod_left hg0 hg hglog)
 
 /-- Under `μ.prod ν`, the slice entropy `y ↦ entropy μ (fun x ↦ g (x, y))` is `ν`-integrable. -/
-theorem integrable_entropy_prod_left {g : α × β → ℝ}
+theorem integrable_entropy_prod_right {g : α × β → ℝ}
     (hg0 : 0 ≤ᵐ[μ.prod ν] g) (hg : Integrable g (μ.prod ν))
     (hglog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
     Integrable (fun y ↦ entropy μ (fun x ↦ g (x, y))) ν := by
@@ -144,9 +144,9 @@ private theorem integrable_and_integral_mul_log_marginal_fst {g : α × β → �
     · filter_upwards [hg.prod_right_ae] with x hx using hx.mul_const (Real.log (G x))
     · refine (integrable_mul_log_integral_prod_left (.of_forall hg0) hg hglog).norm.congr ?_
       filter_upwards [hg.prod_right_ae] with x _
-      dsimp
-      have hcongr : (fun y ↦ |g (x, y) * Real.log (G x)|) =
-          fun y ↦ g (x, y) * |Real.log (G x)| :=
+      simp only [Real.norm_eq_abs, Pi.mul_apply, Function.comp_apply, G]
+      have hcongr : (fun y ↦ |g (x, y) * Real.log (∫ z, g (x, z) ∂ν)|) =
+          fun y ↦ g (x, y) * |Real.log (∫ z, g (x, z) ∂ν)| :=
         funext fun y ↦ by rw [abs_mul, abs_of_nonneg (hg0 (x, y))]
       rw [abs_mul, abs_of_nonneg (integral_nonneg fun y ↦ hg0 (x, y)), hcongr, integral_mul_const]
   exact ⟨hint, by
@@ -171,78 +171,100 @@ private theorem ae_eq_zero_of_integral_fst_eq_zero {g : α × β → ℝ}
       with y hy _ using hy
   · exact .of_forall fun _ h ↦ absurd h hGx
 
+/-- Zero-mass case of `entropy_integral_prod_le_of_measurable`: when the total integral vanishes,
+`g` vanishes `μ.prod ν`-a.e., so both sides vanish. -/
+private theorem entropy_integral_prod_le_of_integral_eq_zero {g : α × β → ℝ}
+    (hg0 : ∀ p, 0 ≤ g p) (hg : Integrable g (μ.prod ν))
+    (hM : ∫ p, g p ∂(μ.prod ν) = 0) :
+    entropy μ (fun x ↦ ∫ y, g (x, y) ∂ν) ≤ ∫ y, entropy μ (fun x ↦ g (x, y)) ∂ν := by
+  have hgae : g =ᵐ[μ.prod ν] 0 := (integral_eq_zero_iff_of_nonneg hg0 hg).1 hM
+  have hGae : (fun x ↦ ∫ y, g (x, y) ∂ν) =ᵐ[μ] 0 :=
+    (ae_ae_of_ae_prod hgae).mono fun _ hx ↦ by simpa using integral_congr_ae hx
+  have hslice_ae : (fun y ↦ entropy μ (fun x ↦ g (x, y))) =ᵐ[ν] 0 :=
+    (ae_ae_of_ae_prod (measurePreserving_swap.quasiMeasurePreserving.ae hgae)).mono fun _ hy ↦ by
+      simpa using entropy_congr_ae (μ := μ) hy
+  rw [entropy_congr_ae hGae, Pi.zero_def, entropy_zero, integral_congr_ae hslice_ae,
+    Pi.zero_def, integral_zero]
+
+/-- Pointwise Klein bound comparing `g` against the rank-one product `G p.1 * m p.2 / M` of its
+marginals when the total mass `M` is positive. -/
+private theorem ae_mul_log_marginal_sub_le {g : α × β → ℝ}
+    (hgm : Measurable g) (hg0 : ∀ p, 0 ≤ g p) (hg : Integrable g (μ.prod ν))
+    (hM_pos : 0 < ∫ p, g p ∂(μ.prod ν)) :
+    ∀ᵐ p ∂(μ.prod ν),
+      g p * Real.log (∫ y, g (p.1, y) ∂ν) + g p * Real.log (∫ x, g (x, p.2) ∂μ) -
+        g p * Real.log (∫ q, g q ∂(μ.prod ν)) - g p * Real.log (g p) ≤
+      (∫ y, g (p.1, y) ∂ν) * (∫ x, g (x, p.2) ∂μ) / (∫ q, g q ∂(μ.prod ν)) - g p := by
+  have hae_m : ∀ᵐ p ∂(μ.prod ν), (∫ x, g (x, p.2) ∂μ) = 0 → g p = 0 :=
+    measurePreserving_swap.quasiMeasurePreserving.ae <|
+      ae_eq_zero_of_integral_fst_eq_zero (hgm.comp measurable_swap)
+        (fun q ↦ hg0 (Prod.swap q)) (measurePreserving_swap.integrable_comp_of_integrable hg)
+  filter_upwards [ae_eq_zero_of_integral_fst_eq_zero hgm hg0 hg, hae_m] with p hpG hpm
+  have hG0 : 0 ≤ ∫ y, g (p.1, y) ∂ν := integral_nonneg fun y ↦ hg0 (p.1, y)
+  have hm0 : 0 ≤ ∫ x, g (x, p.2) ∂μ := integral_nonneg fun x ↦ hg0 (x, p.2)
+  rcases (hg0 p).eq_or_lt with hgp0 | hgp_pos
+  · simp only [← hgp0, zero_mul, add_zero, sub_zero]
+    exact div_nonneg (mul_nonneg hG0 hm0) hM_pos.le
+  · have hGp : 0 < ∫ y, g (p.1, y) ∂ν := lt_of_le_of_ne hG0 fun h0 ↦ hgp_pos.ne' (hpG h0.symm)
+    have hmp : 0 < ∫ x, g (x, p.2) ∂μ := lt_of_le_of_ne hm0 fun h0 ↦ hgp_pos.ne' (hpm h0.symm)
+    have hq := div_pos (mul_pos hGp hmp) hM_pos
+    have hklein := Real.sub_le_mul_log_sub_mul_log (hg0 p) hq.le (fun h0 ↦ absurd h0 hq.ne')
+    rw [Real.log_div (mul_pos hGp hmp).ne' hM_pos.ne', Real.log_mul hGp.ne' hmp.ne'] at hklein
+    linarith
+
 /-- Measurable, everywhere-nonnegative core of `entropy_integral_prod_le`. -/
 private theorem entropy_integral_prod_le_of_measurable {g : α × β → ℝ}
     (hgm : Measurable g) (hg0 : ∀ p, 0 ≤ g p) (hg : Integrable g (μ.prod ν))
     (hglog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
     entropy μ (fun x ↦ ∫ y, g (x, y) ∂ν) ≤ ∫ y, entropy μ (fun x ↦ g (x, y)) ∂ν := by
-  let G : α → ℝ := fun x ↦ ∫ y, g (x, y) ∂ν
-  let m : β → ℝ := fun y ↦ ∫ x, g (x, y) ∂μ
-  let M : ℝ := ∫ p, g p ∂(μ.prod ν)
-  have hG0 (x : α) : 0 ≤ G x := integral_nonneg fun y ↦ hg0 (x, y)
-  have hm0 (y : β) : 0 ≤ m y := integral_nonneg fun x ↦ hg0 (x, y)
+  set G : α → ℝ := fun x ↦ ∫ y, g (x, y) ∂ν
+  set m : β → ℝ := fun y ↦ ∫ x, g (x, y) ∂μ with hm_def
+  set M : ℝ := ∫ p, g p ∂(μ.prod ν) with hM_def
+  -- Degenerate case `M = 0`: `g` vanishes a.e.
   rcases (integral_nonneg hg0 : 0 ≤ M).eq_or_lt with hM_zero | hM_pos
-  · have hgae : g =ᵐ[μ.prod ν] 0 := (integral_eq_zero_iff_of_nonneg hg0 hg).1 hM_zero.symm
-    have hGae : G =ᵐ[μ] 0 :=
-      (ae_ae_of_ae_prod hgae).mono fun x hx ↦ by simpa [G] using integral_congr_ae hx
-    have hslice_ae : (fun y ↦ entropy μ (fun x ↦ g (x, y))) =ᵐ[ν] 0 :=
-      (ae_ae_of_ae_prod (measurePreserving_swap.quasiMeasurePreserving.ae hgae)).mono fun y hy ↦ by
-        simpa using entropy_congr_ae (μ := μ) hy
-    rw [entropy_congr_ae hGae, Pi.zero_def, entropy_zero, integral_congr_ae hslice_ae,
-      Pi.zero_def, integral_zero]
-  · have hgs_int := measurePreserving_swap.integrable_comp_of_integrable hg
-    have hgslog_int := measurePreserving_swap.integrable_comp_of_integrable hglog
-    obtain ⟨h_glogG_int, h_glogG_eq⟩ :=
-      integrable_and_integral_mul_log_marginal_fst hgm hg0 hg hglog
-    obtain ⟨h_gslogm_int, h_gslogm_eq⟩ :=
-      integrable_and_integral_mul_log_marginal_fst (hgm.comp measurable_swap)
-        (fun q ↦ hg0 (Prod.swap q)) hgs_int hgslog_int
-    have h_glogm_int : Integrable (fun p : α × β ↦ g p * Real.log (m p.2)) (μ.prod ν) :=
-      measurePreserving_swap.integrable_comp_of_integrable h_gslogm_int
-    have h_glogm_eq : ∫ p, g p * Real.log (m p.2) ∂(μ.prod ν) = ∫ y, m y * Real.log (m y) ∂ν := by
-      rw [← integral_prod_swap (fun p : α × β ↦ g p * Real.log (m p.2))]; exact h_gslogm_eq
-    have hae_m : ∀ᵐ p ∂(μ.prod ν), m p.2 = 0 → g p = 0 :=
-      measurePreserving_swap.quasiMeasurePreserving.ae <|
-        ae_eq_zero_of_integral_fst_eq_zero (hgm.comp measurable_swap)
-          (fun q ↦ hg0 (Prod.swap q)) hgs_int
-    -- Pointwise Klein inequality `g * (log G + log m - log M - log g) ≤ G * m / M - g`.
-    have hpt : ∀ᵐ p ∂(μ.prod ν),
-        g p * Real.log (G p.1) + g p * Real.log (m p.2) -
-          g p * Real.log M - g p * Real.log (g p) ≤ G p.1 * m p.2 / M - g p := by
-      filter_upwards [ae_eq_zero_of_integral_fst_eq_zero hgm hg0 hg, hae_m] with p hpG hpm
-      rcases (hg0 p).eq_or_lt with hgp0 | hgp_pos
-      · simp only [← hgp0, zero_mul, add_zero, sub_zero]
-        exact div_nonneg (mul_nonneg (hG0 p.1) (hm0 p.2)) hM_pos.le
-      · have hGp : 0 < G p.1 := lt_of_le_of_ne (hG0 p.1) fun h0 ↦ hgp_pos.ne' (hpG h0.symm)
-        have hmp : 0 < m p.2 := lt_of_le_of_ne (hm0 p.2) fun h0 ↦ hgp_pos.ne' (hpm h0.symm)
-        have hq := div_pos (mul_pos hGp hmp) hM_pos
-        have hklein := Real.sub_le_mul_log_sub_mul_log (hg0 p) hq.le (fun h0 ↦ absurd h0 hq.ne')
-        rw [Real.log_div (mul_pos hGp hmp).ne' hM_pos.ne', Real.log_mul hGp.ne' hmp.ne'] at hklein
-        linarith
-    have h_sum1 : Integrable (fun p ↦ g p * Real.log (G p.1) + g p * Real.log (m p.2)) (μ.prod ν) :=
-      h_glogG_int.add h_glogm_int
-    have h_sum2 : Integrable (fun p ↦
-        g p * Real.log (G p.1) + g p * Real.log (m p.2) - g p * Real.log M) (μ.prod ν) :=
-      h_sum1.sub (hg.mul_const (Real.log M))
-    have h_rhs : Integrable (fun p : α × β ↦ G p.1 * m p.2 / M) (μ.prod ν) :=
-      (hg.integral_prod_left.mul_prod hg.integral_prod_right).div_const M
-    have hint_le : ∫ p, (g p * Real.log (G p.1) + g p * Real.log (m p.2) -
-        g p * Real.log M - g p * Real.log (g p)) ∂(μ.prod ν) ≤
-        ∫ p, (G p.1 * m p.2 / M - g p) ∂(μ.prod ν) :=
-      integral_mono_ae (h_sum2.sub hglog) (h_rhs.sub hg) hpt
-    have h_GM : ∫ x, G x ∂μ = M := (integral_prod g hg).symm
-    have h_mM : ∫ y, m y ∂ν = M := (integral_prod_symm g hg).symm
-    rw [integral_sub h_sum2 hglog, integral_sub h_sum1 (hg.mul_const _),
-      integral_add h_glogG_int h_glogm_int, integral_mul_const, h_glogG_eq, h_glogm_eq,
-      integral_sub h_rhs hg, integral_div, integral_prod_mul G m, h_GM, h_mM,
-      mul_div_cancel_right₀ M hM_pos.ne', sub_self] at hint_le
-    simp only [entropy_def]
-    rw [integral_sub hglog.integral_prod_right
-      (integrable_mul_log_integral_prod_right (.of_forall hg0) hg hglog),
-      ← integral_prod_symm _ hglog]
-    dsimp only [G, m, M] at h_GM hint_le
-    rw [h_GM]
-    linarith
+  · exact entropy_integral_prod_le_of_integral_eq_zero hg0 hg hM_zero.symm
+  -- Positive-mass case: integrate the pointwise Klein bound against `G p.1 * m p.2 / M` and
+  -- identify each `μ.prod ν` integral with the corresponding marginal entropy term.
+  obtain ⟨h_glogG_int', h_glogG_eq'⟩ :=
+    integrable_and_integral_mul_log_marginal_fst hgm hg0 hg hglog
+  have h_glogG_int : Integrable (fun p : α × β ↦ g p * Real.log (G p.1)) (μ.prod ν) := h_glogG_int'
+  have h_glogG_eq : ∫ p, g p * Real.log (G p.1) ∂(μ.prod ν) = ∫ x, G x * Real.log (G x) ∂μ :=
+    h_glogG_eq'
+  obtain ⟨h_gslogm_int, h_gslogm_eq⟩ :=
+    integrable_and_integral_mul_log_marginal_fst (hgm.comp measurable_swap)
+      (fun q ↦ hg0 (Prod.swap q)) (measurePreserving_swap.integrable_comp_of_integrable hg)
+      (measurePreserving_swap.integrable_comp_of_integrable hglog)
+  have h_glogm_int : Integrable (fun p : α × β ↦ g p * Real.log (m p.2)) (μ.prod ν) :=
+    measurePreserving_swap.integrable_comp_of_integrable h_gslogm_int
+  have h_glogm_eq : ∫ p, g p * Real.log (m p.2) ∂(μ.prod ν) = ∫ y, m y * Real.log (m y) ∂ν := by
+    rw [← integral_prod_swap (fun p : α × β ↦ g p * Real.log (m p.2))]; exact h_gslogm_eq
+  have h_sum1 : Integrable (fun p ↦ g p * Real.log (G p.1) + g p * Real.log (m p.2)) (μ.prod ν) :=
+    h_glogG_int.add h_glogm_int
+  have h_sum2 : Integrable (fun p ↦
+      g p * Real.log (G p.1) + g p * Real.log (m p.2) - g p * Real.log M) (μ.prod ν) :=
+    h_sum1.sub (hg.mul_const (Real.log M))
+  have h_rhs : Integrable (fun p : α × β ↦ G p.1 * m p.2 / M) (μ.prod ν) :=
+    (hg.integral_prod_left.mul_prod hg.integral_prod_right).div_const M
+  have hpt : ∀ᵐ p ∂(μ.prod ν),
+      g p * Real.log (G p.1) + g p * Real.log (m p.2) -
+        g p * Real.log M - g p * Real.log (g p) ≤ G p.1 * m p.2 / M - g p :=
+    ae_mul_log_marginal_sub_le hgm hg0 hg hM_pos
+  have hint_le : ∫ p, (g p * Real.log (G p.1) + g p * Real.log (m p.2) -
+      g p * Real.log M - g p * Real.log (g p)) ∂(μ.prod ν) ≤
+      ∫ p, (G p.1 * m p.2 / M - g p) ∂(μ.prod ν) :=
+    integral_mono_ae (h_sum2.sub hglog) (h_rhs.sub hg) hpt
+  have h_GM : ∫ x, G x ∂μ = M := (integral_prod g hg).symm
+  have h_mM : ∫ y, m y ∂ν = M := (integral_prod_symm g hg).symm
+  rw [integral_sub h_sum2 hglog, integral_sub h_sum1 (hg.mul_const _),
+    integral_add h_glogG_int h_glogm_int, integral_mul_const, h_glogG_eq, h_glogm_eq,
+    integral_sub h_rhs hg, integral_div, integral_prod_mul G m, h_GM, h_mM,
+    mul_div_cancel_right₀ M hM_pos.ne', sub_self, ← hM_def] at hint_le
+  simp only [entropy_def]
+  rw [integral_sub hglog.integral_prod_right
+    (integrable_mul_log_integral_prod_right (.of_forall hg0) hg hglog),
+    ← integral_prod_symm _ hglog, h_GM]
+  rw [hm_def] at hint_le
+  linarith
 
 /-- **Convexity of functional entropy under marginal averaging.** Under probability measures `μ`
 and `ν`, for any a.e. nonnegative integrable `g` on `μ.prod ν` with `g log g` integrable,
@@ -276,68 +298,7 @@ section FiniteProduct
 
 universe u
 
-/-- Entropy subadditivity on `Measure.pi` over `Fin n` for measurable nonnegative functions. -/
-private theorem entropy_pi_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, MeasurableSpace (α i)]
-    (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)] {g : (∀ i, α i) → ℝ},
-    Measurable g → (∀ x, 0 ≤ g x) → Integrable g (Measure.pi μ) →
-    Integrable (fun x ↦ g x * Real.log (g x)) (Measure.pi μ) →
-    entropy (Measure.pi μ) g ≤
-      ∑ i, ∫ x, entropy (μ i) (fun y ↦ g (Function.update x i y)) ∂Measure.pi μ
-  | 0, _, _, _, _, g, _, _, _, _ => by
-    rw [show g = fun _ ↦ g default from funext fun x ↦ congrArg g (Subsingleton.elim x default),
-      entropy_const]; simp
-  | n + 1, α, _, μ, _, g, hgm, hg0, hg, hglog => by
-    let e := MeasurableEquiv.piFinSuccAbove α 0
-    have mps := (measurePreserving_piFinSuccAbove μ 0).symm e
-    let ν := Measure.pi fun j ↦ μ (Fin.succAbove 0 j)
-    let F : α 0 × (∀ j, α (Fin.succAbove 0 j)) → ℝ := fun p ↦ g (e.symm p)
-    have hF0 (p : α 0 × (∀ j, α (Fin.succAbove 0 j))) : 0 ≤ F p := hg0 (e.symm p)
-    have hF_int := mps.integrable_comp_of_integrable hg
-    have hFlog_int := mps.integrable_comp_of_integrable hglog
-    let H (i : Fin (n + 1)) (x : ∀ i, α i) := entropy (μ i) (fun y ↦ g (Function.update x i y))
-    have hHi (i : Fin (n + 1)) : Integrable (H i) (Measure.pi μ) := by
-      have hmp := TauCeti.measurePreserving_update_prod_pi μ i
-      exact integrable_entropy_prod_right (hmp.quasiMeasurePreserving.ae (.of_forall hg0))
-        (hmp.integrable_comp_of_integrable hg) (hmp.integrable_comp_of_integrable hglog)
-    have hH_eq (j : Fin n) (a : α 0) (w : ∀ j, α (Fin.succAbove 0 j)) :
-        entropy (μ (Fin.succAbove 0 j)) (fun y ↦ F (a, Function.update w j y)) =
-          H (Fin.succAbove 0 j) (e.symm (a, w)) := by
-      simp only [F, H, e, MeasurableEquiv.piFinSuccAbove_symm_apply,
-        Fin.insertNthEquiv_apply, Fin.insertNth_update]
-    have hHp_int (j : Fin n) := mps.integrable_comp_of_integrable (hHi (Fin.succAbove 0 j))
-    have h0 : ∫ w, entropy (μ 0) (fun a ↦ F (a, w)) ∂ν = ∫ x, H 0 x ∂Measure.pi μ := by
-      rw [← mps.integral_comp e.symm.measurableEmbedding (H 0),
-        integral_prod_symm (fun p ↦ H 0 (e.symm p)) (mps.integrable_comp_of_integrable (hHi 0))]
-      refine integral_congr_ae (.of_forall fun w ↦ ?_)
-      have hc (a : α 0) : H 0 (e.symm (a, w)) = entropy (μ 0) (fun y ↦ F (y, w)) := by
-        simp only [F, H, e, MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_apply,
-          Fin.update_insertNth]
-      simp_rw [hc, integral_const, probReal_univ, one_smul]
-    have h1 : (∫ a, entropy ν (fun w ↦ F (a, w)) ∂μ 0) ≤
-        ∑ j : Fin n, ∫ x, H (Fin.succAbove 0 j) x ∂Measure.pi μ := calc
-      _ ≤ ∫ a, (∑ j : Fin n, ∫ w, H (Fin.succAbove 0 j) (e.symm (a, w)) ∂ν) ∂μ 0 := by
-          refine integral_mono_ae
-            (integrable_entropy_prod_right (.of_forall hF0) hF_int hFlog_int)
-            (integrable_finsetSum _ fun j _ ↦ (hHp_int j).integral_prod_left) ?_
-          filter_upwards [hF_int.prod_right_ae, hFlog_int.prod_right_ae] with a ha ha_log
-          simpa only [hH_eq] using entropy_pi_fin (α := fun j ↦ α (Fin.succAbove 0 j))
-            (fun j ↦ μ (Fin.succAbove 0 j)) (g := fun w ↦ F (a, w))
-            ((hgm.comp e.symm.measurable).comp measurable_prodMk_left)
-            (fun w ↦ hF0 (a, w)) ha ha_log
-      _ = ∑ j : Fin n, ∫ a, ∫ w, H (Fin.succAbove 0 j) (e.symm (a, w)) ∂ν ∂μ 0 :=
-          integral_finsetSum _ fun j _ ↦ (hHp_int j).integral_prod_left
-      _ = ∑ j : Fin n, ∫ x, H (Fin.succAbove 0 j) x ∂Measure.pi μ :=
-          Finset.sum_congr rfl fun j _ ↦ by
-            rw [← integral_prod (fun p ↦ H (Fin.succAbove 0 j) (e.symm p)) (hHp_int j),
-              mps.integral_comp e.symm.measurableEmbedding (H (Fin.succAbove 0 j))]
-    calc entropy (Measure.pi μ) g
-        = entropy ((μ 0).prod ν) F := (mps.entropy_comp hgm.aestronglyMeasurable).symm
-      _ ≤ (∫ a, entropy ν (fun w ↦ F (a, w)) ∂μ 0) +
-            ∫ w, entropy (μ 0) (fun a ↦ F (a, w)) ∂ν :=
-          entropy_prod_le (.of_forall hF0) hF_int hFlog_int
-      _ ≤ (∑ j : Fin n, ∫ x, H (Fin.succAbove 0 j) x ∂Measure.pi μ) + ∫ x, H 0 x ∂Measure.pi μ :=
-          add_le_add h1 h0.le
-      _ = ∑ i, ∫ x, H i x ∂Measure.pi μ := by rw [Fin.sum_univ_succAbove _ 0, add_comm]
+section SliceIntegrability
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type u} [∀ i, MeasurableSpace (α i)]
   (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
@@ -366,14 +327,97 @@ theorem integrable_entropy_update_pi (i : ι) {g : (∀ j, α j) → ℝ}
     (hglog : Integrable (fun x ↦ g x * Real.log (g x)) (Measure.pi μ)) :
     Integrable (fun x ↦ entropy (μ i) (fun y ↦ g (Function.update x i y))) (Measure.pi μ) :=
   have hmp := TauCeti.measurePreserving_update_prod_pi μ i
-  integrable_entropy_prod_right (hmp.quasiMeasurePreserving.ae hg0)
+  integrable_entropy_prod_left (hmp.quasiMeasurePreserving.ae hg0)
     (hmp.integrable_comp_of_integrable hg) (hmp.integrable_comp_of_integrable hglog)
+
+end SliceIntegrability
+
+/-- Under `Measure.pi μ` on `Fin (n + 1)`, the `μ 0`-entropy averaged over the remaining
+coordinates equals the `i = 0` coordinate-refresh entropy integral. -/
+private theorem integral_entropy_piFinSuccAbove_symm_zero {n : ℕ} {α : Fin (n + 1) → Type u}
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
+    {g : (∀ i, α i) → ℝ} (hg0 : ∀ x, 0 ≤ g x) (hg : Integrable g (Measure.pi μ))
+    (hglog : Integrable (fun x ↦ g x * Real.log (g x)) (Measure.pi μ)) :
+    (∫ w, entropy (μ 0) (fun a ↦ g ((MeasurableEquiv.piFinSuccAbove α 0).symm (a, w)))
+        ∂Measure.pi (fun j ↦ μ (Fin.succAbove 0 j))) =
+      ∫ x, entropy (μ 0) (fun y ↦ g (Function.update x 0 y)) ∂Measure.pi μ := by
+  let e := MeasurableEquiv.piFinSuccAbove α 0
+  have mps := (measurePreserving_piFinSuccAbove μ 0).symm e
+  let H0 : (∀ i, α i) → ℝ := fun x ↦ entropy (μ 0) (fun y ↦ g (Function.update x 0 y))
+  have hH0 : Integrable H0 (Measure.pi μ) :=
+    integrable_entropy_update_pi μ 0 (.of_forall hg0) hg hglog
+  rw [← mps.integral_comp e.symm.measurableEmbedding H0,
+    integral_prod_symm (fun p ↦ H0 (e.symm p)) (mps.integrable_comp_of_integrable hH0)]
+  refine integral_congr_ae (.of_forall fun w ↦ ?_)
+  have hc (a : α 0) :
+      H0 (e.symm (a, w)) =
+        entropy (μ 0) (fun y ↦ g ((MeasurableEquiv.piFinSuccAbove α 0).symm (y, w))) := by
+    simp only [H0, e, MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_apply,
+      Fin.update_insertNth]
+  simp_rw [hc, integral_const, probReal_univ, one_smul]
+
+/-- Entropy subadditivity on `Measure.pi` over `Fin n` for measurable nonnegative functions. -/
+private theorem entropy_pi_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, MeasurableSpace (α i)]
+    (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)] {g : (∀ i, α i) → ℝ},
+    Measurable g → (∀ x, 0 ≤ g x) → Integrable g (Measure.pi μ) →
+    Integrable (fun x ↦ g x * Real.log (g x)) (Measure.pi μ) →
+    entropy (Measure.pi μ) g ≤
+      ∑ i, ∫ x, entropy (μ i) (fun y ↦ g (Function.update x i y)) ∂Measure.pi μ
+  | 0, _, _, _, _, g, _, _, _, _ => by
+    rw [show g = fun _ ↦ g default from funext fun x ↦ congrArg g (Subsingleton.elim x default),
+      entropy_const]; simp
+  | n + 1, α, _, μ, _, g, hgm, hg0, hg, hglog => by
+    -- Split off coordinate `0` via `piFinSuccAbove`, reducing `Measure.pi μ` to `(μ 0).prod ν`.
+    let e := MeasurableEquiv.piFinSuccAbove α 0
+    have mps := (measurePreserving_piFinSuccAbove μ 0).symm e
+    let ν := Measure.pi fun j ↦ μ (Fin.succAbove 0 j)
+    let F : α 0 × (∀ j, α (Fin.succAbove 0 j)) → ℝ := fun p ↦ g (e.symm p)
+    have hF0 (p : α 0 × (∀ j, α (Fin.succAbove 0 j))) : 0 ≤ F p := hg0 (e.symm p)
+    have hF_int := mps.integrable_comp_of_integrable hg
+    have hFlog_int := mps.integrable_comp_of_integrable hglog
+    let H (i : Fin (n + 1)) (x : ∀ i, α i) := entropy (μ i) (fun y ↦ g (Function.update x i y))
+    have hH_eq (j : Fin n) (a : α 0) (w : ∀ j, α (Fin.succAbove 0 j)) :
+        entropy (μ (Fin.succAbove 0 j)) (fun y ↦ F (a, Function.update w j y)) =
+          H (Fin.succAbove 0 j) (e.symm (a, w)) := by
+      simp only [F, H, e, MeasurableEquiv.piFinSuccAbove_symm_apply,
+        Fin.insertNthEquiv_apply, Fin.insertNth_update]
+    have hHp_int (j : Fin n) := mps.integrable_comp_of_integrable
+      (integrable_entropy_update_pi μ (Fin.succAbove 0 j) (.of_forall hg0) hg hglog)
+    -- Bound the `ν`-slice entropies by the induction hypothesis on the remaining `n` coordinates.
+    have h1 : (∫ a, entropy ν (fun w ↦ F (a, w)) ∂μ 0) ≤
+        ∑ j : Fin n, ∫ x, H (Fin.succAbove 0 j) x ∂Measure.pi μ := calc
+      _ ≤ ∫ a, (∑ j : Fin n, ∫ w, H (Fin.succAbove 0 j) (e.symm (a, w)) ∂ν) ∂μ 0 := by
+          refine integral_mono_ae
+            (integrable_entropy_prod_left (.of_forall hF0) hF_int hFlog_int)
+            (integrable_finsetSum _ fun j _ ↦ (hHp_int j).integral_prod_left) ?_
+          filter_upwards [hF_int.prod_right_ae, hFlog_int.prod_right_ae] with a ha ha_log
+          simpa only [hH_eq] using entropy_pi_fin (α := fun j ↦ α (Fin.succAbove 0 j))
+            (fun j ↦ μ (Fin.succAbove 0 j)) (g := fun w ↦ F (a, w))
+            ((hgm.comp e.symm.measurable).comp measurable_prodMk_left)
+            (fun w ↦ hF0 (a, w)) ha ha_log
+      _ = ∑ j : Fin n, ∫ a, ∫ w, H (Fin.succAbove 0 j) (e.symm (a, w)) ∂ν ∂μ 0 :=
+          integral_finsetSum _ fun j _ ↦ (hHp_int j).integral_prod_left
+      _ = ∑ j : Fin n, ∫ x, H (Fin.succAbove 0 j) x ∂Measure.pi μ :=
+          Finset.sum_congr rfl fun j _ ↦ by
+            rw [← integral_prod (fun p ↦ H (Fin.succAbove 0 j) (e.symm p)) (hHp_int j),
+              mps.integral_comp e.symm.measurableEmbedding (H (Fin.succAbove 0 j))]
+    -- Combine `h1` with the `i = 0` term via binary subadditivity `entropy_prod_le`.
+    have h0 := integral_entropy_piFinSuccAbove_symm_zero μ hg0 hg hglog
+    calc entropy (Measure.pi μ) g
+        = entropy ((μ 0).prod ν) F := (mps.entropy_comp hgm.aestronglyMeasurable).symm
+      _ ≤ (∫ a, entropy ν (fun w ↦ F (a, w)) ∂μ 0) +
+            ∫ w, entropy (μ 0) (fun a ↦ F (a, w)) ∂ν :=
+          entropy_prod_le (.of_forall hF0) hF_int hFlog_int
+      _ ≤ (∑ j : Fin n, ∫ x, H (Fin.succAbove 0 j) x ∂Measure.pi μ) + ∫ x, H 0 x ∂Measure.pi μ :=
+          add_le_add h1 h0.le
+      _ = ∑ i, ∫ x, H i x ∂Measure.pi μ := by rw [Fin.sum_univ_succAbove _ 0, add_comm]
 
 /-- **Subadditivity (tensorization) of functional entropy** on `Measure.pi` over an arbitrary
 finite index type: for an a.e. nonnegative integrable function `g` of independent coordinates with
 `g log g` integrable, `Ent(g) ≤ ∑ i, E[Ent_{μ i}(y ↦ g (Function.update x i y))]`. -/
-theorem entropy_pi_le_sum {g : (∀ i, α i) → ℝ}
-    (hg0 : 0 ≤ᵐ[Measure.pi μ] g) (hg : Integrable g (Measure.pi μ))
+theorem entropy_pi_le_sum {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type u}
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
+    {g : (∀ i, α i) → ℝ} (hg0 : 0 ≤ᵐ[Measure.pi μ] g) (hg : Integrable g (Measure.pi μ))
     (hglog : Integrable (fun x ↦ g x * Real.log (g x)) (Measure.pi μ)) :
     entropy (Measure.pi μ) g ≤
       ∑ i, ∫ x, entropy (μ i) (fun y ↦ g (Function.update x i y)) ∂Measure.pi μ := by
@@ -389,10 +433,6 @@ theorem entropy_pi_le_sum {g : (∀ i, α i) → ℝ}
   let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
   let Φ := MeasurableEquiv.piCongrLeft α e
   have mp := measurePreserving_piCongrLeft μ e
-  have hupd (k : Fin (Fintype.card ι)) (y : ∀ k, α (e k)) (v : α (e k)) :
-      Φ (Function.update y k v) = Function.update (Φ y) (e k) v := by
-    simpa [Φ, MeasurableEquiv.piCongrLeft, Equiv.piCongrLeft] using
-      Function.piCongrLeft'_symm_update α e.symm y k v
   calc entropy (Measure.pi μ) g'
       = entropy (Measure.pi fun k ↦ μ (e k)) (g' ∘ Φ) :=
         (mp.entropy_comp hg'm.aestronglyMeasurable).symm
@@ -401,14 +441,8 @@ theorem entropy_pi_le_sum {g : (∀ i, α i) → ℝ}
         entropy_pi_fin (α := fun k ↦ α (e k)) (fun k ↦ μ (e k)) (g := g' ∘ Φ)
           (hg'm.comp Φ.measurable) (fun y ↦ hg'0 (Φ y))
           (mp.integrable_comp_of_integrable hg'i) (mp.integrable_comp_of_integrable hg'li)
-    _ = ∑ k, ∫ x, entropy (μ (e k)) (fun v ↦ g' (Function.update x (e k) v)) ∂Measure.pi μ :=
-        Finset.sum_congr rfl fun k _ ↦ by
-          simp_rw [hupd]
-          exact mp.integral_comp Φ.measurableEmbedding
-            (fun x ↦ entropy (μ (e k)) (fun v ↦ g' (Function.update x (e k) v)))
     _ = ∑ i, ∫ x, entropy (μ i) (fun y ↦ g' (Function.update x i y)) ∂Measure.pi μ :=
-        Equiv.sum_comp e fun i ↦
-          ∫ x, entropy (μ i) (fun y ↦ g' (Function.update x i y)) ∂Measure.pi μ
+        TauCeti.sum_integral_piCongrLeft_update μ e (fun i h ↦ entropy (μ i) h) g'
 
 end FiniteProduct
 

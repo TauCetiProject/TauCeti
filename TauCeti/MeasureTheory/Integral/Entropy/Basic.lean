@@ -10,13 +10,15 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.AEMeasurable
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
 # Entropy of a function with respect to a measure
 
 Defines the functional entropy `Ent_μ(g) = ∫ g log g dμ - (∫ g dμ) log (∫ g dμ)` with respect to a
 measure `μ`, using the convention `0 log 0 = 0` of `Real.log`, and records its basic invariance,
-homogeneity, and nonnegativity properties.
+homogeneity, nonnegativity, and dominated-convergence properties.
 
 ## Main definitions
 
@@ -32,6 +34,8 @@ homogeneity, and nonnegativity properties.
   invariance under measurable embeddings and measure-preserving maps.
 * `MeasureTheory.Measure.entropy_nonneg`: under a probability measure, a.e. nonnegative integrable
   functions with `g log g` integrable have nonnegative entropy.
+* `MeasureTheory.Measure.tendsto_entropy_of_dominated`: dominated convergence for `Ent_μ(F n)` under
+  a finite measure.
 
 ## References
 
@@ -118,5 +122,37 @@ theorem entropy_nonneg {α : Type*} {mα : MeasurableSpace α} {μ : Measure α}
     (hglog : Integrable (fun x ↦ g x * Real.log (g x)) μ) : 0 ≤ entropy μ g := by
   exact sub_nonneg.2 <| Real.convexOn_mul_log.map_integral_le Real.continuous_mul_log.continuousOn
     isClosed_Ici hg0 hg hglog
+
+/-- **Dominated convergence for functional entropy.** Under a finite measure `μ`, if a family of
+a.e. strongly measurable functions `F n` converges `μ`-a.e. to `f` along a countably generated
+filter `l` and eventually satisfies `0 ≤ F n ≤ bound` `μ`-a.e. for an integrable `bound` with
+`bound * log bound` integrable, then `Ent_μ(F n)` tends to `Ent_μ(f)`. -/
+theorem tendsto_entropy_of_dominated {α ι : Type*} {mα : MeasurableSpace α} {μ : Measure α}
+    [IsFiniteMeasure μ] {l : Filter ι} [l.IsCountablyGenerated] {F : ι → α → ℝ} {f : α → ℝ}
+    (bound : α → ℝ) (hF_meas : ∀ᶠ n in l, AEStronglyMeasurable (F n) μ)
+    (hF_nonneg : ∀ᶠ n in l, 0 ≤ᵐ[μ] F n) (hF_le : ∀ᶠ n in l, F n ≤ᵐ[μ] bound)
+    (hbound : Integrable bound μ)
+    (hbound_log : Integrable (fun x ↦ bound x * Real.log (bound x)) μ)
+    (hlim : ∀ᵐ x ∂μ, Filter.Tendsto (fun n ↦ F n x) l (nhds (f x))) :
+    Filter.Tendsto (fun n ↦ entropy μ (F n)) l (nhds (entropy μ f)) := by
+  have hlim_int : Filter.Tendsto (fun n ↦ ∫ x, F n x ∂μ) l (nhds (∫ x, f x ∂μ)) :=
+    tendsto_integral_filter_of_dominated_convergence bound hF_meas
+      ((hF_nonneg.and hF_le).mono fun _ ⟨h0, hle⟩ ↦
+        (h0.and hle).mono fun _ ⟨hx0, hxle⟩ ↦ by rwa [Real.norm_of_nonneg hx0])
+      hbound hlim
+  have hlim_log :
+      Filter.Tendsto (fun n ↦ ∫ x, F n x * Real.log (F n x) ∂μ) l
+        (nhds (∫ x, f x * Real.log (f x) ∂μ)) :=
+    tendsto_integral_filter_of_dominated_convergence
+      (fun x ↦ 1 + ‖bound x * Real.log (bound x)‖)
+      (hF_meas.mono fun _ hn ↦ Real.continuous_mul_log.comp_aestronglyMeasurable hn)
+      ((hF_nonneg.and hF_le).mono fun _ ⟨h0, hle⟩ ↦
+        (h0.and hle).mono fun _ ⟨hx0, hxle⟩ ↦ by
+          simpa only [Real.norm_eq_abs] using
+            TauCeti.abs_mul_log_le_one_add_abs_mul_log hx0 hxle)
+      ((integrable_const 1).add hbound_log.norm)
+      (hlim.mono fun _ hx ↦ Real.continuous_mul_log.continuousAt.tendsto.comp hx)
+  simp_rw [entropy_def]
+  exact hlim_log.sub (Real.continuous_mul_log.continuousAt.tendsto.comp hlim_int)
 
 end MeasureTheory.Measure

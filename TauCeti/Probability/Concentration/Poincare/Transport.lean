@@ -84,44 +84,46 @@ section LinearIsometryEquiv
 
 variable [BorelSpace E] [BorelSpace F]
 
+omit [MeasurableSpace E] [MeasurableSpace F] [BorelSpace E] [BorelSpace F] in
+private theorem norm_fderiv_comp_linearIsometryEquiv (e : E ≃ₗᵢ[ℝ] F) (f : F → ℝ) (x : E) :
+    ‖fderiv ℝ (fun y ↦ f (e y)) x‖ = ‖fderiv ℝ f (e x)‖ := by
+  have hfd := e.toContinuousLinearEquiv.comp_right_fderiv (𝕜 := ℝ) (f := f) (x := x)
+  simp only [Function.comp_def, LinearIsometryEquiv.coe_toContinuousLinearEquiv] at hfd
+  rw [hfd]
+  exact ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ e
+
+private theorem map_symm_map_linearIsometryEquiv (μ : Measure E) (e : E ≃ₗᵢ[ℝ] F) :
+    (μ.map e).map e.symm = μ := by
+  simpa using e.toHomeomorph.toMeasurableEquiv.map_symm_map (μ := μ)
+
 /-- Pushing a measure forward along a linear isometry equivalence preserves the Poincaré
 inequality with the same constant. -/
 theorem PoincareInequality.map_linearIsometryEquiv (h : PoincareInequality μ C)
     (e : E ≃ₗᵢ[ℝ] F) : PoincareInequality (μ.map e) C :=
-  h.map_of_norm_fderiv_comp e.toHomeomorph.measurableEmbedding e.contDiff fun f x ↦ by
-    have := e.toContinuousLinearEquiv.comp_right_fderiv (𝕜 := ℝ) (f := f) (x := x)
-    simp only [Function.comp_def, LinearIsometryEquiv.coe_toContinuousLinearEquiv] at this
-    rw [this]
-    exact ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ e
+  h.map_of_norm_fderiv_comp e.toHomeomorph.measurableEmbedding e.contDiff
+    (norm_fderiv_comp_linearIsometryEquiv e)
 
 /-- The Poincaré inequality with constant `C` is invariant under pushing the measure forward
 along a linear isometry equivalence. -/
 @[simp]
 theorem poincareInequality_map_linearIsometryEquiv_iff (e : E ≃ₗᵢ[ℝ] F) :
-    PoincareInequality (μ.map e) C ↔ PoincareInequality μ C := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.map_linearIsometryEquiv e⟩
-  have := h.map_linearIsometryEquiv e.symm
-  rwa [Measure.map_map e.symm.continuous.measurable e.continuous.measurable,
-    LinearIsometryEquiv.symm_comp_self, Measure.map_id] at this
+    PoincareInequality (μ.map e) C ↔ PoincareInequality μ C :=
+  ⟨fun h ↦ map_symm_map_linearIsometryEquiv μ e ▸ h.map_linearIsometryEquiv e.symm,
+    fun h ↦ h.map_linearIsometryEquiv e⟩
 
 /-- Pushing a measure forward along a linear isometry equivalence preserves the logarithmic
 Sobolev inequality with the same constant. -/
 theorem LogSobolevInequality.map_linearIsometryEquiv (h : LogSobolevInequality μ C)
     (e : E ≃ₗᵢ[ℝ] F) : LogSobolevInequality (μ.map e) C :=
-  h.map_of_norm_fderiv_comp e.toHomeomorph.measurableEmbedding e.contDiff fun f x ↦ by
-    have := e.toContinuousLinearEquiv.comp_right_fderiv (𝕜 := ℝ) (f := f) (x := x)
-    rw [show fderiv ℝ (fun y ↦ f (e y)) x = (fderiv ℝ f (e x)).comp _ from this]
-    exact ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ e
+  h.map_of_norm_fderiv_comp e.toHomeomorph.measurableEmbedding e.contDiff
+    (norm_fderiv_comp_linearIsometryEquiv e)
 
 /-- The logarithmic Sobolev inequality with constant `C` is invariant under pushing the measure
 forward along a linear isometry equivalence. -/
 @[simp]
 theorem logSobolevInequality_map_linearIsometryEquiv_iff (e : E ≃ₗᵢ[ℝ] F) :
     LogSobolevInequality (μ.map e) C ↔ LogSobolevInequality μ C :=
-  ⟨fun h ↦ by
-    have := h.map_linearIsometryEquiv e.symm
-    rwa [Measure.map_map e.symm.continuous.measurable e.continuous.measurable,
-      LinearIsometryEquiv.symm_comp_self, Measure.map_id] at this,
+  ⟨fun h ↦ map_symm_map_linearIsometryEquiv μ e ▸ h.map_linearIsometryEquiv e.symm,
     fun h ↦ h.map_linearIsometryEquiv e⟩
 
 end LinearIsometryEquiv
@@ -129,6 +131,12 @@ end LinearIsometryEquiv
 section Translation
 
 variable [BorelSpace E]
+
+omit [NormedSpace ℝ E] in
+private theorem map_add_neg_map_add_right (μ : Measure E) (a : E) :
+    (μ.map (· + a)).map (· + -a) = μ := by
+  have hcancel : ((· + -a) ∘ (· + a) : E → E) = id := funext fun x ↦ add_neg_cancel_right x a
+  rw [Measure.map_map (measurable_add_const _) (measurable_add_const _), hcancel, Measure.map_id]
 
 /-- Translating a measure preserves the Poincaré inequality with the same constant. -/
 theorem PoincareInequality.map_add_right (h : PoincareInequality μ C) (a : E) :
@@ -139,13 +147,9 @@ theorem PoincareInequality.map_add_right (h : PoincareInequality μ C) (a : E) :
 /-- The Poincaré inequality with constant `C` is invariant under translating the measure. -/
 @[simp]
 theorem poincareInequality_map_add_right_iff (a : E) :
-    PoincareInequality (μ.map (· + a)) C ↔ PoincareInequality μ C := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.map_add_right a⟩
-  have h' := h.map_add_right (-a)
-  have hcancel : ((· + -a) ∘ (· + a) : E → E) = id :=
-    funext fun x ↦ add_neg_cancel_right x a
-  rwa [Measure.map_map (measurable_add_const _) (measurable_add_const _),
-    hcancel, Measure.map_id] at h'
+    PoincareInequality (μ.map (· + a)) C ↔ PoincareInequality μ C :=
+  ⟨fun h ↦ map_add_neg_map_add_right μ a ▸ h.map_add_right (-a),
+    fun h ↦ h.map_add_right a⟩
 
 /-- Translating a measure preserves the logarithmic Sobolev inequality with the same constant. -/
 theorem LogSobolevInequality.map_add_right (h : LogSobolevInequality μ C) (a : E) :
@@ -158,11 +162,7 @@ measure. -/
 @[simp]
 theorem logSobolevInequality_map_add_right_iff (a : E) :
     LogSobolevInequality (μ.map (· + a)) C ↔ LogSobolevInequality μ C :=
-  ⟨fun h ↦ by
-    have h' := h.map_add_right (-a)
-    rwa [Measure.map_map (measurable_add_const _) (measurable_add_const _),
-      show ((· + -a) ∘ (· + a) : E → E) = id from funext fun x ↦ add_neg_cancel_right x a,
-      Measure.map_id] at h',
+  ⟨fun h ↦ map_add_neg_map_add_right μ a ▸ h.map_add_right (-a),
     fun h ↦ h.map_add_right a⟩
 
 end Translation

@@ -95,68 +95,6 @@ private theorem hasDerivAt_interp (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x| ≤
       ((hasDerivAt_cos t).mul_const p.1).add ((hasDerivAt_sin t).mul_const p.2)
     exact ((hf.differentiable one_ne_zero _).hasDerivAt.comp t h1).const_mul (f p.1)
 
-private theorem integral_interp_deriv (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x| ≤ A)
-    (hB : ∀ x, |deriv f x| ≤ B) (θ : ℝ) :
-    ∫ p, f p.1 * (deriv f (cos θ * p.1 + sin θ * p.2) * (-sin θ * p.1 + cos θ * p.2))
-        ∂(Measure.prod γ γ) =
-      -sin θ * ∫ p, deriv f p.1 * deriv f (cos θ * p.1 + sin θ * p.2) ∂(Measure.prod γ γ) := by
-  have hc : Continuous f := hf.continuous
-  have hA0 : 0 ≤ A := (abs_nonneg _).trans (hA 0)
-  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
-  obtain ⟨c, hcdef⟩ : ∃ c, c = cos θ := ⟨_, rfl⟩
-  obtain ⟨s, hsdef⟩ : ∃ s, s = sin θ := ⟨_, rfl⟩
-  rw [← hcdef, ← hsdef]
-  have hcs : c ^ 2 + s ^ 2 = 1 := by rw [hcdef, hsdef]; exact cos_sq_add_sin_sq θ
-  have hmp := measurePreserving_reflection_gaussianReal θ
-  rw [← hcdef, ← hsdef] at hmp
-  let H : ℝ × ℝ → ℝ := fun q => f (c * q.1 + s * q.2) * (deriv f q.1 * (-q.2))
-  have hHc : Continuous H := by fun_prop
-  have hHint : Integrable H (Measure.prod γ γ) := by
-    refine ((integrable_abs_add_abs_gaussianReal 0 0 1 1).const_mul (A * B)).mono'
-      hHc.aestronglyMeasurable
-      (ae_of_all _ fun q => ?_)
-    rw [Real.norm_eq_abs]
-    simp only [H, abs_mul, abs_neg]
-    calc |f (c * q.1 + s * q.2)| * (|deriv f q.1| * |q.2|)
-        ≤ A * (B * (|q.1| + |q.2|)) := by
-          gcongr
-          · exact hA _
-          · exact hB _
-          · exact le_add_of_nonneg_left (abs_nonneg _)
-      _ = A * B * (|q.1| + |q.2|) := by ring
-  have e1 : (fun p : ℝ × ℝ =>
-      f p.1 * (deriv f (c * p.1 + s * p.2) * (-s * p.1 + c * p.2))) =
-      fun p => H (c * p.1 + s * p.2, s * p.1 - c * p.2) := by
-    funext p
-    simp only [H]
-    rw [show c * (c * p.1 + s * p.2) + s * (s * p.1 - c * p.2) = p.1 by
-      linear_combination p.1 * hcs]
-    ring
-  have hchange := hmp.hasLaw.integral_comp hHc.aestronglyMeasurable
-  simp only [Function.comp_def] at hchange
-  rw [e1, hchange,
-    integral_prod _ hHint]
-  have hinner : ∀ u : ℝ, ∫ v, H (u, v) ∂γ = -s * (deriv f u * ∫ v, deriv f (c * u + s * v) ∂γ) := by
-    intro u
-    have : ∀ v : ℝ, H (u, v) = -(deriv f u) * (v * f (c * u + s * v)) := fun v => by
-      simp only [H]; ring
-    simp_rw [this]
-    rw [integral_const_mul, integral_mul_comp_affine_gaussianReal hf hA hB]
-    ring
-  simp_rw [hinner]
-  rw [integral_const_mul]
-  congr 1
-  have hint : Integrable (fun p : ℝ × ℝ => deriv f p.1 * deriv f (c * p.1 + s * p.2))
-      (Measure.prod γ γ) :=
-    Integrable.of_bound (by fun_prop : Continuous _).aestronglyMeasurable (B * B)
-      (ae_of_all _ fun p => by
-        rw [Real.norm_eq_abs, abs_mul]
-        exact mul_le_mul (hB _) (hB _) (abs_nonneg _) hB0)
-  rw [integral_prod _ hint]
-  congr 1
-  funext u
-  exact (integral_const_mul _ _).symm
-
 end Interpolation
 
 private theorem integral_deriv_mul_deriv_rot_le {f : ℝ → ℝ} {B : ℝ}
@@ -219,7 +157,7 @@ theorem variance_le_integral_deriv_sq_gaussianReal {f : ℝ → ℝ} (hf : ContD
     ∫ p, deriv f p.1 * deriv f (cos θ * p.1 + sin θ * p.2) ∂(Measure.prod γ γ)
   have hψ : ∀ θ, HasDerivAt ψ (-sin θ * J θ) θ := fun θ => by
     have := hasDerivAt_interp hf hA hB θ
-    rwa [integral_interp_deriv hf hA hB θ] at this
+    rwa [integral_mul_deriv_rot_gaussianReal hf hA hB hf hB θ] at this
   have hJ : ∀ θ, J θ ≤ D := fun θ => by
     simpa only [J, hD] using integral_deriv_mul_deriv_rot_le hf hB θ
   -- The derivative bound makes the corrected interpolation monotone.
