@@ -28,13 +28,14 @@ normalized elementary symmetric functions, where `e_k(s)` is `Multiset.esymm s k
   `S_k S_{k+2} ≤ S_{k+1}²` for every `k`.
 * `Multiset.eq_of_esymm_div_choose_mul_esymm_div_choose_eq_sq`: if `e_{k+2}(s) ≠ 0` and
   `S_k S_{k+2} = S_{k+1}²`, then all elements of `s` are equal.
-* `Multiset.exists_esymm_div_choose_eq_of_card_eq_succ`: the roots `r` of the derivative of
-  `∏_{a ∈ s} (X - a)` are `n - 1` real numbers with the same `S_0, …, S_{n-1}` as `s`.
+* `Multiset.exists_esymm_div_choose_eq_of_card_eq_succ`: if `n ≥ 1`, there is a multiset `r` of
+  `n - 1` real numbers with the same `S_0, …, S_{n-1}` as `s`.
 
 ## Implementation notes
 
-The last result is Rolle's theorem (`Polynomial.card_roots_le_derivative`); it lowers `n` to
-`k + 2` in Newton's inequality. Replacing `s` by the inverses of its elements reverses the
+The last result is Rolle's theorem (`Polynomial.card_roots_le_derivative`): its proof takes for
+`r` the roots of the derivative of `∏_{a ∈ s} (X - a)`. It lowers `n` to `k + 2` in Newton's
+inequality. Replacing `s` by the inverses of its elements reverses the
 sequence `S_0, …, S_{k+2}` up to the factor `S_{k+2}`, which reduces the inequality to
 `S_0 S_2 ≤ S_1²`, the inequality between the arithmetic and the quadratic mean.
 
@@ -52,9 +53,6 @@ namespace Multiset
 private noncomputable def mNorm (s : Multiset ℝ) (k : ℕ) : ℝ :=
   s.esymm k / (card s).choose k
 
-private theorem mNorm_zero (s : Multiset ℝ) : mNorm s 0 = 1 := by
-  simp [mNorm]
-
 private theorem mNorm_card (s : Multiset ℝ) : mNorm s (card s) = s.prod := by
   rw [mNorm, Multiset.esymm_card_eq_prod, Nat.choose_self, Nat.cast_one, div_one]
 
@@ -67,6 +65,18 @@ private theorem mNorm_map_inv_mul_prod (s : Multiset ℝ) (hs : (0 : ℝ) ∉ s)
     mNorm (s.map (·⁻¹)) j * s.prod = mNorm s (card s - j) := by
   rw [mNorm, mNorm, card_map, ← Nat.choose_symm hj, div_mul_eq_mul_div,
     Multiset.esymm_map_inv_mul_prod s hs hj]
+
+/-- For `card s = k + 2` and `0 ∉ s`, inverting the elements of `s` expresses `S_{k+2}`, `S_{k+1}`
+and `S_k` through `∏ s` and `S_0`, `S_1`, `S_2` of the inverses. -/
+private theorem mNorm_eq_mul_prod_of_card_eq {s : Multiset ℝ} {k : ℕ} (hcard : card s = k + 2)
+    (h0 : (0 : ℝ) ∉ s) :
+    mNorm s (k + 2) = s.prod ∧ mNorm s (k + 1) = mNorm (s.map (·⁻¹)) 1 * s.prod ∧
+      mNorm s k = mNorm (s.map (·⁻¹)) 2 * s.prod := by
+  have h1 := mNorm_map_inv_mul_prod s h0 (j := 1) (by omega)
+  have h2 := mNorm_map_inv_mul_prod s h0 (j := 2) (by omega)
+  rw [hcard, show k + 2 - 1 = k + 1 by omega] at h1
+  rw [hcard, show k + 2 - 2 = k by omega] at h2
+  exact ⟨by rw [← hcard, mNorm_card], h1.symm, h2.symm⟩
 
 open Polynomial in
 /-- Rolle's theorem: the roots `r` of the derivative of `∏_{a ∈ s} (X - a)` are real, and they
@@ -177,13 +187,8 @@ private theorem mNorm_mul_le_sq (s : Multiset ℝ) (k : ℕ) :
     by_cases h0 : (0 : ℝ) ∈ s
     · rw [← add_zero (k + 2), ← hd, mNorm_card, Multiset.prod_eq_zero h0, mul_zero]
       positivity
-    have h0' := mNorm_map_inv_mul_prod s h0 (j := 0) (by omega)
-    have h1 := mNorm_map_inv_mul_prod s h0 (j := 1) (by omega)
-    have h2 := mNorm_map_inv_mul_prod s h0 (j := 2) (by omega)
-    rw [hd, show k + 2 + 0 - 0 = k + 2 by omega, mNorm_zero] at h0'
-    rw [hd, show k + 2 + 0 - 1 = k + 1 by omega] at h1
-    rw [hd, show k + 2 + 0 - 2 = k by omega] at h2
-    rw [← h0', ← h1, ← h2]
+    obtain ⟨h0', h1, h2⟩ := mNorm_eq_mul_prod_of_card_eq hd h0
+    rw [h0', h1, h2]
     nlinarith [mNorm_two_le (s.map (·⁻¹)), sq_nonneg s.prod]
   | succ d ih =>
     obtain ⟨r, hr, hsr⟩ := exists_mNorm_eq s (m := k + 2 + d) (by omega)
@@ -204,13 +209,8 @@ private theorem eq_of_mNorm_mul_eq_sq (s : Multiset ℝ) (k : ℕ) (hne : mNorm 
     have hcard : card s = k + 2 := hd
     have h0 : (0 : ℝ) ∉ s := fun h0 ↦ hne (by rw [← hcard, mNorm_card, Multiset.prod_eq_zero h0])
     have hP : s.prod ≠ 0 := Multiset.prod_ne_zero h0
-    have h0' := mNorm_map_inv_mul_prod s h0 (j := 0) (by omega)
-    have h1 := mNorm_map_inv_mul_prod s h0 (j := 1) (by omega)
-    have h2 := mNorm_map_inv_mul_prod s h0 (j := 2) (by omega)
-    rw [hcard, show k + 2 - 0 = k + 2 by omega, mNorm_zero] at h0'
-    rw [hcard, show k + 2 - 1 = k + 1 by omega] at h1
-    rw [hcard, show k + 2 - 2 = k by omega] at h2
-    rw [← h0', ← h1, ← h2] at heq
+    obtain ⟨h0', h1, h2⟩ := mNorm_eq_mul_prod_of_card_eq hcard h0
+    rw [h0', h1, h2] at heq
     have ht : mNorm (s.map (·⁻¹)) 2 = mNorm (s.map (·⁻¹)) 1 ^ 2 := by
       refine mul_right_cancel₀ (pow_ne_zero 2 hP) ?_
       linear_combination heq
@@ -252,9 +252,9 @@ theorem eq_of_esymm_div_choose_mul_esymm_div_choose_eq_sq {s : Multiset ℝ} {k 
   exact eq_of_mNorm_mul_eq_sq s k
     (div_ne_zero hne (by exact_mod_cast (Nat.choose_pos hk).ne')) h
 
-/-- Rolle's theorem for the normalized elementary symmetric functions: if `card s = m + 1`, the
-roots `r` of the derivative of `∏_{a ∈ s} (X - a)` are `m` real numbers with
-`e_j(s) / binom(m + 1, j) = e_j(r) / binom(m, j)` for every `j ≤ m`. -/
+/-- Rolle's theorem for the normalized elementary symmetric functions: if `card s = m + 1`, there
+is a multiset `r` of `m` real numbers with `e_j(s) / binom(m + 1, j) = e_j(r) / binom(m, j)` for
+every `j ≤ m`. -/
 theorem exists_esymm_div_choose_eq_of_card_eq_succ (s : Multiset ℝ) {m : ℕ}
     (hs : card s = m + 1) :
     ∃ r : Multiset ℝ, card r = m ∧

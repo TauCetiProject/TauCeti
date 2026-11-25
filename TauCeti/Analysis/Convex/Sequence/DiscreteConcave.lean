@@ -12,24 +12,26 @@ import Mathlib.Tactic.Ring
 /-!
 # Chords of discretely concave sequences
 
-A sequence `a : ℕ → K` in a linearly ordered field is discretely concave on `[0, r]` when
-`a j + a (j + 2) ≤ 2 a (j + 1)` for `j + 2 ≤ r`, that is, when its increments `a (j + 1) - a j`
-decrease. This file proves the chord inequalities of such sequences: the slope of a chord
-decreases when either endpoint moves to the right.
+A sequence `a : ℕ → K` in a linearly ordered commutative ring is discretely concave on
+`[0, r]` when `a j + a (j + 2) ≤ 2 a (j + 1)` for `j + 2 ≤ r`, that is, when its increments
+`a (j + 1) - a j` decrease. This file proves the chord inequalities of such sequences: the
+slope of a chord decreases when either endpoint moves to the right.
 
 ## Main results
 
 * `TauCeti.mul_sub_le_mul_sub_of_add_le_two_mul`: for `p < q < m ≤ r`, the slope over `[q, m]`
   is at most the slope over `[p, q]`, in the form `(q - p) (a m - a q) ≤ (m - q) (a q - a p)`.
-* `TauCeti.div_sub_le_div_sub_of_add_le_two_mul`: the slope over `[s, r]` is at most the slope
-  over `[l, k]` when `l ≤ s`, `l < k ≤ r` and `s < r`.
+* `TauCeti.div_sub_le_div_sub_of_add_le_two_mul`: in a linearly ordered field, the slope over
+  `[s, r]` is at most the slope over `[l, k]` when `l ≤ s`, `l < k ≤ r` and `s < r`.
 -/
 
 public section
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+section OrderedRing
+
+variable {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K]
 
 /-- Three chords of a concave sequence: if `a_j + a_{j+2} ≤ 2 a_{j+1}` for `j + 2 ≤ r`, then for
 `p < q < m ≤ r` the slope over `[q, m]` is at most the slope over `[p, q]`. -/
@@ -76,6 +78,12 @@ theorem mul_sub_le_mul_sub_of_add_le_two_mul {a : ℕ → K} {r : ℕ}
   have hmq : (0 : K) ≤ m - q := sub_nonneg.mpr (by exact_mod_cast hqm.le)
   nlinarith [mul_le_mul_of_nonneg_left h1 hmq, mul_le_mul_of_nonneg_left h2 hqp]
 
+end OrderedRing
+
+section Field
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+
 /-- A sequence `a` with `a_j + a_{j+2} ≤ 2 a_{j+1}` for `j + 2 ≤ r` is concave on `[0, r]`: the
 slope of the chord over `[s, r]` is at most the slope over `[l, k]` when `l ≤ s` and `k ≤ r`. -/
 theorem div_sub_le_div_sub_of_add_le_two_mul {a : ℕ → K} {r : ℕ}
@@ -106,5 +114,7 @@ theorem div_sub_le_div_sub_of_add_le_two_mul {a : ℕ → K} {r : ℕ}
       nlinarith
     · exact le_rfl
   exact step1.trans step2
+
+end Field
 
 end TauCeti
