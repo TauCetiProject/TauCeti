@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpo
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
 public import TauCeti.Geometry.Lie.Exponential.Units.Basic
 import Mathlib.Analysis.Normed.Ring.Units
+import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
 # The Cartan decomposition of the group of units
@@ -55,6 +56,8 @@ positive diagonal matrix, which is not a product of this form.
   `a * exp (-log √(a⋆ a))`.
 * `Units.continuous_polarUnitary`, `Units.continuous_log_sqrt_star_mul`: both factors depend
   continuously on the unit.
+* `Unitary.joined_of_joined_toUnits`, `Unitary.joined_toUnits_iff`: two unitaries are joined by a
+  path of unitaries exactly when they are joined by a path of units.
 * `TauCeti.cartanHomeomorph`: the homeomorphism `unitary A × selfAdjoint A ≃ₜ Aˣ`,
   `(u, x) ↦ u * exp x`, with `TauCeti.val_cartanHomeomorph_apply`,
   `TauCeti.cartanHomeomorph_symm_apply_fst` and `TauCeti.coe_cartanHomeomorph_symm_apply_snd`
@@ -160,6 +163,22 @@ theorem continuous_polarUnitary : Continuous fun a : Aˣ ↦ a.polarUnitary := b
   exact continuous_val.mul (exp_continuous.comp continuous_log_sqrt_star_mul.neg)
 
 end Units
+
+namespace Unitary
+
+/-- Two unitaries joined by a path of units are joined by a path of unitaries: the unitary factor
+of the polar decomposition retracts the units onto the unitaries. -/
+theorem joined_of_joined_toUnits {u v : unitary A}
+    (h : Joined (Unitary.toUnits u) (Unitary.toUnits v)) : Joined u v := by
+  simpa only [Units.polarUnitary_toUnits] using h.map Units.continuous_polarUnitary
+
+/-- Two unitaries are joined by a path of unitaries exactly when they are joined by a path of
+units. -/
+theorem joined_toUnits_iff {u v : unitary A} :
+    Joined (Unitary.toUnits u) (Unitary.toUnits v) ↔ Joined u v :=
+  ⟨joined_of_joined_toUnits, fun h ↦ h.map continuous_toUnits⟩
+
+end Unitary
 
 end Continuity
 
