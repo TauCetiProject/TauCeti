@@ -97,7 +97,8 @@ variable {q W}
 /-- **A restriction keeps every lower bound.** -/
 theorem IsLowerBound.restrict {γ : ℝ} (hγ : q.IsLowerBound γ) :
     (q.restrict W hW).IsLowerBound γ :=
-  (isLowerBound_iff _).mpr fun u ↦ (isLowerBound_iff q).mp hγ (q.restrictInclusion W hW u)
+  (isLowerBound_iff _).mpr fun u ↦ by
+    simpa using (isLowerBound_iff q).mp hγ (q.restrictInclusion W hW u)
 
 /-- An admissible shift of `q` is admissible for every restriction of `q`. -/
 theorem IsAdmissibleShift.restrict {α : ℝ} (hα : q.IsAdmissibleShift α) :
@@ -176,12 +177,13 @@ dense in `H`, the graph of the operator represented by `q.restrict W hW` consist
 theorem mem_graph_operator_restrict_iff (hd : Dense ((q.restrict W hW).domain : Set H)) {x h : H} :
     (x, h) ∈ ((q.restrict W hW).operator hd).graph ↔
       ∃ hx : x ∈ W, ∀ v (hv : v ∈ W), q.form ⟨x, hW hx⟩ ⟨v, hW hv⟩ = ⟪h, v⟫_𝕜 := by
-  rw [mem_graph_operator_iff]
+  simp only [mem_graph_operator_iff, restrict_form_apply, restrictInclusion,
+    Submodule.inclusion_apply, Subtype.forall, Subtype.exists, restrict_domain]
   constructor
-  · rintro ⟨u, rfl, hu⟩
-    exact ⟨u.property, fun v hv ↦ hu ⟨v, hv⟩⟩
+  · rintro ⟨u, hu, rfl, hv⟩
+    exact ⟨hu, hv⟩
   · rintro ⟨hx, hv⟩
-    exact ⟨⟨x, hx⟩, rfl, fun v ↦ hv v v.property⟩
+    exact ⟨x, hx, rfl, hv⟩
 
 variable {hW} in
 /-- The operator represented by the restriction of `q` to a dense subspace `W` of the form domain
@@ -210,9 +212,7 @@ def map : SemiboundedForm 𝕜 H' where
   exists_lowerBound := by
     obtain ⟨γ, hγ⟩ := q.exists_lowerBound
     refine ⟨γ, fun u ↦ ?_⟩
-    have h := hγ ((U.toLinearEquiv.submoduleMap q.domain).symm u)
-    rwa [← U.norm_map, ← LinearIsometryEquiv.coe_toLinearEquiv,
-      ← LinearEquiv.submoduleMap_apply, LinearEquiv.apply_symm_apply] at h
+    simpa using hγ ((U.toLinearEquiv.submoduleMap q.domain).symm u)
 
 /-- The form domain of `q.map U` is the image of the form domain under `U`. -/
 @[simp]
