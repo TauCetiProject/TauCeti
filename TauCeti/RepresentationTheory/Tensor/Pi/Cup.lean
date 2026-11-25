@@ -198,11 +198,8 @@ private theorem smoothPiTensorProductContraction_proj_lexPairing (x)
       (smoothPiTensorProductContraction_ι_apply ..)).trans <|
     (PiTensorProduct.map_tmulLex π _ w).trans ?_
   -- The retraction undoes the augmentation in every factor of the left block.
-  refine congrArg (fun z ↦ PiTensorProduct.tmulLex R (fun i ↦ (X i).V) z _) ?_
-  refine (LinearMap.congr_fun (PiTensorProduct.map_comp _ _) x).symm.trans ?_
-  rw [show (fun i ↦ π (.inl i) ∘ₗ (a (.inl i)).toLinearMap) = fun _ ↦ LinearMap.id from
-    funext fun i ↦ LinearMap.ext (hπa (.inl i)), PiTensorProduct.map_id]
-  exact LinearMap.id_apply _
+  exact congrArg (fun z ↦ PiTensorProduct.tmulLex R (fun i ↦ (X i).V) z _)
+    (piTensorProductMap_retraction_augmentation _ _ _ _ (fun i ↦ hπa (.inl i)) x)
 
 /-- The homotopy of the tensor contraction over `I₁ ⊕ₗ I₂` commutes with the block pairing with an
 augmented tensor on the left. -/
@@ -235,9 +232,8 @@ private theorem smoothPiTensorProductContraction_hom_lexPairing (n : ℕ) (x)
   have h₁ : PiTensorProduct.map (fun i ↦ (a (.inl i)).toLinearMap ∘ₗ π (.inl i))
       (PiTensorProduct.map (fun i ↦ (a (.inl i)).toLinearMap) x) =
       PiTensorProduct.map (fun i ↦ (a (.inl i)).toLinearMap) x := by
-    refine (LinearMap.congr_fun (PiTensorProduct.map_comp _ _) x).symm.trans ?_
-    exact congrArg (fun f ↦ PiTensorProduct.map f x) (funext fun i ↦
-      LinearMap.ext fun v ↦ congrArg (a (.inl i)).toLinearMap (hπa (.inl i) v))
+    rw [PiTensorProduct.map_comp, LinearMap.comp_apply,
+      piTensorProductMap_retraction_augmentation _ _ _ _ (fun i ↦ hπa (.inl i)) x]
   rw [h₀, h₁]
   exact (congrArg (· + _) (LinearMap.map_zero₂ (PiTensorProduct.tmulLex R fun i ↦ (M i).V) w)).trans
     (zero_add _)
