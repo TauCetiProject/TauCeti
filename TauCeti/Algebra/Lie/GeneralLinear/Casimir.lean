@@ -11,9 +11,9 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.TwoWeylVectorPairing
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 import TauCeti.Algebra.Lie.Matrix.Single
+import TauCeti.Algebra.Order.BigOperators.Dominance
 
 /-!
 # The trace-form Casimir element of `gl n`
@@ -212,8 +212,7 @@ private theorem glCasimir_eigenvalue_eq (mu : Fin N → K) :
     (∑ i : Fin N, mu i * mu i) +
         ∑ i : Fin N, ∑ j ∈ Finset.Ioi i, (mu i - mu j) =
       ∑ i : Fin N, mu i * (mu i + (N : K) - 1 - 2 * (i : K)) := by
-  rw [← GeneralLinear.twoWeylVectorPairing_def, GeneralLinear.twoWeylVectorPairing_eq_sum_zsmul,
-    ← Finset.sum_add_distrib]
+  rw [← twoRhoPairing_def, twoRhoPairing_eq_sum_zsmul, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [zsmul_eq_mul]
   push_cast
