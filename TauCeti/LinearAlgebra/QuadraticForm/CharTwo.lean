@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.CharP.Two
 import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -71,7 +72,10 @@ that underpins the Arf invariant:
 
 * `QuadraticMap.isTotallyIsotropic_range_inl_add_inr_prod_self`: in characteristic two, the diagonal
   submodule of `M × M` is `(Q.prod Q)`-totally-isotropic.
-* `QuadraticMap.isAlt_polarBilin`: in characteristic two, `Q.polarBilin` is alternating.
+* `QuadraticMap.polar_self_eq_zero_of_charTwo`, `QuadraticMap.isAlt_polarBilin`: in
+  characteristic two, `polar Q x x = 0`, so `Q.polarBilin` is alternating.
+* `QuadraticMap.map_add_eq_polar_of_map_eq`: in characteristic two, `Q (x + y) = polar Q x y`
+  when `Q x = Q y`.
 * `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm`: in characteristic two, every binary form
   `binaryQuadraticForm R a b` has nondegenerate polar bilinear form.
 * `QuadraticMap.even_finrank_of_nondegenerate_polarBilin`,
@@ -118,10 +122,19 @@ theorem isTotallyIsotropic_range_inl_add_inr_prod_self [CharP R 2] (Q : Quadrati
     add_zero, zero_add, QuadraticMap.prod_apply, ← two_nsmul, ← Nat.cast_smul_eq_nsmul R,
     CharP.cast_eq_zero, zero_smul]
 
+/-- In characteristic two, the polar form of any quadratic map vanishes on the diagonal. -/
+theorem polar_self_eq_zero_of_charTwo [CharP R 2] (Q : QuadraticMap R M P) (x : M) :
+    polar Q x x = 0 := by
+  rw [polar_self, ← Nat.cast_smul_eq_nsmul R, CharP.cast_eq_zero, zero_smul]
+
 /-- In characteristic two, the polar bilinear map of any quadratic map is alternating. -/
 theorem isAlt_polarBilin [CharP R 2] (Q : QuadraticMap R M P) : Q.polarBilin.IsAlt := fun x ↦ by
-  rw [polarBilin_apply_apply, polar_self, ← Nat.cast_smul_eq_nsmul R, CharP.cast_eq_zero,
-    zero_smul]
+  rw [polarBilin_apply_apply, polar_self_eq_zero_of_charTwo]
+
+/-- In characteristic two, `Q (x + y)` is the polar pairing of `x` and `y` when `Q x = Q y`. -/
+theorem map_add_eq_polar_of_map_eq [CharP R 2] (Q : QuadraticMap R M P) {x y : M}
+    (hxy : Q x = Q y) : Q (x + y) = polar Q x y := by
+  rw [QuadraticMap.map_add (⇑Q), hxy, TauCeti.add_self_eq_zero_of_charTwo R, zero_add]
 
 end QuadraticMap
 
