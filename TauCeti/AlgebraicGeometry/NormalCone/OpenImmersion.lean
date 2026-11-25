@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.NormalCone.NormalSheaf
-public import TauCeti.AlgebraicGeometry.RelativeSpec.Trivial
+public import TauCeti.AlgebraicGeometry.RelativeSpec.MorphismProperties
 
 /-!
 # Normal cones of open immersions
