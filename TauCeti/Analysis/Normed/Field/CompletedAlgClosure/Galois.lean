@@ -20,7 +20,7 @@ import Mathlib.Topology.MetricSpace.Completion
 
 Let `K` be a field complete for a nontrivial ultrametric absolute value, `K^alg` its algebraic
 closure with the spectral norm and `C` the completion of `K^alg`. Every `σ ∈ G_K` is an isometry
-of `K^alg` (`TauCeti.isometry_algHom`), so it extends to a continuous `K`-algebra
+of `K^alg` (`AlgHom.isometry`), so it extends to a continuous `K`-algebra
 automorphism `σ_C` of `C`. This file proves that `σ ↦ σ_C` identifies `G_K` with the continuous
 `K`-algebra automorphisms of `C`, compatibly with composition, and that the action map
 `G_K × C → C` is jointly continuous for the Krull topology.
@@ -104,7 +104,7 @@ variable {K : Type u} [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametr
 /-- A `K`-algebra automorphism of `K^alg` is an isometry for the spectral norm. -/
 theorem SpectralAlgClosure.isometry_algEquiv
     (σ : SpectralAlgClosure K ≃ₐ[K] SpectralAlgClosure K) : Isometry σ :=
-  isometry_algHom (σ : SpectralAlgClosure K →ₐ[K] SpectralAlgClosure K)
+  (σ : SpectralAlgClosure K →ₐ[K] SpectralAlgClosure K).isometry
 
 namespace CompletedAlgClosure
 

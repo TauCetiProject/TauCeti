@@ -23,6 +23,8 @@ public section
 
 open Polynomial
 
+namespace TauCeti
+
 /-- In an extension `L` of a field `K`, a root of `X ^ N - t X - b`, for `N` zero in `K`, `t ∈ K`
 nonzero and `b` separable over `K`, is separable over `K`. -/
 theorem mem_separableClosure_of_pow_sub_mul_sub_eq_zero {K L : Type*} [Field K] [Field L]
@@ -40,3 +42,5 @@ theorem mem_separableClosure_of_pow_sub_mul_sub_eq_zero {K L : Type*} [Field K] 
   have hgy : aeval y g = 0 := by simpa [g, c] using hy
   have hsep : IsSeparable E y := hg.of_dvd (minpoly.dvd E y hgy)
   exact mem_separableClosure_iff.2 (IsSeparable.of_algebra_isSeparable_of_isSeparable K hsep)
+
+end TauCeti
