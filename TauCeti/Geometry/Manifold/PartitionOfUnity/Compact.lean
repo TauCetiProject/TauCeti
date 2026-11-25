@@ -8,13 +8,14 @@ module
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Monoid
+import TauCeti.Geometry.Manifold.BumpFunction
 
 /-!
 # Smooth cutoff functions around compact sets
 
 On a Hausdorff manifold modelled on a finite-dimensional real space, a compact set `K` inside an
-open set `W` has a smooth cutoff function: a smooth `σ : M → [0, 1]`, equal to `1` on a
-neighbourhood of `K`, whose support is a compact subset of `W`
+open set `W` has a cutoff of the manifold's differentiability class with values in `[0, 1]`, equal
+to `1` on a neighbourhood of `K`, with topological support a compact subset of `W`
 (`IsCompact.exists_contMDiff_one_nhds_tsupport_subset`).
 
 Mathlib's smooth Urysohn lemma `exists_contMDiffMap_one_nhds_of_subset_interior` gives such a
@@ -39,16 +40,16 @@ universe u
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type u} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  {M : Type u} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
 
 variable (I) in
-/-- **A smooth cutoff around a compact set.** If `K` is a compact subset of an open set `W` of a
-Hausdorff manifold modelled on a finite-dimensional space, there is a smooth function
+/-- **A `C^n` cutoff around a compact set.** If `K` is a compact subset of an open set `W` of a
+Hausdorff `C^n` manifold modelled on a finite-dimensional space, there is a `C^n` function
 `σ : M → [0, 1]` equal to `1` on a neighbourhood of `K` whose topological support is a compact
 subset of `W`. -/
 theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset {K W : Set M} (hK : IsCompact K)
-    (hW : IsOpen W) (hKW : K ⊆ W) :
-    ∃ σ : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ σ ∧ (∀ᶠ x in 𝓝ˢ K, σ x = 1) ∧ HasCompactSupport σ ∧
+    (hW : IsOpen W) (hKW : K ⊆ W) (n : ℕ∞ := ⊤) [IsManifold I n M] :
+    ∃ σ : M → ℝ, ContMDiff I 𝓘(ℝ) n σ ∧ (∀ᶠ x in 𝓝ˢ K, σ x = 1) ∧ HasCompactSupport σ ∧
       tsupport σ ⊆ W ∧ ∀ x, σ x ∈ Icc 0 1 := by
   -- Bump functions at the points of `K` supported in `W`; finitely many of the open sets where
   -- one of them is `1` cover `K`.
@@ -68,7 +69,8 @@ theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset {K W : Set M} (hK : 
   have hsupp : tsupport (fun y ↦ Real.smoothTransition (∑ i ∈ t, ρ i y)) ⊆ C :=
     closure_minimal (fun y hy ↦ by_contra fun h ↦ mem_support.1 hy (hσC y h)) hC.isClosed
   refine ⟨fun y ↦ Real.smoothTransition (∑ i ∈ t, ρ i y),
-    Real.smoothTransition.contDiff.contMDiff.comp (ContMDiff.sum fun i _ ↦ (ρ i).contMDiff),
+    Real.smoothTransition.contDiff.contMDiff.comp
+      (ContMDiff.sum fun i _ ↦ (ρ i).contMDiff_of_isManifold),
     ?_, hC.of_isClosed_subset (isClosed_tsupport _) hsupp,
     hsupp.trans (iUnion₂_subset fun i _ ↦ (hρ i).2),
     fun y ↦ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩⟩
@@ -78,7 +80,6 @@ theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset {K W : Set M} (hK : 
   have := Finset.single_le_sum (fun j _ ↦ (ρ j).nonneg) hi (f := fun j ↦ ρ j y)
   rwa [(interior_subset hyi : ρ i y = 1)] at this
 
-omit [IsManifold I ∞ M] in
 variable (I) in
 /-- **A finite smooth bump covering of a compact set.** If `K` is a compact subset of a Hausdorff
 manifold modelled on a finite-dimensional space and `U x` is a neighbourhood of `x` for every

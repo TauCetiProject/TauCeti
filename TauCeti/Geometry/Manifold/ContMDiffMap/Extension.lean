@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ContMDiff.Log
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Extending local smooth data to global smooth maps
@@ -34,6 +35,10 @@ any set closed in the ambient real space and contained in the domain.
 A closed set inside an open set has a smooth `[0, 1]`-valued cutoff equal to one exactly on the
 closed set, with topological support in the open set
 (`IsClosed.exists_contMDiff_tsupport_subset_eq_one_iff`).
+For a sequence whose regularity holds eventually near each compact set,
+`ContMDiffMap.exists_contMDiffMap_eventuallyEq_nhdsSet_of_eventually_contMDiffAt` chooses compactly
+supported global representatives that agree with the original maps near each compact set on a tail.
+
 Reference: M. Hirsch, *Differential Topology*, Chapter 2, §2, and Chapter 8, §1.
 -/
 
@@ -211,3 +216,52 @@ theorem IsClosed.exists_contMDiff_tsupport_subset_eq_one_iff [SigmaCompactSpace 
   refine ⟨ρ, hsρ, fun x ↦ hrange (mem_range_self x), ?_, hone⟩
   rw [tsupport, hsupp]
   exact hVU
+
+section Exhaustion
+
+variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M]
+  {n : ℕ∞} [IsManifold I n M]
+
+/-- If the terms of a sequence are eventually `C^n` near each compact set, the sequence admits
+compactly supported global `C^n` representatives which agree with it near each compact set on a
+tail. -/
+theorem ContMDiffMap.exists_contMDiffMap_eventuallyEq_nhdsSet_of_eventually_contMDiffAt
+    (f : ℕ → M → F)
+    (h : ∀ K : Set M, IsCompact K → ∀ᶠ i : ℕ in Filter.atTop, ∀ x ∈ K,
+      ContMDiffAt I 𝓘(ℝ, F) n (f i) x) :
+    ∃ g : ℕ → C^n⟮I, M; 𝓘(ℝ, F), F⟯, (∀ i, HasCompactSupport (g i : M → F)) ∧
+      ∀ K : Set M, IsCompact K → ∀ᶠ i : ℕ in Filter.atTop, (g i : M → F) =ᶠ[𝓝ˢ K] f i := by
+  classical
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
+  let L := CompactExhaustion.choice M
+  let regular (i j : ℕ) := ∀ x ∈ L (j + 1), ContMDiffAt I 𝓘(ℝ, F) n (f i) x
+  have hext (i : ℕ) : ∃ g : C^n⟮I, M; 𝓘(ℝ, F), F⟯, HasCompactSupport (g : M → F) ∧
+      ∀ j ≤ i, regular i j → (g : M → F) =ᶠ[𝓝ˢ (L j)] f i := by
+    by_cases hreg : ∃ j ≤ i, regular i j
+    · let j := Nat.findGreatest (regular i) i
+      obtain ⟨k, hki, hk⟩ := hreg
+      have hj : regular i j := Nat.findGreatest_spec hki hk
+      obtain ⟨ρ, hρ, hρ1, hρc, hρsupp, -⟩ :=
+        (L.isCompact j).exists_contMDiff_one_nhds_tsupport_subset (n := n) I isOpen_interior
+          (L.subset_interior_succ j)
+      have hf : ContMDiffOn I 𝓘(ℝ, F) n (f i) (interior (L (j + 1))) :=
+        fun x hx ↦ (hj x (interior_subset hx)).contMDiffWithinAt
+      refine ⟨⟨fun x ↦ ρ x • f i x,
+        hf.contMDiff_smul_of_tsupport_subset isOpen_interior hρ.contMDiffOn hρsupp⟩,
+        hρc.smul_right, fun l hli hl ↦ ?_⟩
+      have hlj : l ≤ j := Nat.le_findGreatest hli hl
+      filter_upwards [hρ1.filter_mono (nhdsSet_mono (L.subset hlj))] with x hx
+      simp [hx]
+    · exact ⟨⟨0, contMDiff_const⟩, HasCompactSupport.zero,
+        fun j hji hj ↦ (hreg ⟨j, hji, hj⟩).elim⟩
+  choose g hgc hge using hext
+  refine ⟨g, hgc, fun K hK ↦ ?_⟩
+  obtain ⟨j, hj⟩ := L.exists_superset_of_isCompact hK
+  filter_upwards [Filter.eventually_ge_atTop j, h (L (j + 1)) (L.isCompact _)] with i hi hreg
+  exact (hge i j hi hreg).filter_mono (nhdsSet_mono hj)
+
+end Exhaustion
