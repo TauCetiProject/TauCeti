@@ -291,8 +291,7 @@ theorem hasStructuralConstant_pow_of_concaveOn (h : IsAdmissiblePair Γ f)
     have := (hle ν hν).trans htan
     rw [hνG, ← div_eq_mul_inv, div_le_iff₀ hG] at this
     nlinarith
-  calc c ^ n ≤ G ^ n := pow_le_pow_left₀ hc hcG n
-    _ = ∏ j, a j := Real.rpow_inv_natCast_pow hP.le Fintype.card_ne_zero
+  rwa [← Real.rpow_natCast, ← Real.le_rpow_inv_iff_of_pos hc hP.le hn]
 
 end IsAdmissiblePair
 
@@ -329,25 +328,21 @@ theorem add (hs₁ : HasStructuralConstant Γ₁ f₁ (c₁ ^ Fintype.card ι))
   refine ⟨fun {μ} hμ ↦ ?_⟩
   have := h₁.isAdmissibleCone.nonempty
   set n := Fintype.card ι
-  have hn' : n ≠ 0 := Fintype.card_ne_zero
+  have hn : (0 : ℝ) < n := Nat.cast_pos.2 Fintype.card_pos
   set a : ι → ℝ := fun j ↦ fderiv ℝ f₁ μ (Pi.single j 1)
   set b : ι → ℝ := fun j ↦ fderiv ℝ f₂ μ (Pi.single j 1)
   have ha (j : ι) : 0 ≤ a j := (h₁.fderiv_single_pos hμ.1 j).le
   have hb (j : ι) : 0 ≤ b j := (h₂.fderiv_single_pos hμ.2 j).le
-  -- The `n`-th root of a structural constant `cⁿ ≤ ∏_j a_j` is a lower bound for the geometric
-  -- mean of the `a_j`.
-  have hroot {c : ℝ} {a : ι → ℝ} (hc : 0 ≤ c) (hle : c ^ n ≤ ∏ j, a j) :
-      c ≤ (∏ j, a j) ^ (n : ℝ)⁻¹ := by
-    rw [← Real.pow_rpow_inv_natCast hc hn']
-    exact Real.rpow_le_rpow (pow_nonneg hc n) hle (inv_nonneg.2 (Nat.cast_nonneg n))
-  have hsum : c₁ + c₂ ≤ (∏ j, (a j + b j)) ^ (n : ℝ)⁻¹ :=
-    (add_le_add (hroot hc₁ (hs₁.le_prod_fderiv_single hμ.1))
-      (hroot hc₂ (hs₂.le_prod_fderiv_single hμ.2))).trans (Real.prod_rpow_inv_card_add_le ha hb)
+  -- By `Real.le_rpow_inv_iff_of_pos`, `cⁿ ≤ P ↔ c ≤ P ^ (1 / n)` for `c, P ≥ 0`, so the claim and
+  -- both hypotheses are lower bounds for geometric means, which are superadditive.
   simp only [h₁.fderiv_add_apply h₂ hμ]
-  calc (c₁ + c₂) ^ n ≤ ((∏ j, (a j + b j)) ^ (n : ℝ)⁻¹) ^ n :=
-        pow_le_pow_left₀ (add_nonneg hc₁ hc₂) hsum n
-    _ = ∏ j, (a j + b j) :=
-        Real.rpow_inv_natCast_pow (prod_nonneg fun j _ ↦ add_nonneg (ha j) (hb j)) hn'
+  rw [← Real.rpow_natCast, ← Real.le_rpow_inv_iff_of_pos (add_nonneg hc₁ hc₂)
+    (prod_nonneg fun j _ ↦ add_nonneg (ha j) (hb j)) hn]
+  refine (add_le_add ?_ ?_).trans (Real.prod_rpow_inv_card_add_le ha hb)
+  · rw [Real.le_rpow_inv_iff_of_pos hc₁ (prod_nonneg fun j _ ↦ ha j) hn, Real.rpow_natCast]
+    exact hs₁.le_prod_fderiv_single hμ.1
+  · rw [Real.le_rpow_inv_iff_of_pos hc₂ (prod_nonneg fun j _ ↦ hb j) hn, Real.rpow_natCast]
+    exact hs₂.le_prod_fderiv_single hμ.2
 
 end HasStructuralConstant
 
@@ -398,7 +393,6 @@ theorem hasStructuralConstant_prod_rpow :
     simpa [Set.pi] using convex_pi (s := Set.univ) fun i _ ↦ convex_Ioi (0 : ℝ)
   refine isAdmissiblePair_prod_rpow.hasStructuralConstant_pow_of_concaveOn
     (Real.concaveOn_prod_rpow.subset (fun μ hμ i ↦ (hμ i).le) hconv)
-    (inv_nonneg.2 (Nat.cast_nonneg _)) fun μ _ ↦ ?_
-  rw [mul_inv_cancel₀ hn, one_mul]
+    (inv_nonneg.2 (Nat.cast_nonneg _)) fun μ _ ↦ by simp [hn]
 
 end TauCeti

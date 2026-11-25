@@ -165,9 +165,12 @@ theorem prod_rpow_inv_card_add_le {ι : Type*} [Fintype ι] [Nonempty ι] {a b :
 theorem concaveOn_prod_rpow {ι : Type*} [Fintype ι] :
     ConcaveOn ℝ {μ : ι → ℝ | ∀ i, 0 ≤ μ i}
       fun μ ↦ (∏ i, μ i) ^ (Fintype.card ι : ℝ)⁻¹ := by
+  -- The nonnegative orthant is the product `Set.univ.pi fun _ ↦ Set.Ici 0` of half-lines.
+  have hconv : Convex ℝ {μ : ι → ℝ | ∀ i, 0 ≤ μ i} := by
+    simpa [Set.pi] using convex_pi (s := Set.univ) fun i _ ↦ convex_Ici (0 : ℝ)
   rcases isEmpty_or_nonempty ι with hι | hι
-  · simpa using concaveOn_const (1 : ℝ) (convex_Ici (0 : ι → ℝ))
-  refine ⟨convex_Ici (0 : ι → ℝ), fun μ hμ ν hν a b ha hb _ ↦ ?_⟩
+  · exact (concaveOn_const 1 hconv).congr fun μ _ ↦ by simp
+  refine ⟨hconv, fun μ hμ ν hν a b ha hb _ ↦ ?_⟩
   -- Superadditivity applied to `a • μ` and `b • ν`.
   have hsuper := prod_rpow_inv_card_add_le (fun i ↦ mul_nonneg ha (hμ i))
     (fun i ↦ mul_nonneg hb (hν i))
