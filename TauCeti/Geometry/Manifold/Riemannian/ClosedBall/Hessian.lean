@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
+import TauCeti.Analysis.Calculus.Gradient
 
 /-!
 # The Hessian on the closed unit ball
@@ -61,10 +62,8 @@ theorem hessian_comp_subtypeVal_closedBall {f : E → ℝ} {x : closedBall (0 : 
         (mvfderiv (𝓡∂ n) (Subtype.val : closedBall (0 : E) 1 → E) x w) := by
   have : FiniteDimensional ℝ E :=
     Module.finite_of_finrank_pos (by rw [Fact.out (p := finrank ℝ E = n)]; exact NeZero.pos n)
-  have hD : DifferentiableAt ℝ (fderiv ℝ f) x :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by simp)
   have hgrad : DifferentiableAt ℝ (∇ f) x :=
-    (InnerProductSpace.toDual ℝ E).symm.differentiableAt.comp _ hD
+    (hf.gradient_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
   rw [isLocalRiemannianIsometry_subtypeVal_closedBall.hessian_comp
     (contMDiffAt_iff_contDiffAt.2 hf), hessian_eq_iteratedFDeriv_model_space hgrad,
     iteratedFDeriv_two_apply]
