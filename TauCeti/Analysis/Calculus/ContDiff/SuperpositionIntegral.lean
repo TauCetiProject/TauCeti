@@ -20,7 +20,7 @@ file shows that `u ↦ ∫ w (G ∘ F u)` is smooth, and more precisely `C^n` wh
 The superposition operator `f ↦ G ∘ f` is `C^n` near every bounded continuous function whose values
 stay in a compact set (`BoundedContinuousFunction.exists_contDiffAt_forall_apply_eq`), and
 integration against `w` is a continuous linear functional on bounded continuous functions
-(`BoundedContinuousFunction.integralMulCLM`). Such functionals compute, for instance, the moments
+(`BoundedContinuousFunction.integralSMulCLM`). Such functionals compute, for instance, the moments
 of a nonlinear function of a field, such as `log |α|²` for a section `α` away from its zeros,
 smoothly in the field.
 -/
@@ -49,9 +49,9 @@ theorem contDiff_integral_mul_comp {n : ℕ∞} {F : E → α →ᵇ X} (hF : Co
       (‖F u₀‖ + 1)) one_pos fun t y hy ↦ mem_closedBall_zero_iff.2 <| by
         linarith [(F u₀).norm_coe_le_norm t, norm_sub_norm_le y (F u₀ t),
           (mem_ball_iff_norm.1 hy).le]
-  refine (((integralMulCLM hw).contDiff.contDiffAt.comp _ (hΘ.comp u₀
+  refine (((integralSMulCLM (F := ℝ) hw).contDiff.contDiffAt.comp _ (hΘ.comp u₀
     (hF.of_le (by exact_mod_cast hj)).contDiffAt))).congr_of_eventuallyEq ?_
   filter_upwards [hF.continuous.continuousAt.eventually (ball_mem_nhds (F u₀) one_pos)] with u hu
-  simp only [Function.comp_apply, integralMulCLM_apply, hΘeq _ hu]
+  simp only [Function.comp_apply, integralSMulCLM_apply, smul_eq_mul, hΘeq _ hu]
 
 end BoundedContinuousFunction

@@ -19,9 +19,9 @@ be compact, and the measure need not be finite. This is what lets an integral id
 fixed weight pass to uniform limits, for instance from smooth functions to all bounded uniformly
 continuous ones in a distributional identity tested against a compactly supported function.
 
-For a real weight, integration against `w` is a continuous linear functional on real bounded
-continuous functions (`BoundedContinuousFunction.integralMulCLM`), of norm at most `∫ ‖w‖ ∂μ`
-(`BoundedContinuousFunction.norm_integralMulCLM_le`); here no second-countability is needed.
+Integration against `w` is then a continuous linear functional `u ↦ ∫ w • u ∂μ` on
+`α →ᵇ F` (`BoundedContinuousFunction.integralSMulCLM`), of norm at most `∫ ‖w‖ ∂μ`
+(`BoundedContinuousFunction.norm_integralSMulCLM_le`).
 -/
 
 public section
@@ -60,43 +60,32 @@ theorem Integrable.continuous_integral_smul (hw : Integrable w μ) :
     Continuous fun u : α →ᵇ F ↦ ∫ x, w x • u x ∂μ :=
   hw.lipschitzWith_integral_smul.continuous
 
-end MeasureTheory
+variable [SMulCommClass 𝕜 ℝ F]
 
-namespace BoundedContinuousFunction
-
-open MeasureTheory
-
-variable {α : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
-  {μ : Measure α}
-
-/-- Integration against an integrable weight `w`, as a continuous linear functional
-`g ↦ ∫ w g` on real bounded continuous functions, of norm at most `∫ ‖w‖`. -/
-noncomputable def integralMulCLM {w : α → ℝ} (hw : Integrable w μ) : (α →ᵇ ℝ) →L[ℝ] ℝ :=
+/-- Integration against an integrable scalar weight `w`, as the continuous linear map
+`u ↦ ∫ w • u ∂μ` on bounded continuous functions, of norm at most `∫ ‖w‖ ∂μ`. -/
+noncomputable def _root_.BoundedContinuousFunction.integralSMulCLM (hw : Integrable w μ) :
+    (α →ᵇ F) →L[ℝ] F :=
   LinearMap.mkContinuous
-    { toFun g := ∫ t, w t * g t ∂μ
-      map_add' g g' := by
-        simp only [add_apply, mul_add]
-        exact integral_add (hw.mul_bdd g.continuous.aestronglyMeasurable
-          (ae_of_all _ fun t ↦ g.norm_coe_le_norm t)) (hw.mul_bdd
-          g'.continuous.aestronglyMeasurable (ae_of_all _ fun t ↦ g'.norm_coe_le_norm t))
-      map_smul' c g := by
-        simp only [smul_apply, smul_eq_mul, RingHom.id_apply, mul_left_comm (w _),
-          integral_const_mul] }
-    (∫ t, ‖w t‖ ∂μ) fun g ↦ by
-      refine (norm_integral_le_of_norm_le (hw.norm.mul_const ‖g‖)
-        (ae_of_all _ fun t ↦ ?_)).trans_eq (by rw [integral_mul_const, mul_comm])
-      rw [norm_mul]
-      exact mul_le_mul_of_nonneg_left (g.norm_coe_le_norm t) (norm_nonneg _)
+    { toFun u := ∫ x, w x • u x ∂μ
+      map_add' u v := by
+        simp only [add_apply, smul_add]
+        exact integral_add (u.integrable_smul hw) (v.integrable_smul hw)
+      map_smul' c u := by
+        simp only [smul_apply, smul_comm (w _) c, integral_smul, RingHom.id_apply] }
+    (∫ x, ‖w x‖ ∂μ) fun u ↦ by
+      simpa [Real.coe_toNNReal _ (integral_nonneg fun _ ↦ norm_nonneg _)] using
+        hw.lipschitzWith_integral_smul.dist_le_mul u 0
 
-/-- `integralMulCLM hw` integrates `g` against the weight `w`. -/
+/-- `integralSMulCLM hw` integrates `u` against the weight `w`. -/
 @[simp]
-theorem integralMulCLM_apply {w : α → ℝ} (hw : Integrable w μ) (g : α →ᵇ ℝ) :
-    integralMulCLM hw g = ∫ t, w t * g t ∂μ := by
+theorem _root_.BoundedContinuousFunction.integralSMulCLM_apply (hw : Integrable w μ)
+    (u : α →ᵇ F) : BoundedContinuousFunction.integralSMulCLM hw u = ∫ x, w x • u x ∂μ := by
   rfl
 
 /-- The operator norm of integration against `w` is at most the `L¹` norm `∫ ‖w‖` of `w`. -/
-theorem norm_integralMulCLM_le {w : α → ℝ} (hw : Integrable w μ) :
-    ‖integralMulCLM hw‖ ≤ ∫ t, ‖w t‖ ∂μ :=
+theorem _root_.BoundedContinuousFunction.norm_integralSMulCLM_le (hw : Integrable w μ) :
+    ‖(BoundedContinuousFunction.integralSMulCLM hw : (α →ᵇ F) →L[ℝ] F)‖ ≤ ∫ x, ‖w x‖ ∂μ :=
   LinearMap.mkContinuous_norm_le _ (integral_nonneg fun _ ↦ norm_nonneg _) _
 
-end BoundedContinuousFunction
+end MeasureTheory
