@@ -43,6 +43,8 @@ the images of the generators of the Lazard ring in a polynomial ring.
 * `MonomialOrder.degree_eq_of_forall_lt`, `MonomialOrder.degree_eq_of_forall_mem_lt`: strict
   comparisons preserving the leading exponent, including comparisons on a set containing the
   support.
+* `MonomialOrder.degree_eq_of_support_subset`: a polynomial whose support lies in that of `f` and
+  contains the leading exponent of `f` has the same leading exponent.
 * `MonomialOrder.leadingCoeff_eq_of_degree_eq`, `MonomialOrder.leadingTerm_eq_of_degree_eq`,
   `MonomialOrder.sPolynomial_eq_of_degree_eq`: orders agreeing on leading exponents also agree
   on the corresponding leading coefficients, leading terms and S-polynomials.
@@ -151,6 +153,14 @@ theorem degree_eq_of_forall_mem_lt [CommSemiring R] (n : MonomialOrder σ)
   intro a ha hne
   exact h a (hf ha) _ (hf (m.degree_mem_support hf0))
     (lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne))
+
+/-- If the support of `g` lies in that of `f` and contains the leading exponent of `f`, then `g`
+has the same leading exponent as `f`. The coefficient rings of `f` and `g` may differ. -/
+theorem degree_eq_of_support_subset {S : Type*} [CommSemiring R] [CommSemiring S]
+    {f : MvPolynomial σ R} {g : MvPolynomial σ S} (h : g.support ⊆ f.support)
+    (hf : m.degree f ∈ g.support) : m.degree g = m.degree f :=
+  m.toSyn.injective
+    (le_antisymm (m.degree_le_iff.2 fun _ he ↦ m.le_degree (h he)) (m.le_degree hf))
 
 /-- Orders agreeing on the leading exponent of a polynomial agree on its leading coefficient. -/
 theorem leadingCoeff_eq_of_degree_eq [CommSemiring R] (n : MonomialOrder σ)

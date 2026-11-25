@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.ContinuedFractions.Determinant
 public import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.Asymptotics.Sum.Divergence
 
 /-!
 # Three-term recurrences, Casoratians, and reduction-of-order convergence of continued fractions

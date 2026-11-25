@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Subgroup.Map
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Fintype.Basic
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 
@@ -206,6 +207,19 @@ theorem generated_smul_eq_top_iff (φ : MulAut G) (t : BranchTuple r G) :
   refine ⟨fun h ↦ Subgroup.map_injective (f := φ.toMonoidHom) φ.injective ?_, fun h ↦ ?_⟩
   · rw [h, htop]
   · rw [h, htop]
+
+/-- Simultaneous conjugation by `x : ConjAct G` is the inner automorphism of `ofConjAct x` acting
+on every entry. -/
+theorem conjAct_smul_eq (x : ConjAct G) (t : BranchTuple r G) :
+    x • t = MulAut.conj (ConjAct.ofConjAct x) • t := by
+  funext i
+  simp [ConjAct.smul_def, MulAut.smul_def, MulAut.conj_apply]
+
+/-- Simultaneous conjugation conjugates the ordered product. -/
+@[simp]
+theorem product_conjAct_smul (x : ConjAct G) (t : BranchTuple r G) :
+    product (x • t) = x • product t := by
+  rw [conjAct_smul_eq, product_smul, ConjAct.smul_def, MulAut.conj_apply]
 
 /-- Simultaneous conjugation does not change the conjugacy classes of the entries. -/
 @[simp]
