@@ -30,7 +30,8 @@ compact set.
 ## Main declarations
 
 * `TauCeti.flowDomain`: the domain of the maximal flow, in `(time, point)` order.
-* `TauCeti.flowOf`: the maximal flow, total with junk values outside `flowDomain`.
+* `TauCeti.flowOf`: the maximal flow, total with junk values outside `flowDomain`, recorded by
+  `TauCeti.flowOf_of_notMem`.
 * `TauCeti.ordConnected_setOf_mem_flowDomain`: the times of the flow through a point form an
   interval.
 * `TauCeti.isMIntegralCurveAt_flowOf`: a trajectory is an integral curve near every time in its
@@ -46,6 +47,8 @@ compact set.
 * `TauCeti.isOpen_flowDomain`: openness of the domain for complete model spaces.
 * `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow for complete model spaces.
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
+* `TauCeti.mdifferentiableAt_flowOf_prod`, `TauCeti.mdifferentiableAt_flowOf_apply`: joint
+  differentiability of the maximal flow and differentiability of its time-`t` maps.
 * `TauCeti.isOpen_setOf_mem_flowDomain`: the parameters of a continuous family of times and
   points at which the flow is defined form an open set, and
   `TauCeti.isOpen_setOf_mem_flowDomain_and_flowOf_mem` the times and points whose trajectory is
@@ -118,6 +121,11 @@ theorem mem_flowDomain_zero_of_mem {v : (x : M) → TangentSpace I x} {t : ℝ} 
 /-- The maximal flow fixes every point at time zero. -/
 theorem flowOf_zero (v : (x : M) → TangentSpace I x) (x : M) : flowOf v 0 x = x := by
   rw [flowOf_apply, maximalIntegralCurve_zero]
+
+/-- Outside the maximal-flow domain, the maximal flow takes the junk value `x`. -/
+theorem flowOf_of_notMem {v : (x : M) → TangentSpace I x} {t : ℝ} {x : M}
+    (ht : (t, x) ∉ flowDomain v) : flowOf v t x = x := by
+  rw [flowOf_apply, maximalIntegralCurve_eq_of_not_mem (mem_flowDomain.not.mp ht)]
 
 /-- The differential of the time-`0` local flow map `flowOf v 0` acts as the identity on every
 tangent vector. -/
@@ -280,9 +288,7 @@ theorem flowOf_flowOf_of_flowOf_eq
     refine ⟨hs', ?_⟩
     rw [(flowOf_add hv ht hs').2, add_comm, ← heq, hx]
   · rcases eq_or_ne s 0 with rfl | hs0
-    · have htx : flowOf v t x = x := by
-        rw [flowOf_apply, maximalIntegralCurve_eq_of_not_mem (mem_flowDomain.not.mp ht)]
-      rw [htx]
+    · rw [flowOf_of_notMem ht]
       exact ⟨hs, flowOf_zero v x⟩
     · -- A nonzero return time makes the maximal interval contain all integer multiples of `s`,
       -- hence all of `ℝ`, contradicting `(t, x) ∉ flowDomain v`.
@@ -315,17 +321,14 @@ theorem flowOf_ne_flowOf_of_lt
   have hs_mem : s ∈ Ioo 0 T₀ := ⟨hs, hst.trans_le ht⟩
   have hs_dom : (s, x) ∈ flowDomain v := by
     by_contra hdom
-    exact hmin s hs_mem <| by
-      rw [flowOf_apply, maximalIntegralCurve_eq_of_not_mem (mem_flowDomain.not.mp hdom)]
+    exact hmin s hs_mem (flowOf_of_notMem hdom)
   by_cases ht_dom : (t, x) ∈ flowDomain v
   · -- Flowing back by `-s` turns `flowOf v s x = flowOf v t x` into a return at `t - s ∈ (0, T₀)`.
     have hneg : (-s, flowOf v t x) ∈ flowDomain v := h ▸ neg_mem_flowDomain_flowOf hv hs_dom
     have hadd := (flowOf_add hv ht_dom hneg).2
     rw [← h, flowOf_neg_flowOf hv hs_dom] at hadd
     exact hmin (t + -s) ⟨by linarith, by linarith⟩ hadd.symm
-  · have htx : flowOf v t x = x := by
-      rw [flowOf_apply, maximalIntegralCurve_eq_of_not_mem (mem_flowDomain.not.mp ht_dom)]
-    exact hmin s hs_mem (h.trans htx)
+  · exact hmin s hs_mem (h.trans (flowOf_of_notMem ht_dom))
 
 end FlowLaw
 
@@ -411,12 +414,23 @@ theorem isOpen_setOf_mem_flowDomain_and_flowOf_mem
     IsOpen {q : ℝ × M | q ∈ flowDomain v ∧ flowOf v q.1 q.2 ∈ U} :=
   (contMDiffOn_flowOf le_rfl hv).continuousOn.isOpen_inter_preimage (isOpen_flowDomain hv) hU
 
-private theorem mdifferentiableAt_flowOf_prod
+/-- On a complete normed model space, the maximal flow `(t, x) ↦ flowOf v t x` is jointly
+differentiable at every point of its domain. -/
+theorem mdifferentiableAt_flowOf_prod
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {p : ℝ × M}
     (hp : p ∈ flowDomain v) :
     MDifferentiableAt (𝓘(ℝ).prod I) I (fun q : ℝ × M ↦ flowOf v q.1 q.2) p :=
   ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
     ((isOpen_flowDomain hv).mem_nhds hp)).mdifferentiableAt one_ne_zero
+
+/-- On a complete normed model space, the time-`t` map `y ↦ flowOf v t y` is differentiable at
+every point `x` with `(t, x) ∈ flowDomain v`. -/
+theorem mdifferentiableAt_flowOf_apply
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) :
+    MDifferentiableAt I I (flowOf v t) x :=
+  (mdifferentiableAt_flowOf_prod hv ht).comp x
+    (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
 
 /-- **The derivative of a trajectory at time zero.** The derivative of `s ↦ flowOf v s x` at
 `s = 0` sends `a` to `a • v x`. -/
@@ -475,14 +489,12 @@ theorem mfderiv_flowOf_comp_apply
     mfderiv (𝓘(ℝ).prod J) I (fun q : ℝ × N ↦ flowOf v q.1 (f q.2)) p w =
       w.1 • v (flowOf v p.1 (f p.2)) +
         mfderiv I I (flowOf v p.1) (f p.2) (mfderiv J I f p.2 w.2) := by
-  have hflow_prod := mdifferentiableAt_flowOf_prod hv hp
-  have hflow : MDifferentiableAt I I (flowOf v p.1) (f p.2) :=
-    hflow_prod.comp (f p.2) (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
   have hcomp : mfderiv J I (flowOf v p.1 ∘ f) p.2 =
       (mfderiv I I (flowOf v p.1) (f p.2)).comp (mfderiv J I f p.2) :=
-    mfderiv_comp p.2 hflow hf
+    mfderiv_comp p.2 (mdifferentiableAt_flowOf_apply hv hp) hf
   have hΦ : MDifferentiableAt (𝓘(ℝ).prod J) I (fun q : ℝ × N ↦ flowOf v q.1 (f q.2)) p :=
-    hflow_prod.comp p (mdifferentiableAt_fst.prodMk (hf.comp p mdifferentiableAt_snd))
+    (mdifferentiableAt_flowOf_prod hv hp).comp p
+      (mdifferentiableAt_fst.prodMk (hf.comp p mdifferentiableAt_snd))
   refine (mfderiv_prod_eq_add_apply hΦ).trans ?_
   -- The trajectory through `f s` has velocity `v` at time `t`.
   rw [mfderiv_flowOf_trajectory_apply hv hp]
@@ -549,10 +561,7 @@ theorem mfderiv_flowOf_apply_self
         (mem_flowDomain_zero (hv _))
     filter_upwards [h₁, h₂, h₃] with s hs hts hst
     rw [comp_apply, (flowOf_add hv hs hts).2, (flowOf_add hv ht hst).2, add_comm]
-  have hΦ : MDifferentiableAt I I (flowOf v t) x :=
-    (mdifferentiableAt_flowOf_prod hv ht).comp x
-      (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
-  have key := mfderiv_comp_apply_of_eq (0 : ℝ) hΦ
+  have key := mfderiv_comp_apply_of_eq (0 : ℝ) (mdifferentiableAt_flowOf_apply hv ht)
     (mdifferentiableAt_flowOf hv (mem_flowDomain_zero (hv x))) (flowOf_zero v x) (1 : ℝ)
   have hvel' : mfderiv 𝓘(ℝ) I (flowOf v t ∘ fun s ↦ flowOf v s x) 0 (1 : ℝ) =
       v (flowOf v t x) := by
@@ -573,12 +582,8 @@ theorem mfderiv_flowOf_add_apply
     -- The tangent spaces at `flowOf v t q` and `flowOf v (s + t) p` are both the model space `E`.
     @Eq E (mfderiv I I (flowOf v t) q (mfderiv I I (flowOf v s) p w))
       (mfderiv I I (flowOf v (s + t)) p w) := by
-  have hΦs : MDifferentiableAt I I (flowOf v s) p :=
-    (mdifferentiableAt_flowOf_prod hv hs).comp p
-      (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
-  have hΦt : MDifferentiableAt I I (flowOf v t) q :=
-    (mdifferentiableAt_flowOf_prod hv ht).comp q
-      (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
+  have hΦs := mdifferentiableAt_flowOf_apply hv hs
+  have hΦt := mdifferentiableAt_flowOf_apply hv ht
   have hev : (flowOf v t ∘ flowOf v s) =ᶠ[𝓝 p] flowOf v (s + t) := by
     have h₁ : ∀ᶠ z in 𝓝 p, (s, z) ∈ flowDomain v :=
       (isOpen_setOf_mem_flowDomain hv continuous_const continuous_id).mem_nhds hs
@@ -621,8 +626,7 @@ theorem exists_pos_period_le_nhds_flowOf
   obtain ⟨s, hs⟩ := hex
   have hsdom : (s, x) ∈ flowDomain v := by
     by_contra hdom
-    apply hs
-    rw [flowOf_apply, maximalIntegralCurve_eq_of_not_mem (mem_flowDomain.not.mp hdom)]
+    exact hs (flowOf_of_notMem hdom)
   have hflow := (mdifferentiableAt_flowOf_prod hv hsdom).continuousAt
   have hne : ∀ᶠ p : ℝ × M in 𝓝 (s, x), flowOf v p.1 p.2 ≠ p.2 :=
     (hflow.prodMk continuousAt_snd).preimage_mem_nhds

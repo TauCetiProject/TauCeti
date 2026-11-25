@@ -253,9 +253,7 @@ theorem mfderiv_flowTransition_apply (w : TangentSpace I p) :
         mfderiv I I (flowOf v T) p w := by
   have hτ : MDifferentiableAt I 𝓘(ℝ) (flowHittingTime v g T p) p :=
     (contMDiffAt_flowHittingTime le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
-  have hF : MDifferentiableAt (𝓘(ℝ).prod I) I (fun q : ℝ × M ↦ flowOf v q.1 q.2) (T, p) :=
-    ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
-      ((isOpen_flowDomain hv).mem_nhds hT)).mdifferentiableAt one_ne_zero
+  have hF := mdifferentiableAt_flowOf_prod hv hT
   have hpair : MDifferentiableAt I (𝓘(ℝ).prod I) (fun z ↦ (flowHittingTime v g T p z, z)) p :=
     hτ.prodMk mdifferentiableAt_id
   -- The transition is the joint flow composed with `z ↦ (τ z, z)`; split the derivative of the
