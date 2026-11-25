@@ -14,7 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 Every real-linear map of the plane `ℂ` has the form `A z = z a + conj z b` for unique `a b : ℂ`: it
 is `TauCeti.wirtingerPartsCLM a b`, with `a` and `b` its two Wirtinger parts
-(`TauCeti.fderiv_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`). This file computes the
+(`TauCeti.exists_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`). This file computes the
 three quantities of linear distortion of `A` in terms of `a` and `b`:
 
 * the operator norm `‖A‖ = |a| + |b|` (`TauCeti.norm_wirtingerPartsCLM`);
@@ -140,22 +140,6 @@ theorem det_wirtingerPartsCLM (a b : ℂ) :
   ring
 
 /-! ### The sign of the Jacobian near complex linear and antilinear maps -/
-
-/-- Every real-linear map of the plane is `z ↦ z a + conj z b` for some `a b : ℂ`. -/
-theorem exists_eq_wirtingerPartsCLM (D : ℂ →L[ℝ] ℂ) : ∃ a b : ℂ, D = wirtingerPartsCLM a b :=
-  ⟨_, _, by simpa only [ContinuousLinearMap.fderiv] using fderiv_eq_wirtingerPartsCLM D 0⟩
-
-/-- Multiplication `z ↦ z c` is the real-linear map with Wirtinger parts `c` and `0`. -/
-theorem smulRight_id_eq_wirtingerPartsCLM (c : ℂ) :
-    (ContinuousLinearMap.id ℝ ℂ).smulRight c = wirtingerPartsCLM c 0 := by
-  ext v
-  simp
-
-/-- The map `z ↦ conj z c` is the real-linear map with Wirtinger parts `0` and `c`. -/
-theorem smulRight_conjCLE_eq_wirtingerPartsCLM (c : ℂ) :
-    conjCLE.toContinuousLinearMap.smulRight c = wirtingerPartsCLM 0 c := by
-  ext v
-  simp
 
 /-- **A real-linear map close to a complex multiplication preserves orientation.** If
 `‖D - (z ↦ z c)‖ < ‖c‖`, then `det D > 0`: writing `D z = z a + conj z b`, the hypothesis is
