@@ -20,10 +20,11 @@ parallel to `e` are parametrized by their intersection `y` with the orthogonal h
 line section `{t | y + t • e ∈ A}`. Integrating the number of these points over the hyperplane
 gives at most a constant times the `(n - 1)`-dimensional Hausdorff measure of `A`:
 
-`∫_{(ℝ ∙ e)ᗮ} #{t | y + t • e ∈ A} dy ≤ |B_{n-1}| · Hⁿ⁻¹(A)`
+`∫_{(ℝ ∙ e)ᗮ} #{t | y + t • e ∈ A} dμ(y) ≤ μ(B_{n-1}) · Hⁿ⁻¹(A)`
 
-(`TauCeti.lintegral_encard_lineSection_le`), where `|B_{n-1}|` is the volume of the unit ball of
-the hyperplane; for the normalized Hausdorff measure `μHE[n - 1]` the constant is `2ⁿ⁻¹`
+(`TauCeti.lintegral_encard_lineSection_le`) for any additive Haar measure `μ` on the hyperplane,
+where `B_{n-1}` is the unit ball of the hyperplane; for the volume and the normalized Hausdorff
+measure `μHE[n - 1]` the constant is `2ⁿ⁻¹`
 (`TauCeti.lintegral_encard_lineSection_le_euclideanHausdorffMeasure`). So if `Hⁿ⁻¹(A)` is finite,
 almost every line parallel to `e` meets `A` in finitely many points
 (`TauCeti.ae_finite_lineSection`, `TauCeti.ae_finite_lineSection_of_euclideanHausdorffMeasure`).
@@ -40,7 +41,8 @@ orthogonal projection onto `(ℝ ∙ e)ᗮ`, which is `1`-Lipschitz
 ## Main results
 
 * `TauCeti.lintegral_encard_lineSection_le`: the integrated number of points of `A` on the lines
-  parallel to `e` is at most `|B_{n-1}| · Hⁿ⁻¹(A)`, and
+  parallel to `e` is at most `μ(B_{n-1}) · Hⁿ⁻¹(A)` for any additive Haar measure `μ` on the
+  hyperplane, and
   `TauCeti.lintegral_encard_lineSection_le_euclideanHausdorffMeasure`: at most
   `2ⁿ⁻¹ μHE[n - 1](A)`.
 * `TauCeti.ae_finite_lineSection` and `TauCeti.ae_finite_lineSection_of_euclideanHausdorffMeasure`:
@@ -87,8 +89,9 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- **The projection bound.** For a nonzero vector `e` of an `n`-dimensional real inner product
 space and any set `A`, the number of points of `A` on the line through `y` parallel to `e`,
-integrated over the orthogonal hyperplane `(ℝ ∙ e)ᗮ`, is at most the volume of the unit ball of
-the hyperplane times the `(n - 1)`-dimensional Hausdorff measure of `A`. -/
+integrated over the orthogonal hyperplane `(ℝ ∙ e)ᗮ` against an additive Haar measure `μ`, is at
+most the `μ`-measure of the unit ball of the hyperplane times the `(n - 1)`-dimensional Hausdorff
+measure of `A`. -/
 theorem lintegral_encard_lineSection_le {e : E} (he : e ≠ 0) (A : Set E)
     (μ : Measure (ℝ ∙ e)ᗮ) [μ.IsAddHaarMeasure] :
     ∫⁻ y, ({t : ℝ | (y : E) + t • e ∈ A}.encard : ℝ≥0∞) ∂μ ≤
@@ -101,8 +104,8 @@ theorem lintegral_encard_lineSection_le {e : E} (he : e ≠ 0) (A : Set E)
 
 /-- **The projection bound for the normalized Hausdorff measure.** For a nonzero vector `e` of an
 `n`-dimensional real inner product space and any set `A`, the number of points of `A` on the line
-through `y` parallel to `e`, integrated over the orthogonal hyperplane `(ℝ ∙ e)ᗮ`, is at most
-`2ⁿ⁻¹ μHE[n - 1](A)`. -/
+through `y` parallel to `e`, integrated over the orthogonal hyperplane `(ℝ ∙ e)ᗮ` against its
+volume, is at most `2ⁿ⁻¹ μHE[n - 1](A)`. -/
 theorem lintegral_encard_lineSection_le_euclideanHausdorffMeasure {e : E} (he : e ≠ 0)
     (A : Set E) :
     ∫⁻ y : (ℝ ∙ e)ᗮ, ({t : ℝ | (y : E) + t • e ∈ A}.encard : ℝ≥0∞) ≤

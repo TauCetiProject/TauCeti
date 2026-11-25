@@ -122,6 +122,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.finrank_orthogonal_eq_finrank_quotient`: `dim Kᗮ = dim (E ⧸ K)`.
 * `Submodule.inner_starProjection_map_apply`: `⟪P_{e K} (e x), e y⟫ = ⟪P_K x, y⟫` for a linear
   isometry equivalence `e`.
+* `Submodule.orthogonalProjectionOnto_orthogonal_span_singleton_eq_iff`: the projection onto
+  `(𝕜 ∙ e)ᗮ` sends `x` to `y` iff `x` lies on the line through `y` parallel to `e`.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
 * `Submodule.rank_le_of_disjoint_orthogonal`: if `U ⊓ Vᗮ = ⊥`, then `rank U ≤ rank V`.
@@ -462,6 +464,20 @@ theorem inner_starProjection_map_apply {E' : Type*} [NormedAddCommGroup E']
       ⟪K.starProjection x, y⟫_𝕜 := by
   rw [starProjection_map_apply, e.symm_apply_apply, e.inner_map_map]
 
+/-- The orthogonal projection onto `(𝕜 ∙ e)ᗮ` sends `x` to `y` exactly when `x` lies on the line
+through `y` parallel to `e`. -/
+theorem orthogonalProjectionOnto_orthogonal_span_singleton_eq_iff {e : E} (y : (𝕜 ∙ e)ᗮ)
+    (x : E) : (𝕜 ∙ e)ᗮ.orthogonalProjectionOnto x = y ↔ ∃ t : 𝕜, (y : E) + t • e = x := by
+  constructor
+  · intro hx
+    have hmem := (𝕜 ∙ e)ᗮ.sub_starProjection_mem_orthogonal x
+    rw [orthogonal_orthogonal, starProjection_apply, hx] at hmem
+    obtain ⟨t, ht⟩ := mem_span_singleton.1 hmem
+    exact ⟨t, by rw [ht]; abel⟩
+  · rintro ⟨t, rfl⟩
+    rw [map_add, map_smul, orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero,
+      smul_zero, add_zero, orthogonalProjectionOnto_mem_subspace_eq_self]
+
 section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -503,22 +519,6 @@ theorem inner_starProjection_sq_of_finrank_eq_one (L : Submodule ℝ F) [L.HasOr
     rw [inner_starProjection_left_eq_right, real_inner_comm]
   rw [hyx] at h
   rw [sq, h, mul_comm]
-
-omit R in
-/-- The orthogonal projection onto `(ℝ ∙ e)ᗮ` sends `x` to `y` exactly when `x` lies on the line
-through `y` parallel to `e`. -/
-theorem orthogonalProjectionOnto_orthogonal_span_singleton_eq_iff {e : F} (y : (ℝ ∙ e)ᗮ)
-    (x : F) : (ℝ ∙ e)ᗮ.orthogonalProjectionOnto x = y ↔ ∃ t : ℝ, (y : F) + t • e = x := by
-  constructor
-  · intro hx
-    have hmem := (ℝ ∙ e)ᗮ.sub_starProjection_mem_orthogonal x
-    rw [Submodule.orthogonal_orthogonal, Submodule.starProjection_apply, hx] at hmem
-    obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 hmem
-    exact ⟨t, by rw [ht]; abel⟩
-  · rintro ⟨t, rfl⟩
-    rw [map_add, map_smul,
-      Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero, smul_zero,
-      add_zero, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
 
 end Real
 
