@@ -179,6 +179,16 @@ theorem stabilizeGL_eq_reindexGL_fromBlocksGL (m k : ℕ) (u : GL (Fin m) A) :
   rcases i with i | i <;> rcases j with j | j <;>
     simp [coe_stabilizeGL_apply, Matrix.one_apply, Fin.ext_iff] <;> omega
 
+/-- Stabilizing the reindexing of `u` along an enumeration `e` of a finite index type to size
+`m + k` is the reindexing of `u ⊕ 1` along the enumeration of `ι ⊕ Fin k` built from `e`. -/
+theorem stabilizeGL_reindexGL {ι : Type*} [Fintype ι] [DecidableEq ι] {m : ℕ} (e : ι ≃ Fin m)
+    (k : ℕ) (u : GL ι A) :
+    stabilizeGL A (Nat.le_add_right m k) (e.reindexGL A u) =
+      ((e.sumCongr (Equiv.refl (Fin k))).trans finSumFinEquiv).reindexGL A
+        (fromBlocksGL (u, 1)) := by
+  rw [stabilizeGL_eq_reindexGL_fromBlocksGL, ← Equiv.reindexGL_trans_reindexGL,
+    MulEquiv.trans_apply, Equiv.reindexGL_sumCongr_fromBlocksGL, map_one]
+
 /-- Stabilization is extension by the identity along the inclusion `Fin m ↪ Fin n` of the first
 `m` indices. -/
 theorem _root_.Function.Embedding.extendGL_castLEEmb {m n : ℕ} (h : m ≤ n) :
