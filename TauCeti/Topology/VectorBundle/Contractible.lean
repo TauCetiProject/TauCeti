@@ -371,10 +371,8 @@ theorem exists_orthonormalFrameBundle_lift_of_contractibleSpace
   -- pullback fibres with the topology of their norms, which agrees with the pullback fibre topology
   -- only after unfolding instances, so the fibre and vector bundle structures of the pullback are
   -- restated for it.
-  let fb : @FiberBundle Y F _ _ ((g : Y → B) *ᵖ E) _ fun _ ↦ UniformSpace.toTopologicalSpace :=
-    FiberBundle.pullback (F := F) (E := E) g
-  let : @VectorBundle 𝕜 Y F ((g : Y → B) *ᵖ E) _ _ _ _ _ _ _ _ fb :=
-    VectorBundle.pullback 𝕜 (F := F) (E := E) g
+  let := Pullback.normedFiberBundle F E g
+  let := Pullback.normedVectorBundle F E 𝕜 g
   let c := Module.finBasisOfFinrankEq 𝕜 F h.symm
   let o := stdOrthonormalBasis 𝕜 V
   exact ⟨⟨fun y ↦ OrthonormalFrameBundle.pullbackLift g ⟨y, e.orthonormalFrame c o ⟨y, hY y⟩⟩,
