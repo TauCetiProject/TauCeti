@@ -28,7 +28,8 @@ Let `V`, `W`, `X` be oriented real inner product spaces of the same finite dimen
 * **Comparison of the exponents.** `q_I(A) ≤ q_O(A)ⁿ⁻¹`, and `q_O(A) ≤ q_I(A)ⁿ⁻¹` if `J(A) > 0`:
   for such `A` both distortions lie between `‖A‖ / ℓ(A)` and its `(n - 1)`-st power.
   In dimension `2` the two distortions of a map with `J(A) > 0` agree, and in every dimension
-  `q_I(A) = 1` iff `q_O(A) = 1`.
+  `q_I(A) = 1` iff `q_O(A) = 1`. For `J(A) > 0`, `q_I = q_Oⁿ⁻¹` exactly when the `n - 1` largest
+  singular values agree, and `q_O = q_Iⁿ⁻¹` exactly when the `n - 1` smallest ones agree.
 
 ## Main declarations
 
@@ -42,6 +43,8 @@ Let `V`, `W`, `X` be oriented real inner product spaces of the same finite dimen
   `Orientation.outerDistortion_le_ofReal_innerDistortion_pow`: `q_I ≤ q_Oⁿ⁻¹` and `q_O ≤ q_Iⁿ⁻¹`.
 * `Orientation.outerDistortion_eq_ofReal_innerDistortion_of_fin_two`: `q_O = q_I` in dimension `2`.
 * `Orientation.innerDistortion_eq_one_iff_outerDistortion_eq_one`: `q_I(A) = 1` iff `q_O(A) = 1`.
+* `Orientation.ofReal_innerDistortion_eq_outerDistortion_pow_iff`,
+  `Orientation.outerDistortion_eq_ofReal_innerDistortion_pow_iff`: the equality cases.
 
 ## References
 
@@ -325,5 +328,109 @@ theorem innerDistortion_eq_one_iff_outerDistortion_eq_one {A : V →ₗ[ℝ] W} 
     refine le_antisymm ?_ (oV.one_le_innerDistortion oW hJ)
     have := oV.ofReal_innerDistortion_le_outerDistortion_pow oW A
     rwa [h, one_pow, ENNReal.ofReal_le_one] at this
+
+/-! ### Equality cases of the comparison of the exponents -/
+
+/-- A product of `m` reals in `(0, c]` is `cᵐ` exactly when every factor is `c`. -/
+private theorem prod_range_eq_pow_iff_of_le {m : ℕ} {f : ℕ → ℝ} {c : ℝ}
+    (hpos : ∀ i < m, 0 < f i) (hle : ∀ i < m, f i ≤ c) :
+    ∏ i ∈ Finset.range m, f i = c ^ m ↔ ∀ i < m, f i = c := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · by_contra hne
+    push Not at hne
+    obtain ⟨i, hi, hfi⟩ := hne
+    have := Finset.prod_lt_prod₀ (s := Finset.range m) (g := fun _ ↦ c)
+      (fun j hj ↦ hpos j (Finset.mem_range.mp hj)) (fun j hj ↦ hle j (Finset.mem_range.mp hj))
+      ⟨i, Finset.mem_range.mpr hi, (hle i hi).lt_of_ne hfi⟩
+    simp [h] at this
+  · rw [Finset.prod_congr rfl fun i hi ↦ h i (Finset.mem_range.mp hi), Finset.prod_const,
+      Finset.card_range]
+
+/-- A product of `m` reals in `[c, ∞)`, with `c > 0`, is `cᵐ` exactly when every factor is
+`c`. -/
+private theorem prod_range_eq_pow_iff_of_ge {m : ℕ} {f : ℕ → ℝ} {c : ℝ} (hc : 0 < c)
+    (hle : ∀ i < m, c ≤ f i) :
+    ∏ i ∈ Finset.range m, f i = c ^ m ↔ ∀ i < m, f i = c := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · by_contra hne
+    push Not at hne
+    obtain ⟨i, hi, hfi⟩ := hne
+    have := Finset.prod_lt_prod₀ (s := Finset.range m) (f := fun _ ↦ c) (fun _ _ ↦ hc)
+      (fun j hj ↦ hle j (Finset.mem_range.mp hj))
+      ⟨i, Finset.mem_range.mpr hi, (hle i hi).lt_of_ne hfi.symm⟩
+    simp [h] at this
+  · rw [Finset.prod_congr rfl fun i hi ↦ h i (Finset.mem_range.mp hi), Finset.prod_const,
+      Finset.card_range]
+
+omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
+/-- When `J(A) > 0`, every singular value `σᵢ` with `i < n` is positive. -/
+private theorem singularValues_pos_of_orientedJacobian_pos {A : V →ₗ[ℝ] W}
+    (h : 0 < oV.orientedJacobian oW A) {i : ℕ} (hi : i < n) : 0 < A.singularValues i := by
+  have hℓ := oV.minimalStretch_pos_of_orientedJacobian_ne_zero oW (by omega) h.ne'
+  rw [A.minimalStretch_def, (Fact.out : finrank ℝ V = n)] at hℓ
+  exact hℓ.trans_le (A.singularValues_antitone (by omega))
+
+omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
+/-- **Equality case of `q_I ≤ q_Oⁿ⁻¹`.** When `J(A) > 0`, `q_I(A) = q_O(A)ⁿ⁻¹` exactly when the
+`n - 1` largest singular values agree, `σ₁ = ⋯ = σₙ₋₁` (indexed from `0` here). -/
+theorem ofReal_innerDistortion_eq_outerDistortion_pow_iff {A : V →ₗ[ℝ] W}
+    (h : 0 < oV.orientedJacobian oW A) :
+    ENNReal.ofReal (oV.innerDistortion oW A) = oV.outerDistortion oW A ^ (n - 1) ↔
+      ∀ i < n - 1, A.singularValues i = A.singularValues 0 := by
+  have hs := fun {i} (hi : i < n) ↦ oV.singularValues_pos_of_orientedJacobian_pos oW h hi
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp [oV.innerDistortion_of_pos oW h, oV.orientedJacobian_eq_one_of_fin_zero oW h]
+  rw [oV.innerDistortion_eq_prod_singularValues oW h,
+    oV.outerDistortion_eq_ofReal_prod_singularValues oW h]
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  have hQ : 0 < ∏ i ∈ Finset.range m, A.singularValues i :=
+    Finset.prod_pos fun i hi ↦ hs (by simp at hi; omega)
+  have hm : 0 < A.singularValues m := hs (by omega)
+  have h0 : 0 < A.singularValues 0 := hs (by omega)
+  simp only [Nat.add_sub_cancel, Finset.prod_range_succ]
+  rw [← prod_range_eq_pow_iff_of_le (fun i hi ↦ hs (by omega))
+      (fun i _ ↦ A.singularValues_antitone (Nat.zero_le i))]
+  set Q := ∏ i ∈ Finset.range m, A.singularValues i
+  set s₀ := A.singularValues 0
+  set sₘ := A.singularValues m
+  rw [← ENNReal.ofReal_pow (by positivity),
+    ENNReal.ofReal_eq_ofReal_iff (by positivity) (by positivity),
+    ← pow_left_inj₀ (a := Q) (b := s₀ ^ m) (n := m + 1) hQ.le (by positivity) (by omega),
+    div_pow, mul_pow, div_eq_div_iff (by positivity) (by positivity)]
+  constructor <;> intro h'
+  · refine mul_right_cancel₀ (pow_pos hm (m + 1)).ne' ?_
+    linear_combination h'
+  · linear_combination (sₘ ^ (m + 1)) * h'
+
+omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
+/-- **Equality case of `q_O ≤ q_Iⁿ⁻¹`.** When `J(A) > 0`, `q_O(A) = q_I(A)ⁿ⁻¹` exactly when the
+`n - 1` smallest singular values agree, `σ₂ = ⋯ = σₙ` (indexed from `0` here). -/
+theorem outerDistortion_eq_ofReal_innerDistortion_pow_iff {A : V →ₗ[ℝ] W}
+    (h : 0 < oV.orientedJacobian oW A) :
+    oV.outerDistortion oW A = ENNReal.ofReal (oV.innerDistortion oW A ^ (n - 1)) ↔
+      ∀ i < n - 1, A.singularValues (i + 1) = A.singularValues (n - 1) := by
+  have hs := fun {i} (hi : i < n) ↦ oV.singularValues_pos_of_orientedJacobian_pos oW h hi
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp [oV.outerDistortion_of_pos oW h, oV.orientedJacobian_eq_one_of_fin_zero oW h]
+  rw [oV.innerDistortion_eq_prod_singularValues oW h,
+    oV.outerDistortion_eq_ofReal_prod_singularValues oW h]
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  have hR : 0 < ∏ i ∈ Finset.range m, A.singularValues (i + 1) :=
+    Finset.prod_pos fun i hi ↦ hs (by simp at hi; omega)
+  have hm : 0 < A.singularValues m := hs (by omega)
+  have h0 : 0 < A.singularValues 0 := hs (by omega)
+  simp only [Nat.add_sub_cancel, Finset.prod_range_succ']
+  rw [← prod_range_eq_pow_iff_of_ge hm
+      (fun i hi ↦ A.singularValues_antitone (show i + 1 ≤ m by omega))]
+  set R := ∏ i ∈ Finset.range m, A.singularValues (i + 1)
+  set s₀ := A.singularValues 0
+  set sₘ := A.singularValues m
+  rw [ENNReal.ofReal_eq_ofReal_iff (by positivity) (by positivity),
+    ← pow_left_inj₀ (a := R) (b := sₘ ^ m) (n := m + 1) hR.le (by positivity) (by omega),
+    div_pow, div_eq_div_iff (by positivity) (by positivity)]
+  constructor <;> intro h'
+  · refine mul_right_cancel₀ (pow_pos h0 (m + 1)).ne' ?_
+    linear_combination -h'
+  · linear_combination -(s₀ ^ (m + 1)) * h'
 
 end Orientation
