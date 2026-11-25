@@ -38,6 +38,8 @@ the principal block, over every field (`TauCeti.eq_centerAugmentation`).
   homomorphism `Z(k[G]) → k` taking the value `1` at `e_B`.
 * `TauCeti.eq_centerAugmentation`: a `k`-algebra homomorphism `Z(k[G]) → k` taking the value `1`
   at the principal block idempotent is the augmentation.
+* `TauCeti.IsBlockIdempotent.centralCharacter_principalBlockIdempotent`: over an algebraically
+  closed field, the central character of the principal block is the augmentation.
 
 ## References
 
@@ -92,6 +94,13 @@ theorem centralCharacter_eq_zero_of_mul_eq_zero (hb : IsBlockIdempotent b)
     hb.centralCharacter e = 0 := by
   have := congrArg hb.centralCharacter h
   rwa [map_mul, centralCharacter_self, one_mul, map_zero] at this
+
+/-- Over an algebraically closed field, the central character of the principal block is the
+augmentation. -/
+@[simp]
+theorem centralCharacter_principalBlockIdempotent :
+    (isBlockIdempotent_principalBlockIdempotent k G).centralCharacter = centerAugmentation k G :=
+  eq_centerAugmentation (centralCharacter_self _)
 
 end IsBlockIdempotent
 
