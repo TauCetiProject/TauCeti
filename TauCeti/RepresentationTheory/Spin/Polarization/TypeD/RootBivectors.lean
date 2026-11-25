@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 public import TauCeti.RepresentationTheory.Spin.IntegralLattice
 public import TauCeti.RepresentationTheory.Spin.Weight
 
