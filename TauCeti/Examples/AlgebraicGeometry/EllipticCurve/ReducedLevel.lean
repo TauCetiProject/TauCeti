@@ -41,37 +41,47 @@ namespace TauCeti.Examples.ReducedLevel
 
 open Nat WeierstrassCurve
 
-/-- At a prime `p`, the exponent of `p` in `n` is the number of times `p` occurs in the list of
-prime factors of `n`, which `norm_num` evaluates on numerals. -/
-private theorem multiplicity_eq_count {p n : ℕ} (hp : p.Prime) :
-    multiplicity p n = n.primeFactorsList.count p := by
-  rw [Nat.multiplicity_eq_factorization hp, Nat.primeFactorsList_count_eq]
+/-- The prime factors of `n` as the underlying set of its list of prime factors, a form that the
+`Nat.primeFactorsList` simproc evaluates on numerals. -/
+private theorem primeFactors_eq_toFinset (n : ℕ) : n.primeFactors = n.primeFactorsList.toFinset :=
+  (Nat.toFinset_factors n).symm
+
+/-- The level-lowering primes in terms of lists of prime factors, so that `norm_num` evaluates
+them on numerals: at a prime `q`, the exponent of `q` in `n` is the number of times `q` occurs
+in the list of prime factors of `n`. -/
+private theorem levelLoweringPrimes_eq_count (M : ℕ) (Δ : ℤ) (ℓ : ℕ) :
+    levelLoweringPrimes M Δ ℓ = M.primeFactorsList.toFinset.filter fun q ↦
+      M.primeFactorsList.count q = 1 ∧ ℓ ∣ Δ.natAbs.primeFactorsList.count q := by
+  rw [levelLoweringPrimes_def, ← primeFactors_eq_toFinset]
+  refine Finset.filter_congr fun q hq ↦ ?_
+  have hq := Nat.prime_of_mem_primeFactors hq
+  simp only [Nat.multiplicity_eq_factorization hq, Nat.primeFactorsList_count_eq]
 
 /-! ### The arithmetic reduced level -/
 
 -- `M = 33`, `Δ = 3⁶ · 11²`, `ℓ = 3`: the prime `3 = ℓ` is removed and `11` is kept.
 example : levelLoweringPrimes 33 (3 ^ 6 * 11 ^ 2) 3 = {3} := by
-  rw [levelLoweringPrimes_def]
-  norm_num [Nat.primeFactors, Finset.filter_insert, Finset.filter_singleton, multiplicity_eq_count]
+  rw [levelLoweringPrimes_eq_count]
+  norm_num [Finset.filter_insert, Finset.filter_singleton]
 
 example : reducedEllipticLevel 33 (3 ^ 6 * 11 ^ 2) 3 = 11 := by
-  rw [reducedEllipticLevel_def, levelLoweringPrimes_def]
-  norm_num [Nat.primeFactors, Finset.filter_insert, Finset.filter_singleton, multiplicity_eq_count]
+  rw [reducedEllipticLevel_def, levelLoweringPrimes_eq_count]
+  norm_num [Finset.filter_insert, Finset.filter_singleton]
 
 -- `M = 141`, `Δ = 3⁷ · 47`, `ℓ = 3`: neither valuation is divisible by `3`, nothing is removed.
 example : reducedEllipticLevel 141 (3 ^ 7 * 47) 3 = 141 := by
-  rw [reducedEllipticLevel_def, levelLoweringPrimes_def]
-  norm_num [Nat.primeFactors, Finset.filter_insert, Finset.filter_singleton, multiplicity_eq_count]
+  rw [reducedEllipticLevel_def, levelLoweringPrimes_eq_count]
+  norm_num [Finset.filter_insert, Finset.filter_singleton]
 
 -- The same data at `ℓ = 7` removes `3`, since `7 ∣ v_3(Δ) = 7`.
 example : reducedEllipticLevel 141 (3 ^ 7 * 47) 7 = 47 := by
-  rw [reducedEllipticLevel_def, levelLoweringPrimes_def]
-  norm_num [Nat.primeFactors, Finset.filter_insert, Finset.filter_singleton, multiplicity_eq_count]
+  rw [reducedEllipticLevel_def, levelLoweringPrimes_eq_count]
+  norm_num [Finset.filter_insert, Finset.filter_singleton]
 
 -- `M = 3² · 5`, `Δ = 3⁷ · 5⁷`, `ℓ = 7`: `5` is removed, the exponent two at `3` is kept.
 example : reducedEllipticLevel (3 ^ 2 * 5) (3 ^ 7 * 5 ^ 7) 7 = 9 := by
-  rw [reducedEllipticLevel_def, levelLoweringPrimes_def]
-  norm_num [Nat.primeFactors, Finset.filter_insert, Finset.filter_singleton, multiplicity_eq_count]
+  rw [reducedEllipticLevel_def, levelLoweringPrimes_eq_count]
+  norm_num [Finset.filter_insert, Finset.filter_singleton]
 
 -- A conductor exponent above one is never stripped, whatever `Δ` and `ℓ` are.
 example {M : ℕ} {Δ : ℤ} {ℓ q : ℕ} (hq : q.Prime) (h : 1 < multiplicity q M) :
@@ -82,8 +92,8 @@ example {M : ℕ} {Δ : ℤ} {ℓ q : ℕ} (hq : q.Prime) (h : 1 < multiplicity 
 example {Δ : ℤ} {ℓ : ℕ} : reducedEllipticLevel 1 Δ ℓ = 1 := by simp
 
 example : reducedEllipticLevel 141 (-(3 ^ 7 * 47)) 7 = 47 := by
-  rw [reducedEllipticLevel_neg, reducedEllipticLevel_def, levelLoweringPrimes_def]
-  norm_num [Nat.primeFactors, Finset.filter_insert, Finset.filter_singleton, multiplicity_eq_count]
+  rw [reducedEllipticLevel_neg, reducedEllipticLevel_def, levelLoweringPrimes_eq_count]
+  norm_num [Finset.filter_insert, Finset.filter_singleton]
 
 /-! ### The curve 141a1 -/
 
@@ -131,20 +141,20 @@ theorem absNorm_algorithmicConductor_curve141a1 :
     rw [isGlobalMinimal_curve141a1.dvd_absNorm_algorithmicConductor_iff rfl hp, Δ_curve141a1]
     norm_cast
   rw [← Nat.prod_primeFactors_of_squarefree hsq, hpf]
-  norm_num [Nat.primeFactors]
+  norm_num [primeFactors_eq_toFinset]
 
 /-- **At `ℓ = 3` the reduced level of 141a1 is its conductor `141`**: the valuations
 `v_3(Δ) = 7` and `v_47(Δ) = 1` are prime to `3`, so no prime is removed. -/
 theorem reducedLevel_curve141a1_three : (curve141a1.baseChange ℚ).reducedLevel 3 = 141 := by
   rw [isGlobalMinimal_curve141a1.reducedLevel_eq 3 rfl, absNorm_algorithmicConductor_curve141a1,
-    Δ_curve141a1, reducedEllipticLevel_def, levelLoweringPrimes_def]
-  norm_num [Nat.primeFactors, Finset.filter_insert, Finset.filter_singleton, multiplicity_eq_count]
+    Δ_curve141a1, reducedEllipticLevel_def, levelLoweringPrimes_eq_count]
+  norm_num [Finset.filter_insert, Finset.filter_singleton]
 
 /-- **At `ℓ = 7` the reduced level of 141a1 is `47`**: since `7 ∣ v_3(Δ) = 7`, the prime `3` is
 removed. -/
 theorem reducedLevel_curve141a1_seven : (curve141a1.baseChange ℚ).reducedLevel 7 = 47 := by
   rw [isGlobalMinimal_curve141a1.reducedLevel_eq 7 rfl, absNorm_algorithmicConductor_curve141a1,
-    Δ_curve141a1, reducedEllipticLevel_def, levelLoweringPrimes_def]
-  norm_num [Nat.primeFactors, Finset.filter_insert, Finset.filter_singleton, multiplicity_eq_count]
+    Δ_curve141a1, reducedEllipticLevel_def, levelLoweringPrimes_eq_count]
+  norm_num [Finset.filter_insert, Finset.filter_singleton]
 
 end TauCeti.Examples.ReducedLevel
