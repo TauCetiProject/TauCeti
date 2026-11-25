@@ -74,6 +74,10 @@ lower bound on the dimension is needed: in dimension one, both measures count po
 * `TauCeti.roundSphereVolume_add_two` and `TauCeti.roundSphereVolume_zero` through
   `TauCeti.roundSphereVolume_four`: the recurrence `|Sⁿ⁺²| = (2 π / (n + 1)) |Sⁿ|` and the
   low-dimensional areas `|S⁰| = 2`, `|S¹| = 2 π`, `|S²| = 4 π`, `|S³| = 2 π²`, `|S⁴| = 8 π² / 3`.
+* `TauCeti.eventually_integrableOn_sphere_of_isBigO_one`: in dimension `d + 1`, a function that
+  is bounded at infinity is integrable on the spheres of large radius around the origin.
+* `TauCeti.tendsto_setIntegral_sphere_of_isLittleO`: in dimension `d + 1`, the integral over the
+  sphere of radius `r` of a function that is `o(‖x‖ ^ (-d))` at infinity tends to `0` as `r → ∞`.
 
 ## References
 
@@ -517,5 +521,51 @@ theorem roundSphereVolume_three : roundSphereVolume 3 = 2 * Real.pi ^ 2 := by
 theorem roundSphereVolume_four : roundSphereVolume 4 = 8 * Real.pi ^ 2 / 3 := by
   rw [roundSphereVolume_add_two 2, roundSphereVolume_two]
   ring
+
+omit [FiniteDimensional ℝ E] in
+/-- In a real inner product space of dimension `d + 1`, an `AEStronglyMeasurable` function that is
+bounded at infinity is integrable, for `d`-dimensional Hausdorff measure, on the spheres of large
+radius around the origin: these have finite measure `r ^ d |Sᵈ|`. -/
+theorem eventually_integrableOn_sphere_of_isBigO_one {F : Type*} [NormedAddCommGroup F] {d : ℕ}
+    (hE : finrank ℝ E = d + 1) {f : E → F} (hm : AEStronglyMeasurable f μHE[d])
+    (hf : f =O[Bornology.cobounded E] fun _ ↦ (1 : ℝ)) :
+    ∀ᶠ r in atTop, IntegrableOn f (sphere (0 : E) r) μHE[d] := by
+  obtain ⟨C, hC⟩ := hf.bound
+  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.1 hC
+  filter_upwards [eventually_ge_atTop R, eventually_gt_atTop 0] with r hRr hr
+  refine Measure.integrableOn_of_bounded (M := C * ‖(1 : ℝ)‖) ?_ hm ?_
+  · rw [euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume hE 0 hr]
+    exact ENNReal.ofReal_ne_top
+  · refine (ae_restrict_iff' isClosed_sphere.measurableSet).2 (Eventually.of_forall fun x hx ↦ ?_)
+    exact hR (show R ≤ ‖x‖ by rw [mem_sphere_zero_iff_norm.1 hx]; exact hRr)
+
+omit [FiniteDimensional ℝ E] in
+/-- **Sphere integrals of functions decaying faster than the area.** If `f = o(‖x‖ ^ (-d))` at
+infinity in a real inner product space of dimension `d + 1`, then the integral of `f` over the
+sphere of radius `r` around the origin, for `d`-dimensional Hausdorff measure, tends to `0` as
+`r → ∞`: the sphere has area `r ^ d |Sᵈ|`. -/
+theorem tendsto_setIntegral_sphere_of_isLittleO {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {d : ℕ} (hE : finrank ℝ E = d + 1) {f : E → F}
+    (hf : f =o[Bornology.cobounded E] fun x ↦ ‖x‖ ^ (-(d : ℝ))) :
+    Tendsto (fun r ↦ ∫ x in sphere (0 : E) r, f x ∂μHE[d]) atTop (𝓝 0) := by
+  have hS := roundSphereVolume_pos d
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  -- Outside a ball, `‖f x‖ ≤ ε ‖x‖ ^ (-d) / (2 |Sᵈ|)`.
+  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.1
+    (hf.def (c := ε / (2 * roundSphereVolume d)) (by positivity))
+  filter_upwards [eventually_ge_atTop R, eventually_gt_atTop 0] with r hRr hr
+  have hμ := euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume hE 0 hr
+  rw [dist_zero_right]
+  refine (norm_setIntegral_le_of_norm_le_const
+    (C := ε / (2 * roundSphereVolume d) * r ^ (-(d : ℝ)))
+    (by rw [hμ]; exact ENNReal.ofReal_lt_top) fun x hx ↦ ?_).trans_lt ?_
+  · have hx : ‖x‖ = r := mem_sphere_zero_iff_norm.1 hx
+    have := hR (show R ≤ ‖x‖ by rw [hx]; exact hRr)
+    rwa [hx, Real.norm_of_nonneg (Real.rpow_nonneg hr.le _)] at this
+  · rw [measureReal_def, hμ, ENNReal.toReal_ofReal (by positivity), Real.rpow_neg hr.le,
+      Real.rpow_natCast]
+    field_simp
+    linarith
 
 end TauCeti

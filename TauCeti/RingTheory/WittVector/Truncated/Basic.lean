@@ -80,6 +80,12 @@ namespace TruncatedWittVector
 variable {p : ℕ} [hp : Fact p.Prime]
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
 
+omit hp in
+/-- The coordinates of the lift `x.out` beyond the truncation length vanish. -/
+theorem coeff_out_eq_zero_of_le {n : ℕ} (x : TruncatedWittVector p n A) {i : ℕ} (hi : n ≤ i) :
+    x.out.coeff i = 0 := by
+  rw [out, WittVector.coeff_mk, dite_eq_right (Nat.not_lt.mpr hi)]
+
 /-- Change the coefficient ring of a truncated Witt vector. -/
 def map (n : ℕ) (f : A →+* B) :
     TruncatedWittVector p n A →+* TruncatedWittVector p n B :=
@@ -115,6 +121,14 @@ theorem map_comp (n : ℕ) (f : A →+* B) (g : B →+* C) :
     map (p := p) n (g.comp f) = (map n g).comp (map n f) := by
   ext x i
   simp only [map_coeff, RingHom.comp_apply]
+
+/-- The map of truncated Witt vectors induced by a surjection is surjective. -/
+theorem map_surjective (n : ℕ) (f : A →+* B) (hf : Function.Surjective f) :
+    Function.Surjective (map (p := p) n f) := by
+  intro y
+  obtain ⟨x, rfl⟩ := WittVector.truncate_surjective (p := p) n B y
+  obtain ⟨x, rfl⟩ := WittVector.map_surjective f hf x
+  exact ⟨WittVector.truncate n x, map_wittVector_truncate n f x⟩
 
 /-- The Witt vector Frobenius of `W(A)` descends to `TruncatedWittVector.map n (frobenius A p)` on
 `W_n(A)` for `A` of characteristic `p`. -/

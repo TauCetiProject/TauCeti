@@ -229,11 +229,8 @@ vectors by the Cartan integers, is the root lattice of `t`. -/
 theorem eq_rootLattice {L : IntegralLattice (Fin t.rank → ℚ)}
     (hcarrier : ∀ x, x ∈ L.carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i)
     (hform : ∀ i j, L.form (Pi.single i 1) (Pi.single j 1) = ((t.cartanMatrix i j : ℤ) : ℚ)) :
-    L = t.rootLattice ht := by
-  refine IntegralLattice.ext (Submodule.ext fun x ↦
-    (hcarrier x).trans (t.mem_rootLattice_carrier_iff ht x).symm) ?_
-  refine LinearMap.BilinForm.ext_basis (Pi.basisFun ℚ (Fin t.rank)) fun i j ↦ ?_
-  rw [Pi.basisFun_apply, Pi.basisFun_apply, hform, rootLattice_form_single_single]
+    L = t.rootLattice ht :=
+  eq_ofGramMatrix_basisFun _ _ hcarrier hform
 
 /-- The root lattice of type `Aₙ` is the simple-root lattice `typeARootLattice n`. -/
 theorem rootLattice_A (n : ℕ) (ht : (A n).IsSimplyLaced) :
