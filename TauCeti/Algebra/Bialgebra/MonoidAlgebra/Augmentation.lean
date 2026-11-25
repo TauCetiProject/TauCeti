@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 
 /-!
