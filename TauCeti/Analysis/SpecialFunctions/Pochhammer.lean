@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 
+import Mathlib.Data.Nat.Choose.Bounds
+import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 
@@ -28,12 +30,16 @@ complex vertical line by the evaluated ascending Pochhammer polynomial.
   `‖(ascPochhammer R n).eval x‖ ≤ (ascPochhammer ℝ n).eval ‖x‖`.
 * `TauCeti.norm_ascPochhammer_eval_le_ascFactorial`: if `‖x‖ ≤ M` for `M : ℕ`, then
   `‖(ascPochhammer R n).eval x‖ ≤ M.ascFactorial n`.
+* `TauCeti.norm_ascPochhammer_eval_le_factorial_mul_pow`: if `‖x‖ ≤ M` for `M : ℕ`, then
+  `‖(ascPochhammer R n).eval x‖ ≤ n! (M + n) ^ M`.
 * `TauCeti.norm_endpoints_le_norm_ascPochhammer_eval`: the first and last factor norms are
   bounded by the polynomial norm when every intermediate real factor has absolute value at
   least one.
 -/
 
 public section
+
+open scoped Nat
 
 namespace TauCeti
 
@@ -66,6 +72,22 @@ theorem norm_ascPochhammer_eval_le_ascFactorial {R : Type*} [SeminormedRing R] [
     ‖(ascPochhammer R n).eval x‖ ≤ M.ascFactorial n :=
   (norm_ascPochhammer_eval_le_of_norm_le n hx).trans_eq
     (ascPochhammer_nat_eq_natCast_ascFactorial ℝ M n)
+
+/-- If `‖x‖ ≤ M` for a natural number `M` in a seminormed ring with `‖1‖ = 1`, then the evaluated
+ascending Pochhammer polynomial `(x)ₙ` has norm at most `n! (M + n) ^ M`: it grows like `n!` up to
+a polynomial factor. -/
+theorem norm_ascPochhammer_eval_le_factorial_mul_pow {R : Type*} [SeminormedRing R]
+    [NormOneClass R] (n : ℕ) {x : R} {M : ℕ} (hx : ‖x‖ ≤ M) :
+    ‖(ascPochhammer R n).eval x‖ ≤ n ! * ((M : ℝ) + n) ^ M := by
+  have h := norm_ascPochhammer_eval_le_ascFactorial n (M := M + 1)
+    (hx.trans (by push_cast; linarith))
+  rw [Nat.ascFactorial_eq_factorial_mul_choose] at h
+  have hc : (M + n).choose n ≤ (M + n) ^ M := by
+    rw [← Nat.choose_symm_add]
+    exact Nat.choose_le_pow _ _
+  calc ‖(ascPochhammer R n).eval x‖ ≤ ((n ! * (M + n).choose n : ℕ) : ℝ) := h
+    _ ≤ ((n ! * (M + n) ^ M : ℕ) : ℝ) := by exact_mod_cast Nat.mul_le_mul_left _ hc
+    _ = n ! * ((M : ℝ) + n) ^ M := by push_cast; ring
 
 /-- If the intermediate real factors have absolute value at least one, the norm of the
 ascending Pochhammer polynomial bounds the product of its first and last factor norms on a
