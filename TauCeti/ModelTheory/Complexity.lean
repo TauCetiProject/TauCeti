@@ -30,7 +30,9 @@ Translating a formula along a language homomorphism (`FirstOrder.Language.LHom.o
 keeps it atomic, quantifier-free or universal, and quantifying all bound variables of a universal
 formula (`FirstOrder.Language.BoundedFormula.alls`) gives a universal formula. These let universal
 sentences of a language be read in an extension by constants. Substituting terms for the free
-variables (`FirstOrder.Language.BoundedFormula.subst`) keeps a formula atomic or quantifier-free.
+variables (`FirstOrder.Language.BoundedFormula.subst`), or turning its bound positions into free
+variables (`FirstOrder.Language.BoundedFormula.toFormula`), keeps a formula atomic or
+quantifier-free.
 
 Along an embedding, universal sentences pass from the target to the source and existential
 sentences from the source to the target. Universal sentences are moreover local: one holds in a
@@ -294,6 +296,19 @@ formula. -/
 theorem IsEqualityFree.subst {β : Type*} (hφ : φ.IsEqualityFree) (tf : α → L.Term β) :
     (φ.subst tf).IsEqualityFree :=
   hφ.mapTermRel fun _ _ h => h
+
+/-- Turning the bound positions of an atomic formula into free variables gives an atomic
+formula. -/
+theorem IsAtomic.toFormula (h : φ.IsAtomic) : φ.toFormula.IsAtomic :=
+  IsAtomic.recOn h (fun _ _ => IsAtomic.equal _ _) fun _ _ => IsAtomic.rel _ _
+
+/-- Turning the bound positions of a quantifier-free formula into free variables gives a
+quantifier-free formula. -/
+theorem IsQF.toFormula (h : φ.IsQF) : φ.toFormula.IsQF := by
+  induction h with
+  | falsum => exact IsQF.falsum
+  | of_isAtomic h => exact h.toFormula.isQF
+  | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
 
 /-- Translating a universal formula along a language homomorphism gives a universal formula. -/
 theorem IsUniversal.onBoundedFormula (h : φ.IsUniversal) (ϕ : L →ᴸ L') :
