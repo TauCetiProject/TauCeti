@@ -329,8 +329,7 @@ theorem principalUnitCharacter_teichmullerCharacter (ψ : Γ →* (ResidueField 
     principalUnitCharacter R (teichmullerCharacter R ψ) = 1 := by
   rw [principalUnitCharacter_eq_one_iff, unitsMap_residue_comp_teichmullerCharacter]
 
-/-- The principal-unit part is idempotent: a character with values in the principal units is its
-own principal-unit part. -/
+/-- The principal-unit part is idempotent: the principal-unit part of `⟨χ⟩` is `⟨χ⟩`. -/
 @[simp]
 theorem principalUnitCharacter_principalUnitCharacter (χ : Γ →* Rˣ) :
     principalUnitCharacter R (principalUnitCharacter R χ) = principalUnitCharacter R χ := by
