@@ -13,10 +13,10 @@ public import TauCeti.AlgebraicGeometry.Scheme.Normal
 /-!
 # The curve `y² + (x + c)ⁿ = 0` is not normal for odd `n ≥ 3`
 
-NashBlowups §0.6 (normality under separable extension of the ground field) has the Check that
-separability is needed: for `k = 𝔽_p(t)` with `p` odd, the curve `C : x^p + y² + t = 0` becomes,
-over `k' = k(t^{1/p})` and with `u = x + t^{1/p}`, the integral curve `u^p + y² = 0`, which is not
-normal at `u = y = 0`. This file proves the non-normality.
+Normality is not preserved under inseparable extension of the ground field: for `k = 𝔽_p(t)` with
+`p` odd, the curve `C : x^p + y² + t = 0` becomes, over `k' = k(t^{1/p})` and with
+`u = x + t^{1/p}`, the integral curve `u^p + y² = 0`, which is not normal at `u = y = 0`. This file
+proves the non-normality.
 
 Over a domain `K`, put `A = K[x, y]/(y² + (x + c)ⁿ)` for `c ∈ K` and odd `n`, as
 `AdjoinRoot (poly c n)` over `K[x]`. The parametrization `s ↦ (x, y) = (-s² - c, sⁿ)` is an
@@ -26,7 +26,7 @@ injective ring homomorphism `A → K[s]` (`param_injective`): every element of `
 squares to `-(x + c)`, so it is integral over `A`; it lies in `A` only if `s` lies in the image of
 the parametrization, which has no `s¹` term once `n ≥ 3`. Hence `A` is not integrally closed
 (`not_isIntegrallyClosed`) and `Spec A` is not normal (`not_isNormalScheme`). In characteristic
-`p` with `c^p = t`, `(x + c)^p = x^p + t`, which gives the curve of the roadmap Check
+`p` with `c^p = t`, `(x + c)^p = x^p + t`, which gives the curve `x^p + y² + t = 0`
 (`not_isNormalScheme_of_charP`).
 -/
 
@@ -44,6 +44,8 @@ variable {K : Type u} [CommRing K]
 plane curve `y² + (x + c)ⁿ = 0`. -/
 noncomputable def poly (c : K) (n : ℕ) : K[X][X] := X ^ 2 + C ((X + C c) ^ n)
 
+theorem poly_def (c : K) (n : ℕ) : poly c n = X ^ 2 + C ((X + C c) ^ n) := (rfl)
+
 theorem degree_poly [Nontrivial K] (c : K) (n : ℕ) : (poly c n).degree = 2 :=
   degree_X_pow_add_C two_pos _
 
@@ -53,17 +55,17 @@ theorem monic_poly (c : K) (n : ℕ) : (poly c n).Monic :=
 /-- The polynomial substituted for `x` by the parametrization: `-s² - c`. -/
 noncomputable abbrev paramX (c : K) : K[X] := -X ^ 2 - C c
 
-theorem comp_paramX_eq_expand (q : K[X]) (c : K) :
+private theorem comp_paramX_eq_expand (q : K[X]) (c : K) :
     q.comp (paramX c) = expand K 2 (q.comp (-X - C c)) := by
   rw [expand_eq_comp_X_pow, comp_assoc]
   simp
 
-theorem coeff_comp_paramX_of_odd (q : K[X]) (c : K) {k : ℕ} (hk : Odd k) :
+private theorem coeff_comp_paramX_of_odd (q : K[X]) (c : K) {k : ℕ} (hk : Odd k) :
     (q.comp (paramX c)).coeff k = 0 := by
   rw [comp_paramX_eq_expand, coeff_expand two_pos]
   simp [hk.not_two_dvd_nat]
 
-theorem eq_zero_of_comp_paramX_eq_zero {q : K[X]} {c : K} (h : q.comp (paramX c) = 0) :
+private theorem eq_zero_of_comp_paramX_eq_zero {q : K[X]} {c : K} (h : q.comp (paramX c) = 0) :
     q = 0 := by
   rw [comp_paramX_eq_expand, expand_eq_zero two_pos] at h
   have : q = (q.comp (-X - C c)).comp (-X - C c) := by
@@ -71,20 +73,22 @@ theorem eq_zero_of_comp_paramX_eq_zero {q : K[X]} {c : K} (h : q.comp (paramX c)
     simp
   rw [this, h, zero_comp]
 
-theorem coeff_comp_paramX_mul_X_pow_of_even (q : K[X]) (c : K) {n k : ℕ} (hn : Odd n)
+private theorem coeff_comp_paramX_mul_X_pow_of_even (q : K[X]) (c : K) {n k : ℕ} (hn : Odd n)
     (hk : Even k) : (q.comp (paramX c) * X ^ n).coeff k = 0 := by
   rw [coeff_mul_X_pow']
   split_ifs with h
   · exact coeff_comp_paramX_of_odd q c (Nat.Even.sub_odd h hk hn)
   · rfl
 
+private theorem X_add_C_comp_paramX (c : K) :
+    (X + C c : K[X]).comp (paramX c) = C (-1) * X ^ 2 := by
+  simp [paramX]
+
 /-- The parametrization `s ↦ (x, y) = (-s² - c, sⁿ)` of the curve `y² + (x + c)ⁿ = 0`, for odd
 `n`. -/
 noncomputable def param (c : K) {n : ℕ} (hn : Odd n) : AdjoinRoot (poly c n) →+* K[X] :=
   AdjoinRoot.lift (aeval (paramX c)).toRingHom (X ^ n) <| by
-    rw [poly, eval₂_add, eval₂_X_pow, eval₂_C, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_pow,
-      map_add, aeval_X, aeval_C, paramX, algebraMap_eq, sub_add_cancel, hn.neg_pow, ← pow_mul,
-      ← pow_mul, mul_comm, add_neg_cancel]
+    simp [poly_def, paramX, eval₂_pow, hn.neg_pow, ← pow_mul, mul_comm]
 
 variable (c : K) {n : ℕ}
 
@@ -112,6 +116,8 @@ theorem exists_eq_of_add_of_mul_root (a : AdjoinRoot (poly c n)) :
   conv_lhs => rw [eq_X_add_C_of_degree_le_one hd]
   simp [add_comm]
 
+/-- The parametrization `s ↦ (-s² - c, sⁿ)` is injective for odd `n`, over any commutative
+ring `K`. -/
 theorem param_injective (hn : Odd n) : Function.Injective (param c hn) := by
   rw [injective_iff_map_eq_zero]
   intro a ha
@@ -127,12 +133,13 @@ theorem param_injective (hn : Odd n) : Function.Injective (param c hn) := by
     exact (monic_X_pow n).mul_left_eq_zero_iff.mp ha
   simp [eq_zero_of_comp_paramX_eq_zero h₀, eq_zero_of_comp_paramX_eq_zero h₁]
 
-/-- The coordinate ring of `y² + (x + c)ⁿ = 0` is a domain for odd `n`. -/
+/-- The coordinate ring of `y² + (x + c)ⁿ = 0` is a domain for odd `n`, over a domain
+`K`. -/
 theorem isDomain [IsDomain K] (hn : Odd n) : IsDomain (AdjoinRoot (poly c n)) :=
   (param_injective c hn).isDomain _
 
 /-- The image of the parametrization has no `s¹` term once `n ≥ 3`. -/
-theorem coeff_one_param (hn : Odd n) (h3 : 3 ≤ n) (a : AdjoinRoot (poly c n)) :
+theorem coeff_param_one (hn : Odd n) (h3 : 3 ≤ n) (a : AdjoinRoot (poly c n)) :
     (param c hn a).coeff 1 = 0 := by
   obtain ⟨r₀, r₁, rfl⟩ := exists_eq_of_add_of_mul_root c a
   simp only [map_add, map_mul, param_of, param_root, coeff_add, coeff_mul_X_pow',
@@ -141,13 +148,14 @@ theorem coeff_one_param (hn : Odd n) (h3 : 3 ≤ n) (a : AdjoinRoot (poly c n)) 
 
 /-- In `K[x, y]/(y² + (x + c)ⁿ)`, `y² = -(x + c)ⁿ`. -/
 theorem root_sq : AdjoinRoot.root (poly c n) ^ 2 = -AdjoinRoot.of _ (X + C c) ^ n := by
-  rw [eq_neg_iff_add_eq_zero, ← AdjoinRoot.mk_self (f := poly c n),
-    show AdjoinRoot.mk (poly c n) (poly c n) =
-      AdjoinRoot.mk (poly c n) (X ^ 2 + C ((X + C c) ^ n)) from rfl]
-  simp [AdjoinRoot.mk_C]
+  have h := AdjoinRoot.eval₂_root (poly c n)
+  simp only [poly_def, eval₂_add, eval₂_X_pow, eval₂_C] at h
+  rw [← map_pow]
+  exact eq_neg_of_add_eq_zero_left h
 
-/-- The coordinate ring of `y² + (x + c)ⁿ = 0` is not integrally closed for odd `n ≥ 3`: the
-element `y / (x + c)^((n-1)/2)` of its fraction field is a square root of `-(x + c)`. -/
+/-- Over a domain `K`, the coordinate ring of `y² + (x + c)ⁿ = 0` is not integrally closed for
+odd `n ≥ 3`: the element `y / (x + c)^((n-1)/2)` of its fraction field is a square root of
+`-(x + c)`. -/
 theorem not_isIntegrallyClosed [IsDomain K] (hn : Odd n) (h3 : 3 ≤ n) :
     ¬ IsIntegrallyClosed (AdjoinRoot (poly c n)) := by
   intro hic
@@ -156,7 +164,7 @@ theorem not_isIntegrallyClosed [IsDomain K] (hn : Odd n) (h3 : 3 ≤ n) :
   let F := FractionRing (AdjoinRoot (poly c (2 * m + 1)))
   have hu : AdjoinRoot.of (poly c (2 * m + 1)) (X + C c) ≠ 0 := fun h ↦ by
     have := congrArg (fun z ↦ (param c hn z).coeff 2) h
-    simp only [param_of, map_zero, coeff_zero, paramX] at this
+    simp only [param_of, X_add_C_comp_paramX, map_zero] at this
     simp at this
   have hu' : algebraMap _ F (AdjoinRoot.of (poly c (2 * m + 1)) (X + C c)) ≠ 0 := by
     rwa [ne_eq, map_eq_zero_iff _ (IsFractionRing.injective _ F)]
@@ -175,14 +183,10 @@ theorem not_isIntegrallyClosed [IsDomain K] (hn : Odd n) (h3 : 3 ≤ n) :
       AdjoinRoot.root (poly c (2 * m + 1)) :=
     IsFractionRing.injective _ F <| by
       rw [map_mul, ha, map_pow, div_mul_cancel₀ _ (pow_ne_zero _ hu')]
-  have := congrArg (fun z ↦ (param c hn z).coeff (1 + 2 * m)) hay
-  simp only [map_mul, map_pow] at this
-  have hx : (X + C c : K[X]).comp (paramX c) = C (-1) * X ^ 2 := by simp [paramX]
-  rw [param_of, param_root, hx, mul_pow, ← pow_mul, ← mul_assoc, mul_comm _ (C (-1) ^ m),
-    ← C_pow, coeff_mul_X_pow,
-    coeff_C_mul, coeff_one_param c hn h3, mul_zero, show 1 + 2 * m = 2 * m + 1 by ring,
-    coeff_X_pow_self] at this
-  exact zero_ne_one this
+  have := congrArg (fun z ↦ (param c hn z).coeff (2 * m + 1)) hay
+  simp only [map_mul, map_pow, param_of, param_root, X_add_C_comp_paramX] at this
+  simp only [mul_pow, ← C_pow, ← pow_mul, mul_left_comm _ (C _), coeff_C_mul] at this
+  simp [coeff_mul_X_pow', coeff_param_one c hn h3] at this
 
 /-- The curve `y² + (x + c)ⁿ = 0` over a domain is not normal for odd `n ≥ 3`. -/
 theorem not_isNormalScheme [IsDomain K] (hn : Odd n) (h3 : 3 ≤ n) :
@@ -191,15 +195,14 @@ theorem not_isNormalScheme [IsDomain K] (hn : Odd n) (h3 : 3 ≤ n) :
   rw [isNormalScheme_Spec_iff]
   exact not_isIntegrallyClosed c hn h3
 
-/-- NashBlowups §0.6 Check: over a domain `K` of odd prime characteristic `p` in which `t` is a
-`p`-th power, as it is over `k' = k(t^{1/p})` for `k = 𝔽_p(t)`, the curve `x^p + y² + t = 0` is not
-normal. -/
+/-- Over a domain `K` of odd prime characteristic `p` in which `t` is a `p`-th power, as it is over
+`k' = k(t^{1/p})` for `k = 𝔽_p(t)`, the curve `x^p + y² + t = 0` is not normal. -/
 theorem not_isNormalScheme_of_charP [IsDomain K] (p : ℕ) [hp : Fact p.Prime] [CharP K p]
     (hp2 : p ≠ 2) {t : K} (ht : ∃ c, c ^ p = t) :
     ¬ IsNormalScheme (Spec (.of (AdjoinRoot (X ^ 2 + C (X ^ p + C t) : K[X][X])))) := by
   obtain ⟨c, rfl⟩ := ht
   have h : (X ^ 2 + C (X ^ p + C (c ^ p)) : K[X][X]) = poly c p := by
-    simp [poly, add_pow_char, C_pow]
+    simp [poly_def, add_pow_char, C_pow]
   rw [h]
   exact not_isNormalScheme c (hp.out.odd_of_ne_two hp2) (by have := hp.out.two_le; omega)
 
