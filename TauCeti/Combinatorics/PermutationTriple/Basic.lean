@@ -351,6 +351,11 @@ def IsoClass.mk (t : PermutationTriple n) : IsoClass n :=
     IsoClass.mk t = IsoClass.mk t' ↔ Equivalent t t' := by
   exact Quotient.eq''
 
+/-- Relabeling the sheets does not change the isomorphism class. -/
+@[simp] theorem IsoClass.mk_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
+    IsoClass.mk (τ • t) = IsoClass.mk t :=
+  MulAction.orbitRel.Quotient.quotient_smul_eq
+
 /-- Every isomorphism class is the class of some triple. -/
 theorem IsoClass.mk_surjective : Function.Surjective (IsoClass.mk : PermutationTriple n → _) :=
   Quotient.mk''_surjective

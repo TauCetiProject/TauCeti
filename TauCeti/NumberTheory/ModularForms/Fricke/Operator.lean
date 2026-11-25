@@ -75,6 +75,7 @@ transport of the later Fricke rungs is built from.
   **diamond shift** `W ∘ ⟨d⟩ = ⟨d⁻¹⟩ ∘ W`, on modular and on cusp forms.
 * `TauCeti.frickeGL_smul_eq_S_smul`: on `ℍ`, `W` acts as `τ ↦ -1 / (N τ)`, the inversion `S`
   after the dilation by `N`.
+* `TauCeti.frickeGL_smul_frickeGL_smul`: on `ℍ`, `W` acts as an involution, as `W²` is scalar.
 
 ## Provenance
 
@@ -130,6 +131,13 @@ public theorem frickeGL_smul_eq_S_smul (τ : ℍ) :
   apply UpperHalfPlane.ext
   rw [coe_smul_of_det_pos val_det_frickeGL_pos, modular_S_smul]
   simp [num, denom, coe_pos_real_smul, inv_neg, neg_div]
+
+/-- **The Fricke matrix acts on `ℍ` as an involution**: `W² = (-N) • 1` is scalar
+(`frickeGL_sq`), and scalar matrices act trivially. Unlike the slash by `W`, which squares to the
+nonzero scalar `frickeScalar N k`, the Möbius action of `W` squares to the identity. -/
+@[simp]
+public theorem frickeGL_smul_frickeGL_smul (τ : ℍ) : frickeGL ℝ N • frickeGL ℝ N • τ = τ := by
+  rw [← mul_smul, ← sq, frickeGL_sq, glScalar_smul]
 
 /-- **`W` normalizes `Γ₁(N)` in `GL (Fin 2) ℝ`**: conjugating the image of `Γ₁(N)` by the Fricke
 matrix returns that same subgroup. This is `frickeConjSL_mem_Gamma1` — that `W σ W⁻¹` stays in

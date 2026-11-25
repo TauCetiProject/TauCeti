@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Holder.Normed
 public import TauCeti.Analysis.Sobolev.W1p.Convex
+import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.MetricSpace.Holder
 
