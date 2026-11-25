@@ -65,9 +65,7 @@ theorem tendsto_toWeakSpace_cofinite (hv : Orthonormal 𝕜 v) :
   rw [star_zero] at h
   rw [map_zero]
   refine h.congr fun i ↦ ?_
-  rw [← hF, Function.comp_apply, Completion.coe_toComplₗᵢ, Completion.coe_toComplL,
-    ← InnerProductSpace.toDual_symm_apply]
-  exact inner_conj_symm _ _
+  simp [← hF, ι, inner_conj_symm]
 
 /-- **An orthonormal sequence tends weakly to zero.** An orthonormal sequence `eₙ` in an inner
 product space satisfies `eₙ ⇀ 0`. -/
