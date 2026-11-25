@@ -63,8 +63,9 @@ The odd reflection `v` of `u` across the boundary hyperplane lies in `W^{2,p}(�
 Hessian `D²u` on `H` and `-R ∘ D²u(ρ x) ∘ R` on the other side, where `ρ` is the reflection in the
 hyperplane and `R` its linear part
 (`TauCeti.Wkp.exists_value_ae_eq_sub_comp_normalReflection`). Since `R` is an involution, the
-trace of `R ∘ M ∘ R` is the trace of `M`, so `Δv` is the odd reflection of `f`, whose `Lᵖ` norm is
-at most `2 ‖f‖_{Lᵖ(H)}` because `ρ` preserves volume. The whole-space estimate
+trace of `R ∘ M ∘ R` is the trace of `M`, so `Δv` is the odd reflection of `f`
+(`TauCeti.traceCLM_ae_eq_sub_comp_normalReflection`), whose `Lᵖ` norm is at most
+`2 ‖f‖_{Lᵖ(H)}` because `ρ` preserves volume. The whole-space estimate
 (`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq`) bounds `D²v` by
 `Δv`, and `D²v` restricts to `D²u` on `H`.
 
@@ -115,6 +116,34 @@ section Reflection
 
 variable {a : ℝ} {D W : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
 
+omit [BorelSpace E] in
+/-- **The trace of an odd-reflected field.** If `W` is the odd reflection
+`D x - R ∘ D (ρ x) ∘ R` of a field `D` vanishing off the half-space `H`, then the trace of `W` is
+the odd reflection `g - g ∘ ρ` of the trace `g` of `D`, extended by zero off `H`, because
+`tr (R ∘ M ∘ R) = tr M`. -/
+theorem traceCLM_ae_eq_sub_comp_normalReflection {μ : Measure (WithLp 2 (ℝ × E))}
+    (hW : W =ᵐ[μ] fun x =>
+      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator D x -
+        (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
+          (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator D
+            (normalReflection E a x) ∘L
+          (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) :
+    (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (W x)) =ᵐ[μ]
+      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator
+          (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (D x)) -
+        (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator
+          (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (D x)) ∘ normalReflection E a := by
+  have hgD (y : WithLp 2 (ℝ × E)) : traceCLM ℝ (WithLp 2 (ℝ × E))
+      ((normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator D y) =
+        (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator
+          (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (D x)) y :=
+    (congr_fun (indicator_comp_of_zero (g := traceCLM ℝ (WithLp 2 (ℝ × E))) (map_zero _)) y).symm
+  filter_upwards [hW] with x hx
+  have hR := (normalLinearReflection E).toContinuousLinearEquiv.traceCLM_comp_comp_symm
+    ((normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator D (normalReflection E a x))
+  rw [← LinearIsometryEquiv.toContinuousLinearEquiv_symm, normalLinearReflection_symm] at hR
+  rw [hx, map_sub, hR, hgD, hgD, Pi.sub_apply, Function.comp_apply]
+
 /-- If `W` is the odd reflection `D x - R ∘ D (ρ x) ∘ R` of a field `D` vanishing off the half-space
 `H`, the `Lᵖ` norm of `tr W` is at most twice that of `tr D` on `H`. -/
 private theorem eLpNorm_traceCLM_le_of_ae_eq_sub_comp_normalReflection
@@ -134,23 +163,13 @@ private theorem eLpNorm_traceCLM_le_of_ae_eq_sub_comp_normalReflection
   obtain ⟨g, hg_def⟩ : ∃ g : WithLp 2 (ℝ × E) → ℝ,
       g = (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator
         fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (D x) := ⟨_, rfl⟩
-  have hgD : ∀ x, traceCLM ℝ (WithLp 2 (ℝ × E))
-      ((normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator D x) = g x := fun x => by
-    rw [hg_def]
-    by_cases hx : x ∈ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))
-    · simp only [indicator_of_mem hx]
-    · simp only [indicator_of_notMem hx, map_zero]
   have hg_meas : AEStronglyMeasurable g volume := hg_def ▸
     (aestronglyMeasurable_indicator_iff hS).2
       ((traceCLM ℝ (WithLp 2 (ℝ × E))).continuous.comp_aestronglyMeasurable hD)
   -- The trace of `W` is the odd reflection `g - g ∘ ρ` of `g`, since `tr (R ∘ M ∘ R) = tr M`.
   have htr : (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (W x)) =ᵐ[volume]
-      g - g ∘ normalReflection E a := by
-    filter_upwards [hW] with x hx
-    have hR := (normalLinearReflection E).toContinuousLinearEquiv.traceCLM_comp_comp_symm
-      ((normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator D (normalReflection E a x))
-    rw [← LinearIsometryEquiv.toContinuousLinearEquiv_symm, normalLinearReflection_symm] at hR
-    rw [hx, map_sub, hR, hgD, hgD, Pi.sub_apply, Function.comp_apply]
+      g - g ∘ normalReflection E a :=
+    hg_def ▸ traceCLM_ae_eq_sub_comp_normalReflection hW
   rw [eLpNorm_congr_ae htr, ← eLpNorm_indicator_eq_eLpNorm_restrict hS.nullMeasurableSet, ← hg_def,
     two_mul]
   calc eLpNorm (g - g ∘ normalReflection E a) p volume
