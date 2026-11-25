@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Subpath
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Category.TopPair.Quotient
+import TauCeti.Topology.Separation.Hausdorff
 
 /-!
 # The reduced suspension
@@ -297,29 +298,23 @@ instance [CompactSpace X] : CompactSpace (ReducedSuspension X x₀) :=
   haveI : CompactSpace (reducedSuspensionPair X x₀).fst := inferInstanceAs (CompactSpace (X × I))
   (reducedSuspensionPair X x₀).compactSpace_ordinaryPairQuotient
 
-private lemma disjoint_nhdsSet_reducedSuspensionLocus [T2Space X] {x : X} {t : I}
-    (hx : x ≠ x₀) (ht0 : t ≠ 0) (ht1 : t ≠ 1) :
-    Disjoint (𝓝ˢ (reducedSuspensionLocus X x₀)) (𝓝 (x, t)) := by
+/-- The reduced suspension of a Hausdorff space is Hausdorff. -/
+instance instT2Space [T2Space X] : T2Space (ReducedSuspension X x₀) := by
+  -- `ReducedSuspension X x₀` is the quotient of `reducedSuspensionPair X x₀`, whose ambient
+  -- space `TopCat.of (X × I)` has carrier and topology `X × I` (`TopCat.coe_of`).
+  have : T2Space (reducedSuspensionPair X x₀).fst := inferInstanceAs (T2Space (X × I))
   have hsub : reducedSuspensionLocus X x₀ =
       Set.univ ×ˢ ({0, 1} : Set I) ∪ {x₀} ×ˢ Set.univ := by
     ext ⟨u, s⟩
     simp [reducedSuspensionLocus, or_comm]
-  rw [hsub, nhdsSet_union, disjoint_sup_left, nhds_prod_eq]
-  exact ⟨(Filter.disjoint_prod.2 <| Or.inr <|
-      (Set.toFinite ({0, 1} : Set I)).isCompact.disjoint_nhdsSet_nhds <| by
-        simp [ht0, ht1]).mono_left (nhdsSet_prod_le _ _),
-    (Filter.disjoint_prod.2 <| Or.inl <|
-      isCompact_singleton.disjoint_nhdsSet_nhds hx).mono_left (nhdsSet_prod_le _ _)⟩
-
-instance [T2Space X] : T2Space (ReducedSuspension X x₀) := by
-  -- `ReducedSuspension X x₀` is the quotient of `reducedSuspensionPair X x₀`, whose ambient
-  -- space `TopCat.of (X × I)` has carrier and topology `X × I` (`TopCat.coe_of`).
-  have : T2Space (reducedSuspensionPair X x₀).fst := inferInstanceAs (T2Space (X × I))
   refine (reducedSuspensionPair X x₀).t2Space_ordinaryPairQuotient_of_disjoint_nhdsSet
     fun ⟨x, t⟩ h ↦ ?_
   rw [TopPair.range_ofSubset_map] at h ⊢
-  exact disjoint_nhdsSet_reducedSuspensionLocus
-    (fun hx ↦ h (Or.inl hx)) (fun ht ↦ h (Or.inr (Or.inl ht))) (fun ht ↦ h (Or.inr (Or.inr ht)))
+  rw [hsub]
+  exact isCompact_singleton.disjoint_nhdsSet_univ_prod_union_prod_univ
+    (Set.toFinite ({0, 1} : Set I)).isCompact
+    (fun hx ↦ h (Or.inl hx))
+    (fun ht ↦ h (Or.inr (ht.imp id Set.eq_of_mem_singleton)))
 
 instance [Subsingleton X] : Subsingleton (ReducedSuspension X x₀) :=
   subsingleton_of_forall_eq basepoint (ind fun x t ↦ Subsingleton.elim x x₀ ▸ mk_basepoint t)

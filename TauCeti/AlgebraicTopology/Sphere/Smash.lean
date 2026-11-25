@@ -190,7 +190,7 @@ lemma smashSphereHomeomorph_zero_left (n : ℕ) :
   refine Homeomorph.ext fun z ↦ congrFun (smashSphere_ext (by simp) fun x y ↦ ?_) z
   rw [Homeomorph.trans_apply, smashSphereHomeomorph_mk_basedCubeToSphere,
     Subsingleton.elim x Fin.elim0]
-  simp [Fin.elim0_append]; rfl
+  simp [Function.comp_def]
 
 /-- **Right `S⁰` unit coherence for `TauCeti.smashSphereHomeomorph`**: `Sᵐ ∧ S⁰ ≃ₜ Sᵐ` agrees
 with `TauCeti.SmashProduct.sphereZeroRightHomeomorph`. -/
@@ -228,8 +228,8 @@ lemma smashSphereHomeomorph_assoc (m n k : ℕ) :
     obtain ⟨z', rfl⟩ := exists_basedCubeToSphere_eq_of_ne h.2
     simp only [Homeomorph.trans_apply, SmashProduct.congrHomeomorph_mk, Homeomorph.refl_apply,
       id_eq, SmashProduct.assoc_mk, smashSphereHomeomorph_mk_basedCubeToSphere,
-      sphereCongrHomeomorph_basedCubeToSphere, Fin.append_assoc]
-    exact congrArg (basedCubeToSphere.{u} (m + (n + k))) (funext fun _ ↦ rfl)
+      sphereCongrHomeomorph_basedCubeToSphere, Fin.append_assoc, Function.comp_def,
+      Fin.cast_cast, Fin.cast_eq_self]
 
 end SmashSphere
 
@@ -240,7 +240,7 @@ def intervalEndpointPairIsoCubeOne :
     intervalEndpointPair.{u} ≅ cubeBoundaryPair.{u} 1 :=
   TopPair.ofSubsetIso (X := TopCat.of (ULift.{u} I)) (Y := TopCat.of (ULift.{u} (I^(Fin 1))))
     (Homeomorph.ulift.trans ((Homeomorph.funUnique (Fin 1) I).symm.trans Homeomorph.ulift.symm))
-    fun _ ↦ by simp [Cube.boundary_fin_one_iff]; rfl
+    fun _ ↦ by simp [Cube.boundary_fin_one_iff, Homeomorph.ulift]
 
 /-- **The pointed quotient `I / {0, 1}` is homeomorphic to `TopCat.sphere 1`**, sending `t ∈ I` to
 `basedCubeToSphere 1 (fun _ ↦ t)`. -/

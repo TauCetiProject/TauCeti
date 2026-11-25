@@ -9,6 +9,7 @@ public import Mathlib.Topology.Connected.PathConnected
 public import TauCeti.Topology.Category.TopPair.Quotient
 import Mathlib.Topology.CompactOpen
 import TauCeti.Topology.Category.TopPair
+import TauCeti.Topology.Separation.Hausdorff
 
 /-!
 # The pointed smash product of topological spaces
@@ -177,22 +178,13 @@ instance [CompactSpace X] [CompactSpace Y] : CompactSpace (SmashProduct x₀ y�
   haveI : CompactSpace (smashPair x₀ y₀).fst := inferInstanceAs (CompactSpace (X × Y))
   (smashPair x₀ y₀).compactSpace_ordinaryPairQuotient
 
-private lemma disjoint_nhdsSet_smashAxes [T2Space X] [T2Space Y] {x : X} {y : Y}
-    (hx : x ≠ x₀) (hy : y ≠ y₀) :
-    Disjoint (𝓝ˢ (univ ×ˢ {y₀} ∪ {x₀} ×ˢ univ : Set (X × Y))) (𝓝 (x, y)) := by
-  rw [nhdsSet_union, disjoint_sup_left, nhds_prod_eq]
-  exact ⟨(Filter.disjoint_prod.2 <| Or.inr <|
-      isCompact_singleton.disjoint_nhdsSet_nhds hy).mono_left (nhdsSet_prod_le _ _),
-    (Filter.disjoint_prod.2 <| Or.inl <|
-      isCompact_singleton.disjoint_nhdsSet_nhds hx).mono_left (nhdsSet_prod_le _ _)⟩
-
 instance [T2Space X] [T2Space Y] : T2Space (SmashProduct x₀ y₀) := by
   -- The ambient space `(smashPair x₀ y₀).fst` is `TopCat.of (X × Y)`, whose carrier and topology
   -- are definitionally `X × Y` with its product topology (`TopCat.coe_of`).
   have : T2Space (smashPair x₀ y₀).fst := inferInstanceAs (T2Space (X × Y))
   refine (smashPair x₀ y₀).t2Space_ordinaryPairQuotient_of_disjoint_nhdsSet fun ⟨x, y⟩ h ↦ ?_
   rw [TopPair.range_ofSubset_map] at h ⊢
-  exact disjoint_nhdsSet_smashAxes
+  exact isCompact_singleton.disjoint_nhdsSet_univ_prod_union_prod_univ isCompact_singleton
     (fun hx ↦ h (Or.inr ⟨hx, trivial⟩)) (fun hy ↦ h (Or.inl ⟨trivial, hy⟩))
 
 instance subsingleton_left [Subsingleton X] : Subsingleton (SmashProduct x₀ y₀) :=
@@ -518,6 +510,21 @@ private def smashToOrdinaryPairQuotientProd [LocallyCompactSpace X]
       (fun x ↦ (prodQuotientFromBoth_π A B x _).trans (prodQuotientFromRight_basepoint A B x))
       (prodQuotientFromBoth_basepoint A B _))
 
+@[simp]
+private lemma smashToOrdinaryPairQuotientProd_mk [LocallyCompactSpace X]
+    [LocallyCompactSpace (qRight B).ordinaryPairQuotient]
+    (qa : (qLeft A).ordinaryPairQuotient) (qb : (qRight B).ordinaryPairQuotient) :
+    smashToOrdinaryPairQuotientProd A B (SmashProduct.mk _ _ (qa, qb)) =
+      prodQuotientFromBoth A B qa qb :=
+  SmashProduct.lift_mk _ _ _ _ qa qb
+
+@[simp]
+private lemma smashToOrdinaryPairQuotientProd_basepoint [LocallyCompactSpace X]
+    [LocallyCompactSpace (qRight B).ordinaryPairQuotient] :
+    smashToOrdinaryPairQuotientProd A B (SmashProduct.basepoint _ _) =
+      (qProd A B).ordinaryPairQuotientBasepoint :=
+  SmashProduct.lift_basepoint _ _ _ _
+
 /-- **The pointed quotient of a product pair is the smash product of the pointed quotients.**
 When `X` and `Y / B` are locally compact (in particular when `X` and `Y` are compact Hausdorff and
 `B` is closed), `(X × Y) / (A × Y ∪ X × B) ≃ₜ (X / A) ∧ (Y / B)`, including when `A` or `B` is
@@ -530,24 +537,22 @@ def ordinaryPairQuotientProdHomeomorph [LocallyCompactSpace X]
   toFun := ordinaryPairQuotientProdToSmash A B
   invFun := smashToOrdinaryPairQuotientProd A B
   left_inv := ordinaryPairQuotient_ind (P := qProd A B)
-    (fun ⟨x, y⟩ ↦ (congrArg (smashToOrdinaryPairQuotientProd A B)
-      (ordinaryPairQuotientProdToSmash_π A B x y)).trans
-      (by simp [smashToOrdinaryPairQuotientProd]))
-    ((congrArg (smashToOrdinaryPairQuotientProd A B)
-      (ordinaryPairQuotientProdToSmash_basepoint A B)).trans
-      (by simp [smashToOrdinaryPairQuotientProd]))
+    (fun ⟨(x : X), (y : Y)⟩ ↦ by
+      rw [ordinaryPairQuotientProdToSmash_π A B x y, smashToOrdinaryPairQuotientProd_mk,
+        prodQuotientFromBoth_π, prodQuotientFromRight_π])
+    (by rw [ordinaryPairQuotientProdToSmash_basepoint A B,
+      smashToOrdinaryPairQuotientProd_basepoint])
   right_inv := SmashProduct.ind <|
     ordinaryPairQuotient_ind (P := qLeft A)
-      (fun x ↦ ordinaryPairQuotient_ind (P := qRight B)
-        (fun y ↦ (congrArg (ordinaryPairQuotientProdToSmash A B)
-          (((SmashProduct.lift_mk _ _ _ _ _ _).trans (prodQuotientFromBoth_π A B x _)).trans
-            (prodQuotientFromRight_π A B x y))).trans (ordinaryPairQuotientProdToSmash_π A B x y))
-        (by rw [SmashProduct.mk_basepoint_right]
-            simpa [smashToOrdinaryPairQuotientProd] using
-              ordinaryPairQuotientProdToSmash_basepoint A B))
-      (fun _ ↦ by rw [SmashProduct.mk_basepoint_left]
-                  simpa [smashToOrdinaryPairQuotientProd] using
-                    ordinaryPairQuotientProdToSmash_basepoint A B)
+      (fun (x : X) ↦ ordinaryPairQuotient_ind (P := qRight B)
+        (fun (y : Y) ↦ by
+          rw [smashToOrdinaryPairQuotientProd_mk, prodQuotientFromBoth_π, prodQuotientFromRight_π,
+            ordinaryPairQuotientProdToSmash_π A B x y])
+        (by rw [SmashProduct.mk_basepoint_right, smashToOrdinaryPairQuotientProd_basepoint,
+          ordinaryPairQuotientProdToSmash_basepoint A B]))
+      (fun _ ↦ by
+        rw [SmashProduct.mk_basepoint_left, smashToOrdinaryPairQuotientProd_basepoint,
+          ordinaryPairQuotientProdToSmash_basepoint A B])
   continuous_toFun := (ordinaryPairQuotientProdToSmash A B).hom.continuous
   continuous_invFun := (smashToOrdinaryPairQuotientProd A B).continuous
 

@@ -14,8 +14,8 @@ import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 /-!
 # Based sphere quotients of disks and cubes
 
-This file equips `TopCat.sphere n` with its positive first-coordinate basepoint
-`TauCeti.sphereBasepoint n` (`e₀`) and antipode `TauCeti.sphereAntiBasepoint n` (`-e₀`), applies the
+For `TopCat.sphere n` based at its positive first-coordinate pole `TauCeti.sphereBasepoint n`
+(`e₀`), this file introduces the antipode `TauCeti.sphereAntiBasepoint n` (`-e₀`), applies the
 coordinate linear isometry `TauCeti.spherePoleLinearIsometry n` moving `e_last` to `e₀` (identity in
 dimension `0` and `(x₀, x₁, …, xₙ) ↦ (xₙ, -x₀, x₁, …, xₙ₋₁)` of determinant `(-1) ^ (n + 1)` for
 `n ≥ 1`), and constructs the canonical pointed homeomorphisms `TauCeti.cubeQuotientSphereHomeomorph`
@@ -45,17 +45,6 @@ private def sphereVec {n : ℕ} (s : TopCat.sphere.{u} n) : EuclideanSpace ℝ (
 private lemma sphere_ext {n : ℕ} {s t : TopCat.sphere.{u} n} (h : sphereVec s = sphereVec t) :
     s = t := ULift.ext (Subtype.ext h)
 
-/-- The positive first-coordinate pole `e₀` of `TopCat.sphere n`. -/
-def sphereBasepoint (n : ℕ) : TopCat.sphere.{u} n :=
-  (ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩ :
-    ULift.{u} (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))
-
-@[simp]
-lemma coe_sphereBasepoint_down (n : ℕ) :
-    (((sphereBasepoint.{u} n : TopCat.sphere.{u} n) :
-      ULift.{u} (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).down :
-        EuclideanSpace ℝ (Fin (n + 1))) = EuclideanSpace.single 0 1 := (rfl)
-
 /-- The negative first-coordinate pole `-e₀` of `TopCat.sphere n`, antipodal to
 `TauCeti.sphereBasepoint`. -/
 def sphereAntiBasepoint (n : ℕ) : TopCat.sphere.{u} n :=
@@ -66,7 +55,7 @@ lemma coe_sphereAntiBasepoint_down (n : ℕ) :
     (((sphereAntiBasepoint.{u} n : TopCat.sphere.{u} n) :
       ULift.{u} (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).down :
         EuclideanSpace ℝ (Fin (n + 1))) = -EuclideanSpace.single 0 1 :=
-  congrArg Subtype.val (diskBoundaryNeg_apply_down (sphereBasepoint.{u} n))
+  (congrArg Subtype.val (diskBoundaryNeg_apply_down (sphereBasepoint.{u} n))).trans (by simp)
 
 /-- The basepoint `e₀` and its antipode `-e₀` on `TopCat.sphere n` are distinct. -/
 lemma sphereBasepoint_ne_sphereAntiBasepoint (n : ℕ) :
@@ -75,11 +64,6 @@ lemma sphereBasepoint_ne_sphereAntiBasepoint (n : ℕ) :
   simp only [sphereVec, coe_sphereBasepoint_down, coe_sphereAntiBasepoint_down, PiLp.neg_apply,
     PiLp.single_apply, ↓reduceIte] at h0
   norm_num at h0
-
-/-- `TauCeti.sphereBasepoint (d + 1)` coincides with `TauCeti.sphereBasePoint d`. -/
-lemma sphereBasePoint_eq_sphereBasepoint (d : ℕ) :
-    sphereBasePoint.{u} d = sphereBasepoint.{u} (d + 1) :=
-  sphere_ext (coe_sphereBasePoint_down d)
 
 /-- Every point of `TopCat.sphere 0` is either `sphereBasepoint 0` or `sphereAntiBasepoint 0`. -/
 lemma eq_sphereBasepoint_or_eq_sphereAntiBasepoint (s : TopCat.sphere.{u} 0) :
@@ -269,15 +253,17 @@ lemma coe_basedDiskToSphere_down (n : ℕ) (z : TopCat.disk.{u} n) :
         (closedBallToSphere n
           ((z : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down)) := by
   let z₀ : TopCat.disk.{0} n :=
-    ULift.up ((z : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down)
+    (ULift.up ((z : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down) :
+      ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
+  have hz₀ : (z₀ : ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down =
+      (z : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down := ULift.down_up _
   have hcb : diskHomeomorphClosedBall.{u} n z = diskHomeomorphClosedBall.{0} n z₀ :=
     Subtype.ext ((coe_diskHomeomorphClosedBall_apply z).trans
       (coe_diskHomeomorphClosedBall_apply z₀).symm)
   have hcube : diskHomeomorphCube.{u} n z = diskHomeomorphCube.{0} n z₀ := by
     rw [diskHomeomorphCube_apply, diskHomeomorphCube_apply, hcb]
-  simp only [basedDiskToSphere_apply, coe_basedCubeToSphere_down, cubeToSphere_apply, hcube,
-    Homeomorph.symm_apply_apply]
-  rfl
+  rw [basedDiskToSphere_apply, coe_basedCubeToSphere_down, hcube, cubeToSphere_apply,
+    Homeomorph.symm_apply_apply, hz₀]
 
 @[simp]
 lemma basedDiskToSphere_eq_sphereBasepoint_iff {n : ℕ} {z : TopCat.disk.{u} n} :
@@ -322,9 +308,9 @@ def cubeQuotientSphereHomeomorph (n : ℕ) :
     (TopCat.ofHom ((basedCubeToSphere.{u} n).comp ⟨ULift.down, continuous_uliftDown⟩))
     (sphereBasepoint.{u} n)
     (fun _ ↦ basedCubeToSphere_eq_sphereBasepoint_iff.trans
-      (by rw [TopPair.range_ofSubset_map]; rfl))
+      (by rw [TopPair.range_ofSubset_map]; exact Set.mem_preimage.symm))
     (fun _ _ hy h ↦ ULift.ext <| (basedCubeToSphere_eq_iff.1 h).resolve_right fun hb ↦
-      hy (by rw [TopPair.range_ofSubset_map]; exact hb.1))
+      hy (by rw [TopPair.range_ofSubset_map]; exact Set.mem_preimage.2 hb.1))
     (fun _ hs ↦ let ⟨y, hy⟩ := exists_basedCubeToSphere_eq_of_ne hs; ⟨ULift.up y, hy⟩)
 
 instance t2Space_cubeBoundaryPairQuotient (n : ℕ) :
@@ -377,13 +363,13 @@ instance t2Space_diskBoundaryPairQuotient (n : ℕ) :
 -- `ConcreteCategory.hom`, so `simpNF` rejects `@[simp]` on this lemma.
 lemma diskQuotientSphereHomeomorph_π (n : ℕ) (z : TopCat.disk.{u} n) :
     diskQuotientSphereHomeomorph.{u} n ((diskBoundaryPair.{u} n).ordinaryPairQuotientπ z) =
-      basedDiskToSphere.{u} n z :=
-  (congrArg (cubeQuotientSphereHomeomorph.{u} n) <|
-    (TopPair.ordinaryPairQuotientCongrHomeomorph_π (diskBoundaryPairIsoCube.{u} n) z).trans <|
-      congrArg _ <| ULift.ext <| (congrArg
-        (fun f : diskBoundaryPair.{u} n ⟶ cubeBoundaryPair.{u} n ↦ (TopPair.Hom.fst f z).down)
-        (diskBoundaryPairIsoCube_hom n)).trans (diskBoundaryPairToCube_fst_apply_down z)).trans
-    (cubeQuotientSphereHomeomorph_π n _)
+      basedDiskToSphere.{u} n z := by
+  have h : TopPair.Hom.fst (diskBoundaryPairIsoCube.{u} n).hom z =
+      ULift.up (diskHomeomorphCube.{u} n z) :=
+    ULift.ext (diskBoundaryPairIsoCube_hom_fst_apply_down z)
+  simp only [diskQuotientSphereHomeomorph, Homeomorph.trans_apply,
+    TopPair.ordinaryPairQuotientCongrHomeomorph_π (diskBoundaryPairIsoCube.{u} n) z, h,
+    cubeQuotientSphereHomeomorph_π, basedDiskToSphere_apply]
 
 @[simp]
 lemma diskQuotientSphereHomeomorph_basepoint (n : ℕ) :

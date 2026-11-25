@@ -20,7 +20,12 @@ Hausdorff.
 
 Mathlib's `image_closure_of_isCompact` identifies the image of a compact closure with the closure
 of the image; consequently a map into a Hausdorff space that is continuous on the closure of a
-relatively compact set sends it to a relatively compact set (`IsCompact.closure_image`).
+relatively compact set sends it to a relatively compact set (`IsCompact.closure_image`). In a
+product where a factor is Hausdorff, a compact slice `s ×ˢ univ` or `univ ×ˢ t` is separated by a
+set neighbourhood from any point whose coordinate avoids the slice
+(`IsCompact.disjoint_nhdsSet_prod_univ`, `IsCompact.disjoint_nhdsSet_univ_prod`), and in a product
+of Hausdorff spaces the union `univ ×ˢ t ∪ s ×ˢ univ` is separated from `(x, y)` whenever `x ∉ s`
+and `y ∉ t` (`IsCompact.disjoint_nhdsSet_univ_prod_union_prod_univ`).
 
 ## Main results
 
@@ -32,11 +37,14 @@ relatively compact set sends it to a relatively compact set (`IsCompact.closure_
   as `y → b`, then `g b = f a` for maps into a Hausdorff space continuous at `a` and `b`.
 * `IsCompact.closure_image`: a map into a Hausdorff space, continuous on the closure of `s`, sends
   a set `s` with compact closure to a set with compact closure.
+* `IsCompact.disjoint_nhdsSet_prod_univ`, `IsCompact.disjoint_nhdsSet_univ_prod`,
+  `IsCompact.disjoint_nhdsSet_univ_prod_union_prod_univ`: set-neighbourhood separation of compact
+  coordinate strips and their union from points outside them.
 -/
 
 public section
 
-open Filter Topology
+open Filter Set Topology
 
 namespace TauCeti
 
@@ -81,3 +89,32 @@ theorem IsCompact.closure_image {X Y : Type*} [TopologicalSpace X] [TopologicalS
     (hf : ContinuousOn f (closure s)) : IsCompact (closure (f '' s)) := by
   rw [← image_closure_of_isCompact hs hf]
   exact hs.image_of_continuousOn hf
+
+/-- In `X × Y` with `X` Hausdorff, the strip `s ×ˢ univ` over a compact set `s ⊆ X` has a
+neighbourhood disjoint from `𝓝 (x, y)` whenever `x ∉ s`. -/
+theorem IsCompact.disjoint_nhdsSet_prod_univ {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [T2Space X] {s : Set X} (hs : IsCompact s) {x : X} (hx : x ∉ s) (y : Y) :
+    Disjoint (𝓝ˢ (s ×ˢ univ)) (𝓝 (x, y)) := by
+  rw [nhds_prod_eq]
+  exact (Filter.disjoint_prod.2 (Or.inl (hs.disjoint_nhdsSet_nhds hx))).mono_left
+    (nhdsSet_prod_le _ _)
+
+/-- In `X × Y` with `Y` Hausdorff, the strip `univ ×ˢ t` over a compact set `t ⊆ Y` has a
+neighbourhood disjoint from `𝓝 (x, y)` whenever `y ∉ t`. -/
+theorem IsCompact.disjoint_nhdsSet_univ_prod {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [T2Space Y] {t : Set Y} (ht : IsCompact t) (x : X) {y : Y} (hy : y ∉ t) :
+    Disjoint (𝓝ˢ (univ ×ˢ t)) (𝓝 (x, y)) := by
+  rw [nhds_prod_eq]
+  exact (Filter.disjoint_prod.2 (Or.inr (ht.disjoint_nhdsSet_nhds hy))).mono_left
+    (nhdsSet_prod_le _ _)
+
+/-- In a product `X × Y` of Hausdorff spaces, the union `univ ×ˢ t ∪ s ×ˢ univ` of strips over
+compact sets `s ⊆ X` and `t ⊆ Y` has a neighbourhood disjoint from `𝓝 (x, y)` whenever `x ∉ s` and
+`y ∉ t`. -/
+theorem IsCompact.disjoint_nhdsSet_univ_prod_union_prod_univ {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [T2Space X] [T2Space Y]
+    {s : Set X} {t : Set Y} (hs : IsCompact s) (ht : IsCompact t)
+    {x : X} {y : Y} (hx : x ∉ s) (hy : y ∉ t) :
+    Disjoint (𝓝ˢ (univ ×ˢ t ∪ s ×ˢ univ)) (𝓝 (x, y)) := by
+  rw [nhdsSet_union, disjoint_sup_left]
+  exact ⟨ht.disjoint_nhdsSet_univ_prod x hy, hs.disjoint_nhdsSet_prod_univ hx y⟩

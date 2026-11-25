@@ -17,7 +17,7 @@ public import TauCeti.Topology.CWComplex.Classical.Zero
 
 Let `X` be a CW complex whose basepoint `x₀` is a `0`-cell. The reduced suspension
 `ΣX = (X × I) / (X × ∂I ∪ {x₀} × I)` is again a CW complex
-(`TauCeti.ReducedSuspension.cwComplex`, an instance), and it is Hausdorff. It has exactly one
+(`TauCeti.ReducedSuspension.cwComplex`, an instance). It has exactly one
 `0`-cell, at the basepoint, and one `(n + 1)`-cell for each `n`-cell of `X` other than the
 basepoint (`TauCeti.ReducedSuspension.cellEquiv`). The cell over an `n`-cell with characteristic
 map `φ` is its suspension: its characteristic map sends `x` to
@@ -50,8 +50,6 @@ The structure is built in two steps.
 
 ## Main results
 
-* `TauCeti.ReducedSuspension.instT2Space`: the reduced suspension of a CW complex based at a
-  `0`-cell is Hausdorff.
 * `TauCeti.ReducedSuspension.cwComplex_map_cellEquiv_symm`: the characteristic map of the cell
   over an `n`-cell of `X` is the suspension of its characteristic map.
 * `TauCeti.ReducedSuspension.cwComplex_openCell_cellEquiv_symm`,
@@ -140,11 +138,6 @@ def cwComplex : CWComplex (univ : Set (ReducedSuspension X x₀)) :=
   isPushout_cylinder.cwComplexOfMapsToSkeletonLT (mem_skeletonLT_univ_of_mem_cellFrontier _)
 
 attribute [instance] cwComplex
-
-/-- The reduced suspension of a CW complex based at a `0`-cell is Hausdorff. -/
-instance instT2Space : T2Space (ReducedSuspension X x₀) :=
-  let := relCWComplexCylinder X x₀
-  isPushout_cylinder.t2Space
 
 /-- The cells of the reduced suspension are those of the point together with those of the
 cylinder on `X` relative to its basepoint. -/

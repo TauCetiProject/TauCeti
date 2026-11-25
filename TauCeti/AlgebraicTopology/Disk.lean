@@ -420,14 +420,17 @@ theorem nonempty_diskBoundary_iff {n : ℕ} : Nonempty (TopCat.diskBoundary.{u} 
 instance nonempty_topCatSphere (n : ℕ) : Nonempty (TopCat.sphere.{u} n) :=
   nonempty_diskBoundary_succ n
 
-/-- The standard basepoint `(1, 0, …, 0)` of `TopCat.sphere (d + 1)`. -/
-def sphereBasePoint (d : ℕ) : TopCat.sphere.{u} (d + 1) :=
-  ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩
+/-- The positive first-coordinate pole `e₀ = (1, 0, …, 0)` of `TopCat.sphere n`. -/
+def sphereBasepoint (n : ℕ) : TopCat.sphere.{u} n :=
+  (ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩ :
+    ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))
 
-/-- The underlying vector of `TauCeti.sphereBasePoint d` is the first standard basis vector. -/
+/-- The underlying vector of `TauCeti.sphereBasepoint n` is the first standard basis vector. -/
 @[simp]
-lemma coe_sphereBasePoint_down (d : ℕ) :
-    ((sphereBasePoint.{u} d).down : EuclideanSpace ℝ (Fin (d + 2))) = EuclideanSpace.single 0 1 :=
+lemma coe_sphereBasepoint_down (n : ℕ) :
+    (((sphereBasepoint.{u} n : TopCat.sphere.{u} n) :
+      ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).down :
+        EuclideanSpace ℝ (Fin (n + 1))) = EuclideanSpace.single 0 1 :=
   (rfl)
 
 /-- The standard orthonormal basis of `EuclideanSpace ℝ (ULift (Fin 1))`. -/
@@ -739,6 +742,13 @@ def diskBoundaryPairIsoCube : diskBoundaryPair.{u} n ≅ cubeBoundaryPair.{u} n 
 lemma diskBoundaryPairIsoCube_hom : (diskBoundaryPairIsoCube.{u} n).hom =
     diskBoundaryPairToCube n :=
   (rfl)
+
+variable {n} in
+/-- On the disk, `TauCeti.diskBoundaryPairIsoCube` sends `z` to `TauCeti.diskHomeomorphCube n z`. -/
+lemma diskBoundaryPairIsoCube_hom_fst_apply_down (z : TopCat.disk.{u} n) :
+    (TopPair.Hom.fst (diskBoundaryPairIsoCube.{u} n).hom z).down = diskHomeomorphCube n z := by
+  rw [diskBoundaryPairIsoCube_hom]
+  exact diskBoundaryPairToCube_fst_apply_down z
 
 /-- In dimension one the radial rescaling `TauCeti.diskHomeomorphClosedBall` is the identity on
 coordinates, since the Euclidean and the sup norms on `ℝ¹` agree. -/
