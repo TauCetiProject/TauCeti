@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.AddCircle
 public import Mathlib.Dynamics.TopologicalEntropy.CoverEntropy
+public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Isometry
 public import Mathlib.Topology.UniformSpace.Equicontinuity
 import TauCeti.Topology.MetricSpace.Equicontinuity
@@ -20,21 +21,23 @@ A totally bounded set `F` is covered by finitely many `V`-balls, so the minimal 
 of `F` have bounded cardinality and the topological entropy of `T` on `F` is at most `0`
 (`TauCeti.coverEntropy_nonpos_of_uniformEquicontinuous`), and equal to `0` when `F` is nonempty.
 
-The iterates of an isometry are uniformly equicontinuous (`Isometry.uniformEquicontinuous_iterate`),
-so an isometry has topological entropy `0` on every nonempty totally bounded set
-(`TauCeti.coverEntropy_eq_zero_of_isometry`); in particular an isometry of a nonempty compact
-pseudo-emetric space has topological entropy `0` (`TauCeti.coverEntropy_univ_eq_zero_of_isometry`).
-This covers the identity and the rotations of the circle.
+The iterates of a `1`-Lipschitz map are uniformly equicontinuous
+(`LipschitzWith.uniformEquicontinuous_iterate`), so a `1`-Lipschitz map has topological entropy `0`
+on every nonempty totally bounded set (`TauCeti.coverEntropy_eq_zero_of_lipschitzWith_one`); in
+particular an isometry of a nonempty compact pseudo-emetric space has topological entropy `0`
+(`TauCeti.coverEntropy_univ_eq_zero_of_isometry`). This covers the identity and the rotations of
+the circle.
 
 ## Main results
 
 * `TauCeti.coverEntropy_nonpos_of_uniformEquicontinuous`,
   `TauCeti.coverEntropy_eq_zero_of_uniformEquicontinuous`: zero entropy on totally bounded sets
   for uniformly equicontinuous iterates.
-* `TauCeti.coverEntropy_eq_zero_of_isometry`: an isometry has topological entropy `0` on a
-  nonempty totally bounded set.
-* `TauCeti.coverEntropy_univ_eq_zero_of_isometry`: an isometry of a nonempty compact
-  pseudo-emetric space has topological entropy `0`.
+* `TauCeti.coverEntropy_eq_zero_of_lipschitzWith_one`: a `1`-Lipschitz map has topological
+  entropy `0` on a nonempty totally bounded set.
+* `TauCeti.coverEntropy_univ_eq_zero_of_lipschitzWith_one`,
+  `TauCeti.coverEntropy_univ_eq_zero_of_isometry`: a `1`-Lipschitz map, in particular an isometry,
+  of a nonempty compact pseudo-emetric space has topological entropy `0`.
 * `TauCeti.coverEntropy_id_eq_zero`, `TauCeti.coverEntropy_addCircle_add_right_eq_zero`: the
   identity and the rotations of the circle have topological entropy `0`.
 -/
@@ -92,16 +95,22 @@ theorem coverEntropyInf_eq_zero_of_uniformEquicontinuous
   ((coverEntropyInf_le_coverEntropy T F).trans
     (coverEntropy_nonpos_of_uniformEquicontinuous hT hF)).antisymm (coverEntropyInf_nonneg T hne)
 
-/-- An isometry has topological entropy `0` on every nonempty totally bounded set. -/
-theorem coverEntropy_eq_zero_of_isometry {Y : Type*} [PseudoEMetricSpace Y] {S : Y → Y}
-    {F : Set Y} (hS : Isometry S) (hF : TotallyBounded F) (hne : F.Nonempty) :
+/-- A `1`-Lipschitz map has topological entropy `0` on every nonempty totally bounded set. -/
+theorem coverEntropy_eq_zero_of_lipschitzWith_one {Y : Type*} [PseudoEMetricSpace Y] {S : Y → Y}
+    {F : Set Y} (hS : LipschitzWith 1 S) (hF : TotallyBounded F) (hne : F.Nonempty) :
     coverEntropy S F = 0 :=
   coverEntropy_eq_zero_of_uniformEquicontinuous hS.uniformEquicontinuous_iterate hF hne
+
+/-- A `1`-Lipschitz map of a nonempty compact pseudo-emetric space has topological entropy `0`. -/
+theorem coverEntropy_univ_eq_zero_of_lipschitzWith_one {Y : Type*} [PseudoEMetricSpace Y]
+    [CompactSpace Y] [Nonempty Y] {S : Y → Y} (hS : LipschitzWith 1 S) :
+    coverEntropy S univ = 0 :=
+  coverEntropy_eq_zero_of_lipschitzWith_one hS isCompact_univ.totallyBounded univ_nonempty
 
 /-- An isometry of a nonempty compact pseudo-emetric space has topological entropy `0`. -/
 theorem coverEntropy_univ_eq_zero_of_isometry {Y : Type*} [PseudoEMetricSpace Y] [CompactSpace Y]
     [Nonempty Y] {S : Y → Y} (hS : Isometry S) : coverEntropy S univ = 0 :=
-  coverEntropy_eq_zero_of_isometry hS isCompact_univ.totallyBounded univ_nonempty
+  coverEntropy_univ_eq_zero_of_lipschitzWith_one hS.lipschitzWith
 
 /-- The identity has topological entropy `0` on every nonempty totally bounded set. -/
 theorem coverEntropy_id_eq_zero (hF : TotallyBounded F) (hne : F.Nonempty) :
