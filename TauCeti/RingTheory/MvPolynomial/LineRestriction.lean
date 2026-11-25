@@ -171,8 +171,7 @@ theorem derivative_aeval_C_add_C_mul_X [Fintype σ] (p : MvPolynomial σ R) (x a
         (∑ i, a i • pderiv i p) := by
   rw [derivative_aeval, map_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [map_smul, Polynomial.derivative_add, Polynomial.derivative_C, zero_add,
-    Polynomial.derivative_C_mul_X, Polynomial.smul_eq_C_mul, mul_comm]
+  simpa [Polynomial.smul_eq_C_mul] using mul_comm _ _
 
 section Shear
 

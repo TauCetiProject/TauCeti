@@ -108,6 +108,13 @@ variable {p : MvPolynomial σ ℝ} {m : ℕ} {a x : σ → ℝ}
 theorem mem_gardingCone : x ∈ gardingCone p a ↔ ∀ t : ℝ, 0 ≤ t → eval (x + t • a) p ≠ 0 :=
   Iff.rfl
 
+/-- For a homogeneous polynomial and `s ≠ 0`, `p(s • x + t • a)` vanishes exactly when
+`p(x + (t / s) • a)` does, since the first point is `s` times the second. -/
+private theorem eval_smul_add_smul_ne_zero_iff (hp : p.IsHomogeneous m) {s : ℝ} (hs : s ≠ 0)
+    (t : ℝ) : eval (s • x + t • a) p ≠ 0 ↔ eval (x + (t / s) • a) p ≠ 0 := by
+  have : s • x + t • a = s • (x + (t / s) • a) := by match_scalars <;> field_simp
+  rw [this, hp.eval_smul_ne_zero_iff hs]
+
 /-- The Gårding cone is invariant under moving in the direction `a`. -/
 theorem add_smul_mem_gardingCone (hx : x ∈ gardingCone p a) {s : ℝ} (hs : 0 ≤ s) :
     x + s • a ∈ gardingCone p a := fun t ht ↦ by
@@ -116,11 +123,8 @@ theorem add_smul_mem_gardingCone (hx : x ∈ gardingCone p a) {s : ℝ} (hs : 0 
 
 /-- The Gårding cone of a homogeneous polynomial is invariant under positive dilations. -/
 theorem smul_mem_gardingCone (hp : p.IsHomogeneous m) (hx : x ∈ gardingCone p a) {s : ℝ}
-    (hs : 0 < s) : s • x ∈ gardingCone p a := fun t ht ↦ by
-  have : s • x + t • a = s • (x + (t / s) • a) := by
-    rw [smul_add, smul_smul, mul_div_cancel₀ _ hs.ne']
-  rw [this, hp.eval_smul_ne_zero_iff hs.ne']
-  exact hx _ (div_nonneg ht hs.le)
+    (hs : 0 < s) : s • x ∈ gardingCone p a := fun t ht ↦
+  (eval_smul_add_smul_ne_zero_iff hp hs.ne' t).2 (hx _ (div_nonneg ht hs.le))
 
 /-- The Gårding cone of a polynomial invariant under a permutation `e` of the variables, in a
 direction fixed by `e`, is invariant under `e`. -/
@@ -150,10 +154,8 @@ theorem gardingCone_smul_left {c : ℝ} (hc : c ≠ 0) : gardingCone (c • p) a
 theorem gardingCone_smul_right {s : ℝ} (hs : 0 < s) : gardingCone p (s • a) = gardingCone p a := by
   ext x
   refine ⟨fun hx t ht ↦ ?_, fun hx t ht ↦ ?_⟩
-  · have := hx (t / s) (div_nonneg ht hs.le)
-    rwa [smul_smul, div_mul_cancel₀ _ hs.ne'] at this
-  · rw [smul_smul]
-    exact hx _ (mul_nonneg ht hs.le)
+  · simpa [smul_smul, hs.ne'] using hx (t / s) (div_nonneg ht hs.le)
+  · simpa [smul_smul] using hx _ (mul_nonneg ht hs.le)
 
 /-- For a homogeneous polynomial with `p(a) ≠ 0`, a point `x` lies in the Gårding cone `Γ(p, a)`
 if and only if `p` does not vanish on the closed segment from `a` to `x`. -/
@@ -163,19 +165,12 @@ theorem mem_gardingCone_iff_forall_mem_segment (hp : p.IsHomogeneous m) (ha : ev
   · rintro hx _ ⟨u, v, hu, hv, huv, rfl⟩
     obtain rfl | hv := hv.eq_or_lt
     · simpa [show u = 1 by linarith] using ha
-    have : u • a + v • x = v • (x + (u / v) • a) := by
-      rw [smul_add, smul_smul, mul_div_cancel₀ _ hv.ne', add_comm]
-    rw [this, hp.eval_smul_ne_zero_iff hv.ne']
+    rw [add_comm, eval_smul_add_smul_ne_zero_iff hp hv.ne']
     exact hx _ (div_nonneg hu hv.le)
   · have h1 : 0 < 1 + t := by linarith
-    have hmem : (t / (1 + t)) • a + (1 / (1 + t)) • x ∈ segment ℝ a x :=
-      ⟨_, _, div_nonneg ht h1.le, div_nonneg zero_le_one h1.le,
-        by rw [← add_div, add_comm, div_self h1.ne'], rfl⟩
-    have : x + t • a = (1 + t) • ((t / (1 + t)) • a + (1 / (1 + t)) • x) := by
-      rw [smul_add, smul_smul, smul_smul, mul_div_cancel₀ _ h1.ne', mul_div_cancel₀ _ h1.ne',
-        one_smul, add_comm]
-    rw [this, hp.eval_smul_ne_zero_iff h1.ne']
-    exact h _ hmem
+    rw [← smul_inv_smul₀ h1.ne' x, eval_smul_add_smul_ne_zero_iff hp h1.ne']
+    exact h _ ⟨t / (1 + t), (1 + t)⁻¹, div_nonneg ht h1.le, inv_nonneg.2 h1.le,
+      by field_simp; ring, add_comm _ _⟩
 
 /-- The same criterion, with the segment parametrized by `θ ∈ [0, 1]`. -/
 private theorem mem_gardingCone_iff_forall_mem_Icc (hp : p.IsHomogeneous m) (ha : eval a p ≠ 0) :
@@ -251,8 +246,8 @@ theorem smul_right (hp : IsHyperbolic p m a) {s : ℝ} (hs : 0 < s) : IsHyperbol
         (aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p).comp
           (Polynomial.C s * Polynomial.X) :=
       Polynomial.funext fun t ↦ by
-        rw [Polynomial.eval_comp, eval_aeval_C_add_C_mul_X, Polynomial.eval_mul,
-          Polynomial.eval_C, Polynomial.eval_X, eval_aeval_C_add_C_mul_X, smul_smul, mul_comm t s]
+        rw [Polynomial.eval_comp, eval_aeval_C_add_C_mul_X, eval_aeval_C_add_C_mul_X]
+        simp [smul_smul, mul_comm t s]
     rw [this]
     refine (hp.splits x).comp_of_natDegree_le_one_of_invertible
       (Polynomial.natDegree_C_mul_X s hs.ne').le ?_
