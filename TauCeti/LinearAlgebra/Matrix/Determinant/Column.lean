@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Alternating.Basic
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.Algebra.Ring.NegOnePow
 import TauCeti.GroupTheory.Perm.Basic
@@ -29,14 +30,17 @@ namespace Matrix
 
 variable {R : Type*} [Ring R] {n : ℕ}
 
-/-- The signed Leibniz sum in which each product is taken in increasing column order. -/
+/-- The signed Leibniz sum in which each product is taken in increasing column order: the
+alternatization, in the rows, of the ordered product of the diagonal entries. -/
 def columnDet (A : Matrix (Fin n) (Fin n) R) : R :=
-  ∑ σ : Perm (Fin n), sign σ • (List.ofFn fun j => A (σ j) j).prod
+  ((MultilinearMap.mkPiAlgebraFin ℤ n R).compLinearMap
+    fun j => LinearMap.proj (R := ℤ) (φ := fun _ : Fin n => R) j).alternatization (of.symm A)
 
 /-- The Leibniz formula for the column determinant, with the product taken in list order. -/
 theorem columnDet_apply (A : Matrix (Fin n) (Fin n) R) :
-    A.columnDet = ∑ σ : Perm (Fin n), sign σ • (List.ofFn fun j => A (σ j) j).prod :=
-  (rfl)
+    A.columnDet = ∑ σ : Perm (Fin n), sign σ • (List.ofFn fun j => A (σ j) j).prod := by
+  rw [columnDet, MultilinearMap.alternatization_apply]
+  simp [MultilinearMap.mkPiAlgebraFin_apply]
 
 /-- The empty column determinant is one. -/
 @[simp] theorem columnDet_fin_zero (A : Matrix (Fin 0) (Fin 0) R) : A.columnDet = 1 := by
@@ -44,21 +48,13 @@ theorem columnDet_apply (A : Matrix (Fin n) (Fin n) R) :
 
 /-- Permuting rows multiplies the column determinant by the sign of the permutation. -/
 @[simp] theorem columnDet_submatrix_left (A : Matrix (Fin n) (Fin n) R) (e : Perm (Fin n)) :
-    (A.submatrix e id).columnDet = sign e • A.columnDet := by
-  simp only [columnDet_apply, submatrix_apply, id_eq, Finset.smul_sum, smul_smul]
-  refine Fintype.sum_equiv (Equiv.mulLeft e) _ _ fun σ => ?_
-  simp [sign_mul, ← mul_assoc, Int.units_mul_self]
+    (A.submatrix e id).columnDet = sign e • A.columnDet :=
+  AlternatingMap.map_perm _ A e
 
 /-- The column determinant vanishes when two distinct rows agree. -/
 theorem columnDet_eq_zero_of_row_eq (A : Matrix (Fin n) (Fin n) R) {i j : Fin n}
-    (hij : i ≠ j) (h : A i = A j) : A.columnDet = 0 := by
-  rw [columnDet_apply, ← Equiv.sum_comp (Equiv.inv (Perm (Fin n)))]
-  simp only [Equiv.inv_apply, sign_inv]
-  refine TauCeti.sum_sign_smul_eq_zero_of_mul_swap _ i j hij fun σ => ?_
-  apply congrArg (fun f : Fin n → R => (List.ofFn f).prod)
-  funext k
-  simpa only [mul_inv_rev, Equiv.swap_inv, Perm.mul_apply] using
-    congrFun (Equiv.apply_swap_eq_self h (σ⁻¹ k)) k
+    (hij : i ≠ j) (h : A i = A j) : A.columnDet = 0 :=
+  AlternatingMap.map_eq_zero_of_eq _ A h hij
 
 /-- Expanding along the first column puts the selected entry on the left of its minor. -/
 theorem columnDet_succ_column_zero (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
