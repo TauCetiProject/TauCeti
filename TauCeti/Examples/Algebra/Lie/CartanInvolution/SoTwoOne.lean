@@ -18,7 +18,7 @@ On `𝔰𝔬(2, 1) = LieAlgebra.Orthogonal.so' (Fin 2) (Fin 1) ℝ`, the matrix 
 * Killing form `B(X, Y) = tr(XY)`, the case `p + q - 2 = 1` of `TauCeti.killingForm_so'_apply`;
 * fixed subalgebra `𝔨 = 𝔰𝔬(2)`, the block matrices `[[A, 0], [0, 0]]` with `A` skew-symmetric of
   size two, of dimension one;
-* `-1`-eigenspace `𝔭` the block matrices `[[0, b], [bᵀ, 0]]`, of dimension two.
+* `-1`-eigenspace `𝔭` of dimension two.
 
 In the coordinates `TauCeti.soTwoOneMatrix x y z` of `𝔰𝔬(2, 1)` (the image of
 `[[x, y], [z, -x]] ∈ 𝔰𝔩₂(ℝ)` under `TauCeti.slTwoLieEquivSoTwoOne`), `𝔨` is `x = 0, z = -y` and
