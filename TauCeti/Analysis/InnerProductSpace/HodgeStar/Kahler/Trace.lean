@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Power
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow.Trace
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
+public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.HermitianForm
+public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -30,12 +33,28 @@ Both sides are forms of top degree, so they agree once they agree on the basis
 (`ContinuousAlternatingMap.pairedWedge_wedgePow_apply_finProdFinEquiv`), and `ω ^ n / n!` is one
 (`TauCeti.AlmostComplexStructure.kahlerPowerForm_apply_complexRealFrame`).
 
+On a complex inner product space `E` of dimension `n`, with `J` multiplication by `i` and the real
+inner product `Re ⟪·, ·⟫_ℂ`, a two-form `α` of type (1,1) has the eigenvalues `λ[α]` of its
+Hermitian form `H_α` relative to the inner product, and their sum is `∑ᵢ α(uᵢ, i uᵢ)` for any
+orthonormal basis `u` (`ContinuousAlternatingMap.sum_relEigenvalues_hermitianSesqForm`). So the
+trace identity reads `n α ∧ ω ^ (n - 1) = (∑ⱼ λⱼ[α]) ω ^ n`
+(`TauCeti.AlmostComplexStructure.nsmul_wedge_wedgePow_ofComplexModule`).
+
 ## Main results
 
 * `TauCeti.AlmostComplexStructure.wedge_kahlerPowerForm_apply_complexRealFrame`: the value
   of `α ∧ ω ^ m / m!` on the frame of `m + 1` Hermitian-orthonormal vectors is
   `∑ᵢ α(uᵢ, J uᵢ)`.
 * `TauCeti.AlmostComplexStructure.wedge_kahlerPowerForm`: the trace identity in top degree.
+* `TauCeti.AlmostComplexStructure.wedge_kahlerPowerForm_ofComplexModule`: on a complex inner
+  product space, `α ∧ ω ^ (n - 1) / (n - 1)! = (∑ⱼ λⱼ[α]) · ω ^ n / n!` for `α` of type (1,1).
+* `TauCeti.AlmostComplexStructure.nsmul_wedge_wedgePow_ofComplexModule`: the same identity
+  without the factorials, `n α ∧ ω ^ (n - 1) = (∑ⱼ λⱼ[α]) ω ^ n`.
+
+## References
+
+* G. Székelyhidi, *Fully non-linear elliptic equations on compact Hermitian manifolds*,
+  J. Differential Geom. 109 (2018), Section 2.
 -/
 
 public section
@@ -86,5 +105,58 @@ theorem wedge_kahlerPowerForm {m : ℕ} (hm : finrank ℝ V = 2 * (m + 1))
   rw [hB, wedge_kahlerPowerForm_apply_complexRealFrame hJ hu hJu,
     kahlerPowerForm_apply_complexRealFrame hJ hu hJu, smul_eq_mul]
   ring
+
+omit hJ
+
+section Complex
+
+/-! ### The trace identity through the eigenvalues of a (1,1)-form -/
+
+attribute [local instance] InnerProductSpace.complexToReal
+
+open Complex
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [FiniteDimensional ℂ E]
+  {α : E [⋀^Fin 2]→L[ℝ] ℝ} (hα : ∀ u v : E, α ![I • u, I • v] = α ![u, v])
+include hα
+
+/-- **The trace identity through eigenvalues**, normalized: on a complex inner product space of
+dimension `m + 1`, with `ω` the Kähler form of multiplication by `i`, a real two-form `α` of type
+(1,1) satisfies `α ∧ ω ^ m / m! = (∑ⱼ λⱼ[α]) · ω ^ (m + 1) / (m + 1)!`, where `λ[α]` are the
+eigenvalues of the Hermitian form `H_α` relative to the inner product. -/
+theorem wedge_kahlerPowerForm_ofComplexModule {m : ℕ} (hm : finrank ℂ E = m + 1) :
+    wedge ((ofComplexModule E).kahlerPowerForm m) α =
+      (∑ j, (isSymm_hermitianSesqForm hα).relEigenvalues hm j) •
+        (ofComplexModule E).kahlerPowerForm (m + 1) := by
+  let b : OrthonormalBasis (Fin (m + 1)) ℂ E := (stdOrthonormalBasis ℂ E).reindex (finCongr hm)
+  have hbR : Orthonormal ℝ (b : Fin (m + 1) → E) := b.orthonormal.real
+  have hm' : finrank ℝ E = 2 * (m + 1) := by
+    rw [← Module.finrank_mul_finrank ℝ ℂ E, Complex.finrank_real_complex, hm]
+  rw [ContinuousAlternatingMap.sum_relEigenvalues_hermitianSesqForm hα hm b,
+    wedge_kahlerPowerForm real_inner_ofComplexModule_ofComplexModule hm' hbR
+      (fun i j ↦ ?_) α]
+  · simp only [ofComplexModule_apply]
+  · rw [ofComplexModule_apply]
+    exact (hbR.complex_iff_forall_real_inner_I_smul_eq_zero).1 b.orthonormal i j
+
+/-- **The trace identity through eigenvalues** `n α ∧ ω ^ (n - 1) = (∑ⱼ λⱼ[α]) ω ^ n` on a
+complex inner product space of dimension `n = m + 1`, for `ω` the Kähler form of multiplication by
+`i` and a real two-form `α` of type (1,1), with `λ[α]` the eigenvalues of `H_α` relative to the
+inner product. -/
+theorem nsmul_wedge_wedgePow_ofComplexModule {m : ℕ} (hm : finrank ℂ E = m + 1) :
+    (m + 1) • wedge ((alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow m) α =
+      (∑ j, (isSymm_hermitianSesqForm hα).relEigenvalues hm j) •
+        (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow (m + 1) := by
+  have h := wedge_kahlerPowerForm_ofComplexModule hα hm
+  rw [kahlerPowerForm_def, kahlerPowerForm_def, wedge_smul_left, smul_smul] at h
+  have hf : (m.factorial : ℝ) ≠ 0 := by positivity
+  have h' := congrArg (fun φ ↦ ((m + 1).factorial : ℝ) • φ) h
+  simp only [smul_smul, Nat.factorial_succ, Nat.cast_mul] at h'
+  rw [← Nat.cast_smul_eq_nsmul ℝ]
+  convert h' using 2
+  · field_simp
+  · field_simp
+
+end Complex
 
 end TauCeti.AlmostComplexStructure
