@@ -157,14 +157,11 @@ theorem dominates_iff_eq_fin_one [AddCommMonoid M] [Preorder M] {a g : Fin 1 →
 /-- On vectors of length two, dominance compares the totals and the first coordinates. -/
 theorem dominates_iff_fin_two [AddCommMonoid M] [LE M] [@Std.Refl M (· ≤ ·)] {a g : Fin 2 → M} :
     Dominates a g ↔ g 0 + g 1 = a 0 + a 1 ∧ a 0 ≤ g 0 := by
-  have h1 (x : Fin 2 → M) : prefixSum 1 x = x 0 := by
-    rw [prefixSum_succ Nat.zero_lt_two, prefixSum_zero, zero_add]
-    rfl
   rw [dominates_iff_forall_prefixSum_le, Fin.sum_univ_two, Fin.sum_univ_two]
-  refine and_congr_right fun hsum ↦ ⟨fun h ↦ h1 a ▸ h1 g ▸ h 1, fun h k ↦ ?_⟩
+  refine and_congr_right fun hsum ↦ ⟨fun h ↦ prefixSum_one a ▸ prefixSum_one g ▸ h 1, fun h k ↦ ?_⟩
   rcases k with _ | _ | k
   · simpa only [prefixSum_zero] using refl_of (· ≤ ·) (0 : M)
-  · rwa [h1, h1]
+  · rwa [prefixSum_one, prefixSum_one]
   · rw [prefixSum_of_le (by omega), prefixSum_of_le (by omega), Fin.sum_univ_two,
       Fin.sum_univ_two, hsum]
     exact refl_of (· ≤ ·) _
@@ -174,8 +171,7 @@ first coordinate of `g`. -/
 theorem Dominates.apply_le_apply_zero [AddCommMonoid M] [Preorder M] {a g : Fin (n + 1) → M}
     (h : Dominates a g) (ha : Antitone a) (i : Fin (n + 1)) : a i ≤ g 0 := by
   have h1 := (dominates_iff_forall_prefixSum_le.mp h).2 1
-  rw [prefixSum_succ (Nat.succ_pos n), prefixSum_succ (Nat.succ_pos n), prefixSum_zero,
-    prefixSum_zero, zero_add, zero_add] at h1
+  rw [prefixSum_one, prefixSum_one] at h1
   exact (ha (Fin.zero_le i)).trans h1
 
 /-- If an antitone vector `a` is dominated by `g`, then every coordinate of `a` is at least the
@@ -186,8 +182,8 @@ theorem Dominates.apply_last_le_apply [AddCommMonoid M] [Preorder M]
   have hn := (dominates_iff_forall_prefixSum_le.mp h).2 n
   -- the total is the prefix sum of length `n` plus the last coordinate
   have hlast (z : Fin (n + 1) → M) : ∑ j, z j = prefixSum n z + z (Fin.last n) := by
-    rw [← prefixSum_of_le le_rfl, prefixSum_succ (Nat.lt_succ_self n)]
-    rfl
+    rw [← prefixSum_of_le le_rfl, prefixSum_succ (Nat.lt_succ_self n),
+      show (⟨n, Nat.lt_succ_self n⟩ : Fin (n + 1)) = Fin.last n from Fin.ext (Fin.val_last n).symm]
   have htot := h.1
   rw [hlast, hlast] at htot
   have hle : prefixSum n a + a (Fin.last n) ≤ prefixSum n g + a (Fin.last n) := by gcongr
