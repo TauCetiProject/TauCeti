@@ -161,9 +161,6 @@ theorem frameTopology_le_of_refinement {κ : Type*}
 frames and the restricted frame domains. No global covering hypothesis is needed. -/
 theorem continuous_restrict_frameTopology (W : Opens M) :
     let c : C(W, M) := ⟨Subtype.val, continuous_subtypeVal⟩
-    let _ : ContMDiffVectorBundle n F (c *ᵖ V) I :=
-      ContMDiffVectorBundle.pullback F V I
-        (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, W; I, M⟯)
     let eW := fun i ↦ (e i).pullback c
     let UW := fun i ↦ Opens.comap c (U i)
     let hUW : ∀ i, (UW i : Set W) ⊆ (eW i).baseSet := fun i _ hx ↦ hU i hx
@@ -171,9 +168,6 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
     let _ := frameTopology (I := I) (n := n) eW UW hUW
     Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ s.restrict W) := by
   let c : C(W, M) := ⟨Subtype.val, continuous_subtypeVal⟩
-  let _ : ContMDiffVectorBundle n F (c *ᵖ V) I :=
-    ContMDiffVectorBundle.pullback F V I
-      (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, W; I, M⟯)
   let eW := fun i ↦ (e i).pullback c
   let UW := fun i ↦ Opens.comap c (U i)
   let hUW : ∀ i, (UW i : Set W) ⊆ (eW i).baseSet := fun i _ hx ↦ hU i hx
@@ -196,8 +190,7 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
   ext x
   simp only [Function.comp_apply, ContMDiffMap.comp_apply,
     Bundle.Trivialization.frameCoordinates_apply]
-  erw [Bundle.Trivialization.frameCoordinates_apply,
-    Bundle.Trivialization.pullback_apply, ContMDiffSection.restrict_apply]
+  rw [Bundle.Trivialization.pullback_apply, ContMDiffSection.restrict_apply]
   rfl
 
 omit [LocallyCompactSpace E] in

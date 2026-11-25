@@ -31,17 +31,18 @@ import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Matrix.HermitianProjector
 
 /-!
-# Smoothness and Hadamard variation of simple spectral projectors and second eigenvalue variation
+# Smoothness and Hadamard variation of simple spectral projectors and eigenvalues
 
 At any Hermitian matrix `A` over an `RCLike` field `𝕜` whose `k`-th sorted eigenvalue `λₖ(A)` is
 simple (`∀ j ≠ k, λⱼ(A) ≠ λₖ(A)`), the rank-one spectral projector `X ↦ Pₖ(X)` is real-analytic
 (`C^ω`) near `A` in `selfAdjoint (Matrix n n 𝕜)`, and hence on the open simple-spectrum locus
 `{X | StrictAnti X.property.isHermitian.eigenvalues₀}`. Complementing the family smoothness and
-first variation of simple eigenvalues in `TauCeti.Analysis.Matrix.Eigenvalues.Smooth`, this file
-proves Hadamard's first variation formula for `Pₖ`, the projector-trace strict Fréchet first
-variation of `λₖ` on `selfAdjoint (Matrix n n 𝕜)`, and Hadamard's second variation formula for
-`λₖ`, supplying the multivariable `C²` chain rules needed for Itô calculus on simple eigenvalues of
-Hermitian matrix processes.
+first variation of simple eigenvalues in `TauCeti.Analysis.Matrix.Eigenvalues.Smooth` and the curve
+second variation in eigenvector coordinates in
+`TauCeti.Analysis.Matrix.Eigenvalues.SecondVariation`, this file proves Hadamard's first variation
+formula for `Pₖ`, together with the basis-free projector-trace strict Fréchet first and bilinear
+second variations of `λₖ` on `selfAdjoint (Matrix n n 𝕜)`, supplying the multivariable `C²` chain
+rules needed for Itô calculus on simple eigenvalues of Hermitian matrix processes.
 
 To state or use the normed calculus declarations in this file,
 `open scoped Matrix.Norms.L2Operator` and enable
@@ -56,9 +57,8 @@ To state or use the normed calculus declarations in this file,
   `Matrix.IsHermitian.hasDerivAt_eigenprojector₀_add_smul`,
   `Matrix.hasStrictFDerivAt_eigenvalues₀_selfAdjoint`, and
   `Matrix.fderiv_eigenvalues₀_selfAdjoint_apply`.
-* `Matrix.hasStrictFDerivAt_fderiv_eigenvalues₀`, `Matrix.fderiv_fderiv_eigenvalues₀_apply`,
-  `Matrix.IsHermitian.iteratedDeriv_two_eigenvalues₀_add_smul`, and
-  `Matrix.IsHermitian.iteratedDeriv_two_eigenvalues₀_add_smul_eq_sum_norm_sq`.
+* `Matrix.hasStrictFDerivAt_fderiv_eigenvalues₀`, `Matrix.fderiv_fderiv_eigenvalues₀_apply`, and
+  `Matrix.IsHermitian.iteratedDeriv_two_eigenvalues₀_add_smul`.
 
 ## References
 
@@ -511,16 +511,14 @@ theorem hasStrictFDerivAt_eigenprojector₀ {A : selfAdjoint (Matrix n n 𝕜)}
   refine ((TauCeti.hasStrictFDerivAt_rankOneHermitianProjector hu_ne).comp A hv_deriv
     |>.congr_of_eventuallyEq (eventuallyEq_eigenprojector₀_rankOne hk).symm).congr_fderiv ?_
   ext B : 1
-  simp only [u, localEigPerturb_self A.property.isHermitian hk, add_zero,
+  simp only [TauCeti.rankOneHermitianProjectorFDeriv_apply,
+    TauCeti.rankOneHermitianProjector_eq_real_smul, u,
+    localEigPerturb_self A.property.isHermitian hk, add_zero,
     A.property.isHermitian.dotProduct_star_eigenvectorBasis₀_self, RCLike.one_re, inv_one, one_smul,
-    TauCeti.rankOneHermitianProjector_eq_real_smul, ContinuousLinearMap.comp_apply,
-    add_apply, smul_apply, sum_apply, ContinuousLinearMap.coe_restrictScalars',
-    ContinuousLinearMap.flip_apply, selfAdjoint.subtypeL_apply,
-    LinearMap.coe_toContinuousLinearMap', LinearMap.sub_apply, LinearMap.add_apply,
-    LinearMap.smul_apply, LinearMap.comp_apply, LinearMap.flip_apply,
-    LinearMap.smulRight_apply, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
-    starL'_apply, RCLike.reLm_coe, dotProductBilin_apply_apply, vecMulVecBilin_apply_apply,
-    mulVecBilinCLM_apply, mulVecCLM_apply, ContinuousLinearMap.mulLeftRight_apply, smul_smul]
+    ContinuousLinearMap.comp_apply, add_apply, smul_apply, sum_apply,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.flip_apply,
+    selfAdjoint.subtypeL_apply, mulVecBilinCLM_apply, mulVecCLM_apply,
+    ContinuousLinearMap.mulLeftRight_apply]
   exact rankOneProjector_deriv_sum_eq A.property.isHermitian B.property.isHermitian k
 
 /-- Applied Fréchet derivative of `X ↦ X.property.isHermitian.eigenprojector₀ k` at simple `λₖ`. -/
@@ -648,6 +646,20 @@ namespace IsHermitian
 
 variable {A B : Matrix n n 𝕜}
 
+omit [Fintype n] [DecidableEq n] in
+private theorem apply_isHermitian_congr {α : Type*}
+    (F : ∀ {M : Matrix n n 𝕜}, M.IsHermitian → α) {M₁ M₂ : Matrix n n 𝕜}
+    (h₁ : M₁.IsHermitian) (h₂ : M₂.IsHermitian) (h : M₁ = M₂) : F h₁ = F h₂ := by
+  subst h; rfl
+
+omit [Fintype n] [DecidableEq n] in
+private theorem comp_selfAdjoint_add_smul {α : Type*}
+    (F : ∀ {M : Matrix n n 𝕜}, M.IsHermitian → α) (hA : A.IsHermitian) (hB : B.IsHermitian) :
+    (fun t : ℝ ↦ F (hA.add (hB.smul (IsSelfAdjoint.all t)))) =
+      fun t : ℝ ↦ F ((⟨A, hA.isSelfAdjoint⟩ +
+        t • (⟨B, hB.isSelfAdjoint⟩ : selfAdjoint (Matrix n n 𝕜))).property.isHermitian) :=
+  funext fun _ ↦ apply_isHermitian_congr F _ _ (by simp)
+
 /-- Directional derivative of `t ↦ (A + t • B).eigenprojector₀ k` at `t = 0` for simple `λₖ(A)`. -/
 theorem hasDerivAt_eigenprojector₀_add_smul (hA : A.IsHermitian) (hB : B.IsHermitian)
     {k : Fin (Fintype.card n)} (hk : ∀ j ≠ k, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ k) :
@@ -657,11 +669,7 @@ theorem hasDerivAt_eigenprojector₀_add_smul (hA : A.IsHermitian) (hB : B.IsHer
           hA.eigenprojector₀ j * B * hA.eigenprojector₀ k)) 0 := by
   let A' : selfAdjoint (Matrix n n 𝕜) := ⟨A, hA.isSelfAdjoint⟩
   let B' : selfAdjoint (Matrix n n 𝕜) := ⟨B, hB.isSelfAdjoint⟩
-  have hfn : (fun t : ℝ ↦ (hA.add (hB.smul (IsSelfAdjoint.all t))).eigenprojector₀ k) =
-      fun t : ℝ ↦ (A' + t • B').property.isHermitian.eigenprojector₀ k :=
-    funext fun t ↦ congrFun
-      ((hA.add (hB.smul (IsSelfAdjoint.all t))).eigenprojector₀_congr _ (by simp [A', B'])) k
-  rw [hfn]
+  rw [comp_selfAdjoint_add_smul (fun h ↦ h.eigenprojector₀ k) hA hB]
   refine ((hasStrictFDerivAt_eigenprojector₀ (A := A') hk).hasFDerivAt.comp_hasDerivAt_of_eq
     (0 : ℝ) (((hasDerivAt_id (0 : ℝ)).smul_const B').const_add A') (by simp)).congr_deriv ?_
   dsimp only [A', B']; simp [smul_add]
@@ -674,34 +682,13 @@ theorem iteratedDeriv_two_eigenvalues₀_add_smul (hA : A.IsHermitian) (hB : B.I
         RCLike.re (hA.eigenprojector₀ k * B * hA.eigenprojector₀ j * B).trace := by
   let A' : selfAdjoint (Matrix n n 𝕜) := ⟨A, hA.isSelfAdjoint⟩
   let B' : selfAdjoint (Matrix n n 𝕜) := ⟨B, hB.isSelfAdjoint⟩
-  have hfn : (fun t : ℝ ↦ (hA.add (hB.smul (IsSelfAdjoint.all t))).eigenvalues₀ k) =
-      fun t : ℝ ↦ (A' + t • B').property.isHermitian.eigenvalues₀ k :=
-    funext fun t ↦ congrFun
-      (IsHermitian.eigenvalues₀_congr (by simp [A', B']) (hA.add (hB.smul (IsSelfAdjoint.all t))) _)
-      k
   have hc : ContDiffAt ℝ 2
       (fun X : selfAdjoint (Matrix n n 𝕜) ↦ X.property.isHermitian.eigenvalues₀ k)
       (A' + (0 : ℝ) • B') := by
     simpa using contDiffAt_eigenvalues₀_selfAdjoint (A := A') (m := 2) hk
-  rw [hfn, iteratedDeriv_succ, iteratedDeriv_one, hc.deriv_deriv_comp_add_smul]
+  rw [comp_selfAdjoint_add_smul (fun h ↦ h.eigenvalues₀ k) hA hB,
+    iteratedDeriv_succ, iteratedDeriv_one, hc.deriv_deriv_comp_add_smul]
   simpa [A', B'] using fderiv_fderiv_eigenvalues₀_apply (A := A') hk B' B'
-
-/-- **Hadamard's second directional variation** (eigenvector matrix-element form, Anderson–Guionnet–
-Zeitouni Lemma 4.3.4): `(d²/dt²)|₀ λₖ(A + t • B) = 2 * ∑ j ≠ k, (λₖ(A) - λⱼ(A))⁻¹ * ‖uⱼ* B uₖ‖²`. -/
-theorem iteratedDeriv_two_eigenvalues₀_add_smul_eq_sum_norm_sq (hA : A.IsHermitian)
-    (hB : B.IsHermitian) {k : Fin (Fintype.card n)}
-    (hk : ∀ j ≠ k, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ k) :
-    iteratedDeriv 2 (fun t : ℝ ↦ (hA.add (hB.smul (IsSelfAdjoint.all t))).eigenvalues₀ k) 0 =
-      2 * ∑ j ∈ Finset.univ.erase k, (hA.eigenvalues₀ k - hA.eigenvalues₀ j)⁻¹ *
-        ‖star ⇑(hA.eigenvectorBasis₀ j) ⬝ᵥ (B *ᵥ ⇑(hA.eigenvectorBasis₀ k))‖ ^ 2 := by
-  rw [hA.iteratedDeriv_two_eigenvalues₀_add_smul hB hk]
-  refine congrArg (2 * ·) (Finset.sum_congr rfl fun j _ ↦ congrArg _ ?_)
-  rw [hA.trace_eigenprojector₀_mul_mul_eigenprojector₀_mul j k B B]
-  have hconj : star ⇑(hA.eigenvectorBasis₀ k) ⬝ᵥ (B *ᵥ ⇑(hA.eigenvectorBasis₀ j)) =
-      star (star ⇑(hA.eigenvectorBasis₀ j) ⬝ᵥ (B *ᵥ ⇑(hA.eigenvectorBasis₀ k))) := by
-    rw [dotProduct_comm, ← star_dotProduct, star_mulVec, dotProduct_comm, hB.eq,
-      ← dotProduct_mulVec]
-  rw [hconj, RCLike.star_def, RCLike.conj_mul]; norm_cast
 
 end IsHermitian
 

@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.Projectivization.Projector
 
 import Mathlib.LinearAlgebra.Matrix.Action
 import TauCeti.Analysis.Matrix.DotProduct
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # The Hermitian projector of a line
@@ -97,7 +98,7 @@ multiplication by `(RCLike.re (star x ⬝ᵥ x))⁻¹`. -/
 theorem rankOneHermitianProjector_eq_real_smul {𝕜 : Type*} [RCLike 𝕜] (x : ι → 𝕜) :
     rankOneHermitianProjector x = (RCLike.re (star x ⬝ᵥ x))⁻¹ • vecMulVec x (star x) := by
   rw [rankOneHermitianProjector_def, RCLike.real_smul_eq_coe_smul (K := 𝕜),
-    RCLike.ofReal_inv, Matrix.ofReal_re_dotProduct_star_self]
+    RCLike.ofReal_inv, ← Matrix.star_dotProduct_self_eq_ofReal_re]
 
 theorem rankOneHermitianProjector_apply (x : ι → K) (i j : ι) :
     rankOneHermitianProjector x i j = x i * star (x j) / (star x ⬝ᵥ x) := by
@@ -172,10 +173,8 @@ the Hermitian projector of `U x` is `U P U*`, where `P` is that of `x`. -/
 theorem rankOneHermitianProjector_unitary_mulVec [DecidableEq ι] {U : Matrix ι ι K}
     (hU : U ∈ unitaryGroup ι K) (x : ι → K) :
     rankOneHermitianProjector (U *ᵥ x) = U * rankOneHermitianProjector x * star U := by
-  have hdot : star (U *ᵥ x) ⬝ᵥ (U *ᵥ x) = star x ⬝ᵥ x := by
-    rw [star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, ← star_eq_conjTranspose,
-      mem_unitaryGroup_iff'.mp hU, one_mulVec]
-  rw [rankOneHermitianProjector_def, rankOneHermitianProjector_def, hdot, Matrix.mul_smul,
+  rw [rankOneHermitianProjector_def, rankOneHermitianProjector_def,
+    star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup hU, Matrix.mul_smul,
     Matrix.smul_mul, mul_vecMulVec, vecMulVec_mul, star_mulVec, star_eq_conjTranspose]
 
 variable (ι K) in

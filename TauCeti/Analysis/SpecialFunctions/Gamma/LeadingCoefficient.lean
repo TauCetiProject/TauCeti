@@ -16,7 +16,9 @@ Deligne's archimedean factors `Gammaℝ s = π ^ (-s / 2) Γ(s / 2)` and
 `Gammaℂ s = 2 (2π) ^ (-s) Γ(s)` have simple poles at `-2m` and `-m` respectively.
 This file computes their leading Laurent coefficients there:
 `meromorphicTrailingCoeffAt Gammaℝ (-2m) = 2 π ^ m (-1) ^ m / m!` and
-`meromorphicTrailingCoeffAt Gammaℂ (-m) = 2 (2π) ^ m (-1) ^ m / m!`.
+`meromorphicTrailingCoeffAt Gammaℂ (-m) = 2 (2π) ^ m (-1) ^ m / m!`, in particular `2` at `0`
+(`Complex.meromorphicTrailingCoeffAt_Gammaℝ_zero`,
+`Complex.meromorphicTrailingCoeffAt_Gammaℂ_zero`).
 
 The functional equation of a Dedekind zeta function relates its behaviour at `1 - n` to its
 value at `n` through the factor `Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂`, so what enters is the ratio of
@@ -34,6 +36,13 @@ For the reciprocal factor `s ↦ (Gammaℝ s)⁻¹ ^ r₁ * (Gammaℂ s)⁻¹ ^ 
 * `TauCeti.exists_rat_meromorphicTrailingCoeffAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub`: its
   leading coefficient at `1 - n`, times `Gammaℝ n ^ r₁ * Gammaℂ n ^ r₂`, is a nonzero rational
   multiple of `π ^ (d - (r₁ + 2 r₂) n)`.
+
+Equivalently, for the archimedean factor `s ↦ Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂` itself:
+* `TauCeti.meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat`: it has a pole of order
+  exactly `d` at `1 - n`;
+* `TauCeti.exists_rat_Gammaℝ_pow_mul_Gammaℂ_pow_eq_mul_meromorphicTrailingCoeffAt`: its value at
+  `n` is a nonzero rational multiple of `π ^ (d - (r₁ + 2 r₂) n)` times its leading coefficient at
+  `1 - n`.
 
 These are the archimedean inputs to Borel's computation of the leading coefficient of a Dedekind
 zeta function at a negative integer.
@@ -79,6 +88,16 @@ theorem meromorphicTrailingCoeffAt_Gammaℝ_neg_two_mul_nat (m : ℕ) :
     cpow_natCast, show (-1 : WithTop ℤ).untop₀ = -1 by simp]
   simp only [zpow_neg, zpow_one, inv_inv, smul_eq_mul]
   ring
+
+/-- The leading Laurent coefficient of `Gammaℂ` at `0` is `2`. -/
+@[simp]
+theorem meromorphicTrailingCoeffAt_Gammaℂ_zero : meromorphicTrailingCoeffAt Gammaℂ 0 = 2 := by
+  simpa using meromorphicTrailingCoeffAt_Gammaℂ_neg_nat 0
+
+/-- The leading Laurent coefficient of `Gammaℝ` at `0` is `2`. -/
+@[simp]
+theorem meromorphicTrailingCoeffAt_Gammaℝ_zero : meromorphicTrailingCoeffAt Gammaℝ 0 = 2 := by
+  simpa using meromorphicTrailingCoeffAt_Gammaℝ_neg_two_mul_nat 0
 
 /-- At a nonpositive even integer `-2m`, the value of `Gammaℝ` at `2m + 1` divided by the leading
 coefficient of `Gammaℝ` at `-2m` is `(-1) ^ m (π / 2) Gammaℂ (2m + 1)`. -/
@@ -141,13 +160,7 @@ theorem analyticOrderAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub (r₁ r₂
       (((if Even n then 0 else r₁) + r₂ : ℕ) : ℕ∞) := by
   have hCo : meromorphicOrderAt Gammaℂ (1 - n) = -1 :=
     (meromorphicOrderAt_Gammaℂ_eq_neg_one_iff _).mpr ⟨n - 1, by push_cast [hn]; ring⟩
-  have hRo : meromorphicOrderAt Gammaℝ (1 - n) = if Even n then 0 else -1 := by
-    rcases Nat.even_or_odd' n with ⟨k, rfl | rfl⟩
-    · rw [ite_eq_left (even_two_mul k), meromorphicOrderAt_Gammaℝ_eq_zero_iff]
-      push_cast
-      exact Gammaℝ_one_sub_two_mul_natCast_ne_zero k
-    · rw [ite_eq_right (Nat.not_even_bit1 k), meromorphicOrderAt_Gammaℝ_eq_neg_one_iff]
-      exact ⟨k, by push_cast; ring⟩
+  have hRo := meromorphicOrderAt_Gammaℝ_one_sub_nat n
   have hm : meromorphicOrderAt (fun s : ℂ ↦ (Gammaℝ s)⁻¹ ^ r₁ * (Gammaℂ s)⁻¹ ^ r₂) (1 - n) =
       (((if Even n then 0 else r₁) + r₂ : ℕ) : ℤ) := by
     rw [fun_meromorphicOrderAt_mul (by fun_prop) (by fun_prop),
@@ -234,5 +247,57 @@ theorem exists_rat_meromorphicTrailingCoeffAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_
     zpow_mul, zpow_mul, zpow_natCast, zpow_natCast]
   push_cast
   ring
+
+/-- The product `Γ_ℝ(s) ^ r₁ Γ_ℂ(s) ^ r₂` of archimedean factors has a pole of order `r₂` at
+`1 - n` for even `n ≥ 1` and of order `r₁ + r₂` for odd `n`: the factor `Γ_ℂ` has a pole at every
+nonpositive integer, while `Γ_ℝ` has one only at the nonpositive even integers. -/
+theorem meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat (r₁ r₂ : ℕ) {n : ℕ}
+    (hn : 1 ≤ n) :
+    meromorphicOrderAt (fun s ↦ Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂) (1 - n) =
+      -((if Even n then r₂ else r₁ + r₂ : ℕ) : ℤ) := by
+  have hR := meromorphic_Gammaℝ (1 - n)
+  have hC := meromorphic_Gammaℂ (1 - n)
+  -- both orders as integers cast into `WithTop ℤ`, so that `norm_cast` reduces to `ℤ`
+  have hCord : meromorphicOrderAt Gammaℂ (1 - n) = ((-1 : ℤ) : WithTop ℤ) :=
+    (meromorphicOrderAt_Gammaℂ_eq_neg_one_iff _).mpr ⟨n - 1, by push_cast [hn]; ring⟩
+  have hRord :
+      meromorphicOrderAt Gammaℝ (1 - n) = ((if Even n then 0 else -1 : ℤ) : WithTop ℤ) := by
+    rw [meromorphicOrderAt_Gammaℝ_one_sub_nat]; split_ifs <;> simp
+  have he : (fun s ↦ Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂) = Gammaℝ ^ r₁ * Gammaℂ ^ r₂ := by
+    ext; simp
+  rw [he, meromorphicOrderAt_mul (hR.pow r₁) (hC.pow r₂), meromorphicOrderAt_pow hR,
+    meromorphicOrderAt_pow hC, hCord, hRord]
+  norm_cast
+  split_ifs <;> push_cast <;> ring
+
+/-- **The leading coefficient of the archimedean factors at `1 - n`.** For `n ≥ 1`, the value at
+`n` of `Γ_ℝ(s) ^ r₁ Γ_ℂ(s) ^ r₂` is a nonzero rational multiple of `π ^ (d - (r₁ + 2 r₂) n)` times
+its leading Laurent coefficient at `1 - n`, where `d` is the pole order there: `r₂` for even `n`
+and `r₁ + r₂` for odd `n` (`meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat`). For the
+signature `(r₁, r₂)` of a number field of degree `r₁ + 2 r₂` and `n ≥ 2`, this is the
+archimedean part of the leading term of its Dedekind zeta function at `1 - n` (Borel 1977, §1.4);
+at `n = 1` the pole of the completed zeta function at `0` also contributes. -/
+theorem exists_rat_Gammaℝ_pow_mul_Gammaℂ_pow_eq_mul_meromorphicTrailingCoeffAt
+    (r₁ r₂ : ℕ) {n : ℕ} (hn : 1 ≤ n) :
+    ∃ q : ℚ, q ≠ 0 ∧ Gammaℝ n ^ r₁ * Gammaℂ n ^ r₂ =
+      q * (π : ℂ) ^ (((if Even n then r₂ else r₁ + r₂ : ℕ) : ℤ) - (r₁ + 2 * r₂ : ℕ) * n) *
+        meromorphicTrailingCoeffAt (fun s ↦ Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂) (1 - n) := by
+  obtain ⟨q, hq, h⟩ :=
+    exists_rat_meromorphicTrailingCoeffAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub r₁ r₂ hn
+  have hc : meromorphicTrailingCoeffAt (fun s ↦ Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂) (1 - n) ≠ 0 :=
+    MeromorphicAt.meromorphicTrailingCoeffAt_ne_zero (by fun_prop) (by
+      rw [meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat r₁ r₂ hn]
+      exact WithTop.coe_ne_top)
+  have hinv : (fun s : ℂ ↦ (Gammaℝ s)⁻¹ ^ r₁ * (Gammaℂ s)⁻¹ ^ r₂) =
+      fun s ↦ (Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂)⁻¹ := by
+    ext s
+    rw [inv_pow, inv_pow, mul_inv]
+  have he : ((if Even n then r₂ else r₁ + r₂ : ℕ) : ℤ) - (r₁ + 2 * r₂ : ℕ) * n =
+      (((if Even n then 0 else r₁) + r₂ : ℕ) : ℤ) - (r₁ + 2 * r₂) * n := by
+    split_ifs <;> push_cast <;> ring
+  rw [hinv, meromorphicTrailingCoeffAt_fun_inv] at h
+  refine ⟨q, hq, ?_⟩
+  rw [he, ← h]
+  field_simp
 
 end TauCeti

@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Sites.Pullback
 public import TauCeti.CategoryTheory.Limits.Final
 
 /-!
-# Pullback and change of coefficients of constant sheaves
+# Constant sheaves: vanishing, pullback and change of coefficients
 
 Let `u : C ⥤ D` be a continuous functor from a site `(C, J)` to a site `(D, K)`, whose sheaf
 pushforward `u_* : Sheaf K A ⥤ Sheaf J A` has the left adjoint `u^* = u.sheafPullback A J K`.
@@ -27,7 +27,14 @@ with apex `X` over `F`, restricted along `u` in the first case.
 For a functor `G : A ⥤ B` preserving sheafification, the sheafified composite with `G` sends the
 constant sheaf with value `X` to the constant sheaf with value `G X`, on any site.
 
+Separately, since the constant sheaf functor is left adjoint to sections over a terminal object
+`T`, a constant sheaf whose sections over `T` vanish is zero
+(`CategoryTheory.Sheaf.isZero_of_isConstant_of_isZero_obj`).
+
 ## Main declarations
+
+* `CategoryTheory.Sheaf.isZero_of_isConstant_of_isZero_obj`: a constant sheaf with vanishing
+  sections over a terminal object is zero.
 
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom`: the comparison `u^* (X_J) ⟶ X_K`.
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom_naturality`: the comparison is natural
@@ -169,6 +176,8 @@ end CategoryTheory.Functor
 
 namespace CategoryTheory.Sheaf
 
+section
+
 variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {A B : Type*} [Category* A]
   [Category* B] (G : A ⥤ B) [HasWeakSheafify J A] [HasWeakSheafify J B]
   [J.PreservesSheafification G]
@@ -199,5 +208,25 @@ lemma constantSheafCompComposeAndSheafifyIso_inv_app (X : A) :
       (presheafToSheaf J B).map ((Functor.compConstIso Cᵒᵖ G).hom.app X) ≫
         (presheafToSheafCompComposeAndSheafifyIso J G).inv.app ((Functor.const Cᵒᵖ).obj X) :=
   (rfl)
+
+end
+
+section
+
+variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {D : Type*} [Category* D]
+  [Preadditive D] [HasWeakSheafify J D]
+
+/-- A constant sheaf whose sections over a terminal object `T` vanish is zero: by the adjunction
+`constantSheafAdj`, endomorphisms of the constant sheaf on `N` are maps from `N` to its sections
+over `T`. -/
+theorem isZero_of_isConstant_of_isZero_obj {T : C} (hT : IsTerminal T) (F : Sheaf J D)
+    [F.IsConstant J] (hF : IsZero (F.obj.obj (Opposite.op T))) : IsZero F := by
+  obtain ⟨N, ⟨e⟩⟩ := F.mem_essImage_of_isConstant
+  refine (IsZero.iff_id_eq_zero F).2 ?_
+  have h := ((constantSheafAdj J D hT).homEquiv N F).injective
+    (a₁ := e.hom ≫ 𝟙 F) (a₂ := e.hom ≫ 0) (hF.eq_of_tgt _ _)
+  simpa using congr(e.inv ≫ $h)
+
+end
 
 end CategoryTheory.Sheaf

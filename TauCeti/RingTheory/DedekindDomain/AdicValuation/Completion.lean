@@ -60,7 +60,10 @@ Everything here concerns one completion. The comparison of two completions along
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletionIntegers`: consequently the
   residue field of `v` is the residue field of `𝒪_v`;
   `residueFieldEquivAdicCompletionIntegers_apply_mk` describes that isomorphism on a quotient
-  representative.
+  representative, and `residue_algebraMap_adicCompletionIntegers_surjective` (in the same
+  namespace) states that `R` maps onto the residue field of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.charP_residueField_adicCompletionIntegers`: when `v`
+  contains the prime `p`, the residue field of `𝒪_v` has characteristic `p`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
   an element of `K` of valuation one maps to a unit of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_mem_adicCompletionIntegers_inv_notMem`: `K_v` has a
@@ -572,6 +575,29 @@ theorem residueFieldEquivAdicCompletionIntegers_apply_mk (a : R) :
     v.residueFieldEquivAdicCompletionIntegers (K := K) (Ideal.Quotient.mk v.asIdeal a) =
       Ideal.Quotient.mk (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K))
         (algebraMap R (v.adicCompletionIntegers K) a) := (rfl)
+
+/-- Every element of the residue field of the completion at `v` is the reduction of an element
+of `R`. -/
+theorem residue_algebraMap_adicCompletionIntegers_surjective :
+    Function.Surjective fun a : R ↦ IsLocalRing.residue (v.adicCompletionIntegers K)
+      (algebraMap R (v.adicCompletionIntegers K) a) := by
+  intro y
+  obtain ⟨x, hx⟩ := (v.residueFieldEquivAdicCompletionIntegers (K := K)).surjective y
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+  exact ⟨a, by
+    rw [← hx, residueFieldEquivAdicCompletionIntegers_apply_mk]
+    exact IsLocalRing.residue_def _⟩
+
+/-- The residue field of the completion at a height-one prime `v` containing the prime `p` has
+characteristic `p`. -/
+theorem charP_residueField_adicCompletionIntegers (p : ℕ) [Fact p.Prime]
+    (hp : (p : R) ∈ v.asIdeal) :
+    CharP (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) p := by
+  rw [CharP.charP_iff_prime_eq_zero Fact.out]
+  have : algebraMap R (v.adicCompletionIntegers K) p ∈ IsLocalRing.maximalIdeal _ := by
+    rw [← Ideal.mem_comap, ← Ideal.under_def, under_maximalIdeal_adicCompletionIntegers]
+    exact hp
+  simpa using (IsLocalRing.residue_eq_zero_iff _).2 this
 
 end SingleCompletion
 

@@ -276,6 +276,14 @@ theorem MemBesov.smul {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (c : ℂ) :
   refine ⟨c • a, fun j ↦ ?_⟩
   rw [lp.coeFn_smul, Pi.smul_apply, Lp.toTemperedDistribution_smul, ha, map_smul, smul_comm]
 
+/-- `B^s_{p,q}` is closed under scalar multiplication by any scalars acting on tempered
+distributions through `ℂ`, such as real numbers. -/
+theorem MemBesov.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
+    [IsScalarTower R ℂ 𝓢'(E, F)] {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (c : R) :
+    (c • u).MemBesov φ s p q := by
+  rw [← smul_one_smul ℂ c u]
+  exact hu.smul _
+
 /-- **Monotonicity of the Besov scale.** `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' ≤ s` and `q ≤ q'`. -/
 theorem MemBesov.mono {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.MemBesov φ s p q)
     (hs : s' ≤ s) (hq : q ≤ q') : u.MemBesov φ s' p q' := by

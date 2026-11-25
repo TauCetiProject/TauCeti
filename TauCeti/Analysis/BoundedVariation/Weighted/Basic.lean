@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 
 /-!
 # Weighted variation and weighted perimeter
@@ -29,6 +30,13 @@ measure, the weighted perimeter in the whole space is the **Gaussian perimeter**
 (`TauCeti.gaussianPerimeter`); a half-space at distance `s` from the origin has Gaussian perimeter
 `φ(s)` for the standard normal density `φ`.
 
+Since `div (e^{−W} X) = e^{−W} div_μ X`, the weighted variation is also the supremum of `∫ u div Y`
+over vector fields `Y` with compact support in `Ω` and `‖Y‖ ≤ e^{−W}`, smooth or only `C¹` (the
+**density-bounded form**). Comparing these fields with the unit-bounded fields of the Euclidean
+variation `|Du|(Ω) = TauCeti.totalVariationOn volume Ω u` gives `m |Du|(Ω) ≤ V_μ(u; Ω) ≤ M |Du|(Ω)`
+whenever `m ≤ e^{−W} ≤ M` on `Ω`. As `e^{−W}` is bounded below by a positive constant on every
+compact set, a function of finite weighted variation has locally finite Euclidean variation.
+
 The weighted divergence matters: the supremum of `∫_U div X dμ`, which is Tau Ceti's
 `TauCeti.perimeter μ Ω U` with the measure `μ` in place of `volume`, is not complement invariant
 and assigns positive perimeter to the whole space for the Gaussian measure. The weighted
@@ -47,6 +55,16 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
   variation pairs `u` with the divergences of the fields `e^{−W} X`.
 * `TauCeti.integral_divergenceCLM_sub_fderiv_mul_exp_neg_eq_zero`: for a `C¹` weight, the weighted
   divergence of a test vector field has `μ`-integral zero.
+* `TauCeti.ofReal_integral_le_weightedVariation_of_contDiff`: `C¹` vector fields with compact
+  support in `Ω` and norm at most `1` bound the weighted variation from below.
+* `TauCeti.weightedVariation_eq_iSup_norm_le_exp_neg` and
+  `TauCeti.weightedVariation_eq_iSup_contDiff_norm_le_exp_neg`: the density-bounded form, over
+  test vector fields and over `C¹` vector fields bounded by `e^{−W}`.
+* `TauCeti.weightedVariation_le_mul_totalVariationOn` and
+  `TauCeti.mul_totalVariationOn_le_weightedVariation`: comparison with the Euclidean variation
+  under bounds `m ≤ e^{−W} ≤ M` on `Ω`.
+* `TauCeti.exists_totalVariationOn_ne_top_of_weightedVariation_ne_top`: a function of finite
+  weighted variation on `Ω` has locally finite Euclidean variation on `Ω`.
 * `TauCeti.weightedVariation_congr_ae`, `TauCeti.weightedVariation_mono`,
   `TauCeti.weightedVariation_smul` and `TauCeti.weightedVariation_add_le`: locality,
   monotonicity in the open set, absolute homogeneity and subadditivity.
@@ -74,7 +92,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory TopologicalSpace TestFunction Set
-open scoped ENNReal Distributions Topology
+open scoped ENNReal NNReal Distributions Topology
 
 section GaussianWeight
 
@@ -232,6 +250,96 @@ theorem integral_divergenceCLM_sub_fderiv_mul_exp_neg_eq_zero (hW : ContDiff ℝ
     _ = traceCLM ℝ E (∫ x, fderiv ℝ (fun y => Real.exp (-W y) • X y) x) :=
         (traceCLM ℝ E).integral_comp_comm hint
     _ = 0 := by rw [integral_fderiv_eq_zero_of_hasCompactSupport hY hYc, map_zero]
+
+/-! ### Density-bounded fields -/
+
+omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
+/-- For a `C¹` weight, the density `e^{−W}` is `C¹`. -/
+private theorem contDiff_exp_neg (hW : ContDiff ℝ 1 W) : ContDiff ℝ 1 fun x => Real.exp (-W x) :=
+  by fun_prop
+
+/-- For a `C¹` weight, a `C¹` vector field `X` with compact support in `Ω` and `‖X x‖ ≤ 1`
+everywhere bounds the weighted variation from below, as the test vector fields of its definition
+do (`TauCeti.ofReal_integral_le_weightedVariation`). -/
+theorem ofReal_integral_le_weightedVariation_of_contDiff (hW : ContDiff ℝ 1 W)
+    (hu : LocallyIntegrableOn u Ω) {X : E → E} (hX : ContDiff ℝ 1 X) (hXc : HasCompactSupport X)
+    (hXΩ : tsupport X ⊆ Ω) (hX1 : ∀ x, ‖X x‖ ≤ 1) :
+    ENNReal.ofReal (∫ x, (LinearMap.trace ℝ E (fderiv ℝ X x : E →ₗ[ℝ] E) - fderiv ℝ W x (X x)) *
+      Real.exp (-W x) * u x) ≤ weightedVariation W Ω u := by
+  have hWd := hW.differentiable one_ne_zero
+  have hdiv {Y : E → E} (hY : ContDiff ℝ 1 Y) (x : E) :
+      LinearMap.trace ℝ E (fderiv ℝ (fun y => Real.exp (-W y) • Y y) x : E →ₗ[ℝ] E) =
+        (LinearMap.trace ℝ E (fderiv ℝ Y x : E →ₗ[ℝ] E) - fderiv ℝ W x (Y x)) *
+          Real.exp (-W x) :=
+    trace_fderiv_exp_neg_smul (hWd x) (hY.differentiable one_ne_zero x)
+  have key := ofReal_integral_trace_fderiv_fun_smul_mul_le_iSup hu (contDiff_exp_neg hW)
+    continuousOn_const (fun _ _ => one_pos) hX hXc hXΩ hX1
+  simp_rw [hdiv hX] at key
+  refine key.trans (iSup₂_le fun φ hφ => ?_)
+  simp_rw [hdiv (φ.contDiff.of_le (by simp)), ← divergenceCLM_apply]
+  exact ofReal_integral_le_weightedVariation φ hφ
+
+/-- **Density-bounded fields.** For a `C¹` weight, a `C¹` vector field `Y` with compact support in
+`Ω` and `‖Y x‖ ≤ e^{−W(x)}` everywhere bounds the weighted variation from below:
+`∫ div Y * u ≤ V_μ(u; Ω)`, where `div Y = tr (DY)`. -/
+theorem ofReal_integral_trace_fderiv_mul_le_weightedVariation (hW : ContDiff ℝ 1 W)
+    (hu : LocallyIntegrableOn u Ω) {Y : E → E} (hY : ContDiff ℝ 1 Y) (hYc : HasCompactSupport Y)
+    (hYΩ : tsupport Y ⊆ Ω) (hYW : ∀ x, ‖Y x‖ ≤ Real.exp (-W x)) :
+    ENNReal.ofReal (∫ x, LinearMap.trace ℝ E (fderiv ℝ Y x : E →ₗ[ℝ] E) * u x) ≤
+      weightedVariation W Ω u := by
+  -- `Y = e^{−W} X` for the `C¹` field `X = e^{W} Y` of norm at most `1`.
+  have hX : ContDiff ℝ 1 fun y => Real.exp (W y) • Y y := hW.exp.fun_smul hY
+  have hYX : (fun y => Real.exp (-W y) • Real.exp (W y) • Y y) = Y := funext fun y => by
+    rw [smul_smul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul]
+  have hX1 (x : E) : ‖Real.exp (W x) • Y x‖ ≤ 1 := by
+    rw [norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le, ← le_div_iff₀' (Real.exp_pos _),
+      one_div, ← Real.exp_neg]
+    exact hYW x
+  refine le_of_eq_of_le ?_ (ofReal_integral_le_weightedVariation_of_contDiff hW hu hX
+    hYc.smul_left ((tsupport_smul_subset_right _ _).trans hYΩ) hX1)
+  congr 2 with x
+  rw [← trace_fderiv_exp_neg_smul ((hW.differentiable one_ne_zero) x)
+    (hX.differentiable one_ne_zero x), hYX]
+
+/-- **The density-bounded form.** For a `C¹` weight and `u` locally integrable on `Ω`, the
+weighted variation is the supremum of `∫ div Y * u` over test vector fields `Y ∈ 𝓓(Ω, E)` with
+`‖Y x‖ ≤ e^{−W(x)}` everywhere. -/
+theorem weightedVariation_eq_iSup_norm_le_exp_neg (hW : ContDiff ℝ 1 W)
+    (hu : LocallyIntegrableOn u Ω) :
+    weightedVariation W Ω u = ⨆ (Y : 𝓓(Ω, E)) (_ : ∀ x, ‖Y x‖ ≤ Real.exp (-W x)),
+      ENNReal.ofReal (∫ x, divergenceCLM Y x * u x) := by
+  refine le_antisymm ?_ (iSup₂_le fun Y hY => ?_)
+  · rw [weightedVariation_eq_iSup_trace_fderiv (hW.differentiable one_ne_zero)]
+    refine iSup₂_le fun X hX => ?_
+    -- The field `e^{−W} X` is only `C¹`; approximate it by test fields bounded by `e^{−W}`.
+    have key := ofReal_integral_trace_fderiv_fun_smul_mul_le_iSup (g := fun _ => 1) hu
+      contDiff_const (contDiff_exp_neg hW).continuous.continuousOn (fun _ _ => Real.exp_pos _)
+      ((contDiff_exp_neg hW).fun_smul (X.contDiff.of_le (by simp))) X.hasCompactSupport.smul_left
+      ((tsupport_smul_subset_right _ _).trans X.tsupport_subset) fun x => by
+        rw [norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
+        exact mul_le_of_le_one_right (Real.exp_pos _).le (hX x)
+    simp only [one_smul] at key
+    simpa only [divergenceCLM_apply] using key
+  · simp_rw [divergenceCLM_apply]
+    exact ofReal_integral_trace_fderiv_mul_le_weightedVariation hW hu
+      (Y.contDiff.of_le (by simp)) Y.hasCompactSupport Y.tsupport_subset hY
+
+/-- **The density-bounded form over `C¹` fields.** For a `C¹` weight and `u` locally integrable
+on `Ω`, the weighted variation is the supremum of `∫ div Y * u` over `C¹` vector fields `Y` with
+compact support in `Ω` and `‖Y x‖ ≤ e^{−W(x)}` everywhere, where `div Y = tr (DY)`. -/
+theorem weightedVariation_eq_iSup_contDiff_norm_le_exp_neg (hW : ContDiff ℝ 1 W)
+    (hu : LocallyIntegrableOn u Ω) :
+    weightedVariation W Ω u = ⨆ (Y : E → E) (_ : ContDiff ℝ 1 Y) (_ : HasCompactSupport Y)
+      (_ : tsupport Y ⊆ Ω) (_ : ∀ x, ‖Y x‖ ≤ Real.exp (-W x)),
+      ENNReal.ofReal (∫ x, LinearMap.trace ℝ E (fderiv ℝ Y x : E →ₗ[ℝ] E) * u x) := by
+  refine le_antisymm ?_ (iSup_le fun Y => iSup_le fun hY => iSup_le fun hYc => iSup_le
+    fun hYΩ => iSup_le fun hYW =>
+      ofReal_integral_trace_fderiv_mul_le_weightedVariation hW hu hY hYc hYΩ hYW)
+  rw [weightedVariation_eq_iSup_norm_le_exp_neg hW hu]
+  refine iSup₂_le fun Y hY => ?_
+  simp_rw [divergenceCLM_apply]
+  exact le_iSup_of_le (Y : E → E) <| le_iSup_of_le (Y.contDiff.of_le (by simp)) <|
+    le_iSup_of_le Y.hasCompactSupport <| le_iSup_of_le Y.tsupport_subset <| le_iSup_of_le hY le_rfl
 
 /-! ### Elementary laws -/
 
@@ -404,6 +512,91 @@ theorem weightedVariation_zero_weight :
 theorem weightedPerimeter_zero_weight :
     weightedPerimeter 0 Ω s = perimeter volume Ω s := by
   rw [weightedPerimeter_def, perimeter_def, weightedVariation_zero_weight]
+
+/-! ### Comparison with the Euclidean variation -/
+
+/-- A nonnegative scalar factor of a test vector field comes out of its divergence pairing. -/
+private theorem ofReal_integral_divergenceCLM_smul_mul (c : ℝ≥0) (Y : 𝓓(Ω, E)) :
+    ENNReal.ofReal (∫ x, divergenceCLM ((c : ℝ) • Y) x * u x) =
+      c * ENNReal.ofReal (∫ x, divergenceCLM Y x * u x) := by
+  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul c.coe_nonneg, ← integral_const_mul]
+  congr 2 with x
+  rw [map_smul, smul_apply, smul_eq_mul, mul_assoc]
+
+/-- **Comparison with the Euclidean variation, upper bound.** For a `C¹` weight with
+`e^{−W} ≤ M` on `Ω` and `u` locally integrable on `Ω`, `V_μ(u; Ω) ≤ M |Du|(Ω)`, where
+`|Du|(Ω) = TauCeti.totalVariationOn volume Ω u`. -/
+theorem weightedVariation_le_mul_totalVariationOn (hW : ContDiff ℝ 1 W)
+    (hu : LocallyIntegrableOn u Ω) {M : ℝ≥0} (hM : ∀ x ∈ Ω, Real.exp (-W x) ≤ M) :
+    weightedVariation W Ω u ≤ M * totalVariationOn volume Ω u := by
+  rw [weightedVariation_eq_iSup_norm_le_exp_neg hW hu]
+  refine iSup₂_le fun Y hY => ?_
+  have hYM (x : E) : ‖Y x‖ ≤ M := by
+    by_cases hx : x ∈ tsupport Y
+    · exact (hY x).trans (hM x (Y.tsupport_subset hx))
+    · rw [image_eq_zero_of_notMem_tsupport hx, norm_zero]
+      exact M.coe_nonneg
+  rcases eq_or_ne M 0 with rfl | hM0
+  · -- A field bounded by `0` vanishes.
+    have hY0 : Y = 0 := by
+      ext x
+      simpa using hYM x
+    simp [hY0]
+  · have hMpos : (0 : ℝ) < M := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hM0)
+    have hY1 (x : E) : ‖((M : ℝ)⁻¹ • Y) x‖ ≤ 1 := by
+      rw [smul_apply, norm_smul, Real.norm_of_nonneg (inv_pos.2 hMpos).le,
+        inv_mul_le_iff₀ hMpos, mul_one]
+      exact hYM x
+    calc ENNReal.ofReal (∫ x, divergenceCLM Y x * u x)
+        = M * ENNReal.ofReal (∫ x, divergenceCLM ((M : ℝ)⁻¹ • Y) x * u x) := by
+          rw [← ofReal_integral_divergenceCLM_smul_mul, smul_smul, mul_inv_cancel₀ hMpos.ne',
+            one_smul]
+      _ ≤ M * totalVariationOn volume Ω u := by
+          gcongr
+          exact ofReal_integral_le_totalVariationOn _ hY1
+
+/-- **Comparison with the Euclidean variation, lower bound.** For a `C¹` weight with
+`m ≤ e^{−W}` on `Ω` and `u` locally integrable on `Ω`, `m |Du|(Ω) ≤ V_μ(u; Ω)`, where
+`|Du|(Ω) = TauCeti.totalVariationOn volume Ω u`. -/
+theorem mul_totalVariationOn_le_weightedVariation (hW : ContDiff ℝ 1 W)
+    (hu : LocallyIntegrableOn u Ω) {m : ℝ≥0} (hm : ∀ x ∈ Ω, (m : ℝ) ≤ Real.exp (-W x)) :
+    m * totalVariationOn volume Ω u ≤ weightedVariation W Ω u := by
+  rw [totalVariationOn_def, ENNReal.mul_iSup]
+  refine iSup_le fun X => ?_
+  rw [ENNReal.mul_iSup]
+  refine iSup_le fun hX => ?_
+  rw [weightedVariation_eq_iSup_norm_le_exp_neg hW hu]
+  have hmX (x : E) : ‖((m : ℝ) • X) x‖ ≤ Real.exp (-W x) := by
+    rw [smul_apply, norm_smul, Real.norm_of_nonneg m.coe_nonneg]
+    by_cases hx : x ∈ tsupport X
+    · exact (mul_le_of_le_one_right m.coe_nonneg (hX x)).trans (hm x (X.tsupport_subset hx))
+    · rw [image_eq_zero_of_notMem_tsupport hx, norm_zero, mul_zero]
+      exact (Real.exp_pos _).le
+  exact le_iSup₂_of_le ((m : ℝ) • X) hmX (ofReal_integral_divergenceCLM_smul_mul m X).ge
+
+/-- **Finite weighted variation gives locally bounded variation.** For a `C¹` weight and `u`
+locally integrable on `Ω`, if `V_μ(u; Ω) < ∞`, then every compact subset of `Ω` has an open
+neighbourhood on which `u` has finite Euclidean variation `TauCeti.totalVariationOn volume`. -/
+theorem exists_totalVariationOn_ne_top_of_weightedVariation_ne_top (hW : ContDiff ℝ 1 W)
+    (hu : LocallyIntegrableOn u Ω) (h : weightedVariation W Ω u ≠ ∞) :
+    ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U u ≠ ∞ := by
+  intro K hK hKΩ
+  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
+  let U : Opens E := ⟨Metric.thickening δ K, Metric.isOpen_thickening⟩
+  have hUΩ : U ≤ Ω := (Metric.thickening_subset_cthickening δ K).trans hδΩ
+  -- `e^{−W}` has a positive lower bound `m` on the compact set `cthickening δ K ⊇ U`.
+  obtain ⟨m', hm', hm'W⟩ := hK.cthickening.exists_forall_le'
+    (contDiff_exp_neg hW).continuous.continuousOn fun x _ => Real.exp_pos (-W x)
+  let m : ℝ≥0 := ⟨m', hm'.le⟩
+  have hm0 : m ≠ 0 := NNReal.coe_ne_zero.1 hm'.ne'
+  have hm (x : E) (hx : x ∈ U) : (m : ℝ) ≤ Real.exp (-W x) :=
+    hm'W x (Metric.thickening_subset_cthickening δ K hx)
+  have hle := (mul_totalVariationOn_le_weightedVariation hW (hu.mono_set hUΩ) hm).trans
+    (weightedVariation_mono hUΩ)
+  refine ⟨U, Metric.self_subset_thickening hδ K, fun htop => h ?_⟩
+  rw [htop, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hm0)] at hle
+  exact top_le_iff.1 hle
 
 /-! ### The Gaussian perimeter -/
 

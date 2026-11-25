@@ -66,6 +66,7 @@ are described through them.
 
 * `TauCeti.conjInvariants_top`, `TauCeti.conjInvariants_bot`: `R[G]^G = Z(R[G])` and
   `R[G]^1 = R[G]`.
+* `TauCeti.mem_conjInvariants_closure_iff`: `R[G]^{⟨S⟩}` is the centralizer of `S`.
 * `TauCeti.relTrace_apply_eq_sum_of_bijective`: `Tr_Q^P(a) = ∑ᵢ sᵢ a sᵢ⁻¹` for every transversal.
 * `TauCeti.relTrace_self`, `TauCeti.relTrace_apply_of_mem`: `Tr_P^P = id`, and
   `Tr_Q^P(a) = |P : Q| a` for `a ∈ R[G]^P`.
@@ -169,6 +170,27 @@ noncomputable def conjInvariants (H : Subgroup G) : Subalgebra R (MonoidAlgebra 
 theorem mem_conjInvariants_iff_commute {H : Subgroup G} {x : MonoidAlgebra R G} :
     x ∈ conjInvariants R H ↔ ∀ h ∈ H, of R G h * x = x * of R G h := by
   simp [conjInvariants, Subalgebra.mem_centralizer_iff]
+
+/-- An element lies in `R[G]^{⟨S⟩}` exactly when it commutes with every element of `S`. -/
+theorem mem_conjInvariants_closure_iff {S : Set G} {x : MonoidAlgebra R G} :
+    x ∈ conjInvariants R (Subgroup.closure S) ↔ ∀ g ∈ S, of R G g * x = x * of R G g := by
+  rw [mem_conjInvariants_iff_commute]
+  refine ⟨fun h g hg => h g (Subgroup.subset_closure hg), fun h g hg => ?_⟩
+  induction hg using Subgroup.closure_induction with
+  | mem g hg => exact h g hg
+  | one => rw [map_one, one_mul, mul_one]
+  | mul a b _ _ ha hb => rw [map_mul, mul_assoc, hb, ← mul_assoc, ha, mul_assoc]
+  | inv a _ ha =>
+    -- `a` is a unit of `R[G]`, so its inverse commutes with `x` as well
+    have hc : Commute (((of R G).toHomUnits a : (MonoidAlgebra R G)ˣ) : MonoidAlgebra R G) x := by
+      rw [MonoidHom.coe_toHomUnits]
+      exact ha
+    simpa only [← map_inv, MonoidHom.coe_toHomUnits] using hc.units_inv_left.eq
+
+/-- An element lies in `R[G]^⟨g⟩` exactly when it commutes with `g`. -/
+theorem mem_conjInvariants_zpowers_iff {g : G} {x : MonoidAlgebra R G} :
+    x ∈ conjInvariants R (Subgroup.zpowers g) ↔ of R G g * x = x * of R G g := by
+  rw [Subgroup.zpowers_eq_closure, mem_conjInvariants_closure_iff, Set.forall_mem_singleton]
 
 /-- An element lies in `R[G]^H` when conjugation by every element of `H` fixes it. -/
 theorem mem_conjInvariants_iff {H : Subgroup G} {x : MonoidAlgebra R G} :

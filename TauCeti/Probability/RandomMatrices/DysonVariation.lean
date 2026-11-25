@@ -16,18 +16,22 @@ import Mathlib.Analysis.Calculus.FDeriv.Linear
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
+import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Completeness
+import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Covariance
 
 /-!
 # Coordinate variation of sorted eigenvalues for Gaussian ensembles
 
-Combining Hadamard's first and second eigenvalue variation formulas
-(`TauCeti.Analysis.Matrix.Eigenvalues.Derivative`) with the coordinate parameterization and
-Casimir / trace inner-product identities of `gaussianEnsemble β n`
-(`TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic`), we compute multivariable Fréchet and
-1D coordinate-ray derivatives at simple sorted eigenvalues of `A + gaussianEnsemble β n g`. These
-identities supply the `(2 / (β n)) δₖₘ` diffusion bracket and `n⁻¹ ∑_{j ≠ k} (λₖ - λⱼ)⁻¹` repulsion
-drift coefficients for GOE (`β = 1`, symmetric `A`) and GUE (`β = 2`, Hermitian `A`) matrix Brownian
-motions (Anderson–Guionnet–Zeitouni Theorem 4.3.2).
+Combining Hadamard's projector-trace first and second eigenvalue variation formulas
+(`TauCeti.Analysis.Matrix.Eigenvalues.Derivative`) with the coordinate parameterization of
+`gaussianEnsemble β n` (`TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic`) and its trace
+covariance and completeness identities
+(`TauCeti.Probability.RandomMatrices.GaussianEnsemble.Covariance` and
+`TauCeti.Probability.RandomMatrices.GaussianEnsemble.Completeness`), we compute multivariable
+Fréchet and 1D coordinate-ray derivatives at simple sorted eigenvalues of
+`A + gaussianEnsemble β n g`. These identities supply the `(2 / (β n)) δₖₘ` diffusion bracket and
+`n⁻¹ ∑_{j ≠ k} (λₖ - λⱼ)⁻¹` repulsion drift coefficients for GOE (`β = 1`, symmetric `A`) and GUE
+(`β = 2`, Hermitian `A`) matrix Brownian motions (Anderson–Guionnet–Zeitouni Theorem 4.3.2).
 
 To state or use the normed calculus declarations in this file,
 `open scoped Matrix.Norms.L2Operator` and enable
@@ -163,6 +167,25 @@ theorem fderiv_fderiv_eigenvalues₀_add_gaussianEnsemble_apply (hA : A.IsHermit
       (contDiff_const.add (gaussianEnsembleSelfAdjointCLM β n).contDiff).contDiffAt v w, hDΦ]
   simp [fderiv_fderiv_eigenvalues₀_apply hkΦ]
 
+private theorem re_sum_trace_mul_gaussianEnsemble_single_mul (β n : ℕ)
+    {X Y : Matrix (Fin n) (Fin n) ℂ} (hX : X.IsHermitian) (hY : Y.IsHermitian) :
+    ∑ p : Fin n × Fin n,
+        (X * gaussianEnsemble β n (Pi.single p 1)).trace.re *
+          (Y * gaussianEnsemble β n (Pi.single p 1)).trace.re =
+      (∑ p : Fin n × Fin n,
+        (X * gaussianEnsemble β n (Pi.single p 1)).trace *
+          (Y * gaussianEnsemble β n (Pi.single p 1)).trace).re := by
+  have hreal {M N : Matrix (Fin n) (Fin n) ℂ} (hM : M.IsHermitian) (hN : N.IsHermitian) :
+      (((M * N).trace).re : ℂ) = (M * N).trace :=
+    RCLike.conj_eq_iff_re.mp
+      (by rw [← RCLike.star_def, ← trace_conjTranspose, conjTranspose_mul, hM.eq, hN.eq,
+        trace_mul_comm])
+  rw [Complex.re_sum]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  have hE := isHermitian_gaussianEnsemble β n (Pi.single p 1)
+  conv_rhs => rw [← hreal hX hE, ← hreal hY hE]
+  rw [← Complex.ofReal_mul, Complex.ofReal_re]
+
 /-- Deterministic coordinate-gradient inner-product identity (Fréchet form) at simple sorted
 eigenvalues `λₖ, λₘ` of `A + gaussianEnsemble β n g` under `(β = 1 ∧ A.IsSymm) ∨ β = 2`, giving
 `(2 / (β * n)) * δₖₘ` (Anderson–Guionnet–Zeitouni Theorem 4.3.2). -/
@@ -184,17 +207,21 @@ theorem sum_fderiv_eigenvalues₀_add_gaussianEnsemble_single_mul (hA : A.IsHerm
     fderiv_eigenvalues₀_add_gaussianEnsemble_apply hA g (Pi.single _ 1) hm]
   rcases hβ with ⟨rfl, hA_symm⟩ | rfl
   · have hPm_symm : (hH.eigenprojector₀ m).IsSymm :=
-      hH.isSymm_eigenprojector₀ (hA_symm.add (isSymm_gaussianEnsemble_of_eq_one rfl g)) hm
-    rw [sum_re_trace_mul_gaussianEnsemble_single_mul_of_eq_one rfl
-      (hH.isHermitian_eigenprojector₀ k) (hH.isHermitian_eigenprojector₀ m), hPm_symm.eq]
+      hH.isSymm_eigenprojector₀ (hA_symm.add (isSymm_gaussianEnsemble_one n g)) hm
+    rw [re_sum_trace_mul_gaussianEnsemble_single_mul 1 n
+      (hH.isHermitian_eigenprojector₀ k) (hH.isHermitian_eigenprojector₀ m),
+      sum_trace_mul_gaussianEnsemble_one_single_mul_trace_mul, ← Complex.ofReal_natCast,
+      ← Complex.ofReal_inv, Complex.re_ofReal_mul, Complex.add_re, hPm_symm.eq]
     by_cases hkm : k = m
     · subst hkm
       simp only [hH.eigenprojector₀_mul_self, hH.trace_eigenprojector₀, Complex.one_re, ↓reduceIte,
         Nat.cast_one, one_mul]
       ring
     · simp [hkm, hH.eigenprojector₀_mul_of_ne hkm]
-  · rw [sum_re_trace_mul_gaussianEnsemble_single_mul_of_ne_one (by decide)
-      (hH.isHermitian_eigenprojector₀ k) (hH.isHermitian_eigenprojector₀ m)]
+  · rw [re_sum_trace_mul_gaussianEnsemble_single_mul 2 n
+      (hH.isHermitian_eigenprojector₀ k) (hH.isHermitian_eigenprojector₀ m),
+      sum_trace_mul_gaussianEnsemble_single_mul_trace_mul_of_ne_one (by decide),
+      ← Complex.ofReal_natCast, ← Complex.ofReal_inv, Complex.re_ofReal_mul]
     by_cases hkm : k = m
     · subst hkm
       simp only [hH.eigenprojector₀_mul_self, hH.trace_eigenprojector₀, Complex.one_re, mul_one,
@@ -238,14 +265,15 @@ theorem half_sum_fderiv_fderiv_eigenvalues₀_add_gaussianEnsemble_single (hA : 
     rw [← Finset.mul_sum, this, mul_comm]
   rw [sum_re_trace_mul_gaussianEnsemble_single_sandwich]
   by_cases hβ1 : β = 1
-  · have hPk_symm : (hH.eigenprojector₀ k).IsSymm := hH.isSymm_eigenprojector₀
-      ((hβ.resolve_left (not_not.mpr hβ1)).add (isSymm_gaussianEnsemble_of_eq_one hβ1 g)) hk
+  · subst hβ1
+    have hPk_symm : (hH.eigenprojector₀ k).IsSymm := hH.isSymm_eigenprojector₀
+      ((hβ.resolve_left (not_not.mpr rfl)).add (isSymm_gaussianEnsemble_one n g)) hk
     have hvanish : (hH.eigenprojector₀ k * (hH.eigenprojector₀ j)ᵀ).trace = 0 := by
       rw [← hPk_symm.eq, ← transpose_mul, trace_transpose, hH.eigenprojector₀_mul_of_ne hjk,
         trace_zero]
-    rw [sum_gaussianEnsemble_single_mul_mul_self_of_eq_one hβ1]
+    rw [sum_gaussianEnsemble_one_single_mul_mul_gaussianEnsemble_one_single]
     simp [mul_add, hvanish, ← Complex.ofReal_natCast, ← Complex.ofReal_inv]
-  · rw [sum_gaussianEnsemble_single_mul_mul_self_of_ne_one hβ1]
+  · rw [sum_gaussianEnsemble_single_mul_mul_gaussianEnsemble_single_of_ne_one hβ1]
     simp [← Complex.ofReal_natCast, ← Complex.ofReal_inv]
 
 /-- Directional derivative of `t ↦ (A + gaussianEnsemble β n (g + t • v)).eigenvalues₀ k` at `0`. -/

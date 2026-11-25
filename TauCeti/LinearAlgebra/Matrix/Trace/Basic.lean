@@ -20,7 +20,6 @@ one equivalence preserves the trace.
 
 ## Main results
 
-* `Matrix.trace_mul_eq_sum`: the double-sum entry expansion of `trace (A * B)`.
 * `Matrix.trace_add_mul_add_mul`: the expansion of `trace ((M + N) * S * (M + N) * S)` into the
   two pure terms and twice the mixed term.
 * `Matrix.trace_two_mul_sub_one`: `trace (2 P - 1) = 2 trace P - n` for an `n × n` matrix `P`.
@@ -35,13 +34,6 @@ public section
 namespace Matrix
 
 variable {m n R : Type*} [Fintype m] [Fintype n] [CommSemiring R]
-
-/-- The trace of a product `A * B` of an `m × n` matrix and an `n × m` matrix is the double sum
-`∑ i, ∑ j, A i j * B j i`. -/
-theorem trace_mul_eq_sum {R : Type*} [AddCommMonoid R] [Mul R]
-    (A : Matrix m n R) (B : Matrix n m R) :
-    (A * B).trace = ∑ i, ∑ j, A i j * B j i := by
-  simp only [trace, diag_apply, Matrix.mul_apply]
 
 /-- The quadratic map `M ↦ trace (M * S * M * S)` expands at a sum into the two pure terms plus
 twice the mixed term. The matrices may be rectangular. -/

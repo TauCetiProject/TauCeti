@@ -44,6 +44,10 @@ the residue fields of `R` are finite.
   `mem_level1_iff` and `mem_level0_iff`, all instances of `mem_map_integralGL_iff`.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel_le_level1`, `level1_le_level0` and the
   monotonicity lemmas `principalLevel_mono`, `level1_mono`, `level0_mono`.
+* `IsDedekindDomain.FiniteAdeleRing.principalLevel_bot`: `K(0) = {1}`.
+* `IsDedekindDomain.FiniteAdeleRing.upperRightHom_mem_level1`,
+  `upperRightHom_mem_principalLevel_iff` and `upperRightHom_algebraMap_mem_principalLevel_iff`:
+  the unipotent matrices `[[1, b], [0, 1]]` in `K₁(N)` and `K(N)`.
 * `IsDedekindDomain.FiniteAdeleRing.isOpen_principalLevel`, `isCompact_principalLevel` and their
   analogues for `K₀(N)` and `K₁(N)`.
 
@@ -278,6 +282,52 @@ theorem principalLevel_top : principalLevel K (⊤ : Ideal R) = (integralGL K 2)
       refine Subgroup.map_mono fun g _ ↦ ?_
       rw [Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff, completedIdeal_top]
       exact fun _ _ ↦ Submodule.mem_top)
+
+/-- At the zero ideal the principal level is trivial: `K(0) = {1}`. -/
+@[simp]
+theorem principalLevel_bot : principalLevel K (⊥ : Ideal R) = ⊥ := by
+  rw [principalLevel_eq_map_ker, (MonoidHom.ker_eq_bot_iff _).mpr
+    (Matrix.GeneralLinearGroup.map_injective ((RingHom.injective_iff_ker_eq_bot _).mpr
+      (Ideal.mk_ker.trans (completedIdeal_bot K)))), Subgroup.map_bot]
+
+variable {K}
+
+open Matrix.GeneralLinearGroup in
+/-- The unipotent matrix `[[1, b], [0, 1]]` with integral `b` is the image of the unipotent
+matrix of `GL₂(Ô)` with entry `b`: the case `Ô ⊆ 𝔸_f` of
+`Matrix.GeneralLinearGroup.map_upperRightHom`. -/
+theorem integralGL_upperRightHom (b : integralAdeles R K) :
+    integralGL K 2 (upperRightHom b) = upperRightHom (b : 𝔸ᶠ[R, K]) :=
+  map_upperRightHom _ b
+
+open Matrix.GeneralLinearGroup in
+/-- The unipotent matrix `[[1, b], [0, 1]]` lies in `K₁(N)` for every integral `b` and every
+ideal `N`. -/
+theorem upperRightHom_mem_level1 {b : 𝔸ᶠ[R, K]} (hb : b ∈ integralAdeles R K) (N : Ideal R) :
+    upperRightHom b ∈ level1 K N := by
+  rw [← integralGL_upperRightHom ⟨b, hb⟩]
+  exact Subgroup.mem_map_of_mem _ (GL2K1.mem_iff.mpr (by simp))
+
+open Matrix.GeneralLinearGroup in
+/-- For integral `b`, the unipotent matrix `[[1, b], [0, 1]]` lies in `K(N)` exactly when
+`b ∈ NÔ`. -/
+theorem upperRightHom_mem_principalLevel_iff {b : 𝔸ᶠ[R, K]} (hb : b ∈ integralAdeles R K)
+    {N : Ideal R} :
+    upperRightHom b ∈ principalLevel K N ↔ (⟨b, hb⟩ : integralAdeles R K) ∈ completedIdeal K N := by
+  rw [principalLevel_eq_map_ker, ← integralGL_upperRightHom ⟨b, hb⟩,
+    Subgroup.mem_map_iff_mem (integralGL_injective K 2), mem_ker_map_quotientMk_iff]
+  refine ⟨fun h ↦ by simpa using h 0 1, fun h i j ↦ ?_⟩
+  fin_cases i <;> fin_cases j <;> simp [h]
+
+open Matrix.GeneralLinearGroup in
+/-- For a nonzero ideal `N` and `r ∈ R`, the unipotent matrix `[[1, r], [0, 1]]` lies in `K(N)`
+exactly when `r ∈ N`. -/
+theorem upperRightHom_algebraMap_mem_principalLevel_iff {N : Ideal R} (hN₀ : N ≠ ⊥) {r : R} :
+    upperRightHom (algebraMap R 𝔸ᶠ[R, K] r) ∈ principalLevel K N ↔ r ∈ N := by
+  rw [upperRightHom_mem_principalLevel_iff ((integralAdeles R K).algebraMap_mem r)]
+  exact algebraMap_mem_completedIdeal_iff hN₀
+
+variable (K)
 
 /-! ### Topology -/
 

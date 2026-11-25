@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
 
 /-!
 # Relatively bounded perturbations of closed forms (KLMN)

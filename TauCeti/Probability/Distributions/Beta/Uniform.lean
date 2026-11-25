@@ -37,7 +37,7 @@ theorem betaMeasure_one_one : betaMeasure 1 1 = uniformMeasure 0 1 := by
         (volume.restrict (Ioo (0 : ℝ) 1)).withDensity 1 := by
       apply withDensity_congr_ae
       filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
-      simp [betaPDF_of_pos_lt_one hx.1 hx.2, beta_one_right one_pos]
+      simp [betaPDF_of_pos_lt_one hx.1 hx.2, beta_one_right zero_le_one]
     _ = volume.restrict (Ioc (0 : ℝ) 1) := by
       rw [withDensity_one]
       exact Measure.restrict_congr_set Ioo_ae_eq_Ioc
