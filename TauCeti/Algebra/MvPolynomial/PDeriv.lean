@@ -19,7 +19,9 @@ with respect to `Y_j` obeys the chain rule
 
 `∂/∂Y_j (p(f)) = ∑ᵢ (∂p/∂Xᵢ)(f) · ∂fᵢ/∂Y_j`,
 
-where the sum runs over any finite set of indices containing the variables of `p`.
+where the sum runs over any finite set of indices containing the variables of `p`. Likewise a
+derivation `D` dual to a family `x` along the index `i`, that is, with `D xⱼ = 1` for `j = i` and
+`D xⱼ = 0` otherwise, acts on `p(x)` as the partial derivative `∂/∂Xᵢ`.
 
 Partial differentiation lowers the total degree, and the degree in the differentiated variable,
 by at least one, so the `k`-th iterated partial derivative along `Xᵢ` of a polynomial of degree
@@ -46,6 +48,8 @@ difference of their constant coefficients.
 * `MvPolynomial.pderiv_aeval`: the chain rule, summed over all variables of a finite type.
 * `MvPolynomial.pderiv_aeval_of_vars_subset`: the chain rule, summed over a finite set containing
   the variables of `p`.
+* `Derivation.map_aeval_eq_aeval_pderiv`: a derivation dual to `x` along the index `i` acts on
+  `p(x)` as the partial derivative `∂/∂Xᵢ`.
 * `MvPolynomial.vars_pderiv_subset`: partial differentiation introduces no new variables.
 * `MvPolynomial.hasFiniteSupport_pderiv`: only finitely many partial derivatives of a polynomial
   are nonzero.
@@ -417,3 +421,23 @@ theorem sub_eq_C_of_forall_pderiv_eq {φ ψ : MvPolynomial σ R}
 end UniqueDiv
 
 end MvPolynomial
+
+namespace Derivation
+
+open MvPolynomial
+
+variable {k R σ : Type*} [CommSemiring k] [CommSemiring R] [Algebra k R] [DecidableEq σ]
+
+/-- **A derivation dual to a family of elements acts as a partial derivative.** If
+`D (x j) = 1` for `j = i` and `D (x j) = 0` otherwise, then `D (p(x)) = (∂p/∂Xᵢ)(x)` for every
+polynomial `p`. -/
+theorem map_aeval_eq_aeval_pderiv (D : Derivation k R R) {x : σ → R} {i : σ}
+    (hx : ∀ j, D (x j) = if i = j then 1 else 0) (p : MvPolynomial σ k) :
+    D (aeval x p) = aeval x (pderiv i p) := by
+  induction p using MvPolynomial.induction_on with
+  | C c => simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p j hp =>
+    by_cases h : i = j <;> simp [leibniz, hp, hx, h, mul_comm, add_comm]
+
+end Derivation
