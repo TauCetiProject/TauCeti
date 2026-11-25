@@ -219,6 +219,11 @@ abbrev chartFrame [IsManifold I 1 M] (x : M) :=
   trivializationAt E (TangentSpace I : TauCeti.chartSource (H := H) x → Type _)
     (⟨x, mem_chart_source H x⟩ : TauCeti.chartSource (H := H) x)
 
+/-- Every point of an intrinsic chart source lies in the base set of its tangent frame. -/
+theorem mem_chartFrame_baseSet [IsManifold I 1 M] (x : M) (y : TauCeti.chartSource (H := H) x) :
+    y ∈ (chartFrame (I := I) x).baseSet :=
+  (trivializationAt_chartSource_baseSet (I := I) x).symm ▸ Set.mem_univ _
+
 /-- The second component of the chart of a tangent bundle at `q`, read at any point `p`: it is the
 tangent coordinate change from the chart at the base point of `p` to the chart at the base point
 of `q`, applied to the fibre component of `p`.  Together with `TangentBundle.coe_chartAt_fst`
@@ -340,14 +345,6 @@ theorem _root_.TangentBundle.trivializationAt_symm_apply_self (x : M) (u : E) :
   rw [← (trivializationAt E (TangentSpace I) x).symmL_apply (R := 𝕜)
     (FiberBundle.mem_baseSet_trivializationAt' x) u]
   exact symmL_trivializationAt_self x u
-
-/-- A tangent vector at `x` has itself as its coordinate vector in the preferred trivialization at
-`x`. -/
-@[simp]
-theorem _root_.TangentBundle.trivializationAt_apply_self (x : M) (v : TangentSpace I x) :
-    (trivializationAt E (TangentSpace I) x ⟨x, v⟩).2 = v :=
-  (TangentBundle.trivializationAt_snd_eq_tangentCoordChange (I := I) v).trans
-    (tangentCoordChange_self (I := I) (mem_extChartAt_source x))
 
 /-- The extension `FiberBundle.extend E w` of a tangent vector `w` at `x` is the vector field with
 constant coordinates `w` in the canonical trivialization of the tangent bundle at `x`. -/
@@ -853,6 +850,15 @@ theorem tangentSpaceOpenEquiv_symm_apply {U : Opens M} (x : U)
     (v : TangentSpace I (x : M)) :
     (tangentSpaceOpenEquiv (I := I) x).symm v = v := by
   exact (rfl)
+
+/-- A continuous linear map on the tangent space of an open submanifold factors through the
+canonical identification `tangentSpaceOpenEquiv` with the ambient tangent space. -/
+theorem comp_tangentSpaceOpenEquiv_symm_comp {U : Opens M} (x : U) {G : Type*} [AddCommMonoid G]
+    [Module 𝕜 G] [TopologicalSpace G] (ξ : TangentSpace I x →L[𝕜] G) :
+    (ξ.comp ((tangentSpaceOpenEquiv (I := I) x).symm : TangentSpace I (x : M) →L[𝕜] _)).comp
+      (tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap = ξ := by
+  rw [ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_symm_comp_coe,
+    ContinuousLinearMap.comp_id]
 
 /-- In inherited charts, the tangent-bundle coordinate changes of an open submanifold and its
 ambient manifold agree locally. -/

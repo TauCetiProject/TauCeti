@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.HomotopyInvariance
 public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 public import Mathlib.Topology.Homotopy.Contractible
-import TauCeti.Geometry.Manifold.SmoothApprox
+import TauCeti.Geometry.Manifold.SmoothApprox.Basic
 
 /-!
 # Integrals of closed forms along homotopic maps

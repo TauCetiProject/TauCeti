@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import TauCeti.RingTheory.LocalRing.Basic
 public import TauCeti.RingTheory.LocalRing.Localization
+import Mathlib.RingTheory.KrullDimension.Zero
 import TauCeti.RingTheory.Spectrum.Prime.Point
 
 /-!
@@ -25,6 +26,10 @@ residue field `(maximalIdeal R).ResidueField` with `IsLocalRing.ResidueField R` 
 this equivalence relates `R`-algebra maps `S →ₐ[R] IsLocalRing.ResidueField R` to primes `𝔮` of
 `S` lying over `maximalIdeal R` whose residue-field map `κ(𝔪_R) → κ(𝔮)` is surjective or bijective.
 
+At a minimal prime `p` of a reduced ring, the local ring `R_p` is already a field, so it maps
+isomorphically onto the residue field `κ(p)`: the residue field of a generic point of a reduced
+scheme is its local ring.
+
 ## Main definitions and results
 
 * `Ideal.ResidueField.map_comp_map`: the residue field maps of `f` and `g` compose to that of
@@ -37,6 +42,8 @@ this equivalence relates `R`-algebra maps `S →ₐ[R] IsLocalRing.ResidueField 
   `ResidueField R` has bijective residue-field map over `𝔪_R`.
 * `TauCeti.IsLocalRing.exists_algHom_residueField_ker_eq`: every prime `𝔮` over `𝔪_R` with
   `κ(𝔪_R) → κ(𝔮)` surjective is the kernel of an `R`-algebra map `S →ₐ[R] ResidueField R`.
+* `Ideal.bijective_algebraMap_residueField_of_mem_minimalPrimes`: at a minimal prime `p` with
+  `R_p` reduced, for instance a minimal prime of a reduced ring, `R_p → κ(p)` is bijective.
 -/
 
 public section
@@ -143,3 +150,16 @@ theorem AlgHom.residueFieldMap_bijective_of_ker_eq [IsLocalRing R] [Algebra R S]
     simp [ψ', RingHom.mem_ker]
   subst hker'
   exact ψ'.residueFieldMap_bijective
+
+/-- At a minimal prime `p` of a ring `R` whose local ring `R_p` is reduced, for instance a minimal
+prime of a reduced ring, `R_p` is a field, so the residue map `R_p → κ(p)` is bijective. -/
+theorem Ideal.bijective_algebraMap_residueField_of_mem_minimalPrimes (p : Ideal R) [p.IsPrime]
+    [IsReduced (Localization.AtPrime p)] (hp : p ∈ minimalPrimes R) :
+    Function.Bijective (algebraMap (Localization.AtPrime p) p.ResidueField) := by
+  have : Ring.KrullDimLE 0 (Localization.AtPrime p) := .of_isLocalization _ hp _
+  have hm := IsLocalRing.isField_iff_maximalIdeal_eq.mp
+    (Ring.KrullDimLE.isField_of_isReduced (R := Localization.AtPrime p))
+  rw [IsLocalRing.ResidueField.algebraMap_eq]
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, IsLocalRing.residue_surjective⟩
+  rw [IsLocalRing.residue_eq_zero_iff, hm] at hx
+  exact Ideal.mem_bot.mp hx

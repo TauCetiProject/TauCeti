@@ -90,7 +90,7 @@ coordinate. -/
 noncomputable def dualDetIsoDetDual (A : FiniteRankBundleCore 𝕜 B) :
     A.dual.det ≅ A.det.dual :=
   constIso
-    (by intro i; exact (localTriv_baseSet_det A.dual i).trans (localTriv_baseSet_det A i).symm)
+    (fun i ↦ ((localTriv_baseSet_det A.dual i).trans (localTriv_baseSet_det A i).symm).le)
     ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm) fun i j x _ _ ↦ by
       rw [coordChange_det_dual, coordChange_dual_det]
       ext v : 1

@@ -49,6 +49,9 @@ apply to complex manifolds. Two properties tie it to the complex structure:
   multiplication by `i` in the tangent coordinates of any chart.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_ofComplexManifold_self`: on a complex normed
   space, its chart expression is constantly multiplication by `i`.
+* `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_self_eq_constSmooth`: on a
+  finite-dimensional complex normed space, it is the constant structure made from
+  `AlmostComplexStructure.ofComplexModule`.
 * `TauCeti.isPseudoholomorphicAt_ofComplexManifold_iff` and its variants within a set, on a set
   and everywhere: pseudoholomorphic maps between complex manifolds are the holomorphic maps.
 * `TauCeti.isPseudoholomorphic_ofComplexManifold_subtype_val`,
@@ -175,6 +178,15 @@ theorem ofComplexManifold_self_eq_const
     ofComplexManifold E E = const (Complex.I • ContinuousLinearMap.id ℝ E) hI := by
   ext x v
   exact (ofComplexManifold_apply (E := E) x v).trans (const_apply _ hI x v).symm
+
+/-- On a finite-dimensional complex normed space `E` viewed as a manifold over itself,
+`ofComplexManifold E E` is the constant structure made from the pointwise almost complex structure
+`AlmostComplexStructure.ofComplexModule E` of multiplication by `i`. -/
+theorem ofComplexManifold_self_eq_constSmooth [FiniteDimensional ℂ E] :
+    ofComplexManifold E E = (AlmostComplexStructure.ofComplexModule E).constSmooth := by
+  refine ext fun x (v : E) ↦ ?_
+  rw [AlmostComplexStructure.constSmooth_apply, AlmostComplexStructure.ofComplexModule_apply]
+  exact ofComplexManifold_apply x v
 
 /-- On a complex normed space `E`, for example `ℂⁿ`, the chart expression of multiplication
 by `i` is constantly multiplication by `i`. Via `toContMDiff`, this is a structure of every

@@ -13,7 +13,7 @@ public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Opposite
 public import Mathlib.Topology.VectorBundle.Constructions
 import TauCeti.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # Duals of finite-rank bundle cores

@@ -90,10 +90,7 @@ theorem exists_mem_signSamples_sign_eq (Q : J → R[X]) (x : R) :
   have hne : ∀ z ∈ Set.uIcc x y, (Q j).eval z ≠ 0 := by
     intro z hz hz0
     exact hfree z hz (eval_eq_zero_of_dvd_of_eval_eq_zero (dvd_sampleProduct Q hj) hz0)
-  rcases le_total x y with hxy | hyx
-  · exact ((Q j).sign_eval_const hxy
-      (fun z hz => hne z (Set.Icc_subset_uIcc hz))).symm
-  · exact (Q j).sign_eval_const hyx (fun z hz => hne z (Set.Icc_subset_uIcc' hz))
+  exact ((Q j).sign_eval_eq_of_forall_mem_uIcc hne).symm
 
 /-- A sign condition has positive sample count exactly when it is realized on the whole line.
 Use this characterization before expanding sample membership with `Finset.signCount_pos`. -/

@@ -246,7 +246,9 @@ def isoToDiffeomorphOfConst {A D : FiniteRankBundleCore 𝕜 B} (e : A ≅ D)
     (contMDiff_totalSpaceMap_of_fiberMap_eq_const e.hom (fun i ↦ (hbase i).le)
       T.toContinuousLinearMap hT he_hom)
     (contMDiff_totalSpaceMap_of_fiberMap_eq_const e.inv (fun i ↦ (hbase i).ge)
-      T.symm.toContinuousLinearMap (coordChange_intertwines_symm hbase T hT) fun x ↦ by
+      T.symm.toContinuousLinearMap
+      (fun i j x hi hj ↦
+        coordChange_intertwines_symm T hT i j x ((hbase i).ge hi) ((hbase j).ge hj)) fun x ↦ by
         ext v : 1
         apply T.injective
         have h := congrArg (fun k : D ⟶ D ↦ k.fiberMap x v) e.inv_hom_id
@@ -285,7 +287,8 @@ noncomputable def constIsoDiffeomorph {A D : FiniteRankBundleCore 𝕜 B}
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     A.core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin A.rank → 𝕜),
       I.prod 𝓘(𝕜, Fin D.rank → 𝕜)⟯ D.core.TotalSpace :=
-  isoToDiffeomorphOfConst (constIso hbase e he) hbase e he (fiberMap_constIso_hom hbase e he)
+  isoToDiffeomorphOfConst (constIso (fun i ↦ (hbase i).le) e he) hbase e he
+    (fiberMap_constIso_hom (fun i ↦ (hbase i).le) e he)
 
 /-- The smooth comparison is the original constant core isomorphism on total spaces. -/
 @[simp]
@@ -296,7 +299,7 @@ theorem coe_constIsoDiffeomorph {A D : FiniteRankBundleCore 𝕜 B}
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     ⇑(constIsoDiffeomorph (I := I) (n := n) hbase e he) =
-      (constIso hbase e he).hom.totalSpaceMap :=
+      (constIso (fun i ↦ (hbase i).le) e he).hom.totalSpaceMap :=
   coe_isoToDiffeomorphOfConst _ _ _ _ _
 
 /-- The inverse smooth comparison is the inverse of the original core isomorphism. -/
@@ -308,7 +311,7 @@ theorem coe_constIsoDiffeomorph_symm {A D : FiniteRankBundleCore 𝕜 B}
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     ⇑(constIsoDiffeomorph (I := I) (n := n) hbase e he).symm =
-      (constIso hbase e he).inv.totalSpaceMap :=
+      (constIso (fun i ↦ (hbase i).le) e he).inv.totalSpaceMap :=
   coe_isoToDiffeomorphOfConst_symm _ _ _ _ _
 
 section IsContMDiff

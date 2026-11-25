@@ -53,7 +53,7 @@ theorem coordChange_ofBundle_intertwines (i j x : B) :
 isomorphism of finite-rank cores with constant fibre map `e₂ ∘ e₁⁻¹`. -/
 noncomputable def ofBundleChangeIso :
     ofBundle 𝕜 e₁ V ≅ ofBundle 𝕜 e₂ V :=
-  constIso (fun i ↦ (baseSet_ofBundle e₁ V i).trans (baseSet_ofBundle e₂ V i).symm)
+  constIso (fun i ↦ ((baseSet_ofBundle e₁ V i).trans (baseSet_ofBundle e₂ V i).symm).le)
     (e₁.symm.trans e₂) fun i j x _ _ ↦ coordChange_ofBundle_intertwines e₁ e₂ V i j x
 
 @[simp]

@@ -77,6 +77,9 @@ section Struct
 variable {k H}
 variable {M M' N N' P : HopfModuleCat k H}
 
+/-- The tensor product of two modules is the coproduct tensor product of their carriers. -/
+theorem tensorObj_def (M N : HopfModuleCat k H) : M ⊗ N = of (Tensor k H M N) := (rfl)
+
 /-- The tensor product of morphisms is the tensor product of the underlying intertwiners. -/
 theorem tensorHom_hom (f : M ⟶ M') (g : N ⟶ N') :
     (f ⊗ₘ g).hom = tensorMap k H f.hom g.hom := (rfl)
