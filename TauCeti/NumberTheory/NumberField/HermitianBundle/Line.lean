@@ -54,11 +54,6 @@ theorem form_eq_mul_form_fiberEquiv_symm_one (h : HermitianMetric K E) (σ : K �
   conv_lhs => rw [hc u, hc v]
   rw [LinearMap.map_smulₛₗ₂, map_smul, smul_eq_mul, smul_eq_mul, mul_assoc]
 
-private theorem fiberEquiv_one_tmul_ne_zero {x₀ : E} (hx₀ : ι x₀ ≠ 0) (σ : K →+* ℂ) :
-    fiberEquiv hι σ (1 ⊗ₜ x₀) ≠ 0 := by
-  rw [fiberEquiv_tmul, map_one, one_mul]
-  exact (map_ne_zero σ).mpr hx₀
-
 include hι in
 /-- **Hermitian metrics on a line agree when one norm does.** If `h` and `h'` give the vector
 `x₀`, with `ι x₀ ≠ 0`, the same norm at every complex embedding, they are equal. -/

@@ -119,6 +119,16 @@ theorem isometryEquivComap_apply [NumberField K] (e : F ≃ₗ[𝓞 K] E) (x : E
     h.isometryEquivComap e x = e.symm x :=
   (rfl)
 
+@[simp]
+theorem toLinearEquiv_isometryEquivComap [NumberField K] (e : F ≃ₗ[𝓞 K] E) :
+    (h.isometryEquivComap e).toLinearEquiv = e.symm :=
+  (rfl)
+
+@[simp]
+theorem isometryEquivComap_symm_apply [NumberField K] (e : F ≃ₗ[𝓞 K] E) (x : F) :
+    (h.isometryEquivComap e).symm x = e x := by
+  simpa using (h.isometryEquivComap e).symm_apply_apply (e x)
+
 /-! ### The quotient metric -/
 
 variable (F' : Submodule (𝓞 K) E)
