@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified
 import TauCeti.FieldTheory.FunctionField.Different.Radical
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.FieldTheory.Kummer.Extension
 
 /-!
 # The maximal extension unramified outside a set of places
@@ -187,17 +188,13 @@ theorem isUnramifiedOutside_adjoin_simple_of_pow_eq [PerfectField k]
     (hF : TauCeti.IsFunctionField k F) {y : A} {n : ℕ} {u : F} (hy : y ^ n = algebraMap F A u)
     (hn : (n : k) ≠ 0) (hdvd : ∀ P ∉ S, (n : ℤ) ∣ P.ord u) : F⟮y⟯.IsUnramifiedOutside S := by
   have : FiniteDimensional F F⟮y⟯ := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral y)
-  -- `y` is a root of `X ^ n - u`, which is separable because `n` is invertible.
-  have : Algebra.IsSeparable F F⟮y⟯ := by
-    refine (isSeparable_adjoin_simple_iff_isSeparable F A).mpr ?_
-    rcases eq_or_ne u 0 with rfl | hu
-    · rw [eq_zero_of_pow_eq_zero (hy.trans (map_zero _)), ← map_zero (algebraMap F A)]
-      exact isSeparable_algebraMap 0
-    have hnF : (n : F) ≠ 0 := by rwa [← map_natCast (algebraMap k F), map_ne_zero]
-    exact (Polynomial.separable_X_pow_sub_C u hnF hu).of_dvd (minpoly.dvd F y (by simp [hy]))
   have hy' : AdjoinSimple.gen F y ^ n = algebraMap F F⟮y⟯ u :=
     Subtype.ext (by simpa only [SubmonoidClass.coe_pow, AdjoinSimple.coe_gen,
       coe_algebraMap_apply] using hy)
+  -- `y` is a root of `X ^ n - u`, which is separable because `n` is invertible.
+  have hnF : (n : F) ≠ 0 := by rwa [← map_natCast (algebraMap k F), map_ne_zero]
+  have : Algebra.IsSeparable F F⟮y⟯ :=
+    TauCeti.isSeparable_of_pow_eq_of_adjoin_eq_top hnF hy' (adjoin_adjoinSimple_gen_eq_top y)
   have hE : TauCeti.IsFunctionField k F⟮y⟯ := hF.finite_extension
   refine .of_isUnramified fun P hP ↦ (TauCeti.Place.isUnramified_iff P).mpr
     ⟨TauCeti.Place.restrict_surjective_of_finiteDimensional hF hE P, fun P' hP' ↦ ⟨?_, ?_⟩⟩
