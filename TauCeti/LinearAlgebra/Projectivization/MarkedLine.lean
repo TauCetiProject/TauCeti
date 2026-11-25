@@ -222,7 +222,7 @@ theorem ker_markedLineIncidence (hv : φ v ≠ 0) :
   have h₁ : A (Pi.single 1 1) = a • v - b • w := by rw [A.map_single_one_one_eq_sub, ha, hb]
   have hab : a * φ v = b * φ w := by simpa [h₁, sub_eq_zero] using hφ
   -- Solving `hab` for `a`, the marked point `0` is `(b / φ v) (φ w v - φ v w)`.
-  have ha' : a = b / φ v * φ w := by field_simp; exact hab
+  have ha' : a = b / φ v * φ w := by rw [div_mul_eq_mul_div, eq_div_iff hv]; exact hab
   refine mem_span_singleton.2 ⟨b / φ v, ?_⟩
   refine (Pi.basisFun K (Fin 2)).ext (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
   · simp [← hb, smul_smul, div_mul_cancel₀ _ hv]
@@ -308,15 +308,8 @@ theorem existsUnique_markedLine {p q : ℙ K V} (hpq : p ≠ q)
     rw [← independent_mk_iff_LinearIndependent p.rep_ne_zero q.rep_ne_zero, mk_rep, mk_rep]
     exact (independent_pair_iff_ne p q).2 hpq
   have hM := markedLine_injective hpq' hp hq
-  refine ⟨map _ hM, ⟨⟨_, hM, rfl⟩, ?_, ?_, ?_⟩, ?_⟩
-  · rw [map_mk, mk_mem_projectivization_iff, LinearMap.mem_ker]
-    exact apply_markedLine_single_one_one_eq_zero
-  · simp_rw [map_mk, markedLine_one]
-    exact ((mk_eq_mk_iff_mem_span _ p.rep_ne_zero).2
-      (smul_mem _ _ (mem_span_singleton_self _))).trans (mk_rep p)
-  · simp_rw [map_mk, markedLine_single_zero_one]
-    exact ((mk_eq_mk_iff_mem_span _ q.rep_ne_zero).2
-      (smul_mem _ _ (mem_span_singleton_self _))).trans (mk_rep q)
+  refine ⟨map _ hM, ⟨⟨_, hM, rfl⟩, (mem_ker_markedLineIncidence_iff_map hM).1
+    (LinearMap.mem_ker.2 markedLineIncidence_markedLine)⟩, ?_⟩
   · rintro u ⟨⟨A, hA, rfl⟩, h₀, h₁, h₂⟩
     -- `A` solves the incidence conditions, so it is a nonzero multiple of the marked line.
     have hker := (mem_ker_markedLineIncidence_iff_map hA).2 ⟨h₀, h₁, h₂⟩
@@ -340,8 +333,7 @@ theorem not_exists_markedLine_of_mem_projectivization {p q : ℙ K V}
   obtain ⟨b, hb⟩ := mem_span_singleton.1 hb
   -- `φ` vanishes at `A [1 : 0] = A [1 : 1] - A [0 : 1] = b q.rep`, so `b = 0`.
   have hφb : b * φ q.rep = 0 := by
-    rw [A.map_single_one_one_eq_sub, map_sub, ← ha, ← hb, map_smul, map_smul, hp] at hφ
-    simpa using hφ
+    simpa [A.map_single_one_one_eq_sub, ← ha, ← hb, hp] using hφ
   have hb₀ : b = 0 := (mul_eq_zero.1 hφb).resolve_right hq
   have : A (Pi.single 0 1) = 0 := by rw [← hb, hb₀, zero_smul]
   exact (Pi.single_ne_zero_iff.2 one_ne_zero) (hA (this.trans (map_zero A).symm))
