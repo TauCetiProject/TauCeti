@@ -285,6 +285,37 @@ theorem hasLeadingTerm_bideterminant_extend (h : μ.InterlacedBy ν) (hμ : μ.c
     ← sum_borderExponent h hμ]
   exact HasLeadingTerm.prod fun j _ => hasLeadingTerm_columnMinor_extend h hμ T j
 
+/-- Counted column by column, the cells of a tableau carrying the letter `a` are its content. -/
+private theorem sum_card_column_eq_content (T : BoundedSSYT N μ) (a : Fin N) :
+    ∑ j ∈ range (μ.rowLen 0), (univ.filter fun i : Fin (μ.colLen j) =>
+      ssytFilling T i j (YoungDiagram.mem_iff_lt_colLen.mpr i.isLt) = a).card =
+        SemistandardYoungTableau.content T.val a := by
+  classical
+  rw [SemistandardYoungTableau.content_apply, Finset.card_eq_sum_card_fiberwise
+    (f := Prod.snd) (t := range (μ.rowLen 0)) fun c hc => Finset.mem_range.mpr
+      (YoungDiagram.mem_iff_lt_rowLen.mp (μ.up_left_mem (Nat.zero_le _) le_rfl
+        ((YoungDiagram.mem_cells _).mp (Finset.mem_filter.mp hc).1)))]
+  refine Finset.sum_congr rfl fun j _ => Finset.card_bij (fun i _ => ((i : ℕ), j))
+    (fun i hi => ?_) (fun i _ i' _ h => Fin.ext (Prod.mk.inj h).1) fun c hc => ?_
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
+    simp only [Finset.mem_filter, YoungDiagram.mem_cells, and_true]
+    exact ⟨YoungDiagram.mem_iff_lt_colLen.mpr i.isLt, by simpa [Fin.ext_iff] using hi⟩
+  · simp only [Finset.mem_filter, YoungDiagram.mem_cells] at hc
+    obtain ⟨⟨hc, ha⟩, rfl⟩ := hc
+    refine ⟨⟨c.1, YoungDiagram.mem_iff_lt_colLen.mp hc⟩, ?_, rfl⟩
+    simp [Fin.ext_iff, ha]
+
+/-- **Standard bideterminants are weight vectors.** The bideterminant of a tableau `T` has degree
+`content T a` in the row `a`, the number of entries of `T` equal to `a`. -/
+theorem isWeightedHomogeneous_bideterminant (hμ : μ.colLen 0 ≤ n) (T : BoundedSSYT N μ)
+    (a : Fin N) :
+    IsWeightedHomogeneous (rowWeight a) (bideterminant R μ hμ (ssytFilling T))
+      (SemistandardYoungTableau.content T.val a) := by
+  rw [bideterminant_eq_prod_range R μ hμ _ le_rfl, ← sum_card_column_eq_content T a]
+  exact IsWeightedHomogeneous.prod _ _ _ fun j _ => by
+    rw [columnMinor_def]
+    exact isWeightedHomogeneous_mvPolynomialMinor R a _ _
+
 end Tableau
 
 /-! ### Linear independence -/

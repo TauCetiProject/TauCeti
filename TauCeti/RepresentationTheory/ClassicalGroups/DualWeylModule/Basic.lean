@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Combinatorics.Young.YoungDiagram
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
+public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # The polynomial model of the dual Weyl modules of `GL_N`
@@ -323,6 +324,30 @@ theorem mvPolynomialMinor_mem_dualWeylModule {k : ℕ} (hk : k ≤ n) (r : Fin k
       ext a b
       have hb : Fin.castLE hk b ≠ t := fun h => htk (h ▸ b.isLt)
       simp [A, B, hb]
+
+/-- The weight `w_a` counting the variables of the row `a`: a monomial is weighted homogeneous of
+degree `k` for it when it has degree `k` in the row `a`. -/
+def rowWeight (a : Fin N) (p : Fin N × Fin n) : ℕ := if p.1 = a then 1 else 0
+
+/-- **Minors are weight vectors.** A minor of `x` on the rows `r` has degree `#{i | r i = a}` in
+the row `a`, the number of times `r` lists `a`. -/
+theorem isWeightedHomogeneous_mvPolynomialMinor {k : Type*} [Fintype k] [DecidableEq k]
+    (a : Fin N) (r : k → Fin N) (c : k → Fin n) :
+    IsWeightedHomogeneous (rowWeight a) (Matrix.mvPolynomialMinor R r c)
+      (Finset.univ.filter fun i => r i = a).card := by
+  classical
+  rw [Matrix.mvPolynomialMinor_eq_det_submatrix, Matrix.det_apply,
+    ← mem_weightedHomogeneousSubmodule]
+  refine Submodule.sum_mem _ fun σ _ => Submodule.smul_of_tower_mem _ _ ?_
+  rw [mem_weightedHomogeneousSubmodule]
+  have h := IsWeightedHomogeneous.prod Finset.univ (fun i =>
+    (X (r (σ i), c i) : MvPolynomial (Fin N × Fin n) R)) (fun i => rowWeight a (r (σ i), c i))
+    (w := rowWeight a) fun i _ => isWeightedHomogeneous_X R _ _
+  have h_deg : ∑ i, rowWeight a (r (σ i), c i) = (Finset.univ.filter fun i => r i = a).card := by
+    simp only [rowWeight, Finset.sum_boole, Nat.cast_id]
+    exact Finset.card_bij (fun i _ => σ i) (by simp) (fun _ _ _ _ h => σ.injective h)
+      fun i hi => ⟨σ.symm i, by simpa using hi, by simp⟩
+  simpa [h_deg] using h
 
 /-- Summed over the columns `j` of a Young diagram `μ` (or over any longer range), the column
 degrees of the minors on the first `μ.colLen j` columns are the row lengths of `μ`. -/
