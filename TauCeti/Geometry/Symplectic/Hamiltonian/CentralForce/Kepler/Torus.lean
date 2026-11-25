@@ -29,7 +29,8 @@ with nonzero angular momentum fill out invariant tori.
   least the circular energy `-m κ² / (2 ℓ²)`
   (`TauCeti.centralForceHamiltonian_kepler_min_le`). Hence the common level of `H = E` and
   `L = ℓ` off the collision set is compact
-  (`TauCeti.isCompact_setOf_centralForceHamiltonian_kepler_eq`). It is also connected
+  (`TauCeti.isCompact_setOf_centralForceHamiltonian_kepler_eq`). For `E` at least the circular
+  energy it is also connected
   (`TauCeti.isConnected_setOf_centralForceHamiltonian_kepler_eq`): in polar coordinates it is the
   radial level `p_r² / (2m) + U_ℓ(r) = E` times the circle of angles.
 * **Regularity.** Above the circular energy, `dH` and `dL` are independent at every state of the
@@ -184,8 +185,8 @@ theorem isConnected_setOf_centralForceHamiltonian_kepler_eq (hm : 0 < m) (hκ : 
       (Icc (keplerPeriapsisRadius m κ ℓ E) (keplerApoapsisRadius m κ ℓ E)) := by
     intro r hr
     have hr0 : r ≠ 0 := (hr₁.trans_le hr.1).ne'
-    rw [funext (effectivePotential_apply m ℓ fun r ↦ -κ / r)]
-    exact ContinuousAt.continuousWithinAt (by fun_prop (disch := positivity))
+    exact (continuousAt_effectivePotential (by fun_prop (disch := exact hr0))
+      hr0).continuousWithinAt
   exact (isConnected_setOf_centralForceHamiltonian_eq_iff b m _ E ℓ).2
     (isConnected_setOf_sq_div_add_eq hm hr₁ hr₁₂ hcont
       ((effectivePotential_kepler_eq_iff hm hκ hℓ hmin hE hr₁).2 (Or.inl rfl))

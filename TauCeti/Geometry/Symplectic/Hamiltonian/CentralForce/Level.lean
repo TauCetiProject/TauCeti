@@ -112,14 +112,6 @@ private theorem polarCanonical_mem_level_iff (m : ℝ) (U : ℝ → ℝ) {E ℓ 
     angularMomentum_polarCanonical h0 h1 h01 (x := (y, (θ, ℓ))) hy.ne', hq, hy, ne_eq,
     not_false_eq_true, and_true, true_and]
 
-/-- Every point off the collision set is the image of its radial projection, its angle and its
-angular momentum under the polar canonical parametrization. -/
-private theorem polarCanonical_radialProjection {x : V × V} (hx : x.1 ≠ 0) :
-    polarCanonical (b 0) (b 1) (radialProjection x,
-      ((polarAngle (b 0) (b 1) x.1).toReal, angularMomentum (b 0) (b 1) x)) = x := by
-  rw [← Prod.mk.eta (p := radialProjection x), radialProjection_fst, radialProjection_snd]
-  exact polarCanonical_polarAngle b x.2 hx (Real.Angle.coe_toReal _)
-
 /-- The radial projection carries the common level `{q ≠ 0, H = E, L = ℓ}` onto the radial level
 `{r > 0, p_r² / (2m) + U_ℓ(r) = E}`. -/
 private theorem image_radialProjection_level (m : ℝ) (U : ℝ → ℝ) (E ℓ : ℝ) :
@@ -178,14 +170,7 @@ theorem isConnected_setOf_centralForceHamiltonian_eq_iff (m : ℝ) (U : ℝ → 
   · -- The radial projection is continuous off the collision set.
     intro hS
     rw [← image_radialProjection_level b m U E ℓ]
-    refine hS.image _ fun x hx ↦ ContinuousAt.continuousWithinAt ?_
-    have hρ : radialProjection = fun x : V × V ↦ (‖x.1‖, ⟪x.1, x.2⟫_ℝ / ‖x.1‖) :=
-      funext fun x ↦ Prod.ext (radialProjection_fst x)
-        ((radialProjection_snd x).trans (radialMomentum_def x))
-    rw [hρ]
-    exact continuous_fst.norm.continuousAt.prodMk
-      (((continuous_fst.inner continuous_snd).continuousAt).div
-        continuous_fst.norm.continuousAt (norm_ne_zero_iff.2 hx.1))
+    exact hS.image _ fun x hx ↦ (continuousAt_radialProjection hx.1).continuousWithinAt
   · -- The polar canonical parametrization is continuous where `r > 0`.
     intro hR
     rw [← image_polarCanonical_level b m U E ℓ]
