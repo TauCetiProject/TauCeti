@@ -61,8 +61,7 @@ local instance mvPolynomialDiscreteTopology : DiscreteTopology (MvPolynomial ℕ
 
 -- A discrete ring that is not noetherian has a formal spectrum that is not locally noetherian.
 example : ¬ (ofSpf (MvPolynomial ℕ ℚ)).IsLocallyNoetherian := by
-  rw [isLocallyNoetherian_ofSpf_iff]
-  exact MvPolynomial.not_isNoetherianRing ℕ ℚ
+  simpa using MvPolynomial.not_isNoetherianRing ℕ ℚ
 
 end NonNoetherian
 

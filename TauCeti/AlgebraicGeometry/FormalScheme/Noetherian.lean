@@ -248,12 +248,14 @@ instance [IsNoetherianRing A] : (ofSpf A).IsNoetherian where
   toCompactSpace := Spf.compactSpace_carrier (IsAdicRing.ideal_spec A).2.1
 
 /-- `Spf A` is locally noetherian if and only if `A` is noetherian (EGA I, Ch. I, 10.6.5). -/
+@[simp]
 theorem isLocallyNoetherian_ofSpf_iff : (ofSpf A).IsLocallyNoetherian ↔ IsNoetherianRing A :=
   ⟨fun _ ↦ isNoetherianRing_of_isOpenImmersion (X := ofSpf A) (𝟙 (Spf A))
     (hf := inferInstanceAs (LocallyRingedSpace.IsOpenImmersion (𝟙 (Spf A)))), fun _ ↦ inferInstance⟩
 
 /-- `Spf A` is a noetherian formal scheme if and only if `A` is noetherian
 (EGA I, Ch. I, 10.6.5). -/
+@[simp]
 theorem isNoetherian_ofSpf_iff : (ofSpf A).IsNoetherian ↔ IsNoetherianRing A :=
   ⟨fun _ ↦ (isLocallyNoetherian_ofSpf_iff A).mp inferInstance, fun _ ↦ inferInstance⟩
 
@@ -267,6 +269,7 @@ sections and compactness of `X` are used directly as those of `X.toFormalScheme`
 
 /-- An ordinary scheme is a locally noetherian formal scheme if and only if it is a locally
 noetherian scheme (EGA I, Ch. I, 10.4.2). -/
+@[simp]
 theorem isLocallyNoetherian_toFormalScheme_iff (X : Scheme.{u}) :
     X.toFormalScheme.IsLocallyNoetherian ↔ AlgebraicGeometry.IsLocallyNoetherian X := by
   refine ⟨fun _ ↦ ⟨fun U ↦ U.property.isAffineOpen_toFormalScheme.isNoetherianRing⟩,
@@ -288,6 +291,7 @@ instance (X : Scheme.{u}) [AlgebraicGeometry.IsLocallyNoetherian X] :
   (isLocallyNoetherian_toFormalScheme_iff X).mpr ‹_›
 
 /-- An ordinary scheme is a noetherian formal scheme if and only if it is a noetherian scheme. -/
+@[simp]
 theorem isNoetherian_toFormalScheme_iff (X : Scheme.{u}) :
     X.toFormalScheme.IsNoetherian ↔ AlgebraicGeometry.IsNoetherian X :=
   ⟨fun h ↦
