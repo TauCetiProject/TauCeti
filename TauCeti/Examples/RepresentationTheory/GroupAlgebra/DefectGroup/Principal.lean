@@ -37,14 +37,18 @@ theorem isDefectGroup_blockOneS₃_iff_sylow {D : Subgroup S₃} :
 
 /-- The subgroup `⟨τ⟩` has order `2 = |S₃|₂`. -/
 theorem card_zpowers_τ : Nat.card (Subgroup.zpowers τ) = 2 ^ (Nat.card S₃).factorization 2 := by
-  rw [Nat.card_zpowers, orderOf_eq_prime (p := 2) (by decide) (by decide), Nat.card_perm,
-    Nat.card_fin, Nat.factorization_def _ Nat.prime_two,
-    multiplicity_eq_of_dvd_of_not_dvd (k := 1) (by decide) (by decide), pow_one]
+  have hτ : Nat.card (Subgroup.zpowers τ) = 2 := by
+    rw [Nat.card_zpowers, orderOf_eq_prime (p := 2) (by decide) (by decide)]
+  -- `|S₃| = 3! = 6`, and `2 ∣ 6` while `2 ^ 2 ∤ 6`.
+  have hS₃ : (Nat.card S₃).factorization 2 = 1 := by
+    rw [Nat.card_perm, Nat.card_fin, Nat.factorization_def _ Nat.prime_two]
+    exact multiplicity_eq_of_dvd_of_not_dvd (by decide) (by decide)
+  rw [hτ, hS₃, pow_one]
 
 /-- `⟨τ⟩` is a defect group of `1 + ρ + ρ²`: it is a Sylow `2`-subgroup. -/
 theorem isDefectGroup_blockOneS₃_zpowers_τ :
     IsDefectGroup (ZMod 2) 2 (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) (Subgroup.zpowers τ) :=
-  isDefectGroup_blockOneS₃_iff_sylow.2 ⟨Sylow.ofCard _ card_zpowers_τ, rfl⟩
+  isDefectGroup_blockOneS₃_iff_sylow.2 ⟨Sylow.ofCard _ card_zpowers_τ, (Sylow.coe_ofCard _ _).symm⟩
 
 /-- The criterion does not apply to `ρ + ρ²`: its augmentation is `2 = 0`. -/
 example : augmentation (ZMod 2) S₃ (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃) = 0 :=
