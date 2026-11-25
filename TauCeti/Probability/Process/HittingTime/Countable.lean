@@ -134,10 +134,7 @@ theorem hittingAfter_eq_iInf_of_isOpen {ι Ω E κ : Type*} [ConditionallyComple
     (hU : IsOpen U) {d : κ → ι} (hd : DenseRange d) (a : ι) :
     hittingAfter X U a ω =
       ⨅ k, if a ≤ d k ∧ X (d k) ω ∈ U then (d k : WithTop ι) else ⊤ :=
-  hf.hittingAfter_eq_iInf_of_isOpen_of_isCofinal hU hd (fun x ↦
-    let ⟨y, hxy⟩ := exists_gt x
-    let ⟨k, hk⟩ := hd.exists_mem_open isOpen_Ioi ⟨y, hxy⟩
-    ⟨d k, mem_range_self k, hk.le⟩) a
+  hf.hittingAfter_eq_iInf_of_isOpen_of_isCofinal hU hd hd.isCofinal_range a
 
 end IsRightContinuous
 
@@ -244,25 +241,8 @@ namespace TauCeti.Probability
 section Open
 
 variable {ι Ω E : Type*} [ConditionallyCompleteLinearOrder ι] [TopologicalSpace ι]
-  [OrderTopology ι] [SecondCountableTopology ι]
-
-private lemma exists_denseRange_isCofinal (a : ι) :
-    ∃ d : ℕ → ι, DenseRange d ∧ IsCofinal (range d) := by
-  classical
-  have : Nonempty ι := ⟨a⟩
-  by_cases h : ∃ m : ι, IsMax m
-  · obtain ⟨m, hm⟩ := h
-    exact ⟨fun n ↦ Nat.casesOn n m (TopologicalSpace.denseSeq ι),
-      (TopologicalSpace.denseRange_denseSeq ι).mono (by rintro _ ⟨n, rfl⟩; exact ⟨n + 1, rfl⟩),
-      fun x ↦ ⟨m, ⟨0, rfl⟩, hm.isTop x⟩⟩
-  · have : NoMaxOrder ι := ⟨fun x ↦ not_isMax_iff.mp fun hx ↦ h ⟨x, hx⟩⟩
-    refine ⟨TopologicalSpace.denseSeq ι, TopologicalSpace.denseRange_denseSeq ι, fun x ↦ ?_⟩
-    obtain ⟨y, hxy⟩ := exists_gt x
-    obtain ⟨k, hk⟩ := (TopologicalSpace.denseRange_denseSeq ι).exists_mem_open isOpen_Ioi ⟨y, hxy⟩
-    exact ⟨_, mem_range_self k, hk.le⟩
-
-variable [DenselyOrdered ι] {mΩ : MeasurableSpace Ω} [TopologicalSpace E] [MeasurableSpace E]
-  [OpensMeasurableSpace E] {X : ι → Ω → E}
+  [OrderTopology ι] [SecondCountableTopology ι] [DenselyOrdered ι] {mΩ : MeasurableSpace Ω}
+  [TopologicalSpace E] [MeasurableSpace E] [OpensMeasurableSpace E] {X : ι → Ω → E}
 
 /-- For any open target `U` and starting time `a`, there is an ambient-measurable representative
 which agrees with the native hitting time `hittingAfter X U a` on every right-continuous path. -/
@@ -271,7 +251,8 @@ theorem exists_measurable_eq_hittingAfter_of_isOpen (hX : ∀ t, Measurable (X t
     ∃ τ : Ω → WithTop ι, Measurable τ ∧
       ∀ ω, IsRightContinuous (fun t ↦ X t ω) → τ ω = hittingAfter X U a ω := by
   classical
-  obtain ⟨d, hd, hcf⟩ := exists_denseRange_isCofinal a
+  have : Nonempty ι := ⟨a⟩
+  obtain ⟨d, hd, hcf⟩ := TopologicalSpace.exists_denseRange_isCofinal (ι := ι)
   refine ⟨fun ω ↦ ⨅ k, if a ≤ d k ∧ X (d k) ω ∈ U then (d k : WithTop ι) else ⊤,
     Measurable.iInf fun k ↦ ?_,
     fun ω hω ↦ (hω.hittingAfter_eq_iInf_of_isOpen_of_isCofinal hU hd hcf a).symm⟩
@@ -296,7 +277,8 @@ theorem aemeasurable_hittingAfter_of_isOpen_of_isRightContinuous {P : Measure Ω
     {U : Set E} (hU : IsOpen U) (a : ι) :
     AEMeasurable (hittingAfter X U a) P := by
   classical
-  obtain ⟨d, hd, hcf⟩ := exists_denseRange_isCofinal a
+  have : Nonempty ι := ⟨a⟩
+  obtain ⟨d, hd, hcf⟩ := TopologicalSpace.exists_denseRange_isCofinal (ι := ι)
   refine ⟨fun ω ↦ ⨅ k, if a ≤ d k ∧ (hX (d k)).mk (X (d k)) ω ∈ U then (d k : WithTop ι) else ⊤,
     Measurable.iInf fun k ↦ ?_, ?_⟩
   · by_cases hk : a ≤ d k

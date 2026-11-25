@@ -29,6 +29,8 @@ The dyadic grid of level `n` of `[a, b]` consists of the points `a + k * ((b - a
 * `TauCeti.dist_dyadicTime_succ`: consecutive dyadic times of level `n` are `T / 2 ^ n` apart.
 * `TauCeti.exists_dyadicTime_mem_open`: every open set of `ℝ≥0` meeting `[0, T]` contains a
   dyadic time.
+* `TauCeti.dyadicNNReal`: the unbounded half-line dyadic grid `j / 2 ^ m` in `ℝ≥0`, with its
+  step, monotonicity, and floor-bracketing lemmas.
 -/
 
 public section
@@ -203,5 +205,62 @@ theorem exists_dyadicTime_mem_open {T s : ℝ≥0} (hsT : s ≤ T) {U : Set ℝ�
       Continuous fun x : Icc (0 : ℝ) T ↦ NNReal.mk x.val x.property.1))
     ⟨⟨s, s.coe_nonneg, hsT⟩, hs⟩
   rcases mem_iUnion.mp hx_grid with ⟨n, k, rfl⟩; exact ⟨n, k, hxU⟩
+
+/-- The `j`th point `j / 2 ^ m` of the level-`m` dyadic grid on the whole half-line `ℝ≥0`. -/
+noncomputable def dyadicNNReal (m j : ℕ) : ℝ≥0 :=
+  (j : ℝ≥0) / (2 : ℝ≥0) ^ m
+
+/-- Explicit ratio formula for a half-line dyadic grid point. -/
+theorem dyadicNNReal_def (m j : ℕ) : dyadicNNReal m j = (j : ℝ≥0) / (2 : ℝ≥0) ^ m :=
+  (rfl)
+
+/-- The initial point of every half-line dyadic grid is `0`. -/
+@[simp]
+theorem dyadicNNReal_zero (m : ℕ) : dyadicNNReal m 0 = 0 := by
+  simp [dyadicNNReal]
+
+/-- The first positive point of the level-`m` half-line dyadic grid is `2⁻ᵐ`. -/
+theorem dyadicNNReal_one (m : ℕ) : dyadicNNReal m 1 = (2⁻¹ : ℝ≥0) ^ m := by
+  rw [dyadicNNReal, Nat.cast_one, one_div, inv_pow]
+
+/-- At each level `m`, the half-line dyadic grid is strictly increasing in its index. -/
+theorem dyadicNNReal_strictMono (m : ℕ) : StrictMono (dyadicNNReal m) := fun _ _ hj ↦
+  div_lt_div_of_pos_right (Nat.cast_lt.mpr hj) (by positivity)
+
+/-- Shifting a half-line dyadic grid index by `i` advances the time by `i * 2⁻ᵐ`. -/
+theorem dyadicNNReal_add (m j i : ℕ) :
+    dyadicNNReal m (j + i) = dyadicNNReal m j + i * (2⁻¹ : ℝ≥0) ^ m := by
+  simp only [dyadicNNReal, div_eq_mul_inv, inv_pow]
+  push_cast
+  ring
+
+/-- Two-step increments on the level-`m` half-line dyadic grid have length `2 * 2⁻ᵐ`. -/
+theorem dyadicNNReal_add_two_sub (m k : ℕ) :
+    dyadicNNReal m (k + 2) - dyadicNNReal m k = 2 * (2⁻¹ : ℝ≥0) ^ m := by
+  rw [dyadicNNReal_add, Nat.cast_ofNat, add_tsub_cancel_left]
+
+/-- The floor index `⌊t * 2 ^ m⌋₊` gives a level-`m` dyadic point at or below `t`. -/
+theorem dyadicNNReal_floor_le (m : ℕ) (t : ℝ≥0) :
+    dyadicNNReal m ⌊(t : ℝ) * (2 : ℝ) ^ m⌋₊ ≤ t := by
+  rw [← NNReal.coe_le_coe, dyadicNNReal]
+  push_cast
+  rw [div_le_iff₀ (by positivity)]
+  exact Nat.floor_le (by positivity)
+
+/-- The successor of the floor index `⌊t * 2 ^ m⌋₊` gives a level-`m` dyadic point strictly
+above `t`. -/
+theorem lt_dyadicNNReal_floor_add_one (m : ℕ) (t : ℝ≥0) :
+    t < dyadicNNReal m (⌊(t : ℝ) * (2 : ℝ) ^ m⌋₊ + 1) := by
+  rw [← NNReal.coe_lt_coe, dyadicNNReal]
+  push_cast
+  rw [lt_div_iff₀ (by positivity)]
+  exact Nat.lt_floor_add_one _
+
+/-- The upper bracketing dyadic point `dyadicNNReal m (⌊t * 2 ^ m⌋₊ + 1)` lies within `2⁻ᵐ`
+of `t`. -/
+theorem dyadicNNReal_floor_add_one_sub_le (m : ℕ) (t : ℝ≥0) :
+    dyadicNNReal m (⌊(t : ℝ) * (2 : ℝ) ^ m⌋₊ + 1) - t ≤ (2⁻¹ : ℝ≥0) ^ m :=
+  (tsub_le_tsub_left (dyadicNNReal_floor_le m t) _).trans_eq
+    (by rw [dyadicNNReal_add, Nat.cast_one, one_mul, add_tsub_cancel_left])
 
 end TauCeti

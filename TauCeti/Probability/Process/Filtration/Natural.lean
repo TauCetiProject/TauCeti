@@ -26,6 +26,13 @@ right-continuous past indicator up to a null set
 Consequently the usual augmented natural filtrations also agree after deterministic
 translation and an equivalent change of measure. The null sets adjoined here are those of
 the ambient measure, not just those already visible at a given time.
+
+## References
+
+* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
+  Springer, 1991, §2.7.A.
+* P. E. Protter, *Stochastic Integration and Differential Equations*, second edition, Springer,
+  2005, Chapter I, §4, Theorem 31.
 -/
 
 public section

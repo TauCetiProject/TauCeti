@@ -47,6 +47,10 @@ visits `U` at some point of `D ∩ [a, t]`.
   `f u` onto a point of a dense set `D` in `(u, v)`.
 * `Dense.exists_mem_Icc_apply_mem_iff_of_isOpen`: on a densely ordered space, visiting an open set
   `U` on `[a, t]` is equivalent to visiting `U` at `t` or at a point of `D ∩ [a, t]`.
+* `DenseRange.isCofinal_range`: in a linear order without maximal elements whose lower rays are
+  closed, any map with dense range has cofinal range.
+* `TopologicalSpace.exists_denseRange_isCofinal`: every nonempty separable linear order with closed
+  lower rays admits a sequence with dense, cofinal range.
 * `TauCeti.le_of_forall_rat_add_le`: a function right-continuous at `t + h` that does not
   increase along rational increments from `t` does not increase along the real increment `h`.
 -/
@@ -224,6 +228,30 @@ theorem Dense.exists_mem_Icc_apply_mem_iff_of_isOpen {ι α : Type*} [LinearOrde
   · rintro (ht | ⟨x, -, hx, hfx⟩)
     · exact ⟨t, ⟨hat, le_rfl⟩, ht⟩
     · exact ⟨x, hx, hfx⟩
+
+/-- In a linear order without maximal elements whose lower rays are closed, the range of any map
+with dense range is cofinal. -/
+theorem DenseRange.isCofinal_range {ι κ : Type*} [LinearOrder ι] [NoMaxOrder ι]
+    [TopologicalSpace ι] [ClosedIicTopology ι] {d : κ → ι} (hd : DenseRange d) :
+    IsCofinal (range d) := fun x ↦
+  let ⟨y, hxy⟩ := exists_gt x
+  let ⟨k, hk⟩ := hd.exists_mem_open isOpen_Ioi ⟨y, hxy⟩
+  ⟨d k, mem_range_self k, hk.le⟩
+
+/-- Every nonempty separable linear order with closed lower rays admits a sequence with dense,
+cofinal range. -/
+theorem TopologicalSpace.exists_denseRange_isCofinal {ι : Type*} [LinearOrder ι]
+    [TopologicalSpace ι] [ClosedIicTopology ι] [TopologicalSpace.SeparableSpace ι] [Nonempty ι] :
+    ∃ d : ℕ → ι, DenseRange d ∧ IsCofinal (range d) := by
+  classical
+  by_cases h : ∃ m : ι, IsMax m
+  · obtain ⟨m, hm⟩ := h
+    exact ⟨fun n ↦ Nat.casesOn n m (TopologicalSpace.denseSeq ι),
+      (TopologicalSpace.denseRange_denseSeq ι).mono (by rintro _ ⟨n, rfl⟩; exact ⟨n + 1, rfl⟩),
+      fun x ↦ ⟨m, ⟨0, rfl⟩, hm.isTop x⟩⟩
+  · have : NoMaxOrder ι := ⟨fun x ↦ not_isMax_iff.mp fun hx ↦ h ⟨x, hx⟩⟩
+    exact ⟨TopologicalSpace.denseSeq ι, TopologicalSpace.denseRange_denseSeq ι,
+      (TopologicalSpace.denseRange_denseSeq ι).isCofinal_range⟩
 
 end OpenTarget
 

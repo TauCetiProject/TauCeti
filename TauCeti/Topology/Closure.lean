@@ -144,12 +144,6 @@ nontrivial. -/
 theorem Dense.frequently_mem_nhdsWithin {X : Type*} [TopologicalSpace X] {D t : Set X}
     (hD : Dense D) (ht : IsOpen t) {x : X} [h : (𝓝[t] x).NeBot] :
     ∃ᶠ y in 𝓝[t] x, y ∈ D := by
-  rw [Filter.frequently_iff]
-  intro s hs
-  obtain ⟨u, hu, v, hv, rfl⟩ := Filter.mem_inf_iff.mp hs
-  obtain ⟨w, hwu, hwo, hxw⟩ := mem_nhds_iff.mp hu
-  have hwt : w ∩ t ∈ 𝓝[t] x :=
-    Filter.inter_mem (Filter.mem_inf_of_left (hwo.mem_nhds hxw))
-      (Filter.mem_inf_of_right (Filter.mem_principal_self t))
-  obtain ⟨y, hyw, hyD⟩ := hD.inter_open_nonempty (w ∩ t) (hwo.inter ht) (h.nonempty_of_mem hwt)
-  exact ⟨y, ⟨hwu hyw.1, hv hyw.2⟩, hyD⟩
+  rw [Filter.frequently_mem_iff_neBot, ← nhdsWithin_inter', ← mem_closure_iff_nhdsWithin_neBot]
+  exact closure_minimal (hD.open_subset_closure_inter ht) isClosed_closure
+    (mem_closure_iff_nhdsWithin_neBot.mpr h)

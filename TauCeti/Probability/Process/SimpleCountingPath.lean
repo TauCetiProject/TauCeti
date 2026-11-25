@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Process.HittingTime
 public import TauCeti.Topology.Order.Cadlag
-import TauCeti.Probability.Process.LevelLocalizer
 import TauCeti.Topology.Order.Monotone.Basic
 
 /-!
@@ -92,29 +91,6 @@ theorem leftLim_add_one_eq_of_not_continuousAt {f : ℝ≥0 → ℕ} (hf : IsSim
   have ht0 : 0 < t := pos_iff_ne_zero.mpr fun h ↦ ht (h ▸ hf.continuousAt_zero)
   exact hf.monotone.leftLim_add_one_eq_of_not_continuousAt (hf.isRightContinuous t) ht
     (hf.le_add_one ht0)
-
-/-- Along a simple counting path, the first hitting time of `Set.Ici c` is at most `t` if and only
-if `c ≤ M t ω`. -/
-theorem hittingAfter_Ici_le_iff {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
-    (hf : IsSimpleCountingPath (M · ω)) (c : ℕ) (t : ℝ≥0) :
-    hittingAfter M (Ici c) 0 ω ≤ t ↔ c ≤ M t ω := by
-  simpa using hf.monotone.hittingAfter_Ici_le_iff
-    (isRightContinuous_iff_continuousWithinAt_Ici.mp hf.isRightContinuous)
-    (n := 0) (t := t) (c := c)
-
-/-- Along a simple counting path, `(t : WithTop ℝ≥0)` is strictly before the first hitting time of
-`Set.Ici c` if and only if `M t ω < c`. -/
-theorem lt_hittingAfter_Ici_iff {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
-    (hf : IsSimpleCountingPath (M · ω)) (c : ℕ) (t : ℝ≥0) :
-    (t : WithTop ℝ≥0) < hittingAfter M (Ici c) 0 ω ↔ M t ω < c := by
-  rw [← not_le, hf.hittingAfter_Ici_le_iff, not_le]
-
-/-- A simple counting path hits a positive level `c` only at a strictly positive time. -/
-theorem hittingAfter_Ici_pos {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
-    (hf : IsSimpleCountingPath (M · ω)) {c : ℕ} (hc : 0 < c) :
-    0 < hittingAfter M (Ici c) 0 ω :=
-  isClosed_Ici.lt_hittingAfter_of_isRightContinuous hf.isRightContinuous
-    (by simp [hf.apply_zero, hc.ne'])
 
 private lemma exists_Ico_le_add_one {f : ℝ≥0 → ℕ} (hf : IsSimpleCountingPath f)
     ⦃t : ℝ≥0⦄ (ht : 0 < t) : ∃ s ∈ Ico 0 t, f t ≤ f s + 1 := by
