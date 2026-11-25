@@ -240,6 +240,7 @@ theorem mem_dimerSubshift [G.LocallyFinite] {Γ : Type*} [Group Γ] [MulAction �
     ω ∈ G.dimerSubshift Γ hΓ ↔ G.IsDimerConfiguration ω :=
   (Iff.rfl)
 
+@[simp]
 theorem coe_dimerSubshift [G.LocallyFinite] {Γ : Type*} [Group Γ] [MulAction Γ G.edgeSet]
     {hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e} :
     (G.dimerSubshift Γ hΓ : Set (G.edgeSet → Bool)) = {ω | G.IsDimerConfiguration ω} :=

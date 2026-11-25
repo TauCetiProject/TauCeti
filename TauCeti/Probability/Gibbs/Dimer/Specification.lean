@@ -109,6 +109,7 @@ theorem dimerKernel_apply_eq_comap (w : G.edgeSet → ℝ) (F : Finset G.edgeSet
   (rfl)
 
 /-- The kernel `γ^w_F` gives a set `C ⊆ 𝔛(G)` the Boltzmann mass of its image. -/
+@[simp]
 theorem dimerKernel_apply (w : G.edgeSet → ℝ) (F : Finset G.edgeSet) (ω : G.dimerSubshift Γ hΓ)
     (C : Set (G.dimerSubshift Γ hΓ)) :
     dimerKernel w F ω C = G.dimerBoltzmann w F ω.val (Subtype.val '' C) := by
