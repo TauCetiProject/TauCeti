@@ -45,6 +45,8 @@ common compact support, are statements about this map.
 
 * `BesselPotentialSpace.continuous_toLp`: the `Lᵖ` function `J^s u` depends continuously on `u`.
 * `BesselPotentialSpace.continuous_toDistr`: `H^{s,p}(E, G)` embeds continuously in `𝓢'(E, G)`.
+* `BesselPotentialSpace.toDistr_real_smul`: the real action on `H^{s,p}(E, G)` obtained from its
+  complex structure acts on the underlying tempered distribution.
 * `BesselPotentialSpace.continuous_of_continuous_toDistr`: the closed graph criterion for linear
   maps into `H^{s,p}`.
 * `BesselPotentialSpace.mapCLM`: the restriction `H^{s,p}(E, G) →L[ℂ] H^{r,p}(E, G')` of an
@@ -115,6 +117,17 @@ theorem continuous_toDistr : Continuous fun u : H^{s, p}(E, G) ↦ u.toDistr := 
   have h := ((besselPotential E G (-s)).comp ((Lp.toTemperedDistributionCLM G volume p).comp
     (toLpₗᵢ E G s p).toContinuousLinearEquiv.toContinuousLinearMap)).continuous
   exact h.congr fun u ↦ by simp
+
+/-- The real action on `H^{s,p}(E, G)` obtained from its complex structure, which is the one
+carried by real-linear structures such as products and their submodules, acts on the underlying
+tempered distribution. The expression `a • u` instead elaborates to Mathlib's direct real action,
+for which `BesselPotentialSpace.toDistr_smul` holds; the two actions agree, but only after
+unfolding more than `simp` and `rw` do, so this lemma names the action explicitly. -/
+@[simp]
+theorem toDistr_real_smul (a : ℝ) (u : H^{s, p}(E, G)) :
+    (@HSMul.hSMul ℝ _ _ (@instHSMul _ _ (Module.complexToReal H^{s, p}(E, G)).toSMul) a u).toDistr =
+      a • u.toDistr :=
+  (rfl)
 
 /-- **Closed graph criterion.** A real-linear map `L` from a Banach space into `H^{s,p}(E, G)` is
 continuous as soon as `x ↦ (L x).toDistr` is continuous into the tempered distributions. -/
@@ -354,32 +367,8 @@ private theorem norm_inclusion_weight_smul_le (h : r ≤ s) (x : E) (v : G) :
 of the `L²` part of `u`, viewed in `H^r`, is `⟨ξ⟩ ^ (r - s)` times that of `u`. -/
 theorem coeFn_fourier_toLp_inclusion (h : r ≤ s) (u : H^{s}(E, F)) :
     ⇑(𝓕 (inclusion h u).toLp : Lp F 2 (volume : Measure E)) =ᵐ[volume]
-      fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ) • 𝓕 u.toLp ξ := by
-  set w : E → ℂ := fun x ↦ (((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)
-  have hw : w.HasTemperateGrowth := by fun_prop
-  set G₀ : Lp F 2 (volume : Measure E) := 𝓕 u.toLp
-  have hG₀ : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) =
-      G₀ :=
-    (toTemperedDistribution_fourier_toLp u).symm
-  have hmem : MemLp (fun x ↦ w x • G₀ x) 2 (volume : Measure E) :=
-    (Lp.memLp G₀).of_le ((hw.1.continuous.aestronglyMeasurable).smul
-      (Lp.aestronglyMeasurable G₀)) (.of_forall fun x ↦ norm_inclusion_weight_smul_le h x _)
-  have heq : 𝓕 (inclusion h u).toLp = hmem.toLp := by
-    refine fourier_toLp_eq_of_smulLeftCLM_fourier_eq ?_
-    -- `⟨ξ⟩ ^ r 𝓕 u = ⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s 𝓕 u = w • G₀`.
-    have hweight : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) =
-        (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) * w := by
-      ext x
-      simp only [w, Pi.mul_apply, ← Complex.ofReal_mul, ← TauCeti.one_add_norm_sq_rpow_add]
-      congr 2
-      ring
-    rw [toDistr_inclusion, hweight, ← smulLeftCLM_smulLeftCLM_apply
-      (g₁ := fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (by fun_prop) hw, hG₀]
-    ext φ
-    rw [Lp.smulLeftCLM_toTemperedDistribution_apply hw, Lp.toTemperedDistribution_apply]
-    exact integral_congr_ae (hmem.coeFn_toLp.mono fun x hx ↦ by simp only [hx])
-  rw [heq]
-  exact hmem.coeFn_toLp
+      fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ) • 𝓕 u.toLp ξ :=
+  fourier_toLp_ae_eq_of_toDistr_eq (toDistr_inclusion h u).symm
 
 /-- **Fourier multipliers between the Hilbert Bessel-potential spaces.** Let `g` be a symbol of
 temperate growth with `‖g ξ‖ ⟨ξ⟩ ^ r ≤ C ⟨ξ⟩ ^ s` for every frequency `ξ`, where

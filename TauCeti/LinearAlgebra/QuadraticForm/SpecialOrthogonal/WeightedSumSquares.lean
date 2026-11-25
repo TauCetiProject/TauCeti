@@ -140,7 +140,7 @@ theorem Matrix.exists_mem_specialOrthogonalGroup_mulVec_eq {ι : Type*} [Fintype
     simp [QuadraticMap.weightedSumSquares_apply, dotProduct]
   obtain ⟨g, hg⟩ := QuadraticMap.exists_specialOrthogonal_map_eq_of_nondegenerate
     (QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))
-    (QuadraticMap.nondegenerate_weightedSumSquares fun _ ↦ isRegular_one)
+    (QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun _ ↦ isRegular_one)
     (by rwa [Module.finrank_fintype_fun_eq_card]) (x := x) (y := y) (by rw [hQ, hQ, h])
     (by rwa [hQ, Ne, dotProduct_self_eq_zero])
   let A := (TauCeti.QuadraticMap.matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).symm g

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.Basis.Fin
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.ODE.ExistUnique
@@ -35,7 +37,8 @@ needed. A point of the torus is represented by a pair `(θ, φ)` of real lifts, 
 appears both as `θ = π` and as `θ = -π`.
 
 * **The negative gradient.** The metric `g` is positive definite where `h > 0`
-  (`TauCeti.shearedTorusMetric_self_pos`), and the negative gradient of `cos θ` for `g` is
+  (`TauCeti.shearedTorusMetric_self_pos`); its Gram determinant in the coordinates `(θ, φ)` is `h`
+  (`TauCeti.det_toMatrix_shearedTorusMetric`). The negative gradient of `cos θ` for `g` is
 
   `(sin θ / h θ) (∂_θ + a θ ∂_φ)` (`TauCeti.shearedTorusField`),
 
@@ -45,7 +48,9 @@ appears both as `θ = π` and as `θ = -π`.
   integral curves exist through every point for all times
   (`TauCeti.exists_hasDerivAt_shearedTorusField`).
 * **A first integral.** Along an integral curve `dφ / dθ = a(θ)`, so `φ - ∫₀^θ a` is constant
-  (`TauCeti.snd_sub_intervalIntegral_eq_of_hasDerivAt_shearedTorusField`).
+  (`TauCeti.snd_sub_intervalIntegral_eq_of_hasDerivAt_shearedTorusField`), and `φ` itself is
+  constant while the angle stays where `a` vanishes
+  (`TauCeti.snd_eq_of_hasDerivAt_shearedTorusField`).
 * **Confinement and limits.** The angle `θ` never crosses a zero of `sin`
   (`TauCeti.fst_mem_Ioo_of_hasDerivAt_shearedTorusField`), so the integral curves through the
   open upper half `0 < θ < π` and the open lower half `-π < θ < 0` form two families. A curve of
@@ -64,13 +69,15 @@ the upper family ends at `φ + A` and the lower family at `φ`
 (`TauCeti.tendsto_atTop_of_hasDerivAt_shearedTorusField_of_mem_Ioo_neg_pi_zero_of_eqOn`). This is
 the pair of endpoint maps whose difference `R_A - id` is the Bott correspondence of the sheared
 torus. For `a = 0` the two families end at the same angle and the contributions cancel already on
-chains. Choosing `h` so that `g` is standard in the Morse–Bott coordinates near the critical
-circles, and the transversality of the stable and unstable manifolds, are not treated here.
+chains. Explicit profiles `h` and `a` for which `g` is standard in the Morse–Bott coordinates near
+the critical circles are constructed in `TauCeti.Analysis.Calculus.Morse.ShearedTorus.Standard`;
+the transversality of the stable and unstable manifolds is not treated here.
 
 ## Main declarations
 
 * `TauCeti.shearedTorusMetric`: the metric `h(θ) dθ² + (dφ - a(θ) dθ)²`.
 * `TauCeti.shearedTorusField`: its negative gradient of `cos θ`.
+* `TauCeti.det_toMatrix_shearedTorusMetric`: the Gram determinant of the metric is `h`.
 * `TauCeti.shearedTorusMetric_shearedTorusField`, `TauCeti.eq_shearedTorusField_iff`: the
   negative gradient property and its uniqueness.
 * `TauCeti.exists_hasDerivAt_shearedTorusField`: the flow is complete.
@@ -131,6 +138,13 @@ theorem shearedTorusMetric_self_pos {θ : ℝ} (hθ : 0 < h θ) {v : ℝ × ℝ}
       rw [mul_assoc]
       exact mul_pos hθ (mul_self_pos.2 h1)
     linarith [mul_self_nonneg (v.2 - a θ * v.1)]
+
+/-- **The Gram determinant.** In the coordinate basis `(∂_θ, ∂_φ)` the Gram matrix of the sheared
+metric is `[[h θ + a θ ^ 2, -a θ], [-a θ, 1]]`, whose determinant is `h θ`. -/
+theorem det_toMatrix_shearedTorusMetric (θ : ℝ) :
+    (LinearMap.BilinForm.toMatrix (Module.Basis.finTwoProd ℝ) (shearedTorusMetric h a θ)).det =
+      h θ := by
+  simp [Matrix.det_fin_two, LinearMap.BilinForm.toMatrix_apply]
 
 /-- The vector field `(sin θ / h θ) (∂_θ + a θ ∂_φ)`, the negative gradient of `cos θ` for the
 sheared metric. -/
@@ -254,6 +268,17 @@ theorem snd_sub_intervalIntegral_eq_of_hasDerivAt_shearedTorusField (ha : Contin
     simpa only [sub_self, Pi.sub_def, comp_def] using
       (hasDerivAt_snd_of_hasDerivAt_shearedTorusField hγ s).sub h₂
   exact is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt) (fun s ↦ (hd s).deriv) t 0
+
+/-- **The circle coordinate is constant where the shear vanishes.** If `a` vanishes at the angle
+of an integral curve at all times between `0` and `t`, then `φ` takes the same value at the times
+`0` and `t`. -/
+theorem snd_eq_of_hasDerivAt_shearedTorusField
+    (hγ : ∀ t, HasDerivAt γ (shearedTorusField h a (γ t)) t) {t : ℝ}
+    (ha0 : ∀ s ∈ uIcc 0 t, a (γ s).1 = 0) : (γ t).2 = (γ 0).2 := by
+  have := (convex_uIcc (0 : ℝ) t).norm_image_sub_le_of_norm_hasDerivWithin_le (C := 0)
+    (fun s _ ↦ (hasDerivAt_snd_of_hasDerivAt_shearedTorusField hγ s).hasDerivWithinAt)
+    (fun s hs ↦ by simp [ha0 s hs]) left_mem_uIcc right_mem_uIcc
+  rwa [zero_mul, norm_le_zero_iff, sub_eq_zero] at this
 
 /-- If the angle of an integral curve is a zero of `sin` at one time, it is constant. -/
 private theorem fst_eq_of_sin_eq_zero (hh : ContDiff ℝ 1 h) (hhp : Periodic h (2 * π))

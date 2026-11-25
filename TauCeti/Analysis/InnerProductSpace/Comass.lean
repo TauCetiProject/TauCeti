@@ -49,6 +49,8 @@ relates that norm to the two norms of geometric measure theory.
 * `ContinuousAlternatingMap.norm_apply_eq_norm_apply_orthonormalBasis_span`: a form has values of
   the same norm on an orthonormal family and on any orthonormal basis of its span.
 * `exteriorPower.norm_formDualEquiv_ιMulti`: the mass of a wedge of vectors is its volume.
+* `exteriorPower.formVectorPairing`: the pairing of forms with `k`-vectors as a continuous bilinear
+  map.
 * `exteriorPower.norm_le_norm_formDualEquiv`, `exteriorPower.norm_formDualEquiv_le`: the mass of
   `k`-vectors is comparable with the inner product norm.
 * `TauCeti.norm_alternatingFormEquiv_ιMulti`, `TauCeti.norm_alternatingFormEquiv_one`: the comass
@@ -284,6 +286,24 @@ theorem norm_formDualEquiv_le (ξ : ⋀[ℝ]^k E) :
       exact hω s
     _ = (∑ s, |⟪B s, ξ⟫|) * ‖ω‖ := (Finset.sum_mul _ _ _).symm
     _ ≤ _ := by gcongr
+
+/-- The pairing `⟨ω, ξ⟩` of a real `k`-form with a `k`-vector, with
+`⟨ω, v₁ ∧ ⋯ ∧ vₖ⟩ = ω(v₁, …, vₖ)` (`exteriorPower.formVectorPairing_ιMulti`), as a continuous
+bilinear map. For fixed `ξ` it is the functional `formDualEquiv ℝ E k ξ` whose norm is the mass of
+`ξ`. -/
+noncomputable def formVectorPairing : (E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ⋀[ℝ]^k E →L[ℝ] ℝ :=
+  (LinearMap.toContinuousLinearMap (formDualEquiv ℝ E k).toLinearMap).flip
+
+/-- The pairing of a form with `ξ` is the evaluation of `formDualEquiv ℝ E k ξ`. -/
+theorem formVectorPairing_apply (ω : E [⋀^Fin k]→L[ℝ] ℝ) (ξ : ⋀[ℝ]^k E) :
+    formVectorPairing ω ξ = formDualEquiv ℝ E k ξ ω := by
+  simp [formVectorPairing]
+
+/-- A form pairs with the wedge `v₁ ∧ ⋯ ∧ vₖ` to its value at `(v₁, …, vₖ)`. -/
+@[simp]
+theorem formVectorPairing_ιMulti (ω : E [⋀^Fin k]→L[ℝ] ℝ) (v : Fin k → E) :
+    formVectorPairing ω (ιMulti ℝ k v) = ω v := by
+  simp [formVectorPairing_apply]
 
 end exteriorPower
 

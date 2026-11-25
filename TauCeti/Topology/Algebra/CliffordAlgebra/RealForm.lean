@@ -13,7 +13,13 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 The positive-definite real Clifford form is the squared Euclidean norm after passing between
 function and Euclidean-space coordinates. Consequently, its unit quadric is identified with the
-Euclidean unit sphere.
+Euclidean unit sphere, and its isometries are linear isometries of `EuclideanSpace ℝ (Fin n)`
+with the same determinant.
+
+## Main definitions
+
+* `TauCeti.realCliffordIsometryEquivEuclidean`: an isometry of `realCliffordForm n 0` as a linear
+  isometry of `EuclideanSpace ℝ (Fin n)`.
 
 ## Main results
 
@@ -23,6 +29,8 @@ Euclidean unit sphere.
   unit-quadric vectors to Euclidean unit vectors.
 * `TauCeti.realCliffordForm_zero_euclideanSpaceEquiv_eq_one` sends Euclidean unit vectors to the
   unit quadric.
+* `TauCeti.det_realCliffordIsometryEquivEuclidean`: the determinant of an isometry is the same
+  in both coordinate systems.
 -/
 
 public section
@@ -61,5 +69,35 @@ theorem realCliffordForm_zero_euclideanSpaceEquiv_eq_one {n : ℕ}
   have hu : ‖(u : EuclideanSpace ℝ (Fin n))‖ = 1 := by
     simpa only [mem_sphere, dist_zero_right] using u.property
   rw [hu, one_pow]
+
+/-- An isometry `f` of the positive-definite form `realCliffordForm n 0` on `Fin n → ℝ`, read as
+a linear isometry of `EuclideanSpace ℝ (Fin n)`: it applies `f` to coordinates. -/
+noncomputable def realCliffordIsometryEquivEuclidean {n : ℕ}
+    (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0)) :
+    EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) where
+  toLinearEquiv := ((EuclideanSpace.equiv (Fin n) ℝ).toLinearEquiv.trans f.toLinearEquiv).trans
+    (EuclideanSpace.equiv (Fin n) ℝ).symm.toLinearEquiv
+  norm_map' u := by
+    have h := realCliffordForm_zero_euclideanSpaceEquiv_eq_norm_sq
+      ((EuclideanSpace.equiv (Fin n) ℝ).symm (f (EuclideanSpace.equiv (Fin n) ℝ u)))
+    rw [ContinuousLinearEquiv.apply_symm_apply, f.map_app,
+      realCliffordForm_zero_euclideanSpaceEquiv_eq_norm_sq] at h
+    exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 h.symm
+
+@[simp]
+theorem realCliffordIsometryEquivEuclidean_apply {n : ℕ}
+    (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0)) (v : Fin n → ℝ) :
+    realCliffordIsometryEquivEuclidean f (WithLp.toLp 2 v) = WithLp.toLp 2 (f v) :=
+  (rfl)
+
+/-- The determinant of an isometry read on `EuclideanSpace ℝ (Fin n)` is its determinant on
+`Fin n → ℝ`. -/
+@[simp]
+theorem det_realCliffordIsometryEquivEuclidean {n : ℕ}
+    (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0)) :
+    LinearMap.det ((realCliffordIsometryEquivEuclidean f).toLinearEquiv :
+        EuclideanSpace ℝ (Fin n) →ₗ[ℝ] EuclideanSpace ℝ (Fin n)) =
+      LinearMap.det (f.toLinearEquiv : (Fin n → ℝ) →ₗ[ℝ] (Fin n → ℝ)) :=
+  LinearMap.det_conj _ (EuclideanSpace.equiv (Fin n) ℝ).symm.toLinearEquiv
 
 end TauCeti

@@ -66,10 +66,7 @@ hypothesis forces `z` to be the lower left corner, so that the boundary is trave
 counterclockwise. -/
 theorem windingNumber_rectBoundary_eq_one (hp : p ∈ Ioo z.re w.re ×ℂ Ioo z.im w.im) :
     windingNumber (rectBoundary z w) 0 4 p = 1 := by
-  have hfr : p ∉ frontier (Rectangle z w) := by
-    have hint := hp
-    rw [← interior_rectangle (hp.1.1.trans hp.1.2).le (hp.2.1.trans hp.2.2).le] at hint
-    exact disjoint_left.1 disjoint_interior_frontier hint
+  have hfr : p ∉ frontier (Rectangle z w) := notMem_frontier_rectangle_of_mem_Ioo hp
   obtain ⟨⟨h₁, h₂⟩, h₃, h₄⟩ := hp
   -- Off the boundary, the winding number is the sum of the winding numbers of the four edges.
   have hsum := (rectPolygon z w).windingNumber_contourCycle (boundary_rectPolygon z w ▸ hfr)

@@ -157,7 +157,8 @@ jobs:
       # UInt64 and explicitly not cryptographic (Lake/Build/Trace.lean carries a TODO to replace
       # it), so content addressing is a deduplication scheme here, not an integrity guarantee.
       # Restoring on main also gives up main's former role as the one build that took nothing on
-      # faith. nightly-verify.yml reinstates it on a daily cadence: it rebuilds from source with the
+      # faith. Nightly verification (nightly-verify-schedule.yml, calling TauCetiTools'
+      # nightly-verify.yml) reinstates it on a daily cadence: it rebuilds from source with the
       # cache off and compares the resulting oleans byte for byte against a cache-restored build of
       # the same commit. That is a detector, not an equivalent guarantee, and its own header spells
       # out the exposure window it leaves. The two are a pair; do not enable this restore without
