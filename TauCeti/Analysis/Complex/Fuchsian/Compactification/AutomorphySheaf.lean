@@ -169,18 +169,6 @@ structure IsAutomorphySection (Γ' : _root_.Subgroup SL(2, ℝ)) (k : ℤ)
 
 variable {Γ' : _root_.Subgroup SL(2, ℝ)} {k : ℤ} {U V : Set Γ.CompactifiedQuotient} {F G : ℍ → ℂ}
 
-/-- The indicator function of the preimage of `V` in `ℍ`, at a point of that preimage. -/
-private theorem indicator_preimage_of_mem {τ : ℍ}
-    (hτ : ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ) ∈ V) (F : ℍ → ℂ) :
-    ((fun σ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) σ)) ⁻¹' V).indicator F τ = F τ :=
-  indicator_of_mem (s := (fun σ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) σ)) ⁻¹' V) hτ F
-
-/-- The indicator function of the preimage of `V` in `ℍ`, off that preimage. -/
-private theorem indicator_preimage_of_notMem {τ : ℍ}
-    (hτ : ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ) ∉ V) (F : ℍ → ℂ) :
-    ((fun σ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) σ)) ⁻¹' V).indicator F τ = 0 :=
-  indicator_of_notMem (s := (fun σ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) σ)) ⁻¹' V) hτ F
-
 /-- An element of `Γ'` preserves the fibres of the projection to the compactified quotient when
 the image of `Γ'` lies in `Γ`. -/
 theorem ofQuotient_quotientMk_smul
@@ -273,20 +261,22 @@ theorem indicator (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2
     (hF : IsAutomorphySection Γ' k U F) (hV : IsOpen V) (hVU : V ⊆ U) :
     IsAutomorphySection Γ' k V
       (((fun τ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ)) ⁻¹' V).indicator F) where
-  eq_zero_of_notMem τ hτ := indicator_preimage_of_notMem hτ F
+  eq_zero_of_notMem τ hτ := indicator_of_notMem (mem_preimage.not.2 hτ : τ ∉ _) F
   apply_smul g hg τ := by
     by_cases hτ : ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ) ∈ V
-    · rw [indicator_preimage_of_mem hτ, indicator_preimage_of_mem
-        (by rwa [ofQuotient_quotientMk_smul hΓ hg]), hF.apply_smul g hg]
-    · rw [indicator_preimage_of_notMem hτ, indicator_preimage_of_notMem
-        (by rwa [ofQuotient_quotientMk_smul hΓ hg]), mul_zero]
+    · rw [indicator_of_mem (mem_preimage.2 hτ : τ ∈ _), indicator_of_mem
+        (mem_preimage.2 (by rwa [ofQuotient_quotientMk_smul hΓ hg]) : g • τ ∈ _),
+        hF.apply_smul g hg]
+    · rw [indicator_of_notMem (mem_preimage.not.2 hτ : τ ∉ _), indicator_of_notMem
+        (mem_preimage.not.2 (by rwa [ofQuotient_quotientMk_smul hΓ hg]) : g • τ ∉ _), mul_zero]
   mdifferentiableAt τ hτ := by
     refine (hF.mdifferentiableAt τ (hVU hτ)).congr_of_eventuallyEq
       (eventuallyEq_of_mem ?_ fun σ hσ ↦ indicator_of_mem hσ F)
     exact ((continuous_ofQuotient.comp continuous_quotient_mk').isOpen_preimage V hV).mem_nhds hτ
   isBoundedAt D hD :=
-    (isBoundedAt_congr (hV.mem_nhds hD) (fun _ hτ ↦ indicator_preimage_of_mem hτ F) k).mpr
-      (hF.isBoundedAt D (hVU hD))
+    (isBoundedAt_congr (hV.mem_nhds hD)
+      (fun τ hτ ↦ indicator_of_mem (mem_preimage.2 hτ : τ ∈ _) F) k).mpr
+        (hF.isBoundedAt D (hVU hD))
 
 /-- **Being a local section is local on the compactified quotient.** A function vanishing off the
 preimage of `U` is a local section over `U` as soon as, near every point of `U`, it agrees on the
@@ -368,15 +358,6 @@ private theorem coe_automorphyRestrict (k : ℤ) {U V : Opens Γ.CompactifiedQuo
       ((fun τ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ)) ⁻¹' V).indicator F :=
   rfl
 
-omit [DiscreteTopology Γ] in
-/-- Restricting to `π⁻¹(V)` and then to `π⁻¹(W)` for `W ⊆ V` is restricting to `π⁻¹(W)`. -/
-private theorem indicator_indicator_preimage {W : Set Γ.CompactifiedQuotient} (hWV : W ⊆ V)
-    (F : ℍ → ℂ) :
-    ((fun τ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ)) ⁻¹' W).indicator
-        (((fun τ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ)) ⁻¹' V).indicator F) =
-      ((fun τ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ)) ⁻¹' W).indicator F := by
-  rw [indicator_indicator, inter_eq_left.mpr (preimage_mono hWV)]
-
 /-- The presheaf of complex vector spaces of local weight-`k` automorphic forms. -/
 private def automorphyPresheaf (k : ℤ) :
     TopCat.Presheaf (ModuleCat.{0} ℂ) (TopCat.of Γ.CompactifiedQuotient) where
@@ -385,11 +366,13 @@ private def automorphyPresheaf (k : ℤ) :
   map_id U := by
     refine ModuleCat.hom_ext (LinearMap.ext fun F ↦ Subtype.ext (funext fun τ ↦ ?_))
     by_cases hτ : ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ) ∈ (U.unop : Set Γ.CompactifiedQuotient)
-    · exact indicator_preimage_of_mem hτ _
-    · exact (indicator_preimage_of_notMem hτ _).trans (F.property.eq_zero_of_notMem τ hτ).symm
+    · exact indicator_of_mem (mem_preimage.2 hτ : τ ∈ _) _
+    · exact (indicator_of_notMem (mem_preimage.not.2 hτ : τ ∉ _) _).trans
+        (F.property.eq_zero_of_notMem τ hτ).symm
   map_comp f g := by
     refine ModuleCat.hom_ext (LinearMap.ext fun F ↦ Subtype.ext ?_)
-    exact (indicator_indicator_preimage g.unop.le _).symm
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+      coe_automorphyRestrict, indicator_indicator, inter_eq_left.mpr (preimage_mono g.unop.le)]
 
 include hΓ in
 /-- **Local weight-`k` automorphic forms glue.** Local sections over the members of a family of
@@ -450,11 +433,12 @@ private theorem isSheafUniqueGluing_automorphyPresheaf (k : ℤ) :
         ∀ τ : ℍ, ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ) ∈ U i →
           (t : ℍ → ℂ) τ = (f i : ℍ → ℂ) τ := by
     refine ⟨fun ht τ hτ ↦ ?_, fun ht ↦ Subtype.ext (funext fun τ ↦ ?_)⟩
-    · rw [← ht, coe_automorphyRestrict, indicator_preimage_of_mem hτ]
+    · rw [← ht, coe_automorphyRestrict, indicator_of_mem (mem_preimage.2 hτ : τ ∈ _)]
     · rw [coe_automorphyRestrict]
       by_cases hτ : ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ) ∈ (U i : Set Γ.CompactifiedQuotient)
-      · rw [indicator_preimage_of_mem hτ, ht τ hτ]
-      · rw [indicator_preimage_of_notMem hτ, (f i).property.eq_zero_of_notMem τ hτ]
+      · rw [indicator_of_mem (mem_preimage.2 hτ : τ ∈ _), ht τ hτ]
+      · rw [indicator_of_notMem (mem_preimage.not.2 hτ : τ ∉ _),
+          (f i).property.eq_zero_of_notMem τ hτ]
   -- compatibility says that the sections agree on the preimages of the overlaps
   have hf (i j : ι) (τ : ℍ) (hi : ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ) ∈ U i)
       (hj : ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ) ∈ U j) :
@@ -464,8 +448,9 @@ private theorem isSheafUniqueGluing_automorphyPresheaf (k : ℤ) :
     have hij : ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ) ∈
         ((U i ⊓ U j : Opens Γ.CompactifiedQuotient) : Set Γ.CompactifiedQuotient) := ⟨hi, hj⟩
     have h' := congrFun (congrArg Subtype.val h) τ
-    rwa [coe_automorphyRestrict, coe_automorphyRestrict, indicator_preimage_of_mem hij,
-      indicator_preimage_of_mem hij] at h'
+    rwa [coe_automorphyRestrict, coe_automorphyRestrict,
+      indicator_of_mem (mem_preimage.2 hij : τ ∈ _), indicator_of_mem (mem_preimage.2 hij : τ ∈ _)]
+      at h'
   obtain ⟨G, hGmem, hG⟩ := exists_glue hΓ k U f hf
   refine ⟨⟨G, hGmem⟩, fun i ↦ (hres ⟨G, hGmem⟩ i).mpr (hG i), fun t ht ↦ ?_⟩
   exact automorphySections_ext_iSup fun i τ hτ ↦
@@ -592,12 +577,13 @@ private theorem automorphyRestrict_holomorphicSMul (k : ℤ) {U V : Opens Γ.Com
         (automorphyRestrict hΓ k h.le F) := by
   refine Subtype.ext (funext fun τ ↦ ?_)
   by_cases hτ : ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ) ∈ (V : Set Γ.CompactifiedQuotient)
-  · rw [coe_automorphyRestrict, indicator_preimage_of_mem hτ, coe_holomorphicSMul,
-      coe_holomorphicSMul, coe_automorphyRestrict, indicator_preimage_of_mem hτ,
+  · rw [coe_automorphyRestrict, indicator_of_mem (mem_preimage.2 hτ : τ ∈ _), coe_holomorphicSMul,
+      coe_holomorphicSMul, coe_automorphyRestrict, indicator_of_mem (mem_preimage.2 hτ : τ ∈ _),
       pullback_of_mem φ (h.le hτ), pullback_of_mem _ hτ,
       TauCeti.holomorphicStructureSheaf.map_apply]
-  · rw [coe_automorphyRestrict, indicator_preimage_of_notMem hτ, coe_holomorphicSMul,
-      coe_automorphyRestrict, indicator_preimage_of_notMem hτ, mul_zero]
+  · rw [coe_automorphyRestrict, indicator_of_notMem (mem_preimage.not.2 hτ : τ ∉ _),
+      coe_holomorphicSMul, coe_automorphyRestrict,
+      indicator_of_notMem (mem_preimage.not.2 hτ : τ ∉ _), mul_zero]
 
 /-- The automorphy sheaf as a presheaf of modules over the holomorphic structure sheaf. -/
 private def automorphyPresheafOfModules (k : ℤ) :
