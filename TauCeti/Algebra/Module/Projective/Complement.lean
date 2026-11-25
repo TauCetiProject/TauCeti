@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.Projection
 
 /-!
@@ -35,7 +36,8 @@ quotient extends to the ambient module.
   `LinearMap.isComplemented_ker_of_projective_quotient`: a map into a projective module with
   projective cokernel has complemented range and kernel.
 * `LinearMap.surjective_comp_subtype_of_projective_quotient`: linear maps extend from a submodule
-  with projective quotient.
+  with projective quotient; `Submodule.dualRestrict_surjective_of_projective_quotient` is the case
+  of functionals.
 -/
 
 public section
@@ -105,3 +107,12 @@ theorem surjective_comp_subtype_of_projective_quotient {W : Submodule R M}
   surjective_comp_subtype_of_isComplemented W.isComplemented_of_projective_quotient
 
 end LinearMap
+
+/-- **Functionals extend from a submodule with projective quotient**: restriction of functionals
+`M^∨ → W^∨` is surjective. This is the ring analogue of `Subspace.dualRestrict_surjective`. -/
+theorem Submodule.dualRestrict_surjective_of_projective_quotient {R M : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] {W : Submodule R M} [Module.Projective R (M ⧸ W)] :
+    Function.Surjective W.dualRestrict := fun ψ ↦ by
+  obtain ⟨φ, hφ⟩ := LinearMap.surjective_comp_subtype_of_projective_quotient (N := R) (W := W) ψ
+  exact ⟨φ, LinearMap.ext fun x ↦ by
+    rw [Submodule.dualRestrict_apply, ← hφ, LinearMap.comp_apply, Submodule.subtype_apply]⟩

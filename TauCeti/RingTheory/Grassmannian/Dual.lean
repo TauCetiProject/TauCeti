@@ -79,13 +79,10 @@ annihilator `N^⊥ ⊆ P^∨` of `N ∈ G(k, P; A)` is a point of `G(l, P^∨; A
 surjective restriction `P^∨ → N^∨` onto a finite projective module of rank `l`. -/
 noncomputable def dualAnnihilator (h : ∀ p, rankAtStalk (R := A) P p = k + l) (N : G(k, P; A)) :
     G(l, Module.Dual A P; A) :=
-  ofSurjective N.toSubmodule.dualRestrict (by
-    have : ⇑N.toSubmodule.dualRestrict = fun φ : Module.Dual A P ↦ φ ∘ₗ N.toSubmodule.subtype :=
-      funext fun φ ↦ LinearMap.ext fun x ↦ Submodule.dualRestrict_apply _ φ x
-    rw [this]
-    exact LinearMap.surjective_comp_subtype_of_projective_quotient) fun p ↦ by
-    rw [TauCeti.Module.rankAtStalk_dual]
-    exact rankAtStalk_toSubmodule h N p
+  ofSurjective N.toSubmodule.dualRestrict Submodule.dualRestrict_surjective_of_projective_quotient
+    fun p ↦ by
+      rw [TauCeti.Module.rankAtStalk_dual]
+      exact rankAtStalk_toSubmodule h N p
 
 @[simp]
 theorem toSubmodule_dualAnnihilator (h : ∀ p, rankAtStalk (R := A) P p = k + l)
@@ -172,8 +169,16 @@ theorem mem_baseChangeDualEquiv_symm_iff (h : ∀ p, rankAtStalk (R := R) M p = 
     (K : G(l, A ⊗[R] Module.Dual R M; A)) (x : A ⊗[R] M) :
     x ∈ ((baseChangeDualEquiv A h).symm K).toSubmodule ↔
       ∀ ξ ∈ K.toSubmodule, baseChangeEvaluation (R := R) (M := M) (A := A) ξ x = 0 := by
-  simp [baseChangeDualEquiv, Submodule.mem_dualCoannihilator, Submodule.mem_map,
-    -Submodule.mem_map_equiv]
+  simp only [baseChangeDualEquiv, Equiv.symm_trans, LinearEquiv.grassmannianCongr_symm,
+    LinearEquiv.symm_symm, Equiv.trans_apply, dualEquiv_symm_apply, toSubmodule_dualCoannihilator,
+    LinearEquiv.toSubmodule_grassmannianCongr_apply, Submodule.mem_dualCoannihilator,
+    Submodule.mem_map_equiv]
+  -- reindex the functionals on `A ⊗[R] M` by `A ⊗[R] M^∨` along `baseChangeEvaluationEquiv`
+  refine ⟨fun H ξ hξ ↦ ?_, fun H φ hφ ↦ ?_⟩
+  · have := H (baseChangeEvaluationEquiv ξ) (by rwa [LinearEquiv.symm_apply_apply])
+    rwa [baseChangeEvaluationEquiv_apply] at this
+  · have := H _ hφ
+    rwa [← baseChangeEvaluationEquiv_apply, LinearEquiv.apply_symm_apply] at this
 
 /-- **Naturality of `baseChangeDualEquiv`.** For `f : A →ₐ[R] B`, the point corresponding to the
 base change of `N` is the base change of the point corresponding to `N`. -/

@@ -59,8 +59,7 @@ For four consecutive maps, `LinearMap.finrank_sub_finrank_sub_finrank_of_exact` 
 alternating dimension difference with endpoint kernel corrections.
 
 A short exact sequence `0 → K → X → Y → 0` with `Y` projective splits as `X ≃ K × Y`
-(`Function.Exact.exists_linearEquiv_prod_of_projective`), so `K` is finite when `X` is
-(`Function.Exact.moduleFinite_of_projective`).
+(`Function.Exact.exists_linearEquiv_prod_of_projective`).
 
 For an exact augmented sequence with one family of spaces,
 `TauCeti.sum_range_neg_one_pow_finrank_eq_add_of_exact` records the finite alternating sum
@@ -317,14 +316,6 @@ theorem exists_linearEquiv_prod_of_projective (hfg : Exact f g) (hf : Function.I
   obtain ⟨s, hs⟩ := Module.projective_lifting_property g LinearMap.id hg
   obtain ⟨e, he⟩ := (hfg.splitSurjectiveEquiv hf) ⟨s, hs⟩
   exact ⟨e, he⟩
-
-/-- In a short exact sequence `0 → K → X → Y → 0` with `Y` projective and `X` finite, `K` is
-finite, being a direct summand of `X`. -/
-theorem moduleFinite_of_projective [Module.Finite R X] (hfg : Exact f g)
-    (hf : Function.Injective f) (hg : Function.Surjective g) : Module.Finite R K := by
-  obtain ⟨e, -, -⟩ := hfg.exists_linearEquiv_prod_of_projective hf hg
-  exact .of_surjective (LinearMap.fst R K Y ∘ₗ e.toLinearMap)
-    (Prod.fst_surjective.comp e.surjective)
 
 end Projective
 

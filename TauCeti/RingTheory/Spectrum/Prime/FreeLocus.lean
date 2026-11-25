@@ -13,7 +13,6 @@ public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
 import Mathlib.RingTheory.Flat.Rank
 import Mathlib.RingTheory.Flat.TorsionFree
-import TauCeti.LinearAlgebra.Exact
 import TauCeti.RingTheory.Flat.Pi
 import TauCeti.RingTheory.Ideal.Pure
 import TauCeti.RingTheory.Localization.Module
@@ -43,8 +42,6 @@ rank loci uniformly.
 At a maximal ideal `P`, the rank of a finite flat module is the dimension of its reduction modulo
 `P`, the form in which Mathlib's freeness criterion over semilocal rings,
 `Module.free_of_flat_of_finrank_eq`, takes its hypothesis.
-Rank is additive on a short exact sequence `0 → K → X → Y → 0` with `X` finite flat and `Y` finite
-projective, since such a sequence splits.
 
 ## Main declarations
 
@@ -67,8 +64,6 @@ projective, since such a sequence splits.
   most `n` is a direct factor of a module of constant rank `n`.
 * `Module.finrank_quotient_tensorProduct_eq_rankAtStalk`: the rank of a finite flat module at a
   maximal ideal `P` is the dimension of its reduction modulo `P`.
-* `Function.Exact.rankAtStalk_eq_add`: rank is additive on a short exact sequence of a finite flat
-  module onto a finite projective one.
 * `TauCeti.Module.finrank_eq_of_rankAtStalk_eq`: a free module of constant rank `n` over a
   nontrivial ring has `Module.finrank` equal to `n`.
 * `TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq`: a finite flat module of constant rank
@@ -286,27 +281,6 @@ theorem finrank_quotient_tensorProduct_eq_rankAtStalk {R : Type*} (M : Type*) [C
     Nat.cast_id]
 
 end Module
-
-namespace Function.Exact
-
-/-- **Rank is additive on short exact sequences.** If `0 → K → X → Y → 0` is exact, `X` is finite
-flat and `Y` is projective (hence finite, as a quotient of `X`), then the rank of `X` at every
-prime is the sum of the ranks of `K` and `Y`. -/
-theorem rankAtStalk_eq_add {R K X Y : Type*} [CommRing R] [AddCommGroup K] [Module R K]
-    [AddCommGroup X] [Module R X] [AddCommGroup Y] [Module R Y] [Module.Finite R X]
-    [Module.Flat R X] [Module.Projective R Y] {f : K →ₗ[R] X}
-    {g : X →ₗ[R] Y} (hfg : Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
-    Module.rankAtStalk (R := R) X = Module.rankAtStalk K + Module.rankAtStalk Y := by
-  have : Module.Finite R Y := .of_surjective g hg
-  have : Module.Finite R K := hfg.moduleFinite_of_projective hf hg
-  -- The sequence splits, so `K` is a direct summand of `X`, with retraction `π`.
-  obtain ⟨e, -, -⟩ := hfg.exists_linearEquiv_prod_of_projective hf hg
-  let π : X →ₗ[R] K := LinearMap.fst R K Y ∘ₗ e.toLinearMap
-  have : Module.Flat R K := .of_retract (e.symm.toLinearMap ∘ₗ LinearMap.inl R K Y) π
-    (by ext x; simp [π])
-  rw [Module.rankAtStalk_eq_of_equiv e, Module.rankAtStalk_prod]
-
-end Function.Exact
 
 namespace TauCeti.Module
 
