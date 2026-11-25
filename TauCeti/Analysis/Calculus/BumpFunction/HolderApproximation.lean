@@ -100,8 +100,7 @@ theorem exists_contDiff_support_subset_holderWith_tendstoUniformly
   let g (n : ℕ) := (ρ n).normed μ ⋆[lsmul ℝ ℝ, μ] f
   have hfc := hf.continuous hα
   have hgc (n : ℕ) : ContDiff ℝ ∞ (g n) :=
-    (ρ n).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ)
-      (ρ n).contDiff_normed hfc.locallyIntegrable
+    (ρ n).contDiff_normed_convolution hfc.locallyIntegrable
   have hInt (n : ℕ) : ∫ z, ‖(ρ n).normed μ z‖ ∂μ = 1 := by
     have heq : (fun z ↦ ‖(ρ n).normed μ z‖) = (ρ n).normed μ := by
       funext z
