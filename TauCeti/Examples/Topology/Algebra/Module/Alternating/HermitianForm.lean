@@ -11,11 +11,11 @@ public import TauCeti.Analysis.InnerProductSpace.TwoDim
 /-!
 # Examples: the Hermitian form of `dx ∧ dy` on `ℂ`
 
-The area form `ω = dx ∧ dy` of `ℂ`, Mathlib's continuous volume form of the standard orientation
-(`Complex.orientation_volumeFormL_apply`), has `ω(1, i) = 1`. Its Hermitian form
-`H_ω(v, w) = ω(v, i w) + i·ω(v, w)` is the standard Hermitian product `conj v · w`. Exchanging
-the real and imaginary parts, `ω(v, w) + i·ω(v, i w)`, would give the non-real value `i` at
-`(1, 1)`.
+The area form `ω = dx ∧ dy` of `ℂ`, the continuous volume form of the standard orientation
+(`Orientation.volumeFormL`, evaluated by `Complex.orientation_volumeFormL_apply`), has
+`ω(1, i) = 1`. Its Hermitian form `H_ω(v, w) = ω(v, i w) + i·ω(v, w)` is the standard Hermitian
+product `conj v · w`. Exchanging the real and imaginary parts, `ω(v, w) + i·ω(v, i w)`, would give
+the non-real value `i` at `(1, 1)`.
 -/
 
 public section
