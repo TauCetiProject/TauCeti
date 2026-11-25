@@ -65,6 +65,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `LinearEquiv.map_toMatrix_mul_map_toMatrix_symm`: even after applying a ring homomorphism to
   their entries, the matrix of a linear equivalence is a left inverse of the matrix of its inverse;
   applying the lemma to `T.symm` gives the product in the other order.
+* `Matrix.toLinAlgEquiv_eq_toLin`: `Matrix.toLinAlgEquiv b` agrees on every matrix with
+  `Matrix.toLin b b`.
 * `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
   linearly independent.
 * `Matrix.mulVecBilin_mul` and `IsIdempotentElem.mulVecBilin`: over a possibly noncommutative
@@ -336,6 +338,13 @@ theorem map_toMatrix_mul_map_toMatrix_symm {R S V M ι κ : Type*} [CommSemiring
 end LinearEquiv
 
 namespace Matrix
+
+/-- `Matrix.toLinAlgEquiv` agrees on every matrix with `Matrix.toLin` in the same basis. -/
+theorem toLinAlgEquiv_eq_toLin {R M n : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [Fintype n] [DecidableEq n] (b : Module.Basis n R M) (A : Matrix n n R) :
+    Matrix.toLinAlgEquiv b A = Matrix.toLin b b A := by
+  ext v
+  rw [toLinAlgEquiv_apply, toLin_apply]
 
 /-- The rows of an identity matrix are linearly independent: they are the standard basis
 vectors `Pi.single i 1`. -/
