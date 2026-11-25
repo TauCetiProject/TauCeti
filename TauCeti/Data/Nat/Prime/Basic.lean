@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Prime.Basic
+public import Mathlib.Data.Nat.PrimeFin
 
 /-!
 # Prime natural numbers: the `Fact` instance on the subtype, the primes prime to `6`, and
@@ -30,6 +31,10 @@ a level `q * n` with a multiple `q * m` of the same `q`-part, as for congruence 
 For coprime natural bases `b ≤ a`, a prime dividing `a ^ n - b ^ n` with `n > 0` divides
 neither base; this ensures that their ratio modulo the prime is a unit.
 
+A nonzero `n` is coprime to `q` exactly when no prime factor of `n` divides `q`; this describes the
+integers coprime to `q` as those all of whose prime factors lie in the set of primes not dividing
+`q`.
+
 ## Main declarations
 
 * `Nat.Primes.instFactPrime`: for `p : Nat.Primes`, the instance `Fact (p : ℕ).Prime`.
@@ -41,6 +46,8 @@ neither base; this ensures that their ratio modulo the prime is a unit.
   `a ^ n - b ^ n` and `a * b`, with `b ≤ a` and `n > 0`, divides `a.gcd b`.
 * `Nat.Coprime.not_dvd_mul_of_dvd_pow_sub_pow`: for coprime natural bases `b ≤ a`, prime
   divisors of `a ^ n - b ^ n` with `n > 0` do not divide the product of the bases.
+* `Nat.coprime_iff_forall_mem_primeFactors_not_dvd`: a nonzero `n` is coprime to `q` exactly when
+  no prime factor of `n` divides `q`.
 -/
 
 public section
@@ -105,5 +112,12 @@ theorem Coprime.not_dvd_mul_of_dvd_pow_sub_pow {a b n p : ℕ} (hab : a.Coprime 
   have h := hp.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul hba hn hdiv hmul
   rw [hab.gcd_eq_one] at h
   exact hp.not_dvd_one h
+
+/-- A nonzero `n` is coprime to `q` exactly when no prime factor of `n` divides `q`. -/
+theorem coprime_iff_forall_mem_primeFactors_not_dvd {n q : ℕ} (hn : n ≠ 0) :
+    n.Coprime q ↔ ∀ p ∈ n.primeFactors, ¬ p ∣ q :=
+  ⟨fun h _ hp hpq ↦ (prime_of_mem_primeFactors hp).one_lt.ne'
+      (eq_one_of_dvd_coprimes h (dvd_of_mem_primeFactors hp) hpq),
+    fun h ↦ coprime_of_dvd fun p hp hpn ↦ h p (mem_primeFactors.2 ⟨hp, hpn, hn⟩)⟩
 
 end Nat

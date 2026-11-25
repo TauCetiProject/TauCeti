@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 import Mathlib.Data.Nat.Periodic
 import TauCeti.Data.Nat.Interval
+import TauCeti.Data.Nat.Prime.Basic
 import TauCeti.Data.ZMod.FinEquiv
 
 /-!
@@ -138,10 +139,8 @@ theorem norm_sum_Icc_filter_coprime_le_two_pow_mul (χ : DirichletCharacter F N)
       omega
     rw [h, ArithmeticFunction.cardDistinctFactors_zero, pow_zero, one_mul]
     exact hB _
-  have hcop (n : ℕ) : n.Coprime m ↔ ∀ p ∈ m.primeFactors, ¬ p ∣ n := by
-    refine ⟨fun h p hp hpn ↦ (Nat.prime_of_mem_primeFactors hp).one_lt.ne'
-      (Nat.eq_one_of_dvd_coprimes h hpn (Nat.dvd_of_mem_primeFactors hp)), fun h ↦ ?_⟩
-    exact (Nat.coprime_of_dvd fun p hp hpm ↦ h p (Nat.mem_primeFactors.mpr ⟨hp, hpm, hm⟩)).symm
+  have hcop (n : ℕ) : n.Coprime m ↔ ∀ p ∈ m.primeFactors, ¬ p ∣ n :=
+    Nat.coprime_comm.trans (Nat.coprime_iff_forall_mem_primeFactors_not_dvd hm)
   simp_rw [hcop, ArithmeticFunction.cardDistinctFactors_eq_card_primeFactors]
   exact χ.norm_sum_Icc_filter_forall_not_dvd_le hB (fun p hp ↦ Nat.prime_of_mem_primeFactors hp) K
 
