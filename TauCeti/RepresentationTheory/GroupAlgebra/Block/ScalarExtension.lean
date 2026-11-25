@@ -108,8 +108,7 @@ theorem centerMapRingHom_principalBlockIdempotent_of_isBlockIdempotent {k' : Typ
 
 /-- **Non-principal blocks under scalar extension.** For a ring homomorphism `f : k →+* k'` to a
 commutative ring, the image of a block idempotent of `k[G]` other than the principal one has
-augmentation `0`; when `k'` is a field, it is therefore a sum of non-principal blocks of
-`k'[G]`. -/
+augmentation `0`. -/
 theorem centerAugmentation_centerMapRingHom_eq_zero {k' : Type*} [CommRing k'] (f : k →+* k')
     {b : Subalgebra.center k (MonoidAlgebra k G)} (hb : IsBlockIdempotent b)
     (hne : b ≠ principalBlockIdempotent k G) :
