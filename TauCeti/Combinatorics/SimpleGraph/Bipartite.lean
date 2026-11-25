@@ -35,6 +35,13 @@ graph are determined up to their order, which is what makes constructions from a
 tree, such as the bipartite Coxeter element of a Coxeter system with a tree as Coxeter graph,
 independent of the colouring up to exchanging the two classes.
 
+Likewise an endomorphism of a preconnected graph either keeps the colour of every vertex or changes
+the colour of every vertex; a permutation doing the latter matches the two colour classes, so the
+graph has an even number of vertices (`TauCeti.two_mul_card_filter_eq_true`). A cycle graph has a
+two-colouring exactly when it has an even number of vertices or a single vertex; on a cycle, which
+of the two happens is read off the parity of the number of steps the endomorphism moves a single
+vertex.
+
 ## Main results
 
 * `SimpleGraph.edgeFinset_between`, `SimpleGraph.card_edgeFinset_top_between`: edge finset of
@@ -52,6 +59,15 @@ independent of the colouring up to exchanging the two classes.
   every edge.
 * `SimpleGraph.Coloring.eq_or_eq_recolorOfEquiv_boolNot`: on a preconnected graph, two
   `Bool`-colourings agree or differ by exchanging the colours.
+* `SimpleGraph.Coloring.forall_apply_eq_or_forall_apply_eq_not`: on a preconnected graph, an
+  endomorphism either keeps the colour of every vertex or changes the colour of every vertex.
+* `SimpleGraph.isBipartite_cycleGraph_iff`: a cycle graph is bipartite exactly when it has an even
+  number of vertices or a single vertex.
+* `SimpleGraph.Coloring.cycleGraph_apply_add_eq_iff_even_val`,
+  `SimpleGraph.Coloring.cycleGraph_forall_apply_eq_iff_even_val_apply_zero` and
+  `SimpleGraph.Coloring.cycleGraph_forall_apply_eq_not_iff_odd_val_apply_zero`: colours alternate
+  around a cycle, so an endomorphism of a cycle preserves the colours exactly when it moves `0` an
+  even number of steps, and exchanges them exactly when it moves `0` an odd number of steps.
 -/
 
 public section
@@ -195,6 +211,20 @@ theorem IsBipartiteWith.isVertexCover_sdiff_union_biUnion_neighborSet {G : Simpl
     · exact Or.inl (Set.subset_union_right <| Set.mem_biUnion hvS huv.symm)
     · exact Or.inr (Set.subset_union_left ⟨hvL, hvS⟩)
 
+/-- **A cycle graph is bipartite exactly when it has an even number of vertices**, or a single
+vertex, in which case it has no edges. -/
+@[simp]
+theorem isBipartite_cycleGraph_iff {n : ℕ} : (cycleGraph n).IsBipartite ↔ Even n ∨ n = 1 := by
+  constructor
+  · intro h
+    by_contra hn
+    push Not at hn
+    have h3 := chromaticNumber_cycleGraph_of_odd n (by have := hn.1.pos; omega) hn.1
+    exact absurd (h3.symm.trans_le h.chromaticNumber_le) (by decide)
+  · rintro (h | rfl)
+    · exact IsBipartite.cycleGraph_of_even h
+    · exact (colorable_of_fintype _).mono (by simp)
+
 /-- **The sign of a two-colouring.** A bipartite graph carries a sign `ε v = ±1`, with values in
 any type with one and an involutive negation, which changes along every edge. -/
 theorem IsBipartite.exists_sign {R : Type*} [One R] [InvolutiveNeg R] {G : SimpleGraph V}
@@ -242,5 +272,90 @@ theorem eq_or_eq_recolorOfEquiv_boolNot (hG : G.Preconnected) (c c' : G.Coloring
     revert hu hv
     generalize c u = a, c v = b, c' u = a', c' v = b'
     decide +revert
+
+/-- **An endomorphism of a preconnected graph preserves or exchanges a two-colouring**: either every
+vertex keeps its colour, or every vertex changes colour. -/
+theorem forall_apply_eq_or_forall_apply_eq_not (hG : G.Preconnected) (c : G.Coloring Bool)
+    (f : G →g G) : (∀ v, c (f v) = c v) ∨ ∀ v, c (f v) = !c v := by
+  rcases c.eq_or_eq_recolorOfEquiv_boolNot hG (c.comp f) with h | h
+  · exact Or.inl fun v ↦ DFunLike.congr_fun h v
+  · exact Or.inr fun v ↦ by simpa using DFunLike.congr_fun h v
+
+/-- On a preconnected graph, an endomorphism keeping the colour of one vertex keeps the colour of
+every vertex. -/
+theorem forall_apply_eq_of_apply_eq (hG : G.Preconnected) (c : G.Coloring Bool) (f : G →g G)
+    {v : V} (hv : c (f v) = c v) (w : V) : c (f w) = c w :=
+  (c.forall_apply_eq_or_forall_apply_eq_not hG f).resolve_right (fun h ↦ by simp [h] at hv) w
+
+/-- On a preconnected graph, an endomorphism changing the colour of one vertex changes the colour of
+every vertex. -/
+theorem forall_apply_eq_not_of_apply_ne (hG : G.Preconnected) (c : G.Coloring Bool) (f : G →g G)
+    {v : V} (hv : c (f v) ≠ c v) (w : V) : c (f w) = !c w :=
+  (c.forall_apply_eq_or_forall_apply_eq_not hG f).resolve_left (fun h ↦ hv (h v)) w
+
+variable {n : ℕ}
+
+open Fin.NatCast in
+/-- Moving `m` steps around a two-coloured cycle keeps the colour exactly when `m` is even; this
+is `SimpleGraph.Coloring.cycleGraph_apply_add_eq_iff_even_val` before reducing `m` modulo the
+length. -/
+private theorem apply_add_natCast_eq_iff_even (c : (cycleGraph (n + 2)).Coloring Bool)
+    (v : Fin (n + 2)) (m : ℕ) : c (v + (m : Fin (n + 2))) = c v ↔ Even m := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    set w : Fin (n + 2) := v + (m : Fin (n + 2))
+    have hne := c.valid (show (cycleGraph (n + 2)).Adj w (w + 1) by simp [cycleGraph_adj])
+    rw [Nat.cast_succ, ← add_assoc, Nat.even_add_one, ← ih]
+    revert hne
+    generalize c w = a, c (w + 1) = b, c v = d
+    decide +revert
+
+/-- **Colours along a cycle alternate**: in a two-colouring of a cycle graph, moving `k` steps
+around the cycle keeps the colour exactly when `k` is even. -/
+theorem cycleGraph_apply_add_eq_iff_even_val {n : ℕ} (c : (cycleGraph n).Coloring Bool)
+    (v k : Fin n) : c (v + k) = c v ↔ Even k.val := by
+  match n, c, v, k with
+  | 0, _, v, _ => exact v.elim0
+  | 1, _, _, k => simp [Subsingleton.elim k 0]
+  | n + 2, c, v, k =>
+    have h := c.apply_add_natCast_eq_iff_even v k.val
+    rwa [Fin.cast_val_eq_self] at h
+
+/-- In a two-colouring of a cycle graph, moving `k` steps around the cycle changes the colour
+exactly when `k` is odd. -/
+theorem cycleGraph_apply_add_eq_not_iff_odd_val {n : ℕ} (c : (cycleGraph n).Coloring Bool)
+    (v k : Fin n) : c (v + k) = !c v ↔ Odd k.val := by
+  rw [Bool.eq_not_iff, ← Nat.not_even_iff_odd, ← c.cycleGraph_apply_add_eq_iff_even_val v k]
+
+/-- In a two-colouring of a cycle graph, two vertices have the same colour exactly when the number
+of steps from the second to the first is even. -/
+theorem cycleGraph_apply_eq_apply_iff_even_val_sub {n : ℕ} (c : (cycleGraph n).Coloring Bool)
+    (u v : Fin n) : c u = c v ↔ Even (u - v).val := by
+  obtain _ | n := n
+  · exact u.elim0
+  · rw [← c.cycleGraph_apply_add_eq_iff_even_val v (u - v), add_sub_cancel]
+
+/-- **Which endomorphisms of a cycle graph preserve a two-colouring**: an endomorphism preserves the
+colours exactly when it moves the vertex `0` an even number of steps. The rotation
+`TauCeti.cycleGraphAddRightIso k` and the reflection `TauCeti.cycleGraphSubLeftIso k` therefore
+preserve the colours exactly when `k` is even. -/
+theorem cycleGraph_forall_apply_eq_iff_even_val_apply_zero {n : ℕ} [NeZero n]
+    (c : (cycleGraph n).Coloring Bool) (f : cycleGraph n →g cycleGraph n) :
+    (∀ v, c (f v) = c v) ↔ Even (f 0).val := by
+  have h := c.cycleGraph_apply_eq_apply_iff_even_val_sub (f 0) 0
+  rw [sub_zero] at h
+  exact ⟨fun hf ↦ h.mp (hf 0), fun h0 ↦ c.forall_apply_eq_of_apply_eq preconnected_cycleGraph f
+    (h.mpr h0)⟩
+
+/-- **Which endomorphisms of a cycle graph exchange the colours of a two-colouring**: an
+endomorphism exchanges the colours exactly when it moves the vertex `0` an odd number of steps. -/
+theorem cycleGraph_forall_apply_eq_not_iff_odd_val_apply_zero {n : ℕ} [NeZero n]
+    (c : (cycleGraph n).Coloring Bool) (f : cycleGraph n →g cycleGraph n) :
+    (∀ v, c (f v) = !c v) ↔ Odd (f 0).val := by
+  have h := c.cycleGraph_apply_add_eq_not_iff_odd_val 0 (f 0)
+  rw [zero_add] at h
+  exact ⟨fun hf ↦ h.mp (hf 0), fun h0 ↦ c.forall_apply_eq_not_of_apply_ne preconnected_cycleGraph f
+    (Bool.eq_not_iff.mp (h.mpr h0))⟩
 
 end SimpleGraph.Coloring
