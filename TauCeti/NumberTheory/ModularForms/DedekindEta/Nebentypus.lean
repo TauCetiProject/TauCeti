@@ -358,14 +358,6 @@ private theorem eq_of_smul_etaQuotient_eq (N : ℕ) (r : ℕ → ℤ) {c c' : �
     (h : (c • fun τ : ℍ ↦ etaQuotient N r τ) = c' • fun τ : ℍ ↦ etaQuotient N r τ) : c = c' :=
   mul_right_cancel₀ (etaQuotient_ne_zero N r UpperHalfPlane.I.im_pos) (congrFun h UpperHalfPlane.I)
 
-/-- `etaQuotient_slash_eq_smul`, with the scalar written as `symb N r k d`. -/
-private theorem etaQuotient_slash_eq_symb_smul {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
-    (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (h24 : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, (δ : ℤ) * r δ)
-    (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {γ : SL(2, ℤ)}
-    (hγ : γ ∈ Gamma0 N) :
-    (fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] γ = symb N r k (γ 1 1) • fun τ : ℍ ↦ etaQuotient N r τ :=
-  etaQuotient_slash_eq_smul hk h24 h24' hγ
-
 /-- The Kronecker-symbol value is periodic modulo `N` on integers prime to `N`: two matrices
 `(a b; N d)` and `(a b; N d) Tʲ` of `Γ₀(N)` act on the eta quotient by `χ(d)` and `χ(d + N j)`. -/
 private theorem symb_eq_of_intCast_eq {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
@@ -401,10 +393,12 @@ private theorem symb_mul {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
   obtain ⟨γ₂, hc₂, hd₂⟩ := h₂.symm.exists_SL2_row 1
   have hγ₁ : γ₁ ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr (by rw [hc₁])
   have hγ₂ : γ₂ ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr (by rw [hc₂])
-  have hlaw := etaQuotient_slash_eq_symb_smul hk h24 h24' (Subgroup.mul_mem _ hγ₁ hγ₂)
-  rw [SlashAction.slash_mul, etaQuotient_slash_eq_symb_smul hk h24 h24' hγ₁,
-    ModularForm.SL_smul_slash, etaQuotient_slash_eq_symb_smul hk h24 h24' hγ₂, smul_smul] at hlaw
-  have h1 := eq_of_smul_etaQuotient_eq N r hlaw
+  have hlaw := etaQuotient_slash_eq_smul hk h24 h24' (Subgroup.mul_mem _ hγ₁ hγ₂)
+  rw [SlashAction.slash_mul, etaQuotient_slash_eq_smul hk h24 h24' hγ₁,
+    ModularForm.SL_smul_slash, etaQuotient_slash_eq_smul hk h24 h24' hγ₂, smul_smul] at hlaw
+  -- The scalars of the transformation law are `symb N r k (γ 1 1)` by definition.
+  have h1 : symb N r k (γ₁ 1 1) * symb N r k (γ₂ 1 1) = symb N r k ((γ₁ * γ₂) 1 1) :=
+    eq_of_smul_etaQuotient_eq N r hlaw
   have h11 : (γ₁ * γ₂) 1 1 = N * γ₂ 0 1 + d₁ * d₂ := by
     simp [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two, hc₁, hd₁, hd₂]
   rw [hd₁, hd₂, h11] at h1

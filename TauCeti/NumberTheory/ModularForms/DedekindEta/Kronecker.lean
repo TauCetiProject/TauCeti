@@ -49,8 +49,9 @@ checked modulo `8` and modulo `3` by evaluation.
 ## Main definitions
 
 * `TauCeti.ModularForm.e24`: the root of unity `e(m / 24) = exp(2 π i m / 24)`, with its
-  homomorphism laws `e24_zero`, `e24_add`, `e24_mul`, `prod_mul_e24_zpow`, its periodicity
-  `e24_congr`, and its values `e24_twelve_mul`, `e24_twelve_mul_eq_χ₄` at multiples of `12`.
+  homomorphism laws `e24_zero`, `e24_add`, `e24_mul`, `prod_mul_e24_zpow`, its nonvanishing
+  `e24_ne_zero`, its periodicity `e24_congr`, and its values `e24_twelve_mul`,
+  `e24_twelve_mul_eq_χ₄` at multiples of `12`.
 
 ## Main results
 
@@ -113,7 +114,9 @@ theorem prod_mul_e24_zpow {ι : Type*} (s : Finset ι) (A : ι → ℂ) (r E : �
   congr 1
   simp only [e24, Int.cast_sum, Finset.mul_sum, Finset.sum_div, Complex.exp_sum]
 
-private theorem e24_ne_zero (m : ℤ) : e24 m ≠ 0 :=
+/-- `e(m / 24)` is nonzero. -/
+@[simp]
+theorem e24_ne_zero (m : ℤ) : e24 m ≠ 0 :=
   Complex.exp_ne_zero _
 
 /-- `e(m / 24)` depends only on `m` modulo `24`. -/
@@ -567,8 +570,7 @@ theorem etaMultiplier_eq_kroneckerSym_mul_of_even_c (γ : SL(2, ℤ)) (heven : E
 /-- **The Kronecker form of the eta multiplier, odd `d`**: for `γ = (a b; c d) ∈ SL(2, ℤ)` with
 `c ≥ 0` and `d` odd, the even-`c` formula
 `ε(γ) = (c / d) · e(((a + d) c - b d (c² - 1) + 3 d - 3 - 3 c d) / 24)` holds also when `c` is
-odd. For `c > 0` odd it is the odd-`c` formula rewritten by quadratic reciprocity. The hypothesis
-`c ≥ 0` cannot be dropped: at `γ = (-1 0; -1 -1)` the right side is `-ε(γ)`. -/
+odd. For `c > 0` odd it is the odd-`c` formula rewritten by quadratic reciprocity. -/
 theorem etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d (γ : SL(2, ℤ))
     (hc : 0 ≤ γ 1 0) (hd : Odd (γ 1 1)) :
     etaMultiplier γ = kroneckerSym (γ 1 0) (γ 1 1) *
