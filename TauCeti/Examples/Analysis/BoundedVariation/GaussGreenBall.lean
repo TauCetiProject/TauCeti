@@ -10,6 +10,7 @@ public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Ball
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.Analysis.BoundedVariation.Ball
+import TauCeti.Analysis.BoundedVariation.Convex
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -83,14 +84,15 @@ theorem ball_check (hn : 2 ≤ finrank ℝ E) {R : ℝ} (hR : 0 < R) {φ : E →
     rw [reducedBoundary_ball hR, mul_comm, ← smul_eq_mul, ← setIntegral_const]
     refine setIntegral_congr_fun isClosed_sphere.measurableSet fun x hx => ?_
     have hxR : ‖x‖ = R := mem_sphere_zero_iff_norm.1 hx
-    rw [outerNormal_ball hR hx, hid (sphere_subset_closedBall hx), id, sub_zero,
-      real_inner_smul_right, real_inner_self_eq_norm_sq, hxR]
+    rw [outerNormal_ball hR hx, hid (sphere_subset_closedBall hx)]
+    simp [real_inner_smul_right, hxR]
     field_simp
   refine ⟨hL, hR', ?_, Measure.addHaar_real_ball_of_pos _ _ hR⟩
   rw [← hL, ← hR']
   exact integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal hn
     (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
-    (fun _ _ _ => ⟨⊤, by simp, by rw [← perimeter_def]; exact perimeter_ball_ne_top⟩) hφ hc
+    (fun _ hK _ => (convex_ball 0 R).exists_opens_totalVariationOn_indicator_ne_top hK.isBounded)
+    hφ hc
     (by simp)
 
 /-- With the inner normal `−x / R` in place of the outer normal the flux through the sphere is
@@ -170,8 +172,9 @@ theorem norm_fluxField (hx : x ≠ 0) :
   have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
   have hpow : ‖x‖ ^ finrank ℝ E = ‖x‖ ^ (finrank ℝ E - 1) * ‖x‖ := by
     rw [← pow_succ, Nat.sub_add_cancel Module.finrank_pos]
-  rw [fluxField_def, norm_smul, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 (by positivity)), hpow,
-    mul_inv, mul_assoc, inv_mul_cancel₀ (norm_ne_zero_iff.2 hx), mul_one]
+  have hx' : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
+  rw [fluxField_def, norm_smul, norm_smul, norm_inv, norm_pow, norm_norm, hpow]
+  field_simp
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- Outside the support of `θ` the field has norm `‖x‖^(1 − n)`. -/
@@ -200,7 +203,7 @@ theorem norm_fluxField_le (x : E) : ‖fluxField θ x‖ ≤ (θ.rIn ^ (finrank 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- **The field is divergence free outside the support of `θ`**: at every `x` with
 `θ.rOut < ‖x‖`, where the field equals `x / ‖x‖ⁿ` near `x`, its divergence is zero. -/
-theorem trace_fderiv_fluxField (hx : θ.rOut < ‖x‖) :
+theorem trace_fderiv_fluxField_eq_zero_of_rOut_lt (hx : θ.rOut < ‖x‖) :
     LinearMap.trace ℝ E (fderiv ℝ (fluxField θ) x : E →ₗ[ℝ] E) = 0 := by
   have hx0 : x ≠ 0 := norm_pos_iff.1 (θ.rOut_pos.trans hx)
   -- Near `x` the field is the radial field `‖y‖ ^ (-n) • y`, whose divergence is
@@ -222,9 +225,8 @@ theorem setIntegral_inner_fluxField_outerNormal_compl_closedBall (hθ : θ.rOut 
     ← setIntegral_const]
   refine setIntegral_congr_fun isClosed_sphere.measurableSet fun x hx => ?_
   have hx1 : ‖x‖ = 1 := mem_sphere_zero_iff_norm.1 hx
-  rw [outerNormal_compl_closedBall one_pos hx, fluxField_of_rOut_le (hx1 ▸ hθ), hx1, one_pow,
-    inv_one, one_smul, sub_zero, one_smul, inner_neg_right, real_inner_self_eq_norm_sq, hx1]
-  norm_num
+  rw [outerNormal_compl_closedBall one_pos hx, fluxField_of_rOut_le (hx1 ▸ hθ)]
+  simp [hx1, inner_neg_right]
 
 /-- The norm of `fluxField θ` is not integrable on the exterior of the unit ball: there it is
 `‖x‖^(1 − n)`, and in polar coordinates `∫_1^∞ r^(n−1) r^(1−n) dr = ∞`. -/
@@ -279,14 +281,15 @@ theorem exterior_check (hn : 2 ≤ finrank ℝ E) (hθ : θ.rOut ≤ 1) :
   -- The divergence vanishes on `s`, which lies outside the support of `θ`.
   have hdiv : ∀ x ∈ (closedBall (0 : E) 1)ᶜ,
       LinearMap.trace ℝ E (fderiv ℝ (fluxField θ) x : E →ₗ[ℝ] E) = 0 := fun x hx =>
-    trace_fderiv_fluxField (hθ.trans_lt (by simpa using hx))
+    trace_fderiv_fluxField_eq_zero_of_rOut_lt (hθ.trans_lt (by simpa using hx))
   -- The unit sphere has positive finite measure `n |ball 0 1|`.
   have hS := euclideanHausdorffMeasure_sphere (0 : E) one_pos
   have hSpos : 0 < μHE[finrank ℝ E - 1].real (sphere (0 : E) 1) := by
     refine ENNReal.toReal_pos ?_ ?_ <;> rw [hS]
     · simp [(measure_ball_pos volume (0 : E) one_pos).ne', show finrank ℝ E ≠ 0 by omega]
     · exact ENNReal.mul_ne_top (ENNReal.mul_ne_top (by simp) measure_ball_lt_top.ne) (by simp)
-  refine ⟨contDiff_fluxField, norm_fluxField_le, hdiv, ?_, perimeter_ball_ne_top, ?_,
+  refine ⟨contDiff_fluxField, norm_fluxField_le, hdiv, ?_,
+    ((convex_ball 0 1).perimeter_lt_top isBounded_ball).ne, ?_,
     setIntegral_inner_fluxField_outerNormal_compl_closedBall hθ, neg_neg_of_pos hSpos, ?_,
     not_integrable_norm_fluxField_mul_indicator_compl_closedBall hθ⟩
   · rw [perimeter_compl, perimeter_closedBall one_pos, perimeter_ball one_pos]
