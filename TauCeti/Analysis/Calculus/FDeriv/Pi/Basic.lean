@@ -38,6 +38,8 @@ the `i`-th variable the separated product with the `i`-th factor replaced by its
 * `TauCeti.hasFDerivAt_prod_comp_eval`, `TauCeti.fderiv_prod_comp_eval_apply_single`: the derivative
   of a separated product `z ↦ ∏ i, φ i (z i)`, whose partial derivative in the `i`-th variable
   replaces the `i`-th factor by its derivative.
+* `TauCeti.fderiv_prod_apply_single`: the partial derivative of the product of coordinates is the
+  product of the other coordinates.
 * `TauCeti.fderiv_apply_single_eq_of_comp_swap`: a function invariant under swapping two
   coordinates has equal partial derivatives in them at points where these coordinates agree.
 
@@ -142,6 +144,18 @@ theorem fderiv_prod_comp_eval_apply_single (hφ : ∀ i, DifferentiableAt 𝕜 (
   rw [mul_comm]
   congr 1
   exact Finset.prod_congr rfl fun j hj ↦ by rw [update_of_ne (Finset.ne_of_mem_erase hj)]
+
+/-- The partial derivative of the product of coordinates `z ↦ ∏ j, z j` in the `i`-th variable is
+the product of the other coordinates. -/
+theorem fderiv_prod_apply_single (y : ι → 𝕜) (i : ι) :
+    fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∏ j, z j) y (Pi.single i 1) =
+      ∏ j ∈ Finset.univ.erase i, y j := by
+  have h := fderiv_prod_comp_eval_apply_single (φ := fun _ : ι ↦ (id : 𝕜 → 𝕜)) (y := y)
+    (fun _ ↦ differentiableAt_id) i
+  simp only [id] at h
+  rw [h, ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i), update_self, deriv_id,
+    one_mul]
+  exact Finset.prod_congr rfl fun j hj ↦ by rw [update_of_ne (Finset.ne_of_mem_erase hj), id]
 
 end ProdCompEval
 

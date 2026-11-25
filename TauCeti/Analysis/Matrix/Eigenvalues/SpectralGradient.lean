@@ -281,7 +281,7 @@ theorem spectralGradient_mul_mul_star (hA : A.IsHermitian) {f : (Fin (Fintype.ca
     have hev : (RCLike.ofReal ∘ hA.eigenvalues : ι → 𝕜) =
         fun i ↦ (hA.eigenvalues₀ (e.symm i) : 𝕜) := by
       funext i
-      rw [Function.comp_apply, ← hA.eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]
+      rw [Function.comp_apply, hA.eigenvalues₀_equivOfCardEq_symm]
     conv_lhs => rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply, hev]
   have hUAW : U * A * star U =
       (U * W) * diagonal (fun i ↦ (hUA.eigenvalues₀ (e.symm i) : 𝕜)) * star (U * W) := by
@@ -327,7 +327,7 @@ theorem spectralGradient_sum_sq (hA : A.IsHermitian) :
   have hw : ∀ i, (hA.spectralGradientWeights (fun μ ↦ ∑ k, μ k ^ 2) i : 𝕜) =
       2 * (hA.eigenvalues i : 𝕜) := fun i ↦ by
     rw [spectralGradientWeights_def, (hd _).fderiv]
-    simp [IsHermitian.eigenvalues, Pi.single_apply, map_ofNat]
+    simp [hA.eigenvalues₀_equivOfCardEq_symm, Pi.single_apply, map_ofNat]
   rw [spectralGradient_def]
   conv_rhs => rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply]
   simp only [hw]
@@ -345,17 +345,11 @@ theorem spectralGradient_prod (hA : A.IsHermitian) :
   have hw : (fun i ↦ (hA.spectralGradientWeights (fun μ ↦ ∏ k, μ k) i : 𝕜)) =
       fun i ↦ ∏ j ∈ univ.erase i, (RCLike.ofReal ∘ hA.eigenvalues) j := by
     funext i
-    have h := TauCeti.fderiv_prod_comp_eval_apply_single (𝕜 := ℝ)
-      (φ := fun _ : Fin (Fintype.card ι) ↦ id) (y := hA.eigenvalues₀)
-      (fun _ ↦ differentiableAt_id) (Fintype.equivOfCardEq (Fintype.card_fin _) |>.symm i)
-    simp only [id] at h
-    rw [spectralGradientWeights_def, h, ← mul_prod_erase _ _ (mem_univ _), Function.update_self,
-      deriv_id, one_mul, RCLike.ofReal_prod]
+    rw [spectralGradientWeights_def, TauCeti.fderiv_prod_apply_single, RCLike.ofReal_prod]
     -- Reindex the product from sorted indices to matrix indices.
     refine prod_equiv (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)))
-      (by simp [Equiv.eq_symm_apply]) fun j hj ↦ ?_
-    rw [Function.update_of_ne (ne_of_mem_erase hj), Function.comp_apply,
-      hA.eigenvalues_apply_equivOfCardEq, id]
+      (by simp [Equiv.eq_symm_apply]) fun j _ ↦ ?_
+    rw [Function.comp_apply, hA.eigenvalues_apply_equivOfCardEq]
   rw [spectralGradient_def, hw, ← adjugate_diagonal]
   conv_rhs => rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply,
     adjugate_mul_mul_of_mul_eq_one (Unitary.mul_star_self_of_mem hA.eigenvectorUnitary.property)]

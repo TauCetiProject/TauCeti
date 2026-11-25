@@ -81,15 +81,12 @@ theorem diagonal_fderiv_prod_two_one
         diagonal ![1, 3] ∧
       diagonal ![(1 : 𝕜), 3] ≠ hT.spectralGradient (fun μ ↦ ∏ k, μ k) := by
   refine ⟨?_, ?_⟩
-  · have h := fun k ↦ fderiv_prod_comp_eval_apply_single (𝕜 := ℝ) (φ := fun _ : Fin 2 ↦ id)
-      (y := hT.eigenvalues₀) (fun _ ↦ differentiableAt_id) k
-    simp only [id] at h
-    have h0 : fderiv ℝ (fun μ : Fin 2 → ℝ ↦ ∏ k, μ k) hT.eigenvalues₀ (Pi.single 0 1) = 1 := by
-      rw [h]
-      simp [eigenvalues₀_two_one, Fin.prod_univ_two, Function.update]
+  · have h0 : fderiv ℝ (fun μ : Fin 2 → ℝ ↦ ∏ k, μ k) hT.eigenvalues₀ (Pi.single 0 1) = 1 := by
+      rw [fderiv_prod_apply_single (ι := Fin 2) hT.eigenvalues₀]
+      simp [eigenvalues₀_two_one, Fin.univ_succ]
     have h1 : fderiv ℝ (fun μ : Fin 2 → ℝ ↦ ∏ k, μ k) hT.eigenvalues₀ (Pi.single 1 1) = 3 := by
-      rw [h]
-      simp [eigenvalues₀_two_one, Fin.prod_univ_two, Function.update]
+      rw [fderiv_prod_apply_single (ι := Fin 2) hT.eigenvalues₀]
+      simp [eigenvalues₀_two_one, Fin.univ_succ, Finset.erase_insert_of_ne]
     congr 1
     funext k
     fin_cases k
