@@ -15,12 +15,14 @@ import TauCeti.RingTheory.RootsOfUnity.LocalRing
 * `e = 3`, `p = 3`: `e' = 1`, and at every place over `3` the residue field has `3` elements.
 * `e = 3`, `p = 2`: the residue field contains a primitive cube root of unity, the reduction of
   `complexRoot 3`, so it has at least `4` elements; `𝔽₂` contains no root of `X² + X + 1`.
+* `e = 3`, `p = 7`: since `7 ≡ 1 mod 3`, at every place `v` over `7` the local degree
+  `[F_v : ℚ₇]` is `1`, the completion map from `ℚ₇` to `F_v` is bijective, and `F_v ≅ ℚ₇`.
 * The isomorphism on `e`-th roots of unity is the canonical map `F → F_v`.
 -/
 
-namespace TauCeti.Examples.CyclotomicCompletion
-
 open IsDedekindDomain NumberField IsLocalRing TauCeti.Cyclotomic
+
+namespace TauCeti.Examples.CyclotomicCompletion
 
 example : complexField 1 = ⊥ := by simp
 
@@ -53,6 +55,33 @@ example (v : HeightOneSpectrum (𝓞 (complexField 3)))
     Subgroup.card_le_card_group _
   rw [Nat.card_units] at hle
   omega
+
+section Seven
+
+open Rat.HeightOneSpectrum (primesEquiv)
+open scoped AdicCompletionExtension
+
+example (v : HeightOneSpectrum (𝓞 (complexField 3)))
+    [v.asIdeal.LiesOver ((primesEquiv (R := ℤ)).symm ⟨7, Nat.prime_seven⟩).asIdeal] :
+    Module.finrank (((primesEquiv (R := ℤ)).symm ⟨7, Nat.prime_seven⟩).adicCompletion ℚ)
+      (v.adicCompletion (complexField 3)) = 1 := by
+  have : Fact (Nat.Prime 7) := ⟨Nat.prime_seven⟩
+  rw [finrank_adicCompletion_eq_orderOf v 7 (by norm_num),
+    show ((7 : ℕ) : ZMod 3) = 1 by decide, orderOf_one]
+
+example (v : HeightOneSpectrum (𝓞 (complexField 3)))
+    [v.asIdeal.LiesOver ((primesEquiv (R := ℤ)).symm ⟨7, Nat.prime_seven⟩).asIdeal] :
+    Function.Bijective (HeightOneSpectrum.adicCompletionExtension ℚ (complexField 3)
+      ((primesEquiv (R := ℤ)).symm ⟨7, Nat.prime_seven⟩) v) :=
+  have : Fact (Nat.Prime 7) := ⟨Nat.prime_seven⟩
+  adicCompletionExtension_bijective v 7 (by decide)
+
+example [Fact (Nat.Prime 7)] (v : HeightOneSpectrum (𝓞 (complexField 3)))
+    (hv : (7 : 𝓞 (complexField 3)) ∈ v.asIdeal) :
+    Nonempty (v.adicCompletion (complexField 3) ≃+* ℚ_[7]) :=
+  nonempty_ringEquiv_padic v 7 (by decide) (mod_cast hv)
+
+end Seven
 
 example (e : ℕ) [NeZero e] (v : HeightOneSpectrum (𝓞 (complexField e)))
     (ζ : rootsOfUnity e (complexField e)) :
