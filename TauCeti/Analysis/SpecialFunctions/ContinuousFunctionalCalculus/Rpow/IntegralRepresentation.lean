@@ -30,7 +30,12 @@ integral (`cfc_setIntegral`).
 The element `a` need not be invertible. When `a = A⁻¹` is the inverse of a positive unbounded
 operator `A`, the integrand is `t ^ (-σ) (A + t)⁻¹`, so this formula writes the power `A ^ (-σ)`
 as an integral of the resolvent of `A` along the negative real axis: it is the contour integral
-of `λ ^ (-σ) (A - λ)⁻¹` around the spectrum, collapsed onto the cut. Mathlib's
+of `λ ^ (-σ) (A - λ)⁻¹` around the spectrum, collapsed onto the cut. For a strictly positive
+element `a`, applying the formula to `a ^ (-1)` gives
+
+`a ^ (-σ) = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) (a + t)⁻¹ dt`
+
+with `(a + t)⁻¹ = Ring.inverse (a + t • 1)` (`CFC.rpow_neg_eq_integral_ringInverse_add`). Mathlib's
 `CFC.exists_measure_rpow_eq_integral_cfc_rpowIntegrand₁₀` is a related representation of the
 negative powers `a ^ p`, `-1 < p < 0`, of a strictly positive `a`, with the integrand
 `t ^ p (t + a)⁻¹` and an unspecified multiple of Lebesgue measure.
@@ -157,5 +162,36 @@ theorem rpow_eq_integral_cfc_div_one_add_mul [CompleteSpace A] (ha : 0 ≤ a) (h
     setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦
       (cfc_const_mul _ _ a (continuousOn_div_one_add_mul ha ht.le)).symm
   rw [hint, ← key, smul_smul, div_mul_div_cancel₀ Real.pi_ne_zero, div_self hsin.ne', one_smul]
+
+/-- **The resolvent integral of a negative power.** For a strictly positive element `a` and
+`0 < σ < 1`,
+
+`a ^ (-σ) = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) (a + t)⁻¹ dt`,
+
+where `(a + t)⁻¹` is the inverse `Ring.inverse (a + t • 1)`. This is
+`CFC.rpow_eq_integral_cfc_div_one_add_mul` for `a ^ (-1)`, whose integrand
+`a ^ (-1) (1 + t a ^ (-1))⁻¹` is `(a + t)⁻¹`. -/
+theorem rpow_neg_eq_integral_ringInverse_add [CompleteSpace A] (ha : IsStrictlyPositive a)
+    (hσ : 0 < σ) (hσ1 : σ < 1) :
+    a ^ (-σ) = (Real.sin (Real.pi * σ) / Real.pi) •
+      ∫ t in Ioi (0 : ℝ), t ^ (-σ) • Ring.inverse (a + t • 1) := by
+  set b : A := a ^ (-1 : ℝ)
+  have hb : 0 ≤ b := rpow_nonneg
+  have hab : a * b = 1 := by
+    simpa [rpow_one a ha.nonneg] using rpow_mul_rpow_neg (1 : ℝ) ha
+  have hba : b * a = 1 := by
+    simpa [rpow_one a ha.nonneg] using rpow_neg_mul_rpow (1 : ℝ) ha
+  -- For `t > 0`, `a + t = a (1 + t b) = (1 + t b) a` has the inverse `b (1 + t b)⁻¹`.
+  have hres (t : ℝ) (ht : 0 < t) :
+      Ring.inverse (a + t • 1) = cfc (fun x : ℝ ↦ x / (1 + t * x)) b := by
+    have hl : a * (1 + t • b) = a + t • 1 := by rw [mul_add, mul_one, mul_smul_comm, hab]
+    have hr : (1 + t • b) * a = a + t • 1 := by rw [add_mul, one_mul, smul_mul_assoc, hba]
+    refine Ring.inverse_unit ⟨a + t • 1, cfc (fun x : ℝ ↦ x / (1 + t * x)) b, ?_, ?_⟩
+    · rw [← hl, mul_assoc, one_add_smul_mul_cfc_div_one_add_mul hb ht.le, hab]
+    · rw [← hr, ← mul_assoc, cfc_div_one_add_mul_mul_one_add_smul hb ht.le, hba]
+  rw [← neg_one_mul σ, ← rpow_rpow a (-1) σ ha, rpow_eq_integral_cfc_div_one_add_mul hb hσ hσ1,
+    neg_one_mul]
+  congr 1
+  exact setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ by rw [hres t ht]
 
 end CFC
