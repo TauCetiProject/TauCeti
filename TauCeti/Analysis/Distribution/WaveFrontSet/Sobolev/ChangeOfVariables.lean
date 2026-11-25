@@ -178,6 +178,7 @@ theorem isInvariantMicrolocalRegularity_isMicrolocallySobolevAt (s : ℝ) :
   smul c hT := hT.smul c
   smul_covector hr hT := (isMicrolocallySobolevAt_smul_iff hr).2 hT
   smulLeftCLM hg hT := hT.smulLeftCLM hg
+  smulLeftCLM_iff hg hx := isMicrolocallySobolevAt_smulLeftCLM_iff hg hx
   restrictCLM_iff h _ _ hx _ := isMicrolocallySobolevAt_restrictCLM_iff h hx
   compCLMOfOpenPartialHomeomorph _ _ _ _ _ _ _ hx hT := hT.compCLMOfOpenPartialHomeomorph hx
 

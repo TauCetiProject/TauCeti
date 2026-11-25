@@ -77,15 +77,19 @@ covectors read in two charts.
 * `TauCeti.BundleTest.isOpen_setOf_isMicrolocallyAt`: it is an open condition on the cotangent
   bundle.
 * `TauCeti.BundleTest.IsMicrolocallyAt.smulLeftDualCLM`,
+  `TauCeti.BundleTest.isMicrolocallyAt_smulLeftDualCLM_iff`,
   `TauCeti.BundleTest.isMicrolocallyAt_smulLeftDualCLM_of_notMem_tsupport`: it is preserved by
-  smooth multiples `f T` (`TauCeti.BundleTest.smulLeftDualCLM`), and on a manifold without
-  boundary `f T` satisfies it at every covector over a point outside the support of `f`.
+  smooth multiples `f T` (`TauCeti.BundleTest.smulLeftDualCLM`), unchanged by them where `f` does
+  not vanish, and on a manifold without boundary `f T` satisfies it at every covector over a point
+  outside the support of `f`.
 * `TauCeti.BundleTest.microlocalSingularSet`: the nonzero covectors at which `T` does not satisfy
   `P`. It is conic (`TauCeti.BundleTest.mk_smul_mem_microlocalSingularSet_iff`), closed in the
   complement of the zero section (`TauCeti.BundleTest.isOpen_diff_microlocalSingularSet`), the
   singular set of a sum lies in the union (`TauCeti.BundleTest.microlocalSingularSet_add_subset`),
   and that of a smooth multiple `f T` lies in that of `T` over the support of `f`
-  (`TauCeti.BundleTest.microlocalSingularSet_smulLeftDualCLM_subset`).
+  (`TauCeti.BundleTest.microlocalSingularSet_smulLeftDualCLM_subset`) and agrees with it where
+  `f` does not vanish (`TauCeti.BundleTest.mem_microlocalSingularSet_smulLeftDualCLM_iff`,
+  `TauCeti.BundleTest.microlocalSingularSet_smulLeftDualCLM_of_forall_mem_ne_zero`).
 
 ## References
 
@@ -404,6 +408,22 @@ theorem IsMicrolocallyAt.smulLeftDualCLM (hP : IsInvariantMicrolocalRegularity P
   rw [← hP.restrictCLM_iff hBt hyB, restrictCLM_chartComponent_eq_smulLeftCLM hg (hB T)]
   exact hP.smulLeftCLM hg ((hP.restrictCLM_iff hBt hyB _).2 (h v))
 
+/-- For an invariant notion of microlocal regularity `P`, where `f` does not vanish, a smooth
+multiple `f T` satisfies `P` exactly where `T` does. -/
+theorem isMicrolocallyAt_smulLeftDualCLM_iff (hP : IsInvariantMicrolocalRegularity P)
+    {f : C^∞⟮I, M; ℝ⟯} (hfx : f x ≠ 0) :
+    IsMicrolocallyAt P (smulLeftDualCLM f T) x ξ ↔ IsMicrolocallyAt P T x ξ := by
+  refine ⟨fun ⟨t, _, c, hc, hcs, hct, hx, h⟩ ↦ ?_, fun h ↦ h.smulLeftDualCLM hP f⟩
+  -- Near `c x`, the local representative of `f T` is `g` times that of `T`, with `g (c x) ≠ 0`.
+  obtain ⟨B, g, hg, hyB, hBt, hgy, hB⟩ :=
+    t.exists_forall_restrictCLM_chartDistributionCLM_smulLeftDualCLM (W := ℝ) c hc hct hcs f
+      (c.map_source hx)
+  have hgx : g (c x) ≠ 0 := by rwa [hgy, c.left_inv hx]
+  refine (isMicrolocallyAt_iff hP T hc hcs hct hx ξ).2 fun v ↦ ?_
+  rw [← hP.restrictCLM_iff hBt hyB, ← hP.smulLeftCLM_iff hg hgx,
+    ← restrictCLM_chartComponent_eq_smulLeftCLM hg (hB T), hP.restrictCLM_iff hBt hyB]
+  exact h v
+
 variable (P) in
 /-- For an invariant notion of microlocal regularity `P`, on a manifold without boundary, a smooth
 multiple `f T` satisfies `P` at every covector at a point outside the support of `f`. -/
@@ -523,5 +543,28 @@ theorem microlocalSingularSet_smulLeftDualCLM_subset [I.Boundaryless]
       microlocalSingularSet I P T ∩ {p | p.proj ∈ tsupport f} :=
   fun p ⟨hp, hT⟩ ↦ ⟨⟨hp, fun h ↦ hT (h.smulLeftDualCLM hP f)⟩, by_contra fun hx ↦
     hT (isMicrolocallyAt_smulLeftDualCLM_of_notMem_tsupport P hP T hx p.snd)⟩
+
+/-- For an invariant notion of microlocal regularity, over the points where `f` does not vanish, a
+smooth multiple `f T` has the same singular set as `T`. -/
+theorem mem_microlocalSingularSet_smulLeftDualCLM_iff (hP : IsInvariantMicrolocalRegularity P)
+    {f : C^∞⟮I, M; ℝ⟯} {p : CotangentBundle I M} (hf : f p.proj ≠ 0) :
+    p ∈ microlocalSingularSet I P (smulLeftDualCLM f T) ↔ p ∈ microlocalSingularSet I P T := by
+  simp [isMicrolocallyAt_smulLeftDualCLM_iff hP hf]
+
+/-- For an invariant notion of microlocal regularity, multiplying by a smooth function that
+vanishes nowhere over the singular set does not change the singular set. -/
+theorem microlocalSingularSet_smulLeftDualCLM_of_forall_mem_ne_zero
+    (hP : IsInvariantMicrolocalRegularity P) {f : C^∞⟮I, M; ℝ⟯} (T : BundleTest I F V →L_c[ℝ] ℝ)
+    (hf : ∀ p ∈ microlocalSingularSet I P T, f p.proj ≠ 0) :
+    microlocalSingularSet I P (smulLeftDualCLM f T) = microlocalSingularSet I P T :=
+  Subset.antisymm (fun _ ⟨hp, hT⟩ ↦ ⟨hp, fun h ↦ hT (h.smulLeftDualCLM hP f)⟩)
+    fun p hp ↦ (mem_microlocalSingularSet_smulLeftDualCLM_iff hP (hf p hp)).2 hp
+
+/-- For an invariant notion of microlocal regularity, multiplying by a smooth function that
+vanishes nowhere does not change the singular set. -/
+theorem microlocalSingularSet_smulLeftDualCLM_of_ne_zero (hP : IsInvariantMicrolocalRegularity P)
+    {f : C^∞⟮I, M; ℝ⟯} (T : BundleTest I F V →L_c[ℝ] ℝ) (hf : ∀ x, f x ≠ 0) :
+    microlocalSingularSet I P (smulLeftDualCLM f T) = microlocalSingularSet I P T :=
+  microlocalSingularSet_smulLeftDualCLM_of_forall_mem_ne_zero hP T fun p _ ↦ hf p.proj
 
 end TauCeti.BundleTest

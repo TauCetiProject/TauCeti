@@ -316,6 +316,7 @@ theorem isInvariantMicrolocalRegularity_isMicrolocallySmoothAt :
   smul c hT := hT.smul c
   smul_covector hr hT := (isMicrolocallySmoothAt_smul_iff hr).2 hT
   smulLeftCLM hg hT := hT.smulLeftCLM hg
+  smulLeftCLM_iff hg hx := isMicrolocallySmoothAt_smulLeftCLM_iff hg hx
   restrictCLM_iff h _ _ hx _ := isMicrolocallySmoothAt_restrictCLM_iff h hx
   compCLMOfOpenPartialHomeomorph he he' hU hUΩ _ _ _ hx hT :=
     hT.compCLMOfOpenPartialHomeomorph _ he he' hU hUΩ hx

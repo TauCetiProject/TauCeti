@@ -21,10 +21,10 @@ on open sets `Ω` of a finite-dimensional real inner product space `E`, points `
 bundles, chart by chart and frame by frame, only uses a few closure properties, which
 `Distribution.IsInvariantMicrolocalRegularity P` records: the pairs `(x, ξ)` where `P` holds form
 an open set, `P` holds for the zero distribution, is preserved by sums, complex multiples and smooth
-multiples, depends only on the ray through `ξ`, is unchanged by restriction to smaller open sets,
-and is preserved by pullback along smooth changes of variables
-(`Distribution.compCLMOfOpenPartialHomeomorph`), covectors pulling back by the transpose of the
-derivative.
+multiples, is unchanged by smooth multiples not vanishing at the point, depends only on the ray
+through `ξ`, is unchanged by restriction to smaller open sets, and is preserved by pullback along
+smooth changes of variables (`Distribution.compCLMOfOpenPartialHomeomorph`), covectors pulling back
+by the transpose of the derivative.
 
 Pullback invariance gives its own converse
 (`Distribution.IsInvariantMicrolocalRegularity.compCLMOfOpenPartialHomeomorph_iff`): `e^* T`
@@ -60,10 +60,11 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 covectors `ξ`, read as "`T` is regular at `(x, ξ)`", is an **invariant notion of microlocal
 regularity** if the pairs `(x, ξ)` where it holds form an open set, it holds for the zero
 distribution at every point of `Ω`, it is preserved by sums, complex multiples and smooth
-multiples, it depends only on the ray through `ξ`, it is unchanged by restriction to smaller open
-sets, and it is preserved by pullback along smooth changes of variables, covectors pulling back by
-the transpose of the derivative. These are the operations relating the local representatives of a
-distribution on a vector bundle in two charts and frames. -/
+multiples, it is unchanged by smooth multiples not vanishing at the point, it depends only on the
+ray through `ξ`, it is unchanged by restriction to smaller open sets, and it is preserved by
+pullback along smooth changes of variables, covectors pulling back by the transpose of the
+derivative. These are the operations relating the local representatives of a distribution on a
+vector bundle in two charts and frames. -/
 structure IsInvariantMicrolocalRegularity (P : (Ω : Opens E) → 𝓓'(Ω, ℂ) → E → E → Prop) :
     Prop where
   isOpen_setOf (Ω : Opens E) (T : 𝓓'(Ω, ℂ)) : IsOpen {p : E × E | P Ω T p.1 p.2}
@@ -75,6 +76,8 @@ structure IsInvariantMicrolocalRegularity (P : (Ω : Opens E) → 𝓓'(Ω, ℂ)
     P Ω T x (r • ξ)
   smulLeftCLM {Ω : Opens E} {T : 𝓓'(Ω, ℂ)} {x ξ : E} {g : E → ℝ} (hg : ContDiff ℝ ∞ g)
     (hT : P Ω T x ξ) : P Ω (smulLeftCLM hg T) x ξ
+  smulLeftCLM_iff {Ω : Opens E} {T : 𝓓'(Ω, ℂ)} {x ξ : E} {g : E → ℝ} (hg : ContDiff ℝ ∞ g)
+    (hx : g x ≠ 0) : P Ω (Distribution.smulLeftCLM hg T) x ξ ↔ P Ω T x ξ
   restrictCLM_iff {Ω Ω' : Opens E} (h : Ω' ≤ Ω) {T : 𝓓'(Ω, ℂ)} {x : E} (hx : x ∈ Ω') (ξ : E) :
     P Ω' (restrictCLM T) x ξ ↔ P Ω T x ξ
   compCLMOfOpenPartialHomeomorph {e : OpenPartialHomeomorph E E} {U Ω : Opens E}
