@@ -37,51 +37,23 @@ namespace TauCeti.LinearDistortionChecks
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [Fact (finrank ℝ E = 2)] (e : OrthonormalBasis (Fin 2) ℝ E)
 
-omit [FiniteDimensional ℝ E] in
-/-- The oriented Jacobian of the operator with matrix `M` in `e`, for the orientation of `e`, is
-`det M`. -/
-theorem orientedJacobian_toLin (M : Matrix (Fin 2) (Fin 2) ℝ) :
-    e.toBasis.orientation.orientedJacobian e.toBasis.orientation (toLin e.toBasis e.toBasis M) =
-      M.det := by
-  rw [Orientation.orientedJacobian_eq_det_toMatrix _ _ _ e rfl e rfl, toMatrix_toLin]
-
-/-- `diag(2, 1)` has outer distortion `‖A‖² / J(A) = 4 / 2 = 2`. -/
-example : e.toBasis.orientation.outerDistortion e.toBasis.orientation
-    (toLin e.toBasis e.toBasis (diagonal ![(2 : ℝ), 1])) = 2 := by
+/-- `diag(2, 1)` has outer distortion `‖A‖² / J(A) = 4 / 2 = 2` and inner distortion
+`J(A) / ℓ(A)² = 2 / 1 = 2`. -/
+example :
+    e.toBasis.orientation.outerDistortion e.toBasis.orientation
+        (toLin e.toBasis e.toBasis (diagonal ![(2 : ℝ), 1])) = 2 ∧
+      e.toBasis.orientation.innerDistortion e.toBasis.orientation
+        (toLin e.toBasis e.toBasis (diagonal ![(2 : ℝ), 1])) = 2 := by
   have hJ : e.toBasis.orientation.orientedJacobian e.toBasis.orientation
-      (toLin e.toBasis e.toBasis (diagonal ![(2 : ℝ), 1])) = 2 := by
-    rw [orientedJacobian_toLin, det_diagonal, Fin.prod_univ_two]
+      (toLin e.toBasis e.toBasis (diagonal ![(2 : ℝ), 1])) = 2 := by simp
+  constructor
+  · rw [Orientation.outerDistortion_of_pos _ _ (by rw [hJ]; norm_num), hJ,
+      norm_toContinuousLinearMap_eq_singularValues_zero,
+      singularValues_toLin_diagonal_fin_two e (by norm_num)]
     norm_num
-  rw [Orientation.outerDistortion_of_pos _ _ (by rw [hJ]; norm_num), hJ,
-    norm_toContinuousLinearMap_eq_singularValues_zero,
-    singularValues_toLin_diagonal_fin_two e (by norm_num)]
-  norm_num
-
-/-- `diag(2, 1)` has inner distortion `J(A) / ℓ(A)² = 2 / 1 = 2`. -/
-example : e.toBasis.orientation.innerDistortion e.toBasis.orientation
-    (toLin e.toBasis e.toBasis (diagonal ![(2 : ℝ), 1])) = 2 := by
-  have hJ : e.toBasis.orientation.orientedJacobian e.toBasis.orientation
-      (toLin e.toBasis e.toBasis (diagonal ![(2 : ℝ), 1])) = 2 := by
-    rw [orientedJacobian_toLin, det_diagonal, Fin.prod_univ_two]
+  · rw [Orientation.innerDistortion_of_pos _ _ (by rw [hJ]; norm_num), hJ, minimalStretch_def,
+      finrank_eq_card_basis e.toBasis, singularValues_toLin_diagonal_fin_two e (by norm_num)]
     norm_num
-  rw [Orientation.innerDistortion_of_pos _ _ (by rw [hJ]; norm_num), hJ, minimalStretch_def,
-    finrank_eq_card_basis e.toBasis, singularValues_toLin_diagonal_fin_two e (by norm_num)]
-  norm_num
-
-omit [FiniteDimensional ℝ E] in
-/-- The reflection `R = diag(-1, 1)` has oriented Jacobian `-1`. -/
-theorem orientedJacobian_reflection :
-    e.toBasis.orientation.orientedJacobian e.toBasis.orientation
-      (toLin e.toBasis e.toBasis (diagonal ![(-1 : ℝ), 1])) = -1 := by
-  rw [orientedJacobian_toLin, det_diagonal, Fin.prod_univ_two]
-  norm_num
-
-omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = 2)] in
-/-- The reflection `R = diag(-1, 1)` is not the zero map. -/
-theorem reflection_ne_zero : toLin e.toBasis e.toBasis (diagonal ![(-1 : ℝ), 1]) ≠ 0 := by
-  rw [Ne, LinearEquiv.map_eq_zero_iff]
-  intro h
-  simpa using congrFun₂ h 0 0
 
 /-- The reflection `R = diag(-1, 1)` has `q_O(R) = ∞` and `q_I(R) = 0`, while the naive quotient
 `‖R‖² / J(R)` is `-1`. -/
@@ -93,10 +65,9 @@ example :
       ‖toContinuousLinearMap (toLin e.toBasis e.toBasis (diagonal ![(-1 : ℝ), 1]))‖ ^ 2 /
         e.toBasis.orientation.orientedJacobian e.toBasis.orientation
           (toLin e.toBasis e.toBasis (diagonal ![(-1 : ℝ), 1])) = -1 := by
-  have hJ := orientedJacobian_reflection e
-  refine ⟨Orientation.outerDistortion_of_nonpos _ _ (by rw [hJ]; norm_num)
-    (reflection_ne_zero e), Orientation.innerDistortion_of_nonpos _ _ (by rw [hJ]; norm_num), ?_⟩
-  rw [hJ, norm_toContinuousLinearMap_eq_singularValues_zero,
+  refine ⟨Orientation.outerDistortion_of_nonpos _ _ (by simp) (by simp),
+    Orientation.innerDistortion_of_nonpos _ _ (by simp), ?_⟩
+  rw [norm_toContinuousLinearMap_eq_singularValues_zero,
     singularValues_toLin_diagonal_fin_two e (by norm_num)]
   norm_num
 
@@ -106,7 +77,7 @@ example :
     ‖toContinuousLinearMap (toLin e.toBasis e.toBasis (diagonal ![(-1 : ℝ), 1]))‖ ^ 2 ≤
       -1 * e.toBasis.orientation.orientedJacobian e.toBasis.orientation
         (toLin e.toBasis e.toBasis (diagonal ![(-1 : ℝ), 1])) := by
-  rw [orientedJacobian_reflection, norm_toContinuousLinearMap_eq_singularValues_zero,
+  rw [norm_toContinuousLinearMap_eq_singularValues_zero,
     singularValues_toLin_diagonal_fin_two e (by norm_num)]
   norm_num
 
@@ -126,7 +97,6 @@ example :
           (toLin e.toBasis e.toBasis (diagonal ![(-1 : ℝ), 1])) *
         e.toBasis.orientation.innerDistortion e.toBasis.orientation
           (toLin e.toBasis e.toBasis (diagonal ![(-1 : ℝ), 1])) = 0 := by
-  have hJ := orientedJacobian_reflection e
   refine ⟨?_, ?_, ?_⟩
   · rw [← toLin_mul, diagonal_mul_diagonal, ← toLin_one e.toBasis]
     congr 1
@@ -135,7 +105,7 @@ example :
   · exact e.toBasis.orientation.innerDistortion_linearIsometryEquiv
       e.toBasis.orientation (LinearIsometryEquiv.refl ℝ E)
       e.toBasis.orientation.orientedJacobian_id
-  · rw [Orientation.innerDistortion_of_nonpos _ _ (by rw [hJ]; norm_num), zero_mul]
+  · rw [Orientation.innerDistortion_of_nonpos _ _ (by simp), zero_mul]
 
 /-- `-id` on the plane has outer distortion `1`: `J(-id) = (-1)² = 1`. -/
 example : e.toBasis.orientation.outerDistortion e.toBasis.orientation
@@ -162,15 +132,7 @@ example :
         (toLin e.toBasis e.toBasis (diagonal ![(1 : ℝ), 0])) = ⊤ ∧
       e.toBasis.orientation.innerDistortion e.toBasis.orientation
         (toLin e.toBasis e.toBasis (diagonal ![(1 : ℝ), 0])) = 0 := by
-  have hJ : e.toBasis.orientation.orientedJacobian e.toBasis.orientation
-      (toLin e.toBasis e.toBasis (diagonal ![(1 : ℝ), 0])) = 0 := by
-    rw [orientedJacobian_toLin, det_diagonal, Fin.prod_univ_two]
-    norm_num
-  have hA : toLin e.toBasis e.toBasis (diagonal ![(1 : ℝ), 0]) ≠ 0 := by
-    rw [Ne, LinearEquiv.map_eq_zero_iff]
-    intro h
-    simpa using congrFun₂ h 0 0
-  exact ⟨Orientation.outerDistortion_of_nonpos _ _ hJ.le hA,
-    Orientation.innerDistortion_of_nonpos _ _ hJ.le⟩
+  exact ⟨Orientation.outerDistortion_of_nonpos _ _ (by simp) (by simp),
+    Orientation.innerDistortion_of_nonpos _ _ (by simp)⟩
 
 end TauCeti.LinearDistortionChecks
