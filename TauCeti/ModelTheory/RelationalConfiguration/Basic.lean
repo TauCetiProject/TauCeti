@@ -8,6 +8,7 @@ module
 public import Mathlib.ModelTheory.LanguageMap
 public import Mathlib.MeasureTheory.Group.Arithmetic
 public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
+public import Mathlib.SetTheory.Cardinal.Continuum
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 
 /-!
@@ -50,6 +51,10 @@ configuration by deciding its relations (`ofStructure`).
 
 * `TauCeti.RelationalConfiguration.measurable_iff` — a map into configurations is measurable
   exactly when each atom coordinate is;
+* `TauCeti.RelationalConfiguration.mk_le_continuum` and
+  `TauCeti.RelationalConfiguration.mk_eq_continuum` — there are at most continuum many
+  configurations on a countable carrier in a countable relational vocabulary, and exactly
+  continuum many when the carrier is infinite and some relation symbol has positive arity;
 * `TauCeti.RelationalConfiguration.measurable_restrict` — restriction is measurable;
 * `TauCeti.RelationalConfiguration.restrict_id` and
   `TauCeti.RelationalConfiguration.restrict_comp` — restriction is functorial;
@@ -220,6 +225,25 @@ theorem Atom.infinite_of_relations [Infinite V] {n : ℕ} (hn : n ≠ 0) (R : L.
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
   have : Nonempty (L.Relations n) := ⟨R⟩
   Infinite.sigma_of_right (β := fun n => L.Relations n × (Fin n → V)) (a := n)
+
+/-- There are at most continuum many configurations on a countable carrier in a countable
+relational vocabulary. Function symbols play no role. -/
+theorem mk_le_continuum (L : Language) (V : Type*)
+    [∀ n, Countable (L.Relations n)] [Countable V] :
+    Cardinal.mk (RelationalConfiguration L V) ≤ Cardinal.continuum := by
+  rw [RelationalConfiguration, Cardinal.mk_arrow, Cardinal.mk_bool, Cardinal.lift_ofNat]
+  exact (Cardinal.power_le_power_left (by norm_num) Cardinal.mk_le_aleph0).trans_eq
+    Cardinal.two_power_aleph0
+
+/-- **There are continuum many configurations** on a countably infinite carrier in a language
+with countably many relation symbols of each arity, one of them of positive arity. -/
+theorem mk_eq_continuum (L : Language) (V : Type*)
+    [∀ n, Countable (L.Relations n)] [Countable V] [Infinite V] {n : ℕ} (hn : n ≠ 0)
+    (R : L.Relations n) :
+    Cardinal.mk (RelationalConfiguration L V) = Cardinal.continuum := by
+  have := Atom.infinite_of_relations (V := V) hn R
+  rw [RelationalConfiguration, Cardinal.mk_arrow, Cardinal.mk_bool, Cardinal.lift_ofNat,
+    Cardinal.mk_eq_aleph0 (Atom L V), Cardinal.lift_aleph0, Cardinal.two_power_aleph0]
 
 /-- Configurations carry the product σ-algebra, one Boolean coordinate per atom. -/
 instance : MeasurableSpace (RelationalConfiguration L V) :=

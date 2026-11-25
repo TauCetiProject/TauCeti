@@ -7,7 +7,6 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
-public import Mathlib.SetTheory.Cardinal.Continuum
 public import TauCeti.Topology.Algebra.Group.Perm
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Perm
 
@@ -23,10 +22,8 @@ finite set of atoms (`SymbolicDynamics.FullShift.cylinder`, clopen by
 measurable by `SymbolicDynamics.FullShift.measurableSet_cylinder`); these finite cylinders form a
 basis of the topology (`SymbolicDynamics.FullShift.isTopologicalBasis_cylinder`). On
 countable carriers in countable relational vocabularies the topology is Polish and its Borel
-σ-algebra is the existing product σ-algebra. There are at most continuum many configurations, and
-exactly continuum many on a countably infinite carrier when some relation symbol has positive
-arity (`TauCeti.RelationalConfiguration.mk_eq_continuum`). The same construction handles finite
-and empty carriers.
+σ-algebra is the existing product σ-algebra. The same construction handles finite and empty
+carriers.
 
 For a discrete carrier, the *logic action* of its permutation group, with the topology of
 pointwise convergence, is jointly continuous, for every language, so stabilizers of
@@ -136,24 +133,5 @@ instance [∀ n, Countable (L.Relations n)] [Countable V] :
 instance [∀ n, Countable (L.Relations n)] [Countable V] :
     BorelSpace (RelationalConfiguration L V) :=
   inferInstanceAs (BorelSpace (Atom L V → Bool))
-
-/-- There are at most continuum many configurations on a countable carrier in a countable
-relational vocabulary. Function symbols play no role. -/
-theorem mk_le_continuum (L : FirstOrder.Language) (V : Type*)
-    [∀ n, Countable (L.Relations n)] [Countable V] :
-    Cardinal.mk (RelationalConfiguration L V) ≤ Cardinal.continuum := by
-  rw [RelationalConfiguration, Cardinal.mk_arrow, Cardinal.mk_bool, Cardinal.lift_ofNat]
-  exact (Cardinal.power_le_power_left (by norm_num) Cardinal.mk_le_aleph0).trans_eq
-    Cardinal.two_power_aleph0
-
-/-- **There are continuum many configurations** on a countably infinite carrier in a language
-with countably many relation symbols of each arity, one of them of positive arity. -/
-theorem mk_eq_continuum (L : FirstOrder.Language) (V : Type*)
-    [∀ n, Countable (L.Relations n)] [Countable V] [Infinite V] {n : ℕ} (hn : n ≠ 0)
-    (R : L.Relations n) :
-    Cardinal.mk (RelationalConfiguration L V) = Cardinal.continuum := by
-  have := Atom.infinite_of_relations (V := V) hn R
-  rw [RelationalConfiguration, Cardinal.mk_arrow, Cardinal.mk_bool, Cardinal.lift_ofNat,
-    Cardinal.mk_eq_aleph0 (Atom L V), Cardinal.lift_aleph0, Cardinal.two_power_aleph0]
 
 end TauCeti.RelationalConfiguration
