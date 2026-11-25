@@ -165,6 +165,7 @@ theorem toFormula_subst (φ : L.BoundedFormula α n) (f : α → L.Term β) :
 
 /-- The free variables of a substituted formula are the variables of the terms substituted for
 its free variables. -/
+@[simp]
 theorem freeVarFinset_subst [DecidableEq α] [DecidableEq β] (φ : L.BoundedFormula α n)
     (f : α → L.Term β) :
     (φ.subst f).freeVarFinset = φ.freeVarFinset.biUnion fun a => (f a).varFinset := by
@@ -174,6 +175,7 @@ theorem freeVarFinset_subst [DecidableEq α] [DecidableEq β] (φ : L.BoundedFor
 
 /-- A free variable of a relabelled formula is the left value of the relabelling at a free
 variable of the formula. -/
+@[simp]
 theorem mem_freeVarFinset_relabel [DecidableEq α] [DecidableEq β] {m : ℕ} (g : α → β ⊕ Fin m)
     (φ : L.BoundedFormula α n) {b : β} :
     b ∈ (φ.relabel g).freeVarFinset ↔ ∃ a ∈ φ.freeVarFinset, g a = Sum.inl b := by
