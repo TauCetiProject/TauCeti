@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.LaplaceTransform.Basic
 import Mathlib.Analysis.Complex.TaylorSeries
+import TauCeti.Analysis.LaplaceTransform.GammaKernel
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.MeasureTheory.Integral.Exp.Moment
 
 /-!
@@ -37,6 +39,10 @@ pointwise sum is integrable (`TauCeti.integrable_exp_mul_of_summable_integral`).
   of the transform on `a - r < re s`.
 * `TauCeti.hasLaplace_ofReal_of_ae_nonneg_of_mem_ball`: **Landau's theorem**, the value `F₁ s` of
   the transform on `ball a r`.
+* `TauCeti.exists_setIntegral_Ioi_sdiff_Icc_pow_mul_exp_neg_mul_div_factorial_le`: the Gamma-kernel
+  estimate for the windowed form: for every `δ > 0` there are `σ > 2` and `C` such that for every
+  `U` some `k ≥ U` makes the mass of `u ^ k * exp (-((σ - 2) * u)) / k !` off `[U, (1 + δ) U]` at
+  most `C / σ ^ k`.
 
 ## References
 
@@ -53,6 +59,72 @@ open Filter MeasureTheory Metric Set
 open scoped Nat Topology
 
 namespace TauCeti
+
+/-! ### The Gamma-kernel window estimate used by the windowed form of Landau's theorem -/
+
+open Real in
+/-- **Mass of the Gamma kernel off a window.** For every `δ > 0` there are `σ > 2` and `C` such
+that for every real `U` some natural number `k ≥ U` bounds the mass of the Gamma kernel
+`u ^ k * exp (-((σ - 2) * u)) / k !` on `(0, ∞) \ [U, (1 + δ) U]` by `C σ^(-k)`. The proof
+applies the Chernoff bound `TauCeti.setIntegral_Ioi_sdiff_Icc_pow_mul_exp_neg_mul_div_factorial_le`
+with the same tilt `l` for both tails and suitable `l`, `σ` and `k`. The window estimate for
+`U ≥ 1` and this choice of parameters are `Deduction.landau_tails` in L. Alpöge's Lean
+formalization of the Riemann hypothesis for Dirichlet L-functions
+(<https://github.com/leanprover-community/riemann-hypothesis>); this theorem extends the estimate
+to every real `U` (for `U < 0` it takes `k = 0`). -/
+theorem exists_setIntegral_Ioi_sdiff_Icc_pow_mul_exp_neg_mul_div_factorial_le {δ : ℝ}
+    (hδ : 0 < δ) : ∃ σ > 2, ∃ C, ∀ U : ℝ, ∃ k : ℕ, U ≤ k ∧
+      ∫ u in Ioi 0 \ Icc U ((1 + δ) * U), u ^ k * exp (-((σ - 2) * u)) / k ! ≤ C / σ ^ k := by
+  -- `l = 2 + 6 / δ`, `σ = l (1 + δ) (l + 2)` (atoms with defining equations); for `0 ≤ U`, apply
+  -- the Chernoff bound with `k = ⌈(1 + δ / 2) σ U⌉`, `a = σ - 2`, `V = (1 + δ) U`; else `k = 0`.
+  obtain ⟨l, hl_def⟩ : ∃ l : ℝ, l = 2 + 6 / δ := ⟨_, rfl⟩
+  have hlδ : δ * l = 2 * δ + 6 := by rw [hl_def]; field_simp
+  have hl : 2 < l := by linarith [div_pos (by norm_num : (0 : ℝ) < 6) hδ]
+  obtain ⟨σ, hσ⟩ : ∃ σ : ℝ, σ = l * (1 + δ) * (l + 2) := ⟨_, rfl⟩
+  have hlδl : 0 < l * δ * (l + 2) := by positivity
+  have hd : 0 < σ - 2 - l := by linarith [mul_self_lt_mul_self (by norm_num : (0 : ℝ) ≤ 2) hl]
+  have he : 0 < σ - 2 + l := by linarith
+  have hy : 0 ≤ σ / (σ - 2 - l) - 1 := by rw [sub_nonneg, le_div_iff₀ hd]; linarith
+  refine ⟨σ, by linarith, exp (σ / (σ - 2 - l) - 1) / (σ - 2 - l) + 1 / (σ - 2 + l),
+    fun U ↦ ?_⟩
+  rcases lt_or_ge U 0 with hU | hU
+  · refine ⟨0, by simpa using hU.le, ?_⟩
+    calc _ ≤ ((σ - 2) ^ (0 + 1))⁻¹ :=
+          setIntegral_pow_mul_exp_neg_mul_div_factorial_le 0 (by linarith)
+            (ae_of_all _ sdiff_subset)
+      _ ≤ exp (σ / (σ - 2 - l) - 1) / (σ - 2 - l) := by
+          rw [zero_add, pow_one, inv_eq_one_div]
+          exact div_le_div₀ (exp_pos _).le (one_le_exp hy) hd (by linarith)
+      _ ≤ _ := by rw [pow_zero, div_one, le_add_iff_nonneg_right]; positivity
+  have hσ1 : 1 ≤ (1 + δ / 2) * σ := by linarith [mul_pos hδ (by linarith : (0 : ℝ) < σ)]
+  set k := ⌈(1 + δ / 2) * σ * U⌉₊
+  have hk1 : (1 + δ / 2) * σ * U ≤ k := Nat.le_ceil _
+  have hk2 : (k : ℝ) < (1 + δ / 2) * σ * U + 1 :=
+    Nat.ceil_lt_add_one (mul_nonneg (by linarith) hU)
+  refine ⟨k, (le_mul_of_one_le_left hU hσ1).trans hk1, ?_⟩
+  -- The two identities that fix `l = 2 + 6 / δ`: they make the rates of the two tails match.
+  have hup : (1 + δ / 2) * (l + 2) = l * (1 + δ) - 1 := by linear_combination -hlδ / 2
+  have hlow : (1 + δ / 2) * (l - 2) = l + 1 := by linear_combination hlδ / 2
+  have h1 : (1 + δ / 2) * σ * (σ / (σ - 2 - l) - 1) = l * (1 + δ) := by
+    rw [div_sub_one hd.ne', mul_div_assoc', div_eq_iff hd.ne']
+    linear_combination σ * hup - hσ
+  have h2 : (1 + δ / 2) * σ * (σ / (σ - 2 + l) - 1) ≤ -l := by
+    rw [div_sub_one he.ne', mul_div_assoc', div_le_iff₀ he]
+    -- By `hlow` the left side is `-(l + 1) σ`, and `l ^ 2 - 2 l ≤ σ`.
+    linarith [congrArg (· * σ) hlow, hσ, hlδl]
+  calc _ ≤ _ := setIntegral_Ioi_sdiff_Icc_pow_mul_exp_neg_mul_div_factorial_le k (l₂ := l)
+          (by linarith) (by linarith : l < σ - 2) (by linarith) U ((1 + δ) * U)
+    _ ≤ exp (σ / (σ - 2 - l) - 1) / σ ^ k / (σ - 2 - l) + exp 0 / σ ^ k / (σ - 2 + l) := by
+        simp only [pow_succ, ← div_eq_mul_inv, ← div_div]
+        gcongr ?_ / _ + ?_ / _
+        · refine exp_div_pow_le_exp_div_pow k (by linarith) hd.le ?_
+          -- `k y ≤ ((1 + δ / 2) σ U + 1) y = l (1 + δ) U + y` by `h1`.
+          linarith [mul_le_mul_of_nonneg_right hk2.le hy, congrArg (· * U) h1]
+        · refine exp_div_pow_le_exp_div_pow k (by linarith) he.le ?_
+          have hz : σ / (σ - 2 + l) - 1 ≤ 0 := by rw [sub_nonpos, div_le_one he]; linarith
+          -- `k z ≤ (1 + δ / 2) σ U z ≤ -l U` by `h2`.
+          linarith [mul_le_mul_of_nonpos_right hk1 hz, mul_le_mul_of_nonneg_left h2 hU]
+    _ = _ := by rw [exp_zero]; ring
 
 section Landau
 
