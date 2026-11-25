@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.RightDerived
+public import TauCeti.Algebra.Homology.HomotopyCategory.Linear
 public import TauCeti.Algebra.Homology.HomotopyCategory.PreservesHomology
 public import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 
@@ -14,8 +15,10 @@ public import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 
 Injective resolutions are additive after passing to the homotopy category: the sum of
 two lifts is a lift of the sum, and lifts of the same morphism are homotopic. Thus right
-derived functors of additive functors are additive. If the functor is exact, its
-positive right derived functors vanish.
+derived functors of additive functors are additive. In the same way, over an `R`-linear
+category a scalar multiple of a lift is a lift of the scalar multiple, so right derived functors
+of `R`-linear functors are `R`-linear (`CategoryTheory.Functor.linear_rightDerived`). If the
+functor is exact, its positive right derived functors vanish.
 
 `CategoryTheory.NatIso.rightDerived` transports a natural isomorphism to right derived
 functors, with the induced transformations as its hom and inverse.
@@ -67,6 +70,24 @@ instance additive_injectiveResolutions : (injectiveResolutions C).Additive where
     exact (HomotopyCategory.eq_of_homotopy _ _ h).trans
       (Functor.map_add (HomotopyCategory.quotient C (ComplexShape.up ℕ)))
 
+/-- Choosing injective resolutions preserves scalar multiplication in the homotopy category. -/
+instance linear_injectiveResolutions (R : Type*) [Semiring R] [Linear R C] :
+    (injectiveResolutions C).Linear R where
+  map_smul {X Y} f a := by
+    let I := injectiveResolution X
+    let J := injectiveResolution Y
+    have h := InjectiveResolution.descHomotopy (a • f)
+      (InjectiveResolution.desc (a • f) J I) (a • InjectiveResolution.desc f J I)
+      (by simp) (by
+        rw [Linear.comp_smul, InjectiveResolution.desc_commutes]
+        -- morphisms out of `X[0]` are determined by their component in degree `0`
+        refine HomologicalComplex.from_single_hom_ext ?_
+        simp only [HomologicalComplex.comp_f, HomologicalComplex.smul_f_apply,
+          HomologicalComplex.single_map_f_self, Linear.smul_comp, Linear.comp_smul,
+          Category.assoc])
+    exact (HomotopyCategory.eq_of_homotopy _ _ h).trans
+      (Functor.map_smul (HomotopyCategory.quotient C (ComplexShape.up ℕ)) _ _)
+
 variable {C} {D : Type*} [Category* D] [Abelian D]
 
 /-- Right derived functors of an additive functor are additive. -/
@@ -74,6 +95,13 @@ instance Functor.additive_rightDerived (F : C ⥤ D) [F.Additive] (q : ℕ) :
     (F.rightDerived q).Additive :=
   inferInstanceAs ((injectiveResolutions C ⋙ F.mapHomotopyCategory _ ⋙
     HomotopyCategory.homologyFunctor D _ q).Additive)
+
+/-- Right derived functors of a linear functor are linear. -/
+instance Functor.linear_rightDerived (R : Type*) [Semiring R] [CategoryTheory.Linear R C]
+    [CategoryTheory.Linear R D] (F : C ⥤ D) [F.Additive] [F.Linear R] (q : ℕ) :
+    (F.rightDerived q).Linear R :=
+  inferInstanceAs ((injectiveResolutions C ⋙ F.mapHomotopyCategory _ ⋙
+    HomotopyCategory.homologyFunctor D _ q).Linear R)
 
 /-- A natural isomorphism between additive functors induces an isomorphism between their
 right derived functors in each degree. -/

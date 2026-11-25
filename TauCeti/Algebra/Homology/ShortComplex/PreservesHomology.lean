@@ -17,7 +17,8 @@ cycles and the homology of `S.map F` with the images under `F` of those of `S`, 
 interacts with the inclusion of the cycles (`ShortComplex.mapCyclesIso_hom_iCycles`). This file
 records the companion statement for the class map: under the two identifications, the class map
 `homologyπ` of `S.map F` is the image under `F` of the class map of `S`
-(`ShortComplex.homologyπ_comp_mapHomologyIso_hom`).
+(`ShortComplex.homologyπ_comp_mapHomologyIso_hom`, with inverse form
+`ShortComplex.map_homologyπ_comp_mapHomologyIso_inv`).
 
 It also provides the natural isomorphism `ShortComplex.homologyDiagramIso` identifying the
 pointwise homology diagram `F ⋙ ShortComplex.homologyFunctor C` of a diagram
@@ -46,7 +47,7 @@ theorem mapCyclesIso_inv_comp_iCycles [S.HasLeftHomology] [F.PreservesLeftHomolo
 /-- **The class map commutes with a functor preserving homology.** Under the identifications
 `mapCyclesIso` and `mapHomologyIso`, the class map of `S.map F` is the image under `F` of the
 class map of `S`. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise]
 theorem homologyπ_comp_mapHomologyIso_hom [S.HasHomology] [(S.map F).HasHomology]
     [F.PreservesLeftHomologyOf S] :
     (S.map F).homologyπ ≫ (S.mapHomologyIso F).hom =
@@ -66,6 +67,16 @@ theorem homologyπ_comp_mapHomologyIso_hom [S.HasHomology] [(S.map F).HasHomolog
     (Category.assoc _ _ _).symm.trans <|
     congrArg (· ≫ F.map S.homologyπ)
       (congrArg Iso.hom (LeftHomologyData.mapCyclesIso_eq h F)).symm
+
+/-- The inverse form of `homologyπ_comp_mapHomologyIso_hom`: under the identifications
+`mapCyclesIso` and `mapHomologyIso`, the image under `F` of the class map of `S` is the class map
+of `S.map F`. -/
+@[reassoc, elementwise]
+theorem map_homologyπ_comp_mapHomologyIso_inv [S.HasHomology] [(S.map F).HasHomology]
+    [F.PreservesLeftHomologyOf S] :
+    F.map S.homologyπ ≫ (S.mapHomologyIso F).inv =
+      (S.mapCyclesIso F).inv ≫ (S.map F).homologyπ := by
+  rw [Iso.comp_inv_eq, Category.assoc, homologyπ_comp_mapHomologyIso_hom, Iso.inv_hom_id_assoc]
 
 end Map
 

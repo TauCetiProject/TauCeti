@@ -53,6 +53,9 @@ shown to vanish.
   `CategoryTheory.Sheaf.H'.resolutionClass_zero_eq_zero_iff` and
   `CategoryTheory.Sheaf.H'.resolutionClass_succ_eq_zero_iff`: the classes of sections exhaust
   `Hⁿ(V, F)`, and the sections with zero class are exactly the boundaries.
+* `CategoryTheory.Sheaf.H'.cohomologyZeroSectionsEquiv_resolutionClass`: in degree `0`, the
+  class of the image of a section of `F` is that section, under the identification of `H⁰(V, F)`
+  with the sections of `F` over `V`.
 * `CategoryTheory.Sheaf.H'.addEquivHomologyOfResolution`: the additive equivalence between
   `Hⁿ(V, F)` and the cohomology of the complex of sections `K(V)`, sending `[s]` to the cohomology
   class of `s` (`CategoryTheory.Sheaf.H'.addEquivHomologyOfResolution_resolutionClass`).
@@ -314,6 +317,25 @@ variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   (ι : F ⟶ K.X 0) [Mono ι] (hι : ι ≫ K.d 0 1 = 0)
   (hι' : (ShortComplex.mk ι (K.d 0 1) hι).Exact) (hK : ∀ j, K.ExactAt (j + 1))
   (hKV : ∀ V j k, Subsingleton ((K.X j).H' (k + 1) V)) (n : ℕ)
+
+/-- In degree `0`, a section `s` of `K⁰` over `V` which is the image under the augmentation
+`ι : F ⟶ K⁰` of a section `t` of `F` has class corresponding to `t` under the identification of
+`H⁰(V, F)` with the sections of `F` over `V`. -/
+lemma cohomologyZeroSectionsEquiv_resolutionClass (V : C) (t : F.obj.obj (op V))
+    {s : (K.X 0).obj.obj (op V)} (hs : (K.d 0 (0 + 1)).hom.app (op V) s = 0)
+    (hts : ι.hom.app (op V) t = s) :
+    cohomologyZeroSectionsEquiv F V (resolutionClass ι hι hι' hK V s hs) = t := by
+  subst hts
+  have h : hι'.lift ((freeYonedaSheafSectionsEquiv J V (K.X 0)).symm (ι.hom.app (op V) t))
+      (by rw [freeYonedaSheafSectionsEquiv_symm_naturality_right, ← ConcreteCategory.comp_apply,
+        ← NatTrans.comp_app, ← ObjectProperty.FullSubcategory.comp_hom, hι]; exact map_zero _) =
+      (freeYonedaSheafSectionsEquiv J V F).symm t := by
+    rw [← cancel_mono ι, ShortComplex.Exact.lift_f,
+      freeYonedaSheafSectionsEquiv_symm_naturality_right]
+  rw [cohomologyZeroSectionsEquiv_apply, resolutionClass_def, CochainComplex.extMk_of_deg_zero, h]
+  -- `H'AddEquivExt` is the identity, and `Ext.addEquiv₀` inverts `Ext.mk₀`
+  exact (congrArg (freeYonedaSheafSectionsEquiv J V F) (Ext.addEquiv₀.apply_symm_apply _)).trans
+    ((freeYonedaSheafSectionsEquiv J V F).apply_symm_apply t)
 
 /-- The complex of presheaves of abelian groups underlying a complex of sheaves. -/
 private abbrev sectionsComplex (K : CochainComplex (Sheaf J AddCommGrpCat.{v}) ℕ) :
