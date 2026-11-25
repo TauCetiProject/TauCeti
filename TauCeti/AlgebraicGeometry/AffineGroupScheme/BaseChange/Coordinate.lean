@@ -27,7 +27,7 @@ anti-equivalence.
   Hopf spectrum of the scalar-extended coordinate Hopf algebra.
 * `TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_hom_naturality`: the underlying
   group-object comparison intertwines pullback and coordinate scalar extension on morphisms.
-* `TauCeti.AffineGroupSchemeCat.baseChange_map_hopfSpec_comp_baseChangeIso_hom`: a commuting
+* `TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality`: a commuting
   square of coordinate Hopf algebras, with the scalar extensions identified, gives the commuting
   square of group schemes over `S`.
 * `TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeNatIso`: the comparison is natural in the
@@ -145,10 +145,11 @@ theorem hopfSpecBaseChangeGrpIso_hom_naturality {H K : CommHopfAlgCat.{u} R}
   exact pullbackSpecIso'_natural (R := R) (S := S) f
 
 /-- **A coordinate square gives a group-scheme square.** If `(S ⊗ f) ≫ b = b' ≫ g`, then base
-change of `Spec f` followed by the comparison of `Spec (S ⊗ H')` with `Spec A'` is the comparison
-of `Spec (S ⊗ H)` with `Spec A` followed by `Spec g`. -/
+change of `Spec f` followed by the comparison of the base change of `Spec H'` with `Spec A'`
+(through `Spec (S ⊗ H')`) is the comparison of the base change of `Spec H` with `Spec A`
+(through `Spec (S ⊗ H)`) followed by `Spec g`. -/
 @[reassoc]
-theorem baseChange_map_hopfSpec_comp_baseChangeIso_hom {H H' : CommHopfAlgCat.{u} R}
+theorem hopfSpecBaseChangeGrpIso_trans_hom_naturality {H H' : CommHopfAlgCat.{u} R}
     {A A' : CommHopfAlgCat.{u} S} (f : H' ⟶ H) (g : A' ⟶ A)
     (b : CommHopfAlgCat.baseChange (K := S) H ≅ A) (b' : CommHopfAlgCat.baseChange (K := S) H' ≅ A')
     (h : CommHopfAlgCat.baseChangeMap (K := S) f ≫ b.hom = b'.hom ≫ g) :

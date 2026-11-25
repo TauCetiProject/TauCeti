@@ -21,8 +21,9 @@ isomorphism for `P` is the coordinate isomorphism for the image of `P` over `K`
 (`TauCeti.ConstantForm.baseChangeMap_coordinateHopfAlgebraCongr_hom_comp`). The same holds for
 the group-scheme isomorphism `TauCeti.ConstantForm.groupSchemeCongr` along the base-change
 isomorphisms `TauCeti.ConstantForm.groupSchemeBaseChangeIso`
-(`TauCeti.ConstantForm.baseChange_map_groupSchemeCongr_hom_comp`), obtained from the coordinate
-form by `TauCeti.AffineGroupSchemeCat.baseChange_map_hopfSpec_comp_baseChangeIso_hom`.
+(`TauCeti.ConstantForm.map_groupSchemeCongr_hom_comp_groupSchemeBaseChangeIso_hom`), obtained
+from the coordinate form by
+`TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality`.
 
 The proof specializes the naturality of quotient isomorphisms under base change
 (`TauCeti.CommHopfAlgCat.baseChangeMap_quotientIsoOfComapEq_hom_comp`)
@@ -77,7 +78,7 @@ variable {R K : Type u} [CommRing R] [CommRing K] [Algebra R K] {n : ℕ}
 isomorphisms the base change of the isomorphism of conjugation by `P` is the isomorphism of
 conjugation by the image of `P`. -/
 @[reassoc]
-theorem baseChange_map_groupSchemeCongr_hom_comp (P : GL (Fin n) R)
+theorem map_groupSchemeCongr_hom_comp_groupSchemeBaseChangeIso_hom (P : GL (Fin n) R)
     {C₁ C₂ : Matrix (Fin n) (Fin n) R}
     (hP : (P : Matrix (Fin n) (Fin n) R) * C₁ * (P : Matrix (Fin n) (Fin n) R)ᵀ = C₂)
     {C₁' C₂' : Matrix (Fin n) (Fin n) K} (h₁ : C₁.map (algebraMap R K) = C₁')
@@ -92,7 +93,7 @@ theorem baseChange_map_groupSchemeCongr_hom_comp (P : GL (Fin n) R)
   rw [groupSchemeCongr_def, groupSchemeCongr_def, groupSchemeBaseChangeIso_def,
     groupSchemeBaseChangeIso_def, GeneralLinear.hopfIdealBaseChangeIso_def,
     GeneralLinear.hopfIdealBaseChangeIso_def]
-  refine AffineGroupSchemeCat.baseChange_map_hopfSpec_comp_baseChangeIso_hom
+  refine AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality
     (coordinateHopfAlgebraCongr P hP).inv
     (coordinateHopfAlgebraCongr (GeneralLinearGroup.map (algebraMap R K) P) hP').inv
     (coordinateHopfAlgebraBaseChangeIso h₁) (coordinateHopfAlgebraBaseChangeIso h₂) ?_
