@@ -744,8 +744,9 @@ theorem derivedSeries_one_eq_top_of_range_eq_of_sup_eq_top (f : L' →ₗ⁅R⁆
       derivedSeriesOfIdeal_zero,
       TauCeti.lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top h,
       LieIdeal.comap_incl_self]
-  have hs : (f.range : Set L) = (derivedSeries R L 1).toLieSubalgebra :=
-    congrArg (fun p : Submodule R L ↦ (p : Set L)) (f.range_toSubmodule.trans hr)
+  have hs : (f.range : Set L) = (derivedSeries R L 1).toLieSubalgebra := by
+    rw [← LieSubalgebra.coe_toSubmodule, f.range_toSubmodule, hr,
+      ← LieIdeal.toLieSubalgebra_toSubmodule, LieSubalgebra.coe_toSubmodule]
   let e : L' ≃ₗ⁅R⁆ (derivedSeries R L 1).toLieSubalgebra :=
     (LieEquiv.ofInjective f hf).trans (LieEquiv.ofEq _ _ hs)
   exact derivedSeries_eq_top_of_surjective e.symm.toLieHom e.symm.surjective hD
@@ -756,8 +757,7 @@ theorem map_center_le_center (f : L' →ₗ⁅R⁆ L) (hf : Function.Surjective 
   intro y hy
   rw [← LieSubmodule.mem_toSubmodule, LieIdeal.coe_map_of_surjective hf] at hy
   obtain ⟨x, hx, rfl⟩ := hy
-  replace hx : x ∈ center R L' := hx
-  rw [LieModule.mem_maxTrivSubmodule] at hx
+  rw [LieSubmodule.coe_toSubmodule, SetLike.mem_coe, LieModule.mem_maxTrivSubmodule] at hx
   rw [LieHom.coe_toLinearMap, LieModule.mem_maxTrivSubmodule]
   intro z
   obtain ⟨w, rfl⟩ := hf z

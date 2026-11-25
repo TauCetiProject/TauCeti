@@ -10,9 +10,9 @@ public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Action
 public import TauCeti.AlgebraicTopology.UniversalCover.Countable
 public import TauCeti.Geometry.Lie.Adjoint.Compact
-public import TauCeti.Geometry.Lie.Subgroup.Center
 public import TauCeti.Geometry.Lie.UniversalCover.Compact
 public import TauCeti.Geometry.Lie.UniversalCover.Splitting
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 public import TauCeti.Topology.Algebra.Group.Covering
 
 /-!
@@ -28,23 +28,22 @@ projection of the universal covering group of a compact connected Lie group, and
 compactness of the factor `K` in the finite cover `T × K → G` of a compact connected Lie group by
 a torus times a simply connected compact semisimple group.
 
-The proof is Weyl's theorem, in its local form
-`MonoidHom.compactSpace_of_isLocalHomeomorph_of_derivedSeries_one_eq_top`, applied to the
-composite
+The proof is Weyl's theorem, in the form
+`Subgroup.compactSpace_of_le_center_of_derivedSeries_one_eq_top` (a connected Lie group with
+perfect, centreless Lie algebra and a cocompact central subgroup is compact), applied to the
+kernel of the composite
 
 `f : K → G → C → C ⧸ π(A)`.
 
 * The subgroup `A` is central in `G`: it is commutative, and it commutes with `K`
   (`TauCeti.Lie.integralLeafSubgroupData_center_toHom_mem_center`). So `π(A)` is central in `C`,
   and `C ⧸ π(A)` is a compact topological group.
-* Since `π ∘ (A × K ≃ G)` sends `(a, k)` to `π(a) π(k)`, the map `f` is surjective and open.
+* Since `π ∘ (A × K ≃ G)` sends `(a, k)` to `π(a) π(k)`, the map `f` is open, so `K ⧸ ker f` is
+  compact.
 * The kernel of `π` is discrete, hence central in the connected group `G`. An element of the
-  kernel of `f` is therefore `a⁻¹` times a central element of `G`, so it is central in `K`. The
-  Lie algebra `[𝔤, 𝔤]` of `K` has zero centre
-  (`TauCeti.Lie.center_eq_bot_integralLeafSubgroupData_derivedSeries`), so the centre of `K` is
-  discrete and so is the kernel of `f`.
-* A surjective open homomorphism with discrete kernel is a covering map, hence a local
-  homeomorphism, and `[𝔤, 𝔤]` is perfect
+  kernel of `f` is therefore `a⁻¹` times a central element of `G`, so it is central in `K`.
+* The Lie algebra `[𝔤, 𝔤]` of `K` has zero centre
+  (`TauCeti.Lie.center_eq_bot_integralLeafSubgroupData_derivedSeries`) and is perfect
   (`TauCeti.Lie.derivedSeries_one_eq_top_integralLeafSubgroupData_derivedSeries`).
 
 For the universal covering group of a compact Lie group the centre and the derived algebra are
@@ -147,10 +146,8 @@ theorem compactSpace_integralLeafSubgroupData_derivedSeries
     LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)
   set D := (derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
     LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)
-  set Φ := centerProdDerivedContinuousMulEquiv hc
+  set Φ := centerProdDerivedContinuousMulEquiv hc with hΦdef
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have : IsTopologicalGroup D.X := topologicalGroup_of_lieGroup D.I' ∞
-  have : T2Space D.X := D.I'.t2Space_of_lieGroup ∞
   -- The image `N = π(A)` is central in `C`, so `C ⧸ N` is a compact topological group.
   set N := (π.comp A.toHom).range
   have : N.Normal :=
@@ -158,16 +155,10 @@ theorem compactSpace_integralLeafSubgroupData_derivedSeries
   set f : D.X →* C ⧸ N := (QuotientGroup.mk' N).comp (π.comp D.toHom)
   -- Through the splitting `Φ : A × K ≃ G`, the projection to `C ⧸ N` only sees the factor `K`.
   have hΦ (p : A.X × D.X) : (QuotientGroup.mk (π (Φ p)) : C ⧸ N) = f p.2 := by
-    rw [show Φ p = A.toHom p.1 * D.toHom p.2 from centerProdDerivedContinuousMulEquiv_apply hc p,
-      map_mul, QuotientGroup.mk_mul,
+    rw [hΦdef, centerProdDerivedContinuousMulEquiv_apply hc p, map_mul, QuotientGroup.mk_mul,
       (QuotientGroup.eq_one_iff (π (A.toHom p.1))).mpr (MonoidHom.mem_range.mpr ⟨p.1, rfl⟩),
       one_mul]
-    simp [f]
-  have hsurjf : Surjective f := by
-    rintro ⟨c⟩
-    obtain ⟨g, rfl⟩ := hsurj c
-    obtain ⟨p, rfl⟩ := Φ.surjective g
-    exact ⟨p.2, (hΦ p).symm⟩
+    simp [f, D]
   have hopen : IsOpenMap f := fun U hU ↦ by
     have himage : f '' U = (fun p ↦ (QuotientGroup.mk (π (Φ p)) : C ⧸ N)) '' (univ ×ˢ U) := by
       ext y
@@ -176,19 +167,13 @@ theorem compactSpace_integralLeafSubgroupData_derivedSeries
     rw [himage]
     exact (QuotientGroup.isOpenMap_coe.comp (hπ.isOpenMap.comp Φ.toHomeomorph.isOpenMap)) _
       (isOpen_univ.prod hU)
-  -- The kernel of `f` is central in `K`, whose centre is discrete.
-  have hker : f.ker ≤ Subgroup.center D.X := fun _ hk ↦
-    mem_center_of_map_mem_range hc π hπ ((QuotientGroup.eq_one_iff _).mp hk)
-  have : DiscreteTopology (Subgroup.center D.X) := discreteTopology_center_of_center_eq_bot
-    (center_eq_bot_integralLeafSubgroupData_derivedSeries hc)
-  -- So `f` is a covering map onto the compact group `C ⧸ N`, and Weyl's theorem applies.
-  have hquot : Topology.IsQuotientMap f := (IsOpenQuotientMap.mk hsurjf
-    (QuotientGroup.continuous_mk.comp (hπ.continuous.comp D.contMDiff_toHom.continuous))
-    hopen).isQuotientMap
-  exact f.compactSpace_of_isLocalHomeomorph_of_derivedSeries_one_eq_top
-    (hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom
-      ((SetLike.isDiscrete_iff_discreteTopology.mpr ‹_›).mono hker)).isLocalHomeomorph
+  -- So `K ⧸ ker f` is compact, `ker f` is central in `K`, and Weyl's theorem applies.
+  have := f.compactSpace_quotient_ker_of_isOpenMap
+    (QuotientGroup.continuous_mk.comp (hπ.continuous.comp D.contMDiff_toHom.continuous)) hopen
+  exact f.ker.compactSpace_of_le_center_of_derivedSeries_one_eq_top
     (derivedSeries_one_eq_top_integralLeafSubgroupData_derivedSeries hc)
+    (center_eq_bot_integralLeafSubgroupData_derivedSeries hc)
+    fun _ hk ↦ mem_center_of_map_mem_range hc π hπ ((QuotientGroup.eq_one_iff _).mp hk)
 
 end TauCeti.Lie
 
