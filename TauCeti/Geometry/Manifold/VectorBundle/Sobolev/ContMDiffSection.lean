@@ -124,7 +124,7 @@ theorem norm_ofContMDiffSection_le (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) :
     Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k _
       (((LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord j)).contDiff.comp_contDiffOn
         (A.contDiffOn_coord s.contMDiff i)).mono
-          ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i)))
+          (A.image_subset_target_inter_preimage_baseSet i))
       ((A.sectionChartData.value_ofComponents_ae μ p k _ _ s i j).trans
         ((A.sectionChartData_coord_ae_eq μ i s).fun_comp _))
 

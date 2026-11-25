@@ -141,8 +141,8 @@ private theorem contDiffOn_coord_tangentHom (k : ℕ) (i : Fin A.n) {s : Π x, V
         (by push_cast; exact le_rfl))).add
       (((contDiffOn_chartZeroOrder_inter A hD hDs i).of_le ENat.LEInfty.out).clm_apply
         (hu.of_le (by exact_mod_cast Nat.le_succ k)))
-  exact (hf.mono ((A.image_subset_chart_image_closure_dom i).trans
-    (A.chart_image_closure_dom_subset i))).congr fun _ hz ↦ coord_tangentHom_eq A hD i hs hz
+  exact (hf.mono (A.image_subset_target_inter_preimage_baseSet i)).congr fun _ hz ↦
+    coord_tangentHom_eq A hD i hs hz
 
 include hD hDs in
 /-- **The higher-order elliptic estimate in a chart.** Let `χ` be a smooth function whose support
@@ -161,7 +161,7 @@ theorem exists_eLpNormWkp_coord_smul_le (hp : 1 < p) (hp_top : p ≠ ⊤) (k : �
   have hU : IsOpen U := (A.image i).isOpen
   set O : Set ℂ := (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet
   have hUO : closure U ⊆ O :=
-    (A.closure_image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i)
+    A.closure_image_subset_target_inter_preimage_baseSet i
   have hcl : closure U ⊆ (A.chart i).target := A.closure_image_subset_target i
   set K : Set ℂ := A.chart i '' tsupport χ
   have hK : IsCompact K := (isClosed_tsupport χ).isCompact.image_of_continuousOn
@@ -214,8 +214,6 @@ private theorem exists_eLpNormWkp_coord_le (k : ℕ) (i : Fin A.n) :
     A.tangentHom.sectionChartData.exists_eLpNormWkp_le_of_chartValueL_ae_eq (p := p) k
   obtain ⟨c₃, hc₃⟩ := A.sectionChartData.exists_eLpNormWkp_le_of_chartValueL_ae_eq (p := p) k
   refine ⟨c₂ + c₃, fun s hs ↦ ?_⟩
-  have hUO : (A.image i : Set ℂ) ⊆ (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet :=
-    (A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i)
   set w := SobolevSection.ofContMDiffSection A volume p (k + 1) s
   set Dw := hD.sobolevSuccL A hDs volume p k w
   set w₀ := A.sectionChartData.lowerOrderL volume p k w
@@ -226,16 +224,19 @@ private theorem exists_eLpNormWkp_coord_le (k : ℕ) (i : Fin A.n) :
       (chartValueL_sobolevSuccL_ofContMDiffSection_ae A hD hDs volume p k s i))
   rw [sectionChartData_image_tangentHom] at h₂
   have h₃ := hc₃ (i := i) (w := (w₀ : A.sectionChartData.SobolevData volume p k))
-    (((A.contDiffOn_coord (s.contMDiff) i).of_le (by exact_mod_cast Nat.le_succ k)).mono hUO)
+    (((A.contDiffOn_coord (s.contMDiff) i).of_le (by exact_mod_cast Nat.le_succ k)).mono
+      (A.image_subset_target_inter_preimage_baseSet i))
     ((A.sectionChartData.chartValueL_coe_lowerOrderL volume p k w i).symm ▸
       SobolevSection.chartValueL_ofContMDiffSection_ae A volume p (k + 1) s i)
   -- The norm of the chart-`i` components is at most the norm of the tuple.
   have hDw : ‖((Dw : SobolevSection A.tangentHom volume p k) :
       A.tangentHom.sectionChartData.SobolevData volume p k) i‖ ≤ ‖Dw‖ :=
-    (SectionChartData.norm_apply_le (Dw : SobolevSection A.tangentHom volume p k) i).trans_eq
-      (Submodule.norm_coe Dw)
+    (norm_le_pi_norm ((Dw : SobolevSection A.tangentHom volume p k) :
+      A.tangentHom.sectionChartData.SobolevData volume p k) i).trans_eq
+        ((Submodule.norm_coe _).trans (Submodule.norm_coe Dw))
   have hw₀ : ‖(w₀ : A.sectionChartData.SobolevData volume p k) i‖ ≤ ‖w₀‖ :=
-    SectionChartData.norm_apply_le w₀ i
+    (norm_le_pi_norm (w₀ : A.sectionChartData.SobolevData volume p k) i).trans_eq
+      (Submodule.norm_coe w₀)
   calc _ ≤ c₂ * ENNReal.ofReal ‖Dw‖ + c₃ * ENNReal.ofReal ‖w₀‖ :=
         add_le_add (h₂.trans (by gcongr)) (h₃.trans (by gcongr))
     _ ≤ c₂ * ENNReal.ofReal ‖Dw‖ + c₃ * ENNReal.ofReal ‖w₀‖ +
@@ -272,7 +273,7 @@ private theorem exists_norm_contMDiffSMulL_component_le (hp : 1 < p) (hp_top : p
   have hb0 : 0 ≤ b := norm_nonneg _
   have hcχ : ContDiffOn ℝ (k + 1 : ℕ) (A.coord i fun x ↦ χ x • s x) (A.image i) :=
     (A.contDiffOn_coord ((hχ.of_le ENat.LEInfty.out).smul_section s.contMDiff) i).mono
-      ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i))
+      (A.image_subset_target_inter_preimage_baseSet i)
   have h₁ := hc₁ hcχ (SobolevSection.chartValueL_contMDiffSMulL_ae_coord hχ
     (SobolevSection.chartValueL_ofContMDiffSection_ae A volume p (k + 1) s) i)
   refine (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 (h₁.trans ?_)
