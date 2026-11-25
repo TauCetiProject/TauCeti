@@ -20,13 +20,12 @@ commutative, so every element is central. This file proves:
 
 * `V` is a simple `U`-module (`TauCeti.RotationModule.isSimpleModule`): over `ℝ` the rotation has no
   eigenvector (`TauCeti.RotationModule.not_exists_eigenvector`);
-* the central element `ι 1` acts by `J` (`TauCeti.RotationModule.centerToEnd_ι_one_apply`), with
-  `J² = -1`, and not by a real scalar (`TauCeti.RotationModule.centerToEnd_ι_one_ne_algebraMap`);
-* the commutant `End_U(V)` is `ℂ` (`TauCeti.RotationModule.endRingEquiv`).
+* the central element `ι 1` acts by `J` (`TauCeti.RotationModule.centerToEnd_ιOne_apply`), with
+  `J² = -1`, and not by a real scalar (`TauCeti.RotationModule.centerToEnd_ιOne_ne_algebraMap`);
+* the commutant `End_U(V)` is `ℂ` as an `ℝ`-algebra (`TauCeti.RotationModule.endAlgEquiv`).
 
-So for an irreducible real module the action `Z(U(𝔤)) → End_{U(𝔤)}(V)` lands in a division algebra
-that is not `ℝ`, and there is no real scalar central character. This is the first Check of
-RepresentationTheory/LieGroups §5.4.
+So for an irreducible real module the action `Z(U(𝔤)) → End_{U(𝔤)}(V)` can land in a division
+algebra other than `ℝ`; here it is `ℂ`, and there is no real scalar central character.
 -/
 
 public section
@@ -53,7 +52,7 @@ noncomputable def rotationAction : UniversalEnvelopingAlgebra ℝ ℝ →ₐ[ℝ
 theorem rotationAction_ι (t : ℝ) : rotationAction (UniversalEnvelopingAlgebra.ι ℝ t) = t * I :=
   UniversalEnvelopingAlgebra.lift_ι_apply ℝ rotationLieHom t
 
-/-- The rotation action is onto `ℂ`: `a + b i` is the image of `a + b ι 1`. -/
+/-- The rotation action is onto `ℂ`. -/
 theorem rotationAction_surjective : Function.Surjective rotationAction := fun z ↦
   ⟨algebraMap ℝ _ z.re + z.im • UniversalEnvelopingAlgebra.ι ℝ (1 : ℝ), by
     rw [map_add, AlgHom.commutes, map_smul, rotationAction_ι]
@@ -73,122 +72,110 @@ noncomputable instance instModule : Module (UniversalEnvelopingAlgebra ℝ ℝ) 
   Module.compHom ℂ rotationAction.toRingHom
 
 /-- The identification of the rotation module with `ℂ`. -/
-def toComplex : RotationModule ≃ ℂ := Equiv.refl _
+noncomputable def toComplex : RotationModule ≃ₗ[ℝ] ℂ := LinearEquiv.refl ℝ ℂ
 
+@[simp]
 theorem smul_def (u : UniversalEnvelopingAlgebra ℝ ℝ) (v : RotationModule) :
     toComplex (u • v) = rotationAction u * toComplex v :=
   smul_eq_mul (rotationAction u) (toComplex v)
 
-theorem toComplex_add (v w : RotationModule) : toComplex (v + w) = toComplex v + toComplex w :=
-  (rfl)
-
-theorem toComplex_zero : toComplex 0 = 0 :=
-  (rfl)
-
-theorem toComplex_realSmul (c : ℝ) (v : RotationModule) : toComplex (c • v) = c * toComplex v :=
-  (Complex.real_smul (x := c) (z := toComplex v))
-
 instance instIsScalarTower : IsScalarTower ℝ (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule :=
   ⟨fun c u v ↦ toComplex.injective <| by
-    rw [toComplex_realSmul, smul_def, smul_def, map_smul, Complex.real_smul, mul_assoc]⟩
+    rw [smul_def, map_smul, map_smul, smul_def, smul_mul_assoc]⟩
 
-/-- **The rotation module is simple.** A nonzero `v` generates everything, since every `w ∈ ℂ` is
-`(w / v) v` and the action is onto `ℂ`. -/
-instance isSimpleModule : IsSimpleModule (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule := by
-  have : Nontrivial RotationModule := inferInstanceAs (Nontrivial ℂ)
-  have : IsSimpleOrder (Submodule (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule) :=
-    ⟨fun N ↦ or_iff_not_imp_left.mpr fun hN ↦ by
-      obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff N).mp hN
-      refine eq_top_iff.mpr fun w _ ↦ ?_
-      obtain ⟨u, hu⟩ := rotationAction_surjective (toComplex w / toComplex v)
-      have hv0' : toComplex v ≠ 0 :=
-        fun h ↦ hv0 (toComplex.injective (h.trans toComplex_zero.symm))
-      convert N.smul_mem u hv
-      apply toComplex.injective
-      rw [smul_def, hu, div_mul_cancel₀ _ hv0']⟩
-  exact ⟨⟩
-
-/-- The real line is an abelian Lie algebra. -/
-theorem isLieAbelian_real : IsLieAbelian ℝ :=
-  ⟨fun x y ↦ by rw [Ring.lie_def, mul_comm, sub_self]⟩
+/-- **The rotation module is simple.** -/
+instance isSimpleModule : IsSimpleModule (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule :=
+  isSimpleModule_iff_toSpanSingleton_surjective.mpr ⟨inferInstanceAs (Nontrivial ℂ), fun v hv w ↦ by
+    obtain ⟨u, hu⟩ := rotationAction_surjective (toComplex w / toComplex v)
+    refine ⟨u, toComplex.injective ?_⟩
+    rw [LinearMap.toSpanSingleton_apply, smul_def, hu,
+      div_mul_cancel₀ _ (toComplex.map_ne_zero_iff.mpr hv)]⟩
 
 /-- The central element `ι 1` of `U(ℝ)`. -/
 noncomputable def ιOne : Subalgebra.center ℝ (UniversalEnvelopingAlgebra ℝ ℝ) :=
   ⟨UniversalEnvelopingAlgebra.ι ℝ (1 : ℝ),
-    have := isLieAbelian_real
+    have : IsLieAbelian ℝ := isMulCommutative_iff_isLieAbelian.mp inferInstance
     UniversalEnvelopingAlgebra.ι_mem_center ℝ ℝ 1⟩
 
+@[simp]
 theorem coe_ιOne : (ιOne : UniversalEnvelopingAlgebra ℝ ℝ) = UniversalEnvelopingAlgebra.ι ℝ 1 :=
   (rfl)
 
 /-- **The central element `ι 1` acts by the rotation `J`**, multiplication by `i`. -/
-theorem centerToEnd_ι_one_apply (v : RotationModule) :
+theorem centerToEnd_ιOne_apply (v : RotationModule) :
     toComplex (centerToEnd ℝ (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule ιOne v) =
       I * toComplex v := by
   rw [centerToEnd_apply, smul_def, coe_ιOne, rotationAction_ι, ofReal_one, one_mul]
 
 /-- **`J² = -1`.** -/
-theorem centerToEnd_ι_one_sq :
+theorem centerToEnd_ιOne_sq :
     centerToEnd ℝ (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule ιOne ^ 2 = -1 := by
   ext v
   apply toComplex.injective
-  rw [pow_two, mul_apply_eq_comp, centerToEnd_ι_one_apply, centerToEnd_ι_one_apply,
-    ← mul_assoc, I_mul_I, LinearMap.neg_apply, one_apply_eq_self, neg_one_mul]
-  rfl
+  rw [pow_two, mul_apply_eq_comp, centerToEnd_ιOne_apply, centerToEnd_ιOne_apply,
+    ← mul_assoc, I_mul_I, LinearMap.neg_apply, one_apply_eq_self, neg_one_mul, map_neg]
 
 /-- **The rotation has no real eigenvector.** -/
 theorem not_exists_eigenvector :
     ¬ ∃ (v : RotationModule) (c : ℝ), v ≠ 0 ∧
       centerToEnd ℝ (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule ιOne v = c • v := by
   rintro ⟨v, c, hv0, h⟩
-  have hv0' : toComplex v ≠ 0 := fun h ↦ hv0 (toComplex.injective (h.trans toComplex_zero.symm))
   have h' := congrArg toComplex h
-  rw [centerToEnd_ι_one_apply, toComplex_realSmul] at h'
-  have := congrArg Complex.im (mul_right_cancel₀ hv0' h')
+  rw [centerToEnd_ιOne_apply, map_smul, real_smul] at h'
+  have := congrArg Complex.im (mul_right_cancel₀ (toComplex.map_ne_zero_iff.mpr hv0) h')
   rw [I_im, ofReal_im] at this
   exact one_ne_zero this
 
 /-- **The central element `ι 1` does not act by a real scalar.** -/
-theorem centerToEnd_ι_one_ne_algebraMap (c : ℝ) :
+theorem centerToEnd_ιOne_ne_algebraMap (c : ℝ) :
     centerToEnd ℝ (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule ιOne ≠
       algebraMap ℝ (Module.End (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule) c := by
   intro h
-  refine not_exists_eigenvector ⟨toComplex.symm 1, c, fun h0 ↦ one_ne_zero
-    (congrArg toComplex h0), ?_⟩
-  rw [h]
-  rfl
+  refine not_exists_eigenvector
+    ⟨toComplex.symm 1, c, toComplex.symm.map_ne_zero_iff.mpr one_ne_zero, ?_⟩
+  rw [h, Module.algebraMap_end_apply]
 
 /-- A `U(ℝ)`-linear endomorphism of the rotation module is multiplication by its value at `1`. -/
 theorem toComplex_end_apply (T : Module.End (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule)
     (v : RotationModule) : toComplex (T v) = toComplex v * toComplex (T (toComplex.symm 1)) := by
   obtain ⟨u, hu⟩ := rotationAction_surjective (toComplex v)
   have hv : v = u • toComplex.symm 1 :=
-    toComplex.injective (by rw [smul_def, hu, Equiv.apply_symm_apply, mul_one])
-  rw [hv, map_smul, smul_def, smul_def, hu, Equiv.apply_symm_apply, mul_one]
+    toComplex.injective (by rw [smul_def, hu, LinearEquiv.apply_symm_apply, mul_one])
+  rw [hv, map_smul, smul_def, smul_def, hu, LinearEquiv.apply_symm_apply, mul_one]
 
 /-- Multiplication by `c ∈ ℂ` as a `U(ℝ)`-linear endomorphism of the rotation module. -/
 noncomputable def mulEnd (c : ℂ) : Module.End (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule where
   toFun v := toComplex.symm (c * toComplex v)
   map_add' v w := toComplex.injective <| by
-    simp only [Equiv.apply_symm_apply, toComplex_add, mul_add]
+    simp only [LinearEquiv.apply_symm_apply, map_add, mul_add]
   map_smul' u v := toComplex.injective <| by
-    simp only [Equiv.apply_symm_apply, smul_def, RingHom.id_apply]
+    simp only [LinearEquiv.apply_symm_apply, smul_def, RingHom.id_apply]
     ring
 
-/-- **The commutant of the rotation module is `ℂ`**: `T ↦ T 1`. -/
-noncomputable def endRingEquiv :
-    Module.End (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule ≃+* ℂ where
+/-- `mulEnd c` is multiplication by `c`. -/
+@[simp]
+theorem toComplex_mulEnd (c : ℂ) (v : RotationModule) :
+    toComplex (mulEnd c v) = c * toComplex v :=
+  toComplex.apply_symm_apply _
+
+/-- **The commutant of the rotation module is `ℂ`** as an `ℝ`-algebra: `T ↦ T 1`. -/
+@[expose, simps]
+noncomputable def endAlgEquiv :
+    Module.End (UniversalEnvelopingAlgebra ℝ ℝ) RotationModule ≃ₐ[ℝ] ℂ where
   toFun T := toComplex (T (toComplex.symm 1))
   invFun := mulEnd
   left_inv T := LinearMap.ext fun v ↦ toComplex.injective <| by
-    change toComplex (toComplex.symm _) = _
-    rw [Equiv.apply_symm_apply, toComplex_end_apply T v, mul_comm]
+    rw [toComplex_mulEnd, toComplex_end_apply T v, mul_comm]
   right_inv c := by
-    change toComplex (toComplex.symm _) = _
-    rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply, mul_one]
+    dsimp only
+    rw [toComplex_mulEnd, LinearEquiv.apply_symm_apply, mul_one]
   map_mul' S T := by
     rw [mul_apply_eq_comp, toComplex_end_apply S, mul_comm]
-  map_add' S T := (rfl)
+  map_add' S T := by
+    rw [LinearMap.add_apply, map_add]
+  commutes' c := by
+    rw [Module.algebraMap_end_apply, map_smul, LinearEquiv.apply_symm_apply,
+      Complex.coe_algebraMap, real_smul, mul_one]
 
 end RotationModule
 
