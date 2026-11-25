@@ -26,6 +26,9 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 * `TauCeti.circleMap_mem_setOf_le_norm_sub_le`: a circle of radius `r ∈ [a, b]`, `0 ≤ a`, about
   `z₀` lies in the closed annulus `a ≤ |z - z₀| ≤ b`.
 * `TauCeti.circleMap_im`: the imaginary part of `circleMap c r θ` is `c.im + r sin θ`.
+* `TauCeti.im_le_circleMap_im_iff`: for `r > 0` and `θ ∈ (-π, π]`, the point at angle `θ` of the
+  circle of radius `r` about `z₀` lies in the closed upper half-plane above `z₀` exactly when
+  `θ ∈ [0, π]`.
 * `TauCeti.isClosed_upperHalfAnnulus`: the closed upper half of the annulus `a ≤ |z - z₀| ≤ b` is
   closed.
 * `TauCeti.circleMap_mem_upperHalfAnnulus`: for `θ ∈ [0, π]`, the point at angle `θ` of a circle
@@ -35,6 +38,9 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 * `TauCeti.hasDerivAt_circleMap_div`: the circle of radius `R` parametrized by arclength,
   `s ↦ c + R e^{i s / R}`, has unit velocity `e^{i s / R} i`.
 * `TauCeti.contDiff_circleMap_zpow`: the integer powers `θ ↦ (R e^{iθ}) ^ k` are smooth.
+* `TauCeti.continuous_circleMap_uncurry`: `circleMap c r θ` is jointly continuous in `(r, θ)`.
+* `ContinuousOn.continuous_uncurry_circleMap`: a function jointly continuous on a product of two
+  circles pulls back along the two angle parametrizations to a continuous function on `ℝ × ℝ`.
 -/
 
 public section
@@ -89,6 +95,15 @@ theorem circleMap_mem_setOf_le_norm_sub_le {z₀ : ℂ} {a b r : ℝ} (ha : 0 �
 theorem circleMap_im (c : ℂ) (r θ : ℝ) : (circleMap c r θ).im = c.im + r * Real.sin θ := by
   rw [← circleMap_zero_im, ← add_im, ← circleMap_sub_center c, add_sub_cancel]
 
+/-- For `r > 0` and `θ ∈ (-π, π]`, the point at angle `θ` of the circle of radius `r` about `z₀`
+lies in the closed upper half-plane `z₀.im ≤ z.im` exactly when `θ ∈ [0, π]`. -/
+theorem im_le_circleMap_im_iff {z₀ : ℂ} {r θ : ℝ} (hr : 0 < r) (hθ : θ ∈ Ioc (-π) π) :
+    z₀.im ≤ (circleMap z₀ r θ).im ↔ θ ∈ Icc 0 π := by
+  rw [circleMap_im, le_add_iff_nonneg_right, mul_nonneg_iff_of_pos_left hr]
+  refine ⟨fun h ↦ ⟨not_lt.1 fun hneg ↦ ?_, hθ.2⟩, fun h ↦
+    Real.sin_nonneg_of_nonneg_of_le_pi h.1 h.2⟩
+  exact (Real.sin_neg_of_neg_of_neg_pi_lt hneg hθ.1).not_ge h
+
 /-- The closed upper half `{z | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}` of the annulus of
 radii `a` and `b` about `z₀` is closed. -/
 theorem isClosed_upperHalfAnnulus (z₀ : ℂ) (a b : ℝ) :
@@ -131,4 +146,24 @@ theorem contDiff_circleMap_zpow (R : ℝ) (k : ℤ) {n : WithTop ℕ∞} :
   simp_rw [circleMap_zero_zpow]
   exact (contDiff_circleMap 0 (R ^ k)).comp (contDiff_const.mul contDiff_id)
 
+/-- The point `circleMap c r θ` depends jointly continuously on the radius `r` and the angle `θ`. -/
+theorem continuous_circleMap_uncurry (c : ℂ) : Continuous fun p : ℝ × ℝ ↦ circleMap c p.1 p.2 := by
+  unfold circleMap
+  fun_prop
+
 end TauCeti
+
+namespace ContinuousOn
+
+open Metric
+
+/-- The pullback of a function jointly continuous on a product of circles
+`sphere c |R| ×ˢ sphere c' |R'|` along the two angle parametrizations is continuous on `ℝ × ℝ`. -/
+theorem continuous_uncurry_circleMap {X : Type*} [TopologicalSpace X] {F : ℂ → ℂ → X}
+    {c c' : ℂ} {R R' : ℝ}
+    (hF : ContinuousOn (Function.uncurry F) (sphere c |R| ×ˢ sphere c' |R'|)) :
+    Continuous (Function.uncurry fun θ φ ↦ F (circleMap c R θ) (circleMap c' R' φ)) :=
+  hF.comp_continuous (f := fun p : ℝ × ℝ ↦ (circleMap c R p.1, circleMap c' R' p.2))
+    (by fun_prop) fun p ↦ ⟨circleMap_mem_sphere' c R p.1, circleMap_mem_sphere' c' R' p.2⟩
+
+end ContinuousOn

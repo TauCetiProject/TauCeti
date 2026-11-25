@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
-import Mathlib.Data.ZMod.QuotientGroup
+import TauCeti.GroupTheory.GroupAction.Orbit.Card
 
 /-!
 # Transitive actions
@@ -96,8 +96,7 @@ theorem isPretransitive_of_prime_natCard_of_smul_ne {G X : Type*} [Group G] [Mul
     ((Nat.dvd_prime hp).mp (pow_smul_eq_iff_minimalPeriod_dvd.mp hg)).resolve_left fun h ↦
       hx (Function.minimalPeriod_eq_one_iff_isFixedPt.mp h).eq
   have huniv : orbit (Subgroup.zpowers g) x = Set.univ := by
-    rw [Set.eq_univ_iff_ncard, ← Nat.card_coe_set_eq, Nat.card_congr (orbitZPowersEquiv g x),
-      Nat.card_zmod, hper]
+    rw [Set.eq_univ_iff_ncard, ← Nat.card_coe_set_eq, natCard_orbit_zpowers, hper]
   rw [isPretransitive_iff_orbit_eq_univ x]
   exact Set.eq_univ_of_univ_subset (huniv ▸ orbit_subgroup_subset (Subgroup.zpowers g) x)
 
