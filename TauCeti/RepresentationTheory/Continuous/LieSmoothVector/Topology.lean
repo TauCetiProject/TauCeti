@@ -28,7 +28,8 @@ The word seminorm of order zero is the norm of `V`
 (`ContRepresentation.wordSeminorm_zero`). So the family separates points and the topology is
 Hausdorff; it is first countable, as the family is countable, and hence metrizable; it is
 locally convex; and the inclusion into `V` is a continuous injective linear map
-(`ContRepresentation.LieSmoothSpace.inclusion`).
+(`ContRepresentation.LieSmoothSpace.inclusion`). For `Y` in the real span of `X`, the derived
+action `dπ(Y)` is continuous, since `P_k(dπ(Y) v) ≤ C P_{k+1}(v)`.
 
 ## Main definitions
 
@@ -37,6 +38,8 @@ locally convex; and the inclusion into `V` is a continuous injective linear map
 * `ContRepresentation.LieSmoothSpace.seminormFamily I π X`: the word seminorms `P_k` on it.
 * `ContRepresentation.LieSmoothSpace.inclusion`: the inclusion into `V`, as a continuous linear
   map.
+* `ContRepresentation.LieSmoothSpace.derivative`: the derived action `dπ(Y)` of an element `Y`
+  of the real span of `X`, as a continuous linear map.
 
 ## Main results
 
@@ -280,6 +283,35 @@ theorem tendsto_nhds {α : Type*} {l : Filter α} {u : α → LieSmoothSpace I �
     fun h k ε hε ↦ (Metric.tendsto_nhds.1 (h k) ε hε).mono fun a ha ↦ ?_⟩
   · rwa [Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg _ _)]
   · rwa [Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg _ _)] at ha
+
+section Derivative
+
+variable [NormedAlgebra ℝ 𝕜] [IsScalarTower ℝ 𝕜 V]
+
+variable (I π X) in
+/-- **The derived action `dπ(Y)` is continuous** on `LieSmoothSpace I π X` for every `Y` in the
+real span of `X`: if `Y = ∑ i, c i • X i`, then `P_k(dπ(Y) v) ≤ (∑ i, |c i|) P_{k+1}(v)`
+(`ContRepresentation.wordSeminorm_lieSmoothVectorsDerivative_le_of_eq_sum`). -/
+def derivative (Y : LeftInvariantDerivation I G) (hY : Y ∈ Submodule.span ℝ (Set.range X)) :
+    LieSmoothSpace I π X →L[𝕜] LieSmoothSpace I π X where
+  toLinearMap := (linearEquiv I π X).symm.toLinearMap ∘ₗ lieSmoothVectorsDerivative I π Y ∘ₗ
+    (linearEquiv I π X).toLinearMap
+  cont := by
+    obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℝ).mp hY
+    refine WithSeminorms.continuous_of_isBounded (withSeminorms I π X) (withSeminorms I π X) _
+      (Seminorm.IsBounded.of_real fun k ↦ ⟨{k + 1}, ∑ i, |c i|, fun v ↦ ?_⟩)
+    simp only [Finset.sup_singleton, seminormFamily_apply, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, linearEquiv_apply, linearEquiv_symm_apply]
+    exact wordSeminorm_lieSmoothVectorsDerivative_le_of_eq_sum X k c hc.symm v.toSmooth
+
+/-- The continuous derived action `dπ(Y)` is the derived action on the smooth vectors. -/
+@[simp]
+theorem toSmooth_derivative (Y : LeftInvariantDerivation I G)
+    (hY : Y ∈ Submodule.span ℝ (Set.range X)) (v : LieSmoothSpace I π X) :
+    (derivative I π X Y hY v).toSmooth = lieSmoothVectorsDerivative I π Y v.toSmooth :=
+  (rfl)
+
+end Derivative
 
 end LieSmoothSpace
 
