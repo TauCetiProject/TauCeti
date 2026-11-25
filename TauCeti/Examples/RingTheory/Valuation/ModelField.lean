@@ -52,17 +52,12 @@ example (K : Type*) [Field K] [ValuativeRel K]
   let v : ℤ → ℤ → ValueGroupWithZero K := fun a b ↦
     e.symm ((Multiplicative.ofAdd (toLex (a, b)) : Multiplicative (ℤ ×ₗ ℤ)) : WithZero _)
   have hv_lt (a b c d : ℤ) : v a b < v c d ↔ a < c ∨ a = c ∧ b < d := by
-    simp only [v]
-    rw [map_lt_map_iff, WithZero.coe_lt_coe, Multiplicative.ofAdd_lt, Prod.Lex.toLex_lt_toLex]
+    simp [v, map_lt_map_iff, Prod.Lex.toLex_lt_toLex]
   have hv_one : (1 : ValueGroupWithZero K) = v 0 0 := by
     simp only [v, Prod.mk_zero_zero, toLex_zero, ofAdd_zero, WithZero.coe_one, map_one]
   have hv_pow (b : ℤ) (n : ℕ) : v 0 b ^ n = v 0 (n * b) := by
-    induction n with
-    | zero => rw [pow_zero, Nat.cast_zero, zero_mul, hv_one]
-    | succ n ih =>
-      rw [pow_succ, ih, Nat.cast_succ, add_one_mul]
-      simp only [v]
-      rw [← map_mul, ← WithZero.coe_mul, ← ofAdd_add, ← toLex_add, Prod.mk_add_mk, add_zero]
+    simp [v, ← map_pow, ← WithZero.coe_pow, ← ofAdd_nsmul, ← toLex_natCast, ← toLex_mul,
+      Prod.ext_iff]
   refine ⟨⟨⟨v 0 (-1), by rw [hv_one, hv_lt]; omega, fun δ hδ ↦ ?_⟩⟩, ?_⟩
   · rcases eq_or_ne δ 0 with rfl | hδ0
     · exact zero_le
