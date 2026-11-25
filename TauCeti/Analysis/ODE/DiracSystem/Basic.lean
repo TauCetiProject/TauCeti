@@ -187,11 +187,6 @@ private theorem diracFundamentalMatrix_mulVec_eq (q : ℝ → ℂ) (t : ℝ) (z 
         t 0 (WithLp.toLp 2 v)) := by
   rw [← toEuclideanCLM_diracFundamentalMatrix, ofLp_toEuclideanCLM]
 
-/-- `WithLp.ofLp` commutes with interval integrals on `EuclideanSpace ℂ (Fin 2)`. -/
-private theorem ofLp_intervalIntegral (F : ℝ → EuclideanSpace ℂ (Fin 2)) (a b : ℝ) :
-    WithLp.ofLp (∫ s in a..b, F s) = ∫ s in a..b, WithLp.ofLp (F s) :=
-  ((PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin 2 ↦ ℂ)).intervalIntegral_comp_comm F).symm
-
 /-- `t ↦ M_q(t, z) v` is continuous on `[0, T]` when `q` is integrable there. -/
 theorem continuousOn_diracFundamentalMatrix_mulVec (hq : IntegrableOn q (Icc 0 T)) (z : ℂ)
     (v : Fin 2 → ℂ) : ContinuousOn (fun t ↦ diracFundamentalMatrix q t z *ᵥ v) (Icc 0 T) := by
@@ -211,7 +206,7 @@ theorem diracFundamentalMatrix_mulVec_eq_add_integral (hq : IntegrableOn q (Icc 
       v + ∫ s in (0 : ℝ)..t, diracCoeff q z s *ᵥ (diracFundamentalMatrix q s z *ᵥ v) := by
   rw [diracFundamentalMatrix_mulVec_eq,
     propagator_apply_eq_add_integral (integrableOn_toEuclideanCLM_diracCoeff hq z) h0 ht,
-    WithLp.ofLp_add, WithLp.ofLp_toLp, ofLp_intervalIntegral]
+    WithLp.ofLp_add, WithLp.ofLp_toLp, PiLp.ofLp_intervalIntegral]
   congr 1
   refine intervalIntegral.integral_congr fun s _ ↦ ?_
   simp [diracFundamentalMatrix_mulVec_eq]
@@ -244,7 +239,7 @@ theorem IsDiracSolution.eq_diracFundamentalMatrix_mulVec {X : ℝ → Fin 2 → 
   have hx : ContinuousOn x (Icc 0 t) :=
     (PiLp.continuous_toLp 2 _).comp_continuousOn (hX.continuousOn.mono Icc_subset_Ici_self)
   have key := eq_propagator_apply hP h0 (right_mem_Icc.2 ht) hx fun r hr ↦ by
-    rw [WithLp.ext_iff, WithLp.ofLp_add, ofLp_intervalIntegral]
+    rw [WithLp.ext_iff, WithLp.ofLp_add, PiLp.ofLp_intervalIntegral]
     simp [x, P, hX.eq_add_integral hr.1]
   have := congrArg WithLp.ofLp key
   simpa [x, diracFundamentalMatrix_mulVec_eq] using this
