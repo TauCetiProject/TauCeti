@@ -26,8 +26,8 @@ The consequences for invertible matrices and the stable component group are in
 
 ## Main results
 
-* `IsStrictlyPositive.one_sub_smul_add_smul_one`: `(1 - t) a + t` is strictly positive for
-  strictly positive `a` and `t ∈ [0, 1]`.
+* `IsStrictlyPositive.one_sub_smul_add_smul`: `(1 - t) a + t b` is strictly positive for
+  strictly positive `a`, `b` and `t ∈ [0, 1]`.
 * `Units.joined_polarUnitary`: `x` and its polar unitary lie in one path component of `Aˣ`.
 * `Units.exists_unitary_joined`: every invertible element is joined in `Aˣ` to a unitary.
 
@@ -47,16 +47,16 @@ section Polar
 
 variable {A : Type*} [CStarAlgebra A]
 
-/-- The straight-line interpolation `(1 - t) a + t` between a strictly positive `a` and `1` is
+/-- The straight-line interpolation `(1 - t) a + t b` between strictly positive `a` and `b` is
 strictly positive for `t ∈ [0, 1]`. -/
-theorem IsStrictlyPositive.one_sub_smul_add_smul_one [PartialOrder A] [StarOrderedRing A] {a : A}
-    (ha : IsStrictlyPositive a) (t : unitInterval) :
-    IsStrictlyPositive ((1 - (t : ℝ)) • a + (t : ℝ) • (1 : A)) := by
+theorem IsStrictlyPositive.one_sub_smul_add_smul [PartialOrder A] [StarOrderedRing A] {a b : A}
+    (ha : IsStrictlyPositive a) (hb : IsStrictlyPositive b) (t : unitInterval) :
+    IsStrictlyPositive ((1 - (t : ℝ)) • a + (t : ℝ) • b) := by
   obtain ⟨t, ht₀, ht₁⟩ := t
   rcases ht₀.eq_or_lt with rfl | ht₀
   · simpa using ha
   · exact isStrictlyPositive_add <| .inr ⟨smul_nonneg (by simpa using ht₁) ha.nonneg,
-      IsStrictlyPositive.smul ht₀ isStrictlyPositive_one⟩
+      hb.smul ht₀⟩
 
 /-- An invertible element of a unital C⋆-algebra is joined to its polar unitary by a path of
 invertible elements: `t ↦ u ((1 - t)|x| + t)`. -/
@@ -66,7 +66,8 @@ theorem Units.joined_polarUnitary [PartialOrder A] [StarOrderedRing A] (x : Aˣ)
   let γ : unitInterval → A := fun t ↦
     (x.polarUnitary : A) * ((1 - (t : ℝ)) • CFC.sqrt (star (x : A) * x) + (t : ℝ) • 1)
   have hγ : ∀ t, IsUnit (γ t) := fun t ↦
-    (Unitary.toUnits x.polarUnitary).isUnit.mul (ha.one_sub_smul_add_smul_one t).isUnit
+    (Unitary.toUnits x.polarUnitary).isUnit.mul
+      (ha.one_sub_smul_add_smul isStrictlyPositive_one t).isUnit
   refine ⟨⟨⟨fun t ↦ (hγ t).unit, ?_⟩, ?_, ?_⟩⟩
   · rw [Units.isOpenEmbedding_val.continuous_iff]
     simp only [Function.comp_def, IsUnit.unit_spec, γ]
