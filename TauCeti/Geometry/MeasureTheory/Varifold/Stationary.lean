@@ -32,8 +32,8 @@ vector fields needs the Riesz representation for vector fields and is not proved
 
 ## Main results
 
-* `Euclidean.abs_firstVariation_le_mul_firstVariationMass`: `|δV(X)| ≤ c ‖δV‖(U)` when `X` is
-  supported in `U` with `|X| ≤ c`.
+* `Euclidean.abs_firstVariation_le_mul_firstVariationMass`: `|δV(X)| ≤ c ‖δV‖(U)` when
+  `‖δV‖(U) < ∞` and `X` is supported in `U` with `|X| ≤ c`.
 * `Euclidean.isStationary_iff_firstVariationMass_eq_zero`: `V` is stationary in `W` if and only if
   `‖δV‖(W) = 0`.
 * `Euclidean.hasLocallyBoundedFirstVariation_iff`: `V` has locally bounded first variation if and
@@ -95,12 +95,19 @@ theorem firstVariationMass_def (V : Measure (W × grassmannian ℝ E k)) (U : Se
       ENNReal.ofReal (firstVariation V X) :=
   (rfl)
 
+/-- Unfolding lemma for `Euclidean.HasLocallyBoundedFirstVariation`. -/
+theorem hasLocallyBoundedFirstVariation_def :
+    HasLocallyBoundedFirstVariation V ↔ ∀ K : Set E, IsCompact K → K ⊆ W → ∃ C : ℝ,
+      ∀ X : 𝓓^{1}(W, E), tsupport X ⊆ K → (∀ x, ‖X x‖ ≤ 1) → |firstVariation V X| ≤ C :=
+  Iff.rfl
+
 /-- Every admissible vector field bounds the total first variation from below. -/
 theorem ofReal_firstVariation_le_firstVariationMass {X : 𝓓^{1}(W, E)} (hXU : tsupport X ⊆ U)
     (hX : ∀ x, ‖X x‖ ≤ 1) : ENNReal.ofReal (firstVariation V X) ≤ firstVariationMass V U :=
   le_iSup₂_of_le X hXU (le_iSup_of_le hX le_rfl)
 
 /-- The total first variation is monotone in the set. -/
+@[gcongr]
 theorem firstVariationMass_mono (h : U ⊆ U') : firstVariationMass V U ≤ firstVariationMass V U' :=
   iSup_mono fun _ ↦ iSup_mono' fun hXU ↦ ⟨hXU.trans h, le_rfl⟩
 
@@ -120,9 +127,8 @@ theorem firstVariationMass_empty (V : Measure (W × grassmannian ℝ E k)) :
     exact image_eq_zero_of_notMem_tsupport fun hx ↦ hX hx
   simp [hX0]
 
-/-- **The bound by the total first variation.** If `X` is supported in `U` and `|X| ≤ c`, then
-`|δV(X)| ≤ c ‖δV‖(U)` (with `‖δV‖(U)` read as a real number, so the bound is only useful when
-`‖δV‖(U) < ∞`). -/
+/-- **The bound by the total first variation.** If `‖δV‖(U) < ∞`, `X` is supported in `U` and
+`|X| ≤ c`, then `|δV(X)| ≤ c ‖δV‖(U)`. -/
 theorem abs_firstVariation_le_mul_firstVariationMass (hU : firstVariationMass V U ≠ ∞)
     {X : 𝓓^{1}(W, E)} (hXU : tsupport X ⊆ U) {c : ℝ} (hX : ∀ x, ‖X x‖ ≤ c) :
     |firstVariation V X| ≤ c * (firstVariationMass V U).toReal := by
