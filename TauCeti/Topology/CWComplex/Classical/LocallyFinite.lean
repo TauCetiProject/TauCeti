@@ -142,14 +142,13 @@ instance StronglyLocallyFinite.subcomplex [StronglyLocallyFinite C] (E : Subcomp
       StronglyLocallyFinite.exists_locallyFinite_finite_subcomplex (C := C)
     let G : ι → Subcomplex (E : Set X) := fun k ↦ .ofLE (inf_le_left : E ⊓ F k ≤ E)
     refine ⟨ι, G, fun k ↦ ?_, ?_, ?_⟩
-    · obtain ⟨N, hN⟩ := eventually_atTop.1 (hF_fin k).eventually_isEmpty_cell
-      have : FiniteDimensional (G k : Set X) := ⟨eventually_atTop.2
-        ⟨N, fun m hm ↦ ⟨fun ⟨⟨j, _⟩, hj⟩ ↦ (hN m hm).false ⟨j, by simpa [G] using hj⟩⟩⟩⟩
-      have : FiniteType (G k : Set X) := ⟨fun n ↦ by
-        have := (hF_fin k).finite_cell n
-        exact ((Set.toFinite ((F k).I n)).preimage Subtype.val_injective.injOn).subset
-          (fun _ hx ↦ by simpa [G] using hx) |>.to_subtype⟩
-      exact finite_of_finiteDimensional_finiteType _
+    · refine Subcomplex.finite_iff_finite_cells.2 <|
+        ((Subcomplex.finite_iff_finite_cells.1 (hF_fin k)).preimage
+          (Function.injective_id.sigma_map fun _ ↦ Subtype.val_injective).injOn).subset
+          fun ⟨n, j⟩ hj ↦ ?_
+      simp only [G, RelCWComplex.Subcomplex.ofLE_I, mem_preimage, RelCWComplex.Subcomplex.inf_I,
+        mem_inter_iff] at hj
+      exact hj.2
     · ext x
       simp only [G, mem_iUnion, RelCWComplex.Subcomplex.coe_ofLE, RelCWComplex.Subcomplex.coe_inf,
         mem_inter_iff]
@@ -169,13 +168,9 @@ instance StronglyLocallyFinite.locallyFinite [StronglyLocallyFinite C] : Locally
     obtain ⟨V, hVx, hV_fin⟩ := hE_lf x
     obtain ⟨W, hWV, hW_open, hxW⟩ := mem_nhds_iff.1 hVx
     obtain ⟨U, hU_open, rfl⟩ := isOpen_induced_iff.1 hW_open
-    have hcell_fin (k : ι) : {p : Σ n, cell C n | p.2 ∈ (E k).I p.1}.Finite := by
-      have := hE_fin k
-      have := RelCWComplex.finite_cells_of_finite (C := (E k : Set X))
-      exact (finite_range fun q : Σ n, cell (E k : Set X) n ↦
-        (⟨q.1, q.2.val⟩ : Σ n, cell C n)).subset fun ⟨n, j⟩ hj ↦ ⟨⟨n, ⟨j, hj⟩⟩, rfl⟩
     refine ⟨Subtype.val ⁻¹' U, hW_open.mem_nhds hxW,
-      (hV_fin.biUnion fun k _ ↦ hcell_fin k).subset fun ⟨n, j⟩ ⟨z, hzc, hzU⟩ ↦ ?_⟩
+      (hV_fin.biUnion fun k _ ↦ Subcomplex.finite_iff_finite_cells.1 (hE_fin k)).subset
+        fun ⟨n, j⟩ ⟨z, hzc, hzU⟩ ↦ ?_⟩
     have hne : (closedCell n j ∩ U).Nonempty := ⟨z.val, hzc, hzU⟩
     rw [← RelCWComplex.closure_openCell_eq_closedCell,
       closure_inter_open_nonempty_iff hU_open] at hne

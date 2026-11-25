@@ -47,9 +47,11 @@ subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.le_iff_I_subset`: one subcomplex lies in another exactly when
   its cells do.
 * `Topology.RelCWComplex.Subcomplex.ofLE`: a subcomplex `F ≤ E`, as a subcomplex of `E`.
-* `Topology.RelCWComplex.Subcomplex.finite_bot`, `Topology.RelCWComplex.Subcomplex.finite_sup`,
-  `Topology.RelCWComplex.Subcomplex.finite_finsetSup`: finiteness of the bottom subcomplex and
-  finite unions of finite subcomplexes.
+* `Topology.RelCWComplex.Subcomplex.finite_iff_finite_cells`,
+  `Topology.RelCWComplex.Subcomplex.finite_bot`, `Topology.RelCWComplex.Subcomplex.finite_sup`,
+  `Topology.RelCWComplex.Subcomplex.finite_finsetSup`: characterization of finite subcomplexes by
+  finiteness of their cell set, and finiteness of the bottom subcomplex and finite unions of finite
+  subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.adjoinCell`,
   `Topology.RelCWComplex.Subcomplex.finite_adjoinCell`: adjoining a single cell whose frontier lies
   in a subcomplex, preserving finiteness.
@@ -379,28 +381,32 @@ lemma ofLE_I {F E : Subcomplex C} (h : F ≤ E) (n : ℕ) :
 
 /-! ### Finiteness and cell adjunction -/
 
+/-- A subcomplex `E` is finite if and only if the set of cells of `C` belonging to `E` is
+finite. -/
+@[alias_in CWComplex.Subcomplex]
+theorem finite_iff_finite_cells {E : Subcomplex C} :
+    Finite (E : Set X) ↔ {p : Σ n, cell C n | p.2 ∈ E.I p.1}.Finite := by
+  rw [RelCWComplex.finite_iff_finite_cells, ← Set.finite_coe_iff]
+  simp only [cell_def]
+  exact Equiv.finite_iff
+    { toFun := fun q ↦ ⟨⟨q.1, q.2.val⟩, q.2.property⟩
+      invFun := fun p ↦ ⟨p.val.1, ⟨p.val.2, p.property⟩⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl }
+
 /-- The bottom subcomplex `⊥` of a relative CW complex is finite. -/
 @[alias_in CWComplex.Subcomplex]
 instance finite_bot : Finite (((⊥ : Subcomplex C) : Set X)) :=
-  have : FiniteDimensional (((⊥ : Subcomplex C) : Set X)) :=
-    ⟨Filter.Eventually.of_forall fun _ ↦ Subtype.isEmpty_false⟩
-  have : FiniteType (((⊥ : Subcomplex C) : Set X)) :=
-    ⟨fun n ↦ (finite_empty : ((⊥ : Subcomplex C).I n).Finite).to_subtype⟩
-  finite_of_finiteDimensional_finiteType _
+  finite_iff_finite_cells.2 (by simp)
 
 /-- The union `E₁ ⊔ E₂` of two finite subcomplexes is finite. -/
 @[alias_in CWComplex.Subcomplex]
 theorem finite_sup {E₁ E₂ : Subcomplex C}
     (h₁ : Finite (E₁ : Set X)) (h₂ : Finite (E₂ : Set X)) :
-    Finite (((E₁ ⊔ E₂ : Subcomplex C) : Set X)) := by
-  have : FiniteDimensional (((E₁ ⊔ E₂ : Subcomplex C) : Set X)) := ⟨by
-    filter_upwards [h₁.eventually_isEmpty_cell, h₂.eventually_isEmpty_cell] with n hn₁ hn₂
-    exact ⟨fun ⟨i, hi⟩ ↦ hi.elim (fun h ↦ hn₁.false ⟨i, h⟩) (fun h ↦ hn₂.false ⟨i, h⟩)⟩⟩
-  have : FiniteType (((E₁ ⊔ E₂ : Subcomplex C) : Set X)) := ⟨fun n ↦ by
-    have := h₁.finite_cell n
-    have := h₂.finite_cell n
-    exact ((Set.toFinite (E₁.I n)).union (Set.toFinite (E₂.I n))).to_subtype⟩
-  exact finite_of_finiteDimensional_finiteType _
+    Finite (((E₁ ⊔ E₂ : Subcomplex C) : Set X)) :=
+  finite_iff_finite_cells.2 <|
+    ((finite_iff_finite_cells.1 h₁).union (finite_iff_finite_cells.1 h₂)).subset fun _ hp ↦ by
+      simpa only [mem_ofPred_eq, sup_I, mem_union] using hp
 
 /-- A `Finset.sup` of finite subcomplexes is finite. -/
 @[alias_in CWComplex.Subcomplex]
@@ -465,19 +471,13 @@ theorem adjoinCell_I (E : Subcomplex C) (n : ℕ) (i : cell C n) (hi : cellFront
 theorem finite_adjoinCell {E : Subcomplex C} (hE : Finite (E : Set X))
     (n : ℕ) (i : cell C n) (hi : cellFrontier n i ⊆ E) :
     Finite (E.adjoinCell n i hi : Set X) := by
-  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 hE.eventually_isEmpty_cell
-  have : FiniteDimensional (E.adjoinCell n i hi : Set X) := ⟨Filter.eventually_atTop.2
-    ⟨max N (n + 1), fun m hm ↦ ⟨fun ⟨j, hj⟩ ↦ (hN m (le_of_max_le_left hm)).false
-      ⟨j, by simpa [adjoinCell_I, Nat.ne_of_gt (Nat.lt_of_succ_le (le_of_max_le_right hm))]
-        using hj⟩⟩⟩⟩
-  have : FiniteType (E.adjoinCell n i hi : Set X) := ⟨fun k ↦ by
-    have := hE.finite_cell k
-    refine Set.Finite.to_subtype ?_
-    rw [adjoinCell_I]
-    split_ifs
-    · exact (Set.toFinite (E.I k)).union (finite_singleton _)
-    · exact Set.toFinite (E.I k)⟩
-  exact finite_of_finiteDimensional_finiteType _
+  refine finite_iff_finite_cells.2 <|
+    ((finite_iff_finite_cells.1 hE).insert ⟨n, i⟩).subset fun ⟨k, j⟩ hj ↦ ?_
+  rw [mem_ofPred_eq, adjoinCell_I] at hj
+  split_ifs at hj with h
+  · subst h
+    exact hj.elim Or.inr fun hj' ↦ Or.inl (congrArg (Sigma.mk k) (mem_singleton_iff.1 hj'))
+  · exact Or.inr hj
 
 end
 

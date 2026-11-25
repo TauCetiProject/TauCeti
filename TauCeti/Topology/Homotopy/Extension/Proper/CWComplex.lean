@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.CWComplex.Classical.LocallyFinite
 public import TauCeti.Topology.Homotopy.Extension.CWComplex
-public import TauCeti.Topology.Homotopy.Extension.Proper.DeformationRetract
+public import TauCeti.Topology.Homotopy.Extension.Proper.Basic
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Topology.CWComplex.Classical.Finite
 import TauCeti.Topology.Maps.Proper.Basic
@@ -32,13 +32,9 @@ compact cylinders `I × F k`, proving `IsProperMap r`
 
 * `Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty`,
   `Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty_of_finiteDimensional`,
-  `Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty_univ`,
-  `TauCeti.hasProperHomotopyExtensionProperty_skeletonLT`: **proper homotopy extension for
-  subcomplexes and skeletons** of strongly locally finite (or finite-dimensional locally finite)
+  `Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProperty_univ`: **proper homotopy
+  extension for subcomplexes** of strongly locally finite (or finite-dimensional locally finite)
   Hausdorff CW complexes.
-* `Topology.RelCWComplex.Subcomplex.hasProperHomotopyInverse_subtypeVal_iff`: in a strongly locally
-  finite Hausdorff CW complex `C`, the inclusion of a subcomplex `E` is a proper homotopy
-  equivalence if and only if `E` is a proper strong deformation retract of `C`.
 
 ## References
 
@@ -104,14 +100,6 @@ theorem
   have := CWComplex.LocallyFinite.stronglyLocallyFinite_of_finiteDimensional (C := C)
   exact E.hasProperHomotopyExtensionProperty
 
-/-- Every skeleton of a strongly locally finite Hausdorff CW complex has the proper homotopy
-extension property inside the complex. -/
-theorem hasProperHomotopyExtensionProperty_skeletonLT [CWComplex.StronglyLocallyFinite C]
-    (n : ℕ∞) :
-    HasProperHomotopyExtensionProperty
-      (Subtype.val ⁻¹' (CWComplex.skeletonLT C n : Set X) : Set C) :=
-  (CWComplex.skeletonLT C n).hasProperHomotopyExtensionProperty
-
 /-- When `W` carries a strongly locally finite CW structure on `univ`, every subcomplex `E` has the
 proper homotopy extension property as a subset of `W`. -/
 @[alias_in Topology.CWComplex.Subcomplex]
@@ -122,22 +110,6 @@ theorem _root_.Topology.RelCWComplex.Subcomplex.hasProperHomotopyExtensionProper
     HasProperHomotopyExtensionProperty (E : Set W) := by
   have h := E.hasProperHomotopyExtensionProperty.image (Homeomorph.Set.univ W)
   rwa [Homeomorph.Set.univ_apply, image_preimage_eq_range_inter, Subtype.range_coe, univ_inter] at h
-
-/-- **Proper strong deformation retraction onto a subcomplex.** In a strongly locally finite
-Hausdorff CW complex `C`, the inclusion of a subcomplex `E` is a proper homotopy equivalence if and
-only if `E` is a proper strong deformation retract of `C`. -/
-@[alias_in Topology.CWComplex.Subcomplex]
-theorem _root_.Topology.RelCWComplex.Subcomplex.hasProperHomotopyInverse_subtypeVal_iff
-    [CWComplex.StronglyLocallyFinite C] (E : CWComplex.Subcomplex C) :
-    (ContinuousMap.subtypeVal
-      (Subtype.val ⁻¹' (E : Set X) : Set C)).HasProperHomotopyInverse ↔
-      ∃ r : C(C, Subtype.val ⁻¹' (E : Set X)), IsProperMap r ∧
-        (∀ a : Subtype.val ⁻¹' (E : Set X), r a = a) ∧
-        ∃ H : (ContinuousMap.id C).HomotopyRel
-          ((ContinuousMap.subtypeVal (Subtype.val ⁻¹' (E : Set X) : Set C)).comp r)
-          (Subtype.val ⁻¹' (E : Set X) : Set C), IsProperMap H := by
-  rw [E.hasProperHomotopyExtensionProperty.hasProperHomotopyInverse_subtypeVal_iff,
-    and_iff_right (E.closed.preimage continuous_subtypeVal)]
 
 end StronglyLocallyFinite
 
