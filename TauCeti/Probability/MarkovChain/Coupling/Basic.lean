@@ -228,8 +228,8 @@ theorem markovChainLaw_map_spliceAtMeeting [MeasurableEq α] [IsMarkovKernel κ]
   rw [prefixLaw_compProd_apply_prod κ hZ n hA hC, Measure.map_apply
     ((measurable_pi_iff.2 fun i => hZ i.val).prodMk (hZ _)) (hA.prod hC), hfib,
     ← measure_inter_add_sdiff _ hM, hin, hout,
-    markovChainLaw_inter_preimage_eval_succ ρ η n (hBn.inter hMn) (measurable_snd hC),
-    markovChainLaw_inter_preimage_eval_succ ρ η n (hBn.diff hMn) (measurable_fst hC),
+    markovChainLaw_inter_preimage_eval_add ρ η n 1 (hBn.inter hMn) (measurable_snd hC),
+    markovChainLaw_inter_preimage_eval_add ρ η n 1 (hBn.diff hMn) (measurable_fst hC), pow_one,
     ← lintegral_inter_add_sdiff (fun ω => κ (Z n ω) C) B hM]
   congr 1
   · refine setLIntegral_congr_fun (hB.inter hM) fun ω hω => ?_

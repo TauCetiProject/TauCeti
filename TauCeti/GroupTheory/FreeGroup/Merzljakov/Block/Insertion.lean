@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Word
+import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
 # Inserting a letter into the blocks of a word
@@ -704,7 +705,8 @@ theorem suffix_of_suffix_blockInsert {u : List (α × Bool)}
   have hpref : invRev u <+: blockInsert a b x m (invRev w) :=
     ⟨invRev s, by rw [← invRev_append, hs, blockInsert_invRev]⟩
   obtain ⟨t, ht⟩ :=
-    prefix_of_prefix_blockInsert hpref fun c hc ↦ hu (c.1, !c.2) (mem_invRev_iff.1 hc)
+    prefix_of_prefix_blockInsert hpref fun c hc ↦
+      hu (c.1, !c.2) (TauCeti.FreeGroup.mem_invRev_iff.1 hc)
   exact ⟨invRev t, by simpa [invRev_append] using congrArg invRev ht⟩
 
 private theorem prefix_flatten_of_prefix_map_blockInsert {u : List (α × Bool)}
@@ -738,7 +740,8 @@ private theorem suffix_flatten_of_suffix_map_blockInsert {u : List (α × Bool)}
   have hpref : invRev u <+: ((L.map invRev).reverse.map (blockInsert a b x m)).flatten :=
     ⟨invRev s, by rw [← invRev_append, hs, invRev_flatten, hmap]⟩
   obtain ⟨t, ht⟩ :=
-    prefix_flatten_of_prefix_map_blockInsert hpref fun c hc ↦ hu (c.1, !c.2) (mem_invRev_iff.1 hc)
+    prefix_flatten_of_prefix_map_blockInsert hpref fun c hc ↦
+      hu (c.1, !c.2) (TauCeti.FreeGroup.mem_invRev_iff.1 hc)
   exact ⟨invRev t, by simpa [invRev_append, ← invRev_flatten] using congrArg invRev ht⟩
 
 /-- If a factorisation `L` splits no occurrence of a word `u` containing neither `x` nor `x⁻¹`,

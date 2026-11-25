@@ -31,10 +31,11 @@ For an integral matrix `A` whose vanishing entries come in transposed pairs, the
 satisfy the relations of the Coxeter matrix `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix A`:
 `(sᵢ sⱼ)^mᵢⱼ = 1`, where `mᵢⱼ = 2, 3, 4, 6` for `Aᵢⱼ Aⱼᵢ = 0, 1, 2, 3` and `mᵢⱼ = ∞` otherwise. This
 gives a homomorphism from the Coxeter group onto the Weyl group. Over a field of characteristic
-zero, and when the Cartan products are nonnegative as for a generalized Cartan matrix, the
-product `sᵢ sⱼ` of two simple reflections has order exactly `mᵢⱼ`, including the infinite order
-`mᵢⱼ = ∞` of affine type `A₁⁽¹⁾`. That the homomorphism is injective, so that the Weyl group is a
-Coxeter group on the simple reflections, is Kac's Proposition 3.13 and is not proved here.
+zero, the product `sᵢ sⱼ` of two simple reflections has order `mᵢⱼ`, including the infinite order
+`mᵢⱼ = ∞` outside `Aᵢⱼ Aⱼᵢ ∈ {0, 1, 2, 3}` (as in affine type `A₁⁽¹⁾`). That the homomorphism is
+injective over a field of characteristic zero for a generalized Cartan matrix, so that the Weyl
+group is a Coxeter group on the simple reflections, is Kac's Proposition 3.13, proved in
+`TauCeti.LinearAlgebra.Matrix.Cartan.Realization.CoxeterSystem`.
 
 ## Main definitions
 
