@@ -16,7 +16,8 @@ public import TauCeti.Topology.VectorBundle.Orientation.Cover
 Let `E → B` be a real vector bundle with model fibre `F`, and let `ι` have cardinality the rank of
 `E`. The units `ℤˣ = {1, -1}` act on the orientation double cover `B'` of `E`, with `-1` reversing
 the orientation and fixing the base point, so that `-1` acts by the deck involution
-(`TauCeti.VectorBundleOrientationCover.neg_one_smul_eq_deck`). The projection `B' → B` is then
+(`TauCeti.VectorBundleOrientationCover.neg_one_smul_eq_deck`), a continuous action since the deck
+involution is continuous. The projection `B' → B` is then
 the quotient map of this action in the strong sense of Mathlib's `IsQuotientCoveringMap`: its
 fibres are the orbits, and every point has a neighbourhood disjoint from its image under the deck
 involution, namely its sheet in a trivialization
@@ -36,8 +37,12 @@ the pulled-back bundle is a double cover of the Thom pair `(E, E₀)` of `E`, as
 free action of `ℤˣ` preserving `E'₀`. In the form of a quotient of topological pairs: `ℤˣ` acts on
 both spaces of the Thom pair `(E', E'₀)`
 (`TauCeti.VectorBundleOrientationCover.thomPairFstMulAction`,
-`TauCeti.VectorBundleOrientationCover.thomPairSndMulAction`), the embedding `E'₀ → E'` commutes with
-the actions (`TauCeti.VectorBundleOrientationCover.thomPair_map_smul`), and both maps underlying the
+`TauCeti.VectorBundleOrientationCover.thomPairSndMulAction`), continuously
+(`TauCeti.VectorBundleOrientationCover.thomPairFstMulAction_continuousConstSMul`,
+`TauCeti.VectorBundleOrientationCover.thomPairSndMulAction_continuousConstSMul`), the embedding
+`E'₀ → E'` and the projection `E' → B'` commute with the actions
+(`TauCeti.VectorBundleOrientationCover.thomPair_map_smul`,
+`TauCeti.VectorBundleOrientationCover.thomPairProj_smul`), and both maps underlying the
 map of Thom pairs `(E', E'₀) ⟶ (E, E₀)` (`TauCeti.pullbackThomPairMap`) are quotient covering maps
 (`TauCeti.VectorBundleOrientationCover.isQuotientCoveringMap_pullbackThomPairMap_fst` and
 `TauCeti.VectorBundleOrientationCover.isQuotientCoveringMap_pullbackThomPairMap_snd`, the second by
@@ -133,13 +138,15 @@ theorem neg_one_smul_eq_deck (p : VectorBundleOrientationCover F E ι) : (-1 : �
   refine congrArg (mk p.proj) (Module.Ray.units_smul_of_neg _ ?_ _)
   simp
 
-/-- Each unit acts on the orientation double cover as the identity or as the deck involution. -/
-private theorem smul_eq_or (u : ℤˣ) :
-    (u • · : VectorBundleOrientationCover F E ι → _) = id ∨
-      (u • · : VectorBundleOrientationCover F E ι → _) = deck := by
-  rcases Int.units_eq_one_or u with rfl | rfl
-  · exact .inl (funext (one_smul ℤˣ))
-  · exact .inr (funext neg_one_smul_eq_deck)
+/-- The action of `ℤˣ` on the orientation double cover is continuous: `-1` acts by the deck
+involution. -/
+instance : ContinuousConstSMul ℤˣ (VectorBundleOrientationCover F E ι) where
+  continuous_const_smul u := by
+    rcases Int.units_eq_one_or u with rfl | rfl
+    · simp_rw [one_smul]
+      exact continuous_id
+    · simp_rw [neg_one_smul_eq_deck]
+      exact (deck (F := F) (E := E) (ι := ι)).continuous
 
 /-- **The orientation double cover is the quotient by its deck transformations.** If `ι` has
 cardinality the rank of the bundle, the projection of the orientation double cover is the quotient
@@ -150,10 +157,8 @@ theorem isQuotientCoveringMap_proj [Fintype ι] [FiniteDimensional ℝ F]
     (hι : Fintype.card ι = finrank ℝ F) :
     IsQuotientCoveringMap (proj : VectorBundleOrientationCover F E ι → B) ℤˣ := by
   refine (isQuotientCoveringMap_iff_isCoveringMap_and _ ℤˣ).2
-    ⟨isCoveringMap_proj hι, surjective_proj hι, ⟨fun u ↦ ?_⟩,
+    ⟨isCoveringMap_proj hι, surjective_proj hι, inferInstance,
       isCancelSMul_iff_eq_one_of_smul_eq.2 fun u p h ↦ ?_, fun {p q} ↦ ⟨fun h ↦ ?_, ?_⟩⟩
-  · rcases smul_eq_or (F := F) (E := E) (ι := ι) u with h | h <;> rw [h]
-    exacts [continuous_id, deck.continuous]
   · -- The unit `-1` acts by the deck involution, which fixes no point.
     rcases Int.units_eq_one_or u with rfl | rfl
     · rfl
@@ -264,6 +269,42 @@ theorem thomPair_map_smul (u : ℤˣ)
     (thomPair F _).map (u • v) = u • (thomPair F _).map v := by
   rw [TopPair.ofSubset_map]
   exact coe_thomPairSnd_smul u v
+
+/-- The projection `E' → B'` of the bundle pulled back to the orientation double cover commutes
+with the action `thomPairFstMulAction` of `ℤˣ` on the total space of its Thom pair and the action
+on the cover. -/
+theorem thomPairProj_smul (u : ℤˣ)
+    (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst) :
+    thomPairProj F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) (u • v) =
+      u • thomPairProj F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) v :=
+  (thomPairProj_apply F _ (u • v)).trans
+    ((proj_smul_totalSpace u v).trans (congrArg (u • ·) (thomPairProj_apply F _ v).symm))
+
+/-- The action `thomPairFstMulAction` of `ℤˣ` on the total space of the Thom pair of the bundle
+pulled back to the orientation double cover is continuous: it acts continuously on the cover and
+fixes the image of each point in the total space of the original bundle.
+
+Like `thomPairFstMulAction`, it is not a global instance; statements using the action use it as a
+local instance. -/
+theorem thomPairFstMulAction_continuousConstSMul : ContinuousConstSMul ℤˣ
+    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst where
+  continuous_const_smul u :=
+    Pullback.continuous_iff.2 ⟨(continuous_const_smul u).comp (Pullback.continuous_proj F E _),
+      Pullback.continuous_lift F E _⟩
+
+attribute [local instance] thomPairFstMulAction_continuousConstSMul
+
+/-- The action `thomPairSndMulAction` of `ℤˣ` on the nonzero vectors of the Thom pair of the bundle
+pulled back to the orientation double cover is continuous, as on the total space.
+
+Like `thomPairSndMulAction`, it is not a global instance; statements using the action use it as a
+local instance. -/
+theorem thomPairSndMulAction_continuousConstSMul : ContinuousConstSMul ℤˣ
+    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd where
+  continuous_const_smul u :=
+    ((continuous_const_smul u : Continuous fun v : (thomPair F
+      ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst ↦ u • v).comp
+        continuous_subtypeVal).subtype_mk _
 
 variable [Fintype ι] [FiniteDimensional ℝ F] (hι : Fintype.card ι = finrank ℝ F)
 

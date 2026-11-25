@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.TensorProduct
 public import TauCeti.Analysis.Distribution.Gluing
-public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
+public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Measure.Haar.Disintegration
 import Mathlib.MeasureTheory.Measure.Haar.Unique

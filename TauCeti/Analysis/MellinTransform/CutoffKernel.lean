@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.MellinInversion
-import TauCeti.Analysis.MellinTransform.Convolution
+public import TauCeti.Analysis.MellinTransform.Convolution
 import TauCeti.Analysis.MellinTransform.Decay
 
 /-!
@@ -33,8 +32,8 @@ supported in `[a, b] ⊆ (0, ∞)` and normalized by `mellin φ 0 = 1` has kerne
 
 ## Main results
 
-* `TauCeti.mellinCutoffKernel_eq_integral_mul_div`: `F₁(φ, ·)` is the Mellin convolution of the
-  sharp cutoff `1_(0,1]` with `φ`.
+* `TauCeti.mellinCutoffKernel_eq_mellinConv`: `F₁(φ, ·)` is the Mellin convolution
+  `TauCeti.mellinConv` of the sharp cutoff `1_(0,1]` with `φ`.
 * `MellinConvergent.hasMellin_mellinCutoffKernel`: `mellin F₁(φ, ·) s = mellin φ s / s` for
   `Re s > 0`, with absolute convergence.
 * `MellinConvergent.mellinCutoffKernel_eq_mellinInv`: Mellin inversion of the kernel on
@@ -139,9 +138,9 @@ variable {φ : ℝ → ℂ} {x : ℝ}
 
 /-- For `x > 0` the cutoff kernel is the Mellin convolution
 `(1_(0,1] ⋆ φ)(x) = ∫_{(0,∞)} 1_(0,1](y) φ(x/y) dy/y`, by the substitution `z = x/y`. -/
-theorem mellinCutoffKernel_eq_integral_mul_div (φ : ℝ → ℂ) (hx : 0 < x) :
-    mellinCutoffKernel φ x =
-      ∫ y in Ioi 0, (Ioc 0 1).indicator (fun _ ↦ (1 : ℂ)) y * φ (x / y) / y := by
+theorem mellinCutoffKernel_eq_mellinConv (φ : ℝ → ℂ) (hx : 0 < x) :
+    mellinCutoffKernel φ x = mellinConv ((Ioc 0 1).indicator fun _ ↦ (1 : ℂ)) φ x := by
+  rw [mellinConv_def]
   have hcongr : (∫ y in Ioi 0, (Ioc 0 1).indicator (fun _ ↦ (1 : ℂ)) y * φ (x / y) / y) =
       mellin (fun y ↦ (Ici x).indicator φ (x * y⁻¹)) 0 := by
     refine setIntegral_congr_fun measurableSet_Ioi fun y hy ↦ ?_
@@ -163,9 +162,9 @@ theorem _root_.MellinConvergent.hasMellin_mellinCutoffKernel {s : ℂ} (hφ : Me
     (hs : 0 < s.re) :
     HasMellin (mellinCutoffKernel φ) s (mellin φ s / s) := by
   have h1 := hasMellin_one_Ioc hs
-  have h := hasMellin_integral_mul_div h1.1 hφ
+  have h := hasMellin_mellinConv h1.1 hφ
   rw [h1.2, one_div_mul_eq_div] at h
-  exact (hasMellin_congr fun x hx ↦ mellinCutoffKernel_eq_integral_mul_div φ hx).mpr h
+  exact (hasMellin_congr fun x hx ↦ mellinCutoffKernel_eq_mellinConv φ hx).mpr h
 
 /-- **Mellin inversion of the cutoff kernel.** If `φ` is Mellin convergent at `σ > 0` and
 `s ↦ mellin φ s / s` is integrable on the line `Re s = σ`, then for `x > 0`
