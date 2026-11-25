@@ -110,7 +110,8 @@ theorem HasWeakFDerivOn.bilin_comp_of_two_lt_mul {G V H : Type*} [NormedAddCommG
   have hgc : ContinuousOn (fun z => g (u z)) Ω := hg.continuousOn.comp huc huW
   have hDgc : ContinuousOn (fun z => fderiv ℝ g (u z)) Ω :=
     (hg.continuousOn_fderiv_of_isOpen hW le_rfl).comp huc huW
-  exact (hDu.contDiffOn_comp huc hW hg huW).bilin_of_memLpLoc B hr hp hpr hgc.memLpLoc
+  exact (hDu.contDiffOn_comp huc hW hg huW).bilin_of_finrank_lt B (by simpa using hr) hp hpr
+    hgc.memLpLoc
     ((hur.memWkpLoc_of_hasWeakFDerivOn hDu).memLpLoc.continuousOn_clm_comp hDgc) hDv
     hv.memLpLoc (hv.memWkpLoc_of_hasWeakFDerivOn hDv).memLpLoc
 
