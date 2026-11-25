@@ -21,9 +21,9 @@ element is open in the Krull topology. Mathlib's transitivity theorem for profin
 on the prime ideals of `O` lying over a given prime of `𝓞 F`
 (`TauCeti.GaloisRep.exists_smul_eq_of_under_eq`).
 
-Combined with `I_{σQ} = σ I_Q σ⁻¹` (`TauCeti.GaloisRep.inertiaGroup_smul`, Mathlib's
-`Ideal.inertia_smul`), the inertia groups at the primes of `O` above a prime of `𝓞 F` form a single
-conjugacy class of subgroups of `G_F` (`TauCeti.GaloisRep.exists_inertiaGroup_eq_map_conj`).
+Combined with `I_{σQ} = σ I_Q σ⁻¹` (Mathlib's `Ideal.inertia_smul`), the inertia groups at the
+primes of `O` above a prime of `𝓞 F` form a single conjugacy class of subgroups of `G_F`
+(`TauCeti.GaloisRep.exists_inertiaGroup_eq_map_conj`).
 
 ## Main results
 
@@ -97,12 +97,6 @@ theorem exists_smul_eq_of_under_eq [PerfectField F]
   have := isInvariant_integralClosure F
   exact Algebra.IsInvariant.exists_smul_of_under_eq_of_profinite P Q hPQ
 
-/-- `I_{σQ} = σ I_Q σ⁻¹`: Mathlib's `Ideal.inertia_smul`. -/
-theorem inertiaGroup_smul (σ : Field.absoluteGaloisGroup F)
-    (Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))) :
-    inertiaGroup F (σ • Q) = (inertiaGroup F Q).map (MulAut.conj σ).toMonoidHom :=
-  Ideal.inertia_smul σ Q
-
 /-- For a perfect field `F`, the inertia groups at two primes of `O` over the same prime of `𝓞 F`
 are conjugate in `G_F`. -/
 theorem exists_inertiaGroup_eq_map_conj [PerfectField F]
@@ -111,6 +105,6 @@ theorem exists_inertiaGroup_eq_map_conj [PerfectField F]
     ∃ σ : Field.absoluteGaloisGroup F,
       inertiaGroup F Q = (inertiaGroup F P).map (MulAut.conj σ).toMonoidHom := by
   obtain ⟨σ, rfl⟩ := exists_smul_eq_of_under_eq P Q hPQ
-  exact ⟨σ, inertiaGroup_smul σ P⟩
+  exact ⟨σ, Ideal.inertia_smul σ P⟩
 
 end TauCeti.GaloisRep

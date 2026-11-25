@@ -197,13 +197,9 @@ theorem isUnramifiedAt_iff_exists [NumberField F] :
       Q.IsMaximal ∧ Q.under (𝓞 F) = v.asIdeal ∧
         GaloisRep.inertiaGroup F Q ≤ ρ.toRepresentation.ker := by
   refine ⟨fun h ↦ ?_, fun ⟨Q, hQ, hQv, h⟩ ↦ (isUnramifiedAt_iff_of_isMaximal hQ hQv).2 h⟩
-  have hinj : Function.Injective
-      (algebraMap (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F))) := by
-    intro a b hab
-    apply FaithfulSMul.algebraMap_injective (𝓞 F) (AlgebraicClosure F)
-    simpa using congrArg Subtype.val hab
-  obtain ⟨Q, hQ, hQv⟩ := Ideal.exists_ideal_over_maximal_of_isIntegral v.asIdeal
-    (((RingHom.injective_iff_ker_eq_bot _).1 hinj).symm ▸ bot_le)
+  obtain ⟨Q, hQ, hQv⟩ := Ideal.exists_maximal_ideal_liesOver_of_isIntegral
+    (S := integralClosure (𝓞 F) (AlgebraicClosure F)) v.asIdeal
+  have hQv : Q.under (𝓞 F) = v.asIdeal := ((Ideal.liesOver_iff _ _).1 hQv).symm
   exact ⟨Q, hQ, hQv, h Q hQ hQv⟩
 
 /-! ### Unramified outside a set of places -/
