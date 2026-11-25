@@ -21,8 +21,8 @@ conjugate-linear in its first argument and `𝕜`-linear in its second. When `a`
 `q(u) = RCLike.re (a u u)` determines `a u u` without loss of information, and its off-diagonal
 real part `RCLike.re (a u v)` is symmetric in `u` and `v`.
 
-This file develops the algebraic, analytic, and restricted-subspace stability properties of
-`q(u) = RCLike.re (a u u)` and of the real-part bilinear pairing `(u, v) ↦ RCLike.re (a u v)`:
+This file develops the algebraic and analytic properties of `q(u) = RCLike.re (a u u)` and of the
+real-part bilinear pairing `(u, v) ↦ RCLike.re (a u v)`:
 
 * **Polarization and convex-combination identities.** For a Hermitian form, expanding `q(u + c • v)`
   separates the linear variation `2 Re(c * a u v)` from the quadratic remainder `‖c‖² q(v)`. For an
@@ -40,10 +40,6 @@ This file develops the algebraic, analytic, and restricted-subspace stability pr
   `C^n` over `ℝ` for every `n` (via `ContinuousLinearMap.contDiff_apply_self`), with strict Fréchet
   derivative `v ↦ 2 Re(a u v)` when `a` is Hermitian (via
   `ContinuousLinearMap.hasStrictFDerivAt_apply_self`).
-* **Subspace-restricted coercive stability.** For an arbitrary (possibly non-Hermitian) continuous
-  sesquilinear form satisfying `c * ‖w‖² ≤ q(w)` on a submodule `W`, weak solutions on `W` that
-  differ by an element of `W` satisfy `c * ‖u - u'‖ ≤ ‖(ℓ - ℓ').comp W.subtypeL‖` in the restricted
-  dual norm on `W`.
 
 ## Main declarations
 
@@ -59,8 +55,6 @@ This file develops the algebraic, analytic, and restricted-subspace stability pr
 * `ContinuousLinearMap.reBilin` and `ContinuousLinearMap.norm_reBilin`: the real part
   `(x, y) ↦ RCLike.re (a x y)` of a continuous sesquilinear form as an isometric continuous
   real-bilinear map.
-* `ContinuousLinearMap.mul_norm_sub_le_norm_comp_subtypeL_of_coercive`: coercive stability of weak
-  solutions on `W` in the restricted dual norm `‖(ℓ - ℓ').comp W.subtypeL‖`.
 * `ContinuousLinearMap.hasStrictFDerivAt_re_apply_self_of_eq_star`: the real strict Fréchet
   derivative of `u ↦ RCLike.re (a u u)` for a continuous Hermitian form.
 -/
@@ -421,32 +415,6 @@ theorem flip_reBilin_of_eq_star [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
     a.reBilin.flip = a.reBilin := by
   ext u v
   exact a.reBilin_comm_of_eq_star ha v u
-
-/-- **Lipschitz dependence of constrained weak solutions on the restricted forcing.** If the real
-quadratic part of `a` dominates `c * ‖w‖ ^ 2` on a submodule `W`, then solutions of `a u v = ℓ v`
-and `a u' v = ℓ' v` on `W` that differ by an element of `W` satisfy
-`c * ‖u - u'‖ ≤ ‖(ℓ - ℓ').comp W.subtypeL‖`. No symmetry of `a` or positivity of `c` is
-required. -/
-theorem mul_norm_sub_le_norm_comp_subtypeL_of_coercive {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ℓ : StrongDual 𝕜 V) {W : Submodule 𝕜 V} {c : ℝ}
-    (hc : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u u' : V} {ℓ' : StrongDual 𝕜 V}
-    (hu : ∀ v ∈ W, a u v = ℓ v) (hu' : ∀ v ∈ W, a u' v = ℓ' v) (h : u - u' ∈ W) :
-    c * ‖u - u'‖ ≤ ‖(ℓ - ℓ').comp W.subtypeL‖ := by
-  rcases (norm_nonneg (u - u')).eq_or_lt with h0 | hpos
-  · rw [← h0, mul_zero]
-    exact norm_nonneg _
-  · have hpair : a (u - u') (u - u') = ((ℓ - ℓ').comp W.subtypeL) ⟨u - u', h⟩ := by
-      rw [a.map_sub, sub_apply, hu (u - u') h, hu' (u - u') h]
-      simp
-    have hle : c * ‖u - u'‖ ^ 2 ≤ ‖(ℓ - ℓ').comp W.subtypeL‖ * ‖u - u'‖ := by
-      calc c * ‖u - u'‖ ^ 2 ≤ RCLike.re (a (u - u') (u - u')) := hc (u - u') h
-        _ ≤ ‖a (u - u') (u - u')‖ := RCLike.re_le_norm _
-        _ = ‖((ℓ - ℓ').comp W.subtypeL) ⟨u - u', h⟩‖ := by rw [hpair]
-        _ ≤ ‖(ℓ - ℓ').comp W.subtypeL‖ * ‖(⟨u - u', h⟩ : W)‖ :=
-            le_opNorm ((ℓ - ℓ').comp W.subtypeL) ⟨u - u', h⟩
-        _ = ‖(ℓ - ℓ').comp W.subtypeL‖ * ‖u - u'‖ := by simp
-    rw [sq, ← mul_assoc] at hle
-    exact le_of_mul_le_mul_right hle hpos
 
 end SeminormedSelf
 

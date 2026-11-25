@@ -68,9 +68,10 @@ develops the algebraic, differential, variational, and direct-method properties 
   satisfy `‖a u v‖² ≤ re (a u u) re (a v v)` (`ContinuousLinearMap.norm_apply_sq_le_of_hermitian`)
   and `re (a u u) = 0 ↔ a u = 0` (`ContinuousLinearMap.re_apply_self_eq_zero_iff`). Coercive forms
   yield quadratic energy-gap bounds, norm convergence of near-minimizers, bounded sublevels
-  (`ContinuousLinearMap.hasBoundedSublevelsOn_quadraticEnergy_of_sub_coercive`), forcing stability,
-  uniqueness, and—on reflexive normed spaces—direct-method existence and uniqueness of constrained
-  minimizers and weak solutions
+  (`ContinuousLinearMap.hasBoundedSublevelsOn_quadraticEnergy_of_sub_coercive`), forcing stability
+  (`ContinuousLinearMap.mul_norm_sub_le_norm_comp_subtypeL_of_coercive`,
+  `ContinuousLinearMap.mul_norm_sub_le_norm_sub_of_coercive`), uniqueness, and—on reflexive normed
+  spaces—direct-method existence and uniqueness of constrained minimizers and weak solutions
   (`ContinuousLinearMap.existsUnique_isMinOn_quadraticEnergy_of_isClosed_convex`,
   `ContinuousLinearMap.existsUnique_vadd_forall_apply_eq_of_isClosed_of_coercive`).
 * **Hilbert-space Lax--Milgram identifications.** On a Hilbert space, global minimizers coincide
@@ -323,6 +324,31 @@ theorem tendsto_of_tendsto_quadraticEnergy (ha : ∀ u v, a u v = star (a v u))
       rw [dist_eq_norm, le_div_iff₀ hc0, mul_comm]
       exact mul_norm_sub_sq_le_quadraticEnergy_sub ℓ ha hc hu (hx i))
     (by simpa only [sub_self, zero_div] using (hE.sub_const (a.quadraticEnergy ℓ u)).div_const c)
+
+/-- **Lipschitz dependence of constrained weak solutions on the restricted forcing.** If the real
+quadratic part of `a` dominates `c * ‖w‖ ^ 2` on a submodule `W`, then solutions of `a u v = ℓ v`
+and `a u' v = ℓ' v` on `W` that differ by an element of `W` satisfy
+`c * ‖u - u'‖ ≤ ‖(ℓ - ℓ').comp W.subtypeL‖`. No symmetry of `a` or positivity of `c` is
+required. -/
+theorem mul_norm_sub_le_norm_comp_subtypeL_of_coercive {W : Submodule 𝕜 V} {c : ℝ}
+    (hc : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ re (a w w)) {u u' : V} {ℓ' : StrongDual 𝕜 V}
+    (hu : ∀ v ∈ W, a u v = ℓ v) (hu' : ∀ v ∈ W, a u' v = ℓ' v) (h : u - u' ∈ W) :
+    c * ‖u - u'‖ ≤ ‖(ℓ - ℓ').comp W.subtypeL‖ := by
+  rcases (norm_nonneg (u - u')).eq_or_lt with h0 | hpos
+  · rw [← h0, mul_zero]
+    exact norm_nonneg _
+  · have hpair : a (u - u') (u - u') = ((ℓ - ℓ').comp W.subtypeL) ⟨u - u', h⟩ := by
+      rw [a.map_sub, sub_apply, hu (u - u') h, hu' (u - u') h]
+      simp
+    have hle : c * ‖u - u'‖ ^ 2 ≤ ‖(ℓ - ℓ').comp W.subtypeL‖ * ‖u - u'‖ := by
+      calc c * ‖u - u'‖ ^ 2 ≤ re (a (u - u') (u - u')) := hc (u - u') h
+        _ ≤ ‖a (u - u') (u - u')‖ := re_le_norm _
+        _ = ‖((ℓ - ℓ').comp W.subtypeL) ⟨u - u', h⟩‖ := by rw [hpair]
+        _ ≤ ‖(ℓ - ℓ').comp W.subtypeL‖ * ‖(⟨u - u', h⟩ : W)‖ :=
+            le_opNorm ((ℓ - ℓ').comp W.subtypeL) ⟨u - u', h⟩
+        _ = ‖(ℓ - ℓ').comp W.subtypeL‖ * ‖u - u'‖ := by simp
+    rw [sq, ← mul_assoc] at hle
+    exact le_of_mul_le_mul_right hle hpos
 
 /-- **Lipschitz dependence on the forcing.** If the energy of `a` dominates `c ‖w‖²` on `W`, then
 solutions of the weak equations `a u v = ℓ v` and `a u' v = ℓ' v` on `W` that differ by an element
