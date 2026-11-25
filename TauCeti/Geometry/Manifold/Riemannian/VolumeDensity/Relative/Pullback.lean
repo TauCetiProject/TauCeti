@@ -59,19 +59,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   (h : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : ℝ → M → N}
   {n₀ : ℕ∞ω} {g₀ : ContMDiffRiemannianMetric I n₀ E (fun x : M ↦ TangentSpace I x)}
 
-/-- The induced metrics of a family of immersions agree with `F_{t₀}^* h` outside `K` for `t` near
-`t₀` when `F_t = F_{t₀}` outside a closed set `K` for `t` near `t₀`. -/
-theorem eventually_forall_notMem_pullback_inner_eq
-    (hΦ : ContMDiff (𝓘(ℝ).prod I) J (n + 1) (uncurry Φ))
-    (hinj : ∀ t x, Injective (mfderiv I J (Φ t) x)) {t₀ : ℝ} {K : Set M} (hK : IsClosed K)
-    (hΦK : ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, Φ t x = Φ t₀ x) :
-    ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, (h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t)).inner x =
-      (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀)).inner x := by
-  filter_upwards [hΦK] with t ht x hx
-  refine h.pullback_inner_congr_of_eventuallyEq ?_ _ _ _ _
-  filter_upwards [hK.isOpen_compl.mem_nhds hx] with y hy
-  exact ht y hy
-
 /-- **Regularity of the relative volume of a compactly supported family of immersions.** Let
 `F_t : M → N` be a jointly `C^(n+1)` family of immersions of a manifold `M`, not necessarily
 compact, into a manifold with a `C^n` metric `h`, with `F_t = F_{t₀}` outside a compact set `K`
