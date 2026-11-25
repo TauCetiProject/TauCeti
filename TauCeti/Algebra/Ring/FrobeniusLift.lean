@@ -11,6 +11,7 @@ public import Mathlib.Data.Nat.Factorization.Defs
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.NumberTheory.Basic
 import Mathlib.NumberTheory.Multiplicity
+import TauCeti.Algebra.Ring.GeomSum
 
 /-!
 # Iterates of lifts of power maps
@@ -22,7 +23,8 @@ the Frobenius of `R / p R`, for a prime `p`, with `c = p` and `q = p`. Then the 
 `p` used in integrality arguments for Hazewinkel's functional equation.
 
 Similarly, if `φ` sends a single element `q` exactly to `q ^ p`, as the Frobenius lift of the
-`q`-de Rham prism does, then `φˢ` sends `q` to `q ^ p ^ s`.
+`q`-de Rham prism does, then `φˢ` sends `q` to `q ^ p ^ s`, and the product of the iterates
+`φˢ([p]_q)` for `s < r` of the `q`-integer `[p]_q = ∑_{i < p} q ^ i` is `[p ^ r]_q`.
 
 When moreover `c` divides `q`, raising to `q`-th powers improves a congruence modulo `c` by one
 power of `c`: `a ≡ b` modulo `c` gives `a ^ q ^ k ≡ b ^ q ^ k` modulo `c ^ (k + 1)`. For a lift
@@ -32,6 +34,8 @@ power of `c`: `a ≡ b` modulo `c` gives `a ^ q ^ k ≡ b ^ q ^ k` modulo `c ^ (
 ## Main results
 
 * `TauCeti.pow_apply_of_apply_eq_pow`: if `φ q = q ^ p` exactly, then `φˢ q = q ^ p ^ s`.
+* `TauCeti.prod_pow_apply_geom_sum`: if `φ q = q ^ p` exactly, then
+  `∏_{s < r} φˢ([p]_q) = [p ^ r]_q`.
 * `TauCeti.dvd_pow_apply_sub_pow_pow`: if `c ∣ φ a - a ^ q` for all `a`, then
   `c ∣ φⁱ a - a ^ q ^ i`.
 * `TauCeti.pow_factorization_succ_dvd_pow_sub_pow`: if `p ∣ u - v`, then
@@ -53,6 +57,18 @@ theorem pow_apply_of_apply_eq_pow {R : Type*} [Semiring R] {φ : R →+* R} {q :
   | succ s ih =>
     rw [RingHom.coe_pow, Function.iterate_succ_apply', ← RingHom.coe_pow, ih, map_pow, hq,
       ← pow_mul, ← pow_succ']
+
+/-- If a ring endomorphism `φ` satisfies `φ(q) = q ^ p`, then
+`[p]_q · φ([p]_q) ⋯ φ^(r - 1)([p]_q) = [p ^ r]_q`, where `[n]_q = ∑ i ∈ range n, q ^ i`. -/
+theorem prod_pow_apply_geom_sum {R : Type*} [CommSemiring R] {φ : R →+* R} {q : R} {p : ℕ}
+    (hq : φ q = q ^ p) (r : ℕ) :
+    ∏ s ∈ Finset.range r, (φ ^ s) (∑ i ∈ Finset.range p, q ^ i) =
+      ∑ i ∈ Finset.range (p ^ r), q ^ i := by
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    rw [Finset.prod_range_succ, ih, pow_succ, geom_sum_range_mul, map_sum]
+    simp [map_pow, pow_apply_of_apply_eq_pow hq]
 
 variable {R : Type*} [CommRing R]
 

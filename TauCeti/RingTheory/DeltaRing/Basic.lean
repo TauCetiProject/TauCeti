@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.Algebra.Ring.Regular
 public import Mathlib.FieldTheory.Finite.Basic
-public import TauCeti.Algebra.Ring.FrobeniusLift
+import TauCeti.Algebra.Ring.FrobeniusLift
 
 /-!
 # δ-rings

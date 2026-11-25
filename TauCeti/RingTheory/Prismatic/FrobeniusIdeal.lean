@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.DeltaRing.Basic
 import Mathlib.Algebra.Order.Ring.GeomSum
 import Mathlib.Tactic.IntervalCases
+import TauCeti.Algebra.Ring.FrobeniusLift
 import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.RingTheory.Ideal.Maps
 
