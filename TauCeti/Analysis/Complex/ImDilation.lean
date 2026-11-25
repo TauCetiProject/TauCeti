@@ -340,4 +340,13 @@ theorem _root_.TopologicalSpace.Opens.closure_upperHalf_subset_reflectionCore {�
     (isClosed_closure.inter (isClosed_le continuous_const Complex.continuous_im))).trans ?_
   exact (inter_subset_inter_left _ hWΩ).trans (Ω.inter_setOf_im_nonneg_subset_reflectionCore)
 
+/-- The closure of `U ∩ {0 ≤ im}` lies in the reflection core of `Ω` when the closure of `U` lies
+in `Ω`: it lies in `closure U ∩ {0 ≤ im} ⊆ Ω ∩ {0 ≤ im}`. -/
+theorem _root_.TopologicalSpace.Opens.closure_inter_setOf_im_nonneg_subset_reflectionCore
+    {Ω : Opens ℂ} {U : Set ℂ} (hUΩ : closure U ⊆ Ω) :
+    closure (U ∩ {z | 0 ≤ z.im}) ⊆ Ω.reflectionCore :=
+  (closure_minimal (inter_subset_inter_left _ subset_closure)
+    (isClosed_closure.inter (isClosed_le continuous_const Complex.continuous_im))).trans
+    ((inter_subset_inter_left _ hUΩ).trans Ω.inter_setOf_im_nonneg_subset_reflectionCore)
+
 end TauCeti

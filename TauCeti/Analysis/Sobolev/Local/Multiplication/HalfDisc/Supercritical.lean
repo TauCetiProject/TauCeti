@@ -20,14 +20,17 @@ finite-dimensional. If `f` and `g` are in `W^{k,p}_loc` on the relatively open s
 `TauCeti.MemWkpLoc.bilin_of_two_lt_mul` from open planar domains to half-discs; for `p > 2` it is
 `TauCeti.MemWkpLoc.bilin_succ_halfPlane` at `q = p`.
 
-Near a point of the real axis both factors are extended across the axis by the order-`k`
-reflection `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball`, the interior theorem
+This is the diagonal case of a statement with three orders, as in the interior. Near a point of
+the real axis both factors are extended across the axis by the higher reflections of their own
+orders `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball`, the interior theorem
 is applied on a disc centred on the axis, and the result is restricted back, since the reflection
 agrees with the map on `{0 ≤ im}`. Near a point off the axis the interior theorem applies
 directly. `TauCeti.inter_setOf_im_nonneg_induction` glues the two cases.
 
 ## Main declarations
 
+* `TauCeti.MemWkpLoc.bilin_of_two_lt_add_sub_mul_halfPlane`: `B(f, g) ∈ W^{c,p}_loc` on half-discs
+  for `f ∈ W^{a,p}_loc`, `g ∈ W^{b,p}_loc` and `(a + b - c) p > 2`.
 * `TauCeti.MemWkpLoc.bilin_of_two_lt_mul_halfPlane`: the algebra property of `W^{k,p}_loc` on
   half-discs for `kp > 2`.
 * `TauCeti.MemWkpLoc.clm_apply_of_two_lt_mul_halfPlane` and
@@ -51,6 +54,30 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimen
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {Ω : Opens ℂ}
 
+/-- **Products on half-discs with three orders.** Let `1 < p`, let
+`f ∈ W^{a,p}_loc(Ω ∩ {0 ≤ im}, F)` and `g ∈ W^{b,p}_loc(Ω ∩ {0 ≤ im}, G)`, and let `c ≤ a`,
+`c ≤ b` with `(a + b - c) p > 2`. Then `B(f, g)` is in `W^{c,p}_loc(Ω ∩ {0 ≤ im}, H)`, with bounds
+up to the real axis. Near the axis `f` and `g` are reflected with their own orders `a` and `b`. -/
+theorem MemWkpLoc.bilin_of_two_lt_add_sub_mul_halfPlane [CompleteSpace H]
+    (B : F →L[ℝ] G →L[ℝ] H) {p : ℝ≥0} (hp : 1 < p) {a b c : ℕ} {f : ℂ → F} {g : ℂ → G}
+    (hf : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) a f)
+    (hg : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) b g) (hca : c ≤ a) (hcb : c ≤ b)
+    (habc : 2 < ((a + b - c : ℕ) : ℝ≥0) * p) :
+    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) c (fun z => B (f z) (g z)) := by
+  have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hp.le
+  refine inter_setOf_im_nonneg_induction (MemWkpLoc p · c fun z => B (f z) (g z))
+    memWkpLoc_iff_locally.2
+    ((hf.mono Ω.coe_upperHalf_subset).bilin_of_two_lt_add_sub_mul B hp
+      (hg.mono Ω.coe_upperHalf_subset) hca hcb habc)
+    fun x r _ hΩ => ?_
+  exact MemWkpLoc.congr_mono
+    (MemWkpLoc.bilin_of_two_lt_add_sub_mul (Ω := ⟨_, isOpen_ball⟩) B hp
+      (MemWkpLoc.planarReflection_higherReflectionCoeff_ball hp1 x r
+        (hf.mono (inter_subset_inter_left _ hΩ)))
+      (MemWkpLoc.planarReflection_higherReflectionCoeff_ball hp1 x r
+        (hg.mono (inter_subset_inter_left _ hΩ))) hca hcb habc)
+    (fun z hz => by simp [planarReflection_of_nonneg _ _ hz.2]) inter_subset_left
+
 /-- **The algebra property on half-discs for `kp > 2`.** Let `1 < p` and `k p > 2`. For
 `f ∈ W^{k,p}_loc(Ω ∩ {0 ≤ im}, F)` and `g ∈ W^{k,p}_loc(Ω ∩ {0 ≤ im}, G)`, the product `B(f, g)`
 is in `W^{k,p}_loc(Ω ∩ {0 ≤ im}, H)`, with bounds up to the real axis. This includes `p ≤ 2` for
@@ -59,20 +86,8 @@ theorem MemWkpLoc.bilin_of_two_lt_mul_halfPlane [CompleteSpace H] (B : F →L[�
     {p : ℝ≥0} (hp : 1 < p) {k : ℕ} (hkp : 2 < (k : ℝ≥0) * p) {f : ℂ → F} {g : ℂ → G}
     (hf : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k f)
     (hg : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k g) :
-    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k (fun z => B (f z) (g z)) := by
-  have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hp.le
-  refine inter_setOf_im_nonneg_induction (MemWkpLoc p · k fun z => B (f z) (g z))
-    memWkpLoc_iff_locally.2
-    ((hf.mono Ω.coe_upperHalf_subset).bilin_of_two_lt_mul B hp hkp
-      (hg.mono Ω.coe_upperHalf_subset))
-    fun x r _ hΩ => ?_
-  exact MemWkpLoc.congr_mono
-    (MemWkpLoc.bilin_of_two_lt_mul (Ω := ⟨_, isOpen_ball⟩) B hp hkp
-      (MemWkpLoc.planarReflection_higherReflectionCoeff_ball hp1 x r
-        (hf.mono (inter_subset_inter_left _ hΩ)))
-      (MemWkpLoc.planarReflection_higherReflectionCoeff_ball hp1 x r
-        (hg.mono (inter_subset_inter_left _ hΩ))))
-    (fun z hz => by simp [planarReflection_of_nonneg _ _ hz.2]) inter_subset_left
+    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k (fun z => B (f z) (g z)) :=
+  hf.bilin_of_two_lt_add_sub_mul_halfPlane B hp hg le_rfl le_rfl (by rwa [Nat.add_sub_cancel])
 
 /-- **Coefficient fields on half-discs for `kp > 2`.** Let `1 < p` and `k p > 2`. A coefficient
 field `A ∈ W^{k,p}_loc(Ω ∩ {0 ≤ im}; F →L[ℝ] G)` applied to `u ∈ W^{k,p}_loc(Ω ∩ {0 ≤ im}; F)`

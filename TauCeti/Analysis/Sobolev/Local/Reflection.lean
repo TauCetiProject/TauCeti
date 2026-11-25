@@ -115,6 +115,13 @@ variable {k : ℕ} {d : Fin k → ℝ} {g : ℂ → F}
 theorem planarReflection_of_nonneg (d : Fin k → ℝ) (g : ℂ → F) {z : ℂ} (hz : 0 ≤ z.im) :
     planarReflection d g z = g z := ite_eq_left hz
 
+/-- The reflection agrees with `g` almost everywhere on `U ∩ {0 ≤ im}`, for every set `U`. -/
+theorem planarReflection_ae_eq_inter_setOf_im_nonneg (d : Fin k → ℝ) (g : ℂ → F) (U : Set ℂ) :
+    planarReflection d g =ᵐ[volume.restrict (U ∩ {z | 0 ≤ z.im})] g :=
+  ae_restrict_of_ae_restrict_of_subset inter_subset_right
+    (ae_restrict_of_forall_mem (measurableSet_le measurable_const Complex.measurable_im)
+      fun _ hz => planarReflection_of_nonneg _ _ hz)
+
 @[simp]
 theorem planarReflection_of_neg (d : Fin k → ℝ) (g : ℂ → F) {z : ℂ} (hz : z.im < 0) :
     planarReflection d g z = ∑ j, d j • g (imDilation (higherReflectionNode j) z) :=

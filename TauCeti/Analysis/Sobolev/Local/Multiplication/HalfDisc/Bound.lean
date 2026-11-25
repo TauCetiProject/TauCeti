@@ -33,10 +33,13 @@ The order-`k` higher reflection `TauCeti.planarReflection (higherReflectionCoeff
 on `Ω⁺` to the reflection core `Ω.reflectionCore`, an open set containing `Ω⁺`, with
 `‖R u‖_{W^{k,p}(Ω.reflectionCore)} ≤ higherReflectionBound k p ‖u‖_{W^{k,p}(Ω⁺)}`
 (`TauCeti.eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le`). The reflection
-agrees with the map on `{0 ≤ im}`, so on `U⁺` the product `B(f, g)` agrees with `B(R f, R g)`. The
-closure of `U⁺` is a compact subset of `Ω⁺`, hence of the reflection core, so the interior bounds
-`TauCeti.exists_eLpNorm_bilin_le_eLpNormWkp_one` and `TauCeti.exists_eLpNormWkp_succ_bilin_le` on
-the reflection core apply to `B(R f, R g)`, and the reflection bound returns to `Ω⁺`.
+agrees with the map almost everywhere on `U⁺`
+(`TauCeti.planarReflection_ae_eq_inter_setOf_im_nonneg`), so there `B(f, g)` agrees with
+`B(R f, R g)`. The closure of `U⁺` is a compact subset of `Ω⁺`, hence of the reflection core
+(`TopologicalSpace.Opens.closure_inter_setOf_im_nonneg_subset_reflectionCore`), so the interior
+bounds `TauCeti.exists_eLpNorm_bilin_le_eLpNormWkp_one` and
+`TauCeti.exists_eLpNormWkp_succ_bilin_le` on the reflection core apply to `B(R f, R g)`, and the
+reflection bound returns to `Ω⁺`.
 
 ## Main declarations
 
@@ -66,29 +69,6 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {Ω : Opens ℂ} {p q : ℝ≥0}
 
-omit [FiniteDimensional ℝ G] in
-/-- The closure of `U ∩ {0 ≤ im}` is compact and lies in the reflection core of `Ω` when the
-closure of `U` is compact and lies in `Ω`. -/
-private theorem isCompact_closure_inter_setOf_im_nonneg {U : Set ℂ} (hU : IsCompact (closure U))
-    (hUΩ : closure U ⊆ Ω) :
-    IsCompact (closure (U ∩ {z | 0 ≤ z.im})) ∧
-      closure (U ∩ {z | 0 ≤ z.im}) ⊆ Ω.reflectionCore := by
-  have hsub : closure (U ∩ {z | 0 ≤ z.im}) ⊆ closure U ∩ {z | 0 ≤ z.im} :=
-    closure_minimal (inter_subset_inter_left _ subset_closure)
-      (isClosed_closure.inter (isClosed_le continuous_const Complex.continuous_im))
-  exact ⟨hU.of_isClosed_subset isClosed_closure (hsub.trans inter_subset_left),
-    hsub.trans ((inter_subset_inter_left _ hUΩ).trans
-      Ω.inter_setOf_im_nonneg_subset_reflectionCore)⟩
-
-omit [FiniteDimensional ℝ G] in
-/-- A higher reflection agrees with the map almost everywhere on `U ∩ {0 ≤ im}`. -/
-private theorem planarReflection_ae_eq_inter_setOf_im_nonneg {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {k : ℕ} (d : Fin k → ℝ) (u : ℂ → E) (U : Set ℂ) :
-    planarReflection d u =ᵐ[volume.restrict (U ∩ {z | 0 ≤ z.im})] u :=
-  ae_restrict_of_ae_restrict_of_subset inter_subset_right
-    (ae_restrict_of_forall_mem (measurableSet_le measurable_const Complex.measurable_im)
-      fun _ hz => planarReflection_of_nonneg _ _ hz)
-
 /-- **Local bound for order-zero mixed products on half-discs.** Fix real normed spaces `F`, `G`
 and `H` with `G` finite-dimensional. For `p > 2`, `1 ≤ q ≤ p` and a set `U` whose closure is
 compact and contained in `Ω`, there is a constant `C` such that
@@ -100,7 +80,9 @@ theorem exists_eLpNorm_bilin_le_eLpNormWkp_one_halfPlane (hp : 2 < p) (hq : 1 �
       eLpNorm (fun z => B (f z) (g z)) q (volume.restrict (U ∩ {z | 0 ≤ z.im})) ≤
         C * ‖B‖ₑ * eLpNorm f p (volume.restrict (U ∩ {z | 0 ≤ z.im})) *
           eLpNormWkp q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 g := by
-  obtain ⟨hUc, hUcore⟩ := isCompact_closure_inter_setOf_im_nonneg hU hUΩ
+  have hUc : IsCompact (closure (U ∩ {z | 0 ≤ z.im})) :=
+    hU.of_isClosed_subset isClosed_closure (closure_mono inter_subset_left)
+  have hUcore := Opens.closure_inter_setOf_im_nonneg_subset_reflectionCore hUΩ
   obtain ⟨C, hC⟩ := exists_eLpNorm_bilin_le_eLpNormWkp_one (F := F) (G := G) (H := H)
     (Ω := Ω.reflectionCore) hp hq hqp hUc hUcore
   set M := higherReflectionBound 1 q
@@ -140,7 +122,9 @@ theorem exists_eLpNormWkp_succ_bilin_le_halfPlane [CompleteSpace H] (hp : 2 < p)
       eLpNormWkp q (U ∩ {z | 0 ≤ z.im}) (k + 1) (fun z => B (f z) (g z)) ≤
         C * ‖B‖ₑ * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) f *
           eLpNormWkp q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) g := by
-  obtain ⟨hUc, hUcore⟩ := isCompact_closure_inter_setOf_im_nonneg hU hUΩ
+  have hUc : IsCompact (closure (U ∩ {z | 0 ≤ z.im})) :=
+    hU.of_isClosed_subset isClosed_closure (closure_mono inter_subset_left)
+  have hUcore := Opens.closure_inter_setOf_im_nonneg_subset_reflectionCore hUΩ
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_bilin_le (F := F) (G := G) (H := H)
     (Ω := Ω.reflectionCore) hp hq hqp k hUc hUcore
   set Mp := higherReflectionBound (k + 1) p
