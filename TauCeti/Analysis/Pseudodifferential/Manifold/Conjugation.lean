@@ -153,6 +153,7 @@ variable [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
 
 When `P` is not a classical pseudodifferential operator of order `m`, neither is its conjugate,
 and both sides are `0`. -/
+@[simp]
 theorem classicalPrincipalSymbol_intrinsicStar (x : M)
     (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
     classicalPrincipalSymbol m (star (toConv P)).ofConv x ξ =
