@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Yosida.Basic
 import TauCeti.Analysis.Semigroups.BoundedGenerator.Perturbation
 import TauCeti.Analysis.Semigroups.Group.Stone.Basic
 public import TauCeti.Analysis.Normed.Operator.Dense
-public import Mathlib.Data.PNat.Basic
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 
 /-!
@@ -64,50 +63,35 @@ public section
 
 namespace TauCeti
 
-open Complex NormedSpace Filter Topology
+open Complex NormedSpace Filter Set Topology
 open scoped InnerProductSpace
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
 variable {A : H →ₗ.[ℂ] H} (hA : IsSelfAdjoint A)
 
-private noncomputable def yosidaFlow (A : H →ₗ.[ℂ] H) (n : ℕ+) (t : ℝ) : H →L[ℂ] H :=
-  NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (n : ℝ)))
-
-/-- Symmetric Yosida exponential orbits are uniformly Cauchy on bounded time intervals. -/
-theorem _root_.IsSelfAdjoint.yosida_exponential_uniform_cauchy
-    (hA : IsSelfAdjoint A) (x : H) (R : ℝ) (ε : ℝ)
-    (hε : 0 < ε) : ∃ N : ℕ+, ∀ m ≥ N, ∀ n ≥ N, ∀ t : ℝ, |t| ≤ R →
-      ‖NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (m : ℝ))) x -
-        NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (n : ℝ))) x‖ < ε := by
-  have hnorm (n : ℕ+) (t : ℝ) :
-      ‖exp (t • (I • A.symmetricYosidaApproximation (n : ℝ)))‖ ≤ 1 := by
+/-- Along real shifts escaping to infinity, symmetric Yosida exponential orbits are uniformly
+Cauchy on every bounded set of times. -/
+theorem _root_.IsSelfAdjoint.uniformCauchySeqOn_exp_smul_I_smul_symmetricYosidaApproximation_apply
+    (hA : IsSelfAdjoint A) (x : H) {S : Set ℝ} {R : ℝ}
+    (hS : ∀ t ∈ S, |t| ≤ R) :
+    UniformCauchySeqOn
+      (fun (r t : ℝ) => exp ((t : ℂ) • (I • A.symmetricYosidaApproximation r)) x)
+      (cocompact ℝ) S := by
+  have hnorm (r t : ℝ) :
+      ‖exp ((t : ℂ) • (I • A.symmetricYosidaApproximation r))‖ ≤ 1 := by
     have h := (Semigroups.StronglyContinuousGroup.isUnitary_ofBoundedExp _
-      (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ))).opNorm_le_one t
-    rw [Semigroups.StronglyContinuousGroup.ofBoundedExp_apply,
+      (hA.isSelfAdjoint_symmetricYosidaApproximation r)).opNorm_le_one t
+    rwa [Semigroups.StronglyContinuousGroup.ofBoundedExp_apply,
       ContinuousLinearMap.norm_restrictScalars] at h
-    simpa only [Complex.coe_smul] using h
-  have hbound : ∀ᶠ n : ℕ+ in atTop, ∀ t ∈ {t : ℝ | |t| ≤ R}, ‖yosidaFlow A n t‖ ≤ 1 := by
-    exact Filter.Eventually.of_forall fun n t _ => hnorm n t
-  have hdomain : ∀ y ∈ (A.domain : Set H),
-      UniformCauchySeqOn (fun n t => yosidaFlow A n t y) atTop {t : ℝ | |t| ≤ R} := by
-    intro y hy
-    have hconv := ((hA.tendsto_symmetricYosidaApproximation_apply ⟨y, hy⟩).mono_left
-      atTop_le_cocompact).comp (tendsto_natCast_atTop_atTop.comp tendsto_PNat_val_atTop_atTop)
-    have h := Semigroups.uniformCauchySeqOn_exp_smul_apply_of_tendsto
-      (G := fun n : ℕ+ => I • A.symmetricYosidaApproximation (n : ℝ))
-      (S := {t : ℝ | |t| ≤ R}) (M := 1) (R := R)
-      (Filter.Eventually.of_forall fun p =>
-        ((hA.commute_symmetricYosidaApproximation (p.1 : ℝ) (p.2 : ℝ)).smul_left I).smul_right I)
-      (hconv.const_smul I)
-      (Filter.Eventually.of_forall fun n t _ s _ => by
-        simpa only [Complex.coe_smul] using! hnorm n (s * t))
-      (fun _ ht => ht)
-    simpa only [yosidaFlow, Complex.coe_smul] using! h
-  have hu := ContinuousLinearMap.uniformCauchySeqOn_apply_of_dense
-    (f := yosidaFlow A) (C := 1) hA.dense_domain hbound hdomain x
-  obtain ⟨N, hN⟩ := Metric.uniformCauchySeqOn_iff.mp hu ε hε
-  refine ⟨N, fun m hm n hn t ht => ?_⟩
-  simpa only [yosidaFlow, dist_eq_norm] using hN m hm n hn t ht
+  refine ContinuousLinearMap.uniformCauchySeqOn_apply_of_dense
+    (C := 1) hA.dense_domain (.of_forall fun r t _ => hnorm r t) ?_ x
+  intro y hy
+  exact Semigroups.uniformCauchySeqOn_exp_smul_apply_of_tendsto
+    (G := fun r => I • A.symmetricYosidaApproximation r)
+    (.of_forall fun p =>
+      ((hA.commute_symmetricYosidaApproximation p.1 p.2).smul_left I).smul_right I)
+    ((hA.tendsto_symmetricYosidaApproximation_apply ⟨y, hy⟩).const_smul I)
+    (.of_forall fun r t _ s _ => hnorm r (s * t)) hS
 
 end TauCeti

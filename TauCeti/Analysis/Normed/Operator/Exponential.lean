@@ -29,6 +29,8 @@ space. The norm bounds for exponentials in a general normed algebra live in
 
 ## Main results
 
+* `ContinuousLinearMap.restrictScalars_exp`: scalar restriction commutes with the exponential.
+
 * `ContinuousLinearMap.exp_add_smul`, `ContinuousLinearMap.exp_add_smul_apply`: exponentials of
   scalar multiples of a bounded operator compose additively.
 * `ContinuousLinearMap.expEquiv`: the exponential of a bounded operator as a continuous linear
@@ -60,6 +62,22 @@ section Operator
 
 variable {𝕜 : Type*} [RCLike 𝕜] {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
   [CompleteSpace X]
+
+/-- Restricting a bounded operator to real scalars commutes with the exponential. -/
+theorem restrictScalars_exp [NormedSpace ℝ X] [IsScalarTower ℝ 𝕜 X] (A : X →L[𝕜] X) :
+    (exp A).restrictScalars ℝ = exp (A.restrictScalars ℝ) := by
+  let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
+  let +nondep : NormedAlgebra ℚ (X →L[ℝ] X) := .restrictScalars ℚ ℝ _
+  let φ : (X →L[𝕜] X) →+* (X →L[ℝ] X) :=
+    { toFun := restrictScalars ℝ
+      map_one' := by ext x; rfl
+      map_mul' := by intro B C; ext x; rfl
+      map_zero' := restrictScalars_zero
+      map_add' := restrictScalars_add }
+  have hφ : Continuous φ := by
+    change Continuous (fun B : X →L[𝕜] X => B.restrictScalars ℝ)
+    exact (restrictScalarsIsometry 𝕜 X X ℝ ℝ).continuous
+  exact NormedSpace.map_exp φ hφ A
 
 /-- Exponentials of scalar multiples of the same bounded operator split over addition. -/
 theorem exp_add_smul (A : X →L[𝕜] X) (s t : 𝕜) :
