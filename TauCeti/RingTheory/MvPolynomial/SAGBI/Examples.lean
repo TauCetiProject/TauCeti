@@ -470,12 +470,13 @@ theorem aeval_duplicateFamily_monomial_sub_monomial :
         (monomial (single 0 1) (1 : ℚ) - monomial (single 1 1) 1 : MvPolynomial (Fin 2) ℚ) = 0 := by
   simp [duplicateFamily_def, ← X_pow_eq_monomial]
 
-/-- **The duplicated family `(x, x)` is a SAGBI basis of `ℚ[x]`**, certified by the empty
-expression `Q = 0` for its exactly vanishing relation. -/
+/-- **The duplicated family `(x, x)` is a SAGBI basis** of the algebra `ℚ[x]` it generates,
+certified by the empty expression `Q = 0` for its exactly vanishing relation. -/
 theorem isSAGBIBasis_duplicateFamily :
-    lex.IsSAGBIBasis {X 0} (Algebra.adjoin ℚ {(X 0 : MvPolynomial (Fin 2) ℚ)}) := by
-  rw [← range_duplicateFamily, isSAGBIBasis_range_iff_forall_exists_aeval_eq
-    monic_duplicateFamily toricIdeal_lex_degree_duplicateFamily]
+    lex.IsSAGBIBasis (Set.range duplicateFamily)
+      (Algebra.adjoin ℚ (Set.range duplicateFamily)) := by
+  rw [isSAGBIBasis_range_iff_forall_exists_aeval_eq monic_duplicateFamily
+    toricIdeal_lex_degree_duplicateFamily]
   exact fun _ ↦ ⟨0, by rw [map_zero, aeval_duplicateFamily_monomial_sub_monomial], by simp⟩
 
 /-- Expressions in the SAGBI basis `(x, x)` are not unique: `x` is the image of both `U` and
