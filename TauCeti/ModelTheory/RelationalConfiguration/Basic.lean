@@ -226,7 +226,8 @@ theorem Atom.infinite_of_relations [Infinite V] {n : ℕ} (hn : n ≠ 0) (R : L.
     Infinite (Atom L V) :=
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
   have : Nonempty (L.Relations n) := ⟨R⟩
-  Infinite.sigma_of_right (β := fun n => L.Relations n × (Fin n → V)) (a := n)
+  have := Infinite.sigma_of_right (β := fun n => L.Relations n × (Fin n → V)) (a := n)
+  inferInstanceAs (Infinite (Σ n, L.Relations n × (Fin n → V)))
 
 /-- A configuration is a truth value for every atom, so there are `2 ^ #(Atom L V)` of them. -/
 theorem mk_eq_two_power (L : Language) (V : Type*) :
