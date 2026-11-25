@@ -27,21 +27,23 @@ open scoped Ordinal
 
 namespace TauCeti.Examples.ModelTheory.LinearOrderClassTypes
 
+variable {V : Type*}
+
 /-- The code obtained by adding the diagonal to the relation of `c`, written as the order
 `x = y ∨ r x y` of Mathlib's `partialOrderOfSO`. -/
-noncomputable def addDiag (c : RelationalConfiguration Language.order ℕ) :
-    RelationalConfiguration Language.order ℕ :=
+noncomputable def addDiag (c : RelationalConfiguration Language.order V) :
+    RelationalConfiguration Language.order V :=
   ofRel fun x y => x = y ∨ codeRel leSymb c x y
 
 /-- The relation of `addDiag c` is the relation of `c` with the diagonal added. -/
 @[simp]
-theorem codeRel_addDiag (c : RelationalConfiguration Language.order ℕ) (x y : ℕ) :
+theorem codeRel_addDiag (c : RelationalConfiguration Language.order V) (x y : V) :
     codeRel leSymb (addDiag c) x y ↔ x = y ∨ codeRel leSymb c x y := by
   rw [addDiag, codeRel_ofRel]
 
 /-- Adding the diagonal to a coded strict well-order gives a coded linear order: its relation is
 the order of Mathlib's `linearOrderOfSTO`. -/
-theorem addDiag_mem_linearOrderClass {c : RelationalConfiguration Language.order ℕ}
+theorem addDiag_mem_linearOrderClass {c : RelationalConfiguration Language.order V}
     (hc : c ∈ wellOrderClass leSymb) : addDiag c ∈ linearOrderClass := by
   rw [mem_wellOrderClass] at hc
   classical
@@ -54,16 +56,16 @@ theorem addDiag_mem_linearOrderClass {c : RelationalConfiguration Language.order
 
 /-- Isomorphic codes with the diagonal added come from coded strict well-orders of the same
 type. -/
-theorem type_eq_of_isoSetoid_addDiag {c d : RelationalConfiguration Language.order ℕ}
+theorem type_eq_of_isoSetoid_addDiag {c d : RelationalConfiguration Language.order V}
     (hc : c ∈ wellOrderClass leSymb) (hd : d ∈ wellOrderClass leSymb)
-    (h : isoSetoid Language.order ℕ (addDiag c) (addDiag d)) :
-    @Ordinal.type ℕ (codeRel leSymb c) (mem_wellOrderClass.1 hc) =
-      @Ordinal.type ℕ (codeRel leSymb d) (mem_wellOrderClass.1 hd) := by
+    (h : isoSetoid Language.order V (addDiag c) (addDiag d)) :
+    @Ordinal.type V (codeRel leSymb c) (mem_wellOrderClass.1 hc) =
+      @Ordinal.type V (codeRel leSymb d) (mem_wellOrderClass.1 hd) := by
   have := mem_wellOrderClass.1 hc
   have := mem_wellOrderClass.1 hd
   obtain ⟨σ, hσ⟩ := isoSetoid_iff_exists_perm_smul_eq.1 h
   -- `σ` carries the reflexive closure of `codeRel leSymb c` to that of `codeRel leSymb d`.
-  have hrefl (x y : ℕ) :
+  have hrefl (x y : V) :
       σ x = σ y ∨ codeRel leSymb d (σ x) (σ y) ↔ x = y ∨ codeRel leSymb c x y := by
     have := codeRel_perm_smul leSymb σ (addDiag c) (σ x) (σ y)
     rw [hσ] at this
