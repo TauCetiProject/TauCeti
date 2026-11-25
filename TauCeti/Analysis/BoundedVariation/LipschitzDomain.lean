@@ -179,7 +179,7 @@ theorem BV.isCompactOperator_toL1CLM_of_isLipschitzDomain
   · exact isCompactOperator_toL1CLM_of_frontier_eq_empty hb hfr
   obtain ⟨g, -, -, -, -, -, -⟩ := isLipschitzDomain_iff_exists_mem_normalCylinder.mp hΩ x₀ hx₀
   have hfr_cpt : IsCompact (frontier (g '' (Ω : Set F))) := by
-    rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier]
+    rw [← g.image_frontier]
     exact (hb.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure).image
       g.continuous
   obtain ⟨L, hL⟩ := (hΩ.image g).exists_isLipschitzDomainWith hfr_cpt
