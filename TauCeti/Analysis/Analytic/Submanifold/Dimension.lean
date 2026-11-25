@@ -283,6 +283,19 @@ theorem IsAnalyticSubmanifold.exists_le_analyticDim_of_subset_sUnion
   obtain ⟨C, hCd⟩ := hS.exists_dim_le_of_subset_iUnion he (by rwa [← sUnion_eq_iUnion])
   exact ⟨C, C.property, (he C).analyticDim_eq ▸ by exact_mod_cast hCd⟩
 
+/-- If a `d`-dimensional analytic submanifold `S ⊆ T ∩ ⋃₀ 𝒞` is covered by finitely many analytic
+submanifolds, one of them meeting `T` has analytic dimension at least `d`. -/
+theorem IsAnalyticSubmanifold.exists_le_analyticDim_of_subset_inter_sUnion
+    {𝒞 : Set (Set (Fin n → 𝕜))} (hS : IsAnalyticSubmanifold d S) (h𝒞 : 𝒞.Finite)
+    (hC : ∀ C ∈ 𝒞, ∃ e, IsAnalyticSubmanifold e C) (hST : S ⊆ T ∩ ⋃₀ 𝒞) :
+    ∃ C ∈ 𝒞, (C ∩ T).Nonempty ∧ (d : WithBot ℕ∞) ≤ analyticDim C := by
+  obtain ⟨C, ⟨hC𝒞, hCT⟩, hdC⟩ := hS.exists_le_analyticDim_of_subset_sUnion
+    (𝒞 := {C ∈ 𝒞 | (C ∩ T).Nonempty}) (h𝒞.subset (sep_subset _ _))
+    (fun C hC' ↦ hC C hC'.1) fun y hy ↦ by
+      obtain ⟨C, hC𝒞, hyC⟩ := mem_sUnion.1 (hST hy).2
+      exact ⟨C, ⟨hC𝒞, y, hyC, (hST hy).1⟩, hyC⟩
+  exact ⟨C, hC𝒞, hCT, hdC⟩
+
 /-- **Dimension of a finite union of analytic submanifolds.** The analytic dimension of the union
 of finitely many analytic submanifolds is the largest of their dimensions. Disjointness is not
 required. -/

@@ -97,19 +97,6 @@ private theorem SemianalyticAt.exists_partition_analyticDim (hA : SemianalyticAt
   rw [hd.analyticDim_eq, he.analyticDim_eq]
   exact_mod_cast h𝒞dim B hB C hC (h𝒞front B hB C hC ⟨y, hyB, hyC⟩) hBC d e hd he
 
-/-- A `d`-dimensional analytic submanifold `S ⊆ T ∩ ⋃₀ 𝒞`, for a finite family `𝒞` of analytic
-submanifolds, has dimension at most that of some member of `𝒞` meeting `T`. -/
-private theorem IsAnalyticSubmanifold.exists_le_analyticDim_of_subset_inter_sUnion {d : ℕ}
-    {S T : Set (Fin n → ℝ)} {𝒞 : Set (Set (Fin n → ℝ))} (hd : IsAnalyticSubmanifold d S)
-    (h𝒞fin : 𝒞.Finite) (h𝒞 : ∀ B ∈ 𝒞, ∃ e, IsAnalyticSubmanifold e B) (hS : S ⊆ T ∩ ⋃₀ 𝒞) :
-    ∃ B ∈ 𝒞, (B ∩ T).Nonempty ∧ (d : WithBot ℕ∞) ≤ analyticDim B := by
-  obtain ⟨B, ⟨hB, hBT⟩, hdB⟩ := hd.exists_le_analyticDim_of_subset_sUnion
-    (𝒞 := {B ∈ 𝒞 | (B ∩ T).Nonempty}) (h𝒞fin.subset (sep_subset _ _))
-    (fun B hB ↦ h𝒞 B hB.1) fun y hy ↦ by
-      obtain ⟨B, hB, hyB⟩ := mem_sUnion.1 (hS hy).2
-      exact ⟨B, ⟨hB, y, hyB, (hS hy).1⟩, hyB⟩
-  exact ⟨B, hB, hBT, hdB⟩
-
 /-- **The closure of a semianalytic germ has the same local dimension.** -/
 theorem SemianalyticAt.analyticDimAt_closure (hA : SemianalyticAt A x) :
     analyticDimAt (closure A) x = analyticDimAt A x := by
