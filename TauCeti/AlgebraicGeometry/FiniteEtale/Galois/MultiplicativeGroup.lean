@@ -175,7 +175,6 @@ theorem card_multiplicativeGroupPowerCoverFiber (Ω : Type u) [Field Ω] [IsSepC
       (kummerCover (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) n hn)) = n :=
   letI : Algebra K[T;T⁻¹] Ω := (laurentEval (R := K) (1 : Ωˣ)).toRingHom.toAlgebra
   card_kummerCoverFiber (R := .of K[T;T⁻¹]) (LaurentPolynomial.genericUnit K) Ω n hn
-    (laurentEval_genericUnit (R := K) (1 : Ωˣ))
 
 end CommRing
 
