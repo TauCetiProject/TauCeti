@@ -33,6 +33,8 @@ then give the Hölder bound for the inverse chart.
 * `ContDiffOn.exists_holderOnWith_iteratedFDeriv_clm_inverse`: inverse-family estimates on a ball.
 * `ContDiffOn.exists_ckHolderSpaceOn_clm_inverse`: the inverse family in `CkHolderSpaceOn`.
 * `OpenPartialHomeomorph.exists_holderOnWith_iteratedFDeriv_symm`: the inverse-chart estimate.
+* `OpenPartialHomeomorph.exists_restr_holderOnWith_iteratedFDeriv_symm`: a restriction whose
+  inverse is `C^{m+1,α}` on its whole target.
 * `OpenPartialHomeomorph.exists_ckHolderSpaceOn_symm`: the inverse chart in `CkHolderSpaceOn`.
 -/
 
@@ -270,6 +272,29 @@ theorem OpenPartialHomeomorph.exists_holderOnWith_iteratedFDeriv_symm
     exact (hev.iteratedFDeriv ℝ m).eq_of_nhds
   exact ⟨ρ, hρ, fun y hy ↦ (hρU hy).1, hg.mono hρU, N,
     TauCeti.holderOnWith_iteratedFDeriv_succ_iff.mpr htop⟩
+
+/-- An open partial homeomorphism that is `C^{m+1}` on a neighbourhood `s` of `a`, with
+`α`-Hölder `(m+1)`-th derivative there and invertible derivative at `a`, restricts around `a` to an
+open partial homeomorphism with the same values whose inverse is `C^{m+1}` on its target, with
+`α`-Hölder `(m+1)`-th derivative there. -/
+theorem OpenPartialHomeomorph.exists_restr_holderOnWith_iteratedFDeriv_symm
+    {E : Type uE} {F : Type uF} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace E]
+    {m : ℕ} {α C : ℝ≥0} (e : OpenPartialHomeomorph E F) {a : E} (ha : a ∈ e.source)
+    {s : Set E} (he : ContDiffOn ℝ (m + 1) e s) (hα : α ≤ 1) (hs : s ∈ 𝓝 a)
+    (hH : HolderOnWith C α (iteratedFDeriv ℝ (m + 1) e) s)
+    (hinv : (fderiv ℝ e a).IsInvertible) :
+    ∃ e' : OpenPartialHomeomorph E F, ⇑e' = ⇑e ∧ a ∈ e'.source ∧ e'.source ⊆ e.source ∧
+      ContDiffOn ℝ (m + 1) e'.symm e'.target ∧
+      ∃ K : ℝ≥0, HolderOnWith K α (iteratedFDeriv ℝ (m + 1) e'.symm) e'.target := by
+  obtain ⟨r, hr, -, hsymm, K, hK⟩ := e.exists_holderOnWith_iteratedFDeriv_symm ha he hα hs hH
+    hinv
+  set e' := e.restrOpen (e.source ∩ e ⁻¹' ball (e a) r) (e.isOpen_inter_preimage isOpen_ball)
+  -- The target of `e'` lies in the ball, since `e'` maps its source there.
+  have ht : e'.target ⊆ ball (e a) r := fun w hw ↦ by
+    have h : e (e'.symm w) ∈ ball (e a) r := (e'.map_target hw).2.2
+    rwa [show e (e'.symm w) = w from e'.right_inv hw] at h
+  exact ⟨e', rfl, ⟨ha, ha, mem_ball_self hr⟩, fun z hz ↦ hz.1, hsymm.mono ht, K, hK.mono ht⟩
 
 /-- The inverse chart lies in `CkHolderSpaceOn (m + 1) α` on a ball about the image point,
 with values `e.symm x`. -/

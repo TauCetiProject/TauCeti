@@ -275,6 +275,20 @@ theorem mapEdgeSet_inter (f : Iso G H) (F F' : Set β) :
   · rintro ⟨⟨he, hF⟩, ⟨_, hF'⟩⟩
     exact ⟨he, hF, hF'⟩
 
+/-- A point lies in a transported vertex set exactly when it is the image of an actual vertex in
+the original set. -/
+theorem mem_mapVertexSet_iff_exists (f : Iso G H) (S : Set α) (y : α') :
+    y ∈ f.mapVertexSet S ↔ ∃ x : G.vertexSet, (x : α) ∈ S ∧ (f.vertexEquiv x : α') = y :=
+  ⟨fun ⟨_, h⟩ ↦ ⟨_, h, by simp⟩,
+    fun ⟨x, hx, hxy⟩ ↦ hxy ▸ ⟨(f.vertexEquiv x).property, by simpa using hx⟩⟩
+
+/-- An edge lies in a transported edge set exactly when it is the image of an actual edge in the
+original set. -/
+theorem mem_mapEdgeSet_iff_exists (f : Iso G H) (F : Set β) (e : β') :
+    e ∈ f.mapEdgeSet F ↔ ∃ a : G.edgeSet, (a : β) ∈ F ∧ (f.edgeEquiv a : β') = e :=
+  ⟨fun ⟨_, h⟩ ↦ ⟨_, h, by simp⟩,
+    fun ⟨a, ha, hae⟩ ↦ hae ▸ ⟨(f.edgeEquiv a).property, by simpa using ha⟩⟩
+
 /-- Transport preserves the extended cardinality of a set of actual edges. -/
 @[simp]
 theorem encard_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :

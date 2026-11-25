@@ -46,7 +46,9 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
 
 * `MvPolynomial.aeval_blockLinearForm_eq_linearSubst`, `MvPolynomial.blockSubst_eq_linearSubst`:
   substituting square block-linear forms is a block-diagonal `MvPolynomial.linearSubst`, and in
-  particular `blockSubst A` is `linearSubst (1 ⊗ₖ A)`.
+  particular `blockSubst A` is `linearSubst (1 ⊗ₖ A)`; conversely, by
+  `MvPolynomial.linearSubst_eq_aeval_blockLinearForm_of_block`, a block-diagonal `linearSubst` is
+  the substitution of the block-linear forms given by its diagonal blocks.
 * `MvPolynomial.blockSubst_mul`: block substitution is a right action of the matrix monoid, and
   `MvPolynomial.blockSubst_inv_blockSubst`, `MvPolynomial.blockSubst_blockSubst_inv`: an
   invertible matrix gives an automorphism.
@@ -55,6 +57,9 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
 * `MvPolynomial.IsMultiHomogeneous.blockSubst`,
   `MvPolynomial.IsHomogeneous.blockSubst_smul`: block substitution preserves the multidegree,
   and scaling `A` by `c` scales a homogeneous polynomial of degree `n` by `c ^ n`.
+* `MvPolynomial.IsMultiHomogeneous.aeval_blockLinearForm`,
+  `MvPolynomial.IsMultiHomogeneous.linearSubst_of_block`: so do block-varying linear forms and
+  block-diagonal linear substitutions.
 * `MvPolynomial.blockSubst_coeff_mem_of_row`,
   `MvPolynomial.coeff_blockSubst_inv_eq_zero_of_row_eq`: vanishing of `blockSubst A⁻¹ P` below a
   weighted-degree threshold along row `i'` of an invertible matrix `A` passes to row `i` of any
@@ -182,12 +187,43 @@ theorem map_blockSubst {S : Type*} [CommSemiring S] (f : R →+* S) (A : Matrix 
     rcases q with ⟨h, j⟩
     simp [hp]
 
+omit [Fintype ι] in
+/-- Substituting block-linear forms preserves multihomogeneity and the multidegree. -/
+theorem IsMultiHomogeneous.aeval_blockLinearForm [DecidableEq κ] {τ : Type*} [Fintype τ]
+    {d : κ → ℕ} {P : MvPolynomial (κ × ι) R} (hP : IsMultiHomogeneous d P) (A : κ → ι → τ → R) :
+    IsMultiHomogeneous d (aeval (blockLinearForm A) P) :=
+  isMultiHomogeneous_iff_forall_isWeightedHomogeneous.2 fun h ↦
+    (hP.isWeightedHomogeneous h).aeval (isWeightedHomogeneous_blockLinearForm _ h)
+
 /-- Block substitution preserves multihomogeneity and the multidegree. -/
 theorem IsMultiHomogeneous.blockSubst [DecidableEq κ] {d : κ → ℕ} {P : MvPolynomial (κ × ι) R}
     (hP : IsMultiHomogeneous d P) (A : Matrix ι ι R) :
     IsMultiHomogeneous d (MvPolynomial.blockSubst A P) :=
-  isMultiHomogeneous_iff_forall_isWeightedHomogeneous.2 fun h ↦
-    (hP.isWeightedHomogeneous h).aeval (isWeightedHomogeneous_blockLinearForm _ h)
+  hP.aeval_blockLinearForm _
+
+/-- A linear substitution whose matrix is block diagonal, `M x y = 0` whenever `x` and `y` lie in
+different blocks, is the substitution of the block-linear forms `MvPolynomial.blockLinearForm`
+given by the diagonal blocks of `M`. -/
+theorem linearSubst_eq_aeval_blockLinearForm_of_block [Fintype κ]
+    {M : Matrix (κ × ι) (κ × ι) R} (hM : ∀ x y, x.1 ≠ y.1 → M x y = 0) :
+    linearSubst M = aeval (blockLinearForm fun h p q ↦ M (h, p) (h, q)) := by
+  classical
+  rw [aeval_blockLinearForm_eq_linearSubst]
+  congr 1
+  ext ⟨h, p⟩ ⟨h', q⟩
+  by_cases hh : h = h'
+  · subst hh
+    simp
+  · simp [hh, hM (h, p) (h', q) hh]
+
+/-- A linear substitution whose matrix is block diagonal, `M x y = 0` whenever `x` and `y` lie in
+different blocks, preserves multihomogeneity and the multidegree. -/
+theorem IsMultiHomogeneous.linearSubst_of_block [Fintype κ] [DecidableEq κ] {d : κ → ℕ}
+    {P : MvPolynomial (κ × ι) R} (hP : IsMultiHomogeneous d P) {M : Matrix (κ × ι) (κ × ι) R}
+    (hM : ∀ x y, x.1 ≠ y.1 → M x y = 0) :
+    IsMultiHomogeneous d (linearSubst M P) := by
+  rw [linearSubst_eq_aeval_blockLinearForm_of_block hM]
+  exact hP.aeval_blockLinearForm _
 
 /-- Rescaling the matrix by `c` rescales a homogeneous polynomial of degree `n` by `c ^ n`. -/
 theorem IsHomogeneous.blockSubst_smul {P : MvPolynomial (κ × ι) R} {n : ℕ}

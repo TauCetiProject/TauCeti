@@ -17,7 +17,7 @@ inclusion, and the point-twist cohomology map is the case `E = D + x`.
 On a compact Hausdorff complex curve the map on first cohomology is surjective for every
 inclusion `D ≤ E`. This follows by adding the points of `E - D` one at a time, since each
 point twist is surjective on `H¹` (the point skyscraper has no first Čech cohomology).
-Consequently, when `H¹(O(D))` is finite-dimensional, `dim H¹(O(E)) ≤ dim H¹(O(D))`.
+Consequently `dim H¹(O(E)) ≤ dim H¹(O(D))`.
 
 ## Main definitions and results
 
@@ -131,10 +131,8 @@ theorem divisorCechCohomologyMapOfLE_one_surjective {D E : WeilDivisor X} (h : D
   divisorCechCohomologyMapOfLE_one_surjective_aux E _ D h
     (Int.toNat_of_nonneg (WeilDivisor.degree_nonneg (sub_nonneg.mpr h))).symm
 
-/-- On a compact Hausdorff complex curve, `h¹(O(E)) ≤ h¹(O(D))` for `D ≤ E` whenever the first
-cohomology of `O(D)` is finite-dimensional. -/
-theorem finrank_divisorCechCohomology_one_le_of_le {D E : WeilDivisor X} (h : D ≤ E)
-    [FiniteDimensional ℂ (divisorCechCohomology D 1)] :
+/-- On a compact Hausdorff complex curve, `h¹(O(E)) ≤ h¹(O(D))` for `D ≤ E`. -/
+theorem finrank_divisorCechCohomology_one_le_of_le {D E : WeilDivisor X} (h : D ≤ E) :
     Module.finrank ℂ (divisorCechCohomology E 1) ≤ Module.finrank ℂ (divisorCechCohomology D 1) :=
   LinearMap.finrank_le_finrank_of_surjective (divisorCechCohomologyMapOfLE_one_surjective h)
 

@@ -37,7 +37,9 @@ corresponding to `α` itself under the contact flat equivalence
 The Reeb field depends on the contact form, not only on the distribution: the form `eˣ (dz - x dy)`
 has the same kernel but Reeb vector field `e^(-x) (∂_y + (x + 1) ∂_z)`
 (`TauCeti.reebVectorField_of_eq_exp_smul_standardContactForm`). In the normalized rescaling law
-`R_(f α) = (R_α + Z) / f` this is the correction `Z = ∂_y + x ∂_z` of the contact plane.
+`R_(f α) = (R_α + z) / f` this is the correction term `z = ∂_y + x ∂_z` of `f = eˣ`, the vector of
+the contact plane with `dα(z, w) = w_x = d(eˣ)(w) / eˣ`
+(`TauCeti.exp_smul_reebVectorField_sub_reebVectorField_of_eq_exp_smul_standardContactForm`).
 
 The form is assembled from the constant forms `dz` and `dy` and the coordinate function `x`, so its
 exterior derivative is computed by the Leibniz rule `d(x dy) = dx ∧ dy`.
@@ -236,6 +238,33 @@ theorem reebVectorField_standardContactForm (p : ℝ × ℝ × ℝ) :
     ⟨standardContactForm_apply_standardReebField p,
       mextDeriv_standardContactForm_standardReebField p⟩).symm
 
+/-- For the contact form `eˣ (dz - x dy)`, the correction term `eˣ R_(eˣ α) - R_α` of the
+normalized rescaling law
+(`TauCeti.SmoothForm.IsContactForm.eq_smul_reebVectorField_sub_reebVectorField_iff`) is the
+vector `∂_y + x ∂_z` of the contact plane: it lies in `ker α` and
+`dα(∂_y + x ∂_z, w) = w_x = d(eˣ)(w) / eˣ`. Here `β` is the one-form `eˣ (dz - x dy)`, given
+through its values. -/
+theorem exp_smul_reebVectorField_sub_reebVectorField_of_eq_exp_smul_standardContactForm
+    {β : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) ℝ 1}
+    (hβ : ∀ q : ℝ × ℝ × ℝ, β.val q = Real.exp q.1 • standardContactForm.val q) (p : ℝ × ℝ × ℝ) :
+    (Real.exp p.1 • β.reebVectorField p - standardContactForm.reebVectorField p :
+      ℝ × ℝ × ℝ) = (0, 1, p.1) := by
+  have hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ) 1 (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1) p :=
+    (Real.contDiff_exp.comp contDiff_fst).contMDiff.contMDiffAt
+  have hd : HasFDerivAt (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1)
+      (Real.exp p.1 • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)) p :=
+    (Real.hasDerivAt_exp p.1).comp_hasFDerivAt p hasFDerivAt_fst
+  -- The candidate `∂_y + x ∂_z`, as a tangent vector at `p`.
+  obtain ⟨z, hz⟩ : ∃ z : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p, z = ((0, 1, p.1) : ℝ × ℝ × ℝ) :=
+    ⟨_, rfl⟩
+  rw [← hz]
+  refine ((isContactForm_standardContactForm.eq_smul_reebVectorField_sub_reebVectorField_iff hf
+    (Real.exp_ne_zero p.1) hβ z).2 ⟨?_, fun w _ ↦ ?_⟩).symm
+  · rw [standardContactForm_apply, hz]
+    simp
+  · rw [mextDeriv_standardContactForm_apply, mvfderiv_eq_fderiv, hd.fderiv, hz]
+    simp [NormedSpace.fromTangentSpace_apply]
+
 /-- The Reeb vector field of the contact form `eˣ (dz - x dy)` is `e^(-x) (∂_y + (x + 1) ∂_z)`.
 This form has the same kernel as `dz - x dy`, but a different Reeb field. Here `β` is the one-form
 `eˣ (dz - x dy)`, given through its values. -/
@@ -243,27 +272,19 @@ theorem reebVectorField_of_eq_exp_smul_standardContactForm
     {β : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) ℝ 1}
     (hβ : ∀ q : ℝ × ℝ × ℝ, β.val q = Real.exp q.1 • standardContactForm.val q) (p : ℝ × ℝ × ℝ) :
     (β.reebVectorField p : ℝ × ℝ × ℝ) = Real.exp (-p.1) • (0, 1, p.1 + 1) := by
-  have hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ) 1 (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1) p :=
-    (Real.contDiff_exp.comp contDiff_fst).contMDiff.contMDiffAt
-  -- The normalized rescaling law, with the correction `z = ∂_y + x ∂_z` in the contact plane.
-  obtain ⟨z, hz⟩ : ∃ z : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p, z = ((0, 1, p.1) : ℝ × ℝ × ℝ) :=
-    ⟨_, rfl⟩
-  have key := (isContactForm_standardContactForm.smul_reebVectorField_eq_add_iff hf
-    (Real.exp_pos p.1).ne' hβ z).2 ⟨?_, fun w _ ↦ ?_⟩
-  · rw [(eq_inv_smul_iff₀ (Real.exp_pos p.1).ne').2 key, hz, reebVectorField_standardContactForm,
-      standardReebField_apply]
-    -- The tangent space of `ℝ × ℝ × ℝ` carries the vector operations of `ℝ × ℝ × ℝ` by
-    -- definition. Restate the goal there, where the `Prod` simp lemmas apply.
-    change (Real.exp p.1)⁻¹ • (((0, 0, 1) : ℝ × ℝ × ℝ) + ((0, 1, p.1) : ℝ × ℝ × ℝ)) =
-      Real.exp (-p.1) • ((0, 1, p.1 + 1) : ℝ × ℝ × ℝ)
-    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp [Real.exp_neg, add_comm]
-  · rw [standardContactForm_apply, hz]
-    ring
-  · have hd : HasFDerivAt (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1)
-        (Real.exp p.1 • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)) p :=
-      (Real.hasDerivAt_exp p.1).comp_hasFDerivAt p hasFDerivAt_fst
-    rw [mextDeriv_standardContactForm_apply, mvfderiv_eq_fderiv, hd.fderiv, hz]
-    simp [NormedSpace.fromTangentSpace_apply]
+  -- The normalized rescaling law `R_β = e^(-x) (R_α + z)`, with the correction term `z` computed
+  -- in `exp_smul_reebVectorField_sub_reebVectorField_of_eq_exp_smul_standardContactForm`.
+  have h : β.reebVectorField p = (Real.exp p.1)⁻¹ • (standardContactForm.reebVectorField p +
+      (Real.exp p.1 • β.reebVectorField p - standardContactForm.reebVectorField p)) := by
+    rw [add_sub_cancel, inv_smul_smul₀ (Real.exp_ne_zero p.1)]
+  rw [h, exp_smul_reebVectorField_sub_reebVectorField_of_eq_exp_smul_standardContactForm hβ p,
+    reebVectorField_standardContactForm, standardReebField_apply, Real.exp_neg]
+  -- The tangent space of `ℝ × ℝ × ℝ` carries the vector operations of `ℝ × ℝ × ℝ` by
+  -- definition. Restate the goal there, where the `Prod` simp lemmas apply.
+  change (Real.exp p.1)⁻¹ • (((0, 0, 1) : ℝ × ℝ × ℝ) + ((0, 1, p.1) : ℝ × ℝ × ℝ)) =
+    (Real.exp p.1)⁻¹ • ((0, 1, p.1 + 1) : ℝ × ℝ × ℝ)
+  congr 1
+  refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp [add_comm]
 
 section InnerProductSpace
 
