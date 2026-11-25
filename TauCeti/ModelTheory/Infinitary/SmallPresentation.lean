@@ -121,12 +121,6 @@ instance countable_relations_smallPresentation :
     Countable (Σ n, L.smallPresentation.Relations n) :=
   Countable.of_equiv _ (Equiv.sigmaCongrRight fun n => equivShrink.{0} (L.Relations n))
 
-/-- The small presentation has countably many relation symbols of each arity. -/
-instance countable_relations_smallPresentation_apply (n : ℕ) :
-    Countable (L.smallPresentation.Relations n) :=
-  have : Countable (L.Relations n) := (sigma_mk_injective (i := n)).countable
-  Countable.of_equiv _ (equivShrink.{0} (L.Relations n))
-
 /-- **Realization in the small presentation.** An `L`-structure, reinterpreted along the inverse
 of `L.smallPresentationEquiv`, realizes the translation of an infinitary formula exactly when it
 realizes the formula. -/
