@@ -276,6 +276,11 @@ theorem finrank_ringClassField :
     Module.finrank K (ringClassField O) = Nat.card (Pic O) := by
   rw [← IsGalois.card_aut_eq_finrank, Nat.card_congr (ringClassArtinEquiv O).toEquiv]
 
+/-- **The ring class field of `O` is trivial exactly when `Pic O` is.** -/
+theorem ringClassField_eq_bot_iff : ringClassField O = ⊥ ↔ Subsingleton (Pic O) := by
+  rw [← IntermediateField.finrank_eq_one_iff, finrank_ringClassField, Nat.card_eq_one_iff_unique,
+    and_iff_left (One.instNonempty)]
+
 /-! ### The decomposition of primes -/
 
 /-- **The residue degree in the ring class field is the order in the Picard group**: for a prime
@@ -394,11 +399,6 @@ theorem subsingleton_gal_ringClassField_iff :
 theorem subsingleton_gal_ringClassField [Subsingleton (Pic O)] :
     Subsingleton Gal(ringClassField O/K) :=
   (subsingleton_gal_ringClassField_iff O).2 ‹_›
-
-/-- **The ring class field of `O` is trivial over `K` iff `Pic O` is trivial.** -/
-theorem ringClassField_eq_bot_iff : ringClassField O = ⊥ ↔ Subsingleton (Pic O) := by
-  rw [← IntermediateField.finrank_eq_one_iff, finrank_ringClassField,
-    Nat.card_eq_one_iff_unique, and_iff_left (inferInstance : Nonempty (Pic O))]
 
 /-- When `Pic O` is trivial, the ring class field of `O` is `⊥` (that is, `K` itself). -/
 @[simp]

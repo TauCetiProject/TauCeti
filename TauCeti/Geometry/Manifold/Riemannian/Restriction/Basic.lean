@@ -357,6 +357,23 @@ theorem coe_tangentSpaceOpenLinearIsometryEquiv
     ⇑(tangentSpaceOpenLinearIsometryEquiv (I := I) U x) = tangentSpaceOpenEquiv (I := I) x :=
   (rfl)
 
+/-- For the Riemannian metric inherited by an open submanifold `U`, precomposition with the inverse
+of the identification `tangentSpaceOpenEquiv` preserves operator norms. -/
+theorem opNorm_comp_tangentSpaceOpenEquiv_symm
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (U : Opens M) (x : U)
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] :
+    letI := instRiemannianBundleOpen (I := I) U
+    ∀ ξ : TangentSpace I x →L[ℝ] G,
+      ‖ξ.comp ((tangentSpaceOpenEquiv (I := I) x).symm : TangentSpace I (x : M) →L[ℝ] _)‖ = ‖ξ‖ :=
+  letI := instRiemannianBundleOpen (I := I) U
+  fun ξ ↦ by
+    have h : ((tangentSpaceOpenEquiv (I := I) x).symm : TangentSpace I (x : M) →L[ℝ] _) =
+        ((tangentSpaceOpenLinearIsometryEquiv (I := I) U x).symm :
+          TangentSpace I (x : M) →L[ℝ] TangentSpace I x) :=
+      -- The isometry is built from `tangentSpaceOpenEquiv`, so both inverses agree on vectors.
+      ContinuousLinearMap.ext fun _ ↦ (rfl)
+    rw [h, ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+
 end Manifold
 
 /-- Installing a bundled `C^n` Riemannian metric `g` as the ambient `RiemannianBundle` instance and

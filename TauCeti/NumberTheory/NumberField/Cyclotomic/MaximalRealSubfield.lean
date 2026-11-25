@@ -42,11 +42,11 @@ cyclotomic numbers of `K` into the real cyclotomic numbers of `K⁺`.
 
 ## Main results
 
-Except for the `IsOfFinOrder` and `IsPrimitiveRoot` declarations, all results are in the namespace
+Except for the `IsPrimitiveRoot` declarations, all results are in the namespace
 `TauCeti.IsCyclotomicExtension.Rat`.
 
-* `IsOfFinOrder.add_inv_mem_maximalRealSubfield`, `IsPrimitiveRoot.add_inv_mem_maximalRealSubfield`,
-  and `IsPrimitiveRoot.addInvMaximalRealInteger`: `ζ + ζ⁻¹` lies in `K⁺` and in `𝓞 K⁺`.
+* `IsPrimitiveRoot.add_inv_mem_maximalRealSubfield` and
+  `IsPrimitiveRoot.addInvMaximalRealInteger`: `ζ + ζ⁻¹` lies in `K⁺` and in `𝓞 K⁺`.
 * `complexEmbedding_galEquivZMod_symm_neg_one_apply`: the automorphism attached to `-1` is
   complex conjugation under every complex embedding.
 * `galEquivZMod_symm_neg_one_apply_eq_self_iff`: its fixed points are the maximal real subfield.
@@ -71,18 +71,6 @@ public section
 
 open NumberField ComplexConjugate IntermediateField _root_.IsCyclotomicExtension.Rat
   DirichletCharacter
-
-/-- **The sum of a root of unity and its inverse is totally real**: for any element `ζ` of finite
-multiplicative order in `K`, `ζ + ζ⁻¹` lies in `maximalRealSubfield K`. -/
-theorem IsOfFinOrder.add_inv_mem_maximalRealSubfield {K : Type*} [Field K] {ζ : K}
-    (hζ : IsOfFinOrder ζ) : ζ + ζ⁻¹ ∈ maximalRealSubfield K := by
-  -- Under any complex embedding `φ`, `ζ` maps to the unit circle, where conjugation is inversion.
-  intro φ
-  obtain ⟨m, hm0, hm⟩ := isOfFinOrder_iff_pow_eq_one.mp hζ
-  have hz : φ ζ ^ m = 1 := by rw [← map_pow, hm, map_one]
-  have hnorm : ‖φ ζ‖ = 1 := Complex.norm_eq_one_of_pow_eq_one hz hm0.ne'
-  rw [map_add, map_inv₀, star_add, star_inv₀, Complex.star_def, ← Complex.inv_eq_conj hnorm,
-    inv_inv, add_comm]
 
 namespace TauCeti.IsCyclotomicExtension.Rat
 
