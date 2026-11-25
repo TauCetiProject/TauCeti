@@ -78,20 +78,13 @@ private theorem continuous_blowUpMap (x : E) (r : ℝ) :
     ((continuous_subtypeVal.comp continuous_fst).sub continuous_const)).subtype_mk _ |>.prodMk
     continuous_snd
 
-/-- For `r ≠ 0` the dilation `y ↦ r⁻¹ (y - x)` is a homeomorphism of `E`. -/
-private def dilationHomeomorph (x : E) {r : ℝ} (hr : r ≠ 0) : E ≃ₜ E :=
-  (Homeomorph.subRight x).trans (Homeomorph.smulOfNeZero r⁻¹ (inv_ne_zero hr))
-
-omit [FiniteDimensional ℝ E] in
-private theorem coe_dilationHomeomorph (x : E) {r : ℝ} (hr : r ≠ 0) :
-    ⇑(dilationHomeomorph x hr) = fun y ↦ r⁻¹ • (y - x) :=
-  (rfl)
-
 private theorem isOpenEmbedding_blowUpMap (x : E) (hr : r ≠ 0) :
     IsOpenEmbedding (blowUpMap (W := W) (k := k) x r) := by
+  have hη := (Measure.blowUpDilation x hr).isOpenEmbedding
+  rw [Measure.coe_blowUpDilation] at hη
   have h : IsOpenEmbedding fun y : W ↦ (⟨r⁻¹ • ((y : E) - x), Opens.mem_top _⟩ : (⊤ : Opens E)) :=
     (IsOpenEmbedding.of_comp_iff _ (⊤ : Opens E).isOpenEmbedding').1
-      ((dilationHomeomorph x hr).isOpenEmbedding.comp W.isOpenEmbedding')
+      (hη.comp W.isOpenEmbedding')
   exact h.prodMap .id
 
 /-- The dilation map takes the pairs over `W` onto the pairs whose base point `y` has
@@ -161,7 +154,8 @@ theorem blowUp_add (V₁ V₂ : Measure (W × grassmannian ℝ E k)) (x : E) (r 
     Measure.map_add _ _ (continuous_blowUpMap x r).measurable, smul_add]
 
 @[simp]
-theorem blowUp_smul (c : ℝ≥0∞) (V : Measure (W × grassmannian ℝ E k)) (x : E) (r : ℝ) :
+theorem blowUp_smul {R : Type*} [SMul R ℝ≥0∞] [IsScalarTower R ℝ≥0∞ ℝ≥0∞]
+    [SMulCommClass ℝ≥0∞ R ℝ≥0∞] (c : R) (V : Measure (W × grassmannian ℝ E k)) (x : E) (r : ℝ) :
     blowUp (c • V) x r = c • blowUp V x r := by
   rw [blowUp_eq, blowUp_eq, Measure.map_smul c (continuous_blowUpMap x r).measurable.aemeasurable,
     smul_comm]
@@ -178,16 +172,18 @@ theorem blowUp_blowUp (V : Measure (W × grassmannian ℝ E k)) (x : E) (hr : 0 
   rw [blowUp_eq, blowUp_eq, blowUp_eq,
     Measure.map_smul (hf := (continuous_blowUpMap 0 t).measurable.aemeasurable),
     Measure.map_map (continuous_blowUpMap 0 t).measurable (continuous_blowUpMap x r).measurable,
-    smul_smul, ← mul_pow, ENNReal.ofReal_mul hr,
-    ENNReal.mul_inv (.inr ENNReal.ofReal_ne_top) (.inl ENNReal.ofReal_ne_top), mul_comm]
-  congr 2
-  ext p <;> simp [blowUpMap, smul_smul, mul_comm]
+    smul_smul]
+  congr 1
+  · simp [ENNReal.ofReal_mul hr, mul_pow, ENNReal.mul_inv, mul_comm]
+  · congr 1
+    ext p <;> simp [blowUpMap, smul_smul, mul_comm]
 
 /-! ### Weight, integrals and local finiteness -/
 
 /-- The weight of the dilation `V_{x,r}` is the `k`-dimensional blow-up `‖V‖_{x,r}` of the weight
 of `V`; in particular `‖V_{x,r}‖(A) = r⁻ᵏ ‖V‖(x + r A)` for `r > 0`
 (`MeasureTheory.Measure.blowUp_apply_vadd_smul`). -/
+@[simp]
 theorem weight_blowUp (V : Measure (W × grassmannian ℝ E k)) (x : E) (r : ℝ) :
     weight (blowUp V x r) = (weight V).blowUp k x r := by
   have hη : Measurable fun y : E ↦ r⁻¹ • (y - x) := (continuous_const_smul r⁻¹).measurable.comp
@@ -196,7 +192,7 @@ theorem weight_blowUp (V : Measure (W × grassmannian ℝ E k)) (x : E) (r : ℝ
     measurable_subtypeVal.comp measurable_fst
   rw [blowUp_eq, weight_smul, Measure.blowUp_def, weight_def, weight_def,
     Measure.map_map hfst (continuous_blowUpMap x r).measurable, Measure.map_map hη hfst]
-  rfl
+  simp only [Function.comp_def, blowUpMap]
 
 /-- Integrals against the dilation: `∫ f dV_{x,r} = r⁻ᵏ ∫ f(r⁻¹ (y - x), P) dV(y, P)`. -/
 theorem integral_blowUp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] (hr : 0 < r)
@@ -298,17 +294,19 @@ theorem IsStationary.integral_tangentialDivergence_blowUp_eq_zero [IsFiniteMeasu
     (hV : IsStationary V) (x : E) (hr : 0 < r) {Y : E → E} (hY : ContDiff ℝ 1 Y)
     (hYc : HasCompactSupport Y) (hYW : ∀ y ∈ tsupport Y, x + r • y ∈ W) :
     ∫ q, tangentialDivergence Y q.1 q.2 ∂blowUp V x r = 0 := by
-  let η := dilationHomeomorph x hr.ne'
+  let η := Measure.blowUpDilation x hr.ne'
   have hsupp : tsupport (Y ∘ η) ⊆ W := by
     rw [tsupport_comp_eq_preimage]
     intro y hy
-    simpa [η, coe_dilationHomeomorph, smul_smul, mul_inv_cancel₀ hr.ne'] using hYW _ hy
-  let X : 𝓓^{1}(W, E) := ⟨Y ∘ η, hY.comp (by rw [coe_dilationHomeomorph]; fun_prop),
+    simpa [η, smul_smul, mul_inv_cancel₀ hr.ne'] using hYW _ hy
+  let X : 𝓓^{1}(W, E) := ⟨Y ∘ η, hY.comp (by rw [Measure.coe_blowUpDilation]; fun_prop),
     hYc.comp_homeomorph η, hsupp⟩
   have hX := (isStationary_iff.1 hV) X
   rw [firstVariation_apply] at hX
-  rw [integral_tangentialDivergence_blowUp V x hr Y]
-  simpa [X, η, coe_dilationHomeomorph, Function.comp_def] using Or.inr hX
+  -- `X` is `Y ∘ η_{x,r}` as a function, so `hX` is the vanishing of `∫ div_P (Y ∘ η_{x,r}) dV`.
+  have hX' : ∫ p, tangentialDivergence (fun y ↦ Y (r⁻¹ • (y - x))) p.1 p.2 ∂V = 0 := by
+    simpa [X, η, Function.comp_def] using hX
+  rw [integral_tangentialDivergence_blowUp V x hr Y, hX', mul_zero]
 
 /-- **Dilations of a stationary varifold on `E` are stationary.** -/
 theorem IsStationary.blowUp {V : Measure ((⊤ : Opens E) × grassmannian ℝ E k)}
@@ -333,9 +331,10 @@ theorem blowUp_lineVarifold (x u : E) (P : grassmannian ℝ E k) (hr : 0 < r) :
     Measure.map_map (continuous_blowUpMap x r).measurable
       (continuous_lineVarifoldParam x u P).measurable, hcomp,
     ← Measure.map_map (continuous_lineVarifoldParam 0 u P).measurable (measurable_const_mul _),
-    Real.map_volume_mul_left (inv_ne_zero hr.ne'), inv_inv, abs_of_pos hr,
+    Real.map_volume_mul_left (inv_ne_zero hr.ne'),
     Measure.map_smul (hf := (continuous_lineVarifoldParam 0 u P).measurable.aemeasurable),
     smul_smul]
+  simp [abs_of_pos hr]
 
 /-- **The dilations of a line through `x` are the line through `0`**: for `1`-planes, the
 dilation about `x` of the line varifold of `x + ℝu` with constant plane `P` is the line varifold
