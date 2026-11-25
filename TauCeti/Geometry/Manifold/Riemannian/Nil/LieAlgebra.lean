@@ -254,15 +254,20 @@ theorem coadjointRepresentation_dualMap_lieAlgebraLieEquiv (p : Nil)
     HeisenbergGroup.coadjointRepresentation_apply_apply, LieEquiv.coe_toLinearEquiv,
     lieAlgebraLieEquiv_adjointRepresentation, map_inv]
 
+/-- Transporting a functional on the Lie algebra of `Nil` to the Heisenberg Lie algebra and back
+returns it. -/
+private theorem dualMap_lieAlgebraLieEquiv_dualMap_symm (μ : Dual ℝ 𝔫) :
+    lieAlgebraLieEquiv.toLinearEquiv.dualMap (lieAlgebraLieEquiv.symm.toLinearEquiv.dualMap μ) =
+      μ :=
+  lieAlgebraLieEquiv.toLinearEquiv.dualMap.apply_symm_apply μ
+
 /-- The coadjoint action of `Nil` on a functional `μ`, through the Heisenberg group. -/
 private theorem coadjointRepresentation_eq (p : Nil) (μ : Dual ℝ 𝔫) :
     Lie.coadjointRepresentation ℝ J Nil p μ =
       lieAlgebraLieEquiv.toLinearEquiv.dualMap (HeisenbergGroup.coadjointRepresentation ℝ
         (toHeisenberg p) (lieAlgebraLieEquiv.symm.toLinearEquiv.dualMap μ)) := by
-  rw [← coadjointRepresentation_dualMap_lieAlgebraLieEquiv]
-  congr 1
-  ext u
-  simp
+  rw [← coadjointRepresentation_dualMap_lieAlgebraLieEquiv,
+    dualMap_lieAlgebraLieEquiv_dualMap_symm]
 
 /-- The coadjoint orbit of `μ` under `Nil` is the image of the corresponding Heisenberg orbit. -/
 private theorem range_coadjointRepresentation_apply_eq_image (μ : Dual ℝ 𝔫) :
@@ -314,29 +319,21 @@ theorem range_coadjointRepresentation_apply_of_ne_zero {μ : Dual ℝ 𝔫}
   refine ⟨?_, fun h ↦ ⟨lieAlgebraLieEquiv.symm.toLinearEquiv.dualMap μ', by simpa using h, ?_⟩⟩
   · rintro ⟨ν, hν, rfl⟩
     simpa using hν
-  · ext u
-    simp
+  · exact dualMap_lieAlgebraLieEquiv_dualMap_symm μ'
 
 /-- **The coadjoint orbit of `Nil` through a functional vanishing on the centre is a point.** -/
 theorem range_coadjointRepresentation_apply_of_eq_zero {μ : Dual ℝ 𝔫} (hμ : μ ζ = 0) :
     Set.range (fun p : Nil ↦ Lie.coadjointRepresentation ℝ J Nil p μ) = {μ} := by
   rw [range_coadjointRepresentation_apply_eq_image,
     HeisenbergGroup.range_coadjointRepresentation_apply_of_eq_zero (by simpa using hμ),
-    Set.image_singleton]
-  congr 1
-  ext u
-  simp
+    Set.image_singleton, dualMap_lieAlgebraLieEquiv_dualMap_symm]
 
 /-- **The coadjoint stabilizer of a functional nonzero on the centre is the centre** `{(0, 0, z)}`
 of `Nil`. -/
 theorem mem_stabilizer_coadjointRepresentation_iff {μ : Dual ℝ 𝔫} (hμ : μ ζ ≠ 0) {p : Nil} :
     p ∈ (Lie.coadjointRepresentation ℝ J Nil).stabilizer μ ↔ p.x = 0 ∧ p.y = 0 := by
-  have hμ' : μ = lieAlgebraLieEquiv.toLinearEquiv.dualMap
-      (lieAlgebraLieEquiv.symm.toLinearEquiv.dualMap μ) := by
-    ext u
-    simp
   rw [Representation.mem_stabilizer, coadjointRepresentation_eq]
-  nth_rw 2 [hμ']
+  conv_lhs => rhs; rw [← dualMap_lieAlgebraLieEquiv_dualMap_symm μ]
   rw [(LinearEquiv.injective _).eq_iff, ← Representation.mem_stabilizer,
     HeisenbergGroup.stabilizer_coadjointRepresentation_of_mem_nonZeroDivisors
       (mem_nonZeroDivisors_of_ne_zero (by simpa using hμ)),
