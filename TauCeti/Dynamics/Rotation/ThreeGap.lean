@@ -10,6 +10,7 @@ public import Mathlib.Order.ConditionallyCompleteLattice.Finset
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.Algebra.BigOperators.Group.List
 public import TauCeti.Algebra.Order.BigOperators.Group.List
+public import TauCeti.Data.List.Sort
 public import TauCeti.NumberTheory.Real.Irrational
 
 /-!
@@ -17,8 +18,8 @@ public import TauCeti.NumberTheory.Real.Irrational
 
 Fix a real number `α` and a natural number `N`. The first `N` points `0, α, 2α, …, (N - 1)α` of
 the orbit of `0` under the rotation by `α` of the circle `ℝ / ℤ` are recorded by their
-fractional parts, as the finite set `Rotation.orbitFract α N` of real numbers in `[0, 1)`.
-These points cut the circle into arcs. `Rotation.gaps α N` is the multiset of the lengths of
+fractional parts, as the finite set `orbitFract α N` of real numbers in `[0, 1)`.
+These points cut the circle into arcs. `gaps α N` is the multiset of the lengths of
 these arcs: the gap from a point `y` is the distance to the next point above it, and the gap
 from the largest point reaches `1`, which is the arc that wraps around to the point `0`.
 
@@ -26,49 +27,61 @@ This file sets up the two objects and their basic API: how many points there are
 irrational `α`, and `min N q.den` for a rational `α = q`), that the gaps are positive, that
 there is one for each point, and that for `0 < N` they sum to `1` (for `N = 0` there is no point
 and no gap). It also names the two lengths that the three-gap theorem is stated with:
-`Rotation.etaPos α N`, the least positive point, and `Rotation.etaNeg α N`, the gap from the
+`etaPos α N`, the least positive point, and `etaNeg α N`, the gap from the
 largest point to `1`. The length `etaNeg α N` is a gap as soon as `0 < N`, and `etaPos α N` is a
 gap when there are at least two distinct points, `2 ≤ #(orbitFract α N)`; with fewer points
 there is no positive point, and `etaPos α N = 0` is not a gap.
 
+All declarations are in the namespace `TauCeti.Rotation`.
+
 ## Main definitions
 
-* `Rotation.orbitFract`: the fractional parts of `n * α` for `n < N`, as a `Finset ℝ`.
-* `Rotation.gaps`: the multiset of gaps between consecutive points, with the wrap-around gap.
-* `Rotation.etaPos`, `Rotation.etaNeg`: the least positive point and the wrap-around gap.
+* `orbitFract`: the fractional parts of `n * α` for `n < N`, as a `Finset ℝ`.
+* `gaps`: the multiset of gaps between consecutive points, with the wrap-around gap.
+* `etaPos`, `etaNeg`: the least positive point and the wrap-around gap.
 
 ## Main statements
 
-* `Rotation.card_orbitFract_of_irrational`: for irrational `α` there are `N` points.
-* `Rotation.card_orbitFract_ratCast`: for `α = q` rational there are `min N q.den` points.
-* `Rotation.card_gaps`: there are as many gaps as points.
-* `Rotation.sum_gaps`: for `0 < N` the gaps sum to `1`.
-* `Rotation.mem_gaps_iff_exists`: the gaps in terms of the points.
-* `Rotation.pos_of_mem_gaps`: every gap is positive.
-* `Rotation.isLeast_etaPos`: when `2 ≤ #(orbitFract α N)`, the length `etaPos α N` is the least
+* `card_orbitFract_of_irrational`: for irrational `α` there are `N` points.
+* `card_orbitFract_ratCast`: for `α = q` rational there are `min N q.den` points.
+* `card_gaps`: there are as many gaps as points.
+* `sum_gaps`: for `0 < N` the gaps sum to `1`.
+* `mem_gaps_iff_exists`: the gaps in terms of the points.
+* `pos_of_mem_gaps`: every gap is positive.
+* `isLeast_etaPos`: when `2 ≤ #(orbitFract α N)`, the length `etaPos α N` is the least
   nonzero point.
-* `Rotation.isGreatest_one_sub_etaNeg`: for `0 < N`, the largest point is `1 - etaNeg α N`.
-* `Rotation.etaPos_mem_gaps`: when `2 ≤ #(orbitFract α N)`, the length `etaPos α N` is a gap.
-* `Rotation.etaNeg_mem_gaps`: for `0 < N`, the length `etaNeg α N` is a gap.
-* `Rotation.etaPos_pos`, `Rotation.etaNeg_pos`: `etaPos α N` is positive when
+* `isGreatest_one_sub_etaNeg`: for `0 < N`, the largest point is `1 - etaNeg α N`.
+* `etaPos_mem_gaps`: when `2 ≤ #(orbitFract α N)`, the length `etaPos α N` is a gap.
+* `etaNeg_mem_gaps`: for `0 < N`, the length `etaNeg α N` is a gap.
+* `etaPos_pos`, `etaNeg_pos`: `etaPos α N` is positive when
   `2 ≤ #(orbitFract α N)`, and `etaNeg α N` is always positive.
 
-`Rotation.mem_gaps_iff_exists` describes the gaps through the points alone: the gap from a point
+`mem_gaps_iff_exists` describes the gaps through the points alone: the gap from a point
 `y` is `z - y` for the least point `z` above `y`, and `1 - y` when `y` is the largest point.
-`Rotation.gaps_eq_coe` and `Rotation.mem_gaps_iff` unfold `Rotation.gaps` to the list it is
+`gaps_eq_coe` and `mem_gaps_iff` unfold `gaps` to the list it is
 built from. The statements about lists of consecutive differences that the proofs use are
 `List.sum_zipWith_sub_append_singleton_cons` and
-`List.pos_of_mem_zipWith_sub_tail_append_singleton`.
+`List.pos_of_mem_zipWith_sub_tail_append_singleton` (in
+`TauCeti/Algebra/BigOperators/Group/List.lean` and
+`TauCeti/Algebra/Order/BigOperators/Group/List.lean`), and
+`List.getElem_zipWith_sub_tail_append_singleton`,
+`List.SortedLT.isLeast_inter_Ioi_getElem_succ` and
+`List.SortedLT.isGreatest_getElem_of_not_succ_lt` (in `TauCeti/Data/List/Sort.lean`).
 
 ## References
 
 * P. Alessandri and V. Berthé, *Three distance theorems and combinatorics on words*,
   Enseign. Math. 44 (1998), 103–132.
+* D. Kunert, three-gap theorem formalization in Lean (`dkunert/three-gap-theorem-lean`, MIT). The
+  shape of the definitions `orbitFract`, `gaps`, `etaPos` and `etaNeg` (uniform in `α`, through
+  `Int.fract`, with a multiset of gaps) follows it.
 -/
 
 public section
 
 open Finset
+
+namespace TauCeti
 
 namespace Rotation
 
@@ -290,3 +303,5 @@ theorem etaPos_pos (h : 2 ≤ #(orbitFract α N)) : 0 < etaPos α N := by
   exact (coe_orbitFract_subset_Ico α N hmem).1.lt_of_ne' fun h0 => hne (Set.mem_singleton_iff.2 h0)
 
 end Rotation
+
+end TauCeti
