@@ -13,7 +13,7 @@ import TauCeti.Probability.Moments.GrowingOrder
 import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
-# Upper spectral bounds from growing even moments
+# Upper spectral bounds from growing trace moments
 
 For a random matrix that is almost surely Hermitian with integrable real even trace, the measure
 of the set where its operator norm is at least `r > 0` is at most the expected real trace of its
@@ -86,14 +86,6 @@ theorem meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul_div_pow
     (Y := fun ω ↦ RCLike.re ((A ω) ^ (2 * k)).trace) 1 (by simpa only [pow_one] using hint)
     (by simpa only [pow_one] using hnonneg) (pow_pos hr _)
 
-/-- A square matrix with positive Euclidean operator norm has a nonempty index type. -/
-private lemma nonempty_of_pos_l2_opNorm [Fintype ι] [DecidableEq ι] {M : Matrix ι ι 𝕜}
-    (h : 0 < ‖M‖) : Nonempty ι := by
-  by_contra hι
-  rw [not_nonempty_iff] at hι
-  rw [Subsingleton.elim M 0, norm_zero] at h
-  exact lt_irrefl _ h
-
 variable {m : ℕ → Type*} [∀ n, Fintype (m n)] [∀ n, DecidableEq (m n)]
   {A : (n : ℕ) → Ω → Matrix (m n) (m n) 𝕜} {k : ℕ → ℕ}
 
@@ -120,7 +112,7 @@ theorem exists_tsum_lt_top_and_eventually_meas_l2_opNorm_ge_le_of_integral_re_tr
     filter_upwards [hn] with ω hω hrω
     exact (pow_le_pow_left₀ hr₀.le hrω _).trans
       (hω.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul _ fun _ ↦
-        nonempty_of_pos_l2_opNorm (hr₀.trans_le hrω))
+        nonempty_of_l2_opNorm_pos (hr₀.trans_le hrω))
   · filter_upwards [hA] with n hn
     filter_upwards [hn] with ω hω
     -- `A ^ (2 * k) = (A ^ k)ᴴ * A ^ k` is positive semidefinite.
@@ -195,7 +187,7 @@ theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_le
     (Y := fun n ω ↦ ‖A n ω‖) ht htr hB hk ?_ ?_ hi hb
   · exact hA.mono fun n hn ↦ hn.mono fun ω (hω : (A n ω).PosSemidef) hrω ↦
       (pow_le_pow_left₀ hr₀.le hrω _).trans
-        (hω.l2_opNorm_pow_le_re_trace_pow _ fun _ ↦ nonempty_of_pos_l2_opNorm (hr₀.trans_le hrω))
+        (hω.l2_opNorm_pow_le_re_trace_pow _ fun _ ↦ nonempty_of_l2_opNorm_pos (hr₀.trans_le hrω))
   · exact hA.mono fun n hn ↦ hn.mono fun ω (hω : (A n ω).PosSemidef) ↦
       (RCLike.nonneg_iff.1 (hω.pow _).trace_nonneg).1
 

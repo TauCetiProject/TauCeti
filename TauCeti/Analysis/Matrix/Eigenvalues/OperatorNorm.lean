@@ -20,7 +20,8 @@ for this eigenvalue attains the operator norm, including when `A = 0`.
 
 The source must be nonempty for a largest eigenvalue or a unit attaining vector to exist.
 For an empty source the operator norm is zero by subsingleton elimination, and
-`spectrum.of_subsingleton` gives the empty Gram spectrum.
+`spectrum.of_subsingleton` gives the empty Gram spectrum. Conversely, a positive operator norm
+forces a nonempty source.
 
 For a Hermitian matrix, each ordered eigenvalue is bounded in absolute value by the operator
 norm, and the `2 * k`-th power of the operator norm is bounded by the real trace of the
@@ -42,6 +43,14 @@ open scoped Matrix.Norms.L2Operator InnerProductSpace ComplexOrder
 namespace Matrix
 
 variable {𝕜 m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n] [DecidableEq n]
+
+/-- A matrix with positive Euclidean operator norm has a nonempty source index type: for an
+empty source the matrix is zero. -/
+theorem nonempty_of_l2_opNorm_pos {A : Matrix m n 𝕜} (h : 0 < ‖A‖) : Nonempty n := by
+  by_contra hn
+  rw [not_nonempty_iff] at hn
+  rw [Subsingleton.elim A 0, norm_zero] at h
+  exact lt_irrefl _ h
 
 /-- The Euclidean operator norm of a Hermitian matrix is the sup norm of its real
 eigenvalue list. This includes the empty index type. -/
