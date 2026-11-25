@@ -14,9 +14,10 @@ public import Mathlib.MeasureTheory.Function.Holder
 For a Hölder triple `p⁻¹ + q⁻¹ = r⁻¹`, multiplication adds Bartnik weights:
 `Lᵖ_δ × Lᵠ_ε → Lʳ_(δ+ε)`. More generally, every bounded real bilinear map acts
 between these classes with the same operator-norm bound as in the unweighted inequality.
-The exponents include `∞`. The product and integrability results require neither
-finite-dimensionality nor completeness. The Bochner integral norm estimate assumes
-that its target space is complete.
+The exponents include `∞`. The product, integrability and integral norm estimates require
+neither finite-dimensionality nor completeness. For a complete target, the integral estimate
+bounds the weighted Bochner volume pairing. For an incomplete target, Mathlib defines the
+Bochner integral to be zero, so that estimate is trivial.
 
 The reference measure must give no mass to the origin, where the radius weight can vanish.
 This includes the intended exterior-domain measures. The result also gives the weighted
@@ -139,25 +140,21 @@ theorem MemWeightedLp.integrable_bilin [ENNReal.HolderConjugate p q]
     (p := p) (q := q) (f := f) (g := g) B hδε h0)).1 hmem
 
 omit [OpensMeasurableSpace E] in
-/-- In a complete target, the weighted Hölder volume pairing has norm at most the product
-of the weighted norms times the norm of the bilinear map. -/
-theorem eNorm_integral_bilin_le_weightedELpNorm [CompleteSpace H]
-    [ENNReal.HolderConjugate p q]
+/-- The norm of the totalized Bochner integral is bounded by the weighted Hölder product.
+For a complete target this bounds the weighted volume pairing; for an incomplete target,
+Mathlib defines the integral to be zero and the bound is trivial. -/
+theorem eNorm_integral_bilin_le_weightedELpNorm [ENNReal.HolderConjugate p q]
     {δ ε : ℝ} {f : E → F} {g : E → G}
     (hf : MemWeightedLp f p δ μ) (hg : MemWeightedLp g q ε μ)
     (B : F →L[ℝ] G →L[ℝ] H) (h0 : ∀ᵐ x ∂μ, x ≠ 0)
     (hδε : δ + ε = -(Module.finrank ℝ E : ℝ)) :
     ‖∫ x, B (f x) (g x) ∂μ‖ₑ ≤
       ‖B‖ₑ * weightedELpNorm f p δ μ * weightedELpNorm g q ε μ := by
-  have hi := hf.integrable_bilin hg B h0 hδε
   have heq := weight_bilin_ae_eq_of_add_eq_neg_finrank
     (p := p) (q := q) (f := f) (g := g) B hδε h0
   calc
-    ‖∫ x, B (f x) (g x) ∂μ‖ₑ ≤ eLpNorm (fun x ↦ B (f x) (g x)) 1 μ := by
-      rw [integral_eq _ hi, eLpNorm_one_eq_lintegral_eNorm hi.aestronglyMeasurable,
-        ← hi.eNorm_toL1]
-      simpa only [eNorm_eq_nnNorm, ENNReal.coe_le_coe] using
-        L1.nnNorm_integral_le (hi.toL1 _)
+    ‖∫ x, B (f x) (g x) ∂μ‖ₑ ≤ eLpNorm (fun x ↦ B (f x) (g x)) 1 μ :=
+      (eNorm_integral_le_lintegral_eNorm _).trans lintegral_eNorm_le_eLpNorm_one
     _ ≤ _ := by
       rw [← eLpNorm_congr_ae heq]
       simpa only [weightedELpNorm_def] using
