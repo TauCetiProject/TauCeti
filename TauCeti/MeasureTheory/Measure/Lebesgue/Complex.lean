@@ -29,7 +29,7 @@ so a half-disc `Ω ∩ {0 ≤ im}` agrees almost everywhere with its interior
 (`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides
-(`Complex.volume_reProdIm` for the area), so a function of the
+(`Complex.volume_reProdIm`, `Complex.volume_real_reProdIm_Icc` for the area), so a function of the
 imaginary part integrable on a rectangle of positive width is integrable on the vertical side,
 and a function of the real or imaginary part integrates by Fubini as the length of the other
 side times its one-dimensional integral (`Complex.setLIntegral_reProdIm_comp_re`,
@@ -125,15 +125,16 @@ theorem measurePreserving_measurableEquivRealProd_reProdIm {s t : Set ℝ} (hs :
   exact h
 
 /-- The planar measure of a rectangle `s ×ℂ t` is the product of the lengths of its sides. -/
-theorem volume_reProdIm {s t : Set ℝ} (hs : MeasurableSet s) (ht : MeasurableSet t) :
-    volume (s ×ℂ t) = volume s * volume t := by
-  calc volume (s ×ℂ t) = volume.restrict (s ×ℂ t) univ := by rw [Measure.restrict_apply_univ]
-    _ = Measure.map measurableEquivRealProd (volume.restrict (s ×ℂ t)) (univ ×ˢ univ) := by
-        rw [univ_prod_univ, Measure.map_apply measurableEquivRealProd.measurable
-          MeasurableSet.univ, preimage_univ]
-    _ = volume s * volume t := by
-        rw [(measurePreserving_measurableEquivRealProd_reProdIm hs ht).map_eq, Measure.prod_prod,
-          Measure.restrict_apply_univ, Measure.restrict_apply_univ]
+theorem volume_reProdIm (s t : Set ℝ) : volume (s ×ℂ t) = volume s * volume t := by
+  have h := volume_preserving_equiv_real_prod.measure_preimage_equiv (s ×ˢ t)
+  rw [Measure.volume_eq_prod, Measure.prod_prod] at h
+  rwa [← preimage_equivRealProd_prod]
+
+/-- The planar measure of a closed rectangle `[a, b] × [c, d]`, as a real number. -/
+theorem volume_real_reProdIm_Icc {a b c d : ℝ} (hab : a ≤ b) (hcd : c ≤ d) :
+    volume.real (Icc a b ×ℂ Icc c d) = (b - a) * (d - c) := by
+  rw [measureReal_def, volume_reProdIm, Real.volume_Icc, Real.volume_Icc, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (by linarith), ENNReal.toReal_ofReal (by linarith)]
 
 /-- A function of the imaginary part integrable on a rectangle of positive width is integrable
 on the vertical side. -/

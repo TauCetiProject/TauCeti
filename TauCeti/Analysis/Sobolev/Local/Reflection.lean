@@ -52,8 +52,9 @@ statement.
   its candidate weak derivative.
 * `TauCeti.map_planarReflection`: linear maps commute with the reflection.
 * `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_tendsto`: integration by parts up
-  to the real axis whenever the boundary layer against the cutoffs `TauCeti.imCutoff` vanishes in
-  the limit; `TauCeti.tendsto_setIntegral_imCutoff_smul` is the matching limit of the bulk terms.
+  to the real axis whenever the boundary-layer integrals `∫_{0 < im} χ imCutoffLayer n v.im • g`
+  tend to `0` (`TauCeti.imCutoffLayer`, with integrability
+  `TauCeti.MemLpLoc.integrableOn_mul_imCutoffLayer_smul`).
 * `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` and its complex form
   `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_complex`: integration by parts on
   the upper half-plane, up to the real axis, in a tangential direction or against a function
@@ -287,14 +288,14 @@ private theorem imReCLM_fst (z : ℂ) : (imReCLM z).fst = z.im := rfl
 
 /-- The boundary-layer cutoff `TauCeti.normalCutoff` of slope `n + 1`, pulled back to `ℂ`: zero
 where `(n + 1) z.im ≤ 1`, one where `(n + 1) z.im ≥ 2`. -/
-def imCutoff (n : ℕ) (z : ℂ) : ℝ := normalCutoff 0 ((n : ℝ) + 1) (imReCLM z)
+private def imCutoff (n : ℕ) (z : ℂ) : ℝ := normalCutoff 0 ((n : ℝ) + 1) (imReCLM z)
 
 /-- The boundary-layer cutoff is smooth. -/
-theorem contDiff_imCutoff (n : ℕ) : ContDiff ℝ ∞ (imCutoff n) :=
+private theorem contDiff_imCutoff (n : ℕ) : ContDiff ℝ ∞ (imCutoff n) :=
   (contDiff_normalCutoff 0 _).comp imReCLM.contDiff
 
 /-- The derivative of the boundary-layer cutoff is normal to the real axis. -/
-theorem hasFDerivAt_imCutoff (n : ℕ) (z : ℂ) :
+private theorem hasFDerivAt_imCutoff (n : ℕ) (z : ℂ) :
     HasFDerivAt (imCutoff n)
       ((deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * ((n : ℝ) + 1)) • imCLM) z := by
   refine ((hasFDerivAt_normalCutoff 0 _ (imReCLM z)).comp z imReCLM.hasFDerivAt).congr_fderiv ?_
@@ -302,18 +303,18 @@ theorem hasFDerivAt_imCutoff (n : ℕ) (z : ℂ) :
   simp [imReCLM_fst]
 
 /-- The boundary-layer cutoff vanishes where `(n + 1) z.im ≤ 1`. -/
-theorem imCutoff_eq_zero {n : ℕ} {z : ℂ} (hz : ((n : ℝ) + 1) * z.im ≤ 1) :
+private theorem imCutoff_eq_zero {n : ℕ} {z : ℂ} (hz : ((n : ℝ) + 1) * z.im ≤ 1) :
     imCutoff n z = 0 :=
   normalCutoff_eq_zero (by simpa [imReCLM_fst] using hz)
 
-/-- The boundary-layer cutoff takes values in `[0, 1]`. -/
-theorem norm_imCutoff_le (n : ℕ) (z : ℂ) : ‖imCutoff n z‖ ≤ 1 := by
+/-- The boundary-layer cutoff has norm at most one. -/
+private theorem norm_imCutoff_le (n : ℕ) (z : ℂ) : ‖imCutoff n z‖ ≤ 1 := by
   unfold imCutoff
   rw [Real.norm_of_nonneg (normalCutoff_nonneg _ _ _)]
   exact normalCutoff_le_one _ _ _
 
 /-- The boundary-layer cutoff is supported in the open upper half-plane. -/
-theorem tsupport_imCutoff_subset (n : ℕ) : tsupport (imCutoff n) ⊆ {z : ℂ | 0 < z.im} :=
+private theorem tsupport_imCutoff_subset (n : ℕ) : tsupport (imCutoff n) ⊆ {z : ℂ | 0 < z.im} :=
   fun z hz => by
     have h := tsupport_normalCutoff_subset (E := ℝ) 0 (c := (n : ℝ) + 1) (by positivity)
       (tsupport_comp_subset_preimage _ imReCLM.continuous hz)
@@ -335,7 +336,7 @@ private theorem eventually_imCutoff_arg {z : ℂ} (hz : 0 < z.im) :
 
 /-- A continuous factor supported in the support of a compactly supported `χ` makes a function
 that is locally integrable up to the real axis integrable on the open upper half-plane. -/
-theorem MemLpLoc.integrableOn_smul_setOf_im_pos {Ω : Opens ℂ} {h : ℂ → F}
+private theorem MemLpLoc.integrableOn_smul_setOf_im_pos {Ω : Opens ℂ} {h : ℂ → F}
     (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h) {β : Type*} [Zero β] {χ : ℂ → β}
     (hχc : HasCompactSupport χ) (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) {f : ℂ → ℝ}
     (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) :
@@ -346,7 +347,8 @@ theorem MemLpLoc.integrableOn_smul_setOf_im_pos {Ω : Opens ℂ} {h : ℂ → F}
 
 /-- Multiplying an integrable function on the upper half-plane by the boundary-layer cutoffs does
 not change its integral in the limit. -/
-theorem tendsto_setIntegral_imCutoff_smul {f : ℂ → F} (hf : IntegrableOn f {z : ℂ | 0 < z.im}) :
+private theorem tendsto_setIntegral_imCutoff_smul {f : ℂ → F}
+    (hf : IntegrableOn f {z : ℂ | 0 < z.im}) :
     Tendsto (fun n : ℕ => ∫ z in {z : ℂ | 0 < z.im}, imCutoff n z • f z) atTop
       (𝓝 (∫ z in {z : ℂ | 0 < z.im}, f z)) := by
   refine tendsto_integral_of_dominated_convergence (fun z => ‖f z‖)
@@ -362,12 +364,89 @@ theorem tendsto_setIntegral_imCutoff_smul {f : ℂ → F} (hf : IntegrableOn f {
         linarith
       simp only [imCutoff, normalCutoff_eq_one h2, one_smul]
 
+/-- The **boundary layer** of the integration by parts up to the real axis: the derivative, in a
+direction with imaginary part `a`, of the cutoff `smoothTransition ((n + 1) im z - 1)` that
+vanishes where `(n + 1) im z ≤ 1` and is one where `(n + 1) im z ≥ 2`. -/
+def imCutoffLayer (n : ℕ) (a : ℝ) (z : ℂ) : ℝ :=
+  deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * a)
+
+/-- The defining formula of `TauCeti.imCutoffLayer`. -/
+theorem imCutoffLayer_def (n : ℕ) (a : ℝ) (z : ℂ) :
+    imCutoffLayer n a z =
+      deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * a) :=
+  (rfl)
+
+/-- The boundary layer is continuous. -/
+theorem continuous_imCutoffLayer (n : ℕ) (a : ℝ) : Continuous (imCutoffLayer n a) :=
+  (((Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
+    ((continuous_const.mul continuous_im).sub continuous_const)).mul continuous_const
+
+/-- A function locally integrable up to the real axis, times `χ` and the boundary layer, is
+integrable on the open upper half-plane, for `χ` continuous with compact support meeting
+`{0 ≤ im}` inside `Ω`. -/
+theorem MemLpLoc.integrableOn_mul_imCutoffLayer_smul {Ω : Opens ℂ} {g : ℂ → F}
+    (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g) {χ : ℂ → ℝ} (hχ : Continuous χ)
+    (hχc : HasCompactSupport χ) (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) (n : ℕ) (a : ℝ) :
+    IntegrableOn (fun z => (χ z * imCutoffLayer n a z) • g z) {z : ℂ | 0 < z.im} :=
+  hg.integrableOn_smul_setOf_im_pos hχc hχΩ (hχ.mul (continuous_imCutoffLayer n a))
+    tsupport_mul_subset_left
+
+/-- The weak derivative identity tested against `imCutoff n * χ`, which is supported in the open
+upper part of `Ω`: the bulk terms plus the boundary layer. -/
+private theorem setIntegral_imCutoff_identity {Ω : Opens ℂ} {g g' : ℂ → F} {v : ℂ}
+    (hgW : HasWeakLineDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) g g' v)
+    (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g)
+    {χ : ℂ → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) (n : ℕ) :
+    (∫ z in {z : ℂ | 0 < z.im}, (imCutoff n z * fderiv ℝ χ z v) • g z) +
+      ∫ z in {z : ℂ | 0 < z.im}, (χ z * imCutoffLayer n v.im z) • g z =
+        -∫ z in {z : ℂ | 0 < z.im}, (imCutoff n z * χ z) • g' z := by
+  set H := {z : ℂ | 0 < z.im}
+  have hdχ : Continuous fun z => fderiv ℝ χ z v :=
+    (hχ.continuous_fderiv (by simp)).clm_apply continuous_const
+  have hθs : tsupport (imCutoff n * χ) ⊆
+      (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) : Set ℂ) := by
+    intro z hz
+    have h1 := tsupport_imCutoff_subset n (tsupport_mul_subset_left hz)
+    rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
+    exact ⟨hχΩ ⟨tsupport_mul_subset_right hz, (le_of_lt h1 : (0 : ℝ) ≤ z.im)⟩, h1⟩
+  let θ : 𝓓(Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), ℝ) :=
+    ⟨imCutoff n * χ, (contDiff_imCutoff n).mul hχ, hχc.mul_left, hθs⟩
+  have hθ := hgW.integral_lineDeriv_smul_eq_neg_integral_smul θ
+  have hcoe : ((θ : 𝓓(Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), ℝ)) : ℂ → ℝ) =
+      imCutoff n * χ := by
+    simp [θ, TestFunction.coe_mk]
+  have hld (z : ℂ) : lineDeriv ℝ (imCutoff n * χ) z v =
+      imCutoff n z * fderiv ℝ χ z v + χ z * imCutoffLayer n v.im z := by
+    rw [((hasFDerivAt_imCutoff n z).mul (hχ.differentiable (by simp) z).hasFDerivAt
+      ).hasLineDerivAt v |>.lineDeriv]
+    simp only [imCutoffLayer_def, FunLike.coe_add, Pi.add_apply, FunLike.coe_smul,
+      Pi.smul_apply, smul_eq_mul, imCLM_apply]
+    ring
+  simp only [hcoe, hld, Pi.mul_apply] at hθ
+  have hzero (z : ℂ) (hz : z ∉ H) : imCutoff n z = 0 ∧ imCutoffLayer n v.im z = 0 := by
+    have hz' : z.im ≤ 0 := not_lt.1 hz
+    refine ⟨imCutoff_eq_zero ?_, ?_⟩
+    · nlinarith [(by positivity : (0 : ℝ) ≤ (n : ℝ) + 1)]
+    · simp [imCutoffLayer_def,
+        Real.smoothTransition.deriv_of_nonpos (imCutoff_arg_neg (n := n) hz').le]
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := H)
+      (f := fun z => (imCutoff n z * fderiv ℝ χ z v + χ z * imCutoffLayer n v.im z) • g z)
+      fun z hz => by simp [hzero z hz],
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := H)
+      (f := fun z => (imCutoff n z * χ z) • g' z) fun z hz => by simp [hzero z hz]] at hθ
+  rw [← integral_add (hg.integrableOn_smul_setOf_im_pos (f := fun z => imCutoff n z *
+    fderiv ℝ χ z v) hχc hχΩ ((contDiff_imCutoff n).continuous.mul hdχ)
+    (tsupport_mul_subset_right.trans (tsupport_fderiv_apply_subset ℝ v)))
+    (hg.integrableOn_mul_imCutoffLayer_smul hχ.continuous hχc hχΩ n v.im)]
+  simpa only [add_smul] using hθ
+
 /-- **Integration by parts up to the real axis, given a vanishing boundary layer.** Let `g'` be a
 weak derivative of `g` in the direction `v` on the upper part of `Ω`, with `g` and `g'` integrable
 on compact subsets of `Ω ∩ {0 ≤ im}`, and let `χ` be smooth with compact support meeting
-`{0 ≤ im}` inside `Ω`. Testing the weak derivative against `imCutoff n * χ` leaves, besides the
-two terms of the identity, the boundary-layer integral of `χ ∂_v (imCutoff n) • g`. If that
-integral tends to `0`, the integration-by-parts identity holds on the upper half-plane. -/
+`{0 ≤ im}` inside `Ω`. If the boundary-layer integrals `∫_{0 < im} χ imCutoffLayer n v.im • g`
+(`TauCeti.imCutoffLayer`) tend to `0`, the integration-by-parts identity holds on the upper
+half-plane. -/
 theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_tendsto {Ω : Opens ℂ}
     {g g' : ℂ → F} {v : ℂ}
     (hgW : HasWeakLineDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) g g' v)
@@ -375,73 +454,21 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_tendsto {Ω : Opens
     (hg' : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g')
     {χ : ℂ → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
     (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω)
-    (hlayer : Tendsto (fun n : ℕ => ∫ z in {z : ℂ | 0 < z.im}, (χ z *
-      (deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * v.im))) • g z)
-      atTop (𝓝 0)) :
+    (hlayer : Tendsto (fun n : ℕ => ∫ z in {z : ℂ | 0 < z.im},
+      (χ z * imCutoffLayer n v.im z) • g z) atTop (𝓝 0)) :
     ∫ z in {z : ℂ | 0 < z.im}, fderiv ℝ χ z v • g z =
       -∫ z in {z : ℂ | 0 < z.im}, χ z • g' z := by
   have := hgW.completeSpace
-  set H := {z : ℂ | 0 < z.im}
-  have hdχ : Continuous fun z => fderiv ℝ χ z v :=
-    (hχ.continuous_fderiv (by simp)).clm_apply continuous_const
-  have hdst : Continuous (deriv Real.smoothTransition) :=
-    (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
-  -- `D n` is `χ` times the derivative of the `n`th cutoff in the direction `v`.
-  set D : ℕ → ℂ → ℝ := fun n z => χ z *
-    (deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * v.im)) with hD
-  have I1 : IntegrableOn (fun z => fderiv ℝ χ z v • g z) H :=
-    hg.integrableOn_smul_setOf_im_pos hχc hχΩ hdχ (tsupport_fderiv_apply_subset ℝ v)
-  have I3 : IntegrableOn (fun z => χ z • g' z) H :=
-    hg'.integrableOn_smul_setOf_im_pos hχc hχΩ hχ.continuous subset_rfl
-  have I1' (n : ℕ) : IntegrableOn (fun z => (imCutoff n z * fderiv ℝ χ z v) • g z) H :=
-    hg.integrableOn_smul_setOf_im_pos hχc hχΩ ((contDiff_imCutoff n).continuous.mul hdχ)
-      (tsupport_mul_subset_right.trans (tsupport_fderiv_apply_subset ℝ v))
-  have I2 (n : ℕ) : IntegrableOn (fun z => D n z • g z) H :=
-    hg.integrableOn_smul_setOf_im_pos hχc hχΩ (hχ.continuous.mul ((hdst.comp
-      ((continuous_const.mul continuous_im).sub continuous_const)).mul continuous_const))
-      tsupport_mul_subset_left
-  -- The weak derivative identity, tested against `imCutoff n * χ`.
-  have key (n : ℕ) : (∫ z in H, (imCutoff n z * fderiv ℝ χ z v) • g z) +
-      ∫ z in H, D n z • g z = -∫ z in H, (imCutoff n z * χ z) • g' z := by
-    have hθs : tsupport (imCutoff n * χ) ⊆
-        (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) : Set ℂ) := by
-      intro z hz
-      have h1 := tsupport_imCutoff_subset n (tsupport_mul_subset_left hz)
-      have h2 := tsupport_mul_subset_right hz
-      rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
-      exact ⟨hχΩ ⟨h2, show (0 : ℝ) ≤ z.im from le_of_lt h1⟩, h1⟩
-    let θ : 𝓓(Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), ℝ) :=
-      ⟨imCutoff n * χ, (contDiff_imCutoff n).mul hχ, hχc.mul_left, hθs⟩
-    have hθ := hgW.integral_lineDeriv_smul_eq_neg_integral_smul θ
-    have hcoe : ((θ : 𝓓(Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), ℝ)) : ℂ → ℝ) =
-        imCutoff n * χ := by
-      simp [θ, TestFunction.coe_mk]
-    have hld (z : ℂ) : lineDeriv ℝ (imCutoff n * χ) z v =
-        imCutoff n z * fderiv ℝ χ z v + D n z := by
-      rw [((hasFDerivAt_imCutoff n z).mul (hχ.differentiable (by simp) z).hasFDerivAt
-        ).hasLineDerivAt v |>.lineDeriv]
-      simp only [hD, FunLike.coe_add, Pi.add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
-        imCLM_apply]
-      ring
-    simp only [hcoe, hld, Pi.mul_apply] at hθ
-    have hzero (z : ℂ) (hz : z ∉ H) : imCutoff n z = 0 ∧ D n z = 0 := by
-      have hz' : z.im ≤ 0 := not_lt.1 (show ¬ (0 : ℝ) < z.im from hz)
-      refine ⟨imCutoff_eq_zero ?_, ?_⟩
-      · nlinarith [(by positivity : (0 : ℝ) ≤ (n : ℝ) + 1)]
-      · simp [hD, Real.smoothTransition.deriv_of_nonpos (imCutoff_arg_neg (n := n) hz').le]
-    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := H)
-        (f := fun z => (imCutoff n z * fderiv ℝ χ z v + D n z) • g z)
-        fun z hz => by simp [hzero z hz],
-      ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := H)
-        (f := fun z => (imCutoff n z * χ z) • g' z) fun z hz => by simp [hzero z hz]] at hθ
-    rw [← integral_add (I1' n) (I2 n)]
-    simpa only [add_smul] using hθ
-  have h1 := tendsto_setIntegral_imCutoff_smul I1
-  have h3 := tendsto_setIntegral_imCutoff_smul I3
+  have h1 := tendsto_setIntegral_imCutoff_smul (hg.integrableOn_smul_setOf_im_pos hχc hχΩ
+    ((hχ.continuous_fderiv (by simp)).clm_apply continuous_const)
+    (tsupport_fderiv_apply_subset ℝ v))
+  have h3 := tendsto_setIntegral_imCutoff_smul
+    (hg'.integrableOn_smul_setOf_im_pos hχc hχΩ hχ.continuous subset_rfl)
   simp only [smul_smul] at h1 h3
   have hlim := h1.add hlayer
   rw [add_zero] at hlim
-  exact tendsto_nhds_unique (hlim.congr key) h3.neg
+  exact tendsto_nhds_unique (hlim.congr (setIntegral_imCutoff_identity hgW hg hχ hχc hχΩ))
+    h3.neg
 
 /-- **Integration by parts up to the real axis.** Let `g'` be a weak derivative of `g` in the
 direction `v` on the upper part of `Ω`, with `g` and `g'` integrable on compact subsets of
@@ -463,16 +490,9 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g'
   have hK : IsCompact K := hχc.isCompact.inter_right (isClosed_le continuous_const continuous_im)
   have hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hχΩ hz, hz.2⟩
   have hgK : IntegrableOn g K := memLp_one_iff_integrable.1 (memLpLoc_iff.1 hg K hKU hK)
-  have hdst : Continuous (deriv Real.smoothTransition) :=
-    (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
-  set D : ℕ → ℂ → ℝ := fun n z => χ z *
-    (deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * v.im)) with hD
-  have I2 (n : ℕ) : IntegrableOn (fun z => D n z • g z) H :=
-    hg.integrableOn_smul_setOf_im_pos hχc hχΩ (hχ.continuous.mul ((hdst.comp
-      ((continuous_const.mul continuous_im).sub continuous_const)).mul continuous_const))
-      tsupport_mul_subset_left
+  have I2 (n : ℕ) := hg.integrableOn_mul_imCutoffLayer_smul hχ.continuous hχc hχΩ n v.im
   rcases hv with hv | hχ0
-  · simp [hv]
+  · simp [imCutoffLayer_def, hv]
   obtain ⟨B, hB⟩ := (Real.smoothTransition.contDiff.continuous_deriv le_rfl).norm
     |>.bddAbove_range_of_hasCompactSupport Real.smoothTransition.hasCompactSupport_deriv.norm
   obtain ⟨M, hM⟩ :=
@@ -493,16 +513,16 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g'
       mul_nonneg (by positivity) (indicator_nonneg (fun _ _ => norm_nonneg _) _)
     by_cases hzK : z ∈ tsupport χ
     swap
-    · simpa [hD, image_eq_zero_of_notMem_tsupport hzK] using hb0
+    · simpa [image_eq_zero_of_notMem_tsupport hzK] using hb0
     by_cases h2 : 2 < ((n : ℝ) + 1) * z.im
-    · simpa [hD, Real.smoothTransition.deriv_of_one_le
+    · simpa [imCutoffLayer_def, Real.smoothTransition.deriv_of_one_le
         (by linarith : 1 ≤ ((n : ℝ) + 1) * z.im - 1)]
         using hb0
     push Not at h2
     rw [indicator_of_mem (show z ∈ K from ⟨hzK, le_of_lt hz⟩), norm_smul]
     have hχz := abs_le_mul_im_of_eq_zero_on_real (hχ.differentiable (by simp)) hM hχ0 hz.le
     have hBz : ‖deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1)‖ ≤ B := hB ⟨_, rfl⟩
-    simp only [hD, norm_mul, Real.norm_eq_abs] at hBz ⊢
+    simp only [imCutoffLayer_def, norm_mul, Real.norm_eq_abs] at hBz ⊢
     have hn : |(n : ℝ) + 1| = (n : ℝ) + 1 := abs_of_pos (by positivity)
     rw [hn]
     calc |χ z| * (|deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1)| *
@@ -513,7 +533,8 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g'
       _ = 2 * (B * M * |v.im|) * ‖g z‖ := by ring
   · have hz : 0 < z.im := hz
     exact tendsto_const_nhds.congr' <| (eventually_imCutoff_arg hz).mono fun n hn => by
-      simp [hD, Real.smoothTransition.deriv_of_one_le hn.le]
+      simp [imCutoffLayer_def, Real.smoothTransition.deriv_of_one_le hn.le]
+
 /-- **Integration by parts up to the real axis, complex form.** The identity of
 `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` for a complex-valued `χ` and values
 in a complex space: it follows by splitting `χ` into its real and imaginary parts, the imaginary

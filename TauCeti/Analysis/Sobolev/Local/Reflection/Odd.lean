@@ -67,14 +67,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-! ### The boundary layer -/
 
-/-- The volume of a rectangle `[-ρ, ρ] × [0, δ]` is `2ρδ`. -/
-private theorem volume_real_reProdIm_Icc {ρ δ : ℝ} (hρ : 0 ≤ ρ) (hδ : 0 ≤ δ) :
-    volume.real (Icc (-ρ) ρ ×ℂ Icc 0 δ) = 2 * ρ * δ := by
-  rw [measureReal_def, Complex.volume_reProdIm measurableSet_Icc measurableSet_Icc,
-    Real.volume_Icc, Real.volume_Icc, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by linarith),
-    ENNReal.toReal_ofReal (by linarith)]
-  ring
-
 omit [NormedSpace ℝ F] in
 /-- A function continuous on `Ω ∩ {0 ≤ im}` and zero on `Ω ∩ ℝ` is uniformly small near the axis
 on every compact subset of `Ω ∩ {0 ≤ im}`. -/
@@ -115,19 +107,20 @@ private theorem norm_setIntegral_le_of_strip {f : ℂ → F} {T : Set ℂ} {ρ w
   calc _ ≤ c * volume.real ({z : ℂ | 0 < z.im} ∩ (T ∩ {z | z.im ≤ w})) :=
         norm_setIntegral_le_of_norm_le_const ((measure_mono hSR).trans_lt hRfin) hon
     _ ≤ c * (2 * ρ * w) := by
-        rw [← volume_real_reProdIm_Icc hρ hw]
+        rw [show 2 * ρ * w = (ρ - -ρ) * (w - 0) by ring,
+          ← Complex.volume_real_reProdIm_Icc (by linarith) hw]
         exact mul_le_mul_of_nonneg_left (measureReal_mono hSR hRfin.ne) hc
 
 /-- **The boundary layer vanishes in the limit.** For `g` continuous on `Ω ∩ {0 ≤ im}` and zero
 on `Ω ∩ ℝ`, and `χ` continuous with compact support meeting `{0 ≤ im}` inside `Ω`, the integral of
-`χ (n + 1) smoothTransition'((n + 1) im - 1) • g` over the upper half-plane tends to zero. -/
+`χ imCutoffLayer n a • g` over the upper half-plane tends to zero. -/
 private theorem tendsto_setIntegral_boundaryLayer {Ω : Opens ℂ} {g : ℂ → F}
     (hgc : ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (hg0 : ∀ x : ℝ, (x : ℂ) ∈ Ω → g x = 0)
     {χ : ℂ → ℝ} (hχ : Continuous χ) (hχc : HasCompactSupport χ)
     (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) (a : ℝ) :
-    Tendsto (fun n : ℕ => ∫ z in {z : ℂ | 0 < z.im},
-      (χ z * (deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * a))) •
-        g z) atTop (𝓝 0) := by
+    Tendsto (fun n : ℕ => ∫ z in {z : ℂ | 0 < z.im}, (χ z * imCutoffLayer n a z) • g z) atTop
+      (𝓝 0) := by
+  simp only [imCutoffLayer_def]
   have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
   set T := tsupport χ ∩ {z : ℂ | 0 ≤ z.im}
   have hT : IsCompact T := hχc.isCompact.inter_right hclosed
@@ -215,13 +208,11 @@ omit [NormedSpace ℝ F] in
 integrable on `Ω`. -/
 private theorem locallyIntegrableOn_indicator_setOf_im_nonneg {Ω : Opens ℂ} {g : ℂ → F}
     (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g) :
-    LocallyIntegrableOn ({z : ℂ | 0 ≤ z.im}.indicator g) Ω := by
-  have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
-  refine (memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).1
-    (memLpLoc_iff.2 fun K hKΩ hK => ?_)
-  rw [memLp_indicator_iff_restrict hH.nullMeasurableSet, Measure.restrict_restrict hH]
-  exact memLpLoc_iff.1 hg _ (fun z hz => ⟨hKΩ hz.2, hz.1⟩)
-    (hK.inter_left (Complex.isClosed_setOfPred_le_im 0))
+    LocallyIntegrableOn ({z : ℂ | 0 ≤ z.im}.indicator g) Ω :=
+  LocallyIntegrableOn.indicator_of_closure
+    (by rw [(Complex.isClosed_setOfPred_le_im 0).closure_eq]
+        exact hg.locallyIntegrableOn le_rfl (Ω.isOpen.isLocallyClosed_inter_setOfPred_le_im 0))
+    (measurableSet_le measurable_const measurable_im).nullMeasurableSet
 
 /-- **Extension by zero.** If `g'` is the weak derivative of `g` in the direction `v` on the upper
 part of `Ω`, with `g` continuous on `Ω ∩ {0 ≤ im}` and zero on `Ω ∩ ℝ` and `g'` integrable on
