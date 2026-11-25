@@ -44,7 +44,5 @@ theorem LipschitzWith.withLpProdMap {K₁ K₂ : ℝ≥0} {f : α → α'} {g : 
         _ ≤ ((K * edist x.fst y.fst) ^ p.toReal + (K * edist x.snd y.snd) ^ p.toReal) ^
             (1 / p.toReal) := by gcongr
         _ = K * edist x y := by
-          rw [WithLp.prod_edist_eq_add hp, ENNReal.mul_rpow_of_nonneg _ _ hp.le,
-            ENNReal.mul_rpow_of_nonneg _ _ hp.le, ← mul_add,
-            ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul,
-            mul_one_div_cancel hp.ne', ENNReal.rpow_one]
+          simp [WithLp.prod_edist_eq_add hp, ENNReal.mul_rpow_of_nonneg _ _ hp.le, ← mul_add,
+            ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hp.le), ENNReal.rpow_rpow_inv hp.ne']
