@@ -210,6 +210,17 @@ theorem eq_propagator_apply_add_integral (hP : IntegrableOn P (Icc a b))
     (fun r hr ↦ (propagator_apply_add_integral_eq hP hF h₀ hr (x t₀)).trans
       (hpicard _ r).symm) ht
 
+/-- For `P` and `P'` integrable on `[a, b]` and `s, t ∈ [a, b]`, the integrand
+`r ↦ N_P(t, r) (P' r - P r) N_{P'}(r, s)` of Duhamel's formula
+`TauCeti.propagator_sub_propagator_eq_integral` is integrable on `[a, b]`. -/
+theorem integrableOn_propagator_comp_sub_comp {P' : ℝ → E →L[𝕜] E} {s : ℝ}
+    (hP : IntegrableOn P (Icc a b)) (hP' : IntegrableOn P' (Icc a b)) (hs : s ∈ Icc a b)
+    (ht : t ∈ Icc a b) :
+    IntegrableOn (fun r ↦ propagator P t r ∘L (P' r - P r) ∘L propagator P' r s) (Icc a b) := by
+  have h := ((hP'.sub hP).mul_continuousOn (continuousOn_propagator_left hP' hs)
+    isCompact_Icc).continuousOn_mul (continuousOn_propagator_right hP ht) isCompact_Icc
+  simpa only [ContinuousLinearMap.mul_def, Pi.sub_apply] using h
+
 /-- **Duhamel's formula for two coefficients.** For `P` and `P'` integrable on `[a, b]` and
 `t₀, t ∈ [a, b]`,
 `N_{P'}(t, t₀) - N_P(t, t₀) = ∫ s in t₀..t, N_P(t, s) (P' s - P s) N_{P'}(s, t₀)`: the difference
@@ -223,10 +234,9 @@ theorem propagator_sub_propagator_eq_integral {P' : ℝ → E →L[𝕜] E}
   have hN := continuousOn_propagator_left hP h₀
   have hN' := continuousOn_propagator_left hP' h₀
   have hK : IntervalIntegrable
-      (fun s ↦ propagator P t s ∘L (P' s - P s) ∘L propagator P' s t₀) volume t₀ t := by
-    have := (((hP'.sub hP).mul_continuousOn hN' isCompact_Icc).continuousOn_mul
-      (continuousOn_propagator_right hP ht) isCompact_Icc).mono_set (uIcc_subset_Icc h₀ ht)
-    simpa only [ContinuousLinearMap.mul_def] using this.intervalIntegrable
+      (fun s ↦ propagator P t s ∘L (P' s - P s) ∘L propagator P' s t₀) volume t₀ t :=
+    ((integrableOn_propagator_comp_sub_comp hP hP' h₀ ht).mono_set
+      (uIcc_subset_Icc h₀ ht)).intervalIntegrable
   ext1 y
   rw [ContinuousLinearMap.intervalIntegral_apply hK]
   set x : ℝ → E := fun r ↦ (propagator P' r t₀ - propagator P r t₀) y
