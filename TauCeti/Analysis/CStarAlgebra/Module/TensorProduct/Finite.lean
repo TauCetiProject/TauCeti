@@ -49,10 +49,9 @@ noncomputable def tensorProductUnitary :
 
 private theorem tensorProductUnitary_coe (x : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, H ⊗[ℂ] A)) :
     e.tensorProductUnitary (A := A) (x : HilbertModuleTensorProduct H A) =
-      finiteCoordinates e x :=
-  IsPosSemidefCStarModuleAlong.equivOfInner_coe (.id ℂ Aᵐᵒᵖ)
-    (finiteCoordinates (A := A) e).toLinearMap (finiteCoordinates_inner (A := A) e)
-    (finiteCoordinates (A := A) e).surjective.denseRange x
+      finiteCoordinates e x := by
+  rw [tensorProductUnitary, CStarModuleUnitary.mk_apply,
+    IsPosSemidefCStarModuleAlong.equivOfInner_coe, LinearEquiv.coe_coe]
 
 /-- The unitary's `i`th coordinate on a pure tensor is the coefficient multiplied by the
 `i`th Fourier coordinate of the Hilbert-space factor. -/
@@ -69,11 +68,8 @@ theorem tensorProductUnitary_symm_apply (a : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)
   let f := finiteCoordinates (A := A) e
   have h : (e.tensorProductUnitary (A := A)).symm a =
       (f.symm a : HilbertModuleTensorProduct H A) := by
-    rw [← CStarModuleUnitary.toLinearIsometryEquiv_apply,
-      CStarModuleUnitary.toLinearIsometryEquiv_symm]
-    simpa only [tensorProductUnitary, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using
-      (IsPosSemidefCStarModuleAlong.equivOfInner_symm_apply (.id ℂ Aᵐᵒᵖ)
-        f.toLinearMap (finiteCoordinates_inner (A := A) e) f.surjective.denseRange (f.symm a))
+    rw [CStarModuleUnitary.symm_apply_eq, tensorProductUnitary_coe]
+    exact (f.apply_symm_apply a).symm
   have hc : f.symm a =
       ∑ i, WithCStarModule.tensorTmul A (e i) (a i) := by
     simpa [f, finiteCoordinates] using e.toBasis.tensorCoordinates_symm_apply
