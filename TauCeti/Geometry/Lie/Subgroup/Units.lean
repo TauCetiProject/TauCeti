@@ -35,6 +35,7 @@ Lie subalgebra; for a closed subgroup its carrier is the exponential-line set.
   subgroup, membership in its Lie algebra is that exponential line staying inside the subgroup.
 * `Subgroup.star_mem_linearLieAlgebra`: the exponential-line set of a subgroup is invariant under
   a star that preserves the subgroup.
+* `Subgroup.star_mem_linearLieSubalgebra`: the same for the Lie algebra of a closed subgroup.
 * `Subgroup.conj_mem_linearLieSubalgebra`: the Lie algebra of a subgroup is invariant under
   conjugation by the subgroup.
 * `Subgroup.le_of_linearLieSubalgebra_le`: a closed connected subgroup lies in every closed
@@ -177,9 +178,11 @@ theorem mem_linearLieSubalgebra :
     x ∈ G.linearLieSubalgebra ↔
       (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := R)).symm x ∈
         TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) G := by
-  rw [linearLieSubalgebra_eq_map, LieSubalgebra.mem_map_submodule,
-    Submodule.mem_map_equiv, LieSubalgebra.mem_toSubmodule]
-  rfl
+  rw [linearLieSubalgebra_eq_map, LieSubalgebra.mem_map]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    rwa [LieEquiv.coe_toLieHom, LieEquiv.symm_apply_apply]
+  · exact fun hx ↦ ⟨_, hx, LieEquiv.apply_symm_apply _ x⟩
 
 /-- For a closed subgroup, membership in the transported Lie subalgebra is equivalent to the
 exponential-line condition. -/
@@ -219,6 +222,14 @@ theorem conj_mem_linearLieSubalgebra {y : Rˣ} (hy : y ∈ G) (hx : x ∈ G.line
   rw [LieEquiv.symm_apply_eq, TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
     TauCeti.Lie.unitsLieAlgebraEquiv_Ad, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
     LieEquiv.apply_symm_apply]
+
+/-- The Lie algebra of a closed subgroup stable under a continuous star is stable under the
+star. -/
+theorem star_mem_linearLieSubalgebra [StarRing R] [StarModule ℝ R] [ContinuousStar R]
+    (hG : IsClosed (G : Set Rˣ)) (hstar : ∀ y ∈ G, star y ∈ G)
+    (hx : x ∈ G.linearLieSubalgebra) : star x ∈ G.linearLieSubalgebra :=
+  (mem_linearLieSubalgebra_iff hG).2 <|
+    star_mem_linearLieAlgebra hstar ((mem_linearLieSubalgebra_iff hG).1 hx)
 
 /-- A closed connected subgroup `G` of `Rˣ` lies in every closed subgroup `L` whose Lie algebra
 contains its own. -/

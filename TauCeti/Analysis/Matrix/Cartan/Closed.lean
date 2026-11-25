@@ -216,13 +216,6 @@ private theorem commutator_mem_lieAlg {Y W : Matrix n n 𝕜}
     Y * W - W * Y ∈ H.linearLieSubalgebra := by
   simpa only [Ring.lie_def] using H.linearLieSubalgebra.lie_mem hY hW
 
-/-- The Lie algebra of a closed subgroup stable under the conjugate transpose is stable under the
-conjugate transpose. -/
-private theorem star_mem_lieAlg (hH : IsClosed (H : Set (GL n 𝕜))) (hstar : ∀ g ∈ H, star g ∈ H)
-    {Y : Matrix n n 𝕜} (hY : Y ∈ H.linearLieSubalgebra) : star Y ∈ H.linearLieSubalgebra :=
-  (H.mem_linearLieSubalgebra_iff hH).2 <|
-    Subgroup.star_mem_linearLieAlgebra hstar ((H.mem_linearLieSubalgebra_iff hH).1 hY)
-
 end LieAlgebra
 
 /-! ### The line through a positive element -/
@@ -266,7 +259,7 @@ private theorem mem_lieAlg_of_isPreconnected (hH : IsClosed (H : Set (GL n 𝕜)
     rwa [← TauCeti.expUnit_neg, TauCeti.expUnit_coe, TauCeti.expUnit_coe] at this
   obtain ⟨X₁, hX₁, -, Z, hZ, rfl, horth⟩ :=
     hX.exists_add_orthogonal (V := H.linearLieSubalgebra.toSubmodule) fun _ ↦
-      star_mem_lieAlg hH hstar
+      Subgroup.star_mem_linearLieSubalgebra hH hstar
   -- `Z` commutes with the Lie algebra: the commutator lies in it and is orthogonal to it.
   have hcomm (Y : Matrix n n 𝕜) (hY : Y ∈ H.linearLieSubalgebra) : Commute Y Z := by
     set A := Z * Y - Y * Z
@@ -285,7 +278,7 @@ private theorem mem_lieAlg_of_isPreconnected (hH : IsClosed (H : Set (GL n 𝕜)
       rw [htr]
       exact horth _ (commutator_mem_lieAlg hY hW)
     have h0 := re_trace_mul_conjTranspose_self_eq_zero_iff.1
-      (hAorth _ (star_mem_lieAlg hH hstar hA))
+      (hAorth _ (Subgroup.star_mem_linearLieSubalgebra hH hstar hA))
     exact (sub_eq_zero.1 h0).symm
   -- Hence `exp Z = exp (-X₁) * exp X` lies in `H`, and the character argument gives `Z = 0`.
   have hZH : TauCeti.expUnit Z ∈ H := by
