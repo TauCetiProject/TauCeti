@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Factorization.Basic
-public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup
+public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
