@@ -92,7 +92,7 @@ theorem exists_eLpNormWkp_succ_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 <
     have hDgY : eLpNormWkp q Ω (k + 1) Dg ≤ Y := hgΩ ▸ le_add_self
     -- The weak Leibniz rule on `Ω`, with `f` locally bounded.
     have hfloc : MemWkpLoc p Ω 1 f := (memWkpLoc_of_eLpNormWkp_ne_top hf).of_le (by omega)
-    have hLeib := hDf.bilin_of_memLpLoc B hp hq hqp
+    have hLeib := hDf.bilin_of_finrank_lt B (by simpa using hp) hq hqp
       ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top)
       (memLp_of_eLpNormWkp_ne_top hDfk).memLpLoc hDg (memLp_of_eLpNormWkp_ne_top hg).memLpLoc
       (memLp_of_eLpNormWkp_ne_top hDgk).memLpLoc

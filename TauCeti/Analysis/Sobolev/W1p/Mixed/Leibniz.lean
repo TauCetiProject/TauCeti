@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.W1p.MixedMultiplication
+public import TauCeti.Analysis.Sobolev.W1p.Mixed.Multiplication
 public import TauCeti.MeasureTheory.Function.MemLpLoc
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
 import TauCeti.Data.ENNReal.Holder
@@ -14,16 +14,20 @@ import TauCeti.Data.ENNReal.Holder
 # The weak Leibniz rule for mixed-exponent products on Euclidean domains
 
 Let `Ω` be an open subset of a real inner product space `E` of finite dimension `n`, let
-`n < p < ∞`, `1 < q ≤ p`, and let `B : F × G → H` be continuous bilinear with `G`
+`n < p < ∞`, `1 ≤ q ≤ p`, and let `B : F × G → H` be continuous bilinear with `G`
 finite-dimensional. This file proves the first two orders of the mixed-exponent product theorem
 for functions that are locally integrable on `Ω`, in the sense of `TauCeti.MemLpLoc`, together
-with their weak derivatives:
+with their weak derivatives. Throughout, `g, Dg ∈ L^q_loc(Ω)`, where `Dg` is a weak derivative
+of `g`.
 
-* Order zero: for `f ∈ Lᵖ_loc(Ω)` and `g ∈ W^{1,q}_loc(Ω)`, the product `B(f, g)` is in
-  `L^q_loc(Ω)`.
-* Order one: for `f ∈ W^{1,p}_loc(Ω)` and `g ∈ W^{1,q}_loc(Ω)`, the product `B(f, g)` has weak
-  derivative `B(Df, g) + B(f, Dg)`, and when `F` is finite-dimensional both lie in
-  `L^q_loc(Ω)`, so that `B(f, g) ∈ W^{1,q}_loc(Ω)`.
+* Order zero: for `f ∈ Lᵖ_loc(Ω)`, the product `B(f, g)` is in `L^q_loc(Ω)`.
+* Order one, the Leibniz rule: for `1 < q` and `f ∈ L^{q'}_loc(Ω)` with weak derivative
+  `Df ∈ Lᵖ_loc(Ω)`, where `q'` is the conjugate exponent of `q`, the product `B(f, g)` has weak
+  derivative `B(Df, g) + B(f, Dg)`.
+* Order one, membership: for `f ∈ L^∞_loc(Ω)` and `Df ∈ Lᵖ_loc(Ω)`, both `B(f, g)` and
+  `B(Df, g) + B(f, Dg)` are in `L^q_loc(Ω)`. When `F` is finite-dimensional and `f, Df ∈ Lᵖ_loc(Ω)`
+  with `Df` a weak derivative of `f`, the factor `f` is locally bounded, so with `1 < q` the
+  product is in `W^{1,q}_loc(Ω)`.
 
 The input is the local gain of integrability `W^{1,q}_loc ⊆ Lʳ_loc` for `1/p + 1/r = 1/q`
 (`TauCeti.HasWeakFDerivOn.memLpLoc_of_holderTriple`), which uses `p > n` and is the local form of
@@ -31,9 +35,9 @@ The input is the local gain of integrability `W^{1,q}_loc ⊆ Lʳ_loc` for `1/p 
 map with finite-dimensional values is locally bounded. The Leibniz rule itself is
 `TauCeti.HasWeakFDerivOn.bilin_of_memLp`, applied at exponents supplied by this gain.
 
-For planar domains, the same statements for the local Sobolev classes `TauCeti.MemWkpLoc` are
-`TauCeti.MemLpLoc.bilin_of_memWkpLoc`, `TauCeti.HasWeakFDerivOn.bilin_of_memLpLoc` and
-`TauCeti.MemWkpLoc.bilin`, with their higher-order consequences in
+For planar domains, `TauCeti.Analysis.Sobolev.Local.Multiplication` restates these results
+for the local Sobolev classes `TauCeti.MemWkpLoc` (`TauCeti.MemLpLoc.bilin_of_memWkpLoc` and
+`TauCeti.MemWkpLoc.bilin`), with their higher-order consequences in
 `TauCeti.Analysis.Sobolev.Local.Multiplication.Higher`.
 
 ## Main declarations
@@ -43,8 +47,10 @@ For planar domains, the same statements for the local Sobolev classes `TauCeti.M
 * `TauCeti.MemLpLoc.bilin_of_hasWeakFDerivOn`: order-zero mixed products.
 * `TauCeti.HasWeakFDerivOn.bilin_of_finrank_lt`: the weak Leibniz rule for order-one mixed
   products.
-* `TauCeti.HasWeakFDerivOn.memLpLoc_bilin_of_finrank_lt`: order-one membership of the product
-  and of its weak derivative.
+* `TauCeti.HasWeakFDerivOn.memLpLoc_bilin_of_memLpLoc_top`: order-one membership of the product
+  and of its candidate weak derivative, for a locally bounded factor.
+* `TauCeti.HasWeakFDerivOn.memLpLoc_bilin_of_finrank_lt`: the same for finite-dimensional
+  factors.
 
 ## References
 
@@ -150,12 +156,33 @@ theorem HasWeakFDerivOn.bilin_of_finrank_lt [CompleteSpace H] (B : F →L[ℝ] G
     (fun K hK hKΩ => memLpLoc_iff.1 hDf K hKΩ hK)
     (fun K hK hKΩ => memLpLoc_iff.1 hgb K hKΩ hK) (fun K hK hKΩ => memLpLoc_iff.1 hDg K hKΩ hK)
 
-/-- **Order-one mixed products.** For `dim E < p` and `1 < q ≤ p`, let `f` and `g` have
-finite-dimensional values and weak derivatives `Df` and `Dg` on `Ω`, with `f, Df ∈ Lᵖ_loc(Ω)`
-and `g, Dg ∈ L^q_loc(Ω)`. Then the product `B(f, g)` and its weak derivative
-`B(Df, g) + B(f, Dg)` (`TauCeti.HasWeakFDerivOn.bilin_of_finrank_lt`) are in `L^q_loc(Ω)`: the
-product is in `W^{1,q}_loc(Ω)`. The factor `f` is locally bounded by
-`TauCeti.HasWeakFDerivOn.memLpLoc_top`. -/
+/-- **Order-one mixed products with a locally bounded factor.** For `dim E < p` and
+`1 ≤ q ≤ p`, let `f ∈ L^∞_loc(Ω)`, let `Df ∈ Lᵖ_loc(Ω)`, and let `g` with finite-dimensional
+values have weak derivative `Dg` on `Ω` with `g, Dg ∈ L^q_loc(Ω)`. Then the product `B(f, g)`
+and the candidate weak derivative `B(Df, g) + B(f, Dg)` are in `L^q_loc(Ω)`. When `Df` is a weak
+derivative of `f` and `1 < q`, `TauCeti.HasWeakFDerivOn.bilin_of_finrank_lt` shows that the
+second function is the weak derivative of the first. -/
+theorem HasWeakFDerivOn.memLpLoc_bilin_of_memLpLoc_top (B : F →L[ℝ] G →L[ℝ] H)
+    (hp : (finrank ℝ E : ℝ≥0) < p) (hq : 1 ≤ q) (hqp : q ≤ p) {f : E → F}
+    {Df : E → E →L[ℝ] F} {g : E → G} {Dg : E → E →L[ℝ] G} (hfi : MemLpLoc ∞ Ω f μ)
+    (hDf : MemLpLoc p Ω Df μ) (hg : HasWeakFDerivOn μ Ω g Dg) (hgq : MemLpLoc q Ω g μ)
+    (hDg : MemLpLoc q Ω Dg μ) :
+    MemLpLoc q Ω (fun x => B (f x) (g x)) μ ∧
+      MemLpLoc q Ω (fun x => B.precompL E (Df x) (g x) + B.precompR E (f x) (Dg x)) μ := by
+  let _ : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq⟩
+  refine ⟨memLpLoc_iff.2 fun K hKΩ hK => ?_, memLpLoc_iff.2 fun K hKΩ hK => ?_⟩
+  · exact B.memLp_of_bilin q (memLpLoc_iff.1 hfi K hKΩ hK) (memLpLoc_iff.1 hgq K hKΩ hK)
+  · exact (memLpLoc_iff.1 (hDf.bilin_of_hasWeakFDerivOn (B.precompL E) hp hqp hg hgq hDg) K
+      hKΩ hK).add ((B.precompR E).memLp_of_bilin q (memLpLoc_iff.1 hfi K hKΩ hK)
+        (memLpLoc_iff.1 hDg K hKΩ hK))
+
+/-- **Order-one mixed products with finite-dimensional factors.** For `dim E < p` and
+`1 ≤ q ≤ p`, let `f` and `g` have finite-dimensional values and weak derivatives `Df` and `Dg`
+on `Ω`, with `f, Df ∈ Lᵖ_loc(Ω)` and `g, Dg ∈ L^q_loc(Ω)`. Then the product `B(f, g)` and the
+candidate weak derivative `B(Df, g) + B(f, Dg)` are in `L^q_loc(Ω)`. The factor `f` is locally
+bounded by `TauCeti.HasWeakFDerivOn.memLpLoc_top`. When `1 < q`,
+`TauCeti.HasWeakFDerivOn.bilin_of_finrank_lt` shows that the second function is the weak
+derivative of the first, so that the product is in `W^{1,q}_loc(Ω)`. -/
 theorem HasWeakFDerivOn.memLpLoc_bilin_of_finrank_lt [FiniteDimensional ℝ F]
     (B : F →L[ℝ] G →L[ℝ] H) (hp : (finrank ℝ E : ℝ≥0) < p) (hq : 1 ≤ q) (hqp : q ≤ p)
     {f : E → F} {Df : E → E →L[ℝ] F} {g : E → G} {Dg : E → E →L[ℝ] G}
@@ -163,13 +190,7 @@ theorem HasWeakFDerivOn.memLpLoc_bilin_of_finrank_lt [FiniteDimensional ℝ F]
     (hg : HasWeakFDerivOn μ Ω g Dg) (hgq : MemLpLoc q Ω g μ) (hDg : MemLpLoc q Ω Dg μ) :
     MemLpLoc q Ω (fun x => B (f x) (g x)) μ ∧
       MemLpLoc q Ω (fun x => B.precompL E (Df x) (g x) + B.precompR E (f x) (Dg x)) μ := by
-  let _ : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq⟩
   let _ : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast hq.trans hqp⟩
-  have hfi : MemLpLoc ∞ Ω f μ := hf.memLpLoc_top hp hfp hDf
-  refine ⟨memLpLoc_iff.2 fun K hKΩ hK => ?_, memLpLoc_iff.2 fun K hKΩ hK => ?_⟩
-  · exact B.memLp_of_bilin q (memLpLoc_iff.1 hfi K hKΩ hK) (memLpLoc_iff.1 hgq K hKΩ hK)
-  · exact (memLpLoc_iff.1 (hDf.bilin_of_hasWeakFDerivOn (B.precompL E) hp hqp hg hgq hDg) K
-      hKΩ hK).add ((B.precompR E).memLp_of_bilin q (memLpLoc_iff.1 hfi K hKΩ hK)
-        (memLpLoc_iff.1 hDg K hKΩ hK))
+  exact hg.memLpLoc_bilin_of_memLpLoc_top B hp hq hqp (hf.memLpLoc_top hp hfp hDf) hDf hgq hDg
 
 end TauCeti

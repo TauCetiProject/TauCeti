@@ -162,7 +162,7 @@ theorem exists_eLpNormWkp_one_bilin_le [FiniteDimensional ℝ F] [CompleteSpace 
   replace hDgq : MemLp Dg q (volume.restrict Ω) := memLp_iff.2 (lt_top_iff_ne_top.2 hDgq)
   -- `f` is locally bounded on `Ω`, so the weak Leibniz rule applies there.
   have hfloc : MemWkpLoc p Ω 1 f := memWkpLoc_of_eLpNormWkp_ne_top hf
-  have hLeib := hDf.bilin_of_memLpLoc B hp hq hqp
+  have hLeib := hDf.bilin_of_finrank_lt B (by simpa using hp) hq hqp
     ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top) hDfp.memLpLoc
     hDg hgq.memLpLoc hDgq.memLpLoc
   have hint : Opens.interior K ≤ Ω := fun z hz => hUΩ (interior_subset hz)
