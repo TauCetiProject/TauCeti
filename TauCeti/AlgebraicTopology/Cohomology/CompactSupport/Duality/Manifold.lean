@@ -29,19 +29,18 @@ product with the fundamental class `[M]` is a bijection `Hᵖ(M; L) → H_q(M; L
 
 The proof is Hatcher's induction over the open subsets of `M` (Lemma 3.36), run through the
 Mayer–Vietoris induction principle over convex chart domains
-(`TauCeti.mayerVietoris_induction_extChartAt_of_isChain`), for the property of an open subset `U`,
+(`TauCeti.mayerVietoris_induction_extChartAt_of_directed`), for the property of an open subset `U`,
 with the orientation restricted from `o`, that its duality map is bijective in every degree:
 
 * on a convex chart domain, which the chart carries onto a convex open subset of `E`
-  (`OpenPartialHomeomorph.isOpenEmbedding_domRestrict`,
-  `TauCeti.range_domRestrict_chartAt_of_eq_inter_preimage`), it holds by duality for convex open
-  subsets of `E` (`TauCeti.HomologicalOrientation.bijective_dualityMap_of_convex`);
+  (`TauCeti.isOpenEmbedding_domRestrict_chartAt_and_convex_range`), it holds by duality for
+  convex open subsets of `E` (`TauCeti.HomologicalOrientation.bijective_dualityMap_of_convex`);
 * it passes from `U`, `V` and `U ∩ V` to `U ∪ V`, by comparing the Mayer–Vietoris sequences of
   cohomology with compact supports and of homology
   (`TauCeti.HomologicalOrientation.bijective_dualityMap_comap_sup`); in the top degree this uses
   `Hⁿ⁺¹_c(U ∩ V) = 0`, the vanishing of cohomology with compact supports above the dimension
   (`TopCat.isZero_compactSupportCohomology_of_finrank_lt`);
-* it passes to disjoint unions and to unions of chains of open subsets
+* it passes to disjoint unions and to directed unions of open subsets
   (`TauCeti.HomologicalOrientation.bijective_dualityMap_comap_iSup_of_pairwise_disjoint`,
   `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_iSup_of_monotone`).
 
@@ -82,16 +81,15 @@ variable {M E : Type} [TopologicalSpace M] [T2Space M]
 private theorem bijective_dualityMap_comap (U : Opens M) (p q : ℕ) (h : p + q = n) :
     Function.Bijective ((o.comap U.isOpenEmbedding').dualityMap hn L p q h) := by
   revert p q h
-  refine mayerVietoris_induction_extChartAt_of_isChain 𝓘(ℝ, E)
+  refine mayerVietoris_induction_extChartAt_of_directed 𝓘(ℝ, E)
     (fun U : Opens M ↦ ∀ p q (h : p + q = n),
       Function.Bijective ((o.comap U.isOpenEmbedding').dualityMap hn L p q h)) ?_ ?_ ?_ ?_ ?_ U
   · intro p q h
     have : IsEmpty (⊥ : Opens M) := ⟨fun x ↦ x.property⟩
     exact (o.comap _).bijective_dualityMap_of_isEmpty hn L h
-  · intro x C U _ hCc hCt hU _ p q h
-    exact (o.comap U.isOpenEmbedding').bijective_dualityMap_of_convex hn L h
-      ((chartAt E x).isOpenEmbedding_domRestrict U.isOpen (hU ▸ inter_subset_left))
-      ((range_domRestrict_chartAt_of_eq_inter_preimage hCt hU).symm ▸ hCc)
+  · intro x C U hC hCc hCt hU _ p q h
+    obtain ⟨hj, hjc⟩ := isOpenEmbedding_domRestrict_chartAt_and_convex_range hC hCc hCt hU
+    exact (o.comap U.isOpenEmbedding').bijective_dualityMap_of_convex hn L h hj hjc
   · intro U V hU hV hUV p q h
     -- The top degree needs `Hⁿ⁺¹_c(U ∩ V) = 0`, the vanishing above the dimension on `U ∩ V`.
     -- It is stated with the `ℤ`-linear structure `ModuleCat.instLinear` of a category of modules,
@@ -104,17 +102,8 @@ private theorem bijective_dualityMap_comap (U : Opens M) (p q : ℕ) (h : p + q 
   · intro s hs hsD p q h
     exact o.bijective_dualityMap_comap_iSup_of_pairwise_disjoint hn L h
       (fun i j hij ↦ hs i j hij) fun i ↦ hsD i p q h
-  · intro c hc hcD p q h
-    have : IsDirected c (· ≤ ·) := ⟨fun U V ↦ by
-      obtain ⟨W, hW, hUW, hVW⟩ := hc.directedOn U U.property V V.property
-      exact ⟨⟨W, hW⟩, hUW, hVW⟩⟩
-    -- The union of the chain is the directed union of its members.
-    have key : ∀ W : Opens M, W = ⨆ U : c, (U : Opens M) →
-        Function.Bijective ((o.comap W.isOpenEmbedding').dualityMap hn L p q h) := by
-      rintro _ rfl
-      exact o.bijective_dualityMap_comap_iSup_of_monotone hn L h (fun _ _ h ↦ h)
-        fun U ↦ hcD U U.property p q h
-    exact key _ (sSup_eq_iSup' c)
+  · intro ι _ _ U hU hUD p q h
+    exact o.bijective_dualityMap_comap_iSup_of_monotone hn L h hU fun i ↦ hUD i p q h
 
 /-- **Poincaré duality.** For a homological orientation `o` of a Hausdorff manifold `M` without
 boundary of dimension `n`, charted on a finite-dimensional real normed space, the duality map

@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Euclidean.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Vanishing
 public import TauCeti.Geometry.Manifold.MayerVietoris
-public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Cohomology with compact supports of a manifold vanishes above its dimension
@@ -20,16 +19,16 @@ coefficients with projective chain coefficients, with no orientation and no comp
 connectedness or countability of `M`.
 
 The proof is Mayer–Vietoris induction over the open subsets of `M`
-(`TauCeti.mayerVietoris_induction_extChartAt_of_isChain`), for the property of an open subset `U`
+(`TauCeti.mayerVietoris_induction_extChartAt_of_directed`), for the property of an open subset `U`
 that `Hᵐ_c(U) = 0` for every `m > n`:
 
 * on a convex chart domain, which the chart carries onto a convex open subset of `E`
-  (`OpenPartialHomeomorph.isOpenEmbedding_domRestrict`,
-  `TauCeti.range_domRestrict_chartAt_of_eq_inter_preimage`), cohomology with compact supports is
-  that of `E`, concentrated in degree `n` (`TopCat.isZero_compactSupportCohomology_of_convex`);
+  (`TauCeti.isOpenEmbedding_domRestrict_chartAt_and_convex_range`), cohomology with compact
+  supports is that of `E`, concentrated in degree `n`
+  (`TopCat.isZero_compactSupportCohomology_of_convex`);
 * it passes from `U`, `V` and `U ∩ V` to `U ∪ V` by the Mayer–Vietoris sequence, which needs the
   vanishing on `U ∩ V` one degree up (`TopCat.isZero_compactSupportCohomology_sup`);
-* it passes to disjoint unions and to unions of chains of open subsets
+* it passes to disjoint unions and to directed unions of open subsets
   (`TopCat.isZero_compactSupportCohomology_iSup_of_pairwise_disjoint`,
   `TopCat.isZero_compactSupportCohomology_iSup_of_monotone`).
 
@@ -67,26 +66,21 @@ theorem isZero_compactSupportCohomology_of_finrank_lt {m : ℕ} (hm : finrank �
   -- The vanishing holds on every open subset of `M`, by Mayer–Vietoris induction.
   have key : ∀ U : Opens M, ∀ m, finrank ℝ E < m →
       IsZero (((Opens.toTopCat (TopCat.of M)).obj U).compactSupportCohomology R k N m) := by
-    refine TauCeti.mayerVietoris_induction_extChartAt_of_isChain 𝓘(ℝ, E) _ ?_ ?_ ?_ ?_ ?_
+    refine TauCeti.mayerVietoris_induction_extChartAt_of_directed 𝓘(ℝ, E) _ ?_ ?_ ?_ ?_ ?_
     · intro m _
       have : IsEmpty ((Opens.toTopCat (TopCat.of M)).obj ⊥) := ⟨fun x ↦ x.property⟩
       exact isZero_compactSupportCohomology_of_isEmpty R k N m
-    · intro x C U _ hCc hCt hU _ m hm
-      have hj := (chartAt E x).isOpenEmbedding_domRestrict U.isOpen (hU ▸ inter_subset_left)
-      exact isZero_compactSupportCohomology_of_convex R N (j := ofHom ⟨_, hj.continuous⟩) hj
-        ((TauCeti.range_domRestrict_chartAt_of_eq_inter_preimage hCt hU).symm ▸ hCc) hm.ne'
+    · intro x C U hC hCc hCt hU _ m hm
+      obtain ⟨hj, hjc⟩ := TauCeti.isOpenEmbedding_domRestrict_chartAt_and_convex_range hC hCc hCt hU
+      exact isZero_compactSupportCohomology_of_convex R N (j := ofHom ⟨_, hj.continuous⟩) hj hjc
+        hm.ne'
     · intro U V hU hV hUV m hm
       exact isZero_compactSupportCohomology_sup (hU m hm) (hV m hm) (hUV (m + 1) (by omega))
     · intro s hs hsm m hm
       exact isZero_compactSupportCohomology_iSup_of_pairwise_disjoint (fun i j hij ↦ hs i j hij)
         fun i ↦ hsm i m hm
-    · intro c hc hcm m hm
-      have : IsDirected c (· ≤ ·) := ⟨fun U V ↦ by
-        obtain ⟨W, hW, hUW, hVW⟩ := hc.directedOn U U.property V V.property
-        exact ⟨⟨W, hW⟩, hUW, hVW⟩⟩
-      rw [sSup_eq_iSup']
-      exact isZero_compactSupportCohomology_iSup_of_monotone (fun _ _ h ↦ h)
-        fun U ↦ hcm U U.property m hm
+    · intro ι _ _ U hU hUm m hm
+      exact isZero_compactSupportCohomology_iSup_of_monotone hU fun i ↦ hUm i m hm
   exact (key ⊤ m hm).of_iso (compactSupportCohomologyIsoOfHomeomorph R k N
     (homeoOfIso (Opens.inclusionTopIso (TopCat.of M))) m).symm
 
