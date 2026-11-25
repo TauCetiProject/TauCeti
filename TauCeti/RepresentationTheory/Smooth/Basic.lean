@@ -51,6 +51,8 @@ case.
   supremum of the invariants of the compact open subgroups.
 * `Representation.le_smoothVectors_iff`: `V^∞` is the largest smooth subrepresentation.
 * `Representation.smoothVectors_eq_top_iff`: `V^∞ = V` exactly when the representation is smooth.
+* `Representation.isSmooth_of_iSup_range_eq_top`: a representation spanned by the images of
+  intertwining maps out of smooth representations is smooth.
 * `Representation.IsSmooth.of_injective`, `Representation.IsSmooth.of_surjective`: smoothness
   passes to subrepresentations and quotients, and equivalent representations are smooth together
   (`Representation.Equiv.isSmooth_iff`).
@@ -265,6 +267,19 @@ theorem isSmooth_iff_forall_mem_smoothVectors : IsSmooth ρ ↔ ∀ v, v ∈ ρ.
 /-- Every vector of a smooth representation is smooth. -/
 theorem IsSmooth.mem_smoothVectors [IsSmooth ρ] (v : V) : v ∈ ρ.smoothVectors :=
   IsSmooth.isOpen_stabilizer v
+
+/-- **A representation spanned by smooth images is smooth.** If the ranges of a family of
+intertwining maps out of smooth representations span `W`, then `W` is smooth. -/
+theorem isSmooth_of_iSup_range_eq_top {κ : Type*} {V : κ → Type*} [∀ k, AddCommMonoid (V k)]
+    [∀ k, Module A (V k)] {ρ : ∀ k, Representation A G (V k)} [∀ k, IsSmooth (ρ k)]
+    (f : ∀ k, (ρ k).IntertwiningMap σ)
+    (hf : ⨆ k, LinearMap.range (f k).toLinearMap = ⊤) : IsSmooth σ := by
+  refine isSmooth_iff_forall_mem_smoothVectors.2 fun w ↦ ?_
+  have hle : ⨆ k, LinearMap.range (f k).toLinearMap ≤ σ.smoothVectors.toSubmodule :=
+    iSup_le fun k ↦ by
+      rintro _ ⟨v, rfl⟩
+      exact (f k).apply_mem_smoothVectors (IsSmooth.mem_smoothVectors v)
+  exact hle (hf ▸ Submodule.mem_top)
 
 /-- `V^∞` is smooth. -/
 instance : IsSmooth ρ.smoothVectors.toRepresentation :=

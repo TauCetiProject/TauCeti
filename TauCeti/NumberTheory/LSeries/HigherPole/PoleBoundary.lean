@@ -31,22 +31,29 @@ function such as an `LSeries`, whose values off its half-plane of convergence ca
 ## Main results
 
 * `PoleBoundary.tendsto_sub_pow_mul`: `(s - a) ^ (k + 1) F s → A` as `s → a` within `Re s > a`.
-* `PoleBoundary.unique`, `PoleBoundary.order_le_of_ne_zero` and `PoleBoundary.order_unique`: the
-  leading coefficient is determined by `F`, and so is the order of the pole when the coefficient
-  is nonzero.
-* `poleBoundary_congr`: only the values on the open half-plane matter.
-* `PoleBoundary.mul_analyticOnNhd`, `PoleBoundary.div_id`, `PoleBoundary.comp_const_mul`,
-  `PoleBoundary.mul` and `PoleBoundary.pow`: multiplication by a function holomorphic on the
-  closed half-plane, division by the argument, rescaling of the variable, and products, under
-  which the pole orders add.
-* `poleBoundary_const_div_pow`, `poleBoundary_riemannZeta` and `poleBoundary_riemannZeta_pow`:
-  the model pole `A / (s - a) ^ (k + 1)`, and the Riemann zeta function and its powers at `1`.
+* `PoleBoundary.unique`, `PoleBoundary.of_lt`, `PoleBoundary.order_le_of_ne_zero` and
+  `PoleBoundary.order_unique`: the leading coefficient is determined by `F`, a pole of order at
+  most `k + 1` also has order at most `l + 1` with leading coefficient `0` for `k < l`, and the
+  order is determined when the coefficient is nonzero.
+* `poleBoundary_congr`, `PoleBoundary.update_of_re_le` and `poleBoundary_update_iff_of_re_le`: only
+  the values on the open half-plane matter.
+* `PoleBoundary.mul_analyticOnNhd`, `PoleBoundary.analyticOnNhd_mul`, `PoleBoundary.const_mul`,
+  `PoleBoundary.neg`, `PoleBoundary.add`, `PoleBoundary.sub`, `PoleBoundary.div_id`,
+  `PoleBoundary.comp_const_mul`, `PoleBoundary.comp_add_right`, `PoleBoundary.mul` and
+  `PoleBoundary.pow`: multiplication by a function holomorphic on the closed half-plane, linear
+  combinations at fixed `(a, k)`, division by the argument, rescaling and horizontal translation of
+  the variable, and products, under which the pole orders add.
+* `poleBoundary_const_div_pow`, `poleBoundary_const_div_pow_iff`,
+  `poleBoundary_of_analyticOnNhd`, `poleBoundary_riemannZeta`, `poleBoundary_riemannZeta_pow` and
+  `not_poleBoundary_inv_one_sub_cexp_log_two`: the model pole `A / (s - a) ^ (k + 1)`, functions
+  holomorphic on the closed half-plane, the Riemann zeta function and its powers at `1`, and the
+  dyadic negative control `(1 - exp ((1 - s) log 2))⁻¹` showing that holomorphic continuation off
+  the real axis cannot be omitted.
 
 ## References
 
 * H. Delange, *Généralisation du théorème de Ikehara*, Ann. Sci. École Norm. Sup. (3) 71 (1954),
-  213–242, Théorème III (§5.2.1, pp. 235–236), of which `PoleBoundary` is the hypothesis for an
-  integer exponent `k + 1`.
+  213–242, §5.2.1, pp. 235–238 (Théorème III) and §5.3, p. 242.
 -/
 
 public section
@@ -98,14 +105,14 @@ private lemma ofReal_mul_ofReal_div_add {c : ℝ} (hc : c ≠ 0) (w : ℂ) :
   push_cast
   field_simp
 
-/-- Two germs holomorphic on balls about `z` multiply to a germ holomorphic on a smaller ball
-about `z`, contained in both. -/
-private lemma exists_ball_analyticOnNhd_mul {z : ℂ} {r ρ : ℝ} {g h : ℂ → ℂ} (hr : 0 < r)
+/-- Two germs holomorphic on balls about `z` restrict to a common ball about `z` contained in
+both. -/
+private lemma exists_ball_analyticOnNhd_pair {z : ℂ} {r ρ : ℝ} {g h : ℂ → ℂ} (hr : 0 < r)
     (hρ : 0 < ρ) (hg : AnalyticOnNhd ℂ g (ball z r)) (hh : AnalyticOnNhd ℂ h (ball z ρ)) :
-    ∃ δ : ℝ, 0 < δ ∧ AnalyticOnNhd ℂ (fun s ↦ g s * h s) (ball z δ) ∧
+    ∃ δ : ℝ, 0 < δ ∧ AnalyticOnNhd ℂ g (ball z δ) ∧ AnalyticOnNhd ℂ h (ball z δ) ∧
       ∀ s ∈ ball z δ, s ∈ ball z r ∧ s ∈ ball z ρ :=
-  ⟨min r ρ, lt_min hr hρ, (hg.mono (ball_subset_ball (min_le_left _ _))).mul
-      (hh.mono (ball_subset_ball (min_le_right _ _))),
+  ⟨min r ρ, lt_min hr hρ, hg.mono (ball_subset_ball (min_le_left _ _)),
+    hh.mono (ball_subset_ball (min_le_right _ _)),
     fun _ hs ↦ ⟨ball_subset_ball (min_le_left _ _) hs, ball_subset_ball (min_le_right _ _) hs⟩⟩
 
 /-- If `F` is holomorphic at every point of the closed half-plane `Re s ≥ a` other than `a`, then
@@ -140,6 +147,18 @@ theorem poleBoundary_congr (hFG : ∀ s : ℂ, a < s.re → F s = G s) :
     PoleBoundary F a k A ↔ PoleBoundary G a k A :=
   ⟨fun h ↦ h.congr hFG, fun h ↦ h.congr fun s hs ↦ (hFG s hs).symm⟩
 
+/-- Updating a function at any point `z` with `Re z ≤ a` leaves `PoleBoundary` unchanged. -/
+@[simp]
+theorem poleBoundary_update_iff_of_re_le {z : ℂ} (hz : z.re ≤ a) (w : ℂ) :
+    PoleBoundary (Function.update F z w) a k A ↔ PoleBoundary F a k A :=
+  poleBoundary_congr fun _ hs ↦
+    Function.update_of_ne (by rintro rfl; exact lt_irrefl _ (hs.trans_le hz)) _ _
+
+/-- Modifying `F` at a point `z` with `Re z ≤ a` preserves `PoleBoundary`. -/
+theorem PoleBoundary.update_of_re_le (hF : PoleBoundary F a k A) {z : ℂ} (hz : z.re ≤ a) (w : ℂ) :
+    PoleBoundary (Function.update F z w) a k A :=
+  (poleBoundary_update_iff_of_re_le hz w).2 hF
+
 /-- The leading coefficient as a limit: `(s - a) ^ (k + 1) F s → A` as `s → a` within the open
 half-plane `Re s > a`. -/
 theorem PoleBoundary.tendsto_sub_pow_mul (hF : PoleBoundary F a k A) :
@@ -158,28 +177,28 @@ theorem PoleBoundary.unique (hA : PoleBoundary F a k A) (hB : PoleBoundary F a k
   have := nhdsWithin_setOfPred_lt_re_neBot (s := (a : ℂ)) (ofReal_re a).ge
   exact_mod_cast tendsto_nhds_unique hA.tendsto_sub_pow_mul hB.tendsto_sub_pow_mul
 
+/-- A pole of order at most `k + 1` is also a pole of order at most `l + 1` with leading
+coefficient `0` whenever `k < l`. -/
+theorem PoleBoundary.of_lt (hF : PoleBoundary F a k A) (hkl : k < l) : PoleBoundary F a l 0 where
+  interior := hF.interior
+  pole := by
+    obtain ⟨r, hr, g, hg, -, hFg⟩ := hF.pole
+    refine ⟨r, hr, fun s ↦ g s * (s - a) ^ (l - k),
+      hg.mul ((analyticOnNhd_id.sub analyticOnNhd_const).pow _), ?_, fun s hs hre ↦ ?_⟩
+    · simp [Nat.sub_ne_zero_of_lt hkl]
+    · have hsa : s - (a : ℂ) ≠ 0 := sub_ne_zero.2 fun hs' ↦ by simp [hs'] at hre
+      have hexp : l + 1 = (k + 1) + (l - k) := by omega
+      dsimp only
+      rw [hFg s hs hre, hexp, pow_add _ (k + 1) (l - k),
+        mul_div_mul_right _ _ (pow_ne_zero _ hsa)]
+  away := hF.away
+
 /-- If `F` has a pole of order at most `k + 1` at `a`, then it has no pole of higher order `l + 1`
 with a nonzero leading coefficient there. -/
 theorem PoleBoundary.order_le_of_ne_zero (hA : PoleBoundary F a k A)
     (hB : PoleBoundary F a l B) (hB0 : B ≠ 0) : l ≤ k := by
   by_contra! hkl
-  have := nhdsWithin_setOfPred_lt_re_neBot (s := (a : ℂ)) (ofReal_re a).ge
-  have hzero : Tendsto (fun s ↦ (s - a) ^ (l - k) * ((s - a) ^ (k + 1) * F s))
-      (𝓝[{s : ℂ | a < s.re}] (a : ℂ)) (𝓝 0) := by
-    have h0 : Tendsto (fun s : ℂ ↦ (s - a) ^ (l - k)) (𝓝[{s : ℂ | a < s.re}] (a : ℂ)) (𝓝 0) := by
-      have : Tendsto (fun s : ℂ ↦ (s - a) ^ (l - k)) (𝓝 (a : ℂ)) (𝓝 ((a - a) ^ (l - k))) :=
-        ((continuous_id.sub continuous_const).pow _).tendsto _
-      rw [sub_self, zero_pow (Nat.sub_ne_zero_of_lt hkl)] at this
-      exact this.mono_left nhdsWithin_le_nhds
-    simpa using h0.mul hA.tendsto_sub_pow_mul
-  have hpow : (fun s : ℂ ↦ (s - a) ^ (l - k) * ((s - a) ^ (k + 1) * F s)) =
-      fun s ↦ (s - a) ^ (l + 1) * F s := by
-    ext s
-    rw [← mul_assoc, ← pow_add]
-    congr 2
-    omega
-  rw [hpow] at hzero
-  exact hB0 (by exact_mod_cast tendsto_nhds_unique hB.tendsto_sub_pow_mul hzero)
+  exact hB0 (hB.unique (hA.of_lt hkl))
 
 /-- **Uniqueness of the pole order**: if `F` has a pole of order `k + 1` with leading coefficient
 `A ≠ 0` and of order `l + 1` with leading coefficient `B ≠ 0`, then `k = l`. -/
@@ -197,14 +216,55 @@ theorem PoleBoundary.mul_analyticOnNhd {C : ℝ} (hF : PoleBoundary F a k A)
   pole := by
     obtain ⟨r, hr, g, hg, hga, hFg⟩ := hF.pole
     obtain ⟨ρ, hρ, hHρ⟩ := (hH a (by simp)).exists_ball_analyticOnNhd
-    obtain ⟨δ, hδ, hgH, hball⟩ := exists_ball_analyticOnNhd_mul hr hρ hg hHρ
-    refine ⟨δ, hδ, _, hgH, by simp [hga, hHa], fun s hs hre ↦ ?_⟩
+    obtain ⟨δ, hδ, hg', hH', hball⟩ := exists_ball_analyticOnNhd_pair hr hρ hg hHρ
+    refine ⟨δ, hδ, _, hg'.mul hH', by simp [hga, hHa], fun s hs hre ↦ ?_⟩
     rw [hFg s (hball s hs).1 hre, div_mul_eq_mul_div]
   away y hy := by
     obtain ⟨r, hr, g, hg, hFg⟩ := hF.away y hy
     obtain ⟨ρ, hρ, hHρ⟩ := (hH ((a : ℂ) + y * I) (by simp)).exists_ball_analyticOnNhd
-    obtain ⟨δ, hδ, hgH, hball⟩ := exists_ball_analyticOnNhd_mul hr hρ hg hHρ
-    exact ⟨δ, hδ, _, hgH, fun s hs hre ↦ by rw [hFg s (hball s hs).1 hre]⟩
+    obtain ⟨δ, hδ, hg', hH', hball⟩ := exists_ball_analyticOnNhd_pair hr hρ hg hHρ
+    exact ⟨δ, hδ, _, hg'.mul hH', fun s hs hre ↦ by rw [hFg s (hball s hs).1 hre]⟩
+
+/-- Multiplying `F` on the left by a function `H` holomorphic at every point of `Re s ≥ a` with
+real value `H a = C` multiplies the leading coefficient by `C`. -/
+theorem PoleBoundary.analyticOnNhd_mul {C : ℝ} (hF : PoleBoundary F a k A)
+    (hH : AnalyticOnNhd ℂ H {s : ℂ | a ≤ s.re}) (hHa : H a = C) :
+    PoleBoundary (fun s ↦ H s * F s) a k (C * A) := by
+  rw [mul_comm C A]
+  exact (hF.mul_analyticOnNhd hH hHa).congr fun s _ ↦ mul_comm (F s) (H s)
+
+/-- Multiplying `F` by a real constant `c` scales the leading coefficient by `c`. -/
+theorem PoleBoundary.const_mul (hF : PoleBoundary F a k A) (c : ℝ) :
+    PoleBoundary (fun s ↦ (c : ℂ) * F s) a k (c * A) :=
+  hF.analyticOnNhd_mul analyticOnNhd_const rfl
+
+/-- Negating `F` negates the leading coefficient. -/
+theorem PoleBoundary.neg (hF : PoleBoundary F a k A) : PoleBoundary (fun s ↦ -F s) a k (-A) := by
+  simpa using hF.const_mul (-1)
+
+/-- Adding two functions satisfying `PoleBoundary` at the same `(a, k)` adds their leading
+coefficients. -/
+theorem PoleBoundary.add (hF : PoleBoundary F a k A) (hG : PoleBoundary G a k B) :
+    PoleBoundary (fun s ↦ F s + G s) a k (A + B) where
+  interior := hF.interior.add hG.interior
+  pole := by
+    obtain ⟨r₁, hr₁, g₁, hg₁, hga₁, hFg₁⟩ := hF.pole
+    obtain ⟨r₂, hr₂, g₂, hg₂, hga₂, hGg₂⟩ := hG.pole
+    obtain ⟨δ, hδ, hg₁', hg₂', hball⟩ := exists_ball_analyticOnNhd_pair hr₁ hr₂ hg₁ hg₂
+    refine ⟨δ, hδ, fun s ↦ g₁ s + g₂ s, hg₁'.add hg₂', by simp [hga₁, hga₂], fun s hs hre ↦ ?_⟩
+    rw [hFg₁ s (hball s hs).1 hre, hGg₂ s (hball s hs).2 hre, add_div]
+  away y hy := by
+    obtain ⟨r₁, hr₁, g₁, hg₁, hFg₁⟩ := hF.away y hy
+    obtain ⟨r₂, hr₂, g₂, hg₂, hGg₂⟩ := hG.away y hy
+    obtain ⟨δ, hδ, hg₁', hg₂', hball⟩ := exists_ball_analyticOnNhd_pair hr₁ hr₂ hg₁ hg₂
+    exact ⟨δ, hδ, fun s ↦ g₁ s + g₂ s, hg₁'.add hg₂',
+      fun s hs hre ↦ by rw [hFg₁ s (hball s hs).1 hre, hGg₂ s (hball s hs).2 hre]⟩
+
+/-- Subtracting two functions satisfying `PoleBoundary` at the same `(a, k)` subtracts their
+leading coefficients. -/
+theorem PoleBoundary.sub (hF : PoleBoundary F a k A) (hG : PoleBoundary G a k B) :
+    PoleBoundary (fun s ↦ F s - G s) a k (A - B) := by
+  simpa [sub_eq_add_neg] using hF.add hG.neg
 
 /-- **Division by the argument**: for `a > 0`, dividing by `s` keeps the pole order and divides
 the leading coefficient by `a`. This is the passage from the Laplace transform `F` of a counting
@@ -252,6 +312,33 @@ theorem PoleBoundary.comp_abscissa_mul (hF : PoleBoundary F a k A) (ha : 0 < a) 
     PoleBoundary (fun s ↦ F (a * s)) 1 k (A / a ^ (k + 1)) := by
   simpa [div_self ha.ne'] using hF.comp_const_mul ha
 
+/-- Horizontal translation `s ↦ F (s + c)` for real `c` shifts the abscissa from `a` to `a - c`
+without changing the pole order or leading coefficient. -/
+theorem PoleBoundary.comp_add_right (hF : PoleBoundary F a k A) (c : ℝ) :
+    PoleBoundary (fun s ↦ F (s + c)) (a - c) k A := by
+  have hre {s : ℂ} (hs : a - c < s.re) : a < (s + c).re := by
+    simpa using sub_lt_iff_lt_add.1 hs
+  have hball {r : ℝ} {z w s : ℂ} (hzw : z + c = w) (hs : s ∈ ball z r) :
+      s + c ∈ ball w r := by
+    simpa [← hzw, dist_add_right] using hs
+  refine ⟨fun s hs ↦ (hF.interior _ (hre hs)).comp_of_eq
+    (analyticAt_id.add analyticAt_const) rfl, ?_, fun y hy ↦ ?_⟩
+  · obtain ⟨r, hr, g, hg, hga, hFg⟩ := hF.pole
+    have hball₀ : ∀ s ∈ ball ((a - c : ℝ) : ℂ) r, s + c ∈ ball (a : ℂ) r :=
+      fun s ↦ hball (by push_cast; ring)
+    refine ⟨r, hr, fun s ↦ g (s + c),
+      fun s hs ↦ (hg _ (hball₀ s hs)).comp_of_eq (analyticAt_id.add analyticAt_const) rfl,
+      by simpa [sub_add_cancel] using hga, fun s hs hsre ↦ ?_⟩
+    rw [hFg _ (hball₀ s hs) (hre hsre)]
+    congr 2; push_cast; ring
+  · obtain ⟨r, hr, g, hg, hFg⟩ := hF.away y hy
+    have hball_y : ∀ s ∈ ball (((a - c : ℝ) : ℂ) + y * I) r,
+        s + c ∈ ball ((a : ℂ) + y * I) r :=
+      fun s ↦ hball (by push_cast; ring)
+    exact ⟨r, hr, fun s ↦ g (s + c),
+      fun s hs ↦ (hg _ (hball_y s hs)).comp_of_eq (analyticAt_id.add analyticAt_const) rfl,
+      fun s hs hsre ↦ hFg _ (hball_y s hs) (hre hsre)⟩
+
 /-- **The product rule**: if `F` has a pole of order `k + 1` and `G` one of order `l + 1` at `a`,
 then `F G` has a pole of order `k + l + 2` there, and the leading coefficients multiply. -/
 theorem PoleBoundary.mul (hF : PoleBoundary F a k A) (hG : PoleBoundary G a l B) :
@@ -260,15 +347,16 @@ theorem PoleBoundary.mul (hF : PoleBoundary F a k A) (hG : PoleBoundary G a l B)
   pole := by
     obtain ⟨r, hr, g, hg, hga, hFg⟩ := hF.pole
     obtain ⟨ρ, hρ, h, hh, hha, hGh⟩ := hG.pole
-    obtain ⟨δ, hδ, hgh, hball⟩ := exists_ball_analyticOnNhd_mul hr hρ hg hh
-    refine ⟨δ, hδ, _, hgh, by simp [hga, hha], fun s hs hre ↦ ?_⟩
+    obtain ⟨δ, hδ, hg', hh', hball⟩ := exists_ball_analyticOnNhd_pair hr hρ hg hh
+    refine ⟨δ, hδ, _, hg'.mul hh', by simp [hga, hha], fun s hs hre ↦ ?_⟩
     rw [hFg s (hball s hs).1 hre, hGh s (hball s hs).2 hre, div_mul_div_comm, ← pow_add]
     ring_nf
   away y hy := by
     obtain ⟨r, hr, g, hg, hFg⟩ := hF.away y hy
     obtain ⟨ρ, hρ, h, hh, hGh⟩ := hG.away y hy
-    obtain ⟨δ, hδ, hgh, hball⟩ := exists_ball_analyticOnNhd_mul hr hρ hg hh
-    exact ⟨δ, hδ, _, hgh, fun s hs hre ↦ by rw [hFg s (hball s hs).1 hre, hGh s (hball s hs).2 hre]⟩
+    obtain ⟨δ, hδ, hg', hh', hball⟩ := exists_ball_analyticOnNhd_pair hr hρ hg hh
+    exact ⟨δ, hδ, _, hg'.mul hh',
+      fun s hs hre ↦ by rw [hFg s (hball s hs).1 hre, hGh s (hball s hs).2 hre]⟩
 
 /-- **Powers**: if `F` has a pole of order `k + 1` at `a`, then `F ^ (n + 1)` has a pole of order
 `(k + 1) (n + 1)`, written `k n + k + n + 1`, with leading coefficient `A ^ (n + 1)`. -/
@@ -288,6 +376,26 @@ theorem poleBoundary_const_div_pow (a A : ℝ) (k : ℕ) :
   .of_analyticAt
     (fun s _ hs ↦ analyticAt_const.div (by fun_prop) (pow_ne_zero _ (sub_ne_zero.2 hs)))
     ⟨1, one_pos, fun _ ↦ A, analyticOnNhd_const, rfl, fun _ _ _ ↦ rfl⟩
+
+/-- Characterization of `PoleBoundary` for the model pole `s ↦ A / (s - a) ^ (k + 1)`. -/
+@[simp]
+theorem poleBoundary_const_div_pow_iff (a A B : ℝ) (k : ℕ) :
+    PoleBoundary (fun s ↦ (A : ℂ) / (s - a) ^ (k + 1)) a k B ↔ B = A :=
+  ⟨fun h ↦ h.unique (poleBoundary_const_div_pow a A k),
+    fun h ↦ h ▸ poleBoundary_const_div_pow a A k⟩
+
+/-- Any function holomorphic at every point of the closed right half-plane `Re s ≥ a` satisfies
+`PoleBoundary F a k 0` for every `k`. -/
+theorem poleBoundary_of_analyticOnNhd (hF : AnalyticOnNhd ℂ F {s : ℂ | a ≤ s.re}) (k : ℕ) :
+    PoleBoundary F a k 0 := by
+  obtain ⟨r, hr, hFr⟩ := (hF a (by simp)).exists_ball_analyticOnNhd
+  refine .of_analyticAt (fun s hs _ ↦ hF s hs)
+    ⟨r, hr, fun s ↦ F s * (s - a) ^ (k + 1),
+      hFr.mul ((analyticOnNhd_id.sub analyticOnNhd_const).pow _),
+      by simp [zero_pow (Nat.succ_ne_zero k)], fun s _ hre ↦ ?_⟩
+  have hsa : (s - (a : ℂ)) ^ (k + 1) ≠ 0 :=
+    pow_ne_zero _ (sub_ne_zero.2 fun h ↦ by simp [h] at hre)
+  exact (mul_div_cancel_right₀ _ hsa).symm
 
 /-- The zero function satisfies `PoleBoundary 0 a k A` exactly when `A = 0`: a nonzero leading
 coefficient forces an actual pole. -/
@@ -311,5 +419,125 @@ theorem poleBoundary_riemannZeta : PoleBoundary riemannZeta 1 0 1 :=
 theorem poleBoundary_riemannZeta_pow (n : ℕ) :
     PoleBoundary (fun s ↦ riemannZeta s ^ (n + 1)) 1 n 1 := by
   simpa using poleBoundary_riemannZeta.pow n
+
+/-! ### Necessity of continuation away from the real pole: the dyadic denominator -/
+
+/-- On `Re s > 1`, `1 - exp ((1 - s) * log 2)` is nonvanishing since
+`‖exp ((1 - s) * log 2)‖ < 1`. -/
+private theorem one_sub_cexp_log_two_ne_zero {s : ℂ} (hs : 1 < s.re) :
+    1 - cexp ((1 - s) * Real.log 2) ≠ 0 := by
+  intro h
+  have heq : cexp ((1 - s) * Real.log 2) = 1 := (sub_eq_zero.1 h).symm
+  have hnorm : ‖cexp ((1 - s) * Real.log 2)‖ = 1 := by rw [heq, norm_one]
+  rw [norm_exp] at hnorm
+  have hre : ((1 - s) * Real.log 2).re < 0 := by
+    rw [mul_comm, re_ofReal_mul, sub_re, one_re]
+    exact mul_neg_of_pos_of_neg (Real.log_pos one_lt_two) (sub_neg.2 hs)
+  have hlt : Real.exp (((1 - s) * Real.log 2).re) < 1 := Real.exp_lt_one_iff.2 hre
+  linarith
+
+/-- The dyadic sum `s ↦ (1 - exp ((1 - s) * log 2))⁻¹` is holomorphic on `Re s > 1`, so it
+satisfies the `interior` clause of `PoleBoundary` at abscissa `1`. -/
+theorem analyticOnNhd_inv_one_sub_cexp_log_two :
+    AnalyticOnNhd ℂ (fun s ↦ (1 - cexp ((1 - s) * Real.log 2))⁻¹) {s : ℂ | 1 < s.re} := by
+  refine AnalyticOnNhd.inv (analyticOnNhd_const.sub ?_) fun s hs ↦
+    one_sub_cexp_log_two_ne_zero hs
+  exact fun s _ ↦ ((analyticAt_const.sub analyticAt_id).mul analyticAt_const).cexp
+
+/-- Near `s = 1`, `s ↦ (1 - exp ((1 - s) * log 2))⁻¹` has the local simple-pole form
+`g s / (s - 1)` on a disc about `1` with `g` holomorphic and `g 1 = (Real.log 2)⁻¹`, so it
+satisfies the `pole` clause of `PoleBoundary` at `a = 1`, `k = 0`, `A = (Real.log 2)⁻¹`. -/
+theorem exists_pole_germ_inv_one_sub_cexp_log_two :
+    ∃ r : ℝ, 0 < r ∧ ∃ g : ℂ → ℂ, AnalyticOnNhd ℂ g (ball (1 : ℂ) r) ∧
+      g 1 = ((Real.log 2)⁻¹ : ℝ) ∧
+      ∀ s ∈ ball (1 : ℂ) r, 1 < s.re →
+        (1 - cexp ((1 - s) * Real.log 2))⁻¹ = g s / (s - 1) := by
+  let denom : ℂ → ℂ := fun s ↦ 1 - cexp ((1 - s) * Real.log 2)
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos one_lt_two
+  have hlog2_ne : (Real.log 2 : ℂ) ≠ 0 := ofReal_ne_zero.2 hlog2.ne'
+  have hderiv : HasDerivAt denom (Real.log 2 : ℂ) 1 := by
+    have h1 : HasDerivAt (fun s : ℂ ↦ (1 - s) * (Real.log 2 : ℂ)) (-(Real.log 2 : ℂ)) 1 := by
+      simpa using ((hasDerivAt_const (1 : ℂ) (1 : ℂ)).sub (hasDerivAt_id 1)).mul_const
+        (Real.log 2 : ℂ)
+    have h2 : HasDerivAt denom (0 - cexp ((1 - (1 : ℂ)) * Real.log 2) * -(Real.log 2 : ℂ)) 1 :=
+      (hasDerivAt_const (1 : ℂ) (1 : ℂ)).sub h1.cexp
+    simpa [denom] using h2
+  have hdenom_an : AnalyticOnNhd ℂ denom univ := fun s _ ↦
+    analyticAt_const.sub (((analyticAt_const.sub analyticAt_id).mul analyticAt_const).cexp)
+  let q : ℂ → ℂ := dslope denom 1
+  have hq_an : AnalyticOnNhd ℂ q univ := hdenom_an.dslope 1
+  have hq1_val : q 1 = (Real.log 2 : ℂ) := by
+    simp only [q, dslope_same, hderiv.deriv]
+  have hq1 : q 1 ≠ 0 := hq1_val ▸ hlog2_ne
+  obtain ⟨r, hr, hq_ne⟩ :=
+    Metric.eventually_nhds_iff_ball.1 ((hq_an 1 (mem_univ 1)).continuousAt.eventually_ne hq1)
+  refine ⟨r, hr, fun s ↦ (q s)⁻¹, (hq_an.mono (subset_univ _)).inv hq_ne,
+    by simp [hq1_val], fun s _ hsre ↦ ?_⟩
+  have hs1 : s ≠ 1 := fun h ↦ by simp [h] at hsre
+  have hsub0 : s - 1 ≠ 0 := sub_ne_zero.2 hs1
+  have hqs : q s = denom s / (s - 1) := by
+    have hd1 : denom 1 = 0 := by simp [denom]
+    simp only [q, dslope_of_ne denom hs1, slope_def_field, hd1, sub_zero]
+  dsimp only [denom] at hqs ⊢
+  have hd0 : 1 - cexp ((1 - s) * Real.log 2) ≠ 0 := one_sub_cexp_log_two_ne_zero hsre
+  rw [hqs]
+  field_simp
+
+/-- Evaluation of `cexp ((1 - s) * log 2)` along the horizontal approach
+`s = 1 + (2π / log 2) i + ε` to the off-real boundary pole `1 + (2π / log 2) i`. -/
+private theorem cexp_one_sub_two_pi_div_log_two (ε : ℝ) :
+    cexp ((1 - (((1 : ℂ) + (2 * Real.pi / Real.log 2 : ℝ) * I) + ε)) * Real.log 2) =
+      (Real.exp (-ε * Real.log 2) : ℂ) := by
+  have hlog2_ne : (Real.log 2 : ℂ) ≠ 0 := ofReal_ne_zero.2 (Real.log_pos one_lt_two).ne'
+  have harg : (1 - (((1 : ℂ) + (2 * Real.pi / Real.log 2 : ℝ) * I) + ε)) * Real.log 2 =
+      ((-ε * Real.log 2 : ℝ) : ℂ) - 2 * Real.pi * I := by
+    have hy_mul : ((2 * Real.pi / Real.log 2 : ℝ) : ℂ) * Real.log 2 = 2 * Real.pi := by
+      push_cast
+      exact div_mul_cancel₀ _ hlog2_ne
+    calc
+      (1 - (((1 : ℂ) + (2 * Real.pi / Real.log 2 : ℝ) * I) + ε)) * Real.log 2
+          = -(ε : ℂ) * Real.log 2 - ((2 * Real.pi / Real.log 2 : ℝ) : ℂ) * Real.log 2 * I := by
+        ring
+      _ = ((-ε * Real.log 2 : ℝ) : ℂ) - 2 * Real.pi * I := by
+        rw [hy_mul]
+        push_cast
+        ring
+  rw [harg, Complex.exp_periodic.sub_eq, ofReal_exp]
+
+/-- Despite being holomorphic on `Re s > 1` with a simple pole at `s = 1`, the dyadic function
+`s ↦ (1 - exp ((1 - s) * log 2))⁻¹` satisfies `PoleBoundary` at abscissa `1` for **no** pole order
+`k + 1` and **no** leading coefficient `A`: its pole at `1 + (2π / log 2) i` violates the `away`
+condition. -/
+theorem not_poleBoundary_inv_one_sub_cexp_log_two (k : ℕ) (A : ℝ) :
+    ¬ PoleBoundary (fun s ↦ (1 - cexp ((1 - s) * Real.log 2))⁻¹) 1 k A := by
+  intro h
+  have hlog2 : (0 : ℝ) < Real.log 2 := Real.log_pos one_lt_two
+  let y : ℝ := 2 * Real.pi / Real.log 2
+  have hy : y ≠ 0 := div_ne_zero (mul_ne_zero two_ne_zero Real.pi_ne_zero) hlog2.ne'
+  obtain ⟨r, hr, g, hg, hF⟩ := h.away y hy
+  let z₀ : ℂ := (1 : ℂ) + y * I
+  -- Along `s_ε = z₀ + ε` (`ε → 0⁺`), `1 - exp ((1 - s_ε) * log 2) = 1 - exp (-ε * log 2) → 0`
+  -- while `g (z₀ + ε) → g z₀`, so `(1 - exp (-ε * log 2)) * g (z₀ + ε)` tends both to `1` and `0`.
+  have hlim_g : Tendsto (fun ε : ℝ ↦ g (z₀ + ε)) (𝓝[>] 0) (𝓝 (g z₀)) := by
+    have hc : ContinuousAt (fun ε : ℝ ↦ g (z₀ + ε)) 0 :=
+      (hg z₀ (mem_ball_self hr)).continuousAt.comp_of_eq
+        (continuousAt_const.add continuous_ofReal.continuousAt) (by simp)
+    simpa using hc.tendsto.mono_left (nhdsWithin_le_nhds (s := Ioi (0 : ℝ)))
+  have hlim_d : Tendsto (fun ε : ℝ ↦ (1 - Real.exp (-ε * Real.log 2) : ℂ)) (𝓝[>] 0) (𝓝 0) := by
+    have hc : Continuous (fun ε : ℝ ↦ (1 - Real.exp (-ε * Real.log 2) : ℂ)) := by fun_prop
+    simpa using (hc.continuousAt (x := (0 : ℝ))).tendsto.mono_left nhdsWithin_le_nhds
+  have hprod0 : Tendsto (fun ε : ℝ ↦ (1 - Real.exp (-ε * Real.log 2) : ℂ) * g (z₀ + ε))
+      (𝓝[>] 0) (𝓝 0) := by
+    simpa using hlim_d.mul hlim_g
+  have hev_one : (fun ε : ℝ ↦ (1 - Real.exp (-ε * Real.log 2) : ℂ) * g (z₀ + ε)) =ᶠ[𝓝[>] 0]
+      fun _ ↦ (1 : ℂ) := by
+    filter_upwards [Ioo_mem_nhdsGT hr] with ε ⟨hε0, hεr⟩
+    have hFε := hF (z₀ + ε) (by simp [z₀, dist_eq_norm, abs_of_pos hε0, hεr]) (by simp [z₀, hε0])
+    rw [cexp_one_sub_two_pi_div_log_two ε] at hFε
+    have hd_ne : (1 - (Real.exp (-ε * Real.log 2) : ℂ)) ≠ 0 := by
+      have hlt : Real.exp (-ε * Real.log 2) < 1 := Real.exp_lt_one_iff.2 (by nlinarith)
+      exact sub_ne_zero.2 (by exact_mod_cast hlt.ne')
+    rw [← hFε, mul_inv_cancel₀ hd_ne]
+  exact one_ne_zero (tendsto_nhds_unique (tendsto_const_nhds.congr' hev_one.symm) hprod0)
 
 end TauCeti.HigherPoleTauberian

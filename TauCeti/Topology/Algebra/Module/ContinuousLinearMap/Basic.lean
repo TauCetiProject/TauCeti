@@ -22,7 +22,7 @@ vanishes. A continuous semilinear map whose scalar ring homomorphism is surjecti
 when the submodule range of its underlying semilinear map is trivial.
 
 A continuous linear map out of `κ → R`, with `κ` finite, is determined by its values on the
-coordinate vectors `Pi.single k 1`.
+coordinate vectors `Pi.single k 1`, and expands as `f x = ∑ k, x k • f (Pi.single k 1)`.
 
 A semilinear family `μ : M₁ →ₛₗ[σ₁₃] M₂ →SL[σ₂₃] M₃` of continuous semilinear maps becomes a
 family of semilinear maps after composing with the coercion `ContinuousLinearMap.coeLMₛₗ`, and
@@ -41,6 +41,12 @@ then Mathlib's algebraic flip `LinearMap.flip` applies to it.
   exactly when it is nonzero.
 * `ContinuousLinearMap.pi_ext_single_one`: a continuous linear map out of `κ → R`, `κ` finite, is
   determined by its values on the coordinate vectors.
+* `ContinuousLinearMap.apply_eq_sum_smul_single`: the expansion
+  `f x = ∑ k, x k • f (Pi.single k 1)` of such a map in the coordinate vectors.
+* `ContinuousLinearMap.units_inv_apply_apply`, `ContinuousLinearMap.units_apply_inv_apply`: a
+  unit continuous linear endomorphism and its inverse undo each other pointwise.
+* `ContinuousLinearMap.mul_self_eq_neg_one_iff_comp_eq_neg_id`: `A * A = -1` in the ring of
+  continuous linear endomorphisms is `A ∘ A = -id`.
 * `LinearMap.flip_coeLMₛₗ_comp_apply`: evaluation of the algebraic flip of such a family `μ`,
   `((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y`.
 -/
@@ -95,6 +101,32 @@ theorem pi_ext_single_one {R M κ : Type*} [Semiring R] [TopologicalSpace R] [To
     [AddCommMonoid M] [Module R M] [Finite κ] [DecidableEq κ] {f g : (κ → R) →L[R] M}
     (h : ∀ k, f (Pi.single k 1) = g (Pi.single k 1)) : f = g :=
   coe_injective <| LinearMap.pi_ext' fun k ↦ LinearMap.ext_ring <| h k
+
+/-- A continuous linear map out of `κ → R`, with `κ` finite, expanded in the coordinate vectors:
+`f x = ∑ k, x k • f (Pi.single k 1)`. -/
+theorem apply_eq_sum_smul_single {R M κ : Type*} [Semiring R] [TopologicalSpace R]
+    [TopologicalSpace M] [AddCommMonoid M] [Module R M] [Fintype κ] [DecidableEq κ]
+    (f : (κ → R) →L[R] M) (x : κ → R) : f x = ∑ k, x k • f (Pi.single k 1) := by
+  conv_lhs => rw [pi_eq_sum_univ' x]
+  simp [map_sum]
+
+/-- Applying the inverse of a unit continuous linear endomorphism undoes applying the unit. -/
+@[simp]
+theorem units_inv_apply_apply (u : (M₁ →L[R₁] M₁)ˣ) (x : M₁) :
+    (↑u⁻¹ : M₁ →L[R₁] M₁) ((u : M₁ →L[R₁] M₁) x) = x := by
+  rw [← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
+
+/-- Applying a unit continuous linear endomorphism undoes applying its inverse. -/
+@[simp]
+theorem units_apply_inv_apply (u : (M₁ →L[R₁] M₁)ˣ) (x : M₁) :
+    (u : M₁ →L[R₁] M₁) ((↑u⁻¹ : M₁ →L[R₁] M₁) x) = x := by
+  rw [← mul_apply_eq_comp, Units.mul_inv, one_apply_eq_self]
+
+/-- `A * A = -1` in the ring of continuous linear endomorphisms is `A ∘ A = -id`. -/
+theorem mul_self_eq_neg_one_iff_comp_eq_neg_id {R M : Type*} [Ring R] [TopologicalSpace M]
+    [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M] {A : M →L[R] M} :
+    A * A = -1 ↔ A.comp A = -ContinuousLinearMap.id R M := by
+  rw [mul_def, one_def]
 
 end ContinuousLinearMap
 

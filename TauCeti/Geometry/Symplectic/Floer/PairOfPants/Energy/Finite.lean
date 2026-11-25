@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
-import TauCeti.Topology.Order.MonotoneConvergence
+import TauCeti.Topology.Order.Monotone.Convergence
 
 /-!
 # Finite-energy pairs of pants have limiting end actions
