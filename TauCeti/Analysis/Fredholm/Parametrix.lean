@@ -127,12 +127,12 @@ theorem IsCompactParametrix.add_right_of_isCompactOperator {T K : E →L[𝕜] F
       rw [comp_add]
       abel
     rw [heq]
-    exact h.1.add (hK.clm_comp S)
+    exact h.left.add (hK.clm_comp S)
   · have heq : (T + K).comp S - 1 = (T.comp S - 1) + K.comp S := by
       rw [add_comp]
       abel
     rw [heq]
-    exact h.2.add (hK.comp_clm S)
+    exact h.right.add (hK.comp_clm S)
 
 /-- Adding a compact operator to a parametrix gives another parametrix of the same map. -/
 theorem IsCompactParametrix.add_left_of_isCompactOperator {T : E →L[𝕜] F} {S L : F →L[𝕜] E}
@@ -240,8 +240,8 @@ variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 theorem IsCompactParametrix.adjoint {T : E →L[𝕜] F} {S : F →L[𝕜] E}
     (h : S.IsCompactParametrix T) : (S†).IsCompactParametrix (T†) := by
   constructor
-  · simpa only [map_sub, adjoint_comp, adjoint_one] using h.2.adjoint
-  · simpa only [map_sub, adjoint_comp, adjoint_one] using h.1.adjoint
+  · simpa only [map_sub, adjoint_comp, adjoint_one] using h.right.adjoint
+  · simpa only [map_sub, adjoint_comp, adjoint_one] using h.left.adjoint
 
 /-- A pair of Hilbert adjoints is a compact-parametrix pair exactly when the original pair is. -/
 @[simp]
