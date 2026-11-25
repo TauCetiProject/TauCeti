@@ -91,7 +91,7 @@ local instance instVectorBundleRealZeroCount : VectorBundle ℝ ℂ L :=
 variable [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)]
   {D : (Π x : X, L x) → Π x : X, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] L x}
   (hD : IsRealCauchyRiemannOperator ℂ (ofComplexManifold ℂ X) D)
-  (hDs : ContMDiffCovariantDerivativeOn ℂ ∞ D univ)
+  {n : ℕ∞ω} [ENat.LEInfty n] (hDs : ContMDiffCovariantDerivativeOn ℂ n D univ)
 
 include hD hDs in
 /-- **A section in the kernel solves a Cauchy–Riemann inequality in each chart.** In chart `i` of a
@@ -108,9 +108,7 @@ theorem exists_norm_conjWirtingerDeriv_coord_le (A : FiniteBundleAtlas ℂ X ℂ
   have h := A.coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder hD hy
     ((hs _).mdifferentiableAt one_ne_zero)
   -- The reading of the one-form `D s = 0` is zero.
-  rw [hs0, FiniteBundleAtlas.coord_tangentHom] at h
-  simp only [Pi.zero_apply, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.zero_comp,
-    ContinuousLinearMap.comp_zero] at h
+  rw [hs0, A.tangentHom.coord_zero i (by rwa [FiniteBundleAtlas.image_tangentHom])] at h
   have hbar : complexAntilinearPartL (fderiv ℝ (A.coord i s) y) =
       -A.chartZeroOrder D i y (A.coord i s y) := eq_neg_of_add_eq_zero_left h.symm
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
@@ -222,12 +220,17 @@ theorem eq_zero_of_evalFundamentalClass_complexEulerClass_lt_ncard [ConnectedSpa
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)
         (complexEulerClass ℂ L (r := 0) (finrank_self ℂ))).down < S.ncard) :
     s = 0 := by
-  by_contra hne
-  obtain ⟨x, hx⟩ := Function.ne_iff.1 hne
-  have hZ := finite_setOf_eq_zero hD hDs hs hs0 ⟨x, hx⟩
-  have hle := ncard_le_evalFundamentalClass_complexEulerClass hD hDs hs hs0 hZ
-  have hSZ : S.ncard ≤ {x | s x = 0}.ncard := ncard_le_ncard hS hZ
-  omega
+  obtain ⟨d⟩ := nonempty_chartData hD hDs hs hs0
+  rw [complexEulerClass_def] at hlt
+  exact funext <| VectorBundleOrientation.eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard
+    _ Complex.finrank_real_complex _ hs.continuous (fun z ↦ chartAt ℂ (d z).c)
+    (fun z ↦ trivializationAt ℂ L (d z).c) (fun _ ↦ Complex.orientation)
+    (fun z ↦ (d z).mem_source) (fun z ↦ (d z).Ω) (fun z _ ↦ (d z).C) (fun z ↦ (d z).mem_baseSet)
+    (fun z ↦ Eventually.of_forall fun _ hx ↦
+      VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _ hx)
+    (fun z ↦ localHomologyMap_chartAt_complexHomologicalOrientation (d z).c (d z).mem_source)
+    (fun z ↦ (d z).isOpen) (fun z ↦ (d z).mem) (fun z ↦ (d z).contDiffOn)
+    (fun z _ _ ↦ ⟨(d z).C, Eventually.of_forall fun _ ↦ le_rfl⟩) (fun z ↦ (d z).norm_le) hS hlt
 
 include hD hDs in
 /-- **Vanishing of the kernel in negative degree.** On a compact connected Riemann surface, if the
