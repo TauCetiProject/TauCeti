@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Lie.Basic
 Basic constructors, simp, and intertwining lemmas for `LieHom`, `LieEquiv`, and `LinearEquiv`:
 construction of `LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`), composition of
 intertwining homomorphisms, and intertwining of inverse equivalences on Lie algebras and bracket
-actions (`LieEquiv.symm_intertwines`, `LinearEquiv.symm_lie_eq_of_lie_eq`).
+actions (`LieEquiv.symm_intertwines`, `LinearEquiv.symm_lie_eq_of_lie_eq`), and the transport
+`e ∘ θ ∘ e⁻¹` of an automorphism along an isomorphism (`LieEquiv.conj`).
 -/
 
 public section
@@ -70,6 +71,24 @@ theorem trans_intertwines (e₁ : L ≃ₗ⁅R⁆ M) (e₂ : M ≃ₗ⁅R⁆ N)
     (h₂ : k.comp e₂.toLieHom = e₂.toLieHom.comp g) :
     k.comp (e₁.trans e₂).toLieHom = (e₁.trans e₂).toLieHom.comp f :=
   LieHom.comp_intertwines e₁.toLieHom e₂.toLieHom h₁ h₂
+
+/-- The transport `e ∘ θ ∘ e⁻¹` of an automorphism `θ` of `L` along an isomorphism `e : L ≃ M`. -/
+def conj (e : L ≃ₗ⁅R⁆ M) (θ : L ≃ₗ⁅R⁆ L) : M ≃ₗ⁅R⁆ M :=
+  (e.symm.trans θ).trans e
+
+@[simp]
+theorem conj_apply (e : L ≃ₗ⁅R⁆ M) (θ : L ≃ₗ⁅R⁆ L) (x : M) : e.conj θ x = e (θ (e.symm x)) :=
+  (rfl)
+
+/-- Transporting along `e` and then along `e⁻¹` gives back `θ`. -/
+@[simp]
+theorem symm_conj_conj (e : L ≃ₗ⁅R⁆ M) (θ : L ≃ₗ⁅R⁆ L) : e.symm.conj (e.conj θ) = θ :=
+  LieEquiv.ext fun x ↦ by simp
+
+/-- The transport of an involution is an involution. -/
+theorem involutive_conj {e : L ≃ₗ⁅R⁆ M} {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ) :
+    Function.Involutive (e.conj θ) :=
+  fun x ↦ by simp [hθ (e.symm x)]
 
 end LieEquiv
 
