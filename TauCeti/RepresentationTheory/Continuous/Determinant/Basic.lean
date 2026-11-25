@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.LinearAlgebra.Determinant.Projective
+public import TauCeti.LinearAlgebra.Determinant.Projective.Basic
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
 
 /-!

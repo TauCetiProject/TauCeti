@@ -314,6 +314,11 @@ theorem prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : 
     ρ.prod σ g x = (ρ g x.1, σ g x.2) :=
   (rfl)
 
+/-- Each operator of a direct sum is the product of the operators of the summands. -/
+theorem prod_apply_eq_prodMap (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) :
+    ρ.prod σ g = (ρ g).prodMap (σ g) :=
+  (rfl)
+
 end Constructions
 
 section ContRepresentation

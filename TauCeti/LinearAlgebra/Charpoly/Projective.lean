@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.Polynomial.Subring
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import Mathlib.RingTheory.TensorProduct.Free
-public import TauCeti.LinearAlgebra.Determinant.Projective
+public import TauCeti.LinearAlgebra.Determinant.Projective.Basic
 public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import TauCeti.LinearAlgebra.Trace.Projective

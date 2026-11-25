@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Continuous.Determinant
+public import TauCeti.RepresentationTheory.Continuous.Determinant.Basic
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 public import TauCeti.LinearAlgebra.Determinant.ConstantRank
-public import TauCeti.LinearAlgebra.Determinant.ProjectiveOperations
+public import TauCeti.LinearAlgebra.Determinant.Projective.Operations
 
 /-!
 # Determinant characters of restrictions, sums, twists and duals
@@ -47,9 +47,7 @@ theorem det_res {Γ' : Type*} [Group Γ'] [TopologicalSpace Γ'] (ρ : Continuou
 theorem det_prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
     (ρ.prod σ).det = ρ.det * σ.det := by
   ext g
-  simp only [coe_det_apply, MonoidHom.mul_apply, Units.val_mul]
-  rw [show ρ.prod σ g = (ρ g).prodMap (σ g) from LinearMap.ext fun x ↦ by simp [prod_apply]]
-  exact LinearMap.projectiveDet_prodMap (ρ g) (σ g)
+  simp [prod_apply_eq_prodMap]
 
 /-- **The determinant of a twist**: on a module of constant rank `d`, twisting by `χ` multiplies
 the determinant character by `χ ^ d`. -/
@@ -57,10 +55,7 @@ theorem det_twist [TopologicalSpace A] [ContinuousSMul A M] {d : ℕ}
     (hd : ∀ p, rankAtStalk (R := A) M p = d) (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) :
     (ρ.twist χ).det = ρ.det * (χ : Γ →* Aˣ) ^ d := by
   ext g
-  rw [coe_det_apply, show (ρ.twist χ) g = (χ g : A) • ρ g from LinearMap.ext fun x ↦ by simp,
-    LinearMap.projectiveDet_smul hd, MonoidHom.mul_apply, MonoidHom.pow_apply, Units.val_mul,
-    Units.val_pow_eq_pow_val, coe_det_apply, mul_comm]
-  rfl
+  simp [twist_apply_eq_smul, LinearMap.projectiveDet_smul hd, mul_comm]
 
 /-- **The determinant of the contragredient** is the inverse of the determinant character. -/
 @[simp]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Determinant.Projective
+public import TauCeti.LinearAlgebra.Determinant.Projective.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -32,6 +32,7 @@ variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGrou
 
 /-- **The determinant of a product** of endomorphisms of finite projective modules is the product
 of the determinants. -/
+@[simp]
 theorem projectiveDet_prodMap [Module.Finite R N] [Module.Projective R N] (f : Module.End R M)
     (g : Module.End R N) : projectiveDet (f.prodMap g) = projectiveDet f * projectiveDet g := by
   obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
@@ -40,10 +41,12 @@ theorem projectiveDet_prodMap [Module.Finite R N] [Module.Projective R N] (f : M
     rw [prodMap_comp, h, h', prodMap_id]
   rw [projectiveDet_eq_det_of_comp_eq_id _ _ hp, projectiveDet_eq_det_of_comp_eq_id π σ h,
     projectiveDet_eq_det_of_comp_eq_id π' σ' h', ← det_prodMap]
-  congr 1
+  refine congrArg LinearMap.det ?_
+  ext <;> simp
 
 /-- **The determinant of the transpose** of an endomorphism of a finite projective module is its
 determinant. -/
+@[simp]
 theorem projectiveDet_dualMap (f : Module.End R M) : projectiveDet f.dualMap = projectiveDet f := by
   obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
   have hd : σ.dualMap ∘ₗ π.dualMap = id := by

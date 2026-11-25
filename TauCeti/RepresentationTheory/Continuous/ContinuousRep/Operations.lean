@@ -266,6 +266,11 @@ theorem twist_apply (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) (g : Γ) (
     ρ.twist χ g x = (χ g : A) • ρ g x :=
   Representation.charTwist_apply_apply _ _ g x
 
+/-- Each operator of a twist is the scalar multiple of the original operator by the character. -/
+theorem twist_apply_eq_smul (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) (g : Γ) :
+    ρ.twist χ g = (χ g : A) • ρ g :=
+  LinearMap.ext (twist_apply ρ χ g)
+
 /-- **Twisting by the trivial character changes nothing**: `M(1) = M`. -/
 @[simp]
 theorem twist_one (ρ : ContinuousRep Γ A M) : ρ.twist 1 = ρ :=

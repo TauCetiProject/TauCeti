@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RepresentationTheory.Continuous.Determinant
-import TauCeti.RepresentationTheory.Continuous.DeterminantOperations
+import TauCeti.RepresentationTheory.Continuous.Determinant.Basic
+import TauCeti.RepresentationTheory.Continuous.Determinant.Operations
 
 /-!
 # Examples: the determinant character
