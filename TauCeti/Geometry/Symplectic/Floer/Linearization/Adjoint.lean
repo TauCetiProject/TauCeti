@@ -194,6 +194,21 @@ theorem floerLinearizationAdjoint_congr_of_eventuallyEq (ω : SymplecticForm V)
   rw [floerLinearizationAdjoint_def, floerLinearizationAdjoint_def, h.fderiv_eq, hc.fderiv_eq,
     h.eq_of_nhds]
 
+/-- The formal adjoint at `z` depends on the structures `J` only near `z`, through the
+`t`-derivative of `w ↦ η w ∘ J(w, u w)`, and on the perturbation `Ks`, `Kt` only at `z`, through
+the zeroth-order coefficient. -/
+theorem floerLinearizationAdjoint_congr_data (ω : SymplecticForm V)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V)
+    (η : ℝ × ℝ → V →L[ℝ] ℝ) {z : ℝ × ℝ} (hJ : J =ᶠ[𝓝 z] J') (hKs : Ks z = Ks' z)
+    (hKt : Kt z = Kt' z) :
+    ω.floerLinearizationAdjoint J Ks Kt u η z = ω.floerLinearizationAdjoint J' Ks' Kt' u η z := by
+  have hc : (fun w ↦ (η w).comp (J w (u w))) =ᶠ[𝓝 z] fun w ↦ (η w).comp (J' w (u w)) :=
+    hJ.mono fun w hw ↦ by simp only [hw]
+  have hC : ω.floerLinearizationCoeff J Ks Kt u z = ω.floerLinearizationCoeff J' Ks' Kt' u z := by
+    ext v
+    simp only [floerLinearizationCoeff_apply, hJ.eq_of_nhds, hKs, hKt]
+  rw [floerLinearizationAdjoint_def, floerLinearizationAdjoint_def, hc.fderiv_eq, hC]
+
 /-- **Translation invariance of the formal adjoint.** Translating the data, the map and the
 covector field by `v` translates the formal adjoint by `v`, as for the linearized operator
 (`floerLinearization_comp_add_right`). -/
