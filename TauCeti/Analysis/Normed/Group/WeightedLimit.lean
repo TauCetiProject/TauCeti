@@ -109,8 +109,7 @@ theorem completeSpace_of_weighted_coeff {ι D E : Type*}
 /-- Finite truncations converge when the weighted coefficients vanish at infinity and uniform
 bounds on weighted coefficients bound the seminorm. -/
 theorem tendsto_trunc_of_weighted_coeff_decay {ι D E : Type*} [DecidableEq ι]
-    [SeminormedAddCommGroup D]
-    [SeminormedAddCommGroup E] (coeff : D → ι → E) (w : ι → ℝ) {a : D}
+    [SeminormedAddCommGroup D] [Norm E] (coeff : D → ι → E) (w : ι → ℝ) {a : D}
     {trunc : Finset ι → D}
     (hbound : ∀ (x : D) {C : ℝ}, (∀ i, ‖coeff x i‖ * w i ≤ C) → ‖x‖ ≤ C)
     (hdecay : Tendsto (fun i ↦ ‖coeff a i‖ * w i) cofinite (𝓝 0))

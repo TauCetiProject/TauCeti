@@ -26,7 +26,7 @@ evaluation of bounded series are in `TauCeti.RingTheory.PowerSeries.OpenDisc.Bou
 
 The norm and completeness constructions follow the restricted-series instances in
 `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic`, using Mathlib's `PowerSeries.gaussNorm` and
-`PowerSeries.HasGaussNorm`; completeness reuses the uniform weighted limit
+`PowerSeries.HasGaussNorm`; completeness reuses the weighted-coefficient completeness criterion
 `TauCeti.completeSpace_of_weighted_coeff`.
 
 ## Main definitions

@@ -18,7 +18,8 @@ converging on half-open annuli `r < |t| < 1` and their union, the Robba ring.
 
 * At a radius `ρ`, `TauCeti.LaurentConvergesAt ρ a` says `‖aₙ‖ ρⁿ → 0` as `|n| → ∞`, the condition
   for `∑ aₙ tⁿ` to converge on the circle `|t| = ρ`, and `TauCeti.laurentGaussNorm ρ a` is the
-  Gauss norm `|a|_ρ = sup_n ‖aₙ‖ ρⁿ`.
+  Gauss norm `|a|_ρ = sup_n ‖aₙ‖ ρⁿ`. Both are defined in
+  `TauCeti.RingTheory.Robba.LaurentGauss`.
 * `TauCeti.annularCoeff R r` is the `R`-module of families converging at every radius `ρ` with
   `0 < ρ`, `r < ρ < 1`: the series on the annulus `r < |t| < 1` (the punctured open unit disc when
   `r ≤ 0`).
@@ -39,8 +40,6 @@ constructed here.
 
 ## Main definitions
 
-* `TauCeti.LaurentConvergesAt`, `TauCeti.laurentGaussNorm`: convergence and the Gauss norm at a
-  radius.
 * `TauCeti.annularCoeff`, `TauCeti.robbaCoeff`: the coefficient modules of an annulus and of the
   Robba ring.
 * `TauCeti.RobbaRing`: the Robba ring, with its `Ring`, `CommRing` and `Algebra` instances from
