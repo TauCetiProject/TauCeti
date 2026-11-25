@@ -100,7 +100,7 @@ theorem c₄_curve141a1 : curve141a1.c₄ = 592 := by
 
 /-- 141a1 is an elliptic curve over `ℚ`. -/
 instance : (curve141a1.baseChange ℚ).IsElliptic := by
-  rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve141a1]
+  rw [isElliptic_iff, ← algebraMap_Δ_of_baseChange_eq rfl, Δ_curve141a1]
   exact IsUnit.mk0 _ (by norm_num)
 
 /-- The discriminant `3⁷ · 47` and `c₄ = 2⁴ · 37` of 141a1 are coprime. -/

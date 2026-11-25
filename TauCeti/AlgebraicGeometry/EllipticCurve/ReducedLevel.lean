@@ -15,8 +15,9 @@ import Mathlib.NumberTheory.Padics.PadicVal.Basic
 Let `E/ℚ` be an elliptic curve of conductor `M` and minimal discriminant `Δ`, and let `ℓ ≥ 3` be
 a prime. At a prime `q ∥ M` the curve has multiplicative reduction, and when `ℓ ∣ v_q(Δ)` the Tate
 curve shows that `E[ℓ]` is unramified at `q` (for `q ≠ ℓ`) or finite flat at `q` (for `q = ℓ`), so
-level lowering removes `q` from the level of a weight-two newform giving `E[ℓ]`. These local facts
-are not proved here. The resulting level is the **reduced level**
+when `E[ℓ]` is irreducible, Ribet's level lowering removes `q` from the level of a weight-two
+newform giving `E[ℓ]` (Bennett–Siksek, Theorem 3). Without irreducibility no such newform need
+exist. These facts are not proved here. The resulting level is the **reduced level**
 
 `M₀ = M / ∏ q`, the product over the primes `q` with `v_q(M) = 1` and `ℓ ∣ v_q(Δ)`
 
@@ -68,8 +69,9 @@ namespace Nat
 
 /-- **The level-lowering primes** of `(M, Δ)` at `ℓ`: the primes `q` occurring in `M` to exponent
 exactly one, with `ℓ` dividing the exponent of `q` in `|Δ|`. For the conductor `M` and minimal
-discriminant `Δ` of an elliptic curve over `ℚ`, these are the multiplicative primes at which
-level lowering removes `q` from the level of a newform giving `E[ℓ]`. Minimal discriminants are
+discriminant `Δ` of an elliptic curve over `ℚ`, these are the multiplicative primes at which,
+when `E[ℓ]` is irreducible, level lowering removes `q` from the level of a newform giving `E[ℓ]`
+(not proved here). Minimal discriminants are
 nonzero; at `Δ = 0` the valuation `multiplicity q 0 = 0` is a junk value, and every `q ∥ M` is
 then a level-lowering prime. -/
 noncomputable def levelLoweringPrimes (M : ℕ) (Δ : ℤ) (ℓ : ℕ) : Finset ℕ :=
@@ -78,8 +80,9 @@ noncomputable def levelLoweringPrimes (M : ℕ) (Δ : ℤ) (ℓ : ℕ) : Finset 
 /-- **The reduced level** `M₀ = M / ∏ q` of `(M, Δ)` at `ℓ`, where `q` runs through the
 level-lowering primes: the primes with `v_q(M) = 1` and `ℓ ∣ v_q(|Δ|)` (Bennett–Siksek,
 equation (3)). For the conductor `M` and minimal discriminant `Δ` of an elliptic curve over `ℚ`
-and a prime `ℓ ≥ 3`, this is the level of the weight-two newform obtained from `E[ℓ]` by level
-lowering. It may keep the prime `ℓ`. -/
+and a prime `ℓ ≥ 3` with `E[ℓ]` irreducible, Ribet's level lowering predicts a weight-two newform
+of level `M₀` giving `E[ℓ]` (not proved here); without irreducibility no such newform need exist.
+It may keep the prime `ℓ`. -/
 noncomputable def reducedEllipticLevel (M : ℕ) (Δ : ℤ) (ℓ : ℕ) : ℕ :=
   M / ∏ q ∈ levelLoweringPrimes M Δ ℓ, q
 
@@ -288,7 +291,7 @@ theorem IsGlobalMinimal.reducedLevel_eq (h : IsGlobalMinimal ℤ E) {W₀ : Weie
     E.reducedLevel ℓ =
       Nat.reducedEllipticLevel (Ideal.absNorm (algorithmicConductor ℤ E)) W₀.Δ ℓ := by
   rw [reducedLevel_def, minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal h (d := W₀.Δ)
-    (by simp [← hW₀, baseChange]), Ideal.absNorm_span_singleton]
+    (algebraMap_Δ_of_baseChange_eq hW₀), Ideal.absNorm_span_singleton]
   exact Nat.reducedEllipticLevel_congr fun q _ _ ↦ by simp [Int.natAbs_abs]
 
 end WeierstrassCurve
