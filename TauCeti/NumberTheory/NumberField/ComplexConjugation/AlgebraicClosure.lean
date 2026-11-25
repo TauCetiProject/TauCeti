@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.NumberTheory.NumberField.CMField
 public import TauCeti.FieldTheory.IntermediateField.FieldRange
+public import TauCeti.RingTheory.IntegralClosure.Subfield
 
 /-!
 # CM or totally real fields via the complex conjugations of a normal extension of `ℚ`
@@ -38,6 +39,8 @@ real, and Mathlib's `NumberField.IsCMField.complexConj F` if `F` is CM.
   a totally real or CM field.
 * `TauCeti.NumberField.isTotallyReal_or_isCMField_iff`: the characterization of fields that are
   totally real or CM by products of two complex conjugations.
+* `TauCeti.NumberField.existsUnique_forall_mem_complexConjugations_apply_eq`: in that case all
+  complex conjugations act on `τ(F)` through one automorphism of `F`.
 * `TauCeti.NumberField.isCMField_of_forall_isConj`: a field algebraic over `ℚ` with one
   automorphism conjugating every complex embedding, not the identity, is CM. Mathlib's
   `NumberField.IsCMField.of_forall_isConj` assumes that the field is Galois over `ℚ` and totally
@@ -55,11 +58,6 @@ public section
 open NumberField NumberField.InfinitePlace NumberField.ComplexEmbedding
 
 namespace TauCeti.NumberField
-
-/-- A subfield of a field algebraic over `ℚ` is algebraic over `ℚ`. -/
-instance isIntegral_subfield {L : Type*} [Field L] [CharZero L] [Algebra.IsIntegral ℚ L]
-    (F : Subfield L) : Algebra.IsIntegral ℚ F :=
-  Algebra.IsIntegral.of_injective F.subtype.toRatAlgHom F.subtype_injective
 
 section General
 
@@ -108,7 +106,7 @@ theorem mem_complexConjugations_iff {c : Gal(Ω/ℚ)} :
 
 /-- A complex conjugation is an involution. -/
 @[simp]
-theorem mul_self_of_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω) :
+theorem mul_self_eq_one_of_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω) :
     c * c = 1 := by
   obtain ⟨ι, hι⟩ := hc
   exact AlgEquiv.ext (isConj_apply_apply hι)
@@ -259,5 +257,24 @@ theorem isTotallyReal_or_isCMField_iff (τ : F →+* Ω) :
     · left
       exact ⟨fun w ↦ isReal_iff.mpr (isConj_one_iff.mp (hs1 ▸ hs _))⟩
     · exact Or.inr (isCMField_of_forall_isConj hs1 hs)
+
+/-- **The common involution of a field fixed by products of complex conjugations.** If every
+product `c₁ c₂` of two complex conjugations of `Ω` fixes `τ(F)` pointwise, there is exactly one
+automorphism `s` of `F` through which every complex conjugation acts on `τ(F)`. By
+`isTotallyReal_or_isCMField_iff` the field `F` is then totally real or CM, and `s` is the identity
+(`apply_eq_of_isTotallyReal`) or `NumberField.IsCMField.complexConj F`
+(`apply_eq_complexConj_of_isCMField`). -/
+theorem existsUnique_forall_mem_complexConjugations_apply_eq (τ : F →+* Ω)
+    (h : ∀ c₁ ∈ complexConjugations Ω, ∀ c₂ ∈ complexConjugations Ω, ∀ x, c₁ (c₂ (τ x)) = τ x) :
+    ∃! s : Gal(F/ℚ), ∀ c ∈ complexConjugations Ω, ∀ x, c (τ x) = τ (s x) := by
+  obtain ⟨c₀, hc₀⟩ := complexConjugations_nonempty Ω
+  have hmem x := apply_mem_fieldRange_of_forall_mul hc₀ fun d hd ↦ h d hd c₀ hc₀ x
+  have hs := apply_restrictOfApplyMem τ hc₀ hmem
+  refine ⟨restrictOfApplyMem τ hc₀ hmem, fun c hc x ↦ ?_, fun s' hs' ↦ ?_⟩
+  · -- `c₀` sends `τ (s x)` back to `τ x`, and `c c₀` fixes `τ (s x)`.
+    calc c (τ x) = c (c₀ (τ (restrictOfApplyMem τ hc₀ hmem x))) := by
+          rw [apply_eq_of_apply_eq_of_mem_complexConjugations hc₀ (hs x).symm]
+      _ = τ (restrictOfApplyMem τ hc₀ hmem x) := h c hc c₀ hc₀ _
+  · exact AlgEquiv.ext fun x ↦ τ.injective ((hs' c₀ hc₀ x).symm.trans (hs x).symm)
 
 end TauCeti.NumberField
