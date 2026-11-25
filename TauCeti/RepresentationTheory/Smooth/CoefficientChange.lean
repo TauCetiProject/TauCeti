@@ -18,11 +18,11 @@ Let `A → B` be a homomorphism of commutative rings and `G` a topological group
 `Representation.isSmooth_baseChange`, restriction because it keeps the operators. This file lifts
 them to functors `TauCeti.SmoothRep.extendScalars B : SmoothRep A G ⥤ SmoothRep B G` and
 `TauCeti.SmoothRep.restrictScalars A : SmoothRep B G ⥤ SmoothRep A G` between the full
-subcategories of smooth representations, and transports the structure proved on `Rep`: base change
-is additive, left adjoint to restriction of scalars (`TauCeti.SmoothRep.extendRestrictScalarsAdj`,
-with unit `v ↦ 1 ⊗ v` and counit `b ⊗ w ↦ b • w`), naturally isomorphic to the identity along
-`A → A` (`TauCeti.SmoothRep.extendScalarsId`), and compatible with composition along `A → B → C`
-(`TauCeti.SmoothRep.extendScalarsComp`).
+subcategories of smooth representations, and transports the structure proved on `Rep`: both are
+additive, and base change is left adjoint to restriction of scalars
+(`TauCeti.SmoothRep.extendRestrictScalarsAdj`, with unit `v ↦ 1 ⊗ v` and counit `b ⊗ w ↦ b • w`),
+naturally isomorphic to the identity along `A → A` (`TauCeti.SmoothRep.extendScalarsId`), and
+compatible with composition along `A → B → C` (`TauCeti.SmoothRep.extendScalarsComp`).
 
 Every morphism, component and correspondence here has the morphism of representations underlying
 it in `Rep`, given by the `simp` lemmas below; the evaluation lemmas on `Rep` then apply.
@@ -108,6 +108,12 @@ variable {A}
 @[simp] lemma restrictScalars_map_hom {V W : SmoothRep.{w} B G} (f : V ⟶ W) :
     ((restrictScalars A).map f).hom = (Rep.restrictScalars A).map f.hom :=
   (rfl)
+
+variable (A) in
+/-- Restriction of scalars of smooth representations is an additive functor. -/
+instance additive_restrictScalars :
+    (restrictScalars A : SmoothRep.{w} B G ⥤ SmoothRep.{w} A G).Additive where
+  map_add {_ _ f _} := ObjectProperty.hom_ext _ <| (Rep.restrictScalars A).map_add (f := f.hom)
 
 end RestrictScalars
 

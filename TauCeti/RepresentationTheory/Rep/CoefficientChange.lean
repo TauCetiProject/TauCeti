@@ -21,9 +21,9 @@ compatible with composition along `A → B → C` (`Rep.extendScalarsComp`, from
 `TensorProduct.AlgebraTensorModule.cancelBaseChange`).
 
 Restriction of scalars `Rep.restrictScalars A : Rep B G ⥤ Rep A G` reads a `B`-module as an
-`A`-module through `A → B`, with the same operators (`Representation.restrictScalars`). Base change
-is left adjoint to it (`Rep.extendRestrictScalarsAdj`): an intertwining map `B ⊗_A V → W`
-corresponds to the `A`-linear intertwining map `v ↦ f (1 ⊗ v)`.
+`A`-module through `A → B`, with the same operators (`Representation.restrictScalars`); it is also
+additive. Base change is left adjoint to it (`Rep.extendRestrictScalarsAdj`): an intertwining map
+`B ⊗_A V → W` corresponds to the `A`-linear intertwining map `v ↦ f (1 ⊗ v)`.
 
 The declarations follow Mathlib's change-of-rings API for modules,
 `ModuleCat.extendScalars`, `ModuleCat.restrictScalars`, `ModuleCat.extendRestrictScalarsAdj`,
@@ -148,6 +148,11 @@ lemma restrictScalars_obj_smul (V : Rep.{w} B G) (a : A) (v : (restrictScalars A
   haveI := IsScalarTower.restrictScalars A B V
   Representation.restrictScalars_apply A V.ρ g v
 
+variable (A) in
+/-- Restriction of scalars of representations is an additive functor. -/
+instance additive_restrictScalars : (restrictScalars A : Rep.{w} B G ⥤ Rep.{w} A G).Additive where
+  map_add := rfl
+
 end RestrictScalars
 
 /-! ### The adjunction -/
@@ -168,7 +173,7 @@ noncomputable def extendRestrictScalarsAdj :
           map_add' := tmul_add 1
           map_smul' a v := by
             have h : ((1 : B) ⊗ₜ[A] (a • v) : B ⊗[A] V) = algebraMap A B a • (1 : B) ⊗ₜ[A] v := by
-              rw [← smul_tmul, smul_tmul', smul_eq_mul, mul_one, Algebra.algebraMap_eq_smul_one]
+              rw [algebraMap_smul, tmul_smul]
             exact h.trans (restrictScalars_obj_smul ((extendScalars B).obj V) a _).symm
           isIntertwining' g := LinearMap.ext fun v ↦ by
             have h : ((1 : B) ⊗ₜ[A] V.ρ g v : B ⊗[A] V) =
@@ -198,7 +203,7 @@ noncomputable def extendRestrictScalarsAdj :
     refine extendScalars_hom_ext B (V := V) fun b v ↦ ?_
     simp only [hom_comp, IntertwiningMap.comp_apply, hom_ofHom, IntertwiningMap.baseChange_tmul,
       hom_id, IntertwiningMap.id_apply]
-    exact (smul_tmul' b (1 : B) v).trans (by rw [smul_eq_mul, mul_one])
+    exact (smul_tmul' b (1 : B) v).trans (by simp)
   right_triangle_components W := hom_ext <| IntertwiningMap.ext <| LinearMap.ext fun w ↦
     one_smul B (w : W)
 
