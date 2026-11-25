@@ -327,22 +327,6 @@ theorem pullbackEquiv_inverse (e : X ≅ Y) : (pullbackEquiv e).inverse = pullba
 
 section Monoidal
 
-/-- Invertible sheaves are quasicoherent. -/
-lemma isInvertible_le_isQuasicoherent (X : Scheme.{u}) :
-    SheafOfModules.isInvertible X ≤ _root_.SheafOfModules.isQuasicoherent X.ringCatSheaf :=
-  fun _ _ ↦ SheafOfModules.isQuasicoherent_of_isInvertible
-
-/-- The fully faithful inclusion of line bundles into quasicoherent sheaves. -/
-abbrev toQuasicoherent (X : Scheme.{u}) : InvertibleSheaf X ⥤ QuasicoherentSheaf X :=
-  ObjectProperty.ιOfLE (isInvertible_le_isQuasicoherent X)
-
--- Quasi-coherence is a monoidal property for the category structure of `X.Modules`, which
--- instance search does not find through `QuasicoherentSheaf X`, so it is passed explicitly.
-/-- The inclusion of line bundles into quasicoherent sheaves is braided monoidal. -/
-instance toQuasicoherentBraided (X : Scheme.{u}) : (toQuasicoherent X).Braided :=
-  @ObjectProperty.instBraidedFullSubcategoryιOfLE X.Modules _ _ _ _ _ _
-    (Scheme.Modules.isMonoidal_isQuasicoherent X) (isInvertible_le_isQuasicoherent X)
-
 /-- **Pullback of line bundles is strong symmetric monoidal.** The structure is transported from
 the lift to line bundles of the strong symmetric monoidal pullback of quasicoherent sheaves to all
 modules, `Scheme.Modules.pullbackToModulesBraided`, along the identifications

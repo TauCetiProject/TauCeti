@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Skeleton
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 
 /-!
@@ -16,8 +17,9 @@ The object property `SheafOfModules.isInvertible X` on `X.Modules` contains the 
 `𝒪_X` and is closed under the monoidal tensor product, because `M ⊗ N` in `X.Modules` is
 canonically isomorphic to `SheafOfModules.tensorProduct X.sheaf M N`, which preserves
 invertibility. Consequently, the full subcategory `InvertibleSheaf X` inherits the symmetric
-monoidal structure of `X.Modules`, and its inclusion `InvertibleSheaf.toFiniteLocallyFree X` into
-`FiniteLocallyFreeSheaf X` is braided monoidal.
+monoidal structure of `X.Modules`, and its inclusions `InvertibleSheaf.toFiniteLocallyFree X` into
+`FiniteLocallyFreeSheaf X` and `InvertibleSheaf.toQuasicoherent X` into `QuasicoherentSheaf X` are
+braided monoidal.
 
 The explicit line-bundle operations `InvertibleSheaf.tensorProduct` and `InvertibleSheaf.trivial`
 are canonically isomorphic to the inherited monoidal tensor product and unit
@@ -33,6 +35,10 @@ isomorphism classes therefore identifies the monoidal `Skeleton` of `InvertibleS
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.toFiniteLocallyFreeMonoidal` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.toFiniteLocallyFreeBraided`: the inclusion into
   finite locally free sheaves is braided monoidal;
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.isInvertible_le_isQuasicoherent`,
+  `TauCeti.AlgebraicGeometry.InvertibleSheaf.toQuasicoherent` and
+  `TauCeti.AlgebraicGeometry.InvertibleSheaf.toQuasicoherentBraided`: invertible sheaves are
+  quasicoherent, and the inclusion into quasicoherent sheaves is braided monoidal;
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_tensorPow` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPow_obj`: monoidal tensor powers of invertible
   sheaves are invertible, and computed on underlying sheaves;
@@ -108,6 +114,22 @@ instance toFiniteLocallyFreeMonoidal (X : Scheme.{u}) : (toFiniteLocallyFree X).
 
 /-- The inclusion of invertible sheaves into finite locally free sheaves is braided monoidal. -/
 instance toFiniteLocallyFreeBraided (X : Scheme.{u}) : (toFiniteLocallyFree X).Braided where
+
+/-- Invertible sheaves are quasicoherent. -/
+lemma isInvertible_le_isQuasicoherent (X : Scheme.{u}) :
+    SheafOfModules.isInvertible X ≤ _root_.SheafOfModules.isQuasicoherent X.ringCatSheaf :=
+  fun _ _ ↦ SheafOfModules.isQuasicoherent_of_isInvertible
+
+/-- The fully faithful inclusion of line bundles into quasicoherent sheaves. -/
+abbrev toQuasicoherent (X : Scheme.{u}) : InvertibleSheaf X ⥤ QuasicoherentSheaf X :=
+  ObjectProperty.ιOfLE (isInvertible_le_isQuasicoherent X)
+
+-- Quasi-coherence is a monoidal property for the category structure of `X.Modules`, which
+-- instance search does not find through `QuasicoherentSheaf X`, so it is passed explicitly.
+/-- The inclusion of line bundles into quasicoherent sheaves is braided monoidal. -/
+instance toQuasicoherentBraided (X : Scheme.{u}) : (toQuasicoherent X).Braided :=
+  @ObjectProperty.instBraidedFullSubcategoryιOfLE X.Modules _ _ _ _ _ _
+    (Scheme.Modules.isMonoidal_isQuasicoherent X) (isInvertible_le_isQuasicoherent X)
 
 /-- `InvertibleSheaf.tensorProduct L K` is canonically isomorphic to the inherited monoidal tensor
 product `L ⊗ K` in `InvertibleSheaf X`. -/
