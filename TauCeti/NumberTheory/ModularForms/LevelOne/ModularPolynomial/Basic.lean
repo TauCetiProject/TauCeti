@@ -39,10 +39,11 @@ of `j((a τ + b) / d)` is obtained from the integral Laurent `q`-expansion of `j
 `ζ_n^{a b}` and substituting `X ↦ X^{a²}` (`laurentQExpansion_j_toGLReal_smul`). Its coefficients
 lie in the ring of integers of the cyclotomic field `ℚ(ζ_n)`. Every automorphism
 `σ ∈ Gal(ℚ(ζ_n) / ℚ)` sends `ζ_n ↦ ζ_n^k` for a unit `k` modulo `n`, and
-`(a, b, d) ↦ (a, k b mod d, d)` permutes `FixedDetMatrices.primitiveReps n`, so `σ` fixes all
-Laurent `q`-coefficients of the symmetric functions of the `j((a τ + b) / d)`. Being both rational
-and integral over `ℤ`, those coefficients are integers, and `TauCeti.ModularForm.exists_aeval_j_eq`
-expresses each coefficient as a unique polynomial in `j` over `ℤ`.
+`FixedDetMatrices.scaleRep k` (`(a, b, d) ↦ (a, k b mod d, d)`) permutes
+`FixedDetMatrices.primitiveReps n`, so `σ` fixes all Laurent `q`-coefficients of the symmetric
+functions of the `j((a τ + b) / d)`. Being both rational and integral over `ℤ`, those coefficients
+are integers, and `TauCeti.ModularForm.exists_aeval_j_eq` expresses each coefficient as a unique
+polynomial in `j` over `ℤ`.
 
 ## Main definitions
 
@@ -81,34 +82,9 @@ open FixedDetMatrices
 
 /-! ### Action and width-`n` `q`-expansion of upper-triangular representatives -/
 
-/-- Natural-number absolute value of the `(i, j)`-entry of a `2 × 2` integral matrix of fixed
-determinant. Keeping `FixedDetMatrix` un-projected avoids semireducible coercion mismatches under
-`rw`. -/
-private def repEntry {m : ℤ} (A : FixedDetMatrix (Fin 2) ℤ m) (i j : Fin 2) : ℕ :=
-  (A.val i j).natAbs
-
 section RepsExpansion
 
 variable {n : ℕ} [NeZero n]
-
-/-- For `n > 0`, a representative `A ∈ reps n` has positive diagonal entries `a, d > 0` with
-`a * d = n`, nonnegative upper-right entry `b < d`, and `A = !![a, b; 0, d]`. -/
-private theorem mem_reps_nat_entries {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ reps (n : ℤ)) :
-    0 < repEntry A 0 0 ∧ 0 < repEntry A 1 1 ∧ repEntry A 0 0 * repEntry A 1 1 = n ∧
-      repEntry A 0 1 < repEntry A 1 1 ∧
-      A.val = !![(repEntry A 0 0 : ℤ), (repEntry A 0 1 : ℤ); 0, (repEntry A 1 1 : ℤ)] := by
-  have h₁₁ : 0 < A.val 1 1 := pos_val_one_one_of_mem_reps (Int.natCast_pos.2 (NeZero.pos n)) hA
-  obtain ⟨h₁₀, h₀₀, h₀₁, h₁₁lt⟩ := hA
-  have hmul : A.val 0 0 * A.val 1 1 = n := apply_zero_zero_mul_apply_one_one h₁₀
-  have ha : (repEntry A 0 0 : ℤ) = A.val 0 0 := Int.natAbs_of_nonneg h₀₀.le
-  have hb : (repEntry A 0 1 : ℤ) = A.val 0 1 := Int.natAbs_of_nonneg h₀₁
-  have hd : (repEntry A 1 1 : ℤ) = A.val 1 1 := Int.natAbs_of_nonneg h₁₁.le
-  refine ⟨Int.natAbs_pos.2 h₀₀.ne', Int.natAbs_pos.2 h₁₁.ne', ?_, ?_, ?_⟩
-  · exact Int.natCast_inj.1 (by rw [Nat.cast_mul, ha, hd, hmul])
-  · rw [abs_of_nonneg h₀₁, abs_of_pos h₁₁] at h₁₁lt
-    exact Int.ofNat_lt.1 (by rwa [hb, hd])
-  · ext i j
-    fin_cases i <;> fin_cases j <;> simp [ha, hb, hd, h₁₀]
 
 /-- For `A ∈ reps n`, `τ ↦ j (A • τ)` has a meromorphic width-`n` cusp function at `0`. -/
 theorem meromorphicAt_cuspFunction_j_toGLReal_smul {A : FixedDetMatrix (Fin 2) ℤ n}
@@ -130,7 +106,9 @@ theorem laurentQExpansion_j_toGLReal_smul {A : FixedDetMatrix (Fin 2) ℤ n}
             (cexp (2 * π * I / n) ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs))
             (pow_ne_zero _ (Complex.exp_ne_zero _))))
           (UpperHalfPlane.laurentQExpansion 1 j)) := by
-  obtain ⟨-, hd, had, -, -⟩ := mem_reps_nat_entries hA
+  have hd : 0 < (A.val 1 1).natAbs := Int.natAbs_pos.2 (apply_one_one_ne_zero_of_mem_reps hA)
+  have had : (A.val 0 0).natAbs * (A.val 1 1).natAbs = n :=
+    (natAbs_apply_zero_zero_mul_natAbs_apply_one_one hA.1).trans (Int.natAbs_natCast n)
   have hexp := TauCeti.UpperHalfPlane.laurentQExpansion_comp_toGLReal_smul
     (Int.natCast_pos.2 (NeZero.pos n)) hA periodic_j_comp_ofComplex meromorphicAt_cuspFunction_j
   rw [Int.cast_natCast] at hexp
@@ -248,129 +226,6 @@ section GaloisDescent
 
 variable {n : ℕ} [NeZero n]
 
-omit [NeZero n] in
-/-- Multiplying the upper-right entry of `!![a, b; 0, d]` (`a * d = n`) by `m` coprime to `n`,
-reduced modulo `d`, preserves `TauCeti.IsPrimitive`. -/
-private theorem isPrimitive_upperTri_mul_mod {a b d m : ℕ} (had : a * d = n) (hm : m.Coprime n)
-    (hprim : TauCeti.IsPrimitive !![(a : ℤ), (b : ℤ); 0, (d : ℤ)]) :
-    TauCeti.IsPrimitive !![(a : ℤ), ((m * b % d : ℕ) : ℤ); 0, (d : ℤ)] := by
-  obtain ⟨f, hf⟩ := isPrimitive_def.1 hprim
-  have hmat : !![(a : ℤ), (b : ℤ); (0 : ℤ), (d : ℤ)] =
-      (a : ℤ) • !![1, 0; 0, 0] + (b : ℤ) • !![0, 1; 0, 0] + (d : ℤ) • !![0, 0; 0, 1] := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-  rw [hmat, map_add, map_add, map_zsmul, map_zsmul, map_zsmul] at hf
-  simp only [zsmul_eq_mul] at hf
-  set c₀₀ := f !![1, 0; 0, 0]
-  set c₀₁ := f !![0, 1; 0, 0]
-  set c₁₁ := f !![0, 0; 0, 1]
-  have hcop : IsCoprime (m : ℤ) (n : ℤ) := Int.isCoprime_iff_nat_coprime.2 (by simpa using hm)
-  obtain ⟨x, y, hxy⟩ := hcop
-  set q : ℕ := m * b / d
-  have hdiv : ((m * b % d : ℕ) : ℤ) + (d : ℤ) * q = (m : ℤ) * b := by
-    exact_mod_cast (Nat.mod_add_div (m * b) d)
-  have hadZ : (a : ℤ) * d = n := by exact_mod_cast had
-  let g : Matrix (Fin 2) (Fin 2) ℤ →ₗ[ℤ] ℤ :=
-    c₀₀ • (entryAddMonoidHom ℤ 0 0).toIntLinearMap +
-      (c₀₁ * x) • (entryAddMonoidHom ℤ 0 1).toIntLinearMap +
-      (c₁₁ + c₀₁ * x * q + c₀₁ * y * b * a) • (entryAddMonoidHom ℤ 1 1).toIntLinearMap
-  refine isPrimitive_def.2 ⟨g, ?_⟩
-  simp only [g, LinearMap.add_apply, LinearMap.smul_apply, AddMonoidHom.coe_toIntLinearMap,
-    entryAddMonoidHom_apply, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one, smul_eq_mul]
-  linear_combination hf + c₀₁ * x * hdiv + c₀₁ * b * hxy + c₀₁ * y * b * hadZ
-
-open scoped Classical in
-/-- A unit `u : (ZMod n)ˣ` acts on `primitiveReps n` by multiplying the upper-right residue `b` of
-`(a b; 0 d)` modulo `d`. -/
-private def scaleRep (u : (ZMod n)ˣ) (A : FixedDetMatrix (Fin 2) ℤ n) :
-    FixedDetMatrix (Fin 2) ℤ n :=
-  if hA : A ∈ reps (n : ℤ) then
-    ⟨!![(repEntry A 0 0 : ℤ), (((u : ZMod n).val * repEntry A 0 1 % repEntry A 1 1 : ℕ) : ℤ);
-        0, (repEntry A 1 1 : ℤ)],
-      by simp [det_fin_two_of, ← Nat.cast_mul, (mem_reps_nat_entries hA).2.2.1]⟩
-  else A
-
-open scoped Classical in
-/-- For `A ∈ reps n`, the underlying matrix of `scaleRep u A` has upper-right entry
-`(u.val * b) % d`. -/
-private theorem val_scaleRep_of_mem_reps (u : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps (n : ℤ)) :
-    (scaleRep u A).val =
-      !![(repEntry A 0 0 : ℤ), (((u : ZMod n).val * repEntry A 0 1 % repEntry A 1 1 : ℕ) : ℤ);
-          0, (repEntry A 1 1 : ℤ)] :=
-  congrArg Subtype.val (dite_eq_left hA : scaleRep u A = _)
-
-/-- `scaleRep u A` lies in `reps n` whenever `A` does, with upper-right entry `(u.val * b) % d`. -/
-private theorem scaleRep_mem_reps_and_entries (u : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps (n : ℤ)) :
-    scaleRep u A ∈ reps (n : ℤ) ∧
-      repEntry (scaleRep u A) 0 0 = repEntry A 0 0 ∧
-      repEntry (scaleRep u A) 1 1 = repEntry A 1 1 ∧
-      repEntry (scaleRep u A) 0 1 = (u : ZMod n).val * repEntry A 0 1 % repEntry A 1 1 := by
-  obtain ⟨ha, hd, -, -, -⟩ := mem_reps_nat_entries hA
-  have hcoe := val_scaleRep_of_mem_reps u hA
-  refine ⟨⟨by simp [hcoe], by simp [hcoe, ha], hcoe ▸ Nat.cast_nonneg _, ?_⟩,
-    by rw [repEntry, hcoe]; simp, by rw [repEntry, hcoe]; simp, ?_⟩
-  · rw [hcoe]
-    simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one]
-    rw [abs_of_nonneg (Nat.cast_nonneg _), abs_of_nonneg (Nat.cast_nonneg _)]
-    exact Int.ofNat_lt.2 (Nat.mod_lt _ hd)
-  · rw [repEntry, hcoe]
-    simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one, Int.natAbs_natCast]
-
-/-- `scaleRep u` maps `primitiveReps n` into itself. -/
-private theorem scaleRep_mem_primitiveReps (u : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ primitiveReps (n : ℤ)) : scaleRep u A ∈ primitiveReps (n : ℤ) := by
-  obtain ⟨hAr, hAp⟩ := mem_primitiveReps.1 hA
-  obtain ⟨hBr, ha, hd, hb⟩ := scaleRep_mem_reps_and_entries u hAr
-  obtain ⟨-, -, had, -, hmatA⟩ := mem_reps_nat_entries hAr
-  obtain ⟨-, -, -, -, hmatB⟩ := mem_reps_nat_entries hBr
-  refine mem_primitiveReps.2 ⟨hBr, ?_⟩
-  rw [hmatB, ha, hb, hd]
-  rw [hmatA] at hAp
-  exact isPrimitive_upperTri_mul_mod had (ZMod.val_coe_unit_coprime u) hAp
-
-/-- `scaleRep u⁻¹` is a left inverse to `scaleRep u` on `reps n`. -/
-private theorem scaleRep_inv_scaleRep (u : (ZMod n)ˣ) {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps (n : ℤ)) : scaleRep u⁻¹ (scaleRep u A) = A := by
-  obtain ⟨hBr, haB, hdB, hbB⟩ := scaleRep_mem_reps_and_entries u hA
-  obtain ⟨hCr, haC, hdC, hbC⟩ := scaleRep_mem_reps_and_entries u⁻¹ hBr
-  obtain ⟨-, -, had, hb_lt, hmatA⟩ := mem_reps_nat_entries hA
-  obtain ⟨-, -, -, -, hmatC⟩ := mem_reps_nat_entries hCr
-  apply Subtype.ext
-  rw [hmatC, haC, haB, hdC, hbC, hdB, hbB, hmatA]
-  have h1 : (((u⁻¹ : (ZMod n)ˣ) : ZMod n) * (u : ZMod n)).val = (1 : ZMod n).val := by
-    rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
-  rw [ZMod.val_mul, ZMod.val_one_eq_one_mod] at h1
-  have hdvd : repEntry A 1 1 ∣ n := ⟨repEntry A 0 0, by rw [mul_comm, had]⟩
-  have hmod : (((u⁻¹ : (ZMod n)ˣ) : ZMod n).val *
-      ((u : ZMod n).val * repEntry A 0 1 % repEntry A 1 1)) % repEntry A 1 1 =
-      repEntry A 0 1 := by
-    calc (((u⁻¹ : (ZMod n)ˣ) : ZMod n).val *
-          ((u : ZMod n).val * repEntry A 0 1 % repEntry A 1 1)) % repEntry A 1 1
-        = ((((u⁻¹ : (ZMod n)ˣ) : ZMod n).val * (u : ZMod n).val) * repEntry A 0 1) %
-            repEntry A 1 1 := by
-          rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, mul_assoc]
-      _ = (1 * repEntry A 0 1) % repEntry A 1 1 :=
-          Nat.ModEq.mul_right (repEntry A 0 1) (Nat.ModEq.of_dvd hdvd h1)
-      _ = repEntry A 0 1 := by rw [one_mul, Nat.mod_eq_of_lt hb_lt]
-  rw [hmod]
-
-open scoped Classical in
-/-- `scaleRep u` permutes `primitiveReps n`. -/
-private theorem image_scaleRep_primitiveReps (u : (ZMod n)ˣ) :
-    (primitiveReps (n : ℤ)).image (scaleRep u) = primitiveReps (n : ℤ) := by
-  refine Finset.eq_of_subset_of_card_le (fun B hB ↦ ?_) ?_
-  · obtain ⟨A, hA, rfl⟩ := Finset.mem_image.1 hB
-    exact scaleRep_mem_primitiveReps u hA
-  · rw [Finset.card_image_of_injOn]
-    intro A hA B hB hAB
-    rw [← scaleRep_inv_scaleRep u (mem_primitiveReps.1 hA).1, hAB,
-      scaleRep_inv_scaleRep u (mem_primitiveReps.1 hB).1]
-
 /-- The integral Laurent series lifting the width-one Laurent `q`-expansion of `j`. -/
 private def intLaurentJ : LaurentSeries ℤ :=
   ((HahnSeries.mem_map_rangeS (f := Int.castRingHom ℂ)).2 fun g ↦ by
@@ -403,10 +258,10 @@ private def repLaurentSeries (A : FixedDetMatrix (Fin 2) ℤ n) :
     LaurentSeries (cyclotomicSubfield n) :=
   if hA : A ∈ reps (n : ℤ) then
     LaurentSeries.expand (cyclotomicSubfield n)
-      (⟨repEntry A 0 0 ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩ : ℕ+)
+      (⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩ : ℕ+)
       (HahnSeries.twistEquiv
         (zpowersHom (cyclotomicSubfield n)ˣ
-          (Units.mk0 (zetaCyclotomic n ^ (repEntry A 0 0 * repEntry A 0 1))
+          (Units.mk0 (zetaCyclotomic n ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs))
             (pow_ne_zero _ (isPrimitiveRoot_zetaCyclotomic.ne_zero (NeZero.ne n)))))
         (HahnSeries.mapRingHom (Int.castRingHom (cyclotomicSubfield n)) intLaurentJ))
   else 0
@@ -418,7 +273,6 @@ private theorem map_val_repLaurentSeries {A : FixedDetMatrix (Fin 2) ℤ n} (hA 
       UpperHalfPlane.laurentQExpansion n (fun τ : ℍ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) := by
   rw [repLaurentSeries, dite_eq_left_of_eq_true (eq_true hA), laurentQExpansion_j_toGLReal_smul hA,
     ← map_intLaurentJ]
-  dsimp only [repEntry]
   set d : ℕ+ := ⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
   ext g
   by_cases hdvd : (d : ℤ) ∣ g
@@ -436,7 +290,7 @@ private theorem repLaurentSeries_coeff_isIntegral {A : FixedDetMatrix (Fin 2) �
     (hA : A ∈ reps (n : ℤ)) (g : ℤ) :
     IsIntegral ℤ ((repLaurentSeries A).coeff g) := by
   rw [repLaurentSeries, dite_eq_left_of_eq_true (eq_true hA)]
-  set d : ℕ+ := ⟨repEntry A 0 0 ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
+  set d : ℕ+ := ⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
   by_cases hdvd : (d : ℤ) ∣ g
   · obtain ⟨r, rfl⟩ := hdvd
     rw [LaurentSeries.coeff_expand_mul, HahnSeries.coeff_twistEquiv, HahnSeries.coeff_mapRingHom]
@@ -447,9 +301,10 @@ private theorem repLaurentSeries_coeff_isIntegral {A : FixedDetMatrix (Fin 2) �
         rw [← pow_succ', Nat.sub_add_cancel (NeZero.pos n), hζ.pow_eq_one]
       rw [inv_eq_of_mul_eq_one_right h1]
       exact hζ_int.pow _
-    have hzpow : IsIntegral ℤ (((Units.mk0 (zetaCyclotomic n ^ (repEntry A 0 0 * repEntry A 0 1))
-        (pow_ne_zero _ (hζ.ne_zero (NeZero.ne n))) ^ r : (cyclotomicSubfield n)ˣ) :
-        cyclotomicSubfield n)) := by
+    have hzpow : IsIntegral ℤ
+        (((Units.mk0 (zetaCyclotomic n ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs))
+          (pow_ne_zero _ (hζ.ne_zero (NeZero.ne n))) ^ r : (cyclotomicSubfield n)ˣ) :
+          cyclotomicSubfield n)) := by
       rw [Units.val_zpow_eq_zpow_val, Units.val_mk0]
       cases r with
       | ofNat l => simpa using (hζ_int.pow _).pow l
@@ -471,28 +326,35 @@ private theorem map_gal_repLaurentSeries (σ : cyclotomicSubfield n ≃ₐ[ℚ] 
       repLaurentSeries (scaleRep (isPrimitiveRoot_zetaCyclotomic.autToPow ℚ σ) A) := by
   have hζ : IsPrimitiveRoot (zetaCyclotomic n) n := isPrimitiveRoot_zetaCyclotomic
   set u := hζ.autToPow ℚ σ
-  obtain ⟨hBr, haB, -, hbB⟩ := scaleRep_mem_reps_and_entries u hA
-  obtain ⟨-, -, had, -, -⟩ := mem_reps_nat_entries hA
-  have hpow : σ (zetaCyclotomic n ^ (repEntry A 0 0 * repEntry A 0 1)) =
-      zetaCyclotomic n ^ (repEntry (scaleRep u A) 0 0 * repEntry (scaleRep u A) 0 1) := by
-    rw [map_pow, ← hζ.autToPow_spec ℚ σ, ← pow_mul, haB, hbB]
-    set q := (u : ZMod n).val * repEntry A 0 1 / repEntry A 1 1
-    have hdiv := Nat.mod_add_div ((u : ZMod n).val * repEntry A 0 1) (repEntry A 1 1)
-    have hexp : (u : ZMod n).val * (repEntry A 0 0 * repEntry A 0 1) =
-        repEntry A 0 0 * ((u : ZMod n).val * repEntry A 0 1 % repEntry A 1 1) + n * q := by
-      calc (u : ZMod n).val * (repEntry A 0 0 * repEntry A 0 1)
-          = repEntry A 0 0 * ((u : ZMod n).val * repEntry A 0 1) := by ring
-        _ = repEntry A 0 0 * (((u : ZMod n).val * repEntry A 0 1 % repEntry A 1 1) +
-              repEntry A 1 1 * q) := by rw [hdiv]
+  have hBr : scaleRep u A ∈ reps (n : ℤ) := (scaleRep_mem_reps_iff u A).2 hA
+  have had : (A.val 0 0).natAbs * (A.val 1 1).natAbs = n :=
+    (natAbs_apply_zero_zero_mul_natAbs_apply_one_one hA.1).trans (Int.natAbs_natCast n)
+  have hbB : ((scaleRep u A).val 0 1).natAbs =
+      (u : ZMod n).val * (A.val 0 1).natAbs % (A.val 1 1).natAbs :=
+    natAbs_scaleRep_apply_zero_one_of_mem_reps u hA
+  have hpow : σ (zetaCyclotomic n ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs)) =
+      zetaCyclotomic n ^ (((scaleRep u A).val 0 0).natAbs * ((scaleRep u A).val 0 1).natAbs) := by
+    rw [scaleRep_apply_zero_zero, map_pow, ← hζ.autToPow_spec ℚ σ, ← pow_mul, hbB]
+    set q := (u : ZMod n).val * (A.val 0 1).natAbs / (A.val 1 1).natAbs
+    have hdiv := Nat.mod_add_div ((u : ZMod n).val * (A.val 0 1).natAbs) (A.val 1 1).natAbs
+    have hexp : (u : ZMod n).val * ((A.val 0 0).natAbs * (A.val 0 1).natAbs) =
+        (A.val 0 0).natAbs *
+          ((u : ZMod n).val * (A.val 0 1).natAbs % (A.val 1 1).natAbs) + n * q := by
+      calc (u : ZMod n).val * ((A.val 0 0).natAbs * (A.val 0 1).natAbs)
+          = (A.val 0 0).natAbs * ((u : ZMod n).val * (A.val 0 1).natAbs) := by ring
+        _ = (A.val 0 0).natAbs *
+              (((u : ZMod n).val * (A.val 0 1).natAbs % (A.val 1 1).natAbs) +
+                (A.val 1 1).natAbs * q) := by rw [hdiv]
         _ = _ := by rw [mul_add, ← mul_assoc, had]
     have hnq : zetaCyclotomic n ^ (n * q) = 1 := by rw [pow_mul, hζ.pow_eq_one, one_pow]
     rw [hexp, pow_add, hnq, mul_one]
   ext g
   rw [repLaurentSeries, dite_eq_left_of_eq_true (eq_true hA),
     repLaurentSeries, dite_eq_left_of_eq_true (eq_true hBr), HahnSeries.coeff_mapRingHom]
-  set dA : ℕ+ := ⟨repEntry A 0 0 ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
-  set dB : ℕ+ := ⟨repEntry (scaleRep u A) 0 0 ^ 2, pow_pos (Int.natAbs_pos.2 hBr.2.1.ne') 2⟩
-  have hdAB : dA = dB := Subtype.ext (by simp [dA, dB, haB])
+  set dA : ℕ+ := ⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
+  set dB : ℕ+ :=
+    ⟨((scaleRep u A).val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hBr.2.1.ne') 2⟩
+  have hdAB : dA = dB := Subtype.ext (by simp [dA, dB])
   by_cases hdvd : (dA : ℤ) ∣ g
   · obtain ⟨r, rfl⟩ := hdvd
     rw [LaurentSeries.coeff_expand_mul, hdAB, LaurentSeries.coeff_expand_mul]
@@ -540,12 +402,9 @@ private theorem map_gal_prod_repLaurentSeries
   simp only [Polynomial.map_prod, Polynomial.map_sub, map_X, map_C]
   rw [Finset.prod_congr rfl fun A hA ↦ by
       rw [map_gal_repLaurentSeries σ (mem_primitiveReps.1 hA).1],
-    ← Finset.prod_image (f := fun A ↦ X - C (repLaurentSeries A)) fun A hA B hB h ↦ by
-      rw [← scaleRep_inv_scaleRep (isPrimitiveRoot_zetaCyclotomic.autToPow ℚ σ)
-          (mem_primitiveReps.1 hA).1, h,
-        scaleRep_inv_scaleRep (isPrimitiveRoot_zetaCyclotomic.autToPow ℚ σ)
-          (mem_primitiveReps.1 hB).1],
-    image_scaleRep_primitiveReps (n := n)]
+    ← Finset.prod_image (f := fun A ↦ X - C (repLaurentSeries A))
+      (scaleRep_injective (isPrimitiveRoot_zetaCyclotomic.autToPow ℚ σ)).injOn,
+    image_scaleRep_primitiveReps]
 
 /-- Every width-one Laurent `q`-coefficient of `(cyclicIsogenyPolynomial n j ·).coeff k` is an
 integer. -/
@@ -670,11 +529,9 @@ theorem modularPolynomial_one : modularPolynomial 1 = Y - C X := by
     ext A
     simp only [Finset.mem_singleton]
     refine ⟨fun hA ↦ ?_, fun h ↦ ?_⟩
-    · obtain ⟨-, -, had, hb, hmat⟩ := mem_reps_nat_entries (n := 1) (mem_primitiveReps.1 hA).1
-      have ha1 : repEntry A 0 0 = 1 := Nat.eq_one_of_mul_eq_one_right had
-      have hd1 : repEntry A 1 1 = 1 := Nat.eq_one_of_mul_eq_one_left had
-      have hb0 : repEntry A 0 1 = 0 := by omega
-      exact Subtype.ext (hmat.trans (by rw [ha1, hd1, hb0]; rfl))
+    · obtain ⟨⟨h10, h00, -, h11⟩, -⟩ := mem_primitiveReps.1 hA
+      exact (reps_one_id A h10 h00 h11).trans
+        (by ext i j; fin_cases i <;> fin_cases j <;> simp [I₁])
     · subst h
       exact mem_primitiveReps.2 ⟨hI₁_reps,
         isPrimitive_def.2 ⟨(entryAddMonoidHom ℤ 0 0).toIntLinearMap, by simp [I₁]⟩⟩
