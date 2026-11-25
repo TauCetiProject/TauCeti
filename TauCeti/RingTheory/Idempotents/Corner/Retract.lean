@@ -9,14 +9,19 @@ public import Mathlib.Algebra.Algebra.Opposite
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
+public import TauCeti.RingTheory.Idempotents.Module
 
 /-!
 # Endomorphism rings of retracts as corners
 
 If `X` is a retract of a module `M`, with inclusion `i : X → M` and retraction `p : M → X`, then
-`i ∘ p` is an idempotent of `End_A M`, and `f ↦ p ∘ f ∘ i` identifies its corner with `End_A X`. The
-statements are made in the opposite ring `(End_A M)ᵐᵒᵖ`, the ring in which the regular module `A`
-recovers `A` itself: `(End_A A)ᵐᵒᵖ ≃ A`.
+`i ∘ p` is an idempotent of `End_A M`, and `f ↦ p ∘ f ∘ i` identifies its corner with `End_A X`.
+The piece `(i ∘ p) • M` of `M` is a copy of `X`, by `i`, on which the corner acts as `End_A X` acts
+on `X`.
+
+The same statements are also made in the opposite ring `(End_A M)ᵐᵒᵖ`, the ring in which the regular
+module `A` recovers `A` itself: `(End_A A)ᵐᵒᵖ ≃ A`. They are derived from the statements in
+`End_A M`.
 
 When `M = X ⊕ Y`, the idempotent of `X` is full as soon as `Y` is a retract of a finite power of
 `X`. This is what relates the module categories of the endomorphism rings of different modules in
@@ -24,14 +29,24 @@ Morita theory, in `TauCeti.RingTheory.Morita.Progenerator`.
 
 ## Main definitions
 
+* `TauCeti.cornerModuleEndAlgEquiv`: the corner of `End_A M` at the idempotent of a retract `X` is
+  `End_A X`.
+* `TauCeti.smulTopRetractAddEquiv`: the piece of `M` cut out by the idempotent of a retract `X` is a
+  copy of `X`.
 * `TauCeti.cornerEndRetractAlgEquiv`: the corner of `(End_A M)ᵐᵒᵖ` at the idempotent of a retract
   `X` is `(End_A X)ᵐᵒᵖ`.
 
 ## Main results
 
-* `TauCeti.isIdempotentElem_op_comp`: the idempotent of a retract.
-* `TauCeti.span_op_comp_eq_top`: this idempotent is full when `id_Y` is a finite sum of maps
-  factoring through `X`.
+* `TauCeti.isIdempotentElem_comp_of_comp_eq_id`: the idempotent of a retract.
+* `TauCeti.sum_comp_eq_id_of_comp_eq_id`: a retract of a finite power of `X` writes its identity
+  map as a finite sum of maps factoring through `X`.
+* `TauCeti.span_comp_eq_top_of_sum_comp_eq_id`: the idempotent of `X` is full when `id_Y` is a
+  finite sum of maps factoring through `X`.
+* `TauCeti.smulTopRetractAddEquiv_smul`, `TauCeti.smulTopRetractAddEquiv_symm_smul`: the copy of `X`
+  turns the action of the corner into the action of `End_A X`.
+* `TauCeti.isIdempotentElem_op_comp`, `TauCeti.span_op_comp_eq_top`: the same idempotent, and its
+  fullness, in the opposite ring.
 
 ## References
 
@@ -42,38 +57,173 @@ Morita theory, in `TauCeti.RingTheory.Morita.Progenerator`.
 public section
 
 open MulOpposite
+open scoped Pointwise
 
 namespace TauCeti
 
 variable {A : Type*} [Ring A] {X : Type*} [AddCommGroup X] [Module A X]
   {M : Type*} [AddCommGroup M] [Module A M]
 
-/-- The idempotent of `(End_A M)ᵐᵒᵖ` attached to a retract `X` of `M`, with inclusion `i` and
+/-- The retraction undoes the inclusion. -/
+@[simp]
+private theorem retract_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id) (y : X) :
+    p (i y) = y :=
+  LinearMap.congr_fun hip y
+
+/-! ### Corners of the endomorphism ring -/
+
+/-- The idempotent `i ∘ p` of `End_A M` attached to a retract `X` of `M`, with inclusion `i` and
 retraction `p`. -/
-theorem isIdempotentElem_op_comp {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id) :
-    IsIdempotentElem (op (i ∘ₗ p : Module.End A M)) := by
-  have h : ∀ y, p (i y) = y := LinearMap.congr_fun hip
-  apply unop_injective
+theorem isIdempotentElem_comp_of_comp_eq_id {i : X →ₗ[A] M} {p : M →ₗ[A] X}
+    (hip : p ∘ₗ i = .id) : IsIdempotentElem (i ∘ₗ p : Module.End A M) := by
+  unfold IsIdempotentElem
   ext x
-  simp [h]
+  simp [retract_apply hip]
 
 /-- An endomorphism of `M` factoring through its retract `X` lies in the two-sided ideal generated
 by the idempotent of `X`. -/
-private theorem op_comp_mem_span_op_comp {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
+private theorem comp_mem_span_comp {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
     (u : X →ₗ[A] M) (v : M →ₗ[A] X) :
-    op (u ∘ₗ v : Module.End A M) ∈ TwoSidedIdeal.span {op (i ∘ₗ p : Module.End A M)} := by
-  have h : ∀ y, p (i y) = y := LinearMap.congr_fun hip
-  have key : op (u ∘ₗ v : Module.End A M) =
-      op (i ∘ₗ v : Module.End A M) * op (i ∘ₗ p : Module.End A M) *
-        op (u ∘ₗ p : Module.End A M) := by
-    apply unop_injective
+    (u ∘ₗ v : Module.End A M) ∈ TwoSidedIdeal.span {(i ∘ₗ p : Module.End A M)} := by
+  have key : (u ∘ₗ v : Module.End A M) =
+      (u ∘ₗ p : Module.End A M) * (i ∘ₗ p : Module.End A M) * (i ∘ₗ v : Module.End A M) := by
     ext x
-    simp [h]
+    simp [retract_apply hip]
   rw [key]
   exact TwoSidedIdeal.mul_mem_right _ _ _
     (TwoSidedIdeal.mul_mem_left _ _ _ (TwoSidedIdeal.subset_span rfl))
 
 variable {Y : Type*} [AddCommGroup Y] [Module A Y]
+
+/-- A retract `Y` of a finite power `Xᵐ` writes `id_Y` as a finite sum of maps factoring through
+`X`. -/
+theorem sum_comp_eq_id_of_comp_eq_id {m : ℕ} {s : Y →ₗ[A] (Fin m → X)}
+    {r : (Fin m → X) →ₗ[A] Y} (hrs : r ∘ₗ s = .id) :
+    ∑ j, (r ∘ₗ LinearMap.single A (fun _ ↦ X) j) ∘ₗ (LinearMap.proj j ∘ₗ s) = .id := by
+  refine LinearMap.ext fun y ↦ ?_
+  simpa [LinearMap.sum_apply, ← map_sum] using
+    (congrArg r (LinearMap.sum_single_apply (fun _ ↦ X) (s y))).trans (LinearMap.congr_fun hrs y)
+
+/-- If `M = X ⊕ Y` and `id_Y` is a finite sum of maps factoring through `X`, that is, `Y` is a
+retract of a finite power of `X`, then the idempotent of `X` is full in `End_A M`. -/
+theorem span_comp_eq_top_of_sum_comp_eq_id {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
+    {i' : Y →ₗ[A] M} {p' : M →ₗ[A] Y} (hsum : i ∘ₗ p + i' ∘ₗ p' = .id) {ι : Type*}
+    (s : Finset ι) (u : ι → X →ₗ[A] Y) (v : ι → Y →ₗ[A] X) (huv : ∑ j ∈ s, u j ∘ₗ v j = .id) :
+    TwoSidedIdeal.span {(i ∘ₗ p : Module.End A M)} = ⊤ := by
+  refine (TwoSidedIdeal.one_mem_iff _).mp ?_
+  have key : (1 : Module.End A M) = (i ∘ₗ p : Module.End A M) +
+      ∑ j ∈ s, ((i' ∘ₗ u j) ∘ₗ (v j ∘ₗ p') : Module.End A M) := by
+    ext x
+    have hx := LinearMap.congr_fun hsum x
+    have hy := LinearMap.congr_fun huv (p' x)
+    simp only [LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.id_apply] at hy
+    simpa [LinearMap.sum_apply, ← map_sum, hy] using hx.symm
+  rw [key]
+  exact add_mem (TwoSidedIdeal.subset_span rfl) (sum_mem fun j _ ↦ comp_mem_span_comp hip _ _)
+
+private theorem comp_corner_val {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
+    (c : (isIdempotentElem_comp_of_comp_eq_id hip).Corner) (x : M) :
+    i (p ((c.val : Module.End A M) x)) = (c.val : Module.End A M) x :=
+  LinearMap.congr_fun ((isIdempotentElem_comp_of_comp_eq_id hip).mul_corner_val c) x
+
+private theorem corner_val_comp {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
+    (c : (isIdempotentElem_comp_of_comp_eq_id hip).Corner) (x : M) :
+    (c.val : Module.End A M) (i (p x)) = (c.val : Module.End A M) x :=
+  LinearMap.congr_fun ((isIdempotentElem_comp_of_comp_eq_id hip).corner_val_mul c) x
+
+/-- **The piece of a retract.** For the idempotent `e = i ∘ p` of a retract `X` of `M`, the piece
+`eM = e • M` of `M` is a copy of `X`, by `i`. -/
+def smulTopRetractAddEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id) :
+    X ≃+ ↥((i ∘ₗ p : Module.End A M) • (⊤ : Submodule ℤ M)) where
+  toFun x := ⟨i x, (isIdempotentElem_comp_of_comp_eq_id hip).mem_smul_top_iff_smul_eq_self.2
+    (by simp [Module.End.smul_def, retract_apply hip])⟩
+  invFun z := p z
+  left_inv := retract_apply hip
+  right_inv z := Subtype.ext
+    ((isIdempotentElem_comp_of_comp_eq_id hip).smul_eq_self_of_mem_smul_top z.property)
+  map_add' x y := Subtype.ext (map_add i x y)
+
+/-- The copy of `x` in the piece of a retract is `i x`. -/
+@[simp]
+theorem coe_smulTopRetractAddEquiv_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
+    (x : X) : (smulTopRetractAddEquiv hip x : M) = i x :=
+  (rfl)
+
+/-- An element `z` of the piece of a retract is the copy of `p z`. -/
+@[simp]
+theorem smulTopRetractAddEquiv_symm_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
+    (z : ↥((i ∘ₗ p : Module.End A M) • (⊤ : Submodule ℤ M))) :
+    (smulTopRetractAddEquiv hip).symm z = p z :=
+  (rfl)
+
+variable (R : Type*) [CommSemiring R] [Algebra R A] [Module R X] [IsScalarTower R A X]
+  [Module R M] [IsScalarTower R A M]
+
+/-- **The endomorphism ring of a retract is a corner.** If `X` is a retract of `M`, with inclusion
+`i` and retraction `p`, the corner of `End_A M` at the idempotent `i ∘ p` is `End_A X`, by
+`f ↦ p ∘ f ∘ i`. -/
+noncomputable def cornerModuleEndAlgEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id) :
+    (isIdempotentElem_comp_of_comp_eq_id hip).Corner ≃ₐ[R] Module.End A X where
+  toFun c := p ∘ₗ (c.val : Module.End A M) ∘ₗ i
+  invFun g := (isIdempotentElem_comp_of_comp_eq_id hip).compress (i ∘ₗ g ∘ₗ p)
+  left_inv c := by
+    apply Subtype.ext
+    ext x
+    simp [retract_apply hip, comp_corner_val hip c, corner_val_comp hip c]
+  right_inv g := by
+    ext x
+    simp [retract_apply hip]
+  map_mul' c c' := by
+    ext x
+    simp [corner_val_comp hip c]
+  map_add' c c' := by
+    ext x
+    simp
+  commutes' r := by
+    ext x
+    simp [retract_apply hip]
+
+/-- The corner element `c` acts on `X` as `p ∘ c ∘ i`. -/
+@[simp]
+theorem cornerModuleEndAlgEquiv_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
+    (c : (isIdempotentElem_comp_of_comp_eq_id hip).Corner) :
+    cornerModuleEndAlgEquiv R hip c = p ∘ₗ (c.val : Module.End A M) ∘ₗ i :=
+  (rfl)
+
+/-- An endomorphism `g` of `X` is the corner element `i ∘ g ∘ p`. -/
+@[simp]
+theorem val_cornerModuleEndAlgEquiv_symm_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X}
+    (hip : p ∘ₗ i = .id) (g : Module.End A X) :
+    ((cornerModuleEndAlgEquiv R hip).symm g).val = i ∘ₗ g ∘ₗ p := by
+  refine ((isIdempotentElem_comp_of_comp_eq_id hip).val_compress _).trans ?_
+  ext x
+  simp [retract_apply hip]
+
+/-- The copy `smulTopRetractAddEquiv` of `X` in `M` turns the action of the corner on `eM` into
+the action of `End_A X` on `X`. -/
+theorem smulTopRetractAddEquiv_smul {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
+    (c : (isIdempotentElem_comp_of_comp_eq_id hip).Corner) (x : X) :
+    smulTopRetractAddEquiv hip (cornerModuleEndAlgEquiv R hip c x) =
+      c • smulTopRetractAddEquiv hip x :=
+  Subtype.ext (comp_corner_val hip c (i x))
+
+/-- The retraction `p : eM → X` turns the action of `End_A X`, through the corner, into its action
+on `X`. -/
+theorem smulTopRetractAddEquiv_symm_smul {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
+    (g : Module.End A X) (z : ↥((i ∘ₗ p : Module.End A M) • (⊤ : Submodule ℤ M))) :
+    (smulTopRetractAddEquiv hip).symm ((cornerModuleEndAlgEquiv R hip).symm g • z) =
+      g ((smulTopRetractAddEquiv hip).symm z) := by
+  rw [smulTopRetractAddEquiv_symm_apply, IsIdempotentElem.Corner.coe_smul,
+    val_cornerModuleEndAlgEquiv_symm_apply]
+  simp [Module.End.smul_def, retract_apply hip]
+
+/-! ### Corners of the opposite endomorphism ring -/
+
+/-- The idempotent of `(End_A M)ᵐᵒᵖ` attached to a retract `X` of `M`, with inclusion `i` and
+retraction `p`. -/
+theorem isIdempotentElem_op_comp {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id) :
+    IsIdempotentElem (op (i ∘ₗ p : Module.End A M)) :=
+  congrArg op (isIdempotentElem_comp_of_comp_eq_id hip).eq
 
 /-- If `M = X ⊕ Y` and `id_Y` is a finite sum of maps factoring through `X`, that is, `Y` is a
 retract of a finite power of `X`, then the idempotent of `X` is full in `(End_A M)ᵐᵒᵖ`. -/
@@ -82,76 +232,48 @@ theorem span_op_comp_eq_top {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘
     {ι : Type*} (s : Finset ι) (u : ι → X →ₗ[A] Y) (v : ι → Y →ₗ[A] X)
     (huv : ∑ j ∈ s, u j ∘ₗ v j = .id) :
     TwoSidedIdeal.span {op (i ∘ₗ p : Module.End A M)} = ⊤ := by
-  refine (TwoSidedIdeal.one_mem_iff _).mp ?_
-  have key : (1 : (Module.End A M)ᵐᵒᵖ) = op (i ∘ₗ p : Module.End A M) +
-      ∑ j ∈ s, op ((i' ∘ₗ u j) ∘ₗ (v j ∘ₗ p') : Module.End A M) := by
-    apply unop_injective
-    ext x
-    have hx := LinearMap.congr_fun hsum x
-    have hy := LinearMap.congr_fun huv (p' x)
-    simp only [LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.id_apply] at hy
-    simpa [LinearMap.sum_apply, ← map_sum, hy] using hx.symm
-  rw [key]
-  exact add_mem (TwoSidedIdeal.subset_span rfl)
-    (sum_mem fun j _ ↦ op_comp_mem_span_op_comp hip _ _)
+  refine eq_top_iff.2 ?_
+  rw [← TwoSidedIdeal.opOrderIso.map_top, ← span_comp_eq_top_of_sum_comp_eq_id hip hsum s u v huv,
+    ← OrderIso.le_symm_apply, TwoSidedIdeal.span_le, Set.singleton_subset_iff]
+  exact TwoSidedIdeal.mem_unop_iff.2 (TwoSidedIdeal.subset_span rfl)
 
-private theorem comp_unop_corner_val {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
-    (c : (isIdempotentElem_op_comp hip).Corner) (x : M) : i (p (unop c.val x)) = unop c.val x :=
-  LinearMap.congr_fun (congrArg unop ((isIdempotentElem_op_comp hip).corner_val_mul c)) x
-
-private theorem unop_corner_val_comp {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
-    (c : (isIdempotentElem_op_comp hip).Corner) (x : M) : unop c.val (i (p x)) = unop c.val x :=
-  LinearMap.congr_fun (congrArg unop ((isIdempotentElem_op_comp hip).mul_corner_val c)) x
-
-variable (R : Type*) [CommSemiring R] [Algebra R A] [Module R X] [IsScalarTower R A X]
-  [Module R M] [IsScalarTower R A M]
+/-- The corner of `(End_A M)ᵐᵒᵖ` at the idempotent of a retract is the opposite of the corner of
+`End_A M`. -/
+private def cornerOpAlgEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id) :
+    (isIdempotentElem_op_comp hip).Corner ≃ₐ[R]
+      ((isIdempotentElem_comp_of_comp_eq_id hip).Corner)ᵐᵒᵖ where
+  toFun c := op ⟨unop c.val,
+    (Subsemigroup.mem_corner_iff (isIdempotentElem_comp_of_comp_eq_id hip)).2
+      ⟨congrArg unop ((isIdempotentElem_op_comp hip).corner_val_mul c),
+        congrArg unop ((isIdempotentElem_op_comp hip).mul_corner_val c)⟩⟩
+  invFun c := ⟨op (unop c).val, (Subsemigroup.mem_corner_iff (isIdempotentElem_op_comp hip)).2
+    ⟨congrArg op ((isIdempotentElem_comp_of_comp_eq_id hip).corner_val_mul (unop c)),
+      congrArg op ((isIdempotentElem_comp_of_comp_eq_id hip).mul_corner_val (unop c))⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
 
 /-- **The endomorphism ring of a retract is a corner.** If `X` is a retract of `M`, with inclusion
 `i` and retraction `p`, the corner of `(End_A M)ᵐᵒᵖ` at the idempotent `i ∘ p` is `(End_A X)ᵐᵒᵖ`,
 by `f ↦ p ∘ f ∘ i`. -/
 noncomputable def cornerEndRetractAlgEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id) :
-    (isIdempotentElem_op_comp hip).Corner ≃ₐ[R] (Module.End A X)ᵐᵒᵖ where
-  toFun c := op (p ∘ₗ (unop c.val : Module.End A M) ∘ₗ i)
-  invFun g := (isIdempotentElem_op_comp hip).compress (op (i ∘ₗ unop g ∘ₗ p))
-  left_inv c := by
-    have hpi : ∀ y, p (i y) = y := LinearMap.congr_fun hip
-    apply Subtype.ext
-    apply unop_injective
-    ext x
-    simp [hpi, comp_unop_corner_val hip c, unop_corner_val_comp hip c]
-  right_inv g := by
-    have hpi : ∀ y, p (i y) = y := LinearMap.congr_fun hip
-    apply unop_injective
-    ext x
-    simp [hpi]
-  map_mul' c c' := by
-    apply unop_injective
-    ext x
-    simp [comp_unop_corner_val hip c]
-  map_add' c c' := by
-    apply unop_injective
-    ext x
-    simp
-  commutes' r := by
-    have hpi : ∀ y, p (i y) = y := LinearMap.congr_fun hip
-    apply unop_injective
-    ext x
-    simp [hpi]
+    (isIdempotentElem_op_comp hip).Corner ≃ₐ[R] (Module.End A X)ᵐᵒᵖ :=
+  (cornerOpAlgEquiv R hip).trans (AlgEquiv.op (cornerModuleEndAlgEquiv R hip))
 
+/-- The corner element `c` acts on `X` as `p ∘ c ∘ i`. -/
 @[simp]
 theorem unop_cornerEndRetractAlgEquiv_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
     (c : (isIdempotentElem_op_comp hip).Corner) :
     unop (cornerEndRetractAlgEquiv R hip c) = p ∘ₗ (unop c.val : Module.End A M) ∘ₗ i :=
   (rfl)
 
+/-- An endomorphism `g` of `X` is the corner element `i ∘ g ∘ p`. -/
 @[simp]
 theorem val_cornerEndRetractAlgEquiv_symm_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X}
     (hip : p ∘ₗ i = .id) (g : (Module.End A X)ᵐᵒᵖ) :
-    ((cornerEndRetractAlgEquiv R hip).symm g).val = op (i ∘ₗ unop g ∘ₗ p) := by
-  have hpi : ∀ y, p (i y) = y := LinearMap.congr_fun hip
-  refine ((isIdempotentElem_op_comp hip).val_compress _).trans ?_
-  apply unop_injective
-  ext x
-  simp [hpi]
+    ((cornerEndRetractAlgEquiv R hip).symm g).val = op (i ∘ₗ unop g ∘ₗ p) :=
+  congrArg op (val_cornerModuleEndAlgEquiv_symm_apply R hip (unop g))
 
 end TauCeti

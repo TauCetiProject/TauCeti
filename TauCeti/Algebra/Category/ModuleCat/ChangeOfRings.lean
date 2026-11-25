@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Descent
+public import Mathlib.Algebra.Category.ModuleCat.Injective
 public import TauCeti.LinearAlgebra.Matrix.BaseChange
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
@@ -20,6 +21,9 @@ import TauCeti.LinearAlgebra.TensorProduct.Cyclic
 
 The counit of restriction of scalars along a ring equivalence, and its inverse, act as the
 identity on the underlying elements.
+Restriction of scalars along an isomorphism of `R`-algebras keeps the endomorphism algebra of a
+module (`ModuleCat.moduleEndRestrictScalarsAlgEquiv`). Along a ring isomorphism it keeps finitely
+generated projective-injective modules (`ModuleCat.finite_projective_injective_restrictScalars`).
 
 It also records three facts about Mathlib's extension of scalars `ModuleCat.extendScalars`.
 
@@ -87,6 +91,74 @@ theorem restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply (e : R ≃
     (restrictScalarsEquivalenceOfRingEquiv e).counitIso.inv.app M x = x := (rfl)
 
 end RestrictScalars
+
+section ModuleEnd
+
+open scoped ModuleCat.Algebra
+
+variable (R : Type*) [CommSemiring R] {Γ Γ' : Type*} [Ring Γ] [Ring Γ'] [Algebra R Γ]
+  [Algebra R Γ'] (σ : Γ ≃ₐ[R] Γ') (W : Type v) [AddCommGroup W] [Module Γ' W] [Module R W]
+  [IsScalarTower R Γ' W]
+
+/-- **Endomorphisms after restriction of scalars along an isomorphism.** Restricting the scalars of
+a `Γ'`-module `W` along an isomorphism of `R`-algebras `σ : Γ ≃ Γ'` does not change its
+endomorphism algebra. -/
+noncomputable def moduleEndRestrictScalarsAlgEquiv :
+    Module.End Γ ((restrictScalarsEquivalenceOfRingEquiv σ.toRingEquiv).functor.obj
+      (ModuleCat.of Γ' W)) ≃ₐ[R] Module.End Γ' W where
+  toFun φ :=
+    { toFun w := φ w
+      map_add' := φ.map_add
+      map_smul' γ w := by
+        obtain ⟨γ, rfl⟩ := σ.surjective γ
+        exact φ.map_smul γ w }
+  invFun ψ :=
+    { toFun w := ψ w
+      map_add' := ψ.map_add
+      map_smul' γ w := ψ.map_smul (σ γ) w }
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+  commutes' r := LinearMap.ext fun w ↦
+    -- `smul_def` unfolds the action on the restricted module, whose carrier is `W`.
+    (restrictScalars.smul_def (M := ModuleCat.of Γ' W) σ.toRingEquiv.toRingHom
+      (algebraMap R Γ r) w).trans <| by
+        rw [Module.algebraMap_end_apply, ← algebraMap_smul Γ' r w]
+        exact congrArg (· • w) (σ.commutes r)
+
+/-- `ModuleCat.moduleEndRestrictScalarsAlgEquiv` keeps the underlying function. -/
+@[simp]
+theorem moduleEndRestrictScalarsAlgEquiv_apply
+    (φ : Module.End Γ ((restrictScalarsEquivalenceOfRingEquiv σ.toRingEquiv).functor.obj
+      (ModuleCat.of Γ' W))) (w : W) :
+    moduleEndRestrictScalarsAlgEquiv R σ W φ w = φ w :=
+  (rfl)
+
+/-- The inverse of `ModuleCat.moduleEndRestrictScalarsAlgEquiv` keeps the underlying function. -/
+@[simp]
+theorem moduleEndRestrictScalarsAlgEquiv_symm_apply (ψ : Module.End Γ' W) (w : W) :
+    (moduleEndRestrictScalarsAlgEquiv R σ W).symm ψ w = ψ w :=
+  (rfl)
+
+end ModuleEnd
+
+/-- **Projective-injective modules along a ring isomorphism.** A finitely generated, projective and
+injective module, with its scalars restricted along a ring isomorphism, is still finitely generated,
+projective and injective. -/
+theorem finite_projective_injective_restrictScalars {Γ Γ' : Type v} [Ring Γ] [Ring Γ']
+    (σ : Γ ≃+* Γ') (W : Type v) [AddCommGroup W] [Module Γ' W] [Module.Finite Γ' W]
+    [Module.Projective Γ' W] [Module.Injective Γ' W] :
+    Module.Finite Γ ((restrictScalarsEquivalenceOfRingEquiv σ).functor.obj (ModuleCat.of Γ' W)) ∧
+      Module.Projective Γ ((restrictScalarsEquivalenceOfRingEquiv σ).functor.obj
+        (ModuleCat.of Γ' W)) ∧
+      Module.Injective Γ ((restrictScalarsEquivalenceOfRingEquiv σ).functor.obj
+        (ModuleCat.of Γ' W)) :=
+  ⟨(σ.toRingHom.finite_restrictScalars_iff σ.surjective _).2 inferInstance,
+    (σ.projective_restrictScalars_iff _).2 inferInstance,
+    Module.injective_module_of_injective_object
+      (inj := ((restrictScalarsEquivalenceOfRingEquiv σ).map_injective_iff _).2
+      (Module.injective_object_of_injective_module Γ' W)) _ _⟩
 
 section Additive
 
