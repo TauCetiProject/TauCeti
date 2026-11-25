@@ -48,6 +48,8 @@ boundary point it flows out of.
   `(0, ∞) × S` bijectively onto the complement of `W`.
 * `TauCeti.IsLiouvilleCompletion.cylindricalEndPartialDiffeomorph`: the Liouville flow-out of the
   boundary, as a diffeomorphism from `(0, ∞) × S` onto the complement of `W`.
+* `TauCeti.IsLiouvilleCompletion.coe_cylindricalEndPartialDiffeomorph_symm`: its inverse is the
+  inverse of the flow-out on `(0, ∞) × S`.
 * `TauCeti.IsLiouvilleCompletion.cylindricalEndPartialDiffeomorph_symm_apply_fst`: its inverse
   reads off the logarithm of the radial coordinate.
 
@@ -77,11 +79,12 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 /-! ### Injectivity and image of the flow-out -/
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Liouville trajectories through an injectively parametrized boundary are disjoint.** If
 the Liouville field of a Liouville domain is complete and `ι : S → M` is an injective map into
 the boundary, then `(t, s) ↦ ψₜ (ι s)` is injective on `ℝ × S`. -/
 theorem IsLiouvilleDomain.injective_flowOf_comp (h : IsLiouvilleDomain ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hc : IsCompleteVectorField Z) (hιinj : Injective ι)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hc : IsCompleteVectorField Z) (hιinj : Injective ι)
     (hιW : ∀ s, ι s ∈ frontier W) :
     Injective (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) := fun p q hpq ↦ by
   have := h.injOn_flowOf hZ hc (x₁ := (ι p.2, p.1)) (x₂ := (ι q.2, q.1)) ⟨hιW _, mem_univ _⟩
@@ -94,7 +97,7 @@ the Liouville domain `W`, with Liouville flow `ψ`, and let `ι : S → M` be an
 the boundary of `W`. Then `(t, s) ↦ ψₜ (ι s)` is a bijection from `(0, ∞) × S` onto the
 complement of `W`. -/
 theorem IsLiouvilleCompletion.bijOn_flowOf_comp (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hιinj : Injective ι) (hιW : range ι = frontier W) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hιinj : Injective ι) (hιW : range ι = frontier W) :
     BijOn (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) (Ioi 0 ×ˢ univ) Wᶜ := by
   -- `(t, s) ↦ (t, ι s)` is a bijection onto `(0, ∞) × ∂W`; compose with the flow map.
   have hmap : BijOn (Prod.map id ι) (Ioi (0 : ℝ) ×ˢ (univ : Set S)) (Ioi 0 ×ˢ frontier W) := by
@@ -113,7 +116,7 @@ omit [FiniteDimensional ℝ E] [T2Space M] in
 into the boundary of a Liouville domain, then the Liouville field is transverse along `ι`: at
 every point of `S` it does not lie in the image of the differential of `ι`, since it crosses the
 boundary strictly outwards. -/
-theorem isTransverseAlong (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.1 = α.1)
+theorem isTransverseAlong (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
     (hι : MDifferentiable J I ι) (hιW : ∀ s, ι s ∈ frontier W) :
     IsTransverseAlong J Z ι := by
   obtain ⟨f, c, hf, rfl, hfc⟩ := h.exists_sublevel_of_interior_eq hZ
@@ -138,7 +141,7 @@ domain whose Liouville field `Z` is complete, with flow `ψ`, and let `ι : S �
 immersion into the boundary of `W` of a boundaryless manifold of one dimension less. Then
 `(t, s) ↦ ψₜ (ι s)` is a local diffeomorphism `ℝ × S → M`. -/
 theorem isLocalDiffeomorph_flowOf_comp (h : IsLiouvilleDomain ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hc : IsCompleteVectorField Z)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hc : IsCompleteVectorField Z)
     (hι : ContMDiff J I (⊤ : ℕ∞) ι) (himm : ∀ s, Injective (mfderiv J I ι s))
     (hιW : ∀ s, ι s ∈ frontier W) (hdim : finrank ℝ E = finrank ℝ E' + 1) :
     IsLocalDiffeomorph (𝓘(ℝ).prod J) I (⊤ : ℕ∞) (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) := by
@@ -152,7 +155,7 @@ Liouville domain whose Liouville field is complete, with flow `ψ`, and let `ι 
 injective immersion into the boundary of `W` of a boundaryless manifold of one dimension less.
 Then `(t, s) ↦ ψₜ (ι s)` is an open embedding of `ℝ × S` into `M`. -/
 theorem isOpenEmbedding_flowOf_comp (h : IsLiouvilleDomain ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hc : IsCompleteVectorField Z)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hc : IsCompleteVectorField Z)
     (hι : ContMDiff J I (⊤ : ℕ∞) ι) (himm : ∀ s, Injective (mfderiv J I ι s))
     (hιinj : Injective ι) (hιW : ∀ s, ι s ∈ frontier W) (hdim : finrank ℝ E = finrank ℝ E' + 1) :
     Topology.IsOpenEmbedding (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) :=
@@ -171,7 +174,7 @@ boundaryless manifold, with Liouville flow `ψ`, and let `ι : S → M` be a smo
 immersion onto the boundary of `W`, from a boundaryless manifold of one dimension less. Then
 `(t, s) ↦ ψₜ (ι s)` restricts to a diffeomorphism from `(0, ∞) × S` onto the complement of `W`. -/
 noncomputable def cylindricalEndPartialDiffeomorph (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (himm : ∀ s, Injective (mfderiv J I ι s)) (hιinj : Injective ι) (hιW : range ι = frontier W)
     (hdim : finrank ℝ E = finrank ℝ E' + 1) :
     PartialDiffeomorph (𝓘(ℝ).prod J) I (ℝ × S) M (⊤ : ℕ∞) :=
@@ -179,7 +182,7 @@ noncomputable def cylindricalEndPartialDiffeomorph (h : IsLiouvilleCompletion ω
     (fun s ↦ hιW ▸ mem_range_self s) hdim).isLocalDiffeomorphOn _).partialDiffeomorphOfInjOn
     (isOpen_Ioi.prod isOpen_univ) (h.bijOn_flowOf_comp hZ hιinj hιW).injOn
 
-variable (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1)
+variable (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
   (hι : ContMDiff J I (⊤ : ℕ∞) ι) (himm : ∀ s, Injective (mfderiv J I ι s)) (hιinj : Injective ι)
   (hιW : range ι = frontier W) (hdim : finrank ℝ E = finrank ℝ E' + 1)
 
@@ -190,6 +193,13 @@ theorem coe_cylindricalEndPartialDiffeomorph :
     ⇑(h.cylindricalEndPartialDiffeomorph hZ hι himm hιinj hιW hdim) =
       fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2) :=
   IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn ..
+
+/-- The inverse of `cylindricalEndPartialDiffeomorph` is the inverse of the Liouville flow-out of
+the boundary on `(0, ∞) × S`: it sends `ψₜ (ι s)`, `t > 0`, to `(t, s)`. -/
+theorem coe_cylindricalEndPartialDiffeomorph_symm :
+    ⇑(h.cylindricalEndPartialDiffeomorph hZ hι himm hιinj hιW hdim).symm =
+      invFunOn (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) (Ioi 0 ×ˢ univ) :=
+  funext fun _ ↦ IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_symm_apply ..
 
 /-- The source of `cylindricalEndPartialDiffeomorph` is `(0, ∞) × S`. -/
 @[simp]

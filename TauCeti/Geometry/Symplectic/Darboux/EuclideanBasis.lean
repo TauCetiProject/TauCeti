@@ -126,7 +126,7 @@ theorem toMatrix_stdSymplecticBasis [DecidableEq ι] :
 `(i, 1)` to `(0, single i 1)`. -/
 noncomputable def stdDarbouxBasis (n : ℕ) :
     Basis (Fin n × Fin 2) ℝ (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) :=
-  (stdSymplecticBasis (Fin n)).reindex (SymplecticForm.darbouxIndexEquiv n).symm
+  (stdSymplecticBasis (Fin n)).reindex (SymplecticForm.darbouxIndexEquiv (Fin n)).symm
 
 @[simp]
 theorem stdDarbouxBasis_zero {n : ℕ} (i : Fin n) :
@@ -228,10 +228,11 @@ noncomputable def darbouxBasisEquiv {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V)
   b.equiv (stdDarbouxBasis n) (Equiv.refl (Fin n × Fin 2))
 
 /-- `b.darbouxBasisEquiv` agrees with `euclideanBasisEquiv` applied to `b` relabelled by
-`SymplecticForm.darbouxIndexEquiv n`. -/
+`SymplecticForm.darbouxIndexEquiv (Fin n)`. -/
 theorem darbouxBasisEquiv_eq_euclideanBasisEquiv_reindex {n : ℕ} (b : Basis (Fin n × Fin 2) ℝ V) :
-    b.darbouxBasisEquiv = (b.reindex (SymplecticForm.darbouxIndexEquiv n)).euclideanBasisEquiv := by
-  refine (b.reindex (SymplecticForm.darbouxIndexEquiv n)).ext' fun x ↦ ?_
+    b.darbouxBasisEquiv =
+      (b.reindex (SymplecticForm.darbouxIndexEquiv (Fin n))).euclideanBasisEquiv := by
+  refine (b.reindex (SymplecticForm.darbouxIndexEquiv (Fin n))).ext' fun x ↦ ?_
   rcases x with i | i
   · rw [euclideanBasisEquiv_apply_inl]
     simp [darbouxBasisEquiv]

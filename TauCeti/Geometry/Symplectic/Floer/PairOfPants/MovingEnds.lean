@@ -35,6 +35,8 @@ output end.
 Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in the disc
 `‖w‖ ≤ 2 exp (2π)` on which the output datum vanishes. Then:
 
+* off the supports of the input end data, in the disc `‖w‖ ≤ 2 exp (2π)`, the datum vanishes
+  (`TauCeti.Floer.puncturedSpherePerturbation_eq_zero_of_le_norm_sub_of_norm_le`);
 * near each input end the datum is that end's datum alone, and far out on the end it is
   `H i(t) dt` (`TauCeti.Floer.puncturedSpherePerturbation_cylindricalEndLift`); far out on the
   output end it is `Hout(t) dt`
@@ -42,12 +44,22 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
 * it is `C^n` jointly in the centers, the scales, the domain point and the target point, away
   from the punctures (`TauCeti.Floer.contMDiffAt_puncturedSpherePerturbation`), so it is a smooth
   family over any smooth path of configurations; for a fixed configuration and a normed target,
-  `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_prod` is the form in real coordinates;
+  `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_prod` is the form in real coordinates, and
+  `TauCeti.Floer.contMDiffAt_uncurry_puncturedSpherePerturbation` that of its components for a
+  manifold target, with `TauCeti.Floer.differentiableAt_puncturedSpherePerturbation_domain` its
+  consequence for the domain point alone; along a `C^n` family of configurations over a normed
+  space of parameters and for a normed target,
+  `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_comp` is the form jointly in the
+  parameter, and for a manifold target
+  `TauCeti.Floer.isOpen_and_contMDiffAt_puncturedSpherePerturbation` is that of its components on
+  the open set of parameters with nonzero scales and domain points off the centers;
 * for a symplectic vector space target, its integrated curvature along any map is at most
   `∑ i, sup |H i| + sup |Hout|`, whatever the configuration
   (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`),
   and likewise for a manifold target with a two-form
-  (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`).
+  (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`),
+  so the same bound holds for its integral over any set
+  (`TauCeti.SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_le`).
   This bound only needs the smaller supports `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` of the input end
   data to be pairwise disjoint and to lie in the disc `‖w‖ ≤ 2 exp (2π)`.
 
@@ -72,11 +84,6 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 namespace TauCeti.Floer
 
 variable {M : Type*}
-
-/-- The factor `exp (-2π)` relating the radius of the support of an input end datum to the radius
-of its end disc is less than `1`. -/
-private theorem exp_neg_two_pi_lt_one : Real.exp (-(2 * π)) < 1 :=
-  Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
 
 section InputEnd
 
@@ -107,23 +114,17 @@ theorem inputEndPerturbation_add_mul (ha : a ≠ 0) (w : ℂ) (x : M) (v : ℂ) 
 theorem inputEndPerturbation_eq_zero_of_le_norm_sub {w : ℂ}
     (hw : ‖a‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - c‖) (x : M) :
     inputEndPerturbation c a H w x = 0 := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · ext v
-    simp [inputEndPerturbation_apply]
-  · rw [inputEndPerturbation, positivePlanePerturbation_eq_zero_of_le_norm ?_ x,
-      ContinuousLinearMap.zero_comp]
-    rw [norm_div, le_div_iff₀ (norm_pos_iff.2 ha)]
-    linarith
+  rw [inputEndPerturbation, positivePlanePerturbation_def,
+    smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub hw, zero_mul, zero_smul,
+    ContinuousLinearMap.zero_comp]
 
 /-- At its center `c`, where the end coordinate takes the junk longitudinal value `0` (from
 `Complex.log 0 = 0`), the input end datum is `0`. -/
 @[simp]
 theorem inputEndPerturbation_self (c a : ℂ) (H : ℝ → M → ℝ) (x : M) :
     inputEndPerturbation c a H c x = 0 := by
-  have h : (zero.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter zero
   ext v
-  simp [inputEndPerturbation_apply, positivePlanePerturbation_def, h,
-    smoothTransition.zero_of_nonpos]
+  simp [inputEndPerturbation_apply, positivePlanePerturbation_def]
 
 /-- The input end datum of the zero Hamiltonian vanishes. -/
 @[simp]
@@ -178,6 +179,31 @@ theorem puncturedSpherePerturbation_def (c a : ι → ℂ) (H : ι → ℝ → M
       ∑ i, inputEndPerturbation (c i) (a i) (H i) w x + negativePlanePerturbation Hout w x :=
   (rfl)
 
+/-- **Normalizing the Hamiltonians.** Adding functions `k i` and `kout` of time to the input and
+output Hamiltonians adds the datum of the target-independent Hamiltonians `k i` and `kout`. -/
+theorem puncturedSpherePerturbation_add_const (c a : ι → ℂ) (H : ι → ℝ → M → ℝ)
+    (Hout : ℝ → M → ℝ) (k : ι → ℝ → ℝ) (kout : ℝ → ℝ) (w : ℂ) (x : M) :
+    puncturedSpherePerturbation c a (fun i t y ↦ H i t y + k i t) (fun t y ↦ Hout t y + kout t)
+        w x =
+      puncturedSpherePerturbation c a H Hout w x +
+        puncturedSpherePerturbation c a (fun i t (_ : M) ↦ k i t) (fun t (_ : M) ↦ kout t) w x := by
+  ext v
+  simp only [puncturedSpherePerturbation_def, add_apply,
+    sum_apply, inputEndPerturbation_apply, positivePlanePerturbation_def,
+    negativePlanePerturbation_def, smul_apply, smul_eq_mul, mul_add, add_mul,
+    Finset.sum_add_distrib]
+  ring
+
+/-- The datum of target-independent Hamiltonians does not depend on the target point. -/
+theorem puncturedSpherePerturbation_const_target (c a : ι → ℂ) (k : ι → ℝ → ℝ) (kout : ℝ → ℝ)
+    (w : ℂ) (x y : M) :
+    puncturedSpherePerturbation c a (fun i t (_ : M) ↦ k i t) (fun t (_ : M) ↦ kout t) w x =
+      puncturedSpherePerturbation c a (fun i t (_ : M) ↦ k i t) (fun t (_ : M) ↦ kout t) w y := by
+  ext v
+  simp only [puncturedSpherePerturbation_def, add_apply,
+    sum_apply, inputEndPerturbation_apply, positivePlanePerturbation_def,
+    negativePlanePerturbation_def]
+
 /-- **The pair of pants has two input ends.** The pair-of-pants datum is the datum of the input
 ends with centers `0` and `1` and scales `1` and `-1`, and of its output Hamiltonian. -/
 theorem puncturedSpherePerturbation_eq_pairOfPantsPerturbation (H : Puncture → ℝ → M → ℝ) :
@@ -192,9 +218,7 @@ theorem puncturedSpherePerturbation_eq_pairOfPantsPerturbation (H : Puncture →
       ← pairOfPantsPerturbation_single_zero, pairOfPantsPerturbation_single]
   -- The input end at `1` is the image of the input end at `0` under `w ↦ 1 - w`.
   have hc : zero.endCoord ((w - 1) / -1) = one.endCoord w := by
-    rw [endCoord_def, endCoord_def, endCenter_zero, endCenter_one, endScale_zero, endScale_one]
-    congr 3
-    ring
+    simpa using endCoord_zero_sub_endCenter_div one w
   have h₁ : inputEndPerturbation 1 (-1) (H one) w x =
       (smoothTransition (one.endSign * (one.endCoord w).re - 1) *
         H one (one.endCoord w).im x) • one.endAngularForm w := by
@@ -231,6 +255,16 @@ theorem puncturedSpherePerturbation_eq_negativePlanePerturbation {w : ℂ}
   rw [puncturedSpherePerturbation_def,
     Finset.sum_eq_zero fun i _ => inputEndPerturbation_eq_zero_of_le_norm_sub (hw i) x, zero_add]
 
+/-- **Off all the ends the datum vanishes.** At a point outside the supports
+`‖w - c i‖ < ‖a i‖ exp (-2π) / 2` of all the input end data, in the disc `‖w‖ ≤ 2 exp (2π)` where
+the output datum vanishes, the datum vanishes. -/
+theorem puncturedSpherePerturbation_eq_zero_of_le_norm_sub_of_norm_le {w : ℂ}
+    (hc : ∀ i, ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - c i‖) (hw : ‖w‖ ≤ 2 * Real.exp (2 * π)) :
+    puncturedSpherePerturbation c a H Hout w = fun _ ↦ 0 :=
+  funext fun x ↦ by
+    rw [puncturedSpherePerturbation_eq_negativePlanePerturbation hc,
+      negativePlanePerturbation_eq_zero_of_norm_le hw]
+
 /-- **At a point off the supports of the other input ends the datum is that end's datum.** At a
 point `w` of the disc `‖w‖ ≤ 2 exp (2π)`, where the output datum vanishes, and outside the
 supports `‖w - c j‖ < ‖a j‖ exp (-2π) / 2` of the input end data of all `j ≠ i`, the datum is the
@@ -251,15 +285,10 @@ private theorem puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_
     (hsep : Pairwise fun i j => r i + r j ≤ ‖c i - c j‖)
     (hout : ∀ i, ‖c i‖ + r i ≤ 2 * Real.exp (2 * π)) {i : ι} {w : ℂ} (hw : ‖w - c i‖ < r i)
     (x : M) :
-    puncturedSpherePerturbation c a H Hout w x = inputEndPerturbation (c i) (a i) (H i) w x := by
-  refine puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne (fun j hj => ?_) ?_ x
-  · have h₁ := hsep hj
-    have h₂ : ‖c j - c i‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
-      simpa using norm_sub_le (w - c i) (w - c j)
-    linarith [hr j]
-  · calc ‖w‖ ≤ ‖c i‖ + ‖w - c i‖ := by
-          simpa using norm_add_le (c i) (w - c i)
-      _ ≤ 2 * Real.exp (2 * π) := by linarith [hout i]
+    puncturedSpherePerturbation c a H Hout w x = inputEndPerturbation (c i) (a i) (H i) w x :=
+  puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne
+    (le_norm_sub_of_norm_sub_lt (fun j _ => hr j) (fun _ hji => hsep hji.symm) hw)
+    (norm_le_two_mul_exp_of_norm_sub_lt (hout i) hw) x
 
 /-- **Near an input end the datum is that end's datum.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are
 pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the disc of the input `i` the
@@ -284,13 +313,7 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_of_pos
         (a i * (deriv zero.cylindricalEndLift z * v)) =
       v.im * (smoothTransition (z.re - 1) * H i z.im x) := by
   have hlt : ‖c i + a i * zero.cylindricalEndLift z - c i‖ < ‖a i‖ / 2 := by
-    have h := norm_cylindricalEndLift_sub_endCenter zero z
-    rw [endCenter_zero, sub_zero, endScale_zero] at h
-    have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
-    rw [add_sub_cancel_left, norm_mul, h, h2]
-    have : Real.exp (-(2 * π * z.re)) < 1 :=
-      Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
-    nlinarith [norm_pos_iff.2 ha]
+    simpa using norm_mul_cylindricalEndLift_zero_lt ha hz
   rw [puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout hlt,
     inputEndPerturbation_cylindricalEndLift_apply hH ha]
 
@@ -317,11 +340,7 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
         (deriv inf.cylindricalEndLift z * v) =
       v.im * (smoothTransition (-z.re - 1) * Hout z.im x) := by
   have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ := by
-    have h := norm_cylindricalEndLift_sub_endCenter inf z
-    rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
-    rw [h]
-    gcongr
-    nlinarith [Real.pi_pos]
+    simpa only [mul_one] using two_mul_exp_le_norm_cylindricalEndLift_inf (R := 1) hz
   rw [puncturedSpherePerturbation_eq_negativePlanePerturbation fun i => ?_,
     negativePlanePerturbation_cylindricalEndLift_apply hH]
   have h := norm_sub_norm_le (inf.cylindricalEndLift z) (c i)
@@ -355,15 +374,6 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
     ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : (ℂ × ℂ) × (ℂ × M) => inputEndPerturbation p.1.1 p.1.2 H p.2.1 p.2.2)
       ((c, a), (w, x)) := by
-  have hcoord : ContDiffAt ℝ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-    have h : ContDiffAt ℂ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-      refine ContDiffAt.div (x := ((c, a), w)) (f := fun q : (ℂ × ℂ) × ℂ => q.2 - q.1.1)
-        (g := fun q : (ℂ × ℂ) × ℂ => q.1.2) ?_ ?_ ha <;> fun_prop
-    exact h.restrict_scalars ℝ
-  have hcoordM : ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
-      (fun p : (ℂ × ℂ) × (ℂ × M) => (p.2.1 - p.1.1) / p.1.2) ((c, a), (w, x)) :=
-    hcoord.contMDiffAt.comp (f := fun p : (ℂ × ℂ) × (ℂ × M) => (p.1, p.2.1)) ((c, a), (w, x))
-      (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))
   have hinv : ContDiffAt ℝ n (fun q : ℂ × ℂ => ContinuousLinearMap.mul ℝ ℂ q.2⁻¹) (c, a) :=
     (ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp (c, a)
       ((contDiffAt_inv ℝ ha).comp (c, a) contDiffAt_snd)
@@ -373,7 +383,7 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
       ((c, a), (w, x)) hinv.contMDiffAt contMDiffAt_fst
   exact ((contMDiffAt_positivePlanePerturbation hH hHs
     (div_ne_zero (sub_ne_zero.2 hw) ha) x).comp ((c, a), (w, x))
-    (hcoordM.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).clm_comp hmul
+    (contMDiffAt_sub_div_prodMk ha w x)).clm_comp hmul
 
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
@@ -391,14 +401,93 @@ theorem contMDiffAt_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i, Period
   simp only [puncturedSpherePerturbation_def]
   refine (contMDiffAt_finsetSum fun i _ => ?_).add
     ((contMDiff_negativePlanePerturbation hHout hHouts).contMDiffAt.comp _ contMDiffAt_snd)
-  -- Evaluating the configuration at `i` is a continuous linear map.
-  have hev : ContMDiffAt (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I))
-      (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) n
-      (fun p : ((ι → ℂ) × (ι → ℂ)) × (ℂ × M) => ((p.1.1 i, p.1.2 i), p.2)) ((c, a), (w, x)) :=
-    have hL : ContDiff ℝ n (fun q : (ι → ℂ) × (ι → ℂ) => (q.1 i, q.2 i)) := by fun_prop
-    (hL.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd
   exact (contMDiffAt_inputEndPerturbation (hH i) (hHs i) (ha i) (hw i) x).comp ((c, a), (w, x))
-    hev
+    (contMDiff_apply_prodMk i).contMDiffAt
+
+/-- Off the centers of the input ends, for period-one Hamiltonians of class `C^n` and nonzero
+scales, the components of the datum are `C^n` jointly in the domain point, in real coordinates,
+and the target point. -/
+theorem contMDiffAt_uncurry_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry Hout)) {c a : ι → ℂ}
+    (ha : ∀ i, a i ≠ 0) {z : ℝ × ℝ} (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) (x : M)
+    (v : ℂ) :
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+      (uncurry fun z x ↦
+        puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x v) (z, x) := by
+  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I)
+      (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun p : (ℝ × ℝ) × M ↦ ((c, a), (Complex.equivRealProdCLM.symm p.1, p.2))) (z, x) :=
+    contMDiffAt_const.prodMk
+      ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _
+        contMDiffAt_fst).prodMk contMDiffAt_snd)
+  exact ((contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts ha hz x).comp (z, x)
+    hφ).clm_apply contMDiffAt_const
+
+/-- Along a `C^n` family of configurations `p ↦ (c p, a p)` of input ends on an open set `U` of a
+normed space of parameters, the points `(p, z)` with `p ∈ U`, nonzero scales and `z` off the centers
+form an open set, on which the components of the datum of the sphere with moving input ends are
+`C^n` jointly in `(p, z)` and the point of `M`. -/
+theorem isOpen_and_contMDiffAt_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry Hout)) {P : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] {c a : P → ι → ℂ} {U : Set P} (hU : IsOpen U)
+    (hc : ContDiffOn ℝ n c U) (ha : ContDiffOn ℝ n a U) :
+    IsOpen {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
+      ∀ i, Complex.equivRealProdCLM.symm q.2 ≠ c q.1 i} ∧
+    ∀ (w : ℂ), ∀ q ∈ {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
+      ∀ i, Complex.equivRealProdCLM.symm q.2 ≠ c q.1 i}, ∀ x : M,
+      ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ) n
+        (uncurry fun (q : P × (ℝ × ℝ)) x ↦
+          puncturedSpherePerturbation (c q.1) (a q.1) H Hout (Complex.equivRealProdCLM.symm q.2)
+            x w)
+        (q, x) := by
+  set S := {q : P × (ℝ × ℝ) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
+    ∀ i, Complex.equivRealProdCLM.symm q.2 ≠ c q.1 i}
+  have hSo : IsOpen S := by
+    have hO : IsOpen {r : ((ι → ℂ) × (ι → ℂ)) × ℂ | (∀ i, r.1.2 i ≠ 0) ∧ ∀ i, r.2 ≠ r.1.1 i} := by
+      simp only [ofPred_and, ofPred_forall]
+      exact (isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const).inter
+        (isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) (by fun_prop))
+    have hcont : ContinuousOn
+        (fun q : P × (ℝ × ℝ) ↦ ((c q.1, a q.1), Complex.equivRealProdCLM.symm q.2)) (U ×ˢ univ) :=
+      ((hc.continuousOn.comp continuousOn_fst mapsTo_fst_prod).prodMk
+        (ha.continuousOn.comp continuousOn_fst mapsTo_fst_prod)).prodMk
+        (by fun_prop : Continuous fun q : P × (ℝ × ℝ) ↦
+          Complex.equivRealProdCLM.symm q.2).continuousOn
+    convert hcont.isOpen_inter_preimage (hU.prod isOpen_univ) hO using 1
+    ext q
+    simp [S]
+  refine ⟨hSo, fun w q hq x ↦ ?_⟩
+  have hfst : ContMDiff (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ, P) n
+      (fun y : (P × (ℝ × ℝ)) × M ↦ y.1.1) :=
+    contDiff_fst.contMDiff.comp contMDiff_fst
+  have hcq := (hc.contDiffAt (hU.mem_nhds hq.1)).contMDiffAt.comp (q, x) hfst.contMDiffAt
+  have haq := (ha.contDiffAt (hU.mem_nhds hq.1)).contMDiffAt.comp (q, x) hfst.contMDiffAt
+  have hg : ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I)
+      (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun y : (P × (ℝ × ℝ)) × M ↦
+        ((c y.1.1, a y.1.1), (Complex.equivRealProdCLM.symm y.1.2, y.2))) (q, x) :=
+    (hcq.prodMk_space haq).prodMk
+      ((((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp
+        contMDiff_fst).contMDiffAt).prodMk contMDiffAt_snd)
+  exact ((contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts hq.2.1 hq.2.2 x).comp (q, x)
+    hg).clm_apply contMDiffAt_const
+
+/-- Off the centers of the input ends, the components of the datum of period-one `C¹`
+Hamiltonians on a manifold are differentiable in the domain point, in real coordinates, for
+nonzero scales. -/
+theorem differentiableAt_puncturedSpherePerturbation_domain (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout)) {c a : ι → ℂ}
+    (ha : ∀ i, a i ≠ 0) {z : ℝ × ℝ} (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) (x : M)
+    (v : ℂ) :
+    DifferentiableAt ℝ
+      (fun z' ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z') x v)
+      z := by
+  have h := (contMDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hz x v).comp z
+    (f := fun z' : ℝ × ℝ ↦ (z', x)) (contMDiffAt_id.prodMk contMDiffAt_const)
+  exact h.contDiffAt.differentiableAt one_ne_zero
 
 end Smooth
 
@@ -429,6 +518,30 @@ theorem contDiffAt_puncturedSpherePerturbation_prod {ι : Type*} [Fintype ι] {n
     (contMDiff_prod_modelWithCornersSelf_iff.2 hHouts.contMDiff) ha hw x).comp (w, x)
     (f := fun p : ℂ × V => ((c, a), p)) (contMDiffAt_const.prodMk contMDiffAt_id)
   exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 h).contDiffAt
+
+/-- For a family of configurations `p ↦ (c p, a p)` over a normed space of parameters, the
+perturbation datum is `C^n` jointly in the parameter, the domain point and the target point, at
+parameters where the family is `C^n` and the scales do not vanish, and at domain points other than
+the centers. -/
+theorem contDiffAt_puncturedSpherePerturbation_comp {ι : Type*} [Fintype ι] {n : ℕ∞}
+    {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ} (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContDiff ℝ n (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContDiff ℝ n (uncurry Hout)) {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {c a : P → ι → ℂ} {p : P} (hc : ContDiffAt ℝ n c p) (ha : ContDiffAt ℝ n a p)
+    (ha₀ : ∀ i, a p i ≠ 0) {w : ℂ} (hw : ∀ i, w ≠ c p i) (x : V) :
+    ContDiffAt ℝ n
+      (fun q : P × (ℂ × V) => puncturedSpherePerturbation (c q.1) (a q.1) H Hout q.2.1 q.2.2)
+      (p, (w, x)) := by
+  have hg : ContMDiffAt 𝓘(ℝ, P × (ℂ × V)) (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V)))
+      n (fun q : P × (ℂ × V) => ((c q.1, a q.1), (q.2.1, q.2.2))) (p, (w, x)) :=
+    ((hc.comp (p, (w, x)) contDiffAt_fst).prodMk
+      (ha.comp (p, (w, x)) contDiffAt_fst)).contMDiffAt.prodMk
+      ((contDiff_fst.comp contDiff_snd).contMDiff.prodMk
+        (contDiff_snd.comp contDiff_snd).contMDiff).contMDiffAt
+  exact ((contMDiffAt_puncturedSpherePerturbation hH
+    (fun i => contMDiff_prod_modelWithCornersSelf_iff.2 (hHs i).contMDiff) hHout
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHouts.contMDiff) ha₀ hw x).comp (p, (w, x))
+    hg).contDiffAt
 
 end SmoothProd
 
@@ -643,6 +756,35 @@ theorem lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le
         exact lintegral_iUnion_le _ _
     _ = (∑ i, ∫⁻ z in D i, f z) + ∫⁻ z in O, f z := by rw [tsum_fintype]
     _ ≤ _ := add_le_add (Finset.sum_le_sum fun i _ ↦ hD i) hO
+
+/-- **The integrated curvature on a sphere with moving input ends is bounded.** Let `K` be the
+datum `puncturedSpherePerturbation c a H Hout` of input ends with centers `c i`, nonzero scales
+`a i` and period-one `C¹` Hamiltonians `H i`, and of the output end at `∞` with the period-one
+`C¹` Hamiltonian `Hout`, and suppose the supports `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` of the input
+end data are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`. If `|H i| ≤ B i`
+and `|Hout| ≤ Bout`, then along any map `u` the integral of the curvature over any set is at most
+`∑ i, B i + Bout` in absolute value, uniformly in the configuration of the input ends. -/
+theorem abs_setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_le
+    (ω : SmoothTwoForm I M) (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j =>
+      ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π)) {B : ι → ℝ}
+    {Bout : ℝ} (hB : ∀ i t x, |H i t x| ≤ B i) (hBout : ∀ t x, |Hout t x| ≤ Bout)
+    (u : ℝ × ℝ → M) (s : Set (ℝ × ℝ)) :
+    |∫ z in s, ω.hamiltonianCurvature
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
+          Complex.I) z (u z)| ≤ ∑ i, B i + Bout := by
+  have hB₀ (i : ι) : 0 ≤ B i := (abs_nonneg _).trans (hB i 0 (u 0))
+  have hBout₀ : 0 ≤ Bout := (abs_nonneg _).trans (hBout 0 (u 0))
+  have hsum₀ : 0 ≤ ∑ i, B i := Finset.sum_nonneg fun i _ ↦ hB₀ i
+  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg hsum₀ hBout₀), ← Real.eNorm_eq_ofReal_abs,
+    ENNReal.ofReal_add hsum₀ hBout₀, ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hB₀ i]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
+    (ω.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le hH hHs hHout hHouts ha
+      hsep hout hB hBout u))
 
 end TauCeti.SmoothTwoForm
 

@@ -338,11 +338,11 @@ theorem excessAt_eq_arrowSum_sub (f : Assignment Q K) (v : V) :
   simp [excessAt_def, arrowSum_def]
 
 @[simp]
-theorem excessAt_zero (v : V) : excessAt (0 : Assignment Q K) v = 0 := by
+theorem excessAt_zero_apply (v : V) : excessAt (0 : Assignment Q K) v = 0 := by
   simp [excessAt_def]
 
 @[simp]
-theorem excessAt_add (f g : Assignment Q K) (v : V) :
+theorem excessAt_add_apply (f g : Assignment Q K) (v : V) :
     excessAt (f + g) v = excessAt f v + excessAt g v := by
   simp only [excessAt_def, Pi.add_apply, sum_add_distrib]
   abel
@@ -351,19 +351,41 @@ variable (Q K) in
 /-- Excess as an additive homomorphism from arrow assignments to vertex functions. -/
 def excessHom : Assignment Q K →+ (V → K) where
   toFun f := excessAt f
-  map_zero' := funext excessAt_zero
-  map_add' f g := funext (excessAt_add f g)
+  map_zero' := funext excessAt_zero_apply
+  map_add' f g := funext (excessAt_add_apply f g)
 
 @[simp]
 theorem excessHom_apply (f : Assignment Q K) (v : V) : excessHom Q K f v = excessAt f v :=
   (rfl)
 
+/-- The excess function of the zero assignment is zero. -/
 @[simp]
-theorem excessAt_neg (f : Assignment Q K) (v : V) : excessAt (-f) v = -excessAt f v :=
+theorem excessAt_zero : excessAt (0 : Assignment Q K) = 0 :=
+  map_zero (excessHom Q K)
+
+/-- The excess function preserves addition of assignments. -/
+@[simp]
+theorem excessAt_add (f g : Assignment Q K) :
+    excessAt (f + g) = excessAt f + excessAt g :=
+  map_add (excessHom Q K) f g
+
+/-- The excess function preserves negation of assignments. -/
+@[simp]
+theorem excessAt_neg (f : Assignment Q K) : excessAt (-f) = -excessAt f :=
+  map_neg (excessHom Q K) f
+
+/-- The excess function preserves subtraction of assignments. -/
+@[simp]
+theorem excessAt_sub (f g : Assignment Q K) :
+    excessAt (f - g) = excessAt f - excessAt g :=
+  map_sub (excessHom Q K) f g
+
+@[simp]
+theorem excessAt_neg_apply (f : Assignment Q K) (v : V) : excessAt (-f) v = -excessAt f v :=
   congrFun (map_neg (excessHom Q K) f) v
 
 @[simp]
-theorem excessAt_sub (f g : Assignment Q K) (v : V) :
+theorem excessAt_sub_apply (f g : Assignment Q K) (v : V) :
     excessAt (f - g) v = excessAt f v - excessAt g v :=
   congrFun (map_sub (excessHom Q K) f g) v
 
@@ -502,19 +524,19 @@ theorem isCirculation_iff_mem_ker (f : Assignment Q K) :
 
 @[simp]
 theorem isCirculation_zero : IsCirculation (0 : Assignment Q K) :=
-  fun _ ↦ excessAt_zero _
+  fun _ ↦ excessAt_zero_apply _
 
 theorem IsCirculation.add {f g : Assignment Q K} (hf : IsCirculation f)
     (hg : IsCirculation g) : IsCirculation (f + g) :=
-  fun v ↦ by rw [excessAt_add, hf v, hg v, add_zero]
+  fun v ↦ by rw [excessAt_add_apply, hf v, hg v, add_zero]
 
 theorem IsCirculation.neg {f : Assignment Q K} (hf : IsCirculation f) :
     IsCirculation (-f) :=
-  fun v ↦ by rw [excessAt_neg, hf v, neg_zero]
+  fun v ↦ by rw [excessAt_neg_apply, hf v, neg_zero]
 
 theorem IsCirculation.sub {f g : Assignment Q K} (hf : IsCirculation f)
     (hg : IsCirculation g) : IsCirculation (f - g) :=
-  fun v ↦ by rw [excessAt_sub, hf v, hg v, sub_zero]
+  fun v ↦ by rw [excessAt_sub_apply, hf v, hg v, sub_zero]
 
 /-- A circulation carries the same total value into any vertex set `S` as out of it. -/
 theorem IsCirculation.arrowSum_compl_eq [DecidableEq V] {f : Assignment Q K}
@@ -526,7 +548,7 @@ from `f₀` by a circulation. -/
 theorem excessAt_eq_iff_isCirculation_sub {f₀ : Assignment Q K} {b : V → K}
     (hf₀ : ∀ v, excessAt f₀ v = b v) (f : Assignment Q K) :
     (∀ v, excessAt f v = b v) ↔ IsCirculation (f - f₀) := by
-  simp only [isCirculation_iff, excessAt_sub, hf₀, sub_eq_zero]
+  simp only [isCirculation_iff, excessAt_sub_apply, hf₀, sub_eq_zero]
 
 /-- Every nonempty prescribed-excess fibre is a translate of the circulations: if `f₀` has excess
 `b`, the assignments with excess `b` are exactly `f₀ + c` for `c` in the kernel of `excessHom`. -/
@@ -582,6 +604,14 @@ theorem map_sub [AddGroup K] [AddGroup L] [AddMonoidHomClass F K L] (φ : F)
     (f g : Assignment Q K) : (f - g).map φ = f.map φ - g.map φ := by
   funext _ _ e
   simp
+
+/-- Reading natural values in `K` and then applying an additive map `φ` with `φ 1 = 1` reads them
+in `L`. -/
+theorem map_map_natCast [AddMonoidWithOne K] [AddMonoidWithOne L] [AddMonoidHomClass F K L]
+    (φ : F) (hφ : φ 1 = 1) (a : Assignment Q ℕ) :
+    (a.map (Nat.cast : ℕ → K)).map φ = a.map Nat.cast := by
+  funext x y e
+  exact map_natCast' φ hφ (a e)
 
 end Algebra
 

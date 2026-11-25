@@ -5,10 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Basic
-public import Mathlib.RepresentationTheory.Character
-public import Mathlib.RepresentationTheory.Intertwining
-public import Mathlib.Data.Finsupp.SMul
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Hom
@@ -16,10 +12,10 @@ public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.PermutationModule
 public import TauCeti.RepresentationTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.RestrictScalars
--- Non-public: flat base change of kernels (`LinearMap.tensorKerEquiv`) and of finite products
--- (`TensorProduct.piRight`) are used only to construct the invariant and intertwiner comparisons.
+-- Non-public: flat base change of kernels (`LinearMap.tensorKerEquiv`) and, through this import,
+-- of finite products (`TensorProduct.piRight`) are used only to construct the invariant and
+-- intertwiner comparisons.
 import Mathlib.RingTheory.Flat.Equalizer
-import Mathlib.LinearAlgebra.TensorProduct.Pi
 -- Non-public: bijectivity of the base-changed quotient map (`QuotSMulTop.baseChange_mkQ_bijective`)
 -- is used only to construct `Representation.baseChangeQuotSMulTopEquiv`.
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
@@ -46,14 +42,16 @@ the trace of a base-changed endomorphism is the image of the trace
 The **intertwiner space** between two representations of a finite monoid commutes with flat scalar
 extension of commutative rings when the source is finite free. An intertwiner is a linear map killed
 by the finite family of conditions `σ g ∘ₗ f = f ∘ₗ ρ g`, so its space is a kernel, and flat
-extension commutes with that kernel (`LinearMap.tensorKerEquiv`). Over a base field, extension
-to any nontrivial commutative algebra preserves its dimension; in particular an endomorphism space
-of dimension one retains that dimension.
+extension commutes with that kernel (`LinearMap.tensorKerEquiv`). The version for any monoid and a
+free coefficient algebra, and the resulting invariance of intertwiner dimensions over a field, are
+in `TauCeti.RepresentationTheory.BaseChange.Intertwiner`.
 
 For a finite group, the whole invariant submodule also commutes with a flat scalar extension.
 Indeed, invariants are the kernel of the finite family of maps `ρ(g) - 1`; flatness preserves that
 kernel, and the finite product comparison identifies the base-changed family with the invariance
 conditions after extending scalars.
+For an arbitrary group the natural comparison map `A ⊗_R V^G → (A ⊗_R V)^G` is still injective
+when `A` is flat over `R`, since it is the scalar extension of the inclusion `V^G → V`.
 
 **Permutation representations are preserved outright.** A `G`-set `X` gives the free module
 `R[X]` with `G` permuting its basis, and extending the scalars along `R → A` gives `A[X]` with the
@@ -74,6 +72,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.baseChange`: scalar extension of a representation.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
+* `Representation.invariantsBaseChangeMap`: the comparison map `A ⊗_R V^G → (A ⊗_R V)^G`,
+  injective for flat `A` (`Representation.invariantsBaseChangeMap_injective`).
 * `Representation.averageMap_baseChange`: the averaging projection commutes with scalar
   extension.
 * `Representation.exists_common_fixed_vector_of_baseChange`: descent of a nonzero common
@@ -83,11 +83,14 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `FDRep.character_baseChange`: the same for the scalar extension of an object of `FDRep`.
 * `TauCeti.ClassFunction.ofFDRep_baseChange`: the same as class functions, the coefficients changed
   along `algebraMap K L`.
+* `Representation.intertwiningDefectAt_baseChange` and
+  `Representation.intertwiningDefectAt_homBaseChangeEquiv`: the intertwining defect
+  `Representation.intertwiningDefectAt` commutes with scalar extension.
 * `Representation.intertwiningMapBaseChangeEquiv`: flat scalar extension of commutative rings
   commutes with intertwiner spaces for finite monoids and finite free source modules.
-* `Representation.finrank_intertwiningMap_baseChange`: scalar extension to a nontrivial
-  commutative base-field algebra preserves the dimension of an intertwiner space.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
+* `Representation.IntertwiningMap.coe_equivLinearMapAsModule_baseChange`: the module map of a
+  base-changed intertwining map `f` is `A ⊗ f`.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
 * `LinearMap.isIntertwiningMap_liftBaseChange_iff`: the `A`-linear extension of an `R`-linear map
   intertwines the base-changed representation exactly when the map intertwines on `V`.
@@ -96,6 +99,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
 * `TauCeti.baseChangeOfMulActionEquiv_one_tmul`: on `1 ⊗ x` the identification
   `A ⊗_R R[G] ≅ A[G]` extends the coefficients of `x` to `A`.
+* `TauCeti.coeff_baseChangeOfMulActionEquiv_one_tmul`: the identification `A ⊗_R R[X] ≅ A[X]`
+  maps `1 ⊗ v` to `v` with its coefficients mapped to `A`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
 * `Representation.baseChangeRestrictScalarsIntEquiv`: a `ZMod n`-representation is its own
   reduction, `ZMod n ⊗_ℤ ρ.restrictScalars ℤ ≅ ρ`.
@@ -145,6 +150,12 @@ theorem baseChange_comp {H : Type*} [Monoid H]
     (ρ : Representation R G V) (φ : H →* G) :
     baseChange A (ρ.comp φ) = (baseChange A ρ).comp φ := by
   simp only [baseChange, MonoidHom.comp_assoc]
+
+/-- Extension of scalars can only enlarge the kernel. -/
+theorem ker_le_ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [Algebra R A]
+    (ρ : Representation R G V) : ρ.ker ≤ (baseChange A ρ).ker := fun g hg ↦ by
+  rw [MonoidHom.mem_ker] at hg ⊢
+  simp [baseChange_apply, hg, Module.End.one_eq_id]
 
 end BaseChange
 
@@ -246,6 +257,54 @@ theorem coe_invariantsBaseChangeEquiv [Finite G]
         LinearMap.tensorKerEquiv_apply, LinearMap.tensorKer_tmul,
         coe_invariantsEquivKerInvariantDefect, LinearMap.lTensor_tmul, Submodule.subtype_apply]
 
+omit [Module.Flat R A] in
+/-- The natural comparison map `A ⊗_R V^G → (A ⊗_R V)^G`, the base change of the inclusion of the
+invariants. Applied to the restriction of `ρ` to a subgroup `U`, it is `A ⊗_R V^U → (A ⊗_R V)^U`
+(`Representation.baseChange_comp`). No flatness and no finiteness of `G` is needed to define it. -/
+noncomputable def invariantsBaseChangeMap (ρ : Representation R G V) :
+    A ⊗[R] ρ.invariants →ₗ[A] (baseChange A ρ).invariants :=
+  (AlgebraTensorModule.lTensor A A ρ.invariants.subtype).codRestrict _ fun x ↦ by
+    induction x with
+    | add x y hx hy => rw [map_add]; exact add_mem hx hy
+    | tmul a v =>
+      exact (mem_invariants _ _).2 fun g ↦ by
+        simp [mem_invariants _ _ |>.1 v.property g]
+
+omit [Module.Flat R A] in
+/-- The comparison map is the scalar extension of the inclusion of the invariant submodule. -/
+@[simp]
+theorem coe_invariantsBaseChangeMap (ρ : Representation R G V) (x : A ⊗[R] ρ.invariants) :
+    (ρ.invariantsBaseChangeMap x : A ⊗[R] V) = ρ.invariants.subtype.lTensor A x :=
+  (rfl)
+
+omit [Module.Flat R A] in
+theorem coe_invariantsBaseChangeMap_tmul (ρ : Representation R G V) (a : A) (v : ρ.invariants) :
+    (ρ.invariantsBaseChangeMap (a ⊗ₜ[R] v) : A ⊗[R] V) = a ⊗ₜ[R] (v : V) :=
+  (rfl)
+
+/-- **The comparison map is injective for flat coefficients.** -/
+theorem invariantsBaseChangeMap_injective (ρ : Representation R G V) :
+    Function.Injective (ρ.invariantsBaseChangeMap (A := A)) := by
+  intro x y h
+  have h' := congrArg Subtype.val h
+  rw [coe_invariantsBaseChangeMap, coe_invariantsBaseChangeMap] at h'
+  exact Module.Flat.lTensor_preserves_injective_linearMap (M := A) ρ.invariants.subtype
+    ρ.invariants.injective_subtype h'
+
+/-- For a finite group, the base-change equivalence of invariants is the comparison map. -/
+@[simp]
+theorem toLinearMap_invariantsBaseChangeEquiv [Finite G] (ρ : Representation R G V) :
+    (ρ.invariantsBaseChangeEquiv (A := A)).toLinearMap = ρ.invariantsBaseChangeMap :=
+  LinearMap.ext fun x ↦ Subtype.ext <|
+    (ρ.coe_invariantsBaseChangeEquiv x).trans (ρ.coe_invariantsBaseChangeMap x).symm
+
+/-- **The comparison map is bijective for flat coefficients and a finite group**: it is the map
+underlying `Representation.invariantsBaseChangeEquiv`. -/
+theorem invariantsBaseChangeMap_bijective [Finite G] (ρ : Representation R G V) :
+    Function.Bijective (ρ.invariantsBaseChangeMap (A := A)) := by
+  rw [← toLinearMap_invariantsBaseChangeEquiv]
+  exact (ρ.invariantsBaseChangeEquiv (A := A)).bijective
+
 end Invariants
 
 section Average
@@ -285,7 +344,6 @@ theorem exists_common_fixed_vector_of_baseChange
     (ρ : Representation R G V) {w : A ⊗[R] V} (hw : w ≠ 0)
     (hfixed : ∀ g, baseChange A ρ g w = w) :
     ∃ v : V, v ≠ 0 ∧ ∀ g, ρ g v = v := by
-  classical
   let b := Module.Free.chooseBasis R A
   let e := TensorProduct.equivFinsuppOfBasisLeft b (N := V)
   have he : e w ≠ 0 := fun h ↦ hw (e.map_eq_zero_iff.mp h)
@@ -302,8 +360,6 @@ end
 end Representation
 
 section Character
-
-open TensorProduct
 
 variable {K : Type*} {L : Type*} [Field K] [Field L] [Algebra K L]
 variable {V : Type*} [AddCommGroup V] [Module K V]
@@ -403,6 +459,18 @@ theorem toLinearMap_baseChange
     (f : IntertwiningMap ρ σ) (A : Type*) [Semiring A] [Algebra R A] :
     (f.baseChange A).toLinearMap = f.toLinearMap.baseChange A :=
   (rfl)
+
+/-- The `A[G]`-linear map attached to a base-changed intertwining map `f` is `A ⊗ f` on the
+underlying types: `Representation.IntertwiningMap.equivLinearMapAsModule` keeps the
+underlying function (`Representation.IntertwiningMap.equivLinearMapAsModule_apply`). -/
+theorem coe_equivLinearMapAsModule_baseChange (f : IntertwiningMap ρ σ) (A : Type*)
+    [CommSemiring A] [Algebra R A] :
+    ⇑(equivLinearMapAsModule _ _ (f.baseChange A)) = f.toLinearMap.lTensor A := by
+  funext x
+  rw [equivLinearMapAsModule_apply, ← LinearMap.baseChange_eq_lTensor]
+  -- `x : asModule` is an element of `A ⊗[R] V`, and `f.baseChange A` is
+  -- `f.toLinearMap.baseChange A` (`Representation.IntertwiningMap.toLinearMap_baseChange`).
+  rfl
 
 /-- **Base change preserves composition**: the base change of `g ∘ f` is the composite of the base
 changes `A ⊗ g ∘ A ⊗ f`. -/
@@ -549,25 +617,30 @@ variable {W : Type*} [AddCommGroup W] [Module K W]
 
 namespace Representation
 
+/-- **The intertwining defect of a base-changed map is the base change of its defect**: the
+intertwining defect at `g` of `f.baseChange L` for the base-changed representations is the base
+change of the defect of `f`. -/
+theorem intertwiningDefectAt_baseChange (ρ : Representation K G V) (σ : Representation K G W)
+    (g : G) (f : V →ₗ[K] W) :
+    intertwiningDefectAt (baseChange L ρ) (baseChange L σ) g (f.baseChange L)
+      = (intertwiningDefectAt ρ σ g f).baseChange L := by
+  rw [intertwiningDefectAt_apply, intertwiningDefectAt_apply, LinearMap.baseChange_sub,
+    LinearMap.baseChange_comp, LinearMap.baseChange_comp, baseChange_apply, baseChange_apply]
+
 /-- The **intertwining defect** of a linear map `f : V →ₗ[K] W`: the family
 `g ↦ σ g ∘ₗ f - f ∘ₗ ρ g`, whose vanishing is exactly the intertwining condition. Writing the
 intertwiner space as the kernel of a single linear map is what makes it visibly compatible with
 base change, `L` being flat over `K`. -/
 private def intertwiningDefect (ρ : Representation K G V) (σ : Representation K G W) :
     (V →ₗ[K] W) →ₗ[K] (G → (V →ₗ[K] W)) :=
-  LinearMap.pi fun g => LinearMap.llcomp K V W W (σ g) - LinearMap.lcomp K W (ρ g)
-
-private theorem intertwiningDefect_apply (ρ : Representation K G V)
-    (σ : Representation K G W) (f : V →ₗ[K] W) (g : G) :
-    intertwiningDefect ρ σ f g = σ g ∘ₗ f - f ∘ₗ ρ g :=
-  rfl
+  LinearMap.pi (intertwiningDefectAt ρ σ)
 
 private theorem mem_ker_intertwiningDefect {ρ : Representation K G V}
     {σ : Representation K G W} {f : V →ₗ[K] W} :
     f ∈ LinearMap.ker (intertwiningDefect ρ σ) ↔ ∀ g, f ∘ₗ ρ g = σ g ∘ₗ f := by
   rw [LinearMap.mem_ker, funext_iff]
   refine forall_congr' fun g => ?_
-  rw [intertwiningDefect_apply, Pi.zero_apply, sub_eq_zero, eq_comm]
+  rw [intertwiningDefect, LinearMap.pi_apply, Pi.zero_apply, intertwiningDefectAt_eq_zero_iff]
 
 /-- The intertwiner space is the kernel of the intertwining defect. -/
 private def intertwiningMapEquivKerDefect (ρ : Representation K G V)
@@ -576,19 +649,25 @@ private def intertwiningMapEquivKerDefect (ρ : Representation K G V)
   toFun f := ⟨f.toLinearMap, mem_ker_intertwiningDefect.mpr f.isIntertwining'⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  invFun f := ⟨f.1, mem_ker_intertwiningDefect.mp f.2⟩
+  invFun f := ⟨f.val, mem_ker_intertwiningDefect.mp f.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
-/-- **The intertwining defect of a base-changed map is the base change of its defect**,
-componentwise: base change is compatible with composition and subtraction, and the base-changed
-representations act by the base-changed operators. -/
-private theorem intertwiningDefect_baseChange (ρ : Representation K G V)
-    (σ : Representation K G W) (f : V →ₗ[K] W) (g : G) :
-    intertwiningDefect (baseChange L ρ) (baseChange L σ) (f.baseChange L) g
-      = (intertwiningDefect ρ σ f g).baseChange L := by
-  rw [intertwiningDefect_apply, intertwiningDefect_apply, LinearMap.baseChange_sub,
-    LinearMap.baseChange_comp, LinearMap.baseChange_comp, baseChange_apply, baseChange_apply]
+/-- The identification `L ⊗[K] Hom_K(V, W) ≃ Hom_L(L ⊗ V, L ⊗ W)` carries the scalar extension
+of the intertwining defect at `g` to the intertwining defect at `g` of the base-changed
+representations. -/
+theorem intertwiningDefectAt_homBaseChangeEquiv [Module.Projective K V] [Module.Finite K V]
+    (ρ : Representation K G V) (σ : Representation K G W) (g : G) (x : L ⊗[K] (V →ₗ[K] W)) :
+    intertwiningDefectAt (baseChange L ρ) (baseChange L σ) g
+        ((LinearMap.isBaseChange_baseChangeHom K L V W).equiv x) =
+      (LinearMap.isBaseChange_baseChangeHom K L V W).equiv
+        ((intertwiningDefectAt ρ σ g).lTensor L x) := by
+  induction x with
+  | tmul a h =>
+    simp only [LinearMap.lTensor_tmul, IsBaseChange.equiv_tmul, LinearMap.baseChangeHom_apply,
+      map_smul, intertwiningDefectAt_baseChange]
+  | add x y hx hy =>
+    simp only [map_add, ← hx, ← hy]
 
 variable [Module.Free K V] [Module.Finite K V]
 
@@ -601,17 +680,12 @@ private theorem intertwiningDefect_homBaseChangeEquiv [Fintype G] [DecidableEq G
       = ((TensorProduct.piRight K L L _).trans
           (LinearEquiv.piCongrRight fun _ ↦ (LinearMap.isBaseChange_baseChangeHom K L V W).equiv))
           (TensorProduct.AlgebraTensorModule.lTensor L L (intertwiningDefect ρ σ) x) := by
-  induction x with
-  | add x y hx hy => simp [hx, hy]
-  | tmul a f =>
-    funext g
-    -- the defect is linear, so both sides are `a • (intertwiningDefect ρ σ f g)`
-    -- base-changed to `L`
-    simp only [IsBaseChange.equiv_tmul, LinearMap.baseChangeHom_apply, map_smul,
-      Pi.smul_apply, intertwiningDefect_baseChange,
-      TensorProduct.AlgebraTensorModule.lTensor_tmul, LinearEquiv.trans_apply,
-      LinearEquiv.piCongrRight_apply, TensorProduct.piRight_apply,
-      TensorProduct.piRightHom_tmul]
+  funext g
+  simp only [intertwiningDefect, LinearMap.pi_apply, intertwiningDefectAt_homBaseChangeEquiv,
+    LinearEquiv.trans_apply, LinearEquiv.piCongrRight_apply, TensorProduct.piRight_apply]
+  -- `x ↦ (L ⊗ defect) x g` is `L ⊗ (defect at g)`
+  congr 1
+  induction x <;> simp_all
 
 /-- Pulling back the base-changed intertwining kernel along scalar extension of linear maps gives
 the kernel of the scalar-extended defect. -/
@@ -669,34 +743,9 @@ end Representation
 
 end Intertwiner
 
-section IntertwinerDimension
-
-open TensorProduct
-
-variable {K L G V W : Type*} [Field K] [CommRing L] [Nontrivial L] [Algebra K L]
-  [Monoid G] [Finite G] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  [AddCommGroup W] [Module K W]
-
-namespace Representation
-
-/-- Scalar extension to a nontrivial commutative algebra preserves the dimension of an intertwiner
-space for a finite monoid and a finite-dimensional source representation. Over the coefficient
-algebra the extended intertwiner space is free, with the same rank as the original vector space. -/
-theorem finrank_intertwiningMap_baseChange
-    (ρ : Representation K G V) (σ : Representation K G W) :
-    Module.finrank L (IntertwiningMap (baseChange L ρ) (baseChange L σ))
-      = Module.finrank K (IntertwiningMap ρ σ) := by
-  rw [← (ρ.intertwiningMapBaseChangeEquiv σ).finrank_eq, Module.finrank_baseChange]
-
-end Representation
-
-end IntertwinerDimension
-
 namespace TauCeti
 
 section PermutationRepresentation
-
-open TensorProduct
 
 section PermutationModule
 
@@ -766,6 +815,22 @@ theorem baseChangeOfMulActionEquiv_one_tmul (x : MonoidAlgebra R G) :
   | zero => simp
   | add x y hx hy => rw [TensorProduct.tmul_add, map_add, hx, hy, map_add]
   | single g r => simp [Algebra.smul_def]
+
+/-- The identification `A ⊗_R R[X] ≅ A[X]` maps `1 ⊗ v` to `v` with its coefficients mapped to
+`A`. -/
+@[simp]
+theorem coeff_baseChangeOfMulActionEquiv_one_tmul (v : MonoidAlgebra R X) (x : X) :
+    (baseChangeOfMulActionEquiv R A G X (1 ⊗ₜ v)).coeff x = algebraMap R A (v.coeff x) := by
+  classical
+  induction v using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add v w hv hw =>
+    simp only [TensorProduct.tmul_add, map_add, MonoidAlgebra.coeff_add, Finsupp.add_apply, hv,
+      hw]
+  | single y r =>
+    rw [baseChangeOfMulActionEquiv_tmul_single, MonoidAlgebra.coeff_single,
+      MonoidAlgebra.coeff_single, Finsupp.single_apply, Finsupp.single_apply]
+    split_ifs <;> simp [Algebra.smul_def]
 
 end PermutationModule
 
@@ -879,8 +944,12 @@ noncomputable def baseChangeFDRep : FDRep k G ⥤ FDRep k' G where
 theorem baseChangeFDRep_obj (V : FDRep k G) :
     (baseChangeFDRep k').obj V = FDRep.of (Representation.baseChange k' V.ρ) := (rfl)
 
+-- Deliberately not a `simp` lemma, for two independent reasons. At default priority it pre-empts
+-- `Functor.map_id`, `Functor.map_comp` and `Functor.map_add`. And even at low priority, rewriting
+-- with it leaves the surrounding implicit object arguments as `(baseChangeFDRep k').obj _`, while
+-- the right-hand side has objects `FDRep.of _`; these agree only above reducible transparency, so
+-- `eq_self` and `baseChangeFDRepHom_hom_hom_hom` no longer match.
 /-- The functor takes an equivariant map to its base change. -/
-@[simp]
 theorem baseChangeFDRep_map {V W : FDRep k G} (φ : V ⟶ W) :
     (baseChangeFDRep k').map φ = baseChangeFDRepHom k' φ := (rfl)
 

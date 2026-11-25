@@ -24,10 +24,15 @@ selects a full idempotent whose corner is a product of division rings.
 ## Main definitions
 
 * `Matrix.cornerSingleOneEquiv`: the corner of `Eᵢᵢ` is isomorphic to the coefficient ring.
+* `Matrix.cornerSingleOneAlgEquiv`: the same isomorphism, of algebras over a commutative ring.
 
 ## Main results
 
 * `Matrix.isIdempotentElem_single_one`: the diagonal matrix unit `Eᵢᵢ` is idempotent.
+* `Matrix.orthogonalIdempotents_map_single`: the images of the diagonal matrix units under a
+  homomorphism out of `Mₙ(α)` are orthogonal idempotents.
+* `Matrix.completeOrthogonalIdempotents_single_one`: the diagonal matrix units form a complete
+  family of orthogonal idempotents.
 * `Matrix.single_apply_eq_of_mem_corner`: a matrix in the corner of `Eᵢᵢ` is supported on the
   entry `(i, i)`.
 * `Matrix.twoSidedIdeal_span_single_one_eq_top`: the diagonal matrix unit `Eᵢᵢ` is full.
@@ -45,6 +50,17 @@ theorem isIdempotentElem_single_one [NonAssocSemiring α] (i : n) :
     IsIdempotentElem (single i i (1 : α)) := by
   simp [IsIdempotentElem]
 
+section Map
+
+variable {B F : Type*} [NonAssocSemiring α] [FunLike F (Matrix n n α) B]
+
+/-- The images of the diagonal matrix units are orthogonal idempotents. -/
+theorem orthogonalIdempotents_map_single [Semiring B] [NonUnitalRingHomClass F (Matrix n n α) B]
+    (f : F) : OrthogonalIdempotents fun i : n => f (single i i 1) :=
+  ⟨fun i => (isIdempotentElem_single_one i).map f, fun i j hij => by simp [← map_mul, hij]⟩
+
+end Map
+
 section Semiring
 
 variable [Semiring α]
@@ -60,25 +76,52 @@ theorem single_apply_eq_of_mem_corner {i : n} {x : Matrix n n α}
 /-- **The corner of the diagonal matrix unit `Eᵢᵢ` is the coefficient ring**, through the
 `(i, i)` entry. -/
 def cornerSingleOneEquiv (i : n) : (isIdempotentElem_single_one (α := α) i).Corner ≃+* α where
-  toFun x := x.1 i i
+  toFun x := x.val i i
   invFun a := ⟨single i i a, (Subsemigroup.mem_corner_iff (isIdempotentElem_single_one i)).mpr
     ⟨by simp, by simp⟩⟩
-  left_inv x := Subtype.ext (single_apply_eq_of_mem_corner x.2)
+  left_inv x := Subtype.ext (single_apply_eq_of_mem_corner x.property)
   right_inv a := by simp
   map_mul' x y := by
     rw [IsIdempotentElem.Corner.val_mul]
-    conv_lhs => rw [← single_apply_eq_of_mem_corner x.2, ← single_apply_eq_of_mem_corner y.2]
+    conv_lhs => rw [← single_apply_eq_of_mem_corner x.property, ← single_apply_eq_of_mem_corner
+        y.property]
     simp
   map_add' _ _ := rfl
 
 @[simp]
 theorem cornerSingleOneEquiv_apply (i : n) (x : (isIdempotentElem_single_one (α := α) i).Corner) :
-    cornerSingleOneEquiv i x = x.1 i i :=
+    cornerSingleOneEquiv i x = x.val i i :=
   (rfl)
 
 @[simp]
 theorem val_cornerSingleOneEquiv_symm_apply (i : n) (a : α) :
-    ((cornerSingleOneEquiv i).symm a).1 = single i i a :=
+    ((cornerSingleOneEquiv i).symm a).val = single i i a :=
+  (rfl)
+
+/-- **The diagonal matrix units `Eᵢᵢ` form a complete family of orthogonal idempotents.** -/
+theorem completeOrthogonalIdempotents_single_one :
+    CompleteOrthogonalIdempotents fun i : n ↦ single i i (1 : α) where
+  idem := isIdempotentElem_single_one
+  ortho i j h := single_mul_single_of_ne (1 : α) i i j h 1
+  complete := sum_single_one
+
+/-- The corner of the diagonal matrix unit `Eᵢᵢ` is the coefficient algebra, through the `(i, i)`
+entry: `Matrix.cornerSingleOneEquiv` as an isomorphism of `R`-algebras. -/
+def cornerSingleOneAlgEquiv (R : Type*) [CommSemiring R] [Algebra R α] (i : n) :
+    (isIdempotentElem_single_one (α := α) i).Corner ≃ₐ[R] α :=
+  AlgEquiv.ofRingEquiv (f := cornerSingleOneEquiv i) fun r ↦ by
+    rw [cornerSingleOneEquiv_apply, IsIdempotentElem.Corner.val_algebraMap, Matrix.smul_apply,
+      single_apply_same, Algebra.smul_def, mul_one]
+
+@[simp]
+theorem cornerSingleOneAlgEquiv_apply (R : Type*) [CommSemiring R] [Algebra R α] (i : n)
+    (x : (isIdempotentElem_single_one (α := α) i).Corner) :
+    cornerSingleOneAlgEquiv R i x = x.val i i :=
+  (rfl)
+
+@[simp]
+theorem val_cornerSingleOneAlgEquiv_symm_apply (R : Type*) [CommSemiring R] [Algebra R α]
+    (i : n) (a : α) : ((cornerSingleOneAlgEquiv R i).symm a).val = single i i a :=
   (rfl)
 
 end Semiring

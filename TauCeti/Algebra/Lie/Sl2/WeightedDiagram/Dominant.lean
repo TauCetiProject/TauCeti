@@ -42,8 +42,8 @@ element of a triple whose neutral element is dominant for `b`.
 
 Consequently every `Int(L)`-orbit of neutral elements of `sl₂` triples meets the finite set
 `RootPairing.Base.dominantNeutralElements b`, so there are only finitely many such orbits, at most
-`3 ^ rank`. This does not say that the dominant element in an orbit is unique, so it does not
-yet give a weighted Dynkin diagram attached to an orbit.
+`3 ^ rank`. That each orbit meets it exactly once is proved in
+`TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Uniqueness`.
 
 ## Main results
 
@@ -124,8 +124,8 @@ theorem exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed
   -- then an inner automorphism `g₂` normalizing `H` makes it dominant
   obtain ⟨g₂, hg₂, h', hh', -, hg₂h, t₂⟩ :=
     exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements b (h := ⟨_, hg₁h⟩)
-      (t.smul_of_mem_intLieAlgebra g₁.2)
-  exact ⟨g₂ * g₁, mul_mem hg₂ g₁.2, h', hh', by rwa [mul_smul],
+      (t.smul_of_mem_intLieAlgebra g₁.property)
+  exact ⟨g₂ * g₁, mul_mem hg₂ g₁.property, h', hh', by rwa [mul_smul],
     by simpa only [mul_smul] using t₂⟩
 
 end IsSl2Triple

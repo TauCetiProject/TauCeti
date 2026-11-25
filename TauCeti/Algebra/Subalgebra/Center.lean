@@ -23,6 +23,8 @@ central subalgebra provides. Transport of the center along an algebra equivalenc
 
 * `Subalgebra.map_center_val` identifies the center of a subalgebra with its intersection
   with its centralizer in the ambient algebra.
+* `TauCeti.bijective_algebraMap_center_of_bijective`: an algebra whose structure map is bijective
+  has the same property for its center.
 * `TauCeti.centerPiAlgEquiv` splits the center of a product of algebras as the product of the
   centers, upgrading Mathlib's `Subalgebra.center_pi` from an equality of subalgebras of
   `Π i, S i` to an algebra equivalence with `Π i, Subalgebra.center R (S i)`.
@@ -125,6 +127,12 @@ namespace TauCeti
 
 variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
 
+/-- If the structure map of an algebra is bijective, so is the structure map into its center. -/
+theorem bijective_algebraMap_center_of_bijective (h : Function.Bijective (algebraMap R A)) :
+    Function.Bijective (algebraMap R (Subalgebra.center R A)) :=
+  ⟨fun _ _ hab => h.1 (congrArg Subtype.val hab), fun z =>
+    (h.2 z).imp fun _ hc => Subtype.ext hc⟩
+
 section Pi
 
 variable {ι : Type*} {S : ι → Type*} [∀ i, Semiring (S i)] [∀ i, Algebra R (S i)]
@@ -135,8 +143,8 @@ def centerPiAlgEquiv :
   have mem_iff : ∀ x : Π i, S i,
       x ∈ Subalgebra.center R (Π i, S i) ↔ ∀ i, x i ∈ Subalgebra.center R (S i) := fun _ => by
     rw [Subalgebra.center_pi]; simp
-  { toFun := fun x i => ⟨x.1 i, (mem_iff _).mp x.2 i⟩
-    invFun := fun y => ⟨fun i => (y i).1, (mem_iff _).mpr fun i => (y i).2⟩
+  { toFun := fun x i => ⟨x.val i, (mem_iff _).mp x.property i⟩
+    invFun := fun y => ⟨fun i => (y i).val, (mem_iff _).mpr fun i => (y i).property⟩
     left_inv := fun _ => rfl
     right_inv := fun _ => rfl
     map_mul' := fun _ _ => rfl

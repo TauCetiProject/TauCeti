@@ -16,6 +16,10 @@ quantifier-free when every member of the family is, as are the disjunction and c
 list of quantifier-free formulas. Conversely, an implication, a negation, a conjunction, a
 disjunction or a biconditional is quantifier-free only when its constituents are.
 
+A formula is equality-free (`FirstOrder.Language.BoundedFormula.IsEqualityFree`) when none of its
+atomic subformulas is an equation. On quantifier-free formulas this is the class whose truth is a
+purely propositional matter, since an equation `t = t` holds in every structure.
+
 In an algebraic language, every atomic formula holds in a subsingleton structure: atomic
 formulas can only assert equality of terms. Every homomorphism preserves atomic formulas
 (`FirstOrder.Language.BoundedFormula.IsAtomic.realize_comp_hom`); Mathlib's
@@ -26,7 +30,9 @@ Translating a formula along a language homomorphism (`FirstOrder.Language.LHom.o
 keeps it atomic, quantifier-free or universal, and quantifying all bound variables of a universal
 formula (`FirstOrder.Language.BoundedFormula.alls`) gives a universal formula. These let universal
 sentences of a language be read in an extension by constants. Substituting terms for the free
-variables (`FirstOrder.Language.BoundedFormula.subst`) keeps a formula atomic or quantifier-free.
+variables (`FirstOrder.Language.BoundedFormula.subst`), or turning its bound positions into free
+variables (`FirstOrder.Language.BoundedFormula.toFormula`), keeps a formula atomic or
+quantifier-free.
 
 Along an embedding, universal sentences pass from the target to the source and existential
 sentences from the source to the target. Universal sentences are moreover local: one holds in a
@@ -108,6 +114,80 @@ theorem isQF_not_iff : φ.not.IsQF ↔ φ.IsQF :=
 theorem isQF_iff_iff : (φ.iff ψ).IsQF ↔ φ.IsQF ∧ ψ.IsQF :=
   isQF_inf_iff.trans <| by simp only [isQF_imp_iff, and_comm (a := ψ.IsQF), and_self]
 
+/-- A formula is equality-free when none of its atomic subformulas is an equation: it is built
+from `⊥` and relation atoms by implication and universal quantification. -/
+inductive IsEqualityFree : ∀ {n : ℕ}, L.BoundedFormula α n → Prop
+  | falsum {n : ℕ} : IsEqualityFree (falsum : L.BoundedFormula α n)
+  | rel {n l : ℕ} (R : L.Relations l) (ts : Fin l → L.Term (α ⊕ Fin n)) :
+    IsEqualityFree (R.boundedFormula ts)
+  | imp {n : ℕ} {φ₁ φ₂ : L.BoundedFormula α n} (h₁ : IsEqualityFree φ₁)
+    (h₂ : IsEqualityFree φ₂) : IsEqualityFree (φ₁.imp φ₂)
+  | all {n : ℕ} {φ : L.BoundedFormula α (n + 1)} (h : IsEqualityFree φ) :
+    IsEqualityFree φ.all
+
+@[simp]
+theorem isEqualityFree_bot : (⊥ : L.BoundedFormula α n).IsEqualityFree :=
+  IsEqualityFree.falsum
+
+/-- An equation is not equality-free. -/
+@[simp]
+theorem not_isEqualityFree_bdEqual (t₁ t₂ : L.Term (α ⊕ Fin n)) :
+    ¬(t₁.bdEqual t₂).IsEqualityFree := nofun
+
+@[simp]
+theorem isEqualityFree_boundedFormula {l : ℕ} (R : L.Relations l)
+    (ts : Fin l → L.Term (α ⊕ Fin n)) : (R.boundedFormula ts).IsEqualityFree :=
+  IsEqualityFree.rel R ts
+
+/-- An equation between terms, as a formula, is not equality-free. -/
+@[simp]
+theorem not_isEqualityFree_equal (t₁ t₂ : L.Term α) : ¬(t₁.equal t₂).IsEqualityFree :=
+  not_isEqualityFree_bdEqual _ _
+
+@[simp]
+theorem isEqualityFree_formula {l : ℕ} (R : L.Relations l) (ts : Fin l → L.Term α) :
+    (R.formula ts).IsEqualityFree :=
+  IsEqualityFree.rel R _
+
+/-- An implication is equality-free exactly when its two sides are. -/
+@[simp]
+theorem isEqualityFree_imp_iff : (φ.imp ψ).IsEqualityFree ↔ φ.IsEqualityFree ∧ ψ.IsEqualityFree :=
+  ⟨fun | .imp h₁ h₂ => ⟨h₁, h₂⟩, fun h => h.1.imp h.2⟩
+
+/-- A universal formula is equality-free exactly when its body is. -/
+@[simp]
+theorem isEqualityFree_all_iff {φ : L.BoundedFormula α (n + 1)} :
+    φ.all.IsEqualityFree ↔ φ.IsEqualityFree :=
+  ⟨fun | .all h => h, IsEqualityFree.all⟩
+
+/-- A negation is equality-free exactly when the negated formula is. -/
+@[simp]
+theorem isEqualityFree_not_iff : φ.not.IsEqualityFree ↔ φ.IsEqualityFree :=
+  isEqualityFree_imp_iff.trans (and_iff_left isEqualityFree_bot)
+
+@[simp]
+theorem isEqualityFree_top : (⊤ : L.BoundedFormula α n).IsEqualityFree :=
+  isEqualityFree_not_iff.2 isEqualityFree_bot
+
+/-- A disjunction is equality-free exactly when its two disjuncts are. -/
+@[simp]
+theorem isEqualityFree_sup_iff :
+    (φ ⊔ ψ).IsEqualityFree ↔ φ.IsEqualityFree ∧ ψ.IsEqualityFree :=
+  isEqualityFree_imp_iff.trans <| by rw [isEqualityFree_not_iff]
+
+/-- A conjunction is equality-free exactly when its two conjuncts are. -/
+@[simp]
+theorem isEqualityFree_inf_iff :
+    (φ ⊓ ψ).IsEqualityFree ↔ φ.IsEqualityFree ∧ ψ.IsEqualityFree :=
+  isEqualityFree_not_iff.trans <| isEqualityFree_imp_iff.trans <| by rw [isEqualityFree_not_iff]
+
+/-- A biconditional is equality-free exactly when its two sides are. -/
+@[simp]
+theorem isEqualityFree_iff_iff :
+    (φ.iff ψ).IsEqualityFree ↔ φ.IsEqualityFree ∧ ψ.IsEqualityFree :=
+  isEqualityFree_inf_iff.trans <| by
+    simp only [isEqualityFree_imp_iff, and_comm (a := ψ.IsEqualityFree), and_self]
+
 end FirstOrder.Language.BoundedFormula
 
 namespace FirstOrder.Language.BoundedFormula
@@ -165,6 +245,69 @@ theorem IsQF.subst {β : Type*} (h : φ.IsQF) (tf : α → L.Term β) : (φ.subs
   induction h with
   | falsum => exact IsQF.falsum
   | of_isAtomic h => exact (h.subst tf).isQF
+  | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
+
+/-- Translating an equality-free formula along a language homomorphism gives an equality-free
+formula. -/
+theorem IsEqualityFree.onBoundedFormula (h : φ.IsEqualityFree) (ϕ : L →ᴸ L') :
+    (ϕ.onBoundedFormula φ).IsEqualityFree := by
+  induction h with
+  | falsum => exact IsEqualityFree.falsum
+  | rel R ts => exact IsEqualityFree.rel _ _
+  | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
+  | all _ ih => exact ih.all
+
+/-- Mapping the terms and relation symbols of an equality-free formula gives an equality-free
+formula, provided the map `h` applied under each quantifier preserves equality-freeness. -/
+theorem IsEqualityFree.mapTermRel {β : Type*} {g : ℕ → ℕ}
+    {ft : ∀ n, L.Term (α ⊕ Fin n) → L'.Term (β ⊕ Fin (g n))}
+    {fr : ∀ n, L.Relations n → L'.Relations n}
+    {h : ∀ n, L'.BoundedFormula β (g (n + 1)) → L'.BoundedFormula β (g n + 1)}
+    (hh : ∀ n (ψ : L'.BoundedFormula β (g (n + 1))), ψ.IsEqualityFree → (h n ψ).IsEqualityFree)
+    (hφ : φ.IsEqualityFree) : (φ.mapTermRel ft fr h).IsEqualityFree := by
+  induction hφ with
+  | falsum => exact IsEqualityFree.falsum
+  | rel R ts => exact IsEqualityFree.rel _ _
+  | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
+  | all _ ih => exact (hh _ _ ih).all
+
+/-- Raising the number of bound positions of an equality-free formula gives an equality-free
+formula. -/
+theorem IsEqualityFree.castLE {m : ℕ} {h : n ≤ m} (hφ : φ.IsEqualityFree) :
+    (φ.castLE h).IsEqualityFree := by
+  induction hφ generalizing m with
+  | falsum => exact IsEqualityFree.falsum
+  | rel R ts => exact IsEqualityFree.rel _ _
+  | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
+  | all _ ih => exact ih.all
+
+/-- Relabelling the free variables of an equality-free formula gives an equality-free formula. -/
+theorem IsEqualityFree.relabel {β : Type*} {m : ℕ} (hφ : φ.IsEqualityFree)
+    (g : α → β ⊕ Fin m) : (φ.relabel g).IsEqualityFree :=
+  hφ.mapTermRel fun _ _ h => h.castLE
+
+/-- Shifting the bound variables of an equality-free formula gives an equality-free formula. -/
+theorem IsEqualityFree.liftAt {k m : ℕ} (hφ : φ.IsEqualityFree) :
+    (φ.liftAt k m).IsEqualityFree :=
+  hφ.mapTermRel fun _ _ h => h.castLE
+
+/-- Substituting terms for the free variables of an equality-free formula gives an equality-free
+formula. -/
+theorem IsEqualityFree.subst {β : Type*} (hφ : φ.IsEqualityFree) (tf : α → L.Term β) :
+    (φ.subst tf).IsEqualityFree :=
+  hφ.mapTermRel fun _ _ h => h
+
+/-- Turning the bound positions of an atomic formula into free variables gives an atomic
+formula. -/
+theorem IsAtomic.toFormula (h : φ.IsAtomic) : φ.toFormula.IsAtomic :=
+  IsAtomic.recOn h (fun _ _ => IsAtomic.equal _ _) fun _ _ => IsAtomic.rel _ _
+
+/-- Turning the bound positions of a quantifier-free formula into free variables gives a
+quantifier-free formula. -/
+theorem IsQF.toFormula (h : φ.IsQF) : φ.toFormula.IsQF := by
+  induction h with
+  | falsum => exact IsQF.falsum
+  | of_isAtomic h => exact h.toFormula.isQF
   | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
 
 /-- Translating a universal formula along a language homomorphism gives a universal formula. -/

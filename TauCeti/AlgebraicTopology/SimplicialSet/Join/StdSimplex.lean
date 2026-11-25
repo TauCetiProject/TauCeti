@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
+public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Join.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Subcomplex
 
@@ -17,7 +18,8 @@ The join `Δ[n] ⋆ Δ[m]` is the standard simplex `Δ[n + m + 1]`, with `Δ[n]`
 faces spanned by the first `n + 1` and the last `m + 1` vertices. Under this isomorphism the joins
 of horns and boundaries are horns: for `n ≠ 0`, the subcomplex
 `(Λ[n, i] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])` of `Δ[n] ⋆ Δ[m]` is the horn `Λ[n + m + 1, i]`, and for
-`m ≠ 0`, `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, j])` is the horn `Λ[n + m + 1, n + 1 + j]`. Hence the
+`m ≠ 0`, `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, j])` is the horn `Λ[n + m + 1, n + 1 + j]`, while
+`(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])` is the boundary `∂Δ[n + m + 1]`. Hence the
 pushout-join of a horn inclusion `Λ[n, i] ⟶ Δ[n]` with `0 < i` and a boundary inclusion
 `∂Δ[m] ⟶ Δ[m]` is an inner anodyne extension, and so is the pushout-join of `∂Δ[n] ⟶ Δ[n]` and
 `Λ[m, j] ⟶ Δ[m]` with `j < m`. These are the generating cases of the lifting
@@ -27,6 +29,13 @@ projections are right and left fibrations.
 ## Main definitions
 
 * `SSet.join.stdSimplexIso n m`: the isomorphism `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`.
+* `SSet.join.coneIso n`: the cone `Δ[0] ⋆ Δ[n]` as `Δ[n + 1]`, with the cone point as the
+  vertex `0`; `SSet.join.coneIso_hom_eq` identifies it with `stdSimplexIso 0 n`, and
+  `SSet.join.coneIso_zero` identifies `coneIso 0` with `stdSimplexIso 0 0`.
+* `SSet.join.joinVertexIso k`: the join `stdSimplex.obj k ⋆ Δ[0]` with a final vertex as
+  `stdSimplex.obj (SimplexCategory.joinVertex.obj k)`, that is `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]` for
+  `k = ⦋n⦌`, with `Δ[n]` as the face opposite to the last vertex;
+  `SSet.join.joinVertexIso_zero` identifies `joinVertexIso ⦋0⦌` with `coneIso 0`.
 * `SSet.join.coneEdgeEquiv x y`: maps `Δ[0] ⋆ Δ[0] ⟶ X` sending the cone point to `y` and the base
   to `x` are the edges from `y` to `x`.
 
@@ -41,6 +50,14 @@ projections are right and left fibrations.
   `SSet.join.mkOfSucc_succ_comp_stdSimplexIso_inv`: under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the cone point
   is the vertex `0`, the first edge of the spine is the cone on the vertex `0` of `Δ[n]`, and the
   other edges of the spine are those of `Δ[n]`.
+* `SSet.join.map_comp_coneIso_hom`, `SSet.join.vertexJoin_map_comp_coneIso_inv`:
+  `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps act on `Δ[n + 1]` by fixing the cone
+  point (`SimplexCategory.vertexJoin`).
+* `SSet.join.δ_succ_comp_coneIso_inv`: under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the face opposite to the
+  vertex `i + 1` is the cone on the face opposite to `i`.
+* `SSet.join.map_comp_joinVertexIso_hom`, `SSet.join.joinVertex_map_comp_joinVertexIso_inv`:
+  `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps of `Δ[n + 1]` fix the last vertex
+  (`SimplexCategory.joinVertex`).
 * `SSet.join.hom_ext_of_isStrictSegal`: maps from the cone `Δ[0] ⋆ Δ[n]` to a strict Segal
   simplicial set are determined by their restrictions to the base `Δ[n]` and to the edge from the
   cone point to the vertex `0`.
@@ -48,6 +65,8 @@ projections are right and left fibrations.
   `Λ[n + m + 1, i]`, for `n ≠ 0`.
 * `SSet.join.preimage_unionJoin_boundary_horn`: `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, j])` corresponds to
   `Λ[n + m + 1, n + 1 + j]`, for `m ≠ 0`.
+* `SSet.join.preimage_unionJoin_boundary_boundary`: `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])`
+  corresponds to `∂Δ[n + m + 1]`.
 * `SSet.join.innerAnodyneExtensions_unionJoin_horn_boundary`,
   `SSet.join.innerAnodyneExtensions_unionJoin_boundary_horn`: the corresponding pushout-joins are
   inner anodyne extensions.
@@ -216,11 +235,11 @@ private lemma yonedaEquiv_splitData_p (k : Fin (n + m + 2)) :
     stdSimplex.yonedaEquiv_id_apply]
 
 private lemma splitData_left_app_apply {a : ℕ} (y : (joinFiber (splitData n m).p 0).obj (op ⦋a⦌))
-    (t : Fin (a + 1)) : ((splitData n m).left.app _ y t : ℕ) = min (y.1 t : ℕ) n :=
+    (t : Fin (a + 1)) : ((splitData n m).left.app _ y t : ℕ) = min (y.val t : ℕ) n :=
   (rfl)
 
 private lemma splitData_right_app_apply {a : ℕ} (y : (joinFiber (splitData n m).p 1).obj (op ⦋a⦌))
-    (t : Fin (a + 1)) : ((splitData n m).right.app _ y t : ℕ) = y.1 t - (n + 1) :=
+    (t : Fin (a + 1)) : ((splitData n m).right.app _ y t : ℕ) = y.val t - (n + 1) :=
   (rfl)
 
 private lemma vertex_splitData (k : Fin (n + m + 2)) : vertex (splitData n m) k = k := by
@@ -367,6 +386,94 @@ lemma inl_comp_stdSimplexIso_hom (n : ℕ) :
   fin_cases i
   rfl
 
+variable (n) in
+/-- The cone `Δ[0] ⋆ Δ[n]` is the standard simplex `Δ[n + 1]`: the isomorphism
+`stdSimplexIso 0 n`, with its target `Δ[0 + n + 1]` written as `Δ[n + 1]`. -/
+noncomputable def coneIso : join Δ[0] Δ[n] ≅ (Δ[n + 1] : SSet.{u}) :=
+  (stdSimplexIso 0 n).trans (stdSimplex.mapIso (eqToIso (by simp : ⦋0 + n + 1⦌ = ⦋n + 1⦌)))
+
+/-- Under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the cone point is the vertex `0`. -/
+@[reassoc (attr := simp)]
+lemma inl_comp_coneIso_hom :
+    inl Δ[0] Δ[n] ≫ (coneIso.{u} n).hom = stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ 0) := by
+  rw [coneIso, Iso.trans_hom, Functor.mapIso_hom, inl_comp_stdSimplexIso_hom_assoc,
+    ← Functor.map_comp]
+  congr 1
+  ext i : 3
+  simp [SimplexCategory.eqToHom_toOrderHom]
+
+/-- Under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the base `Δ[n]` is the face opposite to the vertex `0`. -/
+@[reassoc (attr := simp)]
+lemma inr_comp_coneIso_hom :
+    inr Δ[0] Δ[n] ≫ (coneIso.{u} n).hom = stdSimplex.δ 0 := by
+  apply yonedaEquiv.injective
+  refine stdSimplex.ext _ _ fun i ↦ ?_
+  rw [coneIso, Iso.trans_hom, Functor.mapIso_hom, ← Category.assoc,
+    stdSimplex.yonedaEquiv_comp_apply, yonedaEquiv_inr_comp_stdSimplexIso_hom]
+  ext
+  simp [CosimplicialObject.δ, SimplexCategory.δ, SimplexCategory.eqToHom_toOrderHom]
+
+/-- The vertex `0` of `Δ[n + 1]` is the cone point of `Δ[0] ⋆ Δ[n]`. -/
+@[reassoc (attr := simp)]
+lemma const_zero_comp_coneIso_inv :
+    stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ 0) ≫ (coneIso.{u} n).inv = inl _ _ := by
+  rw [Iso.comp_inv_eq, inl_comp_coneIso_hom]
+
+/-- The face of `Δ[n + 1]` opposite to the vertex `0` is the base of `Δ[0] ⋆ Δ[n]`. -/
+@[reassoc (attr := simp)]
+lemma δ_zero_comp_coneIso_inv : stdSimplex.δ 0 ≫ (coneIso.{u} n).inv = inr _ _ := by
+  rw [Iso.comp_inv_eq, inr_comp_coneIso_hom]
+
+/-- The isomorphism `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps of `Δ[n + 1]` fix
+the cone point `0` (`SimplexCategory.vertexJoin`). -/
+@[reassoc]
+lemma map_comp_coneIso_hom {m : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) :
+    map (𝟙 Δ[0]) (stdSimplex.map f) ≫ (coneIso.{u} n).hom =
+      (coneIso m).hom ≫ stdSimplex.map (SimplexCategory.vertexJoin.map f) := by
+  -- `rw` does not see `Δ[m + 1]` as the source of `stdSimplex.map (vertexJoin.map f)`, so the
+  -- composites with it are computed by `Eq.trans`.
+  refine hom_ext_stdSimplex ?_ ?_
+  · rw [inl_map_assoc, Category.id_comp, inl_comp_coneIso_hom]
+    exact ((inl_comp_coneIso_hom_assoc _).trans ((Functor.map_comp _ _ _).symm.trans
+      (congrArg _ (SimplexCategory.const_zero_comp_vertexJoin_map f)))).symm
+  · rw [inr_map_assoc, inr_comp_coneIso_hom]
+    exact ((Functor.map_comp _ _ _).symm.trans
+      ((congrArg _ (SimplexCategory.δ_zero_comp_vertexJoin_map f).symm).trans
+        (Functor.map_comp _ _ _))).trans (inr_comp_coneIso_hom_assoc _).symm
+
+/-- The inverse of `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps of `Δ[n + 1]` fix
+the cone point `0` (`SimplexCategory.vertexJoin`). -/
+@[reassoc]
+lemma vertexJoin_map_comp_coneIso_inv {m : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) :
+    stdSimplex.map (SimplexCategory.vertexJoin.map f) ≫ (coneIso.{u} n).inv =
+      (coneIso m).inv ≫ map (𝟙 Δ[0]) (stdSimplex.map f) := by
+  -- As for `map_comp_coneIso_hom`, the composites are computed by `Eq.trans`.
+  exact (Iso.inv_hom_id_assoc (coneIso m) _).symm.trans (congrArg ((coneIso m).inv ≫ ·)
+    ((map_comp_coneIso_hom_assoc f _).symm.trans
+      ((congrArg _ (Iso.hom_inv_id _)).trans (Category.comp_id _))))
+
+variable (n) in
+/-- The cone isomorphism is `stdSimplexIso 0 n`, followed by the identification of its target
+`Δ[0 + n + 1]` with `Δ[n + 1]`. For a numeral `n` this identification is the identity, so that,
+for instance, `(coneIso 2).hom` is `(stdSimplexIso 0 2).hom`. -/
+lemma coneIso_hom_eq : (coneIso.{u} n).hom = (stdSimplexIso 0 n).hom ≫ eqToHom (by simp) := by
+  simp [coneIso, eqToHom_map]
+
+/-- Under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the face of `Δ[n + 2]` opposite to the vertex `i + 1` is the
+cone on the face of `Δ[n + 1]` opposite to the vertex `i`. -/
+@[reassoc]
+lemma δ_succ_comp_coneIso_inv (i : Fin (n + 2)) :
+    stdSimplex.δ i.succ ≫ (coneIso.{u} (n + 1)).inv =
+      (coneIso n).inv ≫ map (𝟙 Δ[0]) (stdSimplex.δ i) := by
+  have h := vertexJoin_map_comp_coneIso_inv.{u} (SimplexCategory.δ i)
+  rw [SimplexCategory.vertexJoin_map_δ] at h
+  -- `h` is the claim, with `Δ[n + 1]` written as `stdSimplex.obj (vertexJoin.obj ⦋n⦌)`.
+  exact h
+
+/-- For `n = 0`, the cone isomorphism is `stdSimplexIso 0 0 : Δ[0] ⋆ Δ[0] ≅ Δ[1]`. -/
+lemma coneIso_zero : coneIso.{u} 0 = stdSimplexIso 0 0 :=
+  Iso.ext (by simp [coneIso])
+
 /-- Under `Δ[0] ⋆ Δ[0] ≅ Δ[1]`, the cone point is the source of the edge. -/
 lemma δ_one_comp_stdSimplexIso_inv :
     stdSimplex.δ 1 ≫ (stdSimplexIso 0 0).inv = inl (Δ[0] : SSet.{u}) Δ[0] := by
@@ -392,10 +499,11 @@ lemma δ_zero_comp_stdSimplexIso_inv :
 to `x`, through `Δ[0] ⋆ Δ[0] ≅ Δ[1]`. -/
 noncomputable def coneEdgeEquiv {X : SSet.{u}} (x y : X _⦋0⦌) :
     {τ : join Δ[0] Δ[0] ⟶ X // inl _ _ ≫ τ = const y ∧ inr _ _ ≫ τ = const x} ≃ Edge y x where
-  toFun τ := Edge.mk (yonedaEquiv ((stdSimplexIso 0 0).inv ≫ τ.1))
-    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% δ_one_comp_stdSimplexIso_inv, τ.2.1,
+  toFun τ := Edge.mk (yonedaEquiv ((stdSimplexIso 0 0).inv ≫ τ.val))
+    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% δ_one_comp_stdSimplexIso_inv, τ.property.1,
       yonedaEquiv_const])
-    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% δ_zero_comp_stdSimplexIso_inv, τ.2.2,
+    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% δ_zero_comp_stdSimplexIso_inv,
+        τ.property.2,
       yonedaEquiv_const])
   invFun e := ⟨(stdSimplexIso 0 0).hom ≫ yonedaEquiv.symm e.edge,
     by rw [← δ_one_comp_stdSimplexIso_inv, Category.assoc, Iso.inv_hom_id_assoc,
@@ -409,14 +517,14 @@ noncomputable def coneEdgeEquiv {X : SSet.{u}} (x y : X _⦋0⦌) :
 @[simp]
 lemma coneEdgeEquiv_apply_edge {X : SSet.{u}} (x y : X _⦋0⦌)
     (τ : {τ : join Δ[0] Δ[0] ⟶ X // inl _ _ ≫ τ = const y ∧ inr _ _ ≫ τ = const x}) :
-    (coneEdgeEquiv x y τ).edge = yonedaEquiv ((stdSimplexIso 0 0).inv ≫ τ.1) :=
+    (coneEdgeEquiv x y τ).edge = yonedaEquiv ((stdSimplexIso 0 0).inv ≫ τ.val) :=
   (rfl)
 
 /-- The map `Δ[0] ⋆ Δ[0] ⟶ X` attached to an edge `e` is the composite of `Δ[0] ⋆ Δ[0] ≅ Δ[1]`
 with `e`. -/
 @[simp]
 lemma coneEdgeEquiv_symm_apply_coe {X : SSet.{u}} (x y : X _⦋0⦌) (e : Edge y x) :
-    ((coneEdgeEquiv x y).symm e).1 = (stdSimplexIso 0 0).hom ≫ yonedaEquiv.symm e.edge :=
+    ((coneEdgeEquiv x y).symm e).val = (stdSimplexIso 0 0).hom ≫ yonedaEquiv.symm e.edge :=
   (rfl)
 
 /-- Under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the first edge of the spine of `Δ[n + 1]` is the cone on the
@@ -476,6 +584,104 @@ theorem hom_ext_of_isStrictSegal {X : SSet.{u}} [X.IsStrictSegal] {n : ℕ}
   | succ j => simp only [reassoc_of% mkOfSucc_succ_comp_stdSimplexIso_inv, h]
 
 end cone
+
+section joinVertex
+
+/-! ### Joins `Δ[n] ⋆ Δ[0]` with a final vertex -/
+
+variable (k : SimplexCategory)
+
+/-- The join `Δ[n] ⋆ Δ[0]` with a final vertex is the standard simplex `Δ[n + 1]`, with `Δ[n]` as
+the face opposite to the last vertex: for `k = ⦋n⦌`, the isomorphism `stdSimplexIso n 0`, with its
+target written as `stdSimplex.obj (SimplexCategory.joinVertex.obj k)` so that it is natural in `k`
+(`SSet.join.map_comp_joinVertexIso_hom`). -/
+noncomputable def joinVertexIso :
+    join (stdSimplex.obj k) Δ[0] ≅ stdSimplex.obj (SimplexCategory.joinVertex.obj k) :=
+  stdSimplexIso.{u} k.len 0
+
+/-- Under `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, `Δ[n]` is the face opposite to the last vertex. -/
+@[reassoc (attr := simp)]
+lemma inl_comp_joinVertexIso_hom :
+    inl (stdSimplex.obj k) Δ[0] ≫ (joinVertexIso.{u} k).hom =
+      stdSimplex.map (SimplexCategory.joinVertexInl k) := by
+  induction k using SimplexCategory.rec with | _ n
+  apply yonedaEquiv.injective
+  refine stdSimplex.ext _ _ fun i ↦ ?_
+  refine (yonedaEquiv_inl_comp_stdSimplexIso_hom (m := 0) i).trans ?_
+  rw [yonedaEquiv_map]
+  -- `rw` does not see `Δ[n + 1]` as the type of the vertex, so the vertex of the face is read off
+  -- by `Eq.trans`.
+  refine Eq.trans ?_ (stdSimplex.objEquiv_symm_apply (n := n + 1) _ i).symm
+  rw [SimplexCategory.joinVertexInl_mk]
+  ext
+  simp [SimplexCategory.δ]
+
+/-- Under `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, the vertex of `Δ[0]` is the last vertex. -/
+@[reassoc (attr := simp)]
+lemma inr_comp_joinVertexIso_hom :
+    inr (stdSimplex.obj k) Δ[0] ≫ (joinVertexIso.{u} k).hom =
+      stdSimplex.map (SimplexCategory.joinVertexInr k) := by
+  induction k using SimplexCategory.rec with | _ n
+  apply yonedaEquiv.injective
+  refine stdSimplex.ext _ _ fun i ↦ ?_
+  refine (yonedaEquiv_inr_comp_stdSimplexIso_hom (n := n) (m := 0) i).trans ?_
+  rw [yonedaEquiv_map]
+  -- As for `inl_comp_joinVertexIso_hom`, the vertex is read off by `Eq.trans`.
+  refine Eq.trans ?_ (stdSimplex.objEquiv_symm_apply (n := n + 1) _ i).symm
+  rw [SimplexCategory.joinVertexInr_mk]
+  fin_cases i
+  ext
+  simp
+
+/-- The face of `Δ[n + 1]` opposite to the last vertex is `Δ[n]` in `Δ[n] ⋆ Δ[0]`. -/
+@[reassoc (attr := simp)]
+lemma joinVertexInl_comp_joinVertexIso_inv :
+    stdSimplex.map (SimplexCategory.joinVertexInl k) ≫ (joinVertexIso.{u} k).inv =
+      inl (stdSimplex.obj k) Δ[0] := by
+  rw [Iso.comp_inv_eq, inl_comp_joinVertexIso_hom]
+
+/-- The last vertex of `Δ[n + 1]` is the vertex of `Δ[0]` in `Δ[n] ⋆ Δ[0]`. -/
+@[reassoc (attr := simp)]
+lemma joinVertexInr_comp_joinVertexIso_inv :
+    stdSimplex.map (SimplexCategory.joinVertexInr k) ≫ (joinVertexIso.{u} k).inv =
+      inr (stdSimplex.obj k) Δ[0] := by
+  rw [Iso.comp_inv_eq, inr_comp_joinVertexIso_hom]
+
+/-- For `n = 0`, the isomorphism `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]` is the cone isomorphism
+`Δ[0] ⋆ Δ[0] ≅ Δ[1]`. -/
+lemma joinVertexIso_zero : joinVertexIso.{u} ⦋0⦌ = coneIso 0 :=
+  coneIso_zero.symm
+
+variable {k} {k' : SimplexCategory}
+
+/-- The isomorphism `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps of `Δ[n + 1]` fix
+the last vertex (`SimplexCategory.joinVertex`). -/
+@[reassoc]
+lemma map_comp_joinVertexIso_hom (f : k ⟶ k') :
+    map (stdSimplex.map f) (𝟙 Δ[0]) ≫ (joinVertexIso.{u} k').hom =
+      (joinVertexIso k).hom ≫ stdSimplex.map (SimplexCategory.joinVertex.map f) := by
+  -- `hom_ext_stdSimplex` sees the target as `Δ[k'.len + 1]`, on which the lemmas about
+  -- `joinVertexIso` do not rewrite, so both restrictions are computed first.
+  have h₁ : inl _ _ ≫ map (stdSimplex.map f) (𝟙 Δ[0]) ≫ (joinVertexIso.{u} k').hom =
+      inl _ _ ≫ (joinVertexIso k).hom ≫ stdSimplex.map (SimplexCategory.joinVertex.map f) := by
+    rw [inl_map_assoc, inl_comp_joinVertexIso_hom, inl_comp_joinVertexIso_hom_assoc,
+      ← Functor.map_comp, ← Functor.map_comp, SimplexCategory.joinVertexInl_comp_joinVertex_map]
+  have h₂ : inr _ _ ≫ map (stdSimplex.map f) (𝟙 Δ[0]) ≫ (joinVertexIso.{u} k').hom =
+      inr _ _ ≫ (joinVertexIso k).hom ≫ stdSimplex.map (SimplexCategory.joinVertex.map f) := by
+    rw [inr_map_assoc, Category.id_comp, inr_comp_joinVertexIso_hom,
+      inr_comp_joinVertexIso_hom_assoc, ← Functor.map_comp,
+      SimplexCategory.joinVertexInr_comp_joinVertex_map]
+  exact hom_ext_stdSimplex h₁ h₂
+
+/-- The inverse of `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps of `Δ[n + 1]` fix
+the last vertex (`SimplexCategory.joinVertex`). -/
+@[reassoc]
+lemma joinVertex_map_comp_joinVertexIso_inv (f : k ⟶ k') :
+    stdSimplex.map (SimplexCategory.joinVertex.map f) ≫ (joinVertexIso.{u} k').inv =
+      (joinVertexIso k).inv ≫ map (stdSimplex.map f) (𝟙 Δ[0]) := by
+  rw [Iso.comp_inv_eq, Category.assoc, map_comp_joinVertexIso_hom, Iso.inv_hom_id_assoc]
+
+end joinVertex
 
 section horn
 
@@ -724,7 +930,50 @@ private lemma mem_horn_natAdd_iff (hm : m ≠ 0) (j : Fin (m + 1)) :
       obtain ⟨t, ht⟩ := hx' ⟨n + 1 + l, by omega⟩ (by simpa [Fin.ext_iff] using hlj)
       exact hl (mem_range_right hlast (by rw [ht]))
 
+variable (x) in
+/-- A simplex `x` of `Δ[n + m + 1]` lies in the boundary `∂Δ[n + m + 1]` exactly when its image in
+`Δ[n] ⋆ Δ[m]` has its part in `Δ[n]` in `∂Δ[n]` or its part in `Δ[m]` in `∂Δ[m]`. -/
+private lemma mem_boundary_iff :
+    x ∈ ∂Δ[n + m + 1].obj _ ↔
+      (stdSimplexIso n m).inv.app _ x ∈ (Subcomplex.unionJoin ∂Δ[n] ∂Δ[m]).obj _ := by
+  rw [Subcomplex.mem_unionJoin_iff, objEquiv_stdSimplexIso_inv_app, mem_boundary_iff_notMem_range]
+  constructor
+  · rintro ⟨j, hjx⟩
+    by_cases hjn : (j : ℕ) ≤ n
+    · refine Or.inl fun k y hy ↦ ?_
+      induction k using Opposite.rec with | op k
+      induction k using SimplexCategory.rec with | _ a
+      exact (mem_boundary_iff_notMem_range _).2 ⟨_, notMem_range_left hjn hjx y hy⟩
+    · refine Or.inr fun k y hy ↦ ?_
+      induction k using Opposite.rec with | op k
+      induction k using SimplexCategory.rec with | _ a
+      exact (mem_boundary_iff_notMem_range _).2 ⟨_, notMem_range_right (by omega) hjx y hy⟩
+  · intro h
+    by_contra hx
+    have hx' (j : Fin (n + m + 2)) : j ∈ Set.range x := by
+      by_contra hjx
+      exact hx ⟨j, hjx⟩
+    rcases h with h | h
+    · have h₀ := apply_zero_le (j := 0) (by simp) (hx' 0)
+      obtain ⟨l, hl⟩ := (mem_boundary_iff_notMem_range _).1 (h _ _ (lowerSection_mem x h₀))
+      obtain ⟨t, ht⟩ := hx' (Fin.castLE (by omega) l)
+      exact hl (mem_range_left h₀ (by rw [ht, Fin.val_castLE]))
+    · have hlast := lt_apply_last (j := Fin.last _) (by simp) (hx' _)
+      obtain ⟨l, hl⟩ := (mem_boundary_iff_notMem_range _).1 (h _ _ (upperSection_mem x hlast))
+      obtain ⟨t, ht⟩ := hx' ⟨n + 1 + l, by omega⟩
+      exact hl (mem_range_right hlast (by rw [ht]))
+
 end horn
+
+variable (n m) in
+/-- **The pushout-join of two boundaries is a boundary.** Under `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`, the
+subcomplex `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])` of `Δ[n] ⋆ Δ[m]` corresponds to the boundary
+`∂Δ[n + m + 1]`. -/
+theorem preimage_unionJoin_boundary_boundary :
+    (Subcomplex.unionJoin ∂Δ[n] ∂Δ[m]).preimage (stdSimplexIso n m).inv = ∂Δ[n + m + 1] := by
+  ext ⟨k⟩ x
+  induction k using SimplexCategory.rec with | _ d
+  rw [Subcomplex.preimage_obj, Set.mem_preimage, mem_boundary_iff x]
 
 variable (m) in
 /-- **The pushout-join of a horn and a boundary is a horn.** Under `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`, the

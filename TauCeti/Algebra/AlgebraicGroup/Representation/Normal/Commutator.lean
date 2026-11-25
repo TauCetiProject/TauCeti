@@ -44,7 +44,7 @@ private theorem commutator_weight_pow_finrank_eq_one
     (χ : NonzeroJointWeight (commutator (WithConv (H →ₐ[k] k)))
       (basePointsRepresentation (R := k) (H := H) V))
     (g h : WithConv (H →ₐ[k] k)) :
-    (χ.1 ⟨⁅g, h⁆, Subgroup.commutator_mem_commutator (Subgroup.mem_top g)
+    (χ.val ⟨⁅g, h⁆, Subgroup.commutator_mem_commutator (Subgroup.mem_top g)
       (Subgroup.mem_top h)⟩ : k) ^
         Module.finrank k (normalWeightSubcomodule _ χ).toSubmodule = 1 := by
   let ρ : _root_.Representation k (WithConv (H →ₐ[k] k)) V :=
@@ -53,9 +53,9 @@ private theorem commutator_weight_pow_finrank_eq_one
   let σ := ρ.subrepresentation W.toSubmodule
     (fun x _ hv ↦ basePointsRepresentation_mem W x hv)
   have hscalar (n : commutator (WithConv (H →ₐ[k] k))) :
-      σ n = (χ.1 n : k) • (1 : Module.End k W.toSubmodule) := by
+      σ n = (χ.val n : k) • (1 : Module.End k W.toSubmodule) := by
     ext v
-    exact (mem_normalWeightSubcomodule _ χ v).mp v.2 n
+    exact (mem_normalWeightSubcomodule _ χ v).mp v.property n
   let δ := (Units.map (LinearMap.det : Module.End k W.toSubmodule →* k)).comp σ.asGroupHom
   have hdet : LinearMap.det (σ ⁅g, h⁆) = 1 := by
     have heq : δ ⁅g, h⁆ = 1 := by
@@ -70,7 +70,7 @@ private theorem commutator_weight_apply_commutator_eq_one
     (χ : NonzeroJointWeight (commutator (WithConv (H →ₐ[k] k)))
       (basePointsRepresentation (R := k) (H := H) V))
     (g h : WithConv (H →ₐ[k] k)) :
-    χ.1 ⟨⁅g, h⁆, Subgroup.commutator_mem_commutator (Subgroup.mem_top g)
+    χ.val ⟨⁅g, h⁆, Subgroup.commutator_mem_commutator (Subgroup.mem_top g)
       (Subgroup.mem_top h)⟩ = 1 := by
   classical
   let W := normalWeightSubcomodule _ χ
@@ -85,11 +85,11 @@ private theorem commutator_weight_apply_commutator_eq_one
   let q := ⁅u, AlgHom.mapValue (H := H) (Algebra.ofId k H) h⁆
   let a := q.ofConv (matrixCoefficient (R := k) (C := H) φ v)
   have heval (x : WithConv (H →ₐ[k] k)) :
-      x.ofConv a = (χ.1 ⟨⁅x, h⁆, Subgroup.commutator_mem_commutator
+      x.ofConv a = (χ.val ⟨⁅x, h⁆, Subgroup.commutator_mem_commutator
         (Subgroup.mem_top x) (Subgroup.mem_top h)⟩ : k) := by
     have hq : AlgHom.mapValue (H := H) x.ofConv q = ⁅x, h⁆ := by
       simp only [q, map_commutatorElement]
-      rw [WithConv.mapValue_algebraOfId]
+      rw [AlgHom.mapValue_mapValue_ofId]
       simp [u, AlgHom.mapValue_apply]
     have he := congrArg (fun y : WithConv (H →ₐ[k] k) ↦
       y.ofConv (matrixCoefficient (R := k) (C := H) φ v)) hq
@@ -123,16 +123,16 @@ finite-dimensional rational representation of a reduced connected affine group i
 @[simp]
 theorem nonzeroJointWeight_commutator_eq_one
     (χ : NonzeroJointWeight (commutator (WithConv (H →ₐ[k] k)))
-      (basePointsRepresentation (R := k) (H := H) V)) : χ.1 = 1 := by
+      (basePointsRepresentation (R := k) (H := H) V)) : χ.val = 1 := by
   let N := commutator (WithConv (H →ₐ[k] k))
-  have hle : N ≤ χ.1.ker.map N.subtype := by
+  have hle : N ≤ χ.val.ker.map N.subtype := by
     apply Subgroup.commutator_le.mpr
     intro g _ h _
     exact ⟨⟨⁅g, h⁆, Subgroup.commutator_mem_commutator (Subgroup.mem_top g)
       (Subgroup.mem_top h)⟩, commutator_weight_apply_commutator_eq_one χ g h, rfl⟩
   apply MonoidHom.ext
   intro n
-  obtain ⟨m, hm, hmn⟩ := hle n.2
+  obtain ⟨m, hm, hmn⟩ := hle n.property
   have hmn' : m = n := Subtype.ext hmn
   exact MonoidHom.mem_ker.mp (hmn' ▸ hm)
 
