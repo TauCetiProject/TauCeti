@@ -255,16 +255,19 @@ variable [CompactSpace S] [T2Space S] [T2Space M] (h : IsFramedTube f τ) {r : �
 /-- **The shriek map factors through the Thom collapse.** Let `τ : S × V → M` be a framed tube
 around a compact Hausdorff `S` in a Hausdorff space `M`, with `V` of dimension `r`, let `o`
 generate `H_r(V, V ∖ 0; k)`, and let `c : M → OnePoint (S × V)` be the Thom collapse onto the Thom
-space of the trivial bundle (`TauCeti.thomCollapse`). Then the shriek map of `M` is the map `c_*`
-induced by the collapse followed by the shriek map of the Thom space along its zero section, the
-inverse of the Thom isomorphism `x ↦ (o × x)` of the Thom space: `i_! = (i_!)_{Th} ∘ c_*`. -/
+space of the trivial bundle (`TauCeti.IsFramedTube.thomCollapseHom`). Then the shriek map of `M` is
+the map `c_*` induced by the collapse followed by the shriek map of the Thom space along its zero
+section, the inverse of the Thom isomorphism `x ↦ (o × x)` of the Thom space:
+`i_! = (i_!)_{Th} ∘ c_*`. This is the suspension form of the factorization: the inverse Thom
+isomorphism is the cross product with `o`, as opposed to the local homology of a Serre fibration
+along the core in
+`TauCeti.TopCat.singularHomologyπ_comp_singularHomologyComplPreimageCoreIso_hom`. -/
 theorem shriek_map_thomCollapse (q n : ℕ) (hn : r + q = n)
     (z : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k) ⊗ L)).obj
       (TopCat.of M)) :
     (isFramedTube_onePoint_coe (S := S) (V := V)).shriek L
         isFramedTube_onePoint_coe.isClosed_range hr o ho q n hn
-        (SSet.homologyMap (TopCat.toSSet.map
-          (TopCat.ofHom ⟨thomCollapse τ, continuous_thomCollapse h.isOpenEmbedding⟩))
+        (SSet.homologyMap (TopCat.toSSet.map (h.thomCollapseHom (B := TopCat.of M)))
           (𝟙_ (ModuleCat.{w} k) ⊗ L) n z) =
       h.shriek L h.isClosed_range hr o ho q n hn z := by
   refine (isFramedTube_onePoint_coe.shriek_eq_iff L _ hr o ho q n hn _ _).2 ?_
@@ -272,18 +275,18 @@ theorem shriek_map_thomCollapse (q n : ℕ) (hn : r + q = n)
   -- onto the tube of the Thom space.
   let C := TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of (OnePoint (S × V)))
     (B := (range f)ᶜ) (B' := (range fun x : S ↦ ((x, (0 : V)) : OnePoint (S × V)))ᶜ)
-    (TopCat.ofHom ⟨thomCollapse τ, continuous_thomCollapse h.isOpenEmbedding⟩)
-    fun _ hm hc ↦ hm (h.thomCollapse_mem_range_iff.1 hc)
+    (h.thomCollapseHom (B := TopCat.of M)) fun _ hm hc ↦
+      hm (h.thomCollapse_mem_range_iff.1 (h.thomCollapseHom_apply (B := TopCat.of M) _ ▸ hc))
   have htube : h.tubePairMap ≫ C = (isFramedTube_onePoint_coe (S := S) (V := V)).tubePairMap := by
     rw [tubePairMap_def, tubePairMap_def]
     refine TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _
       (ConcreteCategory.hom_ext _ _ fun p ↦ ?_)
-    simp only [ConcreteCategory.comp_apply, TopCat.hom_ofHom, ContinuousMap.coe_mk, tubeMap_apply]
-    exact thomCollapse_apply h.isOpenEmbedding.injective _
+    simp only [ConcreteCategory.comp_apply, TopCat.hom_ofHom, tubeMap_apply]
+    exact (h.thomCollapseHom_apply (B := TopCat.of M) _).trans
+      (thomCollapse_apply h.isOpenEmbedding.injective _)
   have hπ := ConcreteCategory.congr_hom
     (TopPair.singularHomologyπ_naturality C (𝟙_ (ModuleCat.{w} k) ⊗ L) n) z
-  have hC : TopPair.Hom.fst C =
-      TopCat.ofHom ⟨thomCollapse τ, continuous_thomCollapse h.isOpenEmbedding⟩ :=
+  have hC : TopPair.Hom.fst C = h.thomCollapseHom (B := TopCat.of M) :=
     TopPair.ofSubsetMap_fst _ _
   rw [hC] at hπ
   -- The ambient object of each pair is the space only up to unfolding, so the composites are
