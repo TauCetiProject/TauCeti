@@ -55,10 +55,7 @@ theorem deckCircleMulEquiv_loopDeck
     (g : FundamentalGroup (WedgeSum fun _ : ι ↦ (1 : Circle)) (base _)) :
     deckCircleMulEquiv ι (UniversalCover.loopDeck _ g) =
       (MulOpposite.op (circleFundamentalGroupMulEquiv ι g))⁻¹ := by
-  have h : UniversalCover.deckFundamentalGroupEquiv _ (UniversalCover.loopDeck _ g) =
-      MulOpposite.op g⁻¹ :=
-    (MulEquiv.eq_symm_apply _).1 (by rw [UniversalCover.deckFundamentalGroupEquiv_symm_op, inv_inv])
-  simp [deckCircleMulEquiv, h]
+  simp [deckCircleMulEquiv]
 
 variable {ι} in
 /-- The generator `i` of the free group corresponds to the deck transformation given by the inverse
