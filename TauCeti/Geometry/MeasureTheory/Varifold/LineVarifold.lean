@@ -36,7 +36,6 @@ Hence no bound `|δV(X)| ≤ C sup |X|` holds for the fields supported in any cl
 * `Euclidean.lineVarifoldParam a u P`: the parametrization `t ↦ (a + t u, P)`.
 * `Euclidean.lineVarifold a u P`: the line `a + ℝu`, parametrized by Lebesgue measure, with the
   constant plane `P`.
-* `Euclidean.spanLine w`: the line `span {w}` as a point of `G(E, 1)`.
 * `Euclidean.verticalLift a u w`: the line `a + ℝu` with the constant plane `span {w}`.
 
 ## Main results
@@ -184,6 +183,7 @@ theorem lineVarifold_apply (a u : E) (P : grassmannian ℝ E k)
 
 /-- The weight of the image of a measure `μ` on `ℝ` under `t ↦ (a + t u, P)` is the image of `μ`
 under `t ↦ a + t u`, whatever the plane `P`. -/
+@[simp]
 theorem weight_map_lineVarifoldParam (μ : Measure ℝ) (a u : E) (P : grassmannian ℝ E k) :
     weight (μ.map (lineVarifoldParam a u P)) = μ.map fun t => a + t • u := by
   have hm : Measurable fun p : (⊤ : Opens E) × grassmannian ℝ E k => (p.1 : E) :=
@@ -194,6 +194,7 @@ theorem weight_map_lineVarifoldParam (μ : Measure ℝ) (a u : E) (P : grassmann
 
 /-- The weight of a line varifold is Lebesgue measure transported to the line, whatever the
 plane it carries. -/
+@[simp]
 theorem weight_lineVarifold (a u : E) (P : grassmannian ℝ E k) :
     weight (lineVarifold a u P) = (volume : Measure ℝ).map fun t => a + t • u := by
   rw [lineVarifold_def, weight_map_lineVarifoldParam]
@@ -226,27 +227,15 @@ theorem firstVariation_lineVarifold_apply {a u : E} (hu : u ≠ 0) (P : grassman
     integral_lineVarifold a u P (integrable_tangentialDivergence X).aestronglyMeasurable]
   simp only [lineVarifoldParam_apply]
 
-/-- The line `span {w}`, for `w ≠ 0`, as a point of `G(E, 1)`: the orthogonal projection onto
-it. -/
-def spanLine (w : E) (hw : w ≠ 0) : grassmannian ℝ E 1 :=
-  grassmannian.submoduleEquiv ℝ E 1 ⟨ℝ ∙ w, finrank_span_singleton hw⟩
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The value of `Euclidean.spanLine w hw` is the orthogonal projection onto `span {w}`. -/
-@[simp]
-theorem coe_spanLine (w : E) (hw : w ≠ 0) :
-    (spanLine w hw : E →L[ℝ] E) = (ℝ ∙ w).starProjection := by
-  rw [spanLine, grassmannian.coe_submoduleEquiv_apply]
-
 /-- The *vertical lift* of the line `a + ℝu` along `w ≠ 0`: the line varifold carrying the
 constant plane `span {w}` at every point. -/
 def verticalLift (a u w : E) (hw : w ≠ 0) : Measure ((⊤ : Opens E) × grassmannian ℝ E 1) :=
-  lineVarifold a u (spanLine w hw)
+  lineVarifold a u (grassmannian.spanLine ℝ w hw)
 
 omit [BorelSpace E] in
 /-- The defining formula of `Euclidean.verticalLift`. -/
 theorem verticalLift_def (a u w : E) (hw : w ≠ 0) :
-    verticalLift a u w hw = lineVarifold a u (spanLine w hw) := by
+    verticalLift a u w hw = lineVarifold a u (grassmannian.spanLine ℝ w hw) := by
   rw [verticalLift]
 
 /-- The vertical lift is finite on compact sets. -/
@@ -263,7 +252,7 @@ theorem firstVariation_verticalLift_verticalField {ψ : E → ℝ} (hψ : ContDi
     {n : ℝ} (hn : n ≠ 0) :
     firstVariation (verticalLift a u w (norm_ne_zero_iff.1 (hw ▸ one_ne_zero)))
       (verticalField hψ hψc a w n) = ∫ t : ℝ, ψ (a + t • u) := by
-  rw [verticalLift_def, firstVariation_lineVarifold_apply hu, coe_spanLine]
+  rw [verticalLift_def, firstVariation_lineVarifold_apply hu, grassmannian.coe_spanLine]
   exact integral_congr_ae (ae_of_all _ fun t =>
     tangentialDivergence_verticalField hψ hψc huw hw hn t)
 

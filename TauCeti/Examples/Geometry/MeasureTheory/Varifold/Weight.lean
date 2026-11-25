@@ -82,12 +82,12 @@ theorem norm_e (i : Fin 2) : ‖e i‖ = 1 := by
 
 /-- The line `ℝ eᵢ` as a point of `G(ℝ², 1)`, the orthogonal projection onto it. -/
 abbrev line (i : Fin 2) : grassmannian ℝ Plane 1 :=
-  spanLine (e i) (e_ne_zero i)
+  grassmannian.spanLine ℝ (e i) (e_ne_zero i)
 
 /-- The value of `line i` is the orthogonal projection onto `ℝ eᵢ`. -/
 theorem coe_line (i : Fin 2) : (line i : Plane →L[ℝ] Plane) =
     (ℝ ∙ e i).starProjection :=
-  coe_spanLine _ _
+  grassmannian.coe_spanLine _ _
 
 /-- The horizontal lift of the `x`-axis: the line `ℝ e₀`, parametrized by Lebesgue measure, with
 the horizontal plane `ℝ e₀` at every point. -/

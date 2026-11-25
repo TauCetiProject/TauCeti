@@ -42,6 +42,7 @@ This is the Grassmannian `G(E, k)` that carries the varifolds of a Euclidean spa
 
 * `Euclidean.grassmannian 𝕜 E k`: the orthogonal projections of `E` with range of rank `k`.
 * `Euclidean.grassmannian.submoduleEquiv`: the bijection with the `k`-dimensional subspaces.
+* `Euclidean.grassmannian.spanLine 𝕜 w`: the line `span {w}` as a point of `G(E, 1)`.
 * `Euclidean.grassmannian.finiteGrassmannianHomeomorph`: the homeomorphism from
   `TauCeti.finiteGrassmannian 𝕜 k N` induced by a linear isometry
   `E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)`.
@@ -394,6 +395,18 @@ theorem coe_submoduleEquiv_apply (S : {S : Submodule 𝕜 E // finrank 𝕜 S = 
 @[simp]
 theorem coe_submoduleEquiv_symm_apply (P : grassmannian 𝕜 E k) :
     ((submoduleEquiv 𝕜 E k).symm P : Submodule 𝕜 E) = P.val.range :=
+  (rfl)
+
+variable (𝕜) in
+/-- The line `span {w}`, for `w ≠ 0`, as a point of `G(E, 1)`: the orthogonal projection onto
+it. -/
+noncomputable def spanLine (w : E) (hw : w ≠ 0) : grassmannian 𝕜 E 1 :=
+  submoduleEquiv 𝕜 E 1 ⟨𝕜 ∙ w, finrank_span_singleton hw⟩
+
+/-- The value of `spanLine 𝕜 w hw` is the orthogonal projection onto `span {w}`. -/
+@[simp]
+theorem coe_spanLine (w : E) (hw : w ≠ 0) :
+    (spanLine 𝕜 w hw : E →L[𝕜] E) = (𝕜 ∙ w).starProjection :=
   (rfl)
 
 end grassmannian
