@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Jacobian.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import Mathlib.Tactic.DeriveFintype
+import TauCeti.RingTheory.Noetherian.ULift
 
 /-!
 # The universal elliptic curve
@@ -657,7 +658,7 @@ theorem exists_map_eq_of_isElliptic :
   -- the copy `ULift.{u} Universal.EllipticRing` of the universal ring in `Type u`
   ⟨ULift.{u} Universal.EllipticRing, inferInstance,
     ULift.ringEquiv.toMulEquiv.isDomain Universal.EllipticRing,
-    isNoetherianRing_of_ringEquiv Universal.EllipticRing ULift.ringEquiv.symm,
+    inferInstance,
     Universal.ellipticCurve.map ULift.ringEquiv.symm.toRingHom, inferInstance,
     W.specializeElliptic.comp ULift.ringEquiv.toRingHom, by
       rw [map_map, RingHom.comp_assoc, RingEquiv.toRingHom_comp_symm_toRingHom, RingHom.comp_id,

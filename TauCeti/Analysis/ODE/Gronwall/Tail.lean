@@ -21,11 +21,11 @@ Let `P * g` be integrable on `(x, ∞)` and `u ≤ C * P` on `[x, ∞)`, and sup
 (`TauCeti.le_mul_exp_integral_Ioi_of_le_mul_add_integral_Ioi`).
 
 Stating the hypothesis for the majorants `b` of `u` rather than for `u` itself lets `u` be
-non-measurable. This is the form in which
-the inequality bounds an arbitrary solution of a Volterra integral equation on a ray,
-`TauCeti.norm_volterra_solution_le`. The weight `P` lets the bound grow or decay with `y`; for
-`P = 1` it is the tail-integral analogue of the integral Grönwall inequality
-`TauCeti.le_mul_exp_integral_of_le_add_integral_mul_rev` on a bounded interval.
+non-measurable. This is the form in which the inequality bounds an arbitrary solution of a
+Volterra integral equation on a ray, `TauCeti.norm_volterra_solution_le_of_isBigO_principal_Ici`.
+The weight `P` lets the bound grow or decay with `y`; for `P = 1` it is the tail-integral analogue
+of the integral Grönwall inequality `TauCeti.le_mul_exp_integral_of_le_add_integral_mul_rev` on a
+bounded interval.
 
 The proof iterates the inequality: the `k`-th iterate gives
 `u y ≤ P y * (A * ∑ j < k, Ψ y ^ j / j! + C * (Ψ y ^ k / k!))` for `Ψ` the tail integral of
@@ -73,7 +73,7 @@ theorem le_mul_exp_integral_Ioi_of_le_mul_add_integral_Ioi {u P g : ℝ → ℝ}
           fun v ↦ P v * g v * (∫ u in Ioi v, P u * g u) ^ j / j ! := by
         ext v; simp only [hΨ_def]; ring
       have hint (j : ℕ) : IntegrableOn (fun v ↦ g v * (P v * (Ψ v ^ j / j !))) (Ioi y) := by
-        rw [hfun]; exact (hgy.mul_pow_integral_Ioi j).div_const _
+        rw [hfun]; exact (hgy.mul_comp_integral_Ioi (continuous_pow j).continuousOn).div_const _
       have heq (j : ℕ) :
           ∫ v in Ioi y, g v * (P v * (Ψ v ^ j / j !)) = Ψ y ^ (j + 1) / (j + 1)! := by
         rw [hfun, integral_div, hgy.integral_Ioi_mul_pow_integral_Ioi j, Nat.factorial_succ]

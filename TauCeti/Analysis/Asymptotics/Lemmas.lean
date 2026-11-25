@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Asymptotics.Lemmas
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.Topology.Bornology.BoundedOperation
@@ -104,6 +105,8 @@ resolvent-type functions, which are `O(1 / y)` there.
   only if `‖f x‖ ≤ c * g x` on `s` for some `c`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_isBigO_principal_Icc`: `f = O(g)` at `atTop` and
   on every `[a, b]` gives `f = O(g)` on `[a, ∞)`.
+* `Asymptotics.isBigO_inv_norm_smul_apply`: evaluating continuous linear maps `L a` at `x a` and
+  dividing by `‖x a‖` gives `O(L)`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when, on each `[a, b]`, `f` is bounded and `‖g‖` is bounded below by a positive constant.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when closed
@@ -345,6 +348,15 @@ theorem isBigO_smul_const_self {α 𝕜 E : Type*} [Norm 𝕜] [Norm E] [SMul �
     {l : Filter α} (u : α → 𝕜) (c : E) (hc : ∀ r : 𝕜, ‖r • c‖ ≤ ‖r‖ * ‖c‖) :
     (fun x => u x • c) =O[l] u :=
   IsBigO.of_bound ‖c‖ (Eventually.of_forall fun x => (hc (u x)).trans_eq (mul_comm _ _))
+
+/-- **Evaluation at a unit vector is bounded by the operator norm.** For continuous linear maps
+`L a` and vectors `x a`, `‖x a‖⁻¹ • L a (x a) = O(L)`, along any filter. -/
+theorem isBigO_inv_norm_smul_apply {α E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    [SeminormedAddCommGroup F] [NormedSpace ℝ F] (l : Filter α) (L : α → E →L[ℝ] F)
+    (x : α → E) : (fun a ↦ ‖x a‖⁻¹ • L a (x a)) =O[l] L := by
+  refine IsBigO.of_bound' (Eventually.of_forall fun a ↦ ?_)
+  rw [norm_smul, norm_inv, norm_norm, inv_mul_eq_div]
+  exact div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _) ((L a).le_opNorm (x a))
 
 /-- **An eventual `O((log x)⁻¹)` bound holds on a whole half-line `[a, ∞)` (`a > 1`).** If
 `f = O((log x)⁻¹)` at `atTop` and `f` is bounded on every compact interval `[a, b]`, then there is
