@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.PositiveHarmonic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Uniqueness
+import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 
 /-!
 # Checks for the representation of positive harmonic functions on the half-plane
@@ -14,23 +15,23 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Uniqueness
 A nonnegative harmonic function on the upper half-plane is `c Im z + P[ν](z)` for a unique `c ≥ 0`
 and a unique Poisson-finite measure `ν`
 (`TauCeti.exists_eq_mul_im_add_upperHalfPlanePoissonIntegral`,
-`TauCeti.eq_and_eq_of_mul_im_add_upperHalfPlanePoissonIntegral_eq`). The Checks:
+`TauCeti.eq_and_eq_of_mul_im_add_upperHalfPlanePoissonIntegral_eq`). Worked examples of the
+representation and of its hypotheses, in the namespace `TauCeti.Examples.PositiveHarmonic`:
 
-* `u = Im z` has `c = 1` and `ν = 0`
-  (`TauCeti.Examples.PositiveHarmonic.eq_one_and_eq_zero_of_im_eq`);
+* `u = Im z` has `c = 1` and `ν = 0` (`eq_one_and_eq_zero_of_im_eq`);
 * `u = P[δ₀]`, `u(z) = Im z / (π |z|²)`, has `c = 0` and `ν = δ₀`, and `π y u(iy) = 1 = δ₀(ℝ)` for
-  every `y > 0` (`TauCeti.Examples.PositiveHarmonic.upperHalfPlanePoissonIntegral_dirac_zero`,
-  `TauCeti.Examples.PositiveHarmonic.eq_zero_and_eq_dirac_of_poisson_dirac_eq`,
-  `TauCeti.Examples.PositiveHarmonic.pi_mul_mul_upperHalfPlanePoissonIntegral_dirac_zero_mul_I`);
-* `u ≡ 1 = P[dx]` has a measure of infinite mass, and `π y u(iy) = π y → ∞`;
-* `u = Re z` takes the value `-1` at `-1 + i`, so positivity is a hypothesis.
-
-These are the Checks of §2.2 of the DiracScatteringAndNonlinearFourierTransform roadmap.
+  every `y > 0` (`upperHalfPlanePoissonIntegral_dirac_zero`,
+  `eq_zero_and_eq_dirac_of_upperHalfPlanePoissonIntegral_dirac_eq`,
+  `pi_mul_mul_upperHalfPlanePoissonIntegral_dirac_zero_mul_I`);
+* `u ≡ 1 = P[dx]` has a measure of infinite mass, and `π y u(iy) = π y → ∞`
+  (`volume_univ_eq_top_and_tendsto_pi_mul_mul_upperHalfPlanePoissonIntegral_volume_mul_I`);
+* `u = Re z` is harmonic on the upper half-plane but not nonnegative there, so positivity is a
+  hypothesis (`harmonicOnNhd_re_and_not_forall_re_nonneg`).
 -/
 
 public section
 
-open Complex MeasureTheory Set Filter Topology
+open Complex InnerProductSpace MeasureTheory Set Filter Topology
 open UpperHalfPlane (upperHalfPlaneSet)
 open scoped Real
 
@@ -48,12 +49,13 @@ theorem eq_one_and_eq_zero_of_im_eq {c : ℝ} {ν : Measure ℝ} (hν : IsPoisso
 /-- **`P[δ₀]`.** The Poisson integral of the Dirac mass at `0` is `Im z / (π |z|²)`. -/
 theorem upperHalfPlanePoissonIntegral_dirac_zero (z : ℂ) :
     upperHalfPlanePoissonIntegral (Measure.dirac 0) z = z.im / (π * normSq z) := by
-  rw [upperHalfPlanePoissonIntegral_def, integral_dirac, upperHalfPlanePoissonKernel_eq]
+  rw [upperHalfPlanePoissonIntegral_dirac, upperHalfPlanePoissonKernel_eq]
   simp [normSq_neg]
 
 /-- If `P[δ₀] = c Im z + P[ν]` on the upper half-plane for a Poisson-finite `ν`, then `c = 0` and
 `ν = δ₀`. -/
-theorem eq_zero_and_eq_dirac_of_poisson_dirac_eq {c : ℝ} {ν : Measure ℝ} (hν : IsPoissonFinite ν)
+theorem eq_zero_and_eq_dirac_of_upperHalfPlanePoissonIntegral_dirac_eq {c : ℝ} {ν : Measure ℝ}
+    (hν : IsPoissonFinite ν)
     (h : ∀ z ∈ upperHalfPlaneSet, upperHalfPlanePoissonIntegral (Measure.dirac 0) z =
       c * z.im + upperHalfPlanePoissonIntegral ν z) :
     c = 0 ∧ ν = Measure.dirac 0 := by
@@ -70,7 +72,7 @@ theorem pi_mul_mul_upperHalfPlanePoissonIntegral_dirac_zero_mul_I {y : ℝ} (hy 
   ring
 
 /-- **`u ≡ 1 = P[dx]`.** Lebesgue measure has infinite mass, and `π y P[dx](iy) = π y → ∞`. -/
-theorem volume_univ_eq_top_and_tendsto :
+theorem volume_univ_eq_top_and_tendsto_pi_mul_mul_upperHalfPlanePoissonIntegral_volume_mul_I :
     volume (univ : Set ℝ) = ⊤ ∧
       Tendsto (fun y : ℝ ↦ π * y * upperHalfPlanePoissonIntegral volume (y * I)) atTop atTop := by
   refine ⟨Real.volume_univ, ?_⟩
@@ -78,8 +80,13 @@ theorem volume_univ_eq_top_and_tendsto :
   filter_upwards [eventually_gt_atTop 0] with y hy
   rw [upperHalfPlanePoissonIntegral_volume (by simpa using hy), mul_one, id]
 
-/-- **`u = Re z`** is negative at `-1 + i`, a point of the upper half-plane. -/
-theorem re_neg_one_add_I : (-1 + I).re = -1 ∧ (-1 + I) ∈ upperHalfPlaneSet := by
-  simp [upperHalfPlaneSet]
+/-- **`u = Re z`** is harmonic on the upper half-plane but not nonnegative there (it is `-1` at
+`-1 + i`), so it satisfies every hypothesis of
+`TauCeti.exists_eq_mul_im_add_upperHalfPlanePoissonIntegral` except positivity. -/
+theorem harmonicOnNhd_re_and_not_forall_re_nonneg :
+    HarmonicOnNhd (fun z : ℂ ↦ z.re) upperHalfPlaneSet ∧ ¬∀ z ∈ upperHalfPlaneSet, 0 ≤ z.re := by
+  refine ⟨fun z _ ↦ (analyticAt_id (𝕜 := ℂ)).harmonicAt_re, fun h ↦ ?_⟩
+  have := h (-1 + I) (by simp [upperHalfPlaneSet])
+  norm_num at this
 
 end TauCeti.Examples.PositiveHarmonic
