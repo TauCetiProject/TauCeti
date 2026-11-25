@@ -26,8 +26,8 @@ of `g`.
   derivative `B(Df, g) + B(f, Dg)`.
 * Order one, membership: for `f ∈ L^∞_loc(Ω)` and `Df ∈ Lᵖ_loc(Ω)`, both `B(f, g)` and
   `B(Df, g) + B(f, Dg)` are in `L^q_loc(Ω)`. When `F` is finite-dimensional and `f, Df ∈ Lᵖ_loc(Ω)`
-  with `Df` a weak derivative of `f`, the factor `f` is locally bounded, so with `1 < q` the
-  product is in `W^{1,q}_loc(Ω)`.
+  with `Df` a weak derivative of `f`, the factor `f` is locally bounded by the gain of
+  integrability below at `q = p`.
 
 The input is the local gain of integrability `W^{1,q}_loc ⊆ Lʳ_loc` for `1/p + 1/r = 1/q`
 (`TauCeti.HasWeakFDerivOn.memLpLoc_of_holderTriple`), which uses `p > n` and is the local form of
@@ -43,14 +43,11 @@ for the local Sobolev classes `TauCeti.MemWkpLoc` (`TauCeti.MemLpLoc.bilin_of_me
 ## Main declarations
 
 * `TauCeti.HasWeakFDerivOn.memLpLoc_of_holderTriple`: the local gain of integrability.
-* `TauCeti.HasWeakFDerivOn.memLpLoc_top`: a `W^{1,p}_loc` map, `p > n`, is locally bounded.
 * `TauCeti.MemLpLoc.bilin_of_hasWeakFDerivOn`: order-zero mixed products.
 * `TauCeti.HasWeakFDerivOn.bilin_of_finrank_lt`: the weak Leibniz rule for order-one mixed
   products.
 * `TauCeti.HasWeakFDerivOn.memLpLoc_bilin_of_memLpLoc_top`: order-one membership of the product
   and of its candidate weak derivative, for a locally bounded factor.
-* `TauCeti.HasWeakFDerivOn.memLpLoc_bilin_of_finrank_lt`: the same for finite-dimensional
-  factors.
 
 ## References
 
@@ -88,14 +85,6 @@ theorem HasWeakFDerivOn.memLpLoc_of_holderTriple (hp : (finrank ℝ E : ℝ≥0)
   exact (hC g Dg (hg.mono (subset_closure.trans hWΩ)) hgW hDW).trans_lt
     (ENNReal.mul_lt_top ENNReal.coe_lt_top
       (ENNReal.add_lt_top.2 ⟨hgW.eLpNorm_lt_top, hDW.eLpNorm_lt_top⟩))
-
-/-- **Local boundedness in `W^{1,p}_loc`.** For `dim E < p` with `1 ≤ p`, a weakly
-differentiable map on `Ω` with finite-dimensional values which, with its weak derivative, is
-locally `Lᵖ` on `Ω` is locally essentially bounded on `Ω`. -/
-theorem HasWeakFDerivOn.memLpLoc_top (hp : (finrank ℝ E : ℝ≥0) < p) [Fact (1 ≤ (p : ℝ≥0∞))]
-    {g : E → G} {Dg : E → E →L[ℝ] G} (hg : HasWeakFDerivOn μ Ω g Dg)
-    (hgp : MemLpLoc p Ω g μ) (hDg : MemLpLoc p Ω Dg μ) : MemLpLoc ∞ Ω g μ :=
-  hg.memLpLoc_of_holderTriple hp le_rfl hgp hDg
 
 /-- **Order-zero mixed products.** For `dim E < p` and `1 ≤ q ≤ p`, the product of a locally
 `Lᵖ` map with a weakly differentiable map with finite-dimensional values which, with its weak
@@ -175,22 +164,5 @@ theorem HasWeakFDerivOn.memLpLoc_bilin_of_memLpLoc_top (B : F →L[ℝ] G →L[�
   · exact (memLpLoc_iff.1 (hDf.bilin_of_hasWeakFDerivOn (B.precompL E) hp hqp hg hgq hDg) K
       hKΩ hK).add ((B.precompR E).memLp_of_bilin q (memLpLoc_iff.1 hfi K hKΩ hK)
         (memLpLoc_iff.1 hDg K hKΩ hK))
-
-/-- **Order-one mixed products with finite-dimensional factors.** For `dim E < p` and
-`1 ≤ q ≤ p`, let `f` and `g` have finite-dimensional values and weak derivatives `Df` and `Dg`
-on `Ω`, with `f, Df ∈ Lᵖ_loc(Ω)` and `g, Dg ∈ L^q_loc(Ω)`. Then the product `B(f, g)` and the
-candidate weak derivative `B(Df, g) + B(f, Dg)` are in `L^q_loc(Ω)`. The factor `f` is locally
-bounded by `TauCeti.HasWeakFDerivOn.memLpLoc_top`. When `1 < q`,
-`TauCeti.HasWeakFDerivOn.bilin_of_finrank_lt` shows that the second function is the weak
-derivative of the first, so that the product is in `W^{1,q}_loc(Ω)`. -/
-theorem HasWeakFDerivOn.memLpLoc_bilin_of_finrank_lt [FiniteDimensional ℝ F]
-    (B : F →L[ℝ] G →L[ℝ] H) (hp : (finrank ℝ E : ℝ≥0) < p) (hq : 1 ≤ q) (hqp : q ≤ p)
-    {f : E → F} {Df : E → E →L[ℝ] F} {g : E → G} {Dg : E → E →L[ℝ] G}
-    (hf : HasWeakFDerivOn μ Ω f Df) (hfp : MemLpLoc p Ω f μ) (hDf : MemLpLoc p Ω Df μ)
-    (hg : HasWeakFDerivOn μ Ω g Dg) (hgq : MemLpLoc q Ω g μ) (hDg : MemLpLoc q Ω Dg μ) :
-    MemLpLoc q Ω (fun x => B (f x) (g x)) μ ∧
-      MemLpLoc q Ω (fun x => B.precompL E (Df x) (g x) + B.precompR E (f x) (Dg x)) μ := by
-  let _ : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast hq.trans hqp⟩
-  exact hg.memLpLoc_bilin_of_memLpLoc_top B hp hq hqp (hf.memLpLoc_top hp hfp hDf) hDf hgq hDg
 
 end TauCeti
