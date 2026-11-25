@@ -35,6 +35,9 @@ form of Gauss's sum.
 A sum over `Icc 0 N` of a sequence vanishing at `0` is its sum over `Icc 1 N`.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
+For naturals `N` and `K`, writing the weight `⌊K N / n⌋` of `∑_{N < n ≤ K N} ⌊K N / n⌋ f(n)` as the
+number of `1 ≤ j < K` with `n ≤ K N / j` and swapping the sums gives
+`∑_{1 ≤ j < K} ∑_{N < n ≤ K N / j} f(n)`.
 
 ## Main results
 
@@ -59,6 +62,8 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
   its sum over `Icc 1 N`.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
   sum of `2 L` shifts of `f`.
+* `Finset.sum_Ioc_div_smul_eq_sum_Ico_sum_Ioc`:
+  `∑_{N < n ≤ K N} ⌊K N / n⌋ f(n) = ∑_{1 ≤ j < K} ∑_{N < n ≤ K N / j} f(n)`.
 -/
 
 public section
@@ -266,5 +271,41 @@ theorem sum_Icc_zero_eq_sum_Icc_one {M : Type*} [AddCommMonoid M] {f : ℕ → M
     (N : ℕ) : ∑ k ∈ Icc 0 N, f k = ∑ k ∈ Icc 1 N, f k := by
   rw [Icc_eq_cons_Ioc (Nat.zero_le _), sum_cons, h0, zero_add, ← Icc_add_one_left_eq_Ioc,
     zero_add]
+
+/-- For naturals `N` and `K`, writing the weight `⌊K N / n⌋` as the number of `1 ≤ j < K` with
+`n ≤ K N / j` and swapping the sums:
+`∑_{N < n ≤ K N} ⌊K N / n⌋ f(n) = ∑_{1 ≤ j < K} ∑_{N < n ≤ K N / j} f(n)`. -/
+theorem sum_Ioc_div_smul_eq_sum_Ico_sum_Ioc {M : Type*} [AddCommMonoid M] (f : ℕ → M)
+    (N K : ℕ) :
+    ∑ n ∈ Ioc N (K * N), (K * N / n) • f n = ∑ j ∈ Ico 1 K, ∑ n ∈ Ioc N (K * N / j), f n := by
+  have hcard : ∀ n ∈ Ioc N (K * N), K * N / n = #{j ∈ Ico 1 K | n ≤ K * N / j} := by
+    intro n hn
+    obtain ⟨hNn, hnKN⟩ := mem_Ioc.mp hn
+    have hn0 : 0 < n := (Nat.zero_le N).trans_lt hNn
+    have hK : 0 < K := Nat.pos_of_ne_zero fun hK ↦ by rw [hK, zero_mul] at hnKN; omega
+    have hlt : K * N / n < K :=
+      (Nat.div_lt_iff_lt_mul hn0).mpr ((Nat.mul_lt_mul_left hK).mpr hNn)
+    have hfilter : {j ∈ Ico 1 K | n ≤ K * N / j} = Icc 1 (K * N / n) := by
+      ext j
+      simp only [mem_filter, mem_Ico, mem_Icc]
+      constructor
+      · rintro ⟨⟨hj, -⟩, h⟩
+        exact ⟨hj, (Nat.le_div_iff_mul_le hn0).mpr
+          (by rw [mul_comm]; exact (Nat.le_div_iff_mul_le hj).mp h)⟩
+      · rintro ⟨hj, h⟩
+        exact ⟨⟨hj, h.trans_lt hlt⟩, (Nat.le_div_iff_mul_le hj).mpr
+          (by rw [mul_comm]; exact (Nat.le_div_iff_mul_le hn0).mp h)⟩
+    rw [hfilter, Nat.card_Icc, add_tsub_cancel_right]
+  calc ∑ n ∈ Ioc N (K * N), (K * N / n) • f n
+      = ∑ n ∈ Ioc N (K * N), ∑ j ∈ Ico 1 K, if n ≤ K * N / j then f n else 0 :=
+        sum_congr rfl fun n hn ↦ by rw [hcard n hn, ← sum_filter, sum_const]
+    _ = ∑ j ∈ Ico 1 K, ∑ n ∈ Ioc N (K * N), if n ≤ K * N / j then f n else 0 := sum_comm
+    _ = ∑ j ∈ Ico 1 K, ∑ n ∈ Ioc N (K * N / j), f n := by
+        refine sum_congr rfl fun j _ ↦ ?_
+        rw [← sum_filter]
+        congr 1
+        ext n
+        simp only [mem_filter, mem_Ioc]
+        exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.2.trans (Nat.div_le_self _ _)⟩, h.2⟩⟩
 
 end Finset
