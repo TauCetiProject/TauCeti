@@ -25,7 +25,7 @@ import TauCeti.RingTheory.Perfect.PerfectClosure
 import TauCeti.RingTheory.Perfect.Projective.Dimension
 import TauCeti.RingTheory.RegularLocalRing.Descent
 import TauCeti.RingTheory.RegularLocalRing.Frobenius
-import TauCeti.RingTheory.RegularLocalRing.PowerSeries
+import TauCeti.RingTheory.RegularLocalRing.MvPowerSeries
 import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 
 /-!
