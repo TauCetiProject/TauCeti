@@ -54,8 +54,10 @@ by the area of `B` (`TauCeti.Floer.SphericalCapClass.action_vadd`).
   (`TauCeti.Floer.SphericalCapClass.cast_grading`). It obeys the recapping law
   `μ(B +ᵥ q) = 2 c₁(B) + μ(q)` (`TauCeti.Floer.SphericalCapClass.grading_vadd`) in the form taken
   by the cap-independence lemmas for gradings on torsors under the period group, such as
-  `TauCeti.Floer.add_sub_add_two_mul_chern_productClass_eq`, and `n + μ` has the parity of
-  `sign det (1 - P)` for all cap classes (`TauCeti.Floer.SphericalCapClass.negOnePow_add_grading`).
+  `TauCeti.Floer.add_sub_add_two_mul_chern_productClass_eq`, the gradings of two cap classes differ
+  by `2 c₁` of their difference (`TauCeti.Floer.SphericalCapClass.grading_sub_grading`), and
+  `n + μ` has the parity of `sign det (1 - P)` for all cap classes
+  (`TauCeti.Floer.SphericalCapClass.negOnePow_add_grading`).
 
 ## Main definitions
 
@@ -75,8 +77,9 @@ by the area of `B` (`TauCeti.Floer.SphericalCapClass.action_vadd`).
   `TauCeti.Floer.SphericalCapClass.exists_int_conleyZehnderIndex_eq`: integrality and parity of
   the index at a nondegenerate loop.
 * `TauCeti.Floer.SphericalCapClass.cast_grading`, `TauCeti.Floer.SphericalCapClass.grading_vadd`,
-  `TauCeti.Floer.SphericalCapClass.negOnePow_add_grading`: the grading is `-CZ`, its recapping law
-  and its parity.
+  `TauCeti.Floer.SphericalCapClass.grading_sub_grading`,
+  `TauCeti.Floer.SphericalCapClass.negOnePow_add_grading`: the grading is `-CZ`, its recapping and
+  difference laws and its parity.
 
 ## References
 
@@ -320,6 +323,17 @@ theorem negOnePow_add_grading (hΦ₀ : ∀ v, Φ 0 v = v)
       SignType.sign (LinearMap.det (1 - P)) := by
   obtain ⟨k, hk, hpar⟩ := exists_int_conleyZehnderIndex_eq h hc hcap hΦ hΦσ hΦ₀ hP hPdet q
   rwa [grading_def, hk, round_intCast, ← sub_eq_add_neg]
+
+/-- **Two cap classes differ by a class of the period group.** The gradings of two cap classes of
+`γ` differ by the degree `2 c₁` of the class by which they differ. -/
+theorem grading_sub_grading (q' q : SphericalCapClass ω c γ) :
+    grading h hc hcap hΦ hΦσ q' - grading h hc hcap hΦ hΦσ q =
+      2 * PeriodGroup.chern _ _ (q' -ᵥ q) := by
+  have hq : conleyZehnderIndex h hc hcap hΦ hΦσ q' =
+      -(PeriodGroup.degree _ _ (q' -ᵥ q) : ℝ) + conleyZehnderIndex h hc hcap hΦ hΦσ q := by
+    rw [← conleyZehnderIndex_sub_conleyZehnderIndex h hc hcap hΦ hΦσ q' q, sub_add_cancel]
+  rw [grading_def, grading_def, hq, ← Int.cast_neg, round_intCast_add, PeriodGroup.degree_apply]
+  ring
 
 variable [PathConnectedSpace M]
 
