@@ -89,10 +89,12 @@ vector space.
   `TauCeti.IsAdaptedPseudoGradient`): under the Morse–Smale condition, the slice is a smooth
   manifold of dimension `ind a - ind b - 1`.
 * `TauCeti.IsAdaptedPseudoGradient.levelPoint`: the point of an orbit on a level, at the crossing
-  time `Flow.levelCrossingTime`. Along a trajectory between distinct critical points it is the
-  unique point of the orbit on the level (`TauCeti.IsAdaptedPseudoGradient.levelPoint_eq`), it lies
-  on the trajectory (`TauCeti.IsAdaptedPseudoGradient.mapsTo_levelPoint`), it is a bijection
-  from the middle slice onto the slice on the level
+  time `Flow.levelCrossingTime`, and the point itself when the orbit misses the level
+  (`TauCeti.IsAdaptedPseudoGradient.levelPoint_of_forall_ne`). Along a trajectory between
+  distinct critical points it is the unique point of the orbit on the level
+  (`TauCeti.IsAdaptedPseudoGradient.levelPoint_eq`), it lies on the trajectory
+  (`TauCeti.IsAdaptedPseudoGradient.mapsTo_levelPoint`), it is a bijection from the middle slice
+  onto the slice on the level
   (`TauCeti.IsAdaptedPseudoGradient.bijOn_levelPoint_midpoint`) and determines the trajectory
   (`TauCeti.IsAdaptedPseudoGradient.eq_of_levelPoint_eq_of_mem_midpoint`), and it depends
   continuously on the point (`TauCeti.IsAdaptedPseudoGradient.tendsto_levelPoint`).
@@ -684,6 +686,11 @@ theorem levelPoint_def (c : ℝ) (x : M) :
 theorem apply_levelPoint {c : ℝ} {x : M} (h : ∃ t, f (hX.flow t x) = c) :
     f (hX.levelPoint c x) = c :=
   Flow.apply_flow_levelCrossingTime h
+
+/-- When the orbit of `x` never meets the level `c`, its level point is `x` itself. -/
+theorem levelPoint_of_forall_ne {c : ℝ} {x : M} (h : ∀ t, f (hX.flow t x) ≠ c) :
+    hX.levelPoint c x = x := by
+  rw [levelPoint_def, Flow.levelCrossingTime_of_forall_ne h, Flow.map_zero_apply]
 
 /-- Along a trajectory between distinct critical points, the level point is the unique point of
 the orbit on the level. -/
