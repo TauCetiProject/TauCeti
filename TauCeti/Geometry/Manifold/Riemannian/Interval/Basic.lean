@@ -41,6 +41,8 @@ reflection.
 
 ## Main statements
 
+* `TauCeti.iccEuclideanMetric_inner`: the Euclidean metric evaluates the product of the images of
+  two tangent vectors in `ℝ`.
 * `TauCeti.inner_tangentSpace_Icc`: the inner product of two tangent vectors is the product of
   their images in `ℝ`.
 * `TauCeti.norm_tangentSpace_Icc`: the norm of a tangent vector is the absolute value of its image
@@ -77,6 +79,16 @@ def iccEuclideanMetric :
   inducedRiemannianMetric (n := ω) (Subtype.val : Icc a b → ℝ) contMDiff_subtypeVal_Icc
     injective_mvfderiv_subtypeVal_Icc
 
+/-- The Euclidean metric evaluates the product of the images of two tangent vectors in `ℝ` under
+the differential of the inclusion. -/
+@[simp]
+theorem iccEuclideanMetric_inner (x : Icc a b) (v w : TangentSpace (𝓡∂ 1) x) :
+    (iccEuclideanMetric (a := a) (b := b)).inner x v w =
+      mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x v *
+        mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x w := by
+  rw [iccEuclideanMetric, inducedRiemannianMetric_inner, RCLike.inner_apply, conj_trivial,
+    mul_comm]
+
 /-- The closed interval is a Riemannian manifold with boundary for its Euclidean metric. -/
 instance instRiemannianBundleIcc :
     RiemannianBundle (fun x : Icc a b ↦ TangentSpace (𝓡∂ 1) x) :=
@@ -101,14 +113,10 @@ under the differential of the inclusion. -/
 theorem inner_tangentSpace_Icc (x : Icc a b) (v w : TangentSpace (𝓡∂ 1) x) :
     inner ℝ v w =
       mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x v *
-        mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x w := by
-  -- The bundle instance `instRiemannianBundleIcc` is `iccEuclideanMetric`, which is
-  -- `inducedRiemannianMetric` of the inclusion, by definition; so the inner product of the bundle
-  -- is the one `inducedRiemannianMetric_inner` computes, and the ascription below unfolds to it.
-  have h : inner ℝ v w = inner ℝ (mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x v)
-      (mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x w) :=
-    inducedRiemannianMetric_inner _ _ _ x v w
-  rw [h, RCLike.inner_apply, conj_trivial, mul_comm]
+        mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x w :=
+  -- The inner product of the bundle instance `instRiemannianBundleIcc` is that of
+  -- `iccEuclideanMetric` by definition.
+  iccEuclideanMetric_inner x v w
 
 /-- The norm of a tangent vector of `[a, b]` is the absolute value of its image in `ℝ` under the
 differential of the inclusion. -/
