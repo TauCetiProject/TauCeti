@@ -40,20 +40,17 @@ open Matrix QuaternionGroup
 /-- The quaternion subgroup `Q₈` of `SL(2, 3)`. -/
 abbrev N : Subgroup (SpecialLinearGroup (Fin 2) (ZMod 3)) := sl2ZModThreeQuaternionSubgroup
 
-/-- Row `i` of the character table of `SL(2, 3)`, embedded in `ℂ`. -/
-noncomputable def row (i : SpecialLinearTwoThreeClassIndex)
-    (g : SpecialLinearGroup (Fin 2) (ZMod 3)) : ℂ :=
-  Cyclotomic.complexEmbedding
-    (specialLinearTwoThreeExactCharacterTable i (specialLinearTwoThreeClassData.index g))
-
 /-- The rational character `χhat` of degree two of `SL(2, 3)`. -/
-noncomputable abbrev χhat : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ := row ⟨4, by decide⟩
+noncomputable abbrev χhat : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ :=
+  specialLinearTwoThreeCharacter ⟨4, by decide⟩
 
 /-- The linear character `ω` of `SL(2, 3)`, with value `ω = exp (2πi/3)` at `t`. -/
-noncomputable abbrev ω₁ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ := row ⟨1, by decide⟩
+noncomputable abbrev ω₁ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ :=
+  specialLinearTwoThreeCharacter ⟨1, by decide⟩
 
 /-- The linear character `ω²` of `SL(2, 3)`, the complex conjugate of `ω₁`. -/
-noncomputable abbrev ω₂ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ := row ⟨2, by decide⟩
+noncomputable abbrev ω₂ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ :=
+  specialLinearTwoThreeCharacter ⟨2, by decide⟩
 
 /-- The restriction of `χhat` to `Q₈`. -/
 @[expose] noncomputable def θ (n : N) : ℂ := χhat n
@@ -61,28 +58,14 @@ noncomputable abbrev ω₂ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ := row 
 /-- Sums over `Q₈`. -/
 noncomputable instance fintypeN : Fintype N := Fintype.ofFinite _
 
-/-- Every row of the table is an irreducible character of `SL(2, 3)`. -/
-theorem row_mem (i : SpecialLinearTwoThreeClassIndex) :
-    row i ∈ irreducibleCharacters ℂ (SpecialLinearGroup (Fin 2) (ZMod 3)) := by
-  rw [irreducibleCharacters_specialLinearTwoThree]
-  exact ⟨i, rfl⟩
-
-private theorem index_one : specialLinearTwoThreeClassData.index 1 = ⟨0, by decide⟩ := by
-  decide
-
 private theorem index_neg_one : specialLinearTwoThreeClassData.index (-1) = ⟨1, by decide⟩ := by
   decide
 
-/-- At the identity and at `-1`, row `i` takes the values in the first two columns. -/
-private theorem row_one (i : SpecialLinearTwoThreeClassIndex) :
-    row i 1 =
-      Cyclotomic.complexEmbedding (specialLinearTwoThreeExactCharacterTable i ⟨0, by decide⟩) := by
-  rw [row, index_one]
-
-private theorem row_neg_one (i : SpecialLinearTwoThreeClassIndex) :
-    row i (-1) =
+/-- At `-1`, row `i` takes the value in the second column. -/
+private theorem specialLinearTwoThreeCharacter_neg_one (i : SpecialLinearTwoThreeClassIndex) :
+    specialLinearTwoThreeCharacter i (-1) =
       Cyclotomic.complexEmbedding (specialLinearTwoThreeExactCharacterTable i ⟨1, by decide⟩) := by
-  rw [row, index_neg_one]
+  rw [specialLinearTwoThreeCharacter_apply, index_neg_one]
 
 /-- The values of `χhat` at elements whose fourth power is trivial. -/
 private theorem table_four_of_pow_four :
@@ -106,6 +89,12 @@ private theorem pow_four_eq_one (n : N) : (n : SpecialLinearGroup (Fin 2) (ZMod 
 /-- `-1` as an element of `Q₈`. -/
 private def negOne : N := ⟨-1, neg_one_mem_sl2ZModThreeQuaternionSubgroup⟩
 
+private theorem coe_negOne : (negOne : SpecialLinearGroup (Fin 2) (ZMod 3)) = -1 :=
+  rfl
+
+private theorem negOne_inv : negOne⁻¹ = negOne :=
+  Subtype.ext (by rw [Subgroup.coe_inv, coe_negOne]; decide)
+
 private theorem one_ne_negOne : (1 : N) ≠ negOne := by
   rw [Ne, Subtype.ext_iff]
   decide
@@ -113,11 +102,10 @@ private theorem one_ne_negOne : (1 : N) ≠ negOne := by
 /-- `θ` is `2` at `1`, `-2` at `-1` and `0` elsewhere on `Q₈`. -/
 private theorem θ_eq (n : N) :
     θ n = (if n = 1 then 2 else 0) + (if n = negOne then -2 else 0) := by
-  rw [θ, χhat, row, table_four_of_pow_four _ (pow_four_eq_one n)]
+  rw [θ, χhat, specialLinearTwoThreeCharacter_apply, table_four_of_pow_four _ (pow_four_eq_one n)]
   have h1 : ((n : SpecialLinearGroup (Fin 2) (ZMod 3)) = 1) ↔ n = 1 := OneMemClass.coe_eq_one
   have h2 : ((n : SpecialLinearGroup (Fin 2) (ZMod 3)) = -1) ↔ n = negOne := by
-    rw [Subtype.ext_iff]
-    rfl
+    rw [Subtype.ext_iff, coe_negOne]
   simp only [h1, h2]
   by_cases ha : n = 1
   · subst ha
@@ -130,8 +118,7 @@ private theorem θ_eq (n : N) :
 private theorem θ_inv (n : N) : θ n⁻¹ = θ n := by
   have h1 : n⁻¹ = 1 ↔ n = 1 := inv_eq_one
   have h2 : n⁻¹ = negOne ↔ n = negOne := by
-    rw [inv_eq_iff_eq_inv]
-    exact Iff.of_eq (congrArg _ (Subtype.ext (by decide)))
+    rw [inv_eq_iff_eq_inv, negOne_inv]
   simp only [θ_eq, h1, h2]
 
 /-- **The defining sum of `Irr(G | θ)`**, at any function on `G`, is `2 ψ(1) - 2 ψ(-1)`. -/
@@ -139,7 +126,7 @@ private theorem sum_mul_θ_inv (ψ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ
     ∑ n : N, ψ n * θ n⁻¹ = 2 * ψ 1 - 2 * ψ (-1) := by
   simp_rw [θ_inv, θ_eq, mul_add, Finset.sum_add_distrib, mul_ite, mul_zero,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true]
-  simp only [OneMemClass.coe_one, negOne]
+  simp only [OneMemClass.coe_one, coe_negOne]
   ring
 
 /-- `χhat` restricts to `θ` on `Q₈`. -/
@@ -156,7 +143,8 @@ private theorem θ_negOne : θ negOne = χhat (-1) :=
 /-- **`θ` is an irreducible character of `Q₈`**: it is a character, and its norm is
 `(2² + 2²)/8 = 1`. -/
 theorem θ_mem : θ ∈ irreducibleCharacters ℂ N := by
-  obtain ⟨W, hW⟩ := irreducibleCharacters_subset_range (row_mem ⟨4, by decide⟩)
+  obtain ⟨W, hW⟩ := irreducibleCharacters_subset_range
+    (specialLinearTwoThreeCharacter_mem_irreducibleCharacters ⟨4, by decide⟩)
   have hθW : θ = W.character ∘ N.subtype := by
     rw [hW]
     exact (funext χhat_restrict).symm
@@ -196,23 +184,28 @@ example : θ ∘ sl2ZModThreeQuaternionEquiv = fun x : QuaternionGroup 2 =>
   rw [← hj, eq_four_of_degree_two j h1']
 
 /-- In the table of `SL(2, 3)`, only the three rows of degree two differ at `1` and `-1`. -/
-private theorem table_zero_ne_table_one_iff :
+private theorem degree_ne_table_one_iff :
     ∀ i : SpecialLinearTwoThreeClassIndex,
-      specialLinearTwoThreeExactCharacterTable i ⟨0, by decide⟩ ≠
+      (specialLinearTwoThreeCharacterDegrees i : Cyclotomic 12) ≠
           specialLinearTwoThreeExactCharacterTable i ⟨1, by decide⟩ ↔
         i = ⟨4, by decide⟩ ∨ i = ⟨5, by decide⟩ ∨ i = ⟨6, by decide⟩ := by
-  simp only [specialLinearTwoThreeExactCharacterTable_apply]
+  simp only [specialLinearTwoThreeCharacterDegrees_apply,
+    specialLinearTwoThreeExactCharacterTable_apply]
   decide +kernel
 
 /-- `χhat ω` and `χhat ω²` are the last two rows of the table. -/
-private theorem χhat_mul_ω₁ : (fun g => χhat g * ω₁ g) = row ⟨5, by decide⟩ := by
+private theorem χhat_mul_ω₁ :
+    (fun g => χhat g * ω₁ g) = specialLinearTwoThreeCharacter ⟨5, by decide⟩ := by
   funext g
-  rw [χhat, ω₁, row, row, row, ← map_mul,
+  simp only [χhat, ω₁, specialLinearTwoThreeCharacter_apply]
+  rw [← map_mul,
     (specialLinearTwoThreeExactCharacterTable_row_four_mul _).1]
 
-private theorem χhat_mul_ω₂ : (fun g => χhat g * ω₂ g) = row ⟨6, by decide⟩ := by
+private theorem χhat_mul_ω₂ :
+    (fun g => χhat g * ω₂ g) = specialLinearTwoThreeCharacter ⟨6, by decide⟩ := by
   funext g
-  rw [χhat, ω₂, row, row, row, ← map_mul,
+  simp only [χhat, ω₂, specialLinearTwoThreeCharacter_apply]
+  rw [← map_mul,
     (specialLinearTwoThreeExactCharacterTable_row_four_mul _).2]
 
 /-- **`Irr(SL(2, 3) | χ₂)` consists of `χhat`, `χhat ω` and `χhat ω²`.** -/
@@ -222,14 +215,17 @@ theorem irreducibleCharactersOver_θ :
   ext ψ
   rw [mem_irreducibleCharactersOver_iff_sum, sum_mul_θ_inv, χhat_mul_ω₁, χhat_mul_ω₂]
   have key (i : SpecialLinearTwoThreeClassIndex) :
-      2 * row i 1 - 2 * row i (-1) ≠ 0 ↔
+      2 * specialLinearTwoThreeCharacter i 1 - 2 * specialLinearTwoThreeCharacter i (-1) ≠ 0 ↔
         i = ⟨4, by decide⟩ ∨ i = ⟨5, by decide⟩ ∨ i = ⟨6, by decide⟩ := by
-    rw [← table_zero_ne_table_one_iff, row_one, row_neg_one, ← mul_sub, ne_eq, mul_eq_zero,
-      sub_eq_zero, Cyclotomic.complexEmbedding_injective.eq_iff]
+    rw [← degree_ne_table_one_iff, specialLinearTwoThreeCharacter_one,
+      specialLinearTwoThreeCharacter_neg_one, ← mul_sub, ne_eq, mul_eq_zero, sub_eq_zero,
+      ← map_natCast (Cyclotomic.complexEmbedding (e := 12))
+        (specialLinearTwoThreeCharacterDegrees i),
+      Cyclotomic.complexEmbedding_injective.eq_iff]
     simp
   constructor
   · rintro ⟨hψ, hne⟩
-    obtain ⟨i, rfl⟩ : ψ ∈ Set.range row := by
+    obtain ⟨i, rfl⟩ : ψ ∈ Set.range specialLinearTwoThreeCharacter := by
       rw [irreducibleCharacters_specialLinearTwoThree] at hψ
       exact hψ
     rcases (key i).1 hne with rfl | rfl | rfl
@@ -237,16 +233,18 @@ theorem irreducibleCharactersOver_θ :
     · exact Or.inr (Or.inl rfl)
     · exact Or.inr (Or.inr rfl)
   · rintro (rfl | rfl | rfl)
-    · exact ⟨row_mem _, (key _).2 (Or.inl rfl)⟩
-    · exact ⟨row_mem _, (key _).2 (Or.inr (Or.inl rfl))⟩
-    · exact ⟨row_mem _, (key _).2 (Or.inr (Or.inr rfl))⟩
+    · exact ⟨specialLinearTwoThreeCharacter_mem_irreducibleCharacters _, (key _).2 (Or.inl rfl)⟩
+    · exact ⟨specialLinearTwoThreeCharacter_mem_irreducibleCharacters _,
+        (key _).2 (Or.inr (Or.inl rfl))⟩
+    · exact ⟨specialLinearTwoThreeCharacter_mem_irreducibleCharacters _,
+        (key _).2 (Or.inr (Or.inr rfl))⟩
 
 /-- The value of row `i` at `t`, the fourth column of the table. -/
-private theorem row_t (i : SpecialLinearTwoThreeClassIndex) :
-    row i sl2ZModThreeT =
+private theorem specialLinearTwoThreeCharacter_t (i : SpecialLinearTwoThreeClassIndex) :
+    specialLinearTwoThreeCharacter i sl2ZModThreeT =
       Cyclotomic.complexEmbedding (specialLinearTwoThreeExactCharacterTable i ⟨3, by decide⟩) := by
   have h : specialLinearTwoThreeClassData.index sl2ZModThreeT = ⟨3, by decide⟩ := by decide
-  rw [row, h]
+  rw [specialLinearTwoThreeCharacter_apply, h]
 
 /-- **The three characters of `SL(2, 3)` over `χ₂` are distinct**: at `t`, of order three, they
 take the values `-1`, `-ω` and `-ω²`. -/
@@ -254,10 +252,12 @@ theorem ncard_irreducibleCharactersOver_θ : (irreducibleCharactersOver ℂ N θ
   rw [irreducibleCharactersOver_θ, χhat_mul_ω₁, χhat_mul_ω₂]
   have hne (i j : SpecialLinearTwoThreeClassIndex)
       (h : specialLinearTwoThreeExactCharacterTable i ⟨3, by decide⟩ ≠
-        specialLinearTwoThreeExactCharacterTable j ⟨3, by decide⟩) : row i ≠ row j := by
+        specialLinearTwoThreeExactCharacterTable j ⟨3, by decide⟩) :
+      specialLinearTwoThreeCharacter i ≠ specialLinearTwoThreeCharacter j := by
     intro hij
     have := congrFun hij sl2ZModThreeT
-    rw [row_t, row_t, Cyclotomic.complexEmbedding_injective.eq_iff] at this
+    rw [specialLinearTwoThreeCharacter_t, specialLinearTwoThreeCharacter_t,
+      Cyclotomic.complexEmbedding_injective.eq_iff] at this
     exact h this
   refine Set.ncard_eq_three.2 ⟨_, _, _, hne _ _ ?_, hne _ _ ?_, hne _ _ ?_, rfl⟩ <;>
     simp only [specialLinearTwoThreeExactCharacterTable_apply] <;> decide +kernel
@@ -266,7 +266,8 @@ theorem ncard_irreducibleCharactersOver_θ : (irreducibleCharactersOver ℂ N θ
 `Irr(SL(2, 3) ⧸ Q₈)` onto the three characters over `χ₂`, so the quotient, which is cyclic of order
 three, has three irreducible characters. -/
 example : (irreducibleCharacters ℂ (SpecialLinearGroup (Fin 2) (ZMod 3) ⧸ N)).ncard = 3 := by
-  have h := gallagher_bijOn (row_mem ⟨4, by decide⟩) θ_mem χhat_restrict
+  have h := gallagher_bijOn
+    (specialLinearTwoThreeCharacter_mem_irreducibleCharacters ⟨4, by decide⟩) θ_mem χhat_restrict
   exact h.ncard_eq.trans ncard_irreducibleCharactersOver_θ
 
 end TauCeti.Examples.RepresentationTheory.GallagherSpecialLinearTwoThree

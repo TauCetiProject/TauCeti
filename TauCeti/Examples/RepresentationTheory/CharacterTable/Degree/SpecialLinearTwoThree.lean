@@ -32,13 +32,6 @@ theorem index_center : (Subgroup.center (SpecialLinearGroup (Fin 2) (ZMod 3))).i
   rw [natCard_center_sl2_zmod_three, natCard_sl2_zmod_three] at h
   omega
 
-/-- At `1`, row `i` of the certified table, embedded in `ℂ`, is the degree of that row. -/
-private theorem embeddedRow_one (i : SpecialLinearTwoThreeClassIndex) :
-    Cyclotomic.complexEmbedding
-        (specialLinearTwoThreeExactCharacterTable i (specialLinearTwoThreeClassData.index 1)) =
-      specialLinearTwoThreeCharacterDegrees i := by
-  rw [isCyclotomicCharacterTableSpec_specialLinearTwoThree.table_index_one, map_natCast]
-
 /-- The value at `1` of an irreducible character of `SL(2, 3)` is the degree attached to its row
 of the certified table. -/
 private theorem exists_apply_one_eq {χ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ}
@@ -46,18 +39,20 @@ private theorem exists_apply_one_eq {χ : SpecialLinearGroup (Fin 2) (ZMod 3) �
     ∃ i, χ 1 = specialLinearTwoThreeCharacterDegrees i := by
   rw [irreducibleCharacters_specialLinearTwoThree] at hχ
   obtain ⟨i, rfl⟩ := hχ
-  exact ⟨i, embeddedRow_one i⟩
+  exact ⟨i, specialLinearTwoThreeCharacter_one i⟩
 
 /-- **The degrees of `SL(2, 3)` are `1`, `2` and `3`.** -/
 theorem apply_one_eq_one_or_eq_two_or_eq_three {χ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ}
     (hχ : χ ∈ irreducibleCharacters ℂ (SpecialLinearGroup (Fin 2) (ZMod 3))) :
     χ 1 = 1 ∨ χ 1 = 2 ∨ χ 1 = 3 := by
   obtain ⟨i, hi⟩ := exists_apply_one_eq hχ
-  rw [hi, specialLinearTwoThreeCharacterDegrees_apply]
-  have h7 : ∀ j : Fin 7, (![1, 1, 1, 3, 2, 2, 2] : Fin 7 → ℕ) j = 1 ∨
-      (![1, 1, 1, 3, 2, 2, 2] : Fin 7 → ℕ) j = 2 ∨ (![1, 1, 1, 3, 2, 2, 2] : Fin 7 → ℕ) j = 3 := by
-    decide
-  rcases h7 i with h | h | h <;> simp [h]
+  have hdeg : ∀ j, specialLinearTwoThreeCharacterDegrees j = 1 ∨
+      specialLinearTwoThreeCharacterDegrees j = 2 ∨
+        specialLinearTwoThreeCharacterDegrees j = 3 := by
+    intro j
+    rw [specialLinearTwoThreeCharacterDegrees_apply]
+    fin_cases j <;> decide
+  rcases hdeg i with h | h | h <;> rw [hi, h] <;> norm_num
 
 /-- Every degree `1`, `2`, `3` of `SL(2, 3)` divides `|H : Z| = 12`. -/
 example {χ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ}
@@ -81,13 +76,12 @@ example {χ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ}
 of degree `3`, and `3² = 9` does not divide `|SL(2, 3) : {±1}| = 12`. -/
 example : ∃ χ ∈ irreducibleCharacters ℂ (SpecialLinearGroup (Fin 2) (ZMod 3)), χ 1 = 3 ∧
     ¬ 3 ^ 2 ∣ (Subgroup.center (SpecialLinearGroup (Fin 2) (ZMod 3))).index := by
-  refine ⟨fun g => Cyclotomic.complexEmbedding (specialLinearTwoThreeExactCharacterTable
-    ⟨3, by decide⟩ (specialLinearTwoThreeClassData.index g)), ?_, ?_, ?_⟩
-  · rw [irreducibleCharacters_specialLinearTwoThree]
-    exact ⟨_, rfl⟩
-  · refine (embeddedRow_one _).trans ?_
-    rw [specialLinearTwoThreeCharacterDegrees_apply]
-    exact_mod_cast (rfl : (![1, 1, 1, 3, 2, 2, 2] : Fin 7 → ℕ) 3 = 3)
+  refine ⟨specialLinearTwoThreeCharacter ⟨3, by decide⟩,
+    specialLinearTwoThreeCharacter_mem_irreducibleCharacters _, ?_, ?_⟩
+  · have h3 : specialLinearTwoThreeCharacterDegrees ⟨3, by decide⟩ = 3 := by
+      rw [specialLinearTwoThreeCharacterDegrees_apply]
+      decide
+    rw [specialLinearTwoThreeCharacter_one, h3, Nat.cast_ofNat]
   · rw [index_center]
     norm_num
 
