@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Analysis.Complex.ReImTopology
 public import Mathlib.Topology.Sets.Opens
+public import Mathlib.Analysis.Normed.Group.Basic
+import Mathlib.Analysis.Complex.Basic
+import Mathlib.Topology.MetricSpace.Thickening
+import Mathlib.Topology.UniformSpace.HeineCantor
 
 /-!
 # Upper halves of open planar sets
@@ -22,7 +26,9 @@ open half-plane `{a < im}` (`TauCeti.setOfPred_le_im_mem_nhds`). A relatively op
 `Ω ∩ {0 ≤ im}` is a limit of interior points
 (`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). A local property holds on
 `Ω ∩ {0 ≤ im}` once it holds on the upper half of `Ω` and on the half-discs centred on the real
-axis (`TauCeti.inter_setOf_im_nonneg_induction`).
+axis (`TauCeti.inter_setOf_im_nonneg_induction`). A function continuous on `Ω ∩ {0 ≤ im}` and
+zero on `Ω ∩ ℝ` is uniformly small near the axis on compact sets
+(`TauCeti.exists_forall_norm_lt_of_im_lt`).
 -/
 
 public noncomputable section
@@ -113,3 +119,32 @@ end TauCeti
 theorem TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf (Ω : Opens ℂ) :
     Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) = Ω.upperHalf :=
   Opens.ext ((TauCeti.interior_inter_setOf_im_nonneg Ω.isOpen).trans (Opens.coe_upperHalf Ω).symm)
+
+namespace TauCeti
+
+open Metric Set
+
+/-- A function continuous on `Ω ∩ {0 ≤ im}` and zero on `Ω ∩ ℝ` is uniformly small near the axis
+on every compact subset of `Ω ∩ {0 ≤ im}`. -/
+theorem exists_forall_norm_lt_of_im_lt {E : Type*} [NormedAddCommGroup E] {Ω : Opens ℂ}
+    {g : ℂ → E}
+    (hgc : ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (hg0 : ∀ x : ℝ, (x : ℂ) ∈ Ω → g x = 0)
+    {T : Set ℂ} (hT : IsCompact T) (hTΩ : T ⊆ Ω) (hT0 : T ⊆ {z | 0 ≤ z.im}) {ε : ℝ}
+    (hε : 0 < ε) : ∃ δ > 0, ∀ z ∈ T, z.im < δ → ‖g z‖ < ε := by
+  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
+  obtain ⟨r, hr, hrΩ⟩ := hT.exists_cthickening_subset_open Ω.isOpen hTΩ
+  have hC : IsCompact (cthickening r T ∩ {z : ℂ | 0 ≤ z.im}) := hT.cthickening.inter_right hclosed
+  obtain ⟨δ, hδ, hgδ⟩ := Metric.uniformContinuousOn_iff.1 (hC.uniformContinuousOn_of_continuous
+    (hgc.mono fun z hz => ⟨hrΩ hz.1, hz.2⟩)) ε hε
+  refine ⟨min δ r, lt_min hδ hr, fun z hzT hzδ => ?_⟩
+  have hz0 : 0 ≤ z.im := hT0 hzT
+  have hdist : dist (z.re : ℂ) z = z.im := by
+    rw [Complex.dist_eq_re_im]
+    simp [Real.sqrt_sq hz0]
+  have hz' : (z.re : ℂ) ∈ cthickening r T ∩ {z : ℂ | 0 ≤ z.im} :=
+    ⟨mem_cthickening_of_dist_le _ z r T hzT (by linarith [min_le_right δ r]), by simp⟩
+  have h := hgδ z ⟨self_subset_cthickening T hzT, hz0⟩ _ hz'
+    (by rw [dist_comm, hdist]; linarith [min_le_left δ r])
+  rwa [hg0 _ (hrΩ hz'.1), dist_zero_right] at h
+
+end TauCeti
