@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
-public import TauCeti.LinearAlgebra.Matrix.Idempotent
+public import TauCeti.LinearAlgebra.Matrix.Idempotent.Equivalence
+
+import TauCeti.Data.Matrix.Block
 
 /-!
 # Elementary conjugacy of equivalent idempotents
@@ -14,7 +16,7 @@ public import TauCeti.LinearAlgebra.Matrix.Idempotent
 Let `A` be a ring, not necessarily commutative. Idempotent matrices `e` and `f`, possibly of
 different sizes, are equivalent (`Matrix.IdempotentEquivalent`) exactly when `e ⊕ 0` and `0 ⊕ f`
 are conjugate by an invertible matrix
-(`Matrix.idempotentEquivalent_iff_exists_mul_fromBlocks_mul_inv`).
+(`Matrix.idempotentEquivalent_iff_exists_units_conj_fromBlocks_zero`).
 This file shows that, after adding one more zero block, the conjugating matrix can be taken in the
 elementary subgroup `TauCeti.elementarySubgroup`.
 
@@ -85,8 +87,8 @@ private theorem idempotentEquivalent_mul_fromBlocks_mul_inv (he : IsIdempotentEl
       Matrix.fromBlocks (Matrix.fromBlocks e 0 0 (0 : Matrix κ κ A)) 0 0 0 *
       (↑u⁻¹ : Matrix ((ι ⊕ κ) ⊕ (ι ⊕ κ)) ((ι ⊕ κ) ⊕ (ι ⊕ κ)) A)) := by
   have he₀ := he.fromBlocks_zero₁₂_zero₂₁ (IsIdempotentElem.zero (M₀ := Matrix κ κ A))
-  exact ((he.idempotentEquivalent_fromBlocks_zero (κ := κ)).trans
-    (he₀.idempotentEquivalent_fromBlocks_zero (κ := ι ⊕ κ))).trans
+  exact ((he.idempotentEquivalent_fromBlocks_zero_right κ).symm.trans
+    (he₀.idempotentEquivalent_fromBlocks_zero_right (ι ⊕ κ)).symm).trans
     (idempotentEquivalent_conj (he₀.fromBlocks_zero₁₂_zero₂₁ .zero) u)
 
 /-- **Equivalent idempotents are elementarily conjugate after stabilization.** If `e ∼ f`, then
@@ -100,7 +102,7 @@ theorem IdempotentEquivalent.exists_mem_elementarySubgroup_mul_fromBlocks_mul_in
           Matrix.fromBlocks (Matrix.fromBlocks e 0 0 0) 0 0 0 *
           (↑ε⁻¹ : Matrix ((ι ⊕ κ) ⊕ (ι ⊕ κ)) ((ι ⊕ κ) ⊕ (ι ⊕ κ)) A) =
         Matrix.fromBlocks (Matrix.fromBlocks 0 0 0 f) 0 0 0 := by
-  obtain ⟨u, hu⟩ := h.exists_mul_fromBlocks_mul_inv
+  obtain ⟨u, hu⟩ := h.exists_units_conj_fromBlocks_zero
   obtain ⟨ε, hε, hconj⟩ :=
     TauCeti.exists_mem_elementarySubgroup_mul_fromBlocks_mul_inv u (Matrix.fromBlocks e 0 0 0)
   exact ⟨ε, hε, hconj.trans (by rw [hu])⟩
@@ -122,8 +124,8 @@ theorem idempotentEquivalent_iff_exists_mem_elementarySubgroup_mul_fromBlocks_mu
   rw [hε] at h
   have hf₀ := (isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff.1 h.isIdempotentElem_right).1
   have hf := (isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff.1 hf₀).2
-  exact h.trans ((hf.idempotentEquivalent_zero_fromBlocks (κ := ι)).trans
-    (hf₀.idempotentEquivalent_fromBlocks_zero (κ := ι ⊕ κ))).symm
+  exact h.trans ((hf.idempotentEquivalent_fromBlocks_zero_left ι).symm.trans
+    (hf₀.idempotentEquivalent_fromBlocks_zero_right (ι ⊕ κ)).symm).symm
 
 omit [DecidableEq ι] [DecidableEq κ] in
 /-- **Aligning an idempotent along a surjection.** Let `φ : A →+* B` be a surjective ring

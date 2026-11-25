@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.ModularForms.LFunction
 public import TauCeti.NumberTheory.LSeries.EntireExtension
 import TauCeti.NumberTheory.ModularForms.FiniteDimensional
 import TauCeti.NumberTheory.LSeries.MeanSquare
+import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 
 /-!
 # Dirichlet series of modular forms
@@ -150,8 +151,7 @@ theorem Λ_natCast_add_one (hk : 0 < k) [ModularFormClass F Γ k] (f : F) (n : �
   have h2π : (2 * Real.pi : ℂ) ^ (n + 1) ≠ 0 :=
     pow_ne_zero _ (by exact_mod_cast Real.two_pi_pos.ne')
   have hn : (n.factorial : ℂ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
-  rw [L_apply_of_ne_zero hk f (by exact_mod_cast n.succ_ne_zero), Complex.Gammaℂ_def,
-    Complex.Gamma_nat_eq_factorial, Complex.cpow_neg, ← Nat.cast_succ, Complex.cpow_natCast]
+  rw [L_apply_of_ne_zero hk f (by exact_mod_cast n.succ_ne_zero), Complex.Gammaℂ_natCast_add_one]
   field_simp
 
 /-- At a positive integer the completed `L`-function of a modular form vanishes exactly when its

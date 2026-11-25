@@ -135,10 +135,10 @@ theorem hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral {c : ι �
       ∫ x, (∏ i, hermiteFunction (a i) (c i * x i)) * h x =
         |∏ i, c i|⁻¹ * ∫ y, (∏ i, hermiteFunction (a i) (y i)) * (h ∘ d) y := by
     intro h a
-    rw [← smul_eq_mul, ← integral_comp_mul_pi hc]
+    rw [← smul_eq_mul, ← integral_comp_mul_pi c]
     simp only [Function.comp_apply, hd]
   have hint : ∫ x, f x * g x = |∏ i, c i|⁻¹ * ∫ y, (f ∘ d) y * (g ∘ d) y := by
-    rw [← smul_eq_mul, ← integral_comp_mul_pi hc]
+    rw [← smul_eq_mul, ← integral_comp_mul_pi c]
     simp only [Function.comp_apply, hd]
   convert key.mul_left (|∏ i, c i|⁻¹ * |∏ i, c i|⁻¹) using 1
   · funext a
