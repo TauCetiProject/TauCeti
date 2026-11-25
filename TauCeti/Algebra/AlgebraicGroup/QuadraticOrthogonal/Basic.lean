@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.QuadraticForm.Basis
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Functor
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.LinearAlgebra.Matrix.Alternating.ModIdeal
@@ -52,7 +51,8 @@ smaller: over `𝔽₂` with `q = x²` the polar form is zero while `O(q)` is `�
 * `TauCeti.QuadraticOrthogonal.pointsSubgroup` and `TauCeti.QuadraticOrthogonal.pointsMulEquiv`:
   the points of `O(q)` are the invertible matrices preserving `q_A`; by
   `TauCeti.QuadraticOrthogonal.hopfIdealPointsSubgroup_definingHopfIdeal` these are the matrices
-  cut out by the defining Hopf ideal.
+  cut out by the defining Hopf ideal. Transporting a point along an algebra morphism applies it to
+  the entries of the matrix (`TauCeti.QuadraticOrthogonal.coe_pointsMulEquiv_mapPoints`).
 * `TauCeti.QuadraticOrthogonal.pointsMulEquivOrthogonalGroup`: the points of `O(q)` are
   `TauCeti.QuadraticMap.orthogonalGroup (QuadraticForm.baseChangeForm q A)`, a point acting on
   `Aⁿ` by its matrix (`pointsMulEquivOrthogonalGroup_apply`).
@@ -194,17 +194,16 @@ private theorem comul_relation_mem {x : GeneralLinear.coordinateHopfAlgebra R n}
       (Ideal.span (relationSet R n q)) ⊔
     Ideal.rightTensorIdeal (R := R) (A := GeneralLinear.coordinateHopfAlgebra R n)
       (Ideal.span (relationSet R n q))
+  -- The two tensor ideals are the images of the span along the two tensor inclusions.
   have hL := (isAltMod_relationMatrix R n q).map (J := J)
     (Algebra.TensorProduct.includeLeft (R := R) (S := R)
       (B := GeneralLinear.coordinateHopfAlgebra R n))
-    (Ideal.map_le_iff_le_comap.mpr fun _ hy => Ideal.mem_comap.mpr (Ideal.mem_sup_left
-      (Ideal.includeLeft_mem_leftTensorIdeal (R := R)
-        (B := GeneralLinear.coordinateHopfAlgebra R n) hy)))
+    ((Ideal.leftTensorIdeal_def R (GeneralLinear.coordinateHopfAlgebra R n) _).ge.trans
+      le_sup_left)
   have hR := (isAltMod_relationMatrix R n q).map (J := J)
     (Algebra.TensorProduct.includeRight (R := R) (A := GeneralLinear.coordinateHopfAlgebra R n))
-    (Ideal.map_le_iff_le_comap.mpr fun _ hy => Ideal.mem_comap.mpr (Ideal.mem_sup_right
-      (Ideal.includeRight_mem_rightTensorIdeal (R := R)
-        (A := GeneralLinear.coordinateHopfAlgebra R n) hy)))
+    ((Ideal.rightTensorIdeal_def R (GeneralLinear.coordinateHopfAlgebra R n) _).ge.trans
+      le_sup_right)
   have hcomul := (hL.transpose_mul_mul ((GeneralLinear.genericMatrix R n).map
     (Algebra.TensorProduct.includeRight (R := R)))).add hR
   rw [← relationMatrix_map_comul] at hcomul
@@ -302,7 +301,7 @@ identification `TauCeti.matrixLinearEquiv` of invertible matrices with linear au
 `Aⁿ`. -/
 noncomputable def pointsSubgroup : Subgroup (GL (Fin n) A) :=
   (QuadraticMap.orthogonalGroup (baseChangeForm q A)).comap
-    (matrixLinearEquiv (R := A) (n := Fin n)).toMonoidHom
+    (matrixLinearEquiv (R := A) (n := Fin n) : GL (Fin n) A →* ((Fin n → A) ≃ₗ[A] (Fin n → A)))
 
 variable {R n q A}
 
@@ -312,7 +311,7 @@ theorem mem_pointsSubgroup_iff (g : GL (Fin n) A) :
     g ∈ pointsSubgroup R n q A ↔
       ∀ x, baseChangeForm q A ((g : Matrix (Fin n) (Fin n) A) *ᵥ x) = baseChangeForm q A x := by
   rw [pointsSubgroup, Subgroup.mem_comap, QuadraticMap.mem_orthogonalGroup_iff]
-  simp only [MulEquiv.coe_toMonoidHom, matrixLinearEquiv_apply]
+  simp only [MonoidHom.coe_ofClass, MulEquiv.trans_apply, matrixGeneralLinearEquiv_apply]
 
 /-- A matrix preserves `q_A` exactly when `gᵀ M g - M` is alternating. -/
 theorem mem_pointsSubgroup_iff_isAltMod (g : GL (Fin n) A) :
@@ -321,13 +320,8 @@ theorem mem_pointsSubgroup_iff_isAltMod (g : GL (Fin n) A) :
           (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A) *
           (g : Matrix (Fin n) (Fin n) A) -
         (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A)) := by
-  -- Moving `g` across the dot product: `(g x)ᵀ M (g x) = xᵀ (gᵀ M g) x`.
-  have hframe (M : Matrix (Fin n) (Fin n) A) (x : Fin n → A) :
-      ((g : Matrix (Fin n) (Fin n) A) *ᵥ x) ⬝ᵥ (M *ᵥ ((g : Matrix (Fin n) (Fin n) A) *ᵥ x)) =
-        x ⬝ᵥ (((g : Matrix (Fin n) (Fin n) A)ᵀ * M * (g : Matrix (Fin n) (Fin n) A)) *ᵥ x) := by
-    simp only [← Matrix.mulVec_mulVec, Matrix.dotProduct_mulVec x, Matrix.vecMul_transpose]
-  simp only [mem_pointsSubgroup_iff, isAltMod_bot_iff, baseChangeForm_apply, hframe,
-    Matrix.sub_mulVec, dotProduct_sub, sub_eq_zero]
+  simp only [mem_pointsSubgroup_iff, isAltMod_bot_iff, baseChangeForm_apply,
+    Matrix.sub_mulVec, dotProduct_sub, Matrix.dotProduct_transpose_mul_mul_mulVec, sub_eq_zero]
 
 variable (R n q A)
 
@@ -338,12 +332,11 @@ theorem hopfIdealPointsSubgroup_definingHopfIdeal :
       pointsSubgroup R n q A := by
   ext g
   obtain ⟨p, rfl⟩ := (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).surjective g
-  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff, MulEquiv.symm_apply_apply,
-    mem_pointsSubgroup_iff_isAltMod, GeneralLinear.pointsMulEquiv_apply]
+  rw [GeneralLinear.pointsMulEquiv_apply, ← toConv_ofConv p,
+    GeneralLinear.pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker,
+    AlgHom.toRingHom_eq_coe, definingHopfIdeal_toIdeal_le_ker_iff, mem_pointsSubgroup_iff_isAltMod]
   -- The matrix of the point `p` is the image of the generic matrix under `p`.
-  rw [← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, ← relationMatrix_map,
-    ← definingHopfIdeal_toIdeal_le_ker_iff]
-  exact ⟨fun h x hx => h x (HopfIdeal.mem_toIdeal.mp hx), fun h x hx => h hx⟩
+  rw [relationMatrix_map, GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
 
 /-- **The points identification**: the group of algebra-valued points of the coordinate Hopf
 algebra of `O(q)` is `O(q)(A)`. -/
@@ -361,11 +354,33 @@ theorem pointsMulEquiv_coe
     GeneralLinear.pointsMulEquiv n
         (CommHopfAlgCat.quotientPointsHom (GeneralLinear.coordinateHopfAlgebra R n)
           (definingHopfIdeal R n q) (CommAlgCat.of R A) f) =
-      (pointsMulEquiv R n q A f : GL (Fin n) A) :=
-  (GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply n (definingHopfIdeal R n q)
-    (CommAlgCat.of R A) f).symm
+      (pointsMulEquiv R n q A f : GL (Fin n) A) := by
+  simpa only [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply] using
+    (GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply n (definingHopfIdeal R n q)
+      (CommAlgCat.of R A) f).symm
+
+/-- **Naturality of the points identification**: transporting a point of `O(q)` along an algebra
+morphism `f : A → B` applies `f` to the entries of its matrix. -/
+theorem coe_pointsMulEquiv_mapPoints {B : Type w} [CommRing B] [Algebra R B]
+    (f : CommAlgCat.of R A ⟶ CommAlgCat.of R B)
+    (p : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n q) (CommAlgCat.of R A)) :
+    (pointsMulEquiv R n q B (HopfAlgebra.mapPoints (H := coordinateHopfAlgebra R n q) f p) :
+        GL (Fin n) B) =
+      Matrix.GeneralLinearGroup.map (f.hom : A →+* B)
+        (pointsMulEquiv R n q A p : GL (Fin n) A) := by
+  simp only [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply]
+  rw [GeneralLinear.hopfIdealPointsSubgroupMulEquiv_mapPoints,
+    GeneralLinear.coe_mapHopfIdealPointsSubgroup]
 
 /-! ### Comparison with the orthogonal group of `q_A` -/
+
+/-- The image of `O(q)(A)` under the identification of invertible matrices with linear
+automorphisms of `Aⁿ` is the orthogonal group of `q_A`. -/
+private theorem map_pointsSubgroup :
+    (pointsSubgroup R n q A).map (matrixLinearEquiv (R := A) (n := Fin n) :
+        GL (Fin n) A →* ((Fin n → A) ≃ₗ[A] (Fin n → A))) =
+      QuadraticMap.orthogonalGroup (baseChangeForm q A) :=
+  Subgroup.map_comap_eq_self_of_surjective (matrixLinearEquiv (R := A) (n := Fin n)).surjective _
 
 /-- **The points of `O(q)` are the orthogonal group of `q_A`**: the group of algebra-valued
 points of the coordinate Hopf algebra of `O(q)` is
@@ -376,8 +391,7 @@ noncomputable def pointsMulEquivOrthogonalGroup :
       QuadraticMap.orthogonalGroup (baseChangeForm q A) :=
   (pointsMulEquiv R n q A).trans
     (((matrixLinearEquiv (R := A) (n := Fin n)).subgroupMap _).trans
-      (MulEquiv.subgroupCongr (Subgroup.map_comap_eq_self_of_surjective
-        (matrixLinearEquiv (R := A) (n := Fin n)).surjective _)))
+      (MulEquiv.subgroupCongr (map_pointsSubgroup R n q A)))
 
 variable {R n q A}
 
@@ -388,11 +402,9 @@ theorem pointsMulEquivOrthogonalGroup_apply
     (x : Fin n → A) :
     (pointsMulEquivOrthogonalGroup R n q A f : (Fin n → A) ≃ₗ[A] (Fin n → A)) x =
       ((pointsMulEquiv R n q A f : GL (Fin n) A) : Matrix (Fin n) (Fin n) A) *ᵥ x := by
-  have h : (pointsMulEquivOrthogonalGroup R n q A f : (Fin n → A) ≃ₗ[A] (Fin n → A)) =
-      matrixLinearEquiv (pointsMulEquiv R n q A f) := by
-    rw [pointsMulEquivOrthogonalGroup, MulEquiv.trans_apply, MulEquiv.trans_apply]
-    exact MulEquiv.coe_subgroupMap_apply _ _ _
-  rw [h, matrixLinearEquiv_apply]
+  rw [pointsMulEquivOrthogonalGroup, MulEquiv.trans_apply, MulEquiv.trans_apply,
+    MulEquiv.subgroupCongr_apply, MulEquiv.coe_subgroupMap_apply, MulEquiv.trans_apply,
+    matrixGeneralLinearEquiv_apply]
 
 end Points
 

@@ -10,12 +10,15 @@ public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 /-!
 # Matrices alternating modulo an ideal
 
-A square matrix `N` over a commutative ring is *alternating modulo an ideal* `I`
+A square matrix `N` over a commutative semiring is *alternating modulo an ideal* `I`
 (`Matrix.IsAltMod`) when its diagonal entries and its symmetric sums `N i j + N j i` lie in `I`.
-Equivalently, the quadratic expression `xᵀ N x` lies in `I` for every vector `x`
-(`Matrix.isAltMod_iff_forall_dotProduct_mulVec_mem`), and then `Pᵀ N P` is again alternating
-modulo `I` for every square matrix `P` (`Matrix.IsAltMod.transpose_mul_mul`). Modulo `⊥` this says
-exactly that the quadratic form `x ↦ xᵀ N x` vanishes (`Matrix.isAltMod_bot_iff`).
+Then the quadratic expression `xᵀ N x` lies in `I` for every vector `x`
+(`Matrix.IsAltMod.dotProduct_mulVec_mem`), and `Pᵀ N P` is again alternating modulo `I` for every
+matrix `P`, square or not (`Matrix.IsAltMod.transpose_mul_mul`), since the quadratic expression of
+`Pᵀ N P` at `x` is that of `N` at `P x` (`Matrix.dotProduct_transpose_mul_mul_mulVec`). Over a
+commutative ring the converse holds (`Matrix.isAltMod_iff_forall_dotProduct_mulVec_mem`), and
+modulo `⊥` it says exactly that the quadratic form `x ↦ xᵀ N x` vanishes
+(`Matrix.isAltMod_bot_iff`).
 
 This is the condition that cuts the orthogonal group scheme of a quadratic form out of `GLₙ` in
 every characteristic: `g` preserves the form with coefficient matrix `M` exactly when
@@ -25,8 +28,10 @@ every characteristic: `g` preserves the form with coefficient matrix `M` exactly
 
 * `Matrix.IsAltMod`: alternating modulo an ideal, with `Matrix.isAltMod_iff`,
   `Matrix.IsAltMod.of_mem`, `Matrix.IsAltMod.diag_mem` and `Matrix.IsAltMod.add_transpose_mem`.
-* `Matrix.IsAltMod.sum_mul_mul_mem`: the quadratic expression of such a matrix lies in the ideal.
-* `Matrix.isAltMod_iff_forall_dotProduct_mulVec_mem`: the converse.
+* `Matrix.IsAltMod.sum_mul_mul_mem` and `Matrix.IsAltMod.dotProduct_mulVec_mem`: the quadratic
+  expression of such a matrix lies in the ideal.
+* `Matrix.isAltMod_iff_forall_dotProduct_mulVec_mem`: the converse, over a commutative ring.
+* `Matrix.dotProduct_transpose_mul_mul_mulVec`: the quadratic expression of a framed matrix.
 * `Matrix.IsAltMod.transpose_mul_mul`: stability under framing `N ↦ Pᵀ N P`.
 * `Matrix.IsAltMod.map`: stability under a ring morphism carrying the ideal into another.
 * `Matrix.isAltMod_bot_iff`: alternating modulo `⊥` means the quadratic form vanishes.
@@ -38,11 +43,22 @@ open scoped Matrix
 
 namespace Matrix
 
-variable {ι S : Type*} [CommRing S]
+/-- The quadratic expression of a framed matrix `Pᵀ N P` at `x` is that of `N` at `P x`. -/
+theorem dotProduct_transpose_mul_mul_mulVec {ι κ S : Type*} [CommSemiring S] [Fintype ι]
+    [Fintype κ] (N : Matrix ι ι S) (P : Matrix ι κ S) (x : κ → S) :
+    x ⬝ᵥ ((Pᵀ * N * P) *ᵥ x) = (P *ᵥ x) ⬝ᵥ (N *ᵥ (P *ᵥ x)) := by
+  rw [← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec, Matrix.dotProduct_mulVec,
+    Matrix.vecMul_transpose]
+
+variable {ι κ S : Type*}
+
+section CommSemiring
+
+variable [CommSemiring S]
 
 /-- A square matrix is **alternating modulo an ideal** `I` when its diagonal entries and its
-symmetric sums `N i j + N j i` lie in `I`. For finite `ι` this says that `xᵀ N x ∈ I` for every
-vector `x` (`Matrix.isAltMod_iff_forall_dotProduct_mulVec_mem`). -/
+symmetric sums `N i j + N j i` lie in `I`. For finite `ι` over a commutative ring this says that
+`xᵀ N x ∈ I` for every vector `x` (`Matrix.isAltMod_iff_forall_dotProduct_mulVec_mem`). -/
 def IsAltMod (I : Ideal S) (N : Matrix ι ι S) : Prop :=
   (∀ i, N i i ∈ I) ∧ ∀ i j, N i j + N j i ∈ I
 
@@ -93,16 +109,25 @@ theorem sum_mul_mul_mem [Fintype ι] (hN : IsAltMod I N) (a : ι → S) :
     exact add_mem (add_mem (I.mul_mem_left _ (hN.diag_mem k))
       (Ideal.sum_mem _ fun j _ => I.mul_mem_left _ (hN.add_transpose_mem k j))) ih
 
-/-- A matrix alternating modulo `I` stays so when framed by any matrix: `Pᵀ N P`. -/
-theorem transpose_mul_mul [Fintype ι] (hN : IsAltMod I N) (P : Matrix ι ι S) :
-    IsAltMod I (Pᵀ * N * P) := by
-  refine of_mem (fun k => ?_) fun k l => ?_
-  · have h := hN.sum_mul_mul_mem (fun i => P i k)
-    convert h using 1
-    simp only [Matrix.mul_apply, Matrix.transpose_apply, Finset.sum_mul]
-    rw [Finset.sum_comm]
+/-- The quadratic expression `xᵀ N x` of a matrix alternating modulo `I` lies in `I`. -/
+theorem dotProduct_mulVec_mem [Fintype ι] (hN : IsAltMod I N) (x : ι → S) :
+    x ⬝ᵥ (N *ᵥ x) ∈ I := by
+  have hform : x ⬝ᵥ (N *ᵥ x) = ∑ i, ∑ j, x i * x j * N i j := by
+    simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
     refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
     ring
+  exact hform ▸ hN.sum_mul_mul_mem x
+
+/-- A matrix alternating modulo `I` stays so when framed by any matrix, square or not:
+`Pᵀ N P`. -/
+theorem transpose_mul_mul [Fintype ι] (hN : IsAltMod I N) (P : Matrix ι κ S) :
+    IsAltMod I (Pᵀ * N * P) := by
+  refine of_mem (fun k => ?_) fun k l => ?_
+  · -- The diagonal entry at `k` is the quadratic expression at the `k`-th column of `P`.
+    convert hN.dotProduct_mulVec_mem (P.col k) using 1
+    rw [Matrix.mul_assoc]
+    simp only [Matrix.mul_apply, Matrix.transpose_apply, dotProduct, Matrix.mulVec,
+      Matrix.col_apply]
   · have hsum : (Pᵀ * N * P) k l + (Pᵀ * N * P) l k = (Pᵀ * (N + Nᵀ) * P) k l := by
       rw [Matrix.mul_add, Matrix.add_mul, Matrix.add_apply]
       congr 1
@@ -119,20 +144,13 @@ theorem add (hN : IsAltMod I N) (hN' : IsAltMod I N') : IsAltMod I (N + N') :=
       rw [Matrix.add_apply, Matrix.add_apply, add_add_add_comm]
       exact add_mem (hN.add_transpose_mem i j) (hN'.add_transpose_mem i j)
 
-/-- The negative of a matrix alternating modulo `I` is alternating modulo `I`. -/
-theorem neg (hN : IsAltMod I N) : IsAltMod I (-N) :=
-  of_mem (fun i => by simpa using neg_mem (hN.diag_mem i))
-    fun i j => by
-      rw [Matrix.neg_apply, Matrix.neg_apply, ← neg_add]
-      exact neg_mem (hN.add_transpose_mem i j)
-
 /-- Being alternating modulo an ideal is inherited by every larger ideal. -/
 theorem mono (hIJ : I ≤ J) (hN : IsAltMod I N) : IsAltMod J N :=
   of_mem (fun i => hIJ (hN.diag_mem i)) fun i j => hIJ (hN.add_transpose_mem i j)
 
 /-- A ring morphism carrying `I` into `J` carries matrices alternating modulo `I` to matrices
 alternating modulo `J`. -/
-theorem map {T F : Type*} [CommRing T] [FunLike F S T] [RingHomClass F S T] {J : Ideal T}
+theorem map {T F : Type*} [CommSemiring T] [FunLike F S T] [RingHomClass F S T] {J : Ideal T}
     (hN : IsAltMod I N) (f : F) (hIJ : I.map f ≤ J) : IsAltMod J (N.map f) :=
   of_mem (fun i => hIJ (Ideal.mem_map_of_mem f (hN.diag_mem i)))
     fun i j => by
@@ -141,18 +159,27 @@ theorem map {T F : Type*} [CommRing T] [FunLike F S T] [RingHomClass F S T] {J :
 
 end IsAltMod
 
+end CommSemiring
+
+section CommRing
+
+variable [CommRing S]
+
+/-- The negative of a matrix alternating modulo `I` is alternating modulo `I`. -/
+theorem IsAltMod.neg {I : Ideal S} {N : Matrix ι ι S} (hN : IsAltMod I N) : IsAltMod I (-N) :=
+  IsAltMod.of_mem (fun i => by simpa using neg_mem (hN.diag_mem i))
+    fun i j => by
+      rw [Matrix.neg_apply, Matrix.neg_apply, ← neg_add]
+      exact neg_mem (hN.add_transpose_mem i j)
+
 /-- A matrix is alternating modulo `I` exactly when its quadratic expression `xᵀ N x` lies in `I`
 for every vector `x`. -/
 theorem isAltMod_iff_forall_dotProduct_mulVec_mem [Fintype ι] {I : Ideal S}
     (N : Matrix ι ι S) : IsAltMod I N ↔ ∀ x : ι → S, x ⬝ᵥ (N *ᵥ x) ∈ I := by
   classical
-  have hform (x : ι → S) : x ⬝ᵥ (N *ᵥ x) = ∑ i, ∑ j, x i * x j * N i j := by
-    simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-    ring
   have hsingle (i j : ι) : (Pi.single i 1 : ι → S) ⬝ᵥ (N *ᵥ Pi.single j 1) = N i j := by
     simp
-  refine ⟨fun h x => hform x ▸ h.sum_mul_mul_mem x, fun h => IsAltMod.of_mem
+  refine ⟨fun h x => h.dotProduct_mulVec_mem x, fun h => IsAltMod.of_mem
     (fun i => hsingle i i ▸ h _) fun i j => ?_⟩
   -- Test on `eᵢ + eⱼ` and cancel the two diagonal terms.
   have hij := h (Pi.single i 1 + Pi.single j 1)
@@ -165,5 +192,7 @@ theorem isAltMod_iff_forall_dotProduct_mulVec_mem [Fintype ι] {I : Ideal S}
 theorem isAltMod_bot_iff [Fintype ι] (N : Matrix ι ι S) :
     IsAltMod ⊥ N ↔ ∀ x : ι → S, x ⬝ᵥ (N *ᵥ x) = 0 := by
   simp only [isAltMod_iff_forall_dotProduct_mulVec_mem, Ideal.mem_bot]
+
+end CommRing
 
 end Matrix
