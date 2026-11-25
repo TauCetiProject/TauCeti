@@ -57,6 +57,7 @@ private theorem comp_includeComplex_eq (ρ : Representation ℂ WeilGroupReal V)
 /-- **Restriction to `ℂˣ` detects semisimplicity.** A finite-dimensional complex representation of
 `W_ℝ` is semisimple if and only if its restriction to `W_ℂ = ℂˣ` is: `ℂˣ` is a normal subgroup of
 index two, and `2` is invertible in `ℂ`. -/
+@[simp]
 theorem isSemisimpleRepresentation_comp_includeComplex_iff
     (ρ : Representation ℂ WeilGroupReal V) :
     IsSemisimpleRepresentation (ρ.comp includeComplex) ↔ IsSemisimpleRepresentation ρ := by

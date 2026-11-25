@@ -60,6 +60,7 @@ finite-dimensional representation is semisimple if and only if its restriction t
 subgroup `N` with `[G : N]` invertible in `k` is: restriction preserves semisimplicity
 (`Representation.isSemisimpleRepresentation_comp_subtype`), and the relative Maschke theorem
 (`Representation.isSemisimpleRepresentation_of_comp_subtype`) gives the converse. -/
+@[simp]
 theorem isSemisimpleRepresentation_comp_subtype_iff (ρ : Representation k G V) (N : Subgroup G)
     [N.Normal] [NeZero (N.index : k)] [FiniteDimensional k V] :
     IsSemisimpleRepresentation (ρ.comp N.subtype) ↔ IsSemisimpleRepresentation ρ :=
