@@ -10,10 +10,9 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.Forcing
 /-!
 # Checks for the forcing maps
 
-The first Check of `TauCetiRoadmap/VariationalMethods/README.md` §2.3: on `V = H = ℂ` with
-`j = id` and the form `a(u, v) = conj(u) v`, the `H`-forcing map is the identity and the
-dual-forcing map is `ℓ ↦ conj(ℓ 1)`. Scaling `ℓ` by `i` scales `F ℓ` by `-i`, so `F` is conjugate
-linear, while `S (i h) = i S h`.
+On `V = H = ℂ` with `j = id` and the form `a(u, v) = conj(u) v`, the `H`-forcing map `S` is the
+identity and the dual-forcing map `F` is `ℓ ↦ conj(ℓ 1)`. Scaling `ℓ` by `i` scales `F ℓ` by `-i`,
+so `F` is conjugate linear, while `S (i h) = i S h`, so `S` is linear.
 -/
 
 public section
@@ -30,18 +29,21 @@ def complexInnerForm : CoerciveHermitianForm ℂ ℂ where
   form_apply_eq_star u v := by simp [mul_comm]
   exists_coercive := ⟨1, one_pos, fun u ↦ by simp [← Complex.ofReal_pow]⟩
 
+/-- The values of the form `a(u, v) = conj(u) v`. -/
+@[simp]
+theorem complexInnerForm_form_apply (u v : ℂ) : complexInnerForm.form u v = conj u * v := by
+  simp [complexInnerForm, mul_comm]
+
 /-- The `H`-forcing map of `conj(u) v` along the identity is the identity: `S₀ h = h`. -/
 example (h : ℂ) : complexInnerForm.hForcing (ContinuousLinearMap.id ℂ ℂ) h = h := by
   refine ((complexInnerForm.eq_hForcing_iff _).2 fun v ↦ ?_).symm
-  rfl
+  simp [mul_comm]
 
 /-- The dual-forcing map of `conj(u) v` is `F₀ ℓ = conj(ℓ 1)`. -/
 example (ℓ : StrongDual ℂ ℂ) : complexInnerForm.dualForcing ℓ = conj (ℓ 1) := by
   refine (complexInnerForm.eq_dualForcing_iff.2 fun v ↦ ?_).symm
-  change (innerSL ℂ (conj (ℓ 1))) v = ℓ v
-  rw [innerSL_apply_apply, show ℓ v = v * ℓ 1 by rw [← smul_eq_mul, ← map_smul, smul_eq_mul,
-    mul_one]]
-  simp
+  rw [complexInnerForm_form_apply, Complex.conj_conj, mul_comm, ← smul_eq_mul, ← map_smul,
+    smul_eq_mul, mul_one]
 
 /-- The dual-forcing map is conjugate linear: `F₀ (i ℓ) = -i F₀ ℓ`. -/
 example (ℓ : StrongDual ℂ ℂ) :

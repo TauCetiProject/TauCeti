@@ -22,11 +22,14 @@ linear, since `a` is conjugate linear in the slot where the solution sits, and
 For a continuous linear map `j : V → H` to an inner product space, the **`H`-forcing map**
 `S : H →L[𝕜] V` (`TauCeti.CoerciveHermitianForm.hForcing`) solves `a(S h, v) = ⟪h, j v⟫`. It is
 `F` applied to the functional `⟪h, j ·⟫`, which is conjugate linear in `h`, so `S` is linear, with
-`‖S h‖ ≤ c⁻¹ ‖j‖ ‖h‖`. For a compact form pair and a shift `α ≥ ω`, these are the solution maps
-`S_α` and `F_α` of the shifted form, made coercive by
-`TauCeti.CoerciveHermitianForm.ofSemibounded`. At `𝕜 = ℝ` the `H`-forcing map is the Lax–Milgram
-solution map `IsCoercive.formSolutionMap`
-(`TauCeti.CoerciveHermitianForm.hForcing_eq_formSolutionMap`).
+`‖S h‖ ≤ c⁻¹ ‖j‖ ‖h‖`. Applied to `TauCeti.CoerciveHermitianForm.ofSemibounded`, these maps are
+the solution maps of a shifted semibounded form. When `V` is itself a Hilbert space, they are the
+sesquilinear Lax–Milgram solution maps `InnerProductSpace.solutionOfFunctional` and
+`InnerProductSpace.formSolutionMap` of `a.form`
+(`TauCeti.CoerciveHermitianForm.dualForcing_eq_solutionOfFunctional`,
+`TauCeti.CoerciveHermitianForm.hForcing_eq_formSolutionMap`); at `𝕜 = ℝ` the `H`-forcing map is
+also the real solution map `IsCoercive.formSolutionMap`
+(`TauCeti.CoerciveHermitianForm.hForcing_eq_isCoercive_formSolutionMap`).
 
 ## Main declarations
 
@@ -34,11 +37,16 @@ solution map `IsCoercive.formSolutionMap`
   `eq_dualForcing_iff` and `norm_dualForcing_le`.
 * `TauCeti.CoerciveHermitianForm.hForcing`, with `form_hForcing_apply`,
   `hForcing_apply_eq_dualForcing`, `eq_hForcing_iff` and `norm_hForcing_le`.
-* `TauCeti.CoerciveHermitianForm.hForcing_eq_formSolutionMap`: the comparison at `𝕜 = ℝ`.
+* `TauCeti.CoerciveHermitianForm.dualForcing_eq_solutionOfFunctional` and
+  `TauCeti.CoerciveHermitianForm.hForcing_eq_formSolutionMap`: the comparison with the
+  sesquilinear Lax–Milgram solution maps on a Hilbert space.
+* `TauCeti.CoerciveHermitianForm.hForcing_eq_isCoercive_formSolutionMap`: the comparison with the
+  real Lax–Milgram solution map at `𝕜 = ℝ`.
 
 ## References
 
-* TauCetiRoadmap, `VariationalMethods/README.md`, §2.3.
+* J. K. Hunter, *Notes on Partial Differential Equations*, Chapter 4, Theorem 4.20 (the
+  Lax–Milgram theorem, proved through the Riesz representation in the energy inner product).
 -/
 
 public section
@@ -135,12 +143,35 @@ theorem norm_hForcing_le {c : ℝ} (hc : 0 < c) (hcoer : ∀ u, c * ‖u‖ ^ 2 
     _ ≤ ‖h‖ * ‖j‖ := by rw [innerSL_apply_norm]
     _ = ‖j‖ * ‖h‖ := mul_comm _ _
 
-/-! ### Comparison with the real Lax–Milgram solution map -/
+/-! ### Comparison with the Lax–Milgram solution maps on a Hilbert space -/
+
+section LaxMilgram
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
+  (a : CoerciveHermitianForm 𝕜 V)
+
+/-- On a Hilbert space `V`, the dual-forcing map of a coercive Hermitian form is the sesquilinear
+Lax–Milgram solution map `InnerProductSpace.solutionOfFunctional` of its form. -/
+theorem dualForcing_eq_solutionOfFunctional :
+    a.dualForcing =
+      InnerProductSpace.solutionOfFunctional a.form a.isUnit_continuousLinearMapOfBilin :=
+  ContinuousLinearMap.ext fun ℓ ↦ InnerProductSpace.eq_solutionOfFunctional _ _
+    (a.form_dualForcing_apply ℓ)
+
+/-- On a Hilbert space `V`, the `H`-forcing map of a coercive Hermitian form is the sesquilinear
+Lax–Milgram solution map `InnerProductSpace.formSolutionMap` of its form. -/
+theorem hForcing_eq_formSolutionMap (j : V →L[𝕜] H) :
+    a.hForcing j =
+      InnerProductSpace.formSolutionMap a.form a.isUnit_continuousLinearMapOfBilin j :=
+  ContinuousLinearMap.ext fun h ↦ InnerProductSpace.eq_formSolutionMap _ _ j
+    (a.form_hForcing_apply j h)
+
+end LaxMilgram
 
 /-- At `𝕜 = ℝ`, the `H`-forcing map of a coercive Hermitian form agrees with the Lax–Milgram
 solution map `IsCoercive.formSolutionMap` of any coercive bilinear form with the same values. -/
-theorem hForcing_eq_formSolutionMap {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    [CompleteSpace V] [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+theorem hForcing_eq_isCoercive_formSolutionMap {V H : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [CompleteSpace V] [NormedAddCommGroup H] [InnerProductSpace ℝ H]
     (a : CoerciveHermitianForm ℝ V) {B : V →L[ℝ] V →L[ℝ] ℝ} (hB : IsCoercive B)
     (hBa : ∀ u v, B u v = a.form u v) (j : V →L[ℝ] H) :
     a.hForcing j = hB.formSolutionMap j :=
