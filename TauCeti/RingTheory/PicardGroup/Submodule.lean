@@ -47,8 +47,9 @@ theorem free_iff_isPrincipal (I : Submodule R P) [Module.Invertible R I] :
 /-- The isomorphism `I ⊗ J ≃ I * J` of invertible submodules of an algebra is multiplication. -/
 theorem coe_tensorEquivMul_tmul {A : Type*} [Semiring A] [Algebra R A] [FaithfulSMul R A]
     (I J : (Submodule R A)ˣ) (x : (I : Submodule R A)) (y : (J : Submodule R A)) :
-    (tensorEquivMul I J (x ⊗ₜ y) : A) = x * y :=
-  rfl
+    (tensorEquivMul I J (x ⊗ₜ y) : A) = x * y := by
+  rw [tensorEquivMul]
+  exact (congrArg Subtype.val (LinearEquiv.ofBijective_apply _ _)).trans (val_mulMap'_tmul x y)
 
 end Submodule
 

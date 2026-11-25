@@ -9,9 +9,7 @@ public import TauCeti.NumberTheory.NumberField.ArakelovDivisor.Isometry
 public import TauCeti.NumberTheory.NumberField.ArakelovDivisor.OfHermitianLine
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.TensorProduct
 
-import Mathlib.RingTheory.PicardGroup
 import TauCeti.RingTheory.FractionalIdeal.Operations
-import TauCeti.RingTheory.PicardGroup.Submodule
 
 /-!
 # The class of a hermitian line in the compactified Picard group
@@ -147,28 +145,14 @@ product of the hermitian lines of two Arakelov divisors to the line of their sum
 theorem nonempty_isometryEquiv_tmul_hermitianMetric (D D' : ArakelovDivisor K) :
     Nonempty (HermitianMetric.IsometryEquiv (D.hermitianMetric.tmul D'.hermitianMetric)
       (D + D').hermitianMetric) := by
-  set I := FractionalIdeal.unitsMulEquivSubmodule D.finitePart⁻¹
-  set J := FractionalIdeal.unitsMulEquivSubmodule D'.finitePart⁻¹
   set L : FractionalIdeal (𝓞 K)⁰ K :=
     (((D + D').finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K)
-  have hL : ((I * J : (Submodule (𝓞 K) K)ˣ) : Submodule (𝓞 K) K) = L := by
-    rw [← map_mul, FractionalIdeal.coe_unitsMulEquivSubmodule, ← mul_inv, ← finitePart_add]
   have hL0 : L ≠ 0 := Units.ne_zero _
-  let ψ : (((D.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :
-        Submodule (𝓞 K) K) ⊗[𝓞 K]
-      (((D'.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :
-        Submodule (𝓞 K) K) ≃ₗ[𝓞 K] L :=
-    Submodule.tensorEquivMul I J ≪≫ₗ LinearEquiv.ofEq _ _ hL
-  have hψ (x : (((D.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :
-        Submodule (𝓞 K) K))
-      (y : (((D'.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :
-        Submodule (𝓞 K) K)) :
-      (ψ (x ⊗ₜ y) : K) = x * y := by
-    -- Unfold `ψ` as a composite (`LinearEquiv.trans`); `ofEq` keeps the element of `K`.
-    change (LinearEquiv.ofEq _ _ hL (Submodule.tensorEquivMul I J (x ⊗ₜ y)) : K) = x * y
-    rw [LinearEquiv.coe_ofEq_apply]
-    -- `x ∈ I` and `y ∈ J` by `FractionalIdeal.coe_unitsMulEquivSubmodule`.
-    exact Submodule.coe_tensorEquivMul_tmul I J x y
+  let ψ := FractionalIdeal.tensorEquivMul D.finitePart⁻¹ D'.finitePart⁻¹ ≪≫ₗ
+    LinearEquiv.ofEq _ (L : Submodule (𝓞 K) K) (by rw [← mul_inv, ← finitePart_add])
+  have hψ x y : (ψ (x ⊗ₜ y) : K) = x * y := by
+    rw [LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
+      FractionalIdeal.coe_tensorEquivMul_tmul]
   let g := D.hermitianMetric.tmul D'.hermitianMetric
   obtain ⟨x, hxI, hx⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     ((FractionalIdeal.coeToSubmodule_ne_bot).mpr (Units.ne_zero (D.finitePart⁻¹)))
