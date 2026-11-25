@@ -87,7 +87,7 @@ setting of the linearized operators of Floer theory along Floer cylinders.
 * **Periodization.** A `C²` map with compact support in the open strip `ℝ × (0, 1)`, read through
   the fractional part of `t`, is a test section
   (`TauCeti.CylinderSobolev.comp_fract_mem_testSection`) that agrees with the map near every point
-  of the open strip (`TauCeti.CylinderSobolev.comp_fract_eventuallyEq`). The open strip carries the
+  of the open strip (`TauCeti.apply_fract_snd_eventuallyEq_self`). The open strip carries the
   strip measure (`TauCeti.CylinderSobolev.stripMeasure_eq_restrict_univ_prod_Ioo`).
 * **Translation in `s`.** Translation in `s` commutes with a first-order operator, the coefficient
   field being translated too (`TauCeti.CylinderSobolev.translateLp_jetOperator`), so its right
@@ -223,18 +223,10 @@ theorem comp_add_right_mem_testSection (hξ : ξ ∈ testSection V) (a : ℝ) :
   rw [add_neg_cancel_right, abs_neg] at this
   simpa using hR (s + a) t (by linarith)
 
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
-/-- On the open strip `ℝ × (0, 1)`, a map read through the fractional part `Int.fract` of `t`
-agrees with the map near every point. -/
-theorem comp_fract_eventuallyEq {z : ℝ × ℝ} (hz : z ∈ univ ×ˢ Ioo (0 : ℝ) 1) :
-    (fun w : ℝ × ℝ ↦ ξ (w.1, Int.fract w.2)) =ᶠ[𝓝 z] ξ := by
-  filter_upwards [(isOpen_univ.prod isOpen_Ioo).mem_nhds hz] with w hw
-  rw [Int.fract_eq_self.2 ⟨hw.2.1.le, hw.2.2⟩]
-
 /-- **Periodizing a map supported in the open strip.** A `C²` map `ξ` with compact support in the
 open strip `ℝ × (0, 1)`, read through the fractional part `Int.fract` of `t`, is a test section.
 On the open strip it agrees with `ξ` near every point
-(`TauCeti.CylinderSobolev.comp_fract_eventuallyEq`). -/
+(`TauCeti.apply_fract_snd_eventuallyEq_self`). -/
 theorem comp_fract_mem_testSection (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
     (hξS : tsupport ξ ⊆ univ ×ˢ Ioo (0 : ℝ) 1) :
     (fun z : ℝ × ℝ ↦ ξ (z.1, Int.fract z.2)) ∈ testSection V := by

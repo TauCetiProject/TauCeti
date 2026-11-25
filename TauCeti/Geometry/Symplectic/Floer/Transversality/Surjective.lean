@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.LinearAlgebra.Submodule.Quotient
+import TauCeti.Topology.Algebra.Order.Floor
 
 /-!
 # The universal linearized Floer operator on the cylinder is onto
@@ -186,7 +187,7 @@ private theorem integral_inner_floerLinearization_eq_zero
     (by
       filter_upwards [floerSobolevOperator_jetLp_ae_eq ω hM ξp, hΩ] with z hz hzΩ
       rw [hz, ω.floerLinearization_congr_of_eventuallyEq J Ks Kt u
-        (comp_fract_eventuallyEq hzΩ)]),
+        (apply_fract_snd_eventuallyEq_self hzΩ.2)]),
     integral_stripMeasure] at h0
   -- Off the open strip `D_u ξ` vanishes.
   rwa [setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
