@@ -40,8 +40,8 @@ separability, nontriviality, or completeness assumptions on `G`). -/
   obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 (Completion G)
   let uE := (completionRightIsometry 𝕜 E G).trans (b.tensorCompletionEquiv E)
   let uF := (completionRightIsometry 𝕜 F G).trans (b.tensorCompletionEquiv F)
-  refine ((continuous_linearIsometryEquiv_comp_left uF.symm).comp
-    ((continuous_comp_right uE.toLinearIsometry.toContinuousLinearMap).comp
+  refine ((continuous_linearIsometryEquiv_postcomp uF.symm).comp
+    ((continuous_precomp uE.toLinearIsometry.toContinuousLinearMap).comp
       (continuous_ampliation w))).congr fun A ↦ congrArg ofCLM ?_
   refine completion_ext fun x z ↦ uF.injective ?_
   simpa [uE, uF] using
@@ -56,22 +56,22 @@ separability, nontriviality, or completeness assumptions on `E`). -/
       ofCLM (A.toCLM.lTensorCompletion E) := by
   let cEF := (commIsometry 𝕜 E F).completion
   let cGE := (commIsometry 𝕜 G E).completion
-  refine ((continuous_linearIsometryEquiv_comp_left cGE).comp
-    ((continuous_comp_right cEF.toLinearIsometry.toContinuousLinearMap).comp
+  refine ((continuous_linearIsometryEquiv_postcomp cGE).comp
+    ((continuous_precomp cEF.toLinearIsometry.toContinuousLinearMap).comp
       (continuous_rTensorCompletion E))).congr fun _ ↦
     congrArg ofCLM <| completion_ext fun _ _ ↦ by simp [cEF, cGE]
 /-- Every right slice map `T ↦ sliceRight ξ η T` (with `E₂` complete) is ultraweakly continuous. -/
 @[fun_prop] theorem continuous_sliceRight [CompleteSpace E₂] (ξ : F₁) (η : F₂) :
     Continuous fun A : ContinuousLinearMapUltraweak 𝕜 (Completion (E₁ ⊗[𝕜] F₁))
         (Completion (E₂ ⊗[𝕜] F₂)) ↦ ofCLM (sliceRight ξ η A.toCLM) :=
-  ((continuous_comp_left ((tmulCLM 𝕜 E₂ F₂).flip η).adjoint).comp
-    (continuous_comp_right ((tmulCLM 𝕜 E₁ F₁).flip ξ))).congr fun _ ↦
+  ((continuous_postcomp ((tmulCLM 𝕜 E₂ F₂).flip η).adjoint).comp
+    (continuous_precomp ((tmulCLM 𝕜 E₁ F₁).flip ξ))).congr fun _ ↦
       congrArg ofCLM (sliceRight_apply _ _ _).symm
 /-- Every left slice map `T ↦ sliceLeft e₁ e₂ T` (with `F₂` complete) is ultraweakly continuous. -/
 @[fun_prop] theorem continuous_sliceLeft [CompleteSpace F₂] (e₁ : E₁) (e₂ : E₂) :
     Continuous fun A : ContinuousLinearMapUltraweak 𝕜 (Completion (E₁ ⊗[𝕜] F₁))
         (Completion (E₂ ⊗[𝕜] F₂)) ↦ ofCLM (sliceLeft e₁ e₂ A.toCLM) :=
-  ((continuous_comp_left (tmulCLM 𝕜 E₂ F₂ e₂).adjoint).comp
-    (continuous_comp_right (tmulCLM 𝕜 E₁ F₁ e₁))).congr fun _ ↦
+  ((continuous_postcomp (tmulCLM 𝕜 E₂ F₂ e₂).adjoint).comp
+    (continuous_precomp (tmulCLM 𝕜 E₁ F₁ e₁))).congr fun _ ↦
       congrArg ofCLM (sliceLeft_apply _ _ _).symm
 end TauCeti.ContinuousLinearMapUltraweak

@@ -354,7 +354,7 @@ end Hilbert
 section Functoriality
 
 /-- Precomposition by a bounded operator is ultraweakly continuous. -/
-@[fun_prop] theorem continuous_comp_right {E' : Type*} [NormedAddCommGroup E']
+@[fun_prop] theorem continuous_precomp {E' : Type*} [NormedAddCommGroup E']
     [InnerProductSpace 𝕜 E'] (Q : E' →L[𝕜] E) :
     Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ofCLM (A.toCLM ∘L Q) :=
   continuous_of_continuous_inner_ampliation_apply fun ξ η ↦
@@ -362,7 +362,7 @@ section Functoriality
       rw [lp.ampliation_comp, ContinuousLinearMap.comp_apply]
 
 /-- Postcomposition by a bounded operator between complete spaces is ultraweakly continuous. -/
-@[fun_prop] theorem continuous_comp_left {F' : Type*} [NormedAddCommGroup F']
+@[fun_prop] theorem continuous_postcomp {F' : Type*} [NormedAddCommGroup F']
     [InnerProductSpace 𝕜 F'] [CompleteSpace F] [CompleteSpace F'] (P : F →L[𝕜] F') :
     Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ofCLM (P ∘L A.toCLM) :=
   continuous_of_continuous_inner_ampliation_apply fun ξ η ↦
@@ -371,7 +371,7 @@ section Functoriality
         ← lp.ampliation_comp]
 /-- Postcomposition by a linear isometric equivalence is ultraweakly continuous, without
 completeness assumptions. -/
-@[fun_prop] theorem continuous_linearIsometryEquiv_comp_left {F' : Type*} [NormedAddCommGroup F']
+@[fun_prop] theorem continuous_linearIsometryEquiv_postcomp {F' : Type*} [NormedAddCommGroup F']
     [InnerProductSpace 𝕜 F'] (U : F ≃ₗᵢ[𝕜] F') :
     Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦
       ofCLM (U.toLinearIsometry.toContinuousLinearMap ∘L A.toCLM) :=
