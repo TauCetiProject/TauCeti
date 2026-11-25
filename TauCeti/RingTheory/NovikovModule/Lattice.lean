@@ -59,10 +59,10 @@ not restrict to one on a lattice without a shift of the cutoff.
 * `TauCeti.NovikovModule.single_smul_mem_lattice_iff`:
   `e^h • a ∈ lattice R hF C ↔ a ∈ lattice R hF (C + N h)`, and its set-level form
   `TauCeti.NovikovModule.single_smul_lattice`: `e^h • lattice R hF C = lattice R hF (C - N h)`.
-* `TauCeti.NovikovModule.iUnion_single_neg_smul_lattice`: for monomials of unbounded period, the
+* `TauCeti.NovikovModule.biUnion_single_neg_smul_lattice`: for monomials of unbounded period, the
   completed combinations are `⋃ₘ e^(-m) (lattice R hF C)`; in the action-weighted case,
   `TauCeti.NovikovModule.single_inr_neg_smul_lattice_zero` and
-  `TauCeti.NovikovModule.iUnion_single_inr_neg_smul_lattice_zero` give
+  `TauCeti.NovikovModule.biUnion_single_inr_neg_smul_lattice_zero` give
   `T^(-t) (lattice R hF 0) = lattice R hF t` and that the completed combinations are
   `⋃_(t ≥ 0) T^(-t) (lattice R hF 0)`.
 * `TauCeti.NovikovModule.iUnion_lattice`, `TauCeti.NovikovModule.iInf_lattice`: the lattices
@@ -176,7 +176,7 @@ theorem single_smul_lattice (h : H) (C : ℝ) :
 /-- **The completed module as a union of shifted lattices.** If the monomials `e^m`, `m ∈ M`, have
 periods unbounded above, then every completed combination lies in `e^(-m)` times the lattice of
 cutoff `C` for some `m ∈ M`. -/
-theorem iUnion_single_neg_smul_lattice {M : Set H} (hM : ∀ D : ℝ, ∃ m ∈ M, D ≤ N m) (C : ℝ) :
+theorem biUnion_single_neg_smul_lattice {M : Set H} (hM : ∀ D : ℝ, ∃ m ∈ M, D ≤ N m) (C : ℝ) :
     letI := module (R := R) hF
     ⋃ m ∈ M, NovikovSeries.single (N := N) (-m) (1 : R) •
       (lattice R hF C : Set (NovikovModule R F)) = Set.univ := by
@@ -299,7 +299,7 @@ theorem single_inr_neg_smul_lattice_zero {G : Type*} [AddGroup G] {E : G →+ �
 /-- **The action-weighted completed module as a union of shifted lattices.** On the exponent
 group `G × ℝ` with periods `(g, t) ↦ E g + t`, every completed combination lies in
 `T^(-t) (lattice R hF 0)` for some `t ≥ 0`, where `T^(-t) = e^(0, -t)`. -/
-theorem iUnion_single_inr_neg_smul_lattice_zero {G : Type*} [AddGroup G] {E : G →+ ℝ}
+theorem biUnion_single_inr_neg_smul_lattice_zero {G : Type*} [AddGroup G] {E : G →+ ℝ}
     {P : ι → Type*} [∀ i, AddTorsor (G × ℝ) (P i)] {F : (Σ i, P i) → ℝ}
     (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - E.coprod (AddMonoidHom.id ℝ) h) :
     letI := module (R := R) hF
@@ -351,7 +351,7 @@ theorem isLocalizedModule_lattice {M : AddSubmonoid H} (hM : ∀ D : ℝ, ∃ m 
 `(g, r) ↦ E g + r`, the inclusion of any lattice is a localization at the monomials
 `T^r = e^(0, r)`, `r ≥ 0`. The corresponding set-level identities
 `T^(-r) (lattice R hF 0) = lattice R hF r` and `⋃_(r ≥ 0) T^(-r) (lattice R hF 0) = univ` are
-`single_inr_neg_smul_lattice_zero` and `iUnion_single_inr_neg_smul_lattice_zero`. -/
+`single_inr_neg_smul_lattice_zero` and `biUnion_single_inr_neg_smul_lattice_zero`. -/
 theorem isLocalizedModule_lattice_map_inr {G : Type*} [AddCommGroup G] {E : G →+ ℝ}
     {P : ι → Type*} [∀ i, AddTorsor (G × ℝ) (P i)] {F : (Σ i, P i) → ℝ}
     (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - E.coprod (AddMonoidHom.id ℝ) h) (C : ℝ) :
