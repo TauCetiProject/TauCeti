@@ -31,6 +31,8 @@ subsets of an adic spectrum arise for a discrete Huber ring.
 
 ## Main results
 
+* `IsLocalization.Away.injective_of_eq_mul_self`: a ring homomorphism `B[1/g] → B[1/(g · g)]`
+  compatible with the maps from `B` is injective.
 * `IsLocalization.Away.existsUnique_algebraMap_eq_of_span_eq_top`: compatible elements of the
   localizations `B[1/gᵢ]` come from a unique element of `B`.
 * `IsLocalization.Away.existsUnique_forall_eq_of_span_eq_top`: if the `σᵢ` generate the unit
@@ -55,19 +57,14 @@ variable {B : Type*} [CommSemiring B] {ι : Type*} {g : ι → B}
   [∀ i j, IsLocalization.Away (g i * g j) (Bij i j)]
 
 /-- A ring homomorphism `B[1/g] → B[1/(g · g)]` compatible with the maps from `B` is injective:
-`g · g` is already invertible in `B[1/g]`, and lifting back gives a left inverse. -/
-private theorem injective_of_eq_mul_self {g : B} {Bg Bgg : Type*} [CommSemiring Bg]
+`g · g` is already invertible in `B[1/g]`, so both rings are localizations of `B` away from
+`g · g`. -/
+theorem injective_of_eq_mul_self {g : B} {Bg Bgg : Type*} [CommSemiring Bg]
     [CommSemiring Bgg] [Algebra B Bg] [Algebra B Bgg] [IsLocalization.Away g Bg]
     [IsLocalization.Away (g * g) Bgg] {ρ : Bg →+* Bgg}
-    (hρ : ∀ b, ρ (algebraMap B Bg b) = algebraMap B Bgg b) : Function.Injective ρ := by
-  have hu : IsUnit (algebraMap B Bg (g * g)) := by
-    rw [map_mul]
-    exact (IsLocalization.Away.algebraMap_isUnit g).mul (IsLocalization.Away.algebraMap_isUnit g)
-  let σ : Bgg →+* Bg := IsLocalization.Away.lift (g * g) hu
-  have hσ : σ.comp ρ = RingHom.id Bg :=
-    IsLocalization.ringHom_ext (.powers g) <| RingHom.ext fun b ↦ by
-      simp [σ, hρ, IsLocalization.Away.lift_eq]
-  exact Function.LeftInverse.injective (g := σ) fun x ↦ congrArg (· x) hσ
+    (hρ : ∀ b, ρ (algebraMap B Bg b) = algebraMap B Bgg b) : Function.Injective ρ :=
+  have := mul_of_isUnit (S := Bg) g g (algebraMap_isUnit g)
+  (IsLocalization.bijective (.powers (g * g)) ρ (RingHom.ext hρ)).1
 
 variable {ρl : ∀ i j, Bi i →+* Bij i j} {ρr : ∀ i j, Bi j →+* Bij i j}
   (hρl : ∀ i j b, ρl i j (algebraMap B (Bi i) b) = algebraMap B (Bij i j) b)

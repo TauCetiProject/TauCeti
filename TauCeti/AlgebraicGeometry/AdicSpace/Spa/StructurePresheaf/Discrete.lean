@@ -132,6 +132,7 @@ theorem coe_presentationLimitRingEquivOfDiscreteTopology_apply (T : Finset A) (s
 `s` is a unit of `A_{s'}`, and under `presentationLimitRingEquivOfDiscreteTopology` restriction of
 sections from `R(T/s)` to `R(T'/s')` is the localisation map `A_s → A_{s'}`. This is Wedhorn's
 comparison map of Proposition 8.2(1) for a discrete ring. -/
+@[simp]
 theorem presentationLimitRingEquivOfDiscreteTopology_presentationLimitMap {T T' : Finset A}
     {s s' : A} (h : spaBasicOpen Aplus T' s' ≤ spaBasicOpen Aplus T s)
     (x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)) :
