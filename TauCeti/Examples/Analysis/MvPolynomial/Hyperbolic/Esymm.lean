@@ -14,12 +14,12 @@ public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Esymm
   `(0, 1)` it is `t² + 1`, with no real root (`not_isHyperbolic_sq_add_sq`).
 * In `ℝ³`, `λ = (3, 3, −1)` has `σ₁ = 5`, `σ₂ = 3`, `σ₃ = −9`, so it lies in
   `Γ₂ = Γ(σ₂, e)` but not in `Γ₃ = Γ(σ₃, e)` (`mem_gardingCone_esymm_two`,
-  `not_mem_gardingCone_esymm_three`).
+  `notMem_gardingCone_esymm_three`).
 * `σ₂(−e) = 3 > 0` in `ℝ³`, but `−e ∉ Γ₂` since `σ₁(−e) = −3`; as `σ₂(0) = 0`, the set
   `{σ₂ > 0}` contains `e` and `−e` but not their midpoint, so `Γ₂` needs the condition on `σ₁`
-  (`eval_neg_one_esymm_two`, `neg_one_not_mem_gardingCone_esymm_two`).
+  (`eval_neg_one_esymm_two`, `neg_one_notMem_gardingCone_esymm_two`).
 * For `n = 2`, `(1, −1/2)` lies in the half-plane `Γ₁` but not in the quadrant `Γ₂`
-  (`mem_gardingCone_esymm_one_two`, `not_mem_gardingCone_esymm_two_two`).
+  (`mem_gardingCone_esymm_one_two`, `notMem_gardingCone_esymm_two_two`).
 -/
 
 public section
@@ -40,16 +40,24 @@ theorem not_isHyperbolic_sq_add_sq :
   norm_num at h0
   nlinarith [sq_nonneg r]
 
+/-- `σ₂` in three variables, written out. -/
+theorem eval_esymm_two_fin_three (x : Fin 3 → ℝ) :
+    eval x (esymm (Fin 3) ℝ 2) = x 0 * x 1 + x 0 * x 2 + x 1 * x 2 := by
+  have h : Finset.powersetCard 2 (Finset.univ : Finset (Fin 3)) = {{0, 1}, {0, 2}, {1, 2}} := by
+    decide
+  simp (config := { decide := true }) only [esymm, h, Finset.sum_insert, Finset.prod_insert,
+    Finset.sum_singleton, Finset.prod_singleton, Finset.mem_insert, Finset.mem_singleton]
+  simp [add_assoc]
+
 /-- `σ₂(3, 3, −1) = 3`. -/
 theorem eval_esymm_two : eval ![(3 : ℝ), 3, -1] (esymm (Fin 3) ℝ 2) = 3 := by
-  simp [esymm_eq_multiset_esymm, Multiset.esymm, Fin.univ_val_map, Multiset.powersetCard_coe,
-    List.sublistsLen, List.sublistsLenAux]
+  rw [eval_esymm_two_fin_three]
   norm_num
 
 /-- `σ₃(3, 3, −1) = −9`. -/
 theorem eval_esymm_three : eval ![(3 : ℝ), 3, -1] (esymm (Fin 3) ℝ 3) = -9 := by
-  simp [esymm_eq_multiset_esymm, Multiset.esymm, Fin.univ_val_map, Multiset.powersetCard_coe,
-    List.sublistsLen, List.sublistsLenAux]
+  have h : esymm (Fin 3) ℝ 3 = ∏ i, X i := by simpa using esymm_card (Fin 3) ℝ
+  simp [h, Fin.prod_univ_three]
   norm_num
 
 /-- `σ₁(3, 3, −1) = 5`. -/
@@ -68,7 +76,7 @@ theorem mem_gardingCone_esymm_two : ![(3 : ℝ), 3, -1] ∈ gardingCone (esymm (
     norm_num
 
 /-- `(3, 3, −1) ∉ Γ₃`, since `σ₃(3, 3, −1) = −9 < 0`. -/
-theorem not_mem_gardingCone_esymm_three :
+theorem notMem_gardingCone_esymm_three :
     ![(3 : ℝ), 3, -1] ∉ gardingCone (esymm (Fin 3) ℝ 3) 1 := by
   rw [gardingCone_esymm _]
   intro h
@@ -78,12 +86,11 @@ theorem not_mem_gardingCone_esymm_three :
 
 /-- `σ₂(−e) = 3` in `ℝ³`. -/
 theorem eval_neg_one_esymm_two : eval (-1 : Fin 3 → ℝ) (esymm (Fin 3) ℝ 2) = 3 := by
-  simp [esymm_eq_multiset_esymm, Multiset.esymm, Fin.univ_val_map, Multiset.powersetCard_coe,
-    List.sublistsLen, List.sublistsLenAux]
+  rw [eval_esymm_two_fin_three]
   norm_num
 
 /-- `−e ∉ Γ₂` in `ℝ³`, since `σ₁(−e) = −3`. -/
-theorem neg_one_not_mem_gardingCone_esymm_two :
+theorem neg_one_notMem_gardingCone_esymm_two :
     (-1 : Fin 3 → ℝ) ∉ gardingCone (esymm (Fin 3) ℝ 2) 1 := by
   rw [gardingCone_esymm _]
   intro h
@@ -101,13 +108,13 @@ theorem mem_gardingCone_esymm_one_two :
   norm_num
 
 /-- `(1, −1/2) ∉ Γ₂` for `n = 2`, since `σ₂(1, −1/2) = −1/2`. -/
-theorem not_mem_gardingCone_esymm_two_two :
+theorem notMem_gardingCone_esymm_two_two :
     ![(1 : ℝ), -1 / 2] ∉ gardingCone (esymm (Fin 2) ℝ 2) 1 := by
   rw [gardingCone_esymm _]
   intro h
   have := h 2 (by norm_num) le_rfl
-  simp [esymm_eq_multiset_esymm, Multiset.esymm, Fin.univ_val_map, Multiset.powersetCard_coe,
-    List.sublistsLen, List.sublistsLenAux] at this
+  have h2 : esymm (Fin 2) ℝ 2 = ∏ i, X i := by simpa using esymm_card (Fin 2) ℝ
+  simp [h2, Fin.prod_univ_two] at this
   norm_num at this
 
 end TauCeti.HyperbolicChecks
