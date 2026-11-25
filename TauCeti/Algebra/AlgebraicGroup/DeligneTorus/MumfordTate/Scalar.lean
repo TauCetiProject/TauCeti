@@ -23,8 +23,7 @@ The proof is on coordinate rings. The cocharacter `t ↦ t ^ m • 1` is the wei
 (`TauCeti.DeligneTorus.mumfordTateHopfIdeal_toIdeal_le_ker`), so the Mumford–Tate ideal lies in
 the kernel of its comorphism. For `m ≠ 0` that kernel is the center ideal
 (`TauCeti.GeneralLinear.ker_weightCocharacter_const`).
-Scheme-theoretically, the image of `t ↦ t ^ m • 1` is the whole scalar subgroup, not a finite
-subgroup `μ_k`.
+Scheme-theoretically, the image of `t ↦ t ^ m • 1` is the whole scalar subgroup.
 
 The hypothesis `m ≠ 0` is needed: for the trivial Hodge structure on `ℚ`, of weight zero, the
 Mumford–Tate group is trivial (`TauCeti.DeligneTorus.mumfordTateHopfIdeal_eq_augmentation_iff`),

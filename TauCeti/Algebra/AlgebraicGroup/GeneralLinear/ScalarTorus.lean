@@ -138,8 +138,7 @@ theorem ker_weightCocharacter_const_one :
   rw [HopfIdeal.mem_ker, mem_centerDefiningIdeal_iff]
 
 /-- For `m ≠ 0`, the cocharacter `t ↦ t ^ m • 1` has the same kernel as `t ↦ t • 1`: the center
-ideal of `GLₙ`. Scheme-theoretically its image is the whole scalar subgroup, not a finite
-subgroup `μ_m`. -/
+ideal of `GLₙ`. Scheme-theoretically its image is the whole scalar subgroup. -/
 theorem ker_weightCocharacter_const {m : ℤ} (hm : m ≠ 0) :
     HopfIdeal.ker (weightCocharacter (R := k) (N := n) (fun _ ↦ m)) =
       CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) := by
