@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.Analysis.AbsoluteValue.Equivalence
 public import TauCeti.NumberTheory.NumberField.Units.Signature.Integer
-public import TauCeti.NumberTheory.Padics.AlgebraicClosure
+public import TauCeti.NumberTheory.Padics.AlgebraicClosure.Basic
 public import TauCeti.RingTheory.Valuation.Approximation
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 

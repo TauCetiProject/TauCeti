@@ -170,9 +170,7 @@ private theorem isAtom_matrixCoefficientSubmodule_mem_simpleUnitary
     [Comodule ℂ A H] (hH : IsUnitary ℂ A H) {W : Subcomodule ℂ A H} (hW : IsAtom W) :
     matrixCoefficientSubmodule (R := ℂ) (C := A) (M := W) ∈
       simpleUnitaryCoefficientSubmodules A := by
-  let _ := convolutionModule (R := ℂ) (C := A) (M := H)
-  let _ := convolutionModule (R := ℂ) (C := A) (M := W)
-  have := isSimpleModule_convolution_iff.mp (W.isSimpleModule_convolution_iff_isAtom.mpr hW)
+  have := Subcomodule.isSimpleOrder_of_isAtom hW
   let bW := stdOrthonormalBasis ℂ W
   let _ : Comodule ℂ A (Fin (Module.finrank ℂ W) → ℂ) := Transport bW.toBasis.equivFun
   have : IsSimpleOrder (Subcomodule ℂ A (Fin (Module.finrank ℂ W) → ℂ)) :=

@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Basic
-import Mathlib.Algebra.Module.Equiv.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
@@ -26,10 +26,10 @@ import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
 
 /-!
-# Serre's finiteness and vanishing theorems on projective schemes
+# Serre's vanishing theorem on projective schemes
 
-This file proves Serre's finiteness and vanishing theorems for quasi-coherent modules of finite
-type on projective schemes over a Noetherian commutative ring.
+This file proves Serre's vanishing theorem for quasi-coherent modules of finite type on projective
+schemes over a Noetherian commutative ring.
 
 The argument proceeds in three steps:
 1. On `Proj (Sym_R M)` for a finite `R`-module `M`, `𝒪(1)` is ample
@@ -39,19 +39,15 @@ The argument proceeds in three steps:
 2. On projective space `ℙⁿ_R = Proj (Sym_R M)` over a Noetherian ring `R` (with `M` finite free of
    rank at least `2`), descending induction on the cohomological degree from the vanishing bound
    `Hᵠ(ℙⁿ_R, F) = 0` for `q > n` combines this presentation with the long exact cohomology sequence
-   and the explicit cohomology of twisting sheaves to establish both finite generation of `Hᵠ(F)`
-   and vanishing of `Hᵠ(𝒪(m) ⊗ F)` for `q > 0` and `m ≫ 0`.
-3. Every projective scheme `X` over `R` embeds as a closed subscheme over `R` into some
+   and the explicit cohomology of twisting sheaves to establish vanishing of `Hᵠ(𝒪(m) ⊗ F)` for
+   `q > 0` and `m ≫ 0`.
+3. Every closed subscheme `i : X ⟶ Proj (Sym_R M)` embeds over `Spec R` into some
    `Proj (Sym_R (Fin (d + 2) → R))`. Pushing `F` forward along the closed immersion preserves
    coherence and cohomology, and the projection formula transfers twisting sheaves, yielding
-   Serre's finiteness and vanishing theorems for arbitrary projective schemes over a Noetherian
-   ring.
+   Serre's vanishing theorem for arbitrary closed subschemes of `Proj (Sym_R M)`.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Modules.finite_cohomology_of_isProjectiveOver`: **Serre's finiteness
-  theorem** — for a projective scheme `X` over a Noetherian ring `R` and a quasi-coherent
-  `𝒪_X`-module `F` of finite type, `Hᵠ(X, F)` is a finitely generated `R`-module for every `q`.
 * `AlgebraicGeometry.Scheme.Modules.exists_subsingleton_cohomology_pullback_twistingSheaf_tensor`:
   **Serre's vanishing theorem** — for a closed immersion `i : X ⟶ Proj (Sym_R M)` with `R`
   Noetherian and `M` finite, and a quasi-coherent `𝒪_X`-module `F` of finite type,
@@ -64,9 +60,7 @@ The argument proceeds in three steps:
 * R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Theorem III.5.2 (Serre finiteness
   and vanishing).
 * [The Stacks Project, Tag 01Q3](https://stacks.math.columbia.edu/tag/01Q3) (global generation
-  after twisting by an ample invertible sheaf) and
-  [Tag 02O6](https://stacks.math.columbia.edu/tag/02O6) (finiteness of cohomology of coherent
-  sheaves on proper schemes).
+  after twisting by an ample invertible sheaf).
 -/
 
 public section
@@ -107,46 +101,6 @@ private lemma exists_kernel_shortExact_biproduct_twistingSheaf
       (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) (-(m : ℤ))
   obtain ⟨k, p, _⟩ := hm m le_rfl K hK
   exact ⟨m, k, p, Scheme.Modules.isFinitePresentation_kernel p, TauCeti.kernelSequence_shortExact p⟩
-
-/-- Serre's finiteness theorem on positive-dimensional projective space `Proj (Sym_R M)` over a
-Noetherian ring `R`, proved by descending induction on the cohomological degree. -/
-private theorem finite_cohomology_proj_of_basis {R M : Type u} [CommRing R] [IsNoetherianRing R]
-    [AddCommMonoid M] [Module R M] {κ : Type*} [Finite κ] [Nontrivial κ]
-    (b : Module.Basis κ R M) (F : (Proj (homogeneousSubmodule R M)).Modules)
-    [F.IsQuasicoherent] [F.IsFiniteType] (q : ℕ) :
-    Module.Finite R (Cohomology F q) := by
-  have := Fintype.ofFinite κ
-  have : Module.Finite R M := Module.Finite.of_basis b
-  -- Descending induction on `d` with `card κ ≤ q + d`.
-  suffices h : ∀ (d : ℕ) (G : (Proj (homogeneousSubmodule R M)).Modules)
-      [G.IsQuasicoherent] [G.IsFiniteType] (r : ℕ),
-      Fintype.card κ ≤ r + d → Module.Finite R (Cohomology G r) from
-    h (Fintype.card κ) F q (by omega)
-  intro d
-  induction d with
-  | zero =>
-    intro G _ _ r hr
-    have := b.subsingleton_cohomology_proj_of_card_le G r (by omega)
-    infer_instance
-  | succ d ih =>
-    intro G _ _ r hr
-    obtain ⟨m, k, p, _, hS⟩ := exists_kernel_shortExact_biproduct_twistingSheaf G
-    let T : (Proj (homogeneousSubmodule R M)).Modules :=
-      Proj.twistingSheaf (homogeneousSubmodule R M) (-(m : ℤ))
-    have hE : Module.Finite R (Cohomology (⨁ fun _ : Fin k ↦ T) r) := by
-      have (_ : Fin k) : Module.Finite R (Cohomology T r) :=
-        b.finite_cohomology_twistingSheaf (-(m : ℤ)) r
-      exact Module.Finite.equiv
-        (Scheme.Modules.cohomologyBiproductLinearEquiv R (fun _ : Fin k ↦ T) r).symm
-    have hK : Module.Finite R (Cohomology (kernel p) (r + 1)) :=
-      ih (kernel p) (r + 1) (by omega)
-    let δ := cohomologyδBaseLinear R (Proj (homogeneousSubmodule R M)) hS r (r + 1) rfl
-    have hex : Function.Exact (cohomologyMapBaseLinear R (Proj (homogeneousSubmodule R M)) p r)
-        δ :=
-      exact_cohomologyMapBaseLinear_cohomologyδBaseLinear R (Proj (homogeneousSubmodule R M)) hS r
-    have : IsNoetherian R (Cohomology (kernel p) (r + 1)) :=
-      isNoetherian_of_isNoetherianRing_of_finite R _
-    exact hex.moduleFinite
 
 /-- Fixed-degree Serre vanishing on positive-dimensional projective space `Proj (Sym_R M)` over a
 Noetherian ring `R`, proved by descending induction on the cohomological degree. -/
@@ -235,23 +189,6 @@ end TauCeti.AlgebraicGeometry.Serre
 namespace AlgebraicGeometry.Scheme.Modules
 
 open TauCeti.SymmetricAlgebra TauCeti.AlgebraicGeometry.Serre
-
-/-- **Serre's finiteness theorem.** Let `X` be a projective scheme over a Noetherian commutative
-ring `R` and `F` a quasi-coherent `𝒪_X`-module of finite type. Then `Hᵠ(X, F)` is a finitely
-generated `R`-module for every `q : ℕ`. -/
-theorem finite_cohomology_of_isProjectiveOver (R : Type u) [CommRing R] [IsNoetherianRing R]
-    {X : Scheme.{u}} [X.Over (Spec (.of R))] [X.IsProjectiveOver R]
-    (F : X.Modules) [F.IsQuasicoherent] [F.IsFiniteType] (q : ℕ) :
-    Module.Finite R (Cohomology F q) := by
-  obtain ⟨M, _, _, _, i₀, hi₀, hi₀R⟩ :=
-    Scheme.IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
-  obtain ⟨d, j, _, _, -⟩ :=
-    exists_isClosedImmersion_proj_fin_add_with_pullbackTwistingSheafIso R M 2
-  let i : X ⟶ Proj (homogeneousSubmodule R (Fin (d + 2) → R)) := i₀ ≫ j
-  have : ((pushforward i).obj F).IsFinitePresentation :=
-    isFinitePresentation_pushforward_of_isFinite i F
-  exact (i.moduleFinite_cohomology_pushforward_iff R F q).mp
-    (finite_cohomology_proj_of_basis (Pi.basisFun R (Fin (d + 2))) ((pushforward i).obj F) q)
 
 /-- **Serre's vanishing theorem.** Let `R` be a Noetherian commutative ring, `M` a finite
 `R`-module, `i : X ⟶ Proj (Sym_R M)` a closed immersion, and `F` a quasi-coherent `𝒪_X`-module of

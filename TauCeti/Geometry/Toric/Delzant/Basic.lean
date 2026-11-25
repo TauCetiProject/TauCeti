@@ -51,8 +51,9 @@ facet contains a vertex; at that vertex its normal belongs to a lattice basis. H
 normal is primitive (`TauCeti.Toric.IsDelzant.isPrimitive`): the facet normals are the primitive
 inward normals.
 When the lattice map is injective, a Delzant polytope also has a point on none of its facets
-(`TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`): with at least two facets, the barycentre
-of points lying only on one facet each; with a single facet, such a point pushed off it.
+(`TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`): with at least two facets, the midpoint of
+the points lying only on one facet each, for two different facets; with a single facet, such a point
+pushed off it.
 
 Translating the polytope by `y ∈ V*` changes the support constants to `c j + ⟨y, u j⟩` and keeps
 the normals (`TauCeti.Toric.facetPolyhedron_add`). It preserves the active constraints, hence
@@ -82,6 +83,9 @@ the labelled presentation is Delzant exactly when `(u, c)` is Delzant and every 
 * `TauCeti.Toric.IsDelzant.extremePoints_nonempty`: a Delzant polytope has a vertex.
 * `TauCeti.Toric.mem_extremePoints_facetPolyhedron_iff_span_eq_top`: in finite dimension, the
   vertices are the points of the polyhedron at which the active normals span `V`.
+* `TauCeti.Toric.injOn_activeSet_extremePoints_facetPolyhedron`,
+  `TauCeti.Toric.finite_extremePoints_facetPolyhedron`: a vertex is determined by its active
+  constraints, so a facet polyhedron has finitely many vertices.
 * `TauCeti.Toric.exists_mem_extremePoints_activeSet_subset`: the constraints active at a point of
   a compact facet polyhedron are active at some vertex.
 * `TauCeti.Toric.isSmoothVertex_iff_linearIndepOn`: a smooth vertex is a point whose active
@@ -235,6 +239,19 @@ theorem mem_extremePoints_facetPolyhedron_iff [Finite ι] {x : StrongDual ℝ V}
   unfold facetPolyhedron
   exact mem_extremePoints_polyhedron_iff
 
+/-- **A vertex of a facet polyhedron is determined by its facets.** Two vertices at which the
+same constraints are active are equal. -/
+theorem injOn_activeSet_extremePoints_facetPolyhedron [Finite ι] :
+    InjOn (activeSet (facetPairing i u) c) ((facetPolyhedron i u c).extremePoints ℝ) := by
+  unfold facetPolyhedron
+  exact injOn_activeSet_extremePoints_polyhedron
+
+/-- A facet polyhedron with finitely many facets has finitely many vertices. -/
+theorem finite_extremePoints_facetPolyhedron [Finite ι] :
+    ((facetPolyhedron i u c).extremePoints ℝ).Finite := by
+  unfold facetPolyhedron
+  exact finite_extremePoints_polyhedron
+
 /-- **Vertices of a facet polyhedron, by spanning.** In finite dimension, a point `x` of the
 polyhedron is a vertex exactly when the normals active at `x` span `V`. -/
 theorem mem_extremePoints_facetPolyhedron_iff_span_eq_top [Finite ι] [FiniteDimensional ℝ V]
@@ -333,6 +350,77 @@ theorem nonempty : (facetPolyhedron i u c).Nonempty := by
     obtain ⟨x, hx, -⟩ := hΔ.irredundant h.some
     exact ⟨x, hx⟩
 
+/-- **The facet normals of a Delzant polytope are nonzero.** This holds without assuming that `V` is
+finite-dimensional; for finite-dimensional `V`, `IsDelzant.isPrimitive` gives more. -/
+theorem ne_zero (j : ι) : u j ≠ 0 := fun h0 ↦ by
+  obtain ⟨x, -, hxj⟩ := hΔ.irredundant j
+  have hcj : c j = 0 := by
+    have := (mem_activeSet.1 (hxj ▸ mem_singleton j) : facetPairing i u j x = c j)
+    simpa [h0] using this.symm
+  -- If `u j = 0`, the constraint `j` is active everywhere, so by irredundancy `j` is the only
+  -- facet.
+  have hall : ∀ k, k = j := fun k ↦ by
+    obtain ⟨y, -, hyk⟩ := hΔ.irredundant k
+    have hjy : j ∈ activeSet (facetPairing i u) c y := by simp [mem_activeSet, h0, hcj]
+    rw [hyk] at hjy
+    exact (mem_singleton_iff.1 hjy).symm
+  have : Subsingleton ι := ⟨fun a b ↦ (hall a).trans (hall b).symm⟩
+  -- Then the polyhedron is all of `V*`, which is bounded only if `V* = 0`.
+  have hP : facetPolyhedron i u c = univ := eq_univ_of_forall fun y ↦
+    mem_facetPolyhedron.2 fun k ↦ by simp [Subsingleton.elim k j, h0, hcj]
+  have hbd : Bornology.IsBounded (univ : Set (StrongDual ℝ V)) := hP ▸ hΔ.isBounded
+  have hsub : Subsingleton (StrongDual ℝ V) := by
+    classical
+    by_contra! h
+    exact NormedSpace.unbounded_univ ℝ (StrongDual ℝ V) hbd
+  -- The vertex `0` then has the active normal `u j = 0` in a basis of `N`, which is absurd.
+  have hext : (0 : StrongDual ℝ V) ∈ (facetPolyhedron i u c).extremePoints ℝ :=
+    mem_extremePoints.2
+      ⟨hP ▸ mem_univ _, fun _ _ _ _ _ ↦ ⟨Subsingleton.elim _ _, Subsingleton.elim _ _⟩⟩
+  obtain ⟨b, hb⟩ := hΔ.isSmoothVertex 0 hext
+  have hj : j ∈ activeSet (facetPairing i u) c 0 := by simp [mem_activeSet, hcj]
+  exact b.ne_zero ⟨j, hj⟩ ((hb ⟨j, hj⟩).trans h0)
+
+/-- For an injective lattice map, the facet pairings of a Delzant polytope are nonzero. -/
+theorem facetPairing_ne_zero (hi : Function.Injective i) (j : ι) : facetPairing i u j ≠ 0 :=
+  facetPairing_eq_zero_iff.not.2 ((map_ne_zero_iff i hi).2 (hΔ.ne_zero j))
+
+/-- **A Delzant polytope has a point on none of its facets.** For an injective lattice map, some
+point of a Delzant polytope lies on none of its facets (no facet inequality is an equality
+there). -/
+theorem exists_activeSet_eq_empty (hi : Function.Injective i) :
+    ∃ x ∈ facetPolyhedron i u c, activeSet (facetPairing i u) c x = ∅ := by
+  choose x hx hxj using hΔ.irredundant
+  have hslack : ∀ j k, j ≠ k → c j < x k (i (u j)) := fun j k hjk ↦
+    (mem_facetPolyhedron.1 (hx k) j).lt_of_ne fun h ↦ hjk <| by
+      simpa [hxj k] using (mem_activeSet.2 h.symm : j ∈ activeSet (facetPairing i u) c (x k))
+  rcases subsingleton_or_nontrivial ι with hι | hι
+  · obtain hι' | ⟨⟨j⟩⟩ := isEmpty_or_nonempty ι
+    · exact ⟨0, mem_facetPolyhedron.2 isEmptyElim, eq_empty_of_isEmpty _⟩
+    -- With a single facet `j`, move off it in a direction `w` with `⟨w, u j⟩ = 1`.
+    obtain ⟨w, hw⟩ := LinearMap.surjective_iff_ne_zero.2 (hΔ.facetPairing_ne_zero hi j) 1
+    rw [facetPairing_apply] at hw
+    have hlt : ∀ k, c k < (x j + w) (i (u k)) := fun k ↦ by
+      obtain rfl := Subsingleton.elim k j
+      have := mem_facetPolyhedron.1 (hx k) k
+      simp only [add_apply, hw]
+      linarith
+    exact ⟨x j + w, mem_facetPolyhedron.2 fun k ↦ (hlt k).le,
+      eq_empty_of_forall_notMem fun k hk ↦ (hlt k).ne' (mem_activeSet.1 hk)⟩
+  -- With at least two facets `a ≠ b`, the midpoint of `x a` and `x b` lies on no facet.
+  obtain ⟨a, b, hab⟩ := exists_pair_ne ι
+  have hlt : ∀ j, c j < ((2 : ℝ)⁻¹ • (x a + x b)) (i (u j)) := fun j ↦ by
+    have h1 := mem_facetPolyhedron.1 (hx a) j
+    have h2 := mem_facetPolyhedron.1 (hx b) j
+    have h3 : c j < x a (i (u j)) ∨ c j < x b (i (u j)) := by
+      by_cases hja : j = a
+      · exact Or.inr (hslack j b (by rw [hja]; exact hab))
+      · exact Or.inl (hslack j a hja)
+    simp only [smul_apply, add_apply, smul_eq_mul]
+    rcases h3 with h3 | h3 <;> linarith
+  exact ⟨_, mem_facetPolyhedron.2 fun j ↦ (hlt j).le,
+    eq_empty_of_forall_notMem fun j hj ↦ (hlt j).ne' (mem_activeSet.1 hj)⟩
+
 variable [FiniteDimensional ℝ V]
 
 /-- A Delzant polytope is compact. -/
@@ -349,51 +437,20 @@ theorem exists_mem_extremePoints_mem_activeSet (j : ι) :
   obtain ⟨x, hx, hxj⟩ := hΔ.irredundant j
   exact Toric.exists_mem_extremePoints_mem_activeSet hΔ.isCompact hx (hxj ▸ mem_singleton j)
 
+/-- The facets through a point of a Delzant polytope pass through a smooth vertex. In particular
+the active normals at every point are part of a lattice basis. -/
+theorem exists_isSmoothVertex_activeSet_subset {x : StrongDual ℝ V}
+    (hx : x ∈ facetPolyhedron i u c) :
+    ∃ v, IsSmoothVertex i u c v ∧
+      activeSet (facetPairing i u) c x ⊆ activeSet (facetPairing i u) c v := by
+  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hx
+  exact ⟨v, hΔ.isSmoothVertex v hv, hsub⟩
+
 /-- The facet normals of a Delzant polytope are primitive lattice vectors. -/
 theorem isPrimitive (j : ι) : IsPrimitive (u j) := by
   obtain ⟨x, hx, hj⟩ := hΔ.exists_mem_extremePoints_mem_activeSet j
   obtain ⟨b, hb⟩ := hΔ.isSmoothVertex x hx
   simpa only [hb] using b.isPrimitive ⟨j, hj⟩
-
-/-- For an injective lattice map, the facet pairings of a Delzant polytope are nonzero. -/
-theorem facetPairing_ne_zero (hi : Function.Injective i) (j : ι) : facetPairing i u j ≠ 0 :=
-  facetPairing_eq_zero_iff.not.2 ((map_ne_zero_iff i hi).2 (hΔ.isPrimitive j).ne_zero)
-
-/-- **A Delzant polytope has an interior point.** For an injective lattice map, some point of a
-Delzant polytope lies on none of its facets. -/
-theorem exists_activeSet_eq_empty [Finite ι] (hi : Function.Injective i) :
-    ∃ x ∈ facetPolyhedron i u c, activeSet (facetPairing i u) c x = ∅ := by
-  choose x hx hxj using hΔ.irredundant
-  have hslack : ∀ j k, j ≠ k → c j < x k (i (u j)) := fun j k hjk ↦
-    (mem_facetPolyhedron.1 (hx k) j).lt_of_ne fun h ↦ hjk <| by
-      simpa [hxj k] using (mem_activeSet.2 h.symm : j ∈ activeSet (facetPairing i u) c (x k))
-  rcases subsingleton_or_nontrivial ι with hι | hι
-  · obtain hι' | ⟨⟨j⟩⟩ := isEmpty_or_nonempty ι
-    · exact ⟨0, mem_facetPolyhedron.2 isEmptyElim, eq_empty_of_isEmpty _⟩
-    -- With a single facet `j`, move off it in a direction `w` with `⟨w, u j⟩ = 1`.
-    obtain ⟨w, hw⟩ := SeparatingDual.exists_eq_one (R := ℝ)
-      ((map_ne_zero_iff i hi).2 (hΔ.isPrimitive j).ne_zero)
-    have hlt : ∀ k, c k < (x j + w) (i (u k)) := fun k ↦ by
-      obtain rfl := Subsingleton.elim k j
-      have := mem_facetPolyhedron.1 (hx k) k
-      simp only [add_apply, hw]
-      linarith
-    exact ⟨x j + w, mem_facetPolyhedron.2 fun k ↦ (hlt k).le,
-      eq_empty_of_forall_notMem fun k hk ↦ (hlt k).ne' (mem_activeSet.1 hk)⟩
-  -- With at least two facets, the barycentre of the points `x k` lies on no facet.
-  have := Fintype.ofFinite ι
-  set n : ℝ := (Fintype.card ι : ℝ)
-  have hn : 0 < n := Nat.cast_pos.2 Fintype.card_pos
-  have hlt : ∀ j, c j < (n⁻¹ • ∑ k, x k) (i (u j)) := fun j ↦ by
-    obtain ⟨k, hk⟩ := exists_ne j
-    have hsum : ∑ _k : ι, c j < ∑ k, x k (i (u j)) :=
-      Finset.sum_lt_sum (fun k _ ↦ mem_facetPolyhedron.1 (hx k) j) ⟨k, Finset.mem_univ _,
-        hslack j k hk.symm⟩
-    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hsum
-    simp only [smul_apply, sum_apply, smul_eq_mul]
-    rwa [lt_inv_mul_iff₀ hn]
-  exact ⟨_, mem_facetPolyhedron.2 fun j ↦ (hlt j).le,
-    eq_empty_of_forall_notMem fun j hj ↦ (hlt j).ne' (mem_activeSet.1 hj)⟩
 
 end IsDelzant
 

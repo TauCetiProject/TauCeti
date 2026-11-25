@@ -58,6 +58,27 @@ variable {A : Type u} {σ : Type*} [CommRing A] [SetLike σ A] [AddSubgroupClass
   (hcover : ⨆ i, basicOpen 𝒜 (f i) = ⊤)
 
 include hf hcover in
+/-- Reindex a degree-one cover `f` by its range to obtain `𝒪(1)` as an ample invertible sheaf
+together with the line-bundle class power formula for `𝒪(n)`. -/
+private lemma isAmple_twistingSheaf_one_of_range [CompactSpace (Proj 𝒜)] :
+    ∃ (L : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜)),
+      (TauCeti.AlgebraicGeometry.LineBundleClass.mk L).IsAmple ∧
+      ∀ n : ℤ, ∃ (h : TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible (Proj 𝒜)
+          (twistingSheaf 𝒜 n)),
+        TauCeti.AlgebraicGeometry.LineBundleClass.mk ⟨twistingSheaf 𝒜 n, h⟩ =
+          TauCeti.AlgebraicGeometry.LineBundleClass.mk L ^ n := by
+  have hf' (a : Set.range f) : (a : A) ∈ 𝒜 1 := by
+    obtain ⟨_, i, rfl⟩ := a
+    exact hf i
+  have hcover' : ⨆ a : Set.range f, basicOpen 𝒜 (a : A) = ⊤ :=
+    (iSup_range' (basicOpen 𝒜) f).trans hcover
+  let L : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜) :=
+    ⟨twistingSheaf 𝒜 1, isInvertible_twistingSheaf_of_iSup_eq_top _ hf' hcover' 1⟩
+  exact ⟨L, isAmple_twistingSheaf _ hf' hcover' Nat.one_pos, fun n ↦
+    ⟨isInvertible_twistingSheaf_of_iSup_eq_top _ hf' hcover' n,
+      lineBundleClass_twistingSheaf_eq_zpow _ hf' hcover' n⟩⟩
+
+include hf hcover in
 /-- **Serre's theorem on `Proj`.** If `Proj A` is quasi-compact and covered by degree-one standard
 opens `D₊(f i)` (for instance on projective space over a ring), then for every quasi-coherent
 module `F` of finite type and every sufficiently large `n`, the twist `F(n) = F ⊗ 𝒪(n)` is
@@ -66,25 +87,12 @@ theorem eventually_exists_generatingSections_tensor_twistingSheaf [CompactSpace 
     (F : (Proj 𝒜).Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
     ∀ᶠ n : ℕ in Filter.atTop,
       ∃ σ : (F ⊗ twistingSheaf 𝒜 n).GeneratingSections, σ.IsFiniteType := by
-  -- The invertibility and ampleness results index the cover by a type in the universe of `A`;
-  -- reindex the cover by the range of `f`.
-  have hf' (a : Set.range f) : (a : A) ∈ 𝒜 1 := by
-    obtain ⟨_, i, rfl⟩ := a
-    exact hf i
-  have hcover' : ⨆ a : Set.range f, basicOpen 𝒜 (a : A) = ⊤ :=
-    (iSup_range' (basicOpen 𝒜) f).trans hcover
-  let L : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜) :=
-    ⟨twistingSheaf 𝒜 1, isInvertible_twistingSheaf_of_iSup_eq_top _ hf' hcover' 1⟩
-  have hL : (TauCeti.AlgebraicGeometry.LineBundleClass.mk L).IsAmple :=
-    isAmple_twistingSheaf _ hf' hcover' Nat.one_pos
+  obtain ⟨L, hL, hpow⟩ := isAmple_twistingSheaf_one_of_range f hf hcover
   obtain ⟨n₀, hn₀⟩ := F.exists_generatingSections_tensor_of_isAmple L hL
   refine Filter.eventually_atTop.mpr ⟨n₀, fun n hn ↦ ?_⟩
-  let K : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜) :=
-    ⟨twistingSheaf 𝒜 (n : ℤ), isInvertible_twistingSheaf_of_iSup_eq_top _ hf' hcover' (n : ℤ)⟩
-  have hK : TauCeti.AlgebraicGeometry.LineBundleClass.mk K =
-      TauCeti.AlgebraicGeometry.LineBundleClass.mk L ^ n := by
-    rw [lineBundleClass_twistingSheaf_eq_zpow _ hf' hcover' (n : ℤ), zpow_natCast]
-  exact hn₀ n hn K hK
+  obtain ⟨hinv, hK⟩ := hpow (n : ℤ)
+  rw [zpow_natCast] at hK
+  exact hn₀ n hn ⟨twistingSheaf 𝒜 (n : ℤ), hinv⟩ hK
 
 include hf hcover in
 /-- **Quasi-coherent sheaves of finite type on `Proj` are quotients of sums of twisting
@@ -95,22 +103,12 @@ theorem eventually_exists_epi_free_tensor_twistingSheaf [CompactSpace (Proj 𝒜
     (F : (Proj 𝒜).Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
     ∀ᶠ n : ℕ in Filter.atTop, ∃ (I : Type u) (_ : Finite I)
       (π : (SheafOfModules.free I : (Proj 𝒜).Modules) ⊗ twistingSheaf 𝒜 (-n) ⟶ F), Epi π := by
-  have hf' (a : Set.range f) : (a : A) ∈ 𝒜 1 := by
-    obtain ⟨_, i, rfl⟩ := a
-    exact hf i
-  have hcover' : ⨆ a : Set.range f, basicOpen 𝒜 (a : A) = ⊤ :=
-    (iSup_range' (basicOpen 𝒜) f).trans hcover
-  let L : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜) :=
-    ⟨twistingSheaf 𝒜 1, isInvertible_twistingSheaf_of_iSup_eq_top _ hf' hcover' 1⟩
-  have hL : (TauCeti.AlgebraicGeometry.LineBundleClass.mk L).IsAmple :=
-    isAmple_twistingSheaf _ hf' hcover' Nat.one_pos
+  obtain ⟨L, hL, hpow⟩ := isAmple_twistingSheaf_one_of_range f hf hcover
   obtain ⟨n₀, hn₀⟩ := F.exists_epi_biproduct_of_isAmple L hL
   refine Filter.eventually_atTop.mpr ⟨n₀, fun n hn ↦ ?_⟩
-  let K : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜) :=
-    ⟨twistingSheaf 𝒜 (-n), isInvertible_twistingSheaf_of_iSup_eq_top _ hf' hcover' (-n)⟩
-  have hK : TauCeti.AlgebraicGeometry.LineBundleClass.mk K =
-      (TauCeti.AlgebraicGeometry.LineBundleClass.mk L ^ n)⁻¹ := by
-    rw [lineBundleClass_twistingSheaf_eq_zpow _ hf' hcover' (-n), ← zpow_natCast, ← zpow_neg]
+  obtain ⟨hinv, hK⟩ := hpow (-n)
+  rw [zpow_neg, zpow_natCast] at hK
+  let K : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜) := ⟨twistingSheaf 𝒜 (-n), hinv⟩
   obtain ⟨k, p, hp⟩ := hn₀ n hn K hK
   have : MonoidalPreadditive (Proj 𝒜).Modules :=
     TauCeti.SheafOfModules.monoidalPreadditive (Proj 𝒜).sheaf

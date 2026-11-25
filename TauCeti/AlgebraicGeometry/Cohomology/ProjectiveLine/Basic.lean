@@ -15,7 +15,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
 public import TauCeti.RingTheory.Adjoin.Inverse
-import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Serre
+import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite
 
 /-!
 # Cohomology of the projective line
@@ -60,6 +60,7 @@ All in the namespace `TauCeti.AlgebraicGeometry.projectiveLine`:
 * `bijective_baseRingToGlobalSections`: the global functions on `ℙ¹_R` are the constants `R`.
 * `cohomologyZeroTrivialLinearEquiv`: `H⁰(ℙ¹_R, 𝒪) ≃ₗ[R] R`.
 * `subsingleton_cohomology_one_trivial`: `H¹(ℙ¹_R, 𝒪) = 0` over any ring.
+* `subsingleton_cohomology_succ_trivial`: `Hⁿ⁺¹(ℙ¹_R, 𝒪) = 0` over any ring.
 * `finite_cohomology_one`: `H¹(ℙ¹_R, M)` is a finitely generated `R`-module for `M` quasi-coherent
   of finite type, over any ring `R`.
 * `finite_cohomology`, `finite_globalSections`: `Hⁿ(ℙ¹_R, M)` and `Γ(M, ⊤)` are finitely
@@ -340,6 +341,14 @@ instance subsingleton_cohomology_one_trivial :
     exact QuotientAddGroup.subsingleton_quotient_top
   exact (sectionsQuotientEquivCohomologyOne M _ _ (basicOpen_coord_sup_eq_top R) (hacyclic 0)
     (hacyclic 1)).symm.toEquiv.subsingleton
+
+/-- **The structure sheaf of the projective line has no higher cohomology**, over any ring:
+`Hⁿ⁺¹(ℙ¹_R, 𝒪) = 0`. -/
+instance subsingleton_cohomology_succ_trivial (n : ℕ) :
+    Subsingleton (Cohomology (InvertibleSheaf.trivial (projectiveLine R)).obj (n + 1)) := by
+  rcases n with _ | n
+  · exact subsingleton_cohomology_one_trivial R
+  · exact (Pi.basisFun R (Fin 2)).subsingleton_cohomology_proj_of_card_le _ (n + 2) (by simp)
 
 /-- The structure map from `R` to the global functions on the projective line is bijective, as
 the algebra map of the `R`-algebra structure given by `Scheme.baseRingToStructurePresheaf`. -/

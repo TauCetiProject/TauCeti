@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
+public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Serre
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Modules.Sheaf
@@ -17,8 +18,8 @@ import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 Combining the affine-base identification `Hⁿ(X, M)~ ≅ Rⁿ f_* M`
 (`AlgebraicGeometry.Scheme.Modules.tildeCohomologyIsoHigherDirectImage` in
 `TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent`) with Serre's finiteness
-and vanishing theorems (`TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Serre`), this file
-proves:
+(`TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite`) and vanishing
+(`TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Serre`) theorems, this file proves:
 * coherence (finite presentation) of `R^q f_* F` for every projective scheme `X` over a Noetherian
   ring `R`, every quasi-coherent `𝒪_X`-module `F` of finite type, and every `q : ℕ`;
 * vanishing of `R^q f_* (i^* 𝒪(n) ⊗ F)` for every closed subscheme `i : X ⟶ Proj (Sym_R M)` over

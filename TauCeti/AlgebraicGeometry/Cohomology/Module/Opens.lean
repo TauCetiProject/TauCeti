@@ -194,6 +194,11 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear_comp (n : �
       cohomologyOnResLinear M n (hUV.trans hVW) :=
   LinearMap.ext fun x ↦ cohomologyOnRes_comp_apply M n hUV hVW x
 
+/-- The underlying function of `cohomologyOnResLinear` is `cohomologyOnRes`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.coe_cohomologyOnResLinear (n : ℕ)
+    {U V : X.Opens} (h : U ≤ V) : ⇑(cohomologyOnResLinear M n h) = cohomologyOnRes M n h :=
+  (rfl)
+
 /-- The connecting map `Hⁿ⁰(U ⊓ V, M) ⟶ Hⁿ¹(U ⊔ V, M)` of the Mayer-Vietoris sequence, as a linear
 map over global functions. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.mayerVietorisδLinear (U V : X.Opens) (n₀ n₁ : ℕ)
