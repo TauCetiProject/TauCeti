@@ -13,9 +13,10 @@ import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 # The multiplicative Haar measures of `ℝˣ` and `ℂˣ`
 
 The archimedean factors of the normalized Haar measure on the ideles are the measures `dx / |x|`
-on `ℝˣ` and `2 dx dy / (x² + y²)` on `ℂˣ`: additive Haar measure with density the inverse of the
-normalized absolute value, which is `|x|` at a real place and `|z| ^ 2` at a complex place. This
-file defines them as measures on `ℝ` and `ℂ` that do not charge `0`
+on `ℝˣ` and `2 dx dy / (x² + y²)` on `ℂˣ`: Tate's self-dual additive Haar measure (`dx` on `ℝ`,
+`2 dx dy` on `ℂ`) with density the inverse of the normalized absolute value, which is `|x|` at a
+real place and `|z| ^ 2` at a complex place. With respect to Lebesgue measure the densities are
+`|x|⁻¹` and `2 |z|⁻²`. This file defines them as measures on `ℝ` and `ℂ` that do not charge `0`
 (`TauCeti.realMultHaar`, `TauCeti.complexMultHaar`) and shows that they are invariant under
 multiplication by every nonzero scalar (`TauCeti.map_realMultHaar_mul_left`,
 `TauCeti.map_complexMultHaar_mul_left`). On `(0, ∞)`, `dx / |x|` is `TauCeti.multHaar`
@@ -27,9 +28,12 @@ additive Haar measure by `distribHaarChar A g` and a density `f` satisfies
 `distribHaarChar A g * f (g • x) = f x`, then the measure with density `f` is invariant under
 `g • ·`.
 
-The normalizations are fixed by masses: `dx / |x|` gives `[1, e]` mass one
-(`TauCeti.realMultHaar_Icc_one_exp_one`), and, by polar coordinates, `2 dx dy / (x² + y²)` gives
-the annulus `1 ≤ |z| ≤ e` mass `2 · 2π · log e = 4π` (`TauCeti.complexMultHaar_annulus`).
+The normalizations are fixed by masses: for `0 < a ≤ b`, `dx / |x|` gives `[a, b]` mass
+`log b - log a` (`TauCeti.realMultHaar_Icc`), and, by polar coordinates, `2 dx dy / (x² + y²)` gives
+the annulus `a ≤ |z| ≤ b` mass `2 · 2π · (log b - log a)`
+(`TauCeti.complexMultHaar_setOf_norm_mem_Icc`). In particular `[1, e]` has mass one
+(`TauCeti.realMultHaar_Icc_one_exp_one`) and the annulus `1 ≤ |z| ≤ e` has mass `4π`
+(`TauCeti.complexMultHaar_setOf_norm_mem_Icc_one_exp_one`).
 
 ## References
 
@@ -174,53 +178,61 @@ theorem map_complexMultHaar_mul_left {a : ℂ} (ha : a ≠ 0) :
     Complex.finrank_real_complex]
   linear_combination 2 * h
 
-/-- The interval `[1, e]` lies in `(0, ∞)`. -/
-private theorem Icc_one_exp_one_subset_Ioi : Icc 1 (Real.exp 1) ⊆ Ioi 0 :=
-  fun _ hx ↦ one_pos.trans_le hx.1
+/-- `dx / |x|` gives the interval `[a, b]` mass `log b - log a` for `0 < a ≤ b`. -/
+theorem realMultHaar_Icc {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+    realMultHaar (Icc a b) = ENNReal.ofReal (Real.log b - Real.log a) := by
+  have hsub : Icc a b ⊆ Ioi 0 := fun _ ht ↦ ha.trans_le ht.1
+  rw [← restrict_eq_self _ hsub, realMultHaar_restrict_Ioi, multHaar_Icc ha hab]
 
 /-- `dx / |x|` gives the interval `[1, e]` mass one. -/
 @[simp]
 theorem realMultHaar_Icc_one_exp_one : realMultHaar (Icc 1 (Real.exp 1)) = 1 := by
-  rw [← restrict_eq_self _ Icc_one_exp_one_subset_Ioi, realMultHaar_restrict_Ioi,
-    multHaar_Icc_one_exp_one]
+  rw [realMultHaar_Icc one_pos (Real.one_le_exp zero_le_one), Real.log_exp, Real.log_one,
+    sub_zero, ENNReal.ofReal_one]
 
-/-- **The annulus Check.** `2 dx dy / (x² + y²)` gives the annulus `1 ≤ |z| ≤ e` mass
-`2 · 2π · log e = 4π`. -/
-theorem complexMultHaar_annulus :
-    complexMultHaar {z | ‖z‖ ∈ Icc 1 (Real.exp 1)} = ENNReal.ofReal (4 * π) := by
-  have hm : MeasurableSet {z : ℂ | ‖z‖ ∈ Icc 1 (Real.exp 1)} :=
+/-- `2 dx dy / (x² + y²)` gives the annulus `a ≤ |z| ≤ b` mass `2 · 2π · (log b - log a)` for
+`0 < a ≤ b`. -/
+theorem complexMultHaar_setOf_norm_mem_Icc {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+    complexMultHaar {z | ‖z‖ ∈ Icc a b} = ENNReal.ofReal (4 * π * (Real.log b - Real.log a)) := by
+  have hsub : Icc a b ⊆ Ioi 0 := fun _ ht ↦ ha.trans_le ht.1
+  have hm : MeasurableSet {z : ℂ | ‖z‖ ∈ Icc a b} :=
     measurableSet_Icc.preimage continuous_norm.measurable
-  -- The integrand is constant on each circle about `0`: there it is `2 / ρ ^ 2` for `ρ ∈ [1, e]`,
+  -- The integrand is constant on each circle about `0`: there it is `2 / ρ ^ 2` for `ρ ∈ [a, b]`,
   -- so its circle integral is `2πρ · 2 / ρ ^ 2 = 4π / ρ`.
   have hcircle : ∀ ρ ∈ Ioi (0 : ℝ), circleLIntegral
-      ({z : ℂ | ‖z‖ ∈ Icc 1 (Real.exp 1)}.indicator fun z ↦ ENNReal.ofReal (2 * (‖z‖ ^ 2)⁻¹))
-        0 ρ = (Icc 1 (Real.exp 1)).indicator (fun r ↦ ENNReal.ofReal (4 * π) *
-          ENNReal.ofReal r⁻¹) ρ := by
+      ({z : ℂ | ‖z‖ ∈ Icc a b}.indicator fun z ↦ ENNReal.ofReal (2 * (‖z‖ ^ 2)⁻¹)) 0 ρ =
+        (Icc a b).indicator (fun r ↦ ENNReal.ofReal (4 * π) * ENNReal.ofReal r⁻¹) ρ := by
     intro ρ hρ
     have hρ : 0 < ρ := hρ
-    rw [circleLIntegral_congr (h := fun _ ↦ (Icc 1 (Real.exp 1)).indicator
+    rw [circleLIntegral_congr (h := fun _ ↦ (Icc a b).indicator
       (fun r ↦ ENNReal.ofReal (2 * (r ^ 2)⁻¹)) ρ) 0 ρ fun _ z hz ↦ by
         simp only [indicator_apply, mem_ofPred_eq, mem_sphere_zero_iff_norm.mp hz],
       circleLIntegral_const]
-    by_cases h : ρ ∈ Icc 1 (Real.exp 1)
+    by_cases h : ρ ∈ Icc a b
     · rw [indicator_of_mem h, indicator_of_mem h, ← ENNReal.ofReal_mul (by positivity),
         ← ENNReal.ofReal_mul (by positivity)]
       congr 1
       field_simp
       ring
     · simp [h]
-  calc complexMultHaar {z | ‖z‖ ∈ Icc 1 (Real.exp 1)}
-      = ∫⁻ ρ in Ioi 0, circleLIntegral ({z : ℂ | ‖z‖ ∈ Icc 1 (Real.exp 1)}.indicator
+  calc complexMultHaar {z | ‖z‖ ∈ Icc a b}
+      = ∫⁻ ρ in Ioi 0, circleLIntegral ({z : ℂ | ‖z‖ ∈ Icc a b}.indicator
           fun z ↦ ENNReal.ofReal (2 * (‖z‖ ^ 2)⁻¹)) 0 ρ := by
         rw [complexMultHaar_def, withDensity_apply _ hm, ← lintegral_indicator hm,
           ← lintegral_circleLIntegral_eq_lintegral (Measurable.indicator (by fun_prop) hm) 0]
-    _ = ∫⁻ ρ in Icc 1 (Real.exp 1), ENNReal.ofReal (4 * π) * ENNReal.ofReal ρ⁻¹ := by
+    _ = ∫⁻ ρ in Icc a b, ENNReal.ofReal (4 * π) * ENNReal.ofReal ρ⁻¹ := by
         rw [setLIntegral_congr_fun measurableSet_Ioi hcircle, lintegral_indicator measurableSet_Icc,
           restrict_restrict measurableSet_Icc,
-          inter_eq_self_of_subset_left Icc_one_exp_one_subset_Ioi]
-    _ = ENNReal.ofReal (4 * π) := by
-        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-          setLIntegral_Icc_ofReal_inv one_pos (Real.one_le_exp zero_le_one)]
-        simp
+          inter_eq_self_of_subset_left hsub]
+    _ = ENNReal.ofReal (4 * π * (Real.log b - Real.log a)) := by
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, setLIntegral_Icc_ofReal_inv ha hab,
+          ← ENNReal.ofReal_mul (by positivity)]
+
+/-- **The annulus Check.** `2 dx dy / (x² + y²)` gives the annulus `1 ≤ |z| ≤ e` mass
+`2 · 2π · log e = 4π`. -/
+theorem complexMultHaar_setOf_norm_mem_Icc_one_exp_one :
+    complexMultHaar {z | ‖z‖ ∈ Icc 1 (Real.exp 1)} = ENNReal.ofReal (4 * π) := by
+  rw [complexMultHaar_setOf_norm_mem_Icc one_pos (Real.one_le_exp zero_le_one), Real.log_exp,
+    Real.log_one, sub_zero, mul_one]
 
 end TauCeti
