@@ -33,6 +33,8 @@ composition (`Finset.neg_one_pow_card_inversions_comp`).
 
 * `Finset.inversions_univ`: on a whole finite type, the inversions are all pairs `a < b` with
   `f b < f a`.
+* `Finset.notMem_inversions_iff`: for an injective map, a pair `i < j` of elements of `s` is not an
+  inversion exactly when `f i < f j`.
 * `Finset.card_inversions_insert`: adjoining a new element `a` to `s` adds the inversions
   involving `a`.
 * `Finset.card_inversions_insert_add_card_filter_lt`: for an injective map, the same comparison
@@ -70,6 +72,19 @@ def inversions (f : α → β) (s : Finset α) : Finset (α × α) :=
 theorem mem_inversions {f : α → β} {s : Finset α} {p : α × α} :
     p ∈ s.inversions f ↔ p.1 ∈ s ∧ p.2 ∈ s ∧ p.1 < p.2 ∧ f p.2 < f p.1 := by
   simp [inversions, and_assoc]
+
+/-- For an injective map, a pair `i < j` of elements of `s` fails to be an inversion of `f` on `s`
+exactly when `f` keeps it in order. -/
+theorem notMem_inversions_iff {f : α → β} (hf : Injective f) {s : Finset α} {i j : α}
+    (hi : i ∈ s) (hj : j ∈ s) (hij : i < j) : (i, j) ∉ s.inversions f ↔ f i < f j := by
+  have hne : f i ≠ f j := fun h ↦ ne_of_lt hij (hf h)
+  constructor
+  · intro h
+    exact lt_of_le_of_ne (not_lt.mp fun hlt ↦
+      h (mem_inversions.mpr ⟨hi, hj, hij, hlt⟩)) hne
+  · intro h h'
+    obtain ⟨_, _, _, hlt⟩ := mem_inversions.mp h'
+    exact (not_lt_of_ge h.le) hlt
 
 @[simp]
 theorem inversions_empty (f : α → β) : (∅ : Finset α).inversions f = ∅ := by

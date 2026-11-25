@@ -33,7 +33,7 @@ orientation of `ν⁻`:
 The relative homology across the level is that of the Thom pair `(ν⁻, ν⁻₀)`
 (`nonempty_singularHomology_sublevelPair_iso_thomPair`), whose homology vanishes below the rank
 (`TauCeti.isZero_singularHomology_thomPair_of_compactSpace`) and is `H₀(S; o(ν⁻))` in the rank
-degree (`TauCeti.thomPairSingularHomologyIsoTwistedHomology`).
+degree (`TauCeti.thomPairSingularHomologyFinrankIsoTwistedHomology`).
 
 For a connected critical submanifold of positive index the group `H₀(S; o(ν⁻))` is `ℤ` when `ν⁻`
 is orientable and `ℤ/2` when it is not, so the integral homology across the level in the degree of
@@ -81,17 +81,6 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
   (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
   (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
 
-omit [SecondCountableTopology M] [FiniteDimensional ℝ E'] [J.Boundaryless] [IsManifold J ∞ S] in
-include hfs hcompact hcrit in
-/-- If the critical submanifold is empty, the band has no critical points, so it carries no
-relative homology. -/
-private theorem isZero_singularHomology_sublevelPair_of_isEmpty [IsEmpty S]
-    {C : Type*} [Category C] [Abelian C] [HasCoproducts.{0} C] (R : C) (k : ℕ) :
-    IsZero ((sublevelPair f (hac.trans hcb).le).singularHomology R k) :=
-  isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hfs _ hcompact
-    (fun _ hax hxb hx ↦ isEmptyElim (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx,
-      hax, hxb⟩).choose) R k
-
 include h hfs hc hac hcb hcompact hcrit in
 /-- **Across a Morse–Bott level the relative homology vanishes below the index.** Let
 `i : S → M` be a nondegenerate critical submanifold of a smooth function `f` on a Hausdorff,
@@ -104,7 +93,8 @@ theorem isZero_singularHomology_sublevelPair_of_lt {r : ℕ}
     {C : Type*} [Category C] [Abelian C] [HasCoproducts.{0} C] (R : C) {k : ℕ} (hk : k < r) :
     IsZero ((sublevelPair f (hac.trans hcb).le).singularHomology R k) := by
   cases isEmpty_or_nonempty S with
-  | inl _ => exact isZero_singularHomology_sublevelPair_of_isEmpty hfs hac hcb hcompact hcrit R k
+  | inl _ =>
+    exact isZero_singularHomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit R k
   | inr _ =>
     have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
@@ -162,7 +152,7 @@ theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology {r : ℕ}
     letI := hV.fiberBundle
     haveI := hV.vectorBundle
     Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (r + 1) ≅
+        (ModuleCat.of ℤ ℤ) (r + 1) ≅
       twistedHomology.{0, 0, 0} (signLocalSystem (Fin (r + 1) → ℝ)
         (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) ℤ
         ((Fintype.card_fin (r + 1)).trans (finrank_fin_fun ℝ).symm)) 0) := by
@@ -176,17 +166,18 @@ theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology {r : ℕ}
   | inl _ =>
     -- Over an empty critical submanifold both groups vanish.
     have : IsEmpty (TopCat.of S) := inferInstanceAs (IsEmpty S)
-    exact ⟨(isZero_singularHomology_sublevelPair_of_isEmpty hfs hac hcb hcompact hcrit _ _).iso
-      (isZero_twistedHomology_of_isEmpty _ 0)⟩
+    exact ⟨(isZero_singularHomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit
+      _ _).iso (isZero_twistedHomology_of_isEmpty _ 0)⟩
   | inr _ =>
     -- The frames have size the dimension of the negative normal spaces, which is the index.
-    have hr (s : S) : manifoldMorseIndex I f (i s) = r + 1 := by
-      rw [← h.finrank_negativeNormalSpace hn g.toRiemannianMetric, hV.finrank_eq,
-        Fintype.card_fin]
+    have hr := h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV
     obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
-      hcrit hdim g hr (ModuleCat.of ℤ (ULift.{0} ℤ)) (r + 1)
-    exact ⟨e ≪≫ thomPairSingularHomologyIsoTwistedHomology (Fin (r + 1) → ℝ) _
-      (finrank_fin_fun ℝ)⟩
+      hcrit hdim g hr (ModuleCat.of ℤ ℤ) (r + 1)
+    -- The model fibre `Fin (r + 1) → ℝ` has dimension `r + 1`; its standard basis orients it.
+    have hd : r + 1 = finrank ℝ (Fin (r + 1) → ℝ) := (finrank_fin_fun ℝ).symm
+    exact ⟨e ≪≫ eqToIso (congrArg (TopPair.singularHomology _ (ModuleCat.of ℤ ℤ)) hd) ≪≫
+      thomPairSingularHomologyFinrankIsoTwistedHomology ℤ (Fin (r + 1) → ℝ) _
+        ((Fintype.card_fin (r + 1)).trans hd) (Pi.basisFun ℝ (Fin (r + 1))).orientation⟩
 
 include h hfs hc hac hcb hcompact hcrit in
 /-- **The homology across a connected Morse–Bott level detects the orientability of the negative
@@ -208,7 +199,7 @@ theorem nonempty_vectorBundleOrientation_iff_nonempty_singularHomology_sublevelP
     Nonempty (VectorBundleOrientation (Fin (r + 1) → ℝ)
         (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) (Fin (r + 1))) ↔
       Nonempty (((sublevelPair f (hac.trans hcb).le).singularHomology
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (r + 1) : ModuleCat.{0} ℤ) ≃ₗ[ℤ] ℤ) := by
+        (ModuleCat.of ℤ ℤ) (r + 1) : ModuleCat.{0} ℤ) ≃ₗ[ℤ] ℤ) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   let := subbundleTopology P (F' := Fin (r + 1) → ℝ)
@@ -241,7 +232,7 @@ theorem nonempty_singularHomology_sublevelPair_linearEquiv_quotient_two [Connect
       IsEmpty (VectorBundleOrientation (Fin (r + 1) → ℝ)
         (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) (Fin (r + 1)))) :
     Nonempty (((sublevelPair f (hac.trans hcb).le).singularHomology
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (r + 1) : ModuleCat.{0} ℤ) ≃ₗ[ℤ]
+        (ModuleCat.of ℤ ℤ) (r + 1) : ModuleCat.{0} ℤ) ≃ₗ[ℤ]
       ℤ ⧸ Ideal.span {(2 : ℤ)}) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim

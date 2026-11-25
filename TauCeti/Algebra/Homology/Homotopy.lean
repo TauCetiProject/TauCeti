@@ -21,6 +21,16 @@ transport and iteration of homotopies, and assembly of null-homotopies from comp
 `Homotopy.compSquare` composes specified square homotopies by postcomposing the first
 and precomposing the second, retaining their sum rather than choosing a new outer homotopy.
 
+`HomotopyEquiv.invNaturality` turns a strictly commutative square whose horizontal sides are the
+forward maps of chain homotopy equivalences, `e₁.hom ≫ b = a ≫ e₂.hom`, into a square of homotopy
+inverses commuting up to chain homotopy: `e₁.inv ≫ a` is homotopic to `b ≫ e₂.inv`. This is how a
+strictly natural chain homotopy equivalence, such as the inclusion of smooth singular chains into
+singular chains, has a homotopy inverse which is natural up to chain homotopy.
+
+`HomotopyEquiv.homologyMap_inv` says that the inverse of a chain homotopy equivalence induces on
+homology the inverse of the map induced by its forward map, the inverse law of Mathlib's
+`HomotopyEquiv.toHomologyIso` stated for the induced maps themselves.
+
 `Homotopy.restrict` restricts a homotopy to subcomplexes: when its components, restricted to a
 complex mapping into the source, lift through a degreewise monomorphism into the target, the lifts
 form a homotopy between the restricted maps.
@@ -47,7 +57,11 @@ homotopy identities in degree zero and in positive degrees.  It is the non-induc
 Mathlib's `Homotopy.mkInductive`, for the situation where the components are constructed by a
 recursion of their own rather than one degree at a time from the previous two.
 
-`Homotopy.mkCochainComplexInt` is its counterpart for `ℤ`-indexed cochain complexes: a
+`Homotopy.mkCochainComplex` is its counterpart for `ℕ`-indexed cochain complexes: a null-homotopy
+of `e : P ⟶ Q` from components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy identities in degree
+zero and in positive degrees. It is the non-inductive counterpart of `Homotopy.mkCoinductive`.
+
+`Homotopy.mkCochainComplexInt` is the counterpart for `ℤ`-indexed cochain complexes: a
 null-homotopy of `e : P ⟶ Q` from components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy
 identities `e.f (n + 1) = d ≫ h (n + 1) + h n ≫ d`, stated in every degree `n + 1` so that no
 index is a difference.
@@ -79,6 +93,10 @@ where the differential out of the source and the differential into the target va
 
 `Homotopy.equivSubZero_apply_hom` computes the components of the homotopy from `f - g` to `0`
 that Mathlib's `Homotopy.equivSubZero` builds from a homotopy from `f` to `g`.
+
+`HomotopyEquiv.ofKernel` splits off a contractible direct summand: the kernel of an idempotent
+endomorphism `p` of a complex that is homotopic to zero is a deformation retract of the complex,
+with retraction `𝟙 - p`. Cancelling a contractible disk from a complex is an instance.
 -/
 
 @[expose] public section
@@ -115,7 +133,35 @@ lemma compSquare_hom (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
     (H.compSquare H').hom p q = H.hom p q ≫ b'.f q + a.f p ≫ H'.hom p q := by
   simp [compSquare]
 
+/-- **Naturality up to chain homotopy of homotopy inverses.** If the forward maps of chain
+homotopy equivalences `e₁` and `e₂` commute with `a` and `b`, that is `e₁.hom ≫ b = a ≫ e₂.hom`,
+then `e₁.inv ≫ a` is homotopic to `b ≫ e₂.inv`. -/
+def _root_.HomotopyEquiv.invNaturality (e₁ : HomotopyEquiv K₁ L₁) (e₂ : HomotopyEquiv K₂ L₂)
+    (w : e₁.hom ≫ b = a ≫ e₂.hom) :
+    Homotopy (e₁.inv ≫ a) (b ≫ e₂.inv) :=
+  (Homotopy.ofEq (Category.comp_id (e₁.inv ≫ a)).symm).trans <|
+    (e₂.homotopyHomInvId.symm.compLeft (e₁.inv ≫ a)).trans <|
+      (Homotopy.ofEq (by
+        simp only [Category.assoc]
+        rw [← reassoc_of% w])).trans <|
+        (e₁.homotopyInvHomId.compRight (b ≫ e₂.inv)).trans <|
+          Homotopy.ofEq (Category.id_comp (b ≫ e₂.inv))
+
 end Squares
+
+section HomologyMap
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
+  {K L : HomologicalComplex C c}
+
+/-- The inverse of a chain homotopy equivalence `e` induces on homology the inverse of the map
+induced by `e.hom`. -/
+theorem _root_.HomotopyEquiv.homologyMap_inv (e : HomotopyEquiv K L) (i : ι) [K.HasHomology i]
+    [L.HasHomology i] :
+    HomologicalComplex.homologyMap e.inv i = inv (HomologicalComplex.homologyMap e.hom i) :=
+  IsIso.eq_inv_of_hom_inv_id (e.toHomologyIso i).hom_inv_id
+
+end HomologyMap
 
 section Restrict
 
@@ -323,6 +369,44 @@ end Homotopy
 
 end MkChainComplex
 
+section MkCochainComplex
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {P Q : CochainComplex C ℕ}
+
+namespace Homotopy
+
+/-- A null-homotopy of a map `e : P ⟶ Q` between `ℕ`-indexed cochain complexes, from its
+components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy identities `e.f 0 = d ≫ h 0` and
+`e.f (n + 1) = d ≫ h (n + 1) + h n ≫ d`. The components are given all at once, as in
+`Homotopy.mkChainComplex`; compare `Homotopy.mkCoinductive`, which constructs them one degree at a
+time. -/
+@[no_expose]
+def mkCochainComplex (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
+    (comm_zero : e.f 0 = P.d 0 1 ≫ h 0)
+    (comm_succ : ∀ n, e.f (n + 1) = P.d (n + 1) (n + 2) ≫ h (n + 1) + h n ≫ Q.d n (n + 1)) :
+    Homotopy e 0 where
+  hom i j := if hij : j + 1 = i then eqToHom (congrArg P.X hij.symm) ≫ h j else 0
+  zero i j hij := dite_eq_right (by simpa [ComplexShape.up_Rel] using hij)
+  comm i := by
+    cases i with
+    | zero =>
+        rw [dNext_cochainComplex, prevD_zero_cochainComplex]
+        simpa using comm_zero
+    | succ i =>
+        rw [dNext_cochainComplex, prevD_succ_cochainComplex]
+        simpa using comm_succ i
+
+@[simp]
+lemma mkCochainComplex_hom_succ (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
+    (comm_zero : e.f 0 = P.d 0 1 ≫ h 0)
+    (comm_succ : ∀ n, e.f (n + 1) = P.d (n + 1) (n + 2) ≫ h (n + 1) + h n ≫ Q.d n (n + 1))
+    (n : ℕ) : (mkCochainComplex e h comm_zero comm_succ).hom (n + 1) n = h n := by
+  simp [mkCochainComplex]
+
+end Homotopy
+
+end MkCochainComplex
+
 section MkCochainComplexInt
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {P Q : CochainComplex C ℤ}
@@ -479,3 +563,43 @@ lemma nonempty_homotopy_zero_iff_of_single (K : CochainComplex C ℤ) {X : C} {p
     fun ⟨z, hz⟩ ↦ ⟨(Cochain.equivHomotopy _ _).symm ⟨z, by simpa using hz.symm⟩⟩⟩
 
 end CochainComplex
+
+namespace HomotopyEquiv
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
+  {K : HomologicalComplex C c} (p : K ⟶ K) [HasKernel p]
+
+/-- **The kernel of a null-homotopic idempotent is a deformation retract.** If an idempotent
+endomorphism `p` of a complex `K` is homotopic to zero, the inclusion of its kernel is a homotopy
+equivalence. Its homotopy inverse is the projection `𝟙 - p`
+(`HomotopyEquiv.ofKernel_inv_comp_kernel_ι`), which retracts the inclusion on the nose
+(`HomotopyEquiv.kernel_ι_comp_ofKernel_inv`). -/
+@[no_expose]
+def ofKernel (hp : p ≫ p = p) (h : Homotopy p 0) : HomotopyEquiv (kernel p) K where
+  hom := kernel.ι p
+  inv := kernel.lift p (𝟙 K - p) (by rw [Preadditive.sub_comp, Category.id_comp, hp, sub_self])
+  homotopyHomInvId := Homotopy.ofEq ((cancel_mono (kernel.ι p)).1 (by simp))
+  homotopyInvHomId := (Homotopy.ofEq (kernel.lift_ι _ _ _)).trans <| Homotopy.equivSubZero.symm <|
+    (Homotopy.ofEq (by abel)).trans (Homotopy.equivSubZero h.symm)
+
+variable {p}
+
+@[simp]
+lemma ofKernel_hom (hp : p ≫ p = p) (h : Homotopy p 0) : (ofKernel p hp h).hom = kernel.ι p :=
+  (rfl)
+
+/-- The inclusion of the kernel of a null-homotopic idempotent `p` followed by the projection
+`𝟙 - p` is the identity of the kernel. -/
+@[reassoc (attr := simp)]
+lemma kernel_ι_comp_ofKernel_inv (hp : p ≫ p = p) (h : Homotopy p 0) :
+    kernel.ι p ≫ (ofKernel p hp h).inv = 𝟙 _ :=
+  (cancel_mono (kernel.ι p)).1 (by simp [ofKernel])
+
+/-- The projection onto the kernel of a null-homotopic idempotent `p`, followed by the inclusion,
+is the complementary idempotent `𝟙 - p`. -/
+@[reassoc (attr := simp)]
+lemma ofKernel_inv_comp_kernel_ι (hp : p ≫ p = p) (h : Homotopy p 0) :
+    (ofKernel p hp h).inv ≫ kernel.ι p = 𝟙 K - p :=
+  kernel.lift_ι _ _ _
+
+end HomotopyEquiv

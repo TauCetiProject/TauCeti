@@ -132,7 +132,8 @@ theorem hasProd_ofPowerSeries_torusWeightSeries_closedOrbitHomologyClass
         (fun i ↦ if (1 + P i).det < 0 then -1 else 1)
         (fun i ↦ -(SignType.sign (1 - P i).det * if (1 + P i).det < 0 then -1 else 1))) :=
   TauCeti.hasProd_ofPowerSeries_torusWeightSeries _
-    (tendsto_timePeriodHom_closedOrbitHomologyClass hφ hx hxd hd) hdet hP
+    (tendsto_timePeriodHom_closedOrbitHomologyClass
+      (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hx hxd hd) hdet hP
 
 include hφ hx hd hdet in
 /-- **The orbit-torus series of the closed orbits give the orbit zeta function.** Under the
@@ -152,7 +153,8 @@ theorem orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod
           (torusWeightSeries (decide (0 < (1 - P i).det))
             (if (1 + P i).det < 0 then 1 else 0))) :=
   TauCeti.orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries _
-    (tendsto_timePeriodHom_closedOrbitHomologyClass hφ hx hxd hd) hdet hP K
+    (tendsto_timePeriodHom_closedOrbitHomologyClass
+      (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hx hxd hd) hdet hP K
 
 /-! ### Labels from the linearized return maps
 
@@ -228,9 +230,9 @@ theorem hasProd_ofPowerSeries_torusWeightSeries_fixedPointDerivative
   choose P hdet hPadd hPsub _ using
     fun i ↦ exists_matrix_fixedPointDerivative hE hσ hφσ (hxd i)
   have hP (i : ι) : (1 - P i).det ≠ 0 := by
-    rw [hPsub i, ← fixedPointDet_eq_det_id_sub_fixedPointDerivative]
-    exact (fixedPointDet_ne_zero_iff (hxd i)
-      ((φ.contMDiff.iterate (d i)).mdifferentiableAt (by simp))).2
+    rw [hPsub i]
+    exact (isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x i, (hxd i).eq⟩
+      ((φ.contMDiff.iterate (d i)).mdifferentiableAt (by simp))).1
       ((hφ (d i)).isNondegenerateFixedPt (hd i) le_rfl (hxd i))
   have key := hasProd_ofPowerSeries_torusWeightSeries_closedOrbitHomologyClass hφ hx hxd hd hdet hP
   simp only [hPadd, hPsub] at key
@@ -266,9 +268,9 @@ theorem orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivat
   choose P hdet hPadd hPsub hPpow using
     fun i ↦ exists_matrix_fixedPointDerivative hE hσ hφσ (hxd i)
   have hP (i : ι) (k : ℕ) (hk : k ≠ 0) : (1 - P i ^ k).det ≠ 0 := by
-    rw [hPpow, ← fixedPointDet_eq_det_id_sub_fixedPointDerivative]
-    exact (fixedPointDet_ne_zero_iff ((hxd i).mul_const k)
-      ((φ.contMDiff.iterate _).mdifferentiableAt (by simp))).2
+    rw [hPpow]
+    exact (isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x i, ((hxd i).mul_const k).eq⟩
+      ((φ.contMDiff.iterate _).mdifferentiableAt (by simp))).1
       ((hφ (d i * k)).isNondegenerateFixedPt (Nat.mul_pos (hd i) (Nat.pos_of_ne_zero hk)) le_rfl
         ((hxd i).mul_const k))
   have key := orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod hφ hx hxd hd hdet hP K
@@ -308,7 +310,8 @@ theorem mapRingHom_tprod_fixedPointDerivative_eq_exp_tsum_single_sign_det_div
   have hx : Injective x :=
     injective_of_existsUnique_iterate (fun i ↦ mk_mem_periodicPts (hd i) (hxd i)) hrep
   rw [← orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative hφ hx hxd hd
-    hE hσ hφσ K, orbitZeta_eq_exp_tsum_single_sign_det_div hφ hxd hd hmin hrep K]
+    hE hσ hφσ K, orbitZeta_eq_exp_tsum_single_sign_det_div
+    (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hxd hd hmin hrep K]
 
 include hd in
 /-- **Below a period cutoff, the orbit-torus series labelled by the return maps give the orbit
@@ -348,9 +351,9 @@ theorem
     have hle : d i * n ≤ T := by
       have : ((d i * n : ℕ) : ℝ) < T + 1 := by push_cast; linarith
       exact Nat.lt_succ_iff.1 (by exact_mod_cast this)
-    rw [hPpow, ← fixedPointDet_eq_det_id_sub_fixedPointDerivative]
-    exact (fixedPointDet_ne_zero_iff ((hxd i).mul_const n)
-      ((φ.contMDiff.iterate _).mdifferentiableAt (by simp))).2
+    rw [hPpow]
+    exact (isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x i, ((hxd i).mul_const n).eq⟩
+      ((φ.contMDiff.iterate _).mdifferentiableAt (by simp))).1
       (hφT.isNondegenerateFixedPt (Nat.mul_pos (hd i) (Nat.pos_of_ne_zero hn)) hle
         ((hxd i).mul_const n))
   have hfin : Tendsto (fun i ↦ timePeriodHom φ (closedOrbitHomologyClass (hxd i))) cofinite
@@ -383,7 +386,8 @@ theorem mapRingHom_intTimePeriodHom_orbitZeta_closedOrbitHomologyClass (ε : ι 
       orbitZeta K (Int.castAddHom ℝ) (fun i ↦ (d i : ℤ)) ε := by
   rw [mapRingHom_orbitZeta _ _ _
     (fun i ↦ timePeriodHom_closedOrbitHomologyClass_pos (hxd i) (hd i))
-    (tendsto_timePeriodHom_closedOrbitHomologyClass hφ hx hxd hd)]
+    (tendsto_timePeriodHom_closedOrbitHomologyClass
+      (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hx hxd hd)]
   congr 1
   funext i
   simp

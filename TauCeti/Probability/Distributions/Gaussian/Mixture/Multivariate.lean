@@ -431,8 +431,8 @@ theorem covMatrix_multivariateGaussianMixtureMeasure
     simpa only [id_eq, multivariateGaussianMixtureMeasure_eq_bind] using hmem.eval_piLp i
   ext i j
   rw [covMatrix_apply, multivariateGaussianMixtureMeasure_eq_bind,
-    covariance_bind Measurable.of_discrete (.of_forall fun _ ↦ inferInstance) (hcoord i)
-      (hcoord j), covariance, integral_categoricalMeasure, integral_categoricalMeasure]
+    covariance_bind Measurable.of_discrete.aemeasurable (.of_forall fun _ ↦ inferInstance)
+      (hcoord i) (hcoord j), covariance, integral_categoricalMeasure, integral_categoricalMeasure]
   simp only [integral_eval_multivariateGaussian, integral_categoricalMeasure, smul_eq_mul,
     ← Finset.sum_add_distrib, ← mul_add, Matrix.sum_apply, Matrix.smul_apply, Matrix.add_apply,
     Matrix.vecMulVec_apply, WithLp.ofLp_sub, WithLp.ofLp_sum, WithLp.ofLp_smul, Pi.sub_apply,

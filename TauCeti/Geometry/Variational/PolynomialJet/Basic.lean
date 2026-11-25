@@ -224,6 +224,42 @@ theorem stageDeriv_comm (i j : ι) (r : ℕ) (p : stage R ι α r) :
   apply Subtype.ext
   simp [totalDeriv_comm]
 
+section Map
+
+variable {S β : Type*} [CommSemiring S]
+
+/-- Total differentiation commutes with changing the coefficients along a ring homomorphism `f`
+while relabelling the fields along `σ`, which fixes the base coordinates and sends `uᵃ_I` to
+`u^(σ a)_I`. -/
+theorem totalDeriv_eval₂Hom_relabel (f : R →+* S) (σ : α → β) (i : ι)
+    (p : PolynomialJet R ι α) :
+    totalDeriv i (eval₂Hom (C.comp f) (fun v ↦ X (Sum.map id (Prod.map σ id) v)) p) =
+      eval₂Hom (C.comp f) (fun v ↦ X (Sum.map id (Prod.map σ id) v)) (totalDeriv i p) := by
+  classical
+  induction p using MvPolynomial.induction_on with
+  | C c => simp
+  | add p q hp hq => simp only [map_add, hp, hq]
+  | mul_X p v hp =>
+    have hv : totalDeriv (R := S) i
+        (eval₂Hom (C.comp f) (fun v ↦ X (Sum.map id (Prod.map σ id) v)) (X v)) =
+          eval₂Hom (C.comp f) (fun v ↦ X (Sum.map id (Prod.map σ id) v))
+            (totalDeriv (α := α) i (X v)) := by
+      rcases v with j | ⟨a, I⟩
+      · simp only [eval₂Hom_X', Sum.map_inl, id_eq, totalDeriv_X_base]
+        split <;> simp
+      · simp
+    simp only [map_mul, Derivation.leibniz, smul_eq_mul, map_add, hp, hv]
+
+/-- Total differentiation commutes with changing the coefficients along a ring homomorphism. -/
+@[simp]
+theorem totalDeriv_map (f : R →+* S) (i : ι) (p : PolynomialJet R ι α) :
+    totalDeriv i (map f p) = map f (totalDeriv i p) := by
+  have h := totalDeriv_eval₂Hom_relabel f id i p
+  rw [Prod.map_id, Sum.map_id_id] at h
+  rwa [map_eq_eval₂Hom_C_comp]
+
+end Map
+
 section Evaluation
 
 variable {A : Type*} [CommSemiring A] [Algebra R A]
