@@ -15,8 +15,8 @@ import TauCeti.NumberTheory.LocalField.Topology
 Let `K` be a nonarchimedean local field whose residue field has `q` elements, and `μ` an additive
 Haar measure on `K`. The invariant form `dx/x` on `𝔾_m` gives the measure `|dx/x|_K = |x|_K⁻¹ μ`
 on `K`. It is invariant under multiplication by every nonzero scalar
-(`TauCeti.map_smul_withDensity_inv_normalizedAbsoluteValue`): multiplication by `c` scales `μ` by
-`|c|_K⁻¹` and the density by `|c|_K`. Its restriction to `Kˣ` through `Units.val`,
+(`MeasureTheory.Measure.map_smul_withDensity_inv_normalizedAbsoluteValue`): multiplication by `c`
+scales `μ` by `|c|_K⁻¹` and the density by `|c|_K`. Its restriction to `Kˣ` through `Units.val`,
 `TauCeti.unitsFormMeasure K μ`, is therefore a σ-finite left-invariant measure on `Kˣ`, giving
 the units `𝒪[K]ˣ` mass `(1 - q⁻¹) μ 𝒪[K]`. By uniqueness of Haar measure, the normalized Haar
 measure `d^×x = TauCeti.unitsHaar K` with `d^×x(𝒪[K]ˣ) = 1` is `(1 - q⁻¹)⁻¹ |dx/x|_K` when
@@ -24,8 +24,8 @@ measure `d^×x = TauCeti.unitsHaar K` with `d^×x(𝒪[K]ˣ) = 1` is `(1 - q⁻�
 
 ## Main declarations
 
-* `TauCeti.map_smul_withDensity_inv_normalizedAbsoluteValue`: invariance of `|x|_K⁻¹ μ`.
 * `TauCeti.unitsFormMeasure K μ`: the form measure on `Kˣ`, left-invariant and σ-finite.
+* `TauCeti.map_val_unitsFormMeasure`: its pushforward to `K` is `|x|_K⁻¹ μ`.
 * `TauCeti.unitsFormMeasure_unitFiltration_zero`: its mass on `𝒪[K]ˣ` is `(1 - q⁻¹) μ 𝒪[K]`.
 * `TauCeti.unitsHaar_eq_smul_unitsFormMeasure`: `d^×x = (1 - q⁻¹)⁻¹ |dx/x|_K`.
 -/
@@ -41,39 +41,6 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [MeasurableSpace K] [BorelSpace K]
   (μ : Measure K) [μ.IsAddHaarMeasure]
 
-omit [MeasurableSpace K] [BorelSpace K] in
-/-- The density `|x|_K⁻¹` of the form measure `|dx/x|_K` scales by `|c|_K⁻¹` under `x ↦ c • x`. -/
-private theorem inv_normalizedAbsoluteValue_smul {c : K} (hc : c ≠ 0) (x : K) :
-    ((normalizedAbsoluteValue K (c • x) : ℝ≥0) : ℝ≥0∞)⁻¹ =
-      ((normalizedAbsoluteValue K c : ℝ≥0) : ℝ≥0∞)⁻¹ *
-        ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ := by
-  simp only [smul_eq_mul, map_mul, NNRat.cast_mul, ENNReal.coe_mul]
-  refine ENNReal.mul_inv (Or.inl ?_) (Or.inl ENNReal.coe_ne_top)
-  simpa using hc
-
-/-- **Invariance of the form measure.** The measure `|x|_K⁻¹ μ` on `K` is invariant under
-multiplication by every nonzero scalar. -/
-theorem map_smul_withDensity_inv_normalizedAbsoluteValue {c : K} (hc : c ≠ 0) :
-    (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹).map (c • ·) =
-      μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ := by
-  set a : ℝ≥0∞ := ((normalizedAbsoluteValue K c : ℝ≥0) : ℝ≥0∞)⁻¹
-  have ha0 : a ≠ 0 := ENNReal.inv_ne_zero.2 ENNReal.coe_ne_top
-  have hatop : a ≠ ⊤ := ENNReal.inv_ne_top.2 (by simpa using hc)
-  have he := (MeasurableEquiv.smul₀ (α := K) c hc).measurableEmbedding
-  ext t ht
-  rw [map_apply (measurable_const_smul c) ht, withDensity_apply _ ht,
-    withDensity_apply _ (measurable_const_smul c ht), ← ENNReal.mul_right_inj ha0 hatop]
-  have h₁ : ∫⁻ x in t, ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ ∂(μ.map (c • ·)) =
-      a * ∫⁻ x in t, ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ ∂μ := by
-    rw [map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ hc, restrict_smul,
-      lintegral_smul_measure, ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv (by simpa using hc)]
-  have h₂ : ∫⁻ x in t, ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ ∂(μ.map (c • ·)) =
-      a * ∫⁻ y in (c • ·) ⁻¹' t, ((normalizedAbsoluteValue K y : ℝ≥0) : ℝ≥0∞)⁻¹ ∂μ := by
-    rw [← MeasurableEquiv.coe_smul₀ hc, he.restrict_map, he.lintegral_map,
-      ← lintegral_const_mul' _ _ hatop]
-    exact lintegral_congr fun y ↦ inv_normalizedAbsoluteValue_smul hc y
-  rw [← h₁, h₂]
-
 variable (K) in
 /-- The **form measure** `|dx/x|_K` on the units `Kˣ`: the restriction to `Kˣ`, through
 `Units.val`, of the measure `|x|_K⁻¹ μ` with density `|x|_K⁻¹` against an additive Haar measure
@@ -87,6 +54,22 @@ theorem unitsFormMeasure_apply (s : Set Kˣ) :
     unitsFormMeasure K μ s =
       (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹) (Units.val '' s) :=
   Units.measurableEmbedding_val₀.comap_apply _ s
+
+/-- An additive Haar measure on `K` gives `{0}` mass zero, since `0 • univ = {0}`. -/
+private theorem addHaar_singleton_zero : μ {0} = 0 := by
+  have h := addHaar_smul_eq_normalizedAbsoluteValue_mul μ (0 : K) Set.univ
+  rwa [Set.zero_smul_set Set.univ_nonempty, AbsoluteValue.map_zero, NNRat.cast_zero,
+    ENNReal.coe_zero, zero_mul] at h
+
+/-- The pushforward of the form measure along `Units.val` is the measure `|x|_K⁻¹ μ` on `K`. -/
+theorem map_val_unitsFormMeasure :
+    (unitsFormMeasure K μ).map Units.val =
+      μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ := by
+  rw [unitsFormMeasure, Units.measurableEmbedding_val₀.map_comap]
+  refine restrict_eq_self_of_ae_mem ?_
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1
+    (withDensity_absolutelyContinuous μ _ (addHaar_singleton_zero μ))] with x hx
+  exact ⟨Units.mk0 x hx, rfl⟩
 
 instance isMulLeftInvariant_unitsFormMeasure : (unitsFormMeasure K μ).IsMulLeftInvariant := by
   refine ⟨fun u ↦ Measure.ext fun s hs ↦ ?_⟩
@@ -106,16 +89,11 @@ instance isMulLeftInvariant_unitsFormMeasure : (unitsFormMeasure K μ).IsMulLeft
 instance sigmaFinite_unitsFormMeasure : SigmaFinite (unitsFormMeasure K μ) := by
   have : SigmaFinite (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹) := by
     refine SigmaFinite.withDensity_of_ne_top ?_
-    have h0 : μ {0} = 0 := by
-      have h := addHaar_smul_eq_normalizedAbsoluteValue_mul μ (0 : K) Set.univ
-      rw [Set.zero_smul_set Set.univ_nonempty, AbsoluteValue.map_zero, NNRat.cast_zero,
-        ENNReal.coe_zero, zero_mul] at h
-      exact h
-    refine measure_mono_null (fun x hx ↦ ?_) h0
+    refine measure_mono_null (fun x hx ↦ ?_) (addHaar_singleton_zero μ)
     by_contra h0
     exact hx (ENNReal.inv_ne_top.2 (by simpa using h0))
   refine SigmaFinite.of_map _ Units.measurableEmbedding_val₀.measurable.aemeasurable ?_
-  rw [unitsFormMeasure, Units.measurableEmbedding_val₀.map_comap]
+  rw [map_val_unitsFormMeasure]
   infer_instance
 
 /-- **The form measure of the units of `𝒪[K]`** is `(1 - q⁻¹) μ 𝒪[K]`, where `q` is the
