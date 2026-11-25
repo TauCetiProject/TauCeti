@@ -411,13 +411,9 @@ target. -/
 private theorem continuousOn_chartVolumeDensity_chartInvMap (p : M)
     {K : Set (EuclideanSpace ℝ (Fin (finrank ℝ E)))}
     (hKt : MapsTo (coordEquiv E).symm K (extChartAt I p).target) :
-    ContinuousOn (fun y ↦ chartVolumeDensity (I := I) p (chartInvMap (I := I) p y)) K := by
-  have : IsManifold I ((0 : ℕ∞ω) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
-  exact (contMDiffOn_chartVolumeDensity (I := I) (n := 0) p).continuousOn.comp
-    ((continuousOn_extChartAt_symm p).comp (coordEquiv E).symm.continuous.continuousOn hKt)
-    (mapsTo_chartInvMap_baseSet p hKt)
+    ContinuousOn (fun y ↦ chartVolumeDensity (I := I) p (chartInvMap (I := I) p y)) K :=
+  (continuousOn_chartVolumeDensity_extChartAt_symm p).comp
+    (coordEquiv E).symm.continuous.continuousOn hKt
 
 /-- The coefficient field `chartMatrix p` is continuous on any set mapped into the chart target. -/
 private theorem continuousOn_chartMatrix (p : M)
