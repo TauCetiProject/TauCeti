@@ -179,7 +179,7 @@ theorem isConnected_setOf_centralForceHamiltonian_kepler_eq (hm : 0 < m) (hκ : 
     (hℓ : ℓ ≠ 0) (hmin : -(m * κ ^ 2) / (2 * ℓ ^ 2) ≤ E) (hE : E < 0) :
     IsConnected {x : V × V | x.1 ≠ 0 ∧ centralForceHamiltonian m (fun r ↦ -κ / r) x = E ∧
       angularMomentum (b 0) (b 1) x = ℓ} := by
-  obtain ⟨hr₁, hr₁₂⟩ := kepler_turningRadii_pos_le hm hκ hℓ hmin hE
+  obtain ⟨hr₁, -⟩ := kepler_turningRadii_pos_le hm hκ hℓ hmin hE
   -- The effective potential is continuous away from `r = 0`.
   have hcont : ContinuousOn (effectivePotential m ℓ fun r ↦ -κ / r)
       (Icc (keplerPeriapsisRadius m κ ℓ E) (keplerApoapsisRadius m κ ℓ E)) := by
@@ -188,7 +188,7 @@ theorem isConnected_setOf_centralForceHamiltonian_kepler_eq (hm : 0 < m) (hκ : 
     exact (continuousAt_effectivePotential (by fun_prop (disch := exact hr0))
       hr0).continuousWithinAt
   exact (isConnected_setOf_centralForceHamiltonian_eq_iff b m _ E ℓ).2
-    (isConnected_setOf_sq_div_add_eq hm hr₁ hr₁₂ hcont
+    (isConnected_setOf_sq_div_add_eq hm hr₁ hcont
       ((effectivePotential_kepler_eq_iff hm hκ hℓ hmin hE hr₁).2 (Or.inl rfl))
       fun r hr ↦ effectivePotential_kepler_le_iff hm hκ hℓ hmin hE hr)
 

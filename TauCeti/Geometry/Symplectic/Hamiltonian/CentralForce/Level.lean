@@ -50,9 +50,10 @@ is continuous there and has a turning point `f(a) = E`. Then the energy level
 `{(r, p) | r > 0, p² / (2m) + f(r) = E}` is connected: it is the union of the two graphs
 `p = ±√(2m (E - f(r)))` over `[a, b]`, which meet at `(a, 0)`. -/
 theorem isConnected_setOf_sq_div_add_eq {m : ℝ} (hm : 0 < m) {f : ℝ → ℝ} {a b E : ℝ}
-    (ha : 0 < a) (hab : a ≤ b) (hf : ContinuousOn f (Icc a b)) (hfa : f a = E)
+    (ha : 0 < a) (hf : ContinuousOn f (Icc a b)) (hfa : f a = E)
     (hle : ∀ r, 0 < r → (f r ≤ E ↔ r ∈ Icc a b)) :
     IsConnected {y : ℝ × ℝ | 0 < y.1 ∧ y.2 ^ 2 / (2 * m) + f y.1 = E} := by
+  have hab : a ≤ b := ((hle a ha).1 hfa.le).2
   set g : ℝ → ℝ := fun r ↦ √(2 * m * (E - f r))
   have hg : ContinuousOn g (Icc a b) :=
     Real.continuous_sqrt.comp_continuousOn (continuousOn_const.mul (continuousOn_const.sub hf))
