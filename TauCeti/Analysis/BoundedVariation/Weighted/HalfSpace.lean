@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Euclidean.Volume.Measure
 public import TauCeti.Probability.Distributions.Gaussian.IsoperimetricProfile
 public import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
 import Mathlib.MeasureTheory.Integral.Layercake
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -131,26 +132,12 @@ theorem gaussianPerimeter_setOf_inner_lt (hν : ‖ν‖ = 1) (c : ℝ) :
   rw [lintegral_const_mul _ hρ, ← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ,
     ← Probability.stdGaussian_eq_withDensity_norm, measure_univ, mul_one]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_smul_inv_norm_self (hν : ν ≠ 0) : ‖‖ν‖⁻¹ • ν‖ = 1 :=
-  norm_smul_inv_norm hν
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- For a nonzero `ν`, `{x | ⟪x, ν⟫ < c}` is the half-space of the unit vector `‖ν‖⁻¹ • ν` at
-level `c / ‖ν‖`. -/
-private theorem setOf_inner_lt_eq_smul_inv_norm (hν : ν ≠ 0) (c : ℝ) :
-    {x : E | ⟪x, ν⟫ < c} = {x | ⟪x, ‖ν‖⁻¹ • ν⟫ < c / ‖ν‖} := by
-  have hn : 0 < ‖ν‖ := norm_pos_iff.2 hν
-  ext x
-  simp only [mem_ofPred_eq, real_inner_smul_right, lt_div_iff₀ hn]
-  field_simp
-
 /-- For a nonzero vector `ν`, the half-space `{x | ⟪x, ν⟫ < c}` has Gaussian perimeter
 `φ(c / ‖ν‖)`. -/
 theorem gaussianPerimeter_setOf_inner_lt_of_ne_zero (hν : ν ≠ 0) (c : ℝ) :
     gaussianPerimeter {x : E | ⟪x, ν⟫ < c} = ENNReal.ofReal (gaussianPDFReal 0 1 (c / ‖ν‖)) := by
   rw [setOf_inner_lt_eq_smul_inv_norm hν,
-    gaussianPerimeter_setOf_inner_lt (norm_smul_inv_norm_self hν)]
+    gaussianPerimeter_setOf_inner_lt (ν := ‖ν‖⁻¹ • ν) (norm_smul_inv_norm hν)]
 
 /-- **A half-space of Gaussian measure `v` has Gaussian perimeter `I(v)`.** This holds for every
 vector `ν`: for `ν = 0` the set is `∅` or `E`, of perimeter `0 = I(0) = I(1)`. -/
@@ -162,7 +149,7 @@ theorem gaussianPerimeter_setOf_inner_lt_eq_gaussianIsoperimetricProfile (ν : E
     · simp [hc, gaussianPerimeter_univ, Probability.gaussianIsoperimetricProfile_one]
     · simp [hc, gaussianPerimeter_empty, Probability.gaussianIsoperimetricProfile_zero]
   rw [gaussianPerimeter_setOf_inner_lt_of_ne_zero hν, setOf_inner_lt_eq_smul_inv_norm hν,
-    Probability.measureReal_stdGaussian_setOf_inner_lt (norm_smul_inv_norm_self hν),
+    Probability.measureReal_stdGaussian_setOf_inner_lt (ν := ‖ν‖⁻¹ • ν) (norm_smul_inv_norm hν),
     Probability.gaussianIsoperimetricProfile_cdf]
 
 end TauCeti

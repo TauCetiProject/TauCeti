@@ -112,8 +112,8 @@ theorem tendsto_measureReal_stdGaussian_compl_setOf_inner_lt {ν : E} (hν : ‖
     rw [measureReal_compl (measurableSet_lt (by fun_prop) measurable_const), probReal_univ,
       measureReal_stdGaussian_setOf_inner_lt hν]
   simp_rw [h]
-  rw [← sub_self (1 : ℝ)]
-  exact tendsto_const_nhds.sub ((tendsto_cdf_atTop _).comp tendsto_natCast_atTop_atTop)
+  simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub
+    ((tendsto_cdf_atTop (gaussianReal 0 1)).comp tendsto_natCast_atTop_atTop)
 
 /-- The limit `E` of the half-spaces `U_k` has Gaussian perimeter `0`. -/
 example : gaussianPerimeter (univ : Set E) = 0 :=
