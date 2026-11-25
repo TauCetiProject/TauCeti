@@ -12,7 +12,7 @@ public import TauCeti.RepresentationTheory.Subrepresentation
 # Subrepresentations of a semisimple representation
 
 A representation is semisimple when every subrepresentation has a complementary subrepresentation
-(`Representation.IsSemisimpleRepresentation`). This file records two consequences.
+(`Representation.IsSemisimpleRepresentation`). This file records some consequences.
 
 A representation that maps injectively and equivariantly into a semisimple one is semisimple
 (`Representation.IntertwiningMap.isSemisimpleRepresentation_of_injective`), and so is the image of
@@ -24,6 +24,9 @@ group algebra.
 The dual of a finite-dimensional semisimple representation is semisimple
 (`Representation.isSemisimpleRepresentation_dual`): annihilators exchange the subrepresentations
 of `σ` and of `σ.dual` and carry complements to complements.
+
+A representation is semisimple exactly when it is the sum of its irreducible subrepresentations
+(`Representation.isSemisimpleRepresentation_iff_eq_top_of_forall_atom_le`).
 
 Every subrepresentation `S` of a semisimple representation has an equivariant projection onto it
 (`Subrepresentation.exists_equivariant_projection`): the first component of the splitting
@@ -37,6 +40,9 @@ Every subrepresentation `S` of a semisimple representation has an equivariant pr
   a surjective intertwining map from a semisimple representation is semisimple.
 * `Representation.isSemisimpleRepresentation_dual`: the dual of a finite-dimensional semisimple
   representation is semisimple.
+* `Representation.isSemisimpleRepresentation_iff_eq_top_of_forall_atom_le`: a representation is
+  semisimple exactly when the only subrepresentation containing its irreducible
+  subrepresentations is `⊤`.
 * `Subrepresentation.exists_equivariant_projection`: a subrepresentation of a semisimple
   representation has an equivariant projection onto it.
 -/
@@ -77,6 +83,27 @@ instance Representation.isSemisimpleRepresentation_dual {G : Type*} [Group G]
   have h := Subspace.isCompl_dualAnnihilator (Subrepresentation.isCompl_toSubmodule.2 hC)
   rwa [Subrepresentation.toSubmodule_dualCoannihilator,
     Subspace.dualCoannihilator_dualAnnihilator_eq] at h
+
+open scoped MonoidAlgebra in
+/-- **A representation is semisimple exactly when it is the sum of its irreducible
+subrepresentations**: the only subrepresentation containing every minimal nonzero one is `⊤`. This
+is `sSup_simples_eq_top_iff_isSemisimpleModule` for the module over the group algebra, read across
+`Subrepresentation.subrepresentationSubmoduleOrderIso`. -/
+theorem Representation.isSemisimpleRepresentation_iff_eq_top_of_forall_atom_le :
+    ρ.IsSemisimpleRepresentation ↔
+      ∀ σ : Subrepresentation ρ, (∀ τ : Subrepresentation ρ, IsAtom τ → τ ≤ σ) → σ = ⊤ := by
+  let e := Subrepresentation.subrepresentationSubmoduleOrderIso (ρ := ρ)
+  have hle (σ : Subrepresentation ρ) : (∀ τ : Subrepresentation ρ, IsAtom τ → τ ≤ σ) ↔
+      sSup {m : Submodule k[G] ρ.asModule | IsSimpleModule k[G] m} ≤ e σ := by
+    rw [sSup_le_iff]
+    refine ⟨fun h m hm ↦ ?_, fun h τ hτ ↦ e.le_iff_le.1 <|
+      h _ (Subrepresentation.isSimpleModule_asSubmodule_iff.2 hτ)⟩
+    rw [← e.apply_symm_apply m, e.le_iff_le]
+    exact h _ (Subrepresentation.isSimpleModule_asSubmodule_iff.1 hm)
+  rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule,
+    ← sSup_simples_eq_top_iff_isSemisimpleModule]
+  refine ⟨fun h σ hσ ↦ (map_eq_top_iff e).1 (top_le_iff.1 (h ▸ (hle σ).1 hσ)), fun h ↦ ?_⟩
+  rw [← e.apply_symm_apply (sSup _), h _ ((hle _).2 (e.apply_symm_apply _).ge), map_top]
 
 namespace Subrepresentation
 
