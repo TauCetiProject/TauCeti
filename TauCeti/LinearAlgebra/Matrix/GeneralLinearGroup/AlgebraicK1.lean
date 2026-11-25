@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DeterminantK1
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Prod
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable.BlockSum
 
@@ -19,16 +17,14 @@ type a class in `K₁(A)`, and proves the elementary rules for computing with cl
 additively as in the usual notation `[u]`:
 
 * the class does not depend on how the index type is enumerated, nor on a relabelling of the
-  indices, and conjugate matrices have the same class; already in `GL_∞(A)`, two enumerations
-  give images conjugate by a permutation matrix;
+  indices, and conjugate matrices have the same class;
 * the class of a block diagonal matrix is the sum of the classes of its blocks,
   `[diag(u, v)] = [u] + [v]`, which reduces to the contiguous block sum formula
   `TauCeti.AlgebraicK1.mk_blockSumGL` over `Fin`;
 * the class of a block triangular matrix with diagonal blocks `u` and `v` is `[u] + [v]`,
   whatever its off-diagonal block, and a class is trivial exactly when `u ⊕ 1` is elementary for
   an identity block of some size;
-* the class of an invertible diagonal matrix is the sum of the classes of its entries, and over
-  a commutative ring the determinant of the class of `u` is the determinant of `u`.
+* the class of an invertible diagonal matrix is the sum of the classes of its entries.
 
 It then computes `K₁` of the zero ring, which is trivial, and of a product of two rings,
 `K₁(A × B) ≅ K₁(A) × K₁(B)` through the two projections. The latter holds because an invertible
@@ -37,16 +33,12 @@ product of the classes of the matrices `(u, 1)` and `(1, v)`.
 
 ## Main definitions
 
-* `TauCeti.StableGeneralLinearGroup.ofEquiv`: the image `GL ι A →* GL_∞(A)` through an
-  enumeration `ι ≃ Fin k`.
 * `TauCeti.AlgebraicK1.mkOfFintype`: the class in `K₁(A)` of an invertible matrix indexed by an
   arbitrary finite type.
 * `TauCeti.AlgebraicK1.prodEquiv`: `K₁(A × B) ≃* K₁(A) × K₁(B)`, induced by the projections.
 
 ## Main results
 
-* `TauCeti.StableGeneralLinearGroup.ofEquiv_eq_mul_mul_inv`: two enumerations give images in
-  `GL_∞(A)` conjugate by the image of a permutation matrix.
 * `TauCeti.AlgebraicK1.mkOfFintype_eq_mk_reindexGL`: the class of a matrix over a finite index
   type is the class of its reindexing along any enumeration of the index type.
 * `TauCeti.AlgebraicK1.mkOfFintype_reindexGL`,
@@ -62,7 +54,6 @@ product of the classes of the matrices `(u, 1)` and `(1, v)`.
   elementary for an identity block of some size.
 * `TauCeti.AlgebraicK1.mkOfFintype_scalar`, `TauCeti.AlgebraicK1.mkOfFintype_diagGL`: the class of
   an invertible diagonal matrix is the sum of the classes of its diagonal entries.
-* `TauCeti.AlgebraicK1.det_mkOfFintype`: compatibility with the determinant.
 * `TauCeti.AlgebraicK1.instSubsingleton`: `K₁` of the zero ring is trivial.
 * `TauCeti.AlgebraicK1.prodEquiv_apply`, `TauCeti.AlgebraicK1.prodEquiv_symm_mk`: the isomorphism
   `K₁(A × B) ≃* K₁(A) × K₁(B)` and its inverse on classes.
@@ -81,41 +72,6 @@ noncomputable section
 open Matrix
 
 namespace TauCeti
-
-namespace StableGeneralLinearGroup
-
-/-! ## Enumerations of the indices -/
-
-variable {A : Type*} [Ring A] {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-variable (A) in
-/-- The image in `GL_∞(A)` of an invertible matrix indexed by a finite type `ι`, through an
-enumeration `e : ι ≃ Fin k` of its indices: the image of its reindexing along `e`. -/
-def ofEquiv {k : ℕ} (e : ι ≃ Fin k) : GL ι A →* StableGeneralLinearGroup A :=
-  (of A k).comp (e.reindexGL A).toMonoidHom
-
-/-- The image through an enumeration `e` is the image of the reindexing along `e`. -/
-@[simp]
-theorem ofEquiv_apply {k : ℕ} (e : ι ≃ Fin k) (u : GL ι A) :
-    ofEquiv A e u = of A k (e.reindexGL A u) :=
-  (rfl)
-
-/-- The image in `GL_∞(A)` through an enumeration of the indices is injective. -/
-theorem ofEquiv_injective {k : ℕ} (e : ι ≃ Fin k) : Function.Injective (ofEquiv A e) :=
-  (of_injective k).comp (e.reindexGL A).injective
-
-/-- Two enumerations `e` and `e'` of the indices give images in `GL_∞(A)` which are conjugate by
-the image of the permutation matrix of `e.symm.trans e'`. -/
-theorem ofEquiv_eq_mul_mul_inv {k : ℕ} (e e' : ι ≃ Fin k) (u : GL ι A) :
-    ofEquiv A e' u =
-      of A k (permutationGL (k := A) (e.symm.trans e')) * ofEquiv A e u *
-        (of A k (permutationGL (k := A) (e.symm.trans e')))⁻¹ := by
-  rw [ofEquiv_apply, ofEquiv_apply, ← map_inv, ← map_mul, ← map_mul, permutationGL_mul_mul_inv]
-  congr 1
-  ext : 1
-  simp [Function.comp_def]
-
-end StableGeneralLinearGroup
 
 namespace AlgebraicK1
 
@@ -306,14 +262,6 @@ theorem mkOfFintype_diagGL (t : ι → Aˣ) :
       simp [mkOfFintype_diagGL_mulSingle, MonoidHom.finsetProd_apply, Pi.mulSingle_apply,
         apply_ite]
   simpa [MonoidHom.finsetProd_apply] using DFunLike.congr_fun h t
-
-/-- The determinant of the class of an invertible matrix over a commutative ring is its
-determinant. -/
-@[simp]
-theorem det_mkOfFintype {R : Type*} [CommRing R] (u : GL ι R) :
-    det R (mkOfFintype R ι u) = GeneralLinearGroup.det u := by
-  rw [mkOfFintype_eq_mk_reindexGL (Fintype.equivFin ι), det_mk, Equiv.det_reindexGL]
-
 
 /-! ## The zero ring -/
 
