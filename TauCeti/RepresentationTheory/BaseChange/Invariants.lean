@@ -82,9 +82,4 @@ theorem coe_invariantsBaseChangeEquivOfFree (ρ : Representation R G V) (x : A �
   rw [← LinearEquiv.coe_toLinearMap, toLinearMap_invariantsBaseChangeEquivOfFree,
     coe_invariantsBaseChangeMap]
 
-theorem coe_invariantsBaseChangeEquivOfFree_tmul (ρ : Representation R G V) (a : A)
-    (v : ρ.invariants) :
-    (ρ.invariantsBaseChangeEquivOfFree (a ⊗ₜ[R] v) : A ⊗[R] V) = a ⊗ₜ[R] (v : V) := by
-  simp
-
 end Representation
