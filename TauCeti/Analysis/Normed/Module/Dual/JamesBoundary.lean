@@ -78,11 +78,9 @@ theorem le_norm_tsum_ofReal_smul [CompleteSpace Y] {u : ℕ → Y} {C : ℝ} (hu
       (by simp_rw [div_eq_mul_inv]; rw [← sum_mul, mul_inv_cancel₀ hN.ne'])
     have heq : ∑ n ∈ range N, ((w n / m N : ℝ) : 𝕜) • u n =
         ((m N)⁻¹ : 𝕜) • ∑ n ∈ range N, (w n : 𝕜) • u n := by
-      rw [smul_sum]
-      refine sum_congr rfl fun n _ ↦ ?_
-      rw [smul_smul, div_eq_mul_inv, ofReal_mul, ofReal_inv, mul_comm]
-    rw [heq, norm_smul, norm_inv, norm_ofReal, abs_of_pos hN] at h
-    rwa [le_inv_mul_iff₀ hN, mul_comm] at h
+      simp [smul_sum, smul_smul, div_eq_mul_inv, mul_comm]
+    rw [heq, norm_smul] at h
+    simpa [abs_of_pos hN, le_inv_mul_iff₀' hN] using h
   simpa using le_of_tendsto_of_tendsto (hm.const_mul r) hs hle
 
 /-- **Simons's inequality** for a James boundary. Let `B` be a set of functionals of norm at most
@@ -102,11 +100,8 @@ theorem exists_mem_frequently_lt_re_apply_of_forall_le_norm [CompleteSpace Y]
   have hval (w : ℕ → ℝ) (hw : HasSum w 1) (b : StrongDual 𝕜 Y) :
       ∑' n, w n * re (b (u n)) = re (b (∑' n, (w n : 𝕜) • u n)) :=
     (b.hasSum_mul_re_apply hw.summable hu').tsum_eq
-  have hre_le (b : StrongDual 𝕜 Y) (hb : b ∈ B) (y : Y) : re (b y) ≤ ‖y‖ :=
-    (re_le_norm _).trans ((b.le_opNorm y).trans (mul_le_of_le_one_left (norm_nonneg _) (hB₁ b hb)))
   have hM (n : ℕ) (b : StrongDual 𝕜 Y) (hb : b ∈ B) : |re (b (u n))| ≤ C :=
-    (abs_re_le_norm _).trans ((b.le_opNorm _).trans
-      ((mul_le_mul (hB₁ b hb) (hu' n) (norm_nonneg _) zero_le_one).trans (one_mul C).le))
+    (abs_re_le_norm _).trans ((b.norm_apply_le_of_norm_le_one (hB₁ b hb) _).trans (hu' n))
   -- Every countable convex combination `y` attains its maximum on `B` where `re (b y) = ‖y‖`.
   obtain ⟨b, hbB, hb⟩ := exists_frequently_sub_lt_of_isMaxOn_tsum (s := B)
     (x := fun n b ↦ re (b (u n))) (c := r) hM
@@ -114,7 +109,7 @@ theorem exists_mem_frequently_lt_re_apply_of_forall_le_norm [CompleteSpace Y]
       obtain ⟨b, hbB, hb⟩ := hB (∑' n, (w n : 𝕜) • u n)
       refine ⟨b, hbB, fun b' hb' ↦ ?_⟩
       simp only [hval w hw, hb]
-      exact hre_le b' hb' _)
+      exact b'.re_apply_le_norm_of_norm_le_one (hB₁ b' hb') _)
     (fun w hw0 hw ↦ by
       obtain ⟨b, hbB, hb⟩ := hB (∑' n, (w n : 𝕜) • u n)
       refine ⟨b, hbB, ?_⟩
@@ -141,8 +136,7 @@ theorem exists_mem_frequently_lt_re_apply_of_frequently_lt_re_apply [CompleteSpa
       _ ≤ ∑ n ∈ s, w n * re (φ (u (σ n))) :=
           sum_le_sum fun n _ ↦ mul_le_mul_of_nonneg_left (hσc n).le (hw0 n)
       _ = re (φ (∑ n ∈ s, (w n : 𝕜) • u (σ n))) := hre.symm
-      _ ≤ ‖∑ n ∈ s, (w n : 𝕜) • u (σ n)‖ :=
-          (re_le_norm _).trans ((φ.le_opNorm _).trans (mul_le_of_le_one_left (norm_nonneg _) hφ))
+      _ ≤ ‖∑ n ∈ s, (w n : 𝕜) • u (σ n)‖ := φ.re_apply_le_norm_of_norm_le_one hφ _
   obtain ⟨b, hbB, hb⟩ := exists_mem_frequently_lt_re_apply_of_forall_le_norm hB₁ hB
     (hu.subset (range_comp_subset_range σ u)) hr hc'
   exact ⟨b, hbB, hσ.tendsto_atTop.frequently hb⟩
@@ -179,8 +173,9 @@ theorem tendsto_toWeakSpace_of_forall_mem_tendsto [CompleteSpace Y]
       rw [norm_smul, norm_ofReal, abs_of_pos (inv_pos.2 hpos), inv_mul_le_iff₀ hpos]
       linarith
     filter_upwards [hupper₁ _ hψ (c / (‖ψ‖ + 1)) (div_pos hc hpos)] with n hn
-    rwa [smul_apply, smul_eq_mul, re_ofReal_mul, inv_mul_eq_div,
-      div_le_div_iff_of_pos_right hpos] at hn
+    simp only [smul_apply, smul_eq_mul, re_ofReal_mul] at hn
+    field_simp at hn
+    exact hn
   have hre (ψ : StrongDual 𝕜 Y) : Tendsto (fun n ↦ re (ψ (v n))) atTop (𝓝 0) := by
     refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun a ha ↦ ?_⟩
     · filter_upwards [hupper (-ψ) (-a / 2) (by linarith)] with n hn
@@ -188,15 +183,7 @@ theorem tendsto_toWeakSpace_of_forall_mem_tendsto [CompleteSpace Y]
       linarith
     · filter_upwards [hupper ψ (a / 2) (by linarith)] with n hn
       linarith
-  rw [tendsto_toWeakSpace_iff_forall_eval_tendsto]
-  intro φ
-  have him : Tendsto (fun n ↦ im (φ (v n))) atTop (𝓝 0) := by
-    have := (hre ((I : 𝕜) • φ)).neg
-    simpa [I_mul_re] using this
-  have hφv : Tendsto (fun n ↦ φ (v n)) atTop (𝓝 0) := by
-    have h := ((continuous_ofReal.tendsto 0).comp (hre φ)).add
-      (((continuous_ofReal.tendsto 0).comp him).mul_const (I : 𝕜))
-    simpa [Function.comp_def, re_add_im] using h
-  simpa [v, map_sub, tendsto_sub_nhds_zero_iff] using hφv
+  refine tendsto_toWeakSpace_iff_forall_re_eval_tendsto.2 fun φ ↦ ?_
+  simpa [v, map_sub, tendsto_sub_nhds_zero_iff] using hre φ
 
 end TauCeti
