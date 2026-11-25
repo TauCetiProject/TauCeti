@@ -15,10 +15,11 @@ public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.CauchyRiema
 
 Let `L` be a complex line bundle over a compact connected Riemann surface `X`, smooth as a real
 vector bundle, and let `D` be a smooth real Cauchy–Riemann operator on `L`. A `C¹` section `s` with
-`D s = 0` which is not identically zero has finitely many zeros, and their number is at most the
-first Chern number `c₁(L)[X]`, the Euler class of `L` with its complex orientation
-(`TauCeti.complexEulerClass`) evaluated on the fundamental class of `X`
-(`TauCeti.IsRealCauchyRiemannOperator.ncard_le_evalFundamentalClass_complexEulerClass`). So a
+`D s = 0` which is not identically zero has finitely many zeros
+(`TauCeti.IsRealCauchyRiemannOperator.finite_setOf_eq_zero`). For a section in the kernel with
+finitely many zeros, their number is at most the first Chern number `c₁(L)[X]`, the Euler class of
+`L` with its complex orientation (`TauCeti.complexEulerClass`) evaluated on the fundamental class
+of `X` (`TauCeti.IsRealCauchyRiemannOperator.ncard_le_evalFundamentalClass_complexEulerClass`). So a
 section in the kernel vanishing at more than `c₁(L)[X]` points vanishes identically
 (`TauCeti.IsRealCauchyRiemannOperator.eq_zero_of_evalFundamentalClass_complexEulerClass_lt_ncard`),
 and if `c₁(L)[X] < 0` the kernel on `C¹` sections is zero
@@ -32,20 +33,23 @@ preferred trivializations of `L`. There `D s = 0` reads `\bar∂ sᵢ = -Zᵢ s�
 with a bounded zeroth-order term `Zᵢ`
 (`TauCeti.FiniteBundleAtlas.exists_norm_chartZeroOrder_apply_le`), so the reading satisfies the
 Cauchy–Riemann inequality `‖\bar∂ sᵢ‖ ≤ C ‖sᵢ‖`
-(`TauCeti.IsRealCauchyRiemannOperator.norm_conjWirtingerDeriv_coord_le`). The holomorphic charts
-carry the canonical local orientation of `X` to that of `ℂ`, and the complex-linear trivializations
-read the complex orientation of `L` as that of `ℂ`, so the zero count for sections solving a
-Cauchy–Riemann inequality
+(`TauCeti.IsRealCauchyRiemannOperator.exists_norm_conjWirtingerDeriv_coord_le`). The holomorphic
+charts carry the canonical local orientation of `X` to that of `ℂ`
+(`TauCeti.localHomologyMap_chartAt_complexHomologicalOrientation`), and the complex-linear
+trivializations read the complex orientation of `L` as that of `ℂ`
+(`TauCeti.VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation`), so the zero
+count for sections solving a Cauchy–Riemann inequality
 (`ncard_le_evalFundamentalClass_eulerClass_of_norm_conjWirtingerDeriv_le` in the namespace
-`TauCeti.VectorBundleOrientation`)
-applies.
+`TauCeti.VectorBundleOrientation`) applies.
 
 ## Main results
 
-* `TauCeti.IsRealCauchyRiemannOperator.norm_conjWirtingerDeriv_coord_le`: a section in the kernel
-  satisfies a Cauchy–Riemann inequality in each chart of a finite bundle atlas.
-* `TauCeti.IsRealCauchyRiemannOperator.ncard_le_evalFundamentalClass_complexEulerClass`: a nonzero
-  `C¹` section in the kernel has finitely many zeros, at most `c₁(L)[X]` of them.
+* `TauCeti.IsRealCauchyRiemannOperator.exists_norm_conjWirtingerDeriv_coord_le`: a section in the
+  kernel satisfies a Cauchy–Riemann inequality in each chart of a finite bundle atlas.
+* `TauCeti.IsRealCauchyRiemannOperator.finite_setOf_eq_zero`: on a connected `X`, a nonzero `C¹`
+  section in the kernel has finitely many zeros.
+* `TauCeti.IsRealCauchyRiemannOperator.ncard_le_evalFundamentalClass_complexEulerClass`: a `C¹`
+  section in the kernel with finitely many zeros has at most `c₁(L)[X]` of them.
 * `TauCeti.IsRealCauchyRiemannOperator.eq_zero_of_evalFundamentalClass_complexEulerClass_lt_ncard`
   and `TauCeti.IsRealCauchyRiemannOperator.eq_zero_of_evalFundamentalClass_complexEulerClass_neg`:
   the kernel is detected by values at `c₁(L)[X] + 1` points, and is zero if `c₁(L)[X] < 0`.
@@ -94,7 +98,7 @@ include hD hDs in
 finite bundle atlas, the reading `sᵢ` of a `C¹` section `s` with `D s = 0` satisfies
 `‖\bar∂ sᵢ‖ ≤ C ‖sᵢ‖` on the chart image, for a constant `C` bounding the zeroth-order term of `D`
 in that chart. -/
-theorem norm_conjWirtingerDeriv_coord_le (A : FiniteBundleAtlas ℂ X ℂ L) (i : Fin A.n)
+theorem exists_norm_conjWirtingerDeriv_coord_le (A : FiniteBundleAtlas ℂ X ℂ L) (i : Fin A.n)
     {s : Π x, L x}
     (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) 1 fun x ↦ TotalSpace.mk' ℂ x (s x))
     (hs0 : D s = 0) :
@@ -118,64 +122,41 @@ theorem norm_conjWirtingerDeriv_coord_le (A : FiniteBundleAtlas ℂ X ℂ L) (i 
       gcongr
       exact (hC y (subset_closure hy) _).trans (by gcongr; exact le_max_left _ _)
 
-/-- A holomorphic chart carries the canonical local orientation of a Riemann surface at a point of
-its source to the local orientation of `ℂ` selected by its standard orientation. -/
-private theorem localHomologyMap_complexHomologicalOrientation (c : X) {z : X}
-    (hz : z ∈ (chartAt ℂ c).source) :
-    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
-        (⟨fun x : (chartAt ℂ c).source ↦ chartAt ℂ c x - chartAt ℂ c z,
-          (chartAt ℂ c).continuousOn.domRestrict.sub continuous_const⟩ :
-            C((chartAt ℂ c).source, ℂ)) (S := {⟨z, hz⟩}) (T := {0})
-        (by
-          rintro x hx
-          exact Subtype.ext ((chartAt ℂ c).injOn x.property hz (sub_eq_zero.1 hx))) (1 + 1)
-        (((chartAt ℂ c).open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hz⟩
-          (1 + 1)).symm (complexHomologicalOrientation X z)).val =
-      (Complex.orientation.localOrientation Complex.finrank_real_complex).val := by
-  set φ := chartAt ℂ c
-  rw [complexHomologicalOrientation_apply_of_mem_maximalAtlas
-    (IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℂ)) (n := ∞) c) hz]
-  have hσ : (((ContinuousLinearEquiv.refl ℝ ℂ : ℂ →L[ℝ] ℂ) : C(ℂ, ℂ)).comp
-      ((⟨fun y ↦ y - φ z, by fun_prop⟩ : C(ℂ, ℂ)).comp φ.sourceRestrict)) =
-      (⟨fun y : φ.source ↦ φ y - φ z,
-        φ.continuousOn.domRestrict.sub continuous_const⟩ : C(φ.source, ℂ)) :=
-    ContinuousMap.ext fun y ↦ congrArg (fun w ↦ w - φ z) (φ.sourceRestrict_apply y)
-  have hφ := φ.localHomologyMap_chart_localOrientationOfOrientedChart hz
-    (ContinuousLinearEquiv.refl ℝ ℂ) Complex.orientation
-    Complex.finrank_real_complex Complex.finrank_real_complex (by
-      rw [hσ]
-      exact fun y hy ↦ Subtype.ext (φ.injOn y.property hz (sub_eq_zero.1 hy)))
-  simp only [hσ] at hφ
-  -- `Orientation.map` uses the underlying linear identity, rather than the continuous structure.
-  have hid : (ContinuousLinearEquiv.refl ℝ ℂ).toLinearEquiv = LinearEquiv.refl ℝ ℂ := (rfl)
-  simpa only [hid, Orientation.map_refl, Equiv.refl_apply] using hφ
+/-- The reading of a section `s` in the preferred chart of `X` and the preferred trivialization of
+`L` at `c`: the function `y ↦ (e_c (s (φ_c⁻¹ y))).2` on the chart target. -/
+private abbrev chartReading (s : Π x, L x) (c : X) (y : ℂ) : ℂ :=
+  (trivializationAt ℂ L c (TotalSpace.mk' ℂ ((chartAt ℂ c).symm y) (s ((chartAt ℂ c).symm y)))).2
+
+/-- Chart data at a point `z` for the zero count: a centre `c` whose preferred chart and
+trivialization contain `z`, and an open set `Ω ∋ φ_c z` on which the reading of `s` is `C¹` and
+satisfies `‖\bar∂ f‖ ≤ C ‖f‖`. -/
+private structure ChartData (s : Π x, L x) (z : X) where
+  /-- The centre of the preferred chart and trivialization. -/
+  c : X
+  /-- The open set of the chart target on which the inequality holds. -/
+  Ω : Set ℂ
+  /-- The constant of the Cauchy–Riemann inequality. -/
+  C : ℝ
+  mem_source : z ∈ (chartAt ℂ c).source
+  mem_baseSet : z ∈ (trivializationAt ℂ L c).baseSet
+  isOpen : IsOpen Ω
+  mem : chartAt ℂ c z ∈ Ω
+  contDiffOn : ContDiffOn ℝ 1 (chartReading s c) Ω
+  norm_le : ∀ y ∈ Ω, ‖conjWirtingerDeriv (chartReading s c) y‖ ≤ C * ‖chartReading s c y‖
 
 include hD hDs in
-/-- Around every point a `C¹` section in the kernel is read, in the preferred chart of `X` and
-the preferred trivialization of `L` at some centre `c z`, as a `C¹` function on an open set `Ω z`
-satisfying `‖\bar∂ f‖ ≤ C z ‖f‖`. -/
-private theorem exists_chart_data [CompactSpace X] {s : Π x, L x}
+/-- Around every point, a `C¹` section in the kernel has chart data for the zero count. -/
+private theorem nonempty_chartData [CompactSpace X] {s : Π x, L x}
     (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) 1 fun x ↦ TotalSpace.mk' ℂ x (s x))
-    (hs0 : D s = 0) :
-    ∃ (c : X → X) (Ω : X → Set ℂ) (C : X → ℝ), ∀ z, z ∈ (chartAt ℂ (c z)).source ∧
-      z ∈ (trivializationAt ℂ L (c z)).baseSet ∧ IsOpen (Ω z) ∧ chartAt ℂ (c z) z ∈ Ω z ∧
-      ContDiffOn ℝ 1 (fun y ↦ (trivializationAt ℂ L (c z) (TotalSpace.mk' ℂ
-        ((chartAt ℂ (c z)).symm y) (s ((chartAt ℂ (c z)).symm y)))).2) (Ω z) ∧
-      ∀ y ∈ Ω z, ‖conjWirtingerDeriv (fun y ↦ (trivializationAt ℂ L (c z) (TotalSpace.mk' ℂ
-        ((chartAt ℂ (c z)).symm y) (s ((chartAt ℂ (c z)).symm y)))).2) y‖ ≤
-        C z * ‖(trivializationAt ℂ L (c z) (TotalSpace.mk' ℂ
-          ((chartAt ℂ (c z)).symm y) (s ((chartAt ℂ (c z)).symm y)))).2‖ := by
+    (hs0 : D s = 0) : Nonempty (∀ z, ChartData s z) := by
   obtain ⟨A⟩ := FiniteBundleAtlas.nonempty (E := ℂ) (M := X) (F := ℂ) (V := L)
   choose i hi using A.exists_mem_dom
-  choose C hC using fun j ↦ norm_conjWirtingerDeriv_coord_le hD hDs A j hs hs0
+  choose C hC using fun j ↦ exists_norm_conjWirtingerDeriv_coord_le hD hDs A j hs hs0
   -- The readings of `s` in the charts of `A`.
-  have hc (j : Fin A.n) : (fun y ↦ (trivializationAt ℂ L (A.center j) (TotalSpace.mk' ℂ
-      ((chartAt ℂ (A.center j)).symm y) (s ((chartAt ℂ (A.center j)).symm y)))).2) =
-        A.coord j s :=
+  have hc (j : Fin A.n) : chartReading s (A.center j) = A.coord j s :=
     funext fun y ↦ (A.coord_def j s y).symm
-  refine ⟨fun z ↦ A.center (i z), fun z ↦ A.image (i z), fun z ↦ C (i z), fun z ↦
-    ⟨A.dom_subset_chart_source _ (hi z), A.dom_subset_baseSet _ (hi z), (A.image _).isOpen,
-      A.mem_image.2 ⟨z, hi z, rfl⟩, ?_, ?_⟩⟩
+  refine ⟨fun z ↦ ⟨A.center (i z), A.image (i z), C (i z), A.dom_subset_chart_source _ (hi z),
+    A.dom_subset_baseSet _ (hi z), (A.image _).isOpen, A.mem_image.2 ⟨z, hi z, rfl⟩, ?_, ?_⟩⟩
   · rw [hc]
     -- The reading of `s` is `C¹` on the chart image, which lies over the base set.
     refine (A.contDiffOn_coord hs (i z)).mono fun y hy ↦ ?_
@@ -183,23 +164,8 @@ private theorem exists_chart_data [CompactSpace X] {s : Π x, L x}
     exact ⟨(A.chart _).map_source (A.dom_subset_chart_source _ hx), by
       rw [mem_preimage, (A.chart _).left_inv (A.dom_subset_chart_source _ hx)]
       exact A.dom_subset_baseSet _ hx⟩
-  · intro y hy
-    have h := hC (i z) y hy
-    rw [A.coord_def (i z) s y] at h
-    rwa [hc]
-
-omit [IsManifold 𝓘(ℂ, ℂ) ∞ X] [ChartedSpace ℂ X] [T2Space X] [∀ x, IsTopologicalAddGroup (L x)]
-  [∀ x, ContinuousSMul ℝ (L x)] [∀ x, ContinuousSMul ℂ (L x)]
-  [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)] in
-/-- The preferred trivializations of `L` read its complex orientation as the standard orientation
-of `ℂ`. -/
-private theorem mapOrientation_complex_trivializationAt (c : X) {x : X}
-    (hx : x ∈ (trivializationAt ℂ L c).baseSet) :
-    (trivializationAt ℂ L c).mapOrientation (Fin (1 + 1)) hx
-        (VectorBundleOrientation.reindex (finCongr (by rw [finrank_self]))
-          (VectorBundleOrientation.complex ℂ L) x) = Complex.orientation :=
-  (VectorBundleOrientation.mapOrientation_reindex_complex ℂ L _ _ hx).trans
-    reindex_complexOrientation_complex
+  · rw [hc]
+    exact fun y hy ↦ hC (i z) y hy
 
 variable [CompactSpace X]
 
@@ -210,11 +176,12 @@ Cauchy–Riemann operator, not identically zero, has finitely many zeros. -/
 theorem finite_setOf_eq_zero [ConnectedSpace X] {s : Π x, L x}
     (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) 1 fun x ↦ TotalSpace.mk' ℂ x (s x))
     (hs0 : D s = 0) (hne : ∃ x, s x ≠ 0) : {x | s x = 0}.Finite := by
-  obtain ⟨c, Ω, C, h⟩ := exists_chart_data hD hDs hs hs0
-  exact finite_setOf_section_eq_zero_of_norm_conjWirtingerDeriv_le (fun z ↦ chartAt ℂ (c z))
-    (fun z ↦ trivializationAt ℂ L (c z)) (fun z ↦ (h z).1) (fun z ↦ (h z).2.1) Ω
-    (fun z ↦ (h z).2.2.1) (fun z ↦ (h z).2.2.2.1) (fun z ↦ (h z).2.2.2.2.1) (fun z _ ↦ C z)
-    (fun z _ _ ↦ ⟨C z, Eventually.of_forall fun _ ↦ le_rfl⟩) (fun z ↦ (h z).2.2.2.2.2) hne
+  obtain ⟨d⟩ := nonempty_chartData hD hDs hs hs0
+  exact finite_setOf_section_eq_zero_of_norm_conjWirtingerDeriv_le (fun z ↦ chartAt ℂ (d z).c)
+    (fun z ↦ trivializationAt ℂ L (d z).c) (fun z ↦ (d z).mem_source) (fun z ↦ (d z).mem_baseSet)
+    (fun z ↦ (d z).Ω) (fun z ↦ (d z).isOpen) (fun z ↦ (d z).mem) (fun z ↦ (d z).contDiffOn)
+    (fun z _ ↦ (d z).C) (fun z _ _ ↦ ⟨(d z).C, Eventually.of_forall fun _ ↦ le_rfl⟩)
+    (fun z ↦ (d z).norm_le) hne
 
 include hD hDs in
 /-- **The zero count.** On a compact Riemann surface, a `C¹` section of a complex line bundle `L`
@@ -228,17 +195,19 @@ theorem ncard_le_evalFundamentalClass_complexEulerClass {s : Π x, L x}
       ((complexHomologicalOrientation X).evalFundamentalClass Complex.finrank_real_complex
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)
         (complexEulerClass ℂ L (r := 0) (finrank_self ℂ))).down := by
-  obtain ⟨c, Ω, C, h⟩ := exists_chart_data hD hDs hs hs0
+  obtain ⟨d⟩ := nonempty_chartData hD hDs hs hs0
   rw [complexEulerClass_def]
   exact
     VectorBundleOrientation.ncard_le_evalFundamentalClass_eulerClass_of_norm_conjWirtingerDeriv_le
-    _ Complex.finrank_real_complex _ hs.continuous (fun z ↦ chartAt ℂ (c z))
-    (fun z ↦ trivializationAt ℂ L (c z)) (fun _ ↦ Complex.orientation) (fun z _ ↦ (h z).1) Ω
-    (fun z _ ↦ C z) hZ (fun z _ ↦ (h z).2.1)
-    (fun z _ ↦ Eventually.of_forall fun x hx ↦ mapOrientation_complex_trivializationAt (c z) hx)
-    (fun z _ ↦ localHomologyMap_complexHomologicalOrientation (c z) (h z).1)
-    (fun z _ ↦ (h z).2.2.1) (fun z _ ↦ (h z).2.2.2.1) (fun z _ ↦ (h z).2.2.2.2.1)
-    (fun z _ _ _ ↦ ⟨C z, Eventually.of_forall fun _ ↦ le_rfl⟩) (fun z _ ↦ (h z).2.2.2.2.2)
+    _ Complex.finrank_real_complex _ hs.continuous (fun z ↦ chartAt ℂ (d z).c)
+    (fun z ↦ trivializationAt ℂ L (d z).c) (fun _ ↦ Complex.orientation)
+    (fun z _ ↦ (d z).mem_source) (fun z ↦ (d z).Ω) (fun z _ ↦ (d z).C) hZ
+    (fun z _ ↦ (d z).mem_baseSet)
+    (fun z _ ↦ Eventually.of_forall fun _ hx ↦
+      VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation _ _ hx)
+    (fun z _ ↦ localHomologyMap_chartAt_complexHomologicalOrientation (d z).c (d z).mem_source)
+    (fun z _ ↦ (d z).isOpen) (fun z _ ↦ (d z).mem) (fun z _ ↦ (d z).contDiffOn)
+    (fun z _ _ _ ↦ ⟨(d z).C, Eventually.of_forall fun _ ↦ le_rfl⟩) (fun z _ ↦ (d z).norm_le)
 
 include hD hDs in
 /-- **A section in the kernel vanishing at more than `c₁(L)[X]` points vanishes identically.** On

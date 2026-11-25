@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linear
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Analysis.Complex.UnitDisc.Manifold
 public import TauCeti.Analysis.Complex.UnitDisc.Subdisc
@@ -159,6 +160,40 @@ theorem complexHomologicalOrientation_apply_of_mem_maximalAtlas {k : ℕ∞ω} [
   apply Subtype.ext
   rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign_det_smul _ _ (chartAt ℂ x) e
     (mem_chart_source ℂ x) hx hd.hasFDerivAt hdet.ne', sign_pos hdet, SignType.coe_one, one_smul]
+
+/-- **The canonical orientation read in a preferred chart.** The preferred chart of a Riemann
+surface at `c`, centred at a point `z` of its source, carries the canonical local orientation at
+`z` to the local orientation of `ℂ` at `0` selected by its standard orientation
+`Complex.orientation`. -/
+theorem localHomologyMap_chartAt_complexHomologicalOrientation (c : M) {z : M}
+    (hz : z ∈ (chartAt ℂ c).source) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : (chartAt ℂ c).source ↦ chartAt ℂ c x - chartAt ℂ c z,
+          (chartAt ℂ c).continuousOn.domRestrict.sub continuous_const⟩ :
+            C((chartAt ℂ c).source, ℂ)) (S := {⟨z, hz⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext ((chartAt ℂ c).injOn x.property hz (sub_eq_zero.1 hx))) (1 + 1)
+        (((chartAt ℂ c).open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hz⟩
+          (1 + 1)).symm (complexHomologicalOrientation M z)).val =
+      (Complex.orientation.localOrientation Complex.finrank_real_complex).val := by
+  set φ := chartAt ℂ c
+  rw [complexHomologicalOrientation_apply_of_mem_maximalAtlas
+    (IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℂ, ℂ)) (n := 1) c) hz]
+  have hσ : (((ContinuousLinearEquiv.refl ℝ ℂ : ℂ →L[ℝ] ℂ) : C(ℂ, ℂ)).comp
+      ((⟨fun y ↦ y - φ z, by fun_prop⟩ : C(ℂ, ℂ)).comp φ.sourceRestrict)) =
+      (⟨fun y : φ.source ↦ φ y - φ z,
+        φ.continuousOn.domRestrict.sub continuous_const⟩ : C(φ.source, ℂ)) :=
+    ContinuousMap.ext fun y ↦ congrArg (fun w ↦ w - φ z) (φ.sourceRestrict_apply y)
+  have hφ := φ.localHomologyMap_chart_localOrientationOfOrientedChart hz
+    (ContinuousLinearEquiv.refl ℝ ℂ) Complex.orientation
+    Complex.finrank_real_complex Complex.finrank_real_complex (by
+      rw [hσ]
+      exact fun y hy ↦ Subtype.ext (φ.injOn y.property hz (sub_eq_zero.1 hy)))
+  simp only [hσ] at hφ
+  -- `Orientation.map` uses the underlying linear identity, rather than the continuous structure.
+  have hid : (ContinuousLinearEquiv.refl ℝ ℂ).toLinearEquiv = LinearEquiv.refl ℝ ℂ := (rfl)
+  simpa only [hid, Orientation.map_refl, Equiv.refl_apply] using hφ
 
 variable {N : Type} [TopologicalSpace N] [T2Space N] [ChartedSpace ℂ N] [IsManifold 𝓘(ℂ, ℂ) 1 N]
 
