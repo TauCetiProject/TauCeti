@@ -14,8 +14,8 @@ import Mathlib.Data.Nat.Cast.Basic
 /-!
 # Invertible elements and `Ring.inverse`
 
-This file collects elementary lemmas on units in semirings, numeric literal invertibility, and
-`Ring.inverse` in monoids with zero and distributive negation:
+This file collects elementary lemmas on units in semirings, numeric literal invertibility under ring
+homomorphisms, and `Ring.inverse` in monoids with zero and distributive negation:
 
 * `IsUnit.eq_zero_of_add_self_eq_zero`: if `2` is a unit in a semiring, zero is the only element
   that doubles to zero.
@@ -23,6 +23,7 @@ This file collects elementary lemmas on units in semirings, numeric literal inve
   literals `n ≥ 2`.
 * `TauCeti.map_invOf_ofNat`: ring homomorphisms send `⅟(ofNat(n))` to `⅟(ofNat(n))` independently
   of the chosen `Invertible` instances.
+* `TauCeti.two_mul_map_invOf_two`: a ring homomorphism sends `⅟2` to a half of `1`.
 * `TauCeti.ringInverse_neg`: `Ring.inverse` commutes with negation.
 * `TauCeti.ringInverse_neg_one_pow_mul`: multiplying on the left by `(-1) ^ k` commutes with
   `Ring.inverse`.
@@ -52,6 +53,11 @@ theorem map_invOf_ofNat {R S F : Type*} [NonAssocSemiring R] [Semiring S] [FunLi
     [Invertible (ofNat(n) : R)] [Invertible (ofNat(n) : S)] :
     f ⅟(ofNat(n) : R) = ⅟(ofNat(n) : S) :=
   (invOf_eq_right_inv (by rw [← map_ofNat f n, ← map_mul, mul_invOf_self, map_one])).symm
+
+/-- A ring homomorphism sends `⅟2` to a half of `1`: `2 * f ⅟2 = 1`. -/
+theorem two_mul_map_invOf_two {R S F : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    [Invertible (2 : R)] [FunLike F R S] [RingHomClass F R S] (f : F) : 2 * f ⅟2 = 1 :=
+  (invertibleMapOfNat f 2).mul_invOf_self
 
 variable {R : Type*} [MonoidWithZero R] [HasDistribNeg R]
 
