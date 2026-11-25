@@ -32,8 +32,8 @@ extensions of henselian rings). Uniqueness holds because a surjective valuation 
 most `1` on `R` is at most `1` on `S`, hence is the adic valuation of a height one prime of `S`
 (`Valuation.valuation_heightOneSpectrum`), and the maximal ideal is the only such prime.
 
-In a finite tower `F ⊆ K ⊆ E` the restriction of the normalized extension to `E` is equivalent
-to the normalized extension to `K`, and the ramification indices multiply.
+In a finite tower `F ⊆ K ⊆ E` the restriction to `K` of the normalized extension to `E` is
+equivalent to the normalized extension to `K`, and the ramification indices multiply.
 
 ## Main definitions
 
