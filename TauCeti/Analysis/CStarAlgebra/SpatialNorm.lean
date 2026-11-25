@@ -371,6 +371,7 @@ include hA hB in
 /-- **Monotonicity of the spatial tensor product**: `A₀ ⊗_min B₀ ⊆ A ⊗_min B` for `A₀ ≤ A` and
 `B₀ ≤ B`. As both are closed star subalgebras of `B(E ⊗₂ F)` carrying the operator norm, the
 inclusion is isometric. -/
+@[gcongr]
 theorem minTensor_mono : minTensor A₀ B₀ ≤ minTensor A B :=
   minTensor_le A₀ B₀ (isClosed_minTensor A B) (by
     rintro _ ⟨x, rfl⟩
