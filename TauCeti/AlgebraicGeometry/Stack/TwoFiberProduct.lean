@@ -25,10 +25,10 @@ recovers the other factor: its second projection is a fiberwise equivalence
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.StackInGroupoids.twoFiberProduct f g`: the 2-fibre product, with
-  projections `twoFiberProduct.fst`, `twoFiberProduct.snd`, the 2-cell
-  `twoFiberProduct.iso : fst ≫ f ≅ snd ≫ g` and the morphism `twoFiberProduct.lift` from a
-  2-commutative square.
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.twoFiberProduct f g`: the 2-fibre product. Its
+  underlying pseudofunctor is `TauCeti.Stack.twoFiberProduct f g` by definition, so its projections,
+  the 2-cell `fst ≫ f ≅ snd ≫ g` and the morphism from a 2-commutative square are the site-level
+  `TauCeti.Stack.twoFiberProduct.fst`, `.snd`, `.iso` and `.lift`.
 
 ## Main results
 
@@ -66,51 +66,25 @@ noncomputable def twoFiberProduct : StackInGroupoids.{u} where
 
 namespace twoFiberProduct
 
-/-- The underlying pseudofunctor of the 2-fibre product is the site-level 2-fibre product. -/
+/-- The underlying pseudofunctor of the 2-fibre product is the site-level 2-fibre product, so its
+projections, 2-cell and lift are `TauCeti.Stack.twoFiberProduct.fst`, `.snd`, `.iso` and `.lift`. -/
+@[simp]
 theorem toSchPseudofunctor_eq :
     (twoFiberProduct f g).toSchPseudofunctor = Stack.twoFiberProduct.{u + 1, u} f g :=
   (rfl)
 
-/-- The first projection `X ×_Z Y ⟶ X`. -/
-@[expose] noncomputable def fst : (twoFiberProduct f g).toSchPseudofunctor ⟶ X.toSchPseudofunctor :=
-  Stack.twoFiberProduct.fst.{u + 1, u} f g
-
-/-- The second projection `X ×_Z Y ⟶ Y`. -/
-@[expose] noncomputable def snd : (twoFiberProduct f g).toSchPseudofunctor ⟶ Y.toSchPseudofunctor :=
-  Stack.twoFiberProduct.snd.{u + 1, u} f g
-
-/-- The 2-cell of the 2-fibre product square: `fst ≫ f ≅ snd ≫ g`. -/
-@[expose] noncomputable def iso : fst f g ≫ f ≅ snd f g ≫ g :=
-  Stack.twoFiberProduct.iso.{u + 1, u} f g
-
-variable {W : StackInGroupoids.{u}} (a : W.toSchPseudofunctor ⟶ X.toSchPseudofunctor)
-  (b : W.toSchPseudofunctor ⟶ Y.toSchPseudofunctor) (e : a ≫ f ≅ b ≫ g)
-
-/-- The morphism `W ⟶ X ×_Z Y` induced by a 2-commutative square `e : a ≫ f ≅ b ≫ g`. -/
-@[expose] noncomputable def lift :
-    W.toSchPseudofunctor ⟶ (twoFiberProduct f g).toSchPseudofunctor :=
-  Stack.twoFiberProduct.lift.{u + 1, u} f g a b e
-
-/-- The morphism induced by a 2-commutative square, followed by the first projection, is the
-first morphism of the square. -/
-@[expose] noncomputable def liftCompFst : lift f g a b e ≫ fst f g ≅ a :=
-  Stack.twoFiberProduct.liftCompFst.{u + 1, u} f g a b e
-
-/-- The morphism induced by a 2-commutative square, followed by the second projection, is the
-second morphism of the square. -/
-@[expose] noncomputable def liftCompSnd : lift f g a b e ≫ snd f g ≅ b :=
-  Stack.twoFiberProduct.liftCompSnd.{u + 1, u} f g a b e
-
 /-- **2-base change of a fiberwise equivalence.** The second projection of the 2-fibre product
 along a fiberwise equivalence `f` is a fiberwise equivalence. -/
-theorem isFiberwiseEquiv_snd (hf : Hom.IsFiberwiseEquiv f) : Hom.IsFiberwiseEquiv (snd f g) :=
+theorem isFiberwiseEquiv_snd (hf : Hom.IsFiberwiseEquiv f) :
+    Hom.IsFiberwiseEquiv (X := twoFiberProduct f g) (Stack.twoFiberProduct.snd.{u + 1, u} f g) :=
   (Hom.isFiberwiseEquiv_iff _).mpr fun T ↦
   have := (Hom.isFiberwiseEquiv_iff f).mp hf T
   Stack.twoFiberProduct.isEquivalence_snd_app.{u + 1, u} f g (.mk (op T))
 
 /-- **2-base change of a fiberwise equivalence.** The first projection of the 2-fibre product
 along a fiberwise equivalence `g` is a fiberwise equivalence. -/
-theorem isFiberwiseEquiv_fst (hg : Hom.IsFiberwiseEquiv g) : Hom.IsFiberwiseEquiv (fst f g) :=
+theorem isFiberwiseEquiv_fst (hg : Hom.IsFiberwiseEquiv g) :
+    Hom.IsFiberwiseEquiv (X := twoFiberProduct f g) (Stack.twoFiberProduct.fst.{u + 1, u} f g) :=
   (Hom.isFiberwiseEquiv_iff _).mpr fun T ↦
   have := (Hom.isFiberwiseEquiv_iff g).mp hg T
   Stack.twoFiberProduct.isEquivalence_fst_app.{u + 1, u} f g (.mk (op T))
@@ -118,7 +92,8 @@ theorem isFiberwiseEquiv_fst (hg : Hom.IsFiberwiseEquiv g) : Hom.IsFiberwiseEqui
 /-- **A 2-fibre product along the identity recovers the other factor**: for `g : Y ⟶ Z`, the
 second projection `Z ×_Z Y ⟶ Y` is a fiberwise equivalence. -/
 theorem isFiberwiseEquiv_snd_id :
-    Hom.IsFiberwiseEquiv (snd (𝟙 Z.toSchPseudofunctor) g) :=
+    Hom.IsFiberwiseEquiv (X := twoFiberProduct (𝟙 Z.toSchPseudofunctor) g)
+      (Stack.twoFiberProduct.snd.{u + 1, u} (𝟙 Z.toSchPseudofunctor) g) :=
   isFiberwiseEquiv_snd _ g (Hom.isFiberwiseEquiv_id Z)
 
 end twoFiberProduct
