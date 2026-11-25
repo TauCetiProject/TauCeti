@@ -22,6 +22,8 @@ a coordinate selection.
 
 ## Main results
 
+* `Matrix.norm_toLp_apply_of_mul_conjTranspose_eq_one` — each row of a matrix `V` with
+  `V * Vᴴ = 1` has unit Euclidean norm.
 * `Matrix.exists_mul_conjTranspose_eq_one_and_submatrix_eq` — a matrix with orthonormal rows
   consists of some rows of a unitary matrix.
 * `Matrix.exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix` — a matrix is an invertible
@@ -34,7 +36,20 @@ public section
 
 namespace Matrix
 
-variable {𝕜 m n : Type*} [RCLike 𝕜] [DecidableEq m] [Fintype n] [DecidableEq n]
+variable {𝕜 m n : Type*} [RCLike 𝕜] [DecidableEq m] [Fintype n]
+
+/-- Every row of a matrix `V` satisfying `V * Vᴴ = 1` has unit Euclidean norm. -/
+theorem norm_toLp_apply_of_mul_conjTranspose_eq_one {V : Matrix m n 𝕜} (hV : V * Vᴴ = 1)
+    (k : m) : ‖(WithLp.toLp 2 (V k) : EuclideanSpace 𝕜 n)‖ = 1 := by
+  have hkk : (V * Vᴴ) k k = 1 := by simp [hV]
+  have hsq : ‖(WithLp.toLp 2 (V k) : EuclideanSpace 𝕜 n)‖ ^ 2 = 1 := by
+    apply RCLike.ofReal_injective (K := 𝕜)
+    rw [EuclideanSpace.norm_sq_eq, RCLike.ofReal_sum, RCLike.ofReal_one, ← hkk, Matrix.mul_apply]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [conjTranspose_apply, RCLike.star_def, RCLike.mul_conj, RCLike.ofReal_pow]
+  exact (sq_eq_sq₀ (norm_nonneg _) zero_le_one).mp (by simpa using hsq)
+
+variable [DecidableEq n]
 
 /-- **A matrix with orthonormal rows is a row selection of a unitary matrix.** If `V * Vᴴ = 1` and
 `e : m → n` is injective, then `V` consists of the rows `e i` of a unitary matrix `Q`. -/

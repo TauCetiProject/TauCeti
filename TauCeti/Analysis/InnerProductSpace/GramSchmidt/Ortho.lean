@@ -59,6 +59,12 @@ continues to hold when the input family loses rank.
   normalized vector, or `gramSchmidtOrthonormalBasis` vector with its original input gives its
   squared norm or its residual norm, and the coordinate determinant in
   `gramSchmidtOrthonormalBasis` is the product of the residual norms.
+* `InnerProductSpace.inner_gramSchmidt_eq_zero_of_mem_span_Iio`,
+  `InnerProductSpace.inner_gramSchmidtNormed_eq_zero_of_mem_span_Iio`,
+  `InnerProductSpace.gramSchmidt_sub_mem_span_Iio`,
+  `InnerProductSpace.map_gramSchmidt_sub_mem_span_Iio` — orthogonality against the span of strictly
+  earlier inputs, membership of `gramSchmidt 𝕜 f i - f i` in that span, and its image under a
+  chain-shifting linear map.
 * `ContDiffWithinAt.gramSchmidt`, `ContDiffWithinAt.gramSchmidtNormed` — the corresponding real
   smoothness statements, with at-point, on-set and global versions for the normalized process.
 -/
@@ -132,6 +138,48 @@ theorem gramSchmidtOrthonormalBasis_det_eq_prod_norm [Fintype ι] [DecidableEq �
     (gramSchmidtOrthonormalBasis h f).toBasis.det f = ∏ i, (‖gramSchmidt 𝕜 f i‖ : 𝕜) := by
   rw [gramSchmidtOrthonormalBasis_det]
   simp only [inner_gramSchmidtOrthonormalBasis_eq_norm]
+
+/-- The `i`-th Gram–Schmidt residual is orthogonal to every vector in the span of the strictly
+earlier inputs. -/
+theorem inner_gramSchmidt_eq_zero_of_mem_span_Iio (f : ι → E) (i : ι) {u : E}
+    (hu : u ∈ Submodule.span 𝕜 (f '' Set.Iio i)) :
+    inner 𝕜 (gramSchmidt 𝕜 f i) u = 0 := by
+  have hortho : Submodule.span 𝕜 {gramSchmidt 𝕜 f i} ⟂ Submodule.span 𝕜 (f '' Set.Iio i) := by
+    rw [Submodule.isOrtho_span]
+    rintro _ (rfl : _ = _) _ ⟨j, hj, rfl⟩
+    exact gramSchmidt_inv_triangular 𝕜 f hj
+  exact hortho.inner_eq (Submodule.mem_span_singleton_self _) hu
+
+/-- The `i`-th normalized Gram–Schmidt vector is orthogonal to every vector in the span of the
+strictly earlier inputs, without any linear-independence hypothesis. -/
+theorem inner_gramSchmidtNormed_eq_zero_of_mem_span_Iio (f : ι → E) (i : ι) {u : E}
+    (hu : u ∈ Submodule.span 𝕜 (f '' Set.Iio i)) :
+    inner 𝕜 (gramSchmidtNormed 𝕜 f i) u = 0 := by
+  rw [gramSchmidtNormed, inner_smul_left, inner_gramSchmidt_eq_zero_of_mem_span_Iio f i hu,
+    mul_zero]
+
+/-- The difference `gramSchmidt 𝕜 f i - f i` lies in the span of the strictly earlier inputs. -/
+theorem gramSchmidt_sub_mem_span_Iio (f : ι → E) (i : ι) :
+    gramSchmidt 𝕜 f i - f i ∈ Submodule.span 𝕜 (f '' Set.Iio i) := by
+  rw [← span_gramSchmidt_Iio 𝕜 f i, gramSchmidt_def 𝕜 f i, sub_sub_cancel_left]
+  refine Submodule.neg_mem _ (Submodule.sum_mem _ fun j hj => ?_)
+  rw [Submodule.starProjection_singleton]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨j, Finset.mem_Iio.mp hj, rfl⟩)
+
+/-- If a linear endomorphism `T` shifts a finite chain `w : Fin (n + 1) → E` by
+`T (w k.castSucc) = w k.succ`, then `T` maps `gramSchmidt 𝕜 w k.castSucc - w k.castSucc` into the
+span of `w '' Set.Iio k.succ`. -/
+theorem map_gramSchmidt_sub_mem_span_Iio {n : ℕ} {T : E →ₗ[𝕜] E} {w : Fin (n + 1) → E}
+    (hw : ∀ k : Fin n, T (w k.castSucc) = w k.succ) (k : Fin n) :
+    T (gramSchmidt 𝕜 w k.castSucc - w k.castSucc) ∈
+      Submodule.span 𝕜 (w '' Set.Iio k.succ) := by
+  refine Submodule.span_mono ?_
+    (Submodule.apply_mem_span_image_of_mem_span T (gramSchmidt_sub_mem_span_Iio w k.castSucc))
+  rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
+  let j' : Fin n := ⟨j.val, lt_trans (Fin.lt_def.mp (Set.mem_Iio.mp hj)) k.isLt⟩
+  have hjcast : j'.castSucc = j := Fin.ext rfl
+  rw [← hjcast, hw j']
+  exact ⟨j'.succ, Set.mem_Iio.mpr (Fin.lt_def.mpr (Nat.succ_lt_succ (Fin.lt_def.mp hj))), rfl⟩
 
 /-- The Gram–Schmidt process fixes an input vector orthogonal to all earlier inputs. This is the
 pointwise form of Mathlib's `InnerProductSpace.gramSchmidt_of_orthogonal`: every earlier

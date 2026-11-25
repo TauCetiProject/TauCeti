@@ -71,6 +71,8 @@ reproduce every product `A *ᵥ x`.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
+* `Matrix.mul_diagonal_mul_mulVec_col_of_mul_eq_one`: if `Q * P = 1`, the columns of `P` are
+  eigenvectors of `P * diagonal d * Q`.
 * `Matrix.map_intCast_mulVec` and `Matrix.map_intCast_vecMul`: casting integer entries commutes
   with matrix-vector and vector-matrix multiplication.
 -/
@@ -151,6 +153,19 @@ theorem pow_eq_of_pow_eq_smul_one_of_mulVec_eq_smul {R : Type*} [CommRing R] [No
   have h := pow_mulVec_eq_pow_smul hx m
   rw [hX, smul_mulVec, one_mulVec] at h
   exact smul_left_injective R hx0 h.symm
+
+/-- If `Q * P = 1`, then column `k` of `P` is an eigenvector of `P * diagonal d * Q` with
+eigenvalue `d k`. -/
+theorem mul_diagonal_mul_mulVec_col_of_mul_eq_one {m R : Type*} [Fintype m] [DecidableEq m]
+    [CommSemiring R] {Q : Matrix m n R} {P : Matrix n m R} (hQP : Q * P = 1) (d : m → R)
+    (k : m) : (P * diagonal d * Q) *ᵥ P.col k = d k • P.col k := by
+  have hcol : Q *ᵥ P.col k = Pi.single k 1 := by
+    ext r
+    simpa [mulVec, dotProduct, Matrix.mul_apply, Matrix.one_apply, Pi.single_apply,
+      eq_comm] using congrFun (congrFun hQP r) k
+  rw [← mulVec_mulVec, hcol, ← mulVec_mulVec, diagonal_mulVec_single, mul_one]
+  ext i
+  simp [mulVec, dotProduct, Pi.single_apply, mul_comm]
 
 /-- For a multiplicative map `σ`, the pairing `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`
 along a line: `h(c v, c v) = σ c * c * h(v, v)`. When `σ` is also additive, such as a ring

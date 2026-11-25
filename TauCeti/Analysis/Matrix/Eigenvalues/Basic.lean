@@ -42,9 +42,10 @@ eigenvalues `(a, b)` from the factorisation `(X - a)(X - b)`, and
 The sorted eigenvalues sum to the real part of the trace
 (`Matrix.IsHermitian.sum_eigenvalues₀_eq_re_trace`), their `m`-th powers sum to the real part of
 `tr(Aᵐ)` (`Matrix.IsHermitian.sum_eigenvalues₀_pow_eq_re_trace_pow`), their product is the
-determinant (`Matrix.IsHermitian.det_eq_prod_eigenvalues₀`), and shifting `A` by `t • 1` shifts
-each of them by `t` (`Matrix.IsHermitian.eigenvalues₀_add_smul_one`). In general the eigenvalue
-list of a real diagonal matrix is its diagonal sorted decreasingly
+determinant (`Matrix.IsHermitian.det_eq_prod_eigenvalues₀`), shifting `A` by `t • 1` shifts each
+of them by `t` (`Matrix.IsHermitian.eigenvalues₀_add_smul_one`), and scaling `A` by a nonnegative
+real scalar `s` scales them by `s` (`Matrix.IsHermitian.eigenvalues₀_smul`). In general the
+eigenvalue list of a real diagonal matrix is its diagonal sorted decreasingly
 (`Matrix.IsHermitian.eigenvalues₀_diagonal_eq_comp_sortDesc`). An orthonormal eigenbasis can be
 ordered as the sorted eigenvalues
 (`Matrix.IsHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul`).
@@ -242,6 +243,20 @@ theorem IsHermitian.eigenvalues₀_add_smul_one (hA : A.IsHermitian) (t : ℝ)
   refine Finset.prod_congr rfl fun k _ ↦ ?_
   simp only [sub_comp, X_comp, C_comp, Pi.add_apply, RCLike.ofReal_add, C_add, map_neg]
   ring
+
+/-- **Nonnegative scalar multiplication.** Scaling a Hermitian matrix `A` by a nonnegative real
+scalar `s` scales its sorted eigenvalues by `s`. -/
+theorem IsHermitian.eigenvalues₀_smul (hA : A.IsHermitian) {s : ℝ} (hs : 0 ≤ s)
+    (hAs : (s • A).IsHermitian) :
+    hAs.eigenvalues₀ = s • hA.eigenvalues₀ := by
+  have hS := isSymmetric_toEuclideanLin_iff.mpr hA
+  refine (isSymmetric_toEuclideanLin_iff.mpr hAs).eigenvalues_eq_of_eigenbasis
+    finrank_euclideanSpace (hS.eigenvectorBasis finrank_euclideanSpace)
+    (fun _ _ hij => mul_le_mul_of_nonneg_left (hA.eigenvalues₀_antitone hij) hs) fun i => ?_
+  -- `Matrix.IsHermitian.eigenvalues₀` is defined via the symmetric Euclidean operator.
+  rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smul, LinearMap.smul_apply,
+    hS.apply_eigenvectorBasis, smul_smul, Pi.smul_apply, smul_eq_mul, RCLike.ofReal_mul,
+    Matrix.IsHermitian.eigenvalues₀]
 
 /-- **The sorted eigenvalue list of a real diagonal matrix** is its list of diagonal entries,
 sorted decreasingly by `Tuple.sortDesc`. The entries are transported to the index type `ι` along
