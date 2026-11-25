@@ -12,7 +12,9 @@ import TauCeti.Analysis.Normed.Algebra.NilpotentExponential
 import Mathlib.Tactic.FinCases
 
 /-!
-# The propagator is time-ordered
+# Examples of the propagator: time ordering and continuous dependence on the coefficient
+
+## Time ordering
 
 On `ℝ²`, with matrices acting through `Matrix.toEuclideanCLM`, take the nilpotent matrices
 `A = [[0, 1], [0, 0]]` and `B = [[0, 0], [1, 0]]` and the coefficient `P` equal to `A` on `(-∞, 1)`
@@ -34,8 +36,9 @@ For the scalar constant coefficients `p = 0` and `p′ = 1` on `[0, 1]`, the pro
 `TauCeti.norm_propagator_sub_propagator_le` reads `e − 1 ≤ e`
 (`TauCeti.Examples.Propagator.norm_propagator_one_sub_propagator_zero`). For `P′ = P` the
 right-hand side of that bound is `0`
-(`TauCeti.Examples.Propagator.integral_norm_sub_self_mul_exp_eq_zero`), and the propagator only
-depends on the coefficient almost everywhere (`TauCeti.propagator_congr_ae`).
+(`TauCeti.Examples.Propagator.integral_norm_sub_self_mul_exp_eq_zero`), and coefficients that
+agree almost everywhere on the interval between `s` and `t` have the same propagator `N(t, s)`
+(`TauCeti.propagator_congr_ae`).
 -/
 
 public section
