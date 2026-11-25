@@ -280,9 +280,10 @@ theorem isSobolevCRCoefficients_crReflection (hΩ : MapsTo (starRingEnd ℂ) Ω 
   have h := hJW.twistedReflection (fun z hz _ => hΩ hz)
     (-(R.conjContinuousAlgEquiv.toContinuousLinearEquiv : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)) hJc
     (fun x hx => by ext v; simp [hJR x hx]) (hDJ.mono_exponent hp)
-  rw [map_neg, ContinuousLinearMap.neg_comp] at h
-  exact ⟨h, (memLpLoc_crReflectionCoeff_iff hΩ).2 hJc.memLpLoc,
+  refine ⟨?_, (memLpLoc_crReflectionCoeff_iff hΩ).2 hJc.memLpLoc,
     (memLpLoc_crReflectionDeriv_iff hΩ).2 hDJ, (memLpLoc_crReflectionZeroth_iff hΩ).2 hS⟩
+  rw [crReflectionCoeff_def, crReflectionDeriv_def]
+  rwa [map_neg, ContinuousLinearMap.neg_comp] at h
 
 end SobolevCoefficients
 
