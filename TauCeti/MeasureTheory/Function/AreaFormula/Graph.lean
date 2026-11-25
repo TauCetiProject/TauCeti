@@ -9,8 +9,11 @@ public import TauCeti.Analysis.Calculus.FDeriv.WithLp
 public import TauCeti.MeasureTheory.Function.AreaFormula.Integral
 public import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.Rademacher
+import TauCeti.Analysis.Calculus.Rademacher
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
+import TauCeti.MeasureTheory.Measure.LocallyNull
 
 /-!
 # Surface measure on Lipschitz graphs
@@ -71,6 +74,9 @@ reduces to the normal-graph factor `sqrt (1 + ‖Dφ‖²)` when `F = ℝ`.
   codimension**. For a Lipschitz `φ : E → F` between finite-dimensional real inner product spaces
   and a measurable `s ⊆ E`, the `dim E`-dimensional Euclidean Hausdorff measure of the graph
   `x ↦ (x, φ x)` over `s` is `∫_s sqrt (det (I + Dφ(x)† Dφ(x))) dx`.
+* `LocallyLipschitzOn.lintegral_graph_image_eq_lintegral_sqrt_det_mul` and
+  `LocallyLipschitzOn.euclideanHausdorffMeasure_graph_image`: the same for `φ` locally Lipschitz
+  on an open set `U` and a measurable `s ⊆ U`.
 
 The graph Jacobian itself, `DifferentiableAt.normDet_fderiv_normalGraphEmbedding`, is in
 `TauCeti.Analysis.Calculus.FDeriv.WithLp`. For a Lipschitz `φ`, the graph parametrization is
@@ -84,6 +90,11 @@ on an open set `U` agrees on `U` with a Lipschitz function on the whole space
 In higher codimension the same argument applies to `x ↦ (x, φ x)`, whose derivative is the linear
 graph of `Dφ(x)` (`DifferentiableAt.fderiv_graph`), with Jacobian `sqrt (det (I + A† A))`
 (`ContinuousLinearMap.normDet_graphL`).
+For `φ` only locally Lipschitz on an open `U`, the area formula for injective maps with
+injective derivative (`TauCeti.lintegral_image_eq_lintegral_normDet_fderiv_mul`) applies on the
+points of `s` where `φ` is differentiable; the remaining points form a null set by Rademacher's
+theorem (`LocallyLipschitzOn.ae_differentiableAt_of_mem`), and its image under the graph
+parametrization is `H^{dim E}`-null because the parametrization is locally Lipschitz.
 
 ## References
 
@@ -426,5 +437,75 @@ theorem euclideanHausdorffMeasure_graph_image (hφ : LipschitzWith K φ) (hs : M
     hφ.lintegral_graph_image_eq_lintegral_sqrt_det_mul hs 1
 
 end LipschitzWith
+
+namespace LocallyLipschitzOn
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] {φ : E → F} {U s : Set E}
+
+/-- For `φ` locally Lipschitz on an open set `U`, the graph parametrization `x ↦ (x, φ x)` maps
+null subsets of `U` to `H^{dim E}`-null sets. -/
+theorem euclideanHausdorffMeasure_graph_image_eq_zero (hφ : LocallyLipschitzOn U φ)
+    (hU : IsOpen U) {t : Set E} (htU : t ⊆ U) (ht : volume t = 0) :
+    μHE[finrank ℝ E] ((fun x ↦ WithLp.toLp 2 (x, φ x)) '' t) = 0 := by
+  refine TauCeti.measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof t)
+    fun x hx ↦ ?_
+  obtain ⟨K, v, hv, hφv⟩ := hφ (htU hx)
+  rw [hU.nhdsWithin_eq (htU hx)] at hv
+  obtain ⟨ψ, hψ, hφψ⟩ := hφv.extend_finite_dimension
+  refine ⟨t ∩ v, inter_mem_nhdsWithin t hv, ?_⟩
+  rw [image_congr fun y hy ↦ by rw [hφψ hy.2]]
+  refine nonpos_iff_eq_zero.1 ((hψ.graph.lipschitzOnWith.euclideanHausdorffMeasure_image_le _).trans
+    ?_)
+  rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
+    measure_mono_null inter_subset_left ht, mul_zero]
+
+/-- **Weighted integration on a locally Lipschitz graph.** For `φ : E → F` locally Lipschitz on an
+open set `U` and a measurable `s ⊆ U`, the integral of a weight `g` over the graph of `φ` above `s`,
+against the `dim E`-dimensional Euclidean Hausdorff measure, is the integral over `s` of `g` along
+the graph parametrization `x ↦ (x, φ x)` against `sqrt (det (I + Dφ(x)† Dφ(x))) dx`. Here `Dφ(x)`
+is `fderiv ℝ φ x`, the true derivative at almost every point of `U` by Rademacher's theorem. The
+weight need not be measurable. -/
+theorem lintegral_graph_image_eq_lintegral_sqrt_det_mul (hφ : LocallyLipschitzOn U φ)
+    (hU : IsOpen U) (hs : MeasurableSet s) (hsU : s ⊆ U) (g : WithLp 2 (E × F) → ℝ≥0∞) :
+    ∫⁻ y in (fun x ↦ WithLp.toLp 2 (x, φ x)) '' s, g y ∂μHE[finrank ℝ E] =
+      ∫⁻ x in s, ENNReal.ofReal (Real.sqrt (LinearMap.det
+        (1 + LinearMap.adjoint (fderiv ℝ φ x : E →ₗ[ℝ] F) ∘ₗ (fderiv ℝ φ x : E →ₗ[ℝ] F)))) *
+        g (WithLp.toLp 2 (x, φ x)) := by
+  set G : E → WithLp 2 (E × F) := fun x ↦ WithLp.toLp 2 (x, φ x)
+  set S := {x | DifferentiableAt ℝ φ x}
+  have hD : MeasurableSet (s ∩ S) := hs.inter (measurableSet_of_differentiableAt ℝ φ)
+  -- The points of `s` where `φ` is not differentiable form a null set.
+  have hnull : volume (s \ S) = 0 := by
+    refine measure_mono_null (fun x hx ↦ show ¬(x ∈ U → DifferentiableAt ℝ φ x) from
+      fun hd ↦ hx.2 (hd (hsU hx.1))) (ae_iff.1 (hφ.ae_differentiableAt_of_mem hU (μ := volume)))
+  have hsD : s ∩ S =ᵐ[volume] s :=
+    ae_eq_set.2 ⟨measure_mono_null (fun x hx ↦ (hx.2 hx.1.1).elim) measure_empty,
+      measure_mono_null (t := s \ S) (fun x hx ↦ ⟨hx.1, fun h ↦ hx.2 ⟨hx.1, h⟩⟩) hnull⟩
+  have himg : G '' s =ᵐ[μHE[finrank ℝ E]] G '' (s ∩ S) := by
+    rw [← inter_union_sdiff s S, image_union, inter_union_sdiff]
+    exact union_ae_eq_left_of_ae_eq_empty (ae_eq_empty.2
+      (euclideanHausdorffMeasure_graph_image_eq_zero hφ hU (sdiff_subset.trans hsU) hnull))
+  rw [setLIntegral_congr himg, TauCeti.lintegral_image_eq_lintegral_normDet_fderiv_mul hD
+    (fun x hx ↦ hx.2.hasFDerivAt.graph.differentiableAt)
+    (fun x hx ↦ by rw [hx.2.fderiv_graph]; exact ContinuousLinearMap.injective_graphL _)
+    (fun x _ y _ hxy ↦ congrArg Prod.fst (WithLp.toLp_injective 2 hxy)) g,
+    ← setLIntegral_congr hsD]
+  exact setLIntegral_congr_fun hD fun x hx ↦ by
+    rw [hx.2.fderiv_graph, ContinuousLinearMap.normDet_graphL]
+
+/-- **The area of a locally Lipschitz graph.** For `φ : E → F` locally Lipschitz on an open set
+`U` and a measurable `s ⊆ U`, the `dim E`-dimensional Euclidean Hausdorff measure of the graph of
+`φ` over `s` is `∫_s sqrt (det (I + Dφ(x)† Dφ(x))) dx`. -/
+theorem euclideanHausdorffMeasure_graph_image (hφ : LocallyLipschitzOn U φ) (hU : IsOpen U)
+    (hs : MeasurableSet s) (hsU : s ⊆ U) :
+    μHE[finrank ℝ E] ((fun x ↦ WithLp.toLp 2 (x, φ x)) '' s) =
+      ∫⁻ x in s, ENNReal.ofReal (Real.sqrt (LinearMap.det
+        (1 + LinearMap.adjoint (fderiv ℝ φ x : E →ₗ[ℝ] F) ∘ₗ (fderiv ℝ φ x : E →ₗ[ℝ] F)))) := by
+  simpa only [Pi.one_apply, mul_one, setLIntegral_one, Measure.restrict_apply_univ] using
+    hφ.lintegral_graph_image_eq_lintegral_sqrt_det_mul hU hs hsU 1
+
+end LocallyLipschitzOn
 
 end
