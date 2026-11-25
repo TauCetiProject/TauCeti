@@ -455,15 +455,15 @@ example (w : ℤ) : ¬((trivial ℂ ℂˣ ℂ).prod (ofLinearCharacter (MonoidHo
     (fun _ ↦ ⊥) tateFrob (fun p ↦ (p : ℕ)) ∅ w := by
   intro h
   let p : Nat.Primes := ⟨2, Nat.prime_two⟩
-  have hroots : (((trivial ℂ ℂˣ ℂ).prod (ofLinearCharacter (MonoidHom.id ℂˣ))) (tateFrob p)
-      ).charpoly.aroots ℂ = {1, ((tateFrob p : ℂˣ) : ℂ)} := by
-    rw [charpoly_prod_apply, charpoly_trivial_apply, charpoly_ofLinearCharacter_apply,
-      Module.finrank_self, pow_one, ← C_1, aroots_mul ((monic_X_sub_C _).mul
-      (monic_X_sub_C _)).ne_zero, aroots_X_sub_C]
-    simp
-  have h1 := (h.isWeilNumber_of_mem_aroots (Set.notMem_empty p) (hroots ▸ by simp)).unique
+  have hmem (z : ℂ) (hz : z = 1 ∨ z = ((tateFrob p : ℂˣ) : ℂ)) :
+      z ∈ (((trivial ℂ ℂˣ ℂ).prod (ofLinearCharacter (MonoidHom.id ℂˣ))) (tateFrob p)
+        ).charpoly.aroots ℂ := by
+    refine mem_aroots.mpr ⟨(LinearMap.charpoly_monic _).ne_zero, ?_⟩
+    simp only [charpoly_prod_apply, charpoly_trivial_apply, charpoly_ofLinearCharacter_apply]
+    rcases hz with rfl | rfl <;> simp
+  have h1 := (h.isWeilNumber_of_mem_aroots (Set.notMem_empty p) (hmem 1 (.inl rfl))).unique
     (isWeilNumber_one (K := ℂ) (by norm_num))
-  have h2 := (h.isWeilNumber_of_mem_aroots (Set.notMem_empty p) (hroots ▸ by simp)).unique
+  have h2 := (h.isWeilNumber_of_mem_aroots (Set.notMem_empty p) (hmem _ (.inr rfl))).unique
     (isWeilNumber_tateFrob p)
   omega
 

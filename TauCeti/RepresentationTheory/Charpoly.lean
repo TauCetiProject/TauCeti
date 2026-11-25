@@ -74,8 +74,10 @@ to a domain `S`, is `1`. -/
 theorem eq_one_of_mem_roots_map_charpoly_trivial {S : Type*} [CommRing S] [IsDomain S]
     {φ : R →+* S} {g : G} {z : S} (hz : z ∈ ((trivial R G V g).charpoly.map φ).roots) :
     z = 1 := by
-  obtain ⟨-, -, h⟩ : _ ∧ _ ∧ z = 1 := by simpa [sub_eq_zero] using hz
-  exact h
+  have h := (mem_roots'.mp hz).2
+  simp only [charpoly_trivial_apply, IsRoot.def, eval_map, eval₂_pow, eval₂_sub, eval₂_X,
+    eval₂_one] at h
+  exact sub_eq_zero.mp (eq_zero_of_pow_eq_zero h)
 
 end Monoid
 
