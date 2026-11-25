@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Deriv
 import TauCeti.Data.Nat.Choose.Sum
 
@@ -268,17 +269,6 @@ theorem le_radius_ofScalars_of_regularSingular {ρ : ℂ} {fs gs es a : ℕ → 
   exact mul_le_mul_of_nonneg_right (hbound n) (by positivity)
 
 /-! ### The Frobenius series solves the equation -/
-
-/-- The coefficient of `ζⁿ` in the Cauchy product of `∑ uₖ ζᵏ` and `∑ vₖ ζᵏ`, written as `ζⁿ`
-times a sum of coefficients. -/
-private theorem sum_range_mul_pow_mul_mul_pow_sub {R : Type*} [CommSemiring R] (ζ : R)
-    (u v : ℕ → R) (n : ℕ) :
-    ∑ k ∈ range (n + 1), u k * ζ ^ k * (v (n - k) * ζ ^ (n - k)) =
-      ζ ^ n * ∑ k ∈ range (n + 1), u k * v (n - k) := by
-  rw [mul_sum]
-  refine sum_congr rfl fun k hk ↦ ?_
-  rw [← pow_mul_pow_sub ζ (mem_range_succ_iff.mp hk)]
-  ring
 
 /-- The coefficient of `ζⁿ` in the Euler-operator form of the equation, with the forcing term
 `eₙ ζⁿ`, vanishes by the recursion. -/
