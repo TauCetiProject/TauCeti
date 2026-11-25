@@ -263,6 +263,13 @@ theorem norm_apply_le_of_mass_le (T : 𝓕) {C : ℝ≥0} (hT : mass T ≤ C)
   have h := (enorm_apply_le_mass_mul T φ).trans (mul_le_mul' hT le_rfl)
   simpa using ENNReal.toReal_mono (by finiteness) h
 
+/-- A mass bound by a multiple `c M` of a finite `M` controls each evaluation by
+`c M.toReal` times the supremum norm of the test. -/
+theorem norm_apply_le_mul_toReal_mul_of_mass_le (T : 𝓕) {c : ℝ≥0} {M : ℝ≥0∞} (hM : M ≠ ⊤)
+    (hT : mass T ≤ c * M) (φ : 𝓓^{n}(Ω, F)) : ‖T φ‖ ≤ c * M.toReal * ‖(φ : E →ᵇ F)‖ := by
+  simpa [ENNReal.coe_toNNReal_eq_toReal] using norm_apply_le_of_mass_le T (C := c * M.toNNReal)
+    (hT.trans_eq (by rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hM])) φ
+
 /-- **Mass zero iff current zero.** -/
 theorem mass_eq_zero_iff (T : 𝓕) : mass T = 0 ↔ ⇑T = 0 := by
   refine ⟨fun h => funext fun φ => ?_, fun h => h ▸ mass_zero⟩

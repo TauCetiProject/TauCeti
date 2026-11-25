@@ -92,23 +92,6 @@ private theorem exists_cutoff_forall_mem_tsupport_lt {T : 𝓓(Ω, E [⋀^Fin m]
     inter_subset_left
   exact ⟨ψ, hψ, (hχ.and hψ).mono fun x h ↦ h.1.trans h.2.symm, fun x hx ↦ (hψu hx).2⟩
 
-omit [FiniteDimensional ℝ E] [CompleteSpace F] in
-/-- A bound by `(ε + η) p (L + η)` for every `η > 0`, with `p` continuous, passes to `η = 0`. -/
-private theorem le_mul_of_forall_pos_le_add_mul {a ε L : ℝ} {p : ℝ → ℝ} (hp : Continuous p)
-    (h : ∀ η > 0, a ≤ (ε + η) * p (L + η)) : a ≤ ε * p L :=
-  ge_of_tendsto (tendsto_nhdsWithin_of_tendsto_nhds
-    (Continuous.tendsto' (f := fun η ↦ (ε + η) * p (L + η)) (by fun_prop) 0 _ (by simp)))
-    (eventually_nhdsWithin_of_forall (s := Ioi 0) fun η hη ↦ h η hη)
-
-omit [FiniteDimensional ℝ E] [CompleteSpace F] in
-/-- A bound for the mass of a current, by a multiple of a finite mass, bounds its evaluations. -/
-private theorem norm_apply_le_mul_toReal_mul {j : ℕ}
-    (P : 𝓓(Ω', E' [⋀^Fin j]→L[ℝ] F) →L[ℝ] ℝ) {c : ℝ≥0} {M : ℝ≥0∞} (hM : M ≠ ⊤)
-    (hP : mass P ≤ c * M) (φ : 𝓓(Ω', E' [⋀^Fin j]→L[ℝ] F)) :
-    ‖P φ‖ ≤ c * M.toReal * ‖(φ : E' →ᵇ E' [⋀^Fin j]→L[ℝ] F)‖ := by
-  simpa [ENNReal.coe_toNNReal_eq_toReal] using norm_apply_le_of_mass_le P (C := c * M.toNNReal)
-    (hP.trans_eq (by rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hM])) φ
-
 /-- **The homotopy estimate for pushforwards**: let `T` be a normal `(k + 1)`-current whose
 support is a compact subset of `Ω`, and let `f` and `g` be smooth on `Ω`. If `‖g - f‖ ≤ ε` and
 `‖Df‖, ‖Dg‖ ≤ L` on the support of `T`, then the pushforwards `T ∘ (χ f^*)` and `T ∘ (χ g^*)`
@@ -130,10 +113,12 @@ theorem norm_map_cutoffPullbackCLM_sub_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[
           ‖(extDerivCLM ω : E' →ᵇ E' [⋀^Fin (k + 1 + 1)]→L[ℝ] F)‖ +
         L ^ k * (mass (T ∘L extDerivCLM)).toReal *
           ‖(ω : E' →ᵇ E' [⋀^Fin (k + 1)]→L[ℝ] F)‖) := by
-  refine le_mul_of_forall_pos_le_add_mul (p := fun L ↦ L ^ (k + 1) * (mass T).toReal *
+  -- It suffices to prove the bound with `ε + η` and `L + η` for every `η > 0`.
+  refine ge_of_tendsto (f := fun η : ℝ ↦ (ε + η) * ((L + η) ^ (k + 1) * (mass T).toReal *
       ‖(extDerivCLM ω : E' →ᵇ E' [⋀^Fin (k + 1 + 1)]→L[ℝ] F)‖ +
-    L ^ k * (mass (T ∘L extDerivCLM)).toReal * ‖(ω : E' →ᵇ E' [⋀^Fin (k + 1)]→L[ℝ] F)‖)
-    (by fun_prop) fun η hη ↦ ?_
+    (L + η) ^ k * (mass (T ∘L extDerivCLM)).toReal * ‖(ω : E' →ᵇ E' [⋀^Fin (k + 1)]→L[ℝ] F)‖))
+    (tendsto_nhdsWithin_of_tendsto_nhds (Continuous.tendsto' (by fun_prop) 0 _ (by simp)))
+    (eventually_nhdsWithin_of_forall (s := Ioi 0) fun η (hη : 0 < η) ↦ ?_)
   -- Near the support of `T`, the hypotheses hold up to `η`; cut off there.
   have hη' : ((η.toNNReal : ℝ≥0) : ℝ) = η := Real.coe_toNNReal _ hη.le
   have hf' := hf.continuousOn_fderiv_of_isOpen Ω.isOpen (by simp)
@@ -165,8 +150,9 @@ theorem norm_map_cutoffPullbackCLM_sub_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[
         ((ε + η.toNNReal) * (L + η.toNNReal) ^ (k + 1) : ℝ≥0) * (mass T).toReal *
           ‖(extDerivCLM ω : E' →ᵇ E' [⋀^Fin (k + 1 + 1)]→L[ℝ] F)‖ :=
         add_le_add
-          (norm_apply_le_mul_toReal_mul R hT.comp_extDerivCLM.mass_ne_top (by simpa using hR) ω)
-          (norm_apply_le_mul_toReal_mul S hT.mass_ne_top (by simpa using hS) _)
+          (norm_apply_le_mul_toReal_mul_of_mass_le R hT.comp_extDerivCLM.mass_ne_top
+            (by simpa using hR) ω)
+          (norm_apply_le_mul_toReal_mul_of_mass_le S hT.mass_ne_top (by simpa using hS) _)
     _ = _ := by push_cast [hη']; ring
 
 /-- **The homotopy estimate for pushforwards in degree zero**: let `T` be a `0`-current of finite
@@ -179,9 +165,11 @@ theorem norm_map_cutoffPullbackCLM_sub_le_finZero {T : 𝓓(Ω, E [⋀^Fin 0]→
     (hε : ∀ x ∈ dsupport T, ‖g x - f x‖ ≤ ε) (ω : 𝓓(Ω', E' [⋀^Fin 0]→L[ℝ] F)) :
     ‖T (cutoffPullbackCLM χ g hg ω) - T (cutoffPullbackCLM χ f hf ω)‖ ≤
       ε * (mass T).toReal * ‖(extDerivCLM ω : E' →ᵇ E' [⋀^Fin (0 + 1)]→L[ℝ] F)‖ := by
-  rw [mul_assoc]
-  refine le_mul_of_forall_pos_le_add_mul (L := 0) (p := fun _ ↦ (mass T).toReal *
-    ‖(extDerivCLM ω : E' →ᵇ E' [⋀^Fin (0 + 1)]→L[ℝ] F)‖) (by fun_prop) fun η hη ↦ ?_
+  -- It suffices to prove the bound with `ε + η` for every `η > 0`.
+  refine ge_of_tendsto (f := fun η : ℝ ↦ (ε + η) * (mass T).toReal *
+      ‖(extDerivCLM ω : E' →ᵇ E' [⋀^Fin (0 + 1)]→L[ℝ] F)‖)
+    (tendsto_nhdsWithin_of_tendsto_nhds (Continuous.tendsto' (by fun_prop) 0 _ (by simp)))
+    (eventually_nhdsWithin_of_forall (s := Ioi 0) fun η (hη : 0 < η) ↦ ?_)
   have hη' : ((η.toNNReal : ℝ≥0) : ℝ) = η := Real.coe_toNNReal _ hη.le
   obtain ⟨ψ, hψ, hχψ, hψη⟩ := exists_cutoff_forall_mem_tsupport_lt hχ
     (u := fun x ↦ ‖g x - f x‖ - ε)
@@ -197,7 +185,7 @@ theorem norm_map_cutoffPullbackCLM_sub_le_finZero {T : 𝓓(Ω, E [⋀^Fin 0]→
   have hX := congr($heq ω)
   simp only [_root_.sub_apply, ContinuousLinearMap.comp_apply] at hX
   rw [hcut, hcut, hX]
-  refine (norm_apply_le_mul_toReal_mul S hT hS _).trans_eq ?_
+  refine (norm_apply_le_mul_toReal_mul_of_mass_le S hT hS _).trans_eq ?_
   push_cast [hη']
   ring
 
