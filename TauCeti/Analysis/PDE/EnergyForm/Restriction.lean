@@ -68,6 +68,9 @@ integrability hypotheses on `Ω`.
   `a(u, v) = ⟪G - c, ∇v⟫_{L²(B)} + ⟪f, v⟫_{L²(B)}`.
 * `TauCeti.PDE.energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral`: the
   same equation for the restriction of `u` to `B`, tested against test functions on `B`.
+* `TauCeti.PDE.energyFormH1_restrictL_extendByZeroL_eq`: the zero extension of a weak solution
+  `u ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` to an open `W ⊇ Ω`, restricted to `W ∩ Ω`, solves the
+  same equation there, tested against test functions.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_eq_setIntegral`: if `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = f`
   weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
   essentially bounded and `f` is square integrable it satisfies `a(u, v) = ∫_B f v` for every
@@ -600,6 +603,39 @@ theorem energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setInt
   rw [← inner_toLp_gradient_ofTestFunctionₗ hGc φ, ← inner_toLp_value_ofTestFunctionₗ hf φ]
   exact forall_energyFormH1_restrictL_eq_inner_add_inner hB ha hu hGc hf
     ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
+
+/-- **Zero extensions of weak solutions.** The zero extension of a weak solution `u ∈ H¹₀(Ω)` of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` to an open `W ⊇ Ω`, restricted to `W ∩ Ω`, solves the same equation
+there, tested against test functions: it is the restriction of `u` itself. This is the form of a
+zero boundary condition, a function vanishing off `Ω` and solving the equation on `Ω`, that
+boundary regularity estimates take. -/
+theorem energyFormH1_restrictL_extendByZeroL_eq {W : Opens (EuclideanSpace ℝ ι)} (hΩW : Omega ≤ W)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {f : EuclideanSpace ℝ ι → ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
+    (hG : MemLp G 2 (mu.restrict Omega)) (hf : MemLp f 2 (mu.restrict Omega))
+    {u : W1p0 mu Omega 2}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 (u : W1p mu Omega 2)
+        (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu +
+        ∫ x in Omega, f x * φ x ∂mu)
+    (φ : 𝓓(W ⊓ Omega, ℝ)) :
+    energyFormH1 a 0 0 (W1p.restrictL inf_le_left (W1p0.extendByZeroL hΩW u : W1p mu W 2))
+        (W1p.ofTestFunctionₗ mu (W ⊓ Omega) 2 φ) =
+      ∫ x in W ⊓ Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu +
+        ∫ x in W ⊓ Omega, f x * φ x ∂mu := by
+  have hres : W1p.restrictL (inf_le_left : W ⊓ Omega ≤ W)
+      (W1p0.extendByZeroL hΩW u : W1p mu W 2) =
+      W1p.restrictL inf_le_right (u : W1p mu Omega 2) := by
+    conv_rhs => rw [← W1p0.restrictL_extendByZeroL hΩW u]
+    rw [W1p.restrictL_restrictL]
+  have hsub : mu.restrict ((W ⊓ Omega : Opens _) : Set (EuclideanSpace ℝ ι)) ≤
+      mu.restrict (Omega : Set _) :=
+    Measure.restrict_mono (SetLike.coe_subset_coe.mpr inf_le_right) le_rfl
+  rw [hres]
+  exact energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral inf_le_right
+    (ha.mono_measure hsub) hu (c := 0) (by simpa only [sub_zero] using hG.mono_measure hsub)
+    (hf.mono_measure hsub) φ
 
 /-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` on `Ω`, tested against test functions, holds on
 every open `B ⊆ Ω` against all of `H¹₀(B)` once `G` is replaced by `G - c` for a constant `c`,

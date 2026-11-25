@@ -45,7 +45,8 @@ The estimate is assembled from local estimates by a covering argument.
   Hölder constant and the supremum of the precise representative of `∇u` on `B(x, r)` by a
   multiple of `‖u‖_{L²(B(x, 2r))} + ‖f‖_{L^q(B(x, 2r))} + K_G`, the multiple depending on `r`.
 * **Boundary pieces.** Around a frontier point `x`, the zero extension of `u` to the whole space
-  vanishes off `Ω` and solves the equation on `Ω`, so the curved-boundary estimate
+  vanishes off `Ω` and solves the equation on `Ω`
+  (`TauCeti.PDE.energyFormH1_restrictL_extendByZeroL_eq`), so the curved-boundary estimate
   `TauCeti.PDE.exists_holderOnWith_gradient_of_graph` gives a function, `β`-Hölder on
   `closure Ω` near `x`, which agrees with `∇u` almost everywhere there.
 * **Gluing.** The pieces agree with `∇u` almost everywhere, so any two agree where both are
@@ -77,40 +78,6 @@ namespace TauCeti
 namespace PDE
 
 variable {n : ℕ}
-
-/-- The zero extension of a weak solution `u ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` to an open
-`W ⊇ Ω`, restricted to `W ∩ Ω`, solves the same equation there, tested against test functions:
-it is the restriction of `u` itself. This is the form of a zero boundary condition that the
-curved-boundary estimate takes. -/
-private theorem energyFormH1_restrictL_extendByZeroL_eq
-    {Ω W : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (hΩW : Ω ≤ W)
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (volume.restrict (Ω : Set _)))
-    (hG : MemLp G 2 (volume.restrict (Ω : Set _))) (hf : MemLp f 2 (volume.restrict (Ω : Set _)))
-    {u : W1p0 volume Ω 2}
-    (hu : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 (u : W1p volume Ω 2)
-        (W1p.ofTestFunctionₗ volume Ω 2 φ) =
-      (∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
-        ∫ x in Ω, f x * φ x)
-    (φ : 𝓓(W ⊓ Ω, ℝ)) :
-    energyFormH1 a 0 0 (W1p.restrictL inf_le_left (W1p0.extendByZeroL hΩW u : W1p volume W 2))
-        (W1p.ofTestFunctionₗ volume (W ⊓ Ω) 2 φ) =
-      (∫ x in W ⊓ Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
-        ∫ x in W ⊓ Ω, f x * φ x := by
-  have hres : W1p.restrictL (inf_le_left : W ⊓ Ω ≤ W)
-      (W1p0.extendByZeroL hΩW u : W1p volume W 2) =
-      W1p.restrictL inf_le_right (u : W1p volume Ω 2) := by
-    conv_rhs => rw [← W1p0.restrictL_extendByZeroL hΩW u]
-    rw [W1p.restrictL_restrictL]
-  have hsub : volume.restrict ((W ⊓ Ω : Opens _) : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≤
-      volume.restrict (Ω : Set _) :=
-    Measure.restrict_mono (SetLike.coe_subset_coe.mpr inf_le_right) le_rfl
-  rw [hres]
-  exact energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral inf_le_right
-    (ha.mono_measure hsub) hu (c := 0) (by simpa only [sub_zero] using hG.mono_measure hsub)
-    (hf.mono_measure hsub) φ
 
 /-- **Interior pieces.** Around each point `x ∈ Ω` there is a ball `B(x, ρ)` and a constant
 `κ`, depending on `x`, `n`, `α`, `β`, `q`, `λ`, `Λ` and `M`, on which the precise representative

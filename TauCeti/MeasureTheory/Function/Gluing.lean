@@ -11,7 +11,7 @@ public import Mathlib.Topology.Bases
 public import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# Gluing functions along a sequence of sets
+# Gluing functions from local pieces
 
 Functions prescribed on a sequence of measurable sets, which agree almost everywhere on the
 pairwise intersections, come from a single function. This is the step which glues local limits,
@@ -21,6 +21,15 @@ for sequential compactness in `Lᵖ_loc`.
 In a second-countable space, a property holding almost everywhere on each member of an open cover
 of a set holds almost everywhere on that set, even if the cover is uncountable: Mathlib's
 `TopologicalSpace.isOpen_iUnion_countable` extracts a countable subcover.
+
+Pieces that are continuous up to the boundary are determined by their almost-everywhere values:
+for a measure charging every nonempty open set, two functions continuous on `closure U ∩ V`, for
+open `U` and `V`, which agree almost everywhere on `U ∩ V` agree on `closure U ∩ V`. Consequently
+bounded Hölder functions on the balls of a cover of a compact closure `closure U`, each agreeing
+almost everywhere on `U` with one function `F`, glue along a finite subcover to a single bounded
+Hölder function on `closure U`. Its constant depends only on `U`, the radii and weights of the
+cover and the exponent, so it is uniform over all such families of pieces. This is the step that
+assembles local regularity estimates, in the interior and up to the boundary, into global ones.
 
 ## Main results
 
