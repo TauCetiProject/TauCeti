@@ -86,8 +86,8 @@ private theorem mem_range_map_of_mk_mem {M : GL (Fin 2) K}
   obtain ⟨v, hv⟩ := IsDiscreteValuationRing.exists_algebraMap_eq_of_pow_eq_algebraMap two_ne_zero
     (x := (u : K)) (w := w * (GeneralLinearGroup.det y)⁻¹)
     (by
-      rw [Units.val_mul, map_mul, ← hdet, mul_comm (algebraMap R K _), mul_assoc, ← map_mul,
-        Units.mul_inv, map_one, mul_one])
+      simp only [Units.val_mul, map_mul, map_units_inv, ← hdet, mul_right_comm _ (_ ^ 2),
+        mul_inv_cancel₀ ((GeneralLinearGroup.det y).isUnit.map (algebraMap R K)).ne_zero, one_mul])
   refine ⟨y * GeneralLinearGroup.scalar (Fin 2) v, ?_⟩
   rw [map_mul, GeneralLinearGroup.map_scalar, ← hu]
   congr 2
@@ -112,11 +112,13 @@ theorem comap_conj_smul_range_eq_GL2K0 (hϖ : Irreducible ϖ) (hπ : algebraMap 
   have hentry (i j : Fin 2) : ((diagGL ![1, π ^ k])⁻¹ *
       GeneralLinearGroup.map (algebraMap R K) x * diagGL ![1, π ^ k] : GL (Fin 2) K) i j =
         ((![1, π ^ k] i)⁻¹ : Kˣ) * algebraMap R K (x i j) * (![1, π ^ k] j : Kˣ) := by
-    rw [← map_inv, Units.val_mul, Units.val_mul, diagGL_coe, diagGL_coe, mul_diagonal,
-      diagonal_mul, GeneralLinearGroup.map_apply, Pi.inv_apply]
-  rw [Subgroup.mem_comap, Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv,
-    MulAut.smul_def, MulAut.conj_apply, inv_inv, MonoidHom.comp_apply, ← map_inv, ← map_mul,
-    ← map_mul, GL2K0.mem_iff, hmax, Ideal.mem_span_singleton]
+    rw [← map_inv]
+    simp only [Units.val_mul, diagGL_coe, mul_diagonal, diagonal_mul, GeneralLinearGroup.map_apply,
+      Pi.inv_apply]
+  rw [Subgroup.mem_comap, Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv]
+  simp only [MulAut.smul_def, MulAut.conj_apply, inv_inv, MonoidHom.comp_apply,
+    ← map_inv ProjGenLinGroup.mk, ← map_mul ProjGenLinGroup.mk, GL2K0.mem_iff, hmax,
+    Ideal.mem_span_singleton]
   constructor
   · intro hmem
     obtain ⟨y, hy⟩ := mem_range_map_of_mk_mem hmem (w := GeneralLinearGroup.det x)
@@ -153,6 +155,17 @@ private theorem diagGL_pow_eq_diagGL_zpow (k : ℕ) :
   fin_cases i <;> simp
 
 omit [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K] in
+/-- A diagonal matrix `diag(π^c, π^(c + k))` of powers of `π` is the scalar `π^c` times
+`diag(1, πᵏ)`. -/
+private theorem diagGL_zpow_eq_scalar_mul_diagGL_pow {a : Fin 2 → ℤ} {c : ℤ} {k : ℕ}
+    (h0 : a 0 = c) (h1 : a 1 = c + k) :
+    (diagGL fun i ↦ π ^ a i) = GeneralLinearGroup.scalar (Fin 2) (π ^ c) * diagGL ![1, π ^ k] := by
+  rw [← diagGL_const_mul]
+  congr 1
+  ext i : 1
+  fin_cases i <;> simp [h0, h1, ← zpow_natCast, ← _root_.zpow_add]
+
+omit [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K] in
 /-- The double coset of `diag(1, π⁰) = 1` is `Γ` itself. -/
 theorem doubleCoset_mk_diagGL_pow_zero :
     doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ 0]))
@@ -186,12 +199,8 @@ theorem exists_mem_doubleCoset_mk_diagGL_pow (hϖ : Irreducible ϖ) (hπ : algeb
   have hmk : ProjGenLinGroup.mk (diagGL fun i ↦ π ^ a i) =
       ProjGenLinGroup.mk (diagGL ![1, π ^ (a 1 - a 0).toNat]) := by
     have hD : (diagGL fun i ↦ π ^ a i) = GeneralLinearGroup.scalar (Fin 2) (π ^ a 0) *
-        diagGL ![1, π ^ (a 1 - a 0).toNat] := by
-      rw [← diagGL_const_mul]
-      congr 1
-      ext i : 1
-      fin_cases i <;> simp [← zpow_natCast, ← _root_.zpow_add,
-        Int.toNat_of_nonneg (sub_nonneg.mpr ha01)]
+        diagGL ![1, π ^ (a 1 - a 0).toNat] :=
+      diagGL_zpow_eq_scalar_mul_diagGL_pow rfl (by omega)
     rw [hD, map_mul, ProjGenLinGroup.mk_scalar, one_mul]
   have h := Set.mem_image_of_mem ProjGenLinGroup.mk hM
   rwa [DoubleCoset.image_doubleCoset, himage, hmk] at h
@@ -227,17 +236,13 @@ theorem eq_of_mem_doubleCoset_mk_diagGL_pow (hϖ : Irreducible ϖ) (hπ : algebr
         (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).range := by
     refine mem_doubleCoset.mpr
       ⟨_, ⟨x, rfl⟩, _, ⟨y * GeneralLinearGroup.scalar (Fin 2) v, rfl⟩, ?_⟩
-    have hc := Subgroup.mem_center_iff.mp (scalar_mem_center (ι := Fin 2) (π ^ j))
     have hD : (diagGL fun i ↦ π ^ (![j, (l : ℤ) + j] i)) =
-        GeneralLinearGroup.scalar (Fin 2) (π ^ j) * diagGL ![1, π ^ l] := by
-      rw [← diagGL_const_mul]
-      congr 1
-      ext i : 1
-      fin_cases i <;> simp [← zpow_natCast, ← _root_.zpow_add, add_comm]
+        GeneralLinearGroup.scalar (Fin 2) (π ^ j) * diagGL ![1, π ^ l] :=
+      diagGL_zpow_eq_scalar_mul_diagGL_pow (by simp) (by simp [add_comm])
     rw [← diagGL_pow_eq_diagGL_zpow, ← hu, huv, hD]
     simp only [map_mul, GeneralLinearGroup.map_scalar, mul_assoc]
     congr 1
-    rw [← hc]
+    rw [GeneralLinearGroup.scalar_commute (π ^ j)]
     simp only [mul_assoc]
   have hmono (c d : ℤ) (hcd : c ≤ d) : Monotone ![c, d] := fun i i' hii' ↦ by
     fin_cases i <;> fin_cases i' <;> simp_all
@@ -272,8 +277,9 @@ private theorem inv_mem_doubleCoset_mk_diagGL_pow (k : ℕ) :
   simp only [MonoidHom.comp_apply]
   rw [← map_mul, ← map_mul, ← map_inv, ProjGenLinGroup.mk_eq_mk_iff]
   refine ⟨π ^ k, Units.ext ?_⟩
-  rw [← map_inv, Units.val_mul, Units.val_mul, Units.val_mul, GeneralLinearGroup.coe_scalar,
-    diagGL_coe, diagGL_coe, GeneralLinearGroup.val_map_apply, coe_gl2WeylElement]
+  rw [← map_inv]
+  simp only [Units.val_mul, GeneralLinearGroup.coe_scalar, diagGL_coe,
+    GeneralLinearGroup.val_map_apply, coe_gl2WeylElement]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two, -Units.val_pow_eq_pow_val]

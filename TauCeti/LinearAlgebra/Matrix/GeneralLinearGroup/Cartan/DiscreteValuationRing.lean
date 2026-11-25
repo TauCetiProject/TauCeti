@@ -123,8 +123,8 @@ theorem exists_monotone_mem_doubleCoset_diagGL_zpow (hϖ : Irreducible ϖ)
         diagGL (fun i ↦ π ^ (e i : ℤ)) *
           GeneralLinearGroup.map (algebraMap R K) Q'⁻¹ := by
     refine Units.ext ?_
-    rw [Units.val_mul, GeneralLinearGroup.coe_scalar, scalar_apply, ← smul_eq_diagonal_mul,
-      zpow_natCast, Units.val_pow_eq_pow_val, ← hπ, ← hA, ← hA']
+    simp only [Units.val_mul, GeneralLinearGroup.coe_scalar, scalar_apply, ← smul_eq_diagonal_mul]
+    rw [zpow_natCast π m, Units.val_pow_eq_pow_val, ← hπ, ← hA, ← hA']
     simp only [Units.val_mul, coe_diagGL_zpow_natCast hπ, GeneralLinearGroup.val_map_apply,
       diagGL_coe, ← RingHom.mapMatrix_apply, ← map_mul]
     rw [show s = fun i ↦ (u i : R) * ϖ ^ e i from funext hsu, ← diagonal_mul_diagonal]
@@ -133,8 +133,8 @@ theorem exists_monotone_mem_doubleCoset_diagGL_zpow (hϖ : Irreducible ϖ)
   have hg : g = GeneralLinearGroup.scalar (Fin n) (π ^ (-(m : ℤ))) *
       (GeneralLinearGroup.scalar (Fin n) (π ^ (m : ℤ)) * g) := by
     rw [← mul_assoc, ← map_mul, ← _root_.zpow_add, neg_add_cancel, zpow_zero, map_one, one_mul]
-  have hc := Subgroup.mem_center_iff.mp (scalar_mem_center (ι := Fin n) (π ^ (-(m : ℤ))))
-  rw [hg, hmat, diagGL_zpow_add_const, ← mul_assoc _ (GeneralLinearGroup.scalar _ _), hc]
+  rw [hg, hmat, diagGL_zpow_add_const, ← mul_assoc _ (GeneralLinearGroup.scalar _ _),
+    ← GeneralLinearGroup.scalar_commute]
   simp only [mul_assoc]
 
 /-- Two diagonal elements `diag(π^a)` and `diag(π^b)` of `GLₙ(K)` with monotone exponents lie in the
@@ -164,14 +164,13 @@ private theorem eq_of_monotone_of_diagGL_zpow_mem_doubleCoset (hϖ : Irreducible
   have hGL : (diagGL fun i ↦ π ^ (α i : ℤ) : GL (Fin n) K) =
       GeneralLinearGroup.map (algebraMap R K) x * diagGL (fun i ↦ π ^ (β i : ℤ)) *
         GeneralLinearGroup.map (algebraMap R K) y := by
-    have hc := Subgroup.mem_center_iff.mp (scalar_mem_center (ι := Fin n) (π ^ (m : ℤ)))
     simp only [hαa, hβb, diagGL_zpow_add_const, hxy, ← mul_assoc]
-    rw [hc]
+    rw [← GeneralLinearGroup.scalar_commute]
   have hR := congrArg (fun g : GL (Fin n) K ↦ (g : Matrix (Fin n) (Fin n) K)) hGL
   simp only [Units.val_mul, coe_diagGL_zpow_natCast hπ, GeneralLinearGroup.val_map_apply,
     ← RingHom.mapMatrix_apply, ← map_mul] at hR
   have hαβ := eq_of_mul_mul_eq_diagonal_pow (L := 1) (Q := 1) hϖ hαmono hβmono (by simp) (by simp)
-    (GeneralLinearGroup.det x⁻¹).isUnit (GeneralLinearGroup.det y⁻¹).isUnit
+    (isUnits_det_units x⁻¹) (isUnits_det_units y⁻¹)
     (by rw [Matrix.one_mul, Matrix.mul_one])
     ((GeneralLinearGroup.inv_mul_mul_inv_eq_iff_mul_mul_eq x y).2
       (Matrix.map_injective (IsFractionRing.injective R K) hR).symm)
