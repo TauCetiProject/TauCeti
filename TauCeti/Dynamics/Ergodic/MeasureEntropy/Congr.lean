@@ -43,25 +43,20 @@ namespace TauCeti
 
 variable {X ι κ ι' : Type*} {mX : MeasurableSpace X} {μ : Measure X}
 
-/-- Almost-everywhere equal labels have almost-everywhere equal atoms. -/
-theorem preimage_singleton_ae_eq {a a' : X → ι} (h : a =ᵐ[μ] a') (i : ι) :
-    a ⁻¹' {i} =ᵐ[μ] a' ⁻¹' {i} :=
-  h.mono fun x hx ↦ by simp [Set.mem_preimage, hx]
-
 /-- Almost-everywhere equal labels have equal entropy. No measurability is needed: the atoms
 differ by null sets. -/
 theorem countablePartitionEntropy_congr_ae {a a' : X → ι} (h : a =ᵐ[μ] a') :
     countablePartitionEntropy μ a = countablePartitionEntropy μ a' := by
   simp only [countablePartitionEntropy_def, measureReal_def,
-    measure_congr (preimage_singleton_ae_eq h _)]
+    measure_congr (h.preimage _)]
 
 /-- Almost-everywhere equal labels have equal conditional entropy. -/
 theorem conditionalPartitionEntropy_congr_ae {a a' : X → ι} {b b' : X → κ} (ha : a =ᵐ[μ] a')
     (hb : b =ᵐ[μ] b') :
     conditionalPartitionEntropy μ a b = conditionalPartitionEntropy μ a' b' := by
   simp only [conditionalPartitionEntropy_def, measureReal_def,
-    measure_congr ((preimage_singleton_ae_eq ha _).inter (preimage_singleton_ae_eq hb _)),
-    measure_congr (preimage_singleton_ae_eq hb _)]
+    measure_congr ((ha.preimage _).inter (hb.preimage _)),
+    measure_congr (hb.preimage _)]
 
 /-- Almost-everywhere equality passes to joins, so joins of almost-everywhere equal labels have
 equal entropy. -/
