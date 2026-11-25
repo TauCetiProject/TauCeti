@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf
 
 /-!
@@ -13,8 +14,7 @@ public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf
 Let `S` be a scheme. The big-site module `(𝒪_S)^a : (T, h) ↦ Γ(T, h^* 𝒪_S)` of the structure sheaf
 (`AlgebraicGeometry.Scheme.Modules.bigSheaf`) is the unit module over the big structure sheaf
 `T ↦ Γ(T, 𝒪_T)`: the identifications `h^* 𝒪_S ≅ 𝒪_T` (`Scheme.Modules.pullbackObjUnitIso`) are
-compatible with the restriction maps of the big site. This is `bigSheaf_structureSheaf` of
-SchemeAndStackFoundations §2.9.
+compatible with the restriction maps of the big site.
 
 The isomorphism is built from the global section `1` of the unit module: its image is the family
 of sections `(h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1 ∈ Γ(T, h^* 𝒪_S)`, which is compatible with restriction
@@ -23,7 +23,7 @@ of sections `(h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1 ∈ Γ(T, h^* 𝒪_S)`, which is com
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.bigSheafUnitSection`: the global section `(1)_T` of
+* `AlgebraicGeometry.Scheme.bigSheafUnitSection`: the global section `(1)_T` of
   `(𝒪_S)^a`.
 * `AlgebraicGeometry.Scheme.bigSheafUnitIso`: `(𝒪_S)^a ≅ unit`, the big-site module of the
   structure sheaf is the unit module over the big structure sheaf.
@@ -47,41 +47,45 @@ lemma bigSectionsRestrict_pullbackObjUnitIso_inv_one {T T' : Over S} (f : T ⟶ 
     bigSectionsRestrict (𝟙_ S.Modules) f
         ((pullbackObjUnitIso T'.hom).inv.app ⊤ (1 : Γ(T'.left, ⊤))) =
       (pullbackObjUnitIso T.hom).inv.app ⊤ (1 : Γ(T.left, ⊤)) := by
-  have hu := Hom.pullbackSections_comp_of_eq T'.hom (𝟙_ S.Modules) f.left (Over.w f)
-    (1 : Γ(S, ⊤))
-  rw [← Hom.pullbackObjUnitIso_inv_app_one T'.hom, ← Hom.pullbackObjUnitIso_inv_app_one] at hu
-  rw [bigSectionsRestrict_apply, ← hu]
-  have e : ((pullbackCongr (Over.w f)).inv.app (𝟙_ S.Modules) ≫
-      (pullbackComp f.left T'.hom).inv.app (𝟙_ S.Modules)) ≫
-        ((pullbackComp f.left T'.hom).hom.app (𝟙_ S.Modules) ≫
-          (pullbackCongr (Over.w f)).hom.app (𝟙_ S.Modules)) = 𝟙 _ := by
-    simp
-  exact congr(Hom.app $e ⊤ ((pullbackObjUnitIso T.hom).inv.app ⊤ (1 : Γ(T.left, ⊤))))
+  -- Both sections are pullbacks of `1 : Γ(S, ⊤)`: this is `bigSectionsRestrict_pullbackSectionsLE`.
+  have e (X : Scheme.{u}) (g : X ⟶ S) :
+      g.pullbackSectionsLE (𝟙_ S.Modules) ⊤ ⊤ le_top (1 : Γ(S, ⊤)) =
+        (pullbackObjUnitIso g).inv.app ⊤ (1 : Γ(X, ⊤)) :=
+    (g.pullbackSectionsLE_self _ ⊤ _).trans (Hom.pullbackObjUnitIso_inv_app_one g).symm
+  rw [← e, ← e]
+  exact bigSectionsRestrict_pullbackSectionsLE _ f ⊤ le_top le_top _
+
+end Modules
 
 /-- The global section `(1)_T = (h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1` of the big-site module `(𝒪_S)^a` of the
 structure sheaf. -/
 noncomputable def bigSheafUnitSection (S : Scheme.{u}) :
-    (bigSheaf (𝟙_ S.Modules)).val.sections :=
+    (Modules.bigSheaf (𝟙_ S.Modules)).val.sections :=
   PresheafOfModules.sectionsMk
-    (fun T ↦ (pullbackObjUnitIso T.unop.hom).inv.app ⊤ (1 : Γ(T.unop.left, ⊤)))
-    fun _ _ f ↦ bigSectionsRestrict_pullbackObjUnitIso_inv_one f.unop
+    (fun T ↦ (Modules.pullbackObjUnitIso T.unop.hom).inv.app ⊤ (1 : Γ(T.unop.left, ⊤)))
+    fun _ _ f ↦ Modules.bigSectionsRestrict_pullbackObjUnitIso_inv_one f.unop
 
-end Modules
+/-- Over an `S`-scheme `T`, the section `bigSheafUnitSection S` is `(h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1`. -/
+@[simp]
+lemma bigSheafUnitSection_eval (S : Scheme.{u}) (T : Over S) :
+    (bigSheafUnitSection S).eval (op T) =
+      (Modules.pullbackObjUnitIso T.hom).inv.app ⊤ (1 : Γ(T.left, ⊤)) :=
+  (rfl)
 
 /-- The morphism from the unit module over the big structure sheaf to the big-site module of the
 structure sheaf `𝒪_S` sending `1` to the section `(h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1`. -/
 noncomputable def unitToBigSheafUnit (S : Scheme.{u}) :
     SheafOfModules.unit (bigRingCatSheaf S) ⟶ Modules.bigSheaf (𝟙_ S.Modules) :=
-  (Modules.bigSheaf (𝟙_ S.Modules)).unitHomEquiv.symm (Modules.bigSheafUnitSection S)
+  (Modules.bigSheaf (𝟙_ S.Modules)).unitHomEquiv.symm (bigSheafUnitSection S)
 
 /-- On `Γ(T, 𝒪_T)`, the morphism `unitToBigSheafUnit S` is the inverse of the identification
 `h^* 𝒪_S ≅ 𝒪_T` on global sections. -/
 lemma unitToBigSheafUnit_val_app_apply (S : Scheme.{u}) (T : Over S) (r : Γ(T.left, ⊤)) :
     (unitToBigSheafUnit S).val.app (op T) r = (Modules.pullbackObjUnitIso T.hom).inv.app ⊤ r := by
-  change r • (Modules.pullbackObjUnitIso T.hom).inv.app ⊤ (1 : Γ(T.left, ⊤)) = _
-  exact (Modules.Hom.app_smul (Modules.pullbackObjUnitIso T.hom).inv r
-    (show Γ(𝟙_ T.left.Modules, ⊤) from (1 : Γ(T.left, ⊤)))).symm.trans
-      (congrArg _ (mul_one r))
+  -- The unit module of `T` has the sections of `𝒪_T` as its sections, so `r • 1 = r * 1 = r`.
+  exact (TauCeti.SheafOfModules.unitHomEquiv_symm_val_app (bigSheafUnitSection S) (op T) r).trans
+    ((Modules.Hom.app_smul (Modules.pullbackObjUnitIso T.hom).inv r _).symm.trans
+      (congrArg _ (mul_one r)))
 
 /-- On each `S`-scheme `T`, the morphism `unitToBigSheafUnit S` is bijective: it is the inverse of
 the identification `h^* 𝒪_S ≅ 𝒪_T` on global sections. -/
@@ -96,23 +100,20 @@ lemma bijective_unitToBigSheafUnit_val_app (S : Scheme.{u}) (T : Over S) :
       congr(Modules.Hom.app $((Modules.pullbackObjUnitIso T.hom).hom_inv_id) ⊤ x)
 
 /-- The morphism `unitToBigSheafUnit S` is an isomorphism. -/
-instance isIso_unitToBigSheafUnit (S : Scheme.{u}) : IsIso (unitToBigSheafUnit S) := by
-  have (T : (Over S)ᵒᵖ) : IsIso ((unitToBigSheafUnit S).val.app T) :=
-    (ConcreteCategory.isIso_iff_bijective _).2 (bijective_unitToBigSheafUnit_val_app S T.unop)
-  have : IsIso ((SheafOfModules.forget (bigRingCatSheaf S)).map (unitToBigSheafUnit S)) :=
-    (PresheafOfModules.isoMk (fun T ↦ asIso ((unitToBigSheafUnit S).val.app T))
-      fun _ _ f ↦ (unitToBigSheafUnit S).val.naturality f).isIso_hom
-  exact isIso_of_reflects_iso _ (SheafOfModules.forget (bigRingCatSheaf S))
+instance isIso_unitToBigSheafUnit (S : Scheme.{u}) : IsIso (unitToBigSheafUnit S) :=
+  TauCeti.SheafOfModules.isIso_unitHomEquiv_symm (bigSheafUnitSection S) fun T ↦
+    bijective_unitToBigSheafUnit_val_app S T.unop
 
-/-- **`bigSheaf_structureSheaf`.** The big-site module `(𝒪_S)^a : (T, h) ↦ Γ(T, h^* 𝒪_S)` of the
-structure sheaf is the unit module over the big structure sheaf `T ↦ Γ(T, 𝒪_T)`, through the
-identifications `h^* 𝒪_S ≅ 𝒪_T`. -/
+/-- The big-site module `(𝒪_S)^a : (T, h) ↦ Γ(T, h^* 𝒪_S)` of the structure sheaf is the unit
+module over the big structure sheaf `T ↦ Γ(T, 𝒪_T)`, through the identifications
+`h^* 𝒪_S ≅ 𝒪_T`. -/
 noncomputable def bigSheafUnitIso (S : Scheme.{u}) :
     Modules.bigSheaf (𝟙_ S.Modules) ≅ SheafOfModules.unit (bigRingCatSheaf S) :=
   (asIso (unitToBigSheafUnit S)).symm
 
 /-- The inverse of `bigSheafUnitIso S` is `unitToBigSheafUnit S`, which sends `1` to the section
 `(h^* 𝒪_S ≅ 𝒪_T)⁻¹ 1`. -/
+@[simp]
 lemma bigSheafUnitIso_inv (S : Scheme.{u}) : (bigSheafUnitIso S).inv = unitToBigSheafUnit S :=
   (rfl)
 
