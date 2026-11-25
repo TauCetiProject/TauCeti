@@ -302,9 +302,11 @@ instance instStarCompCommutePi {ι : Type*} [Finite ι] (F : ι → Type*) [∀ 
     [∀ i, StarCompCommute (F i)] : StarCompCommute (∀ i, F i) where
   star_comp σ φ := by
     obtain ⟨i, ψ, h⟩ := AlgHom.exists_eq_comp_piEvalAlgHom φ.toNatAlgHom
-    obtain rfl : φ = (ψ : F i →+* ℂ).comp (Pi.evalRingHom F i) := RingHom.ext (AlgHom.congr_fun h)
+    obtain rfl : φ = (ψ : F i →+* ℂ).comp (Pi.evalRingHom F i) := RingHom.ext fun x ↦ by
+      simpa using (AlgHom.congr_fun h x).trans (AlgHom.comp_apply ψ (Pi.evalAlgHom ℕ F i) x)
     ext x
-    exact RingHom.congr_fun (StarCompCommute.star_comp σ (ψ : F i →+* ℂ)) (x i)
+    simpa [RingHom.star_apply, RingHom.comp_apply] using
+      RingHom.congr_fun (StarCompCommute.star_comp σ (ψ : F i →+* ℂ)) (x i)
 
 section StarCompCommute
 

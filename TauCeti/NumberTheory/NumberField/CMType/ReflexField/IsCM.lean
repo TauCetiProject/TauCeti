@@ -117,7 +117,8 @@ theorem isConj_reflexFieldConj [StarCompCommute E] [Algebra ℚ E] [FiniteDimens
     (Φ : CMType E) (ρ : Φ.reflexField →+* ℂ) : IsConj ρ Φ.reflexFieldConj := by
   obtain ⟨σ, hσ⟩ := IntermediateField.exists_ringEquiv_apply_eq_of_isAlgebraic Φ.reflexField ρ
   refine RingHom.ext fun x ↦ ?_
-  rw [conjugate_coe_eq, RingHom.comp_apply, ← hσ, ← hσ]
+  rw [conjugate_coe_eq, RingHom.comp_apply, ← hσ, ← hσ, RingHom.coe_coe,
+    coe_reflexFieldConj_apply]
   exact (Φ.apply_conj_eq_conj_apply σ x.property).symm
 
 /-- Complex conjugation is not the identity on the reflex field of a CM type on a ring with a
