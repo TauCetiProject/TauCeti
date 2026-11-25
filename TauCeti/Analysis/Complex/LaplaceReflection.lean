@@ -55,6 +55,8 @@ Laplace equation; it needs no hypothesis on `R`.
 ## Main definitions
 
 * `TauCeti.twistedReflection`: the reflection of a function across the real axis twisted by `R`.
+* `TauCeti.twistedSchwarzReflection`: the same reflection keeping the values on the axis, which is
+  continuous when the values on the axis are fixed by `R`.
 
 ## Main results
 
@@ -204,6 +206,50 @@ theorem twistedReflection_id_ae_eq_evenReflection (ξ : ℂ → V) :
   · rw [twistedReflection_of_im_neg hz, evenReflection_of_nonpos hz.le,
       ContinuousLinearMap.id_apply]
   · rw [twistedReflection_of_im_pos hz, evenReflection_of_nonneg hz.le]
+
+/-- The reflection of `ξ : ℂ → V` across the real axis twisted by `R` that keeps the values of `ξ`
+on the axis: it is `ξ z` for `0 ≤ im z` and `R (ξ (conj z))` for `im z < 0`. It agrees almost
+everywhere with `TauCeti.twistedReflection R ξ`
+(`TauCeti.twistedSchwarzReflection_ae_eq_twistedReflection`), and, unlike it, is continuous when
+`ξ` is continuous up to the axis with values fixed by `R` there
+(`TauCeti.continuousOn_twistedSchwarzReflection`). Twisted by `star` it is
+`TauCeti.starSchwarzReflection`. -/
+def twistedSchwarzReflection (R : V →L[ℝ] V) (ξ : ℂ → V) (z : ℂ) : V :=
+  if 0 ≤ z.im then ξ z else R (ξ (conj z))
+
+/-- The defining formula of `TauCeti.twistedSchwarzReflection`. -/
+theorem twistedSchwarzReflection_def (R : V →L[ℝ] V) (ξ : ℂ → V) (z : ℂ) :
+    twistedSchwarzReflection R ξ z = if 0 ≤ z.im then ξ z else R (ξ (conj z)) :=
+  (rfl)
+
+/-- On the closed upper half-plane `TauCeti.twistedSchwarzReflection R ξ` is `ξ`. -/
+@[simp]
+theorem twistedSchwarzReflection_of_im_nonneg (hz : 0 ≤ z.im) :
+    twistedSchwarzReflection R ξ z = ξ z := by
+  rw [twistedSchwarzReflection_def, ite_eq_left hz]
+
+/-- Below the real axis `TauCeti.twistedSchwarzReflection R ξ` is `R` applied to `ξ` at the mirror
+point. -/
+@[simp]
+theorem twistedSchwarzReflection_of_im_neg (hz : z.im < 0) :
+    twistedSchwarzReflection R ξ z = R (ξ (conj z)) := by
+  rw [twistedSchwarzReflection_def, ite_eq_right (not_le.2 hz)]
+
+/-- The two twisted reflections differ only on the real axis, a null set. -/
+theorem twistedSchwarzReflection_ae_eq_twistedReflection (R : V →L[ℝ] V) (ξ : ℂ → V) :
+    twistedSchwarzReflection R ξ =ᵐ[volume] twistedReflection R ξ := by
+  filter_upwards [Complex.ae_im_ne_zero] with z hz
+  rcases lt_or_gt_of_ne hz with hz | hz
+  · rw [twistedSchwarzReflection_of_im_neg hz, twistedReflection_of_im_neg hz]
+  · rw [twistedSchwarzReflection_of_im_nonneg hz.le, twistedReflection_of_im_pos hz]
+
+/-- **Continuity of the twisted reflection.** On a conjugation-invariant set `Ω`, if `ξ` is
+continuous on `Ω ∩ {0 ≤ im}` and `R` fixes its values at the real points of `Ω`, then
+`TauCeti.twistedSchwarzReflection R ξ` is continuous on `Ω`. -/
+theorem continuousOn_twistedSchwarzReflection {Ω : Set ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+    (hξ : ContinuousOn ξ (Ω ∩ {z | 0 ≤ z.im})) (hR : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (ξ x) = ξ x) :
+    ContinuousOn (twistedSchwarzReflection R ξ) Ω :=
+  hξ.ite_conj hΩ R.continuous hR
 
 /-! ### Local integrability -/
 

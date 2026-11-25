@@ -81,6 +81,9 @@ a continuous `J` with weak derivative up to the boundary it holds when `J(s)` an
 * `TauCeti.eLpNorm_twistedReflection_le`: on a conjugation-invariant set, the twisted reflection
   by a map `L` with `‖L v‖ ≤ ‖v‖` at most doubles the `Lᵖ` norm up to the axis, for `1 ≤ p`;
   the measurability is `MeasureTheory.AEStronglyMeasurable.twistedReflection`.
+* `TauCeti.MemWkpLoc.twistedSchwarzReflection`: a continuous `W^{1,p}_loc` map up to the axis,
+  with values on the axis fixed by `L`, has a `W^{1,p}_loc` twisted reflection on the doubled
+  domain.
 
 ## References
 
@@ -102,13 +105,35 @@ section Coefficients
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {R : W ≃L[ℝ] W}
   {J S : ℂ → W →L[ℝ] W} {DJ : ℂ → ℂ →L[ℝ] W →L[ℝ] W}
 
+/-- The map `M ↦ -R M R⁻¹` on `W →L[ℝ] W`, by which `TauCeti.crReflectionCoeff` reflects the
+leading coefficient below the axis. -/
+def crReflectionCoeffMap (R : W ≃L[ℝ] W) : (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W :=
+  -(R.conjContinuousAlgEquiv.toContinuousLinearEquiv : (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W)
+
+/-- `TauCeti.crReflectionCoeffMap` as the negated conjugation by `R`. -/
+theorem crReflectionCoeffMap_def (R : W ≃L[ℝ] W) :
+    crReflectionCoeffMap R =
+      -(R.conjContinuousAlgEquiv.toContinuousLinearEquiv : (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W) :=
+  (rfl)
+
+@[simp]
+theorem crReflectionCoeffMap_apply_apply (R : W ≃L[ℝ] W) (M : W →L[ℝ] W) (v : W) :
+    crReflectionCoeffMap R M v = -R (M (R.symm v)) := by
+  simp [crReflectionCoeffMap_def]
+
+/-- The map `M ↦ -R M R⁻¹` fixes every `M` anticommuting with `R`. -/
+theorem crReflectionCoeffMap_apply_eq_self {M : W →L[ℝ] W} (hM : ∀ v, R (M v) = -M (R v)) :
+    crReflectionCoeffMap R M = M := by
+  ext v
+  simp [hM]
+
 /-- The **reflection of the leading coefficient** across the real axis by `R`: the twisted
-reflection (`TauCeti.twistedReflection`) of `J` by `M ↦ -R M R⁻¹`, so `J` above the axis and
-`-R J(conj z) R⁻¹` below it. Then `∂_s + J' ∂_t`, for this reflected coefficient `J'`, maps
-fields reflected by `R` to fields reflected by `R`. -/
+reflection (`TauCeti.twistedReflection`) of `J` by `M ↦ -R M R⁻¹`
+(`TauCeti.crReflectionCoeffMap`), so `J` above the axis and `-R J(conj z) R⁻¹` below it. Then
+`∂_s + J' ∂_t`, for this reflected coefficient `J'`, maps fields reflected by `R` to fields
+reflected by `R`. -/
 def crReflectionCoeff (R : W ≃L[ℝ] W) (J : ℂ → W →L[ℝ] W) : ℂ → W →L[ℝ] W :=
-  twistedReflection (-(R.conjContinuousAlgEquiv.toContinuousLinearEquiv :
-    (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W)) J
+  twistedReflection (crReflectionCoeffMap R) J
 
 /-- The **reflection of the derivative of the leading coefficient**: the twisted reflection of
 `DJ` by `D ↦ (h ↦ -R D(conj h) R⁻¹)`, the derivative of `TauCeti.crReflectionCoeff R J` below the
@@ -127,8 +152,7 @@ def crReflectionZeroth (R : W ≃L[ℝ] W) (S : ℂ → W →L[ℝ] W) : ℂ →
 
 /-- `TauCeti.crReflectionCoeff` as a twisted reflection. -/
 theorem crReflectionCoeff_def (R : W ≃L[ℝ] W) (J : ℂ → W →L[ℝ] W) :
-    crReflectionCoeff R J = twistedReflection (-(R.conjContinuousAlgEquiv.toContinuousLinearEquiv :
-      (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W)) J :=
+    crReflectionCoeff R J = twistedReflection (crReflectionCoeffMap R) J :=
   (rfl)
 
 /-- `TauCeti.crReflectionDeriv` as a twisted reflection. -/
@@ -195,6 +219,17 @@ theorem crReflectionCoeff_mul_self_of_im_neg (hz : z.im < 0)
   have h := congrArg (fun M : W →L[ℝ] W => M (R.symm v)) hJ
   simp only [mul_apply_eq_comp, neg_apply, one_apply_eq_self] at h
   simp [crReflectionCoeff_apply_of_im_neg hz, h]
+
+/-- Below the axis the reflection of `J` by `M ↦ -R M R⁻¹` that keeps its values on the axis
+squares to `-1` where `J` does at the conjugate point: `(R J R⁻¹)² = R J² R⁻¹`. -/
+theorem twistedSchwarzReflection_crReflectionCoeffMap_comp_self_of_im_neg (hz : z.im < 0)
+    (hJ : J (conj z) ∘L J (conj z) = -ContinuousLinearMap.id ℝ W) :
+    twistedSchwarzReflection (crReflectionCoeffMap R) J z ∘L
+      twistedSchwarzReflection (crReflectionCoeffMap R) J z = -ContinuousLinearMap.id ℝ W := by
+  ext v
+  have h := congrArg (fun M : W →L[ℝ] W => M (R.symm v)) hJ
+  simp only [ContinuousLinearMap.comp_apply, neg_apply, ContinuousLinearMap.id_apply] at h
+  simp [twistedSchwarzReflection_of_im_neg hz, h]
 
 /-- The reflection of the zero derivative field is zero. -/
 @[simp]
@@ -264,6 +299,21 @@ theorem eLpNorm_twistedReflection_le {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ
       hL (f (conj z))
   · simp [hz, hz.le]
 
+/-- **Local Sobolev class of a twisted reflection.** Let `Ω` be invariant under conjugation and
+`1 ≤ p`. If `g ∈ W^{1,p}_loc(Ω ∩ {0 ≤ im})` is continuous there and the continuous linear map `L`
+fixes the values of `g` on `Ω ∩ ℝ`, then `TauCeti.twistedSchwarzReflection L g`, equal to
+`L (g (conj z))` below the axis, is in `W^{1,p}_loc(Ω)`. -/
+theorem MemWkpLoc.twistedSchwarzReflection {Ω : Opens ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+    (hp : 1 ≤ p) (L : F →L[ℝ] F) (hf : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 f)
+    (hfc : ContinuousOn f ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hfL : ∀ x : ℝ, (x : ℂ) ∈ Ω → L (f x) = f x) :
+    MemWkpLoc p Ω 1 (TauCeti.twistedSchwarzReflection L f) := by
+  obtain ⟨-, Df, hDf, hDfp⟩ := memWkpLoc_succ_iff.1 hf
+  rw [memWkpLoc_zero_iff] at hDfp
+  exact memWkpLoc_succ_iff_of_isOpen.2 ⟨(continuousOn_twistedSchwarzReflection hΩ hfc hfL).memLpLoc,
+    _, hDf.twistedSchwarzReflection (fun z hz _ => hΩ hz) L hfc hfL (hDfp.mono_exponent hp),
+    memWkpLoc_zero_iff.2 (hDfp.twistedReflection hΩ _)⟩
+
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {R : W ≃L[ℝ] W}
   {J S : ℂ → W →L[ℝ] W} {DJ : ℂ → ℂ →L[ℝ] W →L[ℝ] W} {U : Set ℂ}
 
@@ -312,13 +362,12 @@ theorem isSobolevCRCoefficients_crReflection (hΩ : MapsTo (starRingEnd ℂ) Ω 
     (hS : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) S) :
     IsSobolevCRCoefficients p Ω (crReflectionCoeff R J) (crReflectionDeriv R DJ)
       (crReflectionZeroth R S) := by
-  have h := hJW.twistedReflection (fun z hz _ => hΩ hz)
-    (-(R.conjContinuousAlgEquiv.toContinuousLinearEquiv : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)) hJc
-    (fun x hx => by ext v; simp [hJR x hx]) (hDJ.mono_exponent hp)
+  have h := hJW.twistedReflection (fun z hz _ => hΩ hz) (crReflectionCoeffMap R) hJc
+    (fun x hx => crReflectionCoeffMap_apply_eq_self (hJR x hx)) (hDJ.mono_exponent hp)
   refine ⟨?_, (memLpLoc_crReflectionCoeff_iff hΩ).2 hJc.memLpLoc,
     (memLpLoc_crReflectionDeriv_iff hΩ).2 hDJ, (memLpLoc_crReflectionZeroth_iff hΩ).2 hS⟩
   rw [crReflectionCoeff_def, crReflectionDeriv_def]
-  rwa [map_neg, ContinuousLinearMap.neg_comp] at h
+  rwa [crReflectionCoeffMap_def, map_neg, ContinuousLinearMap.neg_comp] at h
 
 end SobolevCoefficients
 
@@ -335,19 +384,12 @@ theorem ae_crReflectionCoeff_mul_self {W : Type*} [NormedAddCommGroup W] [Normed
     {R : W ≃L[ℝ] W} {J : ℂ → W →L[ℝ] W} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hJ2 : ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), J z * J z = -1) :
     ∀ᵐ z ∂volume.restrict Ω, crReflectionCoeff R J z * crReflectionCoeff R J z = -1 := by
-  have hJ2' : ∀ᵐ z ∂volume, z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} → J z * J z = -1 :=
-    (ae_restrict_iff' (Ω.isOpen.measurableSet.inter
-      (measurableSet_le measurable_const measurable_im))).1 hJ2
-  have hJ2c := conjLIE.measurePreserving.quasiMeasurePreserving.ae hJ2'
-  refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
-  filter_upwards [hJ2', hJ2c, Complex.ae_im_ne_zero]
-    with z hz hzc hz0 hzΩ
+  filter_upwards [Complex.ae_restrict_of_ae_restrict_inter_setOf_im_nonneg
+    Ω.isOpen.measurableSet hΩ hJ2, ae_restrict_of_ae Complex.ae_im_ne_zero] with z hz hz0
   rcases lt_or_gt_of_ne hz0 with h0 | h0
-  · have hJz := hzc ⟨hΩ hzΩ, by simpa using h0.le⟩
-    simp only [conjLIE_apply] at hJz
-    exact crReflectionCoeff_mul_self_of_im_neg h0 hJz
+  · exact crReflectionCoeff_mul_self_of_im_neg h0 (hz.2 h0.le)
   · rw [crReflectionCoeff_of_im_pos h0]
-    exact hz ⟨hzΩ, h0.le⟩
+    exact hz.1 h0.le
 
 /-! ### The reflection theorem -/
 
