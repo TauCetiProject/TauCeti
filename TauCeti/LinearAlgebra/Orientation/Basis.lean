@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Orientation.Basic
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The sign of a basis relative to an orientation
@@ -16,7 +17,9 @@ equivalence (`Orientation.signBasis_map`). Empty index types are included, so bo
 zero-dimensional orientations retain their sign. Two orientations are equal exactly when they
 agree on whether they are the orientation of a fixed basis
 (`Module.Basis.eq_iff_eq_orientation_iff`). In a line, the basis `(-v)` gives the orientation
-opposite to that of `(v)` (`TauCeti.orientation_basisSingleton_neg`).
+opposite to that of `(v)` (`TauCeti.orientation_basisSingleton_neg`), and two one-vector bases
+define the same orientation exactly when their vectors lie on the same ray
+(`Module.Basis.orientation_eq_iff_sameRay`).
 -/
 
 public section
@@ -45,6 +48,20 @@ theorem eq_iff_eq_orientation_iff (e : Basis ι R E) (x y : Orientation R E ι) 
   · rcases e.orientation_eq_or_eq_neg y with hy | hy
     · exact absurd (h.2 hy) (hx ▸ (Module.Ray.ne_neg_self _).symm)
     · rw [hx, hy]
+
+section Unique
+
+variable [Unique ι]
+
+/-- **Orientations of a line.** For an index type with a single element, two bases define the same
+orientation exactly when their vectors lie on the same ray. -/
+theorem orientation_eq_iff_sameRay (b b' : Basis ι R E) :
+    b.orientation = b'.orientation ↔ SameRay R (b default) (b' default) := by
+  have := b.isTorsionFree
+  rw [b.orientation_eq_iff_det_pos, ← b.det_unique_smul b',
+    sameRay_smul_right_iff_of_ne (b.ne_zero default) (b.isUnit_det b').ne_zero]
+
+end Unique
 
 end Module.Basis
 
