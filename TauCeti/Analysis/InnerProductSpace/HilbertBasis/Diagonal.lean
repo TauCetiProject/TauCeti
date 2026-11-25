@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
+public import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 import Mathlib.Analysis.Normed.Group.Tannery
 
 /-!
@@ -25,6 +26,11 @@ sets: if `m_a → m` pointwise on `ι` and `‖m_a‖ ≤ C`, then `b.diagonal m
 every `x` (`HilbertBasis.tendsto_diagonal_apply`). Fourier multipliers on `L²` of the torus are
 the diagonal operators in the Fourier basis.
 
+A diagonal operator is compact exactly when its entries tend to zero along the cofinite filter
+(`HilbertBasis.isCompactOperator_diagonal_iff`): it is then the operator-norm limit of its finite
+truncations, and conversely the entries are the eigenvalues of the orthonormal eigenvectors `b i`,
+which tend to zero for a compact operator.
+
 ## Main declarations
 
 * `HilbertBasis.diagonal`: the algebra homomorphism `m ↦ b.diagonal m`.
@@ -34,6 +40,7 @@ the diagonal operators in the Fourier basis.
 * `HilbertBasis.norm_diagonal`: `‖b.diagonal m‖ = ‖m‖`.
 * `HilbertBasis.diagonal_injective`: the entries are determined by the operator.
 * `HilbertBasis.tendsto_diagonal_apply`: strong continuity in the entries.
+* `HilbertBasis.isCompactOperator_diagonal_iff`: compactness of a diagonal operator.
 -/
 
 public section
@@ -169,5 +176,25 @@ theorem tendsto_diagonal_apply {α : Type*} {l : Filter α} {m : α → ℓ^∞(
   simp_rw [← hsq] at hlim
   have := hlim.sqrt
   simpa [Real.sqrt_sq (norm_nonneg _)] using this
+
+/-- A diagonal operator is the bounded diagonal operator `lp.diagonalCLM m` on `ℓ²(ι, 𝕜)`
+conjugated by the isometry `b.repr`. -/
+theorem coe_diagonal_eq_comp (m : ℓ^∞(ι, 𝕜)) :
+    ⇑(b.diagonal m) = b.repr.symm ∘ lp.diagonalCLM (p := 2) m ∘ b.repr := by
+  ext1 x
+  apply b.repr.injective
+  ext i
+  simp [lp.diagonalCLM_apply]
+
+/-- **Compact diagonal operators.** A diagonal operator `b.diagonal m` is compact if and only if its
+entries `m i` tend to zero along the cofinite filter. -/
+theorem isCompactOperator_diagonal_iff (m : ℓ^∞(ι, 𝕜)) :
+    IsCompactOperator (b.diagonal m) ↔ Tendsto (fun i ↦ m i) cofinite (𝓝 0) := by
+  refine ⟨fun h ↦ h.tendsto_cofinite_of_orthonormal (T := (b.diagonal m : E →ₗ[𝕜] E))
+    b.orthonormal (b.diagonal_apply_self m), fun h ↦ ?_⟩
+  rw [coe_diagonal_eq_comp]
+  exact ((lp.isCompactOperator_diagonalCLM m (tendsto_zero_iff_norm_tendsto_zero.1 h)).comp_clm
+    b.repr.toContinuousLinearEquiv.toContinuousLinearMap).clm_comp
+    b.repr.symm.toContinuousLinearEquiv.toContinuousLinearMap
 
 end HilbertBasis
