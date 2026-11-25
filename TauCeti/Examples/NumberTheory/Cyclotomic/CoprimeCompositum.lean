@@ -29,11 +29,11 @@ example : complexField 4 ⊓ complexField 8 = ℚ⟮Complex.I⟯ := by
     rw [complexRoot_def, show 2 * Real.pi * Complex.I / (4 : ℕ) = Real.pi / 2 * Complex.I by
       push_cast; ring]
     exact Complex.exp_pi_div_two_mul_I
-  rw [inf_eq_left.2 (complexField_le_of_dvd (by norm_num) (by norm_num)), complexField_def,
-    complexRoot_four]
+  rw [inf_eq_left.2 (isCyclotomicExtension_le_of_dvd ℚ ℂ 4 8 _ _ (by norm_num)),
+    complexField_def, complexRoot_four]
 
 example : complexField 4 ⊓ complexField 8 ≠ ⊥ := by
-  rw [inf_eq_left.2 (complexField_le_of_dvd (by norm_num) (by norm_num))]
+  rw [inf_eq_left.2 (isCyclotomicExtension_le_of_dvd ℚ ℂ 4 8 _ _ (by norm_num))]
   intro h
   have h4 : Module.finrank ℚ (complexField 4) = 2 := by
     rw [IsCyclotomicExtension.Rat.finrank 4]

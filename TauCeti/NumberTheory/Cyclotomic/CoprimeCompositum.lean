@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
+public import TauCeti.FieldTheory.Galois.FiberProduct
 public import TauCeti.RingTheory.Cyclotomic.ComplexField
 
 /-!
@@ -28,7 +28,7 @@ For the cyclotomic fields `ℚ(ζ_m) = TauCeti.Cyclotomic.complexField m` of `�
 
 * `IsCyclotomicExtension.linearDisjoint_of_coprime`, `IsCyclotomicExtension.inf_eq_bot_of_coprime`:
   cyclotomic fields of coprime orders are linearly disjoint and meet in `ℚ`.
-* `IsCyclotomicExtension.isCyclotomicExtension_sup_of_coprime`: their compositum is cyclotomic of
+* `IntermediateField.isCyclotomicExtension_sup_of_coprime`: their compositum is cyclotomic of
   order `mn`.
 * `IsCyclotomicExtension.restrictNormalHomSupProd_bijective_of_coprime`: automorphisms of the two
   factors extend uniquely to the compositum.
@@ -47,19 +47,42 @@ open IntermediateField Module
 
 namespace IsCyclotomicExtension
 
-variable {K : Type*} [Field K] [CharZero K] {F₁ F₂ : IntermediateField ℚ K} {m n : ℕ} [NeZero m]
-  [NeZero n] [IsCyclotomicExtension {m} ℚ F₁] [IsCyclotomicExtension {n} ℚ F₂]
+variable {K : Type*} [Field K] [CharZero K] {F₁ F₂ : IntermediateField ℚ K} {m n : ℕ}
+  [IsCyclotomicExtension {m} ℚ F₁] [IsCyclotomicExtension {n} ℚ F₂]
+
+/-- A `1`-st cyclotomic extension of `ℚ` is `ℚ`. -/
+private theorem eq_bot_of_one (F : IntermediateField ℚ K) [IsCyclotomicExtension {1} ℚ F] :
+    F = ⊥ :=
+  finrank_eq_one_iff.mp (by rw [Rat.finrank 1, Nat.totient_one])
 
 /-- The compositum of an `m`-th and an `n`-th cyclotomic extension of `ℚ`, for coprime `m` and
 `n`, is an `mn`-th cyclotomic extension. -/
-theorem isCyclotomicExtension_sup_of_coprime (h : m.Coprime n) :
+theorem _root_.IntermediateField.isCyclotomicExtension_sup_of_coprime (h : m.Coprime n) :
     IsCyclotomicExtension {m * n} ℚ (F₁ ⊔ F₂ : IntermediateField ℚ K) := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · obtain rfl := (Nat.coprime_zero_left n).mp h
+    rwa [eq_bot_of_one F₂, sup_bot_eq, zero_mul]
+  rcases eq_or_ne n 0 with rfl | hn
+  · obtain rfl := (Nat.coprime_zero_right m).mp h
+    rwa [eq_bot_of_one F₁, bot_sup_eq, mul_zero]
+  have : NeZero m := ⟨hm⟩
+  have : NeZero n := ⟨hn⟩
   rw [← h.lcm_eq_mul]
   exact isCyclotomicExtension_lcm_sup ℚ K m n F₁ F₂
 
 /-- **Cyclotomic fields of coprime orders are linearly disjoint**: the compositum has degree
 `φ(mn) = φ(m) φ(n)`. -/
 theorem linearDisjoint_of_coprime (h : m.Coprime n) : F₁.LinearDisjoint F₂ := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · obtain rfl := (Nat.coprime_zero_left n).mp h
+    rw [eq_bot_of_one F₂]
+    exact .bot_right _
+  rcases eq_or_ne n 0 with rfl | hn
+  · obtain rfl := (Nat.coprime_zero_right m).mp h
+    rw [eq_bot_of_one F₁]
+    exact .bot_left _ _ _
+  have : NeZero m := ⟨hm⟩
+  have : NeZero n := ⟨hn⟩
   have := isCyclotomicExtension_sup_of_coprime (F₁ := F₁) (F₂ := F₂) h
   have : FiniteDimensional ℚ F₁ := finite_of_singleton m ℚ F₁
   have : FiniteDimensional ℚ F₂ := finite_of_singleton n ℚ F₂
@@ -80,15 +103,9 @@ theorem restrictNormalHomSupProd_bijective_of_coprime (h : m.Coprime n) :
     Function.Bijective (restrictNormalHomSupProd F₁ F₂) := by
   have : IsGalois ℚ F₁ := isGalois {m} ℚ F₁
   have : IsGalois ℚ F₂ := isGalois {n} ℚ F₂
-  have := isCyclotomicExtension_sup_of_coprime (F₁ := F₁) (F₂ := F₂) h
-  have : IsGalois ℚ (F₁ ⊔ F₂ : IntermediateField ℚ K) := isGalois {m * n} ℚ _
-  have : FiniteDimensional ℚ F₁ := finite_of_singleton m ℚ F₁
-  have : FiniteDimensional ℚ F₂ := finite_of_singleton n ℚ F₂
-  have : FiniteDimensional ℚ (F₁ ⊔ F₂ : IntermediateField ℚ K) :=
-    finite_of_singleton (m * n) ℚ _
-  refine (restrictNormalHomSupProd_injective F₁ F₂).bijective_of_nat_card_le ?_
-  rw [Nat.card_prod, IsGalois.card_aut_eq_finrank, IsGalois.card_aut_eq_finrank,
-    IsGalois.card_aut_eq_finrank, (linearDisjoint_of_coprime h).finrank_sup]
+  have : FiniteDimensional ℚ F₁ := IsCyclotomicExtension.finite {m} ℚ F₁
+  have : FiniteDimensional ℚ F₂ := IsCyclotomicExtension.finite {n} ℚ F₂
+  exact restrictNormalHomSupProd_bijective_of_inf_eq_bot F₁ F₂ (inf_eq_bot_of_coprime h)
 
 end IsCyclotomicExtension
 
@@ -97,23 +114,25 @@ namespace TauCeti.Cyclotomic
 variable {m n : ℕ}
 
 /-- `ℚ(ζ_m) ⊓ ℚ(ζ_n) = ℚ` in `ℂ` for coprime `m` and `n`. -/
-theorem complexField_inf_eq_bot [NeZero m] [NeZero n] (h : m.Coprime n) :
-    complexField m ⊓ complexField n = ⊥ :=
-  IsCyclotomicExtension.inf_eq_bot_of_coprime h
+theorem complexField_inf_eq_bot (h : m.Coprime n) : complexField m ⊓ complexField n = ⊥ := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · rw [(Nat.coprime_zero_left n).mp h, complexField_one, inf_bot_eq]
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [(Nat.coprime_zero_right m).mp h, complexField_one, bot_inf_eq]
+  have : NeZero m := ⟨hm⟩
+  have : NeZero n := ⟨hn⟩
+  exact IsCyclotomicExtension.inf_eq_bot_of_coprime h
 
 /-- `ℚ(ζ_m) ⊔ ℚ(ζ_n) = ℚ(ζ_{mn})` in `ℂ` for coprime `m` and `n`. -/
-theorem complexField_sup_eq [NeZero m] [NeZero n] (h : m.Coprime n) :
+theorem complexField_sup_eq (h : m.Coprime n) :
     complexField m ⊔ complexField n = complexField (m * n) := by
-  have := IsCyclotomicExtension.isCyclotomicExtension_sup_of_coprime
-    (F₁ := complexField m) (F₂ := complexField n) h
-  exact IntermediateField.isCyclotomicExtension_eq (S := {m * n}) (K := ℚ) (L := ℂ) _ _
-
-/-- For `m ∣ n`, `ℚ(ζ_m) ≤ ℚ(ζ_n)` in `ℂ`. -/
-theorem complexField_le_of_dvd {m n : ℕ} (hn : n ≠ 0) (h : m ∣ n) :
-    complexField m ≤ complexField n := by
-  obtain ⟨k, rfl⟩ := h
-  have hk : k ≠ 0 := right_ne_zero_of_mul hn
-  rw [complexField_def, adjoin_simple_le_iff, mul_comm, ← complexRoot_mul_pow hk]
-  exact pow_mem (complexRoot_mem_complexField _) k
+  rcases eq_or_ne m 0 with rfl | hm
+  · rw [(Nat.coprime_zero_left n).mp h, complexField_one, sup_bot_eq, zero_mul]
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [(Nat.coprime_zero_right m).mp h, complexField_one, bot_sup_eq, mul_zero]
+  have : NeZero m := ⟨hm⟩
+  have : NeZero n := ⟨hn⟩
+  have := isCyclotomicExtension_sup_of_coprime (F₁ := complexField m) (F₂ := complexField n) h
+  exact isCyclotomicExtension_eq (S := {m * n}) (K := ℚ) (L := ℂ) _ _
 
 end TauCeti.Cyclotomic
