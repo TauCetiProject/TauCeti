@@ -34,9 +34,10 @@ Let `M` be a Riemannian manifold with boundary modelled on the half-space `𝓡�
   one (`n = 0`), `T_q∂M = 0` and the boundary is both strictly convex and strictly concave at every
   point, so the exclusion needs `n ≥ 1`.
 * `TauCeti.RiemannianIsometry.isStrictlyConvexAt_iff`, `isConvexAt_iff`,
-  `isStrictlyConcaveAt_iff` and `isStrictlyConvexBoundary_iff`: the predicates are invariant under
-  isometries of Riemannian manifolds with boundary, since corresponding tangent vectors of the
-  boundaries (`TauCeti.BoundaryTangentCorr`) have the same second fundamental form.
+  `isStrictlyConcaveAt_iff`, `isStrictlyConvexOn_iff` and `isStrictlyConvexBoundary_iff`: the
+  predicates are invariant under isometries of Riemannian manifolds with boundary, since
+  corresponding tangent vectors of the boundaries (`TauCeti.BoundaryTangentCorr`) have the same
+  second fundamental form.
 
 ## References
 
@@ -221,16 +222,26 @@ theorem isConvexAt_iff :
   rw [TauCeti.isConvexAt_iff, TauCeti.isConvexAt_iff]
   exact Φ.forall_boundaryTangent_iff q fun _ r ↦ 0 ≤ r
 
+/-- Strict convexity of the boundary on a set is invariant under isometries: `∂M'` is strictly
+convex on `S'` exactly when `∂M` is strictly convex on the preimage of `S'` under `Φ`. -/
+theorem isStrictlyConvexOn_iff (Φ : RiemannianIsometry (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) M M')
+    {S' : Set ((𝓡∂ (n + 1)).boundary M')} :
+    IsStrictlyConvexOn S' ↔ IsStrictlyConvexOn
+      {q : (𝓡∂ (n + 1)).boundary M | ⟨Φ q, Φ.apply_mem_boundary q.property⟩ ∈ S'} := by
+  simp only [TauCeti.isStrictlyConvexOn_iff, Set.mem_ofPred_eq]
+  refine ⟨fun h q hq ↦ (Φ.isStrictlyConvexAt_iff q).1 (h _ hq), fun h q' hq' ↦ ?_⟩
+  have hq : Φ.symm (q' : M') ∈ (𝓡∂ (n + 1)).boundary M :=
+    Φ.symm.apply_mem_boundary q'.property
+  have hΦq : (⟨Φ (Φ.symm q'), Φ.apply_mem_boundary hq⟩ : (𝓡∂ (n + 1)).boundary M') = q' :=
+    Subtype.ext (Φ.apply_symm_apply _)
+  rw [← hΦq] at hq' ⊢
+  exact (Φ.isStrictlyConvexAt_iff ⟨_, hq⟩).2 (h _ hq')
+
 /-- Strict convexity of the boundary is invariant under isometries. -/
 theorem isStrictlyConvexBoundary_iff (Φ : RiemannianIsometry (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) M M') :
     IsStrictlyConvexBoundary n M' ↔ IsStrictlyConvexBoundary n M := by
-  refine ⟨fun h q ↦ (Φ.isStrictlyConvexAt_iff q).1 (h _), fun h q' ↦ ?_⟩
-  have hq : Φ.symm (q' : M') ∈ (𝓡∂ (n + 1)).boundary M :=
-    Φ.symm.apply_mem_boundary q'.property
-  have hq' : (⟨Φ (Φ.symm q'), Φ.apply_mem_boundary hq⟩ : (𝓡∂ (n + 1)).boundary M') = q' :=
-    Subtype.ext (Φ.apply_symm_apply _)
-  rw [← hq']
-  exact (Φ.isStrictlyConvexAt_iff ⟨_, hq⟩).2 (h _)
+  rw [← isStrictlyConvexOn_univ_iff, ← isStrictlyConvexOn_univ_iff, Φ.isStrictlyConvexOn_iff]
+  simp only [Set.mem_univ, Set.ofPred_true]
 
 end RiemannianIsometry
 
