@@ -216,17 +216,13 @@ private theorem relativeProjTwistingSheafChartHom_eq {V : X.AffineZariskiSite}
         ((pullback g).obj A).obj.relativeProjToBase ⁻¹ᵁ V.toOpens := by
       rw [CommMon.relativeProjToBase_preimage _ V]
       exact ⟨z, rfl⟩
-    set p := ((pullback g).obj A).obj.relativeProjToBase
-      (((pullback g).obj A).obj.relativeProjCover.f V z)
-    obtain ⟨a, b, e, hpa⟩ :=
-      exists_basicOpen_le_affine_inter U₁.property U₂.property (g p) ⟨h₁ hz, h₂ hz⟩
-    obtain ⟨f, hf, hpf⟩ := V.property.exists_basicOpen_le
-      (V := g ⁻¹ᵁ (U₁.basicOpen a).toOpens) ⟨p, hpa⟩ hz
-    refine ⟨V.basicOpen f, ⟨U₁.basicOpen a, U₁.basicOpen_le a, ⟨b, e.symm⟩, hf⟩, ?_⟩
+    obtain ⟨l, hl, -, hl₁, hl₂⟩ :=
+      g.exists_affinePair_le (i := ⟨(V, U₁), h₁⟩) (j := ⟨(V, U₂), h₂⟩) le_rfl le_rfl hz
+    refine ⟨l.val.1, ⟨l.val.2, hl₁.2, hl₂.2, l.property⟩, ?_⟩
     -- the charts of the glued twisting sheaf are by definition those of the relative `Proj`
-    change _ ∈ (((pullback g).obj A).obj.relativeProjCover.f (V.basicOpen f)).opensRange
-    rw [← CommMon.relativeProjToBase_preimage _ (V.basicOpen f)]
-    exact hpf
+    change _ ∈ (((pullback g).obj A).obj.relativeProjCover.f l.val.1).opensRange
+    rw [← CommMon.relativeProjToBase_preimage _ l.val.1]
+    exact hl
   · have e₁ := ConcreteCategory.congr_hom (congrArg (Scheme.Modules.Hom.app · W)
       (A.relativeProjTwistingSheafChartHom_comp_transition g n a h₁)) s
     have e₂ := ConcreteCategory.congr_hom (congrArg (Scheme.Modules.Hom.app · W)
