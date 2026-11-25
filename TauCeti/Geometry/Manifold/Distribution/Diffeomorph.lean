@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # Transport of distributions through diffeomorphisms
@@ -23,6 +24,9 @@ The vector-field pullback and Lie-bracket naturality APIs are provided by Mathli
 `TauCeti.IsDistributionFrameOn.comap_mfderivWithin` pulls a local frame back through partial
 coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global specialization, and
 `TauCeti.IsContMDiffDistribution.comap_mfderiv` pulls back a smooth distribution.
+`TauCeti.IsContMDiffDistribution.exists_isDistributionFrameOn_of_eventually_eq_comap` is the local
+version: a distribution that a local diffeomorphism pulls back from a `C^m` one near a point has a
+`C^m` local frame there.
 `PartialDiffeomorph.isInvolutiveDistributionOn` transports local involutivity,
 `TauCeti.IsInvolutiveDistribution.diffeomorph` is its global specialization, and
 `Diffeomorph.isInvolutiveDistribution_iff` gives the equivalence for identified distributions.
@@ -132,6 +136,40 @@ theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ}
   obtain ⟨U, hU, hx, X, hX⟩ := hD' (h x)
   exact ⟨h ⁻¹' U, hU.preimage h.continuous, hx, fun i ↦ mpullback I J h (X i),
     hX.comap_mfderiv h hmn⟩
+
+open Filter in
+open scoped Topology in
+/-- **Local frames of a pulled-back distribution.** If a `C^n` local diffeomorphism `f` at `x`
+pulls a `C^m` distribution `D'` back to `D` near `x`, that is `D z` is the preimage of `D' (f z)`
+under the differential of `f` for `z` near `x`, and `m + 1 ≤ n`, then `D` has a `C^m` local frame
+of the same rank on a neighbourhood of `x`. -/
+theorem IsContMDiffDistribution.exists_isDistributionFrameOn_of_eventually_eq_comap {m : ℕ∞ω}
+    {k : ℕ} {f : M → N} {x : M} (hD' : IsContMDiffDistribution J m k D')
+    (hf : IsLocalDiffeomorphAt I J n f x) (hmn : m + 1 ≤ n)
+    (hDf : ∀ᶠ z in 𝓝 x, D z = (D' (f z)).comap (mfderiv I J f z).toLinearMap) :
+    ∃ U ∈ 𝓝 x, ∃ X : Fin k → Π y : M, TangentSpace I y, IsDistributionFrameOn I m D X U := by
+  obtain ⟨Φ, hxΦ, -, hfΦ⟩ := hf.exists_partialDiffeomorph_eqOn isOpen_univ (mem_univ x)
+  obtain ⟨U', hU', hxU', X', hX'⟩ := isContMDiffDistribution_iff.mp hD' (f x)
+  have hY := hX'.comap_mfderivWithin Φ hmn
+  have hsrc : Φ.source ∈ 𝓝 x := Φ.open_source.mem_nhds hxΦ
+  -- On the open source of `Φ`, the pulled-back family is the preimage of `D'` under `df`.
+  have hcomap : ∀ᶠ z in 𝓝 x, (D' (Φ z)).comap (mfderivWithin I J Φ Φ.source z).toLinearMap =
+      (D' (f z)).comap (mfderiv I J f z).toLinearMap := by
+    filter_upwards [hsrc] with z hz
+    have hfz : f =ᶠ[𝓝 z] Φ := eventually_of_mem (Φ.open_source.mem_nhds hz) fun _ h ↦ hfΦ h
+    -- The tangent spaces at `f z = Φ z` are the same, so the two differentials agree.
+    have hd (w : TangentSpace I z) : mfderiv I J f z w = mfderiv I J Φ z w := by
+      rw [hfz.mfderiv_eq]
+      rfl
+    ext w
+    rw [Φ.mfderivWithin_source hz, Submodule.mem_comap, Submodule.mem_comap,
+      ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe, hd, hfΦ hz]
+  have hU : Φ.source ∩ Φ ⁻¹' U' ∈ 𝓝 x := inter_mem hsrc <|
+    (Φ.contMDiffOn_toFun.continuousOn.continuousAt hsrc).preimage_mem_nhds
+      (hU'.mem_nhds (hfΦ hxΦ ▸ hxU'))
+  refine ⟨_, inter_mem hU (hDf.and hcomap), fun i ↦ mpullbackWithin I J Φ (X' i) Φ.source,
+    (hY.mono inter_subset_left).contMDiffOn, fun hz ↦ hY.linearIndependent hz.1, fun hz ↦ ?_⟩
+  rw [hY.span_eq hz.1, hz.2.2, hz.2.1]
 
 end Regularity
 
