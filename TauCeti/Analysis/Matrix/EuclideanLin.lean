@@ -24,7 +24,8 @@ transformation of the underlying vector.
 
 The rank of a matrix is the rank of the linear map it induces, in both the `ℕ`-valued and the
 `Cardinal`-valued sense; this is what lets a matrix-rank statement be read off an operator-rank
-one.
+one. The kernel of the map of the conjugate transpose is the orthogonal complement of the span of
+the columns.
 
 Normal square matrices induce normal operators on Euclidean space.
 The instance `Matrix.isStarNormal_toEuclideanLin` supplies this normality automatically
@@ -60,6 +61,8 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
   rank is the dimension of the range of the induced map, and the `LinearMap.rank` of the induced
   continuous linear map;
+* `Matrix.ker_toEuclideanLin_conjTranspose` — the kernel of the map of `Aᴴ` is the orthogonal
+  complement of the span of the columns of `A`;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
   Euclidean operator preserves the inner product;
 * `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`, `Matrix.trace_toEuclideanCLM`:
@@ -196,6 +199,20 @@ theorem rank_eq_finrank_range_toEuclideanLin (A : Matrix κ ι 𝕜) :
       A.mulVecLin ∘ₗ (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).toLinearMap := rfl
   rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq,
     Matrix.finrank_range_mulVecLin]
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- The kernel of the map of the conjugate transpose of a matrix is the orthogonal complement of
+the span of the columns of the matrix. -/
+theorem ker_toEuclideanLin_conjTranspose (A : Matrix κ ι 𝕜) :
+    LinearMap.ker (toEuclideanLin Aᴴ) =
+      (Submodule.span 𝕜 (Set.range fun j ↦ WithLp.toLp 2 fun i ↦ A i j))ᗮ := by
+  ext x
+  -- A vector is orthogonal to a span exactly when it is orthogonal to each spanning column.
+  rw [LinearMap.mem_ker, ← Submodule.span_singleton_le_iff_mem, ← Submodule.isOrtho_iff_le,
+    Submodule.isOrtho_comm, Submodule.isOrtho_span]
+  simp only [Set.forall_mem_range, Set.mem_singleton_iff, forall_eq]
+  simp [WithLp.ext_iff, funext_iff, EuclideanSpace.inner_eq_star_dotProduct, mulVec, dotProduct,
+    mul_comm]
 
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
 This is the bridge that turns an operator-rank statement into a matrix-rank one. -/

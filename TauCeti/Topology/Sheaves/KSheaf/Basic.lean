@@ -17,6 +17,8 @@ an arbitrary category.
 
 * `TopCat.KPresheaf.commSq_map`: the restriction maps of a K-presheaf along a bicartesian square
   of compact sets form a commutative square.
+* `TopCat.KPresheaf.mono_coe_functor_op_comp_map`: the diagram of `coconeOfCompacts K` sends a
+  morphism between compact neighbourhoods of `K` to the corresponding restriction map.
 -/
 
 public section
@@ -25,7 +27,17 @@ open CategoryTheory Opposite TopologicalSpace
 
 namespace TopCat.KPresheaf
 
-variable {X : TopCat} [T2Space X] {A : Type*} [Category* A] (F : KPresheaf A X)
+variable {X : TopCat} {A : Type*} [Category* A] (F : KPresheaf A X)
+
+/-- The diagram `(Set.mono_coe K.compactNhds).functor.op ⋙ F` of the cocone `F.coconeOfCompacts K`
+sends a morphism `f : L ⟶ M` between compact neighbourhoods of `K` (so `M ⊆ L`) to the restriction
+map `F.map (opHomOfLE _)` from `L` to `M`. -/
+theorem mono_coe_functor_op_comp_map {K : Compacts X} {L M : (K.compactNhds)ᵒᵖ} (f : L ⟶ M) :
+    ((Set.mono_coe K.compactNhds).functor.op ⋙ F).map f =
+      F.map (opHomOfLE (show M.unop.val ≤ L.unop.val from leOfHom f.unop)) :=
+  rfl
+
+variable [T2Space X]
 
 /-- The restriction maps of a K-presheaf along a bicartesian square `K₁ = K₂ ⊓ K₃`,
 `K₄ = K₂ ⊔ K₃` of compact sets form a commutative square. -/
