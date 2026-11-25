@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Calculus.LineDeriv.Measurable
 import Mathlib.Analysis.Calculus.Rademacher
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
@@ -33,8 +34,7 @@ dominated convergence, as in the Leibniz rule `TauCeti.HasWeakLineDerivOn.lipsch
 * `LipschitzWith.fderiv_normed_convolution_apply`: the directional derivative of the mollification
   is the mollification of the almost-everywhere directional derivative.
 * `LipschitzWith.norm_fderiv_normed_convolution_apply_le`: these derivatives are bounded by
-  `K ‖v‖`, so the derivatives of the mollifications have operator norm at most `K`
-  (`LipschitzWith.norm_fderiv_normed_convolution_le`).
+  `K ‖v‖`.
 * `LipschitzWith.ae_tendsto_fderiv_normed_convolution_apply`: they converge almost everywhere to
   the directional derivative as the bumps shrink.
 * `LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`: integrals against the
@@ -67,11 +67,9 @@ theorem fderiv_normed_convolution_apply (hψ : LipschitzWith K ψ) (ρ : ContDif
       ((hψ.ae_lineDifferentiableAt v).mono fun x hx _ => hx.hasLineDerivAt)
   have hl := hweak.lineDeriv_convolution_right hψ.continuous.locallyIntegrable (ρ.normed μ)
     ρ.contDiff_normed ρ.hasCompactSupport_normed x (by simp)
-  have hsmooth : ContDiff ℝ ∞ (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] ψ) :=
-    ρ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) ρ.contDiff_normed
-      hψ.continuous.locallyIntegrable
   rw [convolution_flip, convolution_flip] at hl
-  rw [← hl, (hsmooth.differentiable (by simp) x).lineDeriv_eq_fderiv]
+  rw [← hl, ((ρ.contDiff_normed_convolution hψ.continuous.locallyIntegrable (n := 1)).differentiable
+    one_ne_zero x).lineDeriv_eq_fderiv]
 
 /-- The derivatives in a direction `v` of the mollifications of a `K`-Lipschitz function are
 bounded by `K ‖v‖`. -/
@@ -83,12 +81,6 @@ theorem norm_fderiv_normed_convolution_apply_le (hψ : LipschitzWith K ψ)
     ρ.integral_normed (measurable_lineDeriv hψ.continuous).aestronglyMeasurable fun y _ => by
       rw [dist_zero_right]
       exact norm_lineDeriv_le_of_lipschitz ℝ hψ
-
-/-- The derivatives of the mollifications of a `K`-Lipschitz function have operator norm at
-most `K`. -/
-theorem norm_fderiv_normed_convolution_le (hψ : LipschitzWith K ψ) (ρ : ContDiffBump (0 : E))
-    (x : E) : ‖fderiv ℝ (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x‖ ≤ K :=
-  opNorm_le_bound _ K.coe_nonneg (hψ.norm_fderiv_normed_convolution_apply_le ρ x)
 
 /-- As normalized bumps shrink to `0` with a bounded ratio of outer to inner radius, the
 derivatives in a direction `v` of the mollifications of a Lipschitz function converge almost

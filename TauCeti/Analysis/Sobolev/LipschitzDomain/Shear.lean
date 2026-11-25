@@ -51,8 +51,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 theorem contDiff_graphFlattening_normed_convolution (hγ : LocallyIntegrable γ μ)
     (ρ : ContDiffBump (0 : E)) (hc : Continuous (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] γ)) :
     ContDiff ℝ ∞ (graphFlattening (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] γ) hc) :=
-  contDiff_graphFlattening
-    (ρ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) ρ.contDiff_normed hγ)
+  contDiff_graphFlattening (ρ.contDiff_normed_convolution hγ)
 
 /-- **Mollified shears have Jacobian `1`**, for every locally integrable `γ`. -/
 theorem det_fderiv_graphFlattening_normed_convolution (hγ : LocallyIntegrable γ μ)
@@ -60,8 +59,8 @@ theorem det_fderiv_graphFlattening_normed_convolution (hγ : LocallyIntegrable �
     (z : WithLp 2 (ℝ × E)) :
     LinearMap.det (fderiv ℝ (graphFlattening (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] γ) hc) z).toLinearMap =
       1 :=
-  det_fderiv_graphFlattening hc ((ρ.hasCompactSupport_normed.contDiff_convolution_left (n := 1)
-    (lsmul ℝ ℝ) ρ.contDiff_normed hγ).differentiable one_ne_zero _)
+  det_fderiv_graphFlattening hc
+    ((ρ.contDiff_normed_convolution hγ (n := 1)).differentiable one_ne_zero _)
 
 /-- **Mollified shears have derivatives of norm at most `1 + K`** for a `K`-Lipschitz `γ`. -/
 theorem norm_fderiv_graphFlattening_normed_convolution_le (hγ : LipschitzWith K γ)
@@ -69,9 +68,9 @@ theorem norm_fderiv_graphFlattening_normed_convolution_le (hγ : LipschitzWith K
     (z : WithLp 2 (ℝ × E)) :
     ‖fderiv ℝ (graphFlattening (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] γ) hc) z‖ ≤ 1 + K :=
   norm_fderiv_graphFlattening_le_one_add
-    ((ρ.hasCompactSupport_normed.contDiff_convolution_left (n := 1) (lsmul ℝ ℝ)
-      ρ.contDiff_normed hγ.continuous.locallyIntegrable).differentiable one_ne_zero)
-    (hγ.norm_fderiv_normed_convolution_le ρ) z
+    ((ρ.contDiff_normed_convolution hγ.continuous.locallyIntegrable (n := 1)).differentiable
+      one_ne_zero)
+    (fun _ => norm_fderiv_le_of_lipschitz ℝ (hγ.normed_convolution ρ)) z
 
 /-- **Mollified shears are uniformly close**: the shear along `ρ ⋆ γ` is within `K · ρ.rOut` of
 the shear along a `K`-Lipschitz `γ`, at every point. -/
