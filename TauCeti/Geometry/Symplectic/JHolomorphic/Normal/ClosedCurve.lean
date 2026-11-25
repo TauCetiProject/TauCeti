@@ -135,8 +135,9 @@ theorem isPseudoholomorphic_fst_smoothNormalModelStructure :
 
 /-- **The normal fibres carry the standard structure**: the fibre structure of `J_N` over every
 point of the base is multiplication by `I`. -/
+@[simp]
 theorem fiberAlmostComplexStructure_smoothNormalModelStructure (z₀ : ℂ) :
-    ComplexStructureFamily.fiberAlmostComplexStructure (smoothNormalModelStructure hν hμ) _ _
+    ComplexStructureFamily.fiberAlmostComplexStructure (smoothNormalModelStructure hν hμ)
         (isPseudoholomorphic_fst_smoothNormalModelStructure hν hμ) z₀ =
       (AlmostComplexStructure.ofComplexModule ℂ).constSmooth := by
   ext w v
@@ -144,7 +145,7 @@ theorem fiberAlmostComplexStructure_smoothNormalModelStructure (z₀ : ℂ) :
   -- `TangentSpace 𝓘(ℝ, ℂ) w` is `ℂ` by definition; retype it as a complex number so that it can be
   -- paired with `0 : ℂ` into a tangent vector `(0, v)` of `ℂ × ℂ`
   let v' : ℂ := v
-  refine (ComplexStructureFamily.fiberAlmostComplexStructure_apply _ _ _ _ z₀ w v').trans ?_
+  refine (ComplexStructureFamily.fiberAlmostComplexStructure_apply _ _ z₀ w v').trans ?_
   refine (congrArg Prod.snd (smoothNormalModelStructure_apply hν hμ (z₀, w) (0, v'))).trans ?_
   refine Eq.trans ?_ (AlmostComplexStructure.constSmooth_apply _ w v').symm
   simp

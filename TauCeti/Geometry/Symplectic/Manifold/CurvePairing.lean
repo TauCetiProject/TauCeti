@@ -294,12 +294,12 @@ theorem apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq {B W : Type*} [Normed
     {θ : SmoothTwoForm 𝓘(ℝ, W) W}
     (hθ : ∀ c (w : TangentSpace 𝓘(ℝ, W) (v c).2), w ≠ 0 →
       0 < SmoothBundleForm.eval₂ θ (v c).2 w
-        (fiberAlmostComplexStructure K i hi hK b (v c).2 w))
+        (fiberAlmostComplexStructure K hK b (v c).2 w))
     (hcl : θ ∈ closedForms 𝓘(ℝ, W) W 2) (c c' : C) : v c = v c' := by
   have hsnd : ContMDiff I' 𝓘(ℝ, W) ∞ (fun c ↦ (v c).2) :=
     (ContinuousLinearMap.snd ℝ B W).contDiff.contMDiff.comp hv
   exact Prod.ext ((hb c).trans (hb c').symm) (apply_eq_of_mem_closedForms_normedSpace hsnd ho
-    (fun c ↦ (hhol c).snd_of_forall_fst_eq K i hi hK hb) hθ hcl c c')
+    (fun c ↦ (hhol c).snd_of_forall_fst_eq hK hb) hθ hcl c c')
 
 /-- **Closed curves in a tamed block structure are constant.** Let `K` be a block almost
 complex structure on `B × W`, one for which the projection to `B` is pseudoholomorphic for a
@@ -317,7 +317,7 @@ theorem apply_eq_of_isPseudoholomorphic_fst {B W : Type*} [NormedAddCommGroup B]
     {θ : B → SmoothTwoForm 𝓘(ℝ, W) W}
     (hθ : ∀ b (w : W) (w' : TangentSpace 𝓘(ℝ, W) w), w' ≠ 0 →
       0 < SmoothBundleForm.eval₂ (θ b) w w'
-        (fiberAlmostComplexStructure K i hi hK b w w'))
+        (fiberAlmostComplexStructure K hK b w w'))
     (hcl : ∀ b, θ b ∈ closedForms 𝓘(ℝ, W) W 2) {v : C → B × W}
     (hv : ContMDiff I' 𝓘(ℝ, B × W) ∞ v)
     (ho : ∀ c (e : Basis (Fin 2) ℝ (TangentSpace I' c)), e 1 = j c (e 0) →
