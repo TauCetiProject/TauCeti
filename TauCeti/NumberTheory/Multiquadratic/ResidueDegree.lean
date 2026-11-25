@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 public import TauCeti.NumberTheory.Multiquadratic.Frobenius
 import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.Multiquadratic.MultiquadraticSplitting

@@ -48,6 +48,8 @@ compares the homology sequences of these short exact sequences.
   of bicomplexes.
 * `HomologicalComplex₂.isIso_totalAugmentation_single`: the total complex of a bicomplex with a
   single column is that column.
+* `HomologicalComplex₂.isIso_totalAugmentation_of_isZero`: the same for any bicomplex whose
+  columns `p + 1` vanish, augmented by an isomorphism.
 * `HomologicalComplex₂.rowZeroShortComplex`: the degreewise split short exact sequence
   `row 0 ⟶ Tot K ⟶ Tot (rowsSucc K)[1]`, where `HomologicalComplex₂.rowsSucc K` is the bicomplex
   of the rows `≥ 1` of `K`; the projection `HomologicalComplex₂.dropRowZero` is natural
@@ -58,6 +60,8 @@ compares the homology sequences of these short exact sequences.
   symmetry.
 * `HomologicalComplex₂.quasiIso_total_map_of_rows`: a map of bicomplexes which is a
   quasi-isomorphism on every row induces a quasi-isomorphism of total complexes.
+* `HomologicalComplex₂.exactAt_total_of_rows`: rows exact along the diagonal `p + q = n` make the
+  total complex exact in degree `n`.
 * `HomologicalComplex₂.quasiIso_totalAugmentation_of_rows`: exact augmented rows make the
   augmentation of the total complex a quasi-isomorphism, and so does any augmentation through
   which such an augmentation factors by a quasi-isomorphism
@@ -178,6 +182,25 @@ lemma total_map_totalAugmentation
     simp
   · simp
 
+/-- **A bicomplex concentrated in the column `0` has that column as its total complex.** If every
+column `p + 1` of `K` vanishes, the augmentation of the total complex by an isomorphism
+`ε : K.X 0 ≅ E` is an isomorphism. -/
+lemma isIso_totalAugmentation_of_isZero (hK : ∀ p q, IsZero ((K.X (p + 1)).X q)) [IsIso ε] :
+    IsIso (K.totalAugmentation ε hε) := by
+  -- The inverse in degree `n` is `ε⁻¹` followed by the inclusion of the summand `(K.X 0).X n`.
+  have (n : ℕ) : IsIso ((K.totalAugmentation ε hε).f n) := by
+    refine ⟨(inv ε).f n ≫ K.ιTotal (ComplexShape.down ℕ) 0 n n (by simp), ?_, ?_⟩
+    · refine total.hom_ext _ fun p q h ↦ ?_
+      rcases p with _ | p
+      · obtain rfl : q = n := by simpa using h
+        rw [ιTotal_totalAugmentation_f_zero_assoc, Category.comp_id,
+          ← HomologicalComplex.comp_f_assoc, IsIso.hom_inv_id, HomologicalComplex.id_f,
+          Category.id_comp]
+      · exact (hK p q).eq_of_src _ _
+    · rw [Category.assoc, ιTotal_totalAugmentation_f_zero, ← HomologicalComplex.comp_f,
+        IsIso.inv_hom_id, HomologicalComplex.id_f]
+  exact HomologicalComplex.Hom.isIso_of_components _
+
 section Single
 
 variable [HasZeroObject C] (E : ChainComplex C ℕ)
@@ -195,23 +218,9 @@ variable [HasTotal ((HomologicalComplex.single _ (ComplexShape.down ℕ) 0).obj 
 augmentation by the identity of `E` is an isomorphism. -/
 lemma isIso_totalAugmentation_single :
     IsIso (totalAugmentation ((HomologicalComplex.single _ (ComplexShape.down ℕ) 0).obj E)
-      (HomologicalComplex.singleObjXSelf _ 0 E).hom (single_d_comp_singleObjXSelf_hom E)) := by
-  -- The inverse in degree `n` is the inclusion of `E.X n` as the summand of the column `0`.
-  have (n : ℕ) : IsIso ((totalAugmentation _ _ (single_d_comp_singleObjXSelf_hom E)).f n) := by
-    refine ⟨(HomologicalComplex.singleObjXSelf _ 0 E).inv.f n ≫
-      HomologicalComplex₂.ιTotal ((HomologicalComplex.single _ (ComplexShape.down ℕ) 0).obj E)
-        _ 0 n n (by simp), ?_, ?_⟩
-    · refine total.hom_ext _ fun p q h ↦ ?_
-      rcases p with _ | p
-      · obtain rfl : q = n := by simpa using h
-        rw [ιTotal_totalAugmentation_f_zero_assoc, Category.comp_id,
-          ← HomologicalComplex.comp_f_assoc, Iso.hom_inv_id, HomologicalComplex.id_f,
-          Category.id_comp]
-      · exact ((HomologicalComplex.eval C _ q).map_isZero
-          (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by simp))).eq_of_src _ _
-    · rw [Category.assoc, ιTotal_totalAugmentation_f_zero, ← HomologicalComplex.comp_f,
-        Iso.inv_hom_id, HomologicalComplex.id_f]
-  exact HomologicalComplex.Hom.isIso_of_components _
+      (HomologicalComplex.singleObjXSelf _ 0 E).hom (single_d_comp_singleObjXSelf_hom E)) :=
+  isIso_totalAugmentation_of_isZero _ _ _ fun p q ↦ (HomologicalComplex.eval C _ q).map_isZero
+    (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by simp))
 
 variable {E}
 
@@ -638,6 +647,30 @@ theorem quasiIso_total_map_of_rows
   intro m
   rw [quasiIsoAt_iff_isIso_homologyMap]
   exact (total_map_aux (m + 1) φ hφ).1 m (Nat.lt_succ_self m)
+
+/-- **Rows exact along a diagonal give a total complex exact in that degree.** If the row `q` of a
+first-quadrant bicomplex `K`, the complex `⋯ ⟶ (K.X 1).X q ⟶ (K.X 0).X q`, is exact in degree `p`
+whenever `p + q = n`, then the total complex of `K` is exact in degree `n`. In the spectral
+sequence of the row filtration, the first page then vanishes on the diagonal of total degree `n`,
+and so does the abutment. -/
+theorem exactAt_total_of_rows
+    (K : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ)) (n : ℕ)
+    (hK : ∀ p q, p + q = n → (((eval C _ q).mapHomologicalComplex _).obj K).ExactAt p) :
+    (K.total (ComplexShape.down ℕ)).ExactAt n := by
+  induction n generalizing K with
+  | zero =>
+    -- In degree `0` the total complex is row `0`, the rows `≥ 1` starting in degree `1`.
+    refine exactAt_iff_isZero_homology _ _ |>.2 <|
+      ((rowZeroShortComplex_shortExact K).homology_exact₂ 0).isZero_X₂
+        ((hK 0 0 rfl).isZero_homology.eq_of_src _ _) ?_
+    exact (extend_exactAt _ _ 0 fun _ ↦ by simp).isZero_homology.eq_of_tgt _ _
+  | succ m ih =>
+    -- The rows of `rowsSucc K` are the rows `≥ 1` of `K`, placed one degree lower.
+    have h := ih (rowsSucc K) fun p q h ↦ hK p (q + 1) (by omega)
+    refine exactAt_iff_isZero_homology _ _ |>.2 <|
+      ((rowZeroShortComplex_shortExact K).homology_exact₂ (m + 1)).isZero_X₂
+        ((hK (m + 1) 0 rfl).isZero_homology.eq_of_src _ _) ?_
+    exact ((extend_exactAt_iff _ _ (embeddingDownNatAdd_f 1 m)).2 h).isZero_homology.eq_of_tgt _ _
 
 variable {E : ChainComplex C ℕ}
 

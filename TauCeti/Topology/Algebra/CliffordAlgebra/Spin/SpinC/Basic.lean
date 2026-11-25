@@ -25,7 +25,9 @@ actual product of the rotation homomorphism and determinant character is a cover
 native coordinate topology on `SO(n)`. Its kernel is `{1, [1, -1]}`. The determinant character
 and rotation map are continuous; compactness of `Spin(n)` makes their surjective product a
 quotient map, and its finite kernel gives the covering. Charge conjugation `[s, z] ↦ [s, z⁻¹]`
-is a continuous automorphism (`CliffordAlgebra.spinCGroup.chargeConjContinuousMulEquiv`).
+is a continuous automorphism (`CliffordAlgebra.spinCGroup.chargeConjContinuousMulEquiv`), and the
+homomorphism `[s, z] ↦ [f s, z]` induced by a quadratic isometry `f` is continuous
+(`QuadraticMap.Isometry.continuous_spinCGroupMap`).
 
 For a positive- or negative-definite form on a finite-dimensional real space, `Spinᶜ(Q)` is
 compact (`CliffordAlgebra.spinCGroup.compactSpace_of_posDef_or_negDef`), as a quotient of the
@@ -111,6 +113,13 @@ theorem continuous_ofSpin : Continuous (ofSpin Q hQ) :=
 theorem continuous_ofCircle : Continuous (ofCircle Q hQ) :=
   ((continuous_mk Q hQ).comp (continuous_const.prodMk continuous_id)).congr
     fun z ↦ (ofCircle_apply Q hQ z).symm
+
+/-- Multiplication by the central circle is continuous. -/
+@[fun_prop]
+theorem continuous_mulCircle [ContinuousMul (spinCGroup Q hQ)] : Continuous (mulCircle Q hQ) := by
+  have h : Continuous fun g : spinCGroup Q hQ × Circle ↦ g.1 * ofCircle Q hQ g.2 :=
+    continuous_fst.mul ((continuous_ofCircle Q hQ).comp continuous_snd)
+  exact h.congr fun g ↦ (mulCircle_apply Q hQ g.1 g.2).symm
 
 /-- Charge conjugation `[s, z] ↦ [s, z⁻¹]` is continuous for the quotient topology. -/
 @[fun_prop]

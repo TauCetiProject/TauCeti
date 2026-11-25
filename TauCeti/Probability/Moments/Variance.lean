@@ -15,6 +15,7 @@ public import TauCeti.Probability.Moments.Mixture
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 import TauCeti.Probability.Moments.Covariance
@@ -36,11 +37,14 @@ This identity is what turns the strong-convexity remainder of an interaction ene
 transport plan, an integral over pairs of transported pairs, into the variance of the
 displacement.
 
-The file also records two consequences of nonzero variance `Var[X; μ] ≠ 0`: strict positivity of
-the expectation of an `ℝ≥0`-valued random variable on a finite measure space, and nondegeneracy
-`μ {ω | X ω = 0} < 1` of a real-valued random variable on a probability space, as well as
-Chebyshev convergence in probability from vanishing variances and Borel--Cantelli almost-sure
-convergence to the mean from summable variances.
+The file also records two consequences of nonzero variance `Var[X; μ] ≠ 0` on a finite measure
+space: strict positivity of the integral (expectation on a probability space) of an almost
+everywhere strongly measurable, almost everywhere nonnegative real function, and nondegeneracy
+`μ {ω | X ω = 0} < μ univ` of a real-valued function. For a family of square-integrable real
+functions on finite measure spaces, the deviation of each from its own integral (its mean when the
+measure is a probability measure) tends to zero in measure when the variances tend to zero
+(Chebyshev), and almost everywhere on a fixed finite measure space when the variances are summable
+(Borel--Cantelli); the integrals themselves may vary and need not converge.
 
 ## Main statements
 
@@ -70,24 +74,30 @@ convergence to the mean from summable variances.
   function on the product of any measure and an s-finite measure is square-integrable if the lower
   integral of the extended variances of its sections in the second coordinate is finite and the
   extended variance of their integrals is finite.
-* `TauCeti.Probability.evariance_integral_prod_le`: for a function integrable on the product of
-  two s-finite measures, the extended variance of its integral over the second factor is at most
-  the mass of that factor times the lower integral of the extended variances of its sections in the
-  first coordinate.
+* `MeasureTheory.Integrable.evariance_integral_prod_le`: for a function integrable on the product
+  of two s-finite measures, the extended variance of its integral over the second factor is at
+  most the mass of that factor times the lower integral of the extended variances of its sections
+  in the first coordinate.
 * `TauCeti.Probability.evariance_prod_le`: the two-factor Efron–Stein bound for a function that is
   almost everywhere strongly measurable on the product of an s-finite measure and a probability
   measure.
-* `TauCeti.Probability.variance_weighted_coordinate_sum` and
-  `TauCeti.Probability.measure_weighted_coordinate_sum_sub_mean_ge`: variance and Chebyshev
-  bounds for weighted sums of pairwise independent variables.
+* `TauCeti.Probability.variance_weighted_coordinate_sum`,
+  `TauCeti.Probability.variance_weighted_coordinate_sum_of_covariance_eq_zero` and
+  `TauCeti.Probability.measure_weighted_coordinate_sum_sub_integral_ge`: variance and Chebyshev
+  bounds for weighted sums of square-integrable variables that are pairwise independent or
+  pairwise uncorrelated.
 * `TauCeti.Probability.tendsto_measure_abs_sub_integral_ge_of_tendsto_variance`: vanishing
-  variances imply convergence in measure to the mean, including on varying finite measure spaces.
-* `TauCeti.Probability.ae_tendsto_sub_integral_of_summable_variance`: summable variances imply
-  almost-everywhere convergence to the mean on a finite measure space.
-* `TauCeti.integral_coe_pos_of_variance_ne_zero`: on a finite measure space, an `ℝ≥0`-valued
-  random variable with nonzero variance has strictly positive expectation.
-* `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: on a probability space, a
-  real-valued random variable with nonzero variance satisfies `μ {ω | X ω = 0} < 1`.
+  variances imply that the deviations of square-integrable functions from their own integrals
+  (their means when each measure is a probability measure) tend to zero in measure, including on
+  varying finite measure spaces.
+* `TauCeti.Probability.ae_tendsto_sub_integral_of_summable_variance`: on a finite measure space,
+  summable variances imply that the deviations of square-integrable functions from their own
+  integrals (their means when the measure is a probability measure) tend to zero almost everywhere.
+* `MeasureTheory.AEStronglyMeasurable.integral_pos_of_nonneg_ae_of_variance_ne_zero`: on a finite
+  measure space, an almost everywhere strongly measurable, almost everywhere nonnegative real
+  function with nonzero variance has strictly positive integral.
+* `TauCeti.measure_setOf_eq_zero_lt_measure_univ_of_variance_ne_zero`: on a finite measure space,
+  a real-valued function with nonzero variance satisfies `μ {ω | X ω = 0} < μ univ`.
 -/
 
 public section
@@ -149,26 +159,25 @@ namespace MeasureTheory
 section Centering
 
 variable {α E : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup E]
-  [InnerProductSpace ℝ E] [CompleteSpace E]
+  [InnerProductSpace ℝ E]
 
-/-- Centering a Hilbert-space-valued square-integrable variable subtracts the squared norm
-of its mean from its second absolute moment. -/
+/-- Centering a square-integrable variable with values in a real inner product space subtracts
+the squared norm of its mean from its second absolute moment. -/
 theorem MemLp.integral_norm_sub_integral_sq [IsProbabilityMeasure μ] {f : α → E}
     (hf : MemLp f 2 μ) :
     ∫ x, ‖f x - ∫ y, f y ∂μ‖ ^ 2 ∂μ =
       (∫ x, ‖f x‖ ^ 2 ∂μ) - ‖∫ x, f x ∂μ‖ ^ 2 := by
-  have hi := hf.integrable one_le_two
-  have hs := (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).mp hf
-  have hc : Integrable (fun x ↦ 2 * ⟪(∫ y, f y ∂μ), f x⟫) μ :=
-    (hi.const_inner _).const_mul 2
-  simp_rw [norm_sub_sq_real, real_inner_comm (∫ y, f y ∂μ)]
-  rw [integral_add (f := fun x ↦ ‖f x‖ ^ 2 - 2 * ⟪(∫ y, f y ∂μ), f x⟫)
-      (g := fun _ ↦ ‖∫ y, f y ∂μ‖ ^ 2) (hs.sub hc) (integrable_const _),
-    integral_sub (f := fun x ↦ ‖f x‖ ^ 2)
-      (g := fun x ↦ 2 * ⟪(∫ y, f y ∂μ), f x⟫) hs hc,
-    integral_const_mul, integral_inner hi, real_inner_self_eq_norm_sq,
-    integral_const, probReal_univ, one_smul]
-  ring
+  by_cases hE : CompleteSpace E
+  swap
+  · simp only [integral_of_not_completeSpace hE, sub_zero, norm_zero]
+    ring
+  -- The orthogonal splitting of the square oscillation about `0` over the whole space.
+  have h := TauCeti.setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add
+    (s := univ) (c := 0) (measure_ne_top μ univ) (hf.integrable one_le_two).integrableOn
+    (by simpa only [sub_zero] using
+      ((memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).mp hf).integrableOn)
+  simp only [Measure.restrict_univ, sub_zero, average_eq_integral, probReal_univ, one_mul] at h
+  linarith
 
 end Centering
 
@@ -279,29 +288,27 @@ section VarianceNeZero
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
-/-- A nonnegative random variable on a finite measure space with nonzero variance has strictly
-positive real expectation. -/
-theorem integral_coe_pos_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ≥0}
-    (hX : AEMeasurable X μ) (hvar : Var[fun ω ↦ (X ω : ℝ); μ] ≠ 0) :
-    0 < ∫ ω, (X ω : ℝ) ∂μ := by
-  have hint := (memLp_two_of_variance_ne_zero
-    (measurable_coe_nnreal_real.comp_aemeasurable hX).aestronglyMeasurable hvar).integrable
-    one_le_two
-  refine lt_of_le_of_ne (integral_nonneg fun ω ↦ (X ω).coe_nonneg) fun heq ↦ hvar ?_
-  have hz : (fun ω ↦ (X ω : ℝ)) =ᵐ[μ] 0 :=
-    (integral_eq_zero_iff_of_nonneg (fun ω ↦ (X ω).coe_nonneg) hint).1 heq.symm
-  rw [variance_congr hz, variance_zero]
+/-- An almost everywhere strongly measurable, almost everywhere nonnegative real function on a
+finite measure space with nonzero variance has strictly positive integral (expectation when `μ`
+is a probability measure). -/
+theorem _root_.MeasureTheory.AEStronglyMeasurable.integral_pos_of_nonneg_ae_of_variance_ne_zero
+    [IsFiniteMeasure μ] {X : Ω → ℝ}
+    (hX : AEStronglyMeasurable X μ) (h0 : 0 ≤ᵐ[μ] X) (hvar : Var[X; μ] ≠ 0) :
+    0 < ∫ ω, X ω ∂μ := by
+  have hint := (memLp_two_of_variance_ne_zero hX hvar).integrable one_le_two
+  refine (integral_nonneg_of_ae h0).lt_of_ne fun heq ↦ hvar ?_
+  rw [variance_congr ((integral_eq_zero_iff_of_nonneg_ae h0 hint).1 heq.symm), variance_zero]
 
-/-- On a probability space, a real-valued random variable with nonzero variance is not almost
-surely zero. -/
-theorem measure_setOf_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure μ] {X : Ω → ℝ}
-    (hvar : Var[X; μ] ≠ 0) :
-    μ {ω | X ω = 0} < 1 := by
-  refine lt_of_le_of_ne prob_le_one fun hfull ↦ hvar ?_
+/-- On a finite measure space, a real-valued random variable with nonzero variance is not almost
+everywhere zero: the set where it vanishes has measure strictly less than the whole space. -/
+theorem measure_setOf_eq_zero_lt_measure_univ_of_variance_ne_zero [IsFiniteMeasure μ]
+    {X : Ω → ℝ} (hvar : Var[X; μ] ≠ 0) :
+    μ {ω | X ω = 0} < μ univ := by
+  refine (measure_mono (subset_univ _)).lt_of_ne fun hfull ↦ hvar ?_
   by_cases hX : AEMeasurable X μ
   · have hnull : NullMeasurableSet {ω | X ω = 0} μ :=
       hX.nullMeasurable (measurableSet_singleton (0 : ℝ))
-    have hae : X =ᵐ[μ] 0 := (ae_mem_iff_measure_eq hnull).2 (hfull.trans measure_univ.symm)
+    have hae : X =ᵐ[μ] 0 := (ae_mem_iff_measure_eq hnull).2 hfull
     rw [variance_congr hae, variance_zero]
   · have hint : ∫ ω, X ω ∂μ = 0 := integral_non_aestronglyMeasurable fun h ↦ hX h.aemeasurable
     -- Without a measurable version of `X` the mean is `0`, so the integrand of the variance
@@ -310,7 +317,7 @@ theorem measure_setOf_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure �
       rw [evariance]
       refine lintegral_eq_zero_of_measure_setOf_eq_zero_eq_measure_univ ?_
       refine le_antisymm (measure_mono (subset_univ _)) ?_
-      rw [measure_univ, ← hfull]
+      rw [← hfull]
       refine measure_mono fun ω h0 ↦ ?_
       simp only [Set.mem_ofPred_eq] at h0 ⊢
       simp [h0, hint]
@@ -338,44 +345,45 @@ end MeasureTheory.MeasurePreserving
 namespace TauCeti.Probability
 
 /-- The variance of a weighted sum of pairwise independent square-integrable variables. -/
-theorem variance_weighted_coordinate_sum {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι]
-    {P : Measure Ω} {X : ι → Ω → ℝ} (a : ι → ℝ) (hX : ∀ i, MemLp (X i) 2 P)
-    (hindep : Pairwise fun i j ↦ IndepFun (X i) (X j) P) :
-    Var[fun ω ↦ ∑ i, a i * X i ω; P] =
-      ∑ i, a i ^ 2 * Var[X i; P] := by
-  have heq : (fun ω ↦ ∑ i, a i * X i ω) =
-      ∑ i, (fun ω ↦ a i * X i ω) := by
-    ext ω
-    simp only [Finset.sum_apply]
-  rw [heq, IndepFun.variance_sum
-    (fun i _ ↦ (hX i).const_mul _) (by
-      intro i _ j _ hij
-      exact (hindep hij).comp (by fun_prop) (by fun_prop))]
-  simp only [variance_const_mul]
+theorem variance_weighted_coordinate_sum {Ω ι : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : ι → Ω → ℝ} {s : Finset ι} (a : ι → ℝ) (hX : ∀ i ∈ s, MemLp (X i) 2 P)
+    (hindep : (s : Set ι).Pairwise fun i j ↦ IndepFun (X i) (X j) P) :
+    Var[fun ω ↦ ∑ i ∈ s, a i * X i ω; P] = ∑ i ∈ s, a i ^ 2 * Var[X i; P] := by
+  have h := IndepFun.variance_sum (X := fun i ω ↦ a i * X i ω)
+    (fun i hi ↦ (hX i hi).const_mul (a i))
+    fun i hi j hj hij ↦ (hindep hi hj hij).comp (by fun_prop) (by fun_prop)
+  simpa only [Finset.sum_fn, variance_const_mul] using h
 
-/-- Chebyshev's bound for a weighted sum of pairwise independent variables. -/
-theorem measure_weighted_coordinate_sum_sub_mean_ge
-    {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {P : Measure Ω}
-    [IsProbabilityMeasure P] {X : ι → Ω → ℝ} (a : ι → ℝ)
-    (hX : ∀ i, MemLp (X i) 2 P)
-    (hindep : Pairwise fun i j ↦ IndepFun (X i) (X j) P)
-    {ε : ℝ} (hε : 0 < ε) :
-    P {ω | ε ≤ |(∑ i, a i * X i ω) -
-        ∫ ω, ∑ i, a i * X i ω ∂P|} ≤
-      ENNReal.ofReal ((∑ i, a i ^ 2 * Var[X i; P]) / ε ^ 2) := by
-  have hmem : MemLp (fun ω ↦ ∑ i, a i * X i ω) 2 P := by
-    have h := memLp_finsetSum' (Finset.univ : Finset ι)
-      (fun i _ ↦ (hX i).const_mul (a i))
-    convert h using 1
-    ext ω
-    simp only [Finset.sum_apply]
-  have h := meas_ge_le_variance_div_sq hmem hε
-  rw [variance_weighted_coordinate_sum a hX hindep] at h
-  exact h
+/-- The variance of a weighted sum of pairwise uncorrelated square-integrable variables on a
+finite measure space. -/
+theorem variance_weighted_coordinate_sum_of_covariance_eq_zero {Ω ι : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} [IsFiniteMeasure P] {X : ι → Ω → ℝ} {s : Finset ι} (a : ι → ℝ)
+    (hX : ∀ i ∈ s, MemLp (X i) 2 P)
+    (hcov : (s : Set ι).Pairwise fun i j ↦ cov[X i, X j; P] = 0) :
+    Var[fun ω ↦ ∑ i ∈ s, a i * X i ω; P] = ∑ i ∈ s, a i ^ 2 * Var[X i; P] := by
+  rw [variance_fun_sum' fun i hi ↦ (hX i hi).const_mul (a i)]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [Finset.sum_eq_single_of_mem i hi fun j hj hji ↦ by
+      rw [covariance_const_mul_left, covariance_const_mul_right, hcov hi hj hji.symm, mul_zero,
+        mul_zero],
+    covariance_self ((hX i hi).const_mul (a i)).aemeasurable, variance_const_mul]
+
+/-- Chebyshev's bound for a weighted sum of pairwise uncorrelated square-integrable variables on a
+finite measure space. -/
+theorem measure_weighted_coordinate_sum_sub_integral_ge {Ω ι : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} [IsFiniteMeasure P] {X : ι → Ω → ℝ} {s : Finset ι} (a : ι → ℝ)
+    (hX : ∀ i ∈ s, MemLp (X i) 2 P)
+    (hcov : (s : Set ι).Pairwise fun i j ↦ cov[X i, X j; P] = 0) {ε : ℝ} (hε : 0 < ε) :
+    P {ω | ε ≤ |(∑ i ∈ s, a i * X i ω) - ∫ ω, ∑ i ∈ s, a i * X i ω ∂P|} ≤
+      ENNReal.ofReal ((∑ i ∈ s, a i ^ 2 * Var[X i; P]) / ε ^ 2) := by
+  have h := meas_ge_le_variance_div_sq
+    (memLp_finsetSum s fun i hi ↦ (hX i hi).const_mul (a i)) hε
+  rwa [variance_weighted_coordinate_sum_of_covariance_eq_zero a hX hcov] at h
 
 /-- **Chebyshev convergence in measure from vanishing variances.** If square-integrable real-valued
 functions on possibly varying finite measure spaces have variances tending to zero along a filter,
-then their deviations from their expectations converge to zero in measure. -/
+then their deviations from their own integrals (their means when each measure is a probability
+measure) converge to zero in measure. -/
 theorem tendsto_measure_abs_sub_integral_ge_of_tendsto_variance {ι : Type*} {l : Filter ι}
     {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)]
     {P : (i : ι) → Measure (Ω i)} [∀ i, IsFiniteMeasure (P i)]
@@ -390,7 +398,8 @@ theorem tendsto_measure_abs_sub_integral_ge_of_tendsto_variance {ι : Type*} {l 
 
 /-- **Borel--Cantelli almost-everywhere convergence from summable variances.** On a finite measure
 space, if a sequence of square-integrable real-valued functions has summable variances, then its
-fluctuations around its expectations converge almost everywhere to zero. -/
+deviations from its own integrals (its means when `P` is a probability measure) converge almost
+everywhere to zero. -/
 theorem ae_tendsto_sub_integral_of_summable_variance {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} [IsFiniteMeasure P] {X : ℕ → Ω → ℝ}
     (hX : ∀ n, MemLp (X n) 2 P) (hvar : Summable fun n ↦ Var[X n; P]) :
@@ -569,7 +578,8 @@ variances of its sections in the first coordinate. For a probability measure on 
 this bounds the extended variance of the average by the lower integral of the extended variances of
 the sections. The proof applies Minkowski's integral inequality in `L²` to the sections centered in
 the first coordinate. -/
-theorem evariance_integral_prod_le (hint : Integrable F (ν.prod π)) :
+theorem _root_.MeasureTheory.Integrable.evariance_integral_prod_le
+    (hint : Integrable F (ν.prod π)) :
     evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
       π Set.univ * ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
   -- Center each section in the first coordinate.
@@ -630,7 +640,7 @@ theorem evariance_prod_le [IsProbabilityMeasure π] (hF : AEStronglyMeasurable F
   by_cases hL : MemLp F 2 (ν.prod π)
   · rw [evariance_prod_eq hF]
     gcongr
-    simpa only [measure_univ, one_mul] using evariance_integral_prod_le (hL.integrable one_le_two)
+    simpa only [measure_univ, one_mul] using (hL.integrable one_le_two).evariance_integral_prod_le
   rw [evariance_eq_top hF hL, top_le_iff, ENNReal.add_eq_top]
   by_contra h
   exact hL (memLp_two_prod_of_lintegral_evariance_ne_top hF (h ∘ .inl) (h ∘ .inr))
