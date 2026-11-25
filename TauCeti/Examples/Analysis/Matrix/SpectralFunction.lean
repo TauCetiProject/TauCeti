@@ -66,6 +66,11 @@ theorem geomMean_eigenvalues₀ {A : Matrix (Fin 2) (Fin 2) 𝕜} (hA : A.IsHerm
   change _ = RCLike.re (∏ k : Fin 2, _) ^ _
   rw [Fin.prod_univ_two, ← RCLike.ofReal_mul, RCLike.ofReal_re]
 
+/-- The square root `4 ^ (1/2)` of `4` is `2`. -/
+theorem four_rpow_inv_two : (4 : ℝ) ^ (2⁻¹ : ℝ) = 2 := by
+  rw [show (4 : ℝ) = 2 ^ 2 by norm_num]
+  simpa using Real.pow_rpow_inv_natCast (x := 2) (n := 2) (by norm_num) two_ne_zero
+
 /-- `det^{1/2}` is `2` at `diag(4, 1)` and at `diag(1, 4)`, and `5/2` at their midpoint
 `diag(5/2, 5/2)`. -/
 theorem geomMean_diagonal_four_one (hA : (diagonal ![((4 : ℝ) : 𝕜), (1 : ℝ)]).IsHermitian)
@@ -73,14 +78,11 @@ theorem geomMean_diagonal_four_one (hA : (diagonal ![((4 : ℝ) : 𝕜), (1 : �
     (hM : (diagonal ![((5 / 2 : ℝ) : 𝕜), (5 / 2 : ℝ)]).IsHermitian) :
     geomMean hA.eigenvalues₀ = 2 ∧ geomMean hB.eigenvalues₀ = 2 ∧
       geomMean hM.eigenvalues₀ = 5 / 2 := by
-  have h4 : (4 : ℝ) ^ (2⁻¹ : ℝ) = 2 := by
-    rw [show (4 : ℝ) = 2 ^ 2 by norm_num]
-    simpa using Real.pow_rpow_inv_natCast (x := 2) (n := 2) (by norm_num) two_ne_zero
   refine ⟨?_, ?_, ?_⟩
   · rw [hA.eigenvalues₀_diagonal_two (by norm_num), geomMean]
-    simpa using h4
+    simpa using four_rpow_inv_two
   · rw [hB.eigenvalues₀_diagonal_two_swap (by norm_num), geomMean]
-    simpa using h4
+    simpa using four_rpow_inv_two
   · rw [hM.eigenvalues₀_diagonal_two le_rfl, geomMean]
     simpa [← sq] using Real.pow_rpow_inv_natCast (x := 5 / 2) (n := 2) (by norm_num) two_ne_zero
 

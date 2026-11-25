@@ -97,7 +97,7 @@ theorem diagonal_fderiv_prod_two_one
     funext k
     fin_cases k
     · exact (congrArg (fun x : ℝ ↦ (x : 𝕜)) h0).trans (by simp)
-    · exact (congrArg (fun x : ℝ ↦ (x : 𝕜)) h1).trans (by rw [RCLike.ofReal_ofNat]; rfl)
+    · exact (congrArg (fun x : ℝ ↦ (x : 𝕜)) h1).trans (by simp [RCLike.ofReal_ofNat])
   · rw [spectralGradient_prod_two_one]
     intro h
     have h01 := congrFun₂ h 0 1
@@ -234,8 +234,8 @@ theorem spectralGradient_geomMean_one_four
     simp
   · rw [hG, diagonal_mul_diagonal, trace_diagonal, Fin.sum_univ_two]
     norm_num [RCLike.ofReal_ofNat]
-  · rw [he, geomMean_def, show (4 : ℝ) = 2 ^ (2 : ℝ) by norm_num]
-    norm_num [← Real.rpow_mul]
+  · rw [he, geomMean_def]
+    simpa using four_rpow_inv_two
 
 /-- **The Euler identity carries the degree.** For `f = σ₂`, homogeneous of degree two, at
 `T = diag(1, 4)`: `∇F(T) = det(T) T⁻¹ = diag(4, 1)` and `tr(∇F(T) T) = 8 = 2 F(T)`. -/
@@ -272,14 +272,11 @@ theorem trace_mul_diagonal_one_four :
       2 * ((diagonal ![(1 : ℝ), 4]).det * (1 : Matrix (Fin 2) (Fin 2) ℝ).det) ^ (2⁻¹ : ℝ) = 4 ∧
       (diagonal ![(1 : ℝ), 4] * diagonal ![1, 1 / 4]).trace = 2 ∧
       2 * ((diagonal ![(1 : ℝ), 4]).det * (diagonal ![(1 : ℝ), 1 / 4]).det) ^ (2⁻¹ : ℝ) = 2 := by
-  have h4 : (4 : ℝ) ^ (2⁻¹ : ℝ) = 2 := by
-    rw [show (4 : ℝ) = 2 ^ (2 : ℝ) by norm_num, ← Real.rpow_mul (by norm_num)]
-    norm_num
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [Matrix.mul_one, trace_diagonal, Fin.sum_univ_two]
     norm_num
   · rw [det_one, det_diagonal, Fin.prod_univ_two]
-    norm_num [h4]
+    norm_num [four_rpow_inv_two]
   · rw [diagonal_mul_diagonal, trace_diagonal, Fin.sum_univ_two]
     norm_num
   · rw [det_diagonal, det_diagonal, Fin.prod_univ_two, Fin.prod_univ_two]
