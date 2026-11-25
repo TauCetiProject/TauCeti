@@ -237,7 +237,6 @@ namespace AlgebraicK1
 
 /-- **Relabelling the indices does not change the class in `K₁`**: for `e : Fin m ≃ Fin n`, the
 reindexed matrix is conjugate to the original one by a permutation matrix. -/
-@[simp]
 theorem mk_reindexGL (e : Fin m ≃ Fin n) (u : GL (Fin m) A) :
     mk A n (e.reindexGL A u) = mk A m u := by
   obtain rfl : m = n := by simpa using Fintype.card_congr e

@@ -74,6 +74,8 @@ Morse-theoretic definitions that use them.
   derivative of a `C²` map in a fixed direction is continuous.
 * `ContDiff.continuous_fderiv_fderiv_apply`: the second derivative of a `C^n` map, `2 ≤ n`, in
   two fixed directions is continuous.
+* `ContDiffOn.hasFDerivWithinAt_fderiv_and_fderiv_fderiv`: the first and second derivatives of a
+  map that is `C²` on an open set `U ⊇ s`, as derivatives within `s`.
 * `TauCeti.fderiv_fderiv_of_notMem_tsupport`: the second derivative vanishes off the support.
 * `TauCeti.eventually_fderiv_ne`: where the second derivative is invertible, the differential
   avoids any prescribed value on a punctured neighbourhood of the point.
@@ -203,6 +205,18 @@ theorem _root_.ContDiffOn.continuousOn_fderiv_fderiv_apply {g : E → F} {s : Se
     ContinuousOn (fun x ↦ fderiv 𝕜 (fun y ↦ fderiv 𝕜 g y v) x v) s :=
   (((hg.fderiv_of_isOpen hs (by norm_num)).clm_apply contDiffOn_const).continuousOn_fderiv_of_isOpen
     hs le_rfl).clm_apply continuousOn_const
+
+/-- The first and second derivatives of a map that is `C²` on an open set `U ⊇ s`, as
+derivatives within `s`: `g` has derivative `fderiv 𝕜 g` and `fderiv 𝕜 g` has derivative
+`fderiv 𝕜 (fderiv 𝕜 g)` within `s` at every point of `s`. -/
+theorem _root_.ContDiffOn.hasFDerivWithinAt_fderiv_and_fderiv_fderiv {U s : Set E} {g : E → F}
+    (hg : ContDiffOn 𝕜 2 g U) (hU : IsOpen U) (hsU : s ⊆ U) :
+    (∀ y ∈ s, HasFDerivWithinAt g (fderiv 𝕜 g y) s y) ∧
+      ∀ y ∈ s, HasFDerivWithinAt (fderiv 𝕜 g) (fderiv 𝕜 (fderiv 𝕜 g) y) s y :=
+  ⟨fun y hy => ((hg.contDiffAt (hU.mem_nhds (hsU hy))).differentiableAt
+      (by norm_num)).hasFDerivAt.hasFDerivWithinAt,
+    fun y hy =>
+      ((hg.contDiffAt (hU.mem_nhds (hsU hy))).hasFDerivAt_fderiv le_rfl).hasFDerivWithinAt⟩
 
 /-- **Where the second derivative is invertible, the differential avoids any prescribed value near
 the point.** Nothing is assumed about the value `c`, and in particular the differential need not
