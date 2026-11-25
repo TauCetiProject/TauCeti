@@ -129,4 +129,6 @@ example (n : ℕ) {k l : Fin n} (hkl : k ≠ l) :
     exact_mod_cast Int.one_le_abs (by omega : ((k : ℕ) : ℤ) - (l : ℕ) ≠ 0)
   calc (1 : ℝ) + 1 ≤ 4 * |((k : ℕ) : ℝ) - (l : ℕ)| := by linarith
     _ = dist (4 * ((k : ℕ) : ℂ)) (4 * ((l : ℕ) : ℂ)) := by
-      simp [dist_eq_norm, ← mul_sub, ← Complex.ofReal_natCast, ← Complex.ofReal_sub]
+      -- Both centres are real, so their distance is that of their real parts.
+      rw [Complex.dist_of_im_eq (by simp), Real.dist_eq]
+      simp [← mul_sub, abs_mul]

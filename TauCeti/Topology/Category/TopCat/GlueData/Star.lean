@@ -258,7 +258,7 @@ theorem starGlueData_ι_eq_iff_of_ne {i j : J} (hij : i ≠ j) {x : U i} {y : U 
       ∃ (hx : x ∈ W i) (hy : y ∈ W j), (ψ i ⟨x, hx⟩ : X) = ψ j ⟨y, hy⟩ := by
   refine ⟨fun h ↦ ?_, fun ⟨hx, hy, h⟩ ↦ (starGlueData_ι_eq_iff hx hy).2 h⟩
   obtain ⟨z, rfl, rfl⟩ := starGlueData_ι_eq_iff_exists.1 h
-  have hz : (z : U i) ∈ W i := ((mem_starOverlap.1 z.2).resolve_left hij).1
+  have hz : (z : U i) ∈ W i := starOverlap_le hij z.2
   exact ⟨hz, starTransition_mem z hz, (starGlueData_ι_eq_iff _ _).1 h⟩
 
 /-- Two distinct pieces of a star gluing overlap exactly when their images in the centre meet.
@@ -266,6 +266,7 @@ In particular, when the centre is one of the pieces, pieces with pairwise disjoi
 only the centre. -/
 theorem nonempty_starGlueData_V_iff {i j : J} (hij : i ≠ j) :
     Nonempty ((starGlueData ψ).V (i, j)) ↔ ((A i : Set X) ∩ A j).Nonempty := by
+  rw [starGlueData_V]
   refine ⟨fun ⟨z⟩ ↦ ?_, fun ⟨a, hai, haj⟩ ↦ ?_⟩
   · obtain ⟨hz, hA⟩ := (mem_starOverlap.1 z.2).resolve_left hij
     exact ⟨_, (ψ i _).2, hA⟩
