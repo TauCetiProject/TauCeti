@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.End.Model
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
@@ -31,7 +32,8 @@ parametrix of the two-ended cylinder
 * **Splitting off the cutoff.** The jet coefficient of the transfer along the end chart `φ'_q`
   with a cutoff `β` (`TauCeti.Floer.endTransferCoeff`) is `β(φ'_q)` times the jet coefficient with
   the cutoff `1`, plus a term that only reads the value of a jet and involves the derivative of `β`
-  (`TauCeti.Floer.endTransferCoeff_apply_eq_smul_add`).
+  (`TauCeti.Floer.endTransferCoeff_apply_eq_smul_add`, in
+  `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Transfer`).
 * **The abstract end piece.** Let the first-order operator on the cylinder with an essentially
   bounded coefficient field `G` have a right inverse `Q`, and let `M` read along `φ'_q` with the
   cutoff `1` be within `ε` of `G` beyond a height `T₀`. For a cutoff `β` bounded by `B`, vanishing
@@ -103,21 +105,6 @@ private theorem endTransferCutoffCoeff_apply (q : Puncture) (β : ℝ × ℝ →
         (positiveEndChartScale q ζ * fderiv ℝ β (positiveEndChart q ζ) (0, 1)) • v.1) := by
   refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp [endTransferCutoffCoeff]
 
-/-- **The jet coefficient of the transfer splits off the cutoff.** The jet coefficient of the
-transfer along an end chart with a cutoff `β` is `β(w)` times the jet coefficient of the transfer
-with the cutoff `1`, plus a term which only reads the value of the jet: at `w = φ'_q(ζ)` with
-conformal scale `r`, the jet `(x, y, z)` goes to `(0, r ∂sβ(w) x, r ∂tβ(w) x)`. -/
-theorem endTransferCoeff_apply_eq_smul_add (q : Puncture) (β : ℝ × ℝ → ℝ) (ζ : ℝ × ℝ)
-    (v : V × V × V) :
-    endTransferCoeff q β ζ v =
-      β (positiveEndChart q ζ) • endTransferCoeff q (fun _ ↦ 1) ζ v +
-        (0, (positiveEndChartScale q ζ * fderiv ℝ β (positiveEndChart q ζ) (1, 0)) • v.1,
-          (positiveEndChartScale q ζ * fderiv ℝ β (positiveEndChart q ζ) (0, 1)) • v.1) := by
-  simp only [endTransferCoeff_apply, fderiv_const_apply, zero_apply,
-    mul_zero, zero_smul, zero_add, mul_one]
-  refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst,
-    Prod.smul_snd, add_zero] <;> module
-
 private theorem endTransferCoeff_eq_smul_add (q : Puncture) (β : ℝ × ℝ → ℝ) (ζ : ℝ × ℝ) :
     endTransferCoeff (V := V) q β ζ =
       β (positiveEndChart q ζ) • endTransferCoeff q (fun _ ↦ 1) ζ +
@@ -147,16 +134,22 @@ private theorem norm_endTransferCutoffCoeff_le (q : Puncture) (β : ℝ × ℝ �
     rw [abs_mul, abs_of_pos hr]
     gcongr
     simpa [he] using (fderiv ℝ β (positiveEndChart q ζ)).le_opNorm e
-  have h₁ := hd (1, 0) (by simp [Prod.norm_def])
-  have h₂ := hd (0, 1) (by simp [Prod.norm_def])
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-  have hv : ‖v.1‖ ≤ ‖v‖ := norm_fst_le v
+  -- Each nonzero component is a coefficient of size at most `r ‖dβ‖` times `v.1`, and
+  -- `‖v.1‖ ≤ ‖v‖`; the factor `2` is slack.
+  have hcomp (e : ℝ × ℝ) (he : ‖e‖ = 1) :
+      |r * fderiv ℝ β (positiveEndChart q ζ) e| * ‖v.1‖ ≤
+        2 * (r * ‖fderiv ℝ β (positiveEndChart q ζ)‖) * ‖v‖ :=
+    calc |r * fderiv ℝ β (positiveEndChart q ζ) e| * ‖v.1‖
+        ≤ (r * ‖fderiv ℝ β (positiveEndChart q ζ)‖) * ‖v‖ :=
+          mul_le_mul (hd e he) (norm_fst_le v) (norm_nonneg _) (by positivity)
+      _ ≤ 2 * (r * ‖fderiv ℝ β (positiveEndChart q ζ)‖) * ‖v‖ :=
+          mul_le_mul_of_nonneg_right (le_mul_of_one_le_left (by positivity) one_le_two)
+            (norm_nonneg _)
   rw [endTransferCutoffCoeff_apply, Prod.norm_def, Prod.norm_def, norm_zero, norm_smul,
     norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
-  refine max_le (by positivity) (max_le ?_ ?_) <;>
-    nlinarith [norm_nonneg v.1, norm_nonneg v, abs_nonneg
-      (r * fderiv ℝ β (positiveEndChart q ζ) (1, 0)), abs_nonneg
-      (r * fderiv ℝ β (positiveEndChart q ζ) (0, 1))]
+  exact max_le (by positivity) (max_le (hcomp (1, 0) (by simp [Prod.norm_def]))
+    (hcomp (0, 1) (by simp [Prod.norm_def])))
 
 end Cutoff
 
@@ -407,9 +400,10 @@ private theorem norm_endRotation_le (q : Puncture) (L : ℝ → AlmostComplexStr
   have hid := ContinuousLinearMap.norm_id_le (𝕜 := ℝ) (E := V)
   have hσb : |σ| * |(fderiv ℝ (positiveEndChart q) ζ (1, 0)).2| ≤ positiveEndChartScale q ζ :=
     (mul_le_of_le_one_left (abs_nonneg _) hσ).trans hb
-  nlinarith [norm_nonneg ((L ζ.2).toLinearMap.toContinuousLinearMap),
-    abs_nonneg (fderiv ℝ (positiveEndChart q) ζ (1, 0)).1, norm_nonneg (ContinuousLinearMap.id ℝ V),
-    mul_nonneg (abs_nonneg σ) (abs_nonneg (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2)]
+  -- The identity term is at most `r · 1` and the `L` term at most `r ‖L‖`.
+  rw [mul_add, mul_one]
+  exact add_le_add ((mul_le_of_le_one_right (abs_nonneg _) hid).trans ha)
+    (mul_le_mul_of_nonneg_right hσb (norm_nonneg _))
 
 private theorem memLp_endRotation (q : Puncture) {L : ℝ → AlmostComplexStructure V}
     (hL : Continuous fun t ↦ (L t).toLinearMap.toContinuousLinearMap) {σ : ℝ} (hσ : |σ| ≤ 1) :

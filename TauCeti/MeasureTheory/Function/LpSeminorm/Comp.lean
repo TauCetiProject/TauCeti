@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NNNorm
-public import Mathlib.Basic.ENNReal.Holder
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.Normed.Operator.NormedSpace
-import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
 
 /-!
@@ -40,9 +38,6 @@ map, such as the projection `Prod.fst` from a product of σ-finite measures, pre
   quasi-measure-preserving map preserves `L^∞`.
 * `ContinuousLinearMap.eLpNorm_comp_le`: postcomposition with a continuous semilinear map scales
   `eLpNorm` by at most its operator norm, with no measurability assumption.
-* `MeasureTheory.MemLp.clm_comp`: the pointwise composition of fields of continuous linear maps in
-  `Lᵖ` and `L^q` lies in `L^r` for a Hölder triple `(p, q, r)`; in particular two `L^∞` fields
-  compose to an `L^∞` field.
 * `Isometry.eLpNorm_comp_of_map_zero`, `LinearIsometry.eLpNorm_comp`,
   `LinearIsometryEquiv.eLpNorm_comp`: postcomposition with an isometry fixing zero, such as a
   linear isometry, preserves `eLpNorm`.
@@ -121,17 +116,6 @@ theorem _root_.ContinuousLinearMap.eLpNorm_comp_le {𝕜 𝕜₂ E F : Type*} [N
     simp [eLpNorm_zero_of_ae_eNorm_zero' hm.aestronglyMeasurable (.of_forall h0)]
   rw [eLpNorm_of_not_aestronglyMeasurable hu, ENNReal.mul_top hA]
   exact le_top
-
-/-- **Hölder's inequality for composition of operator fields.** If `A ∈ Lᵖ(μ)` and `B ∈ L^q(μ)`
-are fields of continuous linear maps and `(p, q, r)` is a Hölder triple, then the pointwise
-composition `x ↦ A x ∘L B x` lies in `L^r(μ)`; in particular two `L^∞` fields compose to an `L^∞`
-field. -/
-theorem MemLp.clm_comp {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-    [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F]
-    [NormedSpace 𝕜 G] {p q : ℝ≥0∞} (r : ℝ≥0∞) [ENNReal.HolderTriple p q r] {A : α → F →L[𝕜] G}
-    {B : α → E →L[𝕜] F} (hA : MemLp A p μ) (hB : MemLp B q μ) :
-    MemLp (fun x ↦ (A x).comp (B x)) r μ :=
-  (ContinuousLinearMap.compL 𝕜 E F G).memLp_of_bilin r hA hB
 
 end MeasureTheory
 

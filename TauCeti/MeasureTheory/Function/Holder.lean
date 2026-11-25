@@ -26,6 +26,9 @@ integration-by-parts arguments:
 * `MeasureTheory.eLpNorm_clm_apply_le`: Hölder's inequality
   `‖x ↦ f x (g x)‖_{Lᶜ} ≤ ‖f‖_{Lᵃ} ‖g‖_{Lᵇ}` for evaluation, and
   `MeasureTheory.eLpNorm_clm_apply_const_le`, evaluation at a fixed vector.
+* `MeasureTheory.MemLp.clm_comp`: the pointwise composition of fields of continuous linear maps in
+  `Lᵖ` and `L^q` lies in `L^r` for a Hölder triple `(p, q, r)`; in particular two `L^∞` fields
+  compose to an `L^∞` field.
 * `MeasureTheory.MemLp.integrable_bilinear_apply`: more generally, an essentially bounded field of
   continuous bilinear maps applied to an `L^p` function and an `L^q` function is integrable.
 * `MeasureTheory.MemLp.integrable_inner_of_holderConjugate`: Hölder's inequality makes the
@@ -106,6 +109,23 @@ theorem _root_.MeasureTheory.eLpNorm_clm_apply_const_le (v : V) :
     exact le_top
 
 end Evaluation
+
+section Composition
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+omit [p.HolderConjugate q] in
+/-- **Hölder's inequality for composition of operator fields.** If `A ∈ Lᵖ(μ)` and `B ∈ L^q(μ)`
+are fields of continuous linear maps and `(p, q, r)` is a Hölder triple, then the pointwise
+composition `x ↦ A x ∘L B x` lies in `L^r(μ)`; in particular two `L^∞` fields compose to an `L^∞`
+field. -/
+theorem clm_comp (r : ℝ≥0∞) [ENNReal.HolderTriple p q r] {A : α → F →L[𝕜] G}
+    {B : α → E →L[𝕜] F} (hA : MemLp A p μ) (hB : MemLp B q μ) :
+    MemLp (fun x ↦ (A x).comp (B x)) r μ :=
+  (ContinuousLinearMap.compL 𝕜 E F G).memLp_of_bilin r hA hB
+
+end Composition
 
 section Bilinear
 
