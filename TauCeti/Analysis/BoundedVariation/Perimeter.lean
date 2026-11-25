@@ -318,6 +318,6 @@ theorem perimeter_le_liminf [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ]
   refine totalVariationOn_le_liminf (hs.mono fun i hi => hli hi) (hli hs₀) fun K hK hKΩ => ?_
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h K hK hKΩ)
     (fun _ => zero_le) fun _ =>
-      setLIntegral_enorm_indicator_one_sub_le μ _ _ hK.isClosed.measurableSet
+      μ.setLIntegral_enorm_indicator_one_sub_le _ _ hK.isClosed.nullMeasurableSet
 
 end TauCeti

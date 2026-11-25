@@ -56,8 +56,8 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
 * `TauCeti.integral_divergenceCLM_sub_fderiv_mul_exp_neg_eq_zero`: for a `C¹` weight, the weighted
   divergence of a test vector field has `μ`-integral zero.
 * `TauCeti.weightedDivergence_eq_zero_of_notMem_tsupport`, `TauCeti.continuous_weightedDivergence`:
-  the weighted divergence of a test vector field vanishes off its support and, for a `C¹` weight,
-  is continuous.
+  the weighted divergence of a test vector field vanishes off its support and, for a weight that
+  is `C¹` on `Ω`, is continuous.
 * `TauCeti.ofReal_integral_le_weightedVariation_of_contDiff`: `C¹` vector fields with compact
   support in `Ω` and norm at most `1` bound the weighted variation from below.
 * `TauCeti.weightedVariation_eq_iSup_norm_le_exp_neg` and
@@ -218,15 +218,25 @@ theorem weightedDivergence_eq_zero_of_notMem_tsupport (X : 𝓓(Ω, E)) {x : E} 
   simp
 
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- For a `C¹` weight, the weighted divergence of a test vector field is continuous. -/
-theorem continuous_weightedDivergence (hW : ContDiff ℝ 1 W) (X : 𝓓(Ω, E)) :
-    Continuous fun x => (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x) :=
-  ((divergenceCLM X).continuous.sub ((hW.continuous_fderiv one_ne_zero).clm_apply
-    X.continuous)).mul hW.continuous.neg.rexp
+/-- For a weight that is `C¹` on `Ω`, the weighted divergence of a test vector field on `Ω` is
+continuous. -/
+theorem continuous_weightedDivergence (hW : ContDiffOn ℝ 1 W Ω) (X : 𝓓(Ω, E)) :
+    Continuous fun x => (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x) := by
+  refine continuous_iff_continuousAt.2 fun x => ?_
+  by_cases hx : x ∈ tsupport X
+  · -- Near a point of `tsupport X ⊆ Ω`, the weight is `C¹`.
+    have hΩ : (Ω : Set E) ∈ 𝓝 x := Ω.isOpen.mem_nhds (X.tsupport_subset hx)
+    exact ((divergenceCLM X).continuous.continuousAt.sub
+      (((hW.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).continuousAt hΩ).clm_apply
+        X.continuous.continuousAt)).mul (hW.continuousOn.continuousAt hΩ).neg.rexp
+  · -- Off `tsupport X`, the weighted divergence vanishes on a neighbourhood.
+    refine (continuousAt_const (y := (0 : ℝ))).congr ?_
+    filter_upwards [(isClosed_tsupport X).isOpen_compl.mem_nhds hx] with y hy
+    exact (weightedDivergence_eq_zero_of_notMem_tsupport X hy).symm
 
-/-- For a `C¹` weight and `u` locally integrable on `Ω`, the weighted pairing of `u` with a test
-vector field on `Ω` is integrable. -/
-theorem integrable_weightedDivergence_mul (hW : ContDiff ℝ 1 W)
+/-- For a weight that is `C¹` on `Ω` and `u` locally integrable on `Ω`, the weighted pairing of
+`u` with a test vector field on `Ω` is integrable. -/
+theorem integrable_weightedDivergence_mul (hW : ContDiffOn ℝ 1 W Ω)
     (hu : LocallyIntegrableOn u Ω) (X : 𝓓(Ω, E)) :
     Integrable fun x => (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x) * u x := by
   have hK : IsCompact (tsupport X) := X.hasCompactSupport
@@ -431,7 +441,7 @@ theorem weightedVariation_smul (c : ℝ) :
 theorem weightedVariation_add_le (hW : ContDiff ℝ 1 W) (hu : LocallyIntegrableOn u Ω) :
     weightedVariation W Ω (u + v) ≤ weightedVariation W Ω u + weightedVariation W Ω v := by
   refine weightedVariation_le_iff.2 fun X hX => ?_
-  have hiu := integrable_weightedDivergence_mul hW hu X
+  have hiu := integrable_weightedDivergence_mul hW.contDiffOn hu X
   by_cases hiv : Integrable fun x =>
       (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x) * v x
   · have hsplit :
@@ -454,7 +464,7 @@ theorem weightedVariation_add_const (hW : ContDiff ℝ 1 W) (c : ℝ) :
   refine iSup_congr fun X => iSup_congr fun _ => congrArg ENNReal.ofReal ?_
   have hc : Integrable fun x =>
       (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x) * c :=
-    (integrable_weightedDivergence_mul hW (locallyIntegrableOn_const c) X)
+    (integrable_weightedDivergence_mul hW.contDiffOn (locallyIntegrableOn_const c) X)
   have hc0 : ∫ x, (divergenceCLM X x - fderiv ℝ W x (X x)) * Real.exp (-W x) * c = 0 := by
     rw [integral_mul_const, integral_divergenceCLM_sub_fderiv_mul_exp_neg_eq_zero hW, zero_mul]
   simp_rw [mul_add]

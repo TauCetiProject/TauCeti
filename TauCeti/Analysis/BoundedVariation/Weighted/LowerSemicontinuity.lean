@@ -13,8 +13,8 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.Indicator
 /-!
 # Lower semicontinuity of the weighted variation
 
-For a `C¹` weight `W`, the weighted variation `V_μ(u; Ω)` (`TauCeti.weightedVariation`) is lower
-semicontinuous for `L¹_loc(Ω)` convergence: if `u₀` and
+For a weight `W` that is `C¹` on `Ω`, the weighted variation `V_μ(u; Ω)`
+(`TauCeti.weightedVariation`) is lower semicontinuous for `L¹_loc(Ω)` convergence: if `u₀` and
 eventually the `u i` are locally integrable on `Ω` and `u i → u₀` in `L¹_loc(Ω)`, then
 `V_μ(u₀; Ω) ≤ liminf V_μ(u i; Ω)` (`TauCeti.weightedVariation_le_liminf`). Each pairing
 `u ↦ ∫ u div_μ X dμ` with an admissible test vector field `X` is continuous for this convergence:
@@ -52,11 +52,11 @@ open scoped ENNReal Distributions Topology symmDiff
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {W : E → ℝ} {Ω : Opens E}
 
-/-- **Lower semicontinuity of the weighted variation under `L¹_loc` convergence.** For a `C¹`
-weight, if `u₀` and eventually the `u i` are locally integrable on `Ω`, and `u i → u₀` in
+/-- **Lower semicontinuity of the weighted variation under `L¹_loc` convergence.** For a weight
+`C¹` on `Ω`, if `u₀` and eventually the `u i` are locally integrable on `Ω`, and `u i → u₀` in
 `L¹_loc(Ω)`, that is `∫_K |u i - u₀| → 0` for every compact `K ⊆ Ω`, then
 `V_μ(u₀; Ω) ≤ liminf V_μ(u i; Ω)`. -/
-theorem weightedVariation_le_liminf (hW : ContDiff ℝ 1 W) {ι : Type*} {l : Filter ι}
+theorem weightedVariation_le_liminf (hW : ContDiffOn ℝ 1 W Ω) {ι : Type*} {l : Filter ι}
     {u : ι → E → ℝ} {u₀ : E → ℝ} (hu : ∀ᶠ i in l, LocallyIntegrableOn (u i) Ω)
     (hu₀ : LocallyIntegrableOn u₀ Ω)
     (h : ∀ K, IsCompact K → K ⊆ Ω → Tendsto (fun i => ∫⁻ x in K, ‖u i x - u₀ x‖ₑ) l (𝓝 0)) :
@@ -71,15 +71,10 @@ theorem weightedVariation_le_liminf (hW : ContDiff ℝ 1 W) {ι : Type*} {l : Fi
   have hg : Continuous g := continuous_weightedDivergence hW X
   have hg0 (x : E) (hx : x ∉ tsupport X) : g x = 0 :=
     weightedDivergence_eq_zero_of_notMem_tsupport X hx
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hg.continuousOn
-  have hbound (x : E) : ‖g x‖ ≤ max C 0 := by
-    by_cases hx : x ∈ tsupport X
-    · exact (hC x hx).trans (le_max_left _ _)
-    · rw [hg0 x hx, norm_zero]
-      exact le_max_right _ _
-  -- The pairing with `g` converges, being bounded by `max C 0 ∫_K |u i - u₀|` for `K = tsupport X`.
+  obtain ⟨C, hC⟩ := hg.bounded_above_of_compact_support (.intro hK hg0)
+  -- The pairing with `g` converges, being bounded by `C ∫_K |u i - u₀|` for `K = tsupport X`.
   have hlim : Tendsto (fun i => ∫ x, g x * u i x) l (𝓝 (∫ x, g x * u₀ x)) :=
-    MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (.of_forall hbound)
+    MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (.of_forall hC)
       (.of_forall hg0)
       (hu.mono fun _ hi => integrable_weightedDivergence_mul hW hi X)
       (integrable_weightedDivergence_mul hW hu₀ X).aestronglyMeasurable
@@ -87,11 +82,11 @@ theorem weightedVariation_le_liminf (hW : ContDiff ℝ 1 W) {ι : Type*} {l : Fi
   rw [← ((ENNReal.continuous_ofReal.tendsto _).comp hlim).liminf_eq]
   exact liminf_le_liminf (.of_forall fun i => ofReal_integral_le_weightedVariation X hX)
 
-/-- **Lower semicontinuity of the weighted perimeter.** For a `C¹` weight, if `s₀` and eventually
-the `s i` are null-measurable in `Ω`, and the sets `s i` converge to `s₀` locally in measure in
-`Ω`, that is `|(s i ∆ s₀) ∩ K| → 0` for every compact `K ⊆ Ω`, then
+/-- **Lower semicontinuity of the weighted perimeter.** For a weight `C¹` on `Ω`, if `s₀` and
+eventually the `s i` are null-measurable in `Ω`, and the sets `s i` converge to `s₀` locally in
+measure in `Ω`, that is `|(s i ∆ s₀) ∩ K| → 0` for every compact `K ⊆ Ω`, then
 `P_μ(s₀; Ω) ≤ liminf P_μ(s i; Ω)`. -/
-theorem weightedPerimeter_le_liminf (hW : ContDiff ℝ 1 W) {ι : Type*} {l : Filter ι}
+theorem weightedPerimeter_le_liminf (hW : ContDiffOn ℝ 1 W Ω) {ι : Type*} {l : Filter ι}
     {s : ι → Set E} {s₀ : Set E} (hs : ∀ᶠ i in l, NullMeasurableSet (s i) (volume.restrict Ω))
     (hs₀ : NullMeasurableSet s₀ (volume.restrict Ω))
     (h : ∀ K, IsCompact K → K ⊆ Ω → Tendsto (fun i => volume ((s i ∆ s₀) ∩ K)) l (𝓝 0)) :
@@ -105,7 +100,7 @@ theorem weightedPerimeter_le_liminf (hW : ContDiff ℝ 1 W) {ι : Type*} {l : Fi
     fun K hK hKΩ => ?_
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h K hK hKΩ)
     (fun _ => zero_le) fun _ =>
-      setLIntegral_enorm_indicator_one_sub_le volume _ _ hK.isClosed.measurableSet
+      volume.setLIntegral_enorm_indicator_one_sub_le _ _ hK.isClosed.nullMeasurableSet
 
 /-- **Lower semicontinuity of the Gaussian perimeter.** If `s₀` and eventually the `s i` are
 null-measurable, and the sets `s i` converge to `s₀` locally in measure, that is
@@ -115,7 +110,7 @@ theorem gaussianPerimeter_le_liminf {ι : Type*} {l : Filter ι} {s : ι → Set
     (h : ∀ K, IsCompact K → Tendsto (fun i => volume ((s i ∆ s₀) ∩ K)) l (𝓝 0)) :
     gaussianPerimeter s₀ ≤ liminf (fun i => gaussianPerimeter (s i)) l := by
   simp only [gaussianPerimeter_def]
-  exact weightedPerimeter_le_liminf contDiff_gaussianWeight
+  exact weightedPerimeter_le_liminf contDiff_gaussianWeight.contDiffOn
     (hs.mono fun _ hi => hi.mono Measure.restrict_le_self) (hs₀.mono Measure.restrict_le_self)
     fun K hK _ => h K hK
 
