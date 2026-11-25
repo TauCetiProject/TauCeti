@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Inv
