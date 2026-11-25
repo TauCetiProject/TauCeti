@@ -176,12 +176,14 @@ theorem SmoothModel.mem_integralPoints_generalLinear_iff
       ∃ M : GL (Fin n) O, M.map (algebraMap O K) = GeneralLinear.pointToGeneralLinear n
         (WithConv.toConv (g.ofConv.comp (eqToHom
           (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj K n).symm).hom.toAlgHom)) := by
-  rw [SmoothModel.mem_integralPoints_iff_mapDomain]
   refine Iff.trans ?_ (mem_integralPoints_generalLinear_iff_of_eq n
-    (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj O n)
+    ((congrArg ObjectProperty.FullSubcategory.obj (SmoothModel.generalLinear_coord O K n)).trans
+      (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj O n))
     (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj K n) g)
-  rw [← GeneralLinear.finiteTypeCoordinateHopfAlgebraBaseChangeIso_hom]
-  rfl
+  rw [SmoothModel.mem_integralPoints_iff_mapDomain, SmoothModel.generalLinear_genericFiberIso,
+    Iso.trans_hom, FiniteTypeCommHopfAlgCat.toBialgHom, ObjectProperty.FullSubcategory.comp_hom,
+    GeneralLinear.finiteTypeCoordinateHopfAlgebraBaseChangeIso_hom]
+  simp only [ObjectProperty.eqToHom_hom, Iso.trans_hom, eqToIso.hom, eqToHom_trans_assoc]
 
 end IntegralPoints
 
