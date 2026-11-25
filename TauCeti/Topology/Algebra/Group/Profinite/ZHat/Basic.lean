@@ -47,6 +47,8 @@ dense, `ℤ̂` is commutative. The identification of the maximal pro-`p` quotien
 * `TauCeti.zHat.lift_mul_apply`, `TauCeti.zHat.lift_zpow_apply`, `TauCeti.zHat.lift_comm`: the
   lift is multiplicative on commuting base elements and compatible with powers, and on `ℤ̂`
   itself it is symmetric.
+* `TauCeti.zHat.mem_zpowers_mk_up_ofAdd_one`: the image of `1` generates every quotient of the
+  defining copy of `ℤ`.
 
 ## References
 
@@ -309,6 +311,19 @@ theorem lift_surjective (a : P) (ha : (Subgroup.zpowers a).topologicalClosure = 
     (isCompact_range (lift a).continuous).isClosed
   rw [← Set.range_eq_univ, ← hclosed.closure_eq]
   exact hdense.closure_range
+
+/-- The canonical generator `1 ∈ ℤ` generates every quotient of the defining copy of `ℤ` by a
+normal subgroup: every element of such a quotient is an integral power of the image of `1`. -/
+theorem mem_zpowers_mk_up_ofAdd_one
+    (H : Subgroup (ULift.{u} (Multiplicative ℤ))) [H.Normal]
+    (x : ULift.{u} (Multiplicative ℤ) ⧸ H) :
+    x ∈ Subgroup.zpowers (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1))) := by
+  obtain ⟨⟨y⟩, rfl⟩ := QuotientGroup.mk_surjective x
+  refine ⟨y.toAdd, ?_⟩
+  simp only [← QuotientGroup.mk_zpow]
+  congr 1
+  ext
+  simp
 
 /-- The lift of `a` is injective when every finite quotient of the defining copy of `ℤ` is
 detected by a continuous quotient of the target carrying `a` to the canonical generator. This is
