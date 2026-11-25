@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.RingTheory.PowerSeries.Exp
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.RingTheory.PowerSeries.Derivative
 import TauCeti.RingTheory.PowerSeries.Trunc
@@ -145,8 +146,8 @@ theorem coeff_zero_rankOneOperator (F G : ℂ⟦X⟧) (κ μ : ℂ) (A : ℂ⟦X
   simp [rankOneOperator, coeff_zero_eq_constantCoeff]
 
 /-- The coefficient of `X` in the operator. When `κ² + κ f₀ + g₀ = 0` it is
-`(μ (f₀ + 2κ) + κ f₁ + g₁) a₀`, so for `a₀ ≠ 0` it vanishes exactly when `μ` is given by DLMF
-2.7.10. -/
+`(μ (f₀ + 2κ) + κ f₁ + g₁) a₀`, so for `a₀ ≠ 0` and a simple root `κ`, `f₀ + 2κ ≠ 0`, it vanishes
+exactly when `μ` is given by DLMF 2.7.10. -/
 theorem coeff_one_rankOneOperator (F G : ℂ⟦X⟧) (κ μ : ℂ) (A : ℂ⟦X⟧) :
     coeff 1 (rankOneOperator F G κ μ A) =
       (μ * (coeff 0 F + 2 * κ) + κ * coeff 1 F + coeff 1 G) * coeff 0 A +
@@ -377,15 +378,13 @@ private noncomputable def residualPoly (κ μ : ℂ) (F G p : Polynomial ℂ) : 
     Polynomial.X * (Polynomial.C (2 * κ) + F) * polyEulerSub μ p +
     (Polynomial.C (κ ^ 2) + Polynomial.C κ * F + G) * p
 
-private lemma derivative_C_mul (c : ℂ) (A : ℂ⟦X⟧) : d⁄dX (C c * A) = C c * d⁄dX A := by
-  rw [Derivation.leibniz, derivative_C, smul_zero, add_zero, smul_eq_mul]
-
 private lemma coe_residualPoly (κ μ : ℂ) (F G p : Polynomial ℂ) :
     ((residualPoly κ μ F G p : Polynomial ℂ) : ℂ⟦X⟧) =
       rankOneOperator (F : ℂ⟦X⟧) (G : ℂ⟦X⟧) κ μ (p : ℂ⟦X⟧) := by
   simp only [residualPoly, polyEulerSub, rankOneOperator, Polynomial.coe_add, Polynomial.coe_sub,
     Polynomial.coe_mul, Polynomial.coe_pow, Polynomial.coe_X, Polynomial.coe_C, coe_polyEuler,
-    map_sub, derivative_C_mul]
+    map_sub, ← smul_eq_C_mul, Derivation.map_smul]
+  simp only [smul_eq_C_mul]
   ring
 
 /-- The residual of `exp(κ e^ζ + μ ζ) p(e^{-ζ})` in the equation
@@ -564,7 +563,8 @@ private lemma coeff_rankOneOperator_trunc_eq_zero {F G : ℂ⟦X⟧} {κ μ : �
         (rankOneOperator F G κ μ (A - trunc N A) -
           (C (κ ^ 2) + C κ * F + G) * (A - trunc N A)) +
         (C (κ ^ 2) + C κ * F + G) * (A - trunc N A) := by
-      simp only [rankOneOperator, map_sub, mul_sub, derivative_C_mul]; ring
+      simp only [rankOneOperator, map_sub, mul_sub, ← smul_eq_C_mul, Derivation.map_smul]
+      simp only [smul_eq_C_mul]; ring
     have hΨ : X ∣ C (κ ^ 2) + C κ * F + G :=
       X_dvd_iff.2 (by simpa [coeff_zero_eq_constantCoeff_apply] using hψ)
     have h := X_pow_dvd_iff.1 (hsub ▸ dvd_add (X_pow_succ_dvd_rankOneOperator_sub F G κ μ hdiv)
@@ -640,11 +640,11 @@ end Analytic
 example {κ : ℂ} (hκ : κ = 0 ∨ κ = 1) :
     rankOneCoeff (-1 + 2 * X ^ 2) (-X ^ 2 - 2 * X ^ 3 + X ^ 4) κ 0 =
       fun s ↦ ((s.factorial : ℂ))⁻¹ := by
-  have hE : d⁄dX (mk fun s ↦ ((s.factorial : ℂ))⁻¹) = mk fun s ↦ ((s.factorial : ℂ))⁻¹ := by
+  have hexp : (mk fun s ↦ ((s.factorial : ℂ))⁻¹) = PowerSeries.exp ℂ := by
     ext n
-    rw [coeff_derivative, coeff_mk, coeff_mk, Nat.factorial_succ]
-    push_cast
-    field_simp
+    simp [coeff_exp]
+  have hE : d⁄dX (mk fun s ↦ ((s.factorial : ℂ))⁻¹) = mk fun s ↦ ((s.factorial : ℂ))⁻¹ := by
+    rw [hexp, derivative_exp]
   have hne : coeff 0 (-1 + 2 * X ^ 2 : ℂ⟦X⟧) + 2 * κ ≠ 0 := by
     rcases hκ with rfl | rfl <;> norm_num [coeff_X_pow]
   refine (eq_rankOneCoeff_of_rankOneOperator_eq_zero ?_ (by simp) hne).symm
