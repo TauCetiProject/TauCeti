@@ -44,7 +44,9 @@ dimension, and the preimage of a submodule `p` inside another submodule `q` has 
 finite-dimensional subspace `p` under a map `f` with finite-dimensional kernel has dimension
 `dim (range f ⊓ p) + dim (ker f)` (`LinearMap.finrank_comap`). An `R`-submodule of
 rank less than `ℵ₀` has finite-dimensional `K`-span over any division ring `K` receiving `R`
-faithfully (`Submodule.finiteDimensional_span_of_rank_lt_aleph0`).
+faithfully (`Submodule.finiteDimensional_span_of_rank_lt_aleph0`). Two finite-dimensional subspaces
+of equal dimension are exchanged by a linear automorphism of the ambient space
+(`Submodule.exists_linearEquiv_mem_iff`), which need not itself be finite-dimensional.
 -/
 
 public section
@@ -235,6 +237,21 @@ theorem exists_mem_notMem_span_pair {V : Submodule 𝕜 E} (a : E) (h : 3 ≤ fi
   have := Set.ncard_insert_le a ({x} : Set E)
   rw [Set.ncard_singleton] at this
   omega
+
+/-- **Subspaces of equal finite dimension are exchanged by a linear automorphism.** In any
+vector space `E` over a division ring `𝕜`, two finite-dimensional subspaces of the same dimension
+are mapped onto each other by a linear automorphism of `E` (`E` itself need not be
+finite-dimensional). -/
+theorem exists_linearEquiv_mem_iff (V L : Submodule 𝕜 E) [FiniteDimensional 𝕜 V]
+    [FiniteDimensional 𝕜 L] (h : finrank 𝕜 V = finrank 𝕜 L) :
+    ∃ g : E ≃ₗ[𝕜] E, ∀ z, z ∈ V ↔ g z ∈ L := by
+  let f := LinearEquiv.ofFinrankEq V L h
+  obtain ⟨g, hg⟩ := V.exists_linearEquiv_restrict_eq f
+  refine ⟨g, fun z ↦ ⟨fun hz ↦ ?_, fun hz ↦ ?_⟩⟩
+  · simp [← hg ⟨z, hz⟩]
+  · set w := f.symm ⟨g z, hz⟩
+    have hw : g w = g z := by rw [← hg w, LinearEquiv.apply_symm_apply]
+    exact g.injective hw ▸ w.property
 
 end DivisionRing
 
