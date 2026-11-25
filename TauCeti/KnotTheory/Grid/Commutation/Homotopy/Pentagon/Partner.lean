@@ -15,14 +15,13 @@ Let `C` be a column turn at the columns `a` and `b = finRotate n a` of a grid di
 in row `s`, and let `s'` be a second row. The homotopy equations of a column commutation and of a
 crossing change both compare a hexagon-counting map `H`, whose hexagons have corners in the rows
 `s` and `s'`, with the round trip `Ψ ∘ Φ` of two pentagon-counting maps: `Φ` counts the pentagons
-of `G` turning in row `s`, and `Ψ` those of `G' = G.swapColumns a b` at `C.withTurnRow s'`. After the
-cancellations on the left-hand side, what remains
-of `∂ ∘ H + H ∘ ∂` off the diagonal are the counted hexagon composites whose recut underlies no
-counted composite. Such a composite has a
-mixed-side overlap, so its two rectangles lie on opposite sides of their common column. This file
-shows that each of them is the partner of a counted pentagon pair: either the recut of a pair
-whose pentagons turn on the same side of the replaced grid line `b`, or the composite with the
-rectangles of a pair turning on opposite sides.
+of `G` turning in row `s`, and `Ψ` those of `G' = G.swapColumns a b` at `C.withTurnRow s'`. After
+the cancellations on the left-hand side, what remains of `∂ ∘ H + H ∘ ∂` off the diagonal are the
+counted hexagon composites whose recut underlies no counted composite. In a mixed-side overlap its
+two rectangles lie on opposite sides of their common column. This file shows that each of them is
+the partner of a counted pentagon pair: either the recut of a pair whose pentagons turn on the
+same side of the replaced grid line `b`, or the composite with the rectangles of a pair turning on
+opposite sides.
 
 The argument is shared by both homotopies. It needs only that the hexagons are counted by their
 markings, as in `TauCeti.GridDiagram.exists_isRecut_of_hasSameSideOverlap_of_mem_iff`, and that
