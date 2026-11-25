@@ -134,10 +134,8 @@ theorem _root_.TauCeti.SmoothTwoForm.hamiltonianVectorField_mem_ker_mfderiv_iff
       ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
       mvfderiv_apply_eq_mfderiv_apply]
     exact funext_iff
-  · have h0 (f : M → ℝ) : σ.hamiltonianVectorField f x = 0 := by
-      rw [hamiltonianVectorField_def, ContinuousLinearMap.inverse_of_not_isInvertible hinv]
-      rfl
-    simp [poissonBracket_def, h0]
+  · simp [poissonBracket_eq_zero_of_not_isInvertible_flat hinv,
+      hamiltonianVectorField_eq_zero_of_not_isInvertible_flat hinv]
 
 /-- The kernel of `dF_x` is a coisotropic subspace of `T_x M` exactly when
 `{F_i, F_j}(x) = 0` for all `i` and `j`. -/
