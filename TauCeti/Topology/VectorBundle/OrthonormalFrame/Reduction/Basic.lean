@@ -155,18 +155,15 @@ theorem exists_trivialization_of_continuousOn_smul_mem (hUT : U ⊆ T.baseSet)
     (hcS : ∀ y ∈ U, op (c y) • T.toOpenPartialHomeomorph.symm (y, 1) ∈ S) (hU : IsOpen U)
     (hc : ContinuousOn c U) {x : B} (hx : x ∈ U) :
     ∃ t : Trivialization H (fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj),
-      t.baseSet = U ∧ ∀ (g : H) (p : S), (p : OrthonormalFrameBundle ℝ F E V).proj ∈ U →
-        t (op g • p) = ((t p).1, (t p).2 * g) := by
+      t.baseSet = U ∧ ∀ (g : H) (p : S)
+        (hgp : op (g : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) ∈ S),
+        (p : OrthonormalFrameBundle ℝ F E V).proj ∈ U → t ⟨_, hgp⟩ = ((t p).1, (t p).2 * g) := by
   have he : ∀ (g : unitary (V →L[ℝ] V)) (p : OrthonormalFrameBundle ℝ F E V),
       p.proj ∈ T.baseSet → (T (op g • p)).2 = (T p).2 * g := fun g p hp ↦
     T.isEquivariant_orthonormalFrameBundleFiber_iff.1 inferInstance p hp g
-  obtain ⟨t, ht, hteq⟩ := T.exists_trivialization_of_continuousOn_symm_mem (fun _ _ ↦ rfl) he
+  exact T.exists_trivialization_of_continuousOn_symm_mem (fun _ _ ↦ rfl) he
     (fun _ hp _ ↦ SMulMemIff.smul_mem_iff (H := H) hp) hUT
     (fun y hy ↦ T.op_smul_symm_one (fun _ _ ↦ rfl) he (hUT hy) (c y) ▸ hcS y hy) hU hc hx
-  refine ⟨t, ht, fun g p hp ↦ ?_⟩
-  have hgp := (SMulMemIff.smul_mem_iff (H := H) p.property).2 g.property
-  rw [SMulMemIff.smul_eq_mk g p hgp]
-  exact hteq g p hgp hp
 
 end Reduction
 

@@ -141,7 +141,9 @@ private theorem exists_trivialization_of_correction (e : Trivialization F (π F 
       simp only [e.orthonormalFrameBundle_symm_apply' cF, op_one, one_smul, mem_sectionFrames_iff,
         frame_smul_apply, proj_smul, unop_op, hcv y hy, LinearIsometryEquiv.apply_symm_apply])
     hU hc hx
-  exact ⟨t, ht ▸ hx, fun g p hp ↦ hteq g p (ht ▸ hp)⟩
+  refine ⟨t, ht ▸ hx, fun g p hp ↦ ?_⟩
+  have hgp := (SMulMemIff.smul_mem_iff p.property).2 g.property
+  exact (congrArg t (SMulMemIff.smul_eq_mk g p hgp)).trans (hteq g p hgp (ht ▸ hp))
 
 /-- **The frames adapted to a continuous unit section are locally trivial.** For a bundle of rank
 `N` with continuous fibre norms, a continuous section `σ` of unit vectors and a unit vector `v₀`
