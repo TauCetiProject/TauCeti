@@ -14,6 +14,9 @@ public import TauCeti.RepresentationTheory.WeilDeligne.Special
 * Reversing the two weights while keeping the same nonzero arrow `e₀ ↦ e₁` makes conjugation by
   an element of degree one scale the monodromy by `q⁻¹` instead of `q`. For `q ≥ 2` in
   characteristic zero there is therefore no Weil–Deligne parameter with the reversed weights.
+* The open kernel of the degree map is needed: on `W = ℤ` with the indiscrete topology and the
+  identity as degree, the `Sp(2)` action `r(w) = diag(1, 2 ^ deg w)` at `q = 2` has kernel `{0}`,
+  which is not open, so it underlies no Weil–Deligne parameter.
 -/
 
 public section
@@ -43,5 +46,38 @@ example [CharZero E] (hq : 2 ≤ q) {w : W} (hw : (deg w).toAdd = 1)
   norm_num at h
   have : q * q = 1 := by exact_mod_cast h.symm
   nlinarith
+
+/-- The group `ℤ`, written multiplicatively, with the indiscrete topology. -/
+@[expose] def IndiscreteInt : Type := Multiplicative ℤ
+
+/-- The group structure of `Multiplicative ℤ`. -/
+instance instGroupIndiscreteInt : Group IndiscreteInt := inferInstanceAs (Group (Multiplicative ℤ))
+
+/-- The indiscrete topology. -/
+instance instTopologicalSpaceIndiscreteInt : TopologicalSpace IndiscreteInt := ⊤
+
+/-- The identity of `ℤ`, as the degree map of `IndiscreteInt`. -/
+def indiscreteIntDeg : IndiscreteInt →* Multiplicative ℤ := MonoidHom.id (Multiplicative ℤ)
+
+/-- **The open degree kernel is necessary.** Give `W = ℤ` (written multiplicatively) the
+indiscrete topology and take the identity as degree. In characteristic zero no Weil–Deligne
+parameter with `q = 2` has the `Sp(2)` Weil action `r(w) = diag(1, 2 ^ deg w)`: its kernel is
+trivial, and the only open subsets of an indiscrete space are `∅` and the whole space. -/
+example [CharZero E] :
+    ¬ ∃ D : WeilDeligneParameter E IndiscreteInt (Fin 2 → E) indiscreteIntDeg 2,
+      ∀ w v, D.r w v =
+        fun i : Fin 2 ↦ (2 : E) ^ ((indiscreteIntDeg w).toAdd * ((i : ℕ) : ℤ)) * v i := by
+  rintro ⟨D, hD⟩
+  -- The kernel contains `1`, so being open in the indiscrete topology it is everything.
+  have hker : (D.r.ker : Set IndiscreteInt) = Set.univ :=
+    (TopologicalSpace.isOpen_top_iff _).1 D.isOpen_ker |>.resolve_left
+      (Set.ne_empty_iff_nonempty.2 ⟨1, one_mem _⟩)
+  let w : IndiscreteInt := Multiplicative.ofAdd (1 : ℤ)
+  have h1 : D.r w = 1 := MonoidHom.mem_ker.1 ((Set.ext_iff.1 hker w).2 trivial)
+  have h := congr_fun (LinearMap.congr_fun h1 (Pi.single 1 1)) 1
+  rw [hD] at h
+  norm_num [indiscreteIntDeg] at h
+  change (2 : E) ^ (1 : ℤ) = 1 at h
+  norm_num at h
 
 end TauCeti.WeilDeligneParameter.SpecialChecks
