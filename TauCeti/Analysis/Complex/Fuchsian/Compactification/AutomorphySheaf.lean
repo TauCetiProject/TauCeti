@@ -642,7 +642,7 @@ the preimage in `ℍ` of the smaller open set. -/
 theorem automorphySheafOfModulesSectionsEquiv_map (k : ℤ) {U V : Opens Γ.CompactifiedQuotient}
     (h : V ⟶ U) (F : (automorphySheafOfModules hΓ k).val.obj (op U)) :
     (automorphySheafOfModulesSectionsEquiv hΓ k V
-        ((automorphySheafOfModules hΓ k).val.map h.op F) : ℍ → ℂ) =
+        (((automorphySheafOfModules hΓ k).val.map h.op).hom F) : ℍ → ℂ) =
       ((fun τ : ℍ ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) τ)) ⁻¹' V).indicator
         (automorphySheafOfModulesSectionsEquiv hΓ k U F : ℍ → ℂ) :=
   (rfl)
