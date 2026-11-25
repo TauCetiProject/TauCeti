@@ -9,8 +9,7 @@ public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.AlgebraicGeometry.Blowup.Modification
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Stalk
 import Mathlib.RingTheory.MvPolynomial.Ideal
-import Mathlib.RingTheory.Polynomial.UniqueFactorization
-import TauCeti.RingTheory.Ideal.Height
+import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
@@ -22,8 +21,8 @@ and Noetherian, the blowup at the origin is a modification, and its centre lies 
 
 The ideal `(x, y)` is not an effective Cartier divisor on any affine open neighbourhood `U` of the
 origin: its stalk at the origin is the maximal ideal of the local ring `k[x, y]_(x, y)`, which has
-dimension two since `(x, y)` contains the two coprime elements `x` and `y`, while the stalks of an
-effective Cartier divisor are principal.
+dimension two since `(x, y)` is a maximal ideal of `k[x, y]`, while the stalks of an effective
+Cartier divisor are principal.
 -/
 
 public section
@@ -84,19 +83,15 @@ theorem mem_support_originIdealSheaf_iff (x : Spec (.of (MvPolynomial (Fin 2) k)
   exact ⟨fun h ↦ PrimeSpectrum.ext
     ((isMaximal_origin_asIdeal k).eq_of_le x.isPrime.ne_top h).symm, fun h ↦ h ▸ le_rfl⟩
 
-/-- The local ring of the plane at the origin has dimension at least two: the prime `(x, y)`
-contains the coprime elements `x` and `y` of the factorial ring `k[x, y]`. -/
-theorem two_le_ringKrullDim_stalk_origin :
-    2 ≤ ringKrullDim ((Spec (.of (MvPolynomial (Fin 2) k))).presheaf.stalk (origin k)) := by
-  have := (origin k).isPrime
+/-- The local ring of the plane at the origin has dimension two: the prime `(x, y)` is a maximal
+ideal of `k[x, y]`, so its height is the number of variables. -/
+theorem ringKrullDim_stalk_origin :
+    ringKrullDim ((Spec (.of (MvPolynomial (Fin 2) k))).presheaf.stalk (origin k)) = 2 := by
+  have := isMaximal_origin_asIdeal k
   rw [ringKrullDim_eq_of_ringEquiv (Spec.stalkIso _ (origin k)).commRingCatIsoToRingEquiv,
-    IsLocalization.AtPrime.ringKrullDim_eq_height (origin k).asIdeal]
-  have hxy : IsRelPrime (X 0 : MvPolynomial (Fin 2) k) (X 1) :=
-    (MvPolynomial.prime_X (i := (0 : Fin 2))).irreducible.isRelPrime_iff_not_dvd.mpr
-      (by simp [MvPolynomial.X_dvd_X])
-  have h := Ideal.two_le_height_of_isRelPrime hxy (p := (origin k).asIdeal)
-    (Ideal.subset_span (by simp)) (Ideal.subset_span (by simp))
-  rwa [← WithBot.coe_ofNat, WithBot.coe_le_coe]
+    IsLocalization.AtPrime.ringKrullDim_eq_height (origin k).asIdeal,
+    MvPolynomial.height_eq_natCard_of_isMaximal, Nat.card_fin]
+  rfl
 
 /-- The stalk of the ideal sheaf of the origin at the origin is the maximal ideal of the local
 ring there. -/
@@ -120,6 +115,6 @@ theorem not_isEffectiveCartier_comap_fromSpec {U : (Spec (.of (MvPolynomial (Fin
   have hdim := Scheme.IdealSheafData.ringKrullDim_stalk_le_one_of_comap hU.fromSpec h y
     (Flat.stalkMap _ y) (hy ▸ stalkIdeal_originIdealSheaf_origin k)
   rw [hy] at hdim
-  exact absurd ((two_le_ringKrullDim_stalk_origin k).trans hdim) (by decide)
+  exact absurd ((ringKrullDim_stalk_origin k).ge.trans hdim) (by decide)
 
 end TauCeti.BlowupModificationExample
