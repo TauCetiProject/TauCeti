@@ -38,12 +38,14 @@ The standard assignments are:
 
 An assignment pulls back along a shift of the pages and an injective map of positions carrying
 the shapes into each other (`TauCeti.BidegreeAssignment.comap`), as in
-`CategoryTheory.SpectralSequence.reindex`.
+`CategoryTheory.SpectralSequence.reindex`; pulling back is functorial
+(`TauCeti.BidegreeAssignment.comap_zero_id`, `TauCeti.BidegreeAssignment.comap_comap`).
 
 The second part proves that boundedness makes the differentials at a position vanish from some
 page on. A differential of the page `r` leaving `pq` ends at the position of total degree
-`deg pq + 1` and filtration degree `fil pq + r - e`; if the first page vanishes there, so does every
-later page (`CategoryTheory.SpectralSequence.isZero_page_X_of_le`), and the differential is zero.
+`deg pq + 1` and filtration degree `fil pq + r - e`; if an earlier page vanishes there, so does
+every later page (`CategoryTheory.SpectralSequence.isZero_page_X_of_le`), and the differential is
+zero.
 Hence:
 
 * `CategoryTheory.SpectralSequence.page_dFrom_eq_zero_of_boundedBelow`: if the first page vanishes
@@ -54,11 +56,12 @@ Hence:
   every page `r ≥ fil pq - α (deg pq - 1) + e`;
 * `CategoryTheory.SpectralSequence.exists_page_dFrom_eq_zero_of_finite` and
   `CategoryTheory.SpectralSequence.exists_page_dTo_eq_zero_of_finite`: if only finitely many
-  positions of total degree `deg pq + 1` (respectively `deg pq - 1`) are nonzero on the first page,
-  the differential leaving (respectively entering) `pq` vanishes on all large pages.
+  positions of total degree `deg pq + 1` (respectively `deg pq - 1`) are nonzero on some page, the
+  differential leaving (respectively entering) `pq` vanishes on all large pages.
 
-Each is derived from a form that bounds the filtration degree in the single total degree the
-differential reaches (`CategoryTheory.SpectralSequence.page_dFrom_eq_zero_of_isZero_of_le_fil`,
+Each is derived from a form, starting from an arbitrary page, that bounds the filtration degree in
+the single total degree the differential reaches
+(`CategoryTheory.SpectralSequence.page_dFrom_eq_zero_of_isZero_of_le_fil`,
 `CategoryTheory.SpectralSequence.page_dTo_eq_zero_of_isZero_of_fil_le`).
 
 ## References
@@ -116,6 +119,25 @@ def comap (A : BidegreeAssignment c r₀) (d : ℤ) (f : κ' → κ) (hf : Funct
   fil_rel r hr i j h := by
     rw [A.fil_rel (r + d) (by lia) _ _ (hrel r i j h)]
     lia
+
+/-- Pulling back along the identity of the positions with no page shift does nothing. -/
+lemma comap_zero_id (A : BidegreeAssignment c r₀) :
+    A.comap 0 id Function.injective_id (fun r i j h ↦ by rwa [add_zero]) (add_zero r₀).ge = A := by
+  ext <;> simp
+
+/-- Pulling back twice is pulling back once, along the composite map of positions and the total
+page shift. -/
+lemma comap_comap {κ'' : Type*} {c'' : ℤ → ComplexShape κ''} {r₀'' : ℤ}
+    (A : BidegreeAssignment c r₀) (d : ℤ) (f : κ' → κ) (hf : Function.Injective f)
+    (hrel : ∀ r i j, (c' r).Rel i j → (c (r + d)).Rel (f i) (f j)) (hd : r₀ ≤ r₀' + d)
+    (d' : ℤ) (f' : κ'' → κ') (hf' : Function.Injective f')
+    (hrel' : ∀ r i j, (c'' r).Rel i j → (c' (r + d')).Rel (f' i) (f' j)) (hd' : r₀' ≤ r₀'' + d') :
+    (A.comap d f hf hrel hd).comap d' f' hf' hrel' hd' =
+      A.comap (d + d') (f ∘ f') (hf.comp hf')
+        (fun r i j h ↦ by
+          simpa only [add_assoc, add_comm d', Function.comp_apply] using hrel _ _ _ (hrel' r i j h))
+        (by lia) := by
+  ext <;> simp [sub_sub]
 
 /-- The **cohomological** bidegree assignment `(p, q) ↦ (p, p + q)`, with page offset `0`, for the
 cohomological shapes `ComplexShape.up' (r, 1 - r)` of
@@ -262,32 +284,32 @@ open Limits TauCeti
 variable {C κ : Type*} [Category* C] [Abelian C] {c : ℤ → ComplexShape κ} {r₀ : ℤ}
   (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
 
-/-- **The leaving differential vanishes past a bound on the filtration degree.** If the first page
+/-- **The leaving differential vanishes past a bound on the filtration degree.** If the page `s`
 vanishes at every position of total degree `deg pq + 1` and filtration degree at least `b`, the
-differential leaving `pq` vanishes on every page `r ≥ b - fil pq + e`: it ends at the position of
-total degree `deg pq + 1` and filtration degree `fil pq + r - e ≥ b`. -/
-lemma page_dFrom_eq_zero_of_isZero_of_le_fil (pq : κ) (b : ℤ)
-    (hb : ∀ pq', A.deg pq' = A.deg pq + 1 → b ≤ A.fil pq' → IsZero ((E.page r₀).X pq'))
-    (r : ℤ) (hr : r₀ ≤ r) (hrb : b - A.fil pq + A.e ≤ r) :
+differential leaving `pq` vanishes on every page `r ≥ s` with `r ≥ b - fil pq + e`: it ends at the
+position of total degree `deg pq + 1` and filtration degree `fil pq + r - e ≥ b`. -/
+lemma page_dFrom_eq_zero_of_isZero_of_le_fil {s : ℤ} (hs : r₀ ≤ s) (pq : κ) (b : ℤ)
+    (hb : ∀ pq', A.deg pq' = A.deg pq + 1 → b ≤ A.fil pq' → IsZero ((E.page s hs).X pq'))
+    (r : ℤ) (hr : r₀ ≤ r) (hsr : s ≤ r) (hrb : b - A.fil pq + A.e ≤ r) :
     (E.page r hr).dFrom pq = 0 := by
   by_cases hrel : (c r).Rel pq ((c r).next pq)
   · rw [HomologicalComplex.dFrom_eq _ hrel,
-      E.page_d_eq_zero_of_le le_rfl (Or.inr (hb _ (A.deg_rel r hr _ _ hrel)
-        (by rw [A.fil_rel r hr _ _ hrel]; lia))) r hr, zero_comp]
+      E.page_d_eq_zero_of_le hs (Or.inr (hb _ (A.deg_rel r hr _ _ hrel)
+        (by rw [A.fil_rel r hr _ _ hrel]; lia))) r hsr, zero_comp]
   · exact HomologicalComplex.dFrom_eq_zero _ hrel
 
-/-- **The entering differential vanishes past a bound on the filtration degree.** If the first
-page vanishes at every position of total degree `deg pq - 1` and filtration degree at most `a`, the
-differential entering `pq` vanishes on every page `r ≥ fil pq - a + e`: it starts at the position
-of total degree `deg pq - 1` and filtration degree `fil pq - r + e ≤ a`. -/
-lemma page_dTo_eq_zero_of_isZero_of_fil_le (pq : κ) (a : ℤ)
-    (ha : ∀ pq', A.deg pq' = A.deg pq - 1 → A.fil pq' ≤ a → IsZero ((E.page r₀).X pq'))
-    (r : ℤ) (hr : r₀ ≤ r) (hra : A.fil pq - a + A.e ≤ r) :
+/-- **The entering differential vanishes past a bound on the filtration degree.** If the page `s`
+vanishes at every position of total degree `deg pq - 1` and filtration degree at most `a`, the
+differential entering `pq` vanishes on every page `r ≥ s` with `r ≥ fil pq - a + e`: it starts at
+the position of total degree `deg pq - 1` and filtration degree `fil pq - r + e ≤ a`. -/
+lemma page_dTo_eq_zero_of_isZero_of_fil_le {s : ℤ} (hs : r₀ ≤ s) (pq : κ) (a : ℤ)
+    (ha : ∀ pq', A.deg pq' = A.deg pq - 1 → A.fil pq' ≤ a → IsZero ((E.page s hs).X pq'))
+    (r : ℤ) (hr : r₀ ≤ r) (hsr : s ≤ r) (hra : A.fil pq - a + A.e ≤ r) :
     (E.page r hr).dTo pq = 0 := by
   by_cases hrel : (c r).Rel ((c r).prev pq) pq
   · rw [HomologicalComplex.dTo_eq _ hrel,
-      E.page_d_eq_zero_of_le le_rfl (Or.inl (ha _ (by rw [A.deg_rel r hr _ _ hrel]; lia)
-        (by have := A.fil_rel r hr _ _ hrel; lia))) r hr, comp_zero]
+      E.page_d_eq_zero_of_le hs (Or.inl (ha _ (by rw [A.deg_rel r hr _ _ hrel]; lia)
+        (by have := A.fil_rel r hr _ _ hrel; lia))) r hsr, comp_zero]
   · exact HomologicalComplex.dTo_eq_zero _ hrel
 
 /-- **Bounded below implies that the leaving differentials vanish eventually** (Stacks, Tag 0BDV,
@@ -298,8 +320,8 @@ lemma page_dFrom_eq_zero_of_boundedBelow (β : ℤ → ℤ)
     (hβ : ∀ pq, β (A.deg pq) ≤ A.fil pq → IsZero ((E.page r₀).X pq)) (pq : κ) (r : ℤ)
     (hr : r₀ ≤ r) (hrβ : β (A.deg pq + 1) - A.fil pq + A.e ≤ r) :
     (E.page r hr).dFrom pq = 0 :=
-  E.page_dFrom_eq_zero_of_isZero_of_le_fil A pq _
-    (fun pq' hpq' h ↦ hβ pq' (by rwa [hpq'])) r hr hrβ
+  E.page_dFrom_eq_zero_of_isZero_of_le_fil A le_rfl pq _
+    (fun pq' hpq' h ↦ hβ pq' (by rwa [hpq'])) r hr hr hrβ
 
 /-- **Bounded above implies that the entering differentials vanish eventually** (Stacks, Tag 0BDV,
 Lemma 24.8 (5)). Let `α : ℤ → ℤ` be a bound above for the first page: it vanishes at every position
@@ -309,31 +331,33 @@ lemma page_dTo_eq_zero_of_boundedAbove (α : ℤ → ℤ)
     (hα : ∀ pq, A.fil pq ≤ α (A.deg pq) → IsZero ((E.page r₀).X pq)) (pq : κ) (r : ℤ)
     (hr : r₀ ≤ r) (hrα : A.fil pq - α (A.deg pq - 1) + A.e ≤ r) :
     (E.page r hr).dTo pq = 0 :=
-  E.page_dTo_eq_zero_of_isZero_of_fil_le A pq _
-    (fun pq' hpq' h ↦ hα pq' (by rwa [hpq'])) r hr hrα
+  E.page_dTo_eq_zero_of_isZero_of_fil_le A le_rfl pq _
+    (fun pq' hpq' h ↦ hα pq' (by rwa [hpq'])) r hr hr hrα
 
 /-- **Finitely many nonzero positions in the next total degree.** If only finitely many positions
-of total degree `deg pq + 1` are nonzero on the first page, the differential leaving `pq` vanishes
+of total degree `deg pq + 1` are nonzero on the page `s`, the differential leaving `pq` vanishes
 on every page from some page on. -/
-lemma exists_page_dFrom_eq_zero_of_finite (pq : κ)
-    (hfin : {pq' | A.deg pq' = A.deg pq + 1 ∧ ¬IsZero ((E.page r₀).X pq')}.Finite) :
-    ∃ s : ℤ, ∀ (r : ℤ) (hr : r₀ ≤ r), s ≤ r → (E.page r hr).dFrom pq = 0 := by
+lemma exists_page_dFrom_eq_zero_of_finite {s : ℤ} (hs : r₀ ≤ s) (pq : κ)
+    (hfin : {pq' | A.deg pq' = A.deg pq + 1 ∧ ¬IsZero ((E.page s hs).X pq')}.Finite) :
+    ∃ t : ℤ, ∀ (r : ℤ) (hr : r₀ ≤ r), t ≤ r → (E.page r hr).dFrom pq = 0 := by
   obtain ⟨M, hM⟩ := (hfin.image A.fil).bddAbove
-  refine ⟨M + 1 - A.fil pq + A.e, fun r hr hrs ↦
-    E.page_dFrom_eq_zero_of_isZero_of_le_fil A pq (M + 1) (fun pq' hpq' h ↦ ?_) r hr hrs⟩
+  refine ⟨max s (M + 1 - A.fil pq + A.e), fun r hr hrt ↦
+    E.page_dFrom_eq_zero_of_isZero_of_le_fil A hs pq (M + 1) (fun pq' hpq' h ↦ ?_) r hr
+      (le_of_max_le_left hrt) (le_of_max_le_right hrt)⟩
   by_contra hz
   have := hM ⟨pq', ⟨hpq', hz⟩, rfl⟩
   lia
 
 /-- **Finitely many nonzero positions in the previous total degree.** If only finitely many
-positions of total degree `deg pq - 1` are nonzero on the first page, the differential entering
+positions of total degree `deg pq - 1` are nonzero on the page `s`, the differential entering
 `pq` vanishes on every page from some page on. -/
-lemma exists_page_dTo_eq_zero_of_finite (pq : κ)
-    (hfin : {pq' | A.deg pq' = A.deg pq - 1 ∧ ¬IsZero ((E.page r₀).X pq')}.Finite) :
-    ∃ s : ℤ, ∀ (r : ℤ) (hr : r₀ ≤ r), s ≤ r → (E.page r hr).dTo pq = 0 := by
+lemma exists_page_dTo_eq_zero_of_finite {s : ℤ} (hs : r₀ ≤ s) (pq : κ)
+    (hfin : {pq' | A.deg pq' = A.deg pq - 1 ∧ ¬IsZero ((E.page s hs).X pq')}.Finite) :
+    ∃ t : ℤ, ∀ (r : ℤ) (hr : r₀ ≤ r), t ≤ r → (E.page r hr).dTo pq = 0 := by
   obtain ⟨M, hM⟩ := (hfin.image A.fil).bddBelow
-  refine ⟨A.fil pq - (M - 1) + A.e, fun r hr hrs ↦
-    E.page_dTo_eq_zero_of_isZero_of_fil_le A pq (M - 1) (fun pq' hpq' h ↦ ?_) r hr hrs⟩
+  refine ⟨max s (A.fil pq - (M - 1) + A.e), fun r hr hrt ↦
+    E.page_dTo_eq_zero_of_isZero_of_fil_le A hs pq (M - 1) (fun pq' hpq' h ↦ ?_) r hr
+      (le_of_max_le_left hrt) (le_of_max_le_right hrt)⟩
   by_contra hz
   have := hM ⟨pq', ⟨hpq', hz⟩, rfl⟩
   lia
