@@ -143,12 +143,6 @@ theorem TauCeti.two_rpow_mul_norm_sum_Ico_le {G H : Type*} [SeminormedAddCommGro
         · exact (hg j).trans (by gcongr; exact le_max_left C 0)
     _ = _ := by ring
 
-/-- Lowering the order from `s` to `s'` multiplies the `j`-th weight `2^{js}` by
-`(2^{s' - s})^j`. -/
-theorem TauCeti.two_rpow_mul_natCast_eq (s s' : ℝ) (j : ℕ) :
-    (2 : ℝ) ^ (s' * j) = (2 ^ (s' - s)) ^ j * 2 ^ (s * j) := by
-  rw [← Real.rpow_mul_natCast zero_le_two, ← Real.rpow_add two_pos, ← add_mul, sub_add_cancel]
-
 /-- **Monotonicity of dyadically weighted sequences.** If `a ≥ 0` and `(2^{js} aⱼ)ⱼ ∈ ℓ^q`, then
 `(2^{js'} aⱼ)ⱼ ∈ ℓ^{q'}` for `s' ≤ s` and `q ≤ q'`. -/
 theorem Memℓp.two_rpow_mul_mono {a : ℕ → ℝ} {s s' : ℝ} {q q' : ℝ≥0∞}
@@ -172,7 +166,7 @@ theorem Memℓp.two_rpow_mul_of_lt {a : ℕ → ℝ} {s s' : ℝ} {q q' : ℝ≥
   have hj : ‖(2 : ℝ) ^ (s * j) * a j‖ ≤ C := hC ⟨j, rfl⟩
   rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (ha j))] at hj
   rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (ha j)),
-    TauCeti.two_rpow_mul_natCast_eq s s' j, mul_assoc, mul_comm C]
+    ← Real.rpow_sub_pow_mul_rpow_mul_natCast two_pos s' s j, mul_assoc, mul_comm C]
   exact mul_le_mul_of_nonneg_left hj (by positivity)
 
 /-- **Weighted tail sums.** Let `gⱼ` be vectors that vanish for `j + N ≤ k`, with `‖gⱼ‖ ≤ K xⱼ`
@@ -965,8 +959,8 @@ private theorem norm_le_of_toDistr_eq_of_lt (hs : s' < s) {u : BesovSpace F φ s
   rw [← norm_weightedBlocks, mul_comm]
   refine lp.norm_le_of_norm_le_geometric (by positivity)
     (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) fun j ↦ ?_
-  rw [norm_weightedBlocks_apply, ← block_eq_of_toDistr_eq h, two_rpow_mul_natCast_eq s s' j,
-    mul_assoc, mul_comm ‖u‖]
+  rw [norm_weightedBlocks_apply, ← block_eq_of_toDistr_eq h,
+    ← Real.rpow_sub_pow_mul_rpow_mul_natCast two_pos s' s j, mul_assoc, mul_comm ‖u‖]
   exact mul_le_mul_of_nonneg_left (rpow_mul_norm_block_le u j) (by positivity)
 
 variable (F φ p) in

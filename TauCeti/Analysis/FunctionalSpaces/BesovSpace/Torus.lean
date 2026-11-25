@@ -879,7 +879,8 @@ private theorem norm_le_of_coeff_eq_of_lt (hs : s' < s) {u : BesovSpace φ s p q
   rw [← norm_weightedBlocks, mul_comm]
   refine lp.norm_le_of_norm_le_geometric (by positivity)
     (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) fun j ↦ ?_
-  rw [norm_weightedBlocks_apply, ← h, two_rpow_mul_natCast_eq s s' j, mul_assoc, mul_comm ‖u‖]
+  rw [norm_weightedBlocks_apply, ← h, ← Real.rpow_sub_pow_mul_rpow_mul_natCast two_pos s' s j,
+    mul_assoc, mul_comm ‖u‖]
   exact mul_le_mul_of_nonneg_left (rpow_mul_norm_littlewoodPaleyBlockLp_le u j) (by positivity)
 
 variable (φ p) in
