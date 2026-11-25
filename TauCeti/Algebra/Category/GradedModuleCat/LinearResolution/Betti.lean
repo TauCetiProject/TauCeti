@@ -90,7 +90,7 @@ In the namespace `TauCeti.GradedProjectiveResolution`:
   `IsMinimal.C_smulGradedDimension_mul_bettiPoincarePowerSeries`, and
   `IsMinimal.C_finrank_mul_eulerPowerSeries`: scalar Betti–Ext comparisons against a single
   isolated target `N` without assuming `A` is finite-dimensional over `k`.
-* `IsMinimal.coeff_coeff_bettiPoincarePowerSeries_nonneg`,
+* `coeff_coeff_bettiPoincarePowerSeries_nonneg`,
   `IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt_of_bddBelow`, and
   `IsMinimal.hasEulerPowerSeries_bettiPoincarePowerSeries_of_bddBelow`: nonnegativity,
   lower-triangular vanishing, and `Bigraded.HasEulerPowerSeries` at `Pᵢ` detected by a target `N`
@@ -586,6 +586,20 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
 namespace GradedProjectiveResolution
 
 include hbP in
+/-- The coefficients of the Betti Poincaré series of a graded projective resolution at `Pᵢ` with
+`gdim(eᵢ • N) ≠ 0` and `gdim(eⱼ • N) = 0` for `j ≠ i` are nonnegative. -/
+theorem coeff_coeff_bettiPoincarePowerSeries_nonneg {M : GradedModuleCat.{uA} 𝒜}
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading)
+    [∀ n, Module.Finite A (r.X n)]
+    (N : GradedModuleCat.{uA} 𝒜) [Module.Finite k N]
+    (hconc : ∀ p, p ≠ 0 → N.grading.piece p = ⊥) (i : I)
+    (hne : ∀ j, j ≠ i → N.smulGradedDimension (e j) = 0)
+    (hself : N.smulGradedDimension (e i) ≠ 0) (n : ℕ) (j : ℤ) :
+    0 ≤ (PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff j := by
+  rw [coeff_bettiPoincarePowerSeries]
+  exact coeff_repr_projective_nonneg he he₀ bP hbP (r.finiteProjectiveTerm n) N hconc i hne hself j
+
+include hbP in
 /-- For a linear resolution `r` with finitely generated terms (without assuming minimality,
 `HasExt`, finite-dimensionality of `A`, or a nonnegative algebra grading), all off-diagonal
 coefficients of `r.bettiPoincarePowerSeries bP i` vanish when there is a finite-dimensional
@@ -651,9 +665,8 @@ theorem IsMinimal.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries (
         PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff j =
       Module.finrank k (Ext.{uA} M (N.shiftObj j) n) := by
   have hN := GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated hconc j
-  have hinv : invert (N.smulGradedDimension (e i)) = N.smulGradedDimension (e i) := by
-    rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ hconc, invert_C]
-  rw [coeff_bettiPoincarePowerSeries, ← hinv,
+  rw [coeff_bettiPoincarePowerSeries,
+    ← GradedModuleCat.invert_smulGradedDimension_of_concentrated (e i) N hconc,
     coeff_invert_smulGradedDimension_mul_repr he he₀ bP hbP _ N i hne, finiteProjectiveTerm_obj]
   exact congrArg _ (hr.extLinearEquiv
     ((N.shiftObj j).positive_smul_top_eq_bot_of_concentrated _ hN) n).finrank_eq
@@ -734,21 +747,6 @@ theorem IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_iff (hr : r.IsMin
   have hc : c ≠ 0 := fun h0 ↦ hself (by rw [hd, h0, map_zero])
   rw [← Module.finrank_zero_iff (R := k), ← Int.natCast_eq_zero, ← hcoeff, mul_eq_zero,
     or_iff_right hc]
-
-include hbP in
-/-- The coefficients of the Betti Poincaré series of a minimal resolution at `Pᵢ` with
-`gdim(eᵢ • N) ≠ 0` and `gdim(eⱼ • N) = 0` for `j ≠ i` are nonnegative. -/
-theorem IsMinimal.coeff_coeff_bettiPoincarePowerSeries_nonneg (hr : r.IsMinimal)
-    (N : GradedModuleCat.{uA} 𝒜) [Module.Finite k N]
-    (hconc : ∀ p, p ≠ 0 → N.grading.piece p = ⊥) (i : I)
-    (hne : ∀ j, j ≠ i → N.smulGradedDimension (e j) = 0)
-    (hself : N.smulGradedDimension (e i) ≠ 0) (n : ℕ) (j : ℤ) :
-    0 ≤ (PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff j := by
-  have hcoeff := hr.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries he he₀ bP hbP N
-    hconc i hne n j
-  rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ hconc, coeff_C_mul] at hcoeff
-  exact nonneg_of_mul_nonneg_right (hcoeff ▸ Int.natCast_nonneg _)
-    (Int.natCast_pos.mpr (N.finrank_smul_piece_zero_pos_of_concentrated (e i) hconc hself))
 
 include hbP in
 /-- **The Betti Poincaré series of a bounded-below minimal resolution vanishes below a shifted

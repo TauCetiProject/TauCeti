@@ -109,7 +109,8 @@ private theorem ext_eulerPowerSeries_matrix_eq_transpose_diagonal_mul_betti
         Matrix.of fun i j ↦ Bigraded.eulerPowerSeries (hB i j))ᵀ :=
   Matrix.ext fun i j ↦ by
     rw [Matrix.transpose_apply, Matrix.diagonal_mul, Matrix.of_apply, Matrix.of_apply]
-    exact ((hr i).C_finrank_mul_eulerPowerSeries he he₀ bP hbP (S j).obj (hconc j) j
+    exact ((hr i).C_finrank_mul_eulerPowerSeries he he₀ bP
+        (by simpa only [gradedIdempotentProjective] using hbP) (S j).obj (hconc j) j
       (fun _ hlj => hne hlj) (hB j i) (h i j) (hE i j)).symm
 
 include hbP in
@@ -127,7 +128,8 @@ theorem gradedCartanMatrix_trunc_mul_eulerPowerSeries_bettiPoincarePowerSeries_e
     (gradedCartanMatrix 𝒜 bP (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS)).map
         (fun p ↦ (p.trunc : PowerSeries ℤ)) *
       Matrix.of (fun i j ↦ Bigraded.eulerPowerSeries
-        ((hr j).hasEulerPowerSeries_bettiPoincarePowerSeries_of_nonneg he he₀ bP hbP hneg
+        ((hr j).hasEulerPowerSeries_bettiPoincarePowerSeries_of_nonneg he he₀ bP
+        (by simpa only [gradedIdempotentProjective] using hbP) hneg
           (fun p hp ↦ hconc j p hp.ne) (S i).obj (hconc i) i
           (fun _ hli => hne hli) (hself i))) = 1 := by
   have (i : I) (n : ℕ) : Module.Finite k ((r i).X n) := Module.Finite.trans A ((r i).X n)
@@ -190,10 +192,13 @@ theorem forall_isLinear_iff_cartan_betti_maslovEulerPowerSeries
       ∀ (n : ℕ) (p : ℤ), (n : ℤ) ≠ p →
         (PowerSeries.coeff n ((r j).bettiPoincarePowerSeries bP i)).coeff p = 0 := by
     exact Bigraded.eulerPowerSeries_eq_maslovEulerPowerSeries_iff hB
-      ((hr j).coeff_coeff_bettiPoincarePowerSeries_nonneg he he₀ bP hbP (S i).obj (hconc i) i
+      ((r j).coeff_coeff_bettiPoincarePowerSeries_nonneg he he₀ bP
+        (by simpa only [gradedIdempotentProjective] using hbP) (S i).obj (hconc i) i
         (fun _ hli => hne hli) (hself i))
       (fun n p hpn ↦ (hr j).coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt_of_nonneg he he₀
-        bP hbP hneg (fun q hq ↦ hconc j q hq.ne) (S i).obj (hconc i) i
+        bP
+        (by simpa only [gradedIdempotentProjective] using hbP) hneg
+        (fun q hq ↦ hconc j q hq.ne) (S i).obj (hconc i) i
         (fun _ hli => hne hli) (hself i) (by omega))
   rw [forall_isLinear_iff_diagonal_bettiPoincarePowerSeriesMatrix S he he₀ hne bP hbP hconc r
     hr hneg hS hself]

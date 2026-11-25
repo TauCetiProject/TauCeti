@@ -150,26 +150,18 @@ variable {I : Type uI}
   (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜 0)
   (hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0)
 
-include he he₀ hne in
-/-- Over a finite-dimensional graded algebra, an exhaustive simple family cut out by degree-zero
-idempotents with nonzero diagonal graded dimensions has a finite index type. -/
-private theorem finite_of_smulGradedDimension_ne_zero
-    (hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0)
-    (hS : IsExhaustiveGradedSimpleFamily S) : Finite I := by
-  let bS := gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS
-  let reg : (gradedFiniteModules 𝒜).FullSubcategory :=
-    ⟨GradedModuleCat.regular (𝒜 := 𝒜), gradedFiniteModules_iff.mpr inferInstance⟩
-  have hmem (i : I) : i ∈ (bS.repr (LaurentK0.of.{uA} _ reg)).support := by
-    rw [Finsupp.mem_support_iff]
-    intro hi
-    have hei : e i ≠ 0 :=
-      fun h0 => hself i (by rw [h0, GradedModuleCat.smulGradedDimension_zero])
-    have hcoord := gradedIdempotentCoordinate_eq_mul_gradedSimpleClassBasisOfNeZero_repr
-      S he he₀ hne hself hS (LaurentK0.of.{uA} _ reg) i
-    rw [gradedIdempotentCoordinate_of, hi, mul_zero] at hcoord
-    exact GradedModuleCat.smulGradedDimension_regular_ne_zero hei hcoord
-  exact Finite.of_injective (fun i => (⟨i, hmem i⟩ : (bS.repr (LaurentK0.of.{uA} _ reg)).support))
-    (fun _ _ h => congrArg Subtype.val h)
+include hne in
+/-- Each diagonal idempotent dimension is nonzero when the projective classes form a basis
+and the simple family is exhaustive and vanishes off the diagonal. -/
+private theorem diagonal_smulGradedDimension_ne_zero
+    (bP : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
+    (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
+      (gradedIdempotentProjective (he i) (he₀ i)))
+    (hS : IsExhaustiveGradedSimpleFamily S) (i : I) :
+    (S i).obj.smulGradedDimension (e i) ≠ 0 :=
+  smulGradedDimension_ne_zero_of_span_eq_top S (span_range_laurentK0_of_eq_top S hS) (he i)
+    (he₀ i) (idempotent_ne_zero_of_basis_eq he he₀ bP i (hbP i)) i (fun _ hli => hne hli.symm)
 
 variable [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
 
@@ -214,10 +206,10 @@ theorem gradedProjectiveExtEuler_flip_injective (hS : IsExhaustiveGradedSimpleFa
     ← gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_mul_repr S he he₀ hI hne hself hS]
   exact DFunLike.congr_fun hxy _
 
-include hne hself in
-/-- **Both radicals of the projective/module q-Euler pairing vanish** when every diagonal graded
-dimension `gdim(eᵢ • Sᵢ)` is nonzero. This does not identify either side with the dual of the
-other; see `TauCeti.gradedProjectiveExtEuler_bijective_iff`. -/
+include hne in
+/-- **Both radicals of the projective/module q-Euler pairing vanish** when an exhaustive family of
+simples is isolated by idempotents whose projective classes form a basis. For bijectivity, see
+`TauCeti.gradedProjectiveExtEuler_bijective_iff`. -/
 theorem gradedProjectiveExtEuler_nondegenerate
     (bP : Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
@@ -225,6 +217,7 @@ theorem gradedProjectiveExtEuler_nondegenerate
       (gradedIdempotentProjective (he i) (he₀ i)))
     (hS : IsExhaustiveGradedSimpleFamily S) :
     (gradedProjectiveExtEuler 𝒜).Nondegenerate := by
+  have hself := diagonal_smulGradedDimension_ne_zero S he he₀ hne bP hbP hS
   constructor
   · rw [LinearMap.separatingLeft_iff_ker_eq_bot]
     exact LinearMap.ker_eq_bot_of_injective
@@ -259,9 +252,7 @@ theorem gradedProjectiveExtEuler_bijective_iff :
   · -- The `i`th coordinate functional is represented, and pairing its representative with
     -- `[Sᵢ]` exhibits an inverse of `gdim(eᵢ • Sᵢ)`.
     intro h i
-    have hself (j : I) : (S j).obj.smulGradedDimension (e j) ≠ 0 :=
-      smulGradedDimension_ne_zero_of_span_eq_top S (span_range_laurentK0_of_eq_top S hS) (he j)
-        (he₀ j) (idempotent_ne_zero_of_basis_eq he he₀ bP j (hbP j)) j (fun _ hlj => hne hlj.symm)
+    have hself := diagonal_smulGradedDimension_ne_zero S he he₀ hne bP hbP hS
     let bS := gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS
     obtain ⟨x, hx⟩ := h.2 (bS.coord i)
     have hxi := DFunLike.congr_fun hx (bS i)
@@ -320,8 +311,9 @@ theorem gradedProjectiveExtEuler_flip_bijective_iff :
     have hpair (i : I) (y : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :
         gradedProjectiveExtEuler 𝒜 (bP i) y =
           (S i).obj.smulGradedDimension (e i) * bS.repr y i := by
-      rw [hbP, gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_mul_repr S he he₀
-        (fun j => Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ j⟩) hne hself hS]
+      have hI (j : I) := Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ j⟩
+      rw [hbP, gradedIdempotentProjective_eq _ _ (hI i),
+        gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_mul_repr S he he₀ hI hne hself hS]
     refine ⟨gradedProjectiveExtEuler_flip_injective S he he₀ hne hself hS, fun f => ?_⟩
     refine ⟨∑ i, ((↑(hu i).unit⁻¹ : LaurentPolynomial ℤ) * f (bP i)) • bS i, ?_⟩
     refine bP.ext fun j => ?_
@@ -342,8 +334,9 @@ theorem gradedProjectiveExtEuler_basis_eq_dualBasis [Finite I] [DecidableEq I]
           (gradedIdempotentProjective (he i) (he₀ i))) =
       (gradedSimpleClassBasis S he he₀ hne hself hS).dualBasis i := by
   ext y
-  rw [gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_repr S he he₀
-      (fun j => Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ j⟩) hne hself hS,
+  have hI (j : I) := Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ j⟩
+  rw [gradedIdempotentProjective_eq _ _ (hI i),
+    gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_repr S he he₀ hI hne hself hS,
     Module.Basis.dualBasis_apply]
 
 end Family

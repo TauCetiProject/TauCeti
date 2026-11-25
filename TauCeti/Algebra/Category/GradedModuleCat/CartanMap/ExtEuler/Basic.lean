@@ -190,7 +190,8 @@ theorem gradedProjectiveExtEulerTarget_ofIdeal_span_singleton {f : A}
           gradedFiniteProjectiveModules_ofIdeal_span_singleton hf hI⟩) =
       N.smulGradedDimension f := by
   rw [gradedProjectiveExtEulerTarget_apply,
-    gradedHomShiftCoordinate_ofIdeal_span_singleton N hf hf₀ hI, involutive_invert]
+    ← gradedIdempotentProjective_eq hf hf₀ hI,
+    gradedHomShiftCoordinate_gradedIdempotentProjective N hf hf₀, involutive_invert]
 
 /-! ### Graded Euler-admissibility of projective pairs -/
 

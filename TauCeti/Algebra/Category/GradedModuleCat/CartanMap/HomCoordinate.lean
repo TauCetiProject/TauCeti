@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Ideal
 public import TauCeti.Algebra.Category.GradedModuleCat.Concentrated
 public import TauCeti.Algebra.Category.GradedModuleCat.HomLaurentSupport
+import TauCeti.Algebra.Polynomial.Laurent.Coeff
 import TauCeti.CategoryTheory.Linear.Biproduct
 import TauCeti.CategoryTheory.Linear.FullyFaithful
 
@@ -48,7 +49,7 @@ vanish).
 
 * `TauCeti.gradedHomShiftCoordinate_of`: on an object class `[P]`, the functional evaluates to
   `gradedDimension k (fun j => P ⟶ M{j})`.
-* `TauCeti.gradedHomShiftCoordinate_ofIdeal_span_singleton`: on `[A f]` for a degree-zero
+* `TauCeti.gradedHomShiftCoordinate_gradedIdempotentProjective`: on `[A f]` for a degree-zero
   idempotent `f`, the functional evaluates to `bar(gdim(f • M))`.
 * `TauCeti.gradedHomShiftCoordinate_eq_mul_repr`: for a finite-dimensional graded module `M` with
   `gdim(eⱼ • M) = 0` for every `j ≠ i`, `gradedHomShiftCoordinate M x = bar(gdim(eᵢ • M)) · xᵢ`.
@@ -163,15 +164,15 @@ theorem gradedHomShiftCoordinate_of (M : GradedModuleCat.{uA} 𝒜) [Module.Fini
 
 /-- On the class `[A f]` of a degree-zero idempotent `f`, `gradedHomShiftCoordinate M` evaluates
 to the conjugate idempotent graded dimension `bar(gdim(f • M))`. -/
-theorem gradedHomShiftCoordinate_ofIdeal_span_singleton (M : GradedModuleCat.{uA} 𝒜)
-    [Module.Finite k M] {f : A} (hf : IsIdempotentElem f) (hf₀ : f ∈ 𝒜 0)
-    (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜) :
+@[simp]
+theorem gradedHomShiftCoordinate_gradedIdempotentProjective (M : GradedModuleCat.{uA} 𝒜)
+    [Module.Finite k M] {f : A} (hf : IsIdempotentElem f) (hf₀ : f ∈ 𝒜 0) :
     gradedHomShiftCoordinate M
         (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-          ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {f}) hI,
-            gradedFiniteProjectiveModules_ofIdeal_span_singleton hf hI⟩) =
+          (gradedIdempotentProjective hf hf₀)) =
       invert (M.smulGradedDimension f) := by
-  rw [gradedHomShiftCoordinate_of]
+  have hI := Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, hf₀⟩
+  rw [gradedIdempotentProjective_eq _ _ hI, gradedHomShiftCoordinate_of]
   ext p
   rw [coeff_gradedDimension, invert_apply,
     GradedModuleCat.finrank_hom_ofIdeal_span_singleton_shiftObj hf hf₀ hI]
@@ -199,7 +200,7 @@ theorem gradedHomShiftCoordinate_eq_mul_repr
     refine bP.ext fun j => ?_
     rw [LinearMap.smul_apply, Module.Basis.coord_apply, Module.Basis.repr_self,
       Finsupp.single_apply, smul_eq_mul, hbP j,
-      gradedHomShiftCoordinate_ofIdeal_span_singleton M (he j) (he₀ j)]
+      gradedHomShiftCoordinate_gradedIdempotentProjective M (he j) (he₀ j)]
     split_ifs with hij
     · subst hij
       rw [mul_one]
@@ -235,6 +236,22 @@ theorem coeff_invert_smulGradedDimension_mul_repr
   rw [← gradedDimension_hom_shiftObj_eq_mul_repr he he₀ bP hbP P M i hne, coeff_gradedDimension]
 
 include hbP in
+/-- A degree-zero target detecting precisely `eᵢ` makes every coefficient of the `i`th
+coordinate of a finite graded projective nonnegative. -/
+theorem coeff_repr_projective_nonneg
+    (P : (gradedFiniteProjectiveModules 𝒜).FullSubcategory)
+    (N : GradedModuleCat.{uA} 𝒜) [Module.Finite k N]
+    (hconc : ∀ p, p ≠ 0 → N.grading.piece p = ⊥) (i : I)
+    (hne : ∀ j, j ≠ i → N.smulGradedDimension (e j) = 0)
+    (hself : N.smulGradedDimension (e i) ≠ 0) (j : ℤ) :
+    0 ≤ (bP.repr (LaurentK0.of.{uA} _ P) i).coeff j := by
+  have hcoeff := coeff_invert_smulGradedDimension_mul_repr he he₀ bP hbP P N i hne j
+  rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ hconc, invert_C,
+    coeff_C_mul] at hcoeff
+  exact nonneg_of_mul_nonneg_right (hcoeff ▸ Int.natCast_nonneg _)
+    (Int.natCast_pos.mpr (N.finrank_smul_piece_zero_pos_of_concentrated (e i) hconc hself))
+
+include hbP in
 /-- For a finite graded projective `P` generated in degree `d` and a finite-dimensional degree-zero
 target `M` annihilated by every `eⱼ` with `j ≠ i`, the weighted projective coordinate
 `gdim(eᵢ • M) · [P]ᵢ` is supported in degree `d` (and may vanish); the coordinate `[P]ᵢ` itself is
@@ -247,9 +264,8 @@ theorem smulGradedDimension_mul_repr_of_isGeneratedInDegree
     (hne : ∀ j, j ≠ i → M.smulGradedDimension (e j) = 0) :
     M.smulGradedDimension (e i) * bP.repr (LaurentK0.of.{uA} _ P) i =
       C (Module.finrank k (P.obj ⟶ M.shiftObj d) : ℤ) * T d := by
-  have hfixed : invert (M.smulGradedDimension (e i)) = M.smulGradedDimension (e i) := by
-    rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ hconc, invert_C]
-  rw [← hfixed, ← gradedDimension_hom_shiftObj_eq_mul_repr he he₀ bP hbP P M i hne,
+  rw [← GradedModuleCat.invert_smulGradedDimension_of_concentrated (e i) M hconc,
+    ← gradedDimension_hom_shiftObj_eq_mul_repr he he₀ bP hbP P M i hne,
     gradedDimension_eq_sum _ {d}, Finset.sum_singleton]
   intro j hj
   exact GradedModuleCat.subsingleton_hom_shiftObj_of_isGeneratedInDegree hP hconc

@@ -202,10 +202,9 @@ theorem smulGradedDimension_regular_ne_zero [DirectSum.Decomposition 𝒜] [SetL
     | zero => exact mul_zero _
     | add x y hx hy => rw [mul_add, hx, hy, zero_add]
     | @homogeneous p x =>
-      have hz := congrArg (fun q : LaurentPolynomial ℤ ↦ q.coeff p) h
-      rw [coeff_smulGradedDimension, regular_grading_piece, AddMonoidAlgebra.coeff_zero,
-        Finsupp.zero_apply, Nat.cast_eq_zero, Module.finrank_zero_iff,
-        Submodule.subsingleton_iff_eq_bot] at hz
+      have hz : f • 𝒜 p = ⊥ := by
+        simpa [regular_grading_piece, Module.finrank_zero_iff, Submodule.subsingleton_iff_eq_bot]
+          using congrArg (fun q : LaurentPolynomial ℤ ↦ q.coeff p) h
       have hx : f * (x : A) ∈ f • 𝒜 p :=
         (Submodule.mem_smul_pointwise_iff_exists _ _ _).2 ⟨x, x.property, rfl⟩
       simpa only [hz, Submodule.mem_bot] using hx
@@ -222,6 +221,12 @@ theorem smulGradedDimension_eq_C_of_concentrated [Module.Finite k M]
   · subst p
     simp
   · simp [coeff_smulGradedDimension, hM p hp, hp]
+
+/-- Laurent inversion fixes the graded dimension of `e • M` for a degree-zero module. -/
+theorem invert_smulGradedDimension_of_concentrated [Module.Finite k M]
+    (hM : ∀ p, p ≠ 0 → M.grading.piece p = ⊥) :
+    invert (M.smulGradedDimension e) = M.smulGradedDimension e := by
+  rw [smulGradedDimension_eq_C_of_concentrated e M hM, invert_C]
 
 /-- A nonzero idempotent graded dimension of a degree-zero module has positive
 degree-zero dimension. No idempotence assumption on `e` is needed. -/
