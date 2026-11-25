@@ -268,11 +268,9 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero_of_contDiff_gr
     ENNReal.coe_ne_top (hq ▸ le_add_self) hL hΩ hpos hc0 hv0 (by
       filter_upwards [heq, hv, hD] with x hx hvx hDx
       rw [hvx, hDx, hx])
-  have hval : value 2 v = 0 := by rw [hv_zero, ← valueL_apply, map_zero]
-  refine valueL_injective 2 ?_
-  rw [map_zero, valueL_apply]
-  exact Lp.ext ((hv.symm.trans (by rw [hval]; exact Lp.coeFn_zero _ _ _)).trans
-    (Lp.coeFn_zero _ _ _).symm)
+  refine Wkp.ext 2 (Lp.ext ?_)
+  rw [value_zero']
+  exact (hv.symm.trans (by rw [hv_zero]; exact value_zero_ae 2)).trans (Lp.coeFn_zero _ _ _).symm
 
 /-- **The a priori estimate for the Dirichlet problem** (Gilbarg–Trudinger, Lemma 9.17). Let
 `Ω ⊆ ℝ × E` be a bounded open set with `C²` boundary, and let `1 < p < ∞`. Let `A` be continuous
