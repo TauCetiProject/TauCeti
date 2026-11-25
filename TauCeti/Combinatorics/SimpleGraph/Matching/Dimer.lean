@@ -5,50 +5,52 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Group.End
 public import Mathlib.Combinatorics.SimpleGraph.Matching
-public import Mathlib.Combinatorics.SimpleGraph.Maps
 public import Mathlib.Combinatorics.SimpleGraph.Finite
+public import TauCeti.Combinatorics.SimpleGraph.Maps
 public import TauCeti.Dynamics.SymbolicDynamics.Subshift
 
 /-!
 # Dimer configurations of a graph
 
 A *dimer configuration* of a simple graph `G` is a configuration `ω : G.edgeSet → Bool` in which
-every vertex lies in exactly one edge of value `true` (`TauCeti.IsDimerConfiguration`). These are
-the indicators of the edge sets of the perfect matchings of `G`: the spanning subgraph
-`TauCeti.dimerSubgraph G ω` with the edges of value `true` is a perfect matching exactly when `ω` is
-a dimer configuration, and `TauCeti.dimerConfigurationEquiv` is the resulting bijection with
-Mathlib's perfect matchings `SimpleGraph.Subgraph.IsPerfectMatching`.
+every vertex lies in exactly one edge of value `true` (`SimpleGraph.IsDimerConfiguration`). These
+are the indicators of the edge sets of the perfect matchings of `G`: the spanning subgraph
+`G.dimerSubgraph ω` with the edges of value `true` is a perfect matching exactly when `ω` is a
+dimer configuration, and `SimpleGraph.dimerConfigurationEquiv` is the resulting bijection with
+Mathlib's perfect matchings `SimpleGraph.Subgraph.IsPerfectMatching`, with inverse the edge
+indicator `SimpleGraph.Subgraph.edgeIndicator`.
 
 For a locally finite graph the dimer configurations form a closed set of configurations
-(`TauCeti.isClosed_setOf_isDimerConfiguration`): whether a vertex is covered exactly once depends
-only on the finitely many edges at that vertex. A graph isomorphism transports dimer
-configurations (`TauCeti.IsDimerConfiguration.comp_mapEdgeSet`), so for a group `Γ` acting on the
-edges through graph automorphisms the dimer configurations form a subshift,
-`TauCeti.dimerSubshift G Γ`, the configuration space `𝔛(G)`. The automorphism group itself acts
-on the edges (`TauCeti.instMulActionIsoEdgeSet`), and a homomorphism `τ : Γ →* (G ≃g G)` induces
-an action of `Γ` of this kind by `MulAction.compHom`.
+(`SimpleGraph.isClosed_setOf_isDimerConfiguration`): whether a vertex is covered exactly once
+depends only on the finitely many edges at that vertex. A graph isomorphism transports dimer
+configurations (`SimpleGraph.IsDimerConfiguration.comp_mapEdgeSet`), so for a group `Γ` acting on
+the edges through graph automorphisms the dimer configurations form a subshift,
+`G.dimerSubshift Γ`, the configuration space `𝔛(G)`. The automorphism group itself acts on the
+edges (`SimpleGraph.Iso.instMulActionEdgeSet`, with `SimpleGraph.Iso.exists_smul_eq_mapEdgeSet`),
+and a homomorphism `τ : Γ →* (G ≃g G)` induces an action of `Γ` of this kind by
+`MulAction.compHom` (`SimpleGraph.Iso.exists_compHom_smul_eq_mapEdgeSet`).
 
 For a finite set `F` of edges and a configuration `ω`, the *completion set*
-`TauCeti.dimerCompletionSet G F ω` is the set of dimer configurations agreeing with `ω` off `F`.
-It is finite (`TauCeti.dimerCompletionSet_finite`) and contains `ω` when `ω` is a dimer
-configuration. Its members are the gluings `Function.updateFinset ω F η` of a configuration `η` on
-`F` to `ω` off `F` that cover every endpoint of an edge of `F` exactly once
-(`TauCeti.dimerCompletionSet_eq_image`), so the set of their restrictions to `F` depends only on
-the values of `ω` on the edges outside `F` that share a vertex with an edge of `F`
-(`TauCeti.restrict_dimerCompletionSet_eq`).
+`G.dimerCompletionSet F ω` is the set of dimer configurations agreeing with `ω` off `F`.
+It is finite (`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer
+configuration. When `ω` is a dimer configuration, the members of its completion set are the
+gluings `Function.updateFinset ω F η` of a configuration `η` on `F` to `ω` off `F` that cover
+every endpoint of an edge of `F` exactly once (`SimpleGraph.dimerCompletionSet_eq_image`). So for
+two dimer configurations `ω₁` and `ω₂` that agree on the edges outside `F` sharing a vertex with
+an edge of `F`, the restrictions to `F` of their completion sets coincide
+(`SimpleGraph.restrict_dimerCompletionSet_eq`).
 
 ## References
 
 * R. Kenyon, *Lectures on dimers*, IAS/Park City Math. Ser. 16 (2009).
 -/
 
-@[expose] public section
+public section
 
 open Set Function
 
-namespace TauCeti
+namespace SimpleGraph
 
 variable {V W : Type*} (G : SimpleGraph V) {G' : SimpleGraph W}
 
@@ -61,8 +63,8 @@ def IsDimerConfiguration (ω : G.edgeSet → Bool) : Prop :=
 variable {G}
 
 theorem isDimerConfiguration_iff {ω : G.edgeSet → Bool} :
-    IsDimerConfiguration G ω ↔ ∀ v : V, ∃! e : G.edgeSet, ω e = true ∧ v ∈ (e : Sym2 V) :=
-  Iff.rfl
+    G.IsDimerConfiguration ω ↔ ∀ v : V, ∃! e : G.edgeSet, ω e = true ∧ v ∈ (e : Sym2 V) :=
+  (Iff.rfl)
 
 /-- Whether a configuration covers a vertex exactly once depends only on its values on the edges
 at that vertex. -/
@@ -75,14 +77,14 @@ theorem existsUnique_congr_of_eqOn_incident {ω ω' : G.edgeSet → Bool} {v : V
 
 /-- A graph isomorphism transports dimer configurations. -/
 theorem IsDimerConfiguration.comp_mapEdgeSet (φ : G ≃g G') {ω : G'.edgeSet → Bool}
-    (hω : IsDimerConfiguration G' ω) : IsDimerConfiguration G (ω ∘ φ.mapEdgeSet) := by
+    (hω : G'.IsDimerConfiguration ω) : G.IsDimerConfiguration (ω ∘ φ.mapEdgeSet) := by
   intro v
   rw [φ.mapEdgeSet.existsUnique_congr_left]
   refine (existsUnique_congr fun e => ?_).1 (hω (φ v))
   simp only [comp_apply, Equiv.apply_symm_apply]
   refine and_congr_right fun _ => ?_
-  change φ v ∈ (e : Sym2 W) ↔ v ∈ Sym2.map φ.symm e
-  rw [Sym2.mem_map]
+  simp only [Iso.mapEdgeSet_symm_apply, Hom.mapEdgeSet_coe, RelEmbedding.coe_toRelHom,
+    RelIso.coe_toRelEmbedding, Sym2.mem_map]
   exact ⟨fun h => ⟨φ v, h, φ.symm_apply_apply v⟩, fun ⟨a, ha, hav⟩ => by
     rw [← hav, φ.apply_symm_apply]; exact ha⟩
 
@@ -97,13 +99,13 @@ def dimerSubgraph (G : SimpleGraph V) (ω : G.edgeSet → Bool) : G.Subgraph whe
   symm := ⟨fun _ _ ⟨h, hω⟩ => ⟨h.symm, by simpa only [Sym2.eq_swap] using hω⟩⟩
 
 @[simp]
-theorem dimerSubgraph_verts (ω : G.edgeSet → Bool) : (dimerSubgraph G ω).verts = univ :=
-  rfl
+theorem dimerSubgraph_verts (ω : G.edgeSet → Bool) : (G.dimerSubgraph ω).verts = univ :=
+  (rfl)
 
 @[simp]
 theorem dimerSubgraph_adj {ω : G.edgeSet → Bool} {u v : V} :
-    (dimerSubgraph G ω).Adj u v ↔ ∃ h : G.Adj u v, ω ⟨s(u, v), h⟩ = true :=
-  Iff.rfl
+    (G.dimerSubgraph ω).Adj u v ↔ ∃ h : G.Adj u v, ω ⟨s(u, v), h⟩ = true :=
+  (Iff.rfl)
 
 /-- The edges of value `true` at a vertex `v` correspond to the neighbours of `v` in the
 subgraph of edges of value `true`. -/
@@ -120,63 +122,68 @@ private theorem existsUnique_edge_iff_existsUnique_adj (ω : G.edgeSet → Bool)
     refine ⟨⟨s(v, w), h⟩, ⟨hω, Sym2.mem_mk_left _ _⟩, fun ⟨e', he'⟩ ⟨hωe', hve'⟩ => ?_⟩
     obtain ⟨w', rfl⟩ := Sym2.mem_iff_exists.1 hve'
     obtain rfl := huniq w' ⟨he', hωe'⟩
-    rfl
+    (rfl)
 
 /-- The subgraph of edges of value `true` is a perfect matching exactly when the configuration is
 a dimer configuration. -/
 theorem isPerfectMatching_dimerSubgraph_iff {ω : G.edgeSet → Bool} :
-    (dimerSubgraph G ω).IsPerfectMatching ↔ IsDimerConfiguration G ω := by
-  rw [SimpleGraph.Subgraph.isPerfectMatching_iff]
+    (G.dimerSubgraph ω).IsPerfectMatching ↔ G.IsDimerConfiguration ω := by
+  rw [Subgraph.isPerfectMatching_iff]
   exact forall_congr' fun v => (existsUnique_edge_iff_existsUnique_adj ω v).symm
 
 open scoped Classical in
 /-- The indicator of the edge set of a subgraph, as a configuration on the edges of `G`. -/
-noncomputable def subgraphIndicator (M : G.Subgraph) (e : G.edgeSet) : Bool :=
+noncomputable def Subgraph.edgeIndicator (M : G.Subgraph) (e : G.edgeSet) : Bool :=
   decide ((e : Sym2 V) ∈ M.edgeSet)
 
 @[simp]
-theorem subgraphIndicator_eq_true {M : G.Subgraph} {e : G.edgeSet} :
-    subgraphIndicator M e = true ↔ (e : Sym2 V) ∈ M.edgeSet := by
-  simp [subgraphIndicator]
+theorem Subgraph.edgeIndicator_eq_true {M : G.Subgraph} {e : G.edgeSet} :
+    M.edgeIndicator e = true ↔ (e : Sym2 V) ∈ M.edgeSet := by
+  simp [edgeIndicator]
 
-theorem dimerSubgraph_subgraphIndicator {M : G.Subgraph} (hM : M.IsSpanning) :
-    dimerSubgraph G (subgraphIndicator M) = M := by
-  refine SimpleGraph.Subgraph.ext ?_ ?_
+theorem dimerSubgraph_edgeIndicator {M : G.Subgraph} (hM : M.IsSpanning) :
+    G.dimerSubgraph M.edgeIndicator = M := by
+  refine Subgraph.ext ?_ ?_
   · exact (Set.eq_univ_of_forall hM).symm
   · ext u v
-    simp only [dimerSubgraph_adj, subgraphIndicator_eq_true, SimpleGraph.Subgraph.mem_edgeSet]
+    simp only [dimerSubgraph_adj, Subgraph.edgeIndicator_eq_true, Subgraph.mem_edgeSet]
     exact ⟨fun ⟨_, h⟩ => h, fun h => ⟨M.adj_sub h, h⟩⟩
 
-theorem subgraphIndicator_dimerSubgraph (ω : G.edgeSet → Bool) :
-    subgraphIndicator (dimerSubgraph G ω) = ω := by
+theorem edgeIndicator_dimerSubgraph (ω : G.edgeSet → Bool) :
+    (G.dimerSubgraph ω).edgeIndicator = ω := by
   funext ⟨e, he⟩
   induction e using Sym2.ind with
   | _ u v =>
-    rw [Bool.eq_iff_iff, subgraphIndicator_eq_true, SimpleGraph.Subgraph.mem_edgeSet]
+    rw [Bool.eq_iff_iff, Subgraph.edgeIndicator_eq_true, Subgraph.mem_edgeSet]
     exact ⟨fun ⟨_, h⟩ => h, fun h => ⟨G.mem_edgeSet.1 he, h⟩⟩
 
 /-- Dimer configurations are the indicators of the edge sets of the perfect matchings. -/
 noncomputable def dimerConfigurationEquiv :
-    {ω : G.edgeSet → Bool // IsDimerConfiguration G ω} ≃ {M : G.Subgraph // M.IsPerfectMatching}
+    {ω : G.edgeSet → Bool // G.IsDimerConfiguration ω} ≃ {M : G.Subgraph // M.IsPerfectMatching}
     where
-  toFun ω := ⟨dimerSubgraph G ω, isPerfectMatching_dimerSubgraph_iff.2 ω.property⟩
-  invFun M := ⟨subgraphIndicator M.val, by
-    rw [← isPerfectMatching_dimerSubgraph_iff, dimerSubgraph_subgraphIndicator M.property.2]
+  toFun ω := ⟨G.dimerSubgraph ω, isPerfectMatching_dimerSubgraph_iff.2 ω.property⟩
+  invFun M := ⟨M.val.edgeIndicator, by
+    rw [← isPerfectMatching_dimerSubgraph_iff, dimerSubgraph_edgeIndicator M.property.2]
     exact M.property⟩
-  left_inv ω := Subtype.ext (subgraphIndicator_dimerSubgraph ω.val)
-  right_inv M := Subtype.ext (dimerSubgraph_subgraphIndicator M.property.2)
+  left_inv ω := Subtype.ext (edgeIndicator_dimerSubgraph ω.val)
+  right_inv M := Subtype.ext (dimerSubgraph_edgeIndicator M.property.2)
 
 @[simp]
-theorem coe_dimerConfigurationEquiv_apply (ω : {ω : G.edgeSet → Bool // IsDimerConfiguration G ω}) :
-    (dimerConfigurationEquiv ω : G.Subgraph) = dimerSubgraph G ω :=
-  rfl
+theorem coe_dimerConfigurationEquiv_apply (ω : {ω : G.edgeSet → Bool // G.IsDimerConfiguration ω}) :
+    (dimerConfigurationEquiv ω : G.Subgraph) = G.dimerSubgraph ω :=
+  (rfl)
+
+@[simp]
+theorem coe_dimerConfigurationEquiv_symm_apply (M : {M : G.Subgraph // M.IsPerfectMatching}) :
+    (dimerConfigurationEquiv.symm M : G.edgeSet → Bool) = M.val.edgeIndicator :=
+  (rfl)
 
 /-! ### Closedness -/
 
 /-- For a locally finite graph the dimer configurations form a closed set: whether a vertex is
 covered exactly once depends only on the finitely many edges at it. -/
 theorem isClosed_setOf_isDimerConfiguration [G.LocallyFinite] :
-    IsClosed {ω : G.edgeSet → Bool | IsDimerConfiguration G ω} := by
+    IsClosed {ω : G.edgeSet → Bool | G.IsDimerConfiguration ω} := by
   classical
   simp only [IsDimerConfiguration, ofPred_forall]
   refine isClosed_iInter fun v => ?_
@@ -198,26 +205,13 @@ theorem isClosed_setOf_isDimerConfiguration [G.LocallyFinite] :
 
 /-! ### The subshift of dimer configurations -/
 
-/-- The automorphism group of `G` acts on its edges. -/
-instance instMulActionIsoEdgeSet : MulAction (G ≃g G) G.edgeSet where
-  smul φ e := φ.mapEdgeSet e
-  one_smul e := Subtype.ext <| by
-    change Sym2.map (⇑(1 : G ≃g G)) e.val = e.val
-    rw [RelIso.coe_one, Sym2.map_id, id]
-  mul_smul φ ψ e := Subtype.ext <| by
-    change Sym2.map (⇑(φ * ψ)) e.val = Sym2.map φ (Sym2.map ψ e.val)
-    rw [RelIso.coe_mul, Sym2.map_map]
-
-theorem iso_smul_edgeSet (φ : G ≃g G) (e : G.edgeSet) : φ • e = φ.mapEdgeSet e :=
-  rfl
-
 variable (G) in
 /-- The subshift `𝔛(G)` of dimer configurations of a locally finite graph `G`, for a group `Γ`
 acting on the edges through graph automorphisms. -/
 def dimerSubshift [G.LocallyFinite] (Γ : Type*) [Group Γ] [MulAction Γ G.edgeSet]
     (hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e) :
-    Subshift Γ G.edgeSet Bool where
-  carrier := {ω | IsDimerConfiguration G ω}
+    TauCeti.Subshift Γ G.edgeSet Bool where
+  carrier := {ω | G.IsDimerConfiguration ω}
   isClosed := isClosed_setOf_isDimerConfiguration
   smul_mem' g ω hω := by
     obtain ⟨φ, hφ⟩ := hΓ g⁻¹
@@ -227,12 +221,8 @@ def dimerSubshift [G.LocallyFinite] (Γ : Type*) [Group Γ] [MulAction Γ G.edge
 @[simp]
 theorem mem_dimerSubshift [G.LocallyFinite] {Γ : Type*} [Group Γ] [MulAction Γ G.edgeSet]
     {hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e} {ω : G.edgeSet → Bool} :
-    ω ∈ dimerSubshift G Γ hΓ ↔ IsDimerConfiguration G ω :=
-  Iff.rfl
-
-/-- The action of the automorphism group on the edges is through graph automorphisms. -/
-theorem exists_iso_smul_eq (φ : G ≃g G) : ∃ ψ : G ≃g G, ∀ e, φ • e = ψ.mapEdgeSet e :=
-  ⟨φ, fun _ => rfl⟩
+    ω ∈ G.dimerSubshift Γ hΓ ↔ G.IsDimerConfiguration ω :=
+  (Iff.rfl)
 
 /-! ### Completion sets -/
 
@@ -240,19 +230,19 @@ variable (G) in
 /-- The completion set `Ω_F(ω)` of a configuration `ω` at a finite set `F` of edges: the dimer
 configurations agreeing with `ω` off `F`. -/
 def dimerCompletionSet (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) : Set (G.edgeSet → Bool) :=
-  {ω' | IsDimerConfiguration G ω' ∧ ∀ e ∉ F, ω' e = ω e}
+  {ω' | G.IsDimerConfiguration ω' ∧ ∀ e ∉ F, ω' e = ω e}
 
 theorem mem_dimerCompletionSet {F : Finset G.edgeSet} {ω ω' : G.edgeSet → Bool} :
-    ω' ∈ dimerCompletionSet G F ω ↔ IsDimerConfiguration G ω' ∧ ∀ e ∉ F, ω' e = ω e :=
-  Iff.rfl
+    ω' ∈ G.dimerCompletionSet F ω ↔ G.IsDimerConfiguration ω' ∧ ∀ e ∉ F, ω' e = ω e :=
+  (Iff.rfl)
 
 theorem mem_dimerCompletionSet_self {F : Finset G.edgeSet} {ω : G.edgeSet → Bool}
-    (hω : IsDimerConfiguration G ω) : ω ∈ dimerCompletionSet G F ω :=
+    (hω : G.IsDimerConfiguration ω) : ω ∈ G.dimerCompletionSet F ω :=
   ⟨hω, fun _ _ => rfl⟩
 
 /-- A completion set is finite: its members are determined by their values on `F`. -/
-theorem dimerCompletionSet_finite (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) :
-    (dimerCompletionSet G F ω).Finite := by
+theorem finite_dimerCompletionSet (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) :
+    (G.dimerCompletionSet F ω).Finite := by
   refine Finite.of_finite_image (f := F.restrict) (toFinite _) ?_
   intro ω₁ h₁ ω₂ h₂ h
   funext e
@@ -260,47 +250,60 @@ theorem dimerCompletionSet_finite (F : Finset G.edgeSet) (ω : G.edgeSet → Boo
   · exact congrFun h ⟨e, he⟩
   · rw [h₁.2 e he, h₂.2 e he]
 
+private theorem updateFinset_apply_of_mem [DecidableEq G.edgeSet] {F : Finset G.edgeSet}
+    {ω : G.edgeSet → Bool} {η : F → Bool} {e : G.edgeSet} (he : e ∈ F) :
+    updateFinset ω F η e = η ⟨e, he⟩ := by
+  simp [updateFinset_def, he]
+
+private theorem updateFinset_apply_of_notMem [DecidableEq G.edgeSet] {F : Finset G.edgeSet}
+    {ω : G.edgeSet → Bool} {η : F → Bool} {e : G.edgeSet} (he : e ∉ F) :
+    updateFinset ω F η e = ω e := by
+  simp [updateFinset_def, he]
+
 open scoped Classical in
 /-- The members of the completion set of a dimer configuration `ω` at `F` are the gluings of
 configurations `η` on `F` to `ω` that cover every endpoint of an edge of `F` exactly once. -/
 theorem dimerCompletionSet_eq_image {F : Finset G.edgeSet} {ω : G.edgeSet → Bool}
-    (hω : IsDimerConfiguration G ω) :
-    dimerCompletionSet G F ω = (fun η => updateFinset ω F η) ''
+    (hω : G.IsDimerConfiguration ω) :
+    G.dimerCompletionSet F ω = (fun η => updateFinset ω F η) ''
       {η | ∀ v : V, (∃ e ∈ F, v ∈ (e : Sym2 V)) →
         ∃! e : G.edgeSet, updateFinset ω F η e = true ∧ v ∈ (e : Sym2 V)} := by
   ext ω'
   constructor
   · rintro ⟨hω', hoff⟩
     have hglue : updateFinset ω F (F.restrict ω') = ω' := by
-      ext e; by_cases he : e ∈ F <;> simp [updateFinset, he, hoff]
+      ext e
+      by_cases he : e ∈ F
+      · rw [updateFinset_apply_of_mem he, Finset.restrict_def]
+      · rw [updateFinset_apply_of_notMem he, hoff e he]
     exact ⟨_, fun v _ => by rw [hglue]; exact hω' v, hglue⟩
   · rintro ⟨η, hη, rfl⟩
-    refine ⟨fun v => ?_, fun e he => dite_eq_right he⟩
+    refine ⟨fun v => ?_, fun e he => updateFinset_apply_of_notMem he⟩
     by_cases hv : ∃ e ∈ F, v ∈ (e : Sym2 V)
     · exact hη v hv
     · simp only [not_exists, not_and] at hv
       refine (existsUnique_congr_of_eqOn_incident fun e he => ?_).2 (hω v)
-      exact dite_eq_right fun heF => hv e heF he
+      exact updateFinset_apply_of_notMem fun heF => hv e heF he
 
 open scoped Classical in
-/-- The restrictions to `F` of the members of a completion set depend only on the values of the
-configuration on the edges outside `F` sharing a vertex with an edge of `F`. -/
+/-- For two dimer configurations that agree on the edges outside `F` sharing a vertex with an edge
+of `F`, the restrictions to `F` of their completion sets coincide. -/
 theorem restrict_dimerCompletionSet_eq {F : Finset G.edgeSet} {ω₁ ω₂ : G.edgeSet → Bool}
-    (h₁ : IsDimerConfiguration G ω₁) (h₂ : IsDimerConfiguration G ω₂)
+    (h₁ : G.IsDimerConfiguration ω₁) (h₂ : G.IsDimerConfiguration ω₂)
     (h : ∀ e ∉ F, (∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)) → ω₁ e = ω₂ e) :
-    F.restrict '' dimerCompletionSet G F ω₁ = F.restrict '' dimerCompletionSet G F ω₂ := by
+    F.restrict '' G.dimerCompletionSet F ω₁ = F.restrict '' G.dimerCompletionSet F ω₂ := by
   have key : ∀ η : F → Bool, ∀ v : V, (∃ f ∈ F, v ∈ (f : Sym2 V)) →
       ((∃! e : G.edgeSet, updateFinset ω₁ F η e = true ∧ v ∈ (e : Sym2 V)) ↔
         ∃! e : G.edgeSet, updateFinset ω₂ F η e = true ∧ v ∈ (e : Sym2 V)) := by
     rintro η v ⟨f, hf, hvf⟩
     refine existsUnique_congr_of_eqOn_incident fun e hve => ?_
     by_cases he : e ∈ F
-    · simp only [updateFinset, dite_eq_left he]
-    · simp only [updateFinset, dite_eq_right he]
+    · rw [updateFinset_apply_of_mem he, updateFinset_apply_of_mem he]
+    · rw [updateFinset_apply_of_notMem he, updateFinset_apply_of_notMem he]
       exact h e he ⟨f, hf, v, hve, hvf⟩
   rw [dimerCompletionSet_eq_image h₁, dimerCompletionSet_eq_image h₂, image_image, image_image]
   simp only [restrict_updateFinset, image_id']
   ext η
   exact forall_congr' fun v => forall_congr' fun hv => key η v hv
 
-end TauCeti
+end SimpleGraph
