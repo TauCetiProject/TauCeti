@@ -191,7 +191,6 @@ lemma ιChainComplex_pointSingularChainIsoAlternatingConst_hom_f (n : ℕ)
 
 /-- In every degree `n`, the inverse of `TauCeti.pointSingularChainIsoAlternatingConst` includes
 `R` as the summand of any (hence the unique) singular `n`-simplex of `X`. -/
-@[simp]
 lemma pointSingularChainIsoAlternatingConst_inv_f (n : ℕ) (σ : (TopCat.toSSet.obj X) _⦋n⦌) :
     (pointSingularChainIsoAlternatingConst R X).inv.f n =
       (TopCat.toSSet.obj X).ιChainComplex σ := by
