@@ -295,6 +295,9 @@ private theorem derivedComparison_homotopy_arbitrary {X : C} (I : InjectiveResol
         ((HomotopyCategory.quotient C (ComplexShape.up ℕ)).obj I.cocomplex) := by
   let T := F'.mapHomotopyCategory (ComplexShape.up ℕ) ⋙
     HomotopyCategory.homologyFunctor D' (ComplexShape.up ℕ) n
+  -- After the canonical rewrite, the source is `(F.rightDerived n ⋙ G).obj X`, which is the
+  -- homotopy-category homology of the chosen resolution only once `rightDerived` is unfolded;
+  -- `rw [Category.assoc]` then fails with a motive type mismatch, so `erw` is needed.
   erw [derivedComparison_homotopy_canonical, Category.assoc, ← T.map_comp,
     injectiveResolutionsCompIso_hom_app_comp_iso_hom]
   exact ((comparisonHomotopyIso F G H' F' e n).hom.naturality I.iso.hom).symm
@@ -403,6 +406,8 @@ theorem rightDerivedPrecompIso_app_hom (F'' : C' ⥤ D) [F''.Additive]
         (Functor.mapHomologicalComplexCompIso (Iso.refl (H' ⋙ F'')) _).inv.app I.cocomplex) n := by
   dsimp only [rightDerivedPrecompIso, Iso.trans_hom, NatTrans.comp_app, Functor.rightUnitor]
   simp_rw [← Iso.app_hom]
+  -- Unfolding `rightUnitor` above leaves its explicit identity structure in the goal, so the
+  -- coefficient iso `rightUnitor F ≪≫ e'` matches only up to that unfolding.
   erw [Functor.rightDerivedCompIso_app_injectiveResolution F (𝟭 D) H' F''
     (Functor.rightUnitor F ≪≫ e') I n]
   dsimp only [CategoryTheory.Functor.mapInjectiveResolution, Iso.app_hom,
@@ -411,8 +416,8 @@ theorem rightDerivedPrecompIso_app_hom (F'' : C' ⥤ D) [F''.Additive]
     CategoryTheory.Functor.id_map, Category.assoc, Category.id_comp,
     Iso.inv_hom_id, Category.comp_id]
   dsimp only [Iso.app_inv]
-  erw [CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso_id_inv_app]
-  erw [← HomologicalComplex.homologyMap_comp]
+  rw [CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso_id_inv_app,
+    HomologicalComplex.homologyFunctor_map, ← HomologicalComplex.homologyMap_comp]
   congr 2
   ext j
   simp

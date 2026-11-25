@@ -270,11 +270,16 @@ theorem rightDerivedΓRestriction_app_injectiveResolution {F : X.Sheaf (ModuleCa
     (Sheaf.Γ (Opens.grothendieckTopology U) (ModuleCat.{u} R)) (sheafRestrictΓIso U) I n
   have ha := I.rightDerived_app_eq
     (Sheaf.natTransΓRes (Opens.grothendieckTopology X) (ModuleCat.{u} R) (op U)) n
-  dsimp only [rightDerivedΓRestriction, NatTrans.comp_app]
-  rw [Category.assoc]
-  erw [hc, ← Category.assoc, ha]
+  dsimp only [rightDerivedΓRestriction, rightDerivedSectionsRestrictIso, NatTrans.comp_app]
+  rw [Category.assoc, hc]
+  -- The target of `hc` is the homology of `(U.sheafRestrict.mapInjectiveResolution I).cocomplex`
+  -- under `Γ`, which is the mapped complex of `I.cocomplex` only after unfolding
+  -- `mapInjectiveResolution`, so reassociating with `rw` fails with a motive type mismatch.
+  erw [← Category.assoc, ha]
   dsimp only [E, Functor.mapInjectiveResolution]
   simp only [Category.assoc, Iso.inv_hom_id_assoc]
+  -- The homology instances still mention `(U.sheafRestrict.mapInjectiveResolution I).cocomplex`,
+  -- so merging the two homology maps needs the same unfolding of `mapInjectiveResolution`.
   erw [← HomologicalComplex.homologyMap_comp]
   congr 1
 
@@ -323,7 +328,7 @@ lemma rightDerivedΓRestrictionComplexMap_f_ΓRes {F : X.Sheaf (ModuleCat.{u} R)
         I).cocomplex.X j).ΓRes (op ⊤)) =
     (I.cocomplex.X j).ΓRes (op U) ≫
       (sheafRestrictSectionsTopIso U).hom.app (I.cocomplex.X j) := by
-  erw [rightDerivedΓRestrictionComplexMap_f]
+  rw [rightDerivedΓRestrictionComplexMap_f]
   -- The mapped injective resolution has the corresponding restricted terms.
   exact (Category.assoc _ _ _).trans
     (congrArg ((I.cocomplex.X j).ΓRes (op U) ≫ ·)
@@ -343,7 +348,7 @@ lemma rightDerivedΓRestrictionComplexMap_f_ΓRes_open {F : X.Sheaf (ModuleCat.{
           I).cocomplex.X j).ΓRes (op D) =
       (I.cocomplex.X j).ΓRes (op (U.isOpenEmbedding.functor.obj D)) := by
   let F := I.cocomplex.X j
-  erw [← Sheaf.ΓRes_map _ (homOfLE (show D ≤ ⊤ from le_top)).op,
+  rw [← Sheaf.ΓRes_map _ (homOfLE (show D ≤ ⊤ from le_top)).op,
     ← Category.assoc, rightDerivedΓRestrictionComplexMap_f_ΓRes]
   rw [sheafRestrictSectionsTopIso_hom_app]
   change F.ΓRes (op U) ≫ F.obj.map _ ≫ F.obj.map _ = _
@@ -458,8 +463,12 @@ private lemma nestedComplexComposition_allProjections (h : V ≤ U)
     (X := TopCat.of U) (relativeOpen h) IU j ((relativeSites h).inverse.obj D)
   have hU := rightDerivedΓRestrictionComplexMap_f_ΓRes_open U I j
     ((relativeInclusionSites h).obj ((relativeSites h).inverse.obj D))
+  -- `hH` leaves sections on `(Opens.map (relativeOpenIso h).hom).obj D`, which `hW` writes as
+  -- `(relativeSites h).inverse.obj D`; these agree only by unfolding `Opens.mapMapIso`, and the
+  -- rewritten goal is typed through `IW` rather than the mapped resolution, so it is not
+  -- type-correct at implicit transparency and `rw` cannot match `hW` and `hU`.
   erw [Sheaf.ΓRes_naturality, reassoc_of% hH, reassoc_of% hW, reassoc_of% hU]
-  erw [nestedCoefficientComplexMap_f, nestedRestrictionIso_hom_app_hom_app]
+  rw [nestedCoefficientComplexMap_f, nestedRestrictionIso_hom_app_hom_app]
   exact Sheaf.ΓRes_map _ _
 
 private lemma nestedComplexComposition (h : V ≤ U)
