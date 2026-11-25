@@ -38,7 +38,8 @@ curvatures `1` and `H = 1`.
 * `TauCeti.leviCivitaConnection_eq_mfderiv_boundaryWeingarten`: the Weingarten equation
   `∇_{dι u} N = dι (S_q u)`.
 * `TauCeti.boundaryPrincipalCurvatures`, `TauCeti.boundaryPrincipalDirection`: the principal
-  curvatures, in decreasing order, and an `h`-orthonormal basis of principal directions
+  curvatures, in decreasing order, and an `h`-orthonormal basis of principal directions,
+  bundled as `TauCeti.boundaryPrincipalBasis`
   (`TauCeti.boundaryWeingarten_boundaryPrincipalDirection`,
   `TauCeti.boundaryInducedForm_boundaryPrincipalDirection`), in which `II_q` is diagonal
   (`TauCeti.boundarySecondFundamentalForm_boundaryPrincipalDirection`).
@@ -237,11 +238,27 @@ def boundaryPrincipalCurvatures (q : (𝓡∂ (n + 1)).boundary M) : Fin n → �
 
 /-- The **principal directions** of the boundary at `q ∈ ∂M`: a basis of the tangent space of the
 boundary, orthonormal for the induced metric, of eigenvectors of the Weingarten map `S_q`, the
-`i`-th with eigenvalue the `i`-th principal curvature. -/
+`i`-th with eigenvalue the `i`-th principal curvature. As a `Module.Basis`, it is
+`TauCeti.boundaryPrincipalBasis`. -/
 def boundaryPrincipalDirection (q : (𝓡∂ (n + 1)).boundary M) (i : Fin n) :
     TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q :=
   (boundaryTangentEquiv q).symm
     ((isSymmetric_boundaryWeingartenTangent q).eigenvectorBasis (finrank_boundaryTangentSpace q) i)
+
+/-- The principal directions at `q ∈ ∂M`, bundled as a basis of the tangent space of the
+boundary. -/
+def boundaryPrincipalBasis (q : (𝓡∂ (n + 1)).boundary M) :
+    Module.Basis (Fin n) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :=
+  ((isSymmetric_boundaryWeingartenTangent q).eigenvectorBasis
+    (finrank_boundaryTangentSpace q)).toBasis.map (boundaryTangentEquiv q).symm
+
+/-- The vectors of `TauCeti.boundaryPrincipalBasis` are the principal directions. -/
+@[simp]
+theorem coe_boundaryPrincipalBasis (q : (𝓡∂ (n + 1)).boundary M) :
+    ⇑(boundaryPrincipalBasis q) = boundaryPrincipalDirection q := by
+  ext1 i
+  rw [boundaryPrincipalBasis, Module.Basis.map_apply, OrthonormalBasis.coe_toBasis,
+    boundaryPrincipalDirection]
 
 /-- The principal curvatures are listed in decreasing order. -/
 theorem boundaryPrincipalCurvatures_antitone (q : (𝓡∂ (n + 1)).boundary M) :
@@ -250,6 +267,7 @@ theorem boundaryPrincipalCurvatures_antitone (q : (𝓡∂ (n + 1)).boundary M) 
 
 /-- The `i`-th principal direction is an eigenvector of the Weingarten map for the `i`-th
 principal curvature: `S_q eᵢ = κᵢ eᵢ`. -/
+@[simp]
 theorem boundaryWeingarten_boundaryPrincipalDirection (q : (𝓡∂ (n + 1)).boundary M) (i : Fin n) :
     boundaryWeingarten q (boundaryPrincipalDirection q i) =
       boundaryPrincipalCurvatures q i • boundaryPrincipalDirection q i := by
@@ -269,6 +287,7 @@ theorem boundaryInducedForm_boundaryPrincipalDirection (q : (𝓡∂ (n + 1)).bo
 
 /-- **The second fundamental form is diagonal in the principal directions**:
 `II_q(eᵢ, eⱼ) = κᵢ δᵢⱼ`. -/
+@[simp]
 theorem boundarySecondFundamentalForm_boundaryPrincipalDirection (q : (𝓡∂ (n + 1)).boundary M)
     (i j : Fin n) :
     boundarySecondFundamentalForm q (boundaryPrincipalDirection q i)
