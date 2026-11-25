@@ -343,21 +343,22 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {V : Opens (WithLp 2 (ℝ × E))} {L : ℝ≥0}
   {ι : Type*} [Fintype ι] [DecidableEq ι] {Omega : Opens (EuclideanSpace ℝ ι)}
   {Γ : Set (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-  {c : EuclideanSpace ℝ ι → ℝ} {lam Lam : ℝ}
+  {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} {lam Lam : ℝ}
 
 namespace IsUniformlyEllipticAE
 
 /-- **Coercivity of the mixed problem on a Lipschitz domain.** Let an affine isometry `e` carry
 the connected open set `Ω ⊆ EuclideanSpace ℝ ι` onto a bounded Lipschitz domain `V`, and let `Γ`
 meet the frontier of `Ω` in a set of positive surface measure. For a measurable inverse-coercive
-principal coefficient `a` with lower constant `λ`, no drift, and an essentially bounded mass
-coefficient `c ≥ 0`, the energy form is coercive on `H¹_Γ(Ω)`, with constant `λ / (1 + P²)` for a
-Poincaré–Friedrichs constant `P` of `(Ω, Γ)`. -/
+principal coefficient `a` with lower constant `λ`, a drift vanishing almost everywhere, and an
+essentially bounded mass coefficient `c ≥ 0`, the energy form is coercive on `H¹_Γ(Ω)`, with
+constant `λ / (1 + P²)` for a Poincaré–Friedrichs constant `P` of `(Ω, Γ)`. -/
 theorem isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomainWith
     (h : IsUniformlyEllipticAE volume (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (volume.restrict Omega))
-    (hc : MemLp c ⊤ (volume.restrict Omega)) (hc_nonneg : ∀ᵐ x ∂volume.restrict Omega, 0 ≤ c x)
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 (c x)) ⊤ (volume.restrict Omega))
+    (hc : MemLp c ⊤ (volume.restrict Omega)) (hb : b =ᵐ[volume.restrict Omega] 0)
+    (hc_nonneg : ∀ᵐ x ∂volume.restrict Omega, 0 ≤ c x)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (volume.restrict Omega))
     (hV : (V : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hVb : Bornology.IsBounded (V : Set (WithLp 2 (ℝ × E))))
     (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
@@ -369,21 +370,22 @@ theorem isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomainWith
   obtain ⟨P, -, hP⟩ :=
     W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_affineIsometryEquiv
       (p := 2) ENNReal.ofNat_ne_top hV hVb e hVΩ hconn hΓ
-  exact h.isCoercive_energyFormH1LVanishingOn_of_poincare ha hc .rfl hc_nonneg hP hcoeff
+  exact h.isCoercive_energyFormH1LVanishingOn_of_poincare ha hc hb hc_nonneg hP hcoeff
 
 /-- **The mixed problem on a Lipschitz domain.** Let an affine isometry `e` carry the connected
 open set `Ω ⊆ EuclideanSpace ℝ ι` onto a bounded Lipschitz domain `V`, and let `Γ` meet the
 frontier of `Ω` in a set of positive surface measure. For a measurable inverse-coercive principal
-coefficient `a`, no drift and an essentially bounded mass coefficient `c ≥ 0`, every Dirichlet
-datum `g ∈ H¹(Ω)` and every forcing `ℓ ∈ (H¹_Γ(Ω))*`, there is exactly one `u ∈ H¹(Ω)` with
-`u - g ∈ H¹_Γ(Ω)` and
+coefficient `a`, a drift vanishing almost everywhere and an essentially bounded mass coefficient
+`c ≥ 0`, every Dirichlet datum `g ∈ H¹(Ω)` and every forcing `ℓ ∈ (H¹_Γ(Ω))*`, there is exactly
+one `u ∈ H¹(Ω)` with `u - g ∈ H¹_Γ(Ω)` and
 
 `∫_Ω ⟨a ∇u, ∇v⟩ + c u v = ℓ v` for every `v ∈ H¹_Γ(Ω)`. -/
 theorem existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_of_isLipschitzDomainWith
     (h : IsUniformlyEllipticAE volume (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (volume.restrict Omega))
-    (hc : MemLp c ⊤ (volume.restrict Omega)) (hc_nonneg : ∀ᵐ x ∂volume.restrict Omega, 0 ≤ c x)
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 (c x)) ⊤ (volume.restrict Omega))
+    (hc : MemLp c ⊤ (volume.restrict Omega)) (hb : b =ᵐ[volume.restrict Omega] 0)
+    (hc_nonneg : ∀ᵐ x ∂volume.restrict Omega, 0 ≤ c x)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (volume.restrict Omega))
     (hV : (V : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hVb : Bornology.IsBounded (V : Set (WithLp 2 (ℝ × E))))
     (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
@@ -393,10 +395,10 @@ theorem existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_of_i
       (Γ ∩ frontier (Omega : Set (EuclideanSpace ℝ ι))) ≠ 0)
     (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1pVanishingOn volume Omega 2 Γ)) :
     ∃! u : W1p volume Omega 2, u - g ∈ w1pVanishingOnSubmodule volume Omega 2 Γ ∧
-      ∀ v : W1pVanishingOn volume Omega 2 Γ, energyFormH1 a 0 c u v = ℓ v :=
+      ∀ v : W1pVanishingOn volume Omega 2 Γ, energyFormH1 a b c u v = ℓ v :=
   existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq hcoeff
-    (h.isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomainWith ha hc hc_nonneg hcoeff hV hVb
-      e hVΩ hconn hΓ) g ℓ
+    (h.isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomainWith ha hc hb hc_nonneg hcoeff hV
+      hVb e hVΩ hconn hΓ) g ℓ
 
 end IsUniformlyEllipticAE
 

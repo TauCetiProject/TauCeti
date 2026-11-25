@@ -223,13 +223,10 @@ theorem div_mul_norm_sq_le_energyFormH1_self_of_zero_drift {P : ℝ}
     (hc_nonneg : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ c x) {u : W1p mu Omega 2}
     (hu : ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
     lam / (P ^ 2 + 1) * ‖u‖ ^ 2 ≤ energyFormH1 a b c u u := by
-  have hsq : ‖W1p.value u‖ ^ 2 ≤ P ^ 2 * ‖W1p.gradient u‖ ^ 2 := by
-    nlinarith [mul_self_le_mul_self (norm_nonneg (W1p.value u)) hu]
-  refine le_trans ?_ (h.mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift ha hcoeff hc hb
-    hc_nonneg u)
-  rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq, div_mul_eq_mul_div,
-    div_le_iff₀ (by positivity)]
-  nlinarith [mul_le_mul_of_nonneg_left hsq h.pos.le]
+  have key := h.mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift ha hcoeff hc hb
+    hc_nonneg u
+  simpa using mul_norm_sq_le_of_gradient_sub_value_bound (P := P) (by simpa using h.pos.le)
+    (A := lam) (B := 0) (by simpa using key) hu
 
 /-- **An `H¹`-norm lower bound from a mass floor, for an inverse-coercive principal
 coefficient.** For a measurable inverse-coercive principal coefficient `a` with lower constant
