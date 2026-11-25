@@ -13,6 +13,7 @@ import TauCeti.Analysis.Complex.JensenFormula
 import TauCeti.Data.Real.Pigeonhole
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Local
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
 # The window form of the logarithmic derivative of the Riemann zeta function
@@ -162,6 +163,31 @@ private theorem norm_sum_filter_not_window_le {s : ℂ} (hs : -1 ≤ s.re) (Z : 
       (one_le_norm_sub_of_riemannZeta_eq_zero hs hζ (Finset.mem_filter.mp hz).2)
   · simp [analyticOrderAt_eq_zero.mpr (Or.inr hζ)]
 
+/-- A zero `ρ` of `ζ` with `|Re ρ - 2| ≤ 2` and `|Im ρ - t| ≤ 2` lies in the closed disc of
+radius `4` about `2 + i t`. -/
+private theorem mem_riemannZetaZerosClosedBall_two_add {ρ : ℂ} {t : ℝ} (hre : |ρ.re - 2| ≤ 2)
+    (him : |ρ.im - t| ≤ 2) (hζ : riemannZeta ρ = 0) :
+    ρ ∈ riemannZetaZerosClosedBall (2 + t * I) 4 := by
+  refine mem_riemannZetaZerosClosedBall.mpr ⟨(Complex.norm_le_abs_re_add_abs_im _).trans ?_, hζ⟩
+  have h1 : (ρ - (2 + t * I)).re = ρ.re - 2 := by simp
+  have h2 : (ρ - (2 + t * I)).im = ρ.im - t := by simp
+  rw [h1, h2]
+  linarith
+
+/-- If a finite set `Z` contains the zeros of the window `0 < Re z < 1`, `|Im z - Im s| ≤ 1`
+about `s`, a sum over these zeros, as a `finsum` over a subtype, is the `Finset` sum over the
+window zeros in `Z`. -/
+private theorem finsum_window_eq_sum_filter {M : Type*} [AddCommMonoid M] {s : ℂ} {Z : Finset ℂ}
+    (hZ : ∀ z : ℂ, 0 < z.re → z.re < 1 → |z.im - s.im| ≤ 1 → riemannZeta z = 0 → z ∈ Z)
+    (f : ℂ → M)
+    [DecidablePred fun z : ℂ ↦ 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0] :
+    ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0}, f ρ =
+      ∑ z ∈ Z with 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0, f z := by
+  rw [finsum_subtype_eq_finsum_cond (f := f)]
+  refine finsum_cond_eq_sum_of_cond_iff _ fun {z} _ ↦ ?_
+  rw [Finset.mem_filter]
+  exact ⟨fun h ↦ ⟨hZ z h.1 h.2.1 h.2.2.1 h.2.2.2, h⟩, fun h ↦ h.2⟩
+
 /-- **The window form of the local expansion of `ζ′/ζ`.** There is a constant `C` such that for
 every `s ≠ 1` with `-1 ≤ Re s ≤ 2` and `ζ(s) ≠ 0`, `ζ′/ζ(s) + 1/(s - 1)` differs from
 `∑ m(ρ)/(s - ρ)` over the zeros `ρ` of `ζ` with `0 < Re ρ < 1` and `|Im ρ - Im s| ≤ 1`, counted
@@ -186,20 +212,17 @@ theorem riemannZeta_logDeriv_window :
   -- the zeros of `ζ` in the disc of radius `4` about `s₀`
   set Z := riemannZetaZerosClosedBall s₀ 4
   set W : ℂ → Prop := fun z ↦ 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1
-  have hWZ (z : ℂ) (hz : W z) (hζz : riemannZeta z = 0) : z ∈ Z := by
-    refine mem_riemannZetaZerosClosedBall.mpr
-      ⟨(Complex.norm_le_abs_re_add_abs_im _).trans ?_, hζz⟩
-    rw [sub_re, sub_im, hs₀, hs₀im]
-    have hre : |z.re - 2| ≤ 2 := abs_le.mpr ⟨by linarith [hz.1], by linarith [hz.2.1]⟩
-    linarith [hz.2.2]
+  have hWZ (z : ℂ) (h0 : 0 < z.re) (h1 : z.re < 1) (him : |z.im - s.im| ≤ 1)
+      (hζz : riemannZeta z = 0) : z ∈ Z :=
+    mem_riemannZetaZerosClosedBall_two_add (abs_le.mpr ⟨by linarith, by linarith⟩)
+      (him.trans (by norm_num)) hζz
   set f : ℂ → ℂ := fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℂ) / (s - z)
   have hwin : ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0},
       f ρ = ∑ z ∈ Z with W z, f z := by
-    rw [finsum_subtype_eq_finsum_cond (f := f)]
-    refine finsum_cond_eq_sum_of_cond_iff _ fun {z} _ ↦ ?_
-    simp only [Finset.mem_filter, W]
-    exact ⟨fun h ↦ ⟨hWZ z ⟨h.1, h.2.1, h.2.2.1⟩ h.2.2.2, h.1, h.2.1, h.2.2.1⟩,
-      fun h ↦ ⟨h.2.1, h.2.2.1, h.2.2.2, (mem_riemannZetaZerosClosedBall.mp h.1).2⟩⟩
+    rw [finsum_window_eq_sum_filter hWZ f]
+    refine Finset.sum_congr (Finset.filter_congr fun z hz ↦ ?_) fun _ _ ↦ rfl
+    exact ⟨fun h ↦ ⟨h.1, h.2.1, h.2.2.1⟩,
+      fun h ↦ ⟨h.1, h.2.1, h.2.2, (mem_riemannZetaZerosClosedBall.mp hz).2⟩⟩
   -- the zeros of the disc outside the window contribute at most their count
   have hrest : ‖∑ z ∈ Z with ¬W z, f z‖ ≤ C₂ * Real.log (|s.im| + 2) := by
     have hcount := hC₂ s₀ hs₀
@@ -217,17 +240,6 @@ theorem riemannZeta_logDeriv_window :
     _ ≤ _ := norm_add_le _ _
     _ ≤ C₁ * Real.log (|s.im| + 2) + C₂ * Real.log (|s.im| + 2) := add_le_add hloc hrest
     _ = _ := by ring
-
-/-- A zero `ρ` of `ζ` with `|Re ρ - 2| ≤ 2` and `|Im ρ - t| ≤ 2` lies in the closed disc of
-radius `4` about `2 + i t`. -/
-private theorem mem_riemannZetaZerosClosedBall_two_add {ρ : ℂ} {t : ℝ} (hre : |ρ.re - 2| ≤ 2)
-    (him : |ρ.im - t| ≤ 2) (hζ : riemannZeta ρ = 0) :
-    ρ ∈ riemannZetaZerosClosedBall (2 + t * I) 4 := by
-  refine mem_riemannZetaZerosClosedBall.mpr ⟨(Complex.norm_le_abs_re_add_abs_im _).trans ?_, hζ⟩
-  have h1 : (ρ - (2 + t * I)).re = ρ.re - 2 := by simp
-  have h2 : (ρ - (2 + t * I)).im = ρ.im - t := by simp
-  rw [h1, h2]
-  linarith
 
 /-- A zero `ρ` of `ζ` in the window `0 < Re ρ < 1`, `|Im ρ - Im s| ≤ 1` about a point `s` with
 `T ≤ |Im s| ≤ T + 1` lies in the closed disc of radius `4` about `2 + i T` or about `2 - i T`. -/
@@ -261,14 +273,8 @@ private theorem norm_finsum_window_le {s : ℂ} {Z : Finset ℂ} {δ : ℝ} (hδ
         ((analyticOrderAt riemannZeta ρ.val).toNat : ℂ) / (s - ρ.val)‖ ≤
       (∑ z ∈ Z, ((analyticOrderAt riemannZeta z).toNat : ℝ)) / δ := by
   classical
-  set f : ℂ → ℂ := fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℂ) / (s - z)
-  have hsum : ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0},
-      f ρ = ∑ z ∈ Z with 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0, f z := by
-    rw [finsum_subtype_eq_finsum_cond (f := f)]
-    refine finsum_cond_eq_sum_of_cond_iff _ fun {z} _ ↦ ?_
-    rw [Finset.mem_filter]
-    exact ⟨fun h ↦ ⟨hZ z h.1 h.2.1 h.2.2.1 h.2.2.2, h⟩, fun h ↦ h.2⟩
-  rw [hsum, Finset.sum_div]
+  rw [finsum_window_eq_sum_filter hZ
+    fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℂ) / (s - z), Finset.sum_div]
   refine (norm_sum_le _ _).trans ((Finset.sum_le_sum fun z hz ↦ ?_).trans
     (Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _) fun _ _ _ ↦ by positivity))
   rw [norm_div, Complex.norm_natCast]
