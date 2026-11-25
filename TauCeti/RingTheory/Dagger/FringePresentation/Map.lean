@@ -67,8 +67,7 @@ public section
 namespace TauCeti.Dagger.FringePresentation
 
 open Filter Topology _root_.MvPowerSeries Polynomial
-open TauCeti.MvPowerSeries (polynomialToRestricted polynomialToRestricted_X
-  denseRange_polynomialToRestricted)
+open TauCeti.MvPowerSeries (isRestricted_subring_ringHom_ext_of_continuous')
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A B : Type*} [CommRing A] [Algebra K A] [CommRing B] [Algebra K B]
@@ -189,27 +188,20 @@ private theorem eventually_exists_ofStage_comp_eq_comp_ofRestricted
   let Φ : IsRestricted.subring (R := K) (fun _ : Fin P.n ↦ (ρ : ℝ)) →ₐ[K] Q.stage ρ' :=
     { (algebraMap K (Q.stage ρ')).restrictedEval₂OfPowBound β hφ hD with
       commutes' := RingHom.restrictedEval₂OfPowBound_algebraMap _ β hφ hD }
-  have hΦ : Continuous Φ :=
-    RingHom.continuous_restrictedEval₂OfPowBound _ β hφ hD (norm_nonneg _)
+  have hΦ : Continuous Φ := RingHom.continuous_restrictedEval₂OfPowBound _ β hφ hD
   refine ⟨Φ, ?_⟩
   -- Both composites, followed by the injective completion map of `B`, are continuous and agree
-  -- on polynomials.
+  -- on constants and variables.
   suffices h : (toCompletion K B).comp ((Q.ofStage ρ').comp Φ) =
       (toCompletion K B).comp ((ψ.comp P.proj).comp
         (washnitzerAlgebra.ofRestricted ρ.property.1 fun _ ↦ le_rfl)) from
     AlgHom.ext fun f ↦ toCompletion_injective (AlgHom.congr_fun h f)
-  refine DFunLike.coe_injective (denseRange_polynomialToRestricted.equalizer
-    ((Q.continuous_toCompletion_comp_ofStage ρ').comp hΦ)
-    (continuous_toCompletion_comp_ofRestricted _ ρ.property.1) ?_)
   have hΦX (i : Fin P.n) : Φ ⟨X i, isRestricted_X _ i⟩ = β i :=
     RingHom.restrictedEval₂OfPowBound_X _ β hφ hD i
-  have hpoly := MvPolynomial.algHom_ext
-    (f := ((toCompletion K B).comp ((Q.ofStage ρ').comp Φ)).comp (polynomialToRestricted _))
-    (g := ((toCompletion K B).comp ((ψ.comp P.proj).comp
-      (washnitzerAlgebra.ofRestricted ρ.property.1 fun _ ↦ le_rfl))).comp
-        (polynomialToRestricted _)) fun i ↦ by
-    simp [polynomialToRestricted_X, hΦX, hβ, washnitzerAlgebra.ofRestricted_X]
-  exact congrArg DFunLike.coe hpoly
+  exact AlgHom.toRingHom_injective (isRestricted_subring_ringHom_ext_of_continuous'
+    ((Q.continuous_toCompletion_comp_ofStage ρ').comp hΦ)
+    (continuous_toCompletion_comp_ofRestricted _ ρ.property.1) (fun r ↦ by simp)
+    fun i ↦ by simp [hΦX, hβ, washnitzerAlgebra.ofRestricted_X])
 
 /-- **Morphisms respect fringe systems** (Grosse-Klönne, Lemma 1.8). Let `ψ : A → B` be a
 homomorphism of `K`-algebras with fringe presentations `P` and `Q`; no continuity is assumed. For

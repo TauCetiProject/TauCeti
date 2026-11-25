@@ -46,7 +46,7 @@ open MvPowerSeries
 open TauCeti.Huber
 open TauCeti.MvPowerSeries (restrictedMap coe_restrictedMap norm_restrictedMap_le
   continuous_restrictedMap polynomialToRestricted restrictedMap_polynomialToRestricted
-  denseRange_polynomialToRestricted)
+  isRestricted_subring_ringHom_ext_of_continuous')
 
 variable {k : ℕ} {R S : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S]
@@ -122,31 +122,14 @@ theorem lipschitzWith_restrictedEval₂OfBound :
 theorem continuous_restrictedEval₂OfBound : Continuous (restrictedEval₂OfBound φ a hφ ha) :=
   (lipschitzWith_restrictedEval₂OfBound φ a hφ ha).continuous
 
-omit [IsUltrametricDist S] [CompleteSpace S] in
-/-- Continuous ring homomorphisms out of `R{X/c}` that agree on constants and variables are
-equal, since the polynomials are dense. -/
-private theorem ringHom_ext_of_continuous {ψ₁ ψ₂ : IsRestricted.subring (R := R) c →+* S}
-    (h₁ : Continuous ψ₁) (h₂ : Continuous ψ₂)
-    (hC : ∀ r, ψ₁ (algebraMap R _ r) = ψ₂ (algebraMap R _ r))
-    (hX : ∀ i, ψ₁ ⟨X i, isRestricted_X c i⟩ = ψ₂ ⟨X i, isRestricted_X c i⟩) : ψ₁ = ψ₂ := by
-  have hp : ψ₁.comp (polynomialToRestricted c).toRingHom =
-      ψ₂.comp (polynomialToRestricted c).toRingHom := by
-    apply MvPolynomial.ringHom_ext
-    · intro r
-      simpa [← MvPolynomial.algebraMap_eq] using hC r
-    · intro i
-      simpa using hX i
-  exact DFunLike.coe_injective (denseRange_polynomialToRestricted.equalizer h₁ h₂
-    (funext (DFunLike.congr_fun hp)))
-
 /-- A continuous homomorphism with the prescribed values on constants and variables is
 bounded evaluation. Uniqueness requires continuity, but not a supplied norm bound on the map. -/
 theorem eq_restrictedEval₂OfBound (ψ : IsRestricted.subring (R := R) c →+* S)
     (hψ : Continuous ψ) (hC : ∀ r, ψ (algebraMap R _ r) = φ r)
     (hX : ∀ i, ψ ⟨X i, isRestricted_X c i⟩ = a i) :
     ψ = restrictedEval₂OfBound φ a hφ ha :=
-  ringHom_ext_of_continuous hψ (continuous_restrictedEval₂OfBound φ a hφ ha) (by simp [hC])
-    (by simp [hX])
+  isRestricted_subring_ringHom_ext_of_continuous' hψ (continuous_restrictedEval₂OfBound φ a hφ ha)
+    (by simp [hC]) (by simp [hX])
 
 include hφ ha in
 /-- The universal property at bounded arguments for an arbitrary bounded coefficient map. -/
@@ -290,8 +273,14 @@ theorem restrictedEval₂OfPowBound_eq_restrictedEval₂OfBound :
 variable [∀ i, Fact (0 < c i)]
 
 /-- Evaluation at arguments with bounded powers increases the Gauss norm by at most `C * D`. -/
-theorem norm_restrictedEval₂OfPowBound_le (hC : 0 ≤ C) (f : IsRestricted.subring (R := R) c) :
+theorem norm_restrictedEval₂OfPowBound_le (f : IsRestricted.subring (R := R) c) :
     ‖restrictedEval₂OfPowBound φ a hφ hpow f‖ ≤ C * D * ‖f‖ := by
+  rcases lt_or_ge C 0 with hC | hC
+  · -- a negative bound `C` forces every coefficient, hence `f`, to vanish
+    have hR (r : R) : r = 0 :=
+      norm_le_zero_iff.mp (by nlinarith [norm_nonneg (φ r), hφ r, norm_nonneg r])
+    obtain rfl : f = 0 := Subtype.ext (MvPowerSeries.ext fun t ↦ hR _)
+    simp
   -- the constant monomial gives `‖1‖ ≤ D`, so `D` is nonnegative
   have hD : 0 ≤ D := by simpa using (norm_nonneg _).trans (hpow 0)
   rw [restrictedEval₂OfPowBound_apply, weightedEval_def]
@@ -300,19 +289,18 @@ theorem norm_restrictedEval₂OfPowBound_le (hC : 0 ≤ C) (f : IsRestricted.sub
       (mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) (mul_nonneg hC hD))
 
 /-- Evaluation at arguments with bounded powers is continuous for the Gauss norm. -/
-theorem continuous_restrictedEval₂OfPowBound (hC : 0 ≤ C) :
+theorem continuous_restrictedEval₂OfPowBound :
     Continuous (restrictedEval₂OfPowBound φ a hφ hpow) :=
-  AddMonoidHomClass.continuous_of_bound _ (C * D)
-    (norm_restrictedEval₂OfPowBound_le φ a hφ hpow hC)
+  AddMonoidHomClass.continuous_of_bound _ (C * D) (norm_restrictedEval₂OfPowBound_le φ a hφ hpow)
 
 /-- A continuous homomorphism with the prescribed values on constants and variables is the
 evaluation at arguments with bounded powers. -/
-theorem eq_restrictedEval₂OfPowBound (hC : 0 ≤ C) (ψ : IsRestricted.subring (R := R) c →+* S)
-    (hψ : Continuous ψ) (hC' : ∀ r, ψ (algebraMap R _ r) = φ r)
+theorem eq_restrictedEval₂OfPowBound (ψ : IsRestricted.subring (R := R) c →+* S)
+    (hψ : Continuous ψ) (hC : ∀ r, ψ (algebraMap R _ r) = φ r)
     (hX : ∀ i, ψ ⟨X i, isRestricted_X c i⟩ = a i) :
     ψ = restrictedEval₂OfPowBound φ a hφ hpow :=
-  ringHom_ext_of_continuous hψ (continuous_restrictedEval₂OfPowBound φ a hφ hpow hC)
-    (by simp [hC']) (by simp [hX])
+  isRestricted_subring_ringHom_ext_of_continuous' hψ
+    (continuous_restrictedEval₂OfPowBound φ a hφ hpow) (by simp [hC]) (by simp [hX])
 
 end PowerBound
 
