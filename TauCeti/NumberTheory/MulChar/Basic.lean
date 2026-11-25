@@ -48,9 +48,10 @@ finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`)
 
 A character satisfies `χ ^ d = 1` if and only if it is trivial on the `d`-th powers of units
 (`MulChar.pow_eq_one_iff_forall_mem_range_apply_eq_one`). At a unit `v`, the inverse character
-takes the value `χ⁻¹ v = χ v⁻¹` (`MulChar.inv_apply_coe`). With values in a domain, the sum of a
-character over a finite commutative monoid `M` is the cast of `#Mˣ` for the trivial character and
-zero otherwise (`MulChar.sum_eq_ite`).
+takes the value `χ⁻¹ v = χ v⁻¹` (`MulChar.inv_apply_coe`), and a finite product of characters
+takes the product of their values (`MulChar.prod_apply_coe`). With values in a domain, the sum of
+a character over a finite commutative monoid `M` is the cast of `#Mˣ` for the trivial character
+and zero otherwise (`MulChar.sum_eq_ite`).
 
 With values in a commutative group with zero, an integer power of a character at a unit is the
 integer power of its value (`MulChar.zpow_apply_coe_eq_zpow`), the `ℤ`-exponent form of Mathlib's
@@ -188,6 +189,14 @@ theorem inv_apply_coe {M R : Type*} [CommMonoid M] [CommMonoidWithZero R] (χ : 
   have h : mulEquivToUnitHom χ⁻¹ v = mulEquivToUnitHom χ v⁻¹ := by
     simp only [map_inv, MonoidHom.inv_apply]
   simpa only [mulEquivToUnitHom_apply, coe_equivToUnitHom] using congrArg Units.val h
+
+/-- At a unit `v`, a finite product of characters takes the product of their values. At a
+nonunit this fails for the empty product, the trivial character, which vanishes there. -/
+theorem prod_apply_coe {M R ι : Type*} [CommMonoid M] [CommMonoidWithZero R] (s : Finset ι)
+    (χ : ι → MulChar M R) (v : Mˣ) : (∏ i ∈ s, χ i) v = ∏ i ∈ s, χ i v := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih => simp [mul_apply, ih]
 
 /-- The sum of a character over a finite commutative monoid `M` is the cast of the number of
 units of `M` for the trivial character and zero otherwise. This puts Mathlib's

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.CategoryTheory.Monad.SimplicialResolution.Augmented
 public import Mathlib.CategoryTheory.Linear.Yoneda
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.Module.BigOperators
 
 /-!
 # Comonad cochains
@@ -19,6 +21,12 @@ Faces are numbered from the outermost comonad factor, so the differential starts
 with a positive outermost counit. The degree-zero augmentation is precomposition
 with the counit, packaged in `cochainComplexAugmentation` as a cochain map from
 `Hom(X, Y)` concentrated in degree zero.
+
+On elements, the differential of `cochainComplex` in degree `n` is
+`f ↦ ∑ i : Fin (n + 2), (-1) ^ i • (d_i ≫ f)`, with `d_i` the counit applied at position `i`
+(`cochainComplex_d_apply`). For the identity comonad every face is an identity, so the
+differential vanishes in even degrees and is the identity in odd degrees
+(`id_cochainComplex_d_apply`).
 
 The construction is contravariant in `X` and covariant in `Y`. No additivity
 or linearity of the comonad is needed: the module structure comes from the
@@ -42,8 +50,10 @@ namespace CategoryTheory.Comonad
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 variable (G : Comonad C) (k : Type w) [Ring k] [Linear k C]
 
-/-- Apply the linear Hom functor to the augmented simplicial resolution of a comonad. -/
-def cochainCosimplicialAugmented : Cᵒᵖ ⥤ C ⥤ CosimplicialObject.Augmented (ModuleCat.{v} k) :=
+/-- Apply the linear Hom functor to the augmented simplicial resolution of a comonad.
+The body is exposed so its terms compute to `Hom` modules in dependent statements. -/
+@[expose] def cochainCosimplicialAugmented :
+    Cᵒᵖ ⥤ C ⥤ CosimplicialObject.Augmented (ModuleCat.{v} k) :=
   G.augmentedSimplicialResolution.op ⋙ (simplicialCosimplicialAugmentedEquiv C).functor ⋙
     (linearYoneda k C ⋙ CosimplicialObject.Augmented.whiskering Cᵒᵖ (ModuleCat.{v} k)).flip
 
@@ -54,8 +64,9 @@ lemma cochainCosimplicialAugmented_def : G.cochainCosimplicialAugmented k =
   (rfl)
 
 /-- The cosimplicial module of comonad cochains, contravariant in the resolved
-object and covariant in the coefficient object. -/
-def cochainCosimplicial : Cᵒᵖ ⥤ C ⥤ CosimplicialObject (ModuleCat.{v} k) :=
+object and covariant in the coefficient object.
+The body is exposed so its terms compute to `Hom` modules in dependent statements. -/
+@[expose] def cochainCosimplicial : Cᵒᵖ ⥤ C ⥤ CosimplicialObject (ModuleCat.{v} k) :=
   G.simplicialResolution.op ⋙ (simplicialCosimplicialEquiv C).functor ⋙
     (linearYoneda k C ⋙ CosimplicialObject.whiskering Cᵒᵖ (ModuleCat.{v} k)).flip
 
@@ -144,8 +155,9 @@ lemma cochainCosimplicial_obj_map_app (X : C) {Y Y' : C} (g : Y ⟶ Y') (n : ℕ
   rfl
 
 /-- The comonad cochain complex, as a bifunctor. Its differentials are the
-alternating sums of precomposition with the outermost-first faces. -/
-def cochainComplex : Cᵒᵖ ⥤ C ⥤ CochainComplex (ModuleCat.{v} k) ℕ :=
+alternating sums of precomposition with the outermost-first faces.
+The body is exposed so its terms compute to `Hom` modules in dependent statements. -/
+@[expose] def cochainComplex : Cᵒᵖ ⥤ C ⥤ CochainComplex (ModuleCat.{v} k) ℕ :=
   G.cochainCosimplicial k ⋙
     (Functor.whiskeringRight _ _ _).obj (alternatingCofaceMapComplex (ModuleCat k))
 
@@ -299,5 +311,129 @@ lemma cochainComplexAugmentation_naturality_right (X : C) {Y Y' : C} (g : Y ⟶ 
         G.cochainComplexAugmentation k X Y' := by
   apply HomologicalComplex.from_single_hom_ext
   simpa using G.cochainAugmentation_naturality_right k X g
+
+/-! ### Evaluation on elements -/
+
+section apply
+
+variable (X Y : C)
+
+@[simp] lemma cochainCosimplicialAugmented_left :
+    (((G.cochainCosimplicialAugmented k).obj (op X)).obj Y).left = ModuleCat.of k (X ⟶ Y) :=
+  (rfl)
+
+/-- The augmentation in degree `n` precomposes with the collapse of all `n + 1` layers. -/
+lemma cochainCosimplicialAugmented_hom_app_apply (n : ℕ) (f : X ⟶ Y) :
+    ((((G.cochainCosimplicialAugmented k).obj (op X)).obj Y).hom.app ⦋n⦌).hom f =
+      (G.resolutionCounit (n + 1)).app X ≫ f :=
+  -- The augmentation is `Hom (-, Y)` applied to that of the resolution, by unfolding.
+  (rfl : _ = (G.simplicialResolutionAugmentation X).app (op ⦋n⦌) ≫ f).trans
+    (congrArg (· ≫ f) (G.simplicialResolutionAugmentation_app X n))
+
+/-- The augmentation in degree `0` precomposes with the counit `G X ⟶ X`. -/
+lemma cochainCosimplicialAugmented_hom_app_zero_apply (f : X ⟶ Y) :
+    ((((G.cochainCosimplicialAugmented k).obj (op X)).obj Y).hom.app ⦋0⦌).hom f =
+      G.ε.app X ≫ f :=
+  (rfl : _ = (G.simplicialResolutionAugmentation X).app (op ⦋0⦌) ≫ f).trans
+    (congrArg (· ≫ f) (G.simplicialResolutionAugmentation_app_zero X))
+
+/-- The `i`th coface precomposes with the counit applied at position `i`. -/
+@[simp] lemma cochainCosimplicial_δ_apply {n : ℕ} (i : Fin (n + 2))
+    (f : (G.resolutionStage (n + 1)).obj X ⟶ Y) :
+    ((((G.cochainCosimplicial k).obj (op X)).obj Y).δ i).hom f =
+      (G.resolutionFace (n + 1) i).app X ≫ f :=
+  -- The coface is `Hom (-, Y)` applied to the face of the resolution, by unfolding.
+  (rfl : _ = (G.simplicialResolution.obj X).δ i ≫ f).trans
+    (congrArg (· ≫ f) (G.simplicialResolution_δ X i))
+
+/-- The `i`th codegeneracy precomposes with the comultiplication applied at position `i`. -/
+@[simp] lemma cochainCosimplicial_σ_apply {n : ℕ} (i : Fin (n + 1))
+    (f : (G.resolutionStage (n + 2)).obj X ⟶ Y) :
+    ((((G.cochainCosimplicial k).obj (op X)).obj Y).σ i).hom f =
+      (G.resolutionDegeneracy n i).app X ≫ f :=
+  -- The codegeneracy is `Hom (-, Y)` applied to the degeneracy of the resolution, by unfolding.
+  (rfl : _ = (G.simplicialResolution.obj X).σ i ≫ f).trans
+    (congrArg (· ≫ f) (G.simplicialResolution_σ X i))
+
+/-- A morphism `Y ⟶ Y'` acts on the augmentation object by postcomposition. -/
+@[simp] lemma cochainCosimplicialAugmented_obj_map_left_apply {Y Y' : C} (g : Y ⟶ Y')
+    (f : X ⟶ Y) :
+    (((G.cochainCosimplicialAugmented k).obj (op X)).map g).left.hom f = f ≫ g := (rfl)
+
+/-- A morphism `Y ⟶ Y'` acts on cochains by postcomposition. -/
+@[simp] lemma cochainCosimplicial_obj_map_app_apply {Y Y' : C} (g : Y ⟶ Y') (n : ℕ)
+    (f : (G.resolutionStage (n + 1)).obj X ⟶ Y) :
+    ((((G.cochainCosimplicial k).obj (op X)).map g).app ⦋n⦌).hom f = f ≫ g := (rfl)
+
+/-- A morphism `X' ⟶ X` acts on the augmentation object by precomposition. -/
+@[simp] lemma cochainCosimplicialAugmented_map_app_left_apply {X' : C} (h : X' ⟶ X)
+    (f : X ⟶ Y) :
+    (((G.cochainCosimplicialAugmented k).map h.op).app Y).left.hom f = h ≫ f := (rfl)
+
+/-- A morphism `h : X' ⟶ X` acts on cochains of degree `n` by precomposition with
+`G^(n+1) h`. -/
+@[simp] lemma cochainCosimplicial_map_app_app_apply {X' : C} (h : X' ⟶ X) (n : ℕ)
+    (f : (G.resolutionStage (n + 1)).obj X ⟶ Y) :
+    ((((G.cochainCosimplicial k).map h.op).app Y).app ⦋n⦌).hom f =
+      (G.resolutionStage (n + 1)).map h ≫ f := (rfl)
+
+@[simp] lemma cochainComplex_X (n : ℕ) :
+    (((G.cochainComplex k).obj (op X)).obj Y).X n =
+      ModuleCat.of k ((G.resolutionStage (n + 1)).obj X ⟶ Y) := (rfl)
+
+/-- The comonad differential is the alternating sum of the precompositions with the counit
+applied at each position. -/
+lemma cochainComplex_d_apply (n : ℕ) (f : (G.resolutionStage (n + 1)).obj X ⟶ Y) :
+    ((((G.cochainComplex k).obj (op X)).obj Y).d n (n + 1)).hom f =
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • ((G.resolutionFace (n + 1) i).app X ≫ f) := by
+  let K := ((G.cochainCosimplicial k).obj (op X)).obj Y
+  have hd : (((G.cochainComplex k).obj (op X)).obj Y).d n (n + 1) =
+      AlternatingCofaceMapComplex.objD K n :=
+    CochainComplex.of_d (fun n ↦ K.obj ⦋n⦌) (AlternatingCofaceMapComplex.objD K) n
+  have hK (x : K.obj ⦋n⦌) : (AlternatingCofaceMapComplex.objD K n).hom x =
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • (K.δ i).hom x := by
+    simp only [AlternatingCofaceMapComplex.objD, ModuleCat.hom_sum, ModuleCat.hom_zsmul,
+      LinearMap.sum_apply, LinearMap.smul_apply]
+  rw [hd]
+  exact (hK f).trans (Finset.sum_congr rfl fun i _ ↦
+    congrArg _ (G.cochainCosimplicial_δ_apply k X Y i f))
+
+/-- A morphism `Y ⟶ Y'` acts on cochains by postcomposition. -/
+@[simp] lemma cochainComplex_obj_map_f_apply {Y Y' : C} (g : Y ⟶ Y') (n : ℕ)
+    (f : (G.resolutionStage (n + 1)).obj X ⟶ Y) :
+    ((((G.cochainComplex k).obj (op X)).map g).f n).hom f = f ≫ g := (rfl)
+
+/-- A morphism `h : X' ⟶ X` acts on cochains of degree `n` by precomposition with
+`G^(n+1) h`. -/
+@[simp] lemma cochainComplex_map_app_f_apply {X' : C} (h : X' ⟶ X) (n : ℕ)
+    (f : (G.resolutionStage (n + 1)).obj X ⟶ Y) :
+    ((((G.cochainComplex k).map h.op).app Y).f n).hom f =
+      (G.resolutionStage (n + 1)).map h ≫ f := (rfl)
+
+end apply
+
+section id
+
+variable (C)
+
+/-- For the identity comonad, the comonad differential vanishes in even degrees and is the
+identity in odd degrees. -/
+lemma id_cochainComplex_d_apply (X Y : C) (n : ℕ)
+    (f : ((Comonad.id C).resolutionStage (n + 1)).obj X ⟶ Y) :
+    (((((Comonad.id C).cochainComplex k).obj (op X)).obj Y).d n (n + 1)).hom f =
+      if Even n then 0 else f := by
+  rw [cochainComplex_d_apply]
+  simp only [id_resolutionFace_app]
+  rw [← Finset.sum_smul, Fin.sum_neg_one_pow ℤ (n + 2)]
+  have h₂ : Even (n + 2) ↔ Even n := by simp [Nat.even_add]
+  -- The remaining identity morphisms and zeros live on iterates of the identity comonad,
+  -- whose objects are `X` by definition, so they are closed by explicit terms.
+  by_cases h : Even n
+  · simp only [h, h₂.2 h, ↓reduceIte]
+    exact zero_smul ℤ _
+  · simp only [h, mt h₂.1 h, ↓reduceIte, one_smul]
+    exact Category.id_comp f
+
+end id
 
 end CategoryTheory.Comonad

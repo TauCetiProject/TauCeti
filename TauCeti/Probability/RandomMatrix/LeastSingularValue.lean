@@ -41,8 +41,8 @@ private theorem leastSingularValue_event_subset
       {ω | ∃ x, TauCeti.IsCompressibleVector k ρ x ∧ ‖toEuclideanLin (A ω) x‖ < u} ∪
       {ω | ∃ x, TauCeti.IsIncompressibleVector k ρ x ∧ ‖toEuclideanLin (A ω) x‖ < t} := by
   intro ω hω
-  have hmin := (toEuclideanLin (A ω)).isLeast_norm_image_sphere
-  rw [finrank_euclideanSpace] at hmin
+  have hmin := (toEuclideanLin (A ω)).isLeast_minimalStretch
+  rw [LinearMap.minimalStretch_def, finrank_euclideanSpace] at hmin
   obtain ⟨x, hx, heq⟩ := hmin.1
   have hnorm : ‖x‖ = 1 := mem_sphere_zero_iff_norm.mp hx
   have hsmall : ‖toEuclideanLin (A ω) x‖ < t := by
@@ -86,7 +86,7 @@ theorem exists_measureReal_singularValues_card_sub_one_lt_le (K : ℝ≥0) :
   have : Nonempty n := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero hn₀)
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let k := ⌊δ * Fintype.card n⌋₊
-  have hcomp' := hcomp hind hA hmom hdim
+  have hcomp' := hcomp hind hA hmom (by omega)
   have hinc := TauCeti.measureReal_exists_isIncompressibleVector_norm_toEuclideanLin_lt_le
     (P := P) (k := k) (ε := ε) ρ.coe_nonneg A
   have hsum : 0 ≤ ∑ i, P.real {ω | infDist (WithLp.toLp 2 fun r ↦ A ω r i)

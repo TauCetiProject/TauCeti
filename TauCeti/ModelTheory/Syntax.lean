@@ -15,7 +15,8 @@ that come from the left summand `α`. This file characterizes it through the ful
 `Term.varFinset`, and computes it after `Term.relabel` and `Term.subst`. It also records that a
 language map commutes with relabelling the variables of a term, and a language map that is
 injective on function symbols acts injectively on terms. Constructor equations for
-`BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas.
+`BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas, and
+defining equations unfold Mathlib's `⊤`, `⊓` and `⊔` on finitary formulas.
 
 ## Main results
 
@@ -48,6 +49,9 @@ injective on function symbols acts injectively on terms. Constructor equations f
   `FirstOrder.Language.LHom.onTheory_mono`, `FirstOrder.Language.LHom.id_onTheory`,
   `FirstOrder.Language.LHom.comp_onTheory`: set-operation and functoriality laws for
   `LHom.onTheory`.
+* `FirstOrder.Language.BoundedFormula.top_def`, `FirstOrder.Language.BoundedFormula.inf_def`,
+  `FirstOrder.Language.BoundedFormula.sup_def`: `⊤` is `⊥.not`, `φ ⊓ ψ` is `(φ.imp ψ.not).not`
+  and `φ ⊔ ψ` is `φ.not.imp ψ`.
 -/
 
 public section
@@ -339,6 +343,15 @@ end Term
 namespace BoundedFormula
 
 variable {L : Language} {α γ : Type*} {n : ℕ}
+
+/-- `⊤` is the negation of `⊥`. -/
+theorem top_def : (⊤ : L.BoundedFormula α n) = (⊥ : L.BoundedFormula α n).not := (rfl)
+
+/-- The conjunction `φ ⊓ ψ` is `(φ.imp ψ.not).not`. -/
+theorem inf_def (φ ψ : L.BoundedFormula α n) : φ ⊓ ψ = (φ.imp ψ.not).not := (rfl)
+
+/-- The disjunction `φ ⊔ ψ` is `φ.not.imp ψ`. -/
+theorem sup_def (φ ψ : L.BoundedFormula α n) : φ ⊔ ψ = φ.not.imp ψ := (rfl)
 
 @[simp]
 theorem constantsVarsEquiv_falsum :
