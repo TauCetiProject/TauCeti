@@ -49,6 +49,8 @@ finite-generation hypothesis.
   every cyclic submodule `R ∙ v` is isomorphic to `R f` for an idempotent `f` fixing `v`.
 * `IsSemisimpleRing.subsingleton_of_subsingleton_linearMap`: vanishing of all linear maps
   to the regular module detects the zero module over a semisimple ring.
+* `RingHom.isSemisimpleModule_iff_of_surjective`: semisimplicity is unchanged by pulling the
+  action back along a surjective ring map.
 * `TauCeti.Module.IsGenerator.of_isSimpleRing`: every nontrivial module over a simple semisimple
   ring is a generator of the module category.
 -/
@@ -178,5 +180,18 @@ instance Module.IsGenerator.of_isSimpleRing [IsSimpleRing R] [IsSemisimpleRing R
       exact Ideal.mem_bot.mp hf
     exact not_subsingleton M (IsSemisimpleRing.subsingleton_of_subsingleton_linearMap hsub)
   exact ((isSimpleRing_iff_isTwoSided_imp.mp ‹_›).2 I htwo).resolve_left hne
+
+/-! ### Semisimplicity along a surjective ring map -/
+
+/-- **Semisimplicity along a surjective ring map.** If `σ : R →+* S` is surjective and compatible
+with the actions of `R` and `S` on `M`, then `M` is semisimple over `R` exactly when it is
+semisimple over `S`. -/
+theorem _root_.RingHom.isSemisimpleModule_iff_of_surjective {R S M : Type*} [Ring R] [Ring S]
+    [AddCommGroup M] [Module R M] [Module S M] (σ : R →+* S) (hσ : Function.Surjective σ)
+    (h : ∀ (r : R) (m : M), σ r • m = r • m) :
+    IsSemisimpleModule R M ↔ IsSemisimpleModule S M := by
+  have : RingHomSurjective σ := ⟨hσ⟩
+  exact LinearMap.isSemisimpleModule_iff_of_bijective (M' := M) (N' := M) (σ := σ)
+    ⟨⟨id, fun _ _ ↦ rfl⟩, fun r m ↦ (h r m).symm⟩ Function.bijective_id
 
 end TauCeti

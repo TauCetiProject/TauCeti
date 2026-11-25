@@ -63,7 +63,11 @@ Hence, whenever the lift of a class `U ∈ Hʳ(E, E₀; π^*o(E), k)` to `(E', E
 (`TauCeti.VectorBundleOrientationCover.nonempty_singularHomology_thomPair_iso_twistedHomology`).
 The natural class `U` is the Thom class with coefficients in the orientation system
 (`TauCeti.twistedThomClass`, over a compact base), which takes the value `1` on the fibre class
-over every point.
+over every point. Its lift is a Thom class of `E'`
+(`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so over a compact base
+`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` holds for every bundle and every commutative ring `k`
+(`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`, in the namespace
+`TauCeti.VectorBundleOrientationCover`).
 
 The lifts of cochains to the orientation cover are stated with the orientations indexed by a type
 `ι : Type`, so the base, the fibres and the ring live in `Type` here.
@@ -74,8 +78,12 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
 
 * `thomPairSingularHomologyIsoTwistedHomology`: `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` from a
   semi-invariant Thom cocycle of `E'`.
-* `nonempty_singularHomology_thomPair_iso_twistedHomology`: the same from a class of
+* `thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass`: the same from a cocycle of
+  `(E, E₀)` with coefficients in `π^*o(E)` whose lifted class is a Thom class of `E'`, and
+  `nonempty_singularHomology_thomPair_iso_twistedHomology`: the same from a class of
   `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`.
+* `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`: over a compact base,
+  `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` for every bundle and every commutative ring `k`.
 
 ## References
 
@@ -177,14 +185,37 @@ def thomPairSingularHomologyIsoTwistedHomology
     (HomologicalComplex.homologyFunctor _ _ p).mapIso
       (coinvariantsTensorSingularChainsRepIsoTwisted hι k)
 
+variable (F E) in
+/-- **The Thom isomorphism with orientation-twisted coefficients over every ring, from a lifted
+Thom cocycle.** Let `E → B` be a real vector bundle of rank `r`, `E'` its pull-back to the
+orientation double cover and `k` any commutative ring, for instance `ℤ`. A relative cocycle `ψ` of
+`(E, E₀)` of degree `r` with coefficients in `π^*o(E)` whose lifted class
+(`TauCeti.VectorBundleOrientationCover.thomPairSignCohomologyMap`) is a Thom class of `E'` gives
+`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)`, over any base and with no orientation of `E`. It is
+`thomPairSingularHomologyIsoTwistedHomology` for the lift of `ψ`, which is semi-invariant
+(`isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap`) and whose class is a Thom class
+(`isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap`). -/
+def thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass
+    (ψ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+      (ModuleCat.of k k)).cycles (finrank ℝ F))
+    (hu : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F)
+        (((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+          (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ)))
+    (p : ℕ) :
+    (thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
+      twistedHomology (signLocalSystem F E k hι) p :=
+  thomPairSingularHomologyIsoTwistedHomology F E hι k
+    (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι k ψ)
+    (isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap hι k hu) p
+
 /-- **The Thom isomorphism with coefficients in the orientation system, from a twisted class whose
 lift is a Thom class.** Let `E → B` be a real vector bundle of rank `r`, `E'` its pull-back to the
 orientation double cover and `k` a commutative ring. If the lift to `(E', E'₀)`
 (`TauCeti.VectorBundleOrientationCover.thomPairSignCohomologyMap`) of a class
 `U ∈ Hʳ(E, E₀; π^*o(E), k)` is a Thom class of `E'`, then `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` in
-every degree `p`. Any cocycle representing `U` lifts to a semi-invariant Thom cocycle of `E'`
-(`isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap`), to which
-`thomPairSingularHomologyIsoTwistedHomology` applies. -/
+every degree `p`: `thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass` applies to any
+cocycle representing `U`. -/
 theorem nonempty_singularHomology_thomPair_iso_twistedHomology
     (U : (thomPair F E).twistedCohomology (thomPairSignLocalSystem F E k hι) k (ModuleCat.of k k)
       (finrank ℝ F))
@@ -194,12 +225,24 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology
       twistedHomology (signLocalSystem F E k hι) p) := by
   obtain ⟨ψ, rfl⟩ := (ModuleCat.epi_iff_surjective _).1
     (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U
-  refine ⟨thomPairSingularHomologyIsoTwistedHomology F E hι k
-    (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι k ψ) ?_ p⟩
-  have h := ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality
-    (thomPairSignCochainMap F E hι k k (ModuleCat.of k k)) (finrank ℝ F)) ψ
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
-  rw [← h, ← thomPairSignCohomologyMap_def]
-  exact hU
+  exact ⟨thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k ψ hU p⟩
+
+/-- **The Thom isomorphism with coefficients in the orientation system over a compact base, over
+every ring.** Let `E → B` be a real vector bundle of rank `r` over a compact base, orientable or
+not, with orientation local system `o(E)`, and let `k` be a commutative ring, `ℤ` included. Then
+`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` in every degree `p`. For the Möbius line over the circle and
+`k = ℤ` this gives `H₁(E, E₀; ℤ) ≅ H₀(S¹; o(E)) ≅ ℤ/2`, where constant coefficients would give
+`ℤ`. -/
+theorem nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace [CompactSpace B]
+    (p : ℕ) :
+    Nonempty ((thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
+      twistedHomology (signLocalSystem F E k hι) p) := by
+  classical
+  -- The lift to the orientation cover of the Thom class with coefficients in the orientation
+  -- system, normalized by any orientation of the model fibre, is a Thom class.
+  let ω : Orientation ℝ F ι :=
+    ((Module.finBasis ℝ F).reindex (Fintype.equivFinOfCardEq hι).symm).orientation
+  exact nonempty_singularHomology_thomPair_iso_twistedHomology hι k _
+    (isThomClass_thomPairSignCohomologyMap_twistedThomClass hι ω) p
 
 end TauCeti.VectorBundleOrientationCover

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Functor
+public import Mathlib.Algebra.Lie.Abelian
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Exponential.Generation
 
@@ -22,6 +23,8 @@ commuting elements of `𝔤` commute (`commute_lieExp_of_lie_eq_zero`).
 
 * `ContMDiffMonoidMorphism.commute_of_lie_lieMap_eq_zero`: commuting Lie algebras integrate to
   commuting images.
+* `TauCeti.Lie.isMulCommutative_of_isLieAbelian`: a connected Lie group with abelian Lie algebra
+  is commutative.
 -/
 
 public section
@@ -83,3 +86,21 @@ theorem commute_of_lie_lieMap_eq_zero [PreconnectedSpace A] [PreconnectedSpace K
   | inv a _ ha => rw [map_inv]; exact ha.inv_left
 
 end ContMDiffMonoidMorphism
+
+namespace TauCeti.Lie
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+
+/-- **A connected Lie group with abelian Lie algebra is commutative.** This is the converse of
+`TauCeti.Lie.isLieAbelian_of_isMulCommutative` for connected groups. -/
+theorem isMulCommutative_of_isLieAbelian [PreconnectedSpace G]
+    [IsLieAbelian (LeftInvariantDerivation I G)] : IsMulCommutative G := by
+  refine ⟨⟨fun a b ↦ ?_⟩⟩
+  have h := ContMDiffMonoidMorphism.commute_of_lie_lieMap_eq_zero
+    (ContMDiffMonoidMorphism.id (I := I) (G := G)) ContMDiffMonoidMorphism.id
+    (fun X Y ↦ by rw [lieMap_id]; exact trivial_lie_zero _ _ _ _) a b
+  simpa only [ContMDiffMonoidMorphism.coe_id, id_eq] using h.eq
+
+end TauCeti.Lie
