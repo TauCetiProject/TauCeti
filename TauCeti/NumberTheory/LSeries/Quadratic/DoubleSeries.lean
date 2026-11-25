@@ -31,8 +31,9 @@ where `ζ₂(u) = (1 - 2⁻ᵘ) ζ(u)` is the Riemann zeta function with its Eul
 over positive odd `n` of the Jacobi symbol `(d / n)` twisted by `ψ`. No square factor of `d` is
 removed, so `(d / n)` vanishes whenever `gcd(d, n) > 1`. Since `ψ` and `ψ'` vanish at even
 integers, the sums over odd `n` and `d` are written as ordinary Dirichlet series (`LSeries`) with
-the coefficients `n ↦ (d / n) ψ(n)` and `d ↦ ψ'(d) L₂(s, χ_d ψ)`. For odd `d`, the inner series is
-the `L`-function of the imprimitive twist `DirichletCharacter.oddQuadraticTwist ψ d` by
+the coefficients `n ↦ (d / n) ψ(n)` and `d ↦ ψ'(d) L₂(s, χ_d ψ)`. For nonzero `d` and
+`1 < re s`, the inner series is the `L`-function of the imprimitive twist
+`DirichletCharacter.oddQuadraticTwist ψ d` by
 `DirichletCharacter.LFunction_oddQuadraticTwist_eq_LSeries`.
 
 The sixteen series, one for each pair `(ψ, ψ')`, are the objects of Blomer's study of the
