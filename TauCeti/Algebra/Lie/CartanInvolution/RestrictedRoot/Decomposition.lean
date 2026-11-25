@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Basic
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Basic.Real.Basic
 import TauCeti.Algebra.Lie.AdjointAction.Basic
-import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
+import TauCeti.Algebra.Lie.CartanInvolution.Spectral
 
 /-!
 # The restricted root space decomposition
@@ -58,10 +58,7 @@ theorem iSup_restrictedRootSpace_eq_top (hθ : θ.IsCartanInvolution) (h𝔞 : �
   have hcomm : Pairwise fun H H' : 𝔞 ↦ Commute (ad ℝ L H) (ad ℝ L H') := fun H H' _ ↦
     TauCeti.LieAlgebra.commute_ad_of_lie_eq_zero (hab _ H.property _ H'.property)
   have h := TauCeti.iSup_iInf_eigenspace_eq_top_of_iSup_eigenspace_eq_top
-    (fun H : 𝔞 ↦ ad ℝ L H) hcomm fun H ↦
-      ((LinearMap.mem_selfAdjointSubmodule _).mp
-        (θ.ad_mem_selfAdjointSubmodule_twistedKillingForm (h𝔞 H.property))).iSup_eigenspace_eq_top
-        hθ.posDef_twistedKillingForm
+    (fun H : 𝔞 ↦ ad ℝ L H) hcomm fun H ↦ hθ.iSup_eigenspace_ad_eq_top (h𝔞 H.property)
   refine eq_top_iff.mpr (h.symm.le.trans (iSup_le fun χ ↦ ?_))
   by_cases hχ : ⨅ H : 𝔞, End.eigenspace (ad ℝ L H) (χ H) = ⊥
   · exact hχ.le.trans bot_le
