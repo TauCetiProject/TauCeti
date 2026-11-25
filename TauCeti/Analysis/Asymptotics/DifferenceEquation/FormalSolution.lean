@@ -22,7 +22,7 @@ Consider the difference equation
 whose coefficients have expansions `f n ∼ ∑ fₛ n⁻ˢ` and `g n ∼ ∑ gₛ n⁻ˢ` as `n → ∞`. Let `ρ` be
 a root of the characteristic equation `ρ² + f₀ ρ + g₀ = 0`, and let `α` satisfy
 `α (f₀ ρ + 2 g₀) = f₁ ρ + g₁`. Substituting the formal series `ρⁿ n^α ∑ aₛ n⁻ˢ` into the equation
-determines the coefficients through the recursion
+leads to the recursion
 
   `ρ (f₀ + 2ρ) s aₛ = ∑_{r=1}^{s} (ρ² 2^{r+1} C(α+r-s, r+1)
     + ρ ∑_{q=0}^{r+1} C(α+r-s, r+1-q) f_q + g_{r+1}) a_{s-r}`
@@ -32,8 +32,10 @@ that the formal series then satisfies the equation to every order: if `f` and `g
 to `O(n^{-N-1})`, the truncation after `N` terms leaves a residual
 `O(|ρ|ⁿ n^{Re α - N - 1})` (`TauCeti.isBigO_formalDifferenceSolution_residual`).
 
-In the case of distinct characteristic roots, `ρ (f₀ + 2ρ) ≠ 0` and the recursion determines the
-coefficients once `a₀` is fixed (`TauCeti.differenceCoeff`, normalized by `a₀ = 1`). The actual
+When `ρ (f₀ + 2ρ) ≠ 0`, the recursion determines the coefficients once `a₀` is fixed
+(`TauCeti.differenceCoeff`, normalized by `a₀ = 1`). For a root `ρ` of the characteristic equation
+this is DLMF's case of distinct characteristic roots under its assumption `g₀ ≠ 0`: then `ρ ≠ 0`,
+and `f₀ + 2ρ ≠ 0` says that `ρ` differs from the other root `-f₀ - ρ`. The actual
 solutions with the expansions `w(n) ∼ ρⁿ n^α ∑ aₛ n⁻ˢ` (DLMF 2.9.8) are obtained from these
 truncated formal solutions by solving a Volterra summation equation for the error, whose forcing
 term is the residual estimated here (Wong and Li).
@@ -46,7 +48,8 @@ term is the residual estimated here (Wong and Li).
 * `TauCeti.differenceResidualCoeff fs gs ρ α a t`: the coefficient of `ρⁿ n^{α-t}` in the
   residual of the formal series `ρⁿ n^α ∑ aₛ n⁻ˢ`.
 * `TauCeti.formalDifferenceSolution a ρ α N n`: the truncation `ρⁿ n^α ∑_{s<N} aₛ n⁻ˢ`.
-* `TauCeti.differenceCoeff fs gs ρ α`: the coefficients defined by DLMF 2.9.7 with `a₀ = 1`.
+* `TauCeti.differenceCoeff fs gs ρ α`: the coefficients defined by DLMF 2.9.7 with `a₀ = 1`,
+  which satisfy that recursion when `ρ (f₀ + 2ρ) ≠ 0`.
 
 ## Main results
 
@@ -57,13 +60,15 @@ term is the residual estimated here (Wong and Li).
   vanish.
 * `TauCeti.isBigO_formalDifferenceSolution_residual`: under DLMF 2.9.5–2.9.7 the truncation after
   `N` terms has residual `O(|ρ|ⁿ n^{Re α - N - 1})`.
-* `TauCeti.mul_differenceCoeff`: `TauCeti.differenceCoeff` satisfies DLMF 2.9.7.
-* `TauCeti.differenceCoeff_succ_eq_zero_of_const`: for constant coefficients and `α = 0` the formal
+* `TauCeti.mul_differenceCoeff`: `TauCeti.differenceCoeff` satisfies DLMF 2.9.7 when
+  `ρ (f₀ + 2ρ) ≠ 0`.
+* `TauCeti.differenceCoeff_succ_eq_zero_of_const`: for constant coefficients and `α = 0` the
+  coefficients `aₛ` with `s ≥ 1` vanish, so for a root `ρ` of the characteristic equation the formal
   solution is `ρⁿ`.
 
 ## Implementation notes
 
-After division by `ρⁿ n^α`, the residual is a function of `u = n⁻¹`, built from the binomial
+The residual is `ρⁿ n^α` times a function of `u = n⁻¹`, built from the binomial
 expansions of `(1 + j u)^{α - s}` for `j = 0, 1, 2` (`Complex.one_add_cpow_hasFPowerSeriesAt_zero`)
 and the expansions of `f` and `g`. These are combined as truncated power series: a function `F`
 approximates `P : PowerSeries ℂ` to order `M` when `F - (trunc (M + 1) P).eval u = O(u^{M+1})`,
@@ -284,8 +289,8 @@ private lemma formalDifferenceSolution_add (a : ℕ → ℂ) (ρ α : ℂ) (N : 
     ← inv_pow]
   ring
 
-/-- After division by `ρⁿ n^α`, the left-hand side of the difference equation at the truncated
-formal solution is a sum over `s < N` of `aₛ n⁻ˢ` times an expression in `(1 + j n⁻¹)^{α-s}`. -/
+/-- The left-hand side of the difference equation at the truncated formal solution is `ρⁿ n^α`
+times a sum over `s < N` of `aₛ n⁻ˢ` times an expression in `(1 + j n⁻¹)^{α-s}`. -/
 private lemma formalDifferenceSolution_residual_eq (f g a : ℕ → ℂ) (ρ α : ℂ) (N : ℕ) {n : ℕ}
     (hn : n ≠ 0) :
     formalDifferenceSolution a ρ α N (n + 2) + f n * formalDifferenceSolution a ρ α N (n + 1) +
@@ -483,7 +488,9 @@ theorem mul_differenceCoeff {fs gs : ℕ → ℂ} {ρ : ℂ} (hρ₀ : ρ * (fs 
       mul_inv_cancel₀ (mul_ne_zero hρ₀ (Nat.cast_add_one_ne_zero s)), one_mul]
 
 /-- For an equation with constant coefficients, `f n = f₀` and `g n = g₀`, and `α = 0`, all the
-coefficients `aₛ` with `s ≥ 1` vanish: the formal solution is `ρⁿ`. For instance, for
+coefficients `aₛ` with `s ≥ 1` vanish, for every `ρ`. So when `ρ` is a root of the characteristic
+equation `ρ² + f₀ ρ + g₀ = 0` (and `α = 0` satisfies DLMF 2.9.6), the formal solution is `ρⁿ`,
+which is an exact solution. For instance, for
 `w (n + 2) - 3 w (n + 1) + 2 w n = 0` the roots are `ρ = 1, 2`, DLMF 2.9.6 gives `α = 0`, and the
 formal solutions are `1` and `2ⁿ`. -/
 theorem differenceCoeff_succ_eq_zero_of_const {fs gs : ℕ → ℂ} (hf : ∀ q ≠ 0, fs q = 0)
