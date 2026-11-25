@@ -80,30 +80,11 @@ private theorem contMDiff_prodField (A : DomainDependentHomSection I M IP P n)
   have hbase : ContMDiff ((IP.prod (I.prod I')).prod 𝓘(ℝ, EP)) (IP.prod (I.prod I')) n
       (fun p : TotalSpace EP (horizontalTangentBundle (I.prod I') (M × N) IP P) ↦ p.proj) :=
     contMDiff_proj _
-  -- Move a horizontal vector at `(p, (x, y))` to `(p, x)` and to `(p, y)`.
-  have hS₁ : ContMDiff ((IP.prod (I.prod I')).prod 𝓘(ℝ, EP)) ((IP.prod I).prod 𝓘(ℝ, EP)) n
-      (fun p : TotalSpace EP (horizontalTangentBundle (I.prod I') (M × N) IP P) ↦
-        (⟨(p.proj.1, p.proj.2.1), p.snd⟩ : TotalSpace EP (horizontalTangentBundle I M IP P))) :=
-    (Bundle.Pullback.contMDiff_iff (ContMDiffMap.fst : C^∞⟮IP.prod I, P × M; IP, P⟯)
-      contMDiff_fst).2
-        ⟨(contMDiff_fst.comp hbase).prodMk (contMDiff_fst.comp (contMDiff_snd.comp hbase)),
-          hlift⟩
-  have hS₂ : ContMDiff ((IP.prod (I.prod I')).prod 𝓘(ℝ, EP)) ((IP.prod I').prod 𝓘(ℝ, EP)) n
-      (fun p : TotalSpace EP (horizontalTangentBundle (I.prod I') (M × N) IP P) ↦
-        (⟨(p.proj.1, p.proj.2.2), p.snd⟩ : TotalSpace EP (horizontalTangentBundle I' N IP P))) :=
-    (Bundle.Pullback.contMDiff_iff (ContMDiffMap.fst : C^∞⟮IP.prod I', P × N; IP, P⟯)
-      contMDiff_fst).2
-        ⟨(contMDiff_fst.comp hbase).prodMk (contMDiff_snd.comp (contMDiff_snd.comp hbase)),
-          hlift⟩
-  -- Apply the two sections there and read the values as tangent vectors to `M` and `N`.
-  have hA := (TauCeti.contMDiff_hom_bundle_iff (E₁ := horizontalTangentBundle I M IP P)
-    (E₂ := verticalTangentBundle I M IP P) A.tangentHom).1 A.contMDiff_tangentHom
-  have hB := (TauCeti.contMDiff_hom_bundle_iff (E₁ := horizontalTangentBundle I' N IP P)
-    (E₂ := verticalTangentBundle I' N IP P) B.tangentHom).1 B.contMDiff_tangentHom
-  have hV₁ := (Bundle.Pullback.contMDiff_lift
-    (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯) contMDiff_snd).comp (hA.comp hS₁)
-  have hV₂ := (Bundle.Pullback.contMDiff_lift
-    (ContMDiffMap.snd : C^∞⟮IP.prod I', P × N; I', N⟯) contMDiff_snd).comp (hB.comp hS₂)
+  -- Apply the two sections at `(p, x)` and `(p, y)` to the horizontal vector at `(p, (x, y))`.
+  have hV₁ := A.contMDiff_apply
+    ((contMDiff_fst.comp hbase).prodMk (contMDiff_fst.comp (contMDiff_snd.comp hbase))) hlift
+  have hV₂ := B.contMDiff_apply
+    ((contMDiff_fst.comp hbase).prodMk (contMDiff_snd.comp (contMDiff_snd.comp hbase))) hlift
   exact (Bundle.Pullback.contMDiff_iff
     (ContMDiffMap.snd : C^∞⟮IP.prod (I.prod I'), P × (M × N); I.prod I', M × N⟯)
       contMDiff_snd).2 ⟨hbase, contMDiff_equivTangentBundleProd_symm.comp (hV₁.prodMk hV₂)⟩
