@@ -398,10 +398,8 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
       (univ ×ˢ (univ ×ˢ φ.target)) :=
     (contMDiffOn_iff_contDiffOn.1 ((contMDiff_cappedComparisonPerturbation (n := 3) hH hHs
       ).comp_contMDiffOn hg)).clm_apply contDiffOn_const
-  have hJt (R : ℝ) (w : ℂ) (x : M) : (hω.symplecticFormAt x).Tames
-      ((h₀.cappedComparisonAlmostComplex J hJ R w).almostComplexStructureAt x) := by
-    rw [h₀.cappedComparisonAlmostComplex_def J hJ R]
-    exact hω.tames_iff.1 (h₀.tames_cappedAlmostComplex J hJ _ _ w) x
+  have hJt (R : ℝ) (w : ℂ) (x : M) :=
+    h₀.tames_almostComplexStructureAt_cappedComparisonAlmostComplex J hJ R w x
   have hWt : IsOpen (W ∩ univ ×ˢ (univ ×ˢ φ.target)) :=
     hW.inter (isOpen_univ.prod (isOpen_univ.prod φ.open_target))
   have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W ∩ univ ×ˢ (univ ×ˢ φ.target) :=
@@ -431,14 +429,6 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
   exact hconv hΩ hΩD hRC (fun k ↦ (hu k).contMDiffOn) (fun k z _ ↦ hfl k z) huK
     (fun k ↦ (hint k).integrableOn) hE
 
-/-- The structures of the comparison family are tamed by `ω` at every point. -/
-private theorem tames_almostComplexStructureAt_cappedComparisonAlmostComplex
-    (hω : ω.IsNondegenerate) (h₀ : ω.Compatible J₀) (hJ : ∀ q t, ω.Tames (J q t)) (R : ℝ) (w : ℂ)
-    (x : M) : (hω.symplecticFormAt x).Tames
-      ((h₀.cappedComparisonAlmostComplex J hJ R w).almostComplexStructureAt x) := by
-  rw [h₀.cappedComparisonAlmostComplex_def J hJ R]
-  exact hω.tames_iff.1 (h₀.tames_cappedAlmostComplex J hJ _ _ w) x
-
 section Closed
 
 variable [I.Boundaryless] [CompactSpace M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -448,14 +438,15 @@ bubbling points.** Let `ω` be a nondegenerate two-form on a closed manifold `M`
 symplectic manifold, let `H_q` be period-one `C³` Hamiltonians with `|H_q| ≤ B_q`, let `J₀` be
 `ω`-compatible and let `J_q(t)` be `ω`-tame end structures. Let the structures `J_R(z, x)` of the
 comparison family, read in the chart at every point of `M`, be `C²` jointly in `(R, z)` and the
-chart coordinate. Let `e : M → F` be injective and differentiable, such as the Whitney embedding of
-`M`, fix a compact window `C ⊆ [0, ∞)` of parameters and a compact `D ⊆ ℝ × ℝ`, and over `C × D`
-let the structures be uniformly tame with respect to `e`, `c ‖d e v‖² ≤ ω(v, J_R v)` with `c > 0`,
-and let the pushforwards through `e` of the Hamiltonian vector fields of the two components of
-`K_R` be at most `L`. There is a threshold `δ > 0` with the following property. Let `uₖ` be `C³`
-maps of the plane chart `ℝ × ℝ ≅ ℂ` of the three-pole sphere into `M` solving the Floer equation
-`(du - X_{K_{Rₖ}})^{0,1} = 0` for the structures `J_{Rₖ}(z, u)` of the comparison family, with
-`Rₖ ∈ C`, integrable energy density and curvature term, and symplectic area `∫ u^* ω ≤ A`, and let
+chart coordinate, for `(R, z)` in an open set `W`. Let `e : M → F` be injective and differentiable,
+such as the Whitney embedding of `M`, fix a compact window `C ⊆ [0, ∞)` of parameters and a compact
+`D ⊆ ℝ × ℝ` with `C × D ⊆ W`, and over `C × D` let the structures be uniformly tame with respect
+to `e`, `c ‖d e v‖² ≤ ω(v, J_R v)` with `c > 0`, and let the pushforwards through `e` of the
+Hamiltonian vector fields of the two components of `K_R` be at most `L`. There is a threshold
+`δ > 0` with the following property. Let `uₖ` be `C³` maps of the plane chart `ℝ × ℝ ≅ ℂ` of the
+three-pole sphere into `M` solving the Floer equation `(du - X_{K_{Rₖ}})^{0,1} = 0` for the
+structures `J_{Rₖ}(z, u)` of the comparison family, with `Rₖ ∈ C`, integrable energy density and
+curvature term, and symplectic area `∫ u^* ω ≤ A`, and let
 `Ω ⊆ D` be open. Then there are a subsequence `φ`, a limit `R₀ ∈ C` of `R_{φ n}`, and a finite set
 `Z ⊆ Ω` with `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)` such that, along `φ`, every disc about a point of
 `Z` eventually carries Floer energy at least `δ`, the energy densities are uniformly bounded on
@@ -469,12 +460,13 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
     (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    {W : Set (ℝ × (ℝ × ℝ))} (hW : IsOpen W)
     (hJR : ∀ α, ContDiffOn ℝ 2 (almostComplexInChartAt I α (uncurry fun R z ↦
       (h₀.cappedComparisonAlmostComplex J hJ R (equivRealProdCLM.symm z)).almostComplexStructureAt))
-      (univ ×ˢ (extChartAt I α).target))
+      (W ×ˢ (extChartAt I α).target))
     {e : M → F} (he : ∀ x, MDifferentiableAt I 𝓘(ℝ, F) e x) (he_inj : Injective e)
     {C : Set ℝ} {D : Set (ℝ × ℝ)} (hC : IsCompact C) (hC₀ : C ⊆ Ici 0) (hD : IsCompact D)
-    {c L : ℝ} (hc : 0 < c)
+    (hCDW : C ×ˢ D ⊆ W) {c L : ℝ} (hc : 0 < c)
     (hJc : ∀ R ∈ C, ∀ z ∈ D, ∀ x v, c * ‖mvfderiv I e x v‖ ^ 2 ≤ hω.symplecticFormAt x v
       ((h₀.cappedComparisonAlmostComplex J hJ R (equivRealProdCLM.symm z)).almostComplexStructureAt
         x v))
@@ -526,14 +518,14 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
         ((contDiff_fst.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))).clm_apply
       contMDiff_const).contMDiffAt
   have hJt (R : ℝ) (w : ℂ) (x : M) :=
-    tames_almostComplexStructureAt_cappedComparisonAlmostComplex hω h₀ hJ R w x
+    h₀.tames_almostComplexStructureAt_cappedComparisonAlmostComplex J hJ R w x
   obtain ⟨δ, hδ, hconv⟩ :=
     hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset
       (Ks := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x 1)
       (Kt := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x Complex.I)
       (J := fun R z ↦ (h₀.cappedComparisonAlmostComplex J hJ R
         (equivRealProdCLM.symm z)).almostComplexStructureAt)
-      he he_inj isOpen_univ hC hD (subset_univ _) hJR
+      he he_inj hW hC hD hCDW hJR
       (hω.contDiffOn_hamiltonianVectorFieldInChartAt fun p _ x ↦ hK 1 p x)
       (hω.contDiffOn_hamiltonianVectorFieldInChartAt fun p _ x ↦ hK Complex.I p x)
       (fun R _ z _ x ↦ hJt R _ x) hc hJc hLs hLt
@@ -629,7 +621,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappe
       h₀.cappedAlmostComplex_eq_base_of_notMem_truncation J hJ _
         (notMem_truncation_of_lt_norm (by linarith) hz')⟩
   have hJt (R : ℝ) (w : ℂ) (x : M) :=
-    tames_almostComplexStructureAt_cappedComparisonAlmostComplex hω h₀ hJ R w x
+    h₀.tames_almostComplexStructureAt_cappedComparisonAlmostComplex J hJ R w x
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_inv
     J₀ (fun x ↦ (h₀.compatibleAt x).tames) he he_inj hc hJc T
   refine ⟨T⁻¹, inv_pos.2 (by positivity), δ, hδ,

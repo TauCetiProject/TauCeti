@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Normed.Field.Inversion
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Germ
 import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 
@@ -267,42 +268,6 @@ theorem isComplexLinearMap_perturbedMFDeriv_zero_of_forall_ne
   exact (hiff y₀ hy₀U).2 (tendsto_nhds_unique (hcont₁.tendsto.mono_left nhdsWithin_le_nhds)
     ((hcont₂.tendsto.mono_left nhdsWithin_le_nhds).congr' hev.symm))
 
-omit [FiniteDimensional ℝ E] in
-/-- The perturbed derivative at `y` only depends on the germ of the map at `y`. -/
-private theorem perturbedMFDeriv_congr_of_eventuallyEq {Ks Kt : ℝ × ℝ → M → ℝ} {y : ℝ × ℝ}
-    (hev : w =ᶠ[𝓝 y] u) :
-    ω.perturbedMFDeriv Ks Kt w y =
-      (ω.perturbedMFDeriv Ks Kt u y : ℝ × ℝ →L[ℝ] TangentSpace I (w y)) := by
-  have hy : w y = u y := hev.eq_of_nhds
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp only [perturbedMFDeriv_apply]
-  rw [hev.mfderiv_eq, hy, perturbedMFDeriv_apply]
-  -- The identification of the tangent spaces at `w y = u y` is the identity.
-  rfl
-
-omit [FiniteDimensional ℝ E] in
-/-- The Floer energy density at `y` only depends on the germ of the map at `y`. -/
-private theorem floerEnergyDensity_congr_of_eventuallyEq {Ks Kt : ℝ × ℝ → M → ℝ} {y : ℝ × ℝ}
-    (hev : w =ᶠ[𝓝 y] u) : ω.floerEnergyDensity Ks Kt w y = ω.floerEnergyDensity Ks Kt u y := by
-  have hy : w y = u y := hev.eq_of_nhds
-  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_congr_of_eventuallyEq hev]
-  -- Only the base point of the two-form remains to be identified.
-  convert rfl using 2
-  rw [hy]
-
-omit [FiniteDimensional ℝ E] in
-/-- Holomorphy at `y` only depends on the germ of the map at `y`. -/
-private theorem isComplexLinearMap_perturbedMFDeriv_of_eventuallyEq {y : ℝ × ℝ}
-    (hev : w =ᶠ[𝓝 y] u)
-    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J₀.almostComplexStructureAt (u y))
-      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ _ ↦ 0) u y).toLinearMap) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J₀.almostComplexStructureAt (w y))
-      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ _ ↦ 0) w y).toLinearMap := by
-  have hy : w y = u y := hev.eq_of_nhds
-  rw [perturbedMFDeriv_congr_of_eventuallyEq hev]
-  convert h using 2
-  rw [hy]
-
 /-- **Holomorphy at the point at infinity, in a manifold.** Let `u` be differentiable and
 `J₀`-holomorphic at every point `z` with `‖z‖ > T`, in complex coordinates, for a smooth almost
 complex structure `J₀` on `M`, in the form of the Floer equation with zero perturbation. Let `w` be
@@ -332,7 +297,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_zero_of_eq_comp_inv
       filter_upwards [(hΩ.sdiff isClosed_singleton).mem_nhds ⟨hy, hy0⟩] with y' hy'
         using hwu y' hy'.1 hy'.2
     have hι := hasDerivAt_inv hy0'
-    refine isComplexLinearMap_perturbedMFDeriv_of_eventuallyEq hev ?_
+    refine ω.isComplexLinearMap_perturbedMFDeriv_of_eventuallyEq _ _ hev ?_
     have h := ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
       (hasFDerivAt_realChart hι).differentiableAt (hu _ hfar) mdifferentiableAt_const
       mdifferentiableAt_const (isComplexLinearMap_fderiv_realChart hι) (hhol _ hfar)
@@ -395,7 +360,7 @@ theorem IsNondegenerate.integrableOn_and_setIntegral_le_of_eq_comp_inv (hω : ω
     rw [perturbationPullback_zero, perturbationPullback_zero] at h
     have hev : w =ᶠ[𝓝 y] u ∘ ι := by
       filter_upwards [hso.mem_nhds hy] with y' hy' using hwu y' hy'.1 hy'.2
-    rw [floerEnergyDensity_congr_of_eventuallyEq hev, h,
+    rw [ω.floerEnergyDensity_congr_of_eventuallyEq _ _ hev, h,
       abs_of_nonneg (det_fderiv_realChart_nonneg (hder y hy)), smul_eq_mul]
   -- Change variables along `ι`; the puncture `0` is a null set.
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
