@@ -61,9 +61,8 @@ theorem not_isZero_higherDirectImage_one_puncturedPlane :
     ¬ IsZero (((puncturedAffineSpace R (Fin 2)).hom.higherDirectImage 1).obj
       (SheafOfModules.unit (puncturedAffineSpace R (Fin 2)).left.ringCatSheaf)) := fun h ↦ by
   have := nontrivial_higherDirectImage_one_puncturedPlane R
-  have h' := (SheafOfModules.forget _ ⋙ PresheafOfModules.evaluation _ (.op ⊤)).map_isZero h
-  exact not_subsingleton Γ(((puncturedAffineSpace R (Fin 2)).hom.higherDirectImage 1).obj
-    (SheafOfModules.unit (puncturedAffineSpace R (Fin 2)).left.ringCatSheaf), ⊤)
-    (ModuleCat.subsingleton_of_isZero h')
+  -- `Γ(M, ⊤)` is the value at `⊤` of the abelian presheaf `(Scheme.Modules.toPresheaf _).obj M`.
+  exact not_subsingleton _ (AddCommGrpCat.subsingleton_of_isZero (G := Γ(_, ⊤))
+    (((Scheme.Modules.toPresheaf _).map_isZero h).obj (.op ⊤)))
 
 end TauCeti.PuncturedAffineSpace
