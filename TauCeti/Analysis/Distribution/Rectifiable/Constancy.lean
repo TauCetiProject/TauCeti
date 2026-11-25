@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.Constancy.Current
 public import TauCeti.Analysis.Distribution.Rectifiable.Integral
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Inner
@@ -82,50 +81,38 @@ private theorem exists_int_eq_of_frameCurrent_eq_smul (b : OrthonormalBasis (Fin
   have hμ : (μHE[k + 1] : Measure V) = volume := by
     rw [← (by simpa using finrank_eq_card_basis b.toBasis : finrank ℝ V = k + 1)]
     exact InnerProductSpace.euclideanHausdorffMeasure_eq_volume
-  rw [hμ] at hθ
   have hτo' : ∀ x, (θ x : ℝ) ≠ 0 → Orthonormal ℝ (τ x) := fun x hx ↦ hτo x (by exact_mod_cast hx)
-  -- The sign `d(x) = det ⟪b_i, τ(x)_j⟫` of the frame relative to `b`.
-  set d : V → ℝ := fun x ↦ (Matrix.of fun j i ↦ ⟪b i, τ x j⟫).det
-  have hdm : Measurable d := by fun_prop
   have hspan (x : V) : ∀ j, τ x j ∈ Submodule.span ℝ (range b) := fun j ↦ by
     simpa [b.coe_toBasis] using b.toBasis.mem_span (τ x j)
+  -- Change to the constant frame `b`; the multiplicity picks up the sign
+  -- `d(x) = det ⟪b_i, τ(x)_j⟫` of the frame relative to `b`.
+  rw [frameCurrent_eq_det_inner_mul hθ measurable_const (fun _ _ ↦ b.orthonormal) hτ hτo'
+    fun x _ ↦ hspan x] at h
+  set d : V → ℝ := fun x ↦ (Matrix.of fun j i ↦ ⟪b i, τ x j⟫).det
   have hd (x : V) (hx : θ x ≠ 0) : d x = 1 ∨ d x = -1 :=
     Orthonormal.det_inner_eq_one_or_eq_neg_one b.orthonormal (hτo x hx) (hspan x)
-  set f : V → ℝ := fun x ↦ d x * θ x - c
-  have hf : LocallyIntegrableOn f Ω volume := by
-    refine (hθ.bdd_mul_of_ne_zero (C := 1) hdm.aestronglyMeasurable (ae_of_all _ fun x hx ↦ ?_)).sub
-      ((locallyIntegrable_const c).locallyIntegrableOn _)
-    rcases hd x (by exact_mod_cast hx) with h1 | h1 <;> simp [h1]
-  -- Testing against `g • det_b` gives `∫ g f = 0`.
+  have hdθ : LocallyIntegrableOn (fun x ↦ d x * θ x) Ω μHE[k + 1] :=
+    hθ.bdd_mul_of_ne_zero (C := 1) (by fun_prop : Measurable d).aestronglyMeasurable
+      (ae_of_all _ fun x hx ↦ by rcases hd x (by exact_mod_cast hx) with h1 | h1 <;> simp [h1])
+  have hf : LocallyIntegrableOn (fun x ↦ d x * θ x - c) Ω volume :=
+    (hμ ▸ hdθ).sub ((locallyIntegrable_const c).locallyIntegrableOn _)
+  -- Testing against `g • det_b` gives `∫ g (d θ - c) = 0`.
   have hzero := Ω.isOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero hf
     fun g hg hgc hgΩ ↦ by
       set ω : 𝓓(Ω, V [⋀^Fin (k + 1)]→L[ℝ] ℝ) :=
         b.toBasis.testTopFormEquiv.symm ⟨g, hg, hgc, hgΩ⟩
       have hωb (x : V) : ω x b = g x := by
-        simp only [ω, Basis.testTopFormEquiv_symm_apply]
-        rw [← b.coe_toBasis, b.toBasis.det_self, mul_one]
-        rfl
-      have hω (x : V) : (θ x : ℝ) * ω x (τ x) = g x • f x + c * ω x b := by
-        rw [hωb]
-        by_cases hx : θ x = 0
-        · simp only [hx, Int.cast_zero, zero_mul, smul_eq_mul, f, mul_zero, zero_sub]
-          ring
-        · have := (ω x).toAlternatingMap.map_eq_det_inner_smul_of_mem_span b.orthonormal
-            (hspan x)
-          simp only [ContinuousAlternatingMap.coe_toAlternatingMap] at this
-          rw [this, hωb]
-          simp only [smul_eq_mul, f, d]
-          ring
+        rw [← b.coe_toBasis]
+        exact Basis.testTopFormEquiv_symm_apply_self _ _ x
       have h1 := congrArg (fun T ↦ T ω) h
-      simp only [frameCurrent_apply (hμ ▸ hθ) hτ hτo', smul_apply,
-        smul_eq_mul, hμ] at h1
-      rw [Orientation.integrationCurrent_apply_eq_integral_volume _ b rfl] at h1
-      have hint1 : Integrable (fun x ↦ (θ x : ℝ) * ω x (τ x)) volume :=
-        hμ ▸ integrable_frameCurrent_integrand (hμ ▸ hθ) hτ hτo' ω
+      rw [frameCurrent_apply hdθ measurable_const (fun _ _ ↦ b.orthonormal), smul_apply,
+        smul_eq_mul, Orientation.integrationCurrent_apply_eq_integral_volume _ b rfl, hμ] at h1
+      have hint1 : Integrable (fun x ↦ d x * θ x * ω x b) volume :=
+        hμ ▸ integrable_frameCurrent_integrand hdθ measurable_const (fun _ _ ↦ b.orthonormal) ω
       have hint2 : Integrable (fun x ↦ ω x b) volume := by
         simpa only [hωb] using hg.continuous.integrable_of_hasCompactSupport hgc
-      calc ∫ x, g x • f x = ∫ x, ((θ x : ℝ) * ω x (τ x) - c * ω x b) :=
-            integral_congr_ae (ae_of_all _ fun x ↦ by simp only [hω x]; ring)
+      calc ∫ x, g x • (d x * θ x - c) = ∫ x, (d x * θ x * ω x b - c * ω x b) :=
+            integral_congr_ae (ae_of_all _ fun x ↦ by simp only [hωb, smul_eq_mul]; ring)
         _ = 0 := by
           rw [integral_sub hint1 (hint2.const_mul c), integral_const_mul, h1, sub_self]
   exact exists_int_of_ae_mul_sub_eq_zero hΩ hd hzero
