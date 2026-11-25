@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import Mathlib.Topology.Algebra.Group.Units
-public import Mathlib.Topology.Instances.Matrix
+public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean
 
 /-!
@@ -70,16 +68,13 @@ theorem isBoundedParameter_iff {G : Type*} [Group G] {n : ℕ} (r : G →* GL (F
 theorem IsBoundedParameter.comp {G H : Type*} [Group G] [Group H] {n : ℕ}
     {r : G →* GL (Fin n) ℂ} (hr : IsBoundedParameter r) (f : H →* G) :
     IsBoundedParameter (r.comp f) :=
-  hr.of_isClosed_subset isClosed_closure
-    (closure_mono (Set.range_comp_subset_range f r))
+  hr.closure_of_subset ((Set.range_comp_subset_range f r).trans subset_closure)
 
 /-- A continuous parameter of a compact group is bounded. -/
 theorem isBoundedParameter_of_compactSpace {G : Type*} [Group G] [TopologicalSpace G]
     [CompactSpace G] {n : ℕ} {r : G →* GL (Fin n) ℂ} (hr : Continuous r) :
-    IsBoundedParameter r := by
-  have hc : IsCompact (Set.range r) := isCompact_range hr
-  rw [isBoundedParameter_iff, hc.isClosed.closure_eq]
-  exact hc
+    IsBoundedParameter r :=
+  (isCompact_range hr).closure
 
 namespace WeilGroupReal
 
@@ -95,6 +90,7 @@ theorem restrictComplex_apply (r : WeilGroupReal →* GL (Fin n) ℂ) (z : WeilG
   (rfl)
 
 /-- The restriction of a continuous parameter is continuous. -/
+@[fun_prop]
 theorem continuous_restrictComplex {r : WeilGroupReal →* GL (Fin n) ℂ} (hr : Continuous r) :
     Continuous (restrictComplex r) :=
   hr.comp continuous_includeComplex
@@ -102,6 +98,7 @@ theorem continuous_restrictComplex {r : WeilGroupReal →* GL (Fin n) ℂ} (hr :
 /-- **Boundedness is detected on `ℂˣ`.** A parameter of `W_ℝ` is bounded exactly when its
 restriction to `W_ℂ = ℂˣ` is: the image of `W_ℝ = ℂˣ ⊔ jℂˣ` is the union of the image of `ℂˣ` and
 its translate by `r j`. -/
+@[simp]
 theorem isBoundedParameter_restrictComplex_iff (r : WeilGroupReal →* GL (Fin n) ℂ) :
     IsBoundedParameter (restrictComplex r) ↔ IsBoundedParameter r := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.comp includeComplex⟩
@@ -113,64 +110,41 @@ theorem isBoundedParameter_restrictComplex_iff (r : WeilGroupReal →* GL (Fin n
     · exact Or.inr ⟨r (includeComplex z), subset_closure ⟨z, rfl⟩, (map_mul r _ _).symm⟩
   have hK : IsCompact (R ∪ (fun x ↦ r j * x) '' R) :=
     h.union (h.image (continuous_const.mul continuous_id))
-  exact hK.of_isClosed_subset isClosed_closure (closure_minimal hsub hK.isClosed)
+  exact hK.closure_of_subset hsub
 
 /-! ### A unipotent parameter with unbounded image -/
 
-/-- The matrix `[[1, log |t|], [0, 1]]`. -/
-private noncomputable def logUnipotentMatrix (t : ℝ) : Matrix (Fin 2) (Fin 2) ℂ :=
-  !![1, (Real.log |t| : ℂ); 0, 1]
-
-private theorem logUnipotentMatrix_mul {s t : ℝ} (hs : s ≠ 0) (ht : t ≠ 0) :
-    logUnipotentMatrix (s * t) = logUnipotentMatrix s * logUnipotentMatrix t := by
-  rw [logUnipotentMatrix, logUnipotentMatrix, logUnipotentMatrix, abs_mul,
-    Real.log_mul (abs_ne_zero.mpr hs) (abs_ne_zero.mpr ht)]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, add_comm]
-
-private theorem logUnipotentMatrix_one : logUnipotentMatrix 1 = 1 := by
-  rw [logUnipotentMatrix]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
-
-/-- The homomorphism `ℝˣ →* GL₂(ℂ)`, `t ↦ [[1, log |t|], [0, 1]]`. -/
-private noncomputable def logUnipotent : ℝˣ →* GL (Fin 2) ℂ where
-  toFun t :=
-    { val := logUnipotentMatrix t
-      inv := logUnipotentMatrix (t⁻¹ : ℝˣ)
-      val_inv := by
-        rw [← logUnipotentMatrix_mul t.ne_zero (t⁻¹).ne_zero, ← Units.val_mul, mul_inv_cancel,
-          Units.val_one, logUnipotentMatrix_one]
-      inv_val := by
-        rw [← logUnipotentMatrix_mul (t⁻¹).ne_zero t.ne_zero, ← Units.val_mul, inv_mul_cancel,
-          Units.val_one, logUnipotentMatrix_one] }
-  map_one' := Units.ext (by simp [logUnipotentMatrix_one])
-  map_mul' s t := Units.ext (by simp [logUnipotentMatrix_mul s.ne_zero t.ne_zero])
+/-- The homomorphism `ℝˣ →* Multiplicative ℂ`, `t ↦ log |t|`. -/
+private noncomputable def logAbs : ℝˣ →* Multiplicative ℂ where
+  toFun t := .ofAdd (Real.log |(t : ℝ)| : ℂ)
+  map_one' := by simp
+  map_mul' s t := by
+    rw [Units.val_mul, abs_mul, Real.log_mul (abs_ne_zero.mpr s.ne_zero)
+      (abs_ne_zero.mpr t.ne_zero), Complex.ofReal_add, ofAdd_add]
 
 /-- **The parameter `w ↦ [[1, log |norm w|], [0, 1]]` of `W_ℝ`**: every `w` acts by a unipotent
 matrix, with both eigenvalues `1`, and the parameter is continuous
 (`TauCeti.ClassFieldTheory.WeilGroupReal.continuous_logNormUnipotent`) but not bounded
 (`TauCeti.ClassFieldTheory.WeilGroupReal.not_isBoundedParameter_logNormUnipotent`). -/
 noncomputable def logNormUnipotent : WeilGroupReal →* GL (Fin 2) ℂ :=
-  logUnipotent.comp norm
+  GeneralLinearGroup.upperRightHom.toMonoidHom.comp (logAbs.comp norm)
 
+@[simp]
 theorem coe_logNormUnipotent (w : WeilGroupReal) :
     (logNormUnipotent w : Matrix (Fin 2) (Fin 2) ℂ) =
       !![1, (Real.log |(norm w : ℝ)| : ℂ); 0, 1] :=
   (rfl)
 
+/-- The `(0, 1)` entry of `logNormUnipotent w` is `log |norm w|`. -/
+theorem logNormUnipotent_apply_zero_one (w : WeilGroupReal) :
+    (logNormUnipotent w : Matrix (Fin 2) (Fin 2) ℂ) 0 1 = (Real.log |(norm w : ℝ)| : ℂ) := by
+  simp
+
 /-- The parameter `w ↦ [[1, log |norm w|], [0, 1]]` is continuous. -/
-theorem continuous_logNormUnipotent : Continuous logNormUnipotent := by
-  have hlog : Continuous fun w : WeilGroupReal ↦ (Real.log (norm w : ℝ) : ℂ) :=
-    Complex.continuous_ofReal.comp <|
-      (Units.continuous_val.comp continuous_norm).log fun w ↦ (norm w).ne_zero
-  refine Units.continuous_iff.mpr ⟨?_, ?_⟩
-  · refine continuous_matrix fun i j ↦ ?_
-    fin_cases i <;> fin_cases j <;>
-      simp [logNormUnipotent, logUnipotent, logUnipotentMatrix, hlog, continuous_const]
-  · refine continuous_matrix fun i j ↦ ?_
-    fin_cases i <;> fin_cases j <;>
-      simp [logNormUnipotent, logUnipotent, logUnipotentMatrix, hlog, continuous_const]
+@[fun_prop]
+theorem continuous_logNormUnipotent : Continuous logNormUnipotent :=
+  GeneralLinearGroup.continuous_upperRightHom.comp <| Complex.continuous_ofReal.comp <|
+    (Units.continuous_val.comp continuous_norm).abs.log fun w ↦ abs_ne_zero.mpr (norm w).ne_zero
 
 /-- **A unipotent parameter need not be bounded.** The parameter
 `w ↦ [[1, log |norm w|], [0, 1]]` has both eigenvalues `1` at every `w` but unbounded image, since
@@ -181,9 +155,8 @@ theorem not_isBoundedParameter_logNormUnipotent : ¬ IsBoundedParameter logNormU
   obtain ⟨B, hB⟩ := (h.image (Units.continuous_val.matrix_elem 0 1)).isBounded.exists_norm_le
   obtain ⟨w, hw⟩ := norm_surjective (Units.mk0 (Real.exp (B + 1)) (Real.exp_pos _).ne')
   have := hB _ ⟨logNormUnipotent w, subset_closure ⟨w, rfl⟩, rfl⟩
-  simp only [coe_logNormUnipotent, hw, Units.val_mk0, abs_of_pos (Real.exp_pos _),
-    Real.log_exp, of_apply, cons_val', cons_val_one, cons_val_zero, empty_val',
-    cons_val_fin_one, Complex.norm_real, Real.norm_eq_abs] at this
+  simp only [logNormUnipotent_apply_zero_one, hw, Units.val_mk0, abs_of_pos (Real.exp_pos _),
+    Real.log_exp, Complex.norm_real, Real.norm_eq_abs] at this
   linarith [le_abs_self (B + 1)]
 
 end WeilGroupReal
