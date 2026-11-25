@@ -76,6 +76,7 @@ theorem cyclotomicPow_def (n : ℤ) :
       ContinuousRep.unitsMapCharacter A (continuousLocalCyclotomicCharacter ℓ F) ^ n :=
   (rfl)
 
+@[simp]
 theorem cyclotomicPow_apply (n : ℤ) (σ : Field.absoluteGaloisGroup F) :
     cyclotomicPow ℓ F A n σ =
       ContinuousRep.unitsMapCharacter A (continuousLocalCyclotomicCharacter ℓ F) σ ^ n :=
@@ -106,14 +107,14 @@ theorem coe_cyclotomicPow_pow (n : ℤ) (d : ℕ) :
     (cyclotomicPow ℓ F A n : Field.absoluteGaloisGroup F →* Aˣ) ^ d =
       (cyclotomicPow ℓ F A (n * d) : Field.absoluteGaloisGroup F →* Aˣ) := by
   ext σ
-  simp [cyclotomicPow_apply, zpow_mul]
+  simp [zpow_mul]
 
 /-- Over `ℤ_ℓ` itself, the first power is the cyclotomic character. -/
 @[simp]
 theorem cyclotomicPow_one_padicInt :
     cyclotomicPow ℓ F ℤ_[ℓ] 1 = continuousLocalCyclotomicCharacter ℓ F := by
   ext σ
-  simp [cyclotomicPow_apply]
+  simp
 
 /-- **Extending coefficients** from `A` to an `A`-algebra `B` sends `χ_ℓ ^ n` with values in `Aˣ`
 to `χ_ℓ ^ n` with values in `Bˣ`. -/
@@ -139,8 +140,7 @@ theorem cyclotomicPow_comp_mapOfAlgebra (n : ℤ) :
   rw [cyclotomicPow_def, cyclotomicPow_def,
     ← continuousLocalCyclotomicCharacter_comp_mapOfAlgebra ℓ F F',
     ContinuousRep.unitsMapCharacter_comp]
-  ext σ
-  simp [ContinuousMonoidHom.zpow_apply]
+  exact map_zpow (ContinuousMonoidHom.compLeft Aˣ (Field.absoluteGaloisGroup.mapOfAlgebra F F')) _ n
 
 end Restriction
 
@@ -160,6 +160,19 @@ theorem cyclotomicLine_def :
 theorem cyclotomicLine_apply (σ : Field.absoluteGaloisGroup F) (a : ℤ_[ℓ]) :
     cyclotomicLine ℓ F σ a = (localCyclotomicCharacter ℓ F σ : ℤ_[ℓ]) * a := by
   rw [cyclotomicLine_def, ofCharacter_apply, continuousLocalCyclotomicCharacter_apply]
+
+/-- The line of the cyclotomic character `χ_ℓ` is `ℤ_ℓ(1)`. -/
+@[simp]
+theorem ofCharacter_continuousLocalCyclotomicCharacter :
+    ofCharacter (continuousLocalCyclotomicCharacter ℓ F) = cyclotomicLine ℓ F :=
+  (cyclotomicLine_def ℓ F).symm
+
+/-- **The determinant of `ℤ_ℓ(1)`** is the cyclotomic character `χ_ℓ`. -/
+@[simp]
+theorem det_cyclotomicLine :
+    (cyclotomicLine ℓ F).det =
+      (continuousLocalCyclotomicCharacter ℓ F : Field.absoluteGaloisGroup F →* ℤ_[ℓ]ˣ) := by
+  rw [cyclotomicLine_def, det_ofCharacter]
 
 /-- **`ℤ_ℓ(1)` restricts to `ℤ_ℓ(1)`** along `G_{F'} → G_F`. -/
 @[simp]
@@ -215,6 +228,12 @@ theorem tateTwist_trivial (n : ℤ) :
 theorem tateTwist_trivial_one :
     (trivial (Field.absoluteGaloisGroup F) ℤ_[ℓ] ℤ_[ℓ]).tateTwist ℓ 1 = cyclotomicLine ℓ F := by
   rw [tateTwist_trivial, cyclotomicPow_one_padicInt, cyclotomicLine_def]
+
+/-- **The Tate twists of `ℤ_ℓ(1)`**: `ℤ_ℓ(1)(n)` is the line of `χ_ℓ ^ (1 + n)`. -/
+@[simp]
+theorem cyclotomicLine_tateTwist (n : ℤ) :
+    (cyclotomicLine ℓ F).tateTwist ℓ n = ofCharacter (cyclotomicPow ℓ F ℤ_[ℓ] (1 + n)) := by
+  rw [← tateTwist_trivial_one, tateTwist_tateTwist, tateTwist_trivial]
 
 /-- **Restriction to `G_{F'}` commutes with Tate twists** along `G_{F'} → G_F`. -/
 @[simp]
