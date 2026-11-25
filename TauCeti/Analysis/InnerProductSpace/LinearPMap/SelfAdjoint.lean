@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
 public import TauCeti.LinearAlgebra.LinearPMap.SmulSub
 public import TauCeti.Analysis.Normed.Operator.LinearPMap.SmulSub
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SubmoduleAdjoint
 import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
@@ -58,9 +59,13 @@ linear maps used by the semigroup development.
   `LinearPMap.denseRange_smul_sub_iff`: the shift has dense range exactly when `A†` has no nonzero
   eigenvector for `conj c`.
 * `LinearPMap.orthogonal_range_eq_ker_adjoint`: for a densely defined `T`,
-  `(range T)ᗮ = ker T†`.
+  `(range T)ᗮ = ker T†`, and `LinearPMap.topologicalClosure_range_eq_orthogonal_ker_adjoint`:
+  `closure (range T) = (ker T†)ᗮ`; for a closed densely defined `T`,
+  `LinearPMap.orthogonal_range_adjoint_eq_ker`: `(range T†)ᗮ = ker T` and
+  `LinearPMap.topologicalClosure_range_adjoint_eq_orthogonal_ker`: `closure (range T†) = (ker T)ᗮ`.
 * `LinearPMap.IsFormalAdjoint.range_le_orthogonal_ker` and `IsSelfAdjoint.orthogonal_range_eq_ker`:
-  the range of a symmetric map is orthogonal to its kernel, and for a self-adjoint map
+  the range of a formal adjoint `S` of `T` is orthogonal to `ker T` (so the range of a symmetric
+  map is orthogonal to its kernel, and `range T† ≤ (ker T)ᗮ`), and for a self-adjoint map
   `(range A)ᗮ = ker A`; `LinearPMap.exists_coe_eq_sub_starProjection` removes the kernel
   component of a vector of the domain without changing its image.
 * `IsSelfAdjoint.denseRange_smul_sub_of_norm_le` and
@@ -161,21 +166,27 @@ theorem denseRange_smul_sub_iff [CompleteSpace E] {A : E →ₗ.[𝕜] E}
     obtain ⟨hy', hAy⟩ := exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero hdense hortho
     exact h ⟨y, hy'⟩ hAy
 
-/-- The values of a symmetric partial linear map are orthogonal to its kernel. -/
-theorem IsFormalAdjoint.apply_mem_orthogonal_ker {A : E →ₗ.[𝕜] E} (hA : A.IsFormalAdjoint A)
-    (x : A.domain) : A x ∈ A.kerᗮ := by
-  refine (Submodule.mem_orthogonal _ _).2 fun y hy ↦ ?_
-  obtain ⟨z, rfl, hz⟩ := mem_ker_iff.1 hy
-  rw [← hA z x, hz, inner_zero_left]
+/-- The values of a formal adjoint `S` of `T` are orthogonal to the kernel of `T`. In particular
+the values of a symmetric partial linear map are orthogonal to its kernel. -/
+theorem IsFormalAdjoint.apply_mem_orthogonal_ker {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] {T : E →ₗ.[𝕜] F} {S : F →ₗ.[𝕜] E} (h : S.IsFormalAdjoint T)
+    (y : S.domain) : S y ∈ T.kerᗮ := by
+  refine (Submodule.mem_orthogonal _ _).2 fun x hx ↦ ?_
+  obtain ⟨z, rfl, hz⟩ := mem_ker_iff.1 hx
+  rw [← h.symm z y, hz, inner_zero_left]
 
-/-- The range of a symmetric partial linear map is orthogonal to its kernel. -/
-theorem IsFormalAdjoint.range_le_orthogonal_ker {A : E →ₗ.[𝕜] E} (hA : A.IsFormalAdjoint A) :
-    LinearMap.range A.toFun ≤ A.kerᗮ := by
-  rintro _ ⟨x, rfl⟩
-  exact hA.apply_mem_orthogonal_ker x
+/-- The range of a formal adjoint `S` of `T` is orthogonal to the kernel of `T`. In particular
+the range of a symmetric partial linear map is orthogonal to its kernel, and so is the range of
+the adjoint `T†` of a densely defined `T` (`adjoint_isFormalAdjoint`). -/
+theorem IsFormalAdjoint.range_le_orthogonal_ker {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] {T : E →ₗ.[𝕜] F} {S : F →ₗ.[𝕜] E} (h : S.IsFormalAdjoint T) :
+    LinearMap.range S.toFun ≤ T.kerᗮ := by
+  rintro _ ⟨y, rfl⟩
+  exact h.apply_mem_orthogonal_ker y
 
 /-- Removing the kernel component of `u ∈ D(A)` gives a vector of `D(A)` with the same image. -/
-theorem exists_coe_eq_sub_starProjection {A : E →ₗ.[𝕜] E} [A.ker.HasOrthogonalProjection]
+theorem exists_coe_eq_sub_starProjection {F : Type*} [AddCommGroup F] [Module 𝕜 F]
+    {A : E →ₗ.[𝕜] F} [A.ker.HasOrthogonalProjection]
     (u : A.domain) : ∃ v : A.domain, (v : E) = u - A.ker.starProjection u ∧ A v = A u :=
   ⟨u - ⟨_, A.ker_le_domain (A.ker.starProjection_apply_mem u)⟩, rfl, by
     rw [map_sub, (coe_mem_ker_iff (x := ⟨_, _⟩)).1 (A.ker.starProjection_apply_mem u), sub_zero]⟩
@@ -204,6 +215,31 @@ theorem _root_.IsSelfAdjoint.orthogonal_range_eq_ker [CompleteSpace E] {A : E �
   conv_rhs => rw [← isSelfAdjoint_def.mp hA]
   exact orthogonal_range_eq_ker_adjoint hA.dense_domain
 
+section Range
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace E]
+  [CompleteSpace F] {T : E →ₗ.[𝕜] F}
+
+/-- The closure of the range of a densely defined partial linear map `T` is the orthogonal
+complement of the kernel of its adjoint. -/
+theorem topologicalClosure_range_eq_orthogonal_ker_adjoint (hd : Dense (T.domain : Set E)) :
+    (LinearMap.range T.toFun).topologicalClosure = T†.kerᗮ := by
+  rw [← orthogonal_range_eq_ker_adjoint hd, Submodule.orthogonal_orthogonal_eq_closure]
+
+/-- The orthogonal complement of the range of the adjoint of a closed densely defined partial
+linear map `T` is the kernel of `T`. -/
+theorem orthogonal_range_adjoint_eq_ker (hT : T.IsClosed) (hd : Dense (T.domain : Set E)) :
+    (LinearMap.range T†.toFun)ᗮ = T.ker := by
+  rw [orthogonal_range_eq_ker_adjoint (dense_adjoint_domain hT.isClosable), adjoint_adjoint hT hd]
+
+/-- The closure of the range of the adjoint of a closed densely defined partial linear map `T` is
+the orthogonal complement of the kernel of `T`. -/
+theorem topologicalClosure_range_adjoint_eq_orthogonal_ker (hT : T.IsClosed)
+    (hd : Dense (T.domain : Set E)) :
+    (LinearMap.range T†.toFun).topologicalClosure = T.kerᗮ := by
+  rw [← orthogonal_range_adjoint_eq_ker hT hd, Submodule.orthogonal_orthogonal_eq_closure]
+
+end Range
 
 /-- For a formally self-adjoint partial linear map, the real cross term between `c • x` and `A x`
 is `re c` times the (real) quadratic form.  The inner product is conjugate-linear in its first

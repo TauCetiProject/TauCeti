@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Basic
 public import TauCeti.Algebra.TemperleyLieb.MarkovTrace
+import TauCeti.Algebra.Group.Fin.Tuple
 import TauCeti.Analysis.Complex.Sqrt
 
 /-!
@@ -110,11 +111,7 @@ theorem cubicIncl_cubicProjection (j : Fin N) :
 theorem cubicInversion_cubicIncl (x : CubicTorus N) :
     cubicInversion (N + 1) (cubicIncl N x) = cubicIncl N (cubicInversion N x) := by
   have h : (cubicInversion (N + 1)).comp (cubicIncl N) = (cubicIncl N).comp (cubicInversion N) :=
-    algHom_ext fun g ↦ by
-      have hneg : (-Fin.snoc g.toAdd 0 : Fin (N + 1) → ZMod 3) = Fin.snoc (-g.toAdd) 0 := by
-        funext i
-        refine Fin.lastCases ?_ (fun i ↦ ?_) i <;> simp
-      simp [of_eq_weyl, hneg]
+    algHom_ext fun g ↦ by simp [of_eq_weyl, Fin.neg_snoc]
   exact AlgHom.congr_fun h x
 
 /-- The inclusion preserves the scalar coefficient. -/

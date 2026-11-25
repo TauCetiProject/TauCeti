@@ -26,6 +26,9 @@ which needs no hypothesis on `g`; for finite presentation the hypothesis on `g` 
 * `AlgebraicGeometry.locallyOfFinitePresentation_of_comp`: if `f ≫ g` is locally of finite
   presentation and `g` is locally of finite type, then `f` is locally of finite presentation.
 
+* `AlgebraicGeometry.locallyOfFinitePresentation_SpecMap_algebraMap`: `Spec S ⟶ Spec R` is
+  locally of finite presentation for a finitely presented `R`-algebra `S`.
+
 * `CommRingCat.locallyOfFinitePresentation_terminal_from_Spec_iff`: finite presentation over
   the terminal scheme for an affine scheme is equivalent to finite presentation over `ℤ`.
 
@@ -64,6 +67,13 @@ theorem locallyOfFinitePresentation_of_comp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (
     rw [Scheme.Hom.appLE_comp_appLE]
     exact HasRingHomProperty.appLE _ _ hfg ⟨W, hW⟩ ⟨V, hV⟩ _
   exact H.of_comp_finiteType _ (HasRingHomProperty.appLE _ g hg ⟨W, hW⟩ ⟨U, hU⟩ hUW)
+
+/-- If `S` is a finitely presented `R`-algebra, then `Spec S ⟶ Spec R` is locally of finite
+presentation. -/
+instance locallyOfFinitePresentation_SpecMap_algebraMap (R S : Type u) [CommRing R] [CommRing S]
+    [Algebra R S] [Algebra.FinitePresentation R S] :
+    LocallyOfFinitePresentation (Spec.map (CommRingCat.ofHom (algebraMap R S))) :=
+  HasRingHomProperty.Spec_iff.mpr (RingHom.finitePresentation_algebraMap.mpr inferInstance)
 
 end AlgebraicGeometry
 
