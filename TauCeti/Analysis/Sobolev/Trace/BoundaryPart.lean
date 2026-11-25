@@ -9,8 +9,9 @@ public import TauCeti.Analysis.Sobolev.Trace.Kernel
 public import TauCeti.Analysis.Sobolev.Trace.Multiplication
 public import TauCeti.Analysis.Sobolev.Trace.Translation
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
-import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.SpecialFunctions.LinearCutoff
 import TauCeti.Analysis.Sobolev.Wkp.Translation
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # Functions whose half-space trace vanishes on a half-hyperplane
@@ -37,8 +38,8 @@ vanishes on `K`, and the trace is continuous. For the other, let `w` be the refl
 of `u` and fix `e` with `ℓ e = 1`. For `τ > 0` the tangential translate
 `w_τ = w (· - (0, τ e))` restricts to a function `v_τ` on `H` whose trace vanishes on the larger
 region `{ℓ < c + τ}` (`TauCeti.W1p.hyperplaneTrace_translate`), and `v_τ → u` as `τ → 0`. A smooth
-cutoff `χ` of the coordinate `ℓ x.snd`, vanishing on `{ℓ ≤ c + τ / 3}` and equal to one on
-`{ℓ ≥ c + 2τ / 3}`, splits `v_τ = (v_τ - χ v_τ) + χ v_τ`.
+cutoff `χ` of the coordinate `ℓ x.snd` (`TauCeti.linearCutoff`), vanishing on `{ℓ ≤ c + τ / 3}`
+and equal to one on `{ℓ ≥ c + 2τ / 3}`, splits `v_τ = (v_τ - χ v_τ) + χ v_τ`.
 
 * The trace of `v_τ - χ v_τ` is `(1 - χ) Tr v_τ`, which vanishes everywhere, so this part lies in
   `W^{1,p}_0(H)` by the kernel theorem `TauCeti.W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero`;
@@ -59,64 +60,14 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open MeasureTheory Set TopologicalSpace Filter Topology
 open scoped ENNReal Gradient Distributions ContDiff
 
+namespace TauCeti
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-! ### A cutoff in a tangential linear coordinate -/
-
-/-- The cutoff `x ↦ σ(δ⁻¹ (ℓ x.snd - s))`, where `σ` is `Real.smoothTransition`. For `δ > 0` it
-vanishes on `{ℓ x.snd ≤ s}` and is one on `{ℓ x.snd ≥ s + δ}`. -/
-private def tangentialCutoff (ℓ : E →L[ℝ] ℝ) (s δ : ℝ) (x : WithLp 2 (ℝ × E)) : ℝ :=
-  Real.smoothTransition (δ⁻¹ * (ℓ x.snd - s))
-
-private theorem hasFDerivAt_tangentialCutoff (ℓ : E →L[ℝ] ℝ) (s δ : ℝ) (x : WithLp 2 (ℝ × E)) :
-    HasFDerivAt (tangentialCutoff ℓ s δ)
-      (deriv Real.smoothTransition (δ⁻¹ * (ℓ x.snd - s)) •
-        δ⁻¹ • ℓ.comp (WithLp.sndL 2 ℝ ℝ E)) x := by
-  have hg : HasFDerivAt (fun y : WithLp 2 (ℝ × E) => δ⁻¹ * (ℓ y.snd - s))
-      (δ⁻¹ • ℓ.comp (WithLp.sndL 2 ℝ ℝ E)) x :=
-    ((ℓ.comp (WithLp.sndL 2 ℝ ℝ E)).hasFDerivAt.sub_const s).const_mul δ⁻¹
-  exact (((Real.smoothTransition.contDiff (n := 1)).differentiable one_ne_zero _).hasDerivAt
-    |>.comp_hasFDerivAt x hg)
-
-private theorem contDiff_tangentialCutoff (ℓ : E →L[ℝ] ℝ) (s δ : ℝ) :
-    ContDiff ℝ ∞ (tangentialCutoff ℓ s δ) :=
-  Real.smoothTransition.contDiff.comp
-    (contDiff_const.mul ((ℓ.comp (WithLp.sndL 2 ℝ ℝ E)).contDiff.sub contDiff_const))
-
-private theorem tangentialCutoff_eq_one {ℓ : E →L[ℝ] ℝ} {s δ : ℝ} (hδ : 0 < δ)
-    {x : WithLp 2 (ℝ × E)} (hx : s + δ ≤ ℓ x.snd) : tangentialCutoff ℓ s δ x = 1 :=
-  Real.smoothTransition.one_of_one_le (by
-    rw [inv_mul_eq_div, le_div_iff₀ hδ]
-    linarith)
-
-private theorem tsupport_tangentialCutoff_subset (ℓ : E →L[ℝ] ℝ) (s : ℝ) {δ : ℝ} (hδ : 0 < δ) :
-    tsupport (tangentialCutoff ℓ s δ) ⊆ {x | s ≤ ℓ x.snd} := by
-  refine closure_minimal (fun x hx => ?_)
-    (isClosed_le continuous_const ((ℓ.comp (WithLp.sndL 2 ℝ ℝ E)).continuous))
-  by_contra hlt
-  refine hx (Real.smoothTransition.zero_of_nonpos ?_)
-  exact mul_nonpos_of_nonneg_of_nonpos (inv_nonneg.2 hδ.le)
-    (sub_nonpos.2 (not_le.1 hlt).le)
-
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-private theorem exists_tangentialCutoff_bound (ℓ : E →L[ℝ] ℝ) (s δ : ℝ) :
-    ∃ M, 0 ≤ M ∧ (∀ x, |tangentialCutoff ℓ s δ x| ≤ M) ∧
-      ∀ x, ‖∇ (tangentialCutoff ℓ s δ) x‖ ≤ M := by
-  obtain ⟨B, hB⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
-  refine ⟨max 1 (B * (|δ⁻¹| * ‖ℓ.comp (WithLp.sndL 2 ℝ ℝ E)‖)), zero_le_one.trans
-    (le_max_left _ _), fun x => ?_, fun x => ?_⟩
-  · rw [tangentialCutoff, abs_of_nonneg (Real.smoothTransition.nonneg _)]
-    exact (Real.smoothTransition.le_one _).trans (le_max_left _ _)
-  · rw [norm_gradient_eq_norm_fderiv, (hasFDerivAt_tangentialCutoff ℓ s δ x).fderiv, norm_smul,
-      norm_smul, Real.norm_eq_abs δ⁻¹]
-    exact (mul_le_mul_of_nonneg_right (hB _) (by positivity)).trans (le_max_right _ _)
 
 /-! ### The restricted test functions vanishing near `K` -/
 
@@ -240,9 +191,12 @@ private theorem mem_closure_vanishingNear_of_ae_eq_zero (hp : p ≠ (∞ : ℝ�
     (hw : ∀ᵐ y ∂(volume : Measure E), ℓ y < c + τ →
       W1p.halfSpaceTrace hp a (W1p.restrictL le_top w) y = 0) :
     W1p.restrictL le_top w ∈ closure (SetLike.coe (vanishingNear p a c ℓ)) := by
-  set χ := tangentialCutoff ℓ (c + τ / 3) (τ / 3)
-  have hχ := contDiff_tangentialCutoff ℓ (c + τ / 3) (τ / 3)
-  obtain ⟨M, hM, hχM, hgradM⟩ := exists_tangentialCutoff_bound ℓ (c + τ / 3) (τ / 3)
+  set L := ℓ.comp (WithLp.sndL 2 ℝ ℝ E)
+  set χ := linearCutoff L (3 / τ) (c + τ / 3)
+  have hχ := contDiff_linearCutoff L (3 / τ) (c + τ / 3)
+  obtain ⟨M, hM, hχM, hderivM⟩ := exists_linearCutoff_bound L (3 / τ) (c + τ / 3)
+  have hgradM : ∀ x, ‖∇ χ x‖ ≤ M := fun x =>
+    (norm_gradient_eq_norm_fderiv χ x).trans_le (hderivM x)
   set v := W1p.restrictL (U := normalHalfSpace (E := E) a) le_top w
   set χv := W1p.contDiffSMul χ hχ hM (fun x _ => hχM x) (fun x _ => hgradM x) v
   -- The cutoff part is the restriction of `χ w`.
@@ -265,12 +219,15 @@ private theorem mem_closure_vanishingNear_of_ae_eq_zero (hp : p ≠ (∞ : ℝ�
     rw [h₃, h₄, Pi.sub_apply, h₂, Pi.zero_apply]
     by_cases hy : ℓ y < c + τ
     · rw [h₁ hy, mul_zero, sub_zero]
-    · rw [tangentialCutoff_eq_one (by positivity) (by simp only [WithLp.toLp_snd]; linarith),
-        one_mul, sub_self]
+    · rw [linearCutoff_eq_one (by
+          rw [div_mul_eq_mul_div, le_div_iff₀ hτ]
+          simp only [L, ContinuousLinearMap.coe_comp, Function.comp_apply, WithLp.sndL_apply,
+            WithLp.toLp_snd]
+          linarith), one_mul, sub_self]
   have hχK : Disjoint (tsupport χ) {x : WithLp 2 (ℝ × E) | x.fst = a ∧ ℓ x.snd ≤ c} :=
     Set.disjoint_left.2 fun x hx hxK => by
       have h : c + τ / 3 ≤ ℓ x.snd :=
-        tsupport_tangentialCutoff_subset ℓ (c + τ / 3) (by positivity : 0 < τ / 3) hx
+        tsupport_linearCutoff_subset L (by positivity : (0 : ℝ) ≤ 3 / τ) (c + τ / 3) hx
       linarith [hxK.2]
   have hsub : v = (v - χv) + χv := (sub_add_cancel v χv).symm
   rw [hsub]
@@ -301,26 +258,12 @@ private theorem halfSpaceTrace_ae_eq_zero_of_mem_closure_vanishingNear (hp : p �
     {u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p}
     (hu : u ∈ closure (SetLike.coe (vanishingNear p a c ℓ))) :
     ∀ᵐ y ∂(volume : Measure E), ℓ y < c → W1p.halfSpaceTrace hp a u y = 0 := by
-  let R := (LpToLpRestrictCLM E ℝ ℝ (volume : Measure E) p {y | ℓ y < c}).comp
-    (W1p.halfSpaceTrace hp a)
-  have hmeas : MeasurableSet {y : E | ℓ y < c} := measurableSet_lt ℓ.measurable measurable_const
-  have hR : ∀ v, R v = 0 ↔ ∀ᵐ y ∂(volume : Measure E), ℓ y < c →
-      W1p.halfSpaceTrace hp a v y = 0 := fun v => by
-    have h := LpToLpRestrictCLM_coeFn ℝ {y : E | ℓ y < c} (W1p.halfSpaceTrace hp a v)
-    rw [Lp.eq_zero_iff_ae_eq_zero]
-    constructor
-    · intro h0
-      refine (ae_restrict_iff' hmeas).1 ?_
-      filter_upwards [h, h0] with y h₁ h₂
-      exact h₁.symm.trans h₂
-    · intro h0
-      filter_upwards [h, (ae_restrict_iff' hmeas).2 h0] with y h₁ h₂
-      exact h₁.trans h₂
-  rw [← hR]
-  refine closure_minimal (s := SetLike.coe (vanishingNear p a c ℓ)) (t := {v | R v = 0}) ?_
-    (isClosed_eq R.continuous continuous_const) hu
+  have hclosed := (Lp.isClosed_setOf_ae_notMem_imp_eq_zero (μ := (volume : Measure E)) (F := ℝ)
+    (p := p) {y | c ≤ ℓ y}).preimage (W1p.halfSpaceTrace hp a).continuous
+  have h := closure_minimal (s := SetLike.coe (vanishingNear p a c ℓ)) ?_ hclosed hu
+  · simpa only [mem_preimage, mem_ofPred_eq, not_le] using h
   rintro _ ⟨φ, hφ, rfl⟩
-  refine (hR _).2 ?_
+  simp only [mem_preimage, mem_ofPred_eq, not_le]
   rw [W1p.halfSpaceTrace_restrictL]
   filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae hp a φ] with y hy hyc
   rw [hy]

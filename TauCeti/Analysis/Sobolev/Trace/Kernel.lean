@@ -113,7 +113,7 @@ private theorem restrictL_normalTranslate_mem_w1p0Submodule (hp : p ≠ (∞ : �
     (hw : ∀ᵐ x ∂volume, x ∉ normalHalfSpace (E := E) a → W1p.value w x = 0) :
     W1p.restrictL le_top (normalTranslate s w) ∈
       w1p0Submodule volume (normalHalfSpace (E := E) a) p := by
-  obtain ⟨M, hM, hθM, hθgradM⟩ := exists_normalCutoff_bound (E := E) a (c := 2 / s) (by positivity)
+  obtain ⟨M, hM, hθM, hθgradM⟩ := exists_normalCutoff_bound (E := E) a (2 / s)
   have h := W1p.restrictL_contDiffSMul_mem_w1p0Submodule hp (contDiff_normalCutoff a (2 / s)) hM
     (fun x _ => hθM x) (fun x _ => hθgradM x) (tsupport_normalCutoff_subset a (by positivity))
     (normalTranslate s w)
