@@ -322,13 +322,6 @@ private theorem exists_perm_pow_apply_eq (hρ : 0 < ρ) (hc : IsPrimitiveRoot c 
     have h1 : u (σ i) (c ^ j * ζ) = u i (c * (c ^ j * ζ)) := hσ i ((), c ^ j * ζ) ⟨trivial, hcζ⟩
     rw [pow_succ, Equiv.Perm.mul_apply, ih (σ i) ζ hζ, h1, pow_succ', mul_assoc]
 
-/-- A power `σʲ` of a permutation fixes `a` exactly when the length of the cycle of `a` divides
-`j`. -/
-private theorem pow_apply_eq_self_iff_minimalPeriod_dvd {a : Fin m} {j : ℕ} :
-    (σ ^ j) a = a ↔ Function.minimalPeriod σ a ∣ j := by
-  rw [← Function.isPeriodicPt_iff_minimalPeriod_dvd, Function.IsPeriodicPt, Function.IsFixedPt,
-    Equiv.Perm.coe_pow]
-
 /-- Under a rotation of the labels as in `exists_perm_pow_apply_eq`, every label comes back to
 itself after `n` rotations: the length `k` of its cycle divides `n`, and `k` and `n / k` are
 positive. -/
@@ -340,7 +333,8 @@ private theorem minimalPeriod_dvd_and_pos (hρ : 0 < ρ) (hc : IsPrimitiveRoot c
   have hζ : ((ρ / 2 : ℝ) : ℂ) ∈ ball (0 : ℂ) ρ := by
     rw [mem_ball_zero_iff, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
     linarith
-  have hk : Function.minimalPeriod σ i ∣ n := pow_apply_eq_self_iff_minimalPeriod_dvd.1 <|
+  have hk : Function.minimalPeriod σ i ∣ n :=
+    (MulAction.pow_smul_eq_iff_minimalPeriod_dvd (a := σ) (b := i)).1 <|
     hinj _ hζ (by simpa using hρ.ne') (a₁ := (σ ^ n) i) (a₂ := i) (by
       simp only
       rw [hσ n i _ hζ, hc.pow_eq_one, one_mul])
@@ -378,7 +372,8 @@ private theorem apply_rootsOfUnity_smul_eq (hρ : 0 < ρ) (hc : IsPrimitiveRoot 
     |>.eq_pow_of_pow_eq_one (ξ := ((ξ : ℂˣ) : ℂ))
     (by rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity _ _).1 ξ.prop, Units.val_one])
   rw [Subgroup.smul_def, Units.smul_def, smul_eq_mul, ← hj, ← pow_mul, ← hσ _ _ _ hζ,
-    pow_apply_eq_self_iff_minimalPeriod_dvd.2 (dvd_mul_right _ j)]
+    ← Equiv.Perm.smul_def, (MulAction.pow_smul_eq_iff_minimalPeriod_dvd (a := σ) (b := a)
+      (n := Function.minimalPeriod σ a * j)).2 (dvd_mul_right _ j)]
 
 /-- The descended branch of `a` reads `u_a` on the disc `ball 0 ρⁿ`: each `t` there is `ζᵈ` for
 some `ζ ∈ ball 0 ρ`, `d = n / k` with `k` the length of the cycle of `a`, and then `tᵏ = ζⁿ` and
@@ -477,7 +472,8 @@ private theorem sameCycle_and_eq_of_descendPow_eq (hρ : 0 < ρ) (hρ1 : ρ ≤ 
   refine ⟨⟨j, by simpa using hj⟩, fun haa ↦ ?_⟩
   subst haa
   -- `σʲ` fixes `a`, so `j` is a multiple of the cycle length `k` and `cʲ` is a `d`-th root of 1
-  obtain ⟨l, rfl⟩ := pow_apply_eq_self_iff_minimalPeriod_dvd.1 hj
+  obtain ⟨l, rfl⟩ : Function.minimalPeriod σ a' ∣ j :=
+    (MulAction.pow_smul_eq_iff_minimalPeriod_dvd (a := σ) (b := a')).1 hj
   set k := Function.minimalPeriod σ a'
   have hcl : (c ^ (k * l) * ζ) ^ (n / k) = (c ^ (k * (n / k))) ^ l * ζ ^ (n / k) := by ring
   rw [← hζt', ← hζt, hζ', hcl,

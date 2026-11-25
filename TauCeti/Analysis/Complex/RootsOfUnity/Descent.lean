@@ -140,13 +140,10 @@ theorem continuousOn_descendPow [TopologicalSpace E] {s : Set ℂ} {f : ℂ → 
     (hfc : ContinuousOn f s) (hf : ∀ u ∈ s, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u) :
     ContinuousOn (descendPow m f) ((· ^ m) '' s) := by
   rintro _ ⟨u, hu, rfl⟩
-  refine ContinuousAt.continuousWithinAt ?_
-  have heq : f =ᶠ[𝓝 u] fun v ↦ descendPow m f (v ^ m) :=
+  have heq : f =ᶠ[𝓝 u] descendPow m f ∘ (· ^ m) :=
     (hs.eventually_mem hu).mono fun v hv ↦ (descendPow_pow (hf v hv)).symm
-  have ht := (hfc.continuousAt (hs.mem_nhds hu)).tendsto.congr' heq
-  rw [← descendPow_pow (hf u hu)] at ht
-  exact (tendsto_map'_iff (g := (· ^ m)).mpr ht).mono_left
-    ((Complex.isOpenQuotientMap_pow m).isOpenMap.nhds_le u)
+  exact ((Complex.isOpenQuotientMap_pow m).continuousAt_comp_iff.1
+    ((hfc.continuousAt (hs.mem_nhds hu)).congr_of_eventuallyEq heq.symm)).continuousWithinAt
 
 variable [NormedAddCommGroup E] [NormedSpace ℂ E]
 
