@@ -41,7 +41,8 @@ subalgebra of `B(E ⊗₂ F)`.
 ## Main declarations
 
 * `TauCeti.spatialTensorLinearMap`: the linear map `B(E, E') ⊗[𝕜] B(F, F') → B(E ⊗₂ F, E' ⊗₂ F')`,
-  with `TauCeti.spatialTensorLinearMap_injective`.
+  with its matrix coefficients `TauCeti.inner_spatialTensorLinearMap` and
+  `TauCeti.spatialTensorLinearMap_injective`.
 * `NonUnitalStarSubalgebra.spatialTensorHom A B`: the star homomorphism `A ⊗[𝕜] B → B(E ⊗₂ F)`,
   with `NonUnitalStarSubalgebra.spatialTensorHom_tmul` and
   `NonUnitalStarSubalgebra.spatialTensorHom_injective`.
@@ -54,6 +55,8 @@ subalgebra of `B(E ⊗₂ F)`.
 * `NonUnitalStarSubalgebra.minTensor A B`: the spatial tensor product `A ⊗_min B`, with
   `NonUnitalStarSubalgebra.isClosed_minTensor`, `NonUnitalStarSubalgebra.minTensor_le` and
   `NonUnitalStarSubalgebra.mapLCompletion_mem_minTensor`.
+* `NonUnitalStarSubalgebra.toMinTensor A B`: the star homomorphism `A ⊗[𝕜] B → A ⊗_min B`, with
+  `NonUnitalStarSubalgebra.norm_toMinTensor` and `NonUnitalStarSubalgebra.denseRange_toMinTensor`.
 
 ## References
 
@@ -91,7 +94,7 @@ theorem spatialTensorLinearMap_tmul (a : E →L[𝕜] E') (b : F →L[𝕜] F') 
 /-- Testing `a ⊗ b` on `ξ ⊗ η` against `ξ' ⊗ η'` gives `⟪ξ', a ξ⟫ ⟪η', b η⟫`: for every `x`, the
 matrix coefficient of `spatialTensorLinearMap x` is that of the operator in `B(F, F')` obtained by
 applying the vector functional `a ↦ ⟪ξ', a ξ⟫` to the first factor of `x`. -/
-private theorem inner_spatialTensorLinearMap (ξ : E) (ξ' : E') (η : F) (η' : F')
+theorem inner_spatialTensorLinearMap (ξ : E) (ξ' : E') (η : F) (η' : F')
     (x : (E →L[𝕜] E') ⊗[𝕜] (F →L[𝕜] F')) :
     ⟪((ξ' ⊗ₜ η' : E' ⊗[𝕜] F') : Completion (E' ⊗[𝕜] F')),
         spatialTensorLinearMap 𝕜 E F E' F' x ((ξ ⊗ₜ η : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F))⟫_𝕜 =
@@ -257,6 +260,7 @@ theorem isClosed_minTensor :
   isClosed_topologicalClosure _
 
 /-- The spatial tensor product contains the image of the algebraic tensor product. -/
+@[simp]
 theorem spatialTensorHom_mem_minTensor (x : A ⊗[𝕜] B) : spatialTensorHom A B x ∈ minTensor A B :=
   le_topologicalClosure _ ⟨x, rfl⟩
 
@@ -272,5 +276,28 @@ theorem minTensor_le
 theorem mapLCompletion_mem_minTensor {a : E →L[𝕜] E} {b : F →L[𝕜] F} (ha : a ∈ A) (hb : b ∈ B) :
     mapLCompletion a b ∈ minTensor A B := by
   simpa using spatialTensorHom_mem_minTensor A B (⟨a, ha⟩ ⊗ₜ ⟨b, hb⟩)
+
+/-- The spatial tensor homomorphism with codomain the spatial tensor product,
+`A ⊗[𝕜] B → A ⊗_min B`. -/
+def toMinTensor : A ⊗[𝕜] B →⋆ₙₐ[𝕜] minTensor A B :=
+  NonUnitalStarAlgHom.codRestrict (spatialTensorHom A B) (minTensor A B)
+    (spatialTensorHom_mem_minTensor A B)
+
+/-- As an operator on `E ⊗₂ F`, `toMinTensor A B x` is `spatialTensorHom A B x`. -/
+@[simp]
+theorem coe_toMinTensor (x : A ⊗[𝕜] B) :
+    (toMinTensor A B x : Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F)) =
+      spatialTensorHom A B x :=
+  (rfl)
+
+/-- The norm of `x` in the spatial tensor product is its spatial norm. -/
+theorem norm_toMinTensor (x : A ⊗[𝕜] B) : ‖toMinTensor A B x‖ = spatialNorm A B x := by
+  rw [spatialNorm_def, ← coe_toMinTensor, AddSubgroupClass.coe_norm]
+
+/-- The algebraic tensor product is dense in the spatial tensor product. -/
+theorem denseRange_toMinTensor : DenseRange (toMinTensor A B) := by
+  -- `A ⊗_min B` is by definition the closure of the range of `spatialTensorHom A B`.
+  rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
+  exact subset_rfl
 
 end NonUnitalStarSubalgebra
