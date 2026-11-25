@@ -44,10 +44,12 @@ theorem monomialWord_def (α : Fin m → ℕ) :
   (rfl)
 
 /-- The ordered monomial word of `α` has length `|α|`. -/
+@[simp]
 theorem length_monomialWord (α : Fin m → ℕ) : (monomialWord α).length = ∑ i, α i := by
   simp [monomialWord, List.length_flatMap, Fin.sum_univ_def]
 
 /-- The letter `i` occurs `α i` times in the ordered monomial word of `α`. -/
+@[simp]
 theorem count_monomialWord (α : Fin m → ℕ) (i : Fin m) : (monomialWord α).count i = α i := by
   rw [monomialWord, List.count_flatMap, ← Fin.sum_univ_def]
   simp [List.count_replicate]

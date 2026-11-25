@@ -43,22 +43,18 @@ section PowerProducts
 
 variable {A : Type x} [Semiring A] [Algebra R A]
 
-private theorem pbwMonomial_flatMap_replicate {n : ℕ} (e : Fin n → L)
-    (c : Fin n → ℕ) (l : List (Fin n)) :
-    pbwMonomial R L e (l.flatMap fun i ↦ List.replicate (c i) i) =
-      (l.map fun i ↦ _root_.UniversalEnvelopingAlgebra.ι R (e i) ^ c i).prod := by
-  induction l with
-  | nil => simp
-  | cons i l ih =>
-      rw [List.flatMap_cons, pbwMonomial_append, List.map_cons, List.prod_cons, ih]
-      simp [pbwMonomial_def]
-
-private theorem pbwMonomial_monomialWord {n : ℕ} (e : Fin n → L) (c : Fin n → ℕ) :
+/-- The ordered PBW monomial of the ordered monomial word of `c` is the ordered product
+`X₁^{c₁} ⋯ X_n^{c_n}` of generator powers. -/
+theorem pbwMonomial_monomialWord {n : ℕ} (e : Fin n → L) (c : Fin n → ℕ) :
     pbwMonomial R L e (monomialWord c) =
       ((List.finRange n).map fun i ↦
         _root_.UniversalEnvelopingAlgebra.ι R (e i) ^ c i).prod := by
   rw [monomialWord_def]
-  exact pbwMonomial_flatMap_replicate R L e c _
+  induction List.finRange n with
+  | nil => simp
+  | cons i l ih =>
+      rw [List.flatMap_cons, pbwMonomial_append, List.map_cons, List.prod_cons, ih]
+      simp [pbwMonomial_def]
 
 /-- Ordered products of generator powers span every surjective image of an enveloping algebra.
 Only a spanning family of the Lie algebra and a compatible scalar action on the target are
