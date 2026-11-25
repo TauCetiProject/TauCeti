@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Etale.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Quotient
+public import TauCeti.RingTheory.Spectrum.Prime.Point
 
 /-!
 # The conormal sequence of a formally smooth quotient
@@ -29,7 +30,9 @@ kernel of a section `P → R ⧸ I` of `Spec P → Spec R` over `V(I)`, every cl
 `Ω[P⁄R] ⧸ J • Ω[P⁄R]` is the class of `D x` for some `x ∈ J`.
 
 For a closed point of a scheme over a field whose residue field is separable over the base, this
-identifies the Zariski cotangent space `𝔪/𝔪²` with the fibre of the differentials.
+identifies the Zariski cotangent space `𝔪/𝔪²` with the fibre of the differentials. In particular,
+at a `k`-point of any `k`-algebra, with no Noetherian hypothesis, the residue field is `k` and
+`𝔪/𝔪² → κ ⊗[R] Ω[R⁄k]` is bijective for the local ring `R` at that point.
 
 ## Main results
 
@@ -41,6 +44,8 @@ identifies the Zariski cotangent space `𝔪/𝔪²` with the fibre of the diffe
   `da` for `a ∈ I` generate `Ω[P⁄R]` modulo `I • Ω[P⁄R]`.
 * `KaehlerDifferential.exists_mem_and_mk_D_eq`: if `P ⧸ J` is formally unramified over `R`, every
   class in `Ω[P⁄R] ⧸ J • Ω[P⁄R]` is the class of `D x` for some `x ∈ J`.
+* `AlgHom.kerCotangentToTensor_residueField_bijective`: for the local ring `R` of a `k`-algebra at
+  the kernel of a `k`-point, the conormal map `𝔪/𝔪² → κ ⊗[R] Ω[R⁄k]` is bijective.
 
 ## References
 
@@ -123,3 +128,25 @@ theorem exists_mem_and_mk_D_eq (J : Ideal P) [Algebra.FormallyUnramified R (P �
     TensorProduct.quotTensorEquivQuotSMul_mk_one_tmul] at hy
 
 end KaehlerDifferential
+
+namespace AlgHom
+
+variable {k A : Type*} [Field k] [CommRing A] [Algebra k A] (point : A →ₐ[k] k)
+
+attribute [local instance] RingHom.ker_isPrime
+
+/-- The residue field of a `k`-algebra at the kernel of a `k`-point is formally étale over `k`,
+being `k` itself. -/
+instance formallyEtale_residueField_ker :
+    Algebra.FormallyEtale k (RingHom.ker point).ResidueField :=
+  .of_equiv (AlgEquiv.ofBijective (Algebra.ofId k _) point.algebraMap_residueField_bijective)
+
+/-- **The conormal map at a rational point is bijective.** For the local ring `R` of a
+`k`-algebra at the kernel of a `k`-point, `𝔪/𝔪² → κ ⊗[R] Ω[R⁄k]` is bijective, with no Noetherian
+hypothesis. -/
+theorem kerCotangentToTensor_residueField_bijective :
+    Bijective (KaehlerDifferential.kerCotangentToTensor k
+      (Localization.AtPrime (RingHom.ker point)) (RingHom.ker point).ResidueField) :=
+  KaehlerDifferential.kerCotangentToTensor_bijective_of_formallyEtale IsLocalRing.residue_surjective
+
+end AlgHom

@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Topology.MetricSpace.Pseudo.Basic
 
 /-!
-# Uniform convergence and uniform Cauchy criteria from distance bounds
+# Uniform convergence, uniform Cauchy and separation criteria from distance bounds
 
 A family of functions into a pseudometric space whose distance to a limit function on `s` is
 eventually bounded by a quantity tending to `0` converges uniformly on `s`
@@ -21,6 +21,10 @@ whose uniform distance on `s` is eventually bounded by a quantity tending to `0`
 
 For families with varying index types, multiplication by a convergent factor preserves uniform
 convergence to a constant (`Filter.Tendsto.eventually_dist_mul_le`).
+
+A family of maps into a pseudometric space separates points through some entourage exactly when
+it separates them through some positive distance
+(`TauCeti.exists_separating_entourage_iff_exists_pos_dist`).
 -/
 
 public section
@@ -28,6 +32,7 @@ public section
 namespace TauCeti
 
 open Filter Topology
+open scoped Uniformity
 
 variable {ι α β : Type*} [PseudoMetricSpace β] {l : Filter ι} {F : ι → α → β} {f : α → β}
   {s : Set α} {u : ι → ℝ}
@@ -88,5 +93,25 @@ theorem _root_.Filter.Tendsto.eventually_dist_mul_le {ι β : Type*} [PseudoMetr
     ((hf.comp tendsto_comap).mul ht) ε hε
   rw [eventually_comap] at h
   exact h.mono fun i hi a ↦ hi ⟨i, a⟩ rfl
+
+/-- A family `g` of maps from a type `α` into a pseudometric space `β` separates points through
+some entourage exactly when it separates them through some distance `δ > 0`: two points are equal
+as soon as all their images are `U`-close, if and only if distinct points have images more than `δ`
+apart. -/
+theorem exists_separating_entourage_iff_exists_pos_dist (g : ι → α → β) :
+    (∃ U ∈ 𝓤 β, ∀ x y : α, (∀ i, (g i x, g i y) ∈ U) → x = y) ↔
+      ∃ δ > 0, ∀ x y : α, x ≠ y → ∃ i, δ < dist (g i x) (g i y) := by
+  constructor
+  · rintro ⟨U, hU, hsep⟩
+    obtain ⟨ε, hε, hεU⟩ := Metric.mem_uniformity_dist.1 hU
+    refine ⟨ε / 2, half_pos hε, fun x y hxy ↦ ?_⟩
+    by_contra! h
+    exact hxy (hsep x y fun i ↦ hεU ((h i).trans_lt (half_lt_self hε)))
+  · rintro ⟨δ, hδ, hsep⟩
+    refine ⟨{p | dist p.1 p.2 ≤ δ}, Metric.mem_uniformity_dist.2 ⟨δ, hδ, fun _ _ h ↦ h.le⟩,
+      fun x y h ↦ ?_⟩
+    by_contra hxy
+    obtain ⟨i, hi⟩ := hsep x y hxy
+    exact (h i).not_gt hi
 
 end TauCeti

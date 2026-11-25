@@ -141,11 +141,12 @@ theorem hasSum_norm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖) ‖y‖ := b
   simpa using lp.hasSum_norm (p := 1) (by simp) y
 
 /-- **The `ℓᵖ` norms decrease in the exponent.** For `0 < p ≤ q`, a sequence `f ∈ ℓᵖ` lies in
-`ℓ^q` (`Memℓp.of_exponent_ge`), and its `ℓ^q` norm is at most its `ℓᵖ` norm. -/
+`ℓ^q` (`Memℓp.of_exponent_ge`), and its `ℓ^q` norm is at most its `ℓᵖ` norm. More generally, the
+`ℓ^q` norm of any `g` dominated coordinatewise by `f` is at most the `ℓᵖ` norm of `f`. -/
 theorem norm_le_norm_of_exponent_le {q : ℝ≥0∞} (hp : p ≠ 0) (hpq : p ≤ q) {f : lp E p}
-    {g : lp E q} (hfg : ∀ i, g i = f i) : ‖g‖ ≤ ‖f‖ := by
+    {g : lp E q} (hfg : ∀ i, ‖g i‖ ≤ ‖f i‖) : ‖g‖ ≤ ‖f‖ := by
   rcases eq_or_ne q ∞ with rfl | hq
-  · exact norm_le_of_forall_le (norm_nonneg' f) fun i ↦ (hfg i).symm ▸ norm_apply_le_norm hp f i
+  · exact norm_le_of_forall_le (norm_nonneg' f) fun i ↦ (hfg i).trans (norm_apply_le_norm hp f i)
   have hpr : 0 < p.toReal := ENNReal.toReal_pos hp (ne_top_of_le_ne_top hq hpq)
   have hpq' : p.toReal ≤ q.toReal := ENNReal.toReal_mono hq hpq
   have hqr : 0 < q.toReal := hpr.trans_le hpq'
@@ -156,7 +157,8 @@ theorem norm_le_norm_of_exponent_le {q : ℝ≥0∞} (hp : p ≠ 0) (hpq : p ≤
   calc ∑ i ∈ s, ‖g i‖ ^ q.toReal
       ≤ ∑ i ∈ s, ‖f‖ ^ (q.toReal - p.toReal) * ‖f i‖ ^ p.toReal := by
         gcongr with i
-        rw [hfg i, hsplit _ (norm_nonneg _)]
+        grw [hfg i]
+        rw [hsplit _ (norm_nonneg _)]
         gcongr
         exact norm_apply_le_norm hp f i
     _ = ‖f‖ ^ (q.toReal - p.toReal) * ∑ i ∈ s, ‖f i‖ ^ p.toReal := (Finset.mul_sum ..).symm
@@ -170,7 +172,7 @@ theorem norm_le_tsum_norm [Fact (1 ≤ p)] (f : lp E p)
     (hf : Summable fun i ↦ ‖f i‖) : ‖f‖ ≤ ∑' i, ‖f i‖ := by
   -- The same sequence, viewed in `ℓ¹`, where its norm is the sum of the norms of its coordinates.
   let g : lp E 1 := ⟨f, memℓp_gen (by simpa using hf)⟩
-  calc ‖f‖ ≤ ‖g‖ := norm_le_norm_of_exponent_le one_ne_zero Fact.out fun _ ↦ rfl
+  calc ‖f‖ ≤ ‖g‖ := norm_le_norm_of_exponent_le one_ne_zero Fact.out fun _ ↦ le_rfl
     _ = ∑' i, ‖f i‖ := (hasSum_norm_one g).tsum_eq.symm
 
 /-- The extended ℓ¹ norm is the sum of the extended norms of the coordinates. -/

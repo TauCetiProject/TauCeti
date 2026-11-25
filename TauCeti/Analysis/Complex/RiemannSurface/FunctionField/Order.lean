@@ -172,6 +172,13 @@ theorem coe_coeff_principalDivisor_orderSystem (u : Additive (MeromorphicFunctio
       order x (u.toMul : MeromorphicFunction X) := by
   rw [OrderSystem.coeff_principalDivisor, coe_ord_orderSystem]
 
+/-- The order at `x` of a nonzero meromorphic function `f` is the coefficient at `x` of its
+principal divisor. -/
+theorem order_eq_principalDivisor_mk0 (hf : f ≠ 0) (x : X) :
+    order x f =
+      ((orderSystem X).principalDivisor (Additive.ofMul (Units.mk0 f hf)) x : WithTop ℤ) := by
+  rw [← WeilDivisor.coeff, coe_coeff_principalDivisor_orderSystem, toMul_ofMul, Units.val_mk0]
+
 /-- The divisor of a nonzero meromorphic function has positive coefficient exactly at its
 zeros. -/
 theorem coeff_principalDivisor_orderSystem_pos_iff {u : Additive (MeromorphicFunction X)ˣ}
