@@ -89,7 +89,7 @@ theorem cohomological_weilOperator_J₀ :
 theorem isPolarization_cohomological_J₀ :
     IsPolarization (isBaseChange_dualLatticeMap hℂ) (RiemannForm.cohomological J₀ hℂ)
       ((-E₀).scaledDualForm isRiemannForm_E₀.injective_neg 1
-        IsRiemannForm.one_smul_mem_range_neg) :=
+        E₀.one_smul_mem_range_neg_of_isPerfPair) :=
   isRiemannForm_E₀.isPolarization_cohomological_one hℂ
 
 /-- The doubled form `E = 2 E₀`. -/
@@ -106,7 +106,7 @@ theorem two_smul_mem_range_E (η : Module.Dual ℤ Λ) : (2 : ℤ) • η ∈ Li
 theorem isPolarization_cohomological_E :
     IsPolarization (isBaseChange_dualLatticeMap hℂ) (RiemannForm.cohomological J₀ hℂ)
       ((-E).scaledDualForm isRiemannForm_E.injective_neg 2
-        (by simpa [LinearMap.range_neg] using two_smul_mem_range_E)) :=
+        (E.smul_mem_range_neg 2 two_smul_mem_range_E)) :=
   isRiemannForm_E.isPolarization_cohomological hℂ two_smul_mem_range_E two_pos
 
 end TauCeti.CohomologicalHodgeExamples
