@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 import Mathlib.Algebra.FiveLemma
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import Mathlib.RingTheory.TensorProduct.Pi
 import TauCeti.Algebra.Exact.Pi
 
 /-!
@@ -38,6 +39,8 @@ finitely presented.
 * `TensorProduct.piScalarRight_tmul_eq_smul`: for a commutative `R`-algebra `A`, the
   identification `A ⊗[R] (ι → R) ≃ (ι → A)` sends `a ⊗ v` to `a` times `v` with coordinates
   mapped into `A`.
+* `TensorProduct.piScalarRight_symm_algebraMap_apply`: conversely, a vector with coordinates
+  mapped from `R` corresponds to the pure tensor `1 ⊗ v`.
 
 ## References
 
@@ -75,6 +78,14 @@ theorem piScalarRight_tmul_eq_smul (a : A) (v : ι → R) :
     piScalarRight R A A ι (a ⊗ₜ v) = a • fun i ↦ algebraMap R A (v i) := by
   ext i
   simp [_root_.Algebra.smul_def, mul_comm]
+
+/-- A vector with coordinates mapped from `R` corresponds to the pure tensor `1 ⊗ v`. This is
+Mathlib's `TensorProduct.piScalarRight_symm_algebraMap` with the vector written coordinatewise,
+the form in which it can be rewritten with. -/
+theorem piScalarRight_symm_algebraMap_apply {S N : Type*} [CommSemiring S] [Algebra R S]
+    [Semiring N] [Algebra R N] [Module S N] [IsScalarTower R S N] (v : ι → R) :
+    (piScalarRight R S N ι).symm (fun i ↦ algebraMap R N (v i)) = 1 ⊗ₜ v :=
+  piScalarRight_symm_algebraMap R S ι v
 
 end PiScalarRight
 

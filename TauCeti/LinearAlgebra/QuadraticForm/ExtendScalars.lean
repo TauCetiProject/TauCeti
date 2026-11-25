@@ -101,17 +101,7 @@ private theorem sumArrowLequivProdArrow_algebraMap (v : ι ⊕ κ → R) :
         fun i ↦ algebraMap R A ((LinearEquiv.sumArrowLequivProdArrow ι κ R R v).2 i)) :=
   rfl
 
-/-- The standard basis vector `Pi.single i 1` of `ι → A` has coordinates in `R`. -/
-private theorem pi_single_one_eq_algebraMap [DecidableEq ι] (i : ι) :
-    (Pi.single i 1 : ι → A) = fun k ↦ algebraMap R A ((Pi.single i (1 : R) : ι → R) k) :=
-  funext fun k ↦ by rw [Pi.apply_single (fun _ ↦ algebraMap R A) (fun _ ↦ map_zero _), map_one]
-
 variable [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
-
-/-- A vector of `ι → A` with coordinates in `R` corresponds to the pure tensor `1 ⊗ v`. -/
-private theorem piScalarRight_symm_algebraMap_apply (v : ι → R) :
-    (piScalarRight R A A ι).symm (fun i ↦ algebraMap R A (v i)) = 1 ⊗ₜ v :=
-  piScalarRight_symm_algebraMap R A ι v
 
 /-- The cross term `polar Q (eᵢ, eⱼ) xᵢ xⱼ` of an unordered pair of coordinates, with its
 coefficient mapped into `A`. -/
@@ -221,8 +211,8 @@ theorem toMatrix'_polarBilin_extendScalars (Q : QuadraticForm R (ι → R)) :
       (LinearMap.BilinForm.toMatrix' Q.polarBilin).map (algebraMap R A) := by
   ext i j
   simp only [LinearMap.BilinForm.toMatrix'_apply, polarBilin_apply_apply, Matrix.map_apply]
-  rw [pi_single_one_eq_algebraMap (R := R) i, pi_single_one_eq_algebraMap (R := R) j,
-    polar_extendScalars_algebraMap]
+  rw [← map_one (algebraMap R A), Pi.single_op (fun _ ↦ algebraMap R A) (fun _ ↦ map_zero _) i,
+    Pi.single_op (fun _ ↦ algebraMap R A) (fun _ ↦ map_zero _) j, polar_extendScalars_algebraMap]
 
 /-- For an injective algebra map `R → A` into an integral domain, for instance a field extension,
 scalar extension preserves and reflects nonsingularity: the polar form of the extension is
@@ -328,7 +318,11 @@ def extendScalars (f : Q₁.IsometryEquiv Q₂) (A : Type*) [CommRing A] [Algebr
     have h : Q₂.comp f.toLinearEquiv.toLinearMap = Q₁ := QuadraticMap.ext f.map_app
     have key := congr($(extendScalars_comp (A := A) Q₂ f.toLinearEquiv.toLinearMap) x)
     rw [h] at key
-    exact key.symm
+    rw [key, comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      LinearEquiv.coe_coe, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+      LinearEquiv.trans_apply,
+      ← LinearEquiv.coe_coe (e := f.toLinearEquiv.baseChange R A _ _),
+      LinearEquiv.coe_baseChange]
 
 /-- The linear equivalence underlying the extension of an isometric equivalence is the base change
 of the original linear equivalence, read in coordinates. -/
