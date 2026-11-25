@@ -440,26 +440,27 @@ end LipschitzWith
 
 namespace LocallyLipschitzOn
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-  [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] {φ : E → F} {U s : Set E}
-
-/-- For `φ` locally Lipschitz on an open set `U`, the graph parametrization `x ↦ (x, φ x)` maps
-null subsets of `U` to `H^{dim E}`-null sets. -/
-theorem euclideanHausdorffMeasure_graph_image_eq_zero (hφ : LocallyLipschitzOn U φ)
-    (hU : IsOpen U) {t : Set E} (htU : t ⊆ U) (ht : volume t = 0) :
+/-- For `φ` locally Lipschitz on a null set `t`, the graph parametrization `x ↦ (x, φ x)` maps
+`t` to an `H^{dim E}`-null set. -/
+theorem euclideanHausdorffMeasure_graph_image_eq_zero {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    [EMetricSpace F] [MeasurableSpace F] [BorelSpace F] {φ : E → F} {t : Set E}
+    (hφ : LocallyLipschitzOn t φ) (ht : volume t = 0) :
     μHE[finrank ℝ E] ((fun x ↦ WithLp.toLp 2 (x, φ x)) '' t) = 0 := by
   refine TauCeti.measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof t)
     fun x hx ↦ ?_
-  obtain ⟨K, v, hv, hφv⟩ := hφ (htU hx)
-  rw [hU.nhdsWithin_eq (htU hx)] at hv
-  obtain ⟨ψ, hψ, hφψ⟩ := hφv.extend_finite_dimension
-  refine ⟨t ∩ v, inter_mem_nhdsWithin t hv, ?_⟩
-  rw [image_congr fun y hy ↦ by rw [hφψ hy.2]]
-  refine nonpos_iff_eq_zero.1 ((hψ.graph.lipschitzOnWith.euclideanHausdorffMeasure_image_le _).trans
-    ?_)
+  obtain ⟨K, v, hv, hφv⟩ := hφ hx
+  -- The graph parametrization is `(K + 1)`-Lipschitz on `v`.
+  have hG : LipschitzOnWith (K + 1) (fun x ↦ WithLp.toLp 2 (x, φ x)) v := fun y hy z hz ↦ by
+    simpa [WithLp.prod_edist_eq_add] using hφv.to_restrict.graph ⟨y, hy⟩ ⟨z, hz⟩
+  refine ⟨t ∩ v, Filter.inter_mem self_mem_nhdsWithin hv, nonpos_iff_eq_zero.1
+    (((hG.mono inter_subset_right).euclideanHausdorffMeasure_image_le _).trans ?_)⟩
   rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
     measure_mono_null inter_subset_left ht, mul_zero]
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] {φ : E → F} {U s : Set E}
 
 /-- **Weighted integration on a locally Lipschitz graph.** For `φ : E → F` locally Lipschitz on an
 open set `U` and a measurable `s ⊆ U`, the integral of a weight `g` over the graph of `φ` above `s`,
@@ -478,15 +479,17 @@ theorem lintegral_graph_image_eq_lintegral_sqrt_det_mul (hφ : LocallyLipschitzO
   have hD : MeasurableSet (s ∩ S) := hs.inter (measurableSet_of_differentiableAt ℝ φ)
   -- The points of `s` where `φ` is not differentiable form a null set.
   have hnull : volume (s \ S) = 0 := by
-    refine measure_mono_null (fun x hx ↦ show ¬(x ∈ U → DifferentiableAt ℝ φ x) from
-      fun hd ↦ hx.2 (hd (hsU hx.1))) (ae_iff.1 (hφ.ae_differentiableAt_of_mem hU (μ := volume)))
+    refine measure_mono_null (fun x hx ↦ ?_)
+      (ae_iff.1 (hφ.ae_differentiableAt_of_mem hU (μ := volume)))
+    rw [mem_ofPred_eq]
+    exact fun hd ↦ hx.2 (hd (hsU hx.1))
   have hsD : s ∩ S =ᵐ[volume] s :=
     ae_eq_set.2 ⟨measure_mono_null (fun x hx ↦ (hx.2 hx.1.1).elim) measure_empty,
       measure_mono_null (t := s \ S) (fun x hx ↦ ⟨hx.1, fun h ↦ hx.2 ⟨hx.1, h⟩⟩) hnull⟩
   have himg : G '' s =ᵐ[μHE[finrank ℝ E]] G '' (s ∩ S) := by
     rw [← inter_union_sdiff s S, image_union, inter_union_sdiff]
     exact union_ae_eq_left_of_ae_eq_empty (ae_eq_empty.2
-      (euclideanHausdorffMeasure_graph_image_eq_zero hφ hU (sdiff_subset.trans hsU) hnull))
+      ((hφ.mono (sdiff_subset.trans hsU)).euclideanHausdorffMeasure_graph_image_eq_zero hnull))
   rw [setLIntegral_congr himg, TauCeti.lintegral_image_eq_lintegral_normDet_fderiv_mul hD
     (fun x hx ↦ hx.2.hasFDerivAt.graph.differentiableAt)
     (fun x hx ↦ by rw [hx.2.fderiv_graph]; exact ContinuousLinearMap.injective_graphL _)
