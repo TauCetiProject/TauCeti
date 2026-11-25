@@ -28,14 +28,14 @@ base-change theorem for Hopf-ideal quotients then gives the isomorphism, as for
 
 ## Main declarations
 
-* `QuadraticForm.coefficientMatrix_baseChangeForm`: the coefficient matrix of `q_K` is that of `q`
-  read in `K`.
 * `TauCeti.QuadraticOrthogonal.map_baseChangeHopfIdeal_definingHopfIdeal`: transport of the
   defining Hopf ideal along the general-linear base-change isomorphism.
 * `TauCeti.QuadraticOrthogonal.coordinateHopfAlgebraBaseChangeIso`: base change of the
   coordinate Hopf algebra of `O(q)` is that of `O(q')` for any form `q'` over `K` with the
   coefficients of `q`, in particular `q' = q_K`
   (`TauCeti.QuadraticOrthogonal.coordinateHopfAlgebraBaseChangeIsoBaseChangeForm`).
+* `TauCeti.QuadraticOrthogonal.coordinateHopfAlgebraBaseChangeIso_hom_tmul_mkQuotient`: its value
+  on a pure tensor of a class of a general-linear function.
 
 ## References
 
@@ -48,73 +48,13 @@ public section
 
 open CategoryTheory Matrix
 open scoped TensorProduct
-open QuadraticForm (coefficientMatrix baseChangeForm baseChangeForm_apply)
-
-namespace QuadraticForm
-
-variable {R : Type*} [CommRing R] {n : ℕ}
-
-/-- **The coefficients of `q_K` are those of `q`.** The coefficient matrix of the form `q_K` on
-`Kⁿ` with the coefficients of `q` is the coefficient matrix of `q` read in `K`. -/
-theorem coefficientMatrix_baseChangeForm (q : QuadraticForm R (Fin n → R)) (K : Type*)
-    [CommRing K] [Algebra R K] :
-    coefficientMatrix (baseChangeForm q K) (Pi.basisFun K (Fin n)) =
-      (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R K) := by
-  classical
-  have hlow : ∀ i j, j < i → coefficientMatrix q (Pi.basisFun R (Fin n)) i j = 0 :=
-    fun i j hji ↦ by
-      simp [coefficientMatrix_apply, ne_of_gt hji, not_lt.mpr hji.le]
-  have hsingle (i j : Fin n) : (Pi.single i 1 : Fin n → K) ⬝ᵥ
-      ((coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R K) *ᵥ Pi.single j 1) =
-        algebraMap R K (coefficientMatrix q (Pi.basisFun R (Fin n)) i j) := by
-    simp
-  ext i j
-  rw [coefficientMatrix_apply]
-  split_ifs with hij hlt
-  · subst hij
-    rw [Pi.basisFun_apply, baseChangeForm_apply, hsingle, Matrix.map_apply]
-  · rw [QuadraticMap.polar, Pi.basisFun_apply, Pi.basisFun_apply, baseChangeForm_apply,
-      baseChangeForm_apply, baseChangeForm_apply, mulVec_add, dotProduct_add, add_dotProduct,
-      add_dotProduct, hsingle, hsingle, hsingle, hsingle, hlow j i hlt, map_zero,
-      Matrix.map_apply]
-    ring
-  · rw [Matrix.map_apply, hlow i j (lt_of_le_of_ne (not_lt.mp hlt) (Ne.symm hij)), map_zero]
-
-end QuadraticForm
+open QuadraticForm (coefficientMatrix baseChangeForm)
 
 namespace TauCeti.QuadraticOrthogonal
 
 universe u v
 
-variable (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
-variable (n : ℕ)
-
-/-- The `R`-algebra structure obtained by restricting the coordinate algebra over `K`. -/
-noncomputable local instance : Algebra R (GeneralLinear.coordinateHopfAlgebra K n) :=
-  Algebra.compHom _ (algebraMap R K)
-
-/-- The coordinate algebra over `K` is a scalar tower over `R → K`. -/
-local instance : IsScalarTower R K (GeneralLinear.coordinateHopfAlgebra K n) :=
-  IsScalarTower.of_algebraMap_eq' rfl
-
-/-- The restriction of the general-linear base-change isomorphism to the original coordinate
-Hopf algebra. -/
-private noncomputable def baseChangeAlgHom :
-    GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] GeneralLinear.coordinateHopfAlgebra K n :=
-  ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom.toAlgHom.restrictScalars
-      R).comp
-    (Algebra.TensorProduct.includeRight :
-      GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] K ⊗[R] GeneralLinear.coordinateHopfAlgebra R n)
-
-/-- Applying the restricted base-change map is applying the ambient isomorphism to a scalar pure
-tensor. -/
-private theorem baseChangeAlgHom_apply (x : GeneralLinear.coordinateHopfAlgebra R n) :
-    baseChangeAlgHom R K n x =
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom (1 ⊗ₜ[R] x) := by
-  simp only [baseChangeAlgHom, AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply,
-    AlgHom.coe_restrictScalars', BialgHom.coe_toAlgHom]
-
-variable {R K n}
+variable {R : Type u} {K : Type max u v} [CommRing R] [CommRing K] [Algebra R K] {n : ℕ}
 variable {q : QuadraticForm R (Fin n → R)} {q' : QuadraticForm K (Fin n → K)}
 
 /-- The general-linear base-change isomorphism carries each scalar-extended entry of the relation
@@ -126,18 +66,24 @@ theorem coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom
         (1 ⊗ₜ[R] relationMatrix R n q i j) =
       relationMatrix K n q' i j := by
-  rw [← baseChangeAlgHom_apply R K n]
-  have hgeneric : (GeneralLinear.genericMatrix R n).map (baseChangeAlgHom R K n) =
-      GeneralLinear.genericMatrix K n := by
-    simpa only [baseChangeAlgHom] using
-      GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_genericMatrix R K n
-  have hform : (coefficientMatrix q (Pi.basisFun R (Fin n))).map
-        (algebraMap R (GeneralLinear.coordinateHopfAlgebra K n)) =
+  let φ : GeneralLinear.coordinateHopfAlgebra R n →+* GeneralLinear.coordinateHopfAlgebra K n :=
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom.toAlgHom.toRingHom.comp
+      Algebra.TensorProduct.includeRight.toRingHom
+  have hgeneric : (GeneralLinear.genericMatrix R n).map φ = GeneralLinear.genericMatrix K n :=
+    Matrix.ext (GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_one_tmul_genericMatrix R K n)
+  have hform : ((coefficientMatrix q (Pi.basisFun R (Fin n))).map
+        (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))).map φ =
       (coefficientMatrix q' (Pi.basisFun K (Fin n))).map
         (algebraMap K (GeneralLinear.coordinateHopfAlgebra K n)) := by
-    rw [← hq, Matrix.map_map, IsScalarTower.algebraMap_eq R K, RingHom.coe_comp]
-  have hmatrix := relationMatrix_map R n q (baseChangeAlgHom R K n)
-  rw [hgeneric, hform, ← relationMatrix_def K n q'] at hmatrix
+    rw [← hq, Matrix.map_map, Matrix.map_map]
+    congr 1
+    funext r
+    change (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom.toAlgHom
+        (Algebra.TensorProduct.includeRight (algebraMap R _ r)) = algebraMap K _ (algebraMap R K r)
+    rw [AlgHom.commutes, IsScalarTower.algebraMap_apply R K, AlgHom.commutes]
+  have hmatrix : (relationMatrix R n q).map φ = relationMatrix K n q' := by
+    rw [relationMatrix_def, relationMatrix_def, Matrix.map_sub _ (map_sub φ), Matrix.map_mul,
+      Matrix.map_mul, Matrix.transpose_map, hgeneric, hform]
   exact congrFun (congrFun hmatrix i) j
 
 /-- The general-linear base-change isomorphism carries the scalar-extended relation set of `q`
@@ -190,6 +136,7 @@ noncomputable def coordinateHopfAlgebraBaseChangeIso
 
 /-- The base-change isomorphism of `O(q)` is compatible with the quotient morphisms from the
 general-linear coordinate Hopf algebras. -/
+@[simp]
 theorem baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_hom
     (hq : (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R K) =
       coefficientMatrix q' (Pi.basisFun K (Fin n))) :
@@ -205,13 +152,40 @@ theorem baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_hom
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n)
     (map_baseChangeHopfIdeal_definingHopfIdeal hq)
 
+/-- On a pure tensor of a class of a general-linear function, the base-change isomorphism of
+`O(q)` is the general-linear isomorphism followed by the quotient map. -/
+theorem coordinateHopfAlgebraBaseChangeIso_hom_tmul_mkQuotient
+    (hq : (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R K) =
+      coefficientMatrix q' (Pi.basisFun K (Fin n)))
+    (s : K) (x : GeneralLinear.coordinateHopfAlgebra R n) :
+    (coordinateHopfAlgebraBaseChangeIso hq).hom.hom
+        (s ⊗ₜ[R] (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
+          (definingHopfIdeal R n q)).hom x) =
+      (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra K n)
+          (definingHopfIdeal K n q')).hom
+        ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom (s ⊗ₜ[R] x)) := by
+  have h := congrArg (fun f ↦ f.hom (s ⊗ₜ[R] x))
+    (baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_hom hq)
+  rw [_root_.CommHopfAlgCat.comp_apply, _root_.CommHopfAlgCat.comp_apply,
+    CommHopfAlgCat.baseChangeMap_apply_tmul] at h
+  exact h
+
 variable (q K) in
 /-- **Base change of `O(q)` to `O(q_K)`**: the scalar extension of the coordinate Hopf algebra of
 `O(q)` along `R → K` is the coordinate Hopf algebra of `O(q_K)`, for `q_K` the form with the
 coefficients of `q`. -/
-noncomputable abbrev coordinateHopfAlgebraBaseChangeIsoBaseChangeForm :
+noncomputable def coordinateHopfAlgebraBaseChangeIsoBaseChangeForm :
     CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra R n q) ≅
       coordinateHopfAlgebra K n (baseChangeForm q K) :=
   coordinateHopfAlgebraBaseChangeIso (QuadraticForm.coefficientMatrix_baseChangeForm q K).symm
+
+variable (q K) in
+/-- The base-change isomorphism to `O(q_K)` is the general base-change isomorphism for `q' = q_K`,
+so the compatibility lemmas for `coordinateHopfAlgebraBaseChangeIso` apply to it. -/
+theorem coordinateHopfAlgebraBaseChangeIsoBaseChangeForm_def :
+    coordinateHopfAlgebraBaseChangeIsoBaseChangeForm K q =
+      coordinateHopfAlgebraBaseChangeIso
+        (QuadraticForm.coefficientMatrix_baseChangeForm q K).symm :=
+  (rfl)
 
 end TauCeti.QuadraticOrthogonal
