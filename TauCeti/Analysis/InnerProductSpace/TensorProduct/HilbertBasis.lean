@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Spectral.Diagonal
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion
 public import TauCeti.Order.Northcott.Prod
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Order.Northcott.Comparison
 
 /-!
 # Hilbert bases of completed tensor products and tensor sums of operators
@@ -285,10 +286,9 @@ theorem hasCompactResolvent_diagonalPMap_tensorProduct {lam : ι → ℝ} {mu : 
     ((b.tensorProduct c).diagonalPMap fun p ↦ (lam p.1 : 𝕜) + mu p.2).HasCompactResolvent := by
   rw [hasCompactResolvent_diagonalPMap_iff]
   have := Northcott.prod_add lam mu
-  refine ⟨fun R ↦ (Northcott.finite_le (h := fun p : ι × κ ↦ lam p.1 + mu p.2) R).subset
-    fun p (hp : ‖(lam p.1 : 𝕜) + mu p.2‖ ≤ R) ↦ ?_⟩
-  rw [← RCLike.ofReal_add, RCLike.norm_ofReal] at hp
-  exact (le_abs_self _).trans hp
+  exact Northcott.of_le_add (h := fun p : ι × κ ↦ lam p.1 + mu p.2) 0 fun p ↦ by
+    rw [add_zero, ← RCLike.ofReal_add, RCLike.norm_ofReal]
+    exact le_abs_self _
 
 variable {b c} in
 /-- **Compact resolvent of the tensor sum of two operators.** Let `A` and `B` have compact
@@ -310,13 +310,12 @@ theorem _root_.LinearPMap.HasCompactResolvent.hasCompactResolvent_diagonalPMap_t
   -- The eigenvalue norms are Northcott, and with a lower bound so are the eigenvalues.
   have hNA := hA.northcott_norm_of_orthonormal b.orthonormal hAb
   have hNB := hB.northcott_norm_of_orthonormal c.orthonormal hBc
-  have key (a R x : ℝ) (hax : a ≤ x) (hxR : x ≤ R) : ‖(x : 𝕜)‖ ≤ max R (-a) := by
+  -- For `a ≤ x` we have `|x| ≤ x + 2 |a|`.
+  have key (a x : ℝ) (hax : a ≤ x) : ‖(x : 𝕜)‖ ≤ x + 2 * |a| := by
     rw [RCLike.norm_ofReal, abs_le]
-    exact ⟨by linarith [le_max_right R (-a)], hxR.trans (le_max_left R (-a))⟩
-  have : Northcott lam :=
-    ⟨fun R ↦ (hNA.finite_le (max R (-a))).subset fun i hi ↦ key a R _ (hlam i) hi⟩
-  have : Northcott mu :=
-    ⟨fun R ↦ (hNB.finite_le (max R (-a'))).subset fun j hj ↦ key a' R _ (hmu j) hj⟩
+    constructor <;> linarith [neg_abs_le a, le_abs_self a]
+  have : Northcott lam := Northcott.of_le_add (2 * |a|) fun i ↦ key a _ (hlam i)
+  have : Northcott mu := Northcott.of_le_add (2 * |a'|) fun j ↦ key a' _ (hmu j)
   exact HilbertBasis.hasCompactResolvent_diagonalPMap_tensorProduct b c
 
 end HilbertBasis

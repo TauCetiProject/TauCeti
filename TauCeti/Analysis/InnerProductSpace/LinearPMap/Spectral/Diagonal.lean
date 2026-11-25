@@ -33,10 +33,11 @@ its spectral data.
   diagonal operator with entries `(z - c i)⁻¹`, which tend to zero along the cofinite filter, and
   such a diagonal operator is compact (`HilbertBasis.isCompactOperator_diagonal_iff`).
 
-Diagonal operators are the self-adjoint operators with a Hilbert basis of eigenvectors
-(`IsSelfAdjoint.eq_diagonalPMap`), and they model the tensor sums `A ⊗ 1 + 1 ⊗ B` of such
-operators. The compact resolvent criterion therefore reduces the compactness of the resolvent of a
-tensor sum to counting pairs of eigenvalues (`Northcott.prod_add`).
+Every self-adjoint operator with a Hilbert basis of eigenvectors is the diagonal operator of its
+eigenvalues (`IsSelfAdjoint.eq_diagonalPMap`), and diagonal operators model the tensor sums
+`A ⊗ 1 + 1 ⊗ B` of such operators. The compact resolvent criterion therefore reduces the
+compactness of the resolvent of a tensor sum to counting pairs of eigenvalues
+(`Northcott.prod_add`).
 
 ## Main results
 
@@ -95,15 +96,14 @@ private theorem isResolventAt_diagonal_resolventEntries {δ : ℝ} (hδ : 0 < δ
   have hne (i : ι) : z - c i ≠ 0 := norm_pos_iff.1 (hδ.trans_le (hz i))
   rw [isResolventAt_iff_forall_mem_graph]
   refine ⟨fun y ↦ (b.mem_graph_diagonalPMap_iff c).2 fun i ↦ ?_, fun p hp ↦ ?_⟩
-  · rw [inner_sub_right, inner_smul_right, inner_diagonal_resolventEntries]
-    calc z * ((z - c i)⁻¹ * ⟪b i, y⟫_𝕜) - ⟪b i, y⟫_𝕜
-        = z * ((z - c i)⁻¹ * ⟪b i, y⟫_𝕜) - (z - c i) * ((z - c i)⁻¹ * ⟪b i, y⟫_𝕜) := by
-          rw [← mul_assoc (z - c i), mul_inv_cancel₀ (hne i), one_mul]
-      _ = c i * ((z - c i)⁻¹ * ⟪b i, y⟫_𝕜) := by ring
+  · simp only [inner_sub_right, inner_smul_right, inner_diagonal_resolventEntries]
+    field_simp [hne i]
+    ring
   · have hp' := (b.mem_graph_diagonalPMap_iff c).1 hp
     refine b.repr.injective (lp.ext (funext fun i ↦ ?_))
-    rw [b.repr_apply_apply, b.repr_apply_apply, inner_diagonal_resolventEntries, inner_sub_right,
-      inner_smul_right, hp' i, ← sub_mul, ← mul_assoc, inv_mul_cancel₀ (hne i), one_mul]
+    simp only [b.repr_apply_apply, inner_diagonal_resolventEntries, inner_sub_right,
+      inner_smul_right, hp' i]
+    field_simp [hne i]
 
 /-- **The resolvent set of a diagonal operator.** `z • I - b.diagonalPMap c` has a bounded inverse
 if and only if `z` lies at a positive distance from all the coefficients `c i`. -/
@@ -115,15 +115,12 @@ theorem mem_resolventSet_diagonalPMap_iff :
   refine ⟨(‖R‖ + 1)⁻¹, by positivity, fun i ↦ ?_⟩
   have hbi := b.diagonalPMap_apply_self c i
   -- A point of the resolvent set is not an eigenvalue, so `z ≠ c i`.
-  have hne : z - c i ≠ 0 := by
-    intro hzi
-    rw [← sub_eq_zero.1 hzi] at hbi
-    exact b.orthonormal.ne_zero i (congrArg Subtype.val (eq_zero_of_apply_eq_smul h _ hbi))
+  have hne : z - c i ≠ 0 := sub_ne_zero_of_apply_eq_smul h _ (b.orthonormal.ne_zero i) hbi
   -- The resolvent acts on `b i` as multiplication by `(z - c i)⁻¹`, so this has norm `≤ ‖R‖`.
   have hle : ‖z - c i‖⁻¹ ≤ ‖R‖ + 1 := by
-    have hRb := resolvent_apply_of_apply_eq_smul h _ hbi
+    have hRb : R (b i) = (z - c i)⁻¹ • b i := resolvent_apply_of_apply_eq_smul h _ hbi
     have := R.le_opNorm (b i)
-    rw [hRb, norm_smul, b.orthonormal.1 i, mul_one, mul_one, norm_inv] at this
+    simp only [hRb, norm_smul, norm_inv, b.orthonormal.1 i, mul_one] at this
     linarith
   exact inv_le_of_inv_le₀ (norm_pos_iff.2 hne) hle
 
