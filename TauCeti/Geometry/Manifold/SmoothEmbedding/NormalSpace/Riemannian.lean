@@ -177,13 +177,13 @@ range of the differential, both exposed definitions. The statements below use th
 equality to pass between the two types, and the proofs then rewrite `normalClass` to the quotient
 map by `normalClass_def`. -/
 
-variable [FiniteDimensional ℝ E]
-
 omit [FiniteDimensional ℝ V] in
 /-- The quotient comparison `TauCeti.orthogonalNormalSpaceEquivQuotient` takes a normal vector to
 its normal class. -/
 theorem orthogonalNormalSpaceEquivQuotient_eq_normalClass (f : SmoothEmbedding I J n M N)
-    (x : M) (hn : n ≠ 0) (w : orthogonalNormalSpace I J f x) :
+    (x : M) (hn : n ≠ 0)
+    [(LinearMap.range (mfderiv I J (f : M → N) x).toLinearMap).HasOrthogonalProjection]
+    (w : orthogonalNormalSpace I J f x) :
     (orthogonalNormalSpaceEquivQuotient (f : M → N) x w : f.NormalSpace x hn) =
       f.normalClass x hn w := by
   rw [normalClass_def]
