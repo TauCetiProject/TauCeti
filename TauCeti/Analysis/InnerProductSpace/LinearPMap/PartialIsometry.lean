@@ -120,7 +120,8 @@ theorem IsPartialIsometry.compPMap_adjointComp {u : E →L[𝕜] F} (hu : u.IsPa
       (hx₂ : x ∈ M.domain) :
       u.adjoint (((u : E →ₗ[𝕜] F).compPMap M) ⟨x, hx₁⟩) = M ⟨x, hx₂⟩ := by
     have hval : ((u : E →ₗ[𝕜] F).compPMap M) ⟨x, hx₁⟩ = u (M ⟨x, hx₂⟩) := by
-      rw [LinearMap.compPMap_apply, coe_coe]; rfl
+      rw [LinearMap.compPMap_apply, coe_coe]
+      exact congrArg u (congrArg M (Subtype.ext rfl))
     rw [hval]
     exact hu.adjoint_apply_apply (hrange (LinearMap.mem_range_self M.toFun ⟨x, hx₂⟩))
   have hdom : ((u : E →ₗ[𝕜] F).compPMap M).adjointComp.domain = M.adjointComp.domain := by

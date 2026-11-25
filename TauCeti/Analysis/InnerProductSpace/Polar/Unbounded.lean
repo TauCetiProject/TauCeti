@@ -83,7 +83,7 @@ namespace LinearPMap
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
@@ -103,11 +103,54 @@ private instance (T : E →ₗ.[𝕜] F) : TopologicalSpace (PolarDom T) := ⊥
 
 private instance (T : E →ₗ.[𝕜] F) : DiscreteTopology (PolarDom T) := ⟨rfl⟩
 
+private def PolarDom.mk {T : E →ₗ.[𝕜] F} {x : E} (hx : x ∈ T.domain) (hxM : x ∈ T.modulus.domain) :
+    PolarDom T :=
+  (⟨x, ⟨hx, hxM⟩⟩ : ↥(T.domain ⊓ T.modulus.domain))
+
+private def PolarDom.val {T : E →ₗ.[𝕜] F} (d : PolarDom T) : E :=
+  Subtype.val (d : ↥(T.domain ⊓ T.modulus.domain))
+
+private theorem PolarDom.val_mem_domain {T : E →ₗ.[𝕜] F} (d : PolarDom T) :
+    d.val ∈ T.domain :=
+  (d : ↥(T.domain ⊓ T.modulus.domain)).property.1
+
+private theorem PolarDom.val_mem_modulus_domain {T : E →ₗ.[𝕜] F} (d : PolarDom T) :
+    d.val ∈ T.modulus.domain :=
+  (d : ↥(T.domain ⊓ T.modulus.domain)).property.2
+
+private theorem PolarDom.val_mk {T : E →ₗ.[𝕜] F} {x : E} (hx : x ∈ T.domain)
+    (hxM : x ∈ T.modulus.domain) : (PolarDom.mk hx hxM).val = x :=
+  -- `PolarDom` is a type-synonym wrapper around `↥(T.domain ⊓ T.modulus.domain)`.
+  rfl
+
 private def polarTargetCLM (T : E →ₗ.[𝕜] F) : PolarDom T →L[𝕜] F :=
   ⟨T.toFun.comp (Submodule.inclusion inf_le_left), continuous_of_discreteTopology⟩
 
 private def polarModulusCLM (T : E →ₗ.[𝕜] F) : PolarDom T →L[𝕜] E :=
   ⟨T.modulus.toFun.comp (Submodule.inclusion inf_le_right), continuous_of_discreteTopology⟩
+
+private theorem polarTargetCLM_apply {T : E →ₗ.[𝕜] F} (d : PolarDom T) :
+    polarTargetCLM T d = T ⟨d.val, d.val_mem_domain⟩ :=
+  -- Unfolds `polarTargetCLM` across the `PolarDom` type synonym.
+  rfl
+
+private theorem polarModulusCLM_apply {T : E →ₗ.[𝕜] F} (d : PolarDom T) :
+    polarModulusCLM T d = T.modulus ⟨d.val, d.val_mem_modulus_domain⟩ :=
+  -- Unfolds `polarModulusCLM` across the `PolarDom` type synonym.
+  rfl
+
+private theorem polarTargetCLM_mk {T : E →ₗ.[𝕜] F} {x : E} (hx : x ∈ T.domain)
+    (hxM : x ∈ T.modulus.domain) : polarTargetCLM T (PolarDom.mk hx hxM) = T ⟨x, hx⟩ := by
+  rw [polarTargetCLM_apply]
+  exact congrArg T (Subtype.ext (PolarDom.val_mk hx hxM))
+
+private theorem polarModulusCLM_mk {T : E →ₗ.[𝕜] F} {x : E} (hx : x ∈ T.domain)
+    (hxM : x ∈ T.modulus.domain) :
+    polarModulusCLM T (PolarDom.mk hx hxM) = T.modulus ⟨x, hxM⟩ := by
+  rw [polarModulusCLM_apply]
+  exact congrArg T.modulus (Subtype.ext (PolarDom.val_mk hx hxM))
+
+variable [CompleteSpace F]
 
 /-- The **polar factor** of a partial linear map `T : E →ₗ.[𝕜] F`: a bounded operator `E →L[𝕜] F`
 constructed by factoring `T` through `T.modulus` on `T.domain ⊓ T.modulus.domain`. When `T` is
@@ -121,33 +164,28 @@ def polarFactor (T : E →ₗ.[𝕜] F) : E →L[𝕜] F :=
 private theorem norm_polarTargetCLM_eq {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) (d : PolarDom T) :
     ‖polarTargetCLM T d‖ = ‖polarModulusCLM T d‖ := by
-  let u : ↥(T.domain ⊓ T.modulus.domain) := d
-  exact (hT.norm_modulus_apply hd u.property.2 u.property.1).symm
+  rw [polarTargetCLM_apply, polarModulusCLM_apply]
+  exact (hT.norm_modulus_apply hd d.val_mem_modulus_domain d.val_mem_domain).symm
 
 private theorem range_polarModulusCLM {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) :
     (polarModulusCLM T).range = LinearMap.range T.modulus.toFun := by
   refine le_antisymm ?_ ?_
   · rintro _ ⟨d, rfl⟩
-    let u : ↥(T.domain ⊓ T.modulus.domain) := d
-    exact ⟨⟨u, u.property.2⟩, rfl⟩
+    exact ⟨⟨d.val, d.val_mem_modulus_domain⟩, (polarModulusCLM_apply d).symm⟩
   · rintro _ ⟨x, rfl⟩
-    let d : PolarDom T :=
-      (⟨x, ⟨hT.modulus_domain hd ▸ x.property, x.property⟩⟩ : ↥(T.domain ⊓ T.modulus.domain))
-    exact ⟨d, rfl⟩
+    exact ⟨PolarDom.mk (hT.modulus_domain hd ▸ x.property) x.property,
+      polarModulusCLM_mk _ x.property⟩
 
 private theorem range_polarTargetCLM {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) :
     (polarTargetCLM T).range = LinearMap.range T.toFun := by
   refine le_antisymm ?_ ?_
   · rintro _ ⟨d, rfl⟩
-    let u : ↥(T.domain ⊓ T.modulus.domain) := d
-    exact ⟨⟨u, u.property.1⟩, rfl⟩
+    exact ⟨⟨d.val, d.val_mem_domain⟩, (polarTargetCLM_apply d).symm⟩
   · rintro _ ⟨x, rfl⟩
-    let d : PolarDom T :=
-      (⟨x, ⟨x.property, (hT.modulus_domain hd).symm ▸ x.property⟩⟩ :
-        ↥(T.domain ⊓ T.modulus.domain))
-    exact ⟨d, rfl⟩
+    exact ⟨PolarDom.mk x.property ((hT.modulus_domain hd).symm ▸ x.property),
+      polarTargetCLM_mk x.property _⟩
 
 /-! ### Right polar decomposition, projections, and uniqueness -/
 
@@ -155,9 +193,9 @@ private theorem range_polarTargetCLM {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
 theorem IsClosed.polarFactor_modulus_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) {x : E} (hxM : x ∈ T.modulus.domain) (hx : x ∈ T.domain) :
     T.polarFactor (T.modulus ⟨x, hxM⟩) = T ⟨x, hx⟩ := by
-  let d : PolarDom T := (⟨x, ⟨hx, hxM⟩⟩ : ↥(T.domain ⊓ T.modulus.domain))
-  exact (polarTargetCLM T).factorThru_apply_apply
-    ⟨1, fun z ↦ by rw [one_mul, norm_polarTargetCLM_eq hT hd z]⟩ d
+  have h := (polarTargetCLM T).factorThru_apply_apply (A := polarModulusCLM T)
+    ⟨1, fun z ↦ by rw [one_mul, norm_polarTargetCLM_eq hT hd z]⟩ (PolarDom.mk hx hxM)
+  rwa [polarModulusCLM_mk, polarTargetCLM_mk] at h
 
 /-- **Right polar decomposition** of a closed densely defined operator: `v ∘ |T| = T`, with exact
 domain equality `D(v ∘ |T|) = D(|T|) = D(T)`. -/
@@ -228,8 +266,8 @@ theorem IsClosed.eq_polarFactor {T : E →ₗ.[𝕜] F} {V : E →L[𝕜] F} (hT
     (hV₀ : ∀ x ∈ T.ker, V x = 0) : V = T.polarFactor := by
   refine ContinuousLinearMap.eq_factorThru ?_ fun y hy ↦ ?_
   · ext d
-    let u : ↥(T.domain ⊓ T.modulus.domain) := d
-    exact LinearPMap.congr_fun hV u.property.2 u.property.1
+    rw [ContinuousLinearMap.comp_apply, polarModulusCLM_apply, polarTargetCLM_apply]
+    exact LinearPMap.congr_fun hV d.val_mem_modulus_domain d.val_mem_domain
   · rw [range_polarModulusCLM hT hd, hT.orthogonal_range_modulus hd] at hy
     exact hV₀ y hy
 
@@ -269,8 +307,9 @@ theorem eq_modulus_and_eq_polarFactor {T : E →ₗ.[𝕜] F} {M : E →ₗ.[�
 theorem IsClosed.adjoint_polarFactor_apply_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) {x : E} (hx : x ∈ T.domain) (hxM : x ∈ T.modulus.domain) :
     T.polarFactor.adjoint (T ⟨x, hx⟩) = T.modulus ⟨x, hxM⟩ := by
-  let d : PolarDom T := (⟨x, ⟨hx, hxM⟩⟩ : ↥(T.domain ⊓ T.modulus.domain))
-  exact congr($(ContinuousLinearMap.adjoint_factorThru_comp (norm_polarTargetCLM_eq hT hd)) d)
+  have h := congr($(ContinuousLinearMap.adjoint_factorThru_comp (norm_polarTargetCLM_eq hT hd))
+    (PolarDom.mk hx hxM))
+  rwa [ContinuousLinearMap.comp_apply, polarTargetCLM_mk, polarModulusCLM_mk] at h
 
 /-- Composing `v†` on the left with `T` recovers `|T|`: `(v† : F →ₗ[𝕜] E).compPMap T = |T|`. -/
 theorem IsClosed.adjoint_polarFactor_compPMap {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
@@ -407,8 +446,16 @@ theorem toPMap_top_polarFactor (B : E →L[𝕜] F) :
     rw [Submodule.top_coe]; exact dense_univ
   refine (B.isClosed_toPMap_top.eq_polarFactor hd ?_ fun x hx ↦ ?_).symm
   · rw [B.toPMap_top_modulus]
-    refine LinearPMap.ext rfl fun x _ _ ↦ ?_
-    exact B.polarFactor_modulus_apply x
+    refine LinearPMap.ext (LinearMap.compPMap_domain _ _) fun x hx₁ hx₂ ↦ ?_
+    calc ((B.polarFactor : E →ₗ[𝕜] F).compPMap ((B.modulus : E →ₗ[𝕜] E).toPMap ⊤)) ⟨x, hx₁⟩
+        = B.polarFactor (((B.modulus : E →ₗ[𝕜] E).toPMap ⊤) ⟨x, Submodule.mem_top⟩) :=
+          LinearMap.compPMap_apply _ _ ⟨x, hx₁⟩
+      _ = B.polarFactor (B.modulus x) :=
+          congrArg B.polarFactor
+            (LinearMap.toPMap_apply (B.modulus : E →ₗ[𝕜] E) ⊤ ⟨x, Submodule.mem_top⟩)
+      _ = B x := B.polarFactor_modulus_apply x
+      _ = ((B : E →ₗ[𝕜] F).toPMap ⊤) ⟨x, hx₂⟩ :=
+          (LinearMap.toPMap_apply (B : E →ₗ[𝕜] F) ⊤ ⟨x, Submodule.mem_top⟩).symm
   · rw [LinearMap.toPMap_ker, top_inf_eq] at hx
     exact B.polarFactor_apply_of_mem_ker hx
 
@@ -423,8 +470,9 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 /-- The polar factor of the zero partial linear map (on `⊤`) is zero. -/
 @[simp]
 theorem polarFactor_zero : (0 : E →ₗ.[𝕜] F).polarFactor = 0 := by
-  have h0 : ((0 : E →L[𝕜] F) : E →ₗ[𝕜] F).toPMap ⊤ = (0 : E →ₗ.[𝕜] F) :=
-    LinearPMap.ext rfl fun _ _ _ ↦ rfl
+  have h0 : ((0 : E →L[𝕜] F) : E →ₗ[𝕜] F).toPMap ⊤ = (0 : E →ₗ.[𝕜] F) := by
+    refine LinearPMap.ext (LinearMap.toPMap_domain _ _) fun _ _ _ ↦ ?_
+    simp
   rw [← h0, ContinuousLinearMap.toPMap_top_polarFactor, ContinuousLinearMap.polarFactor_zero]
 
 end LinearPMap

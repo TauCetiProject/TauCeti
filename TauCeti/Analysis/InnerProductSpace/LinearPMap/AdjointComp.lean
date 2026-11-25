@@ -83,6 +83,15 @@ theorem adjointComp_apply (T : E →ₗ.[𝕜] F) (x : (adjointComp T).domain) :
   -- by proof irrelevance of the membership witnesses.
   (rfl)
 
+/-- The maximal composition `0† ∘ 0` of the zero partial linear map (on `⊤`) is zero. -/
+@[simp]
+theorem adjointComp_zero : (0 : E →ₗ.[𝕜] F).adjointComp = 0 := by
+  have hdom : (0 : E →ₗ.[𝕜] F).adjointComp.domain = ⊤ := eq_top_iff.mpr fun _ _ ↦
+    mem_adjointComp_domain.mpr ⟨Submodule.mem_top, by rw [adjoint_zero]; exact Submodule.mem_top⟩
+  refine LinearPMap.ext hdom fun _ _ _ ↦ ?_
+  rw [adjointComp_apply]
+  exact LinearPMap.congr_fun adjoint_zero _ Submodule.mem_top
+
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
 /-- The form identity for `T†T` needs density of the domain of `T`, but not closedness. -/

@@ -26,6 +26,7 @@ As a consequence, the adjoint of a closable partial linear map has dense domain.
 * `Submodule.adjoint_adjoint`: equality for complete submodules.
 * `LinearPMap.dense_adjoint_domain`: a closable operator has a densely defined
   adjoint.
+* `LinearPMap.adjoint_zero`: the adjoint of the zero partial linear map is zero.
 * `LinearPMap.closure_adjoint`: taking the closure of a partial linear map does not
   change its adjoint.
 * `LinearPMap.adjoint_adjoint_eq_closure`: `T†† = closure T` for a closable densely defined
@@ -199,6 +200,14 @@ theorem closure_adjoint (T : E →ₗ.[𝕜] F) : T.closure† = T† := by
       refine LinearPMap.ext (closure_adjoint_domain hTc) fun y hy hy' ↦ ?_
       rw [adjoint_apply_of_not_dense hd' ⟨y, hy⟩, adjoint_apply_of_not_dense hd ⟨y, hy'⟩]
   · rw [closure_def' hTc]
+
+/-- The adjoint of the zero partial linear map (on `⊤`) is zero. -/
+@[simp]
+theorem adjoint_zero : (0 : E →ₗ.[𝕜] F)† = 0 := by
+  have hd : Dense (((0 : E →ₗ.[𝕜] F).domain : Set E)) := by simp [dense_univ]
+  have hdom : (0 : E →ₗ.[𝕜] F)†.domain = ⊤ := eq_top_iff.mpr fun y _ ↦
+    mem_adjoint_domain_of_exists y ⟨0, fun _ ↦ by simp⟩
+  exact LinearPMap.ext hdom fun y hy _ ↦ adjoint_apply_eq hd ⟨y, hy⟩ fun _ ↦ by simp
 
 end CompleteSource
 

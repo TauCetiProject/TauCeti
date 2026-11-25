@@ -188,10 +188,22 @@ private theorem sqrtS_mul_self (hA : IsSelfAdjoint A)
     sqrtS A * sqrtS A = sqrtB A :=
   CFC.sqrt_mul_sqrt_self _ (sqrtB_nonneg hA hpos)
 
+private theorem sqrtS_apply_sqrtS (hA : IsSelfAdjoint A)
+    (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) (z : E) :
+    sqrtS A (sqrtS A z) = sqrtB A z := by
+  have h := congrArg (· z) (sqrtS_mul_self hA hpos)
+  simpa [mul_apply_eq_comp] using h
+
 private theorem sqrtC_mul_self (hA : IsSelfAdjoint A)
     (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) :
     sqrtC A * sqrtC A = 1 - sqrtB A :=
   CFC.sqrt_mul_sqrt_self _ (one_sub_sqrtB_nonneg hA hpos)
+
+private theorem sqrtC_apply_sqrtC (hA : IsSelfAdjoint A)
+    (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) (z : E) :
+    sqrtC A (sqrtC A z) = z - sqrtB A z := by
+  have h := congrArg (· z) (sqrtC_mul_self hA hpos)
+  simpa [mul_apply_eq_comp, _root_.sub_apply, one_apply_eq_self] using h
 
 private theorem commute_sqrtS_sqrtC : Commute (sqrtS A) (sqrtC A) := by
   have hB : Commute (sqrtB A) (1 - sqrtB A) :=
@@ -204,12 +216,7 @@ private theorem sqrtS_injective (hA : IsSelfAdjoint A)
     Function.Injective (sqrtS A) := by
   intro y₁ y₂ h
   apply sqrtB_injective hA hpos
-  have hmul := sqrtS_mul_self hA hpos
-  calc sqrtB A y₁ = (sqrtS A * sqrtS A) y₁ := by rw [hmul]
-    _ = sqrtS A (sqrtS A y₁) := rfl
-    _ = sqrtS A (sqrtS A y₂) := by rw [h]
-    _ = (sqrtS A * sqrtS A) y₂ := rfl
-    _ = sqrtB A y₂ := by rw [hmul]
+  rw [← sqrtS_apply_sqrtS hA hpos y₁, ← sqrtS_apply_sqrtS hA hpos y₂, h]
 
 private theorem mem_sqrt_domain_iff {x : E} :
     x ∈ A.sqrt.domain ↔ ∃ z, sqrtS A z = x :=
@@ -269,8 +276,7 @@ private theorem norm_le_sqrtS_add_sqrtC (hA : IsSelfAdjoint A)
     rw [← inner_self_eq_norm_sq (𝕜 := 𝕜), ← isPositive_sqrtC.inner_left_eq_inner_right,
       ← mul_apply_eq_comp, sqrtC_mul_self hA hpos]
   have hsum : RCLike.re ⟪sqrtB A z, z⟫ + RCLike.re ⟪(1 - sqrtB A) z, z⟫ = ‖z‖ ^ 2 := by
-    rw [← _root_.map_add, ← inner_add_left, ← _root_.add_apply, add_sub_cancel,
-      one_apply_eq_self, inner_self_eq_norm_sq]
+    simp [_root_.sub_apply, one_apply_eq_self, inner_sub_left]
   have hcross : 0 ≤ RCLike.re ⟪sqrtS A z, sqrtC A z⟫ := by
     rw [inner_re_symm]
     exact re_inner_sqrtC_sqrtS_nonneg z
@@ -280,17 +286,17 @@ private theorem surjective_neg_one_sub_sqrt (hA : IsSelfAdjoint A)
     (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) :
     Function.Surjective (fun x : A.sqrt.domain ↦ (-1 : 𝕜) • (x : E) - A.sqrt x) := by
   let U : E →L[𝕜] E := -(sqrtS A + sqrtC A)
+  have hUx (x : ((U : E →ₗ[𝕜] E).toPMap ⊤).domain) :
+      ((U : E →ₗ[𝕜] E).toPMap ⊤) x = U (x : E) :=
+    LinearMap.toPMap_apply (U : E →ₗ[𝕜] E) ⊤ x
   have hU_sa : IsSelfAdjoint ((U : E →ₗ[𝕜] E).toPMap ⊤) :=
     isSelfAdjoint_toPMap_top (isSelfAdjoint_sqrtS.add isSelfAdjoint_sqrtC).neg
   have hsurj : Function.Surjective U := by
     intro y
     obtain ⟨x, hx⟩ := hU_sa.smul_sub_surjective_of_norm_le (c := 0) zero_lt_one (fun x ↦ by
-      have hUx : ((U : E →ₗ[𝕜] E).toPMap ⊤) x = U (x : E) := rfl
-      rw [zero_smul, zero_sub, hUx, norm_neg, one_mul]
+      rw [zero_smul, zero_sub, hUx x, norm_neg, one_mul]
       simpa only [U, _root_.neg_apply, norm_neg] using norm_le_sqrtS_add_sqrtC hA hpos (x : E)) (-y)
-    have hUx : ((U : E →ₗ[𝕜] E).toPMap ⊤) x = U (x : E) := rfl
-    refine ⟨(x : E), ?_⟩
-    simpa only [zero_smul, zero_sub, hUx, neg_eq_iff_eq_neg, neg_neg] using hx
+    exact ⟨(x : E), by simpa only [zero_smul, zero_sub, hUx x, neg_eq_iff_eq_neg, neg_neg] using hx⟩
   intro y
   obtain ⟨z, hz⟩ := hsurj y
   refine ⟨⟨sqrtS A z, sqrtS_mem_sqrt_domain z⟩, ?_⟩
@@ -331,7 +337,7 @@ theorem _root_.IsSelfAdjoint.domain_le_sqrt_domain {A : E →ₗ.[𝕜] E} (hA :
     A.domain ≤ A.sqrt.domain := by
   intro x hx
   refine mem_sqrt_domain_iff.mpr ⟨sqrtS A (x + A ⟨x, hx⟩), ?_⟩
-  rw [← mul_apply_eq_comp, sqrtS_mul_self hA hpos]
+  rw [sqrtS_apply_sqrtS hA hpos]
   exact sqrtB_add_apply hA hpos ⟨x, hx⟩
 
 /-- Squaring `A.sqrt` via `adjointComp` recovers `A`: `(A.sqrt)† (A.sqrt) = A` on maximal domain. -/
@@ -343,9 +349,8 @@ theorem _root_.IsSelfAdjoint.sqrt_adjointComp {A : E →ₗ.[𝕜] E} (hA : IsSe
   have hle : A ≤ A.sqrt.adjointComp := by
     refine ⟨fun x hx ↦ ?_, fun x y hxy ↦ ?_⟩
     · set z := x + A ⟨x, hx⟩
-      have hxS : sqrtS A (sqrtS A z) = x := by
-        rw [← mul_apply_eq_comp, sqrtS_mul_self hA hpos]
-        exact sqrtB_add_apply hA hpos ⟨x, hx⟩
+      have hxS : sqrtS A (sqrtS A z) = x :=
+        (sqrtS_apply_sqrtS hA hpos z).trans (sqrtB_add_apply hA hpos ⟨x, hx⟩)
       have hx_dom : x ∈ A.sqrt.domain := hxS ▸ sqrtS_mem_sqrt_domain (sqrtS A z)
       refine mem_adjointComp_domain.mpr ⟨hx_dom, ?_⟩
       have hval : A.sqrt ⟨x, hx_dom⟩ = sqrtS A (sqrtC A z) :=
@@ -354,8 +359,7 @@ theorem _root_.IsSelfAdjoint.sqrt_adjointComp {A : E →ₗ.[𝕜] E} (hA : IsSe
       exact sqrtS_mem_sqrt_domain (sqrtC A z)
     · set z := (x : E) + A x
       have hxB : sqrtB A z = (x : E) := sqrtB_add_apply hA hpos x
-      have hxS : sqrtS A (sqrtS A z) = (x : E) := by
-        rw [← mul_apply_eq_comp, sqrtS_mul_self hA hpos, hxB]
+      have hxS : sqrtS A (sqrtS A z) = (x : E) := (sqrtS_apply_sqrtS hA hpos z).trans hxB
       have h1 : A.sqrt ⟨y, adjointComp_domain_le A.sqrt y.property⟩ = sqrtS A (sqrtC A z) :=
         sqrt_apply_sqrtS_sqrtS hA hpos (hxS.trans hxy)
       rw [adjointComp_apply]
@@ -366,8 +370,7 @@ theorem _root_.IsSelfAdjoint.sqrt_adjointComp {A : E →ₗ.[𝕜] E} (hA : IsSe
       have hsub2 : (⟨A.sqrt ⟨y, adjointComp_domain_le A.sqrt y.property⟩,
           h1 ▸ sqrtS_mem_sqrt_domain (sqrtC A z)⟩ : A.sqrt.domain) =
           ⟨sqrtS A (sqrtC A z), sqrtS_mem_sqrt_domain _⟩ := Subtype.ext h1
-      rw [hsub2, sqrt_apply_sqrtS hA hpos, ← mul_apply_eq_comp,
-        sqrtC_mul_self hA hpos, _root_.sub_apply, one_apply_eq_self, hxB]
+      rw [hsub2, sqrt_apply_sqrtS hA hpos, sqrtC_apply_sqrtC hA hpos, hxB]
       exact (add_sub_cancel_left (x : E) (A x)).symm
   have hsq_sa := isSelfAdjoint_adjointComp A.sqrt hsqrt.isClosed hsqrt.dense_domain
   have hsq_pos := re_inner_adjointComp_nonneg A.sqrt

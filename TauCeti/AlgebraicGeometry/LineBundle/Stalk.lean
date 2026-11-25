@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Stalk
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 
 /-!
 # Stalks of invertible sheaves
@@ -107,17 +108,12 @@ theorem finrank_stalk_of_isInvertible :
 
 /-- **A generator of the stalk of an invertible sheaf is a basis.** If the germ `g` generates
 the stalk `M_x`, then `a ↦ a • g` is a bijection from the local ring `𝒪_{X,x}` onto `M_x`: since
-`M_x` is isomorphic to `𝒪_{X,x}`, a surjective endomorphism of it is injective. -/
+`M_x` is isomorphic to `𝒪_{X,x}`, the coordinate of `g` is a unit. -/
 theorem bijective_toSpanSingleton_of_span_eq_top {g : M.presheaf.stalk x}
     (hg : Submodule.span (X.presheaf.stalk x) {g} = ⊤) :
-    Function.Bijective (LinearMap.toSpanSingleton (X.presheaf.stalk x) _ g) := by
-  obtain ⟨e⟩ := nonempty_linearEquiv_stalk_of_isInvertible M x
-  have hsurj : Function.Surjective (LinearMap.toSpanSingleton (X.presheaf.stalk x) _ g) :=
-    (Submodule.span_singleton_eq_top_iff _ _).mp hg
-  have hf := OrzechProperty.bijective_of_surjective_endomorphism
-    (e.symm.toLinearMap ∘ₗ LinearMap.toSpanSingleton (X.presheaf.stalk x) _ g)
-    (e.symm.surjective.comp hsurj)
-  exact ⟨fun a b h ↦ hf.1 (by simp [h]), hsurj⟩
+    Function.Bijective (LinearMap.toSpanSingleton (X.presheaf.stalk x) _ g) :=
+  LinearEquiv.bijective_toSpanSingleton_of_span_eq_top
+    (nonempty_linearEquiv_stalk_of_isInvertible M x).some.symm hg
 
 /-- A multiple `a • g` generates the stalk of an invertible sheaf exactly when `a` is a unit of the
 local ring and `g` generates the stalk. -/

@@ -75,18 +75,7 @@ theorem modulus_eq_sqrt_adjointComp (T : E →ₗ.[𝕜] F) : T.modulus = T.adjo
 /-- The modulus of the zero partial linear map (on `⊤`) is zero. -/
 @[simp]
 theorem modulus_zero : (0 : E →ₗ.[𝕜] F).modulus = 0 := by
-  have hd : Dense (((0 : E →ₗ.[𝕜] F).domain : Set E)) := by simp [dense_univ]
-  have hadj : (0 : E →ₗ.[𝕜] F)† = 0 := by
-    have hdom : (0 : E →ₗ.[𝕜] F)†.domain = ⊤ := eq_top_iff.mpr fun y _ ↦
-      mem_adjoint_domain_of_exists y ⟨0, fun _ ↦ by simp⟩
-    exact LinearPMap.ext hdom fun y hy _ ↦ adjoint_apply_eq hd ⟨y, hy⟩ fun _ ↦ by simp
-  have hcomp : (0 : E →ₗ.[𝕜] F).adjointComp = 0 := by
-    have hdom : (0 : E →ₗ.[𝕜] F).adjointComp.domain = ⊤ := eq_top_iff.mpr fun _ _ ↦
-      mem_adjointComp_domain.mpr ⟨Submodule.mem_top, by rw [hadj]; exact Submodule.mem_top⟩
-    refine LinearPMap.ext hdom fun _ _ _ ↦ ?_
-    rw [adjointComp_apply]
-    exact LinearPMap.congr_fun hadj _ Submodule.mem_top
-  rw [modulus_eq_sqrt_adjointComp, hcomp, sqrt_zero]
+  rw [modulus_eq_sqrt_adjointComp, adjointComp_zero, sqrt_zero]
 
 section Closed
 
