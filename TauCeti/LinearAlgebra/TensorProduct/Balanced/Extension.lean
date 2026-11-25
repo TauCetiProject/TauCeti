@@ -192,6 +192,10 @@ theorem smul_tmul (s s' : S) (p : P) : s • tmul f s' p = tmul f (s * s') p :=
 theorem tmul_eq_smul_one_tmul (s : S) (p : P) : tmul f s p = s • tmul f 1 p := by
   rw [smul_tmul, mul_one]
 
+/-- Scalars from `R` pass through `1 ⊗ -` along `f`: `1 ⊗ (r • p) = f r • (1 ⊗ p)`. -/
+theorem one_tmul_smul (r : R) (p : P) : tmul f 1 (r • p) = f r • tmul f 1 p := by
+  rw [tmul_smul, one_mul, tmul_eq_smul_one_tmul]
+
 /-- Induction on `S ⊗_R P` by pure tensors and addition. -/
 @[elab_as_elim]
 theorem induction_on {C : BalancedExtension f P → Prop} (x : BalancedExtension f P)

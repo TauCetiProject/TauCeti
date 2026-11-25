@@ -57,7 +57,8 @@ square of opposite rings.
 * `TauCeti.PatchedModule.lift`: the universal property of the patched module.
 * `TauCeti.PatchedModule.map`: the `D`-linear map induced by a morphism of patching triples.
 * `TauCeti.BalancedExtension.commSqEquiv h P`: the gluing isomorphism
-  `Q ⊗_{A₁} (A₁ ⊗_D P) ≃ Q ⊗_{A₂} (A₂ ⊗_D P)`, `t ⊗ (s ⊗ p) ↦ (t * π₁ s) ⊗ (1 ⊗ p)`.
+  `Q ⊗_{A₁} (A₁ ⊗_D P) ≃ Q ⊗_{A₂} (A₂ ⊗_D P)`, `t ⊗ (s ⊗ p) ↦ (t * π₁ s) ⊗ (1 ⊗ p)`, with
+  inverse `t ⊗ (s ⊗ p) ↦ (t * π₂ s) ⊗ (1 ⊗ p)`.
 * `TauCeti.toPatchedModule h P`: the `D`-linear map `p ↦ (1 ⊗ p, 1 ⊗ p)` from `P` to the patched
   module of its triple.
 * `TauCeti.patchedModuleEquiv h hD P`: over a fibre-product square, the isomorphism of a finitely
@@ -154,8 +155,8 @@ instance : AddCommGroup (PatchedModule h α) :=
 
 instance : SMul D (PatchedModule h α) where
   smul d x := ⟨p₁ d • x.fst, p₂ d • x.snd, by
-    rw [tmul_smul, tmul_smul, one_mul, one_mul, tmul_eq_smul_one_tmul, map_smul,
-      x.apply_tmul_one_fst, smul_tmul, mul_one, ← RingHom.comp_apply, h, RingHom.comp_apply]⟩
+    have hd : π₁ (p₁ d) = π₂ (p₂ d) := DFunLike.congr_fun h d
+    simp only [one_tmul_smul, map_smul, x.apply_tmul_one_fst, hd]⟩
 
 @[simp] theorem fst_smul (d : D) (x : PatchedModule h α) : (d • x).fst = p₁ d • x.fst := (rfl)
 @[simp] theorem snd_smul (d : D) (x : PatchedModule h α) : (d • x).snd = p₂ d • x.snd := (rfl)
@@ -278,6 +279,18 @@ theorem BalancedExtension.commSqEquiv_tmul (t : Q) (s : A₁) (x : P) :
     commSqEquiv h P (tmul π₁ t (tmul p₁ s x)) = tmul π₂ (t * π₁ s) (tmul p₂ 1 x) := by
   simp [commSqEquiv]
 
+@[simp]
+theorem BalancedExtension.commSqEquiv_symm_tmul (t : Q) (s : A₂) (x : P) :
+    (commSqEquiv h P).symm (tmul π₂ t (tmul p₂ s x)) = tmul π₁ (t * π₂ s) (tmul p₁ 1 x) := by
+  simp [commSqEquiv]
+
+/-- Cancelling base change after the gluing isomorphism is transport along the square. -/
+@[simp]
+theorem BalancedExtension.cancelBaseChange_commSqEquiv
+    (x : BalancedExtension π₁ (BalancedExtension p₁ P)) :
+    cancelBaseChange p₂ π₂ (commSqEquiv h P x) = congrRingHom h (cancelBaseChange p₁ π₁ x) := by
+  simp [commSqEquiv]
+
 /-- The gluing isomorphism is natural in the module. -/
 theorem BalancedExtension.commSqEquiv_map (g : P →ₗ[D] P')
     (x : BalancedExtension π₁ (BalancedExtension p₁ P)) :
@@ -326,10 +339,9 @@ private theorem commSqEquiv_tmul_one_eq_iff (ι : Type*) [Fintype ι]
     (x : BalancedExtension p₁ (ι → D)) (y : BalancedExtension p₂ (ι → D)) :
     commSqEquiv h (ι → D) (tmul π₁ 1 x) = tmul π₂ 1 y ↔
       ∀ i, π₁ (piScalarRight p₁ ι x i) = π₂ (piScalarRight p₂ ι y i) := by
-  rw [commSqEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply, LinearEquiv.symm_apply_eq,
-    ← (piScalarRight (π₂.comp p₂) ι).injective.eq_iff, piScalarRight_congrRingHom,
-    piScalarRight_cancelBaseChange_tmul, piScalarRight_cancelBaseChange_tmul, funext_iff]
-  simp
+  rw [← (cancelBaseChange p₂ π₂).injective.eq_iff,
+    ← (piScalarRight (π₂.comp p₂) ι).injective.eq_iff]
+  simp [funext_iff]
 
 include hD in
 /-- Over a fibre-product square, a finite free module is the patched module of its triple. -/
