@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Pi
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Data.Matrix.Basic
 
 /-!
@@ -13,7 +13,7 @@ public import Mathlib.Data.Matrix.Basic
 
 For a commutative semiring `R` and an `R`-module `E`, scaling the entry `(i, j)` of a matrix `Y`
 with entries in `E` by `r i j : R` is an `R`-linear endomorphism of `Matrix m n E`, multiplicative
-and additive in the weights `r`.
+and additive in the weights `r`. It is `Algebra.lsmul` for the pointwise action of the weights.
 
 ## Main definitions
 
@@ -28,18 +28,11 @@ namespace Matrix
 variable {m n R : Type*} [CommSemiring R]
 
 /-- Entrywise scaling by a matrix of weights in `R`, as an `R`-algebra homomorphism from the
-weights to the `R`-linear endomorphisms of `Matrix m n E`. -/
+weights to the `R`-linear endomorphisms of `Matrix m n E`. This is `Algebra.lsmul` for the
+pointwise action of `m → n → R` on `m → n → E`, the underlying type of `Matrix m n E`. -/
 def entrywiseSMulAlgHom (E : Type*) [AddCommMonoid E] [Module R E] :
-    (m → n → R) →ₐ[R] Module.End R (Matrix m n E) where
-  toFun r :=
-    { toFun Y := of fun i j ↦ r i j • Y i j
-      map_add' Y Z := by ext i j; simp [smul_add]
-      map_smul' c Y := by ext i j; simp [smul_comm (r i j) c] }
-  map_one' := by ext Y i j; simp
-  map_mul' r s := by ext Y i j; simp [mul_smul]
-  map_zero' := by ext Y i j; simp
-  map_add' r s := by ext Y i j; simp [add_smul]
-  commutes' c := by ext Y i j; simp
+    (m → n → R) →ₐ[R] Module.End R (Matrix m n E) :=
+  Algebra.lsmul R R (m → n → E)
 
 /-- `entrywiseSMulAlgHom E r Y` is the matrix with entries `r i j • Y i j`. -/
 theorem entrywiseSMulAlgHom_apply {E : Type*} [AddCommMonoid E] [Module R E]
