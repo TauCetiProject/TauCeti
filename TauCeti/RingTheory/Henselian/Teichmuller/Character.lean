@@ -40,8 +40,12 @@ principal units `1 + 𝔪` (`TauCeti.principalUnitCharacter`,
 `TauCeti.teichmullerCharacter_mul_principalUnitCharacter`,
 `TauCeti.eq_teichmullerCharacter_and_eq_principalUnitCharacter`). The principal-unit part is
 multiplicative in `χ` (`TauCeti.principalUnitCharacterHom`) and is trivial exactly on Teichmüller
-lifts (`TauCeti.principalUnitCharacter_eq_one_iff`). For the `p`-adic cyclotomic character this
-is `χ_p = ω · ⟨χ_p⟩` with `⟨χ_p⟩` valued in `1 + pℤ_p`.
+lifts (`TauCeti.principalUnitCharacter_eq_one_iff`). It is idempotent
+(`TauCeti.principalUnitCharacter_principalUnitCharacter`), independent of the coefficient ring
+(`TauCeti.unitsMap_comp_principalUnitCharacter`), and continuous when `χ` is continuous and its
+reduction has open kernel (`TauCeti.continuous_principalUnitCharacter`,
+`TauCeti.principalUnitContinuousCharacter`). For the `p`-adic cyclotomic character this is
+`χ_p = ω · ⟨χ_p⟩` with `⟨χ_p⟩` valued in `1 + pℤ_p`.
 
 ## Main definitions
 
@@ -49,6 +53,8 @@ is `χ_p = ω · ⟨χ_p⟩` with `⟨χ_p⟩` valued in `1 + pℤ_p`.
 * `TauCeti.teichmullerContinuousCharacter`: the Teichmüller lift `Γ →ₜ* Rˣ` of a residual
   character with open kernel.
 * `TauCeti.principalUnitCharacter`: the principal-unit part `⟨χ⟩ = ω(χ₀)⁻¹ χ` of a character.
+* `TauCeti.principalUnitContinuousCharacter`: the principal-unit part `G →ₜ* Rˣ` of a continuous
+  character whose reduction has open kernel.
 
 ## Main results
 
@@ -322,6 +328,68 @@ theorem principalUnitCharacter_eq_one_iff {χ : Γ →* Rˣ} :
 theorem principalUnitCharacter_teichmullerCharacter (ψ : Γ →* (ResidueField R)ˣ) :
     principalUnitCharacter R (teichmullerCharacter R ψ) = 1 := by
   rw [principalUnitCharacter_eq_one_iff, unitsMap_residue_comp_teichmullerCharacter]
+
+/-- The principal-unit part is idempotent: a character with values in the principal units is its
+own principal-unit part. -/
+@[simp]
+theorem principalUnitCharacter_principalUnitCharacter (χ : Γ →* Rˣ) :
+    principalUnitCharacter R (principalUnitCharacter R χ) = principalUnitCharacter R χ := by
+  rw [principalUnitCharacter.eq_1 (χ := principalUnitCharacter R χ),
+    unitsMap_residue_comp_principalUnitCharacter, teichmullerCharacter_one, inv_one (G := Γ →* Rˣ),
+    one_mul (M := Γ →* Rˣ)]
+
+/-- **Independence of the coefficient ring.** A local homomorphism `f : R → S` carries the
+principal-unit part of `χ` to the principal-unit part of `χ` followed by `f`. -/
+@[simp]
+theorem unitsMap_comp_principalUnitCharacter {S : Type*} [CommRing S] [HenselianLocalRing S]
+    [Finite (ResidueField S)] (f : R →+* S) [IsLocalHom f] (χ : Γ →* Rˣ) :
+    (Units.map (f : R →* S)).comp (principalUnitCharacter R χ) =
+      principalUnitCharacter S ((Units.map (f : R →* S)).comp χ) := by
+  ext g : 1
+  simp only [MonoidHom.comp_apply, principalUnitCharacter_apply, map_mul, map_inv,
+    unitsMap_teichmuller]
+  have h : Units.map (ResidueField.map f : ResidueField R →* ResidueField S)
+      (Units.map (residue R : R →* ResidueField R) (χ g)) =
+        Units.map (residue S : S →* ResidueField S) (Units.map (f : R →* S) (χ g)) :=
+    Units.ext (ResidueField.map_residue f _)
+  rw [h]
+
+/-- **Continuity of the principal-unit part**: if `χ` is continuous and its reduction has open
+kernel, then `⟨χ⟩` is continuous. -/
+theorem continuous_principalUnitCharacter {G : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousConstSMul G G] [TopologicalSpace Rˣ] [ContinuousMul Rˣ] [ContinuousInv Rˣ]
+    {χ : G →* Rˣ} (hχ : Continuous χ)
+    (hres : IsOpen (((Units.map (residue R : R →* ResidueField R)).comp χ).ker : Set G)) :
+    Continuous (principalUnitCharacter R χ) := by
+  refine ((continuous_teichmullerCharacter hres).inv.mul hχ).congr fun g ↦ ?_
+  rw [principalUnitCharacter, MonoidHom.mul_apply, MonoidHom.inv_apply, Pi.mul_apply,
+    Pi.inv_apply]
+
+variable (R) in
+/-- The principal-unit part of a continuous character whose reduction has open kernel, as a
+continuous character. -/
+def principalUnitContinuousCharacter {G : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousConstSMul G G] [TopologicalSpace Rˣ] [ContinuousMul Rˣ] [ContinuousInv Rˣ]
+    (χ : G →ₜ* Rˣ) (hres : IsOpen (((Units.map (residue R : R →* ResidueField R)).comp
+      (χ : G →* Rˣ)).ker : Set G)) : G →ₜ* Rˣ where
+  toMonoidHom := principalUnitCharacter R χ
+  continuous_toFun := continuous_principalUnitCharacter χ.continuous hres
+
+@[simp]
+theorem coe_principalUnitContinuousCharacter {G : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousConstSMul G G] [TopologicalSpace Rˣ] [ContinuousMul Rˣ] [ContinuousInv Rˣ]
+    {χ : G →ₜ* Rˣ} (hres : IsOpen (((Units.map (residue R : R →* ResidueField R)).comp
+      (χ : G →* Rˣ)).ker : Set G)) :
+    (principalUnitContinuousCharacter R χ hres : G →* Rˣ) = principalUnitCharacter R χ :=
+  (rfl)
+
+@[simp]
+theorem principalUnitContinuousCharacter_apply {G : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousConstSMul G G] [TopologicalSpace Rˣ] [ContinuousMul Rˣ] [ContinuousInv Rˣ]
+    {χ : G →ₜ* Rˣ} (hres : IsOpen (((Units.map (residue R : R →* ResidueField R)).comp
+      (χ : G →* Rˣ)).ker : Set G)) (g : G) :
+    principalUnitContinuousCharacter R χ hres g = principalUnitCharacter R χ g :=
+  (rfl)
 
 /-- **Uniqueness of the Teichmüller decomposition**: if `χ = ω · χ'` with `ω` valued in the
 `(q - 1)`-st roots of unity and `χ'` valued in the principal units, then `ω` is the Teichmüller
