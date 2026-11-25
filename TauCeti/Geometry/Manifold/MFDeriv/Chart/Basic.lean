@@ -50,6 +50,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   - `TauCeti.writtenInExtChartAt_self_eq` and `MDifferentiableAt.mfderiv_eq_fderivWithin_self`: a
     map of model spaces reads in charts as `I' ∘ g ∘ I.symm`, with `mfderiv` its derivative on
     `range I`.
+  - `MDifferentiableAt.mfderiv_eq_mfderivWithin_comp_extChartAt_symm`: `mfderiv` at `x` is the
+    derivative on `range I` of the map read through the inverse extended chart at `x`.
 * **Charts of the maximal atlas**:
   - `TauCeti.mdifferentiable_of_mem_maximalAtlas` and `TauCeti.isInvertible_mvfderiv_extend`:
     differentiability and invertibility of the differential for charts of the `C¹` maximal atlas.
@@ -308,6 +310,26 @@ theorem MDifferentiableAt.mfderiv_eq_fderivWithin_self {g : H → H'} {z : H}
     mfderiv I I' g z = fderivWithin 𝕜 (I' ∘ g ∘ I.symm) (range I) (I z) := by
   -- The tangent-space casts `tangentSpaceCastModel` are the identity maps of the model spaces.
   rw [hg.mfderiv, TauCeti.writtenInExtChartAt_self_eq, extChartAt_self_apply]; rfl
+
+/-- The manifold derivative of `g : M → M'` at `x` is the manifold derivative, within `range I`, of
+`g` read through the inverse of the extended chart at `x`. At a boundary point of `M` this reads
+the derivative on the model half-space. -/
+theorem MDifferentiableAt.mfderiv_eq_mfderivWithin_comp_extChartAt_symm [IsManifold I 1 M]
+    {g : M → M'} {x : M} (hg : MDifferentiableAt I I' g x) :
+    mfderiv I I' g x =
+      mfderivWithin 𝓘(𝕜, E) I' (g ∘ (extChartAt I x).symm) (range I) (extChartAt I x x) := by
+  have hg' : MDifferentiableWithinAt 𝓘(𝕜, E) I' (g ∘ (extChartAt I x).symm) (range I)
+      (extChartAt I x x) :=
+    MDifferentiableAt.comp_mdifferentiableWithinAt _ (by rwa [extChartAt_to_inv])
+      (mdifferentiableWithinAt_extChartAt_symm (mem_extChartAt_target x))
+  rw [hg.mfderiv, hg'.mfderivWithin, writtenInExtChartAt, writtenInExtChartAt,
+    extChartAt_model_space_eq_id]
+  simp only [PartialEquiv.refl_symm, PartialEquiv.refl_coe, preimage_id_eq, id_eq,
+    modelWithCornersSelf_coe, range_id, inter_univ, Function.comp_apply, extChartAt_to_inv,
+    CompTriple.comp_eq]
+  -- The two sides differ only in the tangent-space casts `tangentSpaceCastModel` at the equal
+  -- points `x` and `(extChartAt I x).symm (extChartAt I x x)`, which are identities by definition.
+  rfl
 
 section MaximalAtlasExtend
 

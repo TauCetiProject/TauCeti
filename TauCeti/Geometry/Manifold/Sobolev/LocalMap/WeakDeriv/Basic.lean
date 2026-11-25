@@ -37,6 +37,13 @@ overlap domain, independent of `p` and retaining both `(1, 0)` and `(0, 1)` comp
 * `TauCeti.hasWeakMFDerivOnGroupoid_iff_locally`, `TauCeti.ContMDiffOn.hasWeakMFDerivOnGroupoid`,
   `TauCeti.HasWeakMFDerivOnGroupoid.isNullSet_ne`: locality, `mfderiv` consistency, and a.e.
   uniqueness.
+* `TauCeti.hasWeakMFDerivOnGroupoid_iff_isNullSet_ne_mfderiv`,
+  `TauCeti.HasWeakMFDerivGroupoid.isNullSet_ne_mfderiv`: for `C¹` maps, the weak differentials
+  are exactly the fields agreeing with `mfderiv` off a chartwise null set.
+* `TauCeti.hasWeakMFDerivOnBordered_iff_isNullSet_ne_mfderiv`: on a surface with boundary, the
+  weak differentials of a `C¹` map are the fields agreeing with `mfderiv` off a chartwise null set
+  (which may contain the boundary). The groupoid uniqueness and `mfderiv` agreement statements
+  apply directly to `HasWeakMFDerivOnBordered` and `HasWeakMFDerivBordered`.
 
 ## References
 
@@ -369,6 +376,26 @@ theorem HasWeakMFDerivOnGroupoid.isNullSet_ne_mfderiv [IsManifold J 1 X] [HasGro
       ⟨h.1, fun φ hφ ψ hψ ↦ h.2 φ (StructureGroupoid.maximalAtlas_mono inf_le_left hφ) ψ hψ⟩)
     (hu.hasWeakMFDerivOnGroupoid (StructureGroupoid.maximalAtlas_mono inf_le_right) hn hs)
 
+/-- On the whole of `X`, for a `C^n` map `u` with `1 ≤ n`, any weak differential agrees with
+`mfderiv` off a chartwise null set. -/
+theorem HasWeakMFDerivGroupoid.isNullSet_ne_mfderiv [IsManifold J 1 X] [HasGroupoid X G]
+    [IsManifold I ∞ M] {n : ℕ∞ω} (h : HasWeakMFDerivGroupoid G J I u du)
+    (hu : ContMDiff J I n u) (hn : 1 ≤ n) : IsNullSet J {x | du x ≠ mfderiv J I u x} := by
+  simpa using (hasWeakMFDerivOnGroupoid_univ.2 h).isNullSet_ne_mfderiv hu.contMDiffOn hn
+    isOpen_univ
+
+/-- **Weak differentials of a `C¹` map are `mfderiv`, up to a null set.** On open `s` where `u` is
+`C^n` (`1 ≤ n`), a field `du` is a weak differential of `u` exactly when it agrees with `mfderiv`
+off a chartwise null subset of `s`. -/
+theorem hasWeakMFDerivOnGroupoid_iff_isNullSet_ne_mfderiv [IsManifold J 1 X] [HasGroupoid X G]
+    [IsManifold I ∞ M] [CompleteSpace F] {n : ℕ∞ω}
+    (hG : G.maximalAtlas X ⊆ IsManifold.maximalAtlas J 1 X) (hu : ContMDiffOn J I n u s)
+    (hn : 1 ≤ n) (hs : IsOpen s) :
+    HasWeakMFDerivOnGroupoid G J I u du s ↔ IsNullSet J {x ∈ s | du x ≠ mfderiv J I u x} := by
+  refine ⟨fun h ↦ h.isNullSet_ne_mfderiv hu hn hs, fun hnull ↦ ?_⟩
+  refine (hu.hasWeakMFDerivOnGroupoid hG hn hs).congr_deriv_of_isNullSet hG ?_
+  simpa only [ne_comm] using hnull
+
 end Groupoid
 
 /-! ### Riemann surfaces without boundary -/
@@ -524,6 +551,18 @@ theorem HasWeakMFDerivOnBordered.congr_deriv_of_isNullSet
     HasWeakMFDerivOnBordered I u du' s :=
   HasWeakMFDerivOnGroupoid.congr_deriv_of_isNullSet
     (borderedHolomorphicGroupoid_maximalAtlas_subset (by simp)) h hnull
+
+/-- **Weak differentials of a `C¹` map are `mfderiv`, up to a null set.** On an open subset `s`
+of a Riemann surface with boundary where `u` is `C^n`, `1 ≤ n`, a field `du` is a weak
+differential of `u` exactly when it agrees with `mfderiv` off a chartwise null subset of `s`. -/
+theorem hasWeakMFDerivOnBordered_iff_isNullSet_ne_mfderiv
+    [HasGroupoid X borderedHolomorphicGroupoid] [IsManifold I ∞ M] [CompleteSpace F] {n : ℕ∞ω}
+    (hu : ContMDiffOn closedUpperHalfPlaneModel I n u s) (hn : 1 ≤ n) (hs : IsOpen s) :
+    HasWeakMFDerivOnBordered I u du s ↔
+      IsNullSet closedUpperHalfPlaneModel
+        {x ∈ s | du x ≠ mfderiv closedUpperHalfPlaneModel I u x} :=
+  hasWeakMFDerivOnGroupoid_iff_isNullSet_ne_mfderiv
+    (borderedHolomorphicGroupoid_maximalAtlas_subset (by simp)) hu hn hs
 
 end BorderedSurface
 

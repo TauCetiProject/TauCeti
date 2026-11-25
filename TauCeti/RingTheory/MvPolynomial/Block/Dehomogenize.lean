@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.MvPolynomial.Block.Homogenize
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # Dehomogenization of two-coordinate blocks
@@ -34,6 +37,14 @@ preserves the set of nonzero coefficients
 `MvPolynomial.IsMultiHomogeneous.exists_coeff_blockDehomogenize_eq_of_mem_support`) and nonvanishing
 (`MvPolynomial.IsMultiHomogeneous.blockDehomogenize_eq_zero`), and bounds the partial degrees by `e`
 (`MvPolynomial.IsMultiHomogeneous.degreeOf_blockDehomogenize_le`).
+
+For finitely many blocks the two directions are inverse linear isomorphisms: block homogenization,
+written in the coordinates `κ × Fin 2`, is multihomogeneous of multidegree `e`
+(`MvPolynomial.isMultiHomogeneous_rename_blockHomogenize`) and dehomogenizes back to every
+polynomial of partial degrees at most `e`
+(`MvPolynomial.blockDehomogenize_rename_blockHomogenize`). Together with injectivity this gives
+`MvPolynomial.blockDehomogenizeEquiv e`, from the multihomogeneous polynomials of multidegree `e`
+onto `restrictSupport R {m | ∀ h, m h ≤ e h}`.
 
 ## References
 
@@ -260,6 +271,84 @@ theorem IsMultiHomogeneous.degreeOf_blockDehomogenize_le (hP : IsMultiHomogeneou
   obtain ⟨n, hn, hmn⟩ := exists_mem_support_of_mem_support_blockDehomogenize hm
   rw [hmn h, ← add_eq_of_mem_support hP hn h]
   exact Nat.le_add_left _ _
+
+section Equiv
+
+variable [Fintype κ]
+
+variable (e) in
+/-- Block homogenization, written in the coordinates `κ × Fin 2`, is multihomogeneous of
+multidegree `e`. -/
+theorem isMultiHomogeneous_rename_blockHomogenize (f : MvPolynomial κ R) :
+    IsMultiHomogeneous e (rename (Sum.elim (·, (0 : Fin 2)) (·, 1)) (blockHomogenize id e f)) := by
+  refine isMultiHomogeneous_iff_forall_isWeightedHomogeneous.2 fun h ↦ ?_
+  rw [rename_eq_aeval]
+  refine (isWeightedHomogeneous_blockHomogenize id e f h).aeval fun v ↦ ?_
+  cases v <;> exact isWeightedHomogeneous_X R _ _
+
+omit [DecidableEq κ] in
+/-- Dehomogenizing the block homogenization of a polynomial of partial degrees at most `e`
+recovers it. -/
+theorem blockDehomogenize_rename_blockHomogenize {f : MvPolynomial κ R}
+    (hf : f ∈ restrictSupport R {m : κ →₀ ℕ | ∀ h, m h ≤ e h}) :
+    blockDehomogenize (rename (Sum.elim (·, (0 : Fin 2)) (·, 1)) (blockHomogenize id e f)) = f := by
+  rw [blockDehomogenize_rename_sumElim]
+  refine aeval_blockHomogenize_one_X id e fun m hm h ↦ ?_
+  rw [Finsupp.mapDomain_id]
+  exact (mem_restrictSupport_iff R).1 hf hm h
+
+variable (R e) in
+/-- **Dehomogenization of two-coordinate blocks as a linear isomorphism.** The polynomials in the
+variables `X (h, 0)`, `X (h, 1)` that are multihomogeneous of multidegree `e` correspond to the
+polynomials in the variables `X h` of partial degree at most `e h` in each `X h`. The map sets
+every homogenizing coordinate `X (h, 0)` to `1`, and its inverse is block homogenization. -/
+noncomputable def blockDehomogenizeEquiv :
+    multiHomogeneousSubmodule R (Fin 2) e ≃ₗ[R]
+      restrictSupport R {m : κ →₀ ℕ | ∀ h, m h ≤ e h} where
+  toFun P := ⟨blockDehomogenize (P : MvPolynomial (κ × Fin 2) R),
+    mem_restrictSupport_iff_degreeOf_le.2
+      (mem_multiHomogeneousSubmodule.1 P.property).degreeOf_blockDehomogenize_le⟩
+  map_add' P Q := Subtype.ext (map_add _ _ _)
+  map_smul' c P := Subtype.ext (map_smul _ _ _)
+  invFun f :=
+    ⟨rename (Sum.elim (·, (0 : Fin 2)) (·, 1)) (blockHomogenize id e (f : MvPolynomial κ R)),
+    mem_multiHomogeneousSubmodule.2 (isMultiHomogeneous_rename_blockHomogenize e _)⟩
+  left_inv P := by
+    have hP : IsMultiHomogeneous e (P : MvPolynomial (κ × Fin 2) R) :=
+      mem_multiHomogeneousSubmodule.1 P.property
+    refine Subtype.ext (blockDehomogenize_injOn e
+      (isMultiHomogeneous_rename_blockHomogenize e _) hP ?_)
+    exact blockDehomogenize_rename_blockHomogenize
+      (mem_restrictSupport_iff_degreeOf_le.2 hP.degreeOf_blockDehomogenize_le)
+  right_inv f := Subtype.ext (blockDehomogenize_rename_blockHomogenize f.property)
+
+@[simp]
+theorem coe_blockDehomogenizeEquiv_apply (P : multiHomogeneousSubmodule R (Fin 2) e) :
+    (blockDehomogenizeEquiv R e P : MvPolynomial κ R) = blockDehomogenize (P : MvPolynomial _ R) :=
+  (rfl)
+
+@[simp]
+theorem coe_blockDehomogenizeEquiv_symm_apply
+    (f : restrictSupport R {m : κ →₀ ℕ | ∀ h, m h ≤ e h}) :
+    ((blockDehomogenizeEquiv R e).symm f : MvPolynomial (κ × Fin 2) R) =
+      rename (Sum.elim (·, (0 : Fin 2)) (·, 1)) (blockHomogenize id e (f : MvPolynomial κ R)) :=
+  (rfl)
+
+/-- The block homogenization of the monomial `X^m`, `m ≤ e`, is
+`∏ i, X (i, 1) ^ m i * X (i, 0) ^ (e i - m i)`. -/
+theorem coe_blockDehomogenizeEquiv_symm_monomial {m : κ →₀ ℕ} (hm : ∀ h, m h ≤ e h) :
+    (((blockDehomogenizeEquiv R e).symm ⟨monomial m 1, by simp [hm]⟩ :
+        multiHomogeneousSubmodule R (Fin 2) e) : MvPolynomial (κ × Fin 2) R) =
+      ∏ i, X (i, (1 : Fin 2)) ^ m i * X (i, 0) ^ (e i - m i) := by
+  have h : (blockDehomogenizeEquiv R e).symm ⟨monomial m 1, by simp [hm]⟩ =
+      ⟨_, mem_multiHomogeneousSubmodule.2
+        (isMultiHomogeneous_prod_X_pow_mul_X_pow (R := R) hm (1 : Fin 2) 0)⟩ := by
+    rw [LinearEquiv.symm_apply_eq]
+    refine Subtype.ext ?_
+    simp [monomial_eq, Finsupp.prod_fintype]
+  rw [h]
+
+end Equiv
 
 end MultiHomogeneous
 

@@ -22,9 +22,11 @@ coefficient norms, and restrictedness, when the weights are changed by the corre
 norms. In particular, rescaling by the inverses of multiplicative units `uᵢ` turns the weighted
 coefficient norms at the radii `‖uᵢ‖⁻¹` into plain coefficient norms. Rescaling by a family of
 units and then by their inverses is the identity. Rescaling multiplies each variable by its scalar
-(`MvPowerSeries.rescale_X`). Substituting a family into a rescaled
-power series is substituting the rescaled family: `f(a X)` at `X = v` is `f(a v)`; in particular,
-`s • g = f(s X)` gives `s • g(v) = f(s v)`.
+(`MvPowerSeries.rescale_X`). Rescaling by the indicator of the complement of a set of variables
+sets these variables to zero (`MvPowerSeries.coeff_rescale_indicator_compl`), and keeps restricted
+series restricted (`MvPowerSeries.IsRestricted.rescale_indicator_compl`). Substituting a
+family into a rescaled power series is substituting the rescaled family: `f(a X)` at `X = v` is
+`f(a v)`; in particular, `s • g = f(s X)` gives `s • g(v) = f(s v)`.
 -/
 
 public section
@@ -96,6 +98,38 @@ theorem rescale_inv_rescale {A : Type*} [CommSemiring A] (u : σ → Aˣ) (f : M
     funext i
     simp
   rw [rescale_rescale, h, rescale_one, RingHom.id_apply]
+
+open Classical in
+/-- Rescaling by the indicator of the complement of `s` sets the variables of `s` to zero. -/
+theorem coeff_rescale_indicator_compl {A : Type*} [CommSemiring A] (s : Set σ)
+    (f : MvPowerSeries σ A) (t : σ →₀ ℕ) :
+    coeff t (rescale (sᶜ.indicator 1) f) = if ∀ j ∈ s, t j = 0 then coeff t f else 0 := by
+  rw [coeff_rescale, Finsupp.prod,
+    Finset.prod_congr rfl fun j hj ↦ (?_ : _ = if j ∈ sᶜ then (1 : A) else 0),
+    Finset.prod_boole]
+  · have : (∀ j ∈ t.support, j ∈ sᶜ) ↔ ∀ j ∈ s, t j = 0 := by
+      simp only [Finsupp.mem_support_iff, Set.mem_compl_iff]
+      exact ⟨fun h j hj ↦ by_contra fun h' ↦ h j h' hj, fun h j hj hjs ↦ hj (h j hjs)⟩
+    by_cases h : ∀ j ∈ s, t j = 0
+    · simp only [this, eq_true h, ↓reduceIte, one_mul]
+    · simp only [this, eq_false h, ↓reduceIte, zero_mul]
+  · rw [Set.indicator_apply]
+    split_ifs
+    · exact one_pow _
+    · exact zero_pow (Finsupp.mem_support_iff.mp hj)
+
+/-- Setting the variables of `s` to zero, by rescaling with the indicator of the complement of
+`s`, keeps a restricted series restricted. -/
+theorem IsRestricted.rescale_indicator_compl [NormedCommRing R] {c : σ → ℝ} (s : Set σ)
+    {f : MvPowerSeries σ R} (hf : IsRestricted c f) :
+    IsRestricted c (rescale (sᶜ.indicator 1) f) := by
+  classical
+  refine squeeze_zero_norm (fun t ↦ ?_) (tendsto_zero_iff_norm_tendsto_zero.mp hf)
+  rw [coeff_rescale_indicator_compl]
+  split_ifs
+  · exact le_rfl
+  · rw [norm_zero, zero_mul, norm_zero]
+    exact norm_nonneg _
 
 /-- Substituting a family `v` into the rescaling `f(a X)` of `f` substitutes the rescaled family:
 `f(a X)` at `X = v` is `f(a v)`. -/

@@ -599,12 +599,12 @@ end Evaluation
 section Integral
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
-  [μ.IsAddHaarMeasure] {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+  {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
   {G : E → H →L[ℝ] ℝ}
 
-/-- **Mass of an absolutely continuous current.** Against an additive Haar measure, integration
-against a field `G` of continuous linear functionals on a real Hilbert space, locally integrable
-on `Ω`, has mass `∫_Ω ‖G‖`; both sides may be infinite. -/
+/-- **Mass of an absolutely continuous current.** For any measure `μ`, integration against a
+field `G` of continuous linear functionals on a real Hilbert space, locally integrable on `Ω`, has
+mass `∫_Ω ‖G‖`; both sides may be infinite. -/
 theorem mass_integral_apply (hG : LocallyIntegrableOn G Ω μ) :
     mass (fun φ : 𝓓(Ω, H) => ∫ x, G x (φ x) ∂μ) = ∫⁻ x in Ω, ‖G x‖ₑ ∂μ := by
   refine le_antisymm (mass_le_iff.2 fun φ hφ => φ.enorm_integral_apply_le_setLIntegral_enorm hφ G)

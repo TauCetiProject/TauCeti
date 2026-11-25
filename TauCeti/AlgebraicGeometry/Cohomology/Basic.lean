@@ -11,6 +11,8 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HasExt
 public import Mathlib.Topology.Sheaves.Abelian
 public import TauCeti.Topology.Sheaves.Presheaf
+import TauCeti.AlgebraicGeometry.Modules.Sections
+import Mathlib.Algebra.Category.Grp.Zero
 
 /-!
 # Cohomology of sheaves of modules on a scheme
@@ -30,7 +32,9 @@ For a scheme `X` and `M : X.Modules`, the main declarations are:
   `Scheme.Modules.cohomologyOnMap` its functoriality in the coefficient sheaf, bundled as the
   functor `Scheme.Modules.cohomologyOnFunctor X n U`,
   `Scheme.Modules.cohomologyOnZeroEquiv` the identification of `H⁰(U, M)` with `Γ(M, U)`, and
-  `Scheme.Modules.cohomologyOnTopIso` the identification of `Hⁿ(⊤, M)` with `Hⁿ(X, M)`.
+  `Scheme.Modules.cohomologyOnTopIso` the identification of `Hⁿ(⊤, M)` with `Hⁿ(X, M)`;
+* `Scheme.Modules.subsingleton_cohomology_of_isEmpty`, the vanishing of all cohomology on the
+  empty scheme.
 
 The construction is stated for every sheaf of modules, which is the natural generality of sheaf
 cohomology. In particular it applies to finitely presented sheaves through their underlying
@@ -100,6 +104,19 @@ lemma cohomologyZeroEquiv_naturality {M N : X.Modules} (f : M ⟶ N) (x : Cohomo
       f.app ⊤ (cohomologyZeroEquiv M x) :=
   (CategoryTheory.Sheaf.H.equiv₀_naturality isTerminalTop
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f) x).symm
+
+/-- On an empty scheme every sheaf of modules has trivial cohomology in every degree, as it is the
+zero sheaf. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_isEmpty [IsEmpty X]
+    (M : X.Modules) (i : ℕ) :
+    Subsingleton (Cohomology M i) := by
+  have hM : IsZero M := by
+    rw [IsZero.iff_id_eq_zero]
+    refine AlgebraicGeometry.Scheme.Modules.hom_ext _ _ fun U ↦ ?_
+    have : IsEmpty U := ⟨fun x ↦ isEmptyElim x.val⟩
+    ext s
+    exact AlgebraicGeometry.Scheme.Modules.section_ext_of_isEmpty _ _
+  exact (AddCommGrpCat.isZero_iff_subsingleton).mp ((cohomologyFunctor X i).map_isZero hM)
 
 section Opens
 

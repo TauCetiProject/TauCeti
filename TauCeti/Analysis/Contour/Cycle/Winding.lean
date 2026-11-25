@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.Analysis.Contour.Winding.UnboundedComponent
-import TauCeti.Analysis.Contour.Winding.Integer
-import Mathlib.Topology.Algebra.Support
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
 
 /-!
 # Winding numbers and trace-zero weights of contour cycles
 
-The generalized winding number of a contour cycle is defined at every point by additive extension
-from its closed piecewise-`C¹` generators. Away from the cycle's trace, every generator is in the
-classical regime: its principal value is an ordinary integral and its winding number is an integer.
+The generalized winding number of a contour cycle takes a value at every point, by additive
+extension from its closed absolutely continuous generators. Away from the cycle's trace, every
+generator is in the classical regime: its principal value is an ordinary integral and its winding
+number is an integer. On the trace the principal value need not exist, even for a Lipschitz
+generator, and the value is then a junk value.
 This file transfers that classical package to finite formal `ℤ`-combinations of curves.
 
 The support formula is the bridge between the free-abelian-group definition and the single-curve
@@ -80,7 +80,7 @@ theorem sum_support_smul_eq_integral_add_windingNumber_sum
           + c • ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s • w s)
       = integral g C
         + c • ∑ s ∈ S, windingNumber s C • w s := by
-  have hswap : ∀ γ : PiecewiseC1ClosedCurve,
+  have hswap : ∀ γ : AbsolutelyContinuousClosedCurve,
       (FreeAddCommGroup.coeff γ C : ℂ) •
           (c • ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s • w s)
         = ∑ s ∈ S, c • ((FreeAddCommGroup.coeff γ C : ℂ) •
@@ -142,9 +142,9 @@ theorem exists_int_windingNumber_of_not_mem_trace (C : Cycle) {z : ℂ} (hz : z 
   have hgen : ∀ γ ∈ FreeAddCommGroup.support C,
       ∃ n : ℤ, TauCeti.Contour.windingNumber γ γ.a γ.b z = n := by
     intro γ hγ
-    exact γ.isPiecewiseC1On.exists_int_windingNumber γ.source_eq_target
-      (avoids_of_mem_support hz hγ)
-  let n : PiecewiseC1ClosedCurve → ℤ := fun γ ↦
+    exact γ.absolutelyContinuousOnInterval.exists_int_windingNumber γ.source_eq_target
+      fun ⟨t, ht, htz⟩ ↦ avoids_of_mem_support hz hγ t ht htz
+  let n : AbsolutelyContinuousClosedCurve → ℤ := fun γ ↦
     if hγ : γ ∈ FreeAddCommGroup.support C then Classical.choose (hgen γ hγ) else 0
   have hn : ∀ γ ∈ FreeAddCommGroup.support C,
       TauCeti.Contour.windingNumber γ γ.a γ.b z = n γ := by
@@ -167,16 +167,14 @@ theorem isLocallyConstant_windingNumber (C : Cycle) :
         (FreeAddCommGroup.coeff γ C : ℂ) *
           TauCeti.Contour.windingNumber γ γ.a γ.b z) := by
     intro γ hγ
-    obtain ⟨P, hP, hdiff⟩ := γ.isPiecewiseC1On.exists_countable_differentiableAt
-    let inclusion : {z : ℂ // z ∉ trace C} →
-        {z : ℂ // ∀ t ∈ uIcc γ.a γ.b, γ t ≠ z} :=
-      fun z ↦ ⟨z, avoids_of_mem_support z.property hγ⟩
+    let inclusion : {z : ℂ // z ∉ trace C} → {z : ℂ // z ∉ γ '' uIcc γ.a γ.b} :=
+      fun z ↦ ⟨z, fun hz ↦ z.property (mem_trace_iff.mpr ⟨γ, hγ, hz⟩)⟩
     have hinclusion : Continuous inclusion := by fun_prop
-    have hlocal := TauCeti.Contour.isLocallyConstant_windingNumber_of_closed γ.source_eq_target
-      hP γ.continuousOn hdiff γ.intervalIntegrable_deriv
+    have hlocal :=
+      γ.absolutelyContinuousOnInterval.isLocallyConstant_windingNumber γ.source_eq_target
     exact (IsLocallyConstant.const (FreeAddCommGroup.coeff γ C : ℂ)).mul
       (hlocal.comp_continuous hinclusion)
-  have hsum_aux : ∀ (s : Finset PiecewiseC1ClosedCurve),
+  have hsum_aux : ∀ (s : Finset AbsolutelyContinuousClosedCurve),
       s ⊆ FreeAddCommGroup.support C →
         IsLocallyConstant (fun z : {z : ℂ // z ∉ trace C} ↦
           ∑ γ ∈ s, (FreeAddCommGroup.coeff γ C : ℂ) *
@@ -236,18 +234,14 @@ theorem windingNumber_eventually_zero_cocompact (C : Cycle) :
   classical
   have hgen : ∀ γ ∈ FreeAddCommGroup.support C,
       ∀ᶠ z in Filter.cocompact ℂ,
-        (∀ t ∈ uIcc γ.a γ.b, γ t ≠ z) ∧
-          TauCeti.Contour.windingNumber γ γ.a γ.b z = 0 := by
-    intro γ _
-    obtain ⟨P, hP, hdiff⟩ := γ.isPiecewiseC1On.exists_countable_differentiableAt
-    exact TauCeti.Contour.windingNumber_eventually_zero_cocompact γ.source_eq_target hP
-      γ.continuousOn hdiff γ.intervalIntegrable_deriv
+        z ∉ γ '' uIcc γ.a γ.b ∧ TauCeti.Contour.windingNumber γ γ.a γ.b z = 0 := fun γ _ ↦
+    γ.absolutelyContinuousOnInterval.windingNumber_eventually_zero_cocompact γ.source_eq_target
   filter_upwards [(Filter.eventually_all_finset (FreeAddCommGroup.support C)).mpr hgen]
     with z hz
   constructor
   · rw [mem_trace_iff]
-    rintro ⟨γ, hγ, t, ht, htz⟩
-    exact (hz γ hγ).1 t ht htz
+    rintro ⟨γ, hγ, hzγ⟩
+    exact (hz γ hγ).1 hzγ
   · rw [windingNumber_eq_sum_support]
     exact Finset.sum_eq_zero fun γ hγ ↦ by rw [(hz γ hγ).2, mul_zero]
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
+import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
@@ -43,7 +44,9 @@ first, the function equal to `0` on the first ball and `1` on the second is a co
 * `TauCeti.W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`: functions in
   `W^{1,p}_Γ(Ω)` have zero trace on `Γ`.
 * `TauCeti.W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule`: the
-  Poincaré–Friedrichs inequality on `W^{1,p}_Γ(Ω)`.
+  Poincaré–Friedrichs inequality on `W^{1,p}_Γ(Ω)`, and its form
+  `W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_affineIsometryEquiv`
+  on an open set carried onto `Ω` by an affine isometry, such as a domain in `EuclideanSpace ℝ ι`.
 
 ## References
 
@@ -156,5 +159,37 @@ theorem W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodul
   exact W1p.exists_norm_value_le_mul_norm_gradient_of_isCompactOperator
     (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb)
     (w1pVanishingOnSubmodule volume Ω p Γ).isClosed hdisj
+
+/-- **The Poincaré–Friedrichs inequality on an isometric copy of a Lipschitz domain.** Let an
+affine isometry `e` carry the open set `U` of a finite-dimensional inner product space onto a
+bounded Lipschitz domain `Ω ⊆ ℝ × E`, let `U` be connected, let `1 ≤ p < ∞`, and let `Γ'` meet
+the frontier of `U` in a set of positive surface measure. Then there is a constant `C` with
+`‖u‖_{Lᵖ(U)} ≤ C ‖∇u‖_{Lᵖ(U)}` for every `u ∈ W^{1,p}_{Γ'}(U)`. -/
+theorem
+    W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_affineIsometryEquiv
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [MeasurableSpace F] [BorelSpace F] {U : Opens F} {Γ' : Set F}
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (hΩU : (Ω : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' U)
+    (hconn : IsPreconnected (U : Set F))
+    (hΓ : (μHE[finrank ℝ E] : Measure F) (Γ' ∩ frontier (U : Set F)) ≠ 0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ u ∈ w1pVanishingOnSubmodule volume U p Γ',
+      ‖W1p.value u‖ ≤ C * ‖W1p.gradient u‖ := by
+  -- Transport the connectedness of `U` and the surface measure of `Γ'` to `Ω` along `e`.
+  have hconnΩ : IsPreconnected (Ω : Set (WithLp 2 (ℝ × E))) := by
+    rw [hΩU]
+    exact e.symm.toHomeomorph.isPreconnected_preimage.2 hconn
+  have hΓΩ : (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E)))
+      (e.symm ⁻¹' Γ' ∩ frontier (Ω : Set (WithLp 2 (ℝ × E)))) ≠ 0 := by
+    have hfr : ⇑e.symm ⁻¹' frontier (U : Set F) = frontier (e.symm ⁻¹' U) :=
+      e.symm.toHomeomorph.preimage_frontier _
+    rwa [hΩU, ← hfr, ← preimage_inter, e.symm.isometry.euclideanHausdorffMeasure_preimage,
+      e.symm.surjective.range_eq, inter_univ]
+  obtain ⟨C, hC, hPF⟩ := W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule
+    hp hΩ hb hconnΩ hΓΩ
+  refine ⟨C, hC, fun u hu => ?_⟩
+  have h := hPF _ (W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule e.symm hΩU hu)
+  rwa [W1p.norm_value_compAffineIsometryEquivL, W1p.norm_gradient_compAffineIsometryEquivL] at h
 
 end TauCeti

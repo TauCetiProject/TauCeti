@@ -89,6 +89,11 @@ theorem toPartialEquiv_extendTrans_refl :
 theorem coe_extendTrans_refl : ⇑(c.extendTrans I (Homeomorph.refl E)) = c.extend I :=
   congrArg (⇑) (c.toPartialEquiv_extendTrans_refl I)
 
+/-- Moved by the identity, the inverse of `c.extendTrans I` is that of `c.extend I`. -/
+theorem coe_symm_extendTrans_refl :
+    ⇑(c.extendTrans I (Homeomorph.refl E)).symm = (c.extend I).symm :=
+  congrArg (fun e : PartialEquiv M E ↦ ⇑e.symm) (c.toPartialEquiv_extendTrans_refl I)
+
 /-- A chart with values in a normed space, read in its own self model and moved by the identity,
 is the chart itself. -/
 @[simp]

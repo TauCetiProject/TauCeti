@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 
 /-!
 # Finite localization of test functions
@@ -27,7 +28,9 @@ infinite dimension every test function is zero (`TestFunction.eq_zero_of_not_fin
 Near a point where a complex test function `φ` does not vanish, every complex test function
 supported close enough to the point is a smooth multiple of `φ`
 (`TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul`); this is how localization
-arguments replace one cutoff by another.
+arguments replace one cutoff by another. The multiplier is a quotient `χ / φ`, which is smooth
+when no zero of `φ` lies in the closed support of `χ`
+(`ContDiff.mul_inv_of_forall_notMem_tsupport`).
 A compact set `K` in the interior of a compact set `K'` has a complex smooth cutoff supported in
 `K'` and equal to one on `K` (`ContDiffMapSupportedIn.exists_eqOn_one_of_subset_interior`).
 
@@ -192,6 +195,12 @@ theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω
   obtain ⟨χ, hχ01, hχ1, -⟩ := exists_cutoff_tsupport_subset (n := n) hK Ω.isOpen hKΩ subset_rfl
   exact ⟨χ, hχ1, hχ01⟩
 
+/-- Every point of the domain has a test function that is equal to one near it. -/
+theorem exists_eventually_eq_one_nhds {x : E} (hx : x ∈ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ y in 𝓝 x, χ y = 1 :=
+  (exists_eventually_eq_one isCompact_singleton (singleton_subset_iff.2 hx)).imp fun _ h ↦ by
+    simpa only [nhdsSet_singleton] using h.1
+
 /-- Two test functions on `Ω` have a common cutoff test function on `Ω` equal to one on a
 neighbourhood of the union of their supports. -/
 theorem exists_eventually_eq_one_nhdsSet_tsupport_union (φ ψ : 𝓓^{n}(Ω, F)) :
@@ -275,15 +284,9 @@ theorem exists_mem_nhds_forall_exists_contDiff_eq_mul
   refine ⟨interior (χ ⁻¹' {1}), isOpen_interior.mem_nhds (hχ1 rfl), fun ψ hψ ↦ ?_⟩
   -- Write `ψ = φ (θ ψ)` with the function `θ = χ / φ`, which vanishes near the zeros of `φ`.
   let θ : E → ℂ := fun y ↦ (χ y : ℂ) * (φ y)⁻¹
-  have hθ : ContDiff ℝ n θ := by
-    refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
-    by_cases hy : φ y = 0
-    · have hy' : y ∉ tsupport χ := fun h ↦ hχs h hy
-      refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq ?_
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hy'] with z hz
-      simp [θ, hz]
-    · exact (Complex.ofRealCLM.contDiff.comp (hχ.of_le (mod_cast le_top))).contDiffAt.mul
-        (φ.contDiff.contDiffAt.fun_inv hy)
+  have hθ : ContDiff ℝ n θ :=
+    (Complex.ofRealCLM.contDiff.comp (hχ.of_le (mod_cast le_top))).mul_inv_of_forall_notMem_tsupport
+      φ.contDiff fun y hy h ↦ hχs (tsupport_comp_subset (map_zero _) χ h) hy
   refine ⟨fun y ↦ θ y * ψ y, hθ.mul ψ.contDiff, fun y ↦ ?_⟩
   by_cases hψy : ψ y = 0
   · simp [hψy]
